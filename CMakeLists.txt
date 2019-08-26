@@ -201,27 +201,36 @@ check_library_exists(uuid uuid_generate "" HAVE_UUID_GENERATE)
 
 set(FLAVOUR CoInterpreterWithQueueFFI)
 
+# For reproducability and simplified caching, explicitly declare which image & VM are used to generate sources
+set(STABLE_BUILD_IMAGE     "Pharo7.0-SNAPSHOT-64bit-ccd1f64.image")
+set(STABLE_BUILD_IMAGE_ZIP "Pharo7.0-SNAPSHOT.build.166.sha.ccd1f64.arch.64bit.zip")
+if(UNIX)
+	set(STABLE_BUILD_VM_ZIP "pharo-linux-x86_64threaded-201901051900-7a3c6b6.zip")
+endif()
+
 #Custom command that downloads a Pharo image and VM in ${VMMAKER_OUTPUT_PATH}
 add_custom_command(
-  OUTPUT ${VMMAKER_OUTPUT_PATH}/Pharo.image ${VMMAKER_OUTPUT_PATH}/pharo
-  COMMAND wget -O - get.pharo.org/64/70 | bash
-  COMMAND wget -O - get.pharo.org/64/vm70 | bash
+  OUTPUT ${VMMAKER_OUTPUT_PATH}/${STABLE_BUILD_IMAGE}  ${VMMAKER_OUTPUT_PATH}/pharo
+  COMMAND wget --no-clobber -O /tmp/${STABLE_BUILD_IMAGE_ZIP} files.pharo.org/image/70/${STABLE_BUILD_IMAGE_ZIP} || true
+  COMMAND wget --no-clobber -O /tmp/${STABLE_BUILD_VM_ZIP} files.pharo.org/vm/pharo-spur64/linux/${STABLE_BUILD_VM_ZIP} || true
+  COMMAND unzip -o -d . /tmp/${STABLE_BUILD_IMAGE_ZIP} 
+  COMMAND unzip -o -d . /tmp/${STABLE_BUILD_VM_ZIP}   
   WORKING_DIRECTORY ${VMMAKER_OUTPUT_PATH}
   COMMENT "Downloading Pharo 70")
 
 add_custom_command(
   OUTPUT ${VMMAKER_OUTPUT_PATH}/VMMaker.image
-  COMMAND ./pharo Pharo.image --save --quit ${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st ${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}
-  COMMAND ./pharo Pharo.image save VMMaker --delete-old
-  MAIN_DEPENDENCY ${VMMAKER_OUTPUT_PATH}/Pharo.image
-  DEPENDS ${VMMAKER_OUTPUT_PATH}/Pharo.image
+  COMMAND ./pharo -nodisplay ${STABLE_BUILD_IMAGE} --save --quit ${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st ${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}
+  COMMAND ./pharo -nodisplay ${STABLE_BUILD_IMAGE} save VMMaker --delete-old
+  MAIN_DEPENDENCY ${VMMAKER_OUTPUT_PATH}/${STABLE_BUILD_IMAGE}
+  DEPENDS ${VMMAKER_OUTPUT_PATH}/${STABLE_BUILD_IMAGE}
   WORKING_DIRECTORY ${VMMAKER_OUTPUT_PATH}
-COMMENT "Generating VMMaker image")
+  COMMENT "Generating VMMaker image")
 
 #Custom command that generates the vm source code from VMMaker into ${VMMAKER_OUTPUT_PATH} and copies it to ${CMAKE_CURRENT_SOURCE_DIR}
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/vm/src/cogit.c ${CMAKE_CURRENT_BINARY_DIR}/generated/vm/src/gcc3x-cointerp.c
-  COMMAND ${VMMAKER_OUTPUT_PATH}/pharo ${VMMAKER_OUTPUT_PATH}/VMMaker.image eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\'\"
+  COMMAND ${VMMAKER_OUTPUT_PATH}/pharo -nodisplay ${VMMAKER_OUTPUT_PATH}/VMMaker.image eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\'\"
   MAIN_DEPENDENCY ${VMMAKER_OUTPUT_PATH}/VMMaker.image
   COMMENT "Generating VM files for flavour: ${FLAVOUR}")
 
