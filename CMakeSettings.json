@@ -25,7 +25,8 @@
       "inheritEnvironments": [ "linux_x64" ],
       "wslPath": "C:\\Users\\Ben\\AppData\\Local\\Microsoft\\WindowsApps\\ubuntu1804.exe",
       "addressSanitizerRuntimeFlags": "detect_leaks=0",
-      "variables": []
+      "variables": [],
+      "intelliSenseMode": "linux-gcc-x64"
     }
   ]
 }

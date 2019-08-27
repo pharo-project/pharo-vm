@@ -39,7 +39,10 @@ endmacro()
 
 macro(configure_installables INSTALL_COMPONENT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/build/dist")
-    
+
+	# Use RPATH so that "libPharoVMCore.so" can be found in current directory
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath='$ORIGIN'")
+
     install(
       DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux/"
       DESTINATION "./"

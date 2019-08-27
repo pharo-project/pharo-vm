@@ -202,28 +202,29 @@ check_library_exists(uuid uuid_generate "" HAVE_UUID_GENERATE)
 set(FLAVOUR CoInterpreterWithQueueFFI)
 
 # For reproducability and simplified caching, explicitly declare which image & VM are used to generate sources
-set(STABLE_BUILD_IMAGE     "Pharo7.0-SNAPSHOT-64bit-ccd1f64.image")
-set(STABLE_BUILD_IMAGE_ZIP "Pharo7.0-SNAPSHOT.build.166.sha.ccd1f64.arch.64bit.zip")
+set(DOWNLOAD_CACHE /tmp)
+set(BUILDER_IMAGE     "Pharo7.0-SNAPSHOT-64bit-ccd1f64.image")
+set(BUILDER_IMAGE_ZIP "Pharo7.0-SNAPSHOT.build.166.sha.ccd1f64.arch.64bit.zip")
 if(UNIX)
-	set(STABLE_BUILD_VM_ZIP "pharo-linux-x86_64threaded-201901051900-7a3c6b6.zip")
+	set(BUILDER_VM_ZIP "pharo-linux-x86_64threaded-201901051900-7a3c6b6.zip")
 endif()
 
 #Custom command that downloads a Pharo image and VM in ${VMMAKER_OUTPUT_PATH}
 add_custom_command(
-  OUTPUT ${VMMAKER_OUTPUT_PATH}/${STABLE_BUILD_IMAGE}  ${VMMAKER_OUTPUT_PATH}/pharo
-  COMMAND wget --no-clobber -O /tmp/${STABLE_BUILD_IMAGE_ZIP} files.pharo.org/image/70/${STABLE_BUILD_IMAGE_ZIP} || true
-  COMMAND wget --no-clobber -O /tmp/${STABLE_BUILD_VM_ZIP} files.pharo.org/vm/pharo-spur64/linux/${STABLE_BUILD_VM_ZIP} || true
-  COMMAND unzip -o -d . /tmp/${STABLE_BUILD_IMAGE_ZIP} 
-  COMMAND unzip -o -d . /tmp/${STABLE_BUILD_VM_ZIP}   
+  OUTPUT ${VMMAKER_OUTPUT_PATH}/${BUILDER_IMAGE}  ${VMMAKER_OUTPUT_PATH}/pharo
+  COMMAND wget --no-clobber -O ${DOWNLOAD_CACHE}/${BUILDER_IMAGE_ZIP} files.pharo.org/image/70/${BUILDER_IMAGE_ZIP} || true
+  COMMAND wget --no-clobber -O ${DOWNLOAD_CACHE}/${BUILDER_VM_ZIP} files.pharo.org/vm/pharo-spur64/linux/${BUILDER_VM_ZIP} || true
+  COMMAND unzip -o -d . ${DOWNLOAD_CACHE}/${BUILDER_IMAGE_ZIP} 
+  COMMAND unzip -o -d . ${DOWNLOAD_CACHE}/${BUILDER_VM_ZIP}   
   WORKING_DIRECTORY ${VMMAKER_OUTPUT_PATH}
   COMMENT "Downloading Pharo 70")
 
 add_custom_command(
   OUTPUT ${VMMAKER_OUTPUT_PATH}/VMMaker.image
-  COMMAND ./pharo -nodisplay ${STABLE_BUILD_IMAGE} --save --quit ${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st ${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}
-  COMMAND ./pharo -nodisplay ${STABLE_BUILD_IMAGE} save VMMaker --delete-old
-  MAIN_DEPENDENCY ${VMMAKER_OUTPUT_PATH}/${STABLE_BUILD_IMAGE}
-  DEPENDS ${VMMAKER_OUTPUT_PATH}/${STABLE_BUILD_IMAGE}
+  COMMAND ./pharo -nodisplay ${BUILDER_IMAGE} --save --quit ${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st ${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}
+  COMMAND ./pharo -nodisplay ${BUILDER_IMAGE} save VMMaker --delete-old
+  MAIN_DEPENDENCY ${VMMAKER_OUTPUT_PATH}/${BUILDER_IMAGE}
+  DEPENDS ${VMMAKER_OUTPUT_PATH}/${BUILDER_IMAGE}
   WORKING_DIRECTORY ${VMMAKER_OUTPUT_PATH}
   COMMENT "Generating VMMaker image")
 
