@@ -16,17 +16,20 @@ get_git_date(GIT_COMMIT_DATE)
 set(BUILT_FROM "${GIT_DESCRIBE} - Commit: ${GIT_COMMIT_HASH} - Date: ${GIT_COMMIT_DATE}")
 message(STATUS ${BUILT_FROM})
 
-if ((CMAKE_HOST_UNIX) AND (${CMAKE_HOST_SYSTEM_NAME} MATCHES "CYGWIN*"))
+if (((CMAKE_HOST_UNIX) AND (${CMAKE_HOST_SYSTEM_NAME} MATCHES "CYGWIN*")) OR WIN)
   message(STATUS "Building on CYGWIN CMAKE: Adapting paths")
   set(CYGWIN 1)
   set(WIN 1)
 
   # specify the cross compiler
-  set(CMAKE_TOOLCHAIN_PREFIX x86_64-w64-mingw32)
+  set(CMAKE_TOOLCHAIN_PREFIX "")
 
-  SET(CMAKE_C_COMPILER   ${CMAKE_TOOLCHAIN_PREFIX}-clang)
-  SET(CMAKE_CXX_COMPILER ${CMAKE_TOOLCHAIN_PREFIX}-clang++)
-  SET(CMAKE_RC_COMPILER ${CMAKE_TOOLCHAIN_PREFIX}-windres)
+  SET(CMAKE_C_FLAGS "-target x86_64-pc-windows-gnu")
+  SET(CMAKE_REQUIRED_FLAGS "-target x86_64-pc-windows-gnu")
+  SET(CMAKE_CXX_FLAGS "-target x86_64-pc-windows-gnu")
+  SET(CMAKE_C_COMPILER   clang.exe)
+  SET(CMAKE_CXX_COMPILER clang++.exe)
+  SET(CMAKE_RC_COMPILER windres.exe)
   SET(CMAKE_SYSTEM_PROCESSOR x86_64)
 endif()
 
@@ -124,12 +127,12 @@ endif()
 
 set(OPTIMIZATION_FLAGS "")
 
-set(CMAKE_C_FLAGS "-g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
-set(CMAKE_CXX_FLAGS "-g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
+set(CMAKE_C_FLAGS "-g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0 -target x86_64-pc-windows-gnu")
+set(CMAKE_CXX_FLAGS "-g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0 -target x86_64-pc-windows-gnu")
 
 add_definitions(-DIMMUTABILITY=1)
 add_definitions(-DCOGMTVM=0)
-add_definitions(-DPharoVM=1)
+add_definitions(-DPharoVM=1)	
 
 #We require that VM_LABEL does nothing.
 #We should actually cleanup all the places where this is set/used in the VM
@@ -225,8 +228,8 @@ add_custom_command(
 
 add_custom_command(
   OUTPUT ${VMMAKER_OUTPUT_PATH}/VMMaker.image
-  COMMAND ./pharo Pharo.image --save --quit ${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st ${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}
-  COMMAND ./pharo Pharo.image save VMMaker --delete-old
+  COMMAND ./pharo-vm/PharoConsole.exe --headless Pharo.image --save --quit ${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st ${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}
+  COMMAND ./pharo-vm/PharoConsole.exe --headless Pharo.image save VMMaker --delete-old
   MAIN_DEPENDENCY ${VMMAKER_OUTPUT_PATH}/Pharo.image
   DEPENDS ${VMMAKER_OUTPUT_PATH}/Pharo.image
   WORKING_DIRECTORY ${VMMAKER_OUTPUT_PATH}
@@ -235,7 +238,7 @@ COMMENT "Generating VMMaker image")
 #Custom command that generates the vm source code from VMMaker into ${VMMAKER_OUTPUT_PATH} and copies it to ${CMAKE_CURRENT_SOURCE_DIR}
 add_custom_command(
   OUTPUT ${VMSOURCEFILES}
-  COMMAND ${VMMAKER_OUTPUT_PATH}/pharo ${VMMAKER_OUTPUT_PATH}/VMMaker.image eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\'\"
+  COMMAND ${VMMAKER_OUTPUT_PATH}/pharo-vm/PharoConsole.exe --headless ${VMMAKER_OUTPUT_PATH}/VMMaker.image eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\'\"
   MAIN_DEPENDENCY ${VMMAKER_OUTPUT_PATH}/VMMaker.image
   COMMENT "Generating VM files for flavour: ${FLAVOUR}")
 
