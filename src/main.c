@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <pthread.h>
 #include <pharoClient.h>
 #include <pharo.h>
 
-<<<<<<< HEAD
 int runThread(void* p){
 
 	VM_PARAMETERS *parameters = (VM_PARAMETERS*)p;
@@ -25,9 +24,6 @@ void* getMainThreadWorker(){
 
 
 int main(int argc, char* argv[]){
-=======
-int main(int argc, char* argv[], char** env){
->>>>>>> headlessMinGW
 
 	void*(*pworker_newSpawning)(bool);
 	void*(*pworker_run)(void*);
