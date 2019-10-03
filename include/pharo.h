@@ -70,6 +70,8 @@ EXPORT(int) getProcessArgumentCount();
 EXPORT(char**) getProcessArgumentVector();
 EXPORT(char**) getProcessEnvironmentVector();
 
+EXPORT(void *) getModuleSymbol(void *module, const char *symbol);
+
 #ifndef NULL
 #define NULL	0
 #endif

@@ -36,7 +36,6 @@ int sqVMOptionTraceModuleLoading = 0;
 
 void *loadModuleHandle(const char *fileName);
 sqInt freeModuleHandle(void *module);
-void *getModuleSymbol(void *module, const char *symbol);
 
 const char *moduleNamePatterns[] = {
     "%s%s",
@@ -74,7 +73,7 @@ void * tryToLoadModuleInPath(char *path, const char *moduleName)
     return 0;
 }
 
-void *
+EXPORT(void *)
 ioLoadModule(char *pluginName)
 {
     void *moduleHandle;
@@ -175,7 +174,7 @@ sqInt freeModuleHandle(void *module)
     return FreeLibrary((HMODULE)module) ? 1 : 0;
 }
 
-void * getModuleSymbol(void *module, const char *symbol)
+EXPORT(void *) getModuleSymbol(void *module, const char *symbol)
 {
     return (void*)GetProcAddress((HMODULE)module, symbol);
 }
@@ -200,7 +199,7 @@ sqInt freeModuleHandle(void *module)
     return dlclose(module) == 0 ? 0 : 1;
 }
 
-void * getModuleSymbol(void *module, const char *symbol)
+EXPORT(void *) getModuleSymbol(void *module, const char *symbol)
 {
 
     return dlsym(module ? module: dlopen(NULL,0), symbol);

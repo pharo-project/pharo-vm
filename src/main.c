@@ -23,9 +23,9 @@ void* getMainThreadWorker(){
 }
 
 
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[], char** env){
 
-	void*(*pworker_newSpawning)(bool);
+	void*(*pworker_newSpawning)(int);
 	void*(*pworker_run)(void*);
 
 	installErrorHandlers();
@@ -81,8 +81,8 @@ int main(int argc, char* argv[]){
 
 	void* module = ioLoadModule("PThreadedPlugin");
 
-	pworker_newSpawning = dlsym(module, "worker_newSpawning");
-	pworker_run = dlsym(module, "worker_run");
+	pworker_newSpawning = getModuleSymbol(module, "worker_newSpawning");
+	pworker_run = getModuleSymbol(module, "worker_run");
 
 	logInfo("worker_newSpawning: %p worker_run: %p\n",pworker_newSpawning, pworker_run);
 

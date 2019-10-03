@@ -35,7 +35,7 @@ macro(add_third_party_dependencies_per_platform)
     add_third_party_dependency("gcc-runtime-3.4" "build/vm")
     add_third_party_dependency("zlib-1.2.11-fixLibGit" "build/vm")
     add_third_party_dependency("SDL2-2.0.5" "build/vm")   
-    add_third_party_dependency("PThreadedFFI-1.0.2-win64" "build/vm")
+    add_third_party_dependency("PThreadedFFI-1.1.1-win64" "build/vm")
 endmacro()
 
 
@@ -72,10 +72,12 @@ macro(add_required_libs_per_platform)
    target_link_libraries(${VM_EXECUTABLE_NAME} Ole32)
    target_link_libraries(${VM_EXECUTABLE_NAME} comctl32)
    target_link_libraries(${VM_EXECUTABLE_NAME} uuid)
+   target_link_libraries(${VM_EXECUTABLE_NAME} pthread)
 
    target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} Ole32)
    target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} comctl32)
    target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} uuid)
+   target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} pthread)
 
    set_target_properties(${VM_EXECUTABLE_NAME} PROPERTIES LINK_FLAGS "-mwindows")
    set_target_properties(${VM_EXECUTABLE_CONSOLE_NAME} PROPERTIES LINK_FLAGS "-mconsole")
