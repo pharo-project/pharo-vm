@@ -1,32 +1,31 @@
 include_directories(
-    extracted/vm/include/osx
-    extracted/vm/include/unix
-    extracted/vm/include/common
-    generated/vm/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/osx
+    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/unix
+    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/common
 )
 
 set(EXTRACTED_SOURCES
 #Common sources
-    extracted/vm/src/common/sqHeapMap.c
-    extracted/vm/src/common/sqVirtualMachine.c
-    extracted/vm/src/common/sqNamedPrims.c
-    extracted/vm/src/common/sqExternalSemaphores.c
-    extracted/vm/src/common/sqTicker.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqHeapMap.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqVirtualMachine.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqNamedPrims.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqExternalSemaphores.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqTicker.c
 
 #Platform sources
-    extracted/vm/src/unix/aio.c
-    extracted/vm/src/unix/sqUnixHeartbeat.c
-    src/debugUnix.c
-    src/utilsMac.mm
+    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/unix/aio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/unix/sqUnixHeartbeat.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/debugUnix.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilsMac.mm
 
 #Virtual Memory functions
-    src/memoryUnix.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/memoryUnix.c
 )
 
 set(VM_FRONTEND_SOURCES
-    src/main.c
-    src/parameters.c
-    src/macOpenFileDialog.mm)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/macOpenFileDialog.mm)
 
 configure_file(resources/mac/Info.plist.in build/includes/Info.plist)
 
@@ -39,17 +38,31 @@ macro(add_third_party_dependencies_per_platform)
     add_third_party_dependency("libpng-1.2.49" "build/vm")
     add_third_party_dependency("libssh2-1.7.0" "build/vm")
     add_third_party_dependency("openssl-1.0.2q" "build/vm")
-    add_third_party_dependency("pthreadedPlugin-0.0.1" "build/vm")
+    add_third_party_dependency("PThreadedFFI-1.0.2-osx64" "build/vm")
     add_third_party_dependency("SDL2-2.0.7" "build/vm")
 endmacro()
 
-macro(configure_installables)
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/build/dist")
+macro(configure_installables INSTALL_COMPONENT)
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/build/dist")
     
-    install(DIRECTORY "${CMAKE_SOURCE_DIR}/build/vm/" DESTINATION "Pharo.app/Contents/MacOS" USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN ${VM_EXECUTABLE_NAME})
-    install(DIRECTORY "${CMAKE_SOURCE_DIR}/build/vm/" DESTINATION "Pharo.app/Contents/MacOS/Plugins" USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN *.dylib )
-    install(FILES "build/includes/Info.plist" DESTINATION "Pharo.app/Contents")
-    install(FILES "resources/mac/Pharo.icns" DESTINATION "Pharo.app/Contents/Resources")
+    install(
+      DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/vm/"
+      DESTINATION "Pharo.app/Contents/MacOS"
+      COMPONENT ${INSTALL_COMPONENT}
+      USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN ${VM_EXECUTABLE_NAME})
+    install(
+      DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/vm/"
+      DESTINATION "Pharo.app/Contents/MacOS/Plugins"
+      COMPONENT ${INSTALL_COMPONENT}
+      USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN *.dylib)
+    install(
+      FILES "${CMAKE_CURRENT_BINARY_DIR}/build/includes/Info.plist"
+      DESTINATION "Pharo.app/Contents"
+      COMPONENT ${INSTALL_COMPONENT})
+    install(
+      FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/Pharo.icns"
+      DESTINATION "Pharo.app/Contents/Resources"
+      COMPONENT ${INSTALL_COMPONENT})
 endmacro()
 
 macro(add_required_libs_per_platform)

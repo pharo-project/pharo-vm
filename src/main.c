@@ -5,6 +5,7 @@
 #include <pharoClient.h>
 #include <pharo.h>
 
+<<<<<<< HEAD
 int runThread(void* p){
 
 	VM_PARAMETERS *parameters = (VM_PARAMETERS*)p;
@@ -24,11 +25,18 @@ void* getMainThreadWorker(){
 
 
 int main(int argc, char* argv[]){
+=======
+int main(int argc, char* argv[], char** env){
+>>>>>>> headlessMinGW
 
 	void*(*pworker_newSpawning)(bool);
 	void*(*pworker_run)(void*);
 
 	installErrorHandlers();
+
+	setProcessArguments(argc, argv);
+	setProcessEnvironmentVector(env);
+
 
 	VM_PARAMETERS parameters;
 	char buffer[4096+1];
