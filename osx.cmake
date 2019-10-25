@@ -27,7 +27,7 @@ set(VM_FRONTEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/macMain.m
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters.c)
 
-configure_file(resources/mac/Info.plist.in build/includes/Info.plist)
+configure_file("resources/mac/${APPNAME}.plist.in" build/includes/Info.plist)
 
 macro(add_third_party_dependencies_per_platform)
     add_third_party_dependency("pixman-0.34.0" "build/vm")
@@ -47,21 +47,21 @@ macro(configure_installables INSTALL_COMPONENT)
     
     install(
       DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/vm/"
-      DESTINATION "Pharo.app/Contents/MacOS"
+      DESTINATION "${APPNAME}.app/Contents/MacOS"
       COMPONENT ${INSTALL_COMPONENT}
       USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN ${VM_EXECUTABLE_NAME})
     install(
       DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/vm/"
-      DESTINATION "Pharo.app/Contents/MacOS/Plugins"
+      DESTINATION "${APPNAME}.app/Contents/MacOS/Plugins"
       COMPONENT ${INSTALL_COMPONENT}
       USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN *.dylib)
     install(
       FILES "${CMAKE_CURRENT_BINARY_DIR}/build/includes/Info.plist"
-      DESTINATION "Pharo.app/Contents"
+      DESTINATION "${APPNAME}.app/Contents"
       COMPONENT ${INSTALL_COMPONENT})
     install(
-      FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/Pharo.icns"
-      DESTINATION "Pharo.app/Contents/Resources"
+      FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/${APPNAME}.icns"
+      DESTINATION "${APPNAME}.app/Contents/Resources"
       COMPONENT ${INSTALL_COMPONENT})
 endmacro()
 
