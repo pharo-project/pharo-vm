@@ -5,16 +5,11 @@ jobs:
     build-unixes:
         name: Build Unixes
         runs-on: ${{ matrix.os }}
+        env:
+            VM_EXECUTABLE_NAME: GToolkit
         strategy:
             matrix:
                 os: [ubuntu-18.04, macOS-10.14]
-                include:
-                    - os: ubuntu-18.04
-                      env:
-                          VM_EXECUTABLE_NAME: gtoolkit
-                    - os: macOS-10.14
-                      env:
-                          VM_EXECUTABLE_NAME: GToolkit
 
         steps:
             - name: Install dependencies
