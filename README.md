@@ -1,19 +1,18 @@
-Headless OpenSmalltalk-VM for Pharo
+![](https://github.com/feenkcom/opensmalltalk-vm/workflows/Continuous%20integration/badge.svg?branch=gt-headless)
+
+Headless OpenSmalltalk-VM for GToolkit
 -----------------------------------
 
-This is the branch of the Headless VM used for Pharo.
-This branch has the modifications required to run Pharo in a true headless environment.
-The image running on the VM is responsible of handling the UI and the events. 
+This is the branch of the Headless VM used for GToolkit. This branch is based on the Headless VM used for Pharo.
+This branch has the modifications required to run GToolkit in a true headless environment.
+The image running on the VM is responsible of handling the UI and the events.
 
 The image includes a default implementation of the handling of UI through the use of SDL2.
 
 CI
 ---
 
-This project is continuously built and test in the CI infrastructure located at:
-
-[https://ci.inria.fr/pharo-ci-jenkins2/job/pharo-vm/job/headless/](https://ci.inria.fr/pharo-ci-jenkins2/job/pharo-vm/job/headless/)
-
+This project is continuously built and test in the CI infrastructure provided by GitHub Actions.
 
 Building
 --------
@@ -22,15 +21,15 @@ For building the VM it is required the following set of tools:
 
 - A working Pharo
 - CMake (at least version 2.8.4)
-- CLang 
-- Binutils (make and friends) 
+- CLang
+- Binutils (make and friends)
 - wget
 - unzip
 
 Building in OSX / Linux:
 
 ```bash
-$ cmake . 
+$ cmake .
 $ make install
 ```
 
@@ -51,7 +50,7 @@ $ make install
 
 The VM is built from generated code and code written by hand.
 The generated code is the result of converting Smalltalk code into C.
-This conversion is performed during the *cmake* process. 
+This conversion is performed during the *cmake* process.
 
 This will generate the VM in *build/dist/*
 
@@ -59,7 +58,7 @@ Source Directory Structure
 --------------------------
 
 The headless mode is developed on top of code of the Cog branch of Opensmalltalk-vm.
-The code that is used without changes is stored in the *extracted* directory. 
+The code that is used without changes is stored in the *extracted* directory.
 This allows us to easy integrate changes from and to the Cog branch.
 
 The code that has been specially created or modified for this branch is stored in *src* / *include* and *plugins*.
@@ -141,5 +140,3 @@ calls and callbacks or on Smalltalk process switches when Smalltalk processes
 are owned by threads.  This architecture offers non-blocking FFI calls and
 interoperability with multiple native threads, but does /not/ provide true
 concurrency.  This multi-threaded support is as yet experimental.
-
-

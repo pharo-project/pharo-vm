@@ -3,7 +3,7 @@ set(VM_VERSION_FILEVERSION "PharoVM-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_
 
 set(Win32ResourcesFolder "${CMAKE_CURRENT_SOURCE_DIR}/resources/windows")
 if(NOT Win32VMExecutableIcon)
-    set(Win32VMExecutableIcon "${Win32ResourcesFolder}/Pharo.ico")
+    set(Win32VMExecutableIcon "${Win32ResourcesFolder}/${VM_EXECUTABLE_NAME}.ico")
 endif()
 set(Win32Resource "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_NAME}.rc")
 set(Win32DLLResource "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_NAME}DLL.rc")
