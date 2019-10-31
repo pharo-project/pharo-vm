@@ -9,19 +9,16 @@ set(VERSION_MAJOR 8)
 set(VERSION_MINOR 1)
 set(VERSION_PATCH 0)
 
-set(APPNAME Pharo)
-set(EXECUTABLENAME pharo)
+set(APPNAME Pharo CACHE STRING "VM Application name")
 
-if (DEFINED ENV{APPNAME})
-  set(APPNAME $ENV{APPNAME})
+if(UNIX AND NOT OSX)
+    set(VM_EXECUTABLE_NAME pharo CACHE STRING "VM Executable name")
+else()
+    set(VM_EXECUTABLE_NAME Pharo CACHE STRING "VM Executable name")
 endif()
 
-if (DEFINED ENV{EXECUTABLENAME})
-  set(EXECUTABLENAME $ENV{EXECUTABLENAME})
-endif()
 
-message(APPNAME ${APPNAME})
-message(EXECUTABLENAME ${EXECUTABLENAME})
+message("Building ${APPNAME} with executable named ${VM_EXECUTABLE_NAME}")
 
 get_commit_hash(GIT_COMMIT_HASH)
 get_git_describe(GIT_DESCRIBE)
@@ -159,12 +156,6 @@ add_definitions(-D"VM_LABEL\(foo\)=0")
 string(LENGTH "${CMAKE_SOURCE_DIR}/" SOURCE_PATH_SIZE)
 add_definitions("-DSOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
 
-if(UNIX AND NOT OSX)
-    set(VM_EXECUTABLE_NAME "${EXECUTABLENAME}")
-else()
-    set(VM_EXECUTABLE_NAME "${EXECUTABLENAME}")
-endif()
-
 set(VM_LIBRARY_NAME PharoVMCore)
 set(VM_NAME "${APPNAME}")
 set(PHARO_VM TRUE)
@@ -289,8 +280,8 @@ set(SUPPORT_SOURCES
 )
 
 set(VM_SOURCES
-	${SUPPORT_SOURCES}
-  ${GENERATED_SOURCES}
+    ${SUPPORT_SOURCES}
+    ${GENERATED_SOURCES}
 	${EXTRACTED_SOURCES}
 )
 

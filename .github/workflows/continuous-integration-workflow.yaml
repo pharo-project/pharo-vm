@@ -8,6 +8,13 @@ jobs:
         strategy:
             matrix:
                 os: [ubuntu-18.04, macOS-10.14]
+                include:
+                    - os: ubuntu-18.04
+                      env:
+                          VM_EXECUTABLE_NAME: gtoolkit
+                    - os: macOS-10.14
+                      env:
+                          VM_EXECUTABLE_NAME: GToolkit
 
         steps:
             - name: Install dependencies
@@ -20,7 +27,7 @@ jobs:
               run: |
                 mkdir -p build
                 cd build
-                cmake ..
+                cmake .. -DAPPNAME=GToolkit -DVM_EXECUTABLE_NAME=$VM_EXECUTABLE_NAME
 
             - name: make
               run: cd build && make
@@ -41,6 +48,8 @@ jobs:
     build-windows-cygwin:
         name: Build Windows Cygwin
         runs-on: windows-2016
+        env:
+            VM_EXECUTABLE_NAME: GToolkit
         steps:
             - uses: actions/checkout@v1
 
@@ -51,7 +60,7 @@ jobs:
               run: |
                 mkdir -p build
                 cd build
-                cmake .. -DWIN=1
+                cmake .. -DWIN=1  -DAPPNAME=GToolkit -DVM_EXECUTABLE_NAME=$VM_EXECUTABLE_NAME
               shell: pwsh.exe -File .\scripts\runScriptInCygwinBash.ps1 {0}
 
             - name: make
