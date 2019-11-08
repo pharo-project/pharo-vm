@@ -6,7 +6,7 @@ cmake_policy(SET CMP0053 NEW)
 include(macros.cmake)
 
 set(VERSION_MAJOR 8)
-set(VERSION_MINOR 1)
+set(VERSION_MINOR 2)
 set(VERSION_PATCH 0)
 
 set(APPNAME Pharo CACHE STRING "VM Application name")
@@ -197,7 +197,17 @@ endif()
 set(VMMAKER_OUTPUT_PATH "build/vmmaker")
 make_directory(${VMMAKER_OUTPUT_PATH})
 set(EXECUTABLE_OUTPUT_PATH "build/vm")
-set(LIBRARY_OUTPUT_PATH "build/vm")
+
+#If in OSX, configure creation of Bundle
+if (OSX)
+  set(LIBRARY_OUTPUT_DIRECTORY "build/vm/$<CONFIG>/Pharo.app/Contents/MacOS/Plugins")
+else()
+  set(LIBRARY_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
+endif()
+set(LIBRARY_OUTPUT_PATH ${LIBRARY_OUTPUT_DIRECTORY})
+message(STATUS "Writing libraries to: ${LIBRARY_OUTPUT_DIRECTORY}")
+
+#make_directory(${LIBRARY_OUTPUT_PATH})
 
 check_include_files(dirent.h HAVE_DIRENT_H)
 check_include_files(features.h HAVE_FEATURES_H)
@@ -224,10 +234,10 @@ check_library_exists(uuid uuid_generate "" HAVE_UUID_GENERATE)
 #Custom command that downloads a Pharo image and VM in ${VMMAKER_OUTPUT_PATH}
 add_custom_command(
   OUTPUT ${VMMAKER_OUTPUT_PATH}/Pharo.image ${VMMAKER_OUTPUT_PATH}/pharo
-  COMMAND wget -O - get.pharo.org/64/70 | bash
-  COMMAND wget -O - get.pharo.org/64/vm70 | bash
+  COMMAND wget -O - https://get.pharo.org/64/80 | bash
+  COMMAND wget -O - https://get.pharo.org/64/vm80 | bash
   WORKING_DIRECTORY ${VMMAKER_OUTPUT_PATH}
-  COMMENT "Downloading Pharo 70")
+  COMMENT "Downloading Pharo 80")
 
 add_custom_command(
   OUTPUT ${VMMAKER_OUTPUT_PATH}/VMMaker.image
@@ -273,20 +283,42 @@ set(GENERATED_SOURCES ${VMSOURCEFILES})
 set(SUPPORT_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/debug.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/errorCode.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/nullDisplay.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/externalPrimitives.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/client.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/pathUtilities.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/parameterVector.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/fileDialogCommon.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stringUtilities.c
 )
 
 set(VM_SOURCES
     ${SUPPORT_SOURCES}
     ${GENERATED_SOURCES}
-	${EXTRACTED_SOURCES}
+    ${EXTRACTED_SOURCES}
 )
 
-addLibraryWithRPATH(${VM_LIBRARY_NAME} ${VM_SOURCES})
 add_executable(${VM_EXECUTABLE_NAME} ${VM_FRONTEND_APPLICATION_TYPE} ${VM_FRONTEND_SOURCES})
+addLibraryWithRPATH(${VM_LIBRARY_NAME} ${VM_SOURCES})
+
+#If in OSX, configure creation of Bundle
+if(OSX)
+  set_source_files_properties(
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/Pharo.icns"
+    PROPERTIES
+    MACOSX_PACKAGE_LOCATION Resources
+  )
+
+  set_target_properties(
+    ${VM_EXECUTABLE_NAME}
+    PROPERTIES
+    MACOSX_BUNDLE YES
+    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/Info.plist.in"
+    RESOURCE "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/Pharo.icns"
+  )
+endif()
 
 target_link_libraries(${VM_EXECUTABLE_NAME} ${VM_LIBRARY_NAME})
 
