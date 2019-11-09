@@ -200,7 +200,7 @@ set(EXECUTABLE_OUTPUT_PATH "build/vm")
 
 #If in OSX, configure creation of Bundle
 if (OSX)
-  set(LIBRARY_OUTPUT_DIRECTORY "build/vm/$<CONFIG>/Pharo.app/Contents/MacOS/Plugins")
+  set(LIBRARY_OUTPUT_DIRECTORY "build/vm/$<CONFIG>/${APPNAME}.app/Contents/MacOS/Plugins")
 else()
   set(LIBRARY_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
 endif()
