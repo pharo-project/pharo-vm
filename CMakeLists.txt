@@ -11,15 +11,6 @@ set(VERSION_PATCH 0)
 
 set(APPNAME Pharo CACHE STRING "VM Application name")
 
-if(UNIX AND NOT OSX)
-    set(VM_EXECUTABLE_NAME pharo CACHE STRING "VM Executable name")
-else()
-    set(VM_EXECUTABLE_NAME Pharo CACHE STRING "VM Executable name")
-endif()
-
-
-message("Building ${APPNAME} with executable named ${VM_EXECUTABLE_NAME}")
-
 get_commit_hash(GIT_COMMIT_HASH)
 get_git_describe(GIT_DESCRIBE)
 get_git_date(GIT_COMMIT_DATE)
@@ -40,6 +31,14 @@ if ((CMAKE_HOST_UNIX) AND (${CMAKE_HOST_SYSTEM_NAME} MATCHES "CYGWIN*"))
   SET(CMAKE_RC_COMPILER ${CMAKE_TOOLCHAIN_PREFIX}-windres)
   SET(CMAKE_SYSTEM_PROCESSOR x86_64)
 endif()
+
+if(UNIX AND NOT OSX AND NOT WIN)
+    set(VM_EXECUTABLE_NAME pharo CACHE STRING "VM Executable name")
+else()
+    set(VM_EXECUTABLE_NAME Pharo CACHE STRING "VM Executable name")
+endif()
+
+message("Building ${APPNAME} with executable named ${VM_EXECUTABLE_NAME}")
 
 project(PharoVM)
 
