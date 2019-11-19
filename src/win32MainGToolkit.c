@@ -40,8 +40,11 @@ gtoolkit_main(int argc, const char **argv, const char **envp)
 		return 1;
 	}
 
+    // This is always an interactive session.
+    parameters.isInteractiveSession = true;
+
     // Do we need to select an image file interactively?
-	if(parameters.isInteractiveSession && parameters.isDefaultImage)
+	if(parameters.isDefaultImage)
 	{
         if(!findImageFileInVMDirectory(&parameters))
         {
