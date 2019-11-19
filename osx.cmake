@@ -26,7 +26,9 @@ set(EXTRACTED_SOURCES
 )
 
 set(VM_FRONTEND_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/unixMain.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/macMainGToolkit.m
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/${APPNAME}.icns"
+)
 
 configure_file("resources/mac/${APPNAME}.plist.in" build/includes/Info.plist)
 

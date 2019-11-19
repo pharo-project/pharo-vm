@@ -232,7 +232,7 @@ vm_path_find_files_with_extension_in_folder(const char *searchPath, const char *
     {
         char *name = entry->d_name;
         char *fileExtension = strrchr(name, '.');
-        if(!extension)
+        if(!fileExtension)
             continue;
 
         if(strcmp(fileExtension, extension) != 0)

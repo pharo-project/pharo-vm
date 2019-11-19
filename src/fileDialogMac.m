@@ -31,6 +31,14 @@ vm_file_dialog_run_modal_open(VMFileDialog *dialog)
     {
         panel.allowedFileTypes = [NSArray arrayWithObjects: allowedExtension, nil];        
     }
+	
+	if(dialog->defaultFileNameAndPath)
+	{
+		char *defaultDirectory = (char*)calloc(1, FILENAME_MAX+1);
+		vm_path_extract_dirname_into(defaultDirectory, FILENAME_MAX+1, dialog->defaultFileNameAndPath);
+		panel.directoryURL = [NSURL fileURLWithPath: [NSString stringWithUTF8String: defaultDirectory]];
+		free(defaultDirectory);
+	}
 
     dialog->succeeded = false;
     dialog->selectedFileName = NULL;
@@ -42,7 +50,7 @@ vm_file_dialog_run_modal_open(VMFileDialog *dialog)
         {
             if([url isFileURL])
             {
-                dialog->succeeded = false;
+                dialog->succeeded = true;
                 dialog->selectedFileName = strdup([url.path UTF8String]);
             }
         }
