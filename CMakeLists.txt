@@ -190,10 +190,11 @@ endif()
 #Setting output directories
 set(VMMAKER_OUTPUT_PATH "build/vmmaker")
 make_directory(${VMMAKER_OUTPUT_PATH})
-set(EXECUTABLE_OUTPUT_PATH "build/vm")
-
+#set(EXECUTABLE_OUTPUT_PATH "build/vm")
+  
 #If in OSX, configure creation of Bundle
 if (OSX)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "build/vm/$<CONFIG>")
   set(LIBRARY_OUTPUT_DIRECTORY "build/vm/$<CONFIG>/Pharo.app/Contents/MacOS/Plugins")
 else()
   set(LIBRARY_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
@@ -294,7 +295,7 @@ set(VM_SOURCES
     ${EXTRACTED_SOURCES}
 )
 
-add_executable(${VM_EXECUTABLE_NAME} ${VM_FRONTEND_APPLICATION_TYPE} ${VM_FRONTEND_SOURCES})
+add_executable(${VM_EXECUTABLE_NAME} MACOSX_BUNDLE ${VM_FRONTEND_APPLICATION_TYPE} ${VM_FRONTEND_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/Pharo.icns")
 addLibraryWithRPATH(${VM_LIBRARY_NAME} ${VM_SOURCES})
 
 #If in OSX, configure creation of Bundle
@@ -308,7 +309,7 @@ if(OSX)
   set_target_properties(
     ${VM_EXECUTABLE_NAME}
     PROPERTIES
-    MACOSX_BUNDLE YES
+    MACOSX_BUNDLE TRUE
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/Info.plist.in"
     RESOURCE "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/Pharo.icns"
   )

@@ -61,7 +61,7 @@ macro(add_third_party_dependency NAME TARGETPATH)
 
     add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/build/third-party/${NAME}.done"
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/${TARGETPATH}
-        COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_BINARY_DIR}/build/third-party unzip -o "${NAME}.zip" -d ${CMAKE_CURRENT_BINARY_DIR}/${TARGETPATH}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_BINARY_DIR}/build/third-party unzip -o "${NAME}.zip" -d "${CMAKE_CURRENT_BINARY_DIR}/${TARGETPATH}"
         COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/build/third-party/${NAME}.done"
         DEPENDS "build/third-party/${NAME}.zip"
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
