@@ -312,6 +312,8 @@ if(OSX)
     MACOSX_BUNDLE TRUE
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/Info.plist.in"
     RESOURCE "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/Pharo.icns"
+    #Avoid code signing in XCode, otherwise everybody should have a developer account...
+    XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
   )
 endif()
 
