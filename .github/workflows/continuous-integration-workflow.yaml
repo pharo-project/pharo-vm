@@ -37,11 +37,11 @@ jobs:
               if: matrix.variant.os == 'ubuntu-18.04'
               run: sudo apt-get install uuid-dev
 
+            - uses: actions/checkout@v1
+
             - name: Install Cygwin
               if: matrix.variant.os == 'windows-2016'
               run: .\scripts\installCygwin.ps1 "setup-x86_64.exe" x86_64
-
-            - uses: actions/checkout@v1
 
             - name: CMake configuration
               shell: $BASH_SHELL {0}
