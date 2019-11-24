@@ -11,26 +11,27 @@ jobs:
                     - os: ubuntu-18.04
                       appname: Pharo
                       vmExecutable: pharo
-                      shell: bash
+                      bashShell: bash
                     - os: ubuntu-18.04
                       appname: GToolkit
                       vmExecutable: gtoolkit
-                      shell: bash
+                      bashShell: bash
                     - os: macos-latest
                       appname: Pharo
                       vmExecutable: pharo
-                      shell: bash
+                      bashShell: bash
                     - os: macos-latest
                       appname: GToolkit
                       vmExecutable: GToolkit
-                      shell: bash
+                      bashShell: bash
                     - os: windows-2016
                       appname: GToolkit
                       vmExecutable: GToolkit
-                      shell: pwsh.exe -File .\scripts\runScriptInCygwinBash.ps1 {0}
+                      bashShell: pwsh.exe -File .\scripts\runScriptInCygwinBash.ps1 {0}
         env:
             APPNAME: ${{matrix.variant.appname}}
             VM_EXECUTABLE_NAME: ${{ matrix.variant.vmExecutable }}
+            BASH_SHELL: ${{ matrix.variant.bashShell }}
         steps:
             - name: Install linux dependencies
               if: matrix.variant.os == 'ubuntu-18.04'
@@ -43,21 +44,21 @@ jobs:
             - uses: actions/checkout@v1
 
             - name: CMake configuration
-              shell: ${{ matrix.variant.shell}}
+              shell: ${{ env.bashShell }}
               run: |
                 mkdir -p build
                 cd build
                 cmake .. -DAPPNAME=$APPNAME -DVM_EXECUTABLE_NAME=$VM_EXECUTABLE_NAME
 
             - name: make
-              shell: ${{ matrix.variant.shell}}
+              shell: ${{ env.bashShell }}
               run: cd build && make
             - name: make install
-              shell: ${{ matrix.variant.shell}}
+              shell: ${{ env.bashShell }}
               run: cd build && make install
 
             - name: Package artifacts
-              shell: ${{ matrix.variant.shell}}
+              shell: ${{ env.bashShell }}
               run: |
                 cd build
                 make package
@@ -71,7 +72,7 @@ jobs:
 
             - name: Run tests
               continue-on-error: true
-              shell: ${{ matrix.variant.shell}}
+              shell: ${{ env.bashShell }}
               run: scripts/runTests.sh
             - name: Upload test results
               continue-on-error: true
