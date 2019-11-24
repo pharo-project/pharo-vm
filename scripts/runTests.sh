@@ -43,6 +43,15 @@ Darwin)
     TEST_VM_EXECUTABLE="./$VM_EXECUTABLE_NAME.app/Contents/MacOS/$VM_EXECUTABLE_NAME"
     VM_ARCHIVE=../artifacts/$APPNAME-*-mac*-bin.zip
     ;;
+CYGWIN*)
+    TEST_VM_STAGE_NAME="win64"
+    if test "$APPNAME" = ""; then
+        APPNAME="Pharo"
+        VM_EXECUTABLE_NAME="Pharo"
+    fi
+    TEST_VM_EXECUTABLE="./${VM_EXECUTABLE_NAME}Console"
+    VM_ARCHIVE=../artifacts/$APPNAME-*-win*-bin.zip
+    ;;
 *)
     echo "Unsupported operating system $(uname) for running tests"
     exit 0
