@@ -3,7 +3,7 @@ on: [push, pull_request]
 
 jobs:
     build-unixes:
-        name: Build VM
+        name: Build Unixes
         runs-on: ${{ matrix.variant.os }}
         strategy:
             matrix:
@@ -11,54 +11,37 @@ jobs:
                     - os: ubuntu-18.04
                       appname: Pharo
                       vmExecutable: pharo
-                      bashShell: bash --noprofile --norc -eo pipefail
                     - os: ubuntu-18.04
                       appname: GToolkit
                       vmExecutable: gtoolkit
-                      bashShell: bash --noprofile --norc -eo pipefail
                     - os: macos-latest
                       appname: Pharo
                       vmExecutable: pharo
-                      bashShell: bash --noprofile --norc -eo pipefail
                     - os: macos-latest
                       appname: GToolkit
                       vmExecutable: GToolkit
-                      bashShell: bash --noprofile --norc -eo pipefail
-                    - os: windows-2016
-                      appname: GToolkit
-                      vmExecutable: GToolkit
-                      bashShell: pwsh.exe -File .\scripts\runScriptInCygwinBash.ps1
         env:
             APPNAME: ${{matrix.variant.appname}}
             VM_EXECUTABLE_NAME: ${{ matrix.variant.vmExecutable }}
-            BASH_SHELL: ${{ matrix.variant.bashShell }}
         steps:
-            - name: Install linux dependencies
+            - name: Install dependencies
               if: matrix.variant.os == 'ubuntu-18.04'
               run: sudo apt-get install uuid-dev
 
             - uses: actions/checkout@v1
 
-            - name: Install Cygwin
-              if: matrix.variant.os == 'windows-2016'
-              run: .\scripts\installCygwin.ps1 "setup-x86_64.exe" x86_64
-
             - name: CMake configuration
-              shell: $BASH_SHELL {0}
               run: |
                 mkdir -p build
                 cd build
                 cmake .. -DAPPNAME=$APPNAME -DVM_EXECUTABLE_NAME=$VM_EXECUTABLE_NAME
 
             - name: make
-              shell: $BASH_SHELL {0}
               run: cd build && make
             - name: make install
-              shell: $BASH_SHELL {0}
               run: cd build && make install
 
             - name: Package artifacts
-              shell: $BASH_SHELL {0}
               run: |
                 cd build
                 make package
@@ -71,11 +54,57 @@ jobs:
                   path: artifacts
 
             - name: Run tests
-              continue-on-error: true
-              shell: $BASH_SHELL {0}
               run: scripts/runTests.sh
             - name: Upload test results
-              continue-on-error: true
+              uses: actions/upload-artifact@v1
+              with:
+                  name: test-results
+                  path: test-results
+
+    build-windows-cygwin:
+        name: Build Windows Cygwin
+        runs-on: windows-2016
+        env:
+            VM_EXECUTABLE_NAME: GToolkit
+        steps:
+            - uses: actions/checkout@v1
+
+            - name: Install Cygwin
+              run: .\scripts\installCygwin.ps1 "setup-x86_64.exe" x86_64
+
+            - name: CMake configuration
+              run: |
+                mkdir -p build
+                cd build
+                cmake .. -DWIN=1  -DAPPNAME=$VM_EXECUTABLE_NAME -DVM_EXECUTABLE_NAME=$VM_EXECUTABLE_NAME
+              shell: pwsh.exe -File .\scripts\runScriptInCygwinBash.ps1 {0}
+
+            - name: make
+              run: cd build && make
+              shell: pwsh.exe -File .\scripts\runScriptInCygwinBash.ps1 {0}
+            - name: make install
+              run: cd build && make install
+              shell: pwsh.exe -File .\scripts\runScriptInCygwinBash.ps1 {0}
+
+            - name: Package artifacts
+              run: |
+                cd build
+                make package
+                mkdir -p ../artifacts
+                cp -f build/packages/*.zip build/packages/*.sha1 ../artifacts
+              shell: pwsh.exe -File .\scripts\runScriptInCygwinBash.ps1 {0}
+
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v1
+              with:
+                  name: build-artifacts
+                  path: artifacts
+
+            - name: Run tests
+              run: scripts/runTests.sh
+              shell: pwsh.exe -File .\scripts\runScriptInCygwinBash.ps1 {0}
+
+            - name: Upload test results
               uses: actions/upload-artifact@v1
               with:
                   name: test-results
