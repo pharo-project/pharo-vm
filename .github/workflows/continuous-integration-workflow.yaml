@@ -10,8 +10,14 @@ jobs:
                 os: [ubuntu-18.04, macos-latest]
                 include:
                     - os: ubuntu-18.04
+                      appname: Pharo
+                      vmExecutable: pharo
+                    - os: ubuntu-18.04
                       appname: GToolkit
                       vmExecutable: gtoolkit
+                    - os: macos-latest
+                      appname: Pharo
+                      vmExecutable: pharo
                     - os: macos-latest
                       appname: GToolkit
                       vmExecutable: GToolkit
