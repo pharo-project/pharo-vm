@@ -5,12 +5,18 @@ jobs:
     build-unixes:
         name: Build Unixes
         runs-on: ${{ matrix.os }}
-        env:
-            VM_EXECUTABLE_NAME: GToolkit
         strategy:
             matrix:
                 os: [ubuntu-18.04, macos-latest]
-
+                appname: [GToolkit]
+                include:
+                    - os: ubuntu-18.04
+                      vmExecutable: ${{ matrix.appname.toLowerCase() }}
+                    - os: macos-latest
+                      vmExecutable: ${{ matrix.appname }}
+        env:
+            APPNAME: ${{matrix.appname}}
+            VM_EXECUTABLE_NAME: ${{ matrix.vmExecutable }}
         steps:
             - name: Install dependencies
               if: matrix.os == 'ubuntu-18.04'
@@ -22,7 +28,7 @@ jobs:
               run: |
                 mkdir -p build
                 cd build
-                cmake .. -DAPPNAME=GToolkit -DVM_EXECUTABLE_NAME=$VM_EXECUTABLE_NAME
+                cmake .. -DAPPNAME=$APPNAME -DVM_EXECUTABLE_NAME=$VM_EXECUTABLE_NAME
 
             - name: make
               run: cd build && make
@@ -40,6 +46,15 @@ jobs:
               with:
                   name: build-artifacts
                   path: artifacts
+
+            - name: Run tests
+              run: scripts/runTests.sh
+            - name: Upload test results
+              uses: actions/upload-artifact@v1
+              with:
+                  name: test-results
+                  path: test-results
+
     build-windows-cygwin:
         name: Build Windows Cygwin
         runs-on: windows-2016
