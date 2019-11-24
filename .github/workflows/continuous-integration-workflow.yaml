@@ -8,12 +8,13 @@ jobs:
         strategy:
             matrix:
                 os: [ubuntu-18.04, macos-latest]
-                appname: [GToolkit]
                 include:
                     - os: ubuntu-18.04
-                      vmExecutable: ${{ matrix.appname.toLowerCase() }}
+                      appname: GToolkit
+                      vmExecutable: gtoolkit
                     - os: macos-latest
-                      vmExecutable: ${{ matrix.appname }}
+                      appname: GToolkit
+                      vmExecutable: GToolkit
         env:
             APPNAME: ${{matrix.appname}}
             VM_EXECUTABLE_NAME: ${{ matrix.vmExecutable }}
