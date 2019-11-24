@@ -11,23 +11,23 @@ jobs:
                     - os: ubuntu-18.04
                       appname: Pharo
                       vmExecutable: pharo
-                      bashShell: bash --noprofile --norc -eo pipefail {0}
+                      bashShell: bash --noprofile --norc -eo pipefail
                     - os: ubuntu-18.04
                       appname: GToolkit
                       vmExecutable: gtoolkit
-                      bashShell: bash --noprofile --norc -eo pipefail {0}
+                      bashShell: bash --noprofile --norc -eo pipefail
                     - os: macos-latest
                       appname: Pharo
                       vmExecutable: pharo
-                      bashShell: bash --noprofile --norc -eo pipefail {0}
+                      bashShell: bash --noprofile --norc -eo pipefail
                     - os: macos-latest
                       appname: GToolkit
                       vmExecutable: GToolkit
-                      bashShell: bash --noprofile --norc -eo pipefail {0}
+                      bashShell: bash --noprofile --norc -eo pipefail
                     - os: windows-2016
                       appname: GToolkit
                       vmExecutable: GToolkit
-                      bashShell: pwsh.exe -File .\scripts\runScriptInCygwinBash.ps1 {0}
+                      bashShell: pwsh.exe -File .\scripts\runScriptInCygwinBash.ps1
         env:
             APPNAME: ${{matrix.variant.appname}}
             VM_EXECUTABLE_NAME: ${{ matrix.variant.vmExecutable }}
