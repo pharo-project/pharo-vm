@@ -64,8 +64,16 @@ jobs:
     build-windows-cygwin:
         name: Build Windows Cygwin
         runs-on: windows-2016
+        strategy:
+            matrix:
+                variant:
+                    - appname: Pharo
+                      vmExecutable: Pharo
+                    - appname: GToolkit
+                      vmExecutable: GToolkit
         env:
-            VM_EXECUTABLE_NAME: GToolkit
+            APPNAME: ${{matrix.variant.appname}}
+            VM_EXECUTABLE_NAME: ${{ matrix.variant.vmExecutable }}
         steps:
             - uses: actions/checkout@v1
 
@@ -76,7 +84,7 @@ jobs:
               run: |
                 mkdir -p build
                 cd build
-                cmake .. -DWIN=1  -DAPPNAME=$VM_EXECUTABLE_NAME -DVM_EXECUTABLE_NAME=$VM_EXECUTABLE_NAME
+                cmake .. -DAPPNAME=$APPNAME -DVM_EXECUTABLE_NAME=$VM_EXECUTABLE_NAME
               shell: pwsh.exe -File .\scripts\runScriptInCygwinBash.ps1 {0}
 
             - name: make
