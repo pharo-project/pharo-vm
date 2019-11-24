@@ -4,11 +4,10 @@ on: [push, pull_request]
 jobs:
     build-unixes:
         name: Build Unixes
-        runs-on: ${{ matrix.os }}
+        runs-on: ${{ matrix.variant.os }}
         strategy:
             matrix:
-                os: [ubuntu-18.04, macos-latest]
-                include:
+                variant:
                     - os: ubuntu-18.04
                       appname: Pharo
                       vmExecutable: pharo
@@ -22,11 +21,11 @@ jobs:
                       appname: GToolkit
                       vmExecutable: GToolkit
         env:
-            APPNAME: ${{matrix.appname}}
-            VM_EXECUTABLE_NAME: ${{ matrix.vmExecutable }}
+            APPNAME: ${{matrix.variant.appname}}
+            VM_EXECUTABLE_NAME: ${{ matrix.variant.vmExecutable }}
         steps:
             - name: Install dependencies
-              if: matrix.os == 'ubuntu-18.04'
+              if: matrix.variant.os == 'ubuntu-18.04'
               run: sudo apt-get install uuid-dev
 
             - uses: actions/checkout@v1
