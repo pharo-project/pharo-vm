@@ -11,19 +11,19 @@ jobs:
                     - os: ubuntu-18.04
                       appname: Pharo
                       vmExecutable: pharo
-                      bashShell: bash
+                      bashShell: bash --noprofile --norc -eo pipefail {0}
                     - os: ubuntu-18.04
                       appname: GToolkit
                       vmExecutable: gtoolkit
-                      bashShell: bash
+                      bashShell: bash --noprofile --norc -eo pipefail {0}
                     - os: macos-latest
                       appname: Pharo
                       vmExecutable: pharo
-                      bashShell: bash
+                      bashShell: bash --noprofile --norc -eo pipefail {0}
                     - os: macos-latest
                       appname: GToolkit
                       vmExecutable: GToolkit
-                      bashShell: bash
+                      bashShell: bash --noprofile --norc -eo pipefail {0}
                     - os: windows-2016
                       appname: GToolkit
                       vmExecutable: GToolkit
@@ -44,21 +44,21 @@ jobs:
             - uses: actions/checkout@v1
 
             - name: CMake configuration
-              shell: ${{ env.BASH_SHELL }}
+              shell: $BASH_SHELL {0}
               run: |
                 mkdir -p build
                 cd build
                 cmake .. -DAPPNAME=$APPNAME -DVM_EXECUTABLE_NAME=$VM_EXECUTABLE_NAME
 
             - name: make
-              shell: ${{ env.BASH_SHELL }}
+              shell: $BASH_SHELL {0}
               run: cd build && make
             - name: make install
-              shell: ${{ env.BASH_SHELL }}
+              shell: $BASH_SHELL {0}
               run: cd build && make install
 
             - name: Package artifacts
-              shell: ${{ env.BASH_SHELL }}
+              shell: $BASH_SHELL {0}
               run: |
                 cd build
                 make package
@@ -72,7 +72,7 @@ jobs:
 
             - name: Run tests
               continue-on-error: true
-              shell: ${{ env.BASH_SHELL }}
+              shell: $BASH_SHELL {0}
               run: scripts/runTests.sh
             - name: Upload test results
               continue-on-error: true
