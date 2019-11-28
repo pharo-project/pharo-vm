@@ -54,8 +54,10 @@ jobs:
                   path: artifacts
 
             - name: Run tests
+              continue-on-error: true
               run: scripts/runTests.sh
             - name: Upload test results
+              continue-on-error: true
               uses: actions/upload-artifact@v1
               with:
                   name: test-results
@@ -109,10 +111,12 @@ jobs:
                   path: artifacts
 
             - name: Run tests
+              continue-on-error: true
               run: scripts/runTests.sh
               shell: pwsh.exe -File .\scripts\runScriptInCygwinBash.ps1 {0}
 
             - name: Upload test results
+              continue-on-error: true
               uses: actions/upload-artifact@v1
               with:
                   name: test-results
