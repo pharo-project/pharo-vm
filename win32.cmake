@@ -70,6 +70,14 @@ macro(add_third_party_dependencies_per_platform)
     add_third_party_dependency("zlib-1.2.11-fixLibGit" "build/vm")
     add_third_party_dependency("SDL2-2.0.5" "build/vm")
     add_third_party_dependency("PThreadedFFI-1.1.2-win64" "build/vm")
+
+    add_gtoolkit_third_party_dependency("Moz2D" "build/vm")
+    add_gtoolkit_platform_specific_library("msvcp140" "https://dl.feenk.com/Moz2D/windows/development/x86_64/msvcp140.dll" "build/vm")
+    add_gtoolkit_platform_specific_library("vcruntime140" "https://dl.feenk.com/Moz2D/windows/development/x86_64/vcruntime140.dll" "build/vm")
+    #add_gtoolkit_third_party_dependency("Skia" "build/vm")
+    add_gtoolkit_third_party_dependency("Glutin" "build/vm")
+    add_gtoolkit_third_party_dependency("Boxer" "build/vm")
+    add_gtoolkit_third_party_dependency("Clipboard" "build/vm")
 endmacro()
 
 

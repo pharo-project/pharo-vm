@@ -43,11 +43,17 @@ macro(add_third_party_dependencies_per_platform)
     add_third_party_dependency("openssl-1.0.2q" ${LIBRARY_OUTPUT_DIRECTORY})
     add_third_party_dependency("PThreadedFFI-1.1.2-osx64" ${LIBRARY_OUTPUT_DIRECTORY})
     add_third_party_dependency("SDL2-2.0.7" ${LIBRARY_OUTPUT_DIRECTORY})
+
+    add_gtoolkit_third_party_dependency("Moz2D" ${LIBRARY_OUTPUT_DIRECTORY})
+    add_gtoolkit_third_party_dependency("Skia" ${LIBRARY_OUTPUT_DIRECTORY})
+    add_gtoolkit_third_party_dependency("Glutin" ${LIBRARY_OUTPUT_DIRECTORY})
+    add_gtoolkit_third_party_dependency("Boxer" ${LIBRARY_OUTPUT_DIRECTORY})
+    add_gtoolkit_third_party_dependency("Clipboard" ${LIBRARY_OUTPUT_DIRECTORY})
 endmacro()
 
 macro(configure_installables INSTALL_COMPONENT)
   set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/build/dist")
-    
+
   install(
     DIRECTORY "${CMAKE_BINARY_DIR}/build/vm/"
     DESTINATION "./"

@@ -6,7 +6,7 @@ TEST_PACKAGES=".*"
 
 extract_archive()
 {
-    ARCHIVE="$1"
+    ARCHIVE=$1
     case $ARCHIVE in
     *.zip)
         unzip $ARCHIVE -d .
@@ -23,6 +23,28 @@ extract_archive()
         ;;
     esac
 }
+
+fetch_image()
+{
+    case $APPNAME in
+    GToolkit)
+        # Fetch the latest image name.
+        LATEST_TAG=$(wget -O - https://dl.feenk.com/gt/GToolkit-latest-tag)
+
+        # Download and decompress the latest image
+        wget "-O$LATEST_TAG" "https://dl.feenk.com/gt/$LATEST_TAG"
+        unzip $LATEST_TAG -d .
+        mv GToolkit-64-*/* .
+        TEST_IMAGE_NAME=$(ls GToolkit-*.image)
+        ;;
+    *)
+        wget -O - https://get.pharo.org/64/80 | bash
+        echo 80 > pharo.version
+        TEST_IMAGE_NAME=$(ls Pharo*.image)
+        ;;
+    esac
+}
+
 
 case $(uname) in
 Linux)
@@ -65,11 +87,10 @@ cd runTests
 extract_archive $VM_ARCHIVE
 
 # Fetch the image
-wget -O - https://get.pharo.org/64/80 | bash
-echo 80 > pharo.version
+fetch_image
 
 # Run the tests
-PHARO_CI_TESTING_ENVIRONMENT=true $TEST_VM_EXECUTABLE Pharo.image test --junit-xml-output --stage-name=$TEST_VM_STAGE_NAME "$TEST_PACKAGES" || echo "Warning, some tests are failing"
+PHARO_CI_TESTING_ENVIRONMENT=true $TEST_VM_EXECUTABLE $TEST_IMAGE_NAME test --junit-xml-output --stage-name=$TEST_VM_STAGE_NAME "$TEST_PACKAGES" || echo "Warning, some tests are failing"
 
 # Copy the test results.
 mkdir -p ../test-results
