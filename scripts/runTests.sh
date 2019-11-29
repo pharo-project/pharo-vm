@@ -90,7 +90,7 @@ extract_archive $VM_ARCHIVE
 fetch_image
 
 # Run the tests
-PHARO_CI_TESTING_ENVIRONMENT=true $TEST_VM_EXECUTABLE $TEST_IMAGE_NAME test --junit-xml-output --stage-name=$TEST_VM_STAGE_NAME "$TEST_PACKAGES" || echo "Warning, some tests are failing"
+PHARO_CI_TESTING_ENVIRONMENT=true $TEST_VM_EXECUTABLE $TEST_IMAGE_NAME test --junit-xml-output --stage-name=$APPNAME-$TEST_VM_STAGE_NAME "$TEST_PACKAGES" || echo "Warning, some tests are failing"
 
 # Copy the test results.
 mkdir -p ../test-results
