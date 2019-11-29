@@ -194,7 +194,7 @@ endif()
 #Setting output directories
 set(VMMAKER_OUTPUT_PATH "build/vmmaker")
 make_directory(${VMMAKER_OUTPUT_PATH})
-#set(EXECUTABLE_OUTPUT_PATH "build/vm")
+set(EXECUTABLE_OUTPUT_PATH "build/vm")
   
 #If in OSX, configure creation of Bundle
 if (OSX)
