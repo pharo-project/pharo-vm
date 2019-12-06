@@ -25,8 +25,13 @@ set(EXTRACTED_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/memoryUnix.c
 )
 
+set(VM_FRONTEND_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/unixMain.c)
+if("${APPNAME}" STREQUAL "GToolkit")
+    set(VM_FRONTEND_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/macMainGToolkit.m)
+endif()
+
 set(VM_FRONTEND_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/macMainGToolkit.m
+    ${VM_FRONTEND_SOURCES}
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/${APPNAME}.icns"
 )
 
