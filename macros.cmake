@@ -28,6 +28,22 @@ macro(get_platform_name VARNAME)
     endif()
 endmacro()
 
+macro(get_gtoolkit_library_platform PLATFORM_VAR LIBPREFIX_VAR LIBSUFFIX_VAR)
+    set(${LIBPREFIX_VAR} "lib")
+    if(WIN32)
+        set(${PLATFORM_VAR} "windows")
+        set(${LIBSUFFIX_VAR} ".dll")
+    else()
+        if(OSX)
+            set(${PLATFORM_VAR} "osx")
+            set(${LIBSUFFIX_VAR} ".dylib")
+        else()
+            set(${PLATFORM_VAR} "linux")
+            set(${LIBSUFFIX_VAR} ".so")
+        endif()
+    endif()
+endmacro()
+
 macro(get_full_platform_name VARNAME)
 
     if(SIZEOF_VOID_P EQUAL 8)
@@ -68,6 +84,39 @@ macro(add_third_party_dependency NAME TARGETPATH)
 
     add_custom_target(${NAME} ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/build/third-party/${NAME}.done")
     add_dependencies(${VM_EXECUTABLE_NAME} ${NAME})
+endmacro()
+
+macro(add_gtoolkit_platform_specific_library NAME URL TARGETPATH TARGETNAME)
+    if("${APPNAME}" STREQUAL "GToolkit")
+        get_gtoolkit_library_platform(PLATNAME LIBPREFIX LIBSUFFIX)
+
+        add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/build/third-party/${TARGETNAME}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/build/third-party
+            COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_BINARY_DIR}/build/third-party wget "${URL}"
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+        add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/build/third-party/${NAME}.done"
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/${TARGETPATH}
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/build/third-party/${TARGETNAME}" ${CMAKE_CURRENT_BINARY_DIR}/${TARGETPATH}
+            COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/build/third-party/${NAME}.done"
+            DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/build/third-party/${TARGETNAME}"
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+        add_custom_target(${NAME} ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/build/third-party/${NAME}.done")
+        add_dependencies(${VM_EXECUTABLE_NAME} ${NAME})
+    endif()
+
+endmacro()
+
+macro(add_gtoolkit_third_party_dependency NAME TARGETPATH)
+    if("${APPNAME}" STREQUAL "GToolkit")
+        get_gtoolkit_library_platform(PLATNAME LIBPREFIX LIBSUFFIX)
+
+        message("Adding third-party libraries for ${PLATNAME}: ${NAME}")
+        add_gtoolkit_platform_specific_library(${NAME}
+            "https://dl.feenk.com/${NAME}/${PLATNAME}/development/x86_64/${LIBPREFIX}${NAME}${LIBSUFFIX}"
+            ${TARGETPATH} ${LIBPREFIX}${NAME}${LIBSUFFIX})
+    endif()
 endmacro()
 
 macro(get_commit_hash VARNAME)

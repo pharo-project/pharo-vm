@@ -9,6 +9,8 @@ set(VERSION_MAJOR 8)
 set(VERSION_MINOR 2)
 set(VERSION_PATCH 0)
 
+set(APPNAME Pharo CACHE STRING "VM Application name")
+
 get_commit_hash(GIT_COMMIT_HASH)
 get_git_describe(GIT_DESCRIBE)
 get_git_date(GIT_COMMIT_DATE)
@@ -29,6 +31,14 @@ if ((CMAKE_HOST_UNIX) AND (${CMAKE_HOST_SYSTEM_NAME} MATCHES "CYGWIN*"))
   SET(CMAKE_RC_COMPILER ${CMAKE_TOOLCHAIN_PREFIX}-windres)
   SET(CMAKE_SYSTEM_PROCESSOR x86_64)
 endif()
+
+if(UNIX AND NOT APPLE AND NOT WIN)
+    set(VM_EXECUTABLE_NAME pharo CACHE STRING "VM Executable name")
+else()
+    set(VM_EXECUTABLE_NAME Pharo CACHE STRING "VM Executable name")
+endif()
+
+message("Building ${APPNAME} with executable named ${VM_EXECUTABLE_NAME}")
 
 project(PharoVM)
 
@@ -145,16 +155,11 @@ add_definitions(-D"VM_LABEL\(foo\)=0")
 string(LENGTH "${CMAKE_SOURCE_DIR}/" SOURCE_PATH_SIZE)
 add_definitions("-DSOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
 
-if(UNIX AND NOT OSX)
-    set(VM_EXECUTABLE_NAME pharo)
-else()
-    set(VM_EXECUTABLE_NAME Pharo)
-endif()
-
 set(VM_LIBRARY_NAME PharoVMCore)
-set(VM_NAME Pharo)
+set(VM_NAME "${APPNAME}")
 set(PHARO_VM TRUE)
-set(DEFAULT_IMAGE_NAME Pharo.image)
+set(DEFAULT_IMAGE_NAME "${APPNAME}.image")
+set(FORCED_STARTUP_IMAGE_NAME startup.image)
 
 set(VM_TARGET "${CMAKE_SYSTEM}")
 
@@ -194,7 +199,7 @@ set(EXECUTABLE_OUTPUT_PATH "build/vm")
 
 #If in OSX, configure creation of Bundle
 if (OSX)
-  set(LIBRARY_OUTPUT_DIRECTORY "build/vm/$<CONFIG>/Pharo.app/Contents/MacOS/Plugins")
+  set(LIBRARY_OUTPUT_DIRECTORY "build/vm/$<CONFIG>/${APPNAME}.app/Contents/MacOS/Plugins")
 else()
   set(LIBRARY_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
 endif()
@@ -300,7 +305,7 @@ addLibraryWithRPATH(${VM_LIBRARY_NAME} ${VM_SOURCES})
 #If in OSX, configure creation of Bundle
 if(OSX)
   set_source_files_properties(
-    "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/Pharo.icns"
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/${APPNAME}.icns"
     PROPERTIES
     MACOSX_PACKAGE_LOCATION Resources
   )
@@ -309,8 +314,8 @@ if(OSX)
     ${VM_EXECUTABLE_NAME}
     PROPERTIES
     MACOSX_BUNDLE YES
-    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/Info.plist.in"
-    RESOURCE "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/Pharo.icns"
+    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/${APPNAME}.plist.in"
+    RESOURCE "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/${APPNAME}.icns"
   )
 endif()
 
@@ -344,13 +349,13 @@ make_directory("build/packages")
 
 get_full_platform_name(FULL_PLATFORM_NAME)
 
-set(CPACK_PACKAGE_DESCRIPTION "Pharo Headless VM for ${FULL_PLATFORM_NAME}")
+set(CPACK_PACKAGE_DESCRIPTION "${APPNAME} Headless VM for ${FULL_PLATFORM_NAME}")
 set(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${VERSION_PATCH}")
-set(CPACK_PACKAGE_VENDOR "Pharo")
+set(CPACK_PACKAGE_VENDOR "${APPNAME}")
 set(CPACK_PACKAGE_HOMEPAGE_URL "https://pharo.org")
-set(CPACK_PACKAGE_FILE_NAME "PharoVM-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${GIT_COMMIT_HASH}-${FULL_PLATFORM_NAME}")
+set(CPACK_PACKAGE_FILE_NAME "${APPNAME}-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${GIT_COMMIT_HASH}-${FULL_PLATFORM_NAME}")
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/packages")
 set(CPACK_PACKAGE_CHECKSUM "SHA1")
 set(CPACK_GENERATOR "ZIP")

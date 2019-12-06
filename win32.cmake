@@ -3,7 +3,7 @@ set(VM_VERSION_FILEVERSION "PharoVM-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_
 
 set(Win32ResourcesFolder "${CMAKE_CURRENT_SOURCE_DIR}/resources/windows")
 if(NOT Win32VMExecutableIcon)
-    set(Win32VMExecutableIcon "${Win32ResourcesFolder}/Pharo.ico")
+    set(Win32VMExecutableIcon "${Win32ResourcesFolder}/${VM_EXECUTABLE_NAME}.ico")
 endif()
 set(Win32Resource "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_NAME}.rc")
 set(Win32DLLResource "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_NAME}DLL.rc")
@@ -40,8 +40,13 @@ set(VM_FRONTEND_SOURCES_COMMON
     ${Win32Resource}
 )
 
+set(VM_FRONTEND_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/win32Main.c)
+if("${APPNAME}" STREQUAL "GToolkit")
+    set(VM_FRONTEND_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/win32MainGToolkit.c)
+endif()
+
 set(VM_FRONTEND_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/win32Main.c
+    ${VM_FRONTEND_SOURCES}
     ${Win32Manifest}
     ${VM_FRONTEND_SOURCES_COMMON})
 
@@ -70,6 +75,14 @@ macro(add_third_party_dependencies_per_platform)
     add_third_party_dependency("zlib-1.2.11-fixLibGit" "build/vm")
     add_third_party_dependency("SDL2-2.0.5" "build/vm")
     add_third_party_dependency("PThreadedFFI-1.1.2-win64" "build/vm")
+
+    add_gtoolkit_third_party_dependency("Moz2D" "build/vm")
+    add_gtoolkit_platform_specific_library("msvcp140" "https://dl.feenk.com/Moz2D/windows/development/x86_64/msvcp140.dll" "build/vm" "msvcp140.dll")
+    add_gtoolkit_platform_specific_library("vcruntime140" "https://dl.feenk.com/Moz2D/windows/development/x86_64/vcruntime140.dll" "build/vm" "vcruntime140.dll")
+    #add_gtoolkit_third_party_dependency("Skia" "build/vm")
+    add_gtoolkit_third_party_dependency("Glutin" "build/vm")
+    add_gtoolkit_third_party_dependency("Boxer" "build/vm")
+    add_gtoolkit_third_party_dependency("Clipboard" "build/vm")
 endmacro()
 
 
