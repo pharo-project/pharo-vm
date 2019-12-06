@@ -40,8 +40,13 @@ set(VM_FRONTEND_SOURCES_COMMON
     ${Win32Resource}
 )
 
+set(VM_FRONTEND_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/win32Main.c)
+if("${APPNAME}" STREQUAL "GToolkit")
+    set(VM_FRONTEND_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/win32MainGToolkit.c)
+endif()
+
 set(VM_FRONTEND_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/win32MainGToolkit.c
+    ${VM_FRONTEND_SOURCES}
     ${Win32Manifest}
     ${VM_FRONTEND_SOURCES_COMMON})
 
