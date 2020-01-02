@@ -32,5 +32,6 @@ def platforms = ['unix', 'osx', 'windows']
           }
 				}
 			}
-		}		
+		}
+    parallel builders
 	}
