@@ -1,37 +1,45 @@
 properties([disableConcurrentBuilds()])
 def platforms = ['unix', 'osx', 'windows']
-	def builders = [:]
-	def tests = [:]
+def builders = [:]
 
 	for (platf in platforms) {
-        // Need to bind the label variable before the closure - can't do 'for (label in labels)'
-        def platform = platf
+    // Need to bind the label variable before the closure - can't do 'for (label in labels)'
+    def platform = platf
 		
 		builders[platform] = {
       def vmplatform = platform
 			node(platform){
 				timeout(30){
-          cleanWs()
-          dir('repository') {
-            checkout scm
+          stage("Checkout-${vmplatform}"){
+            cleanWs()
+            dir('repository') {
+              checkout scm
+              sh "./scripts/updateSCCSVersions || true"
+            }
           }
           if(vmplatform == 'osx'){
             vmplatform = 'macos'
           }else if(vmplatform == 'unix'){
             vmplatform = 'linux'
           }else{
-            vmDir = 'win'
+            vmplatform = 'win'
           }
-          dir('build.${vmplatform}64x64/pharo.cog.spur') {
+          stage("Build-${vmplatform}"){
+            def build_directory = "repository/build.${vmplatform}64x64/pharo.cog.spur"
             if(vmplatform == 'linux'){
-              shell "./mvm"
-            } else {
-              shell "./mvm -f"
+              build_directory = "${build_directory}/build"
             }
-            archiveArtifacts artifacts: "./vm"
+            dir(build_directory) {
+              if(vmplatform == 'linux'){
+                sh "echo n | bash -e ./mvm"
+              } else {
+                sh "bash -e ./mvm -f"
+              }
+              archiveArtifacts artifacts: "./vm"
+            }
           }
-				}
-			}
-		}
-    parallel builders
+        }
+      }
+    }
 	}
+  parallel builders
