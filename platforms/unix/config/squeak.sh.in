@@ -18,7 +18,7 @@ case "$BIN" in
 *) PLUGINS="`pwd`/$BIN"
 esac
 
-if [ $(uname -s) = "OpenBSD" ]; then
+if [ $(uname -s) = "OpenBSD" ] || [ $(uname -s) = "FreeBSD" ]; then
   LD_LIBRARY_PATH="$PLUGINS:${LD_LIBRARY_PATH}" exec $GDB "$BIN/squeak" "$@"
 fi
 
