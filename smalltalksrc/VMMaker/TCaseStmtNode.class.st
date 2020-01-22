@@ -59,6 +59,7 @@ TCaseStmtNode >> customizeCase: caseParseTree forVar: varName from: firstIndex t
 		dict at: varName put: (TConstantNode new setValue: caseIndex).
 		newCase := caseParseTree copy bindVariableUsesIn: dict andConstantFoldIf: true in: codeGen.
 		self processSharedCodeBlocks: newCase forCase: caseIndex in: codeGen method: aTMethod expandedCases: seen.
+		aTMethod labels addAll: (newCase renameLabelsForInliningInto: aTMethod).
 		newCases addLast: newCase].
 	^newCases
 ]

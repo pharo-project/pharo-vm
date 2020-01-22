@@ -328,14 +328,16 @@ TStmtListNode >> removeAssertions [
 { #category : #'inlining support' }
 TStmtListNode >> renameLabelsForInliningInto: aTMethod [
 	"TMethod already has a method for this; hijack it..."
-	| labels |
+	| labels method |
 	labels := OrderedCollection new.
 	self nodesDo:
-		[:node| node isLabel ifTrue: [labels add: node label]].
-	TMethod new
+		[:node| (node isLabel and: [ node label notNil ])
+			ifTrue: [labels add: node label]].
+	method := TMethod new
 		parseTree: self;
 		labels: labels;
-		renameLabelsForInliningInto: aTMethod
+		renameLabelsForInliningInto: aTMethod.
+	^ method labels
 ]
 
 { #category : #transformations }
