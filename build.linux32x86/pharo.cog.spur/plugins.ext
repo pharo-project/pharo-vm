@@ -1,7 +1,7 @@
 # Copied, perhaps edited, from ../src/examplePlugins.ext
 EXTERNAL_PLUGINS = \
 B3DAcceleratorPlugin \
-FT2Plugin \
+#FT2Plugin \
 JPEGReaderPlugin \
 JPEGReadWriter2Plugin \
 RePlugin \
@@ -10,8 +10,8 @@ SurfacePlugin \
 EventsHandlerPlugin \
 SqueakSSL \
 FileAttributesPlugin \
-AioPlugin \
-BochsIA32Plugin \
-BochsX64Plugin \
-GdbARMPlugin \
+AioPlugin 
+#BochsIA32Plugin \
+#BochsX64Plugin \
+#GdbARMPlugin \
 # SDL2DisplayPlugin
