@@ -12,6 +12,10 @@ if [[ "${ARCH}" = "linux64x64" ]]; then
             libx11-dev \
             libxext-dev \
             libpango1.0-dev \
+            libgl1-mesa-glx \
+            libgl1-mesa-dev \
+            libxext-dev \
+            libglapi-mesa \
             libpulse-dev \
             libaudio-dev \
             gcc-multilib \
