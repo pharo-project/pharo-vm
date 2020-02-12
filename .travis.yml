@@ -107,13 +107,13 @@ script: ./scripts/ci/travis_test.sh
 
 after_success: (cd deploy && ./filter-exec.sh pack-vm.sh)
 
-#deploy:
-#  - provider: releases # Deploy stable tags to GitHub releases
-#    api_key:
-#      secure: ASzbVm1ootfvzfAYm50rWCfIvwp/O+6N1NMv2lymvswj/sGW7MxmYGHj2UNtLg9OAD+lL9YyElyy94MCpSK496+pD7GrOdRAitilMreWR6jGab0D92pPcujMAsDDSRTPNZsui1kvK1skWGMCN41mXLlwtCxSqWdhQ1viMmjXeK29TJbHykFEdfgZc6RcB97NdMyz6Pp9uqbxXSA656UxeLJzsKX88mXFcd5983pVt1ME8dfeUC9dwTihG5IAEg3Uz6HDxcR3uero0alLXycer5zI1kHLede03aNNvcRcUnVjBa5rNY8ON884DblDC+lcc+8b104MQTAGKWbyibjpm+9b0oWJV/tB20VdJUxZ2MpuktLzUrFBjVFjSrB5NmkITtJ1o+eYmjJOzWZNqFueNIsEkbGItDQJkKhNySBnUZ3/gyxnTBwmulUF2i8dimdwAuZlMiTN5mqpSLzLCE9ZrGWz9zuuCCombvpNIAc2IMsaTlpj391TjQfqGvu+Z88hmJOmDwpdUsGwNHo+Cz1N+KivAfySgj1T+CfE4xnuKOQzVbUK1Aqv/uGl1ieS1MfgyrqfgvRWEcGQh7/35n6yxG5s2z1qrs9Vl0e0rN261GQuK5ElNsQSLVRNH13+PdDwTCEZ/APzo+0uGRGTmGKJtzAofmkeAsrwmgGJPAuip/0=
-#    file_glob: true
-#    file: "./products/*.{dmg,gz,zip}"
-#    skip_cleanup: true
-#    on:
-#      repo: OpenSmalltalk/opensmalltalk-vm
-#      tags: true
+deploy:
+  provider: releases
+  api_key:
+    secure: Wcol6atwCtywPaCq1xRjfVIxt+HrYq/vrxHgDdr4WBm+s99nREdxiaIpnPb3S2Qu+H3S3dLmFJ/1pqfltnRn71eOaXktAJkl/iQFoA47YEXdU/tRi2xDZHRSsc61MYaPlap1A0byfOhq8Lj9lx2ojzL7DevJ0Q9JDbwWVy2QuDh+54fKymHo9Q9ta43Yxk8yltXU8f0lhwOMNMORRISp9O10CetlgFclSkX7/FJvLQ7YqWUNngA1BWWR+7sgAxwQDalIPmVJN6q5dDOSoutXEqe0TjnKHAf0HIGbLpMsDB1E8JoUasHfoQvRsDSO/FeUFR+XuNlMmdyAsj/XsrvhZyKFhIssJ6X4RZmW1Ks35WesWMIPGbpEKRJjVe5Ale1NDQJfwQqj/WclfIxgucf7bUAHObCWl8GOVD493inatsHSWsjnOL0dDoumtxNDsulZyJeEPBYtItD1ThcwWpKsbTGEPlrpyvfXZscL+IBIMSKzrfprK/pUpw/Ft/TH7L397KFGE8EnzueCPMWGg+8260gHhnU7+KJvV3htKYNIWALr3pvmsf/D3QjeGUhdvAafEvNMlCKEEdO12twtNEh5VwQnGLpltxdShHwsr/Ocd/aNz9wLX2m1+u/CKriwpyqo5vZ6YrOtujqJSTCsgCpXOAVBSNdPKE6YA3iAR5bQONw=
+  file: "./products/*.{dmg,gz,zip}"
+  file_glob: true
+  skip_cleanup: true
+  on:
+    repo: pharo-project/opensmalltalk-vm
+    tags: true
