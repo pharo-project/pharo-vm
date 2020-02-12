@@ -20,7 +20,7 @@ jobs:
   fast_finish: true
   include:
   - stage: "Main Pharo builds"
-  - env: ARCH="linux32x86" FLAVOR="pharo.cog.spur" HEARTBEAT="threaded"
+    env: ARCH="linux32x86" FLAVOR="pharo.cog.spur" HEARTBEAT="threaded"
   - env: ARCH="macos32x86" FLAVOR="pharo.cog.spur"
     <<: *mac-build
   - env: ARCH="linux64x64" FLAVOR="pharo.cog.spur" HEARTBEAT="threaded"
@@ -28,7 +28,7 @@ jobs:
     <<: *mac-build
 
   - stage: "Other Linux builds"
-  - env: ARCH="linux64x64" FLAVOR="pharo.cog.spur" HEARTBEAT="itimer"
+    env: ARCH="linux64x64" FLAVOR="pharo.cog.spur" HEARTBEAT="itimer"
   - env: ARCH="linux32x86" FLAVOR="pharo.cog.spur" HEARTBEAT="itimer"
 #  - env: ARCH="linux32x86" FLAVOR="pharo.sista.spur" HEARTBEAT="threaded"
 #    compiler: clang
