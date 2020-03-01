@@ -11391,6 +11391,13 @@ StackToRegisterMappingCogit >> genPrintReceiver [
 	self CallRT: ceTestTrampolineWithReceiverArgument.
 ]
 
+{ #category : #'live-typing primitive generators' }
+StackToRegisterMappingCogit >> genPrintHelloStorePop: popBoolean ReceiverVariable: slotIndex [
+	<inline: true>
+
+	self CallRT: cePrintHelloTrampoline.
+]
+
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genPushActiveContextBytecode [
 	self assert: needsFrame.
@@ -12046,9 +12053,11 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean MaybeContextRemoteInstVar
 		needsImmutabilityCheck: needsImmCheck
 ]
 
-{ #category : #'bytecode generator stores' }
+{ #category : #'live-typing bytecode generator stores' }
 StackToRegisterMappingCogit >> genStorePop: popBoolean ReceiverVariable: slotIndex [
 	<inline: true>
+	self genPrintHelloStorePop: popBoolean ReceiverVariable: slotIndex.
+	
 	^self 
 		genStorePop: popBoolean 
 		ReceiverVariable: slotIndex 

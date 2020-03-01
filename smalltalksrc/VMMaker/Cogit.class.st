@@ -269,7 +269,8 @@ Class {
 		'debugOpcodeIndices',
 		'disassemblingMethod',
 		'cogConstituentIndex',
-		'directedSendUsesBinding'
+		'directedSendUsesBinding',
+		'cePrintHelloTrampoline'
 	],
 	#classVars : [
 		'AltBlockCreationBytecodeSize',
@@ -1205,12 +1206,19 @@ Cogit class >> notesAndQueries [
 		inconvenience since we scan anyway to divorce or widow married contexts."
 ]
 
-{ #category : #accessing }
+{ #category : #'live-typing accessing' }
+Cogit class >> numLiveTypingTrampolines [
+	^1.
+]
+
+{ #category : #'live-typing accessing' }
 Cogit class >> numTrampolines [
 	^39 "31 + 4 each for self and super sends"
 		+ (LowcodeVM ifTrue: [1] ifFalse: [0])
 		+ (COGMTVM ifTrue: [ 2 ] ifFalse: [ 0 ])
 		+ 1 "Trampoline test"
+		+ self numLiveTypingTrampolines
+
 	"self withAllSubclasses collect: [:c| {c. (c instVarNames select: [:ea| ea beginsWith: 'ce']) size}]"
 ]
 
@@ -8367,6 +8375,13 @@ Cogit >> generateOpenPICPrototype [
 			 self halt]"
 ]
 
+{ #category : #'live-typing initialization' }
+Cogit >> generatePrintHelloTrampolines [
+	cePrintHelloTrampoline :=  self genTrampolineFor: #cePrintHello
+												called: 'cePrintHelloTrampoline'
+												regsToSave: CallerSavedRegisterMask
+]
+
 { #category : #initialization }
 Cogit >> generateRunTimeTrampolines [
 	"Generate the run-time entries at the base of the native code zone and update the base."
@@ -8483,7 +8498,7 @@ Cogit >> generateStackPointerCapture [
 	self assertCStackWellAligned.
 ]
 
-{ #category : #initialization }
+{ #category : #'live-typing initialization' }
 Cogit >> generateTrampolines [
 	"Generate the run-time entries and exits at the base of the native code zone and update the base.
 	 Read the class-side method trampolines for documentation on the various trampolines"
@@ -8502,6 +8517,8 @@ Cogit >> generateTrampolines [
 	self generateEnilopmarts.
 	self generateTracingTrampolines.
 	self generateLiveTypingTrampolines.
+	self generatePrintHelloTrampolines.
+
 
 	"finish up"
 	self recordGeneratedRunTime: 'methodZoneBase' address: methodZoneBase.

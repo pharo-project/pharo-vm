@@ -69,7 +69,7 @@ traceSources
 "
 Class {
 	#name : #CoInterpreter,
-	#superclass : #StackInterpreterPrimitives,
+	#superclass : #StackWithLiveTypingInterpreter,
 	#instVars : [
 		'cogit',
 		'cogMethodZone',
