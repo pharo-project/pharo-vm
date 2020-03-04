@@ -89,6 +89,29 @@ PharoVMMaker >> generateCoInterpreterWithQueueFFI [
 ]
 
 { #category : #generation }
+PharoVMMaker >> generateCoInterpreterWithQueueFFIWithLowcode [
+
+	| interpreterClass | 
+
+	VMMaker initializeForPharo.
+	interpreterClass := CoInterpreterWithQueueFFI.
+	(interpreterClass bindingOf: #COGMTVM) value: false.
+
+	[ VMMaker
+		generateMainVM: interpreterClass
+		and: StackToRegisterMappingCogit
+		with: #(COGMTVM false
+				ObjectMemory Spur64BitCoMemoryManager
+				MULTIPLEBYTECODESETS true
+				SistaVM true
+				LowcodeVM true
+				bytecodeTableInitializer initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid)
+		to: self outputDirectory / 'generated'
+		platformDir: self outputDirectory / 'generated'
+		including: #() ] valueSupplyingAnswer:true.
+]
+
+{ #category : #generation }
 PharoVMMaker >> generateStackVM [
 
 	| interpreterClass | 

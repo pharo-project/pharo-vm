@@ -12569,7 +12569,10 @@ StackToRegisterMappingCogit >> initializeFixupAt: targetPC [
 	<inline: true>
 	| fixup |
 	fixup := self fixupAt: targetPC.
-	self initializeFixup: fixup
+	self initializeFixup: fixup.
+	LowcodeVM ifTrue: [
+		fixup simNativeStackPtr: -1
+	]
 ]
 
 { #category : #'inline primitive register allocation' }
