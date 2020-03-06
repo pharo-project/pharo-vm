@@ -66,7 +66,7 @@ typedef struct __attribute__((aligned(16))) _sqLowcodeCalloutState
 #define ARGUMENT_calloutState "104(%rbp)"        /* RCX */
 #define ARGUMENT_stackPointer "96(%rbp)"         /* RDX*/
 #define ARGUMENT_stackSize    "56(%rbp)"         /* R8 */
-#define ARGUMENT_functionPointer "48%(rbp)"      /* R9 */
+#define ARGUMENT_functionPointer "48(%rbp)"      /* R9 */
 #else
 #define ARGUMENT_calloutState "64(%rbp)"         /* RDI*/
 #define ARGUMENT_stackPointer "72(%rbp)"         /* RSI */
