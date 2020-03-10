@@ -132,6 +132,29 @@ PharoVMMaker >> generateStackVM [
 		including: #() ] valueSupplyingAnswer:true.
 ]
 
+{ #category : #generation }
+PharoVMMaker >> generateStackVMWithLowcode [
+
+	| interpreterClass | 
+
+	VMMaker initializeForPharo.
+	interpreterClass := StackInterpreter.
+	(interpreterClass bindingOf: #COGMTVM) value: false.
+
+	[ VMMaker
+		generateMainVM: interpreterClass
+		and: StackToRegisterMappingCogit
+		with: #(COGMTVM false
+				ObjectMemory Spur64BitMemoryManager
+				MULTIPLEBYTECODESETS true
+				SistaVM true
+				LowcodeVM true
+				bytecodeTableInitializer initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid)
+		to: self outputDirectory / 'generated'
+		platformDir: self outputDirectory / 'generated'
+		including: #() ] valueSupplyingAnswer:true.
+]
+
 { #category : #accessing }
 PharoVMMaker >> outputDirectory [
 	^ outputDirectory
