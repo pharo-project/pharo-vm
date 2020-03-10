@@ -453,7 +453,9 @@ Cogit class >> attemptToComputeInstVarNamesFor: aCompiledMethod [
 Cogit class >> attemptToComputeTempNamesFor: aCompiledMethod [
 	(aCompiledMethod respondsTo: #tempNames) ifTrue:
 		[| schematicTemps blocks |
-		 schematicTemps := aCompiledMethod methodNode schematicTempNamesString.
+		 [ 
+			 schematicTemps := aCompiledMethod methodNode schematicTempNamesString.
+		] on: SyntaxErrorNotification do: [ :e | ^ self ].
 		 blocks := aCompiledMethod embeddedBlockClosures.
 		 InitializationOptions
 			at: #tempNames
@@ -1035,11 +1037,7 @@ Cogit class >> initializeMiscConstants [
 			[EagerInstructionDecoration ifNil:
 				[EagerInstructionDecoration := false]]. "speeds up single stepping but could lose fidelity"
 
-	ProcessorClass := (InitializationOptions at: #ISA ifAbsentPut: [self objectMemoryClass defaultISA]) caseOf: {
-							[#X64] 		->	[BochsX64Alien].
-							[#IA32] 	->	[BochsIA32Alien].
-							[#ARMv5]	->	[GdbARMAlien].
-							[#MIPSEL]	->	[MIPSELSimulator] }.
+	ProcessorClass := CogProcessor findProcessorForISA: (InitializationOptions at: #ISA ifAbsentPut: [self objectMemoryClass defaultISA]).
 	CogCompilerClass := self activeCompilerClass.
 	(CogCompilerClass withAllSuperclasses copyUpTo: CogAbstractInstruction) reverseDo:
 		[:compilerClass| compilerClass initialize; initializeAbstractRegisters].
@@ -3577,6 +3575,76 @@ Cogit >> breakPC: anAddressArrayOrNil [
 	<doNotGenerate>
 	breakPC := anAddressArrayOrNil.
 	singleStep := singleStep or: [anAddressArrayOrNil singleStepRequiredToTriggerIn: self]
+]
+
+{ #category : #disassembly }
+Cogit >> buildMethodLabelMapFor: surrogateOrAddress [
+	<doNotGenerate>
+	| cogMethod mapEntries codeRanges |
+	cogMethod := surrogateOrAddress isInteger
+								ifTrue: [self cogMethodSurrogateAt: surrogateOrAddress]
+								ifFalse: [surrogateOrAddress].
+	cogMethod cmType = CMBlock ifTrue:
+		[^self buildMethodLabelMapFor: cogMethod cmHomeMethod].
+
+	mapEntries := Dictionary new.
+	(cogMethod cmType = CMMethod and: [cogMethod cmIsFullBlock]) ifFalse:
+		[mapEntries at: cogMethod asInteger + cmEntryOffset put: 'entry'].
+	
+	cogMethod cmType = CMMethod ifTrue:
+		[cogMethod cmIsFullBlock
+			ifTrue: [mapEntries at: cogMethod asInteger + cbNoSwitchEntryOffset put: 'noSwitchEntry']
+			ifFalse: [mapEntries at: cogMethod asInteger + cmNoCheckEntryOffset put: 'noCheckEntry']].
+
+	cogMethod cmType = CMClosedPIC
+		ifTrue:
+			[mapEntries at: cogMethod asInteger + firstCPICCaseOffset put: 'ClosedPICCase0'.
+			 1 to: MaxCPICCases - 1 do:
+				[:i|
+				mapEntries
+					at: cogMethod asInteger + firstCPICCaseOffset + (i * cPICCaseSize)
+					put: 'ClosedPICCase', i printString]]
+		ifFalse:
+			[self mapFor: cogMethod
+				performUntil: #collectMapEntry:address:into:
+				arg: mapEntries].
+
+	NewspeakVM ifTrue:
+		[objectRepresentation canPinObjects ifFalse:
+			[mapEntries keys do:
+				[:a|
+				(mapEntries at: a) = #IsNSSendCall ifTrue:
+					[mapEntries
+						at: a + backEnd jumpShortByteSize
+							put: {'Class'. #disassembleCachedOop:. (objectMemory wordSize)};
+						at: a + backEnd jumpShortByteSize + objectMemory bytesPerOop
+							put: {'ImplicitReceiver'. #disassembleCachedOop:. (objectMemory wordSize)}]]]].
+
+	"This would all be far more elegant and simple if we used blocks.
+	 But there are no blocks in C and the basic enumerators here need
+	 to be used in the real VM.  Apologies."
+	(codeRanges := self codeRangesFor: cogMethod) do:
+		[:range|
+		(cogMethod cmType = CMMethod) ifTrue:
+			[mapEntries keysAndValuesDo:
+				[:mcpc :label| | bcpc selectorOrNone |
+				(((range includes: mcpc) or: [range last + 1 = mcpc])
+				 and: [(AnnotationsWithBytecodePCs includes: label)
+				 and: [range cogMethod stackCheckOffset > 0]]) ifTrue:
+					[bcpc := self bytecodePCFor: mcpc startBcpc: range startpc in: range cogMethod.
+					 bcpc ~= 0 ifTrue:
+						[label = #IsSendCall
+							ifTrue:
+								[selectorOrNone := (self selectorForSendAt: mcpc annotation: IsSendCall in: cogMethod methodObject).
+								 (selectorOrNone isInteger and: [objectMemory addressCouldBeOop: selectorOrNone]) ifTrue:
+									[selectorOrNone := objectMemory stringOf: selectorOrNone].
+								selectorOrNone := ' ', selectorOrNone]
+							ifFalse: [selectorOrNone := ''].
+						 mapEntries
+							at: mcpc
+							put: label, selectorOrNone, ' bc ', bcpc printString, '/', (bcpc + 1) printString]]]].
+	].
+	^mapEntries
 ]
 
 { #category : #'simulation only' }
