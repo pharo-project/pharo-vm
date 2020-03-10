@@ -36,7 +36,7 @@ project(PharoVM)
 
 set(FLAVOUR CoInterpreterWithQueueFFIWithLowcode CACHE STRING "The kind of VM to generate. Possible values: StackVM, CogVM, CoInterpreterWithQueueFFI")
 
-if(FLAVOUR MATCHES "StackVM")
+if(FLAVOUR MATCHES "StackVM.*")
   set(VMSOURCEFILES ${CMAKE_CURRENT_BINARY_DIR}/generated/vm/src/gcc3x-interp.c)
 else()
   set(VMSOURCEFILES ${CMAKE_CURRENT_BINARY_DIR}/generated/vm/src/cogit.c ${CMAKE_CURRENT_BINARY_DIR}/generated/vm/src/gcc3x-cointerp.c)
