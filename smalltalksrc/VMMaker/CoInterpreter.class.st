@@ -2802,18 +2802,8 @@ CoInterpreter >> commenceCogCompiledCodeCompaction [
 CoInterpreter >> commonCallerReturn [
 	"Return to the previous context/frame (sender for method activations, caller for block activations)."
 	<sharedCodeNamed: 'commonCallerReturn' inCase: #returnTopFromBlock>
-	| callersFPOrNull doWeHaveANativeFrame |
+	| callersFPOrNull |
 	<var: #callersFPOrNull type: #'char *'>
-
-	"TODO: Store/restore the nativeSP more properly, when it exists"
-	LowcodeVM ifTrue: [ 
-		doWeHaveANativeFrame := self frameHasNativeFrame: localFP.
-		doWeHaveANativeFrame ifTrue: [
-			nativeStackPointer := (self nativePreviousStackPointerIn: localFP) - 1.
-			nativeSP := 0.
-			self setFrameHasNotNativeFrame: localFP.
-		].
-	].
 
 	callersFPOrNull := self frameCallerFP: localFP.
 	callersFPOrNull = 0 "baseFrame" ifTrue:

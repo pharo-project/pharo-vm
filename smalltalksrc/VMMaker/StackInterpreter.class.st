@@ -5094,19 +5094,9 @@ StackInterpreter >> commonAtPut: stringy [
 StackInterpreter >> commonCallerReturn [
 	"Return to the previous context/frame (sender for method activations, caller for block activations)."
 	<sharedCodeInCase: #returnTopFromBlock>
-	| callersFPOrNull doWeHaveANativeFrame |
+	| callersFPOrNull |
 	<var: #callersFPOrNull type: #'char *'>
-
-	"TODO: Store/restore the nativeSP more properly, when it exists"
-	LowcodeVM ifTrue: [ 
-		doWeHaveANativeFrame := self frameHasNativeFrame: localFP.
-		doWeHaveANativeFrame ifTrue: [
-			nativeStackPointer := (self nativePreviousStackPointerIn: localFP) - 1.
-			nativeSP := 0.
-			self setFrameHasNotNativeFrame: localFP.
-		].
-	].
-
+	
 	callersFPOrNull := self frameCallerFP: localFP.
 	callersFPOrNull = 0 "baseFrame" ifTrue:
 		[self assert: localFP = stackPage baseFP.
@@ -10708,6 +10698,45 @@ StackInterpreter >> lowcodeBinaryInlinePrimitive: prim [
 ]
 
 { #category : #'inline primitive ffi abi' }
+StackInterpreter >> lowcodeCallout: functionPointer structureResult: resultPointer [
+	<var: #functionPointer type: #'char*'>
+	<var: #resultPointer type: #'char*'>
+	<returnTypeC: #'char*'>
+	^ 0
+]
+
+{ #category : #'inline primitive ffi abi' }
+StackInterpreter >> lowcodeCalloutFloat32Result: functionPointer [
+	<var: #functionPointer type: #'char*'>
+	^ 0.0
+]
+
+{ #category : #'inline primitive ffi abi' }
+StackInterpreter >> lowcodeCalloutFloat64Result: functionPointer [
+	<var: #functionPointer type: #'char*'>
+	^ 0.0
+]
+
+{ #category : #'inline primitive ffi abi' }
+StackInterpreter >> lowcodeCalloutInt32Result: functionPointer [
+	<var: #functionPointer type: #'char*'>
+	^ 0
+]
+
+{ #category : #'inline primitive ffi abi' }
+StackInterpreter >> lowcodeCalloutInt64Result: functionPointer [
+	<var: #functionPointer type: #'char*'>
+	^ 0
+]
+
+{ #category : #'inline primitive ffi abi' }
+StackInterpreter >> lowcodeCalloutPointerResult: functionPointer [
+	<var: #functionPointer type: #'char*'>
+	<returnTypeC: #'char*'>
+	^ 0
+]
+
+{ #category : #'inline primitive ffi abi' }
 StackInterpreter >> lowcodeCalloutState: calloutState callFunction: functionPointer [
 	<option: #LowcodeVM>
 	self lowcodeCalloutState: calloutState stackPointer: shadowCallStackPointer stackSize: (self cCoerce: lowcodeCalloutState to: #'char*') - shadowCallStackPointer callFunction: functionPointer
@@ -12518,6 +12547,22 @@ StackInterpreter >> lowcodePrimitiveIsWordsOrBytes [
 ]
 
 { #category : #'inline primitive generated code' }
+StackInterpreter >> lowcodePrimitiveLeaveLocalFrame [
+	<option: #LowcodeVM>	"Lowcode instruction generator"
+	| doWeHaveANativeFrame |
+
+	doWeHaveANativeFrame := self frameHasNativeFrame: localFP.
+	doWeHaveANativeFrame ifTrue: [
+	nativeStackPointer := (self nativePreviousStackPointerIn: localFP) - 1.
+	nativeSP := 0.
+	self setFrameHasNotNativeFrame: localFP.
+	].
+
+
+
+]
+
+{ #category : #'inline primitive generated code' }
 StackInterpreter >> lowcodePrimitiveLeftShift32 [
 	<option: #LowcodeVM>	"Lowcode instruction generator"
 	| value shiftAmount result |
@@ -13650,6 +13695,222 @@ StackInterpreter >> lowcodePrimitiveOr64 [
 	result := first bitOr: second.
 
 	self internalPushInt64: result.
+
+
+]
+
+{ #category : #'inline primitive generated code' }
+StackInterpreter >> lowcodePrimitivePerformCallFloat32 [
+	<option: #LowcodeVM>	"Lowcode instruction generator"
+	| result function |
+	<var: #result type: #'float' >
+	function := extA.
+
+	result := self lowcodeCalloutFloat32Result: (self cCoerce: function to: #'char*').
+
+	self internalPushFloat32: result.
+	extA := 0.
+
+
+]
+
+{ #category : #'inline primitive generated code' }
+StackInterpreter >> lowcodePrimitivePerformCallFloat64 [
+	<option: #LowcodeVM>	"Lowcode instruction generator"
+	| result function |
+	<var: #result type: #'double' >
+	function := extA.
+
+	result := self lowcodeCalloutFloat64Result: (self cCoerce: function to: #'char*').
+
+	self internalPushFloat64: result.
+	extA := 0.
+
+
+]
+
+{ #category : #'inline primitive generated code' }
+StackInterpreter >> lowcodePrimitivePerformCallIndirectFloat32 [
+	<option: #LowcodeVM>	"Lowcode instruction generator"
+	| result function |
+	<var: #result type: #'float' >
+	<var: #function type: #'char*' >
+	function := self internalPopStackPointer.
+
+	result := self lowcodeCalloutFloat32Result: function.
+
+	self internalPushFloat32: result.
+
+
+]
+
+{ #category : #'inline primitive generated code' }
+StackInterpreter >> lowcodePrimitivePerformCallIndirectFloat64 [
+	<option: #LowcodeVM>	"Lowcode instruction generator"
+	| result function |
+	<var: #result type: #'double' >
+	<var: #function type: #'char*' >
+	function := self internalPopStackPointer.
+
+	result := self lowcodeCalloutFloat64Result: function.
+
+	self internalPushFloat64: result.
+
+
+]
+
+{ #category : #'inline primitive generated code' }
+StackInterpreter >> lowcodePrimitivePerformCallIndirectInt32 [
+	<option: #LowcodeVM>	"Lowcode instruction generator"
+	| result function |
+	<var: #result type: #'sqInt' >
+	<var: #function type: #'char*' >
+	function := self internalPopStackPointer.
+
+	result := self lowcodeCalloutInt32Result: function.
+
+	self internalPushInt32: result.
+
+
+]
+
+{ #category : #'inline primitive generated code' }
+StackInterpreter >> lowcodePrimitivePerformCallIndirectInt64 [
+	<option: #LowcodeVM>	"Lowcode instruction generator"
+	| result function |
+	<var: #result type: #'sqLong' >
+	<var: #function type: #'char*' >
+	function := self internalPopStackPointer.
+
+	result := self lowcodeCalloutInt64Result: function.
+
+	self internalPushInt64: result.
+
+
+]
+
+{ #category : #'inline primitive generated code' }
+StackInterpreter >> lowcodePrimitivePerformCallIndirectPointer [
+	<option: #LowcodeVM>	"Lowcode instruction generator"
+	| result function |
+	<var: #result type: #'char*' >
+	<var: #function type: #'char*' >
+	function := self internalPopStackPointer.
+
+	result := self lowcodeCalloutPointerResult: function.
+
+	self internalPushPointer: result.
+
+
+]
+
+{ #category : #'inline primitive generated code' }
+StackInterpreter >> lowcodePrimitivePerformCallIndirectStructure [
+	<option: #LowcodeVM>	"Lowcode instruction generator"
+	| resultPointer result function structureSize |
+	<var: #resultPointer type: #'char*' >
+	<var: #result type: #'char*' >
+	<var: #function type: #'char*' >
+	structureSize := extA.
+	result := self internalPopStackPointer.
+	function := self internalPopStackPointer.
+
+	resultPointer := self lowcodeCallout: function structureResult: result.
+
+	self internalPushPointer: resultPointer.
+	extA := 0.
+
+
+]
+
+{ #category : #'inline primitive generated code' }
+StackInterpreter >> lowcodePrimitivePerformCallIndirectVoid [
+	<option: #LowcodeVM>	"Lowcode instruction generator"
+	| function |
+	<var: #function type: #'char*' >
+	function := self internalPopStackPointer.
+
+	self lowcodeCalloutInt32Result: function.
+
+
+
+]
+
+{ #category : #'inline primitive generated code' }
+StackInterpreter >> lowcodePrimitivePerformCallInt32 [
+	<option: #LowcodeVM>	"Lowcode instruction generator"
+	| result function |
+	<var: #result type: #'sqInt' >
+	function := extA.
+
+	result := self lowcodeCalloutInt32Result: (self cCoerce: function to: #'char*').
+
+	self internalPushInt32: result.
+	extA := 0.
+
+
+]
+
+{ #category : #'inline primitive generated code' }
+StackInterpreter >> lowcodePrimitivePerformCallInt64 [
+	<option: #LowcodeVM>	"Lowcode instruction generator"
+	| result function |
+	<var: #result type: #'sqLong' >
+	function := extA.
+
+	result := self lowcodeCalloutInt64Result: (self cCoerce: function to: #'char*').
+
+	self internalPushInt64: result.
+	extA := 0.
+
+
+]
+
+{ #category : #'inline primitive generated code' }
+StackInterpreter >> lowcodePrimitivePerformCallPointer [
+	<option: #LowcodeVM>	"Lowcode instruction generator"
+	| result function |
+	<var: #result type: #'char*' >
+	function := extA.
+
+	result := self lowcodeCalloutPointerResult: (self cCoerce: function to: #'char*').
+
+	self internalPushPointer: result.
+	extA := 0.
+
+
+]
+
+{ #category : #'inline primitive generated code' }
+StackInterpreter >> lowcodePrimitivePerformCallStructure [
+	<option: #LowcodeVM>	"Lowcode instruction generator"
+	| resultPointer result function structureSize |
+	<var: #resultPointer type: #'char*' >
+	<var: #result type: #'char*' >
+	function := extA.
+	structureSize := extB.
+	result := self internalPopStackPointer.
+
+	self internalPushShadowCallStackPointer: result.
+	resultPointer := self lowcodeCalloutPointerResult: (self cCoerce: function to: #'char*').
+
+	self internalPushPointer: resultPointer.
+	extA := 0.
+	extB := 0.
+	numExtB := 0.
+
+
+]
+
+{ #category : #'inline primitive generated code' }
+StackInterpreter >> lowcodePrimitivePerformCallVoid [
+	<option: #LowcodeVM>	"Lowcode instruction generator"
+	| function |
+	function := extA.
+
+	self lowcodeCalloutInt32Result: (self cCoerce: function to: #'char*').
+
+	extA := 0.
 
 
 ]
@@ -15296,39 +15557,39 @@ StackInterpreter >> lowcodeUnaryInlinePrimitive2: prim [
 			[84]	-> [ ^ self lowcodePrimitiveInt64ToFloat32 ].
 			[85]	-> [ ^ self lowcodePrimitiveInt64ToFloat64 ].
 			[86]	-> [ ^ self lowcodePrimitiveInt64ToPointer ].
-			[87]	-> [ ^ self lowcodePrimitiveLeftShift32 ].
-			[88]	-> [ ^ self lowcodePrimitiveLeftShift64 ].
-			[89]	-> [ ^ self lowcodePrimitiveLoadArgumentAddress ].
-			[90]	-> [ ^ self lowcodePrimitiveLoadArgumentFloat32 ].
-			[91]	-> [ ^ self lowcodePrimitiveLoadArgumentFloat64 ].
-			[92]	-> [ ^ self lowcodePrimitiveLoadArgumentInt16 ].
-			[93]	-> [ ^ self lowcodePrimitiveLoadArgumentInt32 ].
-			[94]	-> [ ^ self lowcodePrimitiveLoadArgumentInt64 ].
-			[95]	-> [ ^ self lowcodePrimitiveLoadArgumentInt8 ].
-			[96]	-> [ ^ self lowcodePrimitiveLoadArgumentPointer ].
-			[97]	-> [ ^ self lowcodePrimitiveLoadArgumentUInt16 ].
-			[98]	-> [ ^ self lowcodePrimitiveLoadArgumentUInt32 ].
-			[99]	-> [ ^ self lowcodePrimitiveLoadArgumentUInt64 ].
-			[100]	-> [ ^ self lowcodePrimitiveLoadArgumentUInt8 ].
-			[101]	-> [ ^ self lowcodePrimitiveLoadFloat32FromMemory ].
-			[102]	-> [ ^ self lowcodePrimitiveLoadFloat64FromMemory ].
-			[103]	-> [ ^ self lowcodePrimitiveLoadInt16FromMemory ].
-			[104]	-> [ ^ self lowcodePrimitiveLoadInt32FromMemory ].
-			[105]	-> [ ^ self lowcodePrimitiveLoadInt64FromMemory ].
-			[106]	-> [ ^ self lowcodePrimitiveLoadInt8FromMemory ].
-			[107]	-> [ ^ self lowcodePrimitiveLoadLocalAddress ].
-			[108]	-> [ ^ self lowcodePrimitiveLoadLocalFloat32 ].
-			[109]	-> [ ^ self lowcodePrimitiveLoadLocalFloat64 ].
-			[110]	-> [ ^ self lowcodePrimitiveLoadLocalInt16 ].
-			[111]	-> [ ^ self lowcodePrimitiveLoadLocalInt32 ].
-			[112]	-> [ ^ self lowcodePrimitiveLoadLocalInt64 ].
-			[113]	-> [ ^ self lowcodePrimitiveLoadLocalInt8 ].
-			[114]	-> [ ^ self lowcodePrimitiveLoadLocalPointer ].
-			[115]	-> [ ^ self lowcodePrimitiveLoadLocalUInt16 ].
-			[116]	-> [ ^ self lowcodePrimitiveLoadLocalUInt32 ].
-			[117]	-> [ ^ self lowcodePrimitiveLoadLocalUInt64 ].
-			[118]	-> [ ^ self lowcodePrimitiveLoadLocalUInt8 ].
-			[119]	-> [ ^ self lowcodePrimitiveLoadObjectAt ].
+			[87]	-> [ ^ self lowcodePrimitiveLeaveLocalFrame ].
+			[88]	-> [ ^ self lowcodePrimitiveLeftShift32 ].
+			[89]	-> [ ^ self lowcodePrimitiveLeftShift64 ].
+			[90]	-> [ ^ self lowcodePrimitiveLoadArgumentAddress ].
+			[91]	-> [ ^ self lowcodePrimitiveLoadArgumentFloat32 ].
+			[92]	-> [ ^ self lowcodePrimitiveLoadArgumentFloat64 ].
+			[93]	-> [ ^ self lowcodePrimitiveLoadArgumentInt16 ].
+			[94]	-> [ ^ self lowcodePrimitiveLoadArgumentInt32 ].
+			[95]	-> [ ^ self lowcodePrimitiveLoadArgumentInt64 ].
+			[96]	-> [ ^ self lowcodePrimitiveLoadArgumentInt8 ].
+			[97]	-> [ ^ self lowcodePrimitiveLoadArgumentPointer ].
+			[98]	-> [ ^ self lowcodePrimitiveLoadArgumentUInt16 ].
+			[99]	-> [ ^ self lowcodePrimitiveLoadArgumentUInt32 ].
+			[100]	-> [ ^ self lowcodePrimitiveLoadArgumentUInt64 ].
+			[101]	-> [ ^ self lowcodePrimitiveLoadArgumentUInt8 ].
+			[102]	-> [ ^ self lowcodePrimitiveLoadFloat32FromMemory ].
+			[103]	-> [ ^ self lowcodePrimitiveLoadFloat64FromMemory ].
+			[104]	-> [ ^ self lowcodePrimitiveLoadInt16FromMemory ].
+			[105]	-> [ ^ self lowcodePrimitiveLoadInt32FromMemory ].
+			[106]	-> [ ^ self lowcodePrimitiveLoadInt64FromMemory ].
+			[107]	-> [ ^ self lowcodePrimitiveLoadInt8FromMemory ].
+			[108]	-> [ ^ self lowcodePrimitiveLoadLocalAddress ].
+			[109]	-> [ ^ self lowcodePrimitiveLoadLocalFloat32 ].
+			[110]	-> [ ^ self lowcodePrimitiveLoadLocalFloat64 ].
+			[111]	-> [ ^ self lowcodePrimitiveLoadLocalInt16 ].
+			[112]	-> [ ^ self lowcodePrimitiveLoadLocalInt32 ].
+			[113]	-> [ ^ self lowcodePrimitiveLoadLocalInt64 ].
+			[114]	-> [ ^ self lowcodePrimitiveLoadLocalInt8 ].
+			[115]	-> [ ^ self lowcodePrimitiveLoadLocalPointer ].
+			[116]	-> [ ^ self lowcodePrimitiveLoadLocalUInt16 ].
+			[117]	-> [ ^ self lowcodePrimitiveLoadLocalUInt32 ].
+			[118]	-> [ ^ self lowcodePrimitiveLoadLocalUInt64 ].
+			[119]	-> [ ^ self lowcodePrimitiveLoadLocalUInt8 ].
 		}
 		otherwise: [ ^ self lowcodeUnaryInlinePrimitive3: prim ].
 	
@@ -15341,66 +15602,66 @@ StackInterpreter >> lowcodeUnaryInlinePrimitive3: prim [
 	<option: #LowcodeVM>	"Lowcode instruction interpreter dispatch"
 	prim
 		caseOf: {
-			[120]	-> [ ^ self lowcodePrimitiveLoadObjectField ].
-			[121]	-> [ ^ self lowcodePrimitiveLoadPointerFromMemory ].
-			[122]	-> [ ^ self lowcodePrimitiveLoadUInt16FromMemory ].
-			[123]	-> [ ^ self lowcodePrimitiveLoadUInt32FromMemory ].
-			[124]	-> [ ^ self lowcodePrimitiveLoadUInt64FromMemory ].
-			[125]	-> [ ^ self lowcodePrimitiveLoadUInt8FromMemory ].
-			[126]	-> [ ^ self lowcodePrimitiveLocalFrameSize ].
-			[127]	-> [ ^ self lowcodePrimitiveLockRegisters ].
-			[128]	-> [ ^ self lowcodePrimitiveLockVM ].
-			[129]	-> [ ^ self lowcodePrimitiveMalloc32 ].
-			[130]	-> [ ^ self lowcodePrimitiveMalloc64 ].
-			[131]	-> [ ^ self lowcodePrimitiveMemcpy32 ].
-			[132]	-> [ ^ self lowcodePrimitiveMemcpy64 ].
-			[133]	-> [ ^ self lowcodePrimitiveMemcpyFixed ].
-			[134]	-> [ ^ self lowcodePrimitiveMoveFloat32ToPhysical ].
-			[135]	-> [ ^ self lowcodePrimitiveMoveFloat64ToPhysical ].
-			[136]	-> [ ^ self lowcodePrimitiveMoveInt32ToPhysical ].
-			[137]	-> [ ^ self lowcodePrimitiveMoveInt64ToPhysical ].
-			[138]	-> [ ^ self lowcodePrimitiveMovePointerToPhysical ].
-			[139]	-> [ ^ self lowcodePrimitiveMul32 ].
-			[140]	-> [ ^ self lowcodePrimitiveMul64 ].
-			[141]	-> [ ^ self lowcodePrimitiveNeg32 ].
-			[142]	-> [ ^ self lowcodePrimitiveNeg64 ].
-			[143]	-> [ ^ self lowcodePrimitiveNot32 ].
-			[144]	-> [ ^ self lowcodePrimitiveNot64 ].
-			[145]	-> [ ^ self lowcodePrimitiveOr32 ].
-			[146]	-> [ ^ self lowcodePrimitiveOr64 ].
-			[147]	-> [ ^ self lowcodePrimitivePerformCallout ].
-			[148]	-> [ ^ self lowcodePrimitivePerformCalloutIndirect ].
-			[149]	-> [ ^ self lowcodePrimitivePushCalloutResultFloat32 ].
-			[150]	-> [ ^ self lowcodePrimitivePushCalloutResultFloat64 ].
-			[151]	-> [ ^ self lowcodePrimitivePushCalloutResultInt32 ].
-			[152]	-> [ ^ self lowcodePrimitivePushCalloutResultInt64 ].
-			[153]	-> [ ^ self lowcodePrimitivePushCalloutResultPointer ].
-			[161]	-> [ ^ self lowcodePrimitivePlaftormCode ].
-			[162]	-> [ ^ self lowcodePrimitivePointerAddConstantOffset ].
-			[163]	-> [ ^ self lowcodePrimitivePointerAddOffset32 ].
-			[164]	-> [ ^ self lowcodePrimitivePointerAddOffset64 ].
-			[165]	-> [ ^ self lowcodePrimitivePointerEqual ].
-			[166]	-> [ ^ self lowcodePrimitivePointerNotEqual ].
-			[167]	-> [ ^ self lowcodePrimitivePointerToInt32 ].
-			[168]	-> [ ^ self lowcodePrimitivePointerToInt64 ].
-			[169]	-> [ ^ self lowcodePrimitivePopFloat32 ].
-			[170]	-> [ ^ self lowcodePrimitivePopFloat64 ].
-			[171]	-> [ ^ self lowcodePrimitivePopInt32 ].
-			[172]	-> [ ^ self lowcodePrimitivePopInt64 ].
-			[173]	-> [ ^ self lowcodePrimitivePopMultipleNative ].
-			[174]	-> [ ^ self lowcodePrimitivePopPointer ].
-			[175]	-> [ ^ self lowcodePrimitivePushConstantUInt32 ].
-			[176]	-> [ ^ self lowcodePrimitivePushConstantUInt64 ].
-			[177]	-> [ ^ self lowcodePrimitivePushNullPointer ].
-			[178]	-> [ ^ self lowcodePrimitivePushOne32 ].
-			[179]	-> [ ^ self lowcodePrimitivePushOne64 ].
-			[180]	-> [ ^ self lowcodePrimitivePushOneFloat32 ].
-			[181]	-> [ ^ self lowcodePrimitivePushOneFloat64 ].
-			[182]	-> [ ^ self lowcodePrimitivePushPhysicalFloat32 ].
-			[183]	-> [ ^ self lowcodePrimitivePushPhysicalFloat64 ].
-			[184]	-> [ ^ self lowcodePrimitivePushPhysicalInt32 ].
-			[185]	-> [ ^ self lowcodePrimitivePushPhysicalInt64 ].
-			[186]	-> [ ^ self lowcodePrimitivePushPhysicalPointer ].
+			[120]	-> [ ^ self lowcodePrimitiveLoadObjectAt ].
+			[121]	-> [ ^ self lowcodePrimitiveLoadObjectField ].
+			[122]	-> [ ^ self lowcodePrimitiveLoadPointerFromMemory ].
+			[123]	-> [ ^ self lowcodePrimitiveLoadUInt16FromMemory ].
+			[124]	-> [ ^ self lowcodePrimitiveLoadUInt32FromMemory ].
+			[125]	-> [ ^ self lowcodePrimitiveLoadUInt64FromMemory ].
+			[126]	-> [ ^ self lowcodePrimitiveLoadUInt8FromMemory ].
+			[127]	-> [ ^ self lowcodePrimitiveLocalFrameSize ].
+			[128]	-> [ ^ self lowcodePrimitiveLockRegisters ].
+			[129]	-> [ ^ self lowcodePrimitiveLockVM ].
+			[130]	-> [ ^ self lowcodePrimitiveMalloc32 ].
+			[131]	-> [ ^ self lowcodePrimitiveMalloc64 ].
+			[132]	-> [ ^ self lowcodePrimitiveMemcpy32 ].
+			[133]	-> [ ^ self lowcodePrimitiveMemcpy64 ].
+			[134]	-> [ ^ self lowcodePrimitiveMemcpyFixed ].
+			[135]	-> [ ^ self lowcodePrimitiveMoveFloat32ToPhysical ].
+			[136]	-> [ ^ self lowcodePrimitiveMoveFloat64ToPhysical ].
+			[137]	-> [ ^ self lowcodePrimitiveMoveInt32ToPhysical ].
+			[138]	-> [ ^ self lowcodePrimitiveMoveInt64ToPhysical ].
+			[139]	-> [ ^ self lowcodePrimitiveMovePointerToPhysical ].
+			[140]	-> [ ^ self lowcodePrimitiveMul32 ].
+			[141]	-> [ ^ self lowcodePrimitiveMul64 ].
+			[142]	-> [ ^ self lowcodePrimitiveNeg32 ].
+			[143]	-> [ ^ self lowcodePrimitiveNeg64 ].
+			[144]	-> [ ^ self lowcodePrimitiveNot32 ].
+			[145]	-> [ ^ self lowcodePrimitiveNot64 ].
+			[146]	-> [ ^ self lowcodePrimitiveOr32 ].
+			[147]	-> [ ^ self lowcodePrimitiveOr64 ].
+			[148]	-> [ ^ self lowcodePrimitivePerformCallFloat32 ].
+			[149]	-> [ ^ self lowcodePrimitivePerformCallFloat64 ].
+			[150]	-> [ ^ self lowcodePrimitivePerformCallIndirectFloat32 ].
+			[151]	-> [ ^ self lowcodePrimitivePerformCallIndirectFloat64 ].
+			[152]	-> [ ^ self lowcodePrimitivePerformCallIndirectInt32 ].
+			[153]	-> [ ^ self lowcodePrimitivePerformCallIndirectInt64 ].
+			[154]	-> [ ^ self lowcodePrimitivePerformCallIndirectPointer ].
+			[155]	-> [ ^ self lowcodePrimitivePerformCallIndirectStructure ].
+			[156]	-> [ ^ self lowcodePrimitivePerformCallIndirectVoid ].
+			[157]	-> [ ^ self lowcodePrimitivePerformCallInt32 ].
+			[158]	-> [ ^ self lowcodePrimitivePerformCallInt64 ].
+			[159]	-> [ ^ self lowcodePrimitivePerformCallPointer ].
+			[160]	-> [ ^ self lowcodePrimitivePerformCallStructure ].
+			[161]	-> [ ^ self lowcodePrimitivePerformCallVoid ].
+			[162]	-> [ ^ self lowcodePrimitivePlaftormCode ].
+			[163]	-> [ ^ self lowcodePrimitivePointerAddConstantOffset ].
+			[164]	-> [ ^ self lowcodePrimitivePointerAddOffset32 ].
+			[165]	-> [ ^ self lowcodePrimitivePointerAddOffset64 ].
+			[166]	-> [ ^ self lowcodePrimitivePointerEqual ].
+			[167]	-> [ ^ self lowcodePrimitivePointerNotEqual ].
+			[168]	-> [ ^ self lowcodePrimitivePointerToInt32 ].
+			[169]	-> [ ^ self lowcodePrimitivePointerToInt64 ].
+			[170]	-> [ ^ self lowcodePrimitivePopFloat32 ].
+			[171]	-> [ ^ self lowcodePrimitivePopFloat64 ].
+			[172]	-> [ ^ self lowcodePrimitivePopInt32 ].
+			[173]	-> [ ^ self lowcodePrimitivePopInt64 ].
+			[174]	-> [ ^ self lowcodePrimitivePopMultipleNative ].
+			[175]	-> [ ^ self lowcodePrimitivePopPointer ].
+			[176]	-> [ ^ self lowcodePrimitivePushConstantUInt32 ].
+			[177]	-> [ ^ self lowcodePrimitivePushConstantUInt64 ].
+			[178]	-> [ ^ self lowcodePrimitivePushNullPointer ].
+			[179]	-> [ ^ self lowcodePrimitivePushOne32 ].
 		}
 		otherwise: [ ^ self lowcodeUnaryInlinePrimitive4: prim ].
 	
@@ -15413,66 +15674,66 @@ StackInterpreter >> lowcodeUnaryInlinePrimitive4: prim [
 	<option: #LowcodeVM>	"Lowcode instruction interpreter dispatch"
 	prim
 		caseOf: {
-			[187]	-> [ ^ self lowcodePrimitivePushSessionIdentifier ].
-			[188]	-> [ ^ self lowcodePrimitivePushZero32 ].
-			[189]	-> [ ^ self lowcodePrimitivePushZero64 ].
-			[190]	-> [ ^ self lowcodePrimitivePushZeroFloat32 ].
-			[191]	-> [ ^ self lowcodePrimitivePushZeroFloat64 ].
-			[192]	-> [ ^ self lowcodePrimitiveRem32 ].
-			[193]	-> [ ^ self lowcodePrimitiveRem64 ].
-			[194]	-> [ ^ self lowcodePrimitiveRightShift32 ].
-			[195]	-> [ ^ self lowcodePrimitiveRightShift64 ].
-			[196]	-> [ ^ self lowcodePrimitiveSignExtend32From16 ].
-			[197]	-> [ ^ self lowcodePrimitiveSignExtend32From8 ].
-			[198]	-> [ ^ self lowcodePrimitiveSignExtend64From16 ].
-			[199]	-> [ ^ self lowcodePrimitiveSignExtend64From32 ].
-			[200]	-> [ ^ self lowcodePrimitiveSignExtend64From8 ].
-			[201]	-> [ ^ self lowcodePrimitiveStoreFloat32ToMemory ].
-			[202]	-> [ ^ self lowcodePrimitiveStoreFloat64ToMemory ].
-			[203]	-> [ ^ self lowcodePrimitiveStoreInt16ToMemory ].
-			[204]	-> [ ^ self lowcodePrimitiveStoreInt32ToMemory ].
-			[205]	-> [ ^ self lowcodePrimitiveStoreInt64ToMemory ].
-			[206]	-> [ ^ self lowcodePrimitiveStoreInt8ToMemory ].
-			[207]	-> [ ^ self lowcodePrimitiveStoreLocalFloat32 ].
-			[208]	-> [ ^ self lowcodePrimitiveStoreLocalFloat64 ].
-			[209]	-> [ ^ self lowcodePrimitiveStoreLocalInt16 ].
-			[210]	-> [ ^ self lowcodePrimitiveStoreLocalInt32 ].
-			[211]	-> [ ^ self lowcodePrimitiveStoreLocalInt64 ].
-			[212]	-> [ ^ self lowcodePrimitiveStoreLocalInt8 ].
-			[213]	-> [ ^ self lowcodePrimitiveStoreLocalPointer ].
-			[214]	-> [ ^ self lowcodePrimitiveStorePointerToMemory ].
-			[215]	-> [ ^ self lowcodePrimitiveSub32 ].
-			[216]	-> [ ^ self lowcodePrimitiveSub64 ].
-			[217]	-> [ ^ self lowcodePrimitiveTruncate32To16 ].
-			[218]	-> [ ^ self lowcodePrimitiveTruncate32To8 ].
-			[219]	-> [ ^ self lowcodePrimitiveTruncate64To16 ].
-			[220]	-> [ ^ self lowcodePrimitiveTruncate64To32 ].
-			[221]	-> [ ^ self lowcodePrimitiveTruncate64To8 ].
-			[222]	-> [ ^ self lowcodePrimitiveUdiv32 ].
-			[223]	-> [ ^ self lowcodePrimitiveUdiv64 ].
-			[224]	-> [ ^ self lowcodePrimitiveUint32Great ].
-			[225]	-> [ ^ self lowcodePrimitiveUint32GreatEqual ].
-			[226]	-> [ ^ self lowcodePrimitiveUint32Less ].
-			[227]	-> [ ^ self lowcodePrimitiveUint32LessEqual ].
-			[228]	-> [ ^ self lowcodePrimitiveUint32ToFloat32 ].
-			[229]	-> [ ^ self lowcodePrimitiveUint32ToFloat64 ].
-			[230]	-> [ ^ self lowcodePrimitiveUint64Great ].
-			[231]	-> [ ^ self lowcodePrimitiveUint64GreatEqual ].
-			[232]	-> [ ^ self lowcodePrimitiveUint64Less ].
-			[233]	-> [ ^ self lowcodePrimitiveUint64LessEqual ].
-			[234]	-> [ ^ self lowcodePrimitiveUint64ToFloat32 ].
-			[235]	-> [ ^ self lowcodePrimitiveUint64ToFloat64 ].
-			[236]	-> [ ^ self lowcodePrimitiveUmul32 ].
-			[237]	-> [ ^ self lowcodePrimitiveUmul64 ].
-			[238]	-> [ ^ self lowcodePrimitiveUnlockRegisters ].
-			[239]	-> [ ^ self lowcodePrimitiveUnlockVM ].
-			[240]	-> [ ^ self lowcodePrimitiveUrem32 ].
-			[241]	-> [ ^ self lowcodePrimitiveUrem64 ].
-			[242]	-> [ ^ self lowcodePrimitiveXor32 ].
-			[243]	-> [ ^ self lowcodePrimitiveXor64 ].
-			[244]	-> [ ^ self lowcodePrimitiveZeroExtend32From16 ].
-			[245]	-> [ ^ self lowcodePrimitiveZeroExtend32From8 ].
-			[246]	-> [ ^ self lowcodePrimitiveZeroExtend64From16 ].
+			[180]	-> [ ^ self lowcodePrimitivePushOne64 ].
+			[181]	-> [ ^ self lowcodePrimitivePushOneFloat32 ].
+			[182]	-> [ ^ self lowcodePrimitivePushOneFloat64 ].
+			[183]	-> [ ^ self lowcodePrimitivePushPhysicalFloat32 ].
+			[184]	-> [ ^ self lowcodePrimitivePushPhysicalFloat64 ].
+			[185]	-> [ ^ self lowcodePrimitivePushPhysicalInt32 ].
+			[186]	-> [ ^ self lowcodePrimitivePushPhysicalInt64 ].
+			[187]	-> [ ^ self lowcodePrimitivePushPhysicalPointer ].
+			[188]	-> [ ^ self lowcodePrimitivePushSessionIdentifier ].
+			[189]	-> [ ^ self lowcodePrimitivePushZero32 ].
+			[190]	-> [ ^ self lowcodePrimitivePushZero64 ].
+			[191]	-> [ ^ self lowcodePrimitivePushZeroFloat32 ].
+			[192]	-> [ ^ self lowcodePrimitivePushZeroFloat64 ].
+			[193]	-> [ ^ self lowcodePrimitiveRem32 ].
+			[194]	-> [ ^ self lowcodePrimitiveRem64 ].
+			[195]	-> [ ^ self lowcodePrimitiveRightShift32 ].
+			[196]	-> [ ^ self lowcodePrimitiveRightShift64 ].
+			[197]	-> [ ^ self lowcodePrimitiveSignExtend32From16 ].
+			[198]	-> [ ^ self lowcodePrimitiveSignExtend32From8 ].
+			[199]	-> [ ^ self lowcodePrimitiveSignExtend64From16 ].
+			[200]	-> [ ^ self lowcodePrimitiveSignExtend64From32 ].
+			[201]	-> [ ^ self lowcodePrimitiveSignExtend64From8 ].
+			[202]	-> [ ^ self lowcodePrimitiveStoreFloat32ToMemory ].
+			[203]	-> [ ^ self lowcodePrimitiveStoreFloat64ToMemory ].
+			[204]	-> [ ^ self lowcodePrimitiveStoreInt16ToMemory ].
+			[205]	-> [ ^ self lowcodePrimitiveStoreInt32ToMemory ].
+			[206]	-> [ ^ self lowcodePrimitiveStoreInt64ToMemory ].
+			[207]	-> [ ^ self lowcodePrimitiveStoreInt8ToMemory ].
+			[208]	-> [ ^ self lowcodePrimitiveStoreLocalFloat32 ].
+			[209]	-> [ ^ self lowcodePrimitiveStoreLocalFloat64 ].
+			[210]	-> [ ^ self lowcodePrimitiveStoreLocalInt16 ].
+			[211]	-> [ ^ self lowcodePrimitiveStoreLocalInt32 ].
+			[212]	-> [ ^ self lowcodePrimitiveStoreLocalInt64 ].
+			[213]	-> [ ^ self lowcodePrimitiveStoreLocalInt8 ].
+			[214]	-> [ ^ self lowcodePrimitiveStoreLocalPointer ].
+			[215]	-> [ ^ self lowcodePrimitiveStorePointerToMemory ].
+			[216]	-> [ ^ self lowcodePrimitiveSub32 ].
+			[217]	-> [ ^ self lowcodePrimitiveSub64 ].
+			[218]	-> [ ^ self lowcodePrimitiveTruncate32To16 ].
+			[219]	-> [ ^ self lowcodePrimitiveTruncate32To8 ].
+			[220]	-> [ ^ self lowcodePrimitiveTruncate64To16 ].
+			[221]	-> [ ^ self lowcodePrimitiveTruncate64To32 ].
+			[222]	-> [ ^ self lowcodePrimitiveTruncate64To8 ].
+			[223]	-> [ ^ self lowcodePrimitiveUdiv32 ].
+			[224]	-> [ ^ self lowcodePrimitiveUdiv64 ].
+			[225]	-> [ ^ self lowcodePrimitiveUint32Great ].
+			[226]	-> [ ^ self lowcodePrimitiveUint32GreatEqual ].
+			[227]	-> [ ^ self lowcodePrimitiveUint32Less ].
+			[228]	-> [ ^ self lowcodePrimitiveUint32LessEqual ].
+			[229]	-> [ ^ self lowcodePrimitiveUint32ToFloat32 ].
+			[230]	-> [ ^ self lowcodePrimitiveUint32ToFloat64 ].
+			[231]	-> [ ^ self lowcodePrimitiveUint64Great ].
+			[232]	-> [ ^ self lowcodePrimitiveUint64GreatEqual ].
+			[233]	-> [ ^ self lowcodePrimitiveUint64Less ].
+			[234]	-> [ ^ self lowcodePrimitiveUint64LessEqual ].
+			[235]	-> [ ^ self lowcodePrimitiveUint64ToFloat32 ].
+			[236]	-> [ ^ self lowcodePrimitiveUint64ToFloat64 ].
+			[237]	-> [ ^ self lowcodePrimitiveUmul32 ].
+			[238]	-> [ ^ self lowcodePrimitiveUmul64 ].
+			[239]	-> [ ^ self lowcodePrimitiveUnlockRegisters ].
 		}
 		otherwise: [ ^ self lowcodeUnaryInlinePrimitive5: prim ].
 	
@@ -15485,8 +15746,16 @@ StackInterpreter >> lowcodeUnaryInlinePrimitive5: prim [
 	<option: #LowcodeVM>	"Lowcode instruction interpreter dispatch"
 	prim
 		caseOf: {
-			[247]	-> [ ^ self lowcodePrimitiveZeroExtend64From32 ].
-			[248]	-> [ ^ self lowcodePrimitiveZeroExtend64From8 ].
+			[240]	-> [ ^ self lowcodePrimitiveUnlockVM ].
+			[241]	-> [ ^ self lowcodePrimitiveUrem32 ].
+			[242]	-> [ ^ self lowcodePrimitiveUrem64 ].
+			[243]	-> [ ^ self lowcodePrimitiveXor32 ].
+			[244]	-> [ ^ self lowcodePrimitiveXor64 ].
+			[245]	-> [ ^ self lowcodePrimitiveZeroExtend32From16 ].
+			[246]	-> [ ^ self lowcodePrimitiveZeroExtend32From8 ].
+			[247]	-> [ ^ self lowcodePrimitiveZeroExtend64From16 ].
+			[248]	-> [ ^ self lowcodePrimitiveZeroExtend64From32 ].
+			[249]	-> [ ^ self lowcodePrimitiveZeroExtend64From8 ].
 		}
 		otherwise: [
 			localIP := localIP - 3.
