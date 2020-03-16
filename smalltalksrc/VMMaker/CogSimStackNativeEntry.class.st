@@ -161,46 +161,46 @@ CogSimStackNativeEntry >> ensureIsMarkedAsSpilled [
 ]
 
 { #category : #'compile abstract instructions' }
-CogSimStackNativeEntry >> ensureSpilledSP: spRegister scratchRegister: scratchRegister [
+CogSimStackNativeEntry >> ensureSpilledWithScratchRegister: scratchRegister [
 	spilled ifFalse: [
 		type caseOf: {
 			[SSNativeRegister]	-> [
-					cogit MoveR: register Mw: offset negated - 1 r: spRegister.
+					cogit MoveR: register Mw: self framePointerOffset r: FPReg.
 					type := SSSpillNative.
 				].
 			[SSRegisterSingleFloat]	-> [
-					cogit MoveRs: register M32: offset negated - 1 r: spRegister.
+					cogit MoveRs: register M32: self framePointerOffset r: FPReg.
 					type := SSSpillFloat32.
 				].
 			[SSRegisterDoubleFloat] -> [
-					cogit MoveRd: register M64: offset negated - 1 r: spRegister.
+					cogit MoveRd: register M64: self framePointerOffset r: FPReg.
 					type := SSSpillFloat64.
 				].
 			[SSConstantFloat32] -> [
 				cogit MoveCw: constantFloat32 asIEEE32BitWord R: scratchRegister.
-				cogit MoveR: scratchRegister M32: offset negated - 1 r: spRegister.
+				cogit MoveR: scratchRegister M32: self framePointerOffset r: FPReg.
 				type := SSSpillFloat32.
 			].
 			[SSConstantFloat64] -> [
 				BytesPerWord == 4 ifTrue: [
 					cogit MoveCw: (constantFloat64 asIEEE64BitWord bitAnd: 16rFFFFFFFF) R: scratchRegister.
-					cogit MoveR: scratchRegister M32: offset negated - 1 r: spRegister.
+					cogit MoveR: scratchRegister M32: self framePointerOffset r: FPReg.
 					cogit MoveCw: (constantFloat64 asIEEE64BitWord bitShift: (self cCoerce: -32 to: #'sqLong')) R: scratchRegister.
-					cogit MoveR: scratchRegister M32: offset negated - 1 + 4 r: spRegister.
+					cogit MoveR: scratchRegister M32: self framePointerOffset + 4 r: FPReg.
 				] ifFalse: [
 					cogit MoveCw: constantFloat32 asIEEE64BitWord R: scratchRegister.
-					cogit MoveR: scratchRegister Mw: offset negated - 1 r: spRegister.
+					cogit MoveR: scratchRegister Mw: self framePointerOffset r: FPReg.
 				].
 				type := SSSpillFloat64.
 			].
 			[SSConstantInt32]	-> [
 					cogit MoveCq: constantInt32 R: scratchRegister.
-					cogit MoveR: scratchRegister Mw: offset negated - 1 r: spRegister.
+					cogit MoveR: scratchRegister Mw: self framePointerOffset r: FPReg.
 					type := SSSpillNative.
 				].
 			[SSConstantNativePointer]	-> [
 					cogit MoveCw: constantNativePointer R: scratchRegister.
-					cogit MoveR: scratchRegister Mw: offset negated - 1 r: spRegister.
+					cogit MoveR: scratchRegister Mw: self framePointerOffset r: FPReg.
 					type := SSSpillNative.
 				].
 		}
@@ -209,6 +209,11 @@ CogSimStackNativeEntry >> ensureSpilledSP: spRegister scratchRegister: scratchRe
 	spilled := true.
 
 
+]
+
+{ #category : #'compile abstract instructions' }
+CogSimStackNativeEntry >> framePointerOffset [
+	^ self stackBaseOffset - offset
 ]
 
 { #category : #accessing }
@@ -229,14 +234,12 @@ CogSimStackNativeEntry >> nativeFloatRegisterOrNone [
 { #category : #'compile abstract instructions' }
 CogSimStackNativeEntry >> nativePopToReg: reg [
 	spilled ifTrue: [
-		cogit loadNativeFramePointerInto: TempReg.
-
 		type caseOf: {
-			[SSSpillNative]	-> [cogit MoveMw: offset negated - 1 r: TempReg R: reg].
+			[SSSpillNative]	-> [cogit MoveMw: self framePointerOffset r: FPReg R: reg].
 			[SSSpillInt64]	-> [self assert: BytesPerWord = 8.
-				cogit MoveMw: offset negated - 1 r: TempReg R: reg].
-			[SSSpillFloat32]	-> [cogit MoveM32: offset negated - 1 r: TempReg Rs: reg.].
-			[SSSpillFloat64]	-> [cogit MoveM64: offset negated - 1 r: TempReg Rd: reg.].}
+				cogit MoveMw: self framePointerOffset r: TempReg R: reg].
+			[SSSpillFloat32]	-> [cogit MoveM32: self framePointerOffset r: FPReg Rs: reg.].
+			[SSSpillFloat64]	-> [cogit MoveM64: self framePointerOffset r: FPReg Rd: reg.].}
 	] ifFalse: [
 		type caseOf: {
 			[SSNativeRegister]	-> [reg ~= register
@@ -261,6 +264,7 @@ CogSimStackNativeEntry >> nativePopToReg: reg [
 CogSimStackNativeEntry >> nativePopToReg: reg secondReg: secondReg [
 	self assert: BytesPerWord = 4.
 	spilled ifTrue: [
+			"FIXME: This looks suspicious"
 			cogit PopR: reg; PopR: secondReg
 		]
 		ifFalse: [
@@ -319,37 +323,11 @@ CogSimStackNativeEntry >> nativeRegisterSecondOrNone [
 ]
 
 { #category : #'compile abstract instructions' }
-CogSimStackNativeEntry >> nativeStackPopToReg: reg [
-	self assert: spilled.
-
-		type caseOf: {
-			[SSSpillNative]	-> [cogit MoveMw: offset negated r: FPReg R: reg].
-			[SSSpillInt64]	-> [self assert: BytesPerWord = 8.
-				cogit MoveMw: offset negated r: FPReg R: reg].
-			[SSSpillFloat32]	-> [cogit MoveM32: offset negated r: FPReg Rs: reg.].
-			[SSSpillFloat64]	-> [cogit MoveM64: offset negated r: FPReg Rd: reg.].
-	}
-]
-
-{ #category : #'compile abstract instructions' }
-CogSimStackNativeEntry >> nativeStackPopToReg: reg secondReg: secondReg [
-	self assert: spilled.
-
-		type caseOf: {
-			[SSSpillInt64]	-> [cogit MoveMw: offset negated + 4 r: FPReg R: reg.
-							     cogit MoveMw: offset negated r: FPReg R: secondReg].
-	}
-]
-
-{ #category : #'compile abstract instructions' }
 CogSimStackNativeEntry >> nativeStoreToReg: reg [
-	"FIXME: Duplicated code with popToReg:"
-	spilled ifTrue: [cogit loadNativeFramePointerInto: TempReg.].
-
 	type caseOf: {
-		[SSSpillNative]	-> [cogit MoveMw: offset negated - 1 r: TempReg R: reg].
-		[SSSpillFloat32]	-> [cogit MoveM32: offset negated - 1 r: TempReg Rs: reg.].
-		[SSSpillFloat64]	-> [cogit MoveM64: offset negated - 1 r: TempReg Rd: reg.].
+		[SSSpillNative]	-> [cogit MoveMw: self framePointerOffset r: FPReg R: reg].
+		[SSSpillFloat32]	-> [cogit MoveM32: self framePointerOffset r: FPReg Rs: reg.].
+		[SSSpillFloat64]	-> [cogit MoveM64: self framePointerOffset r: FPReg Rd: reg.].
 		[SSNativeRegister]	-> [reg ~= register
 										ifTrue: [cogit MoveR: register R: reg]
 										ifFalse: [cogit Label]].
@@ -371,6 +349,7 @@ CogSimStackNativeEntry >> nativeStoreToReg: reg [
 CogSimStackNativeEntry >> nativeStoreToReg: reg secondReg: secondReg [
 	self assert: BytesPerWord = 4.
 	"FIXME: Duplicated code with popToReg:secondReg:"
+	"FIXME: this code looks suspicious:"
 	type caseOf: {
 		[SSBaseOffset]	-> [
 				cogit MoveMw: offset r: register R: reg.
@@ -531,20 +510,8 @@ CogSimStackNativeEntry >> spilled: anObject [
 ]
 
 { #category : #'compile abstract instructions' }
-CogSimStackNativeEntry >> spillingNeedsScratchRegister [
-	spilled ifFalse: [
-		type caseOf: {
-			[SSConstantInt32]	-> [ ^ true ].
-			[SSConstantInt64]	-> [ ^ true ].
-			[SSConstantFloat32]	-> [ ^ true ].
-			[SSConstantFloat64]	-> [ ^ true ].
-			[SSConstantNativePointer]	-> [ ^ true ].
-		}
-		otherwise: [^ false]
-	].
-
-	^ false.
-
+CogSimStackNativeEntry >> stackBaseOffset [
+	^ cogit nativeFrameStackOffset
 ]
 
 { #category : #accessing }

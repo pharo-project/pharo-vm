@@ -256,7 +256,7 @@ CoInterpreter class >> initializeFrameIndices [
 	The first frame in a stack page is the baseFrame and is marked as such by a saved fp being its stackPage,
 	in which case the first word on the stack is the caller context (possibly hybrid) beneath the base frame."
 
-	| fxCallerSavedIP fxSavedFP fxMethod fxIFrameFlags fxThisContext fxIFReceiver fxMFReceiver fxIFSavedIP |
+	| fxCallerSavedIP fxSavedFP fxMethod fxIFrameFlags fxThisContext fxIFReceiver fxMFReceiver fxIFSavedIP fxIFNativeContextMark fxMFNativeContextMark fxIFNativeContextSize fxMFNativeContextSize fxIFNativeContextStackPointer fxMFNativeContextStackPointer fxIFNativeContextFrameBase fxMFNativeContextFrameBase |
 	fxCallerSavedIP := 1.
 	fxSavedFP := 0.
 	fxMethod := -1.
@@ -267,7 +267,15 @@ CoInterpreter class >> initializeFrameIndices [
 	fxIFSavedIP := -4.
 	fxIFReceiver := -5.
 	fxMFReceiver := -3.
-
+	fxIFNativeContextMark := -6.
+	fxMFNativeContextMark := -4.
+	fxIFNativeContextSize := -7.
+	fxMFNativeContextSize := -5.
+	fxIFNativeContextStackPointer := -8.
+	fxMFNativeContextStackPointer := -6.
+	fxIFNativeContextFrameBase := -9.
+	fxMFNativeContextFrameBase := -7.
+	
 	"For debugging undefine values that differ in the StackInterpreter."
 	FrameSlots := #undefined.
 	IFrameSlots := fxCallerSavedIP - fxIFReceiver + 1.
@@ -285,6 +293,18 @@ CoInterpreter class >> initializeFrameIndices [
 	FoxReceiver := #undefined.
 	FoxIFReceiver := fxIFReceiver * BytesPerWord.
 	FoxMFReceiver := fxMFReceiver * BytesPerWord.
+	FoxNativeContextMark := #undefined.
+	FoxIFNativeContextMark := fxIFNativeContextMark * BytesPerWord.
+	FoxMFNativeContextMark := fxMFNativeContextMark * BytesPerWord.
+	FoxNativeContextSize := #undefined.
+	FoxIFNativeContextSize := fxIFNativeContextSize * BytesPerWord.
+	FoxMFNativeContextSize := fxMFNativeContextSize * BytesPerWord.
+	FoxNativeContextStackPointer := #undefined.
+	FoxIFNativeContextStackPointer := fxIFNativeContextStackPointer * BytesPerWord.
+	FoxMFNativeContextStackPointer := fxMFNativeContextStackPointer * BytesPerWord.
+	FoxNativeContextFrameBase := #undefined.
+	FoxIFNativeContextFrameBase := fxIFNativeContextFrameBase * BytesPerWord.
+	FoxMFNativeContextFrameBase := fxMFNativeContextFrameBase * BytesPerWord.
 
 	"N.B.  There is room for one more flag given the current 8 byte alignment of methods (which
 	 is at least needed to distinguish the checked and uncecked entry points by their alignment."
@@ -4499,7 +4519,6 @@ CoInterpreter >> internalizeIPandSP [
 	localIP := self pointerForOop: instructionPointer.
 	localSP := self pointerForOop: stackPointer.
 	localFP := self pointerForOop: framePointer.
-	LowcodeVM ifTrue: [ nativeSP := 0. ]
 ]
 
 { #category : #'trampoline support' }
@@ -4897,22 +4916,6 @@ CoInterpreter >> lookupProtectedNoMNU: selector startingAt: mixinApplication rul
 			[^0].
 		currentClass := self superclassOf: currentClass].
 	^SelectorDoesNotUnderstand
-]
-
-{ #category : #'inline primitive ffi abi' }
-CoInterpreter >> lowcodeDoCallout: functionPointer [
-	<option: #LowcodeVM>
-	<var: #functionPointer type: #'char*' >
-	self undoFetchNextBytecode.
-	self externalizeIPandSP.
-	self lowcodeCalloutState: lowcodeCalloutState callFunction: functionPointer.
-	instructionPointer = cogit ceReturnToInterpreterPC ifTrue: [
-		instructionPointer := self iframeSavedIP: framePointer.
-	].
-	self internalizeIPandSP.
-	self reloadLowcodeStateAfterCallout.
-	self fetchNextBytecode.
-	^ self lowcodeCalloutStateFetchResultFloat32: lowcodeCalloutState
 ]
 
 { #category : #'cog jit support' }
@@ -5910,59 +5913,9 @@ CoInterpreter >> nativeFramePointerIn: theFP [
 	<var: #theFP type: #'char *'>
 	^(self isMachineCodeFrame: theFP)
 		ifTrue:
-			[stackPages pointerAtPointer: theFP + FoxMFReceiver - (BytesPerWord*3) ]
+			[theFP + FoxMFNativeContextFrameBase ]
 		ifFalse:
-			[stackPages pointerAtPointer: theFP + FoxIFReceiver - (BytesPerWord*3) ]
-]
-
-{ #category : #'internal interpreter access' }
-CoInterpreter >> nativeFramePointerIn: theFP put: valueOopPointer [
-	"See StackInterpreter class>>initializeFrameIndices"
-	<option: #LowcodeVM>
-	<returnTypeC: #'char*'>
-	<var: #theFP type: #'char *'>
-	<var: #valueOopPointer type: #'char*'>
-	^(self isMachineCodeFrame: theFP)
-		ifTrue:
-			[stackPages pointerAtPointer: theFP + FoxMFReceiver - (BytesPerWord*3) put: valueOopPointer]
-		ifFalse:
-			[stackPages pointerAtPointer: theFP + FoxIFReceiver - (BytesPerWord*3) put: valueOopPointer]
-]
-
-{ #category : #'internal interpreter access' }
-CoInterpreter >> nativePreviousStackPointerIn: theFP [
-	"See StackInterpreter class>>initializeFrameIndices"
-	<option: #LowcodeVM>
-	<returnTypeC: #'char*'>
-	<var: #theFP type: #'char *'>
-	^(self isMachineCodeFrame: theFP)
-		ifTrue:
-			[stackPages pointerAtPointer: theFP + FoxMFReceiver - (BytesPerWord*2)]
-		ifFalse:
-			[stackPages pointerAtPointer: theFP + FoxIFReceiver - (BytesPerWord*2)]
-]
-
-{ #category : #'internal interpreter access' }
-CoInterpreter >> nativePreviousStackPointerIn: theFP put: valueOopPointer [
-	"See StackInterpreter class>>initializeFrameIndices"
-	<option: #LowcodeVM>
-	<returnTypeC: #'char*'>
-	<var: #theFP type: #'char *'>
-	<var: #valueOopPointer type: #'char *'>
-	^(self isMachineCodeFrame: theFP)
-		ifTrue:
-			[stackPages pointerAtPointer: theFP + FoxMFReceiver - (BytesPerWord*2) put: valueOopPointer]
-		ifFalse:
-			[stackPages pointerAtPointer: theFP + FoxIFReceiver - (BytesPerWord*2) put: valueOopPointer]
-]
-
-{ #category : #'trampoline support' }
-CoInterpreter >> nativeStackPointerAddress [
-	<option: #LowcodeVM>
-	<api>
-	<returnTypeC: #usqInt>
-	^self cCode: [(self addressOf: nativeStackPointer) asUnsignedInteger]
-		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #nativeStackPointer in: self]
+			[theFP + FoxIFNativeContextFrameBase ]
 ]
 
 { #category : #'internal interpreter access' }
@@ -5973,9 +5926,9 @@ CoInterpreter >> nativeStackPointerIn: theFP [
 	<var: #theFP type: #'char *'>
 	^(self isMachineCodeFrame: theFP)
 		ifTrue:
-			[stackPages pointerAtPointer: theFP + FoxMFReceiver - (BytesPerWord*4)]
+			[(stackPages longAtPointer: theFP + FoxMFNativeContextStackPointer) + (theFP + FoxMFNativeContextFrameBase)]
 		ifFalse:
-			[stackPages pointerAtPointer: theFP + FoxIFReceiver - (BytesPerWord*4)]
+			[(stackPages longAtPointer: theFP + FoxIFNativeContextStackPointer) + (theFP + FoxIFNativeContextFrameBase)]
 ]
 
 { #category : #'internal interpreter access' }
@@ -5987,9 +5940,34 @@ CoInterpreter >> nativeStackPointerIn: theFP put: valueOopPointer [
 	<var: #valueOopPointer type: #'char *'>
 	^(self isMachineCodeFrame: theFP)
 		ifTrue:
-			[stackPages pointerAtPointer: theFP + FoxMFReceiver - (BytesPerWord*4) put: valueOopPointer]
+			[stackPages longAtPointer: theFP + FoxMFNativeContextStackPointer put: valueOopPointer - (theFP + FoxMFNativeContextFrameBase)]
 		ifFalse:
-			[stackPages pointerAtPointer: theFP + FoxIFReceiver - (BytesPerWord*4) put: valueOopPointer]
+			[stackPages longAtPointer: theFP + FoxIFNativeContextStackPointer put: valueOopPointer - (theFP + FoxIFNativeContextFrameBase)]
+]
+
+{ #category : #'internal interpreter access' }
+CoInterpreter >> nativeStackSizeIn: theFP [
+	"See StackInterpreter class>>initializeFrameIndices"
+	<inline: false>
+	<var: #theFP type: #'char *'>
+	^(self isMachineCodeFrame: theFP)
+		ifTrue:
+			[stackPages longAtPointer: theFP + FoxMFNativeContextSize]
+		ifFalse:
+			[stackPages longAtPointer: theFP + FoxIFNativeContextSize]
+]
+
+{ #category : #'internal interpreter access' }
+CoInterpreter >> nativeStackSizeIn: theFP put: nativeStackSize [
+	"See StackInterpreter class>>initializeFrameIndices"
+	<inline: false>
+	<var: #theFP type: #'char *'>
+	<var: #nativeStackSize type: #'sqInt'>
+	^(self isMachineCodeFrame: theFP)
+		ifTrue:
+			[stackPages longAtPointer: theFP + FoxMFNativeContextSize put: nativeStackSize]
+		ifFalse:
+			[stackPages longAtPointer: theFP + FoxIFNativeContextSize put: nativeStackSize]
 ]
 
 { #category : #'cog jit support' }

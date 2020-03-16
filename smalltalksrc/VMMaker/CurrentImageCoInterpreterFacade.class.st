@@ -759,11 +759,6 @@ CurrentImageCoInterpreterFacade >> nameOfClass: objOop [
 ]
 
 { #category : #accessing }
-CurrentImageCoInterpreterFacade >> nativeStackPointerAddress [
-	^self addressForLabel: #nativeStackPointer
-]
-
-{ #category : #accessing }
 CurrentImageCoInterpreterFacade >> newMethodAddress [
 	^self addressForLabel: #newMethod
 ]

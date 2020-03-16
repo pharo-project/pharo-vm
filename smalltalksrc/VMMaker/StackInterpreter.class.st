@@ -396,9 +396,6 @@ Class {
 		'gcSemaphoreIndex',
 		'classByteArrayCompactIndex',
 		'checkedPluginName',
-		'nativeSP',
-		'nativeStackPointer',
-		'lowcodeCalloutState',
 		'shadowCallStackPointer',
 		'displayBits',
 		'displayWidth',
@@ -515,10 +512,10 @@ StackInterpreter class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile:'<stddef.h> /* for e.g. alloca */';
 		addHeaderFile:'<setjmp.h>';
 		addHeaderFile:'<wchar.h> /* for wint_t */';
+		addHeaderFile:'<stdint.h>';
 		addHeaderFile:'"vmCallback.h"';
 		addHeaderFile:'"sqMemoryFence.h"';
 		addHeaderFile:'"dispdbg.h"'.
-	LowcodeVM ifTrue: [ aCCodeGenerator addHeaderFile:'"sqLowcodeFFI.h"'].
 
 	vmClass declareInterpreterVersionIn: aCCodeGenerator defaultName: 'Stack'.
 	aCCodeGenerator
@@ -616,16 +613,6 @@ StackInterpreter class >> declareCVarsIn: aCCodeGenerator [
 	aCCodeGenerator
 		var: #reenterInterpreter
 		declareC: 'jmp_buf reenterInterpreter; /* private export */'.
-	LowcodeVM
-		ifTrue:
-			[aCCodeGenerator
-				var: #lowcodeCalloutState type: #'sqLowcodeCalloutState*'.
-			 self declareC: #(nativeSP nativeStackPointer shadowCallStackPointer)
-				as: #'char *'
-				in: aCCodeGenerator]
-		ifFalse:
-			[#(lowcodeCalloutState nativeSP nativeStackPointer shadowCallStackPointer) do:
-				[:var| aCCodeGenerator removeVariable: var]]
 ]
 
 { #category : #'accessing class hierarchy' }
@@ -1205,7 +1192,7 @@ StackInterpreter class >> initializeFrameIndices [
 	The first frame in a stack page is the baseFrame and is marked as such by a null saved fp,
 	in which case the saved method ip is actually the context (possibly hybrid) beneath the base frame"
 
-	| fxCallerSavedIP fxSavedFP fxMethod fxFrameFlags fxThisContext fxReceiver |
+	| fxCallerSavedIP fxSavedFP fxMethod fxFrameFlags fxThisContext fxReceiver fxNativeContextMark fxNativeContextSize fxNativeContextStackPointer fxNativeContextFrameBase |
 	fxCallerSavedIP := 1.
 	fxSavedFP := 0.
 	fxMethod := -1.
@@ -1214,7 +1201,11 @@ StackInterpreter class >> initializeFrameIndices [
 						 Can find ``has context'' bit"
 	fxThisContext := -3.
 	fxReceiver := -4.
-
+	fxNativeContextMark := -5.
+	fxNativeContextSize := -6.
+	fxNativeContextStackPointer := -7.
+	fxNativeContextFrameBase := -8.
+	
 	FrameSlots := fxCallerSavedIP - fxReceiver + 1.
 
 	FoxCallerSavedIP := fxCallerSavedIP * BytesPerWord.
@@ -1225,6 +1216,10 @@ StackInterpreter class >> initializeFrameIndices [
 	FoxFrameFlags := fxFrameFlags * BytesPerWord.
 	FoxThisContext := fxThisContext * BytesPerWord.
 	FoxReceiver := fxReceiver * BytesPerWord.
+	FoxNativeContextMark := fxNativeContextMark * BytesPerWord.
+	FoxNativeContextSize := fxNativeContextSize * BytesPerWord.
+	FoxNativeContextStackPointer := fxNativeContextStackPointer * BytesPerWord.
+	FoxNativeContextFrameBase := fxNativeContextFrameBase * BytesPerWord.
 
 	"Mark the CoInterpreter-specific offsets as #undefined to
 	 avoid including them accidentally in StackInterpreter code."
@@ -1233,7 +1228,16 @@ StackInterpreter class >> initializeFrameIndices [
 	FoxIFrameFlags := #undefined.
 	FoxIFSavedIP := #undefined.
 	FoxIFReceiver := #undefined.
-	FoxMFReceiver := #undefined
+	FoxMFReceiver := #undefined.
+	
+	FoxIFNativeContextMark := #undefined.
+	FoxIFNativeContextSize := #undefined.
+	FoxIFNativeContextStackPointer := #undefined.
+	FoxIFNativeContextFrameBase := #undefined.
+	FoxMFNativeContextMark := #undefined.
+	FoxMFNativeContextSize := #undefined.
+	FoxMFNativeContextStackPointer := #undefined.
+	FoxMFNativeContextFrameBase := #undefined.
 ]
 
 { #category : #initialization }
@@ -2495,16 +2499,6 @@ StackInterpreter >> allOnesAsCharStar [
 								ifTrue: [-1 signedIntToLong64]
 								ifFalse: [-1 signedIntToLong])
 		to: #'char *')
-]
-
-{ #category : #'inline primitive ffi abi' }
-StackInterpreter >> allocateLowcodeCalloutState [
-	<option: #LowcodeVM>
-	| calloutStateSize |
-	calloutStateSize := self sizeof: #'sqLowcodeCalloutState'.
-	shadowCallStackPointer := self cCoerce: ((self cCoerce: shadowCallStackPointer - calloutStateSize to: 'size_t') bitAnd: -16) to: 'char*'.
-	lowcodeCalloutState := self cCoerce: shadowCallStackPointer to: #'sqLowcodeCalloutState*'.
-	
 ]
 
 { #category : #'image save/restore' }
@@ -8568,7 +8562,6 @@ StackInterpreter >> initializeInterpreter: bytesToShift [
 			[breakSelectorLength := objectMemory minSmallInteger]].
 	methodDictLinearSearchLimit := 8.
 	self initialCleanup.
-	LowcodeVM ifTrue: [ self setupNativeStack ].
 	profileSemaphore := profileProcess := profileMethod := objectMemory nilObject.
 	interruptKeycode := 2094. "cmd-. as used for Mac but no other OS"
 	[globalSessionID = 0] whileTrue:
@@ -9056,11 +9049,12 @@ StackInterpreter >> internalPopStackFloat32 [
 	<option: #LowcodeVM>
 	<returnTypeC: #float>
 	<var: #topSingle type: #float>
+	<var: #nsp type: #'char*'>
 	"In the StackInterpreter stacks grow down."
-	| topSingle  |
-	nativeSP := self nativeStackPointerIn: localFP.
-	topSingle := stackPages singleFloatAtPointer: nativeSP - 1.
-	nativeSP := self nativeStackPointerIn: localFP put: nativeSP + objectMemory bytesPerOop.
+	| topSingle sp |
+	sp := self nativeStackPointerIn: localFP.
+	topSingle := stackPages singleFloatAtPointer: sp.
+	sp := self nativeStackPointerIn: localFP put: sp + objectMemory bytesPerOop.
 	^topSingle
 ]
 
@@ -9070,10 +9064,10 @@ StackInterpreter >> internalPopStackFloat64 [
 	<returnTypeC: #double>
 	<var: #topDouble type: #double>
 	"In the StackInterpreter stacks grow down."
-	| topDouble |
-	nativeSP := self nativeStackPointerIn: localFP.
-	topDouble := stackPages floatAtPointer: nativeSP - 1.
-	nativeSP := self nativeStackPointerIn: localFP put: nativeSP + 8.
+	| topDouble sp|
+	sp := self nativeStackPointerIn: localFP.
+	topDouble := stackPages floatAtPointer: sp.
+	self nativeStackPointerIn: localFP put: sp + 8.
 	^topDouble
 ]
 
@@ -9081,10 +9075,10 @@ StackInterpreter >> internalPopStackFloat64 [
 StackInterpreter >> internalPopStackInt32 [
 	<option: #LowcodeVM>
 	"In the StackInterpreter stacks grow down."
-	| topInt32 |
-	nativeSP := self nativeStackPointerIn: localFP.
-	topInt32 := stackPages int32AtPointer: nativeSP - 1.
-	nativeSP := self nativeStackPointerIn: localFP put: nativeSP + objectMemory bytesPerOop.
+	| topInt32 sp |
+	sp := self nativeStackPointerIn: localFP.
+	topInt32 := stackPages int32AtPointer: sp.
+	sp := self nativeStackPointerIn: localFP put: sp + objectMemory bytesPerOop.
 	^topInt32
 ]
 
@@ -9094,10 +9088,10 @@ StackInterpreter >> internalPopStackInt64 [
 	<returnTypeC: #sqLong>
 	<var: #topInt64 type: #sqLong>
 	"In the StackInterpreter stacks grow down."
-	| topInt64 |
-	nativeSP := self nativeStackPointerIn: localFP.
-	topInt64 := stackPages long64AtPointer: nativeSP - 1.
-	nativeSP := self nativeStackPointerIn: localFP put: nativeSP + 8.
+	| topInt64 sp |
+	sp := self nativeStackPointerIn: localFP.
+	topInt64 := stackPages long64AtPointer: sp.
+	sp := self nativeStackPointerIn: localFP put: sp + 8.
 	^topInt64
 ]
 
@@ -9105,8 +9099,9 @@ StackInterpreter >> internalPopStackInt64 [
 StackInterpreter >> internalPopStackNativeSize: popSize [
 	<option: #LowcodeVM>
 	"In the StackInterpreter stacks grow down."
-	nativeSP := self nativeStackPointerIn: localFP.
-	nativeSP := self nativeStackPointerIn: localFP put: nativeSP + popSize.
+	| sp |
+	sp := self nativeStackPointerIn: localFP.
+	self nativeStackPointerIn: localFP put: sp + popSize.
 ]
 
 { #category : #'internal interpreter access' }
@@ -9115,10 +9110,10 @@ StackInterpreter >> internalPopStackPointer [
 	<returnTypeC: #'char*'>
 	<var: #topPointer type: #'char*'>
 	"In the StackInterpreter stacks grow down."
-	| topPointer |
-	nativeSP := self nativeStackPointerIn: localFP.
-	topPointer := stackPages pointerAtPointer: nativeSP - 1.
-	nativeSP := self nativeStackPointerIn: localFP put: nativeSP + objectMemory bytesPerOop.
+	| topPointer sp |
+	sp := self nativeStackPointerIn: localFP.
+	topPointer := stackPages pointerAtPointer: sp.
+	self nativeStackPointerIn: localFP put: sp + objectMemory bytesPerOop.
 	^topPointer
 ]
 
@@ -9133,11 +9128,12 @@ StackInterpreter >> internalPushFloat32: singleFloatValue [
 	<option: #LowcodeVM>
 	<var: #singleFloatValue type: #float >
 	"In the StackInterpreter stacks grow down."
-	nativeSP := (self nativeStackPointerIn: localFP) - objectMemory bytesPerOop.
-	self nativeStackPointerIn: localFP put: nativeSP.
+	| sp |
+	sp := (self nativeStackPointerIn: localFP) - objectMemory bytesPerOop.
+	self nativeStackPointerIn: localFP put: sp.
 
 	"In the StackInterpreter stacks grow down."
-	stackPages singleFloatAtPointer: (nativeSP - 1) put: singleFloatValue
+	stackPages singleFloatAtPointer: sp put: singleFloatValue
 ]
 
 { #category : #'internal interpreter access' }
@@ -9145,11 +9141,12 @@ StackInterpreter >> internalPushFloat64: floatValue [
 	<option: #LowcodeVM>
 	<arg: #floatValue type: #double >
 	"In the StackInterpreter stacks grow down."
-	nativeSP := (self nativeStackPointerIn: localFP) - 8.
-	self nativeStackPointerIn: localFP put: nativeSP.
+	| sp |
+	sp := (self nativeStackPointerIn: localFP) - 8.
+	self nativeStackPointerIn: localFP put: sp.
 
 	"In the StackInterpreter stacks grow down."
-	stackPages floatAtPointer: (nativeSP - 1) put: floatValue
+	stackPages floatAtPointer: sp put: floatValue
 
 ]
 
@@ -9157,11 +9154,12 @@ StackInterpreter >> internalPushFloat64: floatValue [
 StackInterpreter >> internalPushInt32: int32Value [
 	<option: #LowcodeVM>
 	"In the StackInterpreter stacks grow down."
-	nativeSP := (self nativeStackPointerIn: localFP) - objectMemory bytesPerOop.
-	self nativeStackPointerIn: localFP put: nativeSP.
+	| sp |
+	sp := (self nativeStackPointerIn: localFP) - objectMemory bytesPerOop.
+	self nativeStackPointerIn: localFP put: sp.
 
 	"In the StackInterpreter stacks grow down."
-	stackPages int32AtPointer: (nativeSP - 1) put: int32Value
+	stackPages int32AtPointer: sp put: int32Value
 
 ]
 
@@ -9170,11 +9168,12 @@ StackInterpreter >> internalPushInt64: int64Value [
 	<option: #LowcodeVM>
 	<arg: #int64Value type: #sqLong >
 	"In the StackInterpreter stacks grow down."
-	nativeSP := (self nativeStackPointerIn: localFP) - 8.
-	self nativeStackPointerIn: localFP put: nativeSP.
+	| sp |
+	sp := (self nativeStackPointerIn: localFP) - 8.
+	self nativeStackPointerIn: localFP put: sp.
 
 	"In the StackInterpreter stacks grow down."
-	stackPages long64AtPointer: (nativeSP - 1) put: int64Value
+	stackPages long64AtPointer: sp put: int64Value
 
 ]
 
@@ -9183,81 +9182,13 @@ StackInterpreter >> internalPushPointer: pointerValue [
 	<option: #LowcodeVM>
 	<var: #pointerValue type: #'char*' >
 	"In the StackInterpreter stacks grow down."
-	nativeSP := (self nativeStackPointerIn: localFP) - objectMemory bytesPerOop.
-	self nativeStackPointerIn: localFP put: nativeSP.
+	| sp |
+	sp := (self nativeStackPointerIn: localFP) - objectMemory bytesPerOop.
+	self nativeStackPointerIn: localFP put: sp.
 
 	"In the StackInterpreter stacks grow down."
-	stackPages pointerAtPointer: (nativeSP - 1) put: pointerValue
+	stackPages pointerAtPointer: sp put: pointerValue
 
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> internalPushShadowCallStackFloat32: singleFloatValue [
-	<option: #LowcodeVM>
-	<var: #singleFloatValue type: #float >
-	"In the StackInterpreter stacks grow down."
-	shadowCallStackPointer := shadowCallStackPointer - objectMemory bytesPerOop.
-
-	"In the StackInterpreter stacks grow down."
-	stackPages singleFloatAtPointer: shadowCallStackPointer put: singleFloatValue
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> internalPushShadowCallStackFloat64: floatValue [
-	<option: #LowcodeVM>
-	<var: #floatValue type: #double >
-	"In the StackInterpreter stacks grow down."
-	shadowCallStackPointer := shadowCallStackPointer - 8.
-
-	"In the StackInterpreter stacks grow down."
-	stackPages singleFloatAtPointer: shadowCallStackPointer put: floatValue
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> internalPushShadowCallStackInt32: int32Value [
-	<option: #LowcodeVM>
-	"In the StackInterpreter stacks grow down."
-	shadowCallStackPointer := shadowCallStackPointer - objectMemory bytesPerOop.
-
-	"In the StackInterpreter stacks grow down."
-	stackPages int32AtPointer: shadowCallStackPointer put: int32Value
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> internalPushShadowCallStackInt64: int64Value [
-	<option: #LowcodeVM>
-	<arg: #int64Value type: #sqLong >
-	
-	"In the StackInterpreter stacks grow down."
-	shadowCallStackPointer := shadowCallStackPointer - 8.
-
-	"In the StackInterpreter stacks grow down."
-	stackPages int64AtPointer: shadowCallStackPointer put: int64Value
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> internalPushShadowCallStackPointer: pointerValue [
-	<option: #LowcodeVM>
-	<var: #pointerValue type: #'char*' >
-	"In the StackInterpreter stacks grow down."
-	shadowCallStackPointer := shadowCallStackPointer - BytesPerOop.
-
-	"In the StackInterpreter stacks grow down."
-	stackPages pointerAtPointer: shadowCallStackPointer put: pointerValue
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> internalPushShadowCallStackSpace: spaceSize [
-	<option: #LowcodeVM>
-	"In the StackInterpreter stacks grow down."
-	shadowCallStackPointer := shadowCallStackPointer - spaceSize.
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> internalPushShadowCallStackStructure: structurePointer size: size [
-	<option: #LowcodeVM>
-	shadowCallStackPointer := shadowCallStackPointer - size.
-	self lowcode_mem: shadowCallStackPointer cp: structurePointer y: size
 ]
 
 { #category : #'primitive support' }
@@ -9319,7 +9250,6 @@ StackInterpreter >> internalizeIPandSP [
 	localIP := self pointerForOop: instructionPointer.
 	localSP := self pointerForOop: stackPointer.
 	localFP := self pointerForOop: framePointer.
-	LowcodeVM ifTrue: [ nativeSP := 0. ]
 ]
 
 { #category : #'interpreter shell' }
@@ -10737,13 +10667,6 @@ StackInterpreter >> lowcodeCalloutPointerResult: functionPointer [
 ]
 
 { #category : #'inline primitive ffi abi' }
-StackInterpreter >> lowcodeCalloutState: calloutState callFunction: functionPointer [
-	<option: #LowcodeVM>
-	self lowcodeCalloutState: calloutState stackPointer: shadowCallStackPointer stackSize: (self cCoerce: lowcodeCalloutState to: #'char*') - shadowCallStackPointer callFunction: functionPointer
-
-]
-
-{ #category : #'inline primitive ffi abi' }
 StackInterpreter >> lowcodeCalloutState: calloutState float32Register: registerId [
 	"This is implemented as C macros in platform specific headers"
 	<doNotGenerate>
@@ -10864,19 +10787,6 @@ StackInterpreter >> lowcodeCalloutStateFetchResultStructure: calloutState [
 
 ]
 
-{ #category : #'inline primitive ffi abi' }
-StackInterpreter >> lowcodeDoCallout: functionPointer [
-	<option: #LowcodeVM>
-	<var: #functionPointer type: #'char*' >
-	self undoFetchNextBytecode.
-	self externalizeIPandSP.
-	self lowcodeCalloutState: lowcodeCalloutState callFunction: functionPointer.
-	self internalizeIPandSP.
-	self reloadLowcodeStateAfterCallout.
-	self fetchNextBytecode.
-	^ self lowcodeCalloutStateFetchResultFloat32: lowcodeCalloutState
-]
-
 { #category : #'inline primitive dispatch generated code' }
 StackInterpreter >> lowcodeNullaryInlinePrimitive: prim [
 	<option: #LowcodeVM>	"Lowcode instruction interpreter dispatch"
@@ -10933,40 +10843,6 @@ StackInterpreter >> lowcodePrimitiveAdd64 [
 	result := first + second.
 
 	self internalPushInt64: result.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveAlloca32 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| pointer size |
-	<var: #pointer type: #'char*' >
-	<var: #size type: #'sqInt' >
-	size := self internalPopStackInt32.
-
-	nativeStackPointer := self cCoerce:
-	((self cCoerce: nativeStackPointer - size to: 'size_t') bitAnd: -16)
-	to: 'char*'.
-	pointer := nativeStackPointer.
-
-	self internalPushPointer: pointer.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveAlloca64 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| pointer size |
-	<var: #pointer type: #'char*' >
-	<var: #size type: #'sqLong' >
-	size := self internalPopStackInt64.
-
-	nativeStackPointer := nativeStackPointer - size.
-	pointer := nativeStackPointer.
-
-	self internalPushPointer: pointer.
 
 
 ]
@@ -11040,22 +10916,6 @@ StackInterpreter >> lowcodePrimitiveArithmeticRightShift64 [
 ]
 
 { #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveBeginCall [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| alignment |
-	alignment := extA.
-
-	"Store the shadow stack pointer"
-	self shadowCallStackPointerIn: localFP put: shadowCallStackPointer + 1.
-	"Allocate the callout state"
-	self allocateLowcodeCalloutState.
-
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
 StackInterpreter >> lowcodePrimitiveBoolean32ToOop [
 	<option: #LowcodeVM>	"Lowcode instruction generator"
 	| object value |
@@ -11096,125 +10956,6 @@ StackInterpreter >> lowcodePrimitiveByteSizeOf [
 	value := self byteSizeOf: object.
 
 	self internalPushInt32: value.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveCallArgumentFloat32 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| argumentValue |
-	<var: #argumentValue type: #'float' >
-	argumentValue := self internalPopStackFloat32.
-
-	self internalPushShadowCallStackFloat32: argumentValue.
-
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveCallArgumentFloat64 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| argumentValue |
-	<var: #argumentValue type: #'double' >
-	argumentValue := self internalPopStackFloat64.
-
-	self internalPushShadowCallStackFloat64: argumentValue.
-
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveCallArgumentInt32 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| value |
-	<var: #value type: #'sqInt' >
-	value := self internalPopStackInt32.
-
-	self internalPushShadowCallStackInt32: value.
-
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveCallArgumentInt64 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| value |
-	<var: #value type: #'sqLong' >
-	value := self internalPopStackInt64.
-
-	self internalPushShadowCallStackInt64: value.
-
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveCallArgumentPointer [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| pointerValue |
-	<var: #pointerValue type: #'char*' >
-	pointerValue := self internalPopStackPointer.
-
-	self internalPushShadowCallStackPointer: pointerValue.
-
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveCallArgumentSpace [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| spaceSize |
-	spaceSize := extA.
-
-	self internalPushShadowCallStackSpace: spaceSize.
-
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveCallArgumentStructure [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| structurePointer structureSize |
-	<var: #structurePointer type: #'char*' >
-	structureSize := extA.
-	structurePointer := self internalPopStackPointer.
-
-	self internalPushShadowCallStackStructure: structurePointer size: structureSize.
-
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveCallInstruction [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| function |
-	function := extA.
-
-	self abort.
-
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveCallPhysical [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| registerID |
-	registerID := extA.
-
-	self abort.
-
-	extA := 0.
 
 
 ]
@@ -11415,30 +11156,6 @@ StackInterpreter >> lowcodePrimitiveEffectiveAddress64 [
 	result := base + (index*scale) + offset.
 
 	self internalPushPointer: result.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveEndCall [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-
-	"Restore the shadow stack pointer"
-	shadowCallStackPointer := (self shadowCallStackPointerIn: localFP) - 1.
-	self shadowCallStackPointerIn: localFP put: (self cCoerce: 1 to: #'char*').
-
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveEndCallNoCleanup [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-
-	"Restore the shadow stack pointer"
-	shadowCallStackPointer := (self shadowCallStackPointerIn: localFP) - 1.
-	self shadowCallStackPointerIn: localFP put: (self cCoerce: 1 to: #'char*').
-
 
 
 ]
@@ -12551,12 +12268,6 @@ StackInterpreter >> lowcodePrimitiveLeaveLocalFrame [
 	<option: #LowcodeVM>	"Lowcode instruction generator"
 	| doWeHaveANativeFrame |
 
-	doWeHaveANativeFrame := self frameHasNativeFrame: localFP.
-	doWeHaveANativeFrame ifTrue: [
-	nativeStackPointer := (self nativePreviousStackPointerIn: localFP) - 1.
-	nativeSP := 0.
-	self setFrameHasNotNativeFrame: localFP.
-	].
 
 
 
@@ -12592,186 +12303,6 @@ StackInterpreter >> lowcodePrimitiveLeftShift64 [
 	result := value << shiftAmount.
 
 	self internalPushInt64: result.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveLoadArgumentAddress [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| pointer baseOffset |
-	<var: #pointer type: #'char*' >
-	baseOffset := extA.
-
-	pointer := self framePointerOfNativeArgument: baseOffset in: localFP.
-
-	self internalPushPointer: pointer.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveLoadArgumentFloat32 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| floatValue baseOffset |
-	<var: #floatValue type: #'float' >
-	baseOffset := extA.
-
-	floatValue := stackPages singleFloatAtPointer: (self framePointerOfNativeArgument: baseOffset in: localFP).
-
-	self internalPushFloat32: floatValue.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveLoadArgumentFloat64 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| doubleValue baseOffset |
-	<var: #doubleValue type: #'double' >
-	baseOffset := extA.
-
-	doubleValue := stackPages floatAtPointer: (self framePointerOfNativeArgument: baseOffset in: localFP).
-
-	self internalPushFloat64: doubleValue.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveLoadArgumentInt16 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| value baseOffset |
-	<var: #value type: #'sqInt' >
-	baseOffset := extA.
-
-	value := stackPages int16AtPointer: (self framePointerOfNativeArgument: baseOffset in: localFP).
-
-	self internalPushInt32: value.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveLoadArgumentInt32 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| value baseOffset |
-	<var: #value type: #'sqInt' >
-	baseOffset := extA.
-
-	value := stackPages int32AtPointer: (self framePointerOfNativeArgument: baseOffset in: localFP).
-
-	self internalPushInt32: value.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveLoadArgumentInt64 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| value baseOffset |
-	<var: #value type: #'sqLong' >
-	baseOffset := extA.
-
-	value := stackPages int64AtPointer: (self framePointerOfNativeArgument: baseOffset in: localFP).
-
-	self internalPushInt64: value.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveLoadArgumentInt8 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| value baseOffset |
-	<var: #value type: #'sqInt' >
-	baseOffset := extA.
-
-	value := stackPages int8AtPointer: (self framePointerOfNativeArgument: baseOffset in: localFP).
-
-	self internalPushInt32: value.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveLoadArgumentPointer [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| pointerResult baseOffset |
-	<var: #pointerResult type: #'char*' >
-	baseOffset := extA.
-
-	pointerResult := stackPages pointerAtPointer: (self framePointerOfNativeArgument: baseOffset in: localFP).
-
-	self internalPushPointer: pointerResult.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveLoadArgumentUInt16 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| value baseOffset |
-	<var: #value type: #'sqInt' >
-	baseOffset := extA.
-
-	value := stackPages uint16AtPointer: (self framePointerOfNativeArgument: baseOffset in: localFP).
-
-	self internalPushInt32: value.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveLoadArgumentUInt32 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| value baseOffset |
-	<var: #value type: #'sqInt' >
-	baseOffset := extA.
-
-	value := stackPages uint32AtPointer: (self framePointerOfNativeArgument: baseOffset in: localFP).
-
-	self internalPushInt32: value.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveLoadArgumentUInt64 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| value baseOffset |
-	<var: #value type: #'sqLong' >
-	baseOffset := extA.
-
-	value := stackPages uint64AtPointer: (self framePointerOfNativeArgument: baseOffset in: localFP).
-
-	self internalPushInt64: value.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveLoadArgumentUInt8 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| value baseOffset |
-	<var: #value type: #'sqInt' >
-	baseOffset := extA.
-
-	value := stackPages uint8AtPointer: (self framePointerOfNativeArgument: baseOffset in: localFP).
-
-	self internalPushInt32: value.
-	extA := 0.
 
 
 ]
@@ -13158,35 +12689,22 @@ StackInterpreter >> lowcodePrimitiveLoadUInt8FromMemory [
 { #category : #'inline primitive generated code' }
 StackInterpreter >> lowcodePrimitiveLocalFrameSize [
 	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| alignedSize size |
+	| maxDepth size alignedLocalSize stackDepthSize |
 	size := extA.
+	maxDepth := extB.
 
-	"Align the size to 16 bytes."
-	alignedSize := size + 15 bitAnd: -16.
+	alignedLocalSize := size + BytesPerWord - 1 bitAnd: BytesPerWord negated.
+	stackDepthSize := maxDepth * BytesPerWord.
 	"Mark the frame"
 	self setFrameHasNativeFrame: localFP.
-	"Store the previous stack pointer"
-	self nativePreviousStackPointerIn: localFP put: nativeStackPointer + 1.
-	"Make the frame pointer"
-	nativeStackPointer := nativeStackPointer - alignedSize.
-	self nativeFramePointerIn: localFP put: nativeStackPointer + 1.
-	"Set the stack pointer"
-	nativeSP := nativeStackPointer + 1.
-	self nativeStackPointerIn: localFP put: nativeStackPointer + 1.
-	"Reserve space for the native stack"
-	nativeStackPointer := nativeStackPointer - self defaultNativeStackFrameSize.
+	"Set the native stack size."
+	self nativeStackSizeIn: localFP put: alignedLocalSize + stackDepthSize.
+	"Set the stack pointer."
+	self nativeStackPointerIn: localFP put: (self nativeFramePointerIn: localFP) - alignedLocalSize.
 
 	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveLockRegisters [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-
-	"Nop in the interpreter"
-
+	extB := 0.
+	numExtB := 0.
 
 
 ]
@@ -13276,81 +12794,6 @@ StackInterpreter >> lowcodePrimitiveMemcpyFixed [
 	dest := self internalPopStackPointer.
 
 	self lowcode_mem: dest cp: source y: size.
-
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveMoveFloat32ToPhysical [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| registerID value |
-	<var: #value type: #'float' >
-	registerID := extA.
-	value := self internalPopStackFloat32.
-
-	self lowcodeCalloutState: lowcodeCalloutState float32Register: registerID value: value.
-
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveMoveFloat64ToPhysical [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| registerID value |
-	<var: #value type: #'double' >
-	registerID := extA.
-	value := self internalPopStackFloat64.
-
-	self lowcodeCalloutState: lowcodeCalloutState float64Register: registerID value: value.
-
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveMoveInt32ToPhysical [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| registerID value |
-	<var: #value type: #'sqInt' >
-	registerID := extA.
-	value := self internalPopStackInt32.
-
-	self lowcodeCalloutState: lowcodeCalloutState int32Register: registerID value: value.
-
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveMoveInt64ToPhysical [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| registerID value |
-	<var: #value type: #'sqLong' >
-	registerID := extA.
-	value := self internalPopStackInt64.
-
-	self lowcodeCalloutState: lowcodeCalloutState int64Register: registerID value: value.
-
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveMovePointerToPhysical [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| registerID pointerValue |
-	<var: #pointerValue type: #'char*' >
-	registerID := extA.
-	pointerValue := self internalPopStackPointer.
-
-	self lowcodeCalloutState: lowcodeCalloutState pointerRegister: registerID value: pointerValue.
 
 	extA := 0.
 
@@ -13700,248 +13143,6 @@ StackInterpreter >> lowcodePrimitiveOr64 [
 ]
 
 { #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePerformCallFloat32 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| result function |
-	<var: #result type: #'float' >
-	function := extA.
-
-	result := self lowcodeCalloutFloat32Result: (self cCoerce: function to: #'char*').
-
-	self internalPushFloat32: result.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePerformCallFloat64 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| result function |
-	<var: #result type: #'double' >
-	function := extA.
-
-	result := self lowcodeCalloutFloat64Result: (self cCoerce: function to: #'char*').
-
-	self internalPushFloat64: result.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePerformCallIndirectFloat32 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| result function |
-	<var: #result type: #'float' >
-	<var: #function type: #'char*' >
-	function := self internalPopStackPointer.
-
-	result := self lowcodeCalloutFloat32Result: function.
-
-	self internalPushFloat32: result.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePerformCallIndirectFloat64 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| result function |
-	<var: #result type: #'double' >
-	<var: #function type: #'char*' >
-	function := self internalPopStackPointer.
-
-	result := self lowcodeCalloutFloat64Result: function.
-
-	self internalPushFloat64: result.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePerformCallIndirectInt32 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| result function |
-	<var: #result type: #'sqInt' >
-	<var: #function type: #'char*' >
-	function := self internalPopStackPointer.
-
-	result := self lowcodeCalloutInt32Result: function.
-
-	self internalPushInt32: result.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePerformCallIndirectInt64 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| result function |
-	<var: #result type: #'sqLong' >
-	<var: #function type: #'char*' >
-	function := self internalPopStackPointer.
-
-	result := self lowcodeCalloutInt64Result: function.
-
-	self internalPushInt64: result.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePerformCallIndirectPointer [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| result function |
-	<var: #result type: #'char*' >
-	<var: #function type: #'char*' >
-	function := self internalPopStackPointer.
-
-	result := self lowcodeCalloutPointerResult: function.
-
-	self internalPushPointer: result.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePerformCallIndirectStructure [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| resultPointer result function structureSize |
-	<var: #resultPointer type: #'char*' >
-	<var: #result type: #'char*' >
-	<var: #function type: #'char*' >
-	structureSize := extA.
-	result := self internalPopStackPointer.
-	function := self internalPopStackPointer.
-
-	resultPointer := self lowcodeCallout: function structureResult: result.
-
-	self internalPushPointer: resultPointer.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePerformCallIndirectVoid [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| function |
-	<var: #function type: #'char*' >
-	function := self internalPopStackPointer.
-
-	self lowcodeCalloutInt32Result: function.
-
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePerformCallInt32 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| result function |
-	<var: #result type: #'sqInt' >
-	function := extA.
-
-	result := self lowcodeCalloutInt32Result: (self cCoerce: function to: #'char*').
-
-	self internalPushInt32: result.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePerformCallInt64 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| result function |
-	<var: #result type: #'sqLong' >
-	function := extA.
-
-	result := self lowcodeCalloutInt64Result: (self cCoerce: function to: #'char*').
-
-	self internalPushInt64: result.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePerformCallPointer [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| result function |
-	<var: #result type: #'char*' >
-	function := extA.
-
-	result := self lowcodeCalloutPointerResult: (self cCoerce: function to: #'char*').
-
-	self internalPushPointer: result.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePerformCallStructure [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| resultPointer result function structureSize |
-	<var: #resultPointer type: #'char*' >
-	<var: #result type: #'char*' >
-	function := extA.
-	structureSize := extB.
-	result := self internalPopStackPointer.
-
-	self internalPushShadowCallStackPointer: result.
-	resultPointer := self lowcodeCalloutPointerResult: (self cCoerce: function to: #'char*').
-
-	self internalPushPointer: resultPointer.
-	extA := 0.
-	extB := 0.
-	numExtB := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePerformCallVoid [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| function |
-	function := extA.
-
-	self lowcodeCalloutInt32Result: (self cCoerce: function to: #'char*').
-
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePerformCallout [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| function |
-	function := extA.
-
-	self lowcodeDoCallout: (self cCoerce: function to: #'char*').
-
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePerformCalloutIndirect [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| function |
-	<var: #function type: #'char*' >
-	function := self internalPopStackPointer.
-
-	self lowcodeDoCallout: function.
-
-
-
-]
-
-{ #category : #'inline primitive generated code' }
 StackInterpreter >> lowcodePrimitivePin [
 	<option: #LowcodeVM>	"Lowcode instruction generator"
 	| object |
@@ -14190,71 +13391,6 @@ StackInterpreter >> lowcodePrimitivePopPointer [
 ]
 
 { #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePushCalloutResultFloat32 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| result |
-	<var: #result type: #'float' >
-
-	result := self lowcodeCalloutStateFetchResultFloat32: lowcodeCalloutState.
-
-	self internalPushFloat32: result.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePushCalloutResultFloat64 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| result |
-	<var: #result type: #'double' >
-
-	result := self lowcodeCalloutStateFetchResultFloat64: lowcodeCalloutState.
-
-	self internalPushFloat64: result.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePushCalloutResultInt32 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| result |
-	<var: #result type: #'sqInt' >
-
-	result := self lowcodeCalloutStateFetchResultInt32: lowcodeCalloutState.
-
-	self internalPushInt32: result.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePushCalloutResultInt64 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| result |
-	<var: #result type: #'sqLong' >
-
-	result := self lowcodeCalloutStateFetchResultInt64: lowcodeCalloutState.
-
-	self internalPushInt64: result.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePushCalloutResultPointer [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| result |
-	<var: #result type: #'char*' >
-
-	result := self lowcodeCalloutStateFetchResultPointer: lowcodeCalloutState.
-
-	self internalPushPointer: result.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
 StackInterpreter >> lowcodePrimitivePushConstantUInt32 [
 	<option: #LowcodeVM>	"Lowcode instruction generator"
 	| result constant |
@@ -14345,81 +13481,6 @@ StackInterpreter >> lowcodePrimitivePushOneFloat64 [
 	result := 1.0.
 
 	self internalPushFloat64: result.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePushPhysicalFloat32 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| registerID value |
-	<var: #value type: #'float' >
-	registerID := extA.
-
-	value := self lowcodeCalloutState: lowcodeCalloutState float32Register: registerID.
-
-	self internalPushFloat32: value.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePushPhysicalFloat64 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| registerID value |
-	<var: #value type: #'double' >
-	registerID := extA.
-
-	value := self lowcodeCalloutState: lowcodeCalloutState float64Register: registerID.
-
-	self internalPushFloat64: value.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePushPhysicalInt32 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| registerID value |
-	<var: #value type: #'sqInt' >
-	registerID := extA.
-
-	value := self lowcodeCalloutState: lowcodeCalloutState int32Register: registerID.
-
-	self internalPushInt32: value.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePushPhysicalInt64 [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| registerID value |
-	<var: #value type: #'sqLong' >
-	registerID := extA.
-
-	value := self lowcodeCalloutState: lowcodeCalloutState int64Register: registerID.
-
-	self internalPushInt64: value.
-	extA := 0.
-
-
-]
-
-{ #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitivePushPhysicalPointer [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-	| registerID pointerValue |
-	<var: #pointerValue type: #'char*' >
-	registerID := extA.
-
-	pointerValue := self lowcodeCalloutState: lowcodeCalloutState pointerRegister: registerID.
-
-	self internalPushPointer: pointerValue.
-	extA := 0.
 
 
 ]
@@ -15310,16 +14371,6 @@ StackInterpreter >> lowcodePrimitiveUmul64 [
 ]
 
 { #category : #'inline primitive generated code' }
-StackInterpreter >> lowcodePrimitiveUnlockRegisters [
-	<option: #LowcodeVM>	"Lowcode instruction generator"
-
-	"Nop in the interpreter"
-
-
-
-]
-
-{ #category : #'inline primitive generated code' }
 StackInterpreter >> lowcodePrimitiveUnlockVM [
 	<option: #LowcodeVM>	"Lowcode instruction generator"
 
@@ -15530,20 +14581,6 @@ StackInterpreter >> lowcodeUnaryInlinePrimitive2: prim [
 	<option: #LowcodeVM>	"Lowcode instruction interpreter dispatch"
 	prim
 		caseOf: {
-			[60]	-> [ ^ self lowcodePrimitiveFloat64ToFloat32 ].
-			[61]	-> [ ^ self lowcodePrimitiveFloat64ToInt32 ].
-			[62]	-> [ ^ self lowcodePrimitiveFloat64ToInt64 ].
-			[63]	-> [ ^ self lowcodePrimitiveFloat64ToUInt32 ].
-			[64]	-> [ ^ self lowcodePrimitiveFloat64ToUInt64 ].
-			[65]	-> [ ^ self lowcodePrimitiveFree ].
-			[66]	-> [ ^ self lowcodePrimitiveInstantiateIndexable32Oop ].
-			[67]	-> [ ^ self lowcodePrimitiveInstantiateIndexableOop ].
-			[68]	-> [ ^ self lowcodePrimitiveInstantiateOop ].
-			[69]	-> [ ^ self lowcodePrimitiveInt32Equal ].
-			[70]	-> [ ^ self lowcodePrimitiveInt32Great ].
-			[71]	-> [ ^ self lowcodePrimitiveInt32GreatEqual ].
-			[72]	-> [ ^ self lowcodePrimitiveInt32Less ].
-			[73]	-> [ ^ self lowcodePrimitiveInt32LessEqual ].
 			[74]	-> [ ^ self lowcodePrimitiveInt32NotEqual ].
 			[75]	-> [ ^ self lowcodePrimitiveInt32ToFloat32 ].
 			[76]	-> [ ^ self lowcodePrimitiveInt32ToFloat64 ].
@@ -15560,18 +14597,6 @@ StackInterpreter >> lowcodeUnaryInlinePrimitive2: prim [
 			[87]	-> [ ^ self lowcodePrimitiveLeaveLocalFrame ].
 			[88]	-> [ ^ self lowcodePrimitiveLeftShift32 ].
 			[89]	-> [ ^ self lowcodePrimitiveLeftShift64 ].
-			[90]	-> [ ^ self lowcodePrimitiveLoadArgumentAddress ].
-			[91]	-> [ ^ self lowcodePrimitiveLoadArgumentFloat32 ].
-			[92]	-> [ ^ self lowcodePrimitiveLoadArgumentFloat64 ].
-			[93]	-> [ ^ self lowcodePrimitiveLoadArgumentInt16 ].
-			[94]	-> [ ^ self lowcodePrimitiveLoadArgumentInt32 ].
-			[95]	-> [ ^ self lowcodePrimitiveLoadArgumentInt64 ].
-			[96]	-> [ ^ self lowcodePrimitiveLoadArgumentInt8 ].
-			[97]	-> [ ^ self lowcodePrimitiveLoadArgumentPointer ].
-			[98]	-> [ ^ self lowcodePrimitiveLoadArgumentUInt16 ].
-			[99]	-> [ ^ self lowcodePrimitiveLoadArgumentUInt32 ].
-			[100]	-> [ ^ self lowcodePrimitiveLoadArgumentUInt64 ].
-			[101]	-> [ ^ self lowcodePrimitiveLoadArgumentUInt8 ].
 			[102]	-> [ ^ self lowcodePrimitiveLoadFloat32FromMemory ].
 			[103]	-> [ ^ self lowcodePrimitiveLoadFloat64FromMemory ].
 			[104]	-> [ ^ self lowcodePrimitiveLoadInt16FromMemory ].
@@ -15590,6 +14615,32 @@ StackInterpreter >> lowcodeUnaryInlinePrimitive2: prim [
 			[117]	-> [ ^ self lowcodePrimitiveLoadLocalUInt32 ].
 			[118]	-> [ ^ self lowcodePrimitiveLoadLocalUInt64 ].
 			[119]	-> [ ^ self lowcodePrimitiveLoadLocalUInt8 ].
+			[120]	-> [ ^ self lowcodePrimitiveLoadObjectAt ].
+			[121]	-> [ ^ self lowcodePrimitiveLoadObjectField ].
+			[122]	-> [ ^ self lowcodePrimitiveLoadPointerFromMemory ].
+			[123]	-> [ ^ self lowcodePrimitiveLoadUInt16FromMemory ].
+			[124]	-> [ ^ self lowcodePrimitiveLoadUInt32FromMemory ].
+			[125]	-> [ ^ self lowcodePrimitiveLoadUInt64FromMemory ].
+			[126]	-> [ ^ self lowcodePrimitiveLoadUInt8FromMemory ].
+			[127]	-> [ ^ self lowcodePrimitiveLocalFrameSize ].
+			[129]	-> [ ^ self lowcodePrimitiveLockVM ].
+			[130]	-> [ ^ self lowcodePrimitiveMalloc32 ].
+			[131]	-> [ ^ self lowcodePrimitiveMalloc64 ].
+			[132]	-> [ ^ self lowcodePrimitiveMemcpy32 ].
+			[133]	-> [ ^ self lowcodePrimitiveMemcpy64 ].
+			[134]	-> [ ^ self lowcodePrimitiveMemcpyFixed ].
+			[140]	-> [ ^ self lowcodePrimitiveMul32 ].
+			[141]	-> [ ^ self lowcodePrimitiveMul64 ].
+			[142]	-> [ ^ self lowcodePrimitiveNeg32 ].
+			[143]	-> [ ^ self lowcodePrimitiveNeg64 ].
+			[144]	-> [ ^ self lowcodePrimitiveNot32 ].
+			[145]	-> [ ^ self lowcodePrimitiveNot64 ].
+			[146]	-> [ ^ self lowcodePrimitiveOr32 ].
+			[147]	-> [ ^ self lowcodePrimitiveOr64 ].
+			[162]	-> [ ^ self lowcodePrimitivePlaftormCode ].
+			[163]	-> [ ^ self lowcodePrimitivePointerAddConstantOffset ].
+			[164]	-> [ ^ self lowcodePrimitivePointerAddOffset32 ].
+			[165]	-> [ ^ self lowcodePrimitivePointerAddOffset64 ].
 		}
 		otherwise: [ ^ self lowcodeUnaryInlinePrimitive3: prim ].
 	
@@ -15602,52 +14653,6 @@ StackInterpreter >> lowcodeUnaryInlinePrimitive3: prim [
 	<option: #LowcodeVM>	"Lowcode instruction interpreter dispatch"
 	prim
 		caseOf: {
-			[120]	-> [ ^ self lowcodePrimitiveLoadObjectAt ].
-			[121]	-> [ ^ self lowcodePrimitiveLoadObjectField ].
-			[122]	-> [ ^ self lowcodePrimitiveLoadPointerFromMemory ].
-			[123]	-> [ ^ self lowcodePrimitiveLoadUInt16FromMemory ].
-			[124]	-> [ ^ self lowcodePrimitiveLoadUInt32FromMemory ].
-			[125]	-> [ ^ self lowcodePrimitiveLoadUInt64FromMemory ].
-			[126]	-> [ ^ self lowcodePrimitiveLoadUInt8FromMemory ].
-			[127]	-> [ ^ self lowcodePrimitiveLocalFrameSize ].
-			[128]	-> [ ^ self lowcodePrimitiveLockRegisters ].
-			[129]	-> [ ^ self lowcodePrimitiveLockVM ].
-			[130]	-> [ ^ self lowcodePrimitiveMalloc32 ].
-			[131]	-> [ ^ self lowcodePrimitiveMalloc64 ].
-			[132]	-> [ ^ self lowcodePrimitiveMemcpy32 ].
-			[133]	-> [ ^ self lowcodePrimitiveMemcpy64 ].
-			[134]	-> [ ^ self lowcodePrimitiveMemcpyFixed ].
-			[135]	-> [ ^ self lowcodePrimitiveMoveFloat32ToPhysical ].
-			[136]	-> [ ^ self lowcodePrimitiveMoveFloat64ToPhysical ].
-			[137]	-> [ ^ self lowcodePrimitiveMoveInt32ToPhysical ].
-			[138]	-> [ ^ self lowcodePrimitiveMoveInt64ToPhysical ].
-			[139]	-> [ ^ self lowcodePrimitiveMovePointerToPhysical ].
-			[140]	-> [ ^ self lowcodePrimitiveMul32 ].
-			[141]	-> [ ^ self lowcodePrimitiveMul64 ].
-			[142]	-> [ ^ self lowcodePrimitiveNeg32 ].
-			[143]	-> [ ^ self lowcodePrimitiveNeg64 ].
-			[144]	-> [ ^ self lowcodePrimitiveNot32 ].
-			[145]	-> [ ^ self lowcodePrimitiveNot64 ].
-			[146]	-> [ ^ self lowcodePrimitiveOr32 ].
-			[147]	-> [ ^ self lowcodePrimitiveOr64 ].
-			[148]	-> [ ^ self lowcodePrimitivePerformCallFloat32 ].
-			[149]	-> [ ^ self lowcodePrimitivePerformCallFloat64 ].
-			[150]	-> [ ^ self lowcodePrimitivePerformCallIndirectFloat32 ].
-			[151]	-> [ ^ self lowcodePrimitivePerformCallIndirectFloat64 ].
-			[152]	-> [ ^ self lowcodePrimitivePerformCallIndirectInt32 ].
-			[153]	-> [ ^ self lowcodePrimitivePerformCallIndirectInt64 ].
-			[154]	-> [ ^ self lowcodePrimitivePerformCallIndirectPointer ].
-			[155]	-> [ ^ self lowcodePrimitivePerformCallIndirectStructure ].
-			[156]	-> [ ^ self lowcodePrimitivePerformCallIndirectVoid ].
-			[157]	-> [ ^ self lowcodePrimitivePerformCallInt32 ].
-			[158]	-> [ ^ self lowcodePrimitivePerformCallInt64 ].
-			[159]	-> [ ^ self lowcodePrimitivePerformCallPointer ].
-			[160]	-> [ ^ self lowcodePrimitivePerformCallStructure ].
-			[161]	-> [ ^ self lowcodePrimitivePerformCallVoid ].
-			[162]	-> [ ^ self lowcodePrimitivePlaftormCode ].
-			[163]	-> [ ^ self lowcodePrimitivePointerAddConstantOffset ].
-			[164]	-> [ ^ self lowcodePrimitivePointerAddOffset32 ].
-			[165]	-> [ ^ self lowcodePrimitivePointerAddOffset64 ].
 			[166]	-> [ ^ self lowcodePrimitivePointerEqual ].
 			[167]	-> [ ^ self lowcodePrimitivePointerNotEqual ].
 			[168]	-> [ ^ self lowcodePrimitivePointerToInt32 ].
@@ -15662,26 +14667,9 @@ StackInterpreter >> lowcodeUnaryInlinePrimitive3: prim [
 			[177]	-> [ ^ self lowcodePrimitivePushConstantUInt64 ].
 			[178]	-> [ ^ self lowcodePrimitivePushNullPointer ].
 			[179]	-> [ ^ self lowcodePrimitivePushOne32 ].
-		}
-		otherwise: [ ^ self lowcodeUnaryInlinePrimitive4: prim ].
-	
-
-
-]
-
-{ #category : #'inline primitive dispatch generated code' }
-StackInterpreter >> lowcodeUnaryInlinePrimitive4: prim [
-	<option: #LowcodeVM>	"Lowcode instruction interpreter dispatch"
-	prim
-		caseOf: {
 			[180]	-> [ ^ self lowcodePrimitivePushOne64 ].
 			[181]	-> [ ^ self lowcodePrimitivePushOneFloat32 ].
 			[182]	-> [ ^ self lowcodePrimitivePushOneFloat64 ].
-			[183]	-> [ ^ self lowcodePrimitivePushPhysicalFloat32 ].
-			[184]	-> [ ^ self lowcodePrimitivePushPhysicalFloat64 ].
-			[185]	-> [ ^ self lowcodePrimitivePushPhysicalInt32 ].
-			[186]	-> [ ^ self lowcodePrimitivePushPhysicalInt64 ].
-			[187]	-> [ ^ self lowcodePrimitivePushPhysicalPointer ].
 			[188]	-> [ ^ self lowcodePrimitivePushSessionIdentifier ].
 			[189]	-> [ ^ self lowcodePrimitivePushZero32 ].
 			[190]	-> [ ^ self lowcodePrimitivePushZero64 ].
@@ -15725,6 +14713,18 @@ StackInterpreter >> lowcodeUnaryInlinePrimitive4: prim [
 			[228]	-> [ ^ self lowcodePrimitiveUint32LessEqual ].
 			[229]	-> [ ^ self lowcodePrimitiveUint32ToFloat32 ].
 			[230]	-> [ ^ self lowcodePrimitiveUint32ToFloat64 ].
+		}
+		otherwise: [ ^ self lowcodeUnaryInlinePrimitive4: prim ].
+	
+
+
+]
+
+{ #category : #'inline primitive dispatch generated code' }
+StackInterpreter >> lowcodeUnaryInlinePrimitive4: prim [
+	<option: #LowcodeVM>	"Lowcode instruction interpreter dispatch"
+	prim
+		caseOf: {
 			[231]	-> [ ^ self lowcodePrimitiveUint64Great ].
 			[232]	-> [ ^ self lowcodePrimitiveUint64GreatEqual ].
 			[233]	-> [ ^ self lowcodePrimitiveUint64Less ].
@@ -15733,19 +14733,6 @@ StackInterpreter >> lowcodeUnaryInlinePrimitive4: prim [
 			[236]	-> [ ^ self lowcodePrimitiveUint64ToFloat64 ].
 			[237]	-> [ ^ self lowcodePrimitiveUmul32 ].
 			[238]	-> [ ^ self lowcodePrimitiveUmul64 ].
-			[239]	-> [ ^ self lowcodePrimitiveUnlockRegisters ].
-		}
-		otherwise: [ ^ self lowcodeUnaryInlinePrimitive5: prim ].
-	
-
-
-]
-
-{ #category : #'inline primitive dispatch generated code' }
-StackInterpreter >> lowcodeUnaryInlinePrimitive5: prim [
-	<option: #LowcodeVM>	"Lowcode instruction interpreter dispatch"
-	prim
-		caseOf: {
 			[240]	-> [ ^ self lowcodePrimitiveUnlockVM ].
 			[241]	-> [ ^ self lowcodePrimitiveUrem32 ].
 			[242]	-> [ ^ self lowcodePrimitiveUrem64 ].
@@ -15773,22 +14760,10 @@ StackInterpreter >> lowcodeUnaryInlinePrimitive: prim [
 		caseOf: {
 			[0]	-> [ ^ self lowcodePrimitiveAdd32 ].
 			[1]	-> [ ^ self lowcodePrimitiveAdd64 ].
-			[2]	-> [ ^ self lowcodePrimitiveAlloca32 ].
-			[3]	-> [ ^ self lowcodePrimitiveAlloca64 ].
 			[4]	-> [ ^ self lowcodePrimitiveAnd32 ].
 			[5]	-> [ ^ self lowcodePrimitiveAnd64 ].
 			[6]	-> [ ^ self lowcodePrimitiveArithmeticRightShift32 ].
 			[7]	-> [ ^ self lowcodePrimitiveArithmeticRightShift64 ].
-			[8]	-> [ ^ self lowcodePrimitiveBeginCall ].
-			[9]	-> [ ^ self lowcodePrimitiveCallArgumentFloat32 ].
-			[10]	-> [ ^ self lowcodePrimitiveCallArgumentFloat64 ].
-			[11]	-> [ ^ self lowcodePrimitiveCallArgumentInt32 ].
-			[12]	-> [ ^ self lowcodePrimitiveCallArgumentInt64 ].
-			[13]	-> [ ^ self lowcodePrimitiveCallArgumentPointer ].
-			[14]	-> [ ^ self lowcodePrimitiveCallArgumentSpace ].
-			[15]	-> [ ^ self lowcodePrimitiveCallArgumentStructure ].
-			[16]	-> [ ^ self lowcodePrimitiveCallInstruction ].
-			[17]	-> [ ^ self lowcodePrimitiveCallPhysical ].
 			[18]	-> [ ^ self lowcodePrimitiveCheckSessionIdentifier ].
 			[19]	-> [ ^ self lowcodePrimitiveCompareAndSwap32 ].
 			[20]	-> [ ^ self lowcodePrimitiveDiv32 ].
@@ -15800,8 +14775,6 @@ StackInterpreter >> lowcodeUnaryInlinePrimitive: prim [
 			[26]	-> [ ^ self lowcodePrimitiveDuplicatePointer ].
 			[27]	-> [ ^ self lowcodePrimitiveEffectiveAddress32 ].
 			[28]	-> [ ^ self lowcodePrimitiveEffectiveAddress64 ].
-			[29]	-> [ ^ self lowcodePrimitiveEndCall ].
-			[30]	-> [ ^ self lowcodePrimitiveEndCallNoCleanup ].
 			[31]	-> [ ^ self lowcodePrimitiveFloat32Add ].
 			[32]	-> [ ^ self lowcodePrimitiveFloat32Div ].
 			[33]	-> [ ^ self lowcodePrimitiveFloat32Equal ].
@@ -15831,6 +14804,20 @@ StackInterpreter >> lowcodeUnaryInlinePrimitive: prim [
 			[57]	-> [ ^ self lowcodePrimitiveFloat64NotEqual ].
 			[58]	-> [ ^ self lowcodePrimitiveFloat64Sqrt ].
 			[59]	-> [ ^ self lowcodePrimitiveFloat64Sub ].
+			[60]	-> [ ^ self lowcodePrimitiveFloat64ToFloat32 ].
+			[61]	-> [ ^ self lowcodePrimitiveFloat64ToInt32 ].
+			[62]	-> [ ^ self lowcodePrimitiveFloat64ToInt64 ].
+			[63]	-> [ ^ self lowcodePrimitiveFloat64ToUInt32 ].
+			[64]	-> [ ^ self lowcodePrimitiveFloat64ToUInt64 ].
+			[65]	-> [ ^ self lowcodePrimitiveFree ].
+			[66]	-> [ ^ self lowcodePrimitiveInstantiateIndexable32Oop ].
+			[67]	-> [ ^ self lowcodePrimitiveInstantiateIndexableOop ].
+			[68]	-> [ ^ self lowcodePrimitiveInstantiateOop ].
+			[69]	-> [ ^ self lowcodePrimitiveInt32Equal ].
+			[70]	-> [ ^ self lowcodePrimitiveInt32Great ].
+			[71]	-> [ ^ self lowcodePrimitiveInt32GreatEqual ].
+			[72]	-> [ ^ self lowcodePrimitiveInt32Less ].
+			[73]	-> [ ^ self lowcodePrimitiveInt32LessEqual ].
 		}
 		otherwise: [ ^ self lowcodeUnaryInlinePrimitive2: prim ].
 	
@@ -17045,57 +16032,7 @@ StackInterpreter >> nativeFramePointerIn: theFP [
 	<option: #LowcodeVM>
 	<returnTypeC: #'char*'>
 	<var: #theFP type: #'char *'>
-	^ stackPages pointerAtPointer: theFP + FoxReceiver - (BytesPerWord*3)
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> nativeFramePointerIn: theFP put: valueOopPointer [
-	"See StackInterpreter class>>initializeFrameIndices"
-	<inline: false>
-	<option: #LowcodeVM>
-	<returnTypeC: #'char*'>
-	<var: #theFP type: #'char *'>
-	<var: #valueOopPointer type: #'char*'>
-	^ stackPages pointerAtPointer: theFP + FoxReceiver - (BytesPerWord*3) put: valueOopPointer
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> nativeFrameSignalObjectIn: theFP [
-	"See StackInterpreter class>>initializeFrameIndices"
-	<inline: false>
-	<option: #LowcodeVM>
-	<var: #theFP type: #'char *'>
-	^ stackPages longAt: theFP + FoxReceiver - (BytesPerWord*3)
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> nativeFrameSignalObjectIn: theFP put: oop [
-	"See StackInterpreter class>>initializeFrameIndices"
-	<inline: false>
-	<option: #LowcodeVM>
-	<var: #theFP type: #'char *'>
-	^ stackPages longAt: theFP + FoxReceiver - BytesPerWord put: oop
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> nativePreviousStackPointerIn: theFP [
-	"See StackInterpreter class>>initializeFrameIndices"
-	<inline: false>
-	<option: #LowcodeVM>
-	<returnTypeC: #'char*'>
-	<var: #theFP type: #'char *'>
-	^ stackPages pointerAtPointer: theFP + FoxReceiver - (BytesPerWord*2)
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> nativePreviousStackPointerIn: theFP put: valueOopPointer [
-	"See StackInterpreter class>>initializeFrameIndices"
-	<inline: false>
-	<option: #LowcodeVM>
-	<returnTypeC: #'char*'>
-	<var: #theFP type: #'char *'>
-	<var: #valueOopPointer type: #'char*'>
-	^ stackPages pointerAtPointer: theFP + FoxReceiver - (BytesPerWord*2) put: valueOopPointer
+	^ theFP + FoxNativeContextFrameBase
 ]
 
 { #category : #'internal interpreter access' }
@@ -17105,7 +16042,7 @@ StackInterpreter >> nativeStackPointerIn: theFP [
 	<option: #LowcodeVM>
 	<returnTypeC: #'char*'>
 	<var: #theFP type: #'char *'>
-	^ stackPages pointerAtPointer: theFP + FoxReceiver - (BytesPerWord*4)
+	^ (stackPages longAtPointer: theFP + FoxNativeContextStackPointer) + (theFP + FoxNativeContextFrameBase)
 ]
 
 { #category : #'internal interpreter access' }
@@ -17116,13 +16053,24 @@ StackInterpreter >> nativeStackPointerIn: theFP put: valueOopPointer [
 	<returnTypeC: #'char*'>
 	<var: #theFP type: #'char *'>
 	<var: #valueOopPointer type: #'char *'>
-	^ stackPages pointerAtPointer: theFP + FoxReceiver - (BytesPerWord*4) put: valueOopPointer
+	^ stackPages longAtPointer: theFP + FoxNativeContextStackPointer put: valueOopPointer - (theFP + FoxNativeContextFrameBase)
 ]
 
-{ #category : #'stack pages' }
-StackInterpreter >> nativeStackSize [
-	"4 MB native stack size"
-	^ 4 *1024 * 1024
+{ #category : #'internal interpreter access' }
+StackInterpreter >> nativeStackSizeIn: theFP [
+	"See StackInterpreter class>>initializeFrameIndices"
+	<inline: false>
+	<var: #theFP type: #'char *'>
+	^ stackPages longAtPointer: theFP + FoxNativeContextSize
+]
+
+{ #category : #'internal interpreter access' }
+StackInterpreter >> nativeStackSizeIn: theFP put: nativeStackSize [
+	"See StackInterpreter class>>initializeFrameIndices"
+	<inline: false>
+	<var: #theFP type: #'char *'>
+	<var: #nativeStackSize type: #'sqInt'>
+	^ stackPages longAtPointer: theFP + FoxNativeContextSize put: nativeStackSize
 ]
 
 { #category : #'compiled methods' }
@@ -19744,19 +18692,6 @@ StackInterpreter >> reestablishContextPriorToCallback: callbackContext [
 	^true
 ]
 
-{ #category : #'inline primitive ffi abi' }
-StackInterpreter >> reloadLowcodeStateAfterCallout [
-	<option: #LowcodeVM>
-	<var: #initialShadowCallStackPointer type: #'char*' >
-	
-	| calloutStateSize initialShadowCallStackPointer |
-	calloutStateSize := self sizeof: #'sqLowcodeCalloutState'.
-	initialShadowCallStackPointer := (self shadowCallStackPointerIn: localFP) - 1.
-	
-	initialShadowCallStackPointer := self cCoerce: ((self cCoerce: initialShadowCallStackPointer - calloutStateSize to: 'size_t') bitAnd: -16) to: 'char*'.
-	lowcodeCalloutState := self cCoerce: initialShadowCallStackPointer to: #'sqLowcodeCalloutState*'.
-]
-
 { #category : #'object memory support' }
 StackInterpreter >> remapCallbackState [
 	"Callback support - trace suspended callback list"
@@ -20658,23 +19593,6 @@ StackInterpreter >> setTraceFlagOnContextsFramesPageIfNeeded: aContext [
 		 self assert: (thePage trace between: StackPageUnreached and: StackPageTraced).
 		 thePage trace = StackPageUnreached ifTrue:
 			[thePage trace: StackPageReachedButUntraced]]
-]
-
-{ #category : #initialization }
-StackInterpreter >> setupNativeStack [
-	<option: #LowcodeVM>
-	<var: #theNativeStackMemory type: #'char*'>
-	<var: #theShadowCallStackMemory type: #'char*'>
-	<inline: false>
-	"This initializes an alternate stack that is used by the Lowcode instructions"
-	| nativeStackMemorySize theNativeStackMemory shadowCallStackMemorySize theShadowCallStackMemory|
-	nativeStackMemorySize := self nativeStackSize.
-	theNativeStackMemory := self malloc: nativeStackMemorySize.
-	nativeStackPointer := theNativeStackMemory + nativeStackMemorySize.
-	
-	shadowCallStackMemorySize := self shadowCallStackSize.
-	theShadowCallStackMemory := self malloc: shadowCallStackMemorySize.
-	shadowCallStackPointer := theShadowCallStackMemory + shadowCallStackMemorySize
 ]
 
 { #category : #'internal interpreter access' }
