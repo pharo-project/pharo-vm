@@ -4628,6 +4628,30 @@ CoInterpreter >> isCogMethodReference: methodHeader [
 	^objectMemory isNonIntegerObject: methodHeader
 ]
 
+{ #category : #'internal interpreter access' }
+CoInterpreter >> isFrameWithNativeFrame: theFP [
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	| nativeFrameMark |
+	nativeFrameMark := (self isMachineCodeFrame: theFP)
+		ifTrue:
+			[stackPages pointerAtPointer: theFP + FoxMFNativeContextMark]
+		ifFalse:
+			[stackPages pointerAtPointer: theFP + FoxIFNativeContextMark].
+	^ nativeFrameMark ~~ (objectMemory nilObject) and: [nativeFrameMark == (objectMemory splObj: LowcodeContextMark)]
+
+]
+
+{ #category : #'internal interpreter access' }
+CoInterpreter >> isFrameWithNativeFrame: theFP sp: theSP [
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	<var: #theSP type: #'char *'>
+	^ ((self isMachineCodeFrame: theFP)
+		ifTrue: [theSP <= (theFP + FoxMFNativeContextFrameBase)]
+		ifFalse: [theSP <= (theFP + FoxIFNativeContextFrameBase)]) and: [self isFrameWithNativeFrame: theFP]
+]
+
 { #category : #'frame access' }
 CoInterpreter >> isMachineCodeFrame: theFP [ 
 	<var: #theFP type: #'char *'>
@@ -5141,7 +5165,7 @@ CoInterpreter >> mapStackPages [
 	<var: #frameRcvrOffset type: #'char *'>
 	<var: #callerFP type: #'char *'>
 	<var: #theIPPtr type: #'char *'>
-	| numLivePages |
+	| numLivePages hasNativeStack nativeStackPointer nativeStackEnd |
 	numLivePages := 0.
 	0 to: numStackPages - 1 do:
 		[:i| | thePage theSP theFP frameRcvrOffset callerFP theIPPtr theIP oop |
@@ -5164,10 +5188,18 @@ CoInterpreter >> mapStackPages [
 			 self assert: (thePage addressIsInPage: theSP).
 			 self assert: (theIPPtr = 0 or: [thePage addressIsInPage: theIPPtr]).
 			 frameRcvrOffset := self frameReceiverLocation: theFP.
-	 		  [theSP <= frameRcvrOffset] whileTrue:
-				[oop := stackPages longAt: theSP.
+			 hasNativeStack := self isFrameWithNativeFrame: theFP sp: theSP.
+			 nativeStackPointer := hasNativeStack
+				ifTrue: [self nativeStackPointerIn: theFP ]
+				ifFalse: [ frameRcvrOffset + BytesPerWord ].
+			 nativeStackEnd := self nativeStackEnd: theFP.
+				
+	 		  [theSP <= frameRcvrOffset] whileTrue: [
+				(nativeStackPointer <= theSP and: [ theSP < nativeStackEnd ]) ifFalse: [ 
+				oop := stackPages longAt: theSP.
 				 (objectMemory shouldRemapOop: oop) ifTrue:
 					[stackPages longAt: theSP put: (objectMemory remapObj: oop)].
+				].
 				 theSP := theSP + objectMemory wordSize].
 			 (self frameHasContext: theFP) ifTrue:
 				[(objectMemory shouldRemapObj: (self frameContext: theFP)) ifTrue:
@@ -5916,6 +5948,15 @@ CoInterpreter >> nativeFramePointerIn: theFP [
 			[theFP + FoxMFNativeContextFrameBase ]
 		ifFalse:
 			[theFP + FoxIFNativeContextFrameBase ]
+]
+
+{ #category : #'frame access' }
+CoInterpreter >> nativeStackEnd: theFP [
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^(self isMachineCodeFrame: theFP)
+		ifTrue: [theFP + FoxMFNativeContextMark]
+		ifFalse: [theFP + FoxIFNativeContextMark]
 ]
 
 { #category : #'internal interpreter access' }
@@ -7235,6 +7276,30 @@ CoInterpreter >> setCogVMFlags: flags [
 CoInterpreter >> setDesiredCogCodeSize: dccs [
 	<inline: true>
 	desiredCogCodeSize := dccs
+]
+
+{ #category : #'internal interpreter access' }
+CoInterpreter >> setFrameHasNativeFrame: theFP [
+	<inline: true>
+	<option: #LowcodeVM>
+	<var: #theFP type: #'char *'>
+	^(self isMachineCodeFrame: theFP)
+		ifTrue:
+			[stackPages pointerAtPointer: theFP + FoxMFNativeContextMark put: (objectMemory splObj: LowcodeContextMark)]
+		ifFalse:
+			[stackPages pointerAtPointer: theFP + FoxIFNativeContextMark put: (objectMemory splObj: LowcodeContextMark)]
+]
+
+{ #category : #'internal interpreter access' }
+CoInterpreter >> setFrameHasNotNativeFrame: theFP [
+	<inline: true>
+	<option: #LowcodeVM>
+	<var: #theFP type: #'char *'>
+	^(self isMachineCodeFrame: theFP)
+		ifTrue:
+			[stackPages pointerAtPointer: theFP + FoxMFNativeContextMark put: objectMemory nilObject]
+		ifFalse:
+			[stackPages pointerAtPointer: theFP + FoxIFNativeContextMark put: objectMemory nilObject]
 ]
 
 { #category : #'object memory support' }

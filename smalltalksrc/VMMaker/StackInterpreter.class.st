@@ -9510,6 +9510,23 @@ StackInterpreter >> isFrame: aFrame onPage: aPage [
 	^false
 ]
 
+{ #category : #'frame access' }
+StackInterpreter >> isFrameWithNativeFrame: theFP [
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	| nativeFrameMark |
+	nativeFrameMark := stackPages pointerAtPointer: theFP + FoxNativeContextMark.
+	^ nativeFrameMark ~~ (objectMemory nilObject) and: [nativeFrameMark == (objectMemory splObj: LowcodeContextMark)]
+]
+
+{ #category : #'frame access' }
+StackInterpreter >> isFrameWithNativeFrame: theFP sp: theSP [
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	<var: #theSP type: #'char *'>
+	^ theSP <= (theFP + FoxNativeContextFrameBase) and: [self isFrameWithNativeFrame: theFP]
+]
+
 { #category : #'internal interpreter access' }
 StackInterpreter >> isKindOfInteger: oop [
 	"Answer true if the oop is kind of Integer (Small or Large)."
@@ -15030,7 +15047,7 @@ StackInterpreter >> mapStackPages [
 	<var: #theFP type: #'char *'>
 	<var: #callerFP type: #'char *'>
 	<var: #theIPPtr type: #'char *'>
-	| numLivePages |
+	| numLivePages hasNativeStack nativeStackPointer nativeStackEnd |
 	numLivePages := 0.
 	0 to: numStackPages - 1 do:
 		[:i| | thePage theSP theFP callerFP theIPPtr theIP oop |
@@ -15049,10 +15066,18 @@ StackInterpreter >> mapStackPages [
 			[self assert: (thePage addressIsInPage: theFP).
 			 self assert: (thePage addressIsInPage: theSP).
 			 self assert: (theIPPtr = 0 or: [thePage addressIsInPage: theIPPtr]).
-			 [theSP <= (theFP + FoxReceiver)] whileTrue:
-				[oop := stackPages longAt: theSP.
-				 (objectMemory shouldRemapOop: oop) ifTrue:
-					[stackPages longAt: theSP put: (objectMemory remapObj: oop)].
+			 hasNativeStack := self isFrameWithNativeFrame: theFP sp: theSP.
+			 nativeStackPointer := hasNativeStack
+				ifTrue: [self nativeStackPointerIn: theFP ]
+				ifFalse: [ theFP + FoxReceiver + BytesPerWord ].
+			 nativeStackEnd := self nativeStackEnd: theFP.
+			 [theSP <= (theFP + FoxReceiver)] whileTrue: [
+				(nativeStackPointer <= theSP and: [ theSP < nativeStackEnd ]) ifFalse: [ 
+					[oop := stackPages longAt: theSP.
+					 (objectMemory shouldRemapOop: oop) ifTrue:
+						[stackPages longAt: theSP put: (objectMemory remapObj: oop)].
+					].
+				].
 				 theSP := theSP + objectMemory wordSize].
 			 (self frameHasContext: theFP) ifTrue:
 				[(objectMemory shouldRemapObj: (self frameContext: theFP)) ifTrue:
@@ -16033,6 +16058,13 @@ StackInterpreter >> nativeFramePointerIn: theFP [
 	<returnTypeC: #'char*'>
 	<var: #theFP type: #'char *'>
 	^ theFP + FoxNativeContextFrameBase
+]
+
+{ #category : #'frame access' }
+StackInterpreter >> nativeStackEnd: theFP [
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^theFP + FoxNativeContextMark
 ]
 
 { #category : #'internal interpreter access' }
@@ -19410,7 +19442,7 @@ StackInterpreter >> setFrameHasContext: theFP [
 StackInterpreter >> setFrameHasNativeFrame: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	self temporary: (self frameNumArgs: theFP) in: theFP put: (objectMemory splObj: LowcodeContextMark)
+	^ stackPages pointerAtPointer: theFP + FoxNativeContextMark put: (objectMemory splObj: LowcodeContextMark)
 ]
 
 { #category : #'frame access' }
@@ -19418,7 +19450,7 @@ StackInterpreter >> setFrameHasNotNativeFrame: theFP [
 	<inline: true>
 	<option: #LowcodeVM>
 	<var: #theFP type: #'char *'>
-	self temporary: (self frameNumArgs: theFP) in: theFP put: (objectMemory nilObject)
+	^ stackPages pointerAtPointer: theFP + FoxNativeContextMark put: objectMemory nilObject
 ]
 
 { #category : #'plugin primitive support' }
