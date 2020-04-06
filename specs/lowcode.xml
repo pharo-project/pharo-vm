@@ -392,6 +392,13 @@
         <stack-results>
             <int64 name="result"/>
         </stack-results>
+        <semantic language="Smalltalk/Cog/32">
+            self abort.
+        </semantic>
+        <semantic language="Smalltalk/Cog/64">
+            self ArithmeticShiftRightR: shiftAmount R: value.
+			self ssPushNativeRegister: value.
+        </semantic>
         <semantic language="Smalltalk/StackInterpreter">
             result := value &gt;&gt; shiftAmount.
         </semantic>
@@ -1939,6 +1946,13 @@
         <stack-results>
             <int64 name="result"/>
         </stack-results>
+        <semantic language="Smalltalk/Cog/32">
+            self abort.
+        </semantic>
+        <semantic language="Smalltalk/Cog/64">
+            self LogicalShiftLeftR: shiftAmount R: value.
+			self ssPushNativeRegister: value.
+        </semantic>
         <semantic language="Smalltalk/StackInterpreter">
             result := value &lt;&lt; shiftAmount.
         </semantic>
@@ -2477,7 +2491,7 @@
             self nativeStackSizeIn: localFP put: alignedLocalSize + stackDepthSize.
 
             "Set the stack pointer."
-            self nativeStackPointerIn: localFP put: (self nativeStackBasePointerIn: localFP) - alignedLocalSize.
+            self nativeStackPointerIn: localFP put: (self nativeFramePointerIn: localFP) - alignedLocalSize.
         </semantic>
     </instruction>
     <instruction opcode="1129" mnemonic="lockVM" kind="operation">
@@ -3289,6 +3303,13 @@
             <int64 name="value"/>
             <int64 name="shiftAmount"/>
         </stack-arguments>
+        <semantic language="Smalltalk/Cog/32">
+            self abort.
+        </semantic>
+        <semantic language="Smalltalk/Cog/64">
+            self LogicalShiftRightR: shiftAmount R: value.
+			self ssPushNativeRegister: value.
+        </semantic>
         <stack-results>
             <int64 name="result"/>
         </stack-results>
