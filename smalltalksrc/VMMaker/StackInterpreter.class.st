@@ -10908,7 +10908,7 @@ StackInterpreter >> lowcodePrimitiveArithmeticRightShift32 [
 	shiftAmount := self internalPopStackInt32.
 	value := self internalPopStackInt32.
 
-	result := value >> shiftAmount.
+	result := value >>> shiftAmount.
 
 	self internalPushInt32: result.
 
@@ -10925,7 +10925,7 @@ StackInterpreter >> lowcodePrimitiveArithmeticRightShift64 [
 	shiftAmount := self internalPopStackInt64.
 	value := self internalPopStackInt64.
 
-	result := value >> shiftAmount.
+	result := value >>> shiftAmount.
 
 	self internalPushInt64: result.
 
