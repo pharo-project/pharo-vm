@@ -378,7 +378,7 @@
 			self ssPushNativeRegister: value.
         </semantic>
         <semantic language="Smalltalk/StackInterpreter">
-            result := value &gt;&gt; shiftAmount.
+            result := value &gt;&gt;&gt; shiftAmount.
         </semantic>
     </instruction>
     <instruction opcode="1007" mnemonic="arithmeticRightShift64" kind="operation">
@@ -400,7 +400,7 @@
 			self ssPushNativeRegister: value.
         </semantic>
         <semantic language="Smalltalk/StackInterpreter">
-            result := value &gt;&gt; shiftAmount.
+            result := value &gt;&gt;&gt; shiftAmount.
         </semantic>
     </instruction>
     <instruction opcode="1018" mnemonic="checkSessionIdentifier" kind="operation">
