@@ -33,6 +33,7 @@ BaselineOfVMMaker >> baseline: spec [
 				package: 'Balloon-Engine-Pools';
 				package: 'BytecodeSets';
 				package: 'VMMaker' with: [ spec requires: #( 'VMMakerCompatibilityForPharo6' 'Printf') ];
+				package: 'VMMakerPharoDebug' with: [ spec requires: #( 'VMMaker' 'LLVMDisassembler') ];
 				package: 'Cog';
 				package: 'CogTools';
 				package: 'ImageFormat'.
@@ -61,5 +62,8 @@ BaselineOfVMMaker >> baseline: spec [
 			spec
 				package: 'AndreasProfiler' with: [
 					spec repository: 'http://ss3.gemstone.com/ss/AndreasSystemProfiler'].
+			spec baseline: #'LLVMDisassembler' with: [
+				spec
+					repository: 'github://guillep/LLVMBindings' ].
 			spec group: 'default' with: #('VMMaker' 'VMMakerTests') ]
 ]

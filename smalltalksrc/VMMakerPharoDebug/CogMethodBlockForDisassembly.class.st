@@ -7,7 +7,7 @@ Class {
 		'startpc',
 		'machineCode'
 	],
-	#category : #VMMakerPharoDebug
+	#category : #'VMMakerPharoDebug-Disassembly'
 }
 
 { #category : #accessing }

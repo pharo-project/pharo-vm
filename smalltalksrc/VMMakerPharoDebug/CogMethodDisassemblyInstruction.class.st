@@ -8,7 +8,7 @@ Class {
 		'size',
 		'bytes'
 	],
-	#category : #VMMakerPharoDebug
+	#category : #'VMMakerPharoDebug-Disassembly'
 }
 
 { #category : #accessing }
