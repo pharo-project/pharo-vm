@@ -211,6 +211,14 @@ StackWithLiveTypingInterpreter >> printHello [
 
 ]
 
+{ #category : #printing }
+StackWithLiveTypingInterpreter >> printReceiver: receiver [
+	<inline: false>
+	
+	self printOop: receiver.
+
+]
+
 { #category : #'return bytecodes' }
 StackWithLiveTypingInterpreter >> returnFalse [
 	localReturnValue := objectMemory falseObject.

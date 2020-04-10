@@ -270,7 +270,8 @@ Class {
 		'disassemblingMethod',
 		'cogConstituentIndex',
 		'directedSendUsesBinding',
-		'cePrintHelloTrampoline'
+		'cePrintHelloTrampoline',
+		'cePrintReceiverTrampoline'
 	],
 	#classVars : [
 		'AltBlockCreationBytecodeSize',
@@ -1208,7 +1209,7 @@ Cogit class >> notesAndQueries [
 
 { #category : #'live-typing accessing' }
 Cogit class >> numLiveTypingTrampolines [
-	^1.
+	^2.
 ]
 
 { #category : #'live-typing accessing' }
@@ -8237,6 +8238,18 @@ Cogit >> generateInstructionsAt: eventualAbsoluteAddress [
 	^absoluteAddress - eventualAbsoluteAddress
 ]
 
+{ #category : #'live-typing initialization' }
+Cogit >> generateLiveTypingTrampolines [
+	cePrintHelloTrampoline := self genTrampolineFor: #cePrintHello
+												called: 'cePrintHelloTrampoline'
+												regsToSave: CallerSavedRegisterMask.
+	
+	cePrintReceiverTrampoline := self genTrampolineFor: #cePrintReceiver:
+												called: 'cePrintReceiverTrampoline'
+												arg: ReceiverResultReg
+												regsToSave: CallerSavedRegisterMask.
+]
+
 { #category : #'method map' }
 Cogit >> generateMapAt: addressOrNull start: startAddress [
 	"Generate the method map at addressrNull (or compute it if addressOrNull is null).
@@ -8375,13 +8388,6 @@ Cogit >> generateOpenPICPrototype [
 			 self halt]"
 ]
 
-{ #category : #'live-typing initialization' }
-Cogit >> generatePrintHelloTrampolines [
-	cePrintHelloTrampoline :=  self genTrampolineFor: #cePrintHello
-												called: 'cePrintHelloTrampoline'
-												regsToSave: CallerSavedRegisterMask
-]
-
 { #category : #initialization }
 Cogit >> generateRunTimeTrampolines [
 	"Generate the run-time entries at the base of the native code zone and update the base."
@@ -8517,7 +8523,6 @@ Cogit >> generateTrampolines [
 	self generateEnilopmarts.
 	self generateTracingTrampolines.
 	self generateLiveTypingTrampolines.
-	self generatePrintHelloTrampolines.
 
 
 	"finish up"
