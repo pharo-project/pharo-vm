@@ -5940,6 +5940,7 @@ CoInterpreter >> mustMapMachineCodePC: theIP context: aOnceMarriedContext [
 { #category : #'internal interpreter access' }
 CoInterpreter >> nativeFramePointerIn: theFP [
 	"See StackInterpreter class>>initializeFrameIndices"
+	<inline: false>
 	<option: #LowcodeVM>
 	<returnTypeC: #'char*'>
 	<var: #theFP type: #'char *'>
@@ -5963,6 +5964,7 @@ CoInterpreter >> nativeStackEnd: theFP [
 CoInterpreter >> nativeStackPointerIn: theFP [
 	"See StackInterpreter class>>initializeFrameIndices"
 	<option: #LowcodeVM>
+	<inline: false>
 	<returnTypeC: #'char*'>
 	<var: #theFP type: #'char *'>
 	^(self isMachineCodeFrame: theFP)
@@ -5976,6 +5978,7 @@ CoInterpreter >> nativeStackPointerIn: theFP [
 CoInterpreter >> nativeStackPointerIn: theFP put: valueOopPointer [
 	"See StackInterpreter class>>initializeFrameIndices"
 	<option: #LowcodeVM>
+	<inline: false>
 	<returnTypeC: #'char*'>
 	<var: #theFP type: #'char *'>
 	<var: #valueOopPointer type: #'char *'>
