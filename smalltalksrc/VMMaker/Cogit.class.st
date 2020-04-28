@@ -1210,7 +1210,7 @@ Cogit class >> numTrampolines [
 	^39 "31 + 4 each for self and super sends"
 		+ (LowcodeVM ifTrue: [1] ifFalse: [0])
 		+ (COGMTVM ifTrue: [ 2 ] ifFalse: [ 0 ])
-
+		+ 1 "Trampoline test"
 	"self withAllSubclasses collect: [:c| {c. (c instVarNames select: [:ea| ea beginsWith: 'ce']) size}]"
 ]
 
@@ -8396,6 +8396,7 @@ Cogit >> generateTrampolines [
 	SistaVM ifTrue: [self generateSistaRuntime].
 	self generateEnilopmarts.
 	self generateTracingTrampolines.
+	self generateLiveTypingTrampolines.
 
 	"finish up"
 	self recordGeneratedRunTime: 'methodZoneBase' address: methodZoneBase.

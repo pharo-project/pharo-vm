@@ -12,7 +12,8 @@ Class {
 		'externalPrimJumpOffsets',
 		'externalSetPrimOffsets',
 		'introspectionDataIndex',
-		'introspectionData'
+		'introspectionData',
+		'ceTestTrampolineWithReceiverArgument'
 	],
 	#pools : [
 		'VMMethodCacheConstants',
@@ -3661,6 +3662,16 @@ SimpleStackBasedCogit >> genUpArrowReturn [
 			[self PopR: LinkReg]].
 	self RetN: methodOrBlockNumArgs + 1 * objectMemory wordSize.
 	^0
+]
+
+{ #category : #initialization }
+SimpleStackBasedCogit >> generateLiveTypingTrampolines [
+	"Generate trampolines for livetyping"
+	ceTestTrampolineWithReceiverArgument :=
+		self genTrampolineFor: #cePrintObject:
+			called: 'toto'
+			arg: ReceiverResultReg
+			regsToSave: CallerSavedRegisterMask.
 ]
 
 { #category : #initialization }

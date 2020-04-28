@@ -8,6 +8,12 @@ Class {
 }
 
 { #category : #'cog jit support' }
+CoInterpreterWithQueueFFI >> cePrintObject: anOop [
+	<api>
+	self printOop: anOop
+]
+
+{ #category : #'cog jit support' }
 CoInterpreterWithQueueFFI >> primitivePropertyFlagsForSpur: primIndex [
 	<inline: true>
 "This is a hack to avoid the primitive call to be converted in a CogMethod.
