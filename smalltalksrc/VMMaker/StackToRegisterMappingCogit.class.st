@@ -11383,6 +11383,13 @@ StackToRegisterMappingCogit >> genPrimitivePerform [
 	^self genLookupForPerformNumArgs: methodOrBlockNumArgs
 ]
 
+{ #category : #'bytecode generator support' }
+StackToRegisterMappingCogit >> genPrintReceiver [
+
+	self ensureReceiverResultRegContainsSelf.
+	self Call: ceTestTrampolineWithReceiverArgument
+]
+
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genPushActiveContextBytecode [
 	self assert: needsFrame.
