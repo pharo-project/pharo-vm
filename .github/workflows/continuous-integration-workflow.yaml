@@ -11,12 +11,40 @@ jobs:
                     - os: ubuntu-18.04
                       appname: Pharo
                       vmExecutable: pharo
+                      buildType: Debug
+                    - os: ubuntu-18.04
+                      appname: Pharo
+                      vmExecutable: pharo
+                      buildType: Assert
+                    - os: ubuntu-18.04
+                      appname: Pharo
+                      vmExecutable: pharo
+                      buildType: RelWithDebInfo
+                    - os: ubuntu-18.04
+                      appname: Pharo
+                      vmExecutable: pharo
+                      buildType: Release
+
                     - os: macos-latest
                       appname: Pharo
                       vmExecutable: Pharo
+                      buildType: Debug
+                    - os: macos-latest
+                      appname: Pharo
+                      vmExecutable: Pharo
+                      buildType: Assert
+                    - os: macos-latest
+                      appname: Pharo
+                      vmExecutable: Pharo
+                      buildType: RelWithDebInfo
+                    - os: macos-latest
+                      appname: Pharo
+                      vmExecutable: Pharo
+                      buildType: Release
         env:
             APPNAME: ${{matrix.variant.appname}}
             VM_EXECUTABLE_NAME: ${{ matrix.variant.vmExecutable }}
+            VM_BUILD_TYPE: ${{ matrix.variant.buildType }}
             CC: clang
             CXX: clang++
         steps:
@@ -30,7 +58,7 @@ jobs:
               run: |
                 mkdir -p build
                 cd build
-                cmake .. -DAPPNAME=$APPNAME -DVM_EXECUTABLE_NAME=$VM_EXECUTABLE_NAME
+                cmake .. -DCMAKE_BUILD_TYPE=$VM_BUILD_TYPE -DAPPNAME=$APPNAME -DVM_EXECUTABLE_NAME=$VM_EXECUTABLE_NAME
 
             - name: make
               run: cd build && make
@@ -67,9 +95,20 @@ jobs:
                 variant:
                     - appname: Pharo
                       vmExecutable: Pharo
+                      buildType: Debug
+                    - appname: Pharo
+                      vmExecutable: Pharo
+                      buildType: Assert
+                    - appname: Pharo
+                      vmExecutable: Pharo
+                      buildType: RelWithDebInfo
+                    - appname: Pharo
+                      vmExecutable: Pharo
+                      buildType: Release
         env:
             APPNAME: ${{matrix.variant.appname}}
             VM_EXECUTABLE_NAME: ${{ matrix.variant.vmExecutable }}
+            VM_BUILD_TYPE: ${{ matrix.variant.buildType }}
         steps:
             - uses: actions/checkout@v1
 
@@ -80,7 +119,7 @@ jobs:
               run: |
                 mkdir -p build
                 cd build
-                cmake .. -DAPPNAME=$APPNAME -DVM_EXECUTABLE_NAME=$VM_EXECUTABLE_NAME
+                cmake .. -DCMAKE_BUILD_TYPE=$VM_BUILD_TYPE -DAPPNAME=$APPNAME -DVM_EXECUTABLE_NAME=$VM_EXECUTABLE_NAME
               shell: pwsh.exe -File .\scripts\runScriptInCygwinBash.ps1 {0}
 
             - name: make

@@ -20,6 +20,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 set(BUILT_FROM "${GIT_DESCRIBE} - Commit: ${GIT_COMMIT_HASH} - Date: ${GIT_COMMIT_DATE}")
+set(VM_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
 message(STATUS ${BUILT_FROM})
 message(STATUS "Build type ${CMAKE_BUILD_TYPE}")
 
