@@ -15,8 +15,13 @@ get_commit_hash(GIT_COMMIT_HASH)
 get_git_describe(GIT_DESCRIBE)
 get_git_date(GIT_COMMIT_DATE)
 
+if (NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build, options are: Debug Assert RelWithDebInfo (Default) Release." FORCE)
+endif ()
+
 set(BUILT_FROM "${GIT_DESCRIBE} - Commit: ${GIT_COMMIT_HASH} - Date: ${GIT_COMMIT_DATE}")
 message(STATUS ${BUILT_FROM})
+message(STATUS "Build type ${CMAKE_BUILD_TYPE}")
 
 if ((CMAKE_HOST_UNIX) AND (${CMAKE_HOST_SYSTEM_NAME} MATCHES "CYGWIN*"))
   message(STATUS "Building on CYGWIN CMAKE: Adapting paths")
@@ -55,7 +60,8 @@ include(CheckTypeSize)
 include(CheckCSourceCompiles)
 include(CheckStructHasMember)
 
-set(COMMON_FLAGS "")
+set(COMMON_FLAGS "-Wall")
+set(OPTIMIZATION_FLAGS "")
 set(BUILD_I386_VERSION NO)
 
 if(WIN)
@@ -81,10 +87,13 @@ if(WIN)
     set(CMAKE_SHARED_MODULE_PREFIX "")
     set(CMAKE_SHARED_MODULE_SUFFIX ".dll")
 
+    if(MSVC)
+        set(OPTIMIZATION_FLAGS "-O2")
+    else()
+        set(COMMON_FLAGS "${COMMON_FLAGS} -fwrapv -fdeclspec -msse2 -ggdb2 -m64 -mno-rtd -mms-bitfields -funroll-loops -D_MT -fno-builtin-printf -fno-builtin-putchar -fno-builtin-fprintf -Wno-unused-variable -fno-optimize-sibling-calls")
+        set(OPTIMIZATION_FLAGS "-O2 -momit-leaf-frame-pointer")
+    endif()
 
-#    if(NOT MSVC)
-        set(COMMON_FLAGS "-fwrapv -fdeclspec -O2 -msse2 -ggdb2 -m64 -mno-rtd -mms-bitfields -momit-leaf-frame-pointer -funroll-loops -D_MT -fno-builtin-printf -fno-builtin-putchar -fno-builtin-fprintf -Wall -Wno-unused-variable -fno-optimize-sibling-calls")
-#    endif()
 
     set(OS_TYPE "Win32")
     set(VM_TARGET_OS "Win64")
@@ -103,11 +112,9 @@ elseif(UNIX)
     set(CMAKE_CURRENT_SOURCE_DIR_TO_OUT ${CMAKE_CURRENT_SOURCE_DIR})
     set(CMAKE_CURRENT_BINARY_DIR_TO_OUT ${CMAKE_CURRENT_BINARY_DIR})
 
-    set(COMMON_FLAGS "-Wall")
-
     add_definitions(-DLSB_FIRST=1)
 
-    set(COMMON_FLAGS "-O2")
+    set(OPTIMIZATION_FLAGS "-O2")
 
     set(OS_TYPE "unix")
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -124,10 +131,22 @@ elseif(UNIX)
     endif()
 endif()
 
-set(OPTIMIZATION_FLAGS "")
+set(CMAKE_CONFIGURATION_TYPES Debug Release RelWithDebInfo Assert)
 
-set(CMAKE_C_FLAGS "-g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
-set(CMAKE_CXX_FLAGS "-g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
+set(CMAKE_C_FLAGS "${COMMON_FLAGS}")
+set(CMAKE_CXX_FLAGS "${COMMON_FLAGS}")
+
+set(CMAKE_C_FLAGS_DEBUG "-g -DDEBUGVM=1")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -DDEBUGVM=1")
+
+set(CMAKE_C_FLAGS_ASSERT "${OPTIMIZATION_FLAGS} -DDEBUGVM=1")
+set(CMAKE_CXX_FLAGS_ASSERT "${OPTIMIZATION_FLAGS} -DDEBUGVM=1")
+
+set(CMAKE_C_FLAGS_RELEASE "${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
+set(CMAKE_CXX_FLAGS_RELEASE "${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
+
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "${OPTIMIZATION_FLAGS} -g -DNDEBUG -DDEBUGVM=0")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${OPTIMIZATION_FLAGS} -g -DNDEBUG -DDEBUGVM=0")
 
 add_definitions(-DIMMUTABILITY=1)
 add_definitions(-DCOGMTVM=0)
