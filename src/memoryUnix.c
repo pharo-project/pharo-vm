@@ -49,8 +49,12 @@ static char *heap	=  0;
 static sqInt   heapSize	=  0;
 static sqInt   heapLimit	=  0;
 
-static sqInt min(int x, int y) { return (x < y) ? x : y; }
-static sqInt max(int x, int y) { return (x > y) ? x : y; }
+#ifndef max
+# define max(a, b)  (((a) > (b)) ? (a) : (b))
+#endif
+#ifndef min
+# define min(a, b)  (((a) < (b)) ? (a) : (b))
+#endif
 
 static sqInt pageSize = 0;
 static usqInt pageMask = 0;
@@ -80,7 +84,7 @@ sqMakeMemoryNotExecutableFromTo(unsigned long startAddr, unsigned long endAddr)
 //	if (mprotect((void *)firstPage,
 //				 endAddr - firstPage + 1,
 //				 PROT_READ | PROT_WRITE) < 0)
-//		perror("mprotect(x,y,PROT_READ | PROT_WRITE)");
+//		logErrorFromErrno("mprotect(x,y,PROT_READ | PROT_WRITE)");
 }
 
 /* answer the address of (minHeapSize <= N <= desiredHeapSize) bytes of memory. */
@@ -165,7 +169,7 @@ void
 sqDeallocateMemorySegmentAtOfSize(void *addr, sqInt sz)
 {
 	if (munmap(addr, sz) != 0)
-		perror("sqDeallocateMemorySegment... munmap");
+		logErrorFromErrno("sqDeallocateMemorySegment... munmap");
 }
 
 void *
@@ -187,24 +191,24 @@ sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto(sqInt size, void *minAddress
 		alloc = mmap(startAddress, bytes,
 					PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
 		if (alloc == MAP_FAILED) {
-			perror("sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto mmap");
+			logWarnFromErrno("sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto mmap");
 			return 0;
 		}
 
 		if(count >= 6){
-			logDebug("More than 6 retries... maybe something is wrong\n");
+			logTrace("More than 6 retries... maybe something is wrong\n");
 		}
 
-		logDebug("Asked: %10p %10p %10p\n", alloc, minAddress, startAddress);
+		logTrace("Asked: %10p %10p %10p\n", alloc, minAddress, startAddress);
 		if (alloc >= minAddress){
-			logDebug("Allocated Piece: %10p\n", alloc);
+			logTrace("Allocated Piece: %10p\n", alloc);
 			return alloc;
 		}
 
 		count++;
 
 		if (munmap(alloc, bytes) != 0)
-			perror("sqAllocateMemorySegment... munmap");
+			logWarnFromErrno("sqAllocateMemorySegment... munmap");
 		minAddress = (void *)((char *)minAddress + bytes);
 	}
 	return 0;

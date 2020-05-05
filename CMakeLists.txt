@@ -6,8 +6,8 @@ cmake_policy(SET CMP0053 NEW)
 include(macros.cmake)
 
 set(VERSION_MAJOR 8)
-set(VERSION_MINOR 3)
-set(VERSION_PATCH 0)
+set(VERSION_MINOR 4)
+set(VERSION_PATCH 1)
 
 set(APPNAME Pharo CACHE STRING "VM Application name")
 
@@ -94,7 +94,6 @@ if(WIN)
         set(OPTIMIZATION_FLAGS "-O2 -momit-leaf-frame-pointer")
     endif()
 
-
     set(OS_TYPE "Win32")
     set(VM_TARGET_OS "Win64")
 
@@ -114,7 +113,7 @@ elseif(UNIX)
 
     add_definitions(-DLSB_FIRST=1)
 
-    set(OPTIMIZATION_FLAGS "-O2")
+    set(COMMON_FLAGS "-O2")
 
     set(OS_TYPE "unix")
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
