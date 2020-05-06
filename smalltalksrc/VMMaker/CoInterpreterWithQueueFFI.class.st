@@ -10,7 +10,8 @@ Class {
 { #category : #'cog jit support' }
 CoInterpreterWithQueueFFI >> cePrintObject: anOop [
 	<api>
-	self printOop: anOop
+	
+	self printOop: anOop.
 ]
 
 { #category : #'cog jit support' }

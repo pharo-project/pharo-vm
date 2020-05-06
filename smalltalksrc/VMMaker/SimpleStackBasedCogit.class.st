@@ -3393,7 +3393,6 @@ SimpleStackBasedCogit >> genSpecialSelectorNotEqualsEquals [
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genSpecialSelectorSend [
 	| index numArgs |
-	self genPrintReceiver.
 	index := byte0 - self firstSpecialSelectorBytecodeOffset.
 	numArgs := coInterpreter specialSelectorNumArgs: index.
 	^self genSend: index negated - 1 numArgs: numArgs
@@ -3669,7 +3668,8 @@ SimpleStackBasedCogit >> genUpArrowReturn [
 SimpleStackBasedCogit >> generateLiveTypingTrampolines [
 	"Generate trampolines for livetyping"
 	ceTestTrampolineWithReceiverArgument :=
-		self genTrampolineFor: #cePrintObject:
+		self
+			genTrampolineWithoutStackAlignFor: #cePrintObject:
 			called: 'toto'
 			arg: ReceiverResultReg
 			regsToSave: CallerSavedRegisterMask.

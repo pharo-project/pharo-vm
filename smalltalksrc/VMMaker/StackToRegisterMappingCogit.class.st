@@ -11386,8 +11386,9 @@ StackToRegisterMappingCogit >> genPrimitivePerform [
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genPrintReceiver [
 
-	self ensureReceiverResultRegContainsSelf.
-	self Call: ceTestTrampolineWithReceiverArgument
+	self voidReceiverResultRegContainsSelf.
+	self ssAllocateCallReg: ReceiverResultReg.
+	self CallRT: ceTestTrampolineWithReceiverArgument.
 ]
 
 { #category : #'bytecode generators' }
@@ -12059,8 +12060,15 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean ReceiverVariable: slotInd
 { #category : #'bytecode generator stores' }
 StackToRegisterMappingCogit >> genStorePop: popBoolean ReceiverVariable: slotIndex needsStoreCheck: needsStoreCheck needsImmutabilityCheck: needsImmCheck [
 	<inline: false>
-	self ssFlushUpThroughReceiverVariable: slotIndex.
-	self ensureReceiverResultRegContainsSelf.
+	
+	self ssFlushAll.
+	self putSelfInReceiverResultReg.
+	self CallRT: ceTestTrampolineWithReceiverArgument.
+	self putSelfInReceiverResultReg.
+	"self voidReceiverResultRegContainsSelf."
+	"self ssFlushUpThroughReceiverVariable: slotIndex."
+	"self ensureReceiverResultRegContainsSelf."
+
 	"In two path compilation the receiver is young AND mutable, hence no store check nor immutability check is needed"
 	^self 
 		genGenericStorePop: popBoolean 
@@ -12424,7 +12432,7 @@ StackToRegisterMappingCogit >> generateTracingTrampolines [
 	 and avoid noise instructions in the lastNInstructions log by short-cutting these
 	 trampolines, but we need them in the real vm."
 	ceTraceLinkedSendTrampoline :=
-		self genTrampolineFor: #ceTraceLinkedSend:
+		self genTrampolineWithoutStackAlignFor: #ceTraceLinkedSend:
 			called: 'ceTraceLinkedSendTrampoline'
 			arg: ReceiverResultReg
 			regsToSave: CallerSavedRegisterMask..

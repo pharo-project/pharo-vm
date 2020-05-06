@@ -5291,6 +5291,34 @@ Cogit >> compileCallFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrCo
 ]
 
 { #category : #initialization }
+Cogit >> compileCallFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 resultReg: resultRegOrNone regsToSave: regMask alignStack: alignStack [
+	"Generate a call to aRoutine with up to 4 arguments.  If resultRegOrNone is not
+	 NoReg assign the C result to resultRegOrNone.  If saveRegs, save all registers.
+	 Hack: a negative arg value indicates an abstract register, a non-negative value
+	 indicates a constant."
+	<var: #aRoutine type: #'void *'>
+	<inline: false>
+	| regsToSave |
+	regsToSave := resultRegOrNone = NoReg
+						ifTrue: [regMask]
+						ifFalse: [regMask bitClear: (self registerMaskFor: resultRegOrNone)].
+	cStackAlignment > objectMemory wordSize ifTrue:
+		[backEnd
+			genAlignCStackSavingRegisters: regsToSave
+			numArgs: (alignStack ifTrue: [ numArgs ] ifFalse: [ 0 ])
+			wordAlignment: cStackAlignment / objectMemory wordSize].
+	backEnd
+		genSaveRegs: regsToSave;
+		genMarshallNArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3.
+	self CallFullRT: (self cCode: [aRoutine asUnsignedInteger]
+						inSmalltalk: [self simulatedTrampolineFor: aRoutine]).
+	resultRegOrNone ~= NoReg ifTrue:
+		[backEnd genWriteCResultIntoReg: resultRegOrNone].
+	backEnd genRemoveNArgsFromStack: numArgs.
+	backEnd genRestoreRegs: regsToSave
+]
+
+{ #category : #initialization }
 Cogit >> compileCallFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 resultReg: resultRegOrNone resultReg: resultReg2OrNone regsToSave: regMask [
 	"Generate a call to aRoutine with up to 4 arguments.  If resultRegOrNone is not
 	 NoReg assign the C result to resultRegOrNone.  If saveRegs, save all registers.
@@ -5743,6 +5771,35 @@ Cogit >> compileTrampolineFor: aRoutine numArgs: numArgs floatArg: regOrConst0 f
 		floatArg: regOrConst3
 		resultReg: resultRegOrNone
 		regsToSave: regMask.
+	backEnd genLoadStackPointers.
+	(pushLinkReg and: [backEnd hasLinkRegister])
+		ifTrue:
+			[backEnd hasPCRegister
+				ifTrue: [self PopR: PCReg]
+				ifFalse: [self PopR: LinkReg. 
+						self RetN: 0]]
+		ifFalse: [self RetN: 0]
+]
+
+{ #category : #initialization }
+Cogit >> compileTrampolineWithoutStackAlignFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 regsToSave: regMask pushLinkReg: pushLinkReg resultReg: resultRegOrNone [
+	"Generate a trampoline with up to four arguments.  Generate either a call or a jump to aRoutine
+	 as requested by callJumpBar.  If generating a call and resultRegOrNone is not NoReg pass the C
+	 result back in resultRegOrNone.
+	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
+	<var: #aRoutine type: #'void *'>
+	<inline: false>
+	self genSmalltalkToCStackSwitch: pushLinkReg.
+	self
+		compileCallFor: aRoutine
+		numArgs: numArgs
+		arg: regOrConst0
+		arg: regOrConst1
+		arg: regOrConst2
+		arg: regOrConst3
+		resultReg: resultRegOrNone
+		regsToSave: regMask
+		alignStack: false.
 	backEnd genLoadStackPointers.
 	(pushLinkReg and: [backEnd hasLinkRegister])
 		ifTrue:
@@ -7884,6 +7941,54 @@ Cogit >> genTrampolineFor: aRoutine called: aString regsToSave: regMask [
 		pushLinkReg: true
 		resultReg: NoReg
 		appendOpcodes: false
+]
+
+{ #category : #initialization }
+Cogit >> genTrampolineWithoutStackAlignFor: aRoutine  called: aString arg: regOrConst0 regsToSave: regMask [
+	"Generate a trampoline with one argument.
+	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
+	<var: #aRoutine type: #'void *'>
+	<var: #aString type: #'char *'>
+	^self
+		genTrampolineWithoutStackAlignFor: aRoutine
+		called: aString
+		numArgs: 1
+		arg: regOrConst0
+		arg: nil
+		arg: nil
+		arg: nil
+		regsToSave: regMask
+		pushLinkReg: true
+		resultReg: NoReg
+		appendOpcodes: false
+]
+
+{ #category : #initialization }
+Cogit >> genTrampolineWithoutStackAlignFor: aRoutine called: trampolineName numArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 regsToSave: regMask pushLinkReg: pushLinkReg resultReg: resultRegOrNone appendOpcodes: appendBoolean [
+	"Generate a trampoline with up to four arguments.  Generate either a call or a jump to aRoutineOrNil
+	 as requested by callJumpBar.  If generating a call and resultRegOrNone is not NoReg pass the C result
+	 back in resultRegOrNone.
+	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
+	<var: #aRoutine type: #'void *'>
+	<var: #trampolineName type: #'char *'>
+	| startAddress |
+	<inline: false>
+	startAddress := methodZoneBase.
+	appendBoolean ifFalse:
+		[self zeroOpcodeIndex].
+	self compileTrampolineWithoutStackAlignFor: aRoutine
+		numArgs: numArgs
+		arg: regOrConst0
+		arg: regOrConst1
+		arg: regOrConst2
+		arg: regOrConst3
+		regsToSave: regMask
+		pushLinkReg: pushLinkReg
+		resultReg: resultRegOrNone.
+	self outputInstructionsForGeneratedRuntimeAt: startAddress.
+	self recordGeneratedRunTime: trampolineName address: startAddress.
+	self recordRunTimeObjectReferences.
+	^startAddress
 ]
 
 { #category : #initialization }
