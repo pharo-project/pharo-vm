@@ -12,6 +12,13 @@ CoInterpreterWithLiveTyping >> cePrintHello [
 ]
 
 { #category : #trampolines }
+CoInterpreterWithLiveTyping >> cePrintObject: anOop [
+	<api>
+	
+	self printOop: anOop.
+]
+
+{ #category : #trampolines }
 CoInterpreterWithLiveTyping >> cePrintReceiver: receiver [ 
 	<api>
 	self printReceiver: receiver.

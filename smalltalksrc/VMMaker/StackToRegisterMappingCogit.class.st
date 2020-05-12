@@ -11383,14 +11383,6 @@ StackToRegisterMappingCogit >> genPrimitivePerform [
 	^self genLookupForPerformNumArgs: methodOrBlockNumArgs
 ]
 
-{ #category : #'bytecode generator support' }
-StackToRegisterMappingCogit >> genPrintReceiver [
-
-	self voidReceiverResultRegContainsSelf.
-	self ssAllocateCallReg: ReceiverResultReg.
-	self CallRT: ceTestTrampolineWithReceiverArgument.
-]
-
 { #category : #'live-typing primitive generators' }
 StackToRegisterMappingCogit >> genPrintHelloStorePop: popBoolean ReceiverVariable: slotIndex [
 	<inline: true>
@@ -11398,11 +11390,12 @@ StackToRegisterMappingCogit >> genPrintHelloStorePop: popBoolean ReceiverVariabl
 	self CallRT: cePrintHelloTrampoline.
 ]
 
-{ #category : #'live-typing primitive generators' }
+{ #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genPrintReceiver [
-	<inline: true>
 
-	self CallRT: cePrintReceiverTrampoline.
+	self voidReceiverResultRegContainsSelf.
+	self ssAllocateCallReg: ReceiverResultReg.
+	self CallRT: ceTestTrampolineWithReceiverArgument.
 ]
 
 { #category : #'bytecode generators' }
