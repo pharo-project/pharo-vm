@@ -3896,6 +3896,7 @@ Cogit >> ceCPICMiss: cPIC receiver: receiver [
 
 { #category : #accessing }
 Cogit >> ceCPICMissTrampoline [
+	<doNotGenerate>
 	^ ceCPICMissTrampoline
 ]
 
@@ -3958,12 +3959,59 @@ Cogit >> ceFree: pointer [
 	self free: pointer
 ]
 
+{ #category : #accessing }
+Cogit >> ceLargeActiveContextInBlockTrampoline [
+
+	<doNotGenerate>
+	^ objectRepresentation ceLargeActiveContextInBlockTrampoline
+]
+
+{ #category : #accessing }
+Cogit >> ceLargeActiveContextInBlockTrampoline: anAddress [
+
+	<doNotGenerate>
+	objectRepresentation ceLargeActiveContextInBlockTrampoline: anAddress
+]
+
+{ #category : #accessing }
+Cogit >> ceLargeActiveContextInFullBlockTrampoline [
+
+	<doNotGenerate>
+	^ objectRepresentation ceLargeActiveContextInFullBlockTrampoline
+]
+
+{ #category : #accessing }
+Cogit >> ceLargeActiveContextInFullBlockTrampoline: anAddress [
+
+	<doNotGenerate>
+	objectRepresentation ceLargeActiveContextInFullBlockTrampoline: anAddress
+]
+
+{ #category : #accessing }
+Cogit >> ceLargeActiveContextInMethodTrampoline [
+	<doNotGenerate>
+	^ objectRepresentation ceLargeActiveContextInMethodTrampoline
+]
+
+{ #category : #accessing }
+Cogit >> ceLargeActiveContextInMethodTrampoline: anAddress [
+
+	<doNotGenerate>
+	objectRepresentation ceLargeActiveContextInMethodTrampoline: anAddress
+]
+
 { #category : #'trampoline support' }
 Cogit >> ceMalloc: size [
 	<api>
 	<var: #size type: #'size_t'>
 	<returnTypeC: #'void*'>
 	^ self malloc: size
+]
+
+{ #category : #accessing }
+Cogit >> ceMethodAbortTrampoline [
+	<doNotGenerate>
+	^ ceMethodAbortTrampoline
 ]
 
 { #category : #accessing }
@@ -4079,6 +4127,47 @@ Cogit >> ceSICMiss: receiver [
 		andCacheTag: (backEnd inlineCacheTagAt: outerReturn).
 	"NOTREACHED"
 	^nil
+]
+
+{ #category : #accessing }
+Cogit >> ceSmallActiveContextInBlockTrampoline [
+
+	<doNotGenerate>
+	^ objectRepresentation ceSmallActiveContextInBlockTrampoline
+]
+
+{ #category : #accessing }
+Cogit >> ceSmallActiveContextInBlockTrampoline: anAddress [
+
+	<doNotGenerate>
+	objectRepresentation ceSmallActiveContextInBlockTrampoline: anAddress
+]
+
+{ #category : #accessing }
+Cogit >> ceSmallActiveContextInFullBlockTrampoline [
+
+	<doNotGenerate>
+	^ objectRepresentation ceSmallActiveContextInFullBlockTrampoline
+]
+
+{ #category : #accessing }
+Cogit >> ceSmallActiveContextInFullBlockTrampoline: anAddress [
+
+	<doNotGenerate>
+	objectRepresentation ceSmallActiveContextInFullBlockTrampoline: anAddress
+]
+
+{ #category : #accessing }
+Cogit >> ceSmallActiveContextInMethodTrampoline [
+	<doNotGenerate>
+	^ objectRepresentation ceSmallActiveContextInMethodTrampoline
+]
+
+{ #category : #accessing }
+Cogit >> ceSmallActiveContextInMethodTrampoline: anAddress [
+
+	<doNotGenerate>
+	objectRepresentation ceSmallActiveContextInMethodTrampoline: anAddress
 ]
 
 { #category : #debugging }
@@ -8677,8 +8766,9 @@ Cogit >> handleWriteSimulationTrap: aProcessorSimulationTrap [
 	| variableValue |
 	(self addressIsInCodeZone: aProcessorSimulationTrap address) ifTrue:
 		[self error: 'attempt to write to code space'].
-	variableValue := processor perform: aProcessorSimulationTrap registerAccessor.
+	variableValue := aProcessorSimulationTrap writtenValue.
 	(simulatedVariableSetters at: aProcessorSimulationTrap address) value: variableValue.
+
 	processor pc: aProcessorSimulationTrap nextpc
 ]
 
@@ -10697,6 +10787,12 @@ Cogit >> opcodePrintStringFrom: startIndex to: stopIndex [
 ]
 
 { #category : #accessing }
+Cogit >> openPICSize [
+	<doNotGenerate>
+	^ openPICSize
+]
+
+{ #category : #accessing }
 Cogit >> ordinarySendTrampolineAt: anInteger put: aTrampolineAddress [ 
 	<doNotGenerate>
 	
@@ -10829,7 +10925,7 @@ Cogit >> previousInstruction [
 
 { #category : #printing }
 Cogit >> print: aString [
-	<cmacro: '(aString) printf("%s", aString)'>
+	<cmacro: '(aString) vm_printf("%s", aString)'>
 	coInterpreter transcript print: aString
 ]
 
@@ -11002,7 +11098,7 @@ Cogit >> printMethodHeader: cogMethod on: aStream [
 
 { #category : #printing }
 Cogit >> printNum: n [
-	<cmacro: '(n) printf("%" PRIdSQINT, (sqInt) (n))'>
+	<cmacro: '(n) vm_printf("%" PRIdSQINT, (sqInt) (n))'>
 	coInterpreter transcript printNum: n
 ]
 

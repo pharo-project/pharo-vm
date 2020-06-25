@@ -2746,6 +2746,7 @@ CoInterpreter >> cogCodeSize [
 
 { #category : #accessing }
 CoInterpreter >> cogCodeSize: anInteger [ 
+	<doNotGenerate>
 	cogCodeSize := anInteger
 ]
 
@@ -4109,6 +4110,7 @@ CoInterpreter >> heapBase [
 
 { #category : #accessing }
 CoInterpreter >> heapBase: anInteger [ 
+	<doNotGenerate>
 	heapBase := anInteger
 ]
 
@@ -6597,7 +6599,7 @@ CoInterpreter >> printMethodCacheFor: thing [
 			 self cCode: [] inSmalltalk: [self transcript ensureCr].
 			 self printNum: i; space; printHexnp: i; cr; tab.
 			 (objectMemory isBytesNonImm: s)
-				ifTrue: [self cCode: 'printf("%" PRIxSQPTR " %.*s\n", s, (int)(numBytesOf(s)), (char *)firstIndexableField(s))'
+				ifTrue: [self cCode: 'vm_printf("%" PRIxSQPTR " %.*s\n", s, (int)(numBytesOf(s)), (char *)firstIndexableField(s))'
 						inSmalltalk: [self printHex: s; space; print: (self stringOf: s); cr]]
 				ifFalse: [self shortPrintOop: s].
 			 self tab.
@@ -6942,7 +6944,8 @@ CoInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: imag
 								allocateMemory: heapSize
 								minimum: minimumMemory
 								imageFile: f
-								headerSize: headerSize) asUnsignedInteger.
+								headerSize: headerSize
+								desiredPosition: oldBaseAddr) asUnsignedInteger.
 	objectMemory memory ifNil:
 		[self insufficientMemoryAvailableError].
 
@@ -6992,10 +6995,10 @@ CoInterpreter >> reportMinimumUnusedHeadroom [
 	"Report the stack page size and minimum unused headroom to stdout."
 	<api>
 	self cCode:
-			[self pri: 'stack page bytes %lld available headroom %lld minimum unused headroom %lld\n'
-				n: self stackPageByteSize asUnsignedLongLong
-				t: (self stackPageByteSize - self stackLimitBytes - self stackLimitOffset) asUnsignedLongLong
-				f: self minimumUnusedHeadroom asUnsignedLongLong]
+			[self vm_printf: 'stack page bytes %lld available headroom %lld minimum unused headroom %lld\n'
+				_: self stackPageByteSize asUnsignedLongLong
+				_: (self stackPageByteSize - self stackLimitBytes - self stackLimitOffset) asUnsignedLongLong
+				_: self minimumUnusedHeadroom asUnsignedLongLong]
 		inSmalltalk:
 			["CogVMSimulator new initStackPagesForTests reportMinimumUnusedHeadroom"
 			 self print: 'stack page bytes '; printNum: self stackPageByteSize;
@@ -7348,6 +7351,15 @@ CoInterpreter >> shortPrintFrame: theFP [
 	<inline: false>
 	<var: #theFP type: #'char *'>
 	| rcvr mthd |
+	
+	printedStackFrames := printedStackFrames + 1.
+	(maxStacksToPrint ~= 0 and:[ printedStackFrames > maxStacksToPrint])
+		ifTrue: [ 
+			maxStackMessagePrinted = 1 ifFalse: [  
+				self print: '    ... more contexts ...'; cr.
+				maxStackMessagePrinted := 1 ].
+			^ nil ].
+	
 	(stackPages couldBeFramePointer: theFP) ifFalse:
 		[self print: 'invalid frame pointer'; cr.
 		 ^nil].

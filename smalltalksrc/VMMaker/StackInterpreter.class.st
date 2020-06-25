@@ -92,7 +92,7 @@ extraVMMemory
 	- in Spur, free heap to be allocated at startup.  In V3, C memory to reserve for malloc at startup (i.e. malloc extraVMMemory, alloc heap, free extraVMMemory)
 
 framePointer
-	- the pointer to the current frame when primitives (or in the CoInterpreter, when machine-code <-> interpreter transitions) are invoked (c.f. localFP)
+	- the pointer to the current frame when primitives (or in the CoInterpreter, when machine-code <-> CoInterpreter transitions) are invoked (c.f. localFP)
 
 fullScreenFlag
 	- true if the system is in full-screen mode
@@ -414,7 +414,10 @@ Class {
 		'statIdleUsecs',
 		'debugCallbackPath',
 		'debugCallbackReturns',
-		'debugCallbackInvokes'
+		'debugCallbackInvokes',
+		'printedStackFrames',
+		'maxStacksToPrint',
+		'maxStackMessagePrinted'
 	],
 	#classVars : [
 		'AccessModifierPrivate',
@@ -1320,7 +1323,7 @@ StackInterpreter class >> initializePrimitiveTable [
 	"self initializePrimitiveTable"
 
 	"NOTE: The real limit here is 2047 because of the old method header layout but there is no point in going over the needed size"
-	MaxPrimitiveIndex := 575.	
+	MaxPrimitiveIndex := 660.	
 	MaxQuickPrimitiveIndex := 519.
 	PrimNumberExternalCall := 117.
 	PrimNumberDoPrimitive := 118.
@@ -1662,7 +1665,76 @@ StackInterpreter class >> initializePrimitiveTable [
 		(574 primitiveFail) "reserved for addl. external support prims"
 
 		"Unassigned Primitives"
-		(575 primitiveFail))
+		(575 597 primitiveFail)
+
+		"Pinned object creation primitives"
+		(598 primitiveNewPinned)
+		(599 primitiveNewWithArgPinned)
+		
+		"Memory accessor primitives"
+		(600 primitiveLoadBoolean8FromBytes)
+		(601 primitiveLoadUInt8FromBytes)
+		(602 primitiveLoadInt8FromBytes)
+		(603 primitiveLoadUInt16FromBytes)
+		(604 primitiveLoadInt16FromBytes)
+		(605 primitiveLoadUInt32FromBytes)
+		(606 primitiveLoadInt32FromBytes)
+		(607 primitiveLoadUInt64FromBytes)
+		(608 primitiveLoadInt64FromBytes)
+		(609 primitiveLoadPointerFromBytes)
+		(610 primitiveLoadChar8FromBytes)
+		(611 primitiveLoadChar16FromBytes)
+		(612 primitiveLoadChar32FromBytes)
+		(613 primitiveLoadFloat32FromBytes)
+		(614 primitiveLoadFloat64FromBytes)
+		(615 primitiveStoreBoolean8IntoBytes)
+		(616 primitiveStoreUInt8IntoBytes)
+		(617 primitiveStoreInt8IntoBytes)
+		(618 primitiveStoreUInt16IntoBytes)
+		(619 primitiveStoreInt16IntoBytes)
+		(620 primitiveStoreUInt32IntoBytes)
+		(621 primitiveStoreInt32IntoBytes)
+		(622 primitiveStoreUInt64IntoBytes)
+		(623 primitiveStoreInt64IntoBytes)
+		(624 primitiveStorePointerIntoBytes)
+		(625 primitiveStoreChar8IntoBytes)
+		(626 primitiveStoreChar16IntoBytes)
+		(627 primitiveStoreChar32IntoBytes)
+		(628 primitiveStoreFloat32IntoBytes)
+		(629 primitiveStoreFloat64IntoBytes)
+		(630 primitiveLoadBoolean8FromExternalAddress)
+		(631 primitiveLoadUInt8FromExternalAddress)
+		(632 primitiveLoadInt8FromExternalAddress)
+		(633 primitiveLoadUInt16FromExternalAddress)
+		(634 primitiveLoadInt16FromExternalAddress)
+		(635 primitiveLoadUInt32FromExternalAddress)
+		(636 primitiveLoadInt32FromExternalAddress)
+		(637 primitiveLoadUInt64FromExternalAddress)
+		(638 primitiveLoadInt64FromExternalAddress)
+		(639 primitiveLoadPointerFromExternalAddress)
+		(640 primitiveLoadChar8FromExternalAddress)
+		(641 primitiveLoadChar16FromExternalAddress)
+		(642 primitiveLoadChar32FromExternalAddress)
+		(643 primitiveLoadFloat32FromExternalAddress)
+		(644 primitiveLoadFloat64FromExternalAddress)
+		(645 primitiveStoreBoolean8IntoExternalAddress)
+		(646 primitiveStoreUInt8IntoExternalAddress)
+		(647 primitiveStoreInt8IntoExternalAddress)
+		(648 primitiveStoreUInt16IntoExternalAddress)
+		(649 primitiveStoreInt16IntoExternalAddress)
+		(650 primitiveStoreUInt32IntoExternalAddress)
+		(651 primitiveStoreInt32IntoExternalAddress)
+		(652 primitiveStoreUInt64IntoExternalAddress)
+		(653 primitiveStoreInt64IntoExternalAddress)
+		(654 primitiveStorePointerIntoExternalAddress)
+		(655 primitiveStoreChar8IntoExternalAddress)
+		(656 primitiveStoreChar16IntoExternalAddress)
+		(657 primitiveStoreChar32IntoExternalAddress)
+		(658 primitiveStoreFloat32IntoExternalAddress)
+		(659 primitiveStoreFloat64IntoExternalAddress)
+		
+		(660 primitiveFail)
+		)
 ]
 
 { #category : #initialization }
@@ -1862,9 +1934,9 @@ void
 warning(char *s) { /* Print an error message but don''t necessarily exit. */
 	if (erroronwarn) error(s);
 	if (warnpid)
-		printf("\n%s pid %ld\n", s, (long)warnpid);
+		vm_printf("\n%s pid %ld\n", s, (long)warnpid);
 	else
-		printf("\n%s\n", s);
+		vm_printf("\n%s\n", s);
 }
 void
 warningat(char *s, int l) { /* ditto with line number. */
@@ -1878,9 +1950,9 @@ warningat(char *s, int l) { /* ditto with line number. */
 void
 invalidCompactClassError(char *s) { /* Print a (compact) class index error message and exit. */
 #if SPURVM
-	printf("\nClass %s does not have the required class index\n", s);
+	vm_printf("\nClass %s does not have the required class index\n", s);
 #else
-	printf("\nClass %s does not have the required compact class index\n", s);
+	vm_printf("\nClass %s does not have the required compact class index\n", s);
 #endif
 	exit(-1);
 }
@@ -2524,6 +2596,26 @@ StackInterpreter >> allocateMemory: heapSize minimum: minimumMemory imageFile: f
 							Minimum: minimumMemory
 							ImageFile: fileStream
 							HeaderSize: headerSize)
+]
+
+{ #category : #'image save/restore' }
+StackInterpreter >> allocateMemory: heapSize minimum: minimumMemory imageFile: fileStream headerSize: headerSize desiredPosition: desiredBaseAddress [
+	"Translate to C function call with (case sensitive) camelCase. The purpose of this
+	 method is to document the translation.
+	 The default implementation is sqAllocateMemory(minimumMemory, heapSize). This may
+	 be redefined to make use of the image file and header size parameters for efficient
+	 implementation with mmap().
+	 See CCodeGenerator>>writeDefaultMacrosOn: which specifies a default implementation."
+
+	<inline: true>
+	<returnTypeC: #'char *'>
+	<var: #fileStream type: #sqImageFile>
+	^self pointerForOop: (self
+							allocateMemory: heapSize
+							Minimum: minimumMemory
+							ImageFile: fileStream
+							HeaderSize: headerSize
+							BaseAddress: desiredBaseAddress)
 ]
 
 { #category : #'compiled methods' }
@@ -5004,7 +5096,6 @@ StackInterpreter >> closureIn: context numArgs: numArgs instructionPointer: init
 { #category : #'primitive support' }
 StackInterpreter >> codeGeneratorToComputeAccessorDepth [
 	^(VMMaker new
-		beSilent;
 		buildCodeGeneratorForInterpreter: self class primitivesClass
 		includeAPIMethods: false
 		initializeClasses: false)
@@ -5516,7 +5607,8 @@ StackInterpreter >> couldBeProcess: oop [
 StackInterpreter >> cr [
 	"For testing in Smalltalk, this method should be overridden in a subclass."
 	<inline: true>
-	self printf: '\n'
+	self print: '\n'.
+	^ 1.
 ]
 
 { #category : #'message sending' }
@@ -8513,6 +8605,7 @@ StackInterpreter >> initialize [
 	nextWakeupUsecs := 0.
 	tempOop := tempOop2 := theUnknownShort := 0.
 	interruptPending := false.
+	maxStacksToPrint := 0.
 	inIOProcessEvents := 0.
 	fullScreenFlag := 0.
 	sendWheelEvents := deferDisplayUpdates := false.
@@ -9339,7 +9432,7 @@ StackInterpreter >> interpret [
 	self internalizeIPandSP.
 	self initExtensions.
 	self fetchNextBytecode.
-	[true] whileTrue: [self interpretCurrentByteCode ].
+	[true] whileTrue: [self dispatchOn: currentBytecode in: BytecodeTable].
 	localIP := localIP - 1.  "undo the pre-increment of IP before returning"
 	self externalizeIPandSP.
 	^nil
@@ -10214,10 +10307,10 @@ StackInterpreter >> longPrintOop: oop [
 			 startIP to: lastIndex do:
 				[:index| | byte |
 				column = 1 ifTrue:
-					[self cCode: 'printf("0x%08" PRIxSQPTR ": ", (usqIntptr_t)(oop+BaseHeaderSize+index-1))'
+					[self cCode: 'vm_printf("0x%08" PRIxSQPTR ": ", (usqIntptr_t)(oop+BaseHeaderSize+index-1))'
 						inSmalltalk: [self print: (oop+objectMemory baseHeaderSize+index-1) hex; print: ': ']].
 				byte := objectMemory fetchByte: index - 1 ofObject: oop.
-				self cCode: 'printf(" %02x/%-3d", (int)byte,(int)byte)'
+				self cCode: 'vm_printf(" %02x/%-3d", (int)byte,(int)byte)'
 					inSmalltalk: [self space; print: (byte radix: 16); printChar: $/; printNum: byte].
 				column := column + 1.
 				column > bytecodesPerLine ifTrue:
@@ -16473,6 +16566,12 @@ StackInterpreter >> maybeTraceStackOverflow [
 	"nop in the stack interpreter"
 ]
 
+{ #category : #accessing }
+StackInterpreter >> messageSelector [
+	<doNotGenerate>
+	^ messageSelector
+]
+
 { #category : #simulation }
 StackInterpreter >> metaclassNumSlots [
 	<doNotGenerate>
@@ -16491,7 +16590,7 @@ StackInterpreter >> methodArg: index [
 	<doNotGenerate> "Obsolete; was never used; replaced with methodReturnBool: in the VirtualMachine struct."
 	self deprecated.
 	index > argumentCount + 1 ifTrue:
-		[self cCode: 'fprintf(stderr,"[VM]: Attempt to access method args beyond range\n")'.
+		[self cCode: 'vm_printf("[VM]: Attempt to access method args beyond range\n")'.
 		self printCallStack.
 		self primitiveFail.
 		^0].
@@ -17354,6 +17453,12 @@ StackInterpreter >> preGCAction: gcModeArg [
 		[self flushMethodCache]
 ]
 
+{ #category : #accessing }
+StackInterpreter >> primFailCode [
+	<doNotGenerate>
+	^ primFailCode 
+]
+
 { #category : #'primitive support' }
 StackInterpreter >> primitiveAccessorDepthForExternalPrimitiveMethod: methodObj [
 	^objectMemory integerValueOf:
@@ -17619,9 +17724,12 @@ StackInterpreter >> primitiveObject: actualReceiver perform: selector withArgume
 { #category : #'debug printing' }
 StackInterpreter >> print: s [
 	"For testing in Smalltalk, this method should be overridden in a subclass."
+
 	<api>
 	<var: #s type: #'char *'>
-	self cCode: 'fputs(s, stdout)'
+	self
+		cCode: 'vm_printf(s)'
+		inSmalltalk: [ self subclassResponsibility ]
 ]
 
 { #category : #'debug printing' }
@@ -17754,6 +17862,8 @@ StackInterpreter >> printAtCache [
 { #category : #'debug printing' }
 StackInterpreter >> printCallStack [
 	<inline: false>
+	
+	self resetStackPrintedCount.
 	framePointer = nil
 		ifTrue: [self printCallStackOf: (objectMemory fetchPointer: SuspendedContextIndex ofObject: self activeProcess)]
 		ifFalse: [self printCallStackFP: framePointer]
@@ -17764,6 +17874,8 @@ StackInterpreter >> printCallStackFP: theFP [
 	| context |
 	<inline: false>
 	<var: #theFP type: #'char *'>
+
+	self resetStackPrintedCount.
 	context := self shortReversePrintFrameAndCallers: theFP.
 	[context = objectMemory nilObject] whileFalse:
 		[(self isMarriedOrWidowedContext: context)
@@ -17781,6 +17893,9 @@ StackInterpreter >> printCallStackOf: aContextOrProcessOrFrame [
 	<api>
 	| context |
 	<inline: false>
+	
+	self resetStackPrintedCount.
+	
 	(stackPages couldBeFramePointer: aContextOrProcessOrFrame) ifTrue:
 		[^self printCallStackFP: (self cCoerceSimple: aContextOrProcessOrFrame to: #'char *')].
 	(self couldBeProcess: aContextOrProcessOrFrame) ifTrue:
@@ -17806,6 +17921,8 @@ StackInterpreter >> printCallStackOf: aContext currentFP: currFP [
 	<var: #currFP type: #'char *'>
 	<var: #theFP type: #'char *'>
 	<var: #thePage type: #'StackPage *'>
+
+	self resetStackPrintedCount.
 	ctxt := aContext.
 	[ctxt = objectMemory nilObject] whileFalse:
 		[(self isMarriedOrWidowedContext: ctxt)
@@ -17833,7 +17950,7 @@ StackInterpreter >> printCallStackOf: aContext currentFP: currFP [
 StackInterpreter >> printChar: aByte [
 	<api>
 	"For testing in Smalltalk, this method should be overridden in a subclass."
-	self putchar: aByte.
+	self cCode: 'vm_printf("%c", aByte)' inSmalltalk: [self putchar: aByte].
 ]
 
 { #category : #'debug printing' }
@@ -17915,7 +18032,7 @@ StackInterpreter >> printExternalHeadFrame [
 { #category : #'debug printing' }
 StackInterpreter >> printFloat: f [
 	"For testing in Smalltalk, this method should be overridden in a subclass."
-	<cmacro: '(f) printf("%g", f)'>
+	<cmacro: '(f) vm_printf("%g", f)'>
 	self print: f
 ]
 
@@ -18170,7 +18287,7 @@ StackInterpreter >> printHex: n [
 	<var: #buf declareC: 'char buf[37]'> "large enough for a 64-bit value in hex plus the null plus 16 spaces"
 	self cCode: 'memset(buf,'' '',36)' inSmalltalk: [buf := 'doh!'].
 	len := self cCode: 'sprintf(buf + 2 + 2 * BytesPerWord, "0x%" PRIxSQPTR, (usqIntptr_t)(n))'.
-	self cCode: 'printf("%s", buf + len)'.
+	self cCode: 'vm_printf("%s", buf + len)'.
 	len touch: buf
 ]
 
@@ -18195,14 +18312,15 @@ StackInterpreter >> printHexnp: n [
 	<api>
 	<var: #n type: #usqInt>
 	"Print n in hex,  in the form '0x1234', unpadded"
-	^'0x%lx' printf: n
+	^ self cCode: 'vm_printf("0x%lx", n)'inSmalltalk: ['0x%lx' printf: n]
 ]
 
 { #category : #'debug printing' }
 StackInterpreter >> printHexnpnp: n [
 	<var: #n type: #usqInt>
 	"Print n in hex, in the form '1234', unpadded"
-	^'%lx' printf: n
+	^ self cCode: 'vm_printf("%lx", n)'inSmalltalk: ['%lx' printf: n]
+	
 ]
 
 { #category : #'debug printing' }
@@ -18251,7 +18369,7 @@ StackInterpreter >> printMethodCacheFor: thing [
 			[self cCode: [] inSmalltalk: [self transcript ensureCr].
 			 self printNum: i; space; printHexnp: i; cr; tab.
 			 (objectMemory isBytesNonImm: s)
-				ifTrue: [self cCode: 'printf("%" PRIxSQPTR " %.*s\n", s, (int)(numBytesOf(s)), (char *)firstIndexableField(s))'
+				ifTrue: [self cCode: 'vm_printf("%" PRIxSQPTR " %.*s\n", s, (int)(numBytesOf(s)), (char *)firstIndexableField(s))'
 						inSmalltalk: [self printHex: s; space; print: (self stringOf: s); cr]]
 				ifFalse: [self shortPrintOop: s].
 			 self tab.
@@ -18338,7 +18456,7 @@ StackInterpreter >> printNameOfClass: classOop count: cnt [
 StackInterpreter >> printNum: n [
 	"For testing in Smalltalk, this method should be overridden in a subclass."
 
-	self cCode: 'printf("%ld", (long) n)'.
+	self cCode: 'vm_printf("%ld", (long) n)'.
 ]
 
 { #category : #'debug printing' }
@@ -18346,28 +18464,30 @@ StackInterpreter >> printOop: oop [
 	| cls fmt lastIndex startIP bytecodesPerLine column |
 	<inline: false>
 	(objectMemory isImmediate: oop) ifTrue:
-		[^self shortPrintOop: oop].
+		[^ self shortPrintOop: oop].
 	self printHex: oop.
 	(objectMemory addressCouldBeObj: oop) ifFalse:
-		[^self print: ((oop bitAnd: objectMemory allocationUnit - 1) ~= 0
+		[self print: ((oop bitAnd: objectMemory allocationUnit - 1) ~= 0
 						ifTrue: [' is misaligned']
-						ifFalse: [self whereIs: oop]); cr].
+						ifFalse: [self whereIs: oop]); cr. ^self].
+					
 	(objectMemory isFreeObject: oop) ifTrue:
 		[self print: ' is a free chunk of size '; printNum: (objectMemory sizeOfFree: oop).
 		 objectMemory hasSpurMemoryManagerAPI ifTrue:
 			[self print: ' 0th: '; printHex: (objectMemory fetchPointer: 0 ofFreeChunk: oop).
 			 objectMemory printHeaderTypeOf: oop].
-		 ^self cr].
+		 self cr. 
+		^ self].
 	(objectMemory isForwarded: oop) ifTrue:
 		[self
 			print: ' is a forwarded object to '; printHex: (objectMemory followForwarded: oop);
 			print: ' of slot size '; printNum: (objectMemory numSlotsOfAny: oop).
 		 objectMemory printHeaderTypeOf: oop.
-		 ^self cr].
+		 self cr. ^ self].
 	self print: ': a(n) '.
 	self printNameOfClass: (cls := objectMemory fetchClassOfNonImm: oop) count: 5.
 	cls = (objectMemory splObj: ClassFloat) ifTrue:
-		[^self cr; printFloat: (objectMemory dbgFloatValueOf: oop); cr].
+		[self cr; printFloat: (objectMemory dbgFloatValueOf: oop); cr. ^ self].
 	fmt := objectMemory formatOf: oop.
 	fmt > objectMemory lastPointerFormat ifTrue:
 		[self print: ' nbytes '; printNum: (objectMemory numBytesOf: oop)].
@@ -18422,10 +18542,10 @@ StackInterpreter >> printOop: oop [
 			 startIP to: lastIndex do:
 				[:index| | byte |
 				column = 1 ifTrue:
-					[self cCode: 'printf("0x%08" PRIxSQPTR ": ", (usqIntptr_t)(oop+BaseHeaderSize+index-1))'
+					[self cCode: 'vm_printf("0x%08" PRIxSQPTR ": ", (usqIntptr_t)(oop+BaseHeaderSize+index-1))'
 						inSmalltalk: [self print: (oop+objectMemory baseHeaderSize+index-1) hex; print: ': ']].
 				byte := objectMemory fetchByte: index - 1 ofObject: oop.
-				self cCode: 'printf(" %02x/%-3d", (int)byte,(int)byte)'
+				self cCode: 'vm_printf(" %02x/%-3d", (int)byte,(int)byte)'
 					inSmalltalk: [self space; print: (byte radix: 16); printChar: $/; printNum: byte].
 				column := column + 1.
 				column > bytecodesPerLine ifTrue:
@@ -19373,7 +19493,8 @@ StackInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: i
 								allocateMemory: heapSize
 								minimum: minimumMemory
 								imageFile: f
-								headerSize: headerSize) asUnsignedInteger.
+								headerSize: headerSize
+								desiredPosition: oldBaseAddr) asUnsignedInteger.
 	objectMemory memory ifNil: [self insufficientMemoryAvailableError].
 
 	objectMemory
@@ -19569,6 +19690,12 @@ StackInterpreter >> removeProcess: aProcess fromList: aList [
 			 aProcess  = lastLink ifTrue:
 				[objectMemory storePointer: LastLinkIndex ofObject: aList withValue: tempLink]].
 	objectMemory storePointer: NextLinkIndex ofObject: aProcess withValue: objectMemory nilObject
+]
+
+{ #category : #'debug printing' }
+StackInterpreter >> resetStackPrintedCount [
+
+	printedStackFrames := maxStackMessagePrinted := 0
 ]
 
 { #category : #'sista bytecodes' }
@@ -20293,6 +20420,12 @@ StackInterpreter >> setMaxExtSemSizeTo: maxExtSemTabSize [
 	self ioSetMaxExtSemTableSize: maxExtSemTabSize
 ]
 
+{ #category : #'debug printing' }
+StackInterpreter >> setMaxStacksToPrint: anInteger [
+	<api>
+	maxStacksToPrint := anInteger
+]
+
 { #category : #'internal interpreter access' }
 StackInterpreter >> setMethod: aMethodObj [
 	"Set the method and determine the bytecode set based on the method header's sign.
@@ -20540,6 +20673,15 @@ StackInterpreter >> shortPrintContext: aContext [
 	(objectMemory isContext: aContext) ifFalse:
 		[self printHex: aContext; print: ' is not a context'; cr.
 		^nil].
+	
+	printedStackFrames := printedStackFrames + 1.
+	(maxStacksToPrint ~= 0 and:[ printedStackFrames > maxStacksToPrint])
+		ifTrue: [ 
+			maxStackMessagePrinted = 1 ifFalse: [  
+				self print: '    ... more contexts ...'; cr.
+				maxStackMessagePrinted := 1 ].
+			^ nil ].		
+	
 	self printHex: aContext.
 	(self isMarriedOrWidowedContext: aContext)
 		ifTrue: [(self checkIsStillMarriedContext: aContext currentFP: framePointer)
@@ -20572,6 +20714,15 @@ StackInterpreter >> shortPrintFrame: theFP [
 	<inline: false>
 	<var: #theFP type: #'char *'>
 	| rcvr |
+	
+	printedStackFrames := printedStackFrames + 1.
+	(maxStacksToPrint ~= 0 and:[ printedStackFrames > maxStacksToPrint])
+		ifTrue: [ 
+			maxStackMessagePrinted = 1 ifFalse: [  
+				self print: '    ... more contexts ...'; cr.
+				maxStackMessagePrinted := 1 ].
+			^ nil ].	
+	
 	(stackPages couldBeFramePointer: theFP) ifFalse:
 		[self print: 'invalid frame pointer'; cr.
 		 ^nil].
@@ -20591,6 +20742,7 @@ StackInterpreter >> shortPrintFrame: theFP AndNCallers: n [
 	<api>
 	<inline: false>
 	<var: #theFP type: #'char *'>
+	self resetStackPrintedCount.
 	(n ~= 0 and: [stackPages couldBeFramePointer: theFP]) ifTrue:
 		[self shortPrintFrame: theFP.
 		 self shortPrintFrame: (self frameCallerFP: theFP) AndNCallers: n - 1]
@@ -20609,6 +20761,7 @@ StackInterpreter >> shortPrintFrameAndCallers: theFP [
 { #category : #'debug printing' }
 StackInterpreter >> shortPrintFramesInCurrentPage [
 	<inline: false>
+	self resetStackPrintedCount.
 	self shortPrintFrameAndCallers: localFP
 ]
 
@@ -20641,15 +20794,15 @@ StackInterpreter >> shortPrintOop: oop [
 	(objectMemory isImmediate: oop) ifTrue:
 		[(objectMemory isIntegerObject: oop) ifTrue:
 			[self
-				cCode: 'printf("=%ld\n", (long)integerValueOf(oop))'
+				cCode: 'vm_printf("=%ld\n", (long)integerValueOf(oop))'
 				inSmalltalk: [self print: (self shortPrint: oop); cr]].
 		 (objectMemory isImmediateCharacter: oop) ifTrue:
 			[self
-				cCode: 'printf("=$%ld ($%lc)\n", (long)characterValueOf(oop), (wint_t)characterValueOf(oop))'
+				cCode: 'vm_printf("=$%ld ($%lc)\n", (long)characterValueOf(oop), (wint_t)characterValueOf(oop))'
 				inSmalltalk: [self print: (self shortPrint: oop); cr]].
 		 (objectMemory isImmediateFloat: oop) ifTrue:
 			[self
-				cCode: 'printf("=%g\n", floatValueOf(oop))'
+				cCode: 'vm_printf("=%g\n", floatValueOf(oop))'
 				inSmalltalk: [self print: '='; printFloat: (objectMemory floatValueOf: oop); cr]].
 		 ^self].
 	(objectMemory addressCouldBeObj: oop) ifFalse:
@@ -21083,6 +21236,21 @@ StackInterpreter >> space [
 StackInterpreter >> specialSelector: index [
 	<api>
 	^objectMemory fetchPointer: (index * 2) ofObject: (objectMemory splObj: SpecialSelectors)
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> specialSelector: index put: aValue [
+	<doNotGenerate>
+	^objectMemory
+		storePointer: (index * 2)
+		ofObject: (objectMemory splObj: SpecialSelectors)
+		withValue: aValue
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> specialSelectorArray: anOop [
+	<doNotGenerate>
+	objectMemory splObj: SpecialSelectors put: anOop
 ]
 
 { #category : #'message sending' }
