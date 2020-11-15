@@ -25,6 +25,16 @@
           "name": "FEATURE_SOCKETS",
           "value": "False",
           "type": "BOOL"
+        },
+        {
+          "name": "GENERATE_SOURCES",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "FEATURE_COMPILE_GNUISATION",
+          "value": "False",
+          "type": "BOOL"
         }
       ]
     },
