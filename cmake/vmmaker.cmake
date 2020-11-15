@@ -16,6 +16,8 @@
 #  - Check at configure time that wget/curl are available? Otherwise this crashes miserably
 #  - Make the VMFlavours autodescribed? Slang could output a list of generated files that we could use
 
+set(CMAKE_VERBOSE_MAKEFILE TRUE)
+
 #Setting output directories
 set(VMMAKER_OUTPUT_PATH "build/vmmaker")
 make_directory(${VMMAKER_OUTPUT_PATH})
@@ -31,7 +33,7 @@ else()
     if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
         #Build system configuration management advises explicit components
         #rather than standard zero-config scripts that can drift
-        set(VMMAKER_PHARO_VM ${VMMAKER_OUTPUT_PATH}/pharo.exe)
+        set(VMMAKER_PHARO_VM pharo.exe)
         set(VM_URL_DIR https://files.pharo.org/vm/pharo-spur64/win/)
         set(VM_URL_FILE PharoVM-8.6.1-e829a1da-StockReplacement-win64-bin_signed.zip) #2020/11/15 matches https://files.pharo.org/get-files/90/pharo64-win-stable.zip
         set(VM_ARCHIVE_HASH d24a2fb5d8d744a4c8ce0bc332051960d6f5d8db9f75754317b5aee8eafb7cb1)
@@ -64,13 +66,14 @@ else()
     file(ARCHIVE_EXTRACT 
         INPUT ${VM_DOWNLOADED_FILE}
         DESTINATION ${VMMAKER_OUTPUT_PATH})
-    if(NOT EXISTS ${VMMAKER_PHARO_VM})
-        message(FATAL_ERROR "NO DOWNLOAD VM AVAILABLE: ${VMMAKER_PHARO_VM}")
+    if(NOT EXISTS ${VMMAKER_OUTPUT_PATH}/${VMMAKER_PHARO_VM})
+        message(FATAL_ERROR "NO DOWNLOAD VM AVAILABLE: ${VMMAKER_OUTPUT_PATH}/${VMMAKER_PHARO_VM}")
     endif()
 
     #Cross platform image info
     message("DOWNLOAD PHARO IMAGE FOR CODE GENERATION") 
     set(IMAGE_URL_DIR https://files.pharo.org/image/90/)
+    set(IMAGE Pharo9.0-SNAPSHOT-64bit-099690e.image)
     set(IMAGE_URL_FILE Pharo9.0-SNAPSHOT.build.839.sha.099690e.arch.64bit.zip) #2020/11/15 matches https://files.pharo.org/get-files/90/pharo64.zip 
     set(IMAGE_ARCHIVE_HASH 00c489f0516005d7ba7be259673eab1225ad9a4d1f90df9ce5082cbce4b47b82)
     #Common download method for all platforms
@@ -109,28 +112,12 @@ set(PHARO_VM_SLANG_PLUGIN_GENERATED_FILES
   	${GENERATED_SOURCE_DIR}/generated/plugins/src/FilePlugin/FilePlugin.c)
 
 
-#Custom command that downloads a Pharo image and VM in ${VMMAKER_OUTPUT_PATH}
-if(NOT GENERATE_PHARO_VM) 
-  add_custom_command(
-    OUTPUT ${VMMAKER_OUTPUT_PATH}/Pharo.image ${VMMAKER_OUTPUT_PATH}/pharo
-    COMMAND wget -O - https://get.pharo.org/64/90 | bash
-    COMMAND wget -O - https://get.pharo.org/64/vm90 | bash
-    WORKING_DIRECTORY ${VMMAKER_OUTPUT_PATH}
-    COMMENT "Downloading Pharo 90")
-else()
-  add_custom_command(
-    OUTPUT ${VMMAKER_OUTPUT_PATH}/Pharo.image ${VMMAKER_OUTPUT_PATH}/pharo
-    COMMAND wget -O - https://get.pharo.org/64/90 | bash
-    WORKING_DIRECTORY ${VMMAKER_OUTPUT_PATH}
-    COMMENT "Downloading Pharo 90")
-endif()
-
-
 add_custom_command(
   OUTPUT ${VMMAKER_OUTPUT_PATH}/VMMaker.image
-  COMMAND ${VMMAKER_PHARO_VM} Pharo.image --save --quit ${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st ${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}
-  COMMAND ${VMMAKER_PHARO_VM} Pharo.image save VMMaker
-  DEPENDS ${VMMAKER_OUTPUT_PATH}/Pharo.image
+  #2020.11.16.BTC This is odd, that if --interactive is not put here, it is appended and confounds getting 'directory' parameter' 
+  COMMAND echo ${VMMAKER_PHARO_VM} ${IMAGE} --save --quit --interactive ${CMAKE_CURRENT_SOURCE_DIR}/scripts/installVMMaker.st ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMAND ${VMMAKER_PHARO_VM} ${IMAGE} --save --quit --interactive ${CMAKE_CURRENT_SOURCE_DIR}/scripts/installVMMaker.st ${CMAKE_CURRENT_SOURCE_DIR}
+  DEPENDS ${VMMAKER_OUTPUT_PATH}/${IMAGE}
   WORKING_DIRECTORY ${VMMAKER_OUTPUT_PATH}
   COMMENT "Generating VMMaker image")
 
@@ -138,13 +125,15 @@ add_custom_command(
 if (NOT GENERATE_PHARO_VM)
   add_custom_command(
     OUTPUT ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES}
-    COMMAND ${VMMAKER_OUTPUT_PATH}/pharo ${VMMAKER_OUTPUT_PATH}/VMMaker.image eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\'\"
+    #2020.11.16.BTC This is odd, that if --interactive is not put here, it is appended and confounds getting 'directory' parameter' 
+    COMMAND ${VMMAKER_OUTPUT_PATH}/pharo ${VMMAKER_OUTPUT_PATH}/VMMaker.image --interactive eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\'\"
     DEPENDS ${VMMAKER_OUTPUT_PATH}/VMMaker.image
     COMMENT "Generating VM files for flavour: ${FLAVOUR}")
 else()
   add_custom_command(
     OUTPUT ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES}
-    COMMAND ${VMMAKER_PHARO_VM} ${VMMAKER_OUTPUT_PATH}/VMMaker.image eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\'\"
+    #2020.11.16.BTC This is odd, that if --interactive is not put here, it is appended and confounds getting 'directory' parameter' 
+    COMMAND ${VMMAKER_PHARO_VM} ${VMMAKER_OUTPUT_PATH}/VMMaker.image --interactive eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\'\"
     DEPENDS ${VMMAKER_OUTPUT_PATH}/VMMaker.image
     COMMENT "Generating VM files for flavour: ${FLAVOUR}")
 endif()
