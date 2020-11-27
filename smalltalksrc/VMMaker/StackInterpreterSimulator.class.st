@@ -1815,32 +1815,6 @@ StackInterpreterSimulator >> primitiveIdentityHash [
 	^super primitiveIdentityHash
 ]
 
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> primitiveKbdNext [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdNext]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> primitiveKbdPeek [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdPeek]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> primitiveMouseButtons [
-	| buttons |
-	self pop: 1.
-	buttons := Sensor primMouseButtons.
-	self pushInteger: buttons
-]
-
 { #category : #'debugging traps' }
 StackInterpreterSimulator >> primitiveNewWithArg [
 	"(objectMemory hasSpurMemoryManagerAPI

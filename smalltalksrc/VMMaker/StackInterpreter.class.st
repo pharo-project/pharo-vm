@@ -1285,13 +1285,13 @@ StackInterpreter class >> initializePrimitiveTable [
 		(89 primitiveFlushCache)
 
 		"Input/Output Primitives (90-109)"
-		(90 primitiveMousePoint)
+		(90 primitiveFail)					"primitiveMousePoint"
 		(91 primitiveTestDisplayDepth)			"Blue Book: primitiveCursorLocPut"
 		(92 primitiveSetDisplayMode)				"Blue Book: primitiveCursorLink"
 		(93 primitiveInputSemaphore)
 		(94 primitiveGetNextEvent)				"Blue Book: primitiveSampleInterval"
-		(95 primitiveInputWord)
-		(96 primitiveFail)	"primitiveCopyBits"
+		(95 primitiveFail)					"primitiveInputWord"
+		(96 primitiveFail)					"primitiveCopyBits"
 		(97 primitiveSnapshot)
 		(98 primitiveStoreImageSegment)
 		(99 primitiveLoadImageSegment)
@@ -1302,9 +1302,9 @@ StackInterpreter class >> initializePrimitiveTable [
 		(104 primitiveFail)	"primitiveDrawLoop"
 		(105 primitiveStringReplace)
 		(106 primitiveScreenSize)
-		(107 primitiveMouseButtons)
-		(108 primitiveKbdNext)
-		(109 primitiveKbdPeek)
+		(107 primitiveFail)      "primitiveMouseButtons"
+		(108 primitiveFail)      "primitiveKbdNext"
+		(109 primitiveFail)		"primitiveKbdPeek"
 
 		"System Primitives (110-119)"
 		(110 primitiveIdentical)
@@ -1323,7 +1323,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		"Miscellaneous Primitives (120-127)"
 		(120 primitiveCalloutToFFI)
 		(121 primitiveImageName)
-		(122 primitiveNoop)					"Blue Book: primitiveImageVolume"
+		(122 primitiveFail)			"primitiveNoop"		"Blue Book: primitiveImageVolume"
 		(123 primitiveFail)	"was primitiveValueUninterruptably"
 		(124 primitiveLowSpaceSemaphore)
 		(125 primitiveSignalAtBytesLeft)
@@ -1386,14 +1386,14 @@ StackInterpreter class >> initializePrimitiveTable [
 		(179 primitiveFail) "reserved for primitiveAllInstancesOfAny"
 		(180 primitiveGrowMemoryByAtLeast)
 		(181 primitiveSizeInBytesOfInstance)
-		(182 primitiveSizeInBytes)
+		(182 primitiveFail)			"primitiveSizeInBytes"
 		(183 primitiveIsPinned)
 		(184 primitivePin)
 
 		"CriticalSection primitives"
-		(185 primitiveExitCriticalSection) "similar to signal hence index = signal + 100"
-		(186 primitiveEnterCriticalSection) "similar to wait hence index = wait + 100. was primitiveClosureValue"
-		(187 primitiveTestAndSetOwnershipOfCriticalSection) "was primitiveClosureValueWithArgs"
+		(185 primitiveFail)		"primitiveExitCriticalSection" "similar to signal hence index = signal + 100"
+		(186 primitiveFail) 			"primitiveEnterCriticalSection" "similar to wait hence index = wait + 100. was primitiveClosureValue"
+		(187 primitiveFail) "primitiveTestAndSetOwnershipOfCriticalSection""was primitiveClosureValueWithArgs"
 
 		"Perform method directly"
 		(188 primitiveExecuteMethodArgsArray)
@@ -1424,8 +1424,8 @@ StackInterpreter class >> initializePrimitiveTable [
 
 		(210 primitiveContextAt)
 		(211 primitiveContextAtPut)
-		(212 primitiveContextSize)
-		(213 primitiveContextXray)
+		(212 primitiveContextSize)	
+		(213 primitiveFail)			"primitiveContextXray"
 		(214 primitiveVoidVMState)
 		(215 primitiveFlushCacheByMethod) "primitiveVoidVMStateForMethod in the CoInterpreter"
 		(216 217 primitiveFail)	"reserved for Cog primitives"

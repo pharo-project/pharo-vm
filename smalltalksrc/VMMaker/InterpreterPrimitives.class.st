@@ -1821,36 +1821,6 @@ InterpreterPrimitives >> primitiveDivideLargeIntegers [
 
 ]
 
-{ #category : #'process primitives' }
-InterpreterPrimitives >> primitiveEnterCriticalSection [
-	"Attempt to enter a CriticalSection/Mutex.  If not owned, set the owner to the current
-	 process and answer false. If owned by the current process  answer true.   Otherwise
-	 suspend the process.  Answer if the receiver is owned by the current process.
-	 For simulation if there is an argument it is taken to be the effective activeProcess
-	 (see Process>>effectiveProcess)."
-	| criticalSection owningProcessIndex owningProcess activeProc |
-	argumentCount > 0
-		ifTrue:
-			[criticalSection := self stackValue: 1.  "rcvr"
-			 activeProc := self stackTop]
-		ifFalse:
-			[criticalSection := self stackTop.  "rcvr"
-			 activeProc := self activeProcess].
-	owningProcessIndex := ExcessSignalsIndex. "CriticalSections are laid out like Semaphores"
-	owningProcess := objectMemory fetchPointer: owningProcessIndex ofObject: criticalSection.
-	owningProcess = objectMemory nilObject ifTrue:
-		[objectMemory storePointer: owningProcessIndex
-			ofObject: criticalSection
-			withValue: activeProc.
-		 ^self pop: argumentCount + 1 thenPush: objectMemory falseObject].
-	owningProcess = activeProc ifTrue:
-		[^self pop: argumentCount + 1 thenPush: objectMemory trueObject].
-	"Arrange to answer false (unowned) when the process is resumed."
-	self pop: argumentCount + 1 thenPush: objectMemory falseObject.
-	self addLastLink: activeProc toList: criticalSection.
-	self transferTo: self wakeHighestPriority
-]
-
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveEqual [
 	| integerReceiver integerArgument result |
@@ -1883,31 +1853,6 @@ InterpreterPrimitives >> primitiveEqualLargeIntegers [
 
 	self successful ifTrue:
 		[self pop: 2 thenPushBool: integerRcvr = integerArg]
-]
-
-{ #category : #'process primitives' }
-InterpreterPrimitives >> primitiveExitCriticalSection [
-	"Exit the critical section.
-	 This may change the active process as a result."
-	| criticalSection owningProcessIndex owningProcess |
-	criticalSection := self stackTop.  "rcvr"
-	owningProcessIndex := ExcessSignalsIndex. "CriticalSections are laid out like Semaphores"
-	(self isEmptyList: criticalSection)
-		ifTrue:
-			[objectMemory storePointerUnchecked: owningProcessIndex
-				ofObject: criticalSection
-				withValue: objectMemory nilObject]
-		ifFalse:
-			[owningProcess := self removeFirstLinkOfList: criticalSection.
-			 "store check unnecessary because criticalSection referred to owningProcess
-			  via its FirstLinkIndex slot before owningProcess was removed."
-			 objectMemory storePointerUnchecked: owningProcessIndex
-				ofObject: criticalSection
-				withValue: owningProcess.
-			 "Note that resume: isn't fair; it won't suspend the active process.
-			  For fairness we must do the equivalent of a primitiveYield, but that
-			  may break old code, so we stick with unfair resume:."
-			self resume: owningProcess preemptedYieldingIf: preemptionYields]
 ]
 
 { #category : #'system control primitives' }
@@ -2692,13 +2637,6 @@ InterpreterPrimitives >> primitiveInputSemaphore [
 			[self primitiveFailFor: PrimErrBadArgument]
 ]
 
-{ #category : #'I/O primitives' }
-InterpreterPrimitives >> primitiveInputWord [
-	"Return an integer indicating the reason for the most recent input interrupt."
-
-	self pop: 1 thenPushInteger: 0.	"noop for now"
-]
-
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveInstVarAt [
 	| index rcvr hdr fmt totalLength fixedFields value |
@@ -2846,32 +2784,6 @@ InterpreterPrimitives >> primitiveIsWindowObscured [
 	self pop: self methodArgumentCount+1.
 	self pushBool: self ioIsWindowObscured.
 
-]
-
-{ #category : #'I/O primitives' }
-InterpreterPrimitives >> primitiveKbdNext [
-	"Obsolete on virtually all platforms; old style input polling code.
-	Return the next keycode and remove it from the input buffer. The low byte is the 8-bit ISO character. The next four bits are the Smalltalk modifier bits <cmd><option><ctrl><shift>."
-
-	| keystrokeWord |
-	self pop: 1.
-	keystrokeWord := self ioGetKeystroke.
-	keystrokeWord >= 0
-		ifTrue: [self pushInteger: keystrokeWord]
-		ifFalse: [self push: objectMemory nilObject].
-]
-
-{ #category : #'I/O primitives' }
-InterpreterPrimitives >> primitiveKbdPeek [
-	"Obsolete on virtually all platforms; old style input polling code.
-	Return the next keycode and without removing it from the input buffer. The low byte is the 8-bit ISO character. The next four bits are the Smalltalk modifier bits <cmd><option><ctrl><shift>."
-
-	| keystrokeWord |
-	self pop: 1.
-	keystrokeWord := self ioPeekKeystroke.
-	keystrokeWord >= 0
-		ifTrue: [self pushInteger: keystrokeWord]
-		ifFalse: [self push: objectMemory nilObject].
 ]
 
 { #category : #'arithmetic integer primitives' }
@@ -3139,29 +3051,6 @@ InterpreterPrimitives >> primitiveModLargeIntegers [
 
 ]
 
-{ #category : #'I/O primitives' }
-InterpreterPrimitives >> primitiveMouseButtons [
-	"Obsolete on virtually all platforms; old style input polling code.
-	Return the mouse button state. The low three bits encode the state of the <red><yellow><blue> mouse buttons. The next four bits encode the Smalltalk modifier bits <cmd><option><ctrl><shift>."
-
-	| buttonWord |
-	self pop: 1.
-	buttonWord := self ioGetButtonState.
-	self pushInteger: buttonWord.
-]
-
-{ #category : #'I/O primitives' }
-InterpreterPrimitives >> primitiveMousePoint [
-	"Obsolete on virtually all platforms; old style input polling code.
-	Return a Point indicating current position of the mouse. Note that mouse coordinates may be negative if the mouse moves above or to the left of the top-left corner of the Smalltalk window."
-
-	| pointWord x y |
-	pointWord := self ioMousePoint.
-	x := self signExtend16: ((pointWord >> 16) bitAnd: 16rFFFF).
-	y := self signExtend16: (pointWord bitAnd: 16rFFFF).
-	self pop: 1 thenPush: (self makePointwithxValue: x  yValue: y)
-]
-
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveMultiply [
 	| integerRcvr integerArg integerResult overflow |
@@ -3351,13 +3240,6 @@ InterpreterPrimitives >> primitiveNextObject [
 		ifNotNil: [:instance|
 			self assert: (objectMemory isInMemory: instance).
 			self pop: argumentCount+1 thenPush: instance]
-]
-
-{ #category : #'system control primitives' }
-InterpreterPrimitives >> primitiveNoop [
-	"A placeholder for primitives that haven't been implemented or are being withdrawn gradually. Just absorbs any arguments and returns the receiver."
-
-	self pop: argumentCount.  "pop args, leave rcvr on stack"
 ]
 
 { #category : #'arithmetic integer primitives' }
@@ -4994,6 +4876,8 @@ InterpreterPrimitives >> primitiveSuspend [
 
 { #category : #'process primitives' }
 InterpreterPrimitives >> primitiveTestAndSetOwnershipOfCriticalSection [
+	"Did not delete this one because I wanted to check later, theo 2020"
+
 	"Attempt to test-and-set the ownership of the critical section.  If not owned,
 	 set the owner to the current process and answer false. If owned by the
 	 current process answer true.  If owned by some other process answer nil.

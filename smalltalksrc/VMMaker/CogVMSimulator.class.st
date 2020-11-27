@@ -2954,32 +2954,6 @@ CogVMSimulator >> primitiveGetAttribute [
 		self pop: 2 "rcvr, attr" thenPush: s]
 ]
 
-{ #category : #'I/O primitives' }
-CogVMSimulator >> primitiveKbdNext [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdNext]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> primitiveKbdPeek [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdPeek]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> primitiveMouseButtons [
-	| buttons |
-	self pop: 1.
-	buttons := Sensor primMouseButtons.
-	self pushInteger: buttons
-]
-
 { #category : #'debugging traps' }
 CogVMSimulator >> primitiveNewWithArg [
 	"(objectMemory hasSpurMemoryManagerAPI
