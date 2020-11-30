@@ -1347,6 +1347,75 @@ StackInterpreterMT >> preemptionYields: aBoolean [
 	preemptionYields := aBoolean
 ]
 
+{ #category : #'vm scheduling' }
+StackInterpreterMT >> primitiveEnterCriticalSection [
+	"Attempt to enter a CriticalSection/Mutex.  If not owned, set the owner to the current
+	 process and answer false. If owned by the current process  answer true.   Otherwise
+	 suspend the process.  Answer if the receiver is owned by the current process."
+	| criticalSection owningProcessIndex owningProcess activeProc inInterpreter |
+	argumentCount > 0
+		ifTrue:
+			[criticalSection := self stackValue: 1.  "rcvr"
+			 activeProc := self stackTop]
+		ifFalse:
+			[criticalSection := self stackTop.  "rcvr"
+			 activeProc := self activeProcess].
+	owningProcessIndex := ExcessSignalsIndex. "CriticalSections are laid out like Semaphores"
+	owningProcess := objectMemory fetchPointer: owningProcessIndex ofObject: criticalSection.
+	owningProcess = objectMemory nilObject ifTrue:
+		[objectMemory storePointer: owningProcessIndex
+			ofObject: criticalSection
+			withValue: activeProc.
+		 ^self pop: argumentCount + 1 thenPush: objectMemory falseObject].
+	owningProcess = activeProc ifTrue:
+		[^self pop: argumentCount + 1 thenPush: objectMemory trueObject].
+	"Arrange to answer false (unowned) when the process is resumed."
+	self pop: argumentCount + 1 thenPush: objectMemory falseObject.
+	"We're going to switch process, either to an interpreted frame or a machine
+	 code frame. To know whether to return or enter machine code we have to
+	 know from whence we came.  We could have come from the interpreter,
+	 either directly or via a machine code primitive.  We could have come from
+	 machine code.  The instructionPointer tells us where from:"
+	inInterpreter := instructionPointer >= objectMemory startOfMemory.
+	self addLastLink: activeProc toList: criticalSection.
+	self transferTo: self wakeHighestPriority from: CSEnterCriticalSection.
+	self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter
+]
+
+{ #category : #'vm scheduling' }
+StackInterpreterMT >> primitiveExitCriticalSection [
+	"Exit the critical section.
+	 This may change the active process as a result."
+	| criticalSection owningProcessIndex inInterpreter owningProcess |
+	criticalSection := self stackTop.  "rcvr"
+	owningProcessIndex := ExcessSignalsIndex. "CriticalSections are laid out like Semaphores"
+	(self isEmptyList: criticalSection)
+		ifTrue:
+			[objectMemory storePointerUnchecked: owningProcessIndex
+				ofObject: criticalSection
+				withValue: objectMemory nilObject]
+		ifFalse:
+			["We're going to switch process, either to an interpreted frame or a machine
+			  code frame. To know whether to return or enter machine code we have to
+			  know from whence we came.  We could have come from the interpreter,
+			  either directly or via a machine code primitive.  We could have come from
+			  machine code.  The instructionPointer tells us where from:"
+			 inInterpreter := instructionPointer >= objectMemory startOfMemory.
+			 owningProcess := self removeFirstLinkOfList: criticalSection.
+			 "store check unnecessary because aSemaphore referred to owningProcess
+			  via its FirstLinkIndex slot before owningProcess was removed."
+			 objectMemory storePointerUnchecked: owningProcessIndex
+				ofObject: criticalSection
+				withValue: owningProcess.
+			 "Note that resume: isn't fair; it won't suspend the active process.
+			  For fairness we must do the equivalent of a primitiveYield, but that
+			  may break old code, so we stick with unfair resume:."
+			 (self resume: owningProcess
+				preemptedYieldingIf: preemptionYields
+				from: CSExitCriticalSection) ifTrue:
+						[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]]
+]
+
 { #category : #UI }
 StackInterpreterMT >> primitiveGetNextEvent [
 	self inGUIThread ifFalse: [ 
