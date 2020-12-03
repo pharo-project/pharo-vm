@@ -15,7 +15,62 @@ VMBlockTest >> anEmptyMethod [
 { #category : #'as yet unclassified' }
 VMBlockTest >> evaluatingABlock [
 
+  ^[42] value
+]
+
+{ #category : #'as yet unclassified' }
+VMBlockTest >> evaluatingABlockWithLocalBlockVariable [
+
+	^ [ 
+	  | aVariable |
+	  aVariable := 42.
+	  aVariable ] value
+]
+
+{ #category : #'as yet unclassified' }
+VMBlockTest >> evaluatingABlockWithLocalMethodVariableAssignedInTheBlock [
+
+	| aVariable |
+	^ [ 
+	  aVariable := 42.
+	  aVariable ] value
+]
+
+{ #category : #'as yet unclassified' }
+VMBlockTest >> evaluatingABlockWithLocalMethodVariableRead [
+
+	| aVariable |
+	aVariable := 42.
+	^ [ aVariable ] value 
+]
+
+{ #category : #'as yet unclassified' }
+VMBlockTest >> evaluatingABlockWithNonLocalReturn [
+
   [^1] value
+]
+
+{ #category : #testing }
+VMBlockTest >> executeMethod: aMethodToTest [
+
+	| methodReturning initialMethod |
+	
+	methodReturning := self createMethodOopFromPharoMethod:
+		             aMethodToTest.
+
+	initialMethod := self createMethodOopFromPharoMethod:
+		                     self class >> #anEmptyMethod.
+
+	"We want to avoid baseFrameReturn (base frame initialisation)"
+	stackBuilder addNewFrame method: initialMethod.
+	stackBuilder addNewFrame
+		method: methodReturning;
+		receiver: memory trueObject.
+	stackBuilder buildStack.
+	
+	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodReturning).
+	interpreter interpretWhile: [ interpreter method = methodReturning ].
+
 ]
 
 { #category : #helpers }
@@ -61,190 +116,151 @@ VMBlockTest >> methodWithLocalReturningABlock [
 	^ [ a ]
 ]
 
+{ #category : #running }
+VMBlockTest >> setUp [
+
+   super setUp.
+	self installBlockClosureClass.
+]
+
 { #category : #testing }
 VMBlockTest >> testCreatingABlockClosureShouldCopyUsedMethodVariable [
 
-	| methodReturning initialMethod |
+	| methodToTest |
+	methodToTest := self class >> #methodWithLocalReturningABlock.
 
-	initialMethod := self createMethodOopFromPharoMethod:
-		                     self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
-		             self class >> #methodWithLocalReturningABlock.
-
-	self installBlockClosureClass.
-	"We want to avoid baseFrameReturn (base frame initialisation)"
-	stackBuilder addNewFrame method: initialMethod.
-	stackBuilder addNewFrame
-		method: methodReturning;
-		receiver: memory trueObject.
-	stackBuilder buildStack.
-	
-	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodReturning).
-	interpreter interpretWhile: [ interpreter method = methodReturning ].
-
+	self executeMethod: methodToTest.
 	"We assign 1 to the local variable of the method, see methodWithLocalReturningABlock"
 	self
-		assert: (memory fetchPointer: ClosureFirstCopiedValueIndex ofObject: interpreter stackTop) equals: (memory integerObjectOf: 1).
-
+		assert: (memory
+				 fetchPointer: ClosureFirstCopiedValueIndex
+				 ofObject: interpreter stackTop)
+		equals: (memory integerObjectOf: 1)
 ]
 
 { #category : #testing }
 VMBlockTest >> testCreatingABlockClosureShouldHaveCorrectPC [
 
-	| methodReturning initialMethod |
-	
-	initialMethod := self createMethodOopFromPharoMethod:
-		                     self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
-		             self class >> #methodReturningABlock.
+	| methodToTest |
+	methodToTest := self class >> #methodReturningABlock.
 
-	self installBlockClosureClass.
-	"We want to avoid baseFrameReturn (base frame initialisation)"
-	stackBuilder addNewFrame method: initialMethod.
-	stackBuilder addNewFrame
-		method: methodReturning;
-		receiver: memory trueObject.
-	stackBuilder buildStack.
-	
-	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodReturning).
-	interpreter interpretWhile: [ interpreter method = methodReturning ].
+	self executeMethod: methodToTest.
 
-	"hard code for now should be modified"
+	self flag:#'hard code for now should be modified'.
 	self
-		assert: (memory fetchPointer: ClosureStartPCIndex ofObject: interpreter stackTop) equals: (memory integerObjectOf: 29).
-
+		assert: (memory
+				 fetchPointer: ClosureStartPCIndex
+				 ofObject: interpreter stackTop)
+		equals: (memory integerObjectOf: 29)
 ]
 
 { #category : #testing }
 VMBlockTest >> testCreatingABlockClosureShouldHaveOuterContextObject [
 
-	| methodReturning initialMethod |
+	| methodToTest |
+	methodToTest := self class >> #methodReturningABlock.
 
-	initialMethod := self createMethodOopFromPharoMethod:
-		                     self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
-		             self class >> #methodReturningABlock.
-
-	self installBlockClosureClass.
-	"We want to avoid baseFrameReturn (base frame initialisation)"
-	stackBuilder addNewFrame method: initialMethod.
-	stackBuilder addNewFrame
-		method: methodReturning;
-		receiver: memory trueObject.
-	stackBuilder buildStack.
-	
-	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodReturning).
-
-	interpreter interpretWhile: [ interpreter method = methodReturning ].
+	self executeMethod: methodToTest.
 
 	"Currently fails because the stack frame is not overriden.
 	So the interpreter considers it's still married even thought the stack frame is already dead"
 
-	self
-		assert: (interpreter isWidowedContext: (memory outerContextOf: interpreter stackTop))
-
+	self assert: (interpreter isWidowedContext:
+			 (memory outerContextOf: interpreter stackTop))
 ]
 
 { #category : #'as yet unclassified' }
 VMBlockTest >> testCreatingABlockInsideABlockClosureShouldCopyUsedBlockVariable [
 
-	| methodReturning initialMethod |
+	| methodToTest |
+	methodToTest := self class
+	                >> #methodReturningABlockInsideABlockWithLocal.
 
-	initialMethod := self createMethodOopFromPharoMethod:
-		                     self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
-		             self class >> #methodReturningABlockInsideABlockWithLocal.
-
-	self installBlockClosureClass.
-	"We want to avoid baseFrameReturn (base frame initialisation)"
-	stackBuilder addNewFrame method: initialMethod.
-	stackBuilder addNewFrame
-		method: methodReturning;
-		receiver: memory trueObject.
-	stackBuilder buildStack.
-	
-	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodReturning).
-	interpreter interpretWhile: [ interpreter method = methodReturning ].
+	self executeMethod: methodToTest.
 
 	"We assign 2 to the local variable of the block, see methodReturningABlockInsideABlock"
 	self
-		assert: (memory fetchPointer: ClosureFirstCopiedValueIndex ofObject: interpreter stackTop) equals: (memory integerObjectOf: 2).
-
+		assert: (memory
+				 fetchPointer: ClosureFirstCopiedValueIndex
+				 ofObject: interpreter stackTop)
+		equals: (memory integerObjectOf: 2)
 ]
 
 { #category : #testing }
 VMBlockTest >> testCreatingABlockWithTwoArgumentsClosureShouldHaveTwoArguments [
 
-	| methodReturning initialMethod |
+	| methodToTest |
+	methodToTest := self class >> #methodReturningABlockWithTwoArguments.
 
-	initialMethod := self createMethodOopFromPharoMethod:
-		                     self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
-		             self class >> #methodReturningABlockWithTwoArguments.
-
-	self installBlockClosureClass.
-	"We want to avoid baseFrameReturn (base frame initialisation)"
-	stackBuilder addNewFrame method: initialMethod.
-	stackBuilder addNewFrame
-		method: methodReturning;
-		receiver: memory trueObject.
-	stackBuilder buildStack.
-	
-	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodReturning).
-	interpreter interpretWhile: [ interpreter method = methodReturning ].
+	self executeMethod: methodToTest.
 
 	self
-		assert: (memory fetchPointer: ClosureNumArgsIndex ofObject: interpreter stackTop) equals: (memory integerObjectOf: 2).
-
+		assert: (memory
+				 fetchPointer: ClosureNumArgsIndex
+				 ofObject: interpreter stackTop)
+		equals: (memory integerObjectOf: 2)
 ]
 
 { #category : #testing }
 VMBlockTest >> testCreatingABlockWithoutArgumentsClosureShouldHaveNoArgument [
 
-	| methodReturning initialMethod |
-	
-	initialMethod := self createMethodOopFromPharoMethod:
-		                     self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
-		             self class >> #methodReturningABlock.
+	| methodToTest |
+	methodToTest := self class >> #methodReturningABlock.
 
-	self installBlockClosureClass.
-	"We want to avoid baseFrameReturn (base frame initialisation)"
-	stackBuilder addNewFrame method: initialMethod.
-	stackBuilder addNewFrame
-		method: methodReturning;
-		receiver: memory trueObject.
-	stackBuilder buildStack.
-	
-	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodReturning).
-	interpreter interpretWhile: [ interpreter method = methodReturning ].
-
+	self executeMethod: methodToTest.
 	self
-		assert: (memory fetchPointer: ClosureNumArgsIndex ofObject: interpreter stackTop) equals: (memory integerObjectOf: 0).
-
+		assert: (memory
+				 fetchPointer: ClosureNumArgsIndex
+				 ofObject: interpreter stackTop)
+		equals: (memory integerObjectOf: 0)
 ]
 
 { #category : #'as yet unclassified' }
 VMBlockTest >> testEvaluatingABlock [
 
-	| methodReturning initialMethod |
-	
-	initialMethod := self createMethodOopFromPharoMethod:
-		                 self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
-		                   self class >> #evaluatingABlock.
+	| methodToTest |
+	methodToTest := self class >> #evaluatingABlock.
 
-	self installBlockClosureClass.
-	"We want to avoid baseFrameReturn (base frame initialisation)"
-	stackBuilder addNewFrame method: initialMethod.
-	stackBuilder addNewFrame
-		method: methodReturning;
-		receiver: memory trueObject.
-	stackBuilder buildStack.
+	self executeMethod: methodToTest.
 
-	interpreter instructionPointer:
-		(methodBuilder bytecodeAt: 0 forMethod: methodReturning).
-	interpreter interpretWhile: [ interpreter method = methodReturning ].
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: 42)
+]
+
+{ #category : #'as yet unclassified' }
+VMBlockTest >> testEvaluatingABlockWithLocalBlockVariable [
+
+	| methodToTest |
+	methodToTest := self class >> #evaluatingABlockWithLocalBlockVariable.
+
+	self executeMethod: methodToTest.
+
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: 42)
+]
+
+{ #category : #'as yet unclassified' }
+VMBlockTest >> testEvaluatingABlockWithLocalMethodVariable [
+
+	| methodToTest |
+	methodToTest := self class >> #evaluatingABlockWithLocalMethodVariableAssignedInTheBlock.
+
+	self executeMethod: methodToTest.
+
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: 42)
+]
+
+{ #category : #'as yet unclassified' }
+VMBlockTest >> testEvaluatingABlockWithNonLocalReturn [
+
+	| methodToTest |
+	methodToTest := self class >> #evaluatingABlockWithNonLocalReturn.
+
+	self executeMethod: methodToTest.
 
 	self assert: true
 ]
@@ -252,23 +268,10 @@ VMBlockTest >> testEvaluatingABlock [
 { #category : #testing }
 VMBlockTest >> testPushClosureBytecodePushesClosure [
 
-	| methodReturning initialMethod |
-
-	initialMethod := self createMethodOopFromPharoMethod:
-		                     self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
-		             self class >> #methodReturningABlock.
-
-	self installBlockClosureClass.
-	"We want to avoid baseFrameReturn (base frame initialisation)"
-	stackBuilder addNewFrame method: initialMethod.
-	stackBuilder addNewFrame
-		method: methodReturning;
-		receiver: memory trueObject.
-	stackBuilder buildStack.
+	|methodToTest|
+	methodToTest := self class >> #methodReturningABlock.
 	
-	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodReturning).
-	interpreter interpretWhile: [ interpreter method = methodReturning ].
+	self executeMethod: methodToTest.
 
 	self
 		assert: (memory fetchClassOf: interpreter stackTop)
