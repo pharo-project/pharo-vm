@@ -52,6 +52,12 @@ SpurObject class >> on: address image: anImage [
 	
 ]
 
+{ #category : #something }
+SpurObject >> = aSpurObject [
+	^ self address = aSpurObject address
+	
+]
+
 { #category : #accessing }
 SpurObject >> address [
 	^ address
@@ -185,6 +191,16 @@ SpurObject >> memory [
 	^ image memory
 ]
 
+{ #category : #something }
+SpurObject >> nextObject [
+
+	| maybeObject |
+	maybeObject := SpurObject on: self endAddress + self headerSize image: image.
+	^ maybeObject basicNumberOfSlots = 16rFF
+		ifTrue: [ maybeObject ]
+		ifFalse: [ SpurObject on: self endAddress image: image ].
+]
+
 { #category : #'as yet unclassified' }
 SpurObject >> numberOfSlots [
 
@@ -207,6 +223,16 @@ SpurObject >> oop [
 SpurObject >> previousHeaderInteger [
 
 	^ self memory integerAt: address + (0 - self headerSize) size: 4 signed: false
+]
+
+{ #category : #something }
+SpurObject >> printOn: aStream [
+
+	aStream nextPutAll: 'a(n) '.
+	self vmClass printSimpleOn: aStream.
+	aStream
+		nextPutAll: '@';
+		nextPutAll: self address hex
 ]
 
 { #category : #'as yet unclassified' }
