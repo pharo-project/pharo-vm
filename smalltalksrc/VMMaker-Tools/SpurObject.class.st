@@ -52,7 +52,7 @@ SpurObject class >> on: address image: anImage [
 	
 ]
 
-{ #category : #something }
+{ #category : #testing }
 SpurObject >> = aSpurObject [
 	^ self address = aSpurObject address
 	
@@ -74,7 +74,7 @@ SpurObject >> allSlots [
 	^ self spurLayout allSlots
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #converting }
 SpurObject >> asLocalByteArray [ 
 	^ self spurLayout asLocalByteArray 
 ]
@@ -96,7 +96,7 @@ SpurObject >> basicNumberOfSlots [
 	^ self spurLayout basicNumberOfSlots
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-header' }
 SpurObject >> byteSize [
 	
 	| numberOfSlots |
@@ -112,7 +112,7 @@ SpurObject >> classIndex [
 	^ self headerInteger bitAnd: (2 raisedTo: 22) -1
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 SpurObject >> endAddress [
 
 	| basicSize padding |
@@ -123,7 +123,7 @@ SpurObject >> endAddress [
 	^ address + basicSize + padding
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 SpurObject >> fetchPointer: anInteger [
 
 	^ self image fetchPointer: anInteger ofObject: self address
@@ -177,7 +177,7 @@ SpurObject >> indexInClassTable [
 	^ self rawHashBits
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-slots' }
 SpurObject >> instanceVariables [
 
 	| numberOfSlots |
@@ -201,7 +201,7 @@ SpurObject >> nextObject [
 		ifFalse: [ SpurObject on: self endAddress image: image ].
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-slots' }
 SpurObject >> numberOfSlots [
 
 	^ self image numberOfSlotsOf: self
@@ -213,7 +213,7 @@ SpurObject >> objectFormat [
 	^ (self headerInteger >> 24) bitAnd: 2r11111
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #converting }
 SpurObject >> oop [
 
 	^ address
@@ -225,7 +225,7 @@ SpurObject >> previousHeaderInteger [
 	^ self memory integerAt: address + (0 - self headerSize) size: 4 signed: false
 ]
 
-{ #category : #something }
+{ #category : #printing }
 SpurObject >> printOn: aStream [
 
 	aStream nextPutAll: 'a(n) '.
@@ -235,7 +235,7 @@ SpurObject >> printOn: aStream [
 		nextPutAll: self address hex
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #printing }
 SpurObject >> printSimpleOn: aLimitedWriteStream [ 
 	
 	aLimitedWriteStream nextPutAll: self address hex
@@ -248,21 +248,21 @@ SpurObject >> rawHashBits [
 	^((self memory unsignedLongAt: self oop + 4 bigEndian: false) bitAnd: self identityHashHalfWordMask)
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 SpurObject >> simulator [
 	^self image simulator
 ]
 
 { #category : #'accessing-slots' }
 SpurObject >> slotAt: anInteger [ 
-"Api is 1 based but the memory api is O based"
+	"Api is 1 based but the memory api is O based"
 
 	^ self spurLayout slotAt: anInteger - 1
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-slots' }
 SpurObject >> slotAt: anInteger put: aSpurObject [
-"Our api is 1 based but the simulator is 0 based"
+	"Our api is 1 based but the simulator is 0 based"
 	^ self simulator
 		  storePointer: anInteger - 1
 		  ofObject: self address
@@ -289,12 +289,12 @@ SpurObject >> spurLayout: anObject [
 	spurLayout := anObject
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 SpurObject >> vmClass [
 	^self image classOf: self
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #printing }
 SpurObject >> vmPrintOop [
 
 	<primitive: 154>
