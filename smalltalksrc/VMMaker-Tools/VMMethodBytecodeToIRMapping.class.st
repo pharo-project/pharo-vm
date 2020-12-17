@@ -6,7 +6,7 @@ Class {
 		'ir',
 		'mappingList'
 	],
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-InspectorExtensions'
 }
 
 { #category : #'instance creation' }

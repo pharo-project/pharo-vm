@@ -4,7 +4,7 @@ Class {
 	#instVars : [
 		'memory'
 	],
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-InspectorExtensions'
 }
 
 { #category : #'instance-creation' }

@@ -7,7 +7,7 @@ Class {
 		'label',
 		'oop'
 	],
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-InspectorExtensions'
 }
 
 { #category : #accessing }

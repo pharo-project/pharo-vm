@@ -5,7 +5,7 @@ Class {
 		'address',
 		'machineSimulator'
 	],
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-MachineCodeDebugger'
 }
 
 { #category : #'instance creation' }

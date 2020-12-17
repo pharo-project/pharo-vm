@@ -1,7 +1,7 @@
 Class {
 	#name : #VMTFreeTreeNode,
 	#superclass : #VMTFreeListNode,
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-InspectorExtensions'
 }
 
 { #category : #accessing }

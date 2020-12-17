@@ -7,7 +7,7 @@ Class {
 		'machineSimulator',
 		'debugger'
 	],
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-MachineCodeDebugger'
 }
 
 { #category : #accessing }

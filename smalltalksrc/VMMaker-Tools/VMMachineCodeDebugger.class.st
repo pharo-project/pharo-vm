@@ -13,7 +13,7 @@ Class {
 		'ipInput',
 		'jumpToButton'
 	],
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-MachineCodeDebugger'
 }
 
 { #category : #specs }

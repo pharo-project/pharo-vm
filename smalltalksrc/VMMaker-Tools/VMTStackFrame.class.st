@@ -5,7 +5,7 @@ Class {
 		'memory',
 		'framePointer'
 	],
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-InspectorExtensions'
 }
 
 { #category : #accessing }

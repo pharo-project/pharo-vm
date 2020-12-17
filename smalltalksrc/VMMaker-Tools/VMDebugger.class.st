@@ -13,7 +13,7 @@ Class {
 		'stack',
 		'frameContainer'
 	],
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-MachineCodeDebugger'
 }
 
 { #category : #specs }

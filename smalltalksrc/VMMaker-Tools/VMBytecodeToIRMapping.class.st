@@ -5,7 +5,7 @@ Class {
 		'bytecodeInstruction',
 		'irInstruction'
 	],
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-InspectorExtensions'
 }
 
 { #category : #accessing }

@@ -6,7 +6,7 @@ Class {
 		'label',
 		'nodeOop'
 	],
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-InspectorExtensions'
 }
 
 { #category : #'instance-creation' }
