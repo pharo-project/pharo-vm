@@ -40,7 +40,7 @@ Class {
 		'image',
 		'spurLayout'
 	],
-	#category : #'VMMaker-Tools-Model'
+	#category : #'VMMaker-Tools-imageInspector'
 }
 
 { #category : #'as yet unclassified' }
@@ -53,9 +53,11 @@ SpurObject class >> on: address image: anImage [
 ]
 
 { #category : #testing }
-SpurObject >> = aSpurObject [
-	^ self address = aSpurObject address
+SpurObject >> = anotherObject [
+	"if an oop is provided directly, we still allow the comparison"
+	(anotherObject isKindOf: SmallInteger) ifTrue: [ ^ anotherObject = address ].
 	
+	^ anotherObject address = address
 ]
 
 { #category : #accessing }
@@ -110,6 +112,11 @@ SpurObject >> byteSize [
 SpurObject >> classIndex [
 	
 	^ self headerInteger bitAnd: (2 raisedTo: 22) -1
+]
+
+{ #category : #printing }
+SpurObject >> classOop [
+	^ self simulator fetchClassOf: address
 ]
 
 { #category : #accessing }
@@ -179,10 +186,22 @@ SpurObject >> indexInClassTable [
 
 { #category : #'accessing-slots' }
 SpurObject >> instanceVariables [
+	^ (1 to: self numSlots) collect: [ :index | self slotAt: index ]
+]
 
-	| numberOfSlots |
-	numberOfSlots := self image numberOfSlotsOf: self.
-	^ (1 to: numberOfSlots) collect: [ :index | self slotAt: index ]
+{ #category : #testing }
+SpurObject >> isImmediate [
+	^ self simulator isImmediate: address
+]
+
+{ #category : #testing }
+SpurObject >> isOld [
+	^ self simulator isOldObject: self address
+]
+
+{ #category : #testing }
+SpurObject >> isYoung [
+	^ self simulator isYoungObject: self address
 ]
 
 { #category : #accessing }
@@ -193,18 +212,12 @@ SpurObject >> memory [
 
 { #category : #something }
 SpurObject >> nextObject [
-
-	| maybeObject |
-	maybeObject := SpurObject on: self endAddress + self headerSize image: image.
-	^ maybeObject basicNumberOfSlots = 16rFF
-		ifTrue: [ maybeObject ]
-		ifFalse: [ SpurObject on: self endAddress image: image ].
+	^ image nextObjectOf: self
 ]
 
 { #category : #'accessing-slots' }
-SpurObject >> numberOfSlots [
-
-	^ self image numberOfSlotsOf: self
+SpurObject >> numSlots [
+	^ self image numSlotsOf: self.
 ]
 
 { #category : #'accessing-header' }
@@ -226,19 +239,46 @@ SpurObject >> previousHeaderInteger [
 ]
 
 { #category : #printing }
-SpurObject >> printOn: aStream [
-
-	aStream nextPutAll: 'a(n) '.
-	self vmClass printSimpleOn: aStream.
-	aStream
-		nextPutAll: '@';
-		nextPutAll: self address hex
+SpurObject >> printAsCharacter [
+	^ self shouldBeImplemented
 ]
 
 { #category : #printing }
-SpurObject >> printSimpleOn: aLimitedWriteStream [ 
+SpurObject >> printAsImmediate [
+	self isCharacter ifTrue: [ ^ self printAsCharacter ].
+	"default case is a smallInteger"
+	^ self printAsInteger
+]
+
+{ #category : #printing }
+SpurObject >> printAsInteger [
+	^ 'SmallInteger: ', address printString
+]
+
+{ #category : #printing }
+SpurObject >> printOn: aStream [
+	| knownObject |
+	knownObject := VMFrameBuilder new memory: self simulator ; adaptAddressToMemory: address.
+	knownObject isString ifTrue: [ ^ aStream <<  knownObject ].
+
+	self isImmediate ifTrue:[ ^ aStream << self printAsImmediate ].
 	
-	aLimitedWriteStream nextPutAll: self address hex
+	address printOn: aStream
+	
+]
+
+{ #category : #printing }
+SpurObject >> printString [
+	| knownObject |
+	knownObject := VMFrameBuilder new memory: self simulator ; adaptAddressToMemory: address.
+	knownObject isString ifTrue: [ ^ knownObject ].
+
+	self isImmediate ifTrue:[ ^ self printAsImmediate ].
+	
+	^ String streamContents: [ :s |
+		s << address printString.
+		]
+	
 ]
 
 { #category : #'accessing-header' }
@@ -254,19 +294,27 @@ SpurObject >> simulator [
 ]
 
 { #category : #'accessing-slots' }
-SpurObject >> slotAt: anInteger [ 
+SpurObject >> slotAt: anIndex [
 	"Api is 1 based but the memory api is O based"
-
-	^ self spurLayout slotAt: anInteger - 1
+	self numSlots >= anIndex ifFalse: [ SubscriptOutOfBounds signal ].
+	^ SpurObject on: (self spurLayout slotAt: anIndex - 1) image: image 
 ]
 
 { #category : #'accessing-slots' }
-SpurObject >> slotAt: anInteger put: aSpurObject [
+SpurObject >> slotAt: anIndex put: aSpurObjectOrOop [
 	"Our api is 1 based but the simulator is 0 based"
+
+	| value |
+	self numSlots >= anIndex ifFalse: [ SubscriptOutOfBounds signal ].	
+
+	value := aSpurObjectOrOop isInteger 
+		ifTrue:[ aSpurObjectOrOop ] 
+		ifFalse: [ aSpurObjectOrOop address ].
+		
 	^ self simulator
-		  storePointer: anInteger - 1
+		  storePointer: anIndex - 1
 		  ofObject: self address
-		  withValue: aSpurObject address
+		  withValue: value
 ]
 
 { #category : #accessing }

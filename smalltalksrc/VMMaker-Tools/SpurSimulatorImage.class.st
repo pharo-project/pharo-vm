@@ -1,13 +1,10 @@
 Class {
 	#name : #SpurSimulatorImage,
 	#superclass : #SpurImage,
-	#instVars : [
-		'simulator'
-	],
 	#classInstVars : [
 		'simulator'
 	],
-	#category : #'VMMaker-Tools-Model'
+	#category : #'VMMaker-Tools-imageInspector'
 }
 
 { #category : #'as yet unclassified' }
@@ -21,6 +18,11 @@ SpurSimulatorImage class >> onSpurSimulator: aSpur64BitMMLESimulator [
 { #category : #'as yet unclassified' }
 SpurSimulatorImage >> classOf: aSpurObject [ 
 	^self objectForOop: (simulator fetchClassOf: aSpurObject address)
+]
+
+{ #category : #'as yet unclassified' }
+SpurSimulatorImage >> falseObject [
+	^ self objectForOop: simulator falseObject
 ]
 
 { #category : #'as yet unclassified' }
@@ -40,13 +42,19 @@ SpurSimulatorImage >> memory [
 ]
 
 { #category : #'as yet unclassified' }
+SpurSimulatorImage >> nextObjectOf: anOop [
+	"The simulator relies on class indexes, which we do not really set"
+	self shouldNotImplement
+]
+
+{ #category : #'as yet unclassified' }
 SpurSimulatorImage >> nilObject [
- 	^SpurObject on: simulator nilObject image: self 
+ 	^ SpurObject on: simulator nilObject image: self 
 
 ]
 
 { #category : #'as yet unclassified' }
-SpurSimulatorImage >> numberOfSlotsOf: aSpurObject [
+SpurSimulatorImage >> numSlotsOf: aSpurObject [
 
 	^simulator numSlotsOf: aSpurObject address
 ]
@@ -58,16 +66,11 @@ SpurSimulatorImage >> objectForOop: anInteger [
 ]
 
 { #category : #'as yet unclassified' }
-SpurSimulatorImage >> simulator [
-	^ simulator
-]
-
-{ #category : #'as yet unclassified' }
-SpurSimulatorImage >> simulator: aSpur64BitMMLESimulator [ 
-	simulator := aSpur64BitMMLESimulator
+SpurSimulatorImage >> trueObject [
+	^ self objectForOop: simulator trueObject
 ]
 
 { #category : #'as yet unclassified' }
 SpurSimulatorImage >> wordSize [
-	^simulator wordSize
+	^ simulator wordSize
 ]

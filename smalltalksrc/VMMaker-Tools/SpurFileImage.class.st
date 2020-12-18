@@ -9,7 +9,7 @@ Class {
 		'oldBaseAddress',
 		'specialObjectsArrayOop'
 	],
-	#category : #'VMMaker-Tools-Model'
+	#category : #'VMMaker-Tools-imageInspector'
 }
 
 { #category : #'as yet unclassified' }
@@ -132,16 +132,19 @@ SpurFileImage >> initialize [
 
 	super initialize.
 	self readImageHeader.
+	simulator := self wordsize = 4
+		ifTrue: [ Spur32BitMemoryManager simulatorClass new ]
+		ifFalse: [ Spur64BitMemoryManager simulatorClass new ].
 ]
 
 { #category : #'special-classes' }
-SpurFileImage >> is32bit [
- ^(format = 32) 
+SpurFileImage >> is32Bit [
+	^ format = 32
 ]
 
 { #category : #'special-classes' }
-SpurFileImage >> is64bit [
- ^(format = 64) 
+SpurFileImage >> is64Bit [
+	^ format = 64
 ]
 
 { #category : #'special-classes' }
@@ -170,6 +173,15 @@ SpurFileImage >> memory: aCollection [
 SpurFileImage >> messageClass [
 	"indexInClassTable 35"
 	^ self specialObjectsArray slotAt: 16
+]
+
+{ #category : #'special-objects' }
+SpurFileImage >> nextObjectOf: aSpurObject [
+	| maybeObject |
+	maybeObject := SpurObject on: aSpurObject endAddress + self headerSize image: self.
+	^ maybeObject basicNumberOfSlots = 16rFF
+		ifTrue: [ maybeObject ]
+		ifFalse: [ SpurObject on: aSpurObject endAddress image: self ].
 ]
 
 { #category : #'special-objects' }
@@ -204,9 +216,9 @@ SpurFileImage >> readImageHeader [
 
 "Reading the version will allow us to find the format"
 	self readVersionFromImageHeader.
-	self is32bit ifTrue:[
+	self is32Bit ifTrue:[
 		self readImageHeader32 ].
-	self is64bit ifTrue:[
+	self is64Bit ifTrue:[
 		self readImageHeader64 ]
   
 ]
@@ -301,4 +313,9 @@ SpurFileImage >> specialObjectsArray [
 { #category : #accessing }
 SpurFileImage >> specialObjectsArrayOop: anInteger [ 
 	specialObjectsArrayOop := anInteger
+]
+
+{ #category : #'special-classes' }
+SpurFileImage >> wordsize [
+	^ self is32Bit ifTrue: [ 4 ] ifFalse: [ 8 ]
 ]

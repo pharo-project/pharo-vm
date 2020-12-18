@@ -12,9 +12,10 @@ Class {
 	#superclass : #Object,
 	#instVars : [
 		'hiddenRoots',
-		'classTable'
+		'classTable',
+		'simulator'
 	],
-	#category : #'VMMaker-Tools-Model'
+	#category : #'VMMaker-Tools-imageInspector'
 }
 
 { #category : #constants }
@@ -100,11 +101,31 @@ SpurImage >> imageFormat: anInteger [
 ]
 
 { #category : #'special-objects' }
+SpurImage >> nextObjectOf: anOop [
+	^ self subclassResponsibility
+]
+
+{ #category : #'special-objects' }
 SpurImage >> nilObject [
 	^ self subclassResponsibility 
+]
+
+{ #category : #'as yet unclassified' }
+SpurImage >> simulator [
+	^ simulator
+]
+
+{ #category : #'as yet unclassified' }
+SpurImage >> simulator: aSpur64BitMMLESimulator [ 
+	simulator := aSpur64BitMMLESimulator
 ]
 
 { #category : #'special-objects' }
 SpurImage >> trueObject [
 	^ self falseObject nextObject
+]
+
+{ #category : #'special-objects' }
+SpurImage >> wordsize [
+	^ self subclassResponsibility
 ]

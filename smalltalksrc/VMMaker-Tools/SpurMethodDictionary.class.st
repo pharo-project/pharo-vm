@@ -1,7 +1,7 @@
 Class {
 	#name : #SpurMethodDictionary,
 	#superclass : #SpurObject,
-	#category : #'VMMaker-Tools-Model'
+	#category : #'VMMaker-Tools-imageInspector'
 }
 
 { #category : #accessing }

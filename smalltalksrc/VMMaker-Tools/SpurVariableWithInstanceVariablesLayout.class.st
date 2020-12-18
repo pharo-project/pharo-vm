@@ -1,5 +1,5 @@
 Class {
 	#name : #SpurVariableWithInstanceVariablesLayout,
 	#superclass : #SpurLayout,
-	#category : #'VMMaker-Tools-Model'
+	#category : #'VMMaker-Tools-imageInspector'
 }

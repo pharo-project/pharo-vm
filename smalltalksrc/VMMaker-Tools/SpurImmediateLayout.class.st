@@ -1,5 +1,5 @@
 Class {
 	#name : #SpurImmediateLayout,
 	#superclass : #SpurLayout,
-	#category : #'VMMaker-Tools-Model'
+	#category : #'VMMaker-Tools-imageInspector'
 }

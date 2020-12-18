@@ -160,20 +160,6 @@ VMFrameBuilder >> gtInspectorItemsIn: composite [
 
 ]
 
-{ #category : #initialization }
-VMFrameBuilder >> initializeWithInterpreter: anInterpreter andMemory: aMemory [
-	memory := aMemory.
-	interpreter := anInterpreter. "allow to not care if it's for a cog or stack interpreter"
-	method := memory nilObject.
-	context := memory nilObject.
-	receiver := memory nilObject.
-	temps := OrderedCollection new.
-	stack := OrderedCollection new.
-
-	previousFrameArgsSize := 0. " set by the StackBuilder"
-	argumentSize := 0.
-]
-
 { #category : #accesing }
 VMFrameBuilder >> instructionPointer [
 	^ instructionPointer

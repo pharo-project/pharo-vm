@@ -1,7 +1,7 @@
 Class {
 	#name : #SpurVariableLayout,
 	#superclass : #SpurLayout,
-	#category : #'VMMaker-Tools-Model'
+	#category : #'VMMaker-Tools-imageInspector'
 }
 
 { #category : #'gt-inspector-extension' }
