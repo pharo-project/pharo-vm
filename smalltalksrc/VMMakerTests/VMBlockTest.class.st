@@ -133,9 +133,9 @@ VMBlockTest >> testCreatingABlockClosureShouldHaveOuterContextObject [
 		receiver: memory trueObject.
 	stackBuilder buildStack.
 	
-	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodReturning).
 
-	interpreter interpretWhile: [ interpreter method = methodReturning ].
+	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodOop).
+	interpreter interpretWhile: [ interpreter method = methodOop ].
 
 	"Currently fails because the stack frame is not overriden.
 	So the interpreter considers it's still married even thought the stack frame is already dead"

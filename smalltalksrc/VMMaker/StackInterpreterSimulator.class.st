@@ -120,7 +120,7 @@ StackInterpreterSimulator >> allObjectsSelect: objBlock [
 
 	| selected |
 	selected := OrderedCollection new.
-	objectMemory allObjectsDoSafely:
+	objectMemory allObjectsDo:
 		[:obj|
 		(objBlock value: obj) ifTrue: [selected addLast: obj]].
 	^selected
@@ -181,7 +181,6 @@ StackInterpreterSimulator >> basicInitialize [
 	self assert: ConstMinusOne = (objectMemory integerObjectOf: -1).
 
 	methodCache := Array new: MethodCacheSize.
-	nsMethodCache := Array new: NSMethodCacheSize.
 	atCache := Array new: AtCacheTotalSize.
 	self flushMethodCache.
 	gcSemaphoreIndex := 0.

@@ -1,7 +1,9 @@
 function(find_system_git2)
   message(STATUS "Looking for Git2 in the system")
   find_package(LibGit2)
-  if(NOT LIBGIT2_FOUND)
+  if(LIBGIT2_FOUND)
+    add_dependencies(${VM_LIBRARY_NAME} git2)
+  else()
     message(STATUS "Git2 not found.")
   endif()
   set(LIBGIT2_FOUND ${LIBGIT2_FOUND} PARENT_SCOPE)
@@ -66,15 +68,14 @@ endfunction()
 if (DOWNLOAD_DEPENDENCIES)
   #Only get Git2 if required
   if(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES)
-    #Download SDL2 binaries directly
+    #Download LibGit2 binaries directly
     download_git2()
   else()
     #Look for Git2 in the system, then build or download if possible
     find_system_git2()
     if(NOT LIBGIT2_FOUND)
-      build_SDL2()
+      build_git2()
     endif()
   endif()
 endif()
 
-add_dependencies(${VM_LIBRARY_NAME} git2)

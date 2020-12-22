@@ -3384,8 +3384,7 @@ CogIA32Compiler >> genPushC64: constant64Bits [
 	<var: #constant64Bits type: #sqLong>
 	<returnTypeC: #'AbstractInstruction *'>
 	| inst highPart |
-	self assert: BytesPerWord = 4.
-	highPart := self cCode: '(constant64Bits >> 32LL)' inSmalltalk: [ constant64Bits bitShift: -32 ].
+	highPart := constant64Bits bitShift: -32.
 	inst :=cogit PushCw: highPart.
 	cogit PushCw: (constant64Bits bitAnd: 16rFFFFFFFF).
 	^inst
@@ -3895,14 +3894,6 @@ CogIA32Compiler >> prepareStackToCallCFunctionInSmalltalkStack: numberOfArgument
 		ifTrue: [ cogit SubCq: numberAdditionalPushes * 4 R: SPReg ]. 
 	
 	
-]
-
-{ #category : #abi }
-CogIA32Compiler >> registerToSaveIP [
-	"Temporary register used for fetching the instruction pointer. This should
-	not be used for passing parameters in a standard ABI"
-	<option: #LowcodeVM>
-	^ ClassReg
 ]
 
 { #category : #'inline cacheing' }
