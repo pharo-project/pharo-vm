@@ -15,44 +15,40 @@ set(VERSION_MAJOR 9)
 set(VERSION_MINOR 0)
 set(VERSION_PATCH 0)
 
-if(${CMAKE_GENERATOR} MATCHES "Visual Studio.*")
-    set(user_file "${CMAKE_SOURCE_DIR}/CMakeSettings.jsonx" )
-    set(template_file "${CMAKE_SOURCE_DIR}/CMakeSettings.json.template" )
-    file(SHA256 ${template_file} template_hash)
+message("CMAKE_GENERATOR=${CMAKE_GENERATOR}")
+message("9FEATURE_LIB_CAIRO=${FEATURE_LIB_CAIRO}")
 
-    if(EXISTS "${user_file}")
-        file(SHA256 "${user_file}" user_hash)
-        set(user_bak_file "${user_file}.bak.${user_hash}")
+# Manage project template build settings 'CmakeSettings.json'
+# To push out new template, update 'template_uuid' field in 'template_file' with value from https://www.uuidgenerator.net/
+set(user_file "${CMAKE_SOURCE_DIR}/CMakeSettings.json" )
+set(template_file "${CMAKE_SOURCE_DIR}/CMakeSettings.json.template" )
 
-        # From 'user_file' extract recorded hash of template it was copied from
-        file(READ "${user_file}" user_settings )
-        string(REGEX MATCH ".*template-hash[^a-zA-Z0-9]*([a-zA-Z0-9-]*).*" _ ${user_settings})
-        set(recorded_template_hash ${CMAKE_MATCH_1})
+if(EXISTS "${user_file}")
+    # Get uuid from 'user_file' 
+    file(READ "${user_file}" user_settings )
+    string(REGEX MATCH ".*template-uuid[^a-zA-Z0-9]*([a-zA-Z0-9-]*).*" _ ${user_settings})
+    set(user_uuid ${CMAKE_MATCH_1})
 
-        if(NOT "${template_hash}" STREQUAL "${recorded_template_hash}")
-            # move existing file out of the way if template file has changed
-            file(RENAME "${user_file}" "${user_bak_file}")
-        endif()
+    # Get uuid from 'template_file' 
+    file(READ "${template_file}" template_settings )
+    string(REGEX MATCH ".*template-uuid[^a-zA-Z0-9]*([a-zA-Z0-9-]*).*" _ ${template_settings})
+    set(template_uuid ${CMAKE_MATCH_1})
+
+    if("${user_uuid}" STREQUAL "${template_uuid}")
+        message("Project build settings unchanged (${template_file})")
+    else()
+        message("NOTICE!! Project template build settings have changed.")
+        message("NOTICE!! Back up your user build settings (${user_file})")
+        message("NOTICE!! and replace whole file with project template build settings (${template_file}).")
+        message("NOTICE!! Then restore parts of your user settings as you require.")
+        message(FATAL_ERROR "Read output NOTICES!!")
     endif()
-
-    if(NOT EXISTS "${user_file}")
-        # copy 'template_file' to 'user_file' substituting variable 'template_hash'
-        configure_file("${template_file}" "${user_file}" @ONLY)  
-
-        if(EXISTS ${user_bak_file})
-            message("NOTICE!! Your 'CMakeSettings.json' file has been replaced by updated template.") 
-            message("NOTICE!! It is recommended you base your configuration settings off this update.") 
-            message("NOTICE!! Your old settings saved to ${user_bak_file}")
-            message("NOTICE!! To force using your old settings, copy 'template-hash' from new 'CMakeSettings.json' into your restored file.") 
-            message(FATAL_ERROR "Not really an error, just an important NOTICE!! to read in output.") 
-        endif()
-    endif()
+else()
+    message("No user build settings.")
 endif()
-#help code review focus on this part by exiting quickly...
-message(FATAL_ERROR "EVERYTHING OKAY, JUST HELP QUICK CODE REVIEW") 
 
 
-
+# BUILD VM
 set(APPNAME Pharo CACHE STRING "VM Application name")
 
 # Configure CMake to load our modules
@@ -145,6 +141,9 @@ if(MSVC AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     endif()
 endif()
 
+
+message("2FEATURE_LIB_CAIRO=${FEATURE_LIB_CAIRO}")
+
 set(FLAVOUR CoInterpreter CACHE STRING "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
 set(GENERATE_SOURCES TRUE CACHE BOOL "If it generates the sources")
 set(ALWAYS_INTERACTIVE FALSE CACHE BOOL "If this VM will always add interactive or not. If it is set, the headless parameter is not by default true")
@@ -159,6 +158,8 @@ set(FEATURE_LIB_SDL2 TRUE CACHE BOOL "Build SDL2 support")
 set(FEATURE_LIB_CAIRO TRUE CACHE BOOL "Build Cairo support")
 set(FEATURE_LIB_FREETYPE2 TRUE CACHE BOOL "Build Cairo support")
 set(FEATURE_LIB_GIT2 TRUE CACHE BOOL "Build LibGit2 support")
+
+message("1FEATURE_LIB_CAIRO=${FEATURE_LIB_CAIRO}")
 
 set(PHARO_LIBRARY_PATH "@executable_path/Plugins" CACHE STRING "The RPATH to use in the build")
 
