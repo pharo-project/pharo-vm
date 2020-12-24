@@ -16,9 +16,8 @@ set(VERSION_MINOR 0)
 set(VERSION_PATCH 0)
 
 message("CMAKE_GENERATOR=${CMAKE_GENERATOR}")
-message("9FEATURE_LIB_CAIRO=${FEATURE_LIB_CAIRO}")
 
-# Manage project template build settings 'CmakeSettings.json'
+# Visual Studio stores user build settings in file 'CmakeSettings.json'.  We would like to manage that via a project template.
 # To push out new template, update 'template_uuid' field in 'template_file' with value from https://www.uuidgenerator.net/
 set(user_file "${CMAKE_SOURCE_DIR}/CMakeSettings.json" )
 set(template_file "${CMAKE_SOURCE_DIR}/CMakeSettings.json.template" )
@@ -141,9 +140,6 @@ if(MSVC AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     endif()
 endif()
 
-
-message("2FEATURE_LIB_CAIRO=${FEATURE_LIB_CAIRO}")
-
 set(FLAVOUR CoInterpreter CACHE STRING "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
 set(GENERATE_SOURCES TRUE CACHE BOOL "If it generates the sources")
 set(ALWAYS_INTERACTIVE FALSE CACHE BOOL "If this VM will always add interactive or not. If it is set, the headless parameter is not by default true")
@@ -158,8 +154,6 @@ set(FEATURE_LIB_SDL2 TRUE CACHE BOOL "Build SDL2 support")
 set(FEATURE_LIB_CAIRO TRUE CACHE BOOL "Build Cairo support")
 set(FEATURE_LIB_FREETYPE2 TRUE CACHE BOOL "Build Cairo support")
 set(FEATURE_LIB_GIT2 TRUE CACHE BOOL "Build LibGit2 support")
-
-message("1FEATURE_LIB_CAIRO=${FEATURE_LIB_CAIRO}")
 
 set(PHARO_LIBRARY_PATH "@executable_path/Plugins" CACHE STRING "The RPATH to use in the build")
 
