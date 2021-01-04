@@ -145,6 +145,7 @@ set(FLAVOUR CoInterpreter CACHE STRING "The kind of VM to generate. Possible val
 set(GENERATE_SOURCES TRUE CACHE BOOL "If it generates the sources")
 set(ALWAYS_INTERACTIVE FALSE CACHE BOOL "If this VM will always add interactive or not. If it is set, the headless parameter is not by default true")
 set(FEATURE_FFI TRUE CACHE BOOL "Configure and compile support for FFI in the VM")
+set(FEATURE_THREADED_FFI TRUE CACHE BOOL "Configure and compile support for Threaded (running in another thread) FFI in the VM")
 set(FEATURE_NETWORK TRUE CACHE BOOL "Configure and compile support for network and sockets in the VM")
 set(FEATURE_COMPILE_GNUISATION TRUE CACHE BOOL "Use gcc gnu extensions to compile the VM")
 set(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS TRUE CACHE BOOL "Use inline memory accessors instead of macros")
@@ -328,9 +329,9 @@ set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/")
 
 #If in OSX, configure creation of Bundle
 if (OSX)
-  set(EXECUTABLE_OUTPUT_PATH "build/vm/Debug")
-  set(RUNTIME_OUTPUT_PATH "build/vm/")
-  set(LIBRARY_OUTPUT_DIRECTORY "build/vm/Debug/${VM_EXECUTABLE_NAME}.app/Contents/MacOS/Plugins")
+  set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/Debug")
+  set(RUNTIME_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/")
+  set(LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/vm/Debug/${VM_EXECUTABLE_NAME}.app/Contents/MacOS/Plugins")
 else()
   set(LIBRARY_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
 endif()
@@ -461,6 +462,10 @@ if (${FEATURE_FFI})
         PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ffi/include)
     target_compile_definitions(${VM_LIBRARY_NAME} 
         PRIVATE FEATURE_FFI=1)
+
+    if(${FEATURE_THREADED_FFI})
+        target_compile_definitions(${VM_LIBRARY_NAME} PRIVATE FEATURE_THREADED_FFI=1)
+    endif()
 endif()
 
 

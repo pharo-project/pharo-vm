@@ -18,6 +18,11 @@
           "type": "BOOL"
         },
         {
+          "name": "FEATURE_THREADED_FFI",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
           "name": "DOWNLOAD_DEPENDENCIES",
           "value": "False",
           "type": "BOOL"
@@ -98,6 +103,11 @@
       "variables": [
         {
           "name": "FEATURE_FFI",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "FEATURE_THREADED_FFI",
           "value": "True",
           "type": "BOOL"
         },

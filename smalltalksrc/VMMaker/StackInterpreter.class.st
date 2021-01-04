@@ -527,7 +527,7 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 #include <ffi.h>
 #endif //FEATURE_FFI
 #if FEATURE_THREADED_FFI
-#include "pharovm/pThreadedFFI/worker.h"
+#include "worker.h"
 #endif //FEATURE_THREADED_FFI'.
 
 	vmClass declareInterpreterVersionIn: aCCodeGenerator defaultName: 'Stack'.
