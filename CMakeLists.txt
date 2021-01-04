@@ -48,10 +48,6 @@ if(${CMAKE_GENERATOR} MATCHES "Visual Studio.*")
         endif()
     endif()
 endif()
-#help code review focus on this part by exiting quickly...
-message(FATAL_ERROR "EVERYTHING OKAY, JUST HELP QUICK CODE REVIEW") 
-
-
 
 set(APPNAME Pharo CACHE STRING "VM Application name")
 
