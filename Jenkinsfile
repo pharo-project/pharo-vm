@@ -16,10 +16,8 @@ def isMainBranch(){
 }
 
 def runInCygwin(command){
-	def currentDir = bat("cd")
-	
 	def c = """#!c:\\tools\\cygwin\\bin\\bash --login
-    cd `cygpath \"${currentDir}\"`
+    cd `cygpath \"$WORKSPACE\"`
     set -ex
     ${command}
     """
@@ -90,9 +88,9 @@ def runBuild(platformName, configuration, headless = true){
     if(isWindows()){
       shell "mkdir ${buildDirectory}"
       recordCygwinVersions(buildDirectory)
-      shell "cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository"
-      shell "VERBOSE=1 make install"
-      shell "VERBOSE=1 make package"
+      shell "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository"
+      shell "cd ${buildDirectory} && VERBOSE=1 make install"
+      shell "cd ${buildDirectory} && VERBOSE=1 make package"
     }else{
       cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
       dir("${buildDirectory}"){
@@ -120,8 +118,8 @@ def runTests(platform, configuration, packages, withWorker){
       shell "echo 90 > pharo.version"
           
       if(isWindows()){
-        shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
-        shell "PHARO_CI_TESTING_ENVIRONMENT=true ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
+        shell "cd runTests && unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
+        shell "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
       } else {
         shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
 
