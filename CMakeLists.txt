@@ -46,7 +46,6 @@ else()
     message("No user build settings.")
 endif()
 
-
 # BUILD VM
 set(APPNAME Pharo CACHE STRING "VM Application name")
 
