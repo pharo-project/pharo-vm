@@ -243,7 +243,10 @@ try{
 					runBuild(platform, "CoInterpreter")
 				}
 				timeout(30){
-					runBuild(platform, "CoInterpreter", false)
+					// Only build the Stock replacement version in the main branch
+					if(isMainBranch()){
+						runBuild(platform, "CoInterpreter", false)
+					}
 				}
 			}
 		}

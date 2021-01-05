@@ -22,3 +22,7 @@ target_include_directories(TestLibrary
 PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/includes
 )
+
+if(${CYGWIN})
+	target_link_libraries(TestLibrary pthread)
+endif()
