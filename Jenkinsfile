@@ -134,6 +134,10 @@ def runTests(platform, configuration, packages, withWorker){
 				}
 				junit allowEmptyResults: true, testResults: "*.xml"
 			} finally{
+				if(fileExists('PharoDebug.log')){
+					shell "mv PharoDebug.log PharoDebug-${stageName}.log"
+					 archiveArtifacts allowEmptyArchive: true, artifacts: "PharoDebug-${stageName}.log", fingerprint: true
+				}
 				if(fileExists('crash.dmp')){
 					shell "mv crash.dmp crash-${stageName}.dmp"
 					archiveArtifacts allowEmptyArchive: true, artifacts: "crash-${stageName}.dmp", fingerprint: true
