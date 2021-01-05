@@ -144,6 +144,7 @@ def runTests(platform, configuration, packages, withWorker){
 				}
 				if(fileExists('progress.log')){
 					shell "mv progress.log progress-${stageName}.log"
+					shell "cat progress-${stageName}.log"
 					archiveArtifacts allowEmptyArchive: true, artifacts: "progress-${stageName}.log", fingerprint: true
 				}
 			}
