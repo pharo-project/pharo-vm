@@ -7,7 +7,7 @@ def isWindows(){
 }
 
 def shell(params){
-    if(isWindows()) bat(params) 
+    if(isWindows()) runInCygwin(params) 
     else sh(params)
 }
 
@@ -16,8 +16,10 @@ def isMainBranch(){
 }
 
 def runInCygwin(command){
+	def currentDir = sh("pwd")
+	
 	def c = """#!c:\\tools\\cygwin\\bin\\bash --login
-    cd `cygpath \"$WORKSPACE\"`
+    cd `cygpath \"$currentDir\"`
     set -ex
     ${command}
     """
@@ -67,7 +69,7 @@ def buildGTKBundle(){
 	}
 }
 def recordCygwinVersions(buildDirectory){
-    runInCygwin "cd ${buildDirectory} &&  cygcheck -c -d > cygwinVersions.txt"
+    shell "cd ${buildDirectory} &&  cygcheck -c -d > cygwinVersions.txt"
 	archiveArtifacts artifacts: "${buildDirectory}/cygwinVersions.txt"
 }
 
@@ -86,11 +88,11 @@ def runBuild(platformName, configuration, headless = true){
 
 	stage("Build-${platform}-${configuration}"){
     if(isWindows()){
-      runInCygwin "mkdir ${buildDirectory}"
+      shell "mkdir ${buildDirectory}"
       recordCygwinVersions(buildDirectory)
-      runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository"
-      runInCygwin "cd ${buildDirectory} && VERBOSE=1 make install"
-      runInCygwin "cd ${buildDirectory} && VERBOSE=1 make package"
+      shell "cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository"
+      shell "VERBOSE=1 make install"
+      shell "VERBOSE=1 make package"
     }else{
       cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
       dir("${buildDirectory}"){
@@ -108,6 +110,7 @@ def runTests(platform, configuration, packages, withWorker){
   cleanWs()
 
   def stageName = withWorker ? "Tests-${platform}-${configuration}-worker" : "Tests-${platform}-${configuration}"
+  def hasWorker = withWorker ? "--worker" : ""
 
   stage(stageName){
     unstash name: "packages-${platform}-${configuration}"
@@ -117,29 +120,17 @@ def runTests(platform, configuration, packages, withWorker){
       shell "echo 90 > pharo.version"
           
       if(isWindows()){
-        runInCygwin "cd runTests && unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
-        if(withWorker){
-          runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 --worker Pharo.image test --junit-xml-output --stage-name=win64-${configuration}-worker '${packages}'"
-        }else{
-          runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 Pharo.image test --junit-xml-output --stage-name=win64-${configuration} '${packages}'"
-        }
+        shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
+        shell "PHARO_CI_TESTING_ENVIRONMENT=true ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
       } else {
         shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
 
         if(platform == 'Darwin-x86_64'){
-          if(withWorker){
-            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 --worker Pharo.image test --junit-xml-output --stage-name=${platform}-${configuration}-worker '${packages}'"
-          } else {
-            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 Pharo.image test --junit-xml-output --stage-name=${platform}-${configuration} '${packages}'"
-          }
+            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
         }
 
         if(platform == 'Linux-x86_64'){
-          if(withWorker){
-            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 --worker Pharo.image test --junit-xml-output --stage-name=${platform}-${configuration}-worker '${packages}'" 
-          }else{
-            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 Pharo.image test --junit-xml-output --stage-name=${platform}-${configuration} '${packages}'" 
-          }
+            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'" 
         }
       }
       junit allowEmptyResults: true, testResults: "*.xml"
