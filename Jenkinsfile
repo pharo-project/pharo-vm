@@ -7,7 +7,7 @@ def isWindows(){
 }
 
 def shell(params){
-    if(isWindows()) runInCygwin(params) 
+    if(isWindows()) bat(params) 
     else sh(params)
 }
 
@@ -67,7 +67,7 @@ def buildGTKBundle(){
 	}
 }
 def recordCygwinVersions(buildDirectory){
-    shell "cd ${buildDirectory} &&  cygcheck -c -d > cygwinVersions.txt"
+    runInCygwin "cd ${buildDirectory} &&  cygcheck -c -d > cygwinVersions.txt"
 	archiveArtifacts artifacts: "${buildDirectory}/cygwinVersions.txt"
 }
 
@@ -86,11 +86,11 @@ def runBuild(platformName, configuration, headless = true){
 
 	stage("Build-${platform}-${configuration}"){
     if(isWindows()){
-      shell "mkdir ${buildDirectory}"
+      runInCygwin "mkdir ${buildDirectory}"
       recordCygwinVersions(buildDirectory)
-      shell "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository"
-      shell "cd ${buildDirectory} && VERBOSE=1 make install"
-      shell "cd ${buildDirectory} && VERBOSE=1 make package"
+      runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository"
+      runInCygwin "cd ${buildDirectory} && VERBOSE=1 make install"
+      runInCygwin "cd ${buildDirectory} && VERBOSE=1 make package"
     }else{
       cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
       dir("${buildDirectory}"){
@@ -110,30 +110,41 @@ def runTests(platform, configuration, packages, withWorker){
   def stageName = withWorker ? "Tests-${platform}-${configuration}-worker" : "Tests-${platform}-${configuration}"
   def hasWorker = withWorker ? "--worker" : ""
 
-  stage(stageName){
-    unstash name: "packages-${platform}-${configuration}"
-    shell "mkdir runTests"
-    dir("runTests"){
-      shell "wget -O - get.pharo.org/64/90 | bash "
-      shell "echo 90 > pharo.version"
+	stage(stageName){
+		unstash name: "packages-${platform}-${configuration}"
+		shell "mkdir runTests"
+		dir("runTests"){
+			try{
+				shell "wget -O - get.pharo.org/64/90 | bash "
+				shell "echo 90 > pharo.version"
           
-      if(isWindows()){
-        shell "cd runTests && unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
-        shell "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
-      } else {
-        shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
+				if(isWindows()){
+					runInCygwin "cd runTests && unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
+					runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
+					} else {
+						shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
 
-        if(platform == 'Darwin-x86_64'){
-            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
-        }
+						if(platform == 'Darwin-x86_64'){
+							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
+						}
 
-        if(platform == 'Linux-x86_64'){
-            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'" 
-        }
-      }
-      junit allowEmptyResults: true, testResults: "*.xml"
-    }
-    archiveArtifacts artifacts: 'runTests/*.xml', excludes: '_CPack_Packages'
+						if(platform == 'Linux-x86_64'){
+							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'" 
+						}
+				}
+				junit allowEmptyResults: true, testResults: "*.xml"
+			} finally{
+				if(fileExists('crash.dmp')){
+					shell "mv crash.dmp crash-${stageName}.dmp"
+					archiveArtifacts allowEmptyArchive: true, artifacts: "crash-${stageName}.dmp", fingerprint: true
+				}
+				if(fileExists('progress.log')){
+					shell "mv progress.log progress-${stageName}.log"
+					archiveArtifacts allowEmptyArchive: true, artifacts: "progress-${stageName}.log", fingerprint: true
+				}
+			}
+		}
+		archiveArtifacts artifacts: 'runTests/*.xml', excludes: '_CPack_Packages'
 	}
 }
 
