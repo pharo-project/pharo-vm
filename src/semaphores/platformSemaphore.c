@@ -21,32 +21,43 @@ int semaphore_release(PlatformSemaphore sem);
 PlatformSemaphore
 semaphore_new(long initialValue) {
     PlatformSemaphore ghSemaphore = CreateSemaphore(
-        NULL,           // default security attributes
-        0,              // initial count
-        0,              // maximum count
-        NULL);          // unnamed semaphore
+        NULL,				// default security attributes
+        initialValue,	// initial count
+        0,					// maximum count
+        NULL);				// unnamed semaphore
   
     return ghSemaphore;
 }
 
 int
 semaphore_wait(PlatformSemaphore sem) {
-    return WaitForSingleObject(
-        sem,   // handle to semaphore
-        0L);           // zero-second time-out interval
+	DWORD returnValue;
+	
+	returnValue = WaitForSingleObject(
+			sem,	// handle to semaphore
+			0L) ;	// zero-second time-out interval
+			
+	return (returnValue != WAIT_FAILED) ? 0 : 1; // Should return 0 on Success 1 on failure
 }
 
 int
 semaphore_signal(PlatformSemaphore sem) {
-    return ReleaseSemaphore(
-        sem,         // handle to semaphore
-        1,           // increase count by one
-        NULL);       // not interested in previous count
+    BOOL returnValue;
+	
+	returnValue = ReleaseSemaphore(
+			sem,		// handle to semaphore
+			1,			// increase count by one
+			NULL);		// not interested in previous count
+	
+	return (returnValue != 0) ? 0 : 1; // Should return 0 on Success 1 on failure
 }
 
 int
 semaphore_release(PlatformSemaphore sem) {
-    return CloseHandle(sem);
+	BOOL returnValue;
+	returnValue = CloseHandle(sem);
+	
+	return (returnValue != 0) ? 0 : 1; // Should return 0 on Success 1 on failure;
 }
 
 #elif !defined(__APPLE__)
