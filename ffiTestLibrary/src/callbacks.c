@@ -44,8 +44,20 @@ int getValue(){
 void callbackFromAnotherThread(SIMPLE_CALLBACK fun){
 #if FEATURE_THREADED_FFI
 	value = 0;
+
+#if defined(_WIN32)
+	CreateThread(
+		NULL,					// default security attributes
+		0,						// use default stack size
+		otherThread,	// thread function name
+		fun,					// argument to thread function
+		0,						// use default creation flags: 0 is run immediately
+		NULL);				// returns the thread identifier
+#else
 	pthread_t t;
 	pthread_create(&t, NULL, otherThread, fun);
 	pthread_detach(t);
+#endif
+
 #endif //FEATURE_THREADED_FFI
 }
