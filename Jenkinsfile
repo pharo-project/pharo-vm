@@ -16,7 +16,7 @@ def isMainBranch(){
 }
 
 def runInCygwin(command){
-	def currentDir = sh("pwd")
+	def currentDir = bat("cd")
 	
 	def c = """#!c:\\tools\\cygwin\\bin\\bash --login
     cd `cygpath \"${currentDir}\"`
