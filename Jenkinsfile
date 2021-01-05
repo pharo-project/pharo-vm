@@ -19,7 +19,7 @@ def runInCygwin(command){
 	def currentDir = sh("pwd")
 	
 	def c = """#!c:\\tools\\cygwin\\bin\\bash --login
-    cd `cygpath \"$currentDir\"`
+    cd `cygpath \"${currentDir}\"`
     set -ex
     ${command}
     """
