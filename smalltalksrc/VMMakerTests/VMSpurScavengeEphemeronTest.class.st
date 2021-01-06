@@ -50,6 +50,44 @@ VMSpurScavengeEphemeronTest >> testDequeueMournerWithOnlyOneEphemeronShouldEmpty
 ]
 
 { #category : #'tests-ephemerons-globals' }
+VMSpurScavengeEphemeronTest >> testMournQueueEphemeronsAreRemappedInTheOldSpace [
+	| ephemeronObjectOop keyObject valueObject firedEphemeron objectKeepingEphemeron |
+	self createEphemeronClass.
+	
+	self newOldSpaceObjectWithSlots: 0. "random object to trigger compaction"
+	
+	objectKeepingEphemeron := self newObjectWithSlots: 1.	
+	valueObject := self newObjectWithSlots: 0.
+	keyObject := self newZeroSizedObject.
+	ephemeronObjectOop := self newEphemeronObject.
+	
+	"slots of the ephemeron, register is ignored"	
+	memory
+		storePointer: 0
+		ofObject: ephemeronObjectOop
+		withValue: keyObject.
+
+	memory
+		storePointer: 1
+		ofObject: ephemeronObjectOop
+		withValue: valueObject.
+	
+	"Link between the root and the ephemeron"
+	memory
+		storePointer: 0
+		ofObject: objectKeepingEphemeron
+		withValue: ephemeronObjectOop.
+
+	"Force object to not be collected by putting them in special variables"
+	self keepObjectInVMVariable1: objectKeepingEphemeron.
+	
+	memory fullGC.
+	
+	firedEphemeron := memory dequeueMourner.
+	self assert: firedEphemeron equals: (memory fetchPointer: 0 ofObject: self keptObjectInVMVariable1)
+]
+
+{ #category : #'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testNewEphemeronObjectShouldBeInstanceOfEphemeronClass [
 
 	| ephemeronObjectOop |
