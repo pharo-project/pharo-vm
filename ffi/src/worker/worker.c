@@ -103,8 +103,8 @@ Worker *worker_new(){
 }
 
 void worker_release(Worker *worker) {
-    threadsafe_queue_free(worker->taskQueue);
-    free(worker);
+    WorkerTask *task = worker_task_new_release();
+    worker_add_call((Worker*)worker, task);
 }
 
 inline void worker_dispatch_callout(Worker *worker, WorkerTask *task) {
@@ -128,6 +128,12 @@ void *worker_run(void *aWorker) {
     while(true) {
         task = worker_next_call(worker);
         if (task) {
+        	if(task->type == WORKER_RELEASE){
+        		threadsafe_queue_free(worker->taskQueue);
+        	    free(worker);
+        	    return NULL;
+        	}
+
             if (task->type == CALLOUT) {
             	executeWorkerTask((Worker *)worker, task);
             } else if (task->type == CALLBACK_RETURN) {

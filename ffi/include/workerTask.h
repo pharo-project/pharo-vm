@@ -7,7 +7,8 @@
 
 typedef enum {
     CALLOUT,
-    CALLBACK_RETURN
+    CALLBACK_RETURN,
+	WORKER_RELEASE
 } WorkerTaskType;
 
 typedef struct {
@@ -25,6 +26,12 @@ typedef struct {
 
 WorkerTask *worker_task_new(void *externalFunction, ffi_cif *cif, void *parameters, void *returnHolder, int semaphoreIndex);
 WorkerTask *worker_task_new_callback(CallbackInvocation* invocation);
+
+/*
+ * I create a new task that is used when the worker should be released.
+ */
+WorkerTask *worker_task_new_release();
+
 void worker_task_release(WorkerTask *task);
 void worker_task_set_main_queue(WorkerTask *task);
 void worker_task_set_queue(WorkerTask *task, void *queueHandle);
