@@ -80,7 +80,7 @@ static void executeWorkerTask(Worker *worker, WorkerTask *task);
 Worker *worker_newSpawning(int spawn) {
     Worker *worker = (Worker *)malloc(sizeof(Worker));
     
-    worker->hasToQuit = FALSE;
+    worker->hasToQuit = false;
     worker->nestedRuns = 0;
     worker->next = NULL;
     worker->threadId = 0;
@@ -143,7 +143,8 @@ void *worker_run(void *aWorker) {
         if (task) {
         	switch(task->type){
         		case WORKER_RELEASE:
-        			worker->hasToQuit = 1;
+        			worker->hasToQuit = true;
+					//We wait in case we need to receive a callback_return message
         			sleep(1);
         			break;
 
