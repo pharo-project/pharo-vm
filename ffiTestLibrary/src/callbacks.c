@@ -3,11 +3,11 @@
 #include <pthread.h>
 #endif //FEATURE_THREADED_FFI
 
-int singleCallToCallback(SIMPLE_CALLBACK fun, int base){
+EXPORT(int) singleCallToCallback(SIMPLE_CALLBACK fun, int base){
 	return fun(base + 1);
 }
 
-int callbackInALoop(SIMPLE_CALLBACK fun){
+EXPORT(int) callbackInALoop(SIMPLE_CALLBACK fun){
 	int i;
 	int acc = 0;
 	
@@ -18,7 +18,7 @@ int callbackInALoop(SIMPLE_CALLBACK fun){
 	return acc;
 }
 
-int reentringCallback(SIMPLE_CALLBACK fun, int base){
+EXPORT(int) reentringCallback(SIMPLE_CALLBACK fun, int base){
 	printf("Value entered: %d\n", base);
 
 	if(base == 0)
@@ -37,11 +37,11 @@ void* otherThread(void* aFunction){
 }
 #endif //FEATURE_THREADED_FFI
 
-int getValue(){
+EXPORT(int) getValue(){
 	return value;
 }
 
-void callbackFromAnotherThread(SIMPLE_CALLBACK fun){
+EXPORT(void) callbackFromAnotherThread(SIMPLE_CALLBACK fun){
 #if FEATURE_THREADED_FFI
 	value = 0;
 

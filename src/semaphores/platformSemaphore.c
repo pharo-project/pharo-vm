@@ -22,8 +22,8 @@ PlatformSemaphore
 semaphore_new(long initialValue) {
     PlatformSemaphore ghSemaphore = CreateSemaphore(
         NULL,				// default security attributes
-        initialValue,	// initial count
-        0,					// maximum count
+        initialValue,		// initial count
+        255,				// maximum count
         NULL);				// unnamed semaphore
   
     return ghSemaphore;
@@ -35,7 +35,7 @@ semaphore_wait(PlatformSemaphore sem) {
 	
 	returnValue = WaitForSingleObject(
 			sem,	// handle to semaphore
-			0L) ;	// zero-second time-out interval
+			INFINITE) ;	// Infinite time-out interval
 			
 	return (returnValue != WAIT_FAILED) ? 0 : 1; // Should return 0 on Success 1 on failure
 }
