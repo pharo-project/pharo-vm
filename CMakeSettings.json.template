@@ -23,7 +23,7 @@
           "type": "BOOL"
         },
         {
-          "name": "DOWNLOAD_DEPENDENCIES",
+          "name": "BUILD_BUNDLE",
           "value": "False",
           "type": "BOOL"
         },
@@ -60,7 +60,7 @@
       "configurationType": "Debug",
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeCommandArgs": "-DGENERATE_SOURCES=FALSE -DDOWNLOAD_DEPENDENCIES=FALSE",
+      "cmakeCommandArgs": "-DGENERATE_SOURCES=FALSE -DBUILD_BUNDLE=FALSE",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "msvc_x86" ],
@@ -127,7 +127,7 @@
           "type": "BOOL"
         },
         {
-          "name": "DOWNLOAD_DEPENDENCIES",
+          "name": "BUILD_BUNDLE",
           "value": "False",
           "type": "BOOL"
         },

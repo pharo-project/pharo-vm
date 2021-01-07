@@ -45,7 +45,7 @@ function(build_Freetype)
   add_dependencies(${VM_LIBRARY_NAME} freetype)
 endfunction()
 
-if (DOWNLOAD_DEPENDENCIES)
+if (BUILD_BUNDLE)
   #Only get Freetype if required
   if(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES)
     #Download Freetype binaries directly
