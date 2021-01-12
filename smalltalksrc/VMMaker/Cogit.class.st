@@ -1071,7 +1071,7 @@ Cogit class >> isCogitClass [
 Cogit class >> isNonArgumentImplicitReceiverVariableName: aString [
 	^#('cogit' 'coInterpreter'
 		'methodZone' 'literalsManager'
-		'objectMemory' 'objectRepresentation' 'manager') includes: aString
+		'objectMemory' 'objectRepresentation' 'manager' 'cogEventLogger') includes: aString
 ]
 
 { #category : #'in-image compilation support' }
@@ -4616,6 +4616,9 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 			 self assertValidMethodMap: cogMethod."
 			 "self disassembleMethod: cogMethod."
 			 "printInstructions := clickConfirm := true""]."
+	
+	cogEventLogger methodJitted: cogMethod.	
+		
 	^cogMethod
 ]
 

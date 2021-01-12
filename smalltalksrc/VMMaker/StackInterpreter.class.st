@@ -10901,9 +10901,13 @@ StackInterpreter >> nacFetchStackPointerOf: aContext [
 { #category : #'debug printing' }
 StackInterpreter >> nameOfClass: classOop [
 	"Brain-damaged nameOfClass: for C VM.  Does *not* answer Foo class for metaclasses.
-	 Use e.g. classIsMeta: to avoid being fooled."
+	 Use e.g. classIsMeta: to avoid being fooled.
+	
+	You better want to use #nameOfClass:inBuffer:withSize:
+	"
 	<inline: false>
 	<returnTypeC: #'char *'>
+	
 	| numSlots maybeNameOop maybeThisClassOop |
 	numSlots := objectMemory numSlotsOf: classOop.
 	numSlots = metaclassNumSlots ifTrue:
@@ -10916,6 +10920,50 @@ StackInterpreter >> nameOfClass: classOop [
 		objectMemory isBytes: maybeNameOop]) ifFalse:
 		[^'bad class'].
 	^objectMemory firstIndexableField: maybeNameOop
+]
+
+{ #category : #'debug printing' }
+StackInterpreter >> nameOfClass: classOop inBuffer: aBuffer withSize: aSize [
+	<inline: false>
+	<api>
+
+	<var: #aBuffer type: #'char*'>
+	<var: #anotherBuffer type: #'char*'>
+	<var: #aSize type: #'size_t'>
+	<returnTypeC: #'int'>
+	
+	| numSlots maybeNameOop maybeThisClassOop anotherBuffer max quantity |
+	numSlots := objectMemory numSlotsOf: classOop.
+	
+	"Let try to guess if it is a Metaclass"
+	numSlots = metaclassNumSlots ifTrue:[
+		maybeThisClassOop := objectMemory fetchPointer: thisClassIndex ofObject: classOop.
+		(self addressCouldBeClassObj: maybeThisClassOop) ifTrue:
+			[
+			
+			anotherBuffer := self alloca: 128 + 1.
+			
+			self 
+				nameOfClass: (objectMemory fetchPointer: thisClassIndex ofObject: classOop) 
+				inBuffer: anotherBuffer 
+				withSize: 129.
+				
+			^ self snprintf: aBuffer _: aSize _: '%s class' _: anotherBuffer	].
+		
+		^ self snprintf: aBuffer _: aSize _: 'bad class'].
+
+	(numSlots > classNameIndex
+	 and: [maybeNameOop := objectMemory fetchPointer: classNameIndex ofObject: classOop.
+		objectMemory isBytes: maybeNameOop]) ifFalse:
+		[^ self snprintf: aBuffer _: aSize _: 'bad class'].
+
+	max := aSize - 1.
+	quantity := max min: (objectMemory lengthOf: maybeNameOop).
+
+	self strncpy: aBuffer _: (objectMemory firstIndexableField: maybeNameOop) _: quantity.	
+	aBuffer at: quantity put: 0.
+	
+	^ quantity.
 ]
 
 { #category : #'stack pages' }

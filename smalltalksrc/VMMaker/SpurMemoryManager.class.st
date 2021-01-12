@@ -5475,6 +5475,8 @@ SpurMemoryManager >> formatOf: objOop [
 		^(self byteAt: objOop + 3) bitAnd: self formatMask
 	 but al least on e.g. Core i7 x86-64 using the clang 6 compiler, this makes no difference,
 	 or at least any change is in the noise."
+	<api>
+	
 	^(self longAt: objOop) >> self formatShift bitAnd: self formatMask
 ]
 
