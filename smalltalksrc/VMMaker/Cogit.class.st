@@ -268,7 +268,8 @@ Class {
 		'disassemblingMethod',
 		'cogConstituentIndex',
 		'directedSendUsesBinding',
-		'simulateFPInUse'
+		'simulateFPInUse',
+		'cogEventLogger'
 	],
 	#classVars : [
 		'AltBlockCreationBytecodeSize',
@@ -373,6 +374,7 @@ Cogit class >> ancilliaryClasses [
 		CogPrimitiveDescriptor.
 		CogBlockMethod.
 		CogMethod.
+		CogEventLogger.
 		self activeCompilerClass literalsManagerClass},
 	((InitializationOptions at: #SistaVM ifAbsent: [false])
 		ifTrue: [{SistaMethodZone}]
@@ -513,7 +515,7 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 	#(	'coInterpreter' 'objectMemory' 'methodZone' 'objectRepresentation'
 		'cogBlockMethodSurrogateClass' 'cogMethodSurrogateClass' 'threadManager' 'processor' 'lastNInstructions' 'simulatedAddresses'
 		'simulatedTrampolines' 'simulatedVariableGetters' 'simulatedVariableSetters'
-		'printRegisters' 'printInstructions' 'clickConfirm' 'singleStep') do:
+		'printRegisters' 'printInstructions' 'clickConfirm' 'singleStep' 'cogEventLogger') do:
 			[:simulationVariableNotNeededForRealVM|
 			aCCodeGenerator removeVariable: simulationVariableNotNeededForRealVM].
 	#(	'selfSendTrampolines' 'dynamicSuperSendTrampolines'
@@ -4731,6 +4733,13 @@ Cogit >> cogCodeConstituents: withDetails [
 	^constituents
 ]
 
+{ #category : #accessing }
+Cogit >> cogEventLogger [
+	<doNotGenerate>
+
+	^ cogEventLogger
+]
+
 { #category : #'in-line cacheing' }
 Cogit >> cogExtendPIC: cPIC CaseNMethod: caseNMethod tag: caseNTag isMNUCase: isMNUCase [
 	"Extend the cPIC with the supplied case.  If caseNMethod is cogged dispatch direct to
@@ -8564,6 +8573,9 @@ Cogit >> initialize [
 	cogBlockMethodSurrogateClass := wordSize = 4
 											ifTrue: [CogBlockMethodSurrogate32]
 											ifFalse: [CogBlockMethodSurrogate64].
+											
+	cogEventLogger := CogEventLogger new.
+	cogEventLogger cogit: self.
 ]
 
 { #category : #initialization }

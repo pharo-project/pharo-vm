@@ -275,7 +275,9 @@ CogMethodZone >> compactCompiledCode [
 							to: #'CogMethod *'].
 	mzFreeStart := dest asUnsignedInteger.
 	methodBytesFreedSinceLastCompaction := 0.
-	compactionInProgress := false
+	compactionInProgress := false.
+
+	cogit cogEventLogger compactCompiledCodeFinished.
 ]
 
 { #category : #accessing }
