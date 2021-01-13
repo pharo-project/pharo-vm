@@ -424,6 +424,16 @@ VMSimpleStackBasedCogitAbstractTest >> jitCompilerClass [
 	^ SimpleStackBasedCogit
 ]
 
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> jitMethod: aPharoCompiledMethod selector: aSelectorOop [
+
+	| methodOop |
+	"We are using V3 bytecode, so we need to recompile the method"
+	methodOop := self createMethodOopFromPharoMethod:
+		             aPharoCompiledMethod.
+	^ cogit cog: methodOop selector: aSelectorOop
+]
+
 { #category : #running }
 VMSimpleStackBasedCogitAbstractTest >> jitOptions [
 
