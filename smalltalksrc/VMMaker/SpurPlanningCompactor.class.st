@@ -375,6 +375,7 @@ SpurPlanningCompactor >> endCompaction [
 	manager
 		unmarkSurvivingObjectsForCompact;
 		endSlidingCompaction.
+	self swapMournQueueFields.
 	self repinRememberedSet.
 	self releaseSavedFirstFieldsSpace
 ]
@@ -454,6 +455,9 @@ SpurPlanningCompactor >> initializeCompaction [
 	manager checkFreeSpace: GCModeFull.
 	self selectSavedFirstFieldsSpace.
 	self unpinRememberedSet.
+	
+	self swapMournQueueFields.
+	
 	manager
 		resetFreeListHeads;
 		totalFreeOldSpace: 0;
@@ -745,6 +749,23 @@ SpurPlanningCompactor >> shouldRemapObj: objOop [
 	^manager slidingCompactionShouldRemapObj: objOop
 ]
 
+{ #category : #compaction }
+SpurPlanningCompactor >> swapMournQueueFields [
+	
+	"Swap top and index before compaction.
+	This is meant to still have top available during compaction to iterate the mourn queue.
+	Otherwise, top will be overwritten during compaction to put the destination address if moved.
+	Restore it after compaction is done."
+	
+	"We swap top and index because the index is not used during compaction"
+	manager objStack: manager mournQueue pagesDo: [ :page | | top index |
+		top := manager topIndexOfObjStack: page.
+		index := manager indexOfObjStack: page.
+		manager topIndexOfObjStack: page put: index.
+		manager indexOfObjStack: page put: top.
+	].
+]
+
 { #category : #private }
 SpurPlanningCompactor >> thereAreObjectsToMove [
 	<inline: true>
@@ -891,12 +912,14 @@ SpurPlanningCompactor >> updatePointersInManagerHeapEntities [
 	"The special non-pointer objects containing pointers, which are the objStacks and the rememberedSet,
 	 must be updated manually since they will not be recognized as containing pointers in the normal sweep."
 
+	self swapMournQueueFields.
 	manager objStack: manager mournQueue do:
 		[:i :page| | mourner |
 		mourner := manager fetchPointer: i ofObject: page.
 		(manager isNonImmediate: mourner) ifTrue: [ | fwd |
 			fwd := manager fetchPointer: 0 ofObject: mourner.
 			manager storePointerUnchecked: i ofObject: page withValue: fwd ]].
+	self swapMournQueueFields.
 	
 	manager relocateObjStacksForPlanningCompactor.
 	(scavenger rememberedSetSize > 0

@@ -857,8 +857,8 @@ SpurMemoryManager class >> initialize [
 	 created by popping emptied pages are kept on the ObjStackFreex list.
 	 ObjStackNextx must be the last field for swizzleObjStackAt:."
 	ObjStackPageSlots := 4092. "+ double header = 16k bytes per page in 32-bits"
-	ObjStackTopx := 1.
-	ObjStackMyx := 0.
+	ObjStackTopx := 0.
+	ObjStackMyx := 1.
 	ObjStackFreex := 2.
 	ObjStackNextx := 3.
 	ObjStackFixedSlots := 4.
@@ -6319,6 +6319,18 @@ SpurMemoryManager >> indexOf: anElement in: anObject [
 	^-1
 ]
 
+{ #category : #'obj stacks' }
+SpurMemoryManager >> indexOfObjStack: objStack [
+	
+	^ self fetchPointer: ObjStackMyx ofObject: objStack
+]
+
+{ #category : #'obj stacks' }
+SpurMemoryManager >> indexOfObjStack: objStack put: aValue [
+	
+	^ self storePointerUnchecked: ObjStackMyx ofObject: objStack withValue: aValue
+]
+
 { #category : #'header formats' }
 SpurMemoryManager >> indexablePointersFormat [
 	<api>
@@ -9658,6 +9670,20 @@ SpurMemoryManager >> objStack: objStack from: start do: aBlock [
 	^size
 ]
 
+{ #category : #'obj stacks' }
+SpurMemoryManager >> objStack: objStack pagesDo: aBlock [
+	"Evaluate aBinaryBlock with all indices and pages of elements in objStack"
+	<inline: true>
+	| objStackPage |
+	objStack = nilObj ifTrue:
+		[^self].
+	self eassert: [self isValidObjStack: objStack].
+	objStackPage := objStack.
+	[objStackPage ~= 0] whileTrue: [
+		aBlock value: objStackPage.
+		objStackPage := self fetchPointer: ObjStackNextx ofObject: objStackPage ]
+]
+
 { #category : #'object enumeration' }
 SpurMemoryManager >> objectAfter: objOop [
 	<api>
@@ -12706,6 +12732,18 @@ SpurMemoryManager >> thirtyTwoBitLongsClassIndexPun [
 	 its class index. The puns occupy indices 16 through 31."
 	<cmacro>
 	^18
+]
+
+{ #category : #'obj stacks' }
+SpurMemoryManager >> topIndexOfObjStack: objStack [
+	
+	^ self fetchPointer: ObjStackTopx ofObject: objStack
+]
+
+{ #category : #'obj stacks' }
+SpurMemoryManager >> topIndexOfObjStack: objStack put: aValue [
+	
+	^ self storePointerUnchecked: ObjStackTopx ofObject: objStack withValue: aValue
 ]
 
 { #category : #'obj stacks' }
