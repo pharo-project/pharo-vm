@@ -40,8 +40,6 @@ VMCodeCompactionTest >> testCompactDuringInterpreterPrimitiveThatMovesCurrentMet
 
 	| firstMethod compactMethod |
 	
-	<expectedFailure>
-
 	"Patching the primitive to execute the method I need to force the code compaction"
 	interpreter primitiveTable at: 1 + 1 put: #primitiveForceMachineCodeCompaction.
 
