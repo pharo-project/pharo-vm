@@ -857,8 +857,8 @@ SpurMemoryManager class >> initialize [
 	 created by popping emptied pages are kept on the ObjStackFreex list.
 	 ObjStackNextx must be the last field for swizzleObjStackAt:."
 	ObjStackPageSlots := 4092. "+ double header = 16k bytes per page in 32-bits"
-	ObjStackTopx := 0.
-	ObjStackMyx := 1.
+	ObjStackTopx := 1.
+	ObjStackMyx := 0.
 	ObjStackFreex := 2.
 	ObjStackNextx := 3.
 	ObjStackFixedSlots := 4.
