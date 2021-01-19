@@ -55,7 +55,7 @@ CogEventLogger >> addCharacter: aCharacter [
 	
 	cogEventBufferPosition >= cogEventBufferSize 
 		ifFalse: [ 
-			cogEventBuffer at: cogEventBufferPosition put: aCharacter.
+			cogEventBuffer at: cogEventBufferPosition put: aCharacter asInteger.
 			cogEventBufferPosition := cogEventBufferPosition + 1 ]
 ]
 
@@ -164,6 +164,16 @@ CogEventLogger >> clearEvent [
 
 ]
 
+{ #category : #accessing }
+CogEventLogger >> cogit [
+	^ cogit
+]
+
+{ #category : #accessing }
+CogEventLogger >> cogit: anObject [
+	cogit := anObject
+]
+
 { #category : #events }
 CogEventLogger >> compactCompiledCodeFinished [
 
@@ -174,6 +184,27 @@ CogEventLogger >> compactCompiledCodeFinished [
 
 ]
 
+{ #category : #simulating }
+CogEventLogger >> fflush: aZnCharacterWriteStream [ 
+
+	aZnCharacterWriteStream flush
+]
+
+{ #category : #simulation }
+CogEventLogger >> fopen: aFileName _: aMode [ 
+	
+	| inner |
+	
+	aMode = 'w+' ifFalse: [ self halt ].
+	
+	inner := aFileName asFileReference writeStream.
+	inner truncate.
+	
+	^ (ZnNewLineWriterStream on: inner)
+			forLf;
+			yourself.
+]
+
 { #category : #builder }
 CogEventLogger >> forEvent: aString [
 
@@ -181,7 +212,34 @@ CogEventLogger >> forEvent: aString [
 	
 	self 
 		addString: aString;
-		addLongLong: self ioUTCMicroseconds
+		addLongLong: cogit coInterpreter ioUTCMicroseconds
+]
+
+{ #category : #simulation }
+CogEventLogger >> fprintf: aWriteStream _: aString _: aCArrayAccessor [ 
+	
+	<doNotGenerate>
+	
+	| str newString delimiterPosition |
+	delimiterPosition := aCArrayAccessor object asString
+		detectIndex: [ :e | e = Character null ] 
+		ifNone: 0.
+		
+	delimiterPosition > 0 
+		ifTrue: [ str := (aCArrayAccessor object first: delimiterPosition - 1) asString ]
+		ifFalse: [ str := aCArrayAccessor object asString ].
+	
+	newString := aString printf: str.
+
+	aWriteStream nextPutAll: newString.
+]
+
+{ #category : #accessing }
+CogEventLogger >> initialize [
+	<doNotGenerate>
+	super initialize.
+	
+	cogEventBuffer := self alloca: 255.
 ]
 
 { #category : #builder }
@@ -217,7 +275,6 @@ CogEventLogger >> methodCollected: aCogMethod [
 CogEventLogger >> methodJitted: aCogMethod [
 
 	<var: #aCogMethod type: #'CogMethod *'>
-	cogEventBuffer at: 0 put: 0.
 
 	self 
 		clearEvent;

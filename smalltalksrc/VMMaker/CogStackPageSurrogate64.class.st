@@ -85,13 +85,13 @@ CogStackPageSurrogate64 >> lastAddress: aValue [
 
 { #category : #accessing }
 CogStackPageSurrogate64 >> nextPage [
-	^stackPages surrogateAtAddress: (memory unsignedLong64At: address + 65)
+	^stackPages surrogateAtAddress: (memory unsignedLong64At: address + 61)
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate64 >> nextPage: aValue [
-	self assert: (address + 64 >= zoneBase and: [address + 71 < zoneLimit]).
-	memory unsignedLong64At: address + 65 put: aValue asInteger.
+	self assert: (address + 60 >= zoneBase and: [address + 67 < zoneLimit]).
+	memory unsignedLong64At: address + 61 put: aValue asInteger.
 	^aValue
 ]
 
@@ -108,13 +108,13 @@ CogStackPageSurrogate64 >> padToWord: aValue [
 
 { #category : #accessing }
 CogStackPageSurrogate64 >> prevPage [
-	^stackPages surrogateAtAddress: (memory unsignedLong64At: address + 73)
+	^stackPages surrogateAtAddress: (memory unsignedLong64At: address + 69)
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate64 >> prevPage: aValue [
-	self assert: (address + 72 >= zoneBase and: [address + 79 < zoneLimit]).
-	memory unsignedLong64At: address + 73 put: aValue asInteger.
+	self assert: (address + 68 >= zoneBase and: [address + 75 < zoneLimit]).
+	memory unsignedLong64At: address + 69 put: aValue asInteger.
 	^aValue
 ]
 

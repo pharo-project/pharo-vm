@@ -60,7 +60,7 @@ LibFFIWorkerTask >> anExternalFunction: anObject [
 LibFFIWorkerTask >> asInteger [
 
 	^ address ifNil: [ 
-		  address := (Random new nextInteger: 1024) + 16rFF1FF ]
+		  address := (Random new nextInt: 1024) + 16rFF1FF ]
 ]
 
 { #category : #'memory access' }

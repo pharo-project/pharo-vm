@@ -29,7 +29,7 @@ Class {
 
 { #category : #accessing }
 CogMethodSurrogate32 class >> alignedByteSize [
-	^20 + self baseHeaderSize
+	^24 + self baseHeaderSize
 ]
 
 { #category : #accessing }
@@ -66,6 +66,18 @@ CogMethodSurrogate32 >> blockSize [
 CogMethodSurrogate32 >> blockSize: aValue [
 	^memory
 		unsignedShortAt: address + baseHeaderSize + 5
+		put: aValue
+]
+
+{ #category : #accessing }
+CogMethodSurrogate32 >> counterIndex [
+	^memory unsignedLongAt: address + 21 + baseHeaderSize
+]
+
+{ #category : #accessing }
+CogMethodSurrogate32 >> counterIndex: aValue [
+	^memory
+		unsignedLongAt: address + baseHeaderSize + 21
 		put: aValue
 ]
 

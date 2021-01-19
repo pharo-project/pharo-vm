@@ -59,6 +59,15 @@ CArrayAccessor >> cPtrAsOop [
 	^object
 ]
 
+{ #category : #iterating }
+CArrayAccessor >> do: aBlockClosure [ 
+
+	"Used for printing"
+
+	offset to: (self size + offset - 1) 
+		do: [ :i | aBlockClosure value: (self at: i) asCharacter ]
+]
+
 { #category : #accessing }
 CArrayAccessor >> floatAt: index [ 
 	^ (self at: index) isFloat

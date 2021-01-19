@@ -33,7 +33,8 @@ Class {
 		'blockEntryOffset',
 		'methodObject',
 		'methodHeader',
-		'selector'
+		'selector',
+		'counterIndex'
 	],
 	#category : #'VMMaker-JIT'
 }
@@ -102,6 +103,16 @@ CogMethod >> containsAddress: anAddress [
 	<inline: true>
 	^self asUnsignedInteger <= anAddress asUnsignedInteger
 	  and: [self asUnsignedInteger + self blockSize >= anAddress asUnsignedInteger]
+]
+
+{ #category : #accessing }
+CogMethod >> counterIndex [
+	^ counterIndex
+]
+
+{ #category : #accessing }
+CogMethod >> counterIndex: anObject [
+	counterIndex := anObject
 ]
 
 { #category : #accessing }
