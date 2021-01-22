@@ -110,7 +110,7 @@ DisplayText >> computeBoundingBox [
 	"Compute minimum enclosing rectangle around characters."
 
 	| character font width carriageReturn lineWidth lineHeight |
-	carriageReturn := Character cr.
+	carriageReturn := Character newLine.
 	width := lineWidth := 0.
 	font := textStyle defaultFont.
 	lineHeight := textStyle lineGrid.

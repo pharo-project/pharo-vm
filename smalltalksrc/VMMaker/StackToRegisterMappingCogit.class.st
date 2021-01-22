@@ -3881,7 +3881,7 @@ StackToRegisterMappingCogit >> printSimStack: aSimStackOrFixup [
 StackToRegisterMappingCogit >> printSimStack: aSimStack toDepth: limit spillBase: spillBase on: aStream [
 	<doNotGenerate>
 	| tempNames width tabWidth |
-	aStream ensureCr.
+	aStream newLine.
 	limit < 0 ifTrue:
 		[^aStream nextPutAll: 'simStackEmpty'; cr; flush].
 	aSimStack ifNil:
@@ -4622,7 +4622,7 @@ StackToRegisterMappingCogit >> traceFixup: fixup merge: isMerge [
 	(compilationTrace anyMask: 32) ifTrue:
 		[index := (fixups object identityIndexOf: fixup) - 1.
 		 coInterpreter transcript
-			ensureCr;
+			newLine;
 			print: bytecodePC; nextPutAll: ' -> '; print: index; nextPut: $/; print: index + initialPC;
 			nextPut: $:; space.
 		 isMerge
@@ -4638,7 +4638,7 @@ StackToRegisterMappingCogit >> traceMerge: fixup [
 	(compilationTrace anyMask: 16) ifTrue:
 		[index := (fixups object identityIndexOf: fixup) - 1.
 		 coInterpreter transcript
-			ensureCr;
+			newLine;
 			print: index; nextPut: $/; print: index + initialPC;
 			nextPut: $:; space.
 			fixup printStateOn: coInterpreter transcript.

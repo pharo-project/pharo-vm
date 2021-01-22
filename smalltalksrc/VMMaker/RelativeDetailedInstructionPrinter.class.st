@@ -48,7 +48,7 @@ RelativeDetailedInstructionPrinter >> print: instruction [
 			[stream nextPut: $-; nextPut: $>; print: next].
 		 stream
 			nextPut: $);
-			cr;
+			newLine;
 			flush.
 		 saveLabel isEmpty ifFalse:
 			[stream nextPutAll: saveLabel; flush]]

@@ -169,9 +169,14 @@ VMMaker class >> forceNewFileNamed: aFilename [
 		A single format is friendlier to e.g. external version control systems.
 		The Microsoft and old MacOS classic C compilers all accept lf format files."
 
-	^(MultiByteFileStream forceNewFileNamed: aFilename)
-		lineEndConvention: #lf;
+	| inner |
+	inner := aFilename asFileReference writeStream.
+	
+	^ (ZnNewLineWriterStream on: inner)
+		forLf;
 		yourself
+
+
 ]
 
 { #category : #'file utilities' }
@@ -715,12 +720,12 @@ VMMaker >> generateExportsFile [
 		s cr.
 
 		s cr; nextPutAll:'sqExport *pluginExports[] = {'.
-		s crtab; nextPutAll:'vm_exports,'.
-		s crtab; nextPutAll: 'os_exports,'.
+		s newLine; tab; nextPutAll:'vm_exports,'.
+		s newLine; tab; nextPutAll: 'os_exports,'.
 		self internalPluginsDo:[:cls|
-			s crtab; nextPutAll: cls moduleName; nextPutAll:'_exports,'
+			s newLine; tab; nextPutAll: cls moduleName; nextPutAll:'_exports,'
 		].
-		s crtab; nextPutAll:'NULL'.
+		s newLine; tab; nextPutAll:'NULL'.
 		s cr; nextPutAll:'};'; cr].
 	(cg needToGenerateHeader: (filePath asFileReference basename) file: filePath contents: contents) ifTrue:
 		[[fileStream := VMMaker forceNewFileNamed: filePath] 

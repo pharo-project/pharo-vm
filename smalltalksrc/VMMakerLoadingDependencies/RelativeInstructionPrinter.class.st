@@ -59,10 +59,10 @@ RelativeInstructionPrinter >> print: instruction [
 				space].
 		 stream skip: -1; nextPut: $>; space].
 	stream nextPutAll: instruction.
-	stream cr.
+	stream newLine.
 	labelling ifFalse:
 		[(labels at: scanner pc + 1) ~~ false ifTrue:
-			[stream nextPutAll: (labels at: scanner pc + 1); nextPut: $:; cr]].
+			[stream nextPutAll: (labels at: scanner pc + 1); nextPut: $:; newLine]].
 	oldPC := scanner pc
 ]
 

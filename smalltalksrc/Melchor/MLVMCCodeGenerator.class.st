@@ -155,7 +155,7 @@ MLVMCCodeGenerator >> emitCAPIExportHeaderOn: aStream [
 	exportedAPIMethods do:
 		[:m|
 		m static ifTrue:
-			[logger ensureCr; show: m selector, ' excluded from export API because it is static'; cr]].
+			[logger newLine; show: m selector, ' excluded from export API because it is static'; newLine]].
 	self emitCFunctionPrototypes: exportedAPIMethods on: aStream.
 	self emitGlobalCVariablesOn: aStream.
 	usedConstants := self emitCMacros: exportedAPIMethods on: aStream.
@@ -189,14 +189,14 @@ MLVMCCodeGenerator >> emitCHeaderOn: aStream [
 	headerClass := [self vmClass coreInterpreterClass]
 						on: MessageNotUnderstood
 						do: [:ex| self vmClass].
-	aStream nextPutAll: (self fileHeaderVersionStampForSourceClass: headerClass); cr; cr.
+	aStream nextPutAll: (self fileHeaderVersionStampForSourceClass: headerClass); newLine; newLine.
 	self addHeaderFileFirst: '"sq.h"'.
 
 	super emitCHeaderOn: aStream.
 	
 	vmClass isInterpreterClass ifTrue:
 		[self maybePutPreambleFor: vmClass on: aStream].
-	aStream cr
+	aStream newLine
 ]
 
 { #category : #'C code generator' }
@@ -222,7 +222,7 @@ MLVMCCodeGenerator >> emitCVariableDeclarationFor: aDeclaration andVarString: va
 	aStream
 		nextPutAll: declaration;
 		nextPut: $;;
-		cr
+		newLine
 ]
 
 { #category : #'C code generator' }
@@ -249,7 +249,7 @@ MLVMCCodeGenerator >> emitExportNamed: exportsNamePrefix forMethod: method plugi
 		nextPutAll: '", (void*)';
 		nextPutAll: primName;
 		nextPutAll: '},';
-		cr
+		newLine
 ]
 
 { #category : #'C code generator' }
@@ -278,7 +278,7 @@ MLVMCCodeGenerator >> emitFunctionPrototypesPreambleOn: aStream [
 MLVMCCodeGenerator >> emitGlobalCVariablesOn: aStream [
 	"Store the global variable declarations on the given stream."
 
-	aStream cr; nextPutAll: '/*** Global Variables ***/'; cr.
+	aStream newLine; nextPutAll: '/*** Global Variables ***/'; newLine.
 	
 	(self sortStrings: (variables select: [:v| self vmClass mustBeGlobal: v])) do:
 		[:var | | varString decl |
@@ -286,7 +286,7 @@ MLVMCCodeGenerator >> emitGlobalCVariablesOn: aStream [
 		decl := variableDeclarations at: varString ifAbsent: ['sqInt ' , varString].
 		decl first == $# "support cgen var: #bytecodeSetSelector declareC: '#define bytecodeSetSelector 0' hack"
 			ifTrue:
-				[aStream nextPutAll: decl; cr]
+				[aStream nextPutAll: decl; newLine]
 			ifFalse:
 				[(decl includesSubstring: ' private ') ifFalse: "work-around hack to prevent localization of variables only referenced once."
 					[(decl beginsWith: 'static') ifFalse: [aStream nextPutAll: 'VM_EXPORT extern '].
@@ -295,8 +295,8 @@ MLVMCCodeGenerator >> emitGlobalCVariablesOn: aStream [
 					aStream
 						nextPutAll: decl;
 						nextPut: $;;
-						cr]]].
-	aStream cr
+						newLine]]].
+	aStream newLine
 ]
 
 { #category : #'C translation' }
@@ -489,11 +489,11 @@ MLVMCCodeGenerator >> removeVariable: aName [
 			[(self vmClass notNil
 			  and: [self vmClass isNonArgumentImplicitReceiverVariableName: aName]) ifFalse:
 				[logger
-					ensureCr;
+					newLine;
 					show: 'warning, variable '
 						, aName
 						, ' doesn''t exist or has already been removed';
-						cr]]
+						newLine]]
 ]
 
 { #category : #'C translation support' }
@@ -537,10 +537,10 @@ MLVMCCodeGenerator >> reportShouldNotBeRemoved: removed varList: varList [
 
 				strm
 					nextPutAll: ' of interpret.';
-					cr;
+					newLine;
 					nextPutAll: 'But it is either used outside of interpret or exported!!';
-					cr].
-		logger ensureCr; show: str.
+					newLine].
+		logger newLine; show: str.
 		self inform: str]
 ]
 
@@ -600,7 +600,7 @@ MLVMCCodeGenerator >> storeAPIExportHeader: headerName OnFile: fullHeaderPath [
 	| header |
 	header := String streamContents:
 				[:s|
-				 s nextPutAll: (self fileHeaderVersionStampForSourceClass: nil); cr.
+				 s nextPutAll: (self fileHeaderVersionStampForSourceClass: nil); newLine.
 				 self emitCAPIExportHeaderOn: s].
 	(self needToGenerateHeader: headerName file: fullHeaderPath contents: header) ifTrue:
 		[self storeHeaderOnFile: fullHeaderPath contents: header]
@@ -627,7 +627,7 @@ MLVMCCodeGenerator >> validateCppIf: nodeOrNil withValue: value [
 			nextPutAll: 'Warning: cppIf: reference to ';
 			store: value;
 			nextPutAll: ' when variable of same name exists.';
-			cr ]
+			newLine ]
 ]
 
 { #category : #'compile-time-options' }
