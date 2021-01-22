@@ -52,23 +52,29 @@ function(build_git2)
 	add_subdirectory(${LibGit2_SOURCE_DIR} ${LibGit2_BINARY_DIR} EXCLUDE_FROM_ALL)
 	unset(BUILD_CLAR)
 
-	#set_target_properties(${NAME} PROPERTIES MACOSX_RPATH ON)
-	add_custom_target(libgit2_copy
-		COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LibGit2_BINARY_DIR}/$<CONFIG>/git2.dll ${LIBRARY_OUTPUT_PATH}/$<CONFIG>/
-		COMMENT "Copying Libgit binaries from '${LibGit2_BINARY_DIR}' to '${LIBRARY_OUTPUT_PATH}'" VERBATIM
-	)
-
-	#set_target_properties(${NAME} PROPERTIES INSTALL_NAME_DIR "@executable_path/Plugins")
-
 	if(WIN)
-		add_dependencies(libgit2_copy git2)
-		add_dependencies(${VM_LIBRARY_NAME} libgit2_copy)
+		add_custom_target(libgit2_copy
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LibGit2_BINARY_DIR}/$<CONFIG>/git2.dll ${LIBRARY_OUTPUT_PATH}/$<CONFIG>/
+			COMMENT "Copying Libgit binaries from '${LibGit2_BINARY_DIR}' to '${LIBRARY_OUTPUT_PATH}'" VERBATIM)
+	elseif(OSX)
+		set_target_properties(git2 PROPERTIES MACOSX_RPATH ON)
+		set_target_properties(git2 PROPERTIES INSTALL_NAME_DIR "@executable_path/Plugins")
+
+		add_custom_target(libgit2_copy
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LibGit2_BINARY_DIR}/libgit2.1.0.1.dylib ${LIBRARY_OUTPUT_PATH}
+			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.0.1.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.0.dylib
+			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.0.1.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.dylib
+			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.0.1.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.0.0.dylib
+			COMMENT "Copying Libgit binaries from '${LibGit2_BINARY_DIR}' to '${LIBRARY_OUTPUT_PATH}'" VERBATIM)
 	else()
-		add_dependencies(${VM_LIBRARY_NAME} git2)
+		message(FATAL "Aggggh not implemented yet")
 	endif()
+
+	add_dependencies(libgit2_copy git2)
+	add_dependencies(${VM_LIBRARY_NAME} libgit2_copy)
 endfunction()
 
-if (DOWNLOAD_DEPENDENCIES)
+if (BUILD_BUNDLE)
   #Only get Git2 if required
   if(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES)
     #Download LibGit2 binaries directly

@@ -59,7 +59,7 @@ configure_file("${Win32ResourcesFolder}/${VM_EXECUTABLE_CONSOLE_NAME}.exe.manife
 
 macro(add_third_party_dependencies_per_platform)
 
-    if (DOWNLOAD_DEPENDENCIES AND CYGWIN)
+    if (BUILD_BUNDLE AND CYGWIN)
 		add_third_party_dependency("gcc-runtime-3.4")
     endif()
     

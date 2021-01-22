@@ -372,6 +372,7 @@ static int nameToAddr(char *hostName)
 	/* resolve the domain name into a list of addresses */
    error = getaddrinfo(hostName, NULL, NULL, &result);
    if (error != 0) {
+	   lastError = error;
 	   return 0;
    }
 
@@ -1707,7 +1708,11 @@ sqInt sqResolverLocalAddress(void) {
 #endif
 }
 
-sqInt sqResolverNameLookupResult(void)		{ return lastAddr; }
+sqInt sqResolverNameLookupResult(void)		{ 
+	if(lastError != 0)
+		success(false);
+	
+	return lastAddr; }
 
 void
 sqResolverAddrLookupResult(char *nameForAddress, sqInt nameSize) {
