@@ -11,3 +11,9 @@ ThreadSafeTranscript >> isBinary [
 	
 	^ false
 ]
+
+{ #category : #'*VMMaker' }
+ThreadSafeTranscript >> newLine [
+	
+	self cr
+]

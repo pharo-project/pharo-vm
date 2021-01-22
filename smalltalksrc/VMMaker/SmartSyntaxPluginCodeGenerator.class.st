@@ -124,7 +124,7 @@ SmartSyntaxPluginCodeGenerator >> ccgLoad: aBlock expr: aString asKindOf: aClass
 		nextPutAll: 	'KindOf: ''';
 		nextPutAll:	aClass asString;
 		nextPutAll: ''').';
-		crtab;
+		newLine; tab;
 		nextPutAll: (self 
 						ccgLoad: aBlock 
 						expr: aString 
@@ -138,7 +138,7 @@ SmartSyntaxPluginCodeGenerator >> ccgLoad: aBlock expr: aString asKindOfIntegerF
 		nextPutAll: 'interpreterProxy success: (interpreterProxy isKindOfInteger: (interpreterProxy stackValue: ';
 		nextPutAll: anInteger asString;
 		nextPutAll: ')).';
-		crtab;
+		newLine; tab;
 		nextPutAll: (self 
 						ccgLoad: aBlock 
 						expr: aString 
@@ -150,15 +150,15 @@ SmartSyntaxPluginCodeGenerator >> ccgLoad: aBlock expr: aString asMemberOf: aCla
 
 	^String streamContents: [:aStream | aStream
 		nextPutAll: 'interpreterProxy success: (interpreterProxy';
-		crtab: 2;
+		newLine; tab; tab;
 		nextPutAll: 'is: (interpreterProxy stackValue: ';
 		nextPutAll: anInteger asString;
 		nextPutAll: ')';
-		crtab: 2;
+		newLine; tab; tab;
 		nextPutAll: 	'MemberOf: ''';
 		nextPutAll:	aClass asString;
 		nextPutAll: ''').';
-		crtab;
+		newLine; tab;
 		nextPutAll: (self 
 						ccgLoad: aBlock 
 						expr: aString 
@@ -172,7 +172,7 @@ SmartSyntaxPluginCodeGenerator >> ccgLoad: aBlock expr: aString asMemberOfLargeN
 		nextPutAll: 'interpreterProxy success: (interpreterProxy isLargeNegativeIntegerObject: (interpreterProxy stackValue: ';
 		nextPutAll: anInteger asString;
 		nextPutAll: ')).';
-		crtab;
+		newLine; tab;
 		nextPutAll: (self 
 						ccgLoad: aBlock 
 						expr: aString 
@@ -186,7 +186,7 @@ SmartSyntaxPluginCodeGenerator >> ccgLoad: aBlock expr: aString asMemberOfLargeP
 		nextPutAll: 'interpreterProxy success: (interpreterProxy isLargePositiveIntegerObject: (interpreterProxy stackValue: ';
 		nextPutAll: anInteger asString;
 		nextPutAll: ')).';
-		crtab;
+		newLine; tab;
 		nextPutAll: (self 
 						ccgLoad: aBlock 
 						expr: aString 
@@ -609,7 +609,7 @@ SmartSyntaxPluginCodeGenerator >> generateDebugCode: aNode on: aStream indent: l
 	self generateDebugCode
 		ifTrue: 
 			[aStream nextPutAll: '/* DebugCode... */';
-			 cr.
+			 newLine.
 			aNode args first
 				emitCCodeOn: aStream
 				level: level

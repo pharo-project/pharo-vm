@@ -5,3 +5,8 @@ WriteStream >> fflush [
 	"compatibility to map the stdio fflush(FILE *) routine onto flush"
 	self flush
 ]
+
+{ #category : #'*VMMaker' }
+WriteStream >> newLine [
+	self cr
+]

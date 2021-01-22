@@ -138,7 +138,7 @@ SpurPlanningCompactor class >> identifyMul: options noise: noise [
 				[:node|
 				(node isSend
 				 and: [#* = node selector]) ifTrue:
-					[Transcript ensureCr; nextPutAll: sel; space; print: node; flush]]]]
+					[Transcript newLine; nextPutAll: sel; space; print: node; flush]]]]
 ]
 
 { #category : #analysis }
@@ -168,7 +168,7 @@ SpurPlanningCompactor class >> identifySignedComparisonsFor: options noise: nois
 								ifNil: [true]
 								ifNotNil: [:t| (cg isIntegralCType: t) and: [t first ~= $u]]])
 				 and: [noise noneSatisfy: [:n| n match: node printString]]]]) ifTrue:
-					[Transcript ensureCr; nextPutAll: sel; space; print: node; flush]]]]
+					[Transcript newLine; nextPutAll: sel; space; print: node; flush]]]]
 ]
 
 { #category : #simulation }
