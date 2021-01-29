@@ -11157,14 +11157,11 @@ StackInterpreter >> openImageFileNamed: fileName [
 	"Attempt to open fileName or fileName, '.image'"
 	<doNotGenerate>
 	| f |
-	f := [FileStream readOnlyFileNamed: fileName]
-			on: FileDoesNotExistException
-			do: [:ex|
-				 ((fileName endsWith: '.image') not
-				  and: [(fileName, '.image') asFileReference exists]) ifFalse:
-					[ex pass].
-				 FileStream readOnlyFileNamed: fileName, '.image'].
-	^f ifNil: [self error: 'no image found'. nil].
+	f := fileName asFileReference.
+	f exists ifFalse: [ (fileName, '.image') asFileReference exists ].
+	f exists ifFalse: [ self error: 'no image found'. nil ].
+	self setImageName: fileName.
+	^ f binaryReadStream 
 ]
 
 { #category : #simulation }
@@ -14386,6 +14383,13 @@ StackInterpreter >> setImageHeaderFlagsFrom: headerFlags [
 	"noThreadingOfGUIThread := headerFlags anyMask: 32. specific to CoInterpreterMT"
 	newFinalization := headerFlags anyMask: 64.
 	sendWheelEvents := headerFlags anyMask: 128
+]
+
+{ #category : #'simulation support' }
+StackInterpreter >> setImageName: aString [ 
+	<doNotGenerate>
+	"Simulation support for when running it with an image"
+	self shouldNotImplement 
 ]
 
 { #category : #'primitive support' }
