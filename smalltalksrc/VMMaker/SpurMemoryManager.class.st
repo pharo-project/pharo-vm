@@ -5790,6 +5790,14 @@ SpurMemoryManager >> getHeapGrowthToSizeGCRatio [
 	^heapGrowthToSizeGCRatio
 ]
 
+{ #category : #accessing }
+SpurMemoryManager >> getMaxOldSpaceSize [
+	<api>
+
+	^ maxOldSpaceSize
+
+]
+
 { #category : #'simulation only' }
 SpurMemoryManager >> getStackPointer [
 	"hack around the CoInterpreter/ObjectMemory split refactoring"
@@ -11588,6 +11596,7 @@ SpurMemoryManager >> setLastSegment: segInfo [
 
 { #category : #accessing }
 SpurMemoryManager >> setMaxOldSpaceSize: limit [
+	<api>
 	<var: #limit type: #usqInt>
 	maxOldSpaceSize := limit.
 	^0
