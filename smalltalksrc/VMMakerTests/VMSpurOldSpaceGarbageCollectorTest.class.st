@@ -37,6 +37,12 @@ VMSpurOldSpaceGarbageCollectorTest >> isValidFirstBridge [
 		isValidSegmentBridge: (memory segmentManager bridgeAt: 0)
 ]
 
+{ #category : #running }
+VMSpurOldSpaceGarbageCollectorTest >> runCaseManaged [ 
+
+	^ self runCase
+]
+
 { #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectBiggerThanSizeOfFreeSpace [
 
@@ -159,4 +165,78 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableSho
 	
 	self deny: anObjectOop equals: self keptObjectInVMVariable1.
 	self assertHashOf: self keptObjectInVMVariable1 equals: hash
+]
+
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testMultiPageMournQueue [
+
+	"This test Fires more ephemerons than those that fit in a single page of the mourn queue.
+	All ephemerons should be put in the mourn queue.
+	The mourn queue should grow with new pages to make them all fit.
+	Then we test we can extract all the objects from the queue"	
+
+	| ephemeronKey ephemeronContainer mourned numberJustOverLimit |
+	self createEphemeronClass.
+	ephemeronKey := self newZeroSizedObject.
+	ephemeronContainer := self newObjectWithSlots: 5000.
+	numberJustOverLimit := 5000.
+	1 to: numberJustOverLimit do: [ :i | | ephemeronObjectOop |
+		ephemeronObjectOop := self newEphemeronObject.
+		memory
+			storePointer: 0 "zero based"
+			ofObject: ephemeronObjectOop
+			withValue: ephemeronKey.
+		memory
+			storePointer: i - 1 "zero based"
+			ofObject: ephemeronContainer
+			withValue: ephemeronObjectOop
+	 ].
+	"Force object to not be collected by putting them in special variables"
+	self keepObjectInVMVariable1: ephemeronContainer.
+
+	self assert: memory validObjStacks.
+	memory fullGC.
+
+	mourned := 0.
+	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
+	self
+		assert: mourned
+		equals: numberJustOverLimit
+]
+
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testPageLimitMournQueue [
+
+	"This test Fires more ephemerons than those that fit in a single page of the mourn queue.
+	All ephemerons should be put in the mourn queue.
+	The mourn queue should grow with new pages to make them all fit.
+	Then we test we can extract all the objects from the queue"	
+
+	| ephemeronKey ephemeronContainer mourned objStackLimit |
+	self createEphemeronClass.
+	ephemeronKey := self newZeroSizedObject.
+	ephemeronContainer := self newObjectWithSlots: 5000.
+	objStackLimit := 4088.
+	1 to: objStackLimit do: [ :i | | ephemeronObjectOop |
+		ephemeronObjectOop := self newEphemeronObject.
+		memory
+			storePointer: 0 "zero based"
+			ofObject: ephemeronObjectOop
+			withValue: ephemeronKey.
+		memory
+			storePointer: i - 1 "zero based"
+			ofObject: ephemeronContainer
+			withValue: ephemeronObjectOop
+	 ].
+	"Force object to not be collected by putting them in special variables"
+	self keepObjectInVMVariable1: ephemeronContainer.
+
+	self assert: memory validObjStacks.
+	memory fullGC.
+
+	mourned := 0.
+	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
+	self
+		assert: mourned
+		equals: objStackLimit
 ]

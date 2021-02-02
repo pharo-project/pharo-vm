@@ -6610,8 +6610,13 @@ SpurMemoryManager >> initializeUnscannedEphemerons [
 	 or unused eden space, which ever is the larger."
 	
 	| largestFree sizeOfUnusedEden |
-	largestFree := self findLargestFreeChunk.
-	sizeOfUnusedEden := scavenger eden limit - freeStart.
+	largestFree := self allocateOldSpaceChunkOfBytes: 100000 * self wordSize "support 100000 ephemerons".
+	unscannedEphemerons
+				start: largestFree
+					+ self baseHeaderSize
+					+ (self freeChunkLargerIndex + 1 * self wordSize);
+				limit: (self addressAfter: largestFree).
+"	sizeOfUnusedEden := scavenger eden limit - freeStart.
 	(largestFree notNil
 	 and: [(self numSlotsOfAny: largestFree) > (sizeOfUnusedEden / self wordSize)])
 		ifTrue:
@@ -6623,7 +6628,7 @@ SpurMemoryManager >> initializeUnscannedEphemerons [
 		ifFalse:
 			[unscannedEphemerons
 				start: freeStart;
-				limit: scavenger eden limit].
+				limit: scavenger eden limit]."
 	unscannedEphemerons top: unscannedEphemerons start
 ]
 

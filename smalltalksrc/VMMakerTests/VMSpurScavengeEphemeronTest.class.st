@@ -7,27 +7,6 @@ Class {
 	#category : #'VMMakerTests-MemoryTests'
 }
 
-{ #category : #helpers }
-VMSpurScavengeEphemeronTest >> createEphemeronClass [
-	ourEphemeronClass := self newObjectWithSlots: 3.
-	memory
-		storePointer: "InstanceSpecificationIndex" 2
-		ofObject: ourEphemeronClass
-		withValue: (memory integerObjectOf: Ephemeron format).
-	memory ensureBehaviorHash: ourEphemeronClass.
-]
-
-{ #category : #helpers }
-VMSpurScavengeEphemeronTest >> newEphemeronObject [
-
-"In pharo Ephemerons have 3 slots"
-	
-	^ self
-		newObjectWithSlots: 3
-		format: memory ephemeronFormat
-		classIndex: (memory ensureBehaviorHash: ourEphemeronClass)
-]
-
 { #category : #'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testDequeueMournerWithOnlyOneEphemeronShouldEmptyMournQueue [
 	| ephemeronObjectOop nonEphemeronObjectOop |
@@ -85,6 +64,41 @@ VMSpurScavengeEphemeronTest >> testMournQueueEphemeronsAreRemappedInTheOldSpace 
 	
 	firedEphemeron := memory dequeueMourner.
 	self assert: firedEphemeron equals: (memory fetchPointer: 0 ofObject: self keptObjectInVMVariable1)
+]
+
+{ #category : #'tests-ephemerons-globals' }
+VMSpurScavengeEphemeronTest >> testMultiPageMournQueue [
+
+	"This test Fires more ephemerons than those that fit in a single page of the mourn queue.
+	All ephemerons should be put in the mourn queue.
+	The mourn queue should grow with new pages to make them all fit.
+	Then we test we can extract all the objects from the queue"	
+
+	| nonEphemeronObjectOop  ephemeronKey ephemeronContainer mourned |
+	self createEphemeronClass.
+	ephemeronKey := self newZeroSizedObject.
+	ephemeronContainer := self newObjectWithSlots: 5000.
+	1 to: 5000 do: [ :i | | ephemeronObjectOop |
+		ephemeronObjectOop := self newEphemeronObject.
+		memory
+			storePointer: 0 "zero based"
+			ofObject: ephemeronObjectOop
+			withValue: ephemeronKey.
+		memory
+			storePointer: i - 1 "zero based"
+			ofObject: ephemeronContainer
+			withValue: ephemeronObjectOop
+	 ].
+	"Force object to not be collected by putting them in special variables"
+	self keepObjectInVMVariable1: ephemeronContainer.
+
+	memory fullGC.
+
+	mourned := 0.
+	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
+	self
+		assert: mourned
+		equals: 5000
 ]
 
 { #category : #'tests-ephemerons-globals' }
