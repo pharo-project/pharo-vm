@@ -4361,7 +4361,10 @@ SpurMemoryManager >> doBecome: obj1 and: obj2 copyHash: copyHashFlag [
 	 and: [o2ClassIndex = 0]]) ifTrue:
 		[self inPlaceBecome: obj1 and: obj2 copyHashFlag: copyHashFlag.
 		 ^self].
+
 	self outOfPlaceBecome: obj1 and: obj2 copyHashFlag: copyHashFlag.
+	self failed ifTrue: [ ^ self].
+
 	"if copyHashFlag then nothing changes, since hashes were also swapped."
 	copyHashFlag ifTrue:
 		[^self].
@@ -9927,9 +9930,15 @@ SpurMemoryManager >> outOfPlaceBecome: obj1 and: obj2 copyHashFlag: copyHashFlag
 	clone1 := (self isContextNonImm: obj1)
 				ifTrue: [coInterpreter cloneContext: obj1]
 				ifFalse: [self clone: obj1].
+	
+	clone1 ifNil: [ self primitiveFail. ^ self ].	
+			
 	clone2 := (self isContextNonImm: obj2)
 				ifTrue: [coInterpreter cloneContext: obj2]
-				ifFalse: [self clone: obj2].
+				ifFalse: [self clone: obj2].	
+
+	clone2 ifNil: [ self primitiveFail. ^ self ].	
+			
 	(self isObjImmutable: obj1) ifTrue:
 		[self setIsImmutableOf: clone1 to: true].
 	(self isObjImmutable: obj2) ifTrue:
