@@ -32,7 +32,7 @@ Class {
 VMSpurMemoryManagerTest class >> testParameters [ 
 
 	^ ParametrizedTestMatrix new
-			forSelector: #wordSize addOptions: { 4 . 8 };
+			forSelector: #wordSize addOptions: { 8 . 4 };
 			yourself
 ]
 

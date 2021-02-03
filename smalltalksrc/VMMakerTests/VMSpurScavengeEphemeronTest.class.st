@@ -1,9 +1,6 @@
 Class {
 	#name : #VMSpurScavengeEphemeronTest,
 	#superclass : #VMSpurInitializedOldSpaceTest,
-	#instVars : [
-		'ourEphemeronClass'
-	],
 	#category : #'VMMakerTests-MemoryTests'
 }
 
@@ -26,79 +23,6 @@ VMSpurScavengeEphemeronTest >> testDequeueMournerWithOnlyOneEphemeronShouldEmpty
 	memory dequeueMourner.
 	self assert: memory dequeueMourner equals: nil
 	
-]
-
-{ #category : #'tests-ephemerons-globals' }
-VMSpurScavengeEphemeronTest >> testMournQueueEphemeronsAreRemappedInTheOldSpace [
-	| ephemeronObjectOop keyObject valueObject firedEphemeron objectKeepingEphemeron |
-	self createEphemeronClass.
-	
-	self newOldSpaceObjectWithSlots: 0. "random object to trigger compaction"
-	
-	objectKeepingEphemeron := self newObjectWithSlots: 1.	
-	valueObject := self newObjectWithSlots: 0.
-	keyObject := self newZeroSizedObject.
-	ephemeronObjectOop := self newEphemeronObject.
-	
-	"slots of the ephemeron, register is ignored"	
-	memory
-		storePointer: 0
-		ofObject: ephemeronObjectOop
-		withValue: keyObject.
-
-	memory
-		storePointer: 1
-		ofObject: ephemeronObjectOop
-		withValue: valueObject.
-	
-	"Link between the root and the ephemeron"
-	memory
-		storePointer: 0
-		ofObject: objectKeepingEphemeron
-		withValue: ephemeronObjectOop.
-
-	"Force object to not be collected by putting them in special variables"
-	self keepObjectInVMVariable1: objectKeepingEphemeron.
-	
-	memory fullGC.
-	
-	firedEphemeron := memory dequeueMourner.
-	self assert: firedEphemeron equals: (memory fetchPointer: 0 ofObject: self keptObjectInVMVariable1)
-]
-
-{ #category : #'tests-ephemerons-globals' }
-VMSpurScavengeEphemeronTest >> testMultiPageMournQueue [
-
-	"This test Fires more ephemerons than those that fit in a single page of the mourn queue.
-	All ephemerons should be put in the mourn queue.
-	The mourn queue should grow with new pages to make them all fit.
-	Then we test we can extract all the objects from the queue"	
-
-	| nonEphemeronObjectOop  ephemeronKey ephemeronContainer mourned |
-	self createEphemeronClass.
-	ephemeronKey := self newZeroSizedObject.
-	ephemeronContainer := self newObjectWithSlots: 5000.
-	1 to: 5000 do: [ :i | | ephemeronObjectOop |
-		ephemeronObjectOop := self newEphemeronObject.
-		memory
-			storePointer: 0 "zero based"
-			ofObject: ephemeronObjectOop
-			withValue: ephemeronKey.
-		memory
-			storePointer: i - 1 "zero based"
-			ofObject: ephemeronContainer
-			withValue: ephemeronObjectOop
-	 ].
-	"Force object to not be collected by putting them in special variables"
-	self keepObjectInVMVariable1: ephemeronContainer.
-
-	memory fullGC.
-
-	mourned := 0.
-	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
-	self
-		assert: mourned
-		equals: 5000
 ]
 
 { #category : #'tests-ephemerons-globals' }

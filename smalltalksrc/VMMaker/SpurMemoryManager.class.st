@@ -6609,26 +6609,13 @@ SpurMemoryManager >> initializeUnscannedEphemerons [
 	"Initialize unscannedEphemerons to use the largest free chunk
 	 or unused eden space, which ever is the larger."
 	
-	| largestFree sizeOfUnusedEden |
-	largestFree := self allocateOldSpaceChunkOfBytes: 100000 * self wordSize "support 100000 ephemerons".
+	| largestFree |
+	largestFree := self allocateOldSpaceChunkOfBytes: 50000 * self wordSize "support 100000 ephemerons".
 	unscannedEphemerons
-				start: largestFree
+				start: largestFree "16906448"
 					+ self baseHeaderSize
-					+ (self freeChunkLargerIndex + 1 * self wordSize);
-				limit: (self addressAfter: largestFree).
-"	sizeOfUnusedEden := scavenger eden limit - freeStart.
-	(largestFree notNil
-	 and: [(self numSlotsOfAny: largestFree) > (sizeOfUnusedEden / self wordSize)])
-		ifTrue:
-			[unscannedEphemerons
-				start: largestFree
-					+ self baseHeaderSize
-					+ (self freeChunkLargerIndex + 1 * self wordSize);
-				limit: (self addressAfter: largestFree)]
-		ifFalse:
-			[unscannedEphemerons
-				start: freeStart;
-				limit: scavenger eden limit]."
+					+ (self freeChunkLargerIndex + 1 * self wordSize) "16906496";
+				limit: (self addressAfter: largestFree) 				 "16906456".
 	unscannedEphemerons top: unscannedEphemerons start
 ]
 
@@ -9689,6 +9676,13 @@ SpurMemoryManager >> objStack: objStack pagesDo: aBlock [
 		objStackPage := self fetchPointer: ObjStackNextx ofObject: objStackPage ]
 ]
 
+{ #category : #'obj stacks' }
+SpurMemoryManager >> objStackAt: objStackRootIndex [
+	"Return the object stack stored at index objStackRootIndex in the root class table"
+	
+	^ self fetchPointer: objStackRootIndex ofObject: hiddenRootsObj
+]
+
 { #category : #'object enumeration' }
 SpurMemoryManager >> objectAfter: objOop [
 	<api>
@@ -9749,6 +9743,13 @@ SpurMemoryManager >> objectBytesForSlots: numSlots [
 SpurMemoryManager >> objectMemory [
 	<doNotGenerate>
 	^self
+]
+
+{ #category : #'obj stacks' }
+SpurMemoryManager >> objectStackPageLimit [
+	<doNotGenerate>
+	"Return the limit of elements that can be pushed in a page of an object stack"
+	^ ObjStackLimit
 ]
 
 { #category : #'object enumeration' }
@@ -11048,7 +11049,13 @@ SpurMemoryManager >> relocateObjStackForPlanningCompactor: objStack [
 			from: ObjStackFreex
 			to: ObjStackFreex.
 		 freeList := next].
-	^relocated
+	
+	"Update the hidden roots object, the class table, to point to the relocated object stack"
+	self storePointer: (self fetchPointer: ObjStackMyx ofObject: objStack)
+		ofObject: hiddenRootsObj
+		withValue: result.
+	
+	^ result
 ]
 
 { #category : #compaction }

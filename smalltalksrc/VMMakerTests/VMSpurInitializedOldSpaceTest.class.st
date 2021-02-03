@@ -1,6 +1,9 @@
 Class {
 	#name : #VMSpurInitializedOldSpaceTest,
 	#superclass : #VMSpurMemoryManagerTest,
+	#instVars : [
+		'ourEphemeronClass'
+	],
 	#category : #'VMMakerTests-MemoryTests'
 }
 
@@ -19,7 +22,7 @@ VMSpurInitializedOldSpaceTest >> assertFreeListEmpty: aFreeListOop [
 { #category : #helpers }
 VMSpurInitializedOldSpaceTest >> createEphemeronClass [
 	ourEphemeronClass := self newObjectWithSlots: 3.
-	memory
+	memory 
 		storePointer: "InstanceSpecificationIndex" 2
 		ofObject: ourEphemeronClass
 		withValue: (memory integerObjectOf: Ephemeron format).
