@@ -5737,6 +5737,13 @@ SpurMemoryManager >> freeTreeOverlapCheck [
 					self assert: (start1 > end2 or: [start1 < start2])]]].
 ]
 
+{ #category : #'gc - global' }
+SpurMemoryManager >> freeUnscannedEphemerons [
+	"Free all the memory allocated to keep the unscanned ephemerons"
+	
+	self addFreeChunkWithBytes: 50000 * self wordSize at: unscannedEphemerons start.
+]
+
 { #category : #'simulation only' }
 SpurMemoryManager >> fullDisplayUpdate [
 	"hack around the CoInterpreter/ObjectMemory split refactoring"
@@ -6610,12 +6617,10 @@ SpurMemoryManager >> initializeUnscannedEphemerons [
 	 or unused eden space, which ever is the larger."
 	
 	| largestFree |
-	largestFree := self allocateOldSpaceChunkOfBytes: 50000 * self wordSize "support 100000 ephemerons".
+	largestFree := self allocateOldSpaceChunkOfBytes: 50000 * self wordSize "support 50K ephemerons".
 	unscannedEphemerons
-				start: largestFree "16906448"
-					+ self baseHeaderSize
-					+ (self freeChunkLargerIndex + 1 * self wordSize) "16906496";
-				limit: (self addressAfter: largestFree) 				 "16906456".
+				start: largestFree;
+				limit: largestFree + 50000 * self wordSize.
 	unscannedEphemerons top: unscannedEphemerons start
 ]
 
@@ -8675,6 +8680,7 @@ SpurMemoryManager >> markObjects: objectsShouldBeUnmarkedAndUnmarkedClassesShoul
 	self markAccessibleObjectsAndFireEphemerons.
 	self expungeDuplicateAndUnmarkedClasses: objectsShouldBeUnmarkedAndUnmarkedClassesShouldBeExpunged.
 	self nilUnmarkedWeaklingSlots.
+	self freeUnscannedEphemerons.
 	marking := false
 ]
 
