@@ -4142,8 +4142,15 @@ SpurMemoryManager >> containsOnlyValidBecomeObjects: array1 and: array2 twoWay: 
 				[(copyHash and: [(self isImmediate: oop2) or: [self isImmutable: oop2]]) ifTrue:
 					[^PrimErrInappropriate]].
 		 fieldOffset := fieldOffset - self bytesPerOop].
-	size >= (totalFreeOldSpace + (scavengeThreshold - freeStart)) ifTrue:
+	
+	"We are going to try to put all objects in the largets free chunk of the old space.
+	If this is true we are sure we can fit them. If it is not true, maybe they fit. But as the primitive cannot
+	abort later, it is needed to take a decision now. A better suggestion can improve the implementation.
+	This will fail, and produce a grow requested by the image (with a compaction) and later retry."
+	
+	size >= self sizeOfLargestFreeChunk ifTrue:
 		[^PrimErrNoMemory].
+
 	"only set flags after checking all args."
 	becomeEffectsFlags := effectsFlags.
 	^0
@@ -4363,7 +4370,6 @@ SpurMemoryManager >> doBecome: obj1 and: obj2 copyHash: copyHashFlag [
 		 ^self].
 
 	self outOfPlaceBecome: obj1 and: obj2 copyHashFlag: copyHashFlag.
-	self failed ifTrue: [ ^ self].
 
 	"if copyHashFlag then nothing changes, since hashes were also swapped."
 	copyHashFlag ifTrue:
@@ -9931,13 +9937,13 @@ SpurMemoryManager >> outOfPlaceBecome: obj1 and: obj2 copyHashFlag: copyHashFlag
 				ifTrue: [coInterpreter cloneContext: obj1]
 				ifFalse: [self clone: obj1].
 	
-	clone1 ifNil: [ self primitiveFail. ^ self ].	
+	clone1 ifNil: [ ^ self error: 'Not enough space to copy the objects in two-way become. This should have been detected before'].	
 			
 	clone2 := (self isContextNonImm: obj2)
 				ifTrue: [coInterpreter cloneContext: obj2]
 				ifFalse: [self clone: obj2].	
 
-	clone2 ifNil: [ self primitiveFail. ^ self ].	
+	clone2 ifNil: [ ^ self error: 'Not enough space to copy the objects in two-way become. This should have been detected before' ].	
 			
 	(self isObjImmutable: obj1) ifTrue:
 		[self setIsImmutableOf: clone1 to: true].
