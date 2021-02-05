@@ -222,7 +222,7 @@ StackInterpreterPrimitives >> doPrimitiveWorkerCallout [
 					^ self primitiveFailFor: PrimErrBadArgument ]].
 	
 	cif returnType size > 0 
-		ifTrue: [returnHolder := self malloc: cif returnType size]
+		ifTrue: [returnHolder := self malloc: (cif returnType size max: BytesPerWord)]
 		ifFalse: [returnHolder := nil].
 
 	" 5. Create the worker task and enqueue it"

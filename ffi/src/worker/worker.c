@@ -19,6 +19,9 @@
 struct __Worker {
 	Runner runner;
 
+	int hasToQuit;
+	int nestedRuns;
+
     pthread_t threadId;
     TSQueue *taskQueue;
 
@@ -77,6 +80,8 @@ static void executeWorkerTask(Worker *worker, WorkerTask *task);
 Worker *worker_newSpawning(int spawn) {
     Worker *worker = (Worker *)malloc(sizeof(Worker));
     
+    worker->hasToQuit = false;
+    worker->nestedRuns = 0;
     worker->next = NULL;
     worker->threadId = 0;
     worker->selfThread = NULL;
@@ -103,8 +108,8 @@ Worker *worker_new(){
 }
 
 void worker_release(Worker *worker) {
-    threadsafe_queue_free(worker->taskQueue);
-    free(worker);
+    WorkerTask *task = worker_task_new_release();
+    worker_add_call((Worker*)worker, task);
 }
 
 inline void worker_dispatch_callout(Worker *worker, WorkerTask *task) {
@@ -116,45 +121,78 @@ void worker_add_call(Worker *worker, WorkerTask *task) {
 }
 
 WorkerTask *worker_next_call(Worker *worker) {
+	if(worker->hasToQuit){
+		if(threadsafe_queue_size(worker->taskQueue) == 0)
+			return NULL;
+	}
+
 	return (WorkerTask *)threadsafe_queue_take(worker->taskQueue);
 }
 
 void *worker_run(void *aWorker) {
     WorkerTask *task = NULL;
     Worker* worker = (Worker*)aWorker;
+    int myRun = worker->nestedRuns;
 
     worker->selfThread = pthread_self();
+    worker->nestedRuns ++;
 
     while(true) {
         task = worker_next_call(worker);
-        if (task) {
-            if (task->type == CALLOUT) {
-            	executeWorkerTask((Worker *)worker, task);
-            } else if (task->type == CALLBACK_RETURN) {
-                // stop consuming tasks and return
-            	/*
-            	 * If we have a semaphore we signal it, if not we return
-            	 * This is to handle callbacks from different threads.
-            	 * I have to return if the callback is in the same thread that the worker (when it is a result of a call in a callout)
-            	 * If the callback is from another thread, just we need to signal the semaphore.
-            	 */
 
-            	if(task->callbackSemaphore){
-            		Semaphore* callbackSemaphore = (Semaphore*)task->callbackSemaphore;
-            		callbackSemaphore->signal(callbackSemaphore);
-            	}else{
-                   	return NULL;
-            	}
-            } else {
-                fprintf(stderr, "Unsupported task type: %d", task->type);
-                perror("");
-            }
+        if (task) {
+        	switch(task->type){
+        		case WORKER_RELEASE:
+        			worker->hasToQuit = true;
+					//We wait in case we need to receive a callback_return message
+        			sleep(1);
+        			break;
+
+        		case CALLOUT:
+					executeWorkerTask((Worker *)worker, task);
+        			break;
+
+        		case CALLBACK_RETURN:
+                    // stop consuming tasks and return
+                	/*
+                	 * If we have a semaphore we signal it, if not we return
+                	 * This is to handle callbacks from different threads.
+                	 * I have to return if the callback is in the same thread that the worker (when it is a result of a call in a callout)
+                	 * If the callback is from another thread, just we need to signal the semaphore.
+                	 */
+
+                	if(task->callbackSemaphore){
+                		Semaphore* callbackSemaphore = (Semaphore*)task->callbackSemaphore;
+                		callbackSemaphore->signal(callbackSemaphore);
+                	}else{
+                       	return NULL;
+                	}
+
+        			break;
+
+        		default:
+                    logError("Unsupported task type: %d", task->type);
+                    perror("");
+        	}
         } else {
-            perror("No callbacks in the queue");
+        	if(worker->hasToQuit)
+        		break;
+        	else
+        		perror("No callbacks in the queue");
         }
     }
+
+
+    logWarn("Finishing Nested run: %d from %d\n", worker->nestedRuns, myRun);
+
+    worker->nestedRuns --;
+
+    if(worker->nestedRuns == 0){
+    	threadsafe_queue_free(worker->taskQueue);
+    	free(worker);
+    }
     
-    return NULL;
+	return NULL;
 }
 
 void executeWorkerTask(Worker *worker, WorkerTask *task) {

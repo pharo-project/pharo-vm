@@ -170,6 +170,38 @@ Integer >> coerceTo: cTypeString sim: interpreter [
 	^self  "C number (int, char, float, etc)"
 ]
 
+{ #category : #'*VMMaker' }
+Integer >> gtInspectorIntegerIn: composite [
+	<gtInspectorPresentationOrder: 30>
+	
+	^ composite table
+		title: 'Integer';
+		display: [ | associations oop32Bit value32Bit oop64Bit value64Bit |
+			self > 0 
+				ifTrue: [ "simple version, negatives aren't taken into account"
+					oop32Bit := ((self bitShift: 1) bitOr: 1).
+					value32Bit := (self bitShift: -1).
+					oop64Bit := ((self bitShift: 3) bitOr: 1).
+					value64Bit := (self bitShift: -3) ]
+				ifFalse: [ oop32Bit := value32Bit := oop64Bit := value64Bit := 0 ].
+
+			associations :=	{
+					'decimal' -> self printString.
+					'hex' -> self printStringHex.
+					'octal' -> (self printStringBase: 8).
+					'binary' -> (self printStringBase: 2).
+					'32Bit oop' -> (oop32Bit printString , ' / ' , oop32Bit hex).
+					'32Bit value' -> (value32Bit printString , ' / ' , value32Bit hex).
+					'64Bit oop' -> (oop64Bit printString , ' / ' , oop64Bit hex).
+					'64Bit value' -> (value64Bit printString , ' / ' , value64Bit hex)} asOrderedCollection.
+			(self between: 0 and: 16r10FFFF)
+				ifTrue: [ associations add: 'character' -> self asCharacter ].
+			associations ];
+		column: 'Key' evaluated: #key;
+		column: 'Value' evaluated: [ :each | each value printString ];
+		send: #value
+]
+
 { #category : #'*VMMaker-printing' }
 Integer >> hex8 [
 	"Print the receiver in base 16 with prefixed base, using at least 8 digits.

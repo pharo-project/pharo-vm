@@ -527,7 +527,7 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 #include <ffi.h>
 #endif //FEATURE_FFI
 #if FEATURE_THREADED_FFI
-#include "pharovm/pThreadedFFI/worker.h"
+#include "worker.h"
 #endif //FEATURE_THREADED_FFI'.
 
 	vmClass declareInterpreterVersionIn: aCCodeGenerator defaultName: 'Stack'.
@@ -1816,7 +1816,7 @@ StackInterpreter class >> primitiveTableStringFor: table [
 		table withIndexDo:
 			[:primSpec :index |
 			s
-				crtab;
+				newLine; tab;
 				nextPutAll: '/* ';
 				print: index - 1;
 				nextPutAll: ' */ ';
@@ -2005,7 +2005,7 @@ StackInterpreter >> ISA [
 StackInterpreter >> abstractDetailedSymbolicMethod: aMethod [
 	<doNotGenerate>
 	| ts prim |
-	(ts := self transcript) ensureCr.
+	(ts := self transcript) newLine.
 	(prim := self primitiveIndexOf: aMethod) > 0 ifTrue:
 		[ts nextPutAll: '<primitive: '; print: prim; nextPut: $>.
 		(self isQuickPrimitiveIndex: prim) ifTrue:
@@ -5314,7 +5314,7 @@ StackInterpreter >> defaultNumStackPages [
 StackInterpreter >> detailedSymbolicMethod: aMethod [
 	<doNotGenerate>
 	 self transcript
-		ensureCr;
+		newLine;
 		nextPutAll:
 			((String streamContents:
 				[:ts| | prim proxy |
@@ -11850,7 +11850,7 @@ StackInterpreter >> printAtCache [
 		fmt := atCache at: i + AtCacheFmt.
 		fixed := atCache at: i + AtCacheFixedFields.
 		(objectMemory addressCouldBeObj: obj) ifTrue:
-			[self transcript ensureCr.
+			[self transcript newLine.
 			 self print: i; tab; print: (i < AtPutBase ifTrue: ['at   '] ifFalse: ['put ']);
 				tab; printNum: sz; tab; printNum: fmt; tab; printNum: fixed; tab;
 				shortPrintOop: obj]]
@@ -12080,7 +12080,7 @@ StackInterpreter >> printFrame: theFP WithSP: theSP [
 	<var: #theFP type: #'char *'>
 	<var: #theSP type: #'char *'>
 	<var: #addr type: #'char *'>
-	self cCode: '' inSmalltalk: [self transcript ensureCr].
+	self cCode: '' inSmalltalk: [self transcript newLine].
 	(stackPages couldBeFramePointer: theFP) ifFalse:
 		[self printHexPtr: theFP; print: ' is not in the stack zone?!'; cr.
 		 ^nil].
@@ -12356,7 +12356,7 @@ StackInterpreter >> printMethodCacheFor: thing [
 		 and: [c ~= 0
 		 and: [(self addressCouldBeClassObj: c)
 			or: [self addressCouldBeClassObj: (objectMemory classForClassTag: c)]]]]) ifTrue:
-			[self cCode: [] inSmalltalk: [self transcript ensureCr].
+			[self cCode: [] inSmalltalk: [self transcript newLine].
 			 self printNum: i; space; printHexnp: i; cr; tab.
 			 (objectMemory isBytesNonImm: s)
 				ifTrue: [self cCode: 'vm_printf("%" PRIxSQPTR " %.*s\n", s, (int)(numBytesOf(s)), (char *)firstIndexableField(s))'
@@ -15812,7 +15812,7 @@ StackInterpreter >> superclassSend [
 StackInterpreter >> symbolicMethod: aMethod [
 	<doNotGenerate>
 	 self transcript
-		ensureCr;
+		newLine;
 		nextPutAll:
 			((String streamContents:
 				[:ts| | prim |

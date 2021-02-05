@@ -299,10 +299,10 @@ AbstractInstructionTests >> runAddCqR: assertPrintBar [
 				assertPrintBar ifFalse:
 					[Transcript
 						nextPutAll: rgetter; nextPut: $(; print: b; nextPutAll: ') + '; print: a; nextPutAll: ' = ';
-						print: (self processor convertInternalToInteger: (self processor perform: rgetter)); cr; flush.
+						print: (self processor convertInternalToInteger: (self processor perform: rgetter)); newLine; flush.
 					 bogus ifTrue:
 						[self processor printRegistersOn: Transcript.
-						 Transcript show: (self processor disassembleInstructionAt: 0 In: memory); cr]]]]
+						 Transcript show: (self processor disassembleInstructionAt: 0 In: memory); newLine]]]]
 ]
 
 { #category : #running }
@@ -340,10 +340,10 @@ AbstractInstructionTests >> runAddCwR: assertPrintBar [
 					assertPrintBar ifFalse:
 						[Transcript
 							nextPutAll: rgetter; nextPut: $(; print: b; nextPutAll: ') + '; print: a; nextPutAll: ' = ';
-							print: (self processor convertInternalToInteger: (self processor perform: rgetter)); cr; flush.
+							print: (self processor convertInternalToInteger: (self processor perform: rgetter)); newLine; flush.
 						 bogus ifTrue:
 							[self processor printRegistersOn: Transcript.
-							 Transcript show: (self processor disassembleInstructionAt: 0 In: memory); cr]]]]]
+							 Transcript show: (self processor disassembleInstructionAt: 0 In: memory); newLine]]]]]
 ]
 
 { #category : #running }
@@ -390,10 +390,10 @@ AbstractInstructionTests >> runAddRR: assertPrintBar [
 						[Transcript
 							nextPutAll: drgetter; nextPut: $(; print: b; nextPutAll: ') + ';
 							nextPutAll: srgetter; nextPut: $(; print: a; nextPutAll: ') = ';
-							print: (self processor convertInternalToInteger: (self processor perform: drgetter)); cr; flush.
+							print: (self processor convertInternalToInteger: (self processor perform: drgetter)); newLine; flush.
 						 bogus ifTrue:
 							[self processor printRegistersOn: Transcript.
-							 Transcript show: (self processor disassembleInstructionAt: 0 In: memory); cr]]]]]
+							 Transcript show: (self processor disassembleInstructionAt: 0 In: memory); newLine]]]]]
 ]
 
 { #category : #running }
@@ -439,7 +439,7 @@ AbstractInstructionTests >> runArithmeticShiftRightRR: assertPrintBar [
 							[Transcript
 								nextPutAll: drgetter; nextPut: $(; print: b; nextPutAll: ') >> ';
 								nextPutAll: srgetter; nextPut: $(; print: a; nextPutAll: ') = ';
-								print: (self processor convertInternalToInteger: (self processor perform: drgetter)); cr; flush.
+								print: (self processor convertInternalToInteger: (self processor perform: drgetter)); newLine; flush.
 							 bogus ifTrue:
 								[self processor printRegistersOn: Transcript.
 								 self processor disassembleFrom: 0 to: inst machineCodeSize in: memory on: Transcript]]]]]]

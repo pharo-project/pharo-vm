@@ -1,4 +1,4 @@
-if (DOWNLOAD_DEPENDENCIES)
+if (BUILD_BUNDLE)
 
   # Cairo does not support building on CMake
   # Download it for now, except for linuxes

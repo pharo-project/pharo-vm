@@ -820,7 +820,7 @@ SpurMemoryManager class >> identifySignedComparisonsFor: options in: selectors n
 								ifNotNil: [:t| (cg isIntegralCType: t) and: [t first ~= $u]]])
 				 and: [noise noneSatisfy: [:n| n match: node printString]]]]) ifTrue:
 					[halt ifTrue: [self halt: node printString].
-					 Transcript ensureCr; nextPutAll: sel; space; print: node; flush]]]]
+					 Transcript newLine; nextPutAll: sel; space; print: node; flush]]]]
 ]
 
 { #category : #translation }

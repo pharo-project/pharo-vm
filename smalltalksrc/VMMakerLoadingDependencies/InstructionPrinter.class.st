@@ -27,13 +27,17 @@ InstructionPrinter class >> on: aMethod [
 InstructionPrinter class >> printClass: class [ 
 	"Create a file whose name is the argument followed by '.bytes'. Store on 
 	the file the symbolic form of the compiled methods of the class."
-	| file |
-	file := FileStream newFileNamed: class name , '.bytes'.
+	| stream |
+
+	stream := (ZnNewLineWriterStream on: class name , '.bytes' asFileReference writeStream)
+		forLf;
+		yourself.
+
 	class selectorsAndMethodsDo: 
 		[:sel :m | 
-		file cr; nextPutAll: sel; cr.
-		(self on: m) printInstructionsOn: file].
-	file close
+		stream newLine; nextPutAll: sel; newLine.
+		(self on: m) printInstructionsOn: stream].
+	stream close
 	"InstructionPrinter printClass: Parser."
 
 ]
@@ -193,7 +197,7 @@ InstructionPrinter >> print: instruction [
 	stream nextPut: $>.
 	stream space.
 	stream nextPutAll: instruction.
-	stream cr.
+	stream newLine.
 	oldPC := scanner pc.
 	"(InstructionPrinter compiledMethodAt: #print:) symbolic."
 
