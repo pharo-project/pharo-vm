@@ -18,6 +18,7 @@ static VMErrorCode processHelpOption(const char *argument, VMParameters * params
 static VMErrorCode processPrintVersionOption(const char *argument, VMParameters * params);
 static VMErrorCode processLogLevelOption(const char *argument, VMParameters * params);
 static VMErrorCode processMaxFramesToPrintOption(const char *argument, VMParameters * params);
+static VMErrorCode processMaxOldSpaceSizeOption(const char *argument, VMParameters * params);
 
 static const VMParameterSpec vm_parameters_spec[] =
 {
@@ -30,6 +31,7 @@ static const VMParameterSpec vm_parameters_spec[] =
 	{.name = "version", .hasArgument = false, .function = processPrintVersionOption},
 	{.name = "logLevel", .hasArgument = true, .function = processLogLevelOption},
 	{.name = "maxFramesToLog", .hasArgument = true, .function = processMaxFramesToPrintOption},
+	{.name = "maxOldSpaceSize", .hasArgument = true, .function = processMaxOldSpaceSizeOption},
 
 #ifdef __APPLE__
 	// This parameter is passed by the XCode debugger.
@@ -338,16 +340,20 @@ vm_printUsageTo(FILE *out)
 "       " VM_NAME " [<option>...] -- [<argument>...]\n"
 "\n"
 "Common <option>s:\n"
-"  --help                 	Print this help message, then exit\n"
+"  --help                       Print this help message, then exit\n"
 #if ALWAYS_INTERACTIVE
-"  --headless             	Run in headless (no window) mode (default: false)\n"
+"  --headless                   Run in headless (no window) mode (default: false)\n"
 #else
-"  --headless             	Run in headless (no window) mode (default: true)\n"
+"  --headless                   Run in headless (no window) mode (default: true)\n"
 #endif
-"  --worker               	run in worker thread (default: false)\n"
-"  --logLevel=<level>     	Sets the log level (ERROR, WARN, INFO or DEBUG)\n"
-"  --version              	Print version information, then exit\n"
-"  --maxFramesToLog=<cant>	Sets the max numbers of Smalltalk frames to log"
+"  --worker                     Run in worker thread (default: false)\n"
+"  --logLevel=<level>     	    Sets the log level (ERROR, WARN, INFO or DEBUG)\n"
+"  --version                    Print version information, then exit\n"
+"  --maxFramesToLog=<cant>		Sets the max numbers of Smalltalk frames to log\n"
+"  --maxOldSpaceSize=<bytes>    Sets the max size of the old space. As the other\n"
+"                               spaces are fixed (or calculated from this) with\n"
+"                               this parameter is possible to set the total size.\n"
+"                               It is possible to use M(MB) and G(GB)."
 "\n"
 "Notes:\n"
 "\n"
@@ -389,6 +395,52 @@ processMaxFramesToPrintOption(const char* value, VMParameters * params)
 	}
 
 	params->maxStackFramesToPrint = intValue;
+
+	return VM_SUCCESS;
+}
+
+static VMErrorCode
+processMaxOldSpaceSizeOption(const char* originalArgument, VMParameters * params)
+{
+	int intValue = 0;
+	int multiplier = 1;
+	int argumentLength = 0;
+	char* argument = alloca(255);
+
+	strncpy(argument, originalArgument, 255);
+	argument[254] = 0;
+
+	if(strlen(argument) > 0){
+		argumentLength = strlen(argument);
+		char lastCharacter = argument[argumentLength - 1];
+
+		switch(lastCharacter){
+			case 'm':
+			case 'M':
+				multiplier = 1024 * 1024;
+				argument[argumentLength - 1] = '\0';
+				break;
+			case 'g':
+			case 'G':
+				multiplier = 1024 * 1024 * 1024;
+				argument[argumentLength - 1] = '\0';
+				break;
+			default:
+				break;
+		}
+	}
+
+	errno = 0;
+	intValue = strtol(argument, NULL, 10);
+
+	if(errno != 0 || intValue < 0)
+	{
+		logError("Invalid option for maxFramesToLog: %s\n", originalArgument);
+		vm_printUsageTo(stderr);
+		return VM_ERROR_INVALID_PARAMETER_VALUE;
+	}
+
+	params->maxOldSpaceSize = intValue * multiplier;
 
 	return VM_SUCCESS;
 }
