@@ -65,8 +65,6 @@
 #undef dispatchFunctionPointer
 #undef dispatchFunctionPointerOnin
 
-#undef squeakFileOffsetType
-#define squeakFileOffsetType off_t
 #include <unistd.h>
 
 #undef sqFTruncate

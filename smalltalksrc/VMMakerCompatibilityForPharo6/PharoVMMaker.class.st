@@ -26,7 +26,7 @@ PharoVMMaker class >> generate: aClassName outputDirectory: aDirectory [
 		nextPutAll: ' in ';
 		nextPutAll: aDirectory printString;
 		nextPutAll: '...';
-		cr;
+		newLine;
 		flush.
 	
 	self new

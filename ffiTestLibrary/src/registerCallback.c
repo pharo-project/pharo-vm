@@ -2,11 +2,11 @@
 
 SIMPLE_CALLBACK registeredCallback;
 
-void registerCallback(SIMPLE_CALLBACK fun){
+EXPORT(void) registerCallback(SIMPLE_CALLBACK fun){
 	registeredCallback = fun;
 }
 
-int registeredCallbackInALoop(){
+EXPORT(int) registeredCallbackInALoop(){
 	int i;
 	int acc = 0;
 	
@@ -17,7 +17,7 @@ int registeredCallbackInALoop(){
 	return acc;
 }
 
-int reentringRegisteredCallback(int base){
+EXPORT(int) reentringRegisteredCallback(int base){
 	printf("Value entered: %d\n", base);
 
 	if(base == 0)

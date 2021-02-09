@@ -1334,7 +1334,7 @@ Cogit class >> tableInitializerFor: aTable in: aCCodeGenerator [
 		s nextPutAll: ' = {'.
 		aTable object
 			do: [:gt|
-				s crtab.
+				s newLine; tab.
 				gt printCInitializerOn: s in: aCCodeGenerator]
 			separatedBy: [s nextPut: $,].
 		s cr; nextPut: $}]
@@ -2925,7 +2925,7 @@ Cogit >> addToMap: annotation instruction: instruction byte: byte at: address fo
 		[| s bytecode |
 		(compilationTrace anyMask: 64) ifTrue:
 			[(s := coInterpreter transcript)
-				ensureCr;
+				newLine;
 				print: annotation; nextPut: $/; nextPutAll: byte hex; space;
 				nextPutAll: address hex; space; nextPutAll: mcpc hex; space;
 				nextPutAll: (AnnotationConstantNames detect: [:name| (Cogit classPool at: name ifAbsent: []) = annotation]); cr; flush.
@@ -6190,7 +6190,7 @@ Cogit >> disassembleTrampolineTable [
 	0 to: trampolineTableIndex - 1 by: 2 do:
 		[:i|
 		self disassembleTrampolineFor: (trampolineAddresses at: i + 1) asInteger.
-		coInterpreter transcript cr]
+		coInterpreter transcript newLine]
 ]
 
 { #category : #'simulation only' }
@@ -6325,18 +6325,18 @@ Cogit >> exclude: aMethodObj [
 				[:excluded| 
 				(excluded anySatisfy: [:exclude| aMethodObj = exclude]) ifTrue:
 					[coInterpreter transcript
-						ensureCr; nextPutAll: 'EXCLUDING ';
+						newLine; nextPutAll: 'EXCLUDING ';
 						nextPutAll: aMethodObj; nextPutAll: ' (compiled block)';
-						cr; flush.
+						newLine; flush.
 					 ^true]].
 		 (compilationTrace anyMask: 1) ifTrue:
 			[| methodClass |
 			 methodClass := coInterpreter nameOfClass: (coInterpreter methodClassOf: aMethodObj).
 			 coInterpreter transcript
-				ensureCr;
+				newLine;
 				nextPutAll: 'compiling compiled block in ';
 				nextPutAll: methodClass;
-				cr; flush]].
+				newLine; flush]].
 	^false
 ]
 
@@ -6354,7 +6354,7 @@ Cogit >> exclude: aMethodObj selector: aSelectorOop [
 				selector := coInterpreter stringOf: aSelectorOop.
 				(excluded anySatisfy: [:exclude| selector = exclude or: [methodClass = exclude]]) ifTrue:
 					[coInterpreter transcript
-						ensureCr; nextPutAll: 'EXCLUDING ';
+						newLine; nextPutAll: 'EXCLUDING ';
 						nextPutAll: methodClass; nextPutAll: '>>#'; nextPutAll: selector;
 						cr; flush.
 					 ^true]].
@@ -6364,7 +6364,7 @@ Cogit >> exclude: aMethodObj selector: aSelectorOop [
 			 selector isEmpty ifTrue:
 				[selector := coInterpreter stringOf: (coInterpreter maybeSelectorOfMethod: aMethodObj)].
 			 coInterpreter transcript
-				ensureCr; nextPutAll: 'compiling ';
+				newLine; nextPutAll: 'compiling ';
 				nextPutAll: methodClass; nextPutAll: '>>#'; nextPutAll: selector;
 				cr; flush]].
 	^false
@@ -10478,7 +10478,7 @@ Cogit >> print: aString [
 { #category : #'method map' }
 Cogit >> print: descriptor IsBackwardBranch: isBackwardBranch Mcpc: mcpc Bcpc: bcpc on: aStream [
 	<doNotGenerate>
-	aStream ensureCr.
+	aStream newLine.
 	mcpc printOn: aStream base: 16.
 	aStream
 		space; tab;
@@ -10572,48 +10572,48 @@ Cogit >> printMethodHeader: cogMethod on: aStream [
 		inSmalltalk:
 			[cogMethod isInteger ifTrue:
 				[^self printMethodHeader: (self cogMethodOrBlockSurrogateAt: cogMethod) on: aStream]].
-	aStream ensureCr.
+	aStream newLine.
 	cogMethod asInteger printOn: aStream base: 16.
 	cogMethod cmType = CMMethod ifTrue:
-		[aStream crtab; nextPutAll: 'objhdr: '.
+		[aStream newLine; tab; nextPutAll: 'objhdr: '.
 		cogMethod objectHeader printOn: aStream base: 16].
 	cogMethod cmType = CMBlock ifTrue:
-		[aStream crtab; nextPutAll: 'homemth: '.
+		[aStream newLine; tab; nextPutAll: 'homemth: '.
 		cogMethod cmHomeMethod asUnsignedInteger printOn: aStream base: 16.
 		aStream
 			nextPutAll: ' (offset '; print: cogMethod homeOffset; nextPut: $);
-			crtab; nextPutAll: 'startpc: '; print: cogMethod startpc].
+			newLine; tab; nextPutAll: 'startpc: '; print: cogMethod startpc].
 	aStream
-		crtab; nextPutAll: 'nArgs: ';	print: cogMethod cmNumArgs;
+		newLine; tab; nextPutAll: 'nArgs: ';	print: cogMethod cmNumArgs;
 		tab;    nextPutAll: 'type: ';	print: cogMethod cmType.
 	(cogMethod cmType ~= 0 and: [cogMethod cmType ~= CMBlock]) ifTrue:
-		[aStream crtab; nextPutAll: 'blksiz: '.
+		[aStream newLine; tab; nextPutAll: 'blksiz: '.
 		cogMethod blockSize printOn: aStream base: 16.
 		cogMethod cmType = CMMethod ifTrue:
-			[aStream crtab; nextPutAll: 'method: '.
+			[aStream newLine; tab; nextPutAll: 'method: '.
 			 cogMethod methodObject printOn: aStream base: 16.
-			 aStream crtab; nextPutAll: 'mthhdr: '.
+			 aStream newLine; tab; nextPutAll: 'mthhdr: '.
 			 cogMethod methodHeader printOn: aStream base: 16].
-		aStream crtab; nextPutAll: 'selctr: '.
+		aStream newLine; tab; nextPutAll: 'selctr: '.
 		cogMethod selector printOn: aStream base: 16.
 		(coInterpreter lookupAddress: cogMethod selector) ifNotNil:
 			[:string| aStream nextPut: $=; nextPutAll: string].
 		cogMethod selector = objectMemory nilObject ifTrue:
 			[aStream space; nextPut: $(; nextPutAll: (coInterpreter stringOf: (coInterpreter maybeSelectorOfMethod: cogMethod methodObject)); nextPut: $)]. 
 		cogMethod cmType = CMMethod ifTrue:
-			[aStream crtab; nextPutAll: 'blkentry: '.
+			[aStream newLine; tab; nextPutAll: 'blkentry: '.
 			 cogMethod blockEntryOffset printOn: aStream base: 16.
 			 cogMethod blockEntryOffset ~= 0 ifTrue:
 				[aStream nextPutAll: ' => '.
 				 cogMethod asInteger + cogMethod blockEntryOffset printOn: aStream base: 16]]].
 	cogMethod cmType = CMClosedPIC
 		ifTrue:
-			[aStream crtab; nextPutAll: 'cPICNumCases: '.
+			[aStream newLine; tab; nextPutAll: 'cPICNumCases: '.
 			 cogMethod cPICNumCases printOn: aStream base: 16.
 			 aStream tab; nextPutAll: 'cpicHasMNUCase: ';
 			 nextPutAll: (cogMethod cpicHasMNUCase ifTrue: ['yes'] ifFalse: ['no'])]
 		ifFalse:
-			[aStream crtab; nextPutAll: 'stackCheckOffset: '.
+			[aStream newLine; tab; nextPutAll: 'stackCheckOffset: '.
 			 cogMethod stackCheckOffset printOn: aStream base: 16.
 			 cogMethod stackCheckOffset > 0 ifTrue:
 				[aStream nextPut: $/.
@@ -10621,12 +10621,12 @@ Cogit >> printMethodHeader: cogMethod on: aStream [
 			cogMethod cmType = CMBlock
 				ifTrue:
 					[aStream
-						crtab;
+						newLine; tab;
 						nextPutAll: 'cbUsesInstVars ';
 						nextPutAll: (cogMethod cbUsesInstVars ifTrue: ['yes'] ifFalse: ['no'])]
 				ifFalse:
 					[aStream
-						crtab;
+						newLine; tab;
 						nextPutAll: 'cmRefersToYoung: ';
 						nextPutAll: (cogMethod cmRefersToYoung ifTrue: ['yes'] ifFalse: ['no']);
 						tab;
@@ -10634,10 +10634,10 @@ Cogit >> printMethodHeader: cogMethod on: aStream [
 						nextPutAll: (cogMethod cmIsFullBlock ifTrue: ['yes'] ifFalse: ['no'])].
 			cogMethod cmType = CMMethod ifTrue:
 				[([cogMethod nextMethodOrIRCs] on: MessageNotUnderstood do: [:ex| nil]) ifNotNil:
-					[:nmoircs| aStream crtab; nextPutAll: 'nextMethodOrIRCs: '.
+					[:nmoircs| aStream newLine; tab; nextPutAll: 'nextMethodOrIRCs: '.
 						nmoircs = 0 ifTrue: [aStream print: nmoircs] ifFalse: [coInterpreter printHex: nmoircs]].
 				 ([cogMethod counters] on: MessageNotUnderstood do: [:ex| nil]) ifNotNil:
-					[:cntrs| aStream crtab; nextPutAll: 'counters: '.
+					[:cntrs| aStream newLine; tab; nextPutAll: 'counters: '.
 						cntrs = 0 ifTrue: [aStream print: cntrs] ifFalse: [coInterpreter printHex: cntrs]]]].
 	aStream cr; flush
 ]
@@ -10730,7 +10730,7 @@ Cogit >> printPCMapPairsFor: cogMethod on: aStream [
 								* (annotation = IsDisplacementX2N
 									ifTrue: [mapByte - DisplacementX2N << AnnotationShift]
 									ifFalse: [mapByte bitAnd: DisplacementMask]))].
-		 aStream ensureCr.
+		 aStream newLine.
 		 map printOn: aStream base: 16.
 		 aStream nextPutAll: ': '.
 		 mapByte printOn: aStream base: 16 length: 2 padded: true.

@@ -366,7 +366,7 @@ VMClass class >> shouldIncludeMethodForSelector: selector [
 										ifNotNil: [:binding| binding value ~~ #undefined]]]]
 				ifNil: [true]]
 		ifNil:
-			[Transcript nextPutAll: 'Cannot find implementation of '; nextPutAll: selector; nextPutAll: ' in hierarchy of '; print: self; cr; flush.
+			[Transcript nextPutAll: 'Cannot find implementation of '; nextPutAll: selector; nextPutAll: ' in hierarchy of '; print: self; newLine; flush.
 			 false]
 ]
 
@@ -416,10 +416,10 @@ VMClass class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord generator: 
 	aCCodeGenerator
 		putDefineOf: 'VM_PROXY_MAJOR' as: self vmProxyMajorVersion on: aStream;
 		putDefineOf: 'VM_PROXY_MINOR' as: self vmProxyMinorVersion on: aStream.
-	aStream cr.
+	aStream newLine.
 	aCCodeGenerator
 		putDefineOf: 'SQ_VI_BYTES_PER_WORD' as: bytesPerWord on: aStream.
-	aStream cr.
+	aStream newLine.
 
 	"The most basic constants must be defined here, not in e.g. the plugin sources, to allow those
 	 other sources to be shared between different builds (Spur vs SqueakV3, 32-bit vs 64-bit, etc)"
@@ -427,18 +427,18 @@ VMClass class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord generator: 
 		[:constName|
 		(self constantClass classPool at: constName ifAbsent: []) ifNotNil:
 			[:const| aCCodeGenerator putDefineOf: constName as: const on: aStream]].
-	aStream cr.
+	aStream newLine.
 
 	((self constantClass classPool associations select: [:a| a key beginsWith: 'PrimErr'])
 		sorted: [:a1 :a2| a1 value <= a2 value])
 		do: [:a| aCCodeGenerator putDefineOf: a key as: a value on: aStream].
-	aStream cr.
+	aStream newLine.
 
 	aCCodeGenerator
 		putDefineOf: 'MinSmallInteger' as: self objectMemoryClass minSmallInteger on: aStream;
 		putDefineOf: 'MaxSmallInteger' as: self objectMemoryClass maxSmallInteger on: aStream;
 		putDefineOf: 'NumSmallIntegerTagBits' as: self objectMemoryClass numSmallIntegerTagBits on: aStream.
-	aStream cr
+	aStream newLine
 ]
 
 { #category : #'translation support' }
