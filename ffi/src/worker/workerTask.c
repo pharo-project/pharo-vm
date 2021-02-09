@@ -32,6 +32,14 @@ WorkerTask *worker_task_new_callback(CallbackInvocation* invocation) {
     return task;
 }
 
+WorkerTask *worker_task_new_release() {
+    WorkerTask *task = malloc(sizeof(WorkerTask));
+    task->callbackSemaphore = NULL;
+
+    task->type = WORKER_RELEASE;
+    return task;
+}
+
 void worker_task_release(WorkerTask *task) {
     free(task);
 }

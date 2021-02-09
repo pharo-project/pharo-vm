@@ -1,13 +1,5 @@
 #include "testLibrary.h"
 
-//Define proper exports on Win32
-#ifdef _WIN32
-# include <windows.h>
-# define EXPORT(returnType) __declspec( dllexport ) returnType
-#else
-# define EXPORT(returnType) returnType
-#endif
-
 //Deprecated
 EXPORT(int) returnAnswer(){
 	return 42;
@@ -19,7 +11,7 @@ EXPORT(int) sumTwoNumbers(int a, int b){
 }
 
 //Deprecated
-EXPORT(int) sumAFloatAndADouble(float a, double b){
+EXPORT(float) sumAFloatAndADouble(float a, double b){
   return a+b; 
 }
 

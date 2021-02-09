@@ -314,7 +314,7 @@ CurrentImageCoInterpreterFacade >> fetchByte: index ofObject: anOop [
 		at: index + 1
 		ifAbsent:
 			[Transcript
-				ensureCr;
+				newLine;
 				nextPutAll: 'warning, accessing past end of '; print: (objectMap keyAtValue: anOop);
 				cr;
 				flush.
