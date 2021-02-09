@@ -1148,9 +1148,9 @@ VMClass >> strncpy: dest _: src _: n [
 								[dest class == ByteArray ifTrue:
 									[[ :idx | dest at: idx put: (getBlock value: idx)]]]]
 					ifFalse:
-						[dest isInteger ifTrue: 
-							[[ :idx | self byteAt: dest + idx - 1 put: (getBlock value: idx)]].
-						 dest isCObjectAccessor ifTrue: [ [ :idx | dest at: idx - 1 put: (getBlock value: idx) asInteger ] ]].
+						[dest isInteger 
+							ifTrue: [[ :idx | self byteAt: dest + idx - 1 put: (getBlock value: idx)]]
+						 	ifFalse: [ dest isCObjectAccessor ifTrue: [ [ :idx | dest at: idx - 1 put: (getBlock value: idx) asInteger ] ]]].
 
 	setBlock ifNil: [self error: 'unhandled type of destination string'].
 	1 to: count do: setBlock.

@@ -70,8 +70,8 @@ CObjectAccessor >> asIntAccessor [
 CObjectAccessor >> asIntAccessorOfSize: byteSize signed: isSigned [ 
 
 	^ self asPluggableAccessor
-		atBlock: [:obj :index | obj integerAt: index size: byteSize signed: isSigned ]
-		atPutBlock: [:obj :index :value | obj integerAt: index put: value size: byteSize signed: isSigned ]
+		atBlock: [:obj :index | obj integerAt: (index - 1) * byteSize + 1 size: byteSize signed: isSigned ]
+		atPutBlock: [:obj :index :value | obj integerAt: (index - 1) * byteSize + 1 put: value size: byteSize signed: isSigned ]
 ]
 
 { #category : #converting }
@@ -125,6 +125,7 @@ CObjectAccessor >> coerceTo: cTypeString sim: interpreterSimulator [
 		[#'float *']			-> [^self asFloatAccessor].
 		[#'double *']		-> [^self asDoubleAccessor].
 		[#'int *']			-> [^self asIntAccessor].
+		[#'sqInt *']			-> [^self asIntAccessorOfSize: interpreterSimulator objectMemory wordSize signed: true].
 		[#'void **']			-> [^self asPointerAccessor: interpreterSimulator objectMemory wordSize].
 		[#'int8_t *']		-> [^self asIntAccessorOfSize: 1 signed: true ].
 		[#'uint8_t *']		-> [^self asIntAccessorOfSize: 1 signed: false ].

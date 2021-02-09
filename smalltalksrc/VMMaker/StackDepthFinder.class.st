@@ -436,7 +436,8 @@ StackDepthFinder >> stackPointers [
 	stackPointers :=  Array new: (end := (method := self method) endPC) + 1.
 	encoderClass ifNil: [encoderClass := method encoderClass].
 	[pc <= end] whileTrue:
-		[stackPointers at: pc put: stackp.
+		[
+		 stackPointers at: pc put: stackp.
 		 encoderClass extensionsAt: pc in: method into:
 			[:extA :extB :delta|
 			2 to: delta by: 2 do: [ :dlt |

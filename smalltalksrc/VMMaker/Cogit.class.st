@@ -1023,7 +1023,9 @@ Cogit class >> initializeWithOptions: optionsDictionary [
 	self initializeAnnotationConstants.
 	self initializeBytecodeTable.
 	self initializeNumTrampolines.
-	self initializePrimitiveTable
+	self initializePrimitiveTable.
+	
+	CogEventLogger initializeWithOptions: optionsDictionary
 ]
 
 { #category : #'in-image compilation support' }
@@ -5624,6 +5626,9 @@ Cogit >> compileEntry [
 	self CmpR: ClassReg R: TempReg.
 	self JumpNonZero: sendMiss.
 	noCheckEntry := self Label.
+	
+	cogEventLogger compileCountIncrementOn: self.	
+	
 	self compileSendTrace ifTrue:
 		[backEnd saveAndRestoreLinkRegAround:
 			[self CallRT: ceTraceLinkedSendTrampoline]]
@@ -5657,6 +5662,8 @@ Cogit >> compileFullBlockEntry [
 	"Context switch entry (use ReceiverResultReg as a non-zero value; it's shorter)."
 	fullBlockEntry := self MoveR: ReceiverResultReg R: SendNumArgsReg.
 	jumpNoContextSwitch jmpTarget: self Label.
+
+	cogEventLogger compileCountIncrementOn: self.
 
 	^0
 ]
@@ -6535,6 +6542,7 @@ Cogit >> fillInMethodHeader: method size: size selector: selector [
 	method cmType: CMMethod.
 	method objectHeader: objectMemory nullHeaderForMachineCodeMethod.
 	method blockSize: size.
+	method counterIndex: -1.
 	method methodObject: methodObj.
 	rawHeader := coInterpreter rawHeaderOf: methodObj.
 	"If the method has already been cogged then
@@ -6579,10 +6587,12 @@ Cogit >> fillInOPICHeader: pic numArgs: numArgs selector: selector [
 	<inline: true>
 	pic cmType: CMOpenPIC.
 	pic objectHeader: 0.
+	pic counterIndex: -1.
 	pic blockSize: openPICSize.
 	"pic methodObject: 0.""This is also the nextOpenPIC link so don't initialize it"
 	methodZone addToOpenPICList: pic.
 	pic methodHeader: 0.
+	pic counterIndex: -1.
 	pic selector: selector.
 	pic cmNumArgs: numArgs.
 	(pic cmRefersToYoung: (objectMemory isYoung: selector)) ifTrue:

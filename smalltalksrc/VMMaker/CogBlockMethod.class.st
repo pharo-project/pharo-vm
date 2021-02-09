@@ -156,7 +156,8 @@ CogBlockMethod class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 								['homeOffset']				-> [#'unsigned short'].
 								['startpc']					-> [#'unsigned short'].
 								['padToWord']				-> [#(#BaseHeaderSize 8 'unsigned int')].
-								['counters']					-> [#usqInt]}				"See SistaCogMethod"
+								['counters']					-> [#usqInt].				"See SistaCogMethod"
+								['counterIndex']			-> [#sqInt]}
 							otherwise:
 								[#sqInt])]]
 ]

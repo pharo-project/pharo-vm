@@ -6,10 +6,17 @@ Class {
 		'cogEventBufferSize',
 		'cogEventBufferPosition',
 		'cogit',
-		'cogEventFile'
+		'cogEventFile',
+		'cogStatCounters',
+		'currentCounterIndex'
+	],
+	#classVars : [
+		'EMPTY_COUNTER_MARK',
+		'STAT_COUNTERS_SIZE'
 	],
 	#pools : [
-		'CogMethodConstants'
+		'CogMethodConstants',
+		'LibFFIConstants'
 	],
 	#category : #'VMMaker-JIT'
 }
@@ -29,6 +36,20 @@ CogEventLogger class >> declareCVarsIn: aCCodeGenerator [
 		var: #cogEventFile
 		declareC: 'FILE* cogEventFile = NULL'.
 
+	aCCodeGenerator 
+		var: #currentCounterIndex
+		declareC: 'sqInt currentCounterIndex = -1'.
+
+	aCCodeGenerator 
+		var: #cogStatCounters
+		declareC: 'sqInt* cogStatCounters = NULL'	
+]
+
+{ #category : #initialization }
+CogEventLogger class >> initializeWithOptions: options [
+
+	STAT_COUNTERS_SIZE := 4096.
+	EMPTY_COUNTER_MARK := BytesPerWord = 8 ifTrue: INT64_MIN ifFalse: INT32_MIN. 
 ]
 
 { #category : #translation }
@@ -148,6 +169,24 @@ CogEventLogger >> addString: aString [
 			self addCharacter: $"]
 ]
 
+{ #category : #initialization }
+CogEventLogger >> allocateStatCounters [
+	
+	cogStatCounters := self cCoerce: (self malloc: STAT_COUNTERS_SIZE * (self sizeof: #'sqInt')) to: #'sqInt *'.
+	0 to: STAT_COUNTERS_SIZE - 1 do: [ :i | cogStatCounters at: i put: EMPTY_COUNTER_MARK ]
+]
+
+{ #category : #'memory access' }
+CogEventLogger >> cCoerce: value to: cTypeString [
+	"Type coercion. For translation a cast will be emmitted. When running in Smalltalk
+	  answer a suitable wrapper for correct indexing."
+	<doNotGenerate>
+
+	^value
+		ifNil: [value]
+		ifNotNil: [value coerceTo: cTypeString sim: cogit coInterpreter]
+]
+
 { #category : #builder }
 CogEventLogger >> clearEvent [ 
 	
@@ -162,6 +201,16 @@ CogEventLogger >> clearEvent [
 				ifNil: [ self perror: 'fopen cogEvents.csv' ] ].
 
 
+]
+
+{ #category : #counters }
+CogEventLogger >> cogStatCountersAddress [
+	
+	<api>
+	<returnTypeC: #usqInt>
+	
+	^self cCode: [(self addressOf: cogStatCounters) asUnsignedInteger]
+		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #cogStatCounters in: self]
 ]
 
 { #category : #accessing }
@@ -184,14 +233,33 @@ CogEventLogger >> compactCompiledCodeFinished [
 
 ]
 
-{ #category : #simulating }
+{ #category : #counters }
+CogEventLogger >> compileCountIncrementOn: aStackToRegisterMappingCogit [ 
+	self shouldBeImplemented.
+]
+
+{ #category : #counters }
+CogEventLogger >> currentCounterIndex [
+
+	<returnTypeC: #'sqInt'>
+
+	^ currentCounterIndex = -1
+		  ifTrue: [ currentCounterIndex := self nextCounterIndex ]
+		  ifFalse: [ currentCounterIndex ]
+]
+
+{ #category : #simulation }
 CogEventLogger >> fflush: aZnCharacterWriteStream [ 
+
+	<doNotGenerate>
 
 	aZnCharacterWriteStream flush
 ]
 
 { #category : #simulation }
 CogEventLogger >> fopen: aFileName _: aMode [ 
+	
+	<doNotGenerate>
 	
 	| inner |
 	
@@ -239,7 +307,9 @@ CogEventLogger >> initialize [
 	<doNotGenerate>
 	super initialize.
 	
+	currentCounterIndex := -1.
 	cogEventBuffer := self alloca: 255.
+
 ]
 
 { #category : #builder }
@@ -268,13 +338,20 @@ CogEventLogger >> methodCollected: aCogMethod [
 		forEvent: 'methodCollected';
 		addClass: (cogit coInterpreter methodClassOf: aCogMethod methodObject);
 		addSelector: (self methodSelector: aCogMethod);
+		addLongLong: (self numberOfCalls: aCogMethod);
 		logEvent.
+	
+	self releaseCounter: aCogMethod counterIndex.
+	aCogMethod counterIndex: -1.
 ]
 
 { #category : #events }
 CogEventLogger >> methodJitted: aCogMethod [
 
 	<var: #aCogMethod type: #'CogMethod *'>
+
+	aCogMethod counterIndex: self currentCounterIndex.
+	self resetCounterIndex.
 
 	self 
 		clearEvent;
@@ -296,5 +373,37 @@ CogEventLogger >> methodSelector: cogMethod [
 				ifTrue: [ ^ s ]
 				ifFalse: [^ cogit objectMemory nilObject]]
 		ifFalse: [^ cogMethod selector].
+
+]
+
+{ #category : #counters }
+CogEventLogger >> nextCounterIndex [
+
+	<returnTypeC: #'sqInt'>
+
+	cogStatCounters 	
+		ifNil: [ self allocateStatCounters ].
+
+	0 to: STAT_COUNTERS_SIZE - 1 
+		do: [ :i | (cogStatCounters at: i) = EMPTY_COUNTER_MARK 
+				ifTrue: [ cogStatCounters at: i put: 0. 
+							 ^ i ] ].
+		
+	self error: 'Could not find an empty counter'
+]
+
+{ #category : #counters }
+CogEventLogger >> numberOfCalls: aCogMethod [
+
+	<var: #aCogMethod type: #'CogMethod *'>
+	<returnTypeC: #'long long'>
+	
+	^ cogStatCounters at: aCogMethod counterIndex 
+]
+
+{ #category : #counters }
+CogEventLogger >> resetCounterIndex [
+
+	currentCounterIndex := -1
 
 ]
