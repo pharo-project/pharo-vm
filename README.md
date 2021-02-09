@@ -53,14 +53,14 @@ In Ubuntu 20.04 and in Mint 20, the VM is built with the following packages:
 - uuid-dev
 - libssl-dev
 
-Building in OSX / Linux:
+### Building in OSX / Linux:
 
 ```bash
 $ cmake . 
 $ make install
 ```
 
-Building in Windows:
+### Building in Windows:
 
 The build in Windows, uses Cygwin. This tool should be installed, and the following Cygwin packages are needed:
 
@@ -94,6 +94,16 @@ $ cmake -DFLAVOUR=[your flavour] .
 The accepted flavours for the moment are as follows:
 - *CoInterpreterWithQueueFFI*: VM including JIT
 - *StackVM*: VM with context to native stack mapping, without JI
+
+### In case of Problems
+
+In case of problems with the build, please tell us including the following things: 
+
+- Command executed
+- CMakeFiles/CMakeOutput.log
+- CMakeFiles/CMakeError.log
+- CMakeCache.txt
+- If you are using windows, please include the output of ```cygcheck -s ```
 
 ## Source Directory Structure
 
