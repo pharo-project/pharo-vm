@@ -104,6 +104,26 @@ def runBuild(platformName, configuration, headless = true){
 	}
 }
 
+def runUnitTests(platform){
+  cleanWs()
+
+	stage("VM Unit Tests"){
+		dir('repository') {
+      checkout scm
+    }
+
+  	cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath"
+    dir("runTests"){
+      shell "VERBOSE=1 make vmmaker"
+      dir("build/vmmaker"){
+				shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 VMMaker.image test --junit-xml-output 'VMMaker.*'"
+				junit allowEmptyResults: true, testResults: "*.xml"        
+      }
+    }		
+		archiveArtifacts artifacts: 'runTests/*.xml', excludes: '_CPack_Packages'
+	}
+}
+
 def runTests(platform, configuration, packages, withWorker){
   cleanWs()
 
@@ -241,6 +261,8 @@ try{
     def platforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64']
 	def builders = [:]
 	def tests = [:]
+
+  runUnitTests('Darwin-x86_64')
 
 	for (platf in platforms) {
         // Need to bind the label variable before the closure - can't do 'for (label in labels)'
