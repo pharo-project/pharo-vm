@@ -112,7 +112,7 @@ def runUnitTests(platform){
       checkout scm
     }
 
-  	cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath"
+  	cmakeBuild generator: "Unix Makefiles", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath"
     dir("runTests"){
       shell "VERBOSE=1 make vmmaker"
       dir("build/vmmaker"){
