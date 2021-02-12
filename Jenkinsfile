@@ -116,7 +116,11 @@ def runUnitTests(platform){
     dir("runTests"){
       shell "VERBOSE=1 make vmmaker"
       dir("build/vmmaker"){
-				shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
+        shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libllvm-full.zip"
+        shell "unzip libllvm-full.zip"
+        shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libunicorn.zip"
+        shell "unzip libunicorn.zip"
+        shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
 				junit allowEmptyResults: true, testResults: "*.xml"        
       }
     }		
