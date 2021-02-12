@@ -121,8 +121,18 @@ def runUnitTests(platform){
         shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libunicorn.zip"
         shell "unzip libunicorn.zip  -d ./vm/Contents/MacOS/Plugins"
         shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
-        junit allowEmptyResults: true, testResults: "*.xml"
-        archiveArtifacts artifacts: '*.xml'
+        
+        // Stop if tests fail
+        // Archive xml reports either case
+        try {
+          junit allowEmptyResults: true, testResults: "*.xml"
+        } catch (ex) {
+          if (currentBuild.result == 'UNSTABLE'){
+            currentBuild.result = 'FAILURE'
+          }
+          archiveArtifacts artifacts: '*.xml'
+        }
+        
       }
     }
   }
