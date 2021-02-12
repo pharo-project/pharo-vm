@@ -131,7 +131,7 @@ if(GENERATE_SOURCES)
     COMPONENT include
     FILES_MATCHING PATTERN *.h)
     
-    add_custom_target(vmmaker DEPENDS ${VMMAKER_IMAGE})
+    add_custom_target(vmmaker DEPENDS build_vmmaker_get_image)
     add_custom_target(generate-sources DEPENDS ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES})
 
 endif()
