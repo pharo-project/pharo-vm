@@ -107,25 +107,25 @@ def runBuild(platformName, configuration, headless = true){
 def runUnitTests(platform){
   cleanWs()
 
-	stage("VM Unit Tests"){
-		dir('repository') {
+  stage("VM Unit Tests"){
+    dir('repository') {
       checkout scm
     }
 
-  	cmakeBuild generator: "Unix Makefiles", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath"
+    cmakeBuild generator: "Unix Makefiles", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath"
     dir("runTests"){
       shell "VERBOSE=1 make vmmaker"
       dir("build/vmmaker"){
         shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libllvm-full.zip"
-        shell "unzip libllvm-full.zip"
+        shell "unzip libllvm-full.zip -d ./vm/Contents/MacOS/Plugins"
         shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libunicorn.zip"
-        shell "unzip libunicorn.zip"
+        shell "unzip libunicorn.zip  -d ./vm/Contents/MacOS/Plugins"
         shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
-				junit allowEmptyResults: true, testResults: "*.xml"        
+        junit allowEmptyResults: true, testResults: "*.xml"
+        archiveArtifacts artifacts: '*.xml'
       }
-    }		
-		archiveArtifacts artifacts: 'runTests/*.xml', excludes: '_CPack_Packages'
-	}
+    }
+  }
 }
 
 def runTests(platform, configuration, packages, withWorker){
