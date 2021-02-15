@@ -56,7 +56,8 @@ In Ubuntu 20.04 and in Mint 20, the VM is built with the following packages:
 ### Building in OSX / Linux:
 
 ```bash
-$ cmake . 
+$ git clone git@github.com <mailto:git@github.com>:pharo-project/opensmalltalk-vm.git
+$ cmake -S opensmalltalk-vm -B build
 $ make install
 ```
 
