@@ -68,8 +68,9 @@ sqMakeMemoryExecutableFromTo(unsigned long startAddr, unsigned long endAddr)
 	if (mprotect((void *)firstPage,
 				 endAddr - firstPage + 1,
 				 PROT_READ | PROT_WRITE | PROT_EXEC) < 0){
-		logWarn("mprotect(x,y,PROT_READ | PROT_WRITE | PROT_EXEC)");
-		logWarn("ERRNO: %d\n", errno);
+		logError("mprotect(x,y,PROT_READ | PROT_WRITE | PROT_EXEC)");
+		logError("ERRNO: %d\n", errno);
+		exit(1);
 	}
 }
 
