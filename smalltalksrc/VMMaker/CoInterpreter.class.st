@@ -6657,6 +6657,7 @@ CoInterpreter >> setCogVMFlags: flags [
 
 { #category : #'internal interpreter access' }
 CoInterpreter >> setDesiredCogCodeSize: dccs [
+	<api>
 	<inline: true>
 	desiredCogCodeSize := dccs
 ]
