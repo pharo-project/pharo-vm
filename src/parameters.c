@@ -19,6 +19,7 @@ static VMErrorCode processPrintVersionOption(const char *argument, VMParameters 
 static VMErrorCode processLogLevelOption(const char *argument, VMParameters * params);
 static VMErrorCode processMaxFramesToPrintOption(const char *argument, VMParameters * params);
 static VMErrorCode processMaxOldSpaceSizeOption(const char *argument, VMParameters * params);
+static VMErrorCode processMaxCodeSpaceSizeOption(const char *argument, VMParameters * params);
 
 static const VMParameterSpec vm_parameters_spec[] =
 {
@@ -32,6 +33,7 @@ static const VMParameterSpec vm_parameters_spec[] =
 	{.name = "logLevel", .hasArgument = true, .function = processLogLevelOption},
 	{.name = "maxFramesToLog", .hasArgument = true, .function = processMaxFramesToPrintOption},
 	{.name = "maxOldSpaceSize", .hasArgument = true, .function = processMaxOldSpaceSizeOption},
+	{.name = "codesize", .hasArgument = true, .function = processMaxCodeSpaceSizeOption},
 
 #ifdef __APPLE__
 	// This parameter is passed by the XCode debugger.
@@ -353,7 +355,9 @@ vm_printUsageTo(FILE *out)
 "  --maxOldSpaceSize=<bytes>    Sets the max size of the old space. As the other\n"
 "                               spaces are fixed (or calculated from this) with\n"
 "                               this parameter is possible to set the total size.\n"
-"                               It is possible to use M(MB) and G(GB)."
+"                               It is possible to use k(kB), M(MB) and G(GB).\n"
+"  --codesize=<bytes>    		Sets the max size of code zone.\n"
+"                               It is possible to use k(kB), M(MB) and G(GB).\n"
 "\n"
 "Notes:\n"
 "\n"
@@ -415,6 +419,11 @@ processMaxOldSpaceSizeOption(const char* originalArgument, VMParameters * params
 		char lastCharacter = argument[argumentLength - 1];
 
 		switch(lastCharacter){
+			case 'k':
+			case 'K':
+				multiplier = 1024;
+				argument[argumentLength - 1] = '\0';
+				break;
 			case 'm':
 			case 'M':
 				multiplier = 1024 * 1024;
@@ -435,12 +444,63 @@ processMaxOldSpaceSizeOption(const char* originalArgument, VMParameters * params
 
 	if(errno != 0 || intValue < 0)
 	{
-		logError("Invalid option for maxFramesToLog: %s\n", originalArgument);
+		logError("Invalid option for maxOldSpaceSize: %s\n", originalArgument);
 		vm_printUsageTo(stderr);
 		return VM_ERROR_INVALID_PARAMETER_VALUE;
 	}
 
 	params->maxOldSpaceSize = intValue * multiplier;
+
+	return VM_SUCCESS;
+}
+
+static VMErrorCode
+processMaxCodeSpaceSizeOption(const char* originalArgument, VMParameters * params)
+{
+	int intValue = 0;
+	int multiplier = 1;
+	int argumentLength = 0;
+	char* argument = alloca(255);
+
+	strncpy(argument, originalArgument, 255);
+	argument[254] = 0;
+
+	if(strlen(argument) > 0){
+		argumentLength = strlen(argument);
+		char lastCharacter = argument[argumentLength - 1];
+
+		switch(lastCharacter){
+			case 'k':
+			case 'K':
+				multiplier = 1024;
+				argument[argumentLength - 1] = '\0';
+				break;
+			case 'm':
+			case 'M':
+				multiplier = 1024 * 1024;
+				argument[argumentLength - 1] = '\0';
+				break;
+			case 'g':
+			case 'G':
+				multiplier = 1024 * 1024 * 1024;
+				argument[argumentLength - 1] = '\0';
+				break;
+			default:
+				break;
+		}
+	}
+
+	errno = 0;
+	intValue = strtol(argument, NULL, 10);
+
+	if(errno != 0 || intValue < 0)
+	{
+		logError("Invalid option for codeSize: %s\n", originalArgument);
+		vm_printUsageTo(stderr);
+		return VM_ERROR_INVALID_PARAMETER_VALUE;
+	}
+
+	params->maxCodeSize = intValue * multiplier;
 
 	return VM_SUCCESS;
 }
