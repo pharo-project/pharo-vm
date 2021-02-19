@@ -118,18 +118,6 @@ if(GENERATE_SOURCES)
         COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\'\"
         DEPENDS build_vmmaker_get_image
         COMMENT "Generating VM files for flavour: ${FLAVOUR}")
-
-    #Define generated files as elements in the c-src component for packaging
-    install(DIRECTORY
-    ${CMAKE_CURRENT_BINARY_DIR}/generated/
-    DESTINATION pharo-vm/generated/
-    COMPONENT c-src)
-
-    install(
-    DIRECTORY "${GENERATED_SOURCE_DIR}/generated/32/vm/include/"
-    DESTINATION include/pharovm
-    COMPONENT include
-    FILES_MATCHING PATTERN *.h)
     
     add_custom_target(vmmaker DEPENDS build_vmmaker_get_image)
     add_custom_target(generate-sources DEPENDS ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES})
