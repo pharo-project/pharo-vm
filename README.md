@@ -55,6 +55,9 @@ In Ubuntu 20.04 and in Mint 20, the VM is built with the following packages:
 
 ### Building in OSX / Linux:
 
+We recommend to use out-of-source building. So, we are building in a different directory than the one containing the sources.
+To do so, we give both parameter for saying where the source is (-S) and where to build (-B).
+
 ```bash
 $ git clone git@github.com <mailto:git@github.com>:pharo-project/opensmalltalk-vm.git
 $ cmake -S opensmalltalk-vm -B build
