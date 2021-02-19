@@ -96,9 +96,9 @@ if(GENERATE_SOURCES)
     ExternalProject_Add(
             build_vmmaker_get_image
 
-            URL https://files.pharo.org/image/90/Pharo9.0-SNAPSHOT.build.1066.sha.35e3e6b.arch.64bit.zip
-            URL_HASH SHA256=31df94ab0d8eb82096a455e36709017e600c31d097d291c084d262d9cc7aaffb
-            BUILD_COMMAND ${VMMAKER_VM} --headless ${VMMAKER_DIR}/image/Pharo9.0-SNAPSHOT-64bit-35e3e6b.image save VMMaker
+            URL https://files.pharo.org/image/90/Pharo9.0-SNAPSHOT.build.1144.sha.ac4bf08.arch.64bit.zip
+            URL_HASH SHA256=eac7c9a2387bc9a44ff2572b7dbd9fddd544d391787a05e5181baded7aab6f45
+            BUILD_COMMAND ${VMMAKER_VM} --headless ${VMMAKER_DIR}/image/Pharo9.0-SNAPSHOT-64bit-ac4bf08.image save VMMaker
             COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --save --quit "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}"
             UPDATE_COMMAND      echo 
             CONFIGURE_COMMAND   echo
