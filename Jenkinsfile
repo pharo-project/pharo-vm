@@ -272,15 +272,15 @@ def uploadPackages(){
 try{
     properties([disableConcurrentBuilds()])
 
-    def platforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64']
+	def platforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64', 'Darwin-arm64']
 	def builders = [:]
 	def tests = [:]
 
-  node('Darwin-x86_64'){
-    runUnitTests('Darwin-x86_64')
-  }
+	node('Darwin-x86_64'){
+		runUnitTests('Darwin-x86_64')
+	}
 
-  for (platf in platforms) {
+	for (platf in platforms) {
         // Need to bind the label variable before the closure - can't do 'for (label in labels)'
         def platform = platf
 		
