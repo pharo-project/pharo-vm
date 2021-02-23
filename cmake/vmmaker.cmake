@@ -52,6 +52,8 @@ if(GENERATE_SOURCES)
     if (GENERATE_PHARO_VM) 
         message("Overriding VM used for code generation")  
         set(VMMAKER_VM ${GENERATE_PHARO_VM})
+        # add empty target because is required later when installing vmmaker
+        add_custom_target(build_vmmaker_get_vm-build)
     else()
         #Pick platform specific VM to download
         if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
