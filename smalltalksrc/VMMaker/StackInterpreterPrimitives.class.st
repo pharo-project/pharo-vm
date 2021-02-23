@@ -262,6 +262,8 @@ StackInterpreterPrimitives >> doPrimitiveWorkerExtractReturnValue [
 
 	"2. Get the returnHolder from the task"
 	task := self getTaskFromAddress: taskAddress.
+	task ifNil: [ ^ self primitiveFailFor: PrimErrBadReceiver ].
+
 	returnHolder := task returnHolderAddress.
 
 	"3. Marshall the return value and push it in the stack"
