@@ -373,6 +373,7 @@ Cogit class >> ancilliaryClasses [
 		CogPrimitiveDescriptor.
 		CogBlockMethod.
 		CogMethod.
+		CogPrimitiveCallState.
 		self activeCompilerClass literalsManagerClass},
 	((InitializationOptions at: #SistaVM ifAbsent: [false])
 		ifTrue: [{SistaMethodZone}]
