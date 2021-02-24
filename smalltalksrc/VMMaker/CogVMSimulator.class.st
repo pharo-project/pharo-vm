@@ -79,7 +79,8 @@ Class {
 		'expectedSends',
 		'expecting',
 		'bootstrapping',
-		'primitiveFailCount'
+		'primitiveFailCount',
+		'primitiveFlags'
 	],
 	#classVars : [
 		'ByteCountsPerMicrosecond',
@@ -302,6 +303,7 @@ CogVMSimulator >> basicInitialize [
 	
 	"This will be overriden when calling initializePluginEntries"
 	mappedPluginEntries := OrderedCollection new.
+	primitiveFlags := Dictionary new.
 ]
 
 { #category : #'multi-threading simulation switch' }
@@ -720,7 +722,7 @@ CogVMSimulator >> collectSends [
 
 { #category : #'cog jit support' }
 CogVMSimulator >> commenceCogCompiledCodeCompaction [
-	"self halt."
+
 	^super commenceCogCompiledCodeCompaction
 ]
 
@@ -2933,6 +2935,8 @@ CogVMSimulator >> primitiveFailCounting [
 { #category : #'as yet unclassified' }
 CogVMSimulator >> primitiveForceMachineCodeCompaction [
 	
+	"This primitive does not exists in the production VM. It is used in the tests to force the Code Compaction and to test it."
+	
 	self commenceCogCompiledCodeCompaction.
 	self pop: 2 thenPushBool: true.
 
@@ -3061,6 +3065,14 @@ CogVMSimulator >> primitiveProcessBoundThreadId [
 	^self perform: #primitiveProcessBoundThreadId
 		withArguments: {}
 		inSuperclass: (cogThreadManager ifNil: [CoInterpreterPrimitives] ifNotNil: [CoInterpreterMT])
+]
+
+{ #category : #'cog jit support' }
+CogVMSimulator >> primitivePropertyFlagsForSpur: primIndex [
+
+	^ primitiveFlags at: primIndex ifAbsent: [ super primitivePropertyFlagsForSpur: primIndex ]
+
+
 ]
 
 { #category : #'multi-threading simulation switch' }
@@ -3556,6 +3568,13 @@ CogVMSimulator >> setOwnerIndexOfProcess: aProcess to: anIndex bind: bind [
 	^self perform: #setOwnerIndexOfProcess:to:bind:
 		withArguments: {aProcess. anIndex. bind}
 		inSuperclass: (cogThreadManager ifNil: [CoInterpreterPrimitives] ifNotNil: [CoInterpreterMT])
+]
+
+{ #category : #'cog jit support' }
+CogVMSimulator >> setPrimitivePropertyFlagFor: primIndex value: aValue [
+
+	^ primitiveFlags at: primIndex put: aValue
+
 ]
 
 { #category : #'debug printing' }

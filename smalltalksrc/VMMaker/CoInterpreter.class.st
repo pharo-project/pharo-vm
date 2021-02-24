@@ -2444,13 +2444,12 @@ CoInterpreter >> commenceCogCompiledCodeCompaction [
 		 self assert: self stackTop asUnsignedInteger ~= instructionPointer.
 		 self push: instructionPointer.
 		 self externalWriteBackHeadStackPointer].
-	self assertValidStackedInstructionPointers: #'__LINE__'.
+	
 	cogit compactCogCompiledCode.
 	self nilUncoggableMethods.
 	instructionPointer ~= 0 ifTrue:
 		[instructionPointer := self popStack.
 		 self externalWriteBackHeadStackPointer].
-	self assertValidStackedInstructionPointers: #'__LINE__'.
 
 	statCodeCompactionCount := statCodeCompactionCount + 1.
 	statCodeCompactionUsecs := statCodeCompactionUsecs + (self ioUTCMicrosecondsNow - startTime).
@@ -5669,9 +5668,10 @@ CoInterpreter >> primitivePropertyFlagsForSpur: primIndex [
 	profileSemaphore ~= objectMemory nilObject ifTrue:
 		[baseFlags := baseFlags bitOr: PrimCallCollectsProfileSamples].
 
-		(primIndex = PrimNumberExternalCall "#primitiveExternalCall"
-	 or: [primIndex = PrimNumberFFICall "#primitiveCalloutToFFI"]) ifTrue: "For callbacks"
-		[baseFlags := baseFlags bitOr: PrimCallMayCallBack.
+		((primIndex = PrimNumberExternalCall "#primitiveExternalCall"
+	 or: [primIndex = PrimNumberFFICall "#primitiveCalloutToFFI"])) ifTrue: "For callbacks"
+		[
+		 baseFlags := baseFlags bitOr: PrimCallMayCallBack.
 		 checkAllocFiller ifTrue:
 			[baseFlags := baseFlags bitOr: CheckAllocationFillerAfterPrimCall]].
 
@@ -7124,7 +7124,7 @@ CoInterpreter >> updateStackZoneReferencesToCompiledCodePreCompaction [
 					[theMethod := (self cCoerceSimple: theMethodField - theFlags to: #'CogBlockMethod *') cmHomeMethod].
 				 theIP := (stackPages longAt: theIPPtr) asUnsignedInteger.
 				 (theIP ~= cogit ceCannotResumePC
-				  and: [self asserta: (theIP >= theMethod asUnsignedInteger
+				  and: [(theIP >= theMethod asUnsignedInteger
 							   and: [theIP < (theMethod asUnsignedInteger + theMethod blockSize)])]) ifTrue:
 					[stackPages
 						longAt: theIPPtr
