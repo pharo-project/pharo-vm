@@ -3390,6 +3390,8 @@ SimpleStackBasedCogit >> genUpArrowReturn [
 { #category : #'primitive generators - call' }
 SimpleStackBasedCogit >> generateCheckProfileTickFromJump: arrivingJmp returningTo: returningLabel beforeCallDo: aBlockClosure [
 
+	<inline: true>
+
 	arrivingJmp jmpTarget: self Label.
 
 	aBlockClosure value.
