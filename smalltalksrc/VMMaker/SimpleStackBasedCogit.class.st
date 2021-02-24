@@ -981,7 +981,7 @@ SimpleStackBasedCogit >> compileInterpreterPrimitive: primitiveRoutine flags: fl
 	 usual stack-switching dance, test the primFailCode and then either
 	 return on success or continue to the method body."
 	<var: #primitiveRoutine declareC: #'void (*primitiveRoutine)(void)'>
-	<var: #cogPrimitiveCallState declareC: #'CogPrimitiveCallState*'>
+	<var: #cogPrimitiveCallState type: #'CogPrimitiveCallState *'>
 
 	| cogPrimitiveCallState |
 
@@ -1122,7 +1122,7 @@ SimpleStackBasedCogit >> compileInterpreterPrimitiveMayCallBack: primitiveRoutin
 	 usual stack-switching dance, test the primFailCode and then either
 	 return on success or continue to the method body."
 	<var: #primitiveRoutine declareC: 'void (*primitiveRoutine)(void)'>
-	<var: #cogPrimitiveCallState declareC: #'CogPrimitiveCallState*'>
+	<var: #cogPrimitiveCallState type: #'CogPrimitiveCallState *'>
 
 	| cogPrimitiveCallState |
 
