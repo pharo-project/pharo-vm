@@ -77,6 +77,13 @@ VMFFIWorkerArgumentMarshallingTest >> doWorkerCallWithValue: smalltalkValue ofTy
 	interpreter primitiveWorkerCallout
 ]
 
+{ #category : #tests }
+VMFFIWorkerArgumentMarshallingTest >> initializationOptions [
+
+	^ super initializationOptions , { 
+		#FEATURE_THREADED_FFI . true }
+]
+
 { #category : #running }
 VMFFIWorkerArgumentMarshallingTest >> setUp [ 
 
