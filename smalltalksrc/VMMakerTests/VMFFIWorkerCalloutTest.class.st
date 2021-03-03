@@ -50,6 +50,13 @@ VMFFIWorkerCalloutTest >> doWorkerCallWithArguments: smalltalkValues ofTypes: ar
 ]
 
 { #category : #tests }
+VMFFIWorkerCalloutTest >> initializationOptions [
+
+	^ super initializationOptions , { 
+		#FEATURE_THREADED_FFI . true }
+]
+
+{ #category : #tests }
 VMFFIWorkerCalloutTest >> testPrimitiveWorkerCalloutEnqueuesOnlyOneTask [
 
 	self doWorkerCallWithArguments: {} ofTypes: {}.
