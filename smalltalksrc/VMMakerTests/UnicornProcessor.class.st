@@ -272,7 +272,7 @@ UnicornProcessor >> runUntil: anAddress [
 
 	^ machineSimulator startAt: machineSimulator instructionPointerValue
 		until: anAddress
-		timeout: 1000
+		timeout: 100000 "microseconds = 100ms"
 		count: 0
 ]
 

@@ -91,7 +91,7 @@ VMBlockTest >> testCreatingABlockClosureShouldCopyUsedMethodVariable [
 { #category : #testing }
 VMBlockTest >> testCreatingABlockClosureShouldHaveCorrectPC [
 
-	| methodReturning initialMethod |
+	| methodReturning initialMethod placeTakenByLiterals closure methodInitialPC methodEndPC |
 	
 	initialMethod := self createMethodOopFromPharoMethod:
 		                     self class >> #anEmptyMethod.
@@ -106,13 +106,16 @@ VMBlockTest >> testCreatingABlockClosureShouldHaveCorrectPC [
 		receiver: memory trueObject.
 	stackBuilder buildStack.
 	
+	"Bytecode index is 1-based, use 0 to set IP just before the first bytecode.
+	The first thing interpretWhile: dows is to fetch a new bytecode"
 	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodReturning).
 	interpreter interpretWhile: [ interpreter method = methodReturning ].
 
-	"hard code for now should be modified"
-	self
-		assert: (memory fetchPointer: ClosureStartPCIndex ofObject: interpreter stackTop) equals: (memory integerObjectOf: 29).
-
+	"The start pc should be the byte just after all the literals"
+	methodInitialPC := (methodBuilder bytecodeAt: 1 forMethod: methodReturning) - methodReturning - memory baseHeaderSize.
+	methodEndPC := methodInitialPC + (memory bytesInObject: methodReturning).
+	self assert: ( (memory integerValueOf: (memory fetchPointer: ClosureStartPCIndex ofObject: interpreter stackTop))
+			between: methodInitialPC and: methodEndPC)
 ]
 
 { #category : #testing }
@@ -134,15 +137,14 @@ VMBlockTest >> testCreatingABlockClosureShouldHaveOuterContextObject [
 	stackBuilder buildStack.
 	
 
-	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodOop).
-	interpreter interpretWhile: [ interpreter method = methodOop ].
+	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodReturning).
+	interpreter interpretWhile: [ interpreter method = methodReturning ].
 
-	"Currently fails because the stack frame is not overriden.
-	So the interpreter considers it's still married even thought the stack frame is already dead"
-
-	self
-		assert: (interpreter isWidowedContext: (memory outerContextOf: interpreter stackTop))
-
+	"The current frame returned, the context is widowed, but the VM does not mark what are the alive frames all the time"
+	self deny: (interpreter isWidowedContext: (memory outerContextOf: interpreter stackTop)).
+	"From time to time, the VM will mark the frames that are alive, and then be able to recognize that a context is widowed"
+	interpreter externalWriteBackHeadFramePointers.
+	self assert: (interpreter isWidowedContext: (memory outerContextOf: interpreter stackTop))
 ]
 
 { #category : #'as yet unclassified' }
@@ -191,8 +193,8 @@ VMBlockTest >> testCreatingABlockWithoutArgumentsClosureShouldHaveNoArgument [
 	stackBuilder buildStack.
 	
 
-	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodOop).
-	interpreter interpretWhile: [ interpreter method = methodOop ].
+	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodReturning).
+	interpreter interpretWhile: [ interpreter method = methodReturning ].
 
 	self
 		assert: (memory fetchPointer: ClosureNumArgsIndex ofObject: interpreter stackTop) equals: (memory integerObjectOf: 0).
@@ -227,14 +229,11 @@ VMBlockTest >> testEvaluatingABlock [
 { #category : #testing }
 VMBlockTest >> testPushClosureBytecodePushesClosure [
 
-	| methodReturning initialMethod |
+	| methodReturning initialMethod methodOop |
 
 	initialMethod := self createMethodOopFromPharoMethod:
 		                     self class >> #anEmptyMethod.
 	methodReturning := self createMethodOopFromPharoMethod:
-		             self class >> #methodReturningABlock.
-
-	methodOop := self createMethodOopFromPharoMethod:
 		             self class >> #methodReturningABlock.
 
 	self installBlockClosureClass.
@@ -245,7 +244,7 @@ VMBlockTest >> testPushClosureBytecodePushesClosure [
 		receiver: memory trueObject.
 	stackBuilder buildStack.
 	
-	interpreter interpretWhile: [ interpreter method = methodOop ].
+	interpreter interpretWhile: [ interpreter method = methodReturning ].
 
 
 	self

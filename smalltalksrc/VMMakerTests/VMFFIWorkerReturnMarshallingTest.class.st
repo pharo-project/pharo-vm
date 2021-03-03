@@ -55,6 +55,13 @@ VMFFIWorkerReturnMarshallingTest >> doTestCalloutWithReturnType: aLibFFIType ret
 ]
 
 { #category : #'tests - marshalling return' }
+VMFFIWorkerReturnMarshallingTest >> initializationOptions [
+
+	^ super initializationOptions , { 
+		#FEATURE_THREADED_FFI . true }
+]
+
+{ #category : #'tests - marshalling return' }
 VMFFIWorkerReturnMarshallingTest >> testPrimitiveCalloutReturningVoidPushesTheReceiver [
 
 	self 

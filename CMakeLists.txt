@@ -55,9 +55,8 @@ set(APPNAME Pharo CACHE STRING "VM Application name")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Extract VCS information
-get_commit_hash(GIT_COMMIT_HASH)
-get_git_describe(GIT_DESCRIBE)
-get_git_date(GIT_COMMIT_DATE)
+include(cmake/versionExtraction.cmake)
+extractVCSInformation(GIT_COMMIT_HASH GIT_DESCRIBE GIT_COMMIT_DATE)
 
 #Variable used to set the VM date
 set(BUILT_FROM "${GIT_DESCRIBE} - Commit: ${GIT_COMMIT_HASH} - Date: ${GIT_COMMIT_DATE}")
