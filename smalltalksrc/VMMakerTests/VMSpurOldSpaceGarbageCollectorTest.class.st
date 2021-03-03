@@ -1,6 +1,9 @@
 Class {
 	#name : #VMSpurOldSpaceGarbageCollectorTest,
 	#superclass : #VMSpurInitializedOldSpaceTest,
+	#instVars : [
+		'objectStackLimit'
+	],
 	#category : #'VMMakerTests-MemoryTests'
 }
 
@@ -41,6 +44,13 @@ VMSpurOldSpaceGarbageCollectorTest >> isValidFirstBridge [
 VMSpurOldSpaceGarbageCollectorTest >> runCaseManaged [ 
 
 	^ self runCase
+]
+
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> setUp [
+
+	objectStackLimit :=  10.
+	super setUp.
 ]
 
 { #category : #'tests-OldSpaceSize' }
@@ -168,7 +178,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableSho
 ]
 
 { #category : #ephemerons }
-VMSpurOldSpaceGarbageCollectorTest >> testMultiPageMournQueue [
+VMSpurOldSpaceGarbageCollectorTest >> testEphemeronOverflowUnscannedEphemeronQueue [
 
 	"This test Fires more ephemerons than those that fit in a single page of the mourn queue.
 	All ephemerons should be put in the mourn queue.
@@ -178,8 +188,47 @@ VMSpurOldSpaceGarbageCollectorTest >> testMultiPageMournQueue [
 	| ephemeronKey ephemeronContainer mourned numberJustOverLimit |
 	self createEphemeronClass.
 	ephemeronKey := self newZeroSizedObject.
-	ephemeronContainer := self newObjectWithSlots: 5000.
-	numberJustOverLimit := 5000.
+	ephemeronContainer := self newObjectWithSlots: 10.
+	numberJustOverLimit := 10.
+	1 to: numberJustOverLimit do: [ :i | | ephemeronObjectOop |
+		ephemeronObjectOop := self newEphemeronObject.
+		memory
+			storePointer: 0 "zero based"
+			ofObject: ephemeronObjectOop
+			withValue: ephemeronKey.
+		memory
+			storePointer: i - 1 "zero based"
+			ofObject: ephemeronContainer
+			withValue: ephemeronObjectOop
+	 ].
+	"Force object to not be collected by putting them in special variables"
+	self keepObjectInVMVariable1: ephemeronContainer.
+
+	self assert: memory validObjStacks.
+	memory unscannedEphemeronsQueueInitialSize: numberJustOverLimit - 1.
+	memory fullGC.
+
+	mourned := 0.
+	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
+	self
+		assert: mourned
+		equals: numberJustOverLimit
+]
+
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testMultiPageMournQueue [
+
+	"This test Fires more ephemerons than those that fit in a single page of the mourn queue.
+	All ephemerons should be put in the mourn queue.
+	The mourn queue should grow with new pages to make them all fit.
+	Then we test we can extract all the objects from the queue"	
+
+	| ephemeronKey ephemeronContainer mourned numberJustOverLimit |
+	self createEphemeronClass.
+	numberJustOverLimit := objectStackLimit + 1.
+			
+	ephemeronKey := self newZeroSizedObject.
+	ephemeronContainer := self newObjectWithSlots: numberJustOverLimit.
 	1 to: numberJustOverLimit do: [ :i | | ephemeronObjectOop |
 		ephemeronObjectOop := self newEphemeronObject.
 		memory
@@ -232,6 +281,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testPageLimitMournQueue [
 	self keepObjectInVMVariable1: ephemeronContainer.
 
 	self assert: memory validObjStacks.
+	memory compactor recordMovements.
 	memory fullGC.
 
 	mourned := 0.

@@ -4,6 +4,9 @@ I am an abstract superclass for all classes in the VM that want to maintain a so
 Class {
 	#name : #VMClass,
 	#superclass : #SlangClass,
+	#instVars : [
+		'memoryManager'
+	],
 	#classVars : [
 		'DefaultBase',
 		'InitializationOptions'
@@ -752,7 +755,8 @@ VMClass >> majorVersion [
 { #category : #'C library simulation' }
 VMClass >> malloc: size [
 	<doNotGenerate>
-	^CArrayAccessor on: (ByteArray new: size)
+	
+	^ CNewArrayAccessor on: (memoryManager allocate: size) manager: memoryManager
 ]
 
 { #category : #'C library simulation' }
@@ -820,6 +824,18 @@ VMClass >> memmove: destAddress _: sourceAddress _: bytes [
 		ifFalse:
 			[0 to: bytes - 4 by: 4 do:
 				[:i| self longAt: dst + i put: (self longAt: src + i)]]
+]
+
+{ #category : #accessing }
+VMClass >> memoryManager [
+	<doNotGenerate>
+	^ memoryManager
+]
+
+{ #category : #accessing }
+VMClass >> memoryManager: aMemoryManager [
+	<doNotGenerate>
+	memoryManager := aMemoryManager
 ]
 
 { #category : #'simulation support' }
@@ -977,6 +993,13 @@ VMClass >> promptNum: string [
 	s := s withBlanksTrimmed.
 	^s notEmpty ifTrue:
 		[Number readFrom: s readStream]
+]
+
+{ #category : #'C library simulation' }
+VMClass >> realloc: originalAddress _: desiredSize [
+
+	<doNotGenerate>
+	^ memoryManager reallocate: originalAddress withSize: desiredSize
 ]
 
 { #category : #arithmetic }
