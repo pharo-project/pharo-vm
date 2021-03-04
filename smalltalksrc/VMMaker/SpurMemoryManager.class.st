@@ -11107,11 +11107,6 @@ SpurMemoryManager >> relocateObjStackForPlanningCompactor: objStack [
 			to: ObjStackFreex.
 		 freeList := next].
 	
-	"Update the hidden roots object, the class table, to point to the relocated object stack"
-	"self storePointer: (self fetchPointer: ObjStackMyx ofObject: objStack)
-		ofObject: hiddenRootsObj
-		withValue: result."
-	
 	^ result
 ]
 
