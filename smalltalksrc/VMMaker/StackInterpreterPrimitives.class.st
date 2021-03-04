@@ -8,6 +8,17 @@ Class {
 	#category : #'VMMaker-Interpreter'
 }
 
+{ #category : #initialization }
+StackInterpreterPrimitives >> allocateParameters: anInteger using: allocationBlock [
+	<inline: #always>
+
+	anInteger = 0 ifTrue: [ ^ nil ].
+
+	^ self
+		cCode: [ allocationBlock value: anInteger ]
+		inSmalltalk: [ CArrayAccessor on: (Array new: anInteger) ]
+]
+
 { #category : #'primitive support' }
 StackInterpreterPrimitives >> cloneContext: aContext [ 
 	| sz cloned spouseFP sp |

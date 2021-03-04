@@ -5775,7 +5775,7 @@ SpurMemoryManager >> freeTreeOverlapCheck [
 SpurMemoryManager >> freeUnscannedEphemerons [
 	"Free all the memory allocated to keep the unscanned ephemerons"
 	
-	memoryManager free: unscannedEphemerons start
+	self free: unscannedEphemerons start
 ]
 
 { #category : #'simulation only' }
