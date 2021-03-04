@@ -754,8 +754,13 @@ VMClass >> majorVersion [
 { #category : #'C library simulation' }
 VMClass >> malloc: size [
 	<doNotGenerate>
-	
-	^ CNewArrayAccessor on: (memoryManager allocate: size) manager: memoryManager
+	| address region |
+	address := memoryManager allocate: size.
+	region := memoryManager regionAtAddress: address.
+	^ CNewArrayAccessor new
+		setObject: region;
+		address: address;
+		yourself
 ]
 
 { #category : #'C library simulation' }

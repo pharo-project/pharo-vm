@@ -1,9 +1,8 @@
 Class {
 	#name : #CNewArrayAccessor,
-	#superclass : #Object,
+	#superclass : #CObjectAccessor,
 	#instVars : [
-		'address',
-		'manager'
+		'address'
 	],
 	#category : #'Slang-Types'
 }
@@ -33,16 +32,4 @@ CNewArrayAccessor >> address: anObject [
 CNewArrayAccessor >> asInteger [
 	
 	^ address
-]
-
-{ #category : #accessing }
-CNewArrayAccessor >> manager [
-
-	^ manager
-]
-
-{ #category : #accessing }
-CNewArrayAccessor >> manager: anObject [
-
-	manager := anObject
 ]

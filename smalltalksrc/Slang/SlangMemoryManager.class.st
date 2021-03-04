@@ -132,6 +132,12 @@ SlangMemoryManager >> reallocate: originalAddress withSize: desiredSize [
 ]
 
 { #category : #'memory-access' }
+SlangMemoryManager >> regionAtAddress: address [
+
+	^ memoryMap at: address
+]
+
+{ #category : #'memory-access' }
 SlangMemoryManager >> regionForAddress: address [
 
 	^ memoryMap associations detect: [ :assoc | 

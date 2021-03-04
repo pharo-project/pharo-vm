@@ -8,6 +8,19 @@ Class {
 	#category : #VMMakerTests
 }
 
+{ #category : #initialization }
+VMTestMockInterpreter >> allocateParameters: anInteger using: allocationBlock [
+	<inline: #always>
+
+	anInteger = 0 ifTrue: [ ^ nil ].
+
+	^ self
+		cCode: [ allocationBlock value: anInteger ]
+		inSmalltalk: [ | ptr | 
+			ptr := CArrayAccessor on: (Array new: anInteger).
+			allocatedElements add: ptr ]
+]
+
 { #category : #'memory testing' }
 VMTestMockInterpreter >> allocatedElements [
 	
