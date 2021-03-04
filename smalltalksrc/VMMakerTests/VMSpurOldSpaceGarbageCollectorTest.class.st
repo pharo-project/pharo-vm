@@ -33,6 +33,13 @@ VMSpurOldSpaceGarbageCollectorTest >> assertObjectWereReclaimed: aBlock [
 	self assert: initialSpace - sizeOfObject equals: memory totalFreeListBytes
 ]
 
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> initializationOptions [
+
+	^ super initializationOptions , { 
+		#ObjStackPageSlots . objectStackLimit }
+]
+
 { #category : #testing }
 VMSpurOldSpaceGarbageCollectorTest >> isValidFirstBridge [
 
@@ -162,7 +169,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableSho
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableShouldBeMoved [
 
 	| anObjectOop hash |
-	1000 timesRepeat: [ self newOldSpaceObjectWithSlots: 0 ].
+	1 timesRepeat: [ self newOldSpaceObjectWithSlots: 0 ].
 	
 	anObjectOop := self newOldSpaceObjectWithSlots: 0.
 
@@ -226,7 +233,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testMultiPageMournQueue [
 	| ephemeronKey ephemeronContainer mourned numberJustOverLimit |
 	self createEphemeronClass.
 	numberJustOverLimit := objectStackLimit + 1.
-			
+
 	ephemeronKey := self newZeroSizedObject.
 	ephemeronContainer := self newObjectWithSlots: numberJustOverLimit.
 	1 to: numberJustOverLimit do: [ :i | | ephemeronObjectOop |
@@ -261,11 +268,13 @@ VMSpurOldSpaceGarbageCollectorTest >> testPageLimitMournQueue [
 	The mourn queue should grow with new pages to make them all fit.
 	Then we test we can extract all the objects from the queue"	
 
-	| ephemeronKey ephemeronContainer mourned objStackLimit |
+	| ephemeronKey ephemeronContainer mourned objStackLimit numberJustBelowLimit |
 	self createEphemeronClass.
+	numberJustBelowLimit := objectStackLimit - 1.
+	
 	ephemeronKey := self newZeroSizedObject.
-	ephemeronContainer := self newObjectWithSlots: 5000.
-	objStackLimit := 4088.
+	ephemeronContainer := self newObjectWithSlots: numberJustBelowLimit.
+	objStackLimit := numberJustBelowLimit.
 	1 to: objStackLimit do: [ :i | | ephemeronObjectOop |
 		ephemeronObjectOop := self newEphemeronObject.
 		memory
