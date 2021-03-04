@@ -13,6 +13,8 @@ VMTestMockInterpreter >> allocateParameters: anInteger using: allocationBlock [
 	
 	| allocated |
 	allocated := super allocateParameters: anInteger using: allocationBlock.
+	allocated ifNil: [ ^ nil ].
+	
 	allocatedElements add: allocated.
 	^ allocated
 ]
