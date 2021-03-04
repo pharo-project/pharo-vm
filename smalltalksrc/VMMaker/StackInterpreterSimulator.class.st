@@ -399,6 +399,19 @@ StackInterpreterSimulator >> close [  "close any files that ST may have opened, 
 	pluginList do: [:assoc| | plugin | plugin := assoc value. plugin ~~ self ifTrue: [plugin close]]
 ]
 
+{ #category : #'primitive support' }
+StackInterpreterSimulator >> codeGeneratorToComputeAccessorDepth [
+
+	^ codeGeneratorToComputeAccessorDepth ifNil: [
+		^(VMMaker new
+			vmmakerConfiguration: VMMakerConfiguration;
+			buildCodeGeneratorForInterpreter: self class primitivesClass
+			includeAPIMethods: false
+			initializeClasses: false)
+				logger: self transcript;
+				yourself ]
+]
+
 { #category : #'simulation only' }
 StackInterpreterSimulator >> cogit [
 	"We don't have a cogit; try and get by on our own devices."

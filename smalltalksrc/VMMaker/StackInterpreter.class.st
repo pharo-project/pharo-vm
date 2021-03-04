@@ -4769,19 +4769,6 @@ StackInterpreter >> closureIn: context numArgs: numArgs instructionPointer: init
 	^newClosure
 ]
 
-{ #category : #'primitive support' }
-StackInterpreter >> codeGeneratorToComputeAccessorDepth [
-
-	^ codeGeneratorToComputeAccessorDepth ifNil: [
-		^(VMMaker new
-			vmmakerConfiguration: VMMakerConfiguration;
-			buildCodeGeneratorForInterpreter: self class primitivesClass
-			includeAPIMethods: false
-			initializeClasses: false)
-				logger: self transcript;
-				yourself ]
-]
-
 { #category : #'as yet unclassified' }
 StackInterpreter >> codeGeneratorToComputeAccessorDepth: aCCodeGenerator [ 
 	<doNotGenerate>
