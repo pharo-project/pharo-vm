@@ -252,8 +252,8 @@ Spur32BitMMLESimulator >> long64At: byteAddress [
 	"memory is a Bitmap, a 32-bit indexable array of bits"
 	| hiWord loWord |
 	byteAddress \\ 8 ~= 0 ifTrue: [self unalignedAccessError].
-	loWord := memoryManager long32At: byteAddress.
-	hiWord := memoryManager long32At: byteAddress + 4.
+	loWord := memoryManager unsignedLong32At: byteAddress.
+	hiWord := memoryManager unsignedLong32At: byteAddress + 4.
 	^hiWord = 0
 		ifTrue: [loWord]
 		ifFalse: [(hiWord bitShift: 32) + loWord]
