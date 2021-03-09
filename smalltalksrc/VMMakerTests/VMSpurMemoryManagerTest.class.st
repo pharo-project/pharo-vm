@@ -79,6 +79,16 @@ VMSpurMemoryManagerTest >> initialCodeSize [
 ]
 
 { #category : #helpers }
+VMSpurMemoryManagerTest >> initializationOptions [
+
+	^ { 
+		  #BytesPerWord.
+		  self wordSize.
+		  #ObjectMemory.
+		  memory class name }
+]
+
+{ #category : #helpers }
 VMSpurMemoryManagerTest >> initializeOldSpaceForFullGC [
 
 	| ourArrayClass |
@@ -219,17 +229,16 @@ VMSpurMemoryManagerTest >> newClassInOldSpaceWithSlots: numberOfSlots instSpec: 
 
 { #category : #helpers }
 VMSpurMemoryManagerTest >> newInterpreter [
+
 	memory := self newMemory.
 
 	self interpreterClass
-		initializeWithOptions:
-			{#BytesPerWord. self wordSize.
-			#ObjectMemory. memory class name}
+		initializeWithOptions: self initializationOptions
 		objectMemoryClass: memory class.
 
 	^ self interpreterClass basicNew
-		objectMemory: memory;
-		basicInitialize
+		  objectMemory: memory;
+		  basicInitialize
 ]
 
 { #category : #running }

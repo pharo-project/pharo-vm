@@ -104,6 +104,40 @@ def runBuild(platformName, configuration, headless = true){
 	}
 }
 
+def runUnitTests(platform){
+  cleanWs()
+
+  stage("VM Unit Tests"){
+    dir('repository') {
+      checkout scm
+    }
+
+    cmakeBuild generator: "Unix Makefiles", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath"
+    dir("runTests"){
+      shell "VERBOSE=1 make vmmaker"
+      dir("build/vmmaker"){
+        shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libllvm-full.zip"
+        shell "unzip libllvm-full.zip -d ./vm/Contents/MacOS/Plugins"
+        shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libunicorn.zip"
+        shell "unzip libunicorn.zip  -d ./vm/Contents/MacOS/Plugins"
+        shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
+        
+        // Stop if tests fail
+        // Archive xml reports either case
+        try {
+          junit allowEmptyResults: true, testResults: "*.xml"
+        } catch (ex) {
+          if (currentBuild.result == 'UNSTABLE'){
+            currentBuild.result = 'FAILURE'
+          }
+          archiveArtifacts artifacts: '*.xml'
+        }
+        
+      }
+    }
+  }
+}
+
 def runTests(platform, configuration, packages, withWorker){
   cleanWs()
 
@@ -160,6 +194,7 @@ def upload(platform, configuration, archiveName) {
 	unstash name: "packages-${platform}-${configuration}"
 
 	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
+	def expandedCSourceFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-c-src.zip").trim()
 	def expandedHeadersFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-include.zip").trim()
 
 	sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
@@ -167,15 +202,22 @@ def upload(platform, configuration, archiveName) {
 		${expandedBinaryFileName} \
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}"
 		sh "scp -o StrictHostKeyChecking=no \
-		${expandedHeadersFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/include"
-
-		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/latest.zip"
+
+		sh "scp -o StrictHostKeyChecking=no \
+		${expandedHeadersFileName} \
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/include"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedHeadersFileName} \
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/include/latest.zip"
+
+		sh "scp -o StrictHostKeyChecking=no \
+		${expandedCSourceFileName} \
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/source"
+		sh "scp -o StrictHostKeyChecking=no \
+		${expandedCSourceFileName} \
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/source/latest.zip"
 	}
 }
 
@@ -234,7 +276,11 @@ try{
 	def builders = [:]
 	def tests = [:]
 
-	for (platf in platforms) {
+  node('Darwin-x86_64'){
+    runUnitTests('Darwin-x86_64')
+  }
+
+  for (platf in platforms) {
         // Need to bind the label variable before the closure - can't do 'for (label in labels)'
         def platform = platf
 		

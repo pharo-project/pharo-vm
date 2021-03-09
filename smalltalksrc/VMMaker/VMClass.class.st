@@ -167,6 +167,8 @@ VMClass class >> initializeMiscConstants [
 	"Use ifAbsentPut: so that they will get copied back to the
 	 VMMaker's options and dead code will likely be eliminated."
 	PharoVM := InitializationOptions at: #PharoVM ifAbsentPut: [false].
+	FEATURE_FFI := InitializationOptions at: #FEATURE_FFI ifAbsentPut: [false].
+	FEATURE_THREADED_FFI := InitializationOptions at: #FEATURE_THREADED_FFI ifAbsentPut: [false].
 	SistaVM := InitializationOptions at: #SistaVM ifAbsentPut: [false].
 	TempVectReadBarrier := InitializationOptions at: #TempVectReadBarrier ifAbsentPut: [false].
 	MULTIPLEBYTECODESETS := InitializationOptions at: #MULTIPLEBYTECODESETS ifAbsentPut: [false].
