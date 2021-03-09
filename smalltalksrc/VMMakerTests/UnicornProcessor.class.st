@@ -7,6 +7,12 @@ Class {
 	#category : #'VMMakerTests-Unicorn'
 }
 
+{ #category : #accessing }
+UnicornProcessor >> al: anInteger [ 
+	
+	^ machineSimulator al: anInteger
+]
+
 { #category : #'as yet unclassified' }
 UnicornProcessor >> cResultRegister [
 	
@@ -184,6 +190,12 @@ UnicornProcessor >> r10: anInteger [
 UnicornProcessor >> r11: anInteger [ 
 	
 	machineSimulator r11: anInteger
+]
+
+{ #category : #accessing }
+UnicornProcessor >> r12: anInteger [ 
+	
+	^ machineSimulator r12: anInteger
 ]
 
 { #category : #'as yet unclassified' }

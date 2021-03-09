@@ -15,6 +15,7 @@ Class {
 		'STAT_COUNTERS_SIZE'
 	],
 	#pools : [
+		'CogAbstractRegisters',
 		'CogMethodConstants',
 		'LibFFIConstants'
 	],
@@ -203,13 +204,26 @@ CogEventLogger >> clearEvent [
 
 ]
 
-{ #category : #counters }
-CogEventLogger >> cogStatCountersAddress [
+{ #category : #accessing }
+CogEventLogger >> cogStatCounters [
+	<doNotGenerate>
 	
-	<api>
-	<returnTypeC: #usqInt>
+	^ cogStatCounters
+]
+
+{ #category : #accessing }
+CogEventLogger >> cogStatCountersAt: anInteger [ 
 	
-	^ self maybeSimulatedAddressOf: #cogStatCounters
+	<doNotGenerate>
+	
+	^ cogStatCounters at: anInteger
+]
+
+{ #category : #accessign }
+CogEventLogger >> cogStatCountersAt: anIndex put: aValue [ 
+	
+	<doNotGenerate>
+	cogStatCounters at: anIndex put: aValue
 ]
 
 { #category : #accessing }
@@ -233,9 +247,38 @@ CogEventLogger >> compactCompiledCodeFinished [
 ]
 
 { #category : #counters }
-CogEventLogger >> compileCountIncrementOn: aStackToRegisterMappingCogit [ 
+CogEventLogger >> compileCountIncrementOn: aCogit [ 
 	
-	"Ahhhh"
+	| counterIndex address |
+
+	counterIndex := self currentCounterIndex.
+	address := self counterAddressFor: counterIndex.
+	
+	RISCTempReg = #undefined 
+		ifTrue: [ 
+			 aCogit PushR: TempReg.
+			 aCogit MoveAw: address R: TempReg.
+			 aCogit AddCq: 1 R: TempReg.
+			 aCogit MoveR: TempReg Aw: address.
+			 aCogit PopR: TempReg ]
+		ifFalse: [  
+				aCogit MoveAw: address R: RISCTempReg.
+				aCogit AddCq: 1 R: RISCTempReg.
+				aCogit MoveR: RISCTempReg Aw: address].
+	
+]
+
+{ #category : #util }
+CogEventLogger >> counterAddressFor: anInteger [
+
+	^ self
+		  cCode: [ self addressOf: (cogStatCounters at: anInteger) ]
+		  inSmalltalk: [ 
+			  (cogit simulatedAddresses			
+					simulatedArrayVariableGetter: #cogStatCountersAt:
+					setter: #cogStatCountersAt:put: in: self 
+					elementSize: (self sizeof: #'sqInt') elementCount: STAT_COUNTERS_SIZE) 
+						addressForIndex: anInteger ]
 ]
 
 { #category : #counters }
@@ -404,7 +447,7 @@ CogEventLogger >> numberOfCalls: aCogMethod [
 { #category : #Cogit }
 CogEventLogger >> releaseCounter: anInteger [ 
 
-	""
+	cogStatCounters at: anInteger put: EMPTY_COUNTER_MARK
 ]
 
 { #category : #counters }

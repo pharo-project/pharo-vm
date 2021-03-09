@@ -6,7 +6,8 @@ Class {
 		'simulatedTrampolines',
 		'simulatedVariables',
 		'cogit',
-		'simulatedRanges'
+		'simulatedRanges',
+		'nextIndex'
 	],
 	#category : #'VMMaker-JITSimulation'
 }
@@ -18,24 +19,47 @@ CogSimulatedAddresses >> cogit: aValue [
 ]
 
 { #category : #private }
-CogSimulatedAddresses >> fakeAddressFor: anObject index: index [
-	"Answer a fake address for some variable based on some index.
-	 The index will usually be the size of simulatedAddresses, but
-	 in determining the varBaseAddress we take a guess at the final
-	 size of simulatedAddresses."
+CogSimulatedAddresses >> fakeAddressFor: anObject [
+
 	<doNotGenerate>
-	^(index + 101 * cogit objectMemory wordSize) negated
-		bitAnd: ((cogit backEnd notNil
-				and: [cogit backEnd wantsNearAddressFor: anObject])
-					ifTrue: [cogit addressSpaceMask]
-					ifFalse: [cogit allButTopBitOfAddressSpaceMask])
+
+	^ self fakeAddressFor: anObject ofSize: cogit objectMemory wordSize
+]
+
+{ #category : #private }
+CogSimulatedAddresses >> fakeAddressFor: anObject ofSize: aSize [
+
+	<doNotGenerate>
+
+	| myIndex |
+	
+	myIndex := self nextIndex + (aSize // cogit objectMemory wordSize).
+	self nextIndex: myIndex.
+	 
+	^ self fakeAddressForIndex: myIndex + 101 * cogit objectMemory wordSize andObject: anObject
+]
+
+{ #category : #private }
+CogSimulatedAddresses >> fakeAddressForIndex: myIndex andObject: anObject [
+
+	| aValue |
+	aValue := myIndex negated bitAnd: ((cogit backEnd notNil and: [ 
+			  cogit backEnd wantsNearAddressFor: anObject ])
+			 ifTrue: [ cogit addressSpaceMask ]
+			 ifFalse: [ cogit allButTopBitOfAddressSpaceMask ]).
+			
+	self assert: aValue > 0.
+	
+	^ aValue
 ]
 
 { #category : #accessing }
 CogSimulatedAddresses >> fakeVarBaseAddress [
 	"We expect simulatedAddresses to have around 40 entries.  48 is hopefully a good maximum."
 	<doNotGenerate>
-	^self fakeAddressFor: nil index: 48
+	
+	^ self fakeAddressForIndex: (48 + 101 * cogit objectMemory wordSize) andObject: nil
+
 ]
 
 { #category : #accessing }
@@ -43,11 +67,14 @@ CogSimulatedAddresses >> forAddress: anInteger [
 	
 	self forAddress: anInteger 
 		ifFound: [ :anAccessor | ^ anAccessor ] 
-		ifNone: [ self error: 'Could not find simulated address ', anInteger ]
+		ifNone: [ self error: 'Could not find simulated address ', anInteger asString ]
 ]
 
 { #category : #accessing }
 CogSimulatedAddresses >> forAddress: address ifFound: aFoundBlock ifNone: aNoneBlock [
+
+	simulatedRanges detect: [ :anArrayVariable | anArrayVariable canHandle: address ]
+		ifFound: [ :anArrayVariable | aFoundBlock value: (anArrayVariable accessorForAddress: address) ].	
 
 	(simulatedTrampolines includesKey: address) ifTrue:
 		[^ aFoundBlock cull: (simulatedTrampolines at: address)].
@@ -81,6 +108,7 @@ CogSimulatedAddresses >> initialize [
 	simulatedAddresses := Dictionary new. 
 	simulatedTrampolines := Dictionary new.
 	simulatedVariables := Dictionary new.
+	simulatedRanges := OrderedCollection new.
 
 ]
 
@@ -107,6 +135,16 @@ CogSimulatedAddresses >> mapPrimitive: primitiveRoutine "<Symbol>" withIndexToUn
 	^uniqueAddress
 ]
 
+{ #category : #accessing }
+CogSimulatedAddresses >> nextIndex [
+	^ nextIndex ifNil: [ nextIndex := 0 ]
+]
+
+{ #category : #accessing }
+CogSimulatedAddresses >> nextIndex: anInteger [ 
+	nextIndex := anInteger
+]
+
 { #category : #private }
 CogSimulatedAddresses >> simulatedAddressFor: anObject [
 	"Answer a simulated address for a block or a symbol.  This is an address that
@@ -119,7 +157,39 @@ CogSimulatedAddresses >> simulatedAddressFor: anObject [
 	<doNotGenerate>
 	^simulatedAddresses
 		at: anObject
-		ifAbsentPut: [self fakeAddressFor: anObject index: simulatedAddresses size]
+		ifAbsentPut: [self fakeAddressFor: anObject]
+]
+
+{ #category : #variables }
+CogSimulatedAddresses >> simulatedArrayVariableGetter: getterSelector
+setter: setterSelector in: aReceiver 
+elementSize: elementSize elementCount: elementCount [
+
+	| variable address aSize |
+	
+	aSize := elementSize * elementCount.
+	
+	simulatedRanges
+		detect: [ :anArrayVariable | 
+			anArrayVariable getterSelector = getterSelector and: [ 
+				anArrayVariable receiver = aReceiver ] ]
+		ifFound: [ :anArrayVariable | ^ anArrayVariable ].
+	
+	
+	variable := CogSimulatedArrayVariable new
+		getterSelector: getterSelector;
+		setterSelector: setterSelector;
+		elementSize: elementSize;
+		elementCount: elementCount;
+		receiver: aReceiver;
+		yourself.
+	
+	address := self fakeAddressFor: variable ofSize: aSize.
+	variable address: address.
+	
+	simulatedRanges add: variable.
+	
+	^ variable
 ]
 
 { #category : #'simulated variables' }
@@ -193,6 +263,10 @@ CogSimulatedAddresses >> trampolineAtAddress: anInteger [
 
 { #category : #'simulated variables' }
 CogSimulatedAddresses >> variableAtAddress: anInteger [ 
+	
+	simulatedRanges 
+		detect: [ :anArrayVariable | anArrayVariable canHandle: anInteger ]
+		ifFound: [ :anArrayVariable | ^ anArrayVariable accessorForAddress: anInteger ].
 	
 	^ simulatedVariables at: anInteger
 ]

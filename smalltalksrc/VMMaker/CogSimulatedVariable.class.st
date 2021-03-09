@@ -80,6 +80,16 @@ CogSimulatedVariable >> initialize [
 	readOnly := false.
 ]
 
+{ #category : #printing }
+CogSimulatedVariable >> printOn: aStream [
+
+	super printOn: aStream.
+	aStream
+	 nextPut: $(;
+	 print: getterSelector;
+	 nextPut: $)
+]
+
 { #category : #accessing }
 CogSimulatedVariable >> receiver: aReceiver [ 
 	

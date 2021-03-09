@@ -4,6 +4,12 @@ Class {
 	#category : #'VMMakerTests-Unicorn'
 }
 
+{ #category : #accessing }
+UnicornX64Simulator >> al: anInteger [ 
+	
+	^ self readRegister: UcX86Registers al
+]
+
 { #category : #registers }
 UnicornX64Simulator >> arg0Register [
 	
