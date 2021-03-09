@@ -280,6 +280,8 @@ CogEventLogger >> compileCountIncrement [
 { #category : #util }
 CogEventLogger >> counterAddressFor: anInteger [
 
+	<returnTypeC: #usqInt>
+
 	^ self
 		  cCode: [ self addressOf: (cogStatCounters at: anInteger) ]
 		  inSmalltalk: [ 
@@ -293,6 +295,7 @@ CogEventLogger >> counterAddressFor: anInteger [
 { #category : #counters }
 CogEventLogger >> currentCounterIndex [
 
+	<inline: true>
 	<returnTypeC: #'sqInt'>
 
 	^ currentCounterIndex = -1
