@@ -543,7 +543,7 @@ VMPrimitiveCallingTest >> testPrimitiveCallSetsPrimitiveFunctionPointerWhenCalli
 		returnAddress: callerAddress.
 	
 	self 
-		assert: (cogit simulatedTrampolines at: interpreter primitiveFunctionPointer) selector
+		assert: (cogit simulatedAddresses trampolineAtAddress: interpreter primitiveFunctionPointer) selector
 		equals: #primitiveAdd
 	
 

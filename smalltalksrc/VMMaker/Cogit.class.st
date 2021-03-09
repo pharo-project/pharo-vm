@@ -124,9 +124,6 @@ Class {
 		'minValidCallAddress',
 		'lastNInstructions',
 		'simulatedAddresses',
-		'simulatedTrampolines',
-		'simulatedVariableGetters',
-		'simulatedVariableSetters',
 		'printRegisters',
 		'printInstructions',
 		'compilationTrace',
@@ -514,7 +511,6 @@ Cogit class >> cogToBytecodeMethodMapping [
 Cogit class >> declareCVarsIn: aCCodeGenerator [
 	#(	'coInterpreter' 'objectMemory' 'methodZone' 'objectRepresentation'
 		'cogBlockMethodSurrogateClass' 'cogMethodSurrogateClass' 'threadManager' 'processor' 'lastNInstructions' 'simulatedAddresses'
-		'simulatedTrampolines' 'simulatedVariableGetters' 'simulatedVariableSetters'
 		'printRegisters' 'printInstructions' 'clickConfirm' 'singleStep' 'cogEventLogger') do:
 			[:simulationVariableNotNeededForRealVM|
 			aCCodeGenerator removeVariable: simulationVariableNotNeededForRealVM].
@@ -3593,7 +3589,7 @@ Cogit >> cCoerceSimple: value to: cTypeString [
 Cogit >> cFramePointerAddress [
 	<cmacro: '() ((usqIntptr_t)&CFramePointer)'>
 	^(backEnd wantsNearAddressFor: #CFramePointer)
-		ifTrue: [self simulatedReadWriteVariableAddress: #getCFramePointer in: self]
+		ifTrue: [ self maybeSimulatedAddressOf: #getCFramePointer ]
 		ifFalse: [coInterpreter inMemoryCFramePointerAddress]
 ]
 
@@ -3733,7 +3729,7 @@ Cogit >> cPICPrototypeCaseOffset [
 Cogit >> cStackPointerAddress [
 	<cmacro: '() ((usqIntptr_t)&CStackPointer)'>
 	^(backEnd wantsNearAddressFor: #CStackPointer)
-		ifTrue: [self simulatedReadWriteVariableAddress: #getCStackPointer in: self]
+		ifTrue: [self maybeSimulatedAddressOf: #getCStackPointer ]
 		ifFalse: [coInterpreter inMemoryCStackPointerAddress]
 ]
 
@@ -5390,7 +5386,7 @@ Cogit >> compileCallFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrCo
 		genSaveRegs: regsToSave;
 		genMarshallNArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3.
 	self CallFullRT: (self cCode: [aRoutine asUnsignedInteger]
-						inSmalltalk: [self simulatedTrampolineFor: aRoutine]).
+						inSmalltalk: [simulatedAddresses simulatedTrampolineFor: aRoutine]).
 	resultRegOrNone ~= NoReg ifTrue:
 		[backEnd genWriteCResultIntoReg: resultRegOrNone].
 	backEnd genRemoveNArgsFromStack: numArgs.
@@ -6455,25 +6451,10 @@ Cogit >> extBBytecode [
 	^0
 ]
 
-{ #category : #initialization }
-Cogit >> fakeAddressFor: anObject index: index [
-	"Answer a fake address for some variable based on some index.
-	 The index will usually be the size of simulatedAddresses, but
-	 in determining the varBaseAddress we take a guess at the final
-	 size of simulatedAddresses."
-	<doNotGenerate>
-	^(index + 101 * objectMemory wordSize) negated
-		bitAnd: ((backEnd notNil
-				and: [backEnd wantsNearAddressFor: anObject])
-					ifTrue: [self addressSpaceMask]
-					ifFalse: [self allButTopBitOfAddressSpaceMask])
-]
-
-{ #category : #accessing }
+{ #category : #simulation }
 Cogit >> fakeVarBaseAddress [
-	"We expect simulatedAddresses to have around 40 entries.  48 is hopefully a good maximum."
-	<doNotGenerate>
-	^self fakeAddressFor: nil index: 48
+	
+	^ simulatedAddresses fakeVarBaseAddress
 ]
 
 { #category : #'generate machine code' }
@@ -8379,7 +8360,7 @@ Cogit >> handleCallOrJumpSimulationTrap: aProcessorSimulationTrap [
 	<doNotGenerate>
 	| evaluable function memory result savedFramePointer savedStackPointer savedArgumentCount rpc |
 
-	evaluable := simulatedTrampolines at: aProcessorSimulationTrap address.
+	evaluable := simulatedAddresses trampolineAtAddress: aProcessorSimulationTrap address.
 
 	(evaluable isBlock not and: [self isPrimitiveRunningInSmalltalkStack: evaluable selector]) 
 		ifTrue: [ self assertCStackWellAligned ]. 
@@ -8472,7 +8453,7 @@ Cogit >> handleCallOrJumpSimulationTrap: aProcessorSimulationTrap [
 Cogit >> handleReadSimulationTrap: aProcessorSimulationTrap [
 	<doNotGenerate>
 	| variableValue accessor |
-	variableValue := (simulatedVariableGetters at: aProcessorSimulationTrap address) value asInteger.
+	variableValue := (simulatedAddresses variableAtAddress: aProcessorSimulationTrap address) getValue asInteger.
 	accessor := aProcessorSimulationTrap registerAccessor.
 	processor
 		perform: accessor
@@ -8498,7 +8479,7 @@ Cogit >> handleWriteSimulationTrap: aProcessorSimulationTrap [
 	(self addressIsInCodeZone: aProcessorSimulationTrap address) ifTrue:
 		[self error: 'attempt to write to code space'].
 	variableValue := aProcessorSimulationTrap writtenValue.
-	(simulatedVariableSetters at: aProcessorSimulationTrap address) value: variableValue.
+	(simulatedAddresses forAddress: aProcessorSimulationTrap address) setValue: variableValue.
 
 	processor pc: aProcessorSimulationTrap nextpc
 ]
@@ -9028,11 +9009,10 @@ Cogit >> lookupAddress: address [
 				[^address = (self codeEntryFor: address) ifTrue:
 					[self codeEntryNameFor: address]].
 		 ^nil].
-	(simulatedTrampolines includesKey: address) ifTrue:
-		[^self labelForSimulationAccessor: (simulatedTrampolines at: address)].
-	(simulatedVariableGetters includesKey: address) ifTrue:
-		[^self labelForSimulationAccessor: (simulatedVariableGetters at: address)].
-	^coInterpreter lookupAddress: address
+
+	^ simulatedAddresses forAddress: address
+		ifFound: [ :anAccessor | self labelForSimulationAccessor: anAccessor]
+		ifNone: [ coInterpreter lookupAddress: address ]
 ]
 
 { #category : #disassembly }
@@ -9503,29 +9483,6 @@ Cogit >> mapObjectReferencesInMachineCodeForYoungGC [
 		[self flushICacheFrom: methodZoneBase asUnsignedInteger to: methodZone limitZony asUnsignedInteger]
 ]
 
-{ #category : #'simulation only' }
-Cogit >> mapPrimitive: primitiveRoutine "<Symbol>" withIndexToUniqueAddress: primIndex [ "<SmallInteger>"
-	| uniqueAddress |
-
-	<doNotGenerate>
-
-	self assert: (primitiveRoutine isSymbol or: [primitiveRoutine isBlock]).
-
-	uniqueAddress := -1 - methodZoneBase - (primIndex * 4) - 16r1000 
-		bitAnd: self allButTopBitOfAddressSpaceMask.
-	
-	simulatedTrampolines
-		at: uniqueAddress
-		ifAbsentPut:
-			[primitiveRoutine isSymbol
-				ifTrue: [MessageSend 
-						receiver: coInterpreter 
-						selector: primitiveRoutine
-						arguments: (1 to: primitiveRoutine numArgs) asArray ]
-				ifFalse: [primitiveRoutine]].
-	^uniqueAddress
-]
-
 { #category : #'method map' }
 Cogit >> mapStartFor: cogMethod [
 	"Answer the address of the first byte of the method map."
@@ -9987,6 +9944,14 @@ Cogit >> maybeNoteStartpcFor: thing [ "<CogBlockStart|CogCodeRange>"
 			at: #numArgs put: ([thing cogMethod ifNil: [-1] ifNotNil: [:cm| cm cmNumArgs]] "CogCodeRange"
 									on: MessageNotUnderstood
 									do: [:ex| thing numArgs])] "CogBlockStart"
+]
+
+{ #category : #simulating }
+Cogit >> maybeSimulatedAddressOf: aSymbol [ 
+	
+	<inline: true>
+	^ self cCode: [ (self addressOf: aSymbol) asUnsignedInteger ] 
+		inSmalltalk: [ (self simulatedAddresses simulatedVariableAccessor: aSymbol in: self) address  ]
 ]
 
 { #category : #'profiling primitives' }
@@ -11601,10 +11566,11 @@ Cogit >> setInterpreter: aCoInterpreter [
 				cogit: self.
 	generatorTable := self class generatorTable.
 	processor := ProcessorClass new.
-	simulatedAddresses := Dictionary new.
-	simulatedTrampolines := Dictionary new.
-	simulatedVariableGetters := Dictionary new.
-	simulatedVariableSetters := Dictionary new.
+
+	simulatedAddresses := CogSimulatedAddresses new
+		cogit: self;
+		yourself.
+
 	traceStores := 0.
 	traceFlags := (self class initializationOptions at: #recordPrimTrace ifAbsent: [true])
 					ifTrue: [8] "record prim trace on by default (see Cogit class>>decareCVarsIn:)"
@@ -11819,94 +11785,18 @@ Cogit >> simulateLeafReturnIn: aMemory [
 	^processor simulateLeafReturnIn: aMemory
 ]
 
-{ #category : #initialization }
-Cogit >> simulatedAddressFor: anObject [
-	"Answer a simulated address for a block or a symbol.  This is an address that
-	 can be called, read or written by generated machine code, and will be mapped
-	 into a Smalltalk message send or block evaluation.
+{ #category : #accessing }
+Cogit >> simulatedAddresses [
 
-	 N.B. These addresses are at the top end of the bottom half of the address space
-	 so that they don't have the sign bit set and so will not look like negative numbers,
-	 unless they're the short-cut routines on ARM, where we want to use a bl, not a blx."
 	<doNotGenerate>
-	^simulatedAddresses
-		at: anObject
-		ifAbsentPut: [self fakeAddressFor: anObject index: simulatedAddresses size]
+	^ simulatedAddresses
 ]
 
-{ #category : #initialization }
-Cogit >> simulatedReadWriteVariableAddress: getter in: receiver [
-	"Answer a simulated variable.  This is a variable whose value can be read
-	 and written by generated machine code."
-	<doNotGenerate>
-	| address |
-	address := self simulatedVariableAddress: getter in: receiver.
-	simulatedVariableSetters
-		at: address
-		ifAbsentPut:
-			[| setter |
-			setter := (((getter beginsWith: 'get')
-						ifTrue: ['s', getter allButFirst]
-						ifFalse: [getter]), ':') asSymbol.
-			[:value| receiver perform: setter with: value]].
-	^address
-]
+{ #category : #simulating }
+Cogit >> simulatedTrampolineFor: aString [ 
 
-{ #category : #initialization }
-Cogit >> simulatedTrampolineFor: selectorOrAddress [
-	"Set a simulated trampoline.  This is a method in the cogit, coInterpreter
-	 or objectMemory that is called from a machine code trampoline."
 	<doNotGenerate>
-	| address |
-	selectorOrAddress isInteger ifTrue:
-		[self assert: (simulatedTrampolines includesKey: selectorOrAddress).
-		 ^selectorOrAddress].
-	self assert: selectorOrAddress isSymbol.
-	address := self simulatedAddressFor: selectorOrAddress.
-	simulatedTrampolines
-		at: address
-		ifAbsentPut:
-			[MessageSend
-				receiver: ((self respondsTo: selectorOrAddress)
-							ifTrue: [self]
-							ifFalse: [(coInterpreter respondsTo: selectorOrAddress)
-										ifTrue: [coInterpreter]
-										ifFalse: [(objectMemory respondsTo: selectorOrAddress)
-											ifTrue: [objectMemory]
-											ifFalse: [(backEnd respondsTo: selectorOrAddress)
-												ifTrue:[backEnd]
-												ifFalse:[self notify: 'cannot find receiver for ', selectorOrAddress]]]])
-				selector: selectorOrAddress
-				arguments: (1 to: selectorOrAddress numArgs) asArray].
-	^address
-]
-
-{ #category : #initialization }
-Cogit >> simulatedTrampolines [
-	<doNotGenerate>
-	^simulatedTrampolines
-]
-
-{ #category : #initialization }
-Cogit >> simulatedVariableAddress: getter in: receiver [
-	"Answer a simulated variable.  This is a variable whose value can be read
-	 by generated machine code."
-	<doNotGenerate>
-	| address |
-	address := self simulatedAddressFor: getter.
-	simulatedVariableGetters
-		at: address
-		ifAbsentPut: [MessageSend receiver: receiver selector: getter].
-	^address
-]
-
-{ #category : #initialization }
-Cogit >> simulatedVariableAt: address [
-	"Answer a simulated variable's value for handling the push/pop tracer."
-	<doNotGenerate>
-	^(simulatedVariableGetters
-		at: address
-		ifAbsent:[0]) value
+	^ simulatedAddresses simulatedTrampolineFor: aString
 ]
 
 { #category : #debugging }

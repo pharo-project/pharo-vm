@@ -8811,6 +8811,15 @@ SpurMemoryManager >> maybeMethodClassOf: methodObj seemsToBeInstantiating: forma
 	^ instSpec = format
 ]
 
+{ #category : #simulating }
+SpurMemoryManager >> maybeSimulatedAddressOf: aSymbol [ 
+	
+	<inline: true>
+
+	^ self cCode: [ (self addressOf: aSymbol) asUnsignedInteger ] 
+		inSmalltalk: [ (coInterpreter cogit simulatedAddresses simulatedVariableAccessor: aSymbol in: self) address  ]
+]
+
 { #category : #'interpreter access' }
 SpurMemoryManager >> maybeSplObj: index [
 	<api>

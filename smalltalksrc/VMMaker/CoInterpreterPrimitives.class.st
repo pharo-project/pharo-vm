@@ -381,8 +381,7 @@ CoInterpreterPrimitives >> primitiveFlushCacheBySelector [
 CoInterpreterPrimitives >> primitiveFunctionPointerAddress [
 	<api>
 	<returnTypeC: #usqInt>
-	^self cCode: [(self addressOf: primitiveFunctionPointer) asUnsignedInteger]
-		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #primitiveFunctionPointer in: self]
+	^ self maybeSimulatedAddressOf: #primitiveFunctionPointer
 ]
 
 { #category : #'process primitives' }

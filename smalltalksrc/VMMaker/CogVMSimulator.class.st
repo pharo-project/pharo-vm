@@ -2334,7 +2334,7 @@ CogVMSimulator >> mapFunctionToAddress: aSymbolOrIndexOrBlock [
 		[uniqueIndices := Dictionary new.
 		 uniqueIndex := 65535].
 	sobui := uniqueIndices at: symbolOrBlock ifAbsentPut: [uniqueIndex := uniqueIndex + 1].
-	^cogit
+	^cogit simulatedAddresses
 		mapPrimitive: symbolOrBlock
 		withIndexToUniqueAddress: sobui
 ]
@@ -2433,10 +2433,19 @@ CogVMSimulator >> maybeMapPrimitiveFunctionPointerBackToSomethingEvaluable [
 			 ^self]].
 	
 	(primitiveFunctionPointer isInteger and: [ 
-		cogit simulatedTrampolines includesKey: primitiveFunctionPointer ])
-		ifTrue: [ primitiveFunctionPointer := (cogit simulatedTrampolines at: primitiveFunctionPointer) selector  ].
+		cogit simulatedAddresses hasTrampolineAtAddress: primitiveFunctionPointer ])
+		ifTrue: [ primitiveFunctionPointer := (cogit simulatedAddresses trampolineAtAddress: primitiveFunctionPointer) selector  ].
 	
 	^super maybeMapPrimitiveFunctionPointerBackToSomethingEvaluable
+]
+
+{ #category : #addresses }
+CogVMSimulator >> maybeSimulatedAddressOf: aSymbol [ 
+	
+	<inline: true>
+
+	^ self cCode: [ (self addressOf: aSymbol) asUnsignedInteger ] 
+		inSmalltalk: [ (cogit simulatedAddresses simulatedVariableAccessor: aSymbol in: self) address  ]
 ]
 
 { #category : #'cog jit support' }

@@ -782,7 +782,7 @@ VMSimpleStackBasedCogitAbstractTest >> setUpCogMethodEntry [
 	self setUpTrampolines.
 	
 	"This is the function a megamorphic PIC will jump when there is a miss"
-	inlineCacheMissTrampoline := cogit simulatedAddressFor: #ceSendFromInLineCacheMiss:.
+	inlineCacheMissTrampoline := cogit simulatedTrampolineFor: #ceSendFromInLineCacheMiss:.
 	
 	cogit computeEntryOffsets.
 	

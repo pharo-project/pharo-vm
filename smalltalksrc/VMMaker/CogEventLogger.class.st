@@ -209,8 +209,7 @@ CogEventLogger >> cogStatCountersAddress [
 	<api>
 	<returnTypeC: #usqInt>
 	
-	^self cCode: [(self addressOf: cogStatCounters) asUnsignedInteger]
-		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #cogStatCounters in: self]
+	^ self maybeSimulatedAddressOf: #cogStatCounters
 ]
 
 { #category : #accessing }
@@ -235,7 +234,8 @@ CogEventLogger >> compactCompiledCodeFinished [
 
 { #category : #counters }
 CogEventLogger >> compileCountIncrementOn: aStackToRegisterMappingCogit [ 
-	self shouldBeImplemented.
+	
+	"Ahhhh"
 ]
 
 { #category : #counters }
@@ -399,6 +399,12 @@ CogEventLogger >> numberOfCalls: aCogMethod [
 	<returnTypeC: #'long long'>
 	
 	^ cogStatCounters at: aCogMethod counterIndex 
+]
+
+{ #category : #Cogit }
+CogEventLogger >> releaseCounter: anInteger [ 
+
+	""
 ]
 
 { #category : #counters }
