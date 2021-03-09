@@ -14,7 +14,7 @@ Class {
 
 { #category : #accessing }
 CogSimulatedAddresses >> cogit: aValue [
-
+	<doNotGenerate>
 	cogit := aValue
 ]
 
@@ -88,7 +88,7 @@ CogSimulatedAddresses >> forAddress: address ifFound: aFoundBlock ifNone: aNoneB
 { #category : #private }
 CogSimulatedAddresses >> getReceiverForSelector: selectorOrAddress [
 	
-	^ { cogit. cogit coInterpreter. cogit backEnd. self } 
+	^ { cogit. cogit coInterpreter. cogit backEnd. cogit objectMemory. self } 
 		detect: [ :aPossibleReceiver | aPossibleReceiver respondsTo: selectorOrAddress ]
 		ifNone: [ self ].
 

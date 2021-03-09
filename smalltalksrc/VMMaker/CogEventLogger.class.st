@@ -233,6 +233,7 @@ CogEventLogger >> cogit [
 
 { #category : #accessing }
 CogEventLogger >> cogit: anObject [
+	<doNotGenerate>
 	cogit := anObject
 ]
 
