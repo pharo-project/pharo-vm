@@ -5623,7 +5623,7 @@ Cogit >> compileEntry [
 	self JumpNonZero: sendMiss.
 	noCheckEntry := self Label.
 	
-	cogEventLogger compileCountIncrementOn: self.	
+	cogEventLogger compileCountIncrement.	
 	
 	self compileSendTrace ifTrue:
 		[backEnd saveAndRestoreLinkRegAround:

@@ -77,7 +77,7 @@ CogMethodSurrogate64 >> counterIndex [
 { #category : #accessing }
 CogMethodSurrogate64 >> counterIndex: aValue [
 	^memory
-		long64At: address + baseHeaderSize + 33
+		unsignedLong64At: address + baseHeaderSize + 33
 		put: aValue
 ]
 

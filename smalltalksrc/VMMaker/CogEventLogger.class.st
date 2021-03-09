@@ -228,6 +228,7 @@ CogEventLogger >> cogStatCountersAt: anIndex put: aValue [
 
 { #category : #accessing }
 CogEventLogger >> cogit [
+	<doNotGenerate>
 	^ cogit
 ]
 
@@ -248,24 +249,26 @@ CogEventLogger >> compactCompiledCodeFinished [
 ]
 
 { #category : #counters }
-CogEventLogger >> compileCountIncrementOn: aCogit [ 
+CogEventLogger >> compileCountIncrement [ 
 	
 	| counterIndex address |
+
+	<inline: true>
 
 	counterIndex := self currentCounterIndex.
 	address := self counterAddressFor: counterIndex.
 	
-	RISCTempReg = #undefined 
+	cogit backEnd hasRISCTempReg
 		ifTrue: [ 
-			 aCogit PushR: TempReg.
-			 aCogit MoveAw: address R: TempReg.
-			 aCogit AddCq: 1 R: TempReg.
-			 aCogit MoveR: TempReg Aw: address.
-			 aCogit PopR: TempReg ]
+			 cogit PushR: TempReg.
+			 cogit MoveAw: address R: TempReg.
+			 cogit AddCq: 1 R: TempReg.
+			 cogit MoveR: TempReg Aw: address.
+			 cogit PopR: TempReg ]
 		ifFalse: [  
-				aCogit MoveAw: address R: RISCTempReg.
-				aCogit AddCq: 1 R: RISCTempReg.
-				aCogit MoveR: RISCTempReg Aw: address].
+				cogit MoveAw: address R: RISCTempReg.
+				cogit AddCq: 1 R: RISCTempReg.
+				cogit MoveR: RISCTempReg Aw: address].
 	
 ]
 

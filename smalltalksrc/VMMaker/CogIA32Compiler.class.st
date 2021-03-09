@@ -3617,6 +3617,12 @@ CogIA32Compiler >> hasLinkRegister [
 ]
 
 { #category : #testing }
+CogIA32Compiler >> hasRISCTempReg [
+
+	^ false
+]
+
+{ #category : #testing }
 CogIA32Compiler >> hasSSE2Instructions [
 	"Answer if we support SSE2"
 	^(cogit ceCheckFeatures bitAnd: (1 << 26)) ~= 0

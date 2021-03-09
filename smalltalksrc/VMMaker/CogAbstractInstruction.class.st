@@ -1018,6 +1018,12 @@ CogAbstractInstruction >> hasPCRegister [
 ]
 
 { #category : #testing }
+CogAbstractInstruction >> hasRISCTempReg [
+
+	^ true
+]
+
+{ #category : #testing }
 CogAbstractInstruction >> hasThreeAddressArithmetic [
 	"Answer if the receiver supports three-address arithmetic instructions (currently only AndCqRR)"
 	<inline: true>
