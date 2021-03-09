@@ -5659,7 +5659,7 @@ Cogit >> compileFullBlockEntry [
 	fullBlockEntry := self MoveR: ReceiverResultReg R: SendNumArgsReg.
 	jumpNoContextSwitch jmpTarget: self Label.
 
-	cogEventLogger compileCountIncrementOn: self.
+	cogEventLogger compileCountIncrement.
 
 	^0
 ]
