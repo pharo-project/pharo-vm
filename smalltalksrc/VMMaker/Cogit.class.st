@@ -6523,7 +6523,7 @@ Cogit >> fillInMethodHeader: method size: size selector: selector [
 	method cmType: CMMethod.
 	method objectHeader: objectMemory nullHeaderForMachineCodeMethod.
 	method blockSize: size.
-	method counterIndex: -1.
+	method counterIndex: cogEventLogger invalidCounterIndex.
 	method methodObject: methodObj.
 	rawHeader := coInterpreter rawHeaderOf: methodObj.
 	"If the method has already been cogged then
@@ -6568,12 +6568,12 @@ Cogit >> fillInOPICHeader: pic numArgs: numArgs selector: selector [
 	<inline: true>
 	pic cmType: CMOpenPIC.
 	pic objectHeader: 0.
-	pic counterIndex: -1.
+	pic counterIndex: cogEventLogger invalidCounterIndex.
 	pic blockSize: openPICSize.
 	"pic methodObject: 0.""This is also the nextOpenPIC link so don't initialize it"
 	methodZone addToOpenPICList: pic.
 	pic methodHeader: 0.
-	pic counterIndex: -1.
+	pic counterIndex: cogEventLogger invalidCounterIndex.
 	pic selector: selector.
 	pic cmNumArgs: numArgs.
 	(pic cmRefersToYoung: (objectMemory isYoung: selector)) ifTrue:

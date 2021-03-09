@@ -12,6 +12,7 @@ Class {
 	],
 	#classVars : [
 		'EMPTY_COUNTER_MARK',
+		'INVALID_COUNTER_INDEX',
 		'STAT_COUNTERS_SIZE'
 	],
 	#pools : [
@@ -50,7 +51,8 @@ CogEventLogger class >> declareCVarsIn: aCCodeGenerator [
 CogEventLogger class >> initializeWithOptions: options [
 
 	STAT_COUNTERS_SIZE := 4096.
-	EMPTY_COUNTER_MARK := BytesPerWord = 8 ifTrue: INT64_MIN ifFalse: INT32_MIN. 
+	EMPTY_COUNTER_MARK := BytesPerWord = 8 ifTrue: INT64_MIN ifFalse: INT32_MIN.
+	INVALID_COUNTER_INDEX := STAT_COUNTERS_SIZE * 2.
 ]
 
 { #category : #translation }
@@ -253,22 +255,25 @@ CogEventLogger >> compileCountIncrement [
 	
 	| counterIndex address |
 
+	<var: #address type:#sqInt>
+	<var: #counterIndex type:#sqInt>
+
 	<inline: true>
 
 	counterIndex := self currentCounterIndex.
 	address := self counterAddressFor: counterIndex.
-	
+
 	cogit backEnd hasRISCTempReg
-		ifTrue: [ 
+		ifTrue: [  
+				cogit MoveAw: address R: RISCTempReg.
+				cogit AddCq: 1 R: RISCTempReg.
+				cogit MoveR: RISCTempReg Aw: address]
+		ifFalse: [ 
 			 cogit PushR: TempReg.
 			 cogit MoveAw: address R: TempReg.
 			 cogit AddCq: 1 R: TempReg.
 			 cogit MoveR: TempReg Aw: address.
 			 cogit PopR: TempReg ]
-		ifFalse: [  
-				cogit MoveAw: address R: RISCTempReg.
-				cogit AddCq: 1 R: RISCTempReg.
-				cogit MoveR: RISCTempReg Aw: address].
 	
 ]
 
@@ -359,6 +364,13 @@ CogEventLogger >> initialize [
 
 ]
 
+{ #category : #events }
+CogEventLogger >> invalidCounterIndex [
+	
+	<inline: true>
+	^ INVALID_COUNTER_INDEX 
+]
+
 { #category : #builder }
 CogEventLogger >> logEvent [ 
 
@@ -389,7 +401,7 @@ CogEventLogger >> methodCollected: aCogMethod [
 		logEvent.
 	
 	self releaseCounter: aCogMethod counterIndex.
-	aCogMethod counterIndex: -1.
+	aCogMethod counterIndex: INVALID_COUNTER_INDEX.
 ]
 
 { #category : #events }
