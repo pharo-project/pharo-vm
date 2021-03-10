@@ -204,7 +204,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledUntilAddressIsRespecte
 	self machineSimulator
 		startAt: initialAddress
 		until: jumpInstruction address
-		timeout: 1000
+		timeout: 100000 "microseconds = 100ms"
 		count: 0.
 	
 	self assert: self temporaryRegisterValue equals: 1
@@ -240,7 +240,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledUntilAddressIsRespecte
 	self machineSimulator
 		startAt: initialAddress
 		until: jumpInstruction address
-		timeout: 1000
+		timeout: 100000 "microseconds = 100ms"
 		count: 0.
 	
 	self assert: self machineSimulator instructionPointerValue equals: jumpInstruction address
@@ -454,7 +454,7 @@ VMMachineSimulatorTest >> testNormalExecutionRespectTimeout [
 	[ self
 		runFrom: initialAddress
 		until: lastInstruction address
-		timeout: 1000 ]
+		timeout: 100000 "microseconds = 100ms" ]
 			on: UnicornTimeout
 			do: [ :e | self assert: e messageText equals: ''. ^ self ].
 			
@@ -476,7 +476,7 @@ VMMachineSimulatorTest >> testNormalExecutionRespectTimeoutUpdatesInstructionPoi
 	[ self
 		runFrom: initialAddress
 		until: lastInstruction address
-		timeout: 1000 ]
+		timeout: 100000 "microseconds = 100ms" ]
 			on: UnicornTimeout
 			do: [ :e | 
 				self deny: self machineSimulator instructionPointerValue equals: initialAddress.

@@ -222,9 +222,8 @@ Spur64BitMMLECoSimulator >> loadImageSegmentFrom: segmentWordArray outPointers: 
 
 { #category : #'memory access' }
 Spur64BitMMLECoSimulator >> long32At: byteAddress [
-	"Note: Adjusted for Smalltalk's 1-based array indexing."
-	byteAddress \\ 4 ~= 0 ifTrue: [self unalignedAccessError].
-	^memory at: byteAddress // 4 + 1
+	
+	^ memoryManager unsignedLong32At: byteAddress
 ]
 
 { #category : #'memory access' }
@@ -234,8 +233,7 @@ Spur64BitMMLECoSimulator >> long32At: byteAddress put: a32BitValue [
 		[self halt]."
 	"(byteAddress between: 16r33FBB8 and: 16r33FBCF) ifTrue:
 		[self halt]."
-	byteAddress \\ 4 ~= 0 ifTrue: [self unalignedAccessError].
-	^memory at: byteAddress // 4 + 1 put: a32BitValue
+	^ memoryManager unsignedLong32At: byteAddress put: a32BitValue
 ]
 
 { #category : #'memory access' }
@@ -243,8 +241,8 @@ Spur64BitMMLECoSimulator >> long64At: byteAddress [
 	"memory is a Bitmap, a 32-bit indexable array of bits"
 	| hiWord loWord |
 	byteAddress \\ 8 ~= 0 ifTrue: [self unalignedAccessError].
-	loWord := memory at: byteAddress // 4 + 1.
-	hiWord := memory at: byteAddress // 4 + 2.
+	loWord := memoryManager unsignedLong32At: byteAddress.
+	hiWord := memoryManager unsignedLong32At: byteAddress + 4.
 	^hiWord = 0
 		ifTrue: [loWord]
 		ifFalse: [(hiWord bitShift: 32) + loWord]
@@ -263,14 +261,13 @@ Spur64BitMMLECoSimulator >> long64At: byteAddress put: a64BitValue [
 Spur64BitMMLECoSimulator >> longAt: byteAddress [
 	"Answer the 64-bit word at byteAddress which must be 0 mod 4."
 
-	^self long64At: byteAddress
+	^ memoryManager unsignedLong64At: byteAddress
 ]
 
 { #category : #'memory access' }
 Spur64BitMMLECoSimulator >> longAt: byteAddress put: a64BitValue [
-	"Store the 64-bit value at byteAddress which must be 0 mod 8."
-	"byteAddress = 16r1F5AE8 ifTrue: [self halt]."
-	^self long64At: byteAddress put: a64BitValue
+	"Store an unsigned word-sized value at byteAddress which must be 0 mod 8."
+	^memoryManager unsignedLong64At: byteAddress put: a64BitValue
 ]
 
 { #category : #'image segment in/out' }

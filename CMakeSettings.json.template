@@ -18,7 +18,12 @@
           "type": "BOOL"
         },
         {
-          "name": "DOWNLOAD_DEPENDENCIES",
+          "name": "FEATURE_THREADED_FFI",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "BUILD_BUNDLE",
           "value": "False",
           "type": "BOOL"
         },
@@ -66,6 +71,11 @@
           "type": "BOOL"
         },
         {
+          "name": "FEATURE_THREADED_FFI",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
           "name": "FEATURE_COMPILE_GNUISATION",
           "value": "False",
           "type": "BOOL"
@@ -81,7 +91,7 @@
           "type": "BOOL"
         },
         {
-          "name": "DOWNLOAD_DEPENDENCIES",
+          "name": "BUILD_BUNDLE",
           "value": "False",
           "type": "BOOL"
         },

@@ -6,12 +6,12 @@
 
 // Macros to define common identity id_type() functions to test arguments and return types
 #define simple_callback_f(TYPE) simple_callback_with_name_f(TYPE, TYPE)
-#define simple_callback_with_name_f(TYPE, NAME) void simple_callback_f_##NAME(simple_callback_##NAME fun, TYPE value){ \
+#define simple_callback_with_name_f(TYPE, NAME) EXPORT(void) simple_callback_f_##NAME(simple_callback_##NAME fun, TYPE value){ \
 	fun(value); \
 }
 
 #define simple_callback_byRef_f(TYPE) simple_callback_byRef_with_name_f(TYPE, TYPE)
-#define simple_callback_byRef_with_name_f(TYPE, NAME) void simple_callback_byRef_f_##NAME(simple_callback_byRef_##NAME fun, TYPE* value){ \
+#define simple_callback_byRef_with_name_f(TYPE, NAME) EXPORT(void) simple_callback_byRef_f_##NAME(simple_callback_byRef_##NAME fun, TYPE* value){ \
 	fun(value); \
 }
 

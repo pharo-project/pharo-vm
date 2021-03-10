@@ -399,6 +399,19 @@ StackInterpreterSimulator >> close [  "close any files that ST may have opened, 
 	pluginList do: [:assoc| | plugin | plugin := assoc value. plugin ~~ self ifTrue: [plugin close]]
 ]
 
+{ #category : #'primitive support' }
+StackInterpreterSimulator >> codeGeneratorToComputeAccessorDepth [
+
+	^ codeGeneratorToComputeAccessorDepth ifNil: [
+		^(VMMaker new
+			vmmakerConfiguration: VMMakerConfiguration;
+			buildCodeGeneratorForInterpreter: self class primitivesClass
+			includeAPIMethods: false
+			initializeClasses: false)
+				logger: self transcript;
+				yourself ]
+]
+
 { #category : #'simulation only' }
 StackInterpreterSimulator >> cogit [
 	"We don't have a cogit; try and get by on our own devices."
@@ -1605,8 +1618,7 @@ StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
 	systemAttributes at: 1 put: fileName; at: 2 put: nil.
 
 	["begin ensure block..."
-	imageName := f fullName.
-	f binary.
+	imageName := fileName asFileReference fullName.
 
 	version := self getWord32FromFile: f swap: false.  "current version: 16r1968 (=6504) vive la revolucion!"
 	(self readableFormat: version)
@@ -1967,7 +1979,7 @@ StackInterpreterSimulator >> printChar: aByte [
 StackInterpreterSimulator >> printCurrentBytecodeOn: aStream [
 	| code |
 	code := currentBytecode radix: 16.
-	aStream ensureCr; print: localIP - method - 3; tab.
+	aStream newLine; print: localIP - method - 3; tab.
 	bytecodeSetSelector > 0 ifTrue:
 		[aStream nextPutAll: 'ALT '].
 	aStream
@@ -2296,13 +2308,13 @@ StackInterpreterSimulator >> setDisplayForm: aForm [
 
 { #category : #'debug printing' }
 StackInterpreterSimulator >> shortPrintContext: aContext [
-	transcript ensureCr.
+	transcript newLine.
 	^super shortPrintContext: aContext
 ]
 
 { #category : #'debug printing' }
 StackInterpreterSimulator >> shortPrintFrame: theFP [
-	self transcript ensureCr.
+	self transcript newLine.
 	^super shortPrintFrame: theFP
 ]
 

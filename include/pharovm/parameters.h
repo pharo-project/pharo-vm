@@ -108,6 +108,12 @@ typedef struct VMParameters_
 	//The number of smalltalk frames to print in a process dump, (0 to print all).
 	int maxStackFramesToPrint;
 
+	//The max size of the old space (as the new space is fixed size, we can take it as a hint of the memory size used by the VM).
+	long maxOldSpaceSize;
+
+	//The max size of the code space (This is the space used to compile JIT methods and trampolines).
+	long maxCodeSize;
+
 	// FIXME: Why passing this is needed when we have the separated vectors?
 	int processArgc;
 	const char** processArgv;

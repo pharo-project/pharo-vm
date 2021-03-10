@@ -32,7 +32,7 @@ Class {
 VMSpurMemoryManagerTest class >> testParameters [ 
 
 	^ ParametrizedTestMatrix new
-			forSelector: #wordSize addOptions: { 4 . 8 };
+			forSelector: #wordSize addOptions: { 8 . 4 };
 			yourself
 ]
 
@@ -76,6 +76,16 @@ VMSpurMemoryManagerTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod 
 { #category : #accessing }
 VMSpurMemoryManagerTest >> initialCodeSize [
 	^ 0
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> initializationOptions [
+
+	^ { 
+		  #BytesPerWord.
+		  self wordSize.
+		  #ObjectMemory.
+		  memory class name }
 ]
 
 { #category : #helpers }
@@ -164,16 +174,6 @@ VMSpurMemoryManagerTest >> interpreterClass [
 	^ StackInterpreterSimulatorLSB
 ]
 
-{ #category : #helpers }
-VMSpurMemoryManagerTest >> jitMethod: aPharoCompiledMethod selector: aSelectorOop [
-
-	| methodOop |
-	"We are using V3 bytecode, so we need to recompile the method"
-	methodOop := self createMethodOopFromPharoMethod:
-		             aPharoCompiledMethod.
-	^ cogit cog: methodOop selector: aSelectorOop
-]
-
 { #category : #tests }
 VMSpurMemoryManagerTest >> keepObjectInVMVariable1: anOop [
 	interpreter newMethod: anOop
@@ -229,19 +229,16 @@ VMSpurMemoryManagerTest >> newClassInOldSpaceWithSlots: numberOfSlots instSpec: 
 
 { #category : #helpers }
 VMSpurMemoryManagerTest >> newInterpreter [
+
 	memory := self newMemory.
 
 	self interpreterClass
-		initializeWithOptions:
-			{#BytesPerWord.
-			self wordSize.
-			#ObjectMemory.
-			memory class name}
+		initializeWithOptions: self initializationOptions
 		objectMemoryClass: memory class.
 
 	^ self interpreterClass basicNew
-		objectMemory: memory;
-		basicInitialize
+		  objectMemory: memory;
+		  basicInitialize
 ]
 
 { #category : #running }
@@ -451,6 +448,7 @@ VMSpurMemoryManagerTest >> setMethodClassIntoClassTable [
 
 { #category : #running }
 VMSpurMemoryManagerTest >> setUp [
+	| memoryManager |
 	super setUp.
 
 	"100 k at least to put the class table in the old space.
@@ -467,9 +465,15 @@ VMSpurMemoryManagerTest >> setUp [
 	emptyObjectSize := objectHeaderSize + 8 "minimum required single empty slot, to use for forwarders".
 	
 	"Set it to bootstrapping to allow smaller memories"
-	interpreter := self newInterpreter.
-	memory := interpreter objectMemory.
+	memoryManager := SlangMemoryManager new.
+	memoryManager initialAddress: initialAddress.
+	memoryManager wordSize: self wordSize.
 	
+	interpreter := self newInterpreter.
+	interpreter memoryManager: memoryManager.
+
+	memory := interpreter objectMemory.
+	memory memoryManager: memoryManager.	
 	memory coInterpreter: interpreter.
 	interpreter objectMemory: memory.
 	
@@ -491,7 +495,7 @@ VMSpurMemoryManagerTest >> setUp [
 	"Schedule a GC, so it does not try to schedule one"
 	memory needGCFlag: 1.
 	
-		methodBuilder := VMMethodBuilder new
+	methodBuilder := VMMethodBuilder new
 		interpreter: interpreter; 
 		memory: memory;
 		yourself.

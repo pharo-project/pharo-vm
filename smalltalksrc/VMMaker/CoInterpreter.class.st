@@ -5705,7 +5705,7 @@ CoInterpreter >> printCogMethod: cogMethod [
 	| address primitive |
 	self cCode: ''
 		inSmalltalk:
-			[self transcript ensureCr.
+			[self transcript newLine.
 			 cogMethod isInteger ifTrue:
 				[^self printCogMethod: (self cCoerceSimple: cogMethod to: #'CogMethod *')]].
 	address := cogMethod asInteger.
@@ -5749,7 +5749,7 @@ CoInterpreter >> printFrame: theFP WithSP: theSP [
 	<var: #rcvrAddress type: #'char *'>
 	<var: #cogMethod type: #'CogBlockMethod *'>
 	<var: #homeMethod type: #'CogMethod *'>
-	self cCode: '' inSmalltalk: [self transcript ensureCr].
+	self cCode: '' inSmalltalk: [self transcript newLine].
 	(stackPages couldBeFramePointer: theFP) ifNil:
 		[self printHexPtr: theFP; print: ' is not in the stack zone?!'; cr.
 		 ^nil].
@@ -5990,7 +5990,7 @@ CoInterpreter >> printMethodCacheFor: thing [
 		 and: [(self addressCouldBeClassObj: c)
 			or: [self addressCouldBeClassObj: (objectMemory classForClassTag: c)]]]]) ifTrue:
 			[n := n + 1.
-			 self cCode: [] inSmalltalk: [self transcript ensureCr].
+			 self cCode: [] inSmalltalk: [self transcript newLine].
 			 self printNum: i; space; printHexnp: i; cr; tab.
 			 (objectMemory isBytesNonImm: s)
 				ifTrue: [self cCode: 'vm_printf("%" PRIxSQPTR " %.*s\n", s, (int)(numBytesOf(s)), (char *)firstIndexableField(s))'
@@ -6657,6 +6657,7 @@ CoInterpreter >> setCogVMFlags: flags [
 
 { #category : #'internal interpreter access' }
 CoInterpreter >> setDesiredCogCodeSize: dccs [
+	<api>
 	<inline: true>
 	desiredCogCodeSize := dccs
 ]

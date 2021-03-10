@@ -4,6 +4,9 @@ I am an abstract superclass for all classes in the VM that want to maintain a so
 Class {
 	#name : #VMClass,
 	#superclass : #SlangClass,
+	#instVars : [
+		'memoryManager'
+	],
 	#classVars : [
 		'DefaultBase',
 		'InitializationOptions'
@@ -155,9 +158,6 @@ VMClass class >> initializeMiscConstants [
 	VMBIGENDIAN class. "Mention this for the benefit of CCodeGenerator>>emitCConstantsOn:"
 	SPURVM := STACKVM := COGVM := COGMTVM := false.
 
-	"Assignment needs to be in here to recognized this constant as a compile-time defined macro"
-	FEATURE_FFI := FEATURE_THREADED_FFI := false.
-
 	InitializationOptions ifNil: [InitializationOptions := Dictionary new].
 	omc := InitializationOptions at: #ObjectMemory ifAbsent: [self error: 'Please specify an object memory'].
 
@@ -170,6 +170,8 @@ VMClass class >> initializeMiscConstants [
 	"Use ifAbsentPut: so that they will get copied back to the
 	 VMMaker's options and dead code will likely be eliminated."
 	PharoVM := InitializationOptions at: #PharoVM ifAbsentPut: [false].
+	FEATURE_FFI := InitializationOptions at: #FEATURE_FFI ifAbsentPut: [false].
+	FEATURE_THREADED_FFI := InitializationOptions at: #FEATURE_THREADED_FFI ifAbsentPut: [false].
 	SistaVM := InitializationOptions at: #SistaVM ifAbsentPut: [false].
 	TempVectReadBarrier := InitializationOptions at: #TempVectReadBarrier ifAbsentPut: [false].
 	MULTIPLEBYTECODESETS := InitializationOptions at: #MULTIPLEBYTECODESETS ifAbsentPut: [false].
@@ -363,7 +365,7 @@ VMClass class >> shouldIncludeMethodForSelector: selector [
 										ifNotNil: [:binding| binding value ~~ #undefined]]]]
 				ifNil: [true]]
 		ifNil:
-			[Transcript nextPutAll: 'Cannot find implementation of '; nextPutAll: selector; nextPutAll: ' in hierarchy of '; print: self; cr; flush.
+			[Transcript nextPutAll: 'Cannot find implementation of '; nextPutAll: selector; nextPutAll: ' in hierarchy of '; print: self; newLine; flush.
 			 false]
 ]
 
@@ -413,10 +415,10 @@ VMClass class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord generator: 
 	aCCodeGenerator
 		putDefineOf: 'VM_PROXY_MAJOR' as: self vmProxyMajorVersion on: aStream;
 		putDefineOf: 'VM_PROXY_MINOR' as: self vmProxyMinorVersion on: aStream.
-	aStream cr.
+	aStream newLine.
 	aCCodeGenerator
 		putDefineOf: 'SQ_VI_BYTES_PER_WORD' as: bytesPerWord on: aStream.
-	aStream cr.
+	aStream newLine.
 
 	"The most basic constants must be defined here, not in e.g. the plugin sources, to allow those
 	 other sources to be shared between different builds (Spur vs SqueakV3, 32-bit vs 64-bit, etc)"
@@ -424,18 +426,18 @@ VMClass class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord generator: 
 		[:constName|
 		(self constantClass classPool at: constName ifAbsent: []) ifNotNil:
 			[:const| aCCodeGenerator putDefineOf: constName as: const on: aStream]].
-	aStream cr.
+	aStream newLine.
 
 	((self constantClass classPool associations select: [:a| a key beginsWith: 'PrimErr'])
 		sorted: [:a1 :a2| a1 value <= a2 value])
 		do: [:a| aCCodeGenerator putDefineOf: a key as: a value on: aStream].
-	aStream cr.
+	aStream newLine.
 
 	aCCodeGenerator
 		putDefineOf: 'MinSmallInteger' as: self objectMemoryClass minSmallInteger on: aStream;
 		putDefineOf: 'MaxSmallInteger' as: self objectMemoryClass maxSmallInteger on: aStream;
 		putDefineOf: 'NumSmallIntegerTagBits' as: self objectMemoryClass numSmallIntegerTagBits on: aStream.
-	aStream cr
+	aStream newLine
 ]
 
 { #category : #'translation support' }
@@ -752,7 +754,13 @@ VMClass >> majorVersion [
 { #category : #'C library simulation' }
 VMClass >> malloc: size [
 	<doNotGenerate>
-	^CArrayAccessor on: (ByteArray new: size)
+	| address region |
+	address := memoryManager allocate: size.
+	region := memoryManager regionAtAddress: address.
+	^ CNewArrayAccessor new
+		setObject: region;
+		address: address;
+		yourself
 ]
 
 { #category : #'C library simulation' }
@@ -820,6 +828,18 @@ VMClass >> memmove: destAddress _: sourceAddress _: bytes [
 		ifFalse:
 			[0 to: bytes - 4 by: 4 do:
 				[:i| self longAt: dst + i put: (self longAt: src + i)]]
+]
+
+{ #category : #accessing }
+VMClass >> memoryManager [
+	<doNotGenerate>
+	^ memoryManager
+]
+
+{ #category : #accessing }
+VMClass >> memoryManager: aMemoryManager [
+	<doNotGenerate>
+	memoryManager := aMemoryManager
 ]
 
 { #category : #'simulation support' }
@@ -977,6 +997,13 @@ VMClass >> promptNum: string [
 	s := s withBlanksTrimmed.
 	^s notEmpty ifTrue:
 		[Number readFrom: s readStream]
+]
+
+{ #category : #'C library simulation' }
+VMClass >> realloc: originalAddress _: desiredSize [
+
+	<doNotGenerate>
+	^ memoryManager reallocate: originalAddress withSize: desiredSize
 ]
 
 { #category : #arithmetic }

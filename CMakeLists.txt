@@ -53,9 +53,8 @@ set(APPNAME Pharo CACHE STRING "VM Application name")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Extract VCS information
-get_commit_hash(GIT_COMMIT_HASH)
-get_git_describe(GIT_DESCRIBE)
-get_git_date(GIT_COMMIT_DATE)
+include(cmake/versionExtraction.cmake)
+extractVCSInformation(GIT_COMMIT_HASH GIT_DESCRIBE GIT_COMMIT_DATE)
 
 #Variable used to set the VM date
 set(BUILT_FROM "${GIT_DESCRIBE} - Commit: ${GIT_COMMIT_HASH} - Date: ${GIT_COMMIT_DATE}")
@@ -143,12 +142,13 @@ set(FLAVOUR CoInterpreter CACHE STRING "The kind of VM to generate. Possible val
 set(GENERATE_SOURCES TRUE CACHE BOOL "If it generates the sources")
 set(ALWAYS_INTERACTIVE FALSE CACHE BOOL "If this VM will always add interactive or not. If it is set, the headless parameter is not by default true")
 set(FEATURE_FFI TRUE CACHE BOOL "Configure and compile support for FFI in the VM")
+set(FEATURE_THREADED_FFI TRUE CACHE BOOL "Configure and compile support for Threaded (running in another thread) FFI in the VM")
 set(FEATURE_NETWORK TRUE CACHE BOOL "Configure and compile support for network and sockets in the VM")
 set(FEATURE_COMPILE_GNUISATION TRUE CACHE BOOL "Use gcc gnu extensions to compile the VM")
 set(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS TRUE CACHE BOOL "Use inline memory accessors instead of macros")
 
 set(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES FALSE CACHE BOOL "Prefer downloading dependencies")
-set(DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download dependencies at build time")
+set(BUILD_BUNDLE TRUE CACHE BOOL "Builds a bundle with all dependencies (locally built or downloaded) copied next to the VM")
 set(FEATURE_LIB_SDL2 TRUE CACHE BOOL "Build SDL2 support")
 set(FEATURE_LIB_CAIRO TRUE CACHE BOOL "Build Cairo support")
 set(FEATURE_LIB_FREETYPE2 TRUE CACHE BOOL "Build Cairo support")
@@ -327,9 +327,9 @@ set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/")
 
 #If in OSX, configure creation of Bundle
 if (OSX)
-  set(EXECUTABLE_OUTPUT_PATH "build/vm/Debug")
-  set(RUNTIME_OUTPUT_PATH "build/vm/")
-  set(LIBRARY_OUTPUT_DIRECTORY "build/vm/Debug/${VM_EXECUTABLE_NAME}.app/Contents/MacOS/Plugins")
+  set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/Debug")
+  set(RUNTIME_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/")
+  set(LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/vm/Debug/${VM_EXECUTABLE_NAME}.app/Contents/MacOS/Plugins")
 else()
   set(LIBRARY_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
 endif()
@@ -460,6 +460,10 @@ if (${FEATURE_FFI})
         PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ffi/include)
     target_compile_definitions(${VM_LIBRARY_NAME} 
         PRIVATE FEATURE_FFI=1)
+
+    if(${FEATURE_THREADED_FFI})
+        target_compile_definitions(${VM_LIBRARY_NAME} PRIVATE FEATURE_THREADED_FFI=1)
+    endif()
 endif()
 
 

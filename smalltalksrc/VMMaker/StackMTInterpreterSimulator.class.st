@@ -1962,7 +1962,7 @@ StackMTInterpreterSimulator >> printChar: aByte [
 StackMTInterpreterSimulator >> printCurrentBytecodeOn: aStream [
 	| code |
 	code := currentBytecode radix: 16.
-	aStream ensureCr; print: localIP - method - 3; tab.
+	aStream newLine; print: localIP - method - 3; tab.
 	bytecodeSetSelector > 0 ifTrue:
 		[aStream nextPutAll: 'ALT '].
 	aStream
@@ -2297,13 +2297,13 @@ StackMTInterpreterSimulator >> setDisplayForm: aForm [
 
 { #category : #'debug printing' }
 StackMTInterpreterSimulator >> shortPrintContext: aContext [
-	transcript ensureCr.
+	transcript newLine.
 	^super shortPrintContext: aContext
 ]
 
 { #category : #'debug printing' }
 StackMTInterpreterSimulator >> shortPrintFrame: theFP [
-	self transcript ensureCr.
+	self transcript newLine.
 	^super shortPrintFrame: theFP
 ]
 

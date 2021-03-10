@@ -50,6 +50,13 @@ VMAbstractFFITest >> createReturnFloatExternalFunctionFor: aBlock withArgumentTy
 ]
 
 { #category : #helpers }
+VMAbstractFFITest >> initializationOptions [
+
+	^ super initializationOptions , { 
+		#FEATURE_FFI . true }
+]
+
+{ #category : #helpers }
 VMAbstractFFITest >> interpreterClass [
 	
 	^ VMTestMockInterpreter

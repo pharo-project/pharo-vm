@@ -186,7 +186,7 @@ VMStructType class >> getter: getter bitPosition: bitPosition bitWidth: bitWidth
 		   nextPutAll: (#('Byte' 'Short' 'Long' 'Long')
 							at: endByte - startByte + 1
 							ifAbsent: ['Long64']);
-		  nextPutAll: 'At: address + '; print: startByte + 1.
+		  nextPutAll: 'At: address + '; print: startByte.
 		(self offsetForInstVar: getter) ifNotNil:
 			[:offsetExpr| s nextPutAll: ' + '; nextPutAll: offsetExpr].
 		shift ~= 0 ifTrue:
@@ -292,12 +292,12 @@ VMStructType class >> setter: getter bitPosition: bitPosition bitWidth: bitWidth
 		alignedPowerOf2 ifTrue:
 			[s nextPut: $^].
 		s nextPutAll: 'memory';
-		  crtab: 2; nextPutAll: accessor; print: startByte + 1.
+		  crtab: 2; nextPutAll: accessor; print: startByte.
 		s crtab: 2; nextPutAll: 'put: '.
 		typeOrNil ifNotNil:
 			[s nextPut: $(].
 		alignedPowerOf2 ifFalse:
-			[s nextPutAll: '((memory '; nextPutAll: accessor; print: startByte + 1;
+			[s nextPutAll: '((memory '; nextPutAll: accessor; print: startByte;
 			    nextPutAll: ') bitAnd: '; nextPutAll: (mask - ((1 << bitWidth - 1) << shift)) hex;
 			    nextPutAll: ') + '].
 		expr := typeOrNil caseOf: {

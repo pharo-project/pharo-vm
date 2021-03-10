@@ -8,7 +8,7 @@ Class {
 	#category : #'VMMaker-Interpreter'
 }
 
-{ #category : #'ffi - helpers' }
+{ #category : #initialization }
 StackInterpreterPrimitives >> allocateParameters: anInteger using: allocationBlock [
 	<inline: #always>
 
@@ -16,10 +16,7 @@ StackInterpreterPrimitives >> allocateParameters: anInteger using: allocationBlo
 
 	^ self
 		cCode: [ allocationBlock value: anInteger ]
-		inSmalltalk: [ | ptr | 
-			ptr := allocationBlock value: anInteger.
-			ptr setObject: (Array new: anInteger).
-			ptr]
+		inSmalltalk: [ CArrayAccessor on: (Array new: anInteger) ]
 ]
 
 { #category : #'primitive support' }
@@ -222,7 +219,7 @@ StackInterpreterPrimitives >> doPrimitiveWorkerCallout [
 					^ self primitiveFailFor: PrimErrBadArgument ]].
 	
 	cif returnType size > 0 
-		ifTrue: [returnHolder := self malloc: cif returnType size]
+		ifTrue: [returnHolder := self malloc: (cif returnType size max: BytesPerWord)]
 		ifFalse: [returnHolder := nil].
 
 	" 5. Create the worker task and enqueue it"
@@ -262,6 +259,8 @@ StackInterpreterPrimitives >> doPrimitiveWorkerExtractReturnValue [
 
 	"2. Get the returnHolder from the task"
 	task := self getTaskFromAddress: taskAddress.
+	task ifNil: [ ^ self primitiveFailFor: PrimErrBadReceiver ].
+
 	returnHolder := task returnHolderAddress.
 
 	"3. Marshall the return value and push it in the stack"

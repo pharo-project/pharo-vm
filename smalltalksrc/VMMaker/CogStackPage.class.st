@@ -54,7 +54,7 @@ CogStackPage class >> getter: getter bitPosition: bitPosition bitWidth: bitWidth
 			[s nextPutAll: 'stackPages surrogateAtAddress: ('].
 		s nextPutAll: 'memory ';
 		   nextPutAll: accessor;
-		   nextPutAll: 'At: address + '; print: startByte + 1.
+		   nextPutAll: 'At: address + '; print: startByte.
 		(typeOrNil notNil and: ['*StackPage*' match: typeOrNil]) ifTrue:
 			[s nextPut: $)]]
 
@@ -119,7 +119,7 @@ CogStackPage class >> setter: getter bitPosition: bitPosition bitWidth: bitWidth
 		(typeOrNil notNil and: ['*StackPage*' match: typeOrNil]) ifFalse:
 			[s nextPut: $^].
 		s nextPutAll: 'memory ';
-		   nextPutAll: accessor; nextPutAll: 'At: address + '; print: startByte + 1;
+		   nextPutAll: accessor; nextPutAll: 'At: address + '; print: startByte;
 		   nextPutAll: ' put: aValue'.
 		(typeOrNil notNil and: ['*StackPage*' match: typeOrNil]) ifTrue:
 			[s nextPutAll: ' asInteger.'; crtab: 1; nextPutAll: '^aValue']]

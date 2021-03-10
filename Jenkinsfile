@@ -104,47 +104,86 @@ def runBuild(platformName, configuration, headless = true){
 	}
 }
 
+def runUnitTests(platform){
+  cleanWs()
+
+  stage("VM Unit Tests"){
+    dir('repository') {
+      checkout scm
+    }
+
+    cmakeBuild generator: "Unix Makefiles", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath"
+    dir("runTests"){
+      shell "VERBOSE=1 make vmmaker"
+      dir("build/vmmaker"){
+        shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libllvm-full.zip"
+        shell "unzip libllvm-full.zip -d ./vm/Contents/MacOS/Plugins"
+        shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libunicorn.zip"
+        shell "unzip libunicorn.zip  -d ./vm/Contents/MacOS/Plugins"
+        shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
+        
+        // Stop if tests fail
+        // Archive xml reports either case
+        try {
+          junit allowEmptyResults: true, testResults: "*.xml"
+        } catch (ex) {
+          if (currentBuild.result == 'UNSTABLE'){
+            currentBuild.result = 'FAILURE'
+          }
+          archiveArtifacts artifacts: '*.xml'
+        }
+        
+      }
+    }
+  }
+}
+
 def runTests(platform, configuration, packages, withWorker){
   cleanWs()
 
   def stageName = withWorker ? "Tests-${platform}-${configuration}-worker" : "Tests-${platform}-${configuration}"
+  def hasWorker = withWorker ? "--worker" : ""
 
-  stage(stageName){
-    unstash name: "packages-${platform}-${configuration}"
-    shell "mkdir runTests"
-    dir("runTests"){
-      shell "wget -O - get.pharo.org/64/90 | bash "
-      shell "echo 90 > pharo.version"
+	stage(stageName){
+		unstash name: "packages-${platform}-${configuration}"
+		shell "mkdir runTests"
+		dir("runTests"){
+			try{
+				shell "wget -O - get.pharo.org/64/90 | bash "
+				shell "echo 90 > pharo.version"
           
-      if(isWindows()){
-        runInCygwin "cd runTests && unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
-        if(withWorker){
-          runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 --worker Pharo.image test --junit-xml-output --stage-name=win64-${configuration}-worker '${packages}'"
-        }else{
-          runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 Pharo.image test --junit-xml-output --stage-name=win64-${configuration} '${packages}'"
-        }
-      } else {
-        shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
+				if(isWindows()){
+					runInCygwin "cd runTests && unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
+					runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
+					} else {
+						shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
 
-        if(platform == 'Darwin-x86_64'){
-          if(withWorker){
-            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 --worker Pharo.image test --junit-xml-output --stage-name=${platform}-${configuration}-worker '${packages}'"
-          } else {
-            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 Pharo.image test --junit-xml-output --stage-name=${platform}-${configuration} '${packages}'"
-          }
-        }
+						if(platform == 'Darwin-x86_64'){
+							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
+						}
 
-        if(platform == 'Linux-x86_64'){
-          if(withWorker){
-            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 --worker Pharo.image test --junit-xml-output --stage-name=${platform}-${configuration}-worker '${packages}'" 
-          }else{
-            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 Pharo.image test --junit-xml-output --stage-name=${platform}-${configuration} '${packages}'" 
-          }
-        }
-      }
-      junit allowEmptyResults: true, testResults: "*.xml"
-    }
-    archiveArtifacts artifacts: 'runTests/*.xml', excludes: '_CPack_Packages'
+						if(platform == 'Linux-x86_64'){
+							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'" 
+						}
+				}
+				junit allowEmptyResults: true, testResults: "*.xml"
+			} finally{
+				if(fileExists('PharoDebug.log')){
+					shell "mv PharoDebug.log PharoDebug-${stageName}.log"
+					 archiveArtifacts allowEmptyArchive: true, artifacts: "PharoDebug-${stageName}.log", fingerprint: true
+				}
+				if(fileExists('crash.dmp')){
+					shell "mv crash.dmp crash-${stageName}.dmp"
+					archiveArtifacts allowEmptyArchive: true, artifacts: "crash-${stageName}.dmp", fingerprint: true
+				}
+				if(fileExists('progress.log')){
+					shell "mv progress.log progress-${stageName}.log"
+					shell "cat progress-${stageName}.log"
+					archiveArtifacts allowEmptyArchive: true, artifacts: "progress-${stageName}.log", fingerprint: true
+				}
+			}
+		}
+		archiveArtifacts artifacts: 'runTests/*.xml', excludes: '_CPack_Packages'
 	}
 }
 
@@ -155,6 +194,7 @@ def upload(platform, configuration, archiveName) {
 	unstash name: "packages-${platform}-${configuration}"
 
 	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
+	def expandedCSourceFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-c-src.zip").trim()
 	def expandedHeadersFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-include.zip").trim()
 
 	sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
@@ -162,15 +202,22 @@ def upload(platform, configuration, archiveName) {
 		${expandedBinaryFileName} \
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}"
 		sh "scp -o StrictHostKeyChecking=no \
-		${expandedHeadersFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/include"
-
-		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/latest.zip"
+
+		sh "scp -o StrictHostKeyChecking=no \
+		${expandedHeadersFileName} \
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/include"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedHeadersFileName} \
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/include/latest.zip"
+
+		sh "scp -o StrictHostKeyChecking=no \
+		${expandedCSourceFileName} \
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/source"
+		sh "scp -o StrictHostKeyChecking=no \
+		${expandedCSourceFileName} \
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/source/latest.zip"
 	}
 }
 
@@ -229,7 +276,11 @@ try{
 	def builders = [:]
 	def tests = [:]
 
-	for (platf in platforms) {
+  node('Darwin-x86_64'){
+    runUnitTests('Darwin-x86_64')
+  }
+
+  for (platf in platforms) {
         // Need to bind the label variable before the closure - can't do 'for (label in labels)'
         def platform = platf
 		
@@ -239,7 +290,10 @@ try{
 					runBuild(platform, "CoInterpreter")
 				}
 				timeout(30){
-					runBuild(platform, "CoInterpreter", false)
+					// Only build the Stock replacement version in the main branch
+					if(isMainBranch()){
+						runBuild(platform, "CoInterpreter", false)
+					}
 				}
 			}
 		}

@@ -11,14 +11,14 @@ CogBlockMethodSurrogate32 class >> alignedByteSize [
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> cbUsesInstVars [
-	^(((memory unsignedByteAt: address + 3 + baseHeaderSize) bitShift: -1) bitAnd: 16r1) ~= 0
+	^(((memory unsignedByteAt: address + 2 + baseHeaderSize) bitShift: -1) bitAnd: 16r1) ~= 0
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> cbUsesInstVars: aValue [
 	memory
-		unsignedByteAt: address + baseHeaderSize + 3
-		put: (((memory unsignedByteAt: address + baseHeaderSize + 3) bitAnd: 16rFD) + ((aValue ifTrue: [1] ifFalse: [0]) bitShift: 1)).
+		unsignedByteAt: address + baseHeaderSize + 2
+		put: (((memory unsignedByteAt: address + baseHeaderSize + 2) bitAnd: 16rFD) + ((aValue ifTrue: [1] ifFalse: [0]) bitShift: 1)).
 	^aValue
 ]
 
@@ -37,129 +37,129 @@ CogBlockMethodSurrogate32 >> cmIsUnlinked: aValue [
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> cmNumArgs [
-	^memory unsignedByteAt: address + 1 + baseHeaderSize
+	^memory unsignedByteAt: address + 0 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> cmNumArgs: aValue [
 	^memory
-		unsignedByteAt: address + baseHeaderSize + 1
+		unsignedByteAt: address + baseHeaderSize + 0
 		put: aValue
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> cmRefersToYoung [
-	^(((memory unsignedByteAt: address + 2 + baseHeaderSize) bitShift: -3) bitAnd: 16r1) ~= 0
+	^(((memory unsignedByteAt: address + 1 + baseHeaderSize) bitShift: -3) bitAnd: 16r1) ~= 0
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> cmRefersToYoung: aValue [
 	memory
-		unsignedByteAt: address + baseHeaderSize + 2
-		put: (((memory unsignedByteAt: address + baseHeaderSize + 2) bitAnd: 16rF7) + ((aValue ifTrue: [1] ifFalse: [0]) bitShift: 3)).
+		unsignedByteAt: address + baseHeaderSize + 1
+		put: (((memory unsignedByteAt: address + baseHeaderSize + 1) bitAnd: 16rF7) + ((aValue ifTrue: [1] ifFalse: [0]) bitShift: 3)).
 	^aValue
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> cmType [
-	^(memory unsignedByteAt: address + 2 + baseHeaderSize) bitAnd: 16r7
+	^(memory unsignedByteAt: address + 1 + baseHeaderSize) bitAnd: 16r7
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> cmType: aValue [
 	self assert: (aValue between: 0 and: 16r7).
 	memory
-		unsignedByteAt: address + baseHeaderSize + 2
-		put: ((memory unsignedByteAt: address + baseHeaderSize + 2) bitAnd: 16rF8) + aValue.
+		unsignedByteAt: address + baseHeaderSize + 1
+		put: ((memory unsignedByteAt: address + baseHeaderSize + 1) bitAnd: 16rF8) + aValue.
 	^aValue
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> cmUsageCount [
-	^((memory unsignedByteAt: address + 2 + baseHeaderSize) bitShift: -5) bitAnd: 16r7
+	^((memory unsignedByteAt: address + 1 + baseHeaderSize) bitShift: -5) bitAnd: 16r7
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> cmUsageCount: aValue [
 	self assert: (aValue between: 0 and: 16r7).
 	memory
-		unsignedByteAt: address + baseHeaderSize + 2
-		put: ((memory unsignedByteAt: address + baseHeaderSize + 2) bitAnd: 16r1F) + (aValue bitShift: 5).
+		unsignedByteAt: address + baseHeaderSize + 1
+		put: ((memory unsignedByteAt: address + baseHeaderSize + 1) bitAnd: 16r1F) + (aValue bitShift: 5).
 	^aValue
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> cmUsesPenultimateLit [
-	^((memory unsignedByteAt: address + 3 + baseHeaderSize) bitAnd: 16r1) ~= 0
+	^((memory unsignedByteAt: address + 2 + baseHeaderSize) bitAnd: 16r1) ~= 0
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> cmUsesPenultimateLit: aValue [
 	memory
-		unsignedByteAt: address + baseHeaderSize + 3
-		put: (((memory unsignedByteAt: address + baseHeaderSize + 3) bitAnd: 16rFE) + (aValue ifTrue: [1] ifFalse: [0])).
+		unsignedByteAt: address + baseHeaderSize + 2
+		put: (((memory unsignedByteAt: address + baseHeaderSize + 2) bitAnd: 16rFE) + (aValue ifTrue: [1] ifFalse: [0])).
 	^aValue
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> cpicHasMNUCaseOrCMIsFullBlock [
-	^(((memory unsignedByteAt: address + 2 + baseHeaderSize) bitShift: -4) bitAnd: 16r1) ~= 0
+	^(((memory unsignedByteAt: address + 1 + baseHeaderSize) bitShift: -4) bitAnd: 16r1) ~= 0
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> cpicHasMNUCaseOrCMIsFullBlock: aValue [
 	memory
-		unsignedByteAt: address + baseHeaderSize + 2
-		put: (((memory unsignedByteAt: address + baseHeaderSize + 2) bitAnd: 16rEF) + ((aValue ifTrue: [1] ifFalse: [0]) bitShift: 4)).
+		unsignedByteAt: address + baseHeaderSize + 1
+		put: (((memory unsignedByteAt: address + baseHeaderSize + 1) bitAnd: 16rEF) + ((aValue ifTrue: [1] ifFalse: [0]) bitShift: 4)).
 	^aValue
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> homeOffset [
-	^memory unsignedShortAt: address + 1
+	^memory unsignedShortAt: address + 0
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> homeOffset: aValue [
 	^memory
-		unsignedShortAt: address + 1
+		unsignedShortAt: address + 0
 		put: aValue
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> padToWord [
-	^memory unsignedLongAt: address + 5
+	^memory unsignedLongAt: address + 4
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> padToWord: aValue [
 	^memory
-		unsignedLongAt: address + 5
+		unsignedLongAt: address + 4
 		put: aValue
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> stackCheckOffset [
-	^((memory unsignedShortAt: address + 3 + baseHeaderSize) bitShift: -4) bitAnd: 16rFFF
+	^((memory unsignedShortAt: address + 2 + baseHeaderSize) bitShift: -4) bitAnd: 16rFFF
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> stackCheckOffset: aValue [
 	self assert: (aValue between: 0 and: 16rFFF).
 	memory
-		unsignedShortAt: address + baseHeaderSize + 3
-		put: ((memory unsignedShortAt: address + baseHeaderSize + 3) bitAnd: 16rF) + (aValue bitShift: 4).
+		unsignedShortAt: address + baseHeaderSize + 2
+		put: ((memory unsignedShortAt: address + baseHeaderSize + 2) bitAnd: 16rF) + (aValue bitShift: 4).
 	^aValue
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> startpc [
-	^memory unsignedShortAt: address + 3
+	^memory unsignedShortAt: address + 2
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> startpc: aValue [
 	^memory
-		unsignedShortAt: address + 3
+		unsignedShortAt: address + 2
 		put: aValue
 ]

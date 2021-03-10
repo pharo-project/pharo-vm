@@ -1394,7 +1394,7 @@ CoInterpreterMT >> threadSwitchIfNecessary: newProc from: sourceCode [
 	(activeProcessAffined and: [newProcThreadId ~= cogThreadManager getVMOwner]) ifTrue:
 		[self cCode: ''
 			inSmalltalk:
-				[self transcript ensureCr; nextPutAll: #threadSwitchIfNecessary:from:; space; print: newProc;
+				[self transcript newLine; nextPutAll: #threadSwitchIfNecessary:from:; space; print: newProc;
 								space; print: vmo; nextPutAll: '->'; print: newProcThreadId; cr; flush].
 		 "If primitiveProcessBindToThreadId has bound a process and indicated a thread
 		  switch is necessary we'll come in here but the activeProcess won't have a
