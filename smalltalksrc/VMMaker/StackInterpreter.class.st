@@ -7429,6 +7429,18 @@ StackInterpreter >> functionPointerFor: primIdx inClass: theClass [
 ]
 
 { #category : #'internal interpreter access' }
+StackInterpreter >> getBlockCompilationCount [
+	"This is nil in the StackVM"
+	^objectMemory nilObject
+]
+
+{ #category : #'internal interpreter access' }
+StackInterpreter >> getBlockCompilationMSecs [
+	"This is nil in the StackVM"
+	^objectMemory nilObject
+]
+
+{ #category : #'internal interpreter access' }
 StackInterpreter >> getCodeCompactionCount [
 	"This is nil in the StackVM"
 	^objectMemory nilObject
@@ -7578,6 +7590,18 @@ StackInterpreter >> getLongFromFile: aFile swap: swapFlag [
 	^swapFlag
 		ifTrue: [objectMemory byteSwapped: w]
 		ifFalse: [w]
+]
+
+{ #category : #'internal interpreter access' }
+StackInterpreter >> getMethodCompilationCount [
+	"This is nil in the StackVM"
+	^objectMemory nilObject
+]
+
+{ #category : #'internal interpreter access' }
+StackInterpreter >> getMethodCompilationMSecs [
+	"This is nil in the StackVM"
+	^objectMemory nilObject
 ]
 
 { #category : #'plugin primitive support' }

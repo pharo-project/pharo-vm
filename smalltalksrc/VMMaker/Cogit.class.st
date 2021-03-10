@@ -268,7 +268,11 @@ Class {
 		'disassemblingMethod',
 		'cogConstituentIndex',
 		'directedSendUsesBinding',
-		'simulateFPInUse'
+		'simulateFPInUse',
+		'statCompileFullBlockCount',
+		'statCompileFullBlockUsecs',
+		'statCompileMethodCount',
+		'statCompileMethodUsecs'
 	],
 	#classVars : [
 		'AltBlockCreationBytecodeSize',
@@ -4568,10 +4572,14 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 	 depend on the zone remaining constant across method generation."
 	<api>
 	<returnTypeC: #'CogMethod *'>
-	| selector cogMethod |
+	<var: #startTime type: #usqLong>
+	
+	| selector cogMethod startTime |
 	<var: #cogMethod type: #'CogMethod *'>
 	(self exclude: aMethodObj selector: aSelectorOop) ifTrue:
 		[^nil].
+	
+	startTime := coInterpreter ioUTCMicrosecondsNow.		
 	
 	self deny: (coInterpreter methodHasCogMethod: aMethodObj).
 	self deny: (objectMemory isOopCompiledMethod: (coInterpreter ultimateLiteralOf: aMethodObj)).
@@ -4614,6 +4622,10 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 			 self assertValidMethodMap: cogMethod."
 			 "self disassembleMethod: cogMethod."
 			 "printInstructions := clickConfirm := true""]."
+		
+	statCompileMethodCount := statCompileMethodCount + 1.
+	statCompileMethodUsecs := statCompileMethodUsecs + (coInterpreter ioUTCMicrosecondsNow - startTime).		
+		
 	^cogMethod
 ]
 
@@ -4781,13 +4793,20 @@ Cogit >> cogFullBlockMethod: aMethodObj numCopied: numCopied [
 	 object aMethodObj.  N.B. If there is no code memory available do *NOT*
 	 attempt to reclaim the method zone.  Certain clients (e.g. ceSICMiss:)
 	 depend on the zone remaining constant across method generation."
+
 	<api>
 	<option: #SistaV1BytecodeSet>
 	<returnTypeC: #'CogMethod *'>
-	| cogMethod |
+	<var: #startTime type: #usqLong>
 	<var: #cogMethod type: #'CogMethod *'>
+
+	| cogMethod 	startTime |
+
 	(self exclude: aMethodObj) ifTrue:
 		[^nil].
+	
+	startTime := coInterpreter ioUTCMicrosecondsNow.	
+
 	self deny: (coInterpreter methodHasCogMethod: aMethodObj).
 	self assert: (objectMemory isOopCompiledMethod: (coInterpreter ultimateLiteralOf: aMethodObj)).
 	aMethodObj = breakMethod ifTrue: [self halt: 'Compilation of breakMethod'].
@@ -4818,6 +4837,10 @@ Cogit >> cogFullBlockMethod: aMethodObj numCopied: numCopied [
 			 self assertValidMethodMap: cogMethod."
 			 "self disassembleMethod: cogMethod."
 			 "printInstructions := clickConfirm := true""]."
+
+	statCompileFullBlockCount := statCompileFullBlockCount + 1.
+	statCompileFullBlockUsecs := statCompileFullBlockUsecs + (coInterpreter ioUTCMicrosecondsNow - startTime).		
+		
 	^cogMethod
 ]
 
@@ -8255,6 +8278,21 @@ Cogit >> generatorTable [
 	^generatorTable
 ]
 
+{ #category : #statistics }
+Cogit >> getBlockCompilationCount [
+
+	<api>
+
+	^ objectMemory integerObjectOf: statCompileFullBlockCount 
+]
+
+{ #category : #statistics }
+Cogit >> getBlockCompilationMSecs [
+
+	<api>
+	^ objectMemory integerObjectOf: statCompileFullBlockUsecs  + 500 // 1000
+]
+
 { #category : #accessing }
 Cogit >> getCFramePointer [
 	<api>
@@ -8286,6 +8324,18 @@ Cogit >> getLiteral: litIndex [
 	maxLitIndex < litIndex ifTrue:
 		[maxLitIndex := litIndex].
 	^coInterpreter literal: litIndex ofMethod: methodObj
+]
+
+{ #category : #statistics }
+Cogit >> getMethodCompilationCount [
+	<api>
+	^ objectMemory integerObjectOf: statCompileMethodCount 
+]
+
+{ #category : #statistics }
+Cogit >> getMethodCompilationMSecs [
+	<api>
+	^ objectMemory integerObjectOf: statCompileMethodUsecs  + 500 // 1000
 ]
 
 { #category : #accessing }
@@ -8564,6 +8614,11 @@ Cogit >> initialize [
 	cogBlockMethodSurrogateClass := wordSize = 4
 											ifTrue: [CogBlockMethodSurrogate32]
 											ifFalse: [CogBlockMethodSurrogate64].
+	
+	statCompileFullBlockCount := 0.
+	statCompileFullBlockUsecs := 0.
+	statCompileMethodCount := 0.
+	statCompileMethodUsecs := 0.
 ]
 
 { #category : #initialization }

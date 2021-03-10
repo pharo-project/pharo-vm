@@ -1800,8 +1800,11 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: arg [
 			[71] ->	[^self integerObjectOf: (self cCode: 'VM_PROXY_MINOR' inSmalltalk: [self class vmProxyMinorVersion])].
 			[72] ->	[^objectMemory integerObjectOf: objectMemory statMarkUsecs + 500 // 1000].
 			[73] ->	[^objectMemory integerObjectOf: objectMemory statSweepUsecs + 500 // 1000].
-			[74] ->	[^objectMemory hasSpurMemoryManagerAPI ifTrue:
-						[objectMemory integerObjectOf: objectMemory statMaxAllocSegmentTime + 500 // 1000]] }
+			[74] ->	[^objectMemory hasSpurMemoryManagerAPI ifTrue: [objectMemory integerObjectOf: objectMemory statMaxAllocSegmentTime + 500 // 1000]].
+			[75] ->	[^self getMethodCompilationCount]. 
+			[76] ->	[^self getMethodCompilationMSecs]. 
+			[77] ->	[^self getBlockCompilationCount]. 
+			[78] ->	[^self getBlockCompilationMSecs] }
 		otherwise: [^nil]
 ]
 
@@ -4106,11 +4109,15 @@ StackInterpreterPrimitives >> primitiveVMParameter [
 		72 total milliseconds in full GCs Mark phase since startup (read-only)
 		73 total milliseconds in full GCs Sweep phase since startup (read-only, can be 0 depending on compactors)
 		74 maximum pause time due to segment allocation
+		75 number of JIT compiled methods since startup (read-only)
+		76 total milliseconds spent on JIT compiled methods since startup (read-only)
+		77 number of JIT compiled block since startup (read-only)
+		78 total milliseconds spent on JIT compiled block since startup (read-only)
 		
 	Note: Thanks to Ian Piumarta for this primitive."
 
 	| paramsArraySize index |
-	paramsArraySize := 74.
+	paramsArraySize := 78.
 	argumentCount = 0 ifTrue: [^self primitiveAllVMParameters: paramsArraySize].
 	argumentCount > 2 ifTrue: [^self primitiveFailFor: PrimErrBadNumArgs].
 	
