@@ -1,6 +1,9 @@
 Class {
 	#name : #VMSpurOldSpaceGarbageCollectorTest,
 	#superclass : #VMSpurInitializedOldSpaceTest,
+	#instVars : [
+		'objectStackLimit'
+	],
 	#category : #'VMMakerTests-MemoryTests'
 }
 
@@ -30,11 +33,31 @@ VMSpurOldSpaceGarbageCollectorTest >> assertObjectWereReclaimed: aBlock [
 	self assert: initialSpace - sizeOfObject equals: memory totalFreeListBytes
 ]
 
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> initializationOptions [
+
+	^ super initializationOptions , { 
+		#ObjStackPageSlots . objectStackLimit }
+]
+
 { #category : #testing }
 VMSpurOldSpaceGarbageCollectorTest >> isValidFirstBridge [
 
 	^ memory segmentManager
 		isValidSegmentBridge: (memory segmentManager bridgeAt: 0)
+]
+
+{ #category : #running }
+VMSpurOldSpaceGarbageCollectorTest >> runCaseManaged [ 
+
+	^ self runCase
+]
+
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> setUp [
+
+	objectStackLimit :=  10.
+	super setUp.
 ]
 
 { #category : #'tests-OldSpaceSize' }
@@ -63,9 +86,9 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectBiggerThanSizeOfFreeSpac
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSize [
 
 	| anObjectOop slotsNumber |
-	slotsNumber := memory totalFreeOldSpace / memory wordSize.
+	slotsNumber := memory totalFreeOldSpace - (objectHeaderSize * 2) / memory wordSize.
 	
-	anObjectOop := self newOldSpaceObjectWithSlots: slotsNumber - 2. "Big object have 2 wordSize of header"
+	anObjectOop := self newOldSpaceObjectWithSlots: slotsNumber. "Big object have 2 wordSize of header"
 
 	self assert: anObjectOop isNotNil
 ]
@@ -74,9 +97,9 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSize [
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSizeShouldBeZero [
 
 	| anObjectOop slotsNumber |
-	slotsNumber := memory totalFreeOldSpace / memory wordSize.
+	slotsNumber := memory totalFreeOldSpace - (objectHeaderSize * 2) / memory wordSize.
 	
-	anObjectOop := self newObjectWithSlots: slotsNumber - 2. "Big object have 2 wordSize of header"
+	anObjectOop := self newObjectWithSlots: slotsNumber. "Big object have 2 wordSize of header"
 	
 	self assert: memory totalFreeOldSpace equals: 0
 ]
@@ -146,7 +169,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableSho
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableShouldBeMoved [
 
 	| anObjectOop hash |
-	1000 timesRepeat: [ self newOldSpaceObjectWithSlots: 0 ].
+	1 timesRepeat: [ self newOldSpaceObjectWithSlots: 0 ].
 	
 	anObjectOop := self newOldSpaceObjectWithSlots: 0.
 
@@ -159,4 +182,120 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableSho
 	
 	self deny: anObjectOop equals: self keptObjectInVMVariable1.
 	self assertHashOf: self keptObjectInVMVariable1 equals: hash
+]
+
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testEphemeronOverflowUnscannedEphemeronQueue [
+
+	"This test Fires more ephemerons than those that fit in a single page of the mourn queue.
+	All ephemerons should be put in the mourn queue.
+	The mourn queue should grow with new pages to make them all fit.
+	Then we test we can extract all the objects from the queue"	
+
+	| ephemeronKey ephemeronContainer mourned numberJustOverLimit |
+	self createEphemeronClass.
+	ephemeronKey := self newZeroSizedObject.
+	ephemeronContainer := self newObjectWithSlots: 10.
+	numberJustOverLimit := 10.
+	1 to: numberJustOverLimit do: [ :i | | ephemeronObjectOop |
+		ephemeronObjectOop := self newEphemeronObject.
+		memory
+			storePointer: 0 "zero based"
+			ofObject: ephemeronObjectOop
+			withValue: ephemeronKey.
+		memory
+			storePointer: i - 1 "zero based"
+			ofObject: ephemeronContainer
+			withValue: ephemeronObjectOop
+	 ].
+	"Force object to not be collected by putting them in special variables"
+	self keepObjectInVMVariable1: ephemeronContainer.
+
+	self assert: memory validObjStacks.
+	memory unscannedEphemeronsQueueInitialSize: numberJustOverLimit - 1.
+	memory fullGC.
+
+	mourned := 0.
+	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
+	self
+		assert: mourned
+		equals: numberJustOverLimit
+]
+
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testMultiPageMournQueue [
+
+	"This test Fires more ephemerons than those that fit in a single page of the mourn queue.
+	All ephemerons should be put in the mourn queue.
+	The mourn queue should grow with new pages to make them all fit.
+	Then we test we can extract all the objects from the queue"	
+
+	| ephemeronKey ephemeronContainer mourned numberJustOverLimit |
+	self createEphemeronClass.
+	numberJustOverLimit := objectStackLimit + 1.
+
+	ephemeronKey := self newZeroSizedObject.
+	ephemeronContainer := self newObjectWithSlots: numberJustOverLimit.
+	1 to: numberJustOverLimit do: [ :i | | ephemeronObjectOop |
+		ephemeronObjectOop := self newEphemeronObject.
+		memory
+			storePointer: 0 "zero based"
+			ofObject: ephemeronObjectOop
+			withValue: ephemeronKey.
+		memory
+			storePointer: i - 1 "zero based"
+			ofObject: ephemeronContainer
+			withValue: ephemeronObjectOop
+	 ].
+	"Force object to not be collected by putting them in special variables"
+	self keepObjectInVMVariable1: ephemeronContainer.
+
+	self assert: memory validObjStacks.
+	memory fullGC.
+
+	mourned := 0.
+	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
+	self
+		assert: mourned
+		equals: numberJustOverLimit
+]
+
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testPageLimitMournQueue [
+
+	"This test Fires more ephemerons than those that fit in a single page of the mourn queue.
+	All ephemerons should be put in the mourn queue.
+	The mourn queue should grow with new pages to make them all fit.
+	Then we test we can extract all the objects from the queue"	
+
+	| ephemeronKey ephemeronContainer mourned objStackLimit numberJustBelowLimit |
+	self createEphemeronClass.
+	numberJustBelowLimit := objectStackLimit - 1.
+	
+	ephemeronKey := self newZeroSizedObject.
+	ephemeronContainer := self newObjectWithSlots: numberJustBelowLimit.
+	objStackLimit := numberJustBelowLimit.
+	1 to: objStackLimit do: [ :i | | ephemeronObjectOop |
+		ephemeronObjectOop := self newEphemeronObject.
+		memory
+			storePointer: 0 "zero based"
+			ofObject: ephemeronObjectOop
+			withValue: ephemeronKey.
+		memory
+			storePointer: i - 1 "zero based"
+			ofObject: ephemeronContainer
+			withValue: ephemeronObjectOop
+	 ].
+	"Force object to not be collected by putting them in special variables"
+	self keepObjectInVMVariable1: ephemeronContainer.
+
+	self assert: memory validObjStacks.
+	memory compactor recordMovements.
+	memory fullGC.
+
+	mourned := 0.
+	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
+	self
+		assert: mourned
+		equals: objStackLimit
 ]

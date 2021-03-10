@@ -61,7 +61,7 @@ DetailedInstructionPrinter >> print: instruction [
 		[stream nextPut: $-; nextPut: $>; print: next].
 	stream
 		nextPut: $);
-		cr;
+		newLine;
 		flush
 ]
 

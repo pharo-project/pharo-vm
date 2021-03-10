@@ -4,6 +4,8 @@
 #include "pharovm/pathUtilities.h"
 
 extern void setMaxStacksToPrint(sqInt anInteger);
+extern void setMaxOldSpaceSize(sqInt anInteger);
+extern void setDesiredCogCodeSize(sqInt anInteger);
 
 #if defined(__GNUC__) && ( defined(i386) || defined(__i386) || defined(__i386__)  \
 			|| defined(i486) || defined(__i486) || defined (__i486__) \
@@ -30,7 +32,9 @@ void mtfsfi(unsigned long long fpscr)
 static int loadPharoImage(const char* fileName);
 static void* runVMThread(void* p);
 static int runOnMainThread(VMParameters *parameters);
+#if PHARO_VM_IN_WORKER_THREAD
 static int runOnWorkerThread(VMParameters *parameters);
+#endif
 
 EXPORT(sqInt) runMainThreadWorker();
 
@@ -53,9 +57,21 @@ EXPORT(int) vm_init(VMParameters* parameters)
 
     ioInitTime();
 
+#if PHARO_VM_IN_WORKER_THREAD
     ioVMThread = ioCurrentOSThread();
+#endif
 	ioInitExternalSemaphores();
 	setMaxStacksToPrint(parameters->maxStackFramesToPrint);
+	setMaxOldSpaceSize(parameters->maxOldSpaceSize);
+
+	if(parameters->maxCodeSize > 0) {
+#ifndef COGVM
+		logError("StackVM does not accept maxCodeSize");
+#else
+		logInfo("Setting codeSize to: %ld", parameters->maxCodeSize);
+		setDesiredCogCodeSize(parameters->maxCodeSize);
+#endif
+	}
 
 	aioInit();
 
@@ -82,7 +98,7 @@ vm_main_with_parameters(VMParameters *parameters)
 
 	if(parameters->isDefaultImage && !parameters->defaultImageFound)
 	{
-		logError("No image has been specified, and no default image has been found.\n");
+		////logError("No image has been specified, and no default image has been found.\n");
 		vm_printUsageTo(stdout);
 		return 0;
 	}
@@ -124,20 +140,32 @@ vm_main_with_parameters(VMParameters *parameters)
 	LOG_SIZEOF(float);
 	LOG_SIZEOF(double);
 
+#if PHARO_VM_IN_WORKER_THREAD
     vmRunOnWorkerThread = vm_parameter_vector_has_element(&parameters->vmParameters, "--worker");
 
     return vmRunOnWorkerThread
         ? runOnWorkerThread(parameters)
         : runOnMainThread(parameters);
+#else
+	return runOnMainThread(parameters);
+#endif
 }
 
 EXPORT(int)
 vm_main(int argc, const char** argv, const char** env)
 {
-	VMParameters parameters = {};
+	VMParameters parameters;
+	parameters.vmParameters.count = 0;
+	parameters.vmParameters.parameters = NULL;
+	parameters.imageParameters.count = 0;
+	parameters.imageParameters.parameters = NULL;
+
 	parameters.processArgc = argc;
 	parameters.processArgv = argv;
 	parameters.environmentVector = env;
+	parameters.maxStackFramesToPrint = 0;
+	parameters.maxCodeSize = 0;
+	parameters.maxOldSpaceSize = 0;
 
 	// Did we succeed on parsing the parameters?
 	VMErrorCode error = vm_parameters_parse(argc, argv, &parameters);
@@ -151,7 +179,7 @@ vm_main(int argc, const char** argv, const char** env)
 	if(parameters.isInteractiveSession && parameters.isDefaultImage && !parameters.defaultImageFound &&
 		!vm_file_dialog_is_nop())
 	{
-		VMFileDialog fileDialog = {};
+		VMFileDialog fileDialog;
 		fileDialog.title = "Select Pharo Image to Open";
 		fileDialog.message = "Choose an image file to execute";
 		fileDialog.filterDescription = "Pharo Images (*.image)";
@@ -169,7 +197,6 @@ vm_main(int argc, const char** argv, const char** env)
 		parameters.isDefaultImage = false;
 		vm_file_dialog_destroy(&fileDialog);
 	}
-
 	int exitCode = vm_main_with_parameters(&parameters);
 	vm_parameters_destroy(&parameters);
 	return exitCode;
@@ -231,6 +258,7 @@ runOnMainThread(VMParameters *parameters)
     return 0;
 }
 
+#if PHARO_VM_IN_WORKER_THREAD
 static int
 runOnWorkerThread(VMParameters *parameters)
 {
@@ -265,3 +293,4 @@ runOnWorkerThread(VMParameters *parameters)
 
     return runMainThreadWorker();
 }
+#endif // PHARO_VM_IN_WORKER_THREAD

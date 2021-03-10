@@ -129,7 +129,7 @@ CogARMv8Compiler class >> filteredInstVarNames [
 { #category : #translation }
 CogARMv8Compiler class >> identifyingPredefinedMacros [
 
-	^#('__aarch64__')
+	^#('__aarch64__' '_M_ARM64')
 ]
 
 { #category : #'class initialization' }
@@ -3648,13 +3648,6 @@ VLDR.64 ARM_ARM v7 DDI10406 pp. A8-622-3"
 	^(((2r11101101000100000000101100000000 bitOr:(srcReg <<16)) bitOr: destReg<<12) bitOr: u<<23) bitOr: immediate8bitValue
 ]
 
-{ #category : #'inline cacheing' }
-CogARMv8Compiler >> flushICacheFrom: startAddress "<Integer>" to: endAddress [ "<Integer>"
-	<cmacro: '(me,startAddress,endAddress) __clear_cache((char*) startAddress, (char*) (endAddress ))'>
-	"On ARM we almost certainly need to flush and wash hands. On linux we use __clear_cache (see http://community.arm.com/groups/processors/blog/2010/02/17/caches-and-self-modifying-code for a decent example) and remember that the end address is *exclusive* so we can just use the end address passed in since it is always the byte after the actual last one needing flushing"
-	self halt: #ceFlushICache
-]
-
 { #category : #'ARM convenience instructions' }
 CogARMv8Compiler >> fmsrFrom: regA to: regB [
 "FMSR or VMOV instruction to move a value from an ARM reg to an fpu double register ready for conversion
@@ -5100,7 +5093,7 @@ CogARMv8Compiler >> outputMachineCodeAt: targetAddress [
 	<inline: true>
 	0 to: machineCodeSize - 1 by: 4 do:
 		[:j|
-		objectMemory long32At: targetAddress + j put: (machineCode at: j // 4)]
+		objectMemory memoryManager unsignedLong32At: targetAddress + j put: (machineCode at: j // 4)]
 ]
 
 { #category : #'generate machine code' }

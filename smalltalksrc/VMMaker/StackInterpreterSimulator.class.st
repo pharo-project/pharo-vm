@@ -120,7 +120,7 @@ StackInterpreterSimulator >> allObjectsSelect: objBlock [
 
 	| selected |
 	selected := OrderedCollection new.
-	objectMemory allObjectsDoSafely:
+	objectMemory allObjectsDo:
 		[:obj|
 		(objBlock value: obj) ifTrue: [selected addLast: obj]].
 	^selected
@@ -181,7 +181,6 @@ StackInterpreterSimulator >> basicInitialize [
 	self assert: ConstMinusOne = (objectMemory integerObjectOf: -1).
 
 	methodCache := Array new: MethodCacheSize.
-	nsMethodCache := Array new: NSMethodCacheSize.
 	atCache := Array new: AtCacheTotalSize.
 	self flushMethodCache.
 	gcSemaphoreIndex := 0.
@@ -398,6 +397,19 @@ StackInterpreterSimulator >> cloneSimulationWindow [
 { #category : #initialization }
 StackInterpreterSimulator >> close [  "close any files that ST may have opened, etc"
 	pluginList do: [:assoc| | plugin | plugin := assoc value. plugin ~~ self ifTrue: [plugin close]]
+]
+
+{ #category : #'primitive support' }
+StackInterpreterSimulator >> codeGeneratorToComputeAccessorDepth [
+
+	^ codeGeneratorToComputeAccessorDepth ifNil: [
+		^(VMMaker new
+			vmmakerConfiguration: VMMakerConfiguration;
+			buildCodeGeneratorForInterpreter: self class primitivesClass
+			includeAPIMethods: false
+			initializeClasses: false)
+				logger: self transcript;
+				yourself ]
 ]
 
 { #category : #'simulation only' }
@@ -919,6 +931,23 @@ StackInterpreterSimulator >> interpret [
 	^nil
 ]
 
+{ #category : #'as yet unclassified' }
+StackInterpreterSimulator >> interpretUntilReturn [
+	self shouldBeImplemented.
+]
+
+{ #category : #'as yet unclassified' }
+StackInterpreterSimulator >> interpretWhile: aFullBlockClosure [ 
+	self internalizeIPandSP.
+	self fetchNextBytecode.
+	[aFullBlockClosure value] whileTrue:
+		[self dispatchOn: currentBytecode in: BytecodeTable.
+		 self incrementByteCount].
+	localIP := localIP - 1.
+	"undo the pre-increment of IP before returning"
+	self externalizeIPandSP
+]
+
 { #category : #'stack pages' }
 StackInterpreterSimulator >> interpreterAllocationReserveBytes [
 	^bootstrapping
@@ -1225,19 +1254,6 @@ StackInterpreterSimulator >> isPrimitiveFunctionPointerAnIndex [
 { #category : #testing }
 StackInterpreterSimulator >> isThreadedVM [
 	^false
-]
-
-{ #category : #'frame access' }
-StackInterpreterSimulator >> isWidowedContext: aOnceMarriedContext [
-	"See if the argument is connected with a live frame or not.
-	 If it is not, turn it into a bereaved single context."
-	(stackPages isFree: stackPage) ifFalse: "in baseReturn the active page has been freed."
-		[((stackPages somePageHasHeadFrameFP: framePointer)
-		  or: [(stackPages somePageHasHeadFrameFP: localFP)
-		  or: [stackPages allPagesFree]]) ifFalse:
-			[thisContext sender sender method = (StackInterpreter >> #baseFrameReturn) ifFalse:
-				[self halt: 'currentFP may not be written back to stack page']]].
-	^super isWidowedContext: aOnceMarriedContext
 ]
 
 { #category : #'compiled methods' }
@@ -1602,8 +1618,7 @@ StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
 	systemAttributes at: 1 put: fileName; at: 2 put: nil.
 
 	["begin ensure block..."
-	imageName := f fullName.
-	f binary.
+	imageName := fileName asFileReference fullName.
 
 	version := self getWord32FromFile: f swap: false.  "current version: 16r1968 (=6504) vive la revolucion!"
 	(self readableFormat: version)
@@ -1815,32 +1830,6 @@ StackInterpreterSimulator >> primitiveIdentityHash [
 	^super primitiveIdentityHash
 ]
 
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> primitiveKbdNext [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdNext]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> primitiveKbdPeek [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdPeek]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> primitiveMouseButtons [
-	| buttons |
-	self pop: 1.
-	buttons := Sensor primMouseButtons.
-	self pushInteger: buttons
-]
-
 { #category : #'debugging traps' }
 StackInterpreterSimulator >> primitiveNewWithArg [
 	"(objectMemory hasSpurMemoryManagerAPI
@@ -1964,7 +1953,7 @@ StackInterpreterSimulator >> printChar: aByte [
 StackInterpreterSimulator >> printCurrentBytecodeOn: aStream [
 	| code |
 	code := currentBytecode radix: 16.
-	aStream ensureCr; print: localIP - method - 3; tab.
+	aStream newLine; print: localIP - method - 3; tab.
 	bytecodeSetSelector > 0 ifTrue:
 		[aStream nextPutAll: 'ALT '].
 	aStream
@@ -2293,13 +2282,13 @@ StackInterpreterSimulator >> setDisplayForm: aForm [
 
 { #category : #'debug printing' }
 StackInterpreterSimulator >> shortPrintContext: aContext [
-	transcript ensureCr.
+	transcript newLine.
 	^super shortPrintContext: aContext
 ]
 
 { #category : #'debug printing' }
 StackInterpreterSimulator >> shortPrintFrame: theFP [
-	self transcript ensureCr.
+	self transcript newLine.
 	^super shortPrintFrame: theFP
 ]
 

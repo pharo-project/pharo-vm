@@ -619,7 +619,8 @@ Class {
 		'statScavenges',
 		'statShrinkMemory',
 		'statAllocatedBytes',
-		'statMaxAllocSegmentTime'
+		'statMaxAllocSegmentTime',
+		'unscannedEphemeronsQueueInitialSize'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -720,6 +721,7 @@ SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
 	aCCodeGenerator
 		var: #freeListsMask type: #usqInt;
 		var: #freeLists type: #'sqInt *';
+		var: #unscannedEphemeronsQueueInitialSize declareC: 'int unscannedEphemeronsQueueInitialSize = 10000; /* 10k ephemerons by default */';
 		var: #objStackInvalidBecause type: #'char *';
 		var: #unscannedEphemerons type: #SpurContiguousObjStack;
 		var: #heapGrowthToSizeGCRatio type: #float;
@@ -820,7 +822,7 @@ SpurMemoryManager class >> identifySignedComparisonsFor: options in: selectors n
 								ifNotNil: [:t| (cg isIntegralCType: t) and: [t first ~= $u]]])
 				 and: [noise noneSatisfy: [:n| n match: node printString]]]]) ifTrue:
 					[halt ifTrue: [self halt: node printString].
-					 Transcript ensureCr; nextPutAll: sel; space; print: node; flush]]]]
+					 Transcript newLine; nextPutAll: sel; space; print: node; flush]]]]
 ]
 
 { #category : #translation }
@@ -856,13 +858,15 @@ SpurMemoryManager class >> initialize [
 	 in GC and it's good to keep their memory around.  So unused pages
 	 created by popping emptied pages are kept on the ObjStackFreex list.
 	 ObjStackNextx must be the last field for swizzleObjStackAt:."
-	ObjStackPageSlots := 4092. "+ double header = 16k bytes per page in 32-bits"
 	ObjStackTopx := 0.
 	ObjStackMyx := 1.
 	ObjStackFreex := 2.
 	ObjStackNextx := 3.
 	ObjStackFixedSlots := 4.
+	ObjStackPageSlots := InitializationOptions
+		at: #ObjStackPageSlots ifAbsent: [4092]. "+ double header = 16k bytes per page in 32-bits"
 	ObjStackLimit := ObjStackPageSlots - ObjStackFixedSlots.
+
 	"The hiddenHootsObject contains the classTable pages and up to 8 additional objects.
 	 Currently we use four; the three objStacks, the mark stack, the weaklings and the
 	 mourn queue, and the rememberedSet."
@@ -989,9 +993,6 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	SelectorUnknownBytecode := 57.
 	SelectorCounterTripped := 58.
 	SelectorSistaTrap := 59.
-	
-	LowcodeContextMark := 60.
-	LowcodeNativeContextClass := 61.
 ]
 
 { #category : #'class initialization' }
@@ -1681,12 +1682,6 @@ SpurMemoryManager >> allObjectsDo: aBlock [
 	self allOldSpaceObjectsDo: aBlock
 ]
 
-{ #category : #'object enumeration' }
-SpurMemoryManager >> allObjectsDoSafely: aBlock [
-	<inline: true>
-	self allObjectsDo: aBlock
-]
-
 { #category : #'free space' }
 SpurMemoryManager >> allObjectsInFreeTree: freeNode do: aBlock [
 	| listNode |
@@ -1960,19 +1955,16 @@ SpurMemoryManager >> allocateLargestFreeChunk [
 { #category : #testing }
 SpurMemoryManager >> allocateMemoryOfSize: memoryBytes [
 	<doNotGenerate>
-	| bytesPerElement |
-	bytesPerElement := (self memoryClass basicNew: 0) bytesPerElement.
-	memory := self memoryClass new: memoryBytes + bytesPerElement - 1 // bytesPerElement
-	
+
+	1halt.
+	^ self allocate: memoryBytes
 ]
 
 { #category : #testing }
 SpurMemoryManager >> allocateMemoryOfSize: memoryBytes initialAddress: initialAddress [
 	<doNotGenerate>
-	| bytesPerElement |
-	bytesPerElement := (self memoryClass basicNew: 0) bytesPerElement.
-	memory := self memoryClass new: memoryBytes + bytesPerElement - 1 // bytesPerElement.
-	memory initialAddress: initialAddress
+
+	^ memoryManager allocate: memoryBytes
 ]
 
 { #category : #'spur bootstrap' }
@@ -2013,28 +2005,39 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 { #category : #asd }
 SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceBytes stackSize: stackBytes codeSize: codeBytes methodCacheSize: methodCacheSize primitiveTraceLogSize: primitiveLogSize rumpCStackSize: rumpCStackSize initialAddress: initialAddress [
 
-		"Intialize the receiver for bootsraping an image.
+	"Intialize the receiver for bootsraping an image.
 	 Set up a large oldSpace and an empty newSpace and set-up freeStart and scavengeThreshold
 	 to allocate in oldSpace.  Later on (in initializePostBootstrap) freeStart and scavengeThreshold
 	 will be set to sane values."
+
 	<doNotGenerate>
-	self assert: (memoryBytes \\ self allocationUnit = 0
-				and: [newSpaceBytes \\ self allocationUnit = 0
-				and: [codeBytes \\ self allocationUnit = 0
-				and: [initialAddress \\ self allocationUnit = 0 ]]]).
-	self allocateMemoryOfSize: memoryBytes + newSpaceBytes + codeBytes + stackBytes + methodCacheSize + primitiveLogSize + rumpCStackSize initialAddress: initialAddress.
-	newSpaceStart := initialAddress + codeBytes + stackBytes + methodCacheSize + primitiveLogSize + rumpCStackSize.
-	endOfMemory := freeOldSpaceStart := initialAddress + memoryBytes + newSpaceBytes + codeBytes + stackBytes + methodCacheSize + primitiveLogSize + rumpCStackSize.
+	| allocatedMemory newSpaceStartOffset |
+	self assert: (memoryBytes \\ self allocationUnit = 0 and: [ 
+			 newSpaceBytes \\ self allocationUnit = 0 and: [ 
+				 codeBytes \\ self allocationUnit = 0 and: [ 
+					 initialAddress \\ self allocationUnit = 0 ] ] ]).
+	newSpaceStartOffset := codeBytes + stackBytes
+	                 + methodCacheSize + primitiveLogSize
+	                 + rumpCStackSize.
+	allocatedMemory := newSpaceStartOffset + newSpaceBytes + memoryBytes.
+	memory := self
+		allocateMemoryOfSize: allocatedMemory
+		initialAddress: initialAddress.
+	newSpaceStart := initialAddress + newSpaceStartOffset.
+	endOfMemory := freeOldSpaceStart := initialAddress + allocatedMemory.
 	"leave newSpace empty for the bootstrap"
 	freeStart := newSpaceBytes + newSpaceStart.
 	oldSpaceStart := newSpaceLimit := newSpaceBytes + newSpaceStart.
-	scavengeThreshold := memory size * memory bytesPerElement. "i.e. /don't/ scavenge."
+	scavengeThreshold := allocatedMemory. "i.e. /don't/ scavenge."
 	scavenger := SpurGenerationScavenger simulatorClass new.
 	scavenger manager: self.
-	scavenger newSpaceStart: newSpaceStart
-				newSpaceBytes: newSpaceBytes
-				survivorBytes: newSpaceBytes // self scavengerDenominator.
-	compactor := self class compactorClass simulatorClass new manager: self; yourself
+	scavenger
+		newSpaceStart: newSpaceStart
+		newSpaceBytes: newSpaceBytes
+		survivorBytes: newSpaceBytes // self scavengerDenominator.
+	compactor := self class compactorClass simulatorClass new
+		             manager: self;
+		             yourself
 ]
 
 { #category : #allocation }
@@ -4151,8 +4154,15 @@ SpurMemoryManager >> containsOnlyValidBecomeObjects: array1 and: array2 twoWay: 
 				[(copyHash and: [(self isImmediate: oop2) or: [self isImmutable: oop2]]) ifTrue:
 					[^PrimErrInappropriate]].
 		 fieldOffset := fieldOffset - self bytesPerOop].
-	size >= (totalFreeOldSpace + (scavengeThreshold - freeStart)) ifTrue:
+	
+	"We are going to try to put all objects in the largets free chunk of the old space.
+	If this is true we are sure we can fit them. If it is not true, maybe they fit. But as the primitive cannot
+	abort later, it is needed to take a decision now. A better suggestion can improve the implementation.
+	This will fail, and produce a grow requested by the image (with a compaction) and later retry."
+	
+	size >= self sizeOfLargestFreeChunk ifTrue:
 		[^PrimErrNoMemory].
+
 	"only set flags after checking all args."
 	becomeEffectsFlags := effectsFlags.
 	^0
@@ -4162,7 +4172,7 @@ SpurMemoryManager >> containsOnlyValidBecomeObjects: array1 and: array2 twoWay: 
 SpurMemoryManager >> convertToArray [
 	<doNotGenerate>
 	"I dont believe it -- this *just works*"
-
+1halt.
 	memory:= memory as: Array
 ]
 
@@ -4370,7 +4380,9 @@ SpurMemoryManager >> doBecome: obj1 and: obj2 copyHash: copyHashFlag [
 	 and: [o2ClassIndex = 0]]) ifTrue:
 		[self inPlaceBecome: obj1 and: obj2 copyHashFlag: copyHashFlag.
 		 ^self].
+
 	self outOfPlaceBecome: obj1 and: obj2 copyHashFlag: copyHashFlag.
+
 	"if copyHashFlag then nothing changes, since hashes were also swapped."
 	copyHashFlag ifTrue:
 		[^self].
@@ -4847,9 +4859,21 @@ SpurMemoryManager >> fetchByte: byteIndex ofObject: objOop [
 
 { #category : #'object access' }
 SpurMemoryManager >> fetchClassOf: oop [
+	"In 64 bits the tagBits are fixed and never used for anything else.
+	Applying the tag has 3 different values
+	If the tagBits are 001, the oop is a SmallInteger.
+	If the tagBits are 010, the oop is a Character.
+	If the tagBits are 101, the oop is a SmallFloat.
+	Otherwise it's tagBits are 000, the oop is an address and we fetch the class from the header
+	
+	In 32 bits, the tagBits are variable.
+	If the tagBits are X1, the oop is a SmallInteger, and using the tagMask will return 1 or 3.
+	Therefore the SmallInteger class is installed in both indexes 1 and 3.
+	If the tagBits are 10, the oop is a character and the class is installed in index 2.
+	Otherwise the last tagBits are 00, which is an address so we fetch the class from the header."
 	| tagBits |
 	^(tagBits := oop bitAnd: self tagMask) ~= 0
-		ifTrue: [self fetchPointer: tagBits ofObject: classTableFirstPage]
+		ifTrue: [	self fetchPointer: tagBits ofObject: classTableFirstPage]
 		ifFalse: [self fetchClassOfNonImm: oop]
 ]
 
@@ -5734,6 +5758,13 @@ SpurMemoryManager >> freeTreeOverlapCheck [
 					self assert: (start1 > end2 or: [start1 < start2])]]].
 ]
 
+{ #category : #'gc - global' }
+SpurMemoryManager >> freeUnscannedEphemerons [
+	"Free all the memory allocated to keep the unscanned ephemerons"
+	
+	self free: unscannedEphemerons start
+]
+
 { #category : #'simulation only' }
 SpurMemoryManager >> fullDisplayUpdate [
 	"hack around the CoInterpreter/ObjectMemory split refactoring"
@@ -5787,6 +5818,14 @@ SpurMemoryManager >> getHeapGrowthToSizeGCRatio [
 	^heapGrowthToSizeGCRatio
 ]
 
+{ #category : #accessing }
+SpurMemoryManager >> getMaxOldSpaceSize [
+	<api>
+
+	^ maxOldSpaceSize
+
+]
+
 { #category : #'simulation only' }
 SpurMemoryManager >> getStackPointer [
 	"hack around the CoInterpreter/ObjectMemory split refactoring"
@@ -5820,7 +5859,6 @@ SpurMemoryManager >> globalGarbageCollect [
 	self runLeakCheckerFor: GCModeFull
 		excludeUnmarkedObjs: true
 		classIndicesShouldBeValid: true.
-
 	compactionStartUsecs := coInterpreter ioUTCMicrosecondsNow.
 	segmentManager prepareForGlobalSweep. "for notePinned:"
 	compactor compact.
@@ -6316,6 +6354,18 @@ SpurMemoryManager >> indexOf: anElement in: anObject [
 	^-1
 ]
 
+{ #category : #'obj stacks' }
+SpurMemoryManager >> indexOfObjStack: objStack [
+	
+	^ self fetchPointer: ObjStackMyx ofObject: objStack
+]
+
+{ #category : #'obj stacks' }
+SpurMemoryManager >> indexOfObjStack: objStack put: aValue [
+	
+	^ self storePointerUnchecked: ObjStackMyx ofObject: objStack withValue: aValue
+]
+
 { #category : #'header formats' }
 SpurMemoryManager >> indexablePointersFormat [
 	<api>
@@ -6404,6 +6454,7 @@ SpurMemoryManager >> initialize [
 
 	"We can initialize things that are allocated but are lazily initialized."
 	unscannedEphemerons := SpurContiguousObjStack new.
+	unscannedEphemeronsQueueInitialSize := 10000. "10k by default"
 
 	"we can initialize things that are virtual in C."
 	scavenger := SpurGenerationScavenger simulatorClass new manager: self; yourself.
@@ -6594,21 +6645,13 @@ SpurMemoryManager >> initializeUnscannedEphemerons [
 	"Initialize unscannedEphemerons to use the largest free chunk
 	 or unused eden space, which ever is the larger."
 	
-	| largestFree sizeOfUnusedEden |
-	largestFree := self findLargestFreeChunk.
-	sizeOfUnusedEden := scavenger eden limit - freeStart.
-	(largestFree notNil
-	 and: [(self numSlotsOfAny: largestFree) > (sizeOfUnusedEden / self wordSize)])
-		ifTrue:
-			[unscannedEphemerons
-				start: largestFree
-					+ self baseHeaderSize
-					+ (self freeChunkLargerIndex + 1 * self wordSize);
-				limit: (self addressAfter: largestFree)]
-		ifFalse:
-			[unscannedEphemerons
-				start: freeStart;
-				limit: scavenger eden limit].
+	| allocation |
+	"Allocate initially space for 10K ephemerons"
+	allocation := (self calloc: (self sizeof: #'void *') _: unscannedEphemeronsQueueInitialSize).
+	allocation ifNil: [ self error: 'Cannot allocate space for unscanned ephemerons' ].
+	unscannedEphemerons
+				start: allocation asInteger;
+				limit: allocation asInteger + ((self sizeof: #'void *') * unscannedEphemeronsQueueInitialSize).
 	unscannedEphemerons top: unscannedEphemerons start
 ]
 
@@ -8668,6 +8711,7 @@ SpurMemoryManager >> markObjects: objectsShouldBeUnmarkedAndUnmarkedClassesShoul
 	self markAccessibleObjectsAndFireEphemerons.
 	self expungeDuplicateAndUnmarkedClasses: objectsShouldBeUnmarkedAndUnmarkedClassesShouldBeExpunged.
 	self nilUnmarkedWeaklingSlots.
+	self freeUnscannedEphemerons.
 	marking := false
 ]
 
@@ -8816,33 +8860,25 @@ SpurMemoryManager >> memmove: destAddress _: sourceAddress _: bytes [
 	dst := destAddress asInteger.
 	src := sourceAddress asInteger.
 	self assert: bytes \\ 8 + (dst \\ 8) + (src \\ 8) = 0.
-	memory bytesPerElement = 8
-		ifTrue:
-			[destAddress > sourceAddress
-				ifTrue:
-					[bytes - 8 to: 0 by: -8 do:
-						[:i| self long64At: dst + i put: (self long64At: src + i)]]
-				ifFalse:
-					[0 to: bytes - 8 by: 8 do:
-						[:i| self long64At: dst + i put: (self long64At: src + i)]]]
-		ifFalse:
-			[destAddress > sourceAddress
+	destAddress > sourceAddress
 				ifTrue:
 					[bytes - 4 to: 0 by: -4 do:
 						[:i| self long32At: dst + i put: (self long32At: src + i)]]
 				ifFalse:
 					[0 to: bytes - 4 by: 4 do:
-						[:i| self long32At: dst + i put: (self long32At: src + i)]]]
+						[:i| self long32At: dst + i put: (self long32At: src + i)]]
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> memory [
 	<cmacro: '() GIV(memory)'>
+	1halt.
 	^memory
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> memory: aValue [
+	1halt.
 	^memory := aValue
 ]
 
@@ -9064,7 +9100,7 @@ SpurMemoryManager >> newExternalAddressWithValue: aPointer [
 		       indexableSize: (self sizeof: #'void*').
 
 	ptr := self cCoerce: (self firstIndexableField: oop) to: #'void **'.
-	ptr at: 0 put: aPointer.
+	ptr at: 0 put: aPointer asIntegerPtr.
 	^ oop
 ]
 
@@ -9655,6 +9691,27 @@ SpurMemoryManager >> objStack: objStack from: start do: aBlock [
 	^size
 ]
 
+{ #category : #'obj stacks' }
+SpurMemoryManager >> objStack: objStack pagesDo: aBlock [
+	"Evaluate aBinaryBlock with all indices and pages of elements in objStack"
+	<inline: true>
+	| objStackPage |
+	objStack = nilObj ifTrue:
+		[^self].
+	self eassert: [self isValidObjStack: objStack].
+	objStackPage := objStack.
+	[objStackPage ~= 0] whileTrue: [
+		aBlock value: objStackPage.
+		objStackPage := self fetchPointer: ObjStackNextx ofObject: objStackPage ]
+]
+
+{ #category : #'obj stacks' }
+SpurMemoryManager >> objStackAt: objStackRootIndex [
+	"Return the object stack stored at index objStackRootIndex in the root class table"
+	
+	^ self fetchPointer: objStackRootIndex ofObject: hiddenRootsObj
+]
+
 { #category : #'object enumeration' }
 SpurMemoryManager >> objectAfter: objOop [
 	<api>
@@ -9715,6 +9772,13 @@ SpurMemoryManager >> objectBytesForSlots: numSlots [
 SpurMemoryManager >> objectMemory [
 	<doNotGenerate>
 	^self
+]
+
+{ #category : #'obj stacks' }
+SpurMemoryManager >> objectStackPageLimit [
+	<doNotGenerate>
+	"Return the limit of elements that can be pushed in a page of an object stack"
+	^ ObjStackLimit
 ]
 
 { #category : #'object enumeration' }
@@ -9916,9 +9980,15 @@ SpurMemoryManager >> outOfPlaceBecome: obj1 and: obj2 copyHashFlag: copyHashFlag
 	clone1 := (self isContextNonImm: obj1)
 				ifTrue: [coInterpreter cloneContext: obj1]
 				ifFalse: [self clone: obj1].
+	
+	clone1 ifNil: [ self error: 'Not enough space to copy the objects in two-way become. This should have been detected before'. ^ self].	
+			
 	clone2 := (self isContextNonImm: obj2)
 				ifTrue: [coInterpreter cloneContext: obj2]
-				ifFalse: [self clone: obj2].
+				ifFalse: [self clone: obj2].	
+
+	clone2 ifNil: [ self error: 'Not enough space to copy the objects in two-way become. This should have been detected before'.^ self ].	
+			
 	(self isObjImmutable: obj1) ifTrue:
 		[self setIsImmutableOf: clone1 to: true].
 	(self isObjImmutable: obj2) ifTrue:
@@ -9936,6 +10006,12 @@ SpurMemoryManager >> outOfPlaceBecome: obj1 and: obj2 copyHashFlag: copyHashFlag
 	((self isYoungObject: obj1) ~= (self isYoungObject: clone2)
 	 or: [(self isYoungObject: obj2) ~= (self isYoungObject: clone1)]) ifTrue:
 		[becomeEffectsFlags := becomeEffectsFlags bitOr: OldBecameNewFlag]
+]
+
+{ #category : #accessing }
+SpurMemoryManager >> outerContextOf: aBlockClosureOop [
+
+	^ self fetchPointer: ClosureOuterContextIndex ofObject: aBlockClosureOop
 ]
 
 { #category : #'simulation only' }
@@ -10805,8 +10881,17 @@ SpurMemoryManager >> pushOnUnscannedEphemeronsStack: anEphemeron [
 	 ephemeron as strong in this GC cycle."
 	<inline: false>
 	self assert: (self isEphemeron: anEphemeron).
-	unscannedEphemerons top >= unscannedEphemerons limit ifTrue:
-		[^false].
+	unscannedEphemerons top >= unscannedEphemerons limit ifTrue: [ | desiredSize reallocated |
+		"Reallocate and duplication"
+		desiredSize := (unscannedEphemerons limit - unscannedEphemerons start) * 2.
+		reallocated := self
+			realloc: unscannedEphemerons start
+			_: desiredSize.
+		reallocated ifNil: [ self error: 'Not enough room to grow unscannedEphemerons queue' ].
+		unscannedEphemerons limit: reallocated + desiredSize.
+		unscannedEphemerons top: reallocated + (unscannedEphemerons top - unscannedEphemerons start).
+		unscannedEphemerons start: reallocated ].
+
 	self longAt: unscannedEphemerons top put: anEphemeron.
 	unscannedEphemerons top: unscannedEphemerons top + self bytesPerOop.
 	^true
@@ -11008,7 +11093,8 @@ SpurMemoryManager >> relocateObjStackForPlanningCompactor: objStack [
 			from: ObjStackFreex
 			to: ObjStackFreex.
 		 freeList := next].
-	^relocated
+	
+	^ result
 ]
 
 { #category : #compaction }
@@ -11579,6 +11665,7 @@ SpurMemoryManager >> setLastSegment: segInfo [
 
 { #category : #accessing }
 SpurMemoryManager >> setMaxOldSpaceSize: limit [
+	<api>
 	<var: #limit type: #usqInt>
 	maxOldSpaceSize := limit.
 	^0
@@ -11942,6 +12029,7 @@ SpurMemoryManager >> sqAllocateMemorySegmentOfSize: segmentSize Above: minAddres
 	 depending on the number of segments.
 	 The delta will be the distance between segments to be bridged."
 	| delta newMemory start |
+	1halt.
 	self assert: segmentSize \\ memory bytesPerElement = 0.
 	delta := segmentManager numSegments odd ifTrue: [1024 * 1024] ifFalse: [0].
 	"A previous shrink may have freed up memory.  Don't bother to grow if there's already room.
@@ -12700,6 +12788,18 @@ SpurMemoryManager >> thirtyTwoBitLongsClassIndexPun [
 ]
 
 { #category : #'obj stacks' }
+SpurMemoryManager >> topIndexOfObjStack: objStack [
+	
+	^ self fetchPointer: ObjStackTopx ofObject: objStack
+]
+
+{ #category : #'obj stacks' }
+SpurMemoryManager >> topIndexOfObjStack: objStack put: aValue [
+	
+	^ self storePointerUnchecked: ObjStackTopx ofObject: objStack withValue: aValue
+]
+
+{ #category : #'obj stacks' }
 SpurMemoryManager >> topOfObjStack: objStack [
 	| topx |
 	"This assert is tricky.  push:onObjStack: may call topOfObjStack: just after pushing an
@@ -13123,6 +13223,12 @@ SpurMemoryManager >> unpinObject: objOop [
 	^0
 ]
 
+{ #category : #accessing }
+SpurMemoryManager >> unscannedEphemeronsQueueInitialSize: anInteger [ 
+	
+	unscannedEphemeronsQueueInitialSize := anInteger
+]
+
 { #category : #initialization }
 SpurMemoryManager >> updateFreeLists [
 	"Snapshot did not guarantee the state of the freelist prevLink, so we need to update it.
@@ -13400,6 +13506,7 @@ SpurMemoryManager >> wordSizeClassIndexPun [
 { #category : #simulation }
 SpurMemoryManager >> writeEnableMemory [
 	<doNotGenerate>
+	1halt.
 	memory class == ReadOnlyArrayWrapper ifTrue:
 		[memory := memory array]
 ]
@@ -13413,6 +13520,7 @@ SpurMemoryManager >> writeImageSegmentsToFile: aBinaryStream [
 { #category : #simulation }
 SpurMemoryManager >> writeProtectMemory [
 	<doNotGenerate>
+	1halt.
 	memory class ~~ ReadOnlyArrayWrapper ifTrue:
 		[memory := ReadOnlyArrayWrapper around: memory]
 ]

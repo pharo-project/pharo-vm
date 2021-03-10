@@ -25,6 +25,8 @@ Class {
 		'DisownVMLockOutFullGC',
 		'DoAssertionChecks',
 		'DoExpensiveAssertionChecks',
+		'FEATURE_FFI',
+		'FEATURE_THREADED_FFI',
 		'GCCheckPrimCall',
 		'GCModeBecome',
 		'GCModeFreeSpace',
@@ -35,7 +37,6 @@ Class {
 		'HashMultiplyConstant',
 		'HashMultiplyMask',
 		'IMMUTABILITY',
-		'LowcodeVM',
 		'MULTIPLEBYTECODESETS',
 		'NewspeakVM',
 		'PharoVM',
@@ -122,7 +123,10 @@ VMBasicConstants class >> namesDefinedAtCompileTime [
 		__osf__
 		UNIX
 		WIN32 _WIN32 _WIN32_WCE
-		WIN64 _WIN64 _WIN64_WCE)
+		WIN64 _WIN64 _WIN64_WCE
+		
+		FEATURE_FFI
+		FEATURE_THREADED_FFI)
 ]
 
 { #category : #'C translation' }

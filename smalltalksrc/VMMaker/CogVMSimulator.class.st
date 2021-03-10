@@ -79,7 +79,8 @@ Class {
 		'expectedSends',
 		'expecting',
 		'bootstrapping',
-		'primitiveFailCount'
+		'primitiveFailCount',
+		'primitiveFlags'
 	],
 	#classVars : [
 		'ByteCountsPerMicrosecond',
@@ -173,7 +174,7 @@ CogVMSimulator >> allObjectsSelect: objBlock [
 
 	| selected |
 	selected := OrderedCollection new.
-	objectMemory allObjectsDoSafely:
+	objectMemory allObjectsDo:
 		[:oop| (objBlock value: oop) ifTrue: [selected addLast: oop]].
 	^ selected
 ]
@@ -262,7 +263,6 @@ CogVMSimulator >> basicInitialize [
 	enableCog := true.
 
 	methodCache := Array new: MethodCacheSize.
-	nsMethodCache := Array new: NSMethodCacheSize.
 	atCache := nil.
 	self flushMethodCache.
 	cogCompiledCodeCompactionCalledFor := false.
@@ -303,6 +303,7 @@ CogVMSimulator >> basicInitialize [
 	
 	"This will be overriden when calling initializePluginEntries"
 	mappedPluginEntries := OrderedCollection new.
+	primitiveFlags := Dictionary new.
 ]
 
 { #category : #'multi-threading simulation switch' }
@@ -721,7 +722,7 @@ CogVMSimulator >> collectSends [
 
 { #category : #'cog jit support' }
 CogVMSimulator >> commenceCogCompiledCodeCompaction [
-	"self halt."
+
 	^super commenceCogCompiledCodeCompaction
 ]
 
@@ -2934,6 +2935,8 @@ CogVMSimulator >> primitiveFailCounting [
 { #category : #'as yet unclassified' }
 CogVMSimulator >> primitiveForceMachineCodeCompaction [
 	
+	"This primitive does not exists in the production VM. It is used in the tests to force the Code Compaction and to test it."
+	
 	self commenceCogCompiledCodeCompaction.
 	self pop: 2 thenPushBool: true.
 
@@ -2952,32 +2955,6 @@ CogVMSimulator >> primitiveGetAttribute [
 		1 to: attribute size do: [ :i |
 			objectMemory storeByte: i-1 ofObject: s withValue: (attribute at: i) asciiValue].
 		self pop: 2 "rcvr, attr" thenPush: s]
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> primitiveKbdNext [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdNext]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> primitiveKbdPeek [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdPeek]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> primitiveMouseButtons [
-	| buttons |
-	self pop: 1.
-	buttons := Sensor primMouseButtons.
-	self pushInteger: buttons
 ]
 
 { #category : #'debugging traps' }
@@ -3062,6 +3039,14 @@ CogVMSimulator >> primitiveProcessBoundThreadId [
 	^self perform: #primitiveProcessBoundThreadId
 		withArguments: {}
 		inSuperclass: (cogThreadManager ifNil: [CoInterpreterPrimitives] ifNotNil: [CoInterpreterMT])
+]
+
+{ #category : #'cog jit support' }
+CogVMSimulator >> primitivePropertyFlagsForSpur: primIndex [
+
+	^ primitiveFlags at: primIndex ifAbsent: [ super primitivePropertyFlagsForSpur: primIndex ]
+
+
 ]
 
 { #category : #'multi-threading simulation switch' }
@@ -3160,7 +3145,7 @@ CogVMSimulator >> printChar: aByte [
 CogVMSimulator >> printCurrentBytecodeOn: aStream [
 	| code |
 	code := currentBytecode radix: 16.
-	aStream ensureCr; print: localIP - method - 3; tab.
+	aStream newLine; print: localIP - method - 3; tab.
 	bytecodeSetSelector > 0 ifTrue:
 		[aStream nextPutAll: 'ALT '].
 	aStream
@@ -3559,15 +3544,22 @@ CogVMSimulator >> setOwnerIndexOfProcess: aProcess to: anIndex bind: bind [
 		inSuperclass: (cogThreadManager ifNil: [CoInterpreterPrimitives] ifNotNil: [CoInterpreterMT])
 ]
 
+{ #category : #'cog jit support' }
+CogVMSimulator >> setPrimitivePropertyFlagFor: primIndex value: aValue [
+
+	^ primitiveFlags at: primIndex put: aValue
+
+]
+
 { #category : #'debug printing' }
 CogVMSimulator >> shortPrintContext: aContext [
-	transcript ensureCr.
+	transcript newLine.
 	^super shortPrintContext: aContext
 ]
 
 { #category : #'debug printing' }
 CogVMSimulator >> shortPrintFrame: theFP [
-	self transcript ensureCr.
+	self transcript newLine.
 	^super shortPrintFrame: theFP
 ]
 

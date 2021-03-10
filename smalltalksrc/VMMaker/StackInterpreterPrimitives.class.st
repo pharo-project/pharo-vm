@@ -8,7 +8,7 @@ Class {
 	#category : #'VMMaker-Interpreter'
 }
 
-{ #category : #'ffi - helpers' }
+{ #category : #initialization }
 StackInterpreterPrimitives >> allocateParameters: anInteger using: allocationBlock [
 	<inline: #always>
 
@@ -16,10 +16,7 @@ StackInterpreterPrimitives >> allocateParameters: anInteger using: allocationBlo
 
 	^ self
 		cCode: [ allocationBlock value: anInteger ]
-		inSmalltalk: [ | ptr | 
-			ptr := allocationBlock value: anInteger.
-			ptr setObject: (Array new: anInteger).
-			ptr]
+		inSmalltalk: [ CArrayAccessor on: (Array new: anInteger) ]
 ]
 
 { #category : #'primitive support' }
@@ -60,6 +57,220 @@ StackInterpreterPrimitives >> cloneContext: aContext [
 						ofObject: cloned
 						withValue: (objectMemory fetchPointer: i + CtxtTempFrameStart ofObject: aContext)]]].
 	^cloned
+]
+
+{ #category : #ffi }
+StackInterpreterPrimitives >> doPrimitiveSameThreadCallout [
+	"Actual primitive implementation of primitiveSameThreadCallout.
+	Because of Slang restrictions, making FFI optional requires cutting the primitive in two different methods. Otherwise slang will unconditionally do all local declarations which may refer to invalid types if FFI is not enabled.
+	
+	Method primitiveSameThreadCallout checks if the feature is available. If so, it calls this method."
+	<inline: false>
+	<option: #FEATURE_FFI>
+	
+	| externalFunction cif PARAM_EXTERNALFUNCTION PARAM_ARGUMENTS argumentsArrayOop argumentSize parameters returnHolder |
+	<var: #parameters type: #'void **'>
+	<var: #returnHolder type: #'void *'>
+	<var: #externalFunction type: #'void *'>
+
+	PARAM_EXTERNALFUNCTION := 1.
+	PARAM_ARGUMENTS := 0.
+
+	"1. Obtain externalFunction and extract the CIF"
+	externalFunction := self getHandler: (self stackValue: PARAM_EXTERNALFUNCTION).
+	self failed 
+		ifTrue: [ 
+			self logDebug: 'Invalid External Function Argument'.
+			^ self primitiveFailFor: PrimErrBadArgument ].
+
+	cif := self getHandlerAsCif:(objectMemory
+				fetchPointer: 1
+				ofObject: (self stackValue: PARAM_EXTERNALFUNCTION)).
+
+	self failed
+		ifTrue: [ 
+			self logDebug: 'Invalid CIF in ExternalFunction'.
+			^ self primitiveFailFor: PrimErrBadArgument ].
+
+	" 2. Prepare Arguments:
+	- Verify Arguments is an Array
+	- Allocate space for all the arguments in the stack and a holder for the return, and the parameters' pointer C array
+	- Marshall arguments and store in the parameter array."
+	argumentsArrayOop := self stackValue: PARAM_ARGUMENTS.
+
+	(objectMemory isArray: argumentsArrayOop)
+		ifFalse: [ 
+			self logDebug: 'Argument Array is not an Array'.
+			^ self primitiveFailFor: PrimErrBadArgument ].
+
+	argumentSize := cif numberArguments.
+
+	(objectMemory slotSizeOf: argumentsArrayOop) = argumentSize
+		ifFalse: [ 
+			self logDebug: 'Argument Array size mismatch'.
+			^ self primitiveFailFor: PrimErrBadArgument ].
+		
+	parameters := self allocateParameters: argumentSize 
+		using: [:aSize | self alloca: (self sizeof: #'void*') * aSize ].
+
+	0 to: argumentSize - 1 do: [ :i | 
+		| argType argHolder |
+		argType := cif argTypeAt: i.
+
+		argHolder := self alloca: argType size.
+		parameters at: i put: argHolder.
+	
+		self marshallArgumentFrom: argumentsArrayOop atIndex: i into: argHolder ofType: argType type withSize: argType size. 
+				
+		self failed 
+				ifTrue: [ 
+					self logDebug: 'Could not convert argument index: %d' _: i + 1.
+					^ self primitiveFailFor: PrimErrBadArgument ]].
+	
+	returnHolder := self alloca: cif returnType size.
+
+	" 3. Call and then return
+	- Call
+	- Marshall Argument and push it to the stack
+	- Return"
+	self
+		ffi_call: cif
+		_: externalFunction
+		_: returnHolder
+		_: parameters.
+
+	self marshallAndPushReturnValueFrom: returnHolder ofType: cif returnType poping: 3.	
+]
+
+{ #category : #ffi }
+StackInterpreterPrimitives >> doPrimitiveWorkerCallout [
+	"Actual primitive implementation of primitiveWorkerCallout.
+	Because of Slang restrictions, making FFI optional requires cutting the primitive in two different methods. Otherwise slang will unconditionally do all local declarations which may refer to invalid types if FFI is not enabled.
+	
+	Method primitiveWorkerCallout checks if the feature is available. If so, it calls this method."
+	<inline: false>
+	<option: #FEATURE_THREADED_FFI>
+	
+	<export: true>
+	| externalFunction cif PARAM_EXTERNALFUNCTION PARAM_ARGUMENTS PARAM_SEMAPHORE_INDEX PARAM_RECEIVER argumentsArrayOop argumentSize parameters returnHolder receiver worker semaphoreIndex task |
+	<var: #parameters type: #'void **'>
+	<var: #returnHolder type: #'void *'>
+	<var: #task type: #'WorkerTask *'>
+	<var: #externalFunction type: #'void *'>
+	
+	PARAM_RECEIVER 				:= 3.
+	PARAM_EXTERNALFUNCTION 	:= 2.
+	PARAM_ARGUMENTS 			:= 1.
+	PARAM_SEMAPHORE_INDEX 	:= 0.
+
+	"1. Obtain externalFunction and extract the CIF"
+	externalFunction := self getHandler: (self stackValue: PARAM_EXTERNALFUNCTION).
+	self failed 
+		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+
+	cif := self getHandlerAsCif:(objectMemory
+				fetchPointer: 1
+				ofObject: (self stackValue: PARAM_EXTERNALFUNCTION)).
+
+	self failed
+		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+
+	" 2. Obtain the semaphore index"
+	semaphoreIndex := self stackIntegerValue: PARAM_SEMAPHORE_INDEX.
+	self failed
+		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+
+	" 3. Obtain the receiver and extract the worker "
+	receiver := self stackValue: PARAM_RECEIVER.
+	worker := self getWorkerFromAddress: (self getHandler: receiver).
+
+	self failed
+		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+
+	" 4. Prepare Arguments:
+	- Verify Arguments is an Array
+	- Allocate space for all the arguments in the stack and a holder for the return, and the parameters' pointer C array
+	- Marshall arguments and store in the parameter array."
+	argumentsArrayOop := self stackValue: PARAM_ARGUMENTS.
+
+	(objectMemory isArray: argumentsArrayOop)
+		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+
+	argumentSize := cif numberArguments.
+
+	(objectMemory slotSizeOf: argumentsArrayOop) = argumentSize
+		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+		
+	parameters := self allocateParameters: argumentSize using: [ :aSize | 
+		self calloc: aSize _: (self sizeof: #'void*')].
+
+	0 to: argumentSize - 1 do: [ :i | 
+		| argType argHolder |
+		argType := cif argTypeAt: i.
+
+		argHolder := self malloc: argType size.
+		parameters at: i put: argHolder.
+	
+		self marshallArgumentFrom: argumentsArrayOop atIndex: i into: argHolder ofType: argType type withSize: argType size.
+				
+		self failed 
+				ifTrue: [ 
+					self freeArgumentsArray: parameters count: argumentSize.
+					^ self primitiveFailFor: PrimErrBadArgument ]].
+	
+	cif returnType size > 0 
+		ifTrue: [returnHolder := self malloc: (cif returnType size max: BytesPerWord)]
+		ifFalse: [returnHolder := nil].
+
+	" 5. Create the worker task and enqueue it"
+
+	task := self worker_task_new: externalFunction _: cif _: parameters _: returnHolder _: semaphoreIndex.
+
+	self worker_dispatch_callout: worker _: task.
+
+	self pop: 4 thenPush: (objectMemory newExternalAddressWithValue: (self cCoerce: task asInteger to: 'void*'))
+]
+
+{ #category : #ffi }
+StackInterpreterPrimitives >> doPrimitiveWorkerExtractReturnValue [
+	"Actual primitive implementation of primitiveWorkerExtractReturnValue.
+	Because of Slang restrictions, making FFI optional requires cutting the primitive in two different methods. Otherwise slang will unconditionally do all local declarations which may refer to invalid types if FFI is not enabled.
+	
+	Method primitiveWorkerExtractReturnValue checks if the feature is available. If so, it calls this method."
+	<inline: false>
+	<option: #FEATURE_THREADED_FFI>
+	
+	| returnHolder task PARAM_RECEIVER PARAM_TASK_ADDRESS  worker taskAddress receiver |
+	<var: #returnHolder type: #'void *'>
+	<var: #task type: #'WorkerTask *'>
+	<var: #worker type: #'Worker *'>
+	<var: #externalFunction type: #'void *'>
+
+	PARAM_RECEIVER 				:= 1.
+	PARAM_TASK_ADDRESS			:= 0.
+
+	"1. Extract Task address and worker"
+	taskAddress := self readAddress: (self stackValue: PARAM_TASK_ADDRESS).
+	receiver := self stackValue: PARAM_RECEIVER.
+	worker := self getWorkerFromAddress: (self getHandler: receiver).
+
+	self failed
+		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+
+	"2. Get the returnHolder from the task"
+	task := self getTaskFromAddress: taskAddress.
+	task ifNil: [ ^ self primitiveFailFor: PrimErrBadReceiver ].
+
+	returnHolder := task returnHolderAddress.
+
+	"3. Marshall the return value and push it in the stack"
+	self 
+		marshallAndPushReturnValueFrom: returnHolder 
+		ofType: task cif returnType 
+		poping: 2.
+
+	"4. Free the task."	
+	task freeTask.
 ]
 
 { #category : #'ffi - helpers' }
@@ -245,6 +456,7 @@ StackInterpreterPrimitives >> markFrame: theFPInt [
 { #category : #'ffi - helpers' }
 StackInterpreterPrimitives >> marshallAndPushReturnValueFrom: returnHolder ofType: ffiType poping: argumentsAndReceiverCount [
 
+	<option: #FEATURE_FFI>
 	<var: #ffiType type: #'ffi_type *'>
 
 	[ ffiType type ]
@@ -273,6 +485,7 @@ StackInterpreterPrimitives >> marshallAndPushReturnValueFrom: returnHolder ofTyp
 { #category : #'ffi - helpers' }
 StackInterpreterPrimitives >> marshallArgumentFrom: argumentsArrayOop atIndex: i into: argHolder ofType: argType withSize: argTypeSize [
 
+	<option: #FEATURE_FFI>
 	[ argType ]
 		caseOf:
 			{([ FFI_TYPE_POINTER ]
@@ -821,10 +1034,7 @@ StackInterpreterPrimitives >> primitiveContextAtPut [
 	hdr := objectMemory baseHeader: aContext.
 	index := objectMemory integerValueOf: index.
 	(objectMemory isContextHeader: hdr) ifFalse: "might be an instance of a subclass"
-		[self stObject: aContext at: index put: value.
-		 self successful ifTrue:
-			[self pop: argumentCount + 1 thenPush: value].
-		 ^self].
+		[^self primitiveFailFor: PrimErrBadReceiver ].
 	self externalWriteBackHeadFramePointers.
 	(self isStillMarriedContext: aContext) ifFalse:
 		[fmt := objectMemory formatOfHeader: hdr.
@@ -1244,7 +1454,7 @@ StackInterpreterPrimitives >> primitiveFFIAllocate [
 	"Primitive. Allocate an object on the external heap."
 	| byteSize addr oop |
 
-	<api>
+	<export: true>
 	<inline: false>
 	<var: #ptr type: #'sqIntptr_t *'>
 
@@ -1289,10 +1499,10 @@ StackInterpreterPrimitives >> primitiveFFIIntegerAt [
 	 in the receiver, using the platform's endianness."
 	
 	| isSigned byteSize byteOffset rcvr addr value mask valueOop |
-	
+
+	<export: true>
 	<var: 'value' type: #usqLong>
 	<var: 'mask' type: #usqLong>
-	<api>
 	<inline: false>
 	
 	isSigned := self booleanValueOf: (self stackValue: 0).
@@ -1347,10 +1557,10 @@ StackInterpreterPrimitives >> primitiveFFIIntegerAtPut [
 	 in the receiver, using the platform's endianness."
 	
 	| isSigned byteSize byteOffset rcvr addr value max valueOop |
-	
+
+	<export: true>
 	<var: 'value' type: #sqLong>
 	<var: 'max' type: #sqLong>
-	<api>
 	<inline: false>
 	
 	isSigned := self booleanValueOf: (self stackValue: 0).
@@ -2133,7 +2343,7 @@ StackInterpreterPrimitives >> primitiveLoadSymbolFromModule [
 
 	| symbol module moduleHandle address oop symbolString symbolStringSize |
 
-	<api>
+	<export: true>
 	<var: #address type: #'void *'>
 	<var: #ptr type: #'void **'>
 	<var: #symbolString type: #'char *'>
@@ -2523,80 +2733,15 @@ StackInterpreterPrimitives >> primitivePin [
 
 { #category : #ffi }
 StackInterpreterPrimitives >> primitiveSameThreadCallout [
+	"Because of Slang restrictions, making FFI optional requires cutting the primitive in two different methods. Otherwise slang will unconditionally do all local declarations which may refer to invalid types if FFI is not enabled.
+	
+	Method primitiveSameThreadCallout checks if the feature is available. If so, it calls the actual implementation: doPrimitiveSameThreadCallout."
 	<export: true>
-	| externalFunction cif PARAM_EXTERNALFUNCTION PARAM_ARGUMENTS argumentsArrayOop argumentSize parameters returnHolder |
-	<var: #parameters type: #'void **'>
-	<var: #returnHolder type: #'void *'>
-	<var: #externalFunction type: #'void *'>
-
-	PARAM_EXTERNALFUNCTION := 1.
-	PARAM_ARGUMENTS := 0.
-
-	"1. Obtain externalFunction and extract the CIF"
-	externalFunction := self getHandler: (self stackValue: PARAM_EXTERNALFUNCTION).
-	self failed 
-		ifTrue: [ 
-			self logDebug: 'Invalid External Function Argument'.
-			^ self primitiveFailFor: PrimErrBadArgument ].
-
-	cif := self getHandlerAsCif:(objectMemory
-				fetchPointer: 1
-				ofObject: (self stackValue: PARAM_EXTERNALFUNCTION)).
-
-	self failed
-		ifTrue: [ 
-			self logDebug: 'Invalid CIF in ExternalFunction'.
-			^ self primitiveFailFor: PrimErrBadArgument ].
-
-	" 2. Prepare Arguments:
-	- Verify Arguments is an Array
-	- Allocate space for all the arguments in the stack and a holder for the return, and the parameters' pointer C array
-	- Marshall arguments and store in the parameter array."
-	argumentsArrayOop := self stackValue: PARAM_ARGUMENTS.
-
-	(objectMemory isArray: argumentsArrayOop)
-		ifFalse: [ 
-			self logDebug: 'Argument Array is not an Array'.
-			^ self primitiveFailFor: PrimErrBadArgument ].
-
-	argumentSize := cif numberArguments.
-
-	(objectMemory slotSizeOf: argumentsArrayOop) = argumentSize
-		ifFalse: [ 
-			self logDebug: 'Argument Array size mismatch'.
-			^ self primitiveFailFor: PrimErrBadArgument ].
-		
-	parameters := self allocateParameters: argumentSize 
-		using: [:aSize | self alloca: (self sizeof: #'void*') * aSize ].
-
-	0 to: argumentSize - 1 do: [ :i | 
-		| argType argHolder |
-		argType := cif argTypeAt: i.
-
-		argHolder := self alloca: argType size.
-		parameters at: i put: argHolder.
 	
-		self marshallArgumentFrom: argumentsArrayOop atIndex: i into: argHolder ofType: argType type withSize: argType size. 
-				
-		self failed 
-				ifTrue: [ 
-					self logDebug: 'Could not convert argument index: %d' _: i + 1.
-					^ self primitiveFailFor: PrimErrBadArgument ]].
-	
-	returnHolder := self alloca: cif returnType size.
-
-	" 3. Call and then return
-	- Call
-	- Marshall Argument and push it to the stack
-	- Return"
-	self
-		ffi_call: cif
-		_: externalFunction
-		_: returnHolder
-		_: parameters.
-
-	self marshallAndPushReturnValueFrom: returnHolder ofType: cif returnType poping: 3.	
-
+	self cppIf: FEATURE_FFI ifTrue: [
+		self doPrimitiveSameThreadCallout.
+	] ifFalse: [ 
+		self primitiveFailFor: PrimErrUnsupported ]
 ]
 
 { #category : #'memory space primitives' }
@@ -4000,118 +4145,28 @@ StackInterpreterPrimitives >> primitiveVoidVMState [
 
 { #category : #ffi }
 StackInterpreterPrimitives >> primitiveWorkerCallout [
+	"Because of Slang restrictions, making FFI optional requires cutting the primitive in two different methods. Otherwise slang will unconditionally do all local declarations which may refer to invalid types if FFI is not enabled.
+	
+	Method primitiveWorkerCallout checks if the feature is available. If so, it calls the actual implementation: doPrimitiveWorkerCallout."
 	<export: true>
-	| externalFunction cif PARAM_EXTERNALFUNCTION PARAM_ARGUMENTS PARAM_SEMAPHORE_INDEX PARAM_RECEIVER argumentsArrayOop argumentSize parameters returnHolder receiver worker semaphoreIndex task |
-	<var: #parameters type: #'void **'>
-	<var: #returnHolder type: #'void *'>
-	<var: #task type: #'WorkerTask *'>
-	<var: #externalFunction type: #'void *'>
-
-	PARAM_RECEIVER 				:= 3.
-	PARAM_EXTERNALFUNCTION 	:= 2.
-	PARAM_ARGUMENTS 			:= 1.
-	PARAM_SEMAPHORE_INDEX 	:= 0.
-
-	"1. Obtain externalFunction and extract the CIF"
-	externalFunction := self getHandler: (self stackValue: PARAM_EXTERNALFUNCTION).
-	self failed 
-		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-
-	cif := self getHandlerAsCif:(objectMemory
-				fetchPointer: 1
-				ofObject: (self stackValue: PARAM_EXTERNALFUNCTION)).
-
-	self failed
-		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-
-	" 2. Obtain the semaphore index"
-	semaphoreIndex := self stackIntegerValue: PARAM_SEMAPHORE_INDEX.
-	self failed
-		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-
-	" 3. Obtain the receiver and extract the worker "
-	receiver := self stackValue: PARAM_RECEIVER.
-	worker := self getWorkerFromAddress: (self getHandler: receiver).
-
-	self failed
-		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-
-	" 4. Prepare Arguments:
-	- Verify Arguments is an Array
-	- Allocate space for all the arguments in the stack and a holder for the return, and the parameters' pointer C array
-	- Marshall arguments and store in the parameter array."
-	argumentsArrayOop := self stackValue: PARAM_ARGUMENTS.
-
-	(objectMemory isArray: argumentsArrayOop)
-		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-
-	argumentSize := cif numberArguments.
-
-	(objectMemory slotSizeOf: argumentsArrayOop) = argumentSize
-		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-		
-	parameters := self allocateParameters: argumentSize using: [ :aSize | 
-		self calloc: aSize _: (self sizeof: #'void*')].
-
-	0 to: argumentSize - 1 do: [ :i | 
-		| argType argHolder |
-		argType := cif argTypeAt: i.
-
-		argHolder := self malloc: argType size.
-		parameters at: i put: argHolder.
 	
-		self marshallArgumentFrom: argumentsArrayOop atIndex: i into: argHolder ofType: argType type withSize: argType size.
-				
-		self failed 
-				ifTrue: [ 
-					self freeArgumentsArray: parameters count: argumentSize.
-					^ self primitiveFailFor: PrimErrBadArgument ]].
-	
-	cif returnType size > 0 
-		ifTrue: [returnHolder := self malloc: cif returnType size]
-		ifFalse: [returnHolder := nil].
-
-	" 5. Create the worker task and enqueue it"
-
-	task := self worker_task_new: externalFunction _: cif _: parameters _: returnHolder _: semaphoreIndex.
-
-	self worker_dispatch_callout: worker _: task.
-
-	self pop: 4 thenPush: (objectMemory newExternalAddressWithValue: (self cCoerce: task asInteger to: 'void*'))
+	self cppIf: FEATURE_THREADED_FFI ifTrue: [
+		self doPrimitiveWorkerCallout.
+	] ifFalse: [ 
+		self primitiveFailFor: PrimErrUnsupported ]
 ]
 
 { #category : #ffi }
 StackInterpreterPrimitives >> primitiveWorkerExtractReturnValue [
-	<export: true>
-	| returnHolder task PARAM_RECEIVER PARAM_TASK_ADDRESS  worker taskAddress receiver |
-	<var: #returnHolder type: #'void *'>
-	<var: #task type: #'WorkerTask *'>
-	<var: #worker type: #'Worker *'>
-	<var: #externalFunction type: #'void *'>
-
-	PARAM_RECEIVER 				:= 1.
-	PARAM_TASK_ADDRESS			:= 0.
-
-	"1. Extract Task address and worker"
-	taskAddress := self readAddress: (self stackValue: PARAM_TASK_ADDRESS).
-	receiver := self stackValue: PARAM_RECEIVER.
-	worker := self getWorkerFromAddress: (self getHandler: receiver).
-
-	self failed
-		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-
-	"2. Get the returnHolder from the task"
-	task := self getTaskFromAddress: taskAddress.
-	returnHolder := task returnHolderAddress.
+	"Because of Slang restrictions, making FFI optional requires cutting the primitive in two different methods. Otherwise slang will unconditionally do all local declarations which may refer to invalid types if FFI is not enabled.
 	
-	"3. Marshall the return value and push it in the stack"
-	self 
-		marshallAndPushReturnValueFrom: returnHolder 
-		ofType: task cif returnType 
-		poping: 2.
-
-	"4. Free the task."	
-	task freeTask.
+	Method primitiveWorkerExtractReturnValue checks if the feature is available. If so, it calls the actual implementation: doPrimitiveWorkerExtractReturnValue."
+	<export: true>
+	
+	self cppIf: FEATURE_THREADED_FFI ifTrue: [
+		self doPrimitiveWorkerExtractReturnValue.
+	] ifFalse: [ 
+		self primitiveFailFor: PrimErrUnsupported ]
 ]
 
 { #category : #'object access primitives' }

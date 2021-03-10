@@ -113,7 +113,7 @@ CogMethodSurrogate >> at: anAddress memory: memoryArray headerSize: headerSize c
 { #category : #'instance initialization' }
 CogMethodSurrogate >> at: anAddress objectMemory: objectMemory cogit: aCogit [
 	address := anAddress.
-	memory := objectMemory memory.
+	memory := objectMemory memoryManager.
 	baseHeaderSize := objectMemory baseHeaderSize.
 	cogit := aCogit
 ]
@@ -195,15 +195,15 @@ CogMethodSurrogate >> nextOpenPIC: cogMethodSurrogateOrNil [
 { #category : #accessing }
 CogMethodSurrogate >> objectHeader [
 	^baseHeaderSize = 8
-		ifTrue: [memory long64At: address + 1]
-		ifFalse: [memory longAt: address + 1]
+		ifTrue: [memory long64At: address]
+		ifFalse: [memory longAt: address]
 ]
 
 { #category : #accessing }
 CogMethodSurrogate >> objectHeader: aValue [
 	^baseHeaderSize = 8
-		ifTrue: [memory long64At: address + 1 put: aValue]
-		ifFalse: [memory longAt: address + 1 put: aValue]
+		ifTrue: [memory long64At: address put: aValue]
+		ifFalse: [memory longAt: address put: aValue]
 ]
 
 { #category : #printing }

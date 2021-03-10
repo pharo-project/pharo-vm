@@ -248,7 +248,7 @@ UnicornARMv8Simulator >> registerStateGetters [
 { #category : #'as yet unclassified' }
 UnicornARMv8Simulator >> retpcIn: aMemory [ 
 
-	^ aMemory unsignedLongAt: self fp + 9 
+	^ memory longAt: self fp + 8
 ]
 
 { #category : #registers }

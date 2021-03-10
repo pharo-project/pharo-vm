@@ -1,5 +1,11 @@
-cmake_minimum_required(VERSION 2.8.4)
+#  Pharo Virtual Machine
+#
+#  Available Targets:
+#
+#  vmmaker: generates a Pharo development environment with the virtual machine code, Slang transpiler and machine code simulation
+#  generate-sources: generates the virtual machine source code in C, using the Slang-to-C transpiler
 
+cmake_minimum_required(VERSION 3.7.2)
 # Use new and simpler escape sequences
 cmake_policy(SET CMP0053 NEW)
 
@@ -9,15 +15,58 @@ set(VERSION_MAJOR 9)
 set(VERSION_MINOR 0)
 set(VERSION_PATCH 0)
 
+if(${CMAKE_GENERATOR} MATCHES "Visual Studio.*")
+    set(user_file "${CMAKE_SOURCE_DIR}/CMakeSettings.jsonx" )
+    set(template_file "${CMAKE_SOURCE_DIR}/CMakeSettings.json.template" )
+    file(SHA256 ${template_file} template_hash)
+
+    if(EXISTS "${user_file}")
+        file(SHA256 "${user_file}" user_hash)
+        set(user_bak_file "${user_file}.bak.${user_hash}")
+
+        # From 'user_file' extract recorded hash of template it was copied from
+        file(READ "${user_file}" user_settings )
+        string(REGEX MATCH ".*template-hash[^a-zA-Z0-9]*([a-zA-Z0-9-]*).*" _ ${user_settings})
+        set(recorded_template_hash ${CMAKE_MATCH_1})
+
+        if(NOT "${template_hash}" STREQUAL "${recorded_template_hash}")
+            # move existing file out of the way if template file has changed
+            file(RENAME "${user_file}" "${user_bak_file}")
+        endif()
+    endif()
+
+    if(NOT EXISTS "${user_file}")
+        # copy 'template_file' to 'user_file' substituting variable 'template_hash'
+        configure_file("${template_file}" "${user_file}" @ONLY)  
+
+        if(EXISTS ${user_bak_file})
+            message("NOTICE!! Your 'CMakeSettings.json' file has been replaced by updated template.") 
+            message("NOTICE!! It is recommended you base your configuration settings off this update.") 
+            message("NOTICE!! Your old settings saved to ${user_bak_file}")
+            message("NOTICE!! To force using your old settings, copy 'template-hash' from new 'CMakeSettings.json' into your restored file.") 
+            message(FATAL_ERROR "Not really an error, just an important NOTICE!! to read in output.") 
+        endif()
+    endif()
+endif()
+
 set(APPNAME Pharo CACHE STRING "VM Application name")
 
-get_commit_hash(GIT_COMMIT_HASH)
-get_git_describe(GIT_DESCRIBE)
-get_git_date(GIT_COMMIT_DATE)
+# Configure CMake to load our modules
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+# Extract VCS information
+include(cmake/versionExtraction.cmake)
+extractVCSInformation(GIT_COMMIT_HASH GIT_DESCRIBE GIT_COMMIT_DATE)
+
+#Variable used to set the VM date
 set(BUILT_FROM "${GIT_DESCRIBE} - Commit: ${GIT_COMMIT_HASH} - Date: ${GIT_COMMIT_DATE}")
 message(STATUS ${BUILT_FROM})
 
+# Avoid using the d postfix to debug libraries
+# Otherwise, debug libraries change name and breaks FFI bindings
+set(CMAKE_DEBUG_POSTFIX "")
+
+#Configure toolchain for CYGWIN
 if ((CMAKE_HOST_UNIX) AND (${CMAKE_HOST_SYSTEM_NAME} MATCHES "CYGWIN*"))
   message(STATUS "Building on CYGWIN CMAKE: Adapting paths")
   set(CYGWIN 1)
@@ -25,37 +74,108 @@ if ((CMAKE_HOST_UNIX) AND (${CMAKE_HOST_SYSTEM_NAME} MATCHES "CYGWIN*"))
 
   # specify the cross compiler
   set(CMAKE_TOOLCHAIN_PREFIX x86_64-w64-mingw32)
-
+  
   SET(CMAKE_C_COMPILER   ${CMAKE_TOOLCHAIN_PREFIX}-clang)
   SET(CMAKE_CXX_COMPILER ${CMAKE_TOOLCHAIN_PREFIX}-clang++)
   SET(CMAKE_RC_COMPILER ${CMAKE_TOOLCHAIN_PREFIX}-windres)
   SET(CMAKE_SYSTEM_PROCESSOR x86_64)
 endif()
 
+#Set up the project
+#This needs to be at this point, after setting the toolchain configuration
 project(PharoVM)
 
-set(FLAVOUR CoInterpreterWithQueueFFI CACHE STRING "The kind of VM to generate. Possible values: StackVM, CogVM, CoInterpreterWithQueueFFI")
-set(GENERATE_SOURCES 1 CACHE BOOL "If it generates the sources")
-set(ALWAYS_INTERACTIVE 0 CACHE BOOL "If this VM will always add interactive or not. If it is set, the headless parameter is not by default true")
+# Correctly set the system processor under MSVC
+# This is required because CMake will set the HOST_PROCESSOR in windows
+# And not care about our Visual Studio settings
+# See https://gitlab.kitware.com/cmake/cmake/-/issues/15170
+if(MSVC AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    set(CMAKE_SYSTEM_PROCESSOR ${MSVC_CXX_ARCHITECTURE_ID})
+endif()
+message(STATUS "Compiling for architecture: ${CMAKE_SYSTEM_PROCESSOR}")
 
-if(FLAVOUR MATCHES "StackVM")
-  set(VMSOURCEFILES ${CMAKE_CURRENT_BINARY_DIR}/generated/vm/src/gcc3x-interp.c)
+# Windows setjmp does not work as Unix's
+# by it default will unwind the stack, which is not possible in generated code
+# setjmp has an extra argument not exposed in C to avoid unwinding
+# This extra asm file defines a wrapper function that sets this argument to 0
+if(MSVC AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    get_filename_component(COMPILER_DIR "${CMAKE_C_COMPILER}" DIRECTORY)
+    if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ARM64")
+        set(CMAKE_ASM_MASM_COMPILER ${COMPILER_DIR}/armasm64.exe)
+    endif()
+    set(CMAKE_ASM_COMPILER ${CMAKE_ASM_MASM_COMPILER})
+    enable_language(ASM)
+
+    set(ASM_PATH "src/utils/setjmp-Windows-wrapper-${CMAKE_SYSTEM_PROCESSOR}.s")
+
+    get_filename_component(ASM_FILENAME "${ASM_PATH}" NAME_WE)
+    get_filename_component(ASM_DIRNAME "${ASM_PATH}" DIRECTORY)
+
+    add_custom_command(
+        COMMAND "${CMAKE_C_COMPILER}" /nologo /P /EP /I. /I"${CMAKE_CURRENT_SOURCE_DIR}/${ASM_DIRNAME}" /Fi"${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.asm" /Iinclude
+                /I"${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/${ASM_PATH}"
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${ASM_PATH}
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.asm
+        COMMENT "Preprocessing ${CMAKE_CURRENT_SOURCE_DIR}/${ASM_PATH}. Outputting to ${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.asm")
+
+    set_source_files_properties("${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.asm" PROPERTIES GENERATED TRUE)
+
+    if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "X86.*")
+        list(APPEND SUPPORT_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.asm)
+        set_source_files_properties(
+            ${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.asm
+            PROPERTIES
+            COMPILE_FLAGS "/safeseh"
+        )
+    else()
+        add_custom_command(
+            COMMAND "${CMAKE_ASM_MASM_COMPILER}" /Fo "${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.obj" "${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.asm"
+            DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.asm
+            OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.obj
+            COMMENT "Assembling ${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.asm")
+
+        set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.obj PROPERTIES EXTERNAL_OBJECT TRUE)
+
+        list(APPEND SUPPORT_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.obj)
+    endif()
+endif()
+
+set(FLAVOUR CoInterpreter CACHE STRING "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
+set(GENERATE_SOURCES TRUE CACHE BOOL "If it generates the sources")
+set(ALWAYS_INTERACTIVE FALSE CACHE BOOL "If this VM will always add interactive or not. If it is set, the headless parameter is not by default true")
+set(FEATURE_FFI TRUE CACHE BOOL "Configure and compile support for FFI in the VM")
+set(FEATURE_THREADED_FFI TRUE CACHE BOOL "Configure and compile support for Threaded (running in another thread) FFI in the VM")
+set(FEATURE_NETWORK TRUE CACHE BOOL "Configure and compile support for network and sockets in the VM")
+set(FEATURE_COMPILE_GNUISATION TRUE CACHE BOOL "Use gcc gnu extensions to compile the VM")
+set(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS TRUE CACHE BOOL "Use inline memory accessors instead of macros")
+
+set(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES FALSE CACHE BOOL "Prefer downloading dependencies")
+set(BUILD_BUNDLE TRUE CACHE BOOL "Builds a bundle with all dependencies (locally built or downloaded) copied next to the VM")
+set(FEATURE_LIB_SDL2 TRUE CACHE BOOL "Build SDL2 support")
+set(FEATURE_LIB_CAIRO TRUE CACHE BOOL "Build Cairo support")
+set(FEATURE_LIB_FREETYPE2 TRUE CACHE BOOL "Build Cairo support")
+set(FEATURE_LIB_GIT2 TRUE CACHE BOOL "Build LibGit2 support")
+
+set(PHARO_LIBRARY_PATH "@executable_path/Plugins" CACHE STRING "The RPATH to use in the build")
+
+# If we are generating sources, set the source dir as the generation source dir.
+# Otherwise set it to by default to the current source dir, parametrizable
+if(${GENERATE_SOURCES})
+    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR})
 else()
-  set(VMSOURCEFILES ${CMAKE_CURRENT_BINARY_DIR}/generated/vm/src/cogit.c ${CMAKE_CURRENT_BINARY_DIR}/generated/vm/src/gcc3x-cointerp.c)
+    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE STRING "Source directory where to find the generated source. Default value is CMAKE_CURRENT_SOURCE_DIR")
+endif()
+
+if (${FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS})
+    add_compile_definitions(USE_INLINE_MEMORY_ACCESSORS=1)
 endif()
 
 set(PLUGIN_GENERATED_FILES 
-  	${CMAKE_CURRENT_BINARY_DIR}/generated/plugins/src/FilePlugin/FilePlugin.c)
+  	${GENERATED_SOURCE_DIR}/generated/plugins/src/FilePlugin/FilePlugin.c)
 
 
-if(FLAVOUR MATCHES "CoInterpreterWithQueueFFI")
-  add_definitions(-DASYNC_FFI_QUEUE=1)
-endif()
-
-if (GENERATE_PHARO_VM) 
-	set(VMMAKER_PHARO_VM ${GENERATE_PHARO_VM})
-else()
-	set(VMMAKER_PHARO_VM ./pharo)
+if(FLAVOUR MATCHES "CoInterpreter")
+  add_compile_definitions(ASYNC_FFI_QUEUE=1)
 endif()
 
 # Configuration
@@ -71,7 +191,11 @@ include(ExternalProject)
 set(COMMON_FLAGS "")
 set(BUILD_I386_VERSION NO)
 
-if(WIN)
+if(MSVC)
+    set(OS_TYPE "Win32")
+    get_platform_name(VM_TARGET_OS)
+    message(STATUS "Building for ${VM_TARGET_OS}")
+elseif(WIN)
     message(STATUS "Building for WINDOWS")
 
     #Tell the system we are not in UNIX. This is required for Cygwin builds
@@ -105,10 +229,10 @@ if(WIN)
     # this one is important
     SET(CMAKE_SYSTEM_NAME Windows)
 
-    add_definitions(-DNO_ISNAN -DNO_SERVICE -D'TZ="CEST"' "-D'VM_LABEL(foo)=0'" -DLSB_FIRST=1 -DAllocationCheckFiller=0xADD4E55)
+    add_compile_definitions(NO_ISNAN NO_SERVICE "'VM_LABEL(foo)=0'" LSB_FIRST=1 AllocationCheckFiller=0xADD4E55)
 
     #Setting minimal Windows Version to VISTA
-    add_definitions(-D_WIN32_WINNT=0x0600 -DWINVER=0x0600 -DNTDDI_VERSION=0x06000000 -DWIN64=1)
+    add_compile_definitions(_WIN32_WINNT=0x0600 WINVER=0x0600 NTDDI_VERSION=0x06000000 WIN64=1)
 
 elseif(UNIX)
 
@@ -118,7 +242,7 @@ elseif(UNIX)
 
     set(COMMON_FLAGS "-O2 -Wall -Werror=implicit-function-declaration")
 
-    add_definitions(-DLSB_FIRST=1)
+    add_compile_definitions(LSB_FIRST=1)
 
     set(OS_TYPE "unix")
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -140,13 +264,13 @@ set(OPTIMIZATION_FLAGS "")
 set(CMAKE_C_FLAGS "-g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
 set(CMAKE_CXX_FLAGS "-g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
 
-add_definitions(-DIMMUTABILITY=1)
-add_definitions(-DCOGMTVM=0)
-add_definitions(-DPharoVM=1)
+add_compile_definitions(IMMUTABILITY=1)
+add_compile_definitions(COGMTVM=0)
+add_compile_definitions(PharoVM=1)
 
 #We require that VM_LABEL does nothing.
 #We should actually cleanup all the places where this is set/used in the VM
-add_definitions(-D"VM_LABEL\(foo\)=0")
+add_compile_definitions("VM_LABEL\(foo\)=0")
 
 #
 # This definition is used to improve the logging of the messages, to cut-down the path
@@ -156,7 +280,7 @@ add_definitions(-D"VM_LABEL\(foo\)=0")
 # Note that it does not matter if the OS uses / or \, because we are only
 # saving the path size.
 string(LENGTH "${CMAKE_SOURCE_DIR}/" SOURCE_PATH_SIZE)
-add_definitions("-DSOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
+add_compile_definitions("SOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
 
 if(UNIX AND NOT OSX AND NOT WIN)
     set(VM_EXECUTABLE_NAME pharo CACHE STRING "VM Executable name")
@@ -172,9 +296,7 @@ set(PHARO_VM TRUE)
 set(DEFAULT_IMAGE_NAME ${APPNAME}.image)
 
 set(VM_TARGET "${CMAKE_SYSTEM}")
-
-#Change to the correct CPU
-set(VM_TARGET_CPU "x86_64")
+set(VM_TARGET_CPU ${CMAKE_SYSTEM_PROCESSOR})
 
 # Type sizes
 if(BUILD_I386_VERSION)
@@ -202,14 +324,13 @@ else()
 	message(FATAL_ERROR "Failed to find a 64 bits integer type.")
 endif()
 
-#Setting output directories
-set(VMMAKER_OUTPUT_PATH "build/vmmaker")
-make_directory(${VMMAKER_OUTPUT_PATH})
-set(EXECUTABLE_OUTPUT_PATH "build/vm")
+set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/")
 
 #If in OSX, configure creation of Bundle
 if (OSX)
-  set(LIBRARY_OUTPUT_DIRECTORY "build/vm/$<CONFIG>/${VM_EXECUTABLE_NAME}.app/Contents/MacOS/Plugins")
+  set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/Debug")
+  set(RUNTIME_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/")
+  set(LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/vm/Debug/${VM_EXECUTABLE_NAME}.app/Contents/MacOS/Plugins")
 else()
   set(LIBRARY_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
 endif()
@@ -241,144 +362,23 @@ check_include_files(uuid.h HAVE_UUID_H)
 check_library_exists(uuid uuidgen "" HAVE_UUIDGEN)
 check_library_exists(uuid uuid_generate "" HAVE_UUID_GENERATE)
 
-if(GENERATE_SOURCES)
-#Custom command that downloads a Pharo image and VM in ${VMMAKER_OUTPUT_PATH}
-if(NOT GENERATE_PHARO_VM) 
-add_custom_command(
-  OUTPUT ${VMMAKER_OUTPUT_PATH}/Pharo.image ${VMMAKER_OUTPUT_PATH}/pharo
-  COMMAND wget -O - https://get.pharo.org/64/90 | bash
-  COMMAND wget -O - https://get.pharo.org/64/vm90 | bash
-  WORKING_DIRECTORY ${VMMAKER_OUTPUT_PATH}
-  COMMENT "Downloading Pharo 90")
-else()
-add_custom_command(
-  OUTPUT ${VMMAKER_OUTPUT_PATH}/Pharo.image ${VMMAKER_OUTPUT_PATH}/pharo
-  COMMAND wget -O - https://get.pharo.org/64/90 | bash
-  WORKING_DIRECTORY ${VMMAKER_OUTPUT_PATH}
-  COMMENT "Downloading Pharo 90")
-endif()
 
-
-add_custom_command(
-  OUTPUT ${VMMAKER_OUTPUT_PATH}/VMMaker.image
-  COMMAND ${VMMAKER_PHARO_VM} Pharo.image --save --quit ${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st ${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}
-  COMMAND ${VMMAKER_PHARO_VM} Pharo.image save VMMaker
-  DEPENDS ${VMMAKER_OUTPUT_PATH}/Pharo.image
-  WORKING_DIRECTORY ${VMMAKER_OUTPUT_PATH}
-COMMENT "Generating VMMaker image")
-
-#Custom command that generates the vm source code from VMMaker into ${VMMAKER_OUTPUT_PATH} and copies it to ${CMAKE_CURRENT_SOURCE_DIR}
-if (NOT GENERATE_PHARO_VM)
-add_custom_command(
-  OUTPUT ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES}
-  COMMAND ${VMMAKER_OUTPUT_PATH}/pharo ${VMMAKER_OUTPUT_PATH}/VMMaker.image eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\'\"
-  DEPENDS ${VMMAKER_OUTPUT_PATH}/VMMaker.image
-  COMMENT "Generating VM files for flavour: ${FLAVOUR}")
-else()
-add_custom_command(
-  OUTPUT ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES}
-  COMMAND ${VMMAKER_PHARO_VM} ${VMMAKER_OUTPUT_PATH}/VMMaker.image eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\'\"
-  DEPENDS ${VMMAKER_OUTPUT_PATH}/VMMaker.image
-  COMMENT "Generating VM files for flavour: ${FLAVOUR}")
-endif()
-
-add_custom_target(vmmaker DEPENDS ${VMMAKER_OUTPUT_PATH}/VMMaker.image)
-add_custom_target(generate-sources DEPENDS ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES})
-  
-endif()
+#Include targets to build the dev environment and the sources
+include(cmake/vmmaker.cmake)
 
 #Generating config file
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/config.h.in build/include/pharovm/config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/build/include/pharovm/config.h)
 
 message(STATUS "C Compiler: ${CMAKE_C_COMPILER}")
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 message(STATUS "Resource Compiler: ${CMAKE_RC_COMPILER}")
 
-
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/semaphores
-    ${CMAKE_CURRENT_BINARY_DIR}/build/include/
-    ${CMAKE_CURRENT_BINARY_DIR}/build/include/pharovm/
-    ${CMAKE_CURRENT_BINARY_DIR}/generated/vm/include
-	${CMAKE_CURRENT_BINARY_DIR}/build/libffi/install/include
-)
-
 set(VM_FRONTEND_APPLICATION_TYPE)
-if(WIN)
-    include(win32.cmake)
-elseif(OSX)
-    include(osx.cmake)
-elseif(UNIX)
-    include(unix.cmake)
-endif()
-
-#
-# LibFFI
-#
-
-if (NOT WITHOUT_DEPENDENCIES)
-
-ExternalProject_Add(build_libFFI
-	GIT_CONFIG "core.autocrlf=input"
-	PREFIX "${CMAKE_CURRENT_BINARY_DIR}/build/libffi"
-	SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/build/libffi/src"
-	STAMP_DIR "${CMAKE_CURRENT_BINARY_DIR}/build/libffi/stamp"
-	BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/build/libffi/src"
-
-	UPDATE_COMMAND ""
-
-	GIT_REPOSITORY "https://github.com/libffi/libffi.git"
-	GIT_TAG "v3.3"
-	
-	CONFIGURE_COMMAND "./autogen.sh" COMMAND ./configure "${LIBFFI_TARGET}" "--disable-docs" "--prefix=${CMAKE_CURRENT_BINARY_DIR}/build/libffi/install" "CC=${CMAKE_C_COMPILER}" "CXX=${CMAKE_C_COMPILER}" ${LIBFFI_ADDITIONAL}
-	BUILD_COMMAND "${CMAKE_MAKE_PROGRAM}" ${LIBFFI_ADDITIONAL}
-)
-
-make_directory("${CMAKE_CURRENT_BINARY_DIR}/build/dist")
-
-if(OSX)
-    add_custom_command(
-      OUTPUT  ${LIBFFI_OUTPUT}
-      DEPENDS build_libFFI
-      COMMAND install_name_tool -id "@executable_path/Plugins/libffi.7.dylib" "${CMAKE_CURRENT_BINARY_DIR}/build/libffi/install/lib/libffi.7.dylib"
-      COMMAND install_name_tool -id "@executable_path/Plugins/libffi.dylib" "${CMAKE_CURRENT_BINARY_DIR}/build/libffi/install/lib/libffi.dylib"
-      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/libffi/install/lib/"
-      COMMENT "Changing RPath of Libffi")
-
-	add_custom_target(libFFI DEPENDS "${LIBFFI_OUTPUT}")
-else()
-	add_custom_target(libFFI DEPENDS build_libFFI)
-endif()
-
-link_directories("${CMAKE_CURRENT_BINARY_DIR}/build/libffi/install/lib")
-
-endif()
-
-#
-# End LibFFI
-#
+include(cmake/${CMAKE_SYSTEM_NAME}.cmake)
 
 set(GENERATED_SOURCES ${VMSOURCEFILES})
 
-set(SUPPORT_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/pThreadedFFI/functionDefinitionPrimitives.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/pThreadedFFI/primitiveCalls.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/pThreadedFFI/primitiveUtils.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/pThreadedFFI/pThreadedFFI.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/pThreadedFFI/types.c
-	${CMAKE_CURRENT_SOURCE_DIR}/src/pThreadedFFI/typesPrimitives.c
-	${CMAKE_CURRENT_SOURCE_DIR}/src/pThreadedFFI/utils.c
-    
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/pThreadedFFI/callbacks/callbackPrimitives.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/pThreadedFFI/callbacks/callbacks.c
-   
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/pThreadedFFI/sameThread/sameThread.c
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/pThreadedFFI/worker/worker.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/pThreadedFFI/worker/workerPrimitives.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/pThreadedFFI/worker/workerTask.c
-	
+list(APPEND SUPPORT_SOURCES	
 	${CMAKE_CURRENT_SOURCE_DIR}/src/debug.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/errorCode.c
@@ -392,12 +392,41 @@ set(SUPPORT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/stringUtilities.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/imageAccess.c
     
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/threadSafeQueue/threadSafeQueue.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/semaphores/platformSemaphore.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/semaphores/pharoSemaphore.c
 
     ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/heartbeat.c
 )
+
+if(${FEATURE_FFI})
+    list (APPEND SUPPORT_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/functionDefinitionPrimitives.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/primitiveCalls.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/primitiveUtils.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/types.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/typesPrimitives.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/utils.c
+
+        # Single-threaded callout support
+        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/sameThread/sameThread.c
+    
+        # Callback support
+        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/callbacks/callbackPrimitives.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/callbacks/callbacks.c
+
+        # Required by callbacks
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/semaphores/pharoSemaphore.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/threadSafeQueue/threadSafeQueue.c
+    )
+    if (${FEATURE_THREADED_FFI})
+        list(APPEND SUPPORT_SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/pThreadedFFI.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/worker/worker.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/worker/workerPrimitives.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/worker/workerTask.c
+        )
+    endif()
+endif()
+
 
 set(VM_SOURCES
     ${SUPPORT_SOURCES}
@@ -407,7 +436,37 @@ set(VM_SOURCES
 
 add_executable(${VM_EXECUTABLE_NAME} ${VM_FRONTEND_APPLICATION_TYPE} ${VM_FRONTEND_SOURCES})
 addLibraryWithRPATH(${VM_LIBRARY_NAME} ${VM_SOURCES})
-add_dependencies(${VM_LIBRARY_NAME} libFFI)
+
+#
+# LibFFI
+#
+if (${FEATURE_FFI})
+    include(cmake/importLibFFI.cmake)
+endif()
+
+target_include_directories(${VM_LIBRARY_NAME}
+PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm
+    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include
+    ${CMAKE_CURRENT_BINARY_DIR}/build/include/pharovm/
+    ${PHARO_CURRENT_GENERATED}/vm/include
+PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/semaphores
+)
+add_platform_headers()
+
+if (${FEATURE_FFI})
+    target_include_directories(${VM_LIBRARY_NAME}
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ffi/include)
+    target_compile_definitions(${VM_LIBRARY_NAME} 
+        PRIVATE FEATURE_FFI=1)
+
+    if(${FEATURE_THREADED_FFI})
+        target_compile_definitions(${VM_LIBRARY_NAME} PRIVATE FEATURE_THREADED_FFI=1)
+    endif()
+endif()
+
 
 #If in OSX, configure creation of Bundle
 if(OSX)
@@ -420,70 +479,16 @@ if(OSX)
 endif()
 
 target_link_libraries(${VM_EXECUTABLE_NAME} ${VM_LIBRARY_NAME})
-target_link_libraries(${VM_LIBRARY_NAME} "ffi")
 
 add_required_libs_per_platform()
 
 include(plugins.cmake)
 
+add_subdirectory(ffiTestLibrary ${CMAKE_CURRENT_BINARY_DIR}/build/ffiTestLibrary)
+
 # Handling Third party dependencies
-
-if (NOT WITHOUT_DEPENDENCIES)
-	add_third_party_dependencies_per_platform()
-endif()
-
-# Selecting files to include in the package
-
-configure_installables(bin)
-
-install(FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/build/include/pharovm/config.h
-  DESTINATION include/pharovm
-  COMPONENT include)
-
-install(
-    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm"
-    DESTINATION include
-    COMPONENT include
-    FILES_MATCHING PATTERN *.h)
-
-install(
-    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/common/"
-    DESTINATION include/pharovm
-    COMPONENT include
-    FILES_MATCHING PATTERN *.h)
-
-install(
-    DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/vm/include/"
-    DESTINATION include/pharovm
-    COMPONENT include
-    FILES_MATCHING PATTERN *.h)
+add_third_party_dependencies_per_platform()
 
 # Packaging Setup
 
-make_directory("build/packages")
-
-get_full_platform_name(FULL_PLATFORM_NAME)
-
-set(CPACK_PACKAGE_DESCRIPTION "${APPNAME} Headless VM for ${FULL_PLATFORM_NAME}")
-set(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
-set(CPACK_PACKAGE_VERSION_PATCH "${VERSION_PATCH}")
-set(CPACK_PACKAGE_VENDOR "${APPNAME}")
-set(CPACK_PACKAGE_HOMEPAGE_URL "https://pharo.org")
-
-if(ALWAYS_INTERACTIVE)
-	set(CPACK_PACKAGE_FILE_NAME "${APPNAME}VM-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${GIT_COMMIT_HASH}-StockReplacement-${FULL_PLATFORM_NAME}")
-else()
-	set(CPACK_PACKAGE_FILE_NAME "${APPNAME}VM-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${GIT_COMMIT_HASH}-${FULL_PLATFORM_NAME}")
-endif()
-
-set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/packages")
-set(CPACK_PACKAGE_CHECKSUM "SHA1")
-set(CPACK_GENERATOR "ZIP")
-set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY FALSE)
-
-#Tell CPACK to archive each sub component separately
-set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
-
-include (CPack)
+include(cmake/packaging.cmake)
