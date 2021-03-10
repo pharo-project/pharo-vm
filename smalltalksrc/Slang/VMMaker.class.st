@@ -510,7 +510,7 @@ VMMaker >> couldNotOpenFile: fileName [
 { #category : #initialize }
 VMMaker >> createCodeGenerator [
 "set up a CCodeGenerator for this VMMaker"
-	^CCodeGenerator new
+	^MLVMCCodeGenerator new
 		vmMaker: self;
 		logger: logger;
 		options: optionsDictionary;

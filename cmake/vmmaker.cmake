@@ -52,6 +52,8 @@ if(GENERATE_SOURCES)
     if (GENERATE_PHARO_VM) 
         message("Overriding VM used for code generation")  
         set(VMMAKER_VM ${GENERATE_PHARO_VM})
+        # add empty target because is required later when installing vmmaker
+        add_custom_target(build_vmmaker_get_vm-build)
     else()
         #Pick platform specific VM to download
         if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -96,9 +98,9 @@ if(GENERATE_SOURCES)
     ExternalProject_Add(
             build_vmmaker_get_image
 
-            URL https://files.pharo.org/image/90/Pharo9.0-SNAPSHOT.build.1066.sha.35e3e6b.arch.64bit.zip
-            URL_HASH SHA256=31df94ab0d8eb82096a455e36709017e600c31d097d291c084d262d9cc7aaffb
-            BUILD_COMMAND ${VMMAKER_VM} --headless ${VMMAKER_DIR}/image/Pharo9.0-SNAPSHOT-64bit-35e3e6b.image save VMMaker
+            URL https://files.pharo.org/image/90/Pharo9.0-SNAPSHOT.build.1144.sha.ac4bf08.arch.64bit.zip
+            URL_HASH SHA256=eac7c9a2387bc9a44ff2572b7dbd9fddd544d391787a05e5181baded7aab6f45
+            BUILD_COMMAND ${VMMAKER_VM} --headless ${VMMAKER_DIR}/image/Pharo9.0-SNAPSHOT-64bit-ac4bf08.image save VMMaker
             COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --save --quit "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}"
             UPDATE_COMMAND      echo 
             CONFIGURE_COMMAND   echo
@@ -118,20 +120,8 @@ if(GENERATE_SOURCES)
         COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\'\"
         DEPENDS build_vmmaker_get_image
         COMMENT "Generating VM files for flavour: ${FLAVOUR}")
-
-    #Define generated files as elements in the c-src component for packaging
-    install(DIRECTORY
-    ${CMAKE_CURRENT_BINARY_DIR}/generated/
-    DESTINATION pharo-vm/generated/
-    COMPONENT c-src)
-
-    install(
-    DIRECTORY "${GENERATED_SOURCE_DIR}/generated/32/vm/include/"
-    DESTINATION include/pharovm
-    COMPONENT include
-    FILES_MATCHING PATTERN *.h)
     
-    add_custom_target(vmmaker DEPENDS ${VMMAKER_OUTPUT_PATH}/VMMaker.image)
+    add_custom_target(vmmaker DEPENDS build_vmmaker_get_image)
     add_custom_target(generate-sources DEPENDS ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES})
 
 endif()

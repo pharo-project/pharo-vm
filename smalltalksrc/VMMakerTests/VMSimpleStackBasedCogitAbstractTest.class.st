@@ -670,7 +670,7 @@ VMSimpleStackBasedCogitAbstractTest >> returnValue [
 { #category : #helpers }
 VMSimpleStackBasedCogitAbstractTest >> runFrom: startAddress until: endAddress [
 
-	^ self runFrom: startAddress until: endAddress timeout: 1000. "microseconds"
+	^ self runFrom: startAddress until: endAddress timeout: 100000. "microseconds"
 
 ]
 

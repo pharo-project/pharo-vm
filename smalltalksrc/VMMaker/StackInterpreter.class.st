@@ -4769,18 +4769,6 @@ StackInterpreter >> closureIn: context numArgs: numArgs instructionPointer: init
 	^newClosure
 ]
 
-{ #category : #'primitive support' }
-StackInterpreter >> codeGeneratorToComputeAccessorDepth [
-
-	^ codeGeneratorToComputeAccessorDepth ifNil: [
-		^(VMMaker new
-			buildCodeGeneratorForInterpreter: self class primitivesClass
-			includeAPIMethods: false
-			initializeClasses: false)
-				logger: self transcript;
-				yourself ]
-]
-
 { #category : #'as yet unclassified' }
 StackInterpreter >> codeGeneratorToComputeAccessorDepth: aCCodeGenerator [ 
 	<doNotGenerate>
@@ -11156,12 +11144,8 @@ StackInterpreter >> okayInterpreterObjects [
 StackInterpreter >> openImageFileNamed: fileName [
 	"Attempt to open fileName or fileName, '.image'"
 	<doNotGenerate>
-	| f |
-	f := fileName asFileReference.
-	f exists ifFalse: [ (fileName, '.image') asFileReference exists ].
-	f exists ifFalse: [ self error: 'no image found'. nil ].
 	self setImageName: fileName.
-	^ f binaryReadStream 
+	^ fileName asFileReference binaryReadStream
 ]
 
 { #category : #simulation }
