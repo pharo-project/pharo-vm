@@ -11144,6 +11144,7 @@ StackInterpreter >> okayInterpreterObjects [
 StackInterpreter >> openImageFileNamed: fileName [
 	"Attempt to open fileName or fileName, '.image'"
 	<doNotGenerate>
+	self setImageName: fileName.
 	^ fileName asFileReference binaryReadStream
 ]
 
@@ -14366,6 +14367,13 @@ StackInterpreter >> setImageHeaderFlagsFrom: headerFlags [
 	"noThreadingOfGUIThread := headerFlags anyMask: 32. specific to CoInterpreterMT"
 	newFinalization := headerFlags anyMask: 64.
 	sendWheelEvents := headerFlags anyMask: 128
+]
+
+{ #category : #'simulation support' }
+StackInterpreter >> setImageName: aString [ 
+	<doNotGenerate>
+	"Simulation support for when running it with an image"
+	self shouldNotImplement 
 ]
 
 { #category : #'primitive support' }

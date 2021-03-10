@@ -2634,8 +2634,6 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 	systemAttributes at: 1 put: fileName; at: 2 put: nil.
 
 	["begin ensure block..."
-	imageName := f fullName.
-	f binary.
 
 	version := self getWord32FromFile: f swap: false.  "current version: 16r1968 (=6504) vive la revolucion!"
 	(self readableFormat: version)
@@ -2730,6 +2728,7 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 							ifFalse: [allocationReserve])].
 
 	objectMemory allocateMemoryOfSize: vmRequiredMemorySize + heapSize.	
+	objectMemory memory initialAddress: 0.
 	
 	heapBase := objectMemory
 					setHeapBase: objectMemory memory initialAddress + vmRequiredMemorySize
@@ -3522,6 +3521,11 @@ CogVMSimulator >> setImageHeaderFlagsFrom: headerFlags [
 	^self perform: #setImageHeaderFlagsFrom:
 		withArguments: {headerFlags}
 		inSuperclass: (cogThreadManager ifNil: [CoInterpreterPrimitives] ifNotNil: [CoInterpreterMT])
+]
+
+{ #category : #accessing }
+CogVMSimulator >> setImageName: aString [ 
+	imageName := aString
 ]
 
 { #category : #'multi-threading simulation switch' }

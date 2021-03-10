@@ -155,6 +155,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectNotReferencedShouldBeCollec
 { #category : #tests }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableShouldBeKept [
 	| anObjectOop |
+	memory fullGC.
 	
 	anObjectOop := self newOldSpaceObjectWithSlots: 0.
 

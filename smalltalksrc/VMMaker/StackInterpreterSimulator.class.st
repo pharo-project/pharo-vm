@@ -1618,8 +1618,6 @@ StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
 	systemAttributes at: 1 put: fileName; at: 2 put: nil.
 
 	["begin ensure block..."
-	imageName := fileName asFileReference fullName.
-
 	version := self getWord32FromFile: f swap: false.  "current version: 16r1968 (=6504) vive la revolucion!"
 	(self readableFormat: version)
 		ifTrue: [swapBytes := false]
@@ -1694,6 +1692,7 @@ StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
 		memoryLimit: heapBase + heapSize
 		endOfMemory: heapBase + dataSize. "bogus for Spur"
 	objectMemory allocateMemoryOfSize: objectMemory memoryLimit.
+	objectMemory memory initialAddress: 0.
 	"read in the image in bulk, then swap the bytes if necessary"
 	f position: headerSize.
 	count := objectMemory readHeapFromImageFile: f dataBytes: dataSize.
@@ -2278,6 +2277,11 @@ StackInterpreterSimulator >> setClickStepBreakBlock [
 { #category : #'spur bootstrap' }
 StackInterpreterSimulator >> setDisplayForm: aForm [
 	displayForm := aForm
+]
+
+{ #category : #accessing }
+StackInterpreterSimulator >> setImageName: aString [ 
+	imageName := aString
 ]
 
 { #category : #'debug printing' }
