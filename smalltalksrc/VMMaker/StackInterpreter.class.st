@@ -1386,14 +1386,14 @@ StackInterpreter class >> initializePrimitiveTable [
 		(179 primitiveFail) "reserved for primitiveAllInstancesOfAny"
 		(180 primitiveGrowMemoryByAtLeast)
 		(181 primitiveSizeInBytesOfInstance)
-		(182 primitiveFail)			"primitiveSizeInBytes"
+		(182 primitiveSizeInBytes)
 		(183 primitiveIsPinned)
 		(184 primitivePin)
 
 		"CriticalSection primitives"
-		(185 primitiveFail)		"primitiveExitCriticalSection" "similar to signal hence index = signal + 100"
-		(186 primitiveFail) 			"primitiveEnterCriticalSection" "similar to wait hence index = wait + 100. was primitiveClosureValue"
-		(187 primitiveFail) "primitiveTestAndSetOwnershipOfCriticalSection""was primitiveClosureValueWithArgs"
+		(185 primitiveExitCriticalSection)		 "similar to signal hence index = signal + 100"
+		(186 primitiveEnterCriticalSection) 		 "similar to wait hence index = wait + 100. was primitiveClosureValue"
+		(187 primitiveTestAndSetOwnershipOfCriticalSection) "was primitiveClosureValueWithArgs"
 
 		"Perform method directly"
 		(188 primitiveExecuteMethodArgsArray)
@@ -1425,7 +1425,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		(210 primitiveContextAt)
 		(211 primitiveContextAtPut)
 		(212 primitiveContextSize)	
-		(213 primitiveFail)			"primitiveContextXray"
+		(213 primitiveContextXray)
 		(214 primitiveVoidVMState)
 		(215 primitiveFlushCacheByMethod) "primitiveVoidVMStateForMethod in the CoInterpreter"
 		(216 217 primitiveFail)	"reserved for Cog primitives"
