@@ -8,7 +8,7 @@ Class {
 	#category : #'VMMaker-Interpreter'
 }
 
-{ #category : #'ffi - helpers' }
+{ #category : #initialization }
 StackInterpreterPrimitives >> allocateParameters: anInteger using: allocationBlock [
 	<inline: #always>
 
@@ -16,10 +16,7 @@ StackInterpreterPrimitives >> allocateParameters: anInteger using: allocationBlo
 
 	^ self
 		cCode: [ allocationBlock value: anInteger ]
-		inSmalltalk: [ | ptr | 
-			ptr := allocationBlock value: anInteger.
-			ptr setObject: (Array new: anInteger).
-			ptr]
+		inSmalltalk: [ CArrayAccessor on: (Array new: anInteger) ]
 ]
 
 { #category : #'primitive support' }

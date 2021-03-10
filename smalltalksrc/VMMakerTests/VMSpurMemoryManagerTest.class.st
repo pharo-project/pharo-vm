@@ -32,7 +32,7 @@ Class {
 VMSpurMemoryManagerTest class >> testParameters [ 
 
 	^ ParametrizedTestMatrix new
-			forSelector: #wordSize addOptions: { 4 . 8 };
+			forSelector: #wordSize addOptions: { 8 . 4 };
 			yourself
 ]
 
@@ -448,6 +448,7 @@ VMSpurMemoryManagerTest >> setMethodClassIntoClassTable [
 
 { #category : #running }
 VMSpurMemoryManagerTest >> setUp [
+	| memoryManager |
 	super setUp.
 
 	"100 k at least to put the class table in the old space.
@@ -464,9 +465,15 @@ VMSpurMemoryManagerTest >> setUp [
 	emptyObjectSize := objectHeaderSize + 8 "minimum required single empty slot, to use for forwarders".
 	
 	"Set it to bootstrapping to allow smaller memories"
-	interpreter := self newInterpreter.
-	memory := interpreter objectMemory.
+	memoryManager := SlangMemoryManager new.
+	memoryManager initialAddress: initialAddress.
+	memoryManager wordSize: self wordSize.
 	
+	interpreter := self newInterpreter.
+	interpreter memoryManager: memoryManager.
+
+	memory := interpreter objectMemory.
+	memory memoryManager: memoryManager.	
 	memory coInterpreter: interpreter.
 	interpreter objectMemory: memory.
 	
@@ -488,7 +495,7 @@ VMSpurMemoryManagerTest >> setUp [
 	"Schedule a GC, so it does not try to schedule one"
 	memory needGCFlag: 1.
 	
-		methodBuilder := VMMethodBuilder new
+	methodBuilder := VMMethodBuilder new
 		interpreter: interpreter; 
 		memory: memory;
 		yourself.

@@ -1,32 +1,8 @@
 Class {
 	#name : #VMSpurScavengeEphemeronTest,
 	#superclass : #VMSpurInitializedOldSpaceTest,
-	#instVars : [
-		'ourEphemeronClass'
-	],
 	#category : #'VMMakerTests-MemoryTests'
 }
-
-{ #category : #helpers }
-VMSpurScavengeEphemeronTest >> createEphemeronClass [
-	ourEphemeronClass := self newObjectWithSlots: 3.
-	memory
-		storePointer: "InstanceSpecificationIndex" 2
-		ofObject: ourEphemeronClass
-		withValue: (memory integerObjectOf: Ephemeron format).
-	memory ensureBehaviorHash: ourEphemeronClass.
-]
-
-{ #category : #helpers }
-VMSpurScavengeEphemeronTest >> newEphemeronObject [
-
-"In pharo Ephemerons have 3 slots"
-	
-	^ self
-		newObjectWithSlots: 3
-		format: memory ephemeronFormat
-		classIndex: (memory ensureBehaviorHash: ourEphemeronClass)
-]
 
 { #category : #'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testDequeueMournerWithOnlyOneEphemeronShouldEmptyMournQueue [

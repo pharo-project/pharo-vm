@@ -23,7 +23,7 @@ Spur32BitMMLECoSimulator >> bootstrapping: aBoolean [
 Spur32BitMMLECoSimulator >> byteAt: byteAddress [
 	| lowBits long32 |
 	lowBits := byteAddress bitAnd: 3.
-	long32 := self long32At: byteAddress - lowBits.
+	long32 := memoryManager unsignedLong32At: byteAddress - lowBits.
 	^(long32 bitShift: -8 * lowBits) bitAnd: 16rFF
 ]
 
@@ -236,8 +236,8 @@ Spur32BitMMLECoSimulator >> long64At: byteAddress [
 	"memory is a Bitmap, a 32-bit indexable array of bits"
 	| hiWord loWord |
 	byteAddress \\ 8 ~= 0 ifTrue: [self unalignedAccessError].
-	loWord := memory at: byteAddress // 4 + 1.
-	hiWord := memory at: byteAddress // 4 + 2.
+	loWord := memoryManager unsignedLong32At: byteAddress.
+	hiWord := memoryManager unsignedLong32At: byteAddress + 4.
 	^hiWord = 0
 		ifTrue: [loWord]
 		ifFalse: [(hiWord bitShift: 32) + loWord]
@@ -254,9 +254,8 @@ Spur32BitMMLECoSimulator >> long64At: byteAddress put: a64BitValue [
 
 { #category : #'memory access' }
 Spur32BitMMLECoSimulator >> longAt: byteAddress [
-	"Note: Adjusted for Smalltalk's 1-based array indexing."
-	byteAddress \\ 4 ~= 0 ifTrue: [self unalignedAccessError].
-	^memory at: byteAddress // 4 + 1
+
+	^memoryManager unsignedLong32At: byteAddress
 ]
 
 { #category : #'memory access' }
@@ -267,8 +266,7 @@ Spur32BitMMLECoSimulator >> longAt: byteAddress put: a32BitValue [
 	"((byteAddress between: 16rda8ac and: 16rda8c0)
 	 or: [byteAddress between: 16r8eb98 and: 16r8ebb0]) ifTrue:
 		[self halt]."
-	byteAddress \\ 4 ~= 0 ifTrue: [self unalignedAccessError].
-	^memory at: byteAddress // 4 + 1 put: a32BitValue
+	^ memoryManager unsignedLong32At: byteAddress put: a32BitValue
 ]
 
 { #category : #'image segment in/out' }
