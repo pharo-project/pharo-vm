@@ -5647,26 +5647,29 @@ CoInterpreter >> primitiveFunctionPointer: oop [
 ]
 
 { #category : #'cog jit support' }
-CoInterpreter >> primitivePropertyFlags: primIndex [
-	<api>
+CoInterpreter >> primitivePropertyFlags: primIndex primitiveDescriptor: primitiveDescriptor [
+
 	"Answer any special requirements of the given primitive"
+
+	<api>
 	objectMemory hasSpurMemoryManagerAPI
-		ifTrue: [^self primitivePropertyFlagsForSpur: primIndex]
-		ifFalse: [^self primitivePropertyFlagsForV3: primIndex]
+		ifTrue: [ 
+			^ self
+				  primitivePropertyFlagsForSpur: primIndex
+				  primitiveDescriptor: primitiveDescriptor ]
+		ifFalse: [ 
+			^ self
+				  primitivePropertyFlagsForV3: primIndex
+				  primitiveDescriptor: primitiveDescriptor ]
 ]
 
 { #category : #'cog jit support' }
-CoInterpreter >> primitivePropertyFlagsForSpur: primIndex [
+CoInterpreter >> primitivePropertyFlagsForSpur: primIndex primitiveDescriptor: primitiveDescriptor [
 	<inline: true>
 	"Answer any special requirements of the given primitive.  Spur always needs to set
 	 primitiveFunctionPointer and newMethod so primitives can retry on failure due to forwarders."
 	| baseFlags |
-	self cCode: [] inSmalltalk: [#(
-		mcprimHashMultiply: primitiveExternalCall primitiveCalloutToFFI
-		primitiveClone 
-		primitiveSlotAt
-		primitiveInstVarAt 
-		primitiveAdoptInstance )]. "For senders..."
+	self cCode: [] inSmalltalk: [#( mcprimHashMultiply: )]. "For senders..."
 
 	primIndex = PrimNumberHashMultiply ifTrue:
 		[^PrimCallOnSmalltalkStack].
@@ -5674,22 +5677,16 @@ CoInterpreter >> primitivePropertyFlagsForSpur: primIndex [
 	profileSemaphore ~= objectMemory nilObject ifTrue:
 		[baseFlags := baseFlags bitOr: PrimCallCollectsProfileSamples].
 
-		((primIndex = PrimNumberExternalCall "#primitiveExternalCall"
-	 or: [primIndex = PrimNumberFFICall "#primitiveCalloutToFFI"
-		or: [ primIndex = 148 "primitiveClone"  
-			or: [ primIndex = 173 "primitiveSlotAt" 
-				or: [primIndex = 73 "primitiveInstVarAt" 
-					or: [ primIndex = 160 "primitiveAdoptInstance" ] ] ]]])) ifTrue: "For callbacks"
-		[
-		 baseFlags := baseFlags bitOr: PrimCallMayCallBack.
-		 checkAllocFiller ifTrue:
-			[baseFlags := baseFlags bitOr: CheckAllocationFillerAfterPrimCall]].
+	primitiveDescriptor primMayCallBack ifTrue: [ 
+		baseFlags := baseFlags bitOr: PrimCallMayCallBack.
+		checkAllocFiller ifTrue: [
+			baseFlags := baseFlags bitOr: CheckAllocationFillerAfterPrimCall ]].
 
 	^baseFlags
 ]
 
 { #category : #'cog jit support' }
-CoInterpreter >> primitivePropertyFlagsForV3: primIndex [
+CoInterpreter >> primitivePropertyFlagsForV3: primIndex primitiveDescriptor: anObject [
 	<inline: true>
 	"Answer any special requirements of the given primitive"
 	| baseFlags |

@@ -696,6 +696,7 @@ CogVMSimulator >> codeGeneratorToComputeAccessorDepth [
 
 	^ codeGeneratorToComputeAccessorDepth ifNil: [
 		(VMMaker new
+			vmmakerConfiguration: VMMakerConfiguration;
 			buildCodeGeneratorForInterpreter: CoInterpreterPrimitives
 			includeAPIMethods: false
 			initializeClasses: false)
@@ -3042,11 +3043,12 @@ CogVMSimulator >> primitiveProcessBoundThreadId [
 ]
 
 { #category : #'cog jit support' }
-CogVMSimulator >> primitivePropertyFlagsForSpur: primIndex [
+CogVMSimulator >> primitivePropertyFlagsForSpur: primIndex primitiveDescriptor: primitiveDescriptor [
 
-	^ primitiveFlags at: primIndex ifAbsent: [ super primitivePropertyFlagsForSpur: primIndex ]
-
-
+	^ primitiveFlags at: primIndex ifAbsent: [ 
+		  super
+			  primitivePropertyFlagsForSpur: primIndex
+			  primitiveDescriptor: primitiveDescriptor ]
 ]
 
 { #category : #'multi-threading simulation switch' }

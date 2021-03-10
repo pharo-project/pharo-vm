@@ -463,6 +463,15 @@ CogObjectRepresentation >> genNewArrayOfSize: size initialized: initialized [
 ]
 
 { #category : #'primitive generators' }
+CogObjectRepresentation >> genNonImplementedPrimitive [
+	"Primitive generator used to mark primitives that have no machine code implementation
+	This works as a null pattern.
+	Then primitive generation will just compile a call to the interpreter-version of the primitive
+	"
+	^UnimplementedPrimitive
+]
+
+{ #category : #'primitive generators' }
 CogObjectRepresentation >> genPrimitiveAdd [
 	| jumpNotSI jumpOvfl |
 	<var: #jumpNotSI type: #'AbstractInstruction *'>

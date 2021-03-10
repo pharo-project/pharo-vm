@@ -927,8 +927,11 @@ CurrentImageCoInterpreterFacade >> primitiveIndexOfMethod: anOop header: header 
 ]
 
 { #category : #accessing }
-CurrentImageCoInterpreterFacade >> primitivePropertyFlags: primIndex [
-	^coInterpreter primitivePropertyFlags: primIndex
+CurrentImageCoInterpreterFacade >> primitivePropertyFlags: primIndex primitiveDescriptor: primitiveDescriptor [
+
+	^ coInterpreter
+		  primitivePropertyFlags: primIndex
+		  primitiveDescriptor: primitiveDescriptor
 ]
 
 { #category : #printing }
