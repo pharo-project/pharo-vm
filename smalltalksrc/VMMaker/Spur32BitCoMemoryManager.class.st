@@ -252,7 +252,10 @@ Spur32BitCoMemoryManager >> needGCFlagAddress [
 	<api>
 	<returnTypeC: #usqInt>
 	
-	^ cogit maybeSimulatedAddressOf: #needGCFlag
+	"I need to do this, because if I use directly maybeSimulatedAddressOf: there is a reference to the function needGCFlag and generates it"
+	^ self cCode: [ (self addressOf: needGCFlag) asUnsignedInteger ] 
+		inSmalltalk: [ self maybeSimulatedAddressOf: #needGCFlag.  ]
+
 ]
 
 { #category : #'garbage collection' }

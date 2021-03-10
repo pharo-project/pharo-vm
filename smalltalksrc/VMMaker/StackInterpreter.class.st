@@ -11637,6 +11637,7 @@ StackInterpreter >> primitiveFloatSubtract: rcvrOop fromArg: argOop [
 
 { #category : #accessing }
 StackInterpreter >> primitiveFunctionPointer [
+	<doNotGenerate>
 	^ primitiveFunctionPointer
 ]
 

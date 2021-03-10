@@ -5583,6 +5583,8 @@ Cogit >> compileEntireFullBlockMethod: numCopied [
 	self preenMethodLabel.
 	self compileFullBlockEntry.
 
+	cogEventLogger compileCountIncrement.
+
 	"Frame build"
 	self compileFullBlockMethodFrameBuild: numCopied.
 	"Method body"
@@ -5599,6 +5601,9 @@ Cogit >> compileEntireMethod [
 	self preenMethodLabel.
 	self compileAbort.
 	self compileEntry.
+
+	cogEventLogger compileCountIncrement.
+		
 	(result := self compilePrimitive) < 0 ifTrue:
 		[^result].
 	self compileFrameBuild.
@@ -5622,9 +5627,7 @@ Cogit >> compileEntry [
 	self CmpR: ClassReg R: TempReg.
 	self JumpNonZero: sendMiss.
 	noCheckEntry := self Label.
-	
-	cogEventLogger compileCountIncrement.	
-	
+		
 	self compileSendTrace ifTrue:
 		[backEnd saveAndRestoreLinkRegAround:
 			[self CallRT: ceTraceLinkedSendTrampoline]]
@@ -5658,8 +5661,6 @@ Cogit >> compileFullBlockEntry [
 	"Context switch entry (use ReceiverResultReg as a non-zero value; it's shorter)."
 	fullBlockEntry := self MoveR: ReceiverResultReg R: SendNumArgsReg.
 	jumpNoContextSwitch jmpTarget: self Label.
-
-	cogEventLogger compileCountIncrement.
 
 	^0
 ]
@@ -6250,6 +6251,14 @@ Cogit >> ensureFixupAt: targetPC [
 		[fixup becomeFixup].
 	fixup recordBcpc: bytecodePC.
 	^fixup
+]
+
+{ #category : #debugging }
+Cogit >> ensureMethodIsCoggedEvent: aCogMethod [
+
+	<doNotGenerate>
+
+	cogEventLogger ensureMethodIsCoggedEvent: aCogMethod
 ]
 
 { #category : #debugging }
@@ -7877,6 +7886,9 @@ Cogit >> generateCogFullBlock [
 	postCompileHook ifNotNil:
 		[self perform: postCompileHook with: method.
 		 postCompileHook := nil].
+	
+	cogEventLogger methodJitted: method.
+	
 	^method
 ]
 
@@ -10825,6 +10837,14 @@ Cogit >> recordBlockTrace [
 ]
 
 { #category : #debugging }
+Cogit >> recordDirectActivationOfQuickPrimitive: aMethodOop [
+
+	<doNotGenerate>
+
+	cogEventLogger recordDirectActivationOfQuickPrimitive: aMethodOop
+]
+
+{ #category : #debugging }
 Cogit >> recordEventTrace [
 	<api>
 	<cmacro: '() (traceFlags & 16)'>
@@ -10869,6 +10889,14 @@ Cogit >> recordLastInstruction [
 						disassembleNextInstructionIn: coInterpreter memory
 						for: nil].
 	^self recordInstruction: inst
+]
+
+{ #category : #debugging }
+Cogit >> recordMethodActivatedAfterStackCheckOffset: aCogMethod [
+
+	<doNotGenerate>
+
+	cogEventLogger recordMethodActivatedAfterStackCheckOffset: aCogMethod
 ]
 
 { #category : #debugging }

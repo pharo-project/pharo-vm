@@ -8,7 +8,8 @@ Class {
 		'cogit',
 		'cogEventFile',
 		'cogStatCounters',
-		'currentCounterIndex'
+		'currentCounterIndex',
+		'coInterpreter'
 	],
 	#classVars : [
 		'EMPTY_COUNTER_MARK',
@@ -29,6 +30,7 @@ CogEventLogger class >> declareCVarsIn: aCCodeGenerator [
 	"Declare any additional variables and/or add type declarations for existing variables."
 	
 	aCCodeGenerator removeVariable: #cogit.
+	aCCodeGenerator removeVariable: #coInterpreter.
 	
 	aCCodeGenerator
 		var: #cogEventBuffer
@@ -237,7 +239,9 @@ CogEventLogger >> cogit [
 { #category : #accessing }
 CogEventLogger >> cogit: anObject [
 	<doNotGenerate>
-	cogit := anObject
+	
+	cogit := anObject.
+	coInterpreter := cogit coInterpreter
 ]
 
 { #category : #events }
@@ -303,6 +307,20 @@ CogEventLogger >> currentCounterIndex [
 		  ifFalse: [ currentCounterIndex ]
 ]
 
+{ #category : #events }
+CogEventLogger >> ensureMethodIsCoggedEvent: aCogMethod [
+
+	<api>
+	<var: #aCogMethod type: #'CogMethod *'>
+
+	self 
+		clearEvent;
+		forEvent: 'ensureMethodIsCogged';
+		addClass: (cogit coInterpreter methodClassOf: aCogMethod methodObject);
+		addSelector: (self methodSelector: aCogMethod);
+		logEvent.
+]
+
 { #category : #simulation }
 CogEventLogger >> fflush: aZnCharacterWriteStream [ 
 
@@ -335,7 +353,7 @@ CogEventLogger >> forEvent: aString [
 	
 	self 
 		addString: aString;
-		addLongLong: cogit coInterpreter ioUTCMicroseconds
+		addLongLong: coInterpreter ioUTCMicrosecondsNow
 ]
 
 { #category : #simulation }
@@ -461,6 +479,32 @@ CogEventLogger >> numberOfCalls: aCogMethod [
 	<returnTypeC: #'long long'>
 	
 	^ cogStatCounters at: aCogMethod counterIndex 
+]
+
+{ #category : #events }
+CogEventLogger >> recordDirectActivationOfQuickPrimitive: aMethodOop [
+
+	| aMethodHeader aCogMethod |
+	<api>
+	<var: #aCogMethod type: #'CogMethod *'>
+
+	aMethodHeader := coInterpreter rawHeaderOf: aMethodOop.
+	(coInterpreter isCogMethodReference: aMethodHeader)
+		ifFalse: [ ^ self ].
+
+	aCogMethod := self cCoerceSimple: aMethodHeader to: #'CogMethod *'.
+	cogStatCounters at: aCogMethod counterIndex put: (cogStatCounters at: aCogMethod counterIndex) + 1.
+
+]
+
+{ #category : #events }
+CogEventLogger >> recordMethodActivatedAfterStackCheckOffset: aCogMethod [
+
+	<api>
+	<var: #aCogMethod type: #'CogMethod *'>
+
+	cogStatCounters at: aCogMethod counterIndex put: (cogStatCounters at: aCogMethod counterIndex) + 1
+		
 ]
 
 { #category : #Cogit }

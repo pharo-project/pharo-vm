@@ -542,6 +542,9 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 		 cogit ceEnterCogCodePopReceiverReg.
 		 self error: 'should not be reached'].
 	instructionPointer := cogMethod asInteger + cogMethod stackCheckOffset.
+
+	cogit recordMethodActivatedAfterStackCheckOffset: cogMethod.
+
 	switched := self handleStackOverflowOrEventAllowContextSwitch: (self canContextSwitchIfActivating: newMethod header: methodHeader).
 	self returnToExecutive: inInterpreter postContextSwitch: switched
 ]
@@ -2132,6 +2135,9 @@ CoInterpreter >> ceStackOverflow: contextSwitchIfNotNil [
 	cogMethod := self mframeCogMethod: framePointer.
 	self assert: cesoRetAddr - cogit abortOffset = (self asCogHomeMethod: cogMethod) asInteger.
 	instructionPointer := cogMethod asInteger + cogMethod stackCheckOffset.
+	
+	cogit recordMethodActivatedAfterStackCheckOffset: cogMethod.	
+	
 	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: false line: #'__LINE__'.
 	method := newMethod := messageSelector := objectMemory nilObject.
 	switched := self handleStackOverflowOrEventAllowContextSwitch: contextSwitchIfNotNil ~= 0.
@@ -2861,6 +2867,9 @@ CoInterpreter >> ensureMethodIsCogged: methodObj maybeClosure: maybeClosure [
 		 self commenceCogCompiledCodeCompaction].
 	(self asserta: cogMethod ~~ nil) ifFalse:
 		[self error: 'could not compile method that should have been compiled'].
+	
+	cogit ensureMethodIsCoggedEvent: cogMethod.
+	
 	^cogMethod
 ]
 
@@ -3052,6 +3061,7 @@ CoInterpreter >> executeNewMethod [
 	primitiveFunctionPointer ~= 0 ifTrue:
 		[self isPrimitiveFunctionPointerAnIndex ifTrue:
 			[self externalQuickPrimitiveResponse.
+			 cogit recordDirectActivationOfQuickPrimitive: newMethod.
 			 self return: self popStack toExecutive: inInterpreter.
 			 ^nil].
 		 "slowPrimitiveResponse may of course context-switch.  If so we must reenter the
@@ -4172,6 +4182,7 @@ CoInterpreter >> interpretMethodFromMachineCode [
 			 self isPrimitiveFunctionPointerAnIndex
 				ifTrue:
 					[self externalQuickPrimitiveResponse.
+					 cogit recordDirectActivationOfQuickPrimitive: newMethod.
 					 primFailCode := 0]
 				ifFalse:
 					[self slowPrimitiveResponse].
@@ -4305,7 +4316,8 @@ CoInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 		ifNotNil:
 			[self push: cogMethod asUnsignedInteger.
 			 self push: objectMemory nilObject. "FoxThisContext field"
-			 instructionPointer := cogMethod asUnsignedInteger + cogMethod stackCheckOffset]
+			 instructionPointer := cogMethod asUnsignedInteger + cogMethod stackCheckOffset.
+			 cogit recordMethodActivatedAfterStackCheckOffset: cogMethod.]
 		ifNil:
 			[self push: newMethod.
 			 self setMethod: newMethod methodHeader: methodHeader.

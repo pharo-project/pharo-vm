@@ -257,8 +257,11 @@ Spur64BitCoMemoryManager >> methodHeaderOf: methodObj [
 Spur64BitCoMemoryManager >> needGCFlagAddress [
 	<api>
 	<returnTypeC: #usqInt>
-	
-	^ cogit maybeSimulatedAddressOf: #needGCFlag
+
+	"I need to do this, because if I use directly maybeSimulatedAddressOf: there is a reference to the function needGCFlag and generates it"
+	^ self cCode: [ (self addressOf: needGCFlag) asUnsignedInteger ] 
+		inSmalltalk: [ self maybeSimulatedAddressOf: #needGCFlag.  ]
+
 
 ]
 
@@ -326,7 +329,10 @@ Spur64BitCoMemoryManager >> setUpForUseByFacade: aCurrentImageCoInterpreterFacad
 Spur64BitCoMemoryManager >> specialObjectsArrayAddress [
 	<api>
 	
-	^ self maybeSimulatedAddressOf: #specialObjectsOop.
+	"I need to do this, because if I use directly maybeSimulatedAddressOf: there is a reference to the function specialObjectsOop and generates it"
+	^ self cCode: [ (self addressOf: specialObjectsOop) asUnsignedInteger ] 
+		inSmalltalk: [ self maybeSimulatedAddressOf: #specialObjectsOop.  ]
+
 
 ]
 
