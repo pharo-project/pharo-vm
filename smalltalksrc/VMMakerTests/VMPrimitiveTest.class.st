@@ -424,6 +424,21 @@ VMPrimitiveTest >> testPrimitiveAtPutFailsForNonIndexableObject [
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
 ]
 
+{ #category : #'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveAtPutFailsForNonIntegerArgument [
+	| class objectInstance |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
+	objectInstance := memory instantiateClass: class.
+	
+	interpreter push: objectInstance.
+	interpreter push: memory falseObject.
+	interpreter push: memory falseObject.
+	interpreter primitiveAtPut.
+	
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadArgument. 
+]
+
 { #category : #'tests - primitiveImmutability' }
 VMPrimitiveTest >> testPrimitiveAtPutFailsIfObjectIsContext [
 
@@ -445,21 +460,6 @@ VMPrimitiveTest >> testPrimitiveAtPutFailsIfObjectIsContext [
 	self assert: interpreter failed.
 	"2 is the bad receiver exception in the special object array for the primFailCode"
 	self assert: interpreter primFailCode equals: 2. 
-]
-
-{ #category : #'tests - primitiveAtPut' }
-VMPrimitiveTest >> testPrimitiveAtPutFailsForNonIntegerArgument [
-	| class objectInstance |
-	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
-	objectInstance := memory instantiateClass: class.
-	
-	interpreter push: objectInstance.
-	interpreter push: memory falseObject.
-	interpreter push: memory falseObject.
-	interpreter primitiveAtPut.
-	
-	self assert: interpreter failed.
-	self assert: interpreter primFailCode equals: PrimErrBadArgument. 
 ]
 
 { #category : #'tests - primitiveAtPut' }

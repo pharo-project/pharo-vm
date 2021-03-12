@@ -463,13 +463,21 @@ StackInterpreterPrimitives >> marshallAndPushReturnValueFrom: returnHolder ofTyp
 		caseOf: {
 			[ FFI_TYPE_SINT8 ] 	-> [ self pop: argumentsAndReceiverCount thenPushInteger: (objectMemory readSINT8AtPointer: returnHolder) ].
 			[ FFI_TYPE_SINT16 ] 	-> [ self pop: argumentsAndReceiverCount thenPushInteger: (objectMemory readSINT16AtPointer: returnHolder) ].
-			[ FFI_TYPE_SINT32 ] 	-> [ self pop: argumentsAndReceiverCount thenPushInteger: (objectMemory readSINT32AtPointer: returnHolder) ].
-			[ FFI_TYPE_SINT64 ] 	-> [ self pop: argumentsAndReceiverCount thenPushInteger: (objectMemory readSINT64AtPointer: returnHolder) ].
+			[ FFI_TYPE_SINT32 ] 	-> [ self 
+													pop: argumentsAndReceiverCount 
+													thenPush: (objectMemory signed32BitIntegerFor: (objectMemory readSINT32AtPointer: returnHolder)) ].
+			[ FFI_TYPE_SINT64 ] 	-> [ self 
+													pop: argumentsAndReceiverCount 
+													thenPush: (objectMemory signed64BitIntegerFor: (objectMemory readSINT64AtPointer: returnHolder)) ].
 
 			[ FFI_TYPE_UINT8 ] 	-> [ self pop: argumentsAndReceiverCount thenPushInteger: (objectMemory readUINT8AtPointer: returnHolder) ].
 			[ FFI_TYPE_UINT16 ] 	-> [ self pop: argumentsAndReceiverCount thenPushInteger: (objectMemory readUINT16AtPointer: returnHolder) ].
-			[ FFI_TYPE_UINT32 ] 	-> [ self pop: argumentsAndReceiverCount thenPushInteger: (objectMemory readUINT32AtPointer: returnHolder) ].
-			[ FFI_TYPE_UINT64 ] 	-> [ self pop: argumentsAndReceiverCount thenPushInteger: (objectMemory readUINT64AtPointer: returnHolder) ].
+			[ FFI_TYPE_UINT32 ] 	-> [ self 
+													pop: argumentsAndReceiverCount 
+													thenPush: (objectMemory positive32BitIntegerFor: (objectMemory readUINT32AtPointer: returnHolder)) ].
+			[ FFI_TYPE_UINT64 ] 	-> [ self 
+													pop: argumentsAndReceiverCount 
+													thenPush: (objectMemory positive64BitIntegerFor: (objectMemory readUINT64AtPointer: returnHolder)) ].
 
 			[ FFI_TYPE_POINTER ] 	-> [ self pop: argumentsAndReceiverCount thenPush: (objectMemory newExternalAddressWithValue: (objectMemory readPointerAtPointer: returnHolder)) ].
 
@@ -576,9 +584,14 @@ StackInterpreterPrimitives >> marshallSInt32From: argumentArrayOop at: index int
 { #category : #'ffi - helpers' }
 StackInterpreterPrimitives >> marshallSInt64From: argumentArrayOop at: index into: holder [
 
-	| intHolder |
+	| intHolder value |
+	
+	value := self signed64BitValueOf: (objectMemory fetchPointer: index ofObject: argumentArrayOop).
+	
+	self failed ifTrue: [ ^ self ].
+		
 	intHolder := self cCoerce: holder to: #'int64_t *'.
-	intHolder at: 0 put: (self fetchInteger: index ofObject: argumentArrayOop ).
+	intHolder at: 0 put: value.
 		
 ]
 
@@ -655,10 +668,12 @@ StackInterpreterPrimitives >> marshallUInt32From: argumentArrayOop at: index int
 StackInterpreterPrimitives >> marshallUInt64From: argumentArrayOop at: index into: holder [
 
 	| intHolder value |
-	
-	value := self fetchInteger: index ofObject: argumentArrayOop.
-	value < 0 ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-		
+
+	value := self positive64BitValueOf:( objectMemory fetchPointer: index ofObject: argumentArrayOop ).	
+
+	self failed
+		ifTrue: [ ^ self ].
+			
 	intHolder := self cCoerce: holder to: #'uint64_t *'.
 	intHolder at: 0 put: value.
 		
