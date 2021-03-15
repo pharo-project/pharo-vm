@@ -80,8 +80,8 @@ CogObjectRepresentationFor64BitSpur >> bitAndByteOffsetOfIsFullBlockBitInto: aBl
 		CogBlockMethodSurrogate64 new
 			at: 0 memory: m headerSize: 8 cogit: nil;
 			cpicHasMNUCaseOrCMIsFullBlock: true.
-		self assert: m = #[0 0 0 0 0 0 0 0 0 16 0 0 0 0 0 0].
-		self assert: (m at: objectMemory baseHeaderSize + 2) = 16].
+		self assert: m = #[0 0 0 0 0 0 0 0 16 0 0 0 0 0 0 0 ].
+		self assert: (m at: objectMemory baseHeaderSize + 1) = 16].
 	aBlock value: 16 value: objectMemory baseHeaderSize + 1 "zero-relative"
 ]
 
