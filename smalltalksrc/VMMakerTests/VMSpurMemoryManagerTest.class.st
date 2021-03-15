@@ -538,7 +538,8 @@ VMSpurMemoryManagerTest >> setUpScheduler [
 
 { #category : #running }
 VMSpurMemoryManagerTest >> setUpUsingImage [
-
+	"/!\ Only runnable with a wordsize equals to your image's (needs disabling parametizing of wordsize) /!\"
+	
 	"This is an alternate setUp using an image to correctly initialize memory/interpreter.
 	Currently not used by default, as some tests still fails, but is usable.
 	For example, we could test that all test are working on both a specific setup, and image load one.
@@ -549,8 +550,7 @@ VMSpurMemoryManagerTest >> setUpUsingImage [
 		
 	"You currently have to setup the path by hand, I do not rememeber/know how to get the directory from a repository, to do a correct relative path
 	Sorry :3"
-	self halt.
-	interpreter openOn: 'fileToPath'.
+	interpreter openOn: 'YourImageHere.image'.
 	interpreter initStackPages.
 	interpreter loadInitialContext.
 	
@@ -560,14 +560,15 @@ VMSpurMemoryManagerTest >> setUpUsingImage [
 	newSpaceSize := memory oldSpaceStart -memory newSpaceStart.
 	oldSpaceSize := memory oldSpaceSize.
 	
-	stackBuilder := VMStackBuilder new
-		interpreter: interpreter; 
-		memory: memory;
-		yourself.
-				
 	methodBuilder := VMMethodBuilder new
 		interpreter: interpreter; 
 		memory: memory;
+		yourself.
+
+	stackBuilder := VMStackBuilder new
+		interpreter: interpreter; 
+		memory: memory;
+		methodBuilder: methodBuilder;
 		yourself.
 		
 ]

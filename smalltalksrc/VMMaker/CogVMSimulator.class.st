@@ -3538,6 +3538,11 @@ CogVMSimulator >> setImageHeaderFlagsFrom: headerFlags [
 		inSuperclass: (cogThreadManager ifNil: [CoInterpreterPrimitives] ifNotNil: [CoInterpreterMT])
 ]
 
+{ #category : #accessing }
+CogVMSimulator >> setImageName: aString [ 
+	imageName := aString
+]
+
 { #category : #'multi-threading simulation switch' }
 CogVMSimulator >> setMaxWaitingPriorityTo: minPriority [
 	"This method includes or excludes CoInterpreterMT methods as required.
