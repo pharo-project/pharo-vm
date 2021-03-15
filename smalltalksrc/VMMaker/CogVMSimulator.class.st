@@ -80,7 +80,8 @@ Class {
 		'expecting',
 		'bootstrapping',
 		'primitiveFailCount',
-		'primitiveFlags'
+		'primitiveFlags',
+		'initialAddress'
 	],
 	#classVars : [
 		'ByteCountsPerMicrosecond',

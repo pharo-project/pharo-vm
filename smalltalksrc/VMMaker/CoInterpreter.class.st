@@ -91,7 +91,8 @@ Class {
 		'lastUncoggableInterpretedBlockMethod',
 		'flagInterpretedMethods',
 		'maxLiteralCountForCompile',
-		'minBackwardJumpCountForCompile'
+		'minBackwardJumpCountForCompile',
+		'initialMemoryAddress'
 	],
 	#classVars : [
 		'CSCallbackEnter',
