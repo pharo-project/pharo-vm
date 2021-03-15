@@ -717,10 +717,12 @@ SpurSegmentManager >> someSegmentContainsPinned [
 SpurSegmentManager >> sq: startingAddress Image: byteSize File: bytesToRead Read: aMultiByteFileStream [ 
 
 	<doNotGenerate>
-	^ manager memory 
-		loadFrom: aMultiByteFileStream
-		size: bytesToRead
-		inPosition: startingAddress
+	| region |
+	region := manager memoryManager regionForAddress: startingAddress.
+	^ aMultiByteFileStream
+		readInto: region memory
+		startingAt: startingAddress - region start + 1
+		count: bytesToRead
 ]
 
 { #category : #snapshot }
