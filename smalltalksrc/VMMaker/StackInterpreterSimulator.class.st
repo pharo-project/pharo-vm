@@ -1611,6 +1611,10 @@ StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
 	  hdrNumStackPages hdrEdenBytes hdrMaxExtSemTabSize allocationReserve |
 	"open image file and read the header"
 
+	memoryManager := SlangMemoryManager new.
+	objectMemory memoryManager: memoryManager.
+	memoryManager wordSize: objectMemory wordSize.
+
 	(f := self openImageFileNamed: fileName) ifNil: [^self].
 
 	"Set the image name and the first argument; there are
