@@ -281,7 +281,11 @@ VMMachineCodeDebugger >> runToSelectedInstruction [
 
 	selectedInstruction := self selectedInstruction.
 
-	machineSimulator startAt: machineSimulator instructionPointerValue until: selectedInstruction address timeout: 1000 count: 0.
+	machineSimulator
+		startAt: machineSimulator instructionPointerValue
+		until: selectedInstruction address
+		timeout: 100000 "microseconds = 100ms"
+		count: 0.
 	self refreshStack.
 ]
 

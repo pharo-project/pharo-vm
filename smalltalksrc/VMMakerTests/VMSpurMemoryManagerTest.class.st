@@ -32,7 +32,7 @@ Class {
 VMSpurMemoryManagerTest class >> testParameters [ 
 
 	^ ParametrizedTestMatrix new
-			forSelector: #wordSize addOptions: { 4 . 8 };
+			forSelector: #wordSize addOptions: { 8 . 4 };
 			yourself
 ]
 
@@ -76,6 +76,16 @@ VMSpurMemoryManagerTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod 
 { #category : #accessing }
 VMSpurMemoryManagerTest >> initialCodeSize [
 	^ 0
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> initializationOptions [
+
+	^ { 
+		  #BytesPerWord.
+		  self wordSize.
+		  #ObjectMemory.
+		  memory class name }
 ]
 
 { #category : #helpers }
@@ -219,19 +229,16 @@ VMSpurMemoryManagerTest >> newClassInOldSpaceWithSlots: numberOfSlots instSpec: 
 
 { #category : #helpers }
 VMSpurMemoryManagerTest >> newInterpreter [
+
 	memory := self newMemory.
 
 	self interpreterClass
-		initializeWithOptions:
-			{#BytesPerWord.
-			self wordSize.
-			#ObjectMemory.
-			memory class name}
+		initializeWithOptions: self initializationOptions
 		objectMemoryClass: memory class.
 
 	^ self interpreterClass basicNew
-		objectMemory: memory;
-		basicInitialize
+		  objectMemory: memory;
+		  basicInitialize
 ]
 
 { #category : #running }
@@ -441,6 +448,7 @@ VMSpurMemoryManagerTest >> setMethodClassIntoClassTable [
 
 { #category : #running }
 VMSpurMemoryManagerTest >> setUp [
+	| memoryManager |
 	super setUp.
 
 	"100 k at least to put the class table in the old space.
@@ -457,9 +465,15 @@ VMSpurMemoryManagerTest >> setUp [
 	emptyObjectSize := objectHeaderSize + 8 "minimum required single empty slot, to use for forwarders".
 	
 	"Set it to bootstrapping to allow smaller memories"
-	interpreter := self newInterpreter.
-	memory := interpreter objectMemory.
+	memoryManager := SlangMemoryManager new.
+	memoryManager initialAddress: initialAddress.
+	memoryManager wordSize: self wordSize.
 	
+	interpreter := self newInterpreter.
+	interpreter memoryManager: memoryManager.
+
+	memory := interpreter objectMemory.
+	memory memoryManager: memoryManager.	
 	memory coInterpreter: interpreter.
 	interpreter objectMemory: memory.
 	
@@ -481,7 +495,7 @@ VMSpurMemoryManagerTest >> setUp [
 	"Schedule a GC, so it does not try to schedule one"
 	memory needGCFlag: 1.
 	
-		methodBuilder := VMMethodBuilder new
+	methodBuilder := VMMethodBuilder new
 		interpreter: interpreter; 
 		memory: memory;
 		yourself.
@@ -524,7 +538,8 @@ VMSpurMemoryManagerTest >> setUpScheduler [
 
 { #category : #running }
 VMSpurMemoryManagerTest >> setUpUsingImage [
-
+	"/!\ Only runnable with a wordsize equals to your image's (needs disabling parametizing of wordsize) /!\"
+	
 	"This is an alternate setUp using an image to correctly initialize memory/interpreter.
 	Currently not used by default, as some tests still fails, but is usable.
 	For example, we could test that all test are working on both a specific setup, and image load one.
@@ -535,8 +550,7 @@ VMSpurMemoryManagerTest >> setUpUsingImage [
 		
 	"You currently have to setup the path by hand, I do not rememeber/know how to get the directory from a repository, to do a correct relative path
 	Sorry :3"
-	self halt.
-	interpreter openOn: 'fileToPath'.
+	interpreter openOn: 'YourImageHere.image'.
 	interpreter initStackPages.
 	interpreter loadInitialContext.
 	
@@ -546,14 +560,15 @@ VMSpurMemoryManagerTest >> setUpUsingImage [
 	newSpaceSize := memory oldSpaceStart -memory newSpaceStart.
 	oldSpaceSize := memory oldSpaceSize.
 	
-	stackBuilder := VMStackBuilder new
-		interpreter: interpreter; 
-		memory: memory;
-		yourself.
-				
 	methodBuilder := VMMethodBuilder new
 		interpreter: interpreter; 
 		memory: memory;
+		yourself.
+
+	stackBuilder := VMStackBuilder new
+		interpreter: interpreter; 
+		memory: memory;
+		methodBuilder: methodBuilder;
 		yourself.
 		
 ]

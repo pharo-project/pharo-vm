@@ -5093,7 +5093,7 @@ CogARMv8Compiler >> outputMachineCodeAt: targetAddress [
 	<inline: true>
 	0 to: machineCodeSize - 1 by: 4 do:
 		[:j|
-		objectMemory long32At: targetAddress + j put: (machineCode at: j // 4)]
+		objectMemory memoryManager unsignedLong32At: targetAddress + j put: (machineCode at: j // 4)]
 ]
 
 { #category : #'generate machine code' }

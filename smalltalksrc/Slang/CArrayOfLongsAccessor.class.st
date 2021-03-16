@@ -47,7 +47,7 @@ CArrayOfLongsAccessor >> at: index put: aValue [
 { #category : #'initialize-release' }
 CArrayOfLongsAccessor >> objectMemory: anObjectMemory at: anAddress [
 	objectMemory := anObjectMemory.
-	object := anObjectMemory memory.
+	object := anObjectMemory memoryManager.
 	offset := anAddress / anObjectMemory wordSize.
 	elementByteSize := anObjectMemory wordSize.
 	address := anAddress

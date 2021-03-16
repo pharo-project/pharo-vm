@@ -369,13 +369,14 @@ VMSpurScavengerTest >> testOverflowRememberedSetShouldMakeItGrow [
 	originalLimit := memory scavenger rememberedSetLimit.
 
 	"Create as many objects for the remembered set + 1"
-	oldObjectRootAddress := self newObjectWithSlots: originalLimit + 1.
+	oldObjectRootAddress := self newOldSpaceObjectWithSlots: originalLimit + 1.
 	1 to: originalLimit + 1 do: [ :i | 
 		memory
 			storePointer: i - 1
 			ofObject: oldObjectRootAddress
 			withValue: (self newObjectWithSlots: 1).
 	].
+
 	"Flush them to the old space"
 	memory coInterpreter method: oldObjectRootAddress.
 	memory flushNewSpace.

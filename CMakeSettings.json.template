@@ -1,5 +1,5 @@
 ﻿{
-  "template-hash": "@template_hash@",
+  "template-uuid": "fa53bea9-10fc-4df9-be86-ac96fb915041",
   "configurations": [
     {
       "name": "x86-Debug-StackVM-clang",
@@ -49,42 +49,6 @@
         },
         {
           "name": "FEATURE_LIB_SDL2",
-          "value": "False",
-          "type": "BOOL"
-        }
-      ]
-    },
-    {
-      "name": "x86-Debug-Cog-msvc",
-      "generator": "Visual Studio 16 2019",
-      "configurationType": "Debug",
-      "buildRoot": "${projectDir}\\out\\build\\${name}",
-      "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeCommandArgs": "-DGENERATE_SOURCES=FALSE -DBUILD_BUNDLE=FALSE",
-      "buildCommandArgs": "",
-      "ctestCommandArgs": "",
-      "inheritEnvironments": [ "msvc_x86" ],
-      "variables": [
-        {
-          "name": "FEATURE_FFI",
-          "value": "False",
-          "type": "BOOL"
-        }
-      ]
-    },
-    {
-      "name": "x86-Debug-Cog-clang",
-      "generator": "Visual Studio 16 2019",
-      "configurationType": "Debug",
-      "buildRoot": "${projectDir}\\out\\build\\${name}",
-      "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeCommandArgs": "",
-      "buildCommandArgs": "",
-      "ctestCommandArgs": "",
-      "inheritEnvironments": [ "clang_cl_x86" ],
-      "variables": [
-        {
-          "name": "FEATURE_FFI",
           "value": "False",
           "type": "BOOL"
         }

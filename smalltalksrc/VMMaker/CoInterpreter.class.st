@@ -2444,13 +2444,12 @@ CoInterpreter >> commenceCogCompiledCodeCompaction [
 		 self assert: self stackTop asUnsignedInteger ~= instructionPointer.
 		 self push: instructionPointer.
 		 self externalWriteBackHeadStackPointer].
-	self assertValidStackedInstructionPointers: #'__LINE__'.
+	
 	cogit compactCogCompiledCode.
 	self nilUncoggableMethods.
 	instructionPointer ~= 0 ifTrue:
 		[instructionPointer := self popStack.
 		 self externalWriteBackHeadStackPointer].
-	self assertValidStackedInstructionPointers: #'__LINE__'.
 
 	statCodeCompactionCount := statCodeCompactionCount + 1.
 	statCodeCompactionUsecs := statCodeCompactionUsecs + (self ioUTCMicrosecondsNow - startTime).
@@ -5662,16 +5661,27 @@ CoInterpreter >> primitivePropertyFlagsForSpur: primIndex [
 	"Answer any special requirements of the given primitive.  Spur always needs to set
 	 primitiveFunctionPointer and newMethod so primitives can retry on failure due to forwarders."
 	| baseFlags |
-	self cCode: [] inSmalltalk: [#(mcprimHashMultiply: primitiveExternalCall primitiveCalloutToFFI)]. "For senders..."
+	self cCode: [] inSmalltalk: [#(
+		mcprimHashMultiply: primitiveExternalCall primitiveCalloutToFFI
+		primitiveClone 
+		primitiveSlotAt
+		primitiveInstVarAt 
+		primitiveAdoptInstance )]. "For senders..."
+
 	primIndex = PrimNumberHashMultiply ifTrue:
 		[^PrimCallOnSmalltalkStack].
 	baseFlags := PrimCallNeedsPrimitiveFunction + PrimCallNeedsNewMethod.
 	profileSemaphore ~= objectMemory nilObject ifTrue:
 		[baseFlags := baseFlags bitOr: PrimCallCollectsProfileSamples].
 
-		(primIndex = PrimNumberExternalCall "#primitiveExternalCall"
-	 or: [primIndex = PrimNumberFFICall "#primitiveCalloutToFFI"]) ifTrue: "For callbacks"
-		[baseFlags := baseFlags bitOr: PrimCallMayCallBack.
+		((primIndex = PrimNumberExternalCall "#primitiveExternalCall"
+	 or: [primIndex = PrimNumberFFICall "#primitiveCalloutToFFI"
+		or: [ primIndex = 148 "primitiveClone"  
+			or: [ primIndex = 173 "primitiveSlotAt" 
+				or: [primIndex = 73 "primitiveInstVarAt" 
+					or: [ primIndex = 160 "primitiveAdoptInstance" ] ] ]]])) ifTrue: "For callbacks"
+		[
+		 baseFlags := baseFlags bitOr: PrimCallMayCallBack.
 		 checkAllocFiller ifTrue:
 			[baseFlags := baseFlags bitOr: CheckAllocationFillerAfterPrimCall]].
 
@@ -6657,6 +6667,7 @@ CoInterpreter >> setCogVMFlags: flags [
 
 { #category : #'internal interpreter access' }
 CoInterpreter >> setDesiredCogCodeSize: dccs [
+	<api>
 	<inline: true>
 	desiredCogCodeSize := dccs
 ]
@@ -7124,7 +7135,7 @@ CoInterpreter >> updateStackZoneReferencesToCompiledCodePreCompaction [
 					[theMethod := (self cCoerceSimple: theMethodField - theFlags to: #'CogBlockMethod *') cmHomeMethod].
 				 theIP := (stackPages longAt: theIPPtr) asUnsignedInteger.
 				 (theIP ~= cogit ceCannotResumePC
-				  and: [self asserta: (theIP >= theMethod asUnsignedInteger
+				  and: [(theIP >= theMethod asUnsignedInteger
 							   and: [theIP < (theMethod asUnsignedInteger + theMethod blockSize)])]) ifTrue:
 					[stackPages
 						longAt: theIPPtr

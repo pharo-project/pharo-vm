@@ -221,8 +221,8 @@ UnicornI386Simulator >> postCallArgumentsNumArgs: numArgs in: aMemory [
 	 beyond the pushed return address and saved frame pointer.
 	 For compatibility with Cog/Slang we answer unsigned values."
 
-	^ (9 to: numArgs * 4 + 5 by: 4) collect: [ :i | 
-		  aMemory unsignedLongAt: self ebp + i ]
+	^ (8 to: numArgs * 4 + 4 by: 4) collect: [ :i | 
+		  memory longAt: self ebp + i ]
 ]
 
 { #category : #registers }
@@ -240,7 +240,7 @@ UnicornI386Simulator >> registerList [
 { #category : #'as yet unclassified' }
 UnicornI386Simulator >> retpcIn: aMemory [
 
-	^ aMemory unsignedLongAt: self ebp + 5
+	^ memory longAt: self ebp + 4
 ]
 
 { #category : #registers }

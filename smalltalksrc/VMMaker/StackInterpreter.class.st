@@ -1250,13 +1250,13 @@ StackInterpreter class >> initializePrimitiveTable [
 		(89 primitiveFlushCache)
 
 		"Input/Output Primitives (90-109)"
-		(90 primitiveMousePoint)
+		(90 primitiveFail)					"primitiveMousePoint"
 		(91 primitiveTestDisplayDepth)			"Blue Book: primitiveCursorLocPut"
 		(92 primitiveSetDisplayMode)				"Blue Book: primitiveCursorLink"
 		(93 primitiveInputSemaphore)
 		(94 primitiveGetNextEvent)				"Blue Book: primitiveSampleInterval"
-		(95 primitiveInputWord)
-		(96 primitiveFail)	"primitiveCopyBits"
+		(95 primitiveFail)					"primitiveInputWord"
+		(96 primitiveFail)					"primitiveCopyBits"
 		(97 primitiveSnapshot)
 		(98 primitiveStoreImageSegment)
 		(99 primitiveLoadImageSegment)
@@ -1267,9 +1267,9 @@ StackInterpreter class >> initializePrimitiveTable [
 		(104 primitiveFail)	"primitiveDrawLoop"
 		(105 primitiveStringReplace)
 		(106 primitiveScreenSize)
-		(107 primitiveMouseButtons)
-		(108 primitiveKbdNext)
-		(109 primitiveKbdPeek)
+		(107 primitiveFail)      "primitiveMouseButtons"
+		(108 primitiveFail)      "primitiveKbdNext"
+		(109 primitiveFail)		"primitiveKbdPeek"
 
 		"System Primitives (110-119)"
 		(110 primitiveIdentical)
@@ -1288,7 +1288,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		"Miscellaneous Primitives (120-127)"
 		(120 primitiveCalloutToFFI)
 		(121 primitiveImageName)
-		(122 primitiveNoop)					"Blue Book: primitiveImageVolume"
+		(122 primitiveFail)			"primitiveNoop"		"Blue Book: primitiveImageVolume"
 		(123 primitiveFail)	"was primitiveValueUninterruptably"
 		(124 primitiveLowSpaceSemaphore)
 		(125 primitiveSignalAtBytesLeft)
@@ -1356,8 +1356,8 @@ StackInterpreter class >> initializePrimitiveTable [
 		(184 primitivePin)
 
 		"CriticalSection primitives"
-		(185 primitiveExitCriticalSection) "similar to signal hence index = signal + 100"
-		(186 primitiveEnterCriticalSection) "similar to wait hence index = wait + 100. was primitiveClosureValue"
+		(185 primitiveExitCriticalSection)		 "similar to signal hence index = signal + 100"
+		(186 primitiveEnterCriticalSection) 		 "similar to wait hence index = wait + 100. was primitiveClosureValue"
 		(187 primitiveTestAndSetOwnershipOfCriticalSection) "was primitiveClosureValueWithArgs"
 
 		"Perform method directly"
@@ -1389,7 +1389,7 @@ StackInterpreter class >> initializePrimitiveTable [
 
 		(210 primitiveContextAt)
 		(211 primitiveContextAtPut)
-		(212 primitiveContextSize)
+		(212 primitiveContextSize)	
 		(213 primitiveContextXray)
 		(214 primitiveVoidVMState)
 		(215 primitiveFlushCacheByMethod) "primitiveVoidVMStateForMethod in the CoInterpreter"
@@ -4767,18 +4767,6 @@ StackInterpreter >> closureIn: context numArgs: numArgs instructionPointer: init
 	objectMemory storePointerUnchecked: ClosureStartPCIndex ofObject: newClosure withValue: (objectMemory integerObjectOf: initialIP).
 	objectMemory storePointerUnchecked: ClosureNumArgsIndex ofObject: newClosure withValue: (objectMemory integerObjectOf: numArgs).
 	^newClosure
-]
-
-{ #category : #'primitive support' }
-StackInterpreter >> codeGeneratorToComputeAccessorDepth [
-
-	^ codeGeneratorToComputeAccessorDepth ifNil: [
-		^(VMMaker new
-			buildCodeGeneratorForInterpreter: self class primitivesClass
-			includeAPIMethods: false
-			initializeClasses: false)
-				logger: self transcript;
-				yourself ]
 ]
 
 { #category : #'as yet unclassified' }
@@ -11156,15 +11144,8 @@ StackInterpreter >> okayInterpreterObjects [
 StackInterpreter >> openImageFileNamed: fileName [
 	"Attempt to open fileName or fileName, '.image'"
 	<doNotGenerate>
-	| f |
-	f := [FileStream readOnlyFileNamed: fileName]
-			on: FileDoesNotExistException
-			do: [:ex|
-				 ((fileName endsWith: '.image') not
-				  and: [(fileName, '.image') asFileReference exists]) ifFalse:
-					[ex pass].
-				 FileStream readOnlyFileNamed: fileName, '.image'].
-	^f ifNil: [self error: 'no image found'. nil].
+	self setImageName: fileName.
+	^ fileName asFileReference binaryReadStream
 ]
 
 { #category : #simulation }
@@ -14388,6 +14369,13 @@ StackInterpreter >> setImageHeaderFlagsFrom: headerFlags [
 	sendWheelEvents := headerFlags anyMask: 128
 ]
 
+{ #category : #'simulation support' }
+StackInterpreter >> setImageName: aString [ 
+	<doNotGenerate>
+	"Simulation support for when running it with an image"
+	self shouldNotImplement 
+]
+
 { #category : #'primitive support' }
 StackInterpreter >> setInterruptCheckChain: aFunction [
 	<var: #aFunction declareC: 'void (*aFunction)()'>
@@ -15284,18 +15272,13 @@ StackInterpreter >> stObject: array at: index put: value [
 	| hdr fmt totalLength fixedFields stSize |
 	<inline: true>
 	hdr := objectMemory baseHeader: array.
+	(objectMemory isContextHeader: hdr) ifTrue:[
+		"we have another primitive (contextAt:Put: for contexts"
+		^self primitiveFailFor: PrimErrBadReceiver].
 	fmt := objectMemory formatOfHeader: hdr.
 	totalLength := objectMemory lengthOf: array baseHeader: hdr format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: array format: fmt length: totalLength.
-	(fmt = objectMemory indexablePointersFormat
-	 and: [objectMemory isContextHeader: hdr])
-		ifTrue:
-			[stSize := self stackPointerForMaybeMarriedContext: array.
-			((self oop: index isGreaterThanOrEqualTo: 1)
-			 and: [(self oop: index isLessThanOrEqualTo: stSize)
-			 and: [self isStillMarriedContext: array]]) ifTrue:
-				[^self noInlineTemporary: index - 1 in: (self frameOfMarriedContext: array) put: value]]
-		ifFalse: [stSize := totalLength - fixedFields].
+	stSize := totalLength - fixedFields.
 	((self oop: index isGreaterThanOrEqualTo: (objectMemory firstValidIndexOfIndexableObject: array withFormat: fmt))
 	 and: [self oop: index isLessThanOrEqualTo: stSize])
 		ifTrue: [self subscript: array with: (index + fixedFields) storing: value format: fmt]
