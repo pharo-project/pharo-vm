@@ -3264,6 +3264,7 @@ CCodeGenerator >> initializeCTranslationDictionary [
 	#perform:with:with:with:				#generatePerform:on:indent:
 	#perform:with:with:with:with:		#generatePerform:on:indent:
 	#perform:with:with:with:with:with:	#generatePerform:on:indent:
+	#perform:with:with:with:with:with:with:	#generatePerform:on:indent:
 
 	#value								#generateValue:on:indent:
 	#value:								#generateValue:on:indent:
