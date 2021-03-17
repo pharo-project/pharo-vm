@@ -3571,6 +3571,20 @@ CoInterpreter >> gcMode: anInteger [
 	gcMode := anInteger
 ]
 
+{ #category : #'internal interpreter access' }
+CoInterpreter >> getBlockCompilationCount [
+
+	<doNotGenerate>
+	^ cogit getBlockCompilationCount
+]
+
+{ #category : #'internal interpreter access' }
+CoInterpreter >> getBlockCompilationMSecs [
+
+	<doNotGenerate>
+	^ cogit getBlockCompilationMSecs
+]
+
 { #category : #'cog jit support' }
 CoInterpreter >> getCheckAllocFiller [
 	<api>
@@ -3657,6 +3671,20 @@ CoInterpreter >> getImageHeaderFlags [
 	+ (newFinalization ifTrue: [16r40] ifFalse: [0])
 	+ (sendWheelEvents ifTrue: [16r80] ifFalse: [0])
 	+ (imageHeaderFlags bitClear: 16rDB) "these are any flags we do not recognize"
+]
+
+{ #category : #'internal interpreter access' }
+CoInterpreter >> getMethodCompilationCount [
+
+	<doNotGenerate>
+	^ cogit getMethodCompilationCount
+]
+
+{ #category : #'internal interpreter access' }
+CoInterpreter >> getMethodCompilationMSecs [
+
+	<doNotGenerate>
+	^ cogit getMethodCompilationMSecs
 ]
 
 { #category : #'message sending' }

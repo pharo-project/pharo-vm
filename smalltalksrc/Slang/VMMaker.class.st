@@ -171,6 +171,7 @@ VMMaker class >> forceNewFileNamed: aFilename [
 
 	| inner |
 	inner := aFilename asFileReference writeStream.
+	inner truncate.
 	
 	^ (ZnNewLineWriterStream on: inner)
 		forLf;
