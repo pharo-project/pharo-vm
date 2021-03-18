@@ -3749,12 +3749,13 @@ SimpleStackBasedCogit >> primitivePropertyFlags: primIndex primitiveDescriptor: 
 		[^PrimCallOnSmalltalkStack].
 
 	baseFlags := PrimCallNeedsPrimitiveFunction + PrimCallNeedsNewMethod.
-	coInterpreter profileSemaphore ~= objectMemory nilObject ifTrue:
+	
+	coInterpreter hasProfileSemaphore ifTrue:
 		[baseFlags := baseFlags bitOr: PrimCallCollectsProfileSamples].
 
 	primitiveDescriptor primMayCallBack ifTrue: [ 
 		baseFlags := baseFlags bitOr: PrimCallMayCallBack.
-		coInterpreter checkAllocFiller ifTrue: [
+		coInterpreter hasCheckAllocFiller ifTrue: [
 			baseFlags := baseFlags bitOr: CheckAllocationFillerAfterPrimCall ]].
 
 	^baseFlags

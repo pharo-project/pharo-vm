@@ -7798,6 +7798,22 @@ StackInterpreter >> handleStackOverflowOrEventAllowContextSwitch: mayContextSwit
 	^self checkForEventsMayContextSwitch: mayContextSwitch
 ]
 
+{ #category : #'primitive support' }
+StackInterpreter >> hasCheckAllocFiller [
+
+	<api>
+
+	^ self checkAllocFiller 
+]
+
+{ #category : #profiling }
+StackInterpreter >> hasProfileSemaphore [
+
+	<api>
+	
+	^ profileSemaphore ~= objectMemory nilObject
+]
+
 { #category : #'stack pages' }
 StackInterpreter >> highBit: anUnsignedValue [ 
 	"This is a C implementation needed by ioSetMaxExtSemTableSize
@@ -12908,7 +12924,7 @@ StackInterpreter >> profileMethod [
 	^ profileMethod
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #profiling }
 StackInterpreter >> profileSemaphore [
 	<doNotGenerate>
 	^ profileSemaphore
