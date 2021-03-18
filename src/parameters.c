@@ -13,6 +13,59 @@ typedef struct VMParameterSpec_
 	vm_parameter_process_function function;
 } VMParameterSpec;
 
+/*
+* Parse a text in the form [anInteger]k|K|m|M|g|G
+* Return the number of bytes represented by the text.
+* Return VM_ERROR_INVALID_PARAMETER_VALUE in case of error
+*  (the text is not prefixed by a number or it is negative number)
+*
+* E.g., 2M => 2 * 1024 * 1024
+*/
+long long parseByteSize(const char* text){
+	long long intValue = 0;
+	int multiplier = 1;
+	int argumentLength = 0;
+	char* argument = alloca(255);
+
+	strncpy(argument, text, 255);
+	argument[254] = 0;
+
+	if(strlen(argument) > 0){
+		argumentLength = strlen(argument);
+		char lastCharacter = argument[argumentLength - 1];
+
+		switch(lastCharacter){
+			case 'k':
+			case 'K':
+				multiplier = 1024;
+				argument[argumentLength - 1] = '\0';
+				break;
+			case 'm':
+			case 'M':
+				multiplier = 1024 * 1024;
+				argument[argumentLength - 1] = '\0';
+				break;
+			case 'g':
+			case 'G':
+				multiplier = 1024 * 1024 * 1024;
+				argument[argumentLength - 1] = '\0';
+				break;
+			default:
+				break;
+		}
+	}
+
+	errno = 0;
+	intValue = strtoll(argument, NULL, 10);
+
+	if(errno != 0 || intValue < 0)
+	{
+		return VM_ERROR_INVALID_PARAMETER_VALUE;
+	}
+
+	return intValue * multiplier;
+}
+
 void vm_printUsageTo(FILE *out);
 static VMErrorCode processHelpOption(const char *argument, VMParameters * params);
 static VMErrorCode processPrintVersionOption(const char *argument, VMParameters * params);
@@ -20,24 +73,25 @@ static VMErrorCode processLogLevelOption(const char *argument, VMParameters * pa
 static VMErrorCode processMaxFramesToPrintOption(const char *argument, VMParameters * params);
 static VMErrorCode processMaxOldSpaceSizeOption(const char *argument, VMParameters * params);
 static VMErrorCode processMaxCodeSpaceSizeOption(const char *argument, VMParameters * params);
+static VMErrorCode processEdenSizeOption(const char *argument, VMParameters * params);
 
 static const VMParameterSpec vm_parameters_spec[] =
 {
-	{.name = "headless", .hasArgument = false, .function = NULL},
-    {.name = "worker", .hasArgument = false, .function = NULL},
-	{.name = "interactive", .hasArgument = false, .function = NULL}, // For pharo-ui scripts.
-	{.name = "vm-display-null", .hasArgument = false, .function = NULL}, // For Smalltalk CI.
-	{.name = "help", .hasArgument = false, .function = processHelpOption},
-	{.name = "h", .hasArgument = false, .function = processHelpOption},
-	{.name = "version", .hasArgument = false, .function = processPrintVersionOption},
-	{.name = "logLevel", .hasArgument = true, .function = processLogLevelOption},
-	{.name = "maxFramesToLog", .hasArgument = true, .function = processMaxFramesToPrintOption},
-	{.name = "maxOldSpaceSize", .hasArgument = true, .function = processMaxOldSpaceSizeOption},
-	{.name = "codesize", .hasArgument = true, .function = processMaxCodeSpaceSizeOption},
-
+  {.name = "headless", .hasArgument = false, .function = NULL},
+  {.name = "worker", .hasArgument = false, .function = NULL},
+  {.name = "interactive", .hasArgument = false, .function = NULL}, // For pharo-ui scripts.
+  {.name = "vm-display-null", .hasArgument = false, .function = NULL}, // For Smalltalk CI.
+  {.name = "help", .hasArgument = false, .function = processHelpOption},
+  {.name = "h", .hasArgument = false, .function = processHelpOption},
+  {.name = "version", .hasArgument = false, .function = processPrintVersionOption},
+  {.name = "logLevel", .hasArgument = true, .function = processLogLevelOption},
+  {.name = "maxFramesToLog", .hasArgument = true, .function = processMaxFramesToPrintOption},
+  {.name = "maxOldSpaceSize", .hasArgument = true, .function = processMaxOldSpaceSizeOption},
+  {.name = "codesize", .hasArgument = true, .function = processMaxCodeSpaceSizeOption},
+  {.name = "eden", .hasArgument = true, .function = processEdenSizeOption},
 #ifdef __APPLE__
-	// This parameter is passed by the XCode debugger.
-	{.name = "NSDocumentRevisionsDebugMode", .hasArgument = false, .function = NULL},
+  // This parameter is passed by the XCode debugger.
+  {.name = "NSDocumentRevisionsDebugMode", .hasArgument = false, .function = NULL},
 #endif
 };
 
@@ -356,7 +410,9 @@ vm_printUsageTo(FILE *out)
 "                               spaces are fixed (or calculated from this) with\n"
 "                               this parameter is possible to set the total size.\n"
 "                               It is possible to use k(kB), M(MB) and G(GB).\n"
-"  --codesize=<bytes>    		Sets the max size of code zone.\n"
+"  --codesize=<size>[mk]        Sets the max size of code zone.\n"
+"                               It is possible to use k(kB), M(MB) and G(GB).\n"
+"  --eden=<size>[mk]            Sets the size of eden\n"
 "                               It is possible to use k(kB), M(MB) and G(GB).\n"
 "\n"
 "Notes:\n"
@@ -406,50 +462,16 @@ processMaxFramesToPrintOption(const char* value, VMParameters * params)
 static VMErrorCode
 processMaxOldSpaceSizeOption(const char* originalArgument, VMParameters * params)
 {
-	int intValue = 0;
-	int multiplier = 1;
-	int argumentLength = 0;
-	char* argument = alloca(255);
+	long long intValue = parseByteSize(originalArgument);
 
-	strncpy(argument, originalArgument, 255);
-	argument[254] = 0;
-
-	if(strlen(argument) > 0){
-		argumentLength = strlen(argument);
-		char lastCharacter = argument[argumentLength - 1];
-
-		switch(lastCharacter){
-			case 'k':
-			case 'K':
-				multiplier = 1024;
-				argument[argumentLength - 1] = '\0';
-				break;
-			case 'm':
-			case 'M':
-				multiplier = 1024 * 1024;
-				argument[argumentLength - 1] = '\0';
-				break;
-			case 'g':
-			case 'G':
-				multiplier = 1024 * 1024 * 1024;
-				argument[argumentLength - 1] = '\0';
-				break;
-			default:
-				break;
-		}
-	}
-
-	errno = 0;
-	intValue = strtol(argument, NULL, 10);
-
-	if(errno != 0 || intValue < 0)
+	if(intValue < 0)
 	{
 		logError("Invalid option for maxOldSpaceSize: %s\n", originalArgument);
 		vm_printUsageTo(stderr);
 		return VM_ERROR_INVALID_PARAMETER_VALUE;
 	}
-
-	params->maxOldSpaceSize = intValue * multiplier;
+	
+	params->maxOldSpaceSize = intValue ;
 
 	return VM_SUCCESS;
 }
@@ -457,50 +479,33 @@ processMaxOldSpaceSizeOption(const char* originalArgument, VMParameters * params
 static VMErrorCode
 processMaxCodeSpaceSizeOption(const char* originalArgument, VMParameters * params)
 {
-	int intValue = 0;
-	int multiplier = 1;
-	int argumentLength = 0;
-	char* argument = alloca(255);
+	long long intValue = parseByteSize(originalArgument);
 
-	strncpy(argument, originalArgument, 255);
-	argument[254] = 0;
-
-	if(strlen(argument) > 0){
-		argumentLength = strlen(argument);
-		char lastCharacter = argument[argumentLength - 1];
-
-		switch(lastCharacter){
-			case 'k':
-			case 'K':
-				multiplier = 1024;
-				argument[argumentLength - 1] = '\0';
-				break;
-			case 'm':
-			case 'M':
-				multiplier = 1024 * 1024;
-				argument[argumentLength - 1] = '\0';
-				break;
-			case 'g':
-			case 'G':
-				multiplier = 1024 * 1024 * 1024;
-				argument[argumentLength - 1] = '\0';
-				break;
-			default:
-				break;
-		}
-	}
-
-	errno = 0;
-	intValue = strtol(argument, NULL, 10);
-
-	if(errno != 0 || intValue < 0)
+	if(intValue < 0)
 	{
 		logError("Invalid option for codeSize: %s\n", originalArgument);
 		vm_printUsageTo(stderr);
 		return VM_ERROR_INVALID_PARAMETER_VALUE;
 	}
 
-	params->maxCodeSize = intValue * multiplier;
+	params->maxCodeSize = intValue;
+
+	return VM_SUCCESS;
+}
+
+static VMErrorCode
+processEdenSizeOption(const char* originalArgument, VMParameters * params)
+{
+	long long intValue = parseByteSize(originalArgument);
+
+	if(intValue < 0)
+	{
+		logError("Invalid option for eden: %s\n", originalArgument);
+		vm_printUsageTo(stderr);
+		return VM_ERROR_INVALID_PARAMETER_VALUE;
+	}
+
+	params->edenSize = intValue;
 
 	return VM_SUCCESS;
 }

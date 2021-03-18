@@ -166,6 +166,7 @@ vm_main(int argc, const char** argv, const char** env)
 	parameters.maxStackFramesToPrint = 0;
 	parameters.maxCodeSize = 0;
 	parameters.maxOldSpaceSize = 0;
+  parameters.edenSize = 0;
 
 	// Did we succeed on parsing the parameters?
 	VMErrorCode error = vm_parameters_parse(argc, argv, &parameters);
