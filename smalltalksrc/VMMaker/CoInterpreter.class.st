@@ -147,7 +147,8 @@ CoInterpreter class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
 	^(super ancilliaryClasses copyWithout: InterpreterStackPages),
 	   {	CoInterpreterStackPages.
-		CogBlockMethod },
+		CogBlockMethod.
+		CogPrimitiveDescriptor. },
 	((Cogit ancilliaryClasses) select: [:class| class inheritsFrom: CogBlockMethod])
 ]
 
@@ -5678,7 +5679,7 @@ CoInterpreter >> primitiveFunctionPointer: oop [
 CoInterpreter >> primitivePropertyFlags: primIndex primitiveDescriptor: primitiveDescriptor [
 
 	"Answer any special requirements of the given primitive"
-
+	<var:#primitiveDescriptor type: #'CogPrimitiveDescriptor*'>
 	<api>
 	objectMemory hasSpurMemoryManagerAPI
 		ifTrue: [ 
@@ -5697,6 +5698,9 @@ CoInterpreter >> primitivePropertyFlagsForSpur: primIndex primitiveDescriptor: p
 	"Answer any special requirements of the given primitive.  Spur always needs to set
 	 primitiveFunctionPointer and newMethod so primitives can retry on failure due to forwarders."
 	| baseFlags |
+	
+	<var:#primitiveDescriptor type: #'CogPrimitiveDescriptor*'>
+	
 	self cCode: [] inSmalltalk: [#( mcprimHashMultiply: )]. "For senders..."
 
 	primIndex = PrimNumberHashMultiply ifTrue:
