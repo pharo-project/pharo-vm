@@ -87,8 +87,8 @@ static const VMParameterSpec vm_parameters_spec[] =
   {.name = "logLevel", .hasArgument = true, .function = processLogLevelOption},
   {.name = "maxFramesToLog", .hasArgument = true, .function = processMaxFramesToPrintOption},
   {.name = "maxOldSpaceSize", .hasArgument = true, .function = processMaxOldSpaceSizeOption},
-  {.name = "codesize", .hasArgument = true, .function = processMaxCodeSpaceSizeOption},
-  {.name = "eden", .hasArgument = true, .function = processEdenSizeOption},
+  {.name = "codeSize", .hasArgument = true, .function = processMaxCodeSpaceSizeOption},
+  {.name = "edenSize", .hasArgument = true, .function = processEdenSizeOption},
 #ifdef __APPLE__
   // This parameter is passed by the XCode debugger.
   {.name = "NSDocumentRevisionsDebugMode", .hasArgument = false, .function = NULL},
