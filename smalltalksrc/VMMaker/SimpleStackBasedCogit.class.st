@@ -17,7 +17,8 @@ Class {
 	#pools : [
 		'VMMethodCacheConstants',
 		'VMObjectIndices',
-		'VMSqueakClassIndices'
+		'VMSqueakClassIndices',
+		'VMWellKnownPrimitivesConstants'
 	],
 	#category : #'VMMaker-JIT'
 }
@@ -979,7 +980,7 @@ SimpleStackBasedCogit >> compileInterpreterPrimitive [
 		                    primitiveIndex: primitiveIndex.
 	^ self
 		  compileInterpreterPrimitive: primitiveRoutine
-		  flags: (coInterpreter
+		  flags: (self
 				   primitivePropertyFlags: primitiveIndex
 				   primitiveDescriptor: self primitiveGeneratorOrNil)
 ]
@@ -1462,7 +1463,7 @@ SimpleStackBasedCogit >> compilePrimitive [
 	code = UnimplementedPrimitive ifTrue: [ 
 		opcodeIndex := opcodeIndexAtPrimitive ].
 
-	flags := coInterpreter
+	flags := self
 		         primitivePropertyFlags: primitiveIndex
 		         primitiveDescriptor: primitiveDescriptor.
 	(flags anyMask: PrimCallDoNotJIT) ifTrue: [ ^ ShouldNotJIT ].
@@ -2493,7 +2494,7 @@ SimpleStackBasedCogit >> genPrimitiveClosureValue [
 				  (jumpFail3 jmpTarget: (jumpFail4 jmpTarget: self Label)))).
 	(result := self
 		           compileInterpreterPrimitive: primitiveRoutine
-		           flags: (coInterpreter
+		           flags: (self
 				            primitivePropertyFlags: primitiveIndex
 				            primitiveDescriptor: self primitiveGeneratorOrNil)) < 0 ifTrue: [ ^ result ].
 	jumpFailNArgs jmpTarget: self Label.
@@ -2566,7 +2567,7 @@ SimpleStackBasedCogit >> genPrimitiveFullClosureValue [
 			 (jumpFail4 jmpTarget: self Label)).
 	(result := self
 		           compileInterpreterPrimitive: primitiveRoutine
-		           flags: (coInterpreter
+		           flags: (self
 				            primitivePropertyFlags: primitiveIndex
 				            primitiveDescriptor: self primitiveGeneratorOrNil)) < 0 ifTrue: [ ^ result ].
 	jumpFailNArgs jmpTarget: self Label.
@@ -3733,6 +3734,32 @@ SimpleStackBasedCogit >> primitiveGeneratorOrNil [
 	^nil
 ]
 
+{ #category : #'cog jit support' }
+SimpleStackBasedCogit >> primitivePropertyFlags: primIndex primitiveDescriptor: primitiveDescriptor [
+
+	"Answer any special requirements of the given primitive.  Spur always needs to set
+	 primitiveFunctionPointer and newMethod so primitives can retry on failure due to forwarders."
+	| baseFlags |
+	
+	<var:#primitiveDescriptor type: #'CogPrimitiveDescriptor*'>
+	
+	self cCode: [] inSmalltalk: [#( mcprimHashMultiply: )]. "For senders..."
+
+	primIndex = PrimNumberHashMultiply ifTrue:
+		[^PrimCallOnSmalltalkStack].
+
+	baseFlags := PrimCallNeedsPrimitiveFunction + PrimCallNeedsNewMethod.
+	coInterpreter profileSemaphore ~= objectMemory nilObject ifTrue:
+		[baseFlags := baseFlags bitOr: PrimCallCollectsProfileSamples].
+
+	primitiveDescriptor primMayCallBack ifTrue: [ 
+		baseFlags := baseFlags bitOr: PrimCallMayCallBack.
+		coInterpreter checkAllocFiller ifTrue: [
+			baseFlags := baseFlags bitOr: CheckAllocationFillerAfterPrimCall ]].
+
+	^baseFlags
+]
+
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> putSelfInReceiverResultReg [
 	<inline: true>
@@ -3807,7 +3834,7 @@ SimpleStackBasedCogit >> rewritePrimInvocationIn: cogMethod to: primFunctionPoin
 	primIndex := primitiveIndex := coInterpreter
 		             primitiveIndexOfMethod: cogMethod methodObject
 		             header: cogMethod methodHeader.
-	flags := coInterpreter
+	flags := self
 		         primitivePropertyFlags: primIndex
 		         primitiveDescriptor: self primitiveGeneratorOrNil.
 	(flags anyMask: PrimCallNeedsPrimitiveFunction) ifTrue: [ 

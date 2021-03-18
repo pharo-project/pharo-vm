@@ -452,10 +452,6 @@ Class {
 		'MethodHeaderFlagBitPosition',
 		'MethodHeaderTempCountShift',
 		'MixinIndex',
-		'PrimNumberDoExternalCall',
-		'PrimNumberDoPrimitive',
-		'PrimNumberExternalCall',
-		'PrimNumberFFICall',
 		'PrimitiveTable',
 		'ReturnToInterpreter',
 		'StackPageReachedButUntraced',
@@ -471,7 +467,8 @@ Class {
 		'VMObjectIndices',
 		'VMSpurObjectRepresentationConstants',
 		'VMSqueakClassIndices',
-		'VMStackFrameOffsets'
+		'VMStackFrameOffsets',
+		'VMWellKnownPrimitivesConstants'
 	],
 	#category : #'VMMaker-Interpreter'
 }
