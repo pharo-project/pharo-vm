@@ -817,8 +817,8 @@ SpurSegmentManager >> writeSegment: segment nextSegment: nextSegment toFile: aBi
 						region := (manager memoryManager regionForAddress: segment segStart).
 						aBinaryStream
 							next: segment segSize
-							putAll: region value
-							startingAt: segment segStart - region key + 1.
+							putAll: region memory
+							startingAt: segment segStart - region start + 1.
 						 segment segSize].
 	manager
 		long64At: pier1 put: firstSavedBridgeWord;

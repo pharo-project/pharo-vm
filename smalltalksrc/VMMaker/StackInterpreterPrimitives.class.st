@@ -109,7 +109,7 @@ StackInterpreterPrimitives >> doPrimitiveSameThreadCallout [
 		ifFalse: [ 
 			self logDebug: 'Argument Array size mismatch'.
 			^ self primitiveFailFor: PrimErrBadArgument ].
-		
+
 	parameters := self allocateParameters: argumentSize 
 		using: [:aSize | self alloca: (self sizeof: #'void*') * aSize ].
 
