@@ -15,40 +15,38 @@ set(VERSION_MAJOR 9)
 set(VERSION_MINOR 0)
 set(VERSION_PATCH 0)
 
-if(${CMAKE_GENERATOR} MATCHES "Visual Studio.*")
-    set(user_file "${CMAKE_SOURCE_DIR}/CMakeSettings.jsonx" )
-    set(template_file "${CMAKE_SOURCE_DIR}/CMakeSettings.json.template" )
-    file(SHA256 ${template_file} template_hash)
+message("CMAKE_GENERATOR=${CMAKE_GENERATOR}")
 
-    if(EXISTS "${user_file}")
-        file(SHA256 "${user_file}" user_hash)
-        set(user_bak_file "${user_file}.bak.${user_hash}")
+# Visual Studio stores user build settings in file 'CmakeSettings.json'.  We would like to manage that via a project template.
+# To push out new template, update 'template_uuid' field in 'template_file' with value from https://www.uuidgenerator.net/
+set(user_file "${CMAKE_SOURCE_DIR}/CMakeSettings.json" )
+set(template_file "${CMAKE_SOURCE_DIR}/CMakeSettings.json.template" )
 
-        # From 'user_file' extract recorded hash of template it was copied from
-        file(READ "${user_file}" user_settings )
-        string(REGEX MATCH ".*template-hash[^a-zA-Z0-9]*([a-zA-Z0-9-]*).*" _ ${user_settings})
-        set(recorded_template_hash ${CMAKE_MATCH_1})
+if(EXISTS "${user_file}")
+    # Get uuid from 'user_file' 
+    file(READ "${user_file}" user_settings )
+    string(REGEX MATCH ".*template-uuid[^a-zA-Z0-9]*([a-zA-Z0-9-]*).*" _ ${user_settings})
+    set(user_uuid ${CMAKE_MATCH_1})
 
-        if(NOT "${template_hash}" STREQUAL "${recorded_template_hash}")
-            # move existing file out of the way if template file has changed
-            file(RENAME "${user_file}" "${user_bak_file}")
-        endif()
+    # Get uuid from 'template_file' 
+    file(READ "${template_file}" template_settings )
+    string(REGEX MATCH ".*template-uuid[^a-zA-Z0-9]*([a-zA-Z0-9-]*).*" _ ${template_settings})
+    set(template_uuid ${CMAKE_MATCH_1})
+
+    if("${user_uuid}" STREQUAL "${template_uuid}")
+        message("Project build settings unchanged (${template_file})")
+    else()
+        message("NOTICE!! Project template build settings have changed.")
+        message("NOTICE!! Back up your user build settings (${user_file})")
+        message("NOTICE!! and replace whole file with project template build settings (${template_file}).")
+        message("NOTICE!! Then restore parts of your user settings as you require.")
+        message(FATAL_ERROR "Read output NOTICES!!")
     endif()
-
-    if(NOT EXISTS "${user_file}")
-        # copy 'template_file' to 'user_file' substituting variable 'template_hash'
-        configure_file("${template_file}" "${user_file}" @ONLY)  
-
-        if(EXISTS ${user_bak_file})
-            message("NOTICE!! Your 'CMakeSettings.json' file has been replaced by updated template.") 
-            message("NOTICE!! It is recommended you base your configuration settings off this update.") 
-            message("NOTICE!! Your old settings saved to ${user_bak_file}")
-            message("NOTICE!! To force using your old settings, copy 'template-hash' from new 'CMakeSettings.json' into your restored file.") 
-            message(FATAL_ERROR "Not really an error, just an important NOTICE!! to read in output.") 
-        endif()
-    endif()
+else()
+    message("No user build settings.")
 endif()
 
+# BUILD VM
 set(APPNAME Pharo CACHE STRING "VM Application name")
 
 # Configure CMake to load our modules
@@ -195,6 +193,7 @@ if(MSVC)
     set(OS_TYPE "Win32")
     get_platform_name(VM_TARGET_OS)
     message(STATUS "Building for ${VM_TARGET_OS}")
+    set(CMAKE_CURRENT_SOURCE_DIR_TO_OUT ${CMAKE_CURRENT_SOURCE_DIR})
 elseif(WIN)
     message(STATUS "Building for WINDOWS")
 

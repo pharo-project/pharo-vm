@@ -439,6 +439,29 @@ VMPrimitiveTest >> testPrimitiveAtPutFailsForNonIntegerArgument [
 	self assert: interpreter primFailCode equals: PrimErrBadArgument. 
 ]
 
+{ #category : #'tests - primitiveImmutability' }
+VMPrimitiveTest >> testPrimitiveAtPutFailsIfObjectIsContext [
+
+	| class object slotIndex objectToPutInSlot |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
+	
+	object := interpreter ensureFrameIsMarried: interpreter framePointer SP: interpreter stackPointer.
+
+	interpreter push: object.
+	
+	slotIndex := memory integerObjectOf: 1.
+	objectToPutInSlot := memory instantiateClass: class indexableSize: 1.
+	interpreter push: object.
+	interpreter push: slotIndex.
+	interpreter push: objectToPutInSlot.
+	
+	interpreter primitiveAtPut.
+	
+	self assert: interpreter failed.
+	"2 is the bad receiver exception in the special object array for the primFailCode"
+	self assert: interpreter primFailCode equals: 2. 
+]
+
 { #category : #'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveAtPutFailsIfObjectIsImmutable [
 

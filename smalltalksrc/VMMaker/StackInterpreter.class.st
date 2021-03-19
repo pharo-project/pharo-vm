@@ -11144,6 +11144,7 @@ StackInterpreter >> okayInterpreterObjects [
 StackInterpreter >> openImageFileNamed: fileName [
 	"Attempt to open fileName or fileName, '.image'"
 	<doNotGenerate>
+	self setImageName: fileName.
 	^ fileName asFileReference binaryReadStream
 ]
 
@@ -14368,6 +14369,13 @@ StackInterpreter >> setImageHeaderFlagsFrom: headerFlags [
 	sendWheelEvents := headerFlags anyMask: 128
 ]
 
+{ #category : #'simulation support' }
+StackInterpreter >> setImageName: aString [ 
+	<doNotGenerate>
+	"Simulation support for when running it with an image"
+	self shouldNotImplement 
+]
+
 { #category : #'primitive support' }
 StackInterpreter >> setInterruptCheckChain: aFunction [
 	<var: #aFunction declareC: 'void (*aFunction)()'>
@@ -15264,18 +15272,13 @@ StackInterpreter >> stObject: array at: index put: value [
 	| hdr fmt totalLength fixedFields stSize |
 	<inline: true>
 	hdr := objectMemory baseHeader: array.
+	(objectMemory isContextHeader: hdr) ifTrue:[
+		"we have another primitive (contextAt:Put: for contexts"
+		^self primitiveFailFor: PrimErrBadReceiver].
 	fmt := objectMemory formatOfHeader: hdr.
 	totalLength := objectMemory lengthOf: array baseHeader: hdr format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: array format: fmt length: totalLength.
-	(fmt = objectMemory indexablePointersFormat
-	 and: [objectMemory isContextHeader: hdr])
-		ifTrue:
-			[stSize := self stackPointerForMaybeMarriedContext: array.
-			((self oop: index isGreaterThanOrEqualTo: 1)
-			 and: [(self oop: index isLessThanOrEqualTo: stSize)
-			 and: [self isStillMarriedContext: array]]) ifTrue:
-				[^self noInlineTemporary: index - 1 in: (self frameOfMarriedContext: array) put: value]]
-		ifFalse: [stSize := totalLength - fixedFields].
+	stSize := totalLength - fixedFields.
 	((self oop: index isGreaterThanOrEqualTo: (objectMemory firstValidIndexOfIndexableObject: array withFormat: fmt))
 	 and: [self oop: index isLessThanOrEqualTo: stSize])
 		ifTrue: [self subscript: array with: (index + fixedFields) storing: value format: fmt]
