@@ -26,6 +26,7 @@ SlangMemoryManager >> allocate: desiredSize [
 	newMemoryRegion := SlangMemoryRegion new
 		start: allocatedAddress;
 		memory: newMemory;
+		originallyRequestedMemory: desiredSize;
 		yourself.
 	
 	"Index regions by the high bits of the address"
@@ -113,15 +114,15 @@ SlangMemoryManager >> longAt: address put: aWordSizedValue [
 { #category : #'memory-access' }
 SlangMemoryManager >> readIntegerAt: address size: size signed: aBoolean [
 	
-	| memory |
+	| region |
 	"Check the access is aligned to the size we want to read"
 	address \\ size ~= 0 ifTrue: [self unalignedAccessError].
 	
 	"Get the memory region where the address is stored"
-	memory := self regionForAddress: address.
+	region := self regionForAddress: address.
 	
-	^ memory memory
-		integerAt: address - memory start + 1
+	^ region
+		integerAt: address - region start
 		size: size
 		signed: aBoolean
 ]
@@ -145,7 +146,7 @@ SlangMemoryManager >> reallocate: originalAddress withSize: desiredSize [
 	newAddress := self allocate: desiredSize.
 	oldRegion := self regionAtAddress: originalAddress.
 	newRegion := self regionAtAddress: newAddress.
-	newRegion replaceFrom: 1 to: oldRegion size with: oldRegion.
+	newRegion replaceFrom: 1 to: oldRegion originallyRequestedMemory with: oldRegion.
 	self free: originalAddress.
 	^ newAddress
 ]
@@ -249,15 +250,15 @@ SlangMemoryManager >> wordSize: anObject [
 { #category : #'memory-access' }
 SlangMemoryManager >> writeInteger: aValue at: address size: size signed: aBoolean [
 	
-	| memory |
+	| region |
 	"Check the access is aligned to the size we want to read"
 	address \\ size ~= 0 ifTrue: [self unalignedAccessError].
 	
 	"Get the memory region where the address is stored"
-	memory := self regionForAddress: address.
+	region := self regionForAddress: address.
 	
-	^ memory memory
-		integerAt: address - memory start + 1
+	^ region
+		integerAt: address - region start
 		put: aValue
 		size: size
 		signed: aBoolean
@@ -265,7 +266,7 @@ SlangMemoryManager >> writeInteger: aValue at: address size: size signed: aBoole
 
 { #category : #'memory-access' }
 SlangMemoryManager >> writeSignedInteger: aValue at: address size: size [
-	self haltIf: [address = 16848072].
+
 	^ self writeInteger: aValue at: address size: size signed: true
 ]
 
