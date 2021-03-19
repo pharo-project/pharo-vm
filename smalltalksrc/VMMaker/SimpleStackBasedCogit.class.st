@@ -3718,7 +3718,7 @@ SimpleStackBasedCogit >> primitiveDescriptor [
 	 otherwise answer nil."
 	<returnTypeC: #'PrimitiveDescriptor *'>
 	| aPrimitiveDescriptor |
-	<var: #primitiveDescriptor type: #'PrimitiveDescriptor *'>
+	<var: #aPrimitiveDescriptor type: #'PrimitiveDescriptor *'>
 	(coInterpreter isQuickPrimitiveIndex: primitiveIndex) ifTrue:
 		[aPrimitiveDescriptor := self addressOf: (primitiveGeneratorTable at: 0). "an unused one"
 		 aPrimitiveDescriptor primitiveGenerator: (coInterpreter quickPrimitiveGeneratorFor: primitiveIndex).
