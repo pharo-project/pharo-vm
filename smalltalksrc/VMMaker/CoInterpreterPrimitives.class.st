@@ -573,6 +573,15 @@ CoInterpreterPrimitives >> primitiveProfileSemaphore [
 		[self siglong: reenterInterpreter jmp: ReturnToInterpreter]
 ]
 
+{ #category : #'system control primitives' }
+CoInterpreterPrimitives >> primitiveQuit [ 
+
+	cogit logGCCounters.
+	cogit logCogCounters.
+	cogit shutdownVM.
+	super primitiveQuit
+]
+
 { #category : #'method introspection primitives' }
 CoInterpreterPrimitives >> primitiveResetCountersInMethod [
 	<export: true>

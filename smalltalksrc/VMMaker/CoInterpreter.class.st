@@ -3697,6 +3697,20 @@ CoInterpreter >> getMethodCompilationMSecs [
 	^ cogit getMethodCompilationMSecs
 ]
 
+{ #category : #statistics }
+CoInterpreter >> getStatCodeCompactionCount [
+
+	<api>
+	^ statCodeCompactionCount
+]
+
+{ #category : #statistics }
+CoInterpreter >> getStatCodeCompactionUsecs [
+
+	<api>
+	^ statCodeCompactionUsecs
+]
+
 { #category : #'message sending' }
 CoInterpreter >> handleForwardedSendFaultForReceiver: forwardedReceiver stackDelta: stackDelta [
 	"Handle a send fault that may be due to a send to a forwarded object.
@@ -6354,6 +6368,9 @@ CoInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: imag
 	bytesToShift := objectMemory memoryBaseForImageRead - oldBaseAddr.
 	self initializeInterpreter: bytesToShift.  "adjusts all oops to new location"
 	self initializeCodeGenerator.
+	
+	cogit imageLoaded.
+	
 	^dataSize
 ]
 

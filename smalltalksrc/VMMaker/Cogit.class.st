@@ -8366,6 +8366,22 @@ Cogit >> getPrimitiveIndex [
 	^primitiveIndex
 ]
 
+{ #category : #statistics }
+Cogit >> getStatCompileFullBlockUsecs [
+
+	<api>
+
+	^ statCompileFullBlockUsecs 
+]
+
+{ #category : #statistics }
+Cogit >> getStatCompileMethodUsecs [
+
+	<api>
+
+	^ statCompileMethodUsecs 
+]
+
 { #category : #'as yet unclassified' }
 Cogit >> guardPageSize: anInteger [ 
 
@@ -8545,6 +8561,14 @@ Cogit >> handleWriteSimulationTrap: aProcessorSimulationTrap [
 	(simulatedAddresses forAddress: aProcessorSimulationTrap address) setValue: variableValue.
 
 	processor pc: aProcessorSimulationTrap nextpc
+]
+
+{ #category : #debugging }
+Cogit >> imageLoaded [
+
+	<doNotGenerate>
+
+	cogEventLogger imageLoaded
 ]
 
 { #category : #compaction }
@@ -9023,6 +9047,22 @@ Cogit >> loadSubsequentBytesForDescriptor: descriptor at: pc [
 				[byte3 := objectMemory fetchByte: pc + 3 ofObject: methodObj.
 				 descriptor numBytes > 4 ifTrue:
 					[self notYetImplemented]]]]
+]
+
+{ #category : #debugging }
+Cogit >> logCogCounters [
+
+	<doNotGenerate>
+
+	cogEventLogger logCogCounters
+]
+
+{ #category : #debugging }
+Cogit >> logGCCounters [
+
+	<doNotGenerate>
+
+	cogEventLogger logGCCounters
 ]
 
 { #category : #'in-line cacheing' }
@@ -11759,6 +11799,14 @@ Cogit >> shouldBeImplemented [
 	"In the production VM we can continue in the interpreter..."
 	self cCode: [coInterpreter warning: 'bytecode should be implemented; interpreting']
 		inSmalltalk: [super shouldBeImplemented]
+]
+
+{ #category : #debugging }
+Cogit >> shutdownVM [
+
+	<doNotGenerate>
+
+	cogEventLogger shutdownVM
 ]
 
 { #category : #'simulation processor access' }

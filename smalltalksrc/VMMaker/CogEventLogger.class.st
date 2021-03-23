@@ -223,7 +223,7 @@ CogEventLogger >> cogStatCountersAt: anInteger [
 	^ cogStatCounters at: anInteger
 ]
 
-{ #category : #accessign }
+{ #category : #accessing }
 CogEventLogger >> cogStatCountersAt: anIndex put: aValue [ 
 	
 	<doNotGenerate>
@@ -281,7 +281,7 @@ CogEventLogger >> compileCountIncrement [
 	
 ]
 
-{ #category : #util }
+{ #category : #utils }
 CogEventLogger >> counterAddressFor: anInteger [
 
 	<returnTypeC: #usqInt>
@@ -375,6 +375,17 @@ CogEventLogger >> fprintf: aWriteStream _: aString _: aCArrayAccessor [
 	aWriteStream nextPutAll: newString.
 ]
 
+{ #category : #events }
+CogEventLogger >> imageLoaded [
+
+	<api>
+
+	self 
+		clearEvent;
+		forEvent: 'imageLoaded';
+		logEvent.
+]
+
 { #category : #accessing }
 CogEventLogger >> initialize [
 	<doNotGenerate>
@@ -385,11 +396,26 @@ CogEventLogger >> initialize [
 
 ]
 
-{ #category : #events }
+{ #category : #accessing }
 CogEventLogger >> invalidCounterIndex [
 	
 	<inline: true>
 	^ INVALID_COUNTER_INDEX 
+]
+
+{ #category : #events }
+CogEventLogger >> logCogCounters [
+
+	<api>
+
+	self 
+		clearEvent;
+		forEvent: 'cogCounters';
+		addLongLong: coInterpreter getStatCodeCompactionCount;
+		addLongLong: (coInterpreter getStatCodeCompactionUsecs + 500 // 1000);
+		addLongLong: (cogit getStatCompileFullBlockUsecs  + 500 // 1000);		
+		addLongLong: (cogit getStatCompileMethodUsecs  + 500 // 1000);		
+		logEvent.
 ]
 
 { #category : #builder }
@@ -405,6 +431,17 @@ CogEventLogger >> logEvent [
 	cogEventFile ifNotNil:[ 
 		self fprintf: cogEventFile _: '%s\n' _: cogEventBuffer.
 		self fflush: cogEventFile ]
+]
+
+{ #category : #events }
+CogEventLogger >> logGCCounters [
+
+	<api>
+
+	self 
+		clearEvent;
+		forEvent: 'gcCounters';
+		logEvent.
 ]
 
 { #category : #events }
@@ -518,4 +555,15 @@ CogEventLogger >> resetCounterIndex [
 
 	currentCounterIndex := -1
 
+]
+
+{ #category : #events }
+CogEventLogger >> shutdownVM [
+
+	<api>
+
+	self 
+		clearEvent;
+		forEvent: 'shutdownVM';
+		logEvent.
 ]
