@@ -454,7 +454,9 @@ SpurPlanningCompactor >> initializeCompaction [
 	manager checkFreeSpace: GCModeFull.
 	self selectSavedFirstFieldsSpace.
 	self unpinRememberedSet.
+	
 	manager
+		prepareObjStacksForPlanningCompactor;
 		resetFreeListHeads;
 		totalFreeOldSpace: 0;
 		beginSlidingCompaction.

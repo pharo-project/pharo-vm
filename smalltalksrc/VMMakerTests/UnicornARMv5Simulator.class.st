@@ -437,7 +437,7 @@ UnicornARMv5Simulator >> registerStateGetters [
 UnicornARMv5Simulator >> retpcIn: aMemory [ 
 	"The return address is on the stack, having been pushed by either
 	 simulateCallOf:nextpc:memory: or simulateJumpCallOf:memory:"
-	^aMemory unsignedLongAt: self fp + 5
+	^memory longAt: self fp + 4
 ]
 
 { #category : #registers }

@@ -76,7 +76,7 @@ SpurSimulatedMemory >> initialAddress: anAddress [
 SpurSimulatedMemory >> initialize [
 
 	super initialize.
-	initialAddress := 2*1024*1024.
+	initialAddress := 0"2*1024*1024".
 ]
 
 { #category : #initialization }
@@ -147,6 +147,12 @@ SpurSimulatedMemory >> longAt: address put: aValue [
 SpurSimulatedMemory >> memoryObject [
 	
 	^ memoryObject
+]
+
+{ #category : #replacing }
+SpurSimulatedMemory >> replaceFrom: start to: stop with: replacement startingAt: repStart [ 
+	
+	memoryObject replaceFrom: start to: stop with: replacement memoryObject startingAt: repStart
 ]
 
 { #category : #accessing }

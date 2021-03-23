@@ -79,7 +79,8 @@ Class {
 		'expectedSends',
 		'expecting',
 		'bootstrapping',
-		'primitiveFailCount'
+		'primitiveFailCount',
+		'primitiveFlags'
 	],
 	#classVars : [
 		'ByteCountsPerMicrosecond',
@@ -302,6 +303,7 @@ CogVMSimulator >> basicInitialize [
 	
 	"This will be overriden when calling initializePluginEntries"
 	mappedPluginEntries := OrderedCollection new.
+	primitiveFlags := Dictionary new.
 ]
 
 { #category : #'multi-threading simulation switch' }
@@ -721,7 +723,7 @@ CogVMSimulator >> collectSends [
 
 { #category : #'cog jit support' }
 CogVMSimulator >> commenceCogCompiledCodeCompaction [
-	"self halt."
+
 	^super commenceCogCompiledCodeCompaction
 ]
 
@@ -2642,8 +2644,6 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 	systemAttributes at: 1 put: fileName; at: 2 put: nil.
 
 	["begin ensure block..."
-	imageName := f fullName.
-	f binary.
 
 	version := self getWord32FromFile: f swap: false.  "current version: 16r1968 (=6504) vive la revolucion!"
 	(self readableFormat: version)
@@ -2738,6 +2738,7 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 							ifFalse: [allocationReserve])].
 
 	objectMemory allocateMemoryOfSize: vmRequiredMemorySize + heapSize.	
+	objectMemory memory initialAddress: 0.
 	
 	heapBase := objectMemory
 					setHeapBase: objectMemory memory initialAddress + vmRequiredMemorySize
@@ -2943,6 +2944,8 @@ CogVMSimulator >> primitiveFailCounting [
 { #category : #'as yet unclassified' }
 CogVMSimulator >> primitiveForceMachineCodeCompaction [
 	
+	"This primitive does not exists in the production VM. It is used in the tests to force the Code Compaction and to test it."
+	
 	self commenceCogCompiledCodeCompaction.
 	self pop: 2 thenPushBool: true.
 
@@ -2961,32 +2964,6 @@ CogVMSimulator >> primitiveGetAttribute [
 		1 to: attribute size do: [ :i |
 			objectMemory storeByte: i-1 ofObject: s withValue: (attribute at: i) asciiValue].
 		self pop: 2 "rcvr, attr" thenPush: s]
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> primitiveKbdNext [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdNext]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> primitiveKbdPeek [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdPeek]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> primitiveMouseButtons [
-	| buttons |
-	self pop: 1.
-	buttons := Sensor primMouseButtons.
-	self pushInteger: buttons
 ]
 
 { #category : #'debugging traps' }
@@ -3071,6 +3048,15 @@ CogVMSimulator >> primitiveProcessBoundThreadId [
 	^self perform: #primitiveProcessBoundThreadId
 		withArguments: {}
 		inSuperclass: (cogThreadManager ifNil: [CoInterpreterPrimitives] ifNotNil: [CoInterpreterMT])
+]
+
+{ #category : #'cog jit support' }
+CogVMSimulator >> primitivePropertyFlagsForSpur: primIndex primitiveDescriptor: primitiveDescriptor [
+
+	^ primitiveFlags at: primIndex ifAbsent: [ 
+		  super
+			  primitivePropertyFlagsForSpur: primIndex
+			  primitiveDescriptor: primitiveDescriptor ]
 ]
 
 { #category : #'multi-threading simulation switch' }
@@ -3548,6 +3534,11 @@ CogVMSimulator >> setImageHeaderFlagsFrom: headerFlags [
 		inSuperclass: (cogThreadManager ifNil: [CoInterpreterPrimitives] ifNotNil: [CoInterpreterMT])
 ]
 
+{ #category : #accessing }
+CogVMSimulator >> setImageName: aString [ 
+	imageName := aString
+]
+
 { #category : #'multi-threading simulation switch' }
 CogVMSimulator >> setMaxWaitingPriorityTo: minPriority [
 	"This method includes or excludes CoInterpreterMT methods as required.
@@ -3566,6 +3557,13 @@ CogVMSimulator >> setOwnerIndexOfProcess: aProcess to: anIndex bind: bind [
 	^self perform: #setOwnerIndexOfProcess:to:bind:
 		withArguments: {aProcess. anIndex. bind}
 		inSuperclass: (cogThreadManager ifNil: [CoInterpreterPrimitives] ifNotNil: [CoInterpreterMT])
+]
+
+{ #category : #'cog jit support' }
+CogVMSimulator >> setPrimitivePropertyFlagFor: primIndex value: aValue [
+
+	^ primitiveFlags at: primIndex put: aValue
+
 ]
 
 { #category : #'debug printing' }

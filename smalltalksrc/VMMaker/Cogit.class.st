@@ -124,6 +124,9 @@ Class {
 		'minValidCallAddress',
 		'lastNInstructions',
 		'simulatedAddresses',
+		'simulatedTrampolines',
+		'simulatedVariableGetters',
+		'simulatedVariableSetters',
 		'printRegisters',
 		'printInstructions',
 		'compilationTrace',
@@ -266,7 +269,10 @@ Class {
 		'cogConstituentIndex',
 		'directedSendUsesBinding',
 		'simulateFPInUse',
-		'cogEventLogger'
+		'statCompileFullBlockCount',
+		'statCompileFullBlockUsecs',
+		'statCompileMethodCount',
+		'statCompileMethodUsecs'
 	],
 	#classVars : [
 		'AltBlockCreationBytecodeSize',
@@ -4791,13 +4797,20 @@ Cogit >> cogFullBlockMethod: aMethodObj numCopied: numCopied [
 	 object aMethodObj.  N.B. If there is no code memory available do *NOT*
 	 attempt to reclaim the method zone.  Certain clients (e.g. ceSICMiss:)
 	 depend on the zone remaining constant across method generation."
+
 	<api>
 	<option: #SistaV1BytecodeSet>
 	<returnTypeC: #'CogMethod *'>
-	| cogMethod |
+	<var: #startTime type: #usqLong>
 	<var: #cogMethod type: #'CogMethod *'>
+
+	| cogMethod 	startTime |
+
 	(self exclude: aMethodObj) ifTrue:
 		[^nil].
+	
+	startTime := coInterpreter ioUTCMicrosecondsNow.	
+
 	self deny: (coInterpreter methodHasCogMethod: aMethodObj).
 	self assert: (objectMemory isOopCompiledMethod: (coInterpreter ultimateLiteralOf: aMethodObj)).
 	aMethodObj = breakMethod ifTrue: [self halt: 'Compilation of breakMethod'].
@@ -4828,6 +4841,10 @@ Cogit >> cogFullBlockMethod: aMethodObj numCopied: numCopied [
 			 self assertValidMethodMap: cogMethod."
 			 "self disassembleMethod: cogMethod."
 			 "printInstructions := clickConfirm := true""]."
+
+	statCompileFullBlockCount := statCompileFullBlockCount + 1.
+	statCompileFullBlockUsecs := statCompileFullBlockUsecs + (coInterpreter ioUTCMicrosecondsNow - startTime).		
+		
 	^cogMethod
 ]
 
@@ -8270,6 +8287,21 @@ Cogit >> generatorTable [
 	^generatorTable
 ]
 
+{ #category : #statistics }
+Cogit >> getBlockCompilationCount [
+
+	<api>
+
+	^ objectMemory integerObjectOf: statCompileFullBlockCount 
+]
+
+{ #category : #statistics }
+Cogit >> getBlockCompilationMSecs [
+
+	<api>
+	^ objectMemory integerObjectOf: statCompileFullBlockUsecs  + 500 // 1000
+]
+
 { #category : #accessing }
 Cogit >> getCFramePointer [
 	<api>
@@ -8301,6 +8333,18 @@ Cogit >> getLiteral: litIndex [
 	maxLitIndex < litIndex ifTrue:
 		[maxLitIndex := litIndex].
 	^coInterpreter literal: litIndex ofMethod: methodObj
+]
+
+{ #category : #statistics }
+Cogit >> getMethodCompilationCount [
+	<api>
+	^ objectMemory integerObjectOf: statCompileMethodCount 
+]
+
+{ #category : #statistics }
+Cogit >> getMethodCompilationMSecs [
+	<api>
+	^ objectMemory integerObjectOf: statCompileMethodUsecs  + 500 // 1000
 ]
 
 { #category : #accessing }
@@ -8356,11 +8400,11 @@ Cogit >> handleABICallOrJumpSimulationTrap: aProcessorSimulationTrap evaluable: 
 	processor
 		simulateLeafCallOf: aProcessorSimulationTrap address
 		nextpc: 16rBADF00D
-		memory: coInterpreter memory.
+		memory: nil.
 
 	evaluable valueWithArguments: (processor
 										postCallArgumentsNumArgs: evaluable numArgs
-										in: coInterpreter memory).
+										in: nil).
 
 	evaluable numArgs < 4 ifFalse: [ 1 halt  "If we have more parameters than the ones that fit in the registers"].
 
@@ -11682,7 +11726,7 @@ Cogit >> shortcutTrampoline: aProcessorSimulationTrap to: aBlock [
 	processor
 		simulateLeafCallOf: aProcessorSimulationTrap address
 		nextpc: aProcessorSimulationTrap nextpc
-		memory: coInterpreter memory.
+		memory: nil.
 	coInterpreter
 		stackPointer: processor sp;
 		framePointer: processor fp.
@@ -11762,7 +11806,7 @@ Cogit >> simulateEnilopmart: enilopmartAddress numArgs: n [
 		smashRegistersWithValuesFrom: 16r80000000 by: objectMemory wordSize;
 		simulateLeafCallOf: enilopmartAddress
 		nextpc: 16rBADF00D
-		memory: coInterpreter memory.
+		memory: nil.
 	"If we're already simulating in the context of machine code then
 	 this will take us back to handleCallSimulationTrap:.  Otherwise
 	 start executing machine code in the simulator."
@@ -11792,7 +11836,7 @@ Cogit >> simulateLeafCallOf: someFunction [
 	processor
 		simulateLeafCallOf: someFunction
 		nextpc: 16rBADF00D0
-		memory: coInterpreter memory.
+		memory: nil.
 	
 	singleStep 
 		ifTrue: [ self notYetImplemented ].

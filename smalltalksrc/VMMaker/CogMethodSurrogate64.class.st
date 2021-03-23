@@ -47,25 +47,25 @@ CogMethodSurrogate64 class >> offsetOf: aByteSymbol [
 
 { #category : #accessing }
 CogMethodSurrogate64 >> blockEntryOffset [
-	^memory unsignedShortAt: address + 7 + baseHeaderSize
+	^memory unsignedShortAt: address + 6 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> blockEntryOffset: aValue [
 	^memory
-		unsignedShortAt: address + baseHeaderSize + 7
+		unsignedShortAt: address + baseHeaderSize + 6
 		put: aValue
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> blockSize [
-	^memory unsignedShortAt: address + 5 + baseHeaderSize
+	^memory unsignedShortAt: address + 4 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> blockSize: aValue [
 	^memory
-		unsignedShortAt: address + baseHeaderSize + 5
+		unsignedShortAt: address + baseHeaderSize + 4
 		put: aValue
 ]
 
@@ -83,36 +83,36 @@ CogMethodSurrogate64 >> counterIndex: aValue [
 
 { #category : #accessing }
 CogMethodSurrogate64 >> methodHeader [
-	^memory unsignedLong64At: address + 17 + baseHeaderSize
+	^memory unsignedLong64At: address + 16 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> methodHeader: aValue [
 	^memory
-		unsignedLong64At: address + baseHeaderSize + 17
+		unsignedLong64At: address + baseHeaderSize + 16
 		put: aValue
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> methodObject [
-	^memory unsignedLong64At: address + 9 + baseHeaderSize
+	^memory unsignedLong64At: address + 8 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> methodObject: aValue [
 	^memory
-		unsignedLong64At: address + baseHeaderSize + 9
+		unsignedLong64At: address + baseHeaderSize + 8
 		put: aValue
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> selector [
-	^memory unsignedLong64At: address + 25 + baseHeaderSize
+	^memory unsignedLong64At: address + 24 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> selector: aValue [
 	^memory
-		unsignedLong64At: address + baseHeaderSize + 25
+		unsignedLong64At: address + baseHeaderSize + 24
 		put: aValue
 ]

@@ -47,25 +47,25 @@ CogMethodSurrogate32 class >> offsetOf: aByteSymbol [
 
 { #category : #accessing }
 CogMethodSurrogate32 >> blockEntryOffset [
-	^memory unsignedShortAt: address + 7 + baseHeaderSize
+	^memory unsignedShortAt: address + 6 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> blockEntryOffset: aValue [
 	^memory
-		unsignedShortAt: address + baseHeaderSize + 7
+		unsignedShortAt: address + baseHeaderSize + 6
 		put: aValue
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> blockSize [
-	^memory unsignedShortAt: address + 5 + baseHeaderSize
+	^memory unsignedShortAt: address + 4 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> blockSize: aValue [
 	^memory
-		unsignedShortAt: address + baseHeaderSize + 5
+		unsignedShortAt: address + baseHeaderSize + 4
 		put: aValue
 ]
 
@@ -83,36 +83,36 @@ CogMethodSurrogate32 >> counterIndex: aValue [
 
 { #category : #accessing }
 CogMethodSurrogate32 >> methodHeader [
-	^memory unsignedLongAt: address + 13 + baseHeaderSize
+	^memory unsignedLongAt: address + 12 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> methodHeader: aValue [
 	^memory
-		unsignedLongAt: address + baseHeaderSize + 13
+		unsignedLongAt: address + baseHeaderSize + 12
 		put: aValue
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> methodObject [
-	^memory unsignedLongAt: address + 9 + baseHeaderSize
+	^memory unsignedLongAt: address + 8 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> methodObject: aValue [
 	^memory
-		unsignedLongAt: address + baseHeaderSize + 9
+		unsignedLongAt: address + baseHeaderSize + 8
 		put: aValue
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> selector [
-	^memory unsignedLongAt: address + 17 + baseHeaderSize
+	^memory unsignedLongAt: address + 16 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> selector: aValue [
 	^memory
-		unsignedLongAt: address + baseHeaderSize + 17
+		unsignedLongAt: address + baseHeaderSize + 16
 		put: aValue
 ]

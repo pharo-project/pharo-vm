@@ -2689,13 +2689,6 @@ InterpreterPrimitives >> primitiveInputSemaphore [
 			[self primitiveFailFor: PrimErrBadArgument]
 ]
 
-{ #category : #'I/O primitives' }
-InterpreterPrimitives >> primitiveInputWord [
-	"Return an integer indicating the reason for the most recent input interrupt."
-
-	self pop: 1 thenPushInteger: 0.	"noop for now"
-]
-
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveInstVarAt [
 	| index rcvr hdr fmt totalLength fixedFields value |
@@ -2843,32 +2836,6 @@ InterpreterPrimitives >> primitiveIsWindowObscured [
 	self pop: self methodArgumentCount+1.
 	self pushBool: self ioIsWindowObscured.
 
-]
-
-{ #category : #'I/O primitives' }
-InterpreterPrimitives >> primitiveKbdNext [
-	"Obsolete on virtually all platforms; old style input polling code.
-	Return the next keycode and remove it from the input buffer. The low byte is the 8-bit ISO character. The next four bits are the Smalltalk modifier bits <cmd><option><ctrl><shift>."
-
-	| keystrokeWord |
-	self pop: 1.
-	keystrokeWord := self ioGetKeystroke.
-	keystrokeWord >= 0
-		ifTrue: [self pushInteger: keystrokeWord]
-		ifFalse: [self push: objectMemory nilObject].
-]
-
-{ #category : #'I/O primitives' }
-InterpreterPrimitives >> primitiveKbdPeek [
-	"Obsolete on virtually all platforms; old style input polling code.
-	Return the next keycode and without removing it from the input buffer. The low byte is the 8-bit ISO character. The next four bits are the Smalltalk modifier bits <cmd><option><ctrl><shift>."
-
-	| keystrokeWord |
-	self pop: 1.
-	keystrokeWord := self ioPeekKeystroke.
-	keystrokeWord >= 0
-		ifTrue: [self pushInteger: keystrokeWord]
-		ifFalse: [self push: objectMemory nilObject].
 ]
 
 { #category : #'arithmetic integer primitives' }
@@ -3134,29 +3101,6 @@ InterpreterPrimitives >> primitiveModLargeIntegers [
 
 ]
 
-{ #category : #'I/O primitives' }
-InterpreterPrimitives >> primitiveMouseButtons [
-	"Obsolete on virtually all platforms; old style input polling code.
-	Return the mouse button state. The low three bits encode the state of the <red><yellow><blue> mouse buttons. The next four bits encode the Smalltalk modifier bits <cmd><option><ctrl><shift>."
-
-	| buttonWord |
-	self pop: 1.
-	buttonWord := self ioGetButtonState.
-	self pushInteger: buttonWord.
-]
-
-{ #category : #'I/O primitives' }
-InterpreterPrimitives >> primitiveMousePoint [
-	"Obsolete on virtually all platforms; old style input polling code.
-	Return a Point indicating current position of the mouse. Note that mouse coordinates may be negative if the mouse moves above or to the left of the top-left corner of the Smalltalk window."
-
-	| pointWord x y |
-	pointWord := self ioMousePoint.
-	x := self signExtend16: ((pointWord >> 16) bitAnd: 16rFFFF).
-	y := self signExtend16: (pointWord bitAnd: 16rFFFF).
-	self pop: 1 thenPush: (self makePointwithxValue: x  yValue: y)
-]
-
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveMultiply [
 	| integerRcvr integerArg integerResult overflow |
@@ -3346,13 +3290,6 @@ InterpreterPrimitives >> primitiveNextObject [
 		ifNotNil: [:instance|
 			self assert: (objectMemory isInMemory: instance).
 			self pop: argumentCount+1 thenPush: instance]
-]
-
-{ #category : #'system control primitives' }
-InterpreterPrimitives >> primitiveNoop [
-	"A placeholder for primitives that haven't been implemented or are being withdrawn gradually. Just absorbs any arguments and returns the receiver."
-
-	self pop: argumentCount.  "pop args, leave rcvr on stack"
 ]
 
 { #category : #'arithmetic integer primitives' }

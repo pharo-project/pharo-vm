@@ -112,7 +112,6 @@ Class {
 		'HasBeenReturnedFromMCPCOop',
 		'MFMethodFlagFrameIsMarkedFlag',
 		'MinBackwardJumpCountForCompile',
-		'PrimNumberHashMultiply',
 		'PrimTraceLogSize',
 		'RumpCStackSize',
 		'TraceBlockActivation',
@@ -147,7 +146,8 @@ CoInterpreter class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
 	^(super ancilliaryClasses copyWithout: InterpreterStackPages),
 	   {	CoInterpreterStackPages.
-		CogBlockMethod },
+		CogBlockMethod.
+		CogPrimitiveDescriptor. },
 	((Cogit ancilliaryClasses) select: [:class| class inheritsFrom: CogBlockMethod])
 ]
 
@@ -2450,13 +2450,12 @@ CoInterpreter >> commenceCogCompiledCodeCompaction [
 		 self assert: self stackTop asUnsignedInteger ~= instructionPointer.
 		 self push: instructionPointer.
 		 self externalWriteBackHeadStackPointer].
-	self assertValidStackedInstructionPointers: #'__LINE__'.
+	
 	cogit compactCogCompiledCode.
 	self nilUncoggableMethods.
 	instructionPointer ~= 0 ifTrue:
 		[instructionPointer := self popStack.
 		 self externalWriteBackHeadStackPointer].
-	self assertValidStackedInstructionPointers: #'__LINE__'.
 
 	statCodeCompactionCount := statCodeCompactionCount + 1.
 	statCodeCompactionUsecs := statCodeCompactionUsecs + (self ioUTCMicrosecondsNow - startTime).
@@ -3582,6 +3581,20 @@ CoInterpreter >> gcMode: anInteger [
 	gcMode := anInteger
 ]
 
+{ #category : #'internal interpreter access' }
+CoInterpreter >> getBlockCompilationCount [
+
+	<doNotGenerate>
+	^ cogit getBlockCompilationCount
+]
+
+{ #category : #'internal interpreter access' }
+CoInterpreter >> getBlockCompilationMSecs [
+
+	<doNotGenerate>
+	^ cogit getBlockCompilationMSecs
+]
+
 { #category : #'cog jit support' }
 CoInterpreter >> getCheckAllocFiller [
 	<api>
@@ -3668,6 +3681,20 @@ CoInterpreter >> getImageHeaderFlags [
 	+ (newFinalization ifTrue: [16r40] ifFalse: [0])
 	+ (sendWheelEvents ifTrue: [16r80] ifFalse: [0])
 	+ (imageHeaderFlags bitClear: 16rDB) "these are any flags we do not recognize"
+]
+
+{ #category : #'internal interpreter access' }
+CoInterpreter >> getMethodCompilationCount [
+
+	<doNotGenerate>
+	^ cogit getMethodCompilationCount
+]
+
+{ #category : #'internal interpreter access' }
+CoInterpreter >> getMethodCompilationMSecs [
+
+	<doNotGenerate>
+	^ cogit getMethodCompilationMSecs
 ]
 
 { #category : #'message sending' }
@@ -5664,57 +5691,6 @@ CoInterpreter >> primitiveFunctionPointer: oop [
 	primitiveFunctionPointer := oop
 ]
 
-{ #category : #'cog jit support' }
-CoInterpreter >> primitivePropertyFlags: primIndex [
-	<api>
-	"Answer any special requirements of the given primitive"
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue: [^self primitivePropertyFlagsForSpur: primIndex]
-		ifFalse: [^self primitivePropertyFlagsForV3: primIndex]
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> primitivePropertyFlagsForSpur: primIndex [
-	<inline: true>
-	"Answer any special requirements of the given primitive.  Spur always needs to set
-	 primitiveFunctionPointer and newMethod so primitives can retry on failure due to forwarders."
-	| baseFlags |
-	self cCode: [] inSmalltalk: [#(mcprimHashMultiply: primitiveExternalCall primitiveCalloutToFFI)]. "For senders..."
-	primIndex = PrimNumberHashMultiply ifTrue:
-		[^PrimCallOnSmalltalkStack].
-	baseFlags := PrimCallNeedsPrimitiveFunction + PrimCallNeedsNewMethod.
-	profileSemaphore ~= objectMemory nilObject ifTrue:
-		[baseFlags := baseFlags bitOr: PrimCallCollectsProfileSamples].
-
-		(primIndex = PrimNumberExternalCall "#primitiveExternalCall"
-	 or: [primIndex = PrimNumberFFICall "#primitiveCalloutToFFI"]) ifTrue: "For callbacks"
-		[baseFlags := baseFlags bitOr: PrimCallMayCallBack.
-		 checkAllocFiller ifTrue:
-			[baseFlags := baseFlags bitOr: CheckAllocationFillerAfterPrimCall]].
-
-	^baseFlags
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> primitivePropertyFlagsForV3: primIndex [
-	<inline: true>
-	"Answer any special requirements of the given primitive"
-	| baseFlags |
-	baseFlags := profileSemaphore ~= objectMemory nilObject
-					ifTrue: [PrimCallNeedsNewMethod + PrimCallCollectsProfileSamples]
-					ifFalse: [0].
-
-	longRunningPrimitiveCheckSemaphore ifNotNil:
-		[baseFlags := baseFlags bitOr: PrimCallNeedsNewMethod].
-
-	self cCode: [] inSmalltalk: [#(primitiveExternalCall primitiveCalloutToFFI)]. "For senders..."
-		(primIndex = PrimNumberExternalCall "#primitiveExternalCall"
-	 or: [primIndex = PrimNumberFFICall "#primitiveCalloutToFFI"]) ifTrue: "For callbacks"
-		[baseFlags := baseFlags bitOr: PrimCallNeedsNewMethod + PrimCallNeedsPrimitiveFunction + PrimCallMayCallBack].
-
-	^baseFlags
-]
-
 { #category : #'debug printing' }
 CoInterpreter >> printCogMethod: cogMethod [
 	<api>
@@ -7142,7 +7118,7 @@ CoInterpreter >> updateStackZoneReferencesToCompiledCodePreCompaction [
 					[theMethod := (self cCoerceSimple: theMethodField - theFlags to: #'CogBlockMethod *') cmHomeMethod].
 				 theIP := (stackPages longAt: theIPPtr) asUnsignedInteger.
 				 (theIP ~= cogit ceCannotResumePC
-				  and: [self asserta: (theIP >= theMethod asUnsignedInteger
+				  and: [(theIP >= theMethod asUnsignedInteger
 							   and: [theIP < (theMethod asUnsignedInteger + theMethod blockSize)])]) ifTrue:
 					[stackPages
 						longAt: theIPPtr
