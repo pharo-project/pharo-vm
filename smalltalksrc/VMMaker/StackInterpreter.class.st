@@ -14352,6 +14352,14 @@ StackInterpreter >> setDesiredCogCodeSize: dccs [
 	theUnknownShort := dccs
 ]
 
+{ #category : #'image save/restore' }
+StackInterpreter >> setDesiredEdenBytes: bytes [
+	<api>
+	<var: #bytes type: #usqLong>
+	desiredEdenBytes := bytes.
+	^0
+]
+
 { #category : #'frame access' }
 StackInterpreter >> setFrameContext: theFP to: aContext [
 	<inline: true>
