@@ -194,6 +194,12 @@ if(MSVC)
     get_platform_name(VM_TARGET_OS)
     message(STATUS "Building for ${VM_TARGET_OS}")
     set(CMAKE_CURRENT_SOURCE_DIR_TO_OUT ${CMAKE_CURRENT_SOURCE_DIR})
+    
+    # Define WIN32_LEAN_AND_MEAN to exclude APIs such as Cryptography, DDE, RPC, Shell, and Windows Sockets
+    # They can be included if needed
+    # https://docs.microsoft.com/en-us/windows/win32/winprog/using-the-windows-headers
+    add_compile_definitions(WIN32_LEAN_AND_MEAN)
+    
 elseif(WIN)
     message(STATUS "Building for WINDOWS")
 
@@ -228,6 +234,7 @@ elseif(WIN)
     # this one is important
     SET(CMAKE_SYSTEM_NAME Windows)
 
+    add_compile_definitions(WIN32_LEAN_AND_MEAN)
     add_compile_definitions(NO_ISNAN NO_SERVICE "'VM_LABEL(foo)=0'" LSB_FIRST=1 AllocationCheckFiller=0xADD4E55)
 
     #Setting minimal Windows Version to VISTA
