@@ -124,9 +124,6 @@ Class {
 		'minValidCallAddress',
 		'lastNInstructions',
 		'simulatedAddresses',
-		'simulatedTrampolines',
-		'simulatedVariableGetters',
-		'simulatedVariableSetters',
 		'printRegisters',
 		'printInstructions',
 		'compilationTrace',
@@ -272,7 +269,8 @@ Class {
 		'statCompileFullBlockCount',
 		'statCompileFullBlockUsecs',
 		'statCompileMethodCount',
-		'statCompileMethodUsecs'
+		'statCompileMethodUsecs',
+		'cogEventLogger'
 	],
 	#classVars : [
 		'AltBlockCreationBytecodeSize',
@@ -378,6 +376,7 @@ Cogit class >> ancilliaryClasses [
 		CogBlockMethod.
 		CogMethod.
 		CogEventLogger.
+		CogPrimitiveCallState.
 		self activeCompilerClass literalsManagerClass},
 	((InitializationOptions at: #SistaVM ifAbsent: [false])
 		ifTrue: [{SistaMethodZone}]
@@ -4574,11 +4573,16 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 	 depend on the zone remaining constant across method generation."
 	<api>
 	<returnTypeC: #'CogMethod *'>
-	| selector cogMethod |
+	<var: #startTime type: #usqLong>
 	<var: #cogMethod type: #'CogMethod *'>
+	
+	| selector cogMethod startTime|
+
 	(self exclude: aMethodObj selector: aSelectorOop) ifTrue:
 		[^nil].
-	
+
+	startTime := coInterpreter ioUTCMicrosecondsNow.
+		
 	self deny: (coInterpreter methodHasCogMethod: aMethodObj).
 	self deny: (objectMemory isOopCompiledMethod: (coInterpreter ultimateLiteralOf: aMethodObj)).
 
@@ -4620,6 +4624,9 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 			 self assertValidMethodMap: cogMethod."
 			 "self disassembleMethod: cogMethod."
 			 "printInstructions := clickConfirm := true""]."
+
+	statCompileMethodCount := statCompileMethodCount + 1.
+	statCompileMethodUsecs := statCompileMethodUsecs + (coInterpreter ioUTCMicrosecondsNow - startTime).
 	
 	cogEventLogger methodJitted: cogMethod.	
 		
@@ -8626,6 +8633,11 @@ Cogit >> initialize [
 											
 	cogEventLogger := CogEventLogger new.
 	cogEventLogger cogit: self.
+	
+	statCompileFullBlockCount := 0.
+	statCompileFullBlockUsecs := 0.
+	statCompileMethodCount := 0.
+	statCompileMethodUsecs := 0.
 ]
 
 { #category : #initialization }
