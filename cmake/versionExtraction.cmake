@@ -34,6 +34,7 @@ macro(extractVCSInformation COMMIT_VARNAME DESCRIBE_VARNAME COMMIT_DATE_VARNAME)
 		list(GET FILECONTENT 0 ${COMMIT_VARNAME})
 		list(GET FILECONTENT 1 ${DESCRIBE_VARNAME})
 		list(GET FILECONTENT 2 ${COMMIT_DATE_VARNAME})
+		file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/version.info ${CMAKE_CURRENT_BINARY_DIR}/version.info)
 	else()
 		#If I have information for the Commit ID, I store it in the version.info file
 		file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/version.info ${${COMMIT_VARNAME}}\n)
