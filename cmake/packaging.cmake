@@ -60,19 +60,17 @@ install(FILES
     COMPONENT c-src
 )
 
-if(GENERATE_SOURCES)
-	#Define generated files as elements in the c-src component for packaging
-	install(DIRECTORY
-		${CMAKE_CURRENT_BINARY_DIR}/generated/
-		DESTINATION pharo-vm/generated/
-		COMPONENT c-src)
+#Define generated files as elements in the c-src component for packaging
+install(
+	DIRECTORY "${GENERATED_SOURCE_DIR}/generated/"
+	DESTINATION pharo-vm/generated/
+	COMPONENT c-src)
 
-	install(
-		DIRECTORY "${GENERATED_SOURCE_DIR}/generated/32/vm/include/"
-		DESTINATION include/pharovm
-		COMPONENT include
+install(
+	DIRECTORY "${GENERATED_SOURCE_DIR}/generated/32/vm/include/"
+	DESTINATION include/pharovm
+	COMPONENT include
 	FILES_MATCHING PATTERN *.h)
-endif()
 
 get_platform_name(FULL_PLATFORM_NAME)
 
