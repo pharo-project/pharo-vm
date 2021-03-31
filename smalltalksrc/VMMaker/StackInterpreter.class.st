@@ -452,10 +452,6 @@ Class {
 		'MethodHeaderFlagBitPosition',
 		'MethodHeaderTempCountShift',
 		'MixinIndex',
-		'PrimNumberDoExternalCall',
-		'PrimNumberDoPrimitive',
-		'PrimNumberExternalCall',
-		'PrimNumberFFICall',
 		'PrimitiveTable',
 		'ReturnToInterpreter',
 		'StackPageReachedButUntraced',
@@ -471,7 +467,8 @@ Class {
 		'VMObjectIndices',
 		'VMSpurObjectRepresentationConstants',
 		'VMSqueakClassIndices',
-		'VMStackFrameOffsets'
+		'VMStackFrameOffsets',
+		'VMWellKnownPrimitivesConstants'
 	],
 	#category : #'VMMaker-Interpreter'
 }
@@ -7417,6 +7414,18 @@ StackInterpreter >> functionPointerFor: primIdx inClass: theClass [
 ]
 
 { #category : #'internal interpreter access' }
+StackInterpreter >> getBlockCompilationCount [
+	"This is nil in the StackVM"
+	^objectMemory nilObject
+]
+
+{ #category : #'internal interpreter access' }
+StackInterpreter >> getBlockCompilationMSecs [
+	"This is nil in the StackVM"
+	^objectMemory nilObject
+]
+
+{ #category : #'internal interpreter access' }
 StackInterpreter >> getCodeCompactionCount [
 	"This is nil in the StackVM"
 	^objectMemory nilObject
@@ -7566,6 +7575,18 @@ StackInterpreter >> getLongFromFile: aFile swap: swapFlag [
 	^swapFlag
 		ifTrue: [objectMemory byteSwapped: w]
 		ifFalse: [w]
+]
+
+{ #category : #'internal interpreter access' }
+StackInterpreter >> getMethodCompilationCount [
+	"This is nil in the StackVM"
+	^objectMemory nilObject
+]
+
+{ #category : #'internal interpreter access' }
+StackInterpreter >> getMethodCompilationMSecs [
+	"This is nil in the StackVM"
+	^objectMemory nilObject
 ]
 
 { #category : #'plugin primitive support' }
@@ -7775,6 +7796,22 @@ StackInterpreter >> handleStackOverflowOrEventAllowContextSwitch: mayContextSwit
 	stackLimit = stackPage realStackLimit ifTrue:
 		[^false].
 	^self checkForEventsMayContextSwitch: mayContextSwitch
+]
+
+{ #category : #'primitive support' }
+StackInterpreter >> hasCheckAllocFiller [
+
+	<api>
+
+	^ self checkAllocFiller 
+]
+
+{ #category : #profiling }
+StackInterpreter >> hasProfileSemaphore [
+
+	<api>
+	
+	^ profileSemaphore ~= objectMemory nilObject
 ]
 
 { #category : #'stack pages' }
@@ -12887,7 +12924,7 @@ StackInterpreter >> profileMethod [
 	^ profileMethod
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #profiling }
 StackInterpreter >> profileSemaphore [
 	<doNotGenerate>
 	^ profileSemaphore
@@ -14313,6 +14350,14 @@ StackInterpreter >> setDesiredCogCodeSize: dccs [
 	<inline: true>
 	"This should perhaps be a no-op in the StackVM, but we implement it for the convenience of bootstrap scripts etc."
 	theUnknownShort := dccs
+]
+
+{ #category : #'image save/restore' }
+StackInterpreter >> setDesiredEdenBytes: bytes [
+	<api>
+	<var: #bytes type: #usqLong>
+	desiredEdenBytes := bytes.
+	^0
 ]
 
 { #category : #'frame access' }

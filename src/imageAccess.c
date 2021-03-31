@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include "pharovm/stringUtilities.h"
 
 #if !defined(_WIN32)
 #include <unistd.h>
@@ -27,7 +28,31 @@ sqInt basicImageFileClose(sqImageFile f){
 }
 
 sqImageFile basicImageFileOpen(const char* fileName, char *mode){
+#ifndef _WIN32
 	return fopen(fileName, mode);
+#else
+
+	/*
+	 * In Win32, the filename if using fopen only works with ANSI characters.
+	 * We need to use the wide version.
+	 */
+
+	WCHAR * wideFileName;
+	WCHAR * wideMode;
+	FILE * f;
+
+	wideFileName = vm_string_convert_utf8_to_utf16(fileName);
+	wideMode = vm_string_convert_utf8_to_utf16(mode);
+
+
+	f = _wfopen(wideFileName, wideMode);
+
+	free(wideFileName);
+	free(wideMode);
+
+	return f;
+
+#endif
 }
 
 long int basicImageFilePosition(sqImageFile f){
