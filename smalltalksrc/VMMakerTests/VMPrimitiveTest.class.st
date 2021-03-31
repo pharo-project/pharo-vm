@@ -352,21 +352,28 @@ VMPrimitiveTest >> testPrimitiveArrayBecomeOneWayCreatesForwardThatPointsToOrigi
 
 { #category : #'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveAtPutFailsForForwardedReceiver [
-	| class objectInstance |
-	"I don't know how to force an object to be forwarded ."
-	
-	self skip.
-	
+	| class objectInstance biggerClass objectForwarded array1 array2 |
+	"Forwarding an object happens when becoming it with a bigger object"
 	
 	"We push receiver then 3 arguments"
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
 	objectInstance := memory instantiateClass: class.
 	
+	biggerClass := self newClassInOldSpaceWithSlots: 50 instSpec: memory nonIndexablePointerFormat.
+	objectForwarded :=  memory instantiateClass: biggerClass.
+	
+	array1 := self newArrayWith: { objectInstance }.
+	array2 := self newArrayWith: { objectForwarded }.
+	
+	interpreter push: array1.
+	interpreter push: array2.
+	
+	interpreter primitiveArrayBecome.
+	
 	interpreter push: objectInstance.
 	interpreter push: (memory integerObjectOf: 0).
 	interpreter push: memory falseObject.
-	interpreter push: memory falseObject.
-	interpreter argumentCount: 4.
+	interpreter argumentCount: 3.
 	interpreter primitiveAtPut.
 	
 	self assert: interpreter failed.
@@ -886,6 +893,116 @@ VMPrimitiveTest >> testPrimitiveSetImmutabilityOfObjectAsTrueSetsImmutability [
 	interpreter primitiveSetImmutability.
 	
 	self assert: (memory isImmutable: object)
+]
+
+{ #category : #'tests - primitiveSize' }
+VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForContext [
+
+	| method |
+	method := methodBuilder newMethod buildMethod.
+	
+	interpreter push: method.
+	interpreter primitiveSize.
+	
+	"One literal + 10 bytecodes"
+	self assert: interpreter stackTop equals: (memory integerObjectOf: (10 + wordSize)).
+
+]
+
+{ #category : #'tests - primitiveSize' }
+VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForIndexableObject [
+
+	| array1 |
+	array1 := self newArrayWith: { memory integerObjectOf: 1 . memory integerObjectOf: 2 . memory integerObjectOf: 3 }.
+
+	interpreter push: array1.
+	interpreter primitiveSize.
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 3).
+
+]
+
+{ #category : #'tests - primitiveSize' }
+VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForMethod [
+
+	| method |
+	method := methodBuilder newMethod buildMethod.
+	
+	interpreter push: method.
+	interpreter primitiveSize.
+	
+	"One literal + 10 bytecodes"
+	self assert: interpreter stackTop equals: (memory integerObjectOf: (10 + wordSize)).
+
+]
+
+{ #category : #'tests - primitiveSize' }
+VMPrimitiveTest >> testPrimitiveSizeFailsForForwardedObject [
+
+	| array1 array2 arrayForwarder arrayForwardee |
+	array1 := self newArrayWith: { memory integerObjectOf: 1 . memory integerObjectOf: 2 . memory integerObjectOf: 3 }.
+	array2 := self newArrayWith: { memory integerObjectOf: 4 . memory integerObjectOf: 5 }.
+	
+	interpreter push: array1.
+	interpreter primitiveSize.
+	
+	arrayForwarder := self newArrayWith: { array1 }.
+	arrayForwardee := self newArrayWith: { array2 }.
+	
+	interpreter push: arrayForwarder.
+	interpreter push: arrayForwardee.
+	interpreter primitiveArrayBecome.
+	
+	interpreter push: array1.
+	interpreter push: array1.
+	1halt.
+	interpreter primitiveSize.
+	
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver
+
+]
+
+{ #category : #'tests - primitiveSize' }
+VMPrimitiveTest >> testPrimitiveSizeFailsForForwardedObjectThenCallForwarderResolutionAndCallPrimitiveAgain [
+
+	| array1 array2 arrayForwarder arrayForwardee |
+	array1 := self newArrayWith: { memory integerObjectOf: 1 . memory integerObjectOf: 2 . memory integerObjectOf: 3 }.
+	array2 := self newArrayWith: { memory integerObjectOf: 4 . memory integerObjectOf: 5 }.
+	
+	arrayForwarder := self newArrayWith: { array1 }.
+	arrayForwardee := self newArrayWith: { array2 }.
+	
+	interpreter push: arrayForwarder.
+	interpreter push: arrayForwardee.
+	interpreter primitiveArrayBecome.
+	
+	interpreter push: memory falseObject.
+	interpreter push: array1.
+	interpreter argumentCount: 1.
+	interpreter primitiveSize.
+	self assert: (interpreter followForwardedForAccessorDepth: 0).
+
+	interpreter initPrimCall.
+	interpreter primitiveSize.
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2)
+
+]
+
+{ #category : #'tests - primitiveSize' }
+VMPrimitiveTest >> testPrimitiveSizeFailsForNonIndexable [
+	| class objectInstance |
+	"Forwarding an object happens when becoming it with a bigger object"
+	
+	"We push receiver then 3 arguments"
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
+	objectInstance := memory instantiateClass: class.
+	
+	interpreter push: objectInstance.
+	interpreter primitiveSize.
+	
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
 ]
 
 { #category : #'tests - primitiveAtPut' }
