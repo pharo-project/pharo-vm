@@ -13,7 +13,9 @@ BaselineOfVMMaker >> baseline: spec [
 			
 			"Slang, the basics"			
 			spec
-				package: 'Slang';
+				package: 'Slang' with: [
+					spec requires: #( 'SmaCC-GLR' )
+				];
 				package: 'Slang-Tests' with: [
 					spec requires: #('Slang') ].
 			
@@ -22,6 +24,11 @@ BaselineOfVMMaker >> baseline: spec [
 				spec requires: #('Slang') ].
 			
 			"External Dependencies"
+			spec baseline: 'SmaCC-GLR' with: [ 
+				spec
+					loads: #( 'SmaCC-GLR-Runtime' );
+					className: 'BaselineOfSmaCC';
+					repository: 'github://SmaCCRefactoring/SmaCC' ].
 			spec baseline: 'Unicorn' with: [ 
 				spec repository: 'github://guillep/pharo-unicorn' ].
 			spec baseline: 'LLVMDisassembler' with: [ 
