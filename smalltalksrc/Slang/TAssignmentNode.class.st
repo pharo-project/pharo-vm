@@ -8,6 +8,36 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #tranforming }
+TAssignmentNode >> asCASTIn: aBuilder [
+
+	| type |
+	expression isLiteralArrayDeclaration ifTrue: [ | node literalArrayNode |
+		
+		type := expression args last value.
+		self assert: type last = $*.
+
+		"Transform the literal array declaration to a C block containing:
+		  - a static literal array declaration
+	 	  - an assigment from this literal array to the assigned variable "
+		literalArrayNode := expression args first value collect: [ :e | CConstantNode value: e ].
+		^ CCompoundStatementNode
+			  declarations: { (CDeclarationNode
+					   specifiers: { 'static' . type allButLast }
+					   declarator: (CInitDeclaratorNode
+							    declarator: (CArrayDeclaratorNode identifier: 'aLiteralArray')
+							    initializer: (CGLRInitializerNode initializers: literalArrayNode))) }
+			  statements: { (CAssignmentNode
+					   lvalue: (CIdentifierNode name: variable name)
+					   rvalue: (CIdentifierNode name: 'aLiteralArray')) }
+		
+	].
+
+	^ CAssignmentNode
+	   lvalue: (variable asCASTIn: aBuilder)
+	   rvalue: (expression asCASTExpressionIn: aBuilder)
+]
+
 { #category : #transformations }
 TAssignmentNode >> bindVariableUsesIn: aDictionary [
 	"Do NOT bind the variable on the left-hand-side of an assignment statement."

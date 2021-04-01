@@ -7,6 +7,23 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #tranforming }
+TReturnNode >> asCASTIn: aBuilder [
+
+	'void' = aBuilder currentMethod returnType ifTrue: [
+		"If the function is void, don't say 'return x' instead say ' x; return' "
+		| statements |
+		statements := OrderedCollection new.
+		expression isLeaf ifFalse: [
+			statements add: (expression asCASTIn: aBuilder) ].
+		statements add: CReturnStatementNode new.
+		^ (CCompoundStatementNode statements: statements)
+			needsBrackets: false "Slang compatibility";
+			yourself ].
+	
+	^ CReturnStatementNode expression: (expression asCASTExpressionIn: aBuilder)
+]
+
 { #category : #transformations }
 TReturnNode >> asReturnNode [
 	^self

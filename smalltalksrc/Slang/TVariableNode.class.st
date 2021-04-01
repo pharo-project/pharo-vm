@@ -7,6 +7,14 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #tranforming }
+TVariableNode >> asCASTIn: aBuilder [
+
+	^ name = 'nil'
+		ifTrue: [ CIdentifierNode name: aBuilder nilTranslation ]
+		ifFalse: [ CIdentifierNode name: (aBuilder returnPrefixFromVariable: name) ]
+]
+
 { #category : #transformations }
 TVariableNode >> bindVariableUsesIn: aDictionary [
 

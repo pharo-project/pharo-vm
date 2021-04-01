@@ -53,6 +53,20 @@ TParseNode >> anySatisfy: aBlock unless: cautionaryBlock [
 	^false
 ]
 
+{ #category : #transforming }
+TParseNode >> asCASTExpressionIn: aBuilder [
+
+	"By default use the normal translation.
+	Override for those translations that are not expressions by default"	
+	^ self asCASTIn: aBuilder
+]
+
+{ #category : #tranforming }
+TParseNode >> asCASTIn: aBuilder [
+
+	self subclassResponsibility
+]
+
 { #category : #transformations }
 TParseNode >> asReturnNode [
 	^TReturnNode new 

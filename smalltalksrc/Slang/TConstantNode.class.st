@@ -7,6 +7,12 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #tranforming }
+TConstantNode >> asCASTIn: aBuilder [
+
+	^ CConstantNode value: (aBuilder cLiteralFor: value)
+]
+
 { #category : #transformations }
 TConstantNode >> asPrintfFormatStringNode [
 	^TPrintfFormatStringNode new
