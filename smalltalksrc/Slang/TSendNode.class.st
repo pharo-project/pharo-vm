@@ -150,7 +150,7 @@ TSendNode >> copyWithoutReturn [
 ]
 
 { #category : #'C code generation' }
-TSendNode >> emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen [
+TSendNode >> emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen [
 	"Emit the receiver in a form that can be passed as an argument."
 
 	"If the selector is a built-in construct, translate it and return"
@@ -159,11 +159,6 @@ TSendNode >> emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen [
 		(self emitCCodeAsFieldReferenceOn: aStream level: level generator: aCodeGen) ifFalse:
 			["Otherwise generate the vanilla C function call."
 			 self emitCCodeAsFunctionCallOn: aStream level: level generator: aCodeGen]]
-]
-
-{ #category : #'C code generation' }
-TSendNode >> emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen [
-	^self emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen
 ]
 
 { #category : #'C code generation' }
@@ -194,10 +189,6 @@ TSendNode >> emitCCodeAsFieldReferenceOn: aStream level: level generator: aCodeG
 { #category : #'C code generation' }
 TSendNode >> emitCCodeAsFunctionCallOn: aStream level: level generator: aCodeGen [
 	"Translate this message send into a C function call"
-
-	selector == #break ifTrue:
-		[aStream nextPutAll: '/* send of break elided */'.
-		 ^self].
 
 	"Special case for pluggable modules. Replace messages to interpreterProxy
 	 by interpreterProxy->message(..) if the message is not builtin"

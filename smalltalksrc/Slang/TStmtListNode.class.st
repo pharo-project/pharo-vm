@@ -138,7 +138,7 @@ TStmtListNode >> copyWithoutReturn [
 ]
 
 { #category : #'C code generation' }
-TStmtListNode >> emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen [
+TStmtListNode >> emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen [
 	| size |
 	(size := statements size) = 1 ifTrue:
 		[^statements first emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen].
@@ -160,11 +160,6 @@ TStmtListNode >> emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen
 			  or: [s isComment]) ifFalse: [aStream nextPut: $,].
 			 aStream crtab: level]].
 	aStream nextPut: $)
-]
-
-{ #category : #'C code generation' }
-TStmtListNode >> emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen [
-	^self emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen
 ]
 
 { #category : #'C code generation' }

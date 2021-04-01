@@ -128,7 +128,7 @@ TParseNode >> detect: aBlock ifNone: defaultBlock [
 
 { #category : #'C code generation' }
 TParseNode >> emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen [
-	^self emitCCodeOn: aStream level: level generator: aCodeGen
+	^self emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen
 ]
 
 { #category : #'C code generation' }

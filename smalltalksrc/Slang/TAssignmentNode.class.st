@@ -37,11 +37,6 @@ TAssignmentNode >> bindVariablesIn: aDictionary [
 ]
 
 { #category : #'C code generation' }
-TAssignmentNode >> emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen [
-	^self emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen
-]
-
-{ #category : #'C code generation' }
 TAssignmentNode >> emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen [
 	(expression isStmtList and: [expression statements size > 1]) ifTrue:
 		[^self emitStatementListExpansionAsExpression: expression on: aStream level: level generator: aCodeGen].
@@ -81,7 +76,9 @@ TAssignmentNode >> emitLiteralArrayDeclarationOn: aStream level: level generator
 	self assert: type last = $*.
 	aStream
 		crtab: level;
-		nextPutAll: '{ static ';
+		nextPutAll: '{';
+		crtab: level + 1;
+		nextPutAll: 'static ';
 		nextPutAll: (aCCodeGen
 						arrayInitializerCalled: 'aLiteralArray'
 						for: expression args first value
@@ -117,11 +114,32 @@ TAssignmentNode >> emitStatementListExpansionAsExpression: stmtList on: aStream 
 { #category : #'C code generation' }
 TAssignmentNode >> emitValueExpansionOn: aStream level: level generator: aCodeGen [
 	| stmtList lastStmt copy |
+	
+	"Transform assignments of the form:
+	
+	var := [ a . block . lastexpression ] value.
+	
+	into:
+	
+	[ a . block . var := lastExpression ] value.
+	
+	Takes into account variants of #value and #value:.
+	"
+	
 	self assert: (expression isSend and: [expression isValueExpansion]).
+	
 	stmtList := expression receiver.
 	lastStmt := stmtList statements last.
+	
+	"Optimization. If the expression looks like:
+	
+	var := [ ... var ] value.
+	
+	Emit directly the block without the last statement, as the assignment has no impact in the translation.
+	"
 	lastStmt = variable ifTrue:
 		[^expression emitCCodeOn: aStream level: level generator: aCodeGen].
+	
 	copy := stmtList copy.
 	copy statements
 		at: stmtList statements size
