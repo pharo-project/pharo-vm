@@ -66,6 +66,9 @@ VMSelectorIndexDereferenceRoutineTest >> testPositiveSelectorIndexIsLookedUpInMe
 	self wordSize = 8 ifFalse: [ ^ self skip ].
 	
 	self setUpCogMethodEntry.
+	
+	"We need enough opcodes to generate the routine"
+	cogit allocateOpcodes: 80 bytecodes: 0.
 	cogit objectRepresentation maybeGenerateSelectorIndexDereferenceRoutine.
 	
 	"Smalltalk 1-based array index where the selector should be."
