@@ -6,6 +6,7 @@
 extern void setMaxStacksToPrint(sqInt anInteger);
 extern void setMaxOldSpaceSize(sqInt anInteger);
 extern void setDesiredCogCodeSize(sqInt anInteger);
+extern void setDesiredEdenBytes(sqLong anInteger);
 
 #if defined(__GNUC__) && ( defined(i386) || defined(__i386) || defined(__i386__)  \
 			|| defined(i486) || defined(__i486) || defined (__i486__) \
@@ -63,6 +64,7 @@ EXPORT(int) vm_init(VMParameters* parameters)
 	ioInitExternalSemaphores();
 	setMaxStacksToPrint(parameters->maxStackFramesToPrint);
 	setMaxOldSpaceSize(parameters->maxOldSpaceSize);
+  setDesiredEdenBytes(parameters->edenSize);
 
 	if(parameters->maxCodeSize > 0) {
 #ifndef COGVM
@@ -166,6 +168,7 @@ vm_main(int argc, const char** argv, const char** env)
 	parameters.maxStackFramesToPrint = 0;
 	parameters.maxCodeSize = 0;
 	parameters.maxOldSpaceSize = 0;
+  parameters.edenSize = 0;
 
 	// Did we succeed on parsing the parameters?
 	VMErrorCode error = vm_parameters_parse(argc, argv, &parameters);

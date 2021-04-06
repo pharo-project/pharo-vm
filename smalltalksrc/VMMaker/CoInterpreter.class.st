@@ -112,7 +112,6 @@ Class {
 		'HasBeenReturnedFromMCPCOop',
 		'MFMethodFlagFrameIsMarkedFlag',
 		'MinBackwardJumpCountForCompile',
-		'PrimNumberHashMultiply',
 		'PrimTraceLogSize',
 		'RumpCStackSize',
 		'TraceBlockActivation',
@@ -147,7 +146,8 @@ CoInterpreter class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
 	^(super ancilliaryClasses copyWithout: InterpreterStackPages),
 	   {	CoInterpreterStackPages.
-		CogBlockMethod },
+		CogBlockMethod.
+		CogPrimitiveDescriptor. },
 	((Cogit ancilliaryClasses) select: [:class| class inheritsFrom: CogBlockMethod])
 ]
 
@@ -5672,65 +5672,6 @@ CoInterpreter >> primitiveFunctionPointer: oop [
 	"Apparently not sent but is used in the simulator."
 	<doNotGenerate>
 	primitiveFunctionPointer := oop
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> primitivePropertyFlags: primIndex primitiveDescriptor: primitiveDescriptor [
-
-	"Answer any special requirements of the given primitive"
-
-	<api>
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue: [ 
-			^ self
-				  primitivePropertyFlagsForSpur: primIndex
-				  primitiveDescriptor: primitiveDescriptor ]
-		ifFalse: [ 
-			^ self
-				  primitivePropertyFlagsForV3: primIndex
-				  primitiveDescriptor: primitiveDescriptor ]
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> primitivePropertyFlagsForSpur: primIndex primitiveDescriptor: primitiveDescriptor [
-	<inline: true>
-	"Answer any special requirements of the given primitive.  Spur always needs to set
-	 primitiveFunctionPointer and newMethod so primitives can retry on failure due to forwarders."
-	| baseFlags |
-	self cCode: [] inSmalltalk: [#( mcprimHashMultiply: )]. "For senders..."
-
-	primIndex = PrimNumberHashMultiply ifTrue:
-		[^PrimCallOnSmalltalkStack].
-	baseFlags := PrimCallNeedsPrimitiveFunction + PrimCallNeedsNewMethod.
-	profileSemaphore ~= objectMemory nilObject ifTrue:
-		[baseFlags := baseFlags bitOr: PrimCallCollectsProfileSamples].
-
-	primitiveDescriptor primMayCallBack ifTrue: [ 
-		baseFlags := baseFlags bitOr: PrimCallMayCallBack.
-		checkAllocFiller ifTrue: [
-			baseFlags := baseFlags bitOr: CheckAllocationFillerAfterPrimCall ]].
-
-	^baseFlags
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> primitivePropertyFlagsForV3: primIndex primitiveDescriptor: anObject [
-	<inline: true>
-	"Answer any special requirements of the given primitive"
-	| baseFlags |
-	baseFlags := profileSemaphore ~= objectMemory nilObject
-					ifTrue: [PrimCallNeedsNewMethod + PrimCallCollectsProfileSamples]
-					ifFalse: [0].
-
-	longRunningPrimitiveCheckSemaphore ifNotNil:
-		[baseFlags := baseFlags bitOr: PrimCallNeedsNewMethod].
-
-	self cCode: [] inSmalltalk: [#(primitiveExternalCall primitiveCalloutToFFI)]. "For senders..."
-		(primIndex = PrimNumberExternalCall "#primitiveExternalCall"
-	 or: [primIndex = PrimNumberFFICall "#primitiveCalloutToFFI"]) ifTrue: "For callbacks"
-		[baseFlags := baseFlags bitOr: PrimCallNeedsNewMethod + PrimCallNeedsPrimitiveFunction + PrimCallMayCallBack].
-
-	^baseFlags
 ]
 
 { #category : #'debug printing' }

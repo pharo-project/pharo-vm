@@ -452,10 +452,6 @@ Class {
 		'MethodHeaderFlagBitPosition',
 		'MethodHeaderTempCountShift',
 		'MixinIndex',
-		'PrimNumberDoExternalCall',
-		'PrimNumberDoPrimitive',
-		'PrimNumberExternalCall',
-		'PrimNumberFFICall',
 		'PrimitiveTable',
 		'ReturnToInterpreter',
 		'StackPageReachedButUntraced',
@@ -471,7 +467,8 @@ Class {
 		'VMObjectIndices',
 		'VMSpurObjectRepresentationConstants',
 		'VMSqueakClassIndices',
-		'VMStackFrameOffsets'
+		'VMStackFrameOffsets',
+		'VMWellKnownPrimitivesConstants'
 	],
 	#category : #'VMMaker-Interpreter'
 }
@@ -7812,6 +7809,22 @@ StackInterpreter >> handleStackOverflowOrEventAllowContextSwitch: mayContextSwit
 	^self checkForEventsMayContextSwitch: mayContextSwitch
 ]
 
+{ #category : #'primitive support' }
+StackInterpreter >> hasCheckAllocFiller [
+
+	<api>
+
+	^ self checkAllocFiller 
+]
+
+{ #category : #profiling }
+StackInterpreter >> hasProfileSemaphore [
+
+	<api>
+	
+	^ profileSemaphore ~= objectMemory nilObject
+]
+
 { #category : #'stack pages' }
 StackInterpreter >> highBit: anUnsignedValue [ 
 	"This is a C implementation needed by ioSetMaxExtSemTableSize
@@ -12922,7 +12935,7 @@ StackInterpreter >> profileMethod [
 	^ profileMethod
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #profiling }
 StackInterpreter >> profileSemaphore [
 	<doNotGenerate>
 	^ profileSemaphore
@@ -14348,6 +14361,14 @@ StackInterpreter >> setDesiredCogCodeSize: dccs [
 	<inline: true>
 	"This should perhaps be a no-op in the StackVM, but we implement it for the convenience of bootstrap scripts etc."
 	theUnknownShort := dccs
+]
+
+{ #category : #'image save/restore' }
+StackInterpreter >> setDesiredEdenBytes: bytes [
+	<api>
+	<var: #bytes type: #usqLong>
+	desiredEdenBytes := bytes.
+	^0
 ]
 
 { #category : #'frame access' }

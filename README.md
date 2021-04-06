@@ -42,7 +42,7 @@ sudo ln -s /usr/lib64/libcurl.so.4 /usr/lib64/libcurl-gnutls.so.4
 
 In Ubuntu 20.04 and in Mint 20, the VM is built with the following packages:
 
-- build-essentials
+- build-essential
 - gcc 
 - g++
 - binutils

@@ -926,14 +926,6 @@ CurrentImageCoInterpreterFacade >> primitiveIndexOfMethod: anOop header: header 
 	^method primitive
 ]
 
-{ #category : #accessing }
-CurrentImageCoInterpreterFacade >> primitivePropertyFlags: primIndex primitiveDescriptor: primitiveDescriptor [
-
-	^ coInterpreter
-		  primitivePropertyFlags: primIndex
-		  primitiveDescriptor: primitiveDescriptor
-]
-
 { #category : #printing }
 CurrentImageCoInterpreterFacade >> print: it [
 	it isString ifTrue: [coInterpreter transcript nextPutAll: it] ifFalse: [it printOn: coInterpreter transcript]

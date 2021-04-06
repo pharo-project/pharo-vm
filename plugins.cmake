@@ -97,7 +97,8 @@ endif()
 # Surface Plugin
 #
 
-add_vm_plugin(SurfacePlugin)
+add_vm_plugin(SurfacePlugin 
+	${PHARO_CURRENT_GENERATED}/plugins/src/SurfacePlugin/SurfacePlugin.c)
 
 #
 # LargeIntegers Plugin
