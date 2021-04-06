@@ -16,6 +16,11 @@ TSendNode >> args [
 	^arguments
 ]
 
+{ #category : #accessing }
+TSendNode >> arguments [
+	^ arguments
+]
+
 { #category : #private }
 TSendNode >> arguments: aSequence [
 	arguments := aSequence
@@ -65,8 +70,8 @@ TSendNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in:
 	 and: [(codeGen isBuiltinSelector: selector) not]) ifTrue:
 		[codeGen isConstantNode: self valueInto:
 			[:val|
-			 ^TConstantNode new
-				setValue: val;
+			 ^TConstantNode
+				value: val;
 				yourself]].
 	newReceiver := receiver bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen.
 	newArguments := arguments collect: [:a| a bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen].

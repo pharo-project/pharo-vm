@@ -448,7 +448,7 @@ SmartSyntaxPluginCodeGenerator >> generateAsIfVarAsValue: aNode on: aStream inde
 	fetchNode := TSendNode new
 					setSelector: #fetchPointer:ofObject:
 					receiver: (TVariableNode new setName: 'self')
-					arguments: { TConstantNode new setValue: index - 1. aNode receiver}.
+					arguments: { TConstantNode value: index - 1. aNode receiver}.
 	cName := aNode args third nameOrValue.
 	(class := Smalltalk classNamed: cName) isBehavior ifFalse: 
 		[^self error: 'third arg must identify class'].

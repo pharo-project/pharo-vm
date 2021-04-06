@@ -7,6 +7,19 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance creation' }
+TGoToNode class >> label: aLabel [
+
+	^ self new
+		  setLabel: aLabel;
+		  yourself
+]
+
+{ #category : #tranforming }
+TGoToNode >> asCASTIn: aCCodeGenerator [ 
+	^ CGotoStatementNode identifier: label.
+]
+
 { #category : #'C code generation' }
 TGoToNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
 	"Emit a C goto statement."

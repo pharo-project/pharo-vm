@@ -378,6 +378,21 @@ CASTParserTests >> testParseFunctionPointerDeclarator [
 ]
 
 { #category : #'tests-numbers' }
+CASTParserTests >> testParseGoTo [
+
+	| unit firstStatement |
+	unit := CASTParser parse: 'int f(){
+	goto toto;
+	}'.
+	
+	firstStatement := unit declarations first statements first.
+	
+	self assert: firstStatement isGoTo.
+	self assert: firstStatement label isIdentifier.
+	self assert: firstStatement label name equals: 'toto'.
+]
+
+{ #category : #'tests-numbers' }
 CASTParserTests >> testParseHexadecimalIntegerConstantConstant [
 
 	| unit firstStatement |

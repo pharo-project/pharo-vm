@@ -155,6 +155,22 @@ CASTEqualityTests >> testConstantNodeInEquality [
 ]
 
 { #category : #tests }
+CASTEqualityTests >> testGoToEquality [
+
+	self
+		assert: (CGotoStatementNode identifier: 'toto')
+		equals: (CGotoStatementNode identifier: 'toto')
+]
+
+{ #category : #tests }
+CASTEqualityTests >> testGoToInequality [
+
+	self
+		deny: (CGotoStatementNode identifier: 'tata')
+		equals: (CGotoStatementNode identifier: 'toto')
+]
+
+{ #category : #tests }
 CASTEqualityTests >> testIdentifierNodeEquality [
 
 	self

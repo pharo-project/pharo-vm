@@ -38,9 +38,14 @@ TAssignmentNode >> asCASTIn: aBuilder [
 			assignLastExpressionTo: variable;
 			asCASTIn: aBuilder
 	].
-
-	^ CAssignmentNode
-	   lvalue: (variable asCASTIn: aBuilder)
+	self isVariableUpdatingAssignment ifTrue: [ 
+		 ^ CAssignmentNode
+			lvalue: (variable asCASTIn: aBuilder )
+			operator: expression selector , '='
+			rvalue: (expression arguments first asCASTIn: aBuilder)
+	].
+	CAssignmentNode
+		lvalue: (variable asCASTIn: aBuilder)
 	   rvalue: (expression asCASTExpressionIn: aBuilder)
 ]
 
