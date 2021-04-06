@@ -955,7 +955,6 @@ VMPrimitiveTest >> testPrimitiveSizeFailsForForwardedObject [
 	
 	interpreter push: array1.
 	interpreter push: array1.
-	1halt.
 	interpreter primitiveSize.
 	
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver
