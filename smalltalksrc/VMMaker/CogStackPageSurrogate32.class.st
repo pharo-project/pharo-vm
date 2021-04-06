@@ -30,123 +30,123 @@ CogStackPageSurrogate32 class >> alignedByteSize [
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> baseAddress [
-	^memory unsignedLongAt: address + 16
+	^memory unsignedLong32At: address + 16
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> baseAddress: aValue [
 	self assert: (address + 16 >= zoneBase and: [address + 19 < zoneLimit]).
-	^memory unsignedLongAt: address + 16 put: aValue
+	^memory unsignedLong32At: address + 16 put: aValue
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> baseFP [
-	^memory unsignedLongAt: address + 12
+	^memory unsignedLong32At: address + 12
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> baseFP: aValue [
 	self assert: (address + 12 >= zoneBase and: [address + 15 < zoneLimit]).
-	^memory unsignedLongAt: address + 12 put: aValue
+	^memory unsignedLong32At: address + 12 put: aValue
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> headFP [
-	^memory unsignedLongAt: address + 8
+	^memory unsignedLong32At: address + 8
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> headFP: aValue [
 	self assert: (address + 8 >= zoneBase and: [address + 11 < zoneLimit]).
-	^memory unsignedLongAt: address + 8 put: aValue
+	^memory unsignedLong32At: address + 8 put: aValue
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> headSP [
-	^memory unsignedLongAt: address + 4
+	^memory unsignedLong32At: address + 4
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> headSP: aValue [
 	self assert: (address + 4 >= zoneBase and: [address + 7 < zoneLimit]).
-	^memory unsignedLongAt: address + 4 put: aValue
+	^memory unsignedLong32At: address + 4 put: aValue
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> lastAddress [
-	^memory unsignedLongAt: address + 24
+	^memory unsignedLong32At: address + 24
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> lastAddress: aValue [
 	self assert: (address + 24 >= zoneBase and: [address + 27 < zoneLimit]).
-	^memory unsignedLongAt: address + 24 put: aValue
+	^memory unsignedLong32At: address + 24 put: aValue
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> nextPage [
-	^stackPages surrogateAtAddress: (memory unsignedLongAt: address + 36)
+	^stackPages surrogateAtAddress: (memory unsignedLong32At: address + 36)
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> nextPage: aValue [
 	self assert: (address + 36 >= zoneBase and: [address + 39 < zoneLimit]).
-	memory unsignedLongAt: address + 36 put: aValue asInteger.
+	memory unsignedLong32At: address + 36 put: aValue asInteger.
 	^aValue
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> padToWord [
-	^memory longAt: address + 32
+	^memory long32At: address + 32
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> padToWord: aValue [
 	self assert: (address + 32 >= zoneBase and: [address + 35 < zoneLimit]).
-	^memory longAt: address + 32 put: aValue
+	^memory long32At: address + 32 put: aValue
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> prevPage [
-	^stackPages surrogateAtAddress: (memory unsignedLongAt: address + 40)
+	^stackPages surrogateAtAddress: (memory unsignedLong32At: address + 40)
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> prevPage: aValue [
 	self assert: (address + 40 >= zoneBase and: [address + 43 < zoneLimit]).
-	memory unsignedLongAt: address + 40 put: aValue asInteger.
+	memory unsignedLong32At: address + 40 put: aValue asInteger.
 	^aValue
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> realStackLimit [
-	^memory unsignedLongAt: address + 20
+	^memory unsignedLong32At: address + 20
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> realStackLimit: aValue [
 	self assert: (address + 20 >= zoneBase and: [address + 23 < zoneLimit]).
-	^memory unsignedLongAt: address + 20 put: aValue
+	^memory unsignedLong32At: address + 20 put: aValue
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> stackLimit [
-	^memory unsignedLongAt: address + 0
+	^memory unsignedLong32At: address + 0
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> stackLimit: aValue [
 	self assert: (address + 0 >= zoneBase and: [address + 3 < zoneLimit]).
-	^memory unsignedLongAt: address + 0 put: aValue
+	^memory unsignedLong32At: address + 0 put: aValue
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> trace [
-	^memory longAt: address + 28
+	^memory long32At: address + 28
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> trace: aValue [
 	self assert: (address + 28 >= zoneBase and: [address + 31 < zoneLimit]).
-	^memory longAt: address + 28 put: aValue
+	^memory long32At: address + 28 put: aValue
 ]

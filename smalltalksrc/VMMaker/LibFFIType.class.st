@@ -124,7 +124,7 @@ LibFFIType >> marshallToSmalltalk: holder [
 			[ FFI_TYPE_FLOAT ] -> [ libFFI interpreter objectMemory readFloat32AtPointer: holder ].
 			[ FFI_TYPE_DOUBLE ] -> [ libFFI interpreter objectMemory readFloat64AtPointer: holder ].
 			[ FFI_TYPE_POINTER ] -> [ (holder asPointerAccessor: libFFI interpreter objectMemory wordSize) at: 0 ]. 
-			[ FFI_TYPE_STRUCT ] -> [ holder object ]. 
+			[ FFI_TYPE_STRUCT ] -> [ holder object requestedMemoryCopy ]. 
 			[ FFI_TYPE_SINT8 ] -> [ (holder asIntAccessorOfSize: 1 signed: true) at: 0 ].
 			[ FFI_TYPE_UINT8 ] -> [ (holder asIntAccessorOfSize: 1 signed: false) at: 0 ].
 

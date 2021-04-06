@@ -1956,8 +1956,7 @@ SpurMemoryManager >> allocateLargestFreeChunk [
 SpurMemoryManager >> allocateMemoryOfSize: memoryBytes [
 	<doNotGenerate>
 
-	1halt.
-	^ self allocate: memoryBytes
+	^ memoryManager allocate: memoryBytes
 ]
 
 { #category : #testing }

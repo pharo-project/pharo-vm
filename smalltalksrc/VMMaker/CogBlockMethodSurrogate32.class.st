@@ -128,13 +128,13 @@ CogBlockMethodSurrogate32 >> homeOffset: aValue [
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> padToWord [
-	^memory unsignedLongAt: address + 4
+	^memory unsignedLong32At: address + 4
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate32 >> padToWord: aValue [
 	^memory
-		unsignedLongAt: address + 4
+		unsignedLong32At: address + 4
 		put: aValue
 ]
 
