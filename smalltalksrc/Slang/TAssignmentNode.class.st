@@ -33,6 +33,12 @@ TAssignmentNode >> asCASTIn: aBuilder [
 		
 	].
 
+	(expression isStmtList and: [ expression statements size > 1 ]) ifTrue: [ 
+		^ expression copy
+			assignLastExpressionTo: variable;
+			asCASTIn: aBuilder
+	].
+
 	^ CAssignmentNode
 	   lvalue: (variable asCASTIn: aBuilder)
 	   rvalue: (expression asCASTExpressionIn: aBuilder)

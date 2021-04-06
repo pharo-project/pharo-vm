@@ -1,5 +1,5 @@
 Class {
-	#name : #SlangBasicTranslation,
+	#name : #SlangBasicTranslationTest,
 	#superclass : #ParametrizedTestCase,
 	#instVars : [
 		'generator',
@@ -9,14 +9,14 @@ Class {
 }
 
 { #category : #'building suites' }
-SlangBasicTranslation class >> testParameters [ 
+SlangBasicTranslationTest class >> testParameters [ 
 
 	^ ParametrizedTestMatrix new
 		forSelector: #translationStrategy addOptions: { #slangTranslate . #astTranslate }
 ]
 
 { #category : #helpers }
-SlangBasicTranslation >> astTranslate: tast inStream: aWriteStream [ 
+SlangBasicTranslationTest >> astTranslate: tast inStream: aWriteStream [ 
 	
 	| cAST prettyPrinter |
 	cAST := tast asCASTIn: generator.
@@ -27,19 +27,19 @@ SlangBasicTranslation >> astTranslate: tast inStream: aWriteStream [
 ]
 
 { #category : #accessing }
-SlangBasicTranslation >> generator [
+SlangBasicTranslationTest >> generator [
 
 	^ generator
 ]
 
 { #category : #accessing }
-SlangBasicTranslation >> generator: anObject [
+SlangBasicTranslationTest >> generator: anObject [
 
 	generator := anObject
 ]
 
 { #category : #running }
-SlangBasicTranslation >> setUp [
+SlangBasicTranslationTest >> setUp [
 
 	super setUp.
 
@@ -50,7 +50,7 @@ SlangBasicTranslation >> setUp [
 ]
 
 { #category : #helpers }
-SlangBasicTranslation >> slangTranslate: tast inStream: aWriteStream [ 
+SlangBasicTranslationTest >> slangTranslate: tast inStream: aWriteStream [ 
 	
 	tast
 		emitCCodeOn: aWriteStream
@@ -59,7 +59,7 @@ SlangBasicTranslation >> slangTranslate: tast inStream: aWriteStream [
 ]
 
 { #category : #'tests-blocks' }
-SlangBasicTranslation >> testBlockValue [
+SlangBasicTranslationTest >> testBlockValue [
 
 	"Case:
 	
@@ -88,7 +88,7 @@ bar(3, 4);'
 ]
 
 { #category : #'tests-blocks' }
-SlangBasicTranslation >> testBlockValueAssignment [
+SlangBasicTranslationTest >> testBlockValueAssignment [
 
 	"Case:
 	
@@ -121,7 +121,7 @@ var = bar(3, 4);'
 ]
 
 { #category : #'tests-blocks' }
-SlangBasicTranslation >> testBlockValueAssignmentIntoSameVariable [
+SlangBasicTranslationTest >> testBlockValueAssignmentIntoSameVariable [
 
 	"Case:
 	
@@ -155,7 +155,7 @@ bar(3, 4);'
 ]
 
 { #category : #'tests-blocks' }
-SlangBasicTranslation >> testBlockValueWithVariableAsLastExpression [
+SlangBasicTranslationTest >> testBlockValueWithVariableAsLastExpression [
 
 	"Case:
 	
@@ -185,7 +185,7 @@ bar(3, 4);'
 ]
 
 { #category : #'tests-constants' }
-SlangBasicTranslation >> testConstantCharacter [
+SlangBasicTranslationTest >> testConstantCharacter [
 
 	| translation |
 	translation := self translate: (TConstantNode new setValue: $A).
@@ -194,7 +194,7 @@ SlangBasicTranslation >> testConstantCharacter [
 ]
 
 { #category : #'tests-constants' }
-SlangBasicTranslation >> testConstantFalse [
+SlangBasicTranslationTest >> testConstantFalse [
 
 	| translation |
 	translation := self translate: (TConstantNode new setValue: false).
@@ -203,7 +203,7 @@ SlangBasicTranslation >> testConstantFalse [
 ]
 
 { #category : #'tests-constants' }
-SlangBasicTranslation >> testConstantFloat [
+SlangBasicTranslationTest >> testConstantFloat [
 
 	| translation |
 	translation := self translate: (TConstantNode new setValue: 3.1415).
@@ -212,7 +212,7 @@ SlangBasicTranslation >> testConstantFloat [
 ]
 
 { #category : #'tests-constants' }
-SlangBasicTranslation >> testConstantInteger [
+SlangBasicTranslationTest >> testConstantInteger [
 
 	| translation |
 	"Special case that should be escaped in C"
@@ -222,7 +222,7 @@ SlangBasicTranslation >> testConstantInteger [
 ]
 
 { #category : #'tests-constants' }
-SlangBasicTranslation >> testConstantIntegerHexaCaseA [
+SlangBasicTranslationTest >> testConstantIntegerHexaCaseA [
 
 	| translation |
 	"Only sequences of binary 1s are translated to hexa, and only if either
@@ -236,7 +236,7 @@ SlangBasicTranslation >> testConstantIntegerHexaCaseA [
 ]
 
 { #category : #'tests-constants' }
-SlangBasicTranslation >> testConstantIntegerHexaCaseB [
+SlangBasicTranslationTest >> testConstantIntegerHexaCaseB [
 
 	| translation |
 	"Only sequences of binary 1s are translated to hexa, and only if either
@@ -250,7 +250,7 @@ SlangBasicTranslation >> testConstantIntegerHexaCaseB [
 ]
 
 { #category : #'tests-constants' }
-SlangBasicTranslation >> testConstantNil [
+SlangBasicTranslationTest >> testConstantNil [
 
 	| translation |
 	translation := self translate: (TConstantNode new setValue: nil).
@@ -259,7 +259,7 @@ SlangBasicTranslation >> testConstantNil [
 ]
 
 { #category : #'tests-constants' }
-SlangBasicTranslation >> testConstantQuoteCharacter [
+SlangBasicTranslationTest >> testConstantQuoteCharacter [
 
 	| translation |
 	"Special case that should be escaped in C"
@@ -269,7 +269,7 @@ SlangBasicTranslation >> testConstantQuoteCharacter [
 ]
 
 { #category : #'tests-constants' }
-SlangBasicTranslation >> testConstantString [
+SlangBasicTranslationTest >> testConstantString [
 
 	| translation |
 	translation := self translate: (TConstantNode new setValue: '1
@@ -280,7 +280,7 @@ SlangBasicTranslation >> testConstantString [
 ]
 
 { #category : #'tests-constants' }
-SlangBasicTranslation >> testConstantSymbol [
+SlangBasicTranslationTest >> testConstantSymbol [
 
 	| translation |
 	translation := self translate: (TConstantNode new setValue: #symbol).
@@ -289,7 +289,7 @@ SlangBasicTranslation >> testConstantSymbol [
 ]
 
 { #category : #'tests-constants' }
-SlangBasicTranslation >> testConstantSymbolColon [
+SlangBasicTranslationTest >> testConstantSymbolColon [
 
 	| translation |
 	translation := self translate: (TConstantNode new setValue: #symbol:).
@@ -298,7 +298,7 @@ SlangBasicTranslation >> testConstantSymbolColon [
 ]
 
 { #category : #'tests-constants' }
-SlangBasicTranslation >> testConstantSymbolColonWithMultipleKeywords [
+SlangBasicTranslationTest >> testConstantSymbolColonWithMultipleKeywords [
 
 	| translation |
 	translation := self translate: (TConstantNode new setValue: #sym__bol___:another__:).
@@ -307,7 +307,7 @@ SlangBasicTranslation >> testConstantSymbolColonWithMultipleKeywords [
 ]
 
 { #category : #'tests-constants' }
-SlangBasicTranslation >> testConstantSymbolColonWithUnderscores [
+SlangBasicTranslationTest >> testConstantSymbolColonWithUnderscores [
 
 	| translation |
 	translation := self translate: (TConstantNode new setValue: #symbol___:).
@@ -316,7 +316,7 @@ SlangBasicTranslation >> testConstantSymbolColonWithUnderscores [
 ]
 
 { #category : #'tests-constants' }
-SlangBasicTranslation >> testConstantSymbolColonWithUnderscoresInTheMiddle [
+SlangBasicTranslationTest >> testConstantSymbolColonWithUnderscoresInTheMiddle [
 
 	| translation |
 	translation := self translate: (TConstantNode new setValue: #sym__bol___:).
@@ -325,7 +325,7 @@ SlangBasicTranslation >> testConstantSymbolColonWithUnderscoresInTheMiddle [
 ]
 
 { #category : #'tests-constants' }
-SlangBasicTranslation >> testConstantSymbolWithTranslationMap [
+SlangBasicTranslationTest >> testConstantSymbolWithTranslationMap [
 
 	| translation |
 	generator addSelectorTranslation: #+> to: #strangearrow.
@@ -336,7 +336,7 @@ SlangBasicTranslation >> testConstantSymbolWithTranslationMap [
 ]
 
 { #category : #'tests-constants' }
-SlangBasicTranslation >> testConstantTrue [
+SlangBasicTranslationTest >> testConstantTrue [
 
 	| translation |
 	translation := self translate: (TConstantNode new setValue: true).
@@ -345,7 +345,7 @@ SlangBasicTranslation >> testConstantTrue [
 ]
 
 { #category : #'tests-blocks' }
-SlangBasicTranslation >> testConstantsStatementsInBlockValueAreIgnored [
+SlangBasicTranslationTest >> testConstantsStatementsInBlockValueAreIgnored [
 
 	"Case:
 	
@@ -376,7 +376,7 @@ bar(3, 4);'
 ]
 
 { #category : #'tests-return' }
-SlangBasicTranslation >> testReturnLeafInVoidMethod [
+SlangBasicTranslationTest >> testReturnLeafInVoidMethod [
 
 	| translation |
 	
@@ -390,7 +390,7 @@ SlangBasicTranslation >> testReturnLeafInVoidMethod [
 ]
 
 { #category : #'tests-return' }
-SlangBasicTranslation >> testReturnNonLeafExpressionInVoidMethod [
+SlangBasicTranslationTest >> testReturnNonLeafExpressionInVoidMethod [
 
 	| translation |
 	
@@ -407,7 +407,7 @@ return'
 ]
 
 { #category : #'tests-return' }
-SlangBasicTranslation >> testReturnVariable [
+SlangBasicTranslationTest >> testReturnVariable [
 
 	| translation |
 	translation := self translate: (TReturnNode new
@@ -418,16 +418,47 @@ SlangBasicTranslation >> testReturnVariable [
 ]
 
 { #category : #'tests-assignment' }
-SlangBasicTranslation >> testTranslateLiteralArrayAssignment [
+SlangBasicTranslationTest >> testTranslateBlockAssignmentWithManyStatement [
 
 	| translation variable expression |
-	variable := (TVariableNode new setName: 'var').
+
+	" var :=  [ a := b . c := 1 ]."
+
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TStmtListNode new setStatements: {
+		TAssignmentNode new
+			setVariable: (TVariableNode new setName: 'a')
+			expression:  (TVariableNode new setName: 'b').
+		TAssignmentNode new
+			setVariable:  (TVariableNode new setName: 'c')
+			expression:  (TConstantNode new setValue: 1).
+	}.
+
+	translation := self translate: (TAssignmentNode new
+			setVariable: variable
+			expression: expression).
+
+	self assert: translation trimBoth equals: '{
+	a = b;
+	var = (c = 1);
+}'
+]
+
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testTranslateLiteralArrayAssignment [
+
+	| translation variable expression |
+
+	variable := TVariableNode new setName: 'var'.
+
 	expression := TSendNode new
 		setSelector: #cCoerce:to:
 		receiver: (TVariableNode new setName: 'self')
 		arguments: { 
 			TConstantNode new setValue: { 1 . 2 . 3 }.
 			'int *' }.
+
 	translation := self translate: (TAssignmentNode new
 			setVariable: variable
 			expression: expression).
@@ -441,7 +472,7 @@ SlangBasicTranslation >> testTranslateLiteralArrayAssignment [
 ]
 
 { #category : #'tests-variables' }
-SlangBasicTranslation >> testTranslateNil [
+SlangBasicTranslationTest >> testTranslateNil [
 
 	| translation |
 	translation :=  self translate: (TVariableNode new setName: 'nil').
@@ -450,7 +481,7 @@ SlangBasicTranslation >> testTranslateNil [
 ]
 
 { #category : #'tests-variables' }
-SlangBasicTranslation >> testTranslateNormalVariable [
+SlangBasicTranslationTest >> testTranslateNormalVariable [
 
 	| translation |
 	translation := self translate: (TVariableNode new setName: 'someVar').
@@ -459,7 +490,7 @@ SlangBasicTranslation >> testTranslateNormalVariable [
 ]
 
 { #category : #'tests-blocks' }
-SlangBasicTranslation >> testVariableStatementsInBlockValueAreIgnored [
+SlangBasicTranslationTest >> testVariableStatementsInBlockValueAreIgnored [
 
 	"Case:
 	
@@ -489,7 +520,7 @@ bar(3, 4);'
 ]
 
 { #category : #helpers }
-SlangBasicTranslation >> translate: tast [
+SlangBasicTranslationTest >> translate: tast [
 
 	^ String streamContents: [ :str | 
 		self
@@ -498,13 +529,13 @@ SlangBasicTranslation >> translate: tast [
 ]
 
 { #category : #accessing }
-SlangBasicTranslation >> translationStrategy [
+SlangBasicTranslationTest >> translationStrategy [
 
 	^ translationStrategy
 ]
 
 { #category : #accessing }
-SlangBasicTranslation >> translationStrategy: anObject [
+SlangBasicTranslationTest >> translationStrategy: anObject [
 
 	translationStrategy := anObject
 ]

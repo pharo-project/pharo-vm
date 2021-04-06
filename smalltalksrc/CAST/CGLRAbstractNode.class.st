@@ -20,3 +20,15 @@ CGLRAbstractNode >> ambiguous: aNode [
 				with: aNode children
 				do: [ :n1 :n2 | n1 ambiguous: n2 ] ]
 ]
+
+{ #category : #testing }
+CGLRAbstractNode >> isConstant [
+	
+	^ false
+]
+
+{ #category : #testing }
+CGLRAbstractNode >> isIdentifier [
+	
+	^ false
+]

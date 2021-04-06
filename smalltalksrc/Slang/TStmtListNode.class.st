@@ -79,6 +79,12 @@ TStmtListNode >> args [
 	^arguments
 ]
 
+{ #category : #tranforming }
+TStmtListNode >> asCASTIn: aBuilder [
+	
+	^ CCompoundStatementNode statements: (statements collect: [ :e | e asCASTIn: aBuilder ])
+]
+
 { #category : #transformations }
 TStmtListNode >> asReturnNode [
 	self endsWithReturn ifTrue:
@@ -171,26 +177,35 @@ TStmtListNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
 
 { #category : #'C code generation' }
 TStmtListNode >> emitCCodeOn: aStream prependToEnd: aNodeOrNil level: level generator: aCodeGen [
+	| innerLevel |
 	self emitCCommentOn: aStream level: level generator: aCodeGen.
+	
+	aStream tab: level.
+	aStream nextPut: ${; cr.
+	
+	innerLevel := level + 1.
+	
 	statements withIndexDo:
 		[:s :idx| | position |
-		s emitCCommentOn: aStream level: level generator: aCodeGen.
+		s emitCCommentOn: aStream level: innerLevel generator: aCodeGen.
 		(s isLeaf and: [s isLabel not and: [aNodeOrNil isNil or: [idx < statements size]]]) ifFalse:
 			[aStream peekLast ~~ Character tab ifTrue:
-				[aStream tab: level].
+				[aStream tab: innerLevel].
 			position := aStream position.
 			(aNodeOrNil notNil
 			 and: [idx = statements size])
 				ifTrue:
-					[s emitCCodeOn: aStream prependToEnd: aNodeOrNil level: level generator: aCodeGen]
+					[s emitCCodeOn: aStream prependToEnd: aNodeOrNil level: innerLevel generator: aCodeGen]
 				ifFalse:
-					[s emitCCodeOn: aStream level: level generator: aCodeGen].
+					[s emitCCodeOn: aStream level: innerLevel generator: aCodeGen].
 			aStream position > position ifTrue:
 				[(self stream: aStream endsWithAnyOf: '};') ifFalse:
 					[s needsTrailingSemicolon ifTrue:
 						[aStream nextPut: $;]].
 					 aStream peekLast ~~ Character cr ifTrue:
-						[aStream cr]]]]
+						[aStream cr]]]].
+		
+	aStream nextPut: $}.
 ]
 
 { #category : #testing }

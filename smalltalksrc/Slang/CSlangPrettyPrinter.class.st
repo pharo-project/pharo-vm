@@ -40,7 +40,13 @@ CSlangPrettyPrinter >> visitAssignment: anAssignment [
 		nextPutAll: ' ';
 		nextPutAll: anAssignment operator;
 		nextPutAll: ' '.
+	
+	(anAssignment rvalue isConstant or: [ anAssignment rvalue isIdentifier ])
+		ifFalse: [ stream nextPutAll: '(' ].
 	anAssignment rvalue acceptVisitor: self.
+
+	(anAssignment rvalue isConstant or: [ anAssignment rvalue isIdentifier ])
+		ifFalse: [ stream nextPutAll: ')' ].
 ]
 
 { #category : #generated }
