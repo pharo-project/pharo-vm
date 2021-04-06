@@ -46,6 +46,12 @@ VMClass class >> bytesPerWord [
 	^ BytesPerWord 
 ]
 
+{ #category : #accessing }
+VMClass class >> bytesPerWord: anInteger [ 
+
+	^ BytesPerWord := anInteger
+]
+
 { #category : #'accessing class hierarchy' }
 VMClass class >> cogitClass [
 	"Answer the cogitClass in effect.  Ensure that StackInterpreter has a nil cogitClass."

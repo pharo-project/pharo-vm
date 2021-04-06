@@ -50,6 +50,12 @@ VMMakerConfiguration class >> bytesPerWord [
 ]
 
 { #category : #accessing }
+VMMakerConfiguration class >> bytesPerWord: anInteger [
+
+	^ self baseClass bytesPerWord: anInteger
+]
+
+{ #category : #accessing }
 VMMakerConfiguration class >> constantClass [
 	"The basic constant pool for full generation"
 	^ self baseClass constantClass
