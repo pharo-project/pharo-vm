@@ -265,7 +265,8 @@ Class {
 		'statCompileFullBlockCount',
 		'statCompileFullBlockUsecs',
 		'statCompileMethodCount',
-		'statCompileMethodUsecs'
+		'statCompileMethodUsecs',
+		'frameOverflowTrampoline'
 	],
 	#classVars : [
 		'AltFirstSpecialSelector',
@@ -6895,6 +6896,12 @@ Cogit >> followMethodReferencesInClosedPIC: cPIC [
 	^refersToYoung
 ]
 
+{ #category : #tram }
+Cogit >> frameOverflowTrampoline [
+	
+	^ frameOverflowTrampoline
+]
+
 { #category : #'simulation only' }
 Cogit >> framePointerAddress [
 	"redirect for the backEnd's genSaveStackPointers"
@@ -8070,6 +8077,13 @@ Cogit >> generateEnilopmarts [
 	self recordGeneratedRunTime: 'cePrimReturnEnterCogCodeProfiling' address: cePrimReturnEnterCogCodeProfiling
 ]
 
+{ #category : #trampolines }
+Cogit >> generateFrameOverflowTrampoline [
+	
+	frameOverflowTrampoline := self genTrampolineFor: #ceFrameOverflowTrampoline called: 'ceFrameOverflowTrampoline'.
+
+]
+
 { #category : #'generate machine code' }
 Cogit >> generateInstructionsAt: eventualAbsoluteAddress [
 	"Size pc-dependent instructions and assign eventual addresses to all instructions.
@@ -8234,6 +8248,8 @@ Cogit >> generateRunTimeTrampolines [
 	ceFreeTrampoline := self genTrampolineFor: #ceFree:
 											called: 'ceFreeTrampoline'
 											arg: ReceiverResultReg.
+											
+	self generateFrameOverflowTrampoline
 ]
 
 { #category : #initialization }
