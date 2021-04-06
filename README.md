@@ -61,6 +61,7 @@ To do so, we give both parameter for saying where the source is (-S) and where t
 ```bash
 $ git clone git@github.com <mailto:git@github.com>:pharo-project/opensmalltalk-vm.git
 $ cmake -S opensmalltalk-vm -B build
+$ cd build
 $ make install
 ```
 
