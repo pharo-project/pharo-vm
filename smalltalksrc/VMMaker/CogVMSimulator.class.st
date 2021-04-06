@@ -79,8 +79,7 @@ Class {
 		'expectedSends',
 		'expecting',
 		'bootstrapping',
-		'primitiveFailCount',
-		'primitiveFlags'
+		'primitiveFailCount'
 	],
 	#classVars : [
 		'ByteCountsPerMicrosecond',
@@ -303,7 +302,6 @@ CogVMSimulator >> basicInitialize [
 	
 	"This will be overriden when calling initializePluginEntries"
 	mappedPluginEntries := OrderedCollection new.
-	primitiveFlags := Dictionary new.
 ]
 
 { #category : #'multi-threading simulation switch' }
@@ -3041,15 +3039,6 @@ CogVMSimulator >> primitiveProcessBoundThreadId [
 		inSuperclass: (cogThreadManager ifNil: [CoInterpreterPrimitives] ifNotNil: [CoInterpreterMT])
 ]
 
-{ #category : #'cog jit support' }
-CogVMSimulator >> primitivePropertyFlagsForSpur: primIndex primitiveDescriptor: primitiveDescriptor [
-
-	^ primitiveFlags at: primIndex ifAbsent: [ 
-		  super
-			  primitivePropertyFlagsForSpur: primIndex
-			  primitiveDescriptor: primitiveDescriptor ]
-]
-
 { #category : #'multi-threading simulation switch' }
 CogVMSimulator >> primitiveRelinquishProcessor [
 	"This method includes or excludes CoInterpreterMT methods as required.
@@ -3548,13 +3537,6 @@ CogVMSimulator >> setOwnerIndexOfProcess: aProcess to: anIndex bind: bind [
 	^self perform: #setOwnerIndexOfProcess:to:bind:
 		withArguments: {aProcess. anIndex. bind}
 		inSuperclass: (cogThreadManager ifNil: [CoInterpreterPrimitives] ifNotNil: [CoInterpreterMT])
-]
-
-{ #category : #'cog jit support' }
-CogVMSimulator >> setPrimitivePropertyFlagFor: primIndex value: aValue [
-
-	^ primitiveFlags at: primIndex put: aValue
-
 ]
 
 { #category : #'debug printing' }
