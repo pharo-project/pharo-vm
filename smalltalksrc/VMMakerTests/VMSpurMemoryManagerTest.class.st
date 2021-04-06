@@ -63,7 +63,7 @@ VMSpurMemoryManagerTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod 
 
 	| methodOop |
 	v3Method := aPharoCompiledMethod methodClass compiler
-		            encoderClass: EncoderForV3PlusClosures;
+		            encoderClass: EncoderForSistaV1;
 		            options: #( - optionFullBlockClosure );
 		            compile: aPharoCompiledMethod sourceCode.
 
