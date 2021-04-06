@@ -5942,6 +5942,13 @@ StackInterpreter >> externalWriteBackHeadFramePointers [
 	self assert: stackPages pageListIsWellFormed
 ]
 
+{ #category : #'cog jit support' }
+StackInterpreter >> externalWriteBackHeadStackPointer [
+	self assert: (stackPointer < stackPage baseAddress
+				and: [stackPointer > (stackPage realStackLimit - (LargeContextSlots * objectMemory bytesPerOop))]).
+	stackPage headSP: stackPointer
+]
+
 { #category : #utilities }
 StackInterpreter >> externalizeFPandSP [
 	"Copy the frame and stack pointers to global variables for use in primitives and other functions outside the interpret loop."
@@ -10088,8 +10095,13 @@ StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 	numSlots := (self methodHeaderIndicatesLargeFrame: methodHeader)
 					ifTrue: [LargeContextSlots]
 					ifFalse: [SmallContextSlots].
+
+	(numStack + ReceiverIndex <= numSlots) ifFalse: [	
+			self error:
+				'The number of elements in the frame is bigger than the context. 
+			The method is wrongly compiled. The memory has been corrupted. I quit.'].
+
 	theContext := objectMemory eeInstantiateMethodContextSlots: numSlots.
-	self assert: numStack + ReceiverIndex <= numSlots. 
 	"Mark context as married by setting its sender to the frame pointer plus SmallInteger
 	 tags and the InstructionPointer to the saved fp (which ensures correct alignment
 	 w.r.t. the frame when we check for validity)"
@@ -15807,19 +15819,45 @@ StackInterpreter >> updateStateOfSpouseContextForFrame: theFP WithSP: theSP [
 		 objectMemory storePointer: ReceiverIndex + i
 			ofObject: theContext
 			withValue: (stackPages longAt: pointer)].
-	"now update the non-argument stack contents."
 	pointer := theFP + FoxReceiver - objectMemory wordSize.
-	[pointer >= theSP] whileTrue:
-		[self assert: (objectMemory addressCouldBeOop: (stackPages longAt: pointer)).
-		 tempIndex := tempIndex + 1.
-		 objectMemory storePointer: ReceiverIndex + tempIndex
+
+	self
+		updateTemporariesOf: theContext
+		startingPointer: pointer
+		theSP: theSP
+		startingIndex: tempIndex
+]
+
+{ #category : #'frame access' }
+StackInterpreter >> updateTemporariesOf: theContext startingPointer: initialPointer theSP: theSP startingIndex: startingIndexInContext [
+
+	| iterationPointer indexInContext |
+
+	"now update the non-argument stack contents."
+
+	indexInContext := startingIndexInContext.
+	iterationPointer := initialPointer.
+
+	[ iterationPointer >= theSP ] whileTrue: [ 
+		self assert:
+			(objectMemory addressCouldBeOop: (stackPages longAt: iterationPointer)).
+		indexInContext := indexInContext + 1.
+		objectMemory
+			storePointer: ReceiverIndex + indexInContext
 			ofObject: theContext
-			withValue: (stackPages longAt: pointer).
-		 pointer := pointer - objectMemory wordSize].
-	self assert: ReceiverIndex + tempIndex < (objectMemory lengthOf: theContext).
-	objectMemory storePointerUnchecked: StackPointerIndex
+			withValue: (stackPages longAt: iterationPointer).
+		iterationPointer := iterationPointer - objectMemory wordSize ].
+
+	ReceiverIndex + indexInContext < (objectMemory lengthOf: theContext) 
+		ifFalse: [ 
+			self error:
+				'The number of elements in the frame is bigger than the context. 
+			The method is wrongly compiled. The memory has been corrupted. I quit.' ].
+
+	objectMemory
+		storePointerUnchecked: StackPointerIndex
 		ofObject: theContext
-		withValue: (objectMemory integerObjectOf: tempIndex)
+		withValue: (objectMemory integerObjectOf: indexInContext)
 ]
 
 { #category : #'debug support' }

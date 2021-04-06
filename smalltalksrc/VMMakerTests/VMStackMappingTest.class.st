@@ -62,6 +62,29 @@ VMStackMappingTest >> testDivorceFramesInPage [
 
 ]
 
+{ #category : #'test-context-tomove' }
+VMStackMappingTest >> testMarriedContextWithLargerStackThanExpectedDoNotCorruptNextObjects [
+	| aContext framePointerToMarry stackPointerToMarry numberOfSlots otherObject otherObjectHeader |
+	self buildStackFromFrames.
+	
+	framePointerToMarry := interpreter framePointer.
+	stackPointerToMarry := interpreter stackPointer.
+	aContext := interpreter ensureFrameIsMarried: framePointerToMarry SP: stackPointerToMarry.
+	
+	otherObject := self newZeroSizedObject.
+	otherObjectHeader := memory longAt: otherObject.
+	
+	numberOfSlots := memory slotSizeOf: aContext.
+	
+	1 to: numberOfSlots do: [ :i | 
+		interpreter push: memory trueObject ].
+	
+	interpreter externalWriteBackHeadStackPointer.
+	
+	self should: [interpreter externalDivorceFrame: framePointerToMarry andContext: aContext] raise: VMError.
+
+]
+
 { #category : #tests }
 VMStackMappingTest >> testMarryNewContextIsMarried [
 	| context |
@@ -189,4 +212,22 @@ VMStackMappingTest >> testMarryTopFrame [
 	
 	aContext := interpreter ensureFrameIsMarried: interpreter framePointer SP: interpreter stackPointer.
 	self assert: (interpreter isStillMarriedContext: aContext).
+]
+
+{ #category : #'test-context-tomove' }
+VMStackMappingTest >> testSingleContextWithLargerStackThanExpectedDoNotCorruptNextObjects [
+	| framePointerToMarry  numberOfSlots |
+	self buildStackFromFrames.
+	
+	framePointerToMarry := interpreter framePointer.
+
+	numberOfSlots := LargeContextSlots + 1.
+	
+	1 to: numberOfSlots do: [ :i | 
+		interpreter push: memory trueObject ].
+	
+	interpreter externalWriteBackHeadStackPointer.
+
+	self should: [interpreter ensureFrameIsMarried: framePointerToMarry SP: interpreter stackPointer] raise: VMError
+
 ]

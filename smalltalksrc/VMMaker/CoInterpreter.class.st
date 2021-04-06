@@ -3075,13 +3075,6 @@ CoInterpreter >> externalInstVar: offset ofContext: aContext [
 	^value
 ]
 
-{ #category : #'cog jit support' }
-CoInterpreter >> externalWriteBackHeadStackPointer [
-	self assert: (stackPointer < stackPage baseAddress
-				and: [stackPointer > (stackPage realStackLimit - (LargeContextSlots * objectMemory bytesPerOop))]).
-	stackPage headSP: stackPointer
-]
-
 { #category : #utilities }
 CoInterpreter >> externalizeIPandSP [
 	"Copy the local instruction, stack and frame pointers to global variables for use in primitives and other functions outside the interpret loop."
@@ -4843,7 +4836,14 @@ CoInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 								ifFalse: [objectMemory nilObject].
 			 rcvr := self iframeReceiver: theFP.
 			 numStack := self stackPointerIndexForIFrame: theFP WithSP: theSP numArgs: numArgs].
+
+	(numStack + ReceiverIndex <= numSlots) ifFalse: [	
+			self error:
+				'The number of elements in the frame is bigger than the context. 
+			The method is wrongly compiled. The memory has been corrupted. I quit.'].
+
 	theContext := objectMemory eeInstantiateMethodContextSlots: numSlots.
+
 	self setFrameContext: theFP to: theContext.
 	"Mark context as married by setting its sender to the frame pointer plus SmallInteger
 	 tags and the InstructionPointer to the saved fp (which ensures correct alignment
@@ -4886,7 +4886,6 @@ CoInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 
 	self assert: (self frameHasContext: theFP).
 	self assert: (self frameOfMarriedContext: theContext) = theFP.
-	self assert: numStack + ReceiverIndex < (objectMemory lengthOf: theContext).
 
 	^theContext
 ]
@@ -6809,18 +6808,12 @@ CoInterpreter >> updateStateOfSpouseContextForFrame: theFP WithSP: theSP [
 		 objectMemory storePointer: ReceiverIndex + i
 			ofObject: theContext
 			withValue: (stackPages longAt: argsPointer)].
-	"now update the non-argument stack contents."
-	[pointer >= theSP] whileTrue:
-		[self assert: (objectMemory addressCouldBeOop: (stackPages longAt: pointer)).
-		 tempIndex := tempIndex + 1.
-		 objectMemory storePointer: ReceiverIndex + tempIndex
-			ofObject: theContext
-			withValue: (stackPages longAt: pointer).
-		 pointer := pointer - objectMemory wordSize].
-	self assert: ReceiverIndex + tempIndex < (objectMemory lengthOf: theContext).
-	objectMemory storePointerUnchecked: StackPointerIndex
-		ofObject: theContext
-		withValue: (objectMemory integerObjectOf: tempIndex)
+
+	self
+		updateTemporariesOf: theContext
+		startingPointer: pointer
+		theSP: theSP
+		startingIndex: tempIndex
 ]
 
 { #category : #'debug support' }
