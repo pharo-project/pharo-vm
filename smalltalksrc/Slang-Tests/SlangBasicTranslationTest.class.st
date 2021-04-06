@@ -74,12 +74,12 @@ SlangBasicTranslationTest >> testBlockValue [
 			statements: {
 				TSendNode new
 					setSelector: #foo
-					receiver: (TConstantNode new setValue: 1)
-					arguments: { TConstantNode new setValue: 2 }.
+					receiver: (TConstantNode value: 1)
+					arguments: { TConstantNode value: 2 }.
 				TSendNode new
 					setSelector: #bar
-					receiver: (TConstantNode new setValue: 3)
-					arguments: { TConstantNode new setValue: 4 }.
+					receiver: (TConstantNode value: 3)
+					arguments: { TConstantNode value: 4 }.
 			})
 		arguments: { }).
 
@@ -106,12 +106,12 @@ SlangBasicTranslationTest >> testBlockValueAssignment [
 			statements: {
 				TSendNode new
 					setSelector: #foo
-					receiver: (TConstantNode new setValue: 1)
-					arguments: { TConstantNode new setValue: 2 }.
+					receiver: (TConstantNode value: 1)
+					arguments: { TConstantNode value: 2 }.
 				TSendNode new
 					setSelector: #bar
-					receiver: (TConstantNode new setValue: 3)
-					arguments: { TConstantNode new setValue: 4 }
+					receiver: (TConstantNode value: 3)
+					arguments: { TConstantNode value: 4 }
 			})
 		arguments: { }.
 	translation := self translate: (TAssignmentNode new
@@ -141,12 +141,12 @@ SlangBasicTranslationTest >> testBlockValueAssignmentIntoSameVariable [
 					statements: {
 						TSendNode new
 							setSelector: #foo
-							receiver: (TConstantNode new setValue: 1)
-							arguments: { TConstantNode new setValue: 2 }.
+							receiver: (TConstantNode value: 1)
+							arguments: { TConstantNode value: 2 }.
 						TSendNode new
 							setSelector: #bar
-							receiver: (TConstantNode new setValue: 3)
-							arguments: { TConstantNode new setValue: 4 }.
+							receiver: (TConstantNode value: 3)
+							arguments: { TConstantNode value: 4 }.
 						variable
 					})
 				arguments: { }.
@@ -176,12 +176,12 @@ SlangBasicTranslationTest >> testBlockValueWithVariableAsLastExpression [
 			statements: {
 				TSendNode new
 					setSelector: #foo
-					receiver: (TConstantNode new setValue: 1)
-					arguments: { TConstantNode new setValue: 2 }.
+					receiver: (TConstantNode value: 1)
+					arguments: { TConstantNode value: 2 }.
 				TSendNode new
 					setSelector: #bar
-					receiver: (TConstantNode new setValue: 3)
-					arguments: { TConstantNode new setValue: 4 }.
+					receiver: (TConstantNode value: 3)
+					arguments: { TConstantNode value: 4 }.
 				TVariableNode new setName: 'var'.
 			})
 		arguments: { }).
@@ -196,7 +196,7 @@ SlangBasicTranslationTest >> testBlockValueWithVariableAsLastExpression [
 SlangBasicTranslationTest >> testConstantCharacter [
 
 	| translation |
-	translation := self translate: (TConstantNode new setValue: $A).
+	translation := self translate: (TConstantNode value: $A).
 	
 	self assert: translation equals: '''A'''
 ]
@@ -205,7 +205,7 @@ SlangBasicTranslationTest >> testConstantCharacter [
 SlangBasicTranslationTest >> testConstantFalse [
 
 	| translation |
-	translation := self translate: (TConstantNode new setValue: false).
+	translation := self translate: (TConstantNode value: false).
 	
 	self assert: translation equals: '0'
 ]
@@ -214,7 +214,7 @@ SlangBasicTranslationTest >> testConstantFalse [
 SlangBasicTranslationTest >> testConstantFloat [
 
 	| translation |
-	translation := self translate: (TConstantNode new setValue: 3.1415).
+	translation := self translate: (TConstantNode value: 3.1415).
 	
 	self assert: translation equals: '3.1415'
 ]
@@ -224,7 +224,7 @@ SlangBasicTranslationTest >> testConstantInteger [
 
 	| translation |
 	"Special case that should be escaped in C"
-	translation := self translate: (TConstantNode new setValue: 17).
+	translation := self translate: (TConstantNode value: 17).
 	
 	self assert: translation equals: '17'
 ]
@@ -238,7 +238,7 @@ SlangBasicTranslationTest >> testConstantIntegerHexaCaseA [
 		- or the distance between the higher and lower bits are >= 4"
 
 	"Case A"	
-	translation := self translate: (TConstantNode new setValue: (2 raisedTo: 20)).
+	translation := self translate: (TConstantNode value: (2 raisedTo: 20)).
 	
 	self assert: translation equals: '0x100000'
 ]
@@ -252,7 +252,7 @@ SlangBasicTranslationTest >> testConstantIntegerHexaCaseB [
 		- or the distance between the higher and lower bits are >= 4"
 
 	"Case B"
-	translation := self translate: (TConstantNode new setValue: 2r11111100000).
+	translation := self translate: (TConstantNode value: 2r11111100000).
 
 	self assert: translation equals: '0x7E0'
 ]
@@ -261,7 +261,7 @@ SlangBasicTranslationTest >> testConstantIntegerHexaCaseB [
 SlangBasicTranslationTest >> testConstantNil [
 
 	| translation |
-	translation := self translate: (TConstantNode new setValue: nil).
+	translation := self translate: (TConstantNode value: nil).
 	
 	self assert: translation equals: 'NULL'
 ]
@@ -271,7 +271,7 @@ SlangBasicTranslationTest >> testConstantQuoteCharacter [
 
 	| translation |
 	"Special case that should be escaped in C"
-	translation := self translate: (TConstantNode new setValue: $').
+	translation := self translate: (TConstantNode value: $').
 	
 	self assert: translation equals: '''\'''''
 ]
@@ -280,7 +280,7 @@ SlangBasicTranslationTest >> testConstantQuoteCharacter [
 SlangBasicTranslationTest >> testConstantString [
 
 	| translation |
-	translation := self translate: (TConstantNode new setValue: '1
+	translation := self translate: (TConstantNode value: '1
 2
 3').
 	
@@ -291,7 +291,7 @@ SlangBasicTranslationTest >> testConstantString [
 SlangBasicTranslationTest >> testConstantSymbol [
 
 	| translation |
-	translation := self translate: (TConstantNode new setValue: #symbol).
+	translation := self translate: (TConstantNode value: #symbol).
 	
 	self assert: translation equals: 'symbol'
 ]
@@ -300,7 +300,7 @@ SlangBasicTranslationTest >> testConstantSymbol [
 SlangBasicTranslationTest >> testConstantSymbolColon [
 
 	| translation |
-	translation := self translate: (TConstantNode new setValue: #symbol:).
+	translation := self translate: (TConstantNode value: #symbol:).
 	
 	self assert: translation equals: 'symbol'
 ]
@@ -309,7 +309,7 @@ SlangBasicTranslationTest >> testConstantSymbolColon [
 SlangBasicTranslationTest >> testConstantSymbolColonWithMultipleKeywords [
 
 	| translation |
-	translation := self translate: (TConstantNode new setValue: #sym__bol___:another__:).
+	translation := self translate: (TConstantNode value: #sym__bol___:another__:).
 	
 	self assert: translation equals: 'sym__bol___another'
 ]
@@ -318,7 +318,7 @@ SlangBasicTranslationTest >> testConstantSymbolColonWithMultipleKeywords [
 SlangBasicTranslationTest >> testConstantSymbolColonWithUnderscores [
 
 	| translation |
-	translation := self translate: (TConstantNode new setValue: #symbol___:).
+	translation := self translate: (TConstantNode value: #symbol___:).
 	
 	self assert: translation equals: 'symbol'
 ]
@@ -327,7 +327,7 @@ SlangBasicTranslationTest >> testConstantSymbolColonWithUnderscores [
 SlangBasicTranslationTest >> testConstantSymbolColonWithUnderscoresInTheMiddle [
 
 	| translation |
-	translation := self translate: (TConstantNode new setValue: #sym__bol___:).
+	translation := self translate: (TConstantNode value: #sym__bol___:).
 	
 	self assert: translation equals: 'sym__bol'
 ]
@@ -338,7 +338,7 @@ SlangBasicTranslationTest >> testConstantSymbolWithTranslationMap [
 	| translation |
 	generator addSelectorTranslation: #+> to: #strangearrow.
 	
-	translation := self translate: (TConstantNode new setValue: #+>).
+	translation := self translate: (TConstantNode value: #+>).
 	
 	self assert: translation equals: 'strangearrow'
 ]
@@ -347,7 +347,7 @@ SlangBasicTranslationTest >> testConstantSymbolWithTranslationMap [
 SlangBasicTranslationTest >> testConstantTrue [
 
 	| translation |
-	translation := self translate: (TConstantNode new setValue: true).
+	translation := self translate: (TConstantNode value: true).
 	
 	self assert: translation equals: '1'
 ]
@@ -368,13 +368,13 @@ SlangBasicTranslationTest >> testConstantsStatementsInBlockValueAreIgnored [
 			statements: {
 				TSendNode new
 					setSelector: #foo
-					receiver: (TConstantNode new setValue: 1)
-					arguments: { TConstantNode new setValue: 2 }.
-				TConstantNode new setValue: 72.
+					receiver: (TConstantNode value: 1)
+					arguments: { TConstantNode value: 2 }.
+				TConstantNode value: 72.
 				TSendNode new
 					setSelector: #bar
-					receiver: (TConstantNode new setValue: 3)
-					arguments: { TConstantNode new setValue: 4 }.
+					receiver: (TConstantNode value: 3)
+					arguments: { TConstantNode value: 4 }.
 				TVariableNode new setName: 'var'.
 			})
 		arguments: { }).
@@ -419,7 +419,7 @@ SlangBasicTranslationTest >> testReturnNonLeafExpressionInVoidMethod [
 	translation := self translate: (TReturnNode new
 		setExpression: (TAssignmentNode new
 			setVariable: (TVariableNode new setName: 'var')
-			expression: (TConstantNode new setValue: 7));
+			expression: (TConstantNode value: 7));
 		yourself).
 		
 	self assert: translation equals: 'var = 7;
@@ -452,7 +452,7 @@ SlangBasicTranslationTest >> testTranslateBlockAssignmentWithManyStatement [
 			expression:  (TVariableNode new setName: 'b').
 		TAssignmentNode new
 			setVariable:  (TVariableNode new setName: 'c')
-			expression:  (TConstantNode new setValue: 1).
+			expression:  (TConstantNode value: 1).
 	}.
 
 	translation := self translate: (TAssignmentNode new
@@ -476,7 +476,7 @@ SlangBasicTranslationTest >> testTranslateLiteralArrayAssignment [
 		setSelector: #cCoerce:to:
 		receiver: (TVariableNode new setName: 'self')
 		arguments: { 
-			TConstantNode new setValue: { 1 . 2 . 3 }.
+			TConstantNode value: { 1 . 2 . 3 }.
 			'int *' }.
 
 	translation := self translate: (TAssignmentNode new
@@ -525,13 +525,13 @@ SlangBasicTranslationTest >> testVariableStatementsInBlockValueAreIgnored [
 			statements: {
 				TSendNode new
 					setSelector: #foo
-					receiver: (TConstantNode new setValue: 1)
-					arguments: { TConstantNode new setValue: 2 }.
+					receiver: (TConstantNode value: 1)
+					arguments: { TConstantNode value: 2 }.
 				TVariableNode new setName: 'var'.
 				TSendNode new
 					setSelector: #bar
-					receiver: (TConstantNode new setValue: 3)
-					arguments: { TConstantNode new setValue: 4 }.
+					receiver: (TConstantNode value: 3)
+					arguments: { TConstantNode value: 4 }.
 			})
 		arguments: { }).
 
@@ -552,7 +552,7 @@ SlangBasicTranslationTest >> testVariableUpdateAssignmentMinus [
 		setSelector: #-
 		receiver: variable 
 		arguments: { 
-			TConstantNode new setValue: 7.
+			TConstantNode value: 7.
 		}.
 
 	translation := self translate: (TAssignmentNode new
@@ -573,7 +573,7 @@ SlangBasicTranslationTest >> testVariableUpdateAssignmentPlus [
 		setSelector: #+
 		receiver: variable 
 		arguments: { 
-			TConstantNode new setValue: 7.
+			TConstantNode value: 7.
 		}.
 
 	translation := self translate: (TAssignmentNode new

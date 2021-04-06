@@ -7,6 +7,14 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance creation' }
+TConstantNode class >> value: aValue [
+
+	^ self new
+		  setValue: aValue;
+		  yourself
+]
+
 { #category : #tranforming }
 TConstantNode >> asCASTIn: aBuilder [
 

@@ -855,7 +855,7 @@ TMethod >> extractDirective: theSelector valueBlock: aBlock default: defaultResu
 				   setSelector: pragma selector
 				   receiver: (TVariableNode new setName: 'self')
 				   arguments: (pragma arguments collect: [ :const | 
-						    TConstantNode new setValue: const ])) ].
+						    TConstantNode value: const ])) ].
 	"Pre-pragma backward compatibility:
 	 Scan the top-level statements for a labelling directive of the form:
 
@@ -2397,7 +2397,7 @@ TMethod >> removeUnusedTempsAndNilIfRequiredIn: aCodeGen [
 				[:var| | varNode varType zeroNode |
 				 varNode := TVariableNode new setName: var; yourself.
 				 varType := aCodeGen typeFor: varNode in: self.
-				 zeroNode := TConstantNode new setValue: 0; yourself.
+				 zeroNode := TConstantNode value: 0; yourself.
 				 TAssignmentNode new
 					setVariable: varNode
 					expression: (((aCodeGen isIntegralCType: varType)
@@ -2553,7 +2553,7 @@ TMethod >> replaceSizeMessages [
 			argExpr := TSendNode new
 				setSelector: #+
 				receiver: n receiver
-				arguments: (Array with: (TConstantNode new setValue: 1)).
+				arguments: (Array with: (TConstantNode value: 1)).
 			n
 				setSelector: #sizeOfSTArrayFromCPrimitive:
 				receiver: (TVariableNode new setName: self vmNameString)
@@ -2866,7 +2866,7 @@ TMethod >> transformReturns [
 			[(node expression isVariable and: [node expression name = 'self'])
 				ifTrue:
 					[returnType = #sqInt ifTrue:
-						[node setExpression: (TConstantNode new setValue: 0)]]
+						[node setExpression: (TConstantNode value: 0)]]
 				ifFalse:
 					[returnType = #void ifTrue:
 						[parent

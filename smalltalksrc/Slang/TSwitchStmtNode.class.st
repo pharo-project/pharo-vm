@@ -168,14 +168,14 @@ TSwitchStmtNode >> emitCCodeOn: aStream addToEndOfCases: aNodeOrNil level: level
 			   aNodeOrNil ifNotNil:
 				[| defaultExpr type |
 				 aStream crtab: level + 1.
-				 defaultExpr := TConstantNode new setValue: -1.
+				 defaultExpr := TConstantNode value: -1.
 				 (aNodeOrNil isAssignment
 				  and: [(type := aCodeGen typeFor: aNodeOrNil variable in: aCodeGen currentMethod) notNil
 				  and: [aCodeGen isPointerCType: type]]) ifTrue:
 					[defaultExpr := TSendNode new
 										setSelector: #cCoerceSimple:to:
 										receiver: (TVariableNode new setName: 'self')
-										arguments: {defaultExpr. TConstantNode new setValue: type}].
+										arguments: {defaultExpr. TConstantNode value: type}].
 				 (aNodeOrNil copy setExpression: defaultExpr)
 					emitCCodeOn: aStream level: level generator: aCodeGen.
 				 aStream nextPut: $;]].

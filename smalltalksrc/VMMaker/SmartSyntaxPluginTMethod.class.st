@@ -286,7 +286,7 @@ SmartSyntaxPluginTMethod >> pop: anInteger thenReturnExpr: anExpression [
 	^TSendNode new
 		setSelector: #pop:thenPush:
 		receiver: (TVariableNode new setName: 'interpreterProxy')
-		arguments: {TConstantNode new setValue: anInteger. anExpression}
+		arguments: {TConstantNode value: anInteger. anExpression}
 ]
 
 { #category : #private }
@@ -296,8 +296,8 @@ SmartSyntaxPluginTMethod >> popExpr: anInteger [
 			 setSelector: #pop:
 			 receiver: (TVariableNode new setName: 'interpreterProxy')
 			 arguments: (Array 
-				with: (TConstantNode new 
-					setValue: anInteger))
+				with: (TConstantNode 
+					value: anInteger))
 ]
 
 { #category : #'specifying primitives' }

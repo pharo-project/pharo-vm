@@ -56,7 +56,7 @@ TCaseStmtNode >> customizeCase: caseParseTree forVar: varName from: firstIndex t
 	firstIndex to: lastIndex do:
 		[ :caseIndex |
 		dict := Dictionary new.
-		dict at: varName put: (TConstantNode new setValue: caseIndex).
+		dict at: varName put: (TConstantNode value: caseIndex).
 		newCase := caseParseTree copy bindVariableUsesIn: dict andConstantFoldIf: true in: codeGen.
 		self processSharedCodeBlocks: newCase forCase: caseIndex in: codeGen method: aTMethod expandedCases: seen.
 		newCases addLast: newCase].
@@ -120,7 +120,7 @@ TCaseStmtNode >> emitCCodeOn: aStream addToEndOfCases: aNodeOrNil level: level g
 		nextPutAll: 'error("Case not found");'.
 	aNodeOrNil ifNotNil:
 		[aStream crtab: level + 1.
-		 (aNodeOrNil copy setExpression: (TConstantNode new setValue: -1))
+		 (aNodeOrNil copy setExpression: (TConstantNode value: -1))
 			emitCCodeOn: aStream level: level generator: aCodeGen.
 		 aStream nextPut: $;].
 	aStream

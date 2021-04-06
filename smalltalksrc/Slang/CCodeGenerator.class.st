@@ -152,7 +152,7 @@ CCodeGenerator >> addConstantForBinding: variableBinding [
 				ifTrue:[TDefineNode new
 							setName: variableBinding key
 							value: variableBinding value]
-				ifFalse:[TConstantNode new setValue: variableBinding value].
+				ifFalse:[TConstantNode value: variableBinding value].
 	constants at: variableBinding key put: node
 ]
 
@@ -4054,7 +4054,7 @@ CCodeGenerator >> nodeToCast: exprNode to: cType [
 	^TSendNode new
 		setSelector: #cCoerceSimple:to:
 		receiver: (TVariableNode new setName: 'self')
-		arguments: { exprNode. TConstantNode new setValue: cType }
+		arguments: { exprNode. TConstantNode value: cType }
 		isBuiltInOp: true
 ]
 
