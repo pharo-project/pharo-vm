@@ -531,6 +531,48 @@ SlangBasicTranslationTest >> testVariableStatementsInBlockValueAreIgnored [
 }'
 ]
 
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testVariableUpdateAssignmentMinus [
+
+	| translation variable expression |
+
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		setSelector: #-
+		receiver: variable 
+		arguments: { 
+			TConstantNode new setValue: 7.
+		}.
+
+	translation := self translate: (TAssignmentNode new
+			setVariable: variable
+			expression: expression).
+
+	self assert: translation trimBoth equals: 'var -= 7'
+]
+
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testVariableUpdateAssignmentPlus [
+
+	| translation variable expression |
+
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		setSelector: #+
+		receiver: variable 
+		arguments: { 
+			TConstantNode new setValue: 7.
+		}.
+
+	translation := self translate: (TAssignmentNode new
+			setVariable: variable
+			expression: expression).
+
+	self assert: translation trimBoth equals: 'var += 7'
+]
+
 { #category : #helpers }
 SlangBasicTranslationTest >> translate: tast [
 

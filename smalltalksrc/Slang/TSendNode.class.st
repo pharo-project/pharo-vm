@@ -16,6 +16,11 @@ TSendNode >> args [
 	^arguments
 ]
 
+{ #category : #accessing }
+TSendNode >> arguments [
+	^ arguments
+]
+
 { #category : #private }
 TSendNode >> arguments: aSequence [
 	arguments := aSequence
