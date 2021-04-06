@@ -53,8 +53,7 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager [
 			and: StackToRegisterMappingCogit
 			with: {#COGMTVM. false.
 					#ObjectMemory. memoryManager name.
-					#MULTIPLEBYTECODESETS. true.
-					#bytecodeTableInitializer. #initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid}
+					#bytecodeTableInitializer. #initializeBytecodeTableForSistaV1}
 			to: platformDirectory
 			platformDir:platformDirectory
 			including: #()

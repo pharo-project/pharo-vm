@@ -919,30 +919,12 @@ Cogit class >> initializeBytecodeTable [
 					at: #bytecodeTableInitializer
 					ifAbsent:
 						[MULTIPLEBYTECODESETS
-									ifTrue: [#initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid]
-									ifFalse: [#initializeBytecodeTableForSqueakV3PlusClosures]].
+									ifTrue: [self error]
+									ifFalse: [#initializeBytecodeTableForSistaV1]].
 	"Now make sure all classes in the hierarchy have initialized to the same bytecode table."
 	(self withAllSuperclasses copyUpTo: Cogit) reverseDo: "i.e. exclude Cogit"
 		[:cogitClass|
 		 cogitClass perform: initializer]
-]
-
-{ #category : #'class initialization' }
-Cogit class >> initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid [
-	"SimpleStackBasedCogit initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid"
-	"StackToRegisterMappingCogit initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid"
-
-	| v3Table v1Table |
-	"N.B. Must do it backwards to evaluate AltBlockCreationBytecodeSize & BlockCreationBytecodeSize et al correctly."
-	self initializeBytecodeTableForSistaV1.
-	v1Table := generatorTable.
-	AltBlockCreationBytecodeSize := BlockCreationBytecodeSize.
-	AltFirstSpecialSelector := FirstSpecialSelector.
-	AltNumSpecialSelectors := NumSpecialSelectors.
-	self initializeBytecodeTableForSqueakV3PlusClosures.
-	BytecodeSetHasExtensions := true.
-	v3Table := generatorTable.
-	generatorTable := CArrayAccessor on: v3Table object, v1Table object
 ]
 
 { #category : #'class initialization' }
@@ -1014,7 +996,296 @@ Cogit class >> initializeNumTrampolines [
 
 { #category : #'class initialization' }
 Cogit class >> initializePrimitiveTable [
-	self initializePrimitiveTableForSqueak
+	"Initialize the table of primitive generators.  This does not include normal primitives implemented in the coInterpreter.
+	 N.B. primitives that don't have an explicit arg count (the integer following the generator) may be variadic."
+	"SimpleStackBasedCogit initializePrimitiveTable"
+	MaxCompiledPrimitiveIndex := self objectRepresentationClass wordSize = 8
+										ifTrue: [659]
+										ifFalse: [222].
+	primitiveTable := CArrayAccessor on: (Array new: MaxCompiledPrimitiveIndex + 1).
+	self table: primitiveTable from: 
+	#(	"Integer Primitives (0-19)"
+		(1 genPrimitiveAdd				1)
+		(2 genPrimitiveSubtract			1)
+		(3 genPrimitiveLessThan		1)
+		(4 genPrimitiveGreaterThan		1)
+		(5 genPrimitiveLessOrEqual		1)
+		(6 genPrimitiveGreaterOrEqual	1)
+		(7 genPrimitiveEqual			1)
+		(8 genPrimitiveNotEqual		1)
+		(9 genPrimitiveMultiply			1)
+		(10 genPrimitiveDivide			1)
+		(11 genPrimitiveMod			1)
+		(12 genPrimitiveDiv				1)
+		(13 genPrimitiveQuo			1)
+		(14 genPrimitiveBitAnd			1)
+		(15 genPrimitiveBitOr			1)
+		(16 genPrimitiveBitXor			1)
+		(17 genPrimitiveBitShift			1)
+		"(18 primitiveMakePoint)"
+		"(19 primitiveFail)"					"Guard primitive for simulation -- *must* fail"
+
+		"LargeInteger Primitives (20-39)"
+		"(20 primitiveFail)"
+		"(21 primitiveAddLargeIntegers)"
+		"(22 primitiveSubtractLargeIntegers)"
+		"(23 primitiveLessThanLargeIntegers)"
+		"(24 primitiveGreaterThanLargeIntegers)"
+		"(25 primitiveLessOrEqualLargeIntegers)"
+		"(26 primitiveGreaterOrEqualLargeIntegers)"
+		"(27 primitiveEqualLargeIntegers)"
+		"(28 primitiveNotEqualLargeIntegers)"
+		"(29 primitiveMultiplyLargeIntegers)"
+		"(30 primitiveDivideLargeIntegers)"
+		"(31 primitiveModLargeIntegers)"
+		"(32 primitiveDivLargeIntegers)"
+		"(33 primitiveQuoLargeIntegers)"
+		"(34 primitiveBitAndLargeIntegers)"
+		"(35 primitiveBitOrLargeIntegers)"
+		"(36 primitiveBitXorLargeIntegers)"
+		"(37 primitiveBitShiftLargeIntegers)"
+
+		"Float Primitives (38-59)"
+		"(38 genPrimitiveFloatAt)"
+		"(39 genPrimitiveFloatAtPut)"
+		(40 genPrimitiveAsFloat					0)
+		(41 genPrimitiveFloatAdd				1)
+		(42 genPrimitiveFloatSubtract			1)
+		(43 genPrimitiveFloatLessThan			1)
+		(44 genPrimitiveFloatGreaterThan		1)
+		(45 genPrimitiveFloatLessOrEqual		1)
+		(46 genPrimitiveFloatGreaterOrEqual	1)
+		(47 genPrimitiveFloatEqual				1)
+		(48 genPrimitiveFloatNotEqual			1)
+		(49 genPrimitiveFloatMultiply			1)
+		(50 genPrimitiveFloatDivide				1)
+		"(51 genPrimitiveTruncated)"
+		"(52 genPrimitiveFractionalPart)"
+		"(53 genPrimitiveExponent)"
+		"(54 genPrimitiveTimesTwoPower)"
+		(55 genPrimitiveFloatSquareRoot		0)
+		"(56 genPrimitiveSine)"
+		"(57 genPrimitiveArctan)"
+		"(58 genPrimitiveLogN)"
+		"(59 genPrimitiveExp)"
+
+		"Subscript and Stream Primitives (60-67)"
+		(60 genPrimitiveAt				1)
+		(61 genPrimitiveAtPut			2)
+		(62 genPrimitiveSize			0)
+		(63 genPrimitiveStringAt		1)
+		(64 genPrimitiveStringAtPut		2)
+		"The stream primitives no longer pay their way; normal Smalltalk code is faster."
+		(65 genFastPrimFail)"was primitiveNext"
+		(66 genFastPrimFail) "was primitiveNextPut"
+		(67 genFastPrimFail) "was primitiveAtEnd"
+
+		"StorageManagement Primitives (68-79)"
+		(68 genPrimitiveObjectAt			1)	"Good for debugger/InstructionStream performance"
+		"(69 primitiveObjectAtPut)"
+		(70 genPrimitiveNew			0)
+		(71 genPrimitiveNewWithArg	1)
+		"(72 primitiveArrayBecomeOneWay)"		"Blue Book: primitiveBecome"
+		(73 genNonImplementedPrimitive -1 #maycallback) "(73 primitiveInstVarAt)"
+		"(74 primitiveInstVarAtPut)"
+		(75 genPrimitiveIdentityHash	0)
+		"(76 primitiveStoreStackp)"					"Blue Book: primitiveAsObject"
+		"(77 primitiveSomeInstance)"
+		"(78 primitiveNextInstance)"
+		(79 genPrimitiveNewMethod	2)
+
+		"Control Primitives (80-89)"
+		"(80 primitiveFail)"							"Blue Book: primitiveBlockCopy"
+		"(81 primitiveFail)"							"Blue Book: primitiveValue"
+		"(82 primitiveFail)"							"Blue Book: primitiveValueWithArgs"
+		(83 genPrimitivePerform)
+		"(84 primitivePerformWithArgs)"
+		"(85 primitiveSignal)"
+		"(86 primitiveWait)"
+		"(87 primitiveResume)"
+		"(88 primitiveSuspend)"
+		"(89 primitiveFlushCache)"
+
+		"(90 primitiveMousePoint)"
+		"(91 primitiveTestDisplayDepth)"			"Blue Book: primitiveCursorLocPut"
+		"(92 primitiveSetDisplayMode)"				"Blue Book: primitiveCursorLink"
+		"(93 primitiveInputSemaphore)"
+		"(94 primitiveGetNextEvent)"				"Blue Book: primitiveSampleInterval"
+		"(95 primitiveInputWord)"
+		"(96 primitiveFail)"	"primitiveCopyBits"
+		"(97 primitiveSnapshot)"
+		"(98 primitiveStoreImageSegment)"
+		"(99 primitiveLoadImageSegment)"
+		"(100 primitivePerformInSuperclass)"		"Blue Book: primitiveSignalAtTick"
+		"(101 primitiveBeCursor)"
+		"(102 primitiveBeDisplay)"
+		"(103 primitiveScanCharacters)"
+		"(104 primitiveFail)"	"primitiveDrawLoop"
+		(105 genPrimitiveStringReplace)
+		"(106 primitiveScreenSize)"
+		"(107 primitiveMouseButtons)"
+		"(108 primitiveKbdNext)"
+		"(109 primitiveKbdPeek)"
+
+
+		"System Primitives (110-119)"
+		(110 genPrimitiveIdentical 1)
+		(111 genPrimitiveClass)				"Support both class and Context>>objectClass:"
+		"(112 primitiveBytesLeft)"
+		"(113 primitiveQuit)"
+		"(114 primitiveExitToDebugger)"
+		"(115 primitiveChangeClass)"					"Blue Book: primitiveOopsLeft"
+		"(116 primitiveFlushCacheByMethod)"
+		(117 genNonImplementedPrimitive -1 #maycallback) "primitiveExternalCall"
+		"(118 primitiveDoPrimitiveWithArgs)"
+		"(119 primitiveFlushCacheSelective)"
+		(120 genNonImplementedPrimitive -1 #maycallback) "primitiveFFICall"
+
+		(148 genPrimitiveShallowCopy 0 #maycallback)			"a.k.a. clone"
+
+		(158 genPrimitiveStringCompareWith 1)
+		(159 genPrimitiveHashMultiply 0)
+		
+		(160 genNonImplementedPrimitive -1 #maycallback) "primitive adopt instance"
+
+		(165 genPrimitiveIntegerAt			1)	"Signed version of genPrimitiveAt"
+		(166 genPrimitiveIntegerAtPut		2)	"Signed version of genPrimitiveAtPut"
+
+		(169 genPrimitiveNotIdentical 1)
+
+		(170 genPrimitiveAsCharacter)				"SmallInteger>>asCharacter, Character class>>value:"
+		(171 genPrimitiveImmediateAsInteger 0)	"Character>>value SmallFloat64>>asInteger"
+			
+		(173 genNonImplementedPrimitive -1 #maycallback) "(173 primitiveSlotAt 1)"
+		"(174 primitiveSlotAtPut 2)"
+		(175 genPrimitiveIdentityHash	0)		"Behavior>>identityHash"
+
+		"Old closure primitives"
+		"(186 primitiveFail)" "was primitiveClosureValue"
+		"(187 primitiveFail)" "was primitiveClosureValueWithArgs"
+
+		"Perform method directly"
+		"(188 primitiveExecuteMethodArgsArray)"
+		"(189 primitiveExecuteMethod)"
+
+		"Unwind primitives"
+		"(195 primitiveFindNextUnwindContext)"
+		"(196 primitiveTerminateTo)"
+		"(197 primitiveFindHandlerContext)"
+		(198 genFastPrimFail "primitiveMarkUnwindMethod")
+		(199 genFastPrimFail "primitiveMarkHandlerMethod")
+
+		"new closure primitives"
+		"(200 primitiveClosureCopyWithCopiedValues)"
+		(201 genPrimitiveClosureValue	0) "value"
+		(202 genPrimitiveClosureValue	1) "value:"
+		(203 genPrimitiveClosureValue	2) "value:value:"
+		(204 genPrimitiveClosureValue	3) "value:value:value:"
+		(205 genPrimitiveClosureValue	4) "value:value:value:value:"
+		"(206 genPrimitiveClosureValueWithArgs)" "valueWithArguments:"
+
+		(207 genPrimitiveFullClosureValue) "value[:value:value:value:] et al"
+		"(208 genPrimitiveFullClosureValueWithArgs)" "valueWithArguments:"
+		(209 genPrimitiveFullClosureValue) "valueNoContextSwitch[:value:] et al"
+
+		"(210 primitiveContextAt)"
+		"(211 primitiveContextAtPut)"
+		"(212 primitiveContextSize)"
+
+		"(218 primitiveDoNamedPrimitiveWithArgs)"
+		"(219 primitiveFail)"	"reserved for Cog primitives"
+
+		"(220 primitiveFail)"		"reserved for Cog primitives"
+
+		(221 genPrimitiveClosureValue	0) "valueNoContextSwitch"
+		(222 genPrimitiveClosureValue	1) "valueNoContextSwitch:"
+
+		"SmallFloat primitives (540-559)"
+		(541 genPrimitiveSmallFloatAdd				1)
+		(542 genPrimitiveSmallFloatSubtract			1)
+		(543 genPrimitiveSmallFloatLessThan			1)
+		(544 genPrimitiveSmallFloatGreaterThan		1)
+		(545 genPrimitiveSmallFloatLessOrEqual		1)
+		(546 genPrimitiveSmallFloatGreaterOrEqual		1)
+		(547 genPrimitiveSmallFloatEqual				1)
+		(548 genPrimitiveSmallFloatNotEqual			1)
+		(549 genPrimitiveSmallFloatMultiply				1)
+		(550 genPrimitiveSmallFloatDivide				1)
+		"(551 genPrimitiveSmallFloatTruncated			0)"
+		"(552 genPrimitiveSmallFloatFractionalPart		0)"
+		"(553 genPrimitiveSmallFloatExponent			0)"
+		"(554 genPrimitiveSmallFloatTimesTwoPower	1)"
+		(555 genPrimitiveSmallFloatSquareRoot			0)
+		"(556 genPrimitiveSmallFloatSine				0)"
+		"(557 genPrimitiveSmallFloatArctan				0)"
+		"(558 genPrimitiveSmallFloatLogN				0)"
+		"(559 genPrimitiveSmallFloatExp				0)"
+
+		"Pinned object creation primitives"
+		"(598 primitiveNewPinned)"
+		"(599 primitiveNewWithArgPinned)"
+						
+		(600 genPrimitiveLoadBoolean8FromBytes)
+		(601 genPrimitiveLoadUInt8FromBytes)
+		(602 genPrimitiveLoadInt8FromBytes)
+		(603 genPrimitiveLoadUInt16FromBytes)
+		(604 genPrimitiveLoadInt16FromBytes)
+		(605 genPrimitiveLoadUInt32FromBytes)
+		(606 genPrimitiveLoadInt32FromBytes)
+		(607 genPrimitiveLoadUInt64FromBytes)
+		(608 genPrimitiveLoadInt64FromBytes)
+		(609 genPrimitiveLoadPointerFromBytes)
+		(610 genPrimitiveLoadChar8FromBytes)
+		(611 genPrimitiveLoadChar16FromBytes)
+		(612 genPrimitiveLoadChar32FromBytes)
+		(613 genPrimitiveLoadFloat32FromBytes)
+		(614 genPrimitiveLoadFloat64FromBytes)
+		(615 genPrimitiveStoreBoolean8IntoBytes)
+		(616 genPrimitiveStoreUInt8IntoBytes)
+		(617 genPrimitiveStoreInt8IntoBytes)
+		(618 genPrimitiveStoreUInt16IntoBytes)
+		(619 genPrimitiveStoreInt16IntoBytes)
+		(620 genPrimitiveStoreUInt32IntoBytes)
+		(621 genPrimitiveStoreInt32IntoBytes)
+		(622 genPrimitiveStoreUInt64IntoBytes)
+		(623 genPrimitiveStoreInt64IntoBytes)
+		(624 genPrimitiveStorePointerIntoBytes)
+		(625 genPrimitiveStoreChar8IntoBytes)
+		(626 genPrimitiveStoreChar16IntoBytes)
+		(627 genPrimitiveStoreChar32IntoBytes)
+		(628 genPrimitiveStoreFloat32IntoBytes)
+		(629 genPrimitiveStoreFloat64IntoBytes)
+		(630 genPrimitiveLoadBoolean8FromExternalAddress)
+		(631 genPrimitiveLoadUInt8FromExternalAddress)
+		(632 genPrimitiveLoadInt8FromExternalAddress)
+		(633 genPrimitiveLoadUInt16FromExternalAddress)
+		(634 genPrimitiveLoadInt16FromExternalAddress)
+		(635 genPrimitiveLoadUInt32FromExternalAddress)
+		(636 genPrimitiveLoadInt32FromExternalAddress)
+		(637 genPrimitiveLoadUInt64FromExternalAddress)
+		(638 genPrimitiveLoadInt64FromExternalAddress)
+		(639 genPrimitiveLoadPointerFromExternalAddress)
+		(640 genPrimitiveLoadChar8FromExternalAddress)
+		(641 genPrimitiveLoadChar16FromExternalAddress)
+		(642 genPrimitiveLoadChar32FromExternalAddress)
+		(643 genPrimitiveLoadFloat32FromExternalAddress)
+		(644 genPrimitiveLoadFloat64FromExternalAddress)
+		(645 genPrimitiveStoreBoolean8IntoExternalAddress)
+		(646 genPrimitiveStoreUInt8IntoExternalAddress)
+		(647 genPrimitiveStoreInt8IntoExternalAddress)
+		(648 genPrimitiveStoreUInt16IntoExternalAddress)
+		(649 genPrimitiveStoreInt16IntoExternalAddress)
+		(650 genPrimitiveStoreUInt32IntoExternalAddress)
+		(651 genPrimitiveStoreInt32IntoExternalAddress)
+		(652 genPrimitiveStoreUInt64IntoExternalAddress)
+		(653 genPrimitiveStoreInt64IntoExternalAddress)
+		(654 genPrimitiveStorePointerIntoExternalAddress)
+		(655 genPrimitiveStoreChar8IntoExternalAddress)
+		(656 genPrimitiveStoreChar16IntoExternalAddress)
+		(657 genPrimitiveStoreChar32IntoExternalAddress)
+		(658 genPrimitiveStoreFloat32IntoExternalAddress)
+		(659 genPrimitiveStoreFloat64IntoExternalAddress)
+	)
 ]
 
 { #category : #'class initialization' }

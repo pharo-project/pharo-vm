@@ -119,8 +119,7 @@ VMMakerConfiguration class >> generateSqueakSpurCog64MTVM [
 		and: StackToRegisterMappingCogit
 		with: #(COGMTVM true
 				ObjectMemory Spur64BitCoMemoryManager
-				MULTIPLEBYTECODESETS true
-				bytecodeTableInitializer initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid)
+				bytecodeTableInitializer initializeBytecodeTableForSistaV1)
 		to: self sourceTree, '/spur64src'
 		platformDir: self sourceTree, '/platforms'
 		including:#()
@@ -134,8 +133,7 @@ VMMakerConfiguration class >> generateSqueakSpurCog64VM [
 		generate: CoInterpreter
 		and: StackToRegisterMappingCogit
 		with: #(ObjectMemory Spur64BitCoMemoryManager
-				MULTIPLEBYTECODESETS true
-				bytecodeTableInitializer initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid)
+				bytecodeTableInitializer initializeBytecodeTableForSistaV1)
 		to: self sourceTree, '/spur64src'
 		platformDir: self sourceTree, '/platforms'
 		including:#()
@@ -150,8 +148,7 @@ VMMakerConfiguration class >> generateSqueakSpurCogMTVM [
 		and: StackToRegisterMappingCogit
 		with: #(COGMTVM true
 				ObjectMemory Spur32BitCoMemoryManager
-				MULTIPLEBYTECODESETS true
-				bytecodeTableInitializer initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid)
+				bytecodeTableInitializer initializeBytecodeTableForSistaV1)
 		to: self sourceTree, '/spursrc'
 		platformDir: self sourceTree, '/platforms'
 		including:#()
@@ -165,8 +162,7 @@ VMMakerConfiguration class >> generateSqueakSpurCogSista64VM [
 		and: SistaCogit
 		with: #(	SistaVM true
 				ObjectMemory Spur64BitCoMemoryManager
-				MULTIPLEBYTECODESETS true
-				bytecodeTableInitializer initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid)
+				bytecodeTableInitializer initializeBytecodeTableForSistaV1)
 		to: self sourceTree, '/spursista64src'
 		platformDir: self sourceTree, '/platforms'
 		including:#()
@@ -181,8 +177,7 @@ VMMakerConfiguration class >> generateSqueakSpurCogSistaVM [
 		and: SistaCogit
 		with: #(	SistaVM true
 				ObjectMemory Spur32BitCoMemoryManager
-				MULTIPLEBYTECODESETS true
-				bytecodeTableInitializer initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid)
+				bytecodeTableInitializer initializeBytecodeTableForSistaV1)
 		to: self sourceTree, '/spursistasrc'
 		platformDir: self sourceTree, '/platforms'
 		including:#()
@@ -196,8 +191,7 @@ VMMakerConfiguration class >> generateSqueakSpurCogVM [
 		generate: CoInterpreter
 		and: StackToRegisterMappingCogit
 		with: #(ObjectMemory Spur32BitCoMemoryManager
-				MULTIPLEBYTECODESETS true
-				bytecodeTableInitializer initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid)
+				bytecodeTableInitializer initializeBytecodeTableForSistaV1)
 		to: self sourceTree, '/spursrc'
 		platformDir: self sourceTree, '/platforms'
 		including:#()
