@@ -83,8 +83,10 @@ SlangBasicTranslationTest >> testBlockValue [
 			})
 		arguments: { }).
 
-	self assert: translation trimBoth equals: 'foo(1, 2);
-bar(3, 4);'
+	self assert: translation trimBoth equals: '{
+	foo(1, 2);
+	bar(3, 4);
+}'
 ]
 
 { #category : #'tests-blocks' }
@@ -116,8 +118,10 @@ SlangBasicTranslationTest >> testBlockValueAssignment [
 			setVariable: variable
 			expression: expression).
 
-	self assert: translation trimBoth equals: 'foo(1, 2);
-var = bar(3, 4);'
+	self assert: translation trimBoth equals: '{
+	foo(1, 2);
+	var = bar(3, 4);
+}'
 ]
 
 { #category : #'tests-blocks' }
@@ -150,8 +154,10 @@ SlangBasicTranslationTest >> testBlockValueAssignmentIntoSameVariable [
 			setVariable: variable
 			expression: expression).
 
-	self assert: translation trimBoth equals: 'foo(1, 2);
-bar(3, 4);'
+	self assert: translation trimBoth equals: '{
+	foo(1, 2);
+	bar(3, 4);
+}'
 ]
 
 { #category : #'tests-blocks' }
@@ -180,8 +186,10 @@ SlangBasicTranslationTest >> testBlockValueWithVariableAsLastExpression [
 			})
 		arguments: { }).
 
-	self assert: translation trimBoth equals: 'foo(1, 2);
-bar(3, 4);'
+	self assert: translation trimBoth equals: '{
+	foo(1, 2);
+	bar(3, 4);
+}'
 ]
 
 { #category : #'tests-constants' }
@@ -371,8 +379,10 @@ SlangBasicTranslationTest >> testConstantsStatementsInBlockValueAreIgnored [
 			})
 		arguments: { }).
 
-	self assert: translation trimBoth equals: 'foo(1, 2);
-bar(3, 4);'
+	self assert: translation trimBoth equals: '{
+	foo(1, 2);
+	bar(3, 4);
+}'
 ]
 
 { #category : #'tests-return' }
@@ -515,8 +525,10 @@ SlangBasicTranslationTest >> testVariableStatementsInBlockValueAreIgnored [
 			})
 		arguments: { }).
 
-	self assert: translation trimBoth equals: 'foo(1, 2);
-bar(3, 4);'
+	self assert: translation trimBoth equals: '{
+	foo(1, 2);
+	bar(3, 4);
+}'
 ]
 
 { #category : #helpers }
