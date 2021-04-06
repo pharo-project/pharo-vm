@@ -61,6 +61,13 @@ VMBlockTest >> methodWithLocalReturningABlock [
 	^ [ a ]
 ]
 
+{ #category : #supports }
+VMBlockTest >> setUp [
+
+	super setUp.
+	interpreter initExtensions.
+]
+
 { #category : #testing }
 VMBlockTest >> testCreatingABlockClosureShouldCopyUsedMethodVariable [
 
