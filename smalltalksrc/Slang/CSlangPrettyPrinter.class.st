@@ -108,6 +108,14 @@ CSlangPrettyPrinter >> visitDeclarator: aDeclarator [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitGotoStatement: aGoToStatement [
+
+	stream nextPutAll: 'goto ';
+			 nextPutAll: aGoToStatement label name.
+	
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitIdentifier: anIdentifier [
 
 	stream nextPutAll: anIdentifier name

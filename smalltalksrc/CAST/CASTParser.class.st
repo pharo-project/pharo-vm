@@ -871,7 +871,7 @@ CASTParser >> reduceActionForiteration_statement4: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForjump_statement1: nodes [
 	| result |
-	result := CGLRGotoStatementNode new.
+	result := CGotoStatementNode new.
 	result label: (nodes at: 2).
 	^ result
 ]

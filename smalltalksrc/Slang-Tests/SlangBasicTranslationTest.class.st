@@ -385,6 +385,16 @@ SlangBasicTranslationTest >> testConstantsStatementsInBlockValueAreIgnored [
 }'
 ]
 
+{ #category : #'tests-goto' }
+SlangBasicTranslationTest >> testGoto [
+
+	| translation |
+	
+	translation := self translate: (TGoToNode new setLabel: 'lab').
+
+	self assert: translation trimBoth equals: 'goto lab'
+]
+
 { #category : #'tests-return' }
 SlangBasicTranslationTest >> testReturnLeafInVoidMethod [
 
