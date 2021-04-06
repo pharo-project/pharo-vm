@@ -1,6 +1,6 @@
 Class {
 	#name : #CNewArrayAccessor,
-	#superclass : #CObjectAccessor,
+	#superclass : #CArrayAccessor,
 	#instVars : [
 		'address'
 	],
@@ -32,4 +32,10 @@ CNewArrayAccessor >> address: anObject [
 CNewArrayAccessor >> asInteger [
 	
 	^ address
+]
+
+{ #category : #accessing }
+CNewArrayAccessor >> at: index [
+
+	^ object byteAt: index + 1
 ]

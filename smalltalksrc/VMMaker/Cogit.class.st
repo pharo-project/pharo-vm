@@ -11011,7 +11011,7 @@ Cogit >> printPCMapPairsFor: cogMethod [
 			print: ') ';
 			printHexnp: (mapByte bitAnd: DisplacementMask);
 			printChar: $ ;
-			putchar: $@;
+			printChar: $@;
 		 printHex: mcpc;
 		 cr;
 		 flush.
@@ -12037,7 +12037,7 @@ Cogit >> simulateCogCodeAt: address [ "<Integer>"
 					readOnlyBelow: methodZone zoneEnd]
 		ifFalse:
 			[processor
-					runInMemory: coInterpreter memory
+					runInMemory: nil
 					minimumAddress: guardPageSize
 					readOnlyBelow: methodZone zoneEnd].
 	   "((printRegisters or: [printInstructions]) and: [clickConfirm]) ifTrue:

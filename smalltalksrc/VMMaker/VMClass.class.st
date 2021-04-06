@@ -467,10 +467,19 @@ VMClass >> addressOf: anObject put: aBlock [
 ]
 
 { #category : #'C library simulation' }
-VMClass >> alloca: size [
+VMClass >> alloca: desiredSize [
 	"Simulation of alloca(3)"
 	<doNotGenerate>
-	^CArrayAccessor on: (ByteArray new: size)
+	| address |
+	address := 0 "Does not really matter for now".
+	^ CNewArrayAccessor new
+		setObject: (SlangMemoryRegion new
+			start: address;
+			memory: (ByteArray new: desiredSize);
+			originallyRequestedMemory: desiredSize;
+			yourself);
+		address: address;
+		yourself
 ]
 
 { #category : #'C library extensions' }
