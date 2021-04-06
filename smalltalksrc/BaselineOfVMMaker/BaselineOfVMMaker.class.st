@@ -13,8 +13,11 @@ BaselineOfVMMaker >> baseline: spec [
 			
 			"Slang, the basics"			
 			spec
-				package: 'Slang' with: [
+				package: 'CAST' with: [
 					spec requires: #( 'SmaCC-GLR' )
+				];
+				package: 'Slang' with: [
+					spec requires: #( 'CAST' )
 				];
 				package: 'Slang-Tests' with: [
 					spec requires: #('Slang') ].
