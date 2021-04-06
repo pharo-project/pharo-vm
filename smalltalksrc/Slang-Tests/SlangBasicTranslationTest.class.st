@@ -390,7 +390,7 @@ SlangBasicTranslationTest >> testGoto [
 
 	| translation |
 	
-	translation := self translate: (TGoToNode new setLabel: 'lab').
+	translation := self translate: (TGoToNode label: 'lab').
 
 	self assert: translation trimBoth equals: 'goto lab'
 ]

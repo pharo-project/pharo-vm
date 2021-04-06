@@ -7,6 +7,14 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance creation' }
+TGoToNode class >> label: aLabel [
+
+	^ self new
+		  setLabel: aLabel;
+		  yourself
+]
+
 { #category : #tranforming }
 TGoToNode >> asCASTIn: aCCodeGenerator [ 
 	^ CGotoStatementNode identifier: label.

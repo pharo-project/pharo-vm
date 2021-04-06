@@ -1372,7 +1372,7 @@ TMethod >> inlineGuardingConditional: aSendNode in: aCodeGen [
 			 map
 				at: node
 				put: (expr value ~~ evaluateIfTrue
-						ifTrue: [TGoToNode new setLabel: skipLabel label]
+						ifTrue: [TGoToNode label: skipLabel label]
 						ifFalse:
 							[node == lastNode
 								ifTrue: [TLabeledCommentNode new setComment: 'end ', aSendNode receiver selector, '; fall through']
@@ -1380,7 +1380,7 @@ TMethod >> inlineGuardingConditional: aSendNode in: aCodeGen [
 									[evaluateLabel ifNil:
 										[evaluateLabel := TLabeledCommentNode new setLabel:
 													(self unusedLabelForInlining: method)].
-									 TGoToNode new setLabel: evaluateLabel label]])]].
+									 TGoToNode label: evaluateLabel label]])]].
 	replacementTree replaceNodesIn: map.
 	replacementTree comment: {'inline ', aSendNode receiver selector}.
 	self addVarsDeclarationsAndLabelsOf: method except: method args.
@@ -1434,7 +1434,7 @@ TMethod >> inlineReturningConditional: aSendNode in: aCodeGen [
 									[label ifNil:
 										[label := TLabeledCommentNode new setLabel:
 													(self unusedLabelForInlining: method)].
-									 TGoToNode new setLabel: label label]])]].
+									 TGoToNode label: label label]])]].
 	replacementTree replaceNodesIn: map.
 	self addVarsDeclarationsAndLabelsOf: method except: method args.
 	replacementTree comment: {'inline ', aSendNode receiver selector}.
@@ -2843,12 +2843,12 @@ TMethod >> transformReturnSubExpression: node toAssignmentOf: exitVar andGoto: e
 			[aBinaryBlock value: replacement value: false]
 		ifFalse:
 			[replacement := replacement
-								ifNil: [TGoToNode new setLabel: exitLabel; yourself]
+								ifNil: [TGoToNode label: exitLabel; yourself]
 								ifNotNil:
 									[TStmtListNode new
 										setArguments: #()
 										statements: {replacement.
-													  TGoToNode new setLabel: exitLabel; yourself};
+													  TGoToNode label: exitLabel; yourself};
 										yourself].
 			 aBinaryBlock value: replacement value: true]
 ]

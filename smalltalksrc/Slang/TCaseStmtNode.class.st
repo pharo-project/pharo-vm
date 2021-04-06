@@ -297,7 +297,7 @@ TCaseStmtNode >> processSharedCodeBlocks: caseTree forCase: caseIndex in: codeGe
 											addLabelsTo: aTMethod;
 											asInlineNode])]
 				ifFalse:
-					[map at: node put: (TGoToNode new setLabel: meth sharedLabel)]]].
+					[map at: node put: (TGoToNode label: meth sharedLabel)]]].
 	 caseTree replaceNodesIn: map.
 	 "recursively expand"
 	 sharedNode notNil]
