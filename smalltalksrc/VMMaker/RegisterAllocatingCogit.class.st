@@ -121,8 +121,7 @@ RegisterAllocatingCogit >> assertCorrectSimStackPtr [
 		[deadCode ifFalse:
 			[self assert: simStackPtr + (needsFrame ifTrue: [0] ifFalse: [1])
 						= (self debugStackPointerFor: bytecodePC).
-			 self assert: (simSpillBase >= methodOrBlockNumTemps
-						or: [self maybeCompilingFirstPassOfBlockWithInitialPushNil and: [simSpillBase > methodOrBlockNumArgs]]).
+			 self assert: (simSpillBase >= methodOrBlockNumTemps).
 			 (needsFrame and: [simSpillBase > 0]) ifTrue:
 				[self assert: (self simStackAt: simSpillBase - 1) spilled == true.
 				 self assert: (simSpillBase >= simStackPtr or: [(self simStackAt: simSpillBase) spilled == false])]].
@@ -141,59 +140,6 @@ RegisterAllocatingCogit >> compileAbstractInstructionsFrom: start through: end [
 	 Override to recompile after a loop requiring a merge is detected."
 	scratchBytecodePC := nil.
 	^super compileAbstractInstructionsFrom: start through: end
-]
-
-{ #category : #'compile abstract instructions' }
-RegisterAllocatingCogit >> compileBlockBodies [
-	<inline: false>
-	| result compiledBlocksCount blockStart savedNeedsFrame savedNumArgs savedNumTemps
-	  initialStackPtr initialOpcodeIndex initialIndexOfIRC initialCounterIndex |
-	<var: #blockStart type: #'BlockStart *'>
-	self assert: blockCount > 0.
-	"scanBlock: in compileBlockEntry: sets both of these appropriately for each block."
-	savedNeedsFrame := needsFrame.
-	savedNumArgs := methodOrBlockNumArgs.
-	savedNumTemps := methodOrBlockNumTemps.
-	inBlock := InVanillaBlock.
-	compiledBlocksCount := 0.
-	[compiledBlocksCount < blockCount] whileTrue:
-		[blockStart := self blockStartAt: compiledBlocksCount.
-		 (result := self scanBlock: blockStart) < 0 ifTrue: [^result].
-		 compilationPass := 1.
-		 scratchBytecodePC := nil.
-		 initialOpcodeIndex := opcodeIndex.
-		 initialCounterIndex := self maybeCounterIndex."for SistaCogit"
-		 literalsManager saveForRecompile.
-		 [recompileForLoopRegisterAssignments := false.
-		  self compileBlockEntry: blockStart.
-		  initialStackPtr := simStackPtr.
-		  (result := self compileAbstractInstructionsFrom: blockStart startpc + (self pushNilSize: methodObj numInitialNils: blockStart numInitialNils)
-						through: blockStart startpc + blockStart span - 1) < 0 ifTrue:
-			[^result].
-		  "If the final simStackPtr is less than the initial simStackPtr then scanBlock: over-
-		   estimated the number of initial nils (because it assumed one or more pushNils to
-		   produce an operand were pushNils to initialize temps.  This is very rare, so
-		   compensate by checking, adjusting numInitialNils and recompiling the block body.
-		   N.B.  No need to reinitialize the literalsManager because it answers existing literals."
-		  initialStackPtr ~= simStackPtr or: [recompileForLoopRegisterAssignments]]
-			whileTrue:
-				[self assert: (initialStackPtr > simStackPtr or: [deadCode]).
-				 self assert: compilationPass = 1.
-				 compilationPass := compilationPass + 1. "for asserts"
-				 blockStart numInitialNils: blockStart numInitialNils + simStackPtr - initialStackPtr.
-				 blockStart fakeHeader dependent: nil.
-				 self reinitializeAllButBackwardFixupsFrom: blockStart startpc + blockStart numInitialNils through: blockStart startpc + blockStart span - 1.
-				 nextFixup := 0.
-				 self resetSimStack: blockStart startpc.
-				 self reinitializeOpcodesFrom: initialOpcodeIndex to: opcodeIndex - 1.
-				 opcodeIndex := initialOpcodeIndex.
-				 self maybeSetCounterIndex: initialCounterIndex. "For SistaCogit"
-				 literalsManager resetForRecompile ].
-		compiledBlocksCount := compiledBlocksCount + 1].
-	needsFrame := savedNeedsFrame.
-	methodOrBlockNumArgs := savedNumArgs.
-	methodOrBlockNumTemps := savedNumTemps.
-	^0
 ]
 
 { #category : #'compile abstract instructions' }
@@ -309,8 +255,7 @@ RegisterAllocatingCogit >> copySimStackToFixup: fixup [
 { #category : #'bytecode generator support' }
 RegisterAllocatingCogit >> copySimStackToScratch: spillBase [
 	<inline: true>
-	self assert: (spillBase > methodOrBlockNumTemps
-				or: [self maybeCompilingFirstPassOfBlockWithInitialPushNil and: [spillBase > methodOrBlockNumArgs]]).
+	self assert: (spillBase > methodOrBlockNumTemps).
 	scratchBytecodePC = bytecodePC ifTrue:
 		[^self].
 	scratchBytecodePC := bytecodePC.
@@ -342,10 +287,7 @@ RegisterAllocatingCogit >> duplicateRegisterAssignmentsInTemporaries [
 		liveRegister ~= NoReg ifTrue:
 			[(self register: liveRegister isInMask: liveRegisters) ifTrue:
 				["Filter out pushed temps in first-pass vanilla blocks"
-				 (self maybeCompilingFirstPassOfBlockWithInitialPushNil
-				  and: [current type = SSBaseOffset
-				  and: [current offset ~= (self frameOffsetOfTemporary: i - 1)]]) ifFalse:
-					[^true]].
+				 ^true ].
 			 liveRegisters := liveRegisters bitOr: (self registerMaskFor: liveRegister)]].
 	^false
 ]
@@ -1714,11 +1656,7 @@ RegisterAllocatingCogit >> reinitializeAllButBackwardFixupsFrom: start through: 
 			[distance := self spanFor: descriptor at: pc exts: nExts in: methodObj.
 			 targetPC := pc + descriptor numBytes + distance.
 			 self initializeFixupAt: targetPC].
-		 descriptor isBlockCreation
-			ifTrue:
-				[distance := self spanFor: descriptor at: pc exts: nExts in: methodObj.
-				 pc := pc + descriptor numBytes + distance]
-			ifFalse: [pc := pc + descriptor numBytes].
+		 pc := pc + descriptor numBytes.
 		 nExts := descriptor isExtension ifTrue: [nExts + 1] ifFalse: [0]].
 	start to: end do:
 		[:i| | fixup |

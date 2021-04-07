@@ -577,47 +577,6 @@ StackToRegisterMappingCogit class >> stackToRegisterMapping [
 	 and merge this status at control-flow joins."
 ]
 
-{ #category : #'compile abstract instructions' }
-StackToRegisterMappingCogit >> addBlockStartAt: bytecodepc numArgs: numArgs numCopied: numCopied span: span [
-	"Add a blockStart for an embedded block.  For a binary tree walk block dispatch
-	 blocks must be compiled in pc/depth-first order but are scanned in breadth-first
-	 order, so do an insertion sort (which of course is really a bubble sort because we
-	 have to move everything higher to make room)."
-	<returnTypeC: #'BlockStart *'>
-	| i blockStart |
-	<var: #blockStart type: #'BlockStart *'>
-	"Transcript ensureCr; nextPutAll: 'addBlockStartAt: '; print: bytecodepc; cr; flush."
-	blockCount > 0
-		ifTrue:
-			[i := blockCount - 1.
-			 [blockStart := self addressOf: (blockStarts at: i).
-			  "check for repeat addition during recompilation due to initialNil miscount."
-			  blockStart startpc = bytecodepc ifTrue:
-				[^blockStart].
-			  blockStart startpc > bytecodepc
-			  and: [i > 0]] whileTrue:
-				[i := i - 1].
-			 blockCount to: i + 1 by: -1 do:
-				[:j|
-				blockStarts at: j put: (blockStarts at: j - 1)].
-			blockStart := self cCode: [self addressOf: (blockStarts at: i + 1)]
-								inSmalltalk: [blockStarts at: i + 1 put: CogBlockStart new]]
-		ifFalse:
-			[blockStart := self cCode: [self addressOf: (blockStarts at: blockCount)]
-								inSmalltalk: [blockStarts at: blockCount put: CogBlockStart new]].
-	
-	blockCount := blockCount + 1.
-	blockStart
-		startpc: bytecodepc;
-		numArgs: numArgs;
-		numCopied: numCopied;
-		numInitialNils: 0;
-		stackCheckLabel: nil;
-		hasInstVarRef: false;
-		span: span.
-	^blockStart
-]
-
 { #category : #'primitive generators' }
 StackToRegisterMappingCogit >> adjustArgumentsForPerform: numArgs [
 	"Generate code to adjust the possibly stacked arguments immediately
@@ -853,8 +812,7 @@ StackToRegisterMappingCogit >> assertCorrectSimStackPtr [
 	<inline: true>
 	"Would like to assert simply simSpillBase > methodOrBlockNumTemps but can't because
 	 of the initialNils hack for nested blocks in SqueakV3PlusClosures"
-	self assert: (simSpillBase >= methodOrBlockNumTemps
-				or: [self maybeCompilingFirstPassOfBlockWithInitialPushNil and: [simSpillBase > methodOrBlockNumArgs]]).
+	self assert: (simSpillBase >= methodOrBlockNumTemps).
 	(needsFrame and: [simSpillBase > 0]) ifTrue:
 		[self assert: (self simStackAt: simSpillBase - 1) spilled == true.
 		 self assert: (simSpillBase > simStackPtr or: [(self simStackAt: simSpillBase) spilled == false])].
@@ -984,58 +942,6 @@ StackToRegisterMappingCogit >> compileAbstractInstructionsFrom: start through: e
 ]
 
 { #category : #'compile abstract instructions' }
-StackToRegisterMappingCogit >> compileBlockBodies [
-	<inline: false>
-	| result compiledBlocksCount blockStart savedNeedsFrame savedNumArgs savedNumTemps
-	  initialStackPtr initialOpcodeIndex initialIndexOfIRC initialCounterIndex |
-	<var: #blockStart type: #'BlockStart *'>
-	self assert: blockCount > 0.
-	"scanBlock: in compileBlockEntry: sets both of these appropriately for each block."
-	savedNeedsFrame := needsFrame.
-	savedNumArgs := methodOrBlockNumArgs.
-	savedNumTemps := methodOrBlockNumTemps.
-	inBlock := InVanillaBlock.
-	compiledBlocksCount := 0.
-	[compiledBlocksCount < blockCount] whileTrue:
-		[compilationPass := 1.
-		 blockStart := self blockStartAt: compiledBlocksCount.
-		 (result := self scanBlock: blockStart) < 0 ifTrue: [^result].
-		 initialOpcodeIndex := opcodeIndex.
-		 initialCounterIndex := self maybeCounterIndex."for SistaCogit"
-		 literalsManager saveForRecompile.
-		 [self compileBlockEntry: blockStart.
-		  initialStackPtr := simStackPtr.
-		  (result := self compileAbstractInstructionsFrom: blockStart startpc + (self pushNilSize: methodObj numInitialNils: blockStart numInitialNils)
-						through: blockStart startpc + blockStart span - 1) < 0 ifTrue:
-			[^result].
-		  "If the final simStackPtr is less than the initial simStackPtr then scanBlock: over-
-		   estimated the number of initial nils (because it assumed one or more pushNils to
-		   produce an operand were pushNils to initialize temps.  This is very rare, so
-		   compensate by checking, adjusting numInitialNils and recompiling the block body.
-		   N.B.  No need to reinitialize the literalsManager because it answers existing literals."
-		  initialStackPtr = simStackPtr]
-			whileFalse:
-				[self assert: (initialStackPtr > simStackPtr or: [deadCode]).
-				 compilationPass := compilationPass + 1. "for asserts"
-				 blockStart numInitialNils: blockStart numInitialNils + simStackPtr - initialStackPtr.
-				 blockStart fakeHeader dependent: nil.
-				 self reinitializeFixupsFrom: blockStart startpc + blockStart numInitialNils
-					through: blockStart startpc + blockStart span - 1.
-				 self cCode: 'bzero(abstractOpcodes + initialOpcodeIndex,
-									(opcodeIndex - initialOpcodeIndex) * sizeof(AbstractInstruction))'
-					inSmalltalk: [initialOpcodeIndex to: opcodeIndex - 1 do:
-									[:i| abstractOpcodes at: i put: (CogCompilerClass for: self)]].
-				 opcodeIndex := initialOpcodeIndex.
-				 self maybeSetCounterIndex: initialCounterIndex. "For SistaCogit"
-				 literalsManager resetForRecompile ].
-		compiledBlocksCount := compiledBlocksCount + 1].
-	needsFrame := savedNeedsFrame.
-	methodOrBlockNumArgs := savedNumArgs.
-	methodOrBlockNumTemps := savedNumTemps.
-	^0
-]
-
-{ #category : #'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileBlockFrameBuild: blockStart [
 	"Build a frame for a block activation.  See CoInterpreter class>>initializeFrameIndices.
 	 Override to push the register receiver and register arguments, if any, and to correctly
@@ -1051,16 +957,6 @@ StackToRegisterMappingCogit >> compileBlockFrameBuild: blockStart [
 					[:ign| self PushR: TempReg]]
 			ifFalse:
 				[self genPushConstant: objectMemory nilObject]]
-]
-
-{ #category : #'compile abstract instructions' }
-StackToRegisterMappingCogit >> compileBlockFramelessEntry: blockStart [
-	"Make sure ReceiverResultReg holds the receiver, loaded from
-	 the closure, which is what is initially in ReceiverResultReg"
-	<var: #blockStart type: #'BlockStart *'>
-	methodOrBlockNumTemps := blockStart numArgs + blockStart numCopied + blockStart numInitialNils.
-	self initSimStackForFramelessBlock: blockStart startpc.
-	super compileBlockFramelessEntry: blockStart
 ]
 
 { #category : #'compile abstract instructions' }
@@ -3419,12 +3315,6 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 	self ssPop: numArgs + 1
 ]
 
-{ #category : #debugging }
-StackToRegisterMappingCogit >> maybeCompilingFirstPassOfBlockWithInitialPushNil [
-	"For assert checking; or rather for avoiding assert fails when dealing with the hack for block temps in the SqueakV3PlusClosures bytecode set."
-	^inBlock = InVanillaBlock and: [methodOrBlockNumTemps > methodOrBlockNumArgs and: [compilationPass = 1]]
-]
-
 { #category : #'compile abstract instructions' }
 StackToRegisterMappingCogit >> maybeCountCounter [
 	"This is a hook for SistaCogit"
@@ -3503,8 +3393,7 @@ StackToRegisterMappingCogit >> mergeWithFixupIfRequired: fixup [
 		ifTrue: "case 3"
 			["Would like to assert fixup simStackPtr >= methodOrBlockNumTemps
 			   but can't because of the initialNils hack."
-			 self assert: (fixup simStackPtr >= methodOrBlockNumTemps
-						or: [self maybeCompilingFirstPassOfBlockWithInitialPushNil]).
+			 self assert: (fixup simStackPtr >= methodOrBlockNumTemps).
 			 simStackPtr := fixup simStackPtr ]
 		ifFalse: "case 4"
 			[self ssFlushTo: simStackPtr].
@@ -3752,32 +3641,6 @@ StackToRegisterMappingCogit >> regArgsHaveBeenPushed: aBoolean [
 	regArgsHaveBeenPushed := aBoolean
 ]
 
-{ #category : #'compile abstract instructions' }
-StackToRegisterMappingCogit >> reinitializeFixupsFrom: start through: end [
-	"When a block must be recompiled due to overestimating the
-	 numInitialNils fixups must be restored, which means rescannning
-	 since backward branches need their targets initialized."
-	| descriptor nExts pc distance targetPC |
-	<var: #descriptor type: #'BytecodeDescriptor *'>
-	pc := start.
-	nExts := 0.
-	[pc <= end] whileTrue:
-		[(self fixupAt: pc) reinitialize.
-		 byte0 := (objectMemory fetchByte: pc ofObject: methodObj) + bytecodeSetOffset.
-		 descriptor := self generatorAt: byte0.
-		 (descriptor isBranch
-		  and: [self isBackwardBranch: descriptor at: pc exts: nExts in: methodObj]) ifTrue:
-			[distance := self spanFor: descriptor at: pc exts: nExts in: methodObj.
-			 targetPC := pc + descriptor numBytes + distance.
-			 self initializeFixupAt: targetPC].
-		 descriptor isBlockCreation
-			ifTrue:
-				[distance := self spanFor: descriptor at: pc exts: nExts in: methodObj.
-				 pc := pc + descriptor numBytes + distance]
-			ifFalse: [pc := pc + descriptor numBytes].
-		 nExts := descriptor isExtension ifTrue: [nExts + 1] ifFalse: [0]]
-]
-
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> restoreSimStackAtMergePoint: fixup [
 	<inline: true>
@@ -3796,74 +3659,12 @@ StackToRegisterMappingCogit >> restoreSimStackAtMergePoint: fixup [
 ]
 
 { #category : #'compile abstract instructions' }
-StackToRegisterMappingCogit >> scanBlock: blockStart [
-	"Scan the block to determine if the block needs a frame or not"
-	| descriptor pc end framelessStackDelta nExts pushingNils numPushNils |
-	<var: #blockStart type: #'BlockStart *'>
-	<var: #descriptor type: #'BytecodeDescriptor *'>
-	needsFrame := false.
-	prevBCDescriptor := nil.
-	methodOrBlockNumArgs := blockStart numArgs.
-	inBlock := InVanillaBlock.
-	pc := blockStart startpc.
-	end := blockStart startpc + blockStart span.
-	framelessStackDelta := nExts := extA := numExtB := extB := 0.
-	pushingNils := true.
-	[pc < end] whileTrue:
-		[byte0 := (objectMemory fetchByte: pc ofObject: methodObj) + bytecodeSetOffset.
-		 descriptor := self generatorAt: byte0.
-		 descriptor isExtension ifTrue:
-			[self loadSubsequentBytesForDescriptor: descriptor at: pc.
-			 self perform: descriptor generator].
-		 needsFrame ifFalse:
-			[(descriptor needsFrameFunction isNil
-			  or: [self perform: descriptor needsFrameFunction with: framelessStackDelta])
-				ifTrue: [needsFrame := true]
-				ifFalse: [framelessStackDelta := framelessStackDelta + descriptor stackDelta]].
-		 objectRepresentation maybeNoteDescriptor: descriptor blockStart: blockStart.
-		 (pushingNils
-		  and: [descriptor isExtension not]) ifTrue:
-			["Count the initial number of pushed nils acting as temp initializers.  We can't tell
-			  whether an initial pushNil is an operand reference or a temp initializer, except
-			  when the pushNil is a jump target (has a fixup), which never happens:
-					self systemNavigation browseAllSelect:
-						[:m| | ebc |
-						(ebc := m embeddedBlockClosures
-									select: [:ea| ea decompile statements first isMessage]
-									thenCollect: [:ea| ea decompile statements first selector]) notEmpty
-						and: [(#(whileTrue whileFalse whileTrue: whileFalse:) intersection: ebc) notEmpty]]
-			  or if the bytecode set has a push multiple nils bytecode.  We simply count initial nils.
-			  Rarely we may end up over-estimating.  We will correct by checking the stack depth
-			  at the end of the block in compileBlockBodies."
-			 (numPushNils := self numPushNils: descriptor pc: pc nExts: nExts method: methodObj) > 0
-				ifTrue:
-					[self assert: descriptor numBytes = 1.
-					 blockStart numInitialNils: blockStart numInitialNils + numPushNils]
-				ifFalse:
-					[pushingNils := false]].
-		 pc := self nextBytecodePCFor: descriptor at: pc exts: nExts in: methodObj.
-		 descriptor isExtension
-			ifTrue: [nExts := nExts + 1]
-			ifFalse: [nExts := extA := numExtB := extB := 0].
-		 prevBCDescriptor := descriptor].
-	"It would be nice of this wasn't necessary but alas we need to do the eager
-	 scan for frameless methods so that we don't end up popping too much off
-	 the simulated stack, e.g. for pushNil; returnTopFromBlock methods."
-	needsFrame ifFalse:
-		[self assert: (framelessStackDelta >= 0 and: [blockStart numInitialNils >= framelessStackDelta]).
-		 blockStart numInitialNils: blockStart numInitialNils - framelessStackDelta].
-	^0
-]
-
-{ #category : #'compile abstract instructions' }
 StackToRegisterMappingCogit >> scanMethod [
 	"Scan the method (and all embedded blocks) to determine
 		- what the last bytecode is; extra bytes at the end of a method are used to encode things like source pointers or temp names
 		- if the method needs a frame or not
-		- what are the targets of any backward branches.
-		- how many blocks it creates
-	 Answer the block count or on error a negative error code"
-	| latestContinuation nExts descriptor pc numBlocks distance targetPC framelessStackDelta seenInstVarStore |
+		- what are the targets of any backward branches"
+	| latestContinuation nExts descriptor pc distance targetPC framelessStackDelta seenInstVarStore |
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	needsFrame := useTwoPaths := seenInstVarStore := false.
 	self maybeInitNumFixups.
@@ -3873,7 +3674,7 @@ StackToRegisterMappingCogit >> scanMethod [
 	 and: [coInterpreter isQuickPrimitiveIndex: primitiveIndex]) ifTrue:
 		[^0].
 	pc := latestContinuation := initialPC.
-	numBlocks := framelessStackDelta := nExts := extA := numExtB := extB := 0.
+	framelessStackDelta := nExts := extA := numExtB := extB := 0.
 	[pc <= endPC] whileTrue:
 		[byte0 := (objectMemory fetchByte: pc ofObject: methodObj) + bytecodeSetOffset.
 		 descriptor := self generatorAt: byte0.
@@ -3921,18 +3722,10 @@ StackToRegisterMappingCogit >> scanMethod [
 			maybeDealWithUnsafeJumpForDescriptor: descriptor 
 			pc: pc 
 			latestContinuation: latestContinuation.
-		
-		 descriptor isBlockCreation ifTrue:
-			[numBlocks := numBlocks + 1.
-			 distance := self spanFor: descriptor at: pc exts: nExts in: methodObj.
-			 targetPC := pc + descriptor numBytes + distance.
-			 latestContinuation := latestContinuation max: targetPC.
-			 self maybeCountFixup: descriptor].
 
 		 pc := pc + descriptor numBytes.
 		 nExts := descriptor isExtension ifTrue: [nExts + 1] ifFalse: [extA := numExtB := extB := 0].
-		 prevBCDescriptor := descriptor].
-	^numBlocks
+		 prevBCDescriptor := descriptor]
 ]
 
 { #category : #initialization }
@@ -4210,8 +4003,7 @@ StackToRegisterMappingCogit >> ssFlushUpThroughTemporaryVariable: tempIndex [
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> ssPop: n [
 	self assert: (simStackPtr - n >= methodOrBlockNumTemps
-				or: [(needsFrame not and: [simStackPtr - n >= 0])
-				or: [self maybeCompilingFirstPassOfBlockWithInitialPushNil]]).
+				or: [(needsFrame not and: [simStackPtr - n >= 0])]).
 	simStackPtr := simStackPtr - n.
 	self updateSimSpillBase
 ]
@@ -4382,8 +4174,7 @@ StackToRegisterMappingCogit >> tempsValidAndVolatileEntriesSpilled [
 	| culprit |
 	1 to: methodOrBlockNumTemps do:
 		[:i|
-		 ((self simStackAt: i) type = SSBaseOffset
-		   or: [self maybeCompilingFirstPassOfBlockWithInitialPushNil]) ifFalse:
+		 ((self simStackAt: i) type = SSBaseOffset) ifFalse:
 			[culprit ifNil: [culprit := i].
 			 ^false]].
 	methodOrBlockNumTemps + 1 to: simSpillBase - 1 do:
@@ -4525,8 +4316,7 @@ StackToRegisterMappingCogit >> updateSimSpillBase [
 	"Something volatile has been pushed on the stack; update simSpillBase accordingly."
 	<inline: true>
 	self assert: ((simSpillBase > methodOrBlockNumTemps
-				and: [simStackPtr >= methodOrBlockNumTemps])
-				or: [self maybeCompilingFirstPassOfBlockWithInitialPushNil]).
+				and: [simStackPtr >= methodOrBlockNumTemps])).
 	simSpillBase > simStackPtr
 		ifTrue:
 			[simSpillBase := simStackPtr + 1.

@@ -2401,9 +2401,7 @@ CogVMSimulator >> maybeCheckStackDepth: delta sp: sp pc: mcpc [
 		  return. lastBytecodePCForBlockAt:in: catches method returns at the end of a block, modifying
 		  the bcpc to that of the return.  isNonLocalReturnPC: catches method returns not at the end.
 		  Assumes method return bytecodes are 1 bytecode long;a  dodgy assumption, but good enough."
-		 lastbcpc := cogBlockMethod cmIsFullBlock
-						ifTrue: [cogit endPCOf: cogHomeMethod methodObject]
-						ifFalse: [cogit lastBytecodePCForBlockAt: startbcpc in: cogHomeMethod methodObject].
+		 lastbcpc :=  cogit endPCOf: cogHomeMethod methodObject.
 		 bcpc > lastbcpc ifTrue: [bcpc := lastbcpc]].
 	asp := self stackPointerIndexForFrame: framePointer WithSP: sp + objectMemory wordSize.
 	csp := debugStackPointers at: bcpc ifAbsent: [-1].

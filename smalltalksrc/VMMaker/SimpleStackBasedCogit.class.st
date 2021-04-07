@@ -293,56 +293,6 @@ SimpleStackBasedCogit >> ceShortCutTraceStore: aProcessorSimulationTrap [
 ]
 
 { #category : #'compile abstract instructions' }
-SimpleStackBasedCogit >> compileBlockBodies [
-	<inline: false>
-	| result compiledBlocksCount blockStart savedNeedsFrame savedNumArgs |
-	<var: #blockStart type: #'BlockStart *'>
-	self assert: blockCount > 0.
-	"scanBlock: in compileBlockEntry: sets both of these appropriately for each block."
-	savedNeedsFrame := needsFrame.
-	savedNumArgs := methodOrBlockNumArgs.
-	inBlock := InVanillaBlock.
-	compiledBlocksCount := 0.
-	[compiledBlocksCount < blockCount] whileTrue:
-		[blockStart := self blockStartAt: compiledBlocksCount.
-		 self scanBlock: blockStart.
-		 self compileBlockEntry: blockStart.
-		 (result := self compileAbstractInstructionsFrom: blockStart startpc
-						through: blockStart startpc + blockStart span - 1) < 0 ifTrue:
-			[^result].
-		 compiledBlocksCount := compiledBlocksCount + 1].
-	needsFrame := savedNeedsFrame.
-	methodOrBlockNumArgs := savedNumArgs.
-	^0
-]
-
-{ #category : #'compile abstract instructions' }
-SimpleStackBasedCogit >> compileBlockDispatch [
-	"Compile the jump instruction(s) at the end of the method that dispatch to each block body."
-	<inline: false>
-	| jumpSkip |
-	<var: #jumpSkip type: #'AbstractInstruction *'>
-	self assert: blockCount > 0.
-	"Generate the special block entry for primitiveClosureValueNoContextSwitch
-	 that signals a context-switch is not possible by zeroing SendNumArgsReg.
-	 Even though conceptually this isn't needed if no blocks build a frame it has
-	 to be present so that primitiveClosureValueNoContextSwitch can call it."
-	blockEntryNoContextSwitch := self MoveCq: 0 R: SendNumArgsReg.
-	"Now generate a binary search through start pcs to jump to blocks. 1 block is a special case."
-	jumpSkip := self Jump: 0.
-	"Set OK to context switch flag to non-zero."
-	blockEntryLabel := self MoveR: ReceiverResultReg R: SendNumArgsReg.
-	jumpSkip jmpTarget: self Label.
-	blockCount > 1 ifTrue:
-		[objectRepresentation
-			genLoadSlot: ClosureStartPCIndex
-			sourceReg: ReceiverResultReg
-			destReg: TempReg].
-	self compileBlockDispatchFrom: 0 to: blockCount - 1.
-	^0
-]
-
-{ #category : #'compile abstract instructions' }
 SimpleStackBasedCogit >> compileBlockFrameBuild: blockStart [
 	"Build a frame for a block activation.  See CoInterpreter class>>initializeFrameIndices.
 	 		closure (in ReceiverResultReg)
@@ -411,38 +361,6 @@ SimpleStackBasedCogit >> compileBlockFrameBuild: blockStart [
 	self CmpR: TempReg R: SPReg. "N.B. FLAGS := SPReg - TempReg"
 	self JumpBelow: stackOverflowCall.
 	blockStart stackCheckLabel: (self annotateBytecode: self Label)
-]
-
-{ #category : #'compile abstract instructions' }
-SimpleStackBasedCogit >> compileBlockFramelessEntry: blockStart [
-	"Make sure ReceiverResultReg holds the receiver, loaded from the closure,
-	 which is what is initially in ReceiverResultReg.  We must annotate the first
-	 instruction in vanilla blocks so that findMethodForStartBcpc:inHomeMethod:
-	 can function. We need two annotations because the first is a fiducial."
-	<var: #blockStart type: #'BlockStart *'>
-	blockStart entryLabel ifNotNil:
-		[self annotateBytecode: blockStart entryLabel.
-		 self annotateBytecode: blockStart entryLabel].
-	blockStart hasInstVarRef
-		ifTrue: "Use ReceiverResultReg for Context to agree with store check trampoline"
-			[objectRepresentation
-				genLoadSlot: ClosureOuterContextIndex
-					sourceReg: ReceiverResultReg
-						destReg: ReceiverResultReg;
-				genLoadSlot: ReceiverIndex
-					sourceReg: ReceiverResultReg
-						destReg: Arg0Reg.
-			objectRepresentation
-				genEnsureOopInRegNotForwarded: Arg0Reg scratchReg: TempReg updatingSlot: ReceiverIndex in: ReceiverResultReg.
-			self MoveR: Arg0Reg R: ReceiverResultReg]
-		ifFalse:
-			[objectRepresentation
-				genLoadSlot: ClosureOuterContextIndex
-					sourceReg: ReceiverResultReg
-						destReg: TempReg;
-				genLoadSlot: ReceiverIndex
-					sourceReg: TempReg
-						destReg: ReceiverResultReg].
 ]
 
 { #category : #'compile abstract instructions' }
