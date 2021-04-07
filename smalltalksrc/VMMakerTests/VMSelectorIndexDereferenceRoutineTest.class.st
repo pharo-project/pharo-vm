@@ -2,7 +2,7 @@ Class {
 	#name : #VMSelectorIndexDereferenceRoutineTest,
 	#superclass : #VMSimpleStackBasedCogitAbstractTest,
 	#pools : [
-		'VMSqueakClassIndices'
+		'VMClassIndices'
 	],
 	#category : #'VMMakerTests-JitTests'
 }
@@ -75,7 +75,7 @@ VMSelectorIndexDereferenceRoutineTest >> testPositiveSelectorIndexIsLookedUpInMe
 	index := 3.
 
 	"Create a compiled bytecode method with a marker object at a given index, and a machine code method linked to it."	
-	method := methodBuilder literalAt: index put: memory falseObject; buildMethod.
+	method := methodBuilder literalAt: index put: memory falseObject; build.
 	cogMethod := self generateCogMethod: [ cogit RetN: 0 ] selector: memory nilObject.
 	cogit coInterpreter rawHeaderOf: method put: cogMethod asInteger.
 	cogMethod methodObject: method.

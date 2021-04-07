@@ -46,7 +46,7 @@ VMPrimitiveTest >> setUp [
 
 	"Create the root context with a valid method"
 	"Let's create a method with enough size. It should have at least a literal (4 or 8 bytes depending the word size) and some bytecodes, so we can put the IP inside the method"
-	newMethod := methodBuilder newMethod buildMethod.
+	newMethod := methodBuilder newMethod build.
 	
 	"The context has 5 (in 32 bits) or 9 (in 64 bits) as initial IP, as method has at least one literal"
 	ctx := self newSmallContextReceiver: memory nilObject method: newMethod arguments: #() temporaries: #() ip: self wordSize + 1.
@@ -899,7 +899,7 @@ VMPrimitiveTest >> testPrimitiveSetImmutabilityOfObjectAsTrueSetsImmutability [
 VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForContext [
 
 	| method |
-	method := methodBuilder newMethod buildMethod.
+	method := methodBuilder newMethod build.
 	
 	interpreter push: method.
 	interpreter primitiveSize.
@@ -926,7 +926,7 @@ VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForIndexableObject [
 VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForMethod [
 
 	| method |
-	method := methodBuilder newMethod buildMethod.
+	method := methodBuilder newMethod build.
 	
 	interpreter push: method.
 	interpreter primitiveSize.
@@ -1059,7 +1059,7 @@ VMPrimitiveTest >> testPrimitiveSnapshotContextsShouldBeTenured [
 	interpreter pluginList: #(). 
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
-	method := methodBuilder newMethod buildMethod.
+	method := methodBuilder newMethod build.
 	frame := stackBuilder addNewFrame method: method ; yourself.
 	stackBuilder buildStack.
 	
@@ -1082,7 +1082,7 @@ VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
 	interpreter pluginList: #(). 
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
-	method := methodBuilder newMethod buildMethod.
+	method := methodBuilder newMethod build.
 
 	stackBuilder addNewFrame method: method.
 	stackBuilder buildStack.
@@ -1109,7 +1109,7 @@ VMPrimitiveTest >> testPrimitiveSnapshotNewKeptObjectShouldBeTenured [
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
 	
-	method := methodBuilder newMethod buildMethod.
+	method := methodBuilder newMethod build.
 	stackBuilder addNewFrame method: method.
 	stackBuilder buildStack.
 	interpreter instructionPointer: method + 17.

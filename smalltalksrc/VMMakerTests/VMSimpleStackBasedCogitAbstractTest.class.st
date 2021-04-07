@@ -28,7 +28,7 @@ Class {
 		'CogCompilationConstants',
 		'CogMethodConstants',
 		'VMBytecodeConstants',
-		'VMSqueakClassIndices'
+		'VMClassIndices'
 	],
 	#category : #'VMMakerTests-JitTests'
 }

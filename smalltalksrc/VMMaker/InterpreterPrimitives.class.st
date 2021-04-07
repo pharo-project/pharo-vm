@@ -356,8 +356,8 @@ InterpreterPrimitives >> isInstanceOfClassBlockClosure: oop [
 	 and is _not_ evaluated if oop has a non-zero CompactClassIndex."
 	^objectMemory
 		is: oop
-		instanceOf: (objectMemory splObj: ClassBlockClosure) 
-		compactClassIndex: ClassBlockClosureCompactIndex
+		instanceOf: nil
+		compactClassIndex: ClassFullBlockClosureCompactIndex
 ]
 
 { #category : #'primitive support' }

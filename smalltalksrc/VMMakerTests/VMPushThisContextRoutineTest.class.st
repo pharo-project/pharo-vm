@@ -2,7 +2,7 @@ Class {
 	#name : #VMPushThisContextRoutineTest,
 	#superclass : #VMSimpleStackBasedCogitAbstractTest,
 	#pools : [
-		'VMSqueakClassIndices'
+		'VMClassIndices'
 	],
 	#category : #'VMMakerTests-JitTests'
 }
@@ -41,7 +41,7 @@ VMPushThisContextRoutineTest >> testMarriedContextReturnsSpouseObject [
 	methodObject := methodBuilder newMethod 
 		isSmall: false;
 		numberOfArguments: numberOfArguments;
-		buildMethod.
+		build.
 
 	self machineCodeFrameBuilder
 		returnAddress: callerAddress;

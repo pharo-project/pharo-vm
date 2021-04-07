@@ -3635,7 +3635,7 @@ StackInterpreter >> bytecodePrimValue [
 	isBlock ifTrue:
 		[self externalizeIPandSP.
 		self initPrimCall.
-		self primitiveClosureValue.
+		self primitiveFullClosureValue.
 		self internalizeIPandSP.
 		self successful ifTrue:
 			[^self fetchNextBytecode].

@@ -1,16 +1,22 @@
 Extension { #name : #LiteralVariable }
 
 { #category : #'*VMMakerTests' }
-LiteralVariable >> forMemory: aMemory [
+LiteralVariable >> forMemory: memory [
 
 	| aVariable |
-	aVariable := aMemory
+	aVariable := memory
 			allocateSlotsInOldSpace: 2
-			format: aMemory nonIndexablePointerFormat 
+			format: memory nonIndexablePointerFormat 
 			classIndex: self class hash.
 			
-	aMemory storePointer: 0 ofObject: aVariable withValue: (name forMemory: aMemory).
-	aMemory storePointer: 1 ofObject: aVariable withValue: aMemory nilObject.
+	memory storePointer: 0 ofObject: aVariable withValue: (name forMethodBuilder: memory).
+	memory storePointer: 1 ofObject: aVariable withValue: memory nilObject.
 	 
 	^ aVariable
+]
+
+{ #category : #'*VMMakerTests' }
+LiteralVariable >> forMethodBuilder: aBuilder [
+
+	^ self forMemory: aBuilder memory
 ]
