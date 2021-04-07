@@ -178,7 +178,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 		"3 byte bytecodes"
 		(3 248 248 genCallPrimitiveBytecode)
 		(3 249 249 genExtPushFullClosureBytecode) 
-		(3 250 250 genExtPushClosureBytecode block v4:Block:Code:Size:)
+		(3 250 250 unknownBytecode) "was genExtPushClosureBytecode"
 		(3 251 251 genPushRemoteTempLongBytecode)
 		(3 252 252 genStoreRemoteTempLongBytecode)
 		(3 253 253 genStoreAndPopRemoteTempLongBytecode)
@@ -1348,31 +1348,6 @@ SimpleStackBasedCogit >> genExtPushCharacterBytecode [
 ]
 
 { #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtPushClosureBytecode [
-	"Block compilation.  At this point in the method create the block.  Note its start
-	 and defer generating code for it until after the method and any other preceding
-	 blocks.  The block's actual code will be compiled later."
-	"253		11111101 eei i i kkk	jjjjjjjj		Push Closure Num Copied iii (+ Ext A // 16 * 8) Num Args kkk (+ Ext A \\ 16 * 8) BlockSize jjjjjjjj (+ Ext B * 256). ee = num extensions"
-	| startpc numArgs numCopied |
-	self assert: needsFrame.
-	startpc := bytecodePC + (self generatorAt: byte0) numBytes.
-	self addBlockStartAt: startpc "0 relative"
-		numArgs: (numArgs := (byte1 bitAnd: 16r7) + (extA \\ 16 * 8))
-		numCopied: (numCopied := ((byte1 >> 3) bitAnd: 7) + (extA // 16 * 8))
-		span: byte2 + (extB << 8).
-	extA := numExtB := extB := 0.
-	objectRepresentation
-		genCreateClosureAt: startpc + 1 "1 relative"
-		numArgs: numArgs
-		numCopied: numCopied
-		contextNumArgs: methodOrBlockNumArgs
-		large: (coInterpreter methodNeedsLargeContext: methodObj)
-		inBlock: inBlock.
-	self PushR: ReceiverResultReg.
-	^0
-]
-
-{ #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genExtPushFullClosureBytecode [
 	"Full Block creation compilation. The block's actual code will be compiled separatedly."
 	"*	255		11111111	xxxxxxxx	siyyyyyy	push Closure Compiled block literal index xxxxxxxx (+ Extend A * 256) numCopied yyyyyy receiverOnStack: s = 1 ignoreOuterContext: i = 1"
@@ -2246,30 +2221,6 @@ SimpleStackBasedCogit >> genPushActiveContextBytecode [
 	self assert: needsFrame.
 	objectRepresentation
 		genGetActiveContextNumArgs: methodOrBlockNumArgs
-		large: (coInterpreter methodNeedsLargeContext: methodObj)
-		inBlock: inBlock.
-	self PushR: ReceiverResultReg.
-	^0
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPushClosureCopyCopiedValuesBytecode [
-	"Block compilation.  At this point in the method create the block.  Note its start
-	 and defer generating code for it until after the method and any other preceding
-	 blocks.  The block's actual code will be compiled later."
-	"143   10001111 llllkkkk jjjjjjjj iiiiiiii	Push Closure Num Copied llll Num Args kkkk BlockSize jjjjjjjjiiiiiiii"
-	| startpc numArgs numCopied |
-	self assert: needsFrame.
-	startpc := bytecodePC + (self generatorAt: byte0) numBytes.
-	self addBlockStartAt: startpc "0 relative"
-		numArgs: (numArgs := byte1 bitAnd: 16rF)
-		numCopied: (numCopied := byte1 >> 4)
-		span: (byte2 << 8) + byte3.
-	objectRepresentation
-		genCreateClosureAt: startpc + 1 "1 relative"
-		numArgs: numArgs
-		numCopied: numCopied
-		contextNumArgs: methodOrBlockNumArgs
 		large: (coInterpreter methodNeedsLargeContext: methodObj)
 		inBlock: inBlock.
 	self PushR: ReceiverResultReg.

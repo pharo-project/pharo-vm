@@ -218,13 +218,6 @@ CoInterpreterPrimitives >> primitiveAllMethodsCompiledToMachineCode [
 	self pop: 1 thenPush: arrayObj
 ]
 
-{ #category : #'control primitives' }
-CoInterpreterPrimitives >> primitiveClosureCopyWithCopiedValues [
-	"This is optional old obsolete stuff tedious to implement in Cog because of
-	 the need to map from machine code pc to bytecode pc.  So for now just fail."
-	self primitiveFail
-]
-
 { #category : #'process primitives' }
 CoInterpreterPrimitives >> primitiveCollectCogCodeConstituents [
 	"Answer the contents of the code zone as an array of pair-wise element, address in ascending

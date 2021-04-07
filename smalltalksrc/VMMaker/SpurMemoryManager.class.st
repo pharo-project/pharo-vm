@@ -902,7 +902,6 @@ SpurMemoryManager class >> initializeCompactClassIndices [
 	ClassMessageCompactIndex := 35.
 	ClassMethodContextCompactIndex := 36.
 	ClassBlockContextCompactIndex := 0.
-	ClassBlockClosureCompactIndex := 37.
 	ClassFullBlockClosureCompactIndex := 38.
 
 	ClassByteArrayCompactIndex := 50.
@@ -962,7 +961,7 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	TheInterruptSemaphore := 30.
 	SelectorCannotInterpret := 34.
 	"Was MethodContextProto := 35."
-	ClassBlockClosure := 36.
+	"Was ClassBlockClosure := 36."
 	"Was BlockContextProto := 37."
 	ExternalObjectsArray := 38.
 	ClassMutex := 39.

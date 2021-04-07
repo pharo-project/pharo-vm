@@ -384,7 +384,7 @@ StackToRegisterMappingCogit class >> initializeBytecodeTableForSistaV1 [
 		"3 byte bytecodes"
 		(3 248 248 genCallPrimitiveBytecode hasUnsafeJump)
 		(3 249 249 genExtPushFullClosureBytecode)
-		(3 250 250 genExtPushClosureBytecode block v4:Block:Code:Size:)
+		(3 250 250 unknownBytecode) "was genExtPushClosureBytecode"
 		(3 251 251 genPushRemoteTempLongBytecode)
 		(3 252 252 genStoreRemoteTempLongBytecode)
 		(3 253 253 genStoreAndPopRemoteTempLongBytecode)
@@ -1544,28 +1544,6 @@ StackToRegisterMappingCogit >> genCmpArgIsConstant: argIsConstant rcvrIsConstant
 ]
 
 { #category : #'bytecode generators' }
-StackToRegisterMappingCogit >> genExtPushClosureBytecode [
-	"Block compilation.  At this point in the method create the block.  Note its start
-	 and defer generating code for it until after the method and any other preceding
-	 blocks.  The block's actual code will be compiled later."
-	"253		11111101 eei i i kkk	jjjjjjjj		Push Closure Num Copied iii (+ Ext A // 16 * 8) Num Args kkk (+ Ext A \\ 16 * 8) BlockSize jjjjjjjj (+ Ext B * 256). ee = num extensions"
-	| startpc numArgs numCopied |
-	self assert: needsFrame.
-	startpc := bytecodePC + (self generatorAt: byte0) numBytes.
-	self addBlockStartAt: startpc "0 relative"
-		numArgs: (numArgs := (byte1 bitAnd: 16r7) + (extA \\ 16 * 8))
-		numCopied: (numCopied := ((byte1 >> 3) bitAnd: 7) + (extA // 16 * 8))
-		span: byte2 + (extB << 8).
-	extA := numExtB := extB := 0.
-
-	objectRepresentation createsClosuresInline
-		ifTrue: [ self genInlineClosure: startpc numArgs: numArgs numCopied: numCopied ]
-		ifFalse: [ self genOutlineClosure: startpc numArgs: numArgs numCopied: numCopied ].
-		
-	^ 0
-]
-
-{ #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genExtPushFullClosureBytecode [
 	"Full Block creation compilation. The block's actual code will be compiled separatedly."
 	"*	255		11111111	xxxxxxxx	siyyyyyy	push Closure Compiled block literal index xxxxxxxx (+ Extend A * 256) numCopied yyyyyy receiverOnStack: s = 1 ignoreOuterContext: i = 1"
@@ -1846,32 +1824,6 @@ StackToRegisterMappingCogit >> genIdenticalNoBranchArgIsConstant: argIsConstant 
 	 ^0
 ]
 
-{ #category : #'bytecode generator support' }
-StackToRegisterMappingCogit >> genInlineClosure: startpc numArgs: numArgs numCopied: numCopied [
-	<inline: true>
-	self assert: objectRepresentation getActiveContextAllocatesInMachineCode.
-	 self voidReceiverResultRegContainsSelf.
-	 self ssAllocateCallReg: ReceiverResultReg
-		and: SendNumArgsReg
-		and: ClassReg.
-	 objectRepresentation
-		genNoPopCreateClosureAt: startpc + 1 "1 relative"
-		numArgs: numArgs
-		numCopied: numCopied
-		contextNumArgs: methodOrBlockNumArgs
-		large: (coInterpreter methodNeedsLargeContext: methodObj)
-		inBlock: inBlock.
-	 1 to: numCopied do:
-		[:i| | reg |
-		 reg := self ssStorePop: true toPreferredReg: TempReg.
-		 objectRepresentation
-			genStoreSourceReg: reg
-			slotIndex: ClosureFirstCopiedValueIndex + numCopied - i
-			intoNewObjectInDestReg: ReceiverResultReg].
-	 self ssPushRegister: ReceiverResultReg
-
-]
-
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genInlinedIdenticalOrNotIf: orNot [
 	"Decompose code generation for #== into a common constant-folding version,
@@ -2072,31 +2024,6 @@ StackToRegisterMappingCogit >> genMethodAbortTrampolineFor: numArgs [
 		appendOpcodes: true
 ]
 
-{ #category : #'bytecode generator support' }
-StackToRegisterMappingCogit >> genOutlineClosure: startpc numArgs: numArgs numCopied: numCopied [
-	<inline: true>
-	numCopied > 0 ifTrue:
-		[self ssFlushTo: simStackPtr].
-	self voidReceiverResultRegContainsSelf.
-	objectRepresentation getActiveContextAllocatesInMachineCode
-		ifTrue: [self ssAllocateCallReg: ReceiverResultReg
-					and: SendNumArgsReg
-					and: ClassReg]
-		ifFalse: [self ssAllocateCallReg: SendNumArgsReg
-					and: ReceiverResultReg].
-	objectRepresentation
-		genCreateClosureAt: startpc + 1 "1 relative"
-		numArgs: numArgs
-		numCopied: numCopied
-		contextNumArgs: methodOrBlockNumArgs
-		large: (coInterpreter methodNeedsLargeContext: methodObj)
-		inBlock: inBlock.
-	numCopied > 0 ifTrue:
-		[self ssPop: numCopied].
-	self ssPushRegister: ReceiverResultReg
-
-]
-
 { #category : #initialization }
 StackToRegisterMappingCogit >> genPICAbortTrampolineFor: numArgs [
 	"Generate the abort for a PIC.  This abort performs either a call of
@@ -2199,29 +2126,6 @@ StackToRegisterMappingCogit >> genPushActiveContextBytecode [
 		large: (coInterpreter methodNeedsLargeContext: methodObj)
 		inBlock: inBlock.
 	^self ssPushRegister: ReceiverResultReg
-]
-
-{ #category : #'bytecode generators' }
-StackToRegisterMappingCogit >> genPushClosureCopyCopiedValuesBytecode [
-	"Block compilation.  At this point in the method create the block.  Note its start
-	 and defer generating code for it until after the method and any other preceding
-	 blocks.  The block's actual code will be compiled later."
-	"143   10001111 llllkkkk jjjjjjjj iiiiiiii	Push Closure Num Copied llll Num Args kkkk BlockSize jjjjjjjjiiiiiiii"
-	| startpc numArgs numCopied |
-	self assert: needsFrame.
-	startpc := bytecodePC + (self generatorAt: byte0) numBytes.
-	self addBlockStartAt: startpc "0 relative"
-		numArgs: (numArgs := byte1 bitAnd: 16rF)
-		numCopied: (numCopied := byte1 >> 4)
-		span: (byte2 << 8) + byte3.
-
-	objectRepresentation createsClosuresInline 
-		ifTrue: [ self genInlineClosure: startpc numArgs: numArgs numCopied: numCopied ]
-		ifFalse: [ self genOutlineClosure: startpc numArgs: numArgs numCopied: numCopied ].
-		
-	^ 0
-
-	
 ]
 
 { #category : #'bytecode generator support' }

@@ -772,7 +772,7 @@ StackInterpreter class >> initializeBytecodeTableForSistaV1 [
 		(248		callPrimitiveBytecode)
 		(249		extPushFullClosureBytecode)
 
-		(250		extPushClosureBytecode)
+		(250		unknownBytecode) "was extPushClosureBytecode"
 		(251		pushRemoteTempLongBytecode)
 		(252		storeRemoteTempLongBytecode)
 		(253		storeAndPopRemoteTempLongBytecode)
@@ -1250,7 +1250,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		(199 0 "a.k.a. primitiveMarkHandlerMethod")
 
 		"new closure primitives (were Networking primitives)"
-		(200 primitiveClosureCopyWithCopiedValues)
+		(200 0) "was primitiveClosureCopyWithCopiedValues"
 		(201 primitiveClosureValue) "value"
 		(202 primitiveClosureValue) "value:"
 		(203 primitiveClosureValue) "value:value:"
@@ -3907,7 +3907,6 @@ StackInterpreter >> checkAssumedCompactClasses [
 	objectMemory checkCompactIndex: ClassLargeNegativeIntegerCompactIndex isClass: ClassLargeNegativeInteger named: 'LargeNegativeInteger'.
 	objectMemory checkCompactIndex: ClassLargePositiveIntegerCompactIndex isClass: ClassLargePositiveInteger named: 'LargePositiveInteger'.
 	objectMemory checkCompactIndex: ClassFloatCompactIndex isClass: ClassFloat named: 'Float'.
-	objectMemory checkCompactIndex: ClassBlockClosureCompactIndex isClass: ClassBlockClosure named: 'BlockClosure'.
 	objectMemory checkCompactIndex: ClassMethodContextCompactIndex isClass: ClassMethodContext named: 'MethodContext'.
 	classByteArrayCompactIndex := objectMemory compactIndexOfClass: (objectMemory splObj: ClassByteArray)
 ]
@@ -4570,58 +4569,6 @@ StackInterpreter >> cloneOSErrorObj: errObj numSlots: numSlots [
 				ofObject: clone
 				withValue: (self signed64BitIntegerFor: osErrorCode)].
 	^clone
-]
-
-{ #category : #'control primitives' }
-StackInterpreter >> closureIn: context numArgs: numArgs instructionPointer: initialIP copiedValues: copiedValues [
-	| newClosure numCopied |
-	<inline: true>
-	"numCopied should be zero for nil"
-	numCopied := objectMemory numSlotsOf: copiedValues.
-	ClassBlockClosureCompactIndex ~= 0
-		ifTrue:
-			[newClosure := objectMemory
-								eeInstantiateSmallClassIndex: ClassBlockClosureCompactIndex
-								format: objectMemory indexablePointersFormat
-								numSlots: ClosureFirstCopiedValueIndex + numCopied]
-		ifFalse:
-			[newClosure := objectMemory
-								eeInstantiateSmallClass: (objectMemory splObj: ClassBlockClosure)
-								numSlots: ClosureFirstCopiedValueIndex + numCopied].
-	"Assume: have just allocated a new closure; it must be young. Thus, can use unchecked stores."
-	objectMemory
-		storePointerUnchecked: ClosureOuterContextIndex ofObject: newClosure withValue: context;
-		storePointerUnchecked: ClosureStartPCIndex ofObject: newClosure withValue: (objectMemory integerObjectOf: initialIP);
-		storePointerUnchecked: ClosureNumArgsIndex ofObject: newClosure withValue: (objectMemory integerObjectOf: numArgs).
-	0 to: numCopied - 1 do:
-		[:i|
-		objectMemory storePointerUnchecked: i + ClosureFirstCopiedValueIndex
-			ofObject: newClosure
-			withValue: (objectMemory fetchPointer: i ofObject: copiedValues)].
-	^newClosure
-]
-
-{ #category : #'control primitives' }
-StackInterpreter >> closureIn: context numArgs: numArgs instructionPointer: initialIP numCopiedValues: numCopied [
-	| newClosure |
-	<inline: true>
-	ClassBlockClosureCompactIndex ~= 0
-		ifTrue:
-			[newClosure := objectMemory
-								eeInstantiateSmallClassIndex: ClassBlockClosureCompactIndex
-								format: objectMemory indexablePointersFormat
-								numSlots: ClosureFirstCopiedValueIndex + numCopied]
-							
-		"This path is for preSpur images"					
-		ifFalse:
-			[newClosure := objectMemory
-								eeInstantiateSmallClass: (objectMemory splObj: ClassBlockClosure)
-								numSlots: ClosureFirstCopiedValueIndex + numCopied].
-	"Assume: have just allocated a new closure; it must be young. Thus, can use unchecked stores."
-	objectMemory storePointerUnchecked: ClosureOuterContextIndex ofObject: newClosure withValue: context.
-	objectMemory storePointerUnchecked: ClosureStartPCIndex ofObject: newClosure withValue: (objectMemory integerObjectOf: initialIP).
-	objectMemory storePointerUnchecked: ClosureNumArgsIndex ofObject: newClosure withValue: (objectMemory integerObjectOf: numArgs).
-	^newClosure
 ]
 
 { #category : #'as yet unclassified' }
@@ -5698,22 +5645,6 @@ StackInterpreter >> extPushCharacterBytecode [
 ]
 
 { #category : #'stack bytecodes' }
-StackInterpreter >> extPushClosureBytecode [
-	"253		11111101 eei i i kkk	jjjjjjjj		Push Closure Num Copied iii (+ Ext A // 16 * 8) Num Args kkk (+ Ext A \\ 16 * 8) BlockSize jjjjjjjj (+ Ext B * 256). ee = num extensions.
-	 The compiler has pushed the values to be copied, if any.  Find numArgs and numCopied in the byte following.
-	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
-	 Set numArgs as specified, and set startpc to the pc following the block size and jump over that code."
-	| byte numArgs numCopied blockSize |
-	byte := self fetchByte.
-	numArgs := (byte bitAnd: 7) + (extA \\ 16 * 8).
-	numCopied := ((byte >> 3) bitAnd: 7) + (extA // 16 * 8).
-	extA := 0.
-	blockSize := self fetchByte + (extB << 8).
-	numExtB := extB := 0.
-	self pushClosureNumArgs: numArgs copiedValues: numCopied blockSize: blockSize
-]
-
-{ #category : #'stack bytecodes' }
 StackInterpreter >> extPushFullClosureBytecode [
 	"255		11111111	xxxxxxxx	siyyyyyy	
 		push Closure Compiled block literal index xxxxxxxx (+ Extend A * 256) 
@@ -6377,16 +6308,9 @@ StackInterpreter >> findHomeForContext: aContext [
 	closureOrNil := objectMemory fetchPointer: ClosureIndex ofObject: aContext.
 	closureOrNil = objectMemory nilObject ifTrue:
 		[^aContext].
-	ClassBlockClosureCompactIndex ~= 0
-		ifTrue:
-			[((objectMemory compactClassIndexOf: closureOrNil) ~= ClassBlockClosureCompactIndex
-			  and: [(objectMemory compactClassIndexOf: closureOrNil) ~= ClassFullBlockClosureCompactIndex]) ifTrue:
-				[^nil]]
-		ifFalse:
-			[(objectMemory fetchClassOf: closureOrNil) ~= (objectMemory splObj: ClassBlockClosure) ifTrue:
-				[(ClassFullBlockClosureCompactIndex ~= 0
-				  and: [(objectMemory fetchClassOf: closureOrNil) = (objectMemory splObj: ClassFullBlockClosure)]) ifFalse:
-					[^nil]]].
+	((objectMemory compactClassIndexOf: closureOrNil) ~= ClassFullBlockClosureCompactIndex)
+		ifTrue: [^nil].
+
 	^self findHomeForContext: (objectMemory fetchPointer: ClosureOuterContextIndex ofObject: closureOrNil)
 ]
 
@@ -12841,49 +12765,6 @@ StackInterpreter >> pushActiveContextBytecode [
 StackInterpreter >> pushBool: trueOrFalse [
 	<inline: true>
 	self push: (objectMemory booleanObjectOf: trueOrFalse)
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> pushClosureCopyCopiedValuesBytecode [
-	"The compiler has pushed the values to be copied, if any.  Find numArgs and numCopied in the byte following.
-	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
-	 Set numArgs as specified, and set startpc to the pc following the block size and jump over that code."
-	| numArgsNumCopied numArgs numCopied blockSize |
-	numArgsNumCopied := self fetchByte.
-	numArgs := numArgsNumCopied bitAnd: 16rF.
-	numCopied := numArgsNumCopied bitShift: -4.
-	"Split blockSize := (self fetchByte * 256) + self fetchByte. into two because evaluation order in C is undefined."
-	blockSize := self fetchByte << 8.
-	blockSize := blockSize + self fetchByte.
-	self pushClosureNumArgs: numArgs copiedValues: numCopied blockSize: blockSize
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> pushClosureNumArgs: numArgs copiedValues: numCopied blockSize: blockSize [
-	"The compiler has pushed the values to be copied, if any.
-	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
-	 Set numArgs as specified, and set startpc to the pc following the block size and jump over that code."
-	<inline: true>
-	| newClosure context |
-	"No need to record the pushed copied values in the outerContext."
-	context := self ensureFrameIsMarried: localFP SP: localSP + (numCopied * objectMemory bytesPerOop).
-	newClosure := self
-					closureIn: context
-					numArgs: numArgs
-					instructionPointer: (self oopForPointer: localIP) + 2 - (method+objectMemory baseHeaderSize)
-					numCopiedValues: numCopied.
-	numCopied > 0 ifTrue:
-		[0 to: numCopied - 1 do:
-			[:i|
-			"Assume: have just allocated a new BlockClosure; it must be young.
-			 Thus, can use unchecked stores."
-			 objectMemory storePointerUnchecked: i + ClosureFirstCopiedValueIndex
-				ofObject: newClosure
-				withValue: (self internalStackValue: numCopied - i - 1)].
-		 self internalPop: numCopied].
-	localIP := localIP + blockSize.
-	self fetchNextBytecode.
-	self internalPush: newClosure
 ]
 
 { #category : #'stack bytecodes' }

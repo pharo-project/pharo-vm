@@ -23,10 +23,10 @@ VMBlockTest >> installBlockClosureClass [
 		| aClass |
 	aClass := self
 		newClassInOldSpaceWithSlots: 0
-		instSpec: BlockClosure instSpec.
-	memory setHashBitsOf: aClass to: ClassBlockClosureCompactIndex.
+		instSpec: FullBlockClosure instSpec.
+	memory setHashBitsOf: aClass to: ClassFullBlockClosureCompactIndex.
 	memory
-		storePointer: ClassBlockClosureCompactIndex
+		storePointer: ClassFullBlockClosureCompactIndex
 		ofObject: memory classTableFirstPage
 		withValue: aClass
 ]
@@ -236,7 +236,7 @@ VMBlockTest >> testEvaluatingABlock [
 { #category : #testing }
 VMBlockTest >> testPushClosureBytecodePushesClosure [
 
-	| methodReturning initialMethod methodOop |
+	| methodReturning initialMethod |
 
 	initialMethod := self createMethodOopFromPharoMethod:
 		                     self class >> #anEmptyMethod.
@@ -256,5 +256,5 @@ VMBlockTest >> testPushClosureBytecodePushesClosure [
 
 	self
 		assert: (memory fetchClassOf: interpreter stackTop)
-		equals: (memory classAtIndex: ClassBlockClosureCompactIndex)
+		equals: (memory classAtIndex: ClassFullBlockClosureCompactIndex)
 ]

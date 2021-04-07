@@ -85,7 +85,7 @@ VMStructType class >> fieldAccessorSourceFor: surrogateClass bytesPerWord: bytes
 				ifNotNil: [:implementingClass|
 						self assert: (implementingClass inheritsFrom: Object).
 						implementingClass == surrogateClass]]) ifTrue:
-			[methods
+			[1halt.methods
 				at: (MethodReference class: surrogateClass selector: spec first asSymbol)
 					put: (self getter: spec first
 							 bitPosition: bitPosition

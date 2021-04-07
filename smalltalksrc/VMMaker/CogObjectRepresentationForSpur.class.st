@@ -499,27 +499,6 @@ CogObjectRepresentationForSpur >> genConvertSmallIntegerToCharacterInReg: reg [
 ]
 
 { #category : #'bytecode generator support' }
-CogObjectRepresentationForSpur >> genCreateClosureAt: bcpc numArgs: numArgs numCopied: numCopied contextNumArgs: ctxtNumArgs large: isLargeCtxt inBlock: isInBlock [
-	"Create a closure with the given startpc, numArgs and numCopied
-	 within a context with ctxtNumArgs, large if isLargeCtxt that is in a
-	 block if isInBlock.  If numCopied > 0 pop those values off the stack."
-	self genNoPopCreateClosureAt: bcpc
-		numArgs: numArgs
-		numCopied: numCopied
-		contextNumArgs: ctxtNumArgs
-		large: isLargeCtxt
-		inBlock: isInBlock.
-	1 to: numCopied do:
-		[:i|
-		cogit
-			PopR: TempReg;
-			MoveR: TempReg
-				Mw: numCopied - i + ClosureFirstCopiedValueIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize
-					r: ReceiverResultReg].
-	^0
-]
-
-{ #category : #'bytecode generator support' }
 CogObjectRepresentationForSpur >> genCreateFullClosure: compiledBlock numArgs: numArgs numCopied: numCopied ignoreContext: ignoreContext contextNumArgs: contextNumArgs large: contextIsLarge inBlock: contextIsBlock [
 	"Create a full closure with the given values."
 	| numSlots byteSize header skip |
@@ -1261,43 +1240,6 @@ CogObjectRepresentationForSpur >> genNewHashTrampoline: saveRegs called: name [
 		pushLinkReg: true
 		resultReg: ReceiverResultReg
 		appendOpcodes: false
-]
-
-{ #category : #'bytecode generator support' }
-CogObjectRepresentationForSpur >> genNoPopCreateClosureAt: bcpc numArgs: numArgs numCopied: numCopied contextNumArgs: ctxtNumArgs large: isLargeCtxt inBlock: isInBlock [
-	"Create a closure with the given startpc, numArgs and numCopied
-	 within a context with ctxtNumArgs, large if isLargeCtxt that is in a
-	 block if isInBlock.  Do /not/ initialize the copied values."
-	| numSlots byteSize header skip |
-	<var: #skip type: #'AbstractInstruction *'>
-
-	"First get thisContext into ReceiverResultRega and thence in ClassReg."
-	self genGetActiveContextNumArgs: ctxtNumArgs large: isLargeCtxt inBlock: isInBlock.
-	cogit MoveR: ReceiverResultReg R: ClassReg.
-
-	numSlots := ClosureFirstCopiedValueIndex + numCopied.
-	byteSize := objectMemory smallObjectBytesForSlots: numSlots.
-	header := objectMemory
-					headerForSlots: numSlots
-					format: objectMemory indexablePointersFormat
-					classIndex: ClassBlockClosureCompactIndex.
-	cogit MoveAw: objectMemory freeStartAddress R: ReceiverResultReg.
-	self genStoreHeader: header intoNewInstance: ReceiverResultReg using: TempReg.
-	cogit
-		LoadEffectiveAddressMw: byteSize r: ReceiverResultReg R: TempReg;
-		MoveR: TempReg Aw: objectMemory freeStartAddress;
-		CmpCq: objectMemory getScavengeThreshold R: TempReg.
-	skip := cogit JumpBelow: 0.
-	cogit CallRT: ceScheduleScavengeTrampoline.
-	skip jmpTarget: cogit Label.
-
-	cogit
-		MoveR: ClassReg Mw: ClosureOuterContextIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg;
-		MoveCq: (objectMemory integerObjectOf: bcpc) R: TempReg;
-		MoveR: TempReg Mw: ClosureStartPCIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg;
-		MoveCq: (objectMemory integerObjectOf: numArgs) R: TempReg;
-		MoveR: TempReg Mw: ClosureNumArgsIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg.
-	^0
 ]
 
 { #category : #'primitive generators' }
