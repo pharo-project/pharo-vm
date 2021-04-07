@@ -10009,7 +10009,7 @@ SpurMemoryManager >> outOfPlaceBecome: obj1 and: obj2 copyHashFlag: copyHashFlag
 { #category : #accessing }
 SpurMemoryManager >> outerContextOf: aBlockClosureOop [
 
-	^ self fetchPointer: ClosureOuterContextIndex ofObject: aBlockClosureOop
+	^ self fetchPointer: FullClosureOuterContextIndex ofObject: aBlockClosureOop
 ]
 
 { #category : #'simulation only' }

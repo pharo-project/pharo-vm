@@ -116,11 +116,6 @@ CogBlockMethod class >> initialize [
 	CMMaxUsageCount		:= (2 raisedTo: 3) - 1.
 	MaxStackCheckOffset	:= (2 raisedTo: 12) - 1.
 	MaxMethodSize		:= (2 raisedTo: 16) - 1
-
-	"{ CogBlockMethodSurrogate32 selectors reject: [:s| CogBlockMethod includesSelector: s].
-	    CogBlockMethodSurrogate64 selectors reject: [:s| CogBlockMethod includesSelector: s].
-	    CogMethodSurrogate32 selectors reject: [:s| CogMethod includesSelector: s].
-	    CogMethodSurrogate64 selectors reject: [:s| CogMethod includesSelector: s]. }"
 ]
 
 { #category : #translation }
@@ -152,7 +147,7 @@ CogBlockMethod class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 								['cmUnusedFlags']			-> [#(unsigned ' : 2')].
 								['stackCheckOffset']		-> [#(unsigned ' : 12')].	"See MaxStackCheckOffset in initialize. a.k.a. cPICNumCases"
 								['blockSize']				-> [#'unsigned short'].		"See MaxMethodSize in initialize"
-								['blockEntryOffset']			-> [#'unsigned short'].
+								['picUsage']			-> [#'unsigned short'].
 								['homeOffset']				-> [#'unsigned short'].
 								['startpc']					-> [#'unsigned short'].
 								['padToWord']				-> [#(#BaseHeaderSize 8 'unsigned int')].

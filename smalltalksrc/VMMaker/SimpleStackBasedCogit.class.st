@@ -293,77 +293,6 @@ SimpleStackBasedCogit >> ceShortCutTraceStore: aProcessorSimulationTrap [
 ]
 
 { #category : #'compile abstract instructions' }
-SimpleStackBasedCogit >> compileBlockFrameBuild: blockStart [
-	"Build a frame for a block activation.  See CoInterpreter class>>initializeFrameIndices.
-	 		closure (in ReceiverResultReg)
-			arg0
-			...
-			argN
-			caller's saved ip/this stackPage (for a base frame)
-	fp->	saved fp
-			method
-			context (uninitialized?)
-			receiver
-			first temp
-			...
-	sp->	Nth temp
-	Avoid use of SendNumArgsReg which is the flag determining whether
-	context switch is allowed on stack-overflow."
-	<var: #blockStart type: #'BlockStart *'>
-	<inline: false>
-	self annotateBytecode: self Label.
-	backEnd hasLinkRegister ifTrue:
-		[self PushR: LinkReg].
-	self PushR: FPReg.
-	self MoveR: SPReg R: FPReg.
-	"Think of ClassReg as ClosureReg"
-	self MoveR: ReceiverResultReg R: ClassReg.
-	"The block method field must have its MFMethodFlagIsBlockFlag bit set.
-	 We arrange this using a labelOffset.  A hack, but it works."
-	blockStart fakeHeader
-		addDependent: (self annotateAbsolutePCRef:
-			(self PushCw: blockStart fakeHeader asInteger)); "method"
-		setLabelOffset: MFMethodFlagIsBlockFlag.
-	self annotate: (self PushCw: objectMemory nilObject) "context"
-		objRef: objectMemory nilObject.
-	"Fetch home receiver from outer context. closure is on stack and initially in ReceiverResultReg.
-	 It is safe to use Arg0Reg because reg args are pushed by the value primitives if there are any.".
-	blockStart hasInstVarRef
-		ifTrue: "Use ReceiverResultReg for Context to agree with store check trampoline"
-			[objectRepresentation
-				genLoadSlot: ClosureOuterContextIndex
-					sourceReg: ClassReg
-						destReg: ReceiverResultReg;
-				genLoadSlot: ReceiverIndex
-					sourceReg: ReceiverResultReg
-						destReg: Arg0Reg.
-			objectRepresentation
-				genEnsureOopInRegNotForwarded: Arg0Reg scratchReg: TempReg updatingSlot: ReceiverIndex in: ReceiverResultReg.
-			self MoveR: Arg0Reg R: ReceiverResultReg]
-		ifFalse:
-			[objectRepresentation
-				genLoadSlot: ClosureOuterContextIndex
-					sourceReg: ClassReg
-						destReg: Arg0Reg;
-				genLoadSlot: ReceiverIndex
-					sourceReg: Arg0Reg
-						destReg: ReceiverResultReg].
-	self PushR: ReceiverResultReg. "home receiver"
-	"Push copied values; bytecode initializes temporaries"
-	0 to: blockStart numCopied - 1 do:
-		[:i|
-		objectRepresentation
-			genLoadSlot: i + ClosureFirstCopiedValueIndex
-			sourceReg: ClassReg
-			destReg: TempReg.
-		self PushR: TempReg].
-	self MoveAw: coInterpreter stackLimitAddress R: TempReg.
-	self CmpR: TempReg R: SPReg. "N.B. FLAGS := SPReg - TempReg"
-	self JumpBelow: stackOverflowCall.
-	blockStart stackCheckLabel: (self annotateBytecode: self Label)
-]
-
-{ #category : #'compile abstract instructions' }
 SimpleStackBasedCogit >> compileFrameBuild [
 	"Build a frame for a CogMethod activation.  See CoInterpreter class>>initializeFrameIndices.
 	 		receiver (in ReceiverResultReg)
@@ -1941,88 +1870,6 @@ SimpleStackBasedCogit >> genPrimReturnEnterCogCodeEnilopmart: profiling [
 ]
 
 { #category : #'primitive generators' }
-SimpleStackBasedCogit >> genPrimitiveClosureValue [
-
-	"Check the argument count.  Fail if wrong.
-	 Get the method from the outerContext and see if it is cogged.  If so, jump to the
-	 block entry or the no-context-switch entry, as appropriate, and we're done.  If not,
-	 invoke the interpreter primitive."
-
-	<var: #jumpFail1 type: #'AbstractInstruction *'>
-	<var: #jumpFail2 type: #'AbstractInstruction *'>
-	<var: #jumpFail3 type: #'AbstractInstruction *'>
-	<var: #jumpFail4 type: #'AbstractInstruction *'>
-	<var: #jumpFailNArgs type: #'AbstractInstruction *'>
-	<var: #jumpBCMethod type: #'AbstractInstruction *'>
-	<var: #primitiveRoutine declareC: 'void (*primitiveRoutine)(void)'>
-	| jumpFailNArgs jumpFail1 jumpFail2 jumpFail3 jumpFail4 jumpBCMethod primitiveRoutine result |
-	objectRepresentation
-		genLoadSlot: ClosureNumArgsIndex
-		sourceReg: ReceiverResultReg
-		destReg: TempReg.
-	self
-		CmpCq: (objectMemory integerObjectOf: methodOrBlockNumArgs)
-		R: TempReg.
-	jumpFailNArgs := self JumpNonZero: 0.
-	objectRepresentation
-		genLoadSlot: ClosureOuterContextIndex
-		sourceReg: ReceiverResultReg
-		destReg: ClassReg.
-	jumpFail1 := objectRepresentation genJumpImmediate: ClassReg.
-	objectRepresentation
-		genGetCompactClassIndexNonImmOf: ClassReg
-		into: TempReg.
-	objectRepresentation genCmpClassMethodContextCompactIndexR: TempReg.
-	jumpFail2 := self JumpNonZero: 0.
-	"We defer unforwarding the receiver to the prologue; scanning blocks
-	 for inst var refs and only unforwarding if the block refers to inst vars."
-	(false and: [ objectRepresentation hasSpurMemoryManagerAPI ]) 
-		ifTrue: [ 
-			objectRepresentation
-				genLoadSlot: ReceiverIndex
-				sourceReg: ClassReg
-				destReg: SendNumArgsReg;
-				genEnsureOopInRegNotForwarded: SendNumArgsReg
-				scratchReg: TempReg
-				updatingSlot: ReceiverIndex
-				in: ClassReg ].
-	objectRepresentation
-		genLoadSlot: MethodIndex
-		sourceReg: ClassReg
-		destReg: SendNumArgsReg.
-	jumpFail3 := objectRepresentation genJumpImmediate: SendNumArgsReg.
-	objectRepresentation genGetFormatOf: SendNumArgsReg into: TempReg.
-	self CmpCq: objectMemory firstCompiledMethodFormat R: TempReg.
-	jumpFail4 := self JumpLess: 0.
-	objectRepresentation
-		genLoadSlot: HeaderIndex
-		sourceReg: SendNumArgsReg
-		destReg: ClassReg.
-	jumpBCMethod := objectRepresentation genJumpImmediate: ClassReg.
-	self
-		MoveM16: (self offset: CogMethod of: #blockEntryOffset)
-		r: ClassReg
-		R: TempReg.
-	self AddR: ClassReg R: TempReg.
-	primitiveRoutine := coInterpreter
-		                    functionPointerForCompiledMethod: methodObj
-		                    primitiveIndex: primitiveIndex.
-	primitiveRoutine = #primitiveClosureValueNoContextSwitch ifTrue: [ 
-		blockNoContextSwitchOffset = nil ifTrue: [ ^ NotFullyInitialized ].
-		self SubCq: blockNoContextSwitchOffset R: TempReg ].
-	self JumpR: TempReg.
-	jumpBCMethod jmpTarget: (jumpFail1 jmpTarget: (jumpFail2 jmpTarget:
-				  (jumpFail3 jmpTarget: (jumpFail4 jmpTarget: self Label)))).
-	(result := self
-		           compileInterpreterPrimitive: primitiveRoutine
-		           flags: (self
-				            primitivePropertyFlags: primitiveIndex
-				            primitiveDescriptor: self primitiveDescriptor)) < 0 ifTrue: [ ^ result ].
-	jumpFailNArgs jmpTarget: self Label.
-	^ CompletePrimitive
-]
-
-{ #category : #'primitive generators' }
 SimpleStackBasedCogit >> genPrimitiveFullClosureValue [
 
 	"Check the argument count.  Fail if wrong.
@@ -2038,7 +1885,7 @@ SimpleStackBasedCogit >> genPrimitiveFullClosureValue [
 	<var: #primitiveRoutine declareC: 'void (*primitiveRoutine)(void)'>
 	| jumpFailNArgs jumpFailImmediateMethod jumpFail4 jumpBCMethod primitiveRoutine result |
 	objectRepresentation
-		genLoadSlot: ClosureNumArgsIndex
+		genLoadSlot: FullClosureNumArgsIndex
 		sourceReg: ReceiverResultReg
 		destReg: TempReg.
 	self
@@ -3041,13 +2888,6 @@ SimpleStackBasedCogit >> mapPCDataFor: cogMethod into: arrayObj [
 	errCode ~= 0 ifTrue:
 		[self assert: errCode = PrimErrNoMemory.
 		 ^-1].
-	cogMethod blockEntryOffset ~= 0 ifTrue:
-		[errCode := self blockDispatchTargetsFor: cogMethod
-						perform: #pcDataForBlockEntry:Method:
-						arg: cogMethod asInteger.
-		 errCode ~= 0 ifTrue:
-			[self assert: errCode = PrimErrNoMemory.
-			 ^-1]].
 	^introspectionDataIndex
 ]
 
@@ -3187,19 +3027,6 @@ SimpleStackBasedCogit >> pcDataFor: descriptor Annotation: isBackwardBranchAndAn
 			storePointerUnchecked: introspectionDataIndex + 1 ofObject: introspectionData withValue: (objectMemory integerObjectOf: actualMcpc).
 		 introspectionDataIndex := introspectionDataIndex + 2].
 
-	^0
-]
-
-{ #category : #'method introspection' }
-SimpleStackBasedCogit >> pcDataForBlockEntry: blockEntryMcpc Method: cogMethod [
-	"Collect the branch and send data for the block method starting at blockEntryMcpc, storing it into picData."
-	<returnTypeC: #usqInt>
-	objectMemory
-		storePointerUnchecked: introspectionDataIndex + 0 ofObject: introspectionData withValue: objectMemory nilObject;
-		storePointerUnchecked: introspectionDataIndex + 1 ofObject: introspectionData withValue: (objectMemory integerObjectOf: blockEntryMcpc - blockNoContextSwitchOffset);
-		storePointerUnchecked: introspectionDataIndex + 2 ofObject: introspectionData withValue: objectMemory nilObject;
-		storePointerUnchecked: introspectionDataIndex + 3 ofObject: introspectionData withValue: (objectMemory integerObjectOf: blockEntryMcpc).
-	introspectionDataIndex := introspectionDataIndex + 4.
 	^0
 ]
 

@@ -942,24 +942,6 @@ StackToRegisterMappingCogit >> compileAbstractInstructionsFrom: start through: e
 ]
 
 { #category : #'compile abstract instructions' }
-StackToRegisterMappingCogit >> compileBlockFrameBuild: blockStart [
-	"Build a frame for a block activation.  See CoInterpreter class>>initializeFrameIndices.
-	 Override to push the register receiver and register arguments, if any, and to correctly
-	 initialize the explicitly nilled/pushed temp entries (they are /not/ of type constant nil)."
-	super compileBlockFrameBuild: blockStart.
-	methodOrBlockNumTemps := blockStart numArgs + blockStart numCopied + blockStart numInitialNils.
-	self initSimStackForFramefulMethod: blockStart startpc.
-	blockStart numInitialNils > 0 ifTrue:
-		[blockStart numInitialNils > 1
-			ifTrue:
-				[self genMoveNilR: TempReg.
-				 1 to: blockStart numInitialNils do:
-					[:ign| self PushR: TempReg]]
-			ifFalse:
-				[self genPushConstant: objectMemory nilObject]]
-]
-
-{ #category : #'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileCogFullBlockMethod: numCopied [
 	<option: #SistaV1BytecodeSet>
 	methodOrBlockNumTemps := coInterpreter tempCountOf: methodObj.
@@ -1038,7 +1020,6 @@ StackToRegisterMappingCogit >> compileTwoPathFrameBuild [
 	<option: #IMMUTABILITY>
 	| jumpImmutable jumpOld |
 	self assert: useTwoPaths.
-	self assert: blockCount = 0.
 	jumpImmutable := objectRepresentation genJumpImmutable: ReceiverResultReg scratchReg: TempReg.
 	jumpOld := objectRepresentation genJumpInOldSpace: ReceiverResultReg.
 	"first path. The receiver is mutable"
@@ -1973,17 +1954,6 @@ StackToRegisterMappingCogit >> genPrimReturn [
 	^methodOrBlockNumArgs <= self numRegArgs
 		ifTrue: [self RetN: 0]
 		ifFalse: [super genPrimReturn]
-]
-
-{ #category : #'primitive generators' }
-StackToRegisterMappingCogit >> genPrimitiveClosureValue [
-	"Check the argument count.  Fail if wrong.
-	 Get the method from the outerContext and see if it is cogged.  If so, jump to the
-	 block entry or the no-context-switch entry, as appropriate, and we're done.  If not,
-	 invoke the interpreter primitive.
-	 Override to push the register args first."
-	self genPushRegisterArgs.
-	^super genPrimitiveClosureValue
 ]
 
 { #category : #'primitive generators' }

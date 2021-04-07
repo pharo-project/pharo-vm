@@ -153,9 +153,6 @@ Class {
 		'postCompileHook',
 		'methodLabel',
 		'stackCheckLabel',
-		'blockEntryLabel',
-		'blockEntryNoContextSwitch',
-		'blockNoContextSwitchOffset',
 		'stackOverflowCall',
 		'sendMiss',
 		'missOffset',
@@ -190,8 +187,6 @@ Class {
 		'bytecodeSetOffset',
 		'opcodeIndex',
 		'numAbstractOpcodes',
-		'blockStarts',
-		'blockCount',
 		'labelCounter',
 		'cStackAlignment',
 		'expectedSPAlignment',
@@ -358,7 +353,6 @@ Cogit class >> ancilliaryClasses [
 		[Cogit initializeMiscConstants].
 	^(self activeCompilerClass withAllSuperclasses copyUpThrough: CogAbstractInstruction),
 	  {	CogMethodZone.
-		CogBlockStart.
 		CogBytecodeDescriptor.
 		CogBytecodeFixup.
 		CogPrimitiveDescriptor.
@@ -1156,11 +1150,11 @@ Cogit class >> initializePrimitiveTable [
 
 		"new closure primitives"
 		"(200 primitiveClosureCopyWithCopiedValues)"
-		(201 genPrimitiveClosureValue	0) "value"
-		(202 genPrimitiveClosureValue	1) "value:"
-		(203 genPrimitiveClosureValue	2) "value:value:"
-		(204 genPrimitiveClosureValue	3) "value:value:value:"
-		(205 genPrimitiveClosureValue	4) "value:value:value:value:"
+		"(201 genPrimitiveClosureValue	0)" "value"
+		"(202 genPrimitiveClosureValue	1)" "value:"
+		"(203 genPrimitiveClosureValue	2)" "value:value:"
+		"(204 genPrimitiveClosureValue	3)" "value:value:value:"
+		"(205 genPrimitiveClosureValue	4)" "value:value:value:value:"
 		"(206 genPrimitiveClosureValueWithArgs)" "valueWithArguments:"
 
 		(207 genPrimitiveFullClosureValue) "value[:value:value:value:] et al"
@@ -1176,8 +1170,8 @@ Cogit class >> initializePrimitiveTable [
 
 		"(220 primitiveFail)"		"reserved for Cog primitives"
 
-		(221 genPrimitiveClosureValue	0) "valueNoContextSwitch"
-		(222 genPrimitiveClosureValue	1) "valueNoContextSwitch:"
+		"(221 genPrimitiveClosureValue	0)" "valueNoContextSwitch"
+		"(222 genPrimitiveClosureValue	1)" "valueNoContextSwitch:"
 
 		"SmallFloat primitives (540-559)"
 		(541 genPrimitiveSmallFloatAdd				1)
@@ -3214,11 +3208,11 @@ Cogit >> allCogMethodsFor: cogMethod [
 	cogMethod cmType = CMBlock ifTrue:
 		[^self allCogMethodsFor: cogMethod cmHomeMethod].
 	(cogMethod cmType ~= CMMethod
-	 or: [cogMethod blockEntryOffset = 0]) ifTrue:
+	 or: [cogMethod picUsage = 0]) ifTrue:
 		[^{cogMethod}].
 
 	methods := OrderedCollection with: cogMethod.
-	pc := blockEntry := cogMethod blockEntryOffset + cogMethod asInteger.
+	pc := blockEntry := cogMethod picUsage + cogMethod asInteger.
 	end := (self mapEndFor: cogMethod) - 1.
 	[pc < end] whileTrue:
 		[| targetpc |
@@ -3547,9 +3541,9 @@ Cogit >> blockDispatchFor: cogMethod perform: quaternaryFunction arg: arg [
 	 it answered. Used for disassembling blockDispatch."
 	<doNotGenerate>
 	| pc prevpc blockEntry end targetpc result |
-	cogMethod blockEntryOffset = 0 ifTrue:
+	cogMethod picUsage = 0 ifTrue:
 		[^nil].
-	blockEntry := cogMethod blockEntryOffset + cogMethod asInteger.
+	blockEntry := cogMethod picUsage + cogMethod asInteger.
 	prevpc := pc := blockEntry.
 	end := (self mapEndFor: cogMethod) - 1.
 	[pc < end] whileTrue:
@@ -3579,9 +3573,9 @@ Cogit >> blockDispatchTargetsFor: cogMethod perform: binaryFunction arg: arg [
 	<var: #cogMethod type: #'CogMethod *'>
 	<var: #binaryFunction declareC: 'usqInt (*binaryFunction)(sqInt mcpc, sqInt arg)'>
 	| pc blockEntry end targetpc result |
-	cogMethod blockEntryOffset = 0 ifTrue:
+	cogMethod picUsage = 0 ifTrue:
 		[^nil].
-	blockEntry := cogMethod blockEntryOffset + cogMethod asInteger.
+	blockEntry := cogMethod picUsage + cogMethod asInteger.
 	pc := blockEntry.
 	end := (self mapEndFor: cogMethod) - 1.
 	[pc < end] whileTrue:
@@ -4685,14 +4679,14 @@ Cogit >> codeRangesFor: cogMethod [
 				cogMethod: cogMethod
 				startpc: nil }].
 	end := (self mapEndFor: cogMethod) - 1.
-	cogMethod blockEntryOffset = 0 ifTrue:
+	cogMethod picUsage = 0 ifTrue:
 		[^{ CogCodeRange
 				from: cogMethod asInteger + (self sizeof: CogMethod)
 				to: end
 				cogMethod: cogMethod
 				startpc: (cogMethod cmType ~= CMOpenPIC ifTrue:
 							[coInterpreter startPCOfMethodHeader: cogMethod methodHeader]) }].
-	pc := blockEntry := cogMethod blockEntryOffset + cogMethod asInteger.
+	pc := blockEntry := cogMethod picUsage + cogMethod asInteger.
 	starts := OrderedCollection with: cogMethod.
 	[pc < end] whileTrue:
 		[| targetpc |
@@ -5651,12 +5645,9 @@ Cogit >> compileCogMethod: selector [
 	self methodFoundInvalidPostScan ifTrue:
 		[^coInterpreter cCoerceSimple: ShouldNotJIT to: #'CogMethod *'].
 		
-	blockCount := 0.
-
 	(self maybeAllocAndInitCounters) ifFalse: "Inaccurate error code, but it'll do.  This will likely never fail."
 		[^coInterpreter cCoerceSimple: InsufficientCodeSpace to: #'CogMethod *'].
-	
-	blockEntryLabel := nil.
+
 	methodLabel dependent: nil.
 	(result := self compileEntireMethod) < 0 ifTrue:
 		[^coInterpreter cCoerceSimple: result to: #'CogMethod *'].
@@ -5676,7 +5667,6 @@ Cogit >> compileEntireFullBlockMethod: numCopied [
 	"Method body"
 	(result := self compileMethodBody) < 0 ifTrue:
 		[^result].
-	self assert: blockCount = 0.
 	^0
 ]
 
@@ -6208,8 +6198,8 @@ Cogit >> disassembleMethod: surrogateOrAddress on: aStream [
 						 mapEntries
 							at: mcpc
 							put: label, selectorOrNone, ' bc ', bcpc printString, '/', (bcpc + 1) printString]]]].
-		(cogMethod blockEntryOffset ~= 0
-		 and: [range first = (cogMethod blockEntryOffset + cogMethod asInteger)])
+		(cogMethod picUsage ~= 0
+		 and: [range first = (cogMethod picUsage + cogMethod asInteger)])
 			ifTrue:
 				[aStream nextPutAll: 'blockEntry:'; cr.
 				 self blockDispatchFor: cogMethod
@@ -6548,34 +6538,6 @@ Cogit >> fakeVarBaseAddress [
 ]
 
 { #category : #'generate machine code' }
-Cogit >> fillInBlockHeadersAt: startAddress [
-	"Fill in the block headers now we know the exact layout of the code."
-	| blockStart blockHeader |
-	<var: #blockStart type: #'BlockStart *'>
-	<var: #blockHeader type: #'CogBlockMethod *'>
-
-	(needsFrame and: [blockCount > 0]) ifFalse:
-		[^nil].
-	blockNoContextSwitchOffset = nil
-		ifTrue: [blockNoContextSwitchOffset := blockEntryLabel address - blockEntryNoContextSwitch address]
-		ifFalse: [self assert: blockNoContextSwitchOffset = (blockEntryLabel address - blockEntryNoContextSwitch address)].
-	0 to: blockCount - 1 do:
-		[:i|
-		blockStart := self blockStartAt: i.
-		blockHeader := self cCoerceSimple: blockStart fakeHeader address
-								to: #'CogBlockMethod *'.
-		blockHeader
-			homeOffset: (blockStart fakeHeader address - startAddress);
-			startpc: blockStart startpc;
-			cmType: CMBlock;
-			cmNumArgs: blockStart numArgs;
-			cbUsesInstVars: blockStart hasInstVarRef;
-			stackCheckOffset: (blockStart stackCheckLabel = nil
-								ifTrue: [0]
-								ifFalse: [blockStart stackCheckLabel address - blockStart fakeHeader address])]
-]
-
-{ #category : #'generate machine code' }
 Cogit >> fillInCPICHeader: pic numArgs: numArgs numCases: numCases hasMNUCase: hasMNUCase selector: selector [
 	<returnTypeC: #'CogMethod *'>
 	<var: #pic type: #'CogMethod *'>
@@ -6592,7 +6554,7 @@ Cogit >> fillInCPICHeader: pic numArgs: numArgs numCases: numCases hasMNUCase: h
 	pic cmUsageCount: self initialClosedPICUsageCount.
 	pic cpicHasMNUCase: hasMNUCase.
 	pic cPICNumCases: numCases.
-	pic blockEntryOffset: 0.
+	pic picUsage: 0.
 	self assert: pic cmType = CMClosedPIC.
 	self assert: pic selector = selector.
 	self assert: pic cmNumArgs = numArgs.
@@ -6631,9 +6593,7 @@ Cogit >> fillInMethodHeader: method size: size selector: selector [
 	method cmUsageCount: self initialMethodUsageCount.
 	method cpicHasMNUCase: false.
 	method cmUsesPenultimateLit: maxLitIndex >= ((objectMemory literalCountOfMethodHeader: methodHeader) - 2).
-	method blockEntryOffset: (blockEntryLabel notNil
-								ifTrue: [blockEntryLabel address - method asInteger]
-								ifFalse: [0]).
+	method picUsage: 0.
 	"This can be an error check since a large stackCheckOffset is caused by compiling
 	 a machine-code primitive, and hence depends on the Cogit, not the input method."
 	needsFrame ifTrue:
@@ -6668,7 +6628,7 @@ Cogit >> fillInOPICHeader: pic numArgs: numArgs selector: selector [
 	pic cmUsageCount: self initialOpenPICUsageCount.
 	pic cpicHasMNUCase: false.
 	pic cPICNumCases: 0.
-	pic blockEntryOffset: 0.
+	pic picUsage: 0.
 	self assert: pic cmType = CMOpenPIC.
 	self assert: pic selector = selector.
 	self assert: pic cmNumArgs = numArgs.
@@ -6768,7 +6728,7 @@ Cogit >> findMethodForStartBcpc: startbcpc inHomeMethod: cogMethod [
 	self assert: cogMethod cmType = CMMethod.
 	startbcpc = (coInterpreter startPCOfMethodHeader: cogMethod methodHeader) ifTrue:
 		[^self cCoerceSimple: cogMethod to: #'CogBlockMethod *'].
-	self assert: cogMethod blockEntryOffset ~= 0.
+	self assert: cogMethod picUsage ~= 0.
 	^self cCoerceSimple: (self blockDispatchTargetsFor: cogMethod
 								perform: #findBlockMethodWithEntry:startBcpc:
 								arg: startbcpc)
@@ -7995,7 +7955,6 @@ Cogit >> generateCogMethod: selector [
 	self assert: startAddress + headerSize + codeSize = result.
 	backEnd padIfPossibleWithStopsFrom: result to: startAddress + totalSize - mapSize - 1.
 	self generateMapAt: startAddress + totalSize - 1 start: startAddress + cmNoCheckEntryOffset.
-	self fillInBlockHeadersAt: startAddress.
 	method := self fillInMethodHeader: (self cCoerceSimple: startAddress to: #'CogMethod *')
 					size: totalSize
 					selector: selector.
@@ -8522,7 +8481,7 @@ Cogit >> handleCallOrJumpSimulationTrap: aProcessorSimulationTrap [
 	(function beginsWith: 'primitive') ifTrue:
 		[coInterpreter checkForLastObjectOverwrite.
 		 coInterpreter primFailCode = 0
-			ifTrue: [(#(	primitiveClosureValue primitiveClosureValueWithArgs primitiveClosureValueNoContextSwitch
+			ifTrue: [(#(
 						primitiveFullClosureValue primitiveFullClosureValueWithArgs primitiveFullClosureValueNoContextSwitch
 						primitiveSignal primitiveWait primitiveResume primitiveSuspend primitiveYield
 						primitiveExecuteMethodArgsArray primitiveExecuteMethod
@@ -10297,14 +10256,6 @@ Cogit >> noCogMethodsMaximallyMarked [
 	^true
 ]
 
-{ #category : #accessing }
-Cogit >> noContextSwitchBlockEntryOffset [
-	<api>
-	<cmacro: '() blockNoContextSwitchOffset'>
-	self assert: blockNoContextSwitchOffset notNil.
-	^blockNoContextSwitchOffset
-]
-
 { #category : #compaction }
 Cogit >> noTargetsFreeInClosedPIC: cPIC [
 	"Answer if all targets in the PIC are in-use methods."
@@ -10647,10 +10598,10 @@ Cogit >> printMethodHeader: cogMethod on: aStream [
 			[aStream space; nextPut: $(; nextPutAll: (coInterpreter stringOf: (coInterpreter maybeSelectorOfMethod: cogMethod methodObject)); nextPut: $)]. 
 		cogMethod cmType = CMMethod ifTrue:
 			[aStream newLine; tab; nextPutAll: 'blkentry: '.
-			 cogMethod blockEntryOffset printOn: aStream base: 16.
-			 cogMethod blockEntryOffset ~= 0 ifTrue:
+			 cogMethod picUsage printOn: aStream base: 16.
+			 cogMethod picUsage ~= 0 ifTrue:
 				[aStream nextPutAll: ' => '.
-				 cogMethod asInteger + cogMethod blockEntryOffset printOn: aStream base: 16]]].
+				 cogMethod asInteger + cogMethod picUsage printOn: aStream base: 16]]].
 	cogMethod cmType = CMClosedPIC
 		ifTrue:
 			[aStream newLine; tab; nextPutAll: 'cPICNumCases: '.

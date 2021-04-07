@@ -851,13 +851,9 @@ StackInterpreter class >> initializeContextIndices [
 	LargeContextSize := #bogus.
 
 	"Class BlockClosure"
-	ClosureOuterContextIndex := 0.
-	ClosureStartPCIndex := 1.
-	ClosureNumArgsIndex := 2.
-	ClosureFirstCopiedValueIndex := 3.
-	
-	"Class FullBlockClosure, outercontext and numArgs index are shared with the BlockClosure class."	
+	FullClosureOuterContextIndex := 0.
 	FullClosureCompiledBlockIndex := 1.
+	FullClosureNumArgsIndex := 2.
 	FullClosureReceiverIndex := 3.
 	FullClosureFirstCopiedValueIndex := 4.
 ]
@@ -1251,12 +1247,12 @@ StackInterpreter class >> initializePrimitiveTable [
 
 		"new closure primitives (were Networking primitives)"
 		(200 0) "was primitiveClosureCopyWithCopiedValues"
-		(201 primitiveClosureValue) "value"
-		(202 primitiveClosureValue) "value:"
-		(203 primitiveClosureValue) "value:value:"
-		(204 primitiveClosureValue) "value:value:value:"
-		(205 primitiveClosureValue) "value:value:value:value:"
-		(206 primitiveClosureValueWithArgs) "valueWithArguments:"
+		(201 0) "value"
+		(202 0) "value:"
+		(203 0) "value:value:"
+		(204 0) "value:value:value:"
+		(205 0) "value:value:value:value:"
+		(206 0) "valueWithArguments:"
 
 		(207 primitiveFullClosureValue) "value[:value:value:value:] et al"
 		(208 primitiveFullClosureValueWithArgs) "valueWithArguments:"
@@ -1274,8 +1270,8 @@ StackInterpreter class >> initializePrimitiveTable [
 
 		(220 primitiveFail)		"reserved for Cog primitives"
 
-		(221 primitiveClosureValueNoContextSwitch) "valueNoContextSwitch"
-		(222 primitiveClosureValueNoContextSwitch) "valueNoContextSwitch:"
+		(221 primitiveFail) "valueNoContextSwitch"
+		(222 primitiveFail) "valueNoContextSwitch:"
 
 		(223 229 primitiveFail)	"reserved for Cog primitives (see 228 & 229 in CoInterpreterMT"
 
@@ -1545,34 +1541,6 @@ StackInterpreter class >> namesOfVariablesToLocalize [
 { #category : #translation }
 StackInterpreter class >> needsCogit [
 	^false
-]
-
-{ #category : #translation }
-StackInterpreter class >> patchInterpGCCPPC: fileName [
-	"Interpreter patchInterpGCCPPC: 'Squeak copy 1'"
-	"This will patch out the unneccesary range check (a compare
-	 and branch) in the inner interpreter dispatch loop. for the PPC version of the GCC compiled
-	version of Squeak under MPW"
-	"NOTE: You must edit in the Interpeter file name"
-
-	| delta f code len remnant i |
-	delta := 7.
-	f := FileStream fileNamed: fileName.
-	f binary.
-	code := Bitmap new: (len := f size) // 4.
-	f nextInto: code.
-	remnant := f next: len - (code size * 4).
-	i := 0.
-	["Look for a BCTR instruction"
-	(i := code indexOf: 16r4E800420 startingAt: i + 1 ifAbsent: [0]) > 0] whileTrue:
-		["Look for a CMPLWI cr1,rxx,FF, 7 instrs back"
-	       ((code at: i - delta) bitAnd: 16rFFE0FFFF) = 16r288000FF ifTrue:
-	       	["Copy dispatch instrs back over the compare"
-			self inform: 'Patching at ', i hex.
-			0 to: delta - 2 do: [ :j |
-				code at: (i - delta) + j put: (code at: (i - delta) + j + 2)]]].
-	f position: 0; nextPutAll: code; nextPutAll: remnant.
-	f close
 ]
 
 { #category : #translation }
@@ -1913,50 +1881,6 @@ StackInterpreter >> activateFailingPrimitiveMethod [
 ]
 
 { #category : #'control primitives' }
-StackInterpreter >> activateNewClosure: blockClosure outer: outerContext method: theMethod  numArgs: numArgs mayContextSwitch: mayContextSwitch [
-	"Similar to activateNewMethod but for Closure and newMethod."
-	| numCopied closureIP |
-	<inline: true>
-	self assert: (objectMemory isContext: outerContext).
-	numCopied := self copiedValueCountOfClosure: blockClosure.
-	self assert: theMethod = (objectMemory fetchPointer: MethodIndex ofObject: outerContext).
-	self assert: (objectMemory isOopCompiledMethod: theMethod).
-
-	self push: instructionPointer.
-	self push: framePointer.
-	framePointer := stackPointer.
-	self push: theMethod.
-	self push: (self encodeFrameFieldHasContext: false isBlock: true numArgs: numArgs).
-	self push: objectMemory nilObject. "FxThisContext field"
-	"Because inst var access is not checked, we must follow the receiver in Spur to ensure it is valid."
-	self push: (objectMemory followField: ReceiverIndex ofObject: outerContext).
-
-	"Copy the copied values..."
-	0 to: numCopied - 1 do:
-		[:i|
-		self push: (objectMemory
-					fetchPointer: i + ClosureFirstCopiedValueIndex
-					ofObject: blockClosure)].
-
-	self assert: (self frameIsBlockActivation: framePointer).
-	self assert: (self frameHasContext: framePointer) not.
-
-	"The initial instructions in the block nil-out remaining temps."
-
-	"the instruction pointer is a pointer variable equal to 
-	method oop + ip + BaseHeaderSize 
-	-1 for 0-based addressing of fetchByte 
-	-1 because it gets incremented BEFORE fetching currentByte"
-	closureIP := self quickFetchInteger: ClosureStartPCIndex ofObject: blockClosure.
-	instructionPointer := theMethod + closureIP + objectMemory baseHeaderSize - 2.
-	self setMethod: theMethod.
-
-	"Now check for stack overflow or an event (interrupt, must scavenge, etc)"
-	stackPointer < stackLimit ifTrue:
-		[self handleStackOverflowOrEventAllowContextSwitch: mayContextSwitch]
-]
-
-{ #category : #'control primitives' }
 StackInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch [
 	"Similar to activateNewMethod but for Closure and newMethod."
 	| numCopied methodHeader numTemps |
@@ -2200,7 +2124,7 @@ StackInterpreter >> argumentCountOf: methodPointer [
 StackInterpreter >> argumentCountOfClosure: closurePointer [
 	<api> "for Cogit"
 	<inline: true>
-	^self quickFetchInteger: ClosureNumArgsIndex ofObject: closurePointer
+	^self quickFetchInteger: FullClosureNumArgsIndex ofObject: closurePointer
 ]
 
 { #category : #'compiled methods' }
@@ -3653,7 +3577,7 @@ StackInterpreter >> bytecodePrimValueWithArg [
 	isBlock ifTrue:
 		[self externalizeIPandSP.
 		self initPrimCall.
-		self primitiveClosureValue.
+		self primitiveFullClosureValueWithArgs.
 		self internalizeIPandSP.
 		self successful ifTrue:
 			[^self fetchNextBytecode].
@@ -4692,7 +4616,7 @@ StackInterpreter >> commonReturn [
 	"Walk the closure's lexical chain to find the context or frame to return from (home).
 	 If home is missing (Sista closures) then throw cannotReturn rather than crash."
 	[closure ~= objectMemory nilObject] whileTrue:
-		[home := objectMemory followField: ClosureOuterContextIndex ofObject: closure.
+		[home := objectMemory followField: FullClosureOuterContextIndex ofObject: closure.
 		 (objectMemory isContext: home) ifFalse:
 			[^self internalCannotReturn: localReturnValue].
 		 closure := objectMemory followField: ClosureIndex ofObject: home].
@@ -4974,12 +4898,6 @@ StackInterpreter >> convertFloatsToPlatformOrder [
 			[temp := objectMemory long32At: obj + objectMemory baseHeaderSize.
 			 objectMemory long32At: obj + objectMemory baseHeaderSize put: (objectMemory long32At: obj + objectMemory baseHeaderSize + 4).
 			 objectMemory long32At: obj + objectMemory baseHeaderSize + 4 put: temp]]
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> copiedValueCountOfClosure: closurePointer [
-	<api> "for Cogit"
-	^(objectMemory numSlotsOf: closurePointer) - ClosureFirstCopiedValueIndex
 ]
 
 { #category : #'internal interpreter access' }
@@ -6311,7 +6229,7 @@ StackInterpreter >> findHomeForContext: aContext [
 	((objectMemory compactClassIndexOf: closureOrNil) ~= ClassFullBlockClosureCompactIndex)
 		ifTrue: [^nil].
 
-	^self findHomeForContext: (objectMemory fetchPointer: ClosureOuterContextIndex ofObject: closureOrNil)
+	^self findHomeForContext: (objectMemory fetchPointer: FullClosureOuterContextIndex ofObject: closureOrNil)
 ]
 
 { #category : #'handler search' }
@@ -7187,9 +7105,9 @@ StackInterpreter >> fullClosureIn: context numArgs: numArgs numCopiedValues: num
 								numSlots: FullClosureFirstCopiedValueIndex + numCopied].
 	"Assume: have just allocated a new closure; it must be young. Thus, can use unchecked stores."
 	objectMemory
-		storePointerUnchecked: ClosureOuterContextIndex ofObject: newClosure withValue: context;
+		storePointerUnchecked: FullClosureOuterContextIndex ofObject: newClosure withValue: context;
 		storePointerUnchecked: FullClosureCompiledBlockIndex ofObject: newClosure withValue: compiledBlock;
-		storePointerUnchecked: ClosureNumArgsIndex ofObject: newClosure withValue: (objectMemory integerObjectOf: numArgs).
+		storePointerUnchecked: FullClosureNumArgsIndex ofObject: newClosure withValue: (objectMemory integerObjectOf: numArgs).
 	^newClosure
 ]
 

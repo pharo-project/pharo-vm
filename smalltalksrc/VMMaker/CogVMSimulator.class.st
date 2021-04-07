@@ -1043,14 +1043,6 @@ CogVMSimulator >> enterSmalltalkExecutiveImplementation [
 		inSuperclass: (cogThreadManager ifNil: [CoInterpreterPrimitives] ifNotNil: [CoInterpreterMT])
 ]
 
-{ #category : #enilopmarts }
-CogVMSimulator >> executeCogBlock: cogMethod closure: closure mayContextSwitch: mayContextSwitch [
-	"self shortPrintFrameAndCallers: framePointer"
-	"(#(16r56E90 16r133D0) includes: cogMethod asInteger)  ifTrue: [self halt]."
-	"self halt."
-	^super executeCogBlock: cogMethod closure: closure mayContextSwitch: mayContextSwitch
-]
-
 { #category : #'debug support' }
 CogVMSimulator >> expectSends: anArray [
 	expectedSends := ReadStream on: anArray.
@@ -2885,14 +2877,6 @@ CogVMSimulator >> primTraceLogSize [
 CogVMSimulator >> primitiveBeep [
 
 	Beeper beep.
-]
-
-{ #category : #'debugging traps' }
-CogVMSimulator >> primitiveClosureValueWithArgs [
-	"Transcript clear.
-	 self shortPrintFrameAndCallers: framePointer.
-	 self halt."
-	^super primitiveClosureValueWithArgs
 ]
 
 { #category : #'debugging traps' }

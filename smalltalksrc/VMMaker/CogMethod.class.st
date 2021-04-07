@@ -30,10 +30,10 @@ Class {
 	#superclass : #CogBlockMethod,
 	#instVars : [
 		'blockSize',
-		'blockEntryOffset',
 		'methodObject',
 		'methodHeader',
-		'selector'
+		'selector',
+		'picUsage'
 	],
 	#category : #'VMMaker-JIT'
 }
@@ -66,20 +66,6 @@ CogMethod class >> initialize [
 { #category : #accessing }
 CogMethod class >> surrogateClass [
 	self shouldNotImplement
-]
-
-{ #category : #accessing }
-CogMethod >> blockEntryOffset [
-	"Answer the value of blockEntryOffset"
-
-	^blockEntryOffset
-]
-
-{ #category : #accessing }
-CogMethod >> blockEntryOffset: anObject [
-	"Set the value of blockEntryOffset"
-
-	^blockEntryOffset := anObject
 ]
 
 { #category : #accessing }
@@ -163,6 +149,20 @@ CogMethod >> objectHeader: anObject [
 	"Set the value of objectHeader"
 
 	^objectHeader := anObject
+]
+
+{ #category : #accessing }
+CogMethod >> picUsage [
+	"Answer the value of blockEntryOffset"
+
+	^picUsage
+]
+
+{ #category : #accessing }
+CogMethod >> picUsage: anObject [
+	"Set the value of blockEntryOffset"
+
+	^picUsage := anObject
 ]
 
 { #category : #accessing }
