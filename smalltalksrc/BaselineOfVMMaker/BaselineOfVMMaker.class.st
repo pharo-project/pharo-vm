@@ -55,7 +55,8 @@ BaselineOfVMMaker >> baseline: spec [
 				package: 'VMMaker-Slang'
 				with: [ spec requires: #( 'Melchor' 'VMMaker' ) ];
 				package: 'VMMaker'
-				with: [ spec requires: #( 'Melchor' 'VMMakerLoadingDependencies' 'Printf') ].
+				with: [ spec requires: #( 
+					'VMMaker-Slang' 'VMMakerLoadingDependencies' 'Printf') ].
 								
 			"VM plugins"
 			spec package: 'FileAttributesPlugin' with: [ spec requires: #( 'VMMakerCompatibilityForPharo6') ].
