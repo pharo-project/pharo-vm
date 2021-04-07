@@ -44,7 +44,7 @@ Class {
 		'MaxCounterValue'
 	],
 	#pools : [
-		'VMSqueakClassIndices'
+		'VMClassIndices'
 	],
 	#category : #'VMMaker-JIT'
 }

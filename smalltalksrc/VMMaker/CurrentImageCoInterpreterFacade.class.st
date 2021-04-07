@@ -57,8 +57,8 @@ Class {
 	#pools : [
 		'CogMethodConstants',
 		'VMBasicConstants',
-		'VMObjectIndices',
-		'VMSqueakClassIndices'
+		'VMClassIndices',
+		'VMObjectIndices'
 	],
 	#category : #'VMMaker-Support'
 }

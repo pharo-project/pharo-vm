@@ -647,9 +647,9 @@ Class {
 		'SpurMemoryManagementConstants',
 		'VMBasicConstants',
 		'VMBytecodeConstants',
+		'VMClassIndices',
 		'VMObjectIndices',
-		'VMSpurObjectRepresentationConstants',
-		'VMSqueakClassIndices'
+		'VMSpurObjectRepresentationConstants'
 	],
 	#category : #'VMMaker-SpurMemoryManager'
 }

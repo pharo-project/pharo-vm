@@ -89,9 +89,9 @@ Class {
 	#pools : [
 		'VMBasicConstants',
 		'VMBytecodeConstants',
+		'VMClassIndices',
 		'VMMethodCacheConstants',
 		'VMObjectIndices',
-		'VMSqueakClassIndices',
 		'VMStackFrameOffsets'
 	],
 	#category : #'VMMaker-Interpreter'

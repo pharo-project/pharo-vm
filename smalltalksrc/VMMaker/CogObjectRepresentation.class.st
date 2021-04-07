@@ -26,8 +26,8 @@ Class {
 		'CogMethodConstants',
 		'CogRTLOpcodes',
 		'VMBasicConstants',
+		'VMClassIndices',
 		'VMObjectIndices',
-		'VMSqueakClassIndices',
 		'VMStackFrameOffsets'
 	],
 	#category : #'VMMaker-JIT'

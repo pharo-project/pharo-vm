@@ -20,7 +20,7 @@ Class {
 	],
 	#pools : [
 		'VMBytecodeConstants',
-		'VMSqueakClassIndices'
+		'VMClassIndices'
 	],
 	#category : #'VMMaker-JIT'
 }
@@ -705,10 +705,6 @@ CogObjectRepresentationForSpur >> genGetActiveContextLarge: isLarge inBlock: isI
 	"now get the home CogMethod into ClassReg and save for post-instantiation."
 	isInBlock caseOf: {
 	[InFullBlock]	-> [cogit SubCq: 3 R: ClassReg]. "-3 is -(hasContext+isBlock) flags"
-	[InVanillaBlock]	-> [cogit
-							SubCq: 3 R: ClassReg; "-3 is -(hasContext+isBlock) flags"
-							MoveM16: 0 r: ClassReg R: TempReg;
-							SubR: TempReg R: ClassReg].
 	[0]				-> [cogit SubCq: 1 R: ClassReg]. "-1 is hasContext flag" }.
 
 	"instantiate the context..."

@@ -974,19 +974,13 @@ CoInterpreter >> attemptToSwitchToMachineCode: bcpc [
 	<inline: false>
 	<var: #cogMethod type: #'CogMethod *'>
 	(self methodHasCogMethod: method)
-		ifFalse: 
-			[SistaV1BytecodeSet
-				ifTrue: 
-					[ ((self iframeIsBlockActivation: framePointer) 
-					   and: [(self isVanillaBlockClosure: (cls := self frameStackedReceiver: framePointer numArgs: (self frameNumArgs: framePointer))) not ])
-						ifTrue: 
-							["Compiled block / full closure"
-							 cogit cogFullBlockMethod: method numCopied: (objectMemory numPointerSlotsOf: cls) - FullClosureFirstCopiedValueIndex]
-						ifFalse: 
-							["Compiled method"
-							cogit cog: method selector: objectMemory nilObject] ]
-				ifFalse: 
-					[cogit cog: method selector: objectMemory nilObject] ].
+		ifFalse: [
+			(self iframeIsBlockActivation: framePointer)
+				ifTrue: [ "Compiled block / full closure"
+					cls := self frameStackedReceiver: framePointer numArgs: (self frameNumArgs: framePointer).
+					cogit cogFullBlockMethod: method numCopied: (objectMemory numPointerSlotsOf: cls) - FullClosureFirstCopiedValueIndex]
+				ifFalse: [ "Compiled method"
+					cogit cog: method selector: objectMemory nilObject ] ].
 	(self methodHasCogMethod: method) ifTrue:
 		[cogMethod := self cogMethodOf: method.
 		 pc := self convertToMachineCodeFrame: cogMethod bcpc: bcpc.
@@ -2599,22 +2593,15 @@ CoInterpreter >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
 					put: cogit ceReturnToInterpreterPC]].
 	"Compute the cog method field"
 	(self iframeIsBlockActivation: framePointer)
-		ifTrue:
-			[closure := self pushedReceiverOrClosureOfFrame: framePointer.
-			 (self isVanillaBlockClosure: closure)
-				ifTrue:
-					[startBcpc := self startPCOfClosure: closure.
-					 cogMethod := cogit
-										findMethodForStartBcpc: startBcpc
-										inHomeMethod: cogHomeMethod]
-				ifFalse:
-					[startBcpc := self startPCOfMethodHeader: cogHomeMethod methodHeader.
-					 cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogBlockMethod *'].
-			 methodField := cogMethod asInteger + MFMethodFlagIsBlockFlag]
-		ifFalse:
-			[startBcpc := self startPCOfMethodHeader: cogHomeMethod methodHeader.
-			 cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogBlockMethod *'.
-			 methodField := cogHomeMethod asInteger].
+		ifTrue: [
+			closure := self pushedReceiverOrClosureOfFrame: framePointer.
+			startBcpc := self startPCOfMethodHeader: cogHomeMethod methodHeader.
+			cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogBlockMethod *'.
+			methodField := cogMethod asInteger + MFMethodFlagIsBlockFlag]
+		ifFalse: [
+			startBcpc := self startPCOfMethodHeader: cogHomeMethod methodHeader.
+			cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogBlockMethod *'.
+			methodField := cogHomeMethod asInteger ].
 	"compute the pc before converting the frame to help with debugging."
 	pc := cogit mcPCForBackwardBranch: bcpc startBcpc: startBcpc in: cogMethod.
 	self assert: pc > (cogMethod asUnsignedInteger + cogit noCheckEntryOffset).
@@ -2851,7 +2838,7 @@ CoInterpreter >> ensureMethodIsCogged: methodObj maybeClosure: maybeClosure [
 	(self isCogMethodReference: rawHeader) ifTrue:
 		[^self cCoerceSimple: rawHeader to: #'CogMethod *'].
 	yetToCompact := true.
-	[(maybeClosure ~= objectMemory nilObject and: [(self isVanillaBlockClosure: maybeClosure) not])
+	[(maybeClosure ~= objectMemory nilObject)
 		ifTrue: [cogMethod := cogit cogFullBlockMethod: methodObj numCopied: (self copiedValueCountOfFullClosure: maybeClosure)]
 		ifFalse: [cogMethod := cogit cog: methodObj selector: objectMemory nilObject].
 	 cogMethod == nil
@@ -4516,31 +4503,15 @@ CoInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 			 cogMethod := self ensureMethodIsCogged: theMethod maybeClosure: maybeClosure.
 			 theMethod := cogMethod asInteger.
 			 maybeClosure ~= objectMemory nilObject
-				ifTrue:
-					[(self isVanillaBlockClosure: maybeClosure)
-						ifTrue:
-							["If the pc is the special HasBeenReturnedFromMCPC pc set the pc
-							  appropriately so that the frame stays in the cannotReturn: state."
-							 theIP = HasBeenReturnedFromMCPC
-								ifTrue:
-									[theMethod := (cogit findMethodForStartBcpc: (self startPCOfClosure: maybeClosure)
-														inHomeMethod: (self cCoerceSimple: theMethod
-																			to: #'CogMethod *')) asInteger.
-									 theMethod = 0 ifTrue:
-										[self error: 'cannot find machine code block matching closure''s startpc'].
-									 theIP := cogit ceCannotResumePC]
-								ifFalse:
-									[self assert: (theIP signedBitShift: -16) < -1. "See contextInstructionPointer:frame:"
-									 theMethod := theMethod - ((theIP signedBitShift: -16) * cogit blockAlignment).
-									 theIP := theMethod - theIP signedIntFromShort]]
-						ifFalse:
-							[self assert: (theIP signedBitShift: -16) >= -1.
-							 "If the pc is the special HasBeenReturnedFromMCPC pc set the pc
-							  appropriately so that the frame stays in the cannotReturn: state."
-							 theIP := theIP = HasBeenReturnedFromMCPC
-										ifTrue: [cogit ceCannotResumePC]
-										ifFalse: [theMethod asInteger - theIP]].
-					 stackPages
+				ifTrue: [
+					
+					self assert: (theIP signedBitShift: -16) >= -1.
+					"If the pc is the special HasBeenReturnedFromMCPC pc set the pc
+					appropriately so that the frame stays in the cannotReturn: state."
+					theIP := theIP = HasBeenReturnedFromMCPC
+						ifTrue: [cogit ceCannotResumePC]
+						ifFalse: [theMethod asInteger - theIP].
+					stackPages
 						longAt: (pointer := pointer - objectMemory wordSize)
 						put: theMethod + MFMethodFlagHasContextFlag + MFMethodFlagIsBlockFlag]
 				ifFalse:
@@ -5383,12 +5354,8 @@ CoInterpreter >> mustMapMachineCodePC: theIP context: aOnceMarriedContext [
 		[^objectMemory nilObject].
 	maybeClosure := objectMemory fetchPointer: ClosureIndex ofObject: aOnceMarriedContext.
 	methodObj := objectMemory fetchPointer: MethodIndex ofObject: aOnceMarriedContext.
-	(maybeClosure ~= objectMemory nilObject
-	and: [self isVanillaBlockClosure: maybeClosure])
-		ifTrue: [self assert: (theIP signedBitShift: -16) < -1.
-				startBcpc := self startPCOfClosure: maybeClosure]
-		ifFalse: [self assert: (theIP signedBitShift: -16) = -1.
-				startBcpc := self startPCOfMethod: methodObj].
+	self assert: (theIP signedBitShift: -16) = -1.
+	startBcpc := self startPCOfMethod: methodObj.
 	cogMethod := self ensureMethodIsCogged: methodObj maybeClosure: maybeClosure.
 	bcpc := self bytecodePCFor: theIP cogMethod: cogMethod startBcpc: startBcpc.
 	self assert: bcpc >= (self startPCOfMethod: methodObj).

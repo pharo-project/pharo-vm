@@ -15,9 +15,9 @@ Class {
 		'introspectionData'
 	],
 	#pools : [
+		'VMClassIndices',
 		'VMMethodCacheConstants',
 		'VMObjectIndices',
-		'VMSqueakClassIndices',
 		'VMWellKnownPrimitivesConstants'
 	],
 	#category : #'VMMaker-JIT'

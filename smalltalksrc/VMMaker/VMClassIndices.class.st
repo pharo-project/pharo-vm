@@ -1,5 +1,5 @@
 Class {
-	#name : #VMSqueakClassIndices,
+	#name : #VMClassIndices,
 	#superclass : #VMBasicConstants,
 	#classVars : [
 		'ClassArrayCompactIndex',

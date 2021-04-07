@@ -463,10 +463,10 @@ Class {
 	#pools : [
 		'VMBasicConstants',
 		'VMBytecodeConstants',
+		'VMClassIndices',
 		'VMMethodCacheConstants',
 		'VMObjectIndices',
 		'VMSpurObjectRepresentationConstants',
-		'VMSqueakClassIndices',
 		'VMStackFrameOffsets',
 		'VMWellKnownPrimitivesConstants'
 	],
@@ -8810,17 +8810,6 @@ StackInterpreter >> isStillMarriedContextDuringGC: aContext [
 	 frameContext fields have been followed and so there is no need to follow forwarders."
 	^(self isMarriedOrWidowedContext: aContext)
 	    and: [(self isWidowedContextDuringGC: aContext) not]
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> isVanillaBlockClosure: aClosure [
-	"Answer if aClosure is a vanilla BlockClosure as in the first Cog release, BlockClosure laid out as 
-	 'outerContext, startpc, numArgs.  FullBlockClosure is laid out as  outerContext, method, numArgs, receiver.
-	 So either answer true if we're not supporting FullBlockClosure, or test the startpc/method field."
-	<inline: true>
-	^SistaV1BytecodeSet
-		ifTrue: [objectMemory isIntegerObject: (objectMemory fetchPointer: ClosureStartPCIndex ofObject: aClosure)]
-		ifFalse: [true]
 ]
 
 { #category : #'frame access' }
