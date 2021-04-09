@@ -1217,7 +1217,7 @@ VMClass >> uint32AtPointer: pointer put: value [
 	 pointer is a raw address, and the result is an 32 bit integer."
 	<doNotGenerate>
 
-	^self longAt: pointer put: value
+	^self long32At: pointer put: value
 ]
 
 { #category : #'memory access' }
