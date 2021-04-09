@@ -3,7 +3,8 @@ Class {
 	#superclass : #VMStructType,
 	#instVars : [
 		'primitiveGenerator',
-		'primNumArgs'
+		'primNumArgs',
+		'primMayCallBack'
 	],
 	#category : #'VMMaker-JIT'
 }
@@ -24,6 +25,18 @@ CogPrimitiveDescriptor class >> instVarNamesAndTypesForTranslationDo: aBinaryBlo
 { #category : #translation }
 CogPrimitiveDescriptor class >> structTypeName [
 	^self name allButFirst: 3 "Drop initial Cog"
+]
+
+{ #category : #accessing }
+CogPrimitiveDescriptor >> primMayCallBack [
+	
+	^ primMayCallBack
+]
+
+{ #category : #accessing }
+CogPrimitiveDescriptor >> primMayCallBack: aBoolean [
+	
+	^ primMayCallBack := aBoolean
 ]
 
 { #category : #accessing }

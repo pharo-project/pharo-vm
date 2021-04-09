@@ -66,16 +66,13 @@ VMCodeCompactionTest >> testCompactDuringInterpreterPrimitiveThatMovesCurrentMet
 	| firstMethod compactMethod callerMethod |
 	
 	<expectedFailure>
-
+	
 	"If we have a primitive that forces a code compaction it will crash when not using PrimMaybeCallBack "
 	
 	"Patching the primitive to execute the method I need to force the code compaction"
+	"We use the primitive 1 as it has not #maybeCallback"
 	interpreter primitiveTable at: 1 + 1 put: #primitiveForceMachineCodeCompaction.
 	
-	"We set the primitive properties to use PrimMayCallback. So it came through the interpreter. 
-	All primitives launching a code compaction should do so."
-	interpreter setPrimitivePropertyFlagFor: 1 value: PrimCallNeedsPrimitiveFunction + PrimCallNeedsNewMethod.
-
 	cogit sendTrace: 0.
 	
 	firstMethod := self jitMethod: (self findMethod: #methodToCompile1).
@@ -111,18 +108,15 @@ VMCodeCompactionTest >> testCompactDuringInterpreterPrimitiveThatMovesCurrentMet
 
 	| firstMethod compactMethod callerMethod |
 	
-	"Patching the primitive to execute the method I need to force the code compaction"
-	interpreter primitiveTable at: 1 + 1 put: #primitiveForceMachineCodeCompaction.
+	"Patching the primitive to execute the method I need to force the code compaction
+	We use the primitive 173 as it is marked as mayCallBack"
+	interpreter primitiveTable at: 1 + 173 put: #primitiveForceMachineCodeCompaction.
 	
-	"We set the primitive properties to use PrimMayCallback. So it came through the interpreter. 
-	All primitives launching a code compaction should do so."
-	interpreter setPrimitivePropertyFlagFor: 1 value: PrimCallNeedsPrimitiveFunction + PrimCallNeedsNewMethod + PrimCallMayCallBack.
-
 	cogit sendTrace: 0.
 	
 	firstMethod := self jitMethod: (self findMethod: #methodToCompile1).
 	callerMethod := self jitMethod: (self findMethod: #methodToCompile1).
-	compactMethod := self jitMethod: (self findMethod: #methodThatCallPrimitive1:).
+	compactMethod := self jitMethod: (self findMethod: #methodThatCallPrimitive173:).
 	
 	self fillCodeZone.
 

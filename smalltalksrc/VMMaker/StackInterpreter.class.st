@@ -452,10 +452,6 @@ Class {
 		'MethodHeaderFlagBitPosition',
 		'MethodHeaderTempCountShift',
 		'MixinIndex',
-		'PrimNumberDoExternalCall',
-		'PrimNumberDoPrimitive',
-		'PrimNumberExternalCall',
-		'PrimNumberFFICall',
 		'PrimitiveTable',
 		'ReturnToInterpreter',
 		'StackPageReachedButUntraced',
@@ -471,7 +467,8 @@ Class {
 		'VMObjectIndices',
 		'VMSpurObjectRepresentationConstants',
 		'VMSqueakClassIndices',
-		'VMStackFrameOffsets'
+		'VMStackFrameOffsets',
+		'VMWellKnownPrimitivesConstants'
 	],
 	#category : #'VMMaker-Interpreter'
 }
@@ -4073,9 +4070,8 @@ StackInterpreter >> checkForAndFollowForwardedPrimitiveState [
 	 args to the depth, following any forwarders.  Answer if any are found so
 	 the prim can be retried.  The primitive index is derived from newMethod."
 	<option: #SpurObjectMemory>
-	| primIndex accessorDepth found scannedStackFrame |
+	| primIndex accessorDepth |
 	self assert: self failed.
-	found := scannedStackFrame := false.
 	primIndex := self primitiveIndexOf: newMethod.
 	self assert: (argumentCount = (self argumentCountOf: newMethod) or: [self isMetaPrimitiveIndex: primIndex]).
 	"If the primitive is one of the meta primitives PrimNumberDoPrimitive or
@@ -4097,27 +4093,8 @@ StackInterpreter >> checkForAndFollowForwardedPrimitiveState [
 									ifTrue: [self primitiveAccessorDepthForExternalPrimitiveMethod: newMethod]
 									ifFalse: [primitiveAccessorDepthTable at: primIndex]].
 	self assert: (self saneFunctionPointerForFailureOfPrimIndex: primIndex).
-	self assert: (accessorDepth between: -1 and: 5).
-	accessorDepth >= 0 ifTrue:
-		[0 to: argumentCount do:
-			[:index| | oop |
-			oop := self stackValue: index.
-			(objectMemory isNonImmediate: oop) ifTrue:
-				[(objectMemory isForwarded: oop) ifTrue:
-					[self assert: index < argumentCount. "receiver should have been caught at send time."
-					 found := true.
-					 oop := objectMemory followForwarded: oop.
-					 self stackValue: index put: oop.
-					 scannedStackFrame ifFalse:
-						[scannedStackFrame := true.
-						 self
-							followForwardedFrameContents: framePointer
-							stackPointer: stackPointer + (argumentCount + 1 * objectMemory wordSize) "don't repeat effort"]].
-				(accessorDepth > 0
-			 	 and: [(objectMemory hasPointerFields: oop)
-				 and: [objectMemory followForwardedObjectFields: oop toDepth: accessorDepth]]) ifTrue:
-					[found := true]]]].
-	^found
+	^self followForwardedForAccessorDepth: accessorDepth
+
 ]
 
 { #category : #'process primitive support' }
@@ -6922,6 +6899,37 @@ StackInterpreter >> followForwardedFieldsInCurrentMethod [
 		toDepth: 0
 ]
 
+{ #category : #'as yet unclassified' }
+StackInterpreter >> followForwardedForAccessorDepth: accessorDepth [
+
+	| scannedStackFrame found |
+	found := scannedStackFrame := false.
+
+	self assert: (accessorDepth between: -1 and: 5).
+	accessorDepth >= 0 ifTrue: [ 
+		0 to: argumentCount do: [ :index | 
+			| oop |
+			oop := self stackValue: index.
+			(objectMemory isNonImmediate: oop) ifTrue: [ 
+				(objectMemory isForwarded: oop) ifTrue: [ 
+					self assert: index < argumentCount. "receiver should have been caught at send time."
+					found := true.
+					oop := objectMemory followForwarded: oop.
+					self stackValue: index put: oop.
+					scannedStackFrame ifFalse: [ 
+						scannedStackFrame := true.
+						self
+							followForwardedFrameContents: framePointer
+							stackPointer:
+							stackPointer + (argumentCount + 1 * objectMemory wordSize) "don't repeat effort" ] ].
+				(accessorDepth > 0 and: [ 
+					 (objectMemory hasPointerFields: oop) and: [ 
+						 objectMemory
+							 followForwardedObjectFields: oop
+							 toDepth: accessorDepth ] ]) ifTrue: [ found := true ] ] ] ].
+	^ found
+]
+
 { #category : #'lazy become' }
 StackInterpreter >> followForwardedFrameContents: theFP stackPointer: theSP [
 	"follow pointers in the current stack frame up to theSP."
@@ -7417,6 +7425,18 @@ StackInterpreter >> functionPointerFor: primIdx inClass: theClass [
 ]
 
 { #category : #'internal interpreter access' }
+StackInterpreter >> getBlockCompilationCount [
+	"This is nil in the StackVM"
+	^objectMemory nilObject
+]
+
+{ #category : #'internal interpreter access' }
+StackInterpreter >> getBlockCompilationMSecs [
+	"This is nil in the StackVM"
+	^objectMemory nilObject
+]
+
+{ #category : #'internal interpreter access' }
 StackInterpreter >> getCodeCompactionCount [
 	"This is nil in the StackVM"
 	^objectMemory nilObject
@@ -7566,6 +7586,18 @@ StackInterpreter >> getLongFromFile: aFile swap: swapFlag [
 	^swapFlag
 		ifTrue: [objectMemory byteSwapped: w]
 		ifFalse: [w]
+]
+
+{ #category : #'internal interpreter access' }
+StackInterpreter >> getMethodCompilationCount [
+	"This is nil in the StackVM"
+	^objectMemory nilObject
+]
+
+{ #category : #'internal interpreter access' }
+StackInterpreter >> getMethodCompilationMSecs [
+	"This is nil in the StackVM"
+	^objectMemory nilObject
 ]
 
 { #category : #'plugin primitive support' }
@@ -7775,6 +7807,22 @@ StackInterpreter >> handleStackOverflowOrEventAllowContextSwitch: mayContextSwit
 	stackLimit = stackPage realStackLimit ifTrue:
 		[^false].
 	^self checkForEventsMayContextSwitch: mayContextSwitch
+]
+
+{ #category : #'primitive support' }
+StackInterpreter >> hasCheckAllocFiller [
+
+	<api>
+
+	^ self checkAllocFiller 
+]
+
+{ #category : #profiling }
+StackInterpreter >> hasProfileSemaphore [
+
+	<api>
+	
+	^ profileSemaphore ~= objectMemory nilObject
 ]
 
 { #category : #'stack pages' }
@@ -12887,7 +12935,7 @@ StackInterpreter >> profileMethod [
 	^ profileMethod
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #profiling }
 StackInterpreter >> profileSemaphore [
 	<doNotGenerate>
 	^ profileSemaphore
@@ -14313,6 +14361,14 @@ StackInterpreter >> setDesiredCogCodeSize: dccs [
 	<inline: true>
 	"This should perhaps be a no-op in the StackVM, but we implement it for the convenience of bootstrap scripts etc."
 	theUnknownShort := dccs
+]
+
+{ #category : #'image save/restore' }
+StackInterpreter >> setDesiredEdenBytes: bytes [
+	<api>
+	<var: #bytes type: #usqLong>
+	desiredEdenBytes := bytes.
+	^0
 ]
 
 { #category : #'frame access' }

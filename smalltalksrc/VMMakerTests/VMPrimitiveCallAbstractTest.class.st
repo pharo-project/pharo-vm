@@ -143,6 +143,16 @@ VMPrimitiveCallAbstractTest >> methodThatCallPrimitive159 [
 ]
 
 { #category : #'methods under test' }
+VMPrimitiveCallAbstractTest >> methodThatCallPrimitive173: anArg [
+
+	"This method is used to test the invocation of a primitive.
+	The primitive to invoke is later changed in the primitive table of the interpreter used in the test"
+	<primitive: 173>
+	
+	^ 42
+]
+
+{ #category : #'methods under test' }
 VMPrimitiveCallAbstractTest >> methodThatCallPrimitive1: anArg [
 
 	"This method is used to test the invocation of a primitive.

@@ -130,4 +130,13 @@ typedef int (*fn_ioRegisterSurface)(sqIntptr_t surfaceHandle, sqSurfaceDispatch 
 typedef int (*fn_ioUnregisterSurface)(int surfaceID);
 typedef int (*fn_ioFindSurface)(int surfaceID, sqSurfaceDispatch *fn, sqIntptr_t *surfaceHandle);
 
+typedef struct SqueakSurface {
+	usqIntptr_t handle; /* client supplied handle */
+	sqSurfaceDispatch *dispatch;
+} SqueakSurface;
+
+int createManualSurface(int width, int height, int rowPitch, int depth, int isMSB);
+int destroyManualSurface(int surfaceID);
+int setManualSurfacePointer(int surfaceID, void* ptr);
+
 #endif /* __SQ_DRAW_SURFACE_H */
