@@ -5863,7 +5863,10 @@ Cogit >> computeEntryOffsets [
 	sendMissCall := self compileAbort.
 	self compileEntry.
 	self computeMaximumSizes.
-	self generateInstructionsAt: methodZoneBase + (self sizeof: CogMethod).
+	
+	self enableCodeZoneWriteDuring: [
+		self generateInstructionsAt: methodZoneBase + (self sizeof: CogMethod) ].
+	
 	cmEntryOffset := entry address - methodZoneBase.
 	cmNoCheckEntryOffset := noCheckEntry address - methodZoneBase.
 	missOffset := sendMissCall address + sendMissCall machineCodeSize - methodZoneBase.
@@ -5888,7 +5891,7 @@ Cogit >> computeFullBlockEntryOffsets [
 		 methodOrBlockNumArgs := 0.
 		 self compileFullBlockEntry.
 		 self computeMaximumSizes.
-		 self generateInstructionsAt: methodZoneBase + (self sizeof: CogMethod).
+		 self enableCodeZoneWriteDuring: [self generateInstructionsAt: methodZoneBase + (self sizeof: CogMethod)].
 		 cbEntryOffset := fullBlockEntry address - methodZoneBase.
 		 cbNoSwitchEntryOffset := fullBlockNoContextSwitchEntry address - methodZoneBase]
 ]
@@ -6067,9 +6070,9 @@ Cogit >> disableCodeZoneWrite [
 
 	<inline: true>
 	
-	self 
+	"self 
 		cppIf: (self defined: #pthread_jit_write_protect_np) 
-		ifTrue:[	self pthread_jit_write_protect_np: true ]
+		ifTrue:["	self pthread_jit_write_protect_np: true "]"
 ]
 
 { #category : #disassembly }
@@ -6271,9 +6274,9 @@ Cogit >> enableCodeZoneWrite [
 
 	<inline: true>
 	
-	self 
+	"self 
 		cppIf: (self defined: #pthread_jit_write_protect_np) 
-		ifTrue:[	self pthread_jit_write_protect_np: false ]
+		ifTrue:["	self pthread_jit_write_protect_np: false "]"
 ]
 
 { #category : #'code generation' }
@@ -7915,7 +7918,9 @@ Cogit >> generateClosedPICPrototype [
 	self computeMaximumSizes.
 	cPIC := (self cCoerceSimple: methodZoneBase to: #'CogMethod *').
 	closedPICSize := (self sizeof: CogMethod) + (self generateInstructionsAt: methodZoneBase + (self sizeof: CogMethod)).
-	endAddress := self outputInstructionsAt: methodZoneBase + (self sizeof: CogMethod).
+
+	self enableCodeZoneWriteDuring: [ endAddress := self outputInstructionsAt: methodZoneBase + (self sizeof: CogMethod) ].
+
 	self assert: methodZoneBase + closedPICSize = endAddress.
 	firstCPICCaseOffset := endCPICCase0 address - methodZoneBase.
 	cPICEndOfCodeOffset := cPICEndOfCodeLabel address - methodZoneBase.
@@ -7927,7 +7932,8 @@ Cogit >> generateClosedPICPrototype [
 	
 	"tpr this is a little tiresome but after any assert checking we need to 0 out the case0 objRef rather than leaving 16r5EAF00D lying around"
 
-	backEnd storeLiteral: 0 beforeFollowingAddress: endCPICCase0 address - backEnd jumpLongByteSize.
+	self enableCodeZoneWriteDuring: [
+		backEnd storeLiteral: 0 beforeFollowingAddress: endCPICCase0 address - backEnd jumpLongByteSize].
 	
 	"update the methodZoneBase so we keep the prototype around for later use"
 	methodZoneBase := self alignUptoRoutineBoundary: endAddress.
@@ -8188,8 +8194,11 @@ Cogit >> generateOpenPICPrototype [
 	self compileOpenPIC: (coInterpreter specialSelector: 0) numArgs: self numRegArgs.
 	self computeMaximumSizes.
 	methodLabel concretizeAt: methodZoneBase.
-	codeSize := self generateInstructionsAt: methodZoneBase + (self sizeof: CogMethod).
-	mapSize := self generateMapAt: nil start: methodZoneBase + cmNoCheckEntryOffset.
+
+	self enableCodeZoneWriteDuring: [	
+		codeSize := self generateInstructionsAt: methodZoneBase + (self sizeof: CogMethod).
+		mapSize := self generateMapAt: nil start: methodZoneBase + cmNoCheckEntryOffset].
+	
 	openPICSize := (methodZone roundUpLength: (self sizeof: CogMethod) + codeSize) + (methodZone roundUpLength: mapSize).
 	"self cCode: ''
 		inSmalltalk:
@@ -8747,10 +8756,12 @@ Cogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 	minValidCallAddress := (codeBase min: coInterpreter interpretAddress)
 								min: coInterpreter primitiveFailAddress.
 	methodZone manageFrom: methodZoneBase to: endAddress.
-	self maybeGenerateCheckFeatures.
-	self maybeGenerateICacheFlush.
-	self generateVMOwnerLockFunctions.
-	self genGetLeafCallStackPointer.
+	self enableCodeZoneWriteDuring: [
+		self maybeGenerateCheckFeatures.
+		self maybeGenerateICacheFlush.
+		self generateVMOwnerLockFunctions.
+		self genGetLeafCallStackPointer ].
+
 	self generateStackPointerCapture.
 	self generateTrampolines.
 	self computeEntryOffsets.
