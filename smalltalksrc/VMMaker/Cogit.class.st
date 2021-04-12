@@ -11840,9 +11840,11 @@ Cogit >> setSelectorOf: cogMethod to: aSelectorOop [
 		point: (objectMemory numBytesOf: aSelectorOop)
 		isMNUCase: false.
 	self assert: cogMethod cmType = CMMethod.
-	cogMethod selector: aSelectorOop.
-	(objectMemory isYoung: aSelectorOop) ifTrue:
-		[methodZone ensureInYoungReferrers: cogMethod]
+
+	self enableCodeZoneWriteDuring: [   
+		cogMethod selector: aSelectorOop.
+		(objectMemory isYoung: aSelectorOop) ifTrue:
+			[methodZone ensureInYoungReferrers: cogMethod] ].
 ]
 
 { #category : #initialization }
