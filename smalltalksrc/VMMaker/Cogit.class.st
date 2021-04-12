@@ -8735,7 +8735,9 @@ Cogit >> initializeBackend [
 Cogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 	<api>
 	self initializeBackend.
-	backEnd stopsFrom: startAddress to: endAddress - 1.
+	
+	self enableCodeZoneWriteDuring: [backEnd stopsFrom: startAddress to: endAddress - 1].
+
 	self cCode: [self sqMakeMemoryExecutableFrom: startAddress To: endAddress]
 		inSmalltalk:
 			[startAddress = self class guardPageSize ifTrue:
