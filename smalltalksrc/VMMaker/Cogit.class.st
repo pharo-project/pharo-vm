@@ -541,6 +541,10 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile:'#endif';
 		addHeaderFile:'"cogit.h"';
 		addHeaderFile:'<stdint.h>'.
+		
+	aCCodeGenerator 
+		addHeaderFile: '<pthread.h>'.
+		
 	aCCodeGenerator
 		var: #ceGetFP
 			declareC: 'usqIntptr_t (*ceGetFP)(void)';
@@ -6061,7 +6065,11 @@ Cogit >> deltaToSkipPrimAndErrorStoreIn: aMethodObj header: aMethodHeader [
 { #category : #'code generation' }
 Cogit >> disableCodeZoneWrite [
 
-	<doNotGenerate>
+	<inline: true>
+	
+	self 
+		cppIf: (self defined: #pthread_jit_write_protect_np) 
+		ifTrue:[	self pthread_jit_write_protect_np: true ]
 ]
 
 { #category : #disassembly }
@@ -6261,7 +6269,11 @@ Cogit >> emptyRegisterMask [
 { #category : #'code generation' }
 Cogit >> enableCodeZoneWrite [
 
-	<doNotGenerate>
+	<inline: true>
+	
+	self 
+		cppIf: (self defined: #pthread_jit_write_protect_np) 
+		ifTrue:[	self pthread_jit_write_protect_np: false ]
 ]
 
 { #category : #'code generation' }
@@ -6272,7 +6284,7 @@ Cogit >> enableCodeZoneWriteDuring: codeGenerationBlock [
 	self enableCodeZoneWriteDuring: codeGenerationBlock flushingCacheWith: [  ]
 ]
 
-{ #category : #initialization }
+{ #category : #'code generation' }
 Cogit >> enableCodeZoneWriteDuring: codeGenerationBlock flushingCacheWith: flushBlock [
 
 	<inline: true>
