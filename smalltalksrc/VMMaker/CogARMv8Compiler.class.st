@@ -2761,13 +2761,15 @@ CogARMv8Compiler >> concretizePrefetchAw [
 						offset: addressOperand - cogit varBaseAddress).
 			^ machineCodeSize := 4 ].
 	
-	self notYetImplemented.
-	
 	instrOffset := self moveCw: addressOperand intoR: ConcreteIPReg.
-	"pld	[ConcreteIPReg]"
+	"We fetch using the ConcreteIPReg"
+
 	self
 		machineCodeAt: instrOffset
-		put: (self pld: ConcreteIPReg plus: 1 offset: 0).
+		put: (self
+						prefetchMemory: 0 "prefetchFlags: load in L1 KEEP" 
+						sourceRegister: ConcreteIPReg
+						offset: 0).
 	^ machineCodeSize := instrOffset + 4
 ]
 
@@ -5103,14 +5105,6 @@ CogARMv8Compiler >> padIfPossibleWithStopsFrom: startAddr to: endAddr [
 	self stopsFrom: startAddr to: endAddr - nullBytes.
 	endAddr - nullBytes + 1 to: endAddr 
 		do: [ :p | objectMemory byteAt: p put: 16rFF]
-]
-
-{ #category : #encoding }
-CogARMv8Compiler >> pld: baseReg plus: u offset: immediate [
-	"hint to memory that we will want to read from baseReg +/- imediate sometime soon
-	PLD baseReg, immediate  - ARM_ARM v7 DDI10406 pp. A8-236-7"
-	<inline: true>
-	^ 2r11110101010100001111000000000000 bitOr: (baseReg<<16 bitOr:(u <<23 bitOr: immediate))
 ]
 
 { #category : #assembler }
