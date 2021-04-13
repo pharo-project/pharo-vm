@@ -4,10 +4,8 @@ Class {
 	#instVars : [
 		'ceScheduleScavengeTrampoline',
 		'ceSmallActiveContextInMethodTrampoline',
-		'ceSmallActiveContextInBlockTrampoline',
 		'ceSmallActiveContextInFullBlockTrampoline',
 		'ceLargeActiveContextInMethodTrampoline',
-		'ceLargeActiveContextInBlockTrampoline',
 		'ceLargeActiveContextInFullBlockTrampoline',
 		'ceStoreCheckContextReceiverTrampoline',
 		'ceStoreTrampolines',
@@ -223,18 +221,6 @@ CogObjectRepresentationForSpur >> canPinObjects [
 ]
 
 { #category : #accessing }
-CogObjectRepresentationForSpur >> ceLargeActiveContextInBlockTrampoline [
-	<doNotGenerate>
-	^ ceLargeActiveContextInBlockTrampoline
-]
-
-{ #category : #accessing }
-CogObjectRepresentationForSpur >> ceLargeActiveContextInBlockTrampoline: anInteger [ 
-	<doNotGenerate>
-	ceLargeActiveContextInBlockTrampoline := anInteger
-]
-
-{ #category : #accessing }
 CogObjectRepresentationForSpur >> ceLargeActiveContextInFullBlockTrampoline [
 	<doNotGenerate>
 	^ ceLargeActiveContextInFullBlockTrampoline
@@ -262,18 +248,6 @@ CogObjectRepresentationForSpur >> ceLargeActiveContextInMethodTrampoline: anInte
 CogObjectRepresentationForSpur >> ceScheduleScavengeTrampoline: anAddress [
 	<doNotGenerate>
 	ceScheduleScavengeTrampoline := anAddress
-]
-
-{ #category : #accessing }
-CogObjectRepresentationForSpur >> ceSmallActiveContextInBlockTrampoline [
-	<doNotGenerate>
-	^ ceSmallActiveContextInBlockTrampoline
-]
-
-{ #category : #accessing }
-CogObjectRepresentationForSpur >> ceSmallActiveContextInBlockTrampoline: anInteger [ 
-	<doNotGenerate>
-	ceSmallActiveContextInBlockTrampoline := anInteger
 ]
 
 { #category : #accessing }
@@ -838,11 +812,9 @@ CogObjectRepresentationForSpur >> genGetActiveContextNumArgs: numArgs large: isL
 	routine := isLargeContext
 				ifFalse: [isInBlock caseOf: {
 						[0]				-> [ceSmallActiveContextInMethodTrampoline].
-						[InVanillaBlock]	-> [ceSmallActiveContextInBlockTrampoline].
 						[InFullBlock]	-> [ceSmallActiveContextInFullBlockTrampoline] }]
 				ifTrue: [isInBlock caseOf: {
 						[0]				-> [ceLargeActiveContextInMethodTrampoline].
-						[InVanillaBlock]	-> [ceLargeActiveContextInBlockTrampoline].
 						[InFullBlock]	-> [ceLargeActiveContextInFullBlockTrampoline] }].
 	cogit
 		MoveCq: numArgs R: SendNumArgsReg;
@@ -2976,11 +2948,9 @@ CogObjectRepresentationForSpur >> generateObjectRepresentationTrampolines [
 											called: 'ceScheduleScavengeTrampoline'
 											regsToSave: CallerSavedRegisterMask.
 	ceSmallActiveContextInMethodTrampoline := self genActiveContextTrampolineLarge: false inBlock: 0 called: 'ceSmallMethodContext'.
-	ceSmallActiveContextInBlockTrampoline := self genActiveContextTrampolineLarge: false inBlock: InVanillaBlock called: 'ceSmallBlockContext'.
 	SistaV1BytecodeSet ifTrue:
 		[ceSmallActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: false inBlock: InFullBlock called: 'ceSmallFullBlockContext'].
 	ceLargeActiveContextInMethodTrampoline := self genActiveContextTrampolineLarge: true inBlock: 0 called: 'ceLargeMethodContext'.
-	ceLargeActiveContextInBlockTrampoline := self genActiveContextTrampolineLarge: true inBlock: InVanillaBlock called: 'ceLargeBlockContext'.
 	SistaV1BytecodeSet ifTrue:
 		[ceLargeActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: true inBlock: InFullBlock called: 'ceLargeFullBlockContext'].
 ]
