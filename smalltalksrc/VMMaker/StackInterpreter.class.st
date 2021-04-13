@@ -5274,38 +5274,6 @@ StackInterpreter >> doSignalSemaphoreWithIndex: index [
 	  and: [self synchronousSignal: sema]
 ]
 
-{ #category : #'send bytecodes' }
-StackInterpreter >> doubleExtendedDoAnythingBytecode [
-	"Replaces the Blue Book double-extended send [132], in which the first byte was wasted on 8 bits of argument count. 
-	Here we use 3 bits for the operation sub-type (opType),  and the remaining 5 bits for argument count where needed. 
-	The last byte give access to 256 instVars or literals. 
-	See also secondExtendedSendBytecode"
-	| byte2 byte3 opType top |
-	byte2 := self fetchByte.
-	byte3 := self fetchByte.
-	opType := byte2 >> 5.
-	opType = 0 ifTrue:
-		[messageSelector := self literal: byte3.
-		 argumentCount := byte2 bitAnd: 31.
-		 ^self normalSend].
-	opType = 1 ifTrue:
-		[messageSelector := self literal: byte3.
-		 argumentCount := byte2 bitAnd: 31.
-		 ^self superclassSend].
-	opType = 2 ifTrue: [self fetchNextBytecode. ^self pushMaybeContextReceiverVariable: byte3].
-	opType = 3 ifTrue: [self fetchNextBytecode. ^self pushLiteralConstant: byte3].
-	opType = 4 ifTrue: [self fetchNextBytecode. ^self pushLiteralVariable: byte3].
-	top := self internalStackTop.
-	opType = 7 ifTrue:
-		[self storeLiteralVariable: byte3 withValue: top.
-		 ^self fetchNextBytecode].
-	"opType = 5 is store; opType = 6 is storePop"
-	opType = 6 ifTrue:
-		[self internalPop: 1].
-	self storeMaybeContextReceiverVariable: byte3 withValue: top.
-	self fetchNextBytecode
-]
-
 { #category : #initialization }
 StackInterpreter >> dummyReferToProxy [
 	<inline: false>
@@ -5657,16 +5625,14 @@ StackInterpreter >> extReturnTopFromBlock [
 { #category : #'send bytecodes' }
 StackInterpreter >> extSendBytecode [
 	"238		11101110	i i i i i j j j	Send Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments"
-	| byte rcvr |
+	| byte |
 	byte := self fetchByte.
 	messageSelector := self literal: (byte >> 3) + (extA << 5).
 	extA := 0.
 	argumentCount := (byte bitAnd: 7) + (extB << 3).
 	extB := 0.
 	numExtB := 0.
-	rcvr := self internalStackValue: argumentCount.
-	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
-	self commonSendOrdinary
+	self normalSend
 ]
 
 { #category : #'send bytecodes' }
@@ -13816,21 +13782,6 @@ StackInterpreter >> schedulerPointer [
 	^ objectMemory fetchPointer: ValueIndex ofObject: (objectMemory splObj: SchedulerAssociation)
 ]
 
-{ #category : #'send bytecodes' }
-StackInterpreter >> secondExtendedSendBytecode [
-	"This replaces the Blue Book double-extended super-send [134],
-	which is subsumed by the new double-extended do-anything [132].
-	It offers a 2-byte send of 0-3 args for up to 63 literals, for which 
-	the Blue Book opcode set requires a 3-byte instruction."
-
-	| descriptor |
-	descriptor := self fetchByte.
-	messageSelector := self literal: (descriptor bitAnd: 16r3F).
-	argumentCount := descriptor >> 6.
-	self normalSend.
-
-]
-
 { #category : #'debug printing' }
 StackInterpreter >> selectorOfContext: aContext [
 	(objectMemory isContext: aContext) ifFalse:
@@ -14646,29 +14597,6 @@ StackInterpreter >> sigset: aJumpBuf jmp: sigSaveMask [
 	<doNotGenerate>
 	reenterInterpreter := ReenterInterpreter new returnValue: 0; yourself.
 	^0
-]
-
-{ #category : #'send bytecodes' }
-StackInterpreter >> singleExtendedSendBytecode [
-	"Can use any of the first 32 literals for the selector and pass up to 7 arguments."
-
-	| descriptor |
-	descriptor := self fetchByte.
-	messageSelector := self literal: (descriptor bitAnd: 16r1F).
-	argumentCount := descriptor >> 5.
-	self normalSend.
-]
-
-{ #category : #'send bytecodes' }
-StackInterpreter >> singleExtendedSuperBytecode [
-	"Can use any of the first 32 literals for the selector and pass up to 7 arguments."
-
-	| descriptor |
-	descriptor := self fetchByte.
-	messageSelector := self literal: (descriptor bitAnd: 16r1F).
-	argumentCount := descriptor >> 5.
-	self superclassSend.
-
 ]
 
 { #category : #'sista bytecodes' }
@@ -15506,7 +15434,7 @@ StackInterpreter >> superclassSend [
 	"Assume: messageSelector and argumentCount have been set, and that
 	 the receiver and arguments have been pushed onto the stack,"
 	"Note: This method is inlined into the interpreter dispatch loop."
-	<sharedCodeInCase: #singleExtendedSuperBytecode>
+	<sharedCodeInCase: #extSendSuperBytecode>
 	| superclass |
 	superclass := self superclassOf: (self methodClassOf: method).
 	"classTagForClass: uses ensureBehaviorHash:"
