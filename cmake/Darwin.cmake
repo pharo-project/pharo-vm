@@ -1,4 +1,9 @@
 
+#In Apple Silicon machines the code zone is read-only, and requires special operations
+if("${CMAKE_HOST_SYSTEM_PROCESSOR}" STREQUAL "arm64" )
+    target_compile_definitions(${VM_LIBRARY_NAME} PRIVATE READ_ONLY_CODE_ZONE=1)
+endif()
+
 function(add_platform_headers)
   target_include_directories(${VM_LIBRARY_NAME}
     PUBLIC
