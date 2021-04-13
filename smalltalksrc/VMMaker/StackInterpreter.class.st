@@ -5048,7 +5048,7 @@ StackInterpreter >> directedSuperclassSend [
 	"Assume: messageSelector and argumentCount have been set, and that
 	 the receiver and arguments have been pushed onto the stack,"
 	"Note: This method is inlined into the interpreter dispatch loop."
-	<sharedCodeInCase: #extSendSuperBytecode>
+	"<sharedCodeInCase: #extSendSuperBytecode>"
 	<option: #BytecodeSetHasDirectedSuperSend>
 	| class superclass |
 	class := self internalPopStack.
@@ -15434,7 +15434,7 @@ StackInterpreter >> superclassSend [
 	"Assume: messageSelector and argumentCount have been set, and that
 	 the receiver and arguments have been pushed onto the stack,"
 	"Note: This method is inlined into the interpreter dispatch loop."
-	<sharedCodeInCase: #extSendSuperBytecode>
+	"<sharedCodeInCase: #extSendSuperBytecode>"
 	| superclass |
 	superclass := self superclassOf: (self methodClassOf: method).
 	"classTagForClass: uses ensureBehaviorHash:"
