@@ -17,7 +17,7 @@ TGoToNode class >> label: aLabel [
 
 { #category : #tranforming }
 TGoToNode >> asCASTIn: aCCodeGenerator [ 
-	^ CGotoStatementNode identifier: label.
+	^ CGotoStatementNode identifier: label
 ]
 
 { #category : #'C code generation' }

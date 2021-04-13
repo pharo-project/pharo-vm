@@ -71,6 +71,17 @@ CSlangPrettyPrinter >> visitBinary: aBinary [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitCall: aCall [
+	
+	
+	stream nextPutAll: (aCall identifier name).
+	stream nextPutAll: '('.
+	aCall arguments do: [ :arg | arg acceptVisitor: self ] separatedBy: [ stream nextPutAll: ', '].
+	stream nextPutAll: ')'.
+		
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 
 	aCompoundStatement needsBrackets ifTrue: [
@@ -132,7 +143,7 @@ CSlangPrettyPrinter >> visitDeclarator: aDeclarator [
 CSlangPrettyPrinter >> visitGotoStatement: aGoToStatement [
 
 	stream nextPutAll: 'goto ';
-			 nextPutAll: aGoToStatement label name.
+			 nextPutAll: aGoToStatement label name
 	
 ]
 

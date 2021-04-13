@@ -438,6 +438,20 @@ SlangBasicTranslationTest >> testReturnVariable [
 ]
 
 { #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testSendAbsOfInteger [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #abs
+					receiver: (TConstantNode value: -1)
+					arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'abs(-1)'
+]
+
+{ #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testSendAnd [
 
 	| translation send |
