@@ -6070,9 +6070,9 @@ Cogit >> disableCodeZoneWrite [
 
 	<inline: true>
 	
-	"self 
-		cppIf: (self defined: #pthread_jit_write_protect_np) 
-		ifTrue:["	self pthread_jit_write_protect_np: true "]"
+	self 
+		cppIf: #'READ_ONLY_CODE_ZONE'
+		ifTrue:[	self pthread_jit_write_protect_np: true ]
 ]
 
 { #category : #disassembly }
@@ -6274,9 +6274,9 @@ Cogit >> enableCodeZoneWrite [
 
 	<inline: true>
 	
-	"self 
-		cppIf: (self defined: #pthread_jit_write_protect_np) 
-		ifTrue:["	self pthread_jit_write_protect_np: false "]"
+	self 
+		cppIf: #'READ_ONLY_CODE_ZONE'
+		ifTrue:[	self pthread_jit_write_protect_np: false ]
 ]
 
 { #category : #'code generation' }
