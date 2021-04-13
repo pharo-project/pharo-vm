@@ -33,6 +33,16 @@ TSendNode >> argumentsForInliningCodeGenerator: aCodeGen [
 		ifFalse: [arguments]
 ]
 
+{ #category : #tranforming }
+TSendNode >> asCASTIn: aCCodeGenerator [
+
+	| construct |
+	
+	construct := aCCodeGenerator generateCASTForBuiltinConstructAsArgumentFor: self.
+	construct ifNil: [ ^ Error new signal: 'This type of send message has to be implemented.' ].
+	^ construct
+]
+
 { #category : #'inlining support' }
 TSendNode >> asTransformedConstantPerform [
 	"If the receiver is a send of perform: with a constant selector,

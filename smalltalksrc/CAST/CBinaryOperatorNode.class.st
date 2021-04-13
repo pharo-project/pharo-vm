@@ -9,6 +9,16 @@ Class {
 	#category : #'CAST-Nodes'
 }
 
+{ #category : #'instance creation' }
+CBinaryOperatorNode class >> operator: aString left: lexpression right: rexpression [
+	
+	^ self new
+		operator: aString;
+		left: lexpression;
+		right: rexpression;
+		yourself
+]
+
 { #category : #generated }
 CBinaryOperatorNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitBinary: self

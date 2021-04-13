@@ -50,6 +50,27 @@ CSlangPrettyPrinter >> visitAssignment: anAssignment [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitBinary: aBinary [
+	| leftParenthesises rightParenthesises |
+	
+	leftParenthesises := (aBinary left isConstant or: [ aBinary left isIdentifier ]).
+	rightParenthesises := (aBinary right isConstant or: [ aBinary right isIdentifier ]).
+	
+	leftParenthesises ifFalse: [ stream nextPutAll: '(' ].
+	aBinary left acceptVisitor: self.
+	leftParenthesises ifFalse: [ stream nextPutAll: ')' ].
+	
+	stream
+		nextPutAll: ' ';
+		nextPutAll: aBinary operator;
+		nextPutAll: ' '.
+		
+	rightParenthesises ifFalse: [ stream nextPutAll: '(' ].
+	aBinary right acceptVisitor: self.
+	rightParenthesises ifFalse: [ stream nextPutAll: ')' ].
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 
 	aCompoundStatement needsBrackets ifTrue: [

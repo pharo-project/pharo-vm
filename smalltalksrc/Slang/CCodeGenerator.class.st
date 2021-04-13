@@ -39,7 +39,8 @@ Class {
 		'breakOnInline',
 		'environment',
 		'compileTimeOptions',
-		'stopOnErrors'
+		'stopOnErrors',
+		'castTranslationDict'
 	],
 	#classVars : [
 		'NoRegParmsInAssertVMs'
@@ -1714,6 +1715,57 @@ CCodeGenerator >> generateBytesPerWord: msgNode on: aStream indent: level [
 	aStream nextPutAll: 'BytesPerWord'
 ]
 
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAnd: tast [
+	
+		^ CBinaryOperatorNode 
+			operator: #&&
+			left: (tast receiver asCASTIn: self)
+			right: (tast arguments first asCASTIn: self)
+]
+
+{ #category : #utilities }
+CCodeGenerator >> generateCASTForBuiltinConstructAsArgumentFor: msgNode [
+	"Generate CAST for a message node assuming it is a built in construct.
+	If the message node can not be translated as a built in construct, return nil. 
+	"
+
+	| action |
+	(self shouldGenerateAsInterpreterProxySend: msgNode) ifTrue:
+		[^nil].
+	action := asArgumentTranslationDict
+				at: msgNode selector
+				ifAbsent: [castTranslationDict at: msgNode selector ifAbsent: [ ^nil ]].
+	^ self perform: action with: msgNode
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTMinus: tast [
+	
+		^ CBinaryOperatorNode 
+			operator: #-
+			left: (tast receiver asCASTIn: self)
+			right: (tast arguments first asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTOr: tast [
+	
+		^ CBinaryOperatorNode 
+			operator: #||
+			left: (tast receiver asCASTIn: self)
+			right: (tast arguments first asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTPlus: tast [
+	
+		^ CBinaryOperatorNode 
+			operator: #+
+			left: (tast receiver asCASTIn: self)
+			right: (tast arguments first asCASTIn: self)
+]
+
 { #category : #'C translation' }
 CCodeGenerator >> generateCCoercion: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
@@ -3112,6 +3164,7 @@ CCodeGenerator >> initialize [
 	methods := Dictionary new: 500.
 	macros := Dictionary new.
 	self initializeCTranslationDictionary.
+	self initializeCASTTranslationDictionary.
 	headerFiles := OrderedCollection new.
 	globalVariableUsage := Dictionary new.
 	useSymbolicConstants := true.
@@ -3127,6 +3180,185 @@ CCodeGenerator >> initialize [
 	breakDestInlineSelectors := IdentitySet new.
 	
 	stopOnErrors := false.
+]
+
+{ #category : #'C translation support' }
+CCodeGenerator >> initializeCASTTranslationDictionary [
+	"Initialize the dictionary mapping message names to actions for C code generation."
+
+	| pairs |
+	
+	castTranslationDict := Dictionary new: 200.
+	pairs := #(
+	#&				#generateCASTAnd:
+	#|				#generateCASTOr:
+	#abs			#generateCASTAbs:
+	#and:			#generateCASTSequentialAnd:
+	#or:			#generateCASTSequentialOr:
+	#not			#generateCASTNot:
+
+	#+				#generateCASTPlus:
+	#-				#generateCASTMinus:
+	#negated		#generateCASTNegated:
+	#*				#generateCASTTimes:
+	#**				#generateCASTPowerTo:
+	#/				#generateCASTDivide:
+	#//				#generateCASTDivide:
+	#\\				#generateCASTModulo:
+	#<<				#generateCASTShiftLeft:
+	#>>				#generateCASTShiftRight:
+	#>>>			#generateCASTSignedShiftRight:
+	#min:			#generateCASTMin:
+	#max:			#generateCASTMax:
+	#between:and:	#generateCASTBetweenAnd:
+
+	#bitAnd:			#generateCASTBitAnd:
+	#bitOr:				#generateCASTBitOr:
+	#bitXor:			#generateCASTBitXor:
+	#bitShift:			#generateCASTBitShift:
+	#signedBitShift:	#generateCASTSignedBitShift:
+	#bitInvert32		#generateCASTBitInvert:
+	#bitInvert64		#generateCASTBitInvert:
+	#bitClear:			#generateCASTBitClear:
+	#truncateTo:		#generateCASTTruncateTo:
+	#rounded			#generateCASTRounded:
+
+	#byteSwap32		#generateCASTByteSwap32:
+	#byteSwap64		#generateCASTByteSwap64:
+	#byteSwapped32IfBigEndian:	generateCASTByteSwap32IfBigEndian:
+	#byteSwapped64IfBigEndian:	generateCASTByteSwap64IfBigEndian:
+	
+	#<				#generateCASTLessThan:
+	#<=			#generateCASTLessThanOrEqual:
+	#=				#generateCASTEqual:
+	#>				#generateCASTGreaterThan:
+	#>=			#generateCASTGreaterThanOrEqual:
+	#~=			#generateCASTNotEqual:
+	#==			#generateCASTEqual:
+	#~~			#generateCASTNotEqual:
+	#isNil			#generateCASTIsNil:
+	#notNil			#generateCASTNotNil:
+
+	#whileTrue: 	#generateCASTWhileTrue:
+	#whileFalse:	#generateCASTWhileFalse:
+	#whileTrue 	#generateCASTDoWhileTrue:
+	#whileFalse		#generateCASTDoWhileFalse:
+	#to:do:			#generateCASTToDo:
+	#to:by:do:		#generateCASTToByDo:
+	#repeat 		#generateCASTRepeat:
+	#timesRepeat:	#generateCASTTimesRepeat:
+
+	#ifTrue:			#generateCASTIfTrue:
+	#ifFalse:		#generateCASTIfFalse:
+	#ifTrue:ifFalse:	#generateCASTIfTrueIfFalse:
+	#ifFalse:ifTrue:	#generateCASTIfFalseIfTrue:
+
+	#ifNotNil:		#generateCASTIfNotNil:
+	#ifNil:			#generateCASTIfNil:
+	#ifNotNil:ifNil:	#generateCASTIfNotNilIfNil:
+	#ifNil:ifNotNil:	#generateCASTIfNilIfNotNil:
+
+	#at:				#generateCASTAt:
+	#at:put:			#generateCASTAtPut:
+	#basicAt:		#generateCASTAt:
+	#basicAt:put:	#generateCASTAtPut:
+
+	#integerValueOf:			#generateCASTIntegerValueOf:
+	#integerObjectOf:			#generateCASTIntegerObjectOf:
+	#isIntegerObject: 			#generateCASTIsIntegerObject:
+	#cCode:					#generateCASTInlineCCode:
+	#cCode:inSmalltalk:			#generateCASTInlineCCode:
+	#cPreprocessorDirective:	#generateCASTInlineCPreprocessorDirective:
+	#cppIf:ifTrue:ifFalse:		#generateCASTInlineCppIfElse:
+	#cppIf:ifTrue:				#generateCASTInlineCppIfElse:
+	#cCoerce:to:				#generateCASTCCoercion:
+	#cCoerceSimple:to:			#generateCASTCCoercion:
+	#addressOf:				#generateCASTAddressOf:
+	#addressOf:put:			#generateCASTAddressOf:
+	#asAddress:put:			#generateCASTAsAddress:
+	#signedIntFromLong64		#generateCASTSignedIntFromLong64:
+	#signedIntFromLong		#generateCASTSignedIntFromLong:
+	#signedIntFromShort		#generateCASTSignedIntFromShort:
+	#signedIntToLong64		#generateCASTSignedIntToLong64:
+	#signedIntToLong			#generateCASTSignedIntToLong:
+	#signedIntToShort			#generateCASTSignedIntToShort:
+	#preIncrement				#generateCASTPreIncrement:
+	#preDecrement			#generateCASTPreDecrement:
+	#inline:						#generateCASTInlineDirective:
+	#asFloat					#generateCASTAsFloat:
+	#asInteger					#generateCASTAsInteger:
+	#asIntegerPtr				#generateCASTAsIntegerPtr:
+	#asUnsignedInteger		#generateCASTAsUnsignedInteger:
+	#asUnsignedIntegerPtr		#generateCASTAsUnsignedIntegerPtr:
+	#asLong					#generateCASTAsLong:
+	#asUnsignedLong			#generateCASTAsUnsignedLong:
+	#asUnsignedLongLong		#generateCASTAsUnsignedLongLong:
+	#asVoidPointer				#generateCASTAsVoidPointer:
+	#asSymbol					#generateCASTAsSymbol:
+	#flag:						#generateCASTFlag:
+	#anyMask:					#generateCASTBitAnd:
+	#allMask:					#generateCASTAllMask:
+	#noMask:					#generateCASTNoMask:
+	#raisedTo:					#generateCASTRaisedTo:
+	#touch:						#generateCASTTouch:
+
+	#bytesPerOop 				#generateCASTBytesPerOop:
+	#bytesPerWord 			#generateCASTBytesPerWord:
+	#wordSize		 			#generateCASTBytesPerWord:
+	#baseHeaderSize			#generateCASTBaseHeaderSize:
+	#minSmallInteger			#generateCASTSmallIntegerConstant:
+	#maxSmallInteger			#generateCASTSmallIntegerConstant:
+	
+	#sharedCodeNamed:inCase:		#generateCASTSharedCodeDirective:
+
+	#perform:							#generateCASTPerform:
+	#perform:with:						#generateCASTPerform:
+	#perform:with:with:					#generateCASTPerform:
+	#perform:with:with:with:				#generateCASTPerform:
+	#perform:with:with:with:with:		#generateCASTPerform:
+	#perform:with:with:with:with:with:	#generateCASTPerform:
+
+	#value								#generateCASTValue:
+	#value:								#generateCASTValue:
+	#value:value:						#generateCASTValue:
+	#value:value:value:					#generateCASTValue:
+	#value:value:value:value:			#generateCASTValue:
+	#value:value:value:value:value:			#generateCASTValue:
+	#value:value:value:value:value:value:	#generateCASTValue:
+
+	#deny:								#generateCASTDeny:
+
+	#shouldNotImplement				#generateCASTSmalltalkMetaError:
+	#shouldBeImplemented			#generateCASTSmalltalkMetaError:
+	#subclassResponsibility			#generateCASTSmalltalkMetaError:
+	).
+
+	1 to: pairs size by: 2 do: [:i |
+		castTranslationDict at: (pairs at: i) put: (pairs at: i + 1)].
+
+	pairs := #(
+	#ifTrue:					#generateCASTIfTrueAsArgument:	
+	#ifFalse:				#generateCASTIfFalseAsArgument:
+	#ifTrue:ifFalse:			#generateCASTIfTrueIfFalseAsArgument:
+	#ifFalse:ifTrue:			#generateCASTIfFalseIfTrueAsArgument:
+	#ifNotNil:				#generateCASTIfNotNilAsArgument:	
+	#ifNil:					#generateCASTIfNilAsArgument:
+	#ifNotNil:ifNil:			#generateCASTIfNotNilIfNilAsArgument:
+	#ifNil:ifNotNil:			#generateCASTIfNilIfNotNilAsArgument:
+	#cCode:				#generateCASTInlineCCodeAsArgument:
+	#cCode:inSmalltalk:		#generateCASTInlineCCodeAsArgument:
+	#cppIf:ifTrue:ifFalse:	#generateCASTInlineCppIfElseAsArgument:
+	#cppIf:ifTrue:			#generateCASTInlineCppIfElseAsArgument:
+
+	#value					#generateCASTValueAsArgument:
+	#value:					#generateCASTValueAsArgument:
+	#value:value:			#generateCASTValueAsArgument:
+	).
+
+	asArgumentTranslationDict := Dictionary new: 8.
+	1 to: pairs size by: 2 do: [:i |
+		asArgumentTranslationDict at: (pairs at: i) put: (pairs at: i + 1)].
+
 ]
 
 { #category : #'C translation support' }
