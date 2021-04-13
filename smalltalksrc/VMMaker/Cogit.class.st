@@ -567,7 +567,6 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 			as: #'AbstractInstruction *'
 				in: aCCodeGenerator.
 	aCCodeGenerator
-		declareVar: #blockStarts type: #'BlockStart *';
 		declareVar: #fixups type: #'BytecodeFixup *'.
 	aCCodeGenerator
 		var: #ordinarySendTrampolines
@@ -4069,20 +4068,6 @@ Cogit >> ceFree: pointer [
 ]
 
 { #category : #accessing }
-Cogit >> ceLargeActiveContextInBlockTrampoline [
-
-	<doNotGenerate>
-	^ objectRepresentation ceLargeActiveContextInBlockTrampoline
-]
-
-{ #category : #accessing }
-Cogit >> ceLargeActiveContextInBlockTrampoline: anAddress [
-
-	<doNotGenerate>
-	objectRepresentation ceLargeActiveContextInBlockTrampoline: anAddress
-]
-
-{ #category : #accessing }
 Cogit >> ceLargeActiveContextInFullBlockTrampoline [
 
 	<doNotGenerate>
@@ -4259,20 +4244,6 @@ Cogit >> ceSendMustBeBooleanAddTrueTrampoline: anInteger [
 	
 	ceSendMustBeBooleanAddTrueTrampoline :=	anInteger
 
-]
-
-{ #category : #accessing }
-Cogit >> ceSmallActiveContextInBlockTrampoline [
-
-	<doNotGenerate>
-	^ objectRepresentation ceSmallActiveContextInBlockTrampoline
-]
-
-{ #category : #accessing }
-Cogit >> ceSmallActiveContextInBlockTrampoline: anAddress [
-
-	<doNotGenerate>
-	objectRepresentation ceSmallActiveContextInBlockTrampoline: anAddress
 ]
 
 { #category : #accessing }

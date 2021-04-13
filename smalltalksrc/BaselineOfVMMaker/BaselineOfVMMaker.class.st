@@ -54,7 +54,7 @@ BaselineOfVMMaker >> baseline: spec [
 			spec
 				package: 'VMMaker'
 				with: [ spec requires: #( 
-					'VMMakerLoadingDependencies' 'Printf' 'Melchor') ].
+					'VMMakerLoadingDependencies' 'Printf') ].
 								
 			"VM plugins"
 			spec package: 'FileAttributesPlugin' with: [ spec requires: #( 'VMMakerCompatibilityForPharo6') ].
