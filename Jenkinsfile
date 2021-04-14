@@ -158,7 +158,7 @@ def runTests(platform, configuration, packages, withWorker){
 					} else {
 						shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
 
-						if(platform == 'Darwin-x86_64'){
+						if(platform == 'Darwin-x86_64' || platform == 'Darwin-arm64'){
 							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
 						}
 
