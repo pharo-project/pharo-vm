@@ -10,9 +10,16 @@ function(find_system_Freetype)
 endfunction()
 
 function(download_Freetype)
-  if (WIN OR OSX)
+  if (WIN)
     # Download it for now, except for linuxes
-    add_third_party_dependency("freetype-2.9.1")
+	add_third_party_dependency("freetype-2.9.1")
+  endif()
+  if (OSX)
+    If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64")
+      add_third_party_dependency("freetype-2.10.0")
+    else()
+      add_third_party_dependency("freetype-2.9.1")
+    endif()	
   endif()
 endfunction()
 
