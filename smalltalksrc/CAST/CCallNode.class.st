@@ -8,6 +8,15 @@ Class {
 	#category : #'CAST-Nodes'
 }
 
+{ #category : #'instance creation' }
+CCallNode class >> identifier: aString arguments: anOrderdList [
+	
+	^ self new
+		identifier: aString;
+		arguments: anOrderdList;
+		yourself
+]
+
 { #category : #generated }
 CCallNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitCall: self

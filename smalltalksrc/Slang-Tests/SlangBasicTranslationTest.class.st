@@ -392,7 +392,7 @@ SlangBasicTranslationTest >> testGoto [
 	
 	translation := self translate: (TGoToNode label: 'lab').
 
-	self assert: translation trimBoth equals: 'goto lab'
+	self assert: translation equals: 'goto lab'
 ]
 
 { #category : #'tests-return' }
@@ -435,6 +435,67 @@ SlangBasicTranslationTest >> testReturnVariable [
 		yourself).
 		
 	self assert: translation equals: 'return var'
+]
+
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testSendAbsOfInteger [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #abs
+					receiver: (TConstantNode value: -1)
+					arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'abs(-1)'
+]
+
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testSendAnd [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #&
+					receiver: (TConstantNode value: 0)
+					arguments: { TConstantNode value: 1 }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '0 && 1'
+]
+
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testSendOr [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #|
+					receiver: (TConstantNode value: 0)
+					arguments: { TConstantNode value: 1 }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '0 || 1'
+]
+
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testSendPlus [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #+
+					receiver: (
+						TSendNode new
+						setSelector: #+
+						receiver: (TConstantNode value: 1)
+						arguments: { TConstantNode value: 2 }
+					)
+					arguments: { TConstantNode value: 3 }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '(1 + 2) + 3'
 ]
 
 { #category : #'tests-assignment' }
