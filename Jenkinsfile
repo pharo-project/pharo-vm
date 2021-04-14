@@ -88,11 +88,11 @@ def runBuild(platformName, configuration, headless = true){
     if(isWindows()){
       runInCygwin "mkdir ${buildDirectory}"
       recordCygwinVersions(buildDirectory)
-      runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository"
+      runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository -DICEBERG_DEFAULT_REMOTE=httpsUrl"
       runInCygwin "cd ${buildDirectory} && VERBOSE=1 make install"
       runInCygwin "cd ${buildDirectory} && VERBOSE=1 make package"
     }else{
-      cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
+      cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
       dir("${buildDirectory}"){
         shell "VERBOSE=1 make install"
         shell "VERBOSE=1 make package"
@@ -272,7 +272,7 @@ def uploadPackages(){
 try{
     properties([disableConcurrentBuilds()])
 
-    def platforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64']
+    def platforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64', 'Darwin-arm64']
 	def builders = [:]
 	def tests = [:]
 
