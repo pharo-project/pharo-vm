@@ -437,35 +437,35 @@ SlangBasicTranslationTest >> testReturnVariable [
 	self assert: translation equals: 'return var'
 ]
 
-{ #category : #'tests-assignment' }
-SlangBasicTranslationTest >> testSendAbsOfInteger [
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendAbs [
 
 	| translation send |
-
+	
 	send := TSendNode new
 					setSelector: #abs
 					receiver: (TConstantNode value: -1)
 					arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'abs(-1)'
+	self assert: translation equals: 'abs(-1)'
 ]
 
-{ #category : #'tests-assignment' }
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendAnd [
 
 	| translation send |
 
 	send := TSendNode new
 					setSelector: #&
-					receiver: (TConstantNode value: 0)
-					arguments: { TConstantNode value: 1 }.
+					receiver: (TConstantNode value: false)
+					arguments: { TConstantNode value: true }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: '0 && 1'
+	self assert: translation equals: '0 && 1'
 ]
 
-{ #category : #'tests-assignment' }
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendOr [
 
 	| translation send |
@@ -476,10 +476,10 @@ SlangBasicTranslationTest >> testSendOr [
 					arguments: { TConstantNode value: 1 }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: '0 || 1'
+	self assert: translation equals: '0 || 1'
 ]
 
-{ #category : #'tests-assignment' }
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendPlus [
 
 	| translation send |
@@ -495,7 +495,7 @@ SlangBasicTranslationTest >> testSendPlus [
 					arguments: { TConstantNode value: 3 }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: '(1 + 2) + 3'
+	self assert: translation equals: '(1 + 2) + 3'
 ]
 
 { #category : #'tests-assignment' }
@@ -620,7 +620,7 @@ SlangBasicTranslationTest >> testVariableUpdateAssignmentMinus [
 			setVariable: variable
 			expression: expression).
 
-	self assert: translation trimBoth equals: 'var -= 7'
+	self assert: translation equals: 'var -= 7'
 ]
 
 { #category : #'tests-assignment' }
@@ -641,7 +641,7 @@ SlangBasicTranslationTest >> testVariableUpdateAssignmentPlus [
 			setVariable: variable
 			expression: expression).
 
-	self assert: translation trimBoth equals: 'var += 7'
+	self assert: translation equals: 'var += 7'
 ]
 
 { #category : #helpers }

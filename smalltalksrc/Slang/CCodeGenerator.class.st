@@ -1742,8 +1742,14 @@ CCodeGenerator >> generateCASTAbs: tast [
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTAnd: tast [
 
+	^ self generateCASTBinary: tast operator: #&&
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBinary: tast operator: operator [
+
 	^ CBinaryOperatorNode
-		  operator: #&&
+		  operator: operator
 		  left: (tast receiver asCASTIn: self)
 		  right: (tast arguments first asCASTIn: self)
 ]
@@ -1766,28 +1772,25 @@ CCodeGenerator >> generateCASTForBuiltinConstructAsArgumentFor: msgNode [
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTMinus: tast [
 	
-		^ CBinaryOperatorNode 
-			operator: #-
-			left: (tast receiver asCASTIn: self)
-			right: (tast arguments first asCASTIn: self)
+	^ self generateCASTBinary: tast operator: #-
 ]
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTOr: tast [
 	
-		^ CBinaryOperatorNode 
-			operator: #||
-			left: (tast receiver asCASTIn: self)
-			right: (tast arguments first asCASTIn: self)
+	^ self generateCASTBinary: tast operator: #||
 ]
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTPlus: tast [
 	
-		^ CBinaryOperatorNode 
-			operator: #+
-			left: (tast receiver asCASTIn: self)
-			right: (tast arguments first asCASTIn: self)
+	^ self generateCASTBinary: tast operator: #+
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTTimes: tast [
+	
+	^ self generateCASTBinary: tast operator: #*
 ]
 
 { #category : #'C translation' }
