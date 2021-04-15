@@ -1278,7 +1278,7 @@ CASTParser >> reduceActionFortypename1: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForunary_expression3: nodes [
 	| result |
-	result := CGLRUnaryExpressionNode new.
+	result := CUnaryOperatorNode new.
 	result operator: (nodes at: 1).
 	result expression: (nodes at: 2).
 	^ result
@@ -1287,7 +1287,7 @@ CASTParser >> reduceActionForunary_expression3: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForunary_expression5: nodes [
 	| result |
-	result := CGLRUnaryExpressionNode new.
+	result := CUnaryOperatorNode new.
 	result sizeofToken: (nodes at: 1).
 	result expression: (nodes at: 2).
 	^ result
@@ -1296,7 +1296,7 @@ CASTParser >> reduceActionForunary_expression5: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForunary_expression6: nodes [
 	| result |
-	result := CGLRUnaryExpressionNode new.
+	result := CUnaryOperatorNode new.
 	result sizeofToken: (nodes at: 1).
 	result type: (nodes at: 3).
 	result expression: (nodes at: 4).

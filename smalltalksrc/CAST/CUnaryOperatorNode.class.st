@@ -1,57 +1,57 @@
 Class {
-	#name : #CGLRUnaryExpressionNode,
-	#superclass : #CGLRAbstractNode,
+	#name : #CUnaryOperatorNode,
+	#superclass : #CExpressionNode,
 	#instVars : [
 		'expr',
 		'sizeofToken',
 		'type',
 		'operator'
 	],
-	#category : #CAST
+	#category : #'CAST-Nodes'
 }
 
 { #category : #generated }
-CGLRUnaryExpressionNode >> acceptVisitor: anAbstractVisitor [
+CUnaryOperatorNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitUnaryExpression: self
 ]
 
 { #category : #generated }
-CGLRUnaryExpressionNode >> expression [
+CUnaryOperatorNode >> expression [
 	^ expr
 ]
 
 { #category : #generated }
-CGLRUnaryExpressionNode >> expression: anObject [
+CUnaryOperatorNode >> expression: anObject [
 	expr := anObject
 ]
 
 { #category : #generated }
-CGLRUnaryExpressionNode >> operator [
+CUnaryOperatorNode >> operator [
 	^ operator
 ]
 
 { #category : #generated }
-CGLRUnaryExpressionNode >> operator: aSmaCCToken [
+CUnaryOperatorNode >> operator: aSmaCCToken [
 	operator := aSmaCCToken
 ]
 
 { #category : #generated }
-CGLRUnaryExpressionNode >> sizeofToken [
+CUnaryOperatorNode >> sizeofToken [
 	^ sizeofToken
 ]
 
 { #category : #generated }
-CGLRUnaryExpressionNode >> sizeofToken: aSmaCCToken [
+CUnaryOperatorNode >> sizeofToken: aSmaCCToken [
 	sizeofToken := aSmaCCToken
 ]
 
 { #category : #generated }
-CGLRUnaryExpressionNode >> type [
+CUnaryOperatorNode >> type [
 	^ type
 ]
 
 { #category : #generated }
-CGLRUnaryExpressionNode >> type: aCGLRTypeNameNode [
+CUnaryOperatorNode >> type: aCGLRTypeNameNode [
 	self type notNil
 		ifTrue: [ self type parent: nil ].
 	type := aCGLRTypeNameNode.
