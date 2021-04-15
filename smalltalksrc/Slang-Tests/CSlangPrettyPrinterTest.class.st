@@ -138,6 +138,17 @@ CSlangPrettyPrinterTest >> testVisitDeclaration [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitDeclarator [
+
+	| print |
+	print := self prettyPrint: (CPointerDeclaratorNode declarator: (CIdentifierNode name: 'toto') pointers: 1).
+	
+	self assert: print equals: '*toto'
+
+
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitGotoStatement [
 
 	| print |
