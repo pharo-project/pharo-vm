@@ -6951,23 +6951,25 @@ Cogit >> freeUnmarkedMachineCode [
 	<var: #cogMethod type: #'CogMethod *'>
 	freedMethod := false.
 	cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
-	[cogMethod < methodZone limitZony] whileTrue:
-		[(cogMethod cmType = CMMethod
-		  and: [(objectMemory isMarked: cogMethod methodObject) not]) ifTrue:
-			[freedMethod := true.
-			 methodZone freeMethod: cogMethod].
-		 (cogMethod cmType = CMOpenPIC
-		  and: [(objectMemory isImmediate: cogMethod selector) not
-		  and: [(objectMemory isMarked: cogMethod selector) not]]) ifTrue:
-			[freedMethod := true.
-			 methodZone freeMethod: cogMethod].
-		 (cogMethod cmType = CMClosedPIC
-		  and: [self closedPICRefersToUnmarkedObject: cogMethod]) ifTrue:
-			[freedMethod := true.
-			 methodZone freeMethod: cogMethod].
-		 cogMethod := methodZone methodAfter: cogMethod].
-	freedMethod ifTrue:
-		[self unlinkSendsToFree]
+
+	self enableCodeZoneWriteDuring: [   
+		[cogMethod < methodZone limitZony] whileTrue:
+			[(cogMethod cmType = CMMethod
+			  and: [(objectMemory isMarked: cogMethod methodObject) not]) ifTrue:
+				[freedMethod := true.
+				 methodZone freeMethod: cogMethod].
+			 (cogMethod cmType = CMOpenPIC
+			  and: [(objectMemory isImmediate: cogMethod selector) not
+			  and: [(objectMemory isMarked: cogMethod selector) not]]) ifTrue:
+				[freedMethod := true.
+				 methodZone freeMethod: cogMethod].
+			 (cogMethod cmType = CMClosedPIC
+			  and: [self closedPICRefersToUnmarkedObject: cogMethod]) ifTrue:
+				[freedMethod := true.
+				 methodZone freeMethod: cogMethod].
+			 cogMethod := methodZone methodAfter: cogMethod].
+		freedMethod ifTrue:
+			[self unlinkSendsToFree]]
 ]
 
 { #category : #'compile abstract instructions' }
