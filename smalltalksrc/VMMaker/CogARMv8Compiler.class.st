@@ -5678,7 +5678,7 @@ CogARMv8Compiler >> strBaseRegister: baseReg positiveOffset: immediate12bitValue
 	STR <Dt>, [<Xn|SP>{, #<pimm>}]
 	"
 
-	^ (size bitOr: 2r11) << 30
+	^ (size bitAnd: 2r11) << 30
 		bitOr: (2r111101 << 24
 		bitOr: ((immediate12bitValue / 8 bitAnd: 16rfff) << 10
 		bitOr: ((baseReg bitAnd: 16r1f) << 5
