@@ -57,6 +57,12 @@ VMSimpleStackBasedCogitAbstractTest >> abstractInstructions [
 		collect: [ :i | cogit abstractOpcodes at: i ]
 ]
 
+{ #category : #testing }
+VMSimpleStackBasedCogitAbstractTest >> argumentsOnRegisters [
+
+	^ cogit isKindOf: StackToRegisterMappingCogit
+]
+
 { #category : #helpers }
 VMSimpleStackBasedCogitAbstractTest >> assertPushed: anOop after: aBlockClosure [
 	
@@ -471,7 +477,7 @@ VMSimpleStackBasedCogitAbstractTest >> newInterpreter [
 	| theMemory |
 	theMemory := self newMemory.
 
-	CogVMSimulatorLSB
+	self interpreterClass
 		initializeWithOptions: {
 			#BytesPerWord. 8.
 			#ObjectMemory. theMemory class name.
@@ -479,7 +485,7 @@ VMSimpleStackBasedCogitAbstractTest >> newInterpreter [
 		objectMemoryClass: theMemory class.
 		
 		
-	^ CogVMSimulatorLSB basicNew
+	^ self interpreterClass basicNew
 		objectMemory: theMemory;
 		basicInitialize
 ]
@@ -573,9 +579,14 @@ VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver ar
 	self machineSimulator receiverRegisterValue: aReceiver.
 
 	"If the cogit is the StackToRegisterMapping the arguments should go in the registers also"
-	(cogit isKindOf: StackToRegisterMappingCogit) ifTrue: [
-		arguments size >= 1 ifTrue: [ self machineSimulator argument0RegisterValue: (arguments at: 1) ].
-		arguments size > 1 ifTrue: [ self halt ]].
+	self argumentsOnRegisters ifTrue: [
+		arguments withIndexDo: [ :a :i |
+			i = 1 ifTrue: [ 
+				self machineSimulator argument0RegisterValue: a ].
+			i = 2 ifTrue: [ 
+				self machineSimulator argument1RegisterValue: a ].
+			i > 2 ifTrue: [ self error: 'Cogit calling convention only supports 2 arguments by registers' ].
+		] ].
 	
 	self prepareCall
 ]

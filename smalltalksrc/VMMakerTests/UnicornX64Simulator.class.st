@@ -26,6 +26,12 @@ UnicornX64Simulator >> argument0RegisterValue: anInteger [
 	self writeRegister: UcX86Registers rdi value: anInteger
 ]
 
+{ #category : #accessing }
+UnicornX64Simulator >> argument1RegisterValue: anInteger [ 
+
+	self writeRegister: UcX86Registers rsi value: anInteger
+]
+
 { #category : #'phisical-registers' }
 UnicornX64Simulator >> baseRegister [
 

@@ -552,7 +552,10 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveAddReturnsAnSmallInteger [
 		"If the primitive fails it continues, so we need to have an instruction to detect the end"
 		endInstruction := cogit Stop ].
 
-	self prepareStackForSendReceiver: (memory integerObjectOf: 42) arguments: { memory integerObjectOf: 52 }.
+	self
+		prepareStackForSendReceiver: (memory integerObjectOf: 42)
+		arguments: { memory integerObjectOf: 52 }.
+	1halt.
 	self runFrom: primitiveAddress until: callerAddress.
 	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 94).
 ]

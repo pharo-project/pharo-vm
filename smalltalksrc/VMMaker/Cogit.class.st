@@ -10266,6 +10266,18 @@ Cogit >> objectRepresentation [
 ]
 
 { #category : #'simulation only' }
+Cogit >> objectRepresentation: anObjectRepresentation [
+	<doNotGenerate>
+	objectRepresentation := anObjectRepresentation
+]
+
+{ #category : #accessing }
+Cogit >> objectRepresentationClass [
+	<doNotGenerate>
+	^objectMemory objectRepresentationClass
+]
+
+{ #category : #'simulation only' }
 Cogit >> offset: aClass of: fieldSymbol [
 	"This is implemented by stddef's offsetof macro."
 	<doNotGenerate>
@@ -11569,7 +11581,7 @@ Cogit >> setInterpreter: aCoInterpreter [
 	objectMemory := aCoInterpreter objectMemory.
 	threadManager := aCoInterpreter threadManager. "N.B. may be nil"
 	methodZone := self class methodZoneClass new.
-	objectRepresentation := objectMemory objectRepresentationClass
+	objectRepresentation := self objectRepresentationClass
 								forCogit: self methodZone: methodZone.
 	methodZone setInterpreter: aCoInterpreter
 				objectRepresentation: objectRepresentation

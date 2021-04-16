@@ -16,16 +16,15 @@ VMJittedPrimitivesTest class >> isAbstract [
 ]
 
 { #category : #helpers }
+VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop [
+	
+	^ self executePrimitiveWithReceiver: receiverOop withArguments: { }
+]
+
+{ #category : #helpers }
 VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument: argumentOop [
 	
-	"Simulate a primitive execution having an object as receiver and a single argument
-	  - the receiver goes to the receiver register
-	  - the argument should be pushed to the stack
-	If we are in a system without a link register, we need to push the caller IP to the stack to simulate a call"
-	
-	self prepareStackForSendReceiver: receiverOop arguments: { argumentOop }.
-	self runUntilReturn.
-
+	^ self executePrimitiveWithReceiver: receiverOop withArguments: { argumentOop }
 ]
 
 { #category : #utils }
@@ -43,6 +42,19 @@ VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument
 	1halt.
 
 "	self runUntilReturn.
+
+]
+
+{ #category : #helpers }
+VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArguments: aCollection [
+	
+	"Simulate a primitive execution having an object as receiver and a single argument
+	  - the receiver goes to the receiver register
+	  - the argument should be pushed to the stack
+	If we are in a system without a link register, we need to push the caller IP to the stack to simulate a call"
+	
+	self prepareStackForSendReceiver: receiverOop arguments: aCollection.
+	self runUntilReturn.
 
 ]
 

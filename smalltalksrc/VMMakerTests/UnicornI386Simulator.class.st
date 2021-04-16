@@ -22,6 +22,12 @@ UnicornI386Simulator >> argument0RegisterValue: anInteger [
 	self writeRegister: UcX86Registers esi value: anInteger
 ]
 
+{ #category : #accessing }
+UnicornI386Simulator >> argument1RegisterValue: anInteger [ 
+
+	self writeRegister: UcX86Registers edi value: anInteger
+]
+
 { #category : #registers }
 UnicornI386Simulator >> baseRegister [
 

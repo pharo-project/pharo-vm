@@ -15330,7 +15330,7 @@ StackInterpreter >> stackFloatValue: offset [
 StackInterpreter >> stackIntegerValue: offset [
 	"In the StackInterpreter stacks grow down."
 	| integerPointer |
-	integerPointer := stackPages longAt: stackPointer + (offset*objectMemory wordSize).
+	integerPointer := self stackValue: offset.
 	^self checkedIntegerValueOf: integerPointer
 ]
 
@@ -16663,6 +16663,13 @@ StackInterpreter >> withSmallIntegerTags: value [
 	^(self
 		cCode: [self oopForPointer: value]
 		inSmalltalk: [value bitAnd: objectMemory maxCInteger]) + objectMemory smallIntegerTag
+]
+
+{ #category : #'frame access' }
+StackInterpreter >> withoutSmallIntegerTags2: anInteger [
+	<inline: true>
+	<returnTypeC: #'char *'>
+	^self pointerForOop: (anInteger - 1)
 ]
 
 { #category : #'frame access' }

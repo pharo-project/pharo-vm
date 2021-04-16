@@ -22,6 +22,12 @@ UnicornARMv8Simulator >> argument0RegisterValue: anInteger [
 	self writeRegister: UcARM64Registers x3 value: anInteger
 ]
 
+{ #category : #accessing }
+UnicornARMv8Simulator >> argument1RegisterValue: anInteger [ 
+
+	self writeRegister: UcARM64Registers x4 value: anInteger
+]
+
 { #category : #registers }
 UnicornARMv8Simulator >> baseRegister [
 

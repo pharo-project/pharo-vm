@@ -706,8 +706,30 @@ InterpreterPrimitives >> positiveMachineIntegerValueOf: oop [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveAdd [
-
+	<numberOfArguments: 1>
 	self pop2AndPushIntegerIfOK: (self stackIntegerValue: 1) + (self stackIntegerValue: 0)
+]
+
+{ #category : #'arithmetic integer primitives' }
+InterpreterPrimitives >> primitiveAdd2 [
+	<numberOfArguments: 1>
+	
+	| maybeSmallInteger maybeSmallInteger2 result |
+	maybeSmallInteger := self stackValue: 0.
+	maybeSmallInteger2 := self stackValue: 1.
+	
+	(objectMemory isIntegerObject: maybeSmallInteger)
+		ifFalse: [ self primitiveFail ].
+	(objectMemory isIntegerObject: maybeSmallInteger2)
+		ifFalse: [ self primitiveFail ].
+
+	"Check for overflow"
+	result := self
+		sumInteger: (self withoutSmallIntegerTags2: maybeSmallInteger)
+		withInteger: maybeSmallInteger2
+		ifOverflow: [ self primitiveFail ].
+
+	self pop: 2 thenPush: result
 ]
 
 { #category : #'arithmetic largeint primitives' }
@@ -5556,4 +5578,14 @@ InterpreterPrimitives >> successful [
 	
 	"In C, non-zero is true, so avoid computation by using not the C version."
 	^self cCode: [primFailCode not] inSmalltalk: [primFailCode = 0]
+]
+
+{ #category : #'arithmetic integer primitives' }
+InterpreterPrimitives >> sumInteger: anInteger withInteger: anotherInteger ifOverflow: aBlock [
+
+	"Overflow!"
+	anInteger > objectMemory maxCInteger - anotherInteger
+		ifTrue: aBlock.
+
+	^ anInteger + anotherInteger
 ]
