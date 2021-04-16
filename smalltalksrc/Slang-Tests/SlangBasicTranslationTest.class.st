@@ -466,6 +466,28 @@ SlangBasicTranslationTest >> testSendAnd [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfTrue [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #ifTrue:
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: { (TStmtListNode new setStatements: { 
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'a')
+						          expression: (TConstantNode value: false)).
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'c')
+						          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation equals: 'if (x){
+	a = 0;
+	c = 1;
+}'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendNegated [
 
 	| translation send |

@@ -86,7 +86,7 @@ CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 
 	aCompoundStatement needsBrackets ifTrue: [
 		stream
-			crtab: level;
+			tab: level;
 			nextPutAll: '{'.
 	
 		level := level + 1.
@@ -151,6 +151,18 @@ CSlangPrettyPrinter >> visitGotoStatement: aGoToStatement [
 CSlangPrettyPrinter >> visitIdentifier: anIdentifier [
 
 	stream nextPutAll: anIdentifier name
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitIfStatement: anIf [
+
+	stream nextPutAll: 'if ('.
+	anIf if acceptVisitor: self.
+	stream nextPutAll: ') '.
+	anIf then acceptVisitor: self.
+	anIf else ifNotNil: [ :e | 
+		stream nextPutAll: 'else '.
+		e acceptVisitor: self ]
 ]
 
 { #category : #generated }

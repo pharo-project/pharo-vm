@@ -9,9 +9,28 @@ Class {
 	#category : #'CAST-Nodes'
 }
 
+{ #category : #'instance creation' }
+CIfStatementNode class >> if: aCondition then: anExpression [
+
+	^ self new
+		  if: aCondition;
+		  then: anExpression;
+		  yourself
+]
+
+{ #category : #'instance creation' }
+CIfStatementNode class >> if: aCondition then: anExpression else: anOtherExpression [
+
+	^ self new
+		  if: aCondition;
+		  then: anExpression;
+		  else: anOtherExpression;
+		  yourself
+]
+
 { #category : #generated }
 CIfStatementNode >> acceptVisitor: anAbstractVisitor [
-	^ anAbstractVisitor visitSelectionStatement: self
+	^ anAbstractVisitor visitIfStatement: self
 ]
 
 { #category : #generated }

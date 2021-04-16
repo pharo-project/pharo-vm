@@ -1770,6 +1770,14 @@ CCodeGenerator >> generateCASTForBuiltinConstructAsArgumentFor: msgNode [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfTrue: tast [
+
+	^ CIfStatementNode
+		  if: (tast receiver asCASTIn: self)
+		  then: (tast arguments first asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTMinus: tast [
 
 	^ self generateCASTBinary: tast operator: #-
@@ -2212,10 +2220,8 @@ CCodeGenerator >> generateIfTrue: msgNode on: aStream indent: level [
 		ifNil:
 			[aStream nextPutAll: 'if ('.
 			msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-			aStream nextPutAll: ') {'; cr.
-			msgNode args first emitCCodeOn: aStream level: level + 1 generator: self.
-			aStream tab: level.
-			aStream nextPut: $}]
+			aStream nextPutAll: ')'.
+			msgNode args first emitCCodeOn: aStream level: level generator: self]
 		ifNotNil:
 			[:const |
 			const ifTrue:

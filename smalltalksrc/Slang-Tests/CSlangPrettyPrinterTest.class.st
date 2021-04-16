@@ -171,6 +171,40 @@ CSlangPrettyPrinterTest >> testVisitIdentifier [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitIfStatement [
+
+	| print |
+	print := self prettyPrint: (CIfStatementNode
+			          if: (CBinaryOperatorNode
+					           operator: #&&
+					           left: (CIdentifierNode name: 'a')
+					           right: (CIdentifierNode name: 'b'))
+			          then: (CCompoundStatementNode
+					           declarations: { (CAssignmentNode
+							            lvalue: (CIdentifierNode name: 'toto')
+							            rvalue: (CConstantNode value: 99)) }
+					           statements: { (CAssignmentNode
+							            lvalue: (CIdentifierNode name: 'toto')
+							            rvalue: (CIdentifierNode name: 'tutu')) })
+						else: (CCompoundStatementNode
+					           declarations: { (CAssignmentNode
+							            lvalue: (CIdentifierNode name: 'toto')
+							            rvalue: (CConstantNode value: 1)) }
+					           statements: { (CAssignmentNode
+							            lvalue: (CIdentifierNode name: 'tutu')
+							            rvalue: (CIdentifierNode name: 'toto')) })).
+
+	self assert: print trimBoth equals: 'if (a && b) {
+	toto = 99;
+	toto = tutu;
+}
+else {
+	toto = 1;
+	tutu = toto;
+}'
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitInitDeclarator [
 
 	| print |
