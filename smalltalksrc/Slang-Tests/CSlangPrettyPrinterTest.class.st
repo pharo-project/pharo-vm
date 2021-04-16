@@ -207,3 +207,18 @@ CSlangPrettyPrinterTest >> testVisitReturnStatement [
 
 
 ]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitUnaryOperator [
+
+	| print |
+	print := self prettyPrint: (
+		CUnaryOperatorNode operator: #-
+			expression: (CBinaryOperatorNode operator: #-
+								left:  (CConstantNode value: 1)
+								right: (CConstantNode value: 2))).
+	
+	self assert: print equals: '-(1 - 2)'
+
+
+]

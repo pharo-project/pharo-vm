@@ -1771,7 +1771,7 @@ CCodeGenerator >> generateCASTForBuiltinConstructAsArgumentFor: msgNode [
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTMinus: tast [
-	
+
 	^ self generateCASTBinary: tast operator: #-
 ]
 
@@ -1791,6 +1791,14 @@ CCodeGenerator >> generateCASTPlus: tast [
 CCodeGenerator >> generateCASTTimes: tast [
 	
 	^ self generateCASTBinary: tast operator: #*
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTUnary: tast operator: operator [
+
+	^ CUnaryOperatorNode
+		  operator: operator
+		  expression: (tast receiver asCASTIn: self)
 ]
 
 { #category : #'C translation' }

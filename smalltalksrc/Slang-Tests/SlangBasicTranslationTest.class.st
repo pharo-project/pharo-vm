@@ -466,6 +466,20 @@ SlangBasicTranslationTest >> testSendAnd [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendNegated [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #negated
+					receiver: (TConstantNode value: 3)
+					arguments: { }.
+	translation := self translate: send.
+
+	self assert: translation equals: '-3'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendOr [
 
 	| translation send |

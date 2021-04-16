@@ -10,9 +10,18 @@ Class {
 	#category : #'CAST-Nodes'
 }
 
+{ #category : #'instance creation' }
+CUnaryOperatorNode class >> operator: anOperator expression: anExpression [
+
+	^ self new
+		  operator: anOperator;
+		  expression: anExpression;
+		  yourself
+]
+
 { #category : #generated }
 CUnaryOperatorNode >> acceptVisitor: anAbstractVisitor [
-	^ anAbstractVisitor visitUnaryExpression: self
+	^ anAbstractVisitor visitUnaryOperator: self
 ]
 
 { #category : #generated }

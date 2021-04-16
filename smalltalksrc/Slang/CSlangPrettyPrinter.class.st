@@ -183,6 +183,17 @@ CSlangPrettyPrinter >> visitReturnStatement: aReturn [
 		exp acceptVisitor: self ]
 ]
 
+{ #category : #generated }
+CSlangPrettyPrinter >> visitUnaryOperator: anUnary [
+	| parenthesises |
+	
+	parenthesises := (anUnary expression isConstant or: [ anUnary expression isIdentifier ]).
+	stream nextPutAll: anUnary operator.
+	parenthesises ifFalse: [ stream nextPut: $( ].
+	anUnary expression acceptVisitor: self.
+	parenthesises ifFalse: [ stream nextPut: $) ].
+]
+
 { #category : #accessing }
 CSlangPrettyPrinter >> writeStream: aWriteStream [
 

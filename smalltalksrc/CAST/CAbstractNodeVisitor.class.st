@@ -235,7 +235,7 @@ CAbstractNodeVisitor >> visitTypename: aTypename [
 ]
 
 { #category : #generated }
-CAbstractNodeVisitor >> visitUnaryExpression: anUnaryExpression [
+CAbstractNodeVisitor >> visitUnaryOperator: anUnaryExpression [
 	^ self visitAbstract: anUnaryExpression
 ]
 
