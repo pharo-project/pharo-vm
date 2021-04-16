@@ -3,8 +3,6 @@ Class {
 	#superclass : #CExpressionNode,
 	#instVars : [
 		'expr',
-		'sizeofToken',
-		'type',
 		'operator'
 	],
 	#category : #'CAST-Nodes'
@@ -35,6 +33,11 @@ CUnaryOperatorNode >> expression: anObject [
 ]
 
 { #category : #generated }
+CUnaryOperatorNode >> isUnaryOperation [
+	^ true
+]
+
+{ #category : #generated }
 CUnaryOperatorNode >> operator [
 	^ operator
 ]
@@ -42,28 +45,4 @@ CUnaryOperatorNode >> operator [
 { #category : #generated }
 CUnaryOperatorNode >> operator: aSmaCCToken [
 	operator := aSmaCCToken
-]
-
-{ #category : #generated }
-CUnaryOperatorNode >> sizeofToken [
-	^ sizeofToken
-]
-
-{ #category : #generated }
-CUnaryOperatorNode >> sizeofToken: aSmaCCToken [
-	sizeofToken := aSmaCCToken
-]
-
-{ #category : #generated }
-CUnaryOperatorNode >> type [
-	^ type
-]
-
-{ #category : #generated }
-CUnaryOperatorNode >> type: aCGLRTypeNameNode [
-	self type notNil
-		ifTrue: [ self type parent: nil ].
-	type := aCGLRTypeNameNode.
-	self type notNil
-		ifTrue: [ self type parent: self ]
 ]

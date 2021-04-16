@@ -1776,6 +1776,18 @@ CCodeGenerator >> generateCASTMinus: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTNegated: tast [
+
+	^ self generateCASTUnary: tast operator: #-
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTNot: tast [
+
+	^ self generateCASTUnary: tast operator: #!
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTOr: tast [
 	
 	^ self generateCASTBinary: tast operator: #||
