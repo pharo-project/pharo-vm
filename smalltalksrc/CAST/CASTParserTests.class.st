@@ -542,6 +542,17 @@ CASTParserTests >> testParseMultiplyingAssignment [
 	self assert: assignment operator equals: '*='.
 ]
 
+{ #category : #'tests-binary operators' }
+CASTParserTests >> testParseNot [
+
+	| expression |
+	expression := self parseExpression: '!0'.
+	
+	self assert: expression isExpression.
+	self assert: expression isUnaryOperation.
+	self assert: expression operator equals: '!'
+]
+
 { #category : #'tests-numbers' }
 CASTParserTests >> testParseOctalIntegerConstantConstant [
 
@@ -633,6 +644,29 @@ CASTParserTests >> testParseSimpleArrayDeclaration [
 	self assert: declarator isArrayDeclarator.
 	self assert: declarator size equals: nil.
 	self assert: declarator declarator name equals: 'a'.
+]
+
+{ #category : #'tests-control flow' }
+CASTParserTests >> testParseSizeofExpression [
+
+	| statement |
+	statement := self parseExpression: 'sizeof *a'.
+	
+	self assert: statement isSizeof.
+	self assert: statement child isUnaryOperation.
+	self assert: statement child operator equals: '*'.
+	self assert: statement child expression isIdentifier.
+]
+
+{ #category : #'tests-control flow' }
+CASTParserTests >> testParseSizeofTypeInt [
+
+	| statement |
+	statement := self parseExpression: 'sizeof(int)'.
+	
+	self assert: statement isSizeof.
+	self assert: statement child isTypeNode.
+	self assert: statement child specifiers first value equals: 'int'
 ]
 
 { #category : #'tests-declarators' }

@@ -36,6 +36,11 @@ CGLRTypeNode >> initialize [
 ]
 
 { #category : #generated }
+CGLRTypeNode >> isTypeNode [
+	^ true
+]
+
+{ #category : #generated }
 CGLRTypeNode >> qualifiers [
 	^ qualifiers
 ]

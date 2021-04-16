@@ -9,10 +9,10 @@ Class {
 }
 
 { #category : #'instance creation' }
-CCallNode class >> identifier: aString arguments: anOrderdList [
+CCallNode class >> identifier: anIndentifier arguments: anOrderdList [
 	
 	^ self new
-		identifier: aString;
+		identifier: anIndentifier;
 		arguments: anOrderdList;
 		yourself
 ]

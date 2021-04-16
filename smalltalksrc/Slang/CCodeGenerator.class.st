@@ -1742,8 +1742,14 @@ CCodeGenerator >> generateCASTAbs: tast [
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTAnd: tast [
 
+	^ self generateCASTBinary: tast operator: #&&
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBinary: tast operator: operator [
+
 	^ CBinaryOperatorNode
-		  operator: #&&
+		  operator: operator
 		  left: (tast receiver asCASTIn: self)
 		  right: (tast arguments first asCASTIn: self)
 ]
@@ -1764,30 +1770,55 @@ CCodeGenerator >> generateCASTForBuiltinConstructAsArgumentFor: msgNode [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfTrue: tast [
+
+	^ CIfStatementNode
+		  if: (tast receiver asCASTIn: self)
+		  then: (tast arguments first asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTMinus: tast [
-	
-		^ CBinaryOperatorNode 
-			operator: #-
-			left: (tast receiver asCASTIn: self)
-			right: (tast arguments first asCASTIn: self)
+
+	^ self generateCASTBinary: tast operator: #-
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTNegated: tast [
+
+	^ self generateCASTUnary: tast operator: #-
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTNot: tast [
+
+	^ self generateCASTUnary: tast operator: #!
 ]
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTOr: tast [
 	
-		^ CBinaryOperatorNode 
-			operator: #||
-			left: (tast receiver asCASTIn: self)
-			right: (tast arguments first asCASTIn: self)
+	^ self generateCASTBinary: tast operator: #||
 ]
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTPlus: tast [
 	
-		^ CBinaryOperatorNode 
-			operator: #+
-			left: (tast receiver asCASTIn: self)
-			right: (tast arguments first asCASTIn: self)
+	^ self generateCASTBinary: tast operator: #+
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTTimes: tast [
+	
+	^ self generateCASTBinary: tast operator: #*
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTUnary: tast operator: operator [
+
+	^ CUnaryOperatorNode
+		  operator: operator
+		  expression: (tast receiver asCASTIn: self)
 ]
 
 { #category : #'C translation' }
@@ -2189,10 +2220,8 @@ CCodeGenerator >> generateIfTrue: msgNode on: aStream indent: level [
 		ifNil:
 			[aStream nextPutAll: 'if ('.
 			msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-			aStream nextPutAll: ') {'; cr.
-			msgNode args first emitCCodeOn: aStream level: level + 1 generator: self.
-			aStream tab: level.
-			aStream nextPut: $}]
+			aStream nextPutAll: ')'.
+			msgNode args first emitCCodeOn: aStream level: level generator: self]
 		ifNotNil:
 			[:const |
 			const ifTrue:

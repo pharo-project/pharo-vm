@@ -145,6 +145,11 @@ CAbstractNodeVisitor >> visitIdentifierExpression: anIdentifierExpression [
 ]
 
 { #category : #generated }
+CAbstractNodeVisitor >> visitIfStatement: aSelectionStatement [
+	^ self visitAbstract: aSelectionStatement
+]
+
+{ #category : #generated }
 CAbstractNodeVisitor >> visitIncrement: anIncrement [
 	^ self visitAbstract: anIncrement
 ]
@@ -182,11 +187,6 @@ CAbstractNodeVisitor >> visitPoint: aPoint [
 { #category : #generated }
 CAbstractNodeVisitor >> visitReturnStatement: aReturnStatement [
 	^ self visitAbstract: aReturnStatement
-]
-
-{ #category : #generated }
-CAbstractNodeVisitor >> visitSelectionStatement: aSelectionStatement [
-	^ self visitAbstract: aSelectionStatement
 ]
 
 { #category : #generated }
@@ -235,7 +235,7 @@ CAbstractNodeVisitor >> visitTypename: aTypename [
 ]
 
 { #category : #generated }
-CAbstractNodeVisitor >> visitUnaryExpression: anUnaryExpression [
+CAbstractNodeVisitor >> visitUnaryOperator: anUnaryExpression [
 	^ self visitAbstract: anUnaryExpression
 ]
 
