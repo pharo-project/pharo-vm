@@ -149,15 +149,6 @@ extern const pthread_key_t tltiIndex;
 # endif /* COGMTVM */
 #endif /* STACKVM */
 
-// From Joshua Gargus, for XCode 3.1
-#ifdef __GNUC__
-# undef EXPORT
-# define EXPORT(returnType) __attribute__((visibility("default"))) returnType
-# if !defined(VM_LABEL)
-#	define VM_LABEL(foo) asm("\n.globl L" #foo "\nL" #foo ":")
-# endif
-#endif
-
 #if !defined(VM_LABEL) || COGVM
 # undef VM_LABEL
 # define VM_LABEL(foo) ((void)0)
