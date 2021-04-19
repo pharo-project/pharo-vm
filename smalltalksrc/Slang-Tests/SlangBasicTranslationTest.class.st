@@ -466,6 +466,21 @@ SlangBasicTranslationTest >> testSendAnd [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendBetweenAnd [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #between:and:
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: { 
+				        (TConstantNode value: 0).
+				        (TConstantNode value: 100) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '(x >= 0) && (x <= 100)'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendDivide [
 
 	| translation send |

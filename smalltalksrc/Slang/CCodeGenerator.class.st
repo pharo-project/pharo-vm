@@ -1747,6 +1747,21 @@ CCodeGenerator >> generateCASTAnd: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBetweenAnd: tast [
+
+	^ CBinaryOperatorNode
+		  operator: #&&
+		  left: (CBinaryOperatorNode
+				   operator: #>=
+				   left: (tast receiver asCASTIn: self)
+				   right: (tast arguments first asCASTIn: self))
+		  right: (CBinaryOperatorNode
+				   operator: #<=
+				   left: (tast receiver asCASTIn: self)
+				   right: (tast arguments second asCASTIn: self))
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTBinary: tast operator: operator [
 
 	^ CBinaryOperatorNode
