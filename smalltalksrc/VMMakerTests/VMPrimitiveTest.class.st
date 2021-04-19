@@ -110,10 +110,9 @@ VMPrimitiveTest >> testPrimitiveAddFailsWithTypeErrorPreservesStack [
 	
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : #'tests - primitiveAdd' }
 VMPrimitiveTest >> testPrimitiveAddWithNoOverflow [
 
-	interpreter push: (memory integerObjectOf: 42). "Marker"
 	interpreter push: (memory integerObjectOf: 1).
 	interpreter push: (memory integerObjectOf: 2).
 	
@@ -126,7 +125,7 @@ VMPrimitiveTest >> testPrimitiveAddWithNoOverflow [
 	
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : #'tests - primitiveAdd' }
 VMPrimitiveTest >> testPrimitiveAddWithNoOverflowPopsOperands [
 
 	interpreter push: (memory integerObjectOf: 42). "Marker"
@@ -136,31 +135,32 @@ VMPrimitiveTest >> testPrimitiveAddWithNoOverflowPopsOperands [
 	interpreter primitiveAdd. 
 	
 	interpreter popStack. 
+	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
 	
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 	
 	
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : #'tests - primitiveAdd' }
 VMPrimitiveTest >> testPrimitiveAddWithOverflow [
 
-	interpreter push: (memory integerObjectOf: (memory maxSmallInteger)).
+	interpreter push: (memory integerObjectOf: (memory minSmallInteger)).
 	interpreter push: (memory integerObjectOf: 2).
 	
-	interpreter primitiveAdd. 
+	interpreter primitiveSubtract. 
 	
 	self assert: interpreter failed.
 	
 	
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : #'tests - primitiveAdd' }
 VMPrimitiveTest >> testPrimitiveAddWithOverflowPreservesStack [
 	
 	| maxSmallInt |
 	
-	maxSmallInt:= (memory integerObjectOf: (memory maxSmallInteger)). 
+	maxSmallInt:= (memory integerObjectOf: memory maxSmallInteger). 
 	
 	interpreter push: maxSmallInt. 
 	interpreter push: (memory integerObjectOf: 2).
