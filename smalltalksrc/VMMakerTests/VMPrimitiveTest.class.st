@@ -1416,6 +1416,65 @@ VMPrimitiveTest >> testPrimitiveNewWithInvalidClassFails [
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver
 ]
 
+{ #category : #'tests - primitiveNotEqual' }
+VMPrimitiveTest >> testPrimitiveNotEqualWithNoError1 [
+
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory integerObjectOf: 16).
+	
+	interpreter primitiveNotEqual.
+
+	self assert: interpreter stackTop equals: (memory booleanObjectOf: false). 
+]
+
+{ #category : #'tests - primitiveNotEqual' }
+VMPrimitiveTest >> testPrimitiveNotEqualWithNoError2 [
+
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory integerObjectOf: 42).
+	
+	interpreter primitiveNotEqual.
+
+	self assert: interpreter stackTop equals: (memory booleanObjectOf: true). 
+]
+
+{ #category : #'tests - primitiveNotEqual' }
+VMPrimitiveTest >> testPrimitiveNotEqualWithNoErrorPopsOperands [
+
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory integerObjectOf: 18).
+	
+	interpreter primitiveNotEqual. 
+	
+	interpreter popStack. 
+	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 42).
+]
+
+{ #category : #'tests - primitiveNotEqual' }
+VMPrimitiveTest >> testPrimitiveNotEqualWithTypeErrorOnFirstOperand [
+
+	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory integerObjectOf: 16).
+	
+	interpreter primitiveNotEqual.
+
+	self assert: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveNotEqual' }
+VMPrimitiveTest >> testPrimitiveNotEqualWithTypeErrorOnSecondOperand [
+
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory booleanObjectOf: true).
+	
+	interpreter primitiveNotEqual.
+
+	self assert: interpreter failed. 
+]
+
 { #category : #'tests - primitiveImmutability' }
 VMPrimitiveTest >> testPrimitiveSetImmutabilityOfImmediateShouldFail [
 
