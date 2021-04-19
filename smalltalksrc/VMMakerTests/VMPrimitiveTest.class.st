@@ -1283,3 +1283,66 @@ VMPrimitiveTest >> testPrimitiveStringAtPutShouldNotModifyStringIfFailedWhenNonC
 
 	self assert: string contentEquals: (self newString: 'po')
 ]
+
+{ #category : #'tests - primitiveSubtract' }
+VMPrimitiveTest >> testPrimitiveSubtractWithNoOverflow [
+
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: (memory integerObjectOf: 1).
+	
+	interpreter primitiveSubtract. 
+	
+	self deny: interpreter failed.
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 1). 
+	
+	
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMPrimitiveTest >> testPrimitiveSubtractWithNoOverflowPopsOperands [
+
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter push: (memory integerObjectOf: 1).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveSubtract. 
+	
+	interpreter popStack. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
+	
+	
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMPrimitiveTest >> testPrimitiveSubtractWithOverflow [
+
+	interpreter push: (memory integerObjectOf: (memory minSmallInteger)).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveSubtract. 
+	
+	self assert: interpreter failed.
+	
+	
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMPrimitiveTest >> testPrimitiveSubtractWithOverflowPreservesStack [
+	
+	| minSmallInt |
+	
+	minSmallInt:= (memory integerObjectOf: memory minSmallInteger). 
+	
+	interpreter push: minSmallInt. 
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveSubtract. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackValue: 1) equals: minSmallInt.
+	
+	
+]
