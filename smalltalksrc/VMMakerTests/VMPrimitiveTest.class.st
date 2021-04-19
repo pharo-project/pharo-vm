@@ -1287,7 +1287,6 @@ VMPrimitiveTest >> testPrimitiveStringAtPutShouldNotModifyStringIfFailedWhenNonC
 { #category : #'tests - primitiveSubtract' }
 VMPrimitiveTest >> testPrimitiveSubtractWithNoOverflow [
 
-	interpreter push: (memory integerObjectOf: 42). "Marker"
 	interpreter push: (memory integerObjectOf: 2).
 	interpreter push: (memory integerObjectOf: 1).
 	
@@ -1331,7 +1330,7 @@ VMPrimitiveTest >> testPrimitiveSubtractWithOverflow [
 
 { #category : #'tests - primitiveSubtract' }
 VMPrimitiveTest >> testPrimitiveSubtractWithOverflowPreservesStack [
-	
+
 	| minSmallInt |
 	
 	minSmallInt:= (memory integerObjectOf: memory minSmallInteger). 
