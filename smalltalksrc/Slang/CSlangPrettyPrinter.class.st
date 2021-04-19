@@ -82,6 +82,15 @@ CSlangPrettyPrinter >> visitCall: aCall [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitCastExpression: aCastExpression [
+
+	stream nextPut: $(.
+	aCastExpression type acceptVisitor: self.
+	stream nextPut: $).
+	aCastExpression expression acceptVisitor: self
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 
 	aCompoundStatement needsBrackets ifTrue: [
@@ -193,6 +202,24 @@ CSlangPrettyPrinter >> visitReturnStatement: aReturn [
 	aReturn expression ifNotNil: [ :exp |
 		stream space.
 		exp acceptVisitor: self ]
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitTernary: aTarnary [
+
+	stream nextPut: $(.
+	aTarnary condition acceptVisitor: self.
+	stream nextPutAll: ' ? '.
+	aTarnary then acceptVisitor: self.
+	stream nextPutAll: ' : '.
+	aTarnary else acceptVisitor: self.
+	stream nextPut: $)
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitTypename: aTypename [
+
+	stream nextPutAll: aTypename symbol
 ]
 
 { #category : #generated }

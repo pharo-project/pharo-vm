@@ -261,6 +261,16 @@ CASTParserTests >> testParseCallWithArguments [
 	self assert: expression arguments third isBinaryOperation.
 ]
 
+{ #category : #'tests-control flow' }
+CASTParserTests >> testParseCastExpression [
+
+	| statement |
+	statement := self parseStatement: '(int)2.1'.
+	
+	self assert: statement isCastExpression.
+	self assert: statement type equals: 'int'
+]
+
 { #category : #'tests-basic expressions' }
 CASTParserTests >> testParseCommaSeparatedExpression [
 
@@ -706,6 +716,17 @@ CASTParserTests >> testParseStructurePointerAccess [
 	self assert: expression isStructPointerAccess.
 	self assert: expression structurePointer name equals: 'strrr'.
 	self assert: expression member name equals: 'field'.
+]
+
+{ #category : #'tests-control flow' }
+CASTParserTests >> testParseTernary [
+
+	| statement |
+	statement := self parseStatement: '(a ? 0 : 1)'.
+	
+	self assert: statement isTernary.
+	self assert: statement then isConstant.
+	self assert: statement else isConstant
 ]
 
 { #category : #'tests-declarators' }

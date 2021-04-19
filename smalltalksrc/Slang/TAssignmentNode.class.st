@@ -44,7 +44,7 @@ TAssignmentNode >> asCASTIn: aBuilder [
 			operator: expression selector , '='
 			rvalue: (expression arguments first asCASTIn: aBuilder)
 	].
-	CAssignmentNode
+	^ CAssignmentNode
 		lvalue: (variable asCASTIn: aBuilder)
 	   rvalue: (expression asCASTExpressionIn: aBuilder)
 ]

@@ -1,26 +1,36 @@
 Class {
-	#name : #CGLRTernaryNode,
+	#name : #CTernaryNode,
 	#superclass : #CGLRAbstractNode,
 	#instVars : [
 		'condition',
 		'else',
 		'then'
 	],
-	#category : #CAST
+	#category : #'CAST-Nodes'
 }
 
+{ #category : #'instance creation' }
+CTernaryNode class >> condition: aCondition then: thenExpression else: elseExpression [
+
+	^ self new
+		  condition: aCondition;
+		  then: thenExpression;
+		  else: elseExpression;
+		  yourself
+]
+
 { #category : #generated }
-CGLRTernaryNode >> acceptVisitor: anAbstractVisitor [
+CTernaryNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitTernary: self
 ]
 
 { #category : #generated }
-CGLRTernaryNode >> condition [
+CTernaryNode >> condition [
 	^ condition
 ]
 
 { #category : #generated }
-CGLRTernaryNode >> condition: aCGLRAbstractNode [
+CTernaryNode >> condition: aCGLRAbstractNode [
 	self condition notNil
 		ifTrue: [ self condition parent: nil ].
 	condition := aCGLRAbstractNode.
@@ -29,12 +39,12 @@ CGLRTernaryNode >> condition: aCGLRAbstractNode [
 ]
 
 { #category : #generated }
-CGLRTernaryNode >> else [
+CTernaryNode >> else [
 	^ else
 ]
 
 { #category : #generated }
-CGLRTernaryNode >> else: aCGLRAbstractNode [
+CTernaryNode >> else: aCGLRAbstractNode [
 	self else notNil
 		ifTrue: [ self else parent: nil ].
 	else := aCGLRAbstractNode.
@@ -43,12 +53,17 @@ CGLRTernaryNode >> else: aCGLRAbstractNode [
 ]
 
 { #category : #generated }
-CGLRTernaryNode >> then [
+CTernaryNode >> isTernary [
+	^ true
+]
+
+{ #category : #generated }
+CTernaryNode >> then [
 	^ then
 ]
 
 { #category : #generated }
-CGLRTernaryNode >> then: aCGLRExpressionNode [
+CTernaryNode >> then: aCGLRExpressionNode [
 	self then notNil
 		ifTrue: [ self then parent: nil ].
 	then := aCGLRExpressionNode.
