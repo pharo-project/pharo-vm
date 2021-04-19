@@ -40,7 +40,8 @@ Class {
 		'environment',
 		'compileTimeOptions',
 		'stopOnErrors',
-		'castTranslationDict'
+		'castTranslationDict',
+		'castAsArgumentTranslationDict'
 	],
 	#classVars : [
 		'NoRegParmsInAssertVMs'
@@ -1775,7 +1776,7 @@ CCodeGenerator >> generateCASTForBuiltinConstructAsArgumentFor: msgNode [
 	| action |
 	(self shouldGenerateAsInterpreterProxySend: msgNode) ifTrue:
 		[^nil].
-	action := asArgumentTranslationDict
+	action := castAsArgumentTranslationDict
 				at: msgNode selector
 				ifAbsent: [castTranslationDict at: msgNode selector ifAbsent: [ ^nil ]].
 	^ self perform: action with: msgNode
@@ -2308,7 +2309,7 @@ CCodeGenerator >> generateIfTrue: msgNode on: aStream indent: level [
 		ifNil:
 			[aStream nextPutAll: 'if ('.
 			msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-			aStream nextPutAll: ')'.
+			aStream nextPutAll: ') '.
 			msgNode args first emitCCodeOn: aStream level: level generator: self]
 		ifNotNil:
 			[:const |
@@ -3496,7 +3497,7 @@ CCodeGenerator >> initializeCASTTranslationDictionary [
 	#value:value:			#generateCASTValueAsArgument:
 	).
 
-	asArgumentTranslationDict := Dictionary new: 8.
+	castAsArgumentTranslationDict := Dictionary new: 8.
 	1 to: pairs size by: 2 do: [:i |
 		asArgumentTranslationDict at: (pairs at: i) put: (pairs at: i + 1)].
 

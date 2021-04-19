@@ -532,7 +532,7 @@ SlangBasicTranslationTest >> testSendIfTrue [
 						          expression: (TConstantNode value: 1)) }) }.
 	translation := self translate: send.
 
-	self assert: translation equals: 'if (x){
+	self assert: translation trimBoth equals: 'if (x) {
 	a = 0;
 	c = 1;
 }'
@@ -783,6 +783,22 @@ SlangBasicTranslationTest >> testTranslateNormalVariable [
 	translation := self translate: (TVariableNode new setName: 'someVar').
 
 	self assert: translation equals: 'someVar'
+]
+
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testVariableAssignment [
+
+	| translation variable expression |
+
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TConstantNode value: 7.
+
+	translation := self translate: (TAssignmentNode new
+			setVariable: variable
+			expression: expression).
+
+	self assert: translation equals: 'var = 7'
 ]
 
 { #category : #'tests-blocks' }
