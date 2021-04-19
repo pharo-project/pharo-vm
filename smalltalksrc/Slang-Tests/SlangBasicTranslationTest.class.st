@@ -594,6 +594,32 @@ SlangBasicTranslationTest >> testSendLessThanOrEqual [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendMax [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #max:
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: { (TVariableNode new setName: 'y') }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((x < y) ? y : x)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendMin [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #min:
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: { (TVariableNode new setName: 'y') }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((x < y) ? x : y)'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendModulo [
 
 	| translation send |

@@ -1848,6 +1848,30 @@ CCodeGenerator >> generateCASTLessThanOrEqual: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTMax: tast [
+
+	^ CTernaryNode
+		  condition: (CBinaryOperatorNode
+				   operator: #<
+				   left: (tast receiver asCASTIn: self)
+				   right: (tast arguments first asCASTIn: self))
+		  then: (tast arguments first asCASTIn: self)
+		  else: (tast receiver asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTMin: tast [
+
+	^ CTernaryNode
+		  condition: (CBinaryOperatorNode
+				   operator: #<
+				   left: (tast receiver asCASTIn: self)
+				   right: (tast arguments first asCASTIn: self))
+		  then: (tast receiver asCASTIn: self)
+		  else: (tast arguments first asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTMinus: tast [
 
 	^ self generateCASTBinary: tast operator: #-
