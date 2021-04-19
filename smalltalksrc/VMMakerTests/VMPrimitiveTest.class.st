@@ -66,6 +66,69 @@ VMPrimitiveTest >> tearDown [
 	super tearDown
 ]
 
+{ #category : #'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveAddWithNoOverflow [
+
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter push: (memory integerObjectOf: 1).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveAdd. 
+	
+	self deny: interpreter failed.
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 3). 
+	
+	
+]
+
+{ #category : #'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveAddWithNoOverflowPopsOperands [
+
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter push: (memory integerObjectOf: 1).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveAdd. 
+	
+	interpreter popStack. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
+	
+	
+]
+
+{ #category : #'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveAddWithOverflow [
+
+	interpreter push: (memory integerObjectOf: (memory maxSmallInteger)).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveAdd. 
+	
+	self assert: interpreter failed.
+	
+	
+]
+
+{ #category : #'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveAddWithOverflowPreservesStack [
+	
+	| maxSmallInt |
+	
+	maxSmallInt:= (memory integerObjectOf: (memory maxSmallInteger)). 
+	
+	interpreter push: maxSmallInt. 
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveAdd. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackValue: 1) equals: maxSmallInt.
+	
+	
+]
+
 { #category : #'tests - become' }
 VMPrimitiveTest >> testPrimitiveArrayBecomeCreatesForwardersForObjectsOfDifferentSize [
 	| class1 class2 object1 object2 array1 array2 |
