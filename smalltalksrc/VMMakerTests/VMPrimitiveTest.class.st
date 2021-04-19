@@ -840,6 +840,76 @@ VMPrimitiveTest >> testPrimitiveInstVarAtPutPutsTheValueForNonIndexable [
 	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
 ]
 
+{ #category : #'tests - primitiveLessOrEqual' }
+VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoError1 [
+	
+	interpreter push: (memory integerObjectOf: 42).
+	interpreter push: (memory integerObjectOf: 16).
+	
+	interpreter primitiveLessOrEqual. 
+
+	self assert: interpreter stackTop equals: (memory booleanObjectOf: false). 
+]
+
+{ #category : #'tests - primitiveLessOrEqual' }
+VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoError2 [
+	
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory integerObjectOf: 42).
+	
+	interpreter primitiveLessOrEqual. 
+
+	self assert: interpreter stackTop equals: (memory booleanObjectOf: true). 
+]
+
+{ #category : #'tests - primitiveLessOrEqual' }
+VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoErrorEquals [
+	
+	interpreter push: (memory integerObjectOf: 0).
+	interpreter push: (memory integerObjectOf: 0).
+	
+	interpreter primitiveLessOrEqual. 
+
+	self assert: interpreter stackTop equals: (memory booleanObjectOf: true). 
+]
+
+{ #category : #'tests - primitiveLessOrEqual' }
+VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoErrorPopsOperands [
+	
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter push: (memory integerObjectOf: 1).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveLessOrEqual. 
+	
+	interpreter popStack. 
+	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 42).
+]
+
+{ #category : #'tests - primitiveLessOrEqual' }
+VMPrimitiveTest >> testPrimitiveLessOrEqualsFailsWithTypeErrorOnFirstOperand [
+	
+	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveLessOrEqual. 
+	
+	self assert: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveLessOrEqual' }
+VMPrimitiveTest >> testPrimitiveLessOrEqualsFailsWithTypeErrorOnSecondOperand [
+	
+	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveLessOrEqual.
+	
+	self assert: interpreter failed. 
+]
+
 { #category : #'tests - primitiveNew' }
 VMPrimitiveTest >> testPrimitiveNewCreatesTheObjectInYoungSpace [
 	| class |
