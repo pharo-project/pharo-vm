@@ -1632,6 +1632,7 @@ VMPrimitiveTest >> testPrimitiveSubtractWithNoOverflowPopsOperands [
 	interpreter primitiveSubtract. 
 	
 	interpreter popStack. 
+	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
 	
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 	
