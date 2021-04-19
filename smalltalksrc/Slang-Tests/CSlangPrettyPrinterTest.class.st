@@ -77,6 +77,21 @@ CSlangPrettyPrinterTest >> testVisitCall [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitCastExpression [
+
+	| print |
+	print := self prettyPrint:
+		         (CCastExpressionNode
+			          type: (CTypeNameNode symbol: 'int')
+			          expression: (CBinaryOperatorNode
+					           operator: #+
+					           left: (CConstantNode value: 1)
+					           right: (CIdentifierNode name: 'x'))).
+
+	self assert: print equals: '(int)(1 + x)'
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitCompoundStatement [
 
 	| print |
@@ -255,6 +270,15 @@ CSlangPrettyPrinterTest >> testVisitTernary [
 						else: (CConstantNode value: 1)).
 
 	self assert: print trimBoth equals: '(a && b ? 0 : 1)'
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitTypename [
+
+	| print |
+	print := self prettyPrint: (CTypeNameNode symbol: 'int').
+
+	self assert: print equals: 'int'
 ]
 
 { #category : #'tests-visitor' }

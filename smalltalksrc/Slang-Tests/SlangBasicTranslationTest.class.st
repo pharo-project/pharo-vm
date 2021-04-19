@@ -548,6 +548,19 @@ SlangBasicTranslationTest >> testSendPlus [
 	self assert: translation equals: '(1 + 2) + 3'
 ]
 
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendPowerTo [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #**
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: { (TConstantNode value: 2) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '(sqInt)pow(x, 2)'
+]
+
 { #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testTranslateBlockAssignmentWithManyStatement [
 

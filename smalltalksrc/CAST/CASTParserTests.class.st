@@ -261,6 +261,16 @@ CASTParserTests >> testParseCallWithArguments [
 	self assert: expression arguments third isBinaryOperation.
 ]
 
+{ #category : #'tests-control flow' }
+CASTParserTests >> testParseCastExpression [
+
+	| statement |
+	statement := self parseStatement: '(int)2.1'.
+	
+	self assert: statement isCastExpression.
+	self assert: statement type equals: 'int'
+]
+
 { #category : #'tests-basic expressions' }
 CASTParserTests >> testParseCommaSeparatedExpression [
 

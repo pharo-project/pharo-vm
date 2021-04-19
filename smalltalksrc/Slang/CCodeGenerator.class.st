@@ -1754,6 +1754,12 @@ CCodeGenerator >> generateCASTBinary: tast operator: operator [
 		  right: (tast arguments first asCASTIn: self)
 ]
 
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTDivide: tast [
+
+	^ self generateCASTBinary: tast operator: #/
+]
+
 { #category : #utilities }
 CCodeGenerator >> generateCASTForBuiltinConstructAsArgumentFor: msgNode [
 	"Generate CAST for a message node assuming it is a built in construct.
@@ -1793,6 +1799,12 @@ CCodeGenerator >> generateCASTMinus: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTModulo: tast [
+
+	^ self generateCASTBinary: tast operator: #%
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTNegated: tast [
 
 	^ self generateCASTUnary: tast operator: #-
@@ -1814,6 +1826,14 @@ CCodeGenerator >> generateCASTOr: tast [
 CCodeGenerator >> generateCASTPlus: tast [
 	
 	^ self generateCASTBinary: tast operator: #+
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTPowerTo: tast [
+
+	^ CCallNode identifier: 'pow' arguments: { 
+			  (tast receiver asCASTIn: self).
+			  (tast arguments first asCASTIn: self) }
 ]
 
 { #category : #'CAST translation' }

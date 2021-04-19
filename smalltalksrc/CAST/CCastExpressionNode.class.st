@@ -1,27 +1,36 @@
 Class {
-	#name : #CGLRCastExpressionNode,
-	#superclass : #CGLRAbstractNode,
+	#name : #CCastExpressionNode,
+	#superclass : #CExpressionNode,
 	#instVars : [
 		'expr',
 		'type',
 		'leftParenToken',
 		'rightParenToken'
 	],
-	#category : #CAST
+	#category : #'CAST-Nodes'
 }
 
+{ #category : #'instance creation' }
+CCastExpressionNode class >> type: aType expression: anExpression [
+
+	^ self new
+		  type: aType;
+		  expression: anExpression;
+		  yourself
+]
+
 { #category : #generated }
-CGLRCastExpressionNode >> acceptVisitor: anAbstractVisitor [
+CCastExpressionNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitCastExpression: self
 ]
 
 { #category : #generated }
-CGLRCastExpressionNode >> expression [
+CCastExpressionNode >> expression [
 	^ expr
 ]
 
 { #category : #generated }
-CGLRCastExpressionNode >> expression: aCGLRAbstractNode [
+CCastExpressionNode >> expression: aCGLRAbstractNode [
 	self expression notNil
 		ifTrue: [ self expression parent: nil ].
 	expr := aCGLRAbstractNode.
@@ -30,12 +39,17 @@ CGLRCastExpressionNode >> expression: aCGLRAbstractNode [
 ]
 
 { #category : #generated }
-CGLRCastExpressionNode >> type [
+CCastExpressionNode >> isCastExpression [
+	^ true
+]
+
+{ #category : #generated }
+CCastExpressionNode >> type [
 	^ type
 ]
 
 { #category : #generated }
-CGLRCastExpressionNode >> type: aCGLRTypeNameNode [
+CCastExpressionNode >> type: aCGLRTypeNameNode [
 	self type notNil
 		ifTrue: [ self type parent: nil ].
 	type := aCGLRTypeNameNode.
