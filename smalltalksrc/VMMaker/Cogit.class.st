@@ -11333,7 +11333,10 @@ Cogit >> scanMethod [
 		 pc := pc + descriptor numBytes.
 		 descriptor isExtension
 			ifTrue: [nExts := nExts + 1]
-			ifFalse: [nExts := extA := numExtB := extB := 0]]
+			ifFalse: [nExts := extA := numExtB := extB := 0]].
+		
+	"ok"
+	^ 0
 ]
 
 { #category : #'simulation only' }

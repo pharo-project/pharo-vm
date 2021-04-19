@@ -3695,7 +3695,10 @@ StackToRegisterMappingCogit >> scanMethod [
 
 		 pc := pc + descriptor numBytes.
 		 nExts := descriptor isExtension ifTrue: [nExts + 1] ifFalse: [extA := numExtB := extB := 0].
-		 prevBCDescriptor := descriptor]
+		 prevBCDescriptor := descriptor].
+	
+	"ok"
+	^ 0
 ]
 
 { #category : #initialization }
