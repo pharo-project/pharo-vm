@@ -86,11 +86,8 @@ CSlangPrettyPrinter >> visitCastExpression: aCastExpression [
 
 	stream nextPut: $(.
 	aCastExpression type acceptVisitor: self.
-	stream
-		nextPut: $);
-		nextPut: $(.
-	aCastExpression expression acceptVisitor: self.
-	stream nextPut: $)
+	stream nextPut: $).
+	aCastExpression expression acceptVisitor: self
 ]
 
 { #category : #generated }

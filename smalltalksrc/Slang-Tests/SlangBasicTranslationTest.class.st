@@ -466,6 +466,57 @@ SlangBasicTranslationTest >> testSendAnd [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendDivide [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #/
+					receiver: (
+						TSendNode new
+						setSelector: #+
+						receiver: (TConstantNode value: 1)
+						arguments: { TConstantNode value: 2 }
+					)
+					arguments: { TConstantNode value: 3 }.
+	translation := self translate: send.
+
+	self assert: translation equals: '(1 + 2) / 3'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendEqual [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #=
+					receiver: (
+						TSendNode new
+						setSelector: #+
+						receiver: (TConstantNode value: 1)
+						arguments: { TConstantNode value: 2 }
+					)
+					arguments: { TConstantNode value: 3 }.
+	translation := self translate: send.
+
+	self assert: translation equals: '(1 + 2) == 3'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendGreaterThan [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #>=
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: { (TConstantNode value: 3) }.
+	translation := self translate: send.
+
+	self assert: translation equals: 'a >= 3'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendIfTrue [
 
 	| translation send |
@@ -485,6 +536,60 @@ SlangBasicTranslationTest >> testSendIfTrue [
 	a = 0;
 	c = 1;
 }'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIsNil [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #isNil
+					receiver: (TVariableNode new setName: 'ptr')
+					arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: 'ptr == NULL'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendLessThan [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #<
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: { (TConstantNode value: 3) }.
+	translation := self translate: send.
+
+	self assert: translation equals: 'a < 3'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendLessThanOrEqual [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #<=
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: { (TConstantNode value: 3) }.
+	translation := self translate: send.
+
+	self assert: translation equals: 'a <= 3'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendModulo [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #\\
+					receiver: (TConstantNode value: 3)
+					arguments: { (TConstantNode value: 2) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '3 % 2'
 ]
 
 { #category : #'tests-send' }
@@ -513,6 +618,34 @@ SlangBasicTranslationTest >> testSendNot [
 	translation := self translate: send.
 
 	self assert: translation equals: '!1'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendNotEqual [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #~=
+					receiver: (TVariableNode new setName: 'a')
+					arguments: {(TConstantNode value: 2)}.
+	translation := self translate: send.
+
+	self assert: translation equals: 'a != 2'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendNotNil [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #notNil
+					receiver: (TVariableNode new setName: 'ptr')
+					arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: 'ptr != NULL'
 ]
 
 { #category : #'tests-send' }
@@ -559,6 +692,25 @@ SlangBasicTranslationTest >> testSendPowerTo [
 	translation := self translate: send.
 
 	self assert: translation equals: '(sqInt)pow(x, 2)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendTimes [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #*
+					receiver: (
+						TSendNode new
+						setSelector: #+
+						receiver: (TConstantNode value: 1)
+						arguments: { TConstantNode value: 2 }
+					)
+					arguments: { TConstantNode value: 3 }.
+	translation := self translate: send.
+
+	self assert: translation equals: '(1 + 2) * 3'
 ]
 
 { #category : #'tests-assignment' }
