@@ -1285,6 +1285,49 @@ VMPrimitiveTest >> testPrimitiveStringAtPutShouldNotModifyStringIfFailedWhenNonC
 ]
 
 { #category : #'tests - primitiveSubtract' }
+VMPrimitiveTest >> testPrimitiveSubtracFailsWithTypeErrorOnFirstOperand [
+	
+	interpreter push: memory trueObject.
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveSubtract. 
+
+	self assert: interpreter failed.
+	
+	
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMPrimitiveTest >> testPrimitiveSubtracFailsWithTypeErrorOnSecondOperand [
+	
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: memory trueObject.
+	
+	interpreter primitiveSubtract. 
+
+	self assert: interpreter failed.
+	
+	
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMPrimitiveTest >> testPrimitiveSubtractFailsWithTypeErrorPreservesStack [
+
+	| string |
+	
+	string := self newString: '42'.
+	interpreter push: string. 
+	interpreter push: (memory integerObjectOf: 2).
+	
+	
+	interpreter primitiveSubtract. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackValue: 1) equals: string. 
+	
+]
+
+{ #category : #'tests - primitiveSubtract' }
 VMPrimitiveTest >> testPrimitiveSubtractWithNoOverflow [
 
 	interpreter push: (memory integerObjectOf: 2).
