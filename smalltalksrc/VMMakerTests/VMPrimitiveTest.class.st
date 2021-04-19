@@ -143,6 +143,20 @@ VMPrimitiveTest >> testPrimitiveAddWithNoOverflowPopsOperands [
 ]
 
 { #category : #'tests - primitiveAdd' }
+VMPrimitiveTest >> testPrimitiveAddWithNoOverflowPreservesStack [
+	
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory integerObjectOf: memory maxSmallInteger).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveAdd. 
+	
+	self assert: (interpreter stackValue: 2) equals: (memory integerObjectOf: 16). 
+	
+	
+]
+
+{ #category : #'tests - primitiveAdd' }
 VMPrimitiveTest >> testPrimitiveAddWithOverflow [
 
 	interpreter push: (memory integerObjectOf: (memory minSmallInteger)).
