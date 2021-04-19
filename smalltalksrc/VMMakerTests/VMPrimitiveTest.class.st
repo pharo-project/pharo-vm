@@ -722,6 +722,76 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoErrorPopsOperands [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 ]
 
+{ #category : #'tests - primitiveGreaterThan' }
+VMPrimitiveTest >> testPrimitiveGreaterThanFailsWithTypeErrorOnFirstOperand [
+	
+	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveGreaterThan. 
+	
+	self assert: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveGreaterThan' }
+VMPrimitiveTest >> testPrimitiveGreaterThanFailsWithTypeErrorOnSecondOperand [
+	
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: (memory booleanObjectOf: true).
+	
+	interpreter primitiveGreaterThan. 
+	
+	self assert: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveGreaterThan' }
+VMPrimitiveTest >> testPrimitiveGreaterThanWithNoError1 [
+	
+	interpreter push: (memory integerObjectOf: 42).
+	interpreter push: (memory integerObjectOf: -1000).
+	
+	interpreter primitiveGreaterThan. 
+
+	self assert: interpreter stackTop equals: (memory booleanObjectOf: true). 
+]
+
+{ #category : #'tests - primitiveGreaterThan' }
+VMPrimitiveTest >> testPrimitiveGreaterThanWithNoError2 [
+	
+	interpreter push: (memory integerObjectOf: -1000).
+	interpreter push: (memory integerObjectOf: 42).
+	
+	interpreter primitiveGreaterThan. 
+
+	self assert: interpreter stackTop equals: (memory booleanObjectOf: false). 
+]
+
+{ #category : #'tests - primitiveGreaterThan' }
+VMPrimitiveTest >> testPrimitiveGreaterThanWithNoErrorEquals [
+	
+	interpreter push: (memory integerObjectOf: 0).
+	interpreter push: (memory integerObjectOf: 0).
+	
+	interpreter primitiveGreaterThan. 
+
+	self assert: interpreter stackTop equals: (memory booleanObjectOf: false). 
+]
+
+{ #category : #'tests - primitiveGreaterThan' }
+VMPrimitiveTest >> testPrimitiveGreaterThanWithNoErrorPopsOperands [
+	
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter push: (memory integerObjectOf: 1).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveGreaterThan. 
+	
+	interpreter popStack. 
+	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 42).
+]
+
 { #category : #'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveInstVarAtPutOverBoundShouldFailForIndexable [
 	| class object |
