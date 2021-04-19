@@ -66,6 +66,50 @@ VMPrimitiveTest >> tearDown [
 	super tearDown
 ]
 
+{ #category : #'tests - primitiveAdd' }
+VMPrimitiveTest >> testPrimitiveAddFailsWithTypeErrorOnFirstOperand [
+
+	interpreter push: memory trueObject.
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveAdd. 
+
+	self assert: interpreter failed.
+	
+	
+]
+
+{ #category : #'tests - primitiveAdd' }
+VMPrimitiveTest >> testPrimitiveAddFailsWithTypeErrorOnSecondOperand [
+
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: memory trueObject.
+	
+	
+	interpreter primitiveAdd. 
+
+	self assert: interpreter failed.
+	
+	
+]
+
+{ #category : #'tests - primitiveAdd' }
+VMPrimitiveTest >> testPrimitiveAddFailsWithTypeErrorPreservesStack [
+	| string |
+	
+	string := self newString: '42'.
+	interpreter push: string. 
+	interpreter push: (memory integerObjectOf: 2).
+	
+	
+	interpreter primitiveAdd. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackValue: 1) equals: string. 
+	
+	
+]
+
 { #category : #'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveAddWithNoOverflow [
 
