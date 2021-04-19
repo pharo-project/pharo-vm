@@ -527,7 +527,7 @@ CASTParser >> reduceActionForcompound_statement4: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForconditional_expression2: nodes [
 	| result |
-	result := CGLRTernaryNode new.
+	result := CTernaryNode new.
 	result condition: (nodes at: 1).
 	result then: (nodes at: 3).
 	result else: (nodes at: 5).

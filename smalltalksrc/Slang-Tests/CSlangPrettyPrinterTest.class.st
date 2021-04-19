@@ -243,6 +243,21 @@ CSlangPrettyPrinterTest >> testVisitReturnStatement [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitTernary [
+
+	| print |
+	print := self prettyPrint: (CTernaryNode
+			          condition: (CBinaryOperatorNode
+					           operator: #&&
+					           left: (CIdentifierNode name: 'a')
+					           right: (CIdentifierNode name: 'b'))
+			          then: (CConstantNode value: 0)
+						else: (CConstantNode value: 1)).
+
+	self assert: print trimBoth equals: '(a && b ? 0 : 1)'
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitUnaryOperator [
 
 	| print |

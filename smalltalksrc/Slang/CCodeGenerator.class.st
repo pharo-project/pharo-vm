@@ -1778,6 +1778,15 @@ CCodeGenerator >> generateCASTIfTrue: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfTrueAsArgument: tast [
+
+	^ CTernaryNode
+		  condition: (tast receiver asCASTIn: self)
+		  then: (tast arguments first asCASTIn: self)
+		  else: (CConstantNode value: 0)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTMinus: tast [
 
 	^ self generateCASTBinary: tast operator: #-

@@ -708,6 +708,17 @@ CASTParserTests >> testParseStructurePointerAccess [
 	self assert: expression member name equals: 'field'.
 ]
 
+{ #category : #'tests-control flow' }
+CASTParserTests >> testParseTernary [
+
+	| statement |
+	statement := self parseStatement: '(a ? 0 : 1)'.
+	
+	self assert: statement isTernary.
+	self assert: statement then isConstant.
+	self assert: statement else isConstant
+]
+
 { #category : #'tests-declarators' }
 CASTParserTests >> testParseUnionDeclarator [
 

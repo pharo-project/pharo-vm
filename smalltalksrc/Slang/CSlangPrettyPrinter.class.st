@@ -196,6 +196,18 @@ CSlangPrettyPrinter >> visitReturnStatement: aReturn [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitTernary: aTarnary [
+
+	stream nextPut: $(.
+	aTarnary condition acceptVisitor: self.
+	stream nextPutAll: ' ? '.
+	aTarnary then acceptVisitor: self.
+	stream nextPutAll: ' : '.
+	aTarnary else acceptVisitor: self.
+	stream nextPut: $)
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitUnaryOperator: anUnary [
 	| parenthesises |
 	
