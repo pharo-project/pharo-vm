@@ -630,6 +630,65 @@ VMPrimitiveTest >> testPrimitiveAtPutPutsTheValueForAnIndexableObject [
 	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
 ]
 
+{ #category : #'tests - primitiveEqual' }
+VMPrimitiveTest >> testPrimitiveEqualWithNoError1 [
+
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory integerObjectOf: 16).
+	
+	interpreter primitiveEqual.
+
+	self assert: interpreter stackTop equals: (memory booleanObjectOf: true). 
+]
+
+{ #category : #'tests - primitiveEqual' }
+VMPrimitiveTest >> testPrimitiveEqualWithNoError2 [
+
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory integerObjectOf: 42).
+	
+	interpreter primitiveEqual.
+
+	self assert: interpreter stackTop equals: (memory booleanObjectOf: false). 
+]
+
+{ #category : #'tests - primitiveEqual' }
+VMPrimitiveTest >> testPrimitiveEqualWithNoErrorPopsOperands [
+
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory integerObjectOf: 16).
+	
+	interpreter primitiveEqual. 
+	
+	interpreter popStack. 
+	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
+]
+
+{ #category : #'tests - primitiveEqual' }
+VMPrimitiveTest >> testPrimitiveEqualWithTypeErrorOnFirstOperand [
+
+	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory integerObjectOf: 16).
+	
+	interpreter primitiveEqual.
+
+	self assert: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveEqual' }
+VMPrimitiveTest >> testPrimitiveEqualWithTypeErrorOnSecondOperand [
+
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory booleanObjectOf: true).
+	
+	interpreter primitiveEqual.
+
+	self assert: interpreter failed. 
+]
+
 { #category : #'tests - primitiveImmutability' }
 VMPrimitiveTest >> testPrimitiveGetImmutabilityOfImmediateReturnsTrue [
 
