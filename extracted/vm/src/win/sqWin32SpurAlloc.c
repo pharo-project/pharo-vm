@@ -36,6 +36,33 @@ static char  *maxAppAddr;	/* SYSTEM_INFO lpMaximumApplicationAddress */
 # define roundDownToPage(v) ((v)&pageMask)
 # define roundUpToPage(v) (((v)+pageSize-1)&pageMask)
 
+void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
+	
+	char *address, *alloc;
+	usqIntptr_t alignment;
+	sqInt allocBytes;
+	SYSTEM_INFO sysInfo;
+
+	/* determine page boundaries & available address space */
+	GetSystemInfo(&sysInfo);
+	pageSize = sysInfo.dwPageSize;
+	pageMask = ~(pageSize - 1);
+	minAppAddr = sysInfo.lpMinimumApplicationAddress;
+	maxAppAddr = sysInfo.lpMaximumApplicationAddress;
+
+	alignment = max(pageSize,1024*1024);
+	address = (char *)(((usqInt)desiredPosition + alignment - 1) & ~(alignment - 1));
+
+	alloc = sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto(roundUpToPage(desiredSize), address, &allocBytes);
+
+	if (!alloc) {
+		logErrorFromErrno("Could not allocate JIT memory");
+		exit(1);
+	}
+	return alloc;
+}
+
+
 /************************************************************************/
 /* sqAllocateMemory: Initialize virtual memory                          */
 /************************************************************************/
@@ -46,11 +73,6 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 	usqIntptr_t alignment;
 	sqInt allocBytes;
 	SYSTEM_INFO sysInfo;
-
-	if (pageSize) {
-		logError("sqAllocateMemory have already been called");
-		exit(1);
-	}
 
 	/* determine page boundaries & available address space */
 	GetSystemInfo(&sysInfo);

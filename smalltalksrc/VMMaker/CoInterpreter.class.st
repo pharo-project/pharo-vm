@@ -6215,7 +6215,7 @@ CoInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: imag
 
 	| swapBytes headerStart headerSize dataSize oldBaseAddr
 	  minimumMemory heapSize bytesRead bytesToShift firstSegSize
-	  hdrNumStackPages hdrEdenBytes hdrCogCodeSize headerFlags hdrMaxExtSemTabSize allocationReserve |
+	  hdrNumStackPages hdrEdenBytes hdrCogCodeSize headerFlags hdrMaxExtSemTabSize allocationReserve freeOldSpaceInImage headroom cogCodeBase desiredPositionOfHeap |
 	<var: #f type: #sqImageFile>
 	<var: #heapSize type: #usqInt>
 	<var: #dataSize type: #'size_t'>
@@ -6281,34 +6281,28 @@ CoInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: imag
 
 	"compare memory requirements with availability"
 	allocationReserve := self interpreterAllocationReserveBytes.
-	minimumMemory := cogCodeSize "no need to include the stackZone; this is alloca'ed"
-						+ dataSize
+	minimumMemory := "no need to include the stackZone; this is alloca'ed"
+						  dataSize
 						+ objectMemory newSpaceBytes
 						+ allocationReserve.
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[| freeOldSpaceInImage headroom |
-			 freeOldSpaceInImage := self getLongFromFile: f swap: swapBytes.
-			 headroom := objectMemory
-							initialHeadroom: extraVMMemory
-							givenFreeOldSpaceInImage: freeOldSpaceInImage.
-			 heapSize := objectMemory roundUpHeapSize:
-						   cogCodeSize "no need to include the stackZone; this is alloca'ed"
-						+ dataSize
-						+ headroom
-						+ objectMemory newSpaceBytes
-						+ (headroom > allocationReserve
-							ifTrue: [0]
-							ifFalse: [allocationReserve])]
-		ifFalse:
-			[heapSize :=  cogCodeSize "no need to include the stackZone; this is alloca'ed"
-						+ desiredHeapSize
-						+ objectMemory newSpaceBytes
-						+ (desiredHeapSize - dataSize > allocationReserve
-							ifTrue: [0]
-							ifFalse: [allocationReserve]).
-			 heapSize < minimumMemory ifTrue:
-				[self insufficientMemorySpecifiedError]].
+
+	 freeOldSpaceInImage := self getLongFromFile: f swap: swapBytes.
+	 headroom := objectMemory
+					initialHeadroom: extraVMMemory
+					givenFreeOldSpaceInImage: freeOldSpaceInImage.
+	 heapSize := objectMemory roundUpHeapSize:
+				 "no need to include the stackZone; this is alloca'ed"
+				  dataSize
+				+ headroom
+				+ objectMemory newSpaceBytes
+				+ (headroom > allocationReserve
+					ifTrue: [0]
+					ifFalse: [allocationReserve]).
+
+	cogCodeBase := self allocateJITMemory: cogCodeSize desiredPosition: oldBaseAddr - cogCodeSize.
+
+	"We want to avoid the swizzle in case the allocation of the code space is much below in the address space than the requested one"
+	desiredPositionOfHeap := (cogCodeBase + cogCodeSize) max: oldBaseAddr.
 
 	"allocate a contiguous block of memory for the Squeak heap and ancilliary data structures"
 	objectMemory memory: (self
@@ -6316,14 +6310,14 @@ CoInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: imag
 								minimum: minimumMemory
 								imageFile: f
 								headerSize: headerSize
-								desiredPosition: oldBaseAddr) asUnsignedInteger.
+								desiredPosition: desiredPositionOfHeap) asUnsignedInteger.
 	objectMemory memory ifNil:
 		[self insufficientMemoryAvailableError].
 
 	heapBase := objectMemory
-					setHeapBase: objectMemory memory + cogCodeSize
+					setHeapBase: objectMemory memory
 					memoryLimit: objectMemory memory + heapSize
-					endOfMemory: objectMemory memory + cogCodeSize + dataSize.
+					endOfMemory: objectMemory memory + dataSize.
 
 	"position file after the header"
 	self sqImageFile: f Seek: headerStart + headerSize.
@@ -6337,7 +6331,11 @@ CoInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: imag
 	"compute difference between old and new memory base addresses"
 	bytesToShift := objectMemory memoryBaseForImageRead - oldBaseAddr.
 	self initializeInterpreter: bytesToShift.  "adjusts all oops to new location"
-	self initializeCodeGenerator.
+
+	cogit
+		initializeCodeZoneFrom: cogCodeBase
+		upTo: cogCodeBase + cogCodeSize.
+
 	^dataSize
 ]
 

@@ -64,20 +64,20 @@ int mmapErrno = 0;
 void
 sqMakeMemoryExecutableFromTo(unsigned long startAddr, unsigned long endAddr)
 {
-	sqInt firstPage = roundDownToPage(startAddr);
-	if (mprotect((void *)firstPage,
-				 endAddr - firstPage + 1,
-				 PROT_READ | PROT_WRITE | PROT_EXEC) < 0){
-		logError("mprotect(x,y,PROT_READ | PROT_WRITE | PROT_EXEC)");
-		logError("ERRNO: %d\n", errno);
-		exit(1);
-	}
+//	sqInt firstPage = roundDownToPage(startAddr);
+//	if (mprotect((void *)firstPage,
+//				 endAddr - firstPage + 1,
+//				 PROT_READ | PROT_WRITE | PROT_EXEC) < 0){
+//		logError("mprotect(x,y,PROT_READ | PROT_WRITE | PROT_EXEC)");
+//		logError("ERRNO: %d\n", errno);
+//		exit(1);
+//	}
 }
 
 void
 sqMakeMemoryNotExecutableFromTo(unsigned long startAddr, unsigned long endAddr)
 {
-	sqInt firstPage = roundDownToPage(startAddr);
+//	sqInt firstPage = roundDownToPage(startAddr);
 	/* Arguably this is pointless since allocated memory always does include
 	 * write permission.  Annoyingly the mprotect call fails on both linux &
 	 * mac os x.  So make the whole thing a nop.
@@ -88,8 +88,35 @@ sqMakeMemoryNotExecutableFromTo(unsigned long startAddr, unsigned long endAddr)
 //		logErrorFromErrno("mprotect(x,y,PROT_READ | PROT_WRITE)");
 }
 
-/* answer the address of (minHeapSize <= N <= desiredHeapSize) bytes of memory. */
 
+void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
+	
+	pageMask = ~(getpagesize() - 1);
+
+	usqInt alignedSize = valign(max(desiredSize, 1));
+	usqInt desiredBaseAddressAligned = valign(desiredPosition);
+	void* result;
+
+#if __APPLE__	
+	int additionalFlags = MAP_JIT;
+#else
+	int additionalFlags = 0;
+#endif
+	
+	logDebug("Trying to allocate JIT memory in %p\n", (void* )desiredBaseAddressAligned);
+
+	if (MAP_FAILED == (result = mmap((void*) desiredBaseAddressAligned, alignedSize, 
+			PROT_READ | PROT_WRITE | PROT_EXEC, 
+			MAP_FLAGS | additionalFlags, -1, 0))) {
+		logErrorFromErrno("Could not allocate JIT memory");
+		exit(1);
+	}
+
+	return result;
+}
+
+
+/* answer the address of (minHeapSize <= N <= desiredHeapSize) bytes of memory. */
 usqInt
 sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseAddress) {
 

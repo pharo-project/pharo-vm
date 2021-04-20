@@ -2261,6 +2261,15 @@ StackInterpreter >> allOnesAsCharStar [
 ]
 
 { #category : #'image save/restore' }
+StackInterpreter >> allocateJITMemory: desiredSize desiredPosition: desiredPosition [
+	
+	<inline: true>
+	<returnTypeC: #'char *'>
+	
+	^self pointerForOop: (self allocateJITMemory: desiredSize _: desiredPosition)
+]
+
+{ #category : #'image save/restore' }
 StackInterpreter >> allocateMemory: heapSize minimum: minimumMemory imageFile: fileStream headerSize: headerSize [
 	"Translate to C function call with (case sensitive) camelCase. The purpose of this
 	 method is to document the translation.
