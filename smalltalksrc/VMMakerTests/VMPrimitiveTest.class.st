@@ -642,6 +642,42 @@ VMPrimitiveTest >> testPrimitiveDivide [
 ]
 
 { #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveDivideFailsOnFloatResult [
+	"The interpreter fails because 42%4 != 0. This seems intentionnal in the implementation"
+	
+	interpreter push: (memory integerObjectOf: 42).
+	interpreter push: (memory integerObjectOf: 4).
+	
+	interpreter primitiveDivide. 
+	
+	self assert: interpreter failed. 
+	
+
+]
+
+{ #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveDivideFailsWithTypeErrorOnFirstOperand [
+	
+	interpreter push: memory trueObject.
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveMultiply. 
+
+	self assert: interpreter failed.
+]
+
+{ #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveDivideFailsWithTypeErrorOnSecondOperand [
+	
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: memory trueObject.
+	
+	interpreter primitiveMultiply. 
+
+	self assert: interpreter failed.
+]
+
+{ #category : #'tests - primitiveDivide' }
 VMPrimitiveTest >> testPrimitiveDivideWith0DivisionOnFirstOperand [
 
 	interpreter push: (memory integerObjectOf: 0).
@@ -661,6 +697,28 @@ VMPrimitiveTest >> testPrimitiveDivideWith0DivisionOnSecondOperand [
 	interpreter primitiveDivide. 
 	
 	self assert: interpreter failed.
+]
+
+{ #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveDivideWithNegativeNumbers [
+	
+	interpreter push: (memory integerObjectOf: 4).
+	interpreter push: (memory integerObjectOf: -2).
+	
+	interpreter primitiveDivide. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: -2). 
+]
+
+{ #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveDivideWithNegativeNumbers2 [
+	
+	interpreter push: (memory integerObjectOf: -42).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveDivide. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: -21). 
 ]
 
 { #category : #'tests - primitiveEqual' }
