@@ -1157,6 +1157,70 @@ VMPrimitiveTest >> testPrimitiveLessThanWithNoErrorPopsOperands [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 ]
 
+{ #category : #'tests - primitiveMod' }
+VMPrimitiveTest >> testPrimitiveMod [
+
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveMod. 
+	
+	self deny: interpreter failed.
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
+]
+
+{ #category : #'tests - primitiveMod' }
+VMPrimitiveTest >> testPrimitiveModFailPreservesStack [
+
+	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	
+	interpreter primitiveMod. 
+	
+	self assert: interpreter failed. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackValue: 1) equals: (memory booleanObjectOf: true).
+]
+
+{ #category : #'tests - primitiveMod' }
+VMPrimitiveTest >> testPrimitiveModFailsWithTypeErrorOnFirstOperand [
+
+	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory integerObjectOf: 16).
+	
+	interpreter primitiveMod. 
+	
+	self assert: interpreter failed.
+]
+
+{ #category : #'tests - primitiveMod' }
+VMPrimitiveTest >> testPrimitiveModFailsWithTypeErrorOnSecondOperand [
+
+	interpreter push: (memory integerObjectOf: 42).
+	interpreter push: (memory booleanObjectOf: false).
+	
+	
+	interpreter primitiveMod. 
+	
+	self assert: interpreter failed.
+]
+
+{ #category : #'tests - primitiveMod' }
+VMPrimitiveTest >> testPrimitiveModNegativeValue [
+
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory integerObjectOf: -2).
+	
+	interpreter primitiveMod. 
+	
+	self deny: interpreter failed.
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
+]
+
 { #category : #'tests - primitiveMultiply' }
 VMPrimitiveTest >> testPrimitiveMultiplyFailsWithTypeErrorOnFirstOperand [
 
