@@ -642,6 +642,19 @@ VMPrimitiveTest >> testPrimitiveDivide [
 ]
 
 { #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveDivideFailPreservesStack [
+	
+	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	
+	interpreter primitiveDivide. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackValue: 1) equals: (memory booleanObjectOf: true).
+]
+
+{ #category : #'tests - primitiveDivide' }
 VMPrimitiveTest >> testPrimitiveDivideFailsOnFloatResult [
 	"The interpreter fails because 42%4 != 0. This seems intentionnal in the implementation"
 	
