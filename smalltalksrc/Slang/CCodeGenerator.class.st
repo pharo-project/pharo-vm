@@ -41,7 +41,8 @@ Class {
 		'compileTimeOptions',
 		'stopOnErrors',
 		'castTranslationDict',
-		'castAsArgumentTranslationDict'
+		'castAsArgumentTranslationDict',
+		'wordSize'
 	],
 	#classVars : [
 		'NoRegParmsInAssertVMs'
@@ -1440,27 +1441,24 @@ CCodeGenerator >> generateAsConstantExpression: msgNode on: aStream [
 CCodeGenerator >> generateAsFloat: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((double) '.
-	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPutAll: ' )'.
+	aStream nextPutAll:'(double)'.
+	self emitCExpression: msgNode receiver on: aStream
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAsInteger: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((sqInt)'.
-	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll:'(sqInt)'.
+	self emitCExpression: msgNode receiver on: aStream
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAsIntegerPtr: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((sqIntptr_t)'.
-	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll:'(sqIntptr_t)'.
+	self emitCExpression: msgNode receiver on: aStream
 ]
 
 { #category : #'C translation' }
@@ -1747,6 +1745,30 @@ CCodeGenerator >> generateCASTAnd: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsFloat: tast [
+
+	^ CCastExpressionNode
+		  type: (CTypeNameNode symbol: 'double')
+		  expression: (tast receiver asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsInteger: tast [
+
+	^ CCastExpressionNode
+		  type: (CTypeNameNode symbol: 'sqInt')
+		  expression: (tast receiver asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsIntegerPtr: tast [
+
+	^ CCastExpressionNode
+		  type: (CTypeNameNode symbol: 'sqIntptr_t')
+		  expression: (tast receiver asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTBetweenAnd: tast [
 
 	^ CBinaryOperatorNode
@@ -1768,6 +1790,24 @@ CCodeGenerator >> generateCASTBinary: tast operator: operator [
 		  operator: operator
 		  left: (tast receiver asCASTIn: self)
 		  right: (tast arguments first asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBitAnd: tast [
+
+	^ self generateCASTBinary: tast operator: #&
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBitOr: tast [
+
+	^ self generateCASTBinary: tast operator: #|
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBitXor: tast [
+
+	^ self generateCASTBinary: tast operator: '^'
 ]
 
 { #category : #'CAST translation' }
@@ -1824,6 +1864,21 @@ CCodeGenerator >> generateCASTIfTrueAsArgument: tast [
 		  condition: (tast receiver asCASTIn: self)
 		  then: (tast arguments first asCASTIn: self)
 		  else: (CConstantNode value: 0)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfTrueIfFalse: tast [
+
+	| trueBlock |
+	trueBlock := tast arguments first asCASTIn: self.
+	
+	"Hint the pretty printer to add the else next to this block and not in a new line"
+	trueBlock needsCarriageReturn: false.
+	
+	^ CIfStatementNode
+		  if: (tast receiver asCASTIn: self)
+		  then: trueBlock
+		  else: (tast arguments second asCASTIn: self)
 ]
 
 { #category : #'CAST translation' }
@@ -2383,11 +2438,11 @@ CCodeGenerator >> generateIfTrueIfFalse: msgNode on: aStream indent: level [
 			[(self tryToCollapseBothArmsOfConditional: msgNode on: aStream indent: level) ifFalse:
 				[aStream nextPutAll: 'if ('.
 				 msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-				 aStream nextPutAll: ') {'; cr.
-				 msgNode args first emitCCodeOn: aStream level: level + 1 generator: self.
-				 aStream tab: level; nextPut: $}; crtab: level; nextPutAll: 'else {'; cr.
-				 msgNode args last emitCCodeOn: aStream level: level + 1 generator: self.
-				 aStream tab: level; nextPut: $}]]
+				 aStream nextPutAll: ') '.
+				 msgNode args first emitCCodeOn: aStream level: level generator: self.
+				 aStream nextPutAll: 'else '.
+				 msgNode args last emitCCodeOn: aStream level: level generator: self.
+				 ]]
 		ifNotNil:
 			[:const |
 			(const ifTrue: [msgNode args first] ifFalse: [msgNode args last])
@@ -3361,6 +3416,7 @@ CCodeGenerator >> initialize [
 	breakDestInlineSelectors := IdentitySet new.
 	
 	stopOnErrors := false.
+	wordSize := 4
 ]
 
 { #category : #'C translation support' }
@@ -5716,7 +5772,13 @@ CCodeGenerator >> withOptionalConditionalDefineFor: aTMethod on: aStream do: aBl
 	aTMethod terminateConditionalDefineFor: compileTimeOptionPragmas on: aStream
 ]
 
-{ #category : #'C translation' }
+{ #category : #accessing }
 CCodeGenerator >> wordSize [
-	^ 4
+	^ wordSize
+]
+
+{ #category : #accessing }
+CCodeGenerator >> wordSize: aValue [
+
+	wordSize := aValue
 ]
