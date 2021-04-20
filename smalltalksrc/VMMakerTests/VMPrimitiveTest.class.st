@@ -630,6 +630,39 @@ VMPrimitiveTest >> testPrimitiveAtPutPutsTheValueForAnIndexableObject [
 	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
 ]
 
+{ #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveDivide [
+
+	interpreter push: (memory integerObjectOf: 4).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveDivide. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 2). 
+]
+
+{ #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveDivideWith0DivisionOnFirstOperand [
+
+	interpreter push: (memory integerObjectOf: 0).
+	interpreter push: (memory integerObjectOf: 4).
+	
+	interpreter primitiveDivide. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 0). 
+]
+
+{ #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveDivideWith0DivisionOnSecondOperand [
+
+	interpreter push: (memory integerObjectOf: 4).
+	interpreter push: (memory integerObjectOf: 0).
+	
+	interpreter primitiveDivide. 
+	
+	self assert: interpreter failed.
+]
+
 { #category : #'tests - primitiveEqual' }
 VMPrimitiveTest >> testPrimitiveEqualWithNoError1 [
 
