@@ -343,17 +343,14 @@ Class {
 		'nextWakeupUsecs',
 		'nextPollUsecs',
 		'inIOProcessEvents',
-		'interruptKeycode',
 		'interruptPending',
 		'savedWindowSize',
 		'imageHeaderFlags',
 		'fullScreenFlag',
 		'sendWheelEvents',
-		'deferDisplayUpdates',
 		'pendingFinalizationSignals',
 		'extraVMMemory',
 		'interpreterProxy',
-		'showSurfaceFn',
 		'primitiveTable',
 		'primitiveAccessorDepthTable',
 		'externalPrimitiveTable',
@@ -597,8 +594,6 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 			declareC: 'void (*externalPrimitiveTable[MaxExternalPrimitiveTableSize + 1 /* ', (MaxExternalPrimitiveTableSize + 1) printString, ' */])(void)';
 		var: #interruptCheckChain
 			declareC: 'void (*interruptCheckChain)(void) = 0';
-		var: #showSurfaceFn
-			declareC: 'int (*showSurfaceFn)(sqIntptr_t, int, int, int, int)';
 		var: #jmpBuf
 			declareC: 'jmp_buf jmpBuf[MaxJumpBuf + 1 /* ', (MaxJumpBuf + 1) printString, ' */]';
 		var: #suspendedCallbacks
@@ -1037,6 +1032,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		(16 primitiveBitXor)
 		(17 primitiveBitShift)
 		(18 primitiveMakePoint)
+
 		(19 primitiveFail)					"Guard primitive for simulation -- *must* fail"
 
 		"LargeInteger Primitives (20-37)"
@@ -1083,35 +1079,35 @@ StackInterpreter class >> initializePrimitiveTable [
 		(58 primitiveLogN)
 		(59 primitiveExp)
 
-		"Subscript and Stream Primitives (60-67)"
+		"Subscript Primitives (60-64)"
 		(60 primitiveAt)
 		(61 primitiveAtPut)
 		(62 primitiveSize)
 		(63 primitiveStringAt)
 		(64 primitiveStringAtPut)
-		"The stream primitives no longer pay their way; normal Smalltalk code is faster."
-		(65 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called")"was primitiveNext"
-		(66 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called") "was primitiveNextPut"
-		(67 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called") "was primitiveAtEnd"
+		
+		(65 primitiveFail)
+		(66 primitiveFail)
+		(67 primitiveFail)
 
 		"StorageManagement Primitives (68-79)"
 		(68 primitiveObjectAt)
 		(69 primitiveObjectAtPut)
 		(70 primitiveNew)
 		(71 primitiveNewWithArg)
-		(72 primitiveArrayBecomeOneWay)	"Blue Book: primitiveBecome"
+		(72 primitiveArrayBecomeOneWay)
 		(73 primitiveInstVarAt)
 		(74 primitiveInstVarAtPut)
 		(75 primitiveIdentityHash)
-		(76 primitiveStoreStackp)			"Blue Book: primitiveAsObject"
+		(76 primitiveStoreStackp)
 		(77 primitiveSomeInstance)
 		(78 primitiveNextInstance)
 		(79 primitiveNewMethod)
 
 		"Control Primitives (80-89)"
-		(80 primitiveFail)					"Blue Book: primitiveBlockCopy"
-		(81 primitiveFail)					"Blue Book: primitiveValue"
-		(82 primitiveFail)					"Blue Book: primitiveValueWithArgs"
+		(80 primitiveFail)
+		(81 primitiveFail)
+		(82 primitiveFail)
 		(83 primitivePerform)
 		(84 primitivePerformWithArgs)
 		(85 primitiveSignal)
@@ -1121,76 +1117,70 @@ StackInterpreter class >> initializePrimitiveTable [
 		(89 primitiveFlushCache)
 
 		"Input/Output Primitives (90-109)"
-		(90 primitiveFail)					"primitiveMousePoint"
-		(91 primitiveTestDisplayDepth)			"Blue Book: primitiveCursorLocPut"
-		(92 primitiveSetDisplayMode)				"Blue Book: primitiveCursorLink"
-		(93 primitiveInputSemaphore)
-		(94 primitiveGetNextEvent)				"Blue Book: primitiveSampleInterval"
-		(95 primitiveFail)					"primitiveInputWord"
-		(96 primitiveFail)					"primitiveCopyBits"
+		(90 primitiveFail)
+		(91 primitiveFail)
+		(92 primitiveFail)
+		(93 primitiveFail)
+		(94 primitiveFail)
+		(95 primitiveFail)
+		(96 primitiveFail)
 		(97 primitiveSnapshot)
-		(98 primitiveStoreImageSegment)
-		(99 primitiveLoadImageSegment)
-		(100 primitivePerformInSuperclass)		"Blue Book: primitiveSignalAtTick"
-		(101 primitiveBeCursor)
-		(102 primitiveBeDisplay)
-		(103 primitiveFail)	"primitiveScanCharacters"
-		(104 primitiveFail)	"primitiveDrawLoop"
+		(98 primitiveFail)
+		(99 primitiveFail)
+		(100 primitivePerformInSuperclass)
+		(101 primitiveFail)
+		(102 primitiveFail)
+		(103 primitiveFail)
+		(104 primitiveFail)
 		(105 primitiveStringReplace)
-		(106 primitiveScreenSize)
-		(107 primitiveFail)      "primitiveMouseButtons"
-		(108 primitiveFail)      "primitiveKbdNext"
-		(109 primitiveFail)		"primitiveKbdPeek"
+		(106 primitiveFail)
+		(107 primitiveFail)
+		(108 primitiveFail)
+		(109 primitiveFail)
 
 		"System Primitives (110-119)"
 		(110 primitiveIdentical)
 		(111 primitiveClass)
 		(112 primitiveBytesLeft)
 		(113 primitiveQuit)
-		(114 primitiveExitToDebugger)
-		(115 primitiveChangeClass)					"Blue Book: primitiveOopsLeft"
+		(114 primitiveFail)
+		(115 primitiveChangeClass)
 		(116 primitiveFlushCacheByMethod)
 		(117 primitiveExternalCall)
 		(118 primitiveDoPrimitiveWithArgs)
 		(119 primitiveFlushCacheBySelector)
-			"Squeak 2.2 and earlier use 119.  Squeak 2.3 and later use 116.
-			Both are supported for backward compatibility."
 
 		"Miscellaneous Primitives (120-127)"
 		(120 primitiveCalloutToFFI)
 		(121 primitiveImageName)
-		(122 primitiveFail)			"primitiveNoop"		"Blue Book: primitiveImageVolume"
-		(123 primitiveFail)	"was primitiveValueUninterruptably"
+		(122 primitiveFail)
+		(123 primitiveFail)
 		(124 primitiveLowSpaceSemaphore)
 		(125 primitiveSignalAtBytesLeft)
 
-		"Squeak Primitives Start Here"
-
 		"Squeak Miscellaneous Primitives (128-149)"
-		(126 primitiveDeferDisplayUpdates)
-		(127 primitiveShowDisplayRect)
+		(126 primitiveFail)
+		(127 primitiveFail)
 		(128 primitiveArrayBecome)
 		(129 primitiveSpecialObjectsOop)
 		(130 primitiveFullGC)
 		(131 primitiveIncrementalGC)
 		(132 primitiveObjectPointsTo)
-		(133 primitiveSetInterruptKey)
-		(134 primitiveInterruptSemaphore)
+		(133 primitiveFail)
+		(134 primitiveFail)
 		(135 primitiveMillisecondClock)
 		(136 primitiveSignalAtMilliseconds)
 		(137 primitiveSecondsClock)
 		(138 primitiveSomeObject)
 		(139 primitiveNextObject)
-		(140 primitiveBeep)
-		(141 primitiveClipboardText)
+		(140 primitiveFail)
+		(141 primitiveFail)
 		(142 primitiveVMPath)
 		(143 primitiveShortAt)
 		(144 primitiveShortAtPut)
 		(145 primitiveConstantFill)
-		"NOTE: When removing the obsolete indexed primitives,
-		the following two should go become #primitiveIntegerAt / atPut"
-		(146 primitiveFail)	"primitiveReadJoystick"
-		(147 primitiveFail)	"primitiveWarpBits"
+		(146 primitiveFail)
+		(147 primitiveFail)
 		(148 primitiveClone)
 		(149 primitiveGetAttribute)
 
@@ -1235,7 +1225,6 @@ StackInterpreter class >> initializePrimitiveTable [
 		(188 primitiveExecuteMethodArgsArray)
 		(189 primitiveExecuteMethod)
 
-		"Sound Primitives (continued) - NO LONGER INDEXED"
 		(190 194 primitiveFail)
 
 		"Unwind primitives"
@@ -1246,13 +1235,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		(199 0 "a.k.a. primitiveMarkHandlerMethod")
 
 		"new closure primitives (were Networking primitives)"
-		(200 0) "was primitiveClosureCopyWithCopiedValues"
-		(201 0) "value"
-		(202 0) "value:"
-		(203 0) "value:value:"
-		(204 0) "value:value:value:"
-		(205 0) "value:value:value:value:"
-		(206 0) "valueWithArguments:"
+		(200 206 primitiveFail)
 
 		(207 primitiveFullClosureValue) "value[:value:value:value:] et al"
 		(208 primitiveFullClosureValueWithArgs) "valueWithArguments:"
@@ -1276,22 +1259,15 @@ StackInterpreter class >> initializePrimitiveTable [
 		(223 229 primitiveFail)	"reserved for Cog primitives (see 228 & 229 in CoInterpreterMT"
 
 		(230 primitiveRelinquishProcessor)
-		(231 primitiveForceDisplayUpdate)
-		(232 primitiveFormPrint)
-		(233 primitiveSetFullScreen)
-		(234 primitiveFail) "primBitmapdecompressfromByteArrayat"
-		(235 primitiveFail) "primStringcomparewithcollated"
-		(236 primitiveFail) "primSampledSoundconvert8bitSignedFromto16Bit"
-		(237 primitiveFail) "primBitmapcompresstoByteArray"
-		(238 239 primitiveFail) "serial port primitives"
-		(240 primitiveUTCMicrosecondClock)		"was serial port primitive"
-		(241 primitiveLocalMicrosecondClock)		"was serial port primitive"
+		(231 239 primitiveFail)
+		(240 primitiveUTCMicrosecondClock)
+		(241 primitiveLocalMicrosecondClock)
 		(242 primitiveSignalAtUTCMicroseconds)
-		(243 primitiveUpdateTimezone) "primStringtranslatefromtotable"
+		(243 primitiveUpdateTimezone)
 		(244 primitiveUtcAndTimezoneOffset)
-		(245 primitiveCoarseUTCMicrosecondClock) "primStringindexOfAsciiinStringstartingAt"
-		(246 primitiveCoarseLocalMicrosecondClock) "primStringfindSubstringinstartingAtmatchTable"
-		(247 primitiveSnapshotEmbedded)
+		(245 primitiveCoarseUTCMicrosecondClock)
+		(246 primitiveCoarseLocalMicrosecondClock)
+		(247 primitiveFail)
 		(248 primitiveArrayBecomeOneWayNoCopyHash) "was primitiveInvokeObjectAsMethod"
 		(249 primitiveArrayBecomeOneWayCopyHash)
 
@@ -1301,7 +1277,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		(252 primitiveVMProfileSamplesInto "primitiveStopVMProfiling")
 		(253 primitiveFail "N.B. primitiveCollectCogCodeConstituents in CoInterpreter below")
 		(254 primitiveVMParameter)
-		(255 primitiveFail) "RESERVED FOR THE R/Squeak VM. Was primitiveInstVarsPutFromStack. Never used except in Disney tests."
+		(255 primitiveFail)
 
 		"Quick Push Const Methods"
 		(256 nil) "primitivePushSelf"
@@ -1316,11 +1292,9 @@ StackInterpreter class >> initializePrimitiveTable [
 		"Quick Push Inst Var Methods"
 		(264 519 nil) "primitiveLoadInstVar"
 
-		(520 primitiveFail)
-		(521 529 primitiveFail) "Reserved for Spur primitives"
-		(530 539 primitiveFail)
+		(520 540 primitiveFail)
 
-		(540 primitiveFail)
+		"Small float primitives"
 		(541 primitiveSmallFloatAdd)
 		(542 primitiveSmallFloatSubtract)
 		(543 primitiveSmallFloatLessThan)
@@ -1348,10 +1322,9 @@ StackInterpreter class >> initializePrimitiveTable [
 		(571 primitiveUnloadModule)
 		(572 primitiveListBuiltinModule)
 		(573 primitiveListExternalModule)
-		(574 primitiveFail) "reserved for addl. external support prims"
 
 		"Unassigned Primitives"
-		(575 597 primitiveFail)
+		(574 597 primitiveFail)
 
 		"Pinned object creation primitives"
 		(598 primitiveNewPinned)
@@ -1711,7 +1684,7 @@ StackInterpreter class >> requiredMethodNames: options [
 		characterForAscii:
 		findClassOfMethod:forReceiver: findSelectorOfMethod:
 			forceInterruptCheck forceInterruptCheckFromHeartbeat fullDisplayUpdate
-		getCurrentBytecode getFullScreenFlag getInterruptKeycode getInterruptPending
+		getCurrentBytecode getFullScreenFlag getInterruptPending
 			getSavedWindowSize getThisSessionID
 		interpret
 		loadInitialContext
@@ -7077,14 +7050,6 @@ StackInterpreter >> fullClosureIn: context numArgs: numArgs numCopiedValues: num
 	^newClosure
 ]
 
-{ #category : #'I/O primitive support' }
-StackInterpreter >> fullDisplayUpdate [
-	"Repaint the entire smalltalk screen, ignoring the affected rectangle. Used in some platform's code when the Smalltalk window is brought to the front or uncovered."
-	<returnTypeC: #sqInt>
-	self updateDisplayLeft: 0 Top: 0 Right: displayWidth Bottom: displayHeight.
-	self ioForceDisplayUpdate
-]
-
 { #category : #'plugin primitive support' }
 StackInterpreter >> functionForPrimitiveCallout [
 	"Answer the function primitiveCallout from the FFI plugin or nil if it can't
@@ -7245,11 +7210,6 @@ StackInterpreter >> getImageHeaderFlags [
 	+ (newFinalization ifTrue: [16r40] ifFalse: [0])
 	+ (sendWheelEvents ifTrue: [16r80] ifFalse: [0])
 	+ (imageHeaderFlags bitClear: 16rD3) "these are any flags we do not recognize"
-]
-
-{ #category : #'plugin primitive support' }
-StackInterpreter >> getInterruptKeycode [
-	^interruptKeycode
 ]
 
 { #category : #'plugin primitive support' }
@@ -7815,7 +7775,7 @@ StackInterpreter >> initialize [
 	maxStacksToPrint := 0.
 	inIOProcessEvents := 0.
 	fullScreenFlag := 0.
-	sendWheelEvents := deferDisplayUpdates := false.
+	sendWheelEvents := false.
 	displayBits := displayWidth := displayHeight := displayDepth := 0.
 	pendingFinalizationSignals := statPendingFinalizationSignals := 0.
 	globalSessionID := 0.
@@ -7867,7 +7827,6 @@ StackInterpreter >> initializeInterpreter: bytesToShift [
 	methodDictLinearSearchLimit := 8.
 	self initialCleanup.
 	profileSemaphore := profileProcess := profileMethod := objectMemory nilObject.
-	interruptKeycode := 2094. "cmd-. as used for Mac but no other OS"
 	[globalSessionID = 0] whileTrue:
 		[globalSessionID := self
 								cCode: [(self time: #NULL) + self ioMSecs]
@@ -8344,13 +8303,6 @@ Note the resolveAliases flag - this is an awful artefact of OSX and Apples demen
 	self cCode:'sqGetFilenameFromString(aCharBuffer, aFilenameString, filenameLength, aBoolean)'
 		inSmalltalk:["this doesn't translate well in Smalltalk since we know how long strings are rather than considering them terminated by a 0 char. Do the best we can"
 			aCharBuffer replaceFrom:1 to: filenameLength with: aFilenameString]
-]
-
-{ #category : #simulation }
-StackInterpreter >> ioForceDisplayUpdate [
-	"Make sure the display is updated.  Simulation only"
-	<doNotGenerate>
-	UIManager default restoreDisplay
 ]
 
 { #category : #'primitive support' }
@@ -10530,9 +10482,6 @@ StackInterpreter >> moduleUnloaded: aModuleName [
 	Make sure we have no dangling references."
 	<export: true>
 	<var: #aModuleName type: 'char *'>
-	(aModuleName strcmp: 'SurfacePlugin') = 0
-		ifTrue: ["Surface plugin went away. Should never happen. But  then, who knows"
-			showSurfaceFn := 0]
 ]
 
 { #category : #'frame access' }
@@ -11096,30 +11045,7 @@ StackInterpreter >> postBecomeAction: theBecomeEffectsFlags [
 StackInterpreter >> postGCAction: gcModeArg [
 	"Signal the gc semaphore, and inform the display subsystem if the display bitmap has moved."
 
-	self signalSemaphoreWithIndex: gcSemaphoreIndex.
-	self postGCUpdateDisplayBits
-]
-
-{ #category : #'object memory support' }
-StackInterpreter >> postGCUpdateDisplayBits [
-	"Update the displayBits after a GC may have moved it.
-	 Answer if the displayBits appear valid"
-	<inline: false>
-	| displayObj bitsOop bitsNow |
-	displayObj := objectMemory splObj: TheDisplay.
-	((objectMemory isPointers: displayObj)
-	 and: [(objectMemory lengthOf: displayObj) >= 4
-	 and: [objectMemory isWordsOrBytes: (bitsOop := objectMemory fetchPointer: 0 ofObject: displayObj)]]) ifFalse:
-		[^false].
-
-	(objectMemory hasSpurMemoryManagerAPI
-	 and: [objectMemory isPinned: bitsOop]) ifFalse:
-		[bitsNow := self cCode: [objectMemory firstIndexableField: bitsOop]
-					inSmalltalk: [(objectMemory firstIndexableField: bitsOop) asInteger].
-		 displayBits ~= bitsNow ifTrue:
-			[displayBits := bitsNow.
-			 self ioNoteDisplayChanged: displayBits width: displayWidth height: displayHeight depth: displayDepth]].
-	^true
+	self signalSemaphoreWithIndex: gcSemaphoreIndex
 ]
 
 { #category : #'object memory support' }
@@ -13636,29 +13562,6 @@ StackInterpreter >> reverseBytesInImage [
 	self updateObjectsPostByteSwap
 ]
 
-{ #category : #'I/O primitive support' }
-StackInterpreter >> reverseDisplayFrom: startIndex to: endIndex [ 
-	"Reverse the given range of Display pixels, rounded to whole word boundary.
-	Used to give feedback during VM activities such as garbage collection when debugging.
-	 It is assumed that the given word range falls entirely within the first line of the Display."
-	
-	| wordStartIndex wordEndIndex primFailCodeValue |
-	self postGCUpdateDisplayBits ifFalse:
-		[^self].
-	(displayBits = 0 or: [(objectMemory isImmediate: displayBits asInteger) or: [displayDepth <= 0]]) ifTrue: [^self].
-	wordStartIndex := (startIndex max: 0) * displayDepth // 32.
-	wordEndIndex := (endIndex min: displayWidth) * displayDepth // 32.
-	displayBits asInteger + (wordStartIndex * 4) to: displayBits asInteger + (wordEndIndex * 4) by: 4 do:
-		[:ptr | | reversed |
-		reversed := (objectMemory long32At: ptr) bitXor: 16rFFFFFFFF.
-		objectMemory long32At: ptr put: reversed].
-	primFailCodeValue := primFailCode.
-	self initPrimCall.
-	self updateDisplayLeft: 0 Top: 0 Right: displayWidth Bottom: 1.
-	self ioForceDisplayUpdate.
-	primFailCode := primFailCodeValue
-]
-
 { #category : #'method lookup cache' }
 StackInterpreter >> rewriteMethodCacheEntryForExternalPrimitiveToFunction: localPrimAddress [
 	"Rewrite an existing entry in the method cache with a new primitive function address.
@@ -14062,11 +13965,6 @@ StackInterpreter >> setInterruptCheckChain: aFunction [
 ]
 
 { #category : #'plugin primitive support' }
-StackInterpreter >> setInterruptKeycode: value [
-	interruptKeycode := value
-]
-
-{ #category : #'plugin primitive support' }
 StackInterpreter >> setInterruptPending: value [
 	self forceInterruptCheck.
 	interruptPending := value
@@ -14464,17 +14362,8 @@ StackInterpreter >> shortUnconditionalJump [
 ]
 
 { #category : #'I/O primitive support' }
-StackInterpreter >> show: surfaceHandle Sur: left fa: top ce: width Fn: height [
-	"Simulate the showSurfaceFn function call as a failure to load the surface."
-	<doNotGenerate>
-	^0
-]
-
-{ #category : #'I/O primitive support' }
 StackInterpreter >> showDisplayBits: aForm Left: l Top: t Right: r Bottom: b [
 	"Repaint the portion of the Smalltalk screen bounded by the affected rectangle. Used to synchronize the screen after a Bitblt to the Smalltalk Display object."
-	(deferDisplayUpdates
-	 or: [aForm ~= (objectMemory splObj: TheDisplay)]) ifTrue: [^nil].
 	self updateDisplayLeft: l Top: t Right: r Bottom: b
 ]
 
