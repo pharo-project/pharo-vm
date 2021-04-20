@@ -127,12 +127,6 @@ SimulatorMorphicModel >> forceInterruptCheck [
 ]
 
 { #category : #'buttons callbacks' }
-SimulatorMorphicModel >> fullDisplayUpdate [
-	vm fullDisplayUpdate
-"^UserDialogBoxMorph inform: 'Toggle Transcript' title: 'TODO:'"
-]
-
-{ #category : #'buttons callbacks' }
 SimulatorMorphicModel >> hack [
 	UserDialogBoxMorph inform: (morph bounds printString) title: 'Hack:'
 ]

@@ -209,17 +209,6 @@ SimulatorMorph >> forceInterruptCheckButton [
 ]
 
 { #category : #'submorphs - buttons' }
-SimulatorMorph >> fullDisplayUpdateButton [
-	self flag: 'tty'.
-	^fullDisplayUpdateButton ifNil: 
-		[fullDisplayUpdateButton := self basicButton 
-						label: 'vm fullDisplayUpdate' translated; 
-						actionSelector: #fullDisplayUpdate;						
-						setBalloonText: 
-							'Invoke fullDisplayUpdate on Simulator.' translated]
-]
-
-{ #category : #'submorphs - buttons' }
 SimulatorMorph >> hackButton [
 	self flag: 'tty'.
 	^hackButton ifNil: 

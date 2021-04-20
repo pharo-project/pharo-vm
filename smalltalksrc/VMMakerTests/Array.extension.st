@@ -4,7 +4,7 @@ Extension { #name : #Array }
 Array >> forMemory: aMemory [
 
 	^ aMemory newArrayWith:
-		  (self collect: [ :anElement | anElement forMethodBuilder: aMemory ])
+		  (self collect: [ :anElement | anElement forMemory: aMemory ])
 ]
 
 { #category : #'*VMMakerTests' }

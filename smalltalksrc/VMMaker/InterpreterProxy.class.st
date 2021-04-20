@@ -384,12 +384,6 @@ InterpreterProxy >> floatValueOf: oop [
 ]
 
 { #category : #other }
-InterpreterProxy >> fullDisplayUpdate [
-	<returnTypeC: #sqInt>
-	Display display
-]
-
-{ #category : #other }
 InterpreterProxy >> fullGC [
 	<returnTypeC: #sqInt>
 	Smalltalk garbageCollect

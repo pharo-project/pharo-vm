@@ -1370,13 +1370,6 @@ StackInterpreterMT >> primitiveExitCriticalSection [
 						[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]]
 ]
 
-{ #category : #UI }
-StackInterpreterMT >> primitiveGetNextEvent [
-	self inGUIThread ifFalse: [ 
-		^ self primitiveFailFor: PrimErrInappropriate ].
-	^ super primitiveGetNextEvent
-]
-
 { #category : #'process primitives' }
 StackInterpreterMT >> primitiveProcessBindToThreadId [
 	"Attempt to bind the receiver to the thread with the id of the argument or nil, where the receiver is a Process.
@@ -1503,14 +1496,6 @@ StackInterpreterMT >> primitiveResume [
 	inInterpreter := instructionPointer >= objectMemory startOfMemory.
 	(self resume: proc  preemptedYieldingIf: preemptionYields from: CSResume) ifTrue:
 		[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]"
-]
-
-{ #category : #UI }
-StackInterpreterMT >> primitiveScreenSize [
-
-	self inGUIThread ifFalse: [ 
-		^ self primitiveFailFor: PrimErrInappropriate ].
-	^ super primitiveScreenSize
 ]
 
 { #category : #'vm scheduling' }
