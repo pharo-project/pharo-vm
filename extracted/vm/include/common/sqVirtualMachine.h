@@ -132,7 +132,6 @@ typedef struct VirtualMachine {
 	/* InterpreterProxy methodsFor: 'special objects' */
 
 	sqInt (*characterTable)(void);
-	sqInt (*displayObject)(void);
 	sqInt (*falseObject)(void);
 	sqInt (*nilObject)(void);
 	sqInt (*trueObject)(void);
@@ -163,7 +162,6 @@ typedef struct VirtualMachine {
 	sqInt (*becomewith)(sqInt array1, sqInt array2);
 	sqInt (*byteSwapped)(sqInt w);
 	sqInt (*failed)(void);
-	sqInt (*fullDisplayUpdate)(void);
 	void (*fullGC)(void);
 	void (*incrementalGC)(void);
 	sqInt (*primitiveFail)(void);

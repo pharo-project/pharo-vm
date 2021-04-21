@@ -104,7 +104,6 @@ usqIntptr_t  stackPositiveMachineIntegerValue(sqInt);
 
 /* InterpreterProxy methodsFor: 'special objects' */
 sqInt characterTable(void);
-sqInt displayObject(void);
 sqInt falseObject(void);
 sqInt nilObject(void);
 sqInt trueObject(void);
@@ -136,7 +135,6 @@ sqInt pushRemappableOop(sqInt oop);
 sqInt becomewith(sqInt array1, sqInt array2);
 sqInt byteSwapped(sqInt w);
 sqInt failed(void);
-sqInt fullDisplayUpdate(void);
 void fullGC(void);
 void incrementalGC(void);
 sqInt primitiveFail(void);
@@ -367,7 +365,6 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 
 	/* InterpreterProxy methodsFor: 'special objects' */
 	VM->characterTable = characterTable;
-	VM->displayObject = displayObject;
 	VM->falseObject = falseObject;
 	VM->nilObject = nilObject;
 	VM->trueObject = trueObject;
@@ -395,7 +392,6 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 	VM->becomewith = becomewith;
 	VM->byteSwapped = byteSwapped;
 	VM->failed = failed;
-	VM->fullDisplayUpdate = fullDisplayUpdate;
 	VM->fullGC = fullGC;
 	VM->incrementalGC = incrementalGC;
 	VM->primitiveFail = primitiveFail;
