@@ -37,6 +37,12 @@ PharoVMMaker class >> generate: aClassName outputDirectory: aDirectory [
 { #category : #generation }
 PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager [
 
+	self generate: interpreterClass memoryManager: memoryManager compilerClass: StackToRegisterMappingCogit
+]
+
+{ #category : #generation }
+PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compilerClass: compilerClass [
+
 	| platformDirectory |
 	
 	Author useAuthor: 'vmMaker' during: [
@@ -50,7 +56,7 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager [
 		
 		(VMMaker
 			makerFor: interpreterClass
-			and: StackToRegisterMappingCogit
+			and: compilerClass
 			with: {#COGMTVM. false.
 					#ObjectMemory. memoryManager name.
 					#bytecodeTableInitializer. #initializeBytecodeTableForSistaV1}
@@ -70,6 +76,13 @@ PharoVMMaker >> generateCoInterpreter [
 
 	self generate: CoInterpreter memoryManager: Spur64BitCoMemoryManager.
 	self generate: CoInterpreter memoryManager: Spur32BitCoMemoryManager.	
+]
+
+{ #category : #generation }
+PharoVMMaker >> generateSistaVM [
+
+	self generate: CoInterpreter memoryManager: Spur64BitCoMemoryManager compilerClass: SistaCogit.
+	self generate: CoInterpreter memoryManager: Spur32BitCoMemoryManager compilerClass: SistaCogit.
 ]
 
 { #category : #generation }
