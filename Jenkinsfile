@@ -244,7 +244,7 @@ def isPullRequest() {
   return env.CHANGE_ID != null
 }
 
-def uploadPackages(){
+def uploadPackages(platformNames){
 	node('unix'){
 		stage('Upload'){
 			if (isPullRequest()) {
@@ -252,27 +252,24 @@ def uploadPackages(){
 				echo "[DO NO UPLOAD] In PR " + (env.CHANGE_ID?.trim())
 				return;
 			}
-			
+
 			if(!isMainBranch()){
 				echo "[DO NO UPLOAD] In branch different that 'headless': ${env.BRANCH_NAME}";
 				return;
 			}
-			
-			upload('Darwin-x86_64', "CoInterpreter", 'Darwin-x86_64')
-			upload('Linux-x86_64', "CoInterpreter", 'Linux-x86_64')
-			upload('Windows-x86_64', "CoInterpreter", 'Windows-x86_64')
 
-			uploadStockReplacement('Darwin-x86_64', "CoInterpreter", 'Darwin-x86_64-stockReplacement')
-			uploadStockReplacement('Linux-x86_64', "CoInterpreter", 'Linux-x86_64-stockReplacement')
-			uploadStockReplacement('Windows-x86_64', "CoInterpreter", 'Windows-x86_64-stockReplacement')
+			for (platformName in platformNames) {
+				upload(platformName, "CoInterpreter", platformName)
+				uploadStockReplacement(platformName, "CoInterpreter", "${platformName}-stockReplacement")
+			}
 		}
 	}
 }
 
 try{
-    properties([disableConcurrentBuilds()])
+	properties([disableConcurrentBuilds()])
 
-    def platforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64', 'Darwin-arm64']
+	def platforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64', 'Darwin-arm64']
 	def builders = [:]
 	def tests = [:]
 
@@ -312,7 +309,7 @@ try{
 
 	parallel builders
 	
-	uploadPackages()
+	uploadPackages(platforms)
 
 	buildGTKBundle()
 
