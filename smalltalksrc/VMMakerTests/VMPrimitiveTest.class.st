@@ -630,6 +630,123 @@ VMPrimitiveTest >> testPrimitiveAtPutPutsTheValueForAnIndexableObject [
 	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
 ]
 
+{ #category : #'tests - primitiveDiv' }
+VMPrimitiveTest >> testPrimitiveDiv [
+
+	interpreter push: (memory integerObjectOf: 4).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveDiv. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 2). 
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMPrimitiveTest >> testPrimitiveDivFailPreservesStack [
+	
+	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	
+	interpreter primitiveDiv. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackValue: 1) equals: (memory booleanObjectOf: true).
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMPrimitiveTest >> testPrimitiveDivFailsWithTypeErrorOnFirstOperand [
+	
+	interpreter push: memory trueObject.
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveDiv. 
+
+	self assert: interpreter failed.
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMPrimitiveTest >> testPrimitiveDivFailsWithTypeErrorOnSecondOperand [
+	
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: memory trueObject.
+	
+	interpreter primitiveDiv. 
+
+	self assert: interpreter failed.
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMPrimitiveTest >> testPrimitiveDivOnFloatResultRoundsAndDoesntFail [
+"In the primitive implementation of quo, it doesnt push the rest of the operation on the stack"
+
+	interpreter push: (memory integerObjectOf: 42).
+	interpreter push: (memory integerObjectOf: 4).
+	
+	interpreter primitiveDiv. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 10). 
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMPrimitiveTest >> testPrimitiveDivWith0DivisionOnFirstOperand [
+
+	interpreter push: (memory integerObjectOf: 0).
+	interpreter push: (memory integerObjectOf: 4).
+	
+	interpreter primitiveDiv. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 0). 
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMPrimitiveTest >> testPrimitiveDivWith0DivisionOnSecondOperand [
+
+	interpreter push: (memory integerObjectOf: 4).
+	interpreter push: (memory integerObjectOf: 0).
+	
+	interpreter primitiveDiv. 
+	
+	self assert: interpreter failed.
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMPrimitiveTest >> testPrimitiveDivWithNegativeNumbers [
+	
+	interpreter push: (memory integerObjectOf: 4).
+	interpreter push: (memory integerObjectOf: -2).
+	
+	interpreter primitiveDiv. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: -2). 
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMPrimitiveTest >> testPrimitiveDivWithNegativeNumbers2 [
+	
+	interpreter push: (memory integerObjectOf: -42).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveDiv. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: -21). 
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMPrimitiveTest >> testPrimitiveDivWithNoErrorPopsOperands [
+	
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveDiv. 
+	
+	interpreter popStack. 
+	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
+]
+
 { #category : #'tests - primitiveDivide' }
 VMPrimitiveTest >> testPrimitiveDivide [
 
