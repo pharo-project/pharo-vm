@@ -159,10 +159,10 @@ VMPrimitiveTest >> testPrimitiveAddWithNoOverflowPreservesStack [
 { #category : #'tests - primitiveAdd' }
 VMPrimitiveTest >> testPrimitiveAddWithOverflow [
 
-	interpreter push: (memory integerObjectOf: (memory minSmallInteger)).
+	interpreter push: (memory integerObjectOf: (memory maxSmallInteger)).
 	interpreter push: (memory integerObjectOf: 2).
 	
-	interpreter primitiveSubtract. 
+	interpreter primitiveAdd. 
 	
 	self assert: interpreter failed.
 	
