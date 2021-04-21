@@ -1991,6 +1991,91 @@ CCodeGenerator >> generateCASTPowerTo: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTSequentialAnd: tast [
+
+	(self nilOrBooleanConstantReceiverOf: tast receiver)
+		ifNil: [ 
+			(self nilOrBooleanConstantReceiverOf: tast arguments first) 
+				ifNotNil: [ :const | 
+				const == true ifTrue: [ ^ tast receiver asCASTIn: self ] ].
+			^ self generateCASTAnd: tast ]
+		ifNotNil: [ :const | 
+			const
+				ifTrue: [ ^ tast arguments first asCASTIn: self ]
+				ifFalse: [ ^ CConstantNode value: 0 ] ]
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTShiftLeft: tast [
+
+	| finalNode leftNode receiverNode rcvr arg castToLong type mustCastBackToSign mustCastToUnsigned canSuffixTheConstant typeIsUnsigned |
+	rcvr := tast receiver.
+	arg := tast args first.
+	castToLong := false.
+	(rcvr constantNumbericValueIfAtAllPossibleOrNilIn: self) ifNotNil: [ 
+		:rcvrVal | 
+		(arg constantNumbericValueIfAtAllPossibleOrNilIn: self)
+			ifNil: [ castToLong := self is64Bit ]
+			ifNotNil: [ :argVal | 
+				| valueBeyondInt |
+				valueBeyondInt := 1 bitShift: 32. "The default type of const << N is int."
+				castToLong := rcvrVal < valueBeyondInt and: [ 
+					              (rcvrVal bitShift: argVal) >= valueBeyondInt ] ] ].
+	canSuffixTheConstant := rcvr isConstant and: [ 
+		                        rcvr name isEmpty and: [ rcvr value >= 0 ] ].
+	canSuffixTheConstant ifTrue: [ 
+		^ CBinaryOperatorNode
+			  operator: #<<
+			  left: (CConstantNode value:
+					   (self
+						    cLiteralForUnsignedInteger: rcvr value
+						    longlong: castToLong))
+			  right: (arg asCASTIn: self) ].
+	receiverNode := tast receiver asCASTIn: self.
+	leftNode := receiverNode.
+	type := self typeFor: rcvr in: currentMethod.
+	castToLong := castToLong and: [ 
+		              (self sizeOfIntegralCType: type)
+		              < (self sizeOfIntegralCType: #usqLong) ].
+	typeIsUnsigned := type first = $u.
+	mustCastToUnsigned := typeIsUnsigned not or: [ 
+		                      castToLong or: [ 
+			                      (self sizeOfIntegralCType: type)
+			                      < (self sizeOfIntegralCType: #usqInt) ] ].
+	mustCastToUnsigned ifTrue: [ 
+		| unsigned |
+		unsigned := castToLong
+			            ifTrue: [ #usqLong ]
+			            ifFalse: [ 
+				            (self sizeOfIntegralCType: type)
+				            < (self sizeOfIntegralCType: #usqLong)
+					            ifTrue: [ #usqInt ]
+					            ifFalse: [ self unsignedTypeForIntegralType: type ] ].
+		leftNode := CCastExpressionNode
+			            type: (CTypeNameNode symbol: unsigned)
+			            expression: receiverNode ].
+	finalNode := CBinaryOperatorNode
+		  operator: #<<
+		  left: leftNode
+		  right: (arg asCASTIn: self).
+	mustCastBackToSign := typeIsUnsigned not.
+	mustCastBackToSign ifTrue: [ 
+		| promotedType |
+		promotedType := castToLong
+			                ifTrue: [ #sqLong ]
+			                ifFalse: [ 
+				                (self sizeOfIntegralCType: type)
+				                < (self sizeOfIntegralCType: #sqInt)
+					                ifTrue: [ #sqInt ]
+					                ifFalse: [ type ] ].
+		finalNode := CCastExpressionNode
+			            type: (CTypeNameNode symbol: promotedType)
+			            expression: finalNode ].
+
+	^ finalNode
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTTimes: tast [
 	
 	^ self generateCASTBinary: tast operator: #*
@@ -2855,7 +2940,7 @@ CCodeGenerator >> generateSequentialAnd: msgNode on: aStream indent: level [
 			  leave that to the C compiler. But /do/ eliminate the second expression if it is vaccuously true."
 			 (self nilOrBooleanConstantReceiverOf: msgNode args first) ifNotNil:
 				[:const| const == true ifTrue: [^self]].
-			 aStream crtab: level; nextPutAll: ' && ('.
+			 aStream nextPutAll: ' && ('.
 			 self emitCTestBlock: msgNode args first on: aStream indent: level.
 			 aStream nextPut: $)]
 		ifNotNil:

@@ -80,6 +80,21 @@ TStmtListNode >> args [
 ]
 
 { #category : #tranforming }
+TStmtListNode >> asCASTExpressionIn: aBuilder [
+
+	| comma |
+	comma := CBinaryOperatorNode new operator: ','.
+	statements size == 1
+		ifTrue: [ ^ statements first asCASTIn: aBuilder ]
+		ifFalse: [ 
+			comma left: statements first.
+			comma right: statements second.
+			2 to: statements size do: [ :i | 
+				i > 2 ifTrue: [ 
+					comma := CBinaryOperatorNode operator: ',' left: comma right: (statements at: i) ] ] ]
+]
+
+{ #category : #tranforming }
 TStmtListNode >> asCASTIn: aBuilder [
 	
 	^ CCompoundStatementNode statements: (statements collect: [ :e | e asCASTIn: aBuilder ])
@@ -163,8 +178,8 @@ TStmtListNode >> emitCCodeAsExpressionOn: aStream level: level generator: aCodeG
 		p2 := aStream position.
 		(idx < size and: [p2 > p1]) ifTrue:
 			[((self endsWithCloseBracket: aStream)
-			  or: [s isComment]) ifFalse: [aStream nextPut: $,].
-			 aStream crtab: level]].
+			  or: [s isComment]) ifFalse: [aStream nextPutAll: ', '].
+			 ]].
 	aStream nextPut: $)
 ]
 

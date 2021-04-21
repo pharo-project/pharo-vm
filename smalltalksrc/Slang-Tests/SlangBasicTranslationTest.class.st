@@ -701,7 +701,7 @@ SlangBasicTranslationTest >> testSendLeftBitShifNegativeLitteralIntegerOverflow 
 		        arguments: { (TConstantNode value: 32) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '3ULL << 32'
+	self assert: translation equals: '((sqInt)((usqInt)(-3) << 32))'
 ]
 
 { #category : #'tests-send' }
@@ -730,7 +730,7 @@ SlangBasicTranslationTest >> testSendLeftBitShiftByVariable [
 		        arguments: { (TVariableNode new setName: 'a') }.
 	translation := self translate: send.
 
-	self assert: translation equals: ''
+	self assert: translation equals: '3U << a'
 ]
 
 { #category : #'tests-send' }
@@ -744,7 +744,7 @@ SlangBasicTranslationTest >> testSendLeftBitShiftByVariableIn32Bits [
 		        arguments: { (TVariableNode new setName: 'a') }.
 	translation := self translate: send.
 
-	self assert: translation equals: ''
+	self assert: translation equals: '3U << a'
 ]
 
 { #category : #'tests-send' }
@@ -759,7 +759,7 @@ SlangBasicTranslationTest >> testSendLeftBitShiftByVariableIn64Bits [
 		        arguments: { (TVariableNode new setName: 'a') }.
 	translation := self translate: send.
 
-	self assert: translation equals: ''
+	self assert: translation equals: '3ULL << a'
 ]
 
 { #category : #'tests-send' }
@@ -773,7 +773,7 @@ SlangBasicTranslationTest >> testSendLeftBitShiftLong [
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((sqInt)((usqInt)(a) << 3))'
+	self assert: translation equals: '((sqLong)((usqLong)(a) << 3))'
 ]
 
 { #category : #'tests-send' }
@@ -815,7 +815,7 @@ SlangBasicTranslationTest >> testSendLeftBitShiftUnsignedShortType [
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((sqInt)((usqInt)(a) << 3))'
+	self assert: translation equals: '((usqInt)(a) << 3)'
 ]
 
 { #category : #'tests-send' }
@@ -984,6 +984,27 @@ SlangBasicTranslationTest >> testSendPowerTo [
 	translation := self translate: send.
 
 	self assert: translation equals: '(sqInt)pow(x, 2)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendSequentialAndWithConstantReceiverTrue [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #and:
+		        receiver: (TConstantNode value: true)
+		        arguments: { (TStmtListNode new setStatements: { 
+					         (TSendNode new
+						          setSelector: #+
+						          receiver: (TConstantNode value: 1)
+						          arguments: {(TConstantNode value: 2)}).
+					         (TSendNode new
+						          setSelector: #=
+						          receiver: (TVariableNode new setName: 'a')
+						          arguments: { (TVariableNode new setName: 'b') }) }) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '1 && ((1 + 2, a == b))'
 ]
 
 { #category : #'tests-send' }
