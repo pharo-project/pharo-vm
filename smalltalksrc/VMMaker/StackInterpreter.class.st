@@ -411,7 +411,8 @@ Class {
 		'maxStacksToPrint',
 		'maxStackMessagePrinted',
 		'libFFI',
-		'codeGeneratorToComputeAccessorDepth'
+		'codeGeneratorToComputeAccessorDepth',
+		'showSurfaceFn'
 	],
 	#classVars : [
 		'AccessModifierPrivate',
@@ -594,6 +595,8 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 			declareC: 'void (*externalPrimitiveTable[MaxExternalPrimitiveTableSize + 1 /* ', (MaxExternalPrimitiveTableSize + 1) printString, ' */])(void)';
 		var: #interruptCheckChain
 			declareC: 'void (*interruptCheckChain)(void) = 0';
+		var: #showSurfaceFn
+			declareC: 'int (*showSurfaceFn)(sqIntptr_t, int, int, int, int)';
 		var: #jmpBuf
 			declareC: 'jmp_buf jmpBuf[MaxJumpBuf + 1 /* ', (MaxJumpBuf + 1) printString, ' */]';
 		var: #suspendedCallbacks
@@ -7143,12 +7146,6 @@ StackInterpreter >> getCurrentBytecode [
 	"currentBytecode will be private to the main dispatch loop in the generated code. This method allows the currentBytecode to be retrieved from global variables."
 
 	^objectMemory byteAt: instructionPointer
-]
-
-{ #category : #'simulation support' }
-StackInterpreter >> getDeferDisplayUpdates [
-	<doNotGenerate>
-	^deferDisplayUpdates
 ]
 
 { #category : #'internal interpreter access' }
