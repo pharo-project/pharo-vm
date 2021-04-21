@@ -1760,6 +1760,112 @@ VMPrimitiveTest >> testPrimitiveNotEqualWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed. 
 ]
 
+{ #category : #'tests - primitiveQuo' }
+VMPrimitiveTest >> testPrimitiveQuo [
+
+	interpreter push: (memory integerObjectOf: 4).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveQuo. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 2). 
+]
+
+{ #category : #'tests - primitiveQuo' }
+VMPrimitiveTest >> testPrimitiveQuoFailPreservesStack [
+	
+	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	
+	interpreter primitiveQuo. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackValue: 1) equals: (memory booleanObjectOf: true).
+]
+
+{ #category : #'tests - primitiveQuo' }
+VMPrimitiveTest >> testPrimitiveQuoFailsWithTypeErrorOnFirstOperand [
+	
+	interpreter push: memory trueObject.
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveQuo. 
+
+	self assert: interpreter failed.
+]
+
+{ #category : #'tests - primitiveQuo' }
+VMPrimitiveTest >> testPrimitiveQuoFailsWithTypeErrorOnSecondOperand [
+	
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: memory trueObject.
+	
+	interpreter primitiveQuo. 
+
+	self assert: interpreter failed.
+]
+
+{ #category : #'tests - primitiveQuo' }
+VMPrimitiveTest >> testPrimitiveQuoOnFloatResultDoesntReturnRest [
+"Tests that the rest of the integer division is not pushed into the stack, as this is not expected in a primitive behavior"
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory integerObjectOf: 42).
+	interpreter push: (memory integerObjectOf: 4).
+	
+	interpreter primitiveQuo. 
+	
+	self assert: (interpreter stackValue: 1) equals: (memory integerObjectOf: 16). 
+]
+
+{ #category : #'tests - primitiveQuo' }
+VMPrimitiveTest >> testPrimitiveQuoOnFloatResultRoundsAndDoesntFail [
+
+	interpreter push: (memory integerObjectOf: 42).
+	interpreter push: (memory integerObjectOf: 4).
+	
+	interpreter primitiveQuo. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 10). 
+]
+
+{ #category : #'tests - primitiveQuo' }
+VMPrimitiveTest >> testPrimitiveQuoWith0DivisionOnFirstOperand [
+
+	interpreter push: (memory integerObjectOf: 0).
+	interpreter push: (memory integerObjectOf: 4).
+	
+	interpreter primitiveQuo. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 0). 
+]
+
+{ #category : #'tests - primitiveQuo' }
+VMPrimitiveTest >> testPrimitiveQuoWith0DivisionOnSecondOperand [
+	
+	interpreter push: (memory integerObjectOf: 4).
+	interpreter push: (memory integerObjectOf: 0).
+	
+	interpreter primitiveQuo. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 0). 
+]
+
+{ #category : #'tests - primitiveQuo' }
+VMPrimitiveTest >> testPrimitiveQuoWithNoErrorPopsOperands [
+	
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter push: (memory integerObjectOf: 1).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveQuo. 
+	
+	interpreter popStack. 
+	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
+]
+
 { #category : #'tests - primitiveImmutability' }
 VMPrimitiveTest >> testPrimitiveSetImmutabilityOfImmediateShouldFail [
 
