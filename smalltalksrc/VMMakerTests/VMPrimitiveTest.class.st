@@ -674,7 +674,7 @@ VMPrimitiveTest >> testPrimitiveDivideFailsWithTypeErrorOnFirstOperand [
 	interpreter push: memory trueObject.
 	interpreter push: (memory integerObjectOf: 2).
 	
-	interpreter primitiveMultiply. 
+	interpreter primitiveDivide. 
 
 	self assert: interpreter failed.
 ]
@@ -685,7 +685,7 @@ VMPrimitiveTest >> testPrimitiveDivideFailsWithTypeErrorOnSecondOperand [
 	interpreter push: (memory integerObjectOf: 2).
 	interpreter push: memory trueObject.
 	
-	interpreter primitiveMultiply. 
+	interpreter primitiveDivide. 
 
 	self assert: interpreter failed.
 ]
