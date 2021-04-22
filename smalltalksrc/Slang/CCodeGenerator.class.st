@@ -1788,8 +1788,8 @@ CCodeGenerator >> generateCASTBinary: tast operator: operator [
 
 	^ CBinaryOperatorNode
 		  operator: operator
-		  left: (tast receiver asCASTIn: self)
-		  right: (tast arguments first asCASTIn: self)
+		  left: (tast receiver asCASTExpressionIn: self)
+		  right: (tast arguments first asCASTExpressionIn: self)
 ]
 
 { #category : #'CAST translation' }
@@ -1997,11 +1997,11 @@ CCodeGenerator >> generateCASTSequentialAnd: tast [
 		ifNil: [ 
 			(self nilOrBooleanConstantReceiverOf: tast arguments first) 
 				ifNotNil: [ :const | 
-				const == true ifTrue: [ ^ tast receiver asCASTIn: self ] ].
+				const == true ifTrue: [ ^ tast receiver asCASTExpressionIn: self ] ].
 			^ self generateCASTAnd: tast ]
 		ifNotNil: [ :const | 
 			const
-				ifTrue: [ ^ tast arguments first asCASTIn: self ]
+				ifTrue: [ ^ tast arguments first asCASTExpressionIn: self ]
 				ifFalse: [ ^ CConstantNode value: 0 ] ]
 ]
 
