@@ -4,7 +4,8 @@ Class {
 	#instVars : [
 		'declarations',
 		'statements',
-		'needsBrackets'
+		'needsBrackets',
+		'needsCarriageReturn'
 	],
 	#category : #'CAST-Nodes'
 }
@@ -66,6 +67,7 @@ CCompoundStatementNode >> initialize [
 	statements := OrderedCollection new: 2.
 	declarations := OrderedCollection new: 2.
 	needsBrackets := true.
+	needsCarriageReturn := true
 ]
 
 { #category : #testing }
@@ -84,6 +86,18 @@ CCompoundStatementNode >> needsBrackets [
 CCompoundStatementNode >> needsBrackets: anObject [
 
 	needsBrackets := anObject
+]
+
+{ #category : #accessing }
+CCompoundStatementNode >> needsCarriageReturn [
+
+	^ needsCarriageReturn
+]
+
+{ #category : #accessing }
+CCompoundStatementNode >> needsCarriageReturn: aBoolean [
+
+	needsCarriageReturn := aBoolean
 ]
 
 { #category : #generated }

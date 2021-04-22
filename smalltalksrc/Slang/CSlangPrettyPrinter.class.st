@@ -87,32 +87,35 @@ CSlangPrettyPrinter >> visitCastExpression: aCastExpression [
 	stream nextPut: $(.
 	aCastExpression type acceptVisitor: self.
 	stream nextPut: $).
-	aCastExpression expression acceptVisitor: self
+	stream nextPut: $(.
+	aCastExpression expression acceptVisitor: self.
+	stream nextPut: $)
 ]
 
 { #category : #generated }
 CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 
-	aCompoundStatement needsBrackets ifTrue: [
+	aCompoundStatement needsBrackets ifTrue: [ 
 		stream
 			tab: level;
 			nextPutAll: '{'.
-	
+
 		level := level + 1.
 		stream crtab: level ].
-	
-	aCompoundStatement declarations,
-		aCompoundStatement statements
-			do: [ :e | e acceptVisitor: self ]
-			separatedBy: [ 
-				stream nextPut: $;.
-				stream crtab: level ].
-	
-	aCompoundStatement needsBrackets ifTrue: [
+
+	aCompoundStatement declarations , aCompoundStatement statements
+		do: [ :e | e acceptVisitor: self ]
+		separatedBy: [ 
+			stream nextPut: $;.
+			stream crtab: level ].
+
+	aCompoundStatement needsBrackets ifTrue: [ 
 		stream nextPut: $;.
 		level := level - 1.
-		stream crtab: level; nextPut: $}; cr
-	]
+		stream
+			crtab: level;
+			nextPut: $}.
+		aCompoundStatement needsCarriageReturn ifTrue: [ stream cr ] ]
 ]
 
 { #category : #generated }
@@ -207,9 +210,9 @@ CSlangPrettyPrinter >> visitReturnStatement: aReturn [
 { #category : #generated }
 CSlangPrettyPrinter >> visitTernary: aTarnary [
 
-	stream nextPut: $(.
+	stream nextPutAll: '(('.
 	aTarnary condition acceptVisitor: self.
-	stream nextPutAll: ' ? '.
+	stream nextPutAll: ') ? '.
 	aTarnary then acceptVisitor: self.
 	stream nextPutAll: ' : '.
 	aTarnary else acceptVisitor: self.

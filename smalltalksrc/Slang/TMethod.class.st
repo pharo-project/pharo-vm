@@ -1197,6 +1197,13 @@ TMethod >> inferReturnTypeIn: aCodeGen [
 	^existingReturnType ~= returnType
 ]
 
+{ #category : #initialization }
+TMethod >> initialize [
+
+	super initialize.
+	declarations := Dictionary new
+]
+
 { #category : #accessing }
 TMethod >> inline [
 	^inline
