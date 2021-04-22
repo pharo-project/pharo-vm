@@ -835,6 +835,28 @@ VMPrimitiveTest >> testPrimitiveDivideWithNegativeNumbers2 [
 ]
 
 { #category : #'tests - primitiveEqual' }
+VMPrimitiveTest >> testPrimitiveEqualFailsWithFloat [
+
+	interpreter push: (memory integerObjectOf: 15).
+	interpreter push: (memory floatObjectOf: 15.0).
+	
+	interpreter primitiveEqual.
+
+	self assert: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveEqual' }
+VMPrimitiveTest >> testPrimitiveEqualWithNegativeNumbers [
+
+	interpreter push: (memory integerObjectOf: -13).
+	interpreter push: (memory integerObjectOf: -13).
+	
+	interpreter primitiveEqual.
+
+	self deny: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveEqual' }
 VMPrimitiveTest >> testPrimitiveEqualWithNoError1 [
 
 	interpreter push: (memory integerObjectOf: 15).
@@ -930,6 +952,17 @@ VMPrimitiveTest >> testPrimitiveGetImmutabilityReturnsTrueIfObjectIsImmutable [
 ]
 
 { #category : #'tests - primitiveGreaterOrEqual' }
+VMPrimitiveTest >> testPrimitiveGreaterOrEqualFailsWithFloat [
+
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory floatObjectOf: 16.0).
+	
+	interpreter primitiveGreaterOrEqual.
+
+	self assert: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveGreaterOrEqual' }
 VMPrimitiveTest >> testPrimitiveGreaterOrEqualFailsWithTypeErrorOnFirstOperand [
 	
 	interpreter push: (memory trueObject).
@@ -949,6 +982,17 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualFailsWithTypeErrorOnSecondOperand 
 	interpreter primitiveGreaterOrEqual. 
 	
 	self assert: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveGreaterOrEqual' }
+VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNegativeNumbers [
+
+	interpreter push: (memory integerObjectOf: -13).
+	interpreter push: (memory integerObjectOf: -13).
+	
+	interpreter primitiveGreaterOrEqual.
+
+	self deny: interpreter failed. 
 ]
 
 { #category : #'tests - primitiveGreaterOrEqual' }
@@ -1000,6 +1044,17 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoErrorPopsOperands [
 ]
 
 { #category : #'tests - primitiveGreaterThan' }
+VMPrimitiveTest >> testPrimitiveGreaterThanFailsWithFloat [
+
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory floatObjectOf: 16.0).
+	
+	interpreter primitiveGreaterThan.
+
+	self assert: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveGreaterThan' }
 VMPrimitiveTest >> testPrimitiveGreaterThanFailsWithTypeErrorOnFirstOperand [
 	
 	interpreter push: (memory trueObject).
@@ -1019,6 +1074,17 @@ VMPrimitiveTest >> testPrimitiveGreaterThanFailsWithTypeErrorOnSecondOperand [
 	interpreter primitiveGreaterThan. 
 	
 	self assert: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveGreaterThan' }
+VMPrimitiveTest >> testPrimitiveGreaterThanWithNegativeNumbers [
+
+	interpreter push: (memory integerObjectOf: -13).
+	interpreter push: (memory integerObjectOf: -13).
+	
+	interpreter primitiveGreaterThan.
+
+	self deny: interpreter failed. 
 ]
 
 { #category : #'tests - primitiveGreaterThan' }
@@ -1118,6 +1184,28 @@ VMPrimitiveTest >> testPrimitiveInstVarAtPutPutsTheValueForNonIndexable [
 ]
 
 { #category : #'tests - primitiveLessOrEqual' }
+VMPrimitiveTest >> testPrimitiveLessOrEqualFailsWithFloat [
+
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory floatObjectOf: 16.0).
+	
+	interpreter primitiveLessOrEqual.
+
+	self assert: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveLessOrEqual' }
+VMPrimitiveTest >> testPrimitiveLessOrEqualWithNegativeNumbers [
+
+	interpreter push: (memory integerObjectOf: -13).
+	interpreter push: (memory integerObjectOf: -13).
+	
+	interpreter primitiveLessOrEqual.
+
+	self deny: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveLessOrEqual' }
 VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoError1 [
 	
 	interpreter push: (memory integerObjectOf: 42).
@@ -1188,6 +1276,17 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualsFailsWithTypeErrorOnSecondOperand [
 ]
 
 { #category : #'tests - primitiveLessThan' }
+VMPrimitiveTest >> testPrimitiveLessThanFailsWithFloat [
+
+	interpreter push: (memory integerObjectOf: 15).
+	interpreter push: (memory floatObjectOf: 15.0).
+	
+	interpreter primitiveLessThan.
+
+	self assert: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveLessThan' }
 VMPrimitiveTest >> testPrimitiveLessThanFailsWithTypeErrorOnFirstOperand [
 	
 	interpreter push: (memory trueObject).
@@ -1207,6 +1306,17 @@ VMPrimitiveTest >> testPrimitiveLessThanFailsWithTypeErrorOnSecondOperand [
 	interpreter primitiveLessThan. 
 	
 	self assert: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveLessThan' }
+VMPrimitiveTest >> testPrimitiveLessThanWithNegativeNumbers [
+
+	interpreter push: (memory integerObjectOf: -13).
+	interpreter push: (memory integerObjectOf: -13).
+	
+	interpreter primitiveLessThan.
+
+	self deny: interpreter failed. 
 ]
 
 { #category : #'tests - primitiveLessThan' }
@@ -1315,6 +1425,19 @@ VMPrimitiveTest >> testPrimitiveModNegativeValue [
 	interpreter push: (memory integerObjectOf: -2).
 	
 	interpreter primitiveMod. 
+	
+	self deny: interpreter failed.
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
+]
+
+{ #category : #'tests - primitiveMultiply' }
+VMPrimitiveTest >> testPrimitiveMultiplyBy0 [
+
+	interpreter push: (memory integerObjectOf: memory maxCInteger >> memory numSmallIntegerTagBits).
+	interpreter push: (memory integerObjectOf: 0).
+	
+	interpreter primitiveMultiply. 
 	
 	self deny: interpreter failed.
 	
@@ -1685,6 +1808,28 @@ VMPrimitiveTest >> testPrimitiveNewWithInvalidClassFails [
 ]
 
 { #category : #'tests - primitiveNotEqual' }
+VMPrimitiveTest >> testPrimitiveNotEqualFailsWithFloat [
+
+	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory floatObjectOf: 16.0).
+	
+	interpreter primitiveNotEqual.
+
+	self assert: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveNotEqual' }
+VMPrimitiveTest >> testPrimitiveNotEqualWithNegativeNumbers [
+
+	interpreter push: (memory integerObjectOf: -13).
+	interpreter push: (memory integerObjectOf: -13).
+	
+	interpreter primitiveNotEqual.
+
+	self deny: interpreter failed. 
+]
+
+{ #category : #'tests - primitiveNotEqual' }
 VMPrimitiveTest >> testPrimitiveNotEqualWithNoError1 [
 
 	interpreter push: (memory integerObjectOf: 16).
@@ -1832,6 +1977,28 @@ VMPrimitiveTest >> testPrimitiveQuoWith0DivisionOnSecondOperand [
 	interpreter primitiveQuo. 
 	
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 0). 
+]
+
+{ #category : #'tests - primitiveQuo' }
+VMPrimitiveTest >> testPrimitiveQuoWithNegativeNumbers1 [
+
+	interpreter push: (memory integerObjectOf: -13).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveQuo.
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: -6). 
+]
+
+{ #category : #'tests - primitiveQuo' }
+VMPrimitiveTest >> testPrimitiveQuoWithNegativeNumbers2 [
+
+	interpreter push: (memory integerObjectOf: -21).
+	interpreter push: (memory integerObjectOf: -2).
+	
+	interpreter primitiveQuo.
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 10). 
 ]
 
 { #category : #'tests - primitiveQuo' }
