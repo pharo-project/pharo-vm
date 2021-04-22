@@ -85,7 +85,6 @@ VMPrimitiveTest >> testPrimitiveAddFailsWithTypeErrorOnSecondOperand [
 	interpreter push: (memory integerObjectOf: 2).
 	interpreter push: memory trueObject.
 	
-	
 	interpreter primitiveAdd. 
 
 	self assert: interpreter failed.
@@ -100,7 +99,6 @@ VMPrimitiveTest >> testPrimitiveAddFailsWithTypeErrorPreservesStack [
 	string := self newString: '42'.
 	interpreter push: string. 
 	interpreter push: (memory integerObjectOf: 2).
-	
 	
 	interpreter primitiveAdd. 
 	
@@ -135,7 +133,7 @@ VMPrimitiveTest >> testPrimitiveAddWithNoOverflowPopsOperands [
 	interpreter primitiveAdd. 
 	
 	interpreter popStack. 
-	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were popped from the stack by checking that the next value is our marker, for instance 42"
 	
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 	
@@ -143,23 +141,9 @@ VMPrimitiveTest >> testPrimitiveAddWithNoOverflowPopsOperands [
 ]
 
 { #category : #'tests - primitiveAdd' }
-VMPrimitiveTest >> testPrimitiveAddWithNoOverflowPreservesStack [
-	
-	interpreter push: (memory integerObjectOf: 16).
-	interpreter push: (memory integerObjectOf: memory maxSmallInteger).
-	interpreter push: (memory integerObjectOf: 2).
-	
-	interpreter primitiveAdd. 
-	
-	self assert: (interpreter stackValue: 2) equals: (memory integerObjectOf: 16). 
-	
-	
-]
-
-{ #category : #'tests - primitiveAdd' }
 VMPrimitiveTest >> testPrimitiveAddWithOverflow [
 
-	interpreter push: (memory integerObjectOf: (memory maxSmallInteger)).
+	interpreter push: (memory integerObjectOf: memory maxSmallInteger).
 	interpreter push: (memory integerObjectOf: 2).
 	
 	interpreter primitiveAdd. 
@@ -644,14 +628,14 @@ VMPrimitiveTest >> testPrimitiveDiv [
 { #category : #'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDivFailPreservesStack [
 	
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	interpreter push: (memory integerObjectOf: 2).
 	
 	
 	interpreter primitiveDiv. 
 	
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
-	self assert: (interpreter stackValue: 1) equals: (memory booleanObjectOf: true).
+	self assert: (interpreter stackValue: 1) equals: (memory trueObject).
 ]
 
 { #category : #'tests - primitiveDiv' }
@@ -742,7 +726,7 @@ VMPrimitiveTest >> testPrimitiveDivWithNoErrorPopsOperands [
 	interpreter primitiveDiv. 
 	
 	interpreter popStack. 
-	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+	"The previous lines pop the result of primiviteDiv (2 2) for us to check that 2 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
 	
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 ]
@@ -761,19 +745,18 @@ VMPrimitiveTest >> testPrimitiveDivide [
 { #category : #'tests - primitiveDivide' }
 VMPrimitiveTest >> testPrimitiveDivideFailPreservesStack [
 	
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	interpreter push: (memory integerObjectOf: 2).
-	
 	
 	interpreter primitiveDivide. 
 	
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
-	self assert: (interpreter stackValue: 1) equals: (memory booleanObjectOf: true).
+	self assert: (interpreter stackValue: 1) equals: (memory trueObject).
 ]
 
 { #category : #'tests - primitiveDivide' }
 VMPrimitiveTest >> testPrimitiveDivideFailsOnFloatResult [
-	"The interpreter fails because 42%4 != 0. This seems intentionnal in the implementation"
+	"The interpreter fails because 42%4 != 0"
 	
 	interpreter push: (memory integerObjectOf: 42).
 	interpreter push: (memory integerObjectOf: 4).
@@ -832,12 +815,12 @@ VMPrimitiveTest >> testPrimitiveDivideWith0DivisionOnSecondOperand [
 { #category : #'tests - primitiveDivide' }
 VMPrimitiveTest >> testPrimitiveDivideWithNegativeNumbers [
 	
-	interpreter push: (memory integerObjectOf: 4).
+	interpreter push: (memory integerObjectOf: 6).
 	interpreter push: (memory integerObjectOf: -2).
 	
 	interpreter primitiveDivide. 
 	
-	self assert: (interpreter stackTop) equals: (memory integerObjectOf: -2). 
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: -3). 
 ]
 
 { #category : #'tests - primitiveDivide' }
@@ -854,23 +837,23 @@ VMPrimitiveTest >> testPrimitiveDivideWithNegativeNumbers2 [
 { #category : #'tests - primitiveEqual' }
 VMPrimitiveTest >> testPrimitiveEqualWithNoError1 [
 
-	interpreter push: (memory integerObjectOf: 16).
-	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory integerObjectOf: 15).
+	interpreter push: (memory integerObjectOf: 15).
 	
 	interpreter primitiveEqual.
 
-	self assert: interpreter stackTop equals: (memory booleanObjectOf: true). 
+	self assert: interpreter stackTop equals: (memory trueObject). 
 ]
 
 { #category : #'tests - primitiveEqual' }
 VMPrimitiveTest >> testPrimitiveEqualWithNoError2 [
 
-	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory integerObjectOf: 15).
 	interpreter push: (memory integerObjectOf: 42).
 	
 	interpreter primitiveEqual.
 
-	self assert: interpreter stackTop equals: (memory booleanObjectOf: false). 
+	self assert: interpreter stackTop equals: (memory falseObject). 
 ]
 
 { #category : #'tests - primitiveEqual' }
@@ -883,7 +866,7 @@ VMPrimitiveTest >> testPrimitiveEqualWithNoErrorPopsOperands [
 	interpreter primitiveEqual. 
 	
 	interpreter popStack. 
-	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+	"The previous lines pop the result of primiviteEqual (12 16) for us to check that 12 and 16 were poped from the Stack by checking that the next value is our marker, for instance 42"
 
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 ]
@@ -891,8 +874,8 @@ VMPrimitiveTest >> testPrimitiveEqualWithNoErrorPopsOperands [
 { #category : #'tests - primitiveEqual' }
 VMPrimitiveTest >> testPrimitiveEqualWithTypeErrorOnFirstOperand [
 
-	interpreter push: (memory booleanObjectOf: true).
-	interpreter push: (memory integerObjectOf: 16).
+	interpreter push: (memory falseObject).
+	interpreter push: (memory integerObjectOf: 2).
 	
 	interpreter primitiveEqual.
 
@@ -903,7 +886,7 @@ VMPrimitiveTest >> testPrimitiveEqualWithTypeErrorOnFirstOperand [
 VMPrimitiveTest >> testPrimitiveEqualWithTypeErrorOnSecondOperand [
 
 	interpreter push: (memory integerObjectOf: 16).
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	
 	interpreter primitiveEqual.
 
@@ -949,7 +932,7 @@ VMPrimitiveTest >> testPrimitiveGetImmutabilityReturnsTrueIfObjectIsImmutable [
 { #category : #'tests - primitiveGreaterOrEqual' }
 VMPrimitiveTest >> testPrimitiveGreaterOrEqualFailsWithTypeErrorOnFirstOperand [
 	
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	interpreter push: (memory integerObjectOf: 2).
 	
 	interpreter primitiveGreaterOrEqual. 
@@ -961,7 +944,7 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualFailsWithTypeErrorOnFirstOperand [
 VMPrimitiveTest >> testPrimitiveGreaterOrEqualFailsWithTypeErrorOnSecondOperand [
 	
 	interpreter push: (memory integerObjectOf: 2).
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	
 	interpreter primitiveGreaterOrEqual. 
 	
@@ -976,7 +959,7 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoError1 [
 	
 	interpreter primitiveGreaterOrEqual. 
 
-	self assert: interpreter stackTop equals: (memory booleanObjectOf: true). 
+	self assert: interpreter stackTop equals: (memory trueObject). 
 ]
 
 { #category : #'tests - primitiveGreaterOrEqual' }
@@ -987,7 +970,7 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoError2 [
 	
 	interpreter primitiveGreaterOrEqual. 
 
-	self assert: interpreter stackTop equals: (memory booleanObjectOf: false). 
+	self assert: interpreter stackTop equals: (memory falseObject). 
 ]
 
 { #category : #'tests - primitiveGreaterOrEqual' }
@@ -998,7 +981,7 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoErrorEquals [
 	
 	interpreter primitiveGreaterOrEqual. 
 
-	self assert: interpreter stackTop equals: (memory booleanObjectOf: true). 
+	self assert: interpreter stackTop equals: (memory trueObject). 
 ]
 
 { #category : #'tests - primitiveGreaterOrEqual' }
@@ -1011,7 +994,7 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoErrorPopsOperands [
 	interpreter primitiveGreaterOrEqual. 
 	
 	interpreter popStack. 
-	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+	"The previous lines pop the result of primiviteGreaterOrEqual (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
 
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 ]
@@ -1019,7 +1002,7 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoErrorPopsOperands [
 { #category : #'tests - primitiveGreaterThan' }
 VMPrimitiveTest >> testPrimitiveGreaterThanFailsWithTypeErrorOnFirstOperand [
 	
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	interpreter push: (memory integerObjectOf: 2).
 	
 	interpreter primitiveGreaterThan. 
@@ -1031,7 +1014,7 @@ VMPrimitiveTest >> testPrimitiveGreaterThanFailsWithTypeErrorOnFirstOperand [
 VMPrimitiveTest >> testPrimitiveGreaterThanFailsWithTypeErrorOnSecondOperand [
 	
 	interpreter push: (memory integerObjectOf: 2).
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	
 	interpreter primitiveGreaterThan. 
 	
@@ -1046,7 +1029,7 @@ VMPrimitiveTest >> testPrimitiveGreaterThanWithNoError1 [
 	
 	interpreter primitiveGreaterThan. 
 
-	self assert: interpreter stackTop equals: (memory booleanObjectOf: true). 
+	self assert: interpreter stackTop equals: (memory trueObject). 
 ]
 
 { #category : #'tests - primitiveGreaterThan' }
@@ -1057,7 +1040,7 @@ VMPrimitiveTest >> testPrimitiveGreaterThanWithNoError2 [
 	
 	interpreter primitiveGreaterThan. 
 
-	self assert: interpreter stackTop equals: (memory booleanObjectOf: false). 
+	self assert: interpreter stackTop equals: (memory falseObject). 
 ]
 
 { #category : #'tests - primitiveGreaterThan' }
@@ -1068,7 +1051,7 @@ VMPrimitiveTest >> testPrimitiveGreaterThanWithNoErrorEquals [
 	
 	interpreter primitiveGreaterThan. 
 
-	self assert: interpreter stackTop equals: (memory booleanObjectOf: false). 
+	self assert: interpreter stackTop equals: (memory falseObject). 
 ]
 
 { #category : #'tests - primitiveGreaterThan' }
@@ -1081,7 +1064,7 @@ VMPrimitiveTest >> testPrimitiveGreaterThanWithNoErrorPopsOperands [
 	interpreter primitiveGreaterThan. 
 	
 	interpreter popStack. 
-	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+	"The previous lines pop the result of primiviteGreaterThen (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
 
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42).
 ]
@@ -1142,7 +1125,7 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoError1 [
 	
 	interpreter primitiveLessOrEqual. 
 
-	self assert: interpreter stackTop equals: (memory booleanObjectOf: false). 
+	self assert: interpreter stackTop equals: (memory falseObject). 
 ]
 
 { #category : #'tests - primitiveLessOrEqual' }
@@ -1153,7 +1136,7 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoError2 [
 	
 	interpreter primitiveLessOrEqual. 
 
-	self assert: interpreter stackTop equals: (memory booleanObjectOf: true). 
+	self assert: interpreter stackTop equals: (memory trueObject). 
 ]
 
 { #category : #'tests - primitiveLessOrEqual' }
@@ -1164,7 +1147,7 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoErrorEquals [
 	
 	interpreter primitiveLessOrEqual. 
 
-	self assert: interpreter stackTop equals: (memory booleanObjectOf: true). 
+	self assert: interpreter stackTop equals: (memory trueObject). 
 ]
 
 { #category : #'tests - primitiveLessOrEqual' }
@@ -1185,7 +1168,7 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoErrorPopsOperands [
 { #category : #'tests - primitiveLessOrEqual' }
 VMPrimitiveTest >> testPrimitiveLessOrEqualsFailsWithTypeErrorOnFirstOperand [
 	
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	interpreter push: (memory integerObjectOf: 2).
 	
 	interpreter primitiveLessOrEqual. 
@@ -1196,7 +1179,7 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualsFailsWithTypeErrorOnFirstOperand [
 { #category : #'tests - primitiveLessOrEqual' }
 VMPrimitiveTest >> testPrimitiveLessOrEqualsFailsWithTypeErrorOnSecondOperand [
 	
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	interpreter push: (memory integerObjectOf: 2).
 	
 	interpreter primitiveLessOrEqual.
@@ -1207,7 +1190,7 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualsFailsWithTypeErrorOnSecondOperand [
 { #category : #'tests - primitiveLessThan' }
 VMPrimitiveTest >> testPrimitiveLessThanFailsWithTypeErrorOnFirstOperand [
 	
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	interpreter push: (memory integerObjectOf: 2).
 	
 	interpreter primitiveLessThan. 
@@ -1219,7 +1202,7 @@ VMPrimitiveTest >> testPrimitiveLessThanFailsWithTypeErrorOnFirstOperand [
 VMPrimitiveTest >> testPrimitiveLessThanFailsWithTypeErrorOnSecondOperand [
 	
 	interpreter push: (memory integerObjectOf: 2).
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	
 	interpreter primitiveLessThan. 
 	
@@ -1234,7 +1217,7 @@ VMPrimitiveTest >> testPrimitiveLessThanWithNoError1 [
 	
 	interpreter primitiveLessThan. 
 
-	self assert: interpreter stackTop equals: (memory booleanObjectOf: false). 
+	self assert: interpreter stackTop equals: (memory falseObject). 
 ]
 
 { #category : #'tests - primitiveLessThan' }
@@ -1245,7 +1228,7 @@ VMPrimitiveTest >> testPrimitiveLessThanWithNoError2 [
 	
 	interpreter primitiveLessThan. 
 
-	self assert: interpreter stackTop equals: (memory booleanObjectOf: true). 
+	self assert: interpreter stackTop equals: (memory trueObject). 
 ]
 
 { #category : #'tests - primitiveLessThan' }
@@ -1256,7 +1239,7 @@ VMPrimitiveTest >> testPrimitiveLessThanWithNoErrorEquals [
 	
 	interpreter primitiveLessThan. 
 
-	self assert: interpreter stackTop equals: (memory booleanObjectOf: false). 
+	self assert: interpreter stackTop equals: (memory falseObject). 
 ]
 
 { #category : #'tests - primitiveLessThan' }
@@ -1269,7 +1252,7 @@ VMPrimitiveTest >> testPrimitiveLessThanWithNoErrorPopsOperands [
 	interpreter primitiveLessThan. 
 	
 	interpreter popStack. 
-	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+	"The previous lines pop the result of primiviteLessThan (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
 
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 ]
@@ -1290,7 +1273,7 @@ VMPrimitiveTest >> testPrimitiveMod [
 { #category : #'tests - primitiveMod' }
 VMPrimitiveTest >> testPrimitiveModFailPreservesStack [
 
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	interpreter push: (memory integerObjectOf: 2).
 	
 	
@@ -1299,13 +1282,13 @@ VMPrimitiveTest >> testPrimitiveModFailPreservesStack [
 	self assert: interpreter failed. 
 	
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
-	self assert: (interpreter stackValue: 1) equals: (memory booleanObjectOf: true).
+	self assert: (interpreter stackValue: 1) equals: (memory trueObject).
 ]
 
 { #category : #'tests - primitiveMod' }
 VMPrimitiveTest >> testPrimitiveModFailsWithTypeErrorOnFirstOperand [
 
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	interpreter push: (memory integerObjectOf: 16).
 	
 	interpreter primitiveMod. 
@@ -1317,7 +1300,7 @@ VMPrimitiveTest >> testPrimitiveModFailsWithTypeErrorOnFirstOperand [
 VMPrimitiveTest >> testPrimitiveModFailsWithTypeErrorOnSecondOperand [
 
 	interpreter push: (memory integerObjectOf: 42).
-	interpreter push: (memory booleanObjectOf: false).
+	interpreter push: (memory falseObject).
 	
 	
 	interpreter primitiveMod. 
@@ -1363,14 +1346,14 @@ VMPrimitiveTest >> testPrimitiveMultiplyFailsWithTypeErrorOnSecondOperand [
 { #category : #'tests - primitiveMultiply' }
 VMPrimitiveTest >> testPrimitiveMultiplyFailsWithTypeErrorPreservesStack [
 
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	interpreter push: (memory integerObjectOf: 2).
 	
 	
 	interpreter primitiveMultiply. 
 	
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
-	self assert: (interpreter stackValue: 1) equals: (memory booleanObjectOf: true).
+	self assert: (interpreter stackValue: 1) equals: (memory trueObject).
 ]
 
 { #category : #'tests - primitiveMultiply' }
@@ -1396,7 +1379,7 @@ VMPrimitiveTest >> testPrimitiveMultiplyWithNoOverflowPopsOperands [
 	interpreter primitiveMultiply. 
 	
 	interpreter popStack. 
-	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+	"The previous lines pop the result of primiviteMultiply (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
 	
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 ]
@@ -1709,7 +1692,7 @@ VMPrimitiveTest >> testPrimitiveNotEqualWithNoError1 [
 	
 	interpreter primitiveNotEqual.
 
-	self assert: interpreter stackTop equals: (memory booleanObjectOf: false). 
+	self assert: interpreter stackTop equals: (memory falseObject). 
 ]
 
 { #category : #'tests - primitiveNotEqual' }
@@ -1720,7 +1703,7 @@ VMPrimitiveTest >> testPrimitiveNotEqualWithNoError2 [
 	
 	interpreter primitiveNotEqual.
 
-	self assert: interpreter stackTop equals: (memory booleanObjectOf: true). 
+	self assert: interpreter stackTop equals: (memory trueObject). 
 ]
 
 { #category : #'tests - primitiveNotEqual' }
@@ -1733,7 +1716,7 @@ VMPrimitiveTest >> testPrimitiveNotEqualWithNoErrorPopsOperands [
 	interpreter primitiveNotEqual. 
 	
 	interpreter popStack. 
-	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+	"The previous lines pop the result of primiviteNotEqual (16 18) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
 
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42).
 ]
@@ -1741,7 +1724,7 @@ VMPrimitiveTest >> testPrimitiveNotEqualWithNoErrorPopsOperands [
 { #category : #'tests - primitiveNotEqual' }
 VMPrimitiveTest >> testPrimitiveNotEqualWithTypeErrorOnFirstOperand [
 
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	interpreter push: (memory integerObjectOf: 16).
 	
 	interpreter primitiveNotEqual.
@@ -1753,7 +1736,7 @@ VMPrimitiveTest >> testPrimitiveNotEqualWithTypeErrorOnFirstOperand [
 VMPrimitiveTest >> testPrimitiveNotEqualWithTypeErrorOnSecondOperand [
 
 	interpreter push: (memory integerObjectOf: 16).
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	
 	interpreter primitiveNotEqual.
 
@@ -1763,25 +1746,25 @@ VMPrimitiveTest >> testPrimitiveNotEqualWithTypeErrorOnSecondOperand [
 { #category : #'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuo [
 
-	interpreter push: (memory integerObjectOf: 4).
+	interpreter push: (memory integerObjectOf: 15).
 	interpreter push: (memory integerObjectOf: 2).
 	
 	interpreter primitiveQuo. 
 	
-	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 7). 
 ]
 
 { #category : #'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuoFailPreservesStack [
 	
-	interpreter push: (memory booleanObjectOf: true).
+	interpreter push: (memory trueObject).
 	interpreter push: (memory integerObjectOf: 2).
 	
 	
 	interpreter primitiveQuo. 
 	
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
-	self assert: (interpreter stackValue: 1) equals: (memory booleanObjectOf: true).
+	self assert: (interpreter stackValue: 1) equals: (memory trueObject).
 ]
 
 { #category : #'tests - primitiveQuo' }
@@ -2208,12 +2191,10 @@ VMPrimitiveTest >> testPrimitiveSubtractFailsWithTypeErrorPreservesStack [
 	interpreter push: string. 
 	interpreter push: (memory integerObjectOf: 2).
 	
-	
 	interpreter primitiveSubtract. 
 	
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
-	self assert: (interpreter stackValue: 1) equals: string. 
-	
+	self assert: (interpreter stackValue: 1) equals: string.
 ]
 
 { #category : #'tests - primitiveSubtract' }
@@ -2235,13 +2216,13 @@ VMPrimitiveTest >> testPrimitiveSubtractWithNoOverflow [
 VMPrimitiveTest >> testPrimitiveSubtractWithNoOverflowPopsOperands [
 
 	interpreter push: (memory integerObjectOf: 42). "Marker"
-	interpreter push: (memory integerObjectOf: 1).
-	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: (memory integerObjectOf: 10).
+	interpreter push: (memory integerObjectOf: 20).
 	
 	interpreter primitiveSubtract. 
 	
 	interpreter popStack. 
-	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+	"The previous lines pop the result of primiviteSubtract (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
 	
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 	
@@ -2251,14 +2232,12 @@ VMPrimitiveTest >> testPrimitiveSubtractWithNoOverflowPopsOperands [
 { #category : #'tests - primitiveSubtract' }
 VMPrimitiveTest >> testPrimitiveSubtractWithOverflow [
 
-	interpreter push: (memory integerObjectOf: (memory minSmallInteger)).
+	interpreter push: (memory integerObjectOf: memory minSmallInteger).
 	interpreter push: (memory integerObjectOf: 2).
 	
 	interpreter primitiveSubtract. 
 	
 	self assert: interpreter failed.
-	
-	
 ]
 
 { #category : #'tests - primitiveSubtract' }
