@@ -1442,7 +1442,9 @@ CCodeGenerator >> generateAsFloat: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
 	aStream nextPutAll:'(double)'.
-	self emitCExpression: msgNode receiver on: aStream
+	aStream nextPut: $(.
+	self emitCExpression: msgNode receiver on: aStream.
+	aStream nextPut: $)
 ]
 
 { #category : #'C translation' }
@@ -1450,7 +1452,9 @@ CCodeGenerator >> generateAsInteger: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
 	aStream nextPutAll:'(sqInt)'.
-	self emitCExpression: msgNode receiver on: aStream
+	aStream nextPut: $(.
+	self emitCExpression: msgNode receiver on: aStream.
+	aStream nextPut: $)
 ]
 
 { #category : #'C translation' }
@@ -1458,7 +1462,9 @@ CCodeGenerator >> generateAsIntegerPtr: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
 	aStream nextPutAll:'(sqIntptr_t)'.
-	self emitCExpression: msgNode receiver on: aStream
+	aStream nextPut: $(.
+	self emitCExpression: msgNode receiver on: aStream.
+	aStream nextPut: $)
 ]
 
 { #category : #'C translation' }
@@ -1766,6 +1772,25 @@ CCodeGenerator >> generateCASTAsIntegerPtr: tast [
 	^ CCastExpressionNode
 		  type: (CTypeNameNode symbol: 'sqIntptr_t')
 		  expression: (tast receiver asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAt: tast [
+
+	^ CArrayAccessNode
+		  array: (tast receiver asCASTExpressionIn: self)
+		  index: (tast arguments first asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAtPut: tast [
+
+	^ CAssignmentNode
+		  lvalue: (CArrayAccessNode
+				   array: (tast receiver asCASTExpressionIn: self)
+				   index: (tast arguments first asCASTExpressionIn: self))
+		  operator: '='
+		  rvalue: (tast arguments last asCASTExpressionIn: self)
 ]
 
 { #category : #'CAST translation' }
@@ -2865,11 +2890,11 @@ CCodeGenerator >> generatePlus: msgNode on: aStream indent: level [
 { #category : #'C translation' }
 CCodeGenerator >> generatePowerTo: msgNode on: aStream indent: level [ 
 
-	aStream nextPutAll:'(sqInt)pow('.
+	aStream nextPutAll:'(sqInt)(pow('.
 	self emitCExpression: msgNode receiver on: aStream.
 	aStream nextPutAll: ', '.
 	self emitCExpression: msgNode args first on: aStream.
-	aStream nextPutAll:')'.
+	aStream nextPutAll:'))'.
 ]
 
 { #category : #'C translation' }

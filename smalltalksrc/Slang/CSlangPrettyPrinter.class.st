@@ -23,6 +23,15 @@ CSlangPrettyPrinter >> initialize [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitArray: anArrayAcess [
+
+	anArrayAcess array acceptVisitor: self.
+	stream nextPut: $[.
+	anArrayAcess index acceptVisitor: self.
+	stream nextPut: $]
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitArrayDeclarator: anArrayDeclarator [
 
 	anArrayDeclarator declarator acceptVisitor: self.

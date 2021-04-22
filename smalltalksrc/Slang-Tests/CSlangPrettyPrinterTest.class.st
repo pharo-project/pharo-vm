@@ -25,6 +25,17 @@ CSlangPrettyPrinterTest >> setUp [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitArray [
+
+	| print |
+	print := self prettyPrint: (CArrayAccessNode array: (CIdentifierNode name: 'tab') index: (CConstantNode value: 7)).
+	
+	self assert: print equals: 'tab[7]'
+
+
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitArrayDeclarator [
 
 	| print |

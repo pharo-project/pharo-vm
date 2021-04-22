@@ -475,7 +475,7 @@ SlangBasicTranslationTest >> testSendAsFloat [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(double)x'
+	self assert: translation equals: '(double)(x)'
 ]
 
 { #category : #'tests-send' }
@@ -488,7 +488,7 @@ SlangBasicTranslationTest >> testSendAsInteger [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(sqInt)x'
+	self assert: translation equals: '(sqInt)(x)'
 ]
 
 { #category : #'tests-send' }
@@ -501,7 +501,36 @@ SlangBasicTranslationTest >> testSendAsIntegerPtr [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(sqIntptr_t)x'
+	self assert: translation equals: '(sqIntptr_t)(x)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendAt [
+
+	| translation send |
+	
+	send := TSendNode new
+					setSelector: #at:
+					receiver: (TVariableNode new setName: 'tab')
+					arguments: {TConstantNode value: 7}.
+	translation := self translate: send.
+
+	self assert: translation equals: 'tab[7]'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendAtPut [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #at:put:
+		        receiver: (TVariableNode new setName: 'tab')
+		        arguments: { 
+				        (TConstantNode value: 7).
+				        (TVariableNode new setName: 'a') }.
+	translation := self translate: send.
+
+	self assert: translation equals: 'tab[7] = a'
 ]
 
 { #category : #'tests-send' }
@@ -516,7 +545,7 @@ SlangBasicTranslationTest >> testSendBetweenAnd [
 				        (TConstantNode value: 100) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '(x >= 0) && (x <= 100)'
+	self assert: translation equals: '((x >= 0) && (x <= 100))'
 ]
 
 { #category : #'tests-send' }
@@ -983,7 +1012,7 @@ SlangBasicTranslationTest >> testSendPowerTo [
 		        arguments: { (TConstantNode value: 2) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '(sqInt)pow(x, 2)'
+	self assert: translation equals: '(sqInt)(pow(x, 2))'
 ]
 
 { #category : #'tests-send' }
