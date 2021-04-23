@@ -614,6 +614,17 @@ VMPrimitiveTest >> testPrimitiveAtPutPutsTheValueForAnIndexableObject [
 	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
 ]
 
+{ #category : #'tests - primitiveBitShift' }
+VMPrimitiveTest >> testPrimitiveBifShitBorderCase [
+
+	interpreter push: (memory integerObjectOf: (memory maxSmallInteger >> memory numSmallIntegerTagBits)).
+	interpreter push: (memory integerObjectOf: (memory wordSize * -8) + (memory numSmallIntegerTagBits )).
+	
+	interpreter primitiveBitShift. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0).
+]
+
 { #category : #'tests - primitiveBitAnd' }
 VMPrimitiveTest >> testPrimitiveBitAnd1 [
 
@@ -825,6 +836,102 @@ VMPrimitiveTest >> testPrimitiveBitOrWithNegativNumbers [
 	interpreter primitiveBitOr. 
 
 	self assert: interpreter stackTop equals: (memory integerObjectOf: ((memory maxCInteger >> memory numSmallIntegerTagBits) - 1)).
+]
+
+{ #category : #'tests - primitiveBitShift' }
+VMPrimitiveTest >> testPrimitiveBitShift1 [
+
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: (memory integerObjectOf: -16). 
+	
+	interpreter primitiveBitShift. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
+]
+
+{ #category : #'tests - primitiveBitShift' }
+VMPrimitiveTest >> testPrimitiveBitShiftFailsWithTypeErrorOnFirstOperand [
+
+	interpreter push: memory trueObject. 
+	interpreter push: (memory integerObjectOf: (memory maxSmallInteger)).
+	
+	interpreter primitiveBitShift. 
+	
+	self
+		assert: interpreter failed. 
+		
+]
+
+{ #category : #'tests - primitiveBitShift' }
+VMPrimitiveTest >> testPrimitiveBitShiftFailsWithTypeErrorOnSecondOperand [
+	
+	interpreter push: (memory integerObjectOf: (memory maxSmallInteger)).
+	interpreter push: memory trueObject. 
+	
+	interpreter primitiveBitShift. 
+	
+	self
+		assert: interpreter failed. 
+		
+]
+
+{ #category : #'tests - primitiveBitShift' }
+VMPrimitiveTest >> testPrimitiveBitShiftFailsWithTypeErrorPreservesStack [
+
+	interpreter push: memory trueObject. 
+	interpreter push: (memory integerObjectOf: (memory maxSmallInteger)).
+	
+	interpreter primitiveBitShift. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: (memory maxSmallInteger)).
+	self assert: (interpreter stackValue: 1) equals: (memory trueObject). 	
+		
+]
+
+{ #category : #'tests - primitiveBitShift' }
+VMPrimitiveTest >> testPrimitiveBitShiftLeft [
+
+	interpreter push: (memory integerObjectOf: 16). 
+	interpreter push: (memory integerObjectOf: 1). 
+	
+	interpreter primitiveBitShift. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 32). 
+]
+
+{ #category : #'tests - primitiveBitShift' }
+VMPrimitiveTest >> testPrimitiveBitShiftRight [
+
+	interpreter push: (memory integerObjectOf: 16). 
+	interpreter push: (memory integerObjectOf: -1). 
+	
+	interpreter primitiveBitShift. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 8). 
+]
+
+{ #category : #'tests - primitiveBitShift' }
+VMPrimitiveTest >> testPrimitiveBitShiftWithNegativNumbers [
+
+	memory wordSize = 8 ifFalse: [ ^ self ]. "The 32 bits version of the primitive doesn't handle the negativ number case"
+	interpreter push: (memory integerObjectOf: memory minSmallInteger).
+	interpreter push: (memory integerObjectOf: -2).
+	interpreter primitiveBitShift.
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: 16r1C00000000000000)
+]
+
+{ #category : #'tests - primitiveBitShift' }
+VMPrimitiveTest >> testPrimitiveBitShiftWithOverflow [
+"Insures no data is lost when bitshift overflows the integer type."
+
+	interpreter push: memory maxSmallInteger. 
+	interpreter push: (memory integerObjectOf: 1). 
+	
+	interpreter primitiveBitShift. 
+	
+	self assert: (interpreter stackTop) > (memory maxSmallInteger).
 ]
 
 { #category : #'tests - primitiveBitXor' }
