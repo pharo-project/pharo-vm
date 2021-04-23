@@ -1160,7 +1160,16 @@ VMPrimitiveTest >> testPrimitiveDivideWithNegativeNumbers2 [
 
 { #category : #'tests - primitiveEqual' }
 VMPrimitiveTest >> testPrimitiveEqualFailsWithFloat [
+	
+	|classFloat|
 
+	classFloat := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstLongFormat.
+	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
+	memory
+		storePointer: ClassFloatCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classFloat.
+	
 	interpreter push: (memory integerObjectOf: 15).
 	interpreter push: (memory floatObjectOf: 15.0).
 	
@@ -1277,6 +1286,17 @@ VMPrimitiveTest >> testPrimitiveGetImmutabilityReturnsTrueIfObjectIsImmutable [
 
 { #category : #'tests - primitiveGreaterOrEqual' }
 VMPrimitiveTest >> testPrimitiveGreaterOrEqualFailsWithFloat [
+	
+	|classFloat|
+
+	classFloat := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstLongFormat.
+	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
+	memory
+		storePointer: ClassFloatCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classFloat.
+		
+	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
 
 	interpreter push: (memory integerObjectOf: 16).
 	interpreter push: (memory floatObjectOf: 16.0).
@@ -1369,6 +1389,17 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoErrorPopsOperands [
 
 { #category : #'tests - primitiveGreaterThan' }
 VMPrimitiveTest >> testPrimitiveGreaterThanFailsWithFloat [
+
+	|classFloat|
+
+	classFloat := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstLongFormat.
+	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
+	memory
+		storePointer: ClassFloatCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classFloat.
+		
+	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
 
 	interpreter push: (memory integerObjectOf: 16).
 	interpreter push: (memory floatObjectOf: 16.0).
@@ -1510,6 +1541,17 @@ VMPrimitiveTest >> testPrimitiveInstVarAtPutPutsTheValueForNonIndexable [
 { #category : #'tests - primitiveLessOrEqual' }
 VMPrimitiveTest >> testPrimitiveLessOrEqualFailsWithFloat [
 
+	|classFloat|
+
+	classFloat := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstLongFormat.
+	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
+	memory
+		storePointer: ClassFloatCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classFloat.
+		
+	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
+	
 	interpreter push: (memory integerObjectOf: 16).
 	interpreter push: (memory floatObjectOf: 16.0).
 	
@@ -1601,6 +1643,17 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualsFailsWithTypeErrorOnSecondOperand [
 
 { #category : #'tests - primitiveLessThan' }
 VMPrimitiveTest >> testPrimitiveLessThanFailsWithFloat [
+
+	|classFloat|
+
+	classFloat := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstLongFormat.
+	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
+	memory
+		storePointer: ClassFloatCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classFloat.
+		
+	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
 
 	interpreter push: (memory integerObjectOf: 15).
 	interpreter push: (memory floatObjectOf: 15.0).
@@ -2134,6 +2187,17 @@ VMPrimitiveTest >> testPrimitiveNewWithInvalidClassFails [
 { #category : #'tests - primitiveNotEqual' }
 VMPrimitiveTest >> testPrimitiveNotEqualFailsWithFloat [
 
+	|classFloat|
+
+	classFloat := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstLongFormat.
+	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
+	memory
+		storePointer: ClassFloatCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classFloat.
+		
+	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
+	
 	interpreter push: (memory integerObjectOf: 16).
 	interpreter push: (memory floatObjectOf: 16.0).
 	
