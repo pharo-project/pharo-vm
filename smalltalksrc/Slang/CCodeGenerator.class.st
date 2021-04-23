@@ -2031,6 +2031,21 @@ CCodeGenerator >> generateCASTSequentialAnd: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTSequentialOr: tast [
+
+	(self nilOrBooleanConstantReceiverOf: tast receiver)
+		ifNil: [ 
+			(self nilOrBooleanConstantReceiverOf: tast arguments first) 
+				ifNotNil: [ :const | 
+				const == false ifTrue: [ ^ tast receiver asCASTExpressionIn: self ] ].
+			^ self generateCASTOr: tast ]
+		ifNotNil: [ :const | 
+			const
+				ifTrue: [ ^ CConstantNode value: 1]
+				ifFalse: [ ^ tast arguments first asCASTExpressionIn: self ] ]
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTShiftLeft: tast [
 
 	| finalNode leftNode receiverNode rcvr arg castToLong type mustCastBackToSign mustCastToUnsigned canSuffixTheConstant typeIsUnsigned |
@@ -3704,7 +3719,7 @@ CCodeGenerator >> initializeCASTTranslationDictionary [
 
 	castAsArgumentTranslationDict := Dictionary new: 8.
 	1 to: pairs size by: 2 do: [:i |
-		asArgumentTranslationDict at: (pairs at: i) put: (pairs at: i + 1)].
+		castAsArgumentTranslationDict at: (pairs at: i) put: (pairs at: i + 1)].
 
 ]
 

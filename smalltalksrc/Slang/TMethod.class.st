@@ -2404,7 +2404,7 @@ TMethod >> removeUnusedTempsAndNilIfRequiredIn: aCodeGen [
 				[:var| | varNode varType zeroNode |
 				 varNode := TVariableNode new setName: var; yourself.
 				 varType := aCodeGen typeFor: varNode in: self.
-				 zeroNode := TConstantNode value: 0; yourself.
+				 zeroNode := TConstantNode value: 0.
 				 TAssignmentNode new
 					setVariable: varNode
 					expression: (((aCodeGen isIntegralCType: varType)
@@ -2850,12 +2850,12 @@ TMethod >> transformReturnSubExpression: node toAssignmentOf: exitVar andGoto: e
 			[aBinaryBlock value: replacement value: false]
 		ifFalse:
 			[replacement := replacement
-								ifNil: [TGoToNode label: exitLabel; yourself]
+								ifNil: [TGoToNode label: exitLabel]
 								ifNotNil:
 									[TStmtListNode new
 										setArguments: #()
 										statements: {replacement.
-													  TGoToNode label: exitLabel; yourself};
+													  TGoToNode label: exitLabel};
 										yourself].
 			 aBinaryBlock value: replacement value: true]
 ]
