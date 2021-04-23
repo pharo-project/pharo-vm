@@ -614,6 +614,330 @@ VMPrimitiveTest >> testPrimitiveAtPutPutsTheValueForAnIndexableObject [
 	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
 ]
 
+{ #category : #'tests - primitiveBitAnd' }
+VMPrimitiveTest >> testPrimitiveBitAnd1 [
+
+	interpreter push: (memory integerObjectOf: 16r1).
+	interpreter push: (memory integerObjectOf: 16r1).
+	
+	interpreter primitiveBitAnd. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 1). 
+]
+
+{ #category : #'tests - primitiveBitAnd' }
+VMPrimitiveTest >> testPrimitiveBitAnd2 [
+
+	interpreter push: (memory integerObjectOf: 16r1).
+	interpreter push: (memory integerObjectOf: 16r0).
+	
+	interpreter primitiveBitAnd. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
+]
+
+{ #category : #'tests - primitiveBitAnd' }
+VMPrimitiveTest >> testPrimitiveBitAndFailsPreservesStack [
+	
+	| string |
+	
+	string := self newString: '42'.
+	interpreter push: string. 
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveBitAnd. 
+	
+	self assert: interpreter failed. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackValue: 1) equals: string. 
+]
+
+{ #category : #'tests - primitiveBitAnd' }
+VMPrimitiveTest >> testPrimitiveBitAndFailsWithTypeErrorOnFirstOperand [
+	
+	| string |
+	
+	string := self newString: '42'.
+	interpreter push: string. 
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveBitAnd. 
+
+	self assert: interpreter failed.
+]
+
+{ #category : #'tests - primitiveBitAnd' }
+VMPrimitiveTest >> testPrimitiveBitAndFailsWithTypeErrorOnSecondOperand [
+	
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: memory trueObject.
+	
+	interpreter primitiveBitAnd. 
+
+	self assert: interpreter failed.
+]
+
+{ #category : #'tests - primitiveBitAnd' }
+VMPrimitiveTest >> testPrimitiveBitAndWithMaxBitIntWithNoDataLoss [
+	"This insures the fact that no data is lost during the processing of usqInt by the primitive"
+
+	| num |
+	
+	num := memory maxCInteger >> memory numSmallIntegerTagBits.
+	
+	interpreter push: (memory integerObjectOf: num).
+	interpreter push: (memory integerObjectOf: num - 1 ).
+	
+	interpreter primitiveBitAnd. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: (num - 1)).
+]
+
+{ #category : #'tests - primitiveBitAnd' }
+VMPrimitiveTest >> testPrimitiveBitAndWithNegativNumbers [
+"111... 010110 -> -42
+ 000... 010110 ->  21"""
+
+	interpreter push: (memory integerObjectOf: -42).
+	interpreter push: (memory integerObjectOf: 21).
+	
+	interpreter primitiveBitAnd. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 21). 
+]
+
+{ #category : #'tests - primitiveBitOr' }
+VMPrimitiveTest >> testPrimitiveBitOr1 [ 
+
+	interpreter push: (memory integerObjectOf: 16r1).
+	interpreter push: (memory integerObjectOf: 16r1).
+	
+	interpreter primitiveBitOr. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 1). 
+]
+
+{ #category : #'tests - primitiveBitOr' }
+VMPrimitiveTest >> testPrimitiveBitOr2 [
+
+	interpreter push: (memory integerObjectOf: 16r1).
+	interpreter push: (memory integerObjectOf: 16r0).
+	
+	interpreter primitiveBitOr. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 1). 
+	
+	
+	
+	
+]
+
+{ #category : #'tests - primitiveBitOr' }
+VMPrimitiveTest >> testPrimitiveBitOr3 [
+
+	interpreter push: (memory integerObjectOf: 16r0).
+	interpreter push: (memory integerObjectOf: 16r1).
+	
+	interpreter primitiveBitOr. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 1). 
+	
+	
+	
+	
+]
+
+{ #category : #'tests - primitiveBitOr' }
+VMPrimitiveTest >> testPrimitiveBitOr4 [
+
+	"This is to insure that primitiveBitOr executes a logical Or and not an XOr"
+	interpreter push: (memory integerObjectOf: 16r1).
+	interpreter push: (memory integerObjectOf: 16r1).
+	
+	interpreter primitiveBitOr. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 1). 
+	
+	
+	
+	
+]
+
+{ #category : #'tests - primitiveBitOr' }
+VMPrimitiveTest >> testPrimitiveBitOrFailsPreservesStack [
+	
+	interpreter push: memory trueObject.
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveBitOr. 
+	
+	self assert: interpreter failed. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackValue: 1) equals: memory trueObject.
+]
+
+{ #category : #'tests - primitiveBitOr' }
+VMPrimitiveTest >> testPrimitiveBitOrFailsWithTypeErrorOnFirstOperand [
+	
+	interpreter push: memory trueObject.
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveBitOr. 
+
+	self assert: interpreter failed.
+]
+
+{ #category : #'tests - primitiveBitOr' }
+VMPrimitiveTest >> testPrimitiveBitOrFailsWithTypeErrorOnSecondOperand [
+	
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: memory trueObject.
+	
+	interpreter primitiveBitOr. 
+
+	self assert: interpreter failed.
+]
+
+{ #category : #'tests - primitiveBitOr' }
+VMPrimitiveTest >> testPrimitiveBitOrWithMaxBitIntWithNoDataLoss [
+	"This insure the fact that no data is lost during the processing of usqInt by the primitive"
+
+	| num |
+	
+	num := memory maxCInteger >> memory numSmallIntegerTagBits.
+	
+	interpreter push: (memory integerObjectOf: num).
+	interpreter push: (memory integerObjectOf: num - 1 ).
+	
+	interpreter primitiveBitOr. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: (num - 1)).
+]
+
+{ #category : #'tests - primitiveBitOr' }
+VMPrimitiveTest >> testPrimitiveBitOrWithNegativNumbers [
+
+	interpreter push: (memory integerObjectOf: -73).
+	interpreter push: (memory integerObjectOf: (memory maxCInteger >> memory numSmallIntegerTagBits) - 1).
+	
+	interpreter primitiveBitOr. 
+
+	self assert: interpreter stackTop equals: (memory integerObjectOf: ((memory maxCInteger >> memory numSmallIntegerTagBits) - 1)).
+]
+
+{ #category : #'tests - primitiveBitXor' }
+VMPrimitiveTest >> testPrimitiveBitXor1 [
+
+	interpreter push: (memory integerObjectOf: 16r1).
+	interpreter push: (memory integerObjectOf: 16r1).
+	
+	interpreter primitiveBitXor. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
+]
+
+{ #category : #'tests - primitiveBitXor' }
+VMPrimitiveTest >> testPrimitiveBitXor2 [
+
+	interpreter push: (memory integerObjectOf: 16r0).
+	interpreter push: (memory integerObjectOf: 16r1).
+	
+	interpreter primitiveBitXor. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 1). 
+]
+
+{ #category : #'tests - primitiveBitXor' }
+VMPrimitiveTest >> testPrimitiveBitXor3 [
+
+	interpreter push: (memory integerObjectOf: 16r1).
+	interpreter push: (memory integerObjectOf: 16r0).
+	
+	interpreter primitiveBitXor. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 1). 
+]
+
+{ #category : #'tests - primitiveBitXor' }
+VMPrimitiveTest >> testPrimitiveBitXor4 [
+
+	interpreter push: (memory integerObjectOf: 16r0).
+	interpreter push: (memory integerObjectOf: 16r0).
+	
+	interpreter primitiveBitXor. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
+]
+
+{ #category : #'tests - primitiveBitXor' }
+VMPrimitiveTest >> testPrimitiveBitXorFailsPreservesStack [
+	
+	interpreter push: memory trueObject.
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveBitXor. 
+	
+	self assert: interpreter failed. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackValue: 1) equals: memory trueObject.
+]
+
+{ #category : #'tests - primitiveBitXor' }
+VMPrimitiveTest >> testPrimitiveBitXorFailsWithTypeErrorOnFirstOperand [
+	
+	interpreter push: memory trueObject.
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveBitXor. 
+
+	self assert: interpreter failed.
+]
+
+{ #category : #'tests - primitiveBitXor' }
+VMPrimitiveTest >> testPrimitiveBitXorFailsWithTypeErrorOnSecondOperand [
+	
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: memory trueObject.
+	
+	interpreter primitiveBitXor. 
+
+	self assert: interpreter failed.
+]
+
+{ #category : #'tests - primitiveBitXor' }
+VMPrimitiveTest >> testPrimitiveBitXorWithMaxBitIntWithNoDataLoss [
+	"This guarantees the fact that no data is lost during the processing of usqInt by the primitive"
+	"111... 111
+	 100... 000
+	Xor
+	011... 111 = maxSmallInt >> 1 "
+
+	| num |
+	
+	num := memory maxCInteger >> memory numSmallIntegerTagBits.
+	
+	interpreter push: (memory integerObjectOf: num).
+	interpreter push: (memory integerObjectOf: (1 << (memory numSmallIntegerBits - 1))).
+	
+	interpreter primitiveBitXor. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: ((memory maxCInteger >> (memory numSmallIntegerTagBits + 1)))).
+]
+
+{ #category : #'tests - primitiveBitXor' }
+VMPrimitiveTest >> testPrimitiveBitXorWithNegativNumbers [
+
+	interpreter push: (memory integerObjectOf: -42).
+	interpreter push: (memory integerObjectOf: (memory maxCInteger >> memory numSmallIntegerTagBits) - 1).
+	
+	interpreter primitiveBitXor. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 40).
+]
+
 { #category : #'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDiv [
 
