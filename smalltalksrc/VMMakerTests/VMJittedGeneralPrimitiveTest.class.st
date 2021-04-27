@@ -541,7 +541,7 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveAddIsCompleteWhenReceiverTagIsSmall
 ]
 
 { #category : #'tests - primitiveAdd' }
-VMJittedGeneralPrimitiveTest >> testPrimitiveAddReturnsAnSmallInteger [
+VMJittedGeneralPrimitiveTest >> testPrimitiveAddReturnsASmallInteger [
 	
 	| endInstruction primitiveAddress |
 	
@@ -558,7 +558,7 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveAddReturnsAnSmallInteger [
 ]
 
 { #category : #'tests - primitiveAdd' }
-VMJittedGeneralPrimitiveTest >> testPrimitiveAddReturnsAnSmallIntegerWhenNegativeNumbers [
+VMJittedGeneralPrimitiveTest >> testPrimitiveAddReturnsASmallIntegerWhenNegativeNumbers [
 	
 	| endInstruction primitiveAddress |
 	
@@ -1036,6 +1036,116 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveMultiplyReturnsASmallInteger [
 	self prepareStackForSendReceiver: (memory integerObjectOf: 42) arguments: { memory integerObjectOf:  2 }.
 	self runFrom: primitiveAddress until: callerAddress.
 	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 84).
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveSubtractDoesNotCompileIfReceiverTagIsNotSmallInteger [
+	
+	| result |
+	
+	"Setting a value that is not the SmallInteger tag"
+	
+	cogit receiverTags: 0.
+	
+	self compile: [ result := cogit objectRepresentation genPrimitiveSubtract ].
+	self assert: result equals: UnimplementedPrimitive.
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveSubtractFailsWhenArgumentIsNotSmallInteger [
+	
+	| endInstruction primitiveAddress |
+	
+	cogit receiverTags: memory smallIntegerTag.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveSubtract.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: (memory integerObjectOf: 7) arguments: { memory nilObject }.
+	
+	self runFrom: primitiveAddress until: endInstruction address.
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveSubtractFailsWhenSumOverflows [
+	
+	| endInstruction primitiveAddress |
+	
+	cogit receiverTags: memory smallIntegerTag.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveSubtract.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: (memory integerObjectOf: memory minSmallInteger) arguments: { memory integerObjectOf: 1 }.
+
+	self runFrom: primitiveAddress until: endInstruction address.
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveSubtractFailsWhenSumOverflowsWhenNegative [
+	
+	| endInstruction primitiveAddress |
+	
+	cogit receiverTags: memory smallIntegerTag.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveSubtract.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+	
+	self prepareStackForSendReceiver: (memory integerObjectOf: memory minSmallInteger) arguments: { memory integerObjectOf: 1 }.
+	
+	self runFrom: primitiveAddress until: endInstruction address.
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveSubtractIsCompleteWhenReceiverTagIsSmallInteger [
+	
+	| result |
+	
+	cogit receiverTags: memory smallIntegerTag.
+	
+	self compile: [ result := cogit objectRepresentation genPrimitiveSubtract ].
+	self assert: result equals: CompletePrimitive.
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveSubtractReturnsASmallInteger [
+	
+	| endInstruction primitiveAddress |
+	
+	cogit receiverTags: memory smallIntegerTag.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveSubtract.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: (memory integerObjectOf: 42) arguments: { memory integerObjectOf: 52 }.
+	self runFrom: primitiveAddress until: callerAddress.
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: -10).
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveSubtractReturnsASmallIntegerWhenNegativeNumbers [
+	
+	| endInstruction primitiveAddress |
+	
+	cogit receiverTags: memory smallIntegerTag.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveSubtract.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: (memory integerObjectOf: -42) arguments: { memory integerObjectOf: -52 }.
+	
+	self runFrom: primitiveAddress until: callerAddress.
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 10).
 ]
 
 { #category : #'tests - support' }
