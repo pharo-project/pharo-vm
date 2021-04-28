@@ -886,7 +886,7 @@ CASTParser >> reduceActionForjump_statement2: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForjump_statement3: nodes [
 	| result |
-	result := CGLRBreakStatementNode new.
+	result := CBreakStatementNode new.
 	^ result
 ]
 

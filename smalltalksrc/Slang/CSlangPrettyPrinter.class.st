@@ -80,6 +80,12 @@ CSlangPrettyPrinter >> visitBinary: aBinary [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitBreakStatement: aBreakStatement [
+
+	stream nextPutAll: 'break'
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitCall: aCall [
 	
 	

@@ -41,6 +41,18 @@ CCompoundStatementNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitCompoundStatement: self
 ]
 
+{ #category : #adding }
+CCompoundStatementNode >> add: aStatement [
+
+	statements add: aStatement
+]
+
+{ #category : #adding }
+CCompoundStatementNode >> addAll: aCompoundStatement [
+
+	statements add: aCompoundStatement statements
+]
+
 { #category : #generated }
 CCompoundStatementNode >> declarations [
 	^ declarations

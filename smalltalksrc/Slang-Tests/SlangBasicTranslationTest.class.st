@@ -1231,6 +1231,34 @@ SlangBasicTranslationTest >> testSendTruncateTo [
 	self assert: translation equals: '(a & ~1)'
 ]
 
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendWhileTrueWithOneStatementInReceiverBlock [
+
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #whileTrue:
+		        receiver:
+			        (TStmtListNode new setStatements: { (TSendNode new
+					          setSelector: #&
+					          receiver: (TVariableNode new setName: 'a')
+					          arguments: {(TVariableNode new setName: 'b')}) })
+		        arguments: { (TStmtListNode new setStatements:
+				         { (TAssignmentNode new
+					          setVariable: variable
+					          expression: expression) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'while(a && b) {
+	var -= 7;
+}'
+]
+
 { #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testTranslateBlockAssignmentWithManyStatement [
 

@@ -76,6 +76,15 @@ CSlangPrettyPrinterTest >> testVisitBinary [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitBreakStatement [
+
+	| print |
+	print := self prettyPrint: (CBreakStatementNode new).
+
+	self assert: print trimBoth equals: 'break'
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitCall [
 
 	| print |
