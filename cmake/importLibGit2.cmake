@@ -31,7 +31,7 @@ function(download_git2)
   else() # LINUX
     if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv7l")
       add_third_party_dependency("openssl-1.1.1k")
-      add_third_party_dependency("libssh2-1.9.0")s
+      add_third_party_dependency("libssh2-1.9.0")
       add_third_party_dependency("libgit2-1.0.1")
       add_third_party_dependency("zlib-1.2.11")
     else()
