@@ -850,7 +850,7 @@ CASTParser >> reduceActionForiteration_statement2: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForiteration_statement3: nodes [
 	| result |
-	result := CGLRForStatementNode new.
+	result := CForStatementNode new.
 	result init: (nodes at: 3).
 	result until: (nodes at: 4).
 	result statement: (nodes at: 6).
@@ -860,7 +860,7 @@ CASTParser >> reduceActionForiteration_statement3: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForiteration_statement4: nodes [
 	| result |
-	result := CGLRForStatementNode new.
+	result := CForStatementNode new.
 	result init: (nodes at: 3).
 	result until: (nodes at: 4).
 	result step: (nodes at: 5).

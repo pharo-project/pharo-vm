@@ -1903,15 +1903,28 @@ CCodeGenerator >> generateCASTDivide: tast [
 ]
 
 { #category : #'CAST translation' }
-CCodeGenerator >> generateCASTDoWhileTrue: tast [
+CCodeGenerator >> generateCASTDoWhile: boolean loop: tast [
 
-	| block |
+	| block  cond|
 	block := (TStmtListNode new setStatements:
 		          tast receiver statements allButLast) asCASTIn: self.
 	block needsCarriageReturn: false.
+	cond := (tast receiver statements last asCASTExpressionIn: self).
 	^ CDoStatementNode
-		  while: (tast receiver statements last asCASTExpressionIn: self)
+		  while: (boolean ifTrue: [ cond ] ifFalse: [ CUnaryOperatorNode operator: #! expression: cond ])
 		  statement: block
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTDoWhileFalse: tast [
+
+	^ self generateCASTDoWhile: false loop: tast
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTDoWhileTrue: tast [
+
+	^ self generateCASTDoWhile: true loop: tast
 ]
 
 { #category : #'CAST translation' }
@@ -2277,6 +2290,16 @@ CCodeGenerator >> generateCASTWhile: boolean loop: tast [
 				   ifFalse: [ 
 				   CUnaryOperatorNode operator: #! expression: condition ])
 		  statement: (tast arguments first asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTWhileFalse: tast [
+
+	tast receiver statements size <= 1
+		ifTrue: [^self generateCASTWhile: false loop: tast].
+	tast args first isNilStmtListNode
+		ifTrue: [^self generateCASTDoWhileFalse: tast].
+	^self generateCASTWhileForeverBreakIf: true loop: tast
 ]
 
 { #category : #'CAST translation' }

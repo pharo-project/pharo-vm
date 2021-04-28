@@ -1,5 +1,5 @@
 Class {
-	#name : #CGLRForStatementNode,
+	#name : #CForStatementNode,
 	#superclass : #CGLRAbstractNode,
 	#instVars : [
 		'init',
@@ -7,21 +7,32 @@ Class {
 		'statement',
 		'step'
 	],
-	#category : #CAST
+	#category : #'CAST-Nodes'
 }
 
+{ #category : #'instance creation' }
+CForStatementNode class >> init: initialization until: condition step: aStep statement: aStatement [
+
+	^ self new
+		  init: initialization;
+		  until: condition;
+		  step: aStep;
+		  statement: aStatement;
+		  yourself
+]
+
 { #category : #generated }
-CGLRForStatementNode >> acceptVisitor: anAbstractVisitor [
+CForStatementNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitForStatement: self
 ]
 
 { #category : #generated }
-CGLRForStatementNode >> init [
+CForStatementNode >> init [
 	^ init
 ]
 
 { #category : #generated }
-CGLRForStatementNode >> init: aCGLRExpressionStatementNode [
+CForStatementNode >> init: aCGLRExpressionStatementNode [
 	self init notNil
 		ifTrue: [ self init parent: nil ].
 	init := aCGLRExpressionStatementNode.
@@ -29,13 +40,19 @@ CGLRForStatementNode >> init: aCGLRExpressionStatementNode [
 		ifTrue: [ self init parent: self ]
 ]
 
+{ #category : #testing }
+CForStatementNode >> isForStatement [
+
+	^true
+]
+
 { #category : #generated }
-CGLRForStatementNode >> statement [
+CForStatementNode >> statement [
 	^ statement
 ]
 
 { #category : #generated }
-CGLRForStatementNode >> statement: aCGLRAbstractNode [
+CForStatementNode >> statement: aCGLRAbstractNode [
 	self statement notNil
 		ifTrue: [ self statement parent: nil ].
 	statement := aCGLRAbstractNode.
@@ -44,12 +61,12 @@ CGLRForStatementNode >> statement: aCGLRAbstractNode [
 ]
 
 { #category : #generated }
-CGLRForStatementNode >> step [
+CForStatementNode >> step [
 	^ step
 ]
 
 { #category : #generated }
-CGLRForStatementNode >> step: aCGLRExpressionNode [
+CForStatementNode >> step: aCGLRExpressionNode [
 	self step notNil
 		ifTrue: [ self step parent: nil ].
 	step := aCGLRExpressionNode.
@@ -58,12 +75,12 @@ CGLRForStatementNode >> step: aCGLRExpressionNode [
 ]
 
 { #category : #generated }
-CGLRForStatementNode >> until [
+CForStatementNode >> until [
 	^ until
 ]
 
 { #category : #generated }
-CGLRForStatementNode >> until: aCGLRExpressionStatementNode [
+CForStatementNode >> until: aCGLRExpressionStatementNode [
 	self until notNil
 		ifTrue: [ self until parent: nil ].
 	until := aCGLRExpressionStatementNode.
