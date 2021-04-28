@@ -50,7 +50,7 @@ CCompoundStatementNode >> add: aStatement [
 { #category : #adding }
 CCompoundStatementNode >> addAll: aCompoundStatement [
 
-	statements add: aCompoundStatement statements
+	statements addAll: aCompoundStatement statements
 ]
 
 { #category : #generated }

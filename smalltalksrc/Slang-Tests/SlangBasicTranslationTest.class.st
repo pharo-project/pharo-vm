@@ -1232,6 +1232,72 @@ SlangBasicTranslationTest >> testSendTruncateTo [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendWhileTrueWithManyStatementsInReceiverAndArgument [
+
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #whileTrue:
+		        receiver: (TStmtListNode new setStatements: { 
+					         (TAssignmentNode new
+						          setVariable: variable
+						          expression: expression).
+					         (TSendNode new
+						          setSelector: #>=
+						          receiver: (TVariableNode new setName: 'var')
+						          arguments: { (TConstantNode value: 21) }) })
+		        arguments:
+			        { (TStmtListNode new setStatements: { (TAssignmentNode new
+					          setVariable: (TVariableNode new setName: 'b')
+					          expression: (TSendNode new
+							           setSelector: #\\
+							           receiver: (TVariableNode new setName: 'var')
+							           arguments: {(TConstantNode value: 3)})) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'while(1) {
+	var -= 7;
+	if(!(var >= 21)) break;
+	b = var % 3;
+}'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendWhileTrueWithNilAsArgument [
+
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #whileTrue:
+		        receiver: (TStmtListNode new setStatements: { 
+					         (TAssignmentNode new
+						          setVariable: variable
+						          expression: expression).
+					         (TSendNode new
+						          setSelector: #&
+						          receiver: (TVariableNode new setName: 'a')
+						          arguments: { (TVariableNode new setName: 'b') }) })
+		        arguments:
+		        { (TStmtListNode new setStatements:
+			         { (TVariableNode new setName: 'nil') }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'do{
+	var -= 7;
+}while(a && b)'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendWhileTrueWithOneStatementInReceiverBlock [
 
 	| translation send variable expression |

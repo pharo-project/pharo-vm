@@ -1907,7 +1907,7 @@ CCodeGenerator >> generateCASTDoWhileTrue: tast [
 
 	| block |
 	block := (TStmtListNode new setStatements:
-		          tast receiver statements allButLast) asCASTExpressionIn: self.
+		          tast receiver statements allButLast) asCASTIn: self.
 	block needsCarriageReturn: false.
 	^ CDoStatementNode
 		  while: (tast receiver statements last asCASTExpressionIn: self)
@@ -2287,7 +2287,7 @@ CCodeGenerator >> generateCASTWhileForeverBreakIf: boolean loop: tast [
 	if := CIfStatementNode if: (boolean ifTrue: [ cond ] ifFalse: [ CUnaryOperatorNode operator: #! expression: cond ]) then: (CBreakStatementNode new).
 	block := (TStmtListNode new setStatements: tast receiver statements allButLast) asCASTIn: self.
 	block add: if.
-	block addAll: ((tast arguments first) asCASTIn: self).
+	block addAll: (tast arguments first asCASTIn: self).
 	block needsCarriageReturn: false.
 	^ CWhileStatementNode 
 		  while: (CConstantNode value: 1)
