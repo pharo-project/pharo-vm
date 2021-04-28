@@ -8,6 +8,15 @@ Class {
 	#category : #'CAST-Nodes'
 }
 
+{ #category : #'instance creation' }
+CWhileStatementNode class >> while: aBooleanExpression statement: aStatement [
+
+	^ self new
+		  while: aBooleanExpression;
+		  statement: aStatement;
+		  yourself
+]
+
 { #category : #generated }
 CWhileStatementNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitWhileStatement: self

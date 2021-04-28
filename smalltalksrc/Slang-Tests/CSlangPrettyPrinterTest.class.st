@@ -190,6 +190,24 @@ CSlangPrettyPrinterTest >> testVisitDeclarator [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitDoStatement [
+
+	| print compound |
+	compound := (CCompoundStatementNode statements: { CConstantNode value: 15 }).
+	compound needsCarriageReturn: false.
+	print := self prettyPrint: (CDoStatementNode
+			          while: (CBinaryOperatorNode
+					           operator: #&&
+					           left: (CIdentifierNode name: 'a')
+					           right: (CIdentifierNode name: 'b'))
+			          statement: compound).
+
+	self assert: print trimBoth equals: 'do{
+	15;
+}while(a && b);'
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitGotoStatement [
 
 	| print |
@@ -320,4 +338,20 @@ CSlangPrettyPrinterTest >> testVisitUnaryOperator [
 	self assert: print equals: '-(1 - 2)'
 
 
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitWhileStatement [
+
+	| print |
+	print := self prettyPrint: (CWhileStatementNode
+			          while: (CBinaryOperatorNode
+					           operator: #&&
+					           left: (CIdentifierNode name: 'a')
+					           right: (CIdentifierNode name: 'b'))
+			          statement: (CCompoundStatementNode statements: { CConstantNode value: 15 })).
+
+	self assert: print trimBoth equals: 'while(a && b) {
+	15;
+}'
 ]

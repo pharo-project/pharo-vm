@@ -563,6 +563,46 @@ SlangBasicTranslationTest >> testSendBitAnd [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendBitClear [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #bitClear:
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {(TConstantNode value: 3)}.
+	translation := self translate: send.
+
+	self assert: translation equals: '((a | 3) - 3)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendBitInvert64On32Bits [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #bitInvert64
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '~(unsigned long long)a'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendBitInvert64On64Bits [
+
+	| translation send |
+	generator wordSize: 8.
+	send := TSendNode new
+		        setSelector: #bitInvert64
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '~(usqIntptr_t)a'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendBitOr [
 
 	| translation send |
@@ -588,6 +628,58 @@ SlangBasicTranslationTest >> testSendBitXor [
 	translation := self translate: send.
 
 	self assert: translation equals: 'a ^ 1'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendByteSwap32 [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #byteSwap32
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: 'SQ_SWAP_4_BYTES(a)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendByteSwap32IfBigEndian [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #byteSwapped32IfBigEndian:
+		        receiver: nil
+		        arguments: {TVariableNode new setName: 'a'}.
+	translation := self translate: send.
+
+	self assert: translation equals: 'SQ_SWAP_4_BYTES_IF_BIGENDIAN(a)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendByteSwap64 [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #byteSwap64
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: 'SQ_SWAP_8_BYTES(a)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendByteSwap64IfBigEndian [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #byteSwapped64IfBigEndian:
+		        receiver: nil
+		        arguments: {TVariableNode new setName: 'a'}.
+	translation := self translate: send.
+
+	self assert: translation equals: 'SQ_SWAP_8_BYTES_IF_BIGENDIAN(a)'
 ]
 
 { #category : #'tests-send' }
@@ -1016,6 +1108,63 @@ SlangBasicTranslationTest >> testSendPowerTo [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendRightBitShiftSignedIn64Bits [
+
+	| translation send |
+	generator currentMethod declarationAt: 'a' put: 'sqInt'.
+	generator wordSize: 8.
+	send := TSendNode new
+		        setSelector: #>>
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: { (TConstantNode value: 3) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((usqInt) a) >> 3'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendRightBitShiftUnsigned [
+
+	| translation send |
+	generator currentMethod declarationAt: 'a' put: 'usqInt'.
+	send := TSendNode new
+		        setSelector: #>>
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: { (TConstantNode value: 3) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((usqInt) a) >> 3'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendRightBitShiftUnsignedIn64Bits [
+
+	| translation send |
+	generator currentMethod declarationAt: 'a' put: 'usqInt'.
+	generator wordSize: 8.
+	send := TSendNode new
+		        setSelector: #>>
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: { (TConstantNode value: 3) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((usqInt) a) >> 3'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendRounded [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #rounded
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: 'round(a)'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendSequentialAndWithConstantReceiverTrue [
 
 	| translation send |
@@ -1037,6 +1186,20 @@ SlangBasicTranslationTest >> testSendSequentialAndWithConstantReceiverTrue [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendSignedRightBitShiftVariable64Bits [
+
+	| translation send |
+	generator currentMethod declarationAt: 'a' put: 'long long'.
+	send := TSendNode new
+		        setSelector: #>>>
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: { (TConstantNode value: 3) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((sqLong) a) >> 3'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendTimes [
 
 	| translation send |
@@ -1053,6 +1216,19 @@ SlangBasicTranslationTest >> testSendTimes [
 	translation := self translate: send.
 
 	self assert: translation equals: '(1 + 2) * 3'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendTruncateTo [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #truncateTo:
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {(TConstantNode value: 2)}.
+	translation := self translate: send.
+
+	self assert: translation equals: '(a & ~1)'
 ]
 
 { #category : #'tests-assignment' }

@@ -841,7 +841,7 @@ CASTParser >> reduceActionForiteration_statement1: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForiteration_statement2: nodes [
 	| result |
-	result := CGLRDoStatementNode new.
+	result := CDoStatementNode new.
 	result statement: (nodes at: 2).
 	result while: (nodes at: 5).
 	^ result

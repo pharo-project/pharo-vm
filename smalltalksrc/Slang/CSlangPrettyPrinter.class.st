@@ -161,6 +161,16 @@ CSlangPrettyPrinter >> visitDeclarator: aDeclarator [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitDoStatement: aDoStatement [
+
+	stream nextPutAll: 'do'.
+	aDoStatement statement acceptVisitor: self.
+	stream nextPutAll: 'while('.
+	aDoStatement while acceptVisitor: self.
+	stream nextPutAll: ');'
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitGotoStatement: aGoToStatement [
 
 	stream nextPutAll: 'goto ';
@@ -236,13 +246,23 @@ CSlangPrettyPrinter >> visitTypename: aTypename [
 
 { #category : #generated }
 CSlangPrettyPrinter >> visitUnaryOperator: anUnary [
+
 	| parenthesises |
-	
-	parenthesises := (anUnary expression isConstant or: [ anUnary expression isIdentifier ]).
+	parenthesises := anUnary expression isConstant or: [ 
+		                 anUnary expression isIdentifier ].
 	stream nextPutAll: anUnary operator.
 	parenthesises ifFalse: [ stream nextPut: $( ].
 	anUnary expression acceptVisitor: self.
-	parenthesises ifFalse: [ stream nextPut: $) ].
+	parenthesises ifFalse: [ stream nextPut: $) ]
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitWhileStatement: aWhileStatement [
+
+	stream nextPutAll: 'while('.
+	aWhileStatement while acceptVisitor: self.
+	stream nextPutAll: ') '.
+	aWhileStatement statement acceptVisitor: self
 ]
 
 { #category : #accessing }

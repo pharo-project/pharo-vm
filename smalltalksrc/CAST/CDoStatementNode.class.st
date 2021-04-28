@@ -1,25 +1,40 @@
 Class {
-	#name : #CGLRDoStatementNode,
+	#name : #CDoStatementNode,
 	#superclass : #CGLRAbstractNode,
 	#instVars : [
 		'statement',
 		'while'
 	],
-	#category : #CAST
+	#category : #'CAST-Nodes'
 }
 
+{ #category : #'instance creation' }
+CDoStatementNode class >> while: aConditionExpression statement: aStatement [
+
+	^ self new
+		  while: aConditionExpression;
+		  statement: aStatement;
+		  yourself
+]
+
 { #category : #generated }
-CGLRDoStatementNode >> acceptVisitor: anAbstractVisitor [
+CDoStatementNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitDoStatement: self
 ]
 
 { #category : #generated }
-CGLRDoStatementNode >> statement [
+CDoStatementNode >> isDoWhile [
+
+	^true
+]
+
+{ #category : #generated }
+CDoStatementNode >> statement [
 	^ statement
 ]
 
 { #category : #generated }
-CGLRDoStatementNode >> statement: aCGLRAbstractNode [
+CDoStatementNode >> statement: aCGLRAbstractNode [
 	self statement notNil
 		ifTrue: [ self statement parent: nil ].
 	statement := aCGLRAbstractNode.
@@ -28,12 +43,12 @@ CGLRDoStatementNode >> statement: aCGLRAbstractNode [
 ]
 
 { #category : #generated }
-CGLRDoStatementNode >> while [
+CDoStatementNode >> while [
 	^ while
 ]
 
 { #category : #generated }
-CGLRDoStatementNode >> while: aCGLRExpressionNode [
+CDoStatementNode >> while: aCGLRExpressionNode [
 	self while notNil
 		ifTrue: [ self while parent: nil ].
 	while := aCGLRExpressionNode.
