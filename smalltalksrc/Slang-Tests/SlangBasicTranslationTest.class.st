@@ -1325,6 +1325,34 @@ SlangBasicTranslationTest >> testSendWhileTrueWithOneStatementInReceiverBlock [
 }'
 ]
 
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendWhileTrueWithoutArguments [
+
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #whileTrue
+		        receiver: (TStmtListNode new setStatements: { 
+					         (TAssignmentNode new
+						          setVariable: variable
+						          expression: expression).
+					         (TSendNode new
+						          setSelector: #>=
+						          receiver: (TVariableNode new setName: 'var')
+						          arguments: { (TConstantNode value: 21) }) })
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'do{
+	var -= 7;
+}while(var >= 21)'
+]
+
 { #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testTranslateBlockAssignmentWithManyStatement [
 
