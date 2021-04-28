@@ -261,6 +261,8 @@ elseif(UNIX)
 
     elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
         set(VM_TARGET_OS "linux-gnu")
+    elseif(${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
+	set(OPENBSD 1)
     else()
         set(VM_TARGET_OS "${CMAKE_SYSTEM_NAME}")
     endif()
