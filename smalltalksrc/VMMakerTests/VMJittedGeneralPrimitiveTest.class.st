@@ -908,6 +908,134 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveBitShiftShouldReturnZeroIfShiftIsBi
 		equals: (memory integerObjectOf: 0)
 ]
 
+{ #category : #'tests - primitiveDiv' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveDivCompilesOnFloatResult [
+	
+	| endInstruction primitiveAddress |
+	
+	cogit receiverTags: memory smallIntegerTag.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveDiv.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: (memory integerObjectOf: 42 ) arguments: { memory integerObjectOf: 4 }.
+	
+	self runFrom: primitiveAddress until: callerAddress.
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 10).
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveDivDoesNotCompileIfReceiverTagIsNotSmallInteger [
+	
+	| result |
+	
+	"Setting a value that is not the SmallInteger tag"
+	
+	cogit receiverTags: 0.
+	
+	self compile: [ result := cogit objectRepresentation genPrimitiveDiv ].
+	self assert: result equals: UnimplementedPrimitive.
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveDivFailsWhenArgumentIsNotSmallInteger [
+	
+	| endInstruction primitiveAddress |
+	
+	cogit receiverTags: memory smallIntegerTag.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveDiv.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: (memory integerObjectOf: 42) arguments: { memory nilObject }.
+	
+	self runFrom: primitiveAddress until: endInstruction address.
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveDivFailsWithZeroDivision [
+	
+	| endInstruction primitiveAddress |
+	
+	cogit receiverTags: memory smallIntegerTag.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveDiv.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: (memory integerObjectOf: memory maxSmallInteger ) arguments: { memory integerObjectOf: 0 }.
+	
+	self runFrom: primitiveAddress until: endInstruction address.
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveDivIsCompleteWhenReceiverTagIsSmallInteger [
+	
+	| result |
+	
+	cogit receiverTags: memory smallIntegerTag.
+	
+	self compile: [ result := cogit objectRepresentation genPrimitiveDiv ].
+	self assert: result equals: CompletePrimitive.
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveDivReturnsASmallInteger [
+	
+	| endInstruction primitiveAddress |
+	
+	cogit receiverTags: memory smallIntegerTag.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveDiv.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: (memory integerObjectOf: 100) arguments: { memory integerObjectOf: 2 }.
+	self runFrom: primitiveAddress until: callerAddress.
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 50).
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveDivReturnsASmallIntegerWhenNegativeNumbers [
+	
+	| endInstruction primitiveAddress |
+	
+	cogit receiverTags: memory smallIntegerTag.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveDiv.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: (memory integerObjectOf: -100) arguments: { memory integerObjectOf: -2 }.
+	
+	self runFrom: primitiveAddress until: callerAddress.
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 50).
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveDivReturnsZeroWithZeroReceiver [
+	
+	| endInstruction primitiveAddress |
+	
+	cogit receiverTags: memory smallIntegerTag.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveDiv.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: (memory integerObjectOf: 0) arguments: { memory integerObjectOf: 100 }.
+	self runFrom: primitiveAddress until: callerAddress.
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 0).
+]
+
 { #category : #'tests - primitiveMultiply' }
 VMJittedGeneralPrimitiveTest >> testPrimitiveHashMultiplySmallIntegerReturnsHashMultiply [
 	
