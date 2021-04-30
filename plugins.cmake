@@ -67,20 +67,22 @@ target_link_libraries(FileAttributesPlugin PRIVATE FilePlugin)
 # UUIDPlugin
 #
 
-message(STATUS "Adding plugin: UUIDPlugin")
+if(NOT OPENBSD)
+    message(STATUS "Adding plugin: UUIDPlugin")
 
-file(GLOB UUIDPlugin_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/UUIDPlugin/common/*.c   
-)
+    file(GLOB UUIDPlugin_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/plugins/UUIDPlugin/common/*.c
+    )
 
-addLibraryWithRPATH(UUIDPlugin ${UUIDPlugin_SOURCES})
-if(WIN)
-    target_link_libraries(UUIDPlugin PRIVATE "-lole32")
-elseif(UNIX AND NOT OSX)
-   #find_path(LIB_UUID_INCLUDE_DIR uuid.h PATH_SUFFIXES uuid)
-    find_library(LIB_UUID_LIBRARY uuid)
-    message(STATUS "Using uuid library:" ${LIB_UUID_LIBRARY}) 
-    target_link_libraries(UUIDPlugin PRIVATE ${LIB_UUID_LIBRARY})
+    addLibraryWithRPATH(UUIDPlugin ${UUIDPlugin_SOURCES})
+    if(WIN)
+        target_link_libraries(UUIDPlugin PRIVATE "-lole32")
+    elseif(UNIX AND NOT OSX)
+       #find_path(LIB_UUID_INCLUDE_DIR uuid.h PATH_SUFFIXES uuid)
+        find_library(LIB_UUID_LIBRARY uuid)
+        message(STATUS "Using uuid library:" ${LIB_UUID_LIBRARY})
+        target_link_libraries(UUIDPlugin PRIVATE ${LIB_UUID_LIBRARY})
+    endif()
 endif()
 
 #
@@ -193,52 +195,54 @@ endif()
 # SqueakSSL
 #
 
-message(STATUS "Adding plugin: SqueakSSL")
+if(NOT OPENBSD)
+    message(STATUS "Adding plugin: SqueakSSL")
 
-if(OSX)
-    include_directories(
-        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/common
-        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/osx
-    )
-    
-    file(GLOB SqueakSSL_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/common/*.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/osx/*.c   
-    )
-else()
-    if(WIN)
+    if(OSX)
         include_directories(
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/common
-            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/win
+            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/osx
         )
-        
+
         file(GLOB SqueakSSL_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/common/*.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/win/*.c   
-        )    
+            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/osx/*.c
+        )
     else()
-        include_directories(
-            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/common
-            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/unix
-        )
-        
-        file(GLOB SqueakSSL_SOURCES
-            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/common/*.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/unix/*.c   
-        )
+        if(WIN)
+            include_directories(
+                ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/common
+                ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/win
+            )
+
+            file(GLOB SqueakSSL_SOURCES
+                ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/common/*.c
+                ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/win/*.c
+            )
+        else()
+            include_directories(
+                ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/common
+                ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/unix
+            )
+
+            file(GLOB SqueakSSL_SOURCES
+                ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/common/*.c
+                ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/unix/*.c
+            )
+        endif()
     endif()
-endif()
 
-addLibraryWithRPATH(SqueakSSL ${SqueakSSL_SOURCES})
+    addLibraryWithRPATH(SqueakSSL ${SqueakSSL_SOURCES})
 
-if(OSX)
-    target_link_libraries(SqueakSSL PRIVATE "-framework CoreFoundation")
-    target_link_libraries(SqueakSSL PRIVATE "-framework Security")
-elseif(WIN)
-    target_link_libraries(SqueakSSL PRIVATE Crypt32 Secur32)
-else()
-    find_package(OpenSSL REQUIRED)
-    target_link_libraries(SqueakSSL PRIVATE OpenSSL::SSL OpenSSL::Crypto)    
+    if(OSX)
+        target_link_libraries(SqueakSSL PRIVATE "-framework CoreFoundation")
+        target_link_libraries(SqueakSSL PRIVATE "-framework Security")
+    elseif(WIN)
+        target_link_libraries(SqueakSSL PRIVATE Crypt32 Secur32)
+    else()
+        find_package(OpenSSL REQUIRED)
+        target_link_libraries(SqueakSSL PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+    endif()
 endif()
 
 

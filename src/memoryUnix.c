@@ -19,7 +19,11 @@ sqInt uxMemoryExtraBytesLeft(sqInt includingSwap);
 
 #define MAP_PROT	(PROT_READ | PROT_WRITE)
 
+#if __OpenBSD__
+#define MAP_FLAGS	(MAP_ANON | MAP_PRIVATE | MAP_STACK)
+#else
 #define MAP_FLAGS	(MAP_ANON | MAP_PRIVATE)
+#endif
 
 #define valign(x)	((x) & pageMask)
 
