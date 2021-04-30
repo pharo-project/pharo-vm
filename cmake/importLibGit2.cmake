@@ -29,7 +29,7 @@ function(download_git2)
       add_third_party_dependency("openssl-1.0.2q")
     endif()
   else() # LINUX
-    if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv7l")
+    If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv7l" OR (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64"))
       add_third_party_dependency("openssl-1.1.1k")
       add_third_party_dependency("libssh2-1.9.0")
       add_third_party_dependency("libgit2-1.0.1")
