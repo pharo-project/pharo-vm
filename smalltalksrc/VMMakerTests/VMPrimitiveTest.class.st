@@ -1048,12 +1048,14 @@ VMPrimitiveTest >> testPrimitiveBitXorWithNegativNumbers [
 { #category : #'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDiv [
 
-	interpreter push: (memory integerObjectOf: 4).
+	interpreter push: (memory integerObjectOf: 15).
 	interpreter push: (memory integerObjectOf: 2).
 	
 	interpreter primitiveDiv. 
 	
-	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 2). 
+	self deny: interpreter failed. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 7). 
 ]
 
 { #category : #'tests - primitiveDiv' }
@@ -2388,7 +2390,6 @@ VMPrimitiveTest >> testPrimitiveQuo [
 
 	interpreter push: (memory integerObjectOf: 15).
 	interpreter push: (memory integerObjectOf: 2).
-	
 	interpreter primitiveQuo. 
 	
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 7). 
@@ -2478,11 +2479,11 @@ VMPrimitiveTest >> testPrimitiveQuoWith0DivisionOnSecondOperand [
 VMPrimitiveTest >> testPrimitiveQuoWithNegativeNumbers1 [
 
 	interpreter push: (memory integerObjectOf: -13).
-	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: (memory integerObjectOf: -2).
 	
 	interpreter primitiveQuo.
 	
-	self assert: interpreter stackTop equals: (memory integerObjectOf: -6). 
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 6). 
 ]
 
 { #category : #'tests - primitiveQuo' }

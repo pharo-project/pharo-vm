@@ -569,10 +569,10 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveAddReturnsASmallIntegerWhenNegative
 		"If the primitive fails it continues, so we need to have an instruction to detect the end"
 		endInstruction := cogit Stop ].
 
-	self prepareStackForSendReceiver: (memory integerObjectOf: -42) arguments: { memory integerObjectOf: -52 }.
+	self prepareStackForSendReceiver: (memory integerObjectOf: -121) arguments: { memory integerObjectOf: -144 }.
 	
 	self runFrom: primitiveAddress until: callerAddress.
-	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: -94).
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: -265).
 ]
 
 { #category : #'tests - primitiveAsFloat' }
@@ -1391,7 +1391,7 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveGreaterthanReturnsABooleanWhenNegat
 	self assert: self machineSimulator receiverRegisterValue equals: (memory trueObject).
 ]
 
-{ #category : #'tests - primitiveMultiply' }
+{ #category : #'tests - primitiveHashMultiply' }
 VMJittedGeneralPrimitiveTest >> testPrimitiveHashMultiplySmallIntegerReturnsHashMultiply [
 	
 	| result primitiveAddress |
@@ -1878,7 +1878,7 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveSubtractFailsWhenSumOverflows [
 		"If the primitive fails it continues, so we need to have an instruction to detect the end"
 		endInstruction := cogit Stop ].
 
-	self prepareStackForSendReceiver: (memory integerObjectOf: memory minSmallInteger) arguments: { memory integerObjectOf: 1 }.
+	self prepareStackForSendReceiver: (memory integerObjectOf: memory maxSmallInteger) arguments: { memory integerObjectOf: -1 }.
 
 	self runFrom: primitiveAddress until: endInstruction address.
 ]
