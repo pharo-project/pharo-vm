@@ -1048,12 +1048,14 @@ VMPrimitiveTest >> testPrimitiveBitXorWithNegativNumbers [
 { #category : #'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDiv [
 
-	interpreter push: (memory integerObjectOf: 4).
+	interpreter push: (memory integerObjectOf: 15).
 	interpreter push: (memory integerObjectOf: 2).
 	
 	interpreter primitiveDiv. 
 	
-	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 2). 
+	self deny: interpreter failed. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 7). 
 ]
 
 { #category : #'tests - primitiveDiv' }
@@ -1139,12 +1141,12 @@ VMPrimitiveTest >> testPrimitiveDivWithNegativeNumbers [
 { #category : #'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDivWithNegativeNumbers2 [
 	
-	interpreter push: (memory integerObjectOf: -42).
-	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: (memory integerObjectOf: -9).
+	interpreter push: (memory integerObjectOf: 4).
 	
 	interpreter primitiveDiv. 
 	
-	self assert: (interpreter stackTop) equals: (memory integerObjectOf: -21). 
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: -3). 
 ]
 
 { #category : #'tests - primitiveDiv' }
@@ -2388,7 +2390,6 @@ VMPrimitiveTest >> testPrimitiveQuo [
 
 	interpreter push: (memory integerObjectOf: 15).
 	interpreter push: (memory integerObjectOf: 2).
-	
 	interpreter primitiveQuo. 
 	
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 7). 
@@ -2478,22 +2479,22 @@ VMPrimitiveTest >> testPrimitiveQuoWith0DivisionOnSecondOperand [
 VMPrimitiveTest >> testPrimitiveQuoWithNegativeNumbers1 [
 
 	interpreter push: (memory integerObjectOf: -13).
-	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: (memory integerObjectOf: -2).
 	
 	interpreter primitiveQuo.
 	
-	self assert: interpreter stackTop equals: (memory integerObjectOf: -6). 
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 6). 
 ]
 
 { #category : #'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuoWithNegativeNumbers2 [
 
-	interpreter push: (memory integerObjectOf: -21).
-	interpreter push: (memory integerObjectOf: -2).
+	interpreter push: (memory integerObjectOf: -9).
+	interpreter push: (memory integerObjectOf: 4).
 	
 	interpreter primitiveQuo.
 	
-	self assert: interpreter stackTop equals: (memory integerObjectOf: 10). 
+	self assert: interpreter stackTop equals: (memory integerObjectOf: -2). 
 ]
 
 { #category : #'tests - primitiveQuo' }
