@@ -1141,12 +1141,12 @@ VMPrimitiveTest >> testPrimitiveDivWithNegativeNumbers [
 { #category : #'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDivWithNegativeNumbers2 [
 	
-	interpreter push: (memory integerObjectOf: -42).
-	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: (memory integerObjectOf: -9).
+	interpreter push: (memory integerObjectOf: 4).
 	
 	interpreter primitiveDiv. 
 	
-	self assert: (interpreter stackTop) equals: (memory integerObjectOf: -21). 
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: -3). 
 ]
 
 { #category : #'tests - primitiveDiv' }
@@ -2489,12 +2489,12 @@ VMPrimitiveTest >> testPrimitiveQuoWithNegativeNumbers1 [
 { #category : #'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuoWithNegativeNumbers2 [
 
-	interpreter push: (memory integerObjectOf: -21).
-	interpreter push: (memory integerObjectOf: -2).
+	interpreter push: (memory integerObjectOf: -9).
+	interpreter push: (memory integerObjectOf: 4).
 	
 	interpreter primitiveQuo.
 	
-	self assert: interpreter stackTop equals: (memory integerObjectOf: 10). 
+	self assert: interpreter stackTop equals: (memory integerObjectOf: -2). 
 ]
 
 { #category : #'tests - primitiveQuo' }
