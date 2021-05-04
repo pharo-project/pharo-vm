@@ -54,6 +54,24 @@ VMInspectorTest >> testEqualsOtherObject [
 	self assert: object1 equals: object2
 ]
 
+{ #category : #'test-testing' }
+VMInspectorTest >> testImmutability [
+	| object objectOop |
+	objectOop := (self newObjectWithSlots: 1).
+	object := image objectForOop: objectOop.
+	image simulator setIsImmutableOf: objectOop to: true.
+	
+	self assert: object isImmutable
+]
+
+{ #category : #'test-testing' }
+VMInspectorTest >> testImmutabilityISFalseByDefault [
+	| object |
+	object := image objectForOop: (self newObjectWithSlots: 1).
+	
+	self assert: object isImmutable not
+]
+
 { #category : #tests }
 VMInspectorTest >> testInspectOopInspectRightObject [
 	| objectOop window |
