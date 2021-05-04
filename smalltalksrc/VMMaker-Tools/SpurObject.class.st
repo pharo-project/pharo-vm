@@ -203,9 +203,9 @@ SpurObject >> inspectionItems: aBuilder [
 	items := { 
 		#header -> (self header printStringBase: 2).
 		#class -> self classSpurObject.
-		#numSlots -> self numSlots.
-		
-		} asDictionary.
+		#classIndex -> self classIndex.
+		#numSlots -> self numSlots.	
+		} asOrderedCollection .
 	1 to: self numSlots do: [ :i|
 		 items add: (('slot', i printString) -> (self slotAt: i)) ].
 	items add: #format -> self format.
@@ -225,7 +225,7 @@ SpurObject >> inspectionItems: aBuilder [
 			title: 'Value' 
 			evaluated: [ :each | StObjectPrinter asTruncatedTextFrom: each value ])
 			beSortable;
-		items: items associations;
+		items: items;
 		yourself
 ]
 
