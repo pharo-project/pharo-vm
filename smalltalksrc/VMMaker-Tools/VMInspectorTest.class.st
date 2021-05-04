@@ -68,7 +68,6 @@ VMInspectorTest >> testIntegerKnowsItsClass [
 	| class object |
 	class := self setSmallIntegerClassIntoClassTable.
 	object := SpurObject on: (image simulator integerObjectOf: 42) image: image.
-	object inspect.
 	self assert: class equals: object classOop
 ]
 
