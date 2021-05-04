@@ -1,6 +1,9 @@
 Class {
 	#name : #SpurSimulatorImage,
 	#superclass : #SpurImage,
+	#instVars : [
+		'currentObject'
+	],
 	#classInstVars : [
 		'simulator'
 	],
@@ -20,6 +23,11 @@ SpurSimulatorImage >> classOf: aSpurObject [
 	^self objectForOop: (simulator fetchClassOf: aSpurObject address)
 ]
 
+{ #category : #accessing }
+SpurSimulatorImage >> currentObject: anOop [
+	currentObject := anOop
+]
+
 { #category : #'as yet unclassified' }
 SpurSimulatorImage >> falseObject [
 	^ self objectForOop: simulator falseObject
@@ -33,7 +41,20 @@ SpurSimulatorImage >> fetchPointer: anInteger ofObject: objectOop [
 
 { #category : #'as yet unclassified' }
 SpurSimulatorImage >> headerOf: anInteger [ 
-	^simulator objectMemory baseHeader: anInteger
+	^simulator objectMemory baseHeader: anInteger value
+]
+
+{ #category : #'as yet unclassified' }
+SpurSimulatorImage >> inspectOop: anOop [
+	^ (SpurObject on: anOop image: self) inspect
+]
+
+{ #category : #'as yet unclassified' }
+SpurSimulatorImage >> inspectionItems: aBuilder [
+	<inspectorPresentationOrder: 0 title: 'Oop'>
+	^ aBuilder newList
+		items: { currentObject };
+		yourself
 ]
 
 { #category : #'as yet unclassified' }
@@ -56,7 +77,7 @@ SpurSimulatorImage >> nilObject [
 { #category : #'as yet unclassified' }
 SpurSimulatorImage >> numSlotsOf: aSpurObject [
 
-	^simulator numSlotsOf: aSpurObject address
+	^simulator numSlotsOf: aSpurObject address value
 ]
 
 { #category : #'as yet unclassified' }

@@ -83,7 +83,7 @@ SpurObject >> asLocalByteArray [
 
 { #category : #converting }
 SpurObject >> asSpurClass [
-	^ SpurClass on: self address image: self image
+	^ SpurClass on: address image: self image
 ]
 
 { #category : #accessing }
@@ -116,7 +116,12 @@ SpurObject >> classIndex [
 
 { #category : #printing }
 SpurObject >> classOop [
-	^ self simulator fetchClassOf: address
+	^ self simulator fetchClassOf: address value
+]
+
+{ #category : #printing }
+SpurObject >> classSpurObject [
+	^ self class on: self classOop image: image 
 ]
 
 { #category : #accessing }
@@ -133,7 +138,7 @@ SpurObject >> endAddress [
 { #category : #accessing }
 SpurObject >> fetchPointer: anInteger [
 
-	^ self image fetchPointer: anInteger ofObject: self address
+	^ self image fetchPointer: anInteger ofObject: self address value
 ]
 
 { #category : #'accessing-header' }
@@ -147,6 +152,11 @@ SpurObject >> gtInspectorLayoutIn: composite [
 	<gtInspectorPresentationOrder: 0>
 	^self spurLayout gtInspectorLayoutIn: composite
 
+]
+
+{ #category : #accessing }
+SpurObject >> header [
+	^ self isImmediate ifFalse: [ image simulator baseHeader: address value]
 ]
 
 { #category : #'accessing-header' }
@@ -184,6 +194,41 @@ SpurObject >> indexInClassTable [
 	^ self rawHashBits
 ]
 
+{ #category : #accessing }
+SpurObject >> inspectionItems: aBuilder [
+	<inspectorPresentationOrder: 0 title: 'Oop'>
+	| items |
+	self isImmediate ifTrue: [
+		^ address value inspectIntegerIn: aBuilder ].
+	items := { 
+		#header -> (self header printStringBase: 2).
+		#class -> self classSpurObject.
+		#numSlots -> self numSlots.
+		
+		} asDictionary.
+	1 to: self numSlots do: [ :i|
+		 items add: (('slot', i printString) -> (self slotAt: i)) ].
+	items add: #format -> self format.
+	items add: #hash -> self oopHash.
+	items add: #pinned -> self isPinned.
+	items add: (#space -> (self isOld ifTrue: 'Old Space' ifFalse: 'Young Space')).
+	items add: #immutable -> self isImmutable.
+	
+	
+	
+	^ aBuilder newTable 
+		addColumn: (SpStringTableColumn 
+			title: 'Key'
+			evaluated: [ :each | StObjectPrinter asTruncatedTextFrom: each key ])
+			beSortable;
+		addColumn: (SpStringTableColumn 
+			title: 'Value' 
+			evaluated: [ :each | StObjectPrinter asTruncatedTextFrom: each value ])
+			beSortable;
+		items: items associations;
+		yourself
+]
+
 { #category : #'accessing-slots' }
 SpurObject >> instanceVariables [
 	^ (1 to: self numSlots) collect: [ :index | self slotAt: index ]
@@ -191,17 +236,22 @@ SpurObject >> instanceVariables [
 
 { #category : #testing }
 SpurObject >> isImmediate [
-	^ self simulator isImmediate: address
+	^ self simulator isImmediate: address value
+]
+
+{ #category : #testing }
+SpurObject >> isImmutable [
+	^ image simulator isImmutable: address value
 ]
 
 { #category : #testing }
 SpurObject >> isOld [
-	^ self simulator isOldObject: self address
+	^ self simulator isOldObject: self address value
 ]
 
 { #category : #testing }
 SpurObject >> isYoung [
-	^ self simulator isYoungObject: self address
+	^ self simulator isYoungObject: self address value
 ]
 
 { #category : #accessing }
@@ -230,6 +280,11 @@ SpurObject >> objectFormat [
 SpurObject >> oop [
 
 	^ address
+]
+
+{ #category : #something }
+SpurObject >> oopHash [
+	^ image simulator rawHashBitsOf: address value
 ]
 
 { #category : #'accessing-header' }
@@ -335,6 +390,13 @@ SpurObject >> spurLayout [
 { #category : #accessing }
 SpurObject >> spurLayout: anObject [
 	spurLayout := anObject
+]
+
+{ #category : #testing }
+SpurObject >> value [
+	^ (address class includesBehavior: SpurObject) 
+		ifTrue: [ address address ]
+		ifFalse: [ address ]
 ]
 
 { #category : #accessing }

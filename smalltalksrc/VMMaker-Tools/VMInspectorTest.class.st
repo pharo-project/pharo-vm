@@ -13,15 +13,36 @@ Class {
 	#category : #'VMMaker-Tools-Tests'
 }
 
+{ #category : #tests }
+VMInspectorTest >> setSmallIntegerClassIntoClassTable [
+
+	| class |
+	class := self
+		newClassInOldSpaceWithSlots: 0
+		instSpec: memory forwardedFormat.
+	image simulator setHashBitsOf: class to: memory smallIntegerTag.
+	image simulator
+		storePointer: memory smallIntegerTag
+		ofObject: memory classTableFirstPage
+		withValue: class.
+	^class
+	
+]
+
 { #category : #running }
 VMInspectorTest >> setUp [
 	
 	super setUp.
 	image := SpurSimulatorImage onSpurSimulator: memory.
+]
 
+{ #category : #'test-testing' }
+VMInspectorTest >> testClassOfObjectIsNilObjectByDefault [
+	| objectOop object |
+	objectOop := self newObjectWithSlots: 1.
 	
-
-
+	object := (image objectForOop: objectOop).
+	self assert: object classSpurObject equals: image simulator nilObject
 ]
 
 { #category : #tests }
@@ -31,6 +52,24 @@ VMInspectorTest >> testEqualsOtherObject [
 	object2 := image objectForOop: (image simulator integerObjectOf: 42).
 	
 	self assert: object1 equals: object2
+]
+
+{ #category : #tests }
+VMInspectorTest >> testInspectOopInspectRightObject [
+	| objectOop window |
+	objectOop := self newObjectWithSlots: 1.
+	window := image inspectOop: objectOop.
+	[self assert: window title equals: 'Inspector on ', objectOop printString]
+	ensure: [ window close ]
+]
+
+{ #category : #tests }
+VMInspectorTest >> testIntegerKnowsItsClass [
+	| class object |
+	class := self setSmallIntegerClassIntoClassTable.
+	object := SpurObject on: (image simulator integerObjectOf: 42) image: image.
+	object inspect.
+	self assert: class equals: object classOop
 ]
 
 { #category : #'test-testing' }
