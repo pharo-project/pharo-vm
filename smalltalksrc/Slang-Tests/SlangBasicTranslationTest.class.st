@@ -161,6 +161,93 @@ SlangBasicTranslationTest >> testBlockValueAssignmentIntoSameVariable [
 ]
 
 { #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testBlockValueWithConstantArgument [
+
+	"Case:
+	
+	[ :i | a := i ] value: 7"
+
+	| translation |
+
+	translation := self translate: (TSendNode new
+		setSelector: #value:
+		receiver: (TStmtListNode new
+			setArguments: #(i)
+			statements: {
+				TAssignmentNode new setVariable: (TVariableNode new setName: 'a') expression: (TVariableNode new setName: 'i')
+			})
+		arguments: { TConstantNode value: 7 }).
+
+	self assert: translation trimBoth equals: '{
+	a = 7;
+}'
+]
+
+{ #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testBlockValueWithNonLeafArgument [
+
+	"Case:
+	
+	[ :i | a := i ] value: 7 + 5"
+
+	| translation |
+	translation := self translate: (TSendNode new
+			                setSelector: #value:
+			                receiver: (TStmtListNode new
+					                 setArguments: #( i )
+					                 statements: { (TAssignmentNode new
+							                  setVariable: (TVariableNode new setName: 'a')
+							                  expression: (TVariableNode new setName: 'i')) })
+			                arguments: { (TSendNode new
+					                 setSelector: #+
+					                 receiver: (TConstantNode value: 7)
+					                 arguments: { (TConstantNode value: 5) }) }).
+
+	self assert: translation trimBoth equals: 'i = 7 + 5;
+{
+	a = i;
+}'
+]
+
+{ #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testBlockValueWithNonLeafArgumentAndMultipleUse [
+
+	"Case:
+	
+	[ :i | a := i ] value: 7 + 5"
+
+	| translation |
+	translation := self translate: (TSendNode new
+			                setSelector: #value:
+			                receiver:
+				                (TStmtListNode new
+					                 setArguments: #( i )
+					                 statements: { 
+							                 (TAssignmentNode new
+								                  setVariable:
+								                  (TVariableNode new setName: 'a')
+								                  expression: (TVariableNode new setName: 'i')).
+							                 (TAssignmentNode new
+								                  setVariable:
+								                  (TVariableNode new setName: 'b')
+								                  expression: (TSendNode new
+										                   setSelector: #*
+										                   receiver:
+										                   (TVariableNode new setName: 'i')
+										                   arguments: { (TConstantNode value: 5) })) })
+			                arguments: { (TSendNode new
+					                 setSelector: #+
+					                 receiver: (TConstantNode value: 7)
+					                 arguments: { (TConstantNode value: 5) }) }).
+
+	self assert: translation trimBoth equals: 'i = 7 + 5;
+{
+	a = i;
+	b = i * 5;
+}'
+]
+
+{ #category : #'tests-blocks' }
 SlangBasicTranslationTest >> testBlockValueWithVariableAsLastExpression [
 
 	"Case:
@@ -718,6 +805,22 @@ SlangBasicTranslationTest >> testSendEqual [
 	translation := self translate: send.
 
 	self assert: translation equals: '(1 + 2) == 3'
+]
+
+{ #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testSendFunctionCall [
+
+	"Case:
+	
+	[ 1 foo: 2. 3 foo: 4. var ] value"
+
+	| translation |
+	translation := self translate: (TSendNode new
+			                setSelector: #foo
+			                receiver: (TConstantNode value: 1)
+			                arguments: { (TConstantNode value: 2) }).
+
+	self assert: translation equals: 'foo(1, 2)'
 ]
 
 { #category : #'tests-send' }

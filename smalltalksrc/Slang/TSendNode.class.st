@@ -33,6 +33,16 @@ TSendNode >> argumentsForInliningCodeGenerator: aCodeGen [
 		ifFalse: [arguments]
 ]
 
+{ #category : #'C code generation' }
+TSendNode >> asCASTAsFieldReferenceIn: aCodeGen [
+
+	| parenCount struct|
+	(aCodeGen isStructSend: self) ifFalse:
+		[^nil].
+	
+	^nil
+]
+
 { #category : #tranforming }
 TSendNode >> asCASTIn: aCCodeGenerator [
 
