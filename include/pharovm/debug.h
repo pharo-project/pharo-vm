@@ -48,3 +48,5 @@ EXPORT(void) logMessageFromErrno(int level, const char* msg, const char* fileNam
 
 int vm_printf( const char * format, ... );
 void vm_setVMOutputStream(FILE * stream);
+
+EXPORT(void) printStatusAfterError();

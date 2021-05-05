@@ -394,3 +394,7 @@ EXPORT(void) printRegisterState(PCONTEXT regs, FILE* output){
 			regs->Rip);
 #endif
 }
+
+EXPORT(void) printStatusAfterError(){
+	printCrashDebugInformation(GetExceptionInformation());
+}
