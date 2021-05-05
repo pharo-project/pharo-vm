@@ -1934,7 +1934,7 @@ CCodeGenerator >> generateCASTEqual: tast [
 ]
 
 { #category : #utilities }
-CCodeGenerator >> generateCASTForBuiltinConstructAsArgumentFor: msgNode [
+CCodeGenerator >> generateCASTForBuiltinConstructFor: msgNode [
 	"Generate CAST for a message node assuming it is a built in construct.
 	If the message node can not be translated as a built in construct, return nil. 
 	"
@@ -1942,9 +1942,7 @@ CCodeGenerator >> generateCASTForBuiltinConstructAsArgumentFor: msgNode [
 	| action |
 	(self shouldGenerateAsInterpreterProxySend: msgNode) ifTrue:
 		[^nil].
-	action := castAsArgumentTranslationDict
-				at: msgNode selector
-				ifAbsent: [castTranslationDict at: msgNode selector ifAbsent: [ ^nil ]].
+	action := castTranslationDict at: msgNode selector ifAbsent: [ ^nil ].
 	^ self perform: action with: msgNode
 ]
 

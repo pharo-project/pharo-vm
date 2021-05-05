@@ -93,7 +93,7 @@ TSendNode >> asCASTIn: aCCodeGenerator [
 
 	| construct |
 	construct := aCCodeGenerator 
-		             generateCASTForBuiltinConstructAsArgumentFor: self.
+		             generateCASTForBuiltinConstructFor: self.
 	construct ifNil: [ 
 		construct := (self asCASTAsFieldReferenceIn: aCCodeGenerator) ifNotNil: [ :e | e] ifNil: [ 
 			self asCASTAsFunctionCallIn: aCCodeGenerator ]].
