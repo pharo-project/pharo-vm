@@ -717,6 +717,13 @@ VMClass >> localNameFor: aString [
 	^ aString asFileReference basename
 ]
 
+{ #category : #'debug support' }
+VMClass >> logError: aMessage [
+	
+	<doNotGenerate>
+	Warning signal: aMessage
+]
+
 { #category : #'memory access' }
 VMClass >> long64AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
