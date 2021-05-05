@@ -47,6 +47,17 @@ CSlangPrettyPrinterTest >> testVisitArrayDeclarator [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitArrow [
+
+	| print |
+	print := self prettyPrint: (CStructurePointerAccessNode structurePointer: (CIdentifierNode name: 'myStruct') member: (CIdentifierNode name: 'field1')).
+	
+	self assert: print equals: 'myStruct->field1'
+
+
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitAssignment [
 
 	| print |
@@ -295,6 +306,17 @@ CSlangPrettyPrinterTest >> testVisitInitializer [
 	self assert: print equals: '{
 	0, 1, 2
 }'
+
+
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitPoint [
+
+	| print |
+	print := self prettyPrint: (CMemberAccessNode object: (CIdentifierNode name: 'myStruct') member: (CIdentifierNode name: 'field1')).
+	
+	self assert: print equals: 'myStruct.field1'
 
 
 ]

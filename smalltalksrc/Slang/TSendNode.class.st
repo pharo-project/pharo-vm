@@ -36,20 +36,67 @@ TSendNode >> argumentsForInliningCodeGenerator: aCodeGen [
 { #category : #'C code generation' }
 TSendNode >> asCASTAsFieldReferenceIn: aCodeGen [
 
-	| parenCount struct|
+	| struct access member |
 	(aCodeGen isStructSend: self) ifFalse:
 		[^nil].
 	
-	^nil
+	struct := receiver asCASTExpressionIn: aCodeGen.
+	member := CIdentifierNode name: (aCodeGen cFunctionNameFor: selector).
+	access := (receiver structTargetKindIn: aCodeGen) caseOf: {
+		[#pointer] -> [CStructurePointerAccessNode structurePointer: struct member: member].
+		[#struct] -> [CMemberAccessNode object: struct member: member] }.
+	arguments isEmpty ifFalse:
+		[self assert: arguments size = 1.
+		 ^CAssignmentNode lvalue: access rvalue: (arguments first asCASTExpressionIn: self)].
+	^access
+]
+
+{ #category : #'C code generation' }
+TSendNode >> asCASTAsFunctionCallIn: aCodeGen [
+
+	"Translate this message send into a C function call"
+
+	| callNode |
+	callNode := CCallNode
+		            identifier:
+		            (CIdentifierNode name:
+			             (aCodeGen cFunctionNameFor: selector))
+		            arguments: OrderedCollection new.
+
+
+	"Only include the receiver as the first argument in certain cases.
+	 The receiver is always included if it is an expression.
+	 If it is a variable:
+		 If the vmClass says it is an implicit variable, don't include it.
+		 If the variable is 'self' and the method being called is not in
+		 the method set (i.e. it is some external code), don't include it."
+	(self shouldExcludeReceiverAsFirstArgument: aCodeGen) ifFalse: [ 
+		callNode arguments add:
+			((receiver structTargetKindIn: aCodeGen) == #struct
+				 ifTrue: [ CUnaryOperatorNode operator: #& expression: (receiver asCASTExpressionIn: aCodeGen) ]
+				 ifFalse: [ (receiver asCASTExpressionIn: aCodeGen) ]) ].
+	arguments do: [ :arg | callNode arguments add: (arg asCASTExpressionIn: aCodeGen)].
+
+	"Special case for pluggable modules. Replace messages to interpreterProxy
+	 by interpreterProxy->message(..) if the message is not builtin"
+	(aCodeGen shouldGenerateAsInterpreterProxySend: self) ifTrue: [ 
+		(aCodeGen noteUsedPluginFunction: selector) ifTrue: [ 
+			callNode := (CStructurePointerAccessNode 
+				            structurePointer:
+				            (CIdentifierNode name: 'interpreterProxy')
+				            member: callNode) ] ].
+	^ callNode
 ]
 
 { #category : #tranforming }
 TSendNode >> asCASTIn: aCCodeGenerator [
 
 	| construct |
-	
-	construct := aCCodeGenerator generateCASTForBuiltinConstructAsArgumentFor: self.
-	construct ifNil: [ ^ Error new signal: 'This type of send message has to be implemented.' ].
+	construct := aCCodeGenerator 
+		             generateCASTForBuiltinConstructAsArgumentFor: self.
+	construct ifNil: [ 
+		construct := (self asCASTAsFieldReferenceIn: aCCodeGenerator) ifNotNil: [ :e | e] ifNil: [ 
+			self asCASTAsFunctionCallIn: aCCodeGenerator ]].
 	^ construct
 ]
 

@@ -42,6 +42,14 @@ CSlangPrettyPrinter >> visitArrayDeclarator: anArrayDeclarator [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitArrow: aPointerAccess [
+
+	aPointerAccess structurePointer acceptVisitor: self.
+	stream nextPutAll: '->'.
+	aPointerAccess member acceptVisitor: self
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitAssignment: anAssignment [
 
 	anAssignment lvalue acceptVisitor: self.
@@ -49,13 +57,9 @@ CSlangPrettyPrinter >> visitAssignment: anAssignment [
 		nextPutAll: ' ';
 		nextPutAll: anAssignment operator;
 		nextPutAll: ' '.
-	
-	(anAssignment rvalue isConstant or: [ anAssignment rvalue isIdentifier ])
-		ifFalse: [ stream nextPutAll: '(' ].
-	anAssignment rvalue acceptVisitor: self.
 
-	(anAssignment rvalue isConstant or: [ anAssignment rvalue isIdentifier ])
-		ifFalse: [ stream nextPutAll: ')' ].
+
+	anAssignment rvalue acceptVisitor: self
 ]
 
 { #category : #generated }
@@ -221,6 +225,14 @@ CSlangPrettyPrinter >> visitInitializer: anInitializer [
 		separatedBy: [ stream nextPutAll: ', ' ].
 	stream crtab: level.
 	stream nextPut: $}
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitPoint: aMemberAccess [
+
+	aMemberAccess object acceptVisitor: self.
+	stream nextPut: $..
+	aMemberAccess member acceptVisitor: self
 ]
 
 { #category : #generated }

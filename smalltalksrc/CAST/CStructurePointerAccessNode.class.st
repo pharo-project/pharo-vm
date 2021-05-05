@@ -8,6 +8,15 @@ Class {
 	#category : #'CAST-Nodes'
 }
 
+{ #category : #'instance creation' }
+CStructurePointerAccessNode class >> structurePointer: aPointer member: aMember [
+
+	^ self new
+		  structurePointer: aPointer;
+		  member: aMember;
+		  yourself
+]
+
 { #category : #generated }
 CStructurePointerAccessNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitArrow: self

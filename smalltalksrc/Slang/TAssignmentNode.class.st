@@ -12,41 +12,84 @@ Class {
 TAssignmentNode >> asCASTIn: aBuilder [
 
 	| type |
-	expression isLiteralArrayDeclaration ifTrue: [ | node literalArrayNode |
-		
+	expression isLiteralArrayDeclaration ifTrue: [ 
+		| node literalArrayNode |
 		type := expression args last value.
 		self assert: type last = $*.
 
 		"Transform the literal array declaration to a C block containing:
 		  - a static literal array declaration
 	 	  - an assigment from this literal array to the assigned variable "
-		literalArrayNode := expression args first value collect: [ :e | CConstantNode value: e ].
+		literalArrayNode := expression args first value collect: [ :e | 
+			                    CConstantNode value: e ].
 		^ CCompoundStatementNode
 			  declarations: { (CDeclarationNode
-					   specifiers: { 'static' . type allButLast }
+					   specifiers: { 
+							   'static'.
+							   type allButLast }
 					   declarator: (CInitDeclaratorNode
-							    declarator: (CArrayDeclaratorNode identifier: 'aLiteralArray')
-							    initializer: (CGLRInitializerNode initializers: literalArrayNode))) }
+							    declarator:
+							    (CArrayDeclaratorNode identifier: 'aLiteralArray')
+							    initializer:
+							    (CGLRInitializerNode initializers: literalArrayNode))) }
 			  statements: { (CAssignmentNode
 					   lvalue: (CIdentifierNode name: variable name)
-					   rvalue: (CIdentifierNode name: 'aLiteralArray')) }
-		
-	].
+					   rvalue: (CIdentifierNode name: 'aLiteralArray')) } ].
 
-	(expression isStmtList and: [ expression statements size > 1 ]) ifTrue: [ 
-		^ expression copy
-			assignLastExpressionTo: variable;
-			asCASTIn: aBuilder
-	].
+	(expression isStmtList and: [ expression statements size > 1 ]) 
+		ifTrue: [ 
+			^ expression copy
+				  assignLastExpressionTo: variable;
+				  asCASTIn: aBuilder ].
 	self isVariableUpdatingAssignment ifTrue: [ 
-		 ^ CAssignmentNode
-			lvalue: (variable asCASTIn: aBuilder )
-			operator: expression selector , '='
-			rvalue: (expression arguments first asCASTIn: aBuilder)
-	].
+		^ CAssignmentNode
+			  lvalue: (variable asCASTIn: aBuilder)
+			  operator: expression selector , '='
+			  rvalue: (expression arguments first asCASTIn: aBuilder) ].
+	(expression isSend and: [ expression isValueExpansion ]) ifTrue: [ 
+		^ self asCASTValueExpansionIn: aBuilder ].
+
 	^ CAssignmentNode
-		lvalue: (variable asCASTIn: aBuilder)
-	   rvalue: (expression asCASTExpressionIn: aBuilder)
+		  lvalue: (variable asCASTIn: aBuilder)
+		  rvalue: (expression asCASTExpressionIn: aBuilder)
+]
+
+{ #category : #'C code generation' }
+TAssignmentNode >> asCASTValueExpansionIn: aCodeGen [
+
+	| stmtList lastStmt copy |
+	"Transform assignments of the form:
+	
+	var := [ a . block . lastexpression ] value.
+	
+	into:
+	
+	[ a . block . var := lastExpression ] value.
+	
+	Takes into account variants of #value and #value:.
+	"
+	self assert: (expression isSend and: [ expression isValueExpansion ]).
+
+	stmtList := expression receiver.
+	lastStmt := stmtList statements last.
+
+	"Optimization. If the expression looks like:
+	
+	var := [ ... var ] value.
+	
+	Emit directly the block without the last statement, as the assignment has no impact in the translation.
+	"
+	stmtList statements last = variable ifTrue: [ 
+		^ expression asCASTIn: aCodeGen ].
+	copy := stmtList copy.
+	copy statements
+		at: stmtList statements size
+		put:
+		(TAssignmentNode new setVariable: variable expression: lastStmt).
+	^ (TSendNode new
+		   setSelector: expression selector
+		   receiver: copy
+		   arguments: expression args) asCASTIn: aCodeGen
 ]
 
 { #category : #transformations }
