@@ -1145,7 +1145,7 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveDivideDoesNotCompileIfReceiverTagIs
 ]
 
 { #category : #'tests - primitiveDivide' }
-VMJittedGeneralPrimitiveTest >> testPrimitiveDivideFailsOnFloatResult [
+VMJittedGeneralPrimitiveTest >> testPrimitiveDivideFailsOnNonIntegerResult [
 	
 	| endInstruction primitiveAddress |
 	
@@ -1469,7 +1469,7 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveGreaterThanReturnsABoolean [
 ]
 
 { #category : #'tests - primitiveGreaterThan' }
-VMJittedGeneralPrimitiveTest >> testPrimitiveGreaterthanReturnsABooleanWhenNegativeNumbers [
+VMJittedGeneralPrimitiveTest >> testPrimitiveGreaterThanReturnsABooleanWhenNegativeNumbers [
 	
 	| endInstruction primitiveAddress |
 
@@ -1638,7 +1638,7 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveLessThanReturnsABoolean [
 ]
 
 { #category : #'tests - primitiveLessThan' }
-VMJittedGeneralPrimitiveTest >> testPrimitiveLessthanReturnsABooleanWhenNegativeNumbers [
+VMJittedGeneralPrimitiveTest >> testPrimitiveLessThanReturnsABooleanWhenNegativeNumbers [
 
 		| endInstruction primitiveAddress |
 
@@ -1653,23 +1653,6 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveLessthanReturnsABooleanWhenNegative
 	
 	self runFrom: primitiveAddress until: callerAddress.
 	self assert: self machineSimulator receiverRegisterValue equals: (memory falseObject).
-]
-
-{ #category : #'tests - primitiveMultiply' }
-VMJittedGeneralPrimitiveTest >> testPrimitiveMultilyReturnsASmallInteger [
-	
-	| endInstruction primitiveAddress |
-	
-	cogit receiverTags: memory smallIntegerTag.
-	
-	primitiveAddress := self compile: [ 
-		cogit objectRepresentation genPrimitiveMultiply.
-		"If the primitive fails it continues, so we need to have an instruction to detect the end"
-		endInstruction := cogit Stop ].
-
-	self prepareStackForSendReceiver: (memory integerObjectOf: 121) arguments: { memory integerObjectOf: 144 }.
-	self runFrom: primitiveAddress until: callerAddress.
-	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 17424).
 ]
 
 { #category : #'tests - primitiveMultiply' }
@@ -1699,6 +1682,23 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveMultiplyFailsWhenArgumentIsNotSmall
 
 	self prepareStackForSendReceiver: (memory integerObjectOf: 7) arguments: { memory nilObject }.
 	
+	self runFrom: primitiveAddress until: endInstruction address.
+]
+
+{ #category : #'tests - primitiveMultiply' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveMultiplyFailsWhenComputationOverflows [
+	
+	| endInstruction primitiveAddress |
+	
+	cogit receiverTags: memory smallIntegerTag.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveMultiply.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: (memory integerObjectOf: memory maxSmallInteger) arguments: { memory integerObjectOf: 2 }.
+
 	self runFrom: primitiveAddress until: endInstruction address.
 ]
 
@@ -1737,23 +1737,6 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveMultiplyFailsWhenPositiveOverflow [
 		prepareStackForSendReceiver: (memory integerObjectOf: memory maxSmallInteger)
 		arguments: { (memory integerObjectOf: 2) }.
 	
-	self runFrom: primitiveAddress until: endInstruction address.
-]
-
-{ #category : #'tests - primitiveMultiply' }
-VMJittedGeneralPrimitiveTest >> testPrimitiveMultiplyFailsWhenSumOverflows [
-	
-	| endInstruction primitiveAddress |
-	
-	cogit receiverTags: memory smallIntegerTag.
-	
-	primitiveAddress := self compile: [ 
-		cogit objectRepresentation genPrimitiveMultiply.
-		"If the primitive fails it continues, so we need to have an instruction to detect the end"
-		endInstruction := cogit Stop ].
-
-	self prepareStackForSendReceiver: (memory integerObjectOf: memory maxSmallInteger) arguments: { memory integerObjectOf: 2 }.
-
 	self runFrom: primitiveAddress until: endInstruction address.
 ]
 
@@ -1932,7 +1915,7 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveNotEqualReturnsABooleanWhenNegative
 ]
 
 { #category : #'tests - primitiveQuo' }
-VMJittedGeneralPrimitiveTest >> testPrimitiveQuoCompilesOnFloatResult [
+VMJittedGeneralPrimitiveTest >> testPrimitiveQuoCompilesOnNonIntegerResult [
 	
 	| endInstruction primitiveAddress |
 	
