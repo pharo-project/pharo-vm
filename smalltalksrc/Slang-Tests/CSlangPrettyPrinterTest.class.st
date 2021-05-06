@@ -25,12 +25,34 @@ CSlangPrettyPrinterTest >> setUp [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitArray [
+
+	| print |
+	print := self prettyPrint: (CArrayAccessNode array: (CIdentifierNode name: 'tab') index: (CConstantNode value: 7)).
+	
+	self assert: print equals: 'tab[7]'
+
+
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitArrayDeclarator [
 
 	| print |
 	print := self prettyPrint: (CArrayDeclaratorNode identifier: 'aLiteralArray').
 	
 	self assert: print equals: 'aLiteralArray[]'
+
+
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitArrow [
+
+	| print |
+	print := self prettyPrint: (CStructurePointerAccessNode structurePointer: (CIdentifierNode name: 'myStruct') member: (CIdentifierNode name: 'field1')).
+	
+	self assert: print equals: 'myStruct->field1'
 
 
 ]
@@ -62,6 +84,15 @@ CSlangPrettyPrinterTest >> testVisitBinary [
 	self assert: print equals: 'x + (y - 10)'
 
 
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitBreakStatement [
+
+	| print |
+	print := self prettyPrint: (CBreakStatementNode new).
+
+	self assert: print trimBoth equals: 'break'
 ]
 
 { #category : #'tests-visitor' }
@@ -179,6 +210,24 @@ CSlangPrettyPrinterTest >> testVisitDeclarator [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitDoStatement [
+
+	| print compound |
+	compound := (CCompoundStatementNode statements: { CConstantNode value: 15 }).
+	compound needsCarriageReturn: false.
+	print := self prettyPrint: (CDoStatementNode
+			          while: (CBinaryOperatorNode
+					           operator: #&&
+					           left: (CIdentifierNode name: 'a')
+					           right: (CIdentifierNode name: 'b'))
+			          statement: compound).
+
+	self assert: print trimBoth equals: 'do{
+	15;
+}while(a && b);'
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitGotoStatement [
 
 	| print |
@@ -262,6 +311,17 @@ CSlangPrettyPrinterTest >> testVisitInitializer [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitPoint [
+
+	| print |
+	print := self prettyPrint: (CMemberAccessNode object: (CIdentifierNode name: 'myStruct') member: (CIdentifierNode name: 'field1')).
+	
+	self assert: print equals: 'myStruct.field1'
+
+
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitReturnStatement [
 
 	| print |
@@ -309,4 +369,20 @@ CSlangPrettyPrinterTest >> testVisitUnaryOperator [
 	self assert: print equals: '-(1 - 2)'
 
 
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitWhileStatement [
+
+	| print |
+	print := self prettyPrint: (CWhileStatementNode
+			          while: (CBinaryOperatorNode
+					           operator: #&&
+					           left: (CIdentifierNode name: 'a')
+					           right: (CIdentifierNode name: 'b'))
+			          statement: (CCompoundStatementNode statements: { CConstantNode value: 15 })).
+
+	self assert: print trimBoth equals: 'while(a && b) {
+	15;
+}'
 ]

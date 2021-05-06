@@ -8,6 +8,15 @@ Class {
 	#category : #'CAST-Nodes'
 }
 
+{ #category : #'instance creation' }
+CArrayAccessNode class >> array: anIdentifierNode index: anExpressionNode [
+
+	^ self new
+		  array: anIdentifierNode;
+		  index: anExpressionNode;
+		  yourself
+]
+
 { #category : #generated }
 CArrayAccessNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitArray: self

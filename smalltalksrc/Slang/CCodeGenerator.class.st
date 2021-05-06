@@ -1441,24 +1441,27 @@ CCodeGenerator >> generateAsConstantExpression: msgNode on: aStream [
 CCodeGenerator >> generateAsFloat: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'(double)'.
-	self emitCExpression: msgNode receiver on: aStream
+	aStream nextPutAll:'((double) '.
+	self emitCExpression: msgNode receiver on: aStream.
+	aStream nextPutAll: ' )'.
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAsInteger: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'(sqInt)'.
-	self emitCExpression: msgNode receiver on: aStream
+	aStream nextPutAll:'((sqInt)'.
+	self emitCExpression: msgNode receiver on: aStream.
+	aStream nextPut: $)
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAsIntegerPtr: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'(sqIntptr_t)'.
-	self emitCExpression: msgNode receiver on: aStream
+	aStream nextPutAll:'((sqIntptr_t)'.
+	self emitCExpression: msgNode receiver on: aStream.
+	aStream nextPut: $)
 ]
 
 { #category : #'C translation' }
@@ -1769,6 +1772,25 @@ CCodeGenerator >> generateCASTAsIntegerPtr: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAt: tast [
+
+	^ CArrayAccessNode
+		  array: (tast receiver asCASTExpressionIn: self)
+		  index: (tast arguments first asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAtPut: tast [
+
+	^ CAssignmentNode
+		  lvalue: (CArrayAccessNode
+				   array: (tast receiver asCASTExpressionIn: self)
+				   index: (tast arguments first asCASTExpressionIn: self))
+		  operator: '='
+		  rvalue: (tast arguments last asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTBetweenAnd: tast [
 
 	^ CBinaryOperatorNode
@@ -1788,14 +1810,46 @@ CCodeGenerator >> generateCASTBinary: tast operator: operator [
 
 	^ CBinaryOperatorNode
 		  operator: operator
-		  left: (tast receiver asCASTIn: self)
-		  right: (tast arguments first asCASTIn: self)
+		  left: (tast receiver asCASTExpressionIn: self)
+		  right: (tast arguments first asCASTExpressionIn: self)
 ]
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTBitAnd: tast [
 
 	^ self generateCASTBinary: tast operator: #&
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBitClear: tast [
+
+	^ CBinaryOperatorNode
+		  operator: #-
+		  left: (CBinaryOperatorNode
+				   operator: #|
+				   left: (tast receiver asCASTExpressionIn: self)
+				   right: (tast arguments first asCASTExpressionIn: self))
+		  right: (tast arguments first asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBitInvert32: tast [
+
+	^ CCastExpressionNode
+		  type: (CTypeNameNode symbol: 'unsigned int')
+		  expression: (CUnaryOperatorNode
+				   operator: #~
+				   expression: (tast receiver asCASTIn: self))
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBitInvert64: tast [
+
+	^ CUnaryOperatorNode operator: #~ expression: (CCastExpressionNode
+			   type: (self is32Bit not
+					    ifTrue: [ CTypeNameNode symbol: 'usqIntptr_t' ]
+					    ifFalse: [ CTypeNameNode symbol: 'unsigned long long' ])
+			   expression: (tast receiver asCASTIn: self))
 ]
 
 { #category : #'CAST translation' }
@@ -1811,9 +1865,66 @@ CCodeGenerator >> generateCASTBitXor: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTByteSwap32: tast [
+
+	^ CCallNode
+		  identifier: (CIdentifierNode name: 'SQ_SWAP_4_BYTES')
+		  arguments: { (tast receiver asCASTExpressionIn: self) }
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTByteSwap32IfBigEndian: tast [
+
+	^ CCallNode
+		  identifier: (CIdentifierNode name: 'SQ_SWAP_4_BYTES_IF_BIGENDIAN')
+		  arguments: { (tast arguments first asCASTExpressionIn: self) }
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTByteSwap64: tast [
+
+	^ CCallNode
+		  identifier: (CIdentifierNode name: 'SQ_SWAP_8_BYTES')
+		  arguments: { (tast receiver asCASTExpressionIn: self) }
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTByteSwap64IfBigEndian: tast [
+
+	^ CCallNode
+		  identifier: (CIdentifierNode name: 'SQ_SWAP_8_BYTES_IF_BIGENDIAN')
+		  arguments: { (tast arguments first asCASTExpressionIn: self) }
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTDivide: tast [
 
 	^ self generateCASTBinary: tast operator: #/
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTDoWhile: boolean loop: tast [
+
+	| block  cond|
+	block := (TStmtListNode new setStatements:
+		          tast receiver statements allButLast) asCASTIn: self.
+	block needsCarriageReturn: false.
+	cond := (tast receiver statements last asCASTExpressionIn: self).
+	^ CDoStatementNode
+		  while: (boolean ifTrue: [ cond ] ifFalse: [ CUnaryOperatorNode operator: #! expression: cond ])
+		  statement: block
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTDoWhileFalse: tast [
+
+	^ self generateCASTDoWhile: false loop: tast
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTDoWhileTrue: tast [
+
+	^ self generateCASTDoWhile: true loop: tast
 ]
 
 { #category : #'CAST translation' }
@@ -1823,7 +1934,7 @@ CCodeGenerator >> generateCASTEqual: tast [
 ]
 
 { #category : #utilities }
-CCodeGenerator >> generateCASTForBuiltinConstructAsArgumentFor: msgNode [
+CCodeGenerator >> generateCASTForBuiltinConstructFor: msgNode [
 	"Generate CAST for a message node assuming it is a built in construct.
 	If the message node can not be translated as a built in construct, return nil. 
 	"
@@ -1831,9 +1942,7 @@ CCodeGenerator >> generateCASTForBuiltinConstructAsArgumentFor: msgNode [
 	| action |
 	(self shouldGenerateAsInterpreterProxySend: msgNode) ifTrue:
 		[^nil].
-	action := castAsArgumentTranslationDict
-				at: msgNode selector
-				ifAbsent: [castTranslationDict at: msgNode selector ifAbsent: [ ^nil ]].
+	action := castTranslationDict at: msgNode selector ifAbsent: [ ^nil ].
 	^ self perform: action with: msgNode
 ]
 
@@ -1991,18 +2100,41 @@ CCodeGenerator >> generateCASTPowerTo: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTRounded: tast [
+
+	^ CCallNode
+		  identifier: (CIdentifierNode name: 'round')
+		  arguments: { (tast receiver asCASTExpressionIn: self) }
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTSequentialAnd: tast [
 
 	(self nilOrBooleanConstantReceiverOf: tast receiver)
 		ifNil: [ 
 			(self nilOrBooleanConstantReceiverOf: tast arguments first) 
 				ifNotNil: [ :const | 
-				const == true ifTrue: [ ^ tast receiver asCASTIn: self ] ].
+				const == true ifTrue: [ ^ tast receiver asCASTExpressionIn: self ] ].
 			^ self generateCASTAnd: tast ]
 		ifNotNil: [ :const | 
 			const
-				ifTrue: [ ^ tast arguments first asCASTIn: self ]
+				ifTrue: [ ^ tast arguments first asCASTExpressionIn: self ]
 				ifFalse: [ ^ CConstantNode value: 0 ] ]
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTSequentialOr: tast [
+
+	(self nilOrBooleanConstantReceiverOf: tast receiver)
+		ifNil: [ 
+			(self nilOrBooleanConstantReceiverOf: tast arguments first) 
+				ifNotNil: [ :const | 
+				const == false ifTrue: [ ^ tast receiver asCASTExpressionIn: self ] ].
+			^ self generateCASTOr: tast ]
+		ifNotNil: [ :const | 
+			const
+				ifTrue: [ ^ CConstantNode value: 1]
+				ifFalse: [ ^ tast arguments first asCASTExpressionIn: self ] ]
 ]
 
 { #category : #'CAST translation' }
@@ -2076,9 +2208,65 @@ CCodeGenerator >> generateCASTShiftLeft: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTShiftRight: tast [
+
+	| type rcvr |
+	rcvr := tast receiver asCASTIn: self.
+	(self
+		 is64BitIntegralVariable: tast receiver
+		 typeInto: [ :t | type := t ])
+		ifTrue: [ 
+			type first ~= $u ifTrue: [ 
+				rcvr := CCastExpressionNode
+					          type: (CTypeNameNode symbol: 'unsigned ' , type)
+					          expression: rcvr ] ]
+		ifFalse: [ 
+			rcvr := CCastExpressionNode
+				          type: (CTypeNameNode symbol: 'usqInt')
+				          expression: rcvr ].
+
+	^ CBinaryOperatorNode
+		  operator: #>>
+		  left: rcvr
+		  right: (tast arguments first asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTSignedShiftRight: tast [
+
+	| cast |
+	cast := (self is64BitIntegralVariable: tast receiver typeInto: [ :t |  ])
+		        ifTrue: [ 'sqLong' ]
+		        ifFalse: [ 'sqInt' ].
+
+	^ CBinaryOperatorNode
+		  operator: #>>
+		  left: (CCastExpressionNode
+				   type: (CTypeNameNode symbol: cast)
+				   expression: (tast receiver asCASTIn: self))
+		  right: (tast arguments first asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTTimes: tast [
 	
 	^ self generateCASTBinary: tast operator: #*
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTTruncateTo: tast [
+
+	| arg |
+	(self isConstantNode: tast args first valueInto: [ :a | arg := a ]) 
+		ifFalse: [ 
+		self error: 'can''t find method for inlining truncateTo:' ].
+	self assert: (arg isInteger and: [ arg isPowerOfTwo ]).
+	^ CBinaryOperatorNode
+		  operator: #&
+		  left: (tast receiver asCASTExpressionIn: self)
+		  right: (CUnaryOperatorNode
+				   operator: #~
+				   expression: (CConstantNode value: arg - 1))
 ]
 
 { #category : #'CAST translation' }
@@ -2087,6 +2275,85 @@ CCodeGenerator >> generateCASTUnary: tast operator: operator [
 	^ CUnaryOperatorNode
 		  operator: operator
 		  expression: (tast receiver asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTValue: tast [
+	"Reduce [:formal ... :formalN| body ] value: actual ... value: actualN
+	 to body with formals substituted for by actuals."
+	| substitution substitutionDict newLabels castStatements|
+	self assert: tast receiver isStmtList.
+	self assert: tast receiver args size = tast args size.
+	castStatements := CCompoundStatementNode statements: OrderedCollection new.
+	castStatements needsBrackets: false.
+	castStatements needsCarriageReturn: false.
+	substitution := tast receiver copy.
+	substitution renameLabelsForInliningInto: currentMethod.
+	substitutionDict := Dictionary new: tast args size * 2.
+	tast receiver args with: tast args do:
+		[ :argName :exprNode |
+		exprNode isLeaf
+			ifTrue: [substitutionDict at: argName put: exprNode]
+			ifFalse:
+				[ castStatements add: (CAssignmentNode lvalue: (CIdentifierNode name: argName) rvalue: (exprNode asCASTExpressionIn: self)).
+				 self noteUsedVariableName: argName]].
+	substitution bindVariablesIn: substitutionDict.
+	castStatements add: (substitution asCASTIn: self).
+	newLabels := Set withAll: currentMethod labels.
+	substitution nodesDo:
+		[:node| node isLabel ifTrue: [node label ifNotNil: [:label| newLabels add: label]]].
+	"now add the new labels so that a subsequent inline of
+	 the same block will be renamed with different labels."
+	currentMethod labels: newLabels.
+	^castStatements
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTWhile: boolean loop: tast [
+
+	| condition |
+	condition := tast receiver asCASTExpressionIn: self.
+	^ CWhileStatementNode
+		  while: (boolean
+				   ifTrue: [ condition ]
+				   ifFalse: [ 
+				   CUnaryOperatorNode operator: #! expression: condition ])
+		  statement: (tast arguments first asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTWhileFalse: tast [
+
+	tast receiver statements size <= 1
+		ifTrue: [^self generateCASTWhile: false loop: tast].
+	tast args first isNilStmtListNode
+		ifTrue: [^self generateCASTDoWhileFalse: tast].
+	^self generateCASTWhileForeverBreakIf: true loop: tast
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTWhileForeverBreakIf: boolean loop: tast [
+
+	| block if cond |
+	cond := (tast receiver statements last asCASTExpressionIn: self).
+	if := CIfStatementNode if: (boolean ifTrue: [ cond ] ifFalse: [ CUnaryOperatorNode operator: #! expression: cond ]) then: (CBreakStatementNode new).
+	block := (TStmtListNode new setStatements: tast receiver statements allButLast) asCASTIn: self.
+	block add: if.
+	block addAll: (tast arguments first asCASTIn: self).
+	block needsCarriageReturn: false.
+	^ CWhileStatementNode 
+		  while: (CConstantNode value: 1)
+		  statement: block
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTWhileTrue: tast [
+
+	tast receiver statements size <= 1
+		ifTrue: [^self generateCASTWhile: true loop: tast].
+	tast args first isNilStmtListNode
+		ifTrue: [^self generateCASTDoWhileTrue: tast].
+	^self generateCASTWhileForeverBreakIf: false loop: tast
 ]
 
 { #category : #'C translation' }
@@ -2865,11 +3132,11 @@ CCodeGenerator >> generatePlus: msgNode on: aStream indent: level [
 { #category : #'C translation' }
 CCodeGenerator >> generatePowerTo: msgNode on: aStream indent: level [ 
 
-	aStream nextPutAll:'(sqInt)pow('.
+	aStream nextPutAll:'(sqInt)(pow('.
 	self emitCExpression: msgNode receiver on: aStream.
 	aStream nextPutAll: ', '.
 	self emitCExpression: msgNode args first on: aStream.
-	aStream nextPutAll:')'.
+	aStream nextPutAll:'))'.
 ]
 
 { #category : #'C translation' }
@@ -3539,8 +3806,8 @@ CCodeGenerator >> initializeCASTTranslationDictionary [
 	#bitXor:			#generateCASTBitXor:
 	#bitShift:			#generateCASTBitShift:
 	#signedBitShift:	#generateCASTSignedBitShift:
-	#bitInvert32		#generateCASTBitInvert:
-	#bitInvert64		#generateCASTBitInvert:
+	#bitInvert32		#generateCASTBitInvert32:
+	#bitInvert64		#generateCASTBitInvert64:
 	#bitClear:			#generateCASTBitClear:
 	#truncateTo:		#generateCASTTruncateTo:
 	#rounded			#generateCASTRounded:
@@ -3671,15 +3938,11 @@ CCodeGenerator >> initializeCASTTranslationDictionary [
 	#cCode:inSmalltalk:		#generateCASTInlineCCodeAsArgument:
 	#cppIf:ifTrue:ifFalse:	#generateCASTInlineCppIfElseAsArgument:
 	#cppIf:ifTrue:			#generateCASTInlineCppIfElseAsArgument:
-
-	#value					#generateCASTValueAsArgument:
-	#value:					#generateCASTValueAsArgument:
-	#value:value:			#generateCASTValueAsArgument:
 	).
 
 	castAsArgumentTranslationDict := Dictionary new: 8.
 	1 to: pairs size by: 2 do: [:i |
-		asArgumentTranslationDict at: (pairs at: i) put: (pairs at: i + 1)].
+		castAsArgumentTranslationDict at: (pairs at: i) put: (pairs at: i + 1)].
 
 ]
 

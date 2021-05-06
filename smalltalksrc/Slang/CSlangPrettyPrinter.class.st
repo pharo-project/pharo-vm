@@ -23,6 +23,15 @@ CSlangPrettyPrinter >> initialize [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitArray: anArrayAcess [
+
+	anArrayAcess array acceptVisitor: self.
+	stream nextPut: $[.
+	anArrayAcess index acceptVisitor: self.
+	stream nextPut: $]
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitArrayDeclarator: anArrayDeclarator [
 
 	anArrayDeclarator declarator acceptVisitor: self.
@@ -33,6 +42,14 @@ CSlangPrettyPrinter >> visitArrayDeclarator: anArrayDeclarator [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitArrow: aPointerAccess [
+
+	aPointerAccess structurePointer acceptVisitor: self.
+	stream nextPutAll: '->'.
+	aPointerAccess member acceptVisitor: self
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitAssignment: anAssignment [
 
 	anAssignment lvalue acceptVisitor: self.
@@ -40,13 +57,9 @@ CSlangPrettyPrinter >> visitAssignment: anAssignment [
 		nextPutAll: ' ';
 		nextPutAll: anAssignment operator;
 		nextPutAll: ' '.
-	
-	(anAssignment rvalue isConstant or: [ anAssignment rvalue isIdentifier ])
-		ifFalse: [ stream nextPutAll: '(' ].
-	anAssignment rvalue acceptVisitor: self.
 
-	(anAssignment rvalue isConstant or: [ anAssignment rvalue isIdentifier ])
-		ifFalse: [ stream nextPutAll: ')' ].
+
+	anAssignment rvalue acceptVisitor: self
 ]
 
 { #category : #generated }
@@ -68,6 +81,12 @@ CSlangPrettyPrinter >> visitBinary: aBinary [
 	rightParenthesises ifFalse: [ stream nextPutAll: '(' ].
 	aBinary right acceptVisitor: self.
 	rightParenthesises ifFalse: [ stream nextPutAll: ')' ].
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitBreakStatement: aBreakStatement [
+
+	stream nextPutAll: 'break'
 ]
 
 { #category : #generated }
@@ -152,6 +171,16 @@ CSlangPrettyPrinter >> visitDeclarator: aDeclarator [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitDoStatement: aDoStatement [
+
+	stream nextPutAll: 'do'.
+	aDoStatement statement acceptVisitor: self.
+	stream nextPutAll: 'while('.
+	aDoStatement while acceptVisitor: self.
+	stream nextPutAll: ');'
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitGotoStatement: aGoToStatement [
 
 	stream nextPutAll: 'goto ';
@@ -199,6 +228,14 @@ CSlangPrettyPrinter >> visitInitializer: anInitializer [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitPoint: aMemberAccess [
+
+	aMemberAccess object acceptVisitor: self.
+	stream nextPut: $..
+	aMemberAccess member acceptVisitor: self
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitReturnStatement: aReturn [
 
 	stream nextPutAll: 'return'.
@@ -227,13 +264,23 @@ CSlangPrettyPrinter >> visitTypename: aTypename [
 
 { #category : #generated }
 CSlangPrettyPrinter >> visitUnaryOperator: anUnary [
+
 	| parenthesises |
-	
-	parenthesises := (anUnary expression isConstant or: [ anUnary expression isIdentifier ]).
+	parenthesises := anUnary expression isConstant or: [ 
+		                 anUnary expression isIdentifier ].
 	stream nextPutAll: anUnary operator.
 	parenthesises ifFalse: [ stream nextPut: $( ].
 	anUnary expression acceptVisitor: self.
-	parenthesises ifFalse: [ stream nextPut: $) ].
+	parenthesises ifFalse: [ stream nextPut: $) ]
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitWhileStatement: aWhileStatement [
+
+	stream nextPutAll: 'while('.
+	aWhileStatement while acceptVisitor: self.
+	stream nextPutAll: ') '.
+	aWhileStatement statement acceptVisitor: self
 ]
 
 { #category : #accessing }

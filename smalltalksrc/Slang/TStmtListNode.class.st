@@ -85,13 +85,16 @@ TStmtListNode >> asCASTExpressionIn: aBuilder [
 	| comma |
 	comma := CBinaryOperatorNode new operator: ','.
 	statements size == 1
-		ifTrue: [ ^ statements first asCASTIn: aBuilder ]
+		ifTrue: [ ^statements first asCASTExpressionIn: aBuilder ]
 		ifFalse: [ 
-			comma left: statements first.
-			comma right: statements second.
-			2 to: statements size do: [ :i | 
-				i > 2 ifTrue: [ 
-					comma := CBinaryOperatorNode operator: ',' left: comma right: (statements at: i) ] ] ]
+			comma left: (statements first asCASTExpressionIn: aBuilder).
+			comma right: (statements second asCASTExpressionIn: aBuilder).
+			3 to: statements size do: [ :i | 
+				comma := CBinaryOperatorNode
+					         operator: ','
+					         left: comma
+					         right: ((statements at: i) asCASTExpressionIn: aBuilder) ] ].
+	^comma
 ]
 
 { #category : #tranforming }

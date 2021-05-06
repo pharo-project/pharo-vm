@@ -8,6 +8,15 @@ Class {
 	#category : #'CAST-Nodes'
 }
 
+{ #category : #'instance creation' }
+CMemberAccessNode class >> object: anObject member: aMember [
+
+	^ self new
+		  object: anObject;
+		  member: aMember;
+		  yourself
+]
+
 { #category : #generated }
 CMemberAccessNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitPoint: self
