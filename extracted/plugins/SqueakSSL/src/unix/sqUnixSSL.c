@@ -17,6 +17,11 @@
 
 #include <sys/param.h>
 
+#ifdef __OpenBSD__
+#include <sys/socket.h>
+#include <netinet/in.h>
+#endif
+
 typedef struct sqSSL {
 	int state;
 	int certFlags;

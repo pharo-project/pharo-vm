@@ -195,54 +195,52 @@ endif()
 # SqueakSSL
 #
 
-if(NOT OPENBSD)
-    message(STATUS "Adding plugin: SqueakSSL")
+message(STATUS "Adding plugin: SqueakSSL")
 
-    if(OSX)
+if(OSX)
+    include_directories(
+        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/common
+        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/osx
+    )
+
+    file(GLOB SqueakSSL_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/common/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/osx/*.c
+    )
+else()
+    if(WIN)
         include_directories(
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/common
-            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/osx
+            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/win
         )
 
         file(GLOB SqueakSSL_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/common/*.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/osx/*.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/win/*.c
         )
     else()
-        if(WIN)
-            include_directories(
-                ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/common
-                ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/win
-            )
+        include_directories(
+            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/common
+            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/unix
+        )
 
-            file(GLOB SqueakSSL_SOURCES
-                ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/common/*.c
-                ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/win/*.c
-            )
-        else()
-            include_directories(
-                ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/common
-                ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/unix
-            )
-
-            file(GLOB SqueakSSL_SOURCES
-                ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/common/*.c
-                ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/unix/*.c
-            )
-        endif()
+        file(GLOB SqueakSSL_SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/common/*.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/unix/*.c
+        )
     endif()
+endif()
 
-    addLibraryWithRPATH(SqueakSSL ${SqueakSSL_SOURCES})
+addLibraryWithRPATH(SqueakSSL ${SqueakSSL_SOURCES})
 
-    if(OSX)
-        target_link_libraries(SqueakSSL PRIVATE "-framework CoreFoundation")
-        target_link_libraries(SqueakSSL PRIVATE "-framework Security")
-    elseif(WIN)
-        target_link_libraries(SqueakSSL PRIVATE Crypt32 Secur32)
-    else()
-        find_package(OpenSSL REQUIRED)
-        target_link_libraries(SqueakSSL PRIVATE OpenSSL::SSL OpenSSL::Crypto)
-    endif()
+if(OSX)
+    target_link_libraries(SqueakSSL PRIVATE "-framework CoreFoundation")
+    target_link_libraries(SqueakSSL PRIVATE "-framework Security")
+elseif(WIN)
+    target_link_libraries(SqueakSSL PRIVATE Crypt32 Secur32)
+else()
+    find_package(OpenSSL REQUIRED)
+    target_link_libraries(SqueakSSL PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 endif()
 
 
