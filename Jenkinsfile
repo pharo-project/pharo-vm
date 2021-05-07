@@ -120,8 +120,10 @@ def runUnitTests(platform){
         shell "unzip libllvm-full.zip -d ./vm/Contents/MacOS/Plugins"
         shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libunicorn.zip"
         shell "unzip libunicorn.zip  -d ./vm/Contents/MacOS/Plugins"
-        shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
-        
+
+        timeout(20){
+          shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
+         } 
         // Stop if tests fail
         // Archive xml reports either case
         try {
