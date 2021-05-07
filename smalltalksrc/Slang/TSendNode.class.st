@@ -248,6 +248,7 @@ TSendNode >> emitCCodeAsFieldReferenceOn: aStream level: level generator: aCodeG
 	"If appropriate, translate this message send as a pointer dereference"
 
 	| parenCount |
+	1halt.
 	(aCodeGen isStructSend: self) ifFalse:
 		[^false].
 

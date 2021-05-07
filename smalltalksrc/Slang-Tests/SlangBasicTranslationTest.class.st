@@ -1082,6 +1082,20 @@ SlangBasicTranslationTest >> testSendMax [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendMemberAccess [
+
+	| translation send |
+
+	send := TSendNode new
+		        setSelector: #aField
+		        receiver: (TVariableNode new setName: 'toto')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: 'toto.aField'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendMin [
 
 	| translation send |
