@@ -2254,6 +2254,47 @@ CCodeGenerator >> generateCASTTimes: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTToByDoUntil: limitExpr iterativeVariable: itVar negative: negative [
+
+	| operator limit |
+	(limitExpr isSend and: [ 
+		 limitExpr selector = #- and: [ 
+			 limitExpr arguments first isConstant and: [ 
+				 limitExpr arguments first value = 1 ] ] ])
+		ifTrue: [ 
+			operator := negative
+				            ifTrue: [ #> ]
+				            ifFalse: [ #< ].
+			limit := limitExpr receiver ]
+		ifFalse: [ 
+			operator := negative
+				            ifTrue: [ #>= ]
+				            ifFalse: [ #<= ].
+			limit := limitExpr ].
+	^ CBinaryOperatorNode
+		  operator: operator
+		  left: (CIdentifierNode name: itVar)
+		  right: (limit asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTToDo: tast [
+
+	| iterationVar init until step |
+	iterationVar := tast arguments last args first.
+	init := CAssignmentNode
+		        lvalue: (CIdentifierNode name: iterationVar)
+		        rvalue: (tast receiver asCASTExpressionIn: self).
+	until := self generateCASTToByDoUntil: tast arguments first iterativeVariable: iterationVar negative: false.
+	step := CIncrementNode object: (CIdentifierNode name: iterationVar).
+	^ CForStatementNode
+		  init: init
+		  until: until
+		  step: step
+		  statement: (tast arguments last asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTTruncateTo: tast [
 
 	| arg |
