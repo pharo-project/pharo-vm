@@ -694,6 +694,18 @@ VMPrimitiveTest >> testPrimitiveAtPutPutsTheValueForAnIndexableObject [
 	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
 ]
 
+{ #category : #'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveAtPutPutsTheValueForAnIndexableObject2 [
+	| class object |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
+	
+	object := memory instantiateClass: class indexableSize: 1.
+
+	interpreter push: object.
+	
+	self assert: interpreter stackTop equals: memory trueObject.
+]
+
 { #category : #'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveAtReturnsTheValueForAnIndexableObject [
 	| class object |
@@ -1674,6 +1686,120 @@ VMPrimitiveTest >> testPrimitiveGreaterThanWithNoErrorPopsOperands [
 	"The previous lines pop the result of primiviteGreaterThen (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
 
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42).
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalFailsForForwardedOop [
+	| class1 class2 object1 object2 array1 array2|
+	
+	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
+	class2 := self newClassInOldSpaceWithSlots: 2 instSpec: memory nonIndexablePointerFormat.
+	
+	object1 := memory instantiateClass: class1.
+	object2 := memory instantiateClass: class2.
+	
+	array1 := self newArrayWith: { object1 }.
+	array2 := self newArrayWith: { object2 }.
+	
+	interpreter push: array1.
+	interpreter push: array2.
+	
+	interpreter primitiveArrayBecome.
+	
+	interpreter push: object1. 
+	interpreter push: array2. 
+	
+	interpreter primitiveIdentical. 
+
+	self assert: interpreter primFailCode equals: PrimErrBadArgument.
+	
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalReturnsBool [
+
+	interpreter push: memory trueObject.
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveIdentical. 
+
+	self assert: interpreter stackTop equals: memory falseObject. 
+	
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalReturnsFalseForObjectsWithSameValueButDifferentType [
+	| object1 object2 |
+	
+	object1:= memory integerObjectOf: 16. 
+	object2:= memory floatObjectOf: 16.0 . 
+	
+	interpreter push: object1 . 
+	interpreter push: object2. 
+	
+	interpreter primitiveIdentical. 
+
+	self assert: interpreter stackTop equals: memory falseObject. 
+	
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalReturnsFalseWithWrongArgCount [
+	| object |
+	
+	object:= memory integerObjectOf: 16. 
+	
+	interpreter push: object. 
+
+	interpreter primitiveIdentical. 
+	
+	self deny: interpreter failed. 
+
+	self assert: interpreter stackTop equals: memory falseObject. 
+	
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalReturnsTrueForIdenticalObject [
+	| object |
+	
+	object:= memory integerObjectOf: 16. 
+	interpreter push: object. 
+	interpreter push: object. 
+	
+	interpreter primitiveIdentical. 
+
+	self assert: interpreter stackTop equals: memory trueObject. 
+	
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalReturnsTrueForObjectsWithSameValue [
+	| object1 object2 |
+	
+	object1:= memory integerObjectOf: 16. 
+	object2:= memory integerObjectOf: 16. 
+	
+	interpreter push: object1 . 
+	interpreter push: object2. 
+	
+	interpreter primitiveIdentical. 
+
+	self assert: interpreter stackTop equals: memory trueObject. 
+	
+]
+
+{ #category : #'tests - primitiveImmediateAsInteger' }
+VMPrimitiveTest >> testPrimitiveImmediateAsIntegerWithInt [
+
+	interpreter push: (memory integerObjectOf: memory maxSmallInteger).
+	
+	interpreter primitiveImmediateAsInteger. 
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: memory maxSmallInteger). 
+	
+	
 ]
 
 { #category : #'tests - primitiveAt' }
