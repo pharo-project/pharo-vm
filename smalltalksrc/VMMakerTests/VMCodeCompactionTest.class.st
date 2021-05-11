@@ -7,6 +7,31 @@ Class {
 	#category : #'VMMakerTests-JitTests'
 }
 
+{ #category : #tests }
+VMCodeCompactionTest >> createBaseFrameWithMachineCodeMethod: aMachineCodeMethod [
+
+	"Create the root context with a valid method"
+	"Let's create a method with enough size. It should have at least a literal (4 or 8 bytes depending the word size) and some bytecodes, so we can put the IP inside the method"
+	| ctx page aCompiledMethod |
+		
+	"The context has 5 (in 32 bits) or 9 (in 64 bits) as initial IP, as method has at least one literal"
+	aCompiledMethod := aMachineCodeMethod methodObject.
+	
+	ctx := self newSmallContextReceiver: memory nilObject method: aCompiledMethod arguments: #() temporaries: #() ip: cogit entryOffset negated.
+
+	"The base context has a trampoline as the savedIP so it can return to a context that is in the heap"
+	cogit ceBaseFrameReturnTrampoline: 16rAABBCCDD.	
+	
+	page := interpreter makeBaseFrameFor: ctx.
+	interpreter setStackPointersFromPage: page.
+	interpreter setStackPageAndLimit: page.
+	interpreter instructionPointer: interpreter popStack.
+	
+	"keeping track of the base frame."
+	baseFrame := interpreter framePointer. 
+
+]
+
 { #category : #utils }
 VMCodeCompactionTest >> createFillingMethods: anInteger [ 
 
@@ -36,38 +61,78 @@ VMCodeCompactionTest >> fillCodeZone [
 ]
 
 { #category : #tests }
-VMCodeCompactionTest >> testCompactDuringInterpreterPrimitiveThatMovesCurrentMethodShouldNotCrash [
+VMCodeCompactionTest >> testCompactDuringInterpreterPrimitiveThatMovesCurrentMethodWhenShouldNotCrashFromMachineCodeMethod [
 
-	| firstMethod compactMethod |
+	| firstMethod compactMethod callerMethod |
 	
 	<expectedFailure>
-
+	
+	"If we have a primitive that forces a code compaction it will crash when not using PrimMaybeCallBack "
+	
 	"Patching the primitive to execute the method I need to force the code compaction"
+	"We use the primitive 1 as it has not #maybeCallback"
 	interpreter primitiveTable at: 1 + 1 put: #primitiveForceMachineCodeCompaction.
-
+	
 	cogit sendTrace: 0.
 	
 	firstMethod := self jitMethod: (self findMethod: #methodToCompile1).
+	callerMethod := self jitMethod: (self findMethod: #methodToCompile1).
 	compactMethod := self jitMethod: (self findMethod: #methodThatCallPrimitive1:).
 	
 	self fillCodeZone.
 
 	firstMethod cmUsageCount: 0.
 
-	self createBaseFrame.
+	self createBaseFrameWithMachineCodeMethod: callerMethod.
 	
 	"Initialize Stack to the correct pointers in the selected page"
-	machineSimulator stackPointerRegisterValue: interpreter stackPointer.
+	machineSimulator smalltalkStackPointerRegisterValue: interpreter stackPointer.
 	machineSimulator framePointerRegisterValue: interpreter framePointer.
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
 	
 	cogit setCStackPointer: interpreter rumpCStackAddress.
 	cogit setCFramePointer: interpreter rumpCStackAddress.
 	
-	self pushAddress: memory nilObject.
-	self pushAddress: memory falseObject.
+	self prepareStackForSendReceiver: memory nilObject arguments: {memory falseObject}.
+	machineSimulator instructionPointerValue: compactMethod address + cogit noCheckEntryOffset. 
+	
+	self runFrom: compactMethod address + cogit noCheckEntryOffset until: callerAddress.
 
-	self prepareCall.
+	self assert: machineSimulator receiverRegisterValue equals: memory trueObject.
+	
+
+]
+
+{ #category : #tests }
+VMCodeCompactionTest >> testCompactDuringInterpreterPrimitiveThatMovesCurrentMethodWhenUsingPrimCallMayCallBackShouldNotCrashFromMachineCodeMethod [
+
+	| firstMethod compactMethod callerMethod |
+	
+	"Patching the primitive to execute the method I need to force the code compaction
+	We use the primitive 173 as it is marked as mayCallBack"
+	interpreter primitiveTable at: 1 + 173 put: #primitiveForceMachineCodeCompaction.
+	
+	cogit sendTrace: 0.
+	
+	firstMethod := self jitMethod: (self findMethod: #methodToCompile1).
+	callerMethod := self jitMethod: (self findMethod: #methodToCompile1).
+	compactMethod := self jitMethod: (self findMethod: #methodThatCallPrimitive173:).
+	
+	self fillCodeZone.
+
+	firstMethod cmUsageCount: 0.
+
+	self createBaseFrameWithMachineCodeMethod: callerMethod.
+	
+	"Initialize Stack to the correct pointers in the selected page"
+	machineSimulator smalltalkStackPointerRegisterValue: interpreter stackPointer.
+	machineSimulator framePointerRegisterValue: interpreter framePointer.
+	machineSimulator baseRegisterValue: cogit varBaseAddress.
+	
+	cogit setCStackPointer: interpreter rumpCStackAddress.
+	cogit setCFramePointer: interpreter rumpCStackAddress.
+	
+	self prepareStackForSendReceiver: memory nilObject arguments: {memory falseObject}.
 	machineSimulator instructionPointerValue: compactMethod address + cogit noCheckEntryOffset. 
 	
 	self runFrom: compactMethod address + cogit noCheckEntryOffset until: callerAddress.

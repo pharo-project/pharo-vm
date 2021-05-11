@@ -57,7 +57,7 @@ VMCodeGenerationTest >> methodWithIfNilAssignmentOfComplexStatements [
 { #category : #'generation-targets' }
 VMCodeGenerationTest >> methodWithInlinedCommentInBlock [
 
-	nil isNil ifTrue: [ "comment" 1 ]
+	self something not ifTrue: [ "comment" 1 ]
 ]
 
 { #category : #'generation-targets' }
@@ -111,7 +111,9 @@ VMCodeGenerationTest >> testCommentsInInlinedBlocks [
 	self assert: result equals: 'if (!(something())) {
 
 	/* comment */
-}'
+}
+return self;
+'
 ]
 
 { #category : #tests }
@@ -154,8 +156,10 @@ VMCodeGenerationTest >> testCppIfDefinedTranslation [
 		translation parseTree statements first emitCCodeOn: stream level: 0 generator: codeGenerator.
 	].
 	
-	self assert: result equals: '#if defined(Toto)
+	self assert: result equals: '
+#if defined(Toto)
 return 2;
+
 #endif /* defined(Toto) */
 '
 ]
@@ -174,8 +178,10 @@ VMCodeGenerationTest >> testCppIfTranslation [
 		translation parseTree statements first emitCCodeOn: stream level: 0 generator: codeGenerator.
 	].
 	
-	self assert: result equals: '#if Toto
+	self assert: result equals: '
+#if Toto
 return 2;
+
 #endif /* Toto */
 '
 ]
@@ -239,6 +245,8 @@ VMCodeGenerationTest >> testNilIfNilGeneratesOnlyFirstBranch [
 	method := self class >> #methodWithNilIfNil.
 	translation := method asTranslationMethodOfClass: TMethod.
 	codeGenerator := CCodeGeneratorGlobalStructure new.
+	codeGenerator vmMaker: VMMaker new.
+	codeGenerator vmMaker vmmakerConfiguration: VMMakerConfiguration.
 	codeGenerator generateDeadCode: false.
 	codeGenerator addMethod: translation.
 	codeGenerator doInlining: true.
@@ -257,6 +265,8 @@ VMCodeGenerationTest >> testSimpleIfNil [
 	method := self class >> #methodWithIfNilAssignment.
 	translation := method asTranslationMethodOfClass: TMethod.
 	codeGenerator := CCodeGeneratorGlobalStructure new.
+	codeGenerator vmMaker: VMMaker new.
+	codeGenerator vmMaker vmmakerConfiguration: VMMakerConfiguration.
 	codeGenerator generateDeadCode: false.
 	codeGenerator addMethod: translation.
 	codeGenerator doInlining: true.
@@ -277,6 +287,8 @@ VMCodeGenerationTest >> testSimpleIfNilAssignment [
 	method := self class >> #methodWithIfNil.
 	translation := method asTranslationMethodOfClass: TMethod.
 	codeGenerator := CCodeGeneratorGlobalStructure new.
+	codeGenerator vmMaker: VMMaker new.
+	codeGenerator vmMaker vmmakerConfiguration: VMMakerConfiguration.
 	codeGenerator generateDeadCode: false.
 	codeGenerator addMethod: translation.
 	codeGenerator doInlining: true.

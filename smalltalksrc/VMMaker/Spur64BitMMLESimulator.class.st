@@ -225,9 +225,8 @@ Spur64BitMMLESimulator >> loadImageSegmentFrom: segmentWordArray outPointers: ou
 
 { #category : #'memory access' }
 Spur64BitMMLESimulator >> long32At: byteAddress [
-	"Note: Adjusted for Smalltalk's 1-based array indexing."
-	byteAddress \\ 4 ~= 0 ifTrue: [self unalignedAccessError].
-	^memory at: byteAddress // 4 + 1
+
+	^ memoryManager unsignedLong32At: byteAddress
 ]
 
 { #category : #'memory access' }
@@ -237,8 +236,7 @@ Spur64BitMMLESimulator >> long32At: byteAddress put: a32BitValue [
 		[self halt]."
 	"(byteAddress between: 16r33FBB8 and: 16r33FBCF) ifTrue:
 		[self halt]."
-	byteAddress \\ 4 ~= 0 ifTrue: [self unalignedAccessError].
-	^memory at: byteAddress // 4 + 1 put: a32BitValue
+	^ memoryManager unsignedLong32At: byteAddress put: a32BitValue
 ]
 
 { #category : #'memory access' }
@@ -246,8 +244,8 @@ Spur64BitMMLESimulator >> long64At: byteAddress [
 	"memory is a Bitmap, a 32-bit indexable array of bits"
 	| hiWord loWord |
 	byteAddress \\ 8 ~= 0 ifTrue: [self unalignedAccessError].
-	loWord := memory at: byteAddress // 4 + 1.
-	hiWord := memory at: byteAddress // 4 + 2.
+	loWord := memoryManager unsignedLong32At: byteAddress.
+	hiWord := memoryManager unsignedLong32At: byteAddress + 4.
 	^hiWord = 0
 		ifTrue: [loWord]
 		ifFalse: [(hiWord bitShift: 32) + loWord]

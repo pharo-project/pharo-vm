@@ -399,6 +399,19 @@ StackInterpreterSimulator >> close [  "close any files that ST may have opened, 
 	pluginList do: [:assoc| | plugin | plugin := assoc value. plugin ~~ self ifTrue: [plugin close]]
 ]
 
+{ #category : #'primitive support' }
+StackInterpreterSimulator >> codeGeneratorToComputeAccessorDepth [
+
+	^ codeGeneratorToComputeAccessorDepth ifNil: [
+		^(VMMaker new
+			vmmakerConfiguration: VMMakerConfiguration;
+			buildCodeGeneratorForInterpreter: self class primitivesClass
+			includeAPIMethods: false
+			initializeClasses: false)
+				logger: self transcript;
+				yourself ]
+]
+
 { #category : #'simulation only' }
 StackInterpreterSimulator >> cogit [
 	"We don't have a cogit; try and get by on our own devices."
@@ -1598,6 +1611,10 @@ StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
 	  hdrNumStackPages hdrEdenBytes hdrMaxExtSemTabSize allocationReserve |
 	"open image file and read the header"
 
+	memoryManager := SlangMemoryManager new.
+	objectMemory memoryManager: memoryManager.
+	memoryManager wordSize: objectMemory wordSize.
+
 	(f := self openImageFileNamed: fileName) ifNil: [^self].
 
 	"Set the image name and the first argument; there are
@@ -1605,9 +1622,6 @@ StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
 	systemAttributes at: 1 put: fileName; at: 2 put: nil.
 
 	["begin ensure block..."
-	imageName := f fullName.
-	f binary.
-
 	version := self getWord32FromFile: f swap: false.  "current version: 16r1968 (=6504) vive la revolucion!"
 	(self readableFormat: version)
 		ifTrue: [swapBytes := false]
@@ -1682,6 +1696,7 @@ StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
 		memoryLimit: heapBase + heapSize
 		endOfMemory: heapBase + dataSize. "bogus for Spur"
 	objectMemory allocateMemoryOfSize: objectMemory memoryLimit.
+	objectMemory memory initialAddress: 0.
 	"read in the image in bulk, then swap the bytes if necessary"
 	f position: headerSize.
 	count := objectMemory readHeapFromImageFile: f dataBytes: dataSize.
@@ -1816,32 +1831,6 @@ StackInterpreterSimulator >> primitiveIdentityHash [
 	and: [(self stringOf: oop) = 'smallSelect']]) ifTrue:
 		[self halt]."
 	^super primitiveIdentityHash
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> primitiveKbdNext [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdNext]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> primitiveKbdPeek [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdPeek]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> primitiveMouseButtons [
-	| buttons |
-	self pop: 1.
-	buttons := Sensor primMouseButtons.
-	self pushInteger: buttons
 ]
 
 { #category : #'debugging traps' }
@@ -2292,6 +2281,11 @@ StackInterpreterSimulator >> setClickStepBreakBlock [
 { #category : #'spur bootstrap' }
 StackInterpreterSimulator >> setDisplayForm: aForm [
 	displayForm := aForm
+]
+
+{ #category : #accessing }
+StackInterpreterSimulator >> setImageName: aString [ 
+	imageName := aString
 ]
 
 { #category : #'debug printing' }

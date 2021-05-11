@@ -452,10 +452,6 @@ Class {
 		'MethodHeaderFlagBitPosition',
 		'MethodHeaderTempCountShift',
 		'MixinIndex',
-		'PrimNumberDoExternalCall',
-		'PrimNumberDoPrimitive',
-		'PrimNumberExternalCall',
-		'PrimNumberFFICall',
 		'PrimitiveTable',
 		'ReturnToInterpreter',
 		'StackPageReachedButUntraced',
@@ -471,7 +467,8 @@ Class {
 		'VMObjectIndices',
 		'VMSpurObjectRepresentationConstants',
 		'VMSqueakClassIndices',
-		'VMStackFrameOffsets'
+		'VMStackFrameOffsets',
+		'VMWellKnownPrimitivesConstants'
 	],
 	#category : #'VMMaker-Interpreter'
 }
@@ -1250,13 +1247,13 @@ StackInterpreter class >> initializePrimitiveTable [
 		(89 primitiveFlushCache)
 
 		"Input/Output Primitives (90-109)"
-		(90 primitiveMousePoint)
+		(90 primitiveFail)					"primitiveMousePoint"
 		(91 primitiveTestDisplayDepth)			"Blue Book: primitiveCursorLocPut"
 		(92 primitiveSetDisplayMode)				"Blue Book: primitiveCursorLink"
 		(93 primitiveInputSemaphore)
 		(94 primitiveGetNextEvent)				"Blue Book: primitiveSampleInterval"
-		(95 primitiveInputWord)
-		(96 primitiveFail)	"primitiveCopyBits"
+		(95 primitiveFail)					"primitiveInputWord"
+		(96 primitiveFail)					"primitiveCopyBits"
 		(97 primitiveSnapshot)
 		(98 primitiveStoreImageSegment)
 		(99 primitiveLoadImageSegment)
@@ -1267,9 +1264,9 @@ StackInterpreter class >> initializePrimitiveTable [
 		(104 primitiveFail)	"primitiveDrawLoop"
 		(105 primitiveStringReplace)
 		(106 primitiveScreenSize)
-		(107 primitiveMouseButtons)
-		(108 primitiveKbdNext)
-		(109 primitiveKbdPeek)
+		(107 primitiveFail)      "primitiveMouseButtons"
+		(108 primitiveFail)      "primitiveKbdNext"
+		(109 primitiveFail)		"primitiveKbdPeek"
 
 		"System Primitives (110-119)"
 		(110 primitiveIdentical)
@@ -1288,7 +1285,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		"Miscellaneous Primitives (120-127)"
 		(120 primitiveCalloutToFFI)
 		(121 primitiveImageName)
-		(122 primitiveNoop)					"Blue Book: primitiveImageVolume"
+		(122 primitiveFail)			"primitiveNoop"		"Blue Book: primitiveImageVolume"
 		(123 primitiveFail)	"was primitiveValueUninterruptably"
 		(124 primitiveLowSpaceSemaphore)
 		(125 primitiveSignalAtBytesLeft)
@@ -1356,8 +1353,8 @@ StackInterpreter class >> initializePrimitiveTable [
 		(184 primitivePin)
 
 		"CriticalSection primitives"
-		(185 primitiveExitCriticalSection) "similar to signal hence index = signal + 100"
-		(186 primitiveEnterCriticalSection) "similar to wait hence index = wait + 100. was primitiveClosureValue"
+		(185 primitiveExitCriticalSection)		 "similar to signal hence index = signal + 100"
+		(186 primitiveEnterCriticalSection) 		 "similar to wait hence index = wait + 100. was primitiveClosureValue"
 		(187 primitiveTestAndSetOwnershipOfCriticalSection) "was primitiveClosureValueWithArgs"
 
 		"Perform method directly"
@@ -1389,7 +1386,7 @@ StackInterpreter class >> initializePrimitiveTable [
 
 		(210 primitiveContextAt)
 		(211 primitiveContextAtPut)
-		(212 primitiveContextSize)
+		(212 primitiveContextSize)	
 		(213 primitiveContextXray)
 		(214 primitiveVoidVMState)
 		(215 primitiveFlushCacheByMethod) "primitiveVoidVMStateForMethod in the CoInterpreter"
@@ -2261,6 +2258,15 @@ StackInterpreter >> allOnesAsCharStar [
 								ifTrue: [-1 signedIntToLong64]
 								ifFalse: [-1 signedIntToLong])
 		to: #'char *')
+]
+
+{ #category : #'image save/restore' }
+StackInterpreter >> allocateJITMemory: desiredSize desiredPosition: desiredPosition [
+	
+	<inline: true>
+	<returnTypeC: #'char *'>
+	
+	^self pointerForOop: (self allocateJITMemory: desiredSize _: desiredPosition)
 ]
 
 { #category : #'image save/restore' }
@@ -4073,9 +4079,8 @@ StackInterpreter >> checkForAndFollowForwardedPrimitiveState [
 	 args to the depth, following any forwarders.  Answer if any are found so
 	 the prim can be retried.  The primitive index is derived from newMethod."
 	<option: #SpurObjectMemory>
-	| primIndex accessorDepth found scannedStackFrame |
+	| primIndex accessorDepth |
 	self assert: self failed.
-	found := scannedStackFrame := false.
 	primIndex := self primitiveIndexOf: newMethod.
 	self assert: (argumentCount = (self argumentCountOf: newMethod) or: [self isMetaPrimitiveIndex: primIndex]).
 	"If the primitive is one of the meta primitives PrimNumberDoPrimitive or
@@ -4097,27 +4102,8 @@ StackInterpreter >> checkForAndFollowForwardedPrimitiveState [
 									ifTrue: [self primitiveAccessorDepthForExternalPrimitiveMethod: newMethod]
 									ifFalse: [primitiveAccessorDepthTable at: primIndex]].
 	self assert: (self saneFunctionPointerForFailureOfPrimIndex: primIndex).
-	self assert: (accessorDepth between: -1 and: 5).
-	accessorDepth >= 0 ifTrue:
-		[0 to: argumentCount do:
-			[:index| | oop |
-			oop := self stackValue: index.
-			(objectMemory isNonImmediate: oop) ifTrue:
-				[(objectMemory isForwarded: oop) ifTrue:
-					[self assert: index < argumentCount. "receiver should have been caught at send time."
-					 found := true.
-					 oop := objectMemory followForwarded: oop.
-					 self stackValue: index put: oop.
-					 scannedStackFrame ifFalse:
-						[scannedStackFrame := true.
-						 self
-							followForwardedFrameContents: framePointer
-							stackPointer: stackPointer + (argumentCount + 1 * objectMemory wordSize) "don't repeat effort"]].
-				(accessorDepth > 0
-			 	 and: [(objectMemory hasPointerFields: oop)
-				 and: [objectMemory followForwardedObjectFields: oop toDepth: accessorDepth]]) ifTrue:
-					[found := true]]]].
-	^found
+	^self followForwardedForAccessorDepth: accessorDepth
+
 ]
 
 { #category : #'process primitive support' }
@@ -4767,18 +4753,6 @@ StackInterpreter >> closureIn: context numArgs: numArgs instructionPointer: init
 	objectMemory storePointerUnchecked: ClosureStartPCIndex ofObject: newClosure withValue: (objectMemory integerObjectOf: initialIP).
 	objectMemory storePointerUnchecked: ClosureNumArgsIndex ofObject: newClosure withValue: (objectMemory integerObjectOf: numArgs).
 	^newClosure
-]
-
-{ #category : #'primitive support' }
-StackInterpreter >> codeGeneratorToComputeAccessorDepth [
-
-	^ codeGeneratorToComputeAccessorDepth ifNil: [
-		^(VMMaker new
-			buildCodeGeneratorForInterpreter: self class primitivesClass
-			includeAPIMethods: false
-			initializeClasses: false)
-				logger: self transcript;
-				yourself ]
 ]
 
 { #category : #'as yet unclassified' }
@@ -6934,6 +6908,37 @@ StackInterpreter >> followForwardedFieldsInCurrentMethod [
 		toDepth: 0
 ]
 
+{ #category : #'as yet unclassified' }
+StackInterpreter >> followForwardedForAccessorDepth: accessorDepth [
+
+	| scannedStackFrame found |
+	found := scannedStackFrame := false.
+
+	self assert: (accessorDepth between: -1 and: 5).
+	accessorDepth >= 0 ifTrue: [ 
+		0 to: argumentCount do: [ :index | 
+			| oop |
+			oop := self stackValue: index.
+			(objectMemory isNonImmediate: oop) ifTrue: [ 
+				(objectMemory isForwarded: oop) ifTrue: [ 
+					self assert: index < argumentCount. "receiver should have been caught at send time."
+					found := true.
+					oop := objectMemory followForwarded: oop.
+					self stackValue: index put: oop.
+					scannedStackFrame ifFalse: [ 
+						scannedStackFrame := true.
+						self
+							followForwardedFrameContents: framePointer
+							stackPointer:
+							stackPointer + (argumentCount + 1 * objectMemory wordSize) "don't repeat effort" ] ].
+				(accessorDepth > 0 and: [ 
+					 (objectMemory hasPointerFields: oop) and: [ 
+						 objectMemory
+							 followForwardedObjectFields: oop
+							 toDepth: accessorDepth ] ]) ifTrue: [ found := true ] ] ] ].
+	^ found
+]
+
 { #category : #'lazy become' }
 StackInterpreter >> followForwardedFrameContents: theFP stackPointer: theSP [
 	"follow pointers in the current stack frame up to theSP."
@@ -7429,6 +7434,18 @@ StackInterpreter >> functionPointerFor: primIdx inClass: theClass [
 ]
 
 { #category : #'internal interpreter access' }
+StackInterpreter >> getBlockCompilationCount [
+	"This is nil in the StackVM"
+	^objectMemory nilObject
+]
+
+{ #category : #'internal interpreter access' }
+StackInterpreter >> getBlockCompilationMSecs [
+	"This is nil in the StackVM"
+	^objectMemory nilObject
+]
+
+{ #category : #'internal interpreter access' }
 StackInterpreter >> getCodeCompactionCount [
 	"This is nil in the StackVM"
 	^objectMemory nilObject
@@ -7578,6 +7595,18 @@ StackInterpreter >> getLongFromFile: aFile swap: swapFlag [
 	^swapFlag
 		ifTrue: [objectMemory byteSwapped: w]
 		ifFalse: [w]
+]
+
+{ #category : #'internal interpreter access' }
+StackInterpreter >> getMethodCompilationCount [
+	"This is nil in the StackVM"
+	^objectMemory nilObject
+]
+
+{ #category : #'internal interpreter access' }
+StackInterpreter >> getMethodCompilationMSecs [
+	"This is nil in the StackVM"
+	^objectMemory nilObject
 ]
 
 { #category : #'plugin primitive support' }
@@ -7787,6 +7816,22 @@ StackInterpreter >> handleStackOverflowOrEventAllowContextSwitch: mayContextSwit
 	stackLimit = stackPage realStackLimit ifTrue:
 		[^false].
 	^self checkForEventsMayContextSwitch: mayContextSwitch
+]
+
+{ #category : #'primitive support' }
+StackInterpreter >> hasCheckAllocFiller [
+
+	<api>
+
+	^ self checkAllocFiller 
+]
+
+{ #category : #profiling }
+StackInterpreter >> hasProfileSemaphore [
+
+	<api>
+	
+	^ profileSemaphore ~= objectMemory nilObject
 ]
 
 { #category : #'stack pages' }
@@ -11156,15 +11201,8 @@ StackInterpreter >> okayInterpreterObjects [
 StackInterpreter >> openImageFileNamed: fileName [
 	"Attempt to open fileName or fileName, '.image'"
 	<doNotGenerate>
-	| f |
-	f := [FileStream readOnlyFileNamed: fileName]
-			on: FileDoesNotExistException
-			do: [:ex|
-				 ((fileName endsWith: '.image') not
-				  and: [(fileName, '.image') asFileReference exists]) ifFalse:
-					[ex pass].
-				 FileStream readOnlyFileNamed: fileName, '.image'].
-	^f ifNil: [self error: 'no image found'. nil].
+	self setImageName: fileName.
+	^ fileName asFileReference binaryReadStream
 ]
 
 { #category : #simulation }
@@ -12906,7 +12944,7 @@ StackInterpreter >> profileMethod [
 	^ profileMethod
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #profiling }
 StackInterpreter >> profileSemaphore [
 	<doNotGenerate>
 	^ profileSemaphore
@@ -14334,6 +14372,14 @@ StackInterpreter >> setDesiredCogCodeSize: dccs [
 	theUnknownShort := dccs
 ]
 
+{ #category : #'image save/restore' }
+StackInterpreter >> setDesiredEdenBytes: bytes [
+	<api>
+	<var: #bytes type: #usqLong>
+	desiredEdenBytes := bytes.
+	^0
+]
+
 { #category : #'frame access' }
 StackInterpreter >> setFrameContext: theFP to: aContext [
 	<inline: true>
@@ -14386,6 +14432,13 @@ StackInterpreter >> setImageHeaderFlagsFrom: headerFlags [
 	"noThreadingOfGUIThread := headerFlags anyMask: 32. specific to CoInterpreterMT"
 	newFinalization := headerFlags anyMask: 64.
 	sendWheelEvents := headerFlags anyMask: 128
+]
+
+{ #category : #'simulation support' }
+StackInterpreter >> setImageName: aString [ 
+	<doNotGenerate>
+	"Simulation support for when running it with an image"
+	self shouldNotImplement 
 ]
 
 { #category : #'primitive support' }
@@ -15284,18 +15337,13 @@ StackInterpreter >> stObject: array at: index put: value [
 	| hdr fmt totalLength fixedFields stSize |
 	<inline: true>
 	hdr := objectMemory baseHeader: array.
+	(objectMemory isContextHeader: hdr) ifTrue:[
+		"we have another primitive (contextAt:Put: for contexts"
+		^self primitiveFailFor: PrimErrBadReceiver].
 	fmt := objectMemory formatOfHeader: hdr.
 	totalLength := objectMemory lengthOf: array baseHeader: hdr format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: array format: fmt length: totalLength.
-	(fmt = objectMemory indexablePointersFormat
-	 and: [objectMemory isContextHeader: hdr])
-		ifTrue:
-			[stSize := self stackPointerForMaybeMarriedContext: array.
-			((self oop: index isGreaterThanOrEqualTo: 1)
-			 and: [(self oop: index isLessThanOrEqualTo: stSize)
-			 and: [self isStillMarriedContext: array]]) ifTrue:
-				[^self noInlineTemporary: index - 1 in: (self frameOfMarriedContext: array) put: value]]
-		ifFalse: [stSize := totalLength - fixedFields].
+	stSize := totalLength - fixedFields.
 	((self oop: index isGreaterThanOrEqualTo: (objectMemory firstValidIndexOfIndexableObject: array withFormat: fmt))
 	 and: [self oop: index isLessThanOrEqualTo: stSize])
 		ifTrue: [self subscript: array with: (index + fixedFields) storing: value format: fmt]

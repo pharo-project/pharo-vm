@@ -1613,8 +1613,6 @@ StackMTInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
 	systemAttributes at: 1 put: fileName; at: 2 put: nil.
 
 	["begin ensure block..."
-	imageName := f fullName.
-	f binary.
 
 	version := self getWord32FromFile: f swap: false.  "current version: 16r1968 (=6504) vive la revolucion!"
 	(self readableFormat: version)
@@ -1690,6 +1688,7 @@ StackMTInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
 		memoryLimit: heapBase + heapSize
 		endOfMemory: heapBase + dataSize. "bogus for Spur"
 	objectMemory allocateMemoryOfSize: objectMemory memoryLimit.
+	objectMemory memory initialAddress: 0.
 	"read in the image in bulk, then swap the bytes if necessary"
 	f position: headerSize.
 	count := objectMemory readHeapFromImageFile: f dataBytes: dataSize.
@@ -1819,32 +1818,6 @@ StackMTInterpreterSimulator >> primitiveIdentityHash [
 	and: [(self stringOf: oop) = 'smallSelect']]) ifTrue:
 		[self halt]."
 	^super primitiveIdentityHash
-]
-
-{ #category : #'I/O primitives' }
-StackMTInterpreterSimulator >> primitiveKbdNext [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdNext]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-StackMTInterpreterSimulator >> primitiveKbdPeek [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdPeek]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-StackMTInterpreterSimulator >> primitiveMouseButtons [
-	| buttons |
-	self pop: 1.
-	buttons := Sensor primMouseButtons.
-	self pushInteger: buttons
 ]
 
 { #category : #'debugging traps' }

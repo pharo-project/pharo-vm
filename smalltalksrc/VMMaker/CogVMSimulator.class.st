@@ -79,7 +79,9 @@ Class {
 		'expectedSends',
 		'expecting',
 		'bootstrapping',
-		'primitiveFailCount'
+		'primitiveFailCount',
+		'primitiveFlags',
+		'initialAddress'
 	],
 	#classVars : [
 		'ByteCountsPerMicrosecond',
@@ -694,6 +696,7 @@ CogVMSimulator >> codeGeneratorToComputeAccessorDepth [
 
 	^ codeGeneratorToComputeAccessorDepth ifNil: [
 		(VMMaker new
+			vmmakerConfiguration: VMMakerConfiguration;
 			buildCodeGeneratorForInterpreter: CoInterpreterPrimitives
 			includeAPIMethods: false
 			initializeClasses: false)
@@ -720,7 +723,7 @@ CogVMSimulator >> collectSends [
 
 { #category : #'cog jit support' }
 CogVMSimulator >> commenceCogCompiledCodeCompaction [
-	"self halt."
+
 	^super commenceCogCompiledCodeCompaction
 ]
 
@@ -1517,6 +1520,11 @@ CogVMSimulator >> initStackPagesForTests [
 	self initStackPages
 ]
 
+{ #category : #accessing }
+CogVMSimulator >> initialAddress [
+	^ initialAddress
+]
+
 { #category : #initialization }
 CogVMSimulator >> initialEnterSmalltalkExecutive [
 	"Main entry-point into the interpreter at system start-up.
@@ -1536,6 +1544,13 @@ CogVMSimulator >> initialize [
 	
 	self basicInitialize.
 	self initializePluginEntries.
+]
+
+{ #category : #'memory access' }
+CogVMSimulator >> initializeCodeGenerator [
+	cogit
+		initializeCodeZoneFrom: (self cCode: [objectMemory memory] inSmalltalk: [ initialAddress + Cogit guardPageSize ])
+		upTo: (self cCode: [objectMemory memory] inSmalltalk: [ initialAddress + Cogit guardPageSize ]) + cogCodeSize
 ]
 
 { #category : #'multi-threading simulation switch' }
@@ -2625,6 +2640,10 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 	  hdrCogCodeSize stackZoneSize methodCacheSize primTraceLogSize allocationReserve vmRequiredMemorySize |
 	"open image file and read the header"
 
+	memoryManager := SlangMemoryManager new.
+	objectMemory memoryManager: memoryManager.
+	memoryManager wordSize: objectMemory wordSize.
+	
 	(f := self openImageFileNamed: fileName) ifNil: [^self].
 
 	"Set the image name and the first argument; there are
@@ -2632,9 +2651,6 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 	systemAttributes at: 1 put: fileName; at: 2 put: nil.
 
 	["begin ensure block..."
-	imageName := f fullName.
-	f binary.
-
 	version := self getWord32FromFile: f swap: false.  "current version: 16r1968 (=6504) vive la revolucion!"
 	(self readableFormat: version)
 		ifTrue: [swapBytes := false]
@@ -2727,12 +2743,12 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 							ifTrue: [0]
 							ifFalse: [allocationReserve])].
 
-	objectMemory allocateMemoryOfSize: vmRequiredMemorySize + heapSize.	
+	initialAddress := objectMemory allocateMemoryOfSize: vmRequiredMemorySize + heapSize.	
 	
 	heapBase := objectMemory
-					setHeapBase: objectMemory memory initialAddress + vmRequiredMemorySize
-					memoryLimit:  objectMemory memory initialAddress + vmRequiredMemorySize + heapSize
-					endOfMemory: objectMemory memory initialAddress + vmRequiredMemorySize + dataSize.
+		setHeapBase: initialAddress + vmRequiredMemorySize
+		memoryLimit: initialAddress + vmRequiredMemorySize + heapSize
+		endOfMemory: initialAddress + vmRequiredMemorySize + dataSize.
 
 	self assert: cogCodeSize \\ 4 = 0.
 	self assert: objectMemory memoryLimit \\ 4 = 0.
@@ -2742,8 +2758,8 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 	count := objectMemory readHeapFromImageFile: f dataBytes: dataSize.
 	count ~= dataSize ifTrue: [self halt]]
 		ensure: [f close].
-	self moveMethodCacheToMemoryAt: objectMemory cogCodeBase + cogCodeSize + stackZoneSize.
-	self movePrimTraceLogToMemoryAt: objectMemory cogCodeBase + cogCodeSize + stackZoneSize + methodCacheSize.
+	self moveMethodCacheToMemoryAt: heapBase + Cogit guardPageSize + cogCodeSize + stackZoneSize.
+	self movePrimTraceLogToMemoryAt: heapBase + Cogit guardPageSize + cogCodeSize + stackZoneSize + methodCacheSize.
 
 	self ensureImageFormatIsUpToDate: swapBytes.
 
@@ -2933,6 +2949,8 @@ CogVMSimulator >> primitiveFailCounting [
 { #category : #'as yet unclassified' }
 CogVMSimulator >> primitiveForceMachineCodeCompaction [
 	
+	"This primitive does not exists in the production VM. It is used in the tests to force the Code Compaction and to test it."
+	
 	self commenceCogCompiledCodeCompaction.
 	self pop: 2 thenPushBool: true.
 
@@ -2951,32 +2969,6 @@ CogVMSimulator >> primitiveGetAttribute [
 		1 to: attribute size do: [ :i |
 			objectMemory storeByte: i-1 ofObject: s withValue: (attribute at: i) asciiValue].
 		self pop: 2 "rcvr, attr" thenPush: s]
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> primitiveKbdNext [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdNext]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> primitiveKbdPeek [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdPeek]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> primitiveMouseButtons [
-	| buttons |
-	self pop: 1.
-	buttons := Sensor primMouseButtons.
-	self pushInteger: buttons
 ]
 
 { #category : #'debugging traps' }
@@ -3536,6 +3528,11 @@ CogVMSimulator >> setImageHeaderFlagsFrom: headerFlags [
 	^self perform: #setImageHeaderFlagsFrom:
 		withArguments: {headerFlags}
 		inSuperclass: (cogThreadManager ifNil: [CoInterpreterPrimitives] ifNotNil: [CoInterpreterMT])
+]
+
+{ #category : #accessing }
+CogVMSimulator >> setImageName: aString [ 
+	imageName := aString
 ]
 
 { #category : #'multi-threading simulation switch' }
