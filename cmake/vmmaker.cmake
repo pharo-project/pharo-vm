@@ -20,6 +20,9 @@ set(CMAKE_VERBOSE_MAKEFILE TRUE)
 #Setting vmmaker directory and image 
 set( VMMAKER_DIR    "${CMAKE_CURRENT_BINARY_DIR_TO_OUT}/build/vmmaker")
 set( VMMAKER_IMAGE  "${VMMAKER_DIR}/image/VMMaker.image")
+# Sets all the smalltalk sources as a dependency to build an image.
+# If one file is added, it'll require a full rebuild
+file(GLOB_RECURSE VMMAKER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/smalltalksrc/*.st")
 
 if(${SIZEOF_VOID_P} STREQUAL "8")
     set(PHARO_CURRENT_GENERATED ${GENERATED_SOURCE_DIR}/generated/64)
@@ -53,7 +56,7 @@ if(GENERATE_SOURCES)
         message("Overriding VM used for code generation")  
         set(VMMAKER_VM ${GENERATE_PHARO_VM})
         # add empty target because is required later when installing vmmaker
-        add_custom_target(build_vmmaker_get_vm-build)
+        # add_custom_target(build_vmmaker_get_vm-build)
     else()
         #Pick platform specific VM to download
         if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -81,6 +84,7 @@ if(GENERATE_SOURCES)
 
             URL ${VM_URL}
             URL_HASH ${VM_URL_HASH}
+	    
             BUILD_COMMAND       echo 
             UPDATE_COMMAND      echo 
             CONFIGURE_COMMAND   echo 
@@ -95,13 +99,28 @@ if(GENERATE_SOURCES)
     endif()
 
     #Bootstrap VMMaker.image from downloaded image
+    #add_custom_target(toto DEPENDS ${VMMAKER_SOURCES} ${VMMAKER_VM})
+
+
+    file(DOWNLOAD https://files.pharo.org/image/90/Pharo9.0-SNAPSHOT.build.1144.sha.ac4bf08.arch.64bit.zip ${VMMAKER_DIR}/image/pharo.zip)
+
+    add_custom_command(
+      COMMAND ${CMAKE_COMMAND} -E tar xzf ${VMMAKER_DIR}/image/pharo.zip
+      WORKING_DIRECTORY ${VMMAKER_DIR}/image/
+      DEPENDS ${VMMAKER_DIR}/image/pharo.zip
+      COMMENT "Unpacking pharo.zip"
+      OUTPUT ${VMMAKER_DIR}/image/Pharo9.0-SNAPSHOT-64bit-ac4bf08.image
+      VERBATIM)
+
+#file(ARCHIVE_EXTRACT INPUT ${VMMAKER_DIR}/image/pharo.zip DESTINATION ${VMMAKER_DIR}/image/)
+
     ExternalProject_Add(
             build_vmmaker_get_image
 
             URL https://files.pharo.org/image/90/Pharo9.0-SNAPSHOT.build.1144.sha.ac4bf08.arch.64bit.zip
             URL_HASH SHA256=eac7c9a2387bc9a44ff2572b7dbd9fddd544d391787a05e5181baded7aab6f45
-            BUILD_COMMAND ${VMMAKER_VM} --headless ${VMMAKER_DIR}/image/Pharo9.0-SNAPSHOT-64bit-ac4bf08.image save VMMaker
-            COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --save --quit "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}"
+
+	    BUILD_COMMAND	echo
             UPDATE_COMMAND      echo 
             CONFIGURE_COMMAND   echo
             INSTALL_COMMAND     echo
@@ -111,17 +130,20 @@ if(GENERATE_SOURCES)
             BUILD_IN_SOURCE True
             WORKING_DIRECTORY "${VMMAKER_DIR}"
 
-            DEPENDS build_vmmaker_get_vm-build
+            STEP_TARGETS   build
+            DEPENDS
             )
-
+	    
     #Custom command that generates the vm source code from VMMaker into "out/build/XXXX/generated" folder
     add_custom_command(
-        OUTPUT ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES}
+        OUTPUT ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES} ${VMMAKER_IMAGE}
+   	COMMAND ${VMMAKER_VM} --headless ${VMMAKER_DIR}/image/Pharo9.0-SNAPSHOT-64bit-ac4bf08.image save VMMaker
+        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --save --quit "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}"
         COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\'\"
-        DEPENDS build_vmmaker_get_image
+        DEPENDS build_vmmaker_get_image-build ${VMMAKER_SOURCES} ${VMMAKER_VM} ${VMMAKER_DIR}/image/Pharo9.0-SNAPSHOT-64bit-ac4bf08.image
         COMMENT "Generating VM files for flavour: ${FLAVOUR}")
     
-    add_custom_target(vmmaker DEPENDS build_vmmaker_get_image)
+    add_custom_target(vmmaker DEPENDS ${VMMAKER_VM} ${VMMAKER_IMAGE})
     add_custom_target(generate-sources DEPENDS ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES})
 
 endif()
