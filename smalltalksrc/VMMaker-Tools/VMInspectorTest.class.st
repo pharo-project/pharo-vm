@@ -42,7 +42,7 @@ VMInspectorTest >> testClassOfObjectIsNilObjectByDefault [
 	objectOop := self newObjectWithSlots: 1.
 	
 	object := (image objectForOop: objectOop).
-	self assert: object classSpurObject equals: image simulator nilObject
+	self assert: object classSpurObject equals: image simulator nilObject.
 ]
 
 { #category : #tests }
@@ -157,7 +157,7 @@ VMInspectorTest >> testObjectWithInstanceVariableCycleWeCanNavigate [
 	
 	object1 slotAt: 1 put: object2.
 	object2 slotAt: 1 put: object1.
-
+	
 	self assert: (object1 slotAt: 1) address equals: object2.
 	self assert: (object2 slotAt: 1) address equals: object1.
 ]
@@ -208,7 +208,7 @@ VMInspectorTest >> testSlotAtPut [
 	object2 := (image objectForOop: objectOop2).
 	
 	object1 slotAt: 1 put: object2.
-	object2 slotAt: 1 put: object1.
-
+	object2 slotAt: 1 put: image nilObject.
+	object1 inspect.
 	self assert: (object1 slotAt: 1) address equals: object2.
 ]

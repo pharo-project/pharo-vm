@@ -164,7 +164,7 @@ StackBuilderTest >> testHeadFramePointerCallerCallerIsBaseFramePointer [
 	"We have 3 frames. 
 	The caller of the caller of the top frame is the first one, which is the base"
 	self assert: (interpreter frameCallerFP: (interpreter frameCallerFP: interpreter framePointer))
-		equals: stackBuilder page baseFP
+		equals: stackBuilder page baseFP.
 ]
 
 { #category : #'test-VMstate' }

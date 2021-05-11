@@ -63,9 +63,9 @@ Class {
 
 { #category : #inspect }
 VMFrameBuilder >> adaptAddressToMemory: anInteger [
-	anInteger = memory nilObject ifTrue: [ ^ #nilObject ].
-	anInteger = memory trueObject ifTrue: [ ^ #trueObject ].
-	anInteger = memory falseObject ifTrue: [ ^ #falseObject ].
+	anInteger = memory nilObject ifTrue: [ ^ 'nilObject (' , anInteger printString ,')' ].
+	anInteger = memory trueObject ifTrue: [ ^ 'trueObject (' , anInteger printString ,')' ].
+	anInteger = memory falseObject ifTrue: [ ^ 'falseObject (' , anInteger printString ,')' ].
 	^ anInteger
 	"^ memory integerObjectOf: anInteger"
 ]
@@ -157,6 +157,37 @@ VMFrameBuilder >> gtInspectorItemsIn: composite [
 					].
 				GTObjectPrinter asNonTruncatedTextFrom: anAssociation ]
 	
+
+]
+
+{ #category : #inspect }
+VMFrameBuilder >> inspectionItems: aBuilder [
+	<inspectorPresentationOrder: 0 title: 'Oop'>
+
+	| items |
+	items :={
+		#stack -> stack.
+		#temps -> temps.
+		#receiver -> receiver.
+		#context -> context.
+		#flags ->  flags.
+		#method ->  method.
+		#'caller''s method ip' -> nil.
+		#'callerFP' -> callerFrame.
+"		#arguments -> args."
+		#receiver -> receiver.
+		 }.
+	^ aBuilder newTable 
+		addColumn: (SpStringTableColumn 
+			title: 'Key'
+			evaluated: [ :each | StObjectPrinter asTruncatedTextFrom: each key ])
+			beSortable;
+		addColumn: (SpStringTableColumn 
+			title: 'Value' 
+			evaluated: [ :each | StObjectPrinter asTruncatedTextFrom: each value ])
+			beSortable;
+		items: items;
+		yourself
 
 ]
 
