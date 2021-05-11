@@ -956,6 +956,7 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	"ClassProcess := 27. unused"
 	CompactClasses := 28.
 	TheTimerSemaphore := 29.
+	TheInterruptSemaphore := 30. 
 	SelectorCannotInterpret := 34.
 	"Was MethodContextProto := 35."
 	"Was ClassBlockClosure := 36."
