@@ -182,19 +182,19 @@ VMInspectorTest >> testObjectWithNilClass [
 { #category : #'tests-printing' }
 VMInspectorTest >> testPrintFalse [
 
-	self assert: 'falseObject' equals: image falseObject printString
+	self assert: 'falseObject (' , (image falseObject oop printString), ')' equals: image falseObject printString
 ]
 
 { #category : #'tests-printing' }
 VMInspectorTest >> testPrintNil [
 
-	self assert: 'nilObject' equals: image nilObject printString
+	self assert: 'nilObject (' , (image nilObject oop printString), ')' equals: image nilObject printString
 ]
 
 { #category : #'tests-printing' }
 VMInspectorTest >> testPrintTrue [
 
-	self assert: 'trueObject' equals: image trueObject printString
+	self assert: 'trueObject (' , (image trueObject oop printString), ')' equals: image trueObject printString 
 ]
 
 { #category : #tests }
@@ -208,7 +208,6 @@ VMInspectorTest >> testSlotAtPut [
 	object2 := (image objectForOop: objectOop2).
 	
 	object1 slotAt: 1 put: object2.
-	object2 slotAt: 1 put: image nilObject.
-	object1 inspect.
+	
 	self assert: (object1 slotAt: 1) address equals: object2.
 ]
