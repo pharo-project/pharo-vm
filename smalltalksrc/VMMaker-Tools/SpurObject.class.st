@@ -200,7 +200,8 @@ SpurObject >> inspectionItems: aBuilder [
 	| items |
 	self isImmediate ifTrue: [
 		^ address value inspectIntegerIn: aBuilder ].
-	items := { 
+	items := {
+		#oop -> (self address value).
 		#header -> (self header printStringBase: 2).
 		#class -> self classSpurObject.
 		#classIndex -> self classIndex.
