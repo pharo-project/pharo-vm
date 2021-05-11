@@ -125,8 +125,9 @@ CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 	aCompoundStatement declarations , aCompoundStatement statements
 		do: [ :e | e acceptVisitor: self ]
 		separatedBy: [ 
-			stream nextPut: $;.
-			stream crtab: level ].
+			aCompoundStatement needsSeparator ifTrue: [ 
+				stream nextPut: $;.
+				stream crtab: level ] ].
 
 	aCompoundStatement needsBrackets ifTrue: [ 
 		stream nextPut: $;.

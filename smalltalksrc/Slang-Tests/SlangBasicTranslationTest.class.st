@@ -1225,6 +1225,30 @@ SlangBasicTranslationTest >> testSendPowerTo [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendRepeat [
+
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #repeat
+		        receiver: (TStmtListNode new setStatements:
+				         { (TAssignmentNode new
+					          setVariable: variable
+					          expression: expression) })
+		        arguments: {  }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'while(1) {
+	var -= 7;
+}'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendRightBitShiftSignedIn64Bits [
 
 	| translation send |
@@ -1333,6 +1357,34 @@ SlangBasicTranslationTest >> testSendTimes [
 	translation := self translate: send.
 
 	self assert: translation equals: '(1 + 2) * 3'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendTimesRepeat [
+
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #timesRepeat:
+		        receiver: (TConstantNode value: 3)
+		        arguments: { (TStmtListNode new setStatements:
+				         { (TAssignmentNode new
+					          setVariable: variable
+					          expression: expression) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '{
+	var -= 7;
+}{
+	var -= 7;
+}{
+	var -= 7;
+}'
 ]
 
 { #category : #'tests-send' }

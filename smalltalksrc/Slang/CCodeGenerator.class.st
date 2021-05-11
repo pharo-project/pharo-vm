@@ -2100,6 +2100,14 @@ CCodeGenerator >> generateCASTPowerTo: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTRepeat: tast [
+
+	^ CWhileStatementNode
+		  while: (CConstantNode value: 1)
+		  statement: (tast receiver asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTRounded: tast [
 
 	^ CCallNode
@@ -2254,6 +2262,23 @@ CCodeGenerator >> generateCASTTimes: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTTimesRepeat: tast [
+
+	| repeat |
+	repeat := CCompoundStatementNode statements: OrderedCollection new.
+	repeat needsBrackets: false.
+	repeat needsCarriageReturn: false.
+	repeat needsSeparator: false.
+
+	tast receiver value timesRepeat: [ | bloc |
+		bloc := (tast arguments first asCASTIn: self).
+		bloc needsCarriageReturn: false.
+		repeat add: bloc ].
+
+	^ repeat
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTToByDoUntil: limitExpr iterativeVariable: itVar negative: negative [
 
 	| operator limit |
@@ -2281,6 +2306,9 @@ CCodeGenerator >> generateCASTToByDoUntil: limitExpr iterativeVariable: itVar ne
 CCodeGenerator >> generateCASTToDo: tast [
 
 	| iterationVar init until step |
+	(tast args last args size = 1) ifFalse: [
+		self error: 'wrong number of block arguments'.
+	].
 	iterationVar := tast arguments last args first.
 	init := CAssignmentNode
 		        lvalue: (CIdentifierNode name: iterationVar)
