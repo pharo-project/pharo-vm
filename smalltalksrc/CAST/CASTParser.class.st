@@ -1068,7 +1068,7 @@ CASTParser >> reduceActionForpostfix_expression6: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForpostfix_expression7: nodes [
 	| result |
-	result := CGLRIncrementNode new.
+	result := CIncrementNode new.
 	result object: (nodes at: 1).
 	result plusPlusToken: (nodes at: 2).
 	^ result

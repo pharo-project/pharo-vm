@@ -181,6 +181,19 @@ CSlangPrettyPrinter >> visitDoStatement: aDoStatement [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitForStatement: aForStatement [
+
+	stream nextPutAll: 'for('.
+	aForStatement init acceptVisitor: self.
+	stream nextPutAll: '; '.
+	aForStatement until acceptVisitor: self.
+	stream nextPutAll: '; '.
+	aForStatement step acceptVisitor: self.
+	stream nextPutAll: ') '.
+	aForStatement statement acceptVisitor: self.
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitGotoStatement: aGoToStatement [
 
 	stream nextPutAll: 'goto ';
@@ -204,6 +217,15 @@ CSlangPrettyPrinter >> visitIfStatement: anIf [
 	anIf else ifNotNil: [ :e | 
 		stream nextPutAll: 'else '.
 		e acceptVisitor: self ]
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitIncrement: anIncrementNode [
+	| visit |
+	visit := [ anIncrementNode object acceptVisitor: self ].
+	anIncrementNode prefix ifFalse: visit.
+	stream nextPutAll: '++'.
+	anIncrementNode prefix ifTrue: visit.
 ]
 
 { #category : #generated }
