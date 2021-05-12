@@ -606,6 +606,84 @@ SlangBasicTranslationTest >> testSendAsIntegerPtr [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendAsLong [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #asLong
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '(long)(x)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendAsUnsignedInteger [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #asUnsignedInteger
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '(usqInt)(x)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendAsUnsignedIntegerPtr [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #asUnsignedIntegerPtr
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '(usqIntptr_t)(x)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendAsUnsignedLong [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #asUnsignedLong
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '(unsigned long)(x)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendAsUnsignedLongLong [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #asUnsignedLongLong
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '(unsigned long long)(x)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendAsVoidPointer [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #asVoidPointer
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '(void *)(x)'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendAt [
 
 	| translation send |

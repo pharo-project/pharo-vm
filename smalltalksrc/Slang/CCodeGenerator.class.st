@@ -1738,7 +1738,7 @@ CCodeGenerator >> generateCASTAbs: tast [
 			ifNotNil: [:tuple| tuple last]
 			ifNil: [#abs].
 	^ CCallNode identifier: (CIdentifierNode name: absFun)
-					arguments: { tast receiver asCASTIn: self }
+					arguments: { tast receiver asCASTExpressionIn: self }
 ]
 
 { #category : #'CAST translation' }
@@ -1757,27 +1757,65 @@ CCodeGenerator >> generateCASTAnd: tast [
 ]
 
 { #category : #'CAST translation' }
-CCodeGenerator >> generateCASTAsFloat: tast [
+CCodeGenerator >> generateCASTAs: tast type: type [
 
 	^ CCastExpressionNode
-		  type: (CTypeNameNode symbol: 'double')
-		  expression: (tast receiver asCASTIn: self)
+		  type: (CTypeNameNode symbol: type)
+		  expression: (tast receiver asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsFloat: tast [
+
+	^ self generateCASTAs: tast type:  'double'
 ]
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTAsInteger: tast [
 
-	^ CCastExpressionNode
-		  type: (CTypeNameNode symbol: 'sqInt')
-		  expression: (tast receiver asCASTIn: self)
+	^ self generateCASTAs: tast type:  'sqInt'
 ]
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTAsIntegerPtr: tast [
 
-	^ CCastExpressionNode
-		  type: (CTypeNameNode symbol: 'sqIntptr_t')
-		  expression: (tast receiver asCASTIn: self)
+	^ self generateCASTAs: tast type: 'sqIntptr_t'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsLong: tast [
+
+	^ self generateCASTAs: tast type:  'long'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsUnsignedInteger: tast [
+
+	^ self generateCASTAs: tast type:  'usqInt'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsUnsignedIntegerPtr: tast [
+
+	^ self generateCASTAs: tast type:  'usqIntptr_t'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsUnsignedLong: tast [
+
+	^ self generateCASTAs: tast type:  'unsigned long'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsUnsignedLongLong: tast [
+
+	^ self generateCASTAs: tast type:  'unsigned long long'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsVoidPointer: tast [
+
+	^ self generateCASTAs: tast type: 'void *'
 ]
 
 { #category : #'CAST translation' }
