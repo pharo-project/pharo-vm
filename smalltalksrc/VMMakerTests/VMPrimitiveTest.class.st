@@ -1184,6 +1184,47 @@ VMPrimitiveTest >> testPrimitiveBitXorWithNegativNumbers [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 40).
 ]
 
+{ #category : #'tests - primitiveClass' }
+VMPrimitiveTest >> testPrimitiveClassDoesntFailsForForwardedObjectAndArgCountEqualsZero [
+	
+	interpreter push: self setUpForwardedObjects. 
+	
+	interpreter primitiveClass. 
+	
+	self deny: interpreter failed. 
+	
+	
+	
+	
+]
+
+{ #category : #'tests - primitiveClass' }
+VMPrimitiveTest >> testPrimitiveClassFailsForForwardedObjectAndArgCountMoreThanZero [
+	
+	interpreter push: self setUpForwardedObjects. 
+	interpreter argumentCount: 1. 
+	
+	interpreter primitiveClass. 
+	
+	self assert: interpreter failed. 
+	
+	
+	
+	
+]
+
+{ #category : #'tests - primitiveClass' }
+VMPrimitiveTest >> testPrimitiveClassReturnsAClass [
+
+	interpreter push: memory trueObject.
+	
+	interpreter primitiveClass. 
+
+	self assert: interpreter stackTop equals: (memory fetchClassOf: (memory trueObject)). 
+	
+	
+]
+
 { #category : #'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDiv [
 
