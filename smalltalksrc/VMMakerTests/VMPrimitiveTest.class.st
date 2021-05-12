@@ -1689,7 +1689,97 @@ VMPrimitiveTest >> testPrimitiveGreaterThanWithNoErrorPopsOperands [
 ]
 
 { #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalDoesntFailForForwardedOopOnOtherObjectWithArgCountLessThanOne [
+	| class1 class2 object1 object2 array1 array2|
+	"Tests the case where objectArg = 1 and: isOopFowarded: stackTop"
+	
+	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
+	class2 := self newClassInOldSpaceWithSlots: 2 instSpec: memory nonIndexablePointerFormat.
+	
+	object1 := memory instantiateClass: class1.
+	object2 := memory instantiateClass: class2.
+	
+	array1 := self newArrayWith: { object1 }.
+	array2 := self newArrayWith: { object2 }.
+	
+	interpreter push: array1.
+	interpreter push: array2. 
+	
+	interpreter primitiveArrayBecome.
+	
+	self assert: (memory isForwarded: object1) equals: true.
+	self assert: (memory isForwarded: object2) equals: true.
+	
+	interpreter push: array1. 
+	interpreter push: object2. 
+	
+	interpreter argumentCount: 1.
+	interpreter primitiveIdentical. 
+
+	self deny: interpreter failed. 
+]
+
+{ #category : #'as yet unclassified' }
 VMPrimitiveTest >> testPrimitiveIdenticalFailsForForwardedOop [
+	| class1 class2 object1 object2 array1 array2|
+	
+	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
+	class2 := self newClassInOldSpaceWithSlots: 2 instSpec: memory nonIndexablePointerFormat.
+	
+	object1 := memory instantiateClass: class1.
+	object2 := memory instantiateClass: class2.
+	
+	array1 := self newArrayWith: { object1 }.
+	array2 := self newArrayWith: { object2 }.
+	
+	interpreter push: array2.
+	
+	interpreter primitiveArrayBecome.
+	
+	interpreter push: object1. 
+	interpreter push: array2. 
+	
+	interpreter primitiveIdentical. 
+
+	self assert: interpreter primFailCode equals: PrimErrBadArgument.
+	
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalFailsForForwardedOopOnOtherObject [
+	| class1 class2 object1 object2 array1 array2|
+	"Tests the case where objectArg > 1 and: isOopFowarded: stackTop"
+	
+	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
+	class2 := self newClassInOldSpaceWithSlots: 2 instSpec: memory nonIndexablePointerFormat.
+	
+	object1 := memory instantiateClass: class1.
+	object2 := memory instantiateClass: class2.
+	
+	array1 := self newArrayWith: { object1 }.
+	array2 := self newArrayWith: { object2 }.
+	
+	interpreter push: array1.
+	interpreter push: array2. 
+	
+	interpreter primitiveArrayBecome.
+	
+	self assert: (memory isForwarded: object1) equals: true.
+	self assert: (memory isForwarded: object2) equals: true.
+	
+	interpreter push: array1. 
+	interpreter push: object2. 
+	
+	interpreter argumentCount: 3.
+	interpreter primitiveIdentical. 
+
+	self assert: interpreter failed. 
+	self assert: interpreter primFailCode equals: PrimErrBadArgument.
+	
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalFailsForForwardedOopOnReceiver [
 	| class1 class2 object1 object2 array1 array2|
 	
 	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -1706,11 +1796,15 @@ VMPrimitiveTest >> testPrimitiveIdenticalFailsForForwardedOop [
 	
 	interpreter primitiveArrayBecome.
 	
+	self assert: (memory isForwarded: object1) equals: true.
+	self assert: (memory isForwarded: object2) equals: true.
+	
 	interpreter push: object1. 
 	interpreter push: array2. 
 	
 	interpreter primitiveIdentical. 
 
+	self assert: interpreter failed. 
 	self assert: interpreter primFailCode equals: PrimErrBadArgument.
 	
 ]
@@ -1786,6 +1880,45 @@ VMPrimitiveTest >> testPrimitiveIdenticalReturnsTrueForObjectsWithSameValue [
 	interpreter primitiveIdentical. 
 
 	self assert: interpreter stackTop equals: memory trueObject. 
+	
+]
+
+{ #category : #'tests - primitiveImmediateAsInteger' }
+VMPrimitiveTest >> testPrimitiveImmediateAsIntegerFailsWithTypeError [
+
+	interpreter push: (memory trueObject).
+	
+	interpreter primitiveImmediateAsInteger. 
+
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
+	
+	
+]
+
+{ #category : #'tests - primitiveImmediateAsInteger' }
+VMPrimitiveTest >> testPrimitiveImmediateAsIntegerWithChar [
+
+	interpreter push: (memory characterObjectOf: 66).
+	
+	interpreter primitiveImmediateAsInteger. 
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 66).  
+	
+	
+]
+
+{ #category : #'tests - primitiveImmediateAsInteger' }
+VMPrimitiveTest >> testPrimitiveImmediateAsIntegerWithFloat [
+
+	interpreter push: (memory integerObjectOf: 0). 
+	
+	interpreter primitiveImmediateAsInteger. 
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
+	
 	
 ]
 
@@ -1903,6 +2036,27 @@ VMPrimitiveTest >> testPrimitiveInstVarAtReturnsTheValueForNonIndexable [
 	
 	self deny: interpreter failed.
 	self assert: interpreter stackTop equals: memory falseObject.
+]
+
+{ #category : #'tests - primitiveIsPinned' }
+VMPrimitiveTest >> testPrimitiveIsPinnedBool [
+
+	interpreter push: (memory trueObject). 
+	
+	interpreter primitiveIsPinned. 
+	
+	self deny: interpreter failed. 
+	self assert: interpreter stackTop equals: memory falseObject. 
+]
+
+{ #category : #'tests - primitiveIsPinned' }
+VMPrimitiveTest >> testPrimitiveIsPinnedSmallInt [
+
+	interpreter push: (memory integerObjectOf: 10). 
+	
+	interpreter primitiveIsPinned. 
+	
+	self assert: interpreter failed. 
 ]
 
 { #category : #'tests - primitiveLessOrEqual' }
@@ -3132,6 +3286,24 @@ VMPrimitiveTest >> testPrimitiveStringAtShouldNotFailWhenReceiverIsAString [
 	self assert: interpreter successful.
 	self assert: interpreter stackTop equals: (memory characterObjectOf: 2). 
 
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveStringAtShouldNotModifyStringIfFailedWhenNonCharacterArgument [
+	"Every other test is common with at:put:"
+
+	| string |
+	string := self newString: 'po'.
+
+	interpreter push: string.
+	interpreter push: (memory integerObjectOf: 1).
+	interpreter push: memory falseObject.
+	interpreter primitiveStringAtPut.
+
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadArgument.
+
+	self assert: string contentEquals: (self newString: 'po')
 ]
 
 { #category : #'tests - primitiveSubtract' }
