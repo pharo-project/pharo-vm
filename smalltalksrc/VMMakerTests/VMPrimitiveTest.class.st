@@ -495,6 +495,46 @@ VMPrimitiveTest >> testPrimitiveArrayBecomeOneWayCreatesForwardThatPointsToOrigi
 	self assert: (memory followForwarded: object1)  equals: object2
 ]
 
+{ #category : #'tests - primitiveAsCharacter' }
+VMPrimitiveTest >> testPrimitiveAsCharacter [
+	interpreter push: (memory integerObjectOf: 65).
+	
+	interpreter primitiveAsCharacter. 
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory characterObjectOf: 65). 
+]
+
+{ #category : #'tests - primitiveAsCharacter' }
+VMPrimitiveTest >> testPrimitiveAsCharacterCompilesWithNoArg [
+	
+	interpreter primitiveAsCharacter. 
+
+	self deny: interpreter failed.
+]
+
+{ #category : #'tests - primitiveAsCharacter' }
+VMPrimitiveTest >> testPrimitiveAsCharacterFailsForOutOfRangeArg [
+	
+	interpreter push: memory maxSmallInteger. 
+	
+	interpreter primitiveAsCharacter. 
+
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
+]
+
+{ #category : #'tests - primitiveAsCharacter' }
+VMPrimitiveTest >> testPrimitiveAsCharacterFailsWithNonIntObject [
+	
+	interpreter push: memory trueObject. 
+	
+	interpreter primitiveAsCharacter. 
+	
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
+]
+
 { #category : #'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveAtDoesntFailsIfObjectIsImmutable [
 
