@@ -138,6 +138,17 @@ CSlangPrettyPrinterTest >> testVisitCastExpressionDouble [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitComment [
+
+	| print |
+	print := self prettyPrint: (CCommentNode comment: 'a kind comment for the developper :3').
+	
+	self assert: print equals: '/* a kind comment for the developper :3 */'
+
+
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitCompoundStatement [
 
 	| print |
@@ -205,6 +216,17 @@ CSlangPrettyPrinterTest >> testVisitDeclarator [
 	print := self prettyPrint: (CPointerDeclaratorNode declarator: (CIdentifierNode name: 'toto') pointers: 1).
 	
 	self assert: print equals: '*toto'
+
+
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitDecrement [
+
+	| print |
+	print := self prettyPrint: (CDecrementNode object: (CIdentifierNode name: 'i')).
+	
+	self assert: print equals: 'i--'
 
 
 ]

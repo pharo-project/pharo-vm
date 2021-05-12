@@ -112,6 +112,14 @@ CSlangPrettyPrinter >> visitCastExpression: aCastExpression [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitComment: aComment [
+
+	stream nextPutAll: '/* '.
+	stream nextPutAll: aComment comment.
+	stream nextPutAll: ' */'
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 
 	aCompoundStatement needsBrackets ifTrue: [ 
@@ -169,6 +177,15 @@ CSlangPrettyPrinter >> visitDeclarator: aDeclarator [
 		do: [ :e | stream nextPutAll: e ].
 	
 	aDeclarator declarator acceptVisitor: self
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitDecrement: anDecrementNode [
+	| visit |
+	visit := [ anDecrementNode object acceptVisitor: self ].
+	anDecrementNode prefix ifFalse: visit.
+	stream nextPutAll: '--'.
+	anDecrementNode prefix ifTrue: visit.
 ]
 
 { #category : #generated }

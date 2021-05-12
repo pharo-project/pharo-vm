@@ -1742,6 +1742,15 @@ CCodeGenerator >> generateCASTAbs: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAllMask: tast [
+
+	^ CBinaryOperatorNode
+		  operator: #==
+		  left: (self generateCASTBitAnd: tast)
+		  right: (tast arguments first asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTAnd: tast [
 
 	^ self generateCASTBinary: tast operator: #&&
@@ -1788,6 +1797,12 @@ CCodeGenerator >> generateCASTAtPut: tast [
 				   index: (tast arguments first asCASTExpressionIn: self))
 		  operator: '='
 		  rvalue: (tast arguments last asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBaseHeaderSize: tast [
+
+	^ CIdentifierNode name: 'BaseHeaderSize'
 ]
 
 { #category : #'CAST translation' }
@@ -1894,6 +1909,12 @@ CCodeGenerator >> generateCASTByteSwap64IfBigEndian: tast [
 	^ CCallNode
 		  identifier: (CIdentifierNode name: 'SQ_SWAP_8_BYTES_IF_BIGENDIAN')
 		  arguments: { (tast arguments first asCASTExpressionIn: self) }
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBytesPerOop: tast [
+
+	^ CIdentifierNode name: 'BytesPerOop'
 ]
 
 { #category : #'CAST translation' }
@@ -2007,6 +2028,12 @@ CCodeGenerator >> generateCASTIfTrueIfFalse: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTInlineDirective: tast [
+
+	^ CCommentNode comment: 'inline: ' , tast arguments first name
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIsNil: tast [
 
 	^ CBinaryOperatorNode
@@ -2070,6 +2097,15 @@ CCodeGenerator >> generateCASTNegated: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTNoMask: tast [
+
+	^ CBinaryOperatorNode
+		  operator: #==
+		  left: (self generateCASTBitAnd: tast)
+		  right: (CConstantNode value: 0)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTNot: tast [
 
 	^ self generateCASTUnary: tast operator: #!
@@ -2113,6 +2149,42 @@ CCodeGenerator >> generateCASTPowerTo: tast [
 				   arguments: { 
 						   (tast receiver asCASTIn: self).
 						   (tast arguments first asCASTIn: self) })
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTPreDecrement: tast [
+
+	| varNode |
+	varNode := tast receiver.
+	varNode isVariable ifFalse: [ 
+		self error: 'preDecrement can only be applied to variables' ].
+	^ CDecrementNode
+		  object:
+			  (CIdentifierNode name:
+					   (self returnPrefixFromVariable: varNode name))
+		  prefix: true
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTPreIncrement: tast [
+
+	| varNode |
+	varNode := tast receiver.
+	varNode isVariable ifFalse: [ 
+		self error: 'preIncrement can only be applied to variables' ].
+	^ CIncrementNode
+		  object:
+			  (CIdentifierNode name:
+					   (self returnPrefixFromVariable: varNode name))
+		  prefix: true
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTRaisedTo: tast [
+
+	^ CCallNode identifier: (CIdentifierNode name: 'pow') arguments: { 
+			  (tast receiver asCASTIn: self).
+			  (tast arguments first asCASTIn: self) }
 ]
 
 { #category : #'CAST translation' }
@@ -2352,6 +2424,12 @@ CCodeGenerator >> generateCASTToDo: tast [
 		  until: until
 		  step: step
 		  statement: (tast arguments last asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTTouche: tast [
+
+	^ CEmptyStatementNode new
 ]
 
 { #category : #'CAST translation' }
@@ -3272,7 +3350,7 @@ CCodeGenerator >> generateRaisedTo: msgNode on: aStream indent: level [
 
 	aStream nextPutAll:'pow('.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPutAll: ','.
+	aStream nextPutAll: ', '.
 	self emitCExpression: msgNode args first on: aStream.
 	aStream nextPutAll:')'.
 ]

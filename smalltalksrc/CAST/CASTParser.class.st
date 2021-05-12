@@ -1077,7 +1077,7 @@ CASTParser >> reduceActionForpostfix_expression7: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForpostfix_expression8: nodes [
 	| result |
-	result := CGLRDecrementNode new.
+	result := CDecrementNode new.
 	result object: (nodes at: 1).
 	^ result
 ]

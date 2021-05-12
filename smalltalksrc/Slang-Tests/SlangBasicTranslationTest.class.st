@@ -539,6 +539,20 @@ SlangBasicTranslationTest >> testSendAbs [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendAllMask [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #allMask:
+					receiver: (TVariableNode new setName: 'a')
+					arguments: { TConstantNode value: 7 }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((a & 7) == 7)'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendAnd [
 
 	| translation send |
@@ -620,6 +634,18 @@ SlangBasicTranslationTest >> testSendAtPut [
 	self assert: translation equals: 'tab[7] = a'
 ]
 
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testSendBaseHeaderSize [
+
+	| translation |
+	translation := self translate: (TSendNode new
+			                setSelector: #baseHeaderSize
+			                receiver: (TVariableNode new setName: 'aVM')
+			                arguments: { }).
+
+	self assert: translation equals: 'BaseHeaderSize'
+]
+
 { #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendBetweenAnd [
 
@@ -641,12 +667,12 @@ SlangBasicTranslationTest >> testSendBitAnd [
 	| translation send |
 
 	send := TSendNode new
-					setSelector: #bitAnd:
+					setSelector: #noMask:
 					receiver: (TVariableNode new setName: 'a')
 					arguments: { TConstantNode value: 1 }.
 	translation := self translate: send.
 
-	self assert: translation equals: 'a & 1'
+	self assert: translation equals: '(a & 1) == 0'
 ]
 
 { #category : #'tests-send' }
@@ -767,6 +793,18 @@ SlangBasicTranslationTest >> testSendByteSwap64IfBigEndian [
 	translation := self translate: send.
 
 	self assert: translation equals: 'SQ_SWAP_8_BYTES_IF_BIGENDIAN(a)'
+]
+
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testSendBytesPerOop [
+
+	| translation |
+	translation := self translate: (TSendNode new
+			                setSelector: #bytesPerOop
+			                receiver: (TVariableNode new setName: 'aVM')
+			                arguments: { }).
+
+	self assert: translation equals: 'BytesPerOop'	
 ]
 
 { #category : #'tests-assignment' }
@@ -1188,6 +1226,20 @@ SlangBasicTranslationTest >> testSendNegated [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendNoMask [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #noMask:
+					receiver: (TVariableNode new setName: 'a')
+					arguments: { TConstantNode value: 1 }.
+	translation := self translate: send.
+
+	self assert: translation equals: '(a & 1) == 0'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendNot [
 
 	| translation send |
@@ -1273,6 +1325,47 @@ SlangBasicTranslationTest >> testSendPowerTo [
 	translation := self translate: send.
 
 	self assert: translation equals: '(sqInt)(pow(x, 2))'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendPreDecrement [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #preDecrement
+					receiver: (TVariableNode new setName: 'i')
+					arguments: { }.
+	translation := self translate: send.
+
+	self assert: translation equals: '--i'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendPreIncrement [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #preIncrement
+					receiver: (TVariableNode new setName: 'i')
+					arguments: { }.
+	translation := self translate: send.
+
+	self assert: translation equals: '++i'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendRaisedTo [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #raisedTo:
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: { (TConstantNode value: 2) }.
+	translation := self translate: send.
+
+	self assert: translation equals: 'pow(x, 2)'
 ]
 
 { #category : #'tests-send' }

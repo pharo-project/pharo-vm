@@ -55,6 +55,11 @@ CAbstractNodeVisitor >> visitCastExpression: aCastExpression [
 ]
 
 { #category : #generated }
+CAbstractNodeVisitor >> visitComment: aComment [
+	^ self visitAbstract: aComment
+]
+
+{ #category : #generated }
 CAbstractNodeVisitor >> visitCompoundStatement: aCompoundStatement [
 	^ self visitAbstract: aCompoundStatement
 ]
