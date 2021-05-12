@@ -2848,6 +2848,99 @@ VMPrimitiveTest >> testPrimitiveNotEqualWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed. 
 ]
 
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitivePinFailsForForwardedObjects [
+
+	interpreter push: self setUpForwardedObjects. 
+	
+	interpreter primitivePin. 
+	
+	self assert: interpreter failed. 
+	self assert: interpreter primFailCode equals: PrimErrBadArgument. 
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitivePinFailsForImmediate [
+
+	interpreter push: (memory integerObjectOf: 16).
+	
+	interpreter primitivePin. 
+	
+	self assert: interpreter failed. 
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitivePinFailsForNOnBoolOnSecondArg [
+
+	interpreter push: (memory instantiateClass: (self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat)).
+	interpreter push: (memory integerObjectOf: 16). 
+	
+	interpreter primitivePin. 
+	
+	self assert: interpreter failed. 
+	self assert: interpreter primFailCode equals: PrimErrBadArgument. 
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitivePinPinsObjectCreatedInNewSpace [
+	|object object2|
+	
+	object := (memory instantiateClass: (self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat)).
+	interpreter push: object. 
+	interpreter push: (memory trueObject). 
+	
+	self deny: (memory isPinned: object).
+	
+	interpreter primitivePin. 
+	
+	self deny: interpreter failed. 
+	
+	object2 := memory followForwarded: object. 
+	
+	self assert: (memory isPinned: object2). 
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitivePinPinsObjectCreatedInOldSpace [
+	|object|
+	
+	object := self newOldSpaceObjectWithSlots: 1.
+	interpreter push: object. 
+	interpreter push: (memory trueObject). 
+	
+	self deny: (memory isPinned: object).
+	
+	interpreter primitivePin. 
+	
+	self deny: interpreter failed. 
+	
+	self assert: (memory isPinned: object). 
+
+	
+	
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitivePinReturnsBoolean [
+	|object|
+	
+	object := self newOldSpaceObjectWithSlots: 1.
+	interpreter push: object. 
+	interpreter push: (memory trueObject). 
+	
+	self deny: (memory isPinned: object).
+	
+	interpreter primitivePin. 
+	
+	self deny: interpreter failed. 
+	
+	self assert: interpreter stackTop equals: memory falseObject. 
+
+	
+	
+]
+
 { #category : #'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuo [
 
