@@ -1897,6 +1897,22 @@ CCodeGenerator >> generateCASTByteSwap64IfBigEndian: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBytesPerWord: tast [
+
+	^ CIdentifierNode name: 'BytesPerWord'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTDeny: tast [
+
+	^ CCallNode
+		  identifier: (CIdentifierNode name: 'assert')
+		  arguments: { (CUnaryOperatorNode
+				   operator: #!
+				   expression: (tast arguments first asCASTExpressionIn: self)) }
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTDivide: tast [
 
 	^ self generateCASTBinary: tast operator: #/
@@ -2256,6 +2272,24 @@ CCodeGenerator >> generateCASTSignedShiftRight: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTSmallIntegerConstant: tast [
+
+	tast selector = #minSmallInteger ifTrue:
+		[^ CIdentifierNode name: 'MinSmallInteger'].
+	tast selector = #maxSmallInteger ifTrue:
+		[^ CIdentifierNode name: 'MaxSmallInteger'].
+	self error: 'unknown SmallInteger constant'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTSmalltalkMetaError: tast [
+
+	^ CCallNode
+		  identifier: (CIdentifierNode name: 'error')
+		  arguments: { (CStringLiteralNode value: tast selector) }
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTTimes: tast [
 	
 	^ self generateCASTBinary: tast operator: #*
@@ -2270,10 +2304,8 @@ CCodeGenerator >> generateCASTTimesRepeat: tast [
 	repeat needsCarriageReturn: false.
 	repeat needsSeparator: false.
 
-	tast receiver value timesRepeat: [ | bloc |
-		bloc := (tast arguments first asCASTIn: self).
-		bloc needsCarriageReturn: false.
-		repeat add: bloc ].
+	tast receiver value timesRepeat: [
+		repeat add: ((tast arguments first asCASTIn: self) needsCarriageReturn: false; yourself) ].
 
 	^ repeat
 ]

@@ -1099,7 +1099,7 @@ CASTParser >> reduceActionForprimary_expression2: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForprimary_expression3: nodes [
 	| result |
-	result := CGLRStringLiteralNode new.
+	result := CStringLiteralNode new.
 	result value: (nodes at: 1).
 	^ result
 ]

@@ -769,6 +769,33 @@ SlangBasicTranslationTest >> testSendByteSwap64IfBigEndian [
 	self assert: translation equals: 'SQ_SWAP_8_BYTES_IF_BIGENDIAN(a)'
 ]
 
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testSendBytesPerWord [
+
+	| translation |
+	translation := self translate: (TSendNode new
+			                setSelector: #bytesPerWord
+			                receiver: (TVariableNode new setName: 'aVM')
+			                arguments: { }).
+
+	self assert: translation equals: 'BytesPerWord'
+]
+
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testSendDeny [
+
+	| translation |
+	translation := self translate: (TSendNode new
+			                setSelector: #deny:
+			                receiver: (TVariableNode new setName: 'self')
+			                arguments: { (TSendNode new
+					                 setSelector: #=
+					                 receiver: (TVariableNode new setName: 'foo')
+					                 arguments: { (TConstantNode value: 10) }) }).
+
+	self assert: translation equals: 'assert(!(foo == 10))'
+]
+
 { #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendDivide [
 
@@ -1081,6 +1108,18 @@ SlangBasicTranslationTest >> testSendMax [
 	self assert: translation equals: '((x < y) ? y : x)'
 ]
 
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testSendMaxSmallInteger [
+
+	| translation |
+	translation := self translate: (TSendNode new
+			                setSelector: #maxSmallInteger
+			                receiver: (TVariableNode new setName: 'aMemory')
+			                arguments: { }).
+
+	self assert: translation equals: 'MaxSmallInteger'
+]
+
 { #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendMemberAccess [
 
@@ -1106,6 +1145,18 @@ SlangBasicTranslationTest >> testSendMin [
 	translation := self translate: send.
 
 	self assert: translation equals: '((x < y) ? x : y)'
+]
+
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testSendMinSmallInteger [
+
+	| translation |
+	translation := self translate: (TSendNode new
+			                setSelector: #minSmallInteger
+			                receiver: (TVariableNode new setName: 'aMemory')
+			                arguments: { }).
+
+	self assert: translation equals: 'MinSmallInteger'
 ]
 
 { #category : #'tests-send' }
@@ -1227,6 +1278,7 @@ SlangBasicTranslationTest >> testSendPowerTo [
 { #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendRepeat [
 
+	" [ var := var - 7 ] repeat"
 	| translation send variable expression |
 	variable := TVariableNode new setName: 'var'.
 
@@ -1326,6 +1378,30 @@ SlangBasicTranslationTest >> testSendSequentialAndWithConstantReceiverTrue [
 	self assert: translation equals: '1 && ((1 + 2, a == b))'
 ]
 
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testSendShouldBeImplemented [
+
+	| translation |
+	translation := self translate: (TSendNode new
+			                setSelector: #shouldBeImplemented
+			                receiver: (TVariableNode new setName: 'self')
+			                arguments: { }).
+
+	self assert: translation equals: 'error("shouldBeImplemented")'
+]
+
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testSendShouldNotImplement [
+
+	| translation |
+	translation := self translate: (TSendNode new
+			                setSelector: #shouldNotImplement
+			                receiver: (TVariableNode new setName: 'self')
+			                arguments: { }).
+
+	self assert: translation equals: 'error("shouldNotImplement")'
+]
+
 { #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendSignedRightBitShiftVariable64Bits [
 
@@ -1338,6 +1414,18 @@ SlangBasicTranslationTest >> testSendSignedRightBitShiftVariable64Bits [
 	translation := self translate: send.
 
 	self assert: translation equals: '((sqLong) a) >> 3'
+]
+
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testSendSubclassResponsibility [
+
+	| translation |
+	translation := self translate: (TSendNode new
+			                setSelector: #subclassResponsibility
+			                receiver: (TVariableNode new setName: 'self')
+			                arguments: { }).
+
+	self assert: translation equals: 'error("subclassResponsibility")'
 ]
 
 { #category : #'tests-send' }
@@ -1362,6 +1450,7 @@ SlangBasicTranslationTest >> testSendTimes [
 { #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendTimesRepeat [
 
+	"5 timesRepeat: [ var := var - 7 ]"
 	| translation send variable expression |
 	variable := TVariableNode new setName: 'var'.
 
@@ -1371,7 +1460,7 @@ SlangBasicTranslationTest >> testSendTimesRepeat [
 		              arguments: { (TConstantNode value: 7) }.
 	send := TSendNode new
 		        setSelector: #timesRepeat:
-		        receiver: (TConstantNode value: 3)
+		        receiver: (TConstantNode value: 5)
 		        arguments: { (TStmtListNode new setStatements:
 				         { (TAssignmentNode new
 					          setVariable: variable
@@ -1384,12 +1473,17 @@ SlangBasicTranslationTest >> testSendTimesRepeat [
 	var -= 7;
 }{
 	var -= 7;
+}{
+	var -= 7;
+}{
+	var -= 7;
 }'
 ]
 
 { #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendToDo [
 
+	"1 to: 10 do: [ var := var -7 ]"
 	| translation send variable expression |
 	variable := TVariableNode new setName: 'var'.
 
@@ -1418,6 +1512,7 @@ SlangBasicTranslationTest >> testSendToDo [
 { #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendToDoAvoidUnderflowing [
 
+	"1 to: foo - 1 do: [ var := var - 7 ]"
 	| translation send variable expression |
 	variable := TVariableNode new setName: 'var'.
 
@@ -1465,6 +1560,7 @@ SlangBasicTranslationTest >> testSendTruncateTo [
 { #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendWhileFalseWithManyStatementsInReceiverAndArgument [
 
+	"[ var := var - 7. var >= 21 ] whileFalse: [ b := var \\ 3 ]"
 	| translation send variable expression |
 	variable := TVariableNode new setName: 'var'.
 
@@ -1529,6 +1625,7 @@ SlangBasicTranslationTest >> testSendWhileFalseWithOneStatementInReceiverBlock [
 { #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendWhileFalseWithoutArguments [
 
+	"[ var := var - 7. var >= 21 ] whileFalse"
 	| translation send variable expression |
 	variable := TVariableNode new setName: 'var'.
 
@@ -1651,6 +1748,7 @@ SlangBasicTranslationTest >> testSendWhileTrueWithOneStatementInReceiverBlock [
 { #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendWhileTrueWithoutArguments [
 
+	"[ var := var - 7. var >= 21 ] whileTrue"
 	| translation send variable expression |
 	variable := TVariableNode new setName: 'var'.
 
@@ -1674,6 +1772,18 @@ SlangBasicTranslationTest >> testSendWhileTrueWithoutArguments [
 	self assert: translation trimBoth equals: 'do{
 	var -= 7;
 }while(var >= 21)'
+]
+
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testSendWordSize [
+
+	| translation |
+	translation := self translate: (TSendNode new
+			                setSelector: #wordSize
+			                receiver: (TVariableNode new setName: 'aVM')
+			                arguments: { }).
+
+	self assert: translation equals: 'BytesPerWord'
 ]
 
 { #category : #'tests-assignment' }

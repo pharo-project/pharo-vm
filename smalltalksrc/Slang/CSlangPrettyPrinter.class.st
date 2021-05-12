@@ -268,6 +268,14 @@ CSlangPrettyPrinter >> visitReturnStatement: aReturn [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitStringLiteral: aStringLiteral [
+
+	stream nextPut: $".
+	stream nextPutAll: aStringLiteral value.
+	stream nextPut: $"
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitTernary: aTarnary [
 
 	stream nextPutAll: '(('.

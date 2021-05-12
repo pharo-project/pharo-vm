@@ -387,6 +387,15 @@ CSlangPrettyPrinterTest >> testVisitReturnStatement [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitStringLiteral [
+
+	| print |
+	print := self prettyPrint: (CStringLiteralNode value: 'You are breathtaking!').
+
+	self assert: print equals: '"You are breathtaking!"'
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitTernary [
 
 	| print |
