@@ -2112,6 +2112,28 @@ VMPrimitiveTest >> testPrimitiveIsPinnedBool [
 ]
 
 { #category : #'tests - primitiveIsPinned' }
+VMPrimitiveTest >> testPrimitiveIsPinnedFailsForForwardedObjects [
+
+	interpreter push: self setUpForwardedObjects. 
+	
+	interpreter primitiveIsPinned. 
+	
+	self assert: interpreter failed. 
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
+]
+
+{ #category : #'tests - primitiveIsPinned' }
+VMPrimitiveTest >> testPrimitiveIsPinnedFailsForImmediateObjects [
+
+	interpreter push: (memory integerObjectOf: 16). 
+	
+	interpreter primitiveIsPinned. 
+	
+	self assert: interpreter failed. 
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
+]
+
+{ #category : #'tests - primitiveIsPinned' }
 VMPrimitiveTest >> testPrimitiveIsPinnedSmallInt [
 
 	interpreter push: (memory integerObjectOf: 10). 
