@@ -75,6 +75,30 @@ VMPrimitiveTest >> setUp [
 	imageName := VMPrimitiveTest name 
 ]
 
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> setUpForwardedObjects [
+	| class1 class2 object1 object2 array1 array2 |
+	
+	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
+	class2 := self newClassInOldSpaceWithSlots: 2 instSpec: memory nonIndexablePointerFormat.
+	
+	object1 := memory instantiateClass: class1.
+	object2 := memory instantiateClass: class2.
+	
+	array1 := self newArrayWith: { object1 }.
+	array2 := self newArrayWith: { object2 }.
+	
+	interpreter push: array1.
+	interpreter push: array2. 
+	
+	interpreter primitiveArrayBecome.
+	
+	self assert: (memory isForwarded: object1) equals: true.
+	self assert: (memory isForwarded: object2) equals: true.
+	
+	^ object1. 
+]
+
 { #category : #running }
 VMPrimitiveTest >> tearDown [
 
@@ -1690,30 +1714,16 @@ VMPrimitiveTest >> testPrimitiveGreaterThanWithNoErrorPopsOperands [
 
 { #category : #'tests - primitiveIdentical' }
 VMPrimitiveTest >> testPrimitiveIdenticalDoesntFailForForwardedOopOnOtherObjectWithArgCountLessThanOne [
-	| class1 class2 object1 object2 array1 array2|
+	|object1|
 	"Tests the case where objectArg = 1 and: isOopFowarded: stackTop"
 	
-	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
-	class2 := self newClassInOldSpaceWithSlots: 2 instSpec: memory nonIndexablePointerFormat.
-	
-	object1 := memory instantiateClass: class1.
-	object2 := memory instantiateClass: class2.
-	
-	array1 := self newArrayWith: { object1 }.
-	array2 := self newArrayWith: { object2 }.
-	
-	interpreter push: array1.
-	interpreter push: array2. 
-	
-	interpreter primitiveArrayBecome.
-	
-	self assert: (memory isForwarded: object1) equals: true.
-	self assert: (memory isForwarded: object2) equals: true.
-	
-	interpreter push: array1. 
-	interpreter push: object2. 
+	object1 := self setUpForwardedObjects. 
 	
 	interpreter argumentCount: 1.
+	
+	interpreter push: (memory integerObjectOf: 16). 
+	interpreter push: object1. 
+	
 	interpreter primitiveIdentical. 
 
 	self deny: interpreter failed. 
@@ -1747,30 +1757,16 @@ VMPrimitiveTest >> testPrimitiveIdenticalFailsForForwardedOop [
 
 { #category : #'tests - primitiveIdentical' }
 VMPrimitiveTest >> testPrimitiveIdenticalFailsForForwardedOopOnOtherObject [
-	| class1 class2 object1 object2 array1 array2|
+	|object1|
 	"Tests the case where objectArg > 1 and: isOopFowarded: stackTop"
 	
-	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
-	class2 := self newClassInOldSpaceWithSlots: 2 instSpec: memory nonIndexablePointerFormat.
-	
-	object1 := memory instantiateClass: class1.
-	object2 := memory instantiateClass: class2.
-	
-	array1 := self newArrayWith: { object1 }.
-	array2 := self newArrayWith: { object2 }.
-	
-	interpreter push: array1.
-	interpreter push: array2. 
-	
-	interpreter primitiveArrayBecome.
-	
-	self assert: (memory isForwarded: object1) equals: true.
-	self assert: (memory isForwarded: object2) equals: true.
-	
-	interpreter push: array1. 
-	interpreter push: object2. 
+	object1 := self setUpForwardedObjects.
 	
 	interpreter argumentCount: 3.
+	
+	interpreter push: (memory integerObjectOf: 16). 
+	interpreter push: object1.
+	 
 	interpreter primitiveIdentical. 
 
 	self assert: interpreter failed. 
@@ -1780,27 +1776,12 @@ VMPrimitiveTest >> testPrimitiveIdenticalFailsForForwardedOopOnOtherObject [
 
 { #category : #'tests - primitiveIdentical' }
 VMPrimitiveTest >> testPrimitiveIdenticalFailsForForwardedOopOnReceiver [
-	| class1 class2 object1 object2 array1 array2|
+	|object1|
 	
-	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
-	class2 := self newClassInOldSpaceWithSlots: 2 instSpec: memory nonIndexablePointerFormat.
-	
-	object1 := memory instantiateClass: class1.
-	object2 := memory instantiateClass: class2.
-	
-	array1 := self newArrayWith: { object1 }.
-	array2 := self newArrayWith: { object2 }.
-	
-	interpreter push: array1.
-	interpreter push: array2.
-	
-	interpreter primitiveArrayBecome.
-	
-	self assert: (memory isForwarded: object1) equals: true.
-	self assert: (memory isForwarded: object2) equals: true.
+	object1 := self setUpForwardedObjects. 
 	
 	interpreter push: object1. 
-	interpreter push: array2. 
+	interpreter push: (memory integerObjectOf: 16). 
 	
 	interpreter primitiveIdentical. 
 
