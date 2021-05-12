@@ -3302,6 +3302,81 @@ VMPrimitiveTest >> testPrimitiveSlotAtPutsTheValueForNonIndexable [
 	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
 ]
 
+{ #category : #'tests - primitiveAdd - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatAdd [
+
+	interpreter push: (memory smallFloatObjectOf: 10.0). 
+	interpreter push: (memory smallFloatObjectOf: 0.0).
+	
+	interpreter primitiveSmallFloatAdd.  
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory smallFloatObjectOf: 10.0). 
+	
+	
+]
+
+{ #category : #'tests - primitiveAdd - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatAddFailsWithTypeErrorOnFirstOperand [
+
+	interpreter push: memory trueObject.
+	interpreter push: (memory smallFloatObjectOf: 2.0).
+	
+	interpreter primitiveSmallFloatAdd. 
+
+	self assert: interpreter failed.
+	
+	
+]
+
+{ #category : #'tests - primitiveAdd - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatAddFailsWithTypeErrorOnSecondOperand [
+
+	interpreter push: (memory smallFloatObjectOf: 2.0).
+	interpreter push: memory trueObject.
+	
+	interpreter primitiveSmallFloatAdd. 
+
+	self assert: interpreter failed.
+	
+	
+]
+
+{ #category : #'tests - primitiveAdd - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatAddFailsWithTypeErrorPreservesStack [
+	
+	interpreter push: (memory smallFloatObjectOf: 2.0). 
+	interpreter push: memory trueObject. 
+	
+	interpreter primitiveSmallFloatAdd. 
+	
+	self assert: interpreter failed. 
+	
+	self assert: interpreter stackTop equals: memory trueObject.
+	self assert: (interpreter stackValue: 1) equals:  (memory smallFloatObjectOf: 2.0). 
+	
+	
+]
+
+{ #category : #'tests - primitiveAdd - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatAddWithNoOverflowPopsOperands [
+
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter push: (memory smallFloatObjectOf: 1.0).
+	interpreter push: (memory smallFloatObjectOf: 2.0).
+	
+	interpreter primitiveSmallFloatAdd. 
+	
+	interpreter popStack. 
+	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were popped from the stack by checking that the next value is our marker, for instance 42"
+	
+	self deny: interpreter failed. 
+	"self assert: (interpreter stackValue: 1) equals: (memory integerObjectOf: 42)."
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42). 
+	
+	
+]
+
 { #category : #'tests - snapshot' }
 VMPrimitiveTest >> testPrimitiveSnapshotContextsShouldBeTenured [
 	| method frame contextOop contextIdentityHash suspendedContext |
