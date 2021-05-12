@@ -3652,14 +3652,15 @@ InterpreterPrimitives >> primitiveSlotAtPut [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatAdd [
 	<option: #Spur64BitMemoryManager>
-	| rcvr arg |
+	| rcvr arg|
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
-
-	rcvr := objectMemory smallFloatValueOf: (self stackValue: 1).
-	arg := objectMemory loadFloatOrIntFrom: self stackTop.
-	self successful ifTrue:
-		[self pop: 2 thenPushFloat: rcvr + arg]
+	
+	rcvr := objectMemory loadFloatOrIntFrom: (self stackValue: 1). 
+	arg := objectMemory loadFloatOrIntFrom: self stackTop.  
+	self successful 
+		ifTrue: [self pop: 2 thenPushFloat: (rcvr + arg)] 
+		ifFalse: [^self primitiveFailFor: PrimErrBadArgument].
 ]
 
 { #category : #'arithmetic float primitives' }
