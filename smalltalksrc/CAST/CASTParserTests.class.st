@@ -601,6 +601,15 @@ CASTParserTests >> testParsePointerDeclarator [
 	self assert: declarator declarator name equals: 'a'.
 ]
 
+{ #category : #'tests-binary operators' }
+CASTParserTests >> testParsePostIncrement [
+
+	| expression |
+	expression := self parseExpression: 'a++'.
+	
+	self assert: expression isIncrement.
+]
+
 { #category : #'tests-control flow' }
 CASTParserTests >> testParseReturnWithExpression [
 

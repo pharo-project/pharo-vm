@@ -222,7 +222,7 @@ TStmtListNode >> emitCCodeOn: aStream prependToEnd: aNodeOrNil level: level gene
 						[aStream nextPut: $;]].
 					 aStream peekLast ~~ Character cr ifTrue:
 						[aStream cr]]]].
-		
+	aStream tab: level.
 	aStream nextPut: $}.
 ]
 

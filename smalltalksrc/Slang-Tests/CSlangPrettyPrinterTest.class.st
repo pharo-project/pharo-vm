@@ -228,6 +228,38 @@ CSlangPrettyPrinterTest >> testVisitDoStatement [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitForStatement [
+
+	| print init until step for |
+	init := CAssignmentNode
+		        lvalue: (CIdentifierNode name: 'i')
+		        rvalue: (CConstantNode value: 1).
+	until := CBinaryOperatorNode
+		         operator: #<=
+		         left: (CIdentifierNode name: 'i')
+		         right: (CConstantNode value: 10).
+	step := CIncrementNode object: (CIdentifierNode name: 'i').
+	for := CForStatementNode
+		       init: init
+		       until: until
+		       step: step
+		       statement: (CCompoundStatementNode statements: { 
+					        (CAssignmentNode
+						         lvalue: (CIdentifierNode name: 'a')
+						         rvalue: (CBinaryOperatorNode
+								          operator: #%
+								          left: (CIdentifierNode name: 'i')
+								          right: (CConstantNode value: 2))).
+					        (CIncrementNode object: (CIdentifierNode name: 'j')) }).
+	print := self prettyPrint: for.
+
+	self assert: print trimBoth equals: 'for(i = 1; i <= 10; i++) {
+	a = i % 2;
+	j++;
+}'
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitGotoStatement [
 
 	| print |
@@ -284,6 +316,17 @@ else {
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitIncrement [
+
+	| print |
+	print := self prettyPrint: (CIncrementNode object: (CIdentifierNode name: 'i')).
+	
+	self assert: print equals: 'i++'
+
+
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitInitDeclarator [
 
 	| print |
@@ -317,6 +360,17 @@ CSlangPrettyPrinterTest >> testVisitPoint [
 	print := self prettyPrint: (CMemberAccessNode object: (CIdentifierNode name: 'myStruct') member: (CIdentifierNode name: 'field1')).
 	
 	self assert: print equals: 'myStruct.field1'
+
+
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitPreIncrement [
+
+	| print |
+	print := self prettyPrint: (CIncrementNode object: (CIdentifierNode name: 'i') prefix: true).
+	
+	self assert: print equals: '++i'
 
 
 ]

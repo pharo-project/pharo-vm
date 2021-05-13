@@ -1082,6 +1082,20 @@ SlangBasicTranslationTest >> testSendMax [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendMemberAccess [
+
+	| translation send |
+
+	send := TSendNode new
+		        setSelector: #aField
+		        receiver: (TVariableNode new setName: 'toto')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: 'toto.aField'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendMin [
 
 	| translation send |
@@ -1211,6 +1225,30 @@ SlangBasicTranslationTest >> testSendPowerTo [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendRepeat [
+
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #repeat
+		        receiver: (TStmtListNode new setStatements:
+				         { (TAssignmentNode new
+					          setVariable: variable
+					          expression: expression) })
+		        arguments: {  }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'while(1) {
+	var -= 7;
+}'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendRightBitShiftSignedIn64Bits [
 
 	| translation send |
@@ -1319,6 +1357,96 @@ SlangBasicTranslationTest >> testSendTimes [
 	translation := self translate: send.
 
 	self assert: translation equals: '(1 + 2) * 3'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendTimesRepeat [
+
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #timesRepeat:
+		        receiver: (TConstantNode value: 3)
+		        arguments: { (TStmtListNode new setStatements:
+				         { (TAssignmentNode new
+					          setVariable: variable
+					          expression: expression) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '{
+	var -= 7;
+}{
+	var -= 7;
+}{
+	var -= 7;
+}'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendToDo [
+
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #to:do:
+		        receiver: (TConstantNode value: 1)
+		        arguments: { 
+				        (TConstantNode value: 10).
+				        (TStmtListNode new
+					         setArguments: #( i )
+					         statements:
+					         { (TAssignmentNode new
+						          setVariable: variable
+						          expression: expression) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'for(i = 1; i <= 10; i++) {
+	var -= 7;
+}'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendToDoAvoidUnderflowing [
+
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #to:do:
+		        receiver: (TConstantNode value: 1)
+		        arguments: { 
+				        (TSendNode new
+					         setSelector: #-
+					         receiver: (TVariableNode new setName: 'foo')
+					         arguments: { (TConstantNode value: 1) }).
+				        (TConstantNode value: 10).
+				        (TStmtListNode new
+					         setArguments: #( i )
+					         statements:
+					         { (TAssignmentNode new
+						          setVariable: variable
+						          expression: expression) }) }.
+	translation := self translate: send.
+
+	self
+		assert: translation trimBoth
+		equals: 'for(i = 1; i < foo; i++) {
+	var -= 7;
+}'
 ]
 
 { #category : #'tests-send' }
