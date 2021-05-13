@@ -1,17 +1,15 @@
-#include "winuser.h"
-1                       ICON    DISCARDABLE     "@Win32VMExecutableIcon@"
-2                       ICON    DISCARDABLE     "@Win32VMExecutableIcon@"
-3                       ICON    DISCARDABLE     "@Win32VMExecutableIcon@"
-1                       RT_MANIFEST "@Win32Manifest@"
+#include "windows.h"
 
-1 VERSIONINFO
- FILEVERSION @VERSION_MAJOR@,@VERSION_MINOR@,@VERSION_PATCH@,0
- PRODUCTVERSION @VERSION_MAJOR@,@VERSION_MINOR@,@VERSION_PATCH@,0
- FILEFLAGSMASK 0x3fL
- FILEFLAGS 0xaL
- FILEOS 0x10001L
- FILETYPE 0x1L
- FILESUBTYPE 0x0L
+100 ICON @Win32VMExecutableIcon@
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     @VERSION_MAJOR@,@VERSION_MINOR@,@VERSION_PATCH@,0
+PRODUCTVERSION  @VERSION_MAJOR@,@VERSION_MINOR@,@VERSION_PATCH@,0
+FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+FILEFLAGS       VS_FF_DEBUG
+FILEOS          VOS__WINDOWS32
+FILETYPE        VFT_APP
+FILESUBTYPE     VFT2_UNKNOWN
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
@@ -20,7 +18,7 @@ BEGIN
             VALUE "CompanyName", "Pharo.org\0"
             VALUE "FileDescription", "Pharo Virtual Machine\0"
             VALUE "FileVersion", "@VM_VERSION_FILEVERSION@"
-            VALUE "LegalCopyright", "Copyright \251 https://github.com/opensmalltalk 1996-2016\0" // TODO: Check this field
+            VALUE "LegalCopyright", "Copyright \251 https://www.pharo.org 1996-2021\0" // TODO: Check this field
             VALUE "ProductName", "Pharo\0"
             VALUE "ProductVersion", "@VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@-@GIT_COMMIT_HASH@\0"
         END

@@ -149,7 +149,7 @@ UnicornSimulator >> disassembleFrom: anIndex opcodes: numberOfInstructions [
 	^ self disassembler
 		printImmediatesInHexa;
 		disassembleNext: numberOfInstructions
-		instructionsIn: (memory memory copyFrom: anIndex to: anIndex + (numberOfInstructions * 50) "rough estimate")
+		instructionsIn: (memory memoryManager copyFrom: anIndex to: anIndex + (numberOfInstructions * 50) "rough estimate")
 		startAddress: anIndex
 		pc: self instructionPointerValue
 ]
@@ -373,6 +373,14 @@ UnicornSimulator >> mapMemory: aMemory at: anAddress [
 		mapHostMemory: aMemory
 		atAddress: anAddress
 		withPermissions: UnicornConstants permissionAll.
+]
+
+{ #category : #'memory-mapping' }
+UnicornSimulator >> mapMemoryInManager: aSlangMemoryManager [
+
+	aSlangMemoryManager regionsDo: [ :startAddress :region |
+		self mapMemory: region at: startAddress
+	]
 ]
 
 { #category : #accessing }

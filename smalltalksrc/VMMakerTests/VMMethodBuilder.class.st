@@ -81,8 +81,8 @@ VMMethodBuilder >> fillLiteralsFromPharo: pharoLiterals [
 { #category : #filling }
 VMMethodBuilder >> fillMethod [
 	self putHeaderInMethod.
-	self putBytecodesInMethod.
 	self putLiteralInMethod.
+	self putBytecodesInMethod.
 ]
 
 { #category : #initialization }
@@ -97,6 +97,34 @@ VMMethodBuilder >> initialize [
 	"We reuse initialize to reset the builder, so we nil those objects"
 	method := nil.
 	slotSize := nil.
+]
+
+{ #category : #accessing }
+VMMethodBuilder >> inspectMethodIn: aBuilder [
+	<inspectorPresentationOrder: 0 title: 'Items'> 
+
+	| items |
+	items :={
+		#currentMethodOop -> method.
+		#literals -> literals.
+		#numberOfArguments -> numberOfArguments.
+		#bytecodes -> bytecodes.
+		#context -> (isSmall ifTrue: [ 'Small context '] ifFalse: [ 'Big context' ] ).
+		#isPrimitive ->  isPrimitive.
+		#slotSize ->  slotSize.
+		 }.
+	
+	^ aBuilder newTable 
+		addColumn: (SpStringTableColumn 
+			title: 'Key'
+			evaluated: [ :each | StObjectPrinter asTruncatedTextFrom: each key ])
+			beSortable;
+		addColumn: (SpStringTableColumn 
+			title: 'Value' 
+			evaluated: [ :each | StObjectPrinter asTruncatedTextFrom: each value ])
+			beSortable;
+		items: items;
+		yourself
 ]
 
 { #category : #building }

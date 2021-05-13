@@ -30,7 +30,7 @@ BaselineOfVMMaker >> baseline: spec [
 			"Tests"			
 			spec
 				package: 'VMMakerTests' with: [
-					spec requires: #('VMMakerCompatibilityForPharo6' 'Unicorn' 'LLVMDisassembler') ];
+					spec requires: #('VMMakerCompatibilityForPharo6' 'Unicorn' 'LLVMDisassembler' 'Slang-Tests') ];
 				package: 'VMMaker-MT-Tests' with: [
 					spec requires: #('VMMakerTests') ].
 

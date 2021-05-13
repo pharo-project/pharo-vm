@@ -48,7 +48,7 @@ CogMethod class >> cogMethodHeader [
 	^String streamContents:
 		[:s|
 		CogBlockMethod printTypedefOn: s.
-		s cr.
+		s newLine.
 		self printTypedefOn: s]
 ]
 

@@ -1,18 +1,6 @@
 include(plugins.macros.cmake)
 
 #
-# SecurityPlugin - Dummy Version
-#
-
-message(STATUS "Adding plugin: SecurityPlugin")    
-
-file(GLOB SecurityPlugin_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/SecurityPlugin/common/*.c   
-)
-
-addLibraryWithRPATH(SecurityPlugin ${SecurityPlugin_SOURCES})
-
-#
 # FilePlugin
 #
 message(STATUS "Adding plugin: FilePlugin")
@@ -50,20 +38,22 @@ else()
     )
     
     file(GLOB FilePlugin_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/FilePlugin/src/win/*.c   
+        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/FilePlugin/src/win/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/fileUtilsWin.c
         ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/win/sqWin32Directory.c        
     )    
 endif()
 
-addLibraryWithRPATH(FilePlugin ${FilePlugin_SOURCES} 	${CMAKE_CURRENT_BINARY_DIR}/generated/plugins/src/FilePlugin/FilePlugin.c)
+addLibraryWithRPATH(FilePlugin
+    ${FilePlugin_SOURCES}
+    ${PHARO_CURRENT_GENERATED}/plugins/src/FilePlugin/FilePlugin.c)
 
 if(OSX)
-    target_link_libraries(FilePlugin "-framework CoreFoundation")
+    target_link_libraries(FilePlugin PRIVATE "-framework CoreFoundation")
 endif()
 
 if(WIN)
-    target_compile_definitions(FilePlugin PUBLIC "-DWIN32_FILE_SUPPORT")
+    target_compile_definitions(FilePlugin PRIVATE "-DWIN32_FILE_SUPPORT")
 endif()
 
 
@@ -71,82 +61,46 @@ endif()
 # FileAttributesPlugin
 #
 add_vm_plugin(FileAttributesPlugin)
-target_link_libraries(FileAttributesPlugin FilePlugin)
+target_link_libraries(FileAttributesPlugin PRIVATE FilePlugin)
 
 #
 # UUIDPlugin
 #
 
-message(STATUS "Adding plugin: UUIDPlugin")
+if(NOT OPENBSD)
+    message(STATUS "Adding plugin: UUIDPlugin")
 
-file(GLOB UUIDPlugin_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/UUIDPlugin/common/*.c   
-)
+    file(GLOB UUIDPlugin_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/plugins/UUIDPlugin/common/*.c
+    )
 
-addLibraryWithRPATH(UUIDPlugin ${UUIDPlugin_SOURCES})
-if(WIN)
-    target_link_libraries(UUIDPlugin "-lole32")
+    addLibraryWithRPATH(UUIDPlugin ${UUIDPlugin_SOURCES})
+    if(WIN)
+        target_link_libraries(UUIDPlugin PRIVATE "-lole32")
+    elseif(UNIX AND NOT OSX)
+       #find_path(LIB_UUID_INCLUDE_DIR uuid.h PATH_SUFFIXES uuid)
+        find_library(LIB_UUID_LIBRARY uuid)
+        message(STATUS "Using uuid library:" ${LIB_UUID_LIBRARY})
+        target_link_libraries(UUIDPlugin PRIVATE ${LIB_UUID_LIBRARY})
+    endif()
 endif()
+
 #
 # Socket Plugin
-# 
-
-if(WIN)
+#
+if (${FEATURE_NETWORK})
     add_vm_plugin(SocketPlugin)
-    target_link_libraries(SocketPlugin "-lWs2_32")
-else()
-    add_vm_plugin(SocketPlugin)
+  if(WIN)
+    target_link_libraries(SocketPlugin PRIVATE "-lWs2_32")
+  endif()
 endif()
 
 #
 # Surface Plugin
 #
 
-add_vm_plugin(SurfacePlugin)
-
-#
-# SqueakFFIPrims Plugin
-#
-
-#
-# This solution is not portable to different architectures!
-#
-
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakFFIPrims/include/common
-)
-
-set(SqueakFFIPrims_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakFFIPrims/src/common/SqueakFFIPrims.c 
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakFFIPrims/src/common/sqManualSurface.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakFFIPrims/src/common/sqFFIPlugin.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakFFIPrims/src/common/sqFFITestFuncs.c
-)
-
-addLibraryWithRPATH(SqueakFFIPrims ${SqueakFFIPrims_SOURCES})
-
-#
-# IA32ABI Plugin
-#
-
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/IA32ABI/include/common
-)
-
-set(IA32ABI_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/IA32ABI/src/common/IA32ABI.c 
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/IA32ABI/src/common/AlienSUnitTestProcedures.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/IA32ABI/src/common/xabicc.c
-)
-
-if(WIN)
-    set(IA32ABI_SOURCES
-        ${IA32ABI_SOURCES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/IA32ABI/src/common/x64win64stub.c
-    )
-endif()
-
-addLibraryWithRPATH(IA32ABI ${IA32ABI_SOURCES})
+add_vm_plugin(SurfacePlugin 
+	${PHARO_CURRENT_GENERATED}/plugins/src/SurfacePlugin/SurfacePlugin.c)
 
 #
 # LargeIntegers Plugin
@@ -234,7 +188,7 @@ endif()
 addLibraryWithRPATH(LocalePlugin ${LocalePlugin_SOURCES})
 
 if(OSX)
-    target_link_libraries(LocalePlugin "-framework CoreFoundation")
+	target_link_libraries(LocalePlugin PRIVATE "-framework CoreFoundation")
 endif()
 
 #
@@ -248,10 +202,10 @@ if(OSX)
         ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/common
         ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/osx
     )
-    
+
     file(GLOB SqueakSSL_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/common/*.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/osx/*.c   
+        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/osx/*.c
     )
 else()
     if(WIN)
@@ -259,20 +213,20 @@ else()
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/common
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/win
         )
-        
+
         file(GLOB SqueakSSL_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/common/*.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/win/*.c   
-        )    
+            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/win/*.c
+        )
     else()
         include_directories(
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/common
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/unix
         )
-        
+
         file(GLOB SqueakSSL_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/common/*.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/unix/*.c   
+            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/unix/*.c
         )
     endif()
 endif()
@@ -280,13 +234,13 @@ endif()
 addLibraryWithRPATH(SqueakSSL ${SqueakSSL_SOURCES})
 
 if(OSX)
-    target_link_libraries(SqueakSSL "-framework CoreFoundation")
-    target_link_libraries(SqueakSSL "-framework Security")
+    target_link_libraries(SqueakSSL PRIVATE "-framework CoreFoundation")
+    target_link_libraries(SqueakSSL PRIVATE "-framework Security")
 elseif(WIN)
-    target_link_libraries(SqueakSSL "-lSecur32")
-    target_link_libraries(SqueakSSL "-lCrypt32")
+    target_link_libraries(SqueakSSL PRIVATE Crypt32 Secur32)
 else()
-    target_link_libraries(SqueakSSL "-lssl")    
+    find_package(OpenSSL REQUIRED)
+    target_link_libraries(SqueakSSL PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 endif()
 
 
@@ -301,5 +255,5 @@ add_vm_plugin(DSAPrims)
 
 if(NOT WIN)
     add_vm_plugin(UnixOSProcessPlugin)
-    target_link_libraries(UnixOSProcessPlugin FilePlugin)
+    target_link_libraries(UnixOSProcessPlugin PRIVATE FilePlugin)
 endif()

@@ -530,17 +530,15 @@ TMethod >> emitCCommentOn: aStream [
 
 	comment ifNotNil: [
 		aStream cr;cr.
-		1 to: comment size do: [:index | | startPos |
+		1 to: comment size do: [:index | 
 			aStream nextPutAll: '/*'; tab.
-			startPos := aStream position.
 			self printSingleComment: (comment at: index)
 				on: aStream
 				indent: 1
 				tabWidth: 4
 				lineBreak: 78.
-			aStream position - startPos > (comment at: index) size ifTrue: "probably a multi-line comment"
-				[aStream cr].
-			aStream nextPutAll: ' */'; cr]]
+
+			aStream nextPutAll: ' */'; newLine]]
 ]
 
 { #category : #'C code generation' }
@@ -964,7 +962,7 @@ TMethod >> extractStaticDirective [
 	^self
 		extractDirective: #static:
 		valueBlock: [:sendNode| sendNode args first value ~= false]
-		default: (export or: [(properties includesKey: #api) or: [properties includesKey: #api:]]) not
+		default: (export or: [ self isAPIMethod ]) not
 ]
 
 { #category : #'primitive compilation' }
@@ -1182,7 +1180,7 @@ TMethod >> inferReturnTypeFromReturnsIn: aCodeGen [
 											separatedBy: [s nextPutAll: ', '].
 										 s nextPutAll: ' in '; nextPutAll: selector; cr].
 						 Notification signal: message.
-						 aCodeGen logger ensureCr; show: message].
+						 aCodeGen logger newLine; show: message].
 					 returnTypes size = 1 ifTrue:
 						[self returnType: returnTypes anyOne]]
 				ifFalse:
@@ -2200,7 +2198,7 @@ TMethod >> printSingleComment: aString on: aStream indent: indent tabWidth: tabW
 		position := position + wordWidth.
 		position > lineBreak
 			ifTrue:
-				[aStream skip: -1; crtab: indent.
+				[aStream newLine; tab: indent.
 				position := indent * tabWidth + wordWidth + 1.
 				lastChar = Character cr ifTrue:
 					[[readStream peekFor: Character tab] whileTrue].
@@ -2212,7 +2210,7 @@ TMethod >> printSingleComment: aString on: aStream indent: indent tabWidth: tabW
 					[position := position + 1.
 					aStream space].
 				lastChar = Character cr ifTrue:
-					[aStream skip: -1; crtab: indent.
+					[aStream newLine; tab: indent.
 					position := indent * tabWidth.
 					[readStream peekFor: Character tab] whileTrue]]]
 ]

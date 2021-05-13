@@ -17,6 +17,11 @@
 
 #include <sys/param.h>
 
+#ifdef __OpenBSD__
+#include <sys/socket.h>
+#include <netinet/in.h>
+#endif
+
 typedef struct sqSSL {
 	int state;
 	int certFlags;
@@ -33,7 +38,9 @@ typedef struct sqSSL {
 	BIO *bioWrite;
 } sqSSL;
 
-const unsigned char * ASN1_STRING_get0_data(const ASN1_STRING *x);
+#ifndef ASN1_STRING_get0_data
+# define ASN1_STRING_get0_data ASN1_STRING_data
+#endif
 
 #include "pharovm/debug.h"
 

@@ -131,9 +131,9 @@ VMMachineCodeDebugger >> doInitialDisassemble [
 		printImmediatesInHexa;
 		useAlternatePrinterVariant;
 		disassembleNext: 150
-		instructionsIn: (cogit objectMemory memory memoryObject
-			copyFrom: self initialInstructionToDisassemble - cogit objectMemory memory initialAddress + 1
-			to: self initialInstructionToDisassemble - cogit objectMemory memory initialAddress + 600)
+		instructionsIn: (cogit objectMemory memoryManager
+			copyFrom: self initialInstructionToDisassemble
+			to: self initialInstructionToDisassemble + 600)
 		startAddress: self initialInstructionToDisassemble
 		pc: machineSimulator instructionPointerValue 
 ]
@@ -144,7 +144,7 @@ VMMachineCodeDebugger >> initialDisassembly [
 	^ self doInitialDisassemble collect: [ :anInstruction | 
 			VMMachineCodeDebuggerInstruction new
 				instruction: anInstruction;
-				bytes: (anInstruction codeBytes: cogit objectMemory memory);
+				bytes: (anInstruction codeBytes: cogit objectMemory memoryManager);
 				debugger: self;
 				machineSimulator: machineSimulator;
 				yourself ]
@@ -281,7 +281,11 @@ VMMachineCodeDebugger >> runToSelectedInstruction [
 
 	selectedInstruction := self selectedInstruction.
 
-	machineSimulator startAt: machineSimulator instructionPointerValue until: selectedInstruction address timeout: 1000 count: 0.
+	machineSimulator
+		startAt: machineSimulator instructionPointerValue
+		until: selectedInstruction address
+		timeout: 100000 "microseconds = 100ms"
+		count: 0.
 	self refreshStack.
 ]
 

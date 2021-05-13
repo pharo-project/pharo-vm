@@ -97,8 +97,7 @@ UnicornProcessor >> initializeStackFor: aCompiler [
 	"Initialize the machine code simulator"
 	machineSimulator := UnicornSimulator perform: aCompiler backend class ISA asSymbol.
 	machineSimulator memory: aCompiler objectMemory.
-	aCompiler objectMemory memory memoryObject pinInMemory.
-	machineSimulator mapMemory: aCompiler objectMemory memory memoryObject at: aCompiler objectMemory memory initialAddress "just some address not 0".
+	machineSimulator mapMemoryInManager: aCompiler objectMemory memoryManager.
 	
 	"As for the ARMv8 Arm® Architecture Reference Manual
 	
@@ -273,7 +272,7 @@ UnicornProcessor >> runUntil: anAddress [
 
 	^ machineSimulator startAt: machineSimulator instructionPointerValue
 		until: anAddress
-		timeout: 1000
+		timeout: 100000 "microseconds = 100ms"
 		count: 0
 ]
 

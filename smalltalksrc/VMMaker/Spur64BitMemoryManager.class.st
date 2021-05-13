@@ -845,17 +845,6 @@ Spur64BitMemoryManager >> maxSmallInteger [
 	^16rFFFFFFFFFFFFFFF
 ]
 
-{ #category : #simulation }
-Spur64BitMemoryManager >> memoryClass [
-	"Answer the class to use for the memory inst var in simulation.
-	 Answer nil if a suitable class isn't available.  This version emulates 64-bit access given a 32-bit element array."
-	<doNotGenerate>
-	
-	^ SpurSimulatedMemory "self endianness == #little
-		ifTrue: [LittleEndianBitmap]
-		ifFalse: [Bitmap]"
-]
-
 { #category : #'interpreter access' }
 Spur64BitMemoryManager >> methodDictionaryHash: oop mask: mask [
 	<inline: true>

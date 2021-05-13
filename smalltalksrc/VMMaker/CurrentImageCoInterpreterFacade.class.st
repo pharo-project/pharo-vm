@@ -314,7 +314,7 @@ CurrentImageCoInterpreterFacade >> fetchByte: index ofObject: anOop [
 		at: index + 1
 		ifAbsent:
 			[Transcript
-				ensureCr;
+				newLine;
 				nextPutAll: 'warning, accessing past end of '; print: (objectMap keyAtValue: anOop);
 				cr;
 				flush.
@@ -926,11 +926,6 @@ CurrentImageCoInterpreterFacade >> primitiveIndexOfMethod: anOop header: header 
 	^method primitive
 ]
 
-{ #category : #accessing }
-CurrentImageCoInterpreterFacade >> primitivePropertyFlags: primIndex [
-	^coInterpreter primitivePropertyFlags: primIndex
-]
-
 { #category : #printing }
 CurrentImageCoInterpreterFacade >> print: it [
 	it isString ifTrue: [coInterpreter transcript nextPutAll: it] ifFalse: [it printOn: coInterpreter transcript]
@@ -1116,8 +1111,7 @@ CurrentImageCoInterpreterFacade >> splObj: splObjIndex [
 		[ClassLargeNegativeInteger]	-> [self oopForObject: LargeNegativeInteger].
 		[ClassLargePositiveInteger]	-> [self oopForObject: LargePositiveInteger].
 		[ClassSmallInteger]				-> [self oopForObject: SmallInteger].
-		[CompactClasses]				-> [self oopForObject: Smalltalk compactClassesArray].
-		[LowcodeContextMark]				-> [self oopForObject: (Smalltalk globals at: #LowcodeNativeContext ifPresent: [:cls | cls signalingObject ]) ]
+		[CompactClasses]				-> [self oopForObject: Smalltalk compactClassesArray]
 		}
 ]
 

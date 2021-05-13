@@ -711,7 +711,7 @@ CCodeGenerator >> checkClassForNameConflicts: aClass [
 				ifNil: [self error: 'Method ', sel, ' was defined in a previously added class.']
 				ifNotNil:
 					[logger
-						ensureCr;
+						newLine;
 						show: 'warning, method ', aClass name, '>>', sel storeString,
 								' overrides ', tmeth definingClass, '>>', sel storeString;
 						cr]]]
@@ -2287,7 +2287,7 @@ CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aS
 	[expr last isSeparator] whileTrue:
 		[expr := expr allButLast].
 	aStream
-		ensureCr;
+		newLine;
 		nextPut: $#; next: level * 2 put: Character space; nextPutAll: 'if '; nextPutAll: expr; cr.
 
 	self with: msgNode args first
@@ -2296,14 +2296,14 @@ CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aS
 	expr := ' /* ', expr, ' */'.
 	msgNode args size >= 3 ifTrue:
 		[aStream
-			ensureCr;
+			newLine;
 			nextPut: $#; next: level * 2 put: Character space; nextPutAll: 'else'; nextPutAll: expr;
 			cr.
 		self with: msgNode args first
 			ifAppropriateSetTo: false
 			do: [putStatement value: msgNode args third]].
 	aStream
-		ensureCr;
+		newLine;
 		nextPut: $#; next: level * 2 put: Character space; nextPutAll: 'endif'; nextPutAll: expr;
 		cr.
 	asArgument ifTrue:
@@ -3264,6 +3264,7 @@ CCodeGenerator >> initializeCTranslationDictionary [
 	#perform:with:with:with:				#generatePerform:on:indent:
 	#perform:with:with:with:with:		#generatePerform:on:indent:
 	#perform:with:with:with:with:with:	#generatePerform:on:indent:
+	#perform:with:with:with:with:with:with:	#generatePerform:on:indent:
 
 	#value								#generateValue:on:indent:
 	#value:								#generateValue:on:indent:
@@ -3645,7 +3646,7 @@ CCodeGenerator >> localizeGlobalVariables [
 			[:name|
 			(localized at: name) do:
 				[:var|
-				logger ensureCr; show: var, ' localised to ', name; cr]]].
+				logger newLine; show: var, ' localised to ', name; cr]]].
 	elected do: [:ea| (variables includes: ea) ifTrue: [self checkDeleteVariable: ea]].
 	variables removeAllFoundIn: elected
 ]
@@ -3717,7 +3718,7 @@ CCodeGenerator >> maybePutPreambleFor: aClass on: aStream [
 		[:preamble| | actualClass |
 		 actualClass := aClass class whichClassIncludesSelector: #preambleCCode.
 		 aStream
-			ensureCr; cr;
+			newLine; newLine;
 			nextPutAll: '/* '; print: actualClass; nextPutAll: '>>preambleCCode */'; cr;
 			nextPutAll: preamble; cr;
 			nextPutAll: '/* end '; print: actualClass; nextPutAll: '>>preambleCCode */'; cr]
@@ -4164,7 +4165,7 @@ CCodeGenerator >> prepareMethods [
 				[self error: 'Local variable ''', var, ''' may mask global when inlining ', m selector].
 			((methods at: var ifAbsent: [nil]) ifNil: [false] ifNotNil: [:m1| m1 isStructAccessor not]) ifTrue:
 				[logger
-					ensureCr;
+					newLine;
 					nextPutAll: 'Local variable name ''', var, ''' in ';
 					nextPutAll: m selector;
 					nextPutAll: ' may mask method when inlining';
@@ -4480,7 +4481,7 @@ CCodeGenerator >> reportRecursiveMethods [
 			[calls isEmpty] whileFalse: [
 				sel := calls removeFirst.
 				sel = m selector ifTrue: [
-					logger ensureCr; show: m selector, ' is recursive'; cr.
+					logger newLine; show: m selector, ' is recursive'; cr.
 				] ifFalse: [
 					(visited includes: sel) ifFalse: [
 						called := self methodNamed: sel.
@@ -5281,16 +5282,13 @@ CCodeGenerator >> with: aNode ifAppropriateSetTo: aBoolean do: aBlock [
 
 { #category : #'C code generator' }
 CCodeGenerator >> withConditionalDefineOf: aConstantNameString comment: commentOrNil on: aStream do: aBlock [
-	| start |
 	aStream nextPutAll: '#if !defined('; nextPutAll: aConstantNameString; nextPut: $).
 	commentOrNil ifNotNil: [aStream nextPutAll: ' /* '; nextPutAll: commentOrNil; nextPutAll: ' */'].
-	aStream cr.
-	start := aStream position.
+	aStream newLine.
 	aBlock value.
 	aStream nextPutAll: '#endif'.
-	aStream position - start > 80 ifTrue:
-		[aStream nextPutAll: ' /* !defined('; nextPutAll: aConstantNameString; nextPutAll: ') */'].
-	aStream cr
+	aStream nextPutAll: ' /* !defined('; nextPutAll: aConstantNameString; nextPutAll: ') */'.
+	aStream newLine
 ]
 
 { #category : #'C code generator' }

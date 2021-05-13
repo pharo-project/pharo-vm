@@ -16,6 +16,26 @@ VMFFIReturnMarshallingTest >> doTestCalloutWithReturnType: aLibFFIType returnVal
 	self subclassResponsibility
 ]
 
+{ #category : #utils }
+VMFFIReturnMarshallingTest >> doTestCalloutWithReturnType: aLibFFIType returnValue: valueToReturn expectedLargeIntegerValue: expectedValue [ 
+
+	self
+		doTestCalloutWithReturnType: aLibFFIType
+		returnValue: valueToReturn
+		asserting: [ 	
+				self assert: interpreter primFailCode equals: 0.
+				expectedValue > 0 
+					ifTrue: [self 
+							assert: (memory classIndexOf: interpreter stackTop) 
+							equals: ClassLargePositiveIntegerCompactIndex]
+					ifFalse: [self 
+							assert: (memory classIndexOf: interpreter stackTop) 
+							equals: ClassLargeNegativeIntegerCompactIndex  ].
+						
+				self assert: (interpreter signed64BitValueOf: interpreter stackTop) equals: expectedValue ].
+
+]
+
 { #category : #'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> doTestCalloutWithReturnType: aLibFFIType returnValue: valueToReturn expectedSmalltalkValue: expectedValue [
 
@@ -24,7 +44,9 @@ VMFFIReturnMarshallingTest >> doTestCalloutWithReturnType: aLibFFIType returnVal
 		returnValue: valueToReturn
 		asserting: [ 	
 				self assert: interpreter primFailCode equals: 0.
-				self assert: interpreter stackTop equals: expectedValue ].
+				self assert: (memory integerValueOf: interpreter stackTop) <= memory maxSmallInteger.
+				self assert: (memory integerValueOf: interpreter stackTop) >= memory minSmallInteger.
+				self assert: (memory integerValueOf: interpreter stackTop) equals: expectedValue ].
 
 ]
 
@@ -56,7 +78,10 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningDoublePushSmallFloatI
 	self
 		doTestCalloutWithReturnType: interpreter libFFI double
 		returnValue: 7.0
-		expectedSmalltalkValue: (memory floatObjectOf: 7.0)
+		asserting: [ 	
+				self assert: interpreter primFailCode equals: 0.
+				self assert: (memory floatValueOf: interpreter stackTop) equals: 7.0 ].
+
 ]
 
 { #category : #'tests - marshalling return' }
@@ -65,7 +90,10 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningFloatPushSmallFloatIn
 	self
 		doTestCalloutWithReturnType: interpreter libFFI float
 		returnValue: 7.0
-		expectedSmalltalkValue: (memory floatObjectOf: 7.0)
+		asserting: [ 	
+				self assert: interpreter primFailCode equals: 0.
+				self assert: (memory floatValueOf: interpreter stackTop) equals: 7.0 ].
+
 ]
 
 { #category : #'tests - marshalling return' }
@@ -88,16 +116,42 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT16PushSmallIntege
 	self
 		doTestCalloutWithReturnType: interpreter libFFI sint16
 		returnValue: INT16_MAX - 1
-		expectedSmalltalkValue: (memory integerObjectOf: INT16_MAX - 1)
+		expectedSmalltalkValue: INT16_MAX - 1
+]
+
+{ #category : #'tests - marshalling return' }
+VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT32PushLargeInteger [
+
+	| value |
+	value := wordSize = 8 ifTrue: [ ^ self skip ].
+
+	self
+		doTestCalloutWithReturnType: interpreter libFFI sint32
+		returnValue: INT32_MAX - 1
+		expectedLargeIntegerValue: INT32_MAX - 1
 ]
 
 { #category : #'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT32PushSmallInteger [
 
+	| value |
+	value := wordSize = 8 
+		ifTrue: [ INT32_MAX - 1 ] 
+		ifFalse: [ memory maxSmallInteger ].
+
 	self
 		doTestCalloutWithReturnType: interpreter libFFI sint32
-		returnValue: INT32_MAX - 1
-		expectedSmalltalkValue: (memory integerObjectOf: INT32_MAX - 1)
+		returnValue: value
+		expectedSmalltalkValue: value
+]
+
+{ #category : #'tests - marshalling return' }
+VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT64PushLargeInteger [
+
+	self
+		doTestCalloutWithReturnType: interpreter libFFI sint64
+		returnValue: INT64_MAX - 1
+		expectedLargeIntegerValue: INT64_MAX - 1
 ]
 
 { #category : #'tests - marshalling return' }
@@ -105,8 +159,8 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT64PushSmallIntege
 
 	self
 		doTestCalloutWithReturnType: interpreter libFFI sint64
-		returnValue: INT64_MAX - 1
-		expectedSmalltalkValue: (memory integerObjectOf: INT64_MAX - 1)
+		returnValue: memory maxSmallInteger
+		expectedSmalltalkValue: memory maxSmallInteger
 ]
 
 { #category : #'tests - marshalling return' }
@@ -115,7 +169,7 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT8PushSmallInteger
 	self
 		doTestCalloutWithReturnType: interpreter libFFI sint8
 		returnValue: INT8_MAX - 1
-		expectedSmalltalkValue: (memory integerObjectOf: INT8_MAX - 1)
+		expectedSmalltalkValue: INT8_MAX - 1
 ]
 
 { #category : #'tests - marshalling return' }
@@ -124,16 +178,42 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT16PushSmallIntege
 	self
 		doTestCalloutWithReturnType: interpreter libFFI uint16
 		returnValue: INT16_MAX - 1
-		expectedSmalltalkValue: (memory integerObjectOf: INT16_MAX - 1)
+		expectedSmalltalkValue: INT16_MAX - 1
+]
+
+{ #category : #'tests - marshalling return' }
+VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT32PushLargeInteger [
+
+	| value |
+	value := wordSize = 8 ifTrue: [ ^ self skip ].
+
+	self
+		doTestCalloutWithReturnType: interpreter libFFI uint32
+		returnValue: INT32_MAX - 1
+		expectedLargeIntegerValue: INT32_MAX - 1
 ]
 
 { #category : #'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT32PushSmallInteger [
 
+	| value |
+	value := wordSize = 8 
+		ifTrue: [ INT32_MAX - 1 ] 
+		ifFalse: [ memory maxSmallInteger ].
+
 	self
 		doTestCalloutWithReturnType: interpreter libFFI uint32
-		returnValue: INT32_MAX - 1
-		expectedSmalltalkValue: (memory integerObjectOf: INT32_MAX - 1)
+		returnValue: value
+		expectedSmalltalkValue: value
+]
+
+{ #category : #'tests - marshalling return' }
+VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT64PushLargeInteger [
+
+	self
+		doTestCalloutWithReturnType: interpreter libFFI uint64
+		returnValue: INT64_MAX 
+		expectedLargeIntegerValue:  INT64_MAX 
 ]
 
 { #category : #'tests - marshalling return' }
@@ -141,8 +221,8 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT64PushSmallIntege
 
 	self
 		doTestCalloutWithReturnType: interpreter libFFI uint64
-		returnValue: INT64_MAX - 1
-		expectedSmalltalkValue: (memory integerObjectOf: INT64_MAX - 1)
+		returnValue: memory maxSmallInteger 
+		expectedSmalltalkValue:  memory maxSmallInteger 
 ]
 
 { #category : #'tests - marshalling return' }
@@ -151,5 +231,5 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT8PushSmallInteger
 	self
 		doTestCalloutWithReturnType: interpreter libFFI uint8
 		returnValue: INT8_MAX - 1
-		expectedSmalltalkValue: (memory integerObjectOf: INT8_MAX - 1)
+		expectedSmalltalkValue: INT8_MAX - 1
 ]

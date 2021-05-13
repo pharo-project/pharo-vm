@@ -284,7 +284,7 @@ TranscriptStream >> showln: anObject [
 	
 	[
 		self
-			cr;
+			newLine;
 			nextPutAll: anObject asString.
 		self endEntry.
 	] on: FileWriteError do: [self class redirectToStdOut: false].

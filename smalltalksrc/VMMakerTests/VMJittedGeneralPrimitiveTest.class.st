@@ -909,6 +909,23 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveBitShiftShouldReturnZeroIfShiftIsBi
 ]
 
 { #category : #'tests - primitiveMultiply' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveHashMultiplySmallIntegerReturnsHashMultiply [
+	
+	| result primitiveAddress |
+	
+	"Setting a value that is not the SmallInteger tag"
+	
+	cogit receiverTags: memory smallIntegerTag.
+	
+	primitiveAddress := self compile: [ 
+		result := cogit objectRepresentation genPrimitiveHashMultiply ].
+
+	self prepareStackForSendReceiver: (memory integerObjectOf: 50).
+	self runFrom: primitiveAddress until: callerAddress.
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 50 hashMultiply).
+]
+
+{ #category : #'tests - primitiveMultiply' }
 VMJittedGeneralPrimitiveTest >> testPrimitiveMultiplyDoesNotCompileIfReceiverTagIsNotSmallInteger [
 	
 	| result |

@@ -2,6 +2,7 @@
 #define __SQ_WIN32_ALLOC_H
 
 #ifndef NO_VIRTUAL_MEMORY
+#include "sqMemoryAccess.h"
 
 /*
    Limit the default size for virtual memory to 512MB to avoid nasty
@@ -20,6 +21,8 @@
 #undef sqMemoryExtraBytesLeft
 
 extern usqInt sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt baseAddress);
+extern void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition);
+
 #define allocateMemoryMinimumImageFileHeaderSizeBaseAddress(heapSize, minimumMemory, fileStream, headerSize, baseAddress) \
 sqAllocateMemory(minimumMemory, heapSize, baseAddress)
 

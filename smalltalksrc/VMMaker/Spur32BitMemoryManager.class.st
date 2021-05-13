@@ -756,14 +756,6 @@ Spur32BitMemoryManager >> maxSmallInteger [
 	^16r3FFFFFFF
 ]
 
-{ #category : #simulation }
-Spur32BitMemoryManager >> memoryClass [
-	<doNotGenerate>
-	^SpurSimulatedMemory"self endianness == #little
-		ifTrue: [LittleEndianBitmap]
-		ifFalse: [Bitmap]"
-]
-
 { #category : #'interpreter access' }
 Spur32BitMemoryManager >> methodDictionaryHash: oop mask: mask [
 	<inline: true>
