@@ -2302,7 +2302,7 @@ InterpreterPrimitives >> primitiveImageName [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveImmediateAsInteger [
-	"For a Smalllnteger, answer itself.
+	"For a SmallInteger, answer itself.
 	 For a Character, answer its code as an unsigned integer.
 	 For a SmallFloat, answer the signed, but unadjusted bit pattern (so as to keep the result a SmallInteger).
 	 This is a good value for an immediate's hash."
@@ -3652,14 +3652,15 @@ InterpreterPrimitives >> primitiveSlotAtPut [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatAdd [
 	<option: #Spur64BitMemoryManager>
-	| rcvr arg |
+	| rcvr arg|
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
-
-	rcvr := objectMemory smallFloatValueOf: (self stackValue: 1).
-	arg := objectMemory loadFloatOrIntFrom: self stackTop.
-	self successful ifTrue:
-		[self pop: 2 thenPushFloat: rcvr + arg]
+	
+	rcvr := objectMemory loadFloatOrIntFrom: (self stackValue: 1). 
+	arg := objectMemory loadFloatOrIntFrom: self stackTop.  
+	self successful 
+		ifTrue: [self pop: 2 thenPushFloat: (rcvr + arg)] 
+		ifFalse: [^self primitiveFailFor: PrimErrBadArgument].
 ]
 
 { #category : #'arithmetic float primitives' }

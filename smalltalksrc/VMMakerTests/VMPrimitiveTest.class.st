@@ -26,6 +26,22 @@ VMPrimitiveTest >> assert: anOop contentEquals: oopToCompare [
 	
 ]
 
+{ #category : #'tests - primitiveGreaterOrEqual' }
+VMPrimitiveTest >> installFloatClass [
+
+	| classFloat |
+	classFloat := self
+		              newClassInOldSpaceWithSlots: 0
+		              instSpec: memory firstLongFormat.
+	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
+	memory
+		storePointer: ClassFloatCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classFloat
+
+	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
+]
+
 { #category : #'as yet unclassified' }
 VMPrimitiveTest >> newArrayWith: aCollection [ 
 	| array |
@@ -57,6 +73,30 @@ VMPrimitiveTest >> setUp [
 	
 	self setUpScheduler.
 	imageName := VMPrimitiveTest name 
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> setUpForwardedObjects [
+	| class1 class2 object1 object2 array1 array2 |
+	
+	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
+	class2 := self newClassInOldSpaceWithSlots: 2 instSpec: memory nonIndexablePointerFormat.
+	
+	object1 := memory instantiateClass: class1.
+	object2 := memory instantiateClass: class2.
+	
+	array1 := self newArrayWith: { object1 }.
+	array2 := self newArrayWith: { object2 }.
+	
+	interpreter push: array1.
+	interpreter push: array2. 
+	
+	interpreter primitiveArrayBecome.
+	
+	self assert: (memory isForwarded: object1) equals: true.
+	self assert: (memory isForwarded: object2) equals: true.
+	
+	^ object1. 
 ]
 
 { #category : #running }
@@ -455,6 +495,110 @@ VMPrimitiveTest >> testPrimitiveArrayBecomeOneWayCreatesForwardThatPointsToOrigi
 	self assert: (memory followForwarded: object1)  equals: object2
 ]
 
+{ #category : #'tests - primitiveAsCharacter' }
+VMPrimitiveTest >> testPrimitiveAsCharacter [
+	interpreter push: (memory integerObjectOf: 65).
+	
+	interpreter primitiveAsCharacter. 
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory characterObjectOf: 65). 
+]
+
+{ #category : #'tests - primitiveAsCharacter' }
+VMPrimitiveTest >> testPrimitiveAsCharacterCompilesWithNoArg [
+	
+	interpreter primitiveAsCharacter. 
+
+	self deny: interpreter failed.
+]
+
+{ #category : #'tests - primitiveAsCharacter' }
+VMPrimitiveTest >> testPrimitiveAsCharacterFailsForOutOfRangeArg [
+	
+	interpreter push: memory maxSmallInteger. 
+	
+	interpreter primitiveAsCharacter. 
+
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
+]
+
+{ #category : #'tests - primitiveAsCharacter' }
+VMPrimitiveTest >> testPrimitiveAsCharacterFailsWithNonIntObject [
+	
+	interpreter push: memory trueObject. 
+	
+	interpreter primitiveAsCharacter. 
+	
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveAtDoesntFailsIfObjectIsImmutable [
+
+	| class object slotIndex objectToPutInSlot |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
+	
+	object := memory instantiateClass: class indexableSize: 1.
+
+	interpreter push: object.
+	interpreter push: memory trueObject.
+	interpreter primitiveSetImmutability.
+	
+	slotIndex := memory integerObjectOf: 1.
+	objectToPutInSlot := memory instantiateClass: class indexableSize: 1.
+	interpreter push: object.
+	interpreter push: slotIndex.
+	
+	interpreter primitiveAt.
+	
+	self deny: interpreter failed.
+	
+self assert: (memory fetchPointer: 0 ofObject: object) equals: interpreter stackTop. 
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveAtFailsForImmediate [
+
+	interpreter push: (memory integerObjectOf: 32).
+	interpreter push: (memory integerObjectOf: 1).
+	interpreter primitiveAt.
+	
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrInappropriate. 
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveAtFailsForNonIndexableObject [
+	| class object |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
+	
+	object := memory instantiateClass: class.
+
+	interpreter push: object.
+	interpreter push: (memory integerObjectOf: 1).
+	interpreter primitiveAt.
+	
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveAtFailsForNonIntegerArgument [
+	| class objectInstance |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
+	objectInstance := memory instantiateClass: class.
+	
+	interpreter push: objectInstance.
+	interpreter push: memory falseObject.
+	interpreter primitiveAt.
+	
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadArgument. 
+]
+
 { #category : #'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveAtPutFailsForForwardedReceiver [
 	| class objectInstance biggerClass objectForwarded array1 array2 |
@@ -517,7 +661,7 @@ VMPrimitiveTest >> testPrimitiveAtPutFailsForMoreThanTwoArguments [
 	interpreter primitiveAtPut.
 	
 	self assert: interpreter failed.
-	self assert: interpreter primFailCode equals: PrimErrBadArgument. 
+	self assert: interpreter primFailCode equals: PrimErrInappropriate. 
 ]
 
 { #category : #'tests - primitiveAtPut' }
@@ -612,6 +756,41 @@ VMPrimitiveTest >> testPrimitiveAtPutPutsTheValueForAnIndexableObject [
 	
 	self deny: interpreter failed.
 	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
+]
+
+{ #category : #'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveAtPutPutsTheValueForAnIndexableObject2 [
+	| class object |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
+	
+	object := memory instantiateClass: class indexableSize: 1.
+
+	interpreter push: object.
+	
+	self assert: interpreter stackTop equals: memory trueObject.
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveAtReturnsTheValueForAnIndexableObject [
+	| class object |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
+	
+	object := memory instantiateClass: class indexableSize: 1.
+
+	interpreter push: object.
+	interpreter push: (memory integerObjectOf: 1).
+	interpreter push: memory falseObject.
+	
+	interpreter primitiveAtPut.
+	
+	interpreter push: object.
+	interpreter push: (memory integerObjectOf: 1).
+	
+	interpreter primitiveAt. 
+	
+	self deny: interpreter failed.
+	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
+	self assert: interpreter stackTop equals: memory falseObject. 
 ]
 
 { #category : #'tests - primitiveBitShift' }
@@ -1045,6 +1224,47 @@ VMPrimitiveTest >> testPrimitiveBitXorWithNegativNumbers [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 40).
 ]
 
+{ #category : #'tests - primitiveClass' }
+VMPrimitiveTest >> testPrimitiveClassDoesntFailsForForwardedObjectAndArgCountEqualsZero [
+	
+	interpreter push: self setUpForwardedObjects. 
+	
+	interpreter primitiveClass. 
+	
+	self deny: interpreter failed. 
+	
+	
+	
+	
+]
+
+{ #category : #'tests - primitiveClass' }
+VMPrimitiveTest >> testPrimitiveClassFailsForForwardedObjectAndArgCountMoreThanZero [
+	
+	interpreter push: self setUpForwardedObjects. 
+	interpreter argumentCount: 1. 
+	
+	interpreter primitiveClass. 
+	
+	self assert: interpreter failed. 
+	
+	
+	
+	
+]
+
+{ #category : #'tests - primitiveClass' }
+VMPrimitiveTest >> testPrimitiveClassReturnsAClass [
+
+	interpreter push: memory trueObject.
+	
+	interpreter primitiveClass. 
+
+	self assert: interpreter stackTop equals: (memory fetchClassOf: (memory trueObject)). 
+	
+	
+]
+
 { #category : #'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDiv [
 
@@ -1094,7 +1314,7 @@ VMPrimitiveTest >> testPrimitiveDivFailsWithTypeErrorOnSecondOperand [
 ]
 
 { #category : #'tests - primitiveDiv' }
-VMPrimitiveTest >> testPrimitiveDivOnFloatResultRoundsAndDoesntFail [
+VMPrimitiveTest >> testPrimitiveDivOnNonIntegerResultRoundsAndDoesntFail [
 "In the primitive implementation of quo, it doesnt push the rest of the operation on the stack"
 
 	interpreter push: (memory integerObjectOf: 42).
@@ -1269,22 +1489,15 @@ VMPrimitiveTest >> testPrimitiveDivideWithNegativeNumbers2 [
 
 { #category : #'tests - primitiveEqual' }
 VMPrimitiveTest >> testPrimitiveEqualFailsWithFloat [
-	
-	|classFloat|
 
-	classFloat := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstLongFormat.
-	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
-	memory
-		storePointer: ClassFloatCompactIndex
-		ofObject: memory classTableFirstPage
-		withValue: classFloat.
+	self installFloatClass.
 	
 	interpreter push: (memory integerObjectOf: 15).
 	interpreter push: (memory floatObjectOf: 15.0).
 	
 	interpreter primitiveEqual.
-
-	self assert: interpreter failed. 
+	
+	self assert: interpreter failed
 ]
 
 { #category : #'tests - primitiveEqual' }
@@ -1395,24 +1608,16 @@ VMPrimitiveTest >> testPrimitiveGetImmutabilityReturnsTrueIfObjectIsImmutable [
 
 { #category : #'tests - primitiveGreaterOrEqual' }
 VMPrimitiveTest >> testPrimitiveGreaterOrEqualFailsWithFloat [
-	
-	|classFloat|
 
-	classFloat := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstLongFormat.
-	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
-	memory
-		storePointer: ClassFloatCompactIndex
-		ofObject: memory classTableFirstPage
-		withValue: classFloat.
-		
 	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
-
+	self installFloatClass.
+	
 	interpreter push: (memory integerObjectOf: 16).
 	interpreter push: (memory floatObjectOf: 16.0).
 	
 	interpreter primitiveGreaterOrEqual.
-
-	self assert: interpreter failed. 
+	
+	self assert: interpreter failed
 ]
 
 { #category : #'tests - primitiveGreaterOrEqual' }
@@ -1499,23 +1704,12 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoErrorPopsOperands [
 { #category : #'tests - primitiveGreaterThan' }
 VMPrimitiveTest >> testPrimitiveGreaterThanFailsWithFloat [
 
-	|classFloat|
-
-	classFloat := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstLongFormat.
-	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
-	memory
-		storePointer: ClassFloatCompactIndex
-		ofObject: memory classTableFirstPage
-		withValue: classFloat.
-		
 	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
-
+	self installFloatClass.
 	interpreter push: (memory integerObjectOf: 16).
 	interpreter push: (memory floatObjectOf: 16.0).
-	
 	interpreter primitiveGreaterThan.
-
-	self assert: interpreter failed. 
+	self assert: interpreter failed
 ]
 
 { #category : #'tests - primitiveGreaterThan' }
@@ -1599,6 +1793,240 @@ VMPrimitiveTest >> testPrimitiveGreaterThanWithNoErrorPopsOperands [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42).
 ]
 
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalDoesntFailForForwardedOopOnOtherObjectWithArgCountLessThanOne [
+	|object1|
+	"Tests the case where objectArg = 1 and: isOopFowarded: stackTop"
+	
+	object1 := self setUpForwardedObjects. 
+	
+	interpreter argumentCount: 1.
+	
+	interpreter push: (memory integerObjectOf: 16). 
+	interpreter push: object1. 
+	
+	interpreter primitiveIdentical. 
+
+	self deny: interpreter failed. 
+]
+
+{ #category : #'as yet unclassified' }
+VMPrimitiveTest >> testPrimitiveIdenticalFailsForForwardedOop [
+	| class1 class2 object1 object2 array1 array2|
+	
+	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
+	class2 := self newClassInOldSpaceWithSlots: 2 instSpec: memory nonIndexablePointerFormat.
+	
+	object1 := memory instantiateClass: class1.
+	object2 := memory instantiateClass: class2.
+	
+	array1 := self newArrayWith: { object1 }.
+	array2 := self newArrayWith: { object2 }.
+	
+	interpreter push: array2.
+	
+	interpreter primitiveArrayBecome.
+	
+	interpreter push: object1. 
+	interpreter push: array2. 
+	
+	interpreter primitiveIdentical. 
+
+	self assert: interpreter primFailCode equals: PrimErrBadArgument.
+	
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalFailsForForwardedOopOnOtherObject [
+	|object1|
+	"Tests the case where objectArg > 1 and: isOopFowarded: stackTop"
+	
+	object1 := self setUpForwardedObjects.
+	
+	interpreter argumentCount: 3.
+	
+	interpreter push: (memory integerObjectOf: 16). 
+	interpreter push: object1.
+	 
+	interpreter primitiveIdentical. 
+
+	self assert: interpreter failed. 
+	self assert: interpreter primFailCode equals: PrimErrBadArgument.
+	
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalFailsForForwardedOopOnReceiver [
+	|object1|
+	
+	object1 := self setUpForwardedObjects. 
+	
+	interpreter push: object1. 
+	interpreter push: (memory integerObjectOf: 16). 
+	
+	interpreter primitiveIdentical. 
+
+	self assert: interpreter failed. 
+	self assert: interpreter primFailCode equals: PrimErrBadArgument.
+	
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalReturnsBool [
+
+	interpreter push: memory trueObject.
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveIdentical. 
+
+	self assert: interpreter stackTop equals: memory falseObject. 
+	
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalReturnsFalseForObjectsWithSameValueButDifferentType [
+	| object1 object2 |
+	
+	object1:= memory integerObjectOf: 16. 
+	object2:= memory floatObjectOf: 16.0 . 
+	
+	interpreter push: object1 . 
+	interpreter push: object2. 
+	
+	interpreter primitiveIdentical. 
+
+	self assert: interpreter stackTop equals: memory falseObject. 
+	
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalReturnsFalseWithWrongArgCount [
+	| object |
+	
+	object:= memory integerObjectOf: 16. 
+	
+	interpreter push: object. 
+
+	interpreter primitiveIdentical. 
+	
+	self deny: interpreter failed. 
+
+	self assert: interpreter stackTop equals: memory falseObject. 
+	
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalReturnsTrueForIdenticalObject [
+	| object |
+	
+	object:= memory integerObjectOf: 16. 
+	interpreter push: object. 
+	interpreter push: object. 
+	
+	interpreter primitiveIdentical. 
+
+	self assert: interpreter stackTop equals: memory trueObject. 
+	
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalReturnsTrueForObjectsWithSameValue [
+	| object1 object2 |
+	
+	object1:= memory integerObjectOf: 16. 
+	object2:= memory integerObjectOf: 16. 
+	
+	interpreter push: object1 . 
+	interpreter push: object2. 
+	
+	interpreter primitiveIdentical. 
+
+	self assert: interpreter stackTop equals: memory trueObject. 
+	
+]
+
+{ #category : #'tests - primitiveImmediateAsInteger' }
+VMPrimitiveTest >> testPrimitiveImmediateAsIntegerFailsWithTypeError [
+
+	interpreter push: (memory trueObject).
+	
+	interpreter primitiveImmediateAsInteger. 
+
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
+	
+	
+]
+
+{ #category : #'tests - primitiveImmediateAsInteger' }
+VMPrimitiveTest >> testPrimitiveImmediateAsIntegerWithChar [
+
+	interpreter push: (memory characterObjectOf: 66).
+	
+	interpreter primitiveImmediateAsInteger. 
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 66).  
+	
+	
+]
+
+{ #category : #'tests - primitiveImmediateAsInteger' }
+VMPrimitiveTest >> testPrimitiveImmediateAsIntegerWithFloat [
+
+	interpreter push: (memory integerObjectOf: 0). 
+	
+	interpreter primitiveImmediateAsInteger. 
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
+	
+	
+]
+
+{ #category : #'tests - primitiveImmediateAsInteger' }
+VMPrimitiveTest >> testPrimitiveImmediateAsIntegerWithInt [
+
+	interpreter push: (memory integerObjectOf: memory maxSmallInteger).
+	
+	interpreter primitiveImmediateAsInteger. 
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: memory maxSmallInteger). 
+	
+	
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveInstVarAtOverBoundShouldFailForIndexable [
+	| class object |
+	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory arrayFormat.
+	
+	object := memory instantiateClass: class indexableSize: 1.
+
+	interpreter push: object.
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter primitiveInstVarAt.
+	
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadIndex. 
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveInstVarAtOverBoundShouldFailForNonIndexable [
+	| class object |
+	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
+	
+	object := memory instantiateClass: class.
+
+	interpreter push: object.
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter primitiveInstVarAt.
+	
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadIndex.
+]
+
 { #category : #'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveInstVarAtPutOverBoundShouldFailForIndexable [
 	| class object |
@@ -1647,26 +2075,83 @@ VMPrimitiveTest >> testPrimitiveInstVarAtPutPutsTheValueForNonIndexable [
 	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
 ]
 
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveInstVarAtReturnsTheValueForNonIndexable [
+	| class object |
+	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
+	
+	object := memory instantiateClass: class.
+
+	interpreter push: object.
+	interpreter push: (memory integerObjectOf: 1).
+	interpreter push: memory falseObject.
+	
+	interpreter primitiveInstVarAtPut.
+	
+	interpreter push: memory trueObject. 
+	"This is a token to make sure that the object that is tested is the one returned by primitiveInstVarAtPut, and not the one pushed before"
+	
+	interpreter push: object. 
+	interpreter push: (memory integerObjectOf: 1).
+	
+	interpreter primitiveInstVarAt. 
+	
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: memory falseObject.
+]
+
+{ #category : #'tests - primitiveIsPinned' }
+VMPrimitiveTest >> testPrimitiveIsPinnedBool [
+
+	interpreter push: (memory trueObject). 
+	
+	interpreter primitiveIsPinned. 
+	
+	self deny: interpreter failed. 
+	self assert: interpreter stackTop equals: memory falseObject. 
+]
+
+{ #category : #'tests - primitiveIsPinned' }
+VMPrimitiveTest >> testPrimitiveIsPinnedFailsForForwardedObjects [
+
+	interpreter push: self setUpForwardedObjects. 
+	
+	interpreter primitiveIsPinned. 
+	
+	self assert: interpreter failed. 
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
+]
+
+{ #category : #'tests - primitiveIsPinned' }
+VMPrimitiveTest >> testPrimitiveIsPinnedFailsForImmediateObjects [
+
+	interpreter push: (memory integerObjectOf: 16). 
+	
+	interpreter primitiveIsPinned. 
+	
+	self assert: interpreter failed. 
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
+]
+
+{ #category : #'tests - primitiveIsPinned' }
+VMPrimitiveTest >> testPrimitiveIsPinnedSmallInt [
+
+	interpreter push: (memory integerObjectOf: 10). 
+	
+	interpreter primitiveIsPinned. 
+	
+	self assert: interpreter failed. 
+]
+
 { #category : #'tests - primitiveLessOrEqual' }
 VMPrimitiveTest >> testPrimitiveLessOrEqualFailsWithFloat [
 
-	|classFloat|
-
-	classFloat := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstLongFormat.
-	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
-	memory
-		storePointer: ClassFloatCompactIndex
-		ofObject: memory classTableFirstPage
-		withValue: classFloat.
-		
 	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
-	
+	self installFloatClass.
 	interpreter push: (memory integerObjectOf: 16).
 	interpreter push: (memory floatObjectOf: 16.0).
-	
 	interpreter primitiveLessOrEqual.
-
-	self assert: interpreter failed. 
+	self assert: interpreter failed
 ]
 
 { #category : #'tests - primitiveLessOrEqual' }
@@ -1753,23 +2238,12 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualsFailsWithTypeErrorOnSecondOperand [
 { #category : #'tests - primitiveLessThan' }
 VMPrimitiveTest >> testPrimitiveLessThanFailsWithFloat [
 
-	|classFloat|
-
-	classFloat := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstLongFormat.
-	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
-	memory
-		storePointer: ClassFloatCompactIndex
-		ofObject: memory classTableFirstPage
-		withValue: classFloat.
-		
 	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
-
+	self installFloatClass.
 	interpreter push: (memory integerObjectOf: 15).
 	interpreter push: (memory floatObjectOf: 15.0).
-	
 	interpreter primitiveLessThan.
-
-	self assert: interpreter failed. 
+	self assert: interpreter failed
 ]
 
 { #category : #'tests - primitiveLessThan' }
@@ -2296,23 +2770,12 @@ VMPrimitiveTest >> testPrimitiveNewWithInvalidClassFails [
 { #category : #'tests - primitiveNotEqual' }
 VMPrimitiveTest >> testPrimitiveNotEqualFailsWithFloat [
 
-	|classFloat|
-
-	classFloat := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstLongFormat.
-	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
-	memory
-		storePointer: ClassFloatCompactIndex
-		ofObject: memory classTableFirstPage
-		withValue: classFloat.
-		
 	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
-	
+	self installFloatClass.
 	interpreter push: (memory integerObjectOf: 16).
 	interpreter push: (memory floatObjectOf: 16.0).
-	
 	interpreter primitiveNotEqual.
-
-	self assert: interpreter failed. 
+	self assert: interpreter failed
 ]
 
 { #category : #'tests - primitiveNotEqual' }
@@ -2383,6 +2846,99 @@ VMPrimitiveTest >> testPrimitiveNotEqualWithTypeErrorOnSecondOperand [
 	interpreter primitiveNotEqual.
 
 	self assert: interpreter failed. 
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitivePinFailsForForwardedObjects [
+
+	interpreter push: self setUpForwardedObjects. 
+	
+	interpreter primitivePin. 
+	
+	self assert: interpreter failed. 
+	self assert: interpreter primFailCode equals: PrimErrBadArgument. 
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitivePinFailsForImmediate [
+
+	interpreter push: (memory integerObjectOf: 16).
+	
+	interpreter primitivePin. 
+	
+	self assert: interpreter failed. 
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitivePinFailsForNOnBoolOnSecondArg [
+
+	interpreter push: (memory instantiateClass: (self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat)).
+	interpreter push: (memory integerObjectOf: 16). 
+	
+	interpreter primitivePin. 
+	
+	self assert: interpreter failed. 
+	self assert: interpreter primFailCode equals: PrimErrBadArgument. 
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitivePinPinsObjectCreatedInNewSpace [
+	|object object2|
+	
+	object := (memory instantiateClass: (self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat)).
+	interpreter push: object. 
+	interpreter push: (memory trueObject). 
+	
+	self deny: (memory isPinned: object).
+	
+	interpreter primitivePin. 
+	
+	self deny: interpreter failed. 
+	
+	object2 := memory followForwarded: object. 
+	
+	self assert: (memory isPinned: object2). 
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitivePinPinsObjectCreatedInOldSpace [
+	|object|
+	
+	object := self newOldSpaceObjectWithSlots: 1.
+	interpreter push: object. 
+	interpreter push: (memory trueObject). 
+	
+	self deny: (memory isPinned: object).
+	
+	interpreter primitivePin. 
+	
+	self deny: interpreter failed. 
+	
+	self assert: (memory isPinned: object). 
+
+	
+	
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitivePinReturnsBoolean [
+	|object|
+	
+	object := self newOldSpaceObjectWithSlots: 1.
+	interpreter push: object. 
+	interpreter push: (memory trueObject). 
+	
+	self deny: (memory isPinned: object).
+	
+	interpreter primitivePin. 
+	
+	self deny: interpreter failed. 
+	
+	self assert: interpreter stackTop equals: memory falseObject. 
+
+	
+	
 ]
 
 { #category : #'tests - primitiveQuo' }
@@ -2646,6 +3202,36 @@ VMPrimitiveTest >> testPrimitiveSizeFailsForNonIndexable [
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
 ]
 
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveSlotAtOverBoundShouldFailForIndexable [
+	| class object |
+	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory arrayFormat.
+	
+	object := memory instantiateClass: class indexableSize: 1.
+
+	interpreter push: object.
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter primitiveSlotAt.
+	
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadIndex. 
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveSlotAtOverBoundShouldFailNonIndexable [
+	| class object |
+	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
+	
+	object := memory instantiateClass: class.
+
+	interpreter push: object.
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter primitiveSlotAt.
+	
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadIndex.
+]
+
 { #category : #'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveSlotAtPutOverBoundShouldFailForIndexable [
 	| class object |
@@ -2692,6 +3278,103 @@ VMPrimitiveTest >> testPrimitiveSlotAtPutPutsTheValueForNonIndexable [
 	
 	self deny: interpreter failed.
 	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveSlotAtPutsTheValueForNonIndexable [
+	| class object |
+	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
+	
+	object := memory instantiateClass: class.
+
+	interpreter push: object.
+	interpreter push: (memory integerObjectOf: 1).
+	interpreter push: memory falseObject.
+	
+	interpreter primitiveSlotAtPut.
+	
+	interpreter push: object. 
+	interpreter push: (memory integerObjectOf: 1).
+	
+	interpreter primitiveSlotAt. 
+	
+	self deny: interpreter failed.
+	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
+]
+
+{ #category : #'tests - primitiveAdd - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatAdd [
+
+	interpreter push: (memory smallFloatObjectOf: 10.0). 
+	interpreter push: (memory smallFloatObjectOf: 0.0).
+	
+	interpreter primitiveSmallFloatAdd.  
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory smallFloatObjectOf: 10.0). 
+	
+	
+]
+
+{ #category : #'tests - primitiveAdd - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatAddFailsWithTypeErrorOnFirstOperand [
+
+	interpreter push: memory trueObject.
+	interpreter push: (memory smallFloatObjectOf: 2.0).
+	
+	interpreter primitiveSmallFloatAdd. 
+
+	self assert: interpreter failed.
+	
+	
+]
+
+{ #category : #'tests - primitiveAdd - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatAddFailsWithTypeErrorOnSecondOperand [
+
+	interpreter push: (memory smallFloatObjectOf: 2.0).
+	interpreter push: memory trueObject.
+	
+	interpreter primitiveSmallFloatAdd. 
+
+	self assert: interpreter failed.
+	
+	
+]
+
+{ #category : #'tests - primitiveAdd - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatAddFailsWithTypeErrorPreservesStack [
+	
+	interpreter push: (memory smallFloatObjectOf: 2.0). 
+	interpreter push: memory trueObject. 
+	
+	interpreter primitiveSmallFloatAdd. 
+	
+	self assert: interpreter failed. 
+	
+	self assert: interpreter stackTop equals: memory trueObject.
+	self assert: (interpreter stackValue: 1) equals:  (memory smallFloatObjectOf: 2.0). 
+	
+	
+]
+
+{ #category : #'tests - primitiveAdd - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatAddWithNoOverflowPopsOperands [
+
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter push: (memory smallFloatObjectOf: 1.0).
+	interpreter push: (memory smallFloatObjectOf: 2.0).
+	
+	interpreter primitiveSmallFloatAdd. 
+	
+	interpreter popStack. 
+	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were popped from the stack by checking that the next value is our marker, for instance 42"
+	
+	self deny: interpreter failed. 
+	"self assert: (interpreter stackValue: 1) equals: (memory integerObjectOf: 42)."
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42). 
+	
+	
 ]
 
 { #category : #'tests - snapshot' }
@@ -2803,6 +3486,62 @@ VMPrimitiveTest >> testPrimitiveStringAtPutShouldNotFailWhenReceiverIsAString [
 
 { #category : #'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveStringAtPutShouldNotModifyStringIfFailedWhenNonCharacterArgument [
+	"Every other test is common with at:put:"
+
+	| string |
+	string := self newString: 'po'.
+
+	interpreter push: string.
+	interpreter push: (memory integerObjectOf: 1).
+	interpreter push: memory falseObject.
+	interpreter primitiveStringAtPut.
+
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadArgument.
+
+	self assert: string contentEquals: (self newString: 'po')
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveStringAtShouldFailForNonCharacterArgument [
+	"Every other test is common with at:put:"
+	| objectInstance |
+	objectInstance := self memory integerObjectOf: 2. 
+	
+	interpreter push: objectInstance.
+	interpreter push: (memory integerObjectOf: 1).
+	interpreter primitiveStringAt.
+	
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrInappropriate.
+
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveStringAtShouldNotFailWhenReceiverIsAString [
+	"Every other test is common with at:put:"
+	| string |
+
+	string := self newString: 'po'.
+
+	interpreter push: string.
+	interpreter push: (memory integerObjectOf: 1).
+	interpreter push: (memory characterObjectOf: 2).
+
+	interpreter primitiveStringAtPut.
+	
+	interpreter push: string.
+	interpreter push: (memory integerObjectOf: 1).
+	
+	interpreter primitiveStringAt. 
+	
+	self assert: interpreter successful.
+	self assert: interpreter stackTop equals: (memory characterObjectOf: 2). 
+
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveStringAtShouldNotModifyStringIfFailedWhenNonCharacterArgument [
 	"Every other test is common with at:put:"
 
 	| string |
