@@ -8193,8 +8193,8 @@ StackInterpreter >> initializeInterpreter: bytesToShift [
 	interruptKeycode := 2094. "cmd-. as used for Mac but no other OS"
 	[globalSessionID = 0] whileTrue:
 		[globalSessionID := self
-								cCode: [(self time: #NULL) + self ioMSecs]
-								inSmalltalk: [(Random new next * (SmallInteger maxVal min: 16rFFFFFFFF)) asInteger]].
+								cCode: [((self time: #NULL) + self ioMSecs) bitAnd: 16r7FFFFFFF]
+								inSmalltalk: [(Random new next * (SmallInteger maxVal min: 16r7FFFFFFF)) asInteger]].
 	metaAccessorDepth := -2.
 	super initializeInterpreter: bytesToShift
 ]
