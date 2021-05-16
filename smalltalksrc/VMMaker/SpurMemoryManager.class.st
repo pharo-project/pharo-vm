@@ -5912,12 +5912,15 @@ SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount [
 	"Now apply the maxOldSpaceSize limit, if one is in effect."
 	maxOldSpaceSize > 0 ifTrue:
 		[total := segmentManager totalBytesInSegments.
-		 total >= maxOldSpaceSize ifTrue:
-			[^nil].
+		 total >= maxOldSpaceSize ifTrue:[
+			self logError: 'Could not allocate more memory. MaxOldSpaceSize reached.'.
+			^nil].
 		 headroom := maxOldSpaceSize - total.
 		 headroom < ammount ifTrue:
 			[headroom < (minAmmount + (self baseHeaderSize * 2 + self bridgeSize)) ifTrue:
-				[^nil].
+				[
+				self logError: 'Required space is bigger than the headroom. Could not allocate'.
+				^nil].
 			 ammount := headroom]].
 		 
 	start := coInterpreter ioUTCMicrosecondsNow.

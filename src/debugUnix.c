@@ -9,6 +9,14 @@
 
 #endif
 
+#if __APPLE__
+
+#define _XOPEN_SOURCE
+#include <ucontext.h>
+
+#endif
+
+
 #ifdef HAVE_EXECINFO_H
 # include <execinfo.h>
 #endif
@@ -419,4 +427,17 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 #endif
 	fprintf(output,"\n\t(%s)\n", msg);
 	fflush(output);
+}
+
+EXPORT(void) printStatusAfterError(){
+	
+	ucontext_t uap;
+	
+	getcontext(&uap);
+	
+	int saved_errno = errno;
+
+	doReport("VM Error", &uap);
+
+	errno = saved_errno;
 }

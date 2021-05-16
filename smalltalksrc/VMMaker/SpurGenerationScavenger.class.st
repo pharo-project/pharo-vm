@@ -352,7 +352,7 @@ SpurGenerationScavenger >> copyToFutureSpace: survivor bytes: bytesInObject [
 SpurGenerationScavenger >> copyToOldSpace: survivor bytes: bytesInObject format: formatOfSurvivor [
 	"Copy survivor to oldSpace.  Answer the new oop of the object."
 	<inline: #never> "Should be too infrequent to lower icache density of copyAndForward:"
-	| nTenures startOfSurvivor newStart newOop |
+	| nTenures startOfSurvivor newStart newOop growResult |
 	self assert: (formatOfSurvivor = (manager formatOf: survivor)
 				and: [((manager isMarked: survivor) not or: [tenureCriterion = MarkOnTenure])
 				and: [tenureCriterion = TenureToShrinkRT
@@ -362,10 +362,13 @@ SpurGenerationScavenger >> copyToOldSpace: survivor bytes: bytesInObject format:
 	startOfSurvivor := manager startOfObject: survivor.
 	newStart := manager allocateOldSpaceChunkOfBytes: bytesInObject.
 	newStart ifNil:
-		[manager growOldSpaceByAtLeast: 0. "grow by growHeadroom"
+		[growResult := manager growOldSpaceByAtLeast: 0. "grow by growHeadroom"
 		 newStart := manager allocateOldSpaceChunkOfBytes: bytesInObject.
 		 newStart ifNil:
-			[self error: 'out of memory']].
+			[	growResult 
+					ifNil: [ self error: 'Could not allocate new object in the old space. It was not possible to allocate a new memory segment' ] 
+					ifNotNil: [ self error: 'Could not allocate new object in the old space' ]]].
+		
 	"manager checkFreeSpace."
 	manager memcpy: newStart asVoidPointer _: startOfSurvivor asVoidPointer _: bytesInObject.
 	newOop := newStart + (survivor - startOfSurvivor).
