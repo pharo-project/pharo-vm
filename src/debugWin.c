@@ -396,5 +396,33 @@ EXPORT(void) printRegisterState(PCONTEXT regs, FILE* output){
 }
 
 EXPORT(void) printStatusAfterError(){
-	printCrashDebugInformation(GetExceptionInformation());
+
+	char crashdumpFileName[PATH_MAX+1];
+	FILE *crashDumpFile;
+	crashdumpFileName[0] = 0;
+
+	//This is awful but replace the stdout to print all the messages in the file.
+	getCrashDumpFilenameInto(crashdumpFileName);
+	crashDumpFile = fopen(crashdumpFileName, "a+");
+	vm_setVMOutputStream(crashDumpFile);
+
+	fprintf(crashDumpFile, "\n\nAll Smalltalk process stacks (active first):\n");
+	fflush(crashDumpFile);
+
+	printAllStacks();
+
+	fprintf(crashDumpFile, "\nMost recent primitives\n");
+	dumpPrimTraceLog();
+
+	vm_setVMOutputStream(stderr);
+	fclose(crashDumpFile);
+
+	fprintf(stderr, "\n\nAll Smalltalk process stacks (active first):\n");
+	fflush(stderr);
+
+	printAllStacks();
+	fprintf(stderr, "\nMost recent primitives\n");
+	dumpPrimTraceLog();
+
+	fflush(stderr);
 }
