@@ -539,6 +539,19 @@ SlangBasicTranslationTest >> testSendAbs [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendAddressOf [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #addressOf:
+		        receiver: (TVariableNode new setName: 'aVM')
+		        arguments: {(TVariableNode new setName: 'x')}.
+	translation := self translate: send.
+
+	self assert: translation equals: '&x'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendAllMask [
 
 	| translation send |
@@ -1371,6 +1384,45 @@ SlangBasicTranslationTest >> testSendOr [
 	translation := self translate: send.
 
 	self assert: translation equals: '0 || 1'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendPerform [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #perform:
+		        receiver: (TVariableNode new setName: 'self')
+		        arguments: {(TConstantNode value: #foo)}.
+	translation := self translate: send.
+
+	self assert: translation equals: 'foo()'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendPerformWith [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #perform:with:
+		        receiver: (TVariableNode new setName: 'self')
+		        arguments: {TConstantNode value: #foo. TVariableNode new setName: 'x'}.
+	translation := self translate: send.
+
+	self assert: translation equals: 'foo(x)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendPerformWithWith [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #perform:with:with:
+		        receiver: (TVariableNode new setName: 'self')
+		        arguments: {TConstantNode value: #foo. TVariableNode new setName: 'x'. TVariableNode new setName: 'y'}.
+	translation := self translate: send.
+
+	self assert: translation equals: 'foo(x, y)'
 ]
 
 { #category : #'tests-send' }

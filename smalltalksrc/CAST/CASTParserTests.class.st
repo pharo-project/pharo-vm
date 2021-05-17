@@ -177,6 +177,16 @@ CASTParserTests >> testParseAdditionPrecedence [
 
 ]
 
+{ #category : #'tests-binary operators' }
+CASTParserTests >> testParseAdressOf [
+
+	| expression |
+	expression := self parseExpression: '&a'.
+	
+	self assert: expression isUnaryOperation.
+	self assert: expression operator equals: '&'
+]
+
 { #category : #'tests-declarators' }
 CASTParserTests >> testParseArrayDeclarationWithInitializer [
 

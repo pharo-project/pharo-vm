@@ -1742,6 +1742,14 @@ CCodeGenerator >> generateCASTAbs: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAddressOf: tast [
+
+	^ CUnaryOperatorNode
+		  operator: #&
+		  expression: (tast arguments first asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTAllMask: tast [
 
 	^ CBinaryOperatorNode
@@ -2168,6 +2176,19 @@ CCodeGenerator >> generateCASTNotNil: tast [
 CCodeGenerator >> generateCASTOr: tast [
 	
 	^ self generateCASTBinary: tast operator: #||
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTPerform: tast [
+
+	| call |
+	call := CCallNode
+		        identifier: (CIdentifierNode name: (tast arguments first value asString))
+		        arguments: OrderedCollection new.
+	2 to: tast arguments size do: [ :i | 
+		call arguments add:
+			((tast arguments at: i) asCASTExpressionIn: self) ].
+	^ call
 ]
 
 { #category : #'CAST translation' }
