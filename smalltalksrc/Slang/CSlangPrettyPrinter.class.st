@@ -199,6 +199,11 @@ CSlangPrettyPrinter >> visitDoStatement: aDoStatement [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitEmptyStatement: anEmptyStatement [
+	"Nothing to print."
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitForStatement: aForStatement [
 
 	stream nextPutAll: 'for('.

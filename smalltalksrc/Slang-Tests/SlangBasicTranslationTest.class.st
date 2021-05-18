@@ -993,6 +993,206 @@ SlangBasicTranslationTest >> testSendGreaterThan [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfFalse [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #ifFalse:
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: { (TStmtListNode new setStatements: { 
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'a')
+						          expression: (TConstantNode value: false)).
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'c')
+						          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'if (!x) {
+	a = 0;
+	c = 1;
+}'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfFalseIfTrue [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #ifFalse:ifTrue:
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: { 
+				        (TStmtListNode new setStatements: { 
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'a')
+							          expression: (TConstantNode value: false)).
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'c')
+							          expression: (TConstantNode value: 1)) }).
+				        (TStmtListNode new setStatements: { (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'a')
+						          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'if (x) {
+	a = 1;
+}else {
+	a = 0;
+	c = 1;
+}'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfFalseIfTrueCollapseBothArmsOfConditional [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #ifFalse:ifTrue:
+		        receiver: (TSendNode new
+				         setSelector: #foo
+				         receiver: (TVariableNode new setName: 'x')
+				         arguments: { (TConstantNode value: 7) })
+		        arguments: { 
+				        (TStmtListNode new setStatements: { 
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'a')
+							          expression: (TConstantNode value: false)).
+						         
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'c')
+							          expression: (TConstantNode value: 1)) }).
+				        (TStmtListNode new setStatements: { 
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'a')
+							          expression: (TConstantNode value: false)).
+						         
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'c')
+							          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'foo(x, 7);
+{
+	a = 0;
+	c = 1;
+}'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfFalseWithReceiverFalseConstant [
+
+	| translation send |
+	generator generateDeadCode: false.
+	send := TSendNode new
+		        setSelector: #ifFalse:
+		        receiver: (TConstantNode value: false)
+		        arguments: { (TStmtListNode new setStatements: { 
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'a')
+						          expression: (TConstantNode value: false)).
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'c')
+						          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '{
+	a = 0;
+	c = 1;
+}'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfFalseWithReceiverSendNot [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #ifFalse:
+		        receiver: (TSendNode new
+				         setSelector: #not
+				         receiver: (TVariableNode new setName: 'x')
+				         arguments: {  })
+		        arguments: { (TStmtListNode new setStatements: { 
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'a')
+						          expression: (TConstantNode value: false)).
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'c')
+						          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'if (x) {
+	a = 0;
+	c = 1;
+}'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfFalseWithReceiverTrueConstant [
+
+	| translation send |
+	generator generateDeadCode: false.
+	send := TSendNode new
+		        setSelector: #ifFalse:
+		        receiver: (TConstantNode value: true)
+		        arguments: { (TStmtListNode new setStatements: { 
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'a')
+						          expression: (TConstantNode value: false)).
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'c')
+						          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation equals: ''
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfNotNil [
+
+	| translation send |
+	generator generateDeadCode: true.
+	send := TSendNode new
+		        setSelector: #ifNotNil:
+		        receiver: (TSendNode new
+				         setSelector: #foo
+				         receiver: (TVariableNode new setName: 'self')
+				         arguments: { (TVariableNode new setName: 'x') })
+		        arguments: { (TStmtListNode new setStatements: { 
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'a')
+						          expression: (TConstantNode value: false)).
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'c')
+						          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'if (foo(x)) {
+	a = 0;
+	c = 1;
+}'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfNotNilWithNilReceiver [
+
+	| translation send |
+	generator generateDeadCode: false.
+	send := TSendNode new
+		        setSelector: #ifNotNil:
+		        receiver: (TConstantNode value: nil)
+		        arguments: { (TStmtListNode new setStatements: { 
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'a')
+						          expression: (TConstantNode value: false)).
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'c')
+						          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation equals: ''
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendIfTrue [
 
 	| translation send |
@@ -1039,6 +1239,85 @@ SlangBasicTranslationTest >> testSendIfTrueIfFalse [
 	c = 1;
 }else {
 	a = 1;
+}'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfTrueIfFalseCollapseBothArmsOfConditional [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #ifTrue:ifFalse:
+		        receiver: (TSendNode new
+				         setSelector: #foo
+				         receiver: (TVariableNode new setName: 'x')
+				         arguments: { (TConstantNode value: 7) })
+		        arguments: { 
+				        (TStmtListNode new setStatements: { 
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'a')
+							          expression: (TConstantNode value: false)).
+						         
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'c')
+							          expression: (TConstantNode value: 1)) }).
+				        (TStmtListNode new setStatements: { 
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'a')
+							          expression: (TConstantNode value: false)).
+						         
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'c')
+							          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'foo(x, 7);
+{
+	a = 0;
+	c = 1;
+}'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfTrueWithReceiverFalseConstant [
+
+	| translation send |
+	generator generateDeadCode: false.
+	send := TSendNode new
+		        setSelector: #ifTrue:
+		        receiver: (TConstantNode value: false)
+		        arguments: { (TStmtListNode new setStatements: { 
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'a')
+						          expression: (TConstantNode value: false)).
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'c')
+						          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation equals: ''
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfTrueWithReceiverTrueConstant [
+
+	| translation send |
+	generator generateDeadCode: false.
+	send := TSendNode new
+		        setSelector: #ifTrue:
+		        receiver: (TConstantNode value: true)
+		        arguments: { (TStmtListNode new setStatements: { 
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'a')
+						          expression: (TConstantNode value: false)).
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'c')
+						          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '{
+	a = 0;
+	c = 1;
 }'
 ]
 
@@ -1388,7 +1667,7 @@ SlangBasicTranslationTest >> testSendOr [
 
 { #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendPerform [
-
+	"self perform: #foo"
 	| translation send |
 	send := TSendNode new
 		        setSelector: #perform:
@@ -1401,7 +1680,7 @@ SlangBasicTranslationTest >> testSendPerform [
 
 { #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendPerformWith [
-
+	"self perform: #foo with: x"
 	| translation send |
 	send := TSendNode new
 		        setSelector: #perform:with:
@@ -1414,7 +1693,7 @@ SlangBasicTranslationTest >> testSendPerformWith [
 
 { #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendPerformWithWith [
-
+	"self perform: #foo with: x with: y"
 	| translation send |
 	send := TSendNode new
 		        setSelector: #perform:with:with:

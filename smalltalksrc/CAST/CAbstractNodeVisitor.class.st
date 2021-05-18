@@ -95,6 +95,11 @@ CAbstractNodeVisitor >> visitDoStatement: aDoStatement [
 ]
 
 { #category : #generated }
+CAbstractNodeVisitor >> visitEmptyStatement: anEmptyStatement [
+	^ self visitAbstract: anEmptyStatement
+]
+
+{ #category : #generated }
 CAbstractNodeVisitor >> visitEnum: anEnum [
 	^ self visitAbstract: anEnum
 ]

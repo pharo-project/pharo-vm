@@ -2042,11 +2042,113 @@ CCodeGenerator >> generateCASTGreaterThanOrEqual: tast [
 ]
 
 { #category : #'CAST translation' }
-CCodeGenerator >> generateCASTIfTrue: tast [
+CCodeGenerator >> generateCASTIfElse: tast reverseArms: reverse [
+	
+	| firstStatement secondStatment |
+	firstStatement := reverse ifTrue: [ tast arguments last ] ifFalse: [ tast arguments first ].
+	secondStatment := reverse ifTrue: [ tast arguments first ] ifFalse: [ tast arguments last ].
+	
+	"If the receiver is a boolean constant, it returns only the right statement."
+	(self nilOrBooleanConstantReceiverOf: tast receiver) ifNotNil: [ 
+		:const | 
+		^ (const
+			   ifTrue: [ firstStatement ]
+			   ifFalse: [ secondStatment ]) asCASTIn: self ].
 
-	^ CIfStatementNode
-		  if: (tast receiver asCASTIn: self)
-		  then: (tast arguments first asCASTIn: self)
+	"If both statements are different"
+	(firstStatement isSameAs: secondStatment) ifFalse: [ 
+		^ CIfStatementNode
+			  if: (tast receiver asCASTExpressionIn: self)
+			  then: ((firstStatement asCASTIn: self)
+					   needsCarriageReturn: false;
+					   yourself)
+			  else: (secondStatment first asCASTIn: self) ].
+
+	"qsdqsd"
+	tast receiver hasSideEffect ifFalse: [ 
+		^ firstStatement asCASTIn: self ].
+
+	"qsdqsd"
+	^ (CCompoundStatementNode statements: { 
+				 (tast receiver asCASTExpressionIn: self).
+				 (firstStatement asCASTIn: self) })
+		needsBrackets: false;
+		needsCarriageReturn: false;
+		yourself
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfFalse: tast [
+
+	^ (self nilOrBooleanConstantReceiverOf: tast receiver)
+		  ifNil: [ 
+			  CIfStatementNode
+				  if:
+					  ((tast receiver isSend and: [ tast receiver selector == #not ]) "Eliminate double-negatives"
+						   ifTrue: [ tast receiver receiver asCASTExpressionIn: self ]
+						   ifFalse: [ CUnaryOperatorNode operator: #! expression:  (tast receiver asCASTExpressionIn: self) ])
+				  then: (tast arguments first asCASTIn: self)  ]
+		  ifNotNil: [ :const | 
+			  const
+				  ifTrue: [ CEmptyStatementNode new ]
+				  ifFalse: [ tast arguments first asCASTIn: self ] ]
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfFalseIfTrue: tast [
+
+	"qsdqsd"
+
+	(self nilOrBooleanConstantReceiverOf: tast receiver) ifNotNil: [ 
+		:const | 
+		^ (const
+			   ifTrue: [ tast args last ]
+			   ifFalse: [ tast args first ]) asCASTIn: self ].
+
+	"qsdqsd"
+	(tast args first isSameAs: tast args second) ifFalse: [ 
+		^ CIfStatementNode
+			  if: (tast receiver asCASTExpressionIn: self)
+			  then: ((tast arguments last asCASTIn: self)
+					   needsCarriageReturn: false;
+					   yourself)
+			  else: (tast arguments first asCASTIn: self) ].
+
+	"qsdqsd"
+	tast receiver hasSideEffect ifFalse: [ 
+		^ tast arguments first asCASTIn: self ].
+
+	"qsdqsd"
+	^ (CCompoundStatementNode statements: { 
+				 (tast receiver asCASTExpressionIn: self).
+				 (tast arguments first asCASTIn: self) })
+		needsBrackets: false;
+		needsCarriageReturn: false;
+		yourself
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNotNil: tast [
+
+	^ (self isNilConstantReceiverOf: tast) ifFalse: [ 
+		self generateCASTIfTrue: tast
+	] ifTrue: [ 
+		CEmptyStatementNode new.
+	 ]
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfTrue: tast [
+	
+	^ (self nilOrBooleanConstantReceiverOf: tast receiver)
+		  ifNil: [ 
+			  CIfStatementNode
+				  if: (tast receiver asCASTIn: self)
+				  then: (tast arguments first asCASTIn: self) ]
+		  ifNotNil: [ :const | 
+			  const
+				  ifTrue: [ tast arguments first asCASTIn: self ]
+				  ifFalse: [ CEmptyStatementNode new ] ]
 ]
 
 { #category : #'CAST translation' }
@@ -2061,16 +2163,30 @@ CCodeGenerator >> generateCASTIfTrueAsArgument: tast [
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfTrueIfFalse: tast [
 
-	| trueBlock |
-	trueBlock := tast arguments first asCASTIn: self.
-	
-	"Hint the pretty printer to add the else next to this block and not in a new line"
-	trueBlock needsCarriageReturn: false.
-	
-	^ CIfStatementNode
-		  if: (tast receiver asCASTIn: self)
-		  then: trueBlock
-		  else: (tast arguments second asCASTIn: self)
+	^ (self nilOrBooleanConstantReceiverOf: tast receiver)
+		  ifNil: [ 
+			  (tast args first isSameAs: tast args second)
+				  ifFalse: [ 
+					  CIfStatementNode
+						  if: (tast receiver asCASTExpressionIn: self)
+						  then: ((tast arguments first asCASTIn: self)
+								   needsCarriageReturn: false;
+								   yourself)
+						  else: (tast arguments second asCASTIn: self) ]
+				  ifTrue: [ 
+					  tast receiver hasSideEffect
+						  ifTrue: [ 
+							  (CCompoundStatementNode statements: { 
+										   (tast receiver asCASTExpressionIn: self).
+										   (tast arguments first asCASTIn: self) })
+								  needsBrackets: false;
+								  needsCarriageReturn: false;
+								  yourself ]
+						  ifFalse: [ tast arguments first asCASTIn: self ] ] ]
+		  ifNotNil: [ :const | 
+			  (const
+				   ifTrue: [ tast args first ]
+				   ifFalse: [ tast args last ]) asCASTIn: self ]
 ]
 
 { #category : #'CAST translation' }
@@ -2770,12 +2886,11 @@ CCodeGenerator >> generateIfFalse: msgNode on: aStream indent: level [
 					indent: level].
 			aStream nextPutAll: 'if (!'.
 			msgNode receiver isLeaf ifFalse: [aStream nextPut: $(]. "grrrrr"
-			msgNode receiver emitCCodeAsExpressionOn: aStream level: level + 1 generator: self.
+			msgNode receiver emitCCodeAsExpressionOn: aStream level: level  generator: self.
 			msgNode receiver isLeaf ifFalse: [aStream nextPut: $)]. "grrrrr"
-			aStream nextPutAll: ') {'; cr.
-			msgNode args last emitCCodeOn: aStream level: level + 1 generator: self.
-			aStream tab: level.
-			aStream nextPut: $}]
+			aStream nextPutAll: ') '.
+			msgNode args last emitCCodeOn: aStream level: level generator: self.
+			]
 		ifNotNil:
 			[:const |
 			const ifFalse:
@@ -2818,11 +2933,11 @@ CCodeGenerator >> generateIfFalseIfTrue: msgNode on: aStream indent: level [
 			[(self tryToCollapseBothArmsOfConditional: msgNode on: aStream indent: level) ifFalse:
 				[aStream nextPutAll: 'if ('.
 				 msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-				 aStream nextPutAll: ') {'; cr.
-				 msgNode args last emitCCodeOn: aStream level: level + 1 generator: self.
-				 aStream tab: level; nextPut: $}; crtab: level; nextPutAll: 'else {'; cr.
-				 msgNode args first emitCCodeOn: aStream level: level + 1 generator: self.
-				 aStream tab: level; nextPut: $}]]
+				 aStream nextPutAll: ') '.
+				 msgNode args last emitCCodeOn: aStream level: level generator: self.
+				 aStream nextPutAll: 'else '.
+				 msgNode args first emitCCodeOn: aStream level: level generator: self.
+				 ]]
 		ifNotNil:
 			[:const |
 			 (const ifTrue: [msgNode args last] ifFalse: [msgNode args first])

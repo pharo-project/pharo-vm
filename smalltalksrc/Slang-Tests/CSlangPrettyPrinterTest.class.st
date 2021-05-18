@@ -250,6 +250,17 @@ CSlangPrettyPrinterTest >> testVisitDoStatement [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitEmptyStatement [
+
+	| print |
+	print := self prettyPrint: CEmptyStatementNode new.
+	
+	self assert: print equals: ''
+
+
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitForStatement [
 
 	| print init until step for |

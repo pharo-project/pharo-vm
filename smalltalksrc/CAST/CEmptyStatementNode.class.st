@@ -5,6 +5,11 @@ Class {
 }
 
 { #category : #testing }
+CEmptyStatementNode >> acceptVisitor: anAbstractVisitor [
+	^ anAbstractVisitor visitEmptyStatement: self
+]
+
+{ #category : #testing }
 CEmptyStatementNode >> isEmptyStatement [
 	
 	^ true
