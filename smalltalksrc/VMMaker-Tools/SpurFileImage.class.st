@@ -9,7 +9,7 @@ Class {
 		'oldBaseAddress',
 		'specialObjectsArrayOop'
 	],
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-ImageInspector'
 }
 
 { #category : #'as yet unclassified' }

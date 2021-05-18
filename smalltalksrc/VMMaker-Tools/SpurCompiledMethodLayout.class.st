@@ -1,7 +1,7 @@
 Class {
 	#name : #SpurCompiledMethodLayout,
 	#superclass : #SpurLayout,
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-ImageInspector'
 }
 
 { #category : #testing }

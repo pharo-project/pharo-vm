@@ -15,7 +15,7 @@ Class {
 		'classTable',
 		'simulator'
 	],
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-ImageInspector'
 }
 
 { #category : #constants }

@@ -1,7 +1,7 @@
 Class {
 	#name : #SpurHiddenRoots,
 	#superclass : #SpurObject,
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-ImageInspector'
 }
 
 { #category : #'as yet unclassified' }

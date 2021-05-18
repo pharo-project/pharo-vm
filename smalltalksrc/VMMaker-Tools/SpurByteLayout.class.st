@@ -1,7 +1,7 @@
 Class {
 	#name : #SpurByteLayout,
 	#superclass : #SpurLayout,
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-ImageInspector'
 }
 
 { #category : #accessing }

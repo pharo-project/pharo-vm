@@ -1,5 +1,5 @@
 Class {
-	#name : #VMInspectorTest,
+	#name : #VMImageInspectorTest,
 	#superclass : #VMInterpreterTests,
 	#instVars : [
 		'imageName',
@@ -10,11 +10,11 @@ Class {
 		'VMBytecodeConstants',
 		'VMObjectIndices'
 	],
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-ImageInspector'
 }
 
 { #category : #tests }
-VMInspectorTest >> setSmallIntegerClassIntoClassTable [
+VMImageInspectorTest >> setSmallIntegerClassIntoClassTable [
 
 	| class |
 	class := self
@@ -30,14 +30,14 @@ VMInspectorTest >> setSmallIntegerClassIntoClassTable [
 ]
 
 { #category : #running }
-VMInspectorTest >> setUp [
+VMImageInspectorTest >> setUp [
 	
 	super setUp.
 	image := SpurSimulatorImage onSpurSimulator: memory.
 ]
 
 { #category : #'test-testing' }
-VMInspectorTest >> testClassOfObjectIsNilObjectByDefault [
+VMImageInspectorTest >> testClassOfObjectIsNilObjectByDefault [
 	| objectOop object |
 	objectOop := self newObjectWithSlots: 1.
 	
@@ -46,7 +46,7 @@ VMInspectorTest >> testClassOfObjectIsNilObjectByDefault [
 ]
 
 { #category : #tests }
-VMInspectorTest >> testEqualsOtherObject [
+VMImageInspectorTest >> testEqualsOtherObject [
 	| object1 object2 |
 	object1 := image objectForOop: (image simulator integerObjectOf: 42).
 	object2 := image objectForOop: (image simulator integerObjectOf: 42).
@@ -55,7 +55,7 @@ VMInspectorTest >> testEqualsOtherObject [
 ]
 
 { #category : #'test-testing' }
-VMInspectorTest >> testImmutability [
+VMImageInspectorTest >> testImmutability [
 	| object objectOop |
 	objectOop := (self newObjectWithSlots: 1).
 	object := image objectForOop: objectOop.
@@ -65,7 +65,7 @@ VMInspectorTest >> testImmutability [
 ]
 
 { #category : #'test-testing' }
-VMInspectorTest >> testImmutabilityISFalseByDefault [
+VMImageInspectorTest >> testImmutabilityISFalseByDefault [
 	| object |
 	object := image objectForOop: (self newObjectWithSlots: 1).
 	
@@ -73,7 +73,7 @@ VMInspectorTest >> testImmutabilityISFalseByDefault [
 ]
 
 { #category : #tests }
-VMInspectorTest >> testInspectOopInspectRightObject [
+VMImageInspectorTest >> testInspectOopInspectRightObject [
 	| objectOop window |
 	objectOop := self newObjectWithSlots: 1.
 	window := image inspectOop: objectOop.
@@ -82,7 +82,7 @@ VMInspectorTest >> testInspectOopInspectRightObject [
 ]
 
 { #category : #tests }
-VMInspectorTest >> testIntegerKnowsItsClass [
+VMImageInspectorTest >> testIntegerKnowsItsClass [
 	| class object |
 	class := self setSmallIntegerClassIntoClassTable.
 	object := SpurObject on: (image simulator integerObjectOf: 42) image: image.
@@ -90,7 +90,7 @@ VMInspectorTest >> testIntegerKnowsItsClass [
 ]
 
 { #category : #'test-testing' }
-VMInspectorTest >> testIsImmediateObject [
+VMImageInspectorTest >> testIsImmediateObject [
 	| object |
 	object := image objectForOop: (image simulator integerObjectOf: 42).
 	
@@ -98,7 +98,7 @@ VMInspectorTest >> testIsImmediateObject [
 ]
 
 { #category : #'test-testing' }
-VMInspectorTest >> testIsNotImmediateObject [
+VMImageInspectorTest >> testIsNotImmediateObject [
 	| object |
 	object := image objectForOop: (self newObjectWithSlots: 1).
 	
@@ -106,7 +106,7 @@ VMInspectorTest >> testIsNotImmediateObject [
 ]
 
 { #category : #'test-testing' }
-VMInspectorTest >> testIsOld [
+VMImageInspectorTest >> testIsOld [
 	| oop |
 	oop := SpurObject on: (self newOldSpaceObjectWithSlots: 1) image: image.
 
@@ -114,7 +114,7 @@ VMInspectorTest >> testIsOld [
 ]
 
 { #category : #'test-testing' }
-VMInspectorTest >> testIsYoung [
+VMImageInspectorTest >> testIsYoung [
 	| oop |
 	oop := SpurObject on: (self newObjectWithSlots: 1) image: image.
 
@@ -122,13 +122,13 @@ VMInspectorTest >> testIsYoung [
 ]
 
 { #category : #tests }
-VMInspectorTest >> testNilHasNoInstanceVariable [
+VMImageInspectorTest >> testNilHasNoInstanceVariable [
 
 	self assert: image nilObject instanceVariables isEmpty.
 ]
 
 { #category : #'tests-printing' }
-VMInspectorTest >> testNotEqualsNil [
+VMImageInspectorTest >> testNotEqualsNil [
 	| object1 object2 |
 	object1 := image objectForOop: (image simulator integerObjectOf: 42).
 	object2 := image objectForOop: (image simulator nilObject).
@@ -137,7 +137,7 @@ VMInspectorTest >> testNotEqualsNil [
 ]
 
 { #category : #'tests-printing' }
-VMInspectorTest >> testObjectEqualOop [
+VMImageInspectorTest >> testObjectEqualOop [
 	| object1 object2 |
 	object1 := image objectForOop: (image simulator integerObjectOf: 42).
 	object2 := image simulator integerObjectOf: 42.
@@ -146,7 +146,7 @@ VMInspectorTest >> testObjectEqualOop [
 ]
 
 { #category : #tests }
-VMInspectorTest >> testObjectWithInstanceVariableCycleWeCanNavigate [
+VMImageInspectorTest >> testObjectWithInstanceVariableCycleWeCanNavigate [
 
 	| objectOop1 object1 objectOop2 object2 |
 	objectOop1 := self newObjectWithSlots: 1.
@@ -163,7 +163,7 @@ VMInspectorTest >> testObjectWithInstanceVariableCycleWeCanNavigate [
 ]
 
 { #category : #tests }
-VMInspectorTest >> testObjectWithInstanceVariableHasInstanceVariable [
+VMImageInspectorTest >> testObjectWithInstanceVariableHasInstanceVariable [
 
 	| objectOop |
 	objectOop := self newObjectWithSlots: 2.
@@ -171,7 +171,7 @@ VMInspectorTest >> testObjectWithInstanceVariableHasInstanceVariable [
 ]
 
 { #category : #'tests-printing' }
-VMInspectorTest >> testObjectWithNilClass [
+VMImageInspectorTest >> testObjectWithNilClass [
 	| oop object |
 	oop := self newObjectWithSlots: 1.
 	object := SpurObject on: oop image: image.
@@ -180,25 +180,25 @@ VMInspectorTest >> testObjectWithNilClass [
 ]
 
 { #category : #'tests-printing' }
-VMInspectorTest >> testPrintFalse [
+VMImageInspectorTest >> testPrintFalse [
 
 	self assert: 'falseObject (' , (image falseObject oop printString), ')' equals: image falseObject printString
 ]
 
 { #category : #'tests-printing' }
-VMInspectorTest >> testPrintNil [
+VMImageInspectorTest >> testPrintNil [
 
 	self assert: 'nilObject (' , (image nilObject oop printString), ')' equals: image nilObject printString
 ]
 
 { #category : #'tests-printing' }
-VMInspectorTest >> testPrintTrue [
+VMImageInspectorTest >> testPrintTrue [
 
 	self assert: 'trueObject (' , (image trueObject oop printString), ')' equals: image trueObject printString 
 ]
 
 { #category : #tests }
-VMInspectorTest >> testSlotAtPut [
+VMImageInspectorTest >> testSlotAtPut [
 
 	| objectOop1 object1 objectOop2 object2 |
 	objectOop1 := self newObjectWithSlots: 1.

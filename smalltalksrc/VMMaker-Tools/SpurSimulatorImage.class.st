@@ -7,7 +7,7 @@ Class {
 	#classInstVars : [
 		'simulator'
 	],
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-ImageInspector'
 }
 
 { #category : #'as yet unclassified' }

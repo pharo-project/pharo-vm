@@ -1,7 +1,7 @@
 Class {
 	#name : #SpurClass,
 	#superclass : #SpurObject,
-	#category : #'VMMaker-Tools'
+	#category : #'VMMaker-Tools-ImageInspector'
 }
 
 { #category : #'accessing - instance variables' }
