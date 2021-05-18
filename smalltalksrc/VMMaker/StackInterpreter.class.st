@@ -2261,6 +2261,15 @@ StackInterpreter >> allOnesAsCharStar [
 ]
 
 { #category : #'image save/restore' }
+StackInterpreter >> allocateJITMemory: desiredSize desiredPosition: desiredPosition [
+	
+	<inline: true>
+	<returnTypeC: #'char *'>
+	
+	^self pointerForOop: (self allocateJITMemory: desiredSize _: desiredPosition)
+]
+
+{ #category : #'image save/restore' }
 StackInterpreter >> allocateMemory: heapSize minimum: minimumMemory imageFile: fileStream headerSize: headerSize [
 	"Translate to C function call with (case sensitive) camelCase. The purpose of this
 	 method is to document the translation.
@@ -4070,9 +4079,8 @@ StackInterpreter >> checkForAndFollowForwardedPrimitiveState [
 	 args to the depth, following any forwarders.  Answer if any are found so
 	 the prim can be retried.  The primitive index is derived from newMethod."
 	<option: #SpurObjectMemory>
-	| primIndex accessorDepth found scannedStackFrame |
+	| primIndex accessorDepth |
 	self assert: self failed.
-	found := scannedStackFrame := false.
 	primIndex := self primitiveIndexOf: newMethod.
 	self assert: (argumentCount = (self argumentCountOf: newMethod) or: [self isMetaPrimitiveIndex: primIndex]).
 	"If the primitive is one of the meta primitives PrimNumberDoPrimitive or
@@ -4094,27 +4102,8 @@ StackInterpreter >> checkForAndFollowForwardedPrimitiveState [
 									ifTrue: [self primitiveAccessorDepthForExternalPrimitiveMethod: newMethod]
 									ifFalse: [primitiveAccessorDepthTable at: primIndex]].
 	self assert: (self saneFunctionPointerForFailureOfPrimIndex: primIndex).
-	self assert: (accessorDepth between: -1 and: 5).
-	accessorDepth >= 0 ifTrue:
-		[0 to: argumentCount do:
-			[:index| | oop |
-			oop := self stackValue: index.
-			(objectMemory isNonImmediate: oop) ifTrue:
-				[(objectMemory isForwarded: oop) ifTrue:
-					[self assert: index < argumentCount. "receiver should have been caught at send time."
-					 found := true.
-					 oop := objectMemory followForwarded: oop.
-					 self stackValue: index put: oop.
-					 scannedStackFrame ifFalse:
-						[scannedStackFrame := true.
-						 self
-							followForwardedFrameContents: framePointer
-							stackPointer: stackPointer + (argumentCount + 1 * objectMemory wordSize) "don't repeat effort"]].
-				(accessorDepth > 0
-			 	 and: [(objectMemory hasPointerFields: oop)
-				 and: [objectMemory followForwardedObjectFields: oop toDepth: accessorDepth]]) ifTrue:
-					[found := true]]]].
-	^found
+	^self followForwardedForAccessorDepth: accessorDepth
+
 ]
 
 { #category : #'process primitive support' }
@@ -6917,6 +6906,37 @@ StackInterpreter >> followForwardedFieldsInCurrentMethod [
 	objectMemory
 		followForwardedObjectFields: method
 		toDepth: 0
+]
+
+{ #category : #'as yet unclassified' }
+StackInterpreter >> followForwardedForAccessorDepth: accessorDepth [
+
+	| scannedStackFrame found |
+	found := scannedStackFrame := false.
+
+	self assert: (accessorDepth between: -1 and: 5).
+	accessorDepth >= 0 ifTrue: [ 
+		0 to: argumentCount do: [ :index | 
+			| oop |
+			oop := self stackValue: index.
+			(objectMemory isNonImmediate: oop) ifTrue: [ 
+				(objectMemory isForwarded: oop) ifTrue: [ 
+					self assert: index < argumentCount. "receiver should have been caught at send time."
+					found := true.
+					oop := objectMemory followForwarded: oop.
+					self stackValue: index put: oop.
+					scannedStackFrame ifFalse: [ 
+						scannedStackFrame := true.
+						self
+							followForwardedFrameContents: framePointer
+							stackPointer:
+							stackPointer + (argumentCount + 1 * objectMemory wordSize) "don't repeat effort" ] ].
+				(accessorDepth > 0 and: [ 
+					 (objectMemory hasPointerFields: oop) and: [ 
+						 objectMemory
+							 followForwardedObjectFields: oop
+							 toDepth: accessorDepth ] ]) ifTrue: [ found := true ] ] ] ].
+	^ found
 ]
 
 { #category : #'lazy become' }

@@ -80,7 +80,8 @@ Class {
 		'expecting',
 		'bootstrapping',
 		'primitiveFailCount',
-		'primitiveFlags'
+		'primitiveFlags',
+		'initialAddress'
 	],
 	#classVars : [
 		'ByteCountsPerMicrosecond',
@@ -303,7 +304,6 @@ CogVMSimulator >> basicInitialize [
 	
 	"This will be overriden when calling initializePluginEntries"
 	mappedPluginEntries := OrderedCollection new.
-	primitiveFlags := Dictionary new.
 ]
 
 { #category : #'multi-threading simulation switch' }
@@ -1520,6 +1520,11 @@ CogVMSimulator >> initStackPagesForTests [
 	self initStackPages
 ]
 
+{ #category : #accessing }
+CogVMSimulator >> initialAddress [
+	^ initialAddress
+]
+
 { #category : #initialization }
 CogVMSimulator >> initialEnterSmalltalkExecutive [
 	"Main entry-point into the interpreter at system start-up.
@@ -1539,6 +1544,13 @@ CogVMSimulator >> initialize [
 	
 	self basicInitialize.
 	self initializePluginEntries.
+]
+
+{ #category : #'memory access' }
+CogVMSimulator >> initializeCodeGenerator [
+	cogit
+		initializeCodeZoneFrom: (self cCode: [objectMemory memory] inSmalltalk: [ initialAddress + Cogit guardPageSize ])
+		upTo: (self cCode: [objectMemory memory] inSmalltalk: [ initialAddress + Cogit guardPageSize ]) + cogCodeSize
 ]
 
 { #category : #'multi-threading simulation switch' }
@@ -2628,6 +2640,10 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 	  hdrCogCodeSize stackZoneSize methodCacheSize primTraceLogSize allocationReserve vmRequiredMemorySize |
 	"open image file and read the header"
 
+	memoryManager := SlangMemoryManager new.
+	objectMemory memoryManager: memoryManager.
+	memoryManager wordSize: objectMemory wordSize.
+	
 	(f := self openImageFileNamed: fileName) ifNil: [^self].
 
 	"Set the image name and the first argument; there are
@@ -2635,7 +2651,6 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 	systemAttributes at: 1 put: fileName; at: 2 put: nil.
 
 	["begin ensure block..."
-
 	version := self getWord32FromFile: f swap: false.  "current version: 16r1968 (=6504) vive la revolucion!"
 	(self readableFormat: version)
 		ifTrue: [swapBytes := false]
@@ -2728,13 +2743,12 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 							ifTrue: [0]
 							ifFalse: [allocationReserve])].
 
-	objectMemory allocateMemoryOfSize: vmRequiredMemorySize + heapSize.	
-	objectMemory memory initialAddress: 0.
+	initialAddress := objectMemory allocateMemoryOfSize: vmRequiredMemorySize + heapSize.	
 	
 	heapBase := objectMemory
-					setHeapBase: objectMemory memory initialAddress + vmRequiredMemorySize
-					memoryLimit:  objectMemory memory initialAddress + vmRequiredMemorySize + heapSize
-					endOfMemory: objectMemory memory initialAddress + vmRequiredMemorySize + dataSize.
+		setHeapBase: initialAddress + vmRequiredMemorySize
+		memoryLimit: initialAddress + vmRequiredMemorySize + heapSize
+		endOfMemory: initialAddress + vmRequiredMemorySize + dataSize.
 
 	self assert: cogCodeSize \\ 4 = 0.
 	self assert: objectMemory memoryLimit \\ 4 = 0.
@@ -2744,8 +2758,8 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 	count := objectMemory readHeapFromImageFile: f dataBytes: dataSize.
 	count ~= dataSize ifTrue: [self halt]]
 		ensure: [f close].
-	self moveMethodCacheToMemoryAt: objectMemory cogCodeBase + cogCodeSize + stackZoneSize.
-	self movePrimTraceLogToMemoryAt: objectMemory cogCodeBase + cogCodeSize + stackZoneSize + methodCacheSize.
+	self moveMethodCacheToMemoryAt: heapBase + Cogit guardPageSize + cogCodeSize + stackZoneSize.
+	self movePrimTraceLogToMemoryAt: heapBase + Cogit guardPageSize + cogCodeSize + stackZoneSize + methodCacheSize.
 
 	self ensureImageFormatIsUpToDate: swapBytes.
 
@@ -3039,15 +3053,6 @@ CogVMSimulator >> primitiveProcessBoundThreadId [
 	^self perform: #primitiveProcessBoundThreadId
 		withArguments: {}
 		inSuperclass: (cogThreadManager ifNil: [CoInterpreterPrimitives] ifNotNil: [CoInterpreterMT])
-]
-
-{ #category : #'cog jit support' }
-CogVMSimulator >> primitivePropertyFlagsForSpur: primIndex primitiveDescriptor: primitiveDescriptor [
-
-	^ primitiveFlags at: primIndex ifAbsent: [ 
-		  super
-			  primitivePropertyFlagsForSpur: primIndex
-			  primitiveDescriptor: primitiveDescriptor ]
 ]
 
 { #category : #'multi-threading simulation switch' }
@@ -3548,13 +3553,6 @@ CogVMSimulator >> setOwnerIndexOfProcess: aProcess to: anIndex bind: bind [
 	^self perform: #setOwnerIndexOfProcess:to:bind:
 		withArguments: {aProcess. anIndex. bind}
 		inSuperclass: (cogThreadManager ifNil: [CoInterpreterPrimitives] ifNotNil: [CoInterpreterMT])
-]
-
-{ #category : #'cog jit support' }
-CogVMSimulator >> setPrimitivePropertyFlagFor: primIndex value: aValue [
-
-	^ primitiveFlags at: primIndex put: aValue
-
 ]
 
 { #category : #'debug printing' }

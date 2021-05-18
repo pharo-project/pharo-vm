@@ -42,7 +42,7 @@ CogStackPage class >> getter: getter bitPosition: bitPosition bitWidth: bitWidth
 		endByte := bitPosition + bitWidth - 1 // 8.
 		self assert: bitPosition \\ 8 = 0.
 
-		accessor := #('byte' 'short' 'long' 'long')
+		accessor := #('byte' 'short' 'long32' 'long32')
 							at: endByte - startByte + 1
 							ifAbsent: ['long64'].
 		s	nextPutAll: getter; crtab: 1; nextPut: $^.
@@ -105,7 +105,7 @@ CogStackPage class >> setter: getter bitPosition: bitPosition bitWidth: bitWidth
 		endByte := bitPosition + bitWidth - 1 // 8.
 		self assert: bitPosition \\ 8 = 0.
 
-		accessor := #('byte' 'short' 'long' 'long')
+		accessor := #('byte' 'short' 'long32' 'long32')
 							at: endByte - startByte + 1
 							ifAbsent: ['long64'].
 		s	nextPutAll: getter; nextPutAll: ': aValue'; crtab: 1;

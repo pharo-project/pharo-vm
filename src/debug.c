@@ -39,6 +39,7 @@ EXPORT(int) getLogLevel(){
 
 void error(char *errorMessage){
     logError(errorMessage);
+	printStatusAfterError();
     abort();
 }
 

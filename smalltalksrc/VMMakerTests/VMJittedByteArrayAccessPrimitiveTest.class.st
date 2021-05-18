@@ -646,6 +646,25 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreFloat32StoresValue [
 ]
 
 { #category : #'tests - store floats' }
+VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreFloat32StoresValueDoNotOverwriteAfter [
+
+	| expectedValue |
+	expectedValue := -1.1754942106924411e-38.
+
+	self genPrimitive: #StoreFloat32.
+
+	self newReceiver.
+	
+	self 
+		executePrimitiveWithReceiver: receiver
+		withArgument: (self memory integerObjectOf: 0)
+		and: (self memory floatObjectOf: expectedValue). 
+	
+	4 to: 7 do: [ :i | 
+		self assert: (memory fetchByte: i ofObject: targetReceiver) equals: 16r90 + i + 1. ].
+]
+
+{ #category : #'tests - store floats' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreFloat64StoresBoxedFloatValue [
 
 	| expectedValue |
@@ -724,6 +743,28 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt16StoresPositiveVal
 ]
 
 { #category : #'tests - store integers' }
+VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt16StoresPositiveValueWithoutOverwritting [
+
+	| expectedValue |
+
+	expectedValue := 16r1122.
+
+	self genPrimitive: #StoreInt16.
+
+	self newReceiver.
+	
+	self 
+		executePrimitiveWithReceiver: receiver
+		withArgument: (self memory integerObjectOf: 0)
+		and: (self memory integerObjectOf: expectedValue). 
+	
+	self assertEqualsTo: expectedValue bitSize: 16.
+
+	2 to: 7 do: [ :i | 
+		self assert: (memory fetchByte: i ofObject: targetReceiver) equals: 16r90 + i + 1. ].
+]
+
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt32StoresNegativeValue [
 
 	| expectedValue |
@@ -761,6 +802,26 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt32StoresPositiveVal
 	
 	self assertEqualsTo: expectedValue bitSize: 32.
 
+]
+
+{ #category : #'tests - store integers' }
+VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt32StoresPositiveValueWithoutOverwriting [
+
+	| expectedValue |
+
+	expectedValue := 16r11223344.
+
+	self genPrimitive: #StoreInt32.
+
+	self newReceiver.
+	
+	self 
+		executePrimitiveWithReceiver: receiver
+		withArgument: (self memory integerObjectOf: 0)
+		and: (self memory integerObjectOf: expectedValue). 
+	
+	4 to: 7 do: [ :i | 
+		self assert: (memory fetchByte: i ofObject: targetReceiver) equals: 16r90 + i + 1. ].
 ]
 
 { #category : #'tests - store integers' }
@@ -841,6 +902,28 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt8StoresPositiveValu
 	
 	self assertEqualsTo: expectedValue bitSize: 8.
 
+]
+
+{ #category : #'tests - store integers' }
+VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt8StoresPositiveValueWithoutOverwritting [
+
+	| expectedValue |
+
+	expectedValue := 16r11.
+
+	self genPrimitive: #StoreInt8.
+
+	self newReceiver.
+	
+	self 
+		executePrimitiveWithReceiver: receiver
+		withArgument: (self memory integerObjectOf: 0)
+		and: (self memory integerObjectOf: expectedValue). 
+	
+	self assertEqualsTo: expectedValue bitSize: 8.
+
+	1 to: 7 do: [ :i | 
+		self assert: (memory fetchByte: i ofObject: targetReceiver) equals: 16r90 + i + 1. ].
 ]
 
 { #category : #'tests - store integers' }

@@ -717,10 +717,12 @@ SpurSegmentManager >> someSegmentContainsPinned [
 SpurSegmentManager >> sq: startingAddress Image: byteSize File: bytesToRead Read: aMultiByteFileStream [ 
 
 	<doNotGenerate>
-	^ manager memory 
-		loadFrom: aMultiByteFileStream
-		size: bytesToRead
-		inPosition: startingAddress
+	| region |
+	region := manager memoryManager regionForAddress: startingAddress.
+	^ aMultiByteFileStream
+		readInto: region memory
+		startingAt: startingAddress - region start + 1
+		count: bytesToRead
 ]
 
 { #category : #snapshot }
@@ -815,8 +817,8 @@ SpurSegmentManager >> writeSegment: segment nextSegment: nextSegment toFile: aBi
 						region := (manager memoryManager regionForAddress: segment segStart).
 						aBinaryStream
 							next: segment segSize
-							putAll: region value
-							startingAt: segment segStart - region key + 1.
+							putAll: region memory
+							startingAt: segment segStart - region start + 1.
 						 segment segSize].
 	manager
 		long64At: pier1 put: firstSavedBridgeWord;
