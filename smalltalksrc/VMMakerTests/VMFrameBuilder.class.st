@@ -64,11 +64,11 @@ Class {
 	#category : #'VMMakerTests-Builders'
 }
 
-{ #category : #inspect }
+{ #category : #printing }
 VMFrameBuilder >> adaptAddressToMemory: anInteger [
-	anInteger = memory nilObject ifTrue: [ ^ #nilObject ].
-	anInteger = memory trueObject ifTrue: [ ^ #trueObject ].
-	anInteger = memory falseObject ifTrue: [ ^ #falseObject ].
+	anInteger = memory nilObject ifTrue: [ ^ 'nilObject (' , anInteger printString ,')' ].
+	anInteger = memory trueObject ifTrue: [ ^ 'trueObject (' , anInteger printString ,')' ].
+	anInteger = memory falseObject ifTrue: [ ^ 'falseObject (' , anInteger printString ,')' ].
 	^ anInteger
 	"^ memory integerObjectOf: anInteger"
 ]
