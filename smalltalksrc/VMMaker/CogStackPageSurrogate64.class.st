@@ -97,13 +97,13 @@ CogStackPageSurrogate64 >> nextPage: aValue [
 
 { #category : #accessing }
 CogStackPageSurrogate64 >> padToWord [
-	^memory longAt: address + 60
+	^memory long32At: address + 60
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate64 >> padToWord: aValue [
 	self assert: (address + 60 >= zoneBase and: [address + 63 < zoneLimit]).
-	^memory longAt: address + 60 put: aValue
+	^memory long32At: address + 60 put: aValue
 ]
 
 { #category : #accessing }
@@ -142,11 +142,11 @@ CogStackPageSurrogate64 >> stackLimit: aValue [
 
 { #category : #accessing }
 CogStackPageSurrogate64 >> trace [
-	^memory longAt: address + 56
+	^memory long32At: address + 56
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate64 >> trace: aValue [
 	self assert: (address + 56 >= zoneBase and: [address + 59 < zoneLimit]).
-	^memory longAt: address + 56 put: aValue
+	^memory long32At: address + 56 put: aValue
 ]

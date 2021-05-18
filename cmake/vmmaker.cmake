@@ -44,7 +44,8 @@ else()
 endif()
 
 set(PLUGIN_GENERATED_FILES 
-    ${PHARO_CURRENT_GENERATED}/plugins/src/FilePlugin/FilePlugin.c)
+    ${PHARO_CURRENT_GENERATED}/plugins/src/FilePlugin/FilePlugin.c
+    ${PHARO_CURRENT_GENERATED}/plugins/src/SurfacePlugin/SurfacePlugin.c)
 
 if(GENERATE_SOURCES)
 
@@ -101,7 +102,7 @@ if(GENERATE_SOURCES)
             URL https://files.pharo.org/image/90/Pharo9.0-SNAPSHOT.build.1144.sha.ac4bf08.arch.64bit.zip
             URL_HASH SHA256=eac7c9a2387bc9a44ff2572b7dbd9fddd544d391787a05e5181baded7aab6f45
             BUILD_COMMAND ${VMMAKER_VM} --headless ${VMMAKER_DIR}/image/Pharo9.0-SNAPSHOT-64bit-ac4bf08.image save VMMaker
-            COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --save --quit "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}"
+            COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --save --quit "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}" "${ICEBERG_DEFAULT_REMOTE}"
             UPDATE_COMMAND      echo 
             CONFIGURE_COMMAND   echo
             INSTALL_COMMAND     echo

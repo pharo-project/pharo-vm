@@ -183,7 +183,7 @@ VMStructType class >> getter: getter bitPosition: bitPosition bitWidth: bitWidth
 		shift ~= 0 ifTrue:
 			[s nextPut: $(].
 		s nextPutAll: 'memory unsigned';
-		   nextPutAll: (#('Byte' 'Short' 'Long' 'Long')
+		   nextPutAll: (#('Byte' 'Short' 'Long32' 'Long32')
 							at: endByte - startByte + 1
 							ifAbsent: ['Long64']);
 		  nextPutAll: 'At: address + '; print: startByte.
@@ -276,7 +276,7 @@ VMStructType class >> setter: getter bitPosition: bitPosition bitWidth: bitWidth
 		shift := bitPosition \\ 8.
 		alignedPowerOf2 := (#(8 16 32 64) includes: bitWidth) and: [shift = 0].
 		accessor := 'unsigned'
-					, (#('Byte' 'Short' 'Long' 'Long')
+					, (#('Byte' 'Short' 'Long32' 'Long32')
 							at: endByte - startByte + 1
 							ifAbsent: ['Long64'])
 					, 'At: address + '.

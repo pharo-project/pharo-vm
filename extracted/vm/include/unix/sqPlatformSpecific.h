@@ -33,6 +33,8 @@
 #include "sqMemoryAccess.h"
 
 extern usqInt sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt baseAddress);
+extern void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition);
+
 #define allocateMemoryMinimumImageFileHeaderSizeBaseAddress(heapSize, minimumMemory, fileStream, headerSize, baseAddress) \
 sqAllocateMemory(minimumMemory, heapSize, baseAddress)
 extern sqInt sqMemoryExtraBytesLeft(sqInt includingSwap);

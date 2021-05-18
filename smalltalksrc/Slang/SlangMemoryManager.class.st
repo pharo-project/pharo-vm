@@ -10,18 +10,37 @@ Class {
 }
 
 { #category : #allocating }
-SlangMemoryManager >> allocate: aSize [ 
+SlangMemoryManager >> allocate: desiredSize [
 	
-	| allocatedAddress newMemoryRegion |
+	| allocatedAddress newMemoryRegion allocatedSize newMemory |
+	
+	"Allocate chunks multiple of 4KB, as they are required by the machine code simulator"
+	allocatedSize := (desiredSize / 4096) ceiling * 4096.
+	
 	allocatedAddress := nextAvailableAddress.
-	nextAvailableAddress := nextAvailableAddress + aSize.
+	nextAvailableAddress := nextAvailableAddress + allocatedSize.
 	
 	"Warrantee that memory regions do not move, for simulation purposes with the FFI"
-	newMemoryRegion := ByteArray new: aSize.
-	newMemoryRegion pinInMemory.
+	newMemory := ByteArray new: allocatedSize.
+	newMemory pinInMemory.
+	newMemoryRegion := SlangMemoryRegion new
+		start: allocatedAddress;
+		memory: newMemory;
+		originallyRequestedMemory: desiredSize;
+		yourself.
 	
-	memoryMap at: allocatedAddress put: newMemoryRegion.
+	"Index regions by the high bits of the address"
+	allocatedAddress to: allocatedAddress + desiredSize by: 4096 do: [ :pageAddress |
+		memoryMap at: pageAddress >> 12 put: newMemoryRegion.
+	].
 	^ allocatedAddress
+]
+
+{ #category : #allocating }
+SlangMemoryManager >> checkIsRegionAddress: address [
+
+	((address bitAnd: 16rfff) > 0)
+		ifTrue: [ self error: 'Not a region start address' ]
 ]
 
 { #category : #accessing }
@@ -30,15 +49,16 @@ SlangMemoryManager >> copyFrom: start to: end [
 	| region |
 	region := self regionForAddress: start.
 	
-	^ region value
-		copyFrom: start - region key + 1
-		to: end - region key + 1
+	^ region memory
+		copyFrom: start - region start + 1
+		to: end - region start + 1
 ]
 
 { #category : #allocating }
-SlangMemoryManager >> free: anInteger [ 
+SlangMemoryManager >> free: address [ 
 	
-	memoryMap removeKey: anInteger
+	self checkIsRegionAddress: address.
+	memoryMap removeKey: address >> 12
 ]
 
 { #category : #accessing }
@@ -94,15 +114,15 @@ SlangMemoryManager >> longAt: address put: aWordSizedValue [
 { #category : #'memory-access' }
 SlangMemoryManager >> readIntegerAt: address size: size signed: aBoolean [
 	
-	| memory |
+	| region |
 	"Check the access is aligned to the size we want to read"
 	address \\ size ~= 0 ifTrue: [self unalignedAccessError].
 	
 	"Get the memory region where the address is stored"
-	memory := self regionForAddress: address.
+	region := self regionForAddress: address.
 	
-	^ memory value
-		integerAt: address - memory key + 1
+	^ region
+		integerAt: address - region start
 		size: size
 		signed: aBoolean
 ]
@@ -124,9 +144,9 @@ SlangMemoryManager >> reallocate: originalAddress withSize: desiredSize [
 	
 	| newAddress oldRegion newRegion |
 	newAddress := self allocate: desiredSize.
-	oldRegion := memoryMap at: originalAddress.
-	newRegion := memoryMap at: newAddress.
-	newRegion replaceFrom: 1 to: oldRegion size with: oldRegion.
+	oldRegion := self regionAtAddress: originalAddress.
+	newRegion := self regionAtAddress: newAddress.
+	newRegion replaceFrom: 1 to: oldRegion originallyRequestedMemory with: oldRegion.
 	self free: originalAddress.
 	^ newAddress
 ]
@@ -134,20 +154,25 @@ SlangMemoryManager >> reallocate: originalAddress withSize: desiredSize [
 { #category : #'memory-access' }
 SlangMemoryManager >> regionAtAddress: address [
 
-	^ memoryMap at: address
+	self checkIsRegionAddress: address.
+	^ self regionForAddress: address
 ]
 
 { #category : #'memory-access' }
 SlangMemoryManager >> regionForAddress: address [
 
-	^ memoryMap associations detect: [ :assoc | 
-		  address between: assoc key and: assoc key + assoc value size - 1 ]
+	"Memory regions are allocated in multiples of 4KB (12 bits).
+	The Memory map indexes memory regions by the high part"
+	^ memoryMap at: address >> 12
 ]
 
 { #category : #enumerating }
 SlangMemoryManager >> regionsDo: aFullBlockClosure [ 
 	
-	memoryMap keysAndValuesDo: aFullBlockClosure
+	memoryMap values asSet do: [ :region |
+		aFullBlockClosure
+			value: region start
+			value: region memory ]
 ]
 
 { #category : #'memory-access' }
@@ -225,15 +250,15 @@ SlangMemoryManager >> wordSize: anObject [
 { #category : #'memory-access' }
 SlangMemoryManager >> writeInteger: aValue at: address size: size signed: aBoolean [
 	
-	| memory |
+	| region |
 	"Check the access is aligned to the size we want to read"
 	address \\ size ~= 0 ifTrue: [self unalignedAccessError].
 	
 	"Get the memory region where the address is stored"
-	memory := self regionForAddress: address.
+	region := self regionForAddress: address.
 	
-	^ memory value
-		integerAt: address - memory key + 1
+	^ region
+		integerAt: address - region start
 		put: aValue
 		size: size
 		signed: aBoolean
@@ -241,7 +266,7 @@ SlangMemoryManager >> writeInteger: aValue at: address size: size signed: aBoole
 
 { #category : #'memory-access' }
 SlangMemoryManager >> writeSignedInteger: aValue at: address size: size [
-	self haltIf: [address = 16848072].
+
 	^ self writeInteger: aValue at: address size: size signed: true
 ]
 

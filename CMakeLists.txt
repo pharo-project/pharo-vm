@@ -155,6 +155,7 @@ set(FEATURE_LIB_FREETYPE2 TRUE CACHE BOOL "Build Cairo support")
 set(FEATURE_LIB_GIT2 TRUE CACHE BOOL "Build LibGit2 support")
 
 set(PHARO_LIBRARY_PATH "@executable_path/Plugins" CACHE STRING "The RPATH to use in the build")
+set(ICEBERG_DEFAULT_REMOTE "scpUrl" CACHE STRING "If Iceberg uses HTTPS (httpsUrl) or tries first with SSH (scpUrl)")
 
 # If we are generating sources, set the source dir as the generation source dir.
 # Otherwise set it to by default to the current source dir, parametrizable
@@ -194,6 +195,12 @@ if(MSVC)
     get_platform_name(VM_TARGET_OS)
     message(STATUS "Building for ${VM_TARGET_OS}")
     set(CMAKE_CURRENT_SOURCE_DIR_TO_OUT ${CMAKE_CURRENT_SOURCE_DIR})
+    
+    # Define WIN32_LEAN_AND_MEAN to exclude APIs such as Cryptography, DDE, RPC, Shell, and Windows Sockets
+    # They can be included if needed
+    # https://docs.microsoft.com/en-us/windows/win32/winprog/using-the-windows-headers
+    add_compile_definitions(WIN32_LEAN_AND_MEAN)
+    
 elseif(WIN)
     message(STATUS "Building for WINDOWS")
 
@@ -228,6 +235,7 @@ elseif(WIN)
     # this one is important
     SET(CMAKE_SYSTEM_NAME Windows)
 
+    add_compile_definitions(WIN32_LEAN_AND_MEAN)
     add_compile_definitions(NO_ISNAN NO_SERVICE "'VM_LABEL(foo)=0'" LSB_FIRST=1 AllocationCheckFiller=0xADD4E55)
 
     #Setting minimal Windows Version to VISTA
@@ -253,6 +261,9 @@ elseif(UNIX)
 
     elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
         set(VM_TARGET_OS "linux-gnu")
+    elseif(${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
+        set(OPENBSD 1)
+        set(VM_TARGET_OS "openbsd")
     else()
         set(VM_TARGET_OS "${CMAKE_SYSTEM_NAME}")
     endif()
