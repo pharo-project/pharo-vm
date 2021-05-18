@@ -723,6 +723,13 @@ VMClass >> localNameFor: aString [
 	^ aString asFileReference basename
 ]
 
+{ #category : #'debug support' }
+VMClass >> logError: aMessage [
+	
+	<doNotGenerate>
+	Warning signal: aMessage
+]
+
 { #category : #'memory access' }
 VMClass >> long64AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
@@ -1223,7 +1230,7 @@ VMClass >> uint32AtPointer: pointer put: value [
 	 pointer is a raw address, and the result is an 32 bit integer."
 	<doNotGenerate>
 
-	^self longAt: pointer put: value
+	^self long32At: pointer put: value
 ]
 
 { #category : #'memory access' }

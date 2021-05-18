@@ -88,11 +88,11 @@ def runBuild(platformName, configuration, headless = true){
     if(isWindows()){
       runInCygwin "mkdir ${buildDirectory}"
       recordCygwinVersions(buildDirectory)
-      runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository"
+      runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository -DICEBERG_DEFAULT_REMOTE=httpsUrl"
       runInCygwin "cd ${buildDirectory} && VERBOSE=1 make install"
       runInCygwin "cd ${buildDirectory} && VERBOSE=1 make package"
     }else{
-      cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
+      cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
       dir("${buildDirectory}"){
         shell "VERBOSE=1 make install"
         shell "VERBOSE=1 make package"
@@ -120,8 +120,10 @@ def runUnitTests(platform){
         shell "unzip libllvm-full.zip -d ./vm/Contents/MacOS/Plugins"
         shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libunicorn.zip"
         shell "unzip libunicorn.zip  -d ./vm/Contents/MacOS/Plugins"
-        shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
-        
+
+        timeout(20){
+          shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
+         } 
         // Stop if tests fail
         // Archive xml reports either case
         try {
@@ -158,7 +160,7 @@ def runTests(platform, configuration, packages, withWorker){
 					} else {
 						shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
 
-						if(platform == 'Darwin-x86_64'){
+						if(platform == 'Darwin-x86_64' || platform == 'Darwin-arm64'){
 							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
 						}
 
@@ -244,7 +246,7 @@ def isPullRequest() {
   return env.CHANGE_ID != null
 }
 
-def uploadPackages(){
+def uploadPackages(platformNames){
 	node('unix'){
 		stage('Upload'){
 			if (isPullRequest()) {
@@ -252,27 +254,24 @@ def uploadPackages(){
 				echo "[DO NO UPLOAD] In PR " + (env.CHANGE_ID?.trim())
 				return;
 			}
-			
+
 			if(!isMainBranch()){
 				echo "[DO NO UPLOAD] In branch different that 'headless': ${env.BRANCH_NAME}";
 				return;
 			}
-			
-			upload('Darwin-x86_64', "CoInterpreter", 'Darwin-x86_64')
-			upload('Linux-x86_64', "CoInterpreter", 'Linux-x86_64')
-			upload('Windows-x86_64', "CoInterpreter", 'Windows-x86_64')
 
-			uploadStockReplacement('Darwin-x86_64', "CoInterpreter", 'Darwin-x86_64-stockReplacement')
-			uploadStockReplacement('Linux-x86_64', "CoInterpreter", 'Linux-x86_64-stockReplacement')
-			uploadStockReplacement('Windows-x86_64', "CoInterpreter", 'Windows-x86_64-stockReplacement')
+			for (platformName in platformNames) {
+				upload(platformName, "CoInterpreter", platformName)
+				uploadStockReplacement(platformName, "CoInterpreter", "${platformName}-stockReplacement")
+			}
 		}
 	}
 }
 
 try{
-    properties([disableConcurrentBuilds()])
+	properties([disableConcurrentBuilds()])
 
-    def platforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64']
+	def platforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64', 'Darwin-arm64']
 	def builders = [:]
 	def tests = [:]
 
@@ -312,7 +311,7 @@ try{
 
 	parallel builders
 	
-	uploadPackages()
+	uploadPackages(platforms)
 
 	buildGTKBundle()
 

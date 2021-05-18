@@ -1,4 +1,3 @@
-
 function(add_platform_headers)
   target_include_directories(${VM_LIBRARY_NAME}
     PUBLIC
@@ -89,6 +88,11 @@ macro(configure_installables INSTALL_COMPONENT)
 endmacro()
 
 macro(add_required_libs_per_platform)
+   #In Apple Silicon machines the code zone is read-only, and requires special operations
+   if("${CMAKE_HOST_SYSTEM_PROCESSOR}" STREQUAL "arm64" )
+       target_compile_definitions(${VM_LIBRARY_NAME} PRIVATE READ_ONLY_CODE_ZONE=1)
+   endif()
+
    target_link_libraries(${VM_LIBRARY_NAME} "-framework AppKit")
    target_link_libraries(${VM_LIBRARY_NAME} "-framework CoreGraphics")
 endmacro()
