@@ -26,7 +26,6 @@ vm_string_concat(const char *first, const char *second)
 }
 
 #ifdef _WIN32
-#   define WIN32_LEAN_AND_MEAN
 #   include <windows.h>
 
 uint16_t*
