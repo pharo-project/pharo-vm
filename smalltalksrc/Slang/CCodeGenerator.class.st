@@ -2048,27 +2048,28 @@ CCodeGenerator >> generateCASTIfElse: tast reverseArms: reverse [
 	firstStatement := reverse ifTrue: [ tast arguments last ] ifFalse: [ tast arguments first ].
 	secondStatment := reverse ifTrue: [ tast arguments first ] ifFalse: [ tast arguments last ].
 	
-	"If the receiver is a boolean constant, it returns only the right statement."
+	"If the receiver is a boolean constant, it returns only one of the statements (depending on the constant value)."
 	(self nilOrBooleanConstantReceiverOf: tast receiver) ifNotNil: [ 
 		:const | 
 		^ (const
 			   ifTrue: [ firstStatement ]
 			   ifFalse: [ secondStatment ]) asCASTIn: self ].
 
-	"If both statements are different"
+	"If both statements are different, it returs an if nod"
 	(firstStatement isSameAs: secondStatment) ifFalse: [ 
 		^ CIfStatementNode
 			  if: (tast receiver asCASTExpressionIn: self)
 			  then: ((firstStatement asCASTIn: self)
 					   needsCarriageReturn: false;
 					   yourself)
-			  else: (secondStatment first asCASTIn: self) ].
-
-	"qsdqsd"
+			  else: (secondStatment asCASTIn: self) ].
+	
+	"Here, both statement are equal."
+	"If receiver has no side effect, it returns only the one of the statements (they are equal)."
 	tast receiver hasSideEffect ifFalse: [ 
 		^ firstStatement asCASTIn: self ].
 
-	"qsdqsd"
+	"If receiver has side effect, receiver has to be executed before the statement."
 	^ (CCompoundStatementNode statements: { 
 				 (tast receiver asCASTExpressionIn: self).
 				 (firstStatement asCASTIn: self) })
@@ -2097,44 +2098,28 @@ CCodeGenerator >> generateCASTIfFalse: tast [
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfFalseIfTrue: tast [
 
-	"qsdqsd"
+	^ self generateCASTIfElse: tast reverseArms: true 
+]
 
-	(self nilOrBooleanConstantReceiverOf: tast receiver) ifNotNil: [ 
-		:const | 
-		^ (const
-			   ifTrue: [ tast args last ]
-			   ifFalse: [ tast args first ]) asCASTIn: self ].
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNil: tast [
 
-	"qsdqsd"
-	(tast args first isSameAs: tast args second) ifFalse: [ 
+	(self isNilConstantReceiverOf: tast) ifFalse: [ 
 		^ CIfStatementNode
-			  if: (tast receiver asCASTExpressionIn: self)
-			  then: ((tast arguments last asCASTIn: self)
-					   needsCarriageReturn: false;
-					   yourself)
-			  else: (tast arguments first asCASTIn: self) ].
-
-	"qsdqsd"
-	tast receiver hasSideEffect ifFalse: [ 
-		^ tast arguments first asCASTIn: self ].
-
-	"qsdqsd"
-	^ (CCompoundStatementNode statements: { 
-				 (tast receiver asCASTExpressionIn: self).
-				 (tast arguments first asCASTIn: self) })
-		needsBrackets: false;
-		needsCarriageReturn: false;
-		yourself
+			  if: (CUnaryOperatorNode operator: #! expression: (tast receiver asCASTExpressionIn: self))
+			  then: (tast arguments first asCASTIn: self) ].
+	"The receiver is a nil constant, known at translation-time. No need to add a conditional node over it."
+	^ tast arguments first asCASTIn: self
 ]
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfNotNil: tast [
 
-	^ (self isNilConstantReceiverOf: tast) ifFalse: [ 
-		self generateCASTIfTrue: tast
-	] ifTrue: [ 
-		CEmptyStatementNode new.
-	 ]
+	(self isNilConstantReceiverOf: tast) ifFalse: [ 
+		^ CIfStatementNode
+			  if: (tast receiver asCASTExpressionIn: self)
+			  then: (tast arguments first asCASTIn: self) ].
+	^ CEmptyStatementNode new
 ]
 
 { #category : #'CAST translation' }
@@ -2163,30 +2148,7 @@ CCodeGenerator >> generateCASTIfTrueAsArgument: tast [
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfTrueIfFalse: tast [
 
-	^ (self nilOrBooleanConstantReceiverOf: tast receiver)
-		  ifNil: [ 
-			  (tast args first isSameAs: tast args second)
-				  ifFalse: [ 
-					  CIfStatementNode
-						  if: (tast receiver asCASTExpressionIn: self)
-						  then: ((tast arguments first asCASTIn: self)
-								   needsCarriageReturn: false;
-								   yourself)
-						  else: (tast arguments second asCASTIn: self) ]
-				  ifTrue: [ 
-					  tast receiver hasSideEffect
-						  ifTrue: [ 
-							  (CCompoundStatementNode statements: { 
-										   (tast receiver asCASTExpressionIn: self).
-										   (tast arguments first asCASTIn: self) })
-								  needsBrackets: false;
-								  needsCarriageReturn: false;
-								  yourself ]
-						  ifFalse: [ tast arguments first asCASTIn: self ] ] ]
-		  ifNotNil: [ :const | 
-			  (const
-				   ifTrue: [ tast args first ]
-				   ifFalse: [ tast args last ]) asCASTIn: self ]
+	^ self generateCASTIfElse: tast reverseArms: false
 ]
 
 { #category : #'CAST translation' }
@@ -2602,7 +2564,7 @@ CCodeGenerator >> generateCASTToDo: tast [
 ]
 
 { #category : #'CAST translation' }
-CCodeGenerator >> generateCASTTouche: tast [
+CCodeGenerator >> generateCASTTouch: tast [
 
 	^ CEmptyStatementNode new
 ]

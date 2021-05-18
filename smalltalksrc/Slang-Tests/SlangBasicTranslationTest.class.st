@@ -1147,6 +1147,55 @@ SlangBasicTranslationTest >> testSendIfFalseWithReceiverTrueConstant [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfNil [
+
+	| translation send |
+	generator generateDeadCode: true.
+	send := TSendNode new
+		        setSelector: #ifNil:
+		        receiver: (TSendNode new
+				         setSelector: #foo
+				         receiver: (TVariableNode new setName: 'self')
+				         arguments: { (TVariableNode new setName: 'x') })
+		        arguments: { (TStmtListNode new setStatements: { 
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'a')
+						          expression: (TConstantNode value: false)).
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'c')
+						          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'if (!(foo(x))) {
+	a = 0;
+	c = 1;
+}'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfNilWithNilConstantReceiver [
+
+	| translation send |
+	generator generateDeadCode: false.
+	send := TSendNode new
+		        setSelector: #ifNil:
+		        receiver: (TConstantNode value: nil)
+		        arguments: { (TStmtListNode new setStatements: { 
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'a')
+						          expression: (TConstantNode value: false)).
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'c')
+						          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '{
+	a = 0;
+	c = 1;
+}'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendIfNotNil [
 
 	| translation send |
@@ -1173,7 +1222,7 @@ SlangBasicTranslationTest >> testSendIfNotNil [
 ]
 
 { #category : #'tests-send' }
-SlangBasicTranslationTest >> testSendIfNotNilWithNilReceiver [
+SlangBasicTranslationTest >> testSendIfNotNilWithNilConstantReceiver [
 
 	| translation send |
 	generator generateDeadCode: false.
