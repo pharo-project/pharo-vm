@@ -1797,6 +1797,13 @@ CCodeGenerator >> generateCASTAsLong: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsSymbol: tast [
+
+	^ CIdentifierNode name:
+		  (self cFunctionNameFor: tast receiver nameOrValue)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTAsUnsignedInteger: tast [
 
 	^ self generateCASTAs: tast type:  'usqInt'
@@ -2014,6 +2021,17 @@ CCodeGenerator >> generateCASTDoWhileTrue: tast [
 CCodeGenerator >> generateCASTEqual: tast [
 
 	^ self generateCASTBinary: tast operator: #==
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTFlag: tast [
+
+	^ CCallNode
+		  identifier: (CIdentifierNode name: 'flag')
+		  arguments: { ((CStringLiteralNode value:
+					    (self cLiteralFor: tast arguments last value asString))
+				   needsDoubleQuotes: false;
+				   yourself) }
 ]
 
 { #category : #utilities }

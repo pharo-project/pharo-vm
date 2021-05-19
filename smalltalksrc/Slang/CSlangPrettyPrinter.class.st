@@ -292,9 +292,9 @@ CSlangPrettyPrinter >> visitReturnStatement: aReturn [
 { #category : #generated }
 CSlangPrettyPrinter >> visitStringLiteral: aStringLiteral [
 
-	stream nextPut: $".
+	aStringLiteral needsDoubleQuotes ifTrue: [ stream nextPut: $" ].
 	stream nextPutAll: aStringLiteral value.
-	stream nextPut: $"
+	aStringLiteral needsDoubleQuotes ifTrue: [ stream nextPut: $" ]
 ]
 
 { #category : #generated }

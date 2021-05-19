@@ -631,6 +631,18 @@ SlangBasicTranslationTest >> testSendAsLong [
 	self assert: translation equals: '(long)(x)'
 ]
 
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testSendAsSymbol [
+
+	| translation |
+	translation := self translate: (TSendNode new
+			                setSelector: #asSymbol
+			                receiver: (TConstantNode value: 'foo_one')
+			                arguments: { }).
+
+	self assert: translation equals: 'foo_one'
+]
+
 { #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendAsUnsignedInteger [
 
@@ -961,6 +973,19 @@ SlangBasicTranslationTest >> testSendEqual [
 	translation := self translate: send.
 
 	self assert: translation equals: '(1 + 2) == 3'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendFlag [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #flag:
+		        receiver: (TVariableNode new setName: 'self')
+		        arguments: { TConstantNode value: #aSymbol }.
+	translation := self translate: send.
+
+	self assert: translation equals: 'flag("aSymbol")'
 ]
 
 { #category : #'tests-blocks' }
