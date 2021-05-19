@@ -138,6 +138,17 @@ CSlangPrettyPrinterTest >> testVisitCastExpressionDouble [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitComment [
+
+	| print |
+	print := self prettyPrint: (CCommentNode comment: 'a kind comment for the developper :3').
+	
+	self assert: print equals: '/* a kind comment for the developper :3 */'
+
+
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitCompoundStatement [
 
 	| print |
@@ -210,6 +221,17 @@ CSlangPrettyPrinterTest >> testVisitDeclarator [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitDecrement [
+
+	| print |
+	print := self prettyPrint: (CDecrementNode object: (CIdentifierNode name: 'i')).
+	
+	self assert: print equals: 'i--'
+
+
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitDoStatement [
 
 	| print compound |
@@ -225,6 +247,17 @@ CSlangPrettyPrinterTest >> testVisitDoStatement [
 	self assert: print trimBoth equals: 'do{
 	15;
 }while(a && b);'
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitEmptyStatement [
+
+	| print |
+	print := self prettyPrint: CEmptyStatementNode new.
+	
+	self assert: print equals: ''
+
+
 ]
 
 { #category : #'tests-visitor' }
@@ -384,6 +417,15 @@ CSlangPrettyPrinterTest >> testVisitReturnStatement [
 	self assert: print equals: 'return x'
 
 
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitStringLiteral [
+
+	| print |
+	print := self prettyPrint: (CStringLiteralNode value: 'You are breathtaking!').
+
+	self assert: print equals: '"You are breathtaking!"'
 ]
 
 { #category : #'tests-visitor' }

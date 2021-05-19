@@ -1738,7 +1738,24 @@ CCodeGenerator >> generateCASTAbs: tast [
 			ifNotNil: [:tuple| tuple last]
 			ifNil: [#abs].
 	^ CCallNode identifier: (CIdentifierNode name: absFun)
-					arguments: { tast receiver asCASTIn: self }
+					arguments: { tast receiver asCASTExpressionIn: self }
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAddressOf: tast [
+
+	^ CUnaryOperatorNode
+		  operator: #&
+		  expression: (tast arguments first asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAllMask: tast [
+
+	^ CBinaryOperatorNode
+		  operator: #==
+		  left: (self generateCASTBitAnd: tast)
+		  right: (tast arguments first asCASTExpressionIn: self)
 ]
 
 { #category : #'CAST translation' }
@@ -1748,27 +1765,65 @@ CCodeGenerator >> generateCASTAnd: tast [
 ]
 
 { #category : #'CAST translation' }
-CCodeGenerator >> generateCASTAsFloat: tast [
+CCodeGenerator >> generateCASTAs: tast type: type [
 
 	^ CCastExpressionNode
-		  type: (CTypeNameNode symbol: 'double')
-		  expression: (tast receiver asCASTIn: self)
+		  type: (CTypeNameNode symbol: type)
+		  expression: (tast receiver asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsFloat: tast [
+
+	^ self generateCASTAs: tast type:  'double'
 ]
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTAsInteger: tast [
 
-	^ CCastExpressionNode
-		  type: (CTypeNameNode symbol: 'sqInt')
-		  expression: (tast receiver asCASTIn: self)
+	^ self generateCASTAs: tast type:  'sqInt'
 ]
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTAsIntegerPtr: tast [
 
-	^ CCastExpressionNode
-		  type: (CTypeNameNode symbol: 'sqIntptr_t')
-		  expression: (tast receiver asCASTIn: self)
+	^ self generateCASTAs: tast type: 'sqIntptr_t'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsLong: tast [
+
+	^ self generateCASTAs: tast type:  'long'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsUnsignedInteger: tast [
+
+	^ self generateCASTAs: tast type:  'usqInt'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsUnsignedIntegerPtr: tast [
+
+	^ self generateCASTAs: tast type:  'usqIntptr_t'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsUnsignedLong: tast [
+
+	^ self generateCASTAs: tast type:  'unsigned long'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsUnsignedLongLong: tast [
+
+	^ self generateCASTAs: tast type:  'unsigned long long'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsVoidPointer: tast [
+
+	^ self generateCASTAs: tast type: 'void *'
 ]
 
 { #category : #'CAST translation' }
@@ -1788,6 +1843,12 @@ CCodeGenerator >> generateCASTAtPut: tast [
 				   index: (tast arguments first asCASTExpressionIn: self))
 		  operator: '='
 		  rvalue: (tast arguments last asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBaseHeaderSize: tast [
+
+	^ CIdentifierNode name: 'BaseHeaderSize'
 ]
 
 { #category : #'CAST translation' }
@@ -1897,6 +1958,28 @@ CCodeGenerator >> generateCASTByteSwap64IfBigEndian: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBytesPerOop: tast [
+
+	^ CIdentifierNode name: 'BytesPerOop'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBytesPerWord: tast [
+
+	^ CIdentifierNode name: 'BytesPerWord'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTDeny: tast [
+
+	^ CCallNode
+		  identifier: (CIdentifierNode name: 'assert')
+		  arguments: { (CUnaryOperatorNode
+				   operator: #!
+				   expression: (tast arguments first asCASTExpressionIn: self)) }
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTDivide: tast [
 
 	^ self generateCASTBinary: tast operator: #/
@@ -1959,11 +2042,98 @@ CCodeGenerator >> generateCASTGreaterThanOrEqual: tast [
 ]
 
 { #category : #'CAST translation' }
-CCodeGenerator >> generateCASTIfTrue: tast [
+CCodeGenerator >> generateCASTIfElse: tast reverseArms: reverse [
+	
+	| firstStatement secondStatment |
+	firstStatement := reverse ifTrue: [ tast arguments last ] ifFalse: [ tast arguments first ].
+	secondStatment := reverse ifTrue: [ tast arguments first ] ifFalse: [ tast arguments last ].
+	
+	"If the receiver is a boolean constant, it returns only one of the statements (depending on the constant value)."
+	(self nilOrBooleanConstantReceiverOf: tast receiver) ifNotNil: [ 
+		:const | 
+		^ (const
+			   ifTrue: [ firstStatement ]
+			   ifFalse: [ secondStatment ]) asCASTIn: self ].
 
-	^ CIfStatementNode
-		  if: (tast receiver asCASTIn: self)
-		  then: (tast arguments first asCASTIn: self)
+	"If both statements are different, it returs an if nod"
+	(firstStatement isSameAs: secondStatment) ifFalse: [ 
+		^ CIfStatementNode
+			  if: (tast receiver asCASTExpressionIn: self)
+			  then: ((firstStatement asCASTIn: self)
+					   needsCarriageReturn: false;
+					   yourself)
+			  else: (secondStatment asCASTIn: self) ].
+	
+	"Here, both statement are equal."
+	"If receiver has no side effect, it returns only the one of the statements (they are equal)."
+	tast receiver hasSideEffect ifFalse: [ 
+		^ firstStatement asCASTIn: self ].
+
+	"If receiver has side effect, receiver has to be executed before the statement."
+	^ (CCompoundStatementNode statements: { 
+				 (tast receiver asCASTExpressionIn: self).
+				 (firstStatement asCASTIn: self) })
+		needsBrackets: false;
+		needsCarriageReturn: false;
+		yourself
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfFalse: tast [
+
+	^ (self nilOrBooleanConstantReceiverOf: tast receiver)
+		  ifNil: [ 
+			  CIfStatementNode
+				  if:
+					  ((tast receiver isSend and: [ tast receiver selector == #not ]) "Eliminate double-negatives"
+						   ifTrue: [ tast receiver receiver asCASTExpressionIn: self ]
+						   ifFalse: [ CUnaryOperatorNode operator: #! expression:  (tast receiver asCASTExpressionIn: self) ])
+				  then: (tast arguments first asCASTIn: self)  ]
+		  ifNotNil: [ :const | 
+			  const
+				  ifTrue: [ CEmptyStatementNode new ]
+				  ifFalse: [ tast arguments first asCASTIn: self ] ]
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfFalseIfTrue: tast [
+
+	^ self generateCASTIfElse: tast reverseArms: true 
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNil: tast [
+
+	(self isNilConstantReceiverOf: tast) ifFalse: [ 
+		^ CIfStatementNode
+			  if: (CUnaryOperatorNode operator: #! expression: (tast receiver asCASTExpressionIn: self))
+			  then: (tast arguments first asCASTIn: self) ].
+	"The receiver is a nil constant, known at translation-time. No need to add a conditional node over it."
+	^ tast arguments first asCASTIn: self
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNotNil: tast [
+
+	(self isNilConstantReceiverOf: tast) ifFalse: [ 
+		^ CIfStatementNode
+			  if: (tast receiver asCASTExpressionIn: self)
+			  then: (tast arguments first asCASTIn: self) ].
+	^ CEmptyStatementNode new
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfTrue: tast [
+	
+	^ (self nilOrBooleanConstantReceiverOf: tast receiver)
+		  ifNil: [ 
+			  CIfStatementNode
+				  if: (tast receiver asCASTIn: self)
+				  then: (tast arguments first asCASTIn: self) ]
+		  ifNotNil: [ :const | 
+			  const
+				  ifTrue: [ tast arguments first asCASTIn: self ]
+				  ifFalse: [ CEmptyStatementNode new ] ]
 ]
 
 { #category : #'CAST translation' }
@@ -1978,16 +2148,13 @@ CCodeGenerator >> generateCASTIfTrueAsArgument: tast [
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfTrueIfFalse: tast [
 
-	| trueBlock |
-	trueBlock := tast arguments first asCASTIn: self.
-	
-	"Hint the pretty printer to add the else next to this block and not in a new line"
-	trueBlock needsCarriageReturn: false.
-	
-	^ CIfStatementNode
-		  if: (tast receiver asCASTIn: self)
-		  then: trueBlock
-		  else: (tast arguments second asCASTIn: self)
+	^ self generateCASTIfElse: tast reverseArms: false
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTInlineDirective: tast [
+
+	^ CCommentNode comment: 'inline: ' , tast arguments first name
 ]
 
 { #category : #'CAST translation' }
@@ -2054,6 +2221,15 @@ CCodeGenerator >> generateCASTNegated: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTNoMask: tast [
+
+	^ CBinaryOperatorNode
+		  operator: #==
+		  left: (self generateCASTBitAnd: tast)
+		  right: (CConstantNode value: 0)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTNot: tast [
 
 	^ self generateCASTUnary: tast operator: #!
@@ -2081,6 +2257,19 @@ CCodeGenerator >> generateCASTOr: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTPerform: tast [
+
+	| call |
+	call := CCallNode
+		        identifier: (CIdentifierNode name: (tast arguments first value asString))
+		        arguments: OrderedCollection new.
+	2 to: tast arguments size do: [ :i | 
+		call arguments add:
+			((tast arguments at: i) asCASTExpressionIn: self) ].
+	^ call
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTPlus: tast [
 	
 	^ self generateCASTBinary: tast operator: #+
@@ -2097,6 +2286,42 @@ CCodeGenerator >> generateCASTPowerTo: tast [
 				   arguments: { 
 						   (tast receiver asCASTIn: self).
 						   (tast arguments first asCASTIn: self) })
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTPreDecrement: tast [
+
+	| varNode |
+	varNode := tast receiver.
+	varNode isVariable ifFalse: [ 
+		self error: 'preDecrement can only be applied to variables' ].
+	^ CDecrementNode
+		  object:
+			  (CIdentifierNode name:
+					   (self returnPrefixFromVariable: varNode name))
+		  prefix: true
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTPreIncrement: tast [
+
+	| varNode |
+	varNode := tast receiver.
+	varNode isVariable ifFalse: [ 
+		self error: 'preIncrement can only be applied to variables' ].
+	^ CIncrementNode
+		  object:
+			  (CIdentifierNode name:
+					   (self returnPrefixFromVariable: varNode name))
+		  prefix: true
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTRaisedTo: tast [
+
+	^ CCallNode identifier: (CIdentifierNode name: 'pow') arguments: { 
+			  (tast receiver asCASTIn: self).
+			  (tast arguments first asCASTIn: self) }
 ]
 
 { #category : #'CAST translation' }
@@ -2256,6 +2481,24 @@ CCodeGenerator >> generateCASTSignedShiftRight: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTSmallIntegerConstant: tast [
+
+	tast selector = #minSmallInteger ifTrue:
+		[^ CIdentifierNode name: 'MinSmallInteger'].
+	tast selector = #maxSmallInteger ifTrue:
+		[^ CIdentifierNode name: 'MaxSmallInteger'].
+	self error: 'unknown SmallInteger constant'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTSmalltalkMetaError: tast [
+
+	^ CCallNode
+		  identifier: (CIdentifierNode name: 'error')
+		  arguments: { (CStringLiteralNode value: tast selector) }
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTTimes: tast [
 	
 	^ self generateCASTBinary: tast operator: #*
@@ -2270,10 +2513,8 @@ CCodeGenerator >> generateCASTTimesRepeat: tast [
 	repeat needsCarriageReturn: false.
 	repeat needsSeparator: false.
 
-	tast receiver value timesRepeat: [ | bloc |
-		bloc := (tast arguments first asCASTIn: self).
-		bloc needsCarriageReturn: false.
-		repeat add: bloc ].
+	tast receiver value timesRepeat: [
+		repeat add: ((tast arguments first asCASTIn: self) needsCarriageReturn: false; yourself) ].
 
 	^ repeat
 ]
@@ -2320,6 +2561,12 @@ CCodeGenerator >> generateCASTToDo: tast [
 		  until: until
 		  step: step
 		  statement: (tast arguments last asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTTouch: tast [
+
+	^ CEmptyStatementNode new
 ]
 
 { #category : #'CAST translation' }
@@ -2601,12 +2848,11 @@ CCodeGenerator >> generateIfFalse: msgNode on: aStream indent: level [
 					indent: level].
 			aStream nextPutAll: 'if (!'.
 			msgNode receiver isLeaf ifFalse: [aStream nextPut: $(]. "grrrrr"
-			msgNode receiver emitCCodeAsExpressionOn: aStream level: level + 1 generator: self.
+			msgNode receiver emitCCodeAsExpressionOn: aStream level: level  generator: self.
 			msgNode receiver isLeaf ifFalse: [aStream nextPut: $)]. "grrrrr"
-			aStream nextPutAll: ') {'; cr.
-			msgNode args last emitCCodeOn: aStream level: level + 1 generator: self.
-			aStream tab: level.
-			aStream nextPut: $}]
+			aStream nextPutAll: ') '.
+			msgNode args last emitCCodeOn: aStream level: level generator: self.
+			]
 		ifNotNil:
 			[:const |
 			const ifFalse:
@@ -2649,11 +2895,11 @@ CCodeGenerator >> generateIfFalseIfTrue: msgNode on: aStream indent: level [
 			[(self tryToCollapseBothArmsOfConditional: msgNode on: aStream indent: level) ifFalse:
 				[aStream nextPutAll: 'if ('.
 				 msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-				 aStream nextPutAll: ') {'; cr.
-				 msgNode args last emitCCodeOn: aStream level: level + 1 generator: self.
-				 aStream tab: level; nextPut: $}; crtab: level; nextPutAll: 'else {'; cr.
-				 msgNode args first emitCCodeOn: aStream level: level + 1 generator: self.
-				 aStream tab: level; nextPut: $}]]
+				 aStream nextPutAll: ') '.
+				 msgNode args last emitCCodeOn: aStream level: level generator: self.
+				 aStream nextPutAll: 'else '.
+				 msgNode args first emitCCodeOn: aStream level: level generator: self.
+				 ]]
 		ifNotNil:
 			[:const |
 			 (const ifTrue: [msgNode args last] ifFalse: [msgNode args first])
@@ -3240,7 +3486,7 @@ CCodeGenerator >> generateRaisedTo: msgNode on: aStream indent: level [
 
 	aStream nextPutAll:'pow('.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPutAll: ','.
+	aStream nextPutAll: ', '.
 	self emitCExpression: msgNode args first on: aStream.
 	aStream nextPutAll:')'.
 ]

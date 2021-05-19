@@ -112,6 +112,14 @@ CSlangPrettyPrinter >> visitCastExpression: aCastExpression [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitComment: aComment [
+
+	stream nextPutAll: '/* '.
+	stream nextPutAll: aComment comment.
+	stream nextPutAll: ' */'
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 
 	aCompoundStatement needsBrackets ifTrue: [ 
@@ -172,6 +180,15 @@ CSlangPrettyPrinter >> visitDeclarator: aDeclarator [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitDecrement: anDecrementNode [
+	| visit |
+	visit := [ anDecrementNode object acceptVisitor: self ].
+	anDecrementNode prefix ifFalse: visit.
+	stream nextPutAll: '--'.
+	anDecrementNode prefix ifTrue: visit.
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitDoStatement: aDoStatement [
 
 	stream nextPutAll: 'do'.
@@ -179,6 +196,11 @@ CSlangPrettyPrinter >> visitDoStatement: aDoStatement [
 	stream nextPutAll: 'while('.
 	aDoStatement while acceptVisitor: self.
 	stream nextPutAll: ');'
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitEmptyStatement: anEmptyStatement [
+	"Nothing to print."
 ]
 
 { #category : #generated }
@@ -265,6 +287,14 @@ CSlangPrettyPrinter >> visitReturnStatement: aReturn [
 	aReturn expression ifNotNil: [ :exp |
 		stream space.
 		exp acceptVisitor: self ]
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitStringLiteral: aStringLiteral [
+
+	stream nextPut: $".
+	stream nextPutAll: aStringLiteral value.
+	stream nextPut: $"
 ]
 
 { #category : #generated }
