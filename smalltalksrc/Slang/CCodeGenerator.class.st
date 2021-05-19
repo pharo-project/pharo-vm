@@ -2043,11 +2043,15 @@ CCodeGenerator >> generateCASTGreaterThanOrEqual: tast [
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfElse: tast reverseArms: reverse [
-	
+
 	| firstStatement secondStatment |
-	firstStatement := reverse ifTrue: [ tast arguments last ] ifFalse: [ tast arguments first ].
-	secondStatment := reverse ifTrue: [ tast arguments first ] ifFalse: [ tast arguments last ].
-	
+	firstStatement := reverse
+		                  ifTrue: [ tast arguments last ]
+		                  ifFalse: [ tast arguments first ].
+	secondStatment := reverse
+		                  ifTrue: [ tast arguments first ]
+		                  ifFalse: [ tast arguments last ].
+
 	"If the receiver is a boolean constant, it returns only one of the statements (depending on the constant value)."
 	(self nilOrBooleanConstantReceiverOf: tast receiver) ifNotNil: [ 
 		:const | 
@@ -2063,7 +2067,7 @@ CCodeGenerator >> generateCASTIfElse: tast reverseArms: reverse [
 					   needsCarriageReturn: false;
 					   yourself)
 			  else: (secondStatment asCASTIn: self) ].
-	
+
 	"Here, both statement are equal."
 	"If receiver has no side effect, it returns only the one of the statements (they are equal)."
 	tast receiver hasSideEffect ifFalse: [ 
@@ -2071,11 +2075,11 @@ CCodeGenerator >> generateCASTIfElse: tast reverseArms: reverse [
 
 	"If receiver has side effect, receiver has to be executed before the statement."
 	^ (CCompoundStatementNode statements: { 
-				 (tast receiver asCASTExpressionIn: self).
-				 (firstStatement asCASTIn: self) })
-		needsBrackets: false;
-		needsCarriageReturn: false;
-		yourself
+				   (tast receiver asCASTExpressionIn: self).
+				   (firstStatement asCASTIn: self) })
+		  needsBrackets: false;
+		  needsCarriageReturn: false;
+		  yourself
 ]
 
 { #category : #'CAST translation' }
@@ -2113,13 +2117,47 @@ CCodeGenerator >> generateCASTIfNil: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNilIfNotNil: tast [
+
+	^ self generateCASTIfNotNilIfNil: tast reverseArms: true
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfNotNil: tast [
 
 	(self isNilConstantReceiverOf: tast) ifFalse: [ 
 		^ CIfStatementNode
 			  if: (tast receiver asCASTExpressionIn: self)
 			  then: (tast arguments first asCASTIn: self) ].
+	"The receiver is a nil constant, nothing to do."
 	^ CEmptyStatementNode new
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNotNilIfNil: tast [
+
+	^ self generateCASTIfNotNilIfNil: tast reverseArms: false
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNotNilIfNil: tast reverseArms: reverse [
+
+	| firstBlock lastBlock |
+	firstBlock := reverse
+		              ifTrue: [ tast arguments last ]
+		              ifFalse: [ tast arguments first ].
+	lastBlock := reverse
+		             ifTrue: [ tast arguments first ]
+		             ifFalse: [ tast arguments last ].
+	(self isNilConstantReceiverOf: tast) ifFalse: [ 
+		^ CIfStatementNode
+			  if: (tast receiver asCASTExpressionIn: self)
+			  then: ((firstBlock asCASTIn: self)
+					   needsCarriageReturn: false;
+					   yourself)
+			  else: (lastBlock asCASTIn: self) ].
+	"The receiver is a nil constant, known at translation-time. We know which block is executed."
+	^ lastBlock asCASTIn: self
 ]
 
 { #category : #'CAST translation' }
@@ -2521,7 +2559,10 @@ CCodeGenerator >> generateCASTTimesRepeat: tast [
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTToByDoUntil: limitExpr iterativeVariable: itVar negative: negative [
-
+	
+	"Generate the limit expression for a to:do: or to:by:do:.
+	 If the limitExpr is of the form foo - 1 use < foo or > foo, as appropriate, instead of
+	 <= (foo - 1) or >= (foo - 1), so as to avoid 'underflowing' an unsigned value to UINT_MAX."
 	| operator limit |
 	(limitExpr isSend and: [ 
 		 limitExpr selector = #- and: [ 
