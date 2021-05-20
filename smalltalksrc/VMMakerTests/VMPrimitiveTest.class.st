@@ -3377,6 +3377,189 @@ VMPrimitiveTest >> testPrimitiveSmallFloatAddWithNoOverflowPopsOperands [
 	
 ]
 
+{ #category : #'tests - primitiveGreaterThan - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThan [
+
+	interpreter push: (memory smallFloatObjectOf: 10.0). 
+	interpreter push: (memory smallFloatObjectOf: 0.0).
+	
+	interpreter primitiveSmallFloatGreaterThan.  
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory trueObject). 
+	
+	
+]
+
+{ #category : #'tests - primitiveGreaterThan - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThanPopsOperands [
+
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter push: (memory smallFloatObjectOf: 1.0).
+	interpreter push: (memory smallFloatObjectOf: 2.0).
+	
+	interpreter primitiveSmallFloatGreaterThan. 
+	
+	interpreter popStack. 
+	"The previous lines pop the result of primiviteLessThan (1 2) for us to check that 1 and 2 were popped from the stack by checking that the next value is our marker, for instance 42"
+	
+	self deny: interpreter failed. 
+	"self assert: (interpreter stackValue: 1) equals: (memory integerObjectOf: 42)."
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42). 
+	
+	
+]
+
+{ #category : #'tests - primitiveLessThan - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatLessThan [
+
+	interpreter push: (memory smallFloatObjectOf: 10.0). 
+	interpreter push: (memory smallFloatObjectOf: 0.0).
+	
+	interpreter primitiveSmallFloatLessThan.  
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory falseObject). 
+	
+	
+]
+
+{ #category : #'tests - primitiveLessThan - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatLessThanFailsWithTypeErrorOnSecondOperand [
+
+	interpreter push: (memory smallFloatObjectOf: 2.0).
+	interpreter push: memory trueObject.
+	
+	interpreter primitiveSmallFloatLessThan. 
+
+	self assert: interpreter failed.
+	
+	
+]
+
+{ #category : #'tests - primitiveLessThan - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatLessThanFailsWithTypeErrorPreservesStack [
+	
+	interpreter push: (memory smallFloatObjectOf: 2.0). 
+	interpreter push: memory trueObject. 
+	
+	interpreter primitiveSmallFloatLessThan. 
+	
+	self assert: interpreter failed. 
+	
+	self assert: interpreter stackTop equals: memory trueObject.
+	self assert: (interpreter stackValue: 1) equals:  (memory smallFloatObjectOf: 2.0). 
+	
+	
+]
+
+{ #category : #'tests - primitiveLessThan - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatLessThanPopsOperands [
+
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter push: (memory smallFloatObjectOf: 1.0).
+	interpreter push: (memory smallFloatObjectOf: 2.0).
+	
+	interpreter primitiveSmallFloatLessThan. 
+	
+	interpreter popStack. 
+	"The previous lines pop the result of primiviteLessThan (1 2) for us to check that 1 and 2 were popped from the stack by checking that the next value is our marker, for instance 42"
+	
+	self deny: interpreter failed. 
+	"self assert: (interpreter stackValue: 1) equals: (memory integerObjectOf: 42)."
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42). 
+	
+	
+]
+
+{ #category : #'tests - primitiveLessThan - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatLessThantWithNegativeNumbers [
+
+	interpreter push: (memory floatObjectOf: -13.0).
+	interpreter push: (memory floatObjectOf: -15.0).
+	
+	interpreter primitiveSmallFloatLessThan.
+
+	self deny: interpreter failed. 
+	
+	
+]
+
+{ #category : #'tests - primitiveSubtract - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatSubtract [
+
+	interpreter push: (memory smallFloatObjectOf: 10.0). 
+	interpreter push: (memory smallFloatObjectOf: 8.0).
+	
+	interpreter primitiveSmallFloatSubtract.  
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory smallFloatObjectOf: 2.0). 
+	
+	
+]
+
+{ #category : #'tests - primitiveSubtract - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatSubtractFailsWithTypeErrorOnFirstOperand [
+
+	interpreter push: memory trueObject.
+	interpreter push: (memory smallFloatObjectOf: 2.0).
+	
+	interpreter primitiveSmallFloatSubtract. 
+
+	self assert: interpreter failed.
+	
+	
+]
+
+{ #category : #'tests - primitiveSubtract - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatSubtractFailsWithTypeErrorOnSecondOperand [
+
+	interpreter push: (memory smallFloatObjectOf: 2.0).
+	interpreter push: memory trueObject.
+	
+	interpreter primitiveSmallFloatSubtract.  
+
+	self assert: interpreter failed.
+	
+	
+]
+
+{ #category : #'tests - primitiveSubtract - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatSubtractFailsWithTypeErrorPreservesStack [
+	
+	interpreter push: (memory smallFloatObjectOf: 2.0). 
+	interpreter push: memory trueObject. 
+	
+	interpreter primitiveSmallFloatSubtract. 
+	
+	self assert: interpreter failed. 
+	
+	self assert: interpreter stackTop equals: memory trueObject.
+	self assert: (interpreter stackValue: 1) equals:  (memory smallFloatObjectOf: 2.0). 
+	
+	
+]
+
+{ #category : #'tests - primitiveSubtract - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatSubtractWithNoOverflowPopsOperands [
+
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter push: (memory smallFloatObjectOf: 1.0).
+	interpreter push: (memory smallFloatObjectOf: 2.0).
+	
+	interpreter primitiveSmallFloatSubtract. 
+	
+	interpreter popStack. 
+	"The previous lines pop the result of primiviteSubtract (1 2) for us to check that 1 and 2 were popped from the stack by checking that the next value is our marker, for instance 42"
+	
+	self deny: interpreter failed. 
+	"self assert: (interpreter stackValue: 1) equals: (memory integerObjectOf: 42)."
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42). 
+	
+	
+]
+
 { #category : #'tests - snapshot' }
 VMPrimitiveTest >> testPrimitiveSnapshotContextsShouldBeTenured [
 	| method frame contextOop contextIdentityHash suspendedContext |
