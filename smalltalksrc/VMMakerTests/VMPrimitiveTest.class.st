@@ -758,18 +758,6 @@ VMPrimitiveTest >> testPrimitiveAtPutPutsTheValueForAnIndexableObject [
 	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
 ]
 
-{ #category : #'tests - primitiveAtPut' }
-VMPrimitiveTest >> testPrimitiveAtPutPutsTheValueForAnIndexableObject2 [
-	| class object |
-	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
-	
-	object := memory instantiateClass: class indexableSize: 1.
-
-	interpreter push: object.
-	
-	self assert: interpreter stackTop equals: memory trueObject.
-]
-
 { #category : #'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveAtReturnsTheValueForAnIndexableObject [
 	| class object |
@@ -1930,7 +1918,7 @@ VMPrimitiveTest >> testPrimitiveIdenticalReturnsTrueForIdenticalObject [
 ]
 
 { #category : #'tests - primitiveIdentical' }
-VMPrimitiveTest >> testPrimitiveIdenticalReturnsTrueForObjectsWithSameValue [
+VMPrimitiveTest >> testPrimitiveIdenticalReturnsTrueForImmediateObjectsWithSameValue [
 	| object1 object2 |
 	
 	object1:= memory integerObjectOf: 16. 
@@ -2131,16 +2119,6 @@ VMPrimitiveTest >> testPrimitiveIsPinnedFailsForImmediateObjects [
 	
 	self assert: interpreter failed. 
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
-]
-
-{ #category : #'tests - primitiveIsPinned' }
-VMPrimitiveTest >> testPrimitiveIsPinnedSmallInt [
-
-	interpreter push: (memory integerObjectOf: 10). 
-	
-	interpreter primitiveIsPinned. 
-	
-	self assert: interpreter failed. 
 ]
 
 { #category : #'tests - primitiveLessOrEqual' }
@@ -3299,7 +3277,7 @@ VMPrimitiveTest >> testPrimitiveSlotAtPutsTheValueForNonIndexable [
 	interpreter primitiveSlotAt. 
 	
 	self deny: interpreter failed.
-	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
+	self assert: interpreter stackTop equals: memory falseObject.
 ]
 
 { #category : #'tests - primitiveAdd - SmallFloat' }
