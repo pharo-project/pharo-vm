@@ -2590,6 +2590,13 @@ StackInterpreterSimulator >> testWithFramePrint [
 	self test
 ]
 
+{ #category : #'I/O primitives support' }
+StackInterpreterSimulator >> time: ignored [
+	"Simulate the glibc time() function"
+
+	^ DateAndTime now asUnixTime 
+]
+
 { #category : #UI }
 StackInterpreterSimulator >> toggleTranscript [
 	| transcriptPane |
