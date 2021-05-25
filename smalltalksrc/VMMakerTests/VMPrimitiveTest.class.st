@@ -515,13 +515,14 @@ VMPrimitiveTest >> testPrimitiveAsCharacterCompilesWithNoArg [
 
 { #category : #'tests - primitiveAsCharacter' }
 VMPrimitiveTest >> testPrimitiveAsCharacterFailsForOutOfRangeArg [
-	
-	interpreter push: memory maxSmallInteger. 
+
+	interpreter push: (memory integerObjectOf: 16rFF000000).
+	"This number is undecodable both for 64 and 32 bits architectures"
 	
 	interpreter primitiveAsCharacter. 
 
 	self assert: interpreter failed.
-	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver.
 ]
 
 { #category : #'tests - primitiveAsCharacter' }
@@ -1796,32 +1797,6 @@ VMPrimitiveTest >> testPrimitiveIdenticalDoesntFailForForwardedOopOnOtherObjectW
 	interpreter primitiveIdentical. 
 
 	self deny: interpreter failed. 
-]
-
-{ #category : #'as yet unclassified' }
-VMPrimitiveTest >> testPrimitiveIdenticalFailsForForwardedOop [
-	| class1 class2 object1 object2 array1 array2|
-	
-	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
-	class2 := self newClassInOldSpaceWithSlots: 2 instSpec: memory nonIndexablePointerFormat.
-	
-	object1 := memory instantiateClass: class1.
-	object2 := memory instantiateClass: class2.
-	
-	array1 := self newArrayWith: { object1 }.
-	array2 := self newArrayWith: { object2 }.
-	
-	interpreter push: array2.
-	
-	interpreter primitiveArrayBecome.
-	
-	interpreter push: object1. 
-	interpreter push: array2. 
-	
-	interpreter primitiveIdentical. 
-
-	self assert: interpreter primFailCode equals: PrimErrBadArgument.
-	
 ]
 
 { #category : #'tests - primitiveIdentical' }
