@@ -263,19 +263,23 @@ CSlangPrettyPrinterTest >> testVisitEmptyStatement [
 { #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitForStatement [
 
-	| print init until step for |
+	| print init init2 until step step2 for |
 	init := CAssignmentNode
 		        lvalue: (CIdentifierNode name: 'i')
 		        rvalue: (CConstantNode value: 1).
+	init2 := CAssignmentNode
+		         lvalue: (CIdentifierNode name: 'j')
+		         rvalue: (CConstantNode value: 2).
 	until := CBinaryOperatorNode
 		         operator: #<=
 		         left: (CIdentifierNode name: 'i')
 		         right: (CConstantNode value: 10).
 	step := CIncrementNode object: (CIdentifierNode name: 'i').
+	step2 := CIncrementNode object: (CIdentifierNode name: 'j').
 	for := CForStatementNode
-		       init: init
+		       init: { init. init2 }
 		       until: until
-		       step: step
+		       step: { step. step2 }
 		       statement: (CCompoundStatementNode statements: { 
 					        (CAssignmentNode
 						         lvalue: (CIdentifierNode name: 'a')
@@ -286,7 +290,7 @@ CSlangPrettyPrinterTest >> testVisitForStatement [
 					        (CIncrementNode object: (CIdentifierNode name: 'j')) }).
 	print := self prettyPrint: for.
 
-	self assert: print trimBoth equals: 'for(i = 1; i <= 10; i++) {
+	self assert: print trimBoth equals: 'for(i = 1, j = 2; i <= 10; i++, j++) {
 	a = i % 2;
 	j++;
 }'

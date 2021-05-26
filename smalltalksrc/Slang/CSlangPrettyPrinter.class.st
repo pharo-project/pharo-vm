@@ -207,13 +207,17 @@ CSlangPrettyPrinter >> visitEmptyStatement: anEmptyStatement [
 CSlangPrettyPrinter >> visitForStatement: aForStatement [
 
 	stream nextPutAll: 'for('.
-	aForStatement init acceptVisitor: self.
+	aForStatement init
+		do: [ :e | e acceptVisitor: self ]
+		separatedBy: [ stream nextPutAll: ', ' ].
 	stream nextPutAll: '; '.
 	aForStatement until acceptVisitor: self.
 	stream nextPutAll: '; '.
-	aForStatement step acceptVisitor: self.
+	aForStatement step
+		do: [ :e | e acceptVisitor: self ]
+		separatedBy: [ stream nextPutAll: ', ' ].
 	stream nextPutAll: ') '.
-	aForStatement statement acceptVisitor: self.
+	aForStatement statement acceptVisitor: self
 ]
 
 { #category : #generated }

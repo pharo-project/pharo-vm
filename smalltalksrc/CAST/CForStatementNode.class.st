@@ -32,12 +32,10 @@ CForStatementNode >> init [
 ]
 
 { #category : #generated }
-CForStatementNode >> init: aCGLRExpressionStatementNode [
-	self init notNil
-		ifTrue: [ self init parent: nil ].
-	init := aCGLRExpressionStatementNode.
-	self init notNil
-		ifTrue: [ self init parent: self ]
+CForStatementNode >> init: anOrderedCollection [
+	self setParents: self init to: nil.
+	init := anOrderedCollection.
+	self setParents: self init to: self
 ]
 
 { #category : #testing }
@@ -66,12 +64,10 @@ CForStatementNode >> step [
 ]
 
 { #category : #generated }
-CForStatementNode >> step: aCGLRExpressionNode [
-	self step notNil
-		ifTrue: [ self step parent: nil ].
-	step := aCGLRExpressionNode.
-	self step notNil
-		ifTrue: [ self step parent: self ]
+CForStatementNode >> step: anOrderedCollection [
+	self setParents: self step to: nil.
+	step := anOrderedCollection.
+	self setParents: self step to: self
 ]
 
 { #category : #generated }

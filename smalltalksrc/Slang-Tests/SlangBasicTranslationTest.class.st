@@ -833,6 +833,48 @@ SlangBasicTranslationTest >> testSendBitOr [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendBitShiftWithExpressionShiftValue [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #bitShift:
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: { (TSendNode new
+				         setSelector: #+
+				         receiver: (TVariableNode new setName: 'var')
+				         arguments: { (TConstantNode value: 2) }) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '(((var + 2) < 0) ? (usqInt) a >> -(var + 2) : (usqInt) a << (var + 2))'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendBitShiftWithNegativeConstantShiftValue [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #bitShift:
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: { (TConstantNode value: -3) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((usqInt) a) >> 3'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendBitShiftWithPositiveConstantShiftValue [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #bitShift:
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: { (TConstantNode value: 3) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((usqInt) a) << 3'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendBitXor [
 
 	| translation send |
@@ -2113,6 +2155,107 @@ SlangBasicTranslationTest >> testSendShouldNotImplement [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendSignedBitShiftExpressionReceiver [
+
+	| translation send |
+	generator var: 'a' declareC: 'sqLong a'.
+	send := TSendNode new
+		        setSelector: #signedBitShift:
+		        receiver: (TSendNode new
+				         setSelector: #+
+				         receiver: (TVariableNode new setName: 'a')
+				         arguments: { (TConstantNode value: 1) })
+		        arguments: { (TConstantNode value: 2) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((signed)(a + 1) << 2)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendSignedBitShiftInt64VariableReceiver [
+
+	| translation send |
+	generator var: 'a' declareC: '__int64 a'.
+	send := TSendNode new
+		        setSelector: #signedBitShift:
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: { (TConstantNode value: 2) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((__int64)a << 2)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendSignedBitShiftLongLongVariableReceiver [
+
+	| translation send |
+	generator var: 'a' declareC: 'long long a'.
+	send := TSendNode new
+		        setSelector: #signedBitShift:
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: { (TConstantNode value: 2) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((long long)a << 2)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendSignedBitShiftSqLongVariableReceiver [
+
+	| translation send |
+	generator var: 'a' declareC: 'sqLong a'.
+	send := TSendNode new
+		        setSelector: #signedBitShift:
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: { (TConstantNode value: 2) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((sqLong)a << 2)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendSignedBitShiftUnsignedInt64VariableReceiver [
+
+	| translation send |
+	generator var: 'a' declareC: 'unsigned __int64 a'.
+	send := TSendNode new
+		        setSelector: #signedBitShift:
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: { (TConstantNode value: 2) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((signed __int64)a << 2)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendSignedBitShiftUnsignedLongLongVariableReceiver [
+
+	| translation send |
+	generator var: 'a' declareC: 'unsigned long long a'.
+	send := TSendNode new
+		        setSelector: #signedBitShift:
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: { (TConstantNode value: 2) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((signed long long)a << 2)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendSignedBitShiftUsqLongVariableReceiver [
+
+	| translation send |
+	generator var: 'a' declareC: 'usqLong a'.
+	send := TSendNode new
+		        setSelector: #signedBitShift:
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: { (TConstantNode value: 2) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((sqLong)a << 2)'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendSignedRightBitShiftVariable64Bits [
 
 	| translation send |
@@ -2191,6 +2334,105 @@ SlangBasicTranslationTest >> testSendTimesRepeat [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendToByDo [
+
+	"1 to: 10 by: 2 do: [ var := var -7 ]"
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #to:by:do:
+		        receiver: (TConstantNode value: 1)
+		        arguments: { 
+				        (TConstantNode value: 10).
+						(TConstantNode value: 2).
+				        (TStmtListNode new
+					         setArguments: #( i )
+					         statements:
+					         { (TAssignmentNode new
+						          setVariable: variable
+						          expression: expression) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'for(i = 1; i <= 10; i += 2) {
+	var -= 7;
+}'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendToByDoLimitExpressionHasSideEffect [
+
+	"1 to: (var foo) by: 2 do: [ var := var -7 ]"
+	"In the C for loop, the limit expression is executed at each iteration.
+	In Pharo, the limit expression (var foo in this exemple) is executed only once, the value is then passed as argument to the function to:by:do:.
+	If the limit expression has side-effect, a limit variable is declared, for both safety and efficiency."
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #to:by:do:
+		        receiver: (TConstantNode value: 1)
+		        arguments: { 
+				        (TSendNode new
+					         setSelector: #foo
+					         receiver: (TVariableNode new setName: 'var')
+					         arguments: {  }).
+				        (TConstantNode value: 2).
+				        (TStmtListNode new
+					         setArguments: #( i )
+					         statements:
+					         { (TAssignmentNode new
+						          setVariable: variable
+						          expression: expression) }).
+						(TVariableNode new setName: 'toDoLimit') }.
+	translation := self translate: send.
+
+	self
+		assert: translation trimBoth
+		equals: 'for(i = 1, toDoLimit = foo(var); i <= toDoLimit; i += 2) {
+	var -= 7;
+}'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendToByDoWithNegativeStep [
+
+	"10 to: 0 by: -2 do: [ var := var -7 ]"
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #to:by:do:
+		        receiver: (TConstantNode value: 10)
+		        arguments: { 
+				        (TConstantNode value: 0).
+						(TConstantNode value: -2).
+				        (TStmtListNode new
+					         setArguments: #( i )
+					         statements:
+					         { (TAssignmentNode new
+						          setVariable: variable
+						          expression: expression) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'for(i = 10; i >= 0; i += -2) {
+	var -= 7;
+}'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendToDo [
 
 	"1 to: 10 do: [ var := var -7 ]"
@@ -2252,6 +2494,41 @@ SlangBasicTranslationTest >> testSendToDoAvoidUnderflowingOfLimitExpression [
 	self
 		assert: translation trimBoth
 		equals: 'for(i = 1; i < foo; i++) {
+	var -= 7;
+}'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendToDoLimitExpressionHasSideEffect [
+
+	"1 to: (var foo) do: [ var := var -7 ]"
+
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #to:do:
+		        receiver: (TConstantNode value: 1)
+		        arguments: { 
+				        (TSendNode new
+					         setSelector: #foo
+					         receiver: (TVariableNode new setName: 'var')
+					         arguments: {  }).
+				        (TStmtListNode new
+					         setArguments: #( i )
+					         statements:
+					         { (TAssignmentNode new
+						          setVariable: variable
+						          expression: expression) }) }.
+	translation := self translate: send.
+
+	self
+		assert: translation trimBoth
+		equals: 'for(i = 1; i <= foo(var); i++) {
 	var -= 7;
 }'
 ]

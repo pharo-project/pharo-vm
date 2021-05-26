@@ -1927,6 +1927,54 @@ CCodeGenerator >> generateCASTBitOr: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBitShift: tast [
+
+	^ self generateCASTBitShift: tast cast: 'usqInt'
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTBitShift: tast cast: type [
+
+	| arg receiver shift |
+	arg := tast arguments first.
+	receiver := tast receiver.
+	(self isConstantNode: arg valueInto: [ :value | shift := value ]) 
+		ifTrue: [ "bit shift amout is a constant"
+			| shiftOperator |
+			shift < 0
+				ifTrue: [ 
+					shiftOperator := '>>'.
+					shift := shift negated ]
+				ifFalse: [ shiftOperator := '<<' ].
+			^ CBinaryOperatorNode
+				  operator: shiftOperator
+				  left: (CCastExpressionNode
+						   type: (CTypeNameNode symbol: type)
+						   expression: (receiver asCASTExpressionIn: self))
+				  right: (CConstantNode value: shift) ].
+	"bit shift amout is an expression"
+	^ CTernaryNode
+		  condition: (CBinaryOperatorNode
+				   operator: #<
+				   left: (arg asCASTExpressionIn: self)
+				   right: (CConstantNode value: 0))
+		  then: (CBinaryOperatorNode
+				   operator: #>>
+				   left: (CCastExpressionNode
+						    type: (CTypeNameNode symbol: type)
+						    expression: (receiver asCASTExpressionIn: self))
+				   right: (CUnaryOperatorNode
+						    operator: #-
+						    expression: (arg asCASTExpressionIn: self)))
+		  else: (CBinaryOperatorNode
+				   operator: #<<
+				   left: (CCastExpressionNode
+						    type: (CTypeNameNode symbol: type)
+						    expression: (receiver asCASTExpressionIn: self))
+				   right: (arg asCASTExpressionIn: self))
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTBitXor: tast [
 
 	^ self generateCASTBinary: tast operator: '^'
@@ -2521,6 +2569,25 @@ CCodeGenerator >> generateCASTShiftRight: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTSignedBitShift: tast [
+
+	| cast type |
+	"since ``signed'' is a synonym for ``signed int'' do not cast 64-bit values to signed if at all possible."
+	cast := (self
+		         is64BitIntegralVariable: tast receiver
+		         typeInto: [ :t | type := t ])
+		        ifTrue: [ 
+			        (type first = $u
+				         ifTrue: [ 
+					         type allButFirst: (type second = $n
+							          ifTrue: [ 2 ]
+							          ifFalse: [ 1 ]) ]
+				         ifFalse: [ type ]) ]
+		        ifFalse: [ 'signed' ].
+	^ self generateCASTBitShift: tast cast: cast
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTSignedShiftRight: tast [
 
 	| cast |
@@ -2576,6 +2643,42 @@ CCodeGenerator >> generateCASTTimesRepeat: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTToByDo: tast [
+
+	| blockExpr iterationVar until step mayHaveSideEffects inits limitVar limitExpr |
+	blockExpr := tast arguments third.
+	blockExpr args size = 1 ifFalse: [ 
+		self error: 'wrong number of block arguments' ].
+	inits := OrderedCollection new.
+	iterationVar := blockExpr args first.
+	limitExpr := tast args first.
+	inits add: (CAssignmentNode
+			 lvalue: (CIdentifierNode name: iterationVar)
+			 rvalue: (tast receiver asCASTExpressionIn: self)).
+	mayHaveSideEffects := tast arguments size = 4.
+	mayHaveSideEffects ifTrue: [ 
+		limitVar := tast args last.
+		inits add: (CAssignmentNode
+				 lvalue: (CIdentifierNode name: limitVar name)
+				 rvalue: (limitExpr asCASTExpressionIn: self)).
+		limitExpr := limitVar ].
+	until := self
+		         generateCASTToByDoUntil: limitExpr
+		         iterativeVariable: iterationVar
+		         negative:
+		         (self stepExpressionIsNegative: tast arguments second).
+	step := CAssignmentNode
+		        lvalue: (CIdentifierNode name: iterationVar)
+		        operator: '+='
+		        rvalue: (tast arguments second asCASTExpressionIn: self).
+	^ CForStatementNode
+		  init: inits
+		  until: until
+		  step: { step }
+		  statement: (blockExpr asCASTIn: self)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTToByDoUntil: limitExpr iterativeVariable: itVar negative: negative [
 	
 	"Generate the limit expression for a to:do: or to:by:do:.
@@ -2616,9 +2719,9 @@ CCodeGenerator >> generateCASTToDo: tast [
 	until := self generateCASTToByDoUntil: tast arguments first iterativeVariable: iterationVar negative: false.
 	step := CIncrementNode object: (CIdentifierNode name: iterationVar).
 	^ CForStatementNode
-		  init: init
+		  init: { init }
 		  until: until
-		  step: step
+		  step: { step }
 		  statement: (tast arguments last asCASTIn: self)
 ]
 
