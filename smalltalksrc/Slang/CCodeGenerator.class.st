@@ -2588,6 +2588,63 @@ CCodeGenerator >> generateCASTSignedBitShift: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTSignedIntFromLong64: tast [
+
+	^ CCastExpressionNode
+		  type: (CTypeNameNode symbol: 'sqLong')
+		  expression: (tast receiver asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTSignedIntFromLong: tast [
+
+	^ CCastExpressionNode
+		  type: (CTypeNameNode symbol: 'int')
+		  expression: (tast receiver asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTSignedIntFromShort: tast [
+
+	^ CCastExpressionNode
+		  type: (CTypeNameNode symbol: 'short')
+		  expression: (tast receiver asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTSignedIntToLong64: tast [
+
+	^ CCastExpressionNode
+		  type: (CTypeNameNode symbol: 'usqInt')
+		  expression: (tast receiver asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTSignedIntToLong: tast [
+
+	| receiver |
+	receiver := tast receiver asCASTExpressionIn: self.
+	^ CCastExpressionNode
+		  type: (CTypeNameNode symbol: 'usqInt')
+		  expression: (self is64Bit
+				   ifTrue: [ 
+					   CCastExpressionNode
+						   type: (CTypeNameNode symbol: 'int')
+						   expression: receiver ]
+				   ifFalse: [ receiver ])
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTSignedIntToShort: tast [
+
+	^ CCastExpressionNode
+		  type: (CTypeNameNode symbol: 'usqInt')
+		  expression: (CCastExpressionNode
+				   type: (CTypeNameNode symbol: 'short')
+				   expression: (tast receiver asCASTExpressionIn: self))
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTSignedShiftRight: tast [
 
 	| cast |

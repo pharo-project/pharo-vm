@@ -2256,6 +2256,103 @@ SlangBasicTranslationTest >> testSendSignedBitShiftUsqLongVariableReceiver [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendSignedIntFromLong [
+
+	| translation send |
+	generator wordSize: 8.
+	send := TSendNode new
+		        setSelector: #signedIntFromLong
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '((int) a)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendSignedIntFromLong64 [
+
+	| translation send |
+	generator wordSize: 8.
+	send := TSendNode new
+		        setSelector: #signedIntFromLong64
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '((sqLong) a)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendSignedIntFromShort [
+
+	| translation send |
+	generator wordSize: 8.
+	send := TSendNode new
+		        setSelector: #signedIntFromShort
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '((short)a)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendSignedIntToLong [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #signedIntToLong
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '((usqInt) a)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendSignedIntToLong64 [
+
+	| translation send |
+	generator wordSize: 8.
+	send := TSendNode new
+		        setSelector: #signedIntToLong64
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '((usqInt) a)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendSignedIntToLong64Bits [
+
+	| translation send |
+	generator wordSize: 8.
+	send := TSendNode new
+		        setSelector: #signedIntToLong
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '((usqInt) (int)a)'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendSignedIntToShort [
+
+	| translation send |
+	generator var: 'a' declareC: 'int a'.
+	send := TSendNode new
+		        setSelector: #signedIntToShort
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '((usqInt) (short)a)'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendSignedRightBitShiftVariable64Bits [
 
 	| translation send |
