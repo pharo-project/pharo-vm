@@ -3695,10 +3695,11 @@ InterpreterPrimitives >> primitiveSmallFloatEqual [
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
 
-	rcvr := objectMemory smallFloatValueOf: (self stackValue: 1).
+	rcvr := objectMemory loadFloatOrIntFrom: (self stackValue: 1).
 	arg := objectMemory loadFloatOrIntFrom: self stackTop.
-	self successful ifTrue:
-		[self pop: 2 thenPushBool: rcvr = arg]
+	self successful 
+		ifTrue: [self pop: 2 thenPushBool: (rcvr = arg)] 
+		ifFalse: [self primitiveFailFor: PrimErrBadArgument]
 ]
 
 { #category : #'arithmetic float primitives' }
@@ -3738,10 +3739,11 @@ InterpreterPrimitives >> primitiveSmallFloatGreaterOrEqual [
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
 
-	rcvr := objectMemory smallFloatValueOf: (self stackValue: 1).
+	rcvr := objectMemory loadFloatOrIntFrom: (self stackValue: 1).
 	arg := objectMemory loadFloatOrIntFrom: self stackTop.
-	self successful ifTrue:
-		[self pop: 2 thenPushBool: rcvr >= arg]
+	self successful 
+	ifTrue: [self pop: 2 thenPushBool: rcvr >= arg]
+	ifFalse: [self primitiveFailFor: PrimErrBadArgument]
 ]
 
 { #category : #'arithmetic float primitives' }
@@ -3773,10 +3775,11 @@ InterpreterPrimitives >> primitiveSmallFloatLessOrEqual [
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
 
-	rcvr := objectMemory smallFloatValueOf: (self stackValue: 1).
+	rcvr := objectMemory loadFloatOrIntFrom: (self stackValue: 1).
 	arg := objectMemory loadFloatOrIntFrom: self stackTop.
-	self successful ifTrue:
-		[self pop: 2 thenPushBool: rcvr <= arg]
+	self successful 
+		ifTrue: [self pop: 2 thenPushBool: rcvr <= arg]
+		ifFalse: [self primitiveFailFor: PrimErrBadArgument]
 ]
 
 { #category : #'arithmetic float primitives' }
