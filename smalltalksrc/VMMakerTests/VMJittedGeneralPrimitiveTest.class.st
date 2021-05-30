@@ -322,6 +322,47 @@ VMJittedGeneralPrimitiveTest >> testConvertSmallIntegerToInteger [
 	self assert: machineSimulator receiverRegisterValue equals: 17.
 ]
 
+{ #category : #'tests - primitiveAt' }
+VMJittedGeneralPrimitiveTest >> testGenPrimitiveAt [
+
+| endInstruction primitiveAddress class object |
+	
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
+	object := memory instantiateClass: class indexableSize: 1.
+	cogit receiverTags: 2r000. 
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveAt.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: (memory object) arguments: {memory trueObject}.
+	
+	self runFrom: primitiveAddress until: callerAddress.
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: -265).
+]
+
+{ #category : #'tests - primitiveAtPut' }
+VMJittedGeneralPrimitiveTest >> testGenPrimitiveAtPut [
+
+|endInstruction primitiveAddress class object |
+	
+	cogit receiverTags: 2r000. 
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
+	object := memory instantiateClass: class indexableSize: 1.
+	"cogit receiverTags: 2r100. "
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveAtPut.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: (memory object) arguments: {memory trueObject}, { memory integerObjectOf: 1} .
+	
+	self runFrom: primitiveAddress until: callerAddress.
+	"self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: -265)."
+]
+
 { #category : #'tests - support' }
 VMJittedGeneralPrimitiveTest >> testGetClassIndexOfObjectObtainsClassIndex [
 
