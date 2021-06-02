@@ -1,6 +1,8 @@
 "
 This class oversees the translation of a subset of Smalltalk to C, allowing the comforts of Smalltalk during development and the efficiency and portability of C for the resulting interpreter.  
 See VMMaker for more useful info
+
+# toto
 "
 Class {
 	#name : #CCodeGenerator,
@@ -2025,6 +2027,23 @@ CCodeGenerator >> generateCASTBytesPerWord: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTCCoercion: tast [
+
+	| expr cType literal |
+	expr := tast args first.
+	cType := tast args last value.
+	(cType = #float and: [ 
+		 expr isConstant and: [ 
+			 expr value isFloat and: [ 
+				 (literal := self cLiteralFor: expr value) allSatisfy: [ :c | 
+					 c == $. or: [ c isDigit ] ] ] ] ]) ifTrue: [ 
+		^ CConstantNode value: literal , 'f' ].
+	^ CCastExpressionNode
+		  type: (CTypeNameNode symbol: cType)
+		  expression: (expr asCASTExpressionIn: self)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTDeny: tast [
 
 	^ CCallNode
@@ -2253,6 +2272,39 @@ CCodeGenerator >> generateCASTIfTrueAsArgument: tast [
 CCodeGenerator >> generateCASTIfTrueIfFalse: tast [
 
 	^ self generateCASTIfElse: tast reverseArms: false
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTInlineCppIfElse: tast [
+
+	^ self generateCASTInlineCppIfElse: tast asArgument: false
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTInlineCppIfElse: tast asArgument: asArgument [
+	"Generate the CAST node for the C preprocessor if directive."
+	| generateCAST cppIf |
+	generateCAST := asArgument
+		                ifTrue: [ [ :node | node asCASTExpressionIn: self ] ]
+		                ifFalse: [ [ :node | node asCASTIn: self ] ].
+	(self nilOrBooleanConditionFor: tast arguments first) ifNotNil: [ 
+		:condition | 
+		condition ifTrue: [ ^ generateCAST value: tast arguments second ].
+		tast arguments size >= 3 ifTrue: [ 
+			^ generateCAST value: tast arguments third ].
+		^ CEmptyStatementNode ].
+	cppIf := CPreprocessorIfNode
+		         if: (tast arguments first asCASTExpressionIn: self)
+		         then: (self
+				          with: tast arguments first
+				          ifAppropriateSetTo: true
+				          do: [ generateCAST value: tast arguments second ]).
+	tast arguments size >= 3 ifTrue: [ 
+		cppIf else: (self
+				 with: tast arguments first
+				 ifAppropriateSetTo: false
+				 do: [ generateCAST value: tast arguments third ]) ].
+	^ cppIf
 ]
 
 { #category : #'CAST translation' }

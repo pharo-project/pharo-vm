@@ -285,6 +285,27 @@ CSlangPrettyPrinter >> visitPoint: aMemberAccess [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitPreprocessorIf: anIf [
+
+	stream nextPutAll: '#if '.
+	anIf if acceptVisitor: self.
+	stream cr.
+	anIf then acceptVisitor: self.
+	anIf else ifNotNil: [ :e | 
+		stream nextPutAll: '#else /* '.
+		anIf if acceptVisitor: self.
+		stream
+			nextPutAll: ' */';
+			cr.
+		e acceptVisitor: self ].
+	stream nextPutAll: '#endif /* '.
+	anIf if acceptVisitor: self.
+	stream
+		nextPutAll: ' */';
+		cr
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitReturnStatement: aReturn [
 
 	stream nextPutAll: 'return'.

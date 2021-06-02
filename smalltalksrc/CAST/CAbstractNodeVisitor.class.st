@@ -195,6 +195,11 @@ CAbstractNodeVisitor >> visitPoint: aPoint [
 ]
 
 { #category : #generated }
+CAbstractNodeVisitor >> visitPreprocessorIf: anArrayDeclarator [
+	^ self visitAbstract: anArrayDeclarator
+]
+
+{ #category : #generated }
 CAbstractNodeVisitor >> visitReturnStatement: aReturnStatement [
 	^ self visitAbstract: aReturnStatement
 ]

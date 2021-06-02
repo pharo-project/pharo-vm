@@ -413,6 +413,43 @@ CSlangPrettyPrinterTest >> testVisitPreIncrement [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitPreprocessorIf [
+
+	| print |
+	print := self prettyPrint: (CPreprocessorIfNode
+			          if: (CBinaryOperatorNode
+					           operator: #&&
+					           left: (CIdentifierNode name: 'a')
+					           right: (CIdentifierNode name: 'b'))
+			          then: (CCompoundStatementNode
+					           declarations: { (CAssignmentNode
+							            lvalue: (CIdentifierNode name: 'toto')
+							            rvalue: (CConstantNode value: 99)) }
+					           statements: { (CAssignmentNode
+							            lvalue: (CIdentifierNode name: 'toto')
+							            rvalue: (CIdentifierNode name: 'tutu')) })
+						else: (CCompoundStatementNode
+					           declarations: { (CAssignmentNode
+							            lvalue: (CIdentifierNode name: 'toto')
+							            rvalue: (CConstantNode value: 1)) }
+					           statements: { (CAssignmentNode
+							            lvalue: (CIdentifierNode name: 'tutu')
+							            rvalue: (CIdentifierNode name: 'toto')) })).
+
+	self assert: print trimBoth equals: '#if a && b
+{
+	toto = 99;
+	toto = tutu;
+}
+#else
+{
+	toto = 1;
+	tutu = toto;
+}
+#endif'
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitReturnStatement [
 
 	| print |
