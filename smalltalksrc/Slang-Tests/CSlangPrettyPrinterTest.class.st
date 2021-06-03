@@ -441,12 +441,12 @@ CSlangPrettyPrinterTest >> testVisitPreprocessorIf [
 	toto = 99;
 	toto = tutu;
 }
-#else
+#else /* a && b */
 {
 	toto = 1;
 	tutu = toto;
 }
-#endif'
+#endif /* a && b */'
 ]
 
 { #category : #'tests-visitor' }

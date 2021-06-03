@@ -100,7 +100,26 @@ TStmtListNode >> asCASTExpressionIn: aBuilder [
 { #category : #tranforming }
 TStmtListNode >> asCASTIn: aBuilder [
 	
-	^ CCompoundStatementNode statements: (statements collect: [ :e | e asCASTIn: aBuilder ])
+	^ self asCASTIn: aBuilder prependToEnd: nil
+]
+
+{ #category : #tranforming }
+TStmtListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
+
+	| collect |
+	collect := OrderedCollection new.
+
+	statements doWithIndex: [ :e :index | 
+		(e isLeaf and: [ 
+			 e isLabel not and: [ 
+				 aNodeOrNil isNil or: [ index < statements size ] ] ])
+			ifFalse: [ 
+				(aNodeOrNil notNil and: [ index = statements size ])
+					ifTrue: [ 
+					collect add: (e asCASTIn: aBuilder prependToEnd: aNodeOrNil) ]
+					ifFalse: [ collect add: (e asCASTIn: aBuilder) ] ]
+			ifTrue: [ CEmptyStatementNode new ] ].
+	^ CCompoundStatementNode statements: collect
 ]
 
 { #category : #transformations }
