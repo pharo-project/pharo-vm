@@ -461,10 +461,19 @@ VMClass >> addressOf: anObject put: aBlock [
 ]
 
 { #category : #'C library simulation' }
-VMClass >> alloca: size [
+VMClass >> alloca: desiredSize [
 	"Simulation of alloca(3)"
 	<doNotGenerate>
-	^CArrayAccessor on: (ByteArray new: size)
+	| address |
+	address := 0 "Does not really matter for now".
+	^ CNewArrayAccessor new
+		setObject: (SlangMemoryRegion new
+			start: address;
+			memory: (ByteArray new: desiredSize);
+			originallyRequestedMemory: desiredSize;
+			yourself);
+		address: address;
+		yourself
 ]
 
 { #category : #'C library extensions' }
@@ -706,6 +715,13 @@ VMClass >> isInterpreterProxy [
 VMClass >> localNameFor: aString [
 	<doNotGenerate>
 	^ aString asFileReference basename
+]
+
+{ #category : #'debug support' }
+VMClass >> logError: aMessage [
+	
+	<doNotGenerate>
+	Warning signal: aMessage
 ]
 
 { #category : #'memory access' }
@@ -1208,7 +1224,7 @@ VMClass >> uint32AtPointer: pointer put: value [
 	 pointer is a raw address, and the result is an 32 bit integer."
 	<doNotGenerate>
 
-	^self longAt: pointer put: value
+	^self long32At: pointer put: value
 ]
 
 { #category : #'memory access' }

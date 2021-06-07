@@ -3866,35 +3866,38 @@ SimpleStackBasedCogit >> rewritePrimInvocationIn: cogMethod to: primFunctionPoin
 			^ self
 				  rewritePrimInvocationIn: cogMethod
 				  to: (self simulatedTrampolineFor: primFunctionPointer) ] ].
-	self assert: cogMethod cmType = CMMethod.
-	primIndex := primitiveIndex := coInterpreter
-		             primitiveIndexOfMethod: cogMethod methodObject
-		             header: cogMethod methodHeader.
-	flags := self
-		         primitivePropertyFlags: primIndex
-		         primitiveDescriptor: self primitiveDescriptor.
-	(flags anyMask: PrimCallNeedsPrimitiveFunction) ifTrue: [ 
-		backEnd
-			storeLiteral: primFunctionPointer asUnsignedInteger
-			beforeFollowingAddress: cogMethod asUnsignedInteger
-				+ (externalSetPrimOffsets at: cogMethod cmNumArgs) ].
-	"See compileInterpreterPrimitive:"
-	(flags anyMask: PrimCallMayCallBack)
-		ifTrue: [ 
-			address := cogMethod asUnsignedInteger
-			           + (externalPrimJumpOffsets at: cogMethod cmNumArgs).
-			extent := backEnd
-				          rewriteJumpFullAt: address
-				          target: primFunctionPointer asUnsignedInteger ]
-		ifFalse: [ 
-			address := cogMethod asUnsignedInteger
-			           + (externalPrimCallOffsets at: cogMethod cmNumArgs).
-			extent := backEnd
-				          rewriteCallFullAt: address
-				          target: primFunctionPointer asUnsignedInteger ].
-	self
-		flushICacheFrom: cogMethod asUnsignedInteger + cmNoCheckEntryOffset
-		to: address asUnsignedInteger + extent
+
+	self enableCodeZoneWriteDuring: [  
+		self assert: cogMethod cmType = CMMethod.
+		primIndex := primitiveIndex := coInterpreter
+			             primitiveIndexOfMethod: cogMethod methodObject
+			             header: cogMethod methodHeader.
+		flags := self
+			         primitivePropertyFlags: primIndex
+			         primitiveDescriptor: self primitiveDescriptor.
+		(flags anyMask: PrimCallNeedsPrimitiveFunction) ifTrue: [ 
+			backEnd
+				storeLiteral: primFunctionPointer asUnsignedInteger
+				beforeFollowingAddress: cogMethod asUnsignedInteger
+					+ (externalSetPrimOffsets at: cogMethod cmNumArgs) ].
+		"See compileInterpreterPrimitive:"
+		(flags anyMask: PrimCallMayCallBack)
+			ifTrue: [ 
+				address := cogMethod asUnsignedInteger
+				           + (externalPrimJumpOffsets at: cogMethod cmNumArgs).
+				extent := backEnd
+					          rewriteJumpFullAt: address
+					          target: primFunctionPointer asUnsignedInteger ]
+			ifFalse: [ 
+				address := cogMethod asUnsignedInteger
+				           + (externalPrimCallOffsets at: cogMethod cmNumArgs).
+				extent := backEnd
+					          rewriteCallFullAt: address
+					          target: primFunctionPointer asUnsignedInteger ]]
+	 flushingCacheWith: [ 
+		self
+			flushICacheFrom: cogMethod asUnsignedInteger + cmNoCheckEntryOffset
+			to: address asUnsignedInteger + extent]
 ]
 
 { #category : #testing }

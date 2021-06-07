@@ -2761,13 +2761,15 @@ CogARMv8Compiler >> concretizePrefetchAw [
 						offset: addressOperand - cogit varBaseAddress).
 			^ machineCodeSize := 4 ].
 	
-	self notYetImplemented.
-	
 	instrOffset := self moveCw: addressOperand intoR: ConcreteIPReg.
-	"pld	[ConcreteIPReg]"
+	"We fetch using the ConcreteIPReg"
+
 	self
 		machineCodeAt: instrOffset
-		put: (self pld: ConcreteIPReg plus: 1 offset: 0).
+		put: (self
+						prefetchMemory: 0 "prefetchFlags: load in L1 KEEP" 
+						sourceRegister: ConcreteIPReg
+						offset: 0).
 	^ machineCodeSize := instrOffset + 4
 ]
 
@@ -3766,7 +3768,7 @@ CogARMv8Compiler >> genLoadCStackPointer [
 	"Load the stack pointer register with that of the C stack, effecting
 	 a switch to the C stack.  Used when machine code calls into the
 	 CoInterpreter run-time (e.g. to invoke interpreter primitives)."
-	cogit MoveAw: cogit cStackPointerAddress R: SPReg.
+	cogit MoveAw: cogit cStackPointerAddress R: SP.
 	^0
 ]
 
@@ -5093,7 +5095,7 @@ CogARMv8Compiler >> outputMachineCodeAt: targetAddress [
 	<inline: true>
 	0 to: machineCodeSize - 1 by: 4 do:
 		[:j|
-		objectMemory memoryManager unsignedLong32At: targetAddress + j put: (machineCode at: j // 4)]
+		objectMemory uint32AtPointer: targetAddress + j put: (machineCode at: j // 4)]
 ]
 
 { #category : #'generate machine code' }
@@ -5103,14 +5105,6 @@ CogARMv8Compiler >> padIfPossibleWithStopsFrom: startAddr to: endAddr [
 	self stopsFrom: startAddr to: endAddr - nullBytes.
 	endAddr - nullBytes + 1 to: endAddr 
 		do: [ :p | objectMemory byteAt: p put: 16rFF]
-]
-
-{ #category : #encoding }
-CogARMv8Compiler >> pld: baseReg plus: u offset: immediate [
-	"hint to memory that we will want to read from baseReg +/- imediate sometime soon
-	PLD baseReg, immediate  - ARM_ARM v7 DDI10406 pp. A8-236-7"
-	<inline: true>
-	^ 2r11110101010100001111000000000000 bitOr: (baseReg<<16 bitOr:(u <<23 bitOr: immediate))
 ]
 
 { #category : #assembler }
@@ -5684,7 +5678,7 @@ CogARMv8Compiler >> strBaseRegister: baseReg positiveOffset: immediate12bitValue
 	STR <Dt>, [<Xn|SP>{, #<pimm>}]
 	"
 
-	^ (size bitOr: 2r11) << 30
+	^ (size bitAnd: 2r11) << 30
 		bitOr: (2r111101 << 24
 		bitOr: ((immediate12bitValue / 8 bitAnd: 16rfff) << 10
 		bitOr: ((baseReg bitAnd: 16r1f) << 5
