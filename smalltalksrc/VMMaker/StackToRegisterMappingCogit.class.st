@@ -3311,6 +3311,8 @@ StackToRegisterMappingCogit >> generateSistaRuntime [
 { #category : #initialization }
 StackToRegisterMappingCogit >> generateSuperSendTrampolineTo: function named: name numArgs: numArgs in: table [
 	
+	<var: #table type: 'sqInt *'>
+	
 	| trampoline |
 	trampoline := self genSendTrampolineFor: function
 		numArgs: numArgs
