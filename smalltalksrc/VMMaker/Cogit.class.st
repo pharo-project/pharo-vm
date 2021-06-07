@@ -8272,7 +8272,7 @@ Cogit >> generateSendTrampolines [
 			[:numArgs|
 			directedSuperSendTrampolines
 				at: numArgs
-				put: (self genTrampolineFor: #ceSend:above:to:numArgs:
+				put: (self genTrampolineFor: #ceSendAbove:selector:to:numArgs:
 						  called: (self trampolineName: 'ceDirectedSuperSend' numArgs: numArgs)
 						  arg: ClassReg
 						  arg: TempReg
@@ -8280,7 +8280,7 @@ Cogit >> generateSendTrampolines [
 						  arg: (self numArgsOrSendNumArgsReg: numArgs)).
 			directedSuperBindingSendTrampolines
 				at: numArgs
-				put: (self genTrampolineFor: #ceSend:aboveClassBinding:to:numArgs:
+				put: (self genTrampolineFor: #ceSendAboveClassBinding:selector:to:numArgs:
 						  called: (self trampolineName: 'ceDirectedSuperBindingSend' numArgs: numArgs)
 						  arg: ClassReg
 						  arg: TempReg

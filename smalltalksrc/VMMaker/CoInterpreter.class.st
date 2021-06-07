@@ -1744,109 +1744,6 @@ CoInterpreter >> ceReturnToInterpreter: anOop [
 ]
 
 { #category : #trampolines }
-CoInterpreter >> ceSend: selector above: methodClass to: rcvr numArgs: numArgs [
-	"Entry-point for an unlinked directed super send in a CogMethod.  Smalltalk stack looks like
-					receiver
-					args
-		head sp ->	sender return pc
-	methodClass is the class above which to start the lookup.
-
-	If an MNU then defer to handleMNUInMachineCodeTo:... which will dispatch the MNU and
-	may choose to allocate a closed PIC with a fast MNU dispatch for this send.  Otherwise
-	attempt to link the send site as efficiently as possible.  All link attempts may fail; e.g.
-	because we're out of code memory.
-
-	Continue execution via either executeMethod or interpretMethodFromMachineCode:
-	depending on whether the target method is cogged or not."
-	<api>
-	<option: #BytecodeSetHasDirectedSuperSend>
-	| classTag classObj errSelIdx cogMethod |
-	<inline: false>
-	<var: #cogMethod type: #'CogMethod *'>
-	<var: #newCogMethod type: #'CogMethod *'>
-	"self printExternalHeadFrame"
-	"self printStringOf: selector"
-	cogit assertCStackWellAligned.
-	self assert: (objectMemory addressCouldBeOop: rcvr).
-	self sendBreakpoint: selector receiver: rcvr.
-	classTag := objectMemory classTagForClass: (self superclassOf: (objectMemory followMaybeForwarded: methodClass)).
-	argumentCount := numArgs.
-	(self lookupInMethodCacheSel: selector classTag: classTag)
-		ifTrue:"check for coggability because method is in the cache"
-			[self
-				ifAppropriateCompileToNativeCode: newMethod
-				selector: selector]
-		ifFalse:
-			[self deny: (objectMemory isForwardedClassTag: classTag).
-			 (objectMemory isOopForwarded: selector) ifTrue:
-				[^self
-					ceSend: (self handleForwardedSelectorFaultFor: selector)
-					above: methodClass
-					to: rcvr
-					numArgs: numArgs].
-			 messageSelector := selector.
-			 classObj := objectMemory classForClassTag: classTag.
-			 (errSelIdx := self lookupOrdinaryNoMNUEtcInClass: classObj) ~= 0 ifTrue:
-				[(errSelIdx = SelectorDoesNotUnderstand
-				  and: [(cogMethod := cogit cogMNUPICSelector: messageSelector
-											receiver: rcvr
-											methodOperand: (self mnuMethodOrNilFor: rcvr)
-											numArgs: argumentCount) asUnsignedInteger
-						> cogit minCogMethodAddress]) ifTrue:
-						[cogit
-							linkSendAt: (stackPages longAt: stackPointer)
-							in: (self mframeHomeMethod: framePointer)
-							to: cogMethod
-							offset: cogit noCheckEntryOffset
-							receiver: rcvr].
-				self handleMNU: errSelIdx
-					InMachineCodeTo: rcvr
-					classForMessage: classObj.
-				self assert: false "NOTREACHED"]].
-	"Method found and has a cog method.  Attempt to link to it.  The receiver's class may be young.
-	 We must not link to an Open PIC since they perform normal sends."
-	(self maybeMethodHasCogMethod: newMethod) ifTrue:
-		[cogMethod := self cogMethodOf: newMethod.
-		 cogMethod selector = objectMemory nilObject
-			ifTrue: [cogit setSelectorOf: cogMethod to: selector]
-			ifFalse:
-				["Deal with anonymous accessors, e.g. in Newspeak.  The cogMethod may not have the
-				  correct selector.  If not, try and compile a new method with the correct selector."
-				 cogMethod selector ~= selector ifTrue:
-					[(cogit cog: newMethod selector: selector) ifNotNil:
-						[:newCogMethod| cogMethod := newCogMethod]]].
-		 cogMethod selector = selector ifTrue:
-			[cogit
-				linkSendAt: (stackPages longAt: stackPointer)
-				in: (self mframeHomeMethod: framePointer)
-				to: cogMethod
-				offset: cogit noCheckEntryOffset
-				receiver: rcvr].
-		 instructionPointer := self popStack.
-		 self executeNewMethod.
-		 self assert: false "NOTREACHED"].
-	instructionPointer := self popStack.
-	^self interpretMethodFromMachineCode
-	"NOTREACHED"
-]
-
-{ #category : #trampolines }
-CoInterpreter >> ceSend: selector aboveClassBinding: methodClassBinding to: rcvr numArgs: numArgs [
-	"Entry-point for an unlinked directed super send in a CogMethod.  Smalltalk stack looks like
-					receiver
-					args
-		head sp ->	sender return pc
-	methodClassBinding is an association whose value is the class above which to start the lookup."
-	<api>
-	<option: #BytecodeSetHasDirectedSuperSend>
-	self ceSend: selector
-		above: (self fetchPointer: ValueIndex
-					ofObject: (objectMemory followMaybeForwarded: methodClassBinding))
-		to: rcvr
-		numArgs: numArgs
-]
-
-{ #category : #trampolines }
 CoInterpreter >> ceSend: selector super: superNormalBar to: rcvr numArgs: numArgs [
 	"Entry-point for an unlinked send in a CogMethod.  Smalltalk stack looks like
 					receiver
@@ -1985,6 +1882,109 @@ CoInterpreter >> ceSendAbort: selector to: rcvr numArgs: numArgs [
 		 "NOTREACHED"].
 	^self interpretMethodFromMachineCode
 	"NOTREACHED"
+]
+
+{ #category : #trampolines }
+CoInterpreter >> ceSendAbove: methodClass selector:  selector to: rcvr numArgs: numArgs [
+	"Entry-point for an unlinked directed super send in a CogMethod.  Smalltalk stack looks like
+					receiver
+					args
+		head sp ->	sender return pc
+	methodClass is the class above which to start the lookup.
+
+	If an MNU then defer to handleMNUInMachineCodeTo:... which will dispatch the MNU and
+	may choose to allocate a closed PIC with a fast MNU dispatch for this send.  Otherwise
+	attempt to link the send site as efficiently as possible.  All link attempts may fail; e.g.
+	because we're out of code memory.
+
+	Continue execution via either executeMethod or interpretMethodFromMachineCode:
+	depending on whether the target method is cogged or not."
+	<api>
+	<option: #BytecodeSetHasDirectedSuperSend>
+	| classTag classObj errSelIdx cogMethod |
+	<inline: false>
+	<var: #cogMethod type: #'CogMethod *'>
+	<var: #newCogMethod type: #'CogMethod *'>
+	"self printExternalHeadFrame"
+	"self printStringOf: selector"
+	cogit assertCStackWellAligned.
+	self assert: (objectMemory addressCouldBeOop: rcvr).
+	self sendBreakpoint: selector receiver: rcvr.
+	classTag := objectMemory classTagForClass: (self superclassOf: (objectMemory followMaybeForwarded: methodClass)).
+	argumentCount := numArgs.
+	(self lookupInMethodCacheSel: selector classTag: classTag)
+		ifTrue:"check for coggability because method is in the cache"
+			[self
+				ifAppropriateCompileToNativeCode: newMethod
+				selector: selector]
+		ifFalse:
+			[self deny: (objectMemory isForwardedClassTag: classTag).
+			 (objectMemory isOopForwarded: selector) ifTrue:
+				[^self
+					ceSendAbove: methodClass
+					selector: (self handleForwardedSelectorFaultFor: selector)
+					to: rcvr
+					numArgs: numArgs].
+			 messageSelector := selector.
+			 classObj := objectMemory classForClassTag: classTag.
+			 (errSelIdx := self lookupOrdinaryNoMNUEtcInClass: classObj) ~= 0 ifTrue:
+				[(errSelIdx = SelectorDoesNotUnderstand
+				  and: [(cogMethod := cogit cogMNUPICSelector: messageSelector
+											receiver: rcvr
+											methodOperand: (self mnuMethodOrNilFor: rcvr)
+											numArgs: argumentCount) asUnsignedInteger
+						> cogit minCogMethodAddress]) ifTrue:
+						[cogit
+							linkSendAt: (stackPages longAt: stackPointer)
+							in: (self mframeHomeMethod: framePointer)
+							to: cogMethod
+							offset: cogit noCheckEntryOffset
+							receiver: rcvr].
+				self handleMNU: errSelIdx
+					InMachineCodeTo: rcvr
+					classForMessage: classObj.
+				self assert: false "NOTREACHED"]].
+	"Method found and has a cog method.  Attempt to link to it.  The receiver's class may be young.
+	 We must not link to an Open PIC since they perform normal sends."
+	(self maybeMethodHasCogMethod: newMethod) ifTrue:
+		[cogMethod := self cogMethodOf: newMethod.
+		 cogMethod selector = objectMemory nilObject
+			ifTrue: [cogit setSelectorOf: cogMethod to: selector]
+			ifFalse:
+				["Deal with anonymous accessors, e.g. in Newspeak.  The cogMethod may not have the
+				  correct selector.  If not, try and compile a new method with the correct selector."
+				 cogMethod selector ~= selector ifTrue:
+					[(cogit cog: newMethod selector: selector) ifNotNil:
+						[:newCogMethod| cogMethod := newCogMethod]]].
+		 cogMethod selector = selector ifTrue:
+			[cogit
+				linkSendAt: (stackPages longAt: stackPointer)
+				in: (self mframeHomeMethod: framePointer)
+				to: cogMethod
+				offset: cogit noCheckEntryOffset
+				receiver: rcvr].
+		 instructionPointer := self popStack.
+		 self executeNewMethod.
+		 self assert: false "NOTREACHED"].
+	instructionPointer := self popStack.
+	^self interpretMethodFromMachineCode
+	"NOTREACHED"
+]
+
+{ #category : #trampolines }
+CoInterpreter >> ceSendAboveClassBinding: methodClassBinding selector: selector to: rcvr numArgs: numArgs [
+	"Entry-point for an unlinked directed super send in a CogMethod.  Smalltalk stack looks like
+					receiver
+					args
+		head sp ->	sender return pc
+	methodClassBinding is an association whose value is the class above which to start the lookup."
+	<api>
+	<option: #BytecodeSetHasDirectedSuperSend>
+	self ceSendAbove: (self fetchPointer: ValueIndex
+					ofObject: (objectMemory followMaybeForwarded: methodClassBinding))
+		selector: selector
+		to: rcvr
+		numArgs: numArgs
 ]
 
 { #category : #trampolines }

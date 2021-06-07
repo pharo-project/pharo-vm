@@ -229,8 +229,8 @@ CogARMCompiler class >> initializeAbstractRegisters [
 
 	CallerSavedRegisterMask := self registerMaskFor: "0 and: 1 and:" 2 and: 3 and: 9 and: 12.
 
-	TempReg			:= R2.
-	ClassReg			:= R0.
+	TempReg			:= R0.
+	ClassReg			:= R2.
 	ReceiverResultReg	:= R5.
 	SendNumArgsReg	:= R6.
 	SPReg				:= SP. "a.k.a. R13" self assert: SP = 13.

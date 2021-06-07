@@ -26,7 +26,7 @@ VMSistaTrampolineTest >> testSendTrampolineWithFourArguments [
 	| trampolineStart receiver |
 	trampolineStart := self compileWithoutOutput: [ 
 		cogit
-			generateSuperSendTrampolineTo: #ceSend:aboveClassBinding:to:numArgs:
+			generateSuperSendTrampolineTo: #ceSendAboveClassBinding:selector:to:numArgs:
 			named: 'ceDirectedSuperBindingSend'
 			numArgs: 0 "to be in Arg3Reg"
 			in: cogit directedBindingSuperSendTrampolines ] bytecodes: 10.
@@ -35,10 +35,10 @@ VMSistaTrampolineTest >> testSendTrampolineWithFourArguments [
 	self prepareStackForSendReceiver: receiver arguments: { }.
 
 	"Initialize the state of the interpreter"
-	machineSimulator classRegisterValue: 11.
-	machineSimulator temporaryRegisterValue: 12.
+	machineSimulator temporaryRegisterValue: 11.
+	machineSimulator classRegisterValue: 12.
 	machineSimulator receiverRegisterValue: receiver.
-	self runFrom: trampolineStart until: (cogit simulatedTrampolineFor: #ceSend:aboveClassBinding:to:numArgs:).
+	self runFrom: trampolineStart until: (cogit simulatedTrampolineFor: #ceSendAboveClassBinding:selector:to:numArgs:).
 
 	"Check they arrive to the correct C-calling convention registers"
 	self assert: machineSimulator carg0 equals: 11.

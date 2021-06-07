@@ -3278,12 +3278,12 @@ StackToRegisterMappingCogit >> generateSendTrampolines [
 	BytecodeSetHasDirectedSuperSend ifTrue: [
 		0 to: NumSendTrampolines - 1 do: [:numArgs|
 			self
-				generateSuperSendTrampolineTo: #ceSend:above:to:numArgs:
+				generateSuperSendTrampolineTo: #ceSendAbove:selector:to:numArgs:
 				named: 'ceDirectedSuperSend'
 				numArgs: numArgs
 				in: directedSuperSendTrampolines.
 			self
-				generateSuperSendTrampolineTo: #ceSend:aboveClassBinding:to:numArgs:
+				generateSuperSendTrampolineTo: #ceSendAboveClassBinding:selector:to:numArgs:
 				named: 'ceDirectedSuperBindingSend'
 				numArgs: numArgs
 				in: directedSuperBindingSendTrampolines ] ].
@@ -3315,8 +3315,8 @@ StackToRegisterMappingCogit >> generateSuperSendTrampolineTo: function named: na
 	trampoline := self genSendTrampolineFor: function
 		numArgs: numArgs
 		called: (self trampolineName: name numArgs: numArgs)
-		arg: ClassReg
 		arg: TempReg
+		arg: ClassReg
 		arg: ReceiverResultReg
 		arg: (self numArgsOrSendNumArgsReg: numArgs).
 	table at: numArgs put: trampoline.

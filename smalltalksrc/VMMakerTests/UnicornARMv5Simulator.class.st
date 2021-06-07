@@ -61,7 +61,7 @@ UnicornARMv5Simulator >> carg3Register [
 { #category : #registers }
 UnicornARMv5Simulator >> classRegister [
 	
-	^ UcARMRegisters r0
+	^ UcARMRegisters r2
 ]
 
 { #category : #'as yet unclassified' }
@@ -526,7 +526,7 @@ UnicornARMv5Simulator >> stackPointerRegister [
 { #category : #registers }
 UnicornARMv5Simulator >> temporaryRegister [
 	
-	^ UcARMRegisters r2
+	^ UcARMRegisters r0
 ]
 
 { #category : #accessing }
