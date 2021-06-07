@@ -44,7 +44,8 @@ else()
 endif()
 
 set(PLUGIN_GENERATED_FILES 
-    ${PHARO_CURRENT_GENERATED}/plugins/src/FilePlugin/FilePlugin.c)
+    ${PHARO_CURRENT_GENERATED}/plugins/src/FilePlugin/FilePlugin.c
+    ${PHARO_CURRENT_GENERATED}/plugins/src/SurfacePlugin/SurfacePlugin.c)
 
 if(GENERATE_SOURCES)
 

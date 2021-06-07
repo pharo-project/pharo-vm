@@ -8592,7 +8592,7 @@ Cogit >> initialMethodUsageCount [
 	(primitiveIndex = 1
 	 or: [coInterpreter isQuickPrimitiveIndex: primitiveIndex]) ifTrue:
 		[^1].
-	self primitiveGeneratorOrNil ifNil:
+	self primitiveDescriptor primitiveGenerator ifNil:
 		[^2].
 	^3
 ]

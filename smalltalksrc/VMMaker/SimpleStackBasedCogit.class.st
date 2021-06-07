@@ -989,7 +989,7 @@ SimpleStackBasedCogit >> compileInterpreterPrimitive [
 		  compileInterpreterPrimitive: primitiveRoutine
 		  flags: (self
 				   primitivePropertyFlags: primitiveIndex
-				   primitiveDescriptor: self primitiveGeneratorOrNil)
+				   primitiveDescriptor: self primitiveDescriptor)
 ]
 
 { #category : #'primitive generators - call' }
@@ -1438,9 +1438,9 @@ SimpleStackBasedCogit >> compilePrimitive [
 	 on success or continue to the method body."
 
 	<inline: false>
-	<var: #primitiveDescriptor type: #'PrimitiveDescriptor *'>
+	<var: #aPrimitiveDescriptor type: #'PrimitiveDescriptor *'>
 	<var: #primitiveRoutine declareC: 'void (*primitiveRoutine)(void)'>
-	| code opcodeIndexAtPrimitive primitiveDescriptor primitiveRoutine flags |
+	| code opcodeIndexAtPrimitive aPrimitiveDescriptor primitiveRoutine flags |
 	primitiveIndex = 0 ifTrue: [ ^ 0 ].
 	code := 0.
 	"Note opcodeIndex so that compileFallbackToInterpreterPrimitive:
@@ -1450,14 +1450,15 @@ SimpleStackBasedCogit >> compilePrimitive [
 	 for the generated code to be correct.  For example for speed many primitives use
 	 ResultReceiverReg instead of accessing the stack, so the receiver better be at
 	 numArgs down the stack.  Use the interpreter version if not."
-	((primitiveDescriptor := self primitiveGeneratorOrNil) notNil and: [ 
-		 primitiveDescriptor primitiveGenerator notNil and: [ 
-			 primitiveDescriptor primNumArgs < 0 or: [ 
-				 primitiveDescriptor primNumArgs
-				 = (coInterpreter argumentCountOf: methodObj) ] "means don't care" ] ]) 
+	aPrimitiveDescriptor := self primitiveDescriptor.
+	
+	( aPrimitiveDescriptor primitiveGenerator notNil and: [ 
+		 aPrimitiveDescriptor primNumArgs < 0 or: [ 
+			 aPrimitiveDescriptor primNumArgs
+			 = (coInterpreter argumentCountOf: methodObj) ] "means don't care" ] ) 
 		ifTrue: [ 
 			code := objectRepresentation perform:
-				        primitiveDescriptor primitiveGenerator ].
+				        aPrimitiveDescriptor primitiveGenerator ].
 	(code < 0 and: [ code ~= UnimplementedPrimitive ]) ifTrue: [ "Generator failed, so no point continuing..." 
 		^ code ].
 	code = UnfailingPrimitive ifTrue: [ ^ 0 ].
@@ -1472,7 +1473,7 @@ SimpleStackBasedCogit >> compilePrimitive [
 
 	flags := self
 		         primitivePropertyFlags: primitiveIndex
-		         primitiveDescriptor: primitiveDescriptor.
+		         primitiveDescriptor: aPrimitiveDescriptor.
 	(flags anyMask: PrimCallDoNotJIT) ifTrue: [ ^ ShouldNotJIT ].
 
 	(flags anyMask: PrimCallOnSmalltalkStack) ifTrue: [ 
@@ -2522,7 +2523,7 @@ SimpleStackBasedCogit >> genPrimitiveClosureValue [
 		           compileInterpreterPrimitive: primitiveRoutine
 		           flags: (self
 				            primitivePropertyFlags: primitiveIndex
-				            primitiveDescriptor: self primitiveGeneratorOrNil)) < 0 ifTrue: [ ^ result ].
+				            primitiveDescriptor: self primitiveDescriptor)) < 0 ifTrue: [ ^ result ].
 	jumpFailNArgs jmpTarget: self Label.
 	^ CompletePrimitive
 ]
@@ -2595,7 +2596,7 @@ SimpleStackBasedCogit >> genPrimitiveFullClosureValue [
 		           compileInterpreterPrimitive: primitiveRoutine
 		           flags: (self
 				            primitivePropertyFlags: primitiveIndex
-				            primitiveDescriptor: self primitiveGeneratorOrNil)) < 0 ifTrue: [ ^ result ].
+				            primitiveDescriptor: self primitiveDescriptor)) < 0 ifTrue: [ ^ result ].
 	jumpFailNArgs jmpTarget: self Label.
 	^ CompletePrimitive
 ]
@@ -3738,16 +3739,16 @@ SimpleStackBasedCogit >> picAbortTrampolineFor: numArgs [
 ]
 
 { #category : #'primitive generators' }
-SimpleStackBasedCogit >> primitiveGeneratorOrNil [
+SimpleStackBasedCogit >> primitiveDescriptor [
 	"If there is a generator for the current primitive then answer it;
 	 otherwise answer nil."
 	<returnTypeC: #'PrimitiveDescriptor *'>
-	| primitiveDescriptor |
-	<var: #primitiveDescriptor type: #'PrimitiveDescriptor *'>
+	| aPrimitiveDescriptor |
+	<var: #aPrimitiveDescriptor type: #'PrimitiveDescriptor *'>
 	(coInterpreter isQuickPrimitiveIndex: primitiveIndex) ifTrue:
-		[primitiveDescriptor := self addressOf: (primitiveGeneratorTable at: 0). "an unused one"
-		 primitiveDescriptor primitiveGenerator: (coInterpreter quickPrimitiveGeneratorFor: primitiveIndex).
-		 ^primitiveDescriptor].
+		[aPrimitiveDescriptor := self addressOf: (primitiveGeneratorTable at: 0). "an unused one"
+		 aPrimitiveDescriptor primitiveGenerator: (coInterpreter quickPrimitiveGeneratorFor: primitiveIndex).
+		 ^aPrimitiveDescriptor].
 	(primitiveIndex between: 1 and: MaxCompiledPrimitiveIndex) ifTrue:
 		[self cCode: [] inSmalltalk: "for debugging, allow excluding specific primitives"
 			[self class initializationOptions at: #DoNotJIT ifPresent:
@@ -3757,17 +3758,25 @@ SimpleStackBasedCogit >> primitiveGeneratorOrNil [
 					[coInterpreter transcript nextPutAll: 'EXCLUDING primitive #'; print: primitiveIndex; space; nextPutAll: (primitiveGeneratorTable at: primitiveIndex) primitiveGenerator; cr; flush.
 				 ^nil]]].
 		 ^self addressOf: (primitiveGeneratorTable at: primitiveIndex)].
-	^nil
+	
+	"If we don't find the correct entry, we reuse the 0 one (that is unused) and we return that one with the default values"
+	
+	aPrimitiveDescriptor := self addressOf: (primitiveGeneratorTable at: 0). "an unused one"
+	aPrimitiveDescriptor primitiveGenerator: nil.
+	aPrimitiveDescriptor primNumArgs: -1.
+	aPrimitiveDescriptor primMayCallBack: false.
+	
+	^ aPrimitiveDescriptor
 ]
 
 { #category : #'cog jit support' }
-SimpleStackBasedCogit >> primitivePropertyFlags: primIndex primitiveDescriptor: primitiveDescriptor [
+SimpleStackBasedCogit >> primitivePropertyFlags: primIndex primitiveDescriptor: aPrimitiveDescriptor [
 
 	"Answer any special requirements of the given primitive.  Spur always needs to set
 	 primitiveFunctionPointer and newMethod so primitives can retry on failure due to forwarders."
 	| baseFlags |
 	
-	<var:#primitiveDescriptor type: #'CogPrimitiveDescriptor*'>
+	<var:#aPrimitiveDescriptor type: #'CogPrimitiveDescriptor*'>
 	
 	self cCode: [] inSmalltalk: [#( mcprimHashMultiply: )]. "For senders..."
 
@@ -3779,7 +3788,7 @@ SimpleStackBasedCogit >> primitivePropertyFlags: primIndex primitiveDescriptor: 
 	coInterpreter hasProfileSemaphore ifTrue:
 		[baseFlags := baseFlags bitOr: PrimCallCollectsProfileSamples].
 
-	primitiveDescriptor primMayCallBack ifTrue: [ 
+	aPrimitiveDescriptor primMayCallBack ifTrue: [ 
 		baseFlags := baseFlags bitOr: PrimCallMayCallBack.
 		coInterpreter hasCheckAllocFiller ifTrue: [
 			baseFlags := baseFlags bitOr: CheckAllocationFillerAfterPrimCall ]].
@@ -3863,7 +3872,7 @@ SimpleStackBasedCogit >> rewritePrimInvocationIn: cogMethod to: primFunctionPoin
 		             header: cogMethod methodHeader.
 	flags := self
 		         primitivePropertyFlags: primIndex
-		         primitiveDescriptor: self primitiveGeneratorOrNil.
+		         primitiveDescriptor: self primitiveDescriptor.
 	(flags anyMask: PrimCallNeedsPrimitiveFunction) ifTrue: [ 
 		backEnd
 			storeLiteral: primFunctionPointer asUnsignedInteger
