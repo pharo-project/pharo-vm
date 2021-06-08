@@ -1418,13 +1418,6 @@ CCodeGenerator >> generateAnd: msgNode on: aStream indent: level [
 	self emitCExpression: msgNode args first on: aStream indent: level
 ]
 
-{ #category : #'C translation' }
-CCodeGenerator >> generateAsAddress: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream."
-
-	self emitCExpression: msgNode args first on: aStream
-]
-
 { #category : #'C translation support' }
 CCodeGenerator >> generateAsConstantExpression: msgNode on: aStream [
 	"Attempt to generate the C code for this message onto the given stream.
@@ -2305,12 +2298,6 @@ CCodeGenerator >> generateCASTInlineCppIfElse: tast asArgument: asArgument [
 				 ifAppropriateSetTo: false
 				 do: [ generateCAST value: tast arguments third ]) ].
 	^ cppIf
-]
-
-{ #category : #'CAST translation' }
-CCodeGenerator >> generateCASTInlineDirective: tast [
-
-	^ CCommentNode comment: 'inline: ' , tast arguments first name
 ]
 
 { #category : #'CAST translation' }
@@ -3546,16 +3533,6 @@ CCodeGenerator >> generateInlineCppIfElseAsArgument: msgNode on: aStream indent:
 ]
 
 { #category : #'C translation' }
-CCodeGenerator >> generateInlineDirective: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream."
-
-	aStream nextPutAll: '/* inline: '.
-	aStream nextPutAll: msgNode args first name.
-	aStream nextPutAll: ' */'.
-
-]
-
-{ #category : #'C translation' }
 CCodeGenerator >> generateIsNil: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
@@ -4619,7 +4596,6 @@ CCodeGenerator >> initializeCTranslationDictionary [
 	#cCoerceSimple:to:			#generateCCoercion:on:indent:
 	#addressOf:				#generateAddressOf:on:indent:
 	#addressOf:put:			#generateAddressOf:on:indent:
-	#asAddress:put:			#generateAsAddress:on:indent:
 	#signedIntFromLong64		#generateSignedIntFromLong64:on:indent:
 	#signedIntFromLong		#generateSignedIntFromLong:on:indent:
 	#signedIntFromShort		#generateSignedIntFromShort:on:indent:
