@@ -363,7 +363,7 @@ TSendNode >> isNonNullCCode [
 
 { #category : #testing }
 TSendNode >> isPreprocessorDirective [
-	^#(cPreprocessorDirective: cppIf:ifTrue:ifFalse: cppIf:ifTrue:) includes: selector
+	^#( cppIf:ifTrue:ifFalse: cppIf:ifTrue:) includes: selector
 ]
 
 { #category : #testing }

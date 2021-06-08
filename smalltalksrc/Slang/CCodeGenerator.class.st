@@ -3450,14 +3450,6 @@ CCodeGenerator >> generateInlineCCodeAsArgument: msgNode on: aStream indent: lev
 ]
 
 { #category : #'C translation' }
-CCodeGenerator >> generateInlineCPreprocessorDirective: msgNode on: aStream indent: level [
-	"Generate the C preprocessor directive for this message onto the given stream."
-
-	aStream cr; nextPutAll: msgNode args first value.
-	self noteVariableUsageInString: msgNode args first value
-]
-
-{ #category : #'C translation' }
 CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 	| expr putStatement |
@@ -4448,7 +4440,6 @@ CCodeGenerator >> initializeCASTTranslationDictionary [
 	#isIntegerObject: 			#generateCASTIsIntegerObject:
 	#cCode:					#generateCASTInlineCCode:
 	#cCode:inSmalltalk:			#generateCASTInlineCCode:
-	#cPreprocessorDirective:	#generateCASTInlineCPreprocessorDirective:
 	#cppIf:ifTrue:ifFalse:		#generateCASTInlineCppIfElse:
 	#cppIf:ifTrue:				#generateCASTInlineCppIfElse:
 	#cCoerce:to:				#generateCASTCCoercion:
@@ -4622,7 +4613,6 @@ CCodeGenerator >> initializeCTranslationDictionary [
 	#isIntegerObject: 			#generateIsIntegerObject:on:indent:
 	#cCode:					#generateInlineCCode:on:indent:
 	#cCode:inSmalltalk:			#generateInlineCCode:on:indent:
-	#cPreprocessorDirective:	#generateInlineCPreprocessorDirective:on:indent:
 	#cppIf:ifTrue:ifFalse:		#generateInlineCppIfElse:on:indent:
 	#cppIf:ifTrue:				#generateInlineCppIfElse:on:indent:
 	#cCoerce:to:				#generateCCoercion:on:indent:
