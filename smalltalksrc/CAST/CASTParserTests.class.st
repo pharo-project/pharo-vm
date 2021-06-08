@@ -801,3 +801,14 @@ CASTParserTests >> testParseWhile [
 	
 	self assert: statement isWhile
 ]
+
+{ #category : #'tests-control flow' }
+CASTParserTests >> testSwitchStatement [
+
+	| statement |
+	statement := self parseStatement: 'switch(a){
+	case 48: break;
+	case 15: break;
+	default: break;
+}'.
+]

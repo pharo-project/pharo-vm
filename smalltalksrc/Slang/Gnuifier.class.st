@@ -119,6 +119,7 @@ Gnuifier >> gnuifyFrom: inputFile to: outFileStream [
 						inLine = '#include "sq.h"' ifTrue: [ 
 							outLine := '#include "sqGnu.h"' ].
 						(inLine beginsWith: 'interpret(void)') ifTrue: [ "reached the beginning of interpret"
+							
 							beforeInterpret := false.
 							inInterpret := true.
 							inInterpretVars := true ] ]
@@ -144,8 +145,10 @@ Gnuifier >> gnuifyFrom: inputFile to: outFileStream [
 							ifFalse: [ 
 								inInterpret
 									ifTrue: [ "working inside interpret(); translate the switch statement"
+										
 										(inLine beginsWith: '				case ') ifTrue: [ 
 											| tokens |
+											
 											tokens := inLine findTokens: '	 :'.
 											outLine := '				CASE(' , tokens second , ')'.
 											tokens size > 2 ifTrue: [ 
