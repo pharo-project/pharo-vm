@@ -59,7 +59,7 @@ We recommend to use out-of-source building. So, we are building in a different d
 To do so, we give both parameter for saying where the source is (-S) and where to build (-B).
 
 ```bash
-$ git clone git@github.com <mailto:git@github.com>:pharo-project/opensmalltalk-vm.git
+$ git clone git@github.com:pharo-project/opensmalltalk-vm.git
 $ cmake -S opensmalltalk-vm -B build
 $ cd build
 $ make install
