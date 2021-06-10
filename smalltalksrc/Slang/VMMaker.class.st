@@ -170,8 +170,8 @@ VMMaker class >> forceNewFileNamed: aFilename [
 		The Microsoft and old MacOS classic C compilers all accept lf format files."
 
 	| inner |
+	aFilename asFileReference ensureDelete.
 	inner := aFilename asFileReference writeStream.
-	inner truncate.
 	
 	^ (ZnNewLineWriterStream on: inner)
 		forLf;
