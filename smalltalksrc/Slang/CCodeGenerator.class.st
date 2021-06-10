@@ -4181,7 +4181,7 @@ CCodeGenerator >> generateWhile: boolean loop: msgNode on: aStream indent: level
 	boolean ifFalse: [aStream nextPutAll: '!('].
 	self emitCTestBlock: msgNode receiver on: aStream indent: level.
 	boolean ifFalse: [aStream nextPut: $)].
-	aStream nextPutAll: ') '; cr.
+	aStream nextPutAll: ') '.
 	msgNode args first isNilStmtListNode ifFalse:
 		[msgNode args first emitCCodeOn: aStream level: level generator: self]
 ]
