@@ -71,36 +71,36 @@ CogMethodSurrogate32 >> blockSize: aValue [
 
 { #category : #accessing }
 CogMethodSurrogate32 >> methodHeader [
-	^memory unsignedLongAt: address + 12 + baseHeaderSize
+	^memory unsignedLong32At: address + 12 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> methodHeader: aValue [
 	^memory
-		unsignedLongAt: address + baseHeaderSize + 12
+		unsignedLong32At: address + baseHeaderSize + 12
 		put: aValue
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> methodObject [
-	^memory unsignedLongAt: address + 8 + baseHeaderSize
+	^memory unsignedLong32At: address + 8 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> methodObject: aValue [
 	^memory
-		unsignedLongAt: address + baseHeaderSize + 8
+		unsignedLong32At: address + baseHeaderSize + 8
 		put: aValue
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> selector [
-	^memory unsignedLongAt: address + 16 + baseHeaderSize
+	^memory unsignedLong32At: address + 16 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> selector: aValue [
 	^memory
-		unsignedLongAt: address + baseHeaderSize + 16
+		unsignedLong32At: address + baseHeaderSize + 16
 		put: aValue
 ]

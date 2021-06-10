@@ -313,6 +313,17 @@ TAssignmentNode >> postCopy [
 ]
 
 { #category : #'C code generation' }
+TAssignmentNode >> prependCASTIn: aBuilder expression: nodeExp [
+
+	^ CAssignmentNode
+		  lvalue: (variable asCASTExpressionIn: aBuilder)
+		  operator: (self isVariableUpdatingAssignment
+				   ifTrue: [ expression selector "+ or -" ]
+				   ifFalse: [ '' ]) , '='
+		  rvalue: (nodeExp asCASTExpressionIn: aBuilder)
+]
+
+{ #category : #'C code generation' }
 TAssignmentNode >> prependCCodeOn: aStream level: level generator: aCodeGen [
 	variable emitCCodeOn: aStream level: level generator: aCodeGen.
 	aStream

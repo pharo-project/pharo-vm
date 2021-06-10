@@ -119,6 +119,7 @@ Gnuifier >> gnuifyFrom: inputFile to: outFileStream [
 						inLine = '#include "sq.h"' ifTrue: [ 
 							outLine := '#include "sqGnu.h"' ].
 						(inLine beginsWith: 'interpret(void)') ifTrue: [ "reached the beginning of interpret"
+							
 							beforeInterpret := false.
 							inInterpret := true.
 							inInterpretVars := true ] ]
@@ -144,14 +145,16 @@ Gnuifier >> gnuifyFrom: inputFile to: outFileStream [
 							ifFalse: [ 
 								inInterpret
 									ifTrue: [ "working inside interpret(); translate the switch statement"
-										(inLine beginsWith: '				case ') ifTrue: [ 
+										
+										(inLine beginsWith: '			case ') ifTrue: [ 
 											| tokens |
+											
 											tokens := inLine findTokens: '	 :'.
-											outLine := '				CASE(' , tokens second , ')'.
+											outLine := '			CASE(' , tokens second , ')'.
 											tokens size > 2 ifTrue: [ 
 												(tokens allButFirst: 2) do: [ :token | 
 													outLine := outLine , ' ' , token ] ] ].
-										inLine = '			break;' ifTrue: [ outLine := '			BREAK;' ].
+										inLine = '				break;' ifTrue: [ outLine := '				BREAK;' ].
 										inLine = '}' ifTrue: [ "all finished with interpret()" 
 											inInterpret := false ] ]
 									ifFalse: [ 
@@ -163,6 +166,7 @@ Gnuifier >> gnuifyFrom: inputFile to: outFileStream [
 													extraOutLine := '    PRIM_TABLE;' ] ]
 											ifFalse: [ 
 												inPrimitiveResponse ifTrue: [ 
+													1halt.
 													inLine = '	switch (primitiveIndex) {' ifTrue: [ 
 														extraOutLine := outLine.
 														outLine := '	PRIM_DISPATCH;' ].

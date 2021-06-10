@@ -1135,6 +1135,7 @@ CASTParser >> reduceActionForselection_statement3: nodes [
 	result := CGLRSwitchStatementNode new.
 	result if: (nodes at: 3).
 	result statement: (nodes at: 5).
+	1halt.
 	^ result
 ]
 

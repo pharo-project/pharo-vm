@@ -2,7 +2,8 @@ Class {
 	#name : #CStringLiteralNode,
 	#superclass : #CGLRAbstractNode,
 	#instVars : [
-		'value'
+		'value',
+		'needsDoubleQuotes'
 	],
 	#category : #'CAST-Nodes'
 }
@@ -12,12 +13,25 @@ CStringLiteralNode class >> value: aString [
 
 	^ self new
 		  value: aString;
+		  needsDoubleQuotes: true;
 		  yourself
 ]
 
 { #category : #generated }
 CStringLiteralNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitStringLiteral: self
+]
+
+{ #category : #accessing }
+CStringLiteralNode >> needsDoubleQuotes [
+
+	^ needsDoubleQuotes
+]
+
+{ #category : #accessing }
+CStringLiteralNode >> needsDoubleQuotes: aBoolean [
+
+	needsDoubleQuotes := aBoolean
 ]
 
 { #category : #generated }
