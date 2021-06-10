@@ -217,7 +217,6 @@ TStmtListNode >> emitCCodeOn: aStream prependToEnd: aNodeOrNil level: level gene
 	| innerLevel |
 	self emitCCommentOn: aStream level: level generator: aCodeGen.
 	
-	aStream tab: level.
 	aStream nextPut: ${; cr.
 	
 	innerLevel := level + 1.
