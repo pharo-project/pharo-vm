@@ -46,7 +46,8 @@ SlangBasicTranslationTest >> setUp [
 	generator := CCodeGenerator new.
 	generator currentMethod: (TMethod new
 		labels: Set new;
-		yourself).
+		resetUsedVariablesCache;
+		yourself)
 ]
 
 { #category : #helpers }
@@ -962,6 +963,96 @@ SlangBasicTranslationTest >> testSendBytesPerWord [
 			                arguments: { }).
 
 	self assert: translation equals: 'BytesPerWord'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendCCodeInSmalltalkWithNonConstant [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #cCode:inSmalltalk:
+		        receiver: (TVariableNode new setName: 'self')
+		        arguments: { 
+					(TVariableNode new setName: 'value').
+					'unused' }.
+	translation := self translate: send.
+
+	self assert: translation equals: 'value'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendCCodeInSmalltalkWithString [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #cCode:inSmalltalk:
+		        receiver: (TVariableNode new setName: 'self')
+		        arguments: { 
+					TConstantNode value: 'some string'.
+					'unused' }.
+	translation := self translate: send.
+
+	self assert: translation equals: 'some string'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendCCodeInSmalltalkWithStringNotesVariables [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #cCode:inSmalltalk:
+		        receiver: (TVariableNode new setName: 'self')
+		        arguments: { 
+					TConstantNode value: 'some 1 _underscoreToo #yep'.
+					'unused' }.
+	translation := self translate: send.
+
+	self assert: (generator currentMethod usedVariablesCache includes: 'some').
+	self assert: (generator currentMethod usedVariablesCache includes: '_underscoreToo').
+	self assert: (generator currentMethod usedVariablesCache includes: 'yep').
+	self deny: (generator currentMethod usedVariablesCache includes: '1').
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendCCodeWithNonConstant [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #cCode:
+		        receiver: (TVariableNode new setName: 'self')
+		        arguments: { (TVariableNode new setName: 'value') }.
+	translation := self translate: send.
+
+	self assert: translation equals: 'value'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendCCodeWithString [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #cCode:
+		        receiver: (TVariableNode new setName: 'self')
+		        arguments: { TConstantNode value: 'some string' }.
+	translation := self translate: send.
+
+	self assert: translation equals: 'some string'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendCCodeWithStringNotesVariables [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #cCode:
+		        receiver: (TVariableNode new setName: 'self')
+		        arguments: { TConstantNode value: 'some 1 _underscoreToo #yep' }.
+	translation := self translate: send.
+
+	self assert: (generator currentMethod usedVariablesCache includes: 'some').
+	self assert: (generator currentMethod usedVariablesCache includes: '_underscoreToo').
+	self assert: (generator currentMethod usedVariablesCache includes: 'yep').
+	self deny: (generator currentMethod usedVariablesCache includes: '1').
 ]
 
 { #category : #'tests-assignment' }
