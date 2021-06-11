@@ -524,7 +524,7 @@ SlangBasicTranslationTest >> testReturnVariable [
 	self assert: translation equals: 'return var'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendAbs [
 
 	| translation send |
@@ -538,7 +538,7 @@ SlangBasicTranslationTest >> testSendAbs [
 	self assert: translation equals: 'abs(-1)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendAnd [
 
 	| translation send |
@@ -552,7 +552,7 @@ SlangBasicTranslationTest >> testSendAnd [
 	self assert: translation equals: '0 && 1'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendAsFloat [
 
 	| translation send |
@@ -565,7 +565,7 @@ SlangBasicTranslationTest >> testSendAsFloat [
 	self assert: translation equals: '(double)(x)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendAsInteger [
 
 	| translation send |
@@ -578,7 +578,7 @@ SlangBasicTranslationTest >> testSendAsInteger [
 	self assert: translation equals: '(sqInt)(x)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendAsIntegerPtr [
 
 	| translation send |
@@ -591,7 +591,7 @@ SlangBasicTranslationTest >> testSendAsIntegerPtr [
 	self assert: translation equals: '(sqIntptr_t)(x)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendAt [
 
 	| translation send |
@@ -605,7 +605,7 @@ SlangBasicTranslationTest >> testSendAt [
 	self assert: translation equals: 'tab[7]'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendAtPut [
 
 	| translation send |
@@ -620,7 +620,7 @@ SlangBasicTranslationTest >> testSendAtPut [
 	self assert: translation equals: 'tab[7] = a'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendBetweenAnd [
 
 	| translation send |
@@ -635,7 +635,7 @@ SlangBasicTranslationTest >> testSendBetweenAnd [
 	self assert: translation equals: '((x >= 0) && (x <= 100))'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendBitAnd [
 
 	| translation send |
@@ -649,7 +649,7 @@ SlangBasicTranslationTest >> testSendBitAnd [
 	self assert: translation equals: 'a & 1'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendBitClear [
 
 	| translation send |
@@ -662,7 +662,7 @@ SlangBasicTranslationTest >> testSendBitClear [
 	self assert: translation equals: '((a | 3) - 3)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendBitInvert64On32Bits [
 
 	| translation send |
@@ -675,7 +675,7 @@ SlangBasicTranslationTest >> testSendBitInvert64On32Bits [
 	self assert: translation equals: '~(unsigned long long)a'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendBitInvert64On64Bits [
 
 	| translation send |
@@ -689,7 +689,7 @@ SlangBasicTranslationTest >> testSendBitInvert64On64Bits [
 	self assert: translation equals: '~(usqIntptr_t)a'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendBitOr [
 
 	| translation send |
@@ -703,7 +703,7 @@ SlangBasicTranslationTest >> testSendBitOr [
 	self assert: translation equals: 'a | 1'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendBitXor [
 
 	| translation send |
@@ -717,7 +717,7 @@ SlangBasicTranslationTest >> testSendBitXor [
 	self assert: translation equals: 'a ^ 1'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendByteSwap32 [
 
 	| translation send |
@@ -730,7 +730,7 @@ SlangBasicTranslationTest >> testSendByteSwap32 [
 	self assert: translation equals: 'SQ_SWAP_4_BYTES(a)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendByteSwap32IfBigEndian [
 
 	| translation send |
@@ -743,7 +743,7 @@ SlangBasicTranslationTest >> testSendByteSwap32IfBigEndian [
 	self assert: translation equals: 'SQ_SWAP_4_BYTES_IF_BIGENDIAN(a)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendByteSwap64 [
 
 	| translation send |
@@ -756,7 +756,7 @@ SlangBasicTranslationTest >> testSendByteSwap64 [
 	self assert: translation equals: 'SQ_SWAP_8_BYTES(a)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendByteSwap64IfBigEndian [
 
 	| translation send |
@@ -769,7 +769,7 @@ SlangBasicTranslationTest >> testSendByteSwap64IfBigEndian [
 	self assert: translation equals: 'SQ_SWAP_8_BYTES_IF_BIGENDIAN(a)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendDivide [
 
 	| translation send |
@@ -788,7 +788,7 @@ SlangBasicTranslationTest >> testSendDivide [
 	self assert: translation equals: '(1 + 2) / 3'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendEqual [
 
 	| translation send |
@@ -807,7 +807,7 @@ SlangBasicTranslationTest >> testSendEqual [
 	self assert: translation equals: '(1 + 2) == 3'
 ]
 
-{ #category : #'tests-blocks' }
+{ #category : #'tests-sends' }
 SlangBasicTranslationTest >> testSendFunctionCall [
 
 	"Case:
@@ -823,7 +823,7 @@ SlangBasicTranslationTest >> testSendFunctionCall [
 	self assert: translation equals: 'foo(1, 2)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendGreaterThan [
 
 	| translation send |
@@ -836,7 +836,7 @@ SlangBasicTranslationTest >> testSendGreaterThan [
 	self assert: translation equals: 'a >= 3'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIfTrue [
 
 	| translation send |
@@ -858,7 +858,7 @@ SlangBasicTranslationTest >> testSendIfTrue [
 }'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIfTrueIfFalse [
 
 	| translation send |
@@ -886,7 +886,7 @@ SlangBasicTranslationTest >> testSendIfTrueIfFalse [
 }'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIsNil [
 
 	| translation send |
@@ -900,7 +900,7 @@ SlangBasicTranslationTest >> testSendIsNil [
 	self assert: translation equals: 'ptr == NULL'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendLeftBitShifLitteralIntegerOverflow [
 
 	| translation send |
@@ -914,7 +914,7 @@ SlangBasicTranslationTest >> testSendLeftBitShifLitteralIntegerOverflow [
 	self assert: translation equals: '3ULL << 32'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendLeftBitShifNegativeLitteralIntegerOverflow [
 
 	| translation send |
@@ -928,7 +928,7 @@ SlangBasicTranslationTest >> testSendLeftBitShifNegativeLitteralIntegerOverflow 
 	self assert: translation equals: '((sqInt)((usqInt)(-3) << 32))'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendLeftBitShift [
 
 	| translation send |
@@ -942,7 +942,7 @@ SlangBasicTranslationTest >> testSendLeftBitShift [
 	self assert: translation equals: '((sqInt)((usqInt)(a) << 3))'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendLeftBitShiftByVariable [
 
 	| translation send |
@@ -957,7 +957,7 @@ SlangBasicTranslationTest >> testSendLeftBitShiftByVariable [
 	self assert: translation equals: '3U << a'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendLeftBitShiftByVariableIn32Bits [
 
 	| translation send |
@@ -971,7 +971,7 @@ SlangBasicTranslationTest >> testSendLeftBitShiftByVariableIn32Bits [
 	self assert: translation equals: '3U << a'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendLeftBitShiftByVariableIn64Bits [
 
 	| translation send |
@@ -986,7 +986,7 @@ SlangBasicTranslationTest >> testSendLeftBitShiftByVariableIn64Bits [
 	self assert: translation equals: '3ULL << a'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendLeftBitShiftLong [
 
 	| translation send |
@@ -1000,7 +1000,7 @@ SlangBasicTranslationTest >> testSendLeftBitShiftLong [
 	self assert: translation equals: '((sqLong)((usqLong)(a) << 3))'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendLeftBitShiftShortType [
 
 	| translation send |
@@ -1014,7 +1014,7 @@ SlangBasicTranslationTest >> testSendLeftBitShiftShortType [
 	self assert: translation equals: '((sqInt)((usqInt)(a) << 3))'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendLeftBitShiftUnsigned [
 
 	| translation send |
@@ -1028,7 +1028,7 @@ SlangBasicTranslationTest >> testSendLeftBitShiftUnsigned [
 	self assert: translation equals: 'a << 3'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendLeftBitShiftUnsignedShortType [
 
 	| translation send |
@@ -1042,7 +1042,7 @@ SlangBasicTranslationTest >> testSendLeftBitShiftUnsignedShortType [
 	self assert: translation equals: '((usqInt)(a) << 3)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendLessThan [
 
 	| translation send |
@@ -1055,7 +1055,7 @@ SlangBasicTranslationTest >> testSendLessThan [
 	self assert: translation equals: 'a < 3'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendLessThanOrEqual [
 
 	| translation send |
@@ -1068,7 +1068,7 @@ SlangBasicTranslationTest >> testSendLessThanOrEqual [
 	self assert: translation equals: 'a <= 3'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendMax [
 
 	| translation send |
@@ -1081,7 +1081,7 @@ SlangBasicTranslationTest >> testSendMax [
 	self assert: translation equals: '((x < y) ? y : x)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-sends' }
 SlangBasicTranslationTest >> testSendMemberAccess [
 
 	| translation send |
@@ -1095,7 +1095,7 @@ SlangBasicTranslationTest >> testSendMemberAccess [
 	self assert: translation equals: 'toto.aField'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendMin [
 
 	| translation send |
@@ -1108,7 +1108,7 @@ SlangBasicTranslationTest >> testSendMin [
 	self assert: translation equals: '((x < y) ? x : y)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendModulo [
 
 	| translation send |
@@ -1122,7 +1122,7 @@ SlangBasicTranslationTest >> testSendModulo [
 	self assert: translation equals: '3 % 2'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendNegated [
 
 	| translation send |
@@ -1136,7 +1136,7 @@ SlangBasicTranslationTest >> testSendNegated [
 	self assert: translation equals: '-3'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendNot [
 
 	| translation send |
@@ -1150,7 +1150,7 @@ SlangBasicTranslationTest >> testSendNot [
 	self assert: translation equals: '!1'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendNotEqual [
 
 	| translation send |
@@ -1164,7 +1164,7 @@ SlangBasicTranslationTest >> testSendNotEqual [
 	self assert: translation equals: 'a != 2'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendNotNil [
 
 	| translation send |
@@ -1178,7 +1178,7 @@ SlangBasicTranslationTest >> testSendNotNil [
 	self assert: translation equals: 'ptr != NULL'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendOr [
 
 	| translation send |
@@ -1192,7 +1192,7 @@ SlangBasicTranslationTest >> testSendOr [
 	self assert: translation equals: '0 || 1'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendPlus [
 
 	| translation send |
@@ -1211,7 +1211,7 @@ SlangBasicTranslationTest >> testSendPlus [
 	self assert: translation equals: '(1 + 2) + 3'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendPowerTo [
 
 	| translation send |
@@ -1224,7 +1224,7 @@ SlangBasicTranslationTest >> testSendPowerTo [
 	self assert: translation equals: '(sqInt)(pow(x, 2))'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendRepeat [
 
 	| translation send variable expression |
@@ -1248,7 +1248,7 @@ SlangBasicTranslationTest >> testSendRepeat [
 }'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendRightBitShiftSignedIn64Bits [
 
 	| translation send |
@@ -1263,7 +1263,7 @@ SlangBasicTranslationTest >> testSendRightBitShiftSignedIn64Bits [
 	self assert: translation equals: '((usqInt) a) >> 3'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendRightBitShiftUnsigned [
 
 	| translation send |
@@ -1277,7 +1277,7 @@ SlangBasicTranslationTest >> testSendRightBitShiftUnsigned [
 	self assert: translation equals: '((usqInt) a) >> 3'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendRightBitShiftUnsignedIn64Bits [
 
 	| translation send |
@@ -1292,7 +1292,7 @@ SlangBasicTranslationTest >> testSendRightBitShiftUnsignedIn64Bits [
 	self assert: translation equals: '((usqInt) a) >> 3'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendRounded [
 
 	| translation send |
@@ -1305,7 +1305,7 @@ SlangBasicTranslationTest >> testSendRounded [
 	self assert: translation equals: 'round(a)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendSequentialAndWithConstantReceiverTrue [
 
 	| translation send |
@@ -1326,7 +1326,7 @@ SlangBasicTranslationTest >> testSendSequentialAndWithConstantReceiverTrue [
 	self assert: translation equals: '1 && ((1 + 2, a == b))'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendSignedRightBitShiftVariable64Bits [
 
 	| translation send |
@@ -1340,7 +1340,7 @@ SlangBasicTranslationTest >> testSendSignedRightBitShiftVariable64Bits [
 	self assert: translation equals: '((sqLong) a) >> 3'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendTimes [
 
 	| translation send |
@@ -1359,7 +1359,7 @@ SlangBasicTranslationTest >> testSendTimes [
 	self assert: translation equals: '(1 + 2) * 3'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendTimesRepeat [
 
 	| translation send variable expression |
@@ -1387,7 +1387,7 @@ SlangBasicTranslationTest >> testSendTimesRepeat [
 }'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendToDo [
 
 	| translation send variable expression |
@@ -1415,7 +1415,7 @@ SlangBasicTranslationTest >> testSendToDo [
 }'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendToDoAvoidUnderflowing [
 
 	| translation send variable expression |
@@ -1449,7 +1449,7 @@ SlangBasicTranslationTest >> testSendToDoAvoidUnderflowing [
 }'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendTruncateTo [
 
 	| translation send |
@@ -1462,7 +1462,7 @@ SlangBasicTranslationTest >> testSendTruncateTo [
 	self assert: translation equals: '(a & ~1)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendWhileFalseWithManyStatementsInReceiverAndArgument [
 
 	| translation send variable expression |
@@ -1498,7 +1498,7 @@ SlangBasicTranslationTest >> testSendWhileFalseWithManyStatementsInReceiverAndAr
 }'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendWhileFalseWithOneStatementInReceiverBlock [
 
 	| translation send variable expression |
@@ -1526,7 +1526,7 @@ SlangBasicTranslationTest >> testSendWhileFalseWithOneStatementInReceiverBlock [
 }'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendWhileFalseWithoutArguments [
 
 	| translation send variable expression |
@@ -1554,7 +1554,7 @@ SlangBasicTranslationTest >> testSendWhileFalseWithoutArguments [
 }while(!(var >= 21))'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendWhileTrueWithManyStatementsInReceiverAndArgument [
 
 	| translation send variable expression |
@@ -1590,7 +1590,7 @@ SlangBasicTranslationTest >> testSendWhileTrueWithManyStatementsInReceiverAndArg
 }'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendWhileTrueWithNilAsArgument [
 
 	| translation send variable expression |
@@ -1620,7 +1620,7 @@ SlangBasicTranslationTest >> testSendWhileTrueWithNilAsArgument [
 }while(a && b)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendWhileTrueWithOneStatementInReceiverBlock [
 
 	| translation send variable expression |
@@ -1648,7 +1648,7 @@ SlangBasicTranslationTest >> testSendWhileTrueWithOneStatementInReceiverBlock [
 }'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendWhileTrueWithoutArguments [
 
 	| translation send variable expression |
