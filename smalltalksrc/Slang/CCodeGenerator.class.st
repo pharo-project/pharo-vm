@@ -1991,6 +1991,15 @@ CCodeGenerator >> generateCASTIfTrueIfFalse: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIntegerValueOf: aTSendNode [ 
+	
+	^ CBinaryOperatorNode
+		operator: #>>
+		left: (aTSendNode arguments first asCASTIn: self)
+		right: (CConstantNode value: self vmClass objectMemoryClass numSmallIntegerTagBits)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIsNil: tast [
 
 	^ CBinaryOperatorNode

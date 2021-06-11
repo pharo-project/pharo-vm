@@ -3,7 +3,8 @@ Class {
 	#superclass : #ParametrizedTestCase,
 	#instVars : [
 		'generator',
-		'translationStrategy'
+		'translationStrategy',
+		'numSmallIntegerTagBits'
 	],
 	#category : #'Slang-Tests'
 }
@@ -38,15 +39,41 @@ SlangBasicTranslationTest >> generator: anObject [
 	generator := anObject
 ]
 
+{ #category : #accessing }
+SlangBasicTranslationTest >> numSmallIntegerTagBits [
+	
+	"Hook for some tests that require changing translation depending on this value"
+	^ numSmallIntegerTagBits
+]
+
+{ #category : #accessing }
+SlangBasicTranslationTest >> objectMemoryClass [
+	
+	"Compatibility method to make the test look like a vm translatable class"
+	^ self
+]
+
 { #category : #running }
 SlangBasicTranslationTest >> setUp [
 
 	super setUp.
 
-	generator := CCodeGenerator new.
+	generator := MLVMCCodeGenerator new.
 	generator currentMethod: (TMethod new
 		labels: Set new;
 		yourself).
+	
+	"Tell the generator this is the class we are generating.
+	That will make the generation dispatch to us to ask for configurations such as the number of small integer bits"
+	generator vmClass: self.
+	numSmallIntegerTagBits := 42.
+]
+
+{ #category : #compatibility }
+SlangBasicTranslationTest >> shouldGenerateDeadCode [
+	
+	"Compatibility method to make the test look like a VM translatable class"
+	^ true
 ]
 
 { #category : #helpers }
@@ -884,6 +911,20 @@ SlangBasicTranslationTest >> testSendIfTrueIfFalse [
 }else {
 	a = 1;
 }'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIntegerValueOf [
+
+	| translation send |
+
+	send := TSendNode new
+					setSelector: #integerValueOf:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TConstantNode value: true }.
+	translation := self translate: send.
+
+	self assert: translation equals: '1 >> ', numSmallIntegerTagBits asString
 ]
 
 { #category : #'tests-builtins' }
