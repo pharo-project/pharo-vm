@@ -55,6 +55,11 @@ CAbstractNodeVisitor >> visitCastExpression: aCastExpression [
 ]
 
 { #category : #generated }
+CAbstractNodeVisitor >> visitComment: aComment [
+	^ self visitAbstract: aComment
+]
+
+{ #category : #generated }
 CAbstractNodeVisitor >> visitCompoundStatement: aCompoundStatement [
 	^ self visitAbstract: aCompoundStatement
 ]
@@ -87,6 +92,11 @@ CAbstractNodeVisitor >> visitDecrement: aDecrement [
 { #category : #generated }
 CAbstractNodeVisitor >> visitDoStatement: aDoStatement [
 	^ self visitAbstract: aDoStatement
+]
+
+{ #category : #generated }
+CAbstractNodeVisitor >> visitEmptyStatement: anEmptyStatement [
+	^ self visitAbstract: anEmptyStatement
 ]
 
 { #category : #generated }
@@ -182,6 +192,11 @@ CAbstractNodeVisitor >> visitParenthesizedExpression: aParenthesizedExpression [
 { #category : #generated }
 CAbstractNodeVisitor >> visitPoint: aPoint [
 	^ self visitAbstract: aPoint
+]
+
+{ #category : #generated }
+CAbstractNodeVisitor >> visitPreprocessorIf: anArrayDeclarator [
+	^ self visitAbstract: anArrayDeclarator
 ]
 
 { #category : #generated }

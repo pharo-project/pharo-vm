@@ -67,6 +67,13 @@ TParseNode >> asCASTIn: aBuilder [
 	self subclassResponsibility
 ]
 
+{ #category : #'C code generation' }
+TParseNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
+	aNodeOrNil ifNotNil:
+		[^ aNodeOrNil prependCASTIn: aBuilder expression: self].
+	^ self asCASTExpressionIn: aBuilder
+]
+
 { #category : #transformations }
 TParseNode >> asReturnNode [
 	^TReturnNode new 

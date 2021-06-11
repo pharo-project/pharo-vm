@@ -112,6 +112,14 @@ CSlangPrettyPrinter >> visitCastExpression: aCastExpression [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitComment: aComment [
+
+	stream nextPutAll: '/* '.
+	stream nextPutAll: aComment comment.
+	stream nextPutAll: ' */'
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 
 	aCompoundStatement needsBrackets ifTrue: [ 
@@ -172,6 +180,15 @@ CSlangPrettyPrinter >> visitDeclarator: aDeclarator [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitDecrement: anDecrementNode [
+	| visit |
+	visit := [ anDecrementNode object acceptVisitor: self ].
+	anDecrementNode prefix ifFalse: visit.
+	stream nextPutAll: '--'.
+	anDecrementNode prefix ifTrue: visit.
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitDoStatement: aDoStatement [
 
 	stream nextPutAll: 'do'.
@@ -182,16 +199,25 @@ CSlangPrettyPrinter >> visitDoStatement: aDoStatement [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitEmptyStatement: anEmptyStatement [
+	"Nothing to print."
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitForStatement: aForStatement [
 
 	stream nextPutAll: 'for('.
-	aForStatement init acceptVisitor: self.
+	aForStatement init
+		do: [ :e | e acceptVisitor: self ]
+		separatedBy: [ stream nextPutAll: ', ' ].
 	stream nextPutAll: '; '.
 	aForStatement until acceptVisitor: self.
 	stream nextPutAll: '; '.
-	aForStatement step acceptVisitor: self.
+	aForStatement step
+		do: [ :e | e acceptVisitor: self ]
+		separatedBy: [ stream nextPutAll: ', ' ].
 	stream nextPutAll: ') '.
-	aForStatement statement acceptVisitor: self.
+	aForStatement statement acceptVisitor: self
 ]
 
 { #category : #generated }
@@ -259,12 +285,41 @@ CSlangPrettyPrinter >> visitPoint: aMemberAccess [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitPreprocessorIf: anIf [
+
+	stream nextPutAll: '#if '.
+	anIf if acceptVisitor: self.
+	stream cr.
+	anIf then acceptVisitor: self.
+	anIf else ifNotNil: [ :e | 
+		stream nextPutAll: '#else /* '.
+		anIf if acceptVisitor: self.
+		stream
+			nextPutAll: ' */';
+			cr.
+		e acceptVisitor: self ].
+	stream nextPutAll: '#endif /* '.
+	anIf if acceptVisitor: self.
+	stream
+		nextPutAll: ' */';
+		cr
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitReturnStatement: aReturn [
 
 	stream nextPutAll: 'return'.
 	aReturn expression ifNotNil: [ :exp |
 		stream space.
 		exp acceptVisitor: self ]
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitStringLiteral: aStringLiteral [
+
+	aStringLiteral needsDoubleQuotes ifTrue: [ stream nextPut: $" ].
+	stream nextPutAll: aStringLiteral value.
+	aStringLiteral needsDoubleQuotes ifTrue: [ stream nextPut: $" ]
 ]
 
 { #category : #generated }

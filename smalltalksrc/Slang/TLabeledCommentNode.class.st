@@ -93,12 +93,13 @@ TLabeledCommentNode >> printOn: aStream level: level [
 { #category : #printing }
 TLabeledCommentNode >> printOptionalLabelOn: aStream [
 
-	label ifNotNil:
-		[self unindentTabs: aStream.
-		 aStream
+	label ifNotNil: [ 
+		self unindentTabs: aStream.
+		aStream
 			nextPutAll: label;
 			nextPut: $:;
-			tab]
+			nextPut: $;;
+			tab ]
 ]
 
 { #category : #accessing }

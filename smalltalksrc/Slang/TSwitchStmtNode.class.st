@@ -204,7 +204,7 @@ TSwitchStmtNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
 		  aStream crtab: level + 1.
 		  case emitCCodeOn: aStream level: level + 1 generator: aCodeGen.
 		  case endsWithReturn ifFalse:
-			[aStream tab: level + 1; nextPutAll: 'break;']]
+			[aStream cr; tab: level + 1; nextPutAll: 'break;']]
 			valueWithArguments: tuple].
 	aStream
 		crtab: level;

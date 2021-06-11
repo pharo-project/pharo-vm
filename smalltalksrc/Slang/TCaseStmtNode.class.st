@@ -161,7 +161,7 @@ TCaseStmtNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
 						[aStream nextPutAll: ' /*'; print: (caseIndex bitAnd: 255); nextPutAll: '*/'].
 					aStream cr]].
 			(cases at: i) emitCCodeOn: aStream level: level + 1 generator: aCodeGen.
-			aStream tab: level + 1; nextPutAll: 'break;'; cr]].
+			aStream crtab: level + 1; nextPutAll: 'break;'; cr]].
 	aStream tab: level; nextPut: $}
 ]
 

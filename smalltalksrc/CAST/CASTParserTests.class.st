@@ -177,6 +177,16 @@ CASTParserTests >> testParseAdditionPrecedence [
 
 ]
 
+{ #category : #'tests-binary operators' }
+CASTParserTests >> testParseAdressOf [
+
+	| expression |
+	expression := self parseExpression: '&a'.
+	
+	self assert: expression isUnaryOperation.
+	self assert: expression operator equals: '&'
+]
+
 { #category : #'tests-declarators' }
 CASTParserTests >> testParseArrayDeclarationWithInitializer [
 
@@ -790,4 +800,15 @@ CASTParserTests >> testParseWhile [
 	statement := self parseStatement: 'while (a) {  }'.
 	
 	self assert: statement isWhile
+]
+
+{ #category : #'tests-control flow' }
+CASTParserTests >> testSwitchStatement [
+
+	| statement |
+	statement := self parseStatement: 'switch(a){
+	case 48: break;
+	case 15: break;
+	default: break;
+}'.
 ]

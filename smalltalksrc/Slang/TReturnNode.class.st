@@ -154,6 +154,13 @@ TReturnNode >> postCopy [
 ]
 
 { #category : #'C code generation' }
+TReturnNode >> prependCASTIn: aBuilder expression: nodeExp [
+
+	^ CReturnStatementNode expression:
+		  (nodeExp asCASTExpressionIn: aBuilder)
+]
+
+{ #category : #'C code generation' }
 TReturnNode >> prependCCodeOn: aStream level: level generator: aCCodeGenerator [ 
 	aStream nextPutAll: 'return '
 ]
