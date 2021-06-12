@@ -327,11 +327,9 @@ MLVMCCodeGenerator >> generateIntegerObjectOf: msgNode on: aStream indent: level
 MLVMCCodeGenerator >> generateIntegerValueOf: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPut: $(.
 	self emitCExpression: msgNode args first on: aStream.
-	aStream nextPutAll: ' >> ';
-		print: self vmClass objectMemoryClass numSmallIntegerTagBits;
-		nextPut: $).
+	aStream nextPutAll: ' >> '.
+	aStream print: self vmClass objectMemoryClass numSmallIntegerTagBits
 ]
 
 { #category : #'C translation' }
