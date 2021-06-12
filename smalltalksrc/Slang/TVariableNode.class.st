@@ -7,6 +7,14 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance creation' }
+TVariableNode class >> named: aName [
+
+	^ self new
+		setName: aName;
+		yourself
+]
+
 { #category : #tranforming }
 TVariableNode >> asCASTIn: aBuilder [
 
