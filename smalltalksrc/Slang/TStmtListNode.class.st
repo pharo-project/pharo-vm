@@ -200,7 +200,7 @@ TStmtListNode >> emitCCodeAsExpressionOn: aStream level: level generator: aCodeG
 		p2 := aStream position.
 		(idx < size and: [p2 > p1]) ifTrue:
 			[((self endsWithCloseBracket: aStream)
-			  or: [s isComment]) ifFalse: [aStream nextPutAll: ', '].
+			  or: [s isComment]) ifFalse: [aStream nextPutAll: ' , '].
 			 ]].
 	aStream nextPut: $)
 ]

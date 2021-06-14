@@ -44,6 +44,12 @@ CConstantNode >> isConstant [
 	^ true
 ]
 
+{ #category : #testing }
+CConstantNode >> isLeaf [
+	
+	^ true
+]
+
 { #category : #generated }
 CConstantNode >> value [
 	^ value

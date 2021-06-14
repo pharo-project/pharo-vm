@@ -32,3 +32,9 @@ CGLRAbstractNode >> isIdentifier [
 	
 	^ false
 ]
+
+{ #category : #testing }
+CGLRAbstractNode >> isLeaf [
+	
+	^ false
+]

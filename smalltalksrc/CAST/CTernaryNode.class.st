@@ -4,7 +4,8 @@ Class {
 	#instVars : [
 		'condition',
 		'else',
-		'then'
+		'then',
+		'printOnMultipleLines'
 	],
 	#category : #'CAST-Nodes'
 }
@@ -16,6 +17,7 @@ CTernaryNode class >> condition: aCondition then: thenExpression else: elseExpre
 		  condition: aCondition;
 		  then: thenExpression;
 		  else: elseExpression;
+		  printOnMultipleLines: false;
 		  yourself
 ]
 
@@ -55,6 +57,18 @@ CTernaryNode >> else: aCGLRAbstractNode [
 { #category : #generated }
 CTernaryNode >> isTernary [
 	^ true
+]
+
+{ #category : #accessing }
+CTernaryNode >> printOnMultipleLines [
+
+	^ printOnMultipleLines
+]
+
+{ #category : #accessing }
+CTernaryNode >> printOnMultipleLines: aBoolean [
+
+	printOnMultipleLines := aBoolean
 ]
 
 { #category : #generated }

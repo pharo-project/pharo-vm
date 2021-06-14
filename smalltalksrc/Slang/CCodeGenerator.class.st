@@ -2095,15 +2095,34 @@ CCodeGenerator >> generateCASTFlag: tast [
 ]
 
 { #category : #utilities }
-CCodeGenerator >> generateCASTForBuiltinConstructFor: msgNode [
-	"Generate CAST for a message node assuming it is a built in construct.
-	If the message node can not be translated as a built in construct, return nil. 
-	"
+CCodeGenerator >> generateCASTForBuiltinAsArgumentConstructFor: msgNode [
+
+	"Generate CAST argument form for a message node assuming it is a built-in construct.
+	If the message node can not be translated as an argument, try to generate normal CAST form for this built-in.
+	Otherwise return nil."
 
 	| action |
-	(self shouldGenerateAsInterpreterProxySend: msgNode) ifTrue:
-		[^nil].
-	action := castTranslationDict at: msgNode selector ifAbsent: [ ^nil ].
+	(self shouldGenerateAsInterpreterProxySend: msgNode) ifTrue: [ ^ nil ].
+	action := castAsArgumentTranslationDict
+		          at: msgNode selector
+		          ifAbsent: [ 
+		          castTranslationDict
+			          at: msgNode selector
+			          ifAbsent: [ ^ nil ] ].
+	^ self perform: action with: msgNode
+]
+
+{ #category : #utilities }
+CCodeGenerator >> generateCASTForBuiltinConstructFor: msgNode [
+
+	"Generate CAST for a message node assuming it is a built-in construct.
+	If the message node can not be translated as a built-in construct, return nil."
+
+	| action |
+	(self shouldGenerateAsInterpreterProxySend: msgNode) ifTrue: [ ^ nil ].
+	action := castTranslationDict
+		          at: msgNode selector
+		          ifAbsent: [ ^ nil ].
 	^ self perform: action with: msgNode
 ]
 
@@ -2244,7 +2263,7 @@ CCodeGenerator >> generateCASTIfTrue: tast [
 	^ (self nilOrBooleanConstantReceiverOf: tast receiver)
 		  ifNil: [ 
 			  CIfStatementNode
-				  if: (tast receiver asCASTIn: self)
+				  if: (tast receiver asCASTExpressionIn: self)
 				  then: (tast arguments first asCASTIn: self) ]
 		  ifNotNil: [ :const | 
 			  const
@@ -2255,10 +2274,18 @@ CCodeGenerator >> generateCASTIfTrue: tast [
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfTrueAsArgument: tast [
 
-	^ CTernaryNode
-		  condition: (tast receiver asCASTIn: self)
-		  then: (tast arguments first asCASTIn: self)
-		  else: (CConstantNode value: 0)
+	(self nilOrBooleanConstantReceiverOf: tast receiver)
+		ifNil: [ 
+			^ (CTernaryNode
+				   condition: (tast receiver asCASTExpressionIn: self)
+				   then: (tast arguments first asCASTExpressionIn: self)
+				   else: (CConstantNode value: 0))
+				  printOnMultipleLines: true;
+				  yourself ]
+		ifNotNil: [ :const | 
+			const
+				ifTrue: [ ^ tast arguments first asCASTExpressionIn: self ]
+				ifFalse: [ ^ CConstantNode value: (self cLiteralFor: nil) ] ]
 ]
 
 { #category : #'CAST translation' }
@@ -3349,9 +3376,9 @@ CCodeGenerator >> generateIfTrueAsArgument: msgNode on: aStream indent: level [
 		ifNil:
 			[aStream nextPut: $(.
 			 msgNode receiver emitCCodeAsArgumentOn: aStream level: level generator: self.
-			 aStream crtab: level + 1; nextPut: $?; space.
+			 aStream crtab: level + 1; nextPutAll: ' ? '.
 			 msgNode args first emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-			 aStream crtab: level + 1; nextPutAll: ': 0)']
+			 aStream crtab: level + 1; nextPutAll: ' : 0)']
 		ifNotNil:
 			[:const|
 			const

@@ -45,7 +45,7 @@ TAssignmentNode >> asCASTIn: aBuilder [
 		^ CAssignmentNode
 			  lvalue: (variable asCASTIn: aBuilder)
 			  operator: expression selector , '='
-			  rvalue: (expression arguments first asCASTIn: aBuilder) ].
+			  rvalue: (expression arguments first asCASTExpressionIn: aBuilder) ].
 	(expression isSend and: [ expression isValueExpansion ]) ifTrue: [ 
 		^ self asCASTValueExpansionIn: aBuilder ].
 
