@@ -2437,7 +2437,7 @@ SlangBasicTranslationTest >> testSendRightBitShiftSignedIn64Bits [
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((usqInt) a) >> 3'
+	self assert: translation equals: '((usqInt) a ) >> 3'
 ]
 
 { #category : #'tests-builtins' }
@@ -2451,7 +2451,7 @@ SlangBasicTranslationTest >> testSendRightBitShiftUnsigned [
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((usqInt) a) >> 3'
+	self assert: translation equals: '((usqInt) a ) >> 3'
 ]
 
 { #category : #'tests-builtins' }
@@ -2466,7 +2466,7 @@ SlangBasicTranslationTest >> testSendRightBitShiftUnsignedIn64Bits [
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((usqInt) a) >> 3'
+	self assert: translation equals: '((usqInt) a ) >> 3'
 ]
 
 { #category : #'tests-builtins' }
@@ -2541,7 +2541,7 @@ SlangBasicTranslationTest >> testSendSignedBitShiftExpressionReceiver [
 		        arguments: { (TConstantNode value: 2) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((signed)(a + 1) << 2)'
+	self assert: translation equals: '((signed) (a + 1) ) << 2'
 ]
 
 { #category : #'tests-builtins' }
