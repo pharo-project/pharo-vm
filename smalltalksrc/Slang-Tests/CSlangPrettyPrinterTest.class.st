@@ -134,7 +134,7 @@ CSlangPrettyPrinterTest >> testVisitCastExpressionDouble [
 			          right: (CIdentifierNode name: 'b')).
 
 
-	self assert: print equals: '(double)a / b'
+	self assert: print equals: '((double)a) / b'
 ]
 
 { #category : #'tests-visitor' }
@@ -258,6 +258,30 @@ CSlangPrettyPrinterTest >> testVisitEmptyStatement [
 	self assert: print equals: ''
 
 
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitExpressionList [
+
+	| print |
+	print := self prettyPrint: (CExpressionListNode new expressions:
+			          { (CCallNode
+				           identifier: (CIdentifierNode name: 'foo')
+				           arguments: { 
+						           (CConstantNode value: 1).
+						           (CConstantNode value: 2) }).
+						(CCallNode
+				           identifier: (CIdentifierNode name: 'foo')
+				           arguments: { 
+						           (CConstantNode value: 3).
+						           (CConstantNode value: 4) }).
+						(CCallNode
+				           identifier: (CIdentifierNode name: 'foo')
+				           arguments: { 
+						           (CConstantNode value: 5).
+						           (CConstantNode value: 6) }) }).
+
+	self assert: print trimBoth equals: '(foo(1, 2) , foo(3, 4) , foo(5, 6))'
 ]
 
 { #category : #'tests-visitor' }

@@ -23,6 +23,17 @@ CSlangPrettyPrinter >> initialize [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> printExpression: cAST [
+
+	(cAST isLeaf or: [ cAST isFunctionCall ])
+		ifTrue: [ cAST acceptVisitor: self ]
+		ifFalse: [ 
+			stream nextPut: $(.
+			cAST acceptVisitor: self.
+			stream nextPut: $) ]
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitArray: anArrayAcess [
 
 	anArrayAcess array acceptVisitor: self.
@@ -64,23 +75,16 @@ CSlangPrettyPrinter >> visitAssignment: anAssignment [
 
 { #category : #generated }
 CSlangPrettyPrinter >> visitBinary: aBinary [
-	| leftParenthesises rightParenthesises |
 	
-	leftParenthesises := (aBinary left isConstant or: [ aBinary left isIdentifier ]).
-	rightParenthesises := (aBinary right isConstant or: [ aBinary right isIdentifier ]).
 	
-	leftParenthesises ifFalse: [ stream nextPutAll: '(' ].
-	aBinary left acceptVisitor: self.
-	leftParenthesises ifFalse: [ stream nextPutAll: ')' ].
+	self printExpression: aBinary left.
 	
 	stream
 		nextPutAll: ' ';
 		nextPutAll: aBinary operator;
 		nextPutAll: ' '.
 		
-	rightParenthesises ifFalse: [ stream nextPutAll: '(' ].
-	aBinary right acceptVisitor: self.
-	rightParenthesises ifFalse: [ stream nextPutAll: ')' ].
+	self printExpression: aBinary right
 ]
 
 { #category : #generated }
@@ -106,9 +110,7 @@ CSlangPrettyPrinter >> visitCastExpression: aCastExpression [
 	stream nextPut: $(.
 	aCastExpression type acceptVisitor: self.
 	stream nextPut: $).
-	stream nextPut: $(.
-	aCastExpression expression acceptVisitor: self.
-	stream nextPut: $)
+	self printExpression: aCastExpression expression
 ]
 
 { #category : #generated }
@@ -201,6 +203,16 @@ CSlangPrettyPrinter >> visitDoStatement: aDoStatement [
 { #category : #generated }
 CSlangPrettyPrinter >> visitEmptyStatement: anEmptyStatement [
 	"Nothing to print."
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
+
+	stream nextPut: $(.
+	anExpressionList expressions
+		do: [ :e | self printExpression: e ]
+		separatedBy: [ stream nextPutAll: ', ' ].
+	stream nextPut: $)
 ]
 
 { #category : #generated }
@@ -329,14 +341,16 @@ CSlangPrettyPrinter >> visitStringLiteral: aStringLiteral [
 ]
 
 { #category : #generated }
-CSlangPrettyPrinter >> visitTernary: aTarnary [
+CSlangPrettyPrinter >> visitTernary: aTernary [
 
-	stream nextPutAll: '(('.
-	aTarnary condition acceptVisitor: self.
-	stream nextPutAll: ') ? '.
-	aTarnary then acceptVisitor: self.
+	stream nextPutAll: '('.
+	self printExpression: aTernary condition.
+	aTernary printOnMultipleLines ifTrue: [ stream crtab: level + 1 ].
+	stream nextPutAll: ' ? '.
+	self printExpression: aTernary then.
+	aTernary printOnMultipleLines ifTrue: [ stream crtab: level + 1 ].
 	stream nextPutAll: ' : '.
-	aTarnary else acceptVisitor: self.
+	self printExpression: aTernary else.
 	stream nextPut: $)
 ]
 

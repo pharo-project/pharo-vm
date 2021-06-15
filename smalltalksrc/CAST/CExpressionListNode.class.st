@@ -15,6 +15,11 @@ CExpressionListNode >> , anotherExpression [
 ]
 
 { #category : #adding }
+CExpressionListNode >> acceptVisitor: anAbstractVisitor [
+	^ anAbstractVisitor visitExpressionList: self
+]
+
+{ #category : #adding }
 CExpressionListNode >> add: anExpression [
 	
 	expressions add: anExpression

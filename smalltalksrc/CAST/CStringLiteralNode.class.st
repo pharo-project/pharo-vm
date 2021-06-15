@@ -22,6 +22,12 @@ CStringLiteralNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitStringLiteral: self
 ]
 
+{ #category : #generated }
+CStringLiteralNode >> isLeaf [
+
+	^ true
+]
+
 { #category : #accessing }
 CStringLiteralNode >> needsDoubleQuotes [
 

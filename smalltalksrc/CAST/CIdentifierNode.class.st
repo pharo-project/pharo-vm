@@ -44,6 +44,12 @@ CIdentifierNode >> isIdentifier [
 	^ true
 ]
 
+{ #category : #testing }
+CIdentifierNode >> isLeaf [
+	
+	^ true
+]
+
 { #category : #accessing }
 CIdentifierNode >> name [
 	

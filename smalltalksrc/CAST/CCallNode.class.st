@@ -55,7 +55,7 @@ CCallNode >> initialize [
 ]
 
 { #category : #testing }
-CCallNode >> isCall [
+CCallNode >> isFunctionCall [
 	
 	^ true
 ]

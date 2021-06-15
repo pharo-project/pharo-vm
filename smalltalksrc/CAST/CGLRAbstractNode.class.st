@@ -22,13 +22,31 @@ CGLRAbstractNode >> ambiguous: aNode [
 ]
 
 { #category : #testing }
+CGLRAbstractNode >> isBinaryOperation [
+	
+	^ false
+]
+
+{ #category : #testing }
 CGLRAbstractNode >> isConstant [
 	
 	^ false
 ]
 
 { #category : #testing }
+CGLRAbstractNode >> isFunctionCall [
+	
+	^ false
+]
+
+{ #category : #testing }
 CGLRAbstractNode >> isIdentifier [
+	
+	^ false
+]
+
+{ #category : #testing }
+CGLRAbstractNode >> isLeaf [
 	
 	^ false
 ]

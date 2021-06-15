@@ -89,6 +89,18 @@ TSendNode >> asCASTAsFunctionCallIn: aCodeGen [
 ]
 
 { #category : #tranforming }
+TSendNode >> asCASTExpressionIn: aCCodeGenerator [
+
+	| construct |
+	construct := aCCodeGenerator 
+		             generateCASTForBuiltinAsArgumentConstructFor: self.
+	construct ifNil: [ 
+		construct := (self asCASTAsFieldReferenceIn: aCCodeGenerator) ifNotNil: [ :e | e] ifNil: [ 
+			self asCASTAsFunctionCallIn: aCCodeGenerator ]].
+	^ construct
+]
+
+{ #category : #tranforming }
 TSendNode >> asCASTIn: aCCodeGenerator [
 
 	| construct |

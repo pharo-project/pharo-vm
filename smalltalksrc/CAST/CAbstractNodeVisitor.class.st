@@ -115,6 +115,11 @@ CAbstractNodeVisitor >> visitExpression: anExpression [
 ]
 
 { #category : #generated }
+CAbstractNodeVisitor >> visitExpressionList: anExpressionList [
+	^ self visitAbstract: anExpressionList
+]
+
+{ #category : #generated }
 CAbstractNodeVisitor >> visitExpressionStatement: anExpressionStatement [
 	^ self visitAbstract: anExpressionStatement
 ]
