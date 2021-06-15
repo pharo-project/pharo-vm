@@ -265,7 +265,7 @@ CSlangPrettyPrinter >> visitIfStatement: anIf [
 	stream nextPutAll: ') '.
 	anIf then acceptVisitor: self.
 	anIf else ifNotNil: [ :e | 
-		stream nextPutAll: 'else '.
+		stream nextPutAll: ' else '.
 		e acceptVisitor: self ]
 ]
 

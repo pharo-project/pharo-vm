@@ -3248,7 +3248,7 @@ CCodeGenerator >> generateIfFalseIfTrue: msgNode on: aStream indent: level [
 				 msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
 				 aStream nextPutAll: ') '.
 				 msgNode args last emitCCodeOn: aStream level: level generator: self.
-				 aStream nextPutAll: 'else '.
+				 aStream nextPutAll: ' else '.
 				 msgNode args first emitCCodeOn: aStream level: level generator: self.
 				 ]]
 		ifNotNil:
@@ -3287,9 +3287,8 @@ CCodeGenerator >> generateIfNil: msgNode on: aStream indent: level [
 		ifFalse:
 			[aStream nextPutAll: 'if (!('.
 			 msgNode receiver emitCCodeAsExpressionOn: aStream level: level + 1 generator: self.
-			 aStream nextPutAll: ')) {'; cr.
-			 msgNode args last emitCCodeOn: aStream level: level + 1 generator: self.
-			 aStream tab: level; nextPut: $}]
+			 aStream nextPutAll: ')) '.
+			 msgNode args last emitCCodeOn: aStream level: level generator: self ]
 		ifTrue:
 			[msgNode args first emitCCodeOn: aStream level: level generator: self]
 ]
@@ -3324,11 +3323,10 @@ CCodeGenerator >> generateIfNilIfNotNil: msgNode on: aStream indent: level [
 		ifFalse:
 			[aStream nextPutAll: 'if ('.
 			msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-			aStream nextPutAll: ') {'; cr.
-			msgNode args last emitCCodeOn: aStream level: level + 1 generator: self.
-			aStream tab: level; nextPut: $}; cr; tab: level; nextPutAll: 'else {'; cr.
-			msgNode args first emitCCodeOn: aStream level: level + 1 generator: self.
-			aStream tab: level; nextPut: $}]
+			aStream nextPutAll: ') '.
+			msgNode args last emitCCodeOn: aStream level: level generator: self.
+			aStream nextPutAll: ' else '.
+			msgNode args first emitCCodeOn: aStream level: level generator: self.]
 		ifTrue:
 			[msgNode args first emitCCodeOn: aStream level: level generator: self]
 ]
@@ -3358,10 +3356,8 @@ CCodeGenerator >> generateIfNotNil: msgNode on: aStream indent: level [
 		ifFalse:
 			[aStream nextPutAll: 'if ('.
 			msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-			aStream nextPutAll: ') {'; cr.
-			msgNode args first emitCCodeOn: aStream level: level + 1 generator: self.
-			level timesRepeat: [ aStream tab ].
-			aStream nextPut: $}]
+			aStream nextPutAll: ') '.
+			msgNode args first emitCCodeOn: aStream level: level generator: self]
 ]
 
 { #category : #'C translation' }
@@ -3387,11 +3383,10 @@ CCodeGenerator >> generateIfNotNilIfNil: msgNode on: aStream indent: level [
 		ifFalse:
 			[aStream nextPutAll: 'if ('.
 			msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-			aStream nextPutAll: ') {'; cr.
-			msgNode args first emitCCodeOn: aStream level: level + 1 generator: self.
-			aStream tab: level; nextPut: $}; cr; tab: level; nextPutAll: 'else {'; cr.
-			msgNode args last emitCCodeOn: aStream level: level + 1 generator: self.
-			aStream tab: level; nextPut: $}]
+			aStream nextPutAll: ') '.
+			msgNode args first emitCCodeOn: aStream level: level generator: self.
+			aStream nextPutAll: ' else '.
+			msgNode args last emitCCodeOn: aStream level: level generator: self]
 		ifTrue:
 			[msgNode args last emitCCodeOn: aStream level: level generator: self]
 ]
@@ -3458,7 +3453,7 @@ CCodeGenerator >> generateIfTrueIfFalse: msgNode on: aStream indent: level [
 				 msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
 				 aStream nextPutAll: ') '.
 				 msgNode args first emitCCodeOn: aStream level: level generator: self.
-				 aStream nextPutAll: 'else '.
+				 aStream nextPutAll: ' else '.
 				 msgNode args last emitCCodeOn: aStream level: level generator: self.
 				 ]]
 		ifNotNil:
