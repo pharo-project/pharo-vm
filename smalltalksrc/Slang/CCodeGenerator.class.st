@@ -2295,6 +2295,22 @@ CCodeGenerator >> generateCASTIfTrueIfFalse: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTInlineCCode: aTSendNode [ 
+
+	aTSendNode args first isConstant ifTrue: [
+		"If it is a pre-processor declaration"
+		(aTSendNode args first value at: 1 ifAbsent: nil) = $# ifTrue: [
+			"This was assuming the argument is a preprocessor directive.
+			So it was printing it in a new line"
+			self error: 'unsupported' ].
+			
+			self noteVariableUsageInString: aTSendNode args first value.
+			^ CRawCodeNode code: aTSendNode args first value ].
+
+	^ aTSendNode args first asCASTIn: self.
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTInlineCppIfElse: tast [
 
 	^ self generateCASTInlineCppIfElse: tast asArgument: false
@@ -2325,6 +2341,15 @@ CCodeGenerator >> generateCASTInlineCppIfElse: tast asArgument: asArgument [
 				 ifAppropriateSetTo: false
 				 do: [ generateCAST value: tast arguments third ]) ].
 	^ cppIf
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIntegerValueOf: aTSendNode [ 
+	
+	^ CBinaryOperatorNode
+		operator: #>>
+		left: (aTSendNode arguments first asCASTIn: self)
+		right: (CConstantNode value: self vmClass objectMemoryClass numSmallIntegerTagBits)
 ]
 
 { #category : #'CAST translation' }
