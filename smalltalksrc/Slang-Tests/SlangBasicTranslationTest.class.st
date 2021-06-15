@@ -952,7 +952,7 @@ SlangBasicTranslationTest >> testSendBitShiftWithExpressionShiftValue [
 				         arguments: { (TConstantNode value: 2) }) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '(((var + 2) < 0) ? ((usqInt) a ) >> -(var + 2) : ((usqInt) a ) << (var + 2))'
+	self assert: translation equals: '(((var + 2) < 0) ? (((usqInt) a ) >> (-(var + 2))) : (((usqInt) a ) << (var + 2)))'
 ]
 
 { #category : #'tests-builtins' }
@@ -965,7 +965,7 @@ SlangBasicTranslationTest >> testSendBitShiftWithNegativeConstantShiftValue [
 		        arguments: { (TConstantNode value: -3) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((usqInt) a) >> 3'
+	self assert: translation equals: '((usqInt) a ) >> 3'
 ]
 
 { #category : #'tests-builtins' }
@@ -978,7 +978,7 @@ SlangBasicTranslationTest >> testSendBitShiftWithPositiveConstantShiftValue [
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((usqInt) a) << 3'
+	self assert: translation equals: '((usqInt) a ) << 3'
 ]
 
 { #category : #'tests-builtins' }

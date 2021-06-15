@@ -1638,9 +1638,9 @@ CCodeGenerator >> generateBitShift: msgNode on: aStream indent: level [
 			[aStream nextPutAll: '((usqInt) '.
 			self emitCExpression: rcvr on: aStream.
 			shift < 0
-				ifTrue: [aStream nextPutAll: ' >> '; print: shift negated]
-				ifFalse: [aStream nextPutAll: ' << '; print: shift].
-			aStream nextPut: $)]
+				ifTrue: [aStream nextPutAll: ' ) >> '; print: shift negated]
+				ifFalse: [aStream nextPutAll: ' ) << '; print: shift].
+			]
 		ifFalse: "bit shift amount is an expression"
 			[aStream nextPutAll: '(('.
 			self emitCExpression: arg on: aStream indent: level.
