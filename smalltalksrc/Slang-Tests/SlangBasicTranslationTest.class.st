@@ -86,7 +86,7 @@ SlangBasicTranslationTest >> slangTranslate: tast inStream: aWriteStream [
 		generator: generator
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testAssignementAsExpression [
 
 	"y := a := false"
@@ -101,7 +101,7 @@ SlangBasicTranslationTest >> testAssignementAsExpression [
 	self assert: translation equals: 'y = (a = 0)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testAssignementAsExpressionWithExpressionBlock [
 	
 	"y := a := [ 1 foo: 2. 3 foo: 4. 5 foo: 6 ]"
@@ -130,7 +130,7 @@ SlangBasicTranslationTest >> testAssignementAsExpressionWithExpressionBlock [
 	self assert: translation equals: 'y = (foo(1, 2), foo(3, 4), (a = foo(5, 6)))'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testAssignementAsExpressionWithExpressionBlockWithLastStatementEqualToReceiver [
 
 	"y := a := [ 1 foo: 2. 3 foo: 4. 5 foo: 6. a]"
