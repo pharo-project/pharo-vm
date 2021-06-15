@@ -415,7 +415,7 @@ SlangBasicTranslationTest >> testConstantNil [
 	| translation |
 	translation := self translate: (TConstantNode value: nil).
 	
-	self assert: translation equals: 'NULL'
+	self assert: translation equals: 'null'
 ]
 
 { #category : #'tests-constants' }
@@ -866,7 +866,7 @@ SlangBasicTranslationTest >> testSendBitInvert32On32Bits [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '((unsigned int) ~a )'
+	self assert: translation equals: '((unsigned int) (~a) )'
 ]
 
 { #category : #'tests-builtins' }
@@ -880,7 +880,7 @@ SlangBasicTranslationTest >> testSendBitInvert32On64Bits [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '((unsigned int) ~a )'
+	self assert: translation equals: '((unsigned int) (~a) )'
 ]
 
 { #category : #'tests-builtins' }
@@ -3411,4 +3411,10 @@ SlangBasicTranslationTest >> translationStrategy [
 SlangBasicTranslationTest >> translationStrategy: anObject [
 
 	translationStrategy := anObject
+]
+
+{ #category : #accessing }
+SlangBasicTranslationTest >> wordSize [
+	
+	^ generator wordSize
 ]
