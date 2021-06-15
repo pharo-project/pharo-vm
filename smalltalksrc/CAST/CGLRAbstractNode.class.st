@@ -28,6 +28,12 @@ CGLRAbstractNode >> isBinaryOperation [
 ]
 
 { #category : #testing }
+CGLRAbstractNode >> isBinaryOperation [
+	
+	^ false
+]
+
+{ #category : #testing }
 CGLRAbstractNode >> isConstant [
 	
 	^ false

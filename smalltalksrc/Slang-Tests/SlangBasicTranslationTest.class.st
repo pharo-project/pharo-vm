@@ -654,7 +654,7 @@ SlangBasicTranslationTest >> testSendAsFloat [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(double)(x)'
+	self assert: translation equals: '((double) x )'
 ]
 
 { #category : #'tests-builtins' }
@@ -667,7 +667,7 @@ SlangBasicTranslationTest >> testSendAsInteger [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(sqInt)(x)'
+	self assert: translation equals: '((sqInt) x )'
 ]
 
 { #category : #'tests-builtins' }
@@ -680,7 +680,7 @@ SlangBasicTranslationTest >> testSendAsIntegerPtr [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(sqIntptr_t)(x)'
+	self assert: translation equals: '((sqIntptr_t) x )'
 ]
 
 { #category : #'tests-builtins' }
@@ -693,7 +693,7 @@ SlangBasicTranslationTest >> testSendAsLong [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(long)(x)'
+	self assert: translation equals: '((long) x )'
 ]
 
 { #category : #'tests-assignment' }
@@ -718,7 +718,7 @@ SlangBasicTranslationTest >> testSendAsUnsignedInteger [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(usqInt)(x)'
+	self assert: translation equals: '((usqInt) x )'
 ]
 
 { #category : #'tests-builtins' }
@@ -731,7 +731,7 @@ SlangBasicTranslationTest >> testSendAsUnsignedIntegerPtr [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(usqIntptr_t)(x)'
+	self assert: translation equals: '((usqIntptr_t) x )'
 ]
 
 { #category : #'tests-builtins' }
@@ -744,7 +744,7 @@ SlangBasicTranslationTest >> testSendAsUnsignedLong [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(unsigned long)(x)'
+	self assert: translation equals: '((unsigned long) x )'
 ]
 
 { #category : #'tests-builtins' }
@@ -757,7 +757,7 @@ SlangBasicTranslationTest >> testSendAsUnsignedLongLong [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(unsigned long long)(x)'
+	self assert: translation equals: '((unsigned long long) x )'
 ]
 
 { #category : #'tests-builtins' }
@@ -770,7 +770,7 @@ SlangBasicTranslationTest >> testSendAsVoidPointer [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(void *)(x)'
+	self assert: translation equals: '((void *) x )'
 ]
 
 { #category : #'tests-builtins' }
@@ -857,6 +857,33 @@ SlangBasicTranslationTest >> testSendBitClear [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendBitInvert32On32Bits [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #bitInvert32
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '((unsigned int) ~a )'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendBitInvert32On64Bits [
+
+	| translation send |
+	generator wordSize: 8.
+	send := TSendNode new
+		        setSelector: #bitInvert32
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '((unsigned int) ~a )'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendBitInvert64On32Bits [
 
 	| translation send |
@@ -866,7 +893,7 @@ SlangBasicTranslationTest >> testSendBitInvert64On32Bits [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '~(unsigned long long)a'
+	self assert: translation equals: '~((unsigned long long) a )'
 ]
 
 { #category : #'tests-builtins' }
@@ -880,7 +907,7 @@ SlangBasicTranslationTest >> testSendBitInvert64On64Bits [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '~(usqIntptr_t)a'
+	self assert: translation equals: '~((usqIntptr_t) a )'
 ]
 
 { #category : #'tests-builtins' }
@@ -910,7 +937,7 @@ SlangBasicTranslationTest >> testSendBitShiftWithExpressionShiftValue [
 				         arguments: { (TConstantNode value: 2) }) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '(((var + 2) < 0) ? (usqInt) a >> -(var + 2) : (usqInt) a << (var + 2))'
+	self assert: translation equals: '(((var + 2) < 0) ? ((usqInt) a ) >> -(var + 2) : ((usqInt) a ) << (var + 2))'
 ]
 
 { #category : #'tests-builtins' }
@@ -1148,7 +1175,7 @@ SlangBasicTranslationTest >> testSendCCoerceVariableToFloat [
 					                (TVariableNode new setName: 'var').
 					                (TConstantNode value: 'float') }).
 
-	self assert: translation equals: '((float) var)'
+	self assert: translation equals: '((float) var )'
 ]
 
 { #category : #'tests-builtins' }
@@ -2597,7 +2624,7 @@ SlangBasicTranslationTest >> testSendSignedIntFromLong [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '((int) a)'
+	self assert: translation equals: '((int) a )'
 ]
 
 { #category : #'tests-builtins' }
@@ -2611,7 +2638,7 @@ SlangBasicTranslationTest >> testSendSignedIntFromLong64 [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '((sqLong) a)'
+	self assert: translation equals: '((sqLong) a )'
 ]
 
 { #category : #'tests-builtins' }
@@ -2625,7 +2652,7 @@ SlangBasicTranslationTest >> testSendSignedIntFromShort [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '((short)a)'
+	self assert: translation equals: '((short) a )'
 ]
 
 { #category : #'tests-builtins' }
@@ -2638,7 +2665,7 @@ SlangBasicTranslationTest >> testSendSignedIntToLong [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '((usqInt) a)'
+	self assert: translation equals: '((usqInt) a )'
 ]
 
 { #category : #'tests-builtins' }
@@ -2652,7 +2679,7 @@ SlangBasicTranslationTest >> testSendSignedIntToLong64 [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '((usqInt) a)'
+	self assert: translation equals: '((usqInt) a )'
 ]
 
 { #category : #'tests-builtins' }
@@ -2666,7 +2693,7 @@ SlangBasicTranslationTest >> testSendSignedIntToLong64Bits [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '((usqInt) (int)a)'
+	self assert: translation equals: '((usqInt) ((int) a ) )'
 ]
 
 { #category : #'tests-builtins' }
@@ -2680,7 +2707,7 @@ SlangBasicTranslationTest >> testSendSignedIntToShort [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '((usqInt) (short)a)'
+	self assert: translation equals: '((usqInt) ((short) a ) )'
 ]
 
 { #category : #'tests-builtins' }
