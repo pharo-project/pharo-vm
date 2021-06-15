@@ -1940,7 +1940,7 @@ SlangBasicTranslationTest >> testSendIsNil [
 					arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: 'ptr == NULL'
+	self assert: translation equals: 'ptr == null'
 ]
 
 { #category : #'tests-builtins' }
@@ -2256,7 +2256,7 @@ SlangBasicTranslationTest >> testSendNotNil [
 					arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: 'ptr != NULL'
+	self assert: translation equals: 'ptr != null'
 ]
 
 { #category : #'tests-builtins' }
@@ -3290,7 +3290,7 @@ SlangBasicTranslationTest >> testTranslateNil [
 	| translation |
 	translation :=  self translate: (TVariableNode new setName: 'nil').
 
-	self assert: translation equals: 'NULL'
+	self assert: translation equals: 'null'
 ]
 
 { #category : #'tests-variables' }
