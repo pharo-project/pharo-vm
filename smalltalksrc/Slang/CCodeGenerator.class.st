@@ -1638,21 +1638,21 @@ CCodeGenerator >> generateBitShift: msgNode on: aStream indent: level [
 			[aStream nextPutAll: '((usqInt) '.
 			self emitCExpression: rcvr on: aStream.
 			shift < 0
-				ifTrue: [aStream nextPutAll: ' >> '; print: shift negated]
-				ifFalse: [aStream nextPutAll: ' << '; print: shift].
-			aStream nextPut: $)]
+				ifTrue: [aStream nextPutAll: ' ) >> '; print: shift negated]
+				ifFalse: [aStream nextPutAll: ' ) << '; print: shift].
+			]
 		ifFalse: "bit shift amount is an expression"
 			[aStream nextPutAll: '(('.
 			self emitCExpression: arg on: aStream indent: level.
-			aStream nextPutAll: ' < 0) ? ((usqInt) '.
+			aStream nextPutAll: ' < 0) ? (((usqInt) '.
 			self emitCExpression: rcvr on: aStream indent: level.
-			aStream nextPutAll: ' ) >> -'.
+			aStream nextPutAll: ' ) >> (-'.
 			self emitCExpression: arg on: aStream indent: level.
-			aStream nextPutAll: ' : ((usqInt) '.
+			aStream nextPutAll: ')) : (((usqInt) '.
 			self emitCExpression: rcvr on: aStream indent: level.
 			aStream nextPutAll: ' ) << '.
 			self emitCExpression: arg on: aStream indent: level.
-			aStream nextPutAll: ')']
+			aStream nextPutAll: '))']
 ]
 
 { #category : #'C translation' }
@@ -3921,6 +3921,7 @@ CCodeGenerator >> generateShiftLeft: msgNode on: aStream indent: level [
 	"Generate a C bitShift.  If we can determine the result
 	 would overflow the word size, cast to a long integer."
 	| rcvr arg castToLong type mustCastBackToSign mustCastToUnsigned canSuffixTheConstant typeIsUnsigned |
+
 	rcvr := msgNode receiver.
 	arg := msgNode args first.
 	castToLong := false.
@@ -3956,7 +3957,7 @@ CCodeGenerator >> generateShiftLeft: msgNode on: aStream indent: level [
 				ifFalse: [(self sizeOfIntegralCType: type) < (self sizeOfIntegralCType: #sqInt)
 					ifTrue: [#sqInt]
 					ifFalse: [type]].
-			aStream nextPutAll: '(('; nextPutAll: promotedType; nextPut: $)].
+			aStream nextPutAll: '(('; nextPutAll: promotedType; nextPutAll: ') '].
 	mustCastToUnsigned
 		ifTrue:
 			[| unsigned |
@@ -3965,13 +3966,17 @@ CCodeGenerator >> generateShiftLeft: msgNode on: aStream indent: level [
 				ifFalse: [(self sizeOfIntegralCType: type) < (self sizeOfIntegralCType: #usqLong)
 					ifTrue: [#usqInt]
 					ifFalse: [self unsignedTypeForIntegralType: type]].
-			aStream nextPutAll: '(('; nextPutAll: unsigned; nextPutAll: ')('].
+			mustCastBackToSign ifTrue: [ aStream nextPutAll: '(' ].
+			aStream nextPutAll: '(('; nextPutAll: unsigned; nextPutAll: ') '].
+	
 	self emitCExpression: rcvr on: aStream indent: level.
-	mustCastToUnsigned ifTrue: [aStream nextPut: $)].
-		aStream nextPutAll: ' << '.
-		self emitCExpression: arg on: aStream indent: level.
-	mustCastToUnsigned ifTrue: [aStream nextPut: $)].
-	mustCastBackToSign ifTrue: [aStream nextPut: $)].
+	mustCastToUnsigned ifTrue: [aStream nextPutAll: ' )'].
+	
+	aStream nextPutAll: ' << '.
+	self emitCExpression: arg on: aStream indent: level.
+	
+	(mustCastToUnsigned and: [mustCastBackToSign]) ifTrue: [aStream nextPutAll: ')'].
+	mustCastBackToSign ifTrue: [aStream nextPutAll: ' )'].
 ]
 
 { #category : #'C translation' }
@@ -3991,40 +3996,62 @@ CCodeGenerator >> generateShiftRight: msgNode on: aStream indent: level [
 		ifFalse:
 			[aStream nextPutAll: '((usqInt) '.
 			 self emitCExpression: msgNode receiver on: aStream indent: level.
-			 aStream nextPut: $)].
+			 aStream nextPutAll: ' )'].
 	aStream nextPutAll: ' >> '.
 	self emitCExpression: msgNode args first on: aStream indent: level
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateSignedBitShift: msgNode on: aStream indent: level [
+
 	"Generate the C code for this message onto the given stream."
 
 	| cast type arg shift |
 	"since ``signed'' is a synonym for ``signed int'' do not cast 64-bit values to signed if at all possible."
-	cast := (self is64BitIntegralVariable: msgNode receiver typeInto: [:t| type := t])
-				ifTrue: ['(', (type first = $u ifTrue: [type allButFirst: (type second = $n ifTrue: [2] ifFalse: [1])] ifFalse: [type]), ')']
-				ifFalse: ['(signed)'].
-	(self isConstantNode: (arg := msgNode args first) valueInto: [:shiftValue| shift := shiftValue])
-		ifTrue: "bit shift amount is a constant"
-			[aStream nextPut: $(; nextPutAll: cast.
+	cast := (self
+		         is64BitIntegralVariable: msgNode receiver
+		         typeInto: [ :t | type := t ])
+		        ifTrue: [ 
+			        '(' , (type first = $u
+				         ifTrue: [ 
+					         type allButFirst: (type second = $n
+							          ifTrue: [ 2 ]
+							          ifFalse: [ 1 ]) ]
+				         ifFalse: [ type ]) , ') ' ]
+		        ifFalse: [ '(signed) ' ].
+	(self
+		 isConstantNode: (arg := msgNode args first)
+		 valueInto: [ :shiftValue | shift := shiftValue ])
+		ifTrue: [ "bit shift amount is a constant"
+			aStream
+				nextPut: $(;
+				nextPutAll: cast.
 			self emitCExpression: msgNode receiver on: aStream.
 			shift < 0
-				ifTrue: [aStream nextPutAll: ' >> '; print: shift negated]
-				ifFalse: [aStream nextPutAll: ' << '; print: shift].
-			aStream nextPut: $)]
-		ifFalse: "bit shift amount is an expression"
-			[aStream nextPutAll: '(('.
+				ifTrue: [ 
+					aStream
+						nextPutAll: ' ) >> ';
+						print: shift negated ]
+				ifFalse: [ 
+					aStream
+						nextPutAll: ' ) << ';
+						print: shift ] ]
+		ifFalse: [ "bit shift amount is an expression"
+			aStream nextPutAll: '(('.
 			self emitCExpression: arg on: aStream.
-			aStream nextPutAll: ' < 0) ? ('; nextPutAll: cast.
+			aStream
+				nextPutAll: ' < 0) ? (';
+				nextPutAll: cast.
 			self emitCExpression: msgNode receiver on: aStream.
 			aStream nextPutAll: ' >> -'.
 			self emitCExpression: arg on: aStream.
-			aStream nextPutAll: ') : ('; nextPutAll: cast.
+			aStream
+				nextPutAll: ') : (';
+				nextPutAll: cast.
 			self emitCExpression: msgNode receiver on: aStream.
 			aStream nextPutAll: ' << '.
 			self emitCExpression: arg on: aStream.
-			aStream nextPutAll: '))']
+			aStream nextPutAll: '))' ]
 ]
 
 { #category : #'C translation' }
@@ -4095,7 +4122,7 @@ CCodeGenerator >> generateSignedShiftRight: msgNode on: aStream indent: level [
 		ifFalse:
 			[aStream nextPutAll: '((sqInt) '].
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPutAll: ') >> '.
+	aStream nextPutAll: ' ) >> '.
 	self emitCExpression: msgNode args first on: aStream
 ]
 
