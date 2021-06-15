@@ -2555,7 +2555,7 @@ SlangBasicTranslationTest >> testSendSignedBitShiftInt64VariableReceiver [
 		        arguments: { (TConstantNode value: 2) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((__int64)a << 2)'
+	self assert: translation equals: '((__int64) a ) << 2'
 ]
 
 { #category : #'tests-builtins' }
@@ -2569,7 +2569,7 @@ SlangBasicTranslationTest >> testSendSignedBitShiftLongLongVariableReceiver [
 		        arguments: { (TConstantNode value: 2) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((long long)a << 2)'
+	self assert: translation equals: '((long long) a ) << 2'
 ]
 
 { #category : #'tests-builtins' }
@@ -2583,7 +2583,7 @@ SlangBasicTranslationTest >> testSendSignedBitShiftSqLongVariableReceiver [
 		        arguments: { (TConstantNode value: 2) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((sqLong)a << 2)'
+	self assert: translation equals: '((sqLong) a ) << 2'
 ]
 
 { #category : #'tests-builtins' }
@@ -2597,7 +2597,7 @@ SlangBasicTranslationTest >> testSendSignedBitShiftUnsignedInt64VariableReceiver
 		        arguments: { (TConstantNode value: 2) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((signed __int64)a << 2)'
+	self assert: translation equals: '((signed __int64) a ) << 2'
 ]
 
 { #category : #'tests-builtins' }
@@ -2611,7 +2611,7 @@ SlangBasicTranslationTest >> testSendSignedBitShiftUnsignedLongLongVariableRecei
 		        arguments: { (TConstantNode value: 2) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((signed long long)a << 2)'
+	self assert: translation equals: '((signed long long) a ) << 2'
 ]
 
 { #category : #'tests-builtins' }
@@ -2625,7 +2625,7 @@ SlangBasicTranslationTest >> testSendSignedBitShiftUsqLongVariableReceiver [
 		        arguments: { (TConstantNode value: 2) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((sqLong)a << 2)'
+	self assert: translation equals: '((sqLong) a ) << 2'
 ]
 
 { #category : #'tests-builtins' }
@@ -2736,7 +2736,7 @@ SlangBasicTranslationTest >> testSendSignedRightBitShiftVariable64Bits [
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((sqLong) a) >> 3'
+	self assert: translation equals: '((sqInt) a ) >> 3'
 ]
 
 { #category : #'tests-assignment' }

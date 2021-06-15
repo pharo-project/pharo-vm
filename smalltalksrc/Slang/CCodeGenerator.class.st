@@ -4000,22 +4000,24 @@ CCodeGenerator >> generateSignedBitShift: msgNode on: aStream indent: level [
 					         type allButFirst: (type second = $n
 							          ifTrue: [ 2 ]
 							          ifFalse: [ 1 ]) ]
-				         ifFalse: [ type ]) , ')' ]
-		        ifFalse: [ '(signed)' ].
+				         ifFalse: [ type ]) , ') ' ]
+		        ifFalse: [ '(signed) ' ].
 	(self
 		 isConstantNode: (arg := msgNode args first)
 		 valueInto: [ :shiftValue | shift := shiftValue ])
 		ifTrue: [ "bit shift amount is a constant"
-			aStream nextPutAll: cast.
+			aStream
+				nextPut: $(;
+				nextPutAll: cast.
 			self emitCExpression: msgNode receiver on: aStream.
 			shift < 0
 				ifTrue: [ 
 					aStream
-						nextPutAll: ' >> ';
+						nextPutAll: ' ) >> ';
 						print: shift negated ]
 				ifFalse: [ 
 					aStream
-						nextPutAll: ' << ';
+						nextPutAll: ' ) << ';
 						print: shift ] ]
 		ifFalse: [ "bit shift amount is an expression"
 			aStream nextPutAll: '(('.
@@ -4103,7 +4105,7 @@ CCodeGenerator >> generateSignedShiftRight: msgNode on: aStream indent: level [
 		ifFalse:
 			[aStream nextPutAll: '((sqInt) '].
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPutAll: ') >> '.
+	aStream nextPutAll: ' ) >> '.
 	self emitCExpression: msgNode args first on: aStream
 ]
 
