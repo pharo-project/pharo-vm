@@ -2049,6 +2049,19 @@ SlangBasicTranslationTest >> testSendIfTrueWithReceiverTrueConstant [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfTrueWithSingleStatementArgument [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #ifTrue:
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: { TVariableNode new setName: 'break' }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'if (x) break'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIntegerValueOf [
 
 	| translation send |
@@ -3164,9 +3177,9 @@ SlangBasicTranslationTest >> testSendWhileFalseWithManyStatementsInReceiverAndAr
 							           arguments: {(TConstantNode value: 3)})) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'while(1) {
+	self assert: translation trimBoth equals: 'while (1) {
 	var -= 7;
-	if(var >= 21) break;
+	if (var >= 21) break;
 	b = var % 3;
 }'
 ]
@@ -3194,7 +3207,7 @@ SlangBasicTranslationTest >> testSendWhileFalseWithOneStatementInReceiverBlock [
 					          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'while(!(a && b)) {
+	self assert: translation trimBoth equals: 'while (!(a && b)) {
 	var -= 7;
 }'
 ]
@@ -3257,9 +3270,9 @@ SlangBasicTranslationTest >> testSendWhileTrueWithManyStatementsInReceiverAndArg
 							           arguments: {(TConstantNode value: 3)})) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'while(1) {
+	self assert: translation trimBoth equals: 'while (1) {
 	var -= 7;
-	if(!(var >= 21)) break;
+	if (!(var >= 21)) break;
 	b = var % 3;
 }'
 ]
@@ -3317,7 +3330,7 @@ SlangBasicTranslationTest >> testSendWhileTrueWithOneStatementInReceiverBlock [
 					          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'while(a && b) {
+	self assert: translation trimBoth equals: 'while (a && b) {
 	var -= 7;
 }'
 ]

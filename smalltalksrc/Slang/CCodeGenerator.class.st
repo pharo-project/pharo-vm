@@ -3137,11 +3137,11 @@ CCodeGenerator >> generateDoWhileFalse: msgNode on: aStream indent: level [
 	| testStmt receiverWithoutTest |
 	testStmt := msgNode receiver statements last.
 	receiverWithoutTest := TStmtListNode new setStatements: msgNode receiver statements allButLast.
-	aStream nextPutAll: 'do {'; cr.
-	receiverWithoutTest emitCCodeOn: aStream level: level + 1 generator: self.
+	aStream nextPutAll: 'do'.
+	receiverWithoutTest emitCCodeOn: aStream level: level generator: self.
 	aStream tab: level.
-	aStream nextPutAll: '} while(!('.
-	testStmt emitCCodeAsExpressionOn: aStream level: level + 1 generator: self.
+	aStream nextPutAll: 'while(!('.
+	testStmt emitCCodeAsExpressionOn: aStream level: level generator: self.
 	aStream nextPutAll: '))'
 ]
 
@@ -3152,11 +3152,11 @@ CCodeGenerator >> generateDoWhileTrue: msgNode on: aStream indent: level [
 	| testStmt receiverWithoutTest |
 	testStmt := msgNode receiver statements last.
 	receiverWithoutTest := TStmtListNode new setStatements: msgNode receiver statements allButLast.
-	aStream nextPutAll: 'do {'; cr.
-	receiverWithoutTest emitCCodeOn: aStream level: level + 1 generator: self.
+	aStream nextPutAll: 'do'.
+	receiverWithoutTest emitCCodeOn: aStream level: level generator: self.
 	aStream tab: level.
-	aStream nextPutAll: '} while('.
-	testStmt emitCCodeAsExpressionOn: aStream level: level + 1 generator: self.
+	aStream nextPutAll: 'while('.
+	testStmt emitCCodeAsExpressionOn: aStream level: level generator: self.
 	aStream nextPut: $)
 ]
 
@@ -4314,24 +4314,29 @@ CCodeGenerator >> generateWhileFalse: msgNode on: aStream indent: level [
 
 { #category : #'C translation' }
 CCodeGenerator >> generateWhileForeverBreakIf: breakBoolean loop: msgNode on: aStream indent: level [
+
 	"Generate either of
 		while(1) {stmtListA; if(cond) break; stmtListB}
 		while(1) {stmtListA; if(!(cond)) break; stmtListB}."
 
-	| testStmt receiverWithoutTest |
-	aStream peekLast ~~ Character tab ifTrue:
-		[aStream tab: level - 1].
-	aStream nextPutAll: 'while (1) {'; cr.
+	| testStmt statements ifStatement ifSelector |
+	aStream peekLast ~~ Character tab ifTrue: [ aStream tab: level - 1 ].
+	aStream nextPutAll: 'while (1) '.
 	testStmt := msgNode receiver statements last.
-	receiverWithoutTest := TStmtListNode new setStatements: msgNode receiver statements allButLast.
-	receiverWithoutTest emitCCodeOn: aStream level: level + 1 generator: self.
-	aStream tab: level + 1; nextPutAll: 'if ('.
-	breakBoolean ifFalse: [aStream nextPut: $!; nextPut: $(].
-	testStmt emitCCodeAsExpressionOn: aStream level: level + 1 generator: self.
-	breakBoolean ifFalse: [aStream nextPut: $)].
-	aStream nextPutAll: ') break;'; cr.
-	msgNode args first emitCCodeOn: aStream level: level + 1 generator: self.
-	aStream tab: level; nextPut: $}
+	statements := OrderedCollection new.
+	statements addAll: msgNode receiver statements allButLast.
+
+	ifSelector := breakBoolean
+		              ifTrue: [ #ifTrue: ]
+		              ifFalse: [ #ifFalse: ].
+	ifStatement := TSendNode new
+		               setSelector: ifSelector
+		               receiver: testStmt
+		               arguments: { (TVariableNode new setName: 'break') }. "break is created using a TVariableNode, create a dedicated node instead ?"
+	statements add: ifStatement.
+
+	statements addAll: msgNode arguments first statements.
+	TStmtListNode new setStatements: statements; emitCCodeOn: aStream level: level generator: self
 ]
 
 { #category : #'C translation' }

@@ -199,7 +199,7 @@ CSlangPrettyPrinter >> visitDoStatement: aDoStatement [
 	aDoStatement statement acceptVisitor: self.
 	stream nextPutAll: 'while('.
 	aDoStatement while acceptVisitor: self.
-	stream nextPutAll: ');'
+	stream nextPut: $)
 ]
 
 { #category : #generated }
@@ -378,7 +378,7 @@ CSlangPrettyPrinter >> visitUnaryOperator: anUnary [
 { #category : #generated }
 CSlangPrettyPrinter >> visitWhileStatement: aWhileStatement [
 
-	stream nextPutAll: 'while('.
+	stream nextPutAll: 'while ('.
 	aWhileStatement while acceptVisitor: self.
 	stream nextPutAll: ') '.
 	aWhileStatement statement acceptVisitor: self
