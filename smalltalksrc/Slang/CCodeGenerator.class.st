@@ -2959,7 +2959,7 @@ CCodeGenerator >> generateCCoercion: msgNode on: aStream indent: level [
 	aStream nextPutAll: cType.
 	aStream nextPutAll: ') '.
 	self emitCExpression: cExpr on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #accessing }
@@ -3935,7 +3935,7 @@ CCodeGenerator >> generateSignedIntFromLong64: msgNode on: aStream indent: level
 
 	aStream nextPutAll: '((sqLong) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
@@ -3944,16 +3944,16 @@ CCodeGenerator >> generateSignedIntFromLong: msgNode on: aStream indent: level [
 
 	aStream nextPutAll: '((int) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateSignedIntFromShort: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll: '((short)'.
+	aStream nextPutAll: '((short) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
@@ -3962,7 +3962,7 @@ CCodeGenerator >> generateSignedIntToLong64: msgNode on: aStream indent: level [
 
 	aStream nextPutAll: '((usqInt) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
@@ -3971,18 +3971,20 @@ CCodeGenerator >> generateSignedIntToLong: msgNode on: aStream indent: level [
 
 	aStream nextPutAll: '((usqInt) '.
 	self is64Bit ifTrue:
-		[aStream nextPutAll: '(int)'].
+		[aStream nextPutAll: '((int) '].
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	self is64Bit ifTrue:
+		[aStream nextPutAll: ' )'].
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateSignedIntToShort: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll: '((usqInt) (short)'.
+	aStream nextPutAll: '((usqInt) ((short) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' ) )'
 ]
 
 { #category : #'C translation' }
