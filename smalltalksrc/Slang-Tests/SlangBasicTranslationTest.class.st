@@ -633,7 +633,7 @@ SlangBasicTranslationTest >> testSendAllMask [
 					arguments: { TConstantNode value: 7 }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((a & 7) == 7)'
+	self assert: translation equals: '(a & 7) == 7'
 ]
 
 { #category : #'tests-builtins' }
@@ -832,7 +832,7 @@ SlangBasicTranslationTest >> testSendBetweenAnd [
 				        (TConstantNode value: 100) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((x >= 0) && (x <= 100))'
+	self assert: translation equals: '(x >= 0) && (x <= 100)'
 ]
 
 { #category : #'tests-builtins' }
@@ -859,7 +859,7 @@ SlangBasicTranslationTest >> testSendBitClear [
 		        arguments: {(TConstantNode value: 3)}.
 	translation := self translate: send.
 
-	self assert: translation equals: '((a | 3) - 3)'
+	self assert: translation equals: '(a | 3) - 3'
 ]
 
 { #category : #'tests-builtins' }
@@ -2347,7 +2347,7 @@ SlangBasicTranslationTest >> testSendPowerTo [
 		        arguments: { (TConstantNode value: 2) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '(sqInt)(pow(x, 2))'
+	self assert: translation equals: '((sqInt) pow(x, 2) )'
 ]
 
 { #category : #'tests-builtins' }
