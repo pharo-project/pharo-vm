@@ -3904,6 +3904,7 @@ CCodeGenerator >> generateShiftLeft: msgNode on: aStream indent: level [
 	"Generate a C bitShift.  If we can determine the result
 	 would overflow the word size, cast to a long integer."
 	| rcvr arg castToLong type mustCastBackToSign mustCastToUnsigned canSuffixTheConstant typeIsUnsigned |
+
 	rcvr := msgNode receiver.
 	arg := msgNode args first.
 	castToLong := false.
@@ -3939,7 +3940,7 @@ CCodeGenerator >> generateShiftLeft: msgNode on: aStream indent: level [
 				ifFalse: [(self sizeOfIntegralCType: type) < (self sizeOfIntegralCType: #sqInt)
 					ifTrue: [#sqInt]
 					ifFalse: [type]].
-			aStream nextPutAll: '(('; nextPutAll: promotedType; nextPut: $)].
+			aStream nextPutAll: '(('; nextPutAll: promotedType; nextPutAll: ') '].
 	mustCastToUnsigned
 		ifTrue:
 			[| unsigned |
@@ -3948,13 +3949,16 @@ CCodeGenerator >> generateShiftLeft: msgNode on: aStream indent: level [
 				ifFalse: [(self sizeOfIntegralCType: type) < (self sizeOfIntegralCType: #usqLong)
 					ifTrue: [#usqInt]
 					ifFalse: [self unsignedTypeForIntegralType: type]].
-			aStream nextPutAll: '(('; nextPutAll: unsigned; nextPutAll: ')('].
+			aStream nextPutAll: '((('; nextPutAll: unsigned; nextPutAll: ') '].
+	
 	self emitCExpression: rcvr on: aStream indent: level.
-	mustCastToUnsigned ifTrue: [aStream nextPut: $)].
-		aStream nextPutAll: ' << '.
-		self emitCExpression: arg on: aStream indent: level.
-	mustCastToUnsigned ifTrue: [aStream nextPut: $)].
-	mustCastBackToSign ifTrue: [aStream nextPut: $)].
+	mustCastToUnsigned ifTrue: [aStream nextPutAll: ' )'].
+	
+	aStream nextPutAll: ' << '.
+	self emitCExpression: arg on: aStream indent: level.
+	
+	mustCastToUnsigned ifTrue: [aStream nextPutAll: ')'].
+	mustCastBackToSign ifTrue: [aStream nextPutAll: ' )'].
 ]
 
 { #category : #'C translation' }

@@ -1983,7 +1983,7 @@ SlangBasicTranslationTest >> testSendLeftBitShifNegativeLitteralIntegerOverflow 
 		        arguments: { (TConstantNode value: 32) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((sqInt)((usqInt)(-3) << 32))'
+	self assert: translation equals: '((int) (((usqInt) -3 ) << 32) )'
 ]
 
 { #category : #'tests-builtins' }
