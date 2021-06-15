@@ -1644,13 +1644,13 @@ CCodeGenerator >> generateBitShift: msgNode on: aStream indent: level [
 			self emitCExpression: arg on: aStream indent: level.
 			aStream nextPutAll: ' < 0) ? ((usqInt) '.
 			self emitCExpression: rcvr on: aStream indent: level.
-			aStream nextPutAll: ' >> -'.
+			aStream nextPutAll: ' ) >> -'.
 			self emitCExpression: arg on: aStream indent: level.
-			aStream nextPutAll: ') : ((usqInt) '.
+			aStream nextPutAll: ' : ((usqInt) '.
 			self emitCExpression: rcvr on: aStream indent: level.
-			aStream nextPutAll: ' << '.
+			aStream nextPutAll: ' ) << '.
 			self emitCExpression: arg on: aStream indent: level.
-			aStream nextPutAll: '))']
+			aStream nextPutAll: ')']
 ]
 
 { #category : #'C translation' }

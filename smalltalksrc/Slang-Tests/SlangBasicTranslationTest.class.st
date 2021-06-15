@@ -872,7 +872,7 @@ SlangBasicTranslationTest >> testSendBitShiftWithExpressionShiftValue [
 				         arguments: { (TConstantNode value: 2) }) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '(((var + 2) < 0) ? (usqInt) a >> -(var + 2) : (usqInt) a << (var + 2))'
+	self assert: translation equals: '(((var + 2) < 0) ? ((usqInt) a ) >> -(var + 2) : ((usqInt) a ) << (var + 2))'
 ]
 
 { #category : #'tests-send' }
