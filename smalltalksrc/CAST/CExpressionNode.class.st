@@ -1,6 +1,9 @@
 Class {
 	#name : #CExpressionNode,
 	#superclass : #CGLRAbstractNode,
+	#instVars : [
+		'needsParentheses'
+	],
 	#category : #'CAST-Nodes'
 }
 
@@ -25,8 +28,26 @@ CExpressionNode >> combineWithExpression: firstExpression [
 	^ result
 ]
 
+{ #category : #initialization }
+CExpressionNode >> initialize [
+	
+	needsParentheses := false
+]
+
 { #category : #testing }
 CExpressionNode >> isExpression [
 
 	^ true
+]
+
+{ #category : #accessing }
+CExpressionNode >> needsParentheses [
+
+	^ needsParentheses
+]
+
+{ #category : #accessing }
+CExpressionNode >> needsParentheses: aBoolean [
+
+	needsParentheses := aBoolean
 ]

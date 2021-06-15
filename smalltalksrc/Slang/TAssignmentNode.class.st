@@ -8,6 +8,16 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'C code generation' }
+TAssignmentNode >> asCASTExpressionIn: aCodeGen [
+
+	(expression isStmtList and: [ expression statements size > 1 ]) 
+		ifTrue: [ ^ self asCASTStatementListExpansionAsExpression: aCodeGen ].
+	^ (self asCASTIn: aCodeGen)
+		  needsParentheses: true;
+		  yourself
+]
+
 { #category : #tranforming }
 TAssignmentNode >> asCASTIn: aBuilder [
 
@@ -52,6 +62,15 @@ TAssignmentNode >> asCASTIn: aBuilder [
 	^ CAssignmentNode
 		  lvalue: (variable asCASTIn: aBuilder)
 		  rvalue: (expression asCASTExpressionIn: aBuilder)
+]
+
+{ #category : #'C code generation' }
+TAssignmentNode >> asCASTStatementListExpansionAsExpression: aCodeGen [
+	(variable isSameAs: expression statements last) ifTrue:
+		[^ expression asCASTExpressionIn: aCodeGen].
+	^ expression copy
+		assignLastExpressionTo: variable;
+		asCASTExpressionIn: aCodeGen
 ]
 
 { #category : #'C code generation' }
@@ -188,7 +207,7 @@ TAssignmentNode >> emitStatementListExpansion: stmtList on: aStream level: level
 
 { #category : #'C code generation' }
 TAssignmentNode >> emitStatementListExpansionAsExpression: stmtList on: aStream level: level generator: aCodeGen [
-	stmtList statements last = variable ifTrue:
+	(variable isSameAs: stmtList statements last)  ifTrue:
 		[^expression emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen].
 	stmtList copy
 		assignLastExpressionTo: variable;
