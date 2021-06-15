@@ -589,7 +589,7 @@ SlangBasicTranslationTest >> testSendAsFloat [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(double)(x)'
+	self assert: translation equals: '((double) x )'
 ]
 
 { #category : #'tests-send' }
@@ -602,7 +602,7 @@ SlangBasicTranslationTest >> testSendAsInteger [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(sqInt)(x)'
+	self assert: translation equals: '((sqInt) x )'
 ]
 
 { #category : #'tests-send' }
@@ -615,7 +615,7 @@ SlangBasicTranslationTest >> testSendAsIntegerPtr [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(sqIntptr_t)(x)'
+	self assert: translation equals: '((sqIntptr_t) x )'
 ]
 
 { #category : #'tests-send' }
@@ -628,7 +628,7 @@ SlangBasicTranslationTest >> testSendAsLong [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(long)(x)'
+	self assert: translation equals: '((long) x )'
 ]
 
 { #category : #'tests-assignment' }
@@ -653,7 +653,7 @@ SlangBasicTranslationTest >> testSendAsUnsignedInteger [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(usqInt)(x)'
+	self assert: translation equals: '((usqInt) x )'
 ]
 
 { #category : #'tests-send' }
@@ -666,7 +666,7 @@ SlangBasicTranslationTest >> testSendAsUnsignedIntegerPtr [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(usqIntptr_t)(x)'
+	self assert: translation equals: '((usqIntptr_t) x )'
 ]
 
 { #category : #'tests-send' }
@@ -679,7 +679,7 @@ SlangBasicTranslationTest >> testSendAsUnsignedLong [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(unsigned long)(x)'
+	self assert: translation equals: '((unsigned long) x )'
 ]
 
 { #category : #'tests-send' }
@@ -692,7 +692,7 @@ SlangBasicTranslationTest >> testSendAsUnsignedLongLong [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(unsigned long long)(x)'
+	self assert: translation equals: '((unsigned long long) x )'
 ]
 
 { #category : #'tests-send' }
@@ -705,7 +705,7 @@ SlangBasicTranslationTest >> testSendAsVoidPointer [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '(void *)(x)'
+	self assert: translation equals: '((void *) x )'
 ]
 
 { #category : #'tests-send' }

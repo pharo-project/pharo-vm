@@ -1445,27 +1445,27 @@ CCodeGenerator >> generateAsFloat: msgNode on: aStream indent: level [
 CCodeGenerator >> generateAsInteger: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((sqInt)'.
+	aStream nextPutAll:'((sqInt) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAsIntegerPtr: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((sqIntptr_t)'.
+	aStream nextPutAll:'((sqIntptr_t) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAsLong: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((long)'.
+	aStream nextPutAll:'((long) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
@@ -1480,45 +1480,45 @@ CCodeGenerator >> generateAsSymbol: msgNode on: aStream indent: level [
 CCodeGenerator >> generateAsUnsignedInteger: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((usqInt)'.
+	aStream nextPutAll:'((usqInt) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAsUnsignedIntegerPtr: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((usqIntptr_t)'.
+	aStream nextPutAll:'((usqIntptr_t) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAsUnsignedLong: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((unsigned long)'.
+	aStream nextPutAll:'((unsigned long) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAsUnsignedLongLong: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((unsigned long long)'.
+	aStream nextPutAll:'((unsigned long long) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAsVoidPointer: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll: '((void *)'.
+	aStream nextPutAll: '((void *) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
