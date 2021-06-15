@@ -92,7 +92,7 @@ SlangBasicTranslationTest >> slangTranslate: tast inStream: aWriteStream [
 		generator: generator
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testAssignementAsExpression [
 
 	"y := a := false"
@@ -107,7 +107,7 @@ SlangBasicTranslationTest >> testAssignementAsExpression [
 	self assert: translation equals: 'y = (a = 0)'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testAssignementAsExpressionWithExpressionBlock [
 	
 	"y := a := [ 1 foo: 2. 3 foo: 4. 5 foo: 6 ]"
@@ -136,7 +136,7 @@ SlangBasicTranslationTest >> testAssignementAsExpressionWithExpressionBlock [
 	self assert: translation equals: 'y = (foo(1, 2), foo(3, 4), (a = foo(5, 6)))'
 ]
 
-{ #category : #'tests-send' }
+{ #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testAssignementAsExpressionWithExpressionBlockWithLastStatementEqualToReceiver [
 
 	"y := a := [ 1 foo: 2. 3 foo: 4. 5 foo: 6. a]"
@@ -2055,6 +2055,19 @@ SlangBasicTranslationTest >> testSendIfTrueWithReceiverTrueConstant [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfTrueWithSingleStatementArgument [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #ifTrue:
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: { TVariableNode new setName: 'break' }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'if (x) break'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIntegerValueOf [
 
 	| translation send |
@@ -3170,9 +3183,9 @@ SlangBasicTranslationTest >> testSendWhileFalseWithManyStatementsInReceiverAndAr
 							           arguments: {(TConstantNode value: 3)})) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'while(1) {
+	self assert: translation trimBoth equals: 'while (1) {
 	var -= 7;
-	if(var >= 21) break;
+	if (var >= 21) break;
 	b = var % 3;
 }'
 ]
@@ -3200,7 +3213,7 @@ SlangBasicTranslationTest >> testSendWhileFalseWithOneStatementInReceiverBlock [
 					          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'while(!(a && b)) {
+	self assert: translation trimBoth equals: 'while (!(a && b)) {
 	var -= 7;
 }'
 ]
@@ -3263,9 +3276,9 @@ SlangBasicTranslationTest >> testSendWhileTrueWithManyStatementsInReceiverAndArg
 							           arguments: {(TConstantNode value: 3)})) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'while(1) {
+	self assert: translation trimBoth equals: 'while (1) {
 	var -= 7;
-	if(!(var >= 21)) break;
+	if (!(var >= 21)) break;
 	b = var % 3;
 }'
 ]
@@ -3323,7 +3336,7 @@ SlangBasicTranslationTest >> testSendWhileTrueWithOneStatementInReceiverBlock [
 					          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'while(a && b) {
+	self assert: translation trimBoth equals: 'while (a && b) {
 	var -= 7;
 }'
 ]

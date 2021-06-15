@@ -246,7 +246,7 @@ CSlangPrettyPrinterTest >> testVisitDoStatement [
 
 	self assert: print trimBoth equals: 'do{
 	15;
-}while(a && b);'
+}while(a && b)'
 ]
 
 { #category : #'tests-visitor' }
