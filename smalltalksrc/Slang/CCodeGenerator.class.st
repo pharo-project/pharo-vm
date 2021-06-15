@@ -2304,6 +2304,28 @@ CCodeGenerator >> generateCASTIfTrueIfFalse: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfTrueIfFalseAsArgument: tast [
+
+	(self nilOrBooleanConstantReceiverOf: tast receiver)
+		ifNil: [
+			(tast arguments first isSameAs: tast arguments last) ifTrue: [ | expressionList |
+			expressionList := CExpressionListNode new.
+			tast receiver hasSideEffect ifTrue: [ expressionList add: (tast receiver asCASTExpressionIn: self) ].
+			expressionList add: (tast arguments first asCASTExpressionIn: self)
+			].
+			^ (CTernaryNode
+				   condition: (tast receiver asCASTExpressionIn: self)
+				   then: (tast arguments first asCASTExpressionIn: self)
+				   else: (tast arguments last asCASTExpressionIn: self))
+				  printOnMultipleLines: true;
+				  yourself ]
+		ifNotNil: [ :const | 
+			(const
+				 ifTrue: [ ^ tast arguments first ]
+				 ifFalse: [ ^ tast arguments last ]) asCASTExpressionIn: self ]
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTInlineCCode: aTSendNode [ 
 
 	aTSendNode args first isConstant ifTrue: [
@@ -3476,9 +3498,9 @@ CCodeGenerator >> generateIfTrueIfFalseAsArgument: msgNode on: aStream indent: l
 			[(self tryToCollapseBothArmsOfConditionalExpression: msgNode on: aStream indent: level) ifFalse:
 				[aStream nextPut: $(.
 				 msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-				 aStream crtab: level + 1; nextPut: $?; space.
+				 aStream crtab: level + 1; nextPutAll: ' ? '.
 				 msgNode args first emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-				 aStream crtab: level + 1; nextPut: $:; space.
+				 aStream crtab: level + 1; nextPutAll: ' : '.
 				 msgNode args last emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
 				 aStream nextPut: $)]]
 		ifNotNil:
