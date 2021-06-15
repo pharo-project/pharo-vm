@@ -39,6 +39,12 @@ SlangBasicTranslationTest >> generator: anObject [
 	generator := anObject
 ]
 
+{ #category : #compatibility }
+SlangBasicTranslationTest >> isNonArgumentImplicitReceiverVariableName: aString [ 
+	
+	^ false
+]
+
 { #category : #accessing }
 SlangBasicTranslationTest >> numSmallIntegerTagBits [
 	
@@ -1461,7 +1467,7 @@ SlangBasicTranslationTest >> testSendIfFalseIfTrue [
 
 	self assert: translation trimBoth equals: 'if (x) {
 	a = 1;
-}else {
+} else {
 	a = 0;
 	c = 1;
 }'
@@ -1650,7 +1656,7 @@ SlangBasicTranslationTest >> testSendIfNilifNotNil [
 	self assert: translation trimBoth equals: 'if (foo(x)) {
 	b = 1;
 	c = 7;
-}else {
+} else {
 	a = 0;
 	c = 1;
 }'
@@ -1743,7 +1749,7 @@ SlangBasicTranslationTest >> testSendIfNotNilIfNil [
 	self assert: translation trimBoth equals: 'if (foo(x)) {
 	a = 0;
 	c = 1;
-}else {
+} else {
 	b = 1;
 	c = 7;
 }'
@@ -1884,7 +1890,7 @@ SlangBasicTranslationTest >> testSendIfTrueIfFalse [
 	self assert: translation trimBoth equals: 'if (x) {
 	a = 0;
 	c = 1;
-}else {
+} else {
 	a = 1;
 }'
 ]
