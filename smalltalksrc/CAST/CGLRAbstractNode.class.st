@@ -22,6 +22,12 @@ CGLRAbstractNode >> ambiguous: aNode [
 ]
 
 { #category : #testing }
+CGLRAbstractNode >> isCastExpression [
+
+	^ false
+]
+
+{ #category : #testing }
 CGLRAbstractNode >> isConstant [
 	
 	^ false

@@ -1595,17 +1595,24 @@ CCodeGenerator >> generateBitInvert: msgNode on: aStream indent: level [
 
 	| castToUnsignedInt castToUnsignedLong castToUnsignedLongLong |
 	(castToUnsignedInt := msgNode selector = #bitInvert32) ifTrue: [ 
-		aStream nextPutAll: '(unsigned int)' ].
-	aStream nextPut: $~.
+		aStream nextPutAll: '((unsigned int) ' ].
+	
+	"Wrap negation with parentheses too"
+	aStream nextPutAll: '~'.
 	(castToUnsignedLong := msgNode selector = #bitInvert64 and: [ 
 		                       self is32Bit not "then it's 64 bits" ]) 
-		ifTrue: [ aStream nextPutAll: '(usqIntptr_t)' ].
+		ifTrue: [ aStream nextPutAll: '((usqIntptr_t) ' ].
 	(castToUnsignedLongLong := msgNode selector = #bitInvert64 and: [ 
 		                           self is32Bit ]) ifTrue: [ 
-		aStream nextPutAll: '(unsigned long long)' ].
+		aStream nextPutAll: '((unsigned long long) ' ].
 	self assert: castToUnsignedInt asBit + castToUnsignedLong asBit
 		+ castToUnsignedLongLong asBit <= 1. "We should only do a single cast"
-	self emitCExpression: msgNode receiver on: aStream
+	self emitCExpression: msgNode receiver on: aStream.
+	
+	"There should be a single cast"
+	(castToUnsignedLong or: [ castToUnsignedLongLong  or: [ castToUnsignedInt ]]) ifTrue: [
+		aStream nextPutAll: ' )'
+	]
 ]
 
 { #category : #'C translation' }

@@ -792,6 +792,33 @@ SlangBasicTranslationTest >> testSendBitClear [
 ]
 
 { #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendBitInvert32On32Bits [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #bitInvert32
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '((unsigned int) ~a )'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendBitInvert32On64Bits [
+
+	| translation send |
+	generator wordSize: 8.
+	send := TSendNode new
+		        setSelector: #bitInvert32
+		        receiver: (TVariableNode new setName: 'a')
+		        arguments: {}.
+	translation := self translate: send.
+
+	self assert: translation equals: '((unsigned int) ~a )'
+]
+
+{ #category : #'tests-send' }
 SlangBasicTranslationTest >> testSendBitInvert64On32Bits [
 
 	| translation send |
@@ -801,7 +828,7 @@ SlangBasicTranslationTest >> testSendBitInvert64On32Bits [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '~(unsigned long long)a'
+	self assert: translation equals: '~((unsigned long long) a )'
 ]
 
 { #category : #'tests-send' }
@@ -815,7 +842,7 @@ SlangBasicTranslationTest >> testSendBitInvert64On64Bits [
 		        arguments: {}.
 	translation := self translate: send.
 
-	self assert: translation equals: '~(usqIntptr_t)a'
+	self assert: translation equals: '~((usqIntptr_t) a )'
 ]
 
 { #category : #'tests-send' }
