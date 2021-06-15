@@ -27,6 +27,13 @@ SlangBasicTranslationTest >> astTranslate: tast inStream: aWriteStream [
 	cAST acceptVisitor: prettyPrinter.
 ]
 
+{ #category : #compatibility }
+SlangBasicTranslationTest >> constantClass [
+	
+	"The translator requires that we define a class with constants"
+	^ VMBasicConstants
+]
+
 { #category : #accessing }
 SlangBasicTranslationTest >> generator [
 
@@ -65,6 +72,8 @@ SlangBasicTranslationTest >> setUp [
 	super setUp.
 
 	generator := MLVMCCodeGenerator new.
+	generator vmMaker: VMMaker new.
+	generator vmMaker vmmakerConfiguration: VMMakerConfiguration.
 	generator currentMethod: (TMethod new
 		labels: Set new;
 		resetUsedVariablesCache;
