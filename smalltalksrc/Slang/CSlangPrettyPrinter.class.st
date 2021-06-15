@@ -108,9 +108,11 @@ CSlangPrettyPrinter >> visitCall: aCall [
 CSlangPrettyPrinter >> visitCastExpression: aCastExpression [
 
 	stream nextPut: $(.
+	stream nextPut: $(.
 	aCastExpression type acceptVisitor: self.
-	stream nextPut: $).
-	self printExpression: aCastExpression expression
+	stream nextPutAll: ') '.
+	self printExpression: aCastExpression expression.
+	stream nextPutAll: ' )'
 ]
 
 { #category : #generated }
@@ -363,13 +365,14 @@ CSlangPrettyPrinter >> visitTypename: aTypename [
 { #category : #generated }
 CSlangPrettyPrinter >> visitUnaryOperator: anUnary [
 
-	| parenthesises |
-	parenthesises := anUnary expression isConstant or: [ 
-		                 anUnary expression isIdentifier ].
+	| avoidParentheses |
+	avoidParentheses := anUnary expression isCastExpression
+		or: [ anUnary expression isConstant or: [
+			anUnary expression isIdentifier ]].
 	stream nextPutAll: anUnary operator.
-	parenthesises ifFalse: [ stream nextPut: $( ].
+	avoidParentheses ifFalse: [ stream nextPut: $( ].
 	anUnary expression acceptVisitor: self.
-	parenthesises ifFalse: [ stream nextPut: $) ]
+	avoidParentheses ifFalse: [ stream nextPut: $) ]
 ]
 
 { #category : #generated }

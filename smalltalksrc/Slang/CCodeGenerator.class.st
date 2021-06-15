@@ -1445,27 +1445,27 @@ CCodeGenerator >> generateAsFloat: msgNode on: aStream indent: level [
 CCodeGenerator >> generateAsInteger: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((sqInt)'.
+	aStream nextPutAll:'((sqInt) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAsIntegerPtr: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((sqIntptr_t)'.
+	aStream nextPutAll:'((sqIntptr_t) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAsLong: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((long)'.
+	aStream nextPutAll:'((long) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
@@ -1480,45 +1480,45 @@ CCodeGenerator >> generateAsSymbol: msgNode on: aStream indent: level [
 CCodeGenerator >> generateAsUnsignedInteger: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((usqInt)'.
+	aStream nextPutAll:'((usqInt) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAsUnsignedIntegerPtr: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((usqIntptr_t)'.
+	aStream nextPutAll:'((usqIntptr_t) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAsUnsignedLong: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((unsigned long)'.
+	aStream nextPutAll:'((unsigned long) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAsUnsignedLongLong: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll:'((unsigned long long)'.
+	aStream nextPutAll:'((unsigned long long) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAsVoidPointer: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll: '((void *)'.
+	aStream nextPutAll: '((void *) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
@@ -1595,17 +1595,26 @@ CCodeGenerator >> generateBitInvert: msgNode on: aStream indent: level [
 
 	| castToUnsignedInt castToUnsignedLong castToUnsignedLongLong |
 	(castToUnsignedInt := msgNode selector = #bitInvert32) ifTrue: [ 
-		aStream nextPutAll: '(unsigned int)' ].
-	aStream nextPut: $~.
+		aStream nextPutAll: '((unsigned int) (' ].
+	
+	"Wrap negation with parentheses too"
+	aStream nextPutAll: '~'.
 	(castToUnsignedLong := msgNode selector = #bitInvert64 and: [ 
 		                       self is32Bit not "then it's 64 bits" ]) 
-		ifTrue: [ aStream nextPutAll: '(usqIntptr_t)' ].
+		ifTrue: [ aStream nextPutAll: '((usqIntptr_t) ' ].
 	(castToUnsignedLongLong := msgNode selector = #bitInvert64 and: [ 
 		                           self is32Bit ]) ifTrue: [ 
-		aStream nextPutAll: '(unsigned long long)' ].
+		aStream nextPutAll: '((unsigned long long) ' ].
 	self assert: castToUnsignedInt asBit + castToUnsignedLong asBit
 		+ castToUnsignedLongLong asBit <= 1. "We should only do a single cast"
-	self emitCExpression: msgNode receiver on: aStream
+	self emitCExpression: msgNode receiver on: aStream.
+	
+	castToUnsignedInt ifTrue: [ aStream nextPutAll: ')' ].
+	
+	"There should be a single cast"
+	(castToUnsignedLong or: [ castToUnsignedLongLong  or: [ castToUnsignedInt ]]) ifTrue: [
+		aStream nextPutAll: ' )'
+	]
 ]
 
 { #category : #'C translation' }
@@ -1637,13 +1646,13 @@ CCodeGenerator >> generateBitShift: msgNode on: aStream indent: level [
 			self emitCExpression: arg on: aStream indent: level.
 			aStream nextPutAll: ' < 0) ? ((usqInt) '.
 			self emitCExpression: rcvr on: aStream indent: level.
-			aStream nextPutAll: ' >> -'.
+			aStream nextPutAll: ' ) >> -'.
 			self emitCExpression: arg on: aStream indent: level.
-			aStream nextPutAll: ') : ((usqInt) '.
+			aStream nextPutAll: ' : ((usqInt) '.
 			self emitCExpression: rcvr on: aStream indent: level.
-			aStream nextPutAll: ' << '.
+			aStream nextPutAll: ' ) << '.
 			self emitCExpression: arg on: aStream indent: level.
-			aStream nextPutAll: '))']
+			aStream nextPutAll: ')']
 ]
 
 { #category : #'C translation' }
@@ -3053,7 +3062,7 @@ CCodeGenerator >> generateCCoercion: msgNode on: aStream indent: level [
 	aStream nextPutAll: cType.
 	aStream nextPutAll: ') '.
 	self emitCExpression: cExpr on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #accessing }
@@ -4029,7 +4038,7 @@ CCodeGenerator >> generateSignedIntFromLong64: msgNode on: aStream indent: level
 
 	aStream nextPutAll: '((sqLong) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
@@ -4038,16 +4047,16 @@ CCodeGenerator >> generateSignedIntFromLong: msgNode on: aStream indent: level [
 
 	aStream nextPutAll: '((int) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateSignedIntFromShort: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll: '((short)'.
+	aStream nextPutAll: '((short) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
@@ -4056,7 +4065,7 @@ CCodeGenerator >> generateSignedIntToLong64: msgNode on: aStream indent: level [
 
 	aStream nextPutAll: '((usqInt) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
@@ -4065,18 +4074,20 @@ CCodeGenerator >> generateSignedIntToLong: msgNode on: aStream indent: level [
 
 	aStream nextPutAll: '((usqInt) '.
 	self is64Bit ifTrue:
-		[aStream nextPutAll: '(int)'].
+		[aStream nextPutAll: '((int) '].
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	self is64Bit ifTrue:
+		[aStream nextPutAll: ' )'].
+	aStream nextPutAll: ' )'
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateSignedIntToShort: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll: '((usqInt) (short)'.
+	aStream nextPutAll: '((usqInt) ((short) '.
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPut: $)
+	aStream nextPutAll: ' ) )'
 ]
 
 { #category : #'C translation' }
