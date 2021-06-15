@@ -317,6 +317,12 @@ CSlangPrettyPrinter >> visitPreprocessorIf: anIf [
 		cr
 ]
 
+{ #category : #visiting }
+CSlangPrettyPrinter >> visitRawCode: aCRawCodeNode [ 
+	
+	stream nextPutAll: aCRawCodeNode code asString
+]
+
 { #category : #generated }
 CSlangPrettyPrinter >> visitReturnStatement: aReturn [
 
