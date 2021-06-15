@@ -94,7 +94,7 @@ SlangBasicTranslationTest >> shouldGenerateDeadCode [
 
 { #category : #helpers }
 SlangBasicTranslationTest >> slangTranslate: tast inStream: aWriteStream [ 
-	
+
 	tast
 		emitCCodeOn: aWriteStream
 		level: 0
@@ -1997,7 +1997,7 @@ SlangBasicTranslationTest >> testSendLeftBitShift [
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((sqInt)((usqInt)(a) << 3))'
+	self assert: translation equals: '((sqInt) (((usqInt) a ) << 3) )'
 ]
 
 { #category : #'tests-builtins' }
@@ -2055,7 +2055,7 @@ SlangBasicTranslationTest >> testSendLeftBitShiftLong [
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((sqLong)((usqLong)(a) << 3))'
+	self assert: translation equals: '((sqLong) (((usqLong) a ) << 3) )'
 ]
 
 { #category : #'tests-builtins' }
@@ -2069,7 +2069,7 @@ SlangBasicTranslationTest >> testSendLeftBitShiftShortType [
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((sqInt)((usqInt)(a) << 3))'
+	self assert: translation equals: '((sqInt) (((usqInt) a ) << 3) )'
 ]
 
 { #category : #'tests-builtins' }
@@ -2097,7 +2097,7 @@ SlangBasicTranslationTest >> testSendLeftBitShiftUnsignedShortType [
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((usqInt)(a) << 3)'
+	self assert: translation equals: '((usqInt) a ) << 3'
 ]
 
 { #category : #'tests-builtins' }

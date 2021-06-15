@@ -3949,7 +3949,8 @@ CCodeGenerator >> generateShiftLeft: msgNode on: aStream indent: level [
 				ifFalse: [(self sizeOfIntegralCType: type) < (self sizeOfIntegralCType: #usqLong)
 					ifTrue: [#usqInt]
 					ifFalse: [self unsignedTypeForIntegralType: type]].
-			aStream nextPutAll: '((('; nextPutAll: unsigned; nextPutAll: ') '].
+			mustCastBackToSign ifTrue: [ aStream nextPutAll: '(' ].
+			aStream nextPutAll: '(('; nextPutAll: unsigned; nextPutAll: ') '].
 	
 	self emitCExpression: rcvr on: aStream indent: level.
 	mustCastToUnsigned ifTrue: [aStream nextPutAll: ' )'].
@@ -3957,7 +3958,7 @@ CCodeGenerator >> generateShiftLeft: msgNode on: aStream indent: level [
 	aStream nextPutAll: ' << '.
 	self emitCExpression: arg on: aStream indent: level.
 	
-	mustCastToUnsigned ifTrue: [aStream nextPutAll: ')'].
+	(mustCastToUnsigned and: [mustCastBackToSign]) ifTrue: [aStream nextPutAll: ')'].
 	mustCastBackToSign ifTrue: [aStream nextPutAll: ' )'].
 ]
 
