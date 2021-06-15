@@ -1635,21 +1635,21 @@ CCodeGenerator >> generateBitShift: msgNode on: aStream indent: level [
 			[aStream nextPutAll: '((usqInt) '.
 			self emitCExpression: rcvr on: aStream.
 			shift < 0
-				ifTrue: [aStream nextPutAll: ' >> '; print: shift negated]
-				ifFalse: [aStream nextPutAll: ' << '; print: shift].
-			aStream nextPut: $)]
+				ifTrue: [aStream nextPutAll: ' ) >> '; print: shift negated]
+				ifFalse: [aStream nextPutAll: ' ) << '; print: shift].
+			]
 		ifFalse: "bit shift amount is an expression"
 			[aStream nextPutAll: '(('.
 			self emitCExpression: arg on: aStream indent: level.
-			aStream nextPutAll: ' < 0) ? ((usqInt) '.
+			aStream nextPutAll: ' < 0) ? (((usqInt) '.
 			self emitCExpression: rcvr on: aStream indent: level.
-			aStream nextPutAll: ' ) >> -'.
+			aStream nextPutAll: ' ) >> (-'.
 			self emitCExpression: arg on: aStream indent: level.
-			aStream nextPutAll: ' : ((usqInt) '.
+			aStream nextPutAll: ')) : (((usqInt) '.
 			self emitCExpression: rcvr on: aStream indent: level.
 			aStream nextPutAll: ' ) << '.
 			self emitCExpression: arg on: aStream indent: level.
-			aStream nextPutAll: ')']
+			aStream nextPutAll: '))']
 ]
 
 { #category : #'C translation' }
@@ -2298,6 +2298,28 @@ CCodeGenerator >> generateCASTIfTrueAsArgument: tast [
 CCodeGenerator >> generateCASTIfTrueIfFalse: tast [
 
 	^ self generateCASTIfElse: tast reverseArms: false
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfTrueIfFalseAsArgument: tast [
+
+	(self nilOrBooleanConstantReceiverOf: tast receiver)
+		ifNil: [
+			(tast arguments first isSameAs: tast arguments last) ifTrue: [ | expressionList |
+			expressionList := CExpressionListNode new.
+			tast receiver hasSideEffect ifTrue: [ expressionList add: (tast receiver asCASTExpressionIn: self) ].
+			expressionList add: (tast arguments first asCASTExpressionIn: self)
+			].
+			^ (CTernaryNode
+				   condition: (tast receiver asCASTExpressionIn: self)
+				   then: (tast arguments first asCASTExpressionIn: self)
+				   else: (tast arguments last asCASTExpressionIn: self))
+				  printOnMultipleLines: true;
+				  yourself ]
+		ifNotNil: [ :const | 
+			(const
+				 ifTrue: [ ^ tast arguments first ]
+				 ifFalse: [ ^ tast arguments last ]) asCASTExpressionIn: self ]
 ]
 
 { #category : #'CAST translation' }
@@ -3112,11 +3134,11 @@ CCodeGenerator >> generateDoWhileFalse: msgNode on: aStream indent: level [
 	| testStmt receiverWithoutTest |
 	testStmt := msgNode receiver statements last.
 	receiverWithoutTest := TStmtListNode new setStatements: msgNode receiver statements allButLast.
-	aStream nextPutAll: 'do {'; cr.
-	receiverWithoutTest emitCCodeOn: aStream level: level + 1 generator: self.
+	aStream nextPutAll: 'do'.
+	receiverWithoutTest emitCCodeOn: aStream level: level generator: self.
 	aStream tab: level.
-	aStream nextPutAll: '} while(!('.
-	testStmt emitCCodeAsExpressionOn: aStream level: level + 1 generator: self.
+	aStream nextPutAll: 'while(!('.
+	testStmt emitCCodeAsExpressionOn: aStream level: level generator: self.
 	aStream nextPutAll: '))'
 ]
 
@@ -3127,11 +3149,11 @@ CCodeGenerator >> generateDoWhileTrue: msgNode on: aStream indent: level [
 	| testStmt receiverWithoutTest |
 	testStmt := msgNode receiver statements last.
 	receiverWithoutTest := TStmtListNode new setStatements: msgNode receiver statements allButLast.
-	aStream nextPutAll: 'do {'; cr.
-	receiverWithoutTest emitCCodeOn: aStream level: level + 1 generator: self.
+	aStream nextPutAll: 'do'.
+	receiverWithoutTest emitCCodeOn: aStream level: level generator: self.
 	aStream tab: level.
-	aStream nextPutAll: '} while('.
-	testStmt emitCCodeAsExpressionOn: aStream level: level + 1 generator: self.
+	aStream nextPutAll: 'while('.
+	testStmt emitCCodeAsExpressionOn: aStream level: level generator: self.
 	aStream nextPut: $)
 ]
 
@@ -3245,7 +3267,7 @@ CCodeGenerator >> generateIfFalseIfTrue: msgNode on: aStream indent: level [
 				 msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
 				 aStream nextPutAll: ') '.
 				 msgNode args last emitCCodeOn: aStream level: level generator: self.
-				 aStream nextPutAll: 'else '.
+				 aStream nextPutAll: ' else '.
 				 msgNode args first emitCCodeOn: aStream level: level generator: self.
 				 ]]
 		ifNotNil:
@@ -3284,9 +3306,8 @@ CCodeGenerator >> generateIfNil: msgNode on: aStream indent: level [
 		ifFalse:
 			[aStream nextPutAll: 'if (!('.
 			 msgNode receiver emitCCodeAsExpressionOn: aStream level: level + 1 generator: self.
-			 aStream nextPutAll: ')) {'; cr.
-			 msgNode args last emitCCodeOn: aStream level: level + 1 generator: self.
-			 aStream tab: level; nextPut: $}]
+			 aStream nextPutAll: ')) '.
+			 msgNode args last emitCCodeOn: aStream level: level generator: self ]
 		ifTrue:
 			[msgNode args first emitCCodeOn: aStream level: level generator: self]
 ]
@@ -3321,11 +3342,10 @@ CCodeGenerator >> generateIfNilIfNotNil: msgNode on: aStream indent: level [
 		ifFalse:
 			[aStream nextPutAll: 'if ('.
 			msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-			aStream nextPutAll: ') {'; cr.
-			msgNode args last emitCCodeOn: aStream level: level + 1 generator: self.
-			aStream tab: level; nextPut: $}; cr; tab: level; nextPutAll: 'else {'; cr.
-			msgNode args first emitCCodeOn: aStream level: level + 1 generator: self.
-			aStream tab: level; nextPut: $}]
+			aStream nextPutAll: ') '.
+			msgNode args last emitCCodeOn: aStream level: level generator: self.
+			aStream nextPutAll: ' else '.
+			msgNode args first emitCCodeOn: aStream level: level generator: self.]
 		ifTrue:
 			[msgNode args first emitCCodeOn: aStream level: level generator: self]
 ]
@@ -3355,10 +3375,8 @@ CCodeGenerator >> generateIfNotNil: msgNode on: aStream indent: level [
 		ifFalse:
 			[aStream nextPutAll: 'if ('.
 			msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-			aStream nextPutAll: ') {'; cr.
-			msgNode args first emitCCodeOn: aStream level: level + 1 generator: self.
-			level timesRepeat: [ aStream tab ].
-			aStream nextPut: $}]
+			aStream nextPutAll: ') '.
+			msgNode args first emitCCodeOn: aStream level: level generator: self]
 ]
 
 { #category : #'C translation' }
@@ -3384,11 +3402,10 @@ CCodeGenerator >> generateIfNotNilIfNil: msgNode on: aStream indent: level [
 		ifFalse:
 			[aStream nextPutAll: 'if ('.
 			msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-			aStream nextPutAll: ') {'; cr.
-			msgNode args first emitCCodeOn: aStream level: level + 1 generator: self.
-			aStream tab: level; nextPut: $}; cr; tab: level; nextPutAll: 'else {'; cr.
-			msgNode args last emitCCodeOn: aStream level: level + 1 generator: self.
-			aStream tab: level; nextPut: $}]
+			aStream nextPutAll: ') '.
+			msgNode args first emitCCodeOn: aStream level: level generator: self.
+			aStream nextPutAll: ' else '.
+			msgNode args last emitCCodeOn: aStream level: level generator: self]
 		ifTrue:
 			[msgNode args last emitCCodeOn: aStream level: level generator: self]
 ]
@@ -3455,7 +3472,7 @@ CCodeGenerator >> generateIfTrueIfFalse: msgNode on: aStream indent: level [
 				 msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
 				 aStream nextPutAll: ') '.
 				 msgNode args first emitCCodeOn: aStream level: level generator: self.
-				 aStream nextPutAll: 'else '.
+				 aStream nextPutAll: ' else '.
 				 msgNode args last emitCCodeOn: aStream level: level generator: self.
 				 ]]
 		ifNotNil:
@@ -3473,9 +3490,9 @@ CCodeGenerator >> generateIfTrueIfFalseAsArgument: msgNode on: aStream indent: l
 			[(self tryToCollapseBothArmsOfConditionalExpression: msgNode on: aStream indent: level) ifFalse:
 				[aStream nextPut: $(.
 				 msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-				 aStream crtab: level + 1; nextPut: $?; space.
+				 aStream crtab: level + 1; nextPutAll: ' ? '.
 				 msgNode args first emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-				 aStream crtab: level + 1; nextPut: $:; space.
+				 aStream crtab: level + 1; nextPutAll: ' : '.
 				 msgNode args last emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
 				 aStream nextPut: $)]]
 		ifNotNil:
@@ -3901,6 +3918,7 @@ CCodeGenerator >> generateShiftLeft: msgNode on: aStream indent: level [
 	"Generate a C bitShift.  If we can determine the result
 	 would overflow the word size, cast to a long integer."
 	| rcvr arg castToLong type mustCastBackToSign mustCastToUnsigned canSuffixTheConstant typeIsUnsigned |
+
 	rcvr := msgNode receiver.
 	arg := msgNode args first.
 	castToLong := false.
@@ -3936,7 +3954,7 @@ CCodeGenerator >> generateShiftLeft: msgNode on: aStream indent: level [
 				ifFalse: [(self sizeOfIntegralCType: type) < (self sizeOfIntegralCType: #sqInt)
 					ifTrue: [#sqInt]
 					ifFalse: [type]].
-			aStream nextPutAll: '(('; nextPutAll: promotedType; nextPut: $)].
+			aStream nextPutAll: '(('; nextPutAll: promotedType; nextPutAll: ') '].
 	mustCastToUnsigned
 		ifTrue:
 			[| unsigned |
@@ -3945,13 +3963,17 @@ CCodeGenerator >> generateShiftLeft: msgNode on: aStream indent: level [
 				ifFalse: [(self sizeOfIntegralCType: type) < (self sizeOfIntegralCType: #usqLong)
 					ifTrue: [#usqInt]
 					ifFalse: [self unsignedTypeForIntegralType: type]].
-			aStream nextPutAll: '(('; nextPutAll: unsigned; nextPutAll: ')('].
+			mustCastBackToSign ifTrue: [ aStream nextPutAll: '(' ].
+			aStream nextPutAll: '(('; nextPutAll: unsigned; nextPutAll: ') '].
+	
 	self emitCExpression: rcvr on: aStream indent: level.
-	mustCastToUnsigned ifTrue: [aStream nextPut: $)].
-		aStream nextPutAll: ' << '.
-		self emitCExpression: arg on: aStream indent: level.
-	mustCastToUnsigned ifTrue: [aStream nextPut: $)].
-	mustCastBackToSign ifTrue: [aStream nextPut: $)].
+	mustCastToUnsigned ifTrue: [aStream nextPutAll: ' )'].
+	
+	aStream nextPutAll: ' << '.
+	self emitCExpression: arg on: aStream indent: level.
+	
+	(mustCastToUnsigned and: [mustCastBackToSign]) ifTrue: [aStream nextPutAll: ')'].
+	mustCastBackToSign ifTrue: [aStream nextPutAll: ' )'].
 ]
 
 { #category : #'C translation' }
@@ -3971,40 +3993,62 @@ CCodeGenerator >> generateShiftRight: msgNode on: aStream indent: level [
 		ifFalse:
 			[aStream nextPutAll: '((usqInt) '.
 			 self emitCExpression: msgNode receiver on: aStream indent: level.
-			 aStream nextPut: $)].
+			 aStream nextPutAll: ' )'].
 	aStream nextPutAll: ' >> '.
 	self emitCExpression: msgNode args first on: aStream indent: level
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateSignedBitShift: msgNode on: aStream indent: level [
+
 	"Generate the C code for this message onto the given stream."
 
 	| cast type arg shift |
 	"since ``signed'' is a synonym for ``signed int'' do not cast 64-bit values to signed if at all possible."
-	cast := (self is64BitIntegralVariable: msgNode receiver typeInto: [:t| type := t])
-				ifTrue: ['(', (type first = $u ifTrue: [type allButFirst: (type second = $n ifTrue: [2] ifFalse: [1])] ifFalse: [type]), ')']
-				ifFalse: ['(signed)'].
-	(self isConstantNode: (arg := msgNode args first) valueInto: [:shiftValue| shift := shiftValue])
-		ifTrue: "bit shift amount is a constant"
-			[aStream nextPut: $(; nextPutAll: cast.
+	cast := (self
+		         is64BitIntegralVariable: msgNode receiver
+		         typeInto: [ :t | type := t ])
+		        ifTrue: [ 
+			        '(' , (type first = $u
+				         ifTrue: [ 
+					         type allButFirst: (type second = $n
+							          ifTrue: [ 2 ]
+							          ifFalse: [ 1 ]) ]
+				         ifFalse: [ type ]) , ') ' ]
+		        ifFalse: [ '(signed) ' ].
+	(self
+		 isConstantNode: (arg := msgNode args first)
+		 valueInto: [ :shiftValue | shift := shiftValue ])
+		ifTrue: [ "bit shift amount is a constant"
+			aStream
+				nextPut: $(;
+				nextPutAll: cast.
 			self emitCExpression: msgNode receiver on: aStream.
 			shift < 0
-				ifTrue: [aStream nextPutAll: ' >> '; print: shift negated]
-				ifFalse: [aStream nextPutAll: ' << '; print: shift].
-			aStream nextPut: $)]
-		ifFalse: "bit shift amount is an expression"
-			[aStream nextPutAll: '(('.
+				ifTrue: [ 
+					aStream
+						nextPutAll: ' ) >> ';
+						print: shift negated ]
+				ifFalse: [ 
+					aStream
+						nextPutAll: ' ) << ';
+						print: shift ] ]
+		ifFalse: [ "bit shift amount is an expression"
+			aStream nextPutAll: '(('.
 			self emitCExpression: arg on: aStream.
-			aStream nextPutAll: ' < 0) ? ('; nextPutAll: cast.
+			aStream
+				nextPutAll: ' < 0) ? (';
+				nextPutAll: cast.
 			self emitCExpression: msgNode receiver on: aStream.
 			aStream nextPutAll: ' >> -'.
 			self emitCExpression: arg on: aStream.
-			aStream nextPutAll: ') : ('; nextPutAll: cast.
+			aStream
+				nextPutAll: ') : (';
+				nextPutAll: cast.
 			self emitCExpression: msgNode receiver on: aStream.
 			aStream nextPutAll: ' << '.
 			self emitCExpression: arg on: aStream.
-			aStream nextPutAll: '))']
+			aStream nextPutAll: '))' ]
 ]
 
 { #category : #'C translation' }
@@ -4075,7 +4119,7 @@ CCodeGenerator >> generateSignedShiftRight: msgNode on: aStream indent: level [
 		ifFalse:
 			[aStream nextPutAll: '((sqInt) '].
 	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPutAll: ') >> '.
+	aStream nextPutAll: ' ) >> '.
 	self emitCExpression: msgNode args first on: aStream
 ]
 
@@ -4289,24 +4333,29 @@ CCodeGenerator >> generateWhileFalse: msgNode on: aStream indent: level [
 
 { #category : #'C translation' }
 CCodeGenerator >> generateWhileForeverBreakIf: breakBoolean loop: msgNode on: aStream indent: level [
+
 	"Generate either of
 		while(1) {stmtListA; if(cond) break; stmtListB}
 		while(1) {stmtListA; if(!(cond)) break; stmtListB}."
 
-	| testStmt receiverWithoutTest |
-	aStream peekLast ~~ Character tab ifTrue:
-		[aStream tab: level - 1].
-	aStream nextPutAll: 'while (1) {'; cr.
+	| testStmt statements ifStatement ifSelector |
+	aStream peekLast ~~ Character tab ifTrue: [ aStream tab: level - 1 ].
+	aStream nextPutAll: 'while (1) '.
 	testStmt := msgNode receiver statements last.
-	receiverWithoutTest := TStmtListNode new setStatements: msgNode receiver statements allButLast.
-	receiverWithoutTest emitCCodeOn: aStream level: level + 1 generator: self.
-	aStream tab: level + 1; nextPutAll: 'if ('.
-	breakBoolean ifFalse: [aStream nextPut: $!; nextPut: $(].
-	testStmt emitCCodeAsExpressionOn: aStream level: level + 1 generator: self.
-	breakBoolean ifFalse: [aStream nextPut: $)].
-	aStream nextPutAll: ') break;'; cr.
-	msgNode args first emitCCodeOn: aStream level: level + 1 generator: self.
-	aStream tab: level; nextPut: $}
+	statements := OrderedCollection new.
+	statements addAll: msgNode receiver statements allButLast.
+
+	ifSelector := breakBoolean
+		              ifTrue: [ #ifTrue: ]
+		              ifFalse: [ #ifFalse: ].
+	ifStatement := TSendNode new
+		               setSelector: ifSelector
+		               receiver: testStmt
+		               arguments: { (TVariableNode new setName: 'break') }. "break is created using a TVariableNode, create a dedicated node instead ?"
+	statements add: ifStatement.
+
+	statements addAll: msgNode arguments first statements.
+	TStmtListNode new setStatements: statements; emitCCodeOn: aStream level: level generator: self
 ]
 
 { #category : #'C translation' }

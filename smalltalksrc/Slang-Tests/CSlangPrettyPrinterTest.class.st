@@ -246,7 +246,7 @@ CSlangPrettyPrinterTest >> testVisitDoStatement [
 
 	self assert: print trimBoth equals: 'do{
 	15;
-}while(a && b);'
+}while(a && b)'
 ]
 
 { #category : #'tests-visitor' }
@@ -281,7 +281,7 @@ CSlangPrettyPrinterTest >> testVisitExpressionList [
 						           (CConstantNode value: 5).
 						           (CConstantNode value: 6) }) }).
 
-	self assert: print trimBoth equals: '(foo(1, 2) , foo(3, 4) , foo(5, 6))'
+	self assert: print trimBoth equals: '(foo(1, 2), foo(3, 4), foo(5, 6))'
 ]
 
 { #category : #'tests-visitor' }

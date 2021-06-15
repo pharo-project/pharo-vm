@@ -66,14 +66,14 @@ CSlangPrettyPrinter >> visitArrow: aPointerAccess [
 { #category : #generated }
 CSlangPrettyPrinter >> visitAssignment: anAssignment [
 
+	anAssignment needsParentheses ifTrue: [ stream nextPut: $( ].
 	anAssignment lvalue acceptVisitor: self.
 	stream
 		nextPutAll: ' ';
 		nextPutAll: anAssignment operator;
 		nextPutAll: ' '.
-
-
-	anAssignment rvalue acceptVisitor: self
+	anAssignment rvalue acceptVisitor: self.
+	anAssignment needsParentheses ifTrue: [ stream nextPut: $) ]
 ]
 
 { #category : #generated }
@@ -208,7 +208,7 @@ CSlangPrettyPrinter >> visitDoStatement: aDoStatement [
 	aDoStatement statement acceptVisitor: self.
 	stream nextPutAll: 'while('.
 	aDoStatement while acceptVisitor: self.
-	stream nextPutAll: ');'
+	stream nextPut: $)
 ]
 
 { #category : #generated }
@@ -221,7 +221,7 @@ CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
 
 	stream nextPut: $(.
 	anExpressionList expressions
-		do: [ :e | self printExpression: e ]
+		do: [ :e | e acceptVisitor: self ]
 		separatedBy: [ stream nextPutAll: ', ' ].
 	stream nextPut: $)
 ]
@@ -265,7 +265,7 @@ CSlangPrettyPrinter >> visitIfStatement: anIf [
 	stream nextPutAll: ') '.
 	anIf then acceptVisitor: self.
 	anIf else ifNotNil: [ :e | 
-		stream nextPutAll: 'else '.
+		stream nextPutAll: ' else '.
 		e acceptVisitor: self ]
 ]
 
@@ -358,10 +358,10 @@ CSlangPrettyPrinter >> visitTernary: aTernary [
 	self printExpression: aTernary condition.
 	aTernary printOnMultipleLines ifTrue: [ stream crtab: level + 1 ].
 	stream nextPutAll: ' ? '.
-	self printExpression: aTernary then.
+	aTernary then acceptVisitor: self.
 	aTernary printOnMultipleLines ifTrue: [ stream crtab: level + 1 ].
 	stream nextPutAll: ' : '.
-	self printExpression: aTernary else.
+	aTernary else acceptVisitor: self.
 	stream nextPut: $)
 ]
 
@@ -387,7 +387,7 @@ CSlangPrettyPrinter >> visitUnaryOperator: anUnary [
 { #category : #generated }
 CSlangPrettyPrinter >> visitWhileStatement: aWhileStatement [
 
-	stream nextPutAll: 'while('.
+	stream nextPutAll: 'while ('.
 	aWhileStatement while acceptVisitor: self.
 	stream nextPutAll: ') '.
 	aWhileStatement statement acceptVisitor: self
