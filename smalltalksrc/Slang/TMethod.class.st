@@ -504,7 +504,7 @@ TMethod >> emitCCodeOn: aStream generator: aCodeGen [
 	| bodyStream conditional |
 
 	aCodeGen currentMethod: self.
-	usedVariablesCache := Set new.
+	self resetUsedVariablesCache.
 	self emitCCommentOn: aStream.	"place method comment and method name before function."
 	aStream crtab; nextPutAll: '/* '; nextPutAll: self definingClass name; nextPutAll: '>>#'; nextPutAll: self smalltalkSelector; nextPutAll: ' */'.	
 	aStream cr. 
@@ -2568,6 +2568,12 @@ TMethod >> replaceSizeMessages [
 
 ]
 
+{ #category : #'C code generation' }
+TMethod >> resetUsedVariablesCache [
+
+	usedVariablesCache := Set new
+]
+
 { #category : #accessing }
 TMethod >> returnType [
 	"The type of the values returned by this method. This string will be used in the C declaration of this function."
@@ -3076,6 +3082,12 @@ TMethod >> unusedNamePrefixedBy: aString avoiding: usedNames [
 	 usedNames includes: newVarName] whileTrue:
 		[n := n + 1].
 	^usedNames add: newVarName
+]
+
+{ #category : #utilities }
+TMethod >> usedVariablesCache [
+	
+	^ usedVariablesCache
 ]
 
 { #category : #inlining }
