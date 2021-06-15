@@ -25,7 +25,7 @@ CSlangPrettyPrinter >> initialize [
 { #category : #generated }
 CSlangPrettyPrinter >> printExpression: cAST [
 
-	cAST isLeaf
+	(cAST isLeaf or: [ cAST isFunctionCall ])
 		ifTrue: [ cAST acceptVisitor: self ]
 		ifFalse: [ 
 			stream nextPut: $(.
@@ -110,9 +110,7 @@ CSlangPrettyPrinter >> visitCastExpression: aCastExpression [
 	stream nextPut: $(.
 	aCastExpression type acceptVisitor: self.
 	stream nextPut: $).
-	stream nextPut: $(.
-	aCastExpression expression acceptVisitor: self.
-	stream nextPut: $)
+	self printExpression: aCastExpression expression
 ]
 
 { #category : #generated }
@@ -205,6 +203,16 @@ CSlangPrettyPrinter >> visitDoStatement: aDoStatement [
 { #category : #generated }
 CSlangPrettyPrinter >> visitEmptyStatement: anEmptyStatement [
 	"Nothing to print."
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
+
+	stream nextPut: $(.
+	anExpressionList expressions
+		do: [ :e | self printExpression: e ]
+		separatedBy: [ stream nextPutAll: ', ' ].
+	stream nextPut: $)
 ]
 
 { #category : #generated }

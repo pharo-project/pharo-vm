@@ -198,7 +198,7 @@ CASTParserTests >> testParseArrayDeclarationWithInitializer [
 
 	declarator := declaration declarators first.
 	self assert: declarator isInitializerDeclarator.
-	self assert: declarator initializer isCall.
+	self assert: declarator initializer isFunctionCall.
 
 	"Inside the initializer declarator is the array declarator"
 	declarator := declarator declarator.
@@ -252,7 +252,7 @@ CASTParserTests >> testParseCall [
 	expression := self parseExpression: 'toto()'.
 	
 	self assert: expression isExpression.
-	self assert: expression isCall.
+	self assert: expression isFunctionCall.
 	self assert: expression identifier name equals: 'toto'.
 	self assert: expression arguments isEmpty.
 ]
@@ -264,10 +264,10 @@ CASTParserTests >> testParseCallWithArguments [
 	expression := self parseExpression: 'toto(1, foo(), 1+2)'.
 	
 	self assert: expression isExpression.
-	self assert: expression isCall.
+	self assert: expression isFunctionCall.
 	self assert: expression identifier name equals: 'toto'.
 	self assert: expression arguments first isConstant.
-	self assert: expression arguments second isCall.
+	self assert: expression arguments second isFunctionCall.
 	self assert: expression arguments third isBinaryOperation.
 ]
 
@@ -290,7 +290,7 @@ CASTParserTests >> testParseCommaSeparatedExpression [
 	commaSeparatedExpression := expression rvalue.
 	self assert: commaSeparatedExpression isCommaSeparatedExpression.
 	self assert: commaSeparatedExpression expressions first isConstant.
-	self assert: commaSeparatedExpression expressions second isCall.
+	self assert: commaSeparatedExpression expressions second isFunctionCall.
 	self assert: commaSeparatedExpression expressions third isBinaryOperation.
 ]
 
