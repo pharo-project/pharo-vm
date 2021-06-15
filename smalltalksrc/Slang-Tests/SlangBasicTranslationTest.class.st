@@ -39,6 +39,12 @@ SlangBasicTranslationTest >> generator: anObject [
 	generator := anObject
 ]
 
+{ #category : #compatibility }
+SlangBasicTranslationTest >> isNonArgumentImplicitReceiverVariableName: aString [ 
+	
+	^ false
+]
+
 { #category : #accessing }
 SlangBasicTranslationTest >> numSmallIntegerTagBits [
 	
