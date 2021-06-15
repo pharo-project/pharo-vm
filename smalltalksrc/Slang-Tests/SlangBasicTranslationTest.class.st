@@ -62,7 +62,7 @@ SlangBasicTranslationTest >> setUp [
 	generator currentMethod: (TMethod new
 		labels: Set new;
 		resetUsedVariablesCache;
-		yourself)
+		yourself).
 	
 	"Tell the generator this is the class we are generating.
 	That will make the generation dispatch to us to ask for configurations such as the number of small integer bits"

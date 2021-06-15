@@ -111,7 +111,7 @@ CSlangPrettyPrinter >> visitCastExpression: aCastExpression [
 	stream nextPut: $(.
 	aCastExpression type acceptVisitor: self.
 	stream nextPutAll: ') '.
-	self printExpression: aCastExpression expression
+	self printExpression: aCastExpression expression.
 	stream nextPutAll: ' )'
 ]
 

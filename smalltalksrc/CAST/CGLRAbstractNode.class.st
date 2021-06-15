@@ -28,8 +28,8 @@ CGLRAbstractNode >> isBinaryOperation [
 ]
 
 { #category : #testing }
-CGLRAbstractNode >> isBinaryOperation [
-	
+CGLRAbstractNode >> isCastExpression [
+
 	^ false
 ]
 
