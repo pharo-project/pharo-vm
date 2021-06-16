@@ -4170,10 +4170,8 @@ CCodeGenerator >> generateToByDo: msgNode on: aStream indent: level [
 		on: aStream.
 	aStream nextPutAll: '; ', iterationVar, ' += '.
 	self emitCExpression: step on: aStream.
-	aStream nextPutAll: ') {'; cr.
-	blockExpr emitCCodeOn: aStream level: level + 1 generator: self.
-	aStream tab: level.
-	aStream nextPut: $}
+	aStream nextPutAll: ') '.
+	blockExpr emitCCodeOn: aStream level: level generator: self.
 ]
 
 { #category : #'C translation' }
@@ -4206,10 +4204,8 @@ CCodeGenerator >> generateToDo: msgNode on: aStream indent: level [
 	self emitCExpression: msgNode receiver on: aStream.
 	aStream nextPutAll: '; ', iterationVar.
 	self generateToByDoLimitExpression: msgNode args first negative: false on: aStream.
-	aStream nextPutAll: '; ', iterationVar, '++) {'; cr.
-	msgNode args last emitCCodeOn: aStream level: level + 1 generator: self.
-	level timesRepeat: [ aStream tab ].
-	aStream nextPutAll: '}'.
+	aStream nextPutAll: '; ', iterationVar, '++) '.
+	msgNode args last emitCCodeOn: aStream level: level generator: self.
 ]
 
 { #category : #'C translation' }

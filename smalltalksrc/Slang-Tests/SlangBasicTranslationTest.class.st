@@ -66,7 +66,7 @@ SlangBasicTranslationTest >> setUp [
 	
 	"Tell the generator this is the class we are generating.
 	That will make the generation dispatch to us to ask for configurations such as the number of small integer bits"
-	generator vmClass: self.
+	generator vmClass: nil.
 	numSmallIntegerTagBits := 42.
 ]
 
@@ -2959,7 +2959,7 @@ SlangBasicTranslationTest >> testSendToByDo [
 						          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'for(i = 1; i <= 10; i += 2) {
+	self assert: translation trimBoth equals: 'for (i = 1; i <= 10; i += 2) {
 	var -= 7;
 }'
 ]
@@ -2998,7 +2998,7 @@ SlangBasicTranslationTest >> testSendToByDoLimitExpressionHasSideEffect [
 
 	self
 		assert: translation trimBoth
-		equals: 'for(i = 1, toDoLimit = foo(var); i <= toDoLimit; i += 2) {
+		equals: 'for (i = 1, toDoLimit = foo(var); i <= toDoLimit; i += 2) {
 	var -= 7;
 }'
 ]
@@ -3028,7 +3028,7 @@ SlangBasicTranslationTest >> testSendToByDoWithNegativeStep [
 						          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'for(i = 10; i >= 0; i += -2) {
+	self assert: translation trimBoth equals: 'for (i = 10; i >= 0; i += -2) {
 	var -= 7;
 }'
 ]
@@ -3057,7 +3057,7 @@ SlangBasicTranslationTest >> testSendToDo [
 						          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'for(i = 1; i <= 10; i++) {
+	self assert: translation trimBoth equals: 'for (i = 1; i <= 10; i++) {
 	var -= 7;
 }'
 ]
@@ -3094,7 +3094,7 @@ SlangBasicTranslationTest >> testSendToDoAvoidUnderflowingOfLimitExpression [
 
 	self
 		assert: translation trimBoth
-		equals: 'for(i = 1; i < foo; i++) {
+		equals: 'for (i = 1; i < foo; i++) {
 	var -= 7;
 }'
 ]
@@ -3129,7 +3129,7 @@ SlangBasicTranslationTest >> testSendToDoLimitExpressionHasSideEffect [
 
 	self
 		assert: translation trimBoth
-		equals: 'for(i = 1; i <= foo(var); i++) {
+		equals: 'for (i = 1; i <= foo(var); i++) {
 	var -= 7;
 }'
 ]

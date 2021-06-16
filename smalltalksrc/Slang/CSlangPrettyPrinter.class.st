@@ -220,7 +220,7 @@ CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
 { #category : #generated }
 CSlangPrettyPrinter >> visitForStatement: aForStatement [
 
-	stream nextPutAll: 'for('.
+	stream nextPutAll: 'for ('.
 	aForStatement init
 		do: [ :e | e acceptVisitor: self ]
 		separatedBy: [ stream nextPutAll: ', ' ].

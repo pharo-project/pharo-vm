@@ -314,7 +314,7 @@ CSlangPrettyPrinterTest >> testVisitForStatement [
 					        (CIncrementNode object: (CIdentifierNode name: 'j')) }).
 	print := self prettyPrint: for.
 
-	self assert: print trimBoth equals: 'for(i = 1, j = 2; i <= 10; i++, j++) {
+	self assert: print trimBoth equals: 'for (i = 1, j = 2; i <= 10; i++, j++) {
 	a = i % 2;
 	j++;
 }'
