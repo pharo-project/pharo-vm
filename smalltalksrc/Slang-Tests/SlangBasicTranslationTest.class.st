@@ -2585,7 +2585,7 @@ SlangBasicTranslationTest >> testSendRepeat [
 		        arguments: {  }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'while(1) {
+	self assert: translation trimBoth equals: 'while (1) {
 	var -= 7;
 }'
 ]

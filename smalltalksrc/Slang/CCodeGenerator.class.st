@@ -3845,10 +3845,8 @@ CCodeGenerator >> generateRaisedTo: msgNode on: aStream indent: level [
 CCodeGenerator >> generateRepeat: msgNode on: aStream indent: level [
 	"Generate while(1) { stmtList } "
 
-	aStream nextPutAll: 'while(1) {'; cr.
-	msgNode receiver emitCCodeOn: aStream level: level + 1 generator: self.
-	level timesRepeat: [ aStream tab ].
-	aStream nextPutAll: '}'
+	aStream nextPutAll: 'while (1) '.
+	msgNode receiver emitCCodeOn: aStream level: level generator: self
 
 ]
 
