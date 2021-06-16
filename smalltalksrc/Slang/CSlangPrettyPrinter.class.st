@@ -25,7 +25,10 @@ CSlangPrettyPrinter >> initialize [
 { #category : #generated }
 CSlangPrettyPrinter >> printExpression: cAST [
 
-	(cAST isLeaf or: [ cAST isFunctionCall ])
+	(cAST isLeaf
+		or: [ cAST isFunctionCall
+			"Cast expressions already contain their own parentheses"
+			or: [ cAST isCastExpression ] ])
 		ifTrue: [ cAST acceptVisitor: self ]
 		ifFalse: [ 
 			stream nextPut: $(.
@@ -107,11 +110,17 @@ CSlangPrettyPrinter >> visitCall: aCall [
 { #category : #generated }
 CSlangPrettyPrinter >> visitCastExpression: aCastExpression [
 
+	"Wrap everything between parentheses to avoid ambiguities"
 	stream nextPut: $(.
+	
+	"Print the type between parentheses"
 	stream nextPut: $(.
 	aCastExpression type acceptVisitor: self.
 	stream nextPutAll: ') '.
+	
+	"Print the expression to cast"
 	self printExpression: aCastExpression expression.
+	
 	stream nextPutAll: ' )'
 ]
 
@@ -256,7 +265,7 @@ CSlangPrettyPrinter >> visitIfStatement: anIf [
 	stream nextPutAll: ') '.
 	anIf then acceptVisitor: self.
 	anIf else ifNotNil: [ :e | 
-		stream nextPutAll: 'else '.
+		stream nextPutAll: ' else '.
 		e acceptVisitor: self ]
 ]
 
