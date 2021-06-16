@@ -1408,7 +1408,7 @@ SlangBasicTranslationTest >> testSendFunctionCall [
 
 	"Case:
 	
-	[ 1 foo: 2. 3 foo: 4. var ] value"
+	1 foo: 2"
 
 	| translation |
 	translation := self translate: (TSendNode new
@@ -1417,6 +1417,25 @@ SlangBasicTranslationTest >> testSendFunctionCall [
 			                arguments: { (TConstantNode value: 2) }).
 
 	self assert: translation equals: 'foo(1, 2)'
+]
+
+{ #category : #'tests-sends' }
+SlangBasicTranslationTest >> testSendFunctionCallInOperation [
+
+	"Case:
+	
+	1 foo: 2 + 3"
+
+	| translation |
+	translation := self translate: (TSendNode new
+			                setSelector: #+
+			                receiver: (TSendNode new
+					                 setSelector: #foo
+					                 receiver: (TConstantNode value: 1)
+					                 arguments: { (TConstantNode value: 2) })
+			                arguments: { (TConstantNode value: 3) }).
+
+	self assert: translation equals: '(foo(1, 2)) + 3'
 ]
 
 { #category : #'tests-builtins' }
@@ -3049,6 +3068,84 @@ SlangBasicTranslationTest >> testSendToByDoWithNegativeStep [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendToByDoWithOperationReceiver [
+
+	"(1 + 1 foo: 2) to: 10 by: 2 do: [ var := var -7 ]"
+
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #to:by:do:
+		        receiver: (TSendNode new
+				         setSelector: #+
+				         receiver: (TConstantNode value: 1)
+				         arguments: { (TSendNode new
+						          setSelector: #foo
+						          receiver: (TConstantNode value: 1)
+						          arguments: { (TConstantNode value: 2) }) })
+		        arguments: { 
+				        (TConstantNode value: 10).
+				        (TConstantNode value: 2).
+				        (TStmtListNode new
+					         setArguments: #( i )
+					         statements:
+					         { (TAssignmentNode new
+						          setVariable: variable
+						          expression: expression) }) }.
+	translation := self translate: send.
+
+	self
+		assert: translation trimBoth
+		equals: 'for (i = 1 + (foo(1, 2)); i <= 10; i += 2) {
+	var -= 7;
+}'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendToByDoWithOperationUpdate [
+
+	"1 to: 10 by: (1 + 1 foo: 2) do: [ var := var -7 ]"
+
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #to:by:do:
+		        receiver: (TConstantNode value: 1)
+		        arguments: { 
+				        (TConstantNode value: 10).
+				        (TSendNode new
+					         setSelector: #+
+					         receiver: (TConstantNode value: 1)
+					         arguments: { (TSendNode new
+							          setSelector: #foo
+							          receiver: (TConstantNode value: 1)
+							          arguments: { (TConstantNode value: 2) }) }).
+				        (TStmtListNode new
+					         setArguments: #( i )
+					         statements:
+					         { (TAssignmentNode new
+						          setVariable: variable
+						          expression: expression) }) }.
+	translation := self translate: send.
+
+	self
+		assert: translation trimBoth
+		equals: 'for (i = 1; i <= 10; i += 1 + (foo(1, 2))) {
+	var -= 7;
+}'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendToDo [
 
 	"1 to: 10 do: [ var := var -7 ]"
@@ -3144,7 +3241,42 @@ SlangBasicTranslationTest >> testSendToDoLimitExpressionHasSideEffect [
 
 	self
 		assert: translation trimBoth
-		equals: 'for (i = 1; i <= foo(var); i++) {
+		equals: 'for (i = 1; i <= (foo(var)); i++) {
+	var -= 7;
+}'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendToDoWithOperationReceiver [
+
+	"(1 + 1 foo: 2) to: 10 do: [ var := var -7 ]"
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #to:do:
+		        receiver: (TSendNode new
+				         setSelector: #+
+				         receiver: (TConstantNode value: 1)
+				         arguments: { (TSendNode new
+						          setSelector: #foo
+						          receiver: (TConstantNode value: 1)
+						          arguments: { (TConstantNode value: 2) }) })
+		        arguments: { 
+				        (TConstantNode value: 10).
+				        (TStmtListNode new
+					         setArguments: #( i )
+					         statements:
+					         { (TAssignmentNode new
+						          setVariable: variable
+						          expression: expression) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'for (i = 1 + (foo(1, 2)); i <= 10; i++) {
 	var -= 7;
 }'
 ]

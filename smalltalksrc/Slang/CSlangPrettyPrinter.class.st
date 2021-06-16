@@ -25,15 +25,15 @@ CSlangPrettyPrinter >> initialize [
 { #category : #generated }
 CSlangPrettyPrinter >> printExpression: cAST [
 
-	(cAST isLeaf
-		or: [ cAST isFunctionCall
-			"Cast expressions already contain their own parentheses"
-			or: [ cAST isCastExpression ] ])
+	(cAST isLeaf 
+		"Cast expressions already contain their own parentheses"
+		or: [ cAST isCastExpression ])
 		ifTrue: [ cAST acceptVisitor: self ]
 		ifFalse: [ 
 			stream nextPut: $(.
 			cAST acceptVisitor: self.
 			stream nextPut: $) ]
+	
 ]
 
 { #category : #generated }

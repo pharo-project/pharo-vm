@@ -4178,12 +4178,12 @@ CCodeGenerator >> generateToByDo: msgNode on: aStream indent: level [
 	limitExpr := msgNode args first.
 	aStream nextPutAll: 'for (', iterationVar, ' = '.
 	self noteUsedVariableName: iterationVar.
-	self emitCExpression: msgNode receiver on: aStream.
+	msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
 	mayHaveSideEffects := msgNode args size = 4. "See TMethod>>prepareMethodIn:"
 	mayHaveSideEffects ifTrue:
 		[limitVar := msgNode args last.
 		 aStream nextPutAll: ', ', limitVar name, ' = '.
-		 self emitCExpression: limitExpr on: aStream.
+		limitExpr emitCCodeAsExpressionOn: aStream level: level generator: self.
 		 limitExpr := limitVar].
 	aStream nextPutAll: '; ', iterationVar.
 	step := msgNode args at: 2.
@@ -4191,7 +4191,7 @@ CCodeGenerator >> generateToByDo: msgNode on: aStream indent: level [
 		negative: (self stepExpressionIsNegative: step)
 		on: aStream.
 	aStream nextPutAll: '; ', iterationVar, ' += '.
-	self emitCExpression: step on: aStream.
+	step emitCCodeAsExpressionOn: aStream level: level generator: self.
 	aStream nextPutAll: ') '.
 	blockExpr emitCCodeOn: aStream level: level generator: self.
 ]
@@ -4223,7 +4223,7 @@ CCodeGenerator >> generateToDo: msgNode on: aStream indent: level [
 	].
 	iterationVar := msgNode args last args first.
 	aStream nextPutAll: 'for (', iterationVar, ' = '.
-	self emitCExpression: msgNode receiver on: aStream.
+	msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
 	aStream nextPutAll: '; ', iterationVar.
 	self generateToByDoLimitExpression: msgNode args first negative: false on: aStream.
 	aStream nextPutAll: '; ', iterationVar, '++) '.
