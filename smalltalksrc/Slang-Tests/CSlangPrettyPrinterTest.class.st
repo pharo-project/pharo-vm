@@ -119,7 +119,7 @@ CSlangPrettyPrinterTest >> testVisitCastExpression [
 					           left: (CConstantNode value: 1)
 					           right: (CIdentifierNode name: 'x'))).
 
-	self assert: print equals: '(int)(1 + x)'
+	self assert: print equals: '((int) (1 + x) )'
 ]
 
 { #category : #'tests-visitor' }

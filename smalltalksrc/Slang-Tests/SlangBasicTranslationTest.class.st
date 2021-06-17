@@ -2320,14 +2320,199 @@ SlangBasicTranslationTest >> testSendMaxSmallInteger [
 SlangBasicTranslationTest >> testSendMemberAccess [
 
 	| translation send |
-
+	generator var: 'toto' declareC: 'VMCallbackContext toto'.
+	generator addMethod: (TMethod new
+			 selector: 'stackp';
+			 definingClass: VMCallbackContext;
+			 yourself).
 	send := TSendNode new
-		        setSelector: #aField
+		        setSelector: #stackp
 		        receiver: (TVariableNode new setName: 'toto')
-		        arguments: {}.
+		        arguments: {  }.
 	translation := self translate: send.
 
-	self assert: translation equals: 'toto.aField'
+	self assert: translation equals: '(toto.stackp)'
+]
+
+{ #category : #'tests-sends' }
+SlangBasicTranslationTest >> testSendMemberAccessFromPointer [
+
+	| translation send |
+	generator var: 'toto' declareC: 'VMCallbackContext *toto'.
+	generator addMethod: (TMethod new
+			 selector: 'stackp';
+			 definingClass: VMCallbackContext;
+			 yourself).
+	send := TSendNode new
+		        setSelector: #stackp
+		        receiver: (TVariableNode new setName: 'toto')
+		        arguments: {  }.
+	translation := self translate: send.
+
+	self assert: translation equals: '(toto->stackp)'
+]
+
+{ #category : #'tests-sends' }
+SlangBasicTranslationTest >> testSendMemberAccessWithAdressOfVariableStructureReceiver [
+
+	"Tests member access on an adress of a structure variable."
+
+	| translation send |
+	generator addMethod: (TMethod new
+			 selector: 'stackp';
+			 definingClass: VMCallbackContext;
+			 yourself).
+	send := TSendNode new
+		        setSelector: #stackp
+		        receiver: (TSendNode new
+				         setSelector: #addressOf:
+				         receiver: (TVariableNode new setName: 'aVM')
+				         arguments: { (TVariableNode new setName: 'x') })
+		        arguments: {  }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((&x)->stackp)'
+]
+
+{ #category : #'tests-sends' }
+SlangBasicTranslationTest >> testSendMemberAccessWithArgumentAssignment [
+
+	"When there is an argument in the send node, it adds an assignement."
+	| translation send |
+	generator var: 'toto' declareC: 'VMCallbackContext toto'.
+	generator addMethod: (TMethod new
+			 selector: 'stackp';
+			 definingClass: VMCallbackContext;
+			 yourself).
+	send := TSendNode new
+		        setSelector: #stackp
+		        receiver: (TVariableNode new setName: 'toto')
+		        arguments: { (TConstantNode value: 1) }.
+	translation := self translate: send.
+
+	self assert: translation equals: '(toto.stackp = 1)'
+]
+
+{ #category : #'tests-sends' }
+SlangBasicTranslationTest >> testSendMemberAccessWithArrayAccessReceiver [
+
+	"Tests member access on a structure contained in an array."
+
+	| translation send |
+	generator var: 'tab' declareC: 'VMCallbackContext tab[10]'.
+	generator addMethod: (TMethod new
+			 selector: 'stackp';
+			 definingClass: VMCallbackContext;
+			 yourself).
+	send := TSendNode new
+		        setSelector: #stackp
+		        receiver: (TSendNode new
+				         setSelector: #at:
+				         receiver: (TVariableNode new setName: 'tab')
+				         arguments: { (TConstantNode value: 7) })
+		        arguments: {  }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((tab[7]).stackp)'
+]
+
+{ #category : #'tests-sends' }
+SlangBasicTranslationTest >> testSendMemberAccessWithArrayOfPointersToStructAccessReceiver [
+
+	"Tests member access on an adress contained in an array of pointers to structures."
+
+	| translation send |
+	generator var: 'tab' declareC: 'VMCallbackContext *tab[10]'.
+	generator addMethod: (TMethod new
+			 selector: 'stackp';
+			 definingClass: VMCallbackContext;
+			 yourself).
+	send := TSendNode new
+		        setSelector: #stackp
+		        receiver: (TSendNode new
+				         setSelector: #at:
+				         receiver: (TVariableNode new setName: 'tab')
+				         arguments: { (TConstantNode value: 7) })
+		        arguments: {  }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((tab[7])->stackp)'
+]
+
+{ #category : #'tests-sends' }
+SlangBasicTranslationTest >> testSendMemberAccessWithCCoercionReceiver [
+
+	"Tests member access of a structure pointer cast."
+
+	| translation send |
+	generator addMethod: (TMethod new
+			 selector: 'stackp';
+			 definingClass: VMCallbackContext;
+			 yourself).
+	send := TSendNode new
+		        setSelector: #stackp
+		        receiver: (TSendNode new
+			                setSelector: #cCoerceSimple:to:
+			                receiver: (TVariableNode new setName: 'self')
+			                arguments: { 
+					                (TVariableNode new setName: 'var').
+					                (TConstantNode value: 'VMCallbackContext *') })
+		        arguments: {  }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((((VMCallbackContext *) var ))->stackp)'
+]
+
+{ #category : #'tests-sends' }
+SlangBasicTranslationTest >> testSendMemberAccessWithFunctionCallReceiver [
+
+	"Tests member access on a call function that returns a structure"
+
+	| translation send |
+	generator addMethod: (TMethod new
+			 selector: 'stackp';
+			 definingClass: VMCallbackContext;
+			 yourself).
+	generator addMethod: (TMethod new
+			 selector: 'foo';
+			 returnType: 'VMCallbackContext';
+			 yourself).
+	send := TSendNode new
+		        setSelector: #stackp
+		        receiver: (TSendNode new
+				         setSelector: #foo
+				         receiver: (TVariableNode named: 'self')
+				         arguments: {  })
+		        arguments: {  }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((foo()).stackp)'
+]
+
+{ #category : #'tests-sends' }
+SlangBasicTranslationTest >> testSendMemberAccessWithFunctionCallReceiverWithPointerToStructReturn [
+
+	"Tests member access on a call function that returns a pointer to a structure."
+
+	| translation send |
+	generator addMethod: (TMethod new
+			 selector: 'stackp';
+			 definingClass: VMCallbackContext;
+			 yourself).
+	generator addMethod: (TMethod new
+			 selector: 'foo';
+			 returnType: 'VMCallbackContext *';
+			 yourself).
+	send := TSendNode new
+		        setSelector: #stackp
+		        receiver: (TSendNode new
+				         setSelector: #foo
+				         receiver: (TVariableNode named: 'self')
+				         arguments: {  })
+		        arguments: {  }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((foo())->stackp)'
 ]
 
 { #category : #'tests-builtins' }
