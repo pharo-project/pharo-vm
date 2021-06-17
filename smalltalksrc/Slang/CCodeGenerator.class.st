@@ -1945,7 +1945,7 @@ CCodeGenerator >> generateCASTBitShift: tast cast: type [
 	arg := tast arguments first.
 	receiver := tast receiver.
 	(self isConstantNode: arg valueInto: [ :value | shift := value ]) 
-		ifTrue: [ "bit shift amout is a constant"
+		ifTrue: [ "bit shift amount is a constant"
 			| shiftOperator |
 			shift < 0
 				ifTrue: [ 
@@ -1958,26 +1958,30 @@ CCodeGenerator >> generateCASTBitShift: tast cast: type [
 						   type: (CTypeNameNode symbol: type)
 						   expression: (receiver asCASTExpressionIn: self))
 				  right: (CConstantNode value: shift) ].
-	"bit shift amout is an expression"
+	"bit shift amount is an expression"
 	^ CTernaryNode
 		  condition: (CBinaryOperatorNode
 				   operator: #<
 				   left: (arg asCASTExpressionIn: self)
 				   right: (CConstantNode value: 0))
-		  then: (CBinaryOperatorNode
-				   operator: #>>
-				   left: (CCastExpressionNode
-						    type: (CTypeNameNode symbol: type)
-						    expression: (receiver asCASTExpressionIn: self))
-				   right: (CUnaryOperatorNode
-						    operator: #-
-						    expression: (arg asCASTExpressionIn: self)))
-		  else: (CBinaryOperatorNode
-				   operator: #<<
-				   left: (CCastExpressionNode
-						    type: (CTypeNameNode symbol: type)
-						    expression: (receiver asCASTExpressionIn: self))
-				   right: (arg asCASTExpressionIn: self))
+		  then: ((CBinaryOperatorNode
+				    operator: #>>
+				    left: (CCastExpressionNode
+						     type: (CTypeNameNode symbol: type)
+						     expression: (receiver asCASTExpressionIn: self))
+				    right: (CUnaryOperatorNode
+						     operator: #-
+						     expression: (arg asCASTExpressionIn: self)))
+				   needsParentheses: true;
+				   yourself)
+		  else: ((CBinaryOperatorNode
+				    operator: #<<
+				    left: (CCastExpressionNode
+						     type: (CTypeNameNode symbol: type)
+						     expression: (receiver asCASTExpressionIn: self))
+				    right: (arg asCASTExpressionIn: self))
+				   needsParentheses: true;
+				   yourself)
 ]
 
 { #category : #'CAST translation' }
