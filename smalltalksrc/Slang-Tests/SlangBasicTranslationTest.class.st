@@ -2850,7 +2850,7 @@ SlangBasicTranslationTest >> testSendSequentialAndWithConstantReceiverTrue [
 						          arguments: { (TVariableNode new setName: 'b') }) }) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '1 && ((1 + 2 , a == b))'
+	self assert: translation equals: '1 && ((1 + 2, a == b))'
 ]
 
 { #category : #'tests-assignment' }

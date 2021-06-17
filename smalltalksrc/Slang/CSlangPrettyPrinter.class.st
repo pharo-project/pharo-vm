@@ -81,7 +81,7 @@ CSlangPrettyPrinter >> visitAssignment: anAssignment [
 { #category : #generated }
 CSlangPrettyPrinter >> visitBinary: aBinary [
 	
-	
+	aBinary needsParentheses ifTrue: [ stream nextPut: $( ].
 	self printExpression: aBinary left.
 	
 	stream
@@ -89,7 +89,8 @@ CSlangPrettyPrinter >> visitBinary: aBinary [
 		nextPutAll: aBinary operator;
 		nextPutAll: ' '.
 		
-	self printExpression: aBinary right
+	self printExpression: aBinary right.
+	aBinary needsParentheses ifTrue: [ stream nextPut: $) ].
 ]
 
 { #category : #generated }
@@ -381,13 +382,15 @@ CSlangPrettyPrinter >> visitTypename: aTypename [
 CSlangPrettyPrinter >> visitUnaryOperator: anUnary [
 
 	| avoidParentheses |
+	anUnary needsParentheses ifTrue: [ stream nextPut: $( ].
 	avoidParentheses := anUnary expression isCastExpression
 		or: [ anUnary expression isConstant or: [
-			anUnary expression isIdentifier ]].
+			anUnary expression isIdentifier  or: [ anUnary expression isLeaf]]].
 	stream nextPutAll: anUnary operator.
 	avoidParentheses ifFalse: [ stream nextPut: $( ].
 	anUnary expression acceptVisitor: self.
-	avoidParentheses ifFalse: [ stream nextPut: $) ]
+	avoidParentheses ifFalse: [ stream nextPut: $) ].
+	anUnary needsParentheses ifTrue: [ stream nextPut: $) ]
 ]
 
 { #category : #generated }

@@ -1909,9 +1909,11 @@ CCodeGenerator >> generateCASTBitInvert32: tast [
 
 	^ CCastExpressionNode
 		  type: (CTypeNameNode symbol: 'unsigned int')
-		  expression: (CUnaryOperatorNode
-				   operator: #~
-				   expression: (tast receiver asCASTIn: self))
+		  expression: ((CUnaryOperatorNode
+				    operator: #~
+				    expression: (tast receiver asCASTIn: self))
+				   needsParentheses: true;
+				   yourself)
 ]
 
 { #category : #'CAST translation' }
@@ -2918,12 +2920,14 @@ CCodeGenerator >> generateCASTTruncateTo: tast [
 		ifFalse: [ 
 		self error: 'can''t find method for inlining truncateTo:' ].
 	self assert: (arg isInteger and: [ arg isPowerOfTwo ]).
-	^ CBinaryOperatorNode
-		  operator: #&
-		  left: (tast receiver asCASTExpressionIn: self)
-		  right: (CUnaryOperatorNode
-				   operator: #~
-				   expression: (CConstantNode value: arg - 1))
+	^ (CBinaryOperatorNode
+		   operator: #&
+		   left: (tast receiver asCASTExpressionIn: self)
+		   right: (CUnaryOperatorNode
+				    operator: #~
+				    expression: (CConstantNode value: arg - 1)))
+		  needsParentheses: true;
+		  yourself
 ]
 
 { #category : #'CAST translation' }
