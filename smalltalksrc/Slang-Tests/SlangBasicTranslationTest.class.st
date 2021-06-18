@@ -1859,6 +1859,40 @@ SlangBasicTranslationTest >> testSendIfNil [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfNilAsArgument [
+
+	| translation send |
+	generator generateDeadCode: true.
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifNil:
+				         receiver: (TVariableNode named: 'z')
+				         arguments: { TVariableNode named: 'x' }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = ((!z)
+	 ? x
+	 : z)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfNilAsArgumentWithNilConstantReceiver [
+
+	| translation send |
+	generator generateDeadCode: false.
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifNil:
+				         receiver: (TConstantNode value: nil)
+				         arguments: { TVariableNode named: 'x' }).
+	translation := self translate: send.
+
+	self assert: translation equals: 'y = x'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIfNilWithNilConstantReceiver [
 
 	| translation send |

@@ -2299,6 +2299,22 @@ CCodeGenerator >> generateCASTIfNil: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNilAsArgument: tast [
+
+	(self isNilConstantReceiverOf: tast) ifFalse: [ 
+		^ (CTernaryNode
+			   condition: (CUnaryOperatorNode
+					    operator: #!
+					    expression: (tast receiver asCASTExpressionIn: self))
+			   then: (tast arguments first asCASTExpressionIn: self)
+			   else: (tast receiver asCASTExpressionIn: self))
+			  printOnMultipleLines: true;
+			  yourself ].
+	"The receiver is a nil constant, known at translation-time. No need to add a conditional node over it."
+	^ tast arguments first asCASTExpressionIn: self
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfNilIfNotNil: tast [
 
 	^ self generateCASTIfNotNilIfNil: tast reverseArms: true
@@ -3385,11 +3401,11 @@ CCodeGenerator >> generateIfNilAsArgument: msgNode on: aStream indent: level [
 
 	(self isNilConstantReceiverOf: msgNode)
 		ifFalse:
-			[aStream nextPutAll: '(!('.
-			 msgNode receiver emitCCodeAsArgumentOn: aStream level: 0 generator: self.
-			 aStream nextPut: $); crtab: level + 1; nextPut: $?; space.
+			[aStream nextPutAll: '((!'.
+			 self emitCExpression: msgNode receiver on: aStream.
+			 aStream nextPut: $); crtab: level + 1; nextPutAll: ' ? '.
 			 msgNode args last emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-			 aStream crtab: level + 1; nextPut: $:; space.
+			 aStream crtab: level + 1; nextPutAll: ' : '.
 			 msgNode receiver emitCCodeAsArgumentOn: aStream level: 0 generator: self.
 			 (msgNode receiver isLeaf
 			  or: [msgNode receiver isSend
