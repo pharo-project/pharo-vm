@@ -56,3 +56,9 @@ CGLRAbstractNode >> isLeaf [
 	
 	^ false
 ]
+
+{ #category : #testing }
+CGLRAbstractNode >> isUnaryOperation [
+	
+	^ false
+]

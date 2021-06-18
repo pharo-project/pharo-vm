@@ -1474,6 +1474,84 @@ SlangBasicTranslationTest >> testSendIfFalse [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfFalseAsArgument [
+
+	| translation send |
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifFalse:
+				         receiver: (TVariableNode new setName: 'x')
+				         arguments: { (TStmtListNode new setStatements: { 
+							          (TAssignmentNode new
+								           setVariable: (TVariableNode new setName: 'a')
+								           expression: (TConstantNode value: false)).
+							          (TAssignmentNode new
+								           setVariable: (TVariableNode new setName: 'c')
+								           expression: (TConstantNode value: 1)) }) }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = ((!x)
+	 ? ((a = 0), (c = 1))
+	 : 0)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfFalseAsArgumentWithNonLeafReceiver [
+
+	| translation send |
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifFalse:
+				         receiver: (TSendNode new
+						          setSelector: #&
+						          receiver: (TVariableNode new setName: 'x')
+						          arguments: { (TVariableNode new setName: 'y') })
+				         arguments: { (TStmtListNode new setStatements: { 
+							          (TAssignmentNode new
+								           setVariable: (TVariableNode new setName: 'a')
+								           expression: (TConstantNode value: false)).
+							          (TAssignmentNode new
+								           setVariable: (TVariableNode new setName: 'c')
+								           expression: (TConstantNode value: 1)) }) }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = ((!(x && y))
+	 ? ((a = 0), (c = 1))
+	 : 0)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfFalseAsArgumentWithReceiverSendNot [
+
+	| translation send |
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifFalse:
+				         receiver: (TSendNode new
+						          setSelector: #not
+						          receiver: (TSendNode new
+								           setSelector: #&
+								           receiver: (TVariableNode new setName: 'x')
+								           arguments: { (TVariableNode new setName: 'y') })
+						          arguments: {  })
+				         arguments: { (TStmtListNode new setStatements: { 
+							          (TAssignmentNode new
+								           setVariable: (TVariableNode new setName: 'a')
+								           expression: (TConstantNode value: false)).
+							          (TAssignmentNode new
+								           setVariable: (TVariableNode new setName: 'c')
+								           expression: (TConstantNode value: 1)) }) }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = ((x && y)
+	 ? ((a = 0), (c = 1))
+	 : 0)'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIfFalseIfTrue [
 
 	| translation send |
@@ -1526,7 +1604,7 @@ SlangBasicTranslationTest >> testSendIfFalseIfTrueAsArgument [
 								           expression: (TConstantNode value: 0)) }) }).
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'y = (x
+	self assert: translation trimBoth equals: 'y = ((x)
 	 ? ((a = 1), (c = 0))
 	 : ((a = 0), (c = 1)))'
 ]
@@ -1656,6 +1734,31 @@ SlangBasicTranslationTest >> testSendIfFalseIfTrueCollapseBothArmsOfConditionalW
 	translation := self translate: send.
 
 	self assert: translation trimBoth equals: '{
+	a = 0;
+	c = 1;
+}'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfFalseWithNonLeafReceiver [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #ifFalse:
+		        receiver: (TSendNode new
+						          setSelector: #&
+						          receiver: (TVariableNode new setName: 'x')
+						          arguments: { (TVariableNode new setName: 'y') })
+		        arguments: { (TStmtListNode new setStatements: { 
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'a')
+						          expression: (TConstantNode value: false)).
+					         (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'c')
+						          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'if (!(x && y)) {
 	a = 0;
 	c = 1;
 }'
@@ -1998,7 +2101,33 @@ SlangBasicTranslationTest >> testSendIfTrueAsArgument [
 								           expression: (TConstantNode value: 1)) }) }).
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'y = (x
+	self assert: translation trimBoth equals: 'y = ((x)
+	 ? ((a = 0), (c = 1))
+	 : 0)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfTrueAsArgumentWithNonLeafReceiver [
+
+	| translation send |
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifTrue:
+				         receiver: (TSendNode new
+						          setSelector: #&
+						          receiver: (TVariableNode new setName: 'x')
+						          arguments: { (TVariableNode new setName: 'y') })
+				         arguments: { (TStmtListNode new setStatements: { 
+							          (TAssignmentNode new
+								           setVariable: (TVariableNode new setName: 'a')
+								           expression: (TConstantNode value: false)).
+							          (TAssignmentNode new
+								           setVariable: (TVariableNode new setName: 'c')
+								           expression: (TConstantNode value: 1)) }) }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = ((x && y)
 	 ? ((a = 0), (c = 1))
 	 : 0)'
 ]
@@ -2072,7 +2201,7 @@ SlangBasicTranslationTest >> testSendIfTrueIfFalseAsArgument [
 								           expression: (TConstantNode value: 0)) }) }).
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'y = (x
+	self assert: translation trimBoth equals: 'y = ((x)
 	 ? ((a = 0), (c = 1))
 	 : ((a = 1), (c = 0)))'
 ]
