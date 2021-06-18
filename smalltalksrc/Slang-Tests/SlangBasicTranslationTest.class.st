@@ -2079,6 +2079,67 @@ SlangBasicTranslationTest >> testSendIfNotNilIfNil [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfNotNilIfNilAsArgument [
+
+	| translation send |
+	generator generateDeadCode: true.
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifNotNil:ifNil:
+				         receiver: (TVariableNode named: 'z')
+				         arguments: { 
+						         (TVariableNode named: 'x').
+						         (TVariableNode named: 'w') }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = ((z)
+	 ? x
+	 : w)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfNotNilIfNilAsArgumentWithNilConstantReceiver [
+
+	| translation send |
+	generator generateDeadCode: false.
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifNotNil:ifNil:
+				         receiver: (TConstantNode value: nil)
+				         arguments: { 
+						         (TVariableNode named: 'x').
+						         (TVariableNode named: 'w') }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = w'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfNotNilIfNilAsArgumentWithNonLeafReceiver [
+
+	| translation send |
+	generator generateDeadCode: true.
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifNotNil:ifNil:
+				         receiver: (TSendNode new
+						          setSelector: #foo
+						          receiver: (TVariableNode named: 'x')
+						          arguments: { (TConstantNode value: 1) })
+				         arguments: { 
+						         (TVariableNode named: 'x').
+						         (TVariableNode named: 'w') }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = ((foo(x, 1))
+	 ? x
+	 : w)'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIfNotNilIfNilWithNilConstantReceiver [
 
 	"nil ifNotNil: [ a:= true. c = 1 ] ifNil: [ b := false. c := 7 ]"

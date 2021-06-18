@@ -2373,6 +2373,33 @@ CCodeGenerator >> generateCASTIfNotNilIfNil: tast reverseArms: reverse [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNotNilIfNilAsArgument: tast [
+
+	^ self generateCASTIfNotNilIfNilAsArgument: tast reverseArms: false
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNotNilIfNilAsArgument: tast reverseArms: reverse [
+
+	| firstBlock lastBlock |
+	firstBlock := reverse
+		              ifTrue: [ tast arguments last ]
+		              ifFalse: [ tast arguments first ].
+	lastBlock := reverse
+		             ifTrue: [ tast arguments first ]
+		             ifFalse: [ tast arguments last ].
+	(self isNilConstantReceiverOf: tast) ifFalse: [ 
+		^ (CTernaryNode
+			   condition: (tast receiver asCASTExpressionIn: self)
+			   then: (firstBlock asCASTExpressionIn: self)
+			   else: (lastBlock asCASTExpressionIn: self))
+			  printOnMultipleLines: true;
+			  yourself ].
+	"The receiver is a nil constant, known at translation-time. We know which block is executed."
+	^ lastBlock asCASTExpressionIn: self
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfTrue: tast [
 	
 	^ (self nilOrBooleanConstantReceiverOf: tast receiver)
@@ -3513,11 +3540,11 @@ CCodeGenerator >> generateIfNotNilIfNilAsArgument: msgNode on: aStream indent: l
 
 	(self isNilConstantReceiverOf: msgNode)
 		ifFalse:
-			[aStream nextPut: $(.
+			[aStream nextPutAll: '(('.
 			msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-			aStream crtab: level + 1; nextPut: $?; space.
+			aStream nextPut: $); crtab: level + 1; nextPutAll: ' ? '.
 			msgNode args first emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-			aStream crtab: level + 1; nextPut: $:; space.
+			aStream crtab: level + 1; nextPutAll: ' : '.
 			msgNode args last emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
 			aStream nextPut: $)]
 		ifTrue:
