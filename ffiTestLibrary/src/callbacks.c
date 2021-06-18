@@ -1,6 +1,10 @@
 #include "callbacks.h"
 #if FEATURE_THREADED_FFI
-#include <pthread.h>
+#ifdef _WIN32
+# include <Windows.h>
+#else
+# include <pthread.h>
+#endif
 #endif //FEATURE_THREADED_FFI
 
 EXPORT(int) singleCallToCallback(SIMPLE_CALLBACK fun, int base){
@@ -32,7 +36,13 @@ static int value = 0;
 #if FEATURE_THREADED_FFI
 void* otherThread(void* aFunction){
 	SIMPLE_CALLBACK f = (SIMPLE_CALLBACK) aFunction;
+	
+#ifdef _WIN32
+	Sleep(3);
+#else
 	sleep(3);
+#endif
+
 	value = f(42);
 }
 #endif //FEATURE_THREADED_FFI
