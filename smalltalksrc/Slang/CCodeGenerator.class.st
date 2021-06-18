@@ -2321,6 +2321,12 @@ CCodeGenerator >> generateCASTIfNilIfNotNil: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNilIfNotNilAsArgument: tast [
+
+	^ self generateCASTIfNotNilIfNilAsArgument: tast reverseArms: true
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfNotNil: tast [
 
 	(self isNilConstantReceiverOf: tast) ifFalse: [ 
@@ -3480,11 +3486,11 @@ CCodeGenerator >> generateIfNilIfNotNilAsArgument: msgNode on: aStream indent: l
 
 	(self isNilConstantReceiverOf: msgNode)
 		ifFalse:
-			[aStream nextPut: $(.
+			[aStream nextPutAll: '(('.
 			msgNode receiver emitCCodeAsArgumentOn: aStream level: level generator: self.
-			aStream crtab: level + 1; nextPut: $?; space.
+			aStream nextPut: $); crtab: level + 1; nextPutAll: ' ? '.
 			msgNode args last emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-			aStream crtab: level + 1; nextPut: $:; space.
+			aStream crtab: level + 1; nextPutAll: ' : '.
 			msgNode args first emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
 			aStream nextPut: $)]
 		ifTrue:
