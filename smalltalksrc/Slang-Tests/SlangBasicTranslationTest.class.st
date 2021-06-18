@@ -2009,6 +2009,40 @@ SlangBasicTranslationTest >> testSendIfNotNil [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfNotNilAsArgument [
+
+	| translation send |
+	generator generateDeadCode: true.
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifNotNil:
+				         receiver: (TVariableNode named: 'z')
+				         arguments: { TVariableNode named: 'x' }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = ((z)
+	 ? x
+	 : 0)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfNotNilAsArgumentWithNilConstantReceiver [
+
+	| translation send |
+	generator generateDeadCode: false.
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifNotNil:
+				         receiver: (TConstantNode value: nil)
+				         arguments: { TVariableNode named: 'x' }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = null'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIfNotNilIfNil [
 
 	"(self foo: x) ifNotNil: [ a:= true. c = 1 ] ifNil: [ b := false. c := 7 ]"

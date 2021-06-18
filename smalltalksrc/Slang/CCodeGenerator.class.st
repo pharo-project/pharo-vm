@@ -2332,6 +2332,20 @@ CCodeGenerator >> generateCASTIfNotNil: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNotNilAsArgument: tast [
+
+	(self isNilConstantReceiverOf: tast) ifFalse: [ 
+		^ (CTernaryNode
+			   condition: (tast receiver asCASTExpressionIn: self)
+			   then: (tast arguments first asCASTExpressionIn: self)
+			   else: (CConstantNode value: 0))
+			  printOnMultipleLines: true;
+			  yourself ].
+	"The receiver is a nil constant, return C literal for nil."
+	^ CConstantNode value: (self cLiteralFor: nil)
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfNotNilIfNil: tast [
 
 	^ self generateCASTIfNotNilIfNil: tast reverseArms: false
@@ -3468,11 +3482,11 @@ CCodeGenerator >> generateIfNotNilAsArgument: msgNode on: aStream indent: level 
 
 	(self isNilConstantReceiverOf: msgNode)
 		ifFalse:
-			[aStream nextPut: $(.
+			[aStream nextPutAll: '(('.
 			 msgNode receiver emitCCodeAsArgumentOn: aStream level: level generator: self.
-			 aStream crtab: level + 1; nextPut: $?; space.
+			 aStream nextPut: $); crtab: level + 1; nextPutAll: ' ? '.
 			 msgNode args first emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-			 aStream crtab: level + 1; nextPutAll: ': 0)']
+			 aStream crtab: level + 1; nextPutAll: ' : 0)']
 		ifTrue:
 			[aStream nextPutAll: (self cLiteralFor: nil)]
 ]
