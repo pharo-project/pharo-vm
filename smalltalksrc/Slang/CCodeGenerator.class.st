@@ -2195,6 +2195,46 @@ CCodeGenerator >> generateCASTIfElse: tast reverseArms: reverse [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfElseAsArgument: tast reverseArms: reverse [
+
+	| firstStatement secondStatment |
+	firstStatement := reverse
+		                  ifTrue: [ tast arguments last ]
+		                  ifFalse: [ tast arguments first ].
+	secondStatment := reverse
+		                  ifTrue: [ tast arguments first ]
+		                  ifFalse: [ tast arguments last ].
+
+	"If the receiver is a boolean constant, it returns only one of the statements (depending on the constant value)."
+	(self nilOrBooleanConstantReceiverOf: tast receiver) ifNotNil: [ 
+		:const | 
+		^ (const
+			   ifTrue: [ firstStatement ]
+			   ifFalse: [ secondStatment ]) asCASTExpressionIn: self ].
+
+	"If both statements are different, it returs a ternary"
+	(firstStatement isSameAs: secondStatment) ifFalse: [ 
+		^ (CTernaryNode
+			   condition: (tast receiver asCASTExpressionIn: self)
+			   then: (firstStatement asCASTExpressionIn: self)
+			   else: (secondStatment asCASTExpressionIn: self))
+			  printOnMultipleLines: true;
+			  yourself ].
+
+	"Here, both statement are equal."
+	"If receiver has no side effect, it returns only the one of the statements (they are equal)."
+	tast receiver hasSideEffect ifFalse: [ 
+		^ firstStatement asCASTExpressionIn: self ].
+
+	"If receiver has side effect, receiver has to be executed before the statement."
+	^ (CExpressionListNode new expressions: { 
+				   (tast receiver asCASTExpressionIn: self).
+				   (firstStatement asCASTExpressionIn: self) })
+		  printOnMultipleLines: true;
+		  yourself
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfFalse: tast [
 
 	^ (self nilOrBooleanConstantReceiverOf: tast receiver)
@@ -2215,6 +2255,12 @@ CCodeGenerator >> generateCASTIfFalse: tast [
 CCodeGenerator >> generateCASTIfFalseIfTrue: tast [
 
 	^ self generateCASTIfElse: tast reverseArms: true 
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfFalseIfTrueAsArgument: tast [
+
+	^ self generateCASTIfElseAsArgument: tast reverseArms: true
 ]
 
 { #category : #'CAST translation' }
@@ -2312,23 +2358,7 @@ CCodeGenerator >> generateCASTIfTrueIfFalse: tast [
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfTrueIfFalseAsArgument: tast [
 
-	(self nilOrBooleanConstantReceiverOf: tast receiver)
-		ifNil: [
-			(tast arguments first isSameAs: tast arguments last) ifTrue: [ | expressionList |
-			expressionList := CExpressionListNode new.
-			tast receiver hasSideEffect ifTrue: [ expressionList add: (tast receiver asCASTExpressionIn: self) ].
-			expressionList add: (tast arguments first asCASTExpressionIn: self)
-			].
-			^ (CTernaryNode
-				   condition: (tast receiver asCASTExpressionIn: self)
-				   then: (tast arguments first asCASTExpressionIn: self)
-				   else: (tast arguments last asCASTExpressionIn: self))
-				  printOnMultipleLines: true;
-				  yourself ]
-		ifNotNil: [ :const | 
-			(const
-				 ifTrue: [ ^ tast arguments first ]
-				 ifFalse: [ ^ tast arguments last ]) asCASTExpressionIn: self ]
+	^ self generateCASTIfElseAsArgument: tast reverseArms: false
 ]
 
 { #category : #'CAST translation' }
@@ -3296,9 +3326,9 @@ CCodeGenerator >> generateIfFalseIfTrueAsArgument: msgNode on: aStream indent: l
 			[(self tryToCollapseBothArmsOfConditionalExpression: msgNode on: aStream indent: level) ifFalse:
 				[aStream nextPut: $(.
 				 msgNode receiver emitCCodeAsArgumentOn: aStream level: level generator: self.
-				 aStream crtab: level + 1; nextPut: $?; space.
+				 aStream crtab: level + 1; nextPutAll: ' ? '.
 				 msgNode args last emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-				 aStream crtab: level + 1; nextPut: $:; space.
+				 aStream crtab: level + 1; nextPutAll: ' : '.
 				 msgNode args first emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
 				 aStream nextPut: $)]]
 		ifNotNil:
@@ -6523,14 +6553,15 @@ CCodeGenerator >> tryToCollapseBothArmsOfConditional: msgNode on: aStream indent
 CCodeGenerator >> tryToCollapseBothArmsOfConditionalExpression: msgNode on: aStream indent: level [
 	"Attempt to generate the code for an ifTrue:ifFalse: if both arms are found to be the same, in which case
 	 answer true.  Otherwise output nothing and answer false."
+	| sideEffect |
 	(msgNode args first isSameAs: msgNode args second) ifFalse:
 		[^false].
-	aStream nextPut: $(.
-	msgNode receiver hasSideEffect ifTrue:
-		[msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-		 aStream nextPut: $, ; crtab: level]..
+	sideEffect := msgNode receiver hasSideEffect.
+	sideEffect ifTrue:
+		[aStream nextPut: $(.msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
+		 aStream nextPut: $,; space ; crtab: level]..
 	msgNode args first emitCCodeAsArgumentOn: aStream level: level generator: self.
-	aStream nextPut: $).
+	sideEffect ifTrue: [ aStream nextPut: $) ].
 	^true
 ]
 

@@ -1501,6 +1501,98 @@ SlangBasicTranslationTest >> testSendIfFalseIfTrue [
 }'
 ]
 
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfFalseIfTrueAsArgument [
+
+	| translation send |
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifFalse:ifTrue:
+				         receiver: (TVariableNode new setName: 'x')
+				         arguments: { (TStmtListNode new setStatements: { 
+							          (TAssignmentNode new
+								           setVariable: (TVariableNode new setName: 'a')
+								           expression: (TConstantNode value: false)).
+							          (TAssignmentNode new
+								           setVariable: (TVariableNode new setName: 'c')
+								           expression: (TConstantNode value: 1)) }).
+								(TStmtListNode new setStatements: { 
+							          (TAssignmentNode new
+								           setVariable: (TVariableNode new setName: 'a')
+								           expression: (TConstantNode value: true)).
+							          (TAssignmentNode new
+								           setVariable: (TVariableNode new setName: 'c')
+								           expression: (TConstantNode value: 0)) }) }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = (x
+	 ? ((a = 1), (c = 0))
+	 : ((a = 0), (c = 1)))'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfFalseIfTrueAsArgumentCollapseBothArmsOfConditional [
+
+	| translation send |
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifFalse:ifTrue:
+				         receiver: (TSendNode new
+						          setSelector: #foo
+						          receiver: (TVariableNode new setName: 'x')
+						          arguments: { (TConstantNode value: 7) })
+				         arguments: { 
+						         (TStmtListNode new setStatements: { 
+								          (TAssignmentNode new
+									           setVariable: (TVariableNode new setName: 'a')
+									           expression: (TConstantNode value: false)).
+								          (TAssignmentNode new
+									           setVariable: (TVariableNode new setName: 'c')
+									           expression: (TConstantNode value: 1)) }).
+						         (TStmtListNode new setStatements: { 
+								          (TAssignmentNode new
+									           setVariable: (TVariableNode new setName: 'a')
+									           expression: (TConstantNode value: false)).
+								          (TAssignmentNode new
+									           setVariable: (TVariableNode new setName: 'c')
+									           expression: (TConstantNode value: 1)) }) }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = (foo(x, 7), 
+((a = 0), (c = 1)))'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfFalseIfTrueAsArgumentCollapseBothArmsOfConditionalWithNoSideEffect [
+
+	| translation send |
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifFalse:ifTrue:
+				         receiver: (TVariableNode named: 'x')
+				         arguments: { 
+						         (TStmtListNode new setStatements: { 
+								          (TAssignmentNode new
+									           setVariable: (TVariableNode new setName: 'a')
+									           expression: (TConstantNode value: false)).
+								          (TAssignmentNode new
+									           setVariable: (TVariableNode new setName: 'c')
+									           expression: (TConstantNode value: 1)) }).
+						         (TStmtListNode new setStatements: { 
+								          (TAssignmentNode new
+									           setVariable: (TVariableNode new setName: 'a')
+									           expression: (TConstantNode value: false)).
+								          (TAssignmentNode new
+									           setVariable: (TVariableNode new setName: 'c')
+									           expression: (TConstantNode value: 1)) }) }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = ((a = 0), (c = 1))'
+]
+
 { #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIfFalseIfTrueCollapseBothArmsOfConditional [
 
@@ -1532,6 +1624,38 @@ SlangBasicTranslationTest >> testSendIfFalseIfTrueCollapseBothArmsOfConditional 
 
 	self assert: translation trimBoth equals: 'foo(x, 7);
 {
+	a = 0;
+	c = 1;
+}'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfFalseIfTrueCollapseBothArmsOfConditionalWithNoSideEffect [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #ifFalse:ifTrue:
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: { 
+				        (TStmtListNode new setStatements: { 
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'a')
+							          expression: (TConstantNode value: false)).
+						         
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'c')
+							          expression: (TConstantNode value: 1)) }).
+				        (TStmtListNode new setStatements: { 
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'a')
+							          expression: (TConstantNode value: false)).
+						         
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'c')
+							          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '{
 	a = 0;
 	c = 1;
 }'
@@ -1953,6 +2077,68 @@ SlangBasicTranslationTest >> testSendIfTrueIfFalseAsArgument [
 	 : ((a = 1), (c = 0)))'
 ]
 
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfTrueIfFalseAsArgumentCollapseBothArmsOfConditional [
+
+	| translation send |
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifTrue:ifFalse:
+				         receiver: (TSendNode new
+						          setSelector: #foo
+						          receiver: (TVariableNode new setName: 'x')
+						          arguments: { (TConstantNode value: 7) })
+				         arguments: { 
+						         (TStmtListNode new setStatements: { 
+								          (TAssignmentNode new
+									           setVariable: (TVariableNode new setName: 'a')
+									           expression: (TConstantNode value: false)).
+								          (TAssignmentNode new
+									           setVariable: (TVariableNode new setName: 'c')
+									           expression: (TConstantNode value: 1)) }).
+						         (TStmtListNode new setStatements: { 
+								          (TAssignmentNode new
+									           setVariable: (TVariableNode new setName: 'a')
+									           expression: (TConstantNode value: false)).
+								          (TAssignmentNode new
+									           setVariable: (TVariableNode new setName: 'c')
+									           expression: (TConstantNode value: 1)) }) }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = (foo(x, 7), 
+((a = 0), (c = 1)))'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testSendIfTrueIfFalseAsArgumentCollapseBothArmsOfConditionalWithNoSideEffect [
+
+	| translation send |
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifTrue:ifFalse:
+				         receiver: (TVariableNode named: 'x')
+				         arguments: { 
+						         (TStmtListNode new setStatements: { 
+								          (TAssignmentNode new
+									           setVariable: (TVariableNode new setName: 'a')
+									           expression: (TConstantNode value: false)).
+								          (TAssignmentNode new
+									           setVariable: (TVariableNode new setName: 'c')
+									           expression: (TConstantNode value: 1)) }).
+						         (TStmtListNode new setStatements: { 
+								          (TAssignmentNode new
+									           setVariable: (TVariableNode new setName: 'a')
+									           expression: (TConstantNode value: false)).
+								          (TAssignmentNode new
+									           setVariable: (TVariableNode new setName: 'c')
+									           expression: (TConstantNode value: 1)) }) }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = ((a = 0), (c = 1))'
+]
+
 { #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIfTrueIfFalseCollapseBothArmsOfConditional [
 
@@ -1984,6 +2170,38 @@ SlangBasicTranslationTest >> testSendIfTrueIfFalseCollapseBothArmsOfConditional 
 
 	self assert: translation trimBoth equals: 'foo(x, 7);
 {
+	a = 0;
+	c = 1;
+}'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfTrueIfFalseCollapseBothArmsOfConditionalWithNoSideEffect [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #ifTrue:ifFalse:
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: { 
+				        (TStmtListNode new setStatements: { 
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'a')
+							          expression: (TConstantNode value: false)).
+						         
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'c')
+							          expression: (TConstantNode value: 1)) }).
+				        (TStmtListNode new setStatements: { 
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'a')
+							          expression: (TConstantNode value: false)).
+						         
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'c')
+							          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '{
 	a = 0;
 	c = 1;
 }'

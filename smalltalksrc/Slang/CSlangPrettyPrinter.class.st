@@ -227,7 +227,9 @@ CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
 	stream nextPut: $(.
 	anExpressionList expressions
 		do: [ :e | e acceptVisitor: self ]
-		separatedBy: [ stream nextPutAll: ', ' ].
+		separatedBy: [ 
+			stream nextPutAll: ', '.
+			anExpressionList printOnMultipleLines ifTrue: [ stream cr ] ].
 	stream nextPut: $)
 ]
 
