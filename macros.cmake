@@ -25,7 +25,7 @@ endmacro()
 
 macro(get_platform_name VARNAME)
   # See https://github.com/pharo-project/opensmalltalk-vm/issues/270
-  if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x64")
+  if(${CMAKE_SYSTEM_PROCESSOR} MATCHES ".*64.*")
     set(${VARNAME} ${CMAKE_SYSTEM_NAME}-x86_64)
   else()
     set(${VARNAME} ${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR})
