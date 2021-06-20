@@ -1,6 +1,6 @@
 #include "windows.h"
 
-100 ICON @Win32VMExecutableIcon@
+100 ICON "@Win32VMExecutableIcon@"
 
 VS_VERSION_INFO VERSIONINFO
 FILEVERSION     @VERSION_MAJOR@,@VERSION_MINOR@,@VERSION_PATCH@,0
