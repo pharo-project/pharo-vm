@@ -5,12 +5,16 @@ set(VM_VERSION_FILEVERSION "${APPNAME}VM-${VERSION_MAJOR}.${VERSION_MINOR}.${VER
 
 set(Win32ResourcesFolder "${CMAKE_CURRENT_SOURCE_DIR}/resources/windows")
 
-# transform the path into a windows path with unix backslashes C:/bla/blu
-# this is the path required to send as argument to libraries outside of the control of cygwin (like pharo itself)
-execute_process(
-	COMMAND cygpath ${Win32ResourcesFolder} --mixed
-	OUTPUT_VARIABLE Win32ResourcesFolder_OUT
-	OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(${CYGWIN})
+  # transform the path into a windows path with unix backslashes C:/bla/blu
+  # this is the path required to send as argument to libraries outside of the control of cygwin (like pharo itself)
+  execute_process(
+  	COMMAND cygpath ${Win32ResourcesFolder} --mixed
+  	OUTPUT_VARIABLE Win32ResourcesFolder_OUT
+  	OUTPUT_STRIP_TRAILING_WHITESPACE)
+else()
+  set(Win32ResourcesFolder_OUT ${Win32ResourcesFolder})
+endif()
 
 if(NOT Win32VMExecutableIcon)
     set(Win32VMExecutableIcon "${Win32ResourcesFolder_OUT}/Pharo.ico")
