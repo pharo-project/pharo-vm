@@ -3865,11 +3865,11 @@ CCodeGenerator >> generatePlus: msgNode on: aStream indent: level [
 { #category : #'C translation' }
 CCodeGenerator >> generatePowerTo: msgNode on: aStream indent: level [ 
 
-	aStream nextPutAll:'((sqInt) pow('.
+	aStream nextPutAll:'((sqInt) (pow('.
 	self emitCExpression: msgNode receiver on: aStream.
 	aStream nextPutAll: ', '.
 	self emitCExpression: msgNode args first on: aStream.
-	aStream nextPutAll:') )'.
+	aStream nextPutAll:')) )'.
 ]
 
 { #category : #'C translation' }

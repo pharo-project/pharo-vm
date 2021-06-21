@@ -2981,7 +2981,7 @@ SlangBasicTranslationTest >> testSendPowerTo [
 		        arguments: { (TConstantNode value: 2) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((sqInt) pow(x, 2) )'
+	self assert: translation equals: '((sqInt) (pow(x, 2)) )'
 ]
 
 { #category : #'tests-builtins' }
