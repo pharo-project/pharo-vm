@@ -178,7 +178,6 @@ SlangTyper >> inferTypesForImplicitlyTypedVariablesAndMethods [
 	 changedReturnType := false.
 	 allMethods do:
 		[:m|
-		m selector = #returnTempFalseConstantNode ifTrue:[ TOTO := 1 ].
 		self inferTypesForImplicitlyTypedVariablesIn: m.
 		 (self inferReturnTypeOf: m) ifTrue:
 			[changedReturnType := true]].
