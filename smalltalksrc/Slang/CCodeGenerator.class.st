@@ -2450,6 +2450,29 @@ CCodeGenerator >> generateCASTIntegerValueOf: aTSendNode [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIsIntegerObject: msgNode [ 
+
+	self vmClass objectMemoryClass numSmallIntegerTagBits = 1
+		ifTrue: [
+			^ (CBinaryOperatorNode
+				operator: '&'
+				left: 	(msgNode args first asCASTExpressionIn: self)
+				right: (CConstantNode value: 1))
+					needsParentheses: true;
+					yourself ].
+	
+	^ (CBinaryOperatorNode
+		operator: '=='
+		left: (CBinaryOperatorNode
+			operator: '&'
+			left: 	((msgNode args first asCASTExpressionIn: self) needsParentheses: true; yourself)
+			right: (CConstantNode value: 1 << self vmClass objectMemoryClass numSmallIntegerTagBits - 1))
+		right: (CConstantNode value: 1))
+			needsParentheses: true;
+			yourself
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIsNil: tast [
 
 	^ CBinaryOperatorNode

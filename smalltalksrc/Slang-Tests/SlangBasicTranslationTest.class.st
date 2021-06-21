@@ -2385,6 +2385,44 @@ SlangBasicTranslationTest >> testSendIntegerValueOf [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIsIntegerObjectWithLargeTag [
+
+	| translation send value |
+	"constant values work as signed ints"
+	value := 35.
+	send := TSendNode new
+					setSelector: #isIntegerObject:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TConstantNode value: value }.
+
+	numSmallIntegerTagBits := 42.
+	translation := self translate: send.
+
+	self
+		assert: translation
+		equals: '((', 
+			value asString, ' & ', 
+			(1 << numSmallIntegerTagBits - 1) asString, ') == 1)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIsIntegerObjectWithSingleTag [
+
+	| translation send value |
+	"constant values work as signed ints"
+	value := 35.
+	send := TSendNode new
+					setSelector: #isIntegerObject:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TConstantNode value: value }.
+
+	numSmallIntegerTagBits := 1.
+	translation := self translate: send.
+
+	self assert: translation equals: '(',value asString, ' & 1)'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIsNil [
 
 	| translation send |

@@ -343,10 +343,10 @@ MLVMCCodeGenerator >> generateIsIntegerObject: msgNode on: aStream indent: level
 			 self emitCExpression: msgNode args first on: aStream.
 			 aStream nextPutAll: ' & 1)']
 		ifFalse:
-			[aStream nextPutAll: '((('.
+			[aStream nextPutAll: '(('.
 			 self emitCExpression: msgNode args first on: aStream.
 			 aStream
-				nextPutAll: ') & ';
+				nextPutAll: ' & ';
 				print: 1 << self vmClass objectMemoryClass numSmallIntegerTagBits - 1;
 				nextPutAll: ') == 1)']
 ]
