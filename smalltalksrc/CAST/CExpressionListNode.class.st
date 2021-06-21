@@ -2,7 +2,8 @@ Class {
 	#name : #CExpressionListNode,
 	#superclass : #CExpressionNode,
 	#instVars : [
-		'expressions'
+		'expressions',
+		'printOnMultipleLines'
 	],
 	#category : #'CAST-Nodes'
 }
@@ -52,10 +53,23 @@ CExpressionListNode >> expressions: anOrderedCollection [
 CExpressionListNode >> initialize [
 	super initialize.
 	expressions := OrderedCollection new: 2.
+	printOnMultipleLines := false.
 ]
 
 { #category : #testing }
 CExpressionListNode >> isCommaSeparatedExpression [
 
 	^ true
+]
+
+{ #category : #accessing }
+CExpressionListNode >> printOnMultipleLines [
+
+	^ printOnMultipleLines
+]
+
+{ #category : #accessing }
+CExpressionListNode >> printOnMultipleLines: aBoolean [
+
+	printOnMultipleLines := aBoolean
 ]

@@ -25,15 +25,15 @@ CSlangPrettyPrinter >> initialize [
 { #category : #generated }
 CSlangPrettyPrinter >> printExpression: cAST [
 
-	(cAST isLeaf
-		or: [ cAST isFunctionCall
-			"Cast expressions already contain their own parentheses"
-			or: [ cAST isCastExpression ] ])
+	(cAST isLeaf 
+		"Cast expressions already contain their own parentheses"
+		or: [ cAST isCastExpression ])
 		ifTrue: [ cAST acceptVisitor: self ]
 		ifFalse: [ 
 			stream nextPut: $(.
 			cAST acceptVisitor: self.
 			stream nextPut: $) ]
+	
 ]
 
 { #category : #generated }
@@ -58,9 +58,11 @@ CSlangPrettyPrinter >> visitArrayDeclarator: anArrayDeclarator [
 { #category : #generated }
 CSlangPrettyPrinter >> visitArrow: aPointerAccess [
 
-	aPointerAccess structurePointer acceptVisitor: self.
+	aPointerAccess needsParentheses ifTrue:  [ stream nextPut: $(].
+	self printExpression: aPointerAccess structurePointer.
 	stream nextPutAll: '->'.
-	aPointerAccess member acceptVisitor: self
+	aPointerAccess member acceptVisitor: self.
+	aPointerAccess needsParentheses ifTrue:  [ stream nextPut: $)].
 ]
 
 { #category : #generated }
@@ -79,7 +81,7 @@ CSlangPrettyPrinter >> visitAssignment: anAssignment [
 { #category : #generated }
 CSlangPrettyPrinter >> visitBinary: aBinary [
 	
-	
+	aBinary needsParentheses ifTrue: [ stream nextPut: $( ].
 	self printExpression: aBinary left.
 	
 	stream
@@ -87,7 +89,8 @@ CSlangPrettyPrinter >> visitBinary: aBinary [
 		nextPutAll: aBinary operator;
 		nextPutAll: ' '.
 		
-	self printExpression: aBinary right
+	self printExpression: aBinary right.
+	aBinary needsParentheses ifTrue: [ stream nextPut: $) ].
 ]
 
 { #category : #generated }
@@ -110,8 +113,10 @@ CSlangPrettyPrinter >> visitCall: aCall [
 { #category : #generated }
 CSlangPrettyPrinter >> visitCastExpression: aCastExpression [
 
+	| nbParentheses |
+	nbParentheses := aCastExpression needsParentheses ifTrue: [ 2 ] ifFalse: [ 1 ].
 	"Wrap everything between parentheses to avoid ambiguities"
-	stream nextPut: $(.
+	stream next: nbParentheses put: $(.
 	
 	"Print the type between parentheses"
 	stream nextPut: $(.
@@ -120,8 +125,8 @@ CSlangPrettyPrinter >> visitCastExpression: aCastExpression [
 	
 	"Print the expression to cast"
 	self printExpression: aCastExpression expression.
-	
-	stream nextPutAll: ' )'
+	stream space.
+	stream next: nbParentheses put: $)
 ]
 
 { #category : #generated }
@@ -222,14 +227,16 @@ CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
 	stream nextPut: $(.
 	anExpressionList expressions
 		do: [ :e | e acceptVisitor: self ]
-		separatedBy: [ stream nextPutAll: ', ' ].
+		separatedBy: [ 
+			stream nextPutAll: ', '.
+			anExpressionList printOnMultipleLines ifTrue: [ stream cr ] ].
 	stream nextPut: $)
 ]
 
 { #category : #generated }
 CSlangPrettyPrinter >> visitForStatement: aForStatement [
 
-	stream nextPutAll: 'for('.
+	stream nextPutAll: 'for ('.
 	aForStatement init
 		do: [ :e | e acceptVisitor: self ]
 		separatedBy: [ stream nextPutAll: ', ' ].
@@ -302,9 +309,11 @@ CSlangPrettyPrinter >> visitInitializer: anInitializer [
 { #category : #generated }
 CSlangPrettyPrinter >> visitPoint: aMemberAccess [
 
-	aMemberAccess object acceptVisitor: self.
+	aMemberAccess needsParentheses ifTrue:  [ stream nextPut: $(].
+	self printExpression: aMemberAccess object.
 	stream nextPut: $..
-	aMemberAccess member acceptVisitor: self
+	aMemberAccess member acceptVisitor: self.
+	aMemberAccess needsParentheses ifTrue:  [ stream nextPut: $)].
 ]
 
 { #category : #generated }
@@ -375,13 +384,15 @@ CSlangPrettyPrinter >> visitTypename: aTypename [
 CSlangPrettyPrinter >> visitUnaryOperator: anUnary [
 
 	| avoidParentheses |
+	anUnary needsParentheses ifTrue: [ stream nextPut: $( ].
 	avoidParentheses := anUnary expression isCastExpression
 		or: [ anUnary expression isConstant or: [
-			anUnary expression isIdentifier ]].
+			anUnary expression isIdentifier  or: [ anUnary expression isLeaf]]].
 	stream nextPutAll: anUnary operator.
 	avoidParentheses ifFalse: [ stream nextPut: $( ].
 	anUnary expression acceptVisitor: self.
-	avoidParentheses ifFalse: [ stream nextPut: $) ]
+	avoidParentheses ifFalse: [ stream nextPut: $) ].
+	anUnary needsParentheses ifTrue: [ stream nextPut: $) ]
 ]
 
 { #category : #generated }

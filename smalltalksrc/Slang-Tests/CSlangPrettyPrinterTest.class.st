@@ -119,7 +119,7 @@ CSlangPrettyPrinterTest >> testVisitCastExpression [
 					           left: (CConstantNode value: 1)
 					           right: (CIdentifierNode name: 'x'))).
 
-	self assert: print equals: '(int)(1 + x)'
+	self assert: print equals: '((int) (1 + x) )'
 ]
 
 { #category : #'tests-visitor' }
@@ -314,7 +314,7 @@ CSlangPrettyPrinterTest >> testVisitForStatement [
 					        (CIncrementNode object: (CIdentifierNode name: 'j')) }).
 	print := self prettyPrint: for.
 
-	self assert: print trimBoth equals: 'for(i = 1, j = 2; i <= 10; i++, j++) {
+	self assert: print trimBoth equals: 'for (i = 1, j = 2; i <= 10; i++, j++) {
 	a = i % 2;
 	j++;
 }'

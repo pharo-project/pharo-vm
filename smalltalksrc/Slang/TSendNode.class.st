@@ -37,18 +37,31 @@ TSendNode >> argumentsForInliningCodeGenerator: aCodeGen [
 TSendNode >> asCASTAsFieldReferenceIn: aCodeGen [
 
 	| struct access member |
-	(aCodeGen isStructSend: self) ifFalse:
-		[^nil].
-	
+	(aCodeGen isStructSend: self) ifFalse: [ ^ nil ].
+
 	struct := receiver asCASTExpressionIn: aCodeGen.
+	receiver isSend ifTrue: [ struct needsParentheses: true ].
 	member := CIdentifierNode name: (aCodeGen cFunctionNameFor: selector).
-	access := (receiver structTargetKindIn: aCodeGen) caseOf: {
-		[#pointer] -> [CStructurePointerAccessNode structurePointer: struct member: member].
-		[#struct] -> [CMemberAccessNode object: struct member: member] }.
-	arguments isEmpty ifFalse:
-		[self assert: arguments size = 1.
-		 ^CAssignmentNode lvalue: access rvalue: (arguments first asCASTExpressionIn: self)].
-	^access
+	access := (receiver structTargetKindIn: aCodeGen) caseOf: { 
+			          ([ #pointer ]
+			           -> [ 
+			           CStructurePointerAccessNode
+				           structurePointer: struct
+				           member: member ]).
+			          ([ #struct ]
+			           -> [ CMemberAccessNode object: struct member: member ]) }.
+	arguments isEmpty ifFalse: [ 
+		self assert: arguments size = 1.
+		^ (CAssignmentNode
+			   lvalue: (access
+					    needsParentheses: false;
+					    yourself)
+			   rvalue: (arguments first asCASTExpressionIn: aCodeGen))
+			  needsParentheses: true;
+			  yourself ].
+	^ access
+		  needsParentheses: true;
+		  yourself
 ]
 
 { #category : #'C code generation' }
@@ -621,7 +634,7 @@ TSendNode >> structTargetKindIn: aCodeGen [
 	selector == #at: ifTrue:
 		[receiver isVariable ifTrue:
 			[(aCodeGen typeOfVariable: receiver name) ifNotNil:
-				[:type| | derefType |
+				[:type| 
 				 type last = $* ifFalse:
 					[^receiver structTargetKindIn: aCodeGen].
 				 (SlangStructType isTypeStruct: (aCodeGen
