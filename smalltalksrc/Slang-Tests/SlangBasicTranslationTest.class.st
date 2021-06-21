@@ -79,6 +79,9 @@ SlangBasicTranslationTest >> setUp [
 		resetUsedVariablesCache;
 		yourself).
 	
+	"The translator accesses it directly using class variables..."
+	SpurMemoryManager initBytesPerWord: 8.
+	
 	"Tell the generator this is the class we are generating.
 	That will make the generation dispatch to us to ask for configurations such as the number of small integer bits"
 	generator vmClass: self.
@@ -2779,6 +2782,63 @@ SlangBasicTranslationTest >> testSendIfTrueWithSingleStatementArgument [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIntegerObjectOfConstantValue [
+
+	| translation send value |
+	"constant values work as signed ints"
+	value := 35.
+	send := TSendNode new
+					setSelector: #integerObjectOf:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TConstantNode value: value }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((((usqInt) ',value asString, ' ) << ', numSmallIntegerTagBits asString, ') | 1)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIntegerObjectOfSignedValue [
+
+	| translation send |
+	generator currentMethod declarationAt: 'var' put: 'long'.
+	send := TSendNode new
+					setSelector: #integerObjectOf:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TVariableNode named: 'var' }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((((usqInt) var ) << ', numSmallIntegerTagBits asString, ') | 1)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIntegerObjectOfUnsignedSmallValue [
+
+	| translation send |
+	generator currentMethod declarationAt: 'var' put: 'unsigned short'.
+	send := TSendNode new
+					setSelector: #integerObjectOf:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TVariableNode named: 'var' }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((((usqInt) var ) << ', numSmallIntegerTagBits asString, ') | 1)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIntegerObjectOfUnsignedValue [
+
+	| translation send |
+	generator currentMethod declarationAt: 'var' put: 'unsigned long'.
+	send := TSendNode new
+					setSelector: #integerObjectOf:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TVariableNode named: 'var' }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((var << ', numSmallIntegerTagBits asString, ') | 1)'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIntegerValueOf [
 
 	| translation send |
@@ -2790,6 +2850,44 @@ SlangBasicTranslationTest >> testSendIntegerValueOf [
 	translation := self translate: send.
 
 	self assert: translation equals: '1 >> ', numSmallIntegerTagBits asString
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIsIntegerObjectWithLargeTag [
+
+	| translation send value |
+	"constant values work as signed ints"
+	value := 35.
+	send := TSendNode new
+					setSelector: #isIntegerObject:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TConstantNode value: value }.
+
+	numSmallIntegerTagBits := 42.
+	translation := self translate: send.
+
+	self
+		assert: translation
+		equals: '((', 
+			value asString, ' & ', 
+			(1 << numSmallIntegerTagBits - 1) asString, ') == 1)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIsIntegerObjectWithSingleTag [
+
+	| translation send value |
+	"constant values work as signed ints"
+	value := 35.
+	send := TSendNode new
+					setSelector: #isIntegerObject:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TConstantNode value: value }.
+
+	numSmallIntegerTagBits := 1.
+	translation := self translate: send.
+
+	self assert: translation equals: '(',value asString, ' & 1)'
 ]
 
 { #category : #'tests-builtins' }
@@ -3389,7 +3487,7 @@ SlangBasicTranslationTest >> testSendPowerTo [
 		        arguments: { (TConstantNode value: 2) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((sqInt) pow(x, 2) )'
+	self assert: translation equals: '((sqInt) (pow(x, 2)) )'
 ]
 
 { #category : #'tests-builtins' }

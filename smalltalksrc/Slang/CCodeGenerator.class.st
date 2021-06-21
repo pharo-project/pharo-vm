@@ -2496,6 +2496,39 @@ CCodeGenerator >> generateCASTInlineCppIfElse: tast asArgument: asArgument [
 	^ cppIf
 ]
 
+{ #category : #'built-ins' }
+CCodeGenerator >> generateCASTIntegerObjectOf: msgNode [ 
+	
+	| expr mustCastToUnsigned type typeIsUnsigned expressionToShift |
+	expr := msgNode args first.
+	
+	expressionToShift := expr asCASTExpressionIn: self.
+
+	"Note that the default type of an integer constant in C is int.  Hence we /must/
+	 cast expression to long if in the 64-bit world, since e.g. in 64-bits
+		(int)(16r1FFFFF << 3) = (int)16rFFFFFFF8 = -8
+	 whereas
+		(long)(16r1FFFFF << 3) = (long) 16rFFFFFFF8 = 4294967288."
+	type := self typeFor: expr in: currentMethod.
+	typeIsUnsigned := type first = $u.
+	mustCastToUnsigned := typeIsUnsigned not
+		or: [(self sizeOfIntegralCType: type) < (self sizeOfIntegralCType: #usqInt)].
+	mustCastToUnsigned ifTrue: [
+		expressionToShift := CCastExpressionNode
+			type: (CTypeNameNode symbol: #usqInt)
+			expression: expressionToShift ].
+
+	^ (CBinaryOperatorNode
+			operator: #|
+			left: (CBinaryOperatorNode
+			operator: #<<
+			left: expressionToShift
+			right: (CConstantNode  value: self vmClass objectMemoryClass numSmallIntegerTagBits))
+		right: (CConstantNode  value: 1))
+		needsParentheses: true;
+		yourself
+]
+
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIntegerValueOf: aTSendNode [ 
 	
@@ -2503,6 +2536,29 @@ CCodeGenerator >> generateCASTIntegerValueOf: aTSendNode [
 		operator: #>>
 		left: (aTSendNode arguments first asCASTIn: self)
 		right: (CConstantNode value: self vmClass objectMemoryClass numSmallIntegerTagBits)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIsIntegerObject: msgNode [ 
+
+	self vmClass objectMemoryClass numSmallIntegerTagBits = 1
+		ifTrue: [
+			^ (CBinaryOperatorNode
+				operator: '&'
+				left: 	(msgNode args first asCASTExpressionIn: self)
+				right: (CConstantNode value: 1))
+					needsParentheses: true;
+					yourself ].
+	
+	^ (CBinaryOperatorNode
+		operator: '=='
+		left: (CBinaryOperatorNode
+			operator: '&'
+			left: 	((msgNode args first asCASTExpressionIn: self) needsParentheses: true; yourself)
+			right: (CConstantNode value: 1 << self vmClass objectMemoryClass numSmallIntegerTagBits - 1))
+		right: (CConstantNode value: 1))
+			needsParentheses: true;
+			yourself
 ]
 
 { #category : #'CAST translation' }
@@ -3921,11 +3977,11 @@ CCodeGenerator >> generatePlus: msgNode on: aStream indent: level [
 { #category : #'C translation' }
 CCodeGenerator >> generatePowerTo: msgNode on: aStream indent: level [ 
 
-	aStream nextPutAll:'((sqInt) pow('.
+	aStream nextPutAll:'((sqInt) (pow('.
 	self emitCExpression: msgNode receiver on: aStream.
 	aStream nextPutAll: ', '.
 	self emitCExpression: msgNode args first on: aStream.
-	aStream nextPutAll:') )'.
+	aStream nextPutAll:')) )'.
 ]
 
 { #category : #'C translation' }
