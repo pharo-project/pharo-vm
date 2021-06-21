@@ -33,12 +33,6 @@ CUnaryOperatorNode >> expression: anObject [
 ]
 
 { #category : #generated }
-CUnaryOperatorNode >> isLeaf [
-
-	^ expr isLeaf
-]
-
-{ #category : #generated }
 CUnaryOperatorNode >> isUnaryOperation [
 	^ true
 ]
