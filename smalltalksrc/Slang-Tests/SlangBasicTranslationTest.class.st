@@ -287,6 +287,52 @@ SlangBasicTranslationTest >> testBlockValueAsArgumentWithConstantArgument [
 ]
 
 { #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testBlockValueAsArgumentWithMultipleArguments [
+
+	"Case:
+	
+	([ :i :j | 1 foo: 2. i + j = 4  ] value: 4 value: 5) ifTrue: [ a := b ]"
+
+	"In order to test the translation of a block as an argument, the block is given as condition of an if."
+
+	| translation variable expression |
+	variable := TVariableNode new setName: 'var'.
+	expression := TStmtListNode new
+		              setArguments: #( i j )
+		              statements: { 
+				              (TSendNode new
+					               setSelector: #foo
+					               receiver: (TConstantNode value: 1)
+					               arguments: { TConstantNode value: 2 }).
+				              (TSendNode new
+					               setSelector: #=
+					               receiver: (TSendNode new
+							                setSelector: #+
+							                receiver: (TVariableNode named: 'i')
+							                arguments: { (TVariableNode named: 'j') })
+					               arguments: { (TConstantNode value: 4) }) }.
+	translation := self translate: (TSendNode new
+			                setSelector: #ifTrue:
+			                receiver: (TSendNode new
+					                 setSelector: #value:
+					                 receiver: expression
+					                 arguments: { 
+							                 (TConstantNode value: 4).
+							                 (TConstantNode value: 5) })
+			                arguments:
+				                { (TStmtListNode new setStatements:
+					                 { (TAssignmentNode new
+						                  setVariable: (TVariableNode new setName: 'a')
+						                  expression: (TVariableNode new setName: 'b')) }) }).
+
+	self
+		assert: translation trimBoth
+		equals: 'if ((foo(1, 2), (4 + 5) == 4)) {
+	a = b;
+}'
+]
+
+{ #category : #'tests-blocks' }
 SlangBasicTranslationTest >> testBlockValueAsArgumentWithNonLeafArgument [
 
 	"Case:
