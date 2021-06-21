@@ -315,8 +315,9 @@ MLVMCCodeGenerator >> generateIntegerObjectOf: msgNode on: aStream indent: level
 	mustCastToUnsigned := typeIsUnsigned not
 		or: [(self sizeOfIntegralCType: type) < (self sizeOfIntegralCType: #usqInt)].
 	mustCastToUnsigned ifTrue:
-		[aStream nextPutAll: '(usqInt)'].
+		[aStream nextPutAll: '((usqInt) '].
 	self emitCExpression: expr on: aStream.
+	mustCastToUnsigned ifTrue: [ aStream nextPutAll: ' )' ].
 	aStream
 		nextPutAll: ' << ';
 		print: self vmClass objectMemoryClass numSmallIntegerTagBits;

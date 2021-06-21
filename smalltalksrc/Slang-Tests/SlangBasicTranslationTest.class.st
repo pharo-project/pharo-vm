@@ -2314,6 +2314,63 @@ SlangBasicTranslationTest >> testSendIfTrueWithSingleStatementArgument [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIntegerObjectOfConstantValue [
+
+	| translation send value |
+	"constant values work as signed ints"
+	value := 35.
+	send := TSendNode new
+					setSelector: #integerObjectOf:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TConstantNode value: value }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((((usqInt) ',value asString, ' ) << ', numSmallIntegerTagBits asString, ') | 1)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIntegerObjectOfSignedValue [
+
+	| translation send |
+	generator currentMethod declarationAt: 'var' put: 'long'.
+	send := TSendNode new
+					setSelector: #integerObjectOf:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TVariableNode named: 'var' }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((((usqInt) var ) << ', numSmallIntegerTagBits asString, ') | 1)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIntegerObjectOfUnsignedSmallValue [
+
+	| translation send |
+	generator currentMethod declarationAt: 'var' put: 'unsigned short'.
+	send := TSendNode new
+					setSelector: #integerObjectOf:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TVariableNode named: 'var' }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((((usqInt) var ) << ', numSmallIntegerTagBits asString, ') | 1)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIntegerObjectOfUnsignedValue [
+
+	| translation send |
+	generator currentMethod declarationAt: 'var' put: 'unsigned long'.
+	send := TSendNode new
+					setSelector: #integerObjectOf:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TVariableNode named: 'var' }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((var << ', numSmallIntegerTagBits asString, ') | 1)'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIntegerValueOf [
 
 	| translation send |
