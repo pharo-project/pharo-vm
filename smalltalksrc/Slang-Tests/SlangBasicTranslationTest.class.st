@@ -79,6 +79,9 @@ SlangBasicTranslationTest >> setUp [
 		resetUsedVariablesCache;
 		yourself).
 	
+	"The translator accesses it directly using class variables..."
+	SpurMemoryManager initBytesPerWord: 8.
+	
 	"Tell the generator this is the class we are generating.
 	That will make the generation dispatch to us to ask for configurations such as the number of small integer bits"
 	generator vmClass: self.
