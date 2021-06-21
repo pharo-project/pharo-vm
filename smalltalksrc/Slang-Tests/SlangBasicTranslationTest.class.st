@@ -180,7 +180,38 @@ SlangBasicTranslationTest >> testAssignementAsExpressionWithExpressionBlockWithL
 ]
 
 { #category : #'tests-blocks' }
-SlangBasicTranslationTest >> testBlockAsArgument [
+SlangBasicTranslationTest >> testBlockValue [
+
+	"Case:
+	
+	[ 1 foo: 2. 3 foo: 4 ] value"
+
+	| translation |
+
+	translation := self translate: (TSendNode new
+		setSelector: #value
+		receiver: (TStmtListNode new
+			setArguments: #()
+			statements: {
+				TSendNode new
+					setSelector: #foo
+					receiver: (TConstantNode value: 1)
+					arguments: { TConstantNode value: 2 }.
+				TSendNode new
+					setSelector: #bar
+					receiver: (TConstantNode value: 3)
+					arguments: { TConstantNode value: 4 }.
+			})
+		arguments: { }).
+
+	self assert: translation trimBoth equals: '{
+	foo(1, 2);
+	bar(3, 4);
+}'
+]
+
+{ #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testBlockValueAsArgument [
 
 	"Case:
 	
@@ -217,33 +248,125 @@ SlangBasicTranslationTest >> testBlockAsArgument [
 ]
 
 { #category : #'tests-blocks' }
-SlangBasicTranslationTest >> testBlockValue [
+SlangBasicTranslationTest >> testBlockValueAsArgumentWithConstantArgument [
 
 	"Case:
 	
-	[ 1 foo: 2. 3 foo: 4 ] value"
+	([ :i | 1 foo: 2. i = 4 ] value: 4) ifTrue: [ a := b ]"
 
-	| translation |
+	"In order to test the translation of a block as an argument, the block is given as condition of an if."
 
+	| translation variable expression |
+	variable := TVariableNode new setName: 'var'.
+	expression := TStmtListNode new setArguments: #( i ) statements: { 
+			              (TSendNode new
+				               setSelector: #foo
+				               receiver: (TConstantNode value: 1)
+				               arguments: { (TConstantNode value: 2) }).
+			              (TSendNode new
+				               setSelector: #=
+				               receiver: (TVariableNode named: 'i')
+				               arguments: { (TConstantNode value: 4) }) }.
 	translation := self translate: (TSendNode new
-		setSelector: #value
-		receiver: (TStmtListNode new
-			setArguments: #()
-			statements: {
-				TSendNode new
-					setSelector: #foo
-					receiver: (TConstantNode value: 1)
-					arguments: { TConstantNode value: 2 }.
-				TSendNode new
-					setSelector: #bar
-					receiver: (TConstantNode value: 3)
-					arguments: { TConstantNode value: 4 }.
-			})
-		arguments: { }).
+			                setSelector: #ifTrue:
+			                receiver: (TSendNode new
+					                 setSelector: #value:
+					                 receiver: expression
+					                 arguments: { (TConstantNode value: 4) })
+			                arguments:
+				                { (TStmtListNode new setStatements:
+					                 { (TAssignmentNode new
+						                  setVariable: (TVariableNode new setName: 'a')
+						                  expression: (TVariableNode new setName: 'b')) }) }).
 
-	self assert: translation trimBoth equals: '{
-	foo(1, 2);
-	bar(3, 4);
+	self
+		assert: translation trimBoth
+		equals: 'if ((foo(1, 2), 4 == 4)) {
+	a = b;
+}'
+]
+
+{ #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testBlockValueAsArgumentWithNonLeafArgument [
+
+	"Case:
+	
+	([ :i | 1 foo: 2. i = 4 ] value: (3 foo: 4)) ifTrue: [ a := b ]"
+
+	"In order to test the translation of a block as an argument, the block is given as condition of an if."
+
+	| translation variable expression |
+	variable := TVariableNode new setName: 'var'.
+	expression := TStmtListNode new setArguments: #( i ) statements: { 
+			              (TSendNode new
+				               setSelector: #foo
+				               receiver: (TConstantNode value: 1)
+				               arguments: { (TConstantNode value: 2) }).
+			              (TSendNode new
+				               setSelector: #=
+				               receiver: (TVariableNode named: 'i')
+				               arguments: { (TConstantNode value: 4) }) }.
+	translation := self translate: (TSendNode new
+			                setSelector: #ifTrue:
+			                receiver: (TSendNode new
+					                 setSelector: #value:
+					                 receiver: expression
+					                 arguments: { (TSendNode new
+							                  setSelector: #foo
+							                  receiver: (TConstantNode value: 3)
+							                  arguments: { (TConstantNode value: 4) }) })
+			                arguments:
+				                { (TStmtListNode new setStatements:
+					                 { (TAssignmentNode new
+						                  setVariable: (TVariableNode new setName: 'a')
+						                  expression: (TVariableNode new setName: 'b')) }) }).
+
+	self
+		assert: translation trimBoth
+		equals: 'if ((foo(1, 2), (foo(3, 4)) == 4)) {
+	a = b;
+}'
+]
+
+{ #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testBlockValueAsArgumentWithNonLeafArgumentAndMultipleUse [
+
+	"Case:
+	
+	([ :i | 1 foo: i. i = 4 ] value: (3 foo: 4)) ifTrue: [ a := b ]"
+
+	"In order to test the translation of a block as an argument, the block is given as condition of an if."
+
+	| translation variable expression |
+	variable := TVariableNode new setName: 'var'.
+	expression := TStmtListNode new setArguments: #( i ) statements: { 
+			              (TSendNode new
+				               setSelector: #foo
+				               receiver: (TConstantNode value: 1)
+				               arguments: { (TVariableNode named: 'i') }).
+			              (TSendNode new
+				               setSelector: #=
+				               receiver: (TVariableNode named: 'i')
+				               arguments: { (TConstantNode value: 4) }) }.
+	translation := self translate: (TSendNode new
+			                setSelector: #ifTrue:
+			                receiver: (TSendNode new
+					                 setSelector: #value:
+					                 receiver: expression
+					                 arguments: { (TSendNode new
+							                  setSelector: #foo
+							                  receiver: (TConstantNode value: 3)
+							                  arguments: { (TConstantNode value: 4) }) })
+			                arguments:
+				                { (TStmtListNode new setStatements:
+					                 { (TAssignmentNode new
+						                  setVariable: (TVariableNode new setName: 'a')
+						                  expression: (TVariableNode new setName: 'b')) }) }).
+
+	self
+		assert: translation trimBoth
+		equals: 'if ((foo(1, foo(3, 4)), (foo(3, 4)) == 4)) {
+	a = b;
 }'
 ]
 
