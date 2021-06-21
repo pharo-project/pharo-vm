@@ -10,6 +10,7 @@ Class {
 { #category : #running }
 SlangAbstractTestCase >> setUp [
 	super setUp.
-	ccg := CCodeGenerator new.
-
+	ccg := MLVMCCodeGenerator new.
+	ccg vmMaker: VMMaker new.
+	ccg vmMaker vmmakerConfiguration: VMMakerConfiguration.
 ]

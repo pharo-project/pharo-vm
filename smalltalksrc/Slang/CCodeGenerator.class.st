@@ -1393,20 +1393,18 @@ CCodeGenerator >> generateAbs: msgNode on: aStream indent: level [
 CCodeGenerator >> generateAddressOf: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPut: $(; nextPut: $&.
-	self emitCExpression: msgNode args first on: aStream.
-	aStream nextPut: $)
+	aStream nextPut: $&.
+	self emitCExpression: msgNode args first on: aStream
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAllMask: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll: '(('.
+	aStream nextPutAll: '('.
 	self generateBitAnd: msgNode on: aStream indent: level.
 	aStream nextPutAll: ') == '.
-	self emitCExpression: msgNode args first on: aStream indent: level.
-	aStream nextPut: $)
+	self emitCExpression: msgNode args first on: aStream indent: level
 ]
 
 { #category : #'C translation' }
@@ -1554,7 +1552,7 @@ CCodeGenerator >> generateBaseHeaderSize: msgNode on: aStream indent: level [
 CCodeGenerator >> generateBetweenAnd: msgNode on: aStream indent: level [
 	"Generate the C code for the between:and: message onto the given stream."
 
-	aStream nextPutAll: '(('.
+	aStream nextPutAll: '('.
 	self emitCExpression: msgNode receiver on: aStream.
 	aStream nextPutAll: ' >= '.
 	self emitCExpression: msgNode args first on: aStream.
@@ -1562,7 +1560,7 @@ CCodeGenerator >> generateBetweenAnd: msgNode on: aStream indent: level [
 	self emitCExpression: msgNode receiver on: aStream.
 	aStream nextPutAll: ' <= '.
 	self emitCExpression: msgNode args second on: aStream.
-	aStream nextPutAll: '))'
+	aStream nextPutAll: ')'
 ]
 
 { #category : #'C translation' }
@@ -1578,13 +1576,12 @@ CCodeGenerator >> generateBitAnd: msgNode on: aStream indent: level [
 CCodeGenerator >> generateBitClear: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream next: 2 put: $(.
+	aStream nextPut: $(.
 	self emitCExpression: msgNode receiver on: aStream.
 	aStream nextPutAll: ' | '.
 	self emitCExpression: msgNode args first on: aStream.
 	aStream nextPutAll: ') - '.
-	self emitCExpression: msgNode args first on: aStream.
-	aStream nextPut: $)
+	self emitCExpression: msgNode args first on: aStream
 ]
 
 { #category : #'C translation' }
@@ -3094,9 +3091,9 @@ CCodeGenerator >> generateDeadCode: aBool [
 CCodeGenerator >> generateDeny: denyMsgNode on: aStream indent: level [
 	"Generate the C code for a deny: expr onto the given stream."
 
-	aStream nextPutAll: 'assert(!('.
+	aStream nextPutAll: 'assert(!'.
 	self emitCExpression: denyMsgNode args first on: aStream.
-	aStream nextPutAll: '))'
+	aStream nextPutAll: ')'
 ]
 
 { #category : #'C translation' }
@@ -3797,11 +3794,11 @@ CCodeGenerator >> generatePlus: msgNode on: aStream indent: level [
 { #category : #'C translation' }
 CCodeGenerator >> generatePowerTo: msgNode on: aStream indent: level [ 
 
-	aStream nextPutAll:'(sqInt)(pow('.
+	aStream nextPutAll:'((sqInt) pow('.
 	self emitCExpression: msgNode receiver on: aStream.
 	aStream nextPutAll: ', '.
 	self emitCExpression: msgNode args first on: aStream.
-	aStream nextPutAll:'))'.
+	aStream nextPutAll:') )'.
 ]
 
 { #category : #'C translation' }
