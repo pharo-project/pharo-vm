@@ -9,7 +9,11 @@
 #include <stdio.h>
 #include <ffi.h>
 #if FEATURE_THREADED_FFI
-#include <pthread.h>
+#ifdef _WIN32
+# include <Windows.h>
+#else
+# include <pthread.h>
+#endif
 #endif
 #include <errno.h>
 #include <stdlib.h>
