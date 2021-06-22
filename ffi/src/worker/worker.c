@@ -16,6 +16,10 @@
 # include <dispatch/dispatch.h>
 #endif
 
+#ifdef _WIN32
+# include <Windows.h>
+#endif
+
 struct __Worker {
 	Runner runner;
 
@@ -148,8 +152,12 @@ void *worker_run(void *aWorker) {
         	switch(task->type){
         		case WORKER_RELEASE:
         			worker->hasToQuit = true;
-					//We wait in case we need to receive a callback_return message
-        			sleep(1);
+        			//We wait in case we need to receive a callback_return message
+        			#ifdef _WIN32
+        			 Sleep(1);
+        			#else
+        			 sleep(1);
+        			#endif
         			break;
 
         		case CALLOUT:
