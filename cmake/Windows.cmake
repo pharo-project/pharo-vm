@@ -150,9 +150,19 @@ macro(add_required_libs_per_platform)
 	target_link_libraries(${VM_LIBRARY_NAME} uuid)
     # Disable Safe Structured Exception Handling
     #target_link_libraries(${VM_LIBRARY_NAME} "$<$<CXX_COMPILER_ID:MSVC>:-SAFESEH:NO>")
-
+	
 	# pthread is required by tffi and the vm itself. We should always link to it.
-	target_link_libraries(${VM_LIBRARY_NAME} pthread)
+	if (${FEATURE_LIB_PTHREADW32})		
+		find_package(PTHREADW32)
+		if(PTHREADW32_FOUND)
+			target_link_libraries(${VM_LIBRARY_NAME} PTHREADW32::lib)
+		else()
+			message(FATAL_ERROR "PTHREADW32 not found. Provide the path in PTHREADW32_DIR env.variable")
+		endif()
+	else()
+		target_link_libraries(${VM_LIBRARY_NAME} pthread)
+	endif()
+
 	target_link_libraries(${VM_EXECUTABLE_NAME} Ole32)
 	target_link_libraries(${VM_EXECUTABLE_NAME} comctl32)
 	target_link_libraries(${VM_EXECUTABLE_NAME} uuid)
