@@ -79,6 +79,16 @@ The build in Windows, uses Cygwin. This tool should be installed, and the follow
 - git
 - libtool
 
+To automate the Cygwin installation process there is `scripts\installCygwin.ps1` which downloads and installs a chosen version of cygwin and mingw for a given architecture. For example the following installs the latest `Cygwin (64 bit)` and `mingw64-x86_64-clang` compiler:
+```
+.\scripts\installCygwin.ps1 setup-x86_64.exe x86_64
+```
+Do not forget to set the execution policy to `Unrestricted` (from the Admin PowerShell) in order to being able run the `ps1` script:
+```
+Set-ExecutionPolicy -ExecutionPolicy Unrestricted
+````
+
+Bulding the VM:
 ```bash
 $ cmake .
 $ make install

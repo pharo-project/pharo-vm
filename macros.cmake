@@ -24,7 +24,12 @@ macro(addIndependentLibraryWithRPATH NAME)
 endmacro()
 
 macro(get_platform_name VARNAME)
+  # See https://github.com/pharo-project/opensmalltalk-vm/issues/270
+  if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "^(AMD64|x64)$")
+    set(${VARNAME} ${CMAKE_SYSTEM_NAME}-x86_64)
+  else()
     set(${VARNAME} ${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR})
+  endif()
 endmacro()
 
 macro(get_full_platform_name_with_osx VARNAME)
