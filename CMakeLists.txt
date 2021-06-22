@@ -25,6 +25,8 @@ option(FEATURE_LIB_SDL2              "Build SDL2 support"                       
 option(FEATURE_LIB_CAIRO             "Build Cairo support"                                   ON)
 option(FEATURE_LIB_FREETYPE2         "Build freetype2 support"                               ON)
 option(FEATURE_LIB_GIT2              "Build LibGit2 support"                                 ON)
+# PTHREADW32_DIR should be set to the location of the PTHREADW32
+option(FEATURE_LIB_PTHREADW32        "Windows only, link to win32 version of pthread"       OFF)
 option(GENERATE_SOURCES              "If it generates the sources"                           ON)
 option(ALWAYS_INTERACTIVE            "Be interactive by default"                            OFF)
 option(BUILD_BUNDLE                  "Builds a bundle with all dependencies"                 ON)
