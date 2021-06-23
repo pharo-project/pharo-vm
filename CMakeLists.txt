@@ -31,6 +31,8 @@ option(GENERATE_SOURCES              "If it generates the sources"              
 option(ALWAYS_INTERACTIVE            "Be interactive by default"                            OFF)
 option(BUILD_BUNDLE                  "Builds a bundle with all dependencies"                 ON)
 option(FEATURE_COMPILE_GNUISATION    "Use gcc gnu extensions to compile the VM"              ON)
+option(COMPILE_STATIC_LIBRARIES      "Compiles static libraries instead of shared ones"     OFF)
+option(COMPILE_EXECUTABLE            "Compiles executable"                                   ON)
 option(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES        "Prefer downloading dependencies"              OFF)
 option(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS             "Use inline memory accessors instead of macros" ON)
 
@@ -290,13 +292,7 @@ add_compile_definitions("VM_LABEL\(foo\)=0")
 string(LENGTH "${CMAKE_SOURCE_DIR}/" SOURCE_PATH_SIZE)
 add_compile_definitions("SOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
 
-if(UNIX AND NOT OSX AND NOT WIN)
-    set(VM_EXECUTABLE_NAME pharo CACHE STRING "VM Executable name")
-else()
-    set(VM_EXECUTABLE_NAME Pharo CACHE STRING "VM Executable name")
-endif()
-
-message(STATUS "Building ${APPNAME} with executable named ${VM_EXECUTABLE_NAME}")
+message(STATUS "Building ${APPNAME}")
 
 set(VM_LIBRARY_NAME ${APPNAME}VMCore)
 set(VM_NAME ${APPNAME})
@@ -331,18 +327,24 @@ elseif("${SIZEOF_LONG_LONG}" STREQUAL "8")
 else()
 	message(FATAL_ERROR "Failed to find a 64 bits integer type.")
 endif()
-
-set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/")
-
-#If in OSX, configure creation of Bundle
-if (OSX)
-  set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/Debug")
-  set(RUNTIME_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/")
-  set(LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/vm/Debug/${VM_EXECUTABLE_NAME}.app/Contents/MacOS/Plugins")
-else()
-  set(LIBRARY_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
+ 
+# Detect a location to which libraries should be built. The target location depends on whether we want to build an executable or not.
+set(LIBRARY_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/")
+if (COMPILE_EXECUTABLE)
+  set(EXECUTABLE_OUTPUT_PATH ${LIBRARY_OUTPUT_PATH})
+  
+  if(UNIX AND NOT OSX AND NOT WIN)
+      set(VM_EXECUTABLE_NAME pharo CACHE STRING "VM Executable name")
+  else()
+      set(VM_EXECUTABLE_NAME Pharo CACHE STRING "VM Executable name")
+  endif()
+  # If in OSX, configure creation of Bundle
+  if (OSX)
+    set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/Debug")
+    set(LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/vm/Debug/${VM_EXECUTABLE_NAME}.app/Contents/MacOS/Plugins")
+  endif()
 endif()
-set(LIBRARY_OUTPUT_PATH ${LIBRARY_OUTPUT_DIRECTORY})
+
 message(STATUS "Writing libraries to: ${LIBRARY_OUTPUT_DIRECTORY}")
 
 #make_directory(${LIBRARY_OUTPUT_PATH})
@@ -442,7 +444,6 @@ set(VM_SOURCES
     ${EXTRACTED_SOURCES}
 )
 
-add_executable(${VM_EXECUTABLE_NAME} ${VM_FRONTEND_APPLICATION_TYPE} ${VM_FRONTEND_SOURCES})
 addLibraryWithRPATH(${VM_LIBRARY_NAME} ${VM_SOURCES})
 
 #
@@ -476,18 +477,6 @@ if (${FEATURE_FFI})
 endif()
 
 
-#If in OSX, configure creation of Bundle
-if(OSX)
-  set_target_properties(
-    ${VM_EXECUTABLE_NAME}
-    PROPERTIES
-    MACOSX_BUNDLE YES
-    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/Info.plist.in"
-  )
-endif()
-
-target_link_libraries(${VM_EXECUTABLE_NAME} ${VM_LIBRARY_NAME})
-
 add_required_libs_per_platform()
 
 include(plugins.cmake)
@@ -497,6 +486,6 @@ add_subdirectory(ffiTestLibrary ${CMAKE_CURRENT_BINARY_DIR}/build/ffiTestLibrary
 # Handling Third party dependencies
 add_third_party_dependencies_per_platform()
 
-# Packaging Setup
-
-include(cmake/packaging.cmake)
+if(COMPILE_EXECUTABLE)
+  include(cmake/executable.cmake)
+endif()
