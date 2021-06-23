@@ -329,9 +329,9 @@ else()
 endif()
  
 # Detect a location to which libraries should be built. The target location depends on whether we want to build an executable or not.
-set(LIBRARY_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/")
+set(LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/vm/")
 if (COMPILE_EXECUTABLE)
-  set(EXECUTABLE_OUTPUT_PATH ${LIBRARY_OUTPUT_PATH})
+  set(EXECUTABLE_OUTPUT_PATH ${LIBRARY_OUTPUT_DIRECTORY})
   
   if(UNIX AND NOT OSX AND NOT WIN)
       set(VM_EXECUTABLE_NAME pharo CACHE STRING "VM Executable name")
@@ -346,8 +346,6 @@ if (COMPILE_EXECUTABLE)
 endif()
 
 message(STATUS "Writing libraries to: ${LIBRARY_OUTPUT_DIRECTORY}")
-
-#make_directory(${LIBRARY_OUTPUT_PATH})
 
 check_include_files(dirent.h HAVE_DIRENT_H)
 check_include_files(features.h HAVE_FEATURES_H)
