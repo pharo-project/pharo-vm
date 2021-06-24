@@ -88,9 +88,9 @@ VMCodeGenerationTest >> testCommentsInBlocks [
 		translation parseTree statements first emitCCodeOn: stream level: 0 generator: codeGenerator.
 	].
 	
-	self assert: result equals: 'if (!(something())) {
-
-	/* comment */
+	self assert: result equals: 'if (!(something())) 
+/* comment */
+{
 }'
 ]
 
@@ -278,7 +278,7 @@ VMCodeGenerationTest >> testSimpleIfNil [
 		translation parseTree statements first emitCCodeOn: stream level: 0 generator: codeGenerator.
 	].
 	
-	self assert: result equals: 'variable = ((something()) == null
+	self assert: result equals: 'variable = (((something()) == null)
 	 ? 1
 	 : 2)'
 ]
