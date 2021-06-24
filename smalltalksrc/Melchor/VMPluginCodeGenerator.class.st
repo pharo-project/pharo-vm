@@ -44,13 +44,12 @@ VMPluginCodeGenerator >> collectAndCheckInterpreterProxyInterfaceFor: selectors 
 							[(objectMemoryClass whichClassIncludesSelector: selector) ifNil:
 								[self vmmakerConfiguration interpreterProxyClass]]).
 		actual := self compileToTMethodSelector: selector in: self vmmakerConfiguration interpreterProxyClass.
-		{ actual. reference } do:
-			[:tMethod|
-			 tMethod recordDeclarationsIn: self.
-			 tMethod returnType ifNil:
-				[tMethod inferReturnTypeIn: self.
-				 tMethod returnType ifNil:
-					[tMethod returnType: #sqInt]]].
+		{ actual. reference } do: [:tMethod|
+			tMethod recordDeclarationsIn: self.
+			tMethod returnType ifNil: [
+				(SlangTyper on: self) inferReturnTypeOf: tMethod.
+				tMethod returnType ifNil: [
+					tMethod returnType: #sqInt ]]].
 		(reference returnType ~= actual returnType
 		 or: [(1 to: reference args size) anySatisfy:
 				[:i| (reference typeFor: (reference args at: i) in: self)

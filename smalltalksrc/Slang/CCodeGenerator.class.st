@@ -5259,7 +5259,10 @@ CCodeGenerator >> isSimpleType: aType [
 	"For the purposes of the read-before-written initializer, answer if
 	 aType is simple, e.g. not a structure, and array or an opaque type."
 	^(self isPointerCType: aType)
-	  or: [self isIntegralCType: aType]
+	  or: [ (self isIntegralCType: aType)
+		or: [ 
+			"The type affected to literal floating point numbers"
+			aType = #double ]]
 ]
 
 { #category : #inlining }
@@ -5946,6 +5949,11 @@ CCodeGenerator >> printUnboundVariableReferenceWarnings [
 
 { #category : #'type inference' }
 CCodeGenerator >> promoteArithmeticTypes: firstType and: secondType [
+	
+	"If either type is unknown, answer nil."
+	(firstType isNil or: [secondType isNil]) ifTrue:
+		[^nil].
+
 	"Answer the return type for an arithmetic send.  This is so that the inliner can still inline
 	 simple expressions.  Deal with pointer arithmetic, floating point arithmetic and promotion.
 	 It is important to choose deterministically to get stable source generation.
@@ -5955,9 +5963,7 @@ CCodeGenerator >> promoteArithmeticTypes: firstType and: secondType [
 		[^(firstType = #double or: [secondType = #double])
 			ifTrue: [#double]
 			ifFalse: [#float] "in C99 6.3.1.8, float+int, int is converted as a float"].
-	"deal with unknowns, answering nil."
-	(firstType isNil or: [secondType isNil]) ifTrue:
-		[^nil].
+
 	"Deal with integer promotion and arithmetic conversion"
 	^self promoteIntegerArithmeticTypes: firstType and: secondType
 ]
