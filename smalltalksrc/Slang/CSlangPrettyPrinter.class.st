@@ -25,9 +25,10 @@ CSlangPrettyPrinter >> initialize [
 { #category : #generated }
 CSlangPrettyPrinter >> printExpression: cAST [
 
-	(cAST isLeaf 
+	(cAST isLeaf
 		"Cast expressions already contain their own parentheses"
-		or: [ cAST isCastExpression ])
+		or: [ cAST isCastExpression 
+			or: [cAST isUnaryOperation and: [cAST expression isLeaf or: [ cAST needsParentheses]]]])
 		ifTrue: [ cAST acceptVisitor: self ]
 		ifFalse: [ 
 			stream nextPut: $(.
@@ -363,8 +364,9 @@ CSlangPrettyPrinter >> visitStringLiteral: aStringLiteral [
 { #category : #generated }
 CSlangPrettyPrinter >> visitTernary: aTernary [
 
-	stream nextPutAll: '('.
-	self printExpression: aTernary condition.
+	stream nextPutAll: '(('.
+	aTernary condition acceptVisitor: self.
+	stream nextPut: $).
 	aTernary printOnMultipleLines ifTrue: [ stream crtab: level + 1 ].
 	stream nextPutAll: ' ? '.
 	aTernary then acceptVisitor: self.

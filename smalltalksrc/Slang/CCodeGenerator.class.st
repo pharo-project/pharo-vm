@@ -2249,6 +2249,30 @@ CCodeGenerator >> generateCASTIfFalse: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfFalseAsArgument: tast [
+
+	^ (self nilOrBooleanConstantReceiverOf: tast receiver)
+		  ifNil: [ 
+			  (CTernaryNode
+				   condition:
+					   ((tast receiver isSend and: [ tast receiver selector == #not ])
+						    ifTrue: [ "Eliminate double-negatives" 
+							    tast receiver receiver asCASTExpressionIn: self ]
+						    ifFalse: [ 
+							    CUnaryOperatorNode
+								    operator: #!
+								    expression: (tast receiver asCASTExpressionIn: self) ])
+				   then: (tast arguments first asCASTExpressionIn: self)
+				   else: (CConstantNode value: 0))
+				  printOnMultipleLines: true;
+				  yourself ]
+		  ifNotNil: [ :const | 
+			  const
+				  ifTrue: [ CEmptyStatementNode new ]
+				  ifFalse: [ tast arguments first asCASTExpressionIn: self ] ]
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfFalseIfTrue: tast [
 
 	^ self generateCASTIfElse: tast reverseArms: true 
@@ -2272,9 +2296,31 @@ CCodeGenerator >> generateCASTIfNil: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNilAsArgument: tast [
+
+	(self isNilConstantReceiverOf: tast) ifFalse: [ 
+		^ (CTernaryNode
+			   condition: (CUnaryOperatorNode
+					    operator: #!
+					    expression: (tast receiver asCASTExpressionIn: self))
+			   then: (tast arguments first asCASTExpressionIn: self)
+			   else: (tast receiver asCASTExpressionIn: self))
+			  printOnMultipleLines: true;
+			  yourself ].
+	"The receiver is a nil constant, known at translation-time. No need to add a conditional node over it."
+	^ tast arguments first asCASTExpressionIn: self
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfNilIfNotNil: tast [
 
 	^ self generateCASTIfNotNilIfNil: tast reverseArms: true
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNilIfNotNilAsArgument: tast [
+
+	^ self generateCASTIfNotNilIfNilAsArgument: tast reverseArms: true
 ]
 
 { #category : #'CAST translation' }
@@ -2286,6 +2332,20 @@ CCodeGenerator >> generateCASTIfNotNil: tast [
 			  then: (tast arguments first asCASTIn: self) ].
 	"The receiver is a nil constant, nothing to do."
 	^ CEmptyStatementNode new
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNotNilAsArgument: tast [
+
+	(self isNilConstantReceiverOf: tast) ifFalse: [ 
+		^ (CTernaryNode
+			   condition: (tast receiver asCASTExpressionIn: self)
+			   then: (tast arguments first asCASTExpressionIn: self)
+			   else: (CConstantNode value: 0))
+			  printOnMultipleLines: true;
+			  yourself ].
+	"The receiver is a nil constant, return C literal for nil."
+	^ CConstantNode value: (self cLiteralFor: nil)
 ]
 
 { #category : #'CAST translation' }
@@ -2316,6 +2376,33 @@ CCodeGenerator >> generateCASTIfNotNilIfNil: tast reverseArms: reverse [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNotNilIfNilAsArgument: tast [
+
+	^ self generateCASTIfNotNilIfNilAsArgument: tast reverseArms: false
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIfNotNilIfNilAsArgument: tast reverseArms: reverse [
+
+	| firstBlock lastBlock |
+	firstBlock := reverse
+		              ifTrue: [ tast arguments last ]
+		              ifFalse: [ tast arguments first ].
+	lastBlock := reverse
+		             ifTrue: [ tast arguments first ]
+		             ifFalse: [ tast arguments last ].
+	(self isNilConstantReceiverOf: tast) ifFalse: [ 
+		^ (CTernaryNode
+			   condition: (tast receiver asCASTExpressionIn: self)
+			   then: (firstBlock asCASTExpressionIn: self)
+			   else: (lastBlock asCASTExpressionIn: self))
+			  printOnMultipleLines: true;
+			  yourself ].
+	"The receiver is a nil constant, known at translation-time. We know which block is executed."
+	^ lastBlock asCASTExpressionIn: self
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIfTrue: tast [
 	
 	^ (self nilOrBooleanConstantReceiverOf: tast receiver)
@@ -2335,7 +2422,9 @@ CCodeGenerator >> generateCASTIfTrueAsArgument: tast [
 	(self nilOrBooleanConstantReceiverOf: tast receiver)
 		ifNil: [ 
 			^ (CTernaryNode
-				   condition: (tast receiver asCASTExpressionIn: self)
+				   condition: ((tast receiver asCASTExpressionIn: self)
+						    needsParentheses: false;
+						    yourself)
 				   then: (tast arguments first asCASTExpressionIn: self)
 				   else: (CConstantNode value: 0))
 				  printOnMultipleLines: true;
@@ -2407,6 +2496,39 @@ CCodeGenerator >> generateCASTInlineCppIfElse: tast asArgument: asArgument [
 	^ cppIf
 ]
 
+{ #category : #'built-ins' }
+CCodeGenerator >> generateCASTIntegerObjectOf: msgNode [ 
+	
+	| expr mustCastToUnsigned type typeIsUnsigned expressionToShift |
+	expr := msgNode args first.
+	
+	expressionToShift := expr asCASTExpressionIn: self.
+
+	"Note that the default type of an integer constant in C is int.  Hence we /must/
+	 cast expression to long if in the 64-bit world, since e.g. in 64-bits
+		(int)(16r1FFFFF << 3) = (int)16rFFFFFFF8 = -8
+	 whereas
+		(long)(16r1FFFFF << 3) = (long) 16rFFFFFFF8 = 4294967288."
+	type := self typeFor: expr in: currentMethod.
+	typeIsUnsigned := type first = $u.
+	mustCastToUnsigned := typeIsUnsigned not
+		or: [(self sizeOfIntegralCType: type) < (self sizeOfIntegralCType: #usqInt)].
+	mustCastToUnsigned ifTrue: [
+		expressionToShift := CCastExpressionNode
+			type: (CTypeNameNode symbol: #usqInt)
+			expression: expressionToShift ].
+
+	^ (CBinaryOperatorNode
+			operator: #|
+			left: (CBinaryOperatorNode
+			operator: #<<
+			left: expressionToShift
+			right: (CConstantNode  value: self vmClass objectMemoryClass numSmallIntegerTagBits))
+		right: (CConstantNode  value: 1))
+		needsParentheses: true;
+		yourself
+]
+
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIntegerValueOf: aTSendNode [ 
 	
@@ -2414,6 +2536,29 @@ CCodeGenerator >> generateCASTIntegerValueOf: aTSendNode [
 		operator: #>>
 		left: (aTSendNode arguments first asCASTIn: self)
 		right: (CConstantNode value: self vmClass objectMemoryClass numSmallIntegerTagBits)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIsIntegerObject: msgNode [ 
+
+	self vmClass objectMemoryClass numSmallIntegerTagBits = 1
+		ifTrue: [
+			^ (CBinaryOperatorNode
+				operator: '&'
+				left: 	(msgNode args first asCASTExpressionIn: self)
+				right: (CConstantNode value: 1))
+					needsParentheses: true;
+					yourself ].
+	
+	^ (CBinaryOperatorNode
+		operator: '=='
+		left: (CBinaryOperatorNode
+			operator: '&'
+			left: 	((msgNode args first asCASTExpressionIn: self) needsParentheses: true; yourself)
+			right: (CConstantNode value: 1 << self vmClass objectMemoryClass numSmallIntegerTagBits - 1))
+		right: (CConstantNode value: 1))
+			needsParentheses: true;
+			yourself
 ]
 
 { #category : #'CAST translation' }
@@ -3282,11 +3427,11 @@ CCodeGenerator >> generateIfFalseAsArgument: msgNode on: aStream indent: level [
 														isBuiltInOp: msgNode isBuiltinOperator)
 					on: aStream
 					indent: level].
-			aStream nextPutAll: '(!('.
-			msgNode receiver emitCCodeAsArgumentOn: aStream level: 0 generator: self.
-			aStream nextPut: $); crtab: level + 1; nextPut: $?; space.
+			aStream nextPutAll: '((!'.
+			self emitCExpression: msgNode receiver on: aStream.
+			aStream nextPut: $); crtab: level + 1; nextPutAll: ' ? '.
 			msgNode args last emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-			aStream crtab: level + 1; nextPutAll: ': 0)']
+			aStream crtab: level + 1; nextPutAll: ' : 0)']
 		ifNotNil:
 			[:const|
 			const
@@ -3321,9 +3466,9 @@ CCodeGenerator >> generateIfFalseIfTrueAsArgument: msgNode on: aStream indent: l
 	(self nilOrBooleanConstantReceiverOf: msgNode receiver)
 		ifNil:
 			[(self tryToCollapseBothArmsOfConditionalExpression: msgNode on: aStream indent: level) ifFalse:
-				[aStream nextPut: $(.
+				[aStream nextPutAll: '(('.
 				 msgNode receiver emitCCodeAsArgumentOn: aStream level: level generator: self.
-				 aStream crtab: level + 1; nextPutAll: ' ? '.
+				 aStream nextPut: $); crtab: level + 1; nextPutAll: ' ? '.
 				 msgNode args last emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
 				 aStream crtab: level + 1; nextPutAll: ' : '.
 				 msgNode args first emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
@@ -3356,11 +3501,11 @@ CCodeGenerator >> generateIfNilAsArgument: msgNode on: aStream indent: level [
 
 	(self isNilConstantReceiverOf: msgNode)
 		ifFalse:
-			[aStream nextPutAll: '(!('.
-			 msgNode receiver emitCCodeAsArgumentOn: aStream level: 0 generator: self.
-			 aStream nextPut: $); crtab: level + 1; nextPut: $?; space.
+			[aStream nextPutAll: '((!'.
+			 self emitCExpression: msgNode receiver on: aStream.
+			 aStream nextPut: $); crtab: level + 1; nextPutAll: ' ? '.
 			 msgNode args last emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-			 aStream crtab: level + 1; nextPut: $:; space.
+			 aStream crtab: level + 1; nextPutAll: ' : '.
 			 msgNode receiver emitCCodeAsArgumentOn: aStream level: 0 generator: self.
 			 (msgNode receiver isLeaf
 			  or: [msgNode receiver isSend
@@ -3394,11 +3539,11 @@ CCodeGenerator >> generateIfNilIfNotNilAsArgument: msgNode on: aStream indent: l
 
 	(self isNilConstantReceiverOf: msgNode)
 		ifFalse:
-			[aStream nextPut: $(.
+			[aStream nextPutAll: '(('.
 			msgNode receiver emitCCodeAsArgumentOn: aStream level: level generator: self.
-			aStream crtab: level + 1; nextPut: $?; space.
+			aStream nextPut: $); crtab: level + 1; nextPutAll: ' ? '.
 			msgNode args last emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-			aStream crtab: level + 1; nextPut: $:; space.
+			aStream crtab: level + 1; nextPutAll: ' : '.
 			msgNode args first emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
 			aStream nextPut: $)]
 		ifTrue:
@@ -3423,11 +3568,11 @@ CCodeGenerator >> generateIfNotNilAsArgument: msgNode on: aStream indent: level 
 
 	(self isNilConstantReceiverOf: msgNode)
 		ifFalse:
-			[aStream nextPut: $(.
+			[aStream nextPutAll: '(('.
 			 msgNode receiver emitCCodeAsArgumentOn: aStream level: level generator: self.
-			 aStream crtab: level + 1; nextPut: $?; space.
+			 aStream nextPut: $); crtab: level + 1; nextPutAll: ' ? '.
 			 msgNode args first emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-			 aStream crtab: level + 1; nextPutAll: ': 0)']
+			 aStream crtab: level + 1; nextPutAll: ' : 0)']
 		ifTrue:
 			[aStream nextPutAll: (self cLiteralFor: nil)]
 ]
@@ -3454,11 +3599,11 @@ CCodeGenerator >> generateIfNotNilIfNilAsArgument: msgNode on: aStream indent: l
 
 	(self isNilConstantReceiverOf: msgNode)
 		ifFalse:
-			[aStream nextPut: $(.
+			[aStream nextPutAll: '(('.
 			msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-			aStream crtab: level + 1; nextPut: $?; space.
+			aStream nextPut: $); crtab: level + 1; nextPutAll: ' ? '.
 			msgNode args first emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-			aStream crtab: level + 1; nextPut: $:; space.
+			aStream crtab: level + 1; nextPutAll: ' : '.
 			msgNode args last emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
 			aStream nextPut: $)]
 		ifTrue:
@@ -3487,9 +3632,9 @@ CCodeGenerator >> generateIfTrueAsArgument: msgNode on: aStream indent: level [
 
 	(self nilOrBooleanConstantReceiverOf: msgNode receiver)
 		ifNil:
-			[aStream nextPut: $(.
+			[aStream nextPutAll: '(('.
 			 msgNode receiver emitCCodeAsArgumentOn: aStream level: level generator: self.
-			 aStream crtab: level + 1; nextPutAll: ' ? '.
+			 aStream nextPut: $); crtab: level + 1; nextPutAll: ' ? '.
 			 msgNode args first emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
 			 aStream crtab: level + 1; nextPutAll: ' : 0)']
 		ifNotNil:
@@ -3526,9 +3671,9 @@ CCodeGenerator >> generateIfTrueIfFalseAsArgument: msgNode on: aStream indent: l
 	(self nilOrBooleanConstantReceiverOf: msgNode receiver)
 		ifNil:
 			[(self tryToCollapseBothArmsOfConditionalExpression: msgNode on: aStream indent: level) ifFalse:
-				[aStream nextPut: $(.
+				[aStream nextPutAll: '(('.
 				 msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-				 aStream crtab: level + 1; nextPutAll: ' ? '.
+				 aStream nextPut: $); crtab: level + 1; nextPutAll: ' ? '.
 				 msgNode args first emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
 				 aStream crtab: level + 1; nextPutAll: ' : '.
 				 msgNode args last emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
@@ -3832,11 +3977,11 @@ CCodeGenerator >> generatePlus: msgNode on: aStream indent: level [
 { #category : #'C translation' }
 CCodeGenerator >> generatePowerTo: msgNode on: aStream indent: level [ 
 
-	aStream nextPutAll:'((sqInt) pow('.
+	aStream nextPutAll:'((sqInt) (pow('.
 	self emitCExpression: msgNode receiver on: aStream.
 	aStream nextPutAll: ', '.
 	self emitCExpression: msgNode args first on: aStream.
-	aStream nextPutAll:') )'.
+	aStream nextPutAll:')) )'.
 ]
 
 { #category : #'C translation' }
@@ -5114,7 +5259,10 @@ CCodeGenerator >> isSimpleType: aType [
 	"For the purposes of the read-before-written initializer, answer if
 	 aType is simple, e.g. not a structure, and array or an opaque type."
 	^(self isPointerCType: aType)
-	  or: [self isIntegralCType: aType]
+	  or: [ (self isIntegralCType: aType)
+		or: [ 
+			"The type affected to literal floating point numbers"
+			aType = #double ]]
 ]
 
 { #category : #inlining }
@@ -5801,6 +5949,11 @@ CCodeGenerator >> printUnboundVariableReferenceWarnings [
 
 { #category : #'type inference' }
 CCodeGenerator >> promoteArithmeticTypes: firstType and: secondType [
+	
+	"If either type is unknown, answer nil."
+	(firstType isNil or: [secondType isNil]) ifTrue:
+		[^nil].
+
 	"Answer the return type for an arithmetic send.  This is so that the inliner can still inline
 	 simple expressions.  Deal with pointer arithmetic, floating point arithmetic and promotion.
 	 It is important to choose deterministically to get stable source generation.
@@ -5810,9 +5963,7 @@ CCodeGenerator >> promoteArithmeticTypes: firstType and: secondType [
 		[^(firstType = #double or: [secondType = #double])
 			ifTrue: [#double]
 			ifFalse: [#float] "in C99 6.3.1.8, float+int, int is converted as a float"].
-	"deal with unknowns, answering nil."
-	(firstType isNil or: [secondType isNil]) ifTrue:
-		[^nil].
+
 	"Deal with integer promotion and arithmetic conversion"
 	^self promoteIntegerArithmeticTypes: firstType and: secondType
 ]
