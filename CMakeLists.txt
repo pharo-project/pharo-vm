@@ -31,9 +31,8 @@ option(GENERATE_SOURCES              "If it generates the sources"              
 option(ALWAYS_INTERACTIVE            "Be interactive by default"                            OFF)
 option(BUILD_BUNDLE                  "Builds a bundle with all dependencies"                 ON)
 option(FEATURE_COMPILE_GNUISATION    "Use gcc gnu extensions to compile the VM"              ON)
-option(COMPILE_STATIC_LIBRARIES      "Compiles static libraries instead of shared ones"     OFF)
 option(COMPILE_EXECUTABLE            "Compiles executable"                                   ON)
-option(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES        "Prefer downloading dependencies"              OFF)
+option(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES         "Prefer downloading dependencies"              OFF)
 option(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS             "Use inline memory accessors instead of macros" ON)
 
    set(APPNAME                      "Pharo"         CACHE STRING                 "VM Application name")

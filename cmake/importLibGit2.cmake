@@ -60,18 +60,18 @@ function(build_git2)
 
 	if(WIN)
 		add_custom_target(libgit2_copy
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LibGit2_BINARY_DIR}/$<CONFIG>/git2.dll ${LIBRARY_OUTPUT_PATH}/$<CONFIG>/
-			COMMENT "Copying Libgit binaries from '${LibGit2_BINARY_DIR}' to '${LIBRARY_OUTPUT_PATH}'" VERBATIM)
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LibGit2_BINARY_DIR}/$<CONFIG>/git2.dll ${LIBRARY_OUTPUT_DIRECTORY}/$<CONFIG>/
+			COMMENT "Copying Libgit binaries from '${LibGit2_BINARY_DIR}' to '${LIBRARY_OUTPUT_DIRECTORY}'" VERBATIM)
 	elseif(OSX)
 		set_target_properties(git2 PROPERTIES MACOSX_RPATH ON)
 		set_target_properties(git2 PROPERTIES INSTALL_NAME_DIR "@executable_path/Plugins")
 
 		add_custom_target(libgit2_copy
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LibGit2_BINARY_DIR}/libgit2.1.0.1.dylib ${LIBRARY_OUTPUT_PATH}
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.0.1.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.0.dylib
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.0.1.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.dylib
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.0.1.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.0.0.dylib
-			COMMENT "Copying Libgit binaries from '${LibGit2_BINARY_DIR}' to '${LIBRARY_OUTPUT_PATH}'" VERBATIM)
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LibGit2_BINARY_DIR}/libgit2.1.0.1.dylib ${LIBRARY_OUTPUT_DIRECTORY}
+			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_DIRECTORY}/libgit2.1.0.1.dylib ${LIBRARY_OUTPUT_DIRECTORY}/libgit2.1.0.dylib
+			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_DIRECTORY}/libgit2.1.0.1.dylib ${LIBRARY_OUTPUT_DIRECTORY}/libgit2.dylib
+			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_DIRECTORY}/libgit2.1.0.1.dylib ${LIBRARY_OUTPUT_DIRECTORY}/libgit2.1.0.0.dylib
+			COMMENT "Copying Libgit binaries from '${LibGit2_BINARY_DIR}' to '${LIBRARY_OUTPUT_DIRECTORY}'" VERBATIM)
 	else()
 		message(FATAL "Aggggh not implemented yet")
 	endif()

@@ -47,7 +47,7 @@ function(build_Freetype)
   set(BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS_OLD} CACHE BOOL "Type of libraries to build" FORCE)
   
   #set_target_properties(${NAME} PROPERTIES MACOSX_RPATH ON)
-  set_target_properties(freetype PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
+  set_target_properties(freetype PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_DIRECTORY})
   #set_target_properties(${NAME} PROPERTIES INSTALL_NAME_DIR "@executable_path/Plugins")
 
   add_dependencies(${VM_LIBRARY_NAME} freetype)
