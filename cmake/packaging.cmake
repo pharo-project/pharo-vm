@@ -5,7 +5,7 @@
 #   - Several components to package
 #   - Their packaging with CPack
 
-make_directory("build/packages")
+make_directory("${CMAKE_CURRENT_BINARY_DIR}/build/packages")
 
 # Selecting files to include in the packages
 
