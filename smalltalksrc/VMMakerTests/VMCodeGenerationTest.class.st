@@ -108,12 +108,13 @@ VMCodeGenerationTest >> testCommentsInInlinedBlocks [
 		translation parseTree emitCCodeOn: stream level: 0 generator: codeGenerator.
 	].
 	
-	self assert: result equals: 'if (!(something())) {
-
+	self assert: result equals: '{
+	if (!(something())) 
 	/* comment */
-}
-return self;
-'
+{
+	}
+	return self;
+}'
 ]
 
 { #category : #tests }
@@ -134,8 +135,7 @@ VMCodeGenerationTest >> testComplexIfNilAssignment [
 	temp = 1;
 	temp += 1;
 	variable = temp * 3;
-}
-else {
+} else {
 	temp = 2;
 	temp += 5;
 	variable = temp * 3;
@@ -158,8 +158,9 @@ VMCodeGenerationTest >> testCppIfDefinedTranslation [
 	
 	self assert: result equals: '
 #if defined(Toto)
-return 2;
-
+{
+	return 2;
+}
 #endif /* defined(Toto) */
 '
 ]
@@ -180,8 +181,9 @@ VMCodeGenerationTest >> testCppIfTranslation [
 	
 	self assert: result equals: '
 #if Toto
-return 2;
-
+{
+	return 2;
+}
 #endif /* Toto */
 '
 ]
@@ -230,11 +232,12 @@ methodWithLoop(void)
 {
     sqInt i;
 
-	for (i = 1; i <= 10; i += 1) {
-		foo(i);
-	}
-	return self;
-}
+{
+		for (i = 1; i <= 10; i += 1) {
+			foo(i);
+		}
+		return self;
+	}}
 '
 ]
 
@@ -276,8 +279,8 @@ VMCodeGenerationTest >> testSimpleIfNil [
 	].
 	
 	self assert: result equals: 'variable = ((something()) == null
-	? 1
-	: 2)'
+	 ? 1
+	 : 2)'
 ]
 
 { #category : #tests }
@@ -298,7 +301,6 @@ VMCodeGenerationTest >> testSimpleIfNilAssignment [
 	].
 	
 	self assert: result equals: 'if ((something()) == null) {
-}
-else {
+} else {
 }'
 ]
