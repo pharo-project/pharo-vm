@@ -61,7 +61,7 @@ UnicornARMv5Simulator >> carg3Register [
 { #category : #registers }
 UnicornARMv5Simulator >> classRegister [
 	
-	^ UcARMRegisters r0
+	^ UcARMRegisters r8
 ]
 
 { #category : #'as yet unclassified' }

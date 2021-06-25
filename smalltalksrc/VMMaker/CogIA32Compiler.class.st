@@ -2836,6 +2836,12 @@ CogIA32Compiler >> concretizeZeroExtend8RR [
 	^ machineCodeSize := 3
 ]
 
+{ #category : #simulation }
+CogIA32Compiler >> configureStackAlignment [
+	
+	cogit setStackAlignment: 16 expectedSPOffset: 0 expectedFPOffset: 0.
+]
+
 { #category : #'generate machine code' }
 CogIA32Compiler >> dispatchConcretize [
 	"Attempt to generate concrete machine code for the instruction at address.

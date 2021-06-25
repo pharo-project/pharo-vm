@@ -3151,6 +3151,18 @@ CogARMv8Compiler >> conditionOrNil: condCode [
 	^conditionOrNil := condCode
 ]
 
+{ #category : #simulation }
+CogARMv8Compiler >> configureStackAlignment [
+	
+	"As for the ARMv8 Arm® Architecture Reference Manual
+	
+	D1.8.2 SP alignment checking
+	A misaligned stack pointer is where bits[3:0] of the stack pointer are not 0b0000, when the stack pointer is used as the base address of the calculation, regardless of any offset applied by the instruction.
+	
+	Meaning that the stack should be aligned to 16 bytes"
+	cogit setStackAlignment: 16 expectedSPOffset: 0 expectedFPOffset: 0.
+]
+
 { #category : #'generate machine code' }
 CogARMv8Compiler >> dispatchConcretize [
 	"Attempt to generate concrete machine code for the instruction at address.
