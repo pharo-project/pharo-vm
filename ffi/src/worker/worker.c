@@ -16,6 +16,10 @@
 # include <dispatch/dispatch.h>
 #endif
 
+#ifdef _WIN32
+# include <Windows.h>
+#endif
+
 struct __Worker {
 	Runner runner;
 
@@ -66,7 +70,8 @@ void worker_callback_prepare(Runner* worker, CallbackInvocation *invocation){
 	// If we are in the same thread that the runner, I will just put NULL, this is a mark to the process to handle callbacks from other threads.
 	// If the thread is other, I will put a platform semaphore, so the callback invocator can wait on it, and the runner loop signals it.
 
-	if(((Worker*)worker)->selfThread == pthread_self()){
+  // threads should be compared using pthread_equal(), since binary comparison == is not portable
+	if(pthread_equal(((Worker*)worker)->selfThread, pthread_self())){
 		invocation->payload = NULL;
 	}else{
 		invocation->payload = platform_semaphore_new(0);
@@ -83,8 +88,11 @@ Worker *worker_newSpawning(int spawn) {
     worker->hasToQuit = false;
     worker->nestedRuns = 0;
     worker->next = NULL;
-    worker->threadId = 0;
-    worker->selfThread = NULL;
+    /* Notice, that we do not initilize threadId and selfThread, since `int` and `void*` are not of type pthread_t,
+     * which leads to an error when compiling with clang
+     * worker->threadId = 0;
+     * worker->selfThread = NULL;
+     */
     worker->taskQueue = threadsafe_queue_new(platform_semaphore_new(0));
     worker->runner.callbackEnterFunction = worker_enter_callback;
     worker->runner.callbackExitFunction = worker_callback_return;
@@ -144,8 +152,12 @@ void *worker_run(void *aWorker) {
         	switch(task->type){
         		case WORKER_RELEASE:
         			worker->hasToQuit = true;
-					//We wait in case we need to receive a callback_return message
-        			sleep(1);
+        			//We wait in case we need to receive a callback_return message
+        			#ifdef _WIN32
+        			 Sleep(1);
+        			#else
+        			 sleep(1);
+        			#endif
         			break;
 
         		case CALLOUT:
