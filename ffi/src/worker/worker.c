@@ -120,7 +120,7 @@ void worker_release(Worker *worker) {
     worker_add_call((Worker*)worker, task);
 }
 
-void worker_dispatch_callout(Worker *worker, WorkerTask *task) {
+inline void worker_dispatch_callout(Worker *worker, WorkerTask *task) {
     worker_add_call(worker, task);
 }
 
