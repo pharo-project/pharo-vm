@@ -199,7 +199,12 @@ if(MSVC)
     get_platform_name(VM_TARGET_OS)
     message(STATUS "Building for ${VM_TARGET_OS}")
     set(CMAKE_CURRENT_SOURCE_DIR_TO_OUT ${CMAKE_CURRENT_SOURCE_DIR})
-
+    
+    # Define WIN32_LEAN_AND_MEAN to exclude APIs such as Cryptography, DDE, RPC, Shell, and Windows Sockets
+    # They can be included if needed
+    # https://docs.microsoft.com/en-us/windows/win32/winprog/using-the-windows-headers
+    add_compile_definitions(WIN32_LEAN_AND_MEAN)
+    
 elseif(WIN)
     message(STATUS "Building for WINDOWS")
 
