@@ -3154,6 +3154,7 @@ CogARMv8Compiler >> conditionOrNil: condCode [
 { #category : #simulation }
 CogARMv8Compiler >> configureStackAlignment [
 	
+	<doNotGenerate>
 	"As for the ARMv8 Arm® Architecture Reference Manual
 	
 	D1.8.2 SP alignment checking

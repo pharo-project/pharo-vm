@@ -3067,6 +3067,7 @@ CogX64Compiler >> concretizeZeroExtend8RR [
 { #category : #simulation }
 CogX64Compiler >> configureStackAlignment [
 
+	<doNotGenerate>
 	cogit setStackAlignment: 16 expectedSPOffset: 0 expectedFPOffset: 0.
 ]
 

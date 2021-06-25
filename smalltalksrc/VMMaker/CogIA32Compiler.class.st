@@ -2839,6 +2839,7 @@ CogIA32Compiler >> concretizeZeroExtend8RR [
 { #category : #simulation }
 CogIA32Compiler >> configureStackAlignment [
 	
+	<doNotGenerate>
 	cogit setStackAlignment: 16 expectedSPOffset: 0 expectedFPOffset: 0.
 ]
 

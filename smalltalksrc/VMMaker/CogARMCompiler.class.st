@@ -1852,6 +1852,7 @@ CogARMCompiler >> conditionOrNil: condCode [
 { #category : #simulation }
 CogARMCompiler >> configureStackAlignment [
 	
+	<doNotGenerate>
 	"3.20 Compiler eight-byte alignment features
 	The compiler has the following eight-byte alignment features:
 
