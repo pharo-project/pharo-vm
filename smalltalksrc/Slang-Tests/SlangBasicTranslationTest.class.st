@@ -4592,16 +4592,14 @@ SlangBasicTranslationTest >> testSwitchOnCurrentBytecodeAddsPreDispatchHook [
 		arguments: {}).
 
 	self assert: translation equals: 'bytecodeDispatchDebugHook();
-
 VM_LABEL(bytecodeDispatch);
-switch (currentBytecode){
+switch (currentBytecode) {
 	case 0:
 	{
 		someBytecode();
 	}
 	break;
-}
-'
+}'
 ]
 
 { #category : #'tests-assignment' }

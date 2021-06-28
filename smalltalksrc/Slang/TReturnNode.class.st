@@ -80,7 +80,6 @@ TReturnNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
 		emitCCodeAsArgumentOn: aStream
 		level: (expression isStmtList ifTrue: [level + 1] ifFalse: [level])
 		generator: aCodeGen.
-	aStream nextPut: $;
 ]
 
 { #category : #'C code generation' }

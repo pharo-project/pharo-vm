@@ -26,8 +26,9 @@ TCaseStmtNode class >> newWithExpression: anExpression selectors: aCollectionOfS
 { #category : #tranforming }
 TCaseStmtNode >> asCASTIn: aBuilder [
 	
-	| statements expansions duplicates |
+	| statements expansions duplicates switchStatement result |
 	statements := CCompoundStatementNode new.
+	
 	expansions := aBuilder suppressAsmLabelsWhile: [
 		cases collect: [:case| self filterCommentsFrom:
 			(String streamContents:
@@ -50,9 +51,20 @@ TCaseStmtNode >> asCASTIn: aBuilder [
 			statements add: case.
 			statements add: CBreakStatementNode new]].
 	
-	^ CSwitchStatementNode
+	switchStatement := CSwitchStatementNode
 		if: (expression asCASTExpressionIn: aBuilder)
-		statement: statements
+		statement: statements.
+	
+	(expression isVariable and: [expression name = 'currentBytecode']) ifFalse: [ ^ switchStatement ].
+	
+	result := CCompoundStatementNode new.
+	result needsBrackets: false.
+	result add: (CCallNode identifier: (CIdentifierNode name: 'bytecodeDispatchDebugHook')).
+	result add: (CCallNode
+		identifier: (CIdentifierNode name: 'VM_LABEL')
+		arguments: { CIdentifierNode name: 'bytecodeDispatch' }).
+	result add: switchStatement.
+	^ result
 ]
 
 { #category : #transformations }
@@ -177,7 +189,7 @@ TCaseStmtNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
 	(expression isVariable
 	 and: [expression name = 'currentBytecode']) ifTrue:
 		[printMod := true.
-		 aStream nextPutAll: 'bytecodeDispatchDebugHook();'; cr; crtab: level.
+		 aStream nextPutAll: 'bytecodeDispatchDebugHook();'; crtab: level.
 		 aCodeGen outputAsmLabel: 'bytecodeDispatch' on: aStream.
 		 aStream crtab: level].
 	aStream nextPutAll: 'switch ('.

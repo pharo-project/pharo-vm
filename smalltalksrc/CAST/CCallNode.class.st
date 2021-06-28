@@ -9,6 +9,12 @@ Class {
 }
 
 { #category : #'instance creation' }
+CCallNode class >> identifier: anIndentifier [
+	
+	^ self identifier: anIndentifier arguments: #()
+]
+
+{ #category : #'instance creation' }
 CCallNode class >> identifier: anIndentifier arguments: anOrderdList [
 	
 	^ self new
