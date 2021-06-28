@@ -1,25 +1,34 @@
 Class {
-	#name : #CGLRSwitchStatementNode,
+	#name : #CSwitchStatementNode,
 	#superclass : #CGLRAbstractNode,
 	#instVars : [
 		'statement',
 		'if'
 	],
-	#category : #CAST
+	#category : #'CAST-Nodes'
 }
 
+{ #category : #'instance creation' }
+CSwitchStatementNode class >> if: anExpression statement: aStatement [
+
+	^ self new
+		if: anExpression;
+		statement: aStatement;
+		yourself
+]
+
 { #category : #generated }
-CGLRSwitchStatementNode >> acceptVisitor: anAbstractVisitor [
+CSwitchStatementNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitSwitchStatement: self
 ]
 
 { #category : #generated }
-CGLRSwitchStatementNode >> if [
+CSwitchStatementNode >> if [
 	^ if
 ]
 
 { #category : #generated }
-CGLRSwitchStatementNode >> if: aCGLRExpressionNode [
+CSwitchStatementNode >> if: aCGLRExpressionNode [
 	self if notNil
 		ifTrue: [ self if parent: nil ].
 	if := aCGLRExpressionNode.
@@ -27,13 +36,19 @@ CGLRSwitchStatementNode >> if: aCGLRExpressionNode [
 		ifTrue: [ self if parent: self ]
 ]
 
+{ #category : #testing }
+CSwitchStatementNode >> isSwitch [
+	
+	^ true
+]
+
 { #category : #generated }
-CGLRSwitchStatementNode >> statement [
+CSwitchStatementNode >> statement [
 	^ statement
 ]
 
 { #category : #generated }
-CGLRSwitchStatementNode >> statement: aCGLRAbstractNode [
+CSwitchStatementNode >> statement: aCGLRAbstractNode [
 	self statement notNil
 		ifTrue: [ self statement parent: nil ].
 	statement := aCGLRAbstractNode.

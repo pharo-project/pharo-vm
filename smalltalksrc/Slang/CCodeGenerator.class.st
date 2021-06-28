@@ -4340,8 +4340,9 @@ CCodeGenerator >> generateTimes: msgNode on: aStream indent: level [
 CCodeGenerator >> generateTimesRepeat: msgNode on: aStream indent: level [
 	"Generate while(1) { stmtList } "
 
-	msgNode receiver value timesRepeat:
-		[msgNode args first emitCCodeOn: aStream level: level generator: self]
+	msgNode receiver value timesRepeat: [
+		msgNode args first emitCCodeOn: aStream level: level generator: self.
+		aStream crtab: level ]
 ]
 
 { #category : #'C translation' }

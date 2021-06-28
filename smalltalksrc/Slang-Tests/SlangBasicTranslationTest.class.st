@@ -609,6 +609,69 @@ SlangBasicTranslationTest >> testBlockValueWithVariableAsLastExpression [
 }'
 ]
 
+{ #category : #'tests-case' }
+SlangBasicTranslationTest >> testCaseStatementIsTranslatedAsSwitch [
+
+	| translation |
+	
+	translation := self translate: (TCaseStmtNode
+		newWithExpression: (TVariableNode named: 'someVariable')
+		selectors: { #someBytecode }
+		arguments: {}).
+
+	self assert: translation equals: 'switch (someVariable) {
+	case 0:
+	{
+		someBytecode();
+	}
+	break;
+}'
+]
+
+{ #category : #'tests-case' }
+SlangBasicTranslationTest >> testCaseStatementWithDifferentBodyAreDifferentCases [
+
+	| translation |
+	
+	translation := self translate: (TCaseStmtNode
+		newWithExpression: (TVariableNode named: 'someVariable')
+		selectors: { #someBytecode . #someBytecode2 }
+		arguments: {}).
+
+	self assert: translation equals: 'switch (someVariable) {
+	case 0:
+	{
+		someBytecode();
+	}
+	break;
+	case 1:
+	{
+		someBytecode2();
+	}
+	break;
+}'
+]
+
+{ #category : #'tests-case' }
+SlangBasicTranslationTest >> testCaseStatementWithSameBodyAreSameCase [
+
+	| translation |
+	
+	translation := self translate: (TCaseStmtNode
+		newWithExpression: (TVariableNode named: 'someVariable')
+		selectors: { #someBytecode . #someBytecode }
+		arguments: {}).
+
+	self assert: translation equals: 'switch (someVariable) {
+	case 0:
+	case 1:
+	{
+		someBytecode();
+	}
+	break;
+}'
+]
+
 { #category : #'tests-constants' }
 SlangBasicTranslationTest >> testConstantCharacter [
 
@@ -812,6 +875,31 @@ SlangBasicTranslationTest >> testGoto [
 	self assert: translation equals: 'goto lab'
 ]
 
+{ #category : #'tests-case' }
+SlangBasicTranslationTest >> testNonContiguousCaseStatementWithSameBodyAreCollapsedInSameCase [
+
+	| translation |
+	
+	translation := self translate: (TCaseStmtNode
+		newWithExpression: (TVariableNode named: 'someVariable')
+		selectors: { #someBytecode . #someBytecode2 . #someBytecode }
+		arguments: {}).
+
+	self assert: translation equals: 'switch (someVariable) {
+	case 0:
+	case 2:
+	{
+		someBytecode();
+	}
+	break;
+	case 1:
+	{
+		someBytecode2();
+	}
+	break;
+}'
+]
+
 { #category : #'tests-return' }
 SlangBasicTranslationTest >> testReturnLeafInVoidMethod [
 
@@ -823,7 +911,7 @@ SlangBasicTranslationTest >> testReturnLeafInVoidMethod [
 		setExpression: (TVariableNode new setName: 'var');
 		yourself).
 		
-	self assert: translation equals: 'return'
+	self assert: translation equals: 'return;'
 ]
 
 { #category : #'tests-return' }
@@ -840,7 +928,7 @@ SlangBasicTranslationTest >> testReturnNonLeafExpressionInVoidMethod [
 		yourself).
 		
 	self assert: translation equals: 'var = 7;
-return'
+return;'
 ]
 
 { #category : #'tests-return' }
@@ -3923,13 +4011,17 @@ SlangBasicTranslationTest >> testSendTimesRepeat [
 
 	self assert: translation trimBoth equals: '{
 	var -= 7;
-}{
+}
+{
 	var -= 7;
-}{
+}
+{
 	var -= 7;
-}{
+}
+{
 	var -= 7;
-}{
+}
+{
 	var -= 7;
 }'
 ]
@@ -4487,6 +4579,29 @@ SlangBasicTranslationTest >> testSendWordSize [
 			                arguments: { }).
 
 	self assert: translation equals: 'BytesPerWord'
+]
+
+{ #category : #'tests-case' }
+SlangBasicTranslationTest >> testSwitchOnCurrentBytecodeAddsPreDispatchHook [
+
+	| translation |
+	
+	translation := self translate: (TCaseStmtNode
+		newWithExpression: (TVariableNode named: 'currentBytecode')
+		selectors: { #someBytecode }
+		arguments: {}).
+
+	self assert: translation equals: 'bytecodeDispatchDebugHook();
+
+VM_LABEL(bytecodeDispatch);
+switch (currentBytecode){
+	case 0:
+	{
+		someBytecode();
+	}
+	break;
+}
+'
 ]
 
 { #category : #'tests-assignment' }

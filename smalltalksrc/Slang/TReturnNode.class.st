@@ -73,13 +73,14 @@ TReturnNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
 		[expression isLeaf ifFalse:
 			[expression emitCCodeOn: aStream level: level generator: aCodeGen.	
 			 aStream nextPut: $;; crtab: level].
-		 aStream nextPutAll: 'return'.
+		 aStream nextPutAll: 'return;'.
 		 ^self].
 	aStream nextPutAll: 'return '.
 	expression
 		emitCCodeAsArgumentOn: aStream
 		level: (expression isStmtList ifTrue: [level + 1] ifFalse: [level])
-		generator: aCodeGen
+		generator: aCodeGen.
+	aStream nextPut: $;
 ]
 
 { #category : #'C code generation' }

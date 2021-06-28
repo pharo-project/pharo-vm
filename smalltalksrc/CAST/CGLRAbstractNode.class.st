@@ -62,3 +62,9 @@ CGLRAbstractNode >> isUnaryOperation [
 	
 	^ false
 ]
+
+{ #category : #testing }
+CGLRAbstractNode >> needsSeparator [
+	"By default all statements require a separator"
+	^ true
+]

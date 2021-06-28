@@ -13,6 +13,48 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance-creation' }
+TCaseStmtNode class >> newWithExpression: anExpression selectors: aCollectionOfSelectors arguments: arguments [
+	
+	^ self new
+		setExpression: anExpression
+		selectors: aCollectionOfSelectors
+		arguments: arguments;
+		yourself
+]
+
+{ #category : #tranforming }
+TCaseStmtNode >> asCASTIn: aBuilder [
+	
+	| statements expansions duplicates |
+	statements := CCompoundStatementNode new.
+	expansions := aBuilder suppressAsmLabelsWhile: [
+		cases collect: [:case| self filterCommentsFrom:
+			(String streamContents:
+				[:s|
+				case emitCCodeOn: s level: 0 generator: aBuilder ] ) ] ].
+	
+	duplicates := Set new.
+	1 to: cases size do: [:i| | case lastCase |
+		"If case bodies are the same, keep only one."
+		(duplicates includes: i) ifFalse: [
+			"Cases are nested.
+			We iterate from the last case to the first case so the nesting order remains the same as the defined one"
+			(duplicates addAll: ((cases size to: i by: -1) select: [:j| (expansions at: i) = (expansions at: j)])) do: [:k|
+				(lasts at: k) to: (firsts at: k) by: -1 do: [ :caseIndex |
+					case := CLabeledStatementNode case: caseIndex statement: case.
+					"Remember the last case, will be the one attached to the statement"
+					lastCase ifNil: [ lastCase := case ].
+			]].
+			lastCase statement: ((cases at: i) asCASTIn: aBuilder).
+			statements add: case.
+			statements add: CBreakStatementNode new]].
+	
+	^ CSwitchStatementNode
+		if: (expression asCASTExpressionIn: aBuilder)
+		statement: statements
+]
+
 { #category : #transformations }
 TCaseStmtNode >> bindVariableUsesIn: aDictionary [
 
@@ -151,15 +193,15 @@ TCaseStmtNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
 	duplicates := Set new.
 	1 to: cases size do:
 		[:i|
-		(duplicates includes: i) ifFalse:
-			[(duplicates addAll: ((i to: cases size) select: [:j| (expansions at: i) = (expansions at: j)])) do:
-				[:k|
+		(duplicates includes: i) ifFalse: [
+			aStream tab: level + 1.
+			(duplicates addAll: ((i to: cases size) select: [:j| (expansions at: i) = (expansions at: j)])) do: [:k|
 				(firsts at: k) to: (lasts at: k) do:
 					[:caseIndex|
-					aStream tab: level; nextPutAll: 'case '; print: caseIndex; nextPut: $:.
+					aStream nextPutAll: 'case '; print: caseIndex; nextPut: $:.
 					(caseIndex > 255 and: [printMod]) ifTrue:
 						[aStream nextPutAll: ' /*'; print: (caseIndex bitAnd: 255); nextPutAll: '*/'].
-					aStream cr]].
+					aStream crtab: level + 1]].
 			(cases at: i) emitCCodeOn: aStream level: level + 1 generator: aCodeGen.
 			aStream crtab: level + 1; nextPutAll: 'break;'; cr]].
 	aStream tab: level; nextPut: $}
