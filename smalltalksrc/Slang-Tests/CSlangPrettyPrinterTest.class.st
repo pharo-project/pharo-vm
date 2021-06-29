@@ -134,7 +134,7 @@ CSlangPrettyPrinterTest >> testVisitCastExpressionDouble [
 			          right: (CIdentifierNode name: 'b')).
 
 
-	self assert: print equals: '((double)a) / b'
+	self assert: print equals: '((double) a ) / b'
 ]
 
 { #category : #'tests-visitor' }
@@ -351,13 +351,14 @@ CSlangPrettyPrinterTest >> testVisitIfStatement [
 					           operator: #&&
 					           left: (CIdentifierNode name: 'a')
 					           right: (CIdentifierNode name: 'b'))
-			          then: (CCompoundStatementNode
+			          then: ((CCompoundStatementNode
 					           declarations: { (CAssignmentNode
 							            lvalue: (CIdentifierNode name: 'toto')
 							            rvalue: (CConstantNode value: 99)) }
 					           statements: { (CAssignmentNode
 							            lvalue: (CIdentifierNode name: 'toto')
 							            rvalue: (CIdentifierNode name: 'tutu')) })
+									needsCarriageReturn: false; yourself)
 						else: (CCompoundStatementNode
 					           declarations: { (CAssignmentNode
 							            lvalue: (CIdentifierNode name: 'toto')
@@ -369,8 +370,7 @@ CSlangPrettyPrinterTest >> testVisitIfStatement [
 	self assert: print trimBoth equals: 'if (a && b) {
 	toto = 99;
 	toto = tutu;
-}
-else {
+} else {
 	toto = 1;
 	tutu = toto;
 }'
@@ -543,7 +543,7 @@ CSlangPrettyPrinterTest >> testVisitWhileStatement [
 					           right: (CIdentifierNode name: 'b'))
 			          statement: (CCompoundStatementNode statements: { CConstantNode value: 15 })).
 
-	self assert: print trimBoth equals: 'while(a && b) {
+	self assert: print trimBoth equals: 'while (a && b) {
 	15;
 }'
 ]
