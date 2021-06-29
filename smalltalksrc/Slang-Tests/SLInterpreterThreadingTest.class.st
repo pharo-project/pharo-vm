@@ -68,10 +68,10 @@ SLInterpreterThreadingTest >> testReplaceCaseStatementByCASEMacroWithArgument [
 interpret(void){
  localSP;
 
-			case 1 :
+				case 1 :
 }'.
 	
-	self assert: (gnuified lineNumber: 14) equals: '			CASE(1)'
+	self assert: (gnuified lineNumber: 14) equals: '				CASE(1)'
 ]
 
 { #category : #tests }
