@@ -18,9 +18,6 @@ set(EXTRACTED_SOURCES
 
 # Support sources
     ${CMAKE_CURRENT_SOURCE_DIR}/src/fileDialogWin32.c
-
-# Resource with DLL version info.
-    ${Win32DLLResource}
 )
 
 if(COMPILE_EXECUTABLE)
@@ -48,6 +45,9 @@ if(COMPILE_EXECUTABLE)
     set(Win32Manifest "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_NAME}.exe.manifest")
     set(Win32ConsoleManifest "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_CONSOLE_NAME}.exe.manifest")
 
+    # Resource with DLL version info.
+    list(APPEND EXTRACTED_SOURCES ${Win32DLLResource})
+
     set(VM_FRONTEND_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/win32Main.c
         ${Win32Resource})
@@ -63,7 +63,7 @@ if(COMPILE_EXECUTABLE)
     configure_file("${Win32ResourcesFolder}/${VM_EXECUTABLE_NAME}.exe.manifest.in" "${Win32Manifest}" @ONLY IMMEDIATE)
     configure_file("${Win32ResourcesFolder}/${VM_EXECUTABLE_CONSOLE_NAME}.rc.in" "${Win32ConsoleResource}" @ONLY IMMEDIATE)
     configure_file("${Win32ResourcesFolder}/${VM_EXECUTABLE_CONSOLE_NAME}.exe.manifest.in" "${Win32ConsoleManifest}" @ONLY IMMEDIATE)
-elseif()
+endif()
 
 
 function(add_platform_headers)
