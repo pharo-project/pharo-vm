@@ -1,6 +1,5 @@
 set(WIN 1)
 
-
 set(VM_VERSION_FILEVERSION "${APPNAME}VM-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${GIT_COMMIT_HASH}")
 
 set(EXTRACTED_SOURCES
@@ -107,10 +106,12 @@ macro(configure_installables INSTALL_COMPONENT)
           FILES_MATCHING PATTERN *.dll
           PERMISSIONS OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-	install(
-		FILES "${Win32Manifest}" "${Win32ConsoleManifest}"
-		DESTINATION "./"
-        COMPONENT ${INSTALL_COMPONENT})
+    if(COMPILE_EXECUTABLE)
+        install(
+            FILES "${Win32Manifest}" "${Win32ConsoleManifest}"
+            DESTINATION "./"
+            COMPONENT ${INSTALL_COMPONENT})
+    endif()
 
     install(
           DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/vm/"

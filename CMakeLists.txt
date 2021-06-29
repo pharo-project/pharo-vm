@@ -447,6 +447,7 @@ set(VM_SOURCES
 )
 
 addLibraryWithRPATH(${VM_LIBRARY_NAME} ${VM_SOURCES})
+add_custom_command(TARGET ${VM_LIBRARY_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory ${LIBRARY_OUTPUT_DIRECTORY})
 
 #
 # LibFFI
