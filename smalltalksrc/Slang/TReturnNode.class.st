@@ -7,8 +7,19 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #generated }
+TReturnNode class >> expression: anExpression [
+
+	^ self new
+		setExpression: anExpression;
+		yourself
+]
+
 { #category : #tranforming }
 TReturnNode >> asCASTIn: aBuilder [
+
+	(expression isSwitch or: [expression isCaseStmt]) ifTrue: [
+		^ expression asCASTIn: aBuilder addToEndOfCases: self ].
 
 	'void' = aBuilder currentMethod returnType ifTrue: [
 		"If the function is void, don't say 'return x' instead say ' x; return' "

@@ -8,6 +8,15 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance creation' }
+TAssignmentNode class >> variable: aVariable expression: anExpression [
+
+	^ self new
+		setVariable: aVariable
+		expression: anExpression;
+		yourself
+]
+
 { #category : #'C code generation' }
 TAssignmentNode >> asCASTExpressionIn: aCodeGen [
 

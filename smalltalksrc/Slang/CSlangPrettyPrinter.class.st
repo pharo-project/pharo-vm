@@ -305,9 +305,13 @@ CSlangPrettyPrinter >> visitInitializer: anInitializer [
 { #category : #generated }
 CSlangPrettyPrinter >> visitLabeledStatement: aLabeledStatement [
 
+	aLabeledStatement case = 'default'
+		ifTrue: [ stream nextPutAll: 'default' ]
+		ifFalse: [ stream
+			nextPutAll: 'case ';
+			print: aLabeledStatement case ].
+	
 	stream
-		nextPutAll: 'case ';
-		print: aLabeledStatement case;
 		nextPutAll: ':';
 		crtab: level.
 	aLabeledStatement statement acceptVisitor: self.

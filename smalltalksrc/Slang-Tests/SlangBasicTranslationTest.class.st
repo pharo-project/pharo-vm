@@ -900,6 +900,27 @@ SlangBasicTranslationTest >> testNonContiguousCaseStatementWithSameBodyAreCollap
 }'
 ]
 
+{ #category : #'tests-case' }
+SlangBasicTranslationTest >> testReturnCaseStatementMovesReturnIntoSwitch [
+
+	| translation |
+	
+	translation := self translate: (TReturnNode expression: ((TCaseStmtNode
+		newWithExpression: (TVariableNode named: 'someVariable')
+		selectors: { #someBytecode }
+		arguments: {}))).
+
+	self assert: translation equals: 'switch (someVariable) {
+	case 0:
+	{
+		return someBytecode();
+	}
+	default:
+	error("Case not found");
+	return -1;
+}'
+]
+
 { #category : #'tests-return' }
 SlangBasicTranslationTest >> testReturnLeafInVoidMethod [
 

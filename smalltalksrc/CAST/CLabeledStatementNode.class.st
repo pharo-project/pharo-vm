@@ -19,6 +19,12 @@ CLabeledStatementNode class >> case: aCase statement: aStatement [
 ]
 
 { #category : #generated }
+CLabeledStatementNode class >> defaultDoing: aCompoundStatement [
+
+	^ self case: 'default' statement: aCompoundStatement
+]
+
+{ #category : #generated }
 CLabeledStatementNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitLabeledStatement: self
 ]

@@ -764,6 +764,25 @@ CASTParserTests >> testParseSwitch [
 ]
 
 { #category : #'tests-control flow' }
+CASTParserTests >> testParseSwitchWithDefaultCase [
+
+	| statement case0 |
+	statement := self parseStatement: 'switch (a){ case 0: call(); default: break;}'.
+	
+	self assert: statement isSwitch.
+	
+	self assert: statement if isIdentifier.
+	self assert: statement if name equals: 'a'.
+	
+	self assert: statement statement isCompoundStatement.
+	case0 := statement statement statements first.
+	self assert: case0 isLabelledStatement.
+	self assert: case0 case value equals: '0'.
+
+	self assert: statement statement statements second case value equals: 'default'.
+]
+
+{ #category : #'tests-control flow' }
 CASTParserTests >> testParseTernary [
 
 	| statement |

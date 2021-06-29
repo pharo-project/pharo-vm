@@ -908,6 +908,7 @@ CASTParser >> reduceActionForjump_statement5: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForlabeled_statement1: nodes [
 	| result |
+	1halt.
 	result := CLabeledStatementNode new.
 	result label: (nodes at: 1).
 	result statement: (nodes at: 3).
@@ -917,6 +918,7 @@ CASTParser >> reduceActionForlabeled_statement1: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForlabeled_statement2: nodes [
 	| result |
+
 	result := CLabeledStatementNode new.
 	result case: (nodes at: 2).
 	result statement: (nodes at: 4).
@@ -927,7 +929,7 @@ CASTParser >> reduceActionForlabeled_statement2: nodes [
 CASTParser >> reduceActionForlabeled_statement3: nodes [
 	| result |
 	result := CLabeledStatementNode new.
-	result case: (nodes at: 1).
+	result case: (nodes at: 1) value.
 	result statement: (nodes at: 3).
 	^ result
 ]
