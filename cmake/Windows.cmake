@@ -1,38 +1,7 @@
 set(WIN 1)
 
-set(VM_EXECUTABLE_CONSOLE_NAME "${VM_EXECUTABLE_NAME}Console")
+
 set(VM_VERSION_FILEVERSION "${APPNAME}VM-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${GIT_COMMIT_HASH}")
-
-set(Win32ResourcesFolder "${CMAKE_CURRENT_SOURCE_DIR}/resources/windows")
-
-if(${CYGWIN})
-  # transform the path into a windows path with unix backslashes C:/bla/blu
-  # this is the path required to send as argument to libraries outside of the control of cygwin (like pharo itself)
-  execute_process(
-  	COMMAND cygpath ${Win32ResourcesFolder} --mixed
-  	OUTPUT_VARIABLE Win32ResourcesFolder_OUT
-  	OUTPUT_STRIP_TRAILING_WHITESPACE)
-else()
-  set(Win32ResourcesFolder_OUT ${Win32ResourcesFolder})
-endif()
-
-if(NOT Win32VMExecutableIcon)
-    set(Win32VMExecutableIcon "${Win32ResourcesFolder_OUT}/Pharo.ico")
-endif()
-
-set(Win32Resource "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_NAME}.rc")
-set(Win32ConsoleResource "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_CONSOLE_NAME}.rc")
-set(Win32DLLResource "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_NAME}DLL.rc")
-set(Win32Manifest "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_NAME}.exe.manifest")
-set(Win32ConsoleManifest "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_CONSOLE_NAME}.exe.manifest")
-
-function(add_platform_headers)
-    target_include_directories(${VM_LIBRARY_NAME}
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/win
-        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/common
-    )
-endfunction()
 
 set(EXTRACTED_SOURCES
 #Common sources
@@ -54,21 +23,56 @@ set(EXTRACTED_SOURCES
     ${Win32DLLResource}
 )
 
-set(VM_FRONTEND_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/win32Main.c
-    ${Win32Resource})
+if(COMPILE_EXECUTABLE)
+    set(VM_EXECUTABLE_CONSOLE_NAME "${VM_EXECUTABLE_NAME}Console")
+    set(Win32ResourcesFolder "${CMAKE_CURRENT_SOURCE_DIR}/resources/windows")
 
-set(VM_CONSOLE_FRONTEND_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/unixMain.c
-    ${Win32ConsoleResource})
+    if(${CYGWIN})
+      # transform the path into a windows path with unix backslashes C:/bla/blu
+      # this is the path required to send as argument to libraries outside of the control of cygwin (like pharo itself)
+      execute_process(
+      	COMMAND cygpath ${Win32ResourcesFolder} --mixed
+      	OUTPUT_VARIABLE Win32ResourcesFolder_OUT
+      	OUTPUT_STRIP_TRAILING_WHITESPACE)
+    else()
+      set(Win32ResourcesFolder_OUT ${Win32ResourcesFolder})
+    endif()
 
-set(VM_FRONTEND_APPLICATION_TYPE WIN32)
+    if(NOT Win32VMExecutableIcon)
+        set(Win32VMExecutableIcon "${Win32ResourcesFolder_OUT}/Pharo.ico")
+    endif()
 
-configure_file("${Win32ResourcesFolder}/${VM_EXECUTABLE_NAME}.rc.in" "${Win32Resource}" @ONLY IMMEDIATE)
-configure_file("${Win32ResourcesFolder}/${VM_EXECUTABLE_NAME}DLL.rc.in" "${Win32DLLResource}" @ONLY IMMEDIATE)
-configure_file("${Win32ResourcesFolder}/${VM_EXECUTABLE_NAME}.exe.manifest.in" "${Win32Manifest}" @ONLY IMMEDIATE)
-configure_file("${Win32ResourcesFolder}/${VM_EXECUTABLE_CONSOLE_NAME}.rc.in" "${Win32ConsoleResource}" @ONLY IMMEDIATE)
-configure_file("${Win32ResourcesFolder}/${VM_EXECUTABLE_CONSOLE_NAME}.exe.manifest.in" "${Win32ConsoleManifest}" @ONLY IMMEDIATE)
+    set(Win32Resource "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_NAME}.rc")
+    set(Win32ConsoleResource "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_CONSOLE_NAME}.rc")
+    set(Win32DLLResource "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_NAME}DLL.rc")
+    set(Win32Manifest "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_NAME}.exe.manifest")
+    set(Win32ConsoleManifest "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_CONSOLE_NAME}.exe.manifest")
+
+    set(VM_FRONTEND_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/win32Main.c
+        ${Win32Resource})
+
+    set(VM_CONSOLE_FRONTEND_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/unixMain.c
+        ${Win32ConsoleResource})
+
+    set(VM_FRONTEND_APPLICATION_TYPE WIN32)
+
+    configure_file("${Win32ResourcesFolder}/${VM_EXECUTABLE_NAME}.rc.in" "${Win32Resource}" @ONLY IMMEDIATE)
+    configure_file("${Win32ResourcesFolder}/${VM_EXECUTABLE_NAME}DLL.rc.in" "${Win32DLLResource}" @ONLY IMMEDIATE)
+    configure_file("${Win32ResourcesFolder}/${VM_EXECUTABLE_NAME}.exe.manifest.in" "${Win32Manifest}" @ONLY IMMEDIATE)
+    configure_file("${Win32ResourcesFolder}/${VM_EXECUTABLE_CONSOLE_NAME}.rc.in" "${Win32ConsoleResource}" @ONLY IMMEDIATE)
+    configure_file("${Win32ResourcesFolder}/${VM_EXECUTABLE_CONSOLE_NAME}.exe.manifest.in" "${Win32ConsoleManifest}" @ONLY IMMEDIATE)
+elseif()
+
+
+function(add_platform_headers)
+    target_include_directories(${VM_LIBRARY_NAME}
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/win
+        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/common
+    )
+endfunction()
 
 macro(add_third_party_dependencies_per_platform)
 
@@ -139,9 +143,6 @@ macro(add_required_libs_per_platform)
     target_compile_definitions(${VM_LIBRARY_NAME}
         PRIVATE -D_UNICODE -DUNICODE)
 
-	add_executable(${VM_EXECUTABLE_CONSOLE_NAME} ${VM_CONSOLE_FRONTEND_SOURCES})
-	target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} ${VM_LIBRARY_NAME})
-
 	target_link_libraries(${VM_LIBRARY_NAME} winmm)
 	target_link_libraries(${VM_LIBRARY_NAME} Ws2_32)
 	target_link_libraries(${VM_LIBRARY_NAME} DbgHelp)
@@ -163,15 +164,20 @@ macro(add_required_libs_per_platform)
 		target_link_libraries(${VM_LIBRARY_NAME} pthread)
 	endif()
 
-	target_link_libraries(${VM_EXECUTABLE_NAME} Ole32)
-	target_link_libraries(${VM_EXECUTABLE_NAME} comctl32)
-	target_link_libraries(${VM_EXECUTABLE_NAME} uuid)
+	if(COMPILE_EXECUTABLE)
+        add_executable(${VM_EXECUTABLE_CONSOLE_NAME} ${VM_CONSOLE_FRONTEND_SOURCES})
+        target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} ${VM_LIBRARY_NAME})
 
-	target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} Ole32)
-	target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} comctl32)
-	target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} uuid)
+        target_link_libraries(${VM_EXECUTABLE_NAME} Ole32)
+        target_link_libraries(${VM_EXECUTABLE_NAME} comctl32)
+        target_link_libraries(${VM_EXECUTABLE_NAME} uuid)
+
+        target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} Ole32)
+        target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} comctl32)
+        target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} uuid)
 
 
-	set_target_properties(${VM_EXECUTABLE_NAME} PROPERTIES LINK_FLAGS "-mwindows")
-	set_target_properties(${VM_EXECUTABLE_CONSOLE_NAME} PROPERTIES LINK_FLAGS "-mconsole")
+        set_target_properties(${VM_EXECUTABLE_NAME} PROPERTIES LINK_FLAGS "-mwindows")
+        set_target_properties(${VM_EXECUTABLE_CONSOLE_NAME} PROPERTIES LINK_FLAGS "-mconsole")
+    endif()
 endmacro()
