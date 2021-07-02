@@ -1,5 +1,11 @@
 Extension { #name : #SmallInteger }
 
+{ #category : #'*VMMaker' }
+SmallInteger >> armv7Disassembled [
+	
+	^ self disassembleWith: LLVMARMDisassembler armv7
+]
+
 { #category : #'*VMMaker-plugin generation' }
 SmallInteger class >> ccg: cg generateCoerceToOopFrom: aNode on: aStream [
 	"N.B.  The is used both for generation and simulation so answer the result (for interpretation)"
