@@ -1393,34 +1393,6 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsMovesRecei
 ]
 
 { #category : #'tests - sends' }
-VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsMovesSelectorIndexClassRegisterIn64bits [
-	
-	| selector literalIndex |
-	self wordSize = 4 ifTrue: [ ^ self skip ].
-
-	sendTrampolineAddress := self compile: [ cogit RetN: 0 ].
-	cogit ordinarySendTrampolineAt: 0 "num args" put: sendTrampolineAddress.
-	
-	self createFramefulCallFrom: callerAddress.
-	
-	cogit byte0: 0.
-	selector := memory falseObject.
-	cogit methodObj: (methodBuilder newMethod 
-		literalAt: (literalIndex := 0) put: selector ;
-		buildMethod).
-	sendAddress := self compile: [ cogit genSendLiteralSelector0ArgsBytecode ].
-
-	"Push receiver, arg, then send"
-	self pushAddress: memory falseObject.
-	self pushAddress: memory trueObject.
-	self runFrom: sendAddress until: sendTrampolineAddress.
-	
-	self
-		assert: machineSimulator classRegisterValue
-		equals: literalIndex
-]
-
-{ #category : #'tests - sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsMovesSelectorIntoClassRegisterIn32bits [
 	
 	| selector |

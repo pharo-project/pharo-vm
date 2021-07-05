@@ -679,6 +679,12 @@ CogAbstractInstruction >> concretizeMovePatcheableC32R [
 	self subclassResponsibility 
 ]
 
+{ #category : #simulation }
+CogAbstractInstruction >> configureStackAlignment [
+	
+	self subclassResponsibility
+]
+
 { #category : #accessing }
 CogAbstractInstruction >> dependent [
 	^dependent

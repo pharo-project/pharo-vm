@@ -3275,27 +3275,18 @@ StackToRegisterMappingCogit >> generateSendTrampolines [
 					  arg: (self numArgsOrSendNumArgsReg: numArgs))].
 
 	"Generate these in the middle so they are within [firstSend, lastSend]."
-	BytecodeSetHasDirectedSuperSend ifTrue:
-		[0 to: NumSendTrampolines - 1 do:
-			[:numArgs|
-			directedSuperSendTrampolines
-				at: numArgs
-				put: (self genSendTrampolineFor: #ceSend:above:to:numArgs:
-						  numArgs: numArgs
-						  called: (self trampolineName: 'ceDirectedSuperSend' numArgs: numArgs)
-						  arg: ClassReg
-						  arg: TempReg
-						  arg: ReceiverResultReg
-						  arg: (self numArgsOrSendNumArgsReg: numArgs)).
-			directedSuperBindingSendTrampolines
-				at: numArgs
-				put: (self genSendTrampolineFor: #ceSend:aboveClassBinding:to:numArgs:
-						  numArgs: numArgs
-						  called: (self trampolineName: 'ceDirectedSuperBindingSend' numArgs: numArgs)
-						  arg: ClassReg
-						  arg: TempReg
-						  arg: ReceiverResultReg
-						  arg: (self numArgsOrSendNumArgsReg: numArgs))]].
+	BytecodeSetHasDirectedSuperSend ifTrue: [
+		0 to: NumSendTrampolines - 1 do: [:numArgs|
+			self
+				generateSuperSendTrampolineTo: #ceSend:above:to:numArgs:
+				named: 'ceDirectedSuperSend'
+				numArgs: numArgs
+				in: directedSuperSendTrampolines.
+			self
+				generateSuperSendTrampolineTo: #ceSend:aboveClassBinding:to:numArgs:
+				named: 'ceDirectedSuperBindingSend'
+				numArgs: numArgs
+				in: directedSuperBindingSendTrampolines ] ].
 
 	0 to: NumSendTrampolines - 1 do:
 		[:numArgs|
@@ -3315,6 +3306,22 @@ StackToRegisterMappingCogit >> generateSendTrampolines [
 { #category : #initialization }
 StackToRegisterMappingCogit >> generateSistaRuntime [
 	"No sita vm"
+]
+
+{ #category : #initialization }
+StackToRegisterMappingCogit >> generateSuperSendTrampolineTo: function named: name numArgs: numArgs in: table [
+	
+	<var: #table type: #'sqInt *'>
+	| trampoline |
+	trampoline := self genSendTrampolineFor: function
+		numArgs: numArgs
+		called: (self trampolineName: name numArgs: numArgs)
+		arg: ClassReg
+		arg: TempReg
+		arg: ReceiverResultReg
+		arg: (self numArgsOrSendNumArgsReg: numArgs).
+	table at: numArgs put: trampoline.
+	^ trampoline
 ]
 
 { #category : #initialization }

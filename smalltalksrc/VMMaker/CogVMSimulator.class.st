@@ -2656,7 +2656,7 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 		ifTrue: [swapBytes := false]
 		ifFalse: [(version := version byteSwap32) = self imageFormatVersion
 					ifTrue: [swapBytes := true]
-					ifFalse: [self error: 'incomaptible image format']].
+					ifFalse: [self error: 'incompatible image format']].
 	headerSize := self getWord32FromFile: f swap: swapBytes.
 	dataSize := self getLongFromFile: f swap: swapBytes.  "length of heap in file"
 	oldBaseAddr := self getLongFromFile: f swap: swapBytes.  "object memory base address of image"
