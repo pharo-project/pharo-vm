@@ -14,7 +14,6 @@ configure_installables(bin)
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/build/include/pharovm/config.h
   DESTINATION include/pharovm
-  USE_SOURCE_PERMISSIONS
   COMPONENT include)
 
 install(
@@ -50,7 +49,6 @@ install(DIRECTORY
 install(FILES
 	"${CMAKE_CURRENT_BINARY_DIR}/version.info"
 	DESTINATION pharo-vm
-	USE_SOURCE_PERMISSIONS
 	COMPONENT c-src)
 
 #List all cmake files
@@ -62,7 +60,6 @@ install(FILES
     "CMakeLists.txt"
     ${SUPPORT_CMAKE_FILES}
     DESTINATION pharo-vm
-    USE_SOURCE_PERMISSIONS
     COMPONENT c-src
 )
 
