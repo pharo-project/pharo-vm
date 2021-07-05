@@ -146,21 +146,19 @@ CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 		stream nextPutAll: '{'.
 
 		level := level + 1.
-		stream cr ].
-	aCompoundStatement declarations , aCompoundStatement statements do: [ 
-		:e | 
-		stream tab: level.
-		e acceptVisitor: self.
-		(aCompoundStatement needsSeparator and: [ 
-			 e needsTrailingSemicolon ]) ifTrue: [ stream nextPut: $; ].
-		stream cr ].
+		stream crtab: level ].
+
+	aCompoundStatement declarations , aCompoundStatement statements
+		do: [ :e | 
+			e acceptVisitor: self.
+			e needsSeparator ifTrue: [ stream nextPut: $; ] ]
+		separatedBy: [ stream crtab: level ].
 
 	aCompoundStatement needsBrackets ifTrue: [ 
 		level := level - 1.
 		stream
-			tab: level;
-			nextPut: $}.
-		aCompoundStatement needsCarriageReturn ifTrue: [ stream cr ] ]
+			crtab: level;
+			nextPut: $} ]
 ]
 
 { #category : #generated }
@@ -335,6 +333,21 @@ CSlangPrettyPrinter >> visitInitializer: anInitializer [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitLabeledStatement: aLabeledStatement [
+
+	aLabeledStatement case = 'default'
+		ifTrue: [ stream nextPutAll: 'default' ]
+		ifFalse: [ stream
+			nextPutAll: 'case ';
+			print: aLabeledStatement case ].
+	
+	stream
+		nextPutAll: ':';
+		crtab: level.
+	aLabeledStatement statement acceptVisitor: self.
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitParameterDeclaration: aParameter [
 
 	"aParameter specifiers
@@ -363,13 +376,13 @@ CSlangPrettyPrinter >> visitPreprocessorIf: anIf [
 	stream cr.
 	anIf then acceptVisitor: self.
 	anIf else ifNotNil: [ :e | 
-		stream nextPutAll: '#else /* '.
+		stream cr; nextPutAll: '#else /* '.
 		anIf if acceptVisitor: self.
 		stream
 			nextPutAll: ' */';
 			cr.
 		e acceptVisitor: self ].
-	stream nextPutAll: '#endif /* '.
+	stream cr; nextPutAll: '#endif /* '.
 	anIf if acceptVisitor: self.
 	stream
 		nextPutAll: ' */';
@@ -397,6 +410,15 @@ CSlangPrettyPrinter >> visitStringLiteral: aStringLiteral [
 	aStringLiteral needsDoubleQuotes ifTrue: [ stream nextPut: $" ].
 	stream nextPutAll: aStringLiteral value.
 	aStringLiteral needsDoubleQuotes ifTrue: [ stream nextPut: $" ]
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitSwitchStatement: aSwitchStatement [
+
+	stream nextPutAll: 'switch ('.
+	aSwitchStatement if acceptVisitor: self.
+	stream nextPutAll: ') '.
+	aSwitchStatement statement acceptVisitor: self.
 ]
 
 { #category : #generated }

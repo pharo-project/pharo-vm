@@ -70,6 +70,12 @@ CGLRAbstractNode >> isUnaryOperation [
 ]
 
 { #category : #testing }
+CGLRAbstractNode >> needsSeparator [
+	"By default all statements require a separator"
+	^ true
+]
+
+{ #category : #testing }
 CGLRAbstractNode >> needsTrailingSemicolon [ 
 	
 	^ true

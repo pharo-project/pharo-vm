@@ -1393,20 +1393,18 @@ CCodeGenerator >> generateAbs: msgNode on: aStream indent: level [
 CCodeGenerator >> generateAddressOf: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPut: $(; nextPut: $&.
-	self emitCExpression: msgNode args first on: aStream.
-	aStream nextPut: $)
+	aStream nextPut: $&.
+	self emitCExpression: msgNode args first on: aStream
 ]
 
 { #category : #'C translation' }
 CCodeGenerator >> generateAllMask: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream nextPutAll: '(('.
+	aStream nextPutAll: '('.
 	self generateBitAnd: msgNode on: aStream indent: level.
 	aStream nextPutAll: ') == '.
-	self emitCExpression: msgNode args first on: aStream indent: level.
-	aStream nextPut: $)
+	self emitCExpression: msgNode args first on: aStream indent: level
 ]
 
 { #category : #'C translation' }
@@ -1554,7 +1552,7 @@ CCodeGenerator >> generateBaseHeaderSize: msgNode on: aStream indent: level [
 CCodeGenerator >> generateBetweenAnd: msgNode on: aStream indent: level [
 	"Generate the C code for the between:and: message onto the given stream."
 
-	aStream nextPutAll: '(('.
+	aStream nextPutAll: '('.
 	self emitCExpression: msgNode receiver on: aStream.
 	aStream nextPutAll: ' >= '.
 	self emitCExpression: msgNode args first on: aStream.
@@ -1562,7 +1560,7 @@ CCodeGenerator >> generateBetweenAnd: msgNode on: aStream indent: level [
 	self emitCExpression: msgNode receiver on: aStream.
 	aStream nextPutAll: ' <= '.
 	self emitCExpression: msgNode args second on: aStream.
-	aStream nextPutAll: '))'
+	aStream nextPutAll: ')'
 ]
 
 { #category : #'C translation' }
@@ -1578,13 +1576,12 @@ CCodeGenerator >> generateBitAnd: msgNode on: aStream indent: level [
 CCodeGenerator >> generateBitClear: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
 
-	aStream next: 2 put: $(.
+	aStream nextPut: $(.
 	self emitCExpression: msgNode receiver on: aStream.
 	aStream nextPutAll: ' | '.
 	self emitCExpression: msgNode args first on: aStream.
 	aStream nextPutAll: ') - '.
-	self emitCExpression: msgNode args first on: aStream.
-	aStream nextPut: $)
+	self emitCExpression: msgNode args first on: aStream
 ]
 
 { #category : #'C translation' }
@@ -2518,6 +2515,39 @@ CCodeGenerator >> generateCASTInlineCppIfElseAsArgument: tast [
 	^ self generateCASTInlineCppIfElse: tast asArgument: true
 ]
 
+{ #category : #'built-ins' }
+CCodeGenerator >> generateCASTIntegerObjectOf: msgNode [ 
+	
+	| expr mustCastToUnsigned type typeIsUnsigned expressionToShift |
+	expr := msgNode args first.
+	
+	expressionToShift := expr asCASTExpressionIn: self.
+
+	"Note that the default type of an integer constant in C is int.  Hence we /must/
+	 cast expression to long if in the 64-bit world, since e.g. in 64-bits
+		(int)(16r1FFFFF << 3) = (int)16rFFFFFFF8 = -8
+	 whereas
+		(long)(16r1FFFFF << 3) = (long) 16rFFFFFFF8 = 4294967288."
+	type := self typeFor: expr in: currentMethod.
+	typeIsUnsigned := type first = $u.
+	mustCastToUnsigned := typeIsUnsigned not
+		or: [(self sizeOfIntegralCType: type) < (self sizeOfIntegralCType: #usqInt)].
+	mustCastToUnsigned ifTrue: [
+		expressionToShift := CCastExpressionNode
+			type: (CTypeNameNode symbol: #usqInt)
+			expression: expressionToShift ].
+
+	^ (CBinaryOperatorNode
+			operator: #|
+			left: (CBinaryOperatorNode
+			operator: #<<
+			left: expressionToShift
+			right: (CConstantNode  value: self vmClass objectMemoryClass numSmallIntegerTagBits))
+		right: (CConstantNode  value: 1))
+		needsParentheses: true;
+		yourself
+]
+
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTIntegerValueOf: aTSendNode [ 
 	
@@ -2525,6 +2555,29 @@ CCodeGenerator >> generateCASTIntegerValueOf: aTSendNode [
 		operator: #>>
 		left: (aTSendNode arguments first asCASTIn: self)
 		right: (CConstantNode value: self vmClass objectMemoryClass numSmallIntegerTagBits)
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTIsIntegerObject: msgNode [ 
+
+	self vmClass objectMemoryClass numSmallIntegerTagBits = 1
+		ifTrue: [
+			^ (CBinaryOperatorNode
+				operator: '&'
+				left: 	(msgNode args first asCASTExpressionIn: self)
+				right: (CConstantNode value: 1))
+					needsParentheses: true;
+					yourself ].
+	
+	^ (CBinaryOperatorNode
+		operator: '=='
+		left: (CBinaryOperatorNode
+			operator: '&'
+			left: 	((msgNode args first asCASTExpressionIn: self) needsParentheses: true; yourself)
+			right: (CConstantNode value: 1 << self vmClass objectMemoryClass numSmallIntegerTagBits - 1))
+		right: (CConstantNode value: 1))
+			needsParentheses: true;
+			yourself
 ]
 
 { #category : #'CAST translation' }
@@ -3242,9 +3295,9 @@ CCodeGenerator >> generateDeadCode: aBool [
 CCodeGenerator >> generateDeny: denyMsgNode on: aStream indent: level [
 	"Generate the C code for a deny: expr onto the given stream."
 
-	aStream nextPutAll: 'assert(!('.
+	aStream nextPutAll: 'assert(!'.
 	self emitCExpression: denyMsgNode args first on: aStream.
-	aStream nextPutAll: '))'
+	aStream nextPutAll: ')'
 ]
 
 { #category : #'C translation' }
@@ -3959,11 +4012,11 @@ CCodeGenerator >> generatePlus: msgNode on: aStream indent: level [
 { #category : #'C translation' }
 CCodeGenerator >> generatePowerTo: msgNode on: aStream indent: level [ 
 
-	aStream nextPutAll:'(sqInt)(pow('.
+	aStream nextPutAll:'((sqInt) (pow('.
 	self emitCExpression: msgNode receiver on: aStream.
 	aStream nextPutAll: ', '.
 	self emitCExpression: msgNode args first on: aStream.
-	aStream nextPutAll:'))'.
+	aStream nextPutAll:')) )'.
 ]
 
 { #category : #'C translation' }
@@ -4320,12 +4373,11 @@ CCodeGenerator >> generateTimes: msgNode on: aStream indent: level [
 
 { #category : #'C translation' }
 CCodeGenerator >> generateTimesRepeat: msgNode on: aStream indent: level [
-
 	"Generate while(1) { stmtList } "
 
-	msgNode receiver value timesRepeat: [ 
+	msgNode receiver value timesRepeat: [
 		msgNode args first emitCCodeOn: aStream level: level generator: self.
-		aStream cr ]
+		aStream crtab: level ]
 ]
 
 { #category : #'C translation' }
@@ -5243,7 +5295,10 @@ CCodeGenerator >> isSimpleType: aType [
 	"For the purposes of the read-before-written initializer, answer if
 	 aType is simple, e.g. not a structure, and array or an opaque type."
 	^(self isPointerCType: aType)
-	  or: [self isIntegralCType: aType]
+	  or: [ (self isIntegralCType: aType)
+		or: [ 
+			"The type affected to literal floating point numbers"
+			aType = #double ]]
 ]
 
 { #category : #inlining }
@@ -5930,6 +5985,11 @@ CCodeGenerator >> printUnboundVariableReferenceWarnings [
 
 { #category : #'type inference' }
 CCodeGenerator >> promoteArithmeticTypes: firstType and: secondType [
+	
+	"If either type is unknown, answer nil."
+	(firstType isNil or: [secondType isNil]) ifTrue:
+		[^nil].
+
 	"Answer the return type for an arithmetic send.  This is so that the inliner can still inline
 	 simple expressions.  Deal with pointer arithmetic, floating point arithmetic and promotion.
 	 It is important to choose deterministically to get stable source generation.
@@ -5939,9 +5999,7 @@ CCodeGenerator >> promoteArithmeticTypes: firstType and: secondType [
 		[^(firstType = #double or: [secondType = #double])
 			ifTrue: [#double]
 			ifFalse: [#float] "in C99 6.3.1.8, float+int, int is converted as a float"].
-	"deal with unknowns, answering nil."
-	(firstType isNil or: [secondType isNil]) ifTrue:
-		[^nil].
+
 	"Deal with integer promotion and arithmetic conversion"
 	^self promoteIntegerArithmeticTypes: firstType and: secondType
 ]

@@ -54,10 +54,10 @@ SLInterpreterThreadingTest >> testReplaceBreakStatementByBREAKMacro [
 interpret(void){
  localSP;
 
-			break;
+				break;
 }'.
 	
-	self assert: (gnuified lineNumber: 14) equals: '			BREAK;'
+	self assert: (gnuified lineNumber: 14) equals: '				BREAK;'
 ]
 
 { #category : #tests }

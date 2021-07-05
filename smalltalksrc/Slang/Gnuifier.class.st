@@ -146,11 +146,11 @@ Gnuifier >> gnuifyFrom: inputFile to: outFileStream [
 								inInterpret
 									ifTrue: [ "working inside interpret(); translate the switch statement"
 										
-										(inLine beginsWith: '			case ') ifTrue: [ 
+										(inLine beginsWith: '				case ') ifTrue: [ 
 											| tokens |
 											
 											tokens := inLine findTokens: '	 :'.
-											outLine := '			CASE(' , tokens second , ')'.
+											outLine := '				CASE(' , tokens second , ')'.
 											tokens size > 2 ifTrue: [ 
 												(tokens allButFirst: 2) do: [ :token | 
 													outLine := outLine , ' ' , token ] ] ].

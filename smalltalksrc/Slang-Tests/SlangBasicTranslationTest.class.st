@@ -78,6 +78,9 @@ SlangBasicTranslationTest >> setUp [
 		resetUsedVariablesCache;
 		yourself).
 	
+	"The translator accesses it directly using class variables..."
+	SpurMemoryManager initBytesPerWord: 8.
+	
 	"Tell the generator this is the class we are generating.
 	That will make the generation dispatch to us to ask for configurations such as the number of small integer bits"
 	generator vmClass: self.
@@ -605,6 +608,69 @@ SlangBasicTranslationTest >> testBlockValueWithVariableAsLastExpression [
 }'
 ]
 
+{ #category : #'tests-case' }
+SlangBasicTranslationTest >> testCaseStatementIsTranslatedAsSwitch [
+
+	| translation |
+	
+	translation := self translate: (TCaseStmtNode
+		newWithExpression: (TVariableNode named: 'someVariable')
+		selectors: { #someBytecode }
+		arguments: {}).
+
+	self assert: translation equals: 'switch (someVariable) {
+	case 0:
+	{
+		someBytecode();
+	}
+	break;
+}'
+]
+
+{ #category : #'tests-case' }
+SlangBasicTranslationTest >> testCaseStatementWithDifferentBodyAreDifferentCases [
+
+	| translation |
+	
+	translation := self translate: (TCaseStmtNode
+		newWithExpression: (TVariableNode named: 'someVariable')
+		selectors: { #someBytecode . #someBytecode2 }
+		arguments: {}).
+
+	self assert: translation equals: 'switch (someVariable) {
+	case 0:
+	{
+		someBytecode();
+	}
+	break;
+	case 1:
+	{
+		someBytecode2();
+	}
+	break;
+}'
+]
+
+{ #category : #'tests-case' }
+SlangBasicTranslationTest >> testCaseStatementWithSameBodyAreSameCase [
+
+	| translation |
+	
+	translation := self translate: (TCaseStmtNode
+		newWithExpression: (TVariableNode named: 'someVariable')
+		selectors: { #someBytecode . #someBytecode }
+		arguments: {}).
+
+	self assert: translation equals: 'switch (someVariable) {
+	case 0:
+	case 1:
+	{
+		someBytecode();
+	}
+	break;
+}'
+]
+
 { #category : #'tests-constants' }
 SlangBasicTranslationTest >> testConstantCharacter [
 
@@ -859,6 +925,52 @@ foo(sqInt x)
 }'
 ]
 
+{ #category : #'tests-case' }
+SlangBasicTranslationTest >> testNonContiguousCaseStatementWithSameBodyAreCollapsedInSameCase [
+
+	| translation |
+	
+	translation := self translate: (TCaseStmtNode
+		newWithExpression: (TVariableNode named: 'someVariable')
+		selectors: { #someBytecode . #someBytecode2 . #someBytecode }
+		arguments: {}).
+
+	self assert: translation equals: 'switch (someVariable) {
+	case 0:
+	case 2:
+	{
+		someBytecode();
+	}
+	break;
+	case 1:
+	{
+		someBytecode2();
+	}
+	break;
+}'
+]
+
+{ #category : #'tests-case' }
+SlangBasicTranslationTest >> testReturnCaseStatementMovesReturnIntoSwitch [
+
+	| translation |
+	
+	translation := self translate: (TReturnNode expression: ((TCaseStmtNode
+		newWithExpression: (TVariableNode named: 'someVariable')
+		selectors: { #someBytecode }
+		arguments: {}))).
+
+	self assert: translation equals: 'switch (someVariable) {
+	case 0:
+	{
+		return someBytecode();
+	}
+	default:
+	error("Case not found");
+	return -1;
+}'
+]
+
 { #category : #'tests-return' }
 SlangBasicTranslationTest >> testReturnLeafInVoidMethod [
 
@@ -870,7 +982,7 @@ SlangBasicTranslationTest >> testReturnLeafInVoidMethod [
 		setExpression: (TVariableNode new setName: 'var');
 		yourself).
 		
-	self assert: translation equals: 'return'
+	self assert: translation equals: 'return;'
 ]
 
 { #category : #'tests-return' }
@@ -887,7 +999,7 @@ SlangBasicTranslationTest >> testReturnNonLeafExpressionInVoidMethod [
 		yourself).
 		
 	self assert: translation equals: 'var = 7;
-return'
+return;'
 ]
 
 { #category : #'tests-return' }
@@ -939,7 +1051,7 @@ SlangBasicTranslationTest >> testSendAllMask [
 					arguments: { TConstantNode value: 7 }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((a & 7) == 7)'
+	self assert: translation equals: '(a & 7) == 7'
 ]
 
 { #category : #'tests-builtins' }
@@ -1138,7 +1250,7 @@ SlangBasicTranslationTest >> testSendBetweenAnd [
 				        (TConstantNode value: 100) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((x >= 0) && (x <= 100))'
+	self assert: translation equals: '(x >= 0) && (x <= 100)'
 ]
 
 { #category : #'tests-builtins' }
@@ -1165,7 +1277,7 @@ SlangBasicTranslationTest >> testSendBitClear [
 		        arguments: {(TConstantNode value: 3)}.
 	translation := self translate: send.
 
-	self assert: translation equals: '((a | 3) - 3)'
+	self assert: translation equals: '(a | 3) - 3'
 ]
 
 { #category : #'tests-builtins' }
@@ -2929,6 +3041,63 @@ SlangBasicTranslationTest >> testSendIfTrueWithSingleStatementArgument [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIntegerObjectOfConstantValue [
+
+	| translation send value |
+	"constant values work as signed ints"
+	value := 35.
+	send := TSendNode new
+					setSelector: #integerObjectOf:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TConstantNode value: value }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((((usqInt) ',value asString, ' ) << ', numSmallIntegerTagBits asString, ') | 1)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIntegerObjectOfSignedValue [
+
+	| translation send |
+	generator currentMethod declarationAt: 'var' put: 'long'.
+	send := TSendNode new
+					setSelector: #integerObjectOf:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TVariableNode named: 'var' }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((((usqInt) var ) << ', numSmallIntegerTagBits asString, ') | 1)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIntegerObjectOfUnsignedSmallValue [
+
+	| translation send |
+	generator currentMethod declarationAt: 'var' put: 'unsigned short'.
+	send := TSendNode new
+					setSelector: #integerObjectOf:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TVariableNode named: 'var' }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((((usqInt) var ) << ', numSmallIntegerTagBits asString, ') | 1)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIntegerObjectOfUnsignedValue [
+
+	| translation send |
+	generator currentMethod declarationAt: 'var' put: 'unsigned long'.
+	send := TSendNode new
+					setSelector: #integerObjectOf:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TVariableNode named: 'var' }.
+	translation := self translate: send.
+
+	self assert: translation equals: '((var << ', numSmallIntegerTagBits asString, ') | 1)'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIntegerValueOf [
 
 	| translation send |
@@ -2940,6 +3109,44 @@ SlangBasicTranslationTest >> testSendIntegerValueOf [
 	translation := self translate: send.
 
 	self assert: translation equals: '1 >> ', numSmallIntegerTagBits asString
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIsIntegerObjectWithLargeTag [
+
+	| translation send value |
+	"constant values work as signed ints"
+	value := 35.
+	send := TSendNode new
+					setSelector: #isIntegerObject:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TConstantNode value: value }.
+
+	numSmallIntegerTagBits := 42.
+	translation := self translate: send.
+
+	self
+		assert: translation
+		equals: '((', 
+			value asString, ' & ', 
+			(1 << numSmallIntegerTagBits - 1) asString, ') == 1)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIsIntegerObjectWithSingleTag [
+
+	| translation send value |
+	"constant values work as signed ints"
+	value := 35.
+	send := TSendNode new
+					setSelector: #isIntegerObject:
+					receiver: (TVariableNode named: 'self')
+					arguments: { TConstantNode value: value }.
+
+	numSmallIntegerTagBits := 1.
+	translation := self translate: send.
+
+	self assert: translation equals: '(',value asString, ' & 1)'
 ]
 
 { #category : #'tests-builtins' }
@@ -2981,7 +3188,7 @@ SlangBasicTranslationTest >> testSendLeftBitShifNegativeLitteralIntegerOverflow 
 		        arguments: { (TConstantNode value: 32) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((int) (((usqInt) -3 ) << 32) )'
+	self assert: translation equals: '((sqInt) (((usqInt) -3 ) << 32) )'
 ]
 
 { #category : #'tests-builtins' }
@@ -3539,7 +3746,7 @@ SlangBasicTranslationTest >> testSendPowerTo [
 		        arguments: { (TConstantNode value: 2) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '(sqInt)(pow(x, 2))'
+	self assert: translation equals: '((sqInt) (pow(x, 2)) )'
 ]
 
 { #category : #'tests-builtins' }
@@ -4545,6 +4752,27 @@ SlangBasicTranslationTest >> testSendWordSize [
 			                arguments: { }).
 
 	self assert: translation equals: 'BytesPerWord'
+]
+
+{ #category : #'tests-case' }
+SlangBasicTranslationTest >> testSwitchOnCurrentBytecodeAddsPreDispatchHook [
+
+	| translation |
+	
+	translation := self translate: (TCaseStmtNode
+		newWithExpression: (TVariableNode named: 'currentBytecode')
+		selectors: { #someBytecode }
+		arguments: {}).
+
+	self assert: translation equals: 'bytecodeDispatchDebugHook();
+VM_LABEL(bytecodeDispatch);
+switch (currentBytecode) {
+	case 0:
+	{
+		someBytecode();
+	}
+	break;
+}'
 ]
 
 { #category : #'tests-assignment' }

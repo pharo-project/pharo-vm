@@ -92,46 +92,6 @@ TMethod >> addTypeForSelf [
 					ifFalse: [typeForSelf, ' self'])]
 ]
 
-{ #category : #'type inference' }
-TMethod >> addTypesFor: node to: typeSet in: aCodeGen [
-	"Add the value types for the node to typeSet.
-	 Answer if any type was derived from an as-yet-untyped method or variable, which allows us to abort
-	 inferReturnTypeFromReturnsIn: if the return type depends on a yet-to-be-typed method or variable."
-	| expr |
-	expr := node.
-	[expr isAssignment or: [expr isStmtList]] whileTrue:
-		[expr isAssignment ifTrue:
-			[expr := expr variable].
-		 expr isStmtList ifTrue:
-			[expr := expr statements last]].
-	expr isSend ifTrue:
-		[(#(ifTrue: ifFalse: ifTrue:ifFalse: ifFalse:ifTrue:) includes: expr selector) ifTrue:
-			[^expr args
-				inject: false
-				into: [:asYetUntyped :block|
-					asYetUntyped | (self addTypesFor: block to: typeSet in: aCodeGen)]].
-		(aCodeGen returnTypeForSend: expr in: self ifNil: nil)
-			ifNil: [^(aCodeGen methodNamed: expr selector) notNil and: [expr selector ~~ selector]]
-			ifNotNil:
-				[:type |
-				typeSet add: type.
-				^false]].
-	expr isVariable ifTrue:
-		[(aCodeGen typeOfVariable: expr name)
-			ifNotNil: [:type| typeSet add: type]
-			ifNil: [(typeSet add: (expr name = 'self'
-										ifTrue: [#void]
-										ifFalse: [#sqInt])) == #sqInt ifTrue:
-					[^true]]].
-	expr isConstant ifTrue:
-		[(expr value isInteger and: [expr value >= 0]) "cannot determine if signed or unsigned yet..."
-			ifTrue: [typeSet add: expr value]
-			ifFalse:
-				[(expr typeOrNilFrom: aCodeGen in: self) ifNotNil:
-					[:type | typeSet add: type]]].
-	^false
-]
-
 { #category : #'inlining support' }
 TMethod >> addVarsDeclarationsAndLabelsOf: methodToBeInlined except: doNotRename [
 	"Prepare to inline the body of the given method into the receiver by making the args and locals of the argument to the receiver be locals of the receiver. Record any type declarations for these variables. Record labels. Assumes that the variables have already be renamed to avoid name clashes."
@@ -1278,77 +1238,6 @@ TMethod >> incompleteSendsIn: aCodeGen [
 				or: [aCodeGen isAssertSelector: node selector]]].
 
 	^{incompleteSends. inlineableSends}
-]
-
-{ #category : #'type inference' }
-TMethod >> inferReturnTypeFromReturnsIn: aCodeGen [
-	"Attempt to infer the return type of the receiver from returns in the parse tree."
-
-	"this for determining which returns have which return types:"
-	"aCodeGen
-		pushScope: declarations
-		while: [parseTree
-				nodesSelect: [:n| n isReturn]
-				thenCollect: [:n| | s |
-					s := Set new.
-					self addTypesFor: n expression to: s in: aCodeGen.
-					{n. s}]]"
-
-	aCodeGen maybeBreakForTestToInline: selector in: self.
-	returnType ifNotNil: [^self].
-	aCodeGen
-		pushScope: declarations
-		while:
-			[| hasReturn returnTypes |
-			 hasReturn := false.
-			 returnTypes := Set new.
-			 "Debug:
-			 (| rettypes |
-			  rettypes := Dictionary new.
-			  parseTree nodesDo:
-				[:node|
-				node isReturn ifTrue:
-					[| types |
-					 self addTypesFor: node expression to: (types := Set new) in: aCodeGen.
-					 rettypes at: node expression put: types]].
-			  rettypes)"
-			 parseTree nodesDo:
-				[:node|
-				node isReturn ifTrue:
-					[hasReturn := true.
-					 "If we encounter a send of an as-yet-untyped method then abort,
-					  retrying and computing the type when that method is fully typed."
-					 (self addTypesFor: node expression to: returnTypes in: aCodeGen) ifTrue:
-						[^self]]].
-			returnTypes remove: #implicit ifAbsent: [].
-			returnTypes := aCodeGen harmonizeReturnTypesIn: returnTypes.
-			hasReturn
-				ifTrue:
-					[returnTypes size > 1 ifTrue:
-						[| message |
-						 message := String streamContents:
-										[:s|
-										 s nextPutAll: 'conflicting return types '.
-										 returnTypes
-											do: [:t| s nextPutAll: t]
-											separatedBy: [s nextPutAll: ', '].
-										 s nextPutAll: ' in '; nextPutAll: selector; cr].
-						 Notification signal: message.
-						 aCodeGen logger newLine; show: message].
-					 returnTypes size = 1 ifTrue:
-						[self returnType: returnTypes anyOne]]
-				ifFalse:
-					[self returnType: (aCodeGen implicitReturnTypeFor: selector)]]
-]
-
-{ #category : #'type inference' }
-TMethod >> inferReturnTypeIn: aCodeGen [
-	"Attempt to infer the return type of the receiver and answer if it changed."
-
-	| existingReturnType |
-	existingReturnType := returnType.
-	self inferReturnTypeFromReturnsIn: aCodeGen.
-	^existingReturnType ~= returnType
 ]
 
 { #category : #initialization }
@@ -2740,7 +2629,6 @@ TMethod >> returnType: aString [
 	"Set the type of the values returned by this method.
 	 This string will be used in the C declaration of this function.
 	 If the type exists as a symbol, use that."
-
 	returnType := aString isSymbol
 					ifTrue: [aString]
 					ifFalse: [(Symbol findInterned: aString) ifNil: [aString]]
