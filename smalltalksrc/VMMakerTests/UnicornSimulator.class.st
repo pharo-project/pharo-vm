@@ -65,6 +65,18 @@ UnicornSimulator >> arg0RegisterValue: aValue [
 	^ self writeRegister: self arg0Register value: aValue
 ]
 
+{ #category : #registers }
+UnicornSimulator >> arg1Register [
+	
+	^ self subclassResponsibility 
+]
+
+{ #category : #registers }
+UnicornSimulator >> arg1RegisterValue [
+	
+	^ self readRegister: self arg1Register 
+]
+
 { #category : #'as yet unclassified' }
 UnicornSimulator >> argument0RegisterValue [
 	
@@ -95,16 +107,92 @@ UnicornSimulator >> baseRegisterValue: aValue [
 	^ self writeRegister: self baseRegister value: aValue
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'c calling convention' }
 UnicornSimulator >> cResultRegister [
 
 	^ self subclassResponsibility
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'c calling convention' }
 UnicornSimulator >> cReturnRegisterValue: anInteger [ 
 	
 	self eax: anInteger
+]
+
+{ #category : #'c calling convention' }
+UnicornSimulator >> carg0 [
+	
+	"By default fetch values from registers, override in platforms that don't (e.g. IA32)"
+	^ self carg0RegisterValue
+]
+
+{ #category : #'c calling convention' }
+UnicornSimulator >> carg0Register [
+	
+	^ self subclassResponsibility
+]
+
+{ #category : #'c calling convention' }
+UnicornSimulator >> carg0RegisterValue [
+	
+	^ self readRegister: self carg0Register
+]
+
+{ #category : #'c calling convention' }
+UnicornSimulator >> carg1 [
+	
+	"By default fetch values from registers, override in platforms that don't (e.g. IA32)"
+	^ self carg1RegisterValue
+]
+
+{ #category : #'c calling convention' }
+UnicornSimulator >> carg1Register [
+	
+	^ self subclassResponsibility
+]
+
+{ #category : #'c calling convention' }
+UnicornSimulator >> carg1RegisterValue [
+	
+	^ self readRegister: self carg1Register
+]
+
+{ #category : #'c calling convention' }
+UnicornSimulator >> carg2 [
+	
+	"By default fetch values from registers, override in platforms that don't (e.g. IA32)"
+	^ self carg2RegisterValue
+]
+
+{ #category : #'c calling convention' }
+UnicornSimulator >> carg2Register [
+	
+	^ self subclassResponsibility
+]
+
+{ #category : #'c calling convention' }
+UnicornSimulator >> carg2RegisterValue [
+	
+	^ self readRegister: self carg2Register
+]
+
+{ #category : #'c calling convention' }
+UnicornSimulator >> carg3 [
+	
+	"By default fetch values from registers, override in platforms that don't (e.g. IA32)"
+	^ self carg3RegisterValue
+]
+
+{ #category : #'c calling convention' }
+UnicornSimulator >> carg3Register [
+	
+	^ self subclassResponsibility
+]
+
+{ #category : #'c calling convention' }
+UnicornSimulator >> carg3RegisterValue [
+	
+	^ self readRegister: self carg3Register
 ]
 
 { #category : #registers }
@@ -426,7 +514,7 @@ UnicornSimulator >> peekAddress [
 	^ self peek integerAt: 1 size: self wordSize signed: false
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'stack-access' }
 UnicornSimulator >> popBytes [
 
 	| stackAddressIntegerValue aByteArray |
@@ -443,7 +531,7 @@ UnicornSimulator >> popBytes [
 	^ aByteArray
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'stack-access' }
 UnicornSimulator >> popWord [
 
 	| aByteArray |
@@ -451,7 +539,7 @@ UnicornSimulator >> popWord [
 	^ aByteArray integerAt: 1 size: self wordSize signed: false.
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'stack-access' }
 UnicornSimulator >> pushBytes: aByteArray [ 
 
 	| stackAddressIntegerValue |
@@ -472,7 +560,7 @@ UnicornSimulator >> pushBytes: aByteArray [
 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'stack-access' }
 UnicornSimulator >> pushWord: anInteger [ 
 
 	| aByteArray |
@@ -640,7 +728,34 @@ UnicornSimulator >> stackPointerRegisterValue: aValue [
 	self writeRegister: self stackPointerRegister value: aValue
 ]
 
-{ #category : #accessing }
+{ #category : #'stack-access' }
+UnicornSimulator >> stackValueAt: anInteger [ 
+
+	"Get a value from the stack at a 0-base position"
+	| aByteArray |
+	aByteArray := self stackValueBytesAt: anInteger.
+	^ aByteArray integerAt: 1 size: self wordSize signed: false
+]
+
+{ #category : #'stack-access' }
+UnicornSimulator >> stackValueBytesAt: position [
+
+	"Get the bytes from the stack at a 0-base position"
+	| stackAddressIntegerValue aByteArray |
+
+	"Getting address from stack register"
+	stackAddressIntegerValue := self stackPointerRegisterValue.
+
+	"Putting the value from the stack memory.
+	Remember, stack grows down, so we add the offset"
+	aByteArray := self
+		memoryAt: stackAddressIntegerValue + (position * self wordSize)
+		readNext: self wordSize.
+
+	^ aByteArray
+]
+
+{ #category : #'stack-access' }
 UnicornSimulator >> stackValues [
 	
 	| initialValue |
@@ -668,10 +783,22 @@ UnicornSimulator >> step [
 		count: 1
 ]
 
+{ #category : #registers }
+UnicornSimulator >> temporaryRegister [
+	
+	^ self subclassResponsibility
+]
+
 { #category : #accessing }
 UnicornSimulator >> temporaryRegisterValue [
 	
-	^ self subclassResponsibility
+	^ self readRegister: self temporaryRegister
+]
+
+{ #category : #registers }
+UnicornSimulator >> temporaryRegisterValue: anInteger [ 
+	
+	^ self writeRegister: self temporaryRegister value: anInteger
 ]
 
 { #category : #accessing }
