@@ -321,6 +321,26 @@ CSlangPrettyPrinterTest >> testVisitForStatement [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitFunctionDefinition [
+
+	| print |
+	print := self prettyPrint: (CFunctionDefinitionNode
+			          declarator: (CFunctionDeclaratorNode
+					           declarator: (CIdentifierNode name: 'foo')
+					           parameters: { (CParameterDeclarationNode
+							            declarator: (CIdentifierNode name: 'x')
+							            cDeclaration:  'int x' ) })
+			          body: CCompoundStatementNode new
+			          specifiers: { 'static'. 'int' }).
+
+	self assert: print trimBoth equals: 'static int
+foo(int x)
+{
+	;
+}'
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitGotoStatement [
 
 	| print |
@@ -412,6 +432,17 @@ CSlangPrettyPrinterTest >> testVisitInitializer [
 }'
 
 
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitParameterDeclaration [
+
+	| print |
+	print := self prettyPrint: ((CParameterDeclarationNode
+							            declarator: (CIdentifierNode name: 'x')
+							            cDeclaration: 'unsigned int x')).
+
+	self assert: print equals: 'unsigned int x'
 ]
 
 { #category : #'tests-visitor' }

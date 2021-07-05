@@ -3,7 +3,8 @@ Class {
 	#superclass : #CGLRAbstractNode,
 	#instVars : [
 		'specifiers',
-		'declarators'
+		'declarators',
+		'hasRawPrototype'
 	],
 	#category : #'CAST-Nodes'
 }
@@ -51,6 +52,18 @@ CDeclarationNode >> declarators: anOrderedCollection [
 	self setParents: self declarators to: self
 ]
 
+{ #category : #accessing }
+CDeclarationNode >> hasRawPrototype [
+
+	^ hasRawPrototype
+]
+
+{ #category : #accessing }
+CDeclarationNode >> hasRawPrototype: aBoolean [
+	
+	hasRawPrototype := aBoolean
+]
+
 { #category : #comparing }
 CDeclarationNode >> hash [
 
@@ -62,6 +75,7 @@ CDeclarationNode >> hash [
 { #category : #'generated-initialize-release' }
 CDeclarationNode >> initialize [
 	super initialize.
+	hasRawPrototype := false.
 	specifiers := OrderedCollection new: 2.
 	declarators := OrderedCollection new: 2.
 ]

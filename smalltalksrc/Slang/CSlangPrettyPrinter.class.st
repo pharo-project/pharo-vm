@@ -28,6 +28,7 @@ CSlangPrettyPrinter >> printExpression: cAST [
 	(cAST isLeaf
 		"Cast expressions already contain their own parentheses"
 		or: [ cAST isCastExpression 
+			"An unary expression that has a leaf expression dosen't need parentheses aroud expression"
 			or: [cAST isUnaryOperation and: [cAST expression isLeaf or: [ cAST needsParentheses]]]])
 		ifTrue: [ cAST acceptVisitor: self ]
 		ifFalse: [ 
@@ -142,25 +143,22 @@ CSlangPrettyPrinter >> visitComment: aComment [
 CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 
 	aCompoundStatement needsBrackets ifTrue: [ 
-		stream
-			tab: level;
-			nextPutAll: '{'.
+		stream nextPutAll: '{'.
 
 		level := level + 1.
-		stream crtab: level ].
-
-	aCompoundStatement declarations , aCompoundStatement statements
-		do: [ :e | e acceptVisitor: self ]
-		separatedBy: [ 
-			aCompoundStatement needsSeparator ifTrue: [ 
-				stream nextPut: $;.
-				stream crtab: level ] ].
+		stream cr ].
+	aCompoundStatement declarations , aCompoundStatement statements do: [ 
+		:e | 
+		stream tab: level.
+		e acceptVisitor: self.
+		(aCompoundStatement needsSeparator and: [ 
+			 e needsTrailingSemicolon ]) ifTrue: [ stream nextPut: $; ].
+		stream cr ].
 
 	aCompoundStatement needsBrackets ifTrue: [ 
-		stream nextPut: $;.
 		level := level - 1.
 		stream
-			crtab: level;
+			tab: level;
 			nextPut: $}.
 		aCompoundStatement needsCarriageReturn ifTrue: [ stream cr ] ]
 ]
@@ -174,14 +172,14 @@ CSlangPrettyPrinter >> visitConstant: aConstant [
 { #category : #generated }
 CSlangPrettyPrinter >> visitDeclaration: aDeclaration [
 
-	aDeclaration specifiers
-		do: [ :e | 
-			stream nextPutAll: e.
-			stream space ].
-	
-	aDeclaration declarators
-		do: [ :e | e acceptVisitor: self ]
-		separatedBy: [ stream nextPutAll: ', ' ].
+	aDeclaration specifiers do: [ :e | 
+		stream nextPutAll: e.
+		stream space ].
+
+	aDeclaration hasRawPrototype ifFalse: [ 
+		aDeclaration declarators
+			do: [ :e | e acceptVisitor: self ]
+			separatedBy: [ stream nextPutAll: ', ' ] ]
 ]
 
 { #category : #generated }
@@ -252,6 +250,30 @@ CSlangPrettyPrinter >> visitForStatement: aForStatement [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitFunctionDeclarator: aFunctionDeclarator [
+
+	aFunctionDeclarator declarator acceptVisitor: self.
+	stream nextPut: $(.
+	aFunctionDeclarator parameters
+		do: [ :arg | arg acceptVisitor: self ]
+		separatedBy: [ stream nextPutAll: ', ' ].
+	stream nextPut: $)
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitFunctionDefinition: aFunction [
+
+	aFunction specifiers
+		do: [ :e | stream nextPutAll: e ]
+		separatedBy: [ stream space ].
+	stream cr.
+	aFunction hasRawPrototype ifFalse: [ 
+		aFunction declarator acceptVisitor: self ].
+	stream cr.
+	aFunction body acceptVisitor: self
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitGotoStatement: aGoToStatement [
 
 	stream nextPutAll: 'goto ';
@@ -271,10 +293,15 @@ CSlangPrettyPrinter >> visitIfStatement: anIf [
 	stream nextPutAll: 'if ('.
 	anIf if acceptVisitor: self.
 	stream nextPutAll: ') '.
+	anIf then isCompoundStatement ifFalse: [ stream crtab: level + 1 ].
 	anIf then acceptVisitor: self.
+	anIf then needsTrailingSemicolon ifTrue: [ stream nextPut: $; ].
 	anIf else ifNotNil: [ :e | 
+		anIf then isCompoundStatement ifFalse: [ stream crtab: level ].
 		stream nextPutAll: ' else '.
-		e acceptVisitor: self ]
+		anIf else isCompoundStatement ifFalse: [ stream crtab: level + 1 ].
+		e acceptVisitor: self.
+		anIf else needsTrailingSemicolon ifTrue: [ stream nextPut: $; ]]
 ]
 
 { #category : #generated }
@@ -305,6 +332,17 @@ CSlangPrettyPrinter >> visitInitializer: anInitializer [
 		separatedBy: [ stream nextPutAll: ', ' ].
 	stream crtab: level.
 	stream nextPut: $}
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitParameterDeclaration: aParameter [
+
+	"aParameter specifiers
+		do: [ :e | stream nextPutAll: e ]
+		separatedBy: [ stream space ].
+	stream space.
+	aParameter declarator acceptVisitor: self"
+	stream nextPutAll: aParameter rawDeclaration 
 ]
 
 { #category : #generated }

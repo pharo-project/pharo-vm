@@ -67,6 +67,12 @@ CIfStatementNode >> isIf [
 	^ true
 ]
 
+{ #category : #testing }
+CIfStatementNode >> needsTrailingSemicolon [
+
+	^ false
+]
+
 { #category : #generated }
 CIfStatementNode >> then [
 	^ then

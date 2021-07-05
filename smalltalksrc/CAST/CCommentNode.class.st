@@ -38,3 +38,9 @@ CCommentNode >> isComment [
 
 	^ true
 ]
+
+{ #category : #testing }
+CCommentNode >> needsTrailingSemicolon [
+
+	^ false
+]

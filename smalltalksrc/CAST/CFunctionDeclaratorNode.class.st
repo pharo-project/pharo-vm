@@ -9,6 +9,15 @@ Class {
 	#category : #'CAST-Nodes'
 }
 
+{ #category : #'instance creation' }
+CFunctionDeclaratorNode class >> declarator: aDeclarator parameters: parameters [
+
+	^ self new
+		  declarator: aDeclarator;
+		  parameters: parameters;
+		  yourself
+]
+
 { #category : #comparing }
 CFunctionDeclaratorNode >> = anObject [
 

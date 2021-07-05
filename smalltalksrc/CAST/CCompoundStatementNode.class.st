@@ -23,7 +23,9 @@ CCompoundStatementNode class >> declarations: declarations statements: statement
 { #category : #'instance creation' }
 CCompoundStatementNode class >> statements: statements [
 
-	^ self declarations: #() statements: statements
+	^ self new
+		  statements: statements;
+		  yourself
 ]
 
 { #category : #comparing }
@@ -80,7 +82,7 @@ CCompoundStatementNode >> initialize [
 	statements := OrderedCollection new: 2.
 	declarations := OrderedCollection new: 2.
 	needsBrackets := true.
-	needsCarriageReturn := true.
+	needsCarriageReturn := false.
 	needsSeparator := true
 ]
 
@@ -124,6 +126,12 @@ CCompoundStatementNode >> needsSeparator [
 CCompoundStatementNode >> needsSeparator: aBoolean [
 
 	needsSeparator := aBoolean
+]
+
+{ #category : #testing }
+CCompoundStatementNode >> needsTrailingSemicolon [
+
+	^ false
 ]
 
 { #category : #generated }

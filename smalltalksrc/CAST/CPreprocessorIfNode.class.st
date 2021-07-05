@@ -4,7 +4,8 @@ Class {
 	#instVars : [
 		'then',
 		'else',
-		'if'
+		'if',
+		'isArgument'
 	],
 	#category : #'CAST-Nodes'
 }
@@ -55,6 +56,25 @@ CPreprocessorIfNode >> if [
 CPreprocessorIfNode >> if: aStatement [
 
 	if := aStatement
+]
+
+{ #category : #initialization }
+CPreprocessorIfNode >> initialize [ 
+
+	super initialize.
+	isArgument := false
+]
+
+{ #category : #accessing }
+CPreprocessorIfNode >> isArgument [
+
+	^ isArgument
+]
+
+{ #category : #accessing }
+CPreprocessorIfNode >> isArgument: aBoolean [
+
+	isArgument := aBoolean
 ]
 
 { #category : #accessing }

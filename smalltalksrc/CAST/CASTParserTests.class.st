@@ -347,8 +347,7 @@ CASTParserTests >> testParseEmptyCompoundStatement [
 CASTParserTests >> testParseEmptyStatement [
 
 	| unit |
-	unit := CASTParser parse: 'int f(){ ; }'.
-	
+	unit := CASTParser parse: 'int f(int toto){ ; } '.
 	self assert: unit declarations first statements first isEmptyStatement.
 ]
 

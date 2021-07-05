@@ -34,6 +34,12 @@ CGLRAbstractNode >> isCastExpression [
 ]
 
 { #category : #testing }
+CGLRAbstractNode >> isCompoundStatement [
+	
+	^ false
+]
+
+{ #category : #testing }
 CGLRAbstractNode >> isConstant [
 	
 	^ false
@@ -61,4 +67,10 @@ CGLRAbstractNode >> isLeaf [
 CGLRAbstractNode >> isUnaryOperation [
 	
 	^ false
+]
+
+{ #category : #testing }
+CGLRAbstractNode >> needsTrailingSemicolon [ 
+	
+	^ true
 ]

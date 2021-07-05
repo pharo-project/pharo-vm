@@ -21,7 +21,6 @@ SlangBasicTranslationTest >> astTranslate: tast inStream: aWriteStream [
 	
 	| cAST prettyPrinter |
 	cAST := tast asCASTIn: generator.
-	
 	prettyPrinter := CSlangPrettyPrinter new.
 	prettyPrinter writeStream: aWriteStream.
 	cAST acceptVisitor: prettyPrinter.
@@ -809,6 +808,57 @@ SlangBasicTranslationTest >> testGoto [
 	self assert: translation equals: 'goto lab'
 ]
 
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethod [
+
+	"See method foo in SlangBasicTranslationTestClass."
+
+	| translation tMethod |
+	generator addClass: SlangBasicTranslationTestClass.
+	tMethod := generator methodNamed: #foo:.
+	"tMethod referencesGlobalStruct."
+	translation := self translate: (tMethod).
+	self assert: translation trimBoth equals: '/* SlangBasicTranslationTestClass>>#foo: */
+static sqInt
+foo(sqInt x)
+{
+	sqInt a;
+
+	if (x > 10) {
+		a = 1;
+	} else {
+		a = 0;
+	}
+	return a;
+}'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodSpurMemoryManagerLengthOf [
+
+	"See method lengthOf: in SlangBasicTranslationTestClass."
+
+	| translation tMethod |
+	generator addClass: SpurMemoryManager.
+	tMethod := generator methodNamed: #mapExtraRoots.
+	"tMethod referencesGlobalStruct."
+	translation := self translate: (tMethod).
+	generator currentMethod: tMethod.
+	self assert: translation trimBoth equals: '/* SlangBasicTranslationTestClass>>#foo: */
+static sqInt
+foo(sqInt x)
+{
+	sqInt a;
+
+	if (x > 10) {
+		a = 1;
+	} else {
+		a = 0;
+	}
+	return a;
+}'
+]
+
 { #category : #'tests-return' }
 SlangBasicTranslationTest >> testReturnLeafInVoidMethod [
 
@@ -1319,6 +1369,36 @@ SlangBasicTranslationTest >> testSendBytesPerWord [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendCCodeAsArgumentWithBlock [
+
+	| translation send |
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode named: 'y')
+		        expression: (TSendNode new
+				         setSelector: #cCode:
+				         receiver: (TVariableNode new setName: 'self')
+				         arguments: { TStmtListNode new setStatements: { (TSendNode new setSelector: #foo receiver: (TConstantNode value: 1) arguments: { TConstantNode value: 2 }). (TVariableNode named: 'x') } }).
+	translation := self translate: send.
+
+	self assert: translation equals: 'y = (foo(1, 2), x)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendCCodeAsArgumentWithString [
+
+	| translation send |
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode named: 'y')
+		        expression: (TSendNode new
+				         setSelector: #cCode:
+				         receiver: (TVariableNode new setName: 'self')
+				         arguments: { (TConstantNode value: 'foo(x)') }).
+	translation := self translate: send.
+
+	self assert: translation equals: 'y = foo(x)'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendCCodeInSmalltalkWithNonConstant [
 
 	| translation send |
@@ -1470,7 +1550,7 @@ SlangBasicTranslationTest >> testSendCppIfIfTrue [
 { #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendCppIfIfTrueIfFalse [
 
-	"self cppIf: #FEATURE ifTrue: [ a := false. c := 1 ]"
+	"self cppIf: #FEATURE ifTrue: [ a := false. c := 1 ] ifFalse: [ a := true. c := 0 ]"
 	| translation send |
 	send := TSendNode new
 		        setSelector: #cppIf:ifTrue:ifFalse:
@@ -1504,6 +1584,39 @@ SlangBasicTranslationTest >> testSendCppIfIfTrueIfFalse [
 	c = 0;
 }
 #endif /* FEATURE */'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendCppIfIfTrueIfFalseAsArgument [
+
+	"A C preprocessor condition can anywhere in code, even in an expression statement."
+
+	| translation send |
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode named: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifTrue:
+				         receiver: (TSendNode new
+						          setSelector: #<
+						          receiver: (TVariableNode named: 'x')
+						          arguments: { (TConstantNode value: 10) })
+				         arguments: { (TSendNode new
+						          setSelector: #cppIf:ifTrue:ifFalse:
+						          receiver: (TVariableNode new setName: 'self')
+						          arguments: { 
+								          (TConstantNode value: #FEATURE).
+								          (TConstantNode value: 2).
+								          (TConstantNode value: 4) }) }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = ((x < 10)
+	 ? 
+#if FEATURE
+	2
+#else /* FEATURE */
+	4
+#endif /* FEATURE */
+'	
 ]
 
 { #category : #'tests-assignment' }
@@ -1906,6 +2019,24 @@ SlangBasicTranslationTest >> testSendIfFalseIfTrueCollapseBothArmsOfConditionalW
 	a = 0;
 	c = 1;
 }'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfFalseIfTrueWithSingleStatementArguments [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #ifFalse:ifTrue:
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: { 
+				        TVariableNode new setName: 'break'.
+				        TVariableNode new setName: 'continue' }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'if (x) 
+	continue;
+ else 
+	break;'
 ]
 
 { #category : #'tests-builtins' }
@@ -2673,6 +2804,24 @@ SlangBasicTranslationTest >> testSendIfTrueIfFalseCollapseBothArmsOfConditionalW
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfTrueIfFalseWithSingleStatementArguments [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #ifTrue:ifFalse:
+		        receiver: (TVariableNode new setName: 'x')
+		        arguments: { 
+				        TVariableNode new setName: 'break'.
+				        TVariableNode new setName: 'continue' }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'if (x) 
+	break;
+ else 
+	continue;'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIfTrueWithBlockReceiver [
 
 	| translation send |
@@ -2775,7 +2924,8 @@ SlangBasicTranslationTest >> testSendIfTrueWithSingleStatementArgument [
 		        arguments: { TVariableNode new setName: 'break' }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'if (x) break'
+	self assert: translation trimBoth equals: 'if (x) 
+	break;'
 ]
 
 { #category : #'tests-builtins' }
@@ -3825,13 +3975,17 @@ SlangBasicTranslationTest >> testSendTimesRepeat [
 
 	self assert: translation trimBoth equals: '{
 	var -= 7;
-}{
+}
+{
 	var -= 7;
-}{
+}
+{
 	var -= 7;
-}{
+}
+{
 	var -= 7;
-}{
+}
+{
 	var -= 7;
 }'
 ]
@@ -4194,7 +4348,8 @@ SlangBasicTranslationTest >> testSendWhileFalseWithManyStatementsInReceiverAndAr
 
 	self assert: translation trimBoth equals: 'while (1) {
 	var -= 7;
-	if (var >= 21) break;
+	if (var >= 21) 
+		break;
 	b = var % 3;
 }'
 ]
@@ -4287,7 +4442,8 @@ SlangBasicTranslationTest >> testSendWhileTrueWithManyStatementsInReceiverAndArg
 
 	self assert: translation trimBoth equals: 'while (1) {
 	var -= 7;
-	if (!(var >= 21)) break;
+	if (!(var >= 21)) 
+		break;
 	b = var % 3;
 }'
 ]
