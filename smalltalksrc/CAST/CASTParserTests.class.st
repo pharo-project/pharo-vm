@@ -738,6 +738,51 @@ CASTParserTests >> testParseStructurePointerAccess [
 ]
 
 { #category : #'tests-control flow' }
+CASTParserTests >> testParseSwitch [
+
+	| statement case0 case1 |
+	statement := self parseStatement: 'switch (a){ case 0: case 1: call(); break;}'.
+	
+	self assert: statement isSwitch.
+	
+	self assert: statement if isIdentifier.
+	self assert: statement if name equals: 'a'.
+	
+	self assert: statement statement isCompoundStatement.
+	case0 := statement statement statements first.
+	self assert: case0 isLabelledStatement.
+	self assert: case0 case value equals: '0'.
+	
+	"Sequential cases are nested"
+	case1 := case0 statement.
+	self assert: case1 isLabelledStatement.
+	self assert: case1 case value equals: '1'.
+	
+	self assert: case1 statement isFunctionCall.
+	
+	self assert: statement statement statements second isBreakStatement.
+]
+
+{ #category : #'tests-control flow' }
+CASTParserTests >> testParseSwitchWithDefaultCase [
+
+	| statement case0 |
+	statement := self parseStatement: 'switch (a){ case 0: call(); default: break;}'.
+	
+	self assert: statement isSwitch.
+	
+	self assert: statement if isIdentifier.
+	self assert: statement if name equals: 'a'.
+	
+	self assert: statement statement isCompoundStatement.
+	case0 := statement statement statements first.
+	self assert: case0 isLabelledStatement.
+	self assert: case0 case value equals: '0'.
+
+	self assert: statement statement statements second case value equals: 'default'.
+]
+
+{ #category : #'tests-control flow' }
 CASTParserTests >> testParseTernary [
 
 	| statement |

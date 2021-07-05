@@ -7,8 +7,19 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #generated }
+TReturnNode class >> expression: anExpression [
+
+	^ self new
+		setExpression: anExpression;
+		yourself
+]
+
 { #category : #tranforming }
 TReturnNode >> asCASTIn: aBuilder [
+
+	(expression isSwitch or: [expression isCaseStmt]) ifTrue: [
+		^ expression asCASTIn: aBuilder addToEndOfCases: self ].
 
 	'void' = aBuilder currentMethod returnType ifTrue: [
 		"If the function is void, don't say 'return x' instead say ' x; return' "
@@ -73,13 +84,13 @@ TReturnNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
 		[expression isLeaf ifFalse:
 			[expression emitCCodeOn: aStream level: level generator: aCodeGen.	
 			 aStream nextPut: $;; crtab: level].
-		 aStream nextPutAll: 'return'.
+		 aStream nextPutAll: 'return;'.
 		 ^self].
 	aStream nextPutAll: 'return '.
 	expression
 		emitCCodeAsArgumentOn: aStream
 		level: (expression isStmtList ifTrue: [level + 1] ifFalse: [level])
-		generator: aCodeGen
+		generator: aCodeGen.
 ]
 
 { #category : #'C code generation' }

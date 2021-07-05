@@ -908,7 +908,7 @@ CASTParser >> reduceActionForjump_statement5: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForlabeled_statement1: nodes [
 	| result |
-	result := CGLRLabeledStatementNode new.
+	result := CLabeledStatementNode new.
 	result label: (nodes at: 1).
 	result statement: (nodes at: 3).
 	^ result
@@ -917,7 +917,7 @@ CASTParser >> reduceActionForlabeled_statement1: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForlabeled_statement2: nodes [
 	| result |
-	result := CGLRLabeledStatementNode new.
+	result := CLabeledStatementNode new.
 	result case: (nodes at: 2).
 	result statement: (nodes at: 4).
 	^ result
@@ -926,8 +926,8 @@ CASTParser >> reduceActionForlabeled_statement2: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForlabeled_statement3: nodes [
 	| result |
-	result := CGLRLabeledStatementNode new.
-	result case: (nodes at: 1).
+	result := CLabeledStatementNode new.
+	result case: (nodes at: 1) value.
 	result statement: (nodes at: 3).
 	^ result
 ]
@@ -1132,10 +1132,9 @@ CASTParser >> reduceActionForselection_statement2: nodes [
 { #category : #'generated-reduction actions' }
 CASTParser >> reduceActionForselection_statement3: nodes [
 	| result |
-	result := CGLRSwitchStatementNode new.
+	result := CSwitchStatementNode new.
 	result if: (nodes at: 3).
 	result statement: (nodes at: 5).
-	1halt.
 	^ result
 ]
 
@@ -1475,7 +1474,7 @@ CASTParser >> symbolNames [
 
 { #category : #generated }
 CASTParser >> symbolTypes [
-	^ #(#SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #CGLRAbstractNode #OrderedCollection #CGLRAbstractNode #CGLRAbstractNode #SmaCCToken #CGLRAbstractNode #CGLRTypeNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #SmaCCToken #CGLRAbstractNode #OrderedCollection #OrderedCollection #CDeclarationNode #OrderedCollection #SmaCCToken #Object #SmaCCToken #CInitDeclaratorNode #CPointerDeclaratorNode #CGLRAbstractNode #CGLRStructOrUnionSpecifierNode #CGLREnumNode #CTypeNameNode #SmaCCToken #CExpressionNode #OrderedCollection #CIdentifierNode #CGLRStructDeclarationNode #OrderedCollection #OrderedCollection #CGLRStructDeclaratorNode #OrderedCollection #CGLREnumeratorNode #OrderedCollection #CGLRAbstractNode #OrderedCollection #OrderedCollection #OrderedCollection #OrderedCollection #CGLRAbstractNode #CGLRParameterDeclarationNode #CGLRAbstractDeclaratorNode #CGLRAbstractNode #OrderedCollection #CGLRLabeledStatementNode #CCompoundStatementNode #CGLRExpressionStatementNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #OrderedCollection #OrderedCollection #CGLRFunctionDefinitionNode #CGLRTranslationUnitNode #SmaCCToken #SmaCCToken #CGLRAbstractNode #CGLRTranslationUnitNode)
+	^ #(#SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #SmaCCToken #CGLRAbstractNode #OrderedCollection #CGLRAbstractNode #CGLRAbstractNode #SmaCCToken #CGLRAbstractNode #CGLRTypeNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #SmaCCToken #CGLRAbstractNode #OrderedCollection #OrderedCollection #CDeclarationNode #OrderedCollection #SmaCCToken #Object #SmaCCToken #CInitDeclaratorNode #CPointerDeclaratorNode #CGLRAbstractNode #CGLRStructOrUnionSpecifierNode #CGLREnumNode #CTypeNameNode #SmaCCToken #CExpressionNode #OrderedCollection #CIdentifierNode #CGLRStructDeclarationNode #OrderedCollection #OrderedCollection #CGLRStructDeclaratorNode #OrderedCollection #CGLREnumeratorNode #OrderedCollection #CGLRAbstractNode #OrderedCollection #OrderedCollection #OrderedCollection #OrderedCollection #CGLRAbstractNode #CGLRParameterDeclarationNode #CGLRAbstractDeclaratorNode #CGLRAbstractNode #OrderedCollection #CLabeledStatementNode #CCompoundStatementNode #CGLRExpressionStatementNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #CGLRAbstractNode #OrderedCollection #OrderedCollection #CGLRFunctionDefinitionNode #CGLRTranslationUnitNode #SmaCCToken #SmaCCToken #CGLRAbstractNode #CGLRTranslationUnitNode)
 ]
 
 { #category : #generated }

@@ -81,7 +81,7 @@ CCompoundStatementNode >> initialize [
 	declarations := OrderedCollection new: 2.
 	needsBrackets := true.
 	needsCarriageReturn := true.
-	needsSeparator := true
+	needsSeparator := false
 ]
 
 { #category : #testing }
