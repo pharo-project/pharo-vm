@@ -1,6 +1,9 @@
 Class {
 	#name : #CGLRAbstractNode,
 	#superclass : #SmaCCParseNode,
+	#instVars : [
+		'needsSeparator'
+	],
 	#category : #CAST
 }
 
@@ -19,6 +22,19 @@ CGLRAbstractNode >> ambiguous: aNode [
 		ifTrue: [ self children
 				with: aNode children
 				do: [ :n1 :n2 | n1 ambiguous: n2 ] ]
+]
+
+{ #category : #testing }
+CGLRAbstractNode >> comments [
+
+	^ super comments ifNil: [ #() ]
+]
+
+{ #category : #testing }
+CGLRAbstractNode >> initialize [
+
+	super initialize.
+	needsSeparator := true
 ]
 
 { #category : #testing }
@@ -63,8 +79,14 @@ CGLRAbstractNode >> isUnaryOperation [
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : #accessing }
 CGLRAbstractNode >> needsSeparator [
-	"By default all statements require a separator"
-	^ true
+
+	^ needsSeparator
+]
+
+{ #category : #accessing }
+CGLRAbstractNode >> needsSeparator: aBoolean [
+
+	needsSeparator := aBoolean
 ]
