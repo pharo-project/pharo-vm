@@ -141,7 +141,7 @@ CSlangPrettyPrinterTest >> testVisitCastExpressionDouble [
 CSlangPrettyPrinterTest >> testVisitComment [
 
 	| print |
-	print := self prettyPrint: (CCommentNode comment: 'a kind comment for the developper :3').
+	print := self prettyPrint: (CCommentNode comment: ' a kind comment for the developper :3 ').
 	
 	self assert: print equals: '/* a kind comment for the developper :3 */'
 

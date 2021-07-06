@@ -875,54 +875,31 @@ SlangBasicTranslationTest >> testGoto [
 ]
 
 { #category : #'tests-method' }
-SlangBasicTranslationTest >> testMethod [
+SlangBasicTranslationTest >> testMethodComment [
 
-	"See method foo in SlangBasicTranslationTestClass."
-
+	""
 	| translation tMethod |
 	generator addClass: SlangBasicTranslationTestClass.
-	tMethod := generator methodNamed: #foo:.
-	"tMethod referencesGlobalStruct."
-	translation := self translate: (tMethod).
-	self assert: translation trimBoth equals: '/* SlangBasicTranslationTestClass>>#foo: */
-static sqInt
-foo(sqInt x)
-{
-	sqInt a;
-
-	if (x > 10) {
-		a = 1;
-	} else {
-		a = 0;
-	}
-	return a;
-}'
+	tMethod := generator methodNamed: #foo.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: (translation lineNumber: 1), String cr, (translation lineNumber: 2)
+		equals: '/*	This function is doing nothing, and this comment is useless. Not that 
+	useless finaly, because used to test method comments :D */'
 ]
 
 { #category : #'tests-method' }
-SlangBasicTranslationTest >> testMethodSpurMemoryManagerLengthOf [
+SlangBasicTranslationTest >> testMethodCommentOriginalMethod [
 
-	"See method lengthOf: in SlangBasicTranslationTestClass."
-
+	"Comment that includes the pharo style method signature : ClassName>>MethodName "
 	| translation tMethod |
-	generator addClass: SpurMemoryManager.
-	tMethod := generator methodNamed: #mapExtraRoots.
-	"tMethod referencesGlobalStruct."
-	translation := self translate: (tMethod).
-	generator currentMethod: tMethod.
-	self assert: translation trimBoth equals: '/* SlangBasicTranslationTestClass>>#foo: */
-static sqInt
-foo(sqInt x)
-{
-	sqInt a;
-
-	if (x > 10) {
-		a = 1;
-	} else {
-		a = 0;
-	}
-	return a;
-}'
+	generator addClass: SlangBasicTranslationTestClass.
+	tMethod := generator methodNamed: #foo.
+	translation := self translate: tMethod.
+	self
+		assert: (translation trimBoth lineNumber: 3) 
+		equals: '/* SlangBasicTranslationTestClass>>#foo */'
 ]
 
 { #category : #'tests-case' }

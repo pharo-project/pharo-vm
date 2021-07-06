@@ -129,6 +129,12 @@ CFunctionDefinitionNode >> isPrototype [
 ]
 
 { #category : #testing }
+CFunctionDefinitionNode >> needsSeparator [
+
+	^ false
+]
+
+{ #category : #testing }
 CFunctionDefinitionNode >> needsTrailingSemicolon [
 
 	^ false

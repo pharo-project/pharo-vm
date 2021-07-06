@@ -134,9 +134,9 @@ CSlangPrettyPrinter >> visitCastExpression: aCastExpression [
 { #category : #generated }
 CSlangPrettyPrinter >> visitComment: aComment [
 
-	stream nextPutAll: '/* '.
+	stream nextPutAll: '/*'.
 	stream nextPutAll: aComment comment.
-	stream nextPutAll: ' */'
+	stream nextPutAll: '*/'
 ]
 
 { #category : #generated }

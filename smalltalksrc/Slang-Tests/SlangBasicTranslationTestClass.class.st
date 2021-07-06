@@ -5,12 +5,10 @@ Class {
 }
 
 { #category : #inline }
+SlangBasicTranslationTestClass >> foo [
+	"This function is doing nothing, and this comment is useless. Not that useless finaly, because used to test method comments :D"
+]
+
+{ #category : #inline }
 SlangBasicTranslationTestClass >> foo: x [
-	
-	| a |
-	x > 10
-		ifTrue: [ a := true ]
-		ifFalse: [ a := false ].
-	[ true ] whileTrue: [ a = false ].
-	^ a
 ]

@@ -226,20 +226,15 @@ TMethod >> asCASTCommentIn: aCodeGen [
 
 	comment ifNotNil: [ 
 		^ CCommentNode comment: (String streamContents: [ :aStream | 
-				 1 to: comment size do: [ :index | 
-					 aStream
-						 nextPutAll: '/*';
-						 tab.
-					 self
-						 printSingleComment: (comment at: index)
-						 on: aStream
-						 indent: 1
-						 tabWidth: 4
-						 lineBreak: 78.
-
-					 aStream
-						 nextPutAll: ' */';
-						 newLine ] ]) ].
+				   aStream tab.
+				   1 to: comment size do: [ :index | 
+					   self
+						   printSingleComment: (comment at: index)
+						   on: aStream
+						   indent: 1
+						   tabWidth: 4
+						   lineBreak: 78 ].
+				   aStream nextPut: Character space ]) ].
 	^ nil
 ]
 
@@ -319,9 +314,11 @@ TMethod >> asCASTIn: aCodeGen [
 	compoundStatement add:
 		(CCommentNode comment: (String streamContents: [ :aStream | 
 				  aStream
+					  space;
 					  nextPutAll: self definingClass name;
 					  nextPutAll: '>>#';
-					  nextPutAll: self smalltalkSelector ])).
+					  nextPutAll: self smalltalkSelector;
+					  space ])).
 	functionDefinition := self
 		                      asCASTFunctionPrototypeIn: aCodeGen
 		                      isPrototype: false.
@@ -609,7 +606,7 @@ TMethod >> emitCCodeOn: aStream generator: aCodeGen [
 	aCodeGen currentMethod: self.
 	self resetUsedVariablesCache.
 	self emitCCommentOn: aStream.	"place method comment and method name before function."
-	aStream crtab; nextPutAll: '/* '; nextPutAll: self definingClass name; nextPutAll: '>>#'; nextPutAll: self smalltalkSelector; nextPutAll: ' */'.	
+	aStream nextPutAll: '/* '; nextPutAll: self definingClass name; nextPutAll: '>>#'; nextPutAll: self smalltalkSelector; nextPutAll: ' */'.	
 	aStream cr. 
 	conditional := self emitCFunctionPrototype: aStream generator: aCodeGen isPrototype: false.
 	aStream cr.
