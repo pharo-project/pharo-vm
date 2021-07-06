@@ -516,7 +516,11 @@ CogObjectRepresentation >> genPrimitiveAsFloat [
 	cogit MoveR: SendNumArgsReg R: ReceiverResultReg.
 	cogit genPrimReturn.
 	jumpFailAlloc jmpTarget: cogit Label.
-	^ CompletePrimitive
+
+	"This primitive is not complete. If the eden is full, it will fail. 
+	We need to handle that in the C primitive or in the image. 
+	We decided to handle it in the C primitive. "
+	^ 0 
 ]
 
 { #category : #'primitive generators' }
