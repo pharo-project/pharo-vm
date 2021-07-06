@@ -371,22 +371,38 @@ CSlangPrettyPrinter >> visitPoint: aMemberAccess [
 { #category : #generated }
 CSlangPrettyPrinter >> visitPreprocessorIf: anIf [
 
-	stream nextPutAll: '#if '.
+	| nbTabs |
+	nbTabs := anIf isArgument
+		          ifTrue: [ level + 1 ]
+		          ifFalse: [ level ].
+	stream
+		cr;
+		nextPut: $#;
+		next: level * 2 put: Character space;
+		nextPutAll: 'if '.
 	anIf if acceptVisitor: self.
-	stream cr.
+	stream crtab: nbTabs.
 	anIf then acceptVisitor: self.
 	anIf else ifNotNil: [ :e | 
-		stream cr; nextPutAll: '#else /* '.
+		stream
+			cr;
+			nextPut: $#;
+			next: level * 2 put: Character space;
+			nextPutAll: 'else /* '.
 		anIf if acceptVisitor: self.
 		stream
 			nextPutAll: ' */';
-			cr.
+			crtab: nbTabs.
 		e acceptVisitor: self ].
-	stream cr; nextPutAll: '#endif /* '.
+	stream
+		cr;
+		nextPut: $#;
+		next: level * 2 put: Character space;
+		nextPutAll: 'endif /* '.
 	anIf if acceptVisitor: self.
 	stream
-		nextPutAll: ' */';
-		cr
+		nextPutAll: ' */'.
+	anIf isArgument ifTrue: [ stream crtab: level + 1 ]
 ]
 
 { #category : #visiting }
@@ -427,13 +443,16 @@ CSlangPrettyPrinter >> visitTernary: aTernary [
 	stream nextPutAll: '(('.
 	aTernary condition acceptVisitor: self.
 	stream nextPut: $).
-	aTernary printOnMultipleLines ifTrue: [ stream crtab: level + 1 ].
+	aTernary printOnMultipleLines ifTrue: [ 
+		level := level + 2.
+		stream crtab: level - 1 ].
 	stream nextPutAll: ' ? '.
 	aTernary then acceptVisitor: self.
-	aTernary printOnMultipleLines ifTrue: [ stream crtab: level + 1 ].
+	aTernary printOnMultipleLines ifTrue: [ stream crtab: level - 1 ].
 	stream nextPutAll: ' : '.
 	aTernary else acceptVisitor: self.
-	stream nextPut: $)
+	stream nextPut: $).
+	aTernary printOnMultipleLines ifTrue: [ level := level - 2 ]
 ]
 
 { #category : #generated }
@@ -447,9 +466,10 @@ CSlangPrettyPrinter >> visitUnaryOperator: anUnary [
 
 	| avoidParentheses |
 	anUnary needsParentheses ifTrue: [ stream nextPut: $( ].
-	avoidParentheses := anUnary expression isCastExpression
-		or: [ anUnary expression isConstant or: [
-			anUnary expression isIdentifier  or: [ anUnary expression isLeaf]]].
+	avoidParentheses := anUnary expression isCastExpression or: [ 
+		                    anUnary expression isConstant or: [ 
+			                    anUnary expression isIdentifier or: [ 
+				                    anUnary expression isLeaf ] ] ].
 	stream nextPutAll: anUnary operator.
 	avoidParentheses ifFalse: [ stream nextPut: $( ].
 	anUnary expression acceptVisitor: self.

@@ -78,6 +78,12 @@ CPreprocessorIfNode >> isArgument: aBoolean [
 ]
 
 { #category : #accessing }
+CPreprocessorIfNode >> needsSeparator [
+
+	^ false
+]
+
+{ #category : #accessing }
 CPreprocessorIfNode >> then [
 
 	^ then

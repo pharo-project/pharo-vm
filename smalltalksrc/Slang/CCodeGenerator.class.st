@@ -2506,6 +2506,7 @@ CCodeGenerator >> generateCASTInlineCppIfElse: tast asArgument: asArgument [
 				 with: tast arguments first
 				 ifAppropriateSetTo: false
 				 do: [ generateCAST value: tast arguments third ]) ].
+	cppIf isArgument: asArgument.
 	^ cppIf
 ]
 
@@ -3760,6 +3761,7 @@ CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aS
 	
 	"Generate the C code for this message onto the given stream."
 	| expr putStatement |
+	
 	"Compile-time expansion for constants set in the options dictionary,
 	 e.g. to cut down on noise for MULTIPLEBYTECODESETS."
 	putStatement := asArgument
@@ -3778,7 +3780,8 @@ CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aS
 				ifFalse: [expansion])]]
 		ifFalse:
 			[[:node| | expansion |
-			  expansion := String streamContents: [:s| node emitCCodeOn: s level: level generator: self].
+			  expansion := String streamContents: [:s|
+				node emitCCodeOn: s level: level generator: self].
 			 "Remove tabs from first line to avoid indenting a second time"
 			 expansion ifNotEmpty:
 				[expansion := expansion allButFirst: (expansion findFirst: [:c| c ~~ Character tab]) - 1].
@@ -3793,7 +3796,6 @@ CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aS
 				[msgNode args size >= 3 ifTrue:
 					[putStatement value: msgNode args third]].
 		 ^self].
-
 	"Full #if ... #else..."
 	putStatement := asArgument
 		ifTrue: "emitCCodeAsArgumentOn: doesn't indent, the code needs indenting in this case, so post-process."
@@ -3806,7 +3808,7 @@ CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aS
 					copyReplaceAll: (String with: Character cr)
 					with: (String with: Character cr), (String new: level + 1 withAll: Character tab))]]
 		ifFalse:
-			[[:node| node emitCCodeOn: aStream level: level generator: self]].
+			[[:node| aStream tab: level. node emitCCodeOn: aStream level: level generator: self]].
 
 	expr := String streamContents:
 				[:es|
@@ -3819,7 +3821,6 @@ CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aS
 	aStream
 		newLine;
 		nextPut: $#; next: level * 2 put: Character space; nextPutAll: 'if '; nextPutAll: expr; cr.
-
 	self with: msgNode args first
 		ifAppropriateSetTo: true
 		do: [putStatement value: msgNode args second].

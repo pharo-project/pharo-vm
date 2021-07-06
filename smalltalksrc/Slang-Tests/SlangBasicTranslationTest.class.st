@@ -1723,12 +1723,160 @@ SlangBasicTranslationTest >> testSendCppIfIfTrueIfFalseAsArgument [
 
 	self assert: translation trimBoth equals: 'y = ((x < 10)
 	 ? 
-#if FEATURE
-	2
-#else /* FEATURE */
-	4
-#endif /* FEATURE */
-'	
+#    if FEATURE
+			2
+#    else /* FEATURE */
+			4
+#    endif /* FEATURE */
+			
+	 : 0)'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendCppIfIfTrueIfFalseAsArgumentIndentationInBlock [
+
+	"A C preprocessor condition can anywhere in code, even in an expression statement."
+
+	| translation send |
+	send := TStmtListNode new setStatements: { (TAssignmentNode new
+			         setVariable: (TVariableNode named: 'y')
+			         expression: (TSendNode new
+					          setSelector: #ifTrue:
+					          receiver: (TSendNode new
+							           setSelector: #<
+							           receiver: (TVariableNode named: 'x')
+							           arguments: { (TConstantNode value: 10) })
+					          arguments: { (TSendNode new
+							           setSelector: #cppIf:ifTrue:ifFalse:
+							           receiver: (TVariableNode new setName: 'self')
+							           arguments: { 
+									           (TConstantNode value: #FEATURE).
+									           (TConstantNode value: 2).
+									           (TConstantNode value: 4) }) })) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '{
+	y = ((x < 10)
+		 ? 
+#      if FEATURE
+				2
+#      else /* FEATURE */
+				4
+#      endif /* FEATURE */
+				
+		 : 0);
+}'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendCppIfIfTrueIfFalseIndentationInBlock [
+
+	"[self cppIf: #FEATURE ifTrue: [ a := false. c := 1 ] ifFalse: [ a := true. c := 0 ]]"
+
+	| translation send |
+	send := TStmtListNode new setStatements: { (TSendNode new
+			         setSelector: #cppIf:ifTrue:ifFalse:
+			         receiver: (TVariableNode new setName: 'self')
+			         arguments: { 
+					         (TConstantNode value: #FEATURE).
+					         (TStmtListNode new setStatements: { 
+							          (TAssignmentNode new
+								           setVariable: (TVariableNode new setName: 'a')
+								           expression: (TConstantNode value: false)).
+							          (TAssignmentNode new
+								           setVariable: (TVariableNode new setName: 'c')
+								           expression: (TConstantNode value: 1)) }).
+					         (TStmtListNode new setStatements: { 
+							          (TAssignmentNode new
+								           setVariable: (TVariableNode new setName: 'a')
+								           expression: (TConstantNode value: true)).
+							          (TAssignmentNode new
+								           setVariable: (TVariableNode new setName: 'c')
+								           expression: (TConstantNode value: 0)) }) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '{
+	
+#  if FEATURE
+	{
+		a = 0;
+		c = 1;
+	}
+#  else /* FEATURE */
+	{
+		a = 1;
+		c = 0;
+	}
+#  endif /* FEATURE */
+}'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendCppIfIfTrueIndentationInBlock [
+
+	"self cppIf: #FEATURE ifTrue: [ a := false. c := 1 ]"
+
+	| translation send |
+	send := TStmtListNode new setStatements:
+		        { (TStmtListNode new setStatements: { (TSendNode new
+				          setSelector: #cppIf:ifTrue:
+				          receiver: (TVariableNode new setName: 'self')
+				          arguments: { 
+						          (TConstantNode value: #FEATURE).
+						          (TStmtListNode new setStatements: { 
+								           (TAssignmentNode new
+									            setVariable: (TVariableNode new setName: 'a')
+									            expression: (TConstantNode value: false)).
+								           (TAssignmentNode new
+									            setVariable: (TVariableNode new setName: 'c')
+									            expression: (TConstantNode value: 1)) }) }) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '{
+	{
+		
+#    if FEATURE
+		{
+			a = 0;
+			c = 1;
+		}
+#    endif /* FEATURE */
+	}
+}'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendCppIfIfTrueWithSendIfTrueAsCondition [
+
+	"self cppIf: (true ifTrue: [ false ] ifFalse: [ true ]) ifTrue: [ a := false. c := 1 ]"
+
+	| translation send |
+	generator generateDeadCode: false.
+	send := TSendNode new
+		        setSelector: #cppIf:ifTrue:
+		        receiver: (TVariableNode new setName: 'self')
+		        arguments: { 
+				        (TSendNode new
+					         setSelector: #ifTrue:ifFalse:
+					         receiver: (TConstantNode value: true)
+					         arguments: { 
+							         (TStmtListNode new setStatements:
+								          { (TConstantNode value: false) }).
+							         (TStmtListNode new setStatements:
+								          { (TConstantNode value: true) }) }).
+				        (TStmtListNode new setStatements: { 
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'a')
+							          expression: (TConstantNode value: false)).
+						         (TAssignmentNode new
+							          setVariable: (TVariableNode new setName: 'c')
+							          expression: (TConstantNode value: 1)) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '{
+	a = 0;
+	c = 1;
+}'
 ]
 
 { #category : #'tests-assignment' }
