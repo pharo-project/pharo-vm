@@ -329,7 +329,7 @@ CSlangPrettyPrinterTest >> testVisitFunctionDefinition [
 					           declarator: (CIdentifierNode name: 'foo')
 					           parameters: { (CParameterDeclarationNode
 							            declarator: (CIdentifierNode name: 'x')
-							            cDeclaration:  'int x' ) })
+							            specifiers:  { 'int' }) })
 			          body: CCompoundStatementNode new
 			          specifiers: { 'static'. 'int' }).
 
@@ -436,6 +436,17 @@ CSlangPrettyPrinterTest >> testVisitInitializer [
 
 { #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitParameterDeclaration [
+
+	| print |
+	print := self prettyPrint: ((CParameterDeclarationNode
+							            declarator: (CIdentifierNode name: 'x')
+							            specifiers: {'unsigned'. 'int'})).
+
+	self assert: print equals: 'unsigned int x'
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitParameterRawDeclaration [
 
 	| print |
 	print := self prettyPrint: ((CParameterDeclarationNode

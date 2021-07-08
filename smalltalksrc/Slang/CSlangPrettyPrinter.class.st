@@ -350,12 +350,14 @@ CSlangPrettyPrinter >> visitLabeledStatement: aLabeledStatement [
 { #category : #generated }
 CSlangPrettyPrinter >> visitParameterDeclaration: aParameter [
 
-	"aParameter specifiers
-		do: [ :e | stream nextPutAll: e ]
-		separatedBy: [ stream space ].
-	stream space.
-	aParameter declarator acceptVisitor: self"
-	stream nextPutAll: aParameter rawDeclaration 
+	"Raw declaration wins over a normal declaration."
+	aParameter rawDeclaration
+		ifNotNil: [ stream nextPutAll: aParameter rawDeclaration ]
+		ifNil: [ 
+			aParameter specifiers do: [ :e | 
+				stream nextPutAll: e.
+				stream space ].
+			aParameter declarator acceptVisitor: self ]
 ]
 
 { #category : #generated }
