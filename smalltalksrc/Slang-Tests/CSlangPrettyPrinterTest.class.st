@@ -336,7 +336,7 @@ CSlangPrettyPrinterTest >> testVisitFunctionDefinition [
 	self assert: print trimBoth equals: 'static int
 foo(int x)
 {
-	;
+	
 }'
 ]
 
