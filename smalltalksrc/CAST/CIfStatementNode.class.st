@@ -68,6 +68,12 @@ CIfStatementNode >> isIf [
 ]
 
 { #category : #testing }
+CIfStatementNode >> needsSeparator [
+
+	^ false
+]
+
+{ #category : #testing }
 CIfStatementNode >> needsTrailingSemicolon [
 
 	^ false
