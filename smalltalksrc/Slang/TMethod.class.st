@@ -64,7 +64,7 @@ TMethod >> addCASTLocalsIn: aCASTBlock generator: aCodeGen [
 				 (decl beginsWith: 'static') or: [ 
 					 (decl beginsWith: 'extern') or: [ 
 						 usedVariablesCache includes: var ] ] ]) ifTrue: [ 
-				volatileVariables ifTrue: [ decl = 'volatile ' , decl ].
+				volatileVariables ifTrue: [ decl := 'volatile ' , decl ].
 				aCASTBlock declarations add: (CRawCodeNode code: decl) ] ] ]
 ]
 
@@ -264,7 +264,7 @@ TMethod >> asCASTFunctionPrototypeIn: aCodeGen isPrototype: isPrototype [
 	returnTypeIsFunctionPointer ifFalse: [ 
 		arguments := args isEmpty
 			             ifTrue: [ 
-			             { (CParameterDeclarationNode declarator: 'void') } ]
+			             { (CParameterDeclarationNode declarator: (CIdentifierNode name: 'void')) } ]
 			             ifFalse: [ 
 				             args collect: [ :name | 
 					             CParameterDeclarationNode
@@ -724,7 +724,7 @@ TMethod >> emitCLocalsOn: aStream generator: aCodeGen [
 			tab; 
 			nextPutAll: (volatileVariables
 						ifTrue: ['DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT']
-						ifFalse: ['DECL_MAYBE_SQ_GLOBAL_STRUCT']); cr].
+						ifFalse: ['DECL_MAYBE_SQ_GLOBAL_STRUCT']); nextPut: $;; cr].
 	maybeExternFunctions := (declarations select: [:decl| decl beginsWith: 'extern']) keys.
 	(locals isEmpty and: [maybeExternFunctions isEmpty]) ifFalse:
 		[(aCodeGen sortStrings: locals, maybeExternFunctions) do:

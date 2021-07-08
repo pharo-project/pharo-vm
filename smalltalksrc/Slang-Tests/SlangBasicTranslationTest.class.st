@@ -45,10 +45,25 @@ SlangBasicTranslationTest >> generator: anObject [
 	generator := anObject
 ]
 
+{ #category : #helpers }
+SlangBasicTranslationTest >> getTMethodFrom: selector [
+
+	"Generate a TMethod from a SlangBasicTranslationTestClass method."
+
+	generator addClass: SlangBasicTranslationTestClass.
+	^ generator methodNamed: selector
+]
+
 { #category : #compatibility }
 SlangBasicTranslationTest >> isNonArgumentImplicitReceiverVariableName: aString [ 
 	
 	^ false
+]
+
+{ #category : #helpers }
+SlangBasicTranslationTest >> newLine [
+
+	^ String cr
 ]
 
 { #category : #accessing }
@@ -877,15 +892,17 @@ SlangBasicTranslationTest >> testGoto [
 { #category : #'tests-method' }
 SlangBasicTranslationTest >> testMethodComment [
 
-	""
+	"Test the smalltalk comment of the function."
+
 	| translation tMethod |
-	generator addClass: SlangBasicTranslationTestClass.
-	tMethod := generator methodNamed: #foo.
+	tMethod := self getTMethodFrom: #methodWithMultilineComment.
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
 	self
-		assert: (translation lineNumber: 1), String cr, (translation lineNumber: 2)
-		equals: '/*	This function is doing nothing, and this comment is useless. Not that 
+		assert: (translation lineNumber: 1) , self newLine
+			, (translation lineNumber: 2)
+		equals:
+			'/*	This function is doing nothing, and this comment is useless. Not that 
 	useless finaly, because used to test method comments :D */'
 ]
 
@@ -893,13 +910,187 @@ SlangBasicTranslationTest >> testMethodComment [
 SlangBasicTranslationTest >> testMethodCommentOriginalMethod [
 
 	"Comment that includes the pharo style method signature : ClassName>>MethodName "
+
 	| translation tMethod |
-	generator addClass: SlangBasicTranslationTestClass.
-	tMethod := generator methodNamed: #foo.
+	tMethod := self getTMethodFrom: #methodWithMultilineComment.
 	translation := self translate: tMethod.
 	self
-		assert: (translation trimBoth lineNumber: 3) 
-		equals: '/* SlangBasicTranslationTestClass>>#foo */'
+		assert: (translation trimBoth lineNumber: 3)
+		equals:
+		'/* SlangBasicTranslationTestClass>>#methodWithMultilineComment */'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodDefinitionRefersToGlobalStruct [
+
+	"Test if the macro DECL_MAYBE_SQ_GLOBAL_STRUCT is included when the method references to global struct."
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodWithMultilineComment.
+	tMethod referencesGlobalStruct.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: (translation lineNumber: 7)
+		equals: '	DECL_MAYBE_SQ_GLOBAL_STRUCT;'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodDefinitionRefersToVolatileGlobalStruct [
+
+	"Test if the macro DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT is included when the method references to volatile global struct."
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodWithVolatilePragma.
+	tMethod referencesGlobalStruct.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: (translation lineNumber: 5)
+		equals: '	DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT;'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodLocals [
+	
+	"Test method local variables printing."
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodWithLocalVariables.
+	tMethod recordDeclarationsIn: generator.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: (translation lineNumber: 5) , self newLine
+			, (translation lineNumber: 6) , self newLine
+			, (translation lineNumber: 7)
+		equals: '	sqInt a;
+	sqInt b;
+	float foo;'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodParameters [
+
+	"Test method parameters."
+	| translation tMethod |
+	generator addClass: SlangBasicTranslationTestClass.
+	tMethod := generator methodNamed: #first:second:.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: (translation lineNumber: 4)
+		equals: 'firstsecond(sqInt param1, sqInt param2)'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodPrototypeWithExport [
+
+	"Test return type export with macro EXPORT()."
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #increment:.
+	tMethod export: true.
+	tMethod returnType: #sqInt.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: (translation lineNumber: 2) , self newLine
+			, (translation lineNumber: 3)
+		equals: 'EXPORT(sqInt)
+increment(sqInt x)'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodPrototypeWithFunctionPointerReturnType [
+
+	"Test prototype when return type is a function pointer."
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #increment:.
+	tMethod returnType: 'void (*increment(sqInt x))(void)'.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: (translation lineNumber: 2)
+		equals: 'static void (*increment(sqInt x))(void)'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodPrototypeWithStatic [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #increment:.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: (translation lineNumber: 2) , self newLine
+			, (translation lineNumber: 3)
+		equals: 'static sqInt
+increment(sqInt x)'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodReturnType [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #increment:.
+	tMethod static: false.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self assert: (translation lineNumber: 2) equals: 'sqInt'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodUsingExternVariable [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodDefiningSingleVariable.
+	tMethod declarationAt: 'foo' put: 'extern float foo'. 
+	tMethod recordDeclarationsIn: generator.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: (translation lineNumber: 5)
+		equals: '	extern float foo;'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodUsingStaticVariable [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodDefiningSingleVariable.
+	tMethod declarationAt: 'foo' put: 'static float foo'. 
+	tMethod recordDeclarationsIn: generator.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: (translation lineNumber: 5)
+		equals: '	static float foo;'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodVolatileLocals [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodWithVolatileLocalVariables.
+	tMethod recordDeclarationsIn: generator.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: (translation lineNumber: 5) , self newLine
+			, (translation lineNumber: 6) , self newLine
+			, (translation lineNumber: 7)
+		equals: '	volatile sqInt a;
+	volatile sqInt b;
+	volatile float foo;'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodWithNoParameter [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodWithMultilineComment.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: (translation lineNumber: 5)
+		equals: 'methodWithMultilineComment(void)'
 ]
 
 { #category : #'tests-case' }
