@@ -1980,7 +1980,7 @@ SlangBasicTranslationTest >> testSendCppIfIfTrueIfFalseIndentationInBlock [
 ]
 
 { #category : #'tests-builtins' }
-SlangBasicTranslationTest >> testSendCppIfIfTrueIndentationInBlock [
+SlangBasicTranslationTest >> testSendCppIfIfTrueIndentationInNestedBlocks [
 
 	"self cppIf: #FEATURE ifTrue: [ a := false. c := 1 ]"
 
