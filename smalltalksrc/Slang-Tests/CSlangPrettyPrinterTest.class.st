@@ -479,6 +479,30 @@ CSlangPrettyPrinterTest >> testVisitPreIncrement [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitPreprocessorDefine [
+
+	| print |
+	print := self prettyPrint: (CPreprocessorDefineNode
+			          token: (CIdentifierNode name: 'MASK')
+			          expression: (CConstantNode value: 10)).
+
+	self assert: print equals: '#define MASK 10'
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitPreprocessorDefineWithRawExpression [
+
+	| print |
+	print := self prettyPrint: (CPreprocessorDefineNode
+			          token: (CIdentifierNode name: 'failedFunctionDefinition')
+			          rawMacro: '(void (*)(void))0').
+
+	self
+		assert: print
+		equals: '#define failedFunctionDefinition (void (*)(void))0'
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitPreprocessorIf [
 
 	| print |

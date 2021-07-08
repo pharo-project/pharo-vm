@@ -371,6 +371,18 @@ CSlangPrettyPrinter >> visitPoint: aMemberAccess [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitPreprocessorDefine: aPreprocessorDefine [
+
+	stream nextPutAll: '#define '.
+	aPreprocessorDefine token acceptVisitor: self.
+	stream space.
+	"Raw declaration wins over a normal declaration."
+	aPreprocessorDefine rawMacro
+		ifNotNil: [ stream nextPutAll: aPreprocessorDefine rawMacro ]
+		ifNil: [ aPreprocessorDefine expression acceptVisitor: self ]
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitPreprocessorIf: anIf [
 
 	| nbTabs |
