@@ -52,6 +52,12 @@ CGLRAbstractNode >> isFunctionCall [
 ]
 
 { #category : #testing }
+CGLRAbstractNode >> isFunctionDeclarator [
+	
+	^ false
+]
+
+{ #category : #testing }
 CGLRAbstractNode >> isIdentifier [
 	
 	^ false

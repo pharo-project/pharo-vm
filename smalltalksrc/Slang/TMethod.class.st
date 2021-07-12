@@ -41,6 +41,34 @@ TMethod class >> initialize [
 	CaseStatements addAll: #(dispatchOn:in: dispatchOn:in:with: dispatchOn:in:with:with:).
 ]
 
+{ #category : #adding }
+TMethod >> addCASTConditionalCompilationFor: cAST generator: aCodeGen [
+
+	| compileTimeOptionPragmas |
+	(compileTimeOptionPragmas := self compileTimeOptionPragmas: aCodeGen)
+		notEmpty ifTrue: [ 
+		| condition cppIf |
+		compileTimeOptionPragmas doWithIndex: [ :pragma :i | 
+			| element |
+			element := CIdentifierNode name:
+				           ((compileTimeOptionPragmas at: i) argumentAt: 1).
+			pragma selector = #notOption: ifTrue: [ 
+				element := CUnaryOperatorNode operator: #! expression: element ].
+			i <= 1
+				ifTrue: [ condition := element ]
+				ifFalse: [ 
+					condition := CBinaryOperatorNode
+						             operator: #&&
+						             left: condition
+						             right: element ] ].
+		cppIf := CPreprocessorIfNode if: condition then: cAST.
+		cAST isFunctionDeclarator ifTrue: [ 
+			(aCodeGen maybeGenerateCASTPrimitiveFailureDefineFor: selector) 
+				ifNotNil: [ :define | cppIf else: define ] ].
+		^ cppIf ].
+	^ cAST
+]
+
 { #category : #accessing }
 TMethod >> addCASTLocalsIn: aCASTBlock generator: aCodeGen [
 
@@ -239,9 +267,18 @@ TMethod >> asCASTCommentIn: aCodeGen [
 ]
 
 { #category : #'CAST translation' }
+TMethod >> asCASTFunctionPrototypeIn: aCodeGen [
+
+	properties ifNotNil: [ 
+		(properties at: #api: ifAbsent: [  ]) ifNotNil: [ :pragma | 
+			^ CRawCodeNode code: (pragma argumentAt: 1) ] ].
+	^ self asCASTFunctionPrototypeIn: aCodeGen isPrototype: true
+]
+
+{ #category : #'CAST translation' }
 TMethod >> asCASTFunctionPrototypeIn: aCodeGen isPrototype: isPrototype [
 
-	| compileTimeOptionPragmas returnTypeIsFunctionPointer specifiers arguments functionDeclaration |
+	| returnTypeIsFunctionPointer specifiers arguments functionDeclaration |
 	specifiers := OrderedCollection new.
 
 	"If return type is a function pointer, the function prototype is contained in it, as a String. Maybe change it later, we dont want raw code in our C AST."
@@ -292,8 +329,6 @@ TMethod >> asCASTFunctionPrototypeIn: aCodeGen isPrototype: isPrototype [
 
 	returnTypeIsFunctionPointer ifTrue: [ 
 		functionDeclaration hasRawPrototype: true ].
-	(compileTimeOptionPragmas := self compileTimeOptionPragmas: aCodeGen)
-		notEmpty ifTrue: [ "here add if" ].
 	^ functionDeclaration
 ]
 
@@ -330,6 +365,7 @@ TMethod >> asCASTIn: aCodeGen [
 	(returnType = #void or: [ parseTree endsWithReturn ]) ifFalse: [ 
 		functionDefinition body add:
 			(CReturnStatementNode expression: (CConstantNode value: 0)) ].
+	functionDefinition := self addCASTConditionalCompilationFor: functionDefinition generator: aCodeGen.
 	compoundStatement add: functionDefinition.
 	^ compoundStatement
 ]
@@ -717,17 +753,18 @@ TMethod >> emitCLocalsOn: aStream generator: aCodeGen [
 	"Emit a C function header for this method onto the given stream."
 
 	| volatileVariables maybeExternFunctions |
-	aStream nextPut: ${; cr.
+	aStream nextPut: ${.
 	volatileVariables := properties includesKey: #volatile.
 	self refersToGlobalStruct ifTrue:
 		[aStream
-			tab; 
+			crtab; 
 			nextPutAll: (volatileVariables
 						ifTrue: ['DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT']
 						ifFalse: ['DECL_MAYBE_SQ_GLOBAL_STRUCT']); nextPut: $;; cr].
 	maybeExternFunctions := (declarations select: [:decl| decl beginsWith: 'extern']) keys.
 	(locals isEmpty and: [maybeExternFunctions isEmpty]) ifFalse:
-		[(aCodeGen sortStrings: locals, maybeExternFunctions) do:
+		[ aStream cr.
+		(aCodeGen sortStrings: locals, maybeExternFunctions) do:
 			[ :var | | decl |
 			decl := self declarationAt: var
 							ifAbsent: [aCodeGen defaultType, ' ', var].
@@ -741,8 +778,7 @@ TMethod >> emitCLocalsOn: aStream generator: aCodeGen [
 					[aStream nextPutAll: #volatile; space].
 				 aStream
 					nextPutAll: decl;
-					nextPut: $;;
-					cr.]]]
+					nextPut: $;; cr]]]
 ]
 
 { #category : #'C code generation' }

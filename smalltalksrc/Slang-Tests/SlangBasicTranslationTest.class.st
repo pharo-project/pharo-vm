@@ -33,6 +33,12 @@ SlangBasicTranslationTest >> constantClass [
 	^ VMBasicConstants
 ]
 
+{ #category : #compatibility }
+SlangBasicTranslationTest >> defineAtCompileTime: aString [
+
+	^ #(#OPTION1 #OPTION3 #OPTION) includes: aString
+]
+
 { #category : #accessing }
 SlangBasicTranslationTest >> generator [
 
@@ -918,6 +924,44 @@ SlangBasicTranslationTest >> testMethodCommentOriginalMethod [
 		assert: (translation trimBoth lineNumber: 3)
 		equals:
 		'/* SlangBasicTranslationTestClass>>#methodWithMultilineComment */'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodConditionalCompilationWithAnOption [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodWithAnOptionPragma.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodWithAnOptionPragma */
+#if OPTION
+static sqInt
+methodWithAnOptionPragma(void)
+{
+	return self;
+}
+#endif /* OPTION */'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodConditionalCompilationWithSeveralOptions [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodWithOptionPragma.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodWithOptionPragma */
+#if OPTION1 && OPTION3
+static sqInt
+methodWithOptionPragma(void)
+{
+	return self;
+}
+#endif /* OPTION1 && OPTION3 */'
 ]
 
 { #category : #'tests-method' }

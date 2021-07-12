@@ -4,6 +4,24 @@ Class {
 	#category : #'Slang-Tests'
 }
 
+{ #category : #accessing }
+SlangBasicTranslationTestClass class >> initializationOptions [
+
+	^ nil
+]
+
+{ #category : #accessing }
+SlangBasicTranslationTestClass class >> interpreterClass [
+
+	^ nil
+]
+
+{ #category : #accessing }
+SlangBasicTranslationTestClass class >> objectMemoryClass [
+
+	^ nil
+]
+
 { #category : #inline }
 SlangBasicTranslationTestClass >> first: param1 second: param2 [
 	"Method with several parameters"
@@ -15,10 +33,23 @@ SlangBasicTranslationTestClass >> increment: x [
 	^ x + 1
 ]
 
+{ #category : #accessing }
+SlangBasicTranslationTestClass >> initializationOptions [
+
+	^ nil
+]
+
 { #category : #inline }
 SlangBasicTranslationTestClass >> methodDefiningSingleVariable [
 
 	| foo |
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodWithAnOptionPragma [
+
+	<option: #OPTION>
+	
 ]
 
 { #category : #inline }
@@ -35,6 +66,15 @@ SlangBasicTranslationTestClass >> methodWithLocalVariables [
 { #category : #inline }
 SlangBasicTranslationTestClass >> methodWithMultilineComment [
 	"This function is doing nothing, and this comment is useless. Not that useless finaly, because used to test method comments :D"
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodWithOptionPragma [
+
+	<option: #OPTION1>
+	<notOption: #OPTION2>
+	<option: #OPTION3>
+	
 ]
 
 { #category : #inline }

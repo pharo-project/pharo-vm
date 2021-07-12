@@ -255,7 +255,7 @@ CSlangPrettyPrinter >> visitFunctionDeclarator: aFunctionDeclarator [
 	aFunctionDeclarator parameters
 		do: [ :arg | arg acceptVisitor: self ]
 		separatedBy: [ stream nextPutAll: ', ' ].
-	stream nextPut: $)
+	stream nextPutAll: ');'
 ]
 
 { #category : #generated }
@@ -389,8 +389,9 @@ CSlangPrettyPrinter >> visitPreprocessorIf: anIf [
 	nbTabs := anIf isArgument
 		          ifTrue: [ level + 1 ]
 		          ifFalse: [ level ].
+	"Add a carriage return when needed."
+	stream peekLast = Character cr ifFalse: [ stream cr ].
 	stream
-		cr;
 		nextPut: $#;
 		next: level * 2 put: Character space;
 		nextPutAll: 'if '.
