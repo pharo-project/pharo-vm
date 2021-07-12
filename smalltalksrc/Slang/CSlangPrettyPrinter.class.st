@@ -22,6 +22,17 @@ CSlangPrettyPrinter >> initialize [
 	level := 0
 ]
 
+{ #category : #visiting }
+CSlangPrettyPrinter >> printComments: aListOfComments [
+
+	aListOfComments do: [ :e |
+		stream
+			nextPutAll: '/* ';
+			nextPutAll: e;
+			nextPutAll: ' */'.
+	] separatedBy: [ stream cr ].
+]
+
 { #category : #generated }
 CSlangPrettyPrinter >> printExpression: cAST [
 
@@ -215,6 +226,7 @@ CSlangPrettyPrinter >> visitDoStatement: aDoStatement [
 { #category : #generated }
 CSlangPrettyPrinter >> visitEmptyStatement: anEmptyStatement [
 	"Nothing to print."
+	self printComments: anEmptyStatement comments
 ]
 
 { #category : #generated }
@@ -334,16 +346,29 @@ CSlangPrettyPrinter >> visitInitializer: anInitializer [
 { #category : #generated }
 CSlangPrettyPrinter >> visitLabeledStatement: aLabeledStatement [
 
-	aLabeledStatement case = 'default'
-		ifTrue: [ stream nextPutAll: 'default' ]
-		ifFalse: [ stream
-			nextPutAll: 'case ';
-			print: aLabeledStatement case ].
-	
-	stream
-		nextPutAll: ':';
-		crtab: level.
+	"Case and labels are overloaded in the same node..."
+	aLabeledStatement case ifNotNil: [
+		aLabeledStatement case = 'default'
+			ifTrue: [ stream nextPutAll: 'default' ]
+			ifFalse: [ stream
+				nextPutAll: 'case ';
+				print: aLabeledStatement case ]].
+
+	aLabeledStatement label ifNotNil: [
+		stream nextPutAll: aLabeledStatement label name ].
+
+	(aLabeledStatement case notNil or: [ aLabeledStatement label notNil ])
+		ifTrue: [ stream nextPutAll: ':' ].
+
+	self printComments: aLabeledStatement comments.
+
+	stream crtab: level.
+
 	aLabeledStatement statement acceptVisitor: self.
+
+	"Close the statement here to keep compatibility with slang"
+	((aLabeledStatement case notNil or: [ aLabeledStatement label notNil ]) and: [ aLabeledStatement statement needsSeparator ])
+		ifTrue: [ stream nextPutAll: ';']
 ]
 
 { #category : #generated }

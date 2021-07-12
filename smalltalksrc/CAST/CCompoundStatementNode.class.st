@@ -5,8 +5,7 @@ Class {
 		'declarations',
 		'statements',
 		'needsBrackets',
-		'needsCarriageReturn',
-		'needsSeparator'
+		'needsCarriageReturn'
 	],
 	#category : #'CAST-Nodes'
 }
@@ -114,18 +113,6 @@ CCompoundStatementNode >> needsCarriageReturn [
 CCompoundStatementNode >> needsCarriageReturn: aBoolean [
 
 	needsCarriageReturn := aBoolean
-]
-
-{ #category : #accessing }
-CCompoundStatementNode >> needsSeparator [
-
-	^ needsSeparator
-]
-
-{ #category : #accessing }
-CCompoundStatementNode >> needsSeparator: aBoolean [
-
-	needsSeparator := aBoolean
 ]
 
 { #category : #testing }

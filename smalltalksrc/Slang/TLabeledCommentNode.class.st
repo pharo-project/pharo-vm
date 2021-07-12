@@ -1,3 +1,6 @@
+"
+some comment
+"
 Class {
 	#name : #TLabeledCommentNode,
 	#superclass : #TParseNode,
@@ -7,6 +10,56 @@ Class {
 	],
 	#category : #'Slang-AST'
 }
+
+{ #category : #accessing }
+TLabeledCommentNode class >> label: aLabel [
+
+	^ self new
+		setLabel: aLabel;
+		yourself
+]
+
+{ #category : #accessing }
+TLabeledCommentNode class >> withComment: aComment [
+
+	^ self new
+		setComment: aComment;
+		yourself
+]
+
+{ #category : #tranforming }
+TLabeledCommentNode >> asCASTIn: aBuilder [
+
+	| result |
+	result := CCompoundStatementNode new.
+	result needsBrackets: false.
+
+	label ifNotNil: [ 	| labelledNode |
+		labelledNode := CLabeledStatementNode new.		
+		labelledNode label: (CIdentifierNode name: label).
+		labelledNode statement: CEmptyStatementNode new.
+		result add: labelledNode ].	
+
+
+	comment ifNotNil: [ | commentNode |
+		(aBuilder previousCommentMarksInlining: (label isNil and: [asmLabel isNil and: [comment beginsWith: 'begin ']]))
+			ifTrue: [ ^ result ].
+		commentNode := CEmptyStatementNode new.
+		commentNode comments: { self comment }.
+		commentNode needsSeparator: false.
+		result add: commentNode.
+		aBuilder previousCommenter: self].
+
+	(asmLabel notNil "only output labels in the interpret function."
+	 and: [aBuilder currentMethod selector == #interpret]) ifTrue: [ | asmLabelNode |
+		asmLabelNode := CCallNode
+			identifier: (CIdentifierNode name: 'VM_LABEL')
+			arguments: { CIdentifierNode name: asmLabel }.
+		result add: asmLabelNode
+	].	
+
+	^ result
+]
 
 { #category : #accessing }
 TLabeledCommentNode >> asmLabel [
@@ -24,16 +77,20 @@ TLabeledCommentNode >> asmLabel: labelString [
 TLabeledCommentNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
 	"Emit a C comment with optional label."
 
+	| didOutputComment |
+	didOutputComment := false.
 	self printOptionalLabelOn: aStream.
 	comment ifNotNil:
 		[(aCodeGen previousCommentMarksInlining: (label isNil and: [asmLabel isNil and: [comment beginsWith: 'begin ']])) ifTrue:
 			[^true].
 		 aStream nextPutAll: '/* '; nextPutAll: comment; nextPutAll: ' */'.
-		 aCodeGen previousCommenter: self].
+		didOutputComment := true.
+		aCodeGen previousCommenter: self].
 	(asmLabel notNil "only output labels in the interpret function."
-	 and: [aCodeGen currentMethod selector == #interpret]) ifTrue:
-		[aStream crtab: level.
-		 aCodeGen outputAsmLabel: asmLabel on: aStream]
+	 and: [aCodeGen currentMethod selector == #interpret]) ifTrue: [
+		didOutputComment ifTrue: [ aStream cr ].
+		aStream tab: level.
+		aCodeGen outputAsmLabel: asmLabel on: aStream]
 ]
 
 { #category : #'C code generation' }
@@ -98,8 +155,8 @@ TLabeledCommentNode >> printOptionalLabelOn: aStream [
 		aStream
 			nextPutAll: label;
 			nextPut: $:;
-			nextPut: $;;
-			tab ]
+			cr;
+			nextPut: $; ]
 ]
 
 { #category : #accessing }
