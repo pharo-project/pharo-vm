@@ -488,6 +488,30 @@ CASTParserTests >> testParseIntegerConstant [
 	self assert: firstStatement value equals: '17'.
 ]
 
+{ #category : #'tests-control flow' }
+CASTParserTests >> testParseLabelledEmptyStatement [
+
+	| statement |
+	statement := self parseStatement: 'label:;'.
+
+	self assert: statement isLabelledStatement.
+	self assert: statement label name equals: 'label'.
+	self assert: statement case isNil.
+	self assert: statement statement isEmptyStatement
+]
+
+{ #category : #'tests-control flow' }
+CASTParserTests >> testParseLabelledStatement [
+
+	| statement |
+	statement := self parseStatement: 'label: 1+2;'.
+
+	self assert: statement isLabelledStatement.
+	self assert: statement label name equals: 'label'.
+	self assert: statement case isNil.
+	self assert: statement statement isBinaryOperation
+]
+
 { #category : #'tests-numbers' }
 CASTParserTests >> testParseLongIntegerConstantConstant [
 
