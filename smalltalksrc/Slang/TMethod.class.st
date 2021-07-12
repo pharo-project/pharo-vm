@@ -271,8 +271,10 @@ TMethod >> asCASTFunctionPrototypeIn: aCodeGen [
 
 	properties ifNotNil: [ 
 		(properties at: #api: ifAbsent: [  ]) ifNotNil: [ :pragma | 
-			^ CRawCodeNode code: (pragma argumentAt: 1) ] ].
-	^ self asCASTFunctionPrototypeIn: aCodeGen isPrototype: true
+			^ CRawCodeNode code: (pragma argumentAt: 1) , ';' ] ].
+	^ (self asCASTFunctionPrototypeIn: aCodeGen isPrototype: true)
+		  isFunctionPrototype: true;
+		  yourself
 ]
 
 { #category : #'CAST translation' }

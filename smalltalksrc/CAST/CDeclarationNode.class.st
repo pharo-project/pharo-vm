@@ -4,7 +4,8 @@ Class {
 	#instVars : [
 		'specifiers',
 		'declarators',
-		'hasRawPrototype'
+		'hasRawPrototype',
+		'isFunctionPrototype'
 	],
 	#category : #'CAST-Nodes'
 }
@@ -74,10 +75,24 @@ CDeclarationNode >> hash [
 
 { #category : #'generated-initialize-release' }
 CDeclarationNode >> initialize [
+
 	super initialize.
 	hasRawPrototype := false.
+	isFunctionPrototype := false.
 	specifiers := OrderedCollection new: 2.
-	declarators := OrderedCollection new: 2.
+	declarators := OrderedCollection new: 2
+]
+
+{ #category : #accessing }
+CDeclarationNode >> isFunctionPrototype [
+	"Return true if this declaration is a function prototype."
+	^ isFunctionPrototype
+]
+
+{ #category : #accessing }
+CDeclarationNode >> isFunctionPrototype: aBoolean [
+	
+	isFunctionPrototype := aBoolean
 ]
 
 { #category : #generated }

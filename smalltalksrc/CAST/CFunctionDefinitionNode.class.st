@@ -122,12 +122,6 @@ CFunctionDefinitionNode >> initialize [
 	arguments := OrderedCollection new: 2.
 ]
 
-{ #category : #generated }
-CFunctionDefinitionNode >> isPrototype [
-
-	^ body isNil
-]
-
 { #category : #testing }
 CFunctionDefinitionNode >> needsSeparator [
 

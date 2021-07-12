@@ -177,20 +177,19 @@ CSlangPrettyPrinter >> visitDeclaration: aDeclaration [
 	aDeclaration hasRawPrototype ifFalse: [ 
 		aDeclaration declarators
 			do: [ :e | e acceptVisitor: self ]
-			separatedBy: [ stream nextPutAll: ', ' ] ]
+			separatedBy: [ stream nextPutAll: ', ' ] ].
+	aDeclaration isFunctionPrototype ifTrue: [ stream nextPut: $; ]
 ]
 
 { #category : #generated }
 CSlangPrettyPrinter >> visitDeclarator: aDeclarator [
 
-	aDeclarator qualifiers
-		do: [ :e | 
-			stream nextPutAll: e.
-			stream space ].
-	
-	aDeclarator pointers
-		do: [ :e | stream nextPutAll: e ].
-	
+	aDeclarator qualifiers do: [ :e | 
+		stream nextPutAll: e.
+		stream space ].
+
+	aDeclarator pointers do: [ :e | stream nextPutAll: e ].
+
 	aDeclarator declarator acceptVisitor: self
 ]
 
@@ -255,7 +254,7 @@ CSlangPrettyPrinter >> visitFunctionDeclarator: aFunctionDeclarator [
 	aFunctionDeclarator parameters
 		do: [ :arg | arg acceptVisitor: self ]
 		separatedBy: [ stream nextPutAll: ', ' ].
-	stream nextPutAll: ');'
+	stream nextPut: $)
 ]
 
 { #category : #generated }
