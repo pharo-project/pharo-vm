@@ -231,10 +231,12 @@ methodWithLoop(void)
 {
 	sqInt i;
 
-	for (i = 1; i <= 10; i += 1) {
-		foo(i);
+	{
+		for (i = 1; i <= 10; i += 1) {
+			foo(i);
+		}
+		return self;
 	}
-	return self;
 }
 '
 ]
