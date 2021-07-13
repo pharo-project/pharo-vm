@@ -36,9 +36,9 @@ TSwitchStmtNode >> asCASTIn: aBuilder [
 			tuple ].
 	statements add: (CLabeledStatementNode
 			 case: 'default'
-			 statement: (otherwiseOrNil endsWithReturn
-					  ifFalse: [ otherwiseOrNil asCASTIn: aBuilder ]
-					  ifTrue: [ 
+			 statement: (otherwiseOrNil 
+					  ifNotNil: [ otherwiseOrNil asCASTIn: aBuilder ]
+					  ifNil: [ 
 						  CCallNode
 							  identifier: (CIdentifierNode name: 'error')
 							  arguments:
@@ -231,7 +231,7 @@ TSwitchStmtNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
 		  labels do:
 			[:label|
 			 aStream
-				crtab: level;
+				crtab: level + 1;
 				nextPutAll: 'case '.
 			label emitCCodeAsArgumentOn: aStream level: level + 1 generator: aCodeGen.
 			aStream nextPut: $:].
@@ -241,7 +241,7 @@ TSwitchStmtNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
 			[aStream cr; tab: level + 1; nextPutAll: 'break;']]
 			valueWithArguments: tuple].
 	aStream
-		crtab: level;
+		crtab: level + 1;
 		nextPutAll: 'default:';
 		crtab: level + 1.
 	otherwiseOrNil

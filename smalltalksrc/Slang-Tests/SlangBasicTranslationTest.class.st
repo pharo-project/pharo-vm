@@ -1677,6 +1677,40 @@ SlangBasicTranslationTest >> testSendCppIfIfTrueIfFalse [
 #endif /* FEATURE */'
 ]
 
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendCppIfIfTrueIfFalseAsArgument [
+
+	"A C preprocessor condition can anywhere in code, even in an expression statement."
+
+	| translation send |
+	send := TAssignmentNode new
+		        setVariable: (TVariableNode named: 'y')
+		        expression: (TSendNode new
+				         setSelector: #ifTrue:
+				         receiver: (TSendNode new
+						          setSelector: #<
+						          receiver: (TVariableNode named: 'x')
+						          arguments: { (TConstantNode value: 10) })
+				         arguments: { (TSendNode new
+						          setSelector: #cppIf:ifTrue:ifFalse:
+						          receiver: (TVariableNode new setName: 'self')
+						          arguments: { 
+								          (TConstantNode value: #FEATURE).
+								          (TConstantNode value: 2).
+								          (TConstantNode value: 4) }) }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'y = ((x < 10)
+	 ? 
+#    if FEATURE
+			2
+#    else /* FEATURE */
+			4
+#    endif /* FEATURE */
+			
+	 : 0)'
+]
+
 { #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testSendDeny [
 
@@ -4685,7 +4719,67 @@ switch (currentBytecode) {
 { #category : #'tests-switch' }
 SlangBasicTranslationTest >> testSwitchStatement [
 
+	| translation |
+	translation := self translate: (TSwitchStmtNode new
+			                expression: (TVariableNode named: 'x')
+			                cases: (TBraceCaseNode new
+					                 caseLabels:
+						                 { (TStmtListNode new setStatements:
+								                  { (TConstantNode value: 0) }) };
+					                 cases:
+						                 { (TStmtListNode new setStatements:
+								                  { (TAssignmentNode new
+									                   setVariable: (TVariableNode named: 'foo')
+									                   expression: (TConstantNode value: 10)) }) };
+					                 yourself)
+			                otherwiseOrNil:
+				                (TStmtListNode new setStatements:
+					                 { (TAssignmentNode new
+						                  setVariable: (TVariableNode named: 'foo')
+						                  expression: (TConstantNode value: 0)) })).
 
+	self assert: translation trimBoth equals: 'switch (x) {
+	case 0:
+	{
+		foo = 10;
+	}
+	break;
+	default:
+	{
+		foo = 0;
+	}
+}'
+]
+
+{ #category : #'tests-switch' }
+SlangBasicTranslationTest >> testSwitchStatementWithNestedCase [
+
+	| translation |
+	translation := self translate: (TSwitchStmtNode new
+			                expression: (TVariableNode named: 'x')
+			                cases: (TBraceCaseNode new
+					                 caseLabels:
+						                 { (TStmtListNode new setStatements:
+								                  { (TConstantNode value: 0) }) };
+					                 cases:
+						                 { (TStmtListNode new setStatements:
+								                  { (TAssignmentNode new
+									                   setVariable: (TVariableNode named: 'foo')
+									                   expression: (TConstantNode value: 10)) }) };
+					                 yourself)
+			                otherwiseOrNil:
+			                (TStmtListNode new setStatements: {  })).
+
+	self assert: translation trimBoth equals: 'switch (x) {
+	case 0:
+	{
+		foo = 10;
+	}
+	break;
+	default:
+	{
+	}
+}'
 ]
 
 { #category : #'tests-assignment' }

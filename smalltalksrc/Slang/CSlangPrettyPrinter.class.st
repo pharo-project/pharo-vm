@@ -318,17 +318,18 @@ CSlangPrettyPrinter >> visitInitializer: anInitializer [
 CSlangPrettyPrinter >> visitLabeledStatement: aLabeledStatement [
 
 	"Case and labels are overloaded in the same node..."
-	aLabeledStatement case ifNotNil: [
+
+	aLabeledStatement case ifNotNil: [ 
 		aLabeledStatement case = 'default'
 			ifTrue: [ stream nextPutAll: 'default' ]
-			ifFalse: [ stream
-				nextPutAll: 'case ';
-				print: aLabeledStatement case ]].
+			ifFalse: [ 
+				stream nextPutAll: 'case '.
+				aLabeledStatement case acceptVisitor: self ] ].
 
-	aLabeledStatement label ifNotNil: [
+	aLabeledStatement label ifNotNil: [ 
 		stream nextPutAll: aLabeledStatement label name ].
 
-	(aLabeledStatement case notNil or: [ aLabeledStatement label notNil ])
+	(aLabeledStatement case notNil or: [ aLabeledStatement label notNil ]) 
 		ifTrue: [ stream nextPutAll: ':' ].
 
 	self printComments: aLabeledStatement comments.
@@ -338,8 +339,9 @@ CSlangPrettyPrinter >> visitLabeledStatement: aLabeledStatement [
 	aLabeledStatement statement acceptVisitor: self.
 
 	"Close the statement here to keep compatibility with slang"
-	((aLabeledStatement case notNil or: [ aLabeledStatement label notNil ]) and: [ aLabeledStatement statement needsSeparator ])
-		ifTrue: [ stream nextPutAll: ';']
+	((aLabeledStatement case notNil or: [ aLabeledStatement label notNil ]) 
+		 and: [ aLabeledStatement statement needsSeparator ]) ifTrue: [ 
+		stream nextPutAll: ';' ]
 ]
 
 { #category : #generated }
