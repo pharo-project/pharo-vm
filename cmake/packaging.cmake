@@ -11,6 +11,11 @@ make_directory("build/packages")
 
 configure_installables(bin)
 
+install(TARGETS ${VM_LIBRARY_NAME} ffi_shared
+  ARCHIVE DESTINATION . COMPONENT lib
+  LIBRARY DESTINATION . COMPONENT lib
+  RUNTIME DESTINATION . COMPONENT lib)
+
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/build/include/pharovm/config.h
   DESTINATION include/pharovm
