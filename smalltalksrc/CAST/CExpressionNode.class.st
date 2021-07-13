@@ -30,7 +30,7 @@ CExpressionNode >> combineWithExpression: firstExpression [
 
 { #category : #initialization }
 CExpressionNode >> initialize [
-	
+	super initialize.
 	needsParentheses := false
 ]
 

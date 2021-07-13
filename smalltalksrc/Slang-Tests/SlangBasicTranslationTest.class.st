@@ -895,6 +895,65 @@ SlangBasicTranslationTest >> testGoto [
 	self assert: translation equals: 'goto lab'
 ]
 
+{ #category : #'tests-labels' }
+SlangBasicTranslationTest >> testLabel [
+
+	| label translation |
+	label := TLabeledCommentNode label: 'aLabel'.
+	translation := self translate: label.
+
+	self assert: translation equals: 'aLabel:
+;'
+]
+
+{ #category : #'tests-labels' }
+SlangBasicTranslationTest >> testLabelWithASMLabelDoesNotOutputOutsideInterpret [
+
+	| label translation |
+	label := TLabeledCommentNode new asmLabel: 'vm_label'.
+	translation := self translate: label.
+
+	self assert: translation equals: ''
+]
+
+{ #category : #'tests-labels' }
+SlangBasicTranslationTest >> testLabelWithASMLabelWithinInterpret [
+
+	| label translation |
+	generator currentMethod: (TMethod new
+		selector: #interpret;
+		yourself).
+	
+	label := TLabeledCommentNode new asmLabel: 'vm_label'.
+	translation := self translate: label.
+
+	self assert: translation equals: 'VM_LABEL(vm_label);'
+]
+
+{ #category : #'tests-labels' }
+SlangBasicTranslationTest >> testLabelWithComment [
+
+	| label translation |
+	label := TLabeledCommentNode withComment: 'some comment'.
+	translation := self translate: label.
+
+	self assert: translation equals: '/* some comment */'
+]
+
+{ #category : #'tests-labels' }
+SlangBasicTranslationTest >> testLabelWithCommentWithPreviousCommentMarkingAnInline [
+
+	| label translation |
+	
+	"If the previous comment marked an inline, do not output anything"
+	generator previousCommentMarksInlining: true.
+	
+	label := TLabeledCommentNode withComment: 'some comment'.
+	translation := self translate: label.
+
+	self assert: translation equals: ''
+]
+
 { #category : #'tests-method' }
 SlangBasicTranslationTest >> testMethodComment [
 
