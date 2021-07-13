@@ -33,7 +33,7 @@ TSendNode >> argumentsForInliningCodeGenerator: aCodeGen [
 		ifFalse: [arguments]
 ]
 
-{ #category : #'C code generation' }
+{ #category : #tranforming }
 TSendNode >> asCASTAsFieldReferenceIn: aCodeGen [
 
 	| struct access member |
@@ -64,7 +64,7 @@ TSendNode >> asCASTAsFieldReferenceIn: aCodeGen [
 		  yourself
 ]
 
-{ #category : #'C code generation' }
+{ #category : #tranforming }
 TSendNode >> asCASTAsFunctionCallIn: aCodeGen [
 
 	"Translate this message send into a C function call"

@@ -15,6 +15,40 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #transforming }
+TSwitchStmtNode >> asCASTIn: aBuilder [
+
+	| statements |
+	statements := CCompoundStatementNode new.
+	cases do: [ :tuple | 
+		[ :labels :case | 
+		| nestedCase statement |
+		statement := case asCASTIn: aBuilder.
+		labels size to: 1 by: -1 do: [ :i | 
+			nestedCase := CLabeledStatementNode
+				              case: ((labels at: i) asCASTExpressionIn: aBuilder)
+				              statement: (i = labels size
+						               ifTrue: [ statement ]
+						               ifFalse: [ nestedCase ]) ].
+		statements add: nestedCase.
+		case endsWithReturn ifFalse: [ 
+			statements add: CBreakStatementNode new ] ] valueWithArguments:
+			tuple ].
+	statements add: (CLabeledStatementNode
+			 case: 'default'
+			 statement: (otherwiseOrNil endsWithReturn
+					  ifFalse: [ otherwiseOrNil asCASTIn: aBuilder ]
+					  ifTrue: [ 
+						  CCallNode
+							  identifier: (CIdentifierNode name: 'error')
+							  arguments:
+							  { (CStringLiteralNode value:
+								   'Case not found and no otherwise clause') } ])).
+	^ CSwitchStatementNode
+		  if: (expression asCASTExpressionIn: aBuilder)
+		  statement: statements
+]
+
 { #category : #transformations }
 TSwitchStmtNode >> bindVariableUsesIn: aDictionary [
 	expression := expression bindVariableUsesIn: aDictionary.

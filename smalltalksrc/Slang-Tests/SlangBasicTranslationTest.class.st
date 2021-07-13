@@ -4682,6 +4682,12 @@ switch (currentBytecode) {
 }'
 ]
 
+{ #category : #'tests-switch' }
+SlangBasicTranslationTest >> testSwitchStatement [
+
+
+]
+
 { #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testTranslateBlockAssignmentWithManyStatement [
 
