@@ -14,6 +14,15 @@ Class {
 }
 
 { #category : #'instance-creation' }
+TCaseStmtNode class >> newWithExpression: anExpression cases: cases [
+	
+	^ self new
+		setExpression: anExpression
+		cases: cases;
+		yourself
+]
+
+{ #category : #'instance-creation' }
 TCaseStmtNode class >> newWithExpression: anExpression selectors: aCollectionOfSelectors arguments: arguments [
 	
 	^ self new

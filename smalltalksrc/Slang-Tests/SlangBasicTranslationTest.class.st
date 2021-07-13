@@ -1247,6 +1247,27 @@ SlangBasicTranslationTest >> testNonContiguousCaseStatementWithSameBodyAreCollap
 ]
 
 { #category : #'tests-case' }
+SlangBasicTranslationTest >> testReturnCaseStatementDoesNotReplaceGotoByReturn [
+
+	| translation node |
+	node := (TReturnNode expression: ((TCaseStmtNode
+		newWithExpression: (TVariableNode named: 'someVariable')
+		selectors: { #someBytecode }
+		arguments: {}))).
+	node replaceNodesIn: { node expression cases last -> (TGoToNode label: #destination) } asDictionary.
+	
+	translation := self translate: node.
+
+	self assert: translation equals: 'switch (someVariable) {
+	case 0:
+	goto destination;
+	default:
+	error("Case not found");
+	return -1;
+}'
+]
+
+{ #category : #'tests-case' }
 SlangBasicTranslationTest >> testReturnCaseStatementMovesReturnIntoSwitch [
 
 	| translation |
