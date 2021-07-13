@@ -999,7 +999,9 @@ SlangBasicTranslationTest >> testMethodConditionalCompilationWithAnOption [
 static sqInt
 methodWithAnOptionPragma(void)
 {
-	return self;
+	{
+		return self;
+	}
 }
 #endif /* OPTION */'
 ]
@@ -1018,7 +1020,9 @@ SlangBasicTranslationTest >> testMethodConditionalCompilationWithSeveralOptions 
 static sqInt
 methodWithOptionPragma(void)
 {
-	return self;
+	{
+		return self;
+	}
 }
 #endif /* OPTION1 && OPTION3 */'
 ]

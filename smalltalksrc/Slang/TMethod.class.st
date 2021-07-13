@@ -337,10 +337,9 @@ TMethod >> asCASTFunctionPrototypeIn: aCodeGen isPrototype: isPrototype [
 { #category : #'CAST translation' }
 TMethod >> asCASTIn: aCodeGen [
 
-	| compoundStatement functionDefinition |
+	| compoundStatement functionDefinition body|
 	aCodeGen currentMethod: self.
 	self resetUsedVariablesCache.
-
 	compoundStatement := CCompoundStatementNode new
 		                     needsBrackets: false;
 		                     needsCarriageReturn: false;
@@ -359,10 +358,12 @@ TMethod >> asCASTIn: aCodeGen [
 	functionDefinition := self
 		                      asCASTFunctionPrototypeIn: aCodeGen
 		                      isPrototype: false.
+	functionDefinition body: CCompoundStatementNode new.
 	aCodeGen
 		pushScope: declarations
-		while: [ functionDefinition body: (parseTree asCASTIn: aCodeGen) ]. "Generation will note used variables in usedVariablesCache"
+		while: [ body := (parseTree asCASTIn: aCodeGen) ]. "Generation will note used variables in usedVariablesCache"
 	self addCASTLocalsIn: functionDefinition body generator: aCodeGen.
+	functionDefinition body add: body.
 	usedVariablesCache := nil.
 	(returnType = #void or: [ parseTree endsWithReturn ]) ifFalse: [ 
 		functionDefinition body add:
@@ -639,28 +640,26 @@ TMethod >> elideAnyFinalReturn [
 TMethod >> emitCCodeOn: aStream generator: aCodeGen [
 	"Emit C code for this method onto the given stream.
 	 All calls to inlined methods should already have been expanded."
-	| bodyStream localsStream conditional |
+	| bodyStream conditional |
 
 	aCodeGen currentMethod: self.
-	self resetUsedVariablesCache.
+	usedVariablesCache := Set new.
 	self emitCCommentOn: aStream.	"place method comment and method name before function."
 	aStream nextPutAll: '/* '; nextPutAll: self definingClass name; nextPutAll: '>>#'; nextPutAll: self smalltalkSelector; nextPutAll: ' */'.	
-	aStream cr. 
-	conditional := self emitCFunctionPrototype: aStream generator: aCodeGen isPrototype: false.
 	aStream cr.
+	conditional := self emitCFunctionPrototype: aStream generator: aCodeGen isPrototype: false.
+	aStream cr; nextPut: ${.
 	bodyStream := ReadWriteStream on: (ByteString new: 128).
 	aCodeGen "Generation will note used variables in usedVariablesCache"
 		pushScope: declarations
-		while: [parseTree emitCCodeOn: bodyStream level: 0 generator: aCodeGen].
-	localsStream := ReadWriteStream on: (ByteString new: 128).
-	self emitCLocalsOn: localsStream generator: aCodeGen.
+		while: [parseTree emitCCodeOn: bodyStream level: 1 generator: aCodeGen].
+	self emitCLocalsOn: aStream generator: aCodeGen.
 	usedVariablesCache := nil.
-	aStream nextPutAll: localsStream contents.
-	bodyStream position: 1.
-	aStream nextPutAll: bodyStream upToEnd. "avoid the first curly brace of the block, already added in localsStream"
+	aStream tab.
+	aStream nextPutAll: bodyStream contents.
 	(returnType = #void or: [parseTree endsWithReturn]) ifFalse:
-		[aStream tab; nextPutAll: 'return 0;'; cr].
-	aStream cr.
+		[aStream tab; nextPutAll: 'return 0;'].
+	aStream cr; nextPut: $}; cr.
 	conditional ifTrue:
 		[self terminateConditionalDefineFor: (self compileTimeOptionPragmas: aCodeGen) on: aStream]
 ]
@@ -756,22 +755,20 @@ TMethod >> emitCLocalsOn: aStream generator: aCodeGen [
 	"Emit a C function header for this method onto the given stream."
 
 	| volatileVariables maybeExternFunctions |
-	aStream nextPut: ${.
 	volatileVariables := properties includesKey: #volatile.
 	self refersToGlobalStruct ifTrue:
 		[aStream
-			crtab; 
+			crtab;
 			nextPutAll: (volatileVariables
-						ifTrue: ['DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT']
-						ifFalse: ['DECL_MAYBE_SQ_GLOBAL_STRUCT']); nextPut: $;; cr].
+						ifTrue: ['DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT;']
+						ifFalse: ['DECL_MAYBE_SQ_GLOBAL_STRUCT;'])].
+	aStream cr.
 	maybeExternFunctions := (declarations select: [:decl| decl beginsWith: 'extern']) keys.
 	(locals isEmpty and: [maybeExternFunctions isEmpty]) ifFalse:
-		[ aStream cr.
-		(aCodeGen sortStrings: locals, maybeExternFunctions) do:
+		[(aCodeGen sortStrings: locals, maybeExternFunctions) do:
 			[ :var | | decl |
 			decl := self declarationAt: var
 							ifAbsent: [aCodeGen defaultType, ' ', var].
-			
 			(volatileVariables
 			 or: [(decl beginsWith: 'static')
 			 or: [(decl beginsWith: 'extern')
@@ -781,7 +778,9 @@ TMethod >> emitCLocalsOn: aStream generator: aCodeGen [
 					[aStream nextPutAll: #volatile; space].
 				 aStream
 					nextPutAll: decl;
-					nextPut: $;; cr]]]
+					nextPut: $;;
+					cr]].
+		 aStream cr]
 ]
 
 { #category : #'C code generation' }
