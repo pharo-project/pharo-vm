@@ -95,3 +95,9 @@ SlangBasicTranslationTestClass >> methodWithVolatilePragma [
 	<volatile>
 	
 ]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodWithoutReturn [
+
+	<returnTypeC: #sqInt>
+]

@@ -1200,6 +1200,27 @@ SlangBasicTranslationTest >> testMethodWithNoParameter [
 		equals: 'methodWithMultilineComment(void)'
 ]
 
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodWithReturnTypeWithoutReturnReturnsZero [
+
+	| translation tMethod |
+	generator addClass: SlangBasicTranslationTestClass.
+	generator inferTypes.
+	tMethod := generator methodNamed: #methodWithoutReturn.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodWithoutReturn */
+static sqInt
+methodWithoutReturn(void)
+{
+	{
+	}
+	return 0;
+}'
+]
+
 { #category : #'tests-case' }
 SlangBasicTranslationTest >> testNonContiguousCaseStatementWithSameBodyAreCollapsedInSameCase [
 

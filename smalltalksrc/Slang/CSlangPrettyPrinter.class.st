@@ -153,23 +153,29 @@ CSlangPrettyPrinter >> visitComment: aComment [
 { #category : #generated }
 CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 
+	| children first |
+	first := true.
 	aCompoundStatement needsBrackets ifTrue: [ 
+		"If we print brackets, then the first was already printed"
+		first := false.
 		stream nextPutAll: '{'.
+		stream cr.
+		level := level + 1 ].
 
-		level := level + 1.
-		stream crtab: level ].
-
-	aCompoundStatement declarations , aCompoundStatement statements
-		do: [ :e | 
+	children := aCompoundStatement declarations , aCompoundStatement statements.
+	children do: [ :e |
+		first
+			ifTrue: [ first := false. ]
+			ifFalse: [ stream tab: level ].
 			e acceptVisitor: self.
-			e needsSeparator ifTrue: [ stream nextPut: $; ] ]
-		separatedBy: [ stream crtab: level ].
+			e needsSeparator ifTrue: [ stream nextPut: $; ]]
+		separatedBy: [ stream cr ].
 
 	aCompoundStatement needsBrackets ifTrue: [ 
 		level := level - 1.
-		stream
-			crtab: level;
-			nextPut: $} ]
+		children ifNotEmpty: [ stream cr ].
+		stream tab: level.
+		stream nextPut: $} ]
 ]
 
 { #category : #generated }

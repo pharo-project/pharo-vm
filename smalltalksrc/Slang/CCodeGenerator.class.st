@@ -2070,7 +2070,6 @@ CCodeGenerator >> generateCASTDoWhile: boolean loop: tast [
 	| block  cond|
 	block := (TStmtListNode new setStatements:
 		          tast receiver statements allButLast) asCASTIn: self.
-	block needsCarriageReturn: false.
 	cond := (tast receiver statements last asCASTExpressionIn: self).
 	^ CDoStatementNode
 		  while: (boolean ifTrue: [ cond ] ifFalse: [ CUnaryOperatorNode operator: #! expression: cond ])
@@ -2185,7 +2184,6 @@ CCodeGenerator >> generateCASTIfElse: tast reverseArms: reverse [
 				   (tast receiver asCASTExpressionIn: self).
 				   (firstStatement asCASTIn: self) })
 		  needsBrackets: false;
-		  needsCarriageReturn: false;
 		  yourself
 ]
 
@@ -2366,7 +2364,6 @@ CCodeGenerator >> generateCASTIfNotNilIfNil: tast reverseArms: reverse [
 		^ CIfStatementNode
 			  if: (tast receiver asCASTExpressionIn: self)
 			  then: ((firstBlock asCASTIn: self)
-					   needsCarriageReturn: false;
 					   yourself)
 			  else: (lastBlock asCASTIn: self) ].
 	"The receiver is a nil constant, known at translation-time. We know which block is executed."
@@ -3010,11 +3007,10 @@ CCodeGenerator >> generateCASTTimesRepeat: tast [
 	| repeat |
 	repeat := CCompoundStatementNode statements: OrderedCollection new.
 	repeat needsBrackets: false.
-	repeat needsCarriageReturn: false.
 	repeat needsSeparator: false.
 
 	tast receiver value timesRepeat: [
-		repeat add: ((tast arguments first asCASTIn: self) needsCarriageReturn: false; yourself) ].
+		repeat add: (tast arguments first asCASTIn: self) ].
 
 	^ repeat
 ]
@@ -3148,7 +3144,6 @@ CCodeGenerator >> generateCASTValue: tast [
 	castStatements := CCompoundStatementNode statements:
 		                  OrderedCollection new.
 	castStatements needsBrackets: false.
-	castStatements needsCarriageReturn: false.
 	substitution := tast receiver copy.
 	substitution renameLabelsForInliningInto: currentMethod.
 	substitutionDict := Dictionary new: tast args size * 2.
@@ -3231,7 +3226,7 @@ CCodeGenerator >> generateCASTWhileForeverBreakIf: boolean loop: tast [
 	block := (TStmtListNode new setStatements: tast receiver statements allButLast) asCASTIn: self.
 	block add: if.
 	block addAll: (tast arguments first asCASTIn: self).
-	block needsCarriageReturn: false.
+
 	^ CWhileStatementNode 
 		  while: (CConstantNode value: 1)
 		  statement: block

@@ -342,7 +342,6 @@ TMethod >> asCASTIn: aCodeGen [
 	self resetUsedVariablesCache.
 	compoundStatement := CCompoundStatementNode new
 		                     needsBrackets: false;
-		                     needsCarriageReturn: false;
 		                     yourself.
 
 	(self asCASTCommentIn: aCodeGen) ifNotNil: [ :e | 
@@ -365,9 +364,8 @@ TMethod >> asCASTIn: aCodeGen [
 	self addCASTLocalsIn: functionDefinition body generator: aCodeGen.
 	functionDefinition body add: body.
 	usedVariablesCache := nil.
-	(returnType = #void or: [ parseTree endsWithReturn ]) ifFalse: [ 
-		functionDefinition body add:
-			(CReturnStatementNode expression: (CConstantNode value: 0)) ].
+	((returnType = #void) not and: [parseTree endsWithReturn not]) ifTrue: [
+		functionDefinition body add: (CReturnStatementNode expression: (CConstantNode value: 0))].
 	functionDefinition := self addCASTConditionalCompilationFor: functionDefinition generator: aCodeGen.
 	compoundStatement add: functionDefinition.
 	^ compoundStatement
@@ -657,8 +655,9 @@ TMethod >> emitCCodeOn: aStream generator: aCodeGen [
 	usedVariablesCache := nil.
 	aStream tab.
 	aStream nextPutAll: bodyStream contents.
-	(returnType = #void or: [parseTree endsWithReturn]) ifFalse:
-		[aStream tab; nextPutAll: 'return 0;'].
+
+	((returnType = #void) not and: [parseTree endsWithReturn not]) ifTrue:
+		[aStream crtab; nextPutAll: 'return 0;'].
 	aStream cr; nextPut: $}; cr.
 	conditional ifTrue:
 		[self terminateConditionalDefineFor: (self compileTimeOptionPragmas: aCodeGen) on: aStream]
