@@ -4,10 +4,20 @@ Class {
 	#instVars : [
 		'identifiers',
 		'parameters',
-		'ellipsis'
+		'ellipsis',
+		'isPrototype'
 	],
 	#category : #'CAST-Nodes'
 }
+
+{ #category : #'instance creation' }
+CFunctionDeclaratorNode class >> declarator: aDeclarator parameters: parameters [
+
+	^ self new
+		  declarator: aDeclarator;
+		  parameters: parameters;
+		  yourself
+]
 
 { #category : #comparing }
 CFunctionDeclaratorNode >> = anObject [
@@ -79,15 +89,29 @@ CFunctionDeclaratorNode >> identifiers: anOrderedCollection [
 
 { #category : #'generated-initialize-release' }
 CFunctionDeclaratorNode >> initialize [
+
 	super initialize.
 	parameters := OrderedCollection new: 2.
 	identifiers := OrderedCollection new: 2.
+	isPrototype := false
 ]
 
 { #category : #testing }
 CFunctionDeclaratorNode >> isFunctionDeclarator [
 	
 	^ true
+]
+
+{ #category : #accessing }
+CFunctionDeclaratorNode >> isPrototype [
+
+	^ isPrototype
+]
+
+{ #category : #accessing }
+CFunctionDeclaratorNode >> isPrototype: aBoolean [
+
+	isPrototype := aBoolean
 ]
 
 { #category : #generated }

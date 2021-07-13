@@ -50,6 +50,12 @@ CGLRAbstractNode >> isCastExpression [
 ]
 
 { #category : #testing }
+CGLRAbstractNode >> isCompoundStatement [
+	
+	^ false
+]
+
+{ #category : #testing }
 CGLRAbstractNode >> isConstant [
 	
 	^ false
@@ -57,6 +63,12 @@ CGLRAbstractNode >> isConstant [
 
 { #category : #testing }
 CGLRAbstractNode >> isFunctionCall [
+	
+	^ false
+]
+
+{ #category : #testing }
+CGLRAbstractNode >> isFunctionDeclarator [
 	
 	^ false
 ]
@@ -89,4 +101,10 @@ CGLRAbstractNode >> needsSeparator [
 CGLRAbstractNode >> needsSeparator: aBoolean [
 
 	needsSeparator := aBoolean
+]
+
+{ #category : #testing }
+CGLRAbstractNode >> needsTrailingSemicolon [ 
+	
+	^ true
 ]

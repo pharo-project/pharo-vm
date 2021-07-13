@@ -2172,9 +2172,7 @@ CCodeGenerator >> generateCASTIfElse: tast reverseArms: reverse [
 	(firstStatement isSameAs: secondStatment) ifFalse: [ 
 		^ CIfStatementNode
 			  if: (tast receiver asCASTExpressionIn: self)
-			  then: ((firstStatement asCASTIn: self)
-					   needsCarriageReturn: false;
-					   yourself)
+			  then: (firstStatement asCASTIn: self)
 			  else: (secondStatment asCASTIn: self) ].
 
 	"Here, both statement are equal."
@@ -2464,6 +2462,21 @@ CCodeGenerator >> generateCASTInlineCCode: aTSendNode [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTInlineCCodeAsArgument: aTSendNode [
+
+	(aTSendNode args first isConstant and: [ 
+		 aTSendNode args first value isString ]) ifTrue: [ "If it is a pre-processor declaration"
+		(aTSendNode args first value at: 1 ifAbsent: nil) = $# ifTrue: [ "This was assuming the argument is a preprocessor directive.
+			So it was printing it in a new line" 
+			self error: 'unsupported' ].
+
+		self noteVariableUsageInString: aTSendNode args first value.
+		^ CRawCodeNode code: aTSendNode args first value ].
+
+	^ aTSendNode args first asCASTExpressionIn: self
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTInlineCppIfElse: tast [
 
 	^ self generateCASTInlineCppIfElse: tast asArgument: false
@@ -2493,7 +2506,14 @@ CCodeGenerator >> generateCASTInlineCppIfElse: tast asArgument: asArgument [
 				 with: tast arguments first
 				 ifAppropriateSetTo: false
 				 do: [ generateCAST value: tast arguments third ]) ].
+	cppIf isArgument: asArgument.
 	^ cppIf
+]
+
+{ #category : #'CAST translation' }
+CCodeGenerator >> generateCASTInlineCppIfElseAsArgument: tast [
+
+	^ self generateCASTInlineCppIfElse: tast asArgument: true
 ]
 
 { #category : #'built-ins' }
@@ -3012,6 +3032,7 @@ CCodeGenerator >> generateCASTToByDo: tast [
 	inits add: (CAssignmentNode
 			 lvalue: (CIdentifierNode name: iterationVar)
 			 rvalue: (tast receiver asCASTExpressionIn: self)).
+	self noteUsedVariableName: iterationVar.
 	mayHaveSideEffects := tast arguments size = 4.
 	mayHaveSideEffects ifTrue: [ 
 		limitVar := tast args last.
@@ -3073,6 +3094,7 @@ CCodeGenerator >> generateCASTToDo: tast [
 	init := CAssignmentNode
 		        lvalue: (CIdentifierNode name: iterationVar)
 		        rvalue: (tast receiver asCASTExpressionIn: self).
+	self noteUsedVariableName: iterationVar.
 	until := self generateCASTToByDoUntil: tast arguments first iterativeVariable: iterationVar negative: false.
 	step := CIncrementNode object: (CIdentifierNode name: iterationVar).
 	^ CForStatementNode
@@ -3404,7 +3426,9 @@ CCodeGenerator >> generateIfFalse: msgNode on: aStream indent: level [
 			msgNode receiver emitCCodeAsExpressionOn: aStream level: level  generator: self.
 			msgNode receiver isLeaf ifFalse: [aStream nextPut: $)]. "grrrrr"
 			aStream nextPutAll: ') '.
+			msgNode args last isStmtList ifFalse: [ aStream crtab: level + 1 ].
 			msgNode args last emitCCodeOn: aStream level: level generator: self.
+			msgNode args last isStmtList ifFalse: [ aStream nextPut: $; ]
 			]
 		ifNotNil:
 			[:const |
@@ -3449,9 +3473,13 @@ CCodeGenerator >> generateIfFalseIfTrue: msgNode on: aStream indent: level [
 				[aStream nextPutAll: 'if ('.
 				 msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
 				 aStream nextPutAll: ') '.
+				 msgNode args last isStmtList ifFalse: [ aStream crtab: level + 1 ].
 				 msgNode args last emitCCodeOn: aStream level: level generator: self.
+				 msgNode args last isStmtList ifFalse: [ aStream nextPut: $;; cr ].
 				 aStream nextPutAll: ' else '.
+				 msgNode args first isStmtList ifFalse: [ aStream crtab: level + 1 ].
 				 msgNode args first emitCCodeOn: aStream level: level generator: self.
+				 msgNode args first isStmtList ifFalse: [ aStream nextPut: $; ]
 				 ]]
 		ifNotNil:
 			[:const |
@@ -3619,7 +3647,10 @@ CCodeGenerator >> generateIfTrue: msgNode on: aStream indent: level [
 			[aStream nextPutAll: 'if ('.
 			msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
 			aStream nextPutAll: ') '.
-			msgNode args first emitCCodeOn: aStream level: level generator: self]
+			msgNode args first isStmtList ifFalse: [ aStream crtab: level + 1 ].
+			msgNode args first emitCCodeOn: aStream level: level generator: self.
+			msgNode args first isStmtList ifFalse: [ aStream nextPut: $; ]]
+		
 		ifNotNil:
 			[:const |
 			const ifTrue:
@@ -3654,9 +3685,13 @@ CCodeGenerator >> generateIfTrueIfFalse: msgNode on: aStream indent: level [
 				[aStream nextPutAll: 'if ('.
 				 msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
 				 aStream nextPutAll: ') '.
+				msgNode args first isStmtList ifFalse: [ aStream crtab: level + 1 ].
 				 msgNode args first emitCCodeOn: aStream level: level generator: self.
+				msgNode args first isStmtList ifFalse: [ aStream nextPut: $;;cr ].
 				 aStream nextPutAll: ' else '.
+				msgNode args last isStmtList ifFalse: [ aStream crtab: level + 1 ].
 				 msgNode args last emitCCodeOn: aStream level: level generator: self.
+				msgNode args last isStmtList ifFalse: [ aStream nextPut: $; ].
 				 ]]
 		ifNotNil:
 			[:const |
@@ -3723,8 +3758,10 @@ CCodeGenerator >> generateInlineCCodeAsArgument: msgNode on: aStream indent: lev
 
 { #category : #'C translation' }
 CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aStream indent: level [
+	
 	"Generate the C code for this message onto the given stream."
 	| expr putStatement |
+	
 	"Compile-time expansion for constants set in the options dictionary,
 	 e.g. to cut down on noise for MULTIPLEBYTECODESETS."
 	putStatement := asArgument
@@ -3743,7 +3780,8 @@ CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aS
 				ifFalse: [expansion])]]
 		ifFalse:
 			[[:node| | expansion |
-			  expansion := String streamContents: [:s| node emitCCodeOn: s level: level generator: self].
+			  expansion := String streamContents: [:s|
+				node emitCCodeOn: s level: level generator: self].
 			 "Remove tabs from first line to avoid indenting a second time"
 			 expansion ifNotEmpty:
 				[expansion := expansion allButFirst: (expansion findFirst: [:c| c ~~ Character tab]) - 1].
@@ -3758,7 +3796,6 @@ CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aS
 				[msgNode args size >= 3 ifTrue:
 					[putStatement value: msgNode args third]].
 		 ^self].
-
 	"Full #if ... #else..."
 	putStatement := asArgument
 		ifTrue: "emitCCodeAsArgumentOn: doesn't indent, the code needs indenting in this case, so post-process."
@@ -3771,7 +3808,7 @@ CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aS
 					copyReplaceAll: (String with: Character cr)
 					with: (String with: Character cr), (String new: level + 1 withAll: Character tab))]]
 		ifFalse:
-			[[:node| node emitCCodeOn: aStream level: level generator: self]].
+			[[:node| aStream tab: level. node emitCCodeOn: aStream level: level generator: self]].
 
 	expr := String streamContents:
 				[:es|
@@ -3784,7 +3821,6 @@ CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aS
 	aStream
 		newLine;
 		nextPut: $#; next: level * 2 put: Character space; nextPutAll: 'if '; nextPutAll: expr; cr.
-
 	self with: msgNode args first
 		ifAppropriateSetTo: true
 		do: [putStatement value: msgNode args second].

@@ -22,7 +22,9 @@ CCompoundStatementNode class >> declarations: declarations statements: statement
 { #category : #'instance creation' }
 CCompoundStatementNode class >> statements: statements [
 
-	^ self declarations: #() statements: statements
+	^ self new
+		  statements: statements;
+		  yourself
 ]
 
 { #category : #comparing }
@@ -111,6 +113,12 @@ CCompoundStatementNode >> needsCarriageReturn [
 CCompoundStatementNode >> needsCarriageReturn: aBoolean [
 
 	needsCarriageReturn := aBoolean
+]
+
+{ #category : #testing }
+CCompoundStatementNode >> needsTrailingSemicolon [
+
+	^ false
 ]
 
 { #category : #generated }

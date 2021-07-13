@@ -141,7 +141,7 @@ CSlangPrettyPrinterTest >> testVisitCastExpressionDouble [
 CSlangPrettyPrinterTest >> testVisitComment [
 
 	| print |
-	print := self prettyPrint: (CCommentNode comment: 'a kind comment for the developper :3').
+	print := self prettyPrint: (CCommentNode comment: ' a kind comment for the developper :3 ').
 	
 	self assert: print equals: '/* a kind comment for the developper :3 */'
 
@@ -321,6 +321,26 @@ CSlangPrettyPrinterTest >> testVisitForStatement [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitFunctionDefinition [
+
+	| print |
+	print := self prettyPrint: (CFunctionDefinitionNode
+			          declarator: (CFunctionDeclaratorNode
+					           declarator: (CIdentifierNode name: 'foo')
+					           parameters: { (CParameterDeclarationNode
+							            declarator: (CIdentifierNode name: 'x')
+							            specifiers:  { 'int' }) })
+			          body: CCompoundStatementNode new
+			          specifiers: { 'static'. 'int' }).
+
+	self assert: print trimBoth equals: 'static int
+foo(int x)
+{
+	
+}'
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitGotoStatement [
 
 	| print |
@@ -415,6 +435,28 @@ CSlangPrettyPrinterTest >> testVisitInitializer [
 ]
 
 { #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitParameterDeclaration [
+
+	| print |
+	print := self prettyPrint: ((CParameterDeclarationNode
+							            declarator: (CIdentifierNode name: 'x')
+							            specifiers: {'unsigned'. 'int'})).
+
+	self assert: print equals: 'unsigned int x'
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitParameterRawDeclaration [
+
+	| print |
+	print := self prettyPrint: ((CParameterDeclarationNode
+							            declarator: (CIdentifierNode name: 'x')
+							            cDeclaration: 'unsigned int x')).
+
+	self assert: print equals: 'unsigned int x'
+]
+
+{ #category : #'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitPoint [
 
 	| print |
@@ -434,6 +476,30 @@ CSlangPrettyPrinterTest >> testVisitPreIncrement [
 	self assert: print equals: '++i'
 
 
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitPreprocessorDefine [
+
+	| print |
+	print := self prettyPrint: (CPreprocessorDefineNode
+			          token: (CIdentifierNode name: 'MASK')
+			          expression: (CConstantNode value: 10)).
+
+	self assert: print equals: '#define MASK 10'
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitPreprocessorDefineWithRawExpression [
+
+	| print |
+	print := self prettyPrint: (CPreprocessorDefineNode
+			          token: (CIdentifierNode name: 'failedFunctionDefinition')
+			          rawMacro: '(void (*)(void))0').
+
+	self
+		assert: print
+		equals: '#define failedFunctionDefinition (void (*)(void))0'
 ]
 
 { #category : #'tests-visitor' }

@@ -200,6 +200,11 @@ CAbstractNodeVisitor >> visitPoint: aPoint [
 ]
 
 { #category : #generated }
+CAbstractNodeVisitor >> visitPreprocessorDefine: aPreprocessorDefine [
+	^ self visitAbstract: aPreprocessorDefine
+]
+
+{ #category : #generated }
 CAbstractNodeVisitor >> visitPreprocessorIf: anArrayDeclarator [
 	^ self visitAbstract: anArrayDeclarator
 ]
