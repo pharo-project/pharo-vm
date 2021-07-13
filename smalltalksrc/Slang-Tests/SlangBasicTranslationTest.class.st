@@ -2010,7 +2010,7 @@ SlangBasicTranslationTest >> testSendCppIfIfTrueIfFalseAsArgument [
 { #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendCppIfIfTrueIfFalseAsArgumentIndentationInBlock [
 
-	"A C preprocessor condition can anywhere in code, even in an expression statement."
+	"A C preprocessor condition can be anywhere in code, even in an expression statement."
 
 	| translation send |
 	send := TStmtListNode new setStatements: { (TAssignmentNode new
