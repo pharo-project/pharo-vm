@@ -4782,6 +4782,35 @@ SlangBasicTranslationTest >> testSwitchStatementWithNestedCase [
 }'
 ]
 
+{ #category : #'tests-switch' }
+SlangBasicTranslationTest >> testSwitchStatementWithNoDefaultStatement [
+
+	| translation |
+	translation := self translate: (TSwitchStmtNode new
+			                expression: (TVariableNode named: 'x')
+			                cases: (TBraceCaseNode new
+					                 caseLabels:
+						                 { (TStmtListNode new setStatements:
+								                  { (TConstantNode value: 0) }) };
+					                 cases:
+						                 { (TStmtListNode new setStatements:
+								                  { (TAssignmentNode new
+									                   setVariable: (TVariableNode named: 'foo')
+									                   expression: (TConstantNode value: 10)) }) };
+					                 yourself)
+			                otherwiseOrNil: nil).
+
+	self assert: translation trimBoth equals: 'switch (x) {
+	case 0:
+	{
+		foo = 10;
+	}
+	break;
+	default:
+	error("Case not found and no otherwise clause");
+}'
+]
+
 { #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testTranslateBlockAssignmentWithManyStatement [
 
