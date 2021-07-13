@@ -656,7 +656,8 @@ TMethod >> emitCCodeOn: aStream generator: aCodeGen [
 	self emitCLocalsOn: localsStream generator: aCodeGen.
 	usedVariablesCache := nil.
 	aStream nextPutAll: localsStream contents.
-	aStream nextPutAll: (bodyStream position: 1). "avoid the first curly brace of the block, already added in localsStream"
+	bodyStream position: 1.
+	aStream nextPutAll: bodyStream upToEnd. "avoid the first curly brace of the block, already added in localsStream"
 	(returnType = #void or: [parseTree endsWithReturn]) ifFalse:
 		[aStream tab; nextPutAll: 'return 0;'; cr].
 	aStream cr.
