@@ -11,7 +11,16 @@ make_directory("build/packages")
 
 configure_installables(bin)
 
-install(TARGETS ${VM_LIBRARY_NAME} ffi_shared
+if(FFI_FOUND)
+	#If we are using system wide libFFI do not pack it
+	set(library_targets "${VM_LIBRARY_NAME}")
+else()
+	#If we have built libFFI pack it also
+	set(library_targets "${VM_LIBRARY_NAME} ffi_shared")
+endif()
+
+
+install(TARGETS ${library_targets}
   ARCHIVE DESTINATION . COMPONENT lib
   LIBRARY DESTINATION . COMPONENT lib
   RUNTIME DESTINATION . COMPONENT lib)
