@@ -4836,7 +4836,7 @@ SlangBasicTranslationTest >> testSwitchStatementAsArgument [
 							                 (TStmtListNode new setStatements:
 									                  { (TAssignmentNode new
 										                   setVariable: (TVariableNode named: 'foo')
-										                   expression: (TConstantNode value: 10)) }) };
+										                   expression: (TConstantNode value: 11)) }) };
 					                 yourself)
 			                otherwiseOrNil: nil)
 			                arguments: { TStmtListNode new setStatements: {  } }).
@@ -4844,7 +4844,7 @@ SlangBasicTranslationTest >> testSwitchStatementAsArgument [
 	self assert: translation trimBoth equals: 'if (((x == 0)
 	 ? (foo = 10)
 	 : ((x == 1)
-		 ? (foo = 10)
+		 ? (foo = 11)
 		 : (error("Case not found and no otherwise clause"), 0)))) {
 }'
 ]
@@ -4898,6 +4898,42 @@ SlangBasicTranslationTest >> testSwitchStatementAsArgumentWithNastedCases [
 			 : ((x == 3)
 				 ? (foo = 1)
 				 : (error("Case not found and no otherwise clause"), 0)))))) {
+}'
+]
+
+{ #category : #'tests-switch' }
+SlangBasicTranslationTest >> testSwitchStatementAsArgumentWithSwitchVariable [
+
+	"A temporary variable can be used as switch variable, here the variable 'jinx'."
+	| translation |
+	translation := self translate: (TSendNode new
+			                setSelector: #ifTrue:
+			                receiver: ((TSwitchStmtNode new
+			                expression: (TVariableNode named: 'x')
+			                cases: (TBraceCaseNode new
+					                 caseLabels: { 
+							                 (TStmtListNode new setStatements:
+									                  { (TConstantNode value: 0) }).
+							                 (TStmtListNode new setStatements:
+									                  { (TConstantNode value: 1) }) };
+					                 cases: { 
+							                 (TStmtListNode new setStatements:
+									                  { (TAssignmentNode new
+										                   setVariable: (TVariableNode named: 'foo')
+										                   expression: (TConstantNode value: 10)) }).
+							                 (TStmtListNode new setStatements:
+									                  { (TAssignmentNode new
+										                   setVariable: (TVariableNode named: 'foo')
+										                   expression: (TConstantNode value: 11)) }) };
+					                 yourself)
+			                otherwiseOrNil: nil) switchVariable: 'jinx')
+			                arguments: { TStmtListNode new setStatements: {  } }).
+
+	self assert: translation trimBoth equals: 'if ((((jinx = x) == 0)
+	 ? (foo = 10)
+	 : ((jinx == 1)
+		 ? (foo = 11)
+		 : (error("Case not found and no otherwise clause"), 0)))) {
 }'
 ]
 
