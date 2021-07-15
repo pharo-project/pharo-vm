@@ -31,8 +31,10 @@ TAssignmentNode >> asCASTExpressionIn: aCodeGen [
 TAssignmentNode >> asCASTIn: aBuilder [
 
 	| type |
+	expression isSwitch ifTrue:
+		[ ^ expression asCASTIn: aBuilder addToEndOfCases: self ].
 	expression isLiteralArrayDeclaration ifTrue: [ 
-		| node literalArrayNode |
+		|literalArrayNode |
 		type := expression args last value.
 		self assert: type last = $*.
 

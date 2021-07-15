@@ -413,13 +413,14 @@ CSlangPrettyPrinter >> visitTernary: aTernary [
 	stream nextPutAll: '(('.
 	aTernary condition acceptVisitor: self.
 	stream nextPut: $).
-	aTernary printOnMultipleLines ifTrue: [ stream crtab: level + 1 ].
+	aTernary printOnMultipleLines ifTrue: [ level := level + 1. stream crtab: level ].
 	stream nextPutAll: ' ? '.
 	aTernary then acceptVisitor: self.
-	aTernary printOnMultipleLines ifTrue: [ stream crtab: level + 1 ].
+	aTernary printOnMultipleLines ifTrue: [ stream crtab: level ].
 	stream nextPutAll: ' : '.
 	aTernary else acceptVisitor: self.
-	stream nextPut: $)
+	stream nextPut: $).
+	aTernary printOnMultipleLines ifTrue: [ level := level - 1 ]
 ]
 
 { #category : #generated }
