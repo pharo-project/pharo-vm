@@ -236,7 +236,6 @@ CSlangPrettyPrinterTest >> testVisitDoStatement [
 
 	| print compound |
 	compound := (CCompoundStatementNode statements: { CConstantNode value: 15 }).
-	compound needsCarriageReturn: false.
 	print := self prettyPrint: (CDoStatementNode
 			          while: (CBinaryOperatorNode
 					           operator: #&&
@@ -336,7 +335,6 @@ CSlangPrettyPrinterTest >> testVisitFunctionDefinition [
 	self assert: print trimBoth equals: 'static int
 foo(int x)
 {
-	
 }'
 ]
 
@@ -371,14 +369,13 @@ CSlangPrettyPrinterTest >> testVisitIfStatement [
 					           operator: #&&
 					           left: (CIdentifierNode name: 'a')
 					           right: (CIdentifierNode name: 'b'))
-			          then: ((CCompoundStatementNode
+			          then: (CCompoundStatementNode
 					           declarations: { (CAssignmentNode
 							            lvalue: (CIdentifierNode name: 'toto')
 							            rvalue: (CConstantNode value: 99)) }
 					           statements: { (CAssignmentNode
 							            lvalue: (CIdentifierNode name: 'toto')
 							            rvalue: (CIdentifierNode name: 'tutu')) })
-									needsCarriageReturn: false; yourself)
 						else: (CCompoundStatementNode
 					           declarations: { (CAssignmentNode
 							            lvalue: (CIdentifierNode name: 'toto')
