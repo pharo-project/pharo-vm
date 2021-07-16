@@ -423,6 +423,15 @@ MLVMCCodeGenerator >> maybeEmitPrimitiveFailureDefineFor: selector on: aStream [
 		[aStream nextPutAll: '#else\# define ' withCRs; nextPutAll: selector; nextPutAll: ' (void (*)(void))0\' withCRs]
 ]
 
+{ #category : #'C translation support' }
+MLVMCCodeGenerator >> maybeGenerateCASTPrimitiveFailureDefineFor: selector [
+	 (self vmClass notNil
+	 and: [(self vmClass inheritsFrom: self vmmakerConfiguration baseInterpreterClass)
+	 and: [(self vmClass primitiveTable includes: selector)]]) ifTrue:
+		[^ CPreprocessorDefineNode token: (CIdentifierNode name: selector) rawMacro: '(void (*)(void))0' ].
+	^ nil
+]
+
 { #category : #translating }
 MLVMCCodeGenerator >> mostBasicConstantSelectors [
 

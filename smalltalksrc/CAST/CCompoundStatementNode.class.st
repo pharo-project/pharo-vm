@@ -4,8 +4,7 @@ Class {
 	#instVars : [
 		'declarations',
 		'statements',
-		'needsBrackets',
-		'needsCarriageReturn'
+		'needsBrackets'
 	],
 	#category : #'CAST-Nodes'
 }
@@ -22,7 +21,9 @@ CCompoundStatementNode class >> declarations: declarations statements: statement
 { #category : #'instance creation' }
 CCompoundStatementNode class >> statements: statements [
 
-	^ self declarations: #() statements: statements
+	^ self new
+		  statements: statements;
+		  yourself
 ]
 
 { #category : #comparing }
@@ -79,7 +80,6 @@ CCompoundStatementNode >> initialize [
 	statements := OrderedCollection new: 2.
 	declarations := OrderedCollection new: 2.
 	needsBrackets := true.
-	needsCarriageReturn := true.
 	needsSeparator := false
 ]
 
@@ -101,16 +101,10 @@ CCompoundStatementNode >> needsBrackets: anObject [
 	needsBrackets := anObject
 ]
 
-{ #category : #accessing }
-CCompoundStatementNode >> needsCarriageReturn [
+{ #category : #testing }
+CCompoundStatementNode >> needsTrailingSemicolon [
 
-	^ needsCarriageReturn
-]
-
-{ #category : #accessing }
-CCompoundStatementNode >> needsCarriageReturn: aBoolean [
-
-	needsCarriageReturn := aBoolean
+	^ false
 ]
 
 { #category : #generated }

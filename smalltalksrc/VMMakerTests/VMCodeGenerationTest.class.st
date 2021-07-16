@@ -225,19 +225,19 @@ VMCodeGenerationTest >> testLoopVariableIsTemp [
 		translation emitCCodeOn: stream generator: codeGenerator.
 	].
 
-	self assert: result equals: '
-	/* VMCodeGenerationTest>>#methodWithLoop */
+	self assert: result equals: '/* VMCodeGenerationTest>>#methodWithLoop */
 static sqInt
 methodWithLoop(void)
 {
-    sqInt i;
+	sqInt i;
 
-{
+	{
 		for (i = 1; i <= 10; i += 1) {
 			foo(i);
 		}
 		return self;
-	}}
+	}
+}
 '
 ]
 

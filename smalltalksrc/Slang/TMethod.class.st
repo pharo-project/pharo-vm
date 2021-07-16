@@ -41,6 +41,61 @@ TMethod class >> initialize [
 	CaseStatements addAll: #(dispatchOn:in: dispatchOn:in:with: dispatchOn:in:with:with:).
 ]
 
+{ #category : #adding }
+TMethod >> addCASTConditionalCompilationFor: cAST generator: aCodeGen [
+
+	| compileTimeOptionPragmas |
+	(compileTimeOptionPragmas := self compileTimeOptionPragmas: aCodeGen)
+		notEmpty ifTrue: [ 
+		| condition cppIf |
+		compileTimeOptionPragmas doWithIndex: [ :pragma :i | 
+			| element |
+			element := CIdentifierNode name:
+				           ((compileTimeOptionPragmas at: i) argumentAt: 1).
+			pragma selector = #notOption: ifTrue: [ 
+				element := CUnaryOperatorNode operator: #! expression: element ].
+			i <= 1
+				ifTrue: [ condition := element ]
+				ifFalse: [ 
+					condition := CBinaryOperatorNode
+						             operator: #&&
+						             left: condition
+						             right: element ] ].
+		cppIf := CPreprocessorIfNode if: condition then: cAST.
+		cAST isFunctionDeclarator ifTrue: [ 
+			(aCodeGen maybeGenerateCASTPrimitiveFailureDefineFor: selector) 
+				ifNotNil: [ :define | cppIf else: define ] ].
+		^ cppIf ].
+	^ cAST
+]
+
+{ #category : #accessing }
+TMethod >> addCASTLocalsIn: aCASTBlock generator: aCodeGen [
+
+	| volatileVariables maybeExternFunctions |
+	volatileVariables := properties includesKey: #volatile.
+	self refersToGlobalStruct ifTrue: [ 
+		aCASTBlock declarations add:
+			(CIdentifierNode name: (volatileVariables
+					  ifTrue: [ 'DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT' ]
+					  ifFalse: [ 'DECL_MAYBE_SQ_GLOBAL_STRUCT' ])) ].
+	maybeExternFunctions := (declarations select: [ :decl | 
+		                         decl beginsWith: 'extern' ]) keys.
+	
+	(locals isEmpty and: [ maybeExternFunctions isEmpty ]) ifFalse: [ 
+		(aCodeGen sortStrings: locals , maybeExternFunctions) do: [ :var | 
+			| decl |
+			decl := self
+				        declarationAt: var
+				        ifAbsent: [ aCodeGen defaultType , ' ' , var ].
+			(volatileVariables or: [ 
+				 (decl beginsWith: 'static') or: [ 
+					 (decl beginsWith: 'extern') or: [ 
+						 usedVariablesCache includes: var ] ] ]) ifTrue: [ 
+				volatileVariables ifTrue: [ decl := 'volatile ' , decl ].
+				aCASTBlock declarations add: (CRawCodeNode code: decl) ] ] ]
+]
+
 { #category : #accessing }
 TMethod >> addFunctionAttribute: aString [
 	functionAttributes := functionAttributes
@@ -192,6 +247,128 @@ TMethod >> args [
 	"The arguments of this method."
 
 	^args
+]
+
+{ #category : #'CAST translation' }
+TMethod >> asCASTCommentIn: aCodeGen [
+
+	comment ifNotNil: [ 
+		^ CCommentNode comment: (String streamContents: [ :aStream | 
+				   aStream tab.
+				   1 to: comment size do: [ :index | 
+					   self
+						   printSingleComment: (comment at: index)
+						   on: aStream
+						   indent: 1
+						   tabWidth: 4
+						   lineBreak: 78 ].
+				   aStream nextPut: Character space ]) ].
+	^ nil
+]
+
+{ #category : #'CAST translation' }
+TMethod >> asCASTFunctionPrototypeIn: aCodeGen [
+
+	properties ifNotNil: [ 
+		(properties at: #api: ifAbsent: [  ]) ifNotNil: [ :pragma | 
+			^ CRawCodeNode code: (pragma argumentAt: 1) , ';' ] ].
+	^ (self asCASTFunctionPrototypeIn: aCodeGen isPrototype: true)
+		  isFunctionPrototype: true;
+		  yourself
+]
+
+{ #category : #'CAST translation' }
+TMethod >> asCASTFunctionPrototypeIn: aCodeGen isPrototype: isPrototype [
+
+	| returnTypeIsFunctionPointer specifiers arguments functionDeclaration |
+	specifiers := OrderedCollection new.
+
+	"If return type is a function pointer, the function prototype is contained in it, as a String. Maybe change it later, we dont want raw code in our C AST."
+	returnTypeIsFunctionPointer := returnType notNil and: [ 
+		                               returnType last = $) and: [ 
+			                               returnType includesSubstring:
+				                               (aCodeGen cFunctionNameFor:
+					                                selector) ] ].
+	export
+		ifTrue: [ specifiers add: 'EXPORT(' , returnType , ')' ]
+		ifFalse: [ 
+			self isStatic
+				ifTrue: [ specifiers add: 'static' ]
+				ifFalse: [ isPrototype ifTrue: [ specifiers add: 'extern' ] ].
+			(isPrototype or: [ inline ~~ #always ]) ifFalse: [ 
+				specifiers add: 'inline' ].
+			specifiers add: (returnType ifNil: [ #sqInt ]) ].
+	(functionAttributes isNil or: [ returnTypeIsFunctionPointer ]) 
+		ifFalse: [ specifiers add: functionAttributes ].
+	returnTypeIsFunctionPointer ifFalse: [ 
+		arguments := args isEmpty
+			             ifTrue: [ 
+			             { (CParameterDeclarationNode declarator: (CIdentifierNode name: 'void')) } ]
+			             ifFalse: [ 
+				             args collect: [ :name | 
+					             CParameterDeclarationNode
+						             declarator: (CIdentifierNode name: name)
+						             cDeclaration: (self
+								              declarationAt: name
+								              ifAbsent: [ aCodeGen defaultType , ' ' , name ]) ] ] ].
+	functionDeclaration := isPrototype
+		                       ifTrue: [ 
+			                       CDeclarationNode
+				                       specifiers: specifiers
+				                       declarator: (CFunctionDeclaratorNode
+						                        declarator:
+						                        (CIdentifierNode name:
+							                         (aCodeGen cFunctionNameFor: selector))
+						                        parameters: arguments) ]
+		                       ifFalse: [ 
+			                       CFunctionDefinitionNode
+				                       declarator: (CFunctionDeclaratorNode
+						                        declarator:
+						                        (CIdentifierNode name:
+							                         (aCodeGen cFunctionNameFor: selector))
+						                        parameters: arguments)
+				                       specifiers: specifiers ].
+
+	returnTypeIsFunctionPointer ifTrue: [ 
+		functionDeclaration hasRawPrototype: true ].
+	^ functionDeclaration
+]
+
+{ #category : #'CAST translation' }
+TMethod >> asCASTIn: aCodeGen [
+
+	| compoundStatement functionDefinition body|
+	aCodeGen currentMethod: self.
+	self resetUsedVariablesCache.
+	compoundStatement := CCompoundStatementNode new
+		                     needsBrackets: false;
+		                     yourself.
+
+	(self asCASTCommentIn: aCodeGen) ifNotNil: [ :e | 
+		compoundStatement add: e ].
+	compoundStatement add:
+		(CCommentNode comment: (String streamContents: [ :aStream | 
+				  aStream
+					  space;
+					  nextPutAll: self definingClass name;
+					  nextPutAll: '>>#';
+					  nextPutAll: self smalltalkSelector;
+					  space ])).
+	functionDefinition := self
+		                      asCASTFunctionPrototypeIn: aCodeGen
+		                      isPrototype: false.
+	functionDefinition body: CCompoundStatementNode new.
+	aCodeGen
+		pushScope: declarations
+		while: [ body := (parseTree asCASTIn: aCodeGen) ]. "Generation will note used variables in usedVariablesCache"
+	self addCASTLocalsIn: functionDefinition body generator: aCodeGen.
+	functionDefinition body add: body.
+	usedVariablesCache := nil.
+	((returnType = #void) not and: [parseTree endsWithReturn not]) ifTrue: [
+		functionDefinition body add: (CReturnStatementNode expression: (CConstantNode value: 0))].
+	functionDefinition := self addCASTConditionalCompilationFor: functionDefinition generator: aCodeGen.
+	compoundStatement add: functionDefinition.
+	^ compoundStatement
 ]
 
 { #category : #transformations }
@@ -464,10 +641,10 @@ TMethod >> emitCCodeOn: aStream generator: aCodeGen [
 	| bodyStream conditional |
 
 	aCodeGen currentMethod: self.
-	self resetUsedVariablesCache.
+	usedVariablesCache := Set new.
 	self emitCCommentOn: aStream.	"place method comment and method name before function."
-	aStream crtab; nextPutAll: '/* '; nextPutAll: self definingClass name; nextPutAll: '>>#'; nextPutAll: self smalltalkSelector; nextPutAll: ' */'.	
-	aStream cr. 
+	aStream nextPutAll: '/* '; nextPutAll: self definingClass name; nextPutAll: '>>#'; nextPutAll: self smalltalkSelector; nextPutAll: ' */'.	
+	aStream cr.
 	conditional := self emitCFunctionPrototype: aStream generator: aCodeGen isPrototype: false.
 	aStream cr; nextPut: ${.
 	bodyStream := ReadWriteStream on: (ByteString new: 128).
@@ -476,18 +653,28 @@ TMethod >> emitCCodeOn: aStream generator: aCodeGen [
 		while: [parseTree emitCCodeOn: bodyStream level: 1 generator: aCodeGen].
 	self emitCLocalsOn: aStream generator: aCodeGen.
 	usedVariablesCache := nil.
+	aStream tab.
 	aStream nextPutAll: bodyStream contents.
-	(returnType = #void or: [parseTree endsWithReturn]) ifFalse:
-		[aStream tab; nextPutAll: 'return 0;'; cr].
-	aStream nextPut: $}; cr.
+
+	((returnType = #void) not and: [parseTree endsWithReturn not]) ifTrue:
+		[aStream crtab; nextPutAll: 'return 0;'].
+	aStream cr; nextPut: $}; cr.
 	conditional ifTrue:
 		[self terminateConditionalDefineFor: (self compileTimeOptionPragmas: aCodeGen) on: aStream]
 ]
 
 { #category : #'C code generation' }
+TMethod >> emitCCodeOn: aStream level: level generator: aCodeGen [
+
+	"Emit C code for this method onto the given stream.
+	 All calls to inlined methods should already have been expanded."
+
+	self emitCCodeOn: aStream generator: aCodeGen
+]
+
+{ #category : #'C code generation' }
 TMethod >> emitCCommentOn: aStream [
 	"Emit the transferred Smalltalk comments as C comments."
-
 	comment ifNotNil: [
 		aStream cr;cr.
 		1 to: comment size do: [:index | 
@@ -526,6 +713,7 @@ TMethod >> emitCFunctionPrototype: aStream generator: aCodeGen isPrototype: isPr
 	returnTypeIsFunctionPointer := returnType notNil
 									and: [returnType last = $)
 									and: [returnType includesSubstring: (aCodeGen cFunctionNameFor: selector)]].
+								
 	export 
 		ifTrue:
 			[aStream nextPutAll: 'EXPORT('; nextPutAll: returnType; nextPut: $)]
@@ -569,10 +757,10 @@ TMethod >> emitCLocalsOn: aStream generator: aCodeGen [
 	volatileVariables := properties includesKey: #volatile.
 	self refersToGlobalStruct ifTrue:
 		[aStream
-			next: 3 put: Character space; "there's already an opening ${ on this line; see sender"
+			crtab;
 			nextPutAll: (volatileVariables
-						ifTrue: ['DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT']
-						ifFalse: ['DECL_MAYBE_SQ_GLOBAL_STRUCT'])].
+						ifTrue: ['DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT;']
+						ifFalse: ['DECL_MAYBE_SQ_GLOBAL_STRUCT;'])].
 	aStream cr.
 	maybeExternFunctions := (declarations select: [:decl| decl beginsWith: 'extern']) keys.
 	(locals isEmpty and: [maybeExternFunctions isEmpty]) ifFalse:
@@ -584,7 +772,7 @@ TMethod >> emitCLocalsOn: aStream generator: aCodeGen [
 			 or: [(decl beginsWith: 'static')
 			 or: [(decl beginsWith: 'extern')
 			 or: [usedVariablesCache includes: var]]]) ifTrue:
-				[aStream next: 4 put: Character space.
+				[aStream tab.
 				 volatileVariables ifTrue:
 					[aStream nextPutAll: #volatile; space].
 				 aStream

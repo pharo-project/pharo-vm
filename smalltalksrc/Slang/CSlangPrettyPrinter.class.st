@@ -39,6 +39,7 @@ CSlangPrettyPrinter >> printExpression: cAST [
 	(cAST isLeaf
 		"Cast expressions already contain their own parentheses"
 		or: [ cAST isCastExpression 
+			"An unary expression that has a leaf expression dosen't need parentheses aroud expression"
 			or: [cAST isUnaryOperation and: [cAST expression isLeaf or: [ cAST needsParentheses]]]])
 		ifTrue: [ cAST acceptVisitor: self ]
 		ifFalse: [ 
@@ -144,31 +145,37 @@ CSlangPrettyPrinter >> visitCastExpression: aCastExpression [
 { #category : #generated }
 CSlangPrettyPrinter >> visitComment: aComment [
 
-	stream nextPutAll: '/* '.
+	stream nextPutAll: '/*'.
 	stream nextPutAll: aComment comment.
-	stream nextPutAll: ' */'
+	stream nextPutAll: '*/'
 ]
 
 { #category : #generated }
 CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 
+	| children first |
+	first := true.
 	aCompoundStatement needsBrackets ifTrue: [ 
+		"If we print brackets, then the first was already printed"
+		first := false.
 		stream nextPutAll: '{'.
+		stream cr.
+		level := level + 1 ].
 
-		level := level + 1.
-		stream crtab: level ].
-
-	aCompoundStatement declarations , aCompoundStatement statements
-		do: [ :e | 
+	children := aCompoundStatement declarations , aCompoundStatement statements.
+	children do: [ :e |
+		first
+			ifTrue: [ first := false. ]
+			ifFalse: [ stream tab: level ].
 			e acceptVisitor: self.
-			e needsSeparator ifTrue: [ stream nextPut: $; ] ]
-		separatedBy: [ stream crtab: level ].
+			e needsSeparator ifTrue: [ stream nextPut: $; ]]
+		separatedBy: [ stream cr ].
 
 	aCompoundStatement needsBrackets ifTrue: [ 
 		level := level - 1.
-		stream
-			crtab: level;
-			nextPut: $} ]
+		children ifNotEmpty: [ stream cr ].
+		stream tab: level.
+		stream nextPut: $} ]
 ]
 
 { #category : #generated }
@@ -180,27 +187,26 @@ CSlangPrettyPrinter >> visitConstant: aConstant [
 { #category : #generated }
 CSlangPrettyPrinter >> visitDeclaration: aDeclaration [
 
-	aDeclaration specifiers
-		do: [ :e | 
-			stream nextPutAll: e.
-			stream space ].
-	
-	aDeclaration declarators
-		do: [ :e | e acceptVisitor: self ]
-		separatedBy: [ stream nextPutAll: ', ' ].
+	aDeclaration specifiers do: [ :e | 
+		stream nextPutAll: e.
+		stream space ].
+
+	aDeclaration hasRawPrototype ifFalse: [ 
+		aDeclaration declarators
+			do: [ :e | e acceptVisitor: self ]
+			separatedBy: [ stream nextPutAll: ', ' ] ].
+	aDeclaration isFunctionPrototype ifTrue: [ stream nextPut: $; ]
 ]
 
 { #category : #generated }
 CSlangPrettyPrinter >> visitDeclarator: aDeclarator [
 
-	aDeclarator qualifiers
-		do: [ :e | 
-			stream nextPutAll: e.
-			stream space ].
-	
-	aDeclarator pointers
-		do: [ :e | stream nextPutAll: e ].
-	
+	aDeclarator qualifiers do: [ :e | 
+		stream nextPutAll: e.
+		stream space ].
+
+	aDeclarator pointers do: [ :e | stream nextPutAll: e ].
+
 	aDeclarator declarator acceptVisitor: self
 ]
 
@@ -259,6 +265,30 @@ CSlangPrettyPrinter >> visitForStatement: aForStatement [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitFunctionDeclarator: aFunctionDeclarator [
+
+	aFunctionDeclarator declarator acceptVisitor: self.
+	stream nextPut: $(.
+	aFunctionDeclarator parameters
+		do: [ :arg | arg acceptVisitor: self ]
+		separatedBy: [ stream nextPutAll: ', ' ].
+	stream nextPut: $)
+]
+
+{ #category : #generated }
+CSlangPrettyPrinter >> visitFunctionDefinition: aFunction [
+
+	aFunction specifiers
+		do: [ :e | stream nextPutAll: e ]
+		separatedBy: [ stream space ].
+	stream cr.
+	aFunction hasRawPrototype ifFalse: [ 
+		aFunction declarator acceptVisitor: self ].
+	stream cr.
+	aFunction body acceptVisitor: self
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitGotoStatement: aGoToStatement [
 
 	stream nextPutAll: 'goto ';
@@ -278,10 +308,15 @@ CSlangPrettyPrinter >> visitIfStatement: anIf [
 	stream nextPutAll: 'if ('.
 	anIf if acceptVisitor: self.
 	stream nextPutAll: ') '.
+	anIf then isCompoundStatement ifFalse: [ stream crtab: level + 1 ].
 	anIf then acceptVisitor: self.
+	anIf then needsTrailingSemicolon ifTrue: [ stream nextPut: $; ].
 	anIf else ifNotNil: [ :e | 
+		anIf then isCompoundStatement ifFalse: [ stream crtab: level ].
 		stream nextPutAll: ' else '.
-		e acceptVisitor: self ]
+		anIf else isCompoundStatement ifFalse: [ stream crtab: level + 1 ].
+		e acceptVisitor: self.
+		anIf else needsTrailingSemicolon ifTrue: [ stream nextPut: $; ]]
 ]
 
 { #category : #generated }
@@ -345,6 +380,19 @@ CSlangPrettyPrinter >> visitLabeledStatement: aLabeledStatement [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitParameterDeclaration: aParameter [
+
+	"Raw declaration wins over a normal declaration."
+	aParameter rawDeclaration
+		ifNotNil: [ stream nextPutAll: aParameter rawDeclaration ]
+		ifNil: [ 
+			aParameter specifiers do: [ :e | 
+				stream nextPutAll: e.
+				stream space ].
+			aParameter declarator acceptVisitor: self ]
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitPoint: aMemberAccess [
 
 	aMemberAccess needsParentheses ifTrue:  [ stream nextPut: $(].
@@ -355,24 +403,53 @@ CSlangPrettyPrinter >> visitPoint: aMemberAccess [
 ]
 
 { #category : #generated }
+CSlangPrettyPrinter >> visitPreprocessorDefine: aPreprocessorDefine [
+
+	stream nextPutAll: '#define '.
+	aPreprocessorDefine token acceptVisitor: self.
+	stream space.
+	"Raw declaration wins over a normal declaration."
+	aPreprocessorDefine rawMacro
+		ifNotNil: [ stream nextPutAll: aPreprocessorDefine rawMacro ]
+		ifNil: [ aPreprocessorDefine expression acceptVisitor: self ]
+]
+
+{ #category : #generated }
 CSlangPrettyPrinter >> visitPreprocessorIf: anIf [
 
-	stream nextPutAll: '#if '.
+	| nbTabs |
+	nbTabs := anIf isArgument
+		          ifTrue: [ level + 1 ]
+		          ifFalse: [ level ].
+	"Add a carriage return when needed."
+	stream peekLast = Character cr ifFalse: [ stream cr ].
+	stream
+		nextPut: $#;
+		next: level * 2 put: Character space;
+		nextPutAll: 'if '.
 	anIf if acceptVisitor: self.
-	stream cr.
+	stream crtab: nbTabs.
 	anIf then acceptVisitor: self.
 	anIf else ifNotNil: [ :e | 
-		stream cr; nextPutAll: '#else /* '.
+		stream
+			cr;
+			nextPut: $#;
+			next: level * 2 put: Character space;
+			nextPutAll: 'else /* '.
 		anIf if acceptVisitor: self.
 		stream
 			nextPutAll: ' */';
-			cr.
+			crtab: nbTabs.
 		e acceptVisitor: self ].
-	stream cr; nextPutAll: '#endif /* '.
+	stream
+		cr;
+		nextPut: $#;
+		next: level * 2 put: Character space;
+		nextPutAll: 'endif /* '.
 	anIf if acceptVisitor: self.
 	stream
-		nextPutAll: ' */';
-		cr
+		nextPutAll: ' */'.
+	anIf isArgument ifTrue: [ stream crtab: level + 1 ]
 ]
 
 { #category : #visiting }
@@ -413,14 +490,16 @@ CSlangPrettyPrinter >> visitTernary: aTernary [
 	stream nextPutAll: '(('.
 	aTernary condition acceptVisitor: self.
 	stream nextPut: $).
-	aTernary printOnMultipleLines ifTrue: [ level := level + 1. stream crtab: level ].
+	aTernary printOnMultipleLines ifTrue: [ 
+		level := level + 2.
+		stream crtab: level - 1 ].
 	stream nextPutAll: ' ? '.
 	aTernary then acceptVisitor: self.
-	aTernary printOnMultipleLines ifTrue: [ stream crtab: level ].
+	aTernary printOnMultipleLines ifTrue: [ stream crtab: level - 1 ].
 	stream nextPutAll: ' : '.
 	aTernary else acceptVisitor: self.
 	stream nextPut: $).
-	aTernary printOnMultipleLines ifTrue: [ level := level - 1 ]
+	aTernary printOnMultipleLines ifTrue: [ level := level - 2 ]
 ]
 
 { #category : #generated }
@@ -434,9 +513,10 @@ CSlangPrettyPrinter >> visitUnaryOperator: anUnary [
 
 	| avoidParentheses |
 	anUnary needsParentheses ifTrue: [ stream nextPut: $( ].
-	avoidParentheses := anUnary expression isCastExpression
-		or: [ anUnary expression isConstant or: [
-			anUnary expression isIdentifier  or: [ anUnary expression isLeaf]]].
+	avoidParentheses := anUnary expression isCastExpression or: [ 
+		                    anUnary expression isConstant or: [ 
+			                    anUnary expression isIdentifier or: [ 
+				                    anUnary expression isLeaf ] ] ].
 	stream nextPutAll: anUnary operator.
 	avoidParentheses ifFalse: [ stream nextPut: $( ].
 	anUnary expression acceptVisitor: self.

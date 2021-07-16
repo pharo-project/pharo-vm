@@ -18,9 +18,11 @@ TVariableNode class >> named: aName [
 { #category : #tranforming }
 TVariableNode >> asCASTIn: aBuilder [
 
+	aBuilder currentMethod ifNotNil: [ :m | m noteUsedVariableName: name ].
 	^ name = 'nil'
-		ifTrue: [ CIdentifierNode name: aBuilder nilTranslation ]
-		ifFalse: [ CIdentifierNode name: (aBuilder returnPrefixFromVariable: name) ]
+		  ifTrue: [ CIdentifierNode name: aBuilder nilTranslation ]
+		  ifFalse: [ 
+		  CIdentifierNode name: (aBuilder returnPrefixFromVariable: name) ]
 ]
 
 { #category : #transformations }
