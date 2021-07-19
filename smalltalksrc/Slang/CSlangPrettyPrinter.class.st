@@ -425,9 +425,9 @@ CSlangPrettyPrinter >> visitPreprocessorIf: anIf [
 			level + 2 ]
 		ifFalse: [ 
 			tabbing := level ].
-	"Add a carriage return when needed."
-	stream peekLast = Character cr ifFalse: [ stream cr ].
+
 	stream
+		cr;
 		nextPut: $#;
 		next: tabbing * 2 put: Character space;
 		nextPutAll: 'if '.
