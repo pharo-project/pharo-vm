@@ -417,39 +417,44 @@ CSlangPrettyPrinter >> visitPreprocessorDefine: aPreprocessorDefine [
 { #category : #generated }
 CSlangPrettyPrinter >> visitPreprocessorIf: anIf [
 
-	| nbTabs |
-	nbTabs := anIf isArgument
-		          ifTrue: [ level + 1 ]
-		          ifFalse: [ level ].
+	| previousLevel tabbing |
+	previousLevel := level.
+	level := anIf isArgument ifTrue: [ 
+			tabbing := level + 1.
+			level + 2 ]
+		ifFalse: [ 
+			tabbing := level ].
 	"Add a carriage return when needed."
 	stream peekLast = Character cr ifFalse: [ stream cr ].
 	stream
 		nextPut: $#;
-		next: level * 2 put: Character space;
+		next: tabbing * 2 put: Character space;
 		nextPutAll: 'if '.
 	anIf if acceptVisitor: self.
-	stream crtab: nbTabs.
+	stream crtab: level.
 	anIf then acceptVisitor: self.
+	
 	anIf else ifNotNil: [ :e | 
 		stream
 			cr;
 			nextPut: $#;
-			next: level * 2 put: Character space;
+			next: tabbing * 2 put: Character space;
 			nextPutAll: 'else /* '.
 		anIf if acceptVisitor: self.
 		stream
 			nextPutAll: ' */';
-			crtab: nbTabs.
+			crtab: level.
 		e acceptVisitor: self ].
 	stream
 		cr;
 		nextPut: $#;
-		next: level * 2 put: Character space;
+		next: tabbing * 2 put: Character space;
 		nextPutAll: 'endif /* '.
 	anIf if acceptVisitor: self.
 	stream
 		nextPutAll: ' */'.
-	anIf isArgument ifTrue: [ stream crtab: level + 1 ]
+	anIf isArgument ifTrue: [ stream crtab: level ].
+	level := previousLevel.
 ]
 
 { #category : #visiting }
@@ -491,15 +496,15 @@ CSlangPrettyPrinter >> visitTernary: aTernary [
 	aTernary condition acceptVisitor: self.
 	stream nextPut: $).
 	aTernary printOnMultipleLines ifTrue: [ 
-		level := level + 2.
-		stream crtab: level - 1 ].
+		level := level + 1.
+		stream crtab: level ].
 	stream nextPutAll: ' ? '.
 	aTernary then acceptVisitor: self.
-	aTernary printOnMultipleLines ifTrue: [ stream crtab: level - 1 ].
+	aTernary printOnMultipleLines ifTrue: [ stream crtab: level ].
 	stream nextPutAll: ' : '.
 	aTernary else acceptVisitor: self.
 	stream nextPut: $).
-	aTernary printOnMultipleLines ifTrue: [ level := level - 2 ]
+	aTernary printOnMultipleLines ifTrue: [ level := level - 1 ]
 ]
 
 { #category : #generated }
