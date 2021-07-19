@@ -1182,8 +1182,8 @@ static sqInt
 methodWithAnOptionPragma(void)
 {
 	{
-		return self;
 	}
+	return 0;
 }
 #endif /* OPTION */'
 ]
@@ -1203,8 +1203,8 @@ static sqInt
 methodWithOptionPragma(void)
 {
 	{
-		return self;
 	}
+	return 0;
 }
 #endif /* OPTION1 && OPTION3 */'
 ]
@@ -1250,8 +1250,8 @@ SlangBasicTranslationTest >> testMethodLocals [
 		assert: (translation lineNumber: 5) , self newLine
 			, (translation lineNumber: 6) , self newLine
 			, (translation lineNumber: 7)
-		equals: '	sqInt a;
-	sqInt b;
+		equals: '	int a;
+	int b;
 	float foo;'
 ]
 
@@ -1365,8 +1365,8 @@ SlangBasicTranslationTest >> testMethodVolatileLocals [
 		assert: (translation lineNumber: 5) , self newLine
 			, (translation lineNumber: 6) , self newLine
 			, (translation lineNumber: 7)
-		equals: '	volatile sqInt a;
-	volatile sqInt b;
+		equals: '	volatile int a;
+	volatile int b;
 	volatile float foo;'
 ]
 
