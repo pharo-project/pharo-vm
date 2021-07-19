@@ -7,6 +7,12 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #tranforming }
+TInlineNode >> asCASTIn: aBuilder [
+
+	^ method asCASTInlinedIn: aBuilder
+]
+
 { #category : #transformations }
 TInlineNode >> bindVariableUsesIn: aDictionary [
 	method := method bindVariableUsesIn: aDictionary.

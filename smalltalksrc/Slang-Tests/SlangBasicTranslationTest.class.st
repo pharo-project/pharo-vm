@@ -907,11 +907,11 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenArr
 		equals: '{
 	int * bar;
 	int[17] foo;
-
 	VM_LABEL(methodUsingSingleArrayVariable);
 	{
 		bar = foo;
-	}}'
+	}
+}'
 ]
 
 { #category : #'tests-inlinenode' }
@@ -925,11 +925,11 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenExt
 		equals: '{
 	sqInt bar;
 	external int foo;
-
 	VM_LABEL(methodUsingSingleExternalVariable);
 	{
 		bar = foo;
-	}}'
+	}
+}'
 ]
 
 { #category : #'tests-inlinenode' }
@@ -943,12 +943,12 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenIni
 		equals: '{
 	sqInt bar;
 	sqInt foo;
-
 	VM_LABEL(methodUsingSingleNonInitializedVariable);
 	{
 		foo = 0;
 		bar = foo;
-	}}'
+	}
+}'
 ]
 
 { #category : #'tests-inlinenode' }
@@ -962,11 +962,11 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenSta
 		equals: '{
 	int bar;
 	static int foo;
-
 	VM_LABEL(methodUsingSingleStaticVariable);
 	{
 		bar = foo;
-	}}'
+	}
+}'
 ]
 
 { #category : #'tests-inlinenode' }
@@ -979,10 +979,10 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotRemoveExternalTemp [
 		assert: translation
 		equals: '{
 	extern int foo;
-
 	VM_LABEL(methodDefiningSingleExternVariable);
 	{
-	}}'
+	}
+}'
 ]
 
 { #category : #'tests-inlinenode' }
@@ -995,10 +995,10 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotRemoveStaticTemp [
 		assert: translation
 		equals: '{
 	static int foo;
-
 	VM_LABEL(methodDefiningSingleStaticVariable);
 	{
-	}}'
+	}
+}'
 ]
 
 { #category : #'tests-inlinenode' }
@@ -1014,8 +1014,8 @@ SlangBasicTranslationTest >> testInlineNodeRemovesUnusedTemps [
 		equals: '{
 	VM_LABEL(methodDefiningSingleVariable);
 	{
-		return self;
-	}}'
+	}
+}'
 ]
 
 { #category : #'tests-inlinenode' }
@@ -1032,7 +1032,6 @@ SlangBasicTranslationTest >> testInlineNodeSortsLocalTemps [
 	sqInt ddd;
 	sqInt foo;
 	sqInt zzz;
-
 	VM_LABEL(methodWithUnsortedTemps);
 	{
 		aaa = 0;
@@ -1040,7 +1039,8 @@ SlangBasicTranslationTest >> testInlineNodeSortsLocalTemps [
 		zzz = 0;
 		bar = aaa;
 		ddd = zzz + foo;
-	}}'
+	}
+}'
 ]
 
 { #category : #'tests-inlinenode' }
@@ -1051,13 +1051,13 @@ SlangBasicTranslationTest >> testInlineNodeWithSharedCase [
 	translation := self translate: tMethod asInlineNode.
 	self
 		assert: translation
-		equals: '
-methodWithSharedCase:
+		equals: 'methodWithSharedCase:
 /* methodWithSharedCase */
 {
 	VM_LABEL(methodWithSharedCase);
 	{
-	}}'
+	}
+}'
 ]
 
 { #category : #'tests-inlinenode' }
@@ -1068,13 +1068,13 @@ SlangBasicTranslationTest >> testInlineNodeWithSharedLabelInCase [
 	translation := self translate: tMethod asInlineNode.
 	self
 		assert: translation
-		equals: '
-sharedLabel:
+		equals: 'sharedLabel:
 /* methodWithSharedLabelInCase */
 {
 	VM_LABEL(methodWithSharedLabelInCase);
 	{
-	}}'
+	}
+}'
 ]
 
 { #category : #'tests-labels' }

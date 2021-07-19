@@ -371,6 +371,34 @@ TMethod >> asCASTIn: aCodeGen [
 	^ compoundStatement
 ]
 
+{ #category : #'CAST translation' }
+TMethod >> asCASTInlinedIn: aBuilder [
+
+	| compoundStatement body |
+	self removeUnusedTempsAndNilIfRequiredIn: aBuilder.
+	compoundStatement := CCompoundStatementNode new.
+	
+	locals isEmpty ifFalse: [ 
+		(aBuilder sortStrings: locals) do: [ :var | 
+			compoundStatement add: (CRawCodeNode code: (self
+						  declarationAt: var
+						  ifAbsent: [ aBuilder defaultType , ' ' , var ])) ] ].
+	compoundStatement add: (aBuilder asmLabelNodeFor: selector ).
+	aBuilder
+		pushScope: declarations
+		while: [ body := (parseTree asCASTIn: aBuilder) ].
+	compoundStatement add: body.
+	
+	sharedLabel ifNotNil: [
+		^ (CLabeledStatementNode new
+			label: (CIdentifierNode name: sharedLabel);
+			statement: compoundStatement;
+			comments: {selector};
+			yourself) ].
+
+	^ compoundStatement
+]
+
 { #category : #transformations }
 TMethod >> asInlineNode [
 	^TInlineNode new method: self
@@ -787,7 +815,7 @@ TMethod >> emitInlineOn: aStream level: level generator: aCodeGen [
 	"Emit C code for this method onto the given stream. All calls to inlined methods should already have been expanded."
 	self removeUnusedTempsAndNilIfRequiredIn: aCodeGen.
 	sharedLabel ifNotNil:
-		[aStream crtab: level-1; nextPutAll: sharedLabel; nextPut: $:.
+		[aStream tab: level-1; nextPutAll: sharedLabel; nextPut: $:.
 		aStream crtab: level.
 		aStream nextPutAll: '/* '; nextPutAll: selector; nextPutAll: ' */'.
 		aStream crtab: level].
@@ -798,15 +826,14 @@ TMethod >> emitInlineOn: aStream level: level generator: aCodeGen [
 			 aStream
 				crtab: level+1;
 				nextPutAll: (self declarationAt: var ifAbsent: [ aCodeGen defaultType, ' ', var]);
-				nextPut: $;].
-			 aStream cr].
+				nextPut: $;]].
 	aStream crtab: level+1.
 	aCodeGen outputAsmLabel: selector on: aStream.
 	aStream crtab: level+1.
 	aCodeGen
 		pushScope: declarations
 		while: [parseTree emitCCodeOn: aStream level: level+1 generator: aCodeGen].
-	aStream tab: level; nextPut: $}
+	aStream crtab: level; nextPut: $}
 ]
 
 { #category : #'C code generation' }

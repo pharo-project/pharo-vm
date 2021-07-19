@@ -69,9 +69,7 @@ TCaseStmtNode >> asCASTIn: aBuilder [
 	result := CCompoundStatementNode new.
 	result needsBrackets: false.
 	result add: (CCallNode identifier: (CIdentifierNode name: 'bytecodeDispatchDebugHook')).
-	result add: (CCallNode
-		identifier: (CIdentifierNode name: 'VM_LABEL')
-		arguments: { CIdentifierNode name: 'bytecodeDispatch' }).
+	result add: (aBuilder asmLabelNodeFor: 'bytecodeDispatch').
 	result add: switchStatement.
 	^ result
 ]

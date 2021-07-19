@@ -365,7 +365,8 @@ CSlangPrettyPrinter >> visitLabeledStatement: aLabeledStatement [
 		stream nextPutAll: aLabeledStatement label name ].
 
 	(aLabeledStatement case notNil or: [ aLabeledStatement label notNil ]) 
-		ifTrue: [ stream nextPutAll: ':' ].
+		ifTrue: [ stream nextPutAll: ':'.
+			aLabeledStatement comments ifNotEmpty: [ stream cr ] ].
 
 	self printComments: aLabeledStatement comments.
 

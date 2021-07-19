@@ -456,6 +456,22 @@ CCodeGenerator >> arrayInitializerCalled: varName for: array sizeString: sizeStr
 ]
 
 { #category : #utilities }
+CCodeGenerator >> asmLabelNodeFor: selector [
+	| count label |
+	suppressAsmLabels ifTrue: [^self].
+	asmLabelCounts ifNil:
+		[asmLabelCounts := Dictionary new].
+	count := asmLabelCounts
+				at: selector
+				put: 1 + (asmLabelCounts at: selector ifAbsent: [-1]).
+				
+	label := (self cFunctionNameFor: selector), (count = 0 ifTrue: [''] ifFalse: [count printString]).
+	^ CCallNode
+			identifier: (CIdentifierNode name: 'VM_LABEL')
+			arguments: { CIdentifierNode name: label }
+]
+
+{ #category : #utilities }
 CCodeGenerator >> baseTypeForPointerType: aCType [
 	"Answer the type of the referent of a pointer type."
 	self assert: aCType last == $*.

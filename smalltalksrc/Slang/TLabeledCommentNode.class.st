@@ -52,9 +52,7 @@ TLabeledCommentNode >> asCASTIn: aBuilder [
 
 	(asmLabel notNil "only output labels in the interpret function."
 	 and: [aBuilder currentMethod selector == #interpret]) ifTrue: [ | asmLabelNode |
-		asmLabelNode := CCallNode
-			identifier: (CIdentifierNode name: 'VM_LABEL')
-			arguments: { CIdentifierNode name: asmLabel }.
+		asmLabelNode := aBuilder asmLabelNodeFor: asmLabel.
 		result add: asmLabelNode
 	].	
 
