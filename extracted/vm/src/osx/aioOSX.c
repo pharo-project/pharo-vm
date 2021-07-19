@@ -127,7 +127,6 @@ aio_handle_events(struct kevent* changes, int numberOfChanges, long microSeconds
 
 	struct kevent incomingEvents[INCOMING_EVENTS_SIZE];
 	int keventReturn;
-	int exceptionFlag;
 
 	struct timespec timeout;
 
@@ -175,30 +174,30 @@ aio_handle_events(struct kevent* changes, int numberOfChanges, long microSeconds
 			//If the event is not of the signal pipe I process them
 			if(incomingEvents[index].filter != EVFILT_USER){
 				
-				exceptionFlag = 0;
-					
 				//If not is a regular registered FD
 				AioOSXDescriptor *descriptor = (AioOSXDescriptor*)incomingEvents[index].udata;
 				
-				if((incomingEvents[index].filter & EVFILT_READ) == EVFILT_READ){
-					//Check if we have an exception
-					if((incomingEvents[index].filter & EVFILT_EXCEPT) == EVFILT_EXCEPT){
-						exceptionFlag = AIO_X;
+				// Check if we have an exception
+				if(incomingEvents[index].filter == EVFILT_EXCEPT){
+					if(descriptor->readHandlerFn){
+						descriptor->readHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_R | AIO_X);
+					}else{
+						if(descriptor->writeHandlerFn)
+							descriptor->writeHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_W | AIO_X);
+					}
+				}else{
+					if(incomingEvents[index].filter == EVFILT_READ){
+						if(descriptor->readHandlerFn)
+							descriptor->readHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_R);
 					}
 
-					if(descriptor->readHandlerFn)
-						descriptor->readHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_R | exceptionFlag);
-				}
-
-				if((incomingEvents[index].filter & EVFILT_WRITE) == EVFILT_WRITE){
-					//Check if we have an exception
-					if((incomingEvents[index].filter & EVFILT_EXCEPT) == EVFILT_EXCEPT){
-						exceptionFlag = AIO_X;
+					if(incomingEvents[index].filter == EVFILT_WRITE){
+						if(descriptor->writeHandlerFn)
+							descriptor->writeHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_W);
 					}
 					
-					if(descriptor->writeHandlerFn)
-						descriptor->writeHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_W | exceptionFlag);
 				}
+
 			}
 		}
 	}
