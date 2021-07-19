@@ -127,6 +127,7 @@ aio_handle_events(struct kevent* changes, int numberOfChanges, long microSeconds
 
 	struct kevent incomingEvents[INCOMING_EVENTS_SIZE];
 	int keventReturn;
+	int exceptionFlag;
 
 	struct timespec timeout;
 
@@ -173,17 +174,30 @@ aio_handle_events(struct kevent* changes, int numberOfChanges, long microSeconds
 		}else{
 			//If the event is not of the signal pipe I process them
 			if(incomingEvents[index].filter != EVFILT_USER){
+				
+				exceptionFlag = 0;
+					
 				//If not is a regular registered FD
 				AioOSXDescriptor *descriptor = (AioOSXDescriptor*)incomingEvents[index].udata;
-
+				
 				if((incomingEvents[index].filter & EVFILT_READ) == EVFILT_READ){
+					//Check if we have an exception
+					if((incomingEvents[index].filter & EVFILT_EXCEPT) == EVFILT_EXCEPT){
+						exceptionFlag = AIO_X;
+					}
+
 					if(descriptor->readHandlerFn)
-						descriptor->readHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_R);
+						descriptor->readHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_R | exceptionFlag);
 				}
 
 				if((incomingEvents[index].filter & EVFILT_WRITE) == EVFILT_WRITE){
+					//Check if we have an exception
+					if((incomingEvents[index].filter & EVFILT_EXCEPT) == EVFILT_EXCEPT){
+						exceptionFlag = AIO_X;
+					}
+					
 					if(descriptor->writeHandlerFn)
-						descriptor->writeHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_W);
+						descriptor->writeHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_W | exceptionFlag);
 				}
 			}
 		}
@@ -302,7 +316,7 @@ aioSuspend(int fd, int mask){
 	int cant = 0;
 	int nextIndex = 0;
 
-	struct kevent newEvents[2];
+	struct kevent newEvents[3];
 
 	AioOSXDescriptor *descriptor = AioOSXDescriptor_find(fd);
 
@@ -325,6 +339,11 @@ aioSuspend(int fd, int mask){
 
 		EV_SET(&newEvents[nextIndex], fd, EVFILT_WRITE, EV_DELETE, 0, 0, descriptor);
 
+		nextIndex++;
+		cant++;
+	}
+	if((mask & AIO_X) == AIO_X){
+		EV_SET(&newEvents[nextIndex], fd, EVFILT_EXCEPT, EV_DELETE, 0, 0, descriptor);
 		nextIndex++;
 		cant++;
 	}
@@ -355,7 +374,7 @@ aioDisable(int fd){
 
 EXPORT(void)
 aioHandle(int fd, aioHandler handlerFn, int mask){
-	struct kevent newEvents[2];
+	struct kevent newEvents[3];
 
 	AioOSXDescriptor *descriptor = AioOSXDescriptor_find(fd);
 
@@ -366,6 +385,7 @@ aioHandle(int fd, aioHandler handlerFn, int mask){
 
 	int hasRead = (mask & AIO_R) == AIO_R;
 	int hasWrite = (mask & AIO_W) == AIO_W;
+	int hasExceptions = (mask & AIO_X) == AIO_X;
 
 	descriptor->readHandlerFn = hasRead ? handlerFn : NULL;
 	EV_SET(&newEvents[0], fd, EVFILT_READ, hasRead?(EV_ADD | EV_ONESHOT):EV_DELETE, 0, 0, descriptor);
@@ -373,7 +393,9 @@ aioHandle(int fd, aioHandler handlerFn, int mask){
 	descriptor->writeHandlerFn = hasWrite ? handlerFn : NULL;
 	EV_SET(&newEvents[1], fd, EVFILT_WRITE, hasWrite?(EV_ADD | EV_ONESHOT):EV_DELETE, 0, 0, descriptor);
 
-	aio_handle_events(newEvents, 2, 0);
+	EV_SET(&newEvents[2], fd, EVFILT_EXCEPT, hasExceptions?(EV_ADD | EV_ONESHOT):EV_DELETE, 0, 0, descriptor);
+
+	aio_handle_events(newEvents, 3, 0);
 }
 
 AioOSXDescriptor* AioOSXDescriptor_find(int fd){

@@ -458,9 +458,12 @@ static int socketError(int s)
 {
   int error= 0;
   socklen_t errsz= sizeof(error);
-  /* Solaris helpfuly returns -1 if there is an error on the socket, so
-     we can't check the success of the getsockopt call itself.  Ho hum. */
-  getsockopt(s, SOL_SOCKET, SO_ERROR, (void *)&error, &errsz);
+  
+  if(getsockopt(s, SOL_SOCKET, SO_ERROR, (void *)&error, &errsz) == -1){
+	  logWarnFromErrno("getsockopt");
+	  return -1;
+  };
+
   return error;
 }
 
@@ -532,28 +535,38 @@ static void acceptHandler(int fd, void *data, int flags)
 
 static void connectHandler(int fd, void *data, int flags)
 {
+
+  int error;
+
   privateSocketStruct *pss= (privateSocketStruct *)data;
-  logTrace("connectHandler(%d, %p, %d)\n", fd, data, flags);
+//  logError("connectHandler(%d, %p, %d)\n", fd, data, flags);
   
   // If AIO called us but the socket was already resolved, just return
   // Avoids race condition of the AIO
   if (pss->sockState != WaitingForConnection) {
     // Disable the FD again just in case
+    logWarn("A Connect Handler has arrived without the proper state");
     aioDisable(fd);
     return;
   }
-  
+
+  error = socketError(fd);
+
   if (flags & AIO_X) /* -- exception */
   {
     /* error during asynchronous connect() */
     aioDisable(fd);
-    pss->sockError= socketError(fd);
+
+    logTrace("AIO_X, SocketError: %d", error);
+
+    pss->sockError= error;
     pss->sockState= Unconnected;
     logWarnFromErrno("connectHandler");
   } else /* (flags & AIO_W) -- connect completed */
   {
     /* connect() has completed */
-    int error= socketError(fd);
+    logTrace("!AIO_X, SocketError: %d", error);
+
     if (error) {
       aioDisable(fd);
       logTrace("connectHandler: error %d (%s)\n", error, strerror(error));
@@ -904,6 +917,9 @@ void sqSocketConnectToPort(SocketPtr s, sqInt addr, sqInt port)
       if (result == 0)
 	{
 	  /* connection completed synchronously */
+	  logWarnFromErrno("sqConnectToPort");
+      logWarn("LastSocketError: %d", getLastSocketError());
+
 	  SOCKETSTATE(s)= Connected;
 	  notify(PSP(s), CONN_NOTIFY);
 	  setLinger(SOCKET(s), 1);
@@ -2281,6 +2297,9 @@ void sqSocketConnectToAddressSize(SocketPtr s, char *addr, sqInt addrSize)
       if (result == 0)
 	{
 	  /* connection completed synchronously */
+  	  logWarnFromErrno("sqConnectToPort");
+      logWarn("LastSocketError: %d", getLastSocketError());		
+		
 	  SOCKETSTATE(s)= Connected;
 	  notify(PSP(s), CONN_NOTIFY);
 	  setLinger(SOCKET(s), 1);
