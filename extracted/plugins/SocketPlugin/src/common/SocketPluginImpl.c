@@ -539,7 +539,7 @@ static void connectHandler(int fd, void *data, int flags)
   int error;
 
   privateSocketStruct *pss= (privateSocketStruct *)data;
-//  logError("connectHandler(%d, %p, %d)\n", fd, data, flags);
+  logTrace("connectHandler(%d, %p, %d)\n", fd, data, flags);
   
   // If AIO called us but the socket was already resolved, just return
   // Avoids race condition of the AIO
