@@ -57,6 +57,7 @@ SlangBasicTranslationTest >> getTMethodFrom: selector [
 	"Generate a TMethod from a SlangBasicTranslationTestClass method."
 
 	generator addClass: SlangBasicTranslationTestClass.
+	generator inferTypes.
 	^ generator methodNamed: selector
 ]
 
@@ -893,6 +894,187 @@ SlangBasicTranslationTest >> testGoto [
 	translation := self translate: (TGoToNode label: 'lab').
 
 	self assert: translation equals: 'goto lab'
+]
+
+{ #category : #'tests-inlinenode' }
+SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenArrayTemp [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodUsingSingleArrayVariable.
+	translation := self translate: tMethod asInlineNode.
+	self
+		assert: translation
+		equals: '{
+	int * bar;
+	int[17] foo;
+
+	VM_LABEL(methodUsingSingleArrayVariable);
+	{
+		bar = foo;
+	}}'
+]
+
+{ #category : #'tests-inlinenode' }
+SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenExternalTemp [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodUsingSingleExternalVariable.
+	translation := self translate: tMethod asInlineNode.
+	self
+		assert: translation
+		equals: '{
+	sqInt bar;
+	external int foo;
+
+	VM_LABEL(methodUsingSingleExternalVariable);
+	{
+		bar = foo;
+	}}'
+]
+
+{ #category : #'tests-inlinenode' }
+SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenInitializedTemp [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodUsingSingleNonInitializedVariable.
+	translation := self translate: tMethod asInlineNode.
+	self
+		assert: translation
+		equals: '{
+	sqInt bar;
+	sqInt foo;
+
+	VM_LABEL(methodUsingSingleNonInitializedVariable);
+	{
+		foo = 0;
+		bar = foo;
+	}}'
+]
+
+{ #category : #'tests-inlinenode' }
+SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenStaticTemp [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodUsingSingleStaticVariable.
+	translation := self translate: tMethod asInlineNode.
+	self
+		assert: translation
+		equals: '{
+	int bar;
+	static int foo;
+
+	VM_LABEL(methodUsingSingleStaticVariable);
+	{
+		bar = foo;
+	}}'
+]
+
+{ #category : #'tests-inlinenode' }
+SlangBasicTranslationTest >> testInlineNodeDoesNotRemoveExternalTemp [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodDefiningSingleExternVariable.
+	translation := self translate: tMethod asInlineNode.
+	self
+		assert: translation
+		equals: '{
+	extern int foo;
+
+	VM_LABEL(methodDefiningSingleExternVariable);
+	{
+	}}'
+]
+
+{ #category : #'tests-inlinenode' }
+SlangBasicTranslationTest >> testInlineNodeDoesNotRemoveStaticTemp [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodDefiningSingleStaticVariable.
+	translation := self translate: tMethod asInlineNode.
+	self
+		assert: translation
+		equals: '{
+	static int foo;
+
+	VM_LABEL(methodDefiningSingleStaticVariable);
+	{
+	}}'
+]
+
+{ #category : #'tests-inlinenode' }
+SlangBasicTranslationTest >> testInlineNodeRemovesUnusedTemps [
+
+	"Test the smalltalk comment of the function."
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodDefiningSingleVariable.
+	translation := self translate: tMethod asInlineNode.
+	self
+		assert: translation
+		equals: '{
+	VM_LABEL(methodDefiningSingleVariable);
+	{
+		return self;
+	}}'
+]
+
+{ #category : #'tests-inlinenode' }
+SlangBasicTranslationTest >> testInlineNodeSortsLocalTemps [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodWithUnsortedTemps.
+	translation := self translate: tMethod asInlineNode.
+	self
+		assert: translation
+		equals: '{
+	sqInt aaa;
+	sqInt bar;
+	sqInt ddd;
+	sqInt foo;
+	sqInt zzz;
+
+	VM_LABEL(methodWithUnsortedTemps);
+	{
+		aaa = 0;
+		foo = 0;
+		zzz = 0;
+		bar = aaa;
+		ddd = zzz + foo;
+	}}'
+]
+
+{ #category : #'tests-inlinenode' }
+SlangBasicTranslationTest >> testInlineNodeWithSharedCase [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodWithSharedCase.
+	translation := self translate: tMethod asInlineNode.
+	self
+		assert: translation
+		equals: '
+methodWithSharedCase:
+/* methodWithSharedCase */
+{
+	VM_LABEL(methodWithSharedCase);
+	{
+	}}'
+]
+
+{ #category : #'tests-inlinenode' }
+SlangBasicTranslationTest >> testInlineNodeWithSharedLabelInCase [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodWithSharedLabelInCase.
+	translation := self translate: tMethod asInlineNode.
+	self
+		assert: translation
+		equals: '
+sharedLabel:
+/* methodWithSharedLabelInCase */
+{
+	VM_LABEL(methodWithSharedLabelInCase);
+	{
+	}}'
 ]
 
 { #category : #'tests-labels' }
