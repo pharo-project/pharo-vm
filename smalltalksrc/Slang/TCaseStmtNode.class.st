@@ -52,7 +52,7 @@ TCaseStmtNode >> asCASTIn: aBuilder [
 			We iterate from the last case to the first case so the nesting order remains the same as the defined one"
 			(duplicates addAll: ((cases size to: i by: -1) select: [:j| (expansions at: i) = (expansions at: j)])) do: [:k|
 				(lasts at: k) to: (firsts at: k) by: -1 do: [ :caseIndex |
-					case := CLabeledStatementNode case: caseIndex statement: case.
+					case := CLabeledStatementNode case: (CConstantNode value: caseIndex) statement: case.
 					"Remember the last case, will be the one attached to the statement"
 					lastCase ifNil: [ lastCase := case ].
 			]].
@@ -87,7 +87,7 @@ TCaseStmtNode >> asCASTIn: aBuilder addToEndOfCases: aNodeToPrepend [
 		"Cases are nested.
 		We iterate from the last case to the first case so the nesting order remains the same as the defined one"
 		(lasts at: i) to: (firsts at: i) by: -1 do: [ :caseIndex |
-			ccase := CLabeledStatementNode case: caseIndex statement: ccase.
+			ccase := CLabeledStatementNode case: (CConstantNode value: caseIndex) statement: ccase.
 			"Remember the last case, will be the one attached to the statement"
 			lastCase ifNil: [ lastCase := ccase ].
 		].
