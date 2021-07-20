@@ -163,8 +163,16 @@ CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 		stream cr.
 		level := level + 1 ].
 
-	children := aCompoundStatement declarations , aCompoundStatement statements.
-	children do: [ :e |
+	aCompoundStatement declarations do: [ :e |
+		first
+			ifTrue: [ first := false. ]
+			ifFalse: [ stream tab: level ].
+			e acceptVisitor: self.
+			e needsSeparator ifTrue: [ stream nextPut: $; ]]
+		separatedBy: [ stream cr ].
+	stream cr; cr.
+
+	aCompoundStatement statements do: [ :e |
 		first
 			ifTrue: [ first := false. ]
 			ifFalse: [ stream tab: level ].
@@ -174,7 +182,8 @@ CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 
 	aCompoundStatement needsBrackets ifTrue: [ 
 		level := level - 1.
-		children ifNotEmpty: [ stream cr ].
+		(aCompoundStatement statements, aCompoundStatement declarations)
+			ifNotEmpty: [ stream cr ].
 		stream tab: level.
 		stream nextPut: $} ]
 ]
@@ -291,7 +300,8 @@ CSlangPrettyPrinter >> visitFunctionDefinition: aFunction [
 	aFunction hasRawPrototype ifFalse: [ 
 		aFunction declarator acceptVisitor: self ].
 	stream cr.
-	aFunction body acceptVisitor: self
+	aFunction body acceptVisitor: self.
+	stream cr.
 ]
 
 { #category : #generated }
