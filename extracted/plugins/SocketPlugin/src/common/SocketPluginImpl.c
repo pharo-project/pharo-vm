@@ -545,7 +545,6 @@ static void connectHandler(int fd, void *data, int flags)
   // Avoids race condition of the AIO
   if (pss->sockState != WaitingForConnection) {
     // Disable the FD again just in case
-    logWarn("A Connect Handler has arrived without the proper state");
     aioDisable(fd);
     return;
   }
