@@ -294,6 +294,27 @@ SlangBasicTranslationTest >> testBlockValueAsArgument [
 ]
 
 { #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testBlockValueAsArgumentWithComment [
+
+	| translation expression |
+	expression := TStmtListNode new setArguments: #(  ) statements: { 
+		TLabeledCommentNode withComment: 'yes!'.
+		TConstantNode value: 17. }.
+	translation := self translate: (TAssignmentNode
+		variable: (TVariableNode named: 'v')
+		expression: (TSendNode
+			receiver: (TVariableNode named: 'v')
+			selector: #ifTrue: 
+			arguments: {expression})).
+
+	self
+		assert: translation trimBoth
+		equals: 'v = ((v)
+	 ? (/* yes! */ 17)
+	 : 0)'
+]
+
+{ #category : #'tests-blocks' }
 SlangBasicTranslationTest >> testBlockValueAsArgumentWithConstantArgument [
 
 	"Case:

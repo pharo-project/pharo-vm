@@ -269,7 +269,7 @@ TSendNode >> copyWithoutReturn [
 { #category : #'C code generation' }
 TSendNode >> emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen [
 	"Emit the receiver in a form that can be passed as an argument."
-
+self haltIf: [ selector =#logError: and: [ aCodeGen currentMethod selector = #computeMaximumSize  ] ].
 	"If the selector is a built-in construct, translate it and return"
 	(aCodeGen emitBuiltinConstructAsArgumentFor: self on: aStream level: level) ifFalse:
 		["If it is a pointer dereference generate it"
@@ -336,7 +336,7 @@ TSendNode >> emitCCodeAsFunctionCallOn: aStream level: level generator: aCodeGen
 { #category : #'C code generation' }
 TSendNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
 	"Emit the receiver as a statement."
-
+self haltIf: [ selector =#logError: and: [ aCodeGen currentMethod selector = #computeMaximumSize  ] ].
 	"If the selector is a built-in construct, translate it and return"
 	(aCodeGen emitBuiltinConstructFor: self on: aStream level: level) ifFalse:
 		["If it is a pointer dereference generate it"

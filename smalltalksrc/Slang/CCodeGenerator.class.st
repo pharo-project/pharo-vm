@@ -535,21 +535,17 @@ CCodeGenerator >> bytesPerWord [
 
 { #category : #utilities }
 CCodeGenerator >> cCodeForMethod: selector [
-
 	"Answer a string containing the C code for the given method."
-
 	"Example:
 		((CCodeGenerator new initialize addClass: TestCClass1; prepareMethods)
 			cCodeForMethod: #ifTests)"
 
-	| m s cast |
+	| m s |
 	m := self methodNamed: selector.
-	m = nil ifTrue: [ 
-		self error: 'method not found in code base: ' , selector ].
+	m = nil ifTrue: [ self error: 'method not found in code base: ', selector ].
 
-	s := ReadWriteStream on: ''.
-	cast := m asCASTIn: self.
-	cast prettyPrintOn: s.
+	s := (ReadWriteStream on: '').
+	m emitCCodeOn: s generator: self.
 	^ s contents
 ]
 
@@ -1191,17 +1187,17 @@ CCodeGenerator >> emitCMacros: methodList on: aStream [
 
 { #category : #'C code generator' }
 CCodeGenerator >> emitCMethods: methodList on: aStream [
-
 	UIManager default
 		displayProgress: 'Writing Translated Code...'
-		from: 0
-		to: methods size
-		during: [ :bar | 
-			methodList doWithIndex: [ :m :i | 
+		from: 0 to: methods size
+		during:
+			[:bar |
+			methodList doWithIndex:
+				[ :m :i |
 				bar value: i.
-				(m isRealMethod and: [ self shouldGenerateMethod: m ]) ifTrue: [ | cast |
-					cast := m asCASTIn: self.
-					cast prettyPrintOn: aStream ] ] ]
+				(m isRealMethod
+				 and: [self shouldGenerateMethod: m]) ifTrue:
+					[m emitCCodeOn: aStream generator: self]]]
 ]
 
 { #category : #'C code generator' }

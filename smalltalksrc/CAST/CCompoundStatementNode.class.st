@@ -89,6 +89,12 @@ CCompoundStatementNode >> isCompoundStatement [
 	^ true
 ]
 
+{ #category : #testing }
+CCompoundStatementNode >> isEmpty [
+	
+	^ statements isEmpty or: [ statements allSatisfy: [ :e | e isEmpty ] ]
+]
+
 { #category : #accessing }
 CCompoundStatementNode >> last [
 	

@@ -74,6 +74,18 @@ CGLRAbstractNode >> isConstant [
 ]
 
 { #category : #testing }
+CGLRAbstractNode >> isEmpty [
+	
+	^ false
+]
+
+{ #category : #testing }
+CGLRAbstractNode >> isEmptyStatement [
+	
+	^ false
+]
+
+{ #category : #testing }
 CGLRAbstractNode >> isFunctionCall [
 	
 	^ false
