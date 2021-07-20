@@ -29,6 +29,8 @@ CArrayAccessNode >> array [
 
 { #category : #generated }
 CArrayAccessNode >> array: aCGLRAbstractNode [
+	self assertExpression: aCGLRAbstractNode.
+	
 	self array notNil
 		ifTrue: [ self array parent: nil ].
 	array := aCGLRAbstractNode.
@@ -43,6 +45,8 @@ CArrayAccessNode >> index [
 
 { #category : #generated }
 CArrayAccessNode >> index: aCGLRExpressionNode [
+	self assertExpression: aCGLRExpressionNode.
+	
 	self index notNil
 		ifTrue: [ self index parent: nil ].
 	index := aCGLRExpressionNode.

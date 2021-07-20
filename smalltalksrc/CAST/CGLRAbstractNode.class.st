@@ -24,6 +24,18 @@ CGLRAbstractNode >> ambiguous: aNode [
 				do: [ :n1 :n2 | n1 ambiguous: n2 ] ]
 ]
 
+{ #category : #asserting }
+CGLRAbstractNode >> assertExpression: aNode [
+
+	self assert: aNode isExpression
+]
+
+{ #category : #asserting }
+CGLRAbstractNode >> assertListOfExpressions: aCollection [ 
+	
+	self assert: (aCollection allSatisfy: [ :e | e isExpression ])
+]
+
 { #category : #testing }
 CGLRAbstractNode >> comments [
 
@@ -86,9 +98,28 @@ CGLRAbstractNode >> isLeaf [
 ]
 
 { #category : #testing }
+CGLRAbstractNode >> isReturn [
+	
+	^ false
+]
+
+{ #category : #testing }
 CGLRAbstractNode >> isUnaryOperation [
 	
 	^ false
+]
+
+{ #category : #rewriting }
+CGLRAbstractNode >> last [
+	"I'm the last statement of myself"
+	^ self
+]
+
+{ #category : #rewriting }
+CGLRAbstractNode >> last: aReplacement [
+	
+	"I replace myself by the node as argument"
+	^ aReplacement
 ]
 
 { #category : #accessing }

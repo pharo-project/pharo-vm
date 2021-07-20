@@ -28,8 +28,10 @@ CUnaryOperatorNode >> expression [
 ]
 
 { #category : #generated }
-CUnaryOperatorNode >> expression: anObject [
-	expr := anObject
+CUnaryOperatorNode >> expression: aCGLRAbstractNode [
+	self assertExpression: aCGLRAbstractNode.
+	
+	expr := aCGLRAbstractNode
 ]
 
 { #category : #generated }

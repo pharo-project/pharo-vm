@@ -30,6 +30,8 @@ CExpressionListNode >> add: anExpression [
 CExpressionListNode >> combineWithExpression: firstExpression [
 	
 	| result |
+	self assertExpression: firstExpression.
+	
 	result := CExpressionListNode new.
 	result add: firstExpression.
 	expressions do: [ :expr |
@@ -44,6 +46,8 @@ CExpressionListNode >> expressions [
 
 { #category : #generated }
 CExpressionListNode >> expressions: anOrderedCollection [
+	self assertListOfExpressions: anOrderedCollection.
+
 	self setParents: self expressions to: nil.
 	expressions := anOrderedCollection.
 	self setParents: self expressions to: self

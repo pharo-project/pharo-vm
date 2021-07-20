@@ -49,6 +49,8 @@ CWhileStatementNode >> while [
 
 { #category : #generated }
 CWhileStatementNode >> while: aCGLRExpressionNode [
+	self assertExpression: aCGLRExpressionNode.
+	
 	self while notNil
 		ifTrue: [ self while parent: nil ].
 	while := aCGLRExpressionNode.

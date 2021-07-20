@@ -50,6 +50,8 @@ CStructurePointerAccessNode >> structurePointer [
 
 { #category : #generated }
 CStructurePointerAccessNode >> structurePointer: aCGLRAbstractNode [
+	self assertExpression: aCGLRAbstractNode.
+
 	self structurePointer notNil
 		ifTrue: [ self structurePointer parent: nil ].
 	structurePointer := aCGLRAbstractNode.

@@ -21,6 +21,18 @@ TReturnNode >> asCASTIn: aBuilder [
 	(expression isSwitch or: [expression isCaseStmt]) ifTrue: [
 		^ expression asCASTIn: aBuilder addToEndOfCases: self ].
 
+	(expression isSend and: [expression isValueExpansion]) ifTrue: [
+		| statementList lastStatement copy |
+		statementList := expression receiver.
+		lastStatement := statementList statements last.
+		lastStatement isReturn ifTrue: [
+			^ expression asCASTIn: aBuilder ].
+		copy := statementList copy.
+		copy statements
+			at: statementList statements size
+			put: (TReturnNode new setExpression: lastStatement).
+		^ copy asCASTIn: aBuilder ].
+
 	'void' = aBuilder currentMethod returnType ifTrue: [
 		"If the function is void, don't say 'return x' instead say ' x; return' "
 		| statements |

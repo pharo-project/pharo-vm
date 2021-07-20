@@ -1,6 +1,6 @@
 Class {
 	#name : #CStringLiteralNode,
-	#superclass : #CGLRAbstractNode,
+	#superclass : #CExpressionNode,
 	#instVars : [
 		'value',
 		'needsDoubleQuotes'

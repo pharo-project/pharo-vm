@@ -1,6 +1,6 @@
 Class {
 	#name : #CTernaryNode,
-	#superclass : #CGLRAbstractNode,
+	#superclass : #CExpressionNode,
 	#instVars : [
 		'condition',
 		'else',
@@ -32,10 +32,12 @@ CTernaryNode >> condition [
 ]
 
 { #category : #generated }
-CTernaryNode >> condition: aCGLRAbstractNode [
+CTernaryNode >> condition: aCGLRExpressionNode [
+	self assertExpression: aCGLRExpressionNode.
+	
 	self condition notNil
 		ifTrue: [ self condition parent: nil ].
-	condition := aCGLRAbstractNode.
+	condition := aCGLRExpressionNode.
 	self condition notNil
 		ifTrue: [ self condition parent: self ]
 ]
@@ -46,10 +48,12 @@ CTernaryNode >> else [
 ]
 
 { #category : #generated }
-CTernaryNode >> else: aCGLRAbstractNode [
+CTernaryNode >> else: aCGLRExpressionNode [
+	self assertExpression: aCGLRExpressionNode.
+	
 	self else notNil
 		ifTrue: [ self else parent: nil ].
-	else := aCGLRAbstractNode.
+	else := aCGLRExpressionNode.
 	self else notNil
 		ifTrue: [ self else parent: self ]
 ]
@@ -78,6 +82,8 @@ CTernaryNode >> then [
 
 { #category : #generated }
 CTernaryNode >> then: aCGLRExpressionNode [
+	self assertExpression: aCGLRExpressionNode.
+	
 	self then notNil
 		ifTrue: [ self then parent: nil ].
 	then := aCGLRExpressionNode.

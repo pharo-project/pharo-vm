@@ -37,6 +37,8 @@ CBinaryOperatorNode >> left [
 
 { #category : #generated }
 CBinaryOperatorNode >> left: aCGLRAbstractNode [
+	self assertExpression: aCGLRAbstractNode.
+	
 	self left notNil
 		ifTrue: [ self left parent: nil ].
 	left := aCGLRAbstractNode.
@@ -61,6 +63,8 @@ CBinaryOperatorNode >> right [
 
 { #category : #generated }
 CBinaryOperatorNode >> right: aCGLRAbstractNode [
+	self assertExpression: aCGLRAbstractNode.
+	
 	self right notNil
 		ifTrue: [ self right parent: nil ].
 	right := aCGLRAbstractNode.

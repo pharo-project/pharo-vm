@@ -1,6 +1,6 @@
 Class {
 	#name : #CRawCodeNode,
-	#superclass : #CGLRAbstractNode,
+	#superclass : #CExpressionNode,
 	#instVars : [
 		'code'
 	],

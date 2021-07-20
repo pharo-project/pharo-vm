@@ -31,6 +31,9 @@ CCastExpressionNode >> expression [
 
 { #category : #generated }
 CCastExpressionNode >> expression: aCGLRAbstractNode [
+
+	self assertExpression: aCGLRAbstractNode.
+	
 	self expression notNil
 		ifTrue: [ self expression parent: nil ].
 	expr := aCGLRAbstractNode.

@@ -1886,12 +1886,12 @@ CCodeGenerator >> generateCASTBetweenAnd: tast [
 		  operator: #&&
 		  left: (CBinaryOperatorNode
 				   operator: #>=
-				   left: (tast receiver asCASTIn: self)
-				   right: (tast arguments first asCASTIn: self))
+				   left: (tast receiver asCASTExpressionIn: self)
+				   right: (tast arguments first asCASTExpressionIn: self))
 		  right: (CBinaryOperatorNode
 				   operator: #<=
-				   left: (tast receiver asCASTIn: self)
-				   right: (tast arguments second asCASTIn: self))
+				   left: (tast receiver asCASTExpressionIn: self)
+				   right: (tast arguments second asCASTExpressionIn: self))
 ]
 
 { #category : #'CAST translation' }
@@ -1928,7 +1928,7 @@ CCodeGenerator >> generateCASTBitInvert32: tast [
 		  type: (CTypeNameNode symbol: 'unsigned int')
 		  expression: ((CUnaryOperatorNode
 				    operator: #~
-				    expression: (tast receiver asCASTIn: self))
+				    expression: (tast receiver asCASTExpressionIn: self))
 				   needsParentheses: true;
 				   yourself)
 ]
@@ -1940,7 +1940,7 @@ CCodeGenerator >> generateCASTBitInvert64: tast [
 			   type: (self is32Bit not
 					    ifTrue: [ CTypeNameNode symbol: 'usqIntptr_t' ]
 					    ifFalse: [ CTypeNameNode symbol: 'unsigned long long' ])
-			   expression: (tast receiver asCASTIn: self))
+			   expression: (tast receiver asCASTExpressionIn: self))
 ]
 
 { #category : #'CAST translation' }
@@ -2571,7 +2571,7 @@ CCodeGenerator >> generateCASTIntegerValueOf: aTSendNode [
 	
 	^ CBinaryOperatorNode
 		operator: #>>
-		left: (aTSendNode arguments first asCASTIn: self)
+		left: (aTSendNode arguments first asCASTExpressionIn: self)
 		right: (CConstantNode value: self vmClass objectMemoryClass numSmallIntegerTagBits)
 ]
 
@@ -2625,10 +2625,10 @@ CCodeGenerator >> generateCASTMax: tast [
 	^ CTernaryNode
 		  condition: (CBinaryOperatorNode
 				   operator: #<
-				   left: (tast receiver asCASTIn: self)
-				   right: (tast arguments first asCASTIn: self))
-		  then: (tast arguments first asCASTIn: self)
-		  else: (tast receiver asCASTIn: self)
+				   left: (tast receiver asCASTExpressionIn: self)
+				   right: (tast arguments first asCASTExpressionIn: self))
+		  then: (tast arguments first asCASTExpressionIn: self)
+		  else: (tast receiver asCASTExpressionIn: self)
 ]
 
 { #category : #'CAST translation' }
@@ -2637,10 +2637,10 @@ CCodeGenerator >> generateCASTMin: tast [
 	^ CTernaryNode
 		  condition: (CBinaryOperatorNode
 				   operator: #<
-				   left: (tast receiver asCASTIn: self)
-				   right: (tast arguments first asCASTIn: self))
-		  then: (tast receiver asCASTIn: self)
-		  else: (tast arguments first asCASTIn: self)
+				   left: (tast receiver asCASTExpressionIn: self)
+				   right: (tast arguments first asCASTExpressionIn: self))
+		  then: (tast receiver asCASTExpressionIn: self)
+		  else: (tast arguments first asCASTExpressionIn: self)
 ]
 
 { #category : #'CAST translation' }
@@ -2687,7 +2687,7 @@ CCodeGenerator >> generateCASTNotNil: tast [
 
 	^ CBinaryOperatorNode
 		  operator: #!=
-		  left: (tast receiver asCASTIn: self)
+		  left: (tast receiver asCASTExpressionIn: self)
 		  right: (CIdentifierNode name: self nilTranslation)
 ]
 
@@ -2725,8 +2725,8 @@ CCodeGenerator >> generateCASTPowerTo: tast [
 			  (CCallNode
 				   identifier: (CIdentifierNode name: 'pow')
 				   arguments: { 
-						   (tast receiver asCASTIn: self).
-						   (tast arguments first asCASTIn: self) })
+						   (tast receiver asCASTExpressionIn: self).
+						   (tast arguments first asCASTExpressionIn: self) })
 ]
 
 { #category : #'CAST translation' }
@@ -2761,8 +2761,8 @@ CCodeGenerator >> generateCASTPreIncrement: tast [
 CCodeGenerator >> generateCASTRaisedTo: tast [
 
 	^ CCallNode identifier: (CIdentifierNode name: 'pow') arguments: { 
-			  (tast receiver asCASTIn: self).
-			  (tast arguments first asCASTIn: self) }
+			  (tast receiver asCASTExpressionIn: self).
+			  (tast arguments first asCASTExpressionIn: self) }
 ]
 
 { #category : #'CAST translation' }
@@ -2837,7 +2837,7 @@ CCodeGenerator >> generateCASTShiftLeft: tast [
 						    cLiteralForUnsignedInteger: rcvr value
 						    longlong: castToLong))
 			  right: (arg asCASTIn: self) ].
-	receiverNode := tast receiver asCASTIn: self.
+	receiverNode := tast receiver asCASTExpressionIn: self.
 	leftNode := receiverNode.
 	type := self typeFor: rcvr in: currentMethod.
 	castToLong := castToLong and: [ 
@@ -3149,7 +3149,7 @@ CCodeGenerator >> generateCASTUnary: tast operator: operator [
 
 	^ CUnaryOperatorNode
 		  operator: operator
-		  expression: (tast receiver asCASTIn: self)
+		  expression: (tast receiver asCASTExpressionIn: self)
 ]
 
 { #category : #'CAST translation' }

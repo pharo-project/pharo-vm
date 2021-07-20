@@ -8,6 +8,14 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance creation' }
+TStmtListNode class >> statements: aCollection [ 
+	
+	^ self new
+		setStatements: aCollection;
+		yourself
+]
+
 { #category : #utilities }
 TStmtListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned assignments: assigned in: aCodeGen [
 	"Add any variables in variables that are read before written to readBeforeAssigned.

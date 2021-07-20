@@ -1,6 +1,6 @@
 Class {
 	#name : #CPreprocessorIfNode,
-	#superclass : #CGLRAbstractNode,
+	#superclass : #CExpressionNode,
 	#instVars : [
 		'then',
 		'else',

@@ -27,6 +27,9 @@ CReturnStatementNode >> expression [
 
 { #category : #generated }
 CReturnStatementNode >> expression: aCGLRExpressionNode [
+
+	self assertExpression: aCGLRExpressionNode.
+	
 	self expression notNil
 		ifTrue: [ self expression parent: nil ].
 	expr := aCGLRExpressionNode.

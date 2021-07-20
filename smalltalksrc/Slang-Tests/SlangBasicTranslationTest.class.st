@@ -203,6 +203,28 @@ SlangBasicTranslationTest >> testAssignementAsExpressionWithExpressionBlockWithL
 		equals: 'y = (foo(1, 2), foo(3, 4), foo(5, 6), a)'
 ]
 
+{ #category : #'tests-return' }
+SlangBasicTranslationTest >> testBitShiftIfTrue [
+
+	| translation ast |
+	ast := TSendNode
+		receiver: (TSendNode
+			receiver: (TVariableNode named: 'aBoolean')
+			selector: #ifTrue:ifFalse:
+			arguments: { 
+				TStmtListNode statements: { TConstantNode value: 1 }.
+				TStmtListNode statements: { TConstantNode value: 2 }.
+			 } )
+		selector: #<<
+		arguments: {TConstantNode value: 31}.
+	
+	translation := self translate: ast.
+		
+	self assert: translation equals: '((sqInt) (((usqInt) (((aBoolean)
+	 ? 1
+	 : 2)) ) << 0x1F) )'
+]
+
 { #category : #'tests-blocks' }
 SlangBasicTranslationTest >> testBlockValue [
 
@@ -1428,6 +1450,39 @@ SlangBasicTranslationTest >> testNonContiguousCaseStatementWithSameBodyAreCollap
 }'
 ]
 
+{ #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testReturnBlockValueValueValue [
+
+	"Case:
+	
+	return [ :a :b :c | a + b ] value: d value: e value: f "
+
+	| translation |
+
+	translation := self translate: (TReturnNode expression: 
+		(TSendNode new
+			setSelector: #value:value:value:
+			receiver: (TStmtListNode new
+				setArguments: { 
+					TVariableNode named: 'a'.
+					TVariableNode named: 'b'.
+					TVariableNode named: 'c' }
+				statements: {
+					TSendNode new
+						setSelector: #+
+						receiver: (TVariableNode named: 'a')
+						arguments: { TVariableNode named: 'b' }.
+				})
+			arguments: {
+				TVariableNode named: 'd'.
+				TVariableNode named: 'e'.
+				TVariableNode named: 'f'. })).
+
+	self assert: translation trimBoth equals: '{
+	return a + b;
+}'
+]
+
 { #category : #'tests-case' }
 SlangBasicTranslationTest >> testReturnCaseStatementDoesNotReplaceGotoByReturn [
 
@@ -1468,6 +1523,26 @@ SlangBasicTranslationTest >> testReturnCaseStatementMovesReturnIntoSwitch [
 	error("Case not found");
 	return -1;
 }'
+]
+
+{ #category : #'tests-return' }
+SlangBasicTranslationTest >> testReturnIfTrue [
+
+	| translation ast |
+	ast := TReturnNode
+		expression: (TSendNode
+			receiver: (TVariableNode named: 'aBoolean')
+			selector: #ifTrue:ifFalse:
+			arguments: { 
+				TStmtListNode statements: { TConstantNode value: 1 }.
+				TStmtListNode statements: { TConstantNode value: 2 }.
+			 } ).
+	
+	translation := self translate: ast.
+		
+	self assert: translation equals: 'return ((aBoolean)
+	 ? 1
+	 : 2)'
 ]
 
 { #category : #'tests-return' }

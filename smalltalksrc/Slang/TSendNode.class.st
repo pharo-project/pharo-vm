@@ -10,6 +10,16 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance creation' }
+TSendNode class >> receiver: aReceiverNode selector: aString arguments: aCollection [ 
+	
+	^ self new
+		setSelector: aString
+		receiver: aReceiverNode
+		arguments: aCollection;
+		yourself
+]
+
 { #category : #accessing }
 TSendNode >> args [
 

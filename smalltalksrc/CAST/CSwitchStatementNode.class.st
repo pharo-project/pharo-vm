@@ -29,6 +29,8 @@ CSwitchStatementNode >> if [
 
 { #category : #generated }
 CSwitchStatementNode >> if: aCGLRExpressionNode [
+	self assertExpression: aCGLRExpressionNode.
+	
 	self if notNil
 		ifTrue: [ self if parent: nil ].
 	if := aCGLRExpressionNode.

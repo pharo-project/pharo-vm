@@ -22,6 +22,8 @@ CExpressionNode >> acceptVisitor: anAbstractVisitor [
 CExpressionNode >> combineWithExpression: firstExpression [
 	
 	| result |
+	self assertExpression: firstExpression.
+
 	result := CExpressionListNode new.
 	result add: firstExpression.
 	result add: self.

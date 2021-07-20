@@ -33,6 +33,8 @@ CForStatementNode >> init [
 
 { #category : #generated }
 CForStatementNode >> init: anOrderedCollection [
+	self assertListOfExpressions: anOrderedCollection.
+	
 	self setParents: self init to: nil.
 	init := anOrderedCollection.
 	self setParents: self init to: self
@@ -65,6 +67,8 @@ CForStatementNode >> step [
 
 { #category : #generated }
 CForStatementNode >> step: anOrderedCollection [
+	self assertListOfExpressions: anOrderedCollection.
+	
 	self setParents: self step to: nil.
 	step := anOrderedCollection.
 	self setParents: self step to: self
@@ -77,6 +81,8 @@ CForStatementNode >> until [
 
 { #category : #generated }
 CForStatementNode >> until: aCGLRExpressionStatementNode [
+	self assertExpression: aCGLRExpressionStatementNode.
+
 	self until notNil
 		ifTrue: [ self until parent: nil ].
 	until := aCGLRExpressionStatementNode.
