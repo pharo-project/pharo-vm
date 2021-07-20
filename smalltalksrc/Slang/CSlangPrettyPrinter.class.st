@@ -154,7 +154,7 @@ CSlangPrettyPrinter >> visitComment: aComment [
 { #category : #generated }
 CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 
-	| children first |
+	| first |
 	first := true.
 	aCompoundStatement needsBrackets ifTrue: [ 
 		"If we print brackets, then the first was already printed"
@@ -168,9 +168,14 @@ CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 			ifTrue: [ first := false. ]
 			ifFalse: [ stream tab: level ].
 			e acceptVisitor: self.
-			e needsSeparator ifTrue: [ stream nextPut: $; ]]
-		separatedBy: [ stream cr ].
-	stream cr; cr.
+			e needsSeparator ifTrue: [ stream nextPut: $; ].
+			stream cr. ].
+	
+	"Put at least one empty line to separate declarations and statements.
+	This is required for the current GNUisation to work, which searches for empty lines"
+	aCompoundStatement declarations ifNotEmpty: [
+		stream cr.
+	].
 
 	aCompoundStatement statements do: [ :e |
 		first
