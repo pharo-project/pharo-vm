@@ -458,7 +458,7 @@ CCodeGenerator >> arrayInitializerCalled: varName for: array sizeString: sizeStr
 { #category : #utilities }
 CCodeGenerator >> asmLabelNodeFor: selector [
 	| count label |
-	suppressAsmLabels ifTrue: [^self].
+	suppressAsmLabels ifTrue: [^CEmptyStatementNode new].
 	asmLabelCounts ifNil:
 		[asmLabelCounts := Dictionary new].
 	count := asmLabelCounts
@@ -2700,14 +2700,15 @@ CCodeGenerator >> generateCASTOr: tast [
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTPerform: tast [
 
-	| call |
-	call := CCallNode
-		        identifier: (CIdentifierNode name: (tast arguments first value asString))
-		        arguments: OrderedCollection new.
-	2 to: tast arguments size do: [ :i | 
-		call arguments add:
-			((tast arguments at: i) asCASTExpressionIn: self) ].
-	^ call
+	| arguments identifier |
+	arguments := (2 to: tast arguments size) collect: [ :i | 
+		(tast arguments at: i) asCASTExpressionIn: self ].
+	identifier := tast arguments first asCASTExpressionIn: self.
+	identifier isConstant ifTrue: [ 
+		identifier := CIdentifierNode name: identifier value ].
+	^ CCallNode
+        identifier: identifier
+        arguments: arguments
 ]
 
 { #category : #'CAST translation' }

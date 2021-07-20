@@ -115,8 +115,9 @@ CSlangPrettyPrinter >> visitBreakStatement: aBreakStatement [
 { #category : #generated }
 CSlangPrettyPrinter >> visitCall: aCall [
 	
-	
-	stream nextPutAll: (aCall identifier name).
+	aCall identifier isIdentifier ifFalse: [ stream nextPut: $( ].
+	aCall identifier acceptVisitor: self.
+	aCall identifier isIdentifier ifFalse: [ stream nextPut: $) ].
 	stream nextPutAll: '('.
 	aCall arguments do: [ :arg | arg acceptVisitor: self ] separatedBy: [ stream nextPutAll: ', '].
 	stream nextPutAll: ')'.

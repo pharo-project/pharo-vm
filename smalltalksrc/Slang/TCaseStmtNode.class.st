@@ -40,9 +40,7 @@ TCaseStmtNode >> asCASTIn: aBuilder [
 	
 	expansions := aBuilder suppressAsmLabelsWhile: [
 		cases collect: [:case| self filterCommentsFrom:
-			(String streamContents:
-				[:s|
-				case emitCCodeOn: s level: 0 generator: aBuilder ] ) ] ].
+			(String streamContents: [:s| (case asCASTIn: aBuilder) prettyPrintOn: s ] ) ] ].
 	
 	duplicates := Set new.
 	1 to: cases size do: [:i| | case lastCase |

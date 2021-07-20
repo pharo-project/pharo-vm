@@ -4511,6 +4511,23 @@ SlangBasicTranslationTest >> testSendPerformWith [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendPerformWithAccessor [
+
+	| translation send |
+	generator currentMethod declarationAt: 'aPrimitiveDescriptor' put: #'PrimitiveDescriptor *'.
+	send := TSendNode new
+		        setSelector: #perform:
+		        receiver: (TVariableNode named: 'objectRepresentation')
+		        arguments: { TSendNode new
+			        setSelector: #primitiveGenerator
+			        receiver: (TVariableNode named: 'aPrimitiveDescriptor')
+			        arguments: #() }.
+	translation := self translate: send.
+
+	self assert: translation equals: '(primitiveGenerator(aPrimitiveDescriptor))()'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendPerformWithWith [
 	"self perform: #foo with: x with: y"
 	| translation send |
