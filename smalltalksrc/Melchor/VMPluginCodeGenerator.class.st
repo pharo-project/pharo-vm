@@ -187,6 +187,65 @@ VMPluginCodeGenerator >> emitIfdefForPluginFunctionOption: anArrayOrSymbol on: a
 														withArguments: anArrayOrSymbol allButFirst])
 ]
 
+{ #category : #'CAST translation' }
+VMPluginCodeGenerator >> generateCASTInterpreterProxyFunctionDereference: aTSendNode [ 
+	
+	| pluginsToClone thenStatement |
+	pluginsToClone := self pluginFunctionsToClone copyWithoutAll: self selectorsThatAreGeneratedAsMacros.
+	pluginsToClone isEmpty ifTrue: [ ^ CEmptyStatementNode new ].
+	
+	thenStatement := CCompoundStatementNode new.
+	pluginsToClone do: [:s| | cs |
+		cs := self cFunctionNameFor: s.
+		thenStatement add: (self
+			withCASTOptionalVerbiageFor: s
+			mainNode: (CAssignmentNode
+				lvalue: (CIdentifierNode name: cs)
+				rvalue: ( CStructurePointerAccessNode
+					structurePointer: (CIdentifierNode name: 'interpreterProxy')
+					member: (CIdentifierNode name: cs)))
+			ifOptionalNode: (self
+				withCASTConditionalDefineOf: cs
+				comment: nil
+				thenStatement: (CAssignmentNode 
+					lvalue: (CIdentifierNode name: cs)
+					rvalue: (CConstantNode value: 0)))) ].
+	
+	^ self withCASTConditionalDefineOf: 'SQUEAK_BUILTIN_PLUGIN'
+		comment: nil
+		thenStatement: thenStatement.
+]
+
+{ #category : #'CAST translation' }
+VMPluginCodeGenerator >> generateCASTRemapOopIn: aTSendNode [ 
+	
+	"Generate the C code for this message onto the given stream."
+
+	| arm result |
+	"Avoid nesting #if SPURVM...#else...#endif within arms of an outer #if SPURVM...#else...#endif."
+	(Notification new
+		 tag: #inRemapOopInArm;
+		 signal) ifNotNil: [ :inRemapOopInArm | 
+		^ inRemapOopInArm ifTrue: [ 
+			  self generateCASTSpurRemapOopIn: aTSendNode ] ].
+	[ 
+	arm := true.
+	result := self generateCASTSpurRemapOopIn: aTSendNode.
+	arm := false.
+	^ result ]
+		on: Notification
+		do: [ :ex | 
+			ex tag == #inRemapOopInArm
+				ifTrue: [ ex resume: arm ]
+				ifFalse: [ ex pass ] ]
+]
+
+{ #category : #'CAST translation' }
+VMPluginCodeGenerator >> generateCASTSpurRemapOopIn: aTSendNode [ 
+
+	^ aTSendNode args second asCASTIn: self
+]
+
 { #category : #'C translation' }
 VMPluginCodeGenerator >> generateIntegerObjectOf: msgNode on: aStream indent: level [
 	"Generate the C code for this message onto the given stream."
@@ -315,6 +374,17 @@ VMPluginCodeGenerator >> initialize [
 	super initialize.
 	pluginFunctionsUsed := Set new.
 	inliningDone := false
+]
+
+{ #category : #public }
+VMPluginCodeGenerator >> initializeCASTTranslationDictionary [
+
+	super initializeCASTTranslationDictionary.
+	castTranslationDict
+		at: #expandDereferenceInterpreterProxyFunctionTable
+			put: #generateCASTInterpreterProxyFunctionDereference:;
+		at: #remapOop:in:
+			put: #generateCASTRemapOopIn:
 ]
 
 { #category : #public }
@@ -708,6 +778,23 @@ VMPluginCodeGenerator >> typeFor: aNode in: aTMethod [
 				ifTrue: [#'sqInt *']
 				ifFalse: [#sqInt]]].
 	^super typeFor: aNode in: aTMethod
+]
+
+{ #category : #'C translation' }
+VMPluginCodeGenerator >> withCASTOptionalVerbiageFor: selector mainNode: mainNode ifOptionalNode: optionalNode [
+
+	^ (self vmmakerConfiguration interpreterProxyClass >> selector pragmaAt: #option:)
+		ifNil: [ mainNode ]
+		ifNotNil: [:pragma| | option condition |
+			option := pragma arguments first.
+			condition := option isSymbol
+				ifTrue: [ option ]
+				ifFalse: [
+					self perform: option first withArguments: option allButFirst].
+			CPreprocessorIfNode 
+				if: (CConstantNode value: condition)
+				then: mainNode
+				else: optionalNode ]
 ]
 
 { #category : #'C translation' }

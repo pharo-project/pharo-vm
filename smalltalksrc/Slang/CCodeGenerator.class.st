@@ -7027,6 +7027,22 @@ CCodeGenerator >> with: aNode ifAppropriateSetTo: aBoolean do: aBlock [
 ]
 
 { #category : #'C code generator' }
+CCodeGenerator >> withCASTConditionalDefineOf: aConstantNameString comment: commentOrNil thenStatement: statement [
+
+	| thenNode |
+	thenNode := CLabeledStatementNode new.
+	thenNode statement: statement.
+	commentOrNil ifNotNil: [ thenNode comment: commentOrNil ].
+	^ CPreprocessorIfNode
+		if: (CUnaryOperatorNode
+			operator: #!
+			expression: (CCallNode
+				identifier: (CIdentifierNode name: 'defined')
+				arguments: { CConstantNode value: aConstantNameString }))
+		then: thenNode
+]
+
+{ #category : #'C code generator' }
 CCodeGenerator >> withConditionalDefineOf: aConstantNameString comment: commentOrNil on: aStream do: aBlock [
 	aStream nextPutAll: '#if !defined('; nextPutAll: aConstantNameString; nextPut: $).
 	commentOrNil ifNotNil: [aStream nextPutAll: ' /* '; nextPutAll: commentOrNil; nextPutAll: ' */'].
