@@ -2511,19 +2511,20 @@ CCodeGenerator >> generateCASTInlineCppIfElse: tast asArgument: asArgument [
 		condition ifTrue: [ ^ generateCAST value: tast arguments second ].
 		tast arguments size >= 3 ifTrue: [ 
 			^ generateCAST value: tast arguments third ].
-		^ CEmptyStatementNode ].
+		^ CEmptyStatementNode new ].
+	self haltIf: [ self currentMethod selector = #setInterpreter:].
 	cppIf := CPreprocessorIfNode
 		         if: (tast arguments first asCASTExpressionIn: self)
 		         then: (self
 				          with: tast arguments first
 				          ifAppropriateSetTo: true
-				          do: [ generateCAST value: tast arguments second ]).
+				          do: [ generateCAST value: tast arguments second ])
+					asArgument: asArgument.
 	tast arguments size >= 3 ifTrue: [ 
 		cppIf else: (self
 				 with: tast arguments first
 				 ifAppropriateSetTo: false
 				 do: [ generateCAST value: tast arguments third ]) ].
-	cppIf isArgument: asArgument.
 	^ cppIf
 ]
 
@@ -3776,28 +3777,35 @@ CCodeGenerator >> generateInlineCCodeAsArgument: msgNode on: aStream indent: lev
 CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aStream indent: level [
 	
 	"Generate the C code for this message onto the given stream."
-	| expr putStatement |
+	| expr putStatement tabbing sublevel |
+	sublevel := asArgument
+		ifTrue: [ 
+			tabbing := level + 1.
+			level + 2 ]
+		ifFalse: [ 
+			tabbing := level ].
 	
 	"Compile-time expansion for constants set in the options dictionary,
 	 e.g. to cut down on noise for MULTIPLEBYTECODESETS."
 	putStatement := asArgument
 		ifTrue: "emitCCodeAsArgumentOn: doesn't indent, the code needs indenting if it takes multiple lines, so post-process."
 			[[:node| | expansion |
-			  expansion := String streamContents: [:s| node emitCCodeAsArgumentOn: s level: level generator: self].
+				1halt.
+			  expansion := String streamContents: [:s| node emitCCodeAsArgumentOn: s level: sublevel generator: self].
 			  aStream nextPutAll:
 			  ((expansion includes: Character cr)
 				ifTrue:
 					[(String streamContents:
 							[:s|
 							s position > 0 ifTrue: [s tab: level + 1].
-							node emitCCodeAsArgumentOn: s level: level generator: self])
+							node emitCCodeAsArgumentOn: s level: sublevel generator: self])
 						copyReplaceAll: (String with: Character cr)
 						with: (String with: Character cr), (String new: level + 1 withAll: Character tab)]
 				ifFalse: [expansion])]]
 		ifFalse:
 			[[:node| | expansion |
 			  expansion := String streamContents: [:s|
-				node emitCCodeOn: s level: level generator: self].
+				node emitCCodeOn: s level: sublevel generator: self].
 			 "Remove tabs from first line to avoid indenting a second time"
 			 expansion ifNotEmpty:
 				[expansion := expansion allButFirst: (expansion findFirst: [:c| c ~~ Character tab]) - 1].
@@ -3819,12 +3827,12 @@ CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aS
 			  aStream nextPutAll:
 				((String streamContents:
 						[:s|
-						s next: level + 1 put: Character tab.
+						s next: sublevel put: Character tab.
 						node emitCCodeAsArgumentOn: s level: level generator: self])
 					copyReplaceAll: (String with: Character cr)
 					with: (String with: Character cr), (String new: level + 1 withAll: Character tab))]]
 		ifFalse:
-			[[:node| aStream tab: level. node emitCCodeOn: aStream level: level generator: self]].
+			[[:node| aStream tab: sublevel. node emitCCodeOn: aStream level: level generator: self]].
 
 	expr := String streamContents:
 				[:es|
@@ -3836,7 +3844,7 @@ CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aS
 		[expr := expr allButLast].
 	aStream
 		newLine;
-		nextPut: $#; next: level * 2 put: Character space; nextPutAll: 'if '; nextPutAll: expr; cr.
+		nextPut: $#; next: tabbing * 2 put: Character space; nextPutAll: 'if '; nextPutAll: expr; cr.
 	self with: msgNode args first
 		ifAppropriateSetTo: true
 		do: [putStatement value: msgNode args second].
@@ -3844,14 +3852,14 @@ CCodeGenerator >> generateInlineCppIfElse: msgNode asArgument: asArgument on: aS
 	msgNode args size >= 3 ifTrue:
 		[aStream
 			newLine;
-			nextPut: $#; next: level * 2 put: Character space; nextPutAll: 'else'; nextPutAll: expr;
+			nextPut: $#; next: tabbing * 2 put: Character space; nextPutAll: 'else'; nextPutAll: expr;
 			cr.
 		self with: msgNode args first
 			ifAppropriateSetTo: false
 			do: [putStatement value: msgNode args third]].
 	aStream
 		newLine;
-		nextPut: $#; next: level * 2 put: Character space; nextPutAll: 'endif'; nextPutAll: expr;
+		nextPut: $#; next: tabbing * 2 put: Character space; nextPutAll: 'endif'; nextPutAll: expr;
 		cr.
 	asArgument ifTrue:
 		[aStream next: level + 1 put: Character tab]
@@ -7039,7 +7047,7 @@ CCodeGenerator >> withCASTConditionalDefineOf: aConstantNameString comment: comm
 			expression: (CCallNode
 				identifier: (CIdentifierNode name: 'defined')
 				arguments: { CConstantNode value: aConstantNameString }))
-		then: thenNode
+		then: (CCompoundStatementNode statements: { thenNode })
 ]
 
 { #category : #'C code generator' }

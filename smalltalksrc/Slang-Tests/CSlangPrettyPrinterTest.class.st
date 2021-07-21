@@ -162,6 +162,7 @@ CSlangPrettyPrinterTest >> testVisitCompoundStatement [
 	
 	self assert: print trimBoth equals: '{
 	toto = 99;
+
 	toto = tutu;
 }'
 
@@ -386,9 +387,11 @@ CSlangPrettyPrinterTest >> testVisitIfStatement [
 
 	self assert: print trimBoth equals: 'if (a && b) {
 	toto = 99;
+
 	toto = tutu;
 } else {
 	toto = 1;
+
 	tutu = toto;
 }'
 ]
@@ -526,14 +529,42 @@ CSlangPrettyPrinterTest >> testVisitPreprocessorIf [
 	self assert: print trimBoth equals: '#if a && b
 {
 	toto = 99;
+
 	toto = tutu;
 }
 #else /* a && b */
 {
 	toto = 1;
+
 	tutu = toto;
 }
 #endif /* a && b */'
+]
+
+{ #category : #'tests-visitor' }
+CSlangPrettyPrinterTest >> testVisitPreprocessorIfOfSimpleStatementsAddsSeparator [
+
+	| print |
+	print := self prettyPrint: (CPreprocessorIfNode
+			          if: (CConstantNode value: #condition)
+			          then: (CCompoundStatementNode statements: {
+							(CAssignmentNode
+								lvalue: (CIdentifierNode name: 'toto')
+								rvalue: (CConstantNode value: 99)) })
+						else: (CCompoundStatementNode statements: {
+							(CAssignmentNode
+				            lvalue: (CIdentifierNode name: 'toto')
+				            rvalue: (CConstantNode value: 100)) })).
+
+	self assert: print trimBoth equals: '#if condition
+{
+	toto = 99;
+}
+#else /* condition */
+{
+	toto = 100;
+}
+#endif /* condition */'
 ]
 
 { #category : #'tests-visitor' }

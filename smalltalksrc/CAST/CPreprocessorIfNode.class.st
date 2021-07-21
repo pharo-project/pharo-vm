@@ -20,6 +20,16 @@ CPreprocessorIfNode class >> if: aCondition then: anExpression [
 ]
 
 { #category : #'instance creation' }
+CPreprocessorIfNode class >> if: aCondition then: anExpression asArgument: asArgument [
+
+	^ self new
+		  isArgument: asArgument;
+		  if: aCondition;
+		  then: anExpression;
+		  yourself
+]
+
+{ #category : #'instance creation' }
 CPreprocessorIfNode class >> if: aCondition then: anExpression else: anOtherExpression [
 
 	^ self new

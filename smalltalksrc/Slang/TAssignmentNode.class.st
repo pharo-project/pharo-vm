@@ -199,6 +199,7 @@ TAssignmentNode >> emitLiteralArrayDeclarationOn: aStream level: level generator
 						sizeString: nil
 						type: type allButLast) withBlanksTrimmed;
 		nextPut: $;;
+		cr;
 		crtab: level + 1;
 		nextPutAll: variable name;
 		nextPutAll: ' = aLiteralArray;';

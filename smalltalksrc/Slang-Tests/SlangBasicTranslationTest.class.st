@@ -1220,6 +1220,7 @@ SlangBasicTranslationTest >> testMethodConditionalCompilationWithAnOption [
 	self
 		assert: translation
 		equals: '/* SlangBasicTranslationTestClass>>#methodWithAnOptionPragma */
+
 #if OPTION
 static sqInt
 methodWithAnOptionPragma(void)
@@ -1228,6 +1229,7 @@ methodWithAnOptionPragma(void)
 	}
 	return 0;
 }
+
 #endif /* OPTION */'
 ]
 
@@ -1241,6 +1243,7 @@ SlangBasicTranslationTest >> testMethodConditionalCompilationWithSeveralOptions 
 	self
 		assert: translation
 		equals: '/* SlangBasicTranslationTestClass>>#methodWithOptionPragma */
+
 #if OPTION1 && OPTION3
 static sqInt
 methodWithOptionPragma(void)
@@ -1249,6 +1252,7 @@ methodWithOptionPragma(void)
 	}
 	return 0;
 }
+
 #endif /* OPTION1 && OPTION3 */'
 ]
 
@@ -2535,6 +2539,49 @@ SlangBasicTranslationTest >> testSendCppIfIfTrueWithSendIfTrueAsCondition [
 	a = 0;
 	c = 1;
 }'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendCppIfIfTrueWithSingleExpressionDoesNotAddsSeparator [
+
+	| translation send |
+	send := TReturnNode expression: (TSendNode new
+		        setSelector: #cppIf:ifTrue:
+		        receiver: (TVariableNode new setName: 'self')
+		        arguments: { 
+					(TConstantNode value: #FEATURE).
+					(TStmtListNode new setStatements: {
+						(TAssignmentNode new
+							setVariable: (TVariableNode new setName: 'a')
+							expression: (TConstantNode value: false)) }) }).
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: 'return 
+#  if FEATURE
+		(a = 0)
+#  endif /* FEATURE */'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendCppIfIfTrueWithSingleStatementAddsSeparator [
+
+	| translation send |
+	send := TSendNode new
+		        setSelector: #cppIf:ifTrue:
+		        receiver: (TVariableNode new setName: 'self')
+		        arguments: { 
+					(TConstantNode value: #FEATURE).
+					(TStmtListNode new setStatements: {
+						(TAssignmentNode new
+							setVariable: (TVariableNode new setName: 'a')
+							expression: (TConstantNode value: false)) }) }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '#if FEATURE
+{
+	a = 0;
+}
+#endif /* FEATURE */'
 ]
 
 { #category : #'tests-assignment' }

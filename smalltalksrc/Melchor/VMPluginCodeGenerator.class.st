@@ -199,17 +199,17 @@ VMPluginCodeGenerator >> generateCASTInterpreterProxyFunctionDereference: aTSend
 		cs := self cFunctionNameFor: s.
 		thenStatement add: (self
 			withCASTOptionalVerbiageFor: s
-			mainNode: (CAssignmentNode
+			mainNode: (CCompoundStatementNode statements: {CAssignmentNode
 				lvalue: (CIdentifierNode name: cs)
 				rvalue: ( CStructurePointerAccessNode
 					structurePointer: (CIdentifierNode name: 'interpreterProxy')
-					member: (CIdentifierNode name: cs)))
-			ifOptionalNode: (self
+					member: (CIdentifierNode name: cs))})
+			ifOptionalNode: (CCompoundStatementNode statements: {self
 				withCASTConditionalDefineOf: cs
 				comment: nil
 				thenStatement: (CAssignmentNode 
 					lvalue: (CIdentifierNode name: cs)
-					rvalue: (CConstantNode value: 0)))) ].
+					rvalue: (CConstantNode value: 0))})) ].
 	
 	^ self withCASTConditionalDefineOf: 'SQUEAK_BUILTIN_PLUGIN'
 		comment: nil
