@@ -4836,6 +4836,7 @@ CCodeGenerator >> initializeCASTTranslationDictionary [
 	#perform:with:with:with:				#generateCASTPerform:
 	#perform:with:with:with:with:		#generateCASTPerform:
 	#perform:with:with:with:with:with:	#generateCASTPerform:
+	#perform:with:with:with:with:with:with:	#generateCASTPerform:
 
 	#value								#generateCASTValue:
 	#value:								#generateCASTValue:

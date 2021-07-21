@@ -4588,6 +4588,26 @@ SlangBasicTranslationTest >> testSendPerformWithWith [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendPerformWithWith6times [
+	"self perform: #foo with: x with: y"
+	| translation send |
+	send := TSendNode new
+		        setSelector: #perform:with:with:with:with:with:with:
+		        receiver: (TVariableNode new setName: 'self')
+		        arguments: {
+						TConstantNode value: #foo.
+						TVariableNode new setName: 'x'.
+						TVariableNode new setName: 'y'.
+						TVariableNode new setName: 'x'.
+						TVariableNode new setName: 'y'.
+						TVariableNode new setName: 'x'.
+						TVariableNode new setName: 'y'.}.
+	translation := self translate: send.
+
+	self assert: translation equals: 'foo(x, y, x, y, x, y)'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendPlus [
 
 	| translation send |
