@@ -27,13 +27,6 @@ TDefineNode >> constantNumbericValueOrNil [
 	^nil
 ]
 
-{ #category : #'C code generation' }
-TDefineNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-	"Emit a C literal."
-
-	aStream nextPutAll: name.
-]
-
 { #category : #testing }
 TDefineNode >> isDefine [
 

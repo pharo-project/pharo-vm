@@ -603,23 +603,6 @@ SmartSyntaxPluginCodeGenerator >> generateDebugCode: aBool [
 ]
 
 { #category : #'translating builtins' }
-SmartSyntaxPluginCodeGenerator >> generateDebugCode: aNode on: aStream indent: level [ 
-	"Generate the C debug code for this message onto the given stream, if  
-	compiled in debugMode."
-	self generateDebugCode
-		ifTrue: 
-			[aStream nextPutAll: '/* DebugCode... */';
-			 newLine.
-			aNode args first
-				emitCCodeOn: aStream
-				level: level
-				generator: self.
-			aStream tab: level.
-			aStream nextPutAll: '/* ...DebugCode */']
-		ifFalse: [aStream nextPutAll: '/* missing DebugCode */']
-]
-
-{ #category : #'translating builtins' }
 SmartSyntaxPluginCodeGenerator >> generateField: aNode on: aStream indent: anInteger [
 	self genCallOf: #fetchPointer:ofObject: with: aNode args first with: aNode receiver on: aStream
 ]
@@ -788,7 +771,6 @@ SmartSyntaxPluginCodeGenerator >> initializeCTranslationDictionary [
 		"#new						#generateNew:on:indent:"				"unused, never implemented"
 		"#new:						#generateNewSize:on:indent:"			"unused, never implemented"
 		"#superclass					#generateSuperclass:on:indent:"	"unused, never implemented"
-		#debugCode:					#generateDebugCode:on:indent:
 	).
 
 	1 to: pairs size by: 2 do: [:i |

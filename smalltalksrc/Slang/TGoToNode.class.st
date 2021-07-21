@@ -25,21 +25,6 @@ TGoToNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 	^ self asCASTExpressionIn: aBuilder
 ]
 
-{ #category : #'C code generation' }
-TGoToNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-	"Emit a C goto statement."
-
-	aStream nextPutAll: 'goto '.
-	aStream nextPutAll: label.
-]
-
-{ #category : #'C code generation' }
-TGoToNode >> emitCCodeOn: aStream prependToEnd: aNodeOrNil level: lev generator: gen [
-
-	self emitCCodeOn: aStream level: lev generator: gen.
-	aStream nextPut: $;
-]
-
 { #category : #testing }
 TGoToNode >> isGoTo [
 

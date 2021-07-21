@@ -42,16 +42,6 @@ TVariableNode >> bindVariablesIn: aDictionary [
 	^ (aDictionary at: name ifAbsent: [^ self]) copy
 ]
 
-{ #category : #'C code generation' }
-TVariableNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-
-	aStream nextPutAll: (name = 'nil'
-						ifTrue: [aCodeGen cLiteralFor: nil]
-						ifFalse: [aCodeGen returnPrefixFromVariable: name]).
-	aCodeGen currentMethod ifNotNil:
-		[:m| m noteUsedVariableName: name]
-]
-
 { #category : #testing }
 TVariableNode >> hasSideEffect [
 	"Answer if the parse tree rooted at this node has a side-effect or not."

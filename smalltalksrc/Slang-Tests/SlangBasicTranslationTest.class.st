@@ -13,7 +13,7 @@ Class {
 SlangBasicTranslationTest class >> testParameters [ 
 
 	^ ParametrizedTestMatrix new
-		forSelector: #translationStrategy addOptions: { #slangTranslate . #astTranslate }
+		forSelector: #translationStrategy addOptions: { #astTranslate }
 ]
 
 { #category : #helpers }
@@ -114,15 +114,6 @@ SlangBasicTranslationTest >> shouldGenerateDeadCode [
 	
 	"Compatibility method to make the test look like a VM translatable class"
 	^ true
-]
-
-{ #category : #helpers }
-SlangBasicTranslationTest >> slangTranslate: tast inStream: aWriteStream [ 
-
-	tast
-		emitCCodeOn: aWriteStream
-		level: 0
-		generator: generator
 ]
 
 { #category : #'tests-assignment' }
