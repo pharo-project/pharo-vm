@@ -3863,7 +3863,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualEquality [
 ]
 
 { #category : #'tests - primitiveLessOrEqual - SmallFloat' }
-VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualFailsOnFirstOperandWithTypeErrorPreservesStackk [
+VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualFailsOnFirstOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
 	"This line skips the test for 32 bits machines since smallFloat do not exist in 32 bits."
@@ -3880,7 +3880,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualFailsOnFirstOperandWithType
 ]
 
 { #category : #'tests - primitiveLessOrEqual - SmallFloat' }
-VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualFailsOnSecondOperandWithTypeErrorPreservesStackk [
+VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualFailsOnSecondOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
 	"This line skips the test for 32 bits machines since smallFloat do not exist in 32 bits."
