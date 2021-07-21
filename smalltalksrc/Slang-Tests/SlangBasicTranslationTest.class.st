@@ -5957,6 +5957,15 @@ SlangBasicTranslationTest >> testTranslateBlockAssignmentWithManyStatement [
 }'
 ]
 
+{ #category : #'tests-define' }
+SlangBasicTranslationTest >> testTranslateDefineNode [
+
+	| translation |
+	translation :=  self translate: (TDefineNode named: 'PharoVM').
+
+	self assert: translation equals: 'PharoVM'
+]
+
 { #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testTranslateLiteralArrayAssignment [
 
@@ -5979,6 +5988,7 @@ SlangBasicTranslationTest >> testTranslateLiteralArrayAssignment [
 	static int  aLiteralArray[] = {
 		1, 2, 3
 	};
+
 	var = aLiteralArray;
 }'
 ]

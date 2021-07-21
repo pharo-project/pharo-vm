@@ -7,6 +7,20 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance creation' }
+TDefineNode class >> named: aName [
+
+	^ self new
+		name: aName;
+		yourself
+]
+
+{ #category : #'C code generation' }
+TDefineNode >> asCASTIn: aBuilder [
+	
+	^ CConstantNode value: name
+]
+
 { #category : #accessing }
 TDefineNode >> constantNumbericValueOrNil [
 	"Override so that named constants don't get elided."
