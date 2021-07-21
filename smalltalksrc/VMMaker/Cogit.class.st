@@ -3880,6 +3880,13 @@ Cogit >> ceCheckFeatures [
 	^self simulateLeafCallOf: ceCheckFeaturesFunction
 ]
 
+{ #category : #testing }
+Cogit >> ceCheckFeaturesFunction: anAddress [
+	<doNotGenerate> 
+
+	ceCheckFeaturesFunction := anAddress 
+]
+
 { #category : #accessing }
 Cogit >> ceCheckForInterruptTrampoline: anInteger [ 
 	<doNotGenerate>

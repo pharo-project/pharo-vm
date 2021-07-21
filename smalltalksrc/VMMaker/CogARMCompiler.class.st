@@ -3010,7 +3010,7 @@ CogARMCompiler >> prepareStackToCallCFunctionInSmalltalkStack: anObject [
 
 	"ARMv5 should be aligned to 16 bytes"
 
-	cogit MoveR: SPReg R: Extra1Reg.
+	cogit MoveR: SPReg R: ClassReg.
 	cogit MoveR: SPReg R: Extra2Reg.
 	
 	cogit AndCq: ((1 << 32) - 16) R: Extra2Reg. 
@@ -3044,7 +3044,7 @@ CogARMCompiler >> relocateCallBeforeReturnPC: retpc by: delta [
 { #category : #'calling C function in Smalltalk stack' }
 CogARMCompiler >> returnFromCallCFunctionInSmalltalkStack: anObject [
 
-	cogit MoveR: Extra1Reg R: SPReg.
+	cogit MoveR: ClassReg R: SPReg.
 
 ]
 

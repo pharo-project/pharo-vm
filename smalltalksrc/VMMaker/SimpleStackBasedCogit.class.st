@@ -1238,11 +1238,11 @@ SimpleStackBasedCogit >> compileMachineCodeInterpreterPrimitive: primitiveRoutin
 	liveRegsMask := (methodOrBlockNumArgs > self numRegArgs
 					   or: [methodOrBlockNumArgs = 0])
 						ifTrue:
-							[self registerMaskFor: ReceiverResultReg]
+							[self registerMaskFor: ReceiverResultReg and: ClassReg]
 						ifFalse:
 							[(self numRegArgs > 1 and: [methodOrBlockNumArgs > 1])
-								ifFalse: [self registerMaskFor: ReceiverResultReg and: Arg0Reg]
-								ifTrue: [self registerMaskFor: ReceiverResultReg and: Arg0Reg and: Arg1Reg]].
+								ifFalse: [self registerMaskFor: ReceiverResultReg and: Arg0Reg and: ClassReg]
+								ifTrue: [self registerMaskFor: ReceiverResultReg and: Arg0Reg and: Arg1Reg and: ClassReg]].
 
 	"As this is using a call, I need to store the Link register."
 	backEnd hasLinkRegister 
