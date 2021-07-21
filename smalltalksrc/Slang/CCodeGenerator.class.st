@@ -2647,6 +2647,17 @@ CCodeGenerator >> generateCASTMin: tast [
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTMinus: tast [
 
+	"Constant fold if possible"
+	tast constantNumbericValueOrNil ifNotNil: [:value|
+	 (value between: -1 << 31 and: 1 << 31 - 1)
+		ifFalse: [ ^ CConstantNode value: (self cLiteralFor: value) ] ].
+	
+	"Simplify if possible"
+	tast args first constantNumbericValueOrNil ifNotNil: [:value|
+		value = 0 ifTrue: [
+			^ tast receiver asCASTExpressionIn: self ]].
+	
+	"Otherwise, translate normally"
 	^ self generateCASTBinary: tast operator: #-
 ]
 
@@ -2715,6 +2726,17 @@ CCodeGenerator >> generateCASTPerform: tast [
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTPlus: tast [
 	
+	"Constant fold if possible"
+	tast constantNumbericValueOrNil ifNotNil: [:value|
+	 (value between: -1 << 31 and: 1 << 31 - 1)
+		ifFalse: [ ^ CConstantNode value: (self cLiteralFor: value) ] ].
+	
+	"Simplify if possible"
+	tast args first constantNumbericValueOrNil ifNotNil: [:value|
+		value = 0 ifTrue: [
+			^ tast receiver asCASTExpressionIn: self ]].
+	
+	"Otherwise, translate normally"
 	^ self generateCASTBinary: tast operator: #+
 ]
 
@@ -3020,6 +3042,19 @@ CCodeGenerator >> generateCASTSmalltalkMetaError: tast [
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTTimes: tast [
 	
+	"Constant fold if possible"
+	tast constantNumbericValueOrNil ifNotNil: [:value|
+	 (value between: -1 << 31 and: 1 << 31 - 1)
+		ifFalse: [ ^ CConstantNode value: (self cLiteralFor: value) ] ].
+	
+	"Simplify if possible"
+	tast args first constantNumbericValueOrNil ifNotNil: [:value|
+		value = 0 ifTrue: [
+			^ tast args first asCASTExpressionIn: self ].
+		value = 1 ifTrue: [
+			^ tast receiver asCASTExpressionIn: self ]].
+	
+	"Otherwise, translate normally"
 	^ self generateCASTBinary: tast operator: #*
 ]
 

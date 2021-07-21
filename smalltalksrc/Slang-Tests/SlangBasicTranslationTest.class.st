@@ -4448,6 +4448,28 @@ SlangBasicTranslationTest >> testSendModulo [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendMultiplicationWithConstantFoldingOverflowingToLong [
+
+	| translation send |
+	
+	send := TSendNode new
+					setSelector: #*
+					receiver: (TConstantNode value: 1024)
+					arguments: {
+						TSendNode new
+							setSelector: #*
+							receiver: (TConstantNode value: 1024)
+							arguments: {
+								TSendNode new
+									setSelector: #*
+									receiver: (TConstantNode value: 1024)
+									arguments: {(TConstantNode value: 1024)}}}.
+	translation := self translate: send.
+
+	self assert: translation equals: '0x10000000000LL'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendNegated [
 
 	| translation send |
@@ -5029,6 +5051,94 @@ SlangBasicTranslationTest >> testSendSubclassResponsibility [
 			                arguments: { }).
 
 	self assert: translation equals: 'error("subclassResponsibility")'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendSubstractionWithConstantFoldingIfOverflow [
+
+	| translation send |
+	
+	send := TSendNode new
+					setSelector: #-
+					receiver: (TConstantNode value: -1 <<31)
+					arguments: {
+						TSendNode new
+							setSelector: #+
+							receiver: (TConstantNode value: 1024)
+							arguments: {
+								TSendNode new
+									setSelector: #+
+									receiver: (TConstantNode value: 1024)
+									arguments: {(TConstantNode value: 1024)}}}.
+	translation := self translate: send.
+
+	self assert: translation equals: '-2147486720LL'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendSubstractionWithNoConstantFoldingIfNoOverflow [
+
+	| translation send |
+	
+	send := TSendNode new
+					setSelector: #-
+					receiver: (TConstantNode value: -1024)
+					arguments: {
+						TSendNode new
+							setSelector: #+
+							receiver: (TConstantNode value: 1024)
+							arguments: {
+								TSendNode new
+									setSelector: #+
+									receiver: (TConstantNode value: 1024)
+									arguments: {(TConstantNode value: 1024)}}}.
+	translation := self translate: send.
+
+	self assert: translation equals: '-1024 - (1024 + (1024 + 1024))'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendSumWithConstantFoldingIfOverflow [
+
+	| translation send |
+	
+	send := TSendNode new
+					setSelector: #+
+					receiver: (TConstantNode value: 1 <<31)
+					arguments: {
+						TSendNode new
+							setSelector: #+
+							receiver: (TConstantNode value: 1024)
+							arguments: {
+								TSendNode new
+									setSelector: #+
+									receiver: (TConstantNode value: 1024)
+									arguments: {(TConstantNode value: 1024)}}}.
+	translation := self translate: send.
+
+	self assert: translation equals: '2147486720U'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendSumWithNoConstantFoldingIfNoOverflow [
+
+	| translation send |
+	
+	send := TSendNode new
+					setSelector: #+
+					receiver: (TConstantNode value: 1024)
+					arguments: {
+						TSendNode new
+							setSelector: #+
+							receiver: (TConstantNode value: 1024)
+							arguments: {
+								TSendNode new
+									setSelector: #+
+									receiver: (TConstantNode value: 1024)
+									arguments: {(TConstantNode value: 1024)}}}.
+	translation := self translate: send.
+
+	self assert: translation equals: '1024 + (1024 + (1024 + 1024))'
 ]
 
 { #category : #'tests-builtins' }
