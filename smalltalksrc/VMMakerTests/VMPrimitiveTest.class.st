@@ -3487,9 +3487,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatEqual [
 	interpreter primitiveSmallFloatEqual.  
 
 	self deny: interpreter failed.
-	self assert: interpreter stackTop equals: (memory falseObject). 
-	
-	
+	self assert: interpreter stackTop equals: memory falseObject.
 ]
 
 { #category : #'tests - primitiveEqual - SmallFloat' }
@@ -3504,9 +3502,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatEqualEqualEquality [
 	interpreter primitiveSmallFloatEqual.  
 
 	self deny: interpreter failed.
-	self assert: interpreter stackTop equals: (memory trueObject). 
-	
-	
+	self assert: interpreter stackTop equals: memory trueObject.
 ]
 
 { #category : #'tests - primitiveEqual - SmallFloat' }
@@ -3521,8 +3517,6 @@ VMPrimitiveTest >> testPrimitiveSmallFloatEqualFailsWithTypeErrorOnFirstOperand 
 	interpreter primitiveSmallFloatEqual. 
 
 	self assert: interpreter failed.
-	
-	
 ]
 
 { #category : #'tests - primitiveEqual - SmallFloat' }
@@ -3537,8 +3531,6 @@ VMPrimitiveTest >> testPrimitiveSmallFloatEqualFailsWithTypeErrorOnSecondOperand
 	interpreter primitiveSmallFloatEqual. 
 
 	self assert: interpreter failed.
-	
-	
 ]
 
 { #category : #'tests - primitiveEqual - SmallFloat' }
@@ -3555,9 +3547,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatEqualFailsWithTypeErrorPreservesStack 
 	self assert: interpreter failed. 
 	
 	self assert: interpreter stackTop equals: memory trueObject.
-	self assert: (interpreter stackValue: 1) equals:  (memory smallFloatObjectOf: 2.0). 
-	
-	
+	self assert: (interpreter stackValue: 1) equals:  (memory smallFloatObjectOf: 2.0).
 ]
 
 { #category : #'tests - primitiveEqual - SmallFloat' }
@@ -3576,10 +3566,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatEqualPopsOperands [
 	"The previous lines pop the result of primiviteSmallFloatEqual (1 2) for us to check that 1 and 2 were popped from the stack by checking that the next value is our marker, for instance 42"
 	
 	self deny: interpreter failed. 
-	"self assert: (interpreter stackValue: 1) equals: (memory integerObjectOf: 42)."
-	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42). 
-	
-	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42).
 ]
 
 { #category : #'tests - primitiveEqual - SmallFloat' }
@@ -3594,9 +3581,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatEqualtWithNegativeNumbers [
 	interpreter primitiveSmallFloatEqual.
 
 	self deny: interpreter failed. 
-	self assert: interpreter stackTop equals: memory falseObject. 
-	
-	
+	self assert: interpreter stackTop equals: memory falseObject.
 ]
 
 { #category : #'tests - primitiveGreaterOrEqual - SmallFloat' }
