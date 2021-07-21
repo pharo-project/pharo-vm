@@ -3712,7 +3712,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThan [
 ]
 
 { #category : #'tests - primitiveGreaterThan - SmallFloat' }
-VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThanFailsOnSecondOperandWithTypeErrorPreservesStack [
+VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThanFailsOnFirstOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
 	"This line skips the test for 32 bits machines since smallFloat do not exist in 32 bits."
@@ -3726,6 +3726,23 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThanFailsOnSecondOperandWithTyp
 	
 	self assert: interpreter stackTop equals: (memory smallFloatObjectOf: 2.0).
 	self assert: (interpreter stackValue: 1) equals: memory trueObject.
+]
+
+{ #category : #'tests - primitiveGreaterThan - SmallFloat' }
+VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThanFailsOnSecondOperandWithTypeErrorPreservesStack [
+
+	self wordSize = 8 ifFalse: [ ^ self skip].
+	"This line skips the test for 32 bits machines since smallFloat do not exist in 32 bits."
+	
+	interpreter push: (memory smallFloatObjectOf: 2.0). 
+	interpreter push: memory trueObject. 
+	
+	interpreter primitiveSmallFloatGreaterThan. 
+	
+	self assert: interpreter failed. 
+	
+	self assert: interpreter stackTop equals: memory trueObject.
+	self assert: (interpreter stackValue: 1) equals: (memory smallFloatObjectOf: 2.0).
 ]
 
 { #category : #'tests - primitiveGreaterThan - SmallFloat' }
