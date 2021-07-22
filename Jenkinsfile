@@ -309,43 +309,38 @@ try{
 		}
 	}
 
-	builders['Linux-aarch64'] = {
-			node('docker20'){
-				cleanWs()
-				def image;
-
-				stage("Build Image Linux-aarch64"){
-					checkout scm
-					image = docker.build('pharo-ubuntu-arm64','./docker/ubuntu-arm64/')
-				}
-				
-				image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
-					timeout(45){
-					runBuild('Linux-aarch64', "CoInterpreter")
-				}
-			}
-		}
-	}
-
-	builders['Linux-armv7l'] = {
-			node('docker20'){
-				cleanWs()
-				def image;
-
-				stage("Build Image Linux-armv7l"){
-					checkout scm
-					image = docker.build('pharo-debian10-armv7','./docker/debian10-armv7/')
-				}
-				
-				image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
-					timeout(45){
-					runBuild('Linux-armv7l', "CoInterpreter")
-				}
-			}
-		}
-	}
-
 	parallel builders
+
+	node('docker20'){
+			cleanWs()
+			def image;
+			stage("Build Image Linux-aarch64"){
+				checkout scm
+				image = docker.build('pharo-ubuntu-arm64','./docker/ubuntu-arm64/')
+			}
+			
+			image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
+				timeout(45){
+				runBuild('Linux-aarch64', "CoInterpreter")
+			}
+		}
+	}
+
+	node('docker20'){
+			cleanWs()
+			def image;
+				stage("Build Image Linux-armv7l"){
+				checkout scm
+				image = docker.build('pharo-debian10-armv7','./docker/debian10-armv7/')
+			}
+			
+			image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
+				timeout(45){
+				runBuild('Linux-armv7l', "CoInterpreter")
+			}
+		}
+	}
+
 	
 	uploadPackages(platforms)
 
