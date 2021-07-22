@@ -24,6 +24,7 @@ RUN set -eu; \
   apt-get clean; \
   useradd --uid 7431 --gid 100 --home-dir /opt/pharo --no-create-home --no-user-group pharo; \
   chown 7431:100 /opt/pharo -R; \
+  chown 644 /opt/pharo -R; \
   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*; \
   true
 

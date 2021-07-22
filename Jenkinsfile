@@ -316,7 +316,7 @@ try{
 
 				stage("Build Image Linux-aarch64"){
 					checkout scm
-					image = docker.build('pharo-ubuntu-arm64','./docker/')
+					image = docker.build('pharo-ubuntu-arm64','./docker/ubuntu-arm64/')
 				}
 				
 				image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
