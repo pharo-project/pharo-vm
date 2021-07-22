@@ -327,6 +327,24 @@ try{
 		}
 	}
 
+	builders['Linux-armv7l'] = {
+			node('docker20'){
+				cleanWs()
+				def image;
+
+				stage("Build Image Linux-armv7l"){
+					checkout scm
+					image = docker.build('pharo-debian10-armv7','./docker/debian10-armv7/')
+				}
+				
+				image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
+					timeout(30){
+					runBuild('Linux-armv7l', "CoInterpreter")
+				}
+			}
+		}
+	}
+
 	parallel builders
 	
 	uploadPackages(platforms)
