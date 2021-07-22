@@ -311,7 +311,15 @@ try{
 
 	builders['arm64'] = {
 			node('docker20'){
-				docker.build('pharo-ubuntu-arm64','./docker/').inside('-v /tmp:/tmp') {
+			   cleanWs()
+
+			   stage("Build Image"){
+			       checkout scm
+					 def image = docker.build('pharo-ubuntu-arm64','./docker/')
+			   }
+				
+				
+					image.inside('-v /tmp:/tmp') {
 							timeout(30){
 		 					runBuild('Linux-aarch64', "CoInterpreter")
 		 				}
