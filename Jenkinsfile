@@ -309,6 +309,21 @@ try{
 		}
 	}
 
+	builders['arm64'] = {
+			node('docker20'){
+				agent{
+					dockerfile {
+						filename 'Dockerfile.arm64-ubuntu'
+						dir 'docker'
+					}
+				}
+				
+				timeout(30){
+					runBuild('Linux-aarch64', "CoInterpreter")
+				}
+			}
+	}
+
 	parallel builders
 	
 	uploadPackages(platforms)
