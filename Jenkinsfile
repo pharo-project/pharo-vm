@@ -89,13 +89,11 @@ def runBuild(platformName, configuration, headless = true){
       runInCygwin "mkdir ${buildDirectory}"
       recordCygwinVersions(buildDirectory)
       runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository -DICEBERG_DEFAULT_REMOTE=httpsUrl"
-      runInCygwin "cd ${buildDirectory} && VERBOSE=1 make install"
-      runInCygwin "cd ${buildDirectory} && VERBOSE=1 make package"
+      runInCygwin "cd ${buildDirectory} && VERBOSE=1 make install package"
     }else{
       cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
       dir("${buildDirectory}"){
-        shell "VERBOSE=1 make install"
-        shell "VERBOSE=1 make package"
+        shell "VERBOSE=1 make install package"
       }
     }
 	
@@ -309,22 +307,22 @@ try{
 		}
 	}
 
-	builders['arm64'] = {
+	builders['Linux-aarch64'] = {
 			node('docker20'){
-			   cleanWs()
+				cleanWs()
+				def image;
 
-			   stage("Build Image"){
-			       checkout scm
-					 def image = docker.build('pharo-ubuntu-arm64','./docker/')
-			   }
+				stage("Build Image Linux-aarch64"){
+					checkout scm
+					image = docker.build('pharo-ubuntu-arm64','./docker/')
+				}
 				
-				
-					image.inside('-v /tmp:/tmp') {
-							timeout(30){
-		 					runBuild('Linux-aarch64', "CoInterpreter")
-		 				}
-		 			}
+				image.inside('-v /tmp:/tmp') {
+					timeout(30){
+					runBuild('Linux-aarch64', "CoInterpreter")
+				}
 			}
+		}
 	}
 
 	parallel builders
