@@ -275,9 +275,9 @@ try{
 	def builders = [:]
 	def tests = [:]
 
-  node('Darwin-x86_64'){
-    runUnitTests('Darwin-x86_64')
-  }
+//  node('Darwin-x86_64'){
+//    runUnitTests('Darwin-x86_64')
+//  }
 
   for (platf in platforms) {
         // Need to bind the label variable before the closure - can't do 'for (label in labels)'
