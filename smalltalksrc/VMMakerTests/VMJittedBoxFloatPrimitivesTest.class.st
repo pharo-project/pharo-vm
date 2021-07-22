@@ -2,17 +2,32 @@ Class {
 	#name : #VMJittedBoxFloatPrimitivesTest,
 	#superclass : #VMJittedPrimitivesTest,
 	#pools : [
+		'CogAbstractRegisters',
 		'CogRTLOpcodes'
 	],
 	#category : #'VMMakerTests-JitTests'
 }
 
 { #category : #tests }
+VMJittedBoxFloatPrimitivesTest >> setUp [
+
+	super setUp.
+
+	"If we are in Intel 32bits, we need to check if we have SSE instruction set"
+	isa = #IA32 ifTrue: [ 
+		cogit ceCheckFeaturesFunction: (self
+				 compileTrampoline: [ 
+					 cogit MoveCq: 1 << 26 R: TempReg.
+					 cogit RetN: 0 ]
+				 named: 'ceCheckFeatures') ]
+]
+
+{ #category : #tests }
 VMJittedBoxFloatPrimitivesTest >> testAsFloat [
 
 	cogit receiverTags: memory smallIntegerTag.
 	
-	self compile: [ cogit objectRepresentation genPrimitiveAsFloat ].
+	initialAddress := self compile: [ cogit objectRepresentation genPrimitiveAsFloat ].
 
 	self executePrimitiveWithReceiver: (self memory integerObjectOf: 27).
 
@@ -25,15 +40,20 @@ VMJittedBoxFloatPrimitivesTest >> testAsFloat [
 VMJittedBoxFloatPrimitivesTest >> testAsFloatWhenThereIsNotSpaceFailsPrimitive [
 
 	| stop |
+
+	"We can only generate BoxedFloat from an SmallInteger in 32bits"
+	wordSize ~= 4 ifTrue: [ ^ self skip ].
+
 	cogit receiverTags: memory smallIntegerTag.
 
 	memory freeStart: memory scavengeThreshold.
 	
-	self compile: [ 
+	initialAddress := self compile: [ 
 			cogit objectRepresentation genPrimitiveAsFloat.
 			stop := cogit Stop ].
 
 	self prepareStackForSendReceiver: (self memory integerObjectOf: 27) arguments: #().
+
 	self runFrom: initialAddress until: stop address.
 	self assert: machineSimulator instructionPointerValue equals: stop address
 

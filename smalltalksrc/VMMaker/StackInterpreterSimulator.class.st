@@ -1696,7 +1696,7 @@ StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
 		memoryLimit: heapBase + heapSize
 		endOfMemory: heapBase + dataSize. "bogus for Spur"
 	objectMemory allocateMemoryOfSize: objectMemory memoryLimit.
-	objectMemory memory initialAddress: 0.
+	
 	"read in the image in bulk, then swap the bytes if necessary"
 	f position: headerSize.
 	count := objectMemory readHeapFromImageFile: f dataBytes: dataSize.

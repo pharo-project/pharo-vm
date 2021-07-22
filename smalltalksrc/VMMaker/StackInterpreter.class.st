@@ -15973,6 +15973,12 @@ StackInterpreter >> thisClassIndex [
 	^thisClassIndex
 ]
 
+{ #category : #simulation }
+StackInterpreter >> time: aString [ 
+	<doNotGenerate>
+	^ 0
+]
+
 { #category : #'object memory support' }
 StackInterpreter >> traceProfileState [
 	objectMemory hasSpurMemoryManagerAPI ifTrue:

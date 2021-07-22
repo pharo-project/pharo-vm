@@ -598,7 +598,7 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveAsFloatIsCompleteWhenReceiverTagIsS
 	cogit receiverTags: memory smallIntegerTag.
 	
 	self compile: [ result := cogit objectRepresentation genPrimitiveAsFloat ].
-	self assert: result equals: CompletePrimitive.
+	self assert: result equals: 0. "Incomplete Primitive, if the float cannot be allocated, it executes the C code"
 ]
 
 { #category : #'tests - primitiveAsFloat' }

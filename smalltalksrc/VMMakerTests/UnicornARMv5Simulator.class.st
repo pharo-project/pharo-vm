@@ -10,6 +10,12 @@ UnicornARMv5Simulator >> arg0Register [
 	^ UcARMRegisters r3
 ]
 
+{ #category : #registers }
+UnicornARMv5Simulator >> argument0RegisterValue [
+	
+	^ self r3
+]
+
 { #category : #accessing }
 UnicornARMv5Simulator >> argument0RegisterValue: anInteger [ 
 
