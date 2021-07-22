@@ -39,12 +39,6 @@ SlangMethodPrototypeTranslationTest >> setUp [
 		yourself).
 ]
 
-{ #category : #helpers }
-SlangMethodPrototypeTranslationTest >> slangTranslate: tMethod inStream: aWriteStream [
-
-	tMethod emitCFunctionPrototype: aWriteStream generator: generator
-]
-
 { #category : #'test-prototype' }
 SlangMethodPrototypeTranslationTest >> testMethodPrototype [
 	

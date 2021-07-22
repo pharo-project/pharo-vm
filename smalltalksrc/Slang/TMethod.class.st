@@ -723,25 +723,6 @@ TMethod >> emitCFunctionPrototype: aStream generator: aCodeGen isPrototype: isPr
 	^compileTimeOptionPragmas notEmpty
 ]
 
-{ #category : #'C code generation' }
-TMethod >> emitProxyFunctionPrototype: aStream generator: aCodeGen [
-	"Emit an indirect C function header for this method onto the given stream."
-
-	aStream
-		nextPutAll: returnType;
-		space;
-		nextPutAll: '(*';
-		nextPutAll: (aCodeGen cFunctionNameFor: selector);
-		nextPutAll: ')('.
-	args isEmpty
-		ifTrue: [aStream nextPutAll: #void]
-		ifFalse:
-			[args
-				do: [:arg| aStream nextPutAll: (self declarationAt: arg)]
-				separatedBy: [ aStream nextPutAll: ', ' ]].
-	aStream nextPut: $)
-]
-
 { #category : #testing }
 TMethod >> endsWithReturn [
 	"Answer true if the last statement of this method is a return."
