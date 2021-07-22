@@ -320,7 +320,7 @@ try{
 				}
 				
 				image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
-					timeout(30){
+					timeout(45){
 					runBuild('Linux-aarch64', "CoInterpreter")
 				}
 			}
@@ -338,7 +338,7 @@ try{
 				}
 				
 				image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
-					timeout(30){
+					timeout(45){
 					runBuild('Linux-armv7l', "CoInterpreter")
 				}
 			}
