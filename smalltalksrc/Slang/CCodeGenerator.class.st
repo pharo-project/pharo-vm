@@ -762,16 +762,6 @@ CCodeGenerator >> checkForGlobalUsage: vars in: aTMethod [
 		self logger cr; nextPutAll: em; cr; flush]
 ]
 
-{ #category : #public }
-CCodeGenerator >> codeString [
-	"Return a string containing all the C code for the code base. Used for testing."
-
-	| stream |
-	stream := ReadWriteStream on: (String new: 1000).
-	self emitCCodeOn: stream doInlining: true doAssertions: true.
-	^stream contents
-]
-
 { #category : #inlining }
 CCodeGenerator >> collectInlineList: strategy [
 	"Make a list of methods that should be inlined.  If inlineFlagOrSymbol == #asSpecified
@@ -982,32 +972,6 @@ CCodeGenerator >> doInlining: inlineFlag [
 	 Also, since sharing between plugins means that normal pruning
 	 can't be done, allow plugins that want to prune specific methods."
 	self doBasicInlining: inlineFlag
-]
-
-{ #category : #utilities }
-CCodeGenerator >> emitBuiltinConstructAsArgumentFor: msgNode on: aStream level: level [
-	"If the given selector is in the translation dictionary, translate it into a target code construct and return true. Otherwise, do nothing and return false."
-
-	| action |
-	(self shouldGenerateAsInterpreterProxySend: msgNode) ifTrue:
-		[^false].
-	action := asArgumentTranslationDict
-				at: msgNode selector
-				ifAbsent: [translationDict at: msgNode selector ifAbsent: [ ^false ]].
-	self perform: action with: msgNode with: aStream with: level.
-	^true
-]
-
-{ #category : #utilities }
-CCodeGenerator >> emitBuiltinConstructFor: msgNode on: aStream level: level [
-	"If the given selector is in the translation dictionary, translate it into a target code construct and return true. Otherwise, do nothing and return false."
-
-	| action |
-	(self shouldGenerateAsInterpreterProxySend: msgNode) ifTrue:
-		[^false].
-	action := translationDict at: msgNode selector ifAbsent: [ ^false ].
-	self perform: action with: msgNode with: aStream with: level.
-	^true
 ]
 
 { #category : #'C code generator' }
@@ -3161,7 +3125,6 @@ CCodeGenerator >> initialize [
 	variableDeclarations := Dictionary new: 100.
 	methods := Dictionary new: 500.
 	macros := Dictionary new.
-	self initializeCTranslationDictionary.
 	self initializeCASTTranslationDictionary.
 	headerFiles := OrderedCollection new.
 	globalVariableUsage := Dictionary new.
@@ -3483,7 +3446,7 @@ CCodeGenerator >> isAssertSelector: selector [
 CCodeGenerator >> isBuiltinSelector: sel [
 	"Answer true if the given selector is one of the builtin selectors."
 
-	^(self isKernelSelector: sel) or: [translationDict includesKey: sel]
+	^(self isKernelSelector: sel) or: [castTranslationDict includesKey: sel]
 ]
 
 { #category : #'C code generator' }
@@ -3631,7 +3594,7 @@ CCodeGenerator >> isSimpleType: aType [
 { #category : #inlining }
 CCodeGenerator >> isSpecialSelector: aSelector [
 		
-	^ translationDict includesKey: aSelector
+	^ castTranslationDict includesKey: aSelector
 ]
 
 { #category : #utilities }
@@ -3789,59 +3752,6 @@ CCodeGenerator >> messageReceiverIsInterpreterProxy: sendNode [
 CCodeGenerator >> methodNamed: selector [
 	"Answer the method in the code base with the given selector."
 	^ methods at: selector ifAbsent: [ nil ]
-]
-
-{ #category : #inlining }
-CCodeGenerator >> methodStatsString [
-	"Return a string describing the size, # of locals, and # of senders of
-	 each method. Note methods that have inline C code or C declarations."
-
-	| methodsWithCCode sizesOf callsOf s |
-	methodsWithCCode := Set new: methods size.
-	sizesOf := Dictionary new: methods size * 2.  "selector -> nodeCount"
-	callsOf := Dictionary new: methods size * 2.  "selector -> senderCount"
-
-	"For each method, scan its parse tree once to:
-		1. determine if the method contains C code or declarations
-		2. determine how many nodes it has
-		3. increment the sender counts of the methods it calls
-		4. determine if it includes any C declarations or code"
-
-	methods do: [ :m | | hasCCode nodeCount |
-		(translationDict includesKey: m selector) ifTrue: [
-			hasCCode := true.
-		] ifFalse: [
-			hasCCode := m declarations size > 0.
-			nodeCount := 0.
-			m parseTree nodesDo: [ :node | | selr senderCount |
-				node isSend ifTrue: [
-					selr := node selector.
-					node isNonNullCCode ifTrue: [ hasCCode := true ].
-					senderCount := callsOf at: selr ifAbsent: [ 0 ].
-					callsOf at: selr put: senderCount + 1.
-				].
-				nodeCount := nodeCount + 1.
-			].
-		].
-		hasCCode ifTrue: [ methodsWithCCode add: m selector ].
-		sizesOf at: m selector put: nodeCount.
-	].
-
-	s := WriteStream on: (String new: 5000).
-	(self sortStrings: methods keys) do: [ :sel | | m calls registers |
-		m := methods at: sel.
-		registers := m locals size + m args size.
-		calls := callsOf at: sel ifAbsent: [0].
-		registers > 11 ifTrue: [
-			s nextPutAll: sel; tab.
-			s nextPutAll: (sizesOf at: sel) printString; tab.
-			s nextPutAll: calls printString; tab.
-			s nextPutAll: registers printString; tab.
-			(methodsWithCCode includes: sel) ifTrue: [ s nextPutAll: 'CCode' ].
-		s cr.
-		].
-	].
-	^ s contents
 ]
 
 { #category : #accessing }
@@ -4258,7 +4168,7 @@ CCodeGenerator >> printUnboundCallWarnings [
 
 	| knownSelectors undefinedCalls |
 	undefinedCalls := Dictionary new.
-	knownSelectors := translationDict keys asSet.
+	knownSelectors := castTranslationDict keys asSet.
 	knownSelectors add: #error:.
 	methods do: [ :m | knownSelectors add: m selector ].
 	methods do: [ :m |
@@ -4522,32 +4432,6 @@ CCodeGenerator >> removeVariable: aName ifAbsent: ifAbsentBlock [
 	self checkDeleteVariable: aName.
 	variableDeclarations removeKey: aName ifAbsent: [].
 	^variables remove: aName ifAbsent: ifAbsentBlock
-]
-
-{ #category : #utilities }
-CCodeGenerator >> reportRecursiveMethods [
-	"Report in transcript all methods that can call themselves directly or indirectly or via a chain of N intermediate methods."
-
-	methods do: [: m | | visited calls newCalls sel called |
-		visited := translationDict keys asSet.
-		calls := m allCalls asOrderedCollection.
-		5 timesRepeat: [
-			newCalls := Set new: 50.
-			[calls isEmpty] whileFalse: [
-				sel := calls removeFirst.
-				sel = m selector ifTrue: [
-					logger newLine; show: m selector, ' is recursive'; cr.
-				] ifFalse: [
-					(visited includes: sel) ifFalse: [
-						called := self methodNamed: sel.
-						called = nil ifFalse: [ newCalls addAll: called allCalls ].
-					].
-					visited add: sel.
-				].
-			].
-			calls := newCalls asOrderedCollection.
-		].
-	].
 ]
 
 { #category : #inlining }
