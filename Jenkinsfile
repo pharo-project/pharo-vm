@@ -317,7 +317,7 @@ try{
 					image = docker.build('pharo-ubuntu-arm64','./docker/')
 				}
 				
-				image.inside('-v /tmp:/tmp') {
+				image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
 					timeout(30){
 					runBuild('Linux-aarch64', "CoInterpreter")
 				}
