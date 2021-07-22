@@ -311,9 +311,7 @@ try{
 
 	builders['arm64'] = {
 			node('docker20'){
-				docker.dockerfile(
-				        dir: './docker/Dockerfile.arm64-ubuntu'
-				    ).inside('-v /tmp:/tmp') {
+				docker.build('pharo-ubuntu-arm64','./docker/').inside('-v /tmp:/tmp') {
 							timeout(30){
 		 					runBuild('Linux-aarch64', "CoInterpreter")
 		 				}
