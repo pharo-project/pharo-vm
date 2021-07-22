@@ -78,12 +78,14 @@ def runBuild(platformName, configuration, headless = true){
 	def buildDirectory = headless ? "build" :"build-stockReplacement"
 	def additionalParameters = headless ? "" : "-DALWAYS_INTERACTIVE=1"
 
-  stage("Checkout-${platform}"){
-    dir('repository') {
-        checkout scm
-    }
-  }
-
+	stage("Checkout-${platform}"){
+		dir('repository') {
+			checkout scm
+		}
+	}
+  
+	def cmakePath = platform == "Linux-aarch64" ? "InLocalPath" : "InSearchPath";
+  
 	stage("Build-${platform}-${configuration}"){
     if(isWindows()){
       runInCygwin "mkdir ${buildDirectory}"
@@ -91,7 +93,7 @@ def runBuild(platformName, configuration, headless = true){
       runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository -DICEBERG_DEFAULT_REMOTE=httpsUrl"
       runInCygwin "cd ${buildDirectory} && VERBOSE=1 make install package"
     }else{
-      cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
+      cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "${cmakePath}"
       dir("${buildDirectory}"){
         shell "VERBOSE=1 make install package"
       }
