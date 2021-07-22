@@ -71,45 +71,36 @@ def recordCygwinVersions(buildDirectory){
 	archiveArtifacts artifacts: "${buildDirectory}/cygwinVersions.txt"
 }
 
-def runBuild(platformName, configuration, headless = true, docker = false){
+def runBuild(platformName, configuration, headless = true){
 	cleanWs()
 	
 	def platform = headless ? platformName : "${platformName}-stockReplacement"
 	def buildDirectory = headless ? "build" :"build-stockReplacement"
 	def additionalParameters = headless ? "" : "-DALWAYS_INTERACTIVE=1"
 
+  stage("Checkout-${platform}"){
+    dir('repository') {
+        checkout scm
+    }
+  }
+
 	stage("Build-${platform}-${configuration}"){
-		
-		if(docker){
-			agent{
-				dockerfile {
-					filename 'Dockerfile.arm64-ubuntu'
-					dir 'docker'
-				}
-			}		
-		}
-		
-		steps {
-			dir('repository') {
-				checkout scm
-			}
-		
-			if(isWindows()){
-				runInCygwin "mkdir ${buildDirectory}"
-				recordCygwinVersions(buildDirectory)
-				runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository -DICEBERG_DEFAULT_REMOTE=httpsUrl"
-				runInCygwin "cd ${buildDirectory} && VERBOSE=1 make install"
-				runInCygwin "cd ${buildDirectory} && VERBOSE=1 make package"
-			}else{
-				cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
-				dir("${buildDirectory}"){
-					shell "VERBOSE=1 make install"
-					shell "VERBOSE=1 make package"
-				}
-			}	
-			stash excludes: '_CPack_Packages', includes: "${buildDirectory}/build/packages/*", name: "packages-${platform}-${configuration}"
-			archiveArtifacts artifacts: "${buildDirectory}/build/packages/*", excludes: '_CPack_Packages'
-		}
+    if(isWindows()){
+      runInCygwin "mkdir ${buildDirectory}"
+      recordCygwinVersions(buildDirectory)
+      runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository -DICEBERG_DEFAULT_REMOTE=httpsUrl"
+      runInCygwin "cd ${buildDirectory} && VERBOSE=1 make install"
+      runInCygwin "cd ${buildDirectory} && VERBOSE=1 make package"
+    }else{
+      cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
+      dir("${buildDirectory}"){
+        shell "VERBOSE=1 make install"
+        shell "VERBOSE=1 make package"
+      }
+    }
+	
+		stash excludes: '_CPack_Packages', includes: "${buildDirectory}/build/packages/*", name: "packages-${platform}-${configuration}"
+		archiveArtifacts artifacts: "${buildDirectory}/build/packages/*", excludes: '_CPack_Packages'
 	}
 }
 
@@ -284,9 +275,9 @@ try{
 	def builders = [:]
 	def tests = [:]
 
-//	node('Darwin-x86_64'){
-//		runUnitTests('Darwin-x86_64')
-//	}
+  node('Darwin-x86_64'){
+    runUnitTests('Darwin-x86_64')
+  }
 
   for (platf in platforms) {
         // Need to bind the label variable before the closure - can't do 'for (label in labels)'
@@ -319,10 +310,14 @@ try{
 	}
 
 	builders['arm64'] = {
-			node('docker20'){				
-				timeout(30){
-					runBuild('Linux-aarch64', "CoInterpreter", true, true)
-				}
+			node('docker20'){
+				docker.dockerfile(
+				        dir: './docker/Dockerfile.arm64-ubuntu'
+				    ).inside('-v /tmp:/tmp') {
+							timeout(30){
+		 					runBuild('Linux-aarch64', "CoInterpreter")
+		 				}
+		 			}
 			}
 	}
 
