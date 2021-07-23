@@ -299,7 +299,7 @@ def uploadPackages(platformNames){
 	}
 }
 
-def runTestsUsingDocker(platform, imageName, configuration, packages, withWorker)
+def runTestsUsingDocker(platform, imageName, configuration, packages, withWorker){
 	node('docker20'){
 		cleanWs()
 		def image;
