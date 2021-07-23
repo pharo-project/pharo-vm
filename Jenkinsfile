@@ -6,6 +6,10 @@ def isWindows(){
     return env.NODE_LABELS.toLowerCase().contains('windows')
 }
 
+def is32Bits(platform){
+	return platform == 'Linux-armv7l'
+}
+
 def shell(params){
     if(isWindows()) bat(params) 
     else sh(params)
@@ -189,7 +193,7 @@ def runTests(platform, configuration, packages, withWorker){
 							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
 						}
 
-						if(platform == 'Linux-x86_64'){
+						if(platform == 'Linux-x86_64' || platform == 'Linux-aarch64' || platform == 'Linux-armv7l'){
 							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'" 
 						}
 				}
@@ -220,6 +224,7 @@ def upload(platform, configuration, archiveName) {
 
 	unstash name: "packages-${platform}-${configuration}"
 
+	def wordSize = is32Bits() ? "32" : "64"
 	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
 	def expandedCSourceFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-c-src.zip").trim()
 	def expandedHeadersFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-include.zip").trim()
@@ -227,24 +232,24 @@ def upload(platform, configuration, archiveName) {
 	sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/latest.zip"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/latest.zip"
 
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedHeadersFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/include"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/include"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedHeadersFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/include/latest.zip"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/include/latest.zip"
 
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedCSourceFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/source"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedCSourceFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/source/latest.zip"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source/latest.zip"
 	}
 }
 
@@ -254,15 +259,16 @@ def uploadStockReplacement(platform, configuration, archiveName) {
 
 	unstash name: "packages-${archiveName}-${configuration}"
 
+	def wordSize = is32Bits() ? "32" : "64"
 	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build-stockReplacement/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
 
 	sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64/${platform}"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}/${platform}"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64/${platform}/latestReplacement.zip"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}/${platform}/latestReplacement.zip"
 	}
 }
 
@@ -293,6 +299,41 @@ def uploadPackages(platformNames){
 	}
 }
 
+def runTestsUsingDocker(platform, imageName, configuration, packages, withWorker)
+	node('docker20'){
+		cleanWs()
+		def image;
+		stage("Build Image ${platform}"){
+			checkout scm
+			image = docker.build("pharo-${imageName}","./docker/${imageName}/")
+		}
+			
+		image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
+			timeout(45){
+				runTests(platform, configuration, packages, withWorker)
+			}
+		}
+	}
+}
+
+def buildUsingDocker(platform, imageName, configuration, headless=true){
+
+	node('docker20'){
+		cleanWs()
+		def image;
+		stage("Build Image ${platform}"){
+			checkout scm
+			image = docker.build("pharo-${imageName}","./docker/${imageName}/")
+		}
+			
+		image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
+			timeout(45){
+				runBuildFromSources(platform, configuration, headless)
+			}
+		}
+	}
+}
+
 try{
 	properties([disableConcurrentBuilds()])
 
@@ -301,9 +342,9 @@ try{
 	def builders = [:]
 	def tests = [:]
 
-//  node('Darwin-x86_64'){
-//    runUnitTests('Darwin-x86_64')
-//  }
+	node('Darwin-x86_64'){
+		runUnitTests('Darwin-x86_64')
+	}
 
 	for (platf in parallelBuilderPlatforms) {
 		// Need to bind the label variable before the closure - can't do 'for (label in labels)'
@@ -322,12 +363,7 @@ try{
 				}
 			}
 		}
-	}
-	
-	for (platf in platforms) {
-		// Need to bind the label variable before the closure - can't do 'for (label in labels)'
-		def platform = platf
-				
+		
 		tests[platform] = {
 			node(platform){
 				timeout(45){
@@ -342,35 +378,23 @@ try{
 
 	parallel builders
 
-	node('docker20'){
-		cleanWs()
-		def image;
-		stage("Build Image Linux-aarch64"){
-			checkout scm
-			image = docker.build('pharo-ubuntu-arm64','./docker/ubuntu-arm64/')
-		}
-			
-		image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
-			timeout(45){
-				runBuildFromSources('Linux-aarch64', "CoInterpreter")
-			}
-		}
-	}
+	buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter")
+	buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter")
 
-	node('docker20'){
-			cleanWs()
-			def image;
-				stage("Build Image Linux-armv7l"){
-				checkout scm
-				image = docker.build('pharo-debian10-armv7','./docker/debian10-armv7/')
-			}
-
-			image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
-				timeout(45){
-				runBuildFromSources('Linux-armv7l', "CoInterpreter")
-			}
-		}
+	if(isMainBranch()){
+		buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", false)
+		buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", false)
 	}
+	
+	tests['Linux-aarch64'] = { 
+		runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", ".*", false)
+		runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", ".*", true)
+	 }
+
+	tests['Linux-armv7l'] = { 
+		runTestsUsingDocker('Linux-aarch64', 'debian10-armv7', "CoInterpreter", ".*", false)
+		runTestsUsingDocker('Linux-aarch64', 'debian10-armv7', "CoInterpreter", ".*", true)
+	 }
 	
 	uploadPackages(platforms)
 
