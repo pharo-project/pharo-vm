@@ -351,7 +351,7 @@ try{
 		}
 	}
 
-/*	node('docker20'){
+	node('docker20'){
 			cleanWs()
 			def image;
 				stage("Build Image Linux-armv7l"){
@@ -361,11 +361,11 @@ try{
 
 			image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
 				timeout(45){
-				runBuild('Linux-armv7l', "CoInterpreter")
+				runBuildFromSources('Linux-armv7l', "CoInterpreter")
 			}
 		}
 	}
-*/	
+	
 	uploadPackages(platforms)
 
 	buildGTKBundle()
