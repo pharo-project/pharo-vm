@@ -296,7 +296,8 @@ def uploadPackages(platformNames){
 try{
 	properties([disableConcurrentBuilds()])
 
-	def platforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64', 'Darwin-arm64']
+	def parallelBuilderPlatforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64', 'Darwin-arm64']
+	def platforms = parallelBuilderPlatforms + ['Linux-aarch64', 'Linux-armv7l']
 	def builders = [:]
 	def tests = [:]
 
@@ -304,9 +305,9 @@ try{
 //    runUnitTests('Darwin-x86_64')
 //  }
 
-  for (platf in platforms) {
-        // Need to bind the label variable before the closure - can't do 'for (label in labels)'
-        def platform = platf
+	for (platf in parallelBuilderPlatforms) {
+		// Need to bind the label variable before the closure - can't do 'for (label in labels)'
+		def platform = platf
 		
 		builders[platform] = {
 			node(platform){
@@ -321,7 +322,12 @@ try{
 				}
 			}
 		}
-		
+	}
+	
+	for (platf in platforms) {
+		// Need to bind the label variable before the closure - can't do 'for (label in labels)'
+		def platform = platf
+				
 		tests[platform] = {
 			node(platform){
 				timeout(45){
