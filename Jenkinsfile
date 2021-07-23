@@ -118,7 +118,7 @@ def runBuildFromSources(platformName, configuration, headless = true){
 	}
 
 	stage("Build-${platform}-${configuration}"){
-		cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl -DGENERATE_SOURCES=FALSE -DGENERATED_SOURCE_DIR=./repository/", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InLocalPath"
+		cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl -DGENERATE_SOURCES=FALSE -DGENERATED_SOURCE_DIR=../repository/", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InLocalPath"
 		
 		dir("${buildDirectory}"){
 			shell "VERBOSE=1 make install package"
