@@ -84,8 +84,6 @@ def runBuild(platformName, configuration, headless = true){
 		}
 	}
   
-	def cmakePath = platform == "Linux-aarch64" ? "InLocalPath" : "InSearchPath";
-  
 	stage("Build-${platform}-${configuration}"){
     if(isWindows()){
       runInCygwin "mkdir ${buildDirectory}"
@@ -93,12 +91,39 @@ def runBuild(platformName, configuration, headless = true){
       runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository -DICEBERG_DEFAULT_REMOTE=httpsUrl"
       runInCygwin "cd ${buildDirectory} && VERBOSE=1 make install package"
     }else{
-      cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "${cmakePath}"
+      cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
       dir("${buildDirectory}"){
         shell "VERBOSE=1 make install package"
       }
     }
 	
+		stash excludes: '_CPack_Packages', includes: "${buildDirectory}/build/packages/*", name: "packages-${platform}-${configuration}"
+		archiveArtifacts artifacts: "${buildDirectory}/build/packages/*", excludes: '_CPack_Packages'
+	}
+}
+
+def runBuildFromSources(platformName, configuration, headless = true){
+	cleanWs()
+	
+	def platform = headless ? platformName : "${platformName}-stockReplacement"
+	def buildDirectory = headless ? "build" :"build-stockReplacement"
+	def additionalParameters = headless ? "" : "-DALWAYS_INTERACTIVE=1"
+
+	stage("Copy Sources-${platform}"){
+		//We take the source code from Linux version
+		//It is extracted and will create the pharo-vm subdirectory
+		unstash name: "packages-Linux-x86_64-${configuration}"
+		shell "unzip -d . build/build/packages/PharoVM-*-Linux-x86_64-c-src.zip"
+		shell "mv pharo-vm repository"
+	}
+
+	stage("Build-${platform}-${configuration}"){
+		cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl -DGENERATE_SOURCES=FALSE -DGENERATED_SOURCE_DIR=./repository/", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InLocalPath"
+		
+		dir("${buildDirectory}"){
+			shell "VERBOSE=1 make install package"
+		}
+		
 		stash excludes: '_CPack_Packages', includes: "${buildDirectory}/build/packages/*", name: "packages-${platform}-${configuration}"
 		archiveArtifacts artifacts: "${buildDirectory}/build/packages/*", excludes: '_CPack_Packages'
 	}
@@ -312,36 +337,35 @@ try{
 	parallel builders
 
 	node('docker20'){
-			cleanWs()
-			def image;
-			stage("Build Image Linux-aarch64"){
-				checkout scm
-				image = docker.build('pharo-ubuntu-arm64','./docker/ubuntu-arm64/')
-			}
+		cleanWs()
+		def image;
+		stage("Build Image Linux-aarch64"){
+			checkout scm
+			image = docker.build('pharo-ubuntu-arm64','./docker/ubuntu-arm64/')
+		}
 			
-			image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
-				timeout(45){
-				runBuild('Linux-aarch64', "CoInterpreter")
+		image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
+			timeout(45){
+				runBuildFromSources('Linux-aarch64', "CoInterpreter")
 			}
 		}
 	}
 
-	node('docker20'){
+/*	node('docker20'){
 			cleanWs()
 			def image;
 				stage("Build Image Linux-armv7l"){
 				checkout scm
 				image = docker.build('pharo-debian10-armv7','./docker/debian10-armv7/')
 			}
-			
+
 			image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
 				timeout(45){
 				runBuild('Linux-armv7l', "CoInterpreter")
 			}
 		}
 	}
-
-	
+*/	
 	uploadPackages(platforms)
 
 	buildGTKBundle()
