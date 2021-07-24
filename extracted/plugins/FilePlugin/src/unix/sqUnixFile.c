@@ -112,7 +112,13 @@ sqInt dir_Create(char *pathString, sqInt pathStringLength)
     return false;
   if (!sq2uxPath(pathString, pathStringLength, name, MAXPATHLEN, 1))
     return false;
-  return mkdir(name, 0777) == 0;	/* rwxrwxrwx & ~umask */
+  if(mkdir(name, 0777) == 0){/* rwxrwxrwx & ~umask */
+	return true;
+  }	else{
+	logWarn("dir_Create: Error creating %s", pathString);
+	logWarnFromErrno("dir_Create");
+	return false;
+  }
 }
 
 
