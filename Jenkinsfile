@@ -388,8 +388,8 @@ try{
 	 }
 
 	tests['Linux-armv7l'] = { 
-		runTestsUsingDocker('Linux-aarch64', 'debian10-armv7', "CoInterpreter", ".*", false)
-		runTestsUsingDocker('Linux-aarch64', 'debian10-armv7', "CoInterpreter", ".*", true)
+		runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", ".*", false)
+		runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", ".*", true)
 	 }
 	
 	uploadPackages(platforms)
