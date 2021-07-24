@@ -308,7 +308,7 @@ def runInsideDocker(platform, imageName, closure){
 			image = docker.build("pharo-${imageName}","./docker/${imageName}/")
 		}
 			
-		image.inside("-v /tmp:/tmp -v $WORKSPACE:$WORKSPACE", closure)
+		image.inside("-v /tmp:/tmp -v /builds/workspace:/builds/workspace", closure)
 	}
 }
 
