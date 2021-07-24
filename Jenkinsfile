@@ -224,7 +224,7 @@ def upload(platform, configuration, archiveName) {
 
 	unstash name: "packages-${platform}-${configuration}"
 
-	def wordSize = is32Bits() ? "32" : "64"
+	def wordSize = is32Bits(platform) ? "32" : "64"
 	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
 	def expandedCSourceFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-c-src.zip").trim()
 	def expandedHeadersFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-include.zip").trim()
@@ -259,7 +259,7 @@ def uploadStockReplacement(platform, configuration, archiveName) {
 
 	unstash name: "packages-${archiveName}-${configuration}"
 
-	def wordSize = is32Bits() ? "32" : "64"
+	def wordSize = is32Bits(platform) ? "32" : "64"
 	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build-stockReplacement/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
 
 	sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
@@ -299,7 +299,7 @@ def uploadPackages(platformNames){
 	}
 }
 
-def runTestsUsingDocker(platform, imageName, configuration, packages, withWorker){
+def runInsideDocker(platform, imageName, closure){
 	node('docker20'){
 		cleanWs()
 		def image;
@@ -308,28 +308,24 @@ def runTestsUsingDocker(platform, imageName, configuration, packages, withWorker
 			image = docker.build("pharo-${imageName}","./docker/${imageName}/")
 		}
 			
-		image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
-			timeout(45){
-				runTests(platform, configuration, packages, withWorker)
-			}
+		image.inside("-v /tmp:/tmp -v $WORKSPACE:$WORKSPACE", closure)
+	}
+}
+
+def runTestsUsingDocker(platform, imageName, configuration, packages, withWorker){
+	
+	runInsideDocker(platform, imageName){
+		timeout(45){
+			runTests(platform, configuration, packages, withWorker)
 		}
 	}
 }
 
 def buildUsingDocker(platform, imageName, configuration, headless=true){
 
-	node('docker20'){
-		cleanWs()
-		def image;
-		stage("Build Image ${platform}"){
-			checkout scm
-			image = docker.build("pharo-${imageName}","./docker/${imageName}/")
-		}
-			
-		image.inside('-v /tmp:/tmp -v /builds/workspace:/builds/workspace') {
-			timeout(45){
-				runBuildFromSources(platform, configuration, headless)
-			}
+	runInsideDocker(platform, imageName){
+		timeout(45){
+			runBuildFromSources(platform, configuration, headless)
 		}
 	}
 }
