@@ -307,6 +307,8 @@ def runInsideDocker(platform, imageName, closure){
 			checkout scm
 			image = docker.build("pharo-${imageName}","./docker/${imageName}/")
 		}
+		
+		echo "Building using workspace " + env.WORKSPACE
 			
 		image.inside("-v /tmp:/tmp -v /builds/workspace:/builds/workspace -e HOME=/opt/pharo -u pharo", closure)
 	}
@@ -384,11 +386,11 @@ try{
 	
 	tests['Linux-aarch64'] = { 
 		runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", ".*", false)
-		runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", ".*", true)
-	 }
 
-	tests['Linux-armv7l'] = { 
 		runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", ".*", false)
+		
+		runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", ".*", true)
+		
 		runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", ".*", true)
 	 }
 	
