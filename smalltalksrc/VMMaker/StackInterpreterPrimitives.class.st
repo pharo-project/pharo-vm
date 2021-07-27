@@ -4328,6 +4328,13 @@ StackInterpreterPrimitives >> readAddress: anOop [
 	^ objectMemory fetchPointer: 0 ofObject: anOop.
 ]
 
+{ #category : #'I/O primitive support' }
+StackInterpreterPrimitives >> sqImageFile: imageFile Seek: position [
+
+	<doNotGenerate>
+	imageFile position: position
+]
+
 { #category : #'object access primitives' }
 StackInterpreterPrimitives >> unmarkAfterPathTo [
 	<inline: false>

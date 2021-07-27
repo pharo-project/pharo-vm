@@ -721,7 +721,28 @@ VMClass >> localNameFor: aString [
 VMClass >> logError: aMessage [
 	
 	<doNotGenerate>
-	Warning signal: aMessage
+	self logError: aMessage withArgs: #()
+]
+
+{ #category : #'debug support' }
+VMClass >> logError: aFormat _: arg1 [
+	
+	<doNotGenerate>
+	self logError: aFormat withArgs: { arg1 }
+]
+
+{ #category : #'debug support' }
+VMClass >> logError: aFormat _: arg1 _: arg2 [
+	
+	<doNotGenerate>
+	self logError: aFormat withArgs: { arg1. arg2 }
+]
+
+{ #category : #'debug support' }
+VMClass >> logError: aFormat withArgs: args [
+	
+	<doNotGenerate>
+	Error signal: (aFormat printf: args)
 ]
 
 { #category : #'memory access' }
