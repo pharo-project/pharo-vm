@@ -495,7 +495,8 @@ StackInterpreter class >> ancilliaryClasses [
 		CogStackPages.
 		InterpreterStackPages.
 		LibFFI.
-		CogStackPage }
+		CogStackPage.
+		SpurImageHeaderStruct}
 ]
 
 { #category : #constants }
@@ -2261,6 +2262,45 @@ StackInterpreter >> allOnesAsCharStar [
 ]
 
 { #category : #'image save/restore' }
+StackInterpreter >> allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: desiredPositionOfHeap [ 
+
+	<var: #f type: #sqImageFile>
+	<var: #header type: #'SpurImageHeaderStruct'>
+
+	| allocationReserve headroom heapSize minimumMemory |
+	
+	allocationReserve := self interpreterAllocationReserveBytes.
+
+	headroom := objectMemory
+		            initialHeadroom: extraVMMemory
+		            givenFreeOldSpaceInImage: header freeOldSpaceInImage.
+	heapSize := objectMemory roundUpHeapSize:
+		            header dataSize + headroom + objectMemory newSpaceBytes
+		            + (headroom > allocationReserve
+				             ifTrue: [ 0 ]
+				             ifFalse: [ allocationReserve ]).
+
+	minimumMemory := header dataSize + objectMemory newSpaceBytes
+	                 + allocationReserve.
+
+	"allocate a contiguous block of memory for the heap"
+	objectMemory memory: (self
+			 allocateMemory: heapSize
+			 minimum: minimumMemory
+			 imageFile: f
+			 headerSize: header headerSize
+			 desiredPosition: desiredPositionOfHeap) asUnsignedInteger.
+			
+	objectMemory memory ifNil: [ self insufficientMemoryAvailableError ].
+
+	^ objectMemory
+		setHeapBase: objectMemory memory
+		memoryLimit: objectMemory memory + heapSize
+		endOfMemory: objectMemory memory + header dataSize.
+
+]
+
+{ #category : #'image save/restore' }
 StackInterpreter >> allocateJITMemory: desiredSize desiredPosition: desiredPosition [
 	
 	<inline: true>
@@ -2313,6 +2353,18 @@ StackInterpreter >> allocateMemory: heapSize minimum: minimumMemory imageFile: f
 							ImageFile: fileStream
 							HeaderSize: headerSize
 							BaseAddress: desiredBaseAddress)
+]
+
+{ #category : #'image save/restore' }
+StackInterpreter >> allocateMemoryForImage: f withHeader: header [
+
+	<var: #f type: #sqImageFile>
+	<var: #header type: #'SpurImageHeaderStruct'>
+
+	| bytesRead bytesToShift |
+	self allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: header oldBaseAddr.
+	
+	self loadImageFromFile: f withHeader: header 
 ]
 
 { #category : #'compiled methods' }
@@ -9368,6 +9420,27 @@ StackInterpreter >> loadBitBltFrom: bb [
 	^self cCode: '((sqInt (*)(sqInt))fn)(bb)'
 ]
 
+{ #category : #'image save/restore' }
+StackInterpreter >> loadImageFromFile: f withHeader: header [ 
+
+	<var: #f type: #sqImageFile>
+	<var: #header type: #'SpurImageHeaderStruct'>	
+	
+	"read in the image in bulk, then swap the bytes if necessary"
+	| bytesRead bytesToShift |
+	bytesRead := objectMemory
+		             readHeapFromImageFile: f
+		             dataBytes: header dataSize.
+	bytesRead ~= header dataSize ifTrue: [ self unableToReadImageError ].
+
+	self ensureImageFormatIsUpToDate: header swapBytes.
+
+	"compute difference between old and new memory base addresses"
+	bytesToShift := objectMemory memoryBaseForImageRead - header oldBaseAddr.
+	self initializeInterpreter: bytesToShift. "adjusts all oops to new location"
+
+]
+
 { #category : #initialization }
 StackInterpreter >> loadInitialContext [
 	<inline: false>
@@ -13442,13 +13515,52 @@ StackInterpreter >> quinaryInlinePrimitive: primIndex [
 ]
 
 { #category : #'image save/restore' }
-StackInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: imageOffset [
+StackInterpreter >> readHeaderFrom: f startingAt: headerStart [
+
+	<var: #header type: #'SpurImageHeaderStruct'>
+	<returnTypeC: #'SpurImageHeaderStruct'>
+
+	| header |
+	
+	self simulationOnly: [ header := SpurImageHeaderStruct new].
+
+	header swapBytes: (self checkImageVersionFrom: f).
+
+	header headerSize: (self getWord32FromFile: f swap: header swapBytes).
+	header dataSize: (self getLongFromFile: f swap: header swapBytes).
+	header oldBaseAddr: (self getLongFromFile: f swap: header swapBytes).
+	header initialSpecialObjectsOop: (self getLongFromFile: f swap: header swapBytes).
+	
+	header hdrLastHash: (self getLongFromFile: f swap: header swapBytes).	
+	
+	"savedWindowSize :=" self getLongFromFile: f swap: header swapBytes.
+	header headerFlags: (self getLongFromFile: f swap: header swapBytes).
+
+	header extraVMMemory: (self getWord32FromFile: f swap: header swapBytes).
+	header hdrNumStackPages: (self getShortFromFile: f swap: header swapBytes).
+	"This slot holds the size of the native method zone in 1k units. (pad to word boundary)."
+	header hdrCogCodeSize: ((self getShortFromFile: f swap: header swapBytes) * 1024).
+	header hdrEdenBytes: (self getWord32FromFile: f swap: header swapBytes).
+
+	header hdrMaxExtSemTabSize: (self getShortFromFile: f swap: header swapBytes).
+	"pad to word boundary.  This slot can be used for anything else that will fit in 16 bits.
+	 Preserve it to be polite to other VMs."
+	"the2ndUnknownShort :=" self getShortFromFile: f swap: header swapBytes.
+	header firstSegSize: (self getLongFromFile: f swap: header swapBytes).
+
+	header freeOldSpaceInImage:(self getLongFromFile: f swap: header swapBytes).
+
+	"position file after the header"
+	self sqImageFile: f Seek: headerStart + header headerSize.
+
+	^ header
+]
+
+{ #category : #'image save/restore' }
+StackInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: headerStart [
 
 	"Read an image from the given file stream, allocating an amount of memory to its object heap.
 	
-	 V3: desiredHeapSize is the total size of the heap.  Fail if the image has an unknown format or
-	 requires more than the specified amount of memory.
-
 	 Spur: desiredHeapSize is ignored; this routine will attempt to provide at least extraVMMemory's
 	 ammount of free space after the image is loaded, taking any free space in teh image into account.
 	 extraVMMemory is stored in the image header and is accessible as vmParameterAt: 23.  If
@@ -13464,29 +13576,22 @@ StackInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: i
 
 	<var: #f type: #sqImageFile>
 	<var: #heapSize type: #usqInt>
-	<var: #dataSize type: #size_t>
 	<var: #minimumMemory type: #usqInt>
-	<var: #desiredHeapSize type: #usqInt>
 	<var: #allocationReserve type: #usqInt>
-	<var: #headerStart type: #squeakFileOffsetType>
-	<var: #imageOffset type: #squeakFileOffsetType>
-	| headerStart headerSize headerFlags dataSize oldBaseAddr swapBytes minimumMemory bytesRead bytesToShift heapSize firstSegSize hdrEdenBytes hdrMaxExtSemTabSize hdrNumStackPages allocationReserve |
+	<var: #header type: #'SpurImageHeaderStruct'>
+
+	| header |
+
 	metaclassNumSlots := 6. "guess Metaclass instSize"
 	classNameIndex := 6. "guess (Class instVarIndexFor: 'name' ifAbsent: []) - 1"
-	swapBytes := self checkImageVersionFrom: f.
-	headerStart := (self sqImageFilePosition: f) - 4. "record header start position"
 
-	headerSize := self getWord32FromFile: f swap: swapBytes.
-	dataSize := self getLongFromFile: f swap: swapBytes.
-	oldBaseAddr := self getLongFromFile: f swap: swapBytes.
-	objectMemory specialObjectsOop:
-		(self getLongFromFile: f swap: swapBytes).
-	objectMemory lastHash: (self getLongFromFile: f swap: swapBytes). "N.B.  not used."
-	savedWindowSize := self getLongFromFile: f swap: swapBytes.
-	headerFlags := self getLongFromFile: f swap: swapBytes.
-	self setImageHeaderFlagsFrom: headerFlags.
-	extraVMMemory := self getWord32FromFile: f swap: swapBytes.
-	hdrNumStackPages := self getShortFromFile: f swap: swapBytes.
+	header := self readHeaderFrom: f startingAt: headerStart.
+
+	objectMemory specialObjectsOop: header initialSpecialObjectsOop.
+	objectMemory lastHash: header hdrLastHash.
+	self setImageHeaderFlagsFrom: header headerFlags.
+	extraVMMemory := header extraVMMemory.
+
 	"4 stack pages is small.  Should be able to run with as few as
 	 three. 4 should be comfortable but slow.  8 is a reasonable
 	 default.  Can be changed via vmParameterAt: 43 put: n.
@@ -13496,82 +13601,26 @@ StackInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: i
 	numStackPages := desiredNumStackPages ~= 0
 		                 ifTrue: [ desiredNumStackPages ]
 		                 ifFalse: [ 
-			                 hdrNumStackPages = 0
+			                 header hdrNumStackPages = 0
 				                 ifTrue: [ self defaultNumStackPages ]
-				                 ifFalse: [ hdrNumStackPages ] ].
-	desiredNumStackPages := hdrNumStackPages.
-	"pad to word boundary.  This slot can be used for anything else that will fit in 16 bits.
-	 It is used for the cog code size in Cog.  Preserve it to be polite to other VMs."
-	theUnknownShort := self getShortFromFile: f swap: swapBytes.
-	hdrEdenBytes := self getWord32FromFile: f swap: swapBytes.
+				                 ifFalse: [ header hdrNumStackPages ] ].
+	desiredNumStackPages := header hdrNumStackPages.
+
 	objectMemory edenBytes: (desiredEdenBytes ~= 0
 			 ifTrue: [ desiredEdenBytes ]
 			 ifFalse: [ 
-				 hdrEdenBytes = 0
+				 header hdrEdenBytes = 0
 					 ifTrue: [ objectMemory defaultEdenBytes ]
-					 ifFalse: [ hdrEdenBytes ] ]).
-	desiredEdenBytes := hdrEdenBytes.
-	hdrMaxExtSemTabSize := self getShortFromFile: f swap: swapBytes.
-	hdrMaxExtSemTabSize ~= 0 ifTrue: [ 
-		self setMaxExtSemSizeTo: hdrMaxExtSemTabSize ].
-	"pad to word boundary.  This slot can be used for anything else that will fit in 16 bits.
-	 Preserve it to be polite to other VMs."
-	the2ndUnknownShort := self getShortFromFile: f swap: swapBytes.
-	firstSegSize := self getLongFromFile: f swap: swapBytes.
-	objectMemory firstSegmentSize: firstSegSize.
-	"compare memory requirements with availability"
-	allocationReserve := self interpreterAllocationReserveBytes.
-	minimumMemory := dataSize + objectMemory newSpaceBytes
-	                 + allocationReserve.
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue: [ 
-			| freeOldSpaceInImage headroom |
-			freeOldSpaceInImage := self getLongFromFile: f swap: swapBytes.
-			headroom := objectMemory
-				            initialHeadroom: extraVMMemory
-				            givenFreeOldSpaceInImage: freeOldSpaceInImage.
-			heapSize := objectMemory roundUpHeapSize:
-				            dataSize + headroom + objectMemory newSpaceBytes
-				            + (headroom > allocationReserve
-						             ifTrue: [ 0 ]
-						             ifFalse: [ allocationReserve ]) ]
-		ifFalse: [ 
-			heapSize := desiredHeapSize + objectMemory newSpaceBytes
-			            + (desiredHeapSize - dataSize > allocationReserve
-					             ifTrue: [ 0 ]
-					             ifFalse: [ allocationReserve ]).
-			heapSize < minimumMemory ifTrue: [ 
-				self insufficientMemorySpecifiedError ] ].
+					 ifFalse: [ header hdrEdenBytes ] ]).
+	desiredEdenBytes := header hdrEdenBytes.
 
-	"allocate a contiguous block of memory for the Squeak heap"
-	objectMemory memory: (self
-			 allocateMemory: heapSize
-			 minimum: minimumMemory
-			 imageFile: f
-			 headerSize: headerSize
-			 desiredPosition: oldBaseAddr) asUnsignedInteger.
-	objectMemory memory ifNil: [ self insufficientMemoryAvailableError ].
+	header hdrMaxExtSemTabSize ~= 0 ifTrue: [ 
+		self setMaxExtSemSizeTo: header hdrMaxExtSemTabSize ].
+	objectMemory firstSegmentSize: header firstSegSize.
 
-	objectMemory
-		setHeapBase: objectMemory memory
-		memoryLimit: objectMemory memory + heapSize
-		endOfMemory: objectMemory memory + dataSize.
+	self allocateMemoryForImage: f withHeader: header.
 
-	"position file after the header"
-	self sqImageFile: f Seek: headerStart + headerSize.
-
-	"read in the image in bulk, then swap the bytes if necessary"
-	bytesRead := objectMemory
-		             readHeapFromImageFile: f
-		             dataBytes: dataSize.
-	bytesRead ~= dataSize ifTrue: [ self unableToReadImageError ].
-
-	self ensureImageFormatIsUpToDate: swapBytes.
-
-	"compute difference between old and new memory base addresses"
-	bytesToShift := objectMemory memoryBaseForImageRead - oldBaseAddr.
-	self initializeInterpreter: bytesToShift. "adjusts all oops to new location"
-	^ dataSize
+	^ header dataSize
 ]
 
 { #category : #'image save/restore' }
