@@ -632,11 +632,14 @@ CogAbstractInstruction >> cogit: aCogit [
 
 { #category : #'generate machine code' }
 CogAbstractInstruction >> computeJumpTargetOffsetPlus: anPCOffset [
-	<inline: true> "Since it's an extraction from other methods."
+
+	"Since it's an extraction from other methods."
+
+	<inline: true>
+	<var: #jumpTarget type: #sqInt>
 	| jumpTarget |
-	<var: #jumpTarget type: #'AbstractInstruction *'>
 	jumpTarget := self jumpTargetAddress.
-	^jumpTarget signedIntFromLong - (address + anPCOffset) signedIntFromLong.
+	^ jumpTarget - (cogit cCoerceSimple: address + anPCOffset to: #sqInt)
 ]
 
 { #category : #'generate machine code' }
@@ -1190,12 +1193,15 @@ CogAbstractInstruction >> jumpTargetAddress [
 	<inline: true> "Since it's an extraction from other methods."
 	| jumpTarget |
 	<var: #jumpTarget type: #'AbstractInstruction *'>
+	<returnTypeC: #'sqInt'>
+
 	jumpTarget := cogit cCoerceSimple: (operands at: 0) to: #'AbstractInstruction *'.
 	cogit assertSaneJumpTarget: jumpTarget.
 	(self isAnInstruction: jumpTarget) ifTrue:
 		[jumpTarget := cogit cCoerceSimple: jumpTarget address to: #'AbstractInstruction *'].
 	self assert: jumpTarget ~= 0.
-	^jumpTarget
+	
+	^ cogit cCoerceSimple: jumpTarget to: #sqInt.
 ]
 
 { #category : #'generate machine code' }
