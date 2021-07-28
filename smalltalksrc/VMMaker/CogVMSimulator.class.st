@@ -81,7 +81,8 @@ Class {
 		'bootstrapping',
 		'primitiveFailCount',
 		'primitiveFlags',
-		'initialAddress'
+		'initialAddress',
+		'rumpCStackBase'
 	],
 	#classVars : [
 		'ByteCountsPerMicrosecond',
@@ -2074,7 +2075,10 @@ CogVMSimulator >> isBoundThreadId: threadId [
 
 { #category : #'rump c stack' }
 CogVMSimulator >> isOnRumpCStack: address [
-	^address between: heapBase - self rumpCStackSize and: heapBase - objectMemory wordSize
+
+	^ address
+		  between: self rumpCStackAddress - self rumpCStackSize
+		  and: self rumpCStackAddress
 ]
 
 { #category : #'primitive support' }
@@ -3305,12 +3309,9 @@ CogVMSimulator >> rewriteMethodCacheEntryForExternalPrimitiveToFunction: localPr
 
 { #category : #'rump c stack' }
 CogVMSimulator >> rumpCStackAddress [
-	| alignment alignedHeapBase |
-	alignment := 64. "byte alignment for stack frames; IA32 requires 16 bytes."
-	alignedHeapBase := heapBase bitAnd: alignment negated.
-	^alignedHeapBase = heapBase
-		ifTrue: [heapBase - alignment]
-		ifFalse: [alignedHeapBase]
+
+	rumpCStackBase ifNil: [ rumpCStackBase := memoryManager allocate: self rumpCStackSize  ].
+ 	^ rumpCStackBase + self rumpCStackSize
 ]
 
 { #category : #'rump c stack' }
@@ -3346,7 +3347,8 @@ CogVMSimulator >> saneFunctionPointerForFailureOfPrimIndex: primIndex [
 	"For simulation override to do the check specially when the
 	 primitiveFunctionPointer is an invalid address proxy for a primitive."
 	| basePrimitive |
-	(instructionPointer < objectMemory nilObject asUnsignedInteger
+	
+	((self isOnRumpCStack: instructionPointer)
 	and: [primitiveFunctionPointer isInteger
 	and: [self isPrimitiveFunctionPointerAnIndex not
 	and: [primIndex ~= PrimNumberExternalCall

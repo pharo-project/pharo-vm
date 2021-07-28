@@ -465,7 +465,7 @@ VMSpurMemoryManagerTest >> setUp [
 	emptyObjectSize := objectHeaderSize + 8 "minimum required single empty slot, to use for forwarders".
 	
 	"Set it to bootstrapping to allow smaller memories"
-	memoryManager := SlangMemoryManager new.
+	memoryManager := MachineSimulatorMemoryManager new.
 	memoryManager initialAddress: initialAddress.
 	memoryManager wordSize: self wordSize.
 	
