@@ -12,7 +12,15 @@ def shell(params){
 }
 
 def isMainBranch(){
-	return env.BRANCH_NAME == 'headless'
+	return env.BRANCH_NAME.startsWith('pharo-')
+}
+
+/**
+  Returns pharo version for the current branch.
+  Only valid if isMainBranch() is true.
+**/
+def mainBranchVersion(){
+	return env.BRANCH_NAME.substring('pharo-'.length())
 }
 
 def runInCygwin(command){
@@ -59,7 +67,7 @@ def buildGTKBundle(){
 
 						sh "scp -o StrictHostKeyChecking=no \
 						${gtkBundleName} \
-						pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/win/latest-win64-GTK.zip"
+						pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/win/latest${mainBranchVersion()}-win64-GTK.zip"
 					}
 				}
 			}
@@ -205,21 +213,21 @@ def upload(platform, configuration, archiveName) {
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/latest.zip"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/latest${mainBranchVersion()}.zip"
 
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedHeadersFileName} \
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/include"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedHeadersFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/include/latest.zip"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/include/latest${mainBranchVersion()}.zip"
 
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedCSourceFileName} \
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/source"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedCSourceFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/source/latest.zip"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/source/latest${mainBranchVersion()}.zip"
 	}
 }
 
@@ -237,7 +245,7 @@ def uploadStockReplacement(platform, configuration, archiveName) {
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64/${platform}"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64/${platform}/latestReplacement.zip"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64/${platform}/latestReplacement${mainBranchVersion()}.zip"
 	}
 }
 
@@ -256,7 +264,7 @@ def uploadPackages(platformNames){
 			}
 
 			if(!isMainBranch()){
-				echo "[DO NO UPLOAD] In branch different that 'headless': ${env.BRANCH_NAME}";
+				echo "[DO NO UPLOAD] The branch is not a main Pharo version branch (starts with 'pharo-'): ${env.BRANCH_NAME}";
 				return;
 			}
 
