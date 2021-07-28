@@ -5149,7 +5149,7 @@ CogARMv8Compiler >> prepareStackToCallCFunctionInSmalltalkStack: anObject [
 
 	"ARMv8 should be aligned to 16 bytes"
 
-	cogit AndCq: ((1 << 64) - 16) R: Extra2Reg. 
+	cogit AndCq: 16rFFFFFFFFFFFFFFF0 R: Extra2Reg. 
 	cogit MoveR: Extra2Reg R: SP.
 ]
 
