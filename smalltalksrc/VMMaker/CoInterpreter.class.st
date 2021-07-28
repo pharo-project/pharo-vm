@@ -797,8 +797,8 @@ CoInterpreter >> allocateHeapMemoryForImage: f withHeader: header desiredStartin
 	<var: #header type: #'SpurImageHeaderStruct'>
 
 	"We set the heapBase in the interpreter. It is only used by the CoInterpreter"
-	^ heapBase := super allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: desiredPositionOfHeap 
-	
+	heapBase := super allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: desiredPositionOfHeap.
+	^ heapBase
 	
 ]
 

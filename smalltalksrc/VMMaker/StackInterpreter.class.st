@@ -2361,7 +2361,6 @@ StackInterpreter >> allocateMemoryForImage: f withHeader: header [
 	<var: #f type: #sqImageFile>
 	<var: #header type: #'SpurImageHeaderStruct'>
 
-	| bytesRead bytesToShift |
 	self allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: header oldBaseAddr.
 	
 	self loadImageFromFile: f withHeader: header 
