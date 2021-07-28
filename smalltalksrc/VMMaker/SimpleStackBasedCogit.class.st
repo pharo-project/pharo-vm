@@ -260,13 +260,6 @@ SimpleStackBasedCogit >> bytecodePC: anInteger [
 	bytecodePC := anInteger 
 ]
 
-{ #category : #accessing }
-SimpleStackBasedCogit >> bytecodeSetOffset: anInteger [ 
-	
-	<doNotGenerate>
-	bytecodeSetOffset := anInteger
-]
-
 { #category : #trampolines }
 SimpleStackBasedCogit >> cPICMissTrampolineFor: numArgs [
 	^ceCPICMissTrampoline
@@ -1091,9 +1084,8 @@ SimpleStackBasedCogit >> extendedStoreBytecode [
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> firstSpecialSelectorBytecodeOffset [
 	<inline: true>
-	^self cppIf: MULTIPLEBYTECODESETS
-		ifTrue: [bytecodeSetOffset = 256 ifTrue: [AltFirstSpecialSelector + 256] ifFalse: [FirstSpecialSelector]]
-		ifFalse: [FirstSpecialSelector]
+	
+	^ FirstSpecialSelector
 ]
 
 { #category : #'bytecode generator support' }
@@ -2986,9 +2978,7 @@ SimpleStackBasedCogit >> numRegArgs [
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> numSpecialSelectors [
 	<inline: true>
-	^self cppIf: MULTIPLEBYTECODESETS
-		ifTrue: [bytecodeSetOffset = 256 ifTrue: [AltNumSpecialSelectors] ifFalse: [NumSpecialSelectors]]
-		ifFalse: [NumSpecialSelectors]
+	^ NumSpecialSelectors
 ]
 
 { #category : #'span functions' }

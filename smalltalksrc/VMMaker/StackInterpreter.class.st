@@ -7845,7 +7845,6 @@ StackInterpreter >> initializeInterpreter: bytesToShift [
 	methodDictLinearSearchLimit := 8.
 	self initialCleanup.
 	profileSemaphore := profileProcess := profileMethod := objectMemory nilObject.
-	interruptKeycode := 2094. "cmd-. as used for Mac but no other OS"
 	self initializeGlobalSessionID.
 	metaAccessorDepth := -2.
 	super initializeInterpreter: bytesToShift

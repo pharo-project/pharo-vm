@@ -17,7 +17,7 @@ VMSimulationTest >> testSetUpJITSimulationReadsImage [
 	    #ISA -> #aarch64.
 	    #BytesPerWord -> 8.
 	    #MULTIPLEBYTECODESETS -> true.
-	    #bytecodeTableInitializer -> #initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid.
+	    #bytecodeTableInitializer -> #initializeBytecodeTableForSistaV1.
 	} asDictionary.
 
 	c := CogVMSimulator newWithOptions: options.
@@ -38,7 +38,7 @@ VMSimulationTest >> testSetUpNonJITSimulationReadsImage [
 	    #ObjectMemory -> #Spur64BitMemoryManager.
 	    #BytesPerWord -> 8.
 	    #MULTIPLEBYTECODESETS -> true.
-	    #bytecodeTableInitializer -> #initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid.
+	    #bytecodeTableInitializer -> #initializeBytecodeTableForSistaV1.
 	} asDictionary.
 
 	c := StackInterpreterSimulator newWithOptions: options.

@@ -9,7 +9,7 @@ LiteralVariable >> forMemory: memory [
 			format: memory nonIndexablePointerFormat 
 			classIndex: self class hash.
 			
-	memory storePointer: 0 ofObject: aVariable withValue: (name forMethodBuilder: memory).
+	memory storePointer: 0 ofObject: aVariable withValue: (name forMemory: memory).
 	memory storePointer: 1 ofObject: aVariable withValue: memory nilObject.
 	 
 	^ aVariable

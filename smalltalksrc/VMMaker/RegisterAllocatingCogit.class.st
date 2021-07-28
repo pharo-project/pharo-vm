@@ -1649,7 +1649,7 @@ RegisterAllocatingCogit >> reinitializeAllButBackwardFixupsFrom: start through: 
 	pc := start.
 	nExts := 0.
 	[pc <= end] whileTrue:
-		[byte0 := (objectMemory fetchByte: pc ofObject: methodObj) + bytecodeSetOffset.
+		[byte0 := objectMemory fetchByte: pc ofObject: methodObj.
 		 descriptor := self generatorAt: byte0.
 		 (descriptor isBranch
 		  and: [self isBackwardBranch: descriptor at: pc exts: nExts in: methodObj]) ifTrue:

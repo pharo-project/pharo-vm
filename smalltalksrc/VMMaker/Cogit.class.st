@@ -184,7 +184,6 @@ Class {
 		'byte2',
 		'byte3',
 		'bytecodePC',
-		'bytecodeSetOffset',
 		'opcodeIndex',
 		'numAbstractOpcodes',
 		'labelCounter',
@@ -4739,14 +4738,6 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 			isMNUCase: false].
 	aMethodObj = breakMethod ifTrue: [self halt: 'Compilation of breakMethod'].
 
-	"If the generators for the alternate bytecode set are missing then interpret."
-	(coInterpreter methodUsesAlternateBytecodeSet: aMethodObj)
-		ifTrue:
-			[(self numElementsIn: generatorTable) <= 256 ifTrue:
-				[^nil].
-			 bytecodeSetOffset := 256]
-		ifFalse:
-			[bytecodeSetOffset := 0].
 	objectRepresentation ensureNoForwardedLiteralsIn: aMethodObj.
 	methodObj := aMethodObj.
 	methodHeader := objectMemory methodHeaderOf: aMethodObj.
@@ -4951,14 +4942,7 @@ Cogit >> cogFullBlockMethod: aMethodObj numCopied: numCopied [
 	self deny: (coInterpreter methodHasCogMethod: aMethodObj).
 	self assert: (objectMemory isOopCompiledMethod: (coInterpreter ultimateLiteralOf: aMethodObj)).
 	aMethodObj = breakMethod ifTrue: [self halt: 'Compilation of breakMethod'].
-	"If the generators for the alternate bytecode set are missing then interpret."
-	(coInterpreter methodUsesAlternateBytecodeSet: aMethodObj)
-		ifTrue:
-			[(self numElementsIn: generatorTable) <= 256 ifTrue:
-				[^nil].
-			 bytecodeSetOffset := 256]
-		ifFalse:
-			[bytecodeSetOffset := 0].
+
 	objectRepresentation ensureNoForwardedLiteralsIn: aMethodObj.
 	methodObj := aMethodObj.
 	methodHeader := objectMemory methodHeaderOf: aMethodObj.
@@ -8382,7 +8366,7 @@ Cogit >> generatorAt: index [
 Cogit >> generatorForPC: pc [
 	<returnTypeC: #'BytecodeDescriptor *'>
 	<inline: true>
-	^self generatorAt: bytecodeSetOffset + (objectMemory fetchByte: pc ofObject: methodObj)
+	^self generatorAt: (objectMemory fetchByte: pc ofObject: methodObj)
 ]
 
 { #category : #accessing }
@@ -9081,7 +9065,7 @@ Cogit >> linkedSuperSendCacheTags [
 Cogit >> loadBytesAndGetDescriptor [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	| descriptor |
-	byte0 := (objectMemory fetchByte: bytecodePC ofObject: methodObj)  + bytecodeSetOffset.
+	byte0 := objectMemory fetchByte: bytecodePC ofObject: methodObj.
 	descriptor := self generatorAt: byte0.
 	self loadSubsequentBytesForDescriptor: descriptor at: bytecodePC.
 	^ descriptor
@@ -10337,7 +10321,7 @@ Cogit >> nextDescriptorExtensionsAndNextPCInto: aQuaternaryBlock [
 	bcpc := bytecodePC + descriptor numBytes.
 	[bcpc > endPC ifTrue:
 		[^aQuaternaryBlock value: nil value: 0 value: 0 value: 0].
-	 byte0 := (objectMemory fetchByte: bcpc ofObject: methodObj)  + bytecodeSetOffset.
+	 byte0 := objectMemory fetchByte: bcpc ofObject: methodObj.
 	 descriptor := self generatorAt: byte0.
 	 self loadSubsequentBytesForDescriptor: descriptor at: bcpc.
 	 descriptor isExtension ifFalse:
@@ -11472,7 +11456,7 @@ Cogit >> scanMethod [
 	pc := latestContinuation := initialPC.
 	framelessStackDelta := nExts := extA := numExtB := extB := 0.
 	[pc <= endPC] whileTrue:
-		[byte0 := (objectMemory fetchByte: pc ofObject: methodObj) + bytecodeSetOffset.
+		[byte0 := objectMemory fetchByte: pc ofObject: methodObj.
 		 descriptor := self generatorAt: byte0.
 		 descriptor isExtension ifTrue:
 			[descriptor opcode = Nop ifTrue: "unknown bytecode tag; see Cogit class>>#generatorTableFrom:"

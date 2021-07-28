@@ -391,7 +391,7 @@ VMSimpleStackBasedCogitAbstractTest >> initialCodeSize [
 VMSimpleStackBasedCogitAbstractTest >> initializationOptions [
 	
 	^ super initializationOptions, {
-		#bytecodeTableInitializer. #initializeBytecodeTableForSqueakV3PlusClosures}
+		#bytecodeTableInitializer. #initializeBytecodeTableForSistaV1}
 ]
 
 { #category : #running }

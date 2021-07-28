@@ -1173,7 +1173,7 @@ StackToRegisterMappingCogit >> ensureReceiverResultRegContainsSelf [
 StackToRegisterMappingCogit >> evaluate: descriptor at: pc [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	byte0 := objectMemory fetchByte: pc ofObject: methodObj.
-	self assert: descriptor = (self generatorAt: bytecodeSetOffset + byte0).
+	self assert: descriptor = (self generatorAt: byte0).
 	self loadSubsequentBytesForDescriptor: descriptor at: pc.
 	self perform: descriptor generator
 ]
@@ -3653,7 +3653,7 @@ StackToRegisterMappingCogit >> scanMethod [
 	pc := latestContinuation := initialPC.
 	framelessStackDelta := nExts := extA := numExtB := extB := 0.
 	[pc <= endPC] whileTrue:
-		[byte0 := (objectMemory fetchByte: pc ofObject: methodObj) + bytecodeSetOffset.
+		[byte0 := objectMemory fetchByte: pc ofObject: methodObj.
 		 descriptor := self generatorAt: byte0.
 		 descriptor isExtension ifTrue:
 			[descriptor opcode = Nop ifTrue: "unknown bytecode tag; see Cogit class>>#generatorTableFrom:"
