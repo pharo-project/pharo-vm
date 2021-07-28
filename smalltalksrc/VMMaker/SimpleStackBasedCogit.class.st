@@ -260,6 +260,13 @@ SimpleStackBasedCogit >> bytecodePC: anInteger [
 	bytecodePC := anInteger 
 ]
 
+{ #category : #accessing }
+SimpleStackBasedCogit >> bytecodeSetOffset: anInteger [ 
+	
+	<doNotGenerate>
+	bytecodeSetOffset := anInteger
+]
+
 { #category : #trampolines }
 SimpleStackBasedCogit >> cPICMissTrampolineFor: numArgs [
 	^ceCPICMissTrampoline
@@ -705,11 +712,11 @@ SimpleStackBasedCogit >> compileMachineCodeInterpreterPrimitive: primitiveRoutin
 	liveRegsMask := (methodOrBlockNumArgs > self numRegArgs
 					   or: [methodOrBlockNumArgs = 0])
 						ifTrue:
-							[self registerMaskFor: ReceiverResultReg]
+							[self registerMaskFor: ReceiverResultReg and: ClassReg]
 						ifFalse:
 							[(self numRegArgs > 1 and: [methodOrBlockNumArgs > 1])
-								ifFalse: [self registerMaskFor: ReceiverResultReg and: Arg0Reg]
-								ifTrue: [self registerMaskFor: ReceiverResultReg and: Arg0Reg and: Arg1Reg]].
+								ifFalse: [self registerMaskFor: ReceiverResultReg and: Arg0Reg and: ClassReg]
+								ifTrue: [self registerMaskFor: ReceiverResultReg and: Arg0Reg and: Arg1Reg and: ClassReg]].
 
 	"As this is using a call, I need to store the Link register."
 	backEnd hasLinkRegister 
@@ -958,6 +965,19 @@ SimpleStackBasedCogit >> compilePrimitive [
 	^ self compileInterpreterPrimitive: primitiveRoutine flags: flags
 ]
 
+{ #category : #accessing }
+SimpleStackBasedCogit >> directedBindingSuperSendTrampolineAt: anAddress put: aTrampolineAddress [
+	
+	directedSuperBindingSendTrampolines at: anAddress put: aTrampolineAddress
+]
+
+{ #category : #accessing }
+SimpleStackBasedCogit >> directedBindingSuperSendTrampolines [
+
+	<doNotGenerate>	
+	^ directedSuperBindingSendTrampolines
+]
+
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> doubleExtendedDoAnythingBytecode [
 	"Replaces the Blue Book double-extended send [132], in which the first byte was wasted on 8 bits of argument count. 
@@ -996,6 +1016,12 @@ SimpleStackBasedCogit >> duplicateTopBytecode [
 	self MoveMw: 0 r: SPReg R: TempReg.
 	self PushR: TempReg.
 	^0
+]
+
+{ #category : #accessing }
+SimpleStackBasedCogit >> endPC: anInteger [ 
+	<doNotGenerate>
+	endPC := anInteger
 ]
 
 { #category : #'*VMMaker-Tests' }

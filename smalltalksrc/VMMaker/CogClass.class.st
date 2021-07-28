@@ -7,13 +7,6 @@ Class {
 	#category : #'VMMaker-JIT'
 }
 
-{ #category : #'system primitives' }
-CogClass class >> minimumUnusedStackHeadroom [
-	"self minimumUnusedStackHeadroom"
-	<primitive: 'primitiveMinimumUnusedHeadroom'>
-	self primitiveFailed
-]
-
 { #category : #'translation support' }
 CogClass >> cCoerceSimple: value to: cTypeString [
 	<doNotGenerate>

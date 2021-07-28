@@ -7,6 +7,12 @@ Integer >> aarch64Disassembled [
 ]
 
 { #category : #'*VMMaker-Tools' }
+Integer >> armv7Disassembled [
+	
+	^ self disassembleWith: LLVMARMDisassembler armv7
+]
+
+{ #category : #'*VMMaker-Tools' }
 Integer >> disassembleWith: aLLVMDisassembler [ 
 	
 	"Create a byte array big enough to encode the instruction"

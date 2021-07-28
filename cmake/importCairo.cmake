@@ -1,7 +1,6 @@
 if (BUILD_BUNDLE)
 
   # Cairo does not support building on CMake
-  # Download it for now, except for linuxes
   if (WIN)
     If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ARM64")
       add_third_party_dependency("pixman-0.40.0")
@@ -22,6 +21,12 @@ if (BUILD_BUNDLE)
       add_third_party_dependency("pixman-0.34.0")
       add_third_party_dependency("cairo-1.15.4")
       add_third_party_dependency("libpng-1.2.49")
+    endif()
+  else() #Linux, only for arm
+    If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv7l" OR (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64"))
+      add_third_party_dependency("pixman-0.40.0")
+      add_third_party_dependency("cairo-1.16.0")
+      add_third_party_dependency("libpng-1.6.37")
     endif()
   endif()
 endif()

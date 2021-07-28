@@ -10,6 +10,24 @@ UnicornARMv8Simulator >> arg0Register [
 	^ UcARM64Registers x3
 ]
 
+{ #category : #registers }
+UnicornARMv8Simulator >> arg1Register [
+	
+	^ UcARM64Registers x1
+]
+
+{ #category : #registers }
+UnicornARMv8Simulator >> arg2Register [
+	
+	^ UcARM64Registers x2
+]
+
+{ #category : #registers }
+UnicornARMv8Simulator >> arg3Register [
+	
+	^ UcARM64Registers x3
+]
+
 { #category : #'as yet unclassified' }
 UnicornARMv8Simulator >> argument0RegisterValue [
 	
@@ -38,6 +56,30 @@ UnicornARMv8Simulator >> cResultRegister [
 UnicornARMv8Simulator >> cReturnRegisterValue: anInteger [ 
 	
 	self x0: anInteger
+]
+
+{ #category : #registers }
+UnicornARMv8Simulator >> carg0Register [
+	
+	^ UcARM64Registers x0
+]
+
+{ #category : #registers }
+UnicornARMv8Simulator >> carg1Register [
+	
+	^ UcARM64Registers x1
+]
+
+{ #category : #registers }
+UnicornARMv8Simulator >> carg2Register [
+	
+	^ UcARM64Registers x2
+]
+
+{ #category : #registers }
+UnicornARMv8Simulator >> carg3Register [
+	
+	^ UcARM64Registers x3
 ]
 
 { #category : #'as yet unclassified' }
@@ -321,6 +363,12 @@ UnicornARMv8Simulator >> sp [
 UnicornARMv8Simulator >> stackPointerRegister [
 	
 	^ UcARM64Registers sp
+]
+
+{ #category : #registers }
+UnicornARMv8Simulator >> temporaryRegister [
+
+	^ UcARM64Registers x1
 ]
 
 { #category : #accessing }

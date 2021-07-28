@@ -7819,6 +7819,18 @@ StackInterpreter >> initializeExtraClassInstVarIndices [
 ]
 
 { #category : #initialization }
+StackInterpreter >> initializeGlobalSessionID [
+	"Initialize the globalSessionID.
+	To ensure compatibility with old plugins, keep the value to a postive signed 32 bit integer"
+
+	[globalSessionID = 0] whileTrue:
+		[globalSessionID := self
+			cCode: [((self time: #NULL) + self ioMSecs) bitAnd: 16r7FFFFFFF]
+			inSmalltalk: [((self time: #NULL) + self ioMSecs) bitAnd: 16r7FFFFFFF]].
+
+]
+
+{ #category : #initialization }
 StackInterpreter >> initializeInterpreter: bytesToShift [
 	"Initialize Interpreter state before starting execution of a new image."
 	interpreterProxy := self sqGetInterpreterProxy.
@@ -7833,10 +7845,8 @@ StackInterpreter >> initializeInterpreter: bytesToShift [
 	methodDictLinearSearchLimit := 8.
 	self initialCleanup.
 	profileSemaphore := profileProcess := profileMethod := objectMemory nilObject.
-	[globalSessionID = 0] whileTrue:
-		[globalSessionID := self
-								cCode: [(self time: #NULL) + self ioMSecs]
-								inSmalltalk: [(Random new next * (SmallInteger maxVal min: 16rFFFFFFFF)) asInteger]].
+	interruptKeycode := 2094. "cmd-. as used for Mac but no other OS"
+	self initializeGlobalSessionID.
 	metaAccessorDepth := -2.
 	super initializeInterpreter: bytesToShift
 ]
@@ -15442,6 +15452,12 @@ StackInterpreter >> temporaryLocation: offset in: theFP numArgs: numArgs [
 StackInterpreter >> thisClassIndex [
 	<doNotGenerate>
 	^thisClassIndex
+]
+
+{ #category : #simulation }
+StackInterpreter >> time: aString [ 
+	<doNotGenerate>
+	^ 0
 ]
 
 { #category : #'object memory support' }

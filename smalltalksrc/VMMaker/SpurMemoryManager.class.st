@@ -2383,8 +2383,54 @@ SpurMemoryManager >> allocateSlots: numSlots format: formatField classIndex: cla
 { #category : #allocation }
 SpurMemoryManager >> allocateSlots: numSlots format: formatField classIndex: classIndex isPinned: isPinned [
 
-	<api>
-	^ self subclassResponsibility
+	"Allocate an object with numSlots space.  If there is room beneath scavengeThreshold
+	 allocate in newSpace, otherwise alocate in oldSpace.  If there is not room in newSpace
+	 and a scavenge is not already scheduled, schedule a scavenge."
+
+	<inline: true>
+	| numBytes newObj hasToScheduleScavenge |
+	"Object headers are 8 bytes in length if the slot size fits in the num slots field (max implies overflow),
+	 16 bytes otherwise (num slots in preceding word).
+	 Objects always have at least one slot, for the forwarding pointer,
+	 and are multiples of 8 bytes in length."
+	numSlots >= self numSlotsMask
+		ifTrue: [ 
+			numSlots >> 56 > 0 ifTrue: [ ^ nil ]. "overflow size must fit in 56-bits"
+			numBytes := self largeObjectBytesForSlots: numSlots ]
+		ifFalse: [ numBytes := self smallObjectBytesForSlots: numSlots ].
+
+	hasToScheduleScavenge := freeStart + numBytes > scavengeThreshold.
+
+	(hasToScheduleScavenge or: [ isPinned ]) ifTrue: [ 
+		hasToScheduleScavenge ifTrue: [ 
+			needGCFlag ifFalse: [ self scheduleScavenge ] ].
+
+		isPinned
+			ifTrue: [ 
+				^ self
+					  allocateSlotsForPinningInOldSpace: numSlots
+					  bytes: numBytes
+					  format: formatField
+					  classIndex: classIndex ]
+			ifFalse: [ 
+				^ self
+					  allocateSlotsInOldSpace: numSlots
+					  bytes: numBytes
+					  format: formatField
+					  classIndex: classIndex ] ].
+
+	newObj := self
+		          initializeHeaderOfStartAddress: freeStart
+		          numSlots: numSlots
+		          format: formatField
+		          classIndex: classIndex
+		          pinned: false.
+
+	self assert: numBytes \\ self allocationUnit = 0.
+	self assert: newObj \\ self allocationUnit = 0.
+
+	freeStart := freeStart + numBytes.
+	^ newObj
 ]
 
 { #category : #allocation }
@@ -2393,7 +2439,19 @@ SpurMemoryManager >> allocateSlotsForPinningInOldSpace: numSlots bytes: totalByt
 	 allocate in a segment that already includes pinned objects.  The header of the
 	 result will have been filled-in but not the contents."
 	<var: #totalBytes type: #usqInt>
-	^self subclassResponsibility
+	<inline: false>
+	| chunk newOop |
+	chunk := self allocateOldSpaceChunkOfBytes: totalBytes
+				   suchThat: [:f| (segmentManager segmentContainingObj: f) containsPinned].
+	chunk ifNil:
+		[chunk := self allocateOldSpaceChunkOfBytes: totalBytes.
+		 chunk ifNil: [^nil].
+		 (segmentManager segmentContainingObj: chunk) containsPinned: true].
+	
+	newOop := self initializeHeaderOfStartAddress: chunk numSlots: numSlots format: formatField classIndex: classIndex pinned: true.
+	
+	self checkFreeSpace: GCModeNewSpace.
+	^ newOop
 ]
 
 { #category : #allocation }
@@ -2401,7 +2459,14 @@ SpurMemoryManager >> allocateSlotsInOldSpace: numSlots bytes: totalBytes format:
 	"Answer the oop of a chunk of space in oldSpace with numSlots slots.  The header
 	 will have been filled-in but not the contents.  If no memory is available answer nil."
 	<var: #totalBytes type: #usqInt>
-	^self subclassResponsibility
+	<inline: false>
+	| chunk newOop |
+	chunk := self allocateOldSpaceChunkOfBytes: totalBytes.
+	chunk ifNil: [^nil].
+	
+	newOop := self initializeHeaderOfStartAddress: chunk numSlots: numSlots format: formatField classIndex: classIndex pinned: false.	
+	self checkFreeSpace: GCModeNewSpace.
+	^ newOop
 ]
 
 { #category : #allocation }
@@ -6372,6 +6437,24 @@ SpurMemoryManager >> initializeFreeSpacePostLoad: freeListObj [
 		(freeLists at: i) ~= 0 ifTrue:
 			[freeListsMask := freeListsMask bitOr: (1 << i).
 			 freeLists at: i put: (segmentManager swizzleObj: (freeLists at: i))]]
+]
+
+{ #category : #allocation }
+SpurMemoryManager >> initializeHeaderOfStartAddress: startAddress numSlots: numSlots format: formatField classIndex: classIndex pinned: isPinned [	
+
+	| pinFlag |
+
+	pinFlag := isPinned asInteger.
+	
+	numSlots >= self numSlotsMask
+		ifTrue: "for header parsing we put a saturated slot count in the prepended overflow size word"
+			[self flag: #endianness.
+			 self long64At: startAddress put: self numSlotsMask << self numSlotsFullShift + numSlots.
+			 self long64At: startAddress + self baseHeaderSize put: ((self headerForSlots: self numSlotsMask format: formatField classIndex: classIndex) bitOr: pinFlag << self pinnedBitShift).				
+			 ^ startAddress + self baseHeaderSize.
+			] ifFalse:[ 
+				self long64At: startAddress put: ((self headerForSlots: numSlots format: formatField classIndex: classIndex) bitOr: pinFlag << self pinnedBitShift).
+				^ startAddress].
 ]
 
 { #category : #'gc - global' }

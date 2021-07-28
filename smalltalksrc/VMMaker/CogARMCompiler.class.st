@@ -227,10 +227,10 @@ CogARMCompiler class >> initializeAbstractRegisters [
 	 use them for argument passing and so never want to save and restore them.  In fact restoring TempReg/CArg0Reg
 	 would overwrite function results, so it shouldn't be included under any circumstances."
 
-	CallerSavedRegisterMask := self registerMaskFor: "0 and: 1 and:" 2 and: 3 and: 9 and: 12.
+	CallerSavedRegisterMask := self registerMaskFor: 0 and: 1 and: 2 and: 3 and: 9 and: 12.
 
-	TempReg			:= R0.
-	ClassReg			:= R2.
+	TempReg			:= R2.
+	ClassReg			:= R8.
 	ReceiverResultReg	:= R5.
 	SendNumArgsReg	:= R6.
 	SPReg				:= SP. "a.k.a. R13" self assert: SP = 13.
@@ -238,7 +238,7 @@ CogARMCompiler class >> initializeAbstractRegisters [
 	Arg0Reg			:= R3. "overlaps with last C arg reg"
 	Arg1Reg			:= R4.
 	Extra0Reg			:= R7.  "These are callee saved registers"
-	Extra1Reg			:= R8.
+	Extra1Reg			:= R0.
 	Extra2Reg			:= R9.
 	VarBaseReg		:= R10.	"Must be callee saved" self assert: ConcreteVarBaseReg = R10.
 	RISCTempReg		:= R12.	"a.k.a. IP" self assert: ConcreteIPReg = R12.
@@ -1849,6 +1849,19 @@ CogARMCompiler >> conditionOrNil: condCode [
 	^conditionOrNil := condCode
 ]
 
+{ #category : #simulation }
+CogARMCompiler >> configureStackAlignment [
+	
+	<doNotGenerate>
+	"3.20 Compiler eight-byte alignment features
+	The compiler has the following eight-byte alignment features:
+
+	The Procedure Call Standard for the ARM Architecture (AAPCS) requires that the stack is eight-byte aligned at all external interfaces. The compiler and C libraries preserve the eight-byte alignment of the stack. In addition, the default C library memory model maintains eight-byte alignment of the heap.
+	Code is compiled in a way that requires and preserves the eight-byte alignment constraints at external interfaces.
+	If you have assembly language files, or legacy objects, or libraries in your project, it is your responsibility to check that they preserve eight-byte stack alignment, and correct them if required."
+	cogit setStackAlignment: 8 expectedSPOffset: 0 expectedFPOffset: 0.
+]
+
 { #category : #'ARM convenience instructions' }
 CogARMCompiler >> dataOpType: armOpcode rd: destReg rn: srcReg rm: addReg lsr: shft [
 "return an {opcode} destReg, srcReg, addReg lsl #shft"
@@ -2997,7 +3010,7 @@ CogARMCompiler >> prepareStackToCallCFunctionInSmalltalkStack: anObject [
 
 	"ARMv5 should be aligned to 16 bytes"
 
-	cogit MoveR: SPReg R: Extra1Reg.
+	cogit MoveR: SPReg R: ClassReg.
 	cogit MoveR: SPReg R: Extra2Reg.
 	
 	cogit AndCq: ((1 << 32) - 16) R: Extra2Reg. 
@@ -3031,7 +3044,7 @@ CogARMCompiler >> relocateCallBeforeReturnPC: retpc by: delta [
 { #category : #'calling C function in Smalltalk stack' }
 CogARMCompiler >> returnFromCallCFunctionInSmalltalkStack: anObject [
 
-	cogit MoveR: Extra1Reg R: SPReg.
+	cogit MoveR: ClassReg R: SPReg.
 
 ]
 
