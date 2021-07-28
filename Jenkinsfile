@@ -385,13 +385,9 @@ try{
 	}
 	
 	tests['Linux-aarch64'] = { 
-		runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", ".*", false)
+		runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
 
-		runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", ".*", false)
-		
-		runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", ".*", true)
-		
-		runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", ".*", true)
+		runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
 	 }
 	
 	uploadPackages(platforms)
