@@ -342,7 +342,6 @@ VMErrorCode
 vm_parameters_ensure_interactive_image_parameter(VMParameters* parameters)
 {
 	const char* interactiveParameter = "--interactive";
-	const char* headlessParameter = "--headless";
 	VMErrorCode error;
 
 	if (parameters->isInteractiveSession)
@@ -358,6 +357,8 @@ vm_parameters_ensure_interactive_image_parameter(VMParameters* parameters)
 
 #if ALWAYS_INTERACTIVE
 
+	const char* headlessParameter = "--headless";
+	
 	/*
 	 * If the macro ALWAYS_INTERACTIVE is set, we invert the logic of headless / interactive
 	 * This is to mimic the old VM behavior
