@@ -1531,7 +1531,7 @@ StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
 		at: 1 put: fileName;
 		at: 2 put: nil.
 
-	[ self readImageFromFile: f HeapSize: 0 StartingAt: 0 ] 
+	[ self readImageFromFile: f StartingAt: 0 ] 
 		ensure: [ f close ].
 
 ]

@@ -1873,7 +1873,7 @@ StackInterpreter class >> requiredMethodNames: options [
 		primitiveFail primitiveFailFor: primitiveFlushExternalPrimitives printAllStacks printCallStack printContext:
 			printExternalHeadFrame printFramesInPage: printFrame: printHeadFrame printMemory printOop:
 				printStackPages printStackPageList printStackPagesInUse printStackPageListInUse
-		readableFormat: readImageFromFile:HeapSize:StartingAt:
+		readableFormat: readImageFromFile:StartingAt:
 		setFullScreenFlag: setInterruptKeycode: setInterruptPending: setInterruptCheckChain:
 			setSavedWindowSize: success:
 		validInstructionPointer:inMethod:framePointer:) asSet.
@@ -13516,6 +13516,8 @@ StackInterpreter >> quinaryInlinePrimitive: primIndex [
 { #category : #'image save/restore' }
 StackInterpreter >> readHeaderFrom: f startingAt: headerStart [
 
+	<var: #f type: #sqImageFile>
+	<var: #headerStart type: #'squeakFileOffsetType'>
 	<var: #header type: #'SpurImageHeaderStruct'>
 	<returnTypeC: #'SpurImageHeaderStruct'>
 
@@ -13556,11 +13558,11 @@ StackInterpreter >> readHeaderFrom: f startingAt: headerStart [
 ]
 
 { #category : #'image save/restore' }
-StackInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: headerStart [
+StackInterpreter >> readImageFromFile: f StartingAt: headerStart [
 
 	"Read an image from the given file stream, allocating an amount of memory to its object heap.
 	
-	 Spur: desiredHeapSize is ignored; this routine will attempt to provide at least extraVMMemory's
+	 This routine will attempt to provide at least extraVMMemory's
 	 ammount of free space after the image is loaded, taking any free space in teh image into account.
 	 extraVMMemory is stored in the image header and is accessible as vmParameterAt: 23.  If
 	 extraVMMemory is 0, the value defaults to the default grow headroom.  Fail if the image has an
@@ -13574,6 +13576,8 @@ StackInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: h
 	 Smalltalk by invoking the image name as a command."
 
 	<var: #f type: #sqImageFile>
+	<var: #headerStart type: #'squeakFileOffsetType'>
+
 	<var: #heapSize type: #usqInt>
 	<var: #minimumMemory type: #usqInt>
 	<var: #allocationReserve type: #usqInt>
