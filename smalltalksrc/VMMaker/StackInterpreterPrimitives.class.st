@@ -976,22 +976,6 @@ StackInterpreterPrimitives >> primitiveClone [
 	self pop: argumentCount + 1 thenPush: newCopy
 ]
 
-{ #category : #'control primitives' }
-StackInterpreterPrimitives >> primitiveClosureCopyWithCopiedValues [
-	| newClosure numArgs |
-	numArgs := self stackIntegerValue: 1.
-	self successful ifFalse:
-		[^self primitiveFail].
-
-	newClosure := self
-					closureIn: (self stackValue: 2)
-					numArgs: numArgs
-							"greater by 1 due to preIncrement of localIP"
-					instructionPointer: instructionPointer + 2 - (method+objectMemory baseHeaderSize)
-					copiedValues: self stackTop.
-	self pop: 3 thenPush: newClosure
-]
-
 { #category : #'indexing primitives' }
 StackInterpreterPrimitives >> primitiveContextAt [
 	"Special version of primitiveAt for accessing contexts.

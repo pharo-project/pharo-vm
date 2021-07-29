@@ -283,12 +283,6 @@ StackMTInterpreterSimulator >> clipboardSize [
 	^ Clipboard clipboardText size
 ]
 
-{ #category : #'I/O primitives' }
-StackMTInterpreterSimulator >> clipboardWrite: sz From: actualDataAddress At: ignored [
-
-	Clipboard clipboardText: (self stringOf: actualDataAddress - objectMemory baseHeaderSize)
-]
-
 { #category : #'debug support' }
 StackMTInterpreterSimulator >> cloneSimulation [
 	| savedAtEachStepBlock savedDisplayView savedDisplayForm savedQuitBlock savedTranscript |
@@ -659,26 +653,6 @@ StackMTInterpreterSimulator >> framePointer [
 	^framePointer
 ]
 
-{ #category : #'I/O primitives' }
-StackMTInterpreterSimulator >> fullDisplay [
-	| primFailCodeValue |
-	displayForm ifNil: [^self].
-	primFailCodeValue := primFailCode.
-	self initPrimCall.
-	self updateDisplayLeft: 0 Top: 0 Right: displayWidth Bottom: displayHeight.
-	primFailCode := primFailCodeValue
-]
-
-{ #category : #'debug support' }
-StackMTInterpreterSimulator >> fullDisplayUpdate [
-	"Preserve self successful when call asynchronously from Simulator"
-	| primFailCodeValue |
-	primFailCodeValue := primFailCode.
-	self initPrimCall.
-	super fullDisplayUpdate.
-	primFailCode := primFailCodeValue
-]
-
 { #category : #'interpreter shell' }
 StackMTInterpreterSimulator >> functionPointerFor: primIndex inClass: lookupClass [
 	"Override Interpreter to handle the external primitives caching.  See also
@@ -985,11 +959,6 @@ StackMTInterpreterSimulator >> ioGetNextEvent: evtBuf [
 			[:i| (evt at: i) ifNotNil: [:val| evtBuf at: (i - 1) put: val asInteger]]]
 ]
 
-{ #category : #'I/O primitives' }
-StackMTInterpreterSimulator >> ioHasDisplayDepth: depth [
-	^Display supportsDisplayDepth: depth
-]
-
 { #category : #'I/O primitives support' }
 StackMTInterpreterSimulator >> ioHeartbeatMilliseconds [
 	^1
@@ -1147,44 +1116,11 @@ StackMTInterpreterSimulator >> ioScreenSize [
 	^extent x << 16 + extent y
 ]
 
-{ #category : #'I/O primitives' }
-StackMTInterpreterSimulator >> ioSetInputSemaphore: index [
-
-	self primitiveFail
-]
-
 { #category : #'process primitive support' }
 StackMTInterpreterSimulator >> ioSetMaxExtSemTableSize: anInteger [
 	"Inform the VM of the maximum size the image will grow the exernal semaphore table (specialObjectsArray at: 39) to.
 	 This allows the VM to allocate storage such that external semaphores can be signalled without locking."
 	extSemTabSize := anInteger
-]
-
-{ #category : #'I/O primitives' }
-StackMTInterpreterSimulator >> ioShow: destBits D: w i: h s: d p: left l: right a: top y: bottom [
-	"This is the simulator's implementation of ioShowDisplay."
-	| raster pixPerWord simDisp realDisp rect |
-	displayForm ifNil: [^self].
-	displayBits = 0 ifTrue: [^self].
-	pixPerWord := 32 // d.
-	raster := displayForm width + (pixPerWord - 1) // pixPerWord.
-	simDisp := Form new hackBits: objectMemory memory.
-	displayForm unhibernate.
-	realDisp := Form new hackBits: displayForm bits.
-	realDisp
-		copy: (0 @ (top * raster) extent: 4 @ (bottom - top * raster))
-		from: 0 @ (destBits // 4 + (top * raster))
-		in: simDisp
-		rule: Form over.
-	displayView ifNotNil: [^displayView changed].
-	
-	"If running without a view, just blat the bits onto the screen..."
-	rect := 0 @ top corner: displayForm width @ bottom.
-	Display
-		copy: (rect translateBy: self displayLocation)
-		from: rect topLeft
-		in: displayForm
-		rule: Form over
 ]
 
 { #category : #'process primitive support' }
@@ -1754,12 +1690,6 @@ StackMTInterpreterSimulator >> primitiveAtPut [
 	"16r1510B8 = (self stackValue: 2) ifTrue:
 		[self halt]."
 	^super primitiveAtPut
-]
-
-{ #category : #'other primitives' }
-StackMTInterpreterSimulator >> primitiveBeep [
-
-	Beeper beep.
 ]
 
 { #category : #'debugging traps' }

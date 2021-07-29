@@ -218,13 +218,6 @@ CoInterpreterPrimitives >> primitiveAllMethodsCompiledToMachineCode [
 	self pop: 1 thenPush: arrayObj
 ]
 
-{ #category : #'control primitives' }
-CoInterpreterPrimitives >> primitiveClosureCopyWithCopiedValues [
-	"This is optional old obsolete stuff tedious to implement in Cog because of
-	 the need to map from machine code pc to bytecode pc.  So for now just fail."
-	self primitiveFail
-]
-
 { #category : #'process primitives' }
 CoInterpreterPrimitives >> primitiveCollectCogCodeConstituents [
 	"Answer the contents of the code zone as an array of pair-wise element, address in ascending
@@ -667,21 +660,6 @@ CoInterpreterPrimitives >> primitiveSnapshot [
 	 Override to jump to the interpreter because the machine code zone is now void."
 	<inline: false>
 	self snapshot: false.
-	(self iframeMethod: framePointer) = newMethod ifTrue:
-		["snapshot: has reached the end and built a frame.
-		 In the JIT we need to back-up the pc before reentering the interpreter."
-		instructionPointer := instructionPointer - 1].
-	self siglong: reenterInterpreter jmp: ReturnToInterpreter
-	"NOTREACHED"
-]
-
-{ #category : #'system control primitives' }
-CoInterpreterPrimitives >> primitiveSnapshotEmbedded [
-	"Save an embedded snapshot.
-
-	 Override to jump to the interpreter because the machine code zone is now void."
-	<inline: false>
-	self snapshot: true.
 	(self iframeMethod: framePointer) = newMethod ifTrue:
 		["snapshot: has reached the end and built a frame.
 		 In the JIT we need to back-up the pc before reentering the interpreter."

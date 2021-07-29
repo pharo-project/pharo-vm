@@ -81,7 +81,7 @@ VMAbstractFFITest >> newMethodWithBytecodes: aCollection [
 	^ methodBuilder 
 		newMethod;
 		bytecodes: aCollection;
-		buildMethod
+		build
 ]
 
 { #category : #helpers }

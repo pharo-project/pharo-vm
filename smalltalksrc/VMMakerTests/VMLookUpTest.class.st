@@ -51,7 +51,7 @@ VMLookUpTest >> setUp [
 
 	"Create the root context with a valid method"
 	"Let's create a method with enough size. It should have at least a literal (4 or 8 bytes depending the word size) and some bytecodes, so we can put the IP inside the method"
-	newMethod := methodBuilder newMethod buildMethod.
+	newMethod := methodBuilder newMethod build.
 	
 	"The context has 5 (in 32 bits) or 9 (in 64 bits) as initial IP, as method has at least one literal"
 	ctx := self newSmallContextReceiver: memory nilObject method: newMethod arguments: #() temporaries: #() ip: self wordSize + 1.
@@ -82,7 +82,7 @@ VMLookUpTest >> setUp [
 
 { #category : #tests }
 VMLookUpTest >> setUpClassAndMethod [
-	methodOop := methodBuilder newMethod buildMethod.
+	methodOop := methodBuilder newMethod build.
 	selectorOop := memory integerObjectOf: 42.
 	receiver := memory integerObjectOf: 56.
 	receiverClass := self setSmallIntegerClassIntoClassTable
@@ -168,7 +168,7 @@ VMLookUpTest >> testLookUpInFindsCannotInterpretCreatesANewEntryInCache [
 	superclassMethodDictionary := memory fetchPointer: MethodDictionaryIndex ofObject: superclass. 
 	memory storePointer: SuperclassIndex ofObject: receiverClass  withValue: superclass.	
 	
-	cannotInterpretMethodOop := methodBuilder newMethod buildMethod.
+	cannotInterpretMethodOop := methodBuilder newMethod build.
 	cannotInterpretSelectorOop := self newString: 'CannotInterpret'. 
 	self installSelector: cannotInterpretSelectorOop method: cannotInterpretMethodOop inMethodDictionary: superclassMethodDictionary.
 	
@@ -194,7 +194,7 @@ VMLookUpTest >> testLookUpInFindsDNUCreatesANewEntryInCache [
 	aMethodDictionary := memory fetchPointer: MethodDictionaryIndex ofObject: receiverClass.
 	self installSelector: selectorOop method: methodOop  inMethodDictionary: aMethodDictionary.
 	
-	dnuMethodOop := methodBuilder newMethod buildMethod.
+	dnuMethodOop := methodBuilder newMethod build.
 	dnuSelectorOop := self newString: 'DNU'. 
 	self installSelector: dnuSelectorOop method: dnuMethodOop inMethodDictionary: aMethodDictionary.
 	
@@ -246,7 +246,7 @@ VMLookUpTest >> testLookUpNonExistingCannotInterpretAnswersDNUMethod [
 	superclassMethodDictionary := memory fetchPointer: MethodDictionaryIndex ofObject: superclass. 
 	memory storePointer: SuperclassIndex ofObject: receiverClass withValue: superclass.	
 	
-	dnuMethodOop := methodBuilder newMethod buildMethod.
+	dnuMethodOop := methodBuilder newMethod build.
 	dnuSelectorOop := self newString: 'DNU'. 
 	self installSelector: dnuSelectorOop method: dnuMethodOop inMethodDictionary: superclassMethodDictionary.
 	
@@ -293,7 +293,7 @@ VMLookUpTest >> testLookUpNonExistingSelectorAnswersDNUMethod [
 	aMethodDictionary := memory fetchPointer: MethodDictionaryIndex ofObject: receiverClass.
 	self installSelector: selectorOop method: methodOop  inMethodDictionary: aMethodDictionary.
 	
-	dnuMethodOop := methodBuilder newMethod buildMethod.
+	dnuMethodOop := methodBuilder newMethod build.
 	dnuSelectorOop := self newString: 'DNU'. 
 	self installSelector: dnuSelectorOop method: dnuMethodOop inMethodDictionary: aMethodDictionary.
 	
@@ -323,7 +323,7 @@ VMLookUpTest >> testLookUpWithNilMethodDictionaryFindsCannotInterpret [
 	superclassMethodDictionary := memory fetchPointer: MethodDictionaryIndex ofObject: superclass. 
 	memory storePointer: SuperclassIndex ofObject: receiverClass  withValue: superclass.	
 	
-	cannotInterpretMethodOop := methodBuilder newMethod buildMethod.
+	cannotInterpretMethodOop := methodBuilder newMethod build.
 	cannotInterpretSelectorOop := self newString: 'CannotInterpret'. 
 	self installSelector: cannotInterpretSelectorOop method: cannotInterpretMethodOop inMethodDictionary: superclassMethodDictionary.
 	

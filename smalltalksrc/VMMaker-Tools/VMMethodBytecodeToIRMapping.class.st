@@ -28,8 +28,7 @@ VMMethodBytecodeToIRMapping >> computeIR [
 			COGMTVM false
 			ObjectMemory Spur64BitCoMemoryManager
 			ISA aarch64
-			#bytecodeTableInitializer initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid
-			MULTIPLEBYTECODESETS true).
+			#bytecodeTableInitializer initializeBytecodeTableForSistaV1).
 			
 	cogit := coggedResult second.
 	^ ir := (0 to: cogit getOpcodeIndex - 1) collect: [ :i | cogit abstractOpcodes at: i ]

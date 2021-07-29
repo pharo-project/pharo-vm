@@ -58,7 +58,7 @@ Class {
 		'MaxCounterValue'
 	],
 	#pools : [
-		'VMSqueakClassIndices'
+		'VMClassIndices'
 	],
 	#category : #'VMMaker-JIT'
 }
@@ -2603,7 +2603,7 @@ SistaCogit >> picDataFor: cogMethod into: arrayObj [
 	errCode ~= 0 ifTrue:
 		[self assert: errCode = PrimErrNoMemory.
 		 ^-1].
-	cogMethod blockEntryOffset ~= 0 ifTrue:
+	cogMethod picUsage ~= 0 ifTrue:
 		[errCode := self blockDispatchTargetsFor: cogMethod
 						perform: #picDataForBlockEntry:Method:
 						arg: cogMethod asInteger.

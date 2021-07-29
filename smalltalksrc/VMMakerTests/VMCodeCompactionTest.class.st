@@ -435,7 +435,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICInterpreterAbo
 	calleeCogMethod cmUsageCount: 4.
 	calleeMethodOop := calleeCogMethod methodObject.
 	
-	calleeMethodOop2 := methodBuilder fillFromPharoMethod: (self findMethod: #methodWithSend); buildMethod.
+	calleeMethodOop2 := methodBuilder fillFromPharoMethod: (self findMethod: #methodWithSend); build.
 	
 	"Setup the frame to do the patch"
 	"Push receiver then send, to finally stop at the trampoline and patch the call-site"

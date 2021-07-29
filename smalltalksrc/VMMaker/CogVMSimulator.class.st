@@ -650,12 +650,6 @@ CogVMSimulator >> clipboardSize [
 	^ Clipboard clipboardText size
 ]
 
-{ #category : #'I/O primitives' }
-CogVMSimulator >> clipboardWrite: sz From: actualDataAddress At: ignored [
-
-	Clipboard clipboardText: (self stringOf: actualDataAddress - objectMemory baseHeaderSize)
-]
-
 { #category : #'debug support' }
 CogVMSimulator >> cloneSimulation [
 	| savedDisplayView savedDisplayForm savedQuitBlock savedTranscript |
@@ -1043,14 +1037,6 @@ CogVMSimulator >> enterSmalltalkExecutiveImplementation [
 		inSuperclass: (cogThreadManager ifNil: [CoInterpreterPrimitives] ifNotNil: [CoInterpreterMT])
 ]
 
-{ #category : #enilopmarts }
-CogVMSimulator >> executeCogBlock: cogMethod closure: closure mayContextSwitch: mayContextSwitch [
-	"self shortPrintFrameAndCallers: framePointer"
-	"(#(16r56E90 16r133D0) includes: cogMethod asInteger)  ifTrue: [self halt]."
-	"self halt."
-	^super executeCogBlock: cogMethod closure: closure mayContextSwitch: mayContextSwitch
-]
-
 { #category : #'debug support' }
 CogVMSimulator >> expectSends: anArray [
 	expectedSends := ReadStream on: anArray.
@@ -1265,26 +1251,6 @@ CogVMSimulator >> frameOfMarriedContext: aContext [
 { #category : #'debug support' }
 CogVMSimulator >> framePointer [
 	^framePointer
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> fullDisplay [
-	| primFailCodeValue |
-	displayForm ifNil: [^self].
-	primFailCodeValue := primFailCode.
-	self initPrimCall.
-	self updateDisplayLeft: 0 Top: 0 Right: displayWidth Bottom: displayHeight.
-	primFailCode := primFailCodeValue
-]
-
-{ #category : #'debug support' }
-CogVMSimulator >> fullDisplayUpdate [
-	"Preserve self successful when call asynchronously from Simulator"
-	| primFailCodeValue |
-	primFailCodeValue := primFailCode.
-	self initPrimCall.
-	super fullDisplayUpdate.
-	primFailCode := primFailCodeValue
 ]
 
 { #category : #'plugin primitives' }
@@ -1785,11 +1751,6 @@ CogVMSimulator >> ioGetNextEvent: evtBuf [
 			[:i| (evt at: i) ifNotNil: [:val| evtBuf at: (i - 1) put: val]]]
 ]
 
-{ #category : #'I/O primitives' }
-CogVMSimulator >> ioHasDisplayDepth: depth [
-	^Display supportsDisplayDepth: depth
-]
-
 { #category : #'I/O primitives support' }
 CogVMSimulator >> ioHeartbeatMilliseconds [
 	^1
@@ -1958,44 +1919,11 @@ CogVMSimulator >> ioScreenSize [
 	^extent x << 16 + extent y
 ]
 
-{ #category : #'I/O primitives' }
-CogVMSimulator >> ioSetInputSemaphore: index [
-
-	self primitiveFail
-]
-
 { #category : #'process primitive support' }
 CogVMSimulator >> ioSetMaxExtSemTableSize: anInteger [
 	"Inform the VM of the maximum size the image will grow the exernal semaphore table (specialObjectsArray at: 39) to.
 	 This allows the VM to allocate storage such that external semaphores can be signalled without locking."
 	extSemTabSize := anInteger
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> ioShow: destBits D: w i: h s: d p: left l: right a: top y: bottom [
-	"This is the simulator's implementation of ioShowDisplay."
-	| raster pixPerWord simDisp realDisp rect |
-	displayForm ifNil: [^self].
-	displayBits = 0 ifTrue: [^self].
-	pixPerWord := 32 // d.
-	raster := displayForm width + (pixPerWord - 1) // pixPerWord.
-	simDisp := Form new hackBits: objectMemory memory.
-	displayForm unhibernate.
-	realDisp := Form new hackBits: displayForm bits.
-	realDisp
-		copy: (0 @ (top * raster) extent: 4 @ (bottom - top * raster))
-		from: 0 @ (destBits // 4 + (top * raster))
-		in: simDisp
-		rule: Form over.
-	displayView ifNotNil: [^displayView changed].
-	
-	"If running without a view, just blat the bits onto the screen..."
-	rect := 0 @ top corner: displayForm width @ bottom.
-	Display
-		copy: (rect translateBy: self displayLocation)
-		from: rect topLeft
-		in: displayForm
-		rule: Form over
 ]
 
 { #category : #'process primitive support' }
@@ -2401,9 +2329,7 @@ CogVMSimulator >> maybeCheckStackDepth: delta sp: sp pc: mcpc [
 		  return. lastBytecodePCForBlockAt:in: catches method returns at the end of a block, modifying
 		  the bcpc to that of the return.  isNonLocalReturnPC: catches method returns not at the end.
 		  Assumes method return bytecodes are 1 bytecode long;a  dodgy assumption, but good enough."
-		 lastbcpc := cogBlockMethod cmIsFullBlock
-						ifTrue: [cogit endPCOf: cogHomeMethod methodObject]
-						ifFalse: [cogit lastBytecodePCForBlockAt: startbcpc in: cogHomeMethod methodObject].
+		 lastbcpc :=  cogit endPCOf: cogHomeMethod methodObject.
 		 bcpc > lastbcpc ifTrue: [bcpc := lastbcpc]].
 	asp := self stackPointerIndexForFrame: framePointer WithSP: sp + objectMemory wordSize.
 	csp := debugStackPointers at: bcpc ifAbsent: [-1].
@@ -2881,20 +2807,6 @@ CogVMSimulator >> primStringtranslatefromtotable [
 { #category : #'simulation only' }
 CogVMSimulator >> primTraceLogSize [
 	^PrimTraceLogSize * objectMemory wordSize
-]
-
-{ #category : #'other primitives' }
-CogVMSimulator >> primitiveBeep [
-
-	Beeper beep.
-]
-
-{ #category : #'debugging traps' }
-CogVMSimulator >> primitiveClosureValueWithArgs [
-	"Transcript clear.
-	 self shortPrintFrameAndCallers: framePointer.
-	 self halt."
-	^super primitiveClosureValueWithArgs
 ]
 
 { #category : #'debugging traps' }

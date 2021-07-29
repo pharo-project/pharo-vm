@@ -2,8 +2,8 @@ Class {
 	#name : #VMBlockTest,
 	#superclass : #VMInterpreterTests,
 	#pools : [
-		'VMObjectIndices',
-		'VMSqueakClassIndices'
+		'VMClassIndices',
+		'VMObjectIndices'
 	],
 	#category : #'VMMakerTests-InterpreterTests'
 }
@@ -23,10 +23,10 @@ VMBlockTest >> installBlockClosureClass [
 		| aClass |
 	aClass := self
 		newClassInOldSpaceWithSlots: 0
-		instSpec: BlockClosure instSpec.
-	memory setHashBitsOf: aClass to: ClassBlockClosureCompactIndex.
+		instSpec: FullBlockClosure instSpec.
+	memory setHashBitsOf: aClass to: ClassFullBlockClosureCompactIndex.
 	memory
-		storePointer: ClassBlockClosureCompactIndex
+		storePointer: ClassFullBlockClosureCompactIndex
 		ofObject: memory classTableFirstPage
 		withValue: aClass
 ]
@@ -40,10 +40,11 @@ VMBlockTest >> methodReturningABlock [
 
 { #category : #'as yet unclassified' }
 VMBlockTest >> methodReturningABlockInsideABlockWithLocal [
-	
-	true ifTrue:[|anArgument| anArgument := 2.
-		^[anArgument]]
-	
+
+	true ifTrue: [ 
+		| anArgument |
+		anArgument := 2.
+		^ [ anArgument ] ]
 ]
 
 { #category : #supports }
@@ -59,6 +60,70 @@ VMBlockTest >> methodWithLocalReturningABlock [
 	| a |
 	a:= 1.
 	^ [ a ]
+]
+
+{ #category : #supports }
+VMBlockTest >> setUp [
+
+	super setUp.
+	self initializeSpecialSelectors.
+	interpreter initExtensions.
+]
+
+{ #category : #'as yet unclassified' }
+VMBlockTest >> testCreatingABlockCapturesReceiver [
+
+	| methodReturning initialMethod |
+
+	initialMethod := self createMethodOopFromPharoMethod:
+		                     self class >> #anEmptyMethod.
+	methodReturning := self createMethodOopFromPharoMethod:
+		             self class >> #methodReturningABlockInsideABlockWithLocal.
+
+	self installBlockClosureClass.
+	"We want to avoid baseFrameReturn (base frame initialisation)"
+	stackBuilder addNewFrame method: initialMethod.
+	stackBuilder addNewFrame
+		method: methodReturning;
+		receiver: memory trueObject.
+	stackBuilder buildStack.
+	
+	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodReturning).
+	interpreter interpretWhile: [ interpreter method = methodReturning ].
+
+	self assert: (memory fetchPointer: FullClosureReceiverIndex ofObject: interpreter stackTop) equals: memory trueObject
+]
+
+{ #category : #testing }
+VMBlockTest >> testCreatingABlockClosureKnowsCompiledBlock [
+
+	| methodReturning initialMethod methodInitialPC methodEndPC compiledBlock closure compiledBlockInLiteralFrame compiledBlockOfReturnedClosure |
+	
+	initialMethod := self createMethodOopFromPharoMethod:
+		                     self class >> #anEmptyMethod.
+	methodReturning := self createMethodOopFromPharoMethod:
+		             self class >> #methodReturningABlock.
+
+	self installBlockClosureClass.
+	"We want to avoid baseFrameReturn (base frame initialisation)"
+	stackBuilder addNewFrame method: initialMethod.
+	stackBuilder addNewFrame
+		method: methodReturning;
+		receiver: memory trueObject.
+	stackBuilder buildStack.
+	
+	"Bytecode index is 1-based, use 0 to set IP just before the first bytecode.
+	The first thing interpretWhile: dows is to fetch a new bytecode"
+	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodReturning).
+	interpreter interpretWhile: [ interpreter method = methodReturning ].
+
+	closure := interpreter stackTop.
+	compiledBlockInLiteralFrame := memory fetchPointer: 1 ofObject: methodReturning.
+	compiledBlockOfReturnedClosure := memory fetchPointer: FullClosureCompiledBlockIndex ofObject: closure.
+	
+	self
+		assert: compiledBlockInLiteralFrame
+		equals: compiledBlockOfReturnedClosure
 ]
 
 { #category : #testing }
@@ -84,38 +149,8 @@ VMBlockTest >> testCreatingABlockClosureShouldCopyUsedMethodVariable [
 
 	"We assign 1 to the local variable of the method, see methodWithLocalReturningABlock"
 	self
-		assert: (memory fetchPointer: ClosureFirstCopiedValueIndex ofObject: interpreter stackTop) equals: (memory integerObjectOf: 1).
+		assert: (memory fetchPointer: FullClosureFirstCopiedValueIndex ofObject: interpreter stackTop) equals: (memory integerObjectOf: 1).
 
-]
-
-{ #category : #testing }
-VMBlockTest >> testCreatingABlockClosureShouldHaveCorrectPC [
-
-	| methodReturning initialMethod placeTakenByLiterals closure methodInitialPC methodEndPC |
-	
-	initialMethod := self createMethodOopFromPharoMethod:
-		                     self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
-		             self class >> #methodReturningABlock.
-
-	self installBlockClosureClass.
-	"We want to avoid baseFrameReturn (base frame initialisation)"
-	stackBuilder addNewFrame method: initialMethod.
-	stackBuilder addNewFrame
-		method: methodReturning;
-		receiver: memory trueObject.
-	stackBuilder buildStack.
-	
-	"Bytecode index is 1-based, use 0 to set IP just before the first bytecode.
-	The first thing interpretWhile: dows is to fetch a new bytecode"
-	interpreter instructionPointer: (methodBuilder bytecodeAt: 0 forMethod: methodReturning).
-	interpreter interpretWhile: [ interpreter method = methodReturning ].
-
-	"The start pc should be the byte just after all the literals"
-	methodInitialPC := (methodBuilder bytecodeAt: 1 forMethod: methodReturning) - methodReturning - memory baseHeaderSize.
-	methodEndPC := methodInitialPC + (memory bytesInObject: methodReturning).
-	self assert: ( (memory integerValueOf: (memory fetchPointer: ClosureStartPCIndex ofObject: interpreter stackTop))
-			between: methodInitialPC and: methodEndPC)
 ]
 
 { #category : #testing }
@@ -169,8 +204,7 @@ VMBlockTest >> testCreatingABlockInsideABlockClosureShouldCopyUsedBlockVariable 
 	interpreter interpretWhile: [ interpreter method = methodReturning ].
 
 	"We assign 2 to the local variable of the block, see methodReturningABlockInsideABlock"
-	self
-		assert: (memory fetchPointer: ClosureFirstCopiedValueIndex ofObject: interpreter stackTop) equals: (memory integerObjectOf: 2).
+	self assert: (memory fetchPointer: FullClosureFirstCopiedValueIndex ofObject: interpreter stackTop) equals: (memory integerObjectOf: 2).
 
 ]
 
@@ -197,7 +231,7 @@ VMBlockTest >> testCreatingABlockWithoutArgumentsClosureShouldHaveNoArgument [
 	interpreter interpretWhile: [ interpreter method = methodReturning ].
 
 	self
-		assert: (memory fetchPointer: ClosureNumArgsIndex ofObject: interpreter stackTop) equals: (memory integerObjectOf: 0).
+		assert: (memory fetchPointer: FullClosureNumArgsIndex ofObject: interpreter stackTop) equals: (memory integerObjectOf: 0).
 
 ]
 
@@ -229,7 +263,7 @@ VMBlockTest >> testEvaluatingABlock [
 { #category : #testing }
 VMBlockTest >> testPushClosureBytecodePushesClosure [
 
-	| methodReturning initialMethod methodOop |
+	| methodReturning initialMethod |
 
 	initialMethod := self createMethodOopFromPharoMethod:
 		                     self class >> #anEmptyMethod.
@@ -249,5 +283,5 @@ VMBlockTest >> testPushClosureBytecodePushesClosure [
 
 	self
 		assert: (memory fetchClassOf: interpreter stackTop)
-		equals: (memory classAtIndex: ClassBlockClosureCompactIndex)
+		equals: (memory classAtIndex: ClassFullBlockClosureCompactIndex)
 ]

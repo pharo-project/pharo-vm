@@ -437,7 +437,6 @@ CoInterpreter class >> needsCogit [
 CoInterpreter class >> preGenerationHook: aCCodeGenerator [
 	"Override to undo the hiding of primitiveClosureValueNoContextSwitch"
 	super preGenerationHook: aCCodeGenerator.
-	(aCCodeGenerator methodNamed: #primitiveClosureValueNoContextSwitch) static: false.
 
 	"horrible hack to declare primErrorCode and argumentCount as bytes in the same word, and
 	 hence save an instruction by initializing two birds^H^H^H^H^Hbytes with one word write.
@@ -544,97 +543,6 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 		 self error: 'should not be reached'].
 	instructionPointer := cogMethod asInteger + cogMethod stackCheckOffset.
 	switched := self handleStackOverflowOrEventAllowContextSwitch: (self canContextSwitchIfActivating: newMethod header: methodHeader).
-	self returnToExecutive: inInterpreter postContextSwitch: switched
-]
-
-{ #category : #'control primitives' }
-CoInterpreter >> activateNewClosure: blockClosure outer: outerContext method: theMethod  numArgs: numArgs mayContextSwitch: mayContextSwitch [
-	"Similar to activateNewMethod but for Closure and newMethod.
-	 Override to handle the various interpreter/machine code transitions
-	 and to create an appropriate frame layout."
-	| numCopied methodHeader inInterpreter closureIP switched |
-	<inline: true>
-	self assert: (objectMemory isContext: outerContext).
-	numCopied := self copiedValueCountOfClosure: blockClosure.
-	self assert: theMethod = (objectMemory fetchPointer: MethodIndex ofObject: outerContext).
-	self assert: (objectMemory isOopCompiledMethod: theMethod).
-	methodHeader := self rawHeaderOf: theMethod.
-	(self isCogMethodReference: methodHeader) ifTrue:
-		[^self executeCogBlock: (self cogMethodOf: theMethod)
-			closure: blockClosure
-			mayContextSwitch: mayContextSwitch].
-	"How do we know when to compile a block method?
-	 One simple criterion is to check if the block is running within its inner context,
-	 i.e. if the outerContext is married.
-	 Even simpler is to remember the previous block entered via the interpreter and
-	 compile if this is the same one.  But we can thrash trying to compile an uncoggable
-	 method unless we try and remember which ones can't be cogged.  So also record
-	 the last block method we failed to compile and avoid recompiling it."
-	(self methodWithHeaderShouldBeCogged: methodHeader)
-		ifTrue:
-			[(instructionPointer < objectMemory startOfMemory "If from machine code (via value primitive) attempt jitting"
-			  or: [theMethod = lastCoggableInterpretedBlockMethod]) "If from interpreter and repeat block, attempt jitting"
-				ifTrue:
-					[theMethod ~= lastUncoggableInterpretedBlockMethod ifTrue:
-						[cogit cog: theMethod selector: objectMemory nilObject.
-						 (self methodHasCogMethod: theMethod) ifTrue:
-							[^self executeCogBlock: (self cogMethodOf: theMethod)
-								closure: blockClosure
-								mayContextSwitch: mayContextSwitch].
-						 cogCompiledCodeCompactionCalledFor ifFalse:
-							[lastUncoggableInterpretedBlockMethod := theMethod]]]
-				ifFalse:
-					[lastCoggableInterpretedBlockMethod := theMethod]]
-		ifFalse:
-			[self maybeFlagMethodAsInterpreted: theMethod].
-
-	self assert: (self methodHasCogMethod: theMethod) not.
-	"Because this is an uncogged method we need to continue via the interpreter.
-	 We could have been reached either from the interpreter, in which case we
-	 should simply return, or from a machine code frame or from a compiled
-	 primitive.  In these latter two cases we must longjmp back to the interpreter.
-	 The instructionPointer tells us which path we took.
-	 If the sender was an interpreter frame but called through a (failing) primitive
-	 then make sure we restore the saved instruction pointer and avoid pushing
-	 ceReturnToInterpreterPC which is only valid between an interpreter caller
-	 frame and a machine code callee frame."
-	(inInterpreter := instructionPointer >= objectMemory startOfMemory) ifFalse:
-		[instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
-			[instructionPointer := self iframeSavedIP: framePointer]].
-	self push: instructionPointer.
-	self push: framePointer.
-	framePointer := stackPointer.
-	self push: theMethod.
-	self push: objectMemory nilObject. "FxThisContext field"
-	self push: (self encodeFrameFieldHasContext: false isBlock: true numArgs: numArgs).
-	self push: 0. "FoxIFSavedIP"
-	"Because inst var access is not checked, we must follow the receiver in Spur to ensure it is valid."
-	self push: (objectMemory followField: ReceiverIndex ofObject: outerContext).
-
-	"Copy the copied values..."
-	0 to: numCopied - 1 do:
-		[:i|
-		self push: (objectMemory
-					fetchPointer: i + ClosureFirstCopiedValueIndex
-					ofObject: blockClosure)].
-
-	self assert: (self frameIsBlockActivation: framePointer).
-	self assert: (self frameHasContext: framePointer) not.
-
-	"The initial instructions in the block nil-out remaining temps."
-
-	"the instruction pointer is a pointer variable equal to 
-	method oop + ip + BaseHeaderSize 
-	-1 for 0-based addressing of fetchByte 
-	-1 because it gets incremented BEFORE fetching currentByte"
-	closureIP := self quickFetchInteger: ClosureStartPCIndex ofObject: blockClosure.
-	instructionPointer := theMethod + closureIP + objectMemory baseHeaderSize - 2.
-	self setMethod: theMethod methodHeader: methodHeader.
-
-	"Now check for stack overflow or an event (interrupt, must scavenge, etc)"
-	switched := false.
-	stackPointer < stackLimit ifTrue:
-		[switched := self handleStackOverflowOrEventAllowContextSwitch: mayContextSwitch].
 	self returnToExecutive: inInterpreter postContextSwitch: switched
 ]
 
@@ -974,19 +882,13 @@ CoInterpreter >> attemptToSwitchToMachineCode: bcpc [
 	<inline: false>
 	<var: #cogMethod type: #'CogMethod *'>
 	(self methodHasCogMethod: method)
-		ifFalse: 
-			[SistaV1BytecodeSet
-				ifTrue: 
-					[ ((self iframeIsBlockActivation: framePointer) 
-					   and: [(self isVanillaBlockClosure: (cls := self frameStackedReceiver: framePointer numArgs: (self frameNumArgs: framePointer))) not ])
-						ifTrue: 
-							["Compiled block / full closure"
-							 cogit cogFullBlockMethod: method numCopied: (objectMemory numPointerSlotsOf: cls) - FullClosureFirstCopiedValueIndex]
-						ifFalse: 
-							["Compiled method"
-							cogit cog: method selector: objectMemory nilObject] ]
-				ifFalse: 
-					[cogit cog: method selector: objectMemory nilObject] ].
+		ifFalse: [
+			(self iframeIsBlockActivation: framePointer)
+				ifTrue: [ "Compiled block / full closure"
+					cls := self frameStackedReceiver: framePointer numArgs: (self frameNumArgs: framePointer).
+					cogit cogFullBlockMethod: method numCopied: (objectMemory numPointerSlotsOf: cls) - FullClosureFirstCopiedValueIndex]
+				ifFalse: [ "Compiled method"
+					cogit cog: method selector: objectMemory nilObject ] ].
 	(self methodHasCogMethod: method) ifTrue:
 		[cogMethod := self cogMethodOf: method.
 		 pc := self convertToMachineCodeFrame: cogMethod bcpc: bcpc.
@@ -1619,7 +1521,7 @@ CoInterpreter >> ceNonLocalReturn: returnValue [
 	home := nil. "avoid compiler warning"
 	"Walk the closure's lexical chain to find the context or frame to return from (home)."
 	[closure ~= objectMemory nilObject] whileTrue:
-		[home := objectMemory followField: ClosureOuterContextIndex ofObject: closure.
+		[home := objectMemory followField: FullClosureOuterContextIndex ofObject: closure.
 		 (objectMemory isContext: home) ifFalse:
 			["error: can't find home on chain; cannot return"
 			 ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
@@ -2490,7 +2392,7 @@ CoInterpreter >> commonSendOrdinary [
 	"Assume: messageSelector and argumentCount have been set, and that 
 	the receiver and arguments have been pushed onto the stack,"
 	"Note: This method is inlined into the interpreter dispatch loop."
-	<sharedCodeNamed: 'commonSendOrdinary' inCase: #singleExtendedSendBytecode>
+	<sharedCodeNamed: 'commonSendOrdinary' inCase: #extSendBytecode>
 	self sendBreakpoint: messageSelector receiver: (self internalStackValue: argumentCount).
 	cogit recordSendTrace ifTrue:
 		[self recordTrace: (objectMemory classForClassTag: lkupClassTag)
@@ -2599,22 +2501,15 @@ CoInterpreter >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
 					put: cogit ceReturnToInterpreterPC]].
 	"Compute the cog method field"
 	(self iframeIsBlockActivation: framePointer)
-		ifTrue:
-			[closure := self pushedReceiverOrClosureOfFrame: framePointer.
-			 (self isVanillaBlockClosure: closure)
-				ifTrue:
-					[startBcpc := self startPCOfClosure: closure.
-					 cogMethod := cogit
-										findMethodForStartBcpc: startBcpc
-										inHomeMethod: cogHomeMethod]
-				ifFalse:
-					[startBcpc := self startPCOfMethodHeader: cogHomeMethod methodHeader.
-					 cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogBlockMethod *'].
-			 methodField := cogMethod asInteger + MFMethodFlagIsBlockFlag]
-		ifFalse:
-			[startBcpc := self startPCOfMethodHeader: cogHomeMethod methodHeader.
-			 cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogBlockMethod *'.
-			 methodField := cogHomeMethod asInteger].
+		ifTrue: [
+			closure := self pushedReceiverOrClosureOfFrame: framePointer.
+			startBcpc := self startPCOfMethodHeader: cogHomeMethod methodHeader.
+			cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogBlockMethod *'.
+			methodField := cogMethod asInteger + MFMethodFlagIsBlockFlag]
+		ifFalse: [
+			startBcpc := self startPCOfMethodHeader: cogHomeMethod methodHeader.
+			cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogBlockMethod *'.
+			methodField := cogHomeMethod asInteger ].
 	"compute the pc before converting the frame to help with debugging."
 	pc := cogit mcPCForBackwardBranch: bcpc startBcpc: startBcpc in: cogMethod.
 	self assert: pc > (cogMethod asUnsignedInteger + cogit noCheckEntryOffset).
@@ -2851,7 +2746,7 @@ CoInterpreter >> ensureMethodIsCogged: methodObj maybeClosure: maybeClosure [
 	(self isCogMethodReference: rawHeader) ifTrue:
 		[^self cCoerceSimple: rawHeader to: #'CogMethod *'].
 	yetToCompact := true.
-	[(maybeClosure ~= objectMemory nilObject and: [(self isVanillaBlockClosure: maybeClosure) not])
+	[(maybeClosure ~= objectMemory nilObject)
 		ifTrue: [cogMethod := cogit cogFullBlockMethod: methodObj numCopied: (self copiedValueCountOfFullClosure: maybeClosure)]
 		ifFalse: [cogMethod := cogit cog: methodObj selector: objectMemory nilObject].
 	 cogMethod == nil
@@ -2913,28 +2808,6 @@ CoInterpreter >> error: aString [
 	<api: 'extern void error(char *s)'>
 	<doNotGenerate>
 	super error: aString
-]
-
-{ #category : #enilopmarts }
-CoInterpreter >> executeCogBlock: cogMethod closure: closure mayContextSwitch: mayContextSwitch [
-	"Execute a block within a CogMethod.  The caller has already pushed the block and
-	 any arguments and the return pc.  First push the return-to-interpreter trampoline,
-	 then the entry-point and finally the receiver.  We /do not/ push any register
-	 argument(s) to reduce complications in block dispatch; effectively there are no
-	 register arguments to blocks. Instead, the machine code block value primitives
-	 push the reg args if necessary before dispatching to the block.  Hence here, only
-	 the receiver gets pushed. See genPrimitiveClosureValue"
-	<var: #cogMethod type: #'CogMethod *'>
-	cogit assertCStackWellAligned.
-	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer.
-	self ensurePushedInstructionPointer.
-	self push: cogMethod asInteger
-			+ (mayContextSwitch
-				ifTrue: [cogMethod blockEntryOffset]
-				ifFalse: [cogMethod blockEntryOffset - cogit noContextSwitchBlockEntryOffset]).
-	self push: closure.
-	cogit ceCallCogCodePopReceiverReg
-	"NOTREACHED"
 ]
 
 { #category : #enilopmarts }
@@ -4516,31 +4389,15 @@ CoInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 			 cogMethod := self ensureMethodIsCogged: theMethod maybeClosure: maybeClosure.
 			 theMethod := cogMethod asInteger.
 			 maybeClosure ~= objectMemory nilObject
-				ifTrue:
-					[(self isVanillaBlockClosure: maybeClosure)
-						ifTrue:
-							["If the pc is the special HasBeenReturnedFromMCPC pc set the pc
-							  appropriately so that the frame stays in the cannotReturn: state."
-							 theIP = HasBeenReturnedFromMCPC
-								ifTrue:
-									[theMethod := (cogit findMethodForStartBcpc: (self startPCOfClosure: maybeClosure)
-														inHomeMethod: (self cCoerceSimple: theMethod
-																			to: #'CogMethod *')) asInteger.
-									 theMethod = 0 ifTrue:
-										[self error: 'cannot find machine code block matching closure''s startpc'].
-									 theIP := cogit ceCannotResumePC]
-								ifFalse:
-									[self assert: (theIP signedBitShift: -16) < -1. "See contextInstructionPointer:frame:"
-									 theMethod := theMethod - ((theIP signedBitShift: -16) * cogit blockAlignment).
-									 theIP := theMethod - theIP signedIntFromShort]]
-						ifFalse:
-							[self assert: (theIP signedBitShift: -16) >= -1.
-							 "If the pc is the special HasBeenReturnedFromMCPC pc set the pc
-							  appropriately so that the frame stays in the cannotReturn: state."
-							 theIP := theIP = HasBeenReturnedFromMCPC
-										ifTrue: [cogit ceCannotResumePC]
-										ifFalse: [theMethod asInteger - theIP]].
-					 stackPages
+				ifTrue: [
+					
+					self assert: (theIP signedBitShift: -16) >= -1.
+					"If the pc is the special HasBeenReturnedFromMCPC pc set the pc
+					appropriately so that the frame stays in the cannotReturn: state."
+					theIP := theIP = HasBeenReturnedFromMCPC
+						ifTrue: [cogit ceCannotResumePC]
+						ifFalse: [theMethod asInteger - theIP].
+					stackPages
 						longAt: (pointer := pointer - objectMemory wordSize)
 						put: theMethod + MFMethodFlagHasContextFlag + MFMethodFlagIsBlockFlag]
 				ifFalse:
@@ -5383,12 +5240,8 @@ CoInterpreter >> mustMapMachineCodePC: theIP context: aOnceMarriedContext [
 		[^objectMemory nilObject].
 	maybeClosure := objectMemory fetchPointer: ClosureIndex ofObject: aOnceMarriedContext.
 	methodObj := objectMemory fetchPointer: MethodIndex ofObject: aOnceMarriedContext.
-	(maybeClosure ~= objectMemory nilObject
-	and: [self isVanillaBlockClosure: maybeClosure])
-		ifTrue: [self assert: (theIP signedBitShift: -16) < -1.
-				startBcpc := self startPCOfClosure: maybeClosure]
-		ifFalse: [self assert: (theIP signedBitShift: -16) = -1.
-				startBcpc := self startPCOfMethod: methodObj].
+	self assert: (theIP signedBitShift: -16) = -1.
+	startBcpc := self startPCOfMethod: methodObj.
 	cogMethod := self ensureMethodIsCogged: methodObj maybeClosure: maybeClosure.
 	bcpc := self bytecodePCFor: theIP cogMethod: cogMethod startBcpc: startBcpc.
 	self assert: bcpc >= (self startPCOfMethod: methodObj).
@@ -6047,38 +5900,6 @@ CoInterpreter >> printPrimLogEntryAt: i [
 CoInterpreter >> printSends [
 	<inline: true>
 	^cogit printOnTrace
-]
-
-{ #category : #'stack bytecodes' }
-CoInterpreter >> pushClosureNumArgs: numArgs copiedValues: numCopied blockSize: blockSize [
-	"The compiler has pushed the values to be copied, if any.
-	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
-	 Set numArgs as specified, and set startpc to the pc following the block size and jump over that code.
-
-	Override only to add debug tracing as of 4/26/2009"
-	<inline: true>
-	| newClosure context |
-	"No need to record the pushed copied values in the outerContext."
-	context := self ensureFrameIsMarried: localFP SP: localSP + (numCopied * objectMemory bytesPerOop).
-	newClosure := self
-					closureIn: context
-					numArgs: numArgs
-					instructionPointer: (self oopForPointer: localIP) + 2 - (method+objectMemory baseHeaderSize)
-					numCopiedValues: numCopied.
-	cogit recordSendTrace ifTrue:
-		[self recordTrace: TraceBlockCreation thing: newClosure source: TraceIsFromInterpreter].
-	numCopied > 0 ifTrue:
-		[0 to: numCopied - 1 do:
-			[:i|
-			"Assume: have just allocated a new BlockClosure; it must be young.
-			 Thus, can use unchecked stores."
-			 objectMemory storePointerUnchecked: i + ClosureFirstCopiedValueIndex
-				ofObject: newClosure
-				withValue: (self internalStackValue: numCopied - i - 1)].
-		 self internalPop: numCopied].
-	localIP := localIP + blockSize.
-	self fetchNextBytecode.
-	self internalPush: newClosure
 ]
 
 { #category : #'stack bytecodes' }
@@ -6878,23 +6699,6 @@ CoInterpreter >> startPCOfMethodHeader: aCompiledMethodHeader [
 	<api>
 	"Zero-relative version of CompiledMethod>>startpc."
 	^(objectMemory literalCountOfMethodHeader: aCompiledMethodHeader) + LiteralStart * objectMemory bytesPerOop
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> startPCOrNilOfLiteral: lit in: aMethodObj [
-	"Answer the startPC of lit if it is a (clean) block in aMethodObj, otherwise answer nil."
-	<api>
-	| outerContext |
-	((objectMemory isNonImmediate: lit)
-	 and: [(objectMemory formatOf: lit) = objectMemory indexablePointersFormat
-	 and: [(objectMemory numSlotsOf: lit) >= ClosureFirstCopiedValueIndex]]) ifFalse:
-		[^nil].
-	outerContext := objectMemory fetchPointer: ClosureOuterContextIndex ofObject: lit.
-	(objectMemory isContext: outerContext) ifFalse:
-		[^nil].
-	aMethodObj ~~ (objectMemory fetchPointer: MethodIndex ofObject: outerContext) ifTrue:
-		[^nil].
-	^self quickFetchInteger: ClosureStartPCIndex ofObject: lit
 ]
 
 { #category : #'stack bytecodes' }

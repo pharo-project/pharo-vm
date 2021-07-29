@@ -17,13 +17,13 @@ Class {
 		'rumpCStackSize',
 		'wordSize',
 		'methodBuilder',
-		'v3Method'
+		'bytecodeMethod'
 	],
 	#pools : [
 		'VMBasicConstants',
 		'VMBytecodeConstants',
-		'VMObjectIndices',
-		'VMSqueakClassIndices'
+		'VMClassIndices',
+		'VMObjectIndices'
 	],
 	#category : #'VMMakerTests-MemoryTests'
 }
@@ -62,14 +62,14 @@ VMSpurMemoryManagerTest >> createActiveProcess [
 VMSpurMemoryManagerTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod [
 
 	| methodOop |
-	v3Method := aPharoCompiledMethod methodClass compiler
-		            encoderClass: EncoderForV3PlusClosures;
-		            options: #( - optionFullBlockClosure );
+	bytecodeMethod := aPharoCompiledMethod methodClass compiler
+		            encoderClass: EncoderForSistaV1;
+		            options: #( + optionFullBlockClosure );
 		            compile: aPharoCompiledMethod sourceCode.
 
 	methodOop := methodBuilder
-		             fillFromPharoMethod: v3Method;
-		             buildMethod.
+		             fillFromPharoMethod: bytecodeMethod;
+		             build.
 	^ methodOop
 ]
 
@@ -162,6 +162,22 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 	
 	memory scavengingGCTenuringIf: 1.
 	self deny: memory needGCFlag.
+]
+
+{ #category : #running }
+VMSpurMemoryManagerTest >> initializeSpecialSelectors [
+
+	| specialSelectorsArrayOop |
+	specialSelectorsArrayOop := self newOldSpaceObjectWithSlots:
+		                            Smalltalk specialSelectors size.
+
+	Smalltalk specialSelectors withIndexDo: [ :anElement :anIndex | 
+		memory
+			storePointer: anIndex - 1
+			ofObject: specialSelectorsArrayOop
+			withValue: (anElement forMemory: memory) ].
+		
+	memory splObj: SpecialSelectors put: specialSelectorsArrayOop
 ]
 
 { #category : #accessor }
