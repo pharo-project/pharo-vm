@@ -340,6 +340,7 @@ try{
 	def parallelBuilderPlatforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64', 'Darwin-arm64']
 	def platforms = parallelBuilderPlatforms + ['Linux-aarch64', 'Linux-armv7l']
 	def builders = [:]
+	def dockerBuilders = [:]
 	def tests = [:]
 
 	node('Darwin-x86_64'){
@@ -376,21 +377,33 @@ try{
 		}
 	}
 
+	dockerBuilders['Linux-aarch64'] = {
+		buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter")	
+
+		if(isMainBranch()){
+			buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", false)
+		}
+	}
+
+	dockerBuilders['Linux-armv7l'] = {
+		buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter")	
+
+		if(isMainBranch()){
+			buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", false)
+		}
+	}
+
 	parallel builders
 
-	buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter")
-	buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter")
-
-	if(isMainBranch()){
-		buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", false)
-		buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", false)
-	}
+	parallel dockerBuilders
 	
 	tests['Linux-aarch64'] = { 
 		runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
+	}
 
+	tests['Linux-armv7l'] = { 
 		runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
-	 }
+	}
 	
 	uploadPackages(platforms)
 
