@@ -304,13 +304,13 @@ def runInsideDocker(platform, imageName, closure){
 		cleanWs()
 		def image;
 		stage("Build Image ${platform}"){
-			checkout scm
+			unstash name: "dockerfiles"
 			image = docker.build("pharo-${imageName}","./docker/${imageName}/")
 		}
 		
 		echo "Building using workspace " + env.WORKSPACE
 			
-		image.inside("-v /tmp:/tmp -v /builds/workspace:/builds/workspace -e HOME=/opt/pharo -u pharo", closure)
+		image.inside("-v /tmp:/tmp -e HOME=/opt/pharo -u pharo", closure)
 	}
 }
 
@@ -334,6 +334,8 @@ def buildUsingDocker(platform, imageName, configuration, headless=true){
 
 try{
 	properties([disableConcurrentBuilds()])
+
+	stash includes: "docker/**", name: "dockerfiles"
 
 	def parallelBuilderPlatforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64', 'Darwin-arm64']
 	def platforms = parallelBuilderPlatforms + ['Linux-aarch64', 'Linux-armv7l']
