@@ -8958,13 +8958,13 @@ SpurMemoryManager >> memmove: destAddress _: sourceAddress _: bytes [
 { #category : #accessing }
 SpurMemoryManager >> memory [
 	<cmacro: '() GIV(memory)'>
-	1halt.
+
 	^memory
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> memory: aValue [
-	1halt.
+
 	^memory := aValue
 ]
 

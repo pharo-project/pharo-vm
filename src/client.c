@@ -224,7 +224,7 @@ loadPharoImage(const char* fileName)
     imageSize = sqImageFilePosition(imageFile);
     sqImageFileSeek(imageFile, 0);
 
-    readImageFromFileHeapSizeStartingAt(imageFile, 0, 0);
+    readImageFromFileStartingAt(imageFile, 0);
     sqImageFileClose(imageFile);
 
     char* fullImageName = alloca(FILENAME_MAX);
