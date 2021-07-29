@@ -139,6 +139,8 @@ def runUnitTests(platform){
   stage("VM Unit Tests"){
     dir('repository') {
       checkout scm
+		//We stash the docker files so we can create docker images without checkout
+		stash includes: "docker/**", name: "dockerfiles"
     }
 
     cmakeBuild generator: "Unix Makefiles", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath"
@@ -334,8 +336,6 @@ def buildUsingDocker(platform, imageName, configuration, headless=true){
 
 try{
 	properties([disableConcurrentBuilds()])
-
-	stash includes: "docker/**", name: "dockerfiles"
 
 	def parallelBuilderPlatforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64', 'Darwin-arm64']
 	def platforms = parallelBuilderPlatforms + ['Linux-aarch64', 'Linux-armv7l']
