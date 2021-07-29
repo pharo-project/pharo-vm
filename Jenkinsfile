@@ -171,7 +171,7 @@ def runUnitTests(platform){
   }
 }
 
-def runTests(platform, configuration, packages, withWorker){
+def runTests(platform, configuration, packages, withWorker, additionalParameters = ""){
   cleanWs()
 
   def stageName = withWorker ? "Tests-${platform}-${configuration}-worker" : "Tests-${platform}-${configuration}"
@@ -187,16 +187,16 @@ def runTests(platform, configuration, packages, withWorker){
           
 				if(isWindows()){
 					runInCygwin "cd runTests && unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
-					runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
+					runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'"
 					} else {
 						shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
 
 						if(platform == 'Darwin-x86_64' || platform == 'Darwin-arm64'){
-							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
+							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'"
 						}
 
 						if(platform == 'Linux-x86_64' || platform == 'Linux-aarch64' || platform == 'Linux-armv7l'){
-							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'" 
+							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'" 
 						}
 				}
 				junit allowEmptyResults: true, testResults: "*.xml"
@@ -320,7 +320,7 @@ def runTestsUsingDocker(platform, imageName, configuration, packages, withWorker
 	
 	runInsideDocker(platform, imageName){
 		timeout(45){
-			runTests(platform, configuration, packages, withWorker)
+			runTests(platform, configuration, packages, withWorker, "--no-default-preferences")
 		}
 	}
 }
