@@ -2022,8 +2022,9 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 	                 + rumpCStackSize.
 	allocatedMemory := newSpaceStartOffset + newSpaceBytes + memoryBytes.
 
-	memoryManager := SlangMemoryManager new.
-	memoryManager wordSize: self wordSize.
+	memoryManager ifNil: [ 
+		memoryManager := SlangMemoryManager new.
+		memoryManager wordSize: self wordSize ].
 
 	memory := self
 		allocateMemoryOfSize: allocatedMemory
