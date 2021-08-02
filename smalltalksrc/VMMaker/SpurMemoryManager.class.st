@@ -5414,6 +5414,14 @@ SpurMemoryManager >> formatOfHeader: header [
 	^header >> self formatShift bitAnd: self formatMask
 ]
 
+{ #category : #'object access' }
+SpurMemoryManager >> formatOfObject: anOop [
+
+	"extract the format from an object's base header"
+
+	^ self formatOfHeader: (self baseHeader: anOop)
+]
+
 { #category : #'header format' }
 SpurMemoryManager >> formatShift [
 	<api>
@@ -6887,6 +6895,12 @@ SpurMemoryManager >> isContextNonImm: oop [
 	^(self classIndexOf: oop) = ClassMethodContextCompactIndex
 ]
 
+{ #category : #'header access' }
+SpurMemoryManager >> isContextObject: anOop [
+	<inline: true>
+	^(self classIndexOfHeader: (self baseHeader: anOop)) = ClassMethodContextCompactIndex
+]
+
 { #category : #'obj stacks' }
 SpurMemoryManager >> isEmptyObjStack: objStack [
 	objStack = nilObj ifTrue:
@@ -7797,16 +7811,6 @@ SpurMemoryManager >> lengthOf: objOop [
 ]
 
 { #category : #'object access' }
-SpurMemoryManager >> lengthOf: objOop baseHeader: header format: fmt [ 
-	<var: #header type: #usqLong>
-	"Compatibility; does not really suit the Spur format.
-	 Answer the number of indexable bytes or words in the given object.
-	 For a CompiledMethod, the size of the method header (in bytes) should
-	 be subtracted from the result of this method."
-	^self lengthOf: objOop format: fmt
-]
-
-{ #category : #'object access' }
 SpurMemoryManager >> lengthOf: objOop format: fmt [
 	"Answer the number of indexable units in the given object.
 	 For a CompiledMethod, the size of the method header (in bytes)
@@ -7917,7 +7921,7 @@ SpurMemoryManager >> lookupAddress: address [
 	address - self baseHeaderSize = hiddenRootsObj ifTrue:
 		[^'(hiddenRootsObj+baseHeaderSize)'].
 	fmt := self formatOf: address.
-	size := self lengthOf: address baseHeader: (self baseHeader: address) format: fmt.
+	size := self lengthOf: address format: fmt.
 	size = 0 ifTrue:
 		[^address caseOf: { [nilObj] -> ['nil']. [trueObj] -> ['true']. [falseObj] -> ['false'] } otherwise: []].
 	((fmt between: self firstByteFormat and: self firstCompiledMethodFormat - 1) "indexable byte fields"
