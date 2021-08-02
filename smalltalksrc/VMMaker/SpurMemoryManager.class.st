@@ -2012,6 +2012,7 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 
 	<doNotGenerate>
 	| allocatedMemory newSpaceStartOffset |
+
 	self assert: (memoryBytes \\ self allocationUnit = 0 and: [ 
 			 newSpaceBytes \\ self allocationUnit = 0 and: [ 
 				 codeBytes \\ self allocationUnit = 0 and: [ 
@@ -2020,6 +2021,10 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 	                 + methodCacheSize + primitiveLogSize
 	                 + rumpCStackSize.
 	allocatedMemory := newSpaceStartOffset + newSpaceBytes + memoryBytes.
+
+	memoryManager := SlangMemoryManager new.
+	memoryManager wordSize: self wordSize.
+
 	memory := self
 		allocateMemoryOfSize: allocatedMemory
 		initialAddress: initialAddress.
