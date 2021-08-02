@@ -14858,7 +14858,7 @@ StackInterpreter >> stackFloatValue: offset [
 StackInterpreter >> stackIntegerValue: offset [
 	"In the StackInterpreter stacks grow down."
 	| integerPointer |
-	integerPointer := stackPages longAt: stackPointer + (offset*objectMemory wordSize).
+	integerPointer := self stackValue: offset.
 	^self checkedIntegerValueOf: integerPointer
 ]
 
