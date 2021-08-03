@@ -5078,7 +5078,7 @@ SpurMemoryManager >> fixedFieldsOf: objOop format: fmt length: wordLength [
 	fmt < self arrayFormat ifTrue:
 		[^wordLength].  "fixed fields only (zero or more)"
 	class := self fetchClassOfNonImm: objOop.
-	^self fixedFieldsOfClassFormat: (self formatOfClass: class)
+	^self fixedFieldsOfClass: class
 ]
 
 { #category : #'object format' }
