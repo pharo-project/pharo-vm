@@ -14791,7 +14791,7 @@ StackInterpreter >> stObject: array at: index [
 
 	| fmt totalLength fixedFields stSize |
 	<inline: true>
-	fmt := objectMemory formatOfObject: array.
+	fmt := objectMemory formatOf: array.
 	totalLength := objectMemory lengthOf: array format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: array format: fmt length: totalLength.
 	(fmt = objectMemory indexablePointersFormat
@@ -14818,7 +14818,7 @@ StackInterpreter >> stObject: array at: index put: value [
 	(objectMemory isContextObject: array) ifTrue:[
 		"we have another primitive (contextAt:Put: for contexts"
 		^self primitiveFailFor: PrimErrBadReceiver].
-	fmt := objectMemory formatOfObject: array.
+	fmt := objectMemory formatOf: array.
 	totalLength := objectMemory lengthOf: array format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: array format: fmt length: totalLength.
 	stSize := totalLength - fixedFields.
