@@ -250,7 +250,10 @@ sqInt sqSetupSSL(sqSSL *ssl, int server) {
 	logTrace("sqSetupSSL: Disabling SSLv2 and SSLv3\n");
 	SSL_CTX_set_options(ssl->ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 
-	if(!ssl->ctx) ERR_print_errors_fp(stdout);
+	if(!ssl->ctx) {
+		ERR_print_errors_fp(stdout);
+		return 0;
+	}
 
 	logTrace("sqSetupSSL: setting cipher list\n");
 	SSL_CTX_set_cipher_list(ssl->ctx, "!ADH:HIGH:MEDIUM:@STRENGTH");
@@ -261,16 +264,20 @@ sqInt sqSetupSSL(sqSSL *ssl, int server) {
 
         if(SSL_CTX_use_certificate_file(ssl->ctx, ssl->certName, SSL_FILETYPE_PEM)<=0) {
 			ERR_print_errors_fp(stderr);
+			return 0;
 		}
 		if(SSL_CTX_use_PrivateKey_file(ssl->ctx, ssl->certName, SSL_FILETYPE_PEM)<=0) {
 			ERR_print_errors_fp(stderr);
+			return 0;
 		}
 	}
 
 	/* Set up trusted CA */
 	logTrace("sqSetupSSL: No root CA given; using default verify paths\n");
-	if(SSL_CTX_set_default_verify_paths(ssl->ctx) <=0)
+	if(SSL_CTX_set_default_verify_paths(ssl->ctx) <=0){
 		ERR_print_errors_fp(stderr);
+		return 0;
+	}
 
 	logTrace("sqSetupSSL: Creating SSL\n");
 	ssl->ssl = SSL_new(ssl->ctx);
