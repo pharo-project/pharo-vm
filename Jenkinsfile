@@ -19,6 +19,26 @@ def isMainBranch(){
 	return env.BRANCH_NAME.startsWith('pharo-')
 }
 
+def saveIsReleaseFlag(){
+	def gitTags = sh(returnStdout: true, script: 'git tag --list --points-at HEAD').trim()
+	def pattern = ~/^v[0-9]+\.[0-9]+.[0-9]+(\-[a-zA-Z0-9_]+)?$/
+	def isReleaseFlag = false;
+
+	gitTags.eachLine { line -> isReleaseFlag |= pattern.matcher(line).matches() }
+	
+	echo("Extracted versionTag: ${gitTags} is release: ${isReleaseFlag}")
+
+	writeFile file: 'releaseFlag.txt', text: (isReleaseFlag?0:1).toString();
+	
+	stash includes: "releaseFlag.txt", name: "releaseFlag"
+}
+
+def isRelease(){
+	unstash name: "releaseFlag"
+	
+	return readFile('releaseFlag.txt').trim() == "1"	
+}
+
 /**
   Returns pharo version for the current branch.
   Only valid if isMainBranch() is true.
@@ -149,6 +169,9 @@ def runUnitTests(platform){
       checkout scm
 		//We stash the docker files so we can create docker images without checkout
 		stash includes: "docker/**", name: "dockerfiles"
+		
+		//We register if the build is a stable release, we get the metadata from the repository and we stash it
+		saveIsReleaseFlag()
     }
 
     cmakeBuild generator: "Unix Makefiles", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath"
@@ -228,7 +251,7 @@ def runTests(platform, configuration, packages, withWorker, additionalParameters
 	}
 }
 
-def upload(platform, configuration, archiveName) {
+def upload(platform, configuration, archiveName, isStableRelease = false) {
 
 	cleanWs()
 
@@ -260,10 +283,16 @@ def upload(platform, configuration, archiveName) {
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedCSourceFileName} \
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source/latest${mainBranchVersion()}.zip"
+		
+		if(isStableRelease){
+			sh "scp -o StrictHostKeyChecking=no \
+			${expandedBinaryFileName} \
+			pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/stable${mainBranchVersion()}.zip"
+		}
 	}
 }
 
-def uploadStockReplacement(platform, configuration, archiveName) {
+def uploadStockReplacement(platform, configuration, archiveName, isStableRelease = false) {
 
 	cleanWs()
 
@@ -279,6 +308,12 @@ def uploadStockReplacement(platform, configuration, archiveName) {
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}/${platform}/latestReplacement${mainBranchVersion()}.zip"
+
+		if(isStableRelease){
+			sh "scp -o StrictHostKeyChecking=no \
+			${expandedBinaryFileName} \
+			pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/stable${mainBranchVersion()}.zip"
+		}
 	}
 }
 
@@ -290,6 +325,10 @@ def isPullRequest() {
 def uploadPackages(platformNames){
 	node('unix'){
 		stage('Upload'){
+			
+			def releaseFlag = isRelease();
+			echo "Readed releaseFlag: ${releaseFlag}"
+			
 			if (isPullRequest()) {
 				//Only upload files if not in a PR (i.e., CHANGE_ID not empty)
 				echo "[DO NO UPLOAD] In PR " + (env.CHANGE_ID?.trim())
@@ -302,8 +341,8 @@ def uploadPackages(platformNames){
 			}
 
 			for (platformName in platformNames) {
-				upload(platformName, "CoInterpreter", platformName)
-				uploadStockReplacement(platformName, "CoInterpreter", "${platformName}-stockReplacement")
+				upload(platformName, "CoInterpreter", platformName, releaseFlag)
+				uploadStockReplacement(platformName, "CoInterpreter", "${platformName}-stockReplacement",releaseFlag)
 			}
 		}
 	}
