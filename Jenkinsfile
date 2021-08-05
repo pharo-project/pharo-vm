@@ -28,7 +28,7 @@ def saveIsReleaseFlag(){
 	
 	echo("Extracted versionTag: ${gitTags} is release: ${isReleaseFlag}")
 
-	writeFile file: 'releaseFlag.txt', text: (isReleaseFlag?0:1).toString();
+	writeFile file: 'releaseFlag.txt', text: (isReleaseFlag?1:0).toString();
 	
 	stash includes: "releaseFlag.txt", name: "releaseFlag"
 }
