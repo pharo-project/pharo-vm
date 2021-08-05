@@ -6691,7 +6691,11 @@ CoInterpreter >> stackPointerIndexForMFrame: theFP WithSP: theSP numArgs: numArg
 { #category : #'compiled methods' }
 CoInterpreter >> startPCOfClosure: aBlockClosure [
 	"Zero-relative version of BlockClosure>>startpc."
-	^(objectMemory integerValueOf: (objectMemory fetchPointer: ClosureStartPCIndex ofObject: aBlockClosure)) - 1
+
+	"It should be implemented for FullBlockClosures... this implementation was for old BlockClosures"
+	"^(objectMemory integerValueOf: (objectMemory fetchPointer: ClosureStartPCIndex ofObject: aBlockClosure)) - 1"
+	1halt. 
+
 ]
 
 { #category : #'compiled methods' }
