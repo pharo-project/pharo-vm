@@ -39,6 +39,7 @@ Class {
 		'ClassString',
 		'ClassUnsafeAlien',
 		'ClassWeakFinalizer',
+		'ClosureIndex',
 		'CompactClasses',
 		'ConstMinusOne',
 		'ConstOne',
