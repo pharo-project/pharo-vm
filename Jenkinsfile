@@ -312,7 +312,7 @@ def uploadStockReplacement(platform, configuration, archiveName, isStableRelease
 		if(isStableRelease){
 			sh "scp -o StrictHostKeyChecking=no \
 			${expandedBinaryFileName} \
-			pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/stable${mainBranchVersion()}.zip"
+			pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}/${platform}/stable${mainBranchVersion()}.zip"
 		}
 	}
 }
