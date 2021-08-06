@@ -486,7 +486,7 @@ VMSpurMemoryManagerTest >> setUp [
 	"100 k at least to put the class table in the old space.
 	Get total size be a multiple of 4K so Unicorn CPU emulator accepts it"
 	oldSpaceSize := 999 * 1024.
- 	newSpaceSize := 1 * 1024.
+ 	newSpaceSize := 2 * 1024.
 	stackSpaceSize := 9 * 4096.
 	methodCacheSize := 4096 * self wordSize.
 	rumpCStackSize := 0.
