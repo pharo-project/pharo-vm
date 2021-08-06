@@ -324,7 +324,7 @@ Spur32BitMemoryManager >> dbgFloatValueOf: oop [
 	isFloat := self isFloatInstance: oop.
 	isFloat ifTrue:
 		[self cCode: '' inSmalltalk: [result := Float new: 2].
-		 self fetchFloatAt: oop + self baseHeaderSize into: result.
+		 self fetchFloat: oop into: result.
 		 ^result].
 	^0.0
 ]
@@ -409,7 +409,7 @@ Spur32BitMemoryManager >> floatValueOf: oop [
 	isFloat := self isFloatInstance: oop.
 	isFloat ifTrue:
 		[self cCode: '' inSmalltalk: [result := Float new: 2].
-		 self fetchFloatAt: oop + self baseHeaderSize into: result.
+		 self fetchFloat: oop into: result.
 		 ^result].
 	coInterpreter primitiveFail.
 	^0.0

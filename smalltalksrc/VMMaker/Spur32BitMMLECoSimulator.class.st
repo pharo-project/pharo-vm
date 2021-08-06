@@ -81,6 +81,12 @@ Spur32BitMMLECoSimulator >> endianness [
 ]
 
 { #category : #'float primitives' }
+Spur32BitMMLECoSimulator >> fetchFloat: floatOop into: aFloat [
+	aFloat at: 2 put: (self long32At: floatOop + self baseHeaderSize).
+	aFloat at: 1 put: (self long32At: floatOop + self baseHeaderSize + 4)
+]
+
+{ #category : #'float primitives' }
 Spur32BitMMLECoSimulator >> fetchFloatAt: floatBitsAddress into: aFloat [
 	aFloat at: 2 put: (self long32At: floatBitsAddress).
 	aFloat at: 1 put: (self long32At: floatBitsAddress+4)

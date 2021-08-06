@@ -4791,6 +4791,12 @@ SpurMemoryManager >> fetchClassTagOfNonImm: obj [
 	^self classIndexOf: obj
 ]
 
+{ #category : #'interpreter access' }
+SpurMemoryManager >> fetchFloat: floatOop into: aFloat [
+
+	self fetchFloatAt: floatOop + self baseHeaderSize into: aFloat
+]
+
 { #category : #'simulation only' }
 SpurMemoryManager >> fetchInteger: fieldIndex ofObject: objectPointer [
 	"hack around the CoInterpreter/ObjectMemory split refactoring"
