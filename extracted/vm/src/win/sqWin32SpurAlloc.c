@@ -69,7 +69,7 @@ void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
 usqInt
 sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseAddress)
 {
-	char *hint, *address, *alloc;
+	char *address, *alloc;
 	usqIntptr_t alignment;
 	sqInt allocBytes;
 	SYSTEM_INFO sysInfo;
@@ -81,20 +81,8 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 	minAppAddr = sysInfo.lpMinimumApplicationAddress;
 	maxAppAddr = sysInfo.lpMaximumApplicationAddress;
 
-#if __MINGW32__
-	/* choose a suitable starting point. In MinGW the malloc heap is below the
-	 * program, so take the max of a malloc and something from uninitialized
-	 * data.
-	 */
-	hint = malloc(1);
-	free(hint);
-	hint = max(hint, (char*)&fIsConsole);
-#else
-	hint = desiredBaseAddress;
-#endif
-
 	alignment = max(pageSize,1024*1024);
-	address = (char *)(((usqInt)hint + alignment - 1) & ~(alignment - 1));
+	address = (char *)(((usqInt)desiredBaseAddress + alignment - 1) & ~(alignment - 1));
 
 	alloc = sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto
 				(roundUpToPage(desiredHeapSize), address, &allocBytes);
