@@ -93,14 +93,8 @@ VMJittedPrimitivesTest >> prepareStackForSendReceiver: aReceiver [
 VMJittedPrimitivesTest >> setUp [
 
 	super setUp.
+	self installFloatClass.
 
-	classFloat := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstLongFormat.
-	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
-	memory
-		storePointer: ClassFloatCompactIndex
-		ofObject: memory classTableFirstPage
-		withValue: classFloat.
-		
 	memory classExternalAddress: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0) ).
 	
 ]
