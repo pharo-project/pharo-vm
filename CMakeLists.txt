@@ -11,9 +11,9 @@ cmake_policy(SET CMP0053 NEW)
 
 include(macros.cmake)
 
-set(VERSION_MAJOR 9)
+set(VERSION_MAJOR 10)
 set(VERSION_MINOR 0)
-set(VERSION_PATCH 2)
+set(VERSION_PATCH 0)
 
 message("CMAKE_GENERATOR=${CMAKE_GENERATOR}")
 
