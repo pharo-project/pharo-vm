@@ -81,7 +81,8 @@ Class {
 		'bootstrapping',
 		'primitiveFailCount',
 		'primitiveFlags',
-		'initialAddress'
+		'initialAddress',
+		'rumpCStackBase'
 	],
 	#classVars : [
 		'ByteCountsPerMicrosecond',
@@ -304,6 +305,16 @@ CogVMSimulator >> basicInitialize [
 	
 	"This will be overriden when calling initializePluginEntries"
 	mappedPluginEntries := OrderedCollection new.
+]
+
+{ #category : #hooks }
+CogVMSimulator >> beforeCodeZoneInitialization [ 
+
+	super beforeCodeZoneInitialization.
+
+	self moveMethodCacheToMemoryAt: (memoryManager allocate: MethodCacheEntrySize * MethodCacheSize * (self sizeof: #sqInt)).
+	self movePrimTraceLogToMemoryAt: (memoryManager allocate: PrimTraceLogSize * (self sizeof: #sqInt)).
+
 ]
 
 { #category : #'multi-threading simulation switch' }
@@ -1512,13 +1523,6 @@ CogVMSimulator >> initialize [
 	self initializePluginEntries.
 ]
 
-{ #category : #'memory access' }
-CogVMSimulator >> initializeCodeGenerator [
-	cogit
-		initializeCodeZoneFrom: (self cCode: [objectMemory memory] inSmalltalk: [ initialAddress + Cogit guardPageSize ])
-		upTo: (self cCode: [objectMemory memory] inSmalltalk: [ initialAddress + Cogit guardPageSize ]) + cogCodeSize
-]
-
 { #category : #'multi-threading simulation switch' }
 CogVMSimulator >> initializeInterpreter: bytesToShift [
 	"This method includes or excludes CoInterpreterMT methods as required.
@@ -1669,8 +1673,7 @@ CogVMSimulator >> interpret [
 	"If stacklimit is zero then the stack pages have not been initialized."
 	stackLimit = 0 ifTrue:
 		[^self initStackPagesAndInterpret].
-	"record entry time when running as a browser plug-in"
-	self browserPluginInitialiseIfNeeded.
+
 	self internalizeIPandSP.
 	self initExtensions.
 	self fetchNextBytecode.
@@ -2000,7 +2003,10 @@ CogVMSimulator >> isBoundThreadId: threadId [
 
 { #category : #'rump c stack' }
 CogVMSimulator >> isOnRumpCStack: address [
-	^address between: heapBase - self rumpCStackSize and: heapBase - objectMemory wordSize
+
+	^ address
+		  between: self rumpCStackAddress - self rumpCStackSize
+		  and: self rumpCStackAddress
 ]
 
 { #category : #'primitive support' }
@@ -2558,142 +2564,27 @@ CogVMSimulator >> openAsMorphNoTranscript [
 
 { #category : #initialization }
 CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
+
 	"CogVMSimulator new openOn: 'clone.im' extraMemory: 100000"
 
-	| f version headerSize dataSize count oldBaseAddr bytesToShift swapBytes
-	  headerFlags firstSegSize heapSize
-	  hdrNumStackPages hdrEdenBytes hdrMaxExtSemTabSize
-	  hdrCogCodeSize stackZoneSize methodCacheSize primTraceLogSize allocationReserve vmRequiredMemorySize |
+	| f |
+	
 	"open image file and read the header"
-
-	memoryManager := SlangMemoryManager new.
+	memoryManager := MachineSimulatorMemoryManager new.
 	objectMemory memoryManager: memoryManager.
 	memoryManager wordSize: objectMemory wordSize.
-	
-	(f := self openImageFileNamed: fileName) ifNil: [^self].
+
+	(f := self openImageFileNamed: fileName) ifNil: [ ^ self ].
 
 	"Set the image name and the first argument; there are
 	 no arguments during simulation unless set explicitly."
-	systemAttributes at: 1 put: fileName; at: 2 put: nil.
+	systemAttributes
+		at: 1 put: fileName;
+		at: 2 put: nil.
 
-	["begin ensure block..."
-	version := self getWord32FromFile: f swap: false.  "current version: 16r1968 (=6504) vive la revolucion!"
-	(self readableFormat: version)
-		ifTrue: [swapBytes := false]
-		ifFalse: [(version := version byteSwap32) = self imageFormatVersion
-					ifTrue: [swapBytes := true]
-					ifFalse: [self error: 'incompatible image format']].
-	headerSize := self getWord32FromFile: f swap: swapBytes.
-	dataSize := self getLongFromFile: f swap: swapBytes.  "length of heap in file"
-	oldBaseAddr := self getLongFromFile: f swap: swapBytes.  "object memory base address of image"
-	objectMemory specialObjectsOop: (self getLongFromFile: f swap: swapBytes).
-	objectMemory lastHash: (self getLongFromFile: f swap: swapBytes).  "Should be loaded from, and saved to the image header"
+	[ self readImageFromFile: f StartingAt: 0 ] 
+		ensure: [ f close ].
 
-	savedWindowSize	:= self getLongFromFile: f swap: swapBytes.
-	headerFlags		:= self getLongFromFile: f swap: swapBytes.
-	self setImageHeaderFlagsFrom: headerFlags.
-	extraVMMemory	:= self getWord32FromFile: f swap: swapBytes.
-	hdrNumStackPages	:= self getShortFromFile: f swap: swapBytes.
-	"4 stack pages is small.  Should be able to run with as few as
-	 three. 4 should be comfortable but slow.  8 is a reasonable
-	 default. Can be changed via vmParameterAt: 43 put: n"
-	numStackPages := desiredNumStackPages ~= 0
-						ifTrue: [desiredNumStackPages]
-						ifFalse: [hdrNumStackPages = 0
-									ifTrue: [self defaultNumStackPages]
-									ifFalse: [hdrNumStackPages]].
-	desiredNumStackPages := hdrNumStackPages.
-	stackZoneSize := self computeStackZoneSize.
-	"This slot holds the size of the native method zone in 1k units. (pad to word boundary)."
-	hdrCogCodeSize := (self getShortFromFile: f swap: swapBytes) * 1024.
-	cogCodeSize := desiredCogCodeSize ~= 0
-						ifTrue: [desiredCogCodeSize]
-						ifFalse:
-							[hdrCogCodeSize = 0
-									ifTrue: [cogit defaultCogCodeSize]
-									ifFalse: [hdrCogCodeSize]].
-	desiredCogCodeSize := hdrCogCodeSize.
-	self assert: f position = (objectMemory wordSize = 4 ifTrue: [40] ifFalse: [64]).
-	hdrEdenBytes	:= self getWord32FromFile: f swap: swapBytes.
-	objectMemory edenBytes: (desiredEdenBytes ~= 0
-						ifTrue: [desiredEdenBytes]
-						ifFalse:
-							[hdrEdenBytes = 0
-									ifTrue: [objectMemory defaultEdenBytes]
-									ifFalse: [hdrEdenBytes]]).
-	desiredEdenBytes := hdrEdenBytes.
-	hdrMaxExtSemTabSize := self getShortFromFile: f swap: swapBytes.
-	hdrMaxExtSemTabSize ~= 0 ifTrue:
-		[self setMaxExtSemSizeTo: hdrMaxExtSemTabSize].
-	"pad to word boundary.  This slot can be used for anything else that will fit in 16 bits.
-	 Preserve it to be polite to other VMs."
-	the2ndUnknownShort	:= self getShortFromFile: f swap: swapBytes.
-	self assert: f position = (objectMemory wordSize = 4 ifTrue: [48] ifFalse: [72]).
-	firstSegSize := self getLongFromFile: f swap: swapBytes.
-	objectMemory firstSegmentSize: firstSegSize.
-	"For Open PICs to be able to probe the method cache during
-	 simulation the methodCache must be relocated to memory."
-	methodCacheSize := methodCache size * objectMemory wordSize.
-	primTraceLogSize := primTraceLog size * objectMemory wordSize.
-
-	"allocate interpreter memory. This list is in address order, low to high.
-	 In the actual VM the stack zone exists on the C stack."
-	vmRequiredMemorySize := (Cogit guardPageSize
-				+ cogCodeSize
-				+ stackZoneSize
-				+ methodCacheSize
-				+ primTraceLogSize
-				+ self rumpCStackSize) roundUpTo: objectMemory allocationUnit.
-
-	"compare memory requirements with availability"
-	allocationReserve := self interpreterAllocationReserveBytes.
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[| freeOldSpaceInImage headroom |
-			 freeOldSpaceInImage := self getLongFromFile: f swap: swapBytes.
-			 headroom := objectMemory
-							initialHeadroom: extraVMMemory
-							givenFreeOldSpaceInImage: freeOldSpaceInImage.
-			 heapSize := objectMemory roundUpHeapSize:
-						   dataSize
-						+ headroom
-						+ objectMemory newSpaceBytes
-						+ (headroom > allocationReserve
-							ifTrue: [0]
-							ifFalse: [allocationReserve])]
-		ifFalse:
-			[heapSize :=  dataSize
-						+ extraBytes
-						+ objectMemory newSpaceBytes
-						+ (extraBytes > allocationReserve
-							ifTrue: [0]
-							ifFalse: [allocationReserve])].
-
-	initialAddress := objectMemory allocateMemoryOfSize: vmRequiredMemorySize + heapSize.	
-	
-	heapBase := objectMemory
-		setHeapBase: initialAddress + vmRequiredMemorySize
-		memoryLimit: initialAddress + vmRequiredMemorySize + heapSize
-		endOfMemory: initialAddress + vmRequiredMemorySize + dataSize.
-
-	self assert: cogCodeSize \\ 4 = 0.
-	self assert: objectMemory memoryLimit \\ 4 = 0.
-	self assert: self rumpCStackSize \\ 4 = 0.
-	"read in the image in bulk, then swap the bytes if necessary"
-	f position: headerSize.
-	count := objectMemory readHeapFromImageFile: f dataBytes: dataSize.
-	count ~= dataSize ifTrue: [self halt]]
-		ensure: [f close].
-	self moveMethodCacheToMemoryAt: heapBase + Cogit guardPageSize + cogCodeSize + stackZoneSize.
-	self movePrimTraceLogToMemoryAt: heapBase + Cogit guardPageSize + cogCodeSize + stackZoneSize + methodCacheSize.
-
-	self ensureImageFormatIsUpToDate: swapBytes.
-
-	bytesToShift := objectMemory memoryBaseForImageRead - oldBaseAddr.  "adjust pointers for zero base address"
-	UIManager default
-		informUser: 'Relocating object pointers...'
-		during: [self initializeInterpreter: bytesToShift].
-	self initializeCodeGenerator
 ]
 
 { #category : #'stack pages' }
@@ -3330,12 +3221,9 @@ CogVMSimulator >> rewriteMethodCacheEntryForExternalPrimitiveToFunction: localPr
 
 { #category : #'rump c stack' }
 CogVMSimulator >> rumpCStackAddress [
-	| alignment alignedHeapBase |
-	alignment := 64. "byte alignment for stack frames; IA32 requires 16 bytes."
-	alignedHeapBase := heapBase bitAnd: alignment negated.
-	^alignedHeapBase = heapBase
-		ifTrue: [heapBase - alignment]
-		ifFalse: [alignedHeapBase]
+
+	rumpCStackBase ifNil: [ rumpCStackBase := memoryManager allocate: self rumpCStackSize  ].
+ 	^ rumpCStackBase + self rumpCStackSize
 ]
 
 { #category : #'rump c stack' }
@@ -3371,7 +3259,8 @@ CogVMSimulator >> saneFunctionPointerForFailureOfPrimIndex: primIndex [
 	"For simulation override to do the check specially when the
 	 primitiveFunctionPointer is an invalid address proxy for a primitive."
 	| basePrimitive |
-	(instructionPointer < objectMemory nilObject asUnsignedInteger
+	
+	((self isOnRumpCStack: instructionPointer)
 	and: [primitiveFunctionPointer isInteger
 	and: [self isPrimitiveFunctionPointerAnIndex not
 	and: [primIndex ~= PrimNumberExternalCall
@@ -3570,12 +3459,6 @@ CogVMSimulator >> stackPage [
 { #category : #accessing }
 CogVMSimulator >> stackPages [
 	^stackPages
-]
-
-{ #category : #'stack pages' }
-CogVMSimulator >> stackZoneBase [
-	"In the simulator the stack zone starts immediately after the code zone."
-	^cogit cogCodeBase + cogCodeSize
 ]
 
 { #category : #'simulation only' }

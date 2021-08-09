@@ -6,6 +6,10 @@ def isWindows(){
     return env.NODE_LABELS.toLowerCase().contains('windows')
 }
 
+def is32Bits(platform){
+	return platform == 'Linux-armv7l'
+}
+
 def shell(params){
     if(isWindows()) bat(params) 
     else sh(params)
@@ -13,6 +17,26 @@ def shell(params){
 
 def isMainBranch(){
 	return env.BRANCH_NAME.startsWith('pharo-')
+}
+
+def saveIsReleaseFlag(){
+	def gitTags = sh(returnStdout: true, script: 'git tag --list --points-at HEAD').trim()
+	def pattern = ~/^v[0-9]+\.[0-9]+.[0-9]+(\-[a-zA-Z0-9_]+)?$/
+	def isReleaseFlag = false;
+
+	gitTags.eachLine { line -> isReleaseFlag |= pattern.matcher(line).matches() }
+	
+	echo("Extracted versionTag: ${gitTags} is release: ${isReleaseFlag}")
+
+	writeFile file: 'releaseFlag.txt', text: (isReleaseFlag?1:0).toString();
+	
+	stash includes: "releaseFlag.txt", name: "releaseFlag"
+}
+
+def isRelease(){
+	unstash name: "releaseFlag"
+	
+	return readFile('releaseFlag.txt').trim() == "1"	
 }
 
 /**
@@ -86,27 +110,52 @@ def runBuild(platformName, configuration, headless = true){
 	def buildDirectory = headless ? "build" :"build-stockReplacement"
 	def additionalParameters = headless ? "" : "-DALWAYS_INTERACTIVE=1"
 
-  stage("Checkout-${platform}"){
-    dir('repository') {
-        checkout scm
-    }
-  }
-
+	stage("Checkout-${platform}"){
+		dir('repository') {
+			checkout scm
+		}
+	}
+  
 	stage("Build-${platform}-${configuration}"){
     if(isWindows()){
       runInCygwin "mkdir ${buildDirectory}"
       recordCygwinVersions(buildDirectory)
       runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository -DICEBERG_DEFAULT_REMOTE=httpsUrl"
-      runInCygwin "cd ${buildDirectory} && VERBOSE=1 make install"
-      runInCygwin "cd ${buildDirectory} && VERBOSE=1 make package"
+      runInCygwin "cd ${buildDirectory} && VERBOSE=1 make install package"
     }else{
       cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
       dir("${buildDirectory}"){
-        shell "VERBOSE=1 make install"
-        shell "VERBOSE=1 make package"
+        shell "VERBOSE=1 make install package"
       }
     }
 	
+		stash excludes: '_CPack_Packages', includes: "${buildDirectory}/build/packages/*", name: "packages-${platform}-${configuration}"
+		archiveArtifacts artifacts: "${buildDirectory}/build/packages/*", excludes: '_CPack_Packages'
+	}
+}
+
+def runBuildFromSources(platformName, configuration, headless = true){
+	cleanWs()
+	
+	def platform = headless ? platformName : "${platformName}-stockReplacement"
+	def buildDirectory = headless ? "build" :"build-stockReplacement"
+	def additionalParameters = headless ? "" : "-DALWAYS_INTERACTIVE=1"
+
+	stage("Copy Sources-${platform}"){
+		//We take the source code from Linux version
+		//It is extracted and will create the pharo-vm subdirectory
+		unstash name: "packages-Linux-x86_64-${configuration}"
+		shell "unzip -d . build/build/packages/PharoVM-*-Linux-x86_64-c-src.zip"
+		shell "mv pharo-vm repository"
+	}
+
+	stage("Build-${platform}-${configuration}"){
+		cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl -DGENERATE_SOURCES=FALSE -DGENERATED_SOURCE_DIR=../repository/", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InLocalPath"
+		
+		dir("${buildDirectory}"){
+			shell "VERBOSE=1 make install package"
+		}
+		
 		stash excludes: '_CPack_Packages', includes: "${buildDirectory}/build/packages/*", name: "packages-${platform}-${configuration}"
 		archiveArtifacts artifacts: "${buildDirectory}/build/packages/*", excludes: '_CPack_Packages'
 	}
@@ -118,6 +167,11 @@ def runUnitTests(platform){
   stage("VM Unit Tests"){
     dir('repository') {
       checkout scm
+		//We stash the docker files so we can create docker images without checkout
+		stash includes: "docker/**", name: "dockerfiles"
+		
+		//We register if the build is a stable release, we get the metadata from the repository and we stash it
+		saveIsReleaseFlag()
     }
 
     cmakeBuild generator: "Unix Makefiles", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath"
@@ -148,7 +202,7 @@ def runUnitTests(platform){
   }
 }
 
-def runTests(platform, configuration, packages, withWorker){
+def runTests(platform, configuration, packages, withWorker, additionalParameters = ""){
   cleanWs()
 
   def stageName = withWorker ? "Tests-${platform}-${configuration}-worker" : "Tests-${platform}-${configuration}"
@@ -164,16 +218,16 @@ def runTests(platform, configuration, packages, withWorker){
           
 				if(isWindows()){
 					runInCygwin "cd runTests && unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
-					runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
+					runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'"
 					} else {
 						shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
 
 						if(platform == 'Darwin-x86_64' || platform == 'Darwin-arm64'){
-							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
+							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'"
 						}
 
-						if(platform == 'Linux-x86_64'){
-							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'" 
+						if(platform == 'Linux-x86_64' || platform == 'Linux-aarch64' || platform == 'Linux-armv7l'){
+							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'" 
 						}
 				}
 				junit allowEmptyResults: true, testResults: "*.xml"
@@ -197,12 +251,13 @@ def runTests(platform, configuration, packages, withWorker){
 	}
 }
 
-def upload(platform, configuration, archiveName) {
+def upload(platform, configuration, archiveName, isStableRelease = false) {
 
 	cleanWs()
 
 	unstash name: "packages-${platform}-${configuration}"
 
+	def wordSize = is32Bits(platform) ? "32" : "64"
 	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
 	def expandedCSourceFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-c-src.zip").trim()
 	def expandedHeadersFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-include.zip").trim()
@@ -210,42 +265,55 @@ def upload(platform, configuration, archiveName) {
 	sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/latest${mainBranchVersion()}.zip"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/latest${mainBranchVersion()}.zip"
 
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedHeadersFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/include"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/include"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedHeadersFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/include/latest${mainBranchVersion()}.zip"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/include/latest${mainBranchVersion()}.zip"
 
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedCSourceFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/source"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedCSourceFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/${platform}/source/latest${mainBranchVersion()}.zip"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source/latest${mainBranchVersion()}.zip"
+		
+		if(isStableRelease){
+			sh "scp -o StrictHostKeyChecking=no \
+			${expandedBinaryFileName} \
+			pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/stable${mainBranchVersion()}.zip"
+		}
 	}
 }
 
-def uploadStockReplacement(platform, configuration, archiveName) {
+def uploadStockReplacement(platform, configuration, archiveName, isStableRelease = false) {
 
 	cleanWs()
 
 	unstash name: "packages-${archiveName}-${configuration}"
 
+	def wordSize = is32Bits(platform) ? "32" : "64"
 	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build-stockReplacement/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
 
 	sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64/${platform}"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}/${platform}"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64/${platform}/latestReplacement${mainBranchVersion()}.zip"
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}/${platform}/latestReplacement${mainBranchVersion()}.zip"
+
+		if(isStableRelease){
+			sh "scp -o StrictHostKeyChecking=no \
+			${expandedBinaryFileName} \
+			pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}/${platform}/stable${mainBranchVersion()}.zip"
+		}
 	}
 }
 
@@ -257,6 +325,10 @@ def isPullRequest() {
 def uploadPackages(platformNames){
 	node('unix'){
 		stage('Upload'){
+			
+			def releaseFlag = isRelease();
+			echo "Readed releaseFlag: ${releaseFlag}"
+			
 			if (isPullRequest()) {
 				//Only upload files if not in a PR (i.e., CHANGE_ID not empty)
 				echo "[DO NO UPLOAD] In PR " + (env.CHANGE_ID?.trim())
@@ -269,9 +341,42 @@ def uploadPackages(platformNames){
 			}
 
 			for (platformName in platformNames) {
-				upload(platformName, "CoInterpreter", platformName)
-				uploadStockReplacement(platformName, "CoInterpreter", "${platformName}-stockReplacement")
+				upload(platformName, "CoInterpreter", platformName, releaseFlag)
+				uploadStockReplacement(platformName, "CoInterpreter", "${platformName}-stockReplacement",releaseFlag)
 			}
+		}
+	}
+}
+
+def runInsideDocker(platform, imageName, closure){
+	node('docker20'){
+		cleanWs()
+		def image;
+		stage("Build Image ${platform}"){
+			unstash name: "dockerfiles"
+			image = docker.build("pharo-${imageName}","./docker/${imageName}/")
+		}
+		
+		echo "Building using workspace " + env.WORKSPACE
+			
+		image.inside("-v /tmp:/tmp -e HOME=/opt/pharo -u pharo", closure)
+	}
+}
+
+def runTestsUsingDocker(platform, imageName, configuration, packages, withWorker){
+	
+	runInsideDocker(platform, imageName){
+		timeout(45){
+			runTests(platform, configuration, packages, withWorker, "--no-default-preferences")
+		}
+	}
+}
+
+def buildUsingDocker(platform, imageName, configuration, headless=true){
+
+	runInsideDocker(platform, imageName){
+		timeout(45){
+			runBuildFromSources(platform, configuration, headless)
 		}
 	}
 }
@@ -279,17 +384,19 @@ def uploadPackages(platformNames){
 try{
 	properties([disableConcurrentBuilds()])
 
-	def platforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64', 'Darwin-arm64']
+	def parallelBuilderPlatforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64', 'Darwin-arm64']
+	def platforms = parallelBuilderPlatforms + ['Linux-aarch64', 'Linux-armv7l']
 	def builders = [:]
+	def dockerBuilders = [:]
 	def tests = [:]
 
-  node('Darwin-x86_64'){
-    runUnitTests('Darwin-x86_64')
-  }
+	node('Darwin-x86_64'){
+		runUnitTests('Darwin-x86_64')
+	}
 
-  for (platf in platforms) {
-        // Need to bind the label variable before the closure - can't do 'for (label in labels)'
-        def platform = platf
+	for (platf in parallelBuilderPlatforms) {
+		// Need to bind the label variable before the closure - can't do 'for (label in labels)'
+		def platform = platf
 		
 		builders[platform] = {
 			node(platform){
@@ -317,7 +424,33 @@ try{
 		}
 	}
 
+	dockerBuilders['Linux-aarch64'] = {
+		buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter")	
+
+		if(isMainBranch()){
+			buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", false)
+		}
+	}
+
+	dockerBuilders['Linux-armv7l'] = {
+		buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter")	
+
+		if(isMainBranch()){
+			buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", false)
+		}
+	}
+
 	parallel builders
+
+	parallel dockerBuilders
+	
+	tests['Linux-aarch64'] = { 
+		runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
+	}
+
+	tests['Linux-armv7l'] = { 
+		runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
+	}
 	
 	uploadPackages(platforms)
 

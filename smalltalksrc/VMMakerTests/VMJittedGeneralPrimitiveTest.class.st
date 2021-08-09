@@ -13,7 +13,7 @@ VMJittedGeneralPrimitiveTest >> testCheckImmediateWhenImmediateFloat [
 	"32 bits images does not have SmallFloats"
 	self wordSize = 4 
 		ifTrue: [ ^ self skip ].
-		
+	
 	self compile: [ | jump | 
 		jump := cogit objectRepresentation genJumpImmediate: Arg0Reg.
 		"Non-Immediate => 0"
