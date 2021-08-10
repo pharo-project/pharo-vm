@@ -3612,11 +3612,6 @@ SpurMemoryManager >> classExternalAddressIndex [
 	^ self ensureBehaviorHash: self classExternalAddress
 ]
 
-{ #category : #accessing }
-SpurMemoryManager >> classExternalFunction [
-	^self splObj: ClassExternalFunction
-]
-
 { #category : #'plugin support' }
 SpurMemoryManager >> classFloat [
 	^self splObj: ClassFloat

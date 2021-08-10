@@ -181,11 +181,6 @@ InterpreterProxy >> classExternalAddress [
 	^Smalltalk at: #ExternalAddress ifAbsent:[nil]
 ]
 
-{ #category : #'as yet unclassified' }
-InterpreterProxy >> classExternalFunction [
-	^Smalltalk at: #ExternalFunction ifAbsent:[nil]
-]
-
 { #category : #'special classes' }
 InterpreterProxy >> classFloat [
 	^Float
