@@ -102,7 +102,6 @@ ThreadedFFIPlugin class >> calloutStateClass [
 { #category : #translation }
 ThreadedFFIPlugin class >> declareCVarsIn: cg [
 	super declareCVarsIn: cg.
-	cg removeConstant: #COGMTVM. "this should be defined at compile time"
 	cg removeVariable: #allocationMap "this is simulation only"
 ]
 

@@ -479,8 +479,7 @@ CoInterpreter class >> specialValueForConstant: constantName default: defaultVal
 CoInterpreter class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord generator: aCCodeGenerator [
 	super writeVMHeaderTo: aStream bytesPerWord: bytesPerWord generator: aCCodeGenerator.
 	aCCodeGenerator
-		putDefineOf: #COGVM as: 1 on: aStream;
-		putConditionalDefineOf: #COGMTVM as: 0 comment: nil on: aStream.
+		putDefineOf: #COGVM as: 1 on: aStream.
 	aStream cr
 ]
 
