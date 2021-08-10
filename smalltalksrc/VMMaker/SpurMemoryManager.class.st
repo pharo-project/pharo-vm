@@ -969,19 +969,12 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	ClassLargeNegativeInteger := 42.
 
 	ClassExternalAddress := 43.
-	ClassExternalStructure := 44.
-	ClassExternalData := 45.
-	ClassExternalFunction := 46.
-	ClassExternalLibrary := 47.
 
 	SelectorAboutToReturn := 48.
 	SelectorRunWithIn := 49.
 
 	SelectorAttemptToAssign := 50.
 	"PrimErrTableIndex := 51. in VMClass class>>initializePrimitiveErrorCodes"
-	ClassAlien := 52.
-	SelectorInvokeCallback := 53.
-	ClassUnsafeAlien := 54.
 
 	ClassWeakFinalizer := 55.
 
@@ -3532,11 +3525,6 @@ SpurMemoryManager >> checkedLongAt: byteAddress [
 	^self longAt: byteAddress
 ]
 
-{ #category : #accessing }
-SpurMemoryManager >> classAlien [
-	^self splObj: ClassAlien
-]
-
 { #category : #'plugin support' }
 SpurMemoryManager >> classArray [
 	<api>
@@ -3625,23 +3613,8 @@ SpurMemoryManager >> classExternalAddressIndex [
 ]
 
 { #category : #accessing }
-SpurMemoryManager >> classExternalData [
-	^self splObj: ClassExternalData
-]
-
-{ #category : #accessing }
 SpurMemoryManager >> classExternalFunction [
 	^self splObj: ClassExternalFunction
-]
-
-{ #category : #accessing }
-SpurMemoryManager >> classExternalLibrary [
-	^self splObj: ClassExternalLibrary
-]
-
-{ #category : #accessing }
-SpurMemoryManager >> classExternalStructure [
-	^self splObj: ClassExternalStructure
 ]
 
 { #category : #'plugin support' }
@@ -3892,11 +3865,6 @@ SpurMemoryManager >> classTagForClass: classObj [
 SpurMemoryManager >> classTagForSpecialObjectsIndex: splObjIndex compactClassIndex: compactClassIndex [
 	"Answer the compactClassIndex to use as a tag in the first-level method lookup cache."
 	^compactClassIndex
-]
-
-{ #category : #accessing }
-SpurMemoryManager >> classUnsafeAlien [
-	^self splObj: ClassUnsafeAlien
 ]
 
 { #category : #'debug support' }
