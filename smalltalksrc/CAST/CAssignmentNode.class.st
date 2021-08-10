@@ -80,6 +80,8 @@ CAssignmentNode >> rvalue [
 
 { #category : #generated }
 CAssignmentNode >> rvalue: aCGLRAbstractNode [
+	self assertExpression: aCGLRAbstractNode.
+
 	self rvalue notNil
 		ifTrue: [ self rvalue parent: nil ].
 	rvalue := aCGLRAbstractNode.

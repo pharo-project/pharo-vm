@@ -21,6 +21,18 @@ TReturnNode >> asCASTIn: aBuilder [
 	(expression isSwitch or: [expression isCaseStmt]) ifTrue: [
 		^ expression asCASTIn: aBuilder addToEndOfCases: self ].
 
+	(expression isSend and: [expression isValueExpansion]) ifTrue: [
+		| statementList lastStatement copy |
+		statementList := expression receiver.
+		lastStatement := statementList statements last.
+		lastStatement isReturn ifTrue: [
+			^ expression asCASTIn: aBuilder ].
+		copy := statementList copy.
+		copy statements
+			at: statementList statements size
+			put: (TReturnNode new setExpression: lastStatement).
+		^ copy asCASTIn: aBuilder ].
+
 	'void' = aBuilder currentMethod returnType ifTrue: [
 		"If the function is void, don't say 'return x' instead say ' x; return' "
 		| statements |
@@ -68,44 +80,6 @@ TReturnNode >> bindVariablesIn: aDictionary [
 { #category : #transformations }
 TReturnNode >> copyWithoutReturn [
 	^expression
-]
-
-{ #category : #'C code generation' }
-TReturnNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-
-	(expression isSwitch
-	 or: [expression isCaseStmt]) ifTrue:
-		[^expression emitCCodeOn: aStream addToEndOfCases: self level: level generator: aCodeGen].
-
-	(expression isSend and: [expression isValueExpansion]) ifTrue:
-		[^self emitValueExpansionOn: aStream level: level generator: aCodeGen].
-
-	'void' = aCodeGen currentMethod returnType ifTrue: "If the function is void, don't say 'return x' instead say ' x; return' "
-		[expression isLeaf ifFalse:
-			[expression emitCCodeOn: aStream level: level generator: aCodeGen.	
-			 aStream nextPut: $;; crtab: level].
-		 aStream nextPutAll: 'return;'.
-		 ^self].
-	aStream nextPutAll: 'return '.
-	expression
-		emitCCodeAsArgumentOn: aStream
-		level: (expression isStmtList ifTrue: [level + 1] ifFalse: [level])
-		generator: aCodeGen.
-]
-
-{ #category : #'C code generation' }
-TReturnNode >> emitValueExpansionOn: aStream level: level generator: aCodeGen [
-	| stmtList lastStmt copy |
-	self assert: (expression isSend and: [expression isValueExpansion]).
-	stmtList := expression receiver.
-	lastStmt := stmtList statements last.
-	lastStmt isReturn ifTrue:
-		[^expression emitCCodeOn: aStream level: level generator: aCodeGen].
-	copy := stmtList copy.
-	copy statements
-		at: stmtList statements size
-		put: (TReturnNode new setExpression: lastStmt).
-	copy emitCCodeOn: aStream level: level generator: aCodeGen
 ]
 
 { #category : #testing }

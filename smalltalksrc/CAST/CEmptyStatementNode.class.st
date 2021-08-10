@@ -10,6 +10,12 @@ CEmptyStatementNode >> acceptVisitor: anAbstractVisitor [
 ]
 
 { #category : #testing }
+CEmptyStatementNode >> isEmpty [
+	
+	^ true
+]
+
+{ #category : #testing }
 CEmptyStatementNode >> isEmptyStatement [
 	
 	^ true

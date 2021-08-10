@@ -89,6 +89,29 @@ CCompoundStatementNode >> isCompoundStatement [
 	^ true
 ]
 
+{ #category : #testing }
+CCompoundStatementNode >> isEmpty [
+	
+	^ statements isEmpty or: [ statements allSatisfy: [ :e | e isEmpty ] ]
+]
+
+{ #category : #accessing }
+CCompoundStatementNode >> last [
+	
+	^ statements last last
+]
+
+{ #category : #accessing }
+CCompoundStatementNode >> last: aCReturnStatementNode [ 
+	
+	"We rewrite the tree recursively.
+	Since the last statement of a compound statement can be another compound statement,
+	we need to rewrite the last statement of the deepest one"
+	statements
+		at: statements size
+		put: (statements last last: aCReturnStatementNode)
+]
+
 { #category : #accessing }
 CCompoundStatementNode >> needsBrackets [
 

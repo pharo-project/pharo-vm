@@ -40,9 +40,7 @@ TCaseStmtNode >> asCASTIn: aBuilder [
 	
 	expansions := aBuilder suppressAsmLabelsWhile: [
 		cases collect: [:case| self filterCommentsFrom:
-			(String streamContents:
-				[:s|
-				case emitCCodeOn: s level: 0 generator: aBuilder ] ) ] ].
+			(String streamContents: [:s| (case asCASTIn: aBuilder) prettyPrintOn: s ] ) ] ].
 	
 	duplicates := Set new.
 	1 to: cases size do: [:i| | case lastCase |
@@ -69,9 +67,7 @@ TCaseStmtNode >> asCASTIn: aBuilder [
 	result := CCompoundStatementNode new.
 	result needsBrackets: false.
 	result add: (CCallNode identifier: (CIdentifierNode name: 'bytecodeDispatchDebugHook')).
-	result add: (CCallNode
-		identifier: (CIdentifierNode name: 'VM_LABEL')
-		arguments: { CIdentifierNode name: 'bytecodeDispatch' }).
+	result add: (aBuilder asmLabelNodeFor: 'bytecodeDispatch').
 	result add: switchStatement.
 	^ result
 ]
@@ -190,77 +186,6 @@ TCaseStmtNode >> customizeShortCasesForDispatchVar: varName in: codeGen method: 
 	firsts := newFirsts asArray.
 	lasts := newLasts asArray.
 	cases := newCases asArray
-]
-
-{ #category : #'C code generation' }
-TCaseStmtNode >> emitCCodeOn: aStream addToEndOfCases: aNodeOrNil level: level generator: aCodeGen [
-
-	| indent |
-	indent := String new: level + 1 withAll: Character tab.
-	aStream nextPutAll: 'switch ('.
-	expression emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen.
-	aStream nextPutAll: ') {'; cr.
-	cases withIndexDo:
-		[:case :i|
-		(firsts at: i) to: (lasts at: i) do: [ :caseIndex |
-			aStream
-				nextPutAll: indent;
-				nextPutAll: 'case '; print: caseIndex; nextPut: $:;
-				cr ].
-			aStream nextPutAll: indent.
-			case emitCCodeOn: aStream prependToEnd: aNodeOrNil level: level + 1 generator: aCodeGen.
-			(aNodeOrNil notNil and: [aNodeOrNil isReturn]) ifFalse: [
-				aStream crtab: level + 1; nextPutAll: 'break;' ]].
-	aStream
-		crtab: level + 1;
-		nextPutAll: 'default:';
-		crtab: level + 1;
-		nextPutAll: 'error("Case not found");'.
-	aNodeOrNil ifNotNil:
-		[aStream crtab: level + 1.
-		 (aNodeOrNil copy setExpression: (TConstantNode value: -1))
-			emitCCodeOn: aStream level: level generator: aCodeGen.
-		 aStream nextPut: $;].
-	aStream
-		crtab: level;
-		nextPut: $}
-]
-
-{ #category : #'C code generation' }
-TCaseStmtNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-	| printMod expansions duplicates |
-	printMod := false.
-	(expression isVariable
-	 and: [expression name = 'currentBytecode']) ifTrue:
-		[printMod := true.
-		 aStream nextPutAll: 'bytecodeDispatchDebugHook();'; crtab: level.
-		 aCodeGen outputAsmLabel: 'bytecodeDispatch' on: aStream.
-		 aStream crtab: level].
-	aStream nextPutAll: 'switch ('.
-	expression emitCCodeOn: aStream level: level generator: aCodeGen.
-	aStream nextPutAll: ') {'; cr.
-	expansions := aCodeGen suppressAsmLabelsWhile:
-						[cases collect:
-							[:case|
-							self filterCommentsFrom:
-								(String streamContents:
-									[:s|
-									case emitCCodeOn: s level: 0 generator: aCodeGen])]].
-	duplicates := Set new.
-	1 to: cases size do:
-		[:i|
-		(duplicates includes: i) ifFalse: [
-			aStream tab: level + 1.
-			(duplicates addAll: ((i to: cases size) select: [:j| (expansions at: i) = (expansions at: j)])) do: [:k|
-				(firsts at: k) to: (lasts at: k) do:
-					[:caseIndex|
-					aStream nextPutAll: 'case '; print: caseIndex; nextPut: $:.
-					(caseIndex > 255 and: [printMod]) ifTrue:
-						[aStream nextPutAll: ' /*'; print: (caseIndex bitAnd: 255); nextPutAll: '*/'].
-					aStream crtab: level + 1]].
-			(cases at: i) emitCCodeOn: aStream level: level + 1 generator: aCodeGen.
-			aStream crtab: level + 1; nextPutAll: 'break;'; cr]].
-	aStream tab: level; nextPut: $}
 ]
 
 { #category : #accessing }

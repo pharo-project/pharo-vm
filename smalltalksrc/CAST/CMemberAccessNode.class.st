@@ -49,6 +49,9 @@ CMemberAccessNode >> object [
 
 { #category : #generated }
 CMemberAccessNode >> object: aCGLRAbstractNode [
+
+	self assertExpression: aCGLRAbstractNode.
+
 	self object notNil
 		ifTrue: [ self object parent: nil ].
 	object := aCGLRAbstractNode.

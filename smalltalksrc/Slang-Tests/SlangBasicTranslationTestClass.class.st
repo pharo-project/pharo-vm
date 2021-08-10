@@ -40,9 +40,62 @@ SlangBasicTranslationTestClass >> initializationOptions [
 ]
 
 { #category : #inline }
+SlangBasicTranslationTestClass >> methodDefiningSingleExternVariable [
+
+	<var: 'foo' type: #'extern int' >
+	| foo |
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodDefiningSingleStaticVariable [
+
+	<var: 'foo' type: #'static int' >
+	| foo |
+]
+
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodDefiningSingleVariable [
 
 	| foo |
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodUsingSingleArrayVariable [
+
+	<var: 'foo' type: #'int[17]' >
+	| foo bar |
+	bar := foo
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodUsingSingleExternalVariable [
+
+	<var: 'foo' type: #'external int' >
+	| foo bar |
+	bar := foo
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodUsingSingleInitializedVariable [
+
+	<var: 'foo' type: #'int foo = 17' >
+	| foo bar |
+	bar := foo
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodUsingSingleNonInitializedVariable [
+
+	| foo bar |
+	bar := foo
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodUsingSingleStaticVariable [
+
+	<var: 'foo' type: #'static int' >
+	| foo bar |
+	bar := foo
 ]
 
 { #category : #inline }
@@ -55,12 +108,12 @@ SlangBasicTranslationTestClass >> methodWithAnOptionPragma [
 { #category : #inline }
 SlangBasicTranslationTestClass >> methodWithLocalVariables [
 
-		| a b foo |
-		<var: #foo declareC: 'float foo'>
-		foo := 1.2.
-		a := 1.
-		b :=1.
-		^ a + b + foo 
+	<var: #foo declareC: 'float foo'>
+	| a b foo |
+	foo := 1.2.
+	a := 1.
+	b := 1.
+	^ a + b + foo
 ]
 
 { #category : #inline }
@@ -78,15 +131,35 @@ SlangBasicTranslationTestClass >> methodWithOptionPragma [
 ]
 
 { #category : #inline }
+SlangBasicTranslationTestClass >> methodWithSharedCase [
+
+	<sharedCodeInCase: 'sharedCase'>
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodWithSharedLabelInCase [
+
+	<sharedCodeNamed: 'sharedLabel' inCase: 'sharedCase'>
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodWithUnsortedTemps [
+
+	| foo bar zzz aaa ddd |
+	bar := aaa.
+	ddd := zzz + foo
+]
+
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodWithVolatileLocalVariables [
 
-		| a b foo |
-		<volatile>
-		<var: #foo declareC: 'float foo'>
-		foo := 1.2.
-		a := 1.
-		b :=1.
-		^ a + b + foo 
+	<volatile>
+	<var: #foo declareC: 'float foo'>
+	| a b foo |
+	foo := 1.2.
+	a := 1.
+	b := 1.
+	^ a + b + foo
 ]
 
 { #category : #inline }

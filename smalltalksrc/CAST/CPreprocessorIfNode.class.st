@@ -1,6 +1,6 @@
 Class {
 	#name : #CPreprocessorIfNode,
-	#superclass : #CGLRAbstractNode,
+	#superclass : #CExpressionNode,
 	#instVars : [
 		'then',
 		'else',
@@ -14,6 +14,16 @@ Class {
 CPreprocessorIfNode class >> if: aCondition then: anExpression [
 
 	^ self new
+		  if: aCondition;
+		  then: anExpression;
+		  yourself
+]
+
+{ #category : #'instance creation' }
+CPreprocessorIfNode class >> if: aCondition then: anExpression asArgument: asArgument [
+
+	^ self new
+		  isArgument: asArgument;
 		  if: aCondition;
 		  then: anExpression;
 		  yourself

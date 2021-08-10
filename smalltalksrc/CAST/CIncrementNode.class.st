@@ -1,6 +1,6 @@
 Class {
 	#name : #CIncrementNode,
-	#superclass : #CGLRAbstractNode,
+	#superclass : #CExpressionNode,
 	#instVars : [
 		'object',
 		'prefix'
@@ -37,6 +37,8 @@ CIncrementNode >> object [
 
 { #category : #generated }
 CIncrementNode >> object: aCGLRAbstractNode [
+	self assertExpression: aCGLRAbstractNode.
+	
 	self object notNil
 		ifTrue: [ self object parent: nil ].
 	object := aCGLRAbstractNode.

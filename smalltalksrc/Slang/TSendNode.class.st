@@ -10,6 +10,16 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance creation' }
+TSendNode class >> receiver: aReceiverNode selector: aString arguments: aCollection [ 
+	
+	^ self new
+		setSelector: aString
+		receiver: aReceiverNode
+		arguments: aCollection;
+		yourself
+]
+
 { #category : #accessing }
 TSendNode >> args [
 
@@ -117,11 +127,11 @@ TSendNode >> asCASTExpressionIn: aCCodeGenerator [
 TSendNode >> asCASTIn: aCCodeGenerator [
 
 	| construct |
-	construct := aCCodeGenerator 
-		             generateCASTForBuiltinConstructFor: self.
+	construct := aCCodeGenerator generateCASTForBuiltinConstructFor: self.
 	construct ifNil: [ 
-		construct := (self asCASTAsFieldReferenceIn: aCCodeGenerator) ifNotNil: [ :e | e] ifNil: [ 
-			self asCASTAsFunctionCallIn: aCCodeGenerator ]].
+		construct := self asCASTAsFieldReferenceIn: aCCodeGenerator.
+		construct ifNil: [ 
+			construct := self asCASTAsFunctionCallIn: aCCodeGenerator ] ].
 	^ construct
 ]
 
@@ -254,85 +264,6 @@ TSendNode >> copyWithoutReturn [
 									ifTrue: [arg copyWithoutReturn]
 									ifFalse: [arg]]);
 		yourself
-]
-
-{ #category : #'C code generation' }
-TSendNode >> emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen [
-	"Emit the receiver in a form that can be passed as an argument."
-
-	"If the selector is a built-in construct, translate it and return"
-	(aCodeGen emitBuiltinConstructAsArgumentFor: self on: aStream level: level) ifFalse:
-		["If it is a pointer dereference generate it"
-		(self emitCCodeAsFieldReferenceOn: aStream level: level generator: aCodeGen) ifFalse:
-			["Otherwise generate the vanilla C function call."
-			 self emitCCodeAsFunctionCallOn: aStream level: level generator: aCodeGen]]
-]
-
-{ #category : #'C code generation' }
-TSendNode >> emitCCodeAsFieldReferenceOn: aStream level: level generator: aCodeGen [
-	"If appropriate, translate this message send as a pointer dereference"
-
-	| parenCount |
-	(aCodeGen isStructSend: self) ifFalse:
-		[^false].
-
-	parenCount := receiver isSend ifTrue: [2] ifFalse: [1].
-	aStream next: parenCount put: $(.
-	receiver  emitCCodeAsExpressionOn: aStream level: 0 generator: aCodeGen.
-	parenCount > 1 ifTrue:
-		[aStream nextPut: $)].
-	(receiver structTargetKindIn: aCodeGen) caseOf: {
-		[#pointer] -> [aStream nextPut: $-; nextPut: $>].
-		[#struct] -> [aStream nextPut: $.] }.
-	aStream nextPutAll: (aCodeGen cFunctionNameFor: selector).
-	arguments isEmpty ifFalse:
-		[self assert: arguments size = 1.
-		 aStream nextPutAll: ' = '.
-		 arguments first emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen].
-	aStream nextPut: $).
-	^true
-]
-
-{ #category : #'C code generation' }
-TSendNode >> emitCCodeAsFunctionCallOn: aStream level: level generator: aCodeGen [
-	"Translate this message send into a C function call"
-
-	"Special case for pluggable modules. Replace messages to interpreterProxy
-	 by interpreterProxy->message(..) if the message is not builtin"
-	(aCodeGen shouldGenerateAsInterpreterProxySend: self) ifTrue:
-		[(aCodeGen noteUsedPluginFunction: selector) ifTrue:
-			[aStream nextPutAll: 'interpreterProxy->']].
-
-	aStream nextPutAll: (aCodeGen cFunctionNameFor: selector); nextPut: $(.
-
-	"Only include the receiver as the first argument in certain cases.
-	 The receiver is always included if it is an expression.
-	 If it is a variable:
-		 If the vmClass says it is an implicit variable, don't include it.
-		 If the variable is 'self' and the method being called is not in
-		 the method set (i.e. it is some external code), don't include it."
-	(self shouldExcludeReceiverAsFirstArgument: aCodeGen) ifFalse:
-		[(receiver structTargetKindIn: aCodeGen) == #struct ifTrue:
-			[aStream nextPut: $&].
-		 receiver emitCCodeOn: aStream level: level generator: aCodeGen.
-		 arguments isEmpty ifFalse:
-			[aStream nextPutAll: ', ']].
-	arguments
-		do: [ :arg| arg emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen]
-		separatedBy: [aStream nextPut: $,; space].
-	aStream nextPut: $)
-]
-
-{ #category : #'C code generation' }
-TSendNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-	"Emit the receiver as a statement."
-
-	"If the selector is a built-in construct, translate it and return"
-	(aCodeGen emitBuiltinConstructFor: self on: aStream level: level) ifFalse:
-		["If it is a pointer dereference generate it"
-		(self emitCCodeAsFieldReferenceOn: aStream level: level generator: aCodeGen) ifFalse:
-			["Otherwise generate the vanilla C function call."
-			 self emitCCodeAsFunctionCallOn: aStream level: level generator: aCodeGen]]
 ]
 
 { #category : #testing }

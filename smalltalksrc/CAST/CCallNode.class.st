@@ -35,6 +35,8 @@ CCallNode >> arguments [
 
 { #category : #generated }
 CCallNode >> arguments: anOrderedCollection [
+	self assertListOfExpressions: anOrderedCollection.
+
 	self setParents: self arguments to: nil.
 	arguments := anOrderedCollection.
 	self setParents: self arguments to: self

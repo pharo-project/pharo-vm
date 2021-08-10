@@ -115,8 +115,9 @@ CSlangPrettyPrinter >> visitBreakStatement: aBreakStatement [
 { #category : #generated }
 CSlangPrettyPrinter >> visitCall: aCall [
 	
-	
-	stream nextPutAll: (aCall identifier name).
+	aCall identifier isIdentifier ifFalse: [ stream nextPut: $( ].
+	aCall identifier acceptVisitor: self.
+	aCall identifier isIdentifier ifFalse: [ stream nextPut: $) ].
 	stream nextPutAll: '('.
 	aCall arguments do: [ :arg | arg acceptVisitor: self ] separatedBy: [ stream nextPutAll: ', '].
 	stream nextPutAll: ')'.
@@ -153,7 +154,7 @@ CSlangPrettyPrinter >> visitComment: aComment [
 { #category : #generated }
 CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 
-	| children first |
+	| first |
 	first := true.
 	aCompoundStatement needsBrackets ifTrue: [ 
 		"If we print brackets, then the first was already printed"
@@ -162,8 +163,21 @@ CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 		stream cr.
 		level := level + 1 ].
 
-	children := aCompoundStatement declarations , aCompoundStatement statements.
-	children do: [ :e |
+	aCompoundStatement declarations do: [ :e |
+		first
+			ifTrue: [ first := false. ]
+			ifFalse: [ stream tab: level ].
+			e acceptVisitor: self.
+			e needsSeparator ifTrue: [ stream nextPut: $; ].
+			stream cr. ].
+	
+	"Put at least one empty line to separate declarations and statements.
+	This is required for the current GNUisation to work, which searches for empty lines"
+	aCompoundStatement declarations ifNotEmpty: [
+		stream cr.
+	].
+
+	aCompoundStatement statements do: [ :e |
 		first
 			ifTrue: [ first := false. ]
 			ifFalse: [ stream tab: level ].
@@ -173,7 +187,8 @@ CSlangPrettyPrinter >> visitCompoundStatement: aCompoundStatement [
 
 	aCompoundStatement needsBrackets ifTrue: [ 
 		level := level - 1.
-		children ifNotEmpty: [ stream cr ].
+		(aCompoundStatement statements, aCompoundStatement declarations)
+			ifNotEmpty: [ stream cr ].
 		stream tab: level.
 		stream nextPut: $} ]
 ]
@@ -238,12 +253,17 @@ CSlangPrettyPrinter >> visitEmptyStatement: anEmptyStatement [
 { #category : #generated }
 CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
 
+	| lastRequiredSeparator |
 	stream nextPut: $(.
-	anExpressionList expressions
-		do: [ :e | e acceptVisitor: self ]
-		separatedBy: [ 
-			stream nextPutAll: ', '.
-			anExpressionList printOnMultipleLines ifTrue: [ stream cr ] ].
+	anExpressionList expressions do: [ :e | 
+		e acceptVisitor: self.
+		lastRequiredSeparator := e isEmpty not ]
+	separatedBy: [ 
+		lastRequiredSeparator
+			ifFalse: [ stream nextPutAll: ' ' ]
+			ifTrue: [ 
+				stream nextPutAll: ', '.
+				anExpressionList printOnMultipleLines ifTrue: [ stream cr ] ] ].
 	stream nextPut: $)
 ]
 
@@ -285,7 +305,8 @@ CSlangPrettyPrinter >> visitFunctionDefinition: aFunction [
 	aFunction hasRawPrototype ifFalse: [ 
 		aFunction declarator acceptVisitor: self ].
 	stream cr.
-	aFunction body acceptVisitor: self
+	aFunction body acceptVisitor: self.
+	stream cr.
 ]
 
 { #category : #generated }
@@ -365,7 +386,8 @@ CSlangPrettyPrinter >> visitLabeledStatement: aLabeledStatement [
 		stream nextPutAll: aLabeledStatement label name ].
 
 	(aLabeledStatement case notNil or: [ aLabeledStatement label notNil ]) 
-		ifTrue: [ stream nextPutAll: ':' ].
+		ifTrue: [ stream nextPutAll: ':'.
+			aLabeledStatement comments ifNotEmpty: [ stream cr ] ].
 
 	self printComments: aLabeledStatement comments.
 
@@ -424,9 +446,9 @@ CSlangPrettyPrinter >> visitPreprocessorIf: anIf [
 			level + 2 ]
 		ifFalse: [ 
 			tabbing := level ].
-	"Add a carriage return when needed."
-	stream peekLast = Character cr ifFalse: [ stream cr ].
+
 	stream
+		cr;
 		nextPut: $#;
 		next: tabbing * 2 put: Character space;
 		nextPutAll: 'if '.

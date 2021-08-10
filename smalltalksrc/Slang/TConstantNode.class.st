@@ -42,17 +42,6 @@ TConstantNode >> constantNumbericValueOrNil [
 	^value isNumber ifTrue: [value]
 ]
 
-{ #category : #'C code generation' }
-TConstantNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-	"Emit a C literal."
-	aStream nextPutAll: (aCodeGen cLiteralFor: value).
-	comment ifNotNil:
-		[aStream
-			nextPutAll: ' /* ';
-			nextPutAll: comment;
-			nextPutAll: ' */']
-]
-
 { #category : #testing }
 TConstantNode >> hasSideEffect [
 	"Answer if the parse tree rooted at this node has a side-effect or not."

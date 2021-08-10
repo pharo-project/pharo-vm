@@ -371,6 +371,34 @@ TMethod >> asCASTIn: aCodeGen [
 	^ compoundStatement
 ]
 
+{ #category : #'CAST translation' }
+TMethod >> asCASTInlinedIn: aBuilder [
+
+	| compoundStatement body |
+	self removeUnusedTempsAndNilIfRequiredIn: aBuilder.
+	compoundStatement := CCompoundStatementNode new.
+	
+	locals isEmpty ifFalse: [ 
+		(aBuilder sortStrings: locals) do: [ :var | 
+			compoundStatement add: (CRawCodeNode code: (self
+						  declarationAt: var
+						  ifAbsent: [ aBuilder defaultType , ' ' , var ])) ] ].
+	compoundStatement add: (aBuilder asmLabelNodeFor: selector ).
+	aBuilder
+		pushScope: declarations
+		while: [ body := (parseTree asCASTIn: aBuilder) ].
+	compoundStatement add: body.
+	
+	sharedLabel ifNotNil: [
+		^ (CLabeledStatementNode new
+			label: (CIdentifierNode name: sharedLabel);
+			statement: compoundStatement;
+			comments: {selector};
+			yourself) ].
+
+	^ compoundStatement
+]
+
 { #category : #transformations }
 TMethod >> asInlineNode [
 	^TInlineNode new method: self
@@ -635,60 +663,6 @@ TMethod >> elideAnyFinalReturn [
 ]
 
 { #category : #'C code generation' }
-TMethod >> emitCCodeOn: aStream generator: aCodeGen [
-	"Emit C code for this method onto the given stream.
-	 All calls to inlined methods should already have been expanded."
-	| bodyStream conditional |
-
-	aCodeGen currentMethod: self.
-	usedVariablesCache := Set new.
-	self emitCCommentOn: aStream.	"place method comment and method name before function."
-	aStream nextPutAll: '/* '; nextPutAll: self definingClass name; nextPutAll: '>>#'; nextPutAll: self smalltalkSelector; nextPutAll: ' */'.	
-	aStream cr.
-	conditional := self emitCFunctionPrototype: aStream generator: aCodeGen isPrototype: false.
-	aStream cr; nextPut: ${.
-	bodyStream := ReadWriteStream on: (ByteString new: 128).
-	aCodeGen "Generation will note used variables in usedVariablesCache"
-		pushScope: declarations
-		while: [parseTree emitCCodeOn: bodyStream level: 1 generator: aCodeGen].
-	self emitCLocalsOn: aStream generator: aCodeGen.
-	usedVariablesCache := nil.
-	aStream tab.
-	aStream nextPutAll: bodyStream contents.
-
-	((returnType = #void) not and: [parseTree endsWithReturn not]) ifTrue:
-		[aStream crtab; nextPutAll: 'return 0;'].
-	aStream cr; nextPut: $}; cr.
-	conditional ifTrue:
-		[self terminateConditionalDefineFor: (self compileTimeOptionPragmas: aCodeGen) on: aStream]
-]
-
-{ #category : #'C code generation' }
-TMethod >> emitCCodeOn: aStream level: level generator: aCodeGen [
-
-	"Emit C code for this method onto the given stream.
-	 All calls to inlined methods should already have been expanded."
-
-	self emitCCodeOn: aStream generator: aCodeGen
-]
-
-{ #category : #'C code generation' }
-TMethod >> emitCCommentOn: aStream [
-	"Emit the transferred Smalltalk comments as C comments."
-	comment ifNotNil: [
-		aStream cr;cr.
-		1 to: comment size do: [:index | 
-			aStream nextPutAll: '/*'; tab.
-			self printSingleComment: (comment at: index)
-				on: aStream
-				indent: 1
-				tabWidth: 4
-				lineBreak: 78.
-
-			aStream nextPutAll: ' */'; newLine]]
-]
-
-{ #category : #'C code generation' }
 TMethod >> emitCFunctionPrototype: aStream generator: aCodeGen [
 	"Emit a C function header for this method onto the given stream."
 
@@ -747,85 +721,6 @@ TMethod >> emitCFunctionPrototype: aStream generator: aCodeGen isPrototype: isPr
 			[aCodeGen maybeEmitPrimitiveFailureDefineFor: selector on: aStream.
 			 self terminateConditionalDefineFor: compileTimeOptionPragmas on: aStream]].
 	^compileTimeOptionPragmas notEmpty
-]
-
-{ #category : #'C code generation' }
-TMethod >> emitCLocalsOn: aStream generator: aCodeGen [
-	"Emit a C function header for this method onto the given stream."
-
-	| volatileVariables maybeExternFunctions |
-	volatileVariables := properties includesKey: #volatile.
-	self refersToGlobalStruct ifTrue:
-		[aStream
-			crtab;
-			nextPutAll: (volatileVariables
-						ifTrue: ['DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT;']
-						ifFalse: ['DECL_MAYBE_SQ_GLOBAL_STRUCT;'])].
-	aStream cr.
-	maybeExternFunctions := (declarations select: [:decl| decl beginsWith: 'extern']) keys.
-	(locals isEmpty and: [maybeExternFunctions isEmpty]) ifFalse:
-		[(aCodeGen sortStrings: locals, maybeExternFunctions) do:
-			[ :var | | decl |
-			decl := self declarationAt: var
-							ifAbsent: [aCodeGen defaultType, ' ', var].
-			(volatileVariables
-			 or: [(decl beginsWith: 'static')
-			 or: [(decl beginsWith: 'extern')
-			 or: [usedVariablesCache includes: var]]]) ifTrue:
-				[aStream tab.
-				 volatileVariables ifTrue:
-					[aStream nextPutAll: #volatile; space].
-				 aStream
-					nextPutAll: decl;
-					nextPut: $;;
-					cr]].
-		 aStream cr]
-]
-
-{ #category : #'C code generation' }
-TMethod >> emitInlineOn: aStream level: level generator: aCodeGen [
-	"Emit C code for this method onto the given stream. All calls to inlined methods should already have been expanded."
-	self removeUnusedTempsAndNilIfRequiredIn: aCodeGen.
-	sharedLabel ifNotNil:
-		[aStream crtab: level-1; nextPutAll: sharedLabel; nextPut: $:.
-		aStream crtab: level.
-		aStream nextPutAll: '/* '; nextPutAll: selector; nextPutAll: ' */'.
-		aStream crtab: level].
-	aStream nextPut: ${.
-	locals isEmpty ifFalse:
-		[(aCodeGen sortStrings: locals) do:
-			[:var|
-			 aStream
-				crtab: level+1;
-				nextPutAll: (self declarationAt: var ifAbsent: [ aCodeGen defaultType, ' ', var]);
-				nextPut: $;].
-			 aStream cr].
-	aStream crtab: level+1.
-	aCodeGen outputAsmLabel: selector on: aStream.
-	aStream crtab: level+1.
-	aCodeGen
-		pushScope: declarations
-		while: [parseTree emitCCodeOn: aStream level: level+1 generator: aCodeGen].
-	aStream tab: level; nextPut: $}
-]
-
-{ #category : #'C code generation' }
-TMethod >> emitProxyFunctionPrototype: aStream generator: aCodeGen [
-	"Emit an indirect C function header for this method onto the given stream."
-
-	aStream
-		nextPutAll: returnType;
-		space;
-		nextPutAll: '(*';
-		nextPutAll: (aCodeGen cFunctionNameFor: selector);
-		nextPutAll: ')('.
-	args isEmpty
-		ifTrue: [aStream nextPutAll: #void]
-		ifFalse:
-			[args
-				do: [:arg| aStream nextPutAll: (self declarationAt: arg)]
-				separatedBy: [ aStream nextPutAll: ', ' ]].
-	aStream nextPut: $)
 ]
 
 { #category : #testing }
