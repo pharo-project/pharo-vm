@@ -3012,8 +3012,10 @@ CogARMCompiler >> prepareStackToCallCFunctionInSmalltalkStack: anObject [
 
 	cogit MoveR: SPReg R: ClassReg.
 	cogit MoveR: SPReg R: Extra2Reg.
+
 	
-	cogit AndCq: ((1 << 32) - 16) R: Extra2Reg. 
+	
+	cogit AndCq: 16rFFFFFFF0 R: Extra2Reg. 
 	cogit MoveR: Extra2Reg R: SPReg.
 ]
 
