@@ -30,10 +30,10 @@ Class {
 	#superclass : #CogBlockMethod,
 	#instVars : [
 		'blockSize',
+		'picUsage',
 		'methodObject',
 		'methodHeader',
-		'selector',
-		'picUsage'
+		'selector'
 	],
 	#category : #'VMMaker-JIT'
 }
