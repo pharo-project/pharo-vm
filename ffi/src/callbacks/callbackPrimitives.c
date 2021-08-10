@@ -99,7 +99,6 @@ PrimitiveWithDepth(primitiveRegisterCallback, 3){
     sqInt callbackHandle;
     Callback *callback;
     sqInt count;
-    void *handler;
     sqInt idx;
     sqInt paramArray;
     sqInt runnerInstance;
