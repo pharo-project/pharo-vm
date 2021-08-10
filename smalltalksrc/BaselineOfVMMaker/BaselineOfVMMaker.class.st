@@ -59,6 +59,6 @@ BaselineOfVMMaker >> baseline: spec [
 			spec group: 'plugins' with: #('FileAttributesPlugin').
 			spec group: 'core' with: #('VMMaker').
 			spec group: 'tools' with: #('VMMaker-Tools').			
-			spec group: 'tests' with: #('VMMakerTests' 'VMMaker-OriginalTests' 'VMMaker-MT-Tests').			
+			spec group: 'tests' with: #('VMMakerTests' 'VMMaker-OriginalTests').			
 			spec group: 'default' with: #( 'core' 'plugins' 'tools' 'tests') ]
 ]
