@@ -1,6 +1,6 @@
 #include "pharovm/pharo.h"
 
-#define UNIMPLEMENTED unimplementedPrimitive(__FUNCTION__);
+#define UNIMPLEMENTED {static int called = 0; if(!called){ unimplementedPrimitive(__FUNCTION__); called=1;}};
 
 void unimplementedPrimitive(const char* name){
 	logWarn("Unimplemented primitive: %s\n", name);
