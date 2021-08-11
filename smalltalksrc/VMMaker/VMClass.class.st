@@ -745,6 +745,27 @@ VMClass >> logError: aFormat withArgs: args [
 	Error signal: (aFormat printf: args)
 ]
 
+{ #category : #'debug support' }
+VMClass >> logWarn: aMessage [
+	
+	<doNotGenerate>
+	self logWarn: aMessage withArgs: #()
+]
+
+{ #category : #'debug support' }
+VMClass >> logWarn: aMessage _: anArgument [
+	
+	<doNotGenerate>
+	self logWarn: aMessage withArgs: { anArgument }
+]
+
+{ #category : #'debug support' }
+VMClass >> logWarn: aFormat withArgs: args [
+	
+	<doNotGenerate>
+	(aFormat printf: args) traceCr
+]
+
 { #category : #'memory access' }
 VMClass >> long64AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
