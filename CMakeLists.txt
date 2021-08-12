@@ -13,7 +13,7 @@ include(macros.cmake)
 
 set(VERSION_MAJOR 9)
 set(VERSION_MINOR 0)
-set(VERSION_PATCH 3)
+set(VERSION_PATCH 4)
 
 message("CMAKE_GENERATOR=${CMAKE_GENERATOR}")
 
@@ -33,11 +33,12 @@ option(BUILD_BUNDLE                  "Builds a bundle with all dependencies"    
 option(FEATURE_COMPILE_GNUISATION    "Use gcc gnu extensions to compile the VM"              ON)
 option(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES        "Prefer downloading dependencies"              OFF)
 option(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS             "Use inline memory accessors instead of macros" ON)
+option(PHARO_VM_IN_WORKER_THREAD     "Have support for pharo running in a different thread that the main one"	ON)
 
-   set(APPNAME                      "Pharo"         CACHE STRING                 "VM Application name")
-   set(FLAVOUR                      "CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
-   set(PHARO_LIBRARY_PATH           "@executable_path/Plugins" CACHE STRING      "The RPATH to use in the build")
-   set(ICEBERG_DEFAULT_REMOTE       "scpUrl"        CACHE STRING                 "If Iceberg uses HTTPS (httpsUrl) or tries first with SSH (scpUrl)")
+set(APPNAME						"Pharo"         CACHE STRING                 "VM Application name")
+set(FLAVOUR						"CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
+set(PHARO_LIBRARY_PATH			"@executable_path/Plugins" CACHE STRING      "The RPATH to use in the build")
+set(ICEBERG_DEFAULT_REMOTE		"scpUrl"        CACHE STRING                 "If Iceberg uses HTTPS (httpsUrl) or tries first with SSH (scpUrl)")
 
 
 # Visual Studio stores user build settings in file 'CmakeSettings.json'.  We would like to manage that via a project template.
