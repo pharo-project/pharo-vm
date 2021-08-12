@@ -424,11 +424,6 @@ StackInterpreterSimulator >> cr [
 	traceOn ifTrue: [ transcript cr; flush ].
 ]
 
-{ #category : #accessing }
-StackInterpreterSimulator >> currentBytecode: anInteger [ 
-	currentBytecode := anInteger
-]
-
 { #category : #UI }
 StackInterpreterSimulator >> desiredDisplayExtent [
 	^(savedWindowSize
@@ -1213,11 +1208,6 @@ StackInterpreterSimulator >> loadNewPlugin: pluginString [
 		[:entry|
 		 pluginList := pluginList copyWith: entry.
 		 entry]
-]
-
-{ #category : #'spur bootstrap' }
-StackInterpreterSimulator >> localFP [
-	^localFP
 ]
 
 { #category : #'spur bootstrap' }

@@ -2714,6 +2714,7 @@ StackInterpreter >> booleanValueOf: obj [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimAdd [
+	<pops: 2 thenPush: 1>
 	| rcvr arg result |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
@@ -2826,6 +2827,7 @@ StackInterpreter >> bytecodePrimAtPut [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimBitAnd [
+	<pops: 2 thenPush: 1>
 	| rcvr arg |
 	arg := self internalStackTop.
 	rcvr := self internalStackValue: 1.
@@ -2848,6 +2850,7 @@ StackInterpreter >> bytecodePrimBitAnd [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimBitOr [
+	<pops: 2 thenPush: 1>
 	| rcvr arg |
 	arg := self internalStackTop.
 	rcvr := self internalStackValue: 1.
@@ -2870,7 +2873,7 @@ StackInterpreter >> bytecodePrimBitOr [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimBitShift [
-
+	<pops: 2 thenPush: 1>
 	self initPrimCall.
 	self externalizeIPandSP.
 	self primitiveBitShift.
@@ -2894,6 +2897,7 @@ StackInterpreter >> bytecodePrimClass [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimDiv [
+	<pops: 2 thenPush: 1>
 	| quotient |
 	self initPrimCall.
 	quotient := self doPrimitiveDiv: (self internalStackValue: 1) by: (self internalStackValue: 0).
@@ -2907,6 +2911,7 @@ StackInterpreter >> bytecodePrimDiv [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimDivide [
+	<pops: 2 thenPush: 1>
 	| rcvr arg result |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
@@ -2957,6 +2962,7 @@ StackInterpreter >> bytecodePrimEqual [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimEqualSistaV1 [
+	<pops: 2 thenPush: 1>
 	| rcvr arg aBool |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
@@ -3009,6 +3015,7 @@ StackInterpreter >> bytecodePrimGreaterOrEqual [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimGreaterOrEqualSistaV1 [
+	<pops: 2 thenPush: 1>
 	| rcvr arg aBool |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
@@ -3069,6 +3076,7 @@ StackInterpreter >> bytecodePrimGreaterThan [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimGreaterThanSistaV1 [
+	<pops: 2 thenPush: 1>
 	| rcvr arg aBool |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
@@ -3165,6 +3173,7 @@ StackInterpreter >> bytecodePrimLessOrEqual [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimLessOrEqualSistaV1 [
+	<pops: 2 thenPush: 1>
 	| rcvr arg aBool |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
@@ -3225,6 +3234,7 @@ StackInterpreter >> bytecodePrimLessThan [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimLessThanSistaV1 [
+	<pops: 2 thenPush: 1>
 	| rcvr arg aBool |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
@@ -3265,6 +3275,7 @@ StackInterpreter >> bytecodePrimLessThanV4 [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimMakePoint [
+	<pops: 2 thenPush: 1>
 	"Inline primitiveMakePoint for the benefit of the interpreter. Externalizing the
 	 sp & fp, then internalizing and testign for primitive failure add much overhead.
 	 So simply inline the relatively small ammount of code directly."
@@ -3287,6 +3298,7 @@ StackInterpreter >> bytecodePrimMakePoint [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimMod [
+	<pops: 2 thenPush: 1>
 	| mod |
 	self initPrimCall.
 	mod := self doPrimitiveMod: (self internalStackValue: 1) by: (self internalStackValue: 0).
@@ -3301,6 +3313,7 @@ StackInterpreter >> bytecodePrimMod [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimMultiply [
+	<pops: 2 thenPush: 1>
 	| rcvr arg result overflow oop |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
@@ -3381,6 +3394,7 @@ StackInterpreter >> bytecodePrimNotEqual [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimNotEqualSistaV1 [
+	<pops: 2 thenPush: 1>
 	| rcvr arg aBool |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
@@ -3516,6 +3530,7 @@ StackInterpreter >> bytecodePrimSpecialSelector24 [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimSubtract [
+	<pops: 2 thenPush: 1>
 	| rcvr arg result |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
@@ -4983,6 +4998,12 @@ StackInterpreter >> createActualMessageTo: lookupClass [
 	argumentCount := 1
 ]
 
+{ #category : #accessing }
+StackInterpreter >> currentBytecode: anInteger [
+	<doNotGenerate>
+	currentBytecode := anInteger
+]
+
 { #category : #'stack pages' }
 StackInterpreter >> defaultNativeStackFrameSize [
 	"default native stack frame size"
@@ -5290,7 +5311,7 @@ StackInterpreter >> dumpPrimTraceLog [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> duplicateTopBytecode [
-
+	<pops: 0 thenPush: 1>
 	self fetchNextBytecode.
 	self internalPush: self internalStackTop.
 
@@ -5500,6 +5521,7 @@ StackInterpreter >> extJumpIfTrue [
 
 { #category : #'miscellaneous bytecodes' }
 StackInterpreter >> extNopBytecode [
+	<pops: 0 thenPush: 0>
 	"SistaV1		94		01011111		Nop"
 	self fetchNextBytecode.
 	numExtB := extA := extB := 0
@@ -5573,6 +5595,7 @@ StackInterpreter >> extPushLiteralVariableBytecode [
 StackInterpreter >> extPushPseudoVariable [
 	"SistaV1:	*	82			01010010			Push thisContext, (then e.g. Extend B 1 = push thisProcess)"
 	| theThingToPush |
+	<pops: 0 thenPush: 1>
 	extB
 		caseOf: {
 			[0]	->	[theThingToPush := self ensureFrameIsMarried: localFP SP: localSP].
@@ -9003,6 +9026,12 @@ StackInterpreter >> loadInitialContext [
 	activeProc := self activeProcess.
 	activeContext := objectMemory fetchPointer: SuspendedContextIndex ofObject: activeProc.
 	self marryContextInNewStackPageAndInitializeInterpreterRegisters: activeContext
+]
+
+{ #category : #'spur bootstrap' }
+StackInterpreter >> localFP [
+	<doNotGenerate>
+	^localFP
 ]
 
 { #category : #'debug printing' }
@@ -12574,7 +12603,7 @@ StackInterpreter >> pushBool: trueOrFalse [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushConstantFalseBytecode [
-
+	<pops: 0 thenPush: 1>
 	self fetchNextBytecode.
 	self internalPush: objectMemory falseObject.
 
@@ -12590,7 +12619,7 @@ StackInterpreter >> pushConstantMinusOneBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushConstantNilBytecode [
-
+	<pops: 0 thenPush: 1>
 	self fetchNextBytecode.
 	self internalPush: objectMemory nilObject.
 
@@ -12598,7 +12627,7 @@ StackInterpreter >> pushConstantNilBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushConstantOneBytecode [
-
+	<pops: 0 thenPush: 1>
 	self fetchNextBytecode.
 	self internalPush: ConstOne.
 
@@ -12606,7 +12635,7 @@ StackInterpreter >> pushConstantOneBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushConstantTrueBytecode [
-
+	<pops: 0 thenPush: 1>
 	self fetchNextBytecode.
 	self internalPush: objectMemory trueObject.
 
@@ -12622,7 +12651,7 @@ StackInterpreter >> pushConstantTwoBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushConstantZeroBytecode [
-
+	<pops: 0 thenPush: 1>
 	self fetchNextBytecode.
 	self internalPush: ConstZero.
 
@@ -12688,6 +12717,7 @@ StackInterpreter >> pushLiteralConstant: literalIndex [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushLiteralConstantBytecode [
+	<pops: 0 thenPush: 1>
 	<expandCases>
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
@@ -12700,6 +12730,7 @@ StackInterpreter >> pushLiteralConstantBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushLiteralVariable16CasesBytecode [
+	<pops: 0 thenPush: 1>
 	<expandCases>
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
@@ -12807,7 +12838,7 @@ StackInterpreter >> pushNewArrayBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushReceiverBytecode [
-
+	<pops: 0 thenPush: 1>
 	self fetchNextBytecode.
 	self internalPush: self receiver.
 
@@ -12821,6 +12852,7 @@ StackInterpreter >> pushReceiverVariable: fieldIndex [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushReceiverVariableBytecode [
+	<pops: 0 thenPush: 1>
 	<expandCases>
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
@@ -12859,6 +12891,7 @@ StackInterpreter >> pushTemporaryVariable: temporaryIndex [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushTemporaryVariableBytecode [
+	<pops: 0 thenPush: 1>
 	<expandCases>
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
@@ -13514,18 +13547,21 @@ StackInterpreter >> returnAs: returnTypeOop ThroughCallback: vmCallbackContext C
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnFalse [
+	<pops: 0 thenPush: 0>
 	localReturnValue := objectMemory falseObject.
 	self commonReturn
 ]
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnNil [
+	<pops: 0 thenPush: 0>
 	localReturnValue := objectMemory nilObject.
 	self commonReturn
 ]
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnNilFromBlock [
+	<pops: 0 thenPush: 0>
 	"Return nil to the caller of the current block activation."
 	localReturnValue := objectMemory nilObject.
 	self commonCallerReturn
@@ -13533,12 +13569,14 @@ StackInterpreter >> returnNilFromBlock [
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnReceiver [
+	<pops: 0 thenPush: 0>
 	localReturnValue := self receiver.
 	self commonReturn
 ]
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnTopFromBlock [
+	<pops: 0 thenPush: 0>
 	"Return top-of-stack to the caller of the current block activation."
 	localReturnValue := self internalStackTop.
 	self commonCallerReturn
@@ -13546,12 +13584,14 @@ StackInterpreter >> returnTopFromBlock [
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnTopFromMethod [
+	<pops: 1 thenPush: 0>
 	localReturnValue := self internalStackTop.
 	self commonReturn
 ]
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnTrue [
+	<pops: 0 thenPush: 0>
 	localReturnValue := objectMemory trueObject.
 	self commonReturn
 ]
@@ -15929,6 +15969,7 @@ StackInterpreter >> unfollowTempVector: tempVector atIndex: tempVectorIndex in: 
 
 { #category : #'miscellaneous bytecodes' }
 StackInterpreter >> unknownBytecode [
+	<pops: 0 thenPush: 1>
 	"If an error selector is available then send it to the activeContext, otherwise abort."
 	self respondToUnknownBytecode
 ]

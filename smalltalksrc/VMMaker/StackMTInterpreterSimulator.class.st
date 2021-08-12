@@ -1204,11 +1204,6 @@ StackMTInterpreterSimulator >> loadNewPlugin: pluginString [
 ]
 
 { #category : #'spur bootstrap' }
-StackMTInterpreterSimulator >> localFP [
-	^localFP
-]
-
-{ #category : #'spur bootstrap' }
 StackMTInterpreterSimulator >> localIP [
 	^localIP
 ]
