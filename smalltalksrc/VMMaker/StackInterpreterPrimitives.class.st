@@ -572,12 +572,15 @@ StackInterpreterPrimitives >> marshallSInt32From: argumentArrayOop at: index int
 
 	| intHolder value |
 
-	value := self fetchInteger: index ofObject: argumentArrayOop.	
+	value := self signed32BitValueOf: (objectMemory fetchPointer: index ofObject: argumentArrayOop).
+
+	self failed ifTrue: [ ^self primitiveFailFor: PrimErrBadArgument ].
+
 	value > INT32_MAX ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
 	value < INT32_MIN ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
 
 	intHolder := self cCoerce: holder to: #'int32_t *'.
-	intHolder at: 0 put: (self fetchInteger: index ofObject: argumentArrayOop ).
+	intHolder at: 0 put: value.
 		
 ]
 
@@ -655,7 +658,10 @@ StackInterpreterPrimitives >> marshallUInt32From: argumentArrayOop at: index int
 
 	| intHolder value |
 	
-	value := self fetchInteger: index ofObject: argumentArrayOop.
+	value := self positive32BitValueOf: (objectMemory fetchPointer: index ofObject: argumentArrayOop).
+	
+	self failed ifTrue: [ ^self primitiveFailFor: PrimErrBadArgument ].
+	
 	value < 0 ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
 	value > UINT32_MAX ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
 		
