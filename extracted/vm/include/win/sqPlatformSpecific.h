@@ -19,6 +19,10 @@
 
 # include <windows.h>
 
+#ifdef PHARO_VM_IN_WORKER_THREAD
+# include <pthread.h>
+#endif
+
 # define ioCurrentOSThread() pthread_self()
 
 /* missing functions */

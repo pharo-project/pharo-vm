@@ -21,6 +21,7 @@ EXPORT(void) logAssert(const char* fileName, const char* functionName, int line,
 
 EXPORT(void) registerCurrentThreadToHandleExceptions();
 EXPORT(void) installErrorHandlers();
+EXPORT(int) isLogDebug();
 
 //This variable is set externally by CMAKE
 #ifndef SOURCE_PATH_SIZE
