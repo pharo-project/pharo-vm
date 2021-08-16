@@ -110,6 +110,11 @@ def runBuild(platformName, configuration, headless = true){
 	def buildDirectory = headless ? "build" :"build-stockReplacement"
 	def additionalParameters = headless ? "" : "-DALWAYS_INTERACTIVE=1"
 
+	//Adding cross-compiling options
+	if(platformName == "Linux-i686"){
+		additionalParameters += " -DCMAKE_TOOLCHAIN_FILE=./repository/cmake/toolchains/i686-Linux.toolchain"
+	}
+
 	stage("Checkout-${platform}"){
 		dir('repository') {
 			checkout scm
@@ -384,7 +389,7 @@ def buildUsingDocker(platform, imageName, configuration, headless=true){
 try{
 	properties([disableConcurrentBuilds()])
 
-	def parallelBuilderPlatforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64', 'Darwin-arm64']
+	def parallelBuilderPlatforms = ['Linux-x86_64', 'Linux-i686', 'Darwin-x86_64', 'Windows-x86_64', 'Darwin-arm64']
 	def platforms = parallelBuilderPlatforms + ['Linux-aarch64', 'Linux-armv7l']
 	def builders = [:]
 	def dockerBuilders = [:]
