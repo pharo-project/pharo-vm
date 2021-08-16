@@ -22,8 +22,8 @@ if (BUILD_BUNDLE)
       add_third_party_dependency("cairo-1.15.4")
       add_third_party_dependency("libpng-1.2.49")
     endif()
-  else() #Linux, only for arm
-    If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv7l" OR (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64"))
+  else() #Linux, only for arm or i686
+    If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv7l" OR (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64") OR (${CMAKE_SYSTEM_PROCESSOR} MATCHES "i686"))
       add_third_party_dependency("pixman-0.40.0")
       add_third_party_dependency("cairo-1.16.0")
       add_third_party_dependency("libpng-1.6.37")

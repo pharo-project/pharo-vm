@@ -20,7 +20,7 @@ function(download_Freetype)
       add_third_party_dependency("freetype-2.9.1")
     endif()
   else() # linuxes, only for ARM
-    If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv7l" OR (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64"))
+    If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv7l" OR (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64")  OR (${CMAKE_SYSTEM_PROCESSOR} MATCHES "i686"))
       add_third_party_dependency("freetype-2.10.0")
     endif()    
   endif()
