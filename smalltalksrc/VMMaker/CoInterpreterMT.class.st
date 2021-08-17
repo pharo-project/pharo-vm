@@ -1258,13 +1258,6 @@ CoInterpreterMT >> returnToSchedulingLoopAndReleaseVMOrWakeThread: vmThread sour
 	self siglong: savedReenterInterpreter jmp: ReturnToThreadSchedulingLoop
 ]
 
-{ #category : #'callback support' }
-CoInterpreterMT >> sendInvokeCallbackContext: vmCallbackContext [
-	"Override to add sanity assertions."
-	self assertSaneThreadAndProcess.
-	^super sendInvokeCallbackContext: vmCallbackContext
-]
-
 { #category : #'internal interpreter access' }
 CoInterpreterMT >> setCogVMFlags: flags [
 	"Set an array of flags indicating various properties of the Cog VM.

@@ -4931,37 +4931,10 @@ InterpreterPrimitives >> sizeFieldOfAlien: alienObj [
 	^objectMemory longAt: alienObj + objectMemory baseHeaderSize
 ]
 
-{ #category : #'primitive support' }
-InterpreterPrimitives >> sizeOfAlienData: oop [
-	"Answer the start of the Alien's data or fail if oop is not an Alien."
-	<api>
-	<returnTypeC: #usqInt>
-	| size |
-	(self is: oop KindOfClass: (objectMemory splObj: ClassAlien)) ifFalse:
-		[self primitiveFailFor: PrimErrBadArgument.
-		 ^0].
-	size := self sizeFieldOfAlien: oop.
-	^size abs
-]
-
 { #category : #'stack access' }
 InterpreterPrimitives >> stackIntegerValue: aValue [
 
 	self subclassResponsibility
-]
-
-{ #category : #'primitive support' }
-InterpreterPrimitives >> startOfAlienData: oop [
-	"Answer the start of the Alien's data or fail if oop is not an Alien."
-	<api>
-	<returnTypeC: #'void *'>
-	(self is: oop KindOfClass: (objectMemory splObj: ClassAlien)) ifFalse:
-		[self primitiveFailFor: PrimErrBadArgument.
-		 ^0].
-	^self cCoerceSimple: ((self isDirectAlien: oop)
-						 	ifTrue: [oop + objectMemory baseHeaderSize + objectMemory bytesPerOop]
-							ifFalse: [objectMemory longAt: oop + objectMemory baseHeaderSize + objectMemory bytesPerOop])
-			to: #'void *'
 ]
 
 { #category : #'primitive support' }
