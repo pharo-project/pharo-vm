@@ -159,26 +159,13 @@ sqInt copyBitsFromtoat(sqInt leftX, sqInt rightX, sqInt yValue);
 
 /* InterpreterProxy methodsFor: 'FFI support' */
 sqInt classExternalAddress(void);
-sqInt classExternalData(void);
-sqInt classExternalFunction(void);
-sqInt classExternalLibrary(void);
-sqInt classExternalStructure(void);
 void *ioLoadModuleOfLength(sqInt moduleNameIndex, sqInt moduleNameLength);
 void *ioLoadSymbolOfLengthFromModule(sqInt functionNameIndex, sqInt functionNameLength, void* moduleHandle);
 sqInt isInMemory(sqInt address);
-sqInt classAlien(void); /* Alien FFI */
-sqInt classUnsafeAlien(void); /* Alien FFI */
-sqInt *getStackPointer(void);  /* Newsqueak FFI */
+
 void *startOfAlienData(sqInt);
 usqInt sizeOfAlienData(sqInt);
 sqInt signalNoResume(sqInt);
-#if VM_PROXY_MINOR > 8
-sqInt *getStackPointer(void);  /* Alien FFI */
-sqInt sendInvokeCallbackStackRegistersJmpbuf(sqInt thunkPtrAsInt, sqInt stackPtrAsInt, sqInt regsPtrAsInt, sqInt jmpBufPtrAsInt); /* Alien FFI */
-sqInt reestablishContextPriorToCallback(sqInt callbackContext); /* Alien FFI */
-sqInt sendInvokeCallbackContext(vmccp);
-sqInt returnAsThroughCallbackContext(int, vmccp, sqInt);
-#endif /* VM_PROXY_MINOR > 8 */
 #if VM_PROXY_MINOR > 12 /* Spur */
 sqInt isImmediate(sqInt oop);
 sqInt isCharacterObject(sqInt oop);
@@ -420,10 +407,6 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 
 	/* InterpreterProxy methodsFor: 'FFI support' */
 	VM->classExternalAddress = classExternalAddress;
-	VM->classExternalData = classExternalData;
-	VM->classExternalFunction = classExternalFunction;
-	VM->classExternalLibrary = classExternalLibrary;
-	VM->classExternalStructure = classExternalStructure;
 	VM->ioLoadModuleOfLength = ioLoadModuleOfLength;
 	VM->ioLoadSymbolOfLengthFromModule = ioLoadSymbolOfLengthFromModule;
 	VM->isInMemory = isInMemory;
@@ -472,11 +455,6 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 #if VM_PROXY_MINOR > 8
 	VM->primitiveFailFor    = primitiveFailFor;
 	VM->setInterruptCheckChain = setInterruptCheckChain;
-	VM->classAlien          = classAlien;
-	VM->classUnsafeAlien    = classUnsafeAlien;
-	VM->sendInvokeCallbackStackRegistersJmpbuf = sendInvokeCallbackStackRegistersJmpbuf;
-	VM->reestablishContextPriorToCallback = reestablishContextPriorToCallback;
-	VM->getStackPointer     = (sqInt *(*)(void))getStackPointer;
 	VM->isOopImmutable = isOopImmutable;
 	VM->isOopMutable   = isOopMutable;
 #endif
@@ -513,16 +491,12 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 #endif
 
 #if VM_PROXY_MINOR > 11
-	VM->sendInvokeCallbackContext = sendInvokeCallbackContext;
-	VM->returnAsThroughCallbackContext = returnAsThroughCallbackContext;
 	VM->signedMachineIntegerValueOf = signedMachineIntegerValueOf;
 	VM->stackSignedMachineIntegerValue = stackSignedMachineIntegerValue;
 	VM->positiveMachineIntegerValueOf = positiveMachineIntegerValueOf;
 	VM->stackPositiveMachineIntegerValue = stackPositiveMachineIntegerValue;
 	VM->getInterruptPending = getInterruptPending;
 	VM->cStringOrNullFor = cStringOrNullFor;
-	VM->startOfAlienData = startOfAlienData;
-	VM->sizeOfAlienData = sizeOfAlienData;
 	VM->signalNoResume = signalNoResume;
 #endif
 

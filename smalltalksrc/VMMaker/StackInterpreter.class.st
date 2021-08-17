@@ -12196,17 +12196,7 @@ StackInterpreter >> printOop: oop [
 		[self print: ' nbytes '; printNum: (objectMemory numBytesOf: oop)].
 	self cr.
 	(fmt between: objectMemory firstLongFormat and: objectMemory firstCompiledMethodFormat - 1) ifTrue:
-		["This will answer false if splObj: ClassAlien is nilObject"
-		 (self is: oop KindOfClass: (objectMemory splObj: ClassAlien)) ifTrue:
-			[self print: ' datasize '; printNum: (self sizeOfAlienData: oop).
-			self print: ((self isIndirectAlien: oop)
-							ifTrue: [' indirect @ ']
-							ifFalse:
-								[(self isPointerAlien: oop)
-									ifTrue: [' pointer @ ']
-									ifFalse: [' direct @ ']]).
-			 ^self printHex: (self startOfAlienData: oop) asUnsignedInteger; cr].
-		 (objectMemory isWordsNonImm: oop) ifTrue:
+		[(objectMemory isWordsNonImm: oop) ifTrue:
 			[lastIndex := 64 min: ((objectMemory numBytesOf: oop) / objectMemory wordSize).
 			 lastIndex > 0 ifTrue:
 				[1 to: lastIndex do:
@@ -13470,96 +13460,6 @@ StackInterpreter >> retryPrimitiveOnFailure [
 	^retried
 ]
 
-{ #category : #'callback support' }
-StackInterpreter >> returnAs: returnTypeOop ThroughCallback: vmCallbackContext Context: callbackMethodContext [
-	"callbackMethodContext is an activation of invokeCallback:[stack:registers:jmpbuf:].
-	 Its sender is the VM's state prior to the callback.  Reestablish that state (via longjmp),
-	 and mark callbackMethodContext as dead."
-	<export: true>
-	<var: #vmCallbackContext type: #'VMCallbackContext *'>
-	| calloutMethodContext theFP thePage |
-	<var: #theFP type: #'char *'>
-	<var: #thePage type: #'StackPage *'>
-	self assert: primFailCode = 0.
-	self assert: (objectMemory isIntegerObject: returnTypeOop).
-	self assert: (objectMemory isImmediate: vmCallbackContext asInteger) not.
-	self assert: ((objectMemory addressCouldBeObj: callbackMethodContext)
-				and: [objectMemory isContext: callbackMethodContext]).
-	self assert: (debugCallbackPath := 0) = 0.
-	((objectMemory isIntegerObject: returnTypeOop)
-	 and: [self isLiveContext: callbackMethodContext]) ifFalse:
-		[self assert: (debugCallbackPath := 1) = 1.
-		 ^false].
-	calloutMethodContext := self externalInstVar: SenderIndex ofContext: callbackMethodContext.
-	(self isLiveContext: calloutMethodContext) ifFalse:
-		[self assert: (debugCallbackPath := 2) = 2.
-		 ^false].
-	self assert: (debugCallbackReturns := debugCallbackReturns + 1) > 0.
-	"self assert: debugCallbackReturns < 3802."
-	"We're about to leave this stack page; must save the current frame's instructionPointer."
-	self push: instructionPointer.
-	self externalWriteBackHeadFramePointers.
-	"Mark callbackMethodContext as dead; the common case is that it is the current frame.
-	 We go the extra mile for the debugger."
-	(self isSingleContext: callbackMethodContext)
-		ifTrue:
-			[self assert: (debugCallbackPath := debugCallbackPath bitOr: 4) > 0.
-		 	 self markContextAsDead: callbackMethodContext]
-		ifFalse:
-			[self assert: (debugCallbackPath := debugCallbackPath bitOr: 8) > 0.
-		 	 theFP := self frameOfMarriedContext: callbackMethodContext.
-			 self assert: (self frameReceiver: theFP) = (objectMemory splObj: ClassAlien).
-			 framePointer = theFP "common case"
-				ifTrue:
-					[self assert: (debugCallbackPath := debugCallbackPath bitOr: 16) > 0.
-		 			 (self isBaseFrame: theFP) ifFalse: "calloutMethodContext is immediately below on the same page.  Make it current."
-						[self assert: (debugCallbackPath := debugCallbackPath bitOr: 32) > 0.
-		 				 instructionPointer := (self frameCallerSavedIP: theFP) asUnsignedInteger.
-						 stackPointer := theFP + (self frameStackedReceiverOffset: theFP) + objectMemory wordSize.
-						 framePointer := self frameCallerFP: theFP.
-						 self setMethod: (self frameMethodObject: framePointer).
-						 self restoreCStackStateForCallbackContext: vmCallbackContext.
-						 self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer.
-						 "N.B. siglongjmp is defines as _longjmp on non-win32 platforms.
-						  This matches the use of _setjmp in ia32abicc.c."
-						 self siglong: vmCallbackContext trampoline jmp: (self integerValueOf: returnTypeOop).
-						 ^true].
-					 stackPages freeStackPage: stackPage]
-				ifFalse:
-					[self assert: (debugCallbackPath := debugCallbackPath bitOr: 64) > 0.
-		 			 self externalDivorceFrame: theFP andContext: callbackMethodContext.
-					 self markContextAsDead: callbackMethodContext]].
-	"Make the calloutMethodContext the active frame.  The case where calloutMethodContext
-	 is immediately below callbackMethodContext on the same page is handled above."
-	(self isStillMarriedContext: calloutMethodContext)
-		ifTrue:
-			[self assert: (debugCallbackPath := debugCallbackPath bitOr: 128) > 0.
-		 	 theFP := self frameOfMarriedContext: calloutMethodContext.
-			 thePage := stackPages stackPageFor: theFP.
-			 "findSPOf:on: points to the word beneath the instructionPointer, but
-			  there is no instructionPointer on the top frame of the current page."
-			 self assert: thePage ~= stackPage.
-			 stackPointer := thePage headFP = theFP
-								ifTrue: [thePage headSP]
-								ifFalse: [(self findSPOf: theFP on: thePage) - objectMemory wordSize].
-			 framePointer := theFP.
-			 self assert: stackPointer < framePointer]
-		ifFalse:
-			[self assert: (debugCallbackPath := debugCallbackPath bitOr: 256) > 0.
-		 	 thePage := self makeBaseFrameFor: calloutMethodContext.
-			 self setStackPointersFromPage: thePage].
-	instructionPointer := self popStack.
-	self setMethod: (objectMemory fetchPointer: MethodIndex ofObject: calloutMethodContext).
-	self setStackPageAndLimit: thePage.
-	self restoreCStackStateForCallbackContext: vmCallbackContext.
-	primitiveFunctionPointer := vmCallbackContext savedPrimFunctionPointer.
-	"N.B. siglongjmp is defined as _longjmp on non-win32 platforms.
-	  This matches the use of _setjmp in ia32abicc.c."
-	self siglong: vmCallbackContext trampoline jmp: (self integerValueOf: returnTypeOop).
-	"NOTREACHED"
-	^true
-]
-
 { #category : #'return bytecodes' }
 StackInterpreter >> returnFalse [
 	localReturnValue := objectMemory falseObject.
@@ -13771,84 +13671,6 @@ StackInterpreter >> sendBreakpoint: selector receiver: rcvr [
 	self sendBreak: (objectMemory firstFixedFieldOfMaybeImmediate: selector)
 		point: (objectMemory lengthOfMaybeImmediate: selector)
 		receiver: rcvr
-]
-
-{ #category : #'callback support' }
-StackInterpreter >> sendInvokeCallback: thunkPtr Stack: stackPtr Registers: regsPtr Jmpbuf: jmpBufPtr [
-	"Send the 4 argument callback message invokeCallback:stack:registers:jmpbuf:
-	 to Alien class with the supplied args.  The arguments are raw C addresses
-	 and are converted to integer objects on the way."
-	<export: true>
-	| classTag |
-	classTag := self fetchClassTagOfNonImm: (self splObj: ClassAlien).
-	messageSelector := self splObj: SelectorInvokeCallback.
-	argumentCount := 4.
-	(self lookupInMethodCacheSel: messageSelector classTag: classTag) ifFalse:
-	 	[(self lookupOrdinaryNoMNUEtcInClass: (objectMemory classForClassTag: classTag)) ~= 0 ifTrue:
-			[^false]].
-	((self argumentCountOf: newMethod) = 4
-	and: [primitiveFunctionPointer = 0]) ifFalse:
-		[^false].
-	self push: (self splObj: ClassAlien). "receiver"
-	self push: (self positiveMachineIntegerFor: thunkPtr).
-	self push: (self positiveMachineIntegerFor: stackPtr).
-	self push: (self positiveMachineIntegerFor: regsPtr).
-	self push: (self positiveMachineIntegerFor: jmpBufPtr).
-	self ifAppropriateCompileToNativeCode: newMethod selector: messageSelector.
-	self justActivateNewMethod: false. "either interpreted or machine code"
-	(self isMachineCodeFrame: framePointer) ifFalse:
-		[self maybeFlagMethodAsInterpreted: newMethod].
-	self checkForStackOverflow.
-	self enterSmalltalkExecutiveFromCallback.
-	"not reached"
-	^true
-]
-
-{ #category : #'callback support' }
-StackInterpreter >> sendInvokeCallbackContext: vmCallbackContext [
-	"Send the calllback message to Alien class with the supplied arg(s).  Use either the 1 arg
-	 invokeCallbackContext: or the 4 arg invokeCallback:stack:registers:jmpbuf: message,
-	 depending on what selector is installed in the specialObjectsArray. Note that if invoking the
-	 legacy invokeCallback:stack:registers:jmpbuf: we pass the vmCallbackContext as the jmpbuf
-	 argument (see reestablishContextPriorToCallback:). The arguments are raw C addresses and
-	 are converted to integer objects on the way. sendInvokeCallbackContext: &
-	 returnAs:ThroughCallback:Context: along with ownVM: and disownVM: conspire to save and
-	 restore newMethod, argumentCount and primitiveFunctionPointer around a callback.
-	 The VM depends on argumentCount being correct to cut-back the correct number of
-	 arguments on primitive return.  If a primitive that invokes a callback fails after invoking a
-	 callback (a bad idea, but s**t happens during development) then newMethod is required to
-	 activate the right faling method, and Spur expects primitiveFunctionPointer to be valid, so
-	 asserts will fail misleadingly if not."
-	<export: true>
-	<var: #vmCallbackContext type: #'VMCallbackContext *'>
-	| classTag |
-	vmCallbackContext savedPrimFunctionPointer: primitiveFunctionPointer.
-	classTag := self fetchClassTagOfNonImm: (objectMemory splObj: ClassAlien).
-	messageSelector := self splObj: SelectorInvokeCallback.
-	(self lookupInMethodCacheSel: messageSelector classTag: classTag) ifFalse:
-	 	[(self lookupOrdinaryNoMNUEtcInClass: (objectMemory classForClassTag: classTag)) ~= 0 ifTrue:
-			[^false]].
-	primitiveFunctionPointer ~= 0 ifTrue:
-		[primitiveFunctionPointer := vmCallbackContext savedPrimFunctionPointer.
-		 ^false].
-	self assert: (debugCallbackInvokes := debugCallbackInvokes + 1) > 0.
-	"self assert: debugCallbackInvokes < 3802."
-	self saveCStackStateForCallbackContext: vmCallbackContext.
-	self push: (objectMemory splObj: ClassAlien). "receiver"
-	(self argumentCountOf: newMethod) = 4 ifTrue:
-		[self push: (self positiveMachineIntegerFor: vmCallbackContext thunkp asUnsignedInteger).
-		 self push: (self positiveMachineIntegerFor: vmCallbackContext stackp asUnsignedInteger).
-		 self push: (self positiveMachineIntegerFor: vmCallbackContext intregargsp asUnsignedInteger)].
-	self push: (self positiveMachineIntegerFor: vmCallbackContext asUnsignedInteger).
-	self ifAppropriateCompileToNativeCode: newMethod selector: messageSelector.
-	self justActivateNewMethod: false. "either interpreted or machine code"
-	(self isMachineCodeFrame: framePointer) ifFalse:
-		[self maybeFlagMethodAsInterpreted: newMethod].
-	self checkForStackOverflow.
-	self assert: (self frameReceiver: framePointer) = (objectMemory splObj: ClassAlien).
-	self enterSmalltalkExecutiveFromCallback.
-	"not reached"
-	^true
 ]
 
 { #category : #'send bytecodes' }

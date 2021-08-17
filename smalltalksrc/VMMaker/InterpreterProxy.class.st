@@ -156,11 +156,6 @@ InterpreterProxy >> checkedIntegerValueOf: intOop [
 		ifFalse:[self primitiveFail. ^0].
 ]
 
-{ #category : #'FFI support' }
-InterpreterProxy >> classAlien [
-        ^Smalltalk at: #Alien ifAbsent: [nil]
-]
-
 { #category : #'special classes' }
 InterpreterProxy >> classArray [
 	^Array
@@ -184,26 +179,6 @@ InterpreterProxy >> classCharacter [
 { #category : #'FFI support' }
 InterpreterProxy >> classExternalAddress [
 	^Smalltalk at: #ExternalAddress ifAbsent:[nil]
-]
-
-{ #category : #'FFI support' }
-InterpreterProxy >> classExternalData [
-	^Smalltalk at: #ExternalData ifAbsent:[nil]
-]
-
-{ #category : #'FFI support' }
-InterpreterProxy >> classExternalFunction [
-	^Smalltalk at: #ExternalFunction ifAbsent:[nil]
-]
-
-{ #category : #'FFI support' }
-InterpreterProxy >> classExternalLibrary [
-	^Smalltalk at: #ExternalLibrary ifAbsent:[nil]
-]
-
-{ #category : #'FFI support' }
-InterpreterProxy >> classExternalStructure [
-	^Smalltalk at: #ExternalStructure ifAbsent:[nil]
 ]
 
 { #category : #'special classes' }
@@ -239,11 +214,6 @@ InterpreterProxy >> classSmallInteger [
 { #category : #'special classes' }
 InterpreterProxy >> classString [
 	^ByteString
-]
-
-{ #category : #'FFI support' }
-InterpreterProxy >> classUnsafeAlien [
-        ^Smalltalk at: #UnsafeAlien ifAbsent: [nil]
 ]
 
 { #category : #'instance creation' }
