@@ -305,11 +305,6 @@ typedef struct VirtualMachine {
 #endif
 
 #if VM_PROXY_MINOR > 10
-# if !SPURVM
-#	define DisownVMLockOutFullGC 1
-# endif
-  sqInt	(*disownVM)(sqInt flags);
-  sqInt	(*ownVM)   (sqInt threadIdAndFlags);
   void  (*addHighPriorityTickee)(void (*ticker)(void), unsigned periodms);
   void  (*addSynchronousTickee)(void (*ticker)(void), unsigned periodms, unsigned roundms);
   volatile usqLong (*utcMicroseconds)(void);

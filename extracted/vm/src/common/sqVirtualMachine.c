@@ -254,10 +254,6 @@ extern void (*setInterruptCheckChain(void (*aFunction)(void)))();
 void (*setInterruptCheckChain(void (*aFunction)(void)))() { return 0; }
 #endif
 
-#if VM_PROXY_MINOR > 10
-extern sqInt disownVM(sqInt flags);
-extern sqInt ownVM(sqInt threadIdAndFlags);
-#endif /* VM_PROXY_MINOR > 10 */
 extern sqInt isYoung(sqInt);
 
 /* High-priority and synchronous ticker function support. */
@@ -477,8 +473,6 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 #endif
 
 #if VM_PROXY_MINOR > 10
-	VM->disownVM = disownVM;
-	VM->ownVM = ownVM;
 	VM->addHighPriorityTickee = addHighPriorityTickee;
 	VM->addSynchronousTickee = addSynchronousTickee;
 	VM->utcMicroseconds = ioUTCMicroseconds;
