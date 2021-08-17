@@ -181,7 +181,6 @@ char *cStringOrNullFor(sqInt);
 sqInt statNumGCs(void);
 sqInt stringForCString(const char *);
 sqInt primitiveFailForOSError(sqLong);
-sqInt primitiveFailForFFIExceptionat(usqLong exceptionCode, usqInt pc);
 #endif
 #if VM_PROXY_MINOR > 14 /* SmartSyntaxPlugin validation rewrite support */
 sqInt isBooleanObject(sqInt oop);
@@ -509,7 +508,6 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 	VM->statNumGCs = statNumGCs;
 	VM->stringForCString = stringForCString;
 	VM->primitiveFailForOSError = primitiveFailForOSError;
-	VM->primitiveFailForFFIExceptionat = primitiveFailForFFIExceptionat;
 #endif
 
 #if VM_PROXY_MINOR > 14 /* SmartSyntaxPlugin validation rewrite support */
