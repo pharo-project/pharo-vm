@@ -6328,6 +6328,12 @@ Cogit >> enableCodeZoneWriteDuring: codeGenerationBlock flushingCacheWith: flush
 	flushBlock value	
 ]
 
+{ #category : #'compile abstract instructions' }
+Cogit >> endPC: aPC [
+	<doNotGenerate>
+	endPC := aPC
+]
+
 { #category : #'compiled methods' }
 Cogit >> endPCOf: aMethod [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
