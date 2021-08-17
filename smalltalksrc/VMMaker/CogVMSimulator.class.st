@@ -1407,13 +1407,7 @@ CogVMSimulator >> ioCanWriteImage [
 
 { #category : #'primitive support' }
 CogVMSimulator >> ioExit [
-	self threadManager ifNotNil:
-		[:threadManager|
-		threadManager guiProcess ~= Processor activeProcess ifTrue:
-			[threadManager guiProcess
-				signalException:
-					(Notification new tag: #evaluateQuit; yourself).
-			Processor terminateActive]].
+
 	quitBlock value  "Cause return from #test"
 ]
 
@@ -1578,9 +1572,7 @@ CogVMSimulator >> ioRelinquishProcessorForMicroseconds: microseconds [
 	Processor activeProcess == UIManager default uiProcess ifTrue:
 		[World doOneCycle].
 	microseconds >= 1000
-		ifTrue: [self isThreadedVM ifTrue:
-					[self forceInterruptCheckFromHeartbeat].
-				(Delay forMilliseconds: microseconds + 999 // 1000) wait]
+		ifTrue: [ (Delay forMilliseconds: microseconds + 999 // 1000) wait]
 		ifFalse: [Processor yield].
 	byteCount := byteCount + (microseconds * ByteCountsPerMicrosecond) - 1.
 	self incrementByteCount
@@ -1667,11 +1659,6 @@ CogVMSimulator >> isPrimitiveFunctionPointerAnIndex [
 	^primitiveFunctionPointer isInteger
 	  and: [primitiveFunctionPointer >= 0
 	  and: [primitiveFunctionPointer <= MaxQuickPrimitiveIndex]]
-]
-
-{ #category : #testing }
-CogVMSimulator >> isThreadedVM [
-	^self threadManager notNil
 ]
 
 { #category : #'frame access' }
@@ -2700,9 +2687,7 @@ CogVMSimulator >> rumpCStackSize [
 	 variables for simulation speed.  Alas we don't use an in-memory copy of stackLimit,
 	 because we need some activity to count in order to implement the ioMSecs
 	 routine and the stackLimit check is the ideal one."
-	^self threadManager
-		ifNil: [RumpCStackSize]
-		ifNotNil: [:threadManager| RumpCStackSize * (threadManager maxNumThreads + 1)]
+	^ RumpCStackSize
 ]
 
 { #category : #testing }
@@ -3087,8 +3072,7 @@ CogVMSimulator >> utilitiesMenu: aMenuMorph [
 		add: 'inspect cointerpreter' action: #inspect;
 		add: 'inspect cogit' target: cogit action: #inspect;
 		add: 'inspect method zone' target: cogit methodZone action: #inspect.
-	self isThreadedVM ifTrue:
-		[aMenuMorph add: 'inspect thread manager' target: self threadManager action: #inspect].
+
 	aMenuMorph
 		addLine;
 		add: 'print cog methods' target: cogMethodZone action: #printCogMethods;
@@ -3198,13 +3182,7 @@ CogVMSimulator >> windowColorToUse [
 
 { #category : #'primitive support' }
 CogVMSimulator >> windowIsClosing [
-	self threadManager ifNotNil:
-		[:threadManager|
-		threadManager guiProcess ~= Processor activeProcess ifTrue:
-			[threadManager guiProcess
-				signalException:
-					(Notification new tag: #evaluateQuit; yourself).
-			Processor terminateActive]].
+
 	quitBlock ifNotNil:
 		[:effectiveQuitBlock|
 		quitBlock := nil. "stop recursion on explicit window close."

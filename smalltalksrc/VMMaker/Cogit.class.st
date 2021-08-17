@@ -117,7 +117,6 @@ Class {
 		'objectMemory',
 		'objectRepresentation',
 		'processor',
-		'threadManager',
 		'methodZone',
 		'methodZoneBase',
 		'codeBase',
@@ -8754,8 +8753,7 @@ Cogit >> initializeProcessor [
 	self initializeProcessorStack: coInterpreter rumpCStackAddress.
 	self setCFramePointer: processor fp.
 	self setCStackPointer: processor sp.
-	threadManager ifNotNil:
-		[processor := MultiProcessor for: processor coInterpreter: coInterpreter]
+
 ]
 
 { #category : #initialization }
@@ -11622,7 +11620,6 @@ Cogit >> setInterpreter: aCoInterpreter [
 	<doNotGenerate>
 	coInterpreter := aCoInterpreter.
 	objectMemory := aCoInterpreter objectMemory.
-	threadManager := aCoInterpreter threadManager. "N.B. may be nil"
 	methodZone := self class methodZoneClass new.
 	objectRepresentation := objectMemory objectRepresentationClass
 								forCogit: self methodZone: methodZone.
@@ -11702,15 +11699,6 @@ Cogit >> setStackAlignment: stackAlignment expectedSPOffset: spOffset expectedFP
 	expectedFPAlignment := fpOffset \\ stackAlignment.
 	cStackAlignment := stackAlignment
 
-]
-
-{ #category : #initialization }
-Cogit >> setThreadManager: aCogThreadManager [
-	"Initialization of the code generator in the simulator.
-	 Used in the separate VM since this VM does not do a second initialization of the interpreter,
-	 only a second initialization of the objectMemory."
-	<doNotGenerate>
-	threadManager := aCogThreadManager "N.B. may be nil"
 ]
 
 { #category : #'simulation only' }

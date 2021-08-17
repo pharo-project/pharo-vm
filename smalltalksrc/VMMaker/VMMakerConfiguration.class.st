@@ -275,7 +275,7 @@ VMMakerConfiguration class >> sourceTree [
 { #category : #accessing }
 VMMakerConfiguration class >> unusedConstantNames [
 	"Don't generate any defines for the externally defined constants,
-	 STACKVM, COGVM, COGMTVM et al, unless they're actually used."
+	 STACKVM, COGVM et al, unless they're actually used."
 	^ (VMClass class>>#initializeMiscConstants) literals
 		select: [ :lit | lit isVariableBinding and: [lit key isString]]
 		thenCollect: [ :lit | lit key]
