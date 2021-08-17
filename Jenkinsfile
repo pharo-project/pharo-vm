@@ -7,7 +7,11 @@ def isWindows(){
 }
 
 def is32Bits(platform){
-	return platform == 'Linux-armv7l'
+	return platform == 'Linux-armv7l' || platform == 'Linux-i686'
+}
+
+def isLinux(platform){
+	return platform.startsWith('Linux')
 }
 
 def shell(params){
@@ -210,15 +214,16 @@ def runUnitTests(platform){
 def runTests(platform, configuration, packages, withWorker, additionalParameters = ""){
   cleanWs()
 
-  def stageName = withWorker ? "Tests-${platform}-${configuration}-worker" : "Tests-${platform}-${configuration}"
-  def hasWorker = withWorker ? "--worker" : ""
+	def stageName = withWorker ? "Tests-${platform}-${configuration}-worker" : "Tests-${platform}-${configuration}"
+	def hasWorker = withWorker ? "--worker" : ""
+	def wordSize = is32Bits(platform) ? "32" : "64"
 
 	stage(stageName){
 		unstash name: "packages-${platform}-${configuration}"
 		shell "mkdir runTests"
 		dir("runTests"){
 			try{
-				shell "wget -O - get.pharo.org/64/90 | bash "
+				shell "wget -O - get.pharo.org/${wordSize}/90 | bash "
 				shell "echo 90 > pharo.version"
           
 				if(isWindows()){
@@ -231,7 +236,7 @@ def runTests(platform, configuration, packages, withWorker, additionalParameters
 							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'"
 						}
 
-						if(platform == 'Linux-x86_64' || platform == 'Linux-aarch64' || platform == 'Linux-armv7l'){
+						if(isLinux(platform)){
 							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'" 
 						}
 				}
