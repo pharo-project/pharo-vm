@@ -112,7 +112,7 @@ def runBuild(platformName, configuration, headless = true){
 
 	//Adding cross-compiling options
 	if(platformName == "Linux-i686"){
-		additionalParameters += " -DCMAKE_TOOLCHAIN_FILE=./repository/cmake/toolchains/i686-Linux-ubuntu-16.04.toolchain"
+		additionalParameters += " -DCMAKE_TOOLCHAIN_FILE=../repository/cmake/toolchains/i686-Linux-ubuntu-16.04.toolchain"
 	}
 
 	stage("Checkout-${platform}"){
