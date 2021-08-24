@@ -3134,6 +3134,11 @@ InterpreterPrimitives >> primitiveProfileStart [
 { #category : #'system control primitives' }
 InterpreterPrimitives >> primitiveQuit [
 
+	self isLogDebug 
+		ifTrue: [ 
+			self logDebug: 'Quit requested by the image'.
+			self printAllStacks ].
+		
 	self ioExitWithErrorCode: (argumentCount = 1 ifTrue: [objectMemory integerValueOf: self stackTop] ifFalse: [0])
 ]
 

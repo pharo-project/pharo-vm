@@ -14529,8 +14529,7 @@ StackInterpreter >> slowPrimitiveResponse [
 { #category : #'image save/restore' }
 StackInterpreter >> snapshot: embedded [ 
 	"update state of active context"
-	| activeContext activeProc rcvr setMacType stackIndex |
-	<var: #setMacType type: #'void *'>
+	| activeContext activeProc rcvr stackIndex |
 
 	"For now the stack munging below doesn't deal with more than one argument.
 	 It can, and should."
@@ -14549,10 +14548,14 @@ StackInterpreter >> snapshot: embedded [
 		withValue: activeContext.
 
 	tempOop := activeContext.
+
+	self logDebug: 'Garbage Collect for Snapshot'.
+
 	objectMemory garbageCollectForSnapshot.
 	"Nothing moves from here on so it is safe to grab the activeContext again."
 	activeContext := tempOop.
 	tempOop := 0.
+
 
 	self successful ifTrue:
 		["Without contexts or stacks simulate
@@ -14565,13 +14568,8 @@ StackInterpreter >> snapshot: embedded [
 			storePointerUnchecked: stackIndex + CtxtTempFrameStart - 1
 			ofObject: activeContext
 			withValue: objectMemory trueObject.
-		"now attempt to write the snapshot file"
+		"now attempt to write the snapshot file"		
 		self writeImageFileIO.
-		(self successful and: [embedded not]) ifTrue:
-			["set Mac file type and creator; this is a noop on other platforms"
-			setMacType := self ioLoadFunction: 'setMacFileTypeAndCreator' From: 'FilePlugin'.
-			setMacType = 0 ifFalse:
-				[self cCode: '((sqInt (*)(char *, char *, char *))setMacType)(imageName, "STim", "FAST")']].
 		"Without contexts or stacks simulate
 			self pop: 1"
 		objectMemory
@@ -16106,17 +16104,12 @@ StackInterpreter >> writeImageFileIO [
 	<var: #imageName declareC: 'extern char imageName[]'>
 
 	self cCode: [] inSmalltalk: [imageName := 'sooth compiler'. ^self writeImageFileIOSimulation].
-
-	"If the security plugin can be loaded, use it to check for write permission.
-	 If not, assume it's ok"
-	sCWIfn := self ioLoadFunction: 'secCanWriteImage' From: 'SecurityPlugin'.
-	sCWIfn ~= 0 ifTrue:
-		[okToWrite := self cCode: '((sqInt (*)(void))sCWIfn)()'.
-		 okToWrite ifFalse:[^self primitiveFail]].
 	
 	"local constants"
 	headerStart := 0.  
 	headerSize := objectMemory wordSize = 4 ifTrue: [64] ifFalse: [128].  "header size in bytes; do not change!"
+
+	self logDebug: 'Writing snapshot file %s' _: imageName.
 
 	f := self sqImageFile: imageName Open: 'wb'.
 	f = nil ifTrue: "could not open the image file for writing"
@@ -16171,7 +16164,9 @@ StackInterpreter >> writeImageFileIO [
 								File: imageBytes
 								Write: f].
 	self success: bytesWritten = imageBytes.
-	self sqImageFileClose: f
+	self sqImageFileClose: f.
+	
+	self logDebug: 'Snapshot file %s done' _: imageName.
 ]
 
 { #category : #'image save/restore' }

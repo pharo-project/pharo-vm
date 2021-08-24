@@ -78,7 +78,9 @@ static VMErrorCode processEdenSizeOption(const char *argument, VMParameters * pa
 static const VMParameterSpec vm_parameters_spec[] =
 {
   {.name = "headless", .hasArgument = false, .function = NULL},
+#ifdef PHARO_VM_IN_WORKER_THREAD
   {.name = "worker", .hasArgument = false, .function = NULL},
+#endif
   {.name = "interactive", .hasArgument = false, .function = NULL}, // For pharo-ui scripts.
   {.name = "vm-display-null", .hasArgument = false, .function = NULL}, // For Smalltalk CI.
   {.name = "help", .hasArgument = false, .function = processHelpOption},
@@ -403,10 +405,12 @@ vm_printUsageTo(FILE *out)
 #else
 "  --headless                   Run in headless (no window) mode (default: true)\n"
 #endif
+#ifdef PHARO_VM_IN_WORKER_THREAD
 "  --worker                     Run in worker thread (default: false)\n"
-"  --logLevel=<level>     	    Sets the log level (ERROR, WARN, INFO or DEBUG)\n"
+#endif
+"  --logLevel=<level>           Sets the log level number (ERROR(1), WARN(2), INFO(3), DEBUG(4), TRACE(5))\n"
 "  --version                    Print version information, then exit\n"
-"  --maxFramesToLog=<cant>		Sets the max numbers of Smalltalk frames to log\n"
+"  --maxFramesToLog=<cant>      Sets the max numbers of Smalltalk frames to log\n"
 "  --maxOldSpaceSize=<bytes>    Sets the max size of the old space. As the other\n"
 "                               spaces are fixed (or calculated from this) with\n"
 "                               this parameter is possible to set the total size.\n"
