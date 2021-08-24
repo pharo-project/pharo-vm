@@ -59,7 +59,7 @@ We recommend to use out-of-source building. So, we are building in a different d
 To do so, we give both parameter for saying where the source is (-S) and where to build (-B).
 
 ```bash
-$ git clone git@github.com <mailto:git@github.com>:pharo-project/opensmalltalk-vm.git
+$ git clone git@github.com:pharo-project/opensmalltalk-vm.git
 $ cmake -S opensmalltalk-vm -B build
 $ cd build
 $ make install
@@ -79,6 +79,16 @@ The build in Windows, uses Cygwin. This tool should be installed, and the follow
 - git
 - libtool
 
+To automate the Cygwin installation process there is `scripts\installCygwin.ps1` which downloads and installs a chosen version of cygwin and mingw for a given architecture. For example the following installs the latest `Cygwin (64 bit)` and `mingw64-x86_64-clang` compiler:
+```
+.\scripts\installCygwin.ps1 setup-x86_64.exe x86_64
+```
+Do not forget to set the execution policy to `Unrestricted` (from the Admin PowerShell) in order to being able run the `ps1` script:
+```
+Set-ExecutionPolicy -ExecutionPolicy Unrestricted
+````
+
+Bulding the VM:
 ```bash
 $ cmake .
 $ make install

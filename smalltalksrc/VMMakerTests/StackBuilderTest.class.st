@@ -35,7 +35,7 @@ Class {
 { #category : #offset }
 StackBuilderTest >> addFullFrame [
 	| frame |
-	method := methodBuilder newMethod numberOfTemporaries: 2; numberOfArguments: 2; buildMethod.
+	method := methodBuilder newMethod numberOfTemporaries: 2; numberOfArguments: 2; build.
 
 	frame := stackBuilder addNewFrame.
 	instructionPointer := method + 17.
@@ -165,7 +165,7 @@ StackBuilderTest >> testFrameHasMoreArgumentsThanMethodShouldFail [
 	| frame |
 	stackBuilder reset.
 
-	method := methodBuilder newMethod buildMethod.
+	method := methodBuilder newMethod build.
 	frame := stackBuilder addNewFrame.
 	frame method: method;
 		argumentSize: 1.
@@ -179,7 +179,7 @@ StackBuilderTest >> testFrameHasMoreTemporariesThanMethodShouldFail [
 	| frame |
 	stackBuilder reset.
 	
-	method := methodBuilder newMethod buildMethod.
+	method := methodBuilder newMethod build.
 	frame := stackBuilder addNewFrame.
 	frame method: method;
 		temps: { memory nilObject }.
@@ -206,7 +206,7 @@ StackBuilderTest >> testHeadFramePointerCallerIsNotBaseFramePointer [
 { #category : #'test-setFromMethod' }
 StackBuilderTest >> testInstructionPointerIsSetBeforeFirstBytecodeOfLastMethodPushed [
 
-	method := methodBuilder newMethod buildMethod.
+	method := methodBuilder newMethod build.
 	stackBuilder addNewFrame method: method. 
 	stackBuilder buildStack.
 	
@@ -221,7 +221,7 @@ StackBuilderTest >> testMethodHasMoreArgumentsThanFrameShouldUpdateFrame [
 	stackBuilder reset.
 
 	argNum := 1.
-	method := methodBuilder newMethod ; numberOfArguments: argNum ; buildMethod.
+	method := methodBuilder newMethod ; numberOfArguments: argNum ; build.
 	frame := stackBuilder addNewFrame.
 	frame method: method.
 
@@ -237,7 +237,7 @@ StackBuilderTest >> testMethodHasMoreTemporariesThanFrameShouldUpdateFrame [
 	stackBuilder reset.
 
 	tempNum := 1.
-	method := methodBuilder newMethod ; numberOfTemporaries: tempNum ; buildMethod.
+	method := methodBuilder newMethod ; numberOfTemporaries: tempNum ; build.
 	frame := stackBuilder addNewFrame.
 	frame method: method.
 

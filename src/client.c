@@ -33,7 +33,7 @@ void mtfsfi(unsigned long long fpscr)
 static int loadPharoImage(const char* fileName);
 static void* runVMThread(void* p);
 static int runOnMainThread(VMParameters *parameters);
-#if PHARO_VM_IN_WORKER_THREAD
+#ifdef PHARO_VM_IN_WORKER_THREAD
 static int runOnWorkerThread(VMParameters *parameters);
 #endif
 
@@ -58,9 +58,10 @@ EXPORT(int) vm_init(VMParameters* parameters)
 
     ioInitTime();
 
-#if PHARO_VM_IN_WORKER_THREAD
+#ifdef PHARO_VM_IN_WORKER_THREAD
     ioVMThread = ioCurrentOSThread();
 #endif
+
 	ioInitExternalSemaphores();
 	setMaxStacksToPrint(parameters->maxStackFramesToPrint);
 	setMaxOldSpaceSize(parameters->maxOldSpaceSize);
@@ -142,7 +143,7 @@ vm_main_with_parameters(VMParameters *parameters)
 	LOG_SIZEOF(float);
 	LOG_SIZEOF(double);
 
-#if PHARO_VM_IN_WORKER_THREAD
+#ifdef PHARO_VM_IN_WORKER_THREAD
     vmRunOnWorkerThread = vm_parameter_vector_has_element(&parameters->vmParameters, "--worker");
 
     return vmRunOnWorkerThread
@@ -224,7 +225,7 @@ loadPharoImage(const char* fileName)
     imageSize = sqImageFilePosition(imageFile);
     sqImageFileSeek(imageFile, 0);
 
-    readImageFromFileHeapSizeStartingAt(imageFile, 0, 0);
+    readImageFromFileStartingAt(imageFile, 0);
     sqImageFileClose(imageFile);
 
     char* fullImageName = alloca(FILENAME_MAX);
@@ -261,7 +262,7 @@ runOnMainThread(VMParameters *parameters)
     return 0;
 }
 
-#if PHARO_VM_IN_WORKER_THREAD
+#ifdef PHARO_VM_IN_WORKER_THREAD
 static int
 runOnWorkerThread(VMParameters *parameters)
 {

@@ -57,8 +57,8 @@ Class {
 	#pools : [
 		'CogMethodConstants',
 		'VMBasicConstants',
-		'VMObjectIndices',
-		'VMSqueakClassIndices'
+		'VMClassIndices',
+		'VMObjectIndices'
 	],
 	#category : #'VMMaker-Support'
 }
@@ -1151,13 +1151,6 @@ CurrentImageCoInterpreterFacade >> startPCOfMethodHeader: headerIntegerOop [
 	 but only if the CompiledMethod header formats match"
 ]
 
-{ #category : #accessing }
-CurrentImageCoInterpreterFacade >> startPCOrNilOfLiteral: literalOop in: methodOop [
-	^(literalOop isClosure
-	   and: [literalOop method == (objectMap keyAtValue: methodOop)]) ifTrue:
-		[literalOop startpc]
-]
-
 { #category : #testing }
 CurrentImageCoInterpreterFacade >> storePointer: index ofObject: objOop withValue: valueOop [ 
 	(self objectForOop: objOop)
@@ -1182,13 +1175,6 @@ CurrentImageCoInterpreterFacade >> stringOf: anOop [
 	^((thing isLiteral and: [thing isSymbol not])
 		ifTrue: [thing storeString]
 		ifFalse: [thing asString]) contractTo: 64
-]
-
-{ #category : #testing }
-CurrentImageCoInterpreterFacade >> tempCountForBlockStartingAt: startpc in: methodOop [
-	^BlockLocalTempCounter
-		tempCountForBlockStartingAt: startpc
-		in: (self objectForOop: methodOop)
 ]
 
 { #category : #accessing }

@@ -437,7 +437,6 @@ CoInterpreter class >> needsCogit [
 CoInterpreter class >> preGenerationHook: aCCodeGenerator [
 	"Override to undo the hiding of primitiveClosureValueNoContextSwitch"
 	super preGenerationHook: aCCodeGenerator.
-	(aCCodeGenerator methodNamed: #primitiveClosureValueNoContextSwitch) static: false.
 
 	"horrible hack to declare primErrorCode and argumentCount as bytes in the same word, and
 	 hence save an instruction by initializing two birds^H^H^H^H^Hbytes with one word write.
@@ -544,97 +543,6 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 		 self error: 'should not be reached'].
 	instructionPointer := cogMethod asInteger + cogMethod stackCheckOffset.
 	switched := self handleStackOverflowOrEventAllowContextSwitch: (self canContextSwitchIfActivating: newMethod header: methodHeader).
-	self returnToExecutive: inInterpreter postContextSwitch: switched
-]
-
-{ #category : #'control primitives' }
-CoInterpreter >> activateNewClosure: blockClosure outer: outerContext method: theMethod  numArgs: numArgs mayContextSwitch: mayContextSwitch [
-	"Similar to activateNewMethod but for Closure and newMethod.
-	 Override to handle the various interpreter/machine code transitions
-	 and to create an appropriate frame layout."
-	| numCopied methodHeader inInterpreter closureIP switched |
-	<inline: true>
-	self assert: (objectMemory isContext: outerContext).
-	numCopied := self copiedValueCountOfClosure: blockClosure.
-	self assert: theMethod = (objectMemory fetchPointer: MethodIndex ofObject: outerContext).
-	self assert: (objectMemory isOopCompiledMethod: theMethod).
-	methodHeader := self rawHeaderOf: theMethod.
-	(self isCogMethodReference: methodHeader) ifTrue:
-		[^self executeCogBlock: (self cogMethodOf: theMethod)
-			closure: blockClosure
-			mayContextSwitch: mayContextSwitch].
-	"How do we know when to compile a block method?
-	 One simple criterion is to check if the block is running within its inner context,
-	 i.e. if the outerContext is married.
-	 Even simpler is to remember the previous block entered via the interpreter and
-	 compile if this is the same one.  But we can thrash trying to compile an uncoggable
-	 method unless we try and remember which ones can't be cogged.  So also record
-	 the last block method we failed to compile and avoid recompiling it."
-	(self methodWithHeaderShouldBeCogged: methodHeader)
-		ifTrue:
-			[(instructionPointer < objectMemory startOfMemory "If from machine code (via value primitive) attempt jitting"
-			  or: [theMethod = lastCoggableInterpretedBlockMethod]) "If from interpreter and repeat block, attempt jitting"
-				ifTrue:
-					[theMethod ~= lastUncoggableInterpretedBlockMethod ifTrue:
-						[cogit cog: theMethod selector: objectMemory nilObject.
-						 (self methodHasCogMethod: theMethod) ifTrue:
-							[^self executeCogBlock: (self cogMethodOf: theMethod)
-								closure: blockClosure
-								mayContextSwitch: mayContextSwitch].
-						 cogCompiledCodeCompactionCalledFor ifFalse:
-							[lastUncoggableInterpretedBlockMethod := theMethod]]]
-				ifFalse:
-					[lastCoggableInterpretedBlockMethod := theMethod]]
-		ifFalse:
-			[self maybeFlagMethodAsInterpreted: theMethod].
-
-	self assert: (self methodHasCogMethod: theMethod) not.
-	"Because this is an uncogged method we need to continue via the interpreter.
-	 We could have been reached either from the interpreter, in which case we
-	 should simply return, or from a machine code frame or from a compiled
-	 primitive.  In these latter two cases we must longjmp back to the interpreter.
-	 The instructionPointer tells us which path we took.
-	 If the sender was an interpreter frame but called through a (failing) primitive
-	 then make sure we restore the saved instruction pointer and avoid pushing
-	 ceReturnToInterpreterPC which is only valid between an interpreter caller
-	 frame and a machine code callee frame."
-	(inInterpreter := instructionPointer >= objectMemory startOfMemory) ifFalse:
-		[instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
-			[instructionPointer := self iframeSavedIP: framePointer]].
-	self push: instructionPointer.
-	self push: framePointer.
-	framePointer := stackPointer.
-	self push: theMethod.
-	self push: objectMemory nilObject. "FxThisContext field"
-	self push: (self encodeFrameFieldHasContext: false isBlock: true numArgs: numArgs).
-	self push: 0. "FoxIFSavedIP"
-	"Because inst var access is not checked, we must follow the receiver in Spur to ensure it is valid."
-	self push: (objectMemory followField: ReceiverIndex ofObject: outerContext).
-
-	"Copy the copied values..."
-	0 to: numCopied - 1 do:
-		[:i|
-		self push: (objectMemory
-					fetchPointer: i + ClosureFirstCopiedValueIndex
-					ofObject: blockClosure)].
-
-	self assert: (self frameIsBlockActivation: framePointer).
-	self assert: (self frameHasContext: framePointer) not.
-
-	"The initial instructions in the block nil-out remaining temps."
-
-	"the instruction pointer is a pointer variable equal to 
-	method oop + ip + BaseHeaderSize 
-	-1 for 0-based addressing of fetchByte 
-	-1 because it gets incremented BEFORE fetching currentByte"
-	closureIP := self quickFetchInteger: ClosureStartPCIndex ofObject: blockClosure.
-	instructionPointer := theMethod + closureIP + objectMemory baseHeaderSize - 2.
-	self setMethod: theMethod methodHeader: methodHeader.
-
-	"Now check for stack overflow or an event (interrupt, must scavenge, etc)"
-	switched := false.
-	stackPointer < stackLimit ifTrue:
-		[switched := self handleStackOverflowOrEventAllowContextSwitch: mayContextSwitch].
 	self returnToExecutive: inInterpreter postContextSwitch: switched
 ]
 
@@ -788,6 +696,62 @@ CoInterpreter >> addNewMethodToCache: classObj [
 		[primitiveFunctionPointer := #primitiveInvokeObjectAsMethod.
 		^self].
 	super addNewMethodToCache: classObj
+]
+
+{ #category : #'image save/restore' }
+CoInterpreter >> allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: desiredPositionOfHeap [ 
+
+	<var: #f type: #sqImageFile>
+	<var: #header type: #'SpurImageHeaderStruct'>
+
+	"We set the heapBase in the interpreter. It is only used by the CoInterpreter"
+	heapBase := super allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: desiredPositionOfHeap.
+	^ heapBase
+	
+]
+
+{ #category : #allocating }
+CoInterpreter >> allocateJITMemory: desiredSize _: desiredPosition [ 
+
+	<doNotGenerate>
+	^ memoryManager allocate: desiredSize desiredPosition: desiredPosition
+]
+
+{ #category : #'image save/restore' }
+CoInterpreter >> allocateMemoryForImage: f withHeader: header [
+
+	<var: #f type: #sqImageFile>
+	<var: #header type: #'SpurImageHeaderStruct'>
+
+	| cogCodeBase desiredPositionOfHeap |
+
+	cogCodeSize := desiredCogCodeSize ~= 0
+		               ifTrue: [ desiredCogCodeSize ]
+		               ifFalse: [ 
+			               header hdrCogCodeSize = 0
+				               ifTrue: [ cogit defaultCogCodeSize ]
+				               ifFalse: [ header hdrCogCodeSize ] ].
+			
+	cogCodeSize := cogCodeSize min: cogit maxCogCodeSize.
+
+	cogCodeBase := self
+		               allocateJITMemory: cogCodeSize
+		               desiredPosition: header oldBaseAddr - cogCodeSize.
+
+	"We want to avoid the swizzle in case the allocation of the code space is much below in the address space than the requested one"
+	desiredPositionOfHeap := cogCodeBase + cogCodeSize max: header oldBaseAddr.
+
+	self allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: desiredPositionOfHeap.
+	
+	self loadImageFromFile: f withHeader: header.
+	
+	self beforeCodeZoneInitialization.
+
+	cogit
+		initializeCodeZoneFrom: cogCodeBase
+		upTo: cogCodeBase + cogCodeSize.
+
+
 ]
 
 { #category : #'cog jit support' }
@@ -974,19 +938,13 @@ CoInterpreter >> attemptToSwitchToMachineCode: bcpc [
 	<inline: false>
 	<var: #cogMethod type: #'CogMethod *'>
 	(self methodHasCogMethod: method)
-		ifFalse: 
-			[SistaV1BytecodeSet
-				ifTrue: 
-					[ ((self iframeIsBlockActivation: framePointer) 
-					   and: [(self isVanillaBlockClosure: (cls := self frameStackedReceiver: framePointer numArgs: (self frameNumArgs: framePointer))) not ])
-						ifTrue: 
-							["Compiled block / full closure"
-							 cogit cogFullBlockMethod: method numCopied: (objectMemory numPointerSlotsOf: cls) - FullClosureFirstCopiedValueIndex]
-						ifFalse: 
-							["Compiled method"
-							cogit cog: method selector: objectMemory nilObject] ]
-				ifFalse: 
-					[cogit cog: method selector: objectMemory nilObject] ].
+		ifFalse: [
+			(self iframeIsBlockActivation: framePointer)
+				ifTrue: [ "Compiled block / full closure"
+					cls := self frameStackedReceiver: framePointer numArgs: (self frameNumArgs: framePointer).
+					cogit cogFullBlockMethod: method numCopied: (objectMemory numPointerSlotsOf: cls) - FullClosureFirstCopiedValueIndex]
+				ifFalse: [ "Compiled method"
+					cogit cog: method selector: objectMemory nilObject ] ].
 	(self methodHasCogMethod: method) ifTrue:
 		[cogMethod := self cogMethodOf: method.
 		 pc := self convertToMachineCodeFrame: cogMethod bcpc: bcpc.
@@ -1066,6 +1024,11 @@ CoInterpreter >> baseFrameReturn [
 	self setMethod: (self iframeMethod: localFP).
 	self internalStackTopPut: localReturnValue.
 	^self fetchNextBytecode
+]
+
+{ #category : #hooks }
+CoInterpreter >> beforeCodeZoneInitialization [
+	"Hook point for the simulator"
 ]
 
 { #category : #'frame access' }
@@ -1619,7 +1582,7 @@ CoInterpreter >> ceNonLocalReturn: returnValue [
 	home := nil. "avoid compiler warning"
 	"Walk the closure's lexical chain to find the context or frame to return from (home)."
 	[closure ~= objectMemory nilObject] whileTrue:
-		[home := objectMemory followField: ClosureOuterContextIndex ofObject: closure.
+		[home := objectMemory followField: FullClosureOuterContextIndex ofObject: closure.
 		 (objectMemory isContext: home) ifFalse:
 			["error: can't find home on chain; cannot return"
 			 ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
@@ -2490,7 +2453,7 @@ CoInterpreter >> commonSendOrdinary [
 	"Assume: messageSelector and argumentCount have been set, and that 
 	the receiver and arguments have been pushed onto the stack,"
 	"Note: This method is inlined into the interpreter dispatch loop."
-	<sharedCodeNamed: 'commonSendOrdinary' inCase: #singleExtendedSendBytecode>
+	<sharedCodeNamed: 'commonSendOrdinary' inCase: #extSendBytecode>
 	self sendBreakpoint: messageSelector receiver: (self internalStackValue: argumentCount).
 	cogit recordSendTrace ifTrue:
 		[self recordTrace: (objectMemory classForClassTag: lkupClassTag)
@@ -2599,22 +2562,15 @@ CoInterpreter >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
 					put: cogit ceReturnToInterpreterPC]].
 	"Compute the cog method field"
 	(self iframeIsBlockActivation: framePointer)
-		ifTrue:
-			[closure := self pushedReceiverOrClosureOfFrame: framePointer.
-			 (self isVanillaBlockClosure: closure)
-				ifTrue:
-					[startBcpc := self startPCOfClosure: closure.
-					 cogMethod := cogit
-										findMethodForStartBcpc: startBcpc
-										inHomeMethod: cogHomeMethod]
-				ifFalse:
-					[startBcpc := self startPCOfMethodHeader: cogHomeMethod methodHeader.
-					 cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogBlockMethod *'].
-			 methodField := cogMethod asInteger + MFMethodFlagIsBlockFlag]
-		ifFalse:
-			[startBcpc := self startPCOfMethodHeader: cogHomeMethod methodHeader.
-			 cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogBlockMethod *'.
-			 methodField := cogHomeMethod asInteger].
+		ifTrue: [
+			closure := self pushedReceiverOrClosureOfFrame: framePointer.
+			startBcpc := self startPCOfMethodHeader: cogHomeMethod methodHeader.
+			cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogBlockMethod *'.
+			methodField := cogMethod asInteger + MFMethodFlagIsBlockFlag]
+		ifFalse: [
+			startBcpc := self startPCOfMethodHeader: cogHomeMethod methodHeader.
+			cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogBlockMethod *'.
+			methodField := cogHomeMethod asInteger ].
 	"compute the pc before converting the frame to help with debugging."
 	pc := cogit mcPCForBackwardBranch: bcpc startBcpc: startBcpc in: cogMethod.
 	self assert: pc > (cogMethod asUnsignedInteger + cogit noCheckEntryOffset).
@@ -2851,7 +2807,7 @@ CoInterpreter >> ensureMethodIsCogged: methodObj maybeClosure: maybeClosure [
 	(self isCogMethodReference: rawHeader) ifTrue:
 		[^self cCoerceSimple: rawHeader to: #'CogMethod *'].
 	yetToCompact := true.
-	[(maybeClosure ~= objectMemory nilObject and: [(self isVanillaBlockClosure: maybeClosure) not])
+	[(maybeClosure ~= objectMemory nilObject)
 		ifTrue: [cogMethod := cogit cogFullBlockMethod: methodObj numCopied: (self copiedValueCountOfFullClosure: maybeClosure)]
 		ifFalse: [cogMethod := cogit cog: methodObj selector: objectMemory nilObject].
 	 cogMethod == nil
@@ -2913,28 +2869,6 @@ CoInterpreter >> error: aString [
 	<api: 'extern void error(char *s)'>
 	<doNotGenerate>
 	super error: aString
-]
-
-{ #category : #enilopmarts }
-CoInterpreter >> executeCogBlock: cogMethod closure: closure mayContextSwitch: mayContextSwitch [
-	"Execute a block within a CogMethod.  The caller has already pushed the block and
-	 any arguments and the return pc.  First push the return-to-interpreter trampoline,
-	 then the entry-point and finally the receiver.  We /do not/ push any register
-	 argument(s) to reduce complications in block dispatch; effectively there are no
-	 register arguments to blocks. Instead, the machine code block value primitives
-	 push the reg args if necessary before dispatching to the block.  Hence here, only
-	 the receiver gets pushed. See genPrimitiveClosureValue"
-	<var: #cogMethod type: #'CogMethod *'>
-	cogit assertCStackWellAligned.
-	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer.
-	self ensurePushedInstructionPointer.
-	self push: cogMethod asInteger
-			+ (mayContextSwitch
-				ifTrue: [cogMethod blockEntryOffset]
-				ifFalse: [cogMethod blockEntryOffset - cogit noContextSwitchBlockEntryOffset]).
-	self push: closure.
-	cogit ceCallCogCodePopReceiverReg
-	"NOTREACHED"
 ]
 
 { #category : #enilopmarts }
@@ -3931,13 +3865,6 @@ CoInterpreter >> initStackPagesAndInterpret [
 	^nil
 ]
 
-{ #category : #initialization }
-CoInterpreter >> initializeCodeGenerator [
-	cogit
-		initializeCodeZoneFrom: (self cCode: [objectMemory memory] inSmalltalk: [objectMemory cogCodeBase])
-		upTo: (self cCode: [objectMemory memory] inSmalltalk: [objectMemory cogCodeBase]) + cogCodeSize
-]
-
 { #category : #'frame access' }
 CoInterpreter >> instVar: offset ofContext: aContext [
 	"Fetch an instance avriable from a maybe married context.
@@ -4516,31 +4443,15 @@ CoInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 			 cogMethod := self ensureMethodIsCogged: theMethod maybeClosure: maybeClosure.
 			 theMethod := cogMethod asInteger.
 			 maybeClosure ~= objectMemory nilObject
-				ifTrue:
-					[(self isVanillaBlockClosure: maybeClosure)
-						ifTrue:
-							["If the pc is the special HasBeenReturnedFromMCPC pc set the pc
-							  appropriately so that the frame stays in the cannotReturn: state."
-							 theIP = HasBeenReturnedFromMCPC
-								ifTrue:
-									[theMethod := (cogit findMethodForStartBcpc: (self startPCOfClosure: maybeClosure)
-														inHomeMethod: (self cCoerceSimple: theMethod
-																			to: #'CogMethod *')) asInteger.
-									 theMethod = 0 ifTrue:
-										[self error: 'cannot find machine code block matching closure''s startpc'].
-									 theIP := cogit ceCannotResumePC]
-								ifFalse:
-									[self assert: (theIP signedBitShift: -16) < -1. "See contextInstructionPointer:frame:"
-									 theMethod := theMethod - ((theIP signedBitShift: -16) * cogit blockAlignment).
-									 theIP := theMethod - theIP signedIntFromShort]]
-						ifFalse:
-							[self assert: (theIP signedBitShift: -16) >= -1.
-							 "If the pc is the special HasBeenReturnedFromMCPC pc set the pc
-							  appropriately so that the frame stays in the cannotReturn: state."
-							 theIP := theIP = HasBeenReturnedFromMCPC
-										ifTrue: [cogit ceCannotResumePC]
-										ifFalse: [theMethod asInteger - theIP]].
-					 stackPages
+				ifTrue: [
+					
+					self assert: (theIP signedBitShift: -16) >= -1.
+					"If the pc is the special HasBeenReturnedFromMCPC pc set the pc
+					appropriately so that the frame stays in the cannotReturn: state."
+					theIP := theIP = HasBeenReturnedFromMCPC
+						ifTrue: [cogit ceCannotResumePC]
+						ifFalse: [theMethod asInteger - theIP].
+					stackPages
 						longAt: (pointer := pointer - objectMemory wordSize)
 						put: theMethod + MFMethodFlagHasContextFlag + MFMethodFlagIsBlockFlag]
 				ifFalse:
@@ -5383,12 +5294,8 @@ CoInterpreter >> mustMapMachineCodePC: theIP context: aOnceMarriedContext [
 		[^objectMemory nilObject].
 	maybeClosure := objectMemory fetchPointer: ClosureIndex ofObject: aOnceMarriedContext.
 	methodObj := objectMemory fetchPointer: MethodIndex ofObject: aOnceMarriedContext.
-	(maybeClosure ~= objectMemory nilObject
-	and: [self isVanillaBlockClosure: maybeClosure])
-		ifTrue: [self assert: (theIP signedBitShift: -16) < -1.
-				startBcpc := self startPCOfClosure: maybeClosure]
-		ifFalse: [self assert: (theIP signedBitShift: -16) = -1.
-				startBcpc := self startPCOfMethod: methodObj].
+	self assert: (theIP signedBitShift: -16) = -1.
+	startBcpc := self startPCOfMethod: methodObj.
 	cogMethod := self ensureMethodIsCogged: methodObj maybeClosure: maybeClosure.
 	bcpc := self bytecodePCFor: theIP cogMethod: cogMethod startBcpc: startBcpc.
 	self assert: bcpc >= (self startPCOfMethod: methodObj).
@@ -6050,38 +5957,6 @@ CoInterpreter >> printSends [
 ]
 
 { #category : #'stack bytecodes' }
-CoInterpreter >> pushClosureNumArgs: numArgs copiedValues: numCopied blockSize: blockSize [
-	"The compiler has pushed the values to be copied, if any.
-	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
-	 Set numArgs as specified, and set startpc to the pc following the block size and jump over that code.
-
-	Override only to add debug tracing as of 4/26/2009"
-	<inline: true>
-	| newClosure context |
-	"No need to record the pushed copied values in the outerContext."
-	context := self ensureFrameIsMarried: localFP SP: localSP + (numCopied * objectMemory bytesPerOop).
-	newClosure := self
-					closureIn: context
-					numArgs: numArgs
-					instructionPointer: (self oopForPointer: localIP) + 2 - (method+objectMemory baseHeaderSize)
-					numCopiedValues: numCopied.
-	cogit recordSendTrace ifTrue:
-		[self recordTrace: TraceBlockCreation thing: newClosure source: TraceIsFromInterpreter].
-	numCopied > 0 ifTrue:
-		[0 to: numCopied - 1 do:
-			[:i|
-			"Assume: have just allocated a new BlockClosure; it must be young.
-			 Thus, can use unchecked stores."
-			 objectMemory storePointerUnchecked: i + ClosureFirstCopiedValueIndex
-				ofObject: newClosure
-				withValue: (self internalStackValue: numCopied - i - 1)].
-		 self internalPop: numCopied].
-	localIP := localIP + blockSize.
-	self fetchNextBytecode.
-	self internalPush: newClosure
-]
-
-{ #category : #'stack bytecodes' }
 CoInterpreter >> pushFullClosureNumArgs: numArgs copiedValues: numCopiedArg compiledBlock: compiledBlock receiverIsOnStack: receiverIsOnStack ignoreContext: ignoreContext [
 	"The compiler has pushed the values to be copied, if any. The receiver has been pushed on stack before if specified. 
 	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
@@ -6191,152 +6066,6 @@ CoInterpreter >> rawHeaderOf: methodOop put: cogMethodOrMethodHeader [
 		storePointerUnchecked: HeaderIndex
 		ofObject: methodOop
 		withValue: cogMethodOrMethodHeader
-]
-
-{ #category : #'image save/restore' }
-CoInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: imageOffset [
-	"Read an image from the given file stream, allocating an amount of memory to its object heap.
-	
-	 V3: desiredHeapSize is the total size of the heap.  Fail if the image has an unknown format or
-	 requires more than the specified amount of memory.
-
-	 Spur: desiredHeapSize is ignored; this routine will attempt to provide at least extraVMMemory's
-	 ammount of free space after the image is loaded, taking any free space in teh image into account.
-	 extraVMMemory is stored in the image header and is accessible as vmParameterAt: 23.  If
-	 extraVMMemory is 0, the value defaults to the default grow headroom.  Fail if the image has an
-	 unknown format or if sufficient memory cannot be allocated.
-
-	 Details: This method detects when the image was stored on a machine with the opposite byte
-	 ordering from this machine and swaps the bytes automatically. Furthermore, it allows the header
-	 information to start 512 bytes into the file, since some file transfer programs for the Macintosh
-	 apparently prepend a Mac-specific header of this size. Note that this same 512 bytes of prefix
-	 area could also be used to store an exec command on Unix systems, allowing one to launch
-	 Smalltalk by invoking the image name as a command."
-
-	| swapBytes headerStart headerSize dataSize oldBaseAddr
-	  minimumMemory heapSize bytesRead bytesToShift firstSegSize
-	  hdrNumStackPages hdrEdenBytes hdrCogCodeSize headerFlags hdrMaxExtSemTabSize allocationReserve freeOldSpaceInImage headroom cogCodeBase desiredPositionOfHeap |
-	<var: #f type: #sqImageFile>
-	<var: #heapSize type: #usqInt>
-	<var: #dataSize type: #'size_t'>
-	<var: #minimumMemory type: #usqInt>
-	<var: #desiredHeapSize type: #usqInt>
-	<var: #allocationReserve type: #usqInt>
-	<var: #headerStart type: #squeakFileOffsetType>
-	<var: #imageOffset type: #squeakFileOffsetType>
-
-	metaclassNumSlots := 6.	"guess Metaclass instSize"
-	classNameIndex := 6.		"guess (Class instVarIndexFor: 'name' ifAbsent: []) - 1"
-	swapBytes := self checkImageVersionFrom: f startingAt: imageOffset.
-	headerStart := (self sqImageFilePosition: f) - 4.  "record header start position"
-
-	headerSize			:= self getWord32FromFile: f swap: swapBytes.
-	dataSize			:= self getLongFromFile: f swap: swapBytes.
-	oldBaseAddr		:= self getLongFromFile: f swap: swapBytes.
-	objectMemory specialObjectsOop: (self getLongFromFile: f swap: swapBytes).
-	objectMemory lastHash: (self getLongFromFile: f swap: swapBytes). "N.B.  not used."
-	savedWindowSize	:= self getLongFromFile: f swap: swapBytes.
-	headerFlags		:= self getLongFromFile: f swap: swapBytes.
-	self setImageHeaderFlagsFrom: headerFlags.
-	extraVMMemory	:= self getWord32FromFile: f swap: swapBytes. "N.B.  ignored in V3."
-	hdrNumStackPages	:= self getShortFromFile: f swap: swapBytes.
-	"4 stack pages is small.  Should be able to run with as few as
-	 three. 4 should be comfortable but slow.  8 is a reasonable
-	 default.  Can be changed via vmParameterAt: 43 put: n.
-	 Can be set as a preference (Info.plist, VM.ini, command line etc).
-	 If desiredNumStackPages is already non-zero then it has been
-	 set as a preference.  Ignore (but preserve) the header's default."
-	numStackPages := desiredNumStackPages ~= 0
-						ifTrue: [desiredNumStackPages]
-						ifFalse: [hdrNumStackPages = 0
-									ifTrue: [self defaultNumStackPages]
-									ifFalse: [hdrNumStackPages]].
-	desiredNumStackPages := hdrNumStackPages.
-	"This slot holds the size of the native method zone in 1k units. (pad to word boundary)."
-	hdrCogCodeSize := (self getShortFromFile: f swap: swapBytes) * 1024.
-	cogCodeSize := desiredCogCodeSize ~= 0
-						ifTrue: [desiredCogCodeSize]
-						ifFalse:
-							[hdrCogCodeSize = 0
-									ifTrue: [cogit defaultCogCodeSize]
-									ifFalse: [hdrCogCodeSize]].
-	cogCodeSize > cogit maxCogCodeSize ifTrue:
-		[cogCodeSize := cogit maxCogCodeSize].
-	hdrEdenBytes		:= self getWord32FromFile: f swap: swapBytes.
-	objectMemory edenBytes: (desiredEdenBytes ~= 0
-						ifTrue: [desiredEdenBytes]
-						ifFalse:
-							[hdrEdenBytes = 0
-									ifTrue: [objectMemory defaultEdenBytes]
-									ifFalse: [hdrEdenBytes]]).
-	desiredEdenBytes := hdrEdenBytes.
-	hdrMaxExtSemTabSize := self getShortFromFile: f swap: swapBytes.
-	hdrMaxExtSemTabSize ~= 0 ifTrue:
-		[self setMaxExtSemSizeTo: hdrMaxExtSemTabSize].
-	"pad to word boundary.  This slot can be used for anything else that will fit in 16 bits.
-	 Preserve it to be polite to other VMs."
-	the2ndUnknownShort	:= self getShortFromFile: f swap: swapBytes.
-	firstSegSize := self getLongFromFile: f swap: swapBytes.
-	objectMemory firstSegmentSize: firstSegSize.
-
-	"compare memory requirements with availability"
-	allocationReserve := self interpreterAllocationReserveBytes.
-	minimumMemory := "no need to include the stackZone; this is alloca'ed"
-						  dataSize
-						+ objectMemory newSpaceBytes
-						+ allocationReserve.
-
-	 freeOldSpaceInImage := self getLongFromFile: f swap: swapBytes.
-	 headroom := objectMemory
-					initialHeadroom: extraVMMemory
-					givenFreeOldSpaceInImage: freeOldSpaceInImage.
-	 heapSize := objectMemory roundUpHeapSize:
-				 "no need to include the stackZone; this is alloca'ed"
-				  dataSize
-				+ headroom
-				+ objectMemory newSpaceBytes
-				+ (headroom > allocationReserve
-					ifTrue: [0]
-					ifFalse: [allocationReserve]).
-
-	cogCodeBase := self allocateJITMemory: cogCodeSize desiredPosition: oldBaseAddr - cogCodeSize.
-
-	"We want to avoid the swizzle in case the allocation of the code space is much below in the address space than the requested one"
-	desiredPositionOfHeap := (cogCodeBase + cogCodeSize) max: oldBaseAddr.
-
-	"allocate a contiguous block of memory for the Squeak heap and ancilliary data structures"
-	objectMemory memory: (self
-								allocateMemory: heapSize
-								minimum: minimumMemory
-								imageFile: f
-								headerSize: headerSize
-								desiredPosition: desiredPositionOfHeap) asUnsignedInteger.
-	objectMemory memory ifNil:
-		[self insufficientMemoryAvailableError].
-
-	heapBase := objectMemory
-					setHeapBase: objectMemory memory
-					memoryLimit: objectMemory memory + heapSize
-					endOfMemory: objectMemory memory + dataSize.
-
-	"position file after the header"
-	self sqImageFile: f Seek: headerStart + headerSize.
-
-	"read in the image in bulk, then swap the bytes if necessary"
-	bytesRead := objectMemory readHeapFromImageFile: f dataBytes: dataSize.
-	bytesRead ~= dataSize ifTrue: [self unableToReadImageError].
-
-	self ensureImageFormatIsUpToDate: swapBytes.
-
-	"compute difference between old and new memory base addresses"
-	bytesToShift := objectMemory memoryBaseForImageRead - oldBaseAddr.
-	self initializeInterpreter: bytesToShift.  "adjusts all oops to new location"
-
-	cogit
-		initializeCodeZoneFrom: cogCodeBase
-		upTo: cogCodeBase + cogCodeSize.
-
-	^dataSize
 ]
 
 { #category : #'internal interpreter access' }
@@ -6582,26 +6311,6 @@ CoInterpreter >> saveCStackStateForCallbackContext: vmCallbackContext [
 CoInterpreter >> scavengeThreshold [
 	<doNotGenerate>
 	^objectMemory scavengeThreshold
-]
-
-{ #category : #'callback support' }
-CoInterpreter >> sendInvokeCallback: thunkPtr Stack: stackPtr Registers: regsPtr Jmpbuf: jmpBufPtr [
-	"Override to log and check stack alignment.  Since this is an implicit send we need to
-	 log it explicitly. The return side is done via a primitive so that gets logged normally."
-	cogit assertCStackWellAligned.
-	cogit recordPrimTrace ifTrue:
-		[self fastLogPrim: (self splObj: SelectorInvokeCallback)].
-	^super sendInvokeCallback: thunkPtr Stack: stackPtr Registers: regsPtr Jmpbuf: jmpBufPtr
-]
-
-{ #category : #'callback support' }
-CoInterpreter >> sendInvokeCallbackContext: vmCallbackContext [
-	"Override to log and check stack alignment.  Since this is an implicit send we need to
-	 log it explicitly. The return side is done via a primitive so that gets logged normally."
-	cogit assertCStackWellAligned.
-	cogit recordPrimTrace ifTrue:
-		[self fastLogPrim: (self splObj: SelectorInvokeCallback)].
-	^super sendInvokeCallbackContext: vmCallbackContext
 ]
 
 { #category : #'internal interpreter access' }
@@ -6870,7 +6579,11 @@ CoInterpreter >> stackPointerIndexForMFrame: theFP WithSP: theSP numArgs: numArg
 { #category : #'compiled methods' }
 CoInterpreter >> startPCOfClosure: aBlockClosure [
 	"Zero-relative version of BlockClosure>>startpc."
-	^(objectMemory integerValueOf: (objectMemory fetchPointer: ClosureStartPCIndex ofObject: aBlockClosure)) - 1
+
+	"It should be implemented for FullBlockClosures... this implementation was for old BlockClosures"
+	"^(objectMemory integerValueOf: (objectMemory fetchPointer: ClosureStartPCIndex ofObject: aBlockClosure)) - 1"
+	1halt. 
+
 ]
 
 { #category : #'compiled methods' }
@@ -6878,23 +6591,6 @@ CoInterpreter >> startPCOfMethodHeader: aCompiledMethodHeader [
 	<api>
 	"Zero-relative version of CompiledMethod>>startpc."
 	^(objectMemory literalCountOfMethodHeader: aCompiledMethodHeader) + LiteralStart * objectMemory bytesPerOop
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> startPCOrNilOfLiteral: lit in: aMethodObj [
-	"Answer the startPC of lit if it is a (clean) block in aMethodObj, otherwise answer nil."
-	<api>
-	| outerContext |
-	((objectMemory isNonImmediate: lit)
-	 and: [(objectMemory formatOf: lit) = objectMemory indexablePointersFormat
-	 and: [(objectMemory numSlotsOf: lit) >= ClosureFirstCopiedValueIndex]]) ifFalse:
-		[^nil].
-	outerContext := objectMemory fetchPointer: ClosureOuterContextIndex ofObject: lit.
-	(objectMemory isContext: outerContext) ifFalse:
-		[^nil].
-	aMethodObj ~~ (objectMemory fetchPointer: MethodIndex ofObject: outerContext) ifTrue:
-		[^nil].
-	^self quickFetchInteger: ClosureStartPCIndex ofObject: lit
 ]
 
 { #category : #'stack bytecodes' }

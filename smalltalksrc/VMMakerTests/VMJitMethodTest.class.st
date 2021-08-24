@@ -21,22 +21,6 @@ VMJitMethodTest >> initialCodeSize [
 ]
 
 { #category : #running }
-VMJitMethodTest >> initializeSpecialSelectors [
-
-	| specialSelectorsArrayOop |
-	specialSelectorsArrayOop := self newOldSpaceObjectWithSlots:
-		                            Smalltalk specialSelectors size.
-
-	Smalltalk specialSelectors withIndexDo: [ :anElement :anIndex | 
-		memory
-			storePointer: anIndex - 1
-			ofObject: specialSelectorsArrayOop
-			withValue: (anElement forMemory: memory) ].
-		
-	memory splObj: SpecialSelectors put: specialSelectorsArrayOop
-]
-
-{ #category : #running }
 VMJitMethodTest >> setUp [ 
 
 	super setUp.

@@ -28,7 +28,7 @@ Class {
 		'CogCompilationConstants',
 		'CogMethodConstants',
 		'VMBytecodeConstants',
-		'VMSqueakClassIndices'
+		'VMClassIndices'
 	],
 	#category : #'VMMakerTests-JitTests'
 }
@@ -139,7 +139,7 @@ VMSimpleStackBasedCogitAbstractTest >> compileSpecialSend [
 	cogit ordinarySendTrampolineAt: sentSelector numArgs put: sendTrampolineAddress.
 	
 	self createFramefulCallFrom: callerAddress.
-	cogit byte0: 176 + (selectorIndex - 1 / 2).
+	cogit byte0: 96 + (selectorIndex - 1 / 2).
 	sendAddress := self compile: [ cogit genSpecialSelectorSend ].
 ]
 
@@ -387,6 +387,13 @@ VMSimpleStackBasedCogitAbstractTest >> initialCodeSize [
 	^ 4 * 1024
 ]
 
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> initializationOptions [
+	
+	^ super initializationOptions, {
+		#bytecodeTableInitializer. #initializeBytecodeTableForSistaV1}
+]
+
 { #category : #running }
 VMSimpleStackBasedCogitAbstractTest >> initializeInitialStackFrame [
 
@@ -418,6 +425,12 @@ VMSimpleStackBasedCogitAbstractTest >> instructionPointer [
 	^ self readRegister: machineSimulator instructionPointerRegister
 ]
 
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> interpreterClass [
+
+	^ CogVMSimulatorLSB
+]
+
 { #category : #running }
 VMSimpleStackBasedCogitAbstractTest >> jitCompilerClass [
 
@@ -428,9 +441,7 @@ VMSimpleStackBasedCogitAbstractTest >> jitCompilerClass [
 VMSimpleStackBasedCogitAbstractTest >> jitMethod: aPharoCompiledMethod selector: aSelectorOop [
 
 	| methodOop |
-	"We are using V3 bytecode, so we need to recompile the method"
-	methodOop := self createMethodOopFromPharoMethod:
-		             aPharoCompiledMethod.
+	methodOop := self createMethodOopFromPharoMethod: aPharoCompiledMethod.
 	^ cogit cog: methodOop selector: aSelectorOop
 ]
 
@@ -463,25 +474,6 @@ VMSimpleStackBasedCogitAbstractTest >> memoryClass [
 	^ self wordSize = 4
 		ifTrue: [ Spur32BitCoMemoryManager ]
 		ifFalse: [ Spur64BitCoMemoryManager ]
-]
-
-{ #category : #helpers }
-VMSimpleStackBasedCogitAbstractTest >> newInterpreter [
-
-	| theMemory |
-	theMemory := self newMemory.
-
-	CogVMSimulatorLSB
-		initializeWithOptions: {
-			#BytesPerWord. 8.
-			#ObjectMemory. theMemory class name.
-			#bytecodeTableInitializer. #initializeBytecodeTableForSqueakV3PlusClosures}
-		objectMemoryClass: theMemory class.
-		
-		
-	^ CogVMSimulatorLSB basicNew
-		objectMemory: theMemory;
-		basicInitialize
 ]
 
 { #category : #running }

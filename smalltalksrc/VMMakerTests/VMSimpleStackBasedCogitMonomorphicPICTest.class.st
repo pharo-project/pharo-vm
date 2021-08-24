@@ -30,7 +30,7 @@ VMSimpleStackBasedCogitMonomorphicPICTest >> testLinkCallDuringSendInTrampolineR
 	self createFramefulCallFrom: callerAddress.
 	
 	cogit byte0: 0.
-	sendingMethod := methodBuilder newMethod ; literals: { selector }; buildMethod.
+	sendingMethod := methodBuilder newMethod ; literals: { selector }; build.
 	cogit methodObj: sendingMethod.
 	sendAddress := self compile: [ cogit genSendLiteralSelector0ArgsBytecode ].
 
@@ -71,7 +71,7 @@ VMSimpleStackBasedCogitMonomorphicPICTest >> testObtainInlineCacheFromLinkedCall
 	self createFramefulCallFrom: callerAddress.
 	
 	cogit byte0: 0.
-	sendingMethod := methodBuilder newMethod literals: { selector }; buildMethod.
+	sendingMethod := methodBuilder newMethod literals: { selector }; build.
 	cogit methodObj: sendingMethod.
 	sendAddress := self compile: [ cogit genSendLiteralSelector0ArgsBytecode ].
 

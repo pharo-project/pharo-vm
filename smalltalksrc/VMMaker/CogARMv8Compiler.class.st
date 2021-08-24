@@ -1882,7 +1882,7 @@ CogARMv8Compiler >> concretizeLoadEffectiveAddressMwrR [
 	"destReg = srcReg (which contains an address) + offset"
 
 	<inline: true>
-	| srcReg offset destReg instrOffset |
+	| srcReg offset destReg |
 	offset := operands at: 0.
 	srcReg := operands at: 1.
 	destReg := operands at: 2.
@@ -3151,6 +3151,19 @@ CogARMv8Compiler >> conditionOrNil: condCode [
 	^conditionOrNil := condCode
 ]
 
+{ #category : #simulation }
+CogARMv8Compiler >> configureStackAlignment [
+	
+	<doNotGenerate>
+	"As for the ARMv8 Arm® Architecture Reference Manual
+	
+	D1.8.2 SP alignment checking
+	A misaligned stack pointer is where bits[3:0] of the stack pointer are not 0b0000, when the stack pointer is used as the base address of the calculation, regardless of any offset applied by the instruction.
+	
+	Meaning that the stack should be aligned to 16 bytes"
+	cogit setStackAlignment: 16 expectedSPOffset: 0 expectedFPOffset: 0.
+]
+
 { #category : #'generate machine code' }
 CogARMv8Compiler >> dispatchConcretize [
 	"Attempt to generate concrete machine code for the instruction at address.
@@ -3693,19 +3706,6 @@ VCVTW. regB, regA - ARM_ARM v7 DDI10406.pdf pp. A8-576-8"
 ]
 
 { #category : #'ARM convenience instructions' }
-CogARMv8Compiler >> fstd: fpReg rn: addrReg plus: u imm: immediate8bitValue [
-"FSTD or VSTR instruction to move a value to address in an ARM addrReg +/- offset<<2 from an fpu double fpReg
-FSTD fpReg, addrReg, #offset - ARM_ARM v5 DDI 01001.pdf pp. C4-101
-VSTR.64 fpReg, addrReg, #offset - ARM_ARM v7 DDI10406 pp. A8-780-1"
-	<inline: true>
-	"Note that
-		offset is <<2 to make byte address 
-		u =1 -> addrReg + offset<<2
-		u=0 -> addrReg - offset<<2"
-	^(((2r11101101000000000000101100000000 bitOr:(addrReg <<16)) bitOr: fpReg<<12) bitOr: u<<23) bitOr: immediate8bitValue
-]
-
-{ #category : #'ARM convenience instructions' }
 CogARMv8Compiler >> fsubd: destReg with: srcReg [
 "FSUBD or VSUB instruction to subtract double srcReg from double destREg and stick result in double destReg
 FSUBD destReg, destReg, srcReg - ARM_ARM v5 DDI 01001.pdf pp. C4-112
@@ -4168,18 +4168,22 @@ CogARMv8Compiler >> inverseOpcodeFor: armOpcode [
 			 -1]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #testing }
 CogARMv8Compiler >> is12BitValue: constant ifTrue: aTrueBlock ifFalse: aFalseBlock [ 
 	
 	<inline: true>
+	<var: #signedConstant type: #sqInt>
 	
-	^ constant abs <= 2047 "(2 raisedTo: 11) - 1"
+	| signedConstant |
+	signedConstant := cogit cCoerceSimple: constant to: #sqInt.
+	
+	^ signedConstant abs <= 2047 "(2 raisedTo: 11) - 1"
 		ifTrue: [ | twoComplement |
 			"Two complement using 12 bits"
-			twoComplement := constant >= 0
-				ifTrue: [ constant ]
-				ifFalse: [ 16rfff - constant abs + 1 ].
-			aTrueBlock value: constant >= 0 value: twoComplement ]
+			twoComplement := signedConstant >= 0
+				ifTrue: [ signedConstant ]
+				ifFalse: [ 16rfff - signedConstant abs + 1 ].
+			aTrueBlock value: signedConstant >= 0 value: twoComplement ]
 		ifFalse: [aFalseBlock value]
 ]
 
@@ -5145,7 +5149,7 @@ CogARMv8Compiler >> prepareStackToCallCFunctionInSmalltalkStack: anObject [
 
 	"ARMv8 should be aligned to 16 bytes"
 
-	cogit AndCq: ((1 << 64) - 16) R: Extra2Reg. 
+	cogit AndCq: 16rFFFFFFFFFFFFFFF0 R: Extra2Reg. 
 	cogit MoveR: Extra2Reg R: SP.
 ]
 

@@ -37,7 +37,7 @@ VMContextAccessTest >> setUp [
 
 	"Create the root context with a valid method"
 	"Let's create a method with enough size. It should have at least a literal (4 or 8 bytes depending the word size) and some bytecodes, so we can put the IP inside the method"
-	newMethod := methodBuilder newMethod buildMethod.
+	newMethod := methodBuilder newMethod build.
 	
 	"The context has 5 (in 32 bits) or 9 (in 64 bits) as initial IP, as method has at least one literal"
 	ctx := self newSmallContextReceiver: memory nilObject method: newMethod arguments: #() temporaries: #() ip: self wordSize + 1.
