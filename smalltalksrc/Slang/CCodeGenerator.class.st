@@ -1335,53 +1335,6 @@ CCodeGenerator >> fileHeaderVersionStampForSourceClass: sourceClass [
 			s cr]]
 ]
 
-{ #category : #'C translation support' }
-CCodeGenerator >> generateAsConstantExpression: msgNode on: aStream [
-	"Attempt to generate the C code for this message onto the given stream.
-	 Answer if the attempt succeeded.  This handles integer overflow of int
-	 expressions in a 64-bit compiler."
-
-	msgNode constantNumbericValueOrNil ifNotNil:
-		[:value|
-		 (value between: -1 << 31 and: 1 << 31 - 1) ifFalse:
-			[aStream nextPutAll: (self cLiteralFor: value).
-			 ^true]].
-	^false
-]
-
-{ #category : #'C translation' }
-CCodeGenerator >> generateAsSymbol: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream.
-	 The receiver is expected to be a TConstantNode."
-
-	aStream nextPutAll: (self cFunctionNameFor: msgNode receiver nameOrValue)
-]
-
-{ #category : #'C translation' }
-CCodeGenerator >> generateBaseHeaderSize: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream."
-
-	aStream nextPutAll: 'BaseHeaderSize'
-
-]
-
-{ #category : #'C translation' }
-CCodeGenerator >> generateBytesPerOop: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream.
-	 Would prefer to use OopSize than BytesPerOop (shorter)."
-
-	aStream nextPutAll: 'BytesPerOop'
-]
-
-{ #category : #'C translation' }
-CCodeGenerator >> generateBytesPerWord: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream.
-	 Would prefer to use WordSize than BytesPerWord (shorter) but e.g.
-	 mpegtype.h has a parameter named WordSize."
-
-	aStream nextPutAll: 'BytesPerWord'
-]
-
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTAbs: tast [
 
@@ -2968,90 +2921,6 @@ CCodeGenerator >> generateDeadCode: aBool [
 	generateDeadCode := aBool
 ]
 
-{ #category : #'C translation' }
-CCodeGenerator >> generateFlag: msgNode on: aStream indent: level [
-	"Compoensate for the use of self flag: #aSymbol.  We used to translate  symbols
-	 as strings unless they were quoted via #aSymbol asSymbol. But this is too tedious,
-	 so we now translate symbols directly.  The only use that this affected was in
-		 self flag: #aSymbol,
-	 so hard-code it to produce a string value.  Note that this isn't strictly necessary
-	 because there's a
-		#define flag(foo) 0
-	 in C land, but it makes the generated C less dissonant."
-
-	aStream
-		nextPutAll: 'flag(';
-		nextPutAll: (self cLiteralFor: msgNode args last value asString);
-		nextPut: $)
-]
-
-{ #category : #'C translation' }
-CCodeGenerator >> generateIsNil: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream."
-
-	self emitCExpression: msgNode receiver on: aStream.
-	aStream nextPutAll: ' == '.
-	aStream nextPutAll: (self cLiteralFor: nil).
-]
-
-{ #category : #'C translation' }
-CCodeGenerator >> generatePreDecrement: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream."
-
-	| varNode |
-	varNode := msgNode receiver.
-	varNode isVariable
-		ifFalse: [ self error: 'preDecrement can only be applied to variables' ].
-	aStream nextPutAll: '--'.
-	aStream nextPutAll: (self returnPrefixFromVariable: varNode name).
-
-]
-
-{ #category : #'C translation' }
-CCodeGenerator >> generatePreIncrement: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream."
-
-	| varNode |
-	varNode := msgNode receiver.
-	varNode isVariable
-		ifFalse: [ self error: 'preIncrement can only be applied to variables' ].
-	aStream nextPutAll: '++'.
-	aStream nextPutAll: (self returnPrefixFromVariable: varNode name).
-
-]
-
-{ #category : #'C translation' }
-CCodeGenerator >> generateSharedCodeDirective: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream."
-
-	aStream nextPutAll: '/* common code: '.
-	aStream nextPutAll: msgNode args first value.
-	aStream nextPutAll: ' */'.
-
-]
-
-{ #category : #'C translation' }
-CCodeGenerator >> generateSmallIntegerConstant: aSendNode on: aStream indent: indent [
-	aSendNode selector = #minSmallInteger ifTrue:
-		[^aStream nextPutAll: 'MinSmallInteger'].
-	aSendNode selector = #maxSmallInteger ifTrue:
-		[^aStream nextPutAll: 'MaxSmallInteger'].
-	self error: 'unknown SmallInteger constant'
-]
-
-{ #category : #'C translation' }
-CCodeGenerator >> generateSmalltalkMetaError: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream."
-
-	aStream nextPutAll: 'error("'; nextPutAll: msgNode selector; nextPutAll: '")'
-]
-
-{ #category : #'C translation' }
-CCodeGenerator >> generateTouch: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream - which is to say absolutely nothing"
-
-]
-
 { #category : #public }
 CCodeGenerator >> globalsAsSet [
 	"Used by the inliner to avoid name clashes with global variables."
@@ -3393,12 +3262,12 @@ CCodeGenerator >> instVarNamesForClass: aClass [
 
 ]
 
-{ #category : #'C translation' }
+{ #category : #'C translation support' }
 CCodeGenerator >> is32Bit [
 	^ self wordSize = 4
 ]
 
-{ #category : #'C translation' }
+{ #category : #'C translation support' }
 CCodeGenerator >> is64Bit [
 	^ self is32Bit not
 ]
