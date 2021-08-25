@@ -13,7 +13,7 @@ include(macros.cmake)
 
 set(VERSION_MAJOR 9)
 set(VERSION_MINOR 0)
-set(VERSION_PATCH 6)
+set(VERSION_PATCH 7)
 
 message("CMAKE_GENERATOR=${CMAKE_GENERATOR}")
 
