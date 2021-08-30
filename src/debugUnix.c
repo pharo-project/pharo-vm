@@ -110,7 +110,7 @@ EXPORT(void) registerCurrentThreadToHandleExceptions(){
 }
 
 EXPORT(void) installErrorHandlers(){
-	struct sigaction sigusr1_handler_action, sigsegv_handler_action, term_handler_action;
+	struct sigaction sigusr1_handler_action, sigsegv_handler_action, term_handler_action, sigpipe_handler_action;
 
 	sigsegv_handler_action.sa_sigaction = (void (*)(int, siginfo_t *, void *))sigsegv;
 	sigsegv_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
@@ -125,6 +125,12 @@ EXPORT(void) installErrorHandlers(){
 	sigaction(SIGTERM, &term_handler_action, 0);
 	sigaction(SIGKILL, &term_handler_action, 0);
 	sigaction(SIGHUP, &term_handler_action, 0);
+  
+  //Ignore all broken pipe signals. They will be reported as normal errors by send() and write()
+  //Otherwise SIGPIPE kill the process without allowing any recovery or treatment
+  sigpipe_handler_action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
+  sigpipe_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
+  sigaction(SIGPIPE, &sigpipe_handler_action, 0);
 	
 	sigusr1_handler_action.sa_sigaction = (void (*)(int, siginfo_t *, void *))sigusr1;
 	sigusr1_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
