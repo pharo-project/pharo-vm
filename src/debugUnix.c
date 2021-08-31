@@ -46,10 +46,10 @@ void doReport(char* fault, ucontext_t *uap){
 	char crashdumpFileName[PATH_MAX+1];
 	FILE *crashDumpFile;
 
-
 	ctime_r(&now,ctimebuf);
 
 	//This is awful but replace the stdout to print all the messages in the file.
+	crashdumpFileName[0] = 0;
 	getCrashDumpFilenameInto(crashdumpFileName);
 	crashDumpFile = fopen(crashdumpFileName, "a+");
 	vm_setVMOutputStream(crashDumpFile);
@@ -79,12 +79,9 @@ void sigsegv(int sig, siginfo_t *info, ucontext_t *uap)
 {
 	char *fault = strsignal(sig);
 
-	if (!inFault) {
-		inFault = 1;
-		doReport(fault, uap);
-	}
-	
-	abort();
+	doReport(fault, uap);
+
+	exit(-1);
 }
 
 void terminateHandler(int sig, siginfo_t *info, ucontext_t *uap)
@@ -115,27 +112,39 @@ EXPORT(void) installErrorHandlers(){
 	sigsegv_handler_action.sa_sigaction = (void (*)(int, siginfo_t *, void *))sigsegv;
 	sigsegv_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
 	sigemptyset(&sigsegv_handler_action.sa_mask);
+
+
+	sigaction(SIGEMT, &sigsegv_handler_action, 0);
+	sigaction(SIGFPE, &sigsegv_handler_action, 0);
+
+	sigaction(SIGTRAP, &sigsegv_handler_action, 0);
+	sigaction(SIGQUIT, &sigsegv_handler_action, 0);
+
 	sigaction(SIGBUS, &sigsegv_handler_action, 0);
 	sigaction(SIGILL, &sigsegv_handler_action, 0);
 	sigaction(SIGSEGV, &sigsegv_handler_action, 0);
+	sigaction(SIGSYS, &sigsegv_handler_action, 0);
+	sigaction(SIGALRM, &sigsegv_handler_action, 0);
+	sigaction(SIGABRT, &sigsegv_handler_action, 0);
 
 	term_handler_action.sa_sigaction = (void (*)(int, siginfo_t *, void *))terminateHandler;
 	term_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
 
-	sigaction(SIGTERM, &term_handler_action, 0);
-	sigaction(SIGKILL, &term_handler_action, 0);
 	sigaction(SIGHUP, &term_handler_action, 0);
-  
-  //Ignore all broken pipe signals. They will be reported as normal errors by send() and write()
-  //Otherwise SIGPIPE kill the process without allowing any recovery or treatment
-  sigpipe_handler_action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
-  sigpipe_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
-  sigaction(SIGPIPE, &sigpipe_handler_action, 0);
+	sigaction(SIGTERM, &term_handler_action, 0);
+	
+	sigaction(SIGKILL, &term_handler_action, 0);
+
+	//Ignore all broken pipe signals. They will be reported as normal errors by send() and write()
+	//Otherwise SIGPIPE kill the process without allowing any recovery or treatment
+	sigpipe_handler_action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
+	sigpipe_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
+	sigaction(SIGPIPE, &sigpipe_handler_action, 0);
 	
 	sigusr1_handler_action.sa_sigaction = (void (*)(int, siginfo_t *, void *))sigusr1;
 	sigusr1_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
 	sigemptyset(&sigusr1_handler_action.sa_mask);
-    (void)sigaction(SIGUSR1, &sigusr1_handler_action, 0);
+	sigaction(SIGUSR1, &sigusr1_handler_action, 0);
 }
 
 void * printRegisterState(ucontext_t *uap, FILE* output)
@@ -349,6 +358,8 @@ static int runningInVMThread(){
 	
 }
 
+static sqInt printingStack = false;
+
 void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap, FILE* output)
 {
 #if !defined(NOEXECINFO)
@@ -357,7 +368,6 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 	int depth;
 #endif
 	/* flag prevents recursive error when trying to print a broken stack */
-	static sqInt printingStack = false;
 
 #if COGVM
 	/* Testing stackLimit tells us whether the VM is initialized. */
@@ -387,7 +397,7 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 	fflush(output); /* backtrace_symbols_fd uses unbuffered i/o */
 	backtrace_symbols_fd(addrs, depth + 1, fileno(output));
 #endif
-
+	
 	if (runningInVMThread()) {
 		if (!printingStack) {
 #if COGVM
@@ -454,18 +464,9 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 #endif
 		}
 	}
-	else
-		fprintf(output,"\nNot in VM thread. Smalltalk stack might not be updated\n");
-
-		printingStack = true;
-		if (printAll) {
-			fprintf(output, "\n\nAll Smalltalk process stacks (active first):\n");
-			printAllStacks();
-		} else {
-			fprintf(output,"\n\nSmalltalk stack dump:\n");
-			printCallStack();
-		}
-		printingStack = false;
+	else {
+		fprintf(output,"\nNot in VM thread.\n");
+	}
 
 #if STACKVM
 	fprintf(output, "\nMost recent primitives\n");

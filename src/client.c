@@ -99,12 +99,12 @@ vm_main_with_parameters(VMParameters *parameters)
 		return 1;
 	}
 
-	if(parameters->isDefaultImage && !parameters->defaultImageFound)
-	{
+	if(parameters->isDefaultImage && !parameters->defaultImageFound){
 		////logError("No image has been specified, and no default image has been found.\n");
 		vm_printUsageTo(stdout);
 		return 0;
 	}
+
 	installErrorHandlers();
 
 	setProcessArguments(parameters->processArgc, parameters->processArgv);
@@ -112,10 +112,10 @@ vm_main_with_parameters(VMParameters *parameters)
 
 	logInfo("Opening Image: %s\n", parameters->imageFileName);
 
-    //This initialization is required because it makes awful, awful, awful code to calculate
-    //the location of the machine code.
-    //Luckily, it can be cached.
-    osCogStackPageHeadroom();
+	//This initialization is required because it makes awful, awful, awful code to calculate
+	//the location of the machine code.
+	//Luckily, it can be cached.
+	osCogStackPageHeadroom();
 
 	// Retrieve the working directory.
 	char *workingDirectoryBuffer = (char*)calloc(1, FILENAME_MAX+1);
@@ -169,7 +169,7 @@ vm_main(int argc, const char** argv, const char** env)
 	parameters.maxStackFramesToPrint = 0;
 	parameters.maxCodeSize = 0;
 	parameters.maxOldSpaceSize = 0;
-  parameters.edenSize = 0;
+	parameters.edenSize = 0;
 
 	// Did we succeed on parsing the parameters?
 	VMErrorCode error = vm_parameters_parse(argc, argv, &parameters);
