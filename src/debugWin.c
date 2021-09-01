@@ -125,6 +125,7 @@ EXPORT(void) printCrashDebugInformation(LPEXCEPTION_POINTERS exp){
 
 
 	//This is awful but replace the stdout to print all the messages in the file.
+	crashdumpFileName[0] = 0;
 	getCrashDumpFilenameInto(crashdumpFileName);
 	crashDumpFile = fopen(crashdumpFileName, "a+");
 	vm_setVMOutputStream(crashDumpFile);

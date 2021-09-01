@@ -11,9 +11,13 @@ cmake_policy(SET CMP0053 NEW)
 
 include(macros.cmake)
 
+# Extract VCS information
+include(cmake/versionExtraction.cmake)
+extractVCSInformation(GIT_COMMIT_HASH GIT_DESCRIBE GIT_COMMIT_DATE)
+
 set(VERSION_MAJOR 10)
 set(VERSION_MINOR 0)
-set(VERSION_PATCH 0)
+set(VERSION_PATCH "0-${GIT_COMMIT_HASH}")
 
 message("CMAKE_GENERATOR=${CMAKE_GENERATOR}")
 
@@ -74,10 +78,6 @@ endif()
 
 # Configure CMake to load our modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
-# Extract VCS information
-include(cmake/versionExtraction.cmake)
-extractVCSInformation(GIT_COMMIT_HASH GIT_DESCRIBE GIT_COMMIT_DATE)
 
 #Variable used to set the VM date
 set(BUILT_FROM "${GIT_DESCRIBE} - Commit: ${GIT_COMMIT_HASH} - Date: ${GIT_COMMIT_DATE}")
