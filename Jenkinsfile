@@ -108,7 +108,10 @@ def runBuild(platformName, configuration, headless = true){
 	
 	def platform = headless ? platformName : "${platformName}-stockReplacement"
 	def buildDirectory = headless ? "build" :"build-stockReplacement"
-	def additionalParameters = headless ? "" : "-DALWAYS_INTERACTIVE=1"
+	def additionalParameters = ""
+	
+	additionalParameters += headless ? "" : "-DALWAYS_INTERACTIVE=1 "
+	additionalParameters += isRelease() ? "-DBUILD_IS_RELEASE=ON " : "-DBUILD_IS_RELEASE=OFF "
 
 	stage("Checkout-${platform}"){
 		dir('repository') {
