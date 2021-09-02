@@ -113,8 +113,9 @@ EXPORT(void) installErrorHandlers(){
 	sigsegv_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
 	sigemptyset(&sigsegv_handler_action.sa_mask);
 
-
+#ifdef SIGEMT
 	sigaction(SIGEMT, &sigsegv_handler_action, 0);
+#endif
 	sigaction(SIGFPE, &sigsegv_handler_action, 0);
 
 	sigaction(SIGTRAP, &sigsegv_handler_action, 0);
