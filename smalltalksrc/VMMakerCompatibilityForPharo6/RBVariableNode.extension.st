@@ -2,9 +2,13 @@ Extension { #name : #RBVariableNode }
 
 { #category : #'*VMMakerCompatibilityForPharo6-C translation' }
 RBVariableNode >> asTranslatorNodeIn: aTMethod [
+
 	"Answer a TParseNode subclass equivalent of me"
+
 	name = 'true' ifTrue: [^ TConstantNode value: true].
 	name = 'false' ifTrue: [^ TConstantNode value: false].
+	name = 'nil' ifTrue: [^ TConstantNode value: nil].
+
 	^ TVariableNode new setName: name
 ]
 

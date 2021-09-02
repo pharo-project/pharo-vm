@@ -345,15 +345,6 @@ SmartSyntaxPluginCodeGenerator >> ccgValBlock: valString [
 ]
 
 { #category : #'translating builtins' }
-SmartSyntaxPluginCodeGenerator >> genCallOf: aSelector with: aNode on: aStream [
-	pluginFunctionsUsed add: aSelector.
-	aStream nextPutAll: (self cFunctionNameFor: aSelector).
-	aStream nextPut: $(.
-	self emitCExpression: aNode on: aStream.
-	aStream nextPut: $)
-]
-
-{ #category : #'translating builtins' }
 SmartSyntaxPluginCodeGenerator >> genCallOf: aSelector with: firstArgNode with: secondArgNode on: aStream [
 	pluginFunctionsUsed add: aSelector.
 	aStream nextPutAll: (self cFunctionNameFor: aSelector).
@@ -377,12 +368,17 @@ SmartSyntaxPluginCodeGenerator >> genCallOf: aSelector with: firstArgNode with: 
 	aStream nextPut: $)
 ]
 
-{ #category : #'translating builtins' }
-SmartSyntaxPluginCodeGenerator >> generateAsBooleanObj: aNode on: aStream indent: anInteger [
-	pluginFunctionsUsed add: #trueObject; add: #falseObject.
-	aStream nextPutAll: '(('.
-	self emitCExpression: aNode receiver on: aStream.
-	aStream nextPutAll: ') ? trueObject() : falseObject())'.
+{ #category : #'CAST translation' }
+SmartSyntaxPluginCodeGenerator >> generateAsBooleanObj: aTSendNode [
+
+	pluginFunctionsUsed
+		add: #trueObject;
+		add: #falseObject.
+
+	^ CTernaryNode
+		  condition: (aTSendNode receiver asCASTExpressionIn: self)
+		  then: (CCallNode identifier: (CIdentifierNode name: #trueObject))
+		  else: (CCallNode identifier: (CIdentifierNode name: #falseObject))
 ]
 
 { #category : #'translating builtins' }
@@ -405,9 +401,10 @@ SmartSyntaxPluginCodeGenerator >> generateAsCUnsigned: aNode on: aStream indent:
 	self genCallOf: #positive32BitValueOf: with: aNode receiver on: aStream
 ]
 
-{ #category : #'translating builtins' }
-SmartSyntaxPluginCodeGenerator >> generateAsCharPtr: aNode on: aStream indent: anInteger [
-	self generateCoerceToPtr: 'char *' fromObject: aNode receiver on: aStream
+{ #category : #'CAST translation' }
+SmartSyntaxPluginCodeGenerator >> generateAsCharPtr: aNode [
+
+	^ self generateCoerceToPtr: #'char*' fromObject: aNode receiver
 ]
 
 { #category : #'translating builtins' }
@@ -499,9 +496,15 @@ SmartSyntaxPluginCodeGenerator >> generateAsPositiveIntegerObj: aNode on: aStrea
 	self genCallOf: #positive32BitIntegerFor: with: aNode receiver on: aStream
 ]
 
-{ #category : #'translating builtins' }
-SmartSyntaxPluginCodeGenerator >> generateAsSmallIntegerObj: aNode on: aStream indent: anInteger [
-	self genCallOf: #integerObjectOf: with: aNode receiver on: aStream
+{ #category : #'CAST translation' }
+SmartSyntaxPluginCodeGenerator >> generateAsSmallIntegerObj: expr [
+
+	pluginFunctionsUsed
+		add: #integerObjectOf:.
+		
+	^ CCallNode
+		identifier: (CIdentifierNode name: 'integerObjectOf')
+		arguments: { (expr receiver asCASTExpressionIn: self) }
 ]
 
 { #category : #'translating builtins' }
@@ -517,11 +520,18 @@ SmartSyntaxPluginCodeGenerator >> generateAsValue: aNode on: aStream indent: anI
 	class ccg: self generateCoerceToValueFrom: aNode receiver on: aStream
 ]
 
-{ #category : #'translating builtins' }
-SmartSyntaxPluginCodeGenerator >> generateCPtrAsOop: aNode on: aStream indent: anInteger [
-	aStream nextPutAll: '((sqInt)(sqIntptr_t)('.
-	self emitCExpression: aNode receiver on: aStream.
-	aStream nextPutAll: ') - BaseHeaderSize)'
+{ #category : #'CAST translation' }
+SmartSyntaxPluginCodeGenerator >> generateCPtrAsOop: expr [
+
+	^ CCastExpressionNode
+		  type: (CTypeNameNode symbol: #sqInt)
+		  expression: (CBinaryOperatorNode
+				   operator: #-
+				   left: (CCastExpressionNode
+						    type: (CTypeNameNode symbol: #sqIntptr_t)
+						    expression: (expr receiver asCASTExpressionIn: self))
+				   right: (CIdentifierNode name: 'BaseHeaderSize'))
+
 ]
 
 { #category : #'translating builtins' }
@@ -561,15 +571,17 @@ SmartSyntaxPluginCodeGenerator >> generateCoerceToObjectFromPtr: aNode on: aStre
 	aStream nextPutAll: ') - BaseHeaderSize))'
 ]
 
-{ #category : #'asOop:/asValue:' }
-SmartSyntaxPluginCodeGenerator >> generateCoerceToPtr: aString fromObject: aNode on: aStream [
+{ #category : #'CAST translation' }
+SmartSyntaxPluginCodeGenerator >> generateCoerceToPtr: cType fromObject: expr [
+
 	"This code assumes no named instance variables"
-	aStream 
-		nextPutAll: '((';
-		nextPutAll: aString;
-		nextPut: $).
-	self genCallOf: #firstIndexableField: with: aNode on: aStream.
-	aStream nextPut: $)
+
+	^ CCastExpressionNode
+		  type: (CTypeNameNode symbol: cType)
+		  expression: (CCallNode
+				   identifier: (CIdentifierNode name: 'firstIndexableField')
+				   arguments: { (expr asCASTExpressionIn: self) })
+
 ]
 
 { #category : #'asOop:/asValue:' }
@@ -718,63 +730,59 @@ SmartSyntaxPluginCodeGenerator >> initialize [
 ]
 
 { #category : #'translating builtins' }
-SmartSyntaxPluginCodeGenerator >> initializeCTranslationDictionary [ 
+SmartSyntaxPluginCodeGenerator >> initializeCASTTranslationDictionary [ 
 	"Initialize the dictionary mapping message names to actions for C code generation."
 
 	| pairs |
-	super initializeCTranslationDictionary.
+	super initializeCASTTranslationDictionary.
+	
 	pairs := #(
-		#asCInt						#generateAsCInt:on:indent:
-		#asCUnsigned				#generateAsCUnsigned:on:indent:
-		#asCBoolean					#generateAsCBoolean:on:indent:
-		#asCDouble					#generateAsCDouble:on:indent:
+		#asCInt						#generateAsCInt:
+		#asCUnsigned					#generateAsCUnsigned:
+		#asCBoolean					#generateAsCBoolean:
+		#asCDouble					#generateAsCDouble:
 
-		#asSmallIntegerObj			#generateAsSmallIntegerObj:on:indent:
-		#asPositiveIntegerObj		#generateAsPositiveIntegerObj:on:indent:
-		#asBooleanObj				#generateAsBooleanObj:on:indent:
-		#asFloatObj					#generateAsFloatObj:on:indent:
+		#asSmallIntegerObj			#generateAsSmallIntegerObj:
+		#asPositiveIntegerObj		#generateAsPositiveIntegerObj:
+		#asBooleanObj				#generateAsBooleanObj:
+		#asFloatObj					#generateAsFloatObj:
 
-		#asIf:var:					#generateAsIfVar:on:indent:
-		#asIf:var:asValue:			#generateAsIfVarAsValue:on:indent:
-		#asIf:var:put:				#generateAsIfVarPut:on:indent:
-		#field:						#generateField:on:indent:
-		#field:put:					#generateFieldPut:on:indent:
+		#asIf:var:					#generateAsIfVar:
+		#asIf:var:asValue:			#generateAsIfVarAsValue:
+		#asIf:var:put:				#generateAsIfVarPut:
+		#field:						#generateField:
+		#field:put:					#generateFieldPut:
 		
-		#class						#generateClass:on:indent:
+		#class							#generateClass:
 
-		#stSize						#generateStSize:on:indent:
-		#stAt:						#generateStAt:on:indent:
-		#stAt:put:					#generateStAtPut:on:indent:
+		#stSize						#generateStSize:
+		#stAt:							#generateStAt:
+		#stAt:put:					#generateStAtPut:
 
-		#asCharPtr					#generateAsCharPtr:on:indent:
-		#asIntPtr					#generateAsIntPtr:on:indent:
-		#cPtrAsOop					#generateCPtrAsOop:on:indent:
-		#next						#generateNext:on:indent:
+		#asCharPtr					#generateAsCharPtr:
+		#asIntPtr						#generateAsIntPtr:
+		#cPtrAsOop					#generateCPtrAsOop:
+		#next							#generateNext:
 
-		#asOop:						#generateAsOop:on:indent:
-		#asValue:					#generateAsValue:on:indent:
+		#asOop:						#generateAsOop:
+		#asValue:						#generateAsValue:
 
-		#isFloat						#generateIsFloat:on:indent:
-		#isIndexable					#generateIsIndexable:on:indent:
-		#isIntegerOop				#generateIsIntegerOop:on:indent:
-		#isIntegerValue				#generateIsIntegerValue:on:indent:
-		"#FloatOop					#generateIsFloatValue:on:indent:"		"unused, never implemented"
-		#isWords					#generateIsWords:on:indent:
-		#isWordsOrBytes				#generateIsWordsOrBytes:on:indent:
-		#isPointers					#generateIsPointers:on:indent:
-		#isNil						#generateCASTIsNil:
-		#isMemberOf:				#generateIsMemberOf:on:indent:
-		#isKindOf:					#generateIsKindOf:on:indent:
+		#isFloat						#generateIsFloat:
+		#isIndexable					#generateIsIndexable:
+		#isIntegerOop				#generateIsIntegerOop:
+		#isIntegerValue				#generateIsIntegerValue:
+		#isWords						#generateIsWords:
+		#isWordsOrBytes				#generateIsWordsOrBytes:
+		#isPointers					#generateIsPointers:
+		#isNil							#generateCASTIsNil:
+		#isMemberOf:					#generateIsMemberOf:
+		#isKindOf:					#generateIsKindOf:
 
-		#fromStack:					#generateFromStack:on:indent:
-		"#clone						#generateClone:on:indent:"				"unused, never implemented"
-		"#new						#generateNew:on:indent:"				"unused, never implemented"
-		"#new:						#generateNewSize:on:indent:"			"unused, never implemented"
-		"#superclass					#generateSuperclass:on:indent:"	"unused, never implemented"
+		#fromStack:					#generateFromStack:
 	).
 
 	1 to: pairs size by: 2 do: [:i |
-		translationDict at: (pairs at: i) put: (pairs at: i + 1)].
+		castTranslationDict at: (pairs at: i) put: (pairs at: i + 1)].
 
 ]
 

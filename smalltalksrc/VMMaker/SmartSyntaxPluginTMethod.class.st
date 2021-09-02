@@ -96,7 +96,7 @@ SmartSyntaxPluginTMethod >> fixUpReturnOneStmt: stmt on: sStream [
 		["failure returns"
 		 sStream nextPut: expr; nextPut: self nullReturnExpr.
 		 ^nil].
-	(expr isVariable and: ['nil' = expr name]) ifTrue:
+	(expr isConstant and: [expr value isNil]) ifTrue:
 		["^ nil -- this is never right unless automatically generated"
 		 sStream nextPut: stmt.
 		 ^nil].
