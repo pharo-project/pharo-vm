@@ -45,6 +45,9 @@ EXPORT(int) isLogDebug();
 
 EXPORT(void) logMessageFromErrno(int level, const char* msg, const char* fileName, const char* functionName, int line);
 
+void error(char* aMessage);
+
+
 #include <stdio.h>
 
 int vm_printf( const char * format, ... );

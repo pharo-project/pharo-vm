@@ -7268,6 +7268,7 @@ StackInterpreter >> getInterruptPending [
 StackInterpreter >> getLongFromFile: aFile swap: swapFlag [
 	"Answer the next 32 or 64 bit word read from aFile, byte-swapped according to the swapFlag."
 	<var: #aFile type: #sqImageFile>
+	<var: #w type: #usqInt>
 	| w |
 	w := 0.
 	self cCode: [self

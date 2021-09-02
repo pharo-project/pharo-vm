@@ -37,11 +37,11 @@ RBMessageNode >> asTranslatorNodeIn: aTMethod [
 		arguments first isLiteralNode ifTrue: [
 			args := OrderedCollection
 				with: args first
-				with: (TConstantNode new setValue: 1)
+				with: (TConstantNode value: 1)
 				with: args second
 				with: (TAssignmentNode new
 							setVariable: (arguments first asTranslatorNodeIn: aTMethod)
-							expression: (TConstantNode new setValue: 1);
+							expression: (TConstantNode value: 1);
 							yourself)
 				with: (TSendNode new
 					setSelector: #<=
@@ -52,12 +52,12 @@ RBMessageNode >> asTranslatorNodeIn: aTMethod [
 							expression: (TSendNode new
 								setSelector: #+
 								receiver: (TVariableNode new setName: block args first)
-								arguments: { TConstantNode new setValue: 1 });
+								arguments: { TConstantNode value: 1 });
 								yourself)
 		] ifFalse: [
 			args := OrderedCollection
 				with: args first
-				with: (TConstantNode new setValue: 1)
+				with: (TConstantNode value: 1)
 				with: args second
 				with: (TVariableNode new setName: 'iLimiT')
 		]
