@@ -89,10 +89,23 @@ endif()
 # Socket Plugin
 #
 if (${FEATURE_NETWORK})
-    add_vm_plugin(SocketPlugin)
-  if(WIN)
-    target_link_libraries(SocketPlugin PRIVATE "-lWs2_32")
-  endif()
+
+	message(STATUS "Adding plugin: SocketPlugin")
+
+	include_directories(
+		${CMAKE_CURRENT_SOURCE_DIR}/plugins/SocketPlugin/include
+	)
+
+	file(GLOB SocketPlugin_SOURCES
+		${CMAKE_CURRENT_SOURCE_DIR}/plugins/SocketPlugin/src/*.c
+		${PHARO_CURRENT_GENERATED}/plugins/src/SocketPlugin/SocketPlugin.c
+	)
+
+	addLibraryWithRPATH(SocketPlugin ${SocketPlugin_SOURCES})
+
+	if(WIN)
+		target_link_libraries(SocketPlugin PRIVATE "-lWs2_32")
+	endif()
 endif()
 
 #
