@@ -33,14 +33,6 @@ static struct addrinfo *localInfo= 0;
 #define SQ_SOCKET_NUMERIC		(1<<0)
 #define SQ_SOCKET_PASSIVE		(1<<1)
 
-/* family */
-
-#define SQ_SOCKET_FAMILY_UNSPECIFIED	0
-#define SQ_SOCKET_FAMILY_LOCAL		1
-#define SQ_SOCKET_FAMILY_INET4		2
-#define SQ_SOCKET_FAMILY_INET6		3
-#define SQ_SOCKET_FAMILY_MAX		4
-
 /* type */
 
 #define SQ_SOCKET_TYPE_UNSPECIFIED	0

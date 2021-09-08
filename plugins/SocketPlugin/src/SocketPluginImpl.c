@@ -43,6 +43,7 @@ static int one = 1;
 # define ERROR_WOULD_BLOCK	EWOULDBLOCK
 #endif
 
+
 union sockaddr_any
 {
   struct sockaddr		sa;
@@ -594,124 +595,33 @@ sqInt sqSocketConnectionStatus(SocketPtr s)
   return SOCKETSTATE(s);
 }
 
+void socketListenOn(SocketPtr s, void* address, size_t addressSize, int backlogSize) {
 
+	struct sockaddr* addr = (struct sockaddr*) address;
 
-/* TCP => start listening for incoming connections.
- * UDP => associate the local port number with the socket.
- */
-void sqSocketListenOnPort(SocketPtr s, sqInt port)
-{
-  sqSocketListenOnPortBacklogSize(s, port, 1);
-}
+	if (!socketValid(s))
+		return;
 
-void sqSocketListenOnPortBacklogSizeInterface(SocketPtr s, sqInt port, sqInt backlogSize, sqInt addr)
-{
-  struct sockaddr_in saddr;
-
-  if (!socketValid(s))
-    return;
-
-  /* only TCP sockets have a backlog */
-  if ((backlogSize > 1) && (s->socketType != TCPSocketType))
-    {
-      success(false);
-      return;
-    }
-
-  PSP(s)->multiListen= (backlogSize > 1);
-  logTrace("listenOnPortBacklogSize(%d, %ld)\n", SOCKET(s), backlogSize);
-  memset(&saddr, 0, sizeof(saddr));
-  saddr.sin_family= AF_INET;
-  saddr.sin_port= htons((short)port);
-  saddr.sin_addr.s_addr= htonl(addr);
-  bind(SOCKET(s), (struct sockaddr*) &saddr, sizeof(saddr));
-  if (TCPSocketType == s->socketType)
-    {
-      /* --- TCP --- */
-      listen(SOCKET(s), backlogSize);
-      SOCKETSTATE(s)= WaitingForConnection;
-      aioEnable(SOCKET(s), PSP(s), 0);
-      aioHandle(SOCKET(s), acceptHandler, AIO_RX); /* R => accept() */
-    }
-  else
-    {
-      /* --- UDP/RAW --- */
-    }
-}
-
-void sqSocketListenOnPortBacklogSize(SocketPtr s, sqInt port, sqInt backlogSize)
-{
-  sqSocketListenOnPortBacklogSizeInterface(s, port, backlogSize, INADDR_ANY);
-}
-
-/* TCP => open a connection.
- * UDP => set remote address.
- */
-void sqSocketConnectToPort(SocketPtr s, sqInt addr, sqInt port)
-{
-  struct sockaddr_in saddr;
-
-  if (!socketValid(s))
-    return;
-  logTrace("connectTo(%d)\n", SOCKET(s));
-  memset(&saddr, 0, sizeof(saddr));
-  saddr.sin_family= AF_INET;
-  saddr.sin_port= htons((short)port);
-  saddr.sin_addr.s_addr= htonl(addr);
-  if (TCPSocketType != s->socketType)
-    {
-      /* --- UDP/RAW --- */
-      if (SOCKET(s) >= 0)
-	{
-	  int result;
-	  memcpy((void *)&SOCKETPEER(s), (void *)&saddr, sizeof(saddr));
-	  SOCKETPEERSIZE(s)= sizeof(struct sockaddr_in);
-	  result= connect(SOCKET(s), (struct sockaddr *)&saddr, sizeof(saddr));
-	  if (result == 0)
-	    SOCKETSTATE(s)= Connected;
+	/* only TCP sockets have a backlog */
+	if ((backlogSize > 1) && (s->socketType != TCPSocketType)) {
+		success(false);
+		return;
 	}
-    }
-  else
-    {
-      /* --- TCP --- */
-      int result;
-      int lastError;
 
-      aioEnable(SOCKET(s), PSP(s), 0);
-      struct sockaddr_in * p = &saddr;
-      result= connect(SOCKET(s), (struct sockaddr *)p, sizeof(saddr));
+	PSP(s)->multiListen = (backlogSize > 1);
+	logTrace("listenOnPortBacklogSize(%d, %ld)\n", SOCKET(s), backlogSize);
 
-      lastError = getLastSocketError();
+	bind(SOCKET(s), addr, addressSize);
 
-      if (result == 0)
-	{
-	  /* connection completed synchronously */
-	  logWarnFromErrno("sqConnectToPort");
-      logWarn("LastSocketError: %d", getLastSocketError());
-
-	  SOCKETSTATE(s)= Connected;
-	  notify(PSP(s), CONN_NOTIFY);
-	  setLinger(SOCKET(s), 1);
+	if (TCPSocketType == s->socketType) {
+		/* --- TCP --- */
+		listen(SOCKET(s), backlogSize);
+		SOCKETSTATE(s) = WaitingForConnection;
+		aioEnable(SOCKET(s), PSP(s), 0);
+		aioHandle(SOCKET(s), acceptHandler, AIO_RX); /* R => accept() */
+	} else {
+		/* --- UDP/RAW --- */
 	}
-      else
-	{
-	  if (lastError == ERROR_IN_PROGRESS || lastError == ERROR_WOULD_BLOCK) {
-	      /* asynchronous connection in progress */
-	      SOCKETSTATE(s)= WaitingForConnection;
-	      aioHandle(SOCKET(s), connectHandler, AIO_WX);  /* W => connect() */
-	    }
-	  else
-	    {
-	      /* connection error */
-		  logWarnFromErrno("sqConnectToPort");
-	      logWarn("LastSocketError: %d", getLastSocketError());
-
-	      SOCKETSTATE(s)= Unconnected;
-	      SOCKETERROR(s)= lastError;
-	      notify(PSP(s), CONN_NOTIFY);
-	    }
-	}
-    }
 }
 
 void sqSocketAcceptFromRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(SocketPtr s, SocketPtr serverSocket, sqInt recvBufSize, sqInt sendBufSize, sqInt semaIndex, sqInt readSemaIndex, sqInt writeSemaIndex)
@@ -1168,21 +1078,6 @@ sqInt sqSockettoHostportSendDataBufCount(SocketPtr s, sqInt address, sqInt port,
 /*** socket options ***/
 
 
-/* NOTE: we only support the portable options here as an incentive for
-         people to write portable Squeak programs.  If you need
-         non-portable socket options then go write yourself a plugin
-         specific to your platform.  This decision is unilateral and
-         non-negotiable.  - ikp
-   NOTE: we only support the integer-valued options because the code
-	 in SocketPlugin doesn't seem able to cope with the others.
-	 (Personally I think that things like SO_SNDTIMEO et al would
-	 by far more interesting than the majority of things on this
-	 list, but there you go...)
-   NOTE: if your build fails because of a missing option in this list,
-	 simply DELETE THE OPTION (or comment it out) and then send
-	 me mail (ian.piumarta@inria.fr) to let me know about it.
- */
-
 typedef struct
 {
   char *name;		/* name as known to Squeak */
@@ -1354,27 +1249,6 @@ sqInt sqSocketGetOptionsoptionNameStartoptionNameSizereturnedValue(SocketPtr s, 
   return -1;
 }
 
-void sqSocketBindToPort(SocketPtr s, int addr, int port)
-{
-  struct sockaddr_in inaddr;
-  privateSocketStruct *pss= PSP(s);
-
-  if (!socketValid(s))
-	  return;
-
-  /* bind the socket */
-  memset(&inaddr, 0, sizeof(inaddr));
-  inaddr.sin_family= AF_INET;
-  inaddr.sin_port= htons(port);
-  inaddr.sin_addr.s_addr= htonl(addr);
-
-  if (bind(SOCKET(s), (struct sockaddr *)&inaddr, sizeof(struct sockaddr_in)) < 0) {
-      pss->sockError= getLastSocketError();
-      success(false);
-      return;
-    }
-}
-
 void sqSocketSetReusable(SocketPtr s)
 {
   size_t bufSize;
@@ -1391,22 +1265,6 @@ void sqSocketSetReusable(SocketPtr s)
       return;
     }
 }
-
-sqInt sqSocketAddressSizeGetPort(char *addr, sqInt addrSize);
-void  sqSocketAddressSizeSetPort(char *addr, sqInt addrSize, sqInt port);
-
-void  sqSocketBindToAddressSize(SocketPtr s, char *addr, sqInt addrSize);
-void  sqSocketListenBacklog(SocketPtr s, sqInt backlogSize);
-void  sqSocketConnectToAddressSize(SocketPtr s, char *addr, sqInt addrSize);
-
-sqInt sqSocketLocalAddressSize(SocketPtr s);
-void  sqSocketLocalAddressResultSize(SocketPtr s, char *addr, int addrSize);
-sqInt sqSocketRemoteAddressSize(SocketPtr s);
-void  sqSocketRemoteAddressResultSize(SocketPtr s, char *addr, int addrSize);
-
-sqInt sqSocketSendUDPToSizeDataBufCount(SocketPtr s, char *addr, sqInt addrSize, char *buf, sqInt bufSize);
-sqInt sqSocketReceiveUDPDataBufCount(SocketPtr s, char *buf, sqInt bufSize);
-
 
 /* ---- address manipulation ---- */
 
@@ -1438,112 +1296,104 @@ void sqSocketAddressSizeSetPort(char *addr, sqInt addrSize, sqInt port)
 }
 
 
-/* ---- circuit setup ---- */
+void socketBindTo(SocketPtr s, void *address, size_t addrSize) {
 
+	struct sockaddr* addr = (struct sockaddr*) address;
 
-void sqSocketBindToAddressSize(SocketPtr s, char *addr, sqInt addrSize)
-{
-  privateSocketStruct *pss= PSP(s);
+	privateSocketStruct *pss = PSP(s);
 
-  if (!(socketValid(s) && addressValid(addr, addrSize)))
-    goto fail;
+	if (!socketValid(s)){
+		success(false);
+		return;
+	}
 
-  if (bind(SOCKET(s), socketAddress(addr), addressSize(addr)) == 0)
-    return;
+	if (bind(SOCKET(s), addr, addrSize) == 0)
+		return;
 
-  pss->sockError= getLastSocketError();
-
- fail:
-  success(false);
+	pss->sockError = getLastSocketError();
+	success(false);
 }
 
 
-void sqSocketListenBacklog(SocketPtr s, sqInt backlogSize)
-{
-  if (!socketValid(s))
-    goto fail;
+void socketConnectToAddressSize(SocketPtr s, void* address, size_t addrSize){
 
-  if ((backlogSize > 1) && (s->socketType != TCPSocketType))
-    goto fail;
+	/* TCP => open a connection.
+	 * UDP => set remote address.
+	 */
 
-  PSP(s)->multiListen= (backlogSize > 1);
+	struct sockaddr* addr = (struct sockaddr*) address;
 
-  logTrace( "listenBacklog(%d, %ld)\n", SOCKET(s), backlogSize);
+	if (!socketValid(s)) {
+		success(false);
+		return;
+	}
 
-  if (TCPSocketType == s->socketType)
-    {
-      listen(SOCKET(s), backlogSize);	/* acceptHandler catches errors */
-      SOCKETSTATE(s)= WaitingForConnection;
-      aioEnable(SOCKET(s), PSP(s), 0);
-      aioHandle(SOCKET(s), acceptHandler, AIO_RX); /* R => accept() */
-    }
+	logTrace("connectToAddressSize(%d)\n", SOCKET(s));
 
-  return;
+	if (TCPSocketType != s->socketType) {
 
- fail:
-  success(false);
-  return;
+		/* --- UDP/RAW --- */
+
+		if (SOCKET(s) >= 0) {
+
+			int result;
+
+			memcpy((void *) &SOCKETPEER(s), addr, addrSize);
+
+			SOCKETPEERSIZE(s) = addrSize;
+
+			result = connect(SOCKET(s), addr, addrSize);
+
+			if (result == 0)
+				SOCKETSTATE(s) = Connected;
+		}
+	} else /* --- TCP --- */
+	{
+		int result;
+		aioEnable(SOCKET(s), PSP(s), 0);
+		result = connect(SOCKET(s), addr, addrSize);
+
+		logTrace("connect() => %d\n", result);
+
+		if (result == 0) {
+			/* connection completed synchronously */
+			logWarnFromErrno("sqConnectToPort");
+			logWarn("LastSocketError: %d", getLastSocketError());
+
+			SOCKETSTATE(s) = Connected;
+			notify(PSP(s), CONN_NOTIFY);
+			setLinger(SOCKET(s), 1);
+		} else {
+			int lastError = getLastSocketError();
+			if (lastError == ERROR_IN_PROGRESS || lastError == ERROR_WOULD_BLOCK) {
+				/* asynchronous connection in progress */
+				SOCKETSTATE(s) = WaitingForConnection;
+				aioHandle(SOCKET(s), connectHandler, AIO_WX); /* W => connect() */
+			} else {
+				/* connection error */
+				logWarnFromErrno("sqConnectToAddressSize");
+				SOCKETSTATE(s) = Unconnected;
+				SOCKETERROR(s) = errno;
+				notify(PSP(s), CONN_NOTIFY);
+			}
+		}
+	}
 }
 
+void* newIP4SockAddr(int address, int port) {
+	struct sockaddr_in* r = (struct sockaddr_in*) malloc(sizeof(struct sockaddr_in));
 
-void sqSocketConnectToAddressSize(SocketPtr s, char *addr, sqInt addrSize)
-{
-  /* TCP => open a connection.
-   * UDP => set remote address.
-   */
-  if (!(socketValid(s) && addressValid(addr, addrSize)))
-    {
-      success(false);
-      return;
-    }
+	memset(r, 0, sizeof(struct sockaddr_in));
 
-  logTrace( "connectToAddressSize(%d)\n", SOCKET(s));
+	r->sin_family = AF_INET;
+	r->sin_port = htons((short)port);
+	r->sin_addr.s_addr = htonl(address);
 
-  if (TCPSocketType != s->socketType)	/* --- UDP/RAW --- */
-    {
-      if (SOCKET(s) >= 0)
-	{
-	  int result;
-	  memcpy((void *)&SOCKETPEER(s), socketAddress(addr), addressSize(addr));
-	  SOCKETPEERSIZE(s)= addressSize(addr);
-	  result= connect(SOCKET(s), socketAddress(addr), addressSize(addr));
-	  if (result == 0)
-	    SOCKETSTATE(s)= Connected;
-	}
-    }
-  else					/* --- TCP --- */
-    {
-      int result;
-      aioEnable(SOCKET(s), PSP(s), 0);
-      result= connect(SOCKET(s), socketAddress(addr), addressSize(addr));
-      logTrace( "connect() => %d\n", result);
-      if (result == 0)
-	{
-	  /* connection completed synchronously */
-  	  logWarnFromErrno("sqConnectToPort");
-      logWarn("LastSocketError: %d", getLastSocketError());		
-		
-	  SOCKETSTATE(s)= Connected;
-	  notify(PSP(s), CONN_NOTIFY);
-	  setLinger(SOCKET(s), 1);
-	}
-      else {
-		  int lastError = getLastSocketError();
-    	  if (lastError == ERROR_IN_PROGRESS || lastError == ERROR_WOULD_BLOCK) {
-			  /* asynchronous connection in progress */
-			  SOCKETSTATE(s)= WaitingForConnection;
-			  aioHandle(SOCKET(s), connectHandler, AIO_WX);  /* W => connect() */
-			}
-		  else
-			{
-			  /* connection error */
-			  logWarnFromErrno("sqConnectToAddressSize");
-			  SOCKETSTATE(s)= Unconnected;
-			  SOCKETERROR(s)= errno;
-			  notify(PSP(s), CONN_NOTIFY);
-			}
-      }
-    }
+	return r;
+}
+
+size_t ip4SockSize(){
+	return sizeof(struct sockaddr_in);
 }
 
 

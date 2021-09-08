@@ -31,7 +31,6 @@ void  sqSocketCreateNetTypeSocketTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSema
 void  sqSocketCreateRawProtoTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(SocketPtr s, sqInt domain, sqInt protocol, sqInt recvBufSize, sqInt sendBufSize, sqInt semaIndex, sqInt readSemaIndex, sqInt writeSemaIndex);
 void  sqSocketDestroy(SocketPtr s);
 sqInt sqSocketError(SocketPtr s);
-void  sqSocketListenOnPort(SocketPtr s, sqInt port);
 sqInt sqSocketLocalAddress(SocketPtr s);
 sqInt sqSocketLocalPort(SocketPtr s);
 sqInt sqSocketReceiveDataAvailable(SocketPtr s);
@@ -40,16 +39,11 @@ sqInt sqSocketRemoteAddress(SocketPtr s);
 sqInt sqSocketRemotePort(SocketPtr s);
 sqInt sqSocketSendDataBufCount(SocketPtr s, char *buf, sqInt bufSize);
 sqInt sqSocketSendDone(SocketPtr s);
-/* ar 7/16/1999: New primitives for accept().  Note: If accept() calls are not supported simply make the calls fail and the old connection style will be used. */
-void  sqSocketListenOnPortBacklogSize(SocketPtr s, sqInt port, sqInt backlogSize);
-void  sqSocketListenOnPortBacklogSizeInterface(SocketPtr s, sqInt port, sqInt backlogSize, sqInt addr);
 void  sqSocketAcceptFromRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(SocketPtr s, SocketPtr serverSocket, sqInt recvBufSize, sqInt sendBufSize, sqInt semaIndex, sqInt readSemaIndex, sqInt writeSemaIndex);
 sqInt sqSocketReceiveUDPDataBufCountaddressportmoreFlag(SocketPtr s, char *buf, sqInt bufSize,  sqInt *address,  sqInt *port, sqInt *moreFlag);
 sqInt sqSockettoHostportSendDataBufCount(SocketPtr s, sqInt address, sqInt port, char *buf, sqInt bufSize);
 sqInt sqSocketSetOptionsoptionNameStartoptionNameSizeoptionValueStartoptionValueSizereturnedValue(SocketPtr s, char *optionName, sqInt optionNameSize, char *optionValue, sqInt optionValueSize, sqInt *result);
 sqInt sqSocketGetOptionsoptionNameStartoptionNameSizereturnedValue(SocketPtr s, char *optionName, sqInt optionNameSize, sqInt *result);
-/* tpr 4/12/06 add declarations for two new socket routines */
-void sqSocketBindToPort(SocketPtr s, int addr, int port);
 void sqSocketSetReusable(SocketPtr s);
 
 void  sqResolverGetAddressInfoHostSizeServiceSizeFlagsFamilyTypeProtocol(char *hostName, sqInt hostSize, char *servName, sqInt servSize,
@@ -73,12 +67,22 @@ void  sqResolverGetNameInfoServiceResultSize(char *name, sqInt nameSize);
 sqInt sqResolverHostNameSize(void);
 void  sqResolverHostNameResultSize(char *name, sqInt nameSize);
 
-void  sqSocketBindToAddressSize(SocketPtr s, char *addr, sqInt addrSize);
-void  sqSocketListenBacklog(SocketPtr s, sqInt backlogSize);
-void  sqSocketConnectToAddressSize(SocketPtr s, char *addr, sqInt addrSize);
-
 sqInt sqSocketLocalAddressSize(SocketPtr s);
 void  sqSocketLocalAddressResultSize(SocketPtr s, char *addr, int addrSize);
 sqInt sqSocketRemoteAddressSize(SocketPtr s);
 void  sqSocketRemoteAddressResultSize(SocketPtr s, char *addr, int addrSize);
 
+void socketConnectToAddressSize(SocketPtr s, void* addr, size_t addrSize);
+void socketListenOn(SocketPtr s, void* address, size_t addressSize, int backlogSize);
+void socketBindTo(SocketPtr s, void *address, size_t addrSize);
+
+void* newIP4SockAddr(int address, int port);
+size_t ip4SockSize();
+
+/* family */
+
+#define SQ_SOCKET_FAMILY_UNSPECIFIED	0
+#define SQ_SOCKET_FAMILY_LOCAL		1
+#define SQ_SOCKET_FAMILY_INET4		2
+#define SQ_SOCKET_FAMILY_INET6		3
+#define SQ_SOCKET_FAMILY_MAX		4
