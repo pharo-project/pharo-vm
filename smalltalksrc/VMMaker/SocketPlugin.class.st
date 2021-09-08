@@ -668,27 +668,6 @@ SocketPlugin >> primitiveSocketAbortConnection: socket [
 ]
 
 { #category : #primitives }
-SocketPlugin >> primitiveSocketAcceptFrom: sockHandle rcvBufferSize: recvBufSize sndBufSize: sendBufSize semaIndex: semaIndex [ 
-	| socketOop s serverSocket |
-	<var: #s type: 'SocketPtr '>
-	<var: #serverSocket type: 'SocketPtr '>
-	self primitive: 'primitiveSocketAccept'
-		parameters: #(Oop SmallInteger SmallInteger SmallInteger ).
-	serverSocket := self socketValueOf: sockHandle.
-
-	interpreterProxy failed
-		ifFalse: [socketOop := interpreterProxy instantiateClass: interpreterProxy classByteArray indexableSize: self socketRecordSize.
-			s := self socketValueOf: socketOop.
-			self
-				sqSocket: s
-				AcceptFrom: serverSocket
-				RecvBytes: recvBufSize
-				SendBytes: sendBufSize
-				SemaID: semaIndex].
-	^ socketOop
-]
-
-{ #category : #primitives }
 SocketPlugin >> primitiveSocketAcceptFrom: sockHandle rcvBufferSize: recvBufSize sndBufSize: sendBufSize semaIndex: semaIndex readSemaIndex: aReadSema writeSemaIndex: aWriteSema [
 	| socketOop s serverSocket |
 	<var: #s type: 'SocketPtr '>
@@ -759,25 +738,6 @@ SocketPlugin >> primitiveSocketConnectionStatus: socket [
 	interpreterProxy failed ifFalse: [
 		status := self sqSocketConnectionStatus: s].
 	^ status asSmallIntegerObj
-]
-
-{ #category : #primitives }
-SocketPlugin >> primitiveSocketCreateNetwork: netType type: socketType receiveBufferSize: recvBufSize sendBufSize: sendBufSize semaIndex: semaIndex [ 
-	| socketOop s okToCreate |
-	<var: #s type: 'SocketPtr '>
-	self primitive: 'primitiveSocketCreate' parameters: #(#SmallInteger #SmallInteger #SmallInteger #SmallInteger #SmallInteger ).
-
-	socketOop := interpreterProxy instantiateClass: interpreterProxy classByteArray indexableSize: self socketRecordSize.
-	s := self socketValueOf: socketOop.
-	interpreterProxy failed ifFalse:
-		[self
-			sqSocket: s
-			CreateNetType: netType
-			SocketType: socketType
-			RecvBytes: recvBufSize
-			SendBytes: sendBufSize
-			SemaID: semaIndex].
-	^socketOop
 ]
 
 { #category : #primitives }
