@@ -14,11 +14,6 @@ SocketPlugin class >> declareCVarsIn: aCCodeGenerator [
 		self declareC:  (self instVarNames select: [:ivn| ivn first = $s and: [ivn second isUppercase]])
 			as: #'void *'
 			in: aCCodeGenerator."
-	aCCodeGenerator var: 'sDSAfn'	type: 'void *'.
-	aCCodeGenerator var: 'sHSAfn'	type: 'void *'.
-	aCCodeGenerator var: 'sCCTPfn'	type: 'void *'.
-	aCCodeGenerator var: 'sCCLOPfn'	type: 'void *'.
-	aCCodeGenerator var: 'sCCSOTfn'	type: 'void *'.
 	aCCodeGenerator addHeaderFile: '"SocketPlugin.h"'
 ]
 
@@ -32,6 +27,91 @@ SocketPlugin class >> hasHeaderFile [
 SocketPlugin class >> requiresPlatformFiles [
 	"this plugin requires platform specific files in order to work"
 	^true
+]
+
+{ #category : #'accessing - ip4' }
+SocketPlugin >> addressStructFor: aSocketAddress [
+
+	<returnTypeC: #'struct sockaddr*'>
+
+	| addressType |
+
+	addressType := self getAddressType: aSocketAddress.
+	interpreterProxy failed ifTrue: [ ^ nil ].
+	
+	addressType = self ip4AddressType 
+		ifTrue: [ 
+			(self isValidIp4Address: aSocketAddress) 
+				ifFalse: [ ^ nil  ].
+			^ self newIP4SockAddr: (self getIp4Address: aSocketAddress) _: (self getIp4Port: aSocketAddress) ].
+		
+	^ interpreterProxy primitiveFail.
+]
+
+{ #category : #'accessing - ip4' }
+SocketPlugin >> addressStructSizeFor: aSocketAddress [
+
+	<returnTypeC: #'void*'>
+
+	| addressType |
+
+	addressType := self getAddressType: aSocketAddress.
+	interpreterProxy failed ifTrue: [ ^ nil ].
+	
+	addressType = self ip4AddressType 
+		ifTrue: [ ^ self ip4SockSize ].
+		
+	^ interpreterProxy primitiveFail.
+]
+
+{ #category : #'accessing - ip4' }
+SocketPlugin >> getAddressType: anAddressOop [
+
+	<returnTypeC: #int>
+
+	| type |
+	
+	(interpreterProxy isPointers: anAddressOop)
+		ifFalse: [ interpreterProxy primitiveFail. ^ nil  ].
+
+	(interpreterProxy slotSizeOf: anAddressOop) >= 1
+		ifFalse:  [ interpreterProxy primitiveFail. ^ nil  ].
+
+	type := interpreterProxy fetchInteger: 0 ofObject: anAddressOop.
+	interpreterProxy failed ifTrue: [ ^ nil ].
+	
+	^ type
+]
+
+{ #category : #'accessing - ip4' }
+SocketPlugin >> getIp4Address: anAddressOop [
+
+	"IPv4 Addresses are represented by an object with a smallinteger saying the address type (2 for IPv4), a 4 bytes bytearray as second instance variable, and a smallInteger as port number as third instance variable. If it does not have port the value is -1.
+	It returns the int32 representing the address in host order"
+
+	<returnTypeC: #int>
+	<var: #ptrToByteArray type: 'unsigned char * '>
+
+	| ptrToByteArray |
+	ptrToByteArray := interpreterProxy firstIndexableField: (interpreterProxy fetchPointer: 1 ofObject: anAddressOop).
+
+	^ (ptrToByteArray at: 3	) +
+		((ptrToByteArray at: 2) <<8) +
+		((ptrToByteArray at: 1) <<16) +
+		((ptrToByteArray at: 0) <<24)
+
+
+]
+
+{ #category : #'accessing - ip4' }
+SocketPlugin >> getIp4Port: anAddressOop [
+
+	<returnTypeC: #int>
+
+	"IPv4 Addresses are represented by an object with a smallinteger saying the address type (2 for IPv4), a 4 bytes bytearray as second instance variable, and a smallInteger as port number as third instance variable. If it does not have port the value is -1.
+	It returns the int32 representing the port in host order"
+
+	^ interpreterProxy fetchInteger: 2 ofObject: anAddressOop
 ]
 
 { #category : #'initialize-release' }
@@ -60,6 +140,44 @@ SocketPlugin >> intToNetAddress: addr [
 	^ netAddressOop
 ]
 
+{ #category : #'accessing - ip4' }
+SocketPlugin >> ip4AddressType [
+
+	<cmacro: '() SQ_SOCKET_FAMILY_INET4'>
+
+	^ 2
+]
+
+{ #category : #'accessing - ip4' }
+SocketPlugin >> isValidIp4Address: anAddressOop [
+
+	<returnTypeC: #int>
+
+	"IPv4 Addresses are represented by an object with a smallinteger saying the address type (2 for IPv4), a 4 bytes bytearray as second instance variable, and a smallInteger as port number as third instance variable. If it does not have port the value is -1."
+
+	| maybeByteArray maybeInteger type |
+
+	type := self getAddressType: anAddressOop.
+	interpreterProxy failed ifTrue: [ ^ false ].
+	
+	type = self ip4AddressType ifFalse: [ interpreterProxy primitiveFail. ^ false ].
+
+	maybeByteArray := interpreterProxy fetchPointer: 1 ofObject: anAddressOop.
+	
+	(interpreterProxy isBytes: maybeByteArray)
+		ifFalse:  [ interpreterProxy primitiveFail. ^ false  ].
+
+	(interpreterProxy stSizeOf: maybeByteArray) = 4
+		ifFalse:  [ interpreterProxy primitiveFail. ^ false  ].
+
+	maybeInteger := interpreterProxy fetchPointer: 2 ofObject: anAddressOop.
+
+	(interpreterProxy isIntegerObject: maybeInteger)
+		ifFalse:  [ interpreterProxy primitiveFail. ^ false  ].
+		
+	^ true
+]
+
 { #category : #primitives }
 SocketPlugin >> netAddressToInt: ptrToByteArray [
 	"Convert the given internet network address (represented as a four-byte ByteArray) into a 32-bit integer. Fail if the given ptrToByteArray does not appear to point to a four-byte ByteArray."
@@ -84,7 +202,7 @@ SocketPlugin >> primitiveInitializeNetwork: resolverSemaIndex [
 	interpreterProxy success: err = 0
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - resolver - old' }
 SocketPlugin >> primitiveResolverAbortLookup [
 
 	self primitive: 'primitiveResolverAbortLookup'.
@@ -92,7 +210,7 @@ SocketPlugin >> primitiveResolverAbortLookup [
 	self sqResolverAbort
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - resolver - old' }
 SocketPlugin >> primitiveResolverAddressLookupResult [
 	| sz s |
 	self primitive: 'primitiveResolverAddressLookupResult'.
@@ -104,14 +222,14 @@ SocketPlugin >> primitiveResolverAddressLookupResult [
 	^ s
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - resolver - old' }
 SocketPlugin >> primitiveResolverError [
 
 	self primitive: 'primitiveResolverError'.
 	^ self sqResolverError asSmallIntegerObj
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - resolver' }
 SocketPlugin >> primitiveResolverGetAddressInfoFamily [
 
 	| family |
@@ -123,7 +241,7 @@ SocketPlugin >> primitiveResolverGetAddressInfoFamily [
 			 ^family asSmallIntegerObj]
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - resolver' }
 SocketPlugin >> primitiveResolverGetAddressInfoHost: hostName service: servName flags: flags family: family type: type protocol: protocol [
 
 	| hostSize servSize |
@@ -138,7 +256,7 @@ SocketPlugin >> primitiveResolverGetAddressInfoHost: hostName service: servName 
 					Flags: flags Family: family Type: type Protocol: protocol]
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - resolver' }
 SocketPlugin >> primitiveResolverGetAddressInfoNext [
 
 	| more |
@@ -149,7 +267,7 @@ SocketPlugin >> primitiveResolverGetAddressInfoNext [
 	^more asBooleanObj
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - resolver' }
 SocketPlugin >> primitiveResolverGetAddressInfoProtocol [
 
 	| protocol |
@@ -161,7 +279,7 @@ SocketPlugin >> primitiveResolverGetAddressInfoProtocol [
 			 ^protocol asSmallIntegerObj]
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - resolver' }
 SocketPlugin >> primitiveResolverGetAddressInfoResult: socketAddress [
 
 	| addrSize |
@@ -173,7 +291,7 @@ SocketPlugin >> primitiveResolverGetAddressInfoResult: socketAddress [
 			 self sqResolverGetAddressInfoResult: socketAddress Size: addrSize]
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - resolver' }
 SocketPlugin >> primitiveResolverGetAddressInfoSize [
 
 	| size |
@@ -185,7 +303,7 @@ SocketPlugin >> primitiveResolverGetAddressInfoSize [
 			 ^size asSmallIntegerObj]
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - resolver' }
 SocketPlugin >> primitiveResolverGetAddressInfoType [
 
 	| type |
@@ -197,7 +315,7 @@ SocketPlugin >> primitiveResolverGetAddressInfoType [
 			 ^type asSmallIntegerObj]
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - resolver' }
 SocketPlugin >> primitiveResolverGetNameInfo: socketAddress flags: flags [
 
 	| addrSize addrBase |
@@ -211,7 +329,7 @@ SocketPlugin >> primitiveResolverGetNameInfo: socketAddress flags: flags [
 			 self sqResolverGetNameInfo: addrBase Size: addrSize Flags: flags]
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - resolver' }
 SocketPlugin >> primitiveResolverGetNameInfoHostResult: socketName [
 
 	| addrSize |
@@ -223,7 +341,7 @@ SocketPlugin >> primitiveResolverGetNameInfoHostResult: socketName [
 			 self sqResolverGetNameInfoHostResult: socketName Size: addrSize]
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - resolver' }
 SocketPlugin >> primitiveResolverGetNameInfoHostSize [
 
 	| size |
@@ -235,7 +353,7 @@ SocketPlugin >> primitiveResolverGetNameInfoHostSize [
 			 ^size asSmallIntegerObj]
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - resolver' }
 SocketPlugin >> primitiveResolverGetNameInfoServiceResult: socketName [
 
 	| addrSize |
@@ -247,7 +365,7 @@ SocketPlugin >> primitiveResolverGetNameInfoServiceResult: socketName [
 			 self sqResolverGetNameInfoServiceResult: socketName Size: addrSize]
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - resolver' }
 SocketPlugin >> primitiveResolverGetNameInfoServiceSize [
 
 	| size |
@@ -259,7 +377,7 @@ SocketPlugin >> primitiveResolverGetNameInfoServiceSize [
 			 ^size asSmallIntegerObj]
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - resolver' }
 SocketPlugin >> primitiveResolverHostNameResult: nameString [
 
 	| nameSize |
@@ -271,7 +389,7 @@ SocketPlugin >> primitiveResolverHostNameResult: nameString [
 			 self sqResolverHostNameResult: nameString Size: nameSize]
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - resolver' }
 SocketPlugin >> primitiveResolverHostNameSize [
 
 	| size |
@@ -283,7 +401,7 @@ SocketPlugin >> primitiveResolverHostNameSize [
 			 interpreterProxy failed ifFalse: [^size asSmallIntegerObj]]
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - resolver - old' }
 SocketPlugin >> primitiveResolverLocalAddress [
 
 	| addr |
@@ -292,7 +410,7 @@ SocketPlugin >> primitiveResolverLocalAddress [
 	^self intToNetAddress: addr
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - resolver - old' }
 SocketPlugin >> primitiveResolverNameLookupResult [
 
 	| addr |
@@ -301,7 +419,7 @@ SocketPlugin >> primitiveResolverNameLookupResult [
 	^self intToNetAddress: addr
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - resolver - old' }
 SocketPlugin >> primitiveResolverStartAddressLookup: address [
 
 	| addr |
@@ -312,7 +430,7 @@ SocketPlugin >> primitiveResolverStartAddressLookup: address [
 		self sqResolverStartAddrLookup: addr]
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - resolver - old' }
 SocketPlugin >> primitiveResolverStartNameLookup: name [
 
 	| sz |
@@ -323,7 +441,7 @@ SocketPlugin >> primitiveResolverStartNameLookup: name [
 		self sqResolverStartName: name Lookup: sz]
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - resolver - old' }
 SocketPlugin >> primitiveResolverStatus [
 
 	| status |
@@ -332,57 +450,52 @@ SocketPlugin >> primitiveResolverStatus [
 	^status asSmallIntegerObj
 ]
 
-{ #category : #'ipv6 primitives' }
-SocketPlugin >> primitiveSocket: socket bindTo: socketAddress [
+{ #category : #'primitives - connection' }
+SocketPlugin >> primitiveSocket: socket bindTo: socketAddressOop [
 
-	| addrSize addrBase s  |
-	<var: #addrBase type: 'char *'>
+	<var: #addr type: 'void*'>
+	<var: #addrSize type: 'size_t'>
+
 	<var: #s type: 'SocketPtr'>
+
+	| s addr addrSize |
 	self primitive: 'primitiveSocketBindTo' parameters: #(#Oop #Oop).
+
 	s := self socketValueOf: socket.
-	addrSize := interpreterProxy byteSizeOf: socketAddress.
-	addrBase := self cCoerce: (interpreterProxy firstIndexableField: socketAddress) to: 'char *'.
-	interpreterProxy failed ifFalse: [self sqSocket: s BindToAddress: addrBase Size: addrSize]
+
+	addr := self addressStructFor: socketAddressOop.
+	addrSize := self addressStructSizeFor: socketAddressOop.
+
+	interpreterProxy failed ifFalse: [
+		self socketBindTo: s _: addr _: addrSize.
+		self free: addr].
 ]
 
-{ #category : #primitives }
-SocketPlugin >> primitiveSocket: socket bindTo: address port: port [ 
-	| addr s  |
-	<var: #s declareC: 'SocketPtr s'>
-	self primitive: 'primitiveSocketBindToPort' parameters: #(#Oop #ByteArray #SmallInteger ).
-	addr := self
-				netAddressToInt: (self cCoerce: address to: 'unsigned char *').
-	s := self socketValueOf: socket.
-	interpreterProxy failed 
-		ifFalse:[self sqSocket: s BindTo: addr Port: port]
-]
+{ #category : #'primitives - connection' }
+SocketPlugin >> primitiveSocket: socket connectTo: socketAddressOop [
 
-{ #category : #'ipv6 primitives' }
-SocketPlugin >> primitiveSocket: socket connectTo: socketAddress [
+	| addrSize addr s  |
 
-	| addrSize addrBase s  |
-	<var: #addrBase type: 'char *'>
+	<var: #addr type: 'void*'>
+	<var: #addrSize type: 'size_t'>
+
 	<var: #s type: 'SocketPtr'>
+
 	self primitive: 'primitiveSocketConnectTo' parameters: #(#Oop #Oop).
-	s := self socketValueOf: socket.
-	addrSize := interpreterProxy byteSizeOf: socketAddress.
-	addrBase := self cCoerce: (interpreterProxy firstIndexableField: socketAddress) to: 'char *'.
-	interpreterProxy failed ifFalse: [self sqSocket: s ConnectToAddress: addrBase Size: addrSize]
-]
-
-{ #category : #primitives }
-SocketPlugin >> primitiveSocket: socket connectTo: address port: port [ 
-	| addr s okToConnect  |
-	<var: #s type: 'SocketPtr'>
-	self primitive: 'primitiveSocketConnectToPort' parameters: #(#Oop #ByteArray #SmallInteger ).
-	addr := self netAddressToInt: (self cCoerce: address to: 'unsigned char *').
 
 	s := self socketValueOf: socket.
-	interpreterProxy failed ifFalse:
-		[self sqSocket: s ConnectTo: addr Port: port]
+
+	addr := self addressStructFor: socketAddressOop.
+	addrSize := self addressStructSizeFor: socketAddressOop.
+
+	interpreterProxy failed ifFalse: [
+		self socket: s ConnectToAddress: addr Size: addrSize.
+		self free: addr].
+	
+	
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - status' }
 SocketPlugin >> primitiveSocket: socket getOptions: optionName [
 
 	| s optionNameStart optionNameSize returnedValue errorCode results |
@@ -410,57 +523,31 @@ SocketPlugin >> primitiveSocket: socket getOptions: optionName [
 	^ results
 ]
 
-{ #category : #primitives }
-SocketPlugin >> primitiveSocket: socket listenOnPort: port [ 
-	"one part of the wierdass dual prim primitiveSocketListenOnPort which 
-	was warped by some demented evil person determined to twist the very 
-	nature of reality"
-	| s  okToListen |
-	<var: #s type: 'SocketPtr '>
-	self primitive: 'primitiveSocketListenOnPort' parameters: #(#Oop #SmallInteger ).
-	s := self socketValueOf: socket.
+{ #category : #'primitives - connection' }
+SocketPlugin >> primitiveSocket: socket listenOn: socketAddressOop backLog: backlogSize [
 
-	interpreterProxy failed ifFalse:
-		[self sqSocket: s ListenOnPort: port]
-]
+	| addrSize addr s  |
 
-{ #category : #primitives }
-SocketPlugin >> primitiveSocket: socket listenOnPort: port backlogSize: backlog [ 
-	"second part of the wierdass dual prim primitiveSocketListenOnPort 
-	which was warped by some demented evil person determined to twist the 
-	very nature of reality"
-	| s okToListen |
+	<var: #addr type: 'void*'>
+	<var: #addrSize type: 'size_t'>
+
 	<var: #s type: 'SocketPtr'>
-	self primitive: 'primitiveSocketListenOnPortBacklog' parameters: #(#Oop #SmallInteger #SmallInteger ).
+
+	self primitive: 'primitiveSocketListenOn' parameters: #(#Oop #Oop #SmallInteger).
+
 	s := self socketValueOf: socket.
 
-	self sqSocket: s ListenOnPort: port BacklogSize: backlog
+	addr := self addressStructFor: socketAddressOop.
+	addrSize := self addressStructSizeFor: socketAddressOop.
+
+	interpreterProxy failed ifFalse: [
+		self socketListenOn: s _: addr _: addrSize _: backlogSize.
+		self free: addr].
+	
+	
 ]
 
-{ #category : #primitives }
-SocketPlugin >> primitiveSocket: socket listenOnPort: port backlogSize: backlog interface: ifAddr [
-	"Bind a socket to the given port and interface address with no more than backlog pending connections.  The socket can be UDP, in which case the backlog should be specified as zero."
-
-	| s okToListen addr |
-	<var: #s type: 'SocketPtr'>
-	self primitive: 'primitiveSocketListenOnPortBacklogInterface' parameters: #(#Oop #SmallInteger #SmallInteger #ByteArray).
-	s := self socketValueOf: socket.
-
-	addr := self netAddressToInt: (self cCoerce: ifAddr to: 'unsigned char *').
-	self sqSocket: s ListenOnPort: port BacklogSize: backlog Interface: addr
-]
-
-{ #category : #'ipv6 primitives' }
-SocketPlugin >> primitiveSocket: socket listenWithBacklog: backlogSize [
-
-	| s  |
-	<var: #s type: 'SocketPtr'>
-	self primitive: 'primitiveSocketListenWithBacklog' parameters: #(#Oop #SmallInteger).
-	s := self socketValueOf: socket.
-	interpreterProxy failed ifFalse: [self sqSocket: s ListenBacklog: backlogSize]
-]
-
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - connection' }
 SocketPlugin >> primitiveSocket: socket localAddressResult: socketAddress [
 
 	| addrSize addrBase s  |
@@ -473,7 +560,7 @@ SocketPlugin >> primitiveSocket: socket localAddressResult: socketAddress [
 	interpreterProxy failed ifFalse: [self sqSocket: s LocalAddressResult: addrBase Size: addrSize]
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - sending/receiving' }
 SocketPlugin >> primitiveSocket: socket receiveDataBuf: array start: startIndex count: count [ 
 	| s byteSize arrayBase bufStart bytesReceived |
 	<var: #s type: 'SocketPtr'>
@@ -501,7 +588,7 @@ SocketPlugin >> primitiveSocket: socket receiveDataBuf: array start: startIndex 
 	^ (bytesReceived // byteSize) asSmallIntegerObj
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - sending/receiving' }
 SocketPlugin >> primitiveSocket: socket receiveUDPDataBuf: array start: startIndex count: count [ 
 	| s elementSize arrayBase bufStart bytesReceived results address port moreFlag |
 	<var: #s type: #SocketPtr>
@@ -546,7 +633,7 @@ SocketPlugin >> primitiveSocket: socket receiveUDPDataBuf: array start: startInd
 	^ results
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - connection' }
 SocketPlugin >> primitiveSocket: socket remoteAddressResult: socketAddress [
 
 	| addrSize addrBase s  |
@@ -559,7 +646,7 @@ SocketPlugin >> primitiveSocket: socket remoteAddressResult: socketAddress [
 	interpreterProxy failed ifFalse: [self sqSocket: s RemoteAddressResult: addrBase Size: addrSize]
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - sending/receiving' }
 SocketPlugin >> primitiveSocket: socket sendData: array start: startIndex count: count [ 
 	| s byteSize arrayBase bufStart bytesSent |
 	<var: #s type: 'SocketPtr'>
@@ -587,7 +674,7 @@ SocketPlugin >> primitiveSocket: socket sendData: array start: startIndex count:
 	^ (bytesSent // byteSize) asSmallIntegerObj
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - sending/receiving' }
 SocketPlugin >> primitiveSocket: socket sendUDPData: array toHost: hostAddress  port: portNumber start: startIndex count: count [ 
 	| s byteSize arrayBase bufStart bytesSent address |
 	<var: #s type: 'SocketPtr'>
@@ -618,7 +705,7 @@ SocketPlugin >> primitiveSocket: socket sendUDPData: array toHost: hostAddress  
 	^ (bytesSent // byteSize) asSmallIntegerObj
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - status' }
 SocketPlugin >> primitiveSocket: socket setOptions: optionName value: optionValue [
 	"THIS BADLY NEEDS TO BE REWRITTEN TO TAKE Booleans AND Integers AS WELL AS (OR INSTEAD OF) Strings.
 	 It is only used with booleans and integers and parsing these back out of strings in
@@ -655,7 +742,7 @@ SocketPlugin >> primitiveSocket: socket setOptions: optionName value: optionValu
 	^ results
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - connection' }
 SocketPlugin >> primitiveSocketAbortConnection: socket [
 
 	| s |
@@ -667,7 +754,7 @@ SocketPlugin >> primitiveSocketAbortConnection: socket [
 		self sqSocketAbortConnection: s]
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - creation' }
 SocketPlugin >> primitiveSocketAcceptFrom: sockHandle rcvBufferSize: recvBufSize sndBufSize: sendBufSize semaIndex: semaIndex readSemaIndex: aReadSema writeSemaIndex: aWriteSema [
 	| socketOop s serverSocket |
 	<var: #s type: 'SocketPtr '>
@@ -690,7 +777,7 @@ SocketPlugin >> primitiveSocketAcceptFrom: sockHandle rcvBufferSize: recvBufSize
 	^ socketOop
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - connection' }
 SocketPlugin >> primitiveSocketAddressGetPort [
 
 	| addr addrSize addrBase port |
@@ -704,7 +791,7 @@ SocketPlugin >> primitiveSocketAddressGetPort [
 			 interpreterProxy failed ifFalse: [^port asSmallIntegerObj]]
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - connection' }
 SocketPlugin >> primitiveSocketAddressSetPort: portNumber [
 
 	| addr addrSize addrBase |
@@ -715,7 +802,7 @@ SocketPlugin >> primitiveSocketAddressSetPort: portNumber [
 	interpreterProxy failed ifFalse: [self sqSocketAddress: addrBase Size: addrSize SetPort: portNumber]
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - connection' }
 SocketPlugin >> primitiveSocketCloseConnection: socket [
 
 	| s |
@@ -727,7 +814,7 @@ SocketPlugin >> primitiveSocketCloseConnection: socket [
 		self sqSocketCloseConnection: s]
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - status' }
 SocketPlugin >> primitiveSocketConnectionStatus: socket [
 
 	| s status |
@@ -740,7 +827,7 @@ SocketPlugin >> primitiveSocketConnectionStatus: socket [
 	^ status asSmallIntegerObj
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - creation' }
 SocketPlugin >> primitiveSocketCreateNetwork: netType type: socketType receiveBufferSize: recvBufSize sendBufSize: sendBufSize semaIndex: semaIndex readSemaIndex: aReadSema writeSemaIndex: aWriteSema [ 
 	| socketOop s okToCreate |
 	<var: #s type: 'SocketPtr '>
@@ -761,7 +848,7 @@ SocketPlugin >> primitiveSocketCreateNetwork: netType type: socketType receiveBu
 	^socketOop
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - creation' }
 SocketPlugin >> primitiveSocketCreateRaw: netType type: protoType receiveBufferSize: recvBufSize sendBufSize: sendBufSize semaIndex: semaIndex readSemaIndex: aReadSema writeSemaIndex: aWriteSema [ 
 	| socketOop s okToCreate |
 	<var: #s type: 'SocketPtr '>
@@ -794,7 +881,7 @@ SocketPlugin >> primitiveSocketDestroy: socket [
 		self sqSocketDestroy: s]
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - status' }
 SocketPlugin >> primitiveSocketError: socket [
 
 	| s err |
@@ -805,16 +892,6 @@ SocketPlugin >> primitiveSocketError: socket [
 	interpreterProxy failed ifFalse: [
 		err := self sqSocketError: s].
 	^err asSmallIntegerObj
-]
-
-{ #category : #primitives }
-SocketPlugin >> primitiveSocketListenWithOrWithoutBacklog [
-	"Backward compatibility"
-	<export: true>
-	interpreterProxy methodArgumentCount = 2
-		ifTrue:[^self primitiveSocketListenOnPort]
-		ifFalse:[^self primitiveSocketListenOnPortBacklog]
-
 ]
 
 { #category : #primitives }
@@ -829,7 +906,7 @@ SocketPlugin >> primitiveSocketLocalAddress: socket [
 	^self intToNetAddress: addr
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - connection' }
 SocketPlugin >> primitiveSocketLocalAddressSize: socket [
 
 	| s size |
@@ -854,7 +931,7 @@ SocketPlugin >> primitiveSocketLocalPort: socket [
 	^port asSmallIntegerObj
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - sending/receiving' }
 SocketPlugin >> primitiveSocketReceiveDataAvailable: socket [
 
 	| s dataIsAvailable |
@@ -878,7 +955,7 @@ SocketPlugin >> primitiveSocketRemoteAddress: socket [
 	^self intToNetAddress: addr
 ]
 
-{ #category : #'ipv6 primitives' }
+{ #category : #'primitives - connection' }
 SocketPlugin >> primitiveSocketRemoteAddressSize: socket [
 
 	| s size |
@@ -903,7 +980,7 @@ SocketPlugin >> primitiveSocketRemotePort: socket [
 	^port asSmallIntegerObj
 ]
 
-{ #category : #primitives }
+{ #category : #'primitives - status' }
 SocketPlugin >> primitiveSocketSendDone: socket [
 
 	| s done |
