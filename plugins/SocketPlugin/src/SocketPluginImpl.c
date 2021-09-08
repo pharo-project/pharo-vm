@@ -1,154 +1,4 @@
-/* sqUnixSocket.c -- Unix socket support
- * 
- *   Copyright (C) 1996-2007 by Ian Piumarta and other authors/contributors
- *                              listed elsewhere in this file.
- *   All rights reserved.
- *   
- *   This file is part of Unix Squeak.
- * 
- *   Permission is hereby granted, free of charge, to any person obtaining a copy
- *   of this software and associated documentation files (the "Software"), to deal
- *   in the Software without restriction, including without limitation the rights
- *   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *   copies of the Software, and to permit persons to whom the Software is
- *   furnished to do so, subject to the following conditions:
- * 
- *   The above copyright notice and this permission notice shall be included in
- *   all copies or substantial portions of the Software.
- * 
- *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- *   SOFTWARE.
- */
-
-/* Author: Ian.Piumarta@inria.fr
- * 
- * Support for BSD-style "accept" primitives contributed by:
- *	Lex Spoon <lex@cc.gatech.edu>
- *
- * Raw Socket Support by Andreas Raab, RIP.
- *
- * Fix to option parsing in sqSocketSetOptions... by Eliot Miranda, 2013/4/12
- * 
- * Notes:
- * 	Sockets are completely asynchronous, but the resolver is still synchronous.
- * 
- * BUGS:
- *	Now that the image has real UDP primitives, the TCP/UDP duality in
- *	many of the connection-oriented functions should be removed and cremated.
- */
-
-#ifdef _WIN32
-
- // Need to include winsock2 before windows.h
- // Windows.h will import otherwise winsock (1) and create conflicts
-#include <winsock2.h>
-#include <windows.h>
-#include <Ws2tcpip.h>
-#endif //WIN32
-
-#include "pharovm/pharo.h"
-#include "sq.h"
-#include "SocketPlugin.h"
-#include "sqaio.h"
-#include "pharovm/debug.h"
-
-#ifdef ACORN
-
-# include <time.h>
-# define __time_t
-# include <signal.h>
-# include "inetlib.h"
-# include "socklib.h"
-# include "netdb.h"
-# include "unixlib.h"
-# include "sys/ioctl.h"
-# include "sys/errno.h"
-# define h_errno errno
-# define MAXHOSTNAMELEN 256
-# define socklen_t int
-# define strncpy(dst, src, len) copyNCharsFromTo(len, src, dst)
-
-
-#else /* !ACORN */
-
-#ifdef _WIN32
-
-#include <sys/stat.h>
-
-#include <stdio.h>
-
-typedef unsigned int sa_family_t;
-
-struct sockaddr_un
-{
-        sa_family_t sun_family;      /* AF_UNIX */
-        char        sun_path[108];   /* pathname */
-};
-
-#define TCP_MAXSEG 536
-#define S_IFSOCK   0xC000
-
-#define socklen_t int
-
-#else
-
-# include <sys/param.h>
-# include <sys/stat.h>
-# include <sys/socket.h>
-# include <sys/un.h>
-# include <netinet/in.h>
-# include <netinet/udp.h>
-# include <netinet/tcp.h>
-# include <arpa/inet.h>
-# include <netdb.h>
-#include <ifaddrs.h>
-
-#define closesocket(x) close(x)
-#define SD_SEND 	SHUT_WR
-#define SD_RECEIVE 	SHUT_RD
-
-#endif
-
-# ifdef NEED_GETHOSTNAME_P
-    extern int gethostname();
-# endif
-# ifdef HAVE_SYS_TIME_H
-#   include <sys/time.h>
-# else
-#   include <time.h>
-# endif
-# include <errno.h>
-
-#if !defined(_WIN32)
-# include <unistd.h>
-#endif
-#endif /* !ACORN */
-
-/* Solaris sometimes fails to define this in netdb.h */
-#ifndef  MAXHOSTNAMELEN
-# define MAXHOSTNAMELEN	256
-#endif
-
-#ifdef HAVE_SD_DAEMON
-# include <systemd/sd-daemon.h>
-#else
-# define SD_LISTEN_FDS_START 3
-# define sd_listen_fds(u) 0
-#endif
-
-#ifndef true
-# define true 1
-#endif
-
-#ifndef false
-# define false 0
-#endif
-
+#include "SocketPluginImpl.h"
 
 /*** Socket types ***/
 
@@ -166,32 +16,19 @@ struct sockaddr_un
 #define ProvidedSeqPacketSocketType	(SeqPacketSocketType + ReuseExistingSocket)
 #define ProvidedReliableDGramSocketType	(ReliableDGramSocketType + ReuseExistingSocket)
 
-
-
-/*** Resolver states ***/
-
-#define ResolverUninitialised	0
-#define ResolverSuccess		1
-#define ResolverBusy		2
-#define ResolverError		3
-
-
 /*** TCP Socket states ***/
 
-#define Invalid			-1
-#define Unconnected		 0
-#define WaitingForConnection	 1
-#define Connected		 2
-#define OtherEndClosed		 3
-#define ThisEndClosed		 4
+#define Invalid					-1
+#define Unconnected		 		0
+#define WaitingForConnection	1
+#define Connected		 		2
+#define OtherEndClosed		 	3
+#define ThisEndClosed		 	4
 
-#define LINGER_SECS		 1
+#define LINGER_SECS		 		1
 
 volatile static int thisNetSession = 0;
-static int one= 1;
-
-static char   localHostName[MAXHOSTNAMELEN];
-static u_long localHostAddress;	/* GROSS IPv4 ASSUMPTION! */
+static int one = 1;
 
 /*
  * The ERROR constants are different in Windows and in Unix.
@@ -208,7 +45,7 @@ static u_long localHostAddress;	/* GROSS IPv4 ASSUMPTION! */
 
 union sockaddr_any
 {
-  struct sockaddr	sa;
+  struct sockaddr		sa;
   struct sockaddr_un	saun;
   struct sockaddr_in	sin;
   struct sockaddr_in6	sin6;
@@ -231,8 +68,8 @@ typedef struct privateSocketStruct
   int socketType;
 } privateSocketStruct;
 
-#define CONN_NOTIFY	(1<<0)
-#define READ_NOTIFY	(1<<1)
+#define CONN_NOTIFY		(1<<0)
+#define READ_NOTIFY		(1<<1)
 #define WRITE_NOTIFY	(1<<2)
 
 #define PING(S,EVT)						\
@@ -261,16 +98,8 @@ typedef struct privateSocketStruct
 #define SOCKETPEERSIZE(S)	(PSP(S)->peerSize)
 
 
-/*** Resolver state ***/
-
-static char lastName[MAXHOSTNAMELEN+1];
-static int  lastAddr= 0;
-static int  lastError= 0;
-static int  resolverSema= 0;
-
 /*** Variables ***/
 
-extern struct VirtualMachine *interpreterProxy;
 #if !defined(SQUEAK_BUILTIN_PLUGIN)
 # define success(bool) interpreterProxy->success(bool)
 #endif
@@ -344,64 +173,11 @@ static void setLinger(int fd, int flag)
   setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&linger, sizeof(linger));
 }
 
-/* answer the hostname for the given IP address */
-
-static const char *addrToName(int netAddress)
-{
-  u_long nAddr;
-  struct hostent *he;
-
-  lastError= 0;			/* for the resolver */
-  nAddr= htonl(netAddress);
-  if ((he= gethostbyaddr((char *)&nAddr, sizeof(nAddr), AF_INET)))
-    return he->h_name;
-  lastError= h_errno;		/* ditto */
-  return "";
-}
-
-/* answer the IP address for the given hostname */
-
-static int nameToAddr(char *hostName)
-{
-	struct addrinfo* result;
-	struct addrinfo* anAddressInfo;
-	int error;
-	int address = 0;
-	struct sockaddr_in* addr;
-
-	/* resolve the domain name into a list of addresses */
-   error = getaddrinfo(hostName, NULL, NULL, &result);
-   if (error != 0) {
-	   lastError = error;
-	   return 0;
-   }
-
-   anAddressInfo = result;
-
-   while(anAddressInfo && address == 0){
-
-	   if(anAddressInfo->ai_family == AF_INET){
-		   addr = (struct sockaddr_in *)anAddressInfo->ai_addr;
-#ifdef _WIN32
-		   address = ntohl(addr->sin_addr.S_un.S_addr);
-#else
-		   address = ntohl(addr->sin_addr.s_addr);
-#endif
-	   }
-
-	   anAddressInfo = anAddressInfo->ai_next;
-   }
-
-   freeaddrinfo(result);
-
-   return address;
-}
-
 /* answer whether the given socket is valid in this net session */
 
 static int socketValid(SocketPtr s)
 {
-  if (s && s->privateSocketPtr && thisNetSession && (s->sessionID == thisNetSession))
+  if (s && s->privateSocketPtr && getNetSessionID() && (s->sessionID == getNetSessionID()))
     return true;
   success(false);
   return false;
@@ -633,21 +409,24 @@ static void closeHandler(int fd, void *data, int flags)
 }
 
 
-/***     Squeak network functions        ***/
-
+int getNetSessionID(){
+	return thisNetSession;
+}
 
 /* start a new network session */
 
 sqInt sqNetworkInit(sqInt resolverSemaIndex)
 {
-  if (0 != thisNetSession)
+  if (0 != getNetSessionID())
     return 0;  /* already initialised */
-  gethostname(localHostName, MAXHOSTNAMELEN);
-  localHostAddress= nameToAddr(localHostName);
-  thisNetSession= clock() + time(0);
-  if (0 == thisNetSession)
-    thisNetSession= 1;  /* 0 => uninitialised */
-  resolverSema= resolverSemaIndex;
+
+  nameResolverInit(resolverSemaIndex);
+
+  thisNetSession = clock() + time(0);
+
+  if (0 == getNetSessionID())
+	  thisNetSession = 1;  /* 0 => uninitialised */
+
   return 0;
 }
 
@@ -656,22 +435,13 @@ sqInt sqNetworkInit(sqInt resolverSemaIndex)
 
 void sqNetworkShutdown(void)
 {
-  thisNetSession= 0;
-  resolverSema= 0;
-  aioFini();
+	thisNetSession= 0;
+	nameResolverFini();
+	aioFini();
 }
-
-
 
 /***  Squeak Generic Socket Functions   ***/
 
-
-/* create a new socket */
-
-void sqSocketCreateNetTypeSocketTypeRecvBytesSendBytesSemaID(SocketPtr s, sqInt domain, sqInt socketType, sqInt recvBufSize, sqInt sendBufSize, sqInt semaIndex)
-{
-  sqSocketCreateNetTypeSocketTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(s, domain, socketType,recvBufSize, sendBufSize, semaIndex, semaIndex, semaIndex);
-}
 
 void sqSocketCreateNetTypeSocketTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(SocketPtr s, sqInt domain, sqInt socketType, sqInt recvBufSize, sqInt sendBufSize, sqInt semaIndex, sqInt readSemaIndex, sqInt writeSemaIndex)
 {
@@ -749,7 +519,7 @@ void sqSocketCreateNetTypeSocketTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaI
   pss->peer.sin.sin_port= 0;
   pss->peer.sin.sin_addr.s_addr= INADDR_ANY;
   /* Squeak socket */
-  s->sessionID= thisNetSession;
+  s->sessionID= getNetSessionID();
   s->socketType= socketType;
   s->privateSocketPtr= pss;
   logTrace("create(%d) -> %lx\n", SOCKET(s), (unsigned long)PSP(s));
@@ -797,7 +567,7 @@ void sqSocketCreateRawProtoTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(Soc
   pss->peer.sin.sin_port= 0;
   pss->peer.sin.sin_addr.s_addr= INADDR_ANY;
   /* Squeak socket */
-  s->sessionID= thisNetSession;
+  s->sessionID= getNetSessionID();
   s->socketType= RAWSocketType;
   s->privateSocketPtr= pss;
   logTrace("create(%d) -> %lx\n", SOCKET(s), (unsigned long)PSP(s));
@@ -944,13 +714,6 @@ void sqSocketConnectToPort(SocketPtr s, sqInt addr, sqInt port)
     }
 }
 
-
-void sqSocketAcceptFromRecvBytesSendBytesSemaID(SocketPtr s, SocketPtr serverSocket, sqInt recvBufSize, sqInt sendBufSize, sqInt semaIndex)
-{
-  sqSocketAcceptFromRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(s, serverSocket, recvBufSize, sendBufSize, semaIndex, semaIndex, semaIndex);
-}
-
-
 void sqSocketAcceptFromRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(SocketPtr s, SocketPtr serverSocket, sqInt recvBufSize, sqInt sendBufSize, sqInt semaIndex, sqInt readSemaIndex, sqInt writeSemaIndex)
 {
   /* The image has already called waitForConnection, so there is no
@@ -991,7 +754,7 @@ void sqSocketAcceptFromRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(SocketPtr s
   PSP(serverSocket)->acceptedSock= -1;
   SOCKETSTATE(serverSocket)= WaitingForConnection;
   aioHandle(SOCKET(serverSocket), acceptHandler, AIO_RX);
-  s->sessionID= thisNetSession;
+  s->sessionID= getNetSessionID();
   pss->connSema= semaIndex;
   pss->readSema= readSemaIndex;
   pss->writeSema= writeSemaIndex;
@@ -1629,174 +1392,8 @@ void sqSocketSetReusable(SocketPtr s)
     }
 }
 
-/*** Resolver functions ***/
-
-
-/* Note: the Mac and Win32 implementations implement asynchronous lookups
- * in the DNS.  I can't think of an easy way to do this in Unix without
- * going totally ott with threads or somesuch.  If anyone knows differently,
- * please tell me about it. - Ian
- */
-
-
-/*** irrelevancies ***/
-
-void sqResolverAbort(void) {}
-
-void sqResolverStartAddrLookup(sqInt address)
-{
-  const char *res;
-  res= addrToName(address);
-  strncpy(lastName, res, MAXHOSTNAMELEN);
-  logTrace( "startAddrLookup %s\n", lastName);
-}
-
-
-sqInt sqResolverStatus(void)
-{
-  if (!thisNetSession)
-    return ResolverUninitialised;
-  if (lastError != 0)
-    return ResolverError;
-  return ResolverSuccess;
-}
-
-/*** trivialities ***/
-
-sqInt sqResolverAddrLookupResultSize(void)	{ return strlen(lastName); }
-sqInt sqResolverError(void)			{ return lastError; }
-sqInt sqResolverLocalAddress(void) {
-
-#ifndef _WIN32
-
-	/*
-	 * TODO: Check all this code, because is does not work if you have more than one network interface.
-	 */
-
-	struct ifaddrs *ifaddr, *ifa;
-    int s;
-    char host[NI_MAXHOST];
-    sqInt localAddr = 0;
-
-    if (getifaddrs(&ifaddr) == -1) {
-        success(false);
-        return 0;
-    }
-
-
-    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) 
-    {
-        if (ifa->ifa_addr == NULL)
-            continue;  
-
-        s=getnameinfo(ifa->ifa_addr,sizeof(struct sockaddr_in),host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
-
-        if(((strcmp(ifa->ifa_name,"eth0")==0)||(strcmp(ifa->ifa_name,"wlan0")==0))&&(ifa->ifa_addr->sa_family==AF_INET))
-        {
-            if (s != 0)
-            {
-                success(false);
-                return 0;
-            }
-            logTrace( "\tInterface : <%s>\n",ifa->ifa_name );
-            logTrace( "\t IP       : <%s>\n", inet_ntoa(((struct sockaddr_in *)(ifa->ifa_addr))->sin_addr));
-            if(localAddr == 0) { /* take the first plausible answer */
-                localAddr = ((struct sockaddr_in *)(ifa->ifa_addr))->sin_addr.s_addr;
-            }
-           
-        }
-    }
-
-    freeifaddrs(ifaddr);
-    return ntohl(localAddr);
-#else
-
-    static char localHostName[MAXHOSTNAMELEN];
-    static u_long localHostAddress;
-
-    sqInt address;
-
-    gethostname(localHostName,MAXHOSTNAMELEN);
-
-    return nameToAddr(localHostName);
-
-#endif
-}
-
-sqInt sqResolverNameLookupResult(void)		{ 
-	if(lastError != 0)
-		success(false);
-	
-	return lastAddr; }
-
-void
-sqResolverAddrLookupResult(char *nameForAddress, sqInt nameSize) {
-  memcpy(nameForAddress, lastName, nameSize);
-}
-
-/*** name resolution ***/
-
-void
-sqResolverStartNameLookup(char *hostName, sqInt nameSize) {
-  int len= (nameSize < MAXHOSTNAMELEN) ? nameSize : MAXHOSTNAMELEN;
-  memcpy(lastName, hostName, len);
-  lastName[len]= lastError= 0;
-  logTrace( "name lookup %s\n", lastName);
-  lastAddr= nameToAddr(lastName);
-  /* we're done before we even started */
-  interpreterProxy->signalSemaphoreWithIndex(resolverSema);
-}
-
-
-/* ikp 2007-06-07: Generalised primitives for IPv6, &c. */
-
-/* flags */
-
-#define SQ_SOCKET_NUMERIC		(1<<0)
-#define SQ_SOCKET_PASSIVE		(1<<1)
-
-/* family */
-
-#define SQ_SOCKET_FAMILY_UNSPECIFIED	0
-#define SQ_SOCKET_FAMILY_LOCAL		1
-#define SQ_SOCKET_FAMILY_INET4		2
-#define SQ_SOCKET_FAMILY_INET6		3
-#define SQ_SOCKET_FAMILY_MAX		4
-
-/* type */
-
-#define SQ_SOCKET_TYPE_UNSPECIFIED	0
-#define SQ_SOCKET_TYPE_STREAM		1
-#define SQ_SOCKET_TYPE_DGRAM		2
-#define SQ_SOCKET_TYPE_MAX		3
-
-/* protocol */
-
-#define SQ_SOCKET_PROTOCOL_UNSPECIFIED	0
-#define SQ_SOCKET_PROTOCOL_TCP		1
-#define SQ_SOCKET_PROTOCOL_UDP		2
-#define SQ_SOCKET_PROTOCOL_MAX		3
-
-void  sqResolverGetAddressInfoHostSizeServiceSizeFlagsFamilyTypeProtocol(char *hostName, sqInt hostSize, char *servName, sqInt servSize,
-									 sqInt flags, sqInt family, sqInt type, sqInt protocol);
-sqInt sqResolverGetAddressInfoSize(void);
-void  sqResolverGetAddressInfoResultSize(char *addr, sqInt addrSize);
-sqInt sqResolverGetAddressInfoFamily(void);
-sqInt sqResolverGetAddressInfoType(void);
-sqInt sqResolverGetAddressInfoProtocol(void);
-sqInt sqResolverGetAddressInfoNext(void);
-
 sqInt sqSocketAddressSizeGetPort(char *addr, sqInt addrSize);
 void  sqSocketAddressSizeSetPort(char *addr, sqInt addrSize, sqInt port);
-
-void  sqResolverGetNameInfoSizeFlags(char *addr, sqInt addrSize, sqInt flags);
-sqInt sqResolverGetNameInfoHostSize(void);
-void  sqResolverGetNameInfoHostResultSize(char *name, sqInt nameSize);
-sqInt sqResolverGetNameInfoServiceSize(void);
-void  sqResolverGetNameInfoServiceResultSize(char *name, sqInt nameSize);
-
-sqInt sqResolverHostNameSize(void);
-void  sqResolverHostNameResultSize(char *name, sqInt nameSize);
 
 void  sqSocketBindToAddressSize(SocketPtr s, char *addr, sqInt addrSize);
 void  sqSocketListenBacklog(SocketPtr s, sqInt backlogSize);
@@ -1809,246 +1406,6 @@ void  sqSocketRemoteAddressResultSize(SocketPtr s, char *addr, int addrSize);
 
 sqInt sqSocketSendUDPToSizeDataBufCount(SocketPtr s, char *addr, sqInt addrSize, char *buf, sqInt bufSize);
 sqInt sqSocketReceiveUDPDataBufCount(SocketPtr s, char *buf, sqInt bufSize);
-
-
-/* ---- address and service lookup ---- */
-
-
-static struct addrinfo *addrList= 0;
-static struct addrinfo *addrInfo= 0;
-static struct addrinfo *localInfo= 0;
-
-
-void sqResolverGetAddressInfoHostSizeServiceSizeFlagsFamilyTypeProtocol(char *hostName, sqInt hostSize, char *servName, sqInt servSize,
-									sqInt flags, sqInt family, sqInt type, sqInt protocol)
-{
-  char host[MAXHOSTNAMELEN+1], serv[MAXHOSTNAMELEN+1];
-  struct addrinfo request;
-  int gaiError= 0;
-
-  logTrace( "GetAddressInfo %ld %ld %ld %ld %ld %ld\n", hostSize, servSize, flags, family, type, protocol);
-
-  if (addrList)
-    {
-      freeaddrinfo(addrList);
-      addrList= addrInfo= 0;
-    }
-
-  if (localInfo)
-    {
-      free(localInfo->ai_addr);
-      free(localInfo);
-      localInfo= addrInfo= 0;
-    }
-
-  if ((!thisNetSession)
-      || (hostSize < 0) || (hostSize > MAXHOSTNAMELEN)
-      || (servSize < 0) || (servSize > MAXHOSTNAMELEN)
-      || (family   < 0) || (family   >= SQ_SOCKET_FAMILY_MAX)
-      || (type     < 0) || (type     >= SQ_SOCKET_TYPE_MAX)
-      || (protocol < 0) || (protocol >= SQ_SOCKET_PROTOCOL_MAX))
-    goto fail;
-
-  if (hostSize)
-    memcpy(host, hostName, hostSize);
-  host[hostSize]= '\0';
-
-  if (servSize)
-    memcpy(serv, servName, servSize);
-  serv[servSize]= '\0';
-
-  logTrace( "  -> GetAddressInfo %s %s\n", host, serv);
-
-  if (servSize && (family == SQ_SOCKET_FAMILY_LOCAL) && (servSize < sizeof(((struct sockaddr_un *)0)->sun_path)) && !(flags & SQ_SOCKET_NUMERIC))
-    {
-      struct stat st;
-      if ((0 == stat(servName, &st)) && (st.st_mode & S_IFSOCK))
-	{
-	  struct sockaddr_un *saun= calloc(1, sizeof(struct sockaddr_un));
-	  localInfo= (struct addrinfo *)calloc(1, sizeof(struct addrinfo));
-	  localInfo->ai_family= AF_UNIX;
-	  localInfo->ai_socktype= SOCK_STREAM;
-	  localInfo->ai_addrlen= sizeof(struct sockaddr_un);
-	  localInfo->ai_addr= (struct sockaddr *)saun;
-	  /*saun->sun_len= sizeof(struct sockaddr_un);*/
-	  saun->sun_family= AF_UNIX;
-	  memcpy(saun->sun_path, servName, servSize);
-	  saun->sun_path[servSize]= '\0';
-	  addrInfo= localInfo;
-	  interpreterProxy->signalSemaphoreWithIndex(resolverSema);
-	  return;
-	}
-    }
-
-  memset(&request, 0, sizeof(request));
-
-  if (flags & SQ_SOCKET_NUMERIC)	request.ai_flags |= AI_NUMERICHOST;
-  if (flags & SQ_SOCKET_PASSIVE)	request.ai_flags |= AI_PASSIVE;
-
-  switch (family)
-    {
-    case SQ_SOCKET_FAMILY_LOCAL:	request.ai_family= AF_UNIX;		break;
-    case SQ_SOCKET_FAMILY_INET4:	request.ai_family= AF_INET;		break;
-    case SQ_SOCKET_FAMILY_INET6:	request.ai_family= AF_INET6;		break;
-    }
-
-  switch (type)
-    {
-    case SQ_SOCKET_TYPE_STREAM:		request.ai_socktype= SOCK_STREAM;	break;
-    case SQ_SOCKET_TYPE_DGRAM:		request.ai_socktype= SOCK_DGRAM;	break;
-    }
-
-  switch (protocol)
-    {
-    case SQ_SOCKET_PROTOCOL_TCP:	request.ai_protocol= IPPROTO_TCP;	break;
-    case SQ_SOCKET_PROTOCOL_UDP:	request.ai_protocol= IPPROTO_UDP;	break;
-    }
-
-  gaiError= getaddrinfo(hostSize ? host : 0, servSize ? serv : 0, &request, &addrList);
-
-  if (gaiError)
-    {
-      /* Linux gives you either <netdb.h> with   correct NI_* bit definitions and no  EAI_* definitions at all
-	 or                <bind/netdb.h> with incorrect NI_* bit definitions and the EAI_* definitions we need.
-	 We cannot distinguish between impossible constraints and genuine lookup failure, so err conservatively. */
-#    if defined(EAI_BADHINTS)
-      if (EAI_BADHINTS != gaiError)
-	{
-	  logTrace("getaddrinfo: %s\n", gai_strerror(gaiError));
-	  lastError= gaiError;
-	  goto fail;
-	}
-#    else
-      logTrace("getaddrinfo: %s\n", gai_strerror(gaiError));
-#    endif
-      addrList= 0;	/* succeed with zero results for impossible constraints */
-    }
-
-  addrInfo= addrList;
-  interpreterProxy->signalSemaphoreWithIndex(resolverSema);
-  return;
-
- fail:
-  success(false);
-  return;
-}
-
-
-struct addressHeader
-{
-  int	sessionID;
-  int	size;
-};
-
-#define AddressHeaderSize	sizeof(struct addressHeader)
-
-#define addressHeader(A)	((struct addressHeader *)(A))
-#define socketAddress(A)	((struct sockaddr *)((char *)(A) + AddressHeaderSize))
-
-#define addressValid(A, S)	(thisNetSession && (thisNetSession == addressHeader(A)->sessionID) && (addressHeader(A)->size == ((S) - AddressHeaderSize)))
-#define addressSize(A)		(addressHeader(A)->size)
-
-
-#if 0
-static void dumpAddr(struct sockaddr *addr, int addrSize)
-{
-  int i;
-  for (i= 0;  i < addrSize;  ++i)
-    logTrace("%02x ", ((unsigned char *)addr)[i]);
-  logTrace(" ");
-  switch (addr->sa_family)
-    {
-    case AF_UNIX:	logTrace("local\n"); break;
-    case AF_INET:	logTrace("inet\n"); break;
-    case AF_INET6:	logTrace("inet6\n"); break;
-    default:		logTrace("?\n"); break;
-    }
-}
-#endif
-
-sqInt sqResolverGetAddressInfoSize(void)
-{
-  if (!addrInfo)
-    return -1;
-  return AddressHeaderSize + addrInfo->ai_addrlen;
-}
-
-
-void sqResolverGetAddressInfoResultSize(char *addr, sqInt addrSize)
-{
-  if ((!addrInfo) || (addrSize < (AddressHeaderSize + addrInfo->ai_addrlen)))
-    {
-      success(false);
-      return;
-    }
-
-  addressHeader(addr)->sessionID= thisNetSession;
-
-  addressHeader(addr)->size=      addrInfo->ai_addrlen;
-  memcpy(socketAddress(addr), addrInfo->ai_addr, addrInfo->ai_addrlen);
-  /*dumpAddr(socketAddress(addr), addrSize - AddressHeaderSize);*/
-}
-
-
-sqInt sqResolverGetAddressInfoFamily(void)
-{
-  if (!addrInfo)
-    {
-      success(false);
-      return 0;
-    }
-
-  switch (addrInfo->ai_family)
-    {
-    case AF_UNIX:	return SQ_SOCKET_FAMILY_LOCAL;
-    case AF_INET:	return SQ_SOCKET_FAMILY_INET4;
-    case AF_INET6:	return SQ_SOCKET_FAMILY_INET6;
-    }
-
-  return SQ_SOCKET_FAMILY_UNSPECIFIED;
-}
-
-
-sqInt sqResolverGetAddressInfoType(void)
-{
-  if (!addrInfo)
-    {
-      success(false);
-      return 0;
-    }
-
-  switch (addrInfo->ai_socktype)
-    {
-    case SOCK_STREAM:	return SQ_SOCKET_TYPE_STREAM;
-    case SOCK_DGRAM:	return SQ_SOCKET_TYPE_DGRAM;
-    }
-
-  return SQ_SOCKET_TYPE_UNSPECIFIED;
-}
-
-
-sqInt sqResolverGetAddressInfoProtocol(void)
-{
-  if (!addrInfo)
-    {
-      success(false);
-      return 0;
-    }
-
-  switch (addrInfo->ai_protocol)
-    {
-    case IPPROTO_TCP:	return SQ_SOCKET_PROTOCOL_TCP;
-    case IPPROTO_UDP:	return SQ_SOCKET_PROTOCOL_UDP;
-    }
-
- return SQ_SOCKET_PROTOCOL_UNSPECIFIED;
-}
-
-
-sqInt sqResolverGetAddressInfoNext(void)
-{
-  return (addrInfo && (addrInfo= addrInfo->ai_next)) ? true : false;
-}
 
 
 /* ---- address manipulation ---- */
@@ -2078,139 +1435,6 @@ void sqSocketAddressSizeSetPort(char *addr, sqInt addrSize, sqInt port)
       }
 
   success(false);
-}
-
-
-/* ---- host name lookup ---- */
-
-
-static char hostNameInfo[MAXHOSTNAMELEN+1];
-static char servNameInfo[MAXHOSTNAMELEN+1];
-
-static int nameInfoValid= 0;
-
-
-void sqResolverGetNameInfoSizeFlags(char *addr, sqInt addrSize, sqInt flags)
-{
-  int niFlags= 0;
-  int gaiError= 0;
-
-  logTrace( "GetNameInfoSizeFlags %p %ld %ld\n", addr, addrSize, flags);
-
-  nameInfoValid= 0;
-
-  if (!addressValid(addr, addrSize))
-    goto fail;
-
-  niFlags |= NI_NOFQDN;
-
-  if (flags & SQ_SOCKET_NUMERIC) niFlags |= (NI_NUMERICHOST | NI_NUMERICSERV);
-
-  /*dumpAddr(socketAddress(addr), addrSize - AddressHeaderSize);  logTrace("%02x\n", niFlags);*/
-
-  gaiError= getnameinfo(socketAddress(addr), addrSize - AddressHeaderSize,
-			hostNameInfo, sizeof(hostNameInfo),
-			servNameInfo, sizeof(servNameInfo),
-			niFlags);
-
-  if (gaiError)
-    {
-      logTrace("getnameinfo: %s\n", gai_strerror(gaiError));
-      lastError= gaiError;
-      goto fail;
-    }
-
-  nameInfoValid= 1;
-  interpreterProxy->signalSemaphoreWithIndex(resolverSema);
-  return;
-
- fail:
-  success(false);
-}
-
-
-sqInt sqResolverGetNameInfoHostSize(void)
-{
-  if (!nameInfoValid)
-    {
-      success(false);
-      return 0;
-    }
-  return strlen(hostNameInfo);
-}
-
-
-void sqResolverGetNameInfoHostResultSize(char *name, sqInt nameSize)
-{
-  int len;
-
-  if (!nameInfoValid)
-    goto fail;
-
-  len= strlen(hostNameInfo);
-  if (nameSize < len)
-    goto fail;
-
-  memcpy(name, hostNameInfo, len);
-  return;
-
- fail:
-  success(false);
-}
-
-
-sqInt sqResolverGetNameInfoServiceSize(void)
-{
-  if (!nameInfoValid)
-    {
-      success(false);
-      return 0;
-    }
-  return strlen(servNameInfo);
-}
-
-
-void sqResolverGetNameInfoServiceResultSize(char *name, sqInt nameSize)
-{
-  int len;
-
-  if (!nameInfoValid)
-    goto fail;
-
-  len= strlen(servNameInfo);
-  if (nameSize < len)
-    goto fail;
-
-  memcpy(name, servNameInfo, len);
-  return;
-
- fail:
-  success(false);
-}
-
-
-sqInt sqResolverHostNameSize(void)
-{
-  char buf[MAXHOSTNAMELEN+1];
-  if (gethostname(buf, sizeof(buf)))
-    {
-      success(false);
-      return 0;
-    }
-  return strlen(buf);
-}
-
-
-void sqResolverHostNameResultSize(char *name, sqInt nameSize)
-{
-  char buf[MAXHOSTNAMELEN+1];
-  int len;
-  if (gethostname(buf, sizeof(buf)) || (nameSize < (len= strlen(buf))))
-    {
-      success(false);
-      return;
-    }
-  memcpy(name, buf, len);
 }
 
 
@@ -2352,7 +1576,7 @@ void sqSocketLocalAddressResultSize(SocketPtr s, char *addr, int addrSize)
   if (addrSize != (AddressHeaderSize + saddrSize))
     goto fail;
 
-  addressHeader(addr)->sessionID= thisNetSession;
+  addressHeader(addr)->sessionID= getNetSessionID();
 
   addressHeader(addr)->size=      saddrSize;
   memcpy(socketAddress(addr), &saddr.sa, saddrSize);
@@ -2401,7 +1625,7 @@ void sqSocketRemoteAddressResultSize(SocketPtr s, char *addr, int addrSize)
     return;
   }
 
-  addressHeader(addr)->sessionID= thisNetSession;
+  addressHeader(addr)->sessionID= getNetSessionID();
 
   addressHeader(addr)->size=      SOCKETPEERSIZE(s);
   memcpy(socketAddress(addr), &SOCKETPEER(s), SOCKETPEERSIZE(s));
@@ -2435,31 +1659,33 @@ sqInt sqSocketSendUDPToSizeDataBufCount(SocketPtr s, char *addr, sqInt addrSize,
 }
 
 
-sqInt sqSocketReceiveUDPDataBufCount(SocketPtr s, char *buf, sqInt bufSize)
-{
-  logTrace("recvFrom(%d)\n", SOCKET(s));
-  if (socketValid(s) && (TCPSocketType != s->socketType)){
+sqInt sqSocketReceiveUDPDataBufCount(SocketPtr s, char *buf, sqInt bufSize) {
+	int lastError;
 
-	  /* --- UDP/RAW --- */
+	logTrace("recvFrom(%d)\n", SOCKET(s));
+	if (socketValid(s) && (TCPSocketType != s->socketType)) {
 
-	  socklen_t saddrSize= sizeof(SOCKETPEER(s));
+		/* --- UDP/RAW --- */
 
-      int nread= recvfrom(SOCKET(s), buf, bufSize, 0, &SOCKETPEER(s).sa, &saddrSize);
+		socklen_t saddrSize = sizeof(SOCKETPEER(s));
 
-      lastError = getLastSocketError();
+		int nread = recvfrom(SOCKET(s), buf, bufSize, 0, &SOCKETPEER(s).sa,
+				&saddrSize);
 
-      if (nread >= 0) {
-    	  SOCKETPEERSIZE(s)= saddrSize;
-	  	  return nread;
-      }
+		lastError = getLastSocketError();
 
-      SOCKETPEERSIZE(s)= 0;
-      if (lastError == ERROR_WOULD_BLOCK)	/* asynchronous read in progress */
-    	  return 0;
+		if (nread >= 0) {
+			SOCKETPEERSIZE(s) = saddrSize;
+			return nread;
+		}
 
-      SOCKETERROR(s)= lastError;
-      logTrace("receiveData(%d)= %da\n", SOCKET(s), 0);
-    }
-  success(false);
-  return 0;
+		SOCKETPEERSIZE(s) = 0;
+		if (lastError == ERROR_WOULD_BLOCK) /* asynchronous read in progress */
+			return 0;
+
+		SOCKETERROR(s) = lastError;
+		logTrace("receiveData(%d)= %da\n", SOCKET(s), 0);
+	}
+	success(false);
+	return 0;
 }

@@ -98,10 +98,9 @@ if (${FEATURE_NETWORK})
 
 	file(GLOB SocketPlugin_SOURCES
 		${CMAKE_CURRENT_SOURCE_DIR}/plugins/SocketPlugin/src/*.c
-		${PHARO_CURRENT_GENERATED}/plugins/src/SocketPlugin/SocketPlugin.c
 	)
 
-	addLibraryWithRPATH(SocketPlugin ${SocketPlugin_SOURCES})
+	addLibraryWithRPATH(SocketPlugin ${SocketPlugin_SOURCES} ${PHARO_CURRENT_GENERATED}/plugins/src/SocketPlugin/SocketPlugin.c)
 
 	if(WIN)
 		target_link_libraries(SocketPlugin PRIVATE "-lWs2_32")
