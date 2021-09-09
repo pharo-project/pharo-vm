@@ -29,6 +29,12 @@ SocketPlugin class >> requiresPlatformFiles [
 	^true
 ]
 
+{ #category : #translation }
+SocketPlugin class >> shouldGenerateDeadCode [
+
+	^ false
+]
+
 { #category : #'accessing - ip4' }
 SocketPlugin >> addressStructFor: aSocketAddress [
 
@@ -143,7 +149,7 @@ SocketPlugin >> intToNetAddress: addr [
 { #category : #'accessing - ip4' }
 SocketPlugin >> ip4AddressType [
 
-	<cmacro: '() SQ_SOCKET_FAMILY_INET4'>
+	<cmacro: '() SOCKET_FAMILY_INET4'>
 
 	^ 2
 ]
@@ -547,19 +553,6 @@ SocketPlugin >> primitiveSocket: socket listenOn: socketAddressOop backLog: back
 	
 ]
 
-{ #category : #'primitives - connection' }
-SocketPlugin >> primitiveSocket: socket localAddressResult: socketAddress [
-
-	| addrSize addrBase s  |
-	<var: #addrBase type: 'char *'>
-	<var: #s type: 'SocketPtr'>
-	self primitive: 'primitiveSocketLocalAddressResult' parameters: #(#Oop #Oop).
-	s := self socketValueOf: socket.
-	addrSize := interpreterProxy byteSizeOf: socketAddress.
-	addrBase := self cCoerce: (interpreterProxy firstIndexableField: socketAddress) to: 'char *'.
-	interpreterProxy failed ifFalse: [self sqSocket: s LocalAddressResult: addrBase Size: addrSize]
-]
-
 { #category : #'primitives - sending/receiving' }
 SocketPlugin >> primitiveSocket: socket receiveDataBuf: array start: startIndex count: count [ 
 	| s byteSize arrayBase bufStart bytesReceived |
@@ -589,13 +582,17 @@ SocketPlugin >> primitiveSocket: socket receiveDataBuf: array start: startIndex 
 ]
 
 { #category : #'primitives - sending/receiving' }
-SocketPlugin >> primitiveSocket: socket receiveUDPDataBuf: array start: startIndex count: count [ 
-	| s elementSize arrayBase bufStart bytesReceived results address port moreFlag |
+SocketPlugin >> primitiveSocket: socket receiveUDPDataBuf: array start: startIndex count: count fromAddress: socketAddressOop [
+	| s elementSize arrayBase bufStart bytesReceived addr addrSize |
 	<var: #s type: #SocketPtr>
 	<var: #arrayBase type: #'char *'>
 	<var: #bufStart type: #'char *'>
-	self primitive: 'primitiveSocketReceiveUDPDataBufCount'
-		parameters: #(Oop Oop SmallInteger SmallInteger).
+	<var: #addr type: #'void *'>
+	<var: #addrSize type: #'size_t'>
+
+	self primitive: 'primitiveSocketReceiveUDPData'
+		parameters: #(Oop Oop SmallInteger SmallInteger Oop).
+
 	s := self socketValueOf: socket.
 
 	"buffer can be any indexable words or bytes object"
@@ -605,45 +602,24 @@ SocketPlugin >> primitiveSocket: socket receiveUDPDataBuf: array start: startInd
 		ifFalse: [elementSize := 1].
 	interpreterProxy success: (startIndex >= 1
 			and: [count >= 0 and: [startIndex + count - 1 <= (interpreterProxy slotSizeOf: array)]]).
+
+	addr := self addressStructFor: socketAddressOop.
+	addrSize := self addressStructSizeFor: socketAddressOop.
+			
 	interpreterProxy failed
 		ifFalse: ["Note: adjust bufStart for zero-origin indexing"
 			arrayBase		:= self cCoerce: (interpreterProxy firstIndexableField: array) to: #'char *'.
 			bufStart		:= arrayBase + (startIndex - 1 * elementSize).
-			address		:= 0.
-			port			:= 0.
-			moreFlag		:= 0.
-			bytesReceived := self sqSocket: s
-									ReceiveUDPDataBuf: bufStart
-									Count: count * elementSize
-									address: (self addressOf: address)
-									port: (self addressOf: port)
-									moreFlag: (self addressOf: moreFlag).
+			bytesReceived := self socketReceiveUDPData: s
+									_: bufStart
+									_: count * elementSize
+									_: addr
+									_: addrSize.
 
-			"allocate storage for results, remapping newly allocated
-			 oops in case GC happens during allocation"
-			interpreterProxy pushRemappableOop: (self intToNetAddress: address).
-			results := interpreterProxy instantiateClass: interpreterProxy classArray indexableSize: 4.
-			interpreterProxy storePointer: 0 ofObject: results withValue: (bytesReceived // elementSize) asSmallIntegerObj.
-			interpreterProxy storePointer: 1 ofObject: results withValue: interpreterProxy popRemappableOop.
-			interpreterProxy storePointer: 2 ofObject: results withValue: port asSmallIntegerObj.
-			interpreterProxy storePointer: 3 ofObject: results withValue: (moreFlag
-																			ifTrue: [interpreterProxy trueObject]
-																			ifFalse: [interpreterProxy falseObject]).
-			].
-	^ results
-]
-
-{ #category : #'primitives - connection' }
-SocketPlugin >> primitiveSocket: socket remoteAddressResult: socketAddress [
-
-	| addrSize addrBase s  |
-	<var: #addrBase type: 'char *'>
-	<var: #s type: 'SocketPtr'>
-	self primitive: 'primitiveSocketRemoteAddressResult' parameters: #(#Oop #Oop).
-	s := self socketValueOf: socket.
-	addrSize := interpreterProxy byteSizeOf: socketAddress.
-	addrBase := self cCoerce: (interpreterProxy firstIndexableField: socketAddress) to: 'char *'.
-	interpreterProxy failed ifFalse: [self sqSocket: s RemoteAddressResult: addrBase Size: addrSize]
+			self updateAddress: socketAddressOop from: addr.
+			self free: addr ].
+		
+	^ (bytesReceived // elementSize) asSmallIntegerObj
 ]
 
 { #category : #'primitives - sending/receiving' }
@@ -675,13 +651,13 @@ SocketPlugin >> primitiveSocket: socket sendData: array start: startIndex count:
 ]
 
 { #category : #'primitives - sending/receiving' }
-SocketPlugin >> primitiveSocket: socket sendUDPData: array toHost: hostAddress  port: portNumber start: startIndex count: count [ 
-	| s byteSize arrayBase bufStart bytesSent address |
+SocketPlugin >> primitiveSocket: socket sendUDPData: array toAddress: socketAddressOop start: startIndex count: count [ 
+	| s byteSize arrayBase bufStart bytesSent addr addrSize |
 	<var: #s type: 'SocketPtr'>
-	<var: #arrayBase type: 'char *'>
 	<var: #bufStart type: 'char *'>
-	self primitive: 'primitiveSocketSendUDPDataBufCount'
-		parameters: #(Oop Oop ByteArray SmallInteger SmallInteger SmallInteger ).
+
+	self primitive: 'primitiveSocketSendUDPData' parameters: #(Oop Oop Oop SmallInteger SmallInteger ).
+
 	s := self socketValueOf: socket.
 
 	"buffer can be any indexable words or bytes object except CompiledMethod "
@@ -689,19 +665,21 @@ SocketPlugin >> primitiveSocket: socket sendUDPData: array toHost: hostAddress  
 	(interpreterProxy isWords: array)
 		ifTrue: [byteSize := 4]
 		ifFalse: [byteSize := 1].
+
 	interpreterProxy success: (startIndex >= 1
 			and: [count >= 0 and: [startIndex + count - 1 <= (interpreterProxy slotSizeOf: array)]]).
+
 	interpreterProxy failed
 		ifFalse: ["Note: adjust bufStart for zero-origin indexing"
 			arrayBase := self cCoerce: (interpreterProxy firstIndexableField: array) to: 'char *'.
 			bufStart := arrayBase + (startIndex - 1 * byteSize).
-			address := self netAddressToInt: (self cCoerce: hostAddress to: 'unsigned char *').
-			bytesSent := self
-						sqSocket: s
-						toHost: address
-						port: portNumber
-						SendDataBuf: bufStart
-						Count: count * byteSize].
+			addr := self addressStructFor: socketAddressOop.
+			addrSize := self addressStructSizeFor: socketAddressOop.
+
+			bytesSent := self socketSendUDPDataToAddress: s _: addr _: addrSize _: bufStart _: count * byteSize.
+			self free: addr].
+
+
 	^ (bytesSent // byteSize) asSmallIntegerObj
 ]
 
@@ -775,31 +753,6 @@ SocketPlugin >> primitiveSocketAcceptFrom: sockHandle rcvBufferSize: recvBufSize
 				ReadSemaID: aReadSema
 				WriteSemaID: aWriteSema].
 	^ socketOop
-]
-
-{ #category : #'primitives - connection' }
-SocketPlugin >> primitiveSocketAddressGetPort [
-
-	| addr addrSize addrBase port |
-	<var: #addrBase type: 'char *'>
-	addr := self primitive: 'primitiveSocketAddressGetPort' parameters: #() receiver: #Oop.
-	addrSize := interpreterProxy byteSizeOf: addr.
-	addrBase := self cCoerce: (interpreterProxy firstIndexableField: addr) to: 'char *'.
-	interpreterProxy failed
-		ifFalse:
-			[port := self sqSocketAddress: addrBase SizeGetPort: addrSize.
-			 interpreterProxy failed ifFalse: [^port asSmallIntegerObj]]
-]
-
-{ #category : #'primitives - connection' }
-SocketPlugin >> primitiveSocketAddressSetPort: portNumber [
-
-	| addr addrSize addrBase |
-	<var: #addrBase type: 'char *'>
-	addr := self primitive: 'primitiveSocketAddressSetPort' parameters: #(SmallInteger) receiver: #Oop.
-	addrSize := interpreterProxy byteSizeOf: addr.
-	addrBase := self cCoerce: (interpreterProxy firstIndexableField: addr) to: 'char *'.
-	interpreterProxy failed ifFalse: [self sqSocketAddress: addrBase Size: addrSize SetPort: portNumber]
 ]
 
 { #category : #'primitives - connection' }
@@ -906,19 +859,6 @@ SocketPlugin >> primitiveSocketLocalAddress: socket [
 	^self intToNetAddress: addr
 ]
 
-{ #category : #'primitives - connection' }
-SocketPlugin >> primitiveSocketLocalAddressSize: socket [
-
-	| s size |
-	<var: #s type: 'SocketPtr'>
-	self primitive: 'primitiveSocketLocalAddressSize' parameters: #(#Oop).
-	s := self socketValueOf: socket.
-	interpreterProxy failed ifTrue: [^nil].
-	size := self sqSocketLocalAddressSize: s.
-	interpreterProxy failed ifTrue: [^nil].
-	^size asSmallIntegerObj
-]
-
 { #category : #primitives }
 SocketPlugin >> primitiveSocketLocalPort: socket [
 
@@ -955,19 +895,6 @@ SocketPlugin >> primitiveSocketRemoteAddress: socket [
 	^self intToNetAddress: addr
 ]
 
-{ #category : #'primitives - connection' }
-SocketPlugin >> primitiveSocketRemoteAddressSize: socket [
-
-	| s size |
-	<var: #s type: 'SocketPtr'>
-	self primitive: 'primitiveSocketRemoteAddressSize' parameters: #(#Oop).
-	s := self socketValueOf: socket.
-	interpreterProxy failed ifTrue: [^nil].
-	size := self sqSocketRemoteAddressSize: s.
-	interpreterProxy failed ifTrue: [^nil].
-	^size asSmallIntegerObj
-]
-
 { #category : #primitives }
 SocketPlugin >> primitiveSocketRemotePort: socket [
 
@@ -992,6 +919,34 @@ SocketPlugin >> primitiveSocketSendDone: socket [
 	^done asBooleanObj
 ]
 
+{ #category : #'accessing - ip4' }
+SocketPlugin >> setIp4Address: anAddressOop value: addr [
+
+	<api>
+	<returnTypeC: #void>
+	<var: #naPtr type: 'unsigned char * '>
+
+	| naPtr |
+	naPtr := interpreterProxy firstIndexableField: (interpreterProxy fetchPointer: 1 ofObject: anAddressOop).
+	naPtr at: 0 put: (self cCoerce: ((addr >> 24) bitAnd: 16rFF) to: 'char').
+	naPtr at: 1 put: (self cCoerce: ((addr >> 16) bitAnd: 16rFF) to: 'char').
+	naPtr at: 2 put: (self cCoerce: ((addr >> 8) bitAnd: 16rFF) to: 'char').
+	naPtr at: 3 put: (self cCoerce: (addr bitAnd: 16rFF) to: 'char').
+
+]
+
+{ #category : #'accessing - ip4' }
+SocketPlugin >> setIp4Port: anAddressOop value: aPort [
+
+	<api>
+	<returnTypeC: #void>
+
+	"IPv4 Addresses are represented by an object with a smallinteger saying the address type (2 for IPv4), a 4 bytes bytearray as second instance variable, and a smallInteger as port number as third instance variable. If it does not have port the value is -1."
+
+	^ interpreterProxy storeInteger: 2 ofObject: anAddressOop withValue: aPort
+
+]
+
 { #category : #'initialize-release' }
 SocketPlugin >> shutdownModule [
 	<export: true>
@@ -1014,4 +969,21 @@ SocketPlugin >> socketValueOf: socketOop [
 	   and: [(interpreterProxy byteSizeOf: socketOop) = self socketRecordSize])
 		ifTrue: [self cCoerce: (interpreterProxy firstIndexableField: socketOop) to: #SocketPtr]
 		ifFalse: [interpreterProxy primitiveFailFor: PrimErrBadArgument. nil]
+]
+
+{ #category : #'accessing - ip4' }
+SocketPlugin >> updateAddress: socketAddressOop from: addr [
+
+	<returnTypeC: #'void'>
+	<var: #addr type: #'void*'>
+
+	| addressType |
+
+	addressType := self getAddressType: socketAddressOop.
+	interpreterProxy failed ifTrue: [ ^ nil ].
+	
+	addressType = self ip4AddressType 
+		ifTrue: [ ^ self ip4UpdateAddress: socketAddressOop _: addr ].
+		
+	^ interpreterProxy primitiveFail.
 ]
