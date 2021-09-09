@@ -1,4 +1,4 @@
-/* squeak socket support header file */
+#pragma once
 
 /* module initialization/shutdown */
 sqInt socketInit(void);
@@ -40,8 +40,6 @@ sqInt sqSocketRemotePort(SocketPtr s);
 sqInt sqSocketSendDataBufCount(SocketPtr s, char *buf, sqInt bufSize);
 sqInt sqSocketSendDone(SocketPtr s);
 void  sqSocketAcceptFromRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(SocketPtr s, SocketPtr serverSocket, sqInt recvBufSize, sqInt sendBufSize, sqInt semaIndex, sqInt readSemaIndex, sqInt writeSemaIndex);
-sqInt sqSocketReceiveUDPDataBufCountaddressportmoreFlag(SocketPtr s, char *buf, sqInt bufSize,  sqInt *address,  sqInt *port, sqInt *moreFlag);
-sqInt sqSockettoHostportSendDataBufCount(SocketPtr s, sqInt address, sqInt port, char *buf, sqInt bufSize);
 sqInt sqSocketSetOptionsoptionNameStartoptionNameSizeoptionValueStartoptionValueSizereturnedValue(SocketPtr s, char *optionName, sqInt optionNameSize, char *optionValue, sqInt optionValueSize, sqInt *result);
 sqInt sqSocketGetOptionsoptionNameStartoptionNameSizereturnedValue(SocketPtr s, char *optionName, sqInt optionNameSize, sqInt *result);
 void sqSocketSetReusable(SocketPtr s);
@@ -55,9 +53,6 @@ sqInt sqResolverGetAddressInfoType(void);
 sqInt sqResolverGetAddressInfoProtocol(void);
 sqInt sqResolverGetAddressInfoNext(void);
 
-sqInt sqSocketAddressSizeGetPort(char *addr, sqInt addrSize);
-void  sqSocketAddressSizeSetPort(char *addr, sqInt addrSize, sqInt port);
-
 void  sqResolverGetNameInfoSizeFlags(char *addr, sqInt addrSize, sqInt flags);
 sqInt sqResolverGetNameInfoHostSize(void);
 void  sqResolverGetNameInfoHostResultSize(char *name, sqInt nameSize);
@@ -67,22 +62,44 @@ void  sqResolverGetNameInfoServiceResultSize(char *name, sqInt nameSize);
 sqInt sqResolverHostNameSize(void);
 void  sqResolverHostNameResultSize(char *name, sqInt nameSize);
 
-sqInt sqSocketLocalAddressSize(SocketPtr s);
-void  sqSocketLocalAddressResultSize(SocketPtr s, char *addr, int addrSize);
-sqInt sqSocketRemoteAddressSize(SocketPtr s);
-void  sqSocketRemoteAddressResultSize(SocketPtr s, char *addr, int addrSize);
-
 void socketConnectToAddressSize(SocketPtr s, void* addr, size_t addrSize);
 void socketListenOn(SocketPtr s, void* address, size_t addressSize, int backlogSize);
 void socketBindTo(SocketPtr s, void *address, size_t addrSize);
+sqInt socketSendUDPDataToAddress(SocketPtr s, void* address, size_t addrSize, char* buffer, size_t bufferLength);
+sqInt socketReceiveUDPData(SocketPtr s, char *buf, sqInt bufSize, void * address, size_t addrSize);
 
 void* newIP4SockAddr(int address, int port);
 size_t ip4SockSize();
 
+void setIp4Addressvalue(sqInt addressOop, sqInt address);
+void setIp4Portvalue(sqInt addressOop, sqInt port);
+void ip4UpdateAddress(sqInt addressOop, void* addr);
+
+
 /* family */
 
-#define SQ_SOCKET_FAMILY_UNSPECIFIED	0
-#define SQ_SOCKET_FAMILY_LOCAL		1
-#define SQ_SOCKET_FAMILY_INET4		2
-#define SQ_SOCKET_FAMILY_INET6		3
-#define SQ_SOCKET_FAMILY_MAX		4
+#define SOCKET_FAMILY_UNSPECIFIED	0
+#define SOCKET_FAMILY_LOCAL			1
+#define SOCKET_FAMILY_INET4			2
+#define SOCKET_FAMILY_INET6			3
+#define SOCKET_FAMILY_MAX			4
+
+/* flags */
+
+#define SOCKET_NUMERIC			(1<<0)
+#define SOCKET_PASSIVE			(1<<1)
+
+/* type */
+
+#define SOCKET_TYPE_UNSPECIFIED		0
+#define SOCKET_TYPE_STREAM			1
+#define SOCKET_TYPE_DGRAM			2
+#define SOCKET_TYPE_MAX				3
+
+/* protocol */
+
+#define SOCKET_PROTOCOL_UNSPECIFIED	0
+#define SOCKET_PROTOCOL_TCP			1
+#define SOCKET_PROTOCOL_UDP			2
+#define SOCKET_PROTOCOL_MAX			3
+

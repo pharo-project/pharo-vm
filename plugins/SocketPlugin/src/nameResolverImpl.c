@@ -28,25 +28,6 @@ static struct addrinfo *addrList= 0;
 static struct addrinfo *addrInfo= 0;
 static struct addrinfo *localInfo= 0;
 
-/* flags */
-
-#define SQ_SOCKET_NUMERIC		(1<<0)
-#define SQ_SOCKET_PASSIVE		(1<<1)
-
-/* type */
-
-#define SQ_SOCKET_TYPE_UNSPECIFIED	0
-#define SQ_SOCKET_TYPE_STREAM		1
-#define SQ_SOCKET_TYPE_DGRAM		2
-#define SQ_SOCKET_TYPE_MAX		3
-
-/* protocol */
-
-#define SQ_SOCKET_PROTOCOL_UNSPECIFIED	0
-#define SQ_SOCKET_PROTOCOL_TCP		1
-#define SQ_SOCKET_PROTOCOL_UDP		2
-#define SQ_SOCKET_PROTOCOL_MAX		3
-
 /* answer the hostname for the given IP address */
 
 static const char *addrToName(int netAddress)
@@ -287,9 +268,9 @@ void sqResolverGetAddressInfoHostSizeServiceSizeFlagsFamilyTypeProtocol(char *ho
   if ((!getNetSessionID())
       || (hostSize < 0) || (hostSize > MAXHOSTNAMELEN)
       || (servSize < 0) || (servSize > MAXHOSTNAMELEN)
-      || (family   < 0) || (family   >= SQ_SOCKET_FAMILY_MAX)
-      || (type     < 0) || (type     >= SQ_SOCKET_TYPE_MAX)
-      || (protocol < 0) || (protocol >= SQ_SOCKET_PROTOCOL_MAX))
+      || (family   < 0) || (family   >= SOCKET_FAMILY_MAX)
+      || (type     < 0) || (type     >= SOCKET_TYPE_MAX)
+      || (protocol < 0) || (protocol >= SOCKET_PROTOCOL_MAX))
     goto fail;
 
   if (hostSize)
@@ -302,7 +283,7 @@ void sqResolverGetAddressInfoHostSizeServiceSizeFlagsFamilyTypeProtocol(char *ho
 
   logTrace( "  -> GetAddressInfo %s %s\n", host, serv);
 
-  if (servSize && (family == SQ_SOCKET_FAMILY_LOCAL) && (servSize < sizeof(((struct sockaddr_un *)0)->sun_path)) && !(flags & SQ_SOCKET_NUMERIC))
+  if (servSize && (family == SOCKET_FAMILY_LOCAL) && (servSize < sizeof(((struct sockaddr_un *)0)->sun_path)) && !(flags & SOCKET_NUMERIC))
     {
       struct stat st;
       if ((0 == stat(servName, &st)) && (st.st_mode & S_IFSOCK))
@@ -325,26 +306,26 @@ void sqResolverGetAddressInfoHostSizeServiceSizeFlagsFamilyTypeProtocol(char *ho
 
   memset(&request, 0, sizeof(request));
 
-  if (flags & SQ_SOCKET_NUMERIC)	request.ai_flags |= AI_NUMERICHOST;
-  if (flags & SQ_SOCKET_PASSIVE)	request.ai_flags |= AI_PASSIVE;
+  if (flags & SOCKET_NUMERIC)	request.ai_flags |= AI_NUMERICHOST;
+  if (flags & SOCKET_PASSIVE)	request.ai_flags |= AI_PASSIVE;
 
   switch (family)
     {
-    case SQ_SOCKET_FAMILY_LOCAL:	request.ai_family= AF_UNIX;		break;
-    case SQ_SOCKET_FAMILY_INET4:	request.ai_family= AF_INET;		break;
-    case SQ_SOCKET_FAMILY_INET6:	request.ai_family= AF_INET6;		break;
+    case SOCKET_FAMILY_LOCAL:	request.ai_family= AF_UNIX;		break;
+    case SOCKET_FAMILY_INET4:	request.ai_family= AF_INET;		break;
+    case SOCKET_FAMILY_INET6:	request.ai_family= AF_INET6;		break;
     }
 
   switch (type)
     {
-    case SQ_SOCKET_TYPE_STREAM:		request.ai_socktype= SOCK_STREAM;	break;
-    case SQ_SOCKET_TYPE_DGRAM:		request.ai_socktype= SOCK_DGRAM;	break;
+    case SOCKET_TYPE_STREAM:		request.ai_socktype= SOCK_STREAM;	break;
+    case SOCKET_TYPE_DGRAM:		request.ai_socktype= SOCK_DGRAM;	break;
     }
 
   switch (protocol)
     {
-    case SQ_SOCKET_PROTOCOL_TCP:	request.ai_protocol= IPPROTO_TCP;	break;
-    case SQ_SOCKET_PROTOCOL_UDP:	request.ai_protocol= IPPROTO_UDP;	break;
+    case SOCKET_PROTOCOL_TCP:	request.ai_protocol= IPPROTO_TCP;	break;
+    case SOCKET_PROTOCOL_UDP:	request.ai_protocol= IPPROTO_UDP;	break;
     }
 
   gaiError= getaddrinfo(hostSize ? host : 0, servSize ? serv : 0, &request, &addrList);
@@ -386,12 +367,12 @@ sqInt sqResolverGetAddressInfoFamily(void)
 
   switch (addrInfo->ai_family)
     {
-    case AF_UNIX:	return SQ_SOCKET_FAMILY_LOCAL;
-    case AF_INET:	return SQ_SOCKET_FAMILY_INET4;
-    case AF_INET6:	return SQ_SOCKET_FAMILY_INET6;
+    case AF_UNIX:	return SOCKET_FAMILY_LOCAL;
+    case AF_INET:	return SOCKET_FAMILY_INET4;
+    case AF_INET6:	return SOCKET_FAMILY_INET6;
     }
 
-  return SQ_SOCKET_FAMILY_UNSPECIFIED;
+  return SOCKET_FAMILY_UNSPECIFIED;
 }
 
 
@@ -405,11 +386,11 @@ sqInt sqResolverGetAddressInfoType(void)
 
   switch (addrInfo->ai_socktype)
     {
-    case SOCK_STREAM:	return SQ_SOCKET_TYPE_STREAM;
-    case SOCK_DGRAM:	return SQ_SOCKET_TYPE_DGRAM;
+    case SOCK_STREAM:	return SOCKET_TYPE_STREAM;
+    case SOCK_DGRAM:	return SOCKET_TYPE_DGRAM;
     }
 
-  return SQ_SOCKET_TYPE_UNSPECIFIED;
+  return SOCKET_TYPE_UNSPECIFIED;
 }
 
 
@@ -423,11 +404,11 @@ sqInt sqResolverGetAddressInfoProtocol(void)
 
   switch (addrInfo->ai_protocol)
     {
-    case IPPROTO_TCP:	return SQ_SOCKET_PROTOCOL_TCP;
-    case IPPROTO_UDP:	return SQ_SOCKET_PROTOCOL_UDP;
+    case IPPROTO_TCP:	return SOCKET_PROTOCOL_TCP;
+    case IPPROTO_UDP:	return SOCKET_PROTOCOL_UDP;
     }
 
- return SQ_SOCKET_PROTOCOL_UNSPECIFIED;
+ return SOCKET_PROTOCOL_UNSPECIFIED;
 }
 
 
@@ -451,7 +432,7 @@ void sqResolverGetNameInfoSizeFlags(char *addr, sqInt addrSize, sqInt flags)
 
   niFlags |= NI_NOFQDN;
 
-  if (flags & SQ_SOCKET_NUMERIC) niFlags |= (NI_NUMERICHOST | NI_NUMERICSERV);
+  if (flags & SOCKET_NUMERIC) niFlags |= (NI_NUMERICHOST | NI_NUMERICSERV);
 
   /*dumpAddr(socketAddress(addr), addrSize - AddressHeaderSize);  logTrace("%02x\n", niFlags);*/
 

@@ -451,10 +451,10 @@ void sqSocketCreateNetTypeSocketTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaI
 
   switch (domain)
     {
-    case 0:	domain= AF_INET;	break;	/* SQ_SOCKET_DOMAIN_UNSPECIFIED */
-    case 1:	domain= AF_UNIX;	break;	/* SQ_SOCKET_DOMAIN_LOCAL */
-    case 2:	domain= AF_INET;	break;	/* SQ_SOCKET_DOMAIN_INET4 */
-    case 3:	domain= AF_INET6;	break;	/* SQ_SOCKET_DOMAIN_INET6 */
+    case SOCKET_FAMILY_UNSPECIFIED:	domain= AF_INET;	break;
+    case SOCKET_FAMILY_LOCAL:		domain= AF_UNIX;	break;
+    case SOCKET_FAMILY_INET4:		domain = AF_INET;	break;
+    case SOCKET_FAMILY_INET6:		domain = AF_INET6;	break;
     }
 
   s->sessionID= 0;
@@ -1010,71 +1010,6 @@ sqInt sqSocketSendDataBufCount(SocketPtr s, char *buf, sqInt bufSize)
 }
 
 
-/* read data from the UDP socket s into buf for at most bufSize bytes.
-   answer the number of bytes actually read.
-*/ 
-sqInt sqSocketReceiveUDPDataBufCountaddressportmoreFlag(SocketPtr s, char *buf, sqInt bufSize,  sqInt *address,  sqInt *port, sqInt *moreFlag)
-{
-  int lastError;
-  if (socketValid(s) && (TCPSocketType != s->socketType)) /* --- UDP/RAW --- */
-    {
-      struct sockaddr_in saddr;
-      socklen_t addrSize= sizeof(saddr);
-
-      logTrace( "recvFrom(%d)\n", SOCKET(s));
-      memset(&saddr, 0, sizeof(saddr));
-      { 
-	int nread= recvfrom(SOCKET(s), buf, bufSize, 0, (struct sockaddr *)&saddr, &addrSize);
-	if (nread >= 0)
-	  {
-	    *address= ntohl(saddr.sin_addr.s_addr);
-	    *port= ntohs(saddr.sin_port);
-	    return nread;
-	  }
-	lastError = getLastSocketError();
-	if (lastError == ERROR_WOULD_BLOCK)	/* asynchronous read in progress */
-	  return 0;
-	SOCKETERROR(s)= lastError;
-	logTrace("receiveData(%d)= %da\n", SOCKET(s), 0);
-      }
-    }
-  success(false);
-  return 0;
-}
-
-
-/* write data to the UDP socket s from buf for at most bufSize bytes.
- * answer the number of bytes actually written.
- */ 
-sqInt sqSockettoHostportSendDataBufCount(SocketPtr s, sqInt address, sqInt port, char *buf, sqInt bufSize)
-{
-  if (socketValid(s) && (TCPSocketType != s->socketType))
-    {
-      struct sockaddr_in saddr;
-
-      logTrace( "sendTo(%d)\n", SOCKET(s));
-      memset(&saddr, 0, sizeof(saddr));
-      saddr.sin_family= AF_INET;
-      saddr.sin_port= htons((short)port);
-      saddr.sin_addr.s_addr= htonl(address);
-      {
-	int nsent= sendto(SOCKET(s), buf, bufSize, 0, (struct sockaddr *)&saddr, sizeof(saddr));
-	if (nsent >= 0)
-	  return nsent;
-	
-	int lastError = getLastSocketError();
-
-	if (lastError == ERROR_WOULD_BLOCK)	/* asynchronous write in progress */
-	  return 0;
-	logTrace( "UDP send failed\n");
-	SOCKETERROR(s)= lastError;
-      }
-    }
-  success(false);
-  return 0;
-}
-
-
 /*** socket options ***/
 
 
@@ -1266,36 +1201,6 @@ void sqSocketSetReusable(SocketPtr s)
     }
 }
 
-/* ---- address manipulation ---- */
-
-
-sqInt sqSocketAddressSizeGetPort(char *addr, sqInt addrSize)
-{
-  if (addressValid(addr, addrSize))
-    switch (socketAddress(addr)->sa_family)
-      {
-      case AF_INET:	return ntohs(((struct sockaddr_in  *)socketAddress(addr))->sin_port);
-      case AF_INET6:	return ntohs(((struct sockaddr_in6 *)socketAddress(addr))->sin6_port);
-      }
-
-  success(false);
-  return 0;
-}
-
-
-void sqSocketAddressSizeSetPort(char *addr, sqInt addrSize, sqInt port)
-{
-  if (addressValid(addr, addrSize))
-    switch (socketAddress(addr)->sa_family)
-      {
-      case AF_INET:	((struct sockaddr_in  *)socketAddress(addr))->sin_port= htons(port);	return;
-      case AF_INET6:	((struct sockaddr_in6 *)socketAddress(addr))->sin6_port= htons(port);	return;
-      }
-
-  success(false);
-}
-
-
 void socketBindTo(SocketPtr s, void *address, size_t addrSize) {
 
 	struct sockaddr* addr = (struct sockaddr*) address;
@@ -1380,6 +1285,60 @@ void socketConnectToAddressSize(SocketPtr s, void* address, size_t addrSize){
 	}
 }
 
+sqInt socketSendUDPDataToAddress(SocketPtr s, void* address, size_t addrSize, char* buffer, size_t bufferLength) {
+
+	struct sockaddr* addr = (struct sockaddr*)address;
+
+	if (socketValid(s) && (TCPSocketType != s->socketType)) {
+
+		logTrace("sendTo(%d)\n", SOCKET(s));
+
+		int nsent = sendto(SOCKET(s), buffer, bufferLength, 0, addr, addrSize);
+
+		if (nsent >= 0)
+			return nsent;
+
+		int lastError = getLastSocketError();
+
+		if (lastError == ERROR_WOULD_BLOCK) /* asynchronous write in progress */
+			return 0;
+
+		logTrace("UDP send failed\n");
+		SOCKETERROR(s) = lastError;
+	}
+
+	success(false);
+	return 0;
+}
+
+sqInt socketReceiveUDPData(SocketPtr s, char *buf, sqInt bufSize, void * address, size_t addrSize) {
+	int lastError;
+	struct sockaddr* saddr = (struct sockaddr*) address;
+	socklen_t saddrSize = addrSize;
+
+	if (socketValid(s) && (TCPSocketType != s->socketType)) /* --- UDP/RAW --- */
+	{
+		logTrace("recvFrom(%d)\n", SOCKET(s));
+
+		int nread = recvfrom(SOCKET(s), buf, bufSize, 0, saddr, &saddrSize);
+
+		if (nread >= 0) {
+			return nread;
+		}
+
+		lastError = getLastSocketError();
+
+		if (lastError == ERROR_WOULD_BLOCK) /* asynchronous read in progress */
+			return 0;
+
+		SOCKETERROR(s) = lastError;
+		logTrace("receiveData(%d)= %da\n", SOCKET(s), 0);
+	}
+	success(false);
+	return 0;
+}
+
+
 void* newIP4SockAddr(int address, int port) {
 	struct sockaddr_in* r = (struct sockaddr_in*) malloc(sizeof(struct sockaddr_in));
 
@@ -1396,146 +1355,15 @@ size_t ip4SockSize(){
 	return sizeof(struct sockaddr_in);
 }
 
+void ip4UpdateAddress(sqInt addressOop, void* addr){
+	struct sockaddr_in* address = (struct sockaddr_in*)addr;
 
-sqInt sqSocketLocalAddressSize(SocketPtr s)
-{
-  union sockaddr_any saddr;
-  socklen_t saddrSize= sizeof(saddr);
-
-  if (!socketValid(s))
-    return -1;
-
-  if (getsockname(SOCKET(s), &saddr.sa, &saddrSize))
-    return 0;
-
-  return AddressHeaderSize + saddrSize;
-}
-
-
-void sqSocketLocalAddressResultSize(SocketPtr s, char *addr, int addrSize)
-{
-  union sockaddr_any saddr;
-  socklen_t saddrSize= sizeof(saddr);
-
-  if (!socketValid(s))
-    goto fail;
-
-  if (getsockname(SOCKET(s), &saddr.sa, &saddrSize))
-    goto fail;
-
-  if (addrSize != (AddressHeaderSize + saddrSize))
-    goto fail;
-
-  addressHeader(addr)->sessionID= getNetSessionID();
-
-  addressHeader(addr)->size=      saddrSize;
-  memcpy(socketAddress(addr), &saddr.sa, saddrSize);
-  return;
-
- fail:
-  success(false);
-  return;
-}
-
-
-sqInt sqSocketRemoteAddressSize(SocketPtr s)
-{
-  union sockaddr_any saddr;
-  socklen_t saddrSize= sizeof(saddr);
-
-  if (!socketValid(s))
-    return -1;
-
-  if (TCPSocketType == s->socketType)		/* --- TCP --- */
-    {
-      if (0 == getpeername(SOCKET(s), &saddr.sa, &saddrSize))
-	{
-	  if (saddrSize < sizeof(SOCKETPEER(s)))
-	    {
-	      memcpy(&SOCKETPEER(s), &saddr.sa, saddrSize);
-	      return AddressHeaderSize + (SOCKETPEERSIZE(s)= saddrSize);
-	    }
+	if(address->sin_family != AF_INET){
+		success(false);
+		return;
 	}
-    }
-  else if (SOCKETPEERSIZE(s))			/* --- UDP/RAW --- */
-    {
-      return AddressHeaderSize + SOCKETPEERSIZE(s);
-    }
 
-  return -1;
+	setIp4Addressvalue(addressOop, ntohl(address->sin_addr.s_addr));
+	setIp4Portvalue(addressOop, ntohs(address->sin_port));
 }
 
-
-void sqSocketRemoteAddressResultSize(SocketPtr s, char *addr, int addrSize)
-{
-  if (!socketValid(s)
-   || !SOCKETPEERSIZE(s)
-   || (addrSize != (AddressHeaderSize + SOCKETPEERSIZE(s)))) {
-    success(false);
-    return;
-  }
-
-  addressHeader(addr)->sessionID= getNetSessionID();
-
-  addressHeader(addr)->size=      SOCKETPEERSIZE(s);
-  memcpy(socketAddress(addr), &SOCKETPEER(s), SOCKETPEERSIZE(s));
-  SOCKETPEERSIZE(s)= 0;
-}
-
-
-/* ---- communication ---- */
-
-
-sqInt sqSocketSendUDPToSizeDataBufCount(SocketPtr s, char *addr, sqInt addrSize, char *buf, sqInt bufSize)
-{
-  logTrace( "sendTo(%d)\n", SOCKET(s));
-  if (socketValid(s) && addressValid(addr, addrSize) && (TCPSocketType != s->socketType)) /* --- UDP/RAW --- */
-    {
-      int nsent= sendto(SOCKET(s), buf, bufSize, 0, socketAddress(addr), addrSize - AddressHeaderSize);
-      if (nsent >= 0)
-	return nsent;
-	
-      int lastError = getLastSocketError();
-
-      if (lastError == ERROR_WOULD_BLOCK)	/* asynchronous write in progress */
-	return 0;
-
-      logTrace("UDP send failed\n");
-      SOCKETERROR(s)= lastError;
-    }
-
-  success(false);
-  return 0;
-}
-
-
-sqInt sqSocketReceiveUDPDataBufCount(SocketPtr s, char *buf, sqInt bufSize) {
-	int lastError;
-
-	logTrace("recvFrom(%d)\n", SOCKET(s));
-	if (socketValid(s) && (TCPSocketType != s->socketType)) {
-
-		/* --- UDP/RAW --- */
-
-		socklen_t saddrSize = sizeof(SOCKETPEER(s));
-
-		int nread = recvfrom(SOCKET(s), buf, bufSize, 0, &SOCKETPEER(s).sa,
-				&saddrSize);
-
-		lastError = getLastSocketError();
-
-		if (nread >= 0) {
-			SOCKETPEERSIZE(s) = saddrSize;
-			return nread;
-		}
-
-		SOCKETPEERSIZE(s) = 0;
-		if (lastError == ERROR_WOULD_BLOCK) /* asynchronous read in progress */
-			return 0;
-
-		SOCKETERROR(s) = lastError;
-		logTrace("receiveData(%d)= %da\n", SOCKET(s), 0);
-	}
-	success(false);
-	return 0;
-}
