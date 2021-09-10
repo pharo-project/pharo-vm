@@ -23,20 +23,16 @@ sqInt sqResolverNameLookupResult(void);
 void  sqResolverStartAddrLookup(sqInt address);
 void  sqResolverStartNameLookup(char *hostName, sqInt nameSize);
 sqInt sqResolverStatus(void);
+
 void  sqSocketAbortConnection(SocketPtr s);
 void  sqSocketCloseConnection(SocketPtr s);
 sqInt sqSocketConnectionStatus(SocketPtr s);
-void  sqSocketConnectToPort(SocketPtr s, sqInt addr, sqInt port);
 void  sqSocketCreateNetTypeSocketTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(SocketPtr s, sqInt netType, sqInt socketType, sqInt recvBufSize, sqInt sendBufSize, sqInt semaIndex, sqInt readSemaIndex, sqInt writeSemaIndex);
 void  sqSocketCreateRawProtoTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(SocketPtr s, sqInt domain, sqInt protocol, sqInt recvBufSize, sqInt sendBufSize, sqInt semaIndex, sqInt readSemaIndex, sqInt writeSemaIndex);
 void  sqSocketDestroy(SocketPtr s);
 sqInt sqSocketError(SocketPtr s);
-sqInt sqSocketLocalAddress(SocketPtr s);
-sqInt sqSocketLocalPort(SocketPtr s);
 sqInt sqSocketReceiveDataAvailable(SocketPtr s);
 sqInt sqSocketReceiveDataBufCount(SocketPtr s, char *buf, sqInt bufSize);
-sqInt sqSocketRemoteAddress(SocketPtr s);
-sqInt sqSocketRemotePort(SocketPtr s);
 sqInt sqSocketSendDataBufCount(SocketPtr s, char *buf, sqInt bufSize);
 sqInt sqSocketSendDone(SocketPtr s);
 void  sqSocketAcceptFromRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(SocketPtr s, SocketPtr serverSocket, sqInt recvBufSize, sqInt sendBufSize, sqInt semaIndex, sqInt readSemaIndex, sqInt writeSemaIndex);
@@ -67,6 +63,12 @@ void socketListenOn(SocketPtr s, void* address, size_t addressSize, int backlogS
 void socketBindTo(SocketPtr s, void *address, size_t addrSize);
 sqInt socketSendUDPDataToAddress(SocketPtr s, void* address, size_t addrSize, char* buffer, size_t bufferLength);
 sqInt socketReceiveUDPData(SocketPtr s, char *buf, sqInt bufSize, void * address, size_t addrSize);
+
+void socketLocalAddress(SocketPtr s, void* addr, size_t addrSize);
+sqInt socketLocalAddressType(SocketPtr s);
+
+void socketRemoteAddress(SocketPtr s, void* addr, size_t addrSize);
+sqInt socketRemoteAddressType(SocketPtr s);
 
 void* newIP4SockAddr(int address, int port);
 size_t ip4SockSize();

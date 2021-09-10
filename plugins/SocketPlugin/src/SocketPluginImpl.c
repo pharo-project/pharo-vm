@@ -769,82 +769,6 @@ sqInt sqSocketError(SocketPtr s)
 }
 
 
-/* return the local IP address bound to a socket */
-
-sqInt sqSocketLocalAddress(SocketPtr s)
-{
-  struct sockaddr_in saddr;
-  socklen_t saddrSize= sizeof(saddr);
-
-  if (!socketValid(s))
-    return -1;
-  if (getsockname(SOCKET(s), (struct sockaddr *)&saddr, &saddrSize)
-      || (AF_INET != saddr.sin_family))
-    return 0;
-  return ntohl(saddr.sin_addr.s_addr);
-}
-
-
-/* return the peer's IP address */
-
-sqInt sqSocketRemoteAddress(SocketPtr s)
-{
-  struct sockaddr_in saddr;
-  socklen_t saddrSize= sizeof(saddr);
-
-  if (!socketValid(s))
-    return -1;
-  if (TCPSocketType == s->socketType)
-    {
-      /* --- TCP --- */
-      if (getpeername(SOCKET(s), (struct sockaddr *)&saddr, &saddrSize)
-	  || (AF_INET != saddr.sin_family))
-	return 0;
-      return ntohl(saddr.sin_addr.s_addr);
-    }
-  /* --- UDP/RAW --- */
-  return ntohl(SOCKETPEER(s).sin.sin_addr.s_addr);
-}
-
-
-/* return the local port number of a socket */
-
-sqInt sqSocketLocalPort(SocketPtr s)
-{
-  struct sockaddr_in saddr;
-  socklen_t saddrSize= sizeof(saddr);
-
-  if (!socketValid(s))
-    return -1;
-  if (getsockname(SOCKET(s), (struct sockaddr *)&saddr, &saddrSize)
-      || (AF_INET != saddr.sin_family))
-    return 0;
-  return ntohs(saddr.sin_port);
-}
-
-
-/* return the peer's port number */
-
-sqInt sqSocketRemotePort(SocketPtr s)
-{
-  struct sockaddr_in saddr;
-  socklen_t saddrSize= sizeof(saddr);
-
-  if (!socketValid(s))
-    return -1;
-  if (TCPSocketType == s->socketType)
-    {
-      /* --- TCP --- */
-      if (getpeername(SOCKET(s), (struct sockaddr *)&saddr, &saddrSize)
-	  || (AF_INET != saddr.sin_family))
-	return 0;
-      return ntohs(saddr.sin_port);
-    }
-  /* --- UDP/RAW --- */
-  return ntohs(SOCKETPEER(s).sin.sin_port);
-}
-
-
 /* answer whether the socket has data available for reading:
    if the socket is not connected, answer "false";
    if the socket is open and data can be read, answer "true".
@@ -1338,6 +1262,121 @@ sqInt socketReceiveUDPData(SocketPtr s, char *buf, sqInt bufSize, void * address
 	return 0;
 }
 
+static sqInt translateSocketType(sa_family_t sa_family){
+
+	switch(sa_family){
+		case AF_UNSPEC:
+			return SOCKET_FAMILY_UNSPECIFIED;
+
+		case AF_UNIX:
+			return SOCKET_FAMILY_LOCAL;
+
+		case AF_INET:
+			return SOCKET_FAMILY_INET4;
+
+		case AF_INET6:
+			return SOCKET_FAMILY_INET6;
+
+		default: return -1;
+	}
+}
+
+void socketLocalAddress(SocketPtr s, void* addr, size_t addrSize){
+	struct sockaddr *sockaddr = (struct sockaddr*) addr;
+	socklen_t socklen = addrSize;
+
+	memset(sockaddr, 0, addrSize);
+
+	if(!socketValid(s)) {
+		success(false);
+		return;
+	}
+
+	if(getsockname(SOCKET(s), sockaddr, &socklen)==-1){
+		SOCKETERROR(s) = getLastSocketError();
+		logTrace("socketLocalAddress(%d)= %da\n", SOCKET(s), 0);
+
+		return;
+	}
+
+}
+
+void socketRemoteAddress(SocketPtr s, void* addr, size_t addrSize){
+	struct sockaddr *sockaddr = (struct sockaddr*) addr;
+	socklen_t socklen = addrSize;
+
+	memset(sockaddr, 0, addrSize);
+
+	if(!socketValid(s)) {
+		success(false);
+		return;
+	}
+
+	/* If it is UDP/RAW I will use the peersocket stored before */
+
+	if (s->socketType != TCPSocketType){
+		memcpy(sockaddr, &SOCKETPEER(s), addrSize);
+		return;
+	}
+
+
+	if(getpeername(SOCKET(s), sockaddr, &socklen)==-1){
+		SOCKETERROR(s) = getLastSocketError();
+		logTrace("socketRemoteAddress(%d)= %da\n", SOCKET(s), 0);
+
+		return;
+	}
+
+}
+
+
+sqInt socketLocalAddressType(SocketPtr s){
+	struct sockaddr sockaddr;
+	socklen_t socklen = sizeof(struct sockaddr);
+
+	memset(&sockaddr, 0, sizeof(sockaddr));
+
+	if(!socketValid(s)) {
+		success(false);
+		return SOCKET_FAMILY_UNSPECIFIED;
+	}
+
+	if(getsockname(SOCKET(s), &sockaddr, &socklen)==-1){
+		SOCKETERROR(s) = getLastSocketError();
+		logTrace("socketLocalAddressType(%d)= %da\n", SOCKET(s), 0);
+
+		return SOCKET_FAMILY_UNSPECIFIED;
+	}
+
+	return translateSocketType(sockaddr.sa_family);
+}
+
+sqInt socketRemoteAddressType(SocketPtr s){
+	struct sockaddr sockaddr;
+	socklen_t socklen = sizeof(struct sockaddr);
+
+	memset(&sockaddr, 0, sizeof(sockaddr));
+
+	if(!socketValid(s)) {
+		success(false);
+		return SOCKET_FAMILY_UNSPECIFIED;
+	}
+
+	/* If it is UDP/RAW I will use the peersocket stored before */
+
+	if (s->socketType != TCPSocketType){
+		return translateSocketType(SOCKETPEER(s).sa.sa_family);
+	}
+
+	if(getpeername(SOCKET(s), &sockaddr, &socklen)==-1){
+		SOCKETERROR(s) = getLastSocketError();
+		logTrace("socketRemoteAddressType(%d)= %da\n", SOCKET(s), 0);
+
+		return SOCKET_FAMILY_UNSPECIFIED;
+	}
+
+	return translateSocketType(sockaddr.sa_family);
+}
 
 void* newIP4SockAddr(int address, int port) {
 	struct sockaddr_in* r = (struct sockaddr_in*) malloc(sizeof(struct sockaddr_in));
@@ -1359,7 +1398,6 @@ void ip4UpdateAddress(sqInt addressOop, void* addr){
 	struct sockaddr_in* address = (struct sockaddr_in*)addr;
 
 	if(address->sin_family != AF_INET){
-		success(false);
 		return;
 	}
 
