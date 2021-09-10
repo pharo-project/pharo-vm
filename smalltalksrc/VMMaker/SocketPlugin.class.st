@@ -43,7 +43,7 @@ SocketPlugin >> addressStructFor: aSocketAddress [
 	| addressType |
 
 	addressType := self getAddressType: aSocketAddress.
-	interpreterProxy failed ifTrue: [ ^ nil ].
+	addressType = 0 ifTrue: [ ^ interpreterProxy primitiveFail. ].
 	
 	addressType = self ip4AddressType 
 		ifTrue: [ 
@@ -62,7 +62,7 @@ SocketPlugin >> addressStructSizeFor: aSocketAddress [
 	| addressType |
 
 	addressType := self getAddressType: aSocketAddress.
-	interpreterProxy failed ifTrue: [ ^ nil ].
+	addressType = 0 ifTrue: [ ^ interpreterProxy primitiveFail. ].
 	
 	addressType = self ip4AddressType 
 		ifTrue: [ ^ self ip4SockSize ].
@@ -456,6 +456,52 @@ SocketPlugin >> primitiveResolverStatus [
 	^status asSmallIntegerObj
 ]
 
+{ #category : #'primitives - status' }
+SocketPlugin >> primitiveSocket: socket LocalAddress: socketAddressOop [
+
+	<var: #s type: #SocketPtr>
+	<var: #addr type: #'void *'>
+	<var: #addrSize type: #'size_t'>
+
+	| s addr addrSize |
+	self primitive: 'primitiveSocketLocalAddress' parameters: #(Oop Oop).
+
+	s := self socketValueOf: socket.
+
+	addr := self addressStructFor: socketAddressOop.
+	addrSize := self addressStructSizeFor: socketAddressOop.
+			
+	interpreterProxy failed
+		ifFalse: [
+			self socketLocalAddress: s _: addr _: addrSize.
+			self updateAddress: socketAddressOop from: addr.
+			self free: addr ].
+
+]
+
+{ #category : #'primitives - status' }
+SocketPlugin >> primitiveSocket: socket RemoteAddress: socketAddressOop [
+
+	<var: #s type: #SocketPtr>
+	<var: #addr type: #'void *'>
+	<var: #addrSize type: #'size_t'>
+
+	| s addr addrSize |
+	self primitive: 'primitiveSocketRemoteAddress' parameters: #(Oop Oop).
+
+	s := self socketValueOf: socket.
+
+	addr := self addressStructFor: socketAddressOop.
+	addrSize := self addressStructSizeFor: socketAddressOop.
+			
+	interpreterProxy failed
+		ifFalse: [
+			self socketRemoteAddress: s _: addr _: addrSize.
+			self updateAddress: socketAddressOop from: addr.
+			self free: addr ].
+
+]
+
 { #category : #'primitives - connection' }
 SocketPlugin >> primitiveSocket: socket bindTo: socketAddressOop [
 
@@ -803,7 +849,7 @@ SocketPlugin >> primitiveSocketCreateNetwork: netType type: socketType receiveBu
 
 { #category : #'primitives - creation' }
 SocketPlugin >> primitiveSocketCreateRaw: netType type: protoType receiveBufferSize: recvBufSize sendBufSize: sendBufSize semaIndex: semaIndex readSemaIndex: aReadSema writeSemaIndex: aWriteSema [ 
-	| socketOop s okToCreate |
+	| socketOop s |
 	<var: #s type: 'SocketPtr '>
 	self primitive: 'primitiveSocketCreateRAW' parameters: #(#SmallInteger #SmallInteger #SmallInteger #SmallInteger #SmallInteger #SmallInteger #SmallInteger ).
 
@@ -847,28 +893,20 @@ SocketPlugin >> primitiveSocketError: socket [
 	^err asSmallIntegerObj
 ]
 
-{ #category : #primitives }
-SocketPlugin >> primitiveSocketLocalAddress: socket [
+{ #category : #'primitives - status' }
+SocketPlugin >> primitiveSocketLocalAddressType: socket [
 
-	| s addr |
 	<var: #s type: 'SocketPtr'>
-	self primitive: 'primitiveSocketLocalAddress'
-		parameters: #(Oop).
-	s := self socketValueOf: socket.
-	addr := self sqSocketLocalAddress: s.
-	^self intToNetAddress: addr
-]
 
-{ #category : #primitives }
-SocketPlugin >> primitiveSocketLocalPort: socket [
+	| s |
+	self primitive: 'primitiveSocketLocalAddressType' parameters: #(#Oop).
 
-	| s port |
-	<var: #s type: 'SocketPtr '>
-	self primitive: 'primitiveSocketLocalPort'
-		parameters: #(Oop).
 	s := self socketValueOf: socket.
-	port := self sqSocketLocalPort: s.
-	^port asSmallIntegerObj
+
+	interpreterProxy failed ifFalse: [
+		^ (self socketLocalAddressType: s) asSmallIntegerObj ].
+	
+	^ 0 asSmallIntegerObj
 ]
 
 { #category : #'primitives - sending/receiving' }
@@ -883,28 +921,20 @@ SocketPlugin >> primitiveSocketReceiveDataAvailable: socket [
 	^dataIsAvailable asBooleanObj
 ]
 
-{ #category : #primitives }
-SocketPlugin >> primitiveSocketRemoteAddress: socket [
+{ #category : #'primitives - status' }
+SocketPlugin >> primitiveSocketRemoteAddressType: socket [
 
-	| s addr |
 	<var: #s type: 'SocketPtr'>
-	self primitive: 'primitiveSocketRemoteAddress'
-		parameters: #(Oop).
-	s := self socketValueOf: socket.
-	addr := self sqSocketRemoteAddress: s.
-	^self intToNetAddress: addr
-]
 
-{ #category : #primitives }
-SocketPlugin >> primitiveSocketRemotePort: socket [
+	| s |
+	self primitive: 'primitiveSocketRemoteAddressType' parameters: #(#Oop).
 
-	| s port |
-	<var: #s type: 'SocketPtr'>
-	self primitive: 'primitiveSocketRemotePort'
-		parameters: #(Oop).
 	s := self socketValueOf: socket.
-	port := self sqSocketRemotePort: s.
-	^port asSmallIntegerObj
+
+	interpreterProxy failed ifFalse: [
+		^ (self socketRemoteAddressType: s) asSmallIntegerObj ].
+	
+	^ 0 asSmallIntegerObj
 ]
 
 { #category : #'primitives - status' }
@@ -953,6 +983,27 @@ SocketPlugin >> shutdownModule [
 	^self cCode: 'socketShutdown()' inSmalltalk:[true]
 ]
 
+{ #category : #'for - simulation' }
+SocketPlugin >> socket: s ConnectToAddress: addr Size: addrSize [
+
+	<doNotGenerate>
+	self subclassResponsibility
+]
+
+{ #category : #'for - simulation' }
+SocketPlugin >> socketBindTo: s _: addr _: addrSize [
+
+	<doNotGenerate>
+	self subclassResponsibility
+]
+
+{ #category : #'for - simulation' }
+SocketPlugin >> socketListenOn: s _: addr _: addrSize _: backlogSize [
+
+	<doNotGenerate>
+	self subclassResponsibility
+]
+
 { #category : #primitives }
 SocketPlugin >> socketRecordSize [
 	"Return the size of a Smalltalk socket record in bytes."
@@ -971,6 +1022,35 @@ SocketPlugin >> socketValueOf: socketOop [
 		ifFalse: [interpreterProxy primitiveFailFor: PrimErrBadArgument. nil]
 ]
 
+{ #category : #'for - simulation' }
+SocketPlugin >> sqNetworkInit: resolverSemaIndex [
+
+	<doNotGenerate>
+
+	self subclassResponsibility
+]
+
+{ #category : #'for - simulation' }
+SocketPlugin >> sqSocketAbortConnection: s [
+
+	<doNotGenerate>
+	self subclassResponsibility
+]
+
+{ #category : #'for - simulation' }
+SocketPlugin >> sqSocketCloseConnection: s [
+
+	<doNotGenerate>
+	self subclassResponsibility
+]
+
+{ #category : #'for - simulation' }
+SocketPlugin >> sqSocketDestroy: socketPtr [
+
+	<doNotGenerate>
+	self subclassResponsibility
+]
+
 { #category : #'accessing - ip4' }
 SocketPlugin >> updateAddress: socketAddressOop from: addr [
 
@@ -980,10 +1060,8 @@ SocketPlugin >> updateAddress: socketAddressOop from: addr [
 	| addressType |
 
 	addressType := self getAddressType: socketAddressOop.
-	interpreterProxy failed ifTrue: [ ^ nil ].
+	addressType = 0 ifTrue: [ ^ self ].
 	
 	addressType = self ip4AddressType 
 		ifTrue: [ ^ self ip4UpdateAddress: socketAddressOop _: addr ].
-		
-	^ interpreterProxy primitiveFail.
 ]
