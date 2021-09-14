@@ -3354,6 +3354,11 @@ CCodeGenerator >> inlineDispatchesInMethodNamed: selector localizingVars: varsLi
 	"Inline dispatches (case statements) in the method with the given name."
 
 	| m |
+
+	self
+		validateLocalizationOfGlobals: varsList
+		exceptMethod: selector.	
+	
 	m := self methodNamed: selector.
 	m = nil ifFalse: [
 		m inlineCaseStatementBranchesIn: self localizingVars: varsList.
@@ -4433,25 +4438,6 @@ CCodeGenerator >> removeMethodForSelector: aSelector [
 	methods removeKey:  aSelector ifAbsent: []
 ]
 
-{ #category : #inlining }
-CCodeGenerator >> removeMethodsReferingToGlobals: varList except: methodName [
-	"Remove any methods (presumably inlined) that still contain references to the given
-	 global variables. Answer a Dictionary of the removed methods for later reporting."
-
-	| varListAsStrings removed |
-	varListAsStrings := varList collect: [ :sym | sym asString ].
-	removed := Dictionary new: methods size / 2.
-	methods copy keysAndValuesDo:
-		[ :sel :meth| | mVars |
-		sel ~= methodName ifTrue:
-			[mVars := meth freeVariableReferences asSet.
-			 (varListAsStrings anySatisfy: [ :v | mVars includes: v]) ifTrue:
-				[removed at: sel put: meth.
-				self removeMethodForSelector: sel]]].
-
-	^removed
-]
-
 { #category : #utilities }
 CCodeGenerator >> removeVariable: aName [
 	"Remove the given (instance) variable from the code base."
@@ -5181,6 +5167,31 @@ CCodeGenerator >> useSymbolicConstants: aBool [
 { #category : #utilities }
 CCodeGenerator >> validateCppIf: nodeOrNil withValue: value [
 	
+]
+
+{ #category : #inlining }
+CCodeGenerator >> validateLocalizationOfGlobals: varList exceptMethod: methodName [
+
+	| localizationCandidates variablesInConflict |
+	localizationCandidates := varList collect: [ :sym | sym asString ].
+	variablesInConflict := Set new.
+
+	methods copy keysAndValuesDo: [ :sel :meth| | methodFreeVariables |
+		sel ~= methodName ifTrue: [
+			methodFreeVariables := meth freeVariableReferences asSet.
+			 localizationCandidates do: [ :candidate | 
+				(methodFreeVariables includes: candidate)
+					ifTrue: [ variablesInConflict add: candidate ] ] ] ].
+
+	variablesInConflict ifNotEmpty: [ | errorMessage |
+		errorMessage := String streamContents: [ :stream |
+			stream nextPutAll: 'Cannot localize Shared Variables in the interpreter loop: '.
+			variablesInConflict
+				do: [ :e | stream nextPutAll: e ]
+				separatedBy: [ stream nextPutAll: ', ' ]
+		].
+		self error: errorMessage
+	]
 ]
 
 { #category : #'C code generator' }

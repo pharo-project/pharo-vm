@@ -137,8 +137,8 @@ MLVMCCodeGenerator >> doInlining: inlineFlagOrSymbol [
 			self inlineDispatchesInMethodNamed: #interpret
 				localizingVars: self vmClass namesOfVariablesToLocalize.
 			bar value: 1.
-			removed := self removeMethodsReferingToGlobals: self vmClass namesOfVariablesToLocalize
-							except: #interpret.
+			removed := self validateLocalizationOfGlobals: self vmClass namesOfVariablesToLocalize
+							exceptMethod: #interpret.
 			bar value: 2].
 
 	"only prune when generating the interpreter itself"
