@@ -13,6 +13,16 @@ Class {
 { #category : #accessing }
 TSendNode >> args [
 
+	self
+		deprecated: 'use #arguments instead'
+		transformWith: '`@rec args' -> '`@rec arguments'.
+
+	^ self arguments
+]
+
+{ #category : #accessing }
+TSendNode >> arguments [
+
 	^arguments
 ]
 

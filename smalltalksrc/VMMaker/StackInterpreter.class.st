@@ -8079,12 +8079,13 @@ StackInterpreter >> internalAboutToReturn: resultOop through: aContext [
 
 { #category : #'message sending' }
 StackInterpreter >> internalActivateNewMethod [
-	| methodHeader numTemps rcvr |
-	<inline: true>
 
+	<inline: true>
+	| methodHeader numTemps rcvr |
 	methodHeader := objectMemory methodHeaderOf: newMethod.
 	numTemps := self temporaryCountOfMethodHeader: methodHeader.
-	self assert: argumentCount = (self argumentCountOfMethodHeader: methodHeader).
+	self assert:
+		argumentCount = (self argumentCountOfMethodHeader: methodHeader).
 	rcvr := self internalStackValue: argumentCount. "could new rcvr be set at point of send?"
 	self assert: (objectMemory isOopForwarded: rcvr) not.
 
@@ -8094,35 +8095,38 @@ StackInterpreter >> internalActivateNewMethod [
 	self internalPush: newMethod.
 	self setMethod: newMethod methodHeader: methodHeader.
 	self internalPush: (self
-						encodeFrameFieldHasContext: false
-						isBlock: false
-						numArgs: (self argumentCountOfMethodHeader: methodHeader)).
+			 encodeFrameFieldHasContext: false
+			 isBlock: false
+			 numArgs: (self argumentCountOfMethodHeader: methodHeader)).
 	self internalPush: objectMemory nilObject. "FxThisContext field"
 	self internalPush: rcvr.
 
 	"Initialize temps..."
-	argumentCount + 1 to: numTemps do:
-		[:i | self internalPush: objectMemory nilObject].
+	argumentCount + 1 to: numTemps do: [ :i | 
+	self internalPush: objectMemory nilObject ].
 
 	"-1 to account for pre-increment in fetchNextBytecode"
-	localIP := self pointerForOop: (self initialIPForHeader: methodHeader method: newMethod) - 1.
+	localIP := self pointerForOop:
+		           (self initialIPForHeader: methodHeader method: newMethod)
+		           - 1.
 
-	(self methodHeaderHasPrimitive: methodHeader) ifTrue:
-		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
+	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		 localIP := localIP + (self sizeOfCallPrimitiveBytecode: methodHeader).
-		 primFailCode ~= 0 ifTrue:
-			[self reapAndResetErrorCodeTo: localSP header: methodHeader]].
+		localIP := localIP
+		           + (self sizeOfCallPrimitiveBytecode: methodHeader).
+		primFailCode ~= 0 ifTrue: [ 
+			self reapAndResetErrorCodeTo: localSP header: methodHeader ] ].
 
 	self assert: (self frameNumArgs: localFP) = argumentCount.
 	self assert: (self frameIsBlockActivation: localFP) not.
 	self assert: (self frameHasContext: localFP) not.
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
-	localSP < stackLimit ifTrue:
-		[self externalizeIPandSP.
-		 self handleStackOverflowOrEventAllowContextSwitch: (self canContextSwitchIfActivating: newMethod header: methodHeader).
-		 self internalizeIPandSP]
+	localSP < stackLimit ifTrue: [ 
+		self externalizeIPandSP.
+		self handleStackOverflowOrEventAllowContextSwitch:
+			(self canContextSwitchIfActivating: newMethod header: methodHeader).
+		self internalizeIPandSP ]
 ]
 
 { #category : #'return bytecodes' }

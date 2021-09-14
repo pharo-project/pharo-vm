@@ -7,6 +7,21 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance creation' }
+TVariableNode class >> named: aName [
+
+	^ self new
+		  setName: aName;
+		  yourself
+]
+
+{ #category : #transformations }
+TVariableNode >> = anotherNode [
+
+	super = anotherNode ifFalse: [ ^ false ].
+	^ name = anotherNode name
+]
+
 { #category : #transformations }
 TVariableNode >> bindVariableUsesIn: aDictionary [
 

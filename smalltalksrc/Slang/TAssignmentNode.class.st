@@ -8,6 +8,31 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance creation' }
+TAssignmentNode class >> variable: aVariable expression: anExpression [
+
+	^ self new
+		  setVariable: aVariable expression: anExpression;
+		  yourself
+]
+
+{ #category : #'instance creation' }
+TAssignmentNode class >> variableNamed: aVariableName expression: anExpression [
+
+	^ self new
+		  setVariable: (TVariableNode named: aVariableName) expression: anExpression;
+		  yourself
+]
+
+{ #category : #comparing }
+TAssignmentNode >> = anotherNode [
+
+	super = anotherNode ifFalse: [ ^ false ].
+	variable = anotherNode variable ifFalse: [ ^ false ].
+	expression = anotherNode expression ifFalse: [ ^ false ].
+	^ true
+]
+
 { #category : #transformations }
 TAssignmentNode >> bindVariableUsesIn: aDictionary [
 	"Do NOT bind the variable on the left-hand-side of an assignment statement."
@@ -139,6 +164,12 @@ TAssignmentNode >> emitValueExpansionOn: aStream level: level generator: aCodeGe
 TAssignmentNode >> expression [
 
 	^expression
+]
+
+{ #category : #comparing }
+TAssignmentNode >> hash [
+
+	^ variable hash + expression hash
 ]
 
 { #category : #testing }

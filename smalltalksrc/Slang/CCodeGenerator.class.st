@@ -3350,16 +3350,36 @@ CCodeGenerator >> inlineDispatchesInMethodNamed: selector [
 	"Inline dispatches (case statements) in the method with the given name.
 	Then localize variables"
 
-	| m |
-	m := self methodNamed: selector.
-	m = nil ifFalse: [ 
-		m inlineCaseStatementBranchesIn: self.
-		m parseTree nodesDo: [ :n | 
-			n isCaseStmt ifTrue: [ 
-				n
-					customizeShortCasesForDispatchVar: 'currentBytecode'
-					in: self
-					method: m ] ] ]
+	| m variablesToLocalize |
+	(m := self methodNamed: selector) ifNil: [ ^ self ].
+	
+	variablesToLocalize := Set new.
+	m
+		extractDirective: #localizedVariable:
+		valueBlock: [:sendNode| variablesToLocalize add: sendNode arguments first value ]
+		default: nil.
+	m localizeVariables: (variablesToLocalize collect: [ :e | 'local_', e ]).
+	variablesToLocalize do: [ :e |
+		m statements addFirst: (TAssignmentNode
+			variableNamed: #local_, e
+			expression: (TVariableNode named: e)).
+		self haltIf: (m statements last isReturn and: [m statements last expression name ~= 'self']).
+		m statements addLast: (TAssignmentNode
+			variableNamed: e
+			expression: (TVariableNode named: #local_, e)).
+	].
+	
+	
+	m
+		inlineCaseStatementBranchesIn: self
+		withReplacementDictionary: (variablesToLocalize collect: [ :v | 
+			v -> (TVariableNode named: #local_, v) ]) asDictionary.
+	m parseTree nodesDo: [ :n | 
+		n isCaseStmt ifTrue: [ 
+			n
+				customizeShortCasesForDispatchVar: 'currentBytecode'
+				in: self
+				method: m ] ]
 ]
 
 { #category : #utilities }

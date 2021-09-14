@@ -25,6 +25,13 @@ TInlineNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold i
 					yourself]
 ]
 
+{ #category : #transformations }
+TInlineNode >> bindVariablesIn: aDictionary [
+
+	method := method bindVariablesIn: aDictionary.
+
+]
+
 { #category : #'C code generation' }
 TInlineNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
 	method emitInlineOn: aStream level: level generator: aCodeGen.

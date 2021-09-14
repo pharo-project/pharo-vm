@@ -4,7 +4,8 @@ Class {
 	#instVars : [
 		'variableToLocalize',
 		'sharedVariableToLocalize',
-		'sharedVariableToLocalizeBeforeInlining'
+		'sharedVariableToLocalizeBeforeInlining',
+		'autoLocalizedVariable'
 	],
 	#classVars : [
 		'BytecodeTable'
@@ -15,13 +16,24 @@ Class {
 { #category : #initialization }
 MockLocalizationInterpreterMock class >> initialize [
 
-	BytecodeTable := Array new: 4.
+	BytecodeTable := Array new: 5.
 	self table: BytecodeTable from:
 	#(
 	(  0  bytecodeToInline)
 	(  1  bytecodeUsingLocalizedVariable)
 	(  2  bytecodeUsingSharedLocalizedVariable)
 	(  3  bytecodeUsingSharedLocalizedVariableBeforeInlining)
+	(  4  bytecodeUsingAutoLocalizedVariable)
+	)
+]
+
+{ #category : #initialization }
+MockLocalizationInterpreterMock class >> initializeWithAutoLocalizedVariableOnly [
+
+	BytecodeTable := Array new: 1.
+	self table: BytecodeTable from:
+	#(
+	(  0  bytecodeUsingAutoLocalizedVariable)
 	)
 ]
 
@@ -29,6 +41,12 @@ MockLocalizationInterpreterMock class >> initialize [
 MockLocalizationInterpreterMock >> bytecodeToInline [
 
 	"Do nothing"
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingAutoLocalizedVariable [
+
+	autoLocalizedVariable := 17
 ]
 
 { #category : #'interpreter shell' }
@@ -52,6 +70,7 @@ MockLocalizationInterpreterMock >> bytecodeUsingSharedLocalizedVariableBeforeInl
 
 { #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> interpret [
+	<localizedVariable: #autoLocalizedVariable>
 
 	self dispatchOn: 1 in: BytecodeTable
 ]

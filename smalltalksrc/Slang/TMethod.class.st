@@ -160,41 +160,45 @@ TMethod >> allReferencedVariablesUsing: aCodeGen [
 
 { #category : #inlining }
 TMethod >> argAssignmentsFor: meth send: aSendNode except: elidedArgs in: aCodeGen [
+
 	"Return a collection of assignment nodes that assign the given argument expressions to the formal parameter variables of the given method."
+
 	"Optimization: If the actual parameters are either constants or local variables in the target method (the receiver), substitute them directly into the body of meth. Note that global variables cannot be subsituted because the inlined method might depend on the exact ordering of side effects to the globals."
 
 	| stmtList substitutionDict argList |
-	meth args size > (argList := aSendNode args) size ifTrue:
-		[self assert: (meth args first beginsWith: 'self_in_').
-		 argList := {aSendNode receiver}, aSendNode args].
-	
+	meth args size > (argList := aSendNode arguments) size ifTrue: [ 
+		self assert: (meth args first beginsWith: 'self_in_').
+		argList := { aSendNode receiver } , aSendNode args ].
+
 	stmtList := OrderedCollection new: argList size.
 	substitutionDict := Dictionary new: argList size.
-	meth args with: argList do:
-		[:argName :exprNode |
-		(self isNode: exprNode substitutableFor: argName inMethod: meth in: aCodeGen)
-			ifTrue:
-				[substitutionDict
-					at: argName
-					put: (aCodeGen
-							node: exprNode
-							typeCompatibleWith: argName
-							inliningInto: meth
-							in: self).
-				 locals remove: argName ifAbsent: [self assert: (argName beginsWith: 'self_in_')].
-				 declarations removeKey: argName ifAbsent: nil]
-			ifFalse: "Add an assignment for anything except an unused self_in_foo argument"
-				[(elidedArgs includes: argName) ifFalse:
-					[stmtList addLast:
-						(TAssignmentNode new
-							setVariable: (TVariableNode new setName: argName)
-							expression: (aCodeGen
-											node: exprNode copy
-											typeCompatibleWith: argName
-											inliningInto: meth
-											in: self))]]].
+	meth args with: argList do: [ :argName :exprNode | 
+		(self
+			 isNode: exprNode
+			 substitutableFor: argName
+			 inMethod: meth
+			 in: aCodeGen)
+			ifTrue: [ 
+				substitutionDict at: argName put: (aCodeGen
+						 node: exprNode
+						 typeCompatibleWith: argName
+						 inliningInto: meth
+						 in: self).
+				locals
+					remove: argName
+					ifAbsent: [ self assert: (argName beginsWith: 'self_in_') ].
+				declarations removeKey: argName ifAbsent: nil ]
+			ifFalse: [ "Add an assignment for anything except an unused self_in_foo argument"
+				(elidedArgs includes: argName) ifFalse: [ 
+					stmtList addLast: (TAssignmentNode new
+							 setVariable: (TVariableNode new setName: argName)
+							 expression: (aCodeGen
+									  node: exprNode copy
+									  typeCompatibleWith: argName
+									  inliningInto: meth
+									  in: self)) ] ] ].
 	meth parseTree: (meth parseTree bindVariablesIn: substitutionDict).
-	^stmtList
+	^ stmtList
 ]
 
 { #category : #'primitive compilation' }
@@ -264,29 +268,48 @@ TMethod >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: c
 ]
 
 { #category : #transformations }
+TMethod >> bindVariablesIn: constantDictionary [
+	"Class variables are used as constants. This method replaces all references to class variables in the body of this method with the corresponding constant looked up in the class pool dictionary of the source class. The source class class variables should be initialized before this method is called."
+
+	parseTree := parseTree bindVariablesIn: constantDictionary.
+]
+
+{ #category : #transformations }
 TMethod >> buildCaseStmt: aSendNode in: aCodeGen [
+
 	"Build a case statement node for the given send of dispatchOn:in:."
+
 	"Note: the first argument is the variable to be dispatched on. The second argument is a constant node holding an array of unary selectors, which will be turned into sends to self."
 
 	| unimplemented errorMessage |
-	(aSendNode args size >= 2
-	 and: [aSendNode args second isConstant
-	 and: [aSendNode args second value isArray]]) ifFalse:
-		[self error: 'wrong node structure for a case statement'].
+	(aSendNode arguments size >= 2 and: [ 
+		 aSendNode arguments second isConstant and: [ 
+			 aSendNode arguments second value isArray ] ]) ifFalse: [ 
+		self error: 'wrong node structure for a case statement' ].
 
-	unimplemented := aSendNode args second value select: [:s| (aCodeGen methodNamed: s) isNil].
-	unimplemented isEmpty ifFalse:
-		[errorMessage := 'The following selectors in case statement "', (aSendNode printString copyUpTo: $#), '..." are unimplemented: ',
-							(String streamContents: [:s| unimplemented do: [:sel| s crtab; store: sel]]).
-		 aCodeGen logger nextPutAll: errorMessage; cr; flush.
-		 (self confirm: errorMessage
-			orCancel: aCodeGen abortBlock) ifFalse:
-				[self halt]].
+	unimplemented := aSendNode arguments second value select: [ :s | 
+		                 (aCodeGen methodNamed: s) isNil ].
+	unimplemented isEmpty ifFalse: [ 
+		errorMessage := 'The following selectors in case statement "'
+		                , (aSendNode printString copyUpTo: $#)
+		                , '..." are unimplemented: '
+		                , (String streamContents: [ :s | 
+				                 unimplemented do: [ :sel | 
+					                 s
+						                 crtab;
+						                 store: sel ] ]).
+		aCodeGen logger
+			nextPutAll: errorMessage;
+			cr;
+			flush.
+		(self confirm: errorMessage orCancel: aCodeGen abortBlock) ifFalse: [ 
+			self halt ] ].
 
-	^TCaseStmtNode new
-		setExpression: aSendNode args first
-		selectors: aSendNode args second value
-		arguments: (aSendNode args copyFrom: 3 to: aSendNode args size)
+	^ TCaseStmtNode new
+		  setExpression: aSendNode arguments first
+		  selectors: aSendNode arguments second value
+		  arguments:
+		  (aSendNode arguments copyFrom: 3 to: aSendNode arguments size)
 ]
 
 { #category : #transformations }
@@ -1229,7 +1252,7 @@ TMethod >> inlineBuiltin: aSendNode in: aCodeGen [
 ]
 
 { #category : #inlining }
-TMethod >> inlineCaseStatementBranchesIn: aCodeGen [
+TMethod >> inlineCaseStatementBranchesIn: aCodeGen withReplacementDictionary: replacementDictionary [
 
 	| exitLabel |
 	parseTree nodesDo: [ :n | 
@@ -1260,7 +1283,9 @@ TMethod >> inlineCaseStatementBranchesIn: aCodeGen [
 								newStatements
 									addFirst: meth asInlineNode;
 									addFirst: (TLabeledCommentNode new setComment: meth selector).
-								stmtNode setStatements: newStatements ] ] ] ] ] ]
+								stmtNode setStatements: newStatements.
+								stmtNode bindVariablesIn: replacementDictionary.
+								 ] ] ] ] ] ]
 ]
 
 { #category : #inlining }
@@ -1441,6 +1466,7 @@ TMethod >> inlineReturningConditional: aSendNode in: aCodeGen [
 
 { #category : #inlining }
 TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in: aCodeGen [
+
 	"Answer a collection of statements to replace the given send.  directReturn indicates
 	 that the send is the expression in a return statement, so returns can be left in the
 	 body of the inlined method. If exitVar is nil, the value returned by the send is not
@@ -1456,70 +1482,77 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 	methArgs := meth args.
 	"convenient for debugging..."
 	aCodeGen maybeBreakForInlineOf: aSendNode in: self.
-	elidedArgs := #().
-	(methArgs notEmpty and: [methArgs first beginsWith: 'self_in_'])
-		ifTrue: "If the first arg is not used we can and should elide it."
-			[| varNode |
-			 varNode := TVariableNode new setName: methArgs first.
-			 (meth parseTree noneSatisfy: [:node| varNode isSameAs: node]) ifTrue:
-				[elidedArgs := {methArgs first}].
-			 methArgs := methArgs allButFirst].
-	methArgs size = aSendNode args size ifFalse:
-		[^nil].
+	elidedArgs := #(  ).
+	(methArgs notEmpty and: [ methArgs first beginsWith: 'self_in_' ]) 
+		ifTrue: [ "If the first arg is not used we can and should elide it."
+			| varNode |
+			varNode := TVariableNode new setName: methArgs first.
+			(meth parseTree noneSatisfy: [ :node | varNode isSameAs: node ]) 
+				ifTrue: [ elidedArgs := { methArgs first } ].
+			methArgs := methArgs allButFirst ].
+	methArgs size = aSendNode arguments size ifFalse: [ ^ nil ].
 	meth := meth copy.
 
-	(meth statements size > 1
-	 and: [meth statements first isSend
-	 and: [meth statements first selector == #flag:]]) ifTrue:
-		[meth statements removeFirst].
+	(meth statements size > 1 and: [ 
+		 meth statements first isSend and: [ 
+			 meth statements first selector == #flag: ] ]) ifTrue: [ 
+		meth statements removeFirst ].
 
 	"Propagate the return type of an inlined method"
-	(directReturn or: [exitVar notNil]) ifTrue:
-		[exitType := directReturn 
-						ifTrue: [returnType] 
-						ifFalse: [(self typeFor: exitVar in: aCodeGen) ifNil: [#sqInt]].
-		(exitType = #void or: [exitType = meth returnType]) ifFalse:
-			[meth propagateReturnIn: aCodeGen]].
+	(directReturn or: [ exitVar notNil ]) ifTrue: [ 
+		exitType := directReturn
+			            ifTrue: [ returnType ]
+			            ifFalse: [ 
+			            (self typeFor: exitVar in: aCodeGen) ifNil: [ #sqInt ] ].
+		(exitType = #void or: [ exitType = meth returnType ]) ifFalse: [ 
+			meth propagateReturnIn: aCodeGen ] ].
 
 	"Propagate any unusual argument types to untyped argument variables"
-	methArgs
-		with: aSendNode args
-		do: [:formal :actual|
-			(meth declarationAt: formal ifAbsent: nil) ifNil:
-				[(self typeFor: actual in: aCodeGen) ifNotNil:
-					[:type|
-					type ~= #sqInt ifTrue:
-						[meth declarationAt: formal put: (type last = $* ifTrue: [type, formal] ifFalse: [type, ' ', formal])]]]].
+	methArgs with: aSendNode arguments do: [ :formal :actual | 
+		(meth declarationAt: formal ifAbsent: nil) ifNil: [ 
+			(self typeFor: actual in: aCodeGen) ifNotNil: [ :type | 
+				type ~= #sqInt ifTrue: [ 
+					meth declarationAt: formal put: (type last = $*
+							 ifTrue: [ type , formal ]
+							 ifFalse: [ type , ' ' , formal ]) ] ] ] ].
 
 	meth renameVarsForInliningInto: self except: elidedArgs in: aCodeGen.
 	meth renameLabelsForInliningInto: self.
 	self addVarsDeclarationsAndLabelsOf: meth except: elidedArgs.
-	meth hasReturn ifTrue:
-		[directReturn ifFalse:
-			[exitLabel := self unusedLabelForInliningInto: self.
-			 (meth exitVar: exitVar label: exitLabel) "is label used?"
+	meth hasReturn ifTrue: [ 
+		directReturn ifFalse: [ 
+			exitLabel := self unusedLabelForInliningInto: self.
+			(meth exitVar: exitVar label: exitLabel)
 				ifTrue: [ labels add: exitLabel ]
-				ifFalse: [ exitLabel := nil ]]].
-	(inlineStmts := OrderedCollection new: meth statements size + meth args size + 2)
-		add: (label := TLabeledCommentNode new setComment: 'begin ', sel);
-		addAll: (self argAssignmentsFor: meth send: aSendNode except: elidedArgs in: aCodeGen);
-		addAll: meth statements.  "method body"
-	directReturn ifTrue:
-		[meth endsWithReturn
-			ifTrue:
-				[exitVar ifNotNil: "don't remove the returns if being invoked in the context of a return"
-					[inlineStmts at: inlineStmts size put: inlineStmts last copyWithoutReturn]]
-			ifFalse:
-				[inlineStmts add:
-					(TReturnNode new setExpression: (TVariableNode new setName: 'nil'))]].
-	exitLabel ifNotNil:
-		[inlineStmts add:
-			(TLabeledCommentNode new setLabel:
-				exitLabel comment: 'end ', meth selector)].
-	inlineStmts size = 1 ifTrue: "Nuke empty methods; e.g. override of flushAtCache"
-		[self assert: inlineStmts first isComment.
-		 inlineStmts removeFirst].
-	^inlineStmts
+				ifFalse: [ exitLabel := nil ] "is label used?" ] ].
+	(inlineStmts := OrderedCollection new:
+			                meth statements size + meth args size + 2)
+		add: (label := TLabeledCommentNode new setComment: 'begin ' , sel);
+		addAll: (self
+				 argAssignmentsFor: meth
+				 send: aSendNode
+				 except: elidedArgs
+				 in: aCodeGen);
+		addAll: meth statements. "method body"
+	directReturn ifTrue: [ 
+		meth endsWithReturn
+			ifTrue: [ 
+				exitVar ifNotNil: [ "don't remove the returns if being invoked in the context of a return"
+					inlineStmts
+						at: inlineStmts size
+						put: inlineStmts last copyWithoutReturn ] ]
+			ifFalse: [ 
+				inlineStmts add:
+					(TReturnNode new setExpression:
+						 (TVariableNode new setName: 'nil')) ] ].
+	exitLabel ifNotNil: [ 
+		inlineStmts add: (TLabeledCommentNode new
+				 setLabel: exitLabel
+				 comment: 'end ' , meth selector) ].
+	inlineStmts size = 1 ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
+		self assert: inlineStmts first isComment.
+		inlineStmts removeFirst ].
+	^ inlineStmts
 ]
 
 { #category : #inlining }
