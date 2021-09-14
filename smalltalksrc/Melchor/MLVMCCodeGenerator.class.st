@@ -114,15 +114,15 @@ MLVMCCodeGenerator >> doInlining: inlineFlagOrSymbol [
 	"Inline the bodies of all methods that are suitable for inlining."
 	"Modified slightly for the core VM translator, since the first level of inlining for the interpret loop must be performed in order that the instruction implementations can easily discover their addresses. Remember to inline the bytecode routines as well"
 
-	| removed |
+	| interpretMethod |
 	inlineFlagOrSymbol isSymbol ifTrue:
-		[self inlineDispatchesInMethodNamed: #interpret localizingVars: #().	
+		[self inlineDispatchesInMethodNamed: #interpret.
 		 self doBasicInlining: inlineFlagOrSymbol.
 		 self pruneUnreachableMethods.
 		 ^self].
 
 	inlineFlagOrSymbol ifFalse:
-		[self inlineDispatchesInMethodNamed: #interpret localizingVars: #().	
+		[self inlineDispatchesInMethodNamed: #interpret.
 		self pruneUnreachableMethods.
 		^self].
 
@@ -134,17 +134,14 @@ MLVMCCodeGenerator >> doInlining: inlineFlagOrSymbol [
 		displayProgress: 'Inlining bytecodes'
 		from: 1 to: 2
 		during: [:bar |
-			self inlineDispatchesInMethodNamed: #interpret
-				localizingVars: self vmClass namesOfVariablesToLocalize.
-			bar value: 1.
-			removed := self validateLocalizationOfGlobals: self vmClass namesOfVariablesToLocalize
-							exceptMethod: #interpret.
-			bar value: 2].
+			self inlineDispatchesInMethodNamed: #interpret.
+			bar value: 1 ].
 
-	"only prune when generating the interpreter itself"
 	self pruneUnreachableMethods.
-
-	self reportShouldNotBeRemoved: removed  varList: self vmClass namesOfVariablesToLocalize
+	interpretMethod := self methodNamed: #interpret.
+	self
+		localizeVariables: self vmClass namesOfVariablesToLocalize
+		inMethod: interpretMethod
 ]
 
 { #category : #'C code generator' }
