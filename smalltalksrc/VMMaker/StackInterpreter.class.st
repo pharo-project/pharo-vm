@@ -327,8 +327,6 @@ Class {
 		'stackPointer',
 		'framePointer',
 		'localReturnValue',
-		'localAbsentReceiver',
-		'localAbsentReceiverOrZero',
 		'extA',
 		'extB',
 		'numExtB',
