@@ -44,14 +44,6 @@ static int one = 1;
 #endif
 
 
-union sockaddr_any
-{
-  struct sockaddr		sa;
-  struct sockaddr_un	saun;
-  struct sockaddr_in	sin;
-  struct sockaddr_in6	sin6;
-};
-
 typedef struct privateSocketStruct
 {
   int s;			/* Unix socket */
@@ -60,10 +52,7 @@ typedef struct privateSocketStruct
   int writeSema;		/* write io notification semaphore */
   int sockState;		/* connection + data state */
   int sockError;		/* errno after socket error */
-  union sockaddr_any peer;	/* default send/recv address for UDP */
-  socklen_t peerSize;		/* dynamic sizeof(peer) */
-  union sockaddr_any sender;	/* sender address for last UDP receive */
-  socklen_t senderSize;		/* dynamic sizeof(sender) */
+  struct sockaddr_storage peer;	/* default send/recv address for UDP */
   int multiListen;		/* whether to listen for multiple connections */
   int acceptedSock;		/* a connection that has been accepted */
   int socketType;
@@ -87,8 +76,6 @@ typedef struct privateSocketStruct
 }
 
 
-/*** Accessors for private socket members from a Squeak socket pointer ***/
-
 #define _PSP(S)		(((S)->privateSocketPtr))
 #define PSP(S)		((privateSocketStruct *)((S)->privateSocketPtr))
 
@@ -96,7 +83,6 @@ typedef struct privateSocketStruct
 #define SOCKETSTATE(S)		(PSP(S)->sockState)
 #define SOCKETERROR(S)		(PSP(S)->sockError)
 #define SOCKETPEER(S)		(PSP(S)->peer)
-#define SOCKETPEERSIZE(S)	(PSP(S)->peerSize)
 
 
 /*** Variables ***/
@@ -441,8 +427,6 @@ void sqNetworkShutdown(void)
 	aioFini();
 }
 
-/***  Squeak Generic Socket Functions   ***/
-
 
 void sqSocketCreateNetTypeSocketTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(SocketPtr s, sqInt domain, sqInt socketType, sqInt recvBufSize, sqInt sendBufSize, sqInt semaIndex, sqInt readSemaIndex, sqInt writeSemaIndex)
 {
@@ -516,10 +500,13 @@ void sqSocketCreateNetTypeSocketTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaI
   pss->sockError= 0;
   /* initial UDP peer := wildcard */
   memset(&pss->peer, 0, sizeof(pss->peer));
-  pss->peer.sin.sin_family= AF_INET;
-  pss->peer.sin.sin_port= 0;
-  pss->peer.sin.sin_addr.s_addr= INADDR_ANY;
-  /* Squeak socket */
+
+  struct sockaddr_in * sin = (struct sockaddr_in *)&pss->peer;
+
+  sin->sin_family= AF_INET;
+  sin->sin_port= 0;
+  sin->sin_addr.s_addr= INADDR_ANY;
+
   s->sessionID= getNetSessionID();
   s->socketType= socketType;
   s->privateSocketPtr= pss;
@@ -563,11 +550,12 @@ void sqSocketCreateRawProtoTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(Soc
   aioEnable(pss->s, pss, 0);
   pss->sockError= 0;
   /* initial UDP peer := wildcard */
-  memset(&pss->peer, 0, sizeof(pss->peer));
-  pss->peer.sin.sin_family= AF_INET;
-  pss->peer.sin.sin_port= 0;
-  pss->peer.sin.sin_addr.s_addr= INADDR_ANY;
-  /* Squeak socket */
+  struct sockaddr_in * sin = (struct sockaddr_in *)&pss->peer;
+
+  sin->sin_family= AF_INET;
+  sin->sin_port= 0;
+  sin->sin_addr.s_addr= INADDR_ANY;
+
   s->sessionID= getNetSessionID();
   s->socketType= RAWSocketType;
   s->privateSocketPtr= pss;
@@ -593,35 +581,6 @@ sqInt sqSocketConnectionStatus(SocketPtr s)
     }
   logTrace("socketStatus(%d) -> %d\n", SOCKET(s), SOCKETSTATE(s));
   return SOCKETSTATE(s);
-}
-
-void socketListenOn(SocketPtr s, void* address, size_t addressSize, int backlogSize) {
-
-	struct sockaddr* addr = (struct sockaddr*) address;
-
-	if (!socketValid(s))
-		return;
-
-	/* only TCP sockets have a backlog */
-	if ((backlogSize > 1) && (s->socketType != TCPSocketType)) {
-		success(false);
-		return;
-	}
-
-	PSP(s)->multiListen = (backlogSize > 1);
-	logTrace("listenOnPortBacklogSize(%d, %ld)\n", SOCKET(s), backlogSize);
-
-	bind(SOCKET(s), addr, addressSize);
-
-	if (TCPSocketType == s->socketType) {
-		/* --- TCP --- */
-		listen(SOCKET(s), backlogSize);
-		SOCKETSTATE(s) = WaitingForConnection;
-		aioEnable(SOCKET(s), PSP(s), 0);
-		aioHandle(SOCKET(s), acceptHandler, AIO_RX); /* R => accept() */
-	} else {
-		/* --- UDP/RAW --- */
-	}
 }
 
 void sqSocketAcceptFromRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(SocketPtr s, SocketPtr serverSocket, sqInt recvBufSize, sqInt sendBufSize, sqInt semaIndex, sqInt readSemaIndex, sqInt writeSemaIndex)
@@ -824,56 +783,50 @@ sqInt sqSocketSendDone(SocketPtr s)
    answer the number actually read.  For UDP, fill in the peer's address
    with the approriate value.
 */
-sqInt sqSocketReceiveDataBufCount(SocketPtr s, char *buf, sqInt bufSize)
-{
-  int nread= 0;
-  int lastError;
+sqInt sqSocketReceiveDataBufCount(SocketPtr s, char *buf, sqInt bufSize) {
+	int nread = 0;
+	int lastError;
 
-  if (!socketValid(s))
-    return -1;
+	if (!socketValid(s))
+		return -1;
 
-  SOCKETPEERSIZE(s)= 0;
+	if (TCPSocketType != s->socketType) {
+		/* --- UDP/RAW --- */
+		socklen_t addrSize = sizeof(SOCKETPEER(s));
+		if ((nread = recvfrom(SOCKET(s), buf, bufSize, 0,
+				(struct sockaddr *) &SOCKETPEER(s), &addrSize)) <= 0) {
 
-  if (TCPSocketType != s->socketType)
-    {
-      /* --- UDP/RAW --- */
-      socklen_t addrSize= sizeof(SOCKETPEER(s));
-      if ((nread= recvfrom(SOCKET(s), buf, bufSize, 0, (struct sockaddr *)&SOCKETPEER(s), &addrSize)) <= 0) {
+			lastError = getLastSocketError();
 
-      lastError = getLastSocketError();
-
-	  if ((nread == -1) && (lastError == ERROR_WOULD_BLOCK)) {
-	      logTrace("UDP receiveData(%d) < 1 [blocked]\n", SOCKET(s));
-	      return 0;
-	  }
-	  SOCKETERROR(s) = lastError;
-	  logTrace("UDP receiveData(%d) < 1 [a:%d]\n", SOCKET(s), lastError);
-	  return 0;
-	}
-      SOCKETPEERSIZE(s)= addrSize;
-    }
-  else
-    {
-      /* --- TCP --- */
-      if ((nread= recv(SOCKET(s), buf, bufSize, 0)) <= 0) {
-          lastError = getLastSocketError();
-
-		  if ((nread == -1) && (lastError == ERROR_WOULD_BLOCK))
-			{
-			  logTrace("TCP receiveData(%d) < 1 [blocked]\n", SOCKET(s));
-			  return 0;
+			if ((nread == -1) && (lastError == ERROR_WOULD_BLOCK)) {
+				logTrace("UDP receiveData(%d) < 1 [blocked]\n", SOCKET(s));
+				return 0;
 			}
-		  /* connection reset */
-		  SOCKETSTATE(s)= OtherEndClosed;
-		  SOCKETERROR(s)= lastError;
-		  logTrace("TCP receiveData(%d) < 1 [b:%d] return: %d", SOCKET(s), lastError, nread);
-		  notify(PSP(s), CONN_NOTIFY);
-		  return 0;
-      }
-    }
-  /* read completed synchronously */
-  logTrace( "receiveData(%d) done = %d\n", SOCKET(s), nread);
-  return nread;
+			SOCKETERROR(s) = lastError;
+			logTrace("UDP receiveData(%d) < 1 [a:%d]\n", SOCKET(s), lastError);
+			return 0;
+		}
+	} else {
+		/* --- TCP --- */
+		if ((nread = recv(SOCKET(s), buf, bufSize, 0)) <= 0) {
+			lastError = getLastSocketError();
+
+			if ((nread == -1) && (lastError == ERROR_WOULD_BLOCK)) {
+				logTrace("TCP receiveData(%d) < 1 [blocked]\n", SOCKET(s));
+				return 0;
+			}
+			/* connection reset */
+			SOCKETSTATE(s) = OtherEndClosed;
+			SOCKETERROR(s) = lastError;
+			logTrace("TCP receiveData(%d) < 1 [b:%d] return: %d", SOCKET(s),
+					lastError, nread);
+			notify(PSP(s), CONN_NOTIFY);
+			return 0;
+		}
+	}
+	/* read completed synchronously */
+	logTrace("receiveData(%d) done = %d\n", SOCKET(s), nread);
+	return nread;
 }
 
 
@@ -1125,9 +1078,50 @@ void sqSocketSetReusable(SocketPtr s)
     }
 }
 
-void socketBindTo(SocketPtr s, void *address, size_t addrSize) {
+void socketListenOn(SocketPtr s, sqInt socketAddressOop, int backlogSize) {
 
-	struct sockaddr* addr = (struct sockaddr*) address;
+	struct sockaddr_storage saddr;
+	socklen_t saddrSize = sizeof(struct sockaddr_in);
+	int lastError;
+
+	if (!socketValid(s))
+		return;
+
+	/* only TCP sockets have a backlog */
+	if ((backlogSize > 1) && (s->socketType != TCPSocketType)) {
+		success(false);
+		return;
+	}
+
+	updateSockAddressStruct(socketAddressOop, &saddr);
+	if(interpreterProxy->failed()){
+		return;
+	}
+
+	PSP(s)->multiListen = (backlogSize > 1);
+	logTrace("listenOnPortBacklogSize(%d, %ld)\n", SOCKET(s), backlogSize);
+
+	lastError = bind(SOCKET(s), (struct sockaddr *) &saddr, saddrSize);
+
+	if(lastError == -1){
+		logWarnFromErrno("Bind");
+	}
+
+	if (TCPSocketType == s->socketType) {
+		/* --- TCP --- */
+		listen(SOCKET(s), backlogSize);
+		SOCKETSTATE(s) = WaitingForConnection;
+		aioEnable(SOCKET(s), PSP(s), 0);
+		aioHandle(SOCKET(s), acceptHandler, AIO_RX); /* R => accept() */
+	} else {
+		/* --- UDP/RAW --- */
+	}
+}
+
+void socketBindTo(SocketPtr s, sqInt socketAddressOop) {
+
+	struct sockaddr_storage saddr;
+	socklen_t saddrSize = sizeof(struct sockaddr_in);
 
 	privateSocketStruct *pss = PSP(s);
 
@@ -1136,7 +1130,12 @@ void socketBindTo(SocketPtr s, void *address, size_t addrSize) {
 		return;
 	}
 
-	if (bind(SOCKET(s), addr, addrSize) == 0)
+	updateSockAddressStruct(socketAddressOop, &saddr);
+	if(interpreterProxy->failed()){
+		return;
+	}
+
+	if (bind(SOCKET(s), (struct sockaddr *)&saddr, saddrSize) == 0)
 		return;
 
 	pss->sockError = getLastSocketError();
@@ -1144,13 +1143,15 @@ void socketBindTo(SocketPtr s, void *address, size_t addrSize) {
 }
 
 
-void socketConnectToAddressSize(SocketPtr s, void* address, size_t addrSize){
+void socketConnectToAddress(SocketPtr s, sqInt socketAddressOop){
 
 	/* TCP => open a connection.
 	 * UDP => set remote address.
 	 */
 
-	struct sockaddr* addr = (struct sockaddr*) address;
+	struct sockaddr_storage saddr;
+	socklen_t saddrSize = sizeof(struct sockaddr_in);
+
 
 	if (!socketValid(s)) {
 		success(false);
@@ -1158,6 +1159,11 @@ void socketConnectToAddressSize(SocketPtr s, void* address, size_t addrSize){
 	}
 
 	logTrace("connectToAddressSize(%d)\n", SOCKET(s));
+
+	updateSockAddressStruct(socketAddressOop, &saddr);
+	if(interpreterProxy->failed()){
+		return;
+	}
 
 	if (TCPSocketType != s->socketType) {
 
@@ -1167,11 +1173,9 @@ void socketConnectToAddressSize(SocketPtr s, void* address, size_t addrSize){
 
 			int result;
 
-			memcpy((void *) &SOCKETPEER(s), addr, addrSize);
+			memcpy((void *) &SOCKETPEER(s), (struct sockaddr *)&saddr, saddrSize);
 
-			SOCKETPEERSIZE(s) = addrSize;
-
-			result = connect(SOCKET(s), addr, addrSize);
+			result = connect(SOCKET(s), (struct sockaddr *)&saddr, saddrSize);
 
 			if (result == 0)
 				SOCKETSTATE(s) = Connected;
@@ -1180,7 +1184,7 @@ void socketConnectToAddressSize(SocketPtr s, void* address, size_t addrSize){
 	{
 		int result;
 		aioEnable(SOCKET(s), PSP(s), 0);
-		result = connect(SOCKET(s), addr, addrSize);
+		result = connect(SOCKET(s), (struct sockaddr *)&saddr, saddrSize);
 
 		logTrace("connect() => %d\n", result);
 
@@ -1209,15 +1213,21 @@ void socketConnectToAddressSize(SocketPtr s, void* address, size_t addrSize){
 	}
 }
 
-sqInt socketSendUDPDataToAddress(SocketPtr s, void* address, size_t addrSize, char* buffer, size_t bufferLength) {
+sqInt socketSendUDPDataToAddress(SocketPtr s, sqInt socketAddressOop, char* buffer, size_t bufferLength) {
 
-	struct sockaddr* addr = (struct sockaddr*)address;
+	struct sockaddr_storage saddr;
+	socklen_t saddrSize = sizeof(struct sockaddr_in);
 
 	if (socketValid(s) && (TCPSocketType != s->socketType)) {
 
+		updateSockAddressStruct(socketAddressOop, &saddr);
+		if(interpreterProxy->failed()){
+			return 0;
+		}
+
 		logTrace("sendTo(%d)\n", SOCKET(s));
 
-		int nsent = sendto(SOCKET(s), buffer, bufferLength, 0, addr, addrSize);
+		int nsent = sendto(SOCKET(s), buffer, bufferLength, 0, (struct sockaddr *)&saddr, saddrSize);
 
 		if (nsent >= 0)
 			return nsent;
@@ -1235,18 +1245,19 @@ sqInt socketSendUDPDataToAddress(SocketPtr s, void* address, size_t addrSize, ch
 	return 0;
 }
 
-sqInt socketReceiveUDPData(SocketPtr s, char *buf, sqInt bufSize, void * address, size_t addrSize) {
+sqInt socketReceiveUDPData(SocketPtr s, char *buf, sqInt bufSize, sqInt socketAddressOop) {
 	int lastError;
-	struct sockaddr* saddr = (struct sockaddr*) address;
-	socklen_t saddrSize = addrSize;
+	struct sockaddr_storage saddr;
+	socklen_t saddrSize = sizeof(struct sockaddr_in);
 
 	if (socketValid(s) && (TCPSocketType != s->socketType)) /* --- UDP/RAW --- */
 	{
 		logTrace("recvFrom(%d)\n", SOCKET(s));
 
-		int nread = recvfrom(SOCKET(s), buf, bufSize, 0, saddr, &saddrSize);
+		int nread = recvfrom(SOCKET(s), buf, bufSize, 0, (struct sockaddr *)&saddr, &saddrSize);
 
 		if (nread >= 0) {
+			updateAddressObject(socketAddressOop, &saddr);
 			return nread;
 		}
 
@@ -1260,6 +1271,92 @@ sqInt socketReceiveUDPData(SocketPtr s, char *buf, sqInt bufSize, void * address
 	}
 	success(false);
 	return 0;
+}
+
+void socketLocalAddress(SocketPtr s, sqInt socketAddressOop){
+	struct sockaddr_storage sockaddr;
+	socklen_t socklen = sizeof(struct sockaddr_in);
+
+
+	if(!socketValid(s)) {
+		success(false);
+		return;
+	}
+
+	memset((void*)&sockaddr, 0, socklen);
+
+	if(getsockname(SOCKET(s), (struct sockaddr*)&sockaddr, &socklen)==-1){
+		SOCKETERROR(s) = getLastSocketError();
+		logTrace("socketRemoteAddress(%d)= %da\n", SOCKET(s), 0);
+
+		success(false);
+		return;
+	}
+
+	updateAddressObject(socketAddressOop, &sockaddr);
+}
+
+void socketRemoteAddress(SocketPtr s, sqInt socketAddressOop){
+	struct sockaddr_storage sockaddr;
+	socklen_t socklen = sizeof(struct sockaddr_in);
+
+
+	if(!socketValid(s)) {
+		success(false);
+		return;
+	}
+
+	memset((void*)&sockaddr, 0, socklen);
+
+	/* If it is UDP/RAW I will use the peersocket stored before */
+
+	if (s->socketType != TCPSocketType){
+		updateAddressObject(socketAddressOop, &SOCKETPEER(s));
+		return;
+	}
+
+
+	if(getpeername(SOCKET(s), (struct sockaddr*)&sockaddr, &socklen)==-1){
+		SOCKETERROR(s) = getLastSocketError();
+		logTrace("socketRemoteAddress(%d)= %da\n", SOCKET(s), 0);
+
+		if(SOCKETERROR(s) == ENOTCONN){
+			// If the socket is not connected we return all 0.0.0.0
+			return;
+		}
+
+		success(false);
+		return;
+	}
+
+	updateAddressObject(socketAddressOop, &sockaddr);
+}
+
+/*
+ * Handling different address kinds
+ *
+ * Addresses are represented by an object with:
+ *
+ * - A SmallInteger to identify the type of address (check translateSocketType to know the valid values)
+ * - A ByteArray with the address information if it is a IPv4 or IPv6, and a byteString if it is a unix socket
+ * - A SmallInteger with the port (if non unix address).
+ */
+
+static sqInt translateToSocketDomain(sqInt type) {
+	switch (type) {
+		case SOCKET_FAMILY_UNSPECIFIED:
+			return AF_UNSPEC;
+		case SOCKET_FAMILY_LOCAL:
+			return AF_UNIX;
+		case SOCKET_FAMILY_INET4:
+			return AF_INET;
+		case SOCKET_FAMILY_INET6:
+			return AF_INET6;
+		default:
+			logDebug("Invalid SocketFamily: %d", type);
+			success(false);
+			return AF_UNSPEC;
+	}
 }
 
 static sqInt translateSocketType(sa_family_t sa_family){
@@ -1281,127 +1378,142 @@ static sqInt translateSocketType(sa_family_t sa_family){
 	}
 }
 
-void socketLocalAddress(SocketPtr s, void* addr, size_t addrSize){
-	struct sockaddr *sockaddr = (struct sockaddr*) addr;
-	socklen_t socklen = addrSize;
 
-	memset(sockaddr, 0, addrSize);
+void updateAddressObject(sqInt socketAddressOop, struct sockaddr_storage * sockaddr){
 
-	if(!socketValid(s)) {
+	sqInt addressInformation;
+	sqInt portNumber;
+	struct sockaddr_un* unixSocketAddress = (struct sockaddr_un*)sockaddr;
+	struct sockaddr_in* ipv4SocketAddress = (struct sockaddr_in*)sockaddr;
+	struct sockaddr_in6* ipv6SocketAddress = (struct sockaddr_in6*)sockaddr;
+
+	if(interpreterProxy->slotSizeOf(socketAddressOop) < 3){
 		success(false);
 		return;
 	}
 
-	if(getsockname(SOCKET(s), sockaddr, &socklen)==-1){
-		SOCKETERROR(s) = getLastSocketError();
-		logTrace("socketLocalAddress(%d)= %da\n", SOCKET(s), 0);
+	sqInt addressLength = strlen(unixSocketAddress->sun_path);
 
-		return;
+	switch(sockaddr->ss_family){
+		case AF_UNIX:
+
+			addressInformation = interpreterProxy->instantiateClassindexableSize(interpreterProxy->classString(), addressLength);
+
+			if(interpreterProxy->failed()){
+				logDebug("Cannot allocate string of size %d", addressLength);
+				return;
+			}
+
+			memcpy(interpreterProxy->firstIndexableField(addressInformation), unixSocketAddress->sun_path, addressLength);
+			portNumber = interpreterProxy->integerObjectOf(0);
+			break;
+
+		case AF_INET:
+
+			addressInformation = interpreterProxy->instantiateClassindexableSize(interpreterProxy->classByteArray(), sizeof(ipv4SocketAddress->sin_addr.s_addr));
+
+			if(interpreterProxy->failed()){
+				logDebug("Cannot allocate ByteArray of size %ld", sizeof(ipv4SocketAddress->sin_addr.s_addr));
+				return;
+			}
+
+			memcpy(interpreterProxy->firstIndexableField(addressInformation), &(ipv4SocketAddress->sin_addr.s_addr), sizeof(ipv4SocketAddress->sin_addr.s_addr));
+			portNumber = interpreterProxy->integerObjectOf(ntohs(ipv4SocketAddress->sin_port));
+			break;
+
+		case AF_INET6:
+
+			addressInformation = interpreterProxy->instantiateClassindexableSize(interpreterProxy->classByteArray(), sizeof(ipv6SocketAddress->sin6_addr));
+
+			if(interpreterProxy->failed()){
+				logDebug("Cannot allocate ByteArray of size %ld", sizeof(ipv6SocketAddress->sin6_addr));
+				return;
+			}
+
+			memcpy(interpreterProxy->firstIndexableField(addressInformation), &(ipv6SocketAddress->sin6_addr), sizeof(ipv4SocketAddress->sin_addr.s_addr));
+			portNumber = interpreterProxy->integerObjectOf(ntohs(ipv6SocketAddress->sin6_port));
+			break;
+
+		default:
+			addressInformation = interpreterProxy->nilObject();
+			portNumber = interpreterProxy->integerObjectOf(0);
 	}
 
+	interpreterProxy->storeIntegerofObjectwithValue(0, socketAddressOop, translateSocketType(sockaddr->ss_family));
+	interpreterProxy->storePointerofObjectwithValue(1, socketAddressOop, addressInformation);
+	interpreterProxy->storePointerofObjectwithValue(2, socketAddressOop, portNumber);
 }
 
-void socketRemoteAddress(SocketPtr s, void* addr, size_t addrSize){
-	struct sockaddr *sockaddr = (struct sockaddr*) addr;
-	socklen_t socklen = addrSize;
+void updateSockAddressStruct(sqInt socketAddressOop, struct sockaddr_storage * sockaddr){
 
-	memset(sockaddr, 0, addrSize);
+	struct sockaddr_un* unixSocketAddress = (struct sockaddr_un*)sockaddr;
+	struct sockaddr_in* ipv4SocketAddress = (struct sockaddr_in*)sockaddr;
+	struct sockaddr_in6* ipv6SocketAddress = (struct sockaddr_in6*)sockaddr;
 
-	if(!socketValid(s)) {
+	char buffer[256];
+
+	memset((void*)sockaddr, 0, sizeof(struct sockaddr_storage));
+
+	if(interpreterProxy->slotSizeOf(socketAddressOop) < 3){
 		success(false);
 		return;
 	}
 
-	/* If it is UDP/RAW I will use the peersocket stored before */
+	sqInt domain = translateToSocketDomain(interpreterProxy->fetchIntegerofObject(0, socketAddressOop));
+	sqInt addressInformation = interpreterProxy->fetchPointerofObject(1, socketAddressOop);
+	sqInt portNumber = interpreterProxy->fetchIntegerofObject(2, socketAddressOop);
 
-	if (s->socketType != TCPSocketType){
-		memcpy(sockaddr, &SOCKETPEER(s), addrSize);
+	if(interpreterProxy->failed()){
 		return;
 	}
 
-
-	if(getpeername(SOCKET(s), sockaddr, &socklen)==-1){
-		SOCKETERROR(s) = getLastSocketError();
-		logTrace("socketRemoteAddress(%d)= %da\n", SOCKET(s), 0);
-
-		return;
-	}
-
-}
-
-
-sqInt socketLocalAddressType(SocketPtr s){
-	struct sockaddr sockaddr;
-	socklen_t socklen = sizeof(struct sockaddr);
-
-	memset(&sockaddr, 0, sizeof(sockaddr));
-
-	if(!socketValid(s)) {
+	if(!interpreterProxy->isBytes(addressInformation)){
+		logDebug("Address Information in the SocketAddress is not indexable");
 		success(false);
-		return SOCKET_FAMILY_UNSPECIFIED;
-	}
-
-	if(getsockname(SOCKET(s), &sockaddr, &socklen)==-1){
-		SOCKETERROR(s) = getLastSocketError();
-		logTrace("socketLocalAddressType(%d)= %da\n", SOCKET(s), 0);
-
-		return SOCKET_FAMILY_UNSPECIFIED;
-	}
-
-	return translateSocketType(sockaddr.sa_family);
-}
-
-sqInt socketRemoteAddressType(SocketPtr s){
-	struct sockaddr sockaddr;
-	socklen_t socklen = sizeof(struct sockaddr);
-
-	memset(&sockaddr, 0, sizeof(sockaddr));
-
-	if(!socketValid(s)) {
-		success(false);
-		return SOCKET_FAMILY_UNSPECIFIED;
-	}
-
-	/* If it is UDP/RAW I will use the peersocket stored before */
-
-	if (s->socketType != TCPSocketType){
-		return translateSocketType(SOCKETPEER(s).sa.sa_family);
-	}
-
-	if(getpeername(SOCKET(s), &sockaddr, &socklen)==-1){
-		SOCKETERROR(s) = getLastSocketError();
-		logTrace("socketRemoteAddressType(%d)= %da\n", SOCKET(s), 0);
-
-		return SOCKET_FAMILY_UNSPECIFIED;
-	}
-
-	return translateSocketType(sockaddr.sa_family);
-}
-
-void* newIP4SockAddr(int address, int port) {
-	struct sockaddr_in* r = (struct sockaddr_in*) malloc(sizeof(struct sockaddr_in));
-
-	memset(r, 0, sizeof(struct sockaddr_in));
-
-	r->sin_family = AF_INET;
-	r->sin_port = htons((short)port);
-	r->sin_addr.s_addr = htonl(address);
-
-	return r;
-}
-
-size_t ip4SockSize(){
-	return sizeof(struct sockaddr_in);
-}
-
-void ip4UpdateAddress(sqInt addressOop, void* addr){
-	struct sockaddr_in* address = (struct sockaddr_in*)addr;
-
-	if(address->sin_family != AF_INET){
 		return;
 	}
 
-	setIp4Addressvalue(addressOop, ntohl(address->sin_addr.s_addr));
-	setIp4Portvalue(addressOop, ntohs(address->sin_port));
-}
+	sqInt addressInformationSize = interpreterProxy->byteSizeOf(addressInformation);
 
+	switch(domain){
+		case AF_UNIX:
+			unixSocketAddress->sun_family = AF_UNIX;
+			memcpy(unixSocketAddress->sun_path, interpreterProxy->firstIndexableField(addressInformation), addressInformationSize);
+			unixSocketAddress->sun_path[addressInformationSize] = '\0';
+			break;
+
+		case AF_INET:
+
+			if(addressInformationSize != sizeof(ipv4SocketAddress->sin_addr.s_addr)){
+				logDebug("Invalid information in the socketAddress, expecting %ld bytes for IPv4", sizeof(ipv4SocketAddress->sin_addr.s_addr));
+				success(false);
+				return;
+			}
+
+			ipv4SocketAddress->sin_family = AF_INET;
+			memcpy(&(ipv4SocketAddress->sin_addr.s_addr), interpreterProxy->firstIndexableField(addressInformation), sizeof(ipv4SocketAddress->sin_addr.s_addr));
+			ipv4SocketAddress->sin_port = htons((short)portNumber);
+
+			inet_ntop(AF_INET, &(ipv4SocketAddress->sin_addr), buffer, 256);
+			logTrace("Ip4 Address: %s", buffer);
+			break;
+
+		case AF_INET6:
+
+			if(addressInformationSize != sizeof(ipv6SocketAddress->sin6_addr)){
+				logDebug("Invalid information in the socketAddress, expecting %ld bytes for IPv6", sizeof(ipv6SocketAddress->sin6_addr));
+				success(false);
+				return;
+			}
+
+			ipv6SocketAddress->sin6_family = AF_INET6;
+			memcpy(&(ipv6SocketAddress->sin6_addr), interpreterProxy->firstIndexableField(addressInformation), sizeof(ipv6SocketAddress->sin6_addr));
+			ipv6SocketAddress->sin6_port = htons((short)portNumber);
+			break;
+
+		default:
+			logError("Invalid domain type: %d", domain);
+			success(false);
+			return;
+	}
+}

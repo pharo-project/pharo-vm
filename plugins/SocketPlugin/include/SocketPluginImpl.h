@@ -108,3 +108,6 @@ int getNetSessionID();
 
 void nameResolverInit(sqInt resolverSemaIndex);
 void nameResolverFini();
+
+void updateAddressObject(sqInt socketAddressOop, struct sockaddr_storage * sockaddr);
+void updateSockAddressStruct(sqInt socketAddressOop, struct sockaddr_storage * sockaddr);

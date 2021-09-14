@@ -58,25 +58,14 @@ void  sqResolverGetNameInfoServiceResultSize(char *name, sqInt nameSize);
 sqInt sqResolverHostNameSize(void);
 void  sqResolverHostNameResultSize(char *name, sqInt nameSize);
 
-void socketConnectToAddressSize(SocketPtr s, void* addr, size_t addrSize);
-void socketListenOn(SocketPtr s, void* address, size_t addressSize, int backlogSize);
-void socketBindTo(SocketPtr s, void *address, size_t addrSize);
-sqInt socketSendUDPDataToAddress(SocketPtr s, void* address, size_t addrSize, char* buffer, size_t bufferLength);
-sqInt socketReceiveUDPData(SocketPtr s, char *buf, sqInt bufSize, void * address, size_t addrSize);
+void socketConnectToAddress(SocketPtr s, sqInt socketAddressOop);
+void socketListenOn(SocketPtr s, sqInt socketAddressOop, int backlogSize);
+void socketBindTo(SocketPtr s, sqInt socketAddressOop);
+sqInt socketSendUDPDataToAddress(SocketPtr s, sqInt socketAddressOop, char* buffer, size_t bufferLength);
+sqInt socketReceiveUDPData(SocketPtr s, char *buf, sqInt bufSize, sqInt socketAddressOop);
 
-void socketLocalAddress(SocketPtr s, void* addr, size_t addrSize);
-sqInt socketLocalAddressType(SocketPtr s);
-
-void socketRemoteAddress(SocketPtr s, void* addr, size_t addrSize);
-sqInt socketRemoteAddressType(SocketPtr s);
-
-void* newIP4SockAddr(int address, int port);
-size_t ip4SockSize();
-
-void setIp4Addressvalue(sqInt addressOop, sqInt address);
-void setIp4Portvalue(sqInt addressOop, sqInt port);
-void ip4UpdateAddress(sqInt addressOop, void* addr);
-
+void socketLocalAddress(SocketPtr s, sqInt socketAddressOop);
+void socketRemoteAddress(SocketPtr s, sqInt socketAddressOop);
 
 /* family */
 
