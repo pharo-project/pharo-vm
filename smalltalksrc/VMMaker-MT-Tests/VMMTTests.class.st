@@ -27,8 +27,7 @@ VMMTTests >> setUp [
 			COGMTVM true
 			ObjectMemory SpurMockMemory
 			FailImbalancedPrimitives false
-			MULTIPLEBYTECODESETS true
-			bytecodeTableInitializer initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid).
+			bytecodeTableInitializer initializeBytecodeTableForSistaV1).
 	vm processHasThreadId: true.
 	vm noThreadingOfGUIThread: false.
 	vm activeProcessAffined: false.

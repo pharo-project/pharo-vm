@@ -1,20 +1,6 @@
 Class {
 	#name : #VMSpecialSendArithmethicTest,
-	#superclass : #VMSimpleStackBasedCogitAbstractTest,
-	#instVars : [
-		'methodReceiver',
-		'receiverOperationBlock',
-		'argumentOperation',
-		'codeAddress',
-		'receiverValue',
-		'argumentValue',
-		'arguments',
-		'sendBytecode',
-		'value1',
-		'value2',
-		'expectedResult',
-		'expectedReflexiveResult'
-	],
+	#superclass : #VMStackToRegisterMappingCogitTest,
 	#category : #'VMMakerTests-JitTests'
 }
 
@@ -22,20 +8,9 @@ Class {
 VMSpecialSendArithmethicTest class >> testParameters [ 
 
 	^ super testParameters * { 
-		{ #sentSelector -> #+. #sendBytecode -> 176. #value1 -> 42. #value2 -> 54. #expectedResult -> 96. #expectedReflexiveResult -> 84 }.
-		{ #sentSelector -> #-.  #sendBytecode -> 177. #value1 -> 42. #value2 -> 54. #expectedResult -> -12. #expectedReflexiveResult -> 0 }.		
+		{ #sentSelector -> #+. #sendBytecode -> 96. #value1 -> 42. #value2 -> 54. #expectedResult -> 96. #expectedReflexiveResult -> 84 }.
+		{ #sentSelector -> #-.  #sendBytecode -> 97. #value1 -> 42. #value2 -> 54. #expectedResult -> -12. #expectedReflexiveResult -> 0 }.		
 	 }
-]
-
-{ #category : #builder }
-VMSpecialSendArithmethicTest >> argumentOperation: aFullBlockClosure [ 
-	
-	argumentOperation := aFullBlockClosure
-]
-
-{ #category : #builder }
-VMSpecialSendArithmethicTest >> arguments: aCollection [ 
-	arguments := aCollection
 ]
 
 { #category : #running }
@@ -44,113 +19,6 @@ VMSpecialSendArithmethicTest >> assertSpecialSendTo: receiverOop withArg: argOop
 	self assert: machineSimulator instructionPointerValue equals: sendTrampolineAddress.
 	self assert: machineSimulator receiverRegisterValue equals: receiverOop.
 	self assert: machineSimulator arg0RegisterValue equals: argOop.
-]
-
-{ #category : #builder }
-VMSpecialSendArithmethicTest >> buildStackFrame [
-	"Let's prepare the trampoline in case of non-optimized path"
-	self createSpecialSelectorArray.
-
-	"We will call to this address"
-	sendTrampolineAddress := self compile: [ cogit RetN: 0 ].
-	cogit ordinarySendTrampolineAt: sentSelector numArgs put: sendTrampolineAddress.
-	
-	"Setting a value that is not the SmallInteger tag"
-	cogit methodOrBlockNumTemps: "methodOrBlockNumTemps" 0 + arguments size.
-	cogit methodOrBlockNumArgs: arguments size.
-	cogit initSimStackForFramefulMethod: 0.
-	cogit receiverTags: (memory fetchClassTagOf: methodReceiver).
-	cogit regArgsHaveBeenPushed: false.
-
-	self createFramefulCallFrom: callerAddress receiver: methodReceiver arguments: arguments temporaries: #().
-
-]
-
-{ #category : #builder }
-VMSpecialSendArithmethicTest >> compileMethod [
-
-	codeAddress := self compile: [ 
-		               receiverOperationBlock value.
-		               argumentOperation value.
-
-		               cogit byte0: sendBytecode. "Eg: Special Send:#+"
-		               cogit genSpecialSelectorArithmetic.
-		               cogit genReturnTopFromMethod ]
-]
-
-{ #category : #accessing }
-VMSpecialSendArithmethicTest >> expectedReflexiveResult [
-	^ expectedReflexiveResult
-]
-
-{ #category : #accessing }
-VMSpecialSendArithmethicTest >> expectedReflexiveResult: anObject [
-	expectedReflexiveResult := anObject
-]
-
-{ #category : #accessing }
-VMSpecialSendArithmethicTest >> expectedResult [
-	^ expectedResult
-]
-
-{ #category : #accessing }
-VMSpecialSendArithmethicTest >> expectedResult: anObject [
-	expectedResult := anObject
-]
-
-{ #category : #running }
-VMSpecialSendArithmethicTest >> jitCompilerClass [
-
-	^ StackToRegisterMappingCogit 
-]
-
-{ #category : #builder }
-VMSpecialSendArithmethicTest >> methodReceiver: anOop [ 
-	methodReceiver := anOop
-]
-
-{ #category : #builder }
-VMSpecialSendArithmethicTest >> receiverOperation: aFullBlockClosure [ 
-	
-	receiverOperationBlock := aFullBlockClosure
-]
-
-{ #category : #accessing }
-VMSpecialSendArithmethicTest >> sendBytecode [
-	^ sendBytecode
-]
-
-{ #category : #accessing }
-VMSpecialSendArithmethicTest >> sendBytecode: anObject [
-	sendBytecode := anObject
-]
-
-{ #category : #running }
-VMSpecialSendArithmethicTest >> setUp [
-
-	super setUp.
-	methodReceiver := memory nilObject.
-	arguments := #().
-]
-
-{ #category : #builder }
-VMSpecialSendArithmethicTest >> shouldCallTrampolineWith: receiverOfOperation and: argumentOfOperation [ 
-
-	self buildStackFrame.
-	self compileMethod.
-	
-	self runFrom: codeAddress until: sendTrampolineAddress.
-	self assertSpecialSendTo: receiverOfOperation value withArg: argumentOfOperation value
-]
-
-{ #category : #builder }
-VMSpecialSendArithmethicTest >> shouldPerformOperationReturning: aValue [ 
-
-	self buildStackFrame.
-	self compileMethod.
-	
-	self runFrom: codeAddress until: callerAddress.
-	self assert: machineSimulator receiverRegisterValue equals: (memory integerObjectOf: aValue).
 ]
 
 { #category : #'tests - receiver non integer argument' }
@@ -502,24 +370,4 @@ VMSpecialSendArithmethicTest >> testTrueSelfPlusTrueSelfCallsTrampoline [
 		receiverOperation: [ cogit ssPushDesc: cogit ssSelfDescriptor ];
 		argumentOperation: [ cogit ssPushDesc: cogit ssSelfDescriptor ];
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ memory trueObject ].		
-]
-
-{ #category : #accessing }
-VMSpecialSendArithmethicTest >> value1 [
-	^ value1
-]
-
-{ #category : #accessing }
-VMSpecialSendArithmethicTest >> value1: anObject [
-	value1 := anObject
-]
-
-{ #category : #accessing }
-VMSpecialSendArithmethicTest >> value2 [
-	^ value2
-]
-
-{ #category : #accessing }
-VMSpecialSendArithmethicTest >> value2: anObject [
-	value2 := anObject
 ]

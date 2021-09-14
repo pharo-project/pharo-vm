@@ -1066,13 +1066,6 @@ CoInterpreterMT >> preemptDisowningThread [
 			[preemptedThread reenterInterpreter: reenterInterpreter]
 ]
 
-{ #category : #'I/O primitives' }
-CoInterpreterMT >> primitiveGetNextEvent [
-	self inGUIThread ifFalse: [ 
-		^ self primitiveFailFor: PrimErrInappropriate ].
-	^ super primitiveGetNextEvent
-]
-
 { #category : #'process primitives' }
 CoInterpreterMT >> primitiveProcessBindToThreadId [
 	"Attempt to bind the receiver to the thread with the id of the argument or nil, where the receiver is a Process.
@@ -1163,22 +1156,6 @@ CoInterpreterMT >> primitiveRelinquishProcessor [
 						p: (self sizeof: #'jmp_buf')) = 0]].
 	self assert: (objectMemory fetchPointer: MyListIndex ofObject: self activeProcess) = objectMemory nilObject.
 	self pop: 1  "microSecs; leave rcvr on stack"
-]
-
-{ #category : #'I/O primitives' }
-CoInterpreterMT >> primitiveScreenSize [
-
-	self inGUIThread ifFalse: [ 
-		^ self primitiveFailFor: PrimErrInappropriate ].
-	^ super primitiveScreenSize
-]
-
-{ #category : #'I/O primitives' }
-CoInterpreterMT >> primitiveShowDisplayRect [
-
-	self inGUIThread ifFalse: [ 
-		^ self primitiveFailFor: PrimErrInappropriate ].
-	^ super primitiveShowDisplayRect
 ]
 
 { #category : #'process primitives' }
@@ -1279,13 +1256,6 @@ CoInterpreterMT >> returnToSchedulingLoopAndReleaseVMOrWakeThread: vmThread sour
 		ifNil: [cogThreadManager releaseVM].
 	"2 implies returning to the threadSchedulingLoop."
 	self siglong: savedReenterInterpreter jmp: ReturnToThreadSchedulingLoop
-]
-
-{ #category : #'callback support' }
-CoInterpreterMT >> sendInvokeCallbackContext: vmCallbackContext [
-	"Override to add sanity assertions."
-	self assertSaneThreadAndProcess.
-	^super sendInvokeCallbackContext: vmCallbackContext
 ]
 
 { #category : #'internal interpreter access' }

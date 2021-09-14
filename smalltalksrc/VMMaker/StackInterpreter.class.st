@@ -343,17 +343,14 @@ Class {
 		'nextWakeupUsecs',
 		'nextPollUsecs',
 		'inIOProcessEvents',
-		'interruptKeycode',
 		'interruptPending',
 		'savedWindowSize',
 		'imageHeaderFlags',
 		'fullScreenFlag',
 		'sendWheelEvents',
-		'deferDisplayUpdates',
 		'pendingFinalizationSignals',
 		'extraVMMemory',
 		'interpreterProxy',
-		'showSurfaceFn',
 		'primitiveTable',
 		'primitiveAccessorDepthTable',
 		'externalPrimitiveTable',
@@ -414,7 +411,8 @@ Class {
 		'maxStacksToPrint',
 		'maxStackMessagePrinted',
 		'libFFI',
-		'codeGeneratorToComputeAccessorDepth'
+		'codeGeneratorToComputeAccessorDepth',
+		'showSurfaceFn'
 	],
 	#classVars : [
 		'AccessModifierPrivate',
@@ -463,10 +461,10 @@ Class {
 	#pools : [
 		'VMBasicConstants',
 		'VMBytecodeConstants',
+		'VMClassIndices',
 		'VMMethodCacheConstants',
 		'VMObjectIndices',
 		'VMSpurObjectRepresentationConstants',
-		'VMSqueakClassIndices',
 		'VMStackFrameOffsets',
 		'VMWellKnownPrimitivesConstants'
 	],
@@ -495,7 +493,8 @@ StackInterpreter class >> ancilliaryClasses [
 		CogStackPages.
 		InterpreterStackPages.
 		LibFFI.
-		CogStackPage }
+		CogStackPage.
+		SpurImageHeaderStruct}
 ]
 
 { #category : #constants }
@@ -645,8 +644,8 @@ StackInterpreter class >> initializeBytecodeTable [
 		[:initalizer| ^self perform: initalizer].
 
 	^MULTIPLEBYTECODESETS
-		ifTrue: [self initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid]
-		ifFalse: [self initializeBytecodeTableForSqueakV3PlusClosures]
+		ifTrue: [self error]
+		ifFalse: [self initializeBytecodeTableForSistaV1]
 ]
 
 { #category : #initialization }
@@ -772,135 +771,13 @@ StackInterpreter class >> initializeBytecodeTableForSistaV1 [
 		(248		callPrimitiveBytecode)
 		(249		extPushFullClosureBytecode)
 
-		(250		extPushClosureBytecode)
+		(250		unknownBytecode) "was extPushClosureBytecode"
 		(251		pushRemoteTempLongBytecode)
 		(252		storeRemoteTempLongBytecode)
 		(253		storeAndPopRemoteTempLongBytecode)
 				
 		(254 255	unknownBytecode)
 	)
-]
-
-{ #category : #initialization }
-StackInterpreter class >> initializeBytecodeTableForSqueakV3PlusClosures [
-	"StackInterpreter initializeBytecodeTableForSqueakV3PlusClosures"
-	"Note: This table will be used to generate a C switch statement."
-
-	InitializationOptions at: #SqueakV3PlusClosuresBytecodeSet put: (SqueakV3PlusClosuresBytecodeSet := true).
-
-	BytecodeTable := Array new: 256.
-	BytecodeEncoderClassName := #EncoderForV3PlusClosures.
-	LongStoreBytecode := 129.
-	BytecodeSetHasExtensions := false.
-	self table: BytecodeTable from:
-	#(
-		(  0  15 pushReceiverVariableBytecode)
-		( 16  31 pushTemporaryVariableBytecode)
-		( 32  63 pushLiteralConstantBytecode)
-		( 64  95 pushLiteralVariableBytecode)
-		( 96 103 storeAndPopReceiverVariableBytecode)
-		(104 111 storeAndPopTemporaryVariableBytecode)
-		(112 pushReceiverBytecode)
-		(113 pushConstantTrueBytecode)
-		(114 pushConstantFalseBytecode)
-		(115 pushConstantNilBytecode)
-		(116 pushConstantMinusOneBytecode)
-		(117 pushConstantZeroBytecode)
-		(118 pushConstantOneBytecode)
-		(119 pushConstantTwoBytecode)
-		(120 returnReceiver)
-		(121 returnTrue)
-		(122 returnFalse)
-		(123 returnNil)
-		(124 returnTopFromMethod)
-		(125 returnTopFromBlock)
-
-		(126 127 unknownBytecode)
-
-		(128 extendedPushBytecode)
-		(129 extendedStoreBytecode)
-		(130 extendedStoreAndPopBytecode)
-		(131 singleExtendedSendBytecode)
-		(132 doubleExtendedDoAnythingBytecode)
-		(133 singleExtendedSuperBytecode)
-		(134 secondExtendedSendBytecode)
-		(135 popStackBytecode)
-		(136 duplicateTopBytecode)
-
-		(137 pushActiveContextBytecode)
-		(138 pushNewArrayBytecode)),
-
-	((InitializationOptions at: #SpurObjectMemory ifAbsent: [false])
-		ifTrue: [#((139 callPrimitiveBytecode))]	"V3PlusClosures on Spur"
-		ifFalse: [#((139 unknownBytecode))]),	"V3PlusClosures on V3"
-
-	  #(
-		(140 pushRemoteTempLongBytecode)
-		(141 storeRemoteTempLongBytecode)
-		(142 storeAndPopRemoteTempLongBytecode)
-		(143 pushClosureCopyCopiedValuesBytecode)
-
-		(144 151 shortUnconditionalJump)
-		(152 159 shortConditionalJumpFalse)
-		(160 167 longUnconditionalJump)
-		(168 171 longJumpIfTrue)
-		(172 175 longJumpIfFalse)
-
-		"176-191 were sendArithmeticSelectorBytecode"
-		(176 bytecodePrimAdd)
-		(177 bytecodePrimSubtract)
-		(178 bytecodePrimLessThan)
-		(179 bytecodePrimGreaterThan)
-		(180 bytecodePrimLessOrEqual)
-		(181 bytecodePrimGreaterOrEqual)
-		(182 bytecodePrimEqual)
-		(183 bytecodePrimNotEqual)
-		(184 bytecodePrimMultiply)
-		(185 bytecodePrimDivide)
-		(186 bytecodePrimMod)
-		(187 bytecodePrimMakePoint)
-		(188 bytecodePrimBitShift)
-		(189 bytecodePrimDiv)
-		(190 bytecodePrimBitAnd)
-		(191 bytecodePrimBitOr)
-
-		"192-207 were sendCommonSelectorBytecode"
-		(192 bytecodePrimAt)
-		(193 bytecodePrimAtPut)
-		(194 bytecodePrimSize)
-		(195 bytecodePrimNext)
-		(196 bytecodePrimNextPut)
-		(197 bytecodePrimAtEnd)
-		(198 bytecodePrimIdentical)
-		(199 bytecodePrimClass)
-		(200 bytecodePrimNotIdentical) "was bytecodePrimSpecialSelector24 / blockCopy"
-		(201 bytecodePrimValue)
-		(202 bytecodePrimValueWithArg)
-		(203 bytecodePrimDo)
-		(204 bytecodePrimNew)
-		(205 bytecodePrimNewWithArg)
-		(206 bytecodePrimPointX)
-		(207 bytecodePrimPointY)
-
-		(208 223 sendLiteralSelector0ArgsBytecode)
-		(224 239 sendLiteralSelector1ArgBytecode)
-		(240 255 sendLiteralSelector2ArgsBytecode)
-	)
-]
-
-{ #category : #initialization }
-StackInterpreter class >> initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid [
-	"StackInterpreter initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid"
-
-	| v3Table v1Table |
-	self initializeBytecodeTableForSistaV1.
-	v1Table := BytecodeTable.
-	AltBytecodeEncoderClassName := BytecodeEncoderClassName.
-	AltLongStoreBytecode := LongStoreBytecode.
-	self initializeBytecodeTableForSqueakV3PlusClosures.
-	BytecodeSetHasExtensions := true.
-	v3Table := BytecodeTable.
-	BytecodeTable := v3Table, v1Table
 ]
 
 { #category : #initialization }
@@ -973,13 +850,9 @@ StackInterpreter class >> initializeContextIndices [
 	LargeContextSize := #bogus.
 
 	"Class BlockClosure"
-	ClosureOuterContextIndex := 0.
-	ClosureStartPCIndex := 1.
-	ClosureNumArgsIndex := 2.
-	ClosureFirstCopiedValueIndex := 3.
-	
-	"Class FullBlockClosure, outercontext and numArgs index are shared with the BlockClosure class."	
+	FullClosureOuterContextIndex := 0.
 	FullClosureCompiledBlockIndex := 1.
+	FullClosureNumArgsIndex := 2.
 	FullClosureReceiverIndex := 3.
 	FullClosureFirstCopiedValueIndex := 4.
 ]
@@ -1163,6 +1036,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		(16 primitiveBitXor)
 		(17 primitiveBitShift)
 		(18 primitiveMakePoint)
+
 		(19 primitiveFail)					"Guard primitive for simulation -- *must* fail"
 
 		"LargeInteger Primitives (20-37)"
@@ -1209,35 +1083,35 @@ StackInterpreter class >> initializePrimitiveTable [
 		(58 primitiveLogN)
 		(59 primitiveExp)
 
-		"Subscript and Stream Primitives (60-67)"
+		"Subscript Primitives (60-64)"
 		(60 primitiveAt)
 		(61 primitiveAtPut)
 		(62 primitiveSize)
 		(63 primitiveStringAt)
 		(64 primitiveStringAtPut)
-		"The stream primitives no longer pay their way; normal Smalltalk code is faster."
-		(65 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called")"was primitiveNext"
-		(66 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called") "was primitiveNextPut"
-		(67 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called") "was primitiveAtEnd"
+		
+		(65 primitiveFail)
+		(66 primitiveFail)
+		(67 primitiveFail)
 
 		"StorageManagement Primitives (68-79)"
 		(68 primitiveObjectAt)
 		(69 primitiveObjectAtPut)
 		(70 primitiveNew)
 		(71 primitiveNewWithArg)
-		(72 primitiveArrayBecomeOneWay)	"Blue Book: primitiveBecome"
+		(72 primitiveArrayBecomeOneWay)
 		(73 primitiveInstVarAt)
 		(74 primitiveInstVarAtPut)
 		(75 primitiveIdentityHash)
-		(76 primitiveStoreStackp)			"Blue Book: primitiveAsObject"
+		(76 primitiveStoreStackp)
 		(77 primitiveSomeInstance)
 		(78 primitiveNextInstance)
 		(79 primitiveNewMethod)
 
 		"Control Primitives (80-89)"
-		(80 primitiveFail)					"Blue Book: primitiveBlockCopy"
-		(81 primitiveFail)					"Blue Book: primitiveValue"
-		(82 primitiveFail)					"Blue Book: primitiveValueWithArgs"
+		(80 primitiveFail)
+		(81 primitiveFail)
+		(82 primitiveFail)
 		(83 primitivePerform)
 		(84 primitivePerformWithArgs)
 		(85 primitiveSignal)
@@ -1247,76 +1121,70 @@ StackInterpreter class >> initializePrimitiveTable [
 		(89 primitiveFlushCache)
 
 		"Input/Output Primitives (90-109)"
-		(90 primitiveFail)					"primitiveMousePoint"
-		(91 primitiveTestDisplayDepth)			"Blue Book: primitiveCursorLocPut"
-		(92 primitiveSetDisplayMode)				"Blue Book: primitiveCursorLink"
-		(93 primitiveInputSemaphore)
-		(94 primitiveGetNextEvent)				"Blue Book: primitiveSampleInterval"
-		(95 primitiveFail)					"primitiveInputWord"
-		(96 primitiveFail)					"primitiveCopyBits"
+		(90 primitiveFail)
+		(91 primitiveFail)
+		(92 primitiveFail)
+		(93 primitiveFail)
+		(94 primitiveFail)
+		(95 primitiveFail)
+		(96 primitiveFail)
 		(97 primitiveSnapshot)
-		(98 primitiveStoreImageSegment)
-		(99 primitiveLoadImageSegment)
-		(100 primitivePerformInSuperclass)		"Blue Book: primitiveSignalAtTick"
-		(101 primitiveBeCursor)
-		(102 primitiveBeDisplay)
-		(103 primitiveFail)	"primitiveScanCharacters"
-		(104 primitiveFail)	"primitiveDrawLoop"
+		(98 primitiveFail)
+		(99 primitiveFail)
+		(100 primitivePerformInSuperclass)
+		(101 primitiveFail)
+		(102 primitiveFail)
+		(103 primitiveFail)
+		(104 primitiveFail)
 		(105 primitiveStringReplace)
-		(106 primitiveScreenSize)
-		(107 primitiveFail)      "primitiveMouseButtons"
-		(108 primitiveFail)      "primitiveKbdNext"
-		(109 primitiveFail)		"primitiveKbdPeek"
+		(106 primitiveFail)
+		(107 primitiveFail)
+		(108 primitiveFail)
+		(109 primitiveFail)
 
 		"System Primitives (110-119)"
 		(110 primitiveIdentical)
 		(111 primitiveClass)
 		(112 primitiveBytesLeft)
 		(113 primitiveQuit)
-		(114 primitiveExitToDebugger)
-		(115 primitiveChangeClass)					"Blue Book: primitiveOopsLeft"
+		(114 primitiveFail)
+		(115 primitiveChangeClass)
 		(116 primitiveFlushCacheByMethod)
 		(117 primitiveExternalCall)
 		(118 primitiveDoPrimitiveWithArgs)
 		(119 primitiveFlushCacheBySelector)
-			"Squeak 2.2 and earlier use 119.  Squeak 2.3 and later use 116.
-			Both are supported for backward compatibility."
 
 		"Miscellaneous Primitives (120-127)"
 		(120 primitiveCalloutToFFI)
 		(121 primitiveImageName)
-		(122 primitiveFail)			"primitiveNoop"		"Blue Book: primitiveImageVolume"
-		(123 primitiveFail)	"was primitiveValueUninterruptably"
+		(122 primitiveFail)
+		(123 primitiveFail)
 		(124 primitiveLowSpaceSemaphore)
 		(125 primitiveSignalAtBytesLeft)
 
-		"Squeak Primitives Start Here"
-
 		"Squeak Miscellaneous Primitives (128-149)"
-		(126 primitiveDeferDisplayUpdates)
-		(127 primitiveShowDisplayRect)
+		(126 primitiveFail)
+		(127 primitiveFail)
 		(128 primitiveArrayBecome)
 		(129 primitiveSpecialObjectsOop)
 		(130 primitiveFullGC)
 		(131 primitiveIncrementalGC)
 		(132 primitiveObjectPointsTo)
-		(133 primitiveSetInterruptKey)
-		(134 primitiveInterruptSemaphore)
+		(133 primitiveFail)
+		(134 primitiveFail)
 		(135 primitiveMillisecondClock)
 		(136 primitiveSignalAtMilliseconds)
 		(137 primitiveSecondsClock)
 		(138 primitiveSomeObject)
 		(139 primitiveNextObject)
-		(140 primitiveBeep)
-		(141 primitiveClipboardText)
+		(140 primitiveFail)
+		(141 primitiveFail)
 		(142 primitiveVMPath)
 		(143 primitiveShortAt)
 		(144 primitiveShortAtPut)
 		(145 primitiveConstantFill)
-		"NOTE: When removing the obsolete indexed primitives,
-		the following two should go become #primitiveIntegerAt / atPut"
-		(146 primitiveFail)	"primitiveReadJoystick"
-		(147 primitiveFail)	"primitiveWarpBits"
+		(146 primitiveFail)
+		(147 primitiveFail)
 		(148 primitiveClone)
 		(149 primitiveGetAttribute)
 
@@ -1361,7 +1229,6 @@ StackInterpreter class >> initializePrimitiveTable [
 		(188 primitiveExecuteMethodArgsArray)
 		(189 primitiveExecuteMethod)
 
-		"Sound Primitives (continued) - NO LONGER INDEXED"
 		(190 194 primitiveFail)
 
 		"Unwind primitives"
@@ -1372,13 +1239,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		(199 0 "a.k.a. primitiveMarkHandlerMethod")
 
 		"new closure primitives (were Networking primitives)"
-		(200 primitiveClosureCopyWithCopiedValues)
-		(201 primitiveClosureValue) "value"
-		(202 primitiveClosureValue) "value:"
-		(203 primitiveClosureValue) "value:value:"
-		(204 primitiveClosureValue) "value:value:value:"
-		(205 primitiveClosureValue) "value:value:value:value:"
-		(206 primitiveClosureValueWithArgs) "valueWithArguments:"
+		(200 206 primitiveFail)
 
 		(207 primitiveFullClosureValue) "value[:value:value:value:] et al"
 		(208 primitiveFullClosureValueWithArgs) "valueWithArguments:"
@@ -1396,28 +1257,21 @@ StackInterpreter class >> initializePrimitiveTable [
 
 		(220 primitiveFail)		"reserved for Cog primitives"
 
-		(221 primitiveClosureValueNoContextSwitch) "valueNoContextSwitch"
-		(222 primitiveClosureValueNoContextSwitch) "valueNoContextSwitch:"
+		(221 primitiveFail) "valueNoContextSwitch"
+		(222 primitiveFail) "valueNoContextSwitch:"
 
 		(223 229 primitiveFail)	"reserved for Cog primitives (see 228 & 229 in CoInterpreterMT"
 
 		(230 primitiveRelinquishProcessor)
-		(231 primitiveForceDisplayUpdate)
-		(232 primitiveFormPrint)
-		(233 primitiveSetFullScreen)
-		(234 primitiveFail) "primBitmapdecompressfromByteArrayat"
-		(235 primitiveFail) "primStringcomparewithcollated"
-		(236 primitiveFail) "primSampledSoundconvert8bitSignedFromto16Bit"
-		(237 primitiveFail) "primBitmapcompresstoByteArray"
-		(238 239 primitiveFail) "serial port primitives"
-		(240 primitiveUTCMicrosecondClock)		"was serial port primitive"
-		(241 primitiveLocalMicrosecondClock)		"was serial port primitive"
+		(231 239 primitiveFail)
+		(240 primitiveUTCMicrosecondClock)
+		(241 primitiveLocalMicrosecondClock)
 		(242 primitiveSignalAtUTCMicroseconds)
-		(243 primitiveUpdateTimezone) "primStringtranslatefromtotable"
+		(243 primitiveUpdateTimezone)
 		(244 primitiveUtcAndTimezoneOffset)
-		(245 primitiveCoarseUTCMicrosecondClock) "primStringindexOfAsciiinStringstartingAt"
-		(246 primitiveCoarseLocalMicrosecondClock) "primStringfindSubstringinstartingAtmatchTable"
-		(247 primitiveSnapshotEmbedded)
+		(245 primitiveCoarseUTCMicrosecondClock)
+		(246 primitiveCoarseLocalMicrosecondClock)
+		(247 primitiveFail)
 		(248 primitiveArrayBecomeOneWayNoCopyHash) "was primitiveInvokeObjectAsMethod"
 		(249 primitiveArrayBecomeOneWayCopyHash)
 
@@ -1427,7 +1281,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		(252 primitiveVMProfileSamplesInto "primitiveStopVMProfiling")
 		(253 primitiveFail "N.B. primitiveCollectCogCodeConstituents in CoInterpreter below")
 		(254 primitiveVMParameter)
-		(255 primitiveFail) "RESERVED FOR THE R/Squeak VM. Was primitiveInstVarsPutFromStack. Never used except in Disney tests."
+		(255 primitiveFail)
 
 		"Quick Push Const Methods"
 		(256 nil) "primitivePushSelf"
@@ -1442,11 +1296,9 @@ StackInterpreter class >> initializePrimitiveTable [
 		"Quick Push Inst Var Methods"
 		(264 519 nil) "primitiveLoadInstVar"
 
-		(520 primitiveFail)
-		(521 529 primitiveFail) "Reserved for Spur primitives"
-		(530 539 primitiveFail)
+		(520 540 primitiveFail)
 
-		(540 primitiveFail)
+		"Small float primitives"
 		(541 primitiveSmallFloatAdd)
 		(542 primitiveSmallFloatSubtract)
 		(543 primitiveSmallFloatLessThan)
@@ -1474,10 +1326,9 @@ StackInterpreter class >> initializePrimitiveTable [
 		(571 primitiveUnloadModule)
 		(572 primitiveListBuiltinModule)
 		(573 primitiveListExternalModule)
-		(574 primitiveFail) "reserved for addl. external support prims"
 
 		"Unassigned Primitives"
-		(575 597 primitiveFail)
+		(574 597 primitiveFail)
 
 		"Pinned object creation primitives"
 		(598 primitiveNewPinned)
@@ -1670,34 +1521,6 @@ StackInterpreter class >> needsCogit [
 ]
 
 { #category : #translation }
-StackInterpreter class >> patchInterpGCCPPC: fileName [
-	"Interpreter patchInterpGCCPPC: 'Squeak copy 1'"
-	"This will patch out the unneccesary range check (a compare
-	 and branch) in the inner interpreter dispatch loop. for the PPC version of the GCC compiled
-	version of Squeak under MPW"
-	"NOTE: You must edit in the Interpeter file name"
-
-	| delta f code len remnant i |
-	delta := 7.
-	f := FileStream fileNamed: fileName.
-	f binary.
-	code := Bitmap new: (len := f size) // 4.
-	f nextInto: code.
-	remnant := f next: len - (code size * 4).
-	i := 0.
-	["Look for a BCTR instruction"
-	(i := code indexOf: 16r4E800420 startingAt: i + 1 ifAbsent: [0]) > 0] whileTrue:
-		["Look for a CMPLWI cr1,rxx,FF, 7 instrs back"
-	       ((code at: i - delta) bitAnd: 16rFFE0FFFF) = 16r288000FF ifTrue:
-	       	["Copy dispatch instrs back over the compare"
-			self inform: 'Patching at ', i hex.
-			0 to: delta - 2 do: [ :j |
-				code at: (i - delta) + j put: (code at: (i - delta) + j + 2)]]].
-	f position: 0; nextPutAll: code; nextPutAll: remnant.
-	f close
-]
-
-{ #category : #translation }
 StackInterpreter class >> preGenerationHook: aCCodeGen [
 	"Perform any last-minute changes to the code generator immediately
 	 before it performs code analysis and generation.  In this case, make
@@ -1865,14 +1688,14 @@ StackInterpreter class >> requiredMethodNames: options [
 		characterForAscii:
 		findClassOfMethod:forReceiver: findSelectorOfMethod:
 			forceInterruptCheck forceInterruptCheckFromHeartbeat fullDisplayUpdate
-		getCurrentBytecode getFullScreenFlag getInterruptKeycode getInterruptPending
+		getCurrentBytecode getFullScreenFlag getInterruptPending
 			getSavedWindowSize getThisSessionID
 		interpret
 		loadInitialContext
 		primitiveFail primitiveFailFor: primitiveFlushExternalPrimitives printAllStacks printCallStack printContext:
 			printExternalHeadFrame printFramesInPage: printFrame: printHeadFrame printMemory printOop:
 				printStackPages printStackPageList printStackPagesInUse printStackPageListInUse
-		readableFormat: readImageFromFile:HeapSize:StartingAt:
+		readableFormat: readImageFromFile:StartingAt:
 		setFullScreenFlag: setInterruptKeycode: setInterruptPending: setInterruptCheckChain:
 			setSavedWindowSize: success:
 		validInstructionPointer:inMethod:framePointer:) asSet.
@@ -2032,50 +1855,6 @@ StackInterpreter >> activateFailingPrimitiveMethod [
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
 	"NOTREACHED"
 	^nil
-]
-
-{ #category : #'control primitives' }
-StackInterpreter >> activateNewClosure: blockClosure outer: outerContext method: theMethod  numArgs: numArgs mayContextSwitch: mayContextSwitch [
-	"Similar to activateNewMethod but for Closure and newMethod."
-	| numCopied closureIP |
-	<inline: true>
-	self assert: (objectMemory isContext: outerContext).
-	numCopied := self copiedValueCountOfClosure: blockClosure.
-	self assert: theMethod = (objectMemory fetchPointer: MethodIndex ofObject: outerContext).
-	self assert: (objectMemory isOopCompiledMethod: theMethod).
-
-	self push: instructionPointer.
-	self push: framePointer.
-	framePointer := stackPointer.
-	self push: theMethod.
-	self push: (self encodeFrameFieldHasContext: false isBlock: true numArgs: numArgs).
-	self push: objectMemory nilObject. "FxThisContext field"
-	"Because inst var access is not checked, we must follow the receiver in Spur to ensure it is valid."
-	self push: (objectMemory followField: ReceiverIndex ofObject: outerContext).
-
-	"Copy the copied values..."
-	0 to: numCopied - 1 do:
-		[:i|
-		self push: (objectMemory
-					fetchPointer: i + ClosureFirstCopiedValueIndex
-					ofObject: blockClosure)].
-
-	self assert: (self frameIsBlockActivation: framePointer).
-	self assert: (self frameHasContext: framePointer) not.
-
-	"The initial instructions in the block nil-out remaining temps."
-
-	"the instruction pointer is a pointer variable equal to 
-	method oop + ip + BaseHeaderSize 
-	-1 for 0-based addressing of fetchByte 
-	-1 because it gets incremented BEFORE fetching currentByte"
-	closureIP := self quickFetchInteger: ClosureStartPCIndex ofObject: blockClosure.
-	instructionPointer := theMethod + closureIP + objectMemory baseHeaderSize - 2.
-	self setMethod: theMethod.
-
-	"Now check for stack overflow or an event (interrupt, must scavenge, etc)"
-	stackPointer < stackLimit ifTrue:
-		[self handleStackOverflowOrEventAllowContextSwitch: mayContextSwitch]
 ]
 
 { #category : #'control primitives' }
@@ -2261,12 +2040,58 @@ StackInterpreter >> allOnesAsCharStar [
 ]
 
 { #category : #'image save/restore' }
+StackInterpreter >> allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: desiredPositionOfHeap [ 
+
+	<var: #f type: #sqImageFile>
+	<var: #header type: #'SpurImageHeaderStruct'>
+
+	| allocationReserve headroom heapSize minimumMemory |
+	
+	allocationReserve := self interpreterAllocationReserveBytes.
+
+	headroom := objectMemory
+		            initialHeadroom: extraVMMemory
+		            givenFreeOldSpaceInImage: header freeOldSpaceInImage.
+	heapSize := objectMemory roundUpHeapSize:
+		            header dataSize + headroom + objectMemory newSpaceBytes
+		            + (headroom > allocationReserve
+				             ifTrue: [ 0 ]
+				             ifFalse: [ allocationReserve ]).
+
+	minimumMemory := header dataSize + objectMemory newSpaceBytes
+	                 + allocationReserve.
+
+	"allocate a contiguous block of memory for the heap"
+	objectMemory memory: (self
+			 allocateMemory: heapSize
+			 minimum: minimumMemory
+			 imageFile: f
+			 headerSize: header headerSize
+			 desiredPosition: desiredPositionOfHeap) asUnsignedInteger.
+			
+	objectMemory memory ifNil: [ self insufficientMemoryAvailableError ].
+
+	^ objectMemory
+		setHeapBase: objectMemory memory
+		memoryLimit: objectMemory memory + heapSize
+		endOfMemory: objectMemory memory + header dataSize.
+
+]
+
+{ #category : #'image save/restore' }
 StackInterpreter >> allocateJITMemory: desiredSize desiredPosition: desiredPosition [
 	
 	<inline: true>
 	<returnTypeC: #'char *'>
 	
 	^self pointerForOop: (self allocateJITMemory: desiredSize _: desiredPosition)
+]
+
+{ #category : #allocating }
+StackInterpreter >> allocateMemory: desiredSize Minimum: minimumSize ImageFile: imageFile HeaderSize: headerSize BaseAddress: baseAddress [ 
+	
+	<doNotGenerate>
+	^ memoryManager allocate: desiredSize desiredPosition: baseAddress
 ]
 
 { #category : #'image save/restore' }
@@ -2308,6 +2133,17 @@ StackInterpreter >> allocateMemory: heapSize minimum: minimumMemory imageFile: f
 							BaseAddress: desiredBaseAddress)
 ]
 
+{ #category : #'image save/restore' }
+StackInterpreter >> allocateMemoryForImage: f withHeader: header [
+
+	<var: #f type: #sqImageFile>
+	<var: #header type: #'SpurImageHeaderStruct'>
+
+	self allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: header oldBaseAddr.
+	
+	self loadImageFromFile: f withHeader: header 
+]
+
 { #category : #'compiled methods' }
 StackInterpreter >> alternateHeaderHasPrimitiveFlag: methodHeader [
 	<inline: true>
@@ -2331,7 +2167,7 @@ StackInterpreter >> argumentCountOf: methodPointer [
 StackInterpreter >> argumentCountOfClosure: closurePointer [
 	<api> "for Cogit"
 	<inline: true>
-	^self quickFetchInteger: ClosureNumArgsIndex ofObject: closurePointer
+	^self quickFetchInteger: FullClosureNumArgsIndex ofObject: closurePointer
 ]
 
 { #category : #'compiled methods' }
@@ -3766,7 +3602,7 @@ StackInterpreter >> bytecodePrimValue [
 	isBlock ifTrue:
 		[self externalizeIPandSP.
 		self initPrimCall.
-		self primitiveClosureValue.
+		self primitiveFullClosureValue.
 		self internalizeIPandSP.
 		self successful ifTrue:
 			[^self fetchNextBytecode].
@@ -3784,7 +3620,7 @@ StackInterpreter >> bytecodePrimValueWithArg [
 	isBlock ifTrue:
 		[self externalizeIPandSP.
 		self initPrimCall.
-		self primitiveClosureValue.
+		self primitiveFullClosureValue.
 		self internalizeIPandSP.
 		self successful ifTrue:
 			[^self fetchNextBytecode].
@@ -4038,7 +3874,6 @@ StackInterpreter >> checkAssumedCompactClasses [
 	objectMemory checkCompactIndex: ClassLargeNegativeIntegerCompactIndex isClass: ClassLargeNegativeInteger named: 'LargeNegativeInteger'.
 	objectMemory checkCompactIndex: ClassLargePositiveIntegerCompactIndex isClass: ClassLargePositiveInteger named: 'LargePositiveInteger'.
 	objectMemory checkCompactIndex: ClassFloatCompactIndex isClass: ClassFloat named: 'Float'.
-	objectMemory checkCompactIndex: ClassBlockClosureCompactIndex isClass: ClassBlockClosure named: 'BlockClosure'.
 	objectMemory checkCompactIndex: ClassMethodContextCompactIndex isClass: ClassMethodContext named: 'MethodContext'.
 	classByteArrayCompactIndex := objectMemory compactIndexOfClass: (objectMemory splObj: ClassByteArray)
 ]
@@ -4258,7 +4093,7 @@ StackInterpreter >> checkForStackOverflow [
 ]
 
 { #category : #'image save/restore' }
-StackInterpreter >> checkImageVersionFrom: f startingAt: imageOffset [
+StackInterpreter >> checkImageVersionFrom: f [
 	"Read and verify the image file version number and return true if the the given image file needs to be byte-swapped. As a side effect, position the file stream just after the version number of the image header. This code prints a warning and does a hard-exit if it cannot find a valid version number."
 	"This code is based on C code by Ian Piumarta."
 
@@ -4268,38 +4103,21 @@ StackInterpreter >> checkImageVersionFrom: f startingAt: imageOffset [
 	<var: #imageOffset type: #squeakFileOffsetType>
 
 	"check the version number"
-	self sqImageFile: f Seek: imageOffset.
 	version := firstVersion := self getWord32FromFile: f swap: false.
 	(self readableFormat: version) ifTrue: [^ false].
 
 	"try with bytes reversed"
-	self sqImageFile: f Seek: imageOffset.
-	version := self getWord32FromFile: f swap: true.
-	(self readableFormat: version) ifTrue: [^ true].
-
-	"Note: The following is only meaningful if not reading an embedded image"
-	imageOffset = 0 ifTrue:[
-		"try skipping the first 512 bytes (prepended by certain Mac file transfer utilities)"
-		self sqImageFile: f Seek: 512.
-		version := self getWord32FromFile: f swap: false.
-		(self readableFormat: version) ifTrue: [^ false].
-
-		"try skipping the first 512 bytes with bytes reversed"
-		self sqImageFile: f Seek: 512.
-		version := self getWord32FromFile: f swap: true.
-		(self readableFormat: version) ifTrue: [^ true]].
+	(self readableFormat: version byteSwap32) ifTrue: [^ true].
 
 	"hard failure; abort"
-	self print: 'This interpreter (vers. '.
-	self printNum: self imageFormatVersion.
-	self print: ') cannot read image file (vers. '.
-	self printNum: firstVersion.
-	self print: ').'.
-	self cr.
-	self print: 'Press CR to quit...'.
-	self getchar.
+	self logError: 'Invalid image format: detected version %d, expected version %d' 
+		_: firstVersion 
+		_: self imageFormatVersion.
+	
 	self ioExitWithErrorCode: 1.
-	^false
+	
+	"This is needed by Slang"
+	^false	
 ]
 
 { #category : #'object memory support' }
@@ -4703,58 +4521,6 @@ StackInterpreter >> cloneOSErrorObj: errObj numSlots: numSlots [
 	^clone
 ]
 
-{ #category : #'control primitives' }
-StackInterpreter >> closureIn: context numArgs: numArgs instructionPointer: initialIP copiedValues: copiedValues [
-	| newClosure numCopied |
-	<inline: true>
-	"numCopied should be zero for nil"
-	numCopied := objectMemory numSlotsOf: copiedValues.
-	ClassBlockClosureCompactIndex ~= 0
-		ifTrue:
-			[newClosure := objectMemory
-								eeInstantiateSmallClassIndex: ClassBlockClosureCompactIndex
-								format: objectMemory indexablePointersFormat
-								numSlots: ClosureFirstCopiedValueIndex + numCopied]
-		ifFalse:
-			[newClosure := objectMemory
-								eeInstantiateSmallClass: (objectMemory splObj: ClassBlockClosure)
-								numSlots: ClosureFirstCopiedValueIndex + numCopied].
-	"Assume: have just allocated a new closure; it must be young. Thus, can use unchecked stores."
-	objectMemory
-		storePointerUnchecked: ClosureOuterContextIndex ofObject: newClosure withValue: context;
-		storePointerUnchecked: ClosureStartPCIndex ofObject: newClosure withValue: (objectMemory integerObjectOf: initialIP);
-		storePointerUnchecked: ClosureNumArgsIndex ofObject: newClosure withValue: (objectMemory integerObjectOf: numArgs).
-	0 to: numCopied - 1 do:
-		[:i|
-		objectMemory storePointerUnchecked: i + ClosureFirstCopiedValueIndex
-			ofObject: newClosure
-			withValue: (objectMemory fetchPointer: i ofObject: copiedValues)].
-	^newClosure
-]
-
-{ #category : #'control primitives' }
-StackInterpreter >> closureIn: context numArgs: numArgs instructionPointer: initialIP numCopiedValues: numCopied [
-	| newClosure |
-	<inline: true>
-	ClassBlockClosureCompactIndex ~= 0
-		ifTrue:
-			[newClosure := objectMemory
-								eeInstantiateSmallClassIndex: ClassBlockClosureCompactIndex
-								format: objectMemory indexablePointersFormat
-								numSlots: ClosureFirstCopiedValueIndex + numCopied]
-							
-		"This path is for preSpur images"					
-		ifFalse:
-			[newClosure := objectMemory
-								eeInstantiateSmallClass: (objectMemory splObj: ClassBlockClosure)
-								numSlots: ClosureFirstCopiedValueIndex + numCopied].
-	"Assume: have just allocated a new closure; it must be young. Thus, can use unchecked stores."
-	objectMemory storePointerUnchecked: ClosureOuterContextIndex ofObject: newClosure withValue: context.
-	objectMemory storePointerUnchecked: ClosureStartPCIndex ofObject: newClosure withValue: (objectMemory integerObjectOf: initialIP).
-	objectMemory storePointerUnchecked: ClosureNumArgsIndex ofObject: newClosure withValue: (objectMemory integerObjectOf: numArgs).
-	^newClosure
-]
-
 { #category : #'as yet unclassified' }
 StackInterpreter >> codeGeneratorToComputeAccessorDepth: aCCodeGenerator [ 
 	<doNotGenerate>
@@ -4876,7 +4642,7 @@ StackInterpreter >> commonReturn [
 	"Walk the closure's lexical chain to find the context or frame to return from (home).
 	 If home is missing (Sista closures) then throw cannotReturn rather than crash."
 	[closure ~= objectMemory nilObject] whileTrue:
-		[home := objectMemory followField: ClosureOuterContextIndex ofObject: closure.
+		[home := objectMemory followField: FullClosureOuterContextIndex ofObject: closure.
 		 (objectMemory isContext: home) ifFalse:
 			[^self internalCannotReturn: localReturnValue].
 		 closure := objectMemory followField: ClosureIndex ofObject: home].
@@ -4972,7 +4738,7 @@ StackInterpreter >> commonSendOrdinary [
 	"Assume: messageSelector and argumentCount have been set, and that 
 	the receiver and arguments have been pushed onto the stack,"
 	"Note: This method is inlined into the interpreter dispatch loop."
-	<sharedCodeInCase: #singleExtendedSendBytecode>
+	<sharedCodeInCase: #extSendBytecode>
 	self sendBreakpoint: messageSelector receiver: (self internalStackValue: argumentCount).
 	self printSends ifTrue:
 		[self printActivationNameForSelector: messageSelector startClass: (objectMemory classForClassTag: lkupClassTag); cr].
@@ -5161,12 +4927,6 @@ StackInterpreter >> convertFloatsToPlatformOrder [
 ]
 
 { #category : #'internal interpreter access' }
-StackInterpreter >> copiedValueCountOfClosure: closurePointer [
-	<api> "for Cogit"
-	^(objectMemory numSlotsOf: closurePointer) - ClosureFirstCopiedValueIndex
-]
-
-{ #category : #'internal interpreter access' }
 StackInterpreter >> copiedValueCountOfFullClosure: closurePointer [
 	<api> "for Cogit"
 	^(objectMemory numSlotsOf: closurePointer) - FullClosureFirstCopiedValueIndex
@@ -5314,7 +5074,7 @@ StackInterpreter >> directedSuperclassSend [
 	"Assume: messageSelector and argumentCount have been set, and that
 	 the receiver and arguments have been pushed onto the stack,"
 	"Note: This method is inlined into the interpreter dispatch loop."
-	<sharedCodeInCase: #extSendSuperBytecode>
+	"<sharedCodeInCase: #extSendSuperBytecode>"
 	<option: #BytecodeSetHasDirectedSuperSend>
 	| class superclass |
 	class := self internalPopStack.
@@ -5538,38 +5298,6 @@ StackInterpreter >> doSignalSemaphoreWithIndex: index [
 	
 	^(objectMemory isSemaphoreOop: sema)
 	  and: [self synchronousSignal: sema]
-]
-
-{ #category : #'send bytecodes' }
-StackInterpreter >> doubleExtendedDoAnythingBytecode [
-	"Replaces the Blue Book double-extended send [132], in which the first byte was wasted on 8 bits of argument count. 
-	Here we use 3 bits for the operation sub-type (opType),  and the remaining 5 bits for argument count where needed. 
-	The last byte give access to 256 instVars or literals. 
-	See also secondExtendedSendBytecode"
-	| byte2 byte3 opType top |
-	byte2 := self fetchByte.
-	byte3 := self fetchByte.
-	opType := byte2 >> 5.
-	opType = 0 ifTrue:
-		[messageSelector := self literal: byte3.
-		 argumentCount := byte2 bitAnd: 31.
-		 ^self normalSend].
-	opType = 1 ifTrue:
-		[messageSelector := self literal: byte3.
-		 argumentCount := byte2 bitAnd: 31.
-		 ^self superclassSend].
-	opType = 2 ifTrue: [self fetchNextBytecode. ^self pushMaybeContextReceiverVariable: byte3].
-	opType = 3 ifTrue: [self fetchNextBytecode. ^self pushLiteralConstant: byte3].
-	opType = 4 ifTrue: [self fetchNextBytecode. ^self pushLiteralVariable: byte3].
-	top := self internalStackTop.
-	opType = 7 ifTrue:
-		[self storeLiteralVariable: byte3 withValue: top.
-		 ^self fetchNextBytecode].
-	"opType = 5 is store; opType = 6 is storePop"
-	opType = 6 ifTrue:
-		[self internalPop: 1].
-	self storeMaybeContextReceiverVariable: byte3 withValue: top.
-	self fetchNextBytecode
 ]
 
 { #category : #initialization }
@@ -5829,22 +5557,6 @@ StackInterpreter >> extPushCharacterBytecode [
 ]
 
 { #category : #'stack bytecodes' }
-StackInterpreter >> extPushClosureBytecode [
-	"253		11111101 eei i i kkk	jjjjjjjj		Push Closure Num Copied iii (+ Ext A // 16 * 8) Num Args kkk (+ Ext A \\ 16 * 8) BlockSize jjjjjjjj (+ Ext B * 256). ee = num extensions.
-	 The compiler has pushed the values to be copied, if any.  Find numArgs and numCopied in the byte following.
-	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
-	 Set numArgs as specified, and set startpc to the pc following the block size and jump over that code."
-	| byte numArgs numCopied blockSize |
-	byte := self fetchByte.
-	numArgs := (byte bitAnd: 7) + (extA \\ 16 * 8).
-	numCopied := ((byte >> 3) bitAnd: 7) + (extA // 16 * 8).
-	extA := 0.
-	blockSize := self fetchByte + (extB << 8).
-	numExtB := extB := 0.
-	self pushClosureNumArgs: numArgs copiedValues: numCopied blockSize: blockSize
-]
-
-{ #category : #'stack bytecodes' }
 StackInterpreter >> extPushFullClosureBytecode [
 	"255		11111111	xxxxxxxx	siyyyyyy	
 		push Closure Compiled block literal index xxxxxxxx (+ Extend A * 256) 
@@ -5939,16 +5651,14 @@ StackInterpreter >> extReturnTopFromBlock [
 { #category : #'send bytecodes' }
 StackInterpreter >> extSendBytecode [
 	"238		11101110	i i i i i j j j	Send Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments"
-	| byte rcvr |
+	| byte |
 	byte := self fetchByte.
 	messageSelector := self literal: (byte >> 3) + (extA << 5).
 	extA := 0.
 	argumentCount := (byte bitAnd: 7) + (extB << 3).
 	extB := 0.
 	numExtB := 0.
-	rcvr := self internalStackValue: argumentCount.
-	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
-	self commonSendOrdinary
+	self normalSend
 ]
 
 { #category : #'send bytecodes' }
@@ -6508,17 +6218,10 @@ StackInterpreter >> findHomeForContext: aContext [
 	closureOrNil := objectMemory fetchPointer: ClosureIndex ofObject: aContext.
 	closureOrNil = objectMemory nilObject ifTrue:
 		[^aContext].
-	ClassBlockClosureCompactIndex ~= 0
-		ifTrue:
-			[((objectMemory compactClassIndexOf: closureOrNil) ~= ClassBlockClosureCompactIndex
-			  and: [(objectMemory compactClassIndexOf: closureOrNil) ~= ClassFullBlockClosureCompactIndex]) ifTrue:
-				[^nil]]
-		ifFalse:
-			[(objectMemory fetchClassOf: closureOrNil) ~= (objectMemory splObj: ClassBlockClosure) ifTrue:
-				[(ClassFullBlockClosureCompactIndex ~= 0
-				  and: [(objectMemory fetchClassOf: closureOrNil) = (objectMemory splObj: ClassFullBlockClosure)]) ifFalse:
-					[^nil]]].
-	^self findHomeForContext: (objectMemory fetchPointer: ClosureOuterContextIndex ofObject: closureOrNil)
+	((objectMemory compactClassIndexOf: closureOrNil) ~= ClassFullBlockClosureCompactIndex)
+		ifTrue: [^nil].
+
+	^self findHomeForContext: (objectMemory fetchPointer: FullClosureOuterContextIndex ofObject: closureOrNil)
 ]
 
 { #category : #'handler search' }
@@ -7394,18 +7097,10 @@ StackInterpreter >> fullClosureIn: context numArgs: numArgs numCopiedValues: num
 								numSlots: FullClosureFirstCopiedValueIndex + numCopied].
 	"Assume: have just allocated a new closure; it must be young. Thus, can use unchecked stores."
 	objectMemory
-		storePointerUnchecked: ClosureOuterContextIndex ofObject: newClosure withValue: context;
+		storePointerUnchecked: FullClosureOuterContextIndex ofObject: newClosure withValue: context;
 		storePointerUnchecked: FullClosureCompiledBlockIndex ofObject: newClosure withValue: compiledBlock;
-		storePointerUnchecked: ClosureNumArgsIndex ofObject: newClosure withValue: (objectMemory integerObjectOf: numArgs).
+		storePointerUnchecked: FullClosureNumArgsIndex ofObject: newClosure withValue: (objectMemory integerObjectOf: numArgs).
 	^newClosure
-]
-
-{ #category : #'I/O primitive support' }
-StackInterpreter >> fullDisplayUpdate [
-	"Repaint the entire smalltalk screen, ignoring the affected rectangle. Used in some platform's code when the Smalltalk window is brought to the front or uncovered."
-	<returnTypeC: #sqInt>
-	self updateDisplayLeft: 0 Top: 0 Right: displayWidth Bottom: displayHeight.
-	self ioForceDisplayUpdate
 ]
 
 { #category : #'plugin primitive support' }
@@ -7503,12 +7198,6 @@ StackInterpreter >> getCurrentBytecode [
 	^objectMemory byteAt: instructionPointer
 ]
 
-{ #category : #'simulation support' }
-StackInterpreter >> getDeferDisplayUpdates [
-	<doNotGenerate>
-	^deferDisplayUpdates
-]
-
 { #category : #'internal interpreter access' }
 StackInterpreter >> getDesiredCogCodeSize [
 	"This is nil in the StackVM"
@@ -7568,11 +7257,6 @@ StackInterpreter >> getImageHeaderFlags [
 	+ (newFinalization ifTrue: [16r40] ifFalse: [0])
 	+ (sendWheelEvents ifTrue: [16r80] ifFalse: [0])
 	+ (imageHeaderFlags bitClear: 16rD3) "these are any flags we do not recognize"
-]
-
-{ #category : #'plugin primitive support' }
-StackInterpreter >> getInterruptKeycode [
-	^interruptKeycode
 ]
 
 { #category : #'plugin primitive support' }
@@ -8139,7 +7823,7 @@ StackInterpreter >> initialize [
 	maxStacksToPrint := 0.
 	inIOProcessEvents := 0.
 	fullScreenFlag := 0.
-	sendWheelEvents := deferDisplayUpdates := false.
+	sendWheelEvents := false.
 	displayBits := displayWidth := displayHeight := displayDepth := 0.
 	pendingFinalizationSignals := statPendingFinalizationSignals := 0.
 	globalSessionID := 0.
@@ -8177,6 +7861,18 @@ StackInterpreter >> initializeExtraClassInstVarIndices [
 ]
 
 { #category : #initialization }
+StackInterpreter >> initializeGlobalSessionID [
+	"Initialize the globalSessionID.
+	To ensure compatibility with old plugins, keep the value to a postive signed 32 bit integer"
+
+	[globalSessionID = 0] whileTrue:
+		[globalSessionID := self
+			cCode: [((self time: #NULL) + self ioMSecs) bitAnd: 16r7FFFFFFF]
+			inSmalltalk: [((self time: #NULL) + self ioMSecs) bitAnd: 16r7FFFFFFF]].
+
+]
+
+{ #category : #initialization }
 StackInterpreter >> initializeInterpreter: bytesToShift [
 	"Initialize Interpreter state before starting execution of a new image."
 	interpreterProxy := self sqGetInterpreterProxy.
@@ -8191,11 +7887,7 @@ StackInterpreter >> initializeInterpreter: bytesToShift [
 	methodDictLinearSearchLimit := 8.
 	self initialCleanup.
 	profileSemaphore := profileProcess := profileMethod := objectMemory nilObject.
-	interruptKeycode := 2094. "cmd-. as used for Mac but no other OS"
-	[globalSessionID = 0] whileTrue:
-		[globalSessionID := self
-								cCode: [(self time: #NULL) + self ioMSecs]
-								inSmalltalk: [(Random new next * (SmallInteger maxVal min: 16rFFFFFFFF)) asInteger]].
+	self initializeGlobalSessionID.
 	metaAccessorDepth := -2.
 	super initializeInterpreter: bytesToShift
 ]
@@ -8619,8 +8311,7 @@ StackInterpreter >> interpret [
 	"If stacklimit is zero then the stack pages have not been initialized."
 	stackLimit = 0 ifTrue:
 		[^self initStackPagesAndInterpret].
-	"record entry time when running as a browser plug-in"
-	self browserPluginInitialiseIfNeeded.
+
 	self internalizeIPandSP.
 	self initExtensions.
 	self fetchNextBytecode.
@@ -8668,13 +8359,6 @@ Note the resolveAliases flag - this is an awful artefact of OSX and Apples demen
 	self cCode:'sqGetFilenameFromString(aCharBuffer, aFilenameString, filenameLength, aBoolean)'
 		inSmalltalk:["this doesn't translate well in Smalltalk since we know how long strings are rather than considering them terminated by a 0 char. Do the best we can"
 			aCharBuffer replaceFrom:1 to: filenameLength with: aFilenameString]
-]
-
-{ #category : #simulation }
-StackInterpreter >> ioForceDisplayUpdate [
-	"Make sure the display is updated.  Simulation only"
-	<doNotGenerate>
-	UIManager default restoreDisplay
 ]
 
 { #category : #'primitive support' }
@@ -9020,17 +8704,6 @@ StackInterpreter >> isStillMarriedContextDuringGC: aContext [
 	    and: [(self isWidowedContextDuringGC: aContext) not]
 ]
 
-{ #category : #'internal interpreter access' }
-StackInterpreter >> isVanillaBlockClosure: aClosure [
-	"Answer if aClosure is a vanilla BlockClosure as in the first Cog release, BlockClosure laid out as 
-	 'outerContext, startpc, numArgs.  FullBlockClosure is laid out as  outerContext, method, numArgs, receiver.
-	 So either answer true if we're not supporting FullBlockClosure, or test the startpc/method field."
-	<inline: true>
-	^SistaV1BytecodeSet
-		ifTrue: [objectMemory isIntegerObject: (objectMemory fetchPointer: ClosureStartPCIndex ofObject: aClosure)]
-		ifFalse: [true]
-]
-
 { #category : #'frame access' }
 StackInterpreter >> isWidowedContext: aOnceMarriedContext [
 	"See if the argument is married to a live frame or not.
@@ -9369,6 +9042,27 @@ StackInterpreter >> loadBitBltFrom: bb [
 	fn := self ioLoadFunction: 'loadBitBltFrom' From: 'BitBltPlugin'.
 	fn = 0 ifTrue: [^self primitiveFail].
 	^self cCode: '((sqInt (*)(sqInt))fn)(bb)'
+]
+
+{ #category : #'image save/restore' }
+StackInterpreter >> loadImageFromFile: f withHeader: header [ 
+
+	<var: #f type: #sqImageFile>
+	<var: #header type: #'SpurImageHeaderStruct'>	
+	
+	"read in the image in bulk, then swap the bytes if necessary"
+	| bytesRead bytesToShift |
+	bytesRead := objectMemory
+		             readHeapFromImageFile: f
+		             dataBytes: header dataSize.
+	bytesRead ~= header dataSize ifTrue: [ self unableToReadImageError ].
+
+	self ensureImageFormatIsUpToDate: header swapBytes.
+
+	"compute difference between old and new memory base addresses"
+	bytesToShift := objectMemory memoryBaseForImageRead - header oldBaseAddr.
+	self initializeInterpreter: bytesToShift. "adjusts all oops to new location"
+
 ]
 
 { #category : #initialization }
@@ -10865,9 +10559,6 @@ StackInterpreter >> moduleUnloaded: aModuleName [
 	Make sure we have no dangling references."
 	<export: true>
 	<var: #aModuleName type: 'char *'>
-	(aModuleName strcmp: 'SurfacePlugin') = 0
-		ifTrue: ["Surface plugin went away. Should never happen. But  then, who knows"
-			showSurfaceFn := 0]
 ]
 
 { #category : #'frame access' }
@@ -11060,7 +10751,7 @@ StackInterpreter >> normalSend [
 	"Assume: messageSelector and argumentCount have been set, and that 
 	the receiver and arguments have been pushed onto the stack,"
 	"Note: This method is inlined into the interpreter dispatch loop."
-	<sharedCodeInCase: #singleExtendedSendBytecode>
+	<sharedCodeInCase: #extSendBytecode>
 	| rcvr |
 	rcvr := self internalStackValue: argumentCount.
 	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
@@ -11431,30 +11122,7 @@ StackInterpreter >> postBecomeAction: theBecomeEffectsFlags [
 StackInterpreter >> postGCAction: gcModeArg [
 	"Signal the gc semaphore, and inform the display subsystem if the display bitmap has moved."
 
-	self signalSemaphoreWithIndex: gcSemaphoreIndex.
-	self postGCUpdateDisplayBits
-]
-
-{ #category : #'object memory support' }
-StackInterpreter >> postGCUpdateDisplayBits [
-	"Update the displayBits after a GC may have moved it.
-	 Answer if the displayBits appear valid"
-	<inline: false>
-	| displayObj bitsOop bitsNow |
-	displayObj := objectMemory splObj: TheDisplay.
-	((objectMemory isPointers: displayObj)
-	 and: [(objectMemory lengthOf: displayObj) >= 4
-	 and: [objectMemory isWordsOrBytes: (bitsOop := objectMemory fetchPointer: 0 ofObject: displayObj)]]) ifFalse:
-		[^false].
-
-	(objectMemory hasSpurMemoryManagerAPI
-	 and: [objectMemory isPinned: bitsOop]) ifFalse:
-		[bitsNow := self cCode: [objectMemory firstIndexableField: bitsOop]
-					inSmalltalk: [(objectMemory firstIndexableField: bitsOop) asInteger].
-		 displayBits ~= bitsNow ifTrue:
-			[displayBits := bitsNow.
-			 self ioNoteDisplayChanged: displayBits width: displayWidth height: displayHeight depth: displayDepth]].
-	^true
+	self signalSemaphoreWithIndex: gcSemaphoreIndex
 ]
 
 { #category : #'object memory support' }
@@ -12529,17 +12197,7 @@ StackInterpreter >> printOop: oop [
 		[self print: ' nbytes '; printNum: (objectMemory numBytesOf: oop)].
 	self cr.
 	(fmt between: objectMemory firstLongFormat and: objectMemory firstCompiledMethodFormat - 1) ifTrue:
-		["This will answer false if splObj: ClassAlien is nilObject"
-		 (self is: oop KindOfClass: (objectMemory splObj: ClassAlien)) ifTrue:
-			[self print: ' datasize '; printNum: (self sizeOfAlienData: oop).
-			self print: ((self isIndirectAlien: oop)
-							ifTrue: [' indirect @ ']
-							ifFalse:
-								[(self isPointerAlien: oop)
-									ifTrue: [' pointer @ ']
-									ifFalse: [' direct @ ']]).
-			 ^self printHex: (self startOfAlienData: oop) asUnsignedInteger; cr].
-		 (objectMemory isWordsNonImm: oop) ifTrue:
+		[(objectMemory isWordsNonImm: oop) ifTrue:
 			[lastIndex := 64 min: ((objectMemory numBytesOf: oop) / objectMemory wordSize).
 			 lastIndex > 0 ifTrue:
 				[1 to: lastIndex do:
@@ -12976,49 +12634,6 @@ StackInterpreter >> pushBool: trueOrFalse [
 ]
 
 { #category : #'stack bytecodes' }
-StackInterpreter >> pushClosureCopyCopiedValuesBytecode [
-	"The compiler has pushed the values to be copied, if any.  Find numArgs and numCopied in the byte following.
-	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
-	 Set numArgs as specified, and set startpc to the pc following the block size and jump over that code."
-	| numArgsNumCopied numArgs numCopied blockSize |
-	numArgsNumCopied := self fetchByte.
-	numArgs := numArgsNumCopied bitAnd: 16rF.
-	numCopied := numArgsNumCopied bitShift: -4.
-	"Split blockSize := (self fetchByte * 256) + self fetchByte. into two because evaluation order in C is undefined."
-	blockSize := self fetchByte << 8.
-	blockSize := blockSize + self fetchByte.
-	self pushClosureNumArgs: numArgs copiedValues: numCopied blockSize: blockSize
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> pushClosureNumArgs: numArgs copiedValues: numCopied blockSize: blockSize [
-	"The compiler has pushed the values to be copied, if any.
-	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
-	 Set numArgs as specified, and set startpc to the pc following the block size and jump over that code."
-	<inline: true>
-	| newClosure context |
-	"No need to record the pushed copied values in the outerContext."
-	context := self ensureFrameIsMarried: localFP SP: localSP + (numCopied * objectMemory bytesPerOop).
-	newClosure := self
-					closureIn: context
-					numArgs: numArgs
-					instructionPointer: (self oopForPointer: localIP) + 2 - (method+objectMemory baseHeaderSize)
-					numCopiedValues: numCopied.
-	numCopied > 0 ifTrue:
-		[0 to: numCopied - 1 do:
-			[:i|
-			"Assume: have just allocated a new BlockClosure; it must be young.
-			 Thus, can use unchecked stores."
-			 objectMemory storePointerUnchecked: i + ClosureFirstCopiedValueIndex
-				ofObject: newClosure
-				withValue: (self internalStackValue: numCopied - i - 1)].
-		 self internalPop: numCopied].
-	localIP := localIP + blockSize.
-	self fetchNextBytecode.
-	self internalPush: newClosure
-]
-
-{ #category : #'stack bytecodes' }
 StackInterpreter >> pushConstantFalseBytecode [
 
 	self fetchNextBytecode.
@@ -13445,13 +13060,55 @@ StackInterpreter >> quinaryInlinePrimitive: primIndex [
 ]
 
 { #category : #'image save/restore' }
-StackInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: imageOffset [
+StackInterpreter >> readHeaderFrom: f startingAt: headerStart [
+
+	<var: #f type: #sqImageFile>
+	<var: #headerStart type: #'squeakFileOffsetType'>
+	<var: #header type: #'SpurImageHeaderStruct'>
+	<returnTypeC: #'SpurImageHeaderStruct'>
+
+	| header |
+	
+	self simulationOnly: [ header := SpurImageHeaderStruct new].
+
+	header swapBytes: (self checkImageVersionFrom: f).
+
+	header headerSize: (self getWord32FromFile: f swap: header swapBytes).
+	header dataSize: (self getLongFromFile: f swap: header swapBytes).
+	header oldBaseAddr: (self getLongFromFile: f swap: header swapBytes).
+	header initialSpecialObjectsOop: (self getLongFromFile: f swap: header swapBytes).
+	
+	header hdrLastHash: (self getLongFromFile: f swap: header swapBytes).	
+	
+	"savedWindowSize :=" self getLongFromFile: f swap: header swapBytes.
+	header headerFlags: (self getLongFromFile: f swap: header swapBytes).
+
+	header extraVMMemory: (self getWord32FromFile: f swap: header swapBytes).
+	header hdrNumStackPages: (self getShortFromFile: f swap: header swapBytes).
+	"This slot holds the size of the native method zone in 1k units. (pad to word boundary)."
+	header hdrCogCodeSize: ((self getShortFromFile: f swap: header swapBytes) * 1024).
+	header hdrEdenBytes: (self getWord32FromFile: f swap: header swapBytes).
+
+	header hdrMaxExtSemTabSize: (self getShortFromFile: f swap: header swapBytes).
+	"pad to word boundary.  This slot can be used for anything else that will fit in 16 bits.
+	 Preserve it to be polite to other VMs."
+	"the2ndUnknownShort :=" self getShortFromFile: f swap: header swapBytes.
+	header firstSegSize: (self getLongFromFile: f swap: header swapBytes).
+
+	header freeOldSpaceInImage:(self getLongFromFile: f swap: header swapBytes).
+
+	"position file after the header"
+	self sqImageFile: f Seek: headerStart + header headerSize.
+
+	^ header
+]
+
+{ #category : #'image save/restore' }
+StackInterpreter >> readImageFromFile: f StartingAt: headerStart [
+
 	"Read an image from the given file stream, allocating an amount of memory to its object heap.
 	
-	 V3: desiredHeapSize is the total size of the heap.  Fail if the image has an unknown format or
-	 requires more than the specified amount of memory.
-
-	 Spur: desiredHeapSize is ignored; this routine will attempt to provide at least extraVMMemory's
+	 This routine will attempt to provide at least extraVMMemory's
 	 ammount of free space after the image is loaded, taking any free space in teh image into account.
 	 extraVMMemory is stored in the image header and is accessible as vmParameterAt: 23.  If
 	 extraVMMemory is 0, the value defaults to the default grow headroom.  Fail if the image has an
@@ -13464,33 +13121,26 @@ StackInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: i
 	 area could also be used to store an exec command on Unix systems, allowing one to launch
 	 Smalltalk by invoking the image name as a command."
 
-	| headerStart headerSize headerFlags dataSize oldBaseAddr swapBytes
-	  minimumMemory bytesRead bytesToShift heapSize firstSegSize
-	  hdrEdenBytes hdrMaxExtSemTabSize hdrNumStackPages allocationReserve |
 	<var: #f type: #sqImageFile>
+	<var: #headerStart type: #'squeakFileOffsetType'>
+
 	<var: #heapSize type: #usqInt>
-	<var: #dataSize type: #'size_t'>
 	<var: #minimumMemory type: #usqInt>
-	<var: #desiredHeapSize type: #usqInt>
 	<var: #allocationReserve type: #usqInt>
-	<var: #headerStart type: #squeakFileOffsetType>
-	<var: #imageOffset type: #squeakFileOffsetType>
+	<var: #header type: #'SpurImageHeaderStruct'>
 
-	metaclassNumSlots := 6.	"guess Metaclass instSize"
-	classNameIndex := 6.		"guess (Class instVarIndexFor: 'name' ifAbsent: []) - 1"
-	swapBytes := self checkImageVersionFrom: f startingAt: imageOffset.
-	headerStart := (self sqImageFilePosition: f) - 4.  "record header start position"
+	| header |
 
-	headerSize			:= self getWord32FromFile: f swap: swapBytes.
-	dataSize			:= self getLongFromFile: f swap: swapBytes.
-	oldBaseAddr		:= self getLongFromFile: f swap: swapBytes.
-	objectMemory specialObjectsOop: (self getLongFromFile: f swap: swapBytes).
-	objectMemory lastHash: (self getLongFromFile: f swap: swapBytes). "N.B.  not used."
-	savedWindowSize	:= self getLongFromFile: f swap: swapBytes.
-	headerFlags		:= self getLongFromFile: f swap: swapBytes.
-	self setImageHeaderFlagsFrom: headerFlags.
-	extraVMMemory	:= self getWord32FromFile: f swap: swapBytes.
-	hdrNumStackPages	:= self getShortFromFile: f swap: swapBytes.
+	metaclassNumSlots := 6. "guess Metaclass instSize"
+	classNameIndex := 6. "guess (Class instVarIndexFor: 'name' ifAbsent: []) - 1"
+
+	header := self readHeaderFrom: f startingAt: headerStart.
+
+	objectMemory specialObjectsOop: header initialSpecialObjectsOop.
+	objectMemory lastHash: header hdrLastHash.
+	self setImageHeaderFlagsFrom: header headerFlags.
+	extraVMMemory := header extraVMMemory.
+
 	"4 stack pages is small.  Should be able to run with as few as
 	 three. 4 should be comfortable but slow.  8 is a reasonable
 	 default.  Can be changed via vmParameterAt: 43 put: n.
@@ -13498,85 +13148,28 @@ StackInterpreter >> readImageFromFile: f HeapSize: desiredHeapSize StartingAt: i
 	 If desiredNumStackPages is already non-zero then it has been
 	 set as a preference.  Ignore (but preserve) the header's default."
 	numStackPages := desiredNumStackPages ~= 0
-						ifTrue: [desiredNumStackPages]
-						ifFalse: [hdrNumStackPages = 0
-									ifTrue: [self defaultNumStackPages]
-									ifFalse: [hdrNumStackPages]].
-	desiredNumStackPages := hdrNumStackPages.
-	"pad to word boundary.  This slot can be used for anything else that will fit in 16 bits.
-	 It is used for the cog code size in Cog.  Preserve it to be polite to other VMs."
-	theUnknownShort	:= self getShortFromFile: f swap: swapBytes.
-	hdrEdenBytes		:= self getWord32FromFile: f swap: swapBytes.
+		                 ifTrue: [ desiredNumStackPages ]
+		                 ifFalse: [ 
+			                 header hdrNumStackPages = 0
+				                 ifTrue: [ self defaultNumStackPages ]
+				                 ifFalse: [ header hdrNumStackPages ] ].
+	desiredNumStackPages := header hdrNumStackPages.
+
 	objectMemory edenBytes: (desiredEdenBytes ~= 0
-						ifTrue: [desiredEdenBytes]
-						ifFalse:
-							[hdrEdenBytes = 0
-									ifTrue: [objectMemory defaultEdenBytes]
-									ifFalse: [hdrEdenBytes]]).
-	desiredEdenBytes := hdrEdenBytes.
-	hdrMaxExtSemTabSize := self getShortFromFile: f swap: swapBytes.
-	hdrMaxExtSemTabSize ~= 0 ifTrue:
-		[self setMaxExtSemSizeTo: hdrMaxExtSemTabSize].
-	"pad to word boundary.  This slot can be used for anything else that will fit in 16 bits.
-	 Preserve it to be polite to other VMs."
-	the2ndUnknownShort	:= self getShortFromFile: f swap: swapBytes.
-	firstSegSize := self getLongFromFile: f swap: swapBytes.
-	objectMemory firstSegmentSize: firstSegSize.
-	"compare memory requirements with availability"
-	allocationReserve := self interpreterAllocationReserveBytes.
-	minimumMemory := dataSize
-						+ objectMemory newSpaceBytes
-						+ allocationReserve.
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[| freeOldSpaceInImage headroom |
-			 freeOldSpaceInImage := self getLongFromFile: f swap: swapBytes.
-			 headroom := objectMemory
-							initialHeadroom: extraVMMemory
-							givenFreeOldSpaceInImage: freeOldSpaceInImage.
-			 heapSize := objectMemory roundUpHeapSize:
-						   dataSize
-						+ headroom
-						+ objectMemory newSpaceBytes
-						+ (headroom > allocationReserve
-							ifTrue: [0]
-							ifFalse: [allocationReserve])]
-		ifFalse:
-			[heapSize :=  desiredHeapSize
-						+ objectMemory newSpaceBytes
-						+ (desiredHeapSize - dataSize > allocationReserve
-							ifTrue: [0]
-							ifFalse: [allocationReserve]).
-			 heapSize < minimumMemory ifTrue:
-				[self insufficientMemorySpecifiedError]].
+			 ifTrue: [ desiredEdenBytes ]
+			 ifFalse: [ 
+				 header hdrEdenBytes = 0
+					 ifTrue: [ objectMemory defaultEdenBytes ]
+					 ifFalse: [ header hdrEdenBytes ] ]).
+	desiredEdenBytes := header hdrEdenBytes.
 
-	"allocate a contiguous block of memory for the Squeak heap"
-	objectMemory memory: (self
-								allocateMemory: heapSize
-								minimum: minimumMemory
-								imageFile: f
-								headerSize: headerSize
-								desiredPosition: oldBaseAddr) asUnsignedInteger.
-	objectMemory memory ifNil: [self insufficientMemoryAvailableError].
+	header hdrMaxExtSemTabSize ~= 0 ifTrue: [ 
+		self setMaxExtSemSizeTo: header hdrMaxExtSemTabSize ].
+	objectMemory firstSegmentSize: header firstSegSize.
 
-	objectMemory
-		setHeapBase: objectMemory memory
-		memoryLimit: objectMemory memory + heapSize
-		endOfMemory: objectMemory memory + dataSize.
+	self allocateMemoryForImage: f withHeader: header.
 
-	"position file after the header"
-	self sqImageFile: f Seek: headerStart + headerSize.
-
-	"read in the image in bulk, then swap the bytes if necessary"
-	bytesRead := objectMemory readHeapFromImageFile: f dataBytes: dataSize.
-	bytesRead ~= dataSize ifTrue: [self unableToReadImageError].
-
-	self ensureImageFormatIsUpToDate: swapBytes.
-
-	"compute difference between old and new memory base addresses"
-	bytesToShift := objectMemory memoryBaseForImageRead - oldBaseAddr.
-	self initializeInterpreter: bytesToShift.  "adjusts all oops to new location"
-	^dataSize
+	^ header dataSize
 ]
 
 { #category : #'image save/restore' }
@@ -13868,96 +13461,6 @@ StackInterpreter >> retryPrimitiveOnFailure [
 	^retried
 ]
 
-{ #category : #'callback support' }
-StackInterpreter >> returnAs: returnTypeOop ThroughCallback: vmCallbackContext Context: callbackMethodContext [
-	"callbackMethodContext is an activation of invokeCallback:[stack:registers:jmpbuf:].
-	 Its sender is the VM's state prior to the callback.  Reestablish that state (via longjmp),
-	 and mark callbackMethodContext as dead."
-	<export: true>
-	<var: #vmCallbackContext type: #'VMCallbackContext *'>
-	| calloutMethodContext theFP thePage |
-	<var: #theFP type: #'char *'>
-	<var: #thePage type: #'StackPage *'>
-	self assert: primFailCode = 0.
-	self assert: (objectMemory isIntegerObject: returnTypeOop).
-	self assert: (objectMemory isImmediate: vmCallbackContext asInteger) not.
-	self assert: ((objectMemory addressCouldBeObj: callbackMethodContext)
-				and: [objectMemory isContext: callbackMethodContext]).
-	self assert: (debugCallbackPath := 0) = 0.
-	((objectMemory isIntegerObject: returnTypeOop)
-	 and: [self isLiveContext: callbackMethodContext]) ifFalse:
-		[self assert: (debugCallbackPath := 1) = 1.
-		 ^false].
-	calloutMethodContext := self externalInstVar: SenderIndex ofContext: callbackMethodContext.
-	(self isLiveContext: calloutMethodContext) ifFalse:
-		[self assert: (debugCallbackPath := 2) = 2.
-		 ^false].
-	self assert: (debugCallbackReturns := debugCallbackReturns + 1) > 0.
-	"self assert: debugCallbackReturns < 3802."
-	"We're about to leave this stack page; must save the current frame's instructionPointer."
-	self push: instructionPointer.
-	self externalWriteBackHeadFramePointers.
-	"Mark callbackMethodContext as dead; the common case is that it is the current frame.
-	 We go the extra mile for the debugger."
-	(self isSingleContext: callbackMethodContext)
-		ifTrue:
-			[self assert: (debugCallbackPath := debugCallbackPath bitOr: 4) > 0.
-		 	 self markContextAsDead: callbackMethodContext]
-		ifFalse:
-			[self assert: (debugCallbackPath := debugCallbackPath bitOr: 8) > 0.
-		 	 theFP := self frameOfMarriedContext: callbackMethodContext.
-			 self assert: (self frameReceiver: theFP) = (objectMemory splObj: ClassAlien).
-			 framePointer = theFP "common case"
-				ifTrue:
-					[self assert: (debugCallbackPath := debugCallbackPath bitOr: 16) > 0.
-		 			 (self isBaseFrame: theFP) ifFalse: "calloutMethodContext is immediately below on the same page.  Make it current."
-						[self assert: (debugCallbackPath := debugCallbackPath bitOr: 32) > 0.
-		 				 instructionPointer := (self frameCallerSavedIP: theFP) asUnsignedInteger.
-						 stackPointer := theFP + (self frameStackedReceiverOffset: theFP) + objectMemory wordSize.
-						 framePointer := self frameCallerFP: theFP.
-						 self setMethod: (self frameMethodObject: framePointer).
-						 self restoreCStackStateForCallbackContext: vmCallbackContext.
-						 self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer.
-						 "N.B. siglongjmp is defines as _longjmp on non-win32 platforms.
-						  This matches the use of _setjmp in ia32abicc.c."
-						 self siglong: vmCallbackContext trampoline jmp: (self integerValueOf: returnTypeOop).
-						 ^true].
-					 stackPages freeStackPage: stackPage]
-				ifFalse:
-					[self assert: (debugCallbackPath := debugCallbackPath bitOr: 64) > 0.
-		 			 self externalDivorceFrame: theFP andContext: callbackMethodContext.
-					 self markContextAsDead: callbackMethodContext]].
-	"Make the calloutMethodContext the active frame.  The case where calloutMethodContext
-	 is immediately below callbackMethodContext on the same page is handled above."
-	(self isStillMarriedContext: calloutMethodContext)
-		ifTrue:
-			[self assert: (debugCallbackPath := debugCallbackPath bitOr: 128) > 0.
-		 	 theFP := self frameOfMarriedContext: calloutMethodContext.
-			 thePage := stackPages stackPageFor: theFP.
-			 "findSPOf:on: points to the word beneath the instructionPointer, but
-			  there is no instructionPointer on the top frame of the current page."
-			 self assert: thePage ~= stackPage.
-			 stackPointer := thePage headFP = theFP
-								ifTrue: [thePage headSP]
-								ifFalse: [(self findSPOf: theFP on: thePage) - objectMemory wordSize].
-			 framePointer := theFP.
-			 self assert: stackPointer < framePointer]
-		ifFalse:
-			[self assert: (debugCallbackPath := debugCallbackPath bitOr: 256) > 0.
-		 	 thePage := self makeBaseFrameFor: calloutMethodContext.
-			 self setStackPointersFromPage: thePage].
-	instructionPointer := self popStack.
-	self setMethod: (objectMemory fetchPointer: MethodIndex ofObject: calloutMethodContext).
-	self setStackPageAndLimit: thePage.
-	self restoreCStackStateForCallbackContext: vmCallbackContext.
-	primitiveFunctionPointer := vmCallbackContext savedPrimFunctionPointer.
-	"N.B. siglongjmp is defined as _longjmp on non-win32 platforms.
-	  This matches the use of _setjmp in ia32abicc.c."
-	self siglong: vmCallbackContext trampoline jmp: (self integerValueOf: returnTypeOop).
-	"NOTREACHED"
-	^true
-]
-
 { #category : #'return bytecodes' }
 StackInterpreter >> returnFalse [
 	localReturnValue := objectMemory falseObject.
@@ -14012,29 +13515,6 @@ StackInterpreter >> reverseBytesInImage [
 	"Second, return the bytes of bytes-type objects to their
 	 orginal order, and perform any other format conversions."
 	self updateObjectsPostByteSwap
-]
-
-{ #category : #'I/O primitive support' }
-StackInterpreter >> reverseDisplayFrom: startIndex to: endIndex [ 
-	"Reverse the given range of Display pixels, rounded to whole word boundary.
-	Used to give feedback during VM activities such as garbage collection when debugging.
-	 It is assumed that the given word range falls entirely within the first line of the Display."
-	
-	| wordStartIndex wordEndIndex primFailCodeValue |
-	self postGCUpdateDisplayBits ifFalse:
-		[^self].
-	(displayBits = 0 or: [(objectMemory isImmediate: displayBits asInteger) or: [displayDepth <= 0]]) ifTrue: [^self].
-	wordStartIndex := (startIndex max: 0) * displayDepth // 32.
-	wordEndIndex := (endIndex min: displayWidth) * displayDepth // 32.
-	displayBits asInteger + (wordStartIndex * 4) to: displayBits asInteger + (wordEndIndex * 4) by: 4 do:
-		[:ptr | | reversed |
-		reversed := (objectMemory long32At: ptr) bitXor: 16rFFFFFFFF.
-		objectMemory long32At: ptr put: reversed].
-	primFailCodeValue := primFailCode.
-	self initPrimCall.
-	self updateDisplayLeft: 0 Top: 0 Right: displayWidth Bottom: 1.
-	self ioForceDisplayUpdate.
-	primFailCode := primFailCodeValue
 ]
 
 { #category : #'method lookup cache' }
@@ -14160,21 +13640,6 @@ StackInterpreter >> schedulerPointer [
 	^ objectMemory fetchPointer: ValueIndex ofObject: (objectMemory splObj: SchedulerAssociation)
 ]
 
-{ #category : #'send bytecodes' }
-StackInterpreter >> secondExtendedSendBytecode [
-	"This replaces the Blue Book double-extended super-send [134],
-	which is subsumed by the new double-extended do-anything [132].
-	It offers a 2-byte send of 0-3 args for up to 63 literals, for which 
-	the Blue Book opcode set requires a 3-byte instruction."
-
-	| descriptor |
-	descriptor := self fetchByte.
-	messageSelector := self literal: (descriptor bitAnd: 16r3F).
-	argumentCount := descriptor >> 6.
-	self normalSend.
-
-]
-
 { #category : #'debug printing' }
 StackInterpreter >> selectorOfContext: aContext [
 	(objectMemory isContext: aContext) ifFalse:
@@ -14207,84 +13672,6 @@ StackInterpreter >> sendBreakpoint: selector receiver: rcvr [
 	self sendBreak: (objectMemory firstFixedFieldOfMaybeImmediate: selector)
 		point: (objectMemory lengthOfMaybeImmediate: selector)
 		receiver: rcvr
-]
-
-{ #category : #'callback support' }
-StackInterpreter >> sendInvokeCallback: thunkPtr Stack: stackPtr Registers: regsPtr Jmpbuf: jmpBufPtr [
-	"Send the 4 argument callback message invokeCallback:stack:registers:jmpbuf:
-	 to Alien class with the supplied args.  The arguments are raw C addresses
-	 and are converted to integer objects on the way."
-	<export: true>
-	| classTag |
-	classTag := self fetchClassTagOfNonImm: (self splObj: ClassAlien).
-	messageSelector := self splObj: SelectorInvokeCallback.
-	argumentCount := 4.
-	(self lookupInMethodCacheSel: messageSelector classTag: classTag) ifFalse:
-	 	[(self lookupOrdinaryNoMNUEtcInClass: (objectMemory classForClassTag: classTag)) ~= 0 ifTrue:
-			[^false]].
-	((self argumentCountOf: newMethod) = 4
-	and: [primitiveFunctionPointer = 0]) ifFalse:
-		[^false].
-	self push: (self splObj: ClassAlien). "receiver"
-	self push: (self positiveMachineIntegerFor: thunkPtr).
-	self push: (self positiveMachineIntegerFor: stackPtr).
-	self push: (self positiveMachineIntegerFor: regsPtr).
-	self push: (self positiveMachineIntegerFor: jmpBufPtr).
-	self ifAppropriateCompileToNativeCode: newMethod selector: messageSelector.
-	self justActivateNewMethod: false. "either interpreted or machine code"
-	(self isMachineCodeFrame: framePointer) ifFalse:
-		[self maybeFlagMethodAsInterpreted: newMethod].
-	self checkForStackOverflow.
-	self enterSmalltalkExecutiveFromCallback.
-	"not reached"
-	^true
-]
-
-{ #category : #'callback support' }
-StackInterpreter >> sendInvokeCallbackContext: vmCallbackContext [
-	"Send the calllback message to Alien class with the supplied arg(s).  Use either the 1 arg
-	 invokeCallbackContext: or the 4 arg invokeCallback:stack:registers:jmpbuf: message,
-	 depending on what selector is installed in the specialObjectsArray. Note that if invoking the
-	 legacy invokeCallback:stack:registers:jmpbuf: we pass the vmCallbackContext as the jmpbuf
-	 argument (see reestablishContextPriorToCallback:). The arguments are raw C addresses and
-	 are converted to integer objects on the way. sendInvokeCallbackContext: &
-	 returnAs:ThroughCallback:Context: along with ownVM: and disownVM: conspire to save and
-	 restore newMethod, argumentCount and primitiveFunctionPointer around a callback.
-	 The VM depends on argumentCount being correct to cut-back the correct number of
-	 arguments on primitive return.  If a primitive that invokes a callback fails after invoking a
-	 callback (a bad idea, but s**t happens during development) then newMethod is required to
-	 activate the right faling method, and Spur expects primitiveFunctionPointer to be valid, so
-	 asserts will fail misleadingly if not."
-	<export: true>
-	<var: #vmCallbackContext type: #'VMCallbackContext *'>
-	| classTag |
-	vmCallbackContext savedPrimFunctionPointer: primitiveFunctionPointer.
-	classTag := self fetchClassTagOfNonImm: (objectMemory splObj: ClassAlien).
-	messageSelector := self splObj: SelectorInvokeCallback.
-	(self lookupInMethodCacheSel: messageSelector classTag: classTag) ifFalse:
-	 	[(self lookupOrdinaryNoMNUEtcInClass: (objectMemory classForClassTag: classTag)) ~= 0 ifTrue:
-			[^false]].
-	primitiveFunctionPointer ~= 0 ifTrue:
-		[primitiveFunctionPointer := vmCallbackContext savedPrimFunctionPointer.
-		 ^false].
-	self assert: (debugCallbackInvokes := debugCallbackInvokes + 1) > 0.
-	"self assert: debugCallbackInvokes < 3802."
-	self saveCStackStateForCallbackContext: vmCallbackContext.
-	self push: (objectMemory splObj: ClassAlien). "receiver"
-	(self argumentCountOf: newMethod) = 4 ifTrue:
-		[self push: (self positiveMachineIntegerFor: vmCallbackContext thunkp asUnsignedInteger).
-		 self push: (self positiveMachineIntegerFor: vmCallbackContext stackp asUnsignedInteger).
-		 self push: (self positiveMachineIntegerFor: vmCallbackContext intregargsp asUnsignedInteger)].
-	self push: (self positiveMachineIntegerFor: vmCallbackContext asUnsignedInteger).
-	self ifAppropriateCompileToNativeCode: newMethod selector: messageSelector.
-	self justActivateNewMethod: false. "either interpreted or machine code"
-	(self isMachineCodeFrame: framePointer) ifFalse:
-		[self maybeFlagMethodAsInterpreted: newMethod].
-	self checkForStackOverflow.
-	self assert: (self frameReceiver: framePointer) = (objectMemory splObj: ClassAlien).
-	self enterSmalltalkExecutiveFromCallback.
-	"not reached"
-	^true
 ]
 
 { #category : #'send bytecodes' }
@@ -14452,11 +13839,6 @@ StackInterpreter >> setInterruptCheckChain: aFunction [
 	prevFunction := interruptCheckChain.
 	interruptCheckChain := aFunction.
 	^prevFunction
-]
-
-{ #category : #'plugin primitive support' }
-StackInterpreter >> setInterruptKeycode: value [
-	interruptKeycode := value
 ]
 
 { #category : #'plugin primitive support' }
@@ -14857,17 +14239,8 @@ StackInterpreter >> shortUnconditionalJump [
 ]
 
 { #category : #'I/O primitive support' }
-StackInterpreter >> show: surfaceHandle Sur: left fa: top ce: width Fn: height [
-	"Simulate the showSurfaceFn function call as a failure to load the surface."
-	<doNotGenerate>
-	^0
-]
-
-{ #category : #'I/O primitive support' }
 StackInterpreter >> showDisplayBits: aForm Left: l Top: t Right: r Bottom: b [
 	"Repaint the portion of the Smalltalk screen bounded by the affected rectangle. Used to synchronize the screen after a Bitblt to the Smalltalk Display object."
-	(deferDisplayUpdates
-	 or: [aForm ~= (objectMemory splObj: TheDisplay)]) ifTrue: [^nil].
 	self updateDisplayLeft: l Top: t Right: r Bottom: b
 ]
 
@@ -14990,29 +14363,6 @@ StackInterpreter >> sigset: aJumpBuf jmp: sigSaveMask [
 	<doNotGenerate>
 	reenterInterpreter := ReenterInterpreter new returnValue: 0; yourself.
 	^0
-]
-
-{ #category : #'send bytecodes' }
-StackInterpreter >> singleExtendedSendBytecode [
-	"Can use any of the first 32 literals for the selector and pass up to 7 arguments."
-
-	| descriptor |
-	descriptor := self fetchByte.
-	messageSelector := self literal: (descriptor bitAnd: 16r1F).
-	argumentCount := descriptor >> 5.
-	self normalSend.
-]
-
-{ #category : #'send bytecodes' }
-StackInterpreter >> singleExtendedSuperBytecode [
-	"Can use any of the first 32 literals for the selector and pass up to 7 arguments."
-
-	| descriptor |
-	descriptor := self fetchByte.
-	messageSelector := self literal: (descriptor bitAnd: 16r1F).
-	argumentCount := descriptor >> 5.
-	self superclassSend.
-
 ]
 
 { #category : #'sista bytecodes' }
@@ -15180,8 +14530,7 @@ StackInterpreter >> slowPrimitiveResponse [
 { #category : #'image save/restore' }
 StackInterpreter >> snapshot: embedded [ 
 	"update state of active context"
-	| activeContext activeProc rcvr setMacType stackIndex |
-	<var: #setMacType type: #'void *'>
+	| activeContext activeProc rcvr stackIndex |
 
 	"For now the stack munging below doesn't deal with more than one argument.
 	 It can, and should."
@@ -15200,10 +14549,14 @@ StackInterpreter >> snapshot: embedded [
 		withValue: activeContext.
 
 	tempOop := activeContext.
+
+	self logDebug: 'Garbage Collect for Snapshot'.
+
 	objectMemory garbageCollectForSnapshot.
 	"Nothing moves from here on so it is safe to grab the activeContext again."
 	activeContext := tempOop.
 	tempOop := 0.
+
 
 	self successful ifTrue:
 		["Without contexts or stacks simulate
@@ -15216,13 +14569,8 @@ StackInterpreter >> snapshot: embedded [
 			storePointerUnchecked: stackIndex + CtxtTempFrameStart - 1
 			ofObject: activeContext
 			withValue: objectMemory trueObject.
-		"now attempt to write the snapshot file"
+		"now attempt to write the snapshot file"		
 		self writeImageFileIO.
-		(self successful and: [embedded not]) ifTrue:
-			["set Mac file type and creator; this is a noop on other platforms"
-			setMacType := self ioLoadFunction: 'setMacFileTypeAndCreator' From: 'FilePlugin'.
-			setMacType = 0 ifFalse:
-				[self cCode: '((sqInt (*)(char *, char *, char *))setMacType)(imageName, "STim", "FAST")']].
 		"Without contexts or stacks simulate
 			self pop: 1"
 		objectMemory
@@ -15850,7 +15198,7 @@ StackInterpreter >> superclassSend [
 	"Assume: messageSelector and argumentCount have been set, and that
 	 the receiver and arguments have been pushed onto the stack,"
 	"Note: This method is inlined into the interpreter dispatch loop."
-	<sharedCodeInCase: #singleExtendedSuperBytecode>
+	"<sharedCodeInCase: #extSendSuperBytecode>"
 	| superclass |
 	superclass := self superclassOf: (self methodClassOf: method).
 	"classTagForClass: uses ensureBehaviorHash:"
@@ -15963,6 +15311,12 @@ StackInterpreter >> temporaryLocation: offset in: theFP numArgs: numArgs [
 StackInterpreter >> thisClassIndex [
 	<doNotGenerate>
 	^thisClassIndex
+]
+
+{ #category : #simulation }
+StackInterpreter >> time: aString [ 
+	<doNotGenerate>
+	^ 0
 ]
 
 { #category : #'object memory support' }
@@ -16751,17 +16105,12 @@ StackInterpreter >> writeImageFileIO [
 	<var: #imageName declareC: 'extern char imageName[]'>
 
 	self cCode: [] inSmalltalk: [imageName := 'sooth compiler'. ^self writeImageFileIOSimulation].
-
-	"If the security plugin can be loaded, use it to check for write permission.
-	 If not, assume it's ok"
-	sCWIfn := self ioLoadFunction: 'secCanWriteImage' From: 'SecurityPlugin'.
-	sCWIfn ~= 0 ifTrue:
-		[okToWrite := self cCode: '((sqInt (*)(void))sCWIfn)()'.
-		 okToWrite ifFalse:[^self primitiveFail]].
 	
 	"local constants"
 	headerStart := 0.  
 	headerSize := objectMemory wordSize = 4 ifTrue: [64] ifFalse: [128].  "header size in bytes; do not change!"
+
+	self logDebug: 'Writing snapshot file %s' _: imageName.
 
 	f := self sqImageFile: imageName Open: 'wb'.
 	f = nil ifTrue: "could not open the image file for writing"
@@ -16816,7 +16165,9 @@ StackInterpreter >> writeImageFileIO [
 								File: imageBytes
 								Write: f].
 	self success: bytesWritten = imageBytes.
-	self sqImageFileClose: f
+	self sqImageFileClose: f.
+	
+	self logDebug: 'Snapshot file %s done' _: imageName.
 ]
 
 { #category : #'image save/restore' }

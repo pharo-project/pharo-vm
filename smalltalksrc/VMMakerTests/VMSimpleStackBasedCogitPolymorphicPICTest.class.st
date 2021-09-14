@@ -141,7 +141,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> setUp [
 	1 to: 6 "Maximum polymorphic  cases" do: [ :index | | cogMethod compiledMethod |
 		picTypeTags at: index - 1 put: receiverTag + index.
 
-		compiledMethod := methodBuilder newMethod literals: { selector }; buildMethod.
+		compiledMethod := methodBuilder newMethod literals: { selector }; build.
 		cogMethod := self generateCogMethod: [ cogit RetN: 0 ] selector: selector.
 		cogit coInterpreter rawHeaderOf: compiledMethod put: cogMethod asInteger.
 		

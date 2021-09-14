@@ -11,11 +11,45 @@ cmake_policy(SET CMP0053 NEW)
 
 include(macros.cmake)
 
-set(VERSION_MAJOR 9)
-set(VERSION_MINOR 0)
-set(VERSION_PATCH 0)
+message(STATUS "CMAKE_GENERATOR=${CMAKE_GENERATOR}")
 
-message("CMAKE_GENERATOR=${CMAKE_GENERATOR}")
+# Build options
+option(FEATURE_FFI										"Enable FFI"																 ON)
+option(FEATURE_THREADED_FFI								"Enable Threaded (running in another thread) FFI"							 ON)
+option(FEATURE_NETWORK									"Enable network and sockets"												 ON)
+option(FEATURE_LIB_SDL2									"Build SDL2 support"														 ON)
+option(FEATURE_LIB_CAIRO								"Build Cairo support"														 ON)
+option(FEATURE_LIB_FREETYPE2							"Build freetype2 support"													 ON)
+option(FEATURE_LIB_GIT2									"Build LibGit2 support"														 ON)
+option(FEATURE_LIB_PTHREADW32							"Windows only, link to win32 version of pthread"							OFF)
+option(GENERATE_SOURCES									"If it generates the sources"												 ON)
+option(ALWAYS_INTERACTIVE								"Be interactive by default"													OFF)
+option(BUILD_BUNDLE										"Builds a bundle with all dependencies"										 ON)
+option(FEATURE_COMPILE_GNUISATION						"Use gcc gnu extensions to compile the VM"									 ON)
+option(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES		"Prefer downloading dependencies"											OFF)
+option(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS			"Use inline memory accessors instead of macros"								 ON)
+option(PHARO_VM_IN_WORKER_THREAD						"Have support for pharo running in a different thread that the main one"	 ON)
+option(BUILD_IS_RELEASE									"Is this a release version?"												OFF)
+
+set(APPNAME						"Pharo"         CACHE STRING                 "VM Application name")
+set(FLAVOUR						"CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
+set(PHARO_LIBRARY_PATH			"@executable_path/Plugins" CACHE STRING      "The RPATH to use in the build")
+set(ICEBERG_DEFAULT_REMOTE		"scpUrl"        CACHE STRING                 "If Iceberg uses HTTPS (httpsUrl) or tries first with SSH (scpUrl)")
+
+# Extract VCS information
+include(cmake/versionExtraction.cmake)
+extractVCSInformation(GIT_COMMIT_HASH GIT_DESCRIBE GIT_COMMIT_DATE)
+
+set(VERSION_MAJOR 10)
+set(VERSION_MINOR 0)
+
+if(BUILD_IS_RELEASE)
+	set(VERSION_PATCH "0")
+else()
+	set(VERSION_PATCH "0-${GIT_COMMIT_HASH}")
+endif(BUILD_IS_RELEASE)
+
+message(STATUS "Building version ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
 # Visual Studio stores user build settings in file 'CmakeSettings.json'.  We would like to manage that via a project template.
 # To push out new template, update 'template_uuid' field in 'template_file' with value from https://www.uuidgenerator.net/
@@ -34,27 +68,22 @@ if(EXISTS "${user_file}")
     set(template_uuid ${CMAKE_MATCH_1})
 
     if("${user_uuid}" STREQUAL "${template_uuid}")
-        message("Project build settings unchanged (${template_file})")
+        message(STATUS "Project build settings unchanged (${template_file})")
     else()
-        message("NOTICE!! Project template build settings have changed.")
-        message("NOTICE!! Back up your user build settings (${user_file})")
-        message("NOTICE!! and replace whole file with project template build settings (${template_file}).")
-        message("NOTICE!! Then restore parts of your user settings as you require.")
+        message(STATUS "NOTICE!! Project template build settings have changed.")
+        message(STATUS "NOTICE!! Back up your user build settings (${user_file})")
+        message(STATUS "NOTICE!! and replace whole file with project template build settings (${template_file}).")
+        message(STATUS "NOTICE!! Then restore parts of your user settings as you require.")
         message(FATAL_ERROR "Read output NOTICES!!")
     endif()
 else()
-    message("No user build settings.")
+    message(STATUS "No user build settings.")
 endif()
 
 # BUILD VM
-set(APPNAME Pharo CACHE STRING "VM Application name")
 
 # Configure CMake to load our modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
-# Extract VCS information
-include(cmake/versionExtraction.cmake)
-extractVCSInformation(GIT_COMMIT_HASH GIT_DESCRIBE GIT_COMMIT_DATE)
 
 #Variable used to set the VM date
 set(BUILT_FROM "${GIT_DESCRIBE} - Commit: ${GIT_COMMIT_HASH} - Date: ${GIT_COMMIT_DATE}")
@@ -137,25 +166,6 @@ if(MSVC AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
         list(APPEND SUPPORT_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.obj)
     endif()
 endif()
-
-set(FLAVOUR CoInterpreter CACHE STRING "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
-set(GENERATE_SOURCES TRUE CACHE BOOL "If it generates the sources")
-set(ALWAYS_INTERACTIVE FALSE CACHE BOOL "If this VM will always add interactive or not. If it is set, the headless parameter is not by default true")
-set(FEATURE_FFI TRUE CACHE BOOL "Configure and compile support for FFI in the VM")
-set(FEATURE_THREADED_FFI TRUE CACHE BOOL "Configure and compile support for Threaded (running in another thread) FFI in the VM")
-set(FEATURE_NETWORK TRUE CACHE BOOL "Configure and compile support for network and sockets in the VM")
-set(FEATURE_COMPILE_GNUISATION TRUE CACHE BOOL "Use gcc gnu extensions to compile the VM")
-set(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS TRUE CACHE BOOL "Use inline memory accessors instead of macros")
-
-set(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES FALSE CACHE BOOL "Prefer downloading dependencies")
-set(BUILD_BUNDLE TRUE CACHE BOOL "Builds a bundle with all dependencies (locally built or downloaded) copied next to the VM")
-set(FEATURE_LIB_SDL2 TRUE CACHE BOOL "Build SDL2 support")
-set(FEATURE_LIB_CAIRO TRUE CACHE BOOL "Build Cairo support")
-set(FEATURE_LIB_FREETYPE2 TRUE CACHE BOOL "Build Cairo support")
-set(FEATURE_LIB_GIT2 TRUE CACHE BOOL "Build LibGit2 support")
-
-set(PHARO_LIBRARY_PATH "@executable_path/Plugins" CACHE STRING "The RPATH to use in the build")
-set(ICEBERG_DEFAULT_REMOTE "scpUrl" CACHE STRING "If Iceberg uses HTTPS (httpsUrl) or tries first with SSH (scpUrl)")
 
 # If we are generating sources, set the source dir as the generation source dir.
 # Otherwise set it to by default to the current source dir, parametrizable
@@ -271,8 +281,8 @@ endif()
 
 set(OPTIMIZATION_FLAGS "")
 
-set(CMAKE_C_FLAGS "-g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
-set(CMAKE_CXX_FLAGS "-g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
 
 add_compile_definitions(IMMUTABILITY=1)
 add_compile_definitions(COGMTVM=0)

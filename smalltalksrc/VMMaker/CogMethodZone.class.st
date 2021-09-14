@@ -200,7 +200,7 @@ CogMethodZone >> clearSavedPICUsageCount: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	<option: #SistaVM>
 	cogMethod cmType = CMClosedPIC ifTrue:
-		[cogMethod blockEntryOffset: 0]
+		[cogMethod picUsage: 0]
 ]
 
 { #category : #printing }
@@ -824,10 +824,10 @@ CogMethodZone >> restorePICUsageCount: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	<option: #SistaVM>
 	(cogMethod cmType = CMClosedPIC
-	 and: [cogMethod blockEntryOffset ~= 0]) ifTrue:
+	 and: [cogMethod picUsage ~= 0]) ifTrue:
 		[cogMethod
-			cmUsageCount: cogMethod blockEntryOffset;
-			blockEntryOffset: 0]
+			cmUsageCount: cogMethod picUsage;
+			picUsage: 0]
 ]
 
 { #category : #accessing }
@@ -855,7 +855,7 @@ CogMethodZone >> savePICUsageCount: cogMethod [
 	<option: #SistaVM>
 	cogMethod cmType = CMClosedPIC ifTrue:
 		[cogMethod
-			blockEntryOffset: cogMethod cmUsageCount;
+			picUsage: cogMethod cmUsageCount;
 			cmUsageCount: 0]
 ]
 

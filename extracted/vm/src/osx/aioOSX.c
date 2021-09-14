@@ -173,18 +173,43 @@ aio_handle_events(struct kevent* changes, int numberOfChanges, long microSeconds
 		}else{
 			//If the event is not of the signal pipe I process them
 			if(incomingEvents[index].filter != EVFILT_USER){
+				
 				//If not is a regular registered FD
 				AioOSXDescriptor *descriptor = (AioOSXDescriptor*)incomingEvents[index].udata;
+				
+				logTrace("Event %d %hd %hd %hd %hd", incomingEvents[index].ident, incomingEvents[index].filter, EVFILT_EXCEPT, EVFILT_READ, EVFILT_WRITE );
+				
+				// Check if we have an exception
+				/*
+					OUT OF BAND data comes as an error. 
+					We ignore it
+				*/
+				
+				
+				if(incomingEvents[index].filter == EVFILT_EXCEPT 
+					&& ((incomingEvents[index].flags & EV_ERROR) == EV_ERROR)
+					&& ((incomingEvents[index].flags & NOTE_OOB) != NOTE_OOB)){
+					logTrace("Event Flags: %x Data: %d %s %x %x %x", incomingEvents[index].flags,  incomingEvents[index].data, strerror(incomingEvents[index].flags),EV_EOF, EV_ERROR, NOTE_OOB);
 
-				if((incomingEvents[index].filter & EVFILT_READ) == EVFILT_READ){
-					if(descriptor->readHandlerFn)
-						descriptor->readHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_R);
+					if(descriptor->readHandlerFn){
+						descriptor->readHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_R | AIO_X);
+					}else{
+						if(descriptor->writeHandlerFn)
+							descriptor->writeHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_W | AIO_X);
+					}
+				}else{
+					if(incomingEvents[index].filter == EVFILT_READ){
+						if(descriptor->readHandlerFn)
+							descriptor->readHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_R);
+					}
+
+					if(incomingEvents[index].filter == EVFILT_WRITE){
+						if(descriptor->writeHandlerFn)
+							descriptor->writeHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_W);
+					}
+					
 				}
 
-				if((incomingEvents[index].filter & EVFILT_WRITE) == EVFILT_WRITE){
-					if(descriptor->writeHandlerFn)
-						descriptor->writeHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_W);
-				}
 			}
 		}
 	}
@@ -302,13 +327,19 @@ aioSuspend(int fd, int mask){
 	int cant = 0;
 	int nextIndex = 0;
 
-	struct kevent newEvents[2];
+	struct kevent newEvents[3];
 
 	AioOSXDescriptor *descriptor = AioOSXDescriptor_find(fd);
 
 	if(descriptor == NULL){
 		logWarn("Suspending a FD that is not present: %d - IGNORING", fd);
 		return;
+	}
+
+	if((mask & AIO_X) == AIO_X){
+		EV_SET(&newEvents[nextIndex], fd, EVFILT_EXCEPT, EV_DELETE, 0, 0, descriptor);
+		nextIndex++;
+		cant++;
 	}
 
 	if((mask & AIO_R) == AIO_R){
@@ -328,7 +359,7 @@ aioSuspend(int fd, int mask){
 		nextIndex++;
 		cant++;
 	}
-
+	
 	aio_handle_events(newEvents, cant, 0);
 }
 
@@ -355,7 +386,7 @@ aioDisable(int fd){
 
 EXPORT(void)
 aioHandle(int fd, aioHandler handlerFn, int mask){
-	struct kevent newEvents[2];
+	struct kevent newEvents[3];
 
 	AioOSXDescriptor *descriptor = AioOSXDescriptor_find(fd);
 
@@ -366,14 +397,17 @@ aioHandle(int fd, aioHandler handlerFn, int mask){
 
 	int hasRead = (mask & AIO_R) == AIO_R;
 	int hasWrite = (mask & AIO_W) == AIO_W;
+	int hasExceptions = (mask & AIO_X) == AIO_X;
+
+	EV_SET(&newEvents[0], fd, EVFILT_EXCEPT, hasExceptions?(EV_ADD | EV_ONESHOT):EV_DELETE, 0, 0, descriptor);
 
 	descriptor->readHandlerFn = hasRead ? handlerFn : NULL;
-	EV_SET(&newEvents[0], fd, EVFILT_READ, hasRead?(EV_ADD | EV_ONESHOT):EV_DELETE, 0, 0, descriptor);
+	EV_SET(&newEvents[1], fd, EVFILT_READ, hasRead?(EV_ADD | EV_ONESHOT):EV_DELETE, 0, 0, descriptor);
 
 	descriptor->writeHandlerFn = hasWrite ? handlerFn : NULL;
-	EV_SET(&newEvents[1], fd, EVFILT_WRITE, hasWrite?(EV_ADD | EV_ONESHOT):EV_DELETE, 0, 0, descriptor);
+	EV_SET(&newEvents[2], fd, EVFILT_WRITE, hasWrite?(EV_ADD | EV_ONESHOT):EV_DELETE, 0, 0, descriptor);
 
-	aio_handle_events(newEvents, 2, 0);
+	aio_handle_events(newEvents, 3, 0);
 }
 
 AioOSXDescriptor* AioOSXDescriptor_find(int fd){

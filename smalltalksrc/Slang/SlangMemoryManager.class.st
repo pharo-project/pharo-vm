@@ -11,29 +11,35 @@ Class {
 
 { #category : #allocating }
 SlangMemoryManager >> allocate: desiredSize [
-	
+
 	| allocatedAddress newMemoryRegion allocatedSize newMemory |
-	
 	"Allocate chunks multiple of 4KB, as they are required by the machine code simulator"
 	allocatedSize := (desiredSize / 4096) ceiling * 4096.
-	
+
 	allocatedAddress := nextAvailableAddress.
 	nextAvailableAddress := nextAvailableAddress + allocatedSize.
-	
+
 	"Warrantee that memory regions do not move, for simulation purposes with the FFI"
 	newMemory := ByteArray new: allocatedSize.
 	newMemory pinInMemory.
 	newMemoryRegion := SlangMemoryRegion new
-		start: allocatedAddress;
-		memory: newMemory;
-		originallyRequestedMemory: desiredSize;
-		yourself.
-	
+		                   start: allocatedAddress;
+		                   memory: newMemory;
+		                   originallyRequestedMemory: desiredSize;
+		                   yourself.
+
 	"Index regions by the high bits of the address"
-	allocatedAddress to: allocatedAddress + desiredSize by: 4096 do: [ :pageAddress |
-		memoryMap at: pageAddress >> 12 put: newMemoryRegion.
-	].
+	self
+		registerNewRegion: newMemoryRegion
+		size: desiredSize
+		address: allocatedAddress.
 	^ allocatedAddress
+]
+
+{ #category : #allocating }
+SlangMemoryManager >> allocate: desiredSize desiredPosition: desiredPosition [ 
+
+	^ self allocate: desiredSize
 ]
 
 { #category : #allocating }
@@ -71,7 +77,7 @@ SlangMemoryManager >> initialAddress: anInteger [
 SlangMemoryManager >> initialize [
 
 	super initialize.
-	nextAvailableAddress := 0.
+	nextAvailableAddress := 4*1024.
 	memoryMap := Dictionary new
 ]
 
@@ -173,6 +179,14 @@ SlangMemoryManager >> regionsDo: aFullBlockClosure [
 		aFullBlockClosure
 			value: region start
 			value: region memory ]
+]
+
+{ #category : #allocating }
+SlangMemoryManager >> registerNewRegion: newMemoryRegion size: desiredSize address: allocatedAddress [
+
+	allocatedAddress to: allocatedAddress + desiredSize by: 4096 do: [ 
+		:pageAddress | "Index regions by the high bits of the address" 
+		memoryMap at: pageAddress >> 12 put: newMemoryRegion ]
 ]
 
 { #category : #'memory-access' }

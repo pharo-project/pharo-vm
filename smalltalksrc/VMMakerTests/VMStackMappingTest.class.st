@@ -8,7 +8,7 @@ Class {
 VMStackMappingTest >> buildStackFromFrames [
 
 	3 timesRepeat:[  | method |
-		method := methodBuilder newMethod buildMethod.
+		method := methodBuilder newMethod build.
 		stackBuilder addNewFrame 
 			method: method;
 			beSuspended
@@ -21,7 +21,7 @@ VMStackMappingTest >> buildStackFromFrames [
 { #category : #helpers }
 VMStackMappingTest >> newContext [
 	| method |
-	method:= methodBuilder newMethod buildMethod.
+	method:= methodBuilder newMethod build.
 	^self newSmallContextReceiver: memory nilObject method: method arguments: #() temporaries: #() ip: 10.
 ]
 

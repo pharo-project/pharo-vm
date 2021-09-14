@@ -22,6 +22,8 @@
 #endif
 
 #include <signal.h>
+#include <string.h>
+
 
 #define BACKTRACE_DEPTH 64
 
@@ -44,11 +46,10 @@ void doReport(char* fault, ucontext_t *uap){
 	char crashdumpFileName[PATH_MAX+1];
 	FILE *crashDumpFile;
 
-
 	ctime_r(&now,ctimebuf);
 
-
 	//This is awful but replace the stdout to print all the messages in the file.
+	crashdumpFileName[0] = 0;
 	getCrashDumpFilenameInto(crashdumpFileName);
 	crashDumpFile = fopen(crashdumpFileName, "a+");
 	vm_setVMOutputStream(crashDumpFile);
@@ -71,24 +72,32 @@ void sigusr1(int sig, siginfo_t *info, ucontext_t *uap)
 	errno = saved_errno;
 }
 
+
 static int inFault = 0;
 
 void sigsegv(int sig, siginfo_t *info, ucontext_t *uap)
 {
-	char *fault = sig == SIGSEGV
-					? "Segmentation fault"
-					: (sig == SIGBUS
-						? "Bus error"
-						: (sig == SIGILL
-							? "Illegal instruction"
-							: "Unknown signal"));
+	char *fault = strsignal(sig);
 
-	if (!inFault) {
-		inFault = 1;
+	doReport(fault, uap);
+
+	exit(-1);
+}
+
+void terminateHandler(int sig, siginfo_t *info, ucontext_t *uap)
+{
+	char *fault = strsignal(sig);
+
+	logWarn("VM terminated with signal %s", fault);
+
+	if(getLogLevel() >= LOG_DEBUG){		
 		doReport(fault, uap);
 	}
-	abort();
+
+	logWarn("Exiting with error code 1");	
+	exit(1);
 }
+
 
 /*
  * Useful if we want to filter which are the threads to monitor
@@ -98,19 +107,45 @@ EXPORT(void) registerCurrentThreadToHandleExceptions(){
 }
 
 EXPORT(void) installErrorHandlers(){
-	struct sigaction sigusr1_handler_action, sigsegv_handler_action;
+	struct sigaction sigusr1_handler_action, sigsegv_handler_action, term_handler_action, sigpipe_handler_action;
 
 	sigsegv_handler_action.sa_sigaction = (void (*)(int, siginfo_t *, void *))sigsegv;
 	sigsegv_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
 	sigemptyset(&sigsegv_handler_action.sa_mask);
-    (void)sigaction(SIGBUS, &sigsegv_handler_action, 0);
-    (void)sigaction(SIGILL, &sigsegv_handler_action, 0);
-    (void)sigaction(SIGSEGV, &sigsegv_handler_action, 0);
 
+#ifdef SIGEMT
+	sigaction(SIGEMT, &sigsegv_handler_action, 0);
+#endif
+	sigaction(SIGFPE, &sigsegv_handler_action, 0);
+
+	sigaction(SIGTRAP, &sigsegv_handler_action, 0);
+	sigaction(SIGQUIT, &sigsegv_handler_action, 0);
+
+	sigaction(SIGBUS, &sigsegv_handler_action, 0);
+	sigaction(SIGILL, &sigsegv_handler_action, 0);
+	sigaction(SIGSEGV, &sigsegv_handler_action, 0);
+	sigaction(SIGSYS, &sigsegv_handler_action, 0);
+	sigaction(SIGALRM, &sigsegv_handler_action, 0);
+	sigaction(SIGABRT, &sigsegv_handler_action, 0);
+
+	term_handler_action.sa_sigaction = (void (*)(int, siginfo_t *, void *))terminateHandler;
+	term_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
+
+	sigaction(SIGHUP, &term_handler_action, 0);
+	sigaction(SIGTERM, &term_handler_action, 0);
+	
+	sigaction(SIGKILL, &term_handler_action, 0);
+
+	//Ignore all broken pipe signals. They will be reported as normal errors by send() and write()
+	//Otherwise SIGPIPE kill the process without allowing any recovery or treatment
+	sigpipe_handler_action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
+	sigpipe_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
+	sigaction(SIGPIPE, &sigpipe_handler_action, 0);
+	
 	sigusr1_handler_action.sa_sigaction = (void (*)(int, siginfo_t *, void *))sigusr1;
 	sigusr1_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
 	sigemptyset(&sigusr1_handler_action.sa_mask);
-    (void)sigaction(SIGUSR1, &sigusr1_handler_action, 0);
+	sigaction(SIGUSR1, &sigusr1_handler_action, 0);
 }
 
 void * printRegisterState(ucontext_t *uap, FILE* output)
@@ -310,6 +345,22 @@ void * printRegisterState(ucontext_t *uap, FILE* output)
 #endif
 }
 
+static int runningInVMThread(){
+
+/*
+	IF THE VM is compiled without support for PTHREAD we assume that we are in the VM thread
+*/
+	
+#ifdef PHARO_VM_IN_WORKER_THREAD
+	return ioOSThreadsEqual(ioCurrentOSThread(),getVMOSThread());
+#else
+	return 1;
+#endif
+	
+}
+
+static sqInt printingStack = false;
+
 void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap, FILE* output)
 {
 #if !defined(NOEXECINFO)
@@ -318,7 +369,6 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 	int depth;
 #endif
 	/* flag prevents recursive error when trying to print a broken stack */
-	static sqInt printingStack = false;
 
 #if COGVM
 	/* Testing stackLimit tells us whether the VM is initialized. */
@@ -348,8 +398,8 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 	fflush(output); /* backtrace_symbols_fd uses unbuffered i/o */
 	backtrace_symbols_fd(addrs, depth + 1, fileno(output));
 #endif
-
-	if (ioOSThreadsEqual(ioCurrentOSThread(),getVMOSThread())) {
+	
+	if (runningInVMThread()) {
 		if (!printingStack) {
 #if COGVM
 			/* If we're in generated machine code then the only way the stack
@@ -415,8 +465,10 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 #endif
 		}
 	}
-	else
-		fprintf(output,"\nCan't dump Smalltalk stack(s). Not in VM thread\n");
+	else {
+		fprintf(output,"\nNot in VM thread.\n");
+	}
+
 #if STACKVM
 	fprintf(output, "\nMost recent primitives\n");
 	dumpPrimTraceLog();

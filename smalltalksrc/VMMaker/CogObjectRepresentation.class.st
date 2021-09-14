@@ -26,8 +26,8 @@ Class {
 		'CogMethodConstants',
 		'CogRTLOpcodes',
 		'VMBasicConstants',
+		'VMClassIndices',
 		'VMObjectIndices',
-		'VMSqueakClassIndices',
 		'VMStackFrameOffsets'
 	],
 	#category : #'VMMaker-JIT'
@@ -516,7 +516,11 @@ CogObjectRepresentation >> genPrimitiveAsFloat [
 	cogit MoveR: SendNumArgsReg R: ReceiverResultReg.
 	cogit genPrimReturn.
 	jumpFailAlloc jmpTarget: cogit Label.
-	^ CompletePrimitive
+
+	"This primitive is not complete. If the eden is full, it will fail. 
+	We need to handle that in the C primitive or in the image. 
+	We decided to handle it in the C primitive. "
+	^ 0 
 ]
 
 { #category : #'primitive generators' }
@@ -668,17 +672,6 @@ CogObjectRepresentation >> genPrimitiveClass [
 		 cogit MoveR: ClassReg R: ReceiverResultReg].
 	cogit genPrimReturn.
 	^UnfailingPrimitive
-]
-
-{ #category : #'primitive generators' }
-CogObjectRepresentation >> genPrimitiveClosureValue [
-	"Defer to the cogit for this one.  This is for two reasons:
-	 a)	Cogit's version speeds up cull: et al by not calling the interpreter primitive if numArgs is wrong.
-		Our convention for compiling the interpreter primitive call doesn't agree with this usage.
-	b)	Cogit refuses to compile primitiveClosureValueNoContextSwitch until the blockNoContextSwitchOffset
-		is known, and that isn't information the CogObjectRepresentation is privvy to."
-	<doNotGenerate>
-	^cogit genPrimitiveClosureValue
 ]
 
 { #category : #'primitive generators' }

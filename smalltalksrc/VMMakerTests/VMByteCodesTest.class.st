@@ -79,9 +79,9 @@ VMByteCodesTest >> interpret: aBlock [
 VMByteCodesTest >> interpretWithFrame: aBlock [
 
 	callingFrame := stackBuilder addNewFrame
-		method: methodBuilder newMethod buildMethod.
+		method: methodBuilder newMethod build.
 	topFrame := stackBuilder addNewFrame
-		method: methodBuilder newMethod buildMethod.
+		method: methodBuilder newMethod build.
 	stackBuilder buildStack.
 	
 	self interpret: aBlock.
@@ -158,7 +158,7 @@ VMByteCodesTest >> testBytecodePopIntoReceiverWithReadOnlySendsAttemptToAssignMe
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.	
 	object := memory instantiateClass: class indexableSize: 1.
 	attemptToAssignSelector := memory integerObjectOf: 2.
-	attemptToAssignMethod := methodBuilder newMethod numberOfArguments: 2 ; buildMethod.
+	attemptToAssignMethod := methodBuilder newMethod numberOfArguments: 2 ; build.
 	self setUpMethodDictionaryIn: class.
 	aMethodDictionary := memory fetchPointer: MethodDictionaryIndex ofObject: class.
 	self installSelector: attemptToAssignSelector method: attemptToAssignMethod inMethodDictionary: aMethodDictionary.
@@ -413,7 +413,7 @@ VMByteCodesTest >> testReturnFalse [
 	"We need to return to a method.
 	So the method of the first stack should have a compiled method in the method field of the stack.
 	using memory trueObject simulates that behavior."
-	stackBuilder addNewFrame method: methodBuilder newMethod buildMethod.
+	stackBuilder addNewFrame method: methodBuilder newMethod build.
 	stackBuilder addNewFrame.
 	stackBuilder buildStack.
 
@@ -428,7 +428,7 @@ VMByteCodesTest >> testReturnTrue [
 	"We need to return to a method.
 	So the method of the first stack should have a compiled method in the method field of the stack.
 	using memory trueObject simulates that behavior."
-	stackBuilder addNewFrame method: methodBuilder newMethod buildMethod.
+	stackBuilder addNewFrame method: methodBuilder newMethod build.
 	stackBuilder addNewFrame.
 	stackBuilder buildStack.
 
@@ -458,8 +458,8 @@ VMByteCodesTest >> testSendMessageWithTwoArgumentsMakeAFrame [
 	| selectorOop aMethod aMethodToActivate receiver receiverClass aMethodDictionary arg1 arg2 |
 	selectorOop := memory integerObjectOf: 42.
 	methodBuilder newMethod literals: { selectorOop }.
-	aMethod := methodBuilder buildMethod.
-	aMethodToActivate := 	methodBuilder newMethod numberOfArguments: 2 ; buildMethod.
+	aMethod := methodBuilder build.
+	aMethodToActivate := 	methodBuilder newMethod numberOfArguments: 2 ; build.
 	receiver := memory integerObjectOf: 41.
 	receiverClass := self setSmallIntegerClassIntoClassTable.
 	self setUpMethodDictionaryIn: receiverClass.

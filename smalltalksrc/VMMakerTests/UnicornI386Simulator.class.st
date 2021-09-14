@@ -34,6 +34,39 @@ UnicornI386Simulator >> cResultRegister [
 	^ self eax
 ]
 
+{ #category : #'c calling convention' }
+UnicornI386Simulator >> carg0 [
+
+	"Stack value 0 is return address"
+	^ self stackValueAt: 1
+]
+
+{ #category : #registers }
+UnicornI386Simulator >> carg0Register [
+	self shouldBeImplemented.
+]
+
+{ #category : #'c calling convention' }
+UnicornI386Simulator >> carg1 [
+
+	"Stack value 0 is return address"
+	^ self stackValueAt: 2
+]
+
+{ #category : #'c calling convention' }
+UnicornI386Simulator >> carg2 [
+
+	"Stack value 0 is return address"
+	^ self stackValueAt: 3
+]
+
+{ #category : #'c calling convention' }
+UnicornI386Simulator >> carg3 [
+
+	"Stack value 0 is return address"
+	^ self stackValueAt: 4
+]
+
 { #category : #registers }
 UnicornI386Simulator >> classRegister [
 
@@ -298,6 +331,13 @@ UnicornI386Simulator >> sp [
 UnicornI386Simulator >> stackPointerRegister [
 	
 	^ UcX86Registers esp
+]
+
+{ #category : #registers }
+UnicornI386Simulator >> temporaryRegister [
+	
+	"Assume SysV"
+	^ UcX86Registers eax
 ]
 
 { #category : #accessing }

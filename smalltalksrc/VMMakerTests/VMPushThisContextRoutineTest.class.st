@@ -2,7 +2,7 @@ Class {
 	#name : #VMPushThisContextRoutineTest,
 	#superclass : #VMSimpleStackBasedCogitAbstractTest,
 	#pools : [
-		'VMSqueakClassIndices'
+		'VMClassIndices'
 	],
 	#category : #'VMMakerTests-JitTests'
 }
@@ -41,7 +41,7 @@ VMPushThisContextRoutineTest >> testMarriedContextReturnsSpouseObject [
 	methodObject := methodBuilder newMethod 
 		isSmall: false;
 		numberOfArguments: numberOfArguments;
-		buildMethod.
+		build.
 
 	self machineCodeFrameBuilder
 		returnAddress: callerAddress;
@@ -246,7 +246,7 @@ VMPushThisContextRoutineTest >> testNewMarriedSmallContextHasClosureInSetOne [
 
 	| isLargeContext isInBlock routine numberOfArguments |
 	isLargeContext := false.
-	isInBlock := InVanillaBlock "non-block, i.e., a normal method".
+	isInBlock := InFullBlock "non-block, i.e., a normal method".
 	cogit objectRepresentation ceScheduleScavengeTrampoline: (self compile: [ cogit Stop ]).
 	routine := self compile: [ cogit objectRepresentation genGetActiveContextLarge: isLargeContext inBlock: isInBlock ].
 	

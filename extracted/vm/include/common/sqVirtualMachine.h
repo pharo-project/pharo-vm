@@ -132,7 +132,6 @@ typedef struct VirtualMachine {
 	/* InterpreterProxy methodsFor: 'special objects' */
 
 	sqInt (*characterTable)(void);
-	sqInt (*displayObject)(void);
 	sqInt (*falseObject)(void);
 	sqInt (*nilObject)(void);
 	sqInt (*trueObject)(void);
@@ -163,7 +162,6 @@ typedef struct VirtualMachine {
 	sqInt (*becomewith)(sqInt array1, sqInt array2);
 	sqInt (*byteSwapped)(sqInt w);
 	sqInt (*failed)(void);
-	sqInt (*fullDisplayUpdate)(void);
 	void (*fullGC)(void);
 	void (*incrementalGC)(void);
 	sqInt (*primitiveFail)(void);
@@ -204,10 +202,6 @@ typedef struct VirtualMachine {
 	/* InterpreterProxy methodsFor: 'FFI support' */
 
 	sqInt (*classExternalAddress)(void);
-	sqInt (*classExternalData)(void);
-	sqInt (*classExternalFunction)(void);
-	sqInt (*classExternalLibrary)(void);
-	sqInt (*classExternalStructure)(void);
 	void *(*ioLoadModuleOfLength)(sqInt modIndex, sqInt modLength);
 	void *(*ioLoadSymbolOfLengthFromModule)(sqInt fnIndex, sqInt fnLength, sqInt handle);
 	sqInt (*isInMemory)(sqInt address);
@@ -287,11 +281,8 @@ typedef struct VirtualMachine {
 	/* See interp.h and above for standard error codes. */
 	sqInt  (*primitiveFailFor)(sqInt code);
 	void (*(*setInterruptCheckChain)(void (*aFunction)(void)))();
-	sqInt  (*classAlien)(void);
-	sqInt  (*classUnsafeAlien)(void);
 	sqInt  (*sendInvokeCallbackStackRegistersJmpbuf)(sqInt thunkPtrAsInt, sqInt stackPtrAsInt, sqInt regsPtrAsInt, sqInt jmpBufPtrAsInt);
 	sqInt  (*reestablishContextPriorToCallback)(sqInt callbackContext);
-	sqInt *(*getStackPointer)(void);
 	sqInt  (*isOopImmutable)(sqInt oop);
 	sqInt  (*isOopMutable)(sqInt oop);
 #endif
@@ -331,17 +322,12 @@ typedef struct VirtualMachine {
 #endif
 
 #if VM_PROXY_MINOR > 11
-/* VMCallbackContext opaque type avoids all including setjmp.h & vmCallback.h */
-  sqInt (*sendInvokeCallbackContext)(vmccp);
-  sqInt (*returnAsThroughCallbackContext)(int, vmccp, sqInt);
   sqIntptr_t  (*signedMachineIntegerValueOf)(sqInt);
   sqIntptr_t  (*stackSignedMachineIntegerValue)(sqInt);
   usqIntptr_t (*positiveMachineIntegerValueOf)(sqInt);
   usqIntptr_t (*stackPositiveMachineIntegerValue)(sqInt);
   sqInt	 (*getInterruptPending)(void);
   char  *(*cStringOrNullFor)(sqInt);
-  void  *(*startOfAlienData)(sqInt);
-  usqInt (*sizeOfAlienData)(sqInt);
   sqInt  (*signalNoResume)(sqInt);
 #endif
 
