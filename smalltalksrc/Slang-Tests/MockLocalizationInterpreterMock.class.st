@@ -37,6 +37,16 @@ MockLocalizationInterpreterMock class >> initializeWithAutoLocalizedVariableOnly
 	)
 ]
 
+{ #category : #initialization }
+MockLocalizationInterpreterMock class >> initializeWithExternalizedAutoLocalizedVariableOnly [
+
+	BytecodeTable := Array new: 1.
+	self table: BytecodeTable from:
+	#(
+	(  0  bytecodeUsingExternalizedAutoLocalizedVariable)
+	)
+]
+
 { #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeToInline [
 
@@ -45,6 +55,12 @@ MockLocalizationInterpreterMock >> bytecodeToInline [
 
 { #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeUsingAutoLocalizedVariable [
+
+	autoLocalizedVariable := 17
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariable [
 
 	autoLocalizedVariable := 17.
 	self nonInlinedMethodUsingAutolocalizedVariable
