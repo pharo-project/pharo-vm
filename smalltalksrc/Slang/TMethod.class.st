@@ -1252,40 +1252,20 @@ TMethod >> inlineBuiltin: aSendNode in: aCodeGen [
 ]
 
 { #category : #inlining }
-TMethod >> inlineCaseStatementBranchesIn: aCodeGen withReplacementDictionary: replacementDictionary [
+TMethod >> inlineCaseStatementBranchesIn: aCodeGen withLocalizationReplacements: replacementDictionary [
 
-	| exitLabel |
 	parseTree nodesDo: [ :n | 
 		n isCaseStmt ifTrue: [ 
 			n cases do: [ :stmtNode | 
-				| newStatements stmt meth |
+				| stmt meth |
 				(stmt := stmtNode statements first) isSend ifTrue: [ 
 					(meth := aCodeGen methodNamed: stmt selector) ifNotNil: [ 
 						(meth hasUnrenamableCCode not and: [ meth args isEmpty ]) 
-							ifTrue: [ 
-								"We can inline!"
-								meth := meth copy.
-								meth hasReturn
-									ifTrue: [ 
-										exitLabel := meth unusedLabelForInliningInto: self.
-										meth exitVar: nil label: exitLabel.
-										labels add: exitLabel ]
-									ifFalse: [ exitLabel := nil ].
-								meth renameLabelsForInliningInto: self.
-								labels addAll: meth labels.
-								newStatements := stmtNode statements asOrderedCollection
-									                 allButFirst.
-								exitLabel ifNotNil: [ 
-									newStatements addFirst:
-										(TLabeledCommentNode new
-											 setLabel: exitLabel
-											 comment: 'end case') ].
-								newStatements
-									addFirst: meth asInlineNode;
-									addFirst: (TLabeledCommentNode new setComment: meth selector).
-								stmtNode setStatements: newStatements.
-								stmtNode bindVariablesIn: replacementDictionary.
-								 ] ] ] ] ] ]
+							ifTrue: [
+								self
+									inlineMethod: meth copy
+									inCaseStatement: stmtNode
+									withLocalizationReplacements: replacementDictionary ] ] ] ] ] ]
 ]
 
 { #category : #inlining }
@@ -1409,6 +1389,54 @@ TMethod >> inlineGuardingConditional: aSendNode in: aCodeGen [
 				ifNil: [replacementTree statements, aSendNode args first statements, {skipLabel}]
 				ifNotNil:
 					[replacementTree statements, {evaluateLabel}, aSendNode args first statements, {skipLabel}])
+]
+
+{ #category : #inlining }
+TMethod >> inlineMethod: meth inCaseStatement: stmtNode withLocalizationReplacements: replacementDictionary [
+
+	| exitLabel newStatements externalizations sendReplacements internalizations |
+
+	"Perform the main inlining"
+	meth hasReturn
+		ifTrue: [ 
+			exitLabel := meth unusedLabelForInliningInto: self.
+			meth exitVar: nil label: exitLabel.
+			labels add: exitLabel ]
+		ifFalse: [ exitLabel := nil ].
+	meth renameLabelsForInliningInto: self.
+	labels addAll: meth labels.
+
+	newStatements := stmtNode statements asOrderedCollection allButFirst.
+	exitLabel ifNotNil: [ 
+		newStatements addFirst:
+			(TLabeledCommentNode new setLabel: exitLabel comment: 'end case') ].
+	newStatements
+		addFirst: meth asInlineNode;
+		addFirst: (TLabeledCommentNode new setComment: meth selector).
+
+	stmtNode setStatements: newStatements.
+
+	"Replace all localized variables by their localized versions"
+	stmtNode bindVariablesIn: replacementDictionary.
+
+	"Wrap sends with externalization/internalization statements"
+	sendReplacements := Dictionary new.
+	stmtNode nodesDo: [ :node | 
+		node isSend ifTrue: [ 
+			externalizations := replacementDictionary associations collect: [ 
+				                    :globalToLocalAssociation | 
+				                    TAssignmentNode
+					                    variableNamed: globalToLocalAssociation key
+					                    expression: globalToLocalAssociation value ].
+			internalizations := replacementDictionary associations collect: [ 
+				                    :globalToLocalAssociation | 
+				                    TAssignmentNode
+					                    variableNamed: globalToLocalAssociation value name
+					                    expression: (TVariableNode named: globalToLocalAssociation key) ].
+			sendReplacements
+				at: node
+				put: (TStmtListNode statements: externalizations , { node }, internalizations) ] ].
+	^ stmtNode replaceNodesIn: sendReplacements
 ]
 
 { #category : #inlining }

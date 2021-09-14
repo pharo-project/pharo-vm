@@ -5,10 +5,51 @@ Class {
 }
 
 { #category : #tests }
+SlangLocalizationTestCase >> externalizationOf: aVariableName [
+
+	^ (TAssignmentNode
+			variableNamed: aVariableName
+			expression: (TVariableNode named: #local_, aVariableName))
+]
+
+{ #category : #tests }
+SlangLocalizationTestCase >> internalizationOf: aVariableName [
+
+	^ (TAssignmentNode
+			variableNamed: #local_, aVariableName
+			expression: (TVariableNode named: aVariableName))
+]
+
+{ #category : #tests }
 SlangLocalizationTestCase >> setUp [
 
 	super setUp.
 	MockLocalizationInterpreterMock initialize.
+]
+
+{ #category : #tests }
+SlangLocalizationTestCase >> testAutoLocalizeVariableAppendsInternalizationToSends [
+	
+	| interpretMethod case |
+	MockLocalizationInterpreterMock initializeWithAutoLocalizedVariableOnly.
+	ccg addClass: MockLocalizationInterpreterMock.
+	
+	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
+	ccg prepareMethods.
+	ccg inlineDispatchesInMethodNamed: #interpret.
+
+
+	"Fail if we find some node inside the case that uses the localized variable"
+	interpretMethod := ccg methodNamed: #interpret.
+	case := interpretMethod statements second cases first.
+	case statements do: [ :statement |
+		statement nodesWithParentsDo: [ :node :parent |
+			node isSend ifTrue: [ | statementAfter |
+				statementAfter := parent children after: node.
+				self
+					assert: statementAfter
+					equals: (self internalizationOf: #autoLocalizedVariable) ] ]
+	].
 ]
 
 { #category : #tests }
@@ -36,9 +77,7 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableExternalizesAtTheEnd [
 
 	self
 		assert: internalizationStatement
-		equals: (TAssignmentNode
-			variableNamed: #autoLocalizedVariable
-			expression: (TVariableNode named: #local_autoLocalizedVariable))
+		equals: (self externalizationOf: #autoLocalizedVariable)
 ]
 
 { #category : #tests }
@@ -54,9 +93,32 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableInternalizesAtTheBeginning 
 
 	self
 		assert: internalizationStatement
-		equals: (TAssignmentNode
-			variableNamed: #local_autoLocalizedVariable
-			expression: (TVariableNode named: #autoLocalizedVariable))
+		equals: (self internalizationOf: #autoLocalizedVariable)
+]
+
+{ #category : #tests }
+SlangLocalizationTestCase >> testAutoLocalizeVariablePrependsExternalizationToSends [
+	
+	| interpretMethod case |
+	MockLocalizationInterpreterMock initializeWithAutoLocalizedVariableOnly.
+	ccg addClass: MockLocalizationInterpreterMock.
+	
+	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
+	ccg prepareMethods.
+	ccg inlineDispatchesInMethodNamed: #interpret.
+
+
+	"Fail if we find some node inside the case that uses the localized variable"
+	interpretMethod := ccg methodNamed: #interpret.
+	case := interpretMethod statements second cases first.
+	case statements do: [ :statement |
+		statement nodesWithParentsDo: [ :node :parent |
+			node isSend ifTrue: [ | statementBefore |
+				statementBefore := parent children before: node.
+				self
+					assert: statementBefore
+					equals: (self externalizationOf: #autoLocalizedVariable) ] ]
+	].
 ]
 
 { #category : #tests }

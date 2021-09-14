@@ -3372,7 +3372,7 @@ CCodeGenerator >> inlineDispatchesInMethodNamed: selector [
 	
 	m
 		inlineCaseStatementBranchesIn: self
-		withReplacementDictionary: (variablesToLocalize collect: [ :v | 
+		withLocalizationReplacements: (variablesToLocalize collect: [ :v | 
 			v -> (TVariableNode named: #local_, v) ]) asDictionary.
 	m parseTree nodesDo: [ :n | 
 		n isCaseStmt ifTrue: [ 

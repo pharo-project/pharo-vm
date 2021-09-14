@@ -8,6 +8,14 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #accessing }
+TStmtListNode class >> statements: statements [
+
+	^ self new
+		setStatements: statements;
+		yourself
+]
+
 { #category : #utilities }
 TStmtListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned assignments: assigned in: aCodeGen [
 	"Add any variables in variables that are read before written to readBeforeAssigned.
@@ -124,6 +132,12 @@ TStmtListNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold
 TStmtListNode >> bindVariablesIn: aDictionary [
 
 	statements := statements collect: [ :s | s bindVariablesIn: aDictionary ].
+]
+
+{ #category : #enumerating }
+TStmtListNode >> children [
+
+	^ statements
 ]
 
 { #category : #transformations }

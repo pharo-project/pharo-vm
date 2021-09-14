@@ -46,7 +46,8 @@ MockLocalizationInterpreterMock >> bytecodeToInline [
 { #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeUsingAutoLocalizedVariable [
 
-	autoLocalizedVariable := 17
+	autoLocalizedVariable := 17.
+	self nonInlinedMethodUsingAutolocalizedVariable
 ]
 
 { #category : #'interpreter shell' }
@@ -85,4 +86,11 @@ MockLocalizationInterpreterMock >> methodAlsoSharedLocalizedVariableBeforeInlini
 MockLocalizationInterpreterMock >> nonBytecodeUsingSharedLocalizedVariable [
 
 	sharedVariableToLocalize := 17
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> nonInlinedMethodUsingAutolocalizedVariable [
+
+	<inline:false>
+	^ autoLocalizedVariable
 ]
