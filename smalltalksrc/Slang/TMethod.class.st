@@ -1229,9 +1229,8 @@ TMethod >> inlineBuiltin: aSendNode in: aCodeGen [
 ]
 
 { #category : #inlining }
-TMethod >> inlineCaseStatementBranchesIn: aCodeGen localizingVars: varsList [ 
-	| maxTemp usedVars v exitLabel |
-	maxTemp := 0.
+TMethod >> inlineCaseStatementBranchesIn: aCodeGen [
+	| exitLabel |
 	parseTree nodesDo:
 		[:n |
 		n isCaseStmt ifTrue:
@@ -1258,16 +1257,7 @@ TMethod >> inlineCaseStatementBranchesIn: aCodeGen localizingVars: varsList [
 							newStatements
 								addFirst: meth asInlineNode;
 								addFirst: (TLabeledCommentNode new setComment: meth selector).
-							stmtNode setStatements: newStatements]]]]]].
-	usedVars := (locals , args) asSet.
-	1 to: maxTemp do:
-		[:i |
-		v := 't' , i printString.
-		(usedVars includes: v) ifTrue:
-			[self error: 'temp variable name conflicts with an existing local or arg'].
-		locals addLast: v].
-	"make local versions of the given globals"
-	locals addAll: (varsList reject: [:var | usedVars includes: var])
+							stmtNode setStatements: newStatements]]]]]]
 ]
 
 { #category : #inlining }
@@ -1861,6 +1851,15 @@ TMethod >> labels [
 TMethod >> labels: aCollection [
 
 	labels := aCollection asSet
+]
+
+{ #category : #inlining }
+TMethod >> localizeVariables: localizationCandidates [
+
+	| definedVariables |
+	definedVariables := (locals , args) asSet.
+	"make local versions of the given globals"
+	locals addAll: (localizationCandidates reject: [ :var | definedVariables includes: var ])
 ]
 
 { #category : #accessing }

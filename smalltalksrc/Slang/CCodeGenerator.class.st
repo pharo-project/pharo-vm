@@ -718,11 +718,6 @@ CCodeGenerator >> checkClassForNameConflicts: aClass [
 ]
 
 { #category : #utilities }
-CCodeGenerator >> checkDeleteVariable: aName [
-	"Hook for debugging variable deletion."
-]
-
-{ #category : #utilities }
 CCodeGenerator >> checkForGlobalUsage: vars in: aTMethod [ 
 	vars do:
 		[:var |
@@ -3350,6 +3345,24 @@ CCodeGenerator >> initializerForInstVar: varName inStartClass: aClass [
 ]
 
 { #category : #inlining }
+CCodeGenerator >> inlineDispatchesInMethodNamed: selector [
+
+	"Inline dispatches (case statements) in the method with the given name.
+	Then localize variables"
+
+	| m |
+	m := self methodNamed: selector.
+	m = nil ifFalse: [ 
+		m inlineCaseStatementBranchesIn: self.
+		m parseTree nodesDo: [ :n | 
+			n isCaseStmt ifTrue: [ 
+				n
+					customizeShortCasesForDispatchVar: 'currentBytecode'
+					in: self
+					method: m ] ] ]
+]
+
+{ #category : #inlining }
 CCodeGenerator >> inlineDispatchesInMethodNamed: selector localizingVars: varsList [
 	"Inline dispatches (case statements) in the method with the given name."
 
@@ -3652,8 +3665,23 @@ CCodeGenerator >> localizeGlobalVariables [
 			(localized at: name) do:
 				[:var|
 				logger newLine; show: var, ' localised to ', name; cr]]].
-	elected do: [:ea| (variables includes: ea) ifTrue: [self checkDeleteVariable: ea]].
 	variables removeAllFoundIn: elected
+]
+
+{ #category : #inlining }
+CCodeGenerator >> localizeVariables: varsList inMethod: m [
+
+	self validateLocalizationOfGlobals: varsList exceptMethod: m selector.
+	m localizeVariables: varsList.
+	varsList do: [ :v | 
+		| varString |
+		varString := v asString.
+		variables remove: varString ifAbsent: [  ].
+		(variableDeclarations includesKey: varString) ifTrue: [ 
+			m
+				declarationAt: v asString
+				put: (variableDeclarations at: varString).
+			variableDeclarations removeKey: varString ] ]
 ]
 
 { #category : #utilities }
@@ -4327,12 +4355,6 @@ CCodeGenerator >> promoteIntegerArithmeticTypes: firstType and: secondType [
 ]
 
 { #category : #inlining }
-CCodeGenerator >> pruneMethods: selectorList [
-	"Explicitly prune some methods"
-	selectorList do: [:sel| self removeMethodForSelector: sel]
-]
-
-{ #category : #inlining }
 CCodeGenerator >> pruneUnreachableMethods [
 	"Remove any methods that are not reachable. Retain methods needed by the translated classes - see implementors of requiredMethodNames"
  	
@@ -4450,7 +4472,6 @@ CCodeGenerator >> removeVariable: aName [
 { #category : #utilities }
 CCodeGenerator >> removeVariable: aName ifAbsent: ifAbsentBlock [
 	"Remove the given (instance) variable from the code base."
-	self checkDeleteVariable: aName.
 	variableDeclarations removeKey: aName ifAbsent: [].
 	^variables remove: aName ifAbsent: ifAbsentBlock
 ]
@@ -4479,11 +4500,6 @@ CCodeGenerator >> reportRecursiveMethods [
 			calls := newCalls asOrderedCollection.
 		].
 	].
-]
-
-{ #category : #inlining }
-CCodeGenerator >> reportShouldNotBeRemoved: removed varList: varList [
-	"Report whether any of the removed methods are still used."
 ]
 
 { #category : #'C translation support' }

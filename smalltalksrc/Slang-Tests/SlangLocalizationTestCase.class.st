@@ -12,8 +12,7 @@ SlangLocalizationTestCase >> testLocalizeSharedVariableShouldFail [
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
 	ccg prepareMethods.
 
-	[ 
-		ccg inlineDispatchesInMethodNamed: #interpret localizingVars: #( sharedVariableToLocalize ).
+	[ ccg localizeVariables: #( sharedVariableToLocalize ) inMethod: (ccg methodNamed: #interpret).
 		
 		"This should not arrive here"
 		self fail

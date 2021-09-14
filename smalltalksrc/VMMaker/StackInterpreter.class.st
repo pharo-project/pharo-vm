@@ -1715,34 +1715,6 @@ StackInterpreter class >> sourceFileName [
 	^'interp.c'
 ]
 
-{ #category : #initialization }
-StackInterpreter class >> table: anArray from: specArray [ 
-	"SpecArray is an array of one of (index selector) or (index1 
-	 index2 selector) or (index nil) or (index1 index2 nil).  If selector
-	 then the entry is the selector, but if nil the entry is the index."
-	| contiguous |
-	contiguous := 0.
-	specArray do:
-		[:spec | 
-		(spec at: 1) = contiguous ifFalse:
-			[self error: 'Non-contiguous table entry'].
-		spec size = 2
-			ifTrue:
-				[anArray
-					at: (spec at: 1) + 1
-					put: ((spec at: 2) ifNil: [spec at: 1] ifNotNil: [:sym| sym]).
-				 contiguous := contiguous + 1]
-			ifFalse:
-				[(spec at: 1) to: (spec at: 2) do:
-					[:i | anArray at: i + 1 put: ((spec at: 3) ifNil: [i] ifNotNil: [:sym| sym])].
-				 contiguous := contiguous + ((spec at: 2) - (spec at: 1)) + 1]].
-	anArray doWithIndex:
-		[:entry :index|
-		entry isSymbol ifTrue:
-			[(self shouldIncludeMethodForSelector: entry) ifFalse:
-				[anArray at: index put: 0]]]
-]
-
 { #category : #translation }
 StackInterpreter class >> translationClass [
 	"Return te class to use as the interpreterCLass when translating.  For the all-in-one
@@ -11974,7 +11946,12 @@ StackInterpreter >> printFramesOnStackPageListInUse [
 
 { #category : #'debug printing' }
 StackInterpreter >> printHeadFrame [
-	<inline: false>
+	<doNotGenerate>
+	"Prints the head frame from within the interpreter.
+	Simulation only.
+	
+	Do not generate this function as there is no way to properly translate it to C.
+	Translating this function requires access to localFP and localSP which are local variables in the interpreter loop function, thus, they are not accessible from within this function."
 	self printFrame: localFP WithSP: localSP
 ]
 
