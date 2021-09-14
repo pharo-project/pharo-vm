@@ -3,7 +3,8 @@ Class {
 	#superclass : #AbstractInterpreter,
 	#instVars : [
 		'variableToLocalize',
-		'sharedVariableToLocalize'
+		'sharedVariableToLocalize',
+		'sharedVariableToLocalizeBeforeInlining'
 	],
 	#classVars : [
 		'BytecodeTable'
@@ -14,12 +15,13 @@ Class {
 { #category : #initialization }
 MockLocalizationInterpreterMock class >> initialize [
 
-	BytecodeTable := Array new: 3.
+	BytecodeTable := Array new: 4.
 	self table: BytecodeTable from:
 	#(
 	(  0  bytecodeToInline)
 	(  1  bytecodeUsingLocalizedVariable)
 	(  2  bytecodeUsingSharedLocalizedVariable)
+	(  3  bytecodeUsingSharedLocalizedVariableBeforeInlining)
 	)
 ]
 
@@ -42,9 +44,22 @@ MockLocalizationInterpreterMock >> bytecodeUsingSharedLocalizedVariable [
 ]
 
 { #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingSharedLocalizedVariableBeforeInlining [
+
+	sharedVariableToLocalizeBeforeInlining := 42.
+	self methodAlsoSharedLocalizedVariableBeforeInlining
+]
+
+{ #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> interpret [
 
 	self dispatchOn: 1 in: BytecodeTable
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> methodAlsoSharedLocalizedVariableBeforeInlining [
+
+	sharedVariableToLocalizeBeforeInlining := 17
 ]
 
 { #category : #'interpreter shell' }
