@@ -41,6 +41,61 @@ TMethod class >> initialize [
 	CaseStatements addAll: #(dispatchOn:in: dispatchOn:in:with: dispatchOn:in:with:with:).
 ]
 
+{ #category : #adding }
+TMethod >> addCASTConditionalCompilationFor: cAST generator: aCodeGen [
+
+	| compileTimeOptionPragmas |
+	(compileTimeOptionPragmas := self compileTimeOptionPragmas: aCodeGen)
+		notEmpty ifTrue: [ 
+		| condition cppIf |
+		compileTimeOptionPragmas doWithIndex: [ :pragma :i | 
+			| element |
+			element := CIdentifierNode name:
+				           ((compileTimeOptionPragmas at: i) argumentAt: 1).
+			pragma selector = #notOption: ifTrue: [ 
+				element := CUnaryOperatorNode operator: #! expression: element ].
+			i <= 1
+				ifTrue: [ condition := element ]
+				ifFalse: [ 
+					condition := CBinaryOperatorNode
+						             operator: #&&
+						             left: condition
+						             right: element ] ].
+		cppIf := CPreprocessorIfNode if: condition then: cAST.
+		cAST isFunctionDeclarator ifTrue: [ 
+			(aCodeGen maybeGenerateCASTPrimitiveFailureDefineFor: selector) 
+				ifNotNil: [ :define | cppIf else: define ] ].
+		^ cppIf ].
+	^ cAST
+]
+
+{ #category : #accessing }
+TMethod >> addCASTLocalsIn: aCASTBlock generator: aCodeGen [
+
+	| volatileVariables maybeExternFunctions |
+	volatileVariables := properties includesKey: #volatile.
+	self refersToGlobalStruct ifTrue: [ 
+		aCASTBlock declarations add:
+			(CIdentifierNode name: (volatileVariables
+					  ifTrue: [ 'DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT' ]
+					  ifFalse: [ 'DECL_MAYBE_SQ_GLOBAL_STRUCT' ])) ].
+	maybeExternFunctions := (declarations select: [ :decl | 
+		                         decl beginsWith: 'extern' ]) keys.
+	
+	(locals isEmpty and: [ maybeExternFunctions isEmpty ]) ifFalse: [ 
+		(aCodeGen sortStrings: locals , maybeExternFunctions) do: [ :var | 
+			| decl |
+			decl := self
+				        declarationAt: var
+				        ifAbsent: [ aCodeGen defaultType , ' ' , var ].
+			(volatileVariables or: [ 
+				 (decl beginsWith: 'static') or: [ 
+					 (decl beginsWith: 'extern') or: [ 
+						 usedVariablesCache includes: var ] ] ]) ifTrue: [ 
+				volatileVariables ifTrue: [ decl := 'volatile ' , decl ].
+				aCASTBlock declarations add: (CRawCodeNode code: decl) ] ] ]
+]
+
 { #category : #accessing }
 TMethod >> addFunctionAttribute: aString [
 	functionAttributes := functionAttributes
@@ -63,46 +118,6 @@ TMethod >> addTypeForSelf [
 			put: (typeForSelf == #implicit
 					ifTrue: [typeForSelf]
 					ifFalse: [typeForSelf, ' self'])]
-]
-
-{ #category : #'type inference' }
-TMethod >> addTypesFor: node to: typeSet in: aCodeGen [
-	"Add the value types for the node to typeSet.
-	 Answer if any type was derived from an as-yet-untyped method or variable, which allows us to abort
-	 inferReturnTypeFromReturnsIn: if the return type depends on a yet-to-be-typed method or variable."
-	| expr |
-	expr := node.
-	[expr isAssignment or: [expr isStmtList]] whileTrue:
-		[expr isAssignment ifTrue:
-			[expr := expr variable].
-		 expr isStmtList ifTrue:
-			[expr := expr statements last]].
-	expr isSend ifTrue:
-		[(#(ifTrue: ifFalse: ifTrue:ifFalse: ifFalse:ifTrue:) includes: expr selector) ifTrue:
-			[^expr args
-				inject: false
-				into: [:asYetUntyped :block|
-					asYetUntyped | (self addTypesFor: block to: typeSet in: aCodeGen)]].
-		(aCodeGen returnTypeForSend: expr in: self ifNil: nil)
-			ifNil: [^(aCodeGen methodNamed: expr selector) notNil and: [expr selector ~~ selector]]
-			ifNotNil:
-				[:type |
-				typeSet add: type.
-				^false]].
-	expr isVariable ifTrue:
-		[(aCodeGen typeOfVariable: expr name)
-			ifNotNil: [:type| typeSet add: type]
-			ifNil: [(typeSet add: (expr name = 'self'
-										ifTrue: [#void]
-										ifFalse: [#sqInt])) == #sqInt ifTrue:
-					[^true]]].
-	expr isConstant ifTrue:
-		[(expr value isInteger and: [expr value >= 0]) "cannot determine if signed or unsigned yet..."
-			ifTrue: [typeSet add: expr value]
-			ifFalse:
-				[(expr typeOrNilFrom: aCodeGen in: self) ifNotNil:
-					[:type | typeSet add: type]]].
-	^false
 ]
 
 { #category : #'inlining support' }
@@ -232,6 +247,156 @@ TMethod >> args [
 	"The arguments of this method."
 
 	^args
+]
+
+{ #category : #'CAST translation' }
+TMethod >> asCASTCommentIn: aCodeGen [
+
+	comment ifNotNil: [ 
+		^ CCommentNode comment: (String streamContents: [ :aStream | 
+				   aStream tab.
+				   1 to: comment size do: [ :index | 
+					   self
+						   printSingleComment: (comment at: index)
+						   on: aStream
+						   indent: 1
+						   tabWidth: 4
+						   lineBreak: 78 ].
+				   aStream nextPut: Character space ]) ].
+	^ nil
+]
+
+{ #category : #'CAST translation' }
+TMethod >> asCASTFunctionPrototypeIn: aCodeGen [
+
+	properties ifNotNil: [ 
+		(properties at: #api: ifAbsent: [  ]) ifNotNil: [ :pragma | 
+			^ CRawCodeNode code: (pragma argumentAt: 1) , ';' ] ].
+	^ (self asCASTFunctionPrototypeIn: aCodeGen isPrototype: true)
+		  isFunctionPrototype: true;
+		  yourself
+]
+
+{ #category : #'CAST translation' }
+TMethod >> asCASTFunctionPrototypeIn: aCodeGen isPrototype: isPrototype [
+
+	| returnTypeIsFunctionPointer specifiers arguments functionDeclaration |
+	specifiers := OrderedCollection new.
+
+	"If return type is a function pointer, the function prototype is contained in it, as a String. Maybe change it later, we dont want raw code in our C AST."
+	returnTypeIsFunctionPointer := returnType notNil and: [ 
+		                               returnType last = $) and: [ 
+			                               returnType includesSubstring:
+				                               (aCodeGen cFunctionNameFor:
+					                                selector) ] ].
+	export
+		ifTrue: [ specifiers add: 'EXPORT(' , returnType , ')' ]
+		ifFalse: [ 
+			self isStatic
+				ifTrue: [ specifiers add: 'static' ]
+				ifFalse: [ isPrototype ifTrue: [ specifiers add: 'extern' ] ].
+			(isPrototype or: [ inline ~~ #always ]) ifFalse: [ 
+				specifiers add: 'inline' ].
+			specifiers add: (returnType ifNil: [ #sqInt ]) ].
+	(functionAttributes isNil or: [ returnTypeIsFunctionPointer ]) 
+		ifFalse: [ specifiers add: functionAttributes ].
+	returnTypeIsFunctionPointer ifFalse: [ 
+		arguments := args isEmpty
+			             ifTrue: [ 
+			             { (CParameterDeclarationNode declarator: (CIdentifierNode name: 'void')) } ]
+			             ifFalse: [ 
+				             args collect: [ :name | 
+					             CParameterDeclarationNode
+						             declarator: (CIdentifierNode name: name)
+						             cDeclaration: (self
+								              declarationAt: name
+								              ifAbsent: [ aCodeGen defaultType , ' ' , name ]) ] ] ].
+	functionDeclaration := isPrototype
+		                       ifTrue: [ 
+			                       CDeclarationNode
+				                       specifiers: specifiers
+				                       declarator: (CFunctionDeclaratorNode
+						                        declarator:
+						                        (CIdentifierNode name:
+							                         (aCodeGen cFunctionNameFor: selector))
+						                        parameters: arguments) ]
+		                       ifFalse: [ 
+			                       CFunctionDefinitionNode
+				                       declarator: (CFunctionDeclaratorNode
+						                        declarator:
+						                        (CIdentifierNode name:
+							                         (aCodeGen cFunctionNameFor: selector))
+						                        parameters: arguments)
+				                       specifiers: specifiers ].
+
+	returnTypeIsFunctionPointer ifTrue: [ 
+		functionDeclaration hasRawPrototype: true ].
+	^ functionDeclaration
+]
+
+{ #category : #'CAST translation' }
+TMethod >> asCASTIn: aCodeGen [
+
+	| compoundStatement functionDefinition body|
+	aCodeGen currentMethod: self.
+	self resetUsedVariablesCache.
+	compoundStatement := CCompoundStatementNode new
+		                     needsBrackets: false;
+		                     yourself.
+
+	(self asCASTCommentIn: aCodeGen) ifNotNil: [ :e | 
+		compoundStatement add: e ].
+	compoundStatement add:
+		(CCommentNode comment: (String streamContents: [ :aStream | 
+				  aStream
+					  space;
+					  nextPutAll: self definingClass name;
+					  nextPutAll: '>>#';
+					  nextPutAll: self smalltalkSelector;
+					  space ])).
+	functionDefinition := self
+		                      asCASTFunctionPrototypeIn: aCodeGen
+		                      isPrototype: false.
+	functionDefinition body: CCompoundStatementNode new.
+	aCodeGen
+		pushScope: declarations
+		while: [ body := (parseTree asCASTIn: aCodeGen) ]. "Generation will note used variables in usedVariablesCache"
+	self addCASTLocalsIn: functionDefinition body generator: aCodeGen.
+	functionDefinition body add: body.
+	usedVariablesCache := nil.
+	((returnType = #void) not and: [parseTree endsWithReturn not]) ifTrue: [
+		functionDefinition body add: (CReturnStatementNode expression: (CConstantNode value: 0))].
+	functionDefinition := self addCASTConditionalCompilationFor: functionDefinition generator: aCodeGen.
+	compoundStatement add: functionDefinition.
+	^ compoundStatement
+]
+
+{ #category : #'CAST translation' }
+TMethod >> asCASTInlinedIn: aBuilder [
+
+	| compoundStatement body |
+	self removeUnusedTempsAndNilIfRequiredIn: aBuilder.
+	compoundStatement := CCompoundStatementNode new.
+	
+	locals isEmpty ifFalse: [ 
+		(aBuilder sortStrings: locals) do: [ :var | 
+			compoundStatement add: (CRawCodeNode code: (self
+						  declarationAt: var
+						  ifAbsent: [ aBuilder defaultType , ' ' , var ])) ] ].
+	compoundStatement add: (aBuilder asmLabelNodeFor: selector ).
+	aBuilder
+		pushScope: declarations
+		while: [ body := (parseTree asCASTIn: aBuilder) ].
+	compoundStatement add: body.
+	
+	sharedLabel ifNotNil: [
+		^ (CLabeledStatementNode new
+			label: (CIdentifierNode name: sharedLabel);
+			statement: compoundStatement;
+			comments: {selector};
+			yourself) ].
+
+	^ compoundStatement
 ]
 
 { #category : #transformations }
@@ -498,50 +663,6 @@ TMethod >> elideAnyFinalReturn [
 ]
 
 { #category : #'C code generation' }
-TMethod >> emitCCodeOn: aStream generator: aCodeGen [
-	"Emit C code for this method onto the given stream.
-	 All calls to inlined methods should already have been expanded."
-	| bodyStream conditional |
-
-	aCodeGen currentMethod: self.
-	usedVariablesCache := Set new.
-	self emitCCommentOn: aStream.	"place method comment and method name before function."
-	aStream crtab; nextPutAll: '/* '; nextPutAll: self definingClass name; nextPutAll: '>>#'; nextPutAll: self smalltalkSelector; nextPutAll: ' */'.	
-	aStream cr. 
-	conditional := self emitCFunctionPrototype: aStream generator: aCodeGen isPrototype: false.
-	aStream cr; nextPut: ${.
-	bodyStream := ReadWriteStream on: (ByteString new: 128).
-	aCodeGen "Generation will note used variables in usedVariablesCache"
-		pushScope: declarations
-		while: [parseTree emitCCodeOn: bodyStream level: 1 generator: aCodeGen].
-	self emitCLocalsOn: aStream generator: aCodeGen.
-	usedVariablesCache := nil.
-	aStream nextPutAll: bodyStream contents.
-	(returnType = #void or: [parseTree endsWithReturn]) ifFalse:
-		[aStream tab; nextPutAll: 'return 0;'; cr].
-	aStream nextPut: $}; cr.
-	conditional ifTrue:
-		[self terminateConditionalDefineFor: (self compileTimeOptionPragmas: aCodeGen) on: aStream]
-]
-
-{ #category : #'C code generation' }
-TMethod >> emitCCommentOn: aStream [
-	"Emit the transferred Smalltalk comments as C comments."
-
-	comment ifNotNil: [
-		aStream cr;cr.
-		1 to: comment size do: [:index | 
-			aStream nextPutAll: '/*'; tab.
-			self printSingleComment: (comment at: index)
-				on: aStream
-				indent: 1
-				tabWidth: 4
-				lineBreak: 78.
-
-			aStream nextPutAll: ' */'; newLine]]
-]
-
-{ #category : #'C code generation' }
 TMethod >> emitCFunctionPrototype: aStream generator: aCodeGen [
 	"Emit a C function header for this method onto the given stream."
 
@@ -566,6 +687,7 @@ TMethod >> emitCFunctionPrototype: aStream generator: aCodeGen isPrototype: isPr
 	returnTypeIsFunctionPointer := returnType notNil
 									and: [returnType last = $)
 									and: [returnType includesSubstring: (aCodeGen cFunctionNameFor: selector)]].
+								
 	export 
 		ifTrue:
 			[aStream nextPutAll: 'EXPORT('; nextPutAll: returnType; nextPut: $)]
@@ -599,85 +721,6 @@ TMethod >> emitCFunctionPrototype: aStream generator: aCodeGen isPrototype: isPr
 			[aCodeGen maybeEmitPrimitiveFailureDefineFor: selector on: aStream.
 			 self terminateConditionalDefineFor: compileTimeOptionPragmas on: aStream]].
 	^compileTimeOptionPragmas notEmpty
-]
-
-{ #category : #'C code generation' }
-TMethod >> emitCLocalsOn: aStream generator: aCodeGen [
-	"Emit a C function header for this method onto the given stream."
-
-	| volatileVariables maybeExternFunctions |
-	volatileVariables := properties includesKey: #volatile.
-	self refersToGlobalStruct ifTrue:
-		[aStream
-			next: 3 put: Character space; "there's already an opening ${ on this line; see sender"
-			nextPutAll: (volatileVariables
-						ifTrue: ['DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT']
-						ifFalse: ['DECL_MAYBE_SQ_GLOBAL_STRUCT'])].
-	aStream cr.
-	maybeExternFunctions := (declarations select: [:decl| decl beginsWith: 'extern']) keys.
-	(locals isEmpty and: [maybeExternFunctions isEmpty]) ifFalse:
-		[(aCodeGen sortStrings: locals, maybeExternFunctions) do:
-			[ :var | | decl |
-			decl := self declarationAt: var
-							ifAbsent: [aCodeGen defaultType, ' ', var].
-			(volatileVariables
-			 or: [(decl beginsWith: 'static')
-			 or: [(decl beginsWith: 'extern')
-			 or: [usedVariablesCache includes: var]]]) ifTrue:
-				[aStream next: 4 put: Character space.
-				 volatileVariables ifTrue:
-					[aStream nextPutAll: #volatile; space].
-				 aStream
-					nextPutAll: decl;
-					nextPut: $;;
-					cr]].
-		 aStream cr]
-]
-
-{ #category : #'C code generation' }
-TMethod >> emitInlineOn: aStream level: level generator: aCodeGen [
-	"Emit C code for this method onto the given stream. All calls to inlined methods should already have been expanded."
-	self removeUnusedTempsAndNilIfRequiredIn: aCodeGen.
-	sharedLabel ifNotNil:
-		[aStream crtab: level-1; nextPutAll: sharedLabel; nextPut: $:.
-		aStream crtab: level.
-		aStream nextPutAll: '/* '; nextPutAll: selector; nextPutAll: ' */'.
-		aStream crtab: level].
-	aStream nextPut: ${.
-	locals isEmpty ifFalse:
-		[(aCodeGen sortStrings: locals) do:
-			[:var|
-			 aStream
-				crtab: level+1;
-				nextPutAll: (self declarationAt: var ifAbsent: [ aCodeGen defaultType, ' ', var]);
-				nextPut: $;].
-			 aStream cr].
-	aStream crtab: level+1.
-	aCodeGen outputAsmLabel: selector on: aStream.
-	aStream crtab: level+1.
-	aCodeGen
-		pushScope: declarations
-		while: [parseTree emitCCodeOn: aStream level: level+1 generator: aCodeGen].
-	aStream tab: level; nextPut: $}
-]
-
-{ #category : #'C code generation' }
-TMethod >> emitProxyFunctionPrototype: aStream generator: aCodeGen [
-	"Emit an indirect C function header for this method onto the given stream."
-
-	aStream
-		nextPutAll: returnType;
-		space;
-		nextPutAll: '(*';
-		nextPutAll: (aCodeGen cFunctionNameFor: selector);
-		nextPutAll: ')('.
-	args isEmpty
-		ifTrue: [aStream nextPutAll: #void]
-		ifFalse:
-			[args
-				do: [:arg| aStream nextPutAll: (self declarationAt: arg)]
-				separatedBy: [ aStream nextPutAll: ', ' ]].
-	aStream nextPut: $)
 ]
 
 { #category : #testing }
@@ -855,7 +898,7 @@ TMethod >> extractDirective: theSelector valueBlock: aBlock default: defaultResu
 				   setSelector: pragma selector
 				   receiver: (TVariableNode new setName: 'self')
 				   arguments: (pragma arguments collect: [ :const | 
-						    TConstantNode new setValue: const ])) ].
+						    TConstantNode value: const ])) ].
 	"Pre-pragma backward compatibility:
 	 Scan the top-level statements for a labelling directive of the form:
 
@@ -1126,75 +1169,11 @@ TMethod >> incompleteSendsIn: aCodeGen [
 	^{incompleteSends. inlineableSends}
 ]
 
-{ #category : #'type inference' }
-TMethod >> inferReturnTypeFromReturnsIn: aCodeGen [
-	"Attempt to infer the return type of the receiver from returns in the parse tree."
+{ #category : #initialization }
+TMethod >> initialize [
 
-	"this for determining which returns have which return types:"
-	"aCodeGen
-		pushScope: declarations
-		while: [parseTree
-				nodesSelect: [:n| n isReturn]
-				thenCollect: [:n| | s |
-					s := Set new.
-					self addTypesFor: n expression to: s in: aCodeGen.
-					{n. s}]]"
-
-	aCodeGen maybeBreakForTestToInline: selector in: self.
-	returnType ifNotNil: [^self].
-	aCodeGen
-		pushScope: declarations
-		while:
-			[| hasReturn returnTypes |
-			 hasReturn := false.
-			 returnTypes := Set new.
-			 "Debug:
-			 (| rettypes |
-			  rettypes := Dictionary new.
-			  parseTree nodesDo:
-				[:node|
-				node isReturn ifTrue:
-					[| types |
-					 self addTypesFor: node expression to: (types := Set new) in: aCodeGen.
-					 rettypes at: node expression put: types]].
-			  rettypes)"
-			 parseTree nodesDo:
-				[:node|
-				node isReturn ifTrue:
-					[hasReturn := true.
-					 "If we encounter a send of an as-yet-untyped method then abort,
-					  retrying and computing the type when that method is fully typed."
-					 (self addTypesFor: node expression to: returnTypes in: aCodeGen) ifTrue:
-						[^self]]].
-			returnTypes remove: #implicit ifAbsent: [].
-			returnTypes := aCodeGen harmonizeReturnTypesIn: returnTypes.
-			hasReturn
-				ifTrue:
-					[returnTypes size > 1 ifTrue:
-						[| message |
-						 message := String streamContents:
-										[:s|
-										 s nextPutAll: 'conflicting return types '.
-										 returnTypes
-											do: [:t| s nextPutAll: t]
-											separatedBy: [s nextPutAll: ', '].
-										 s nextPutAll: ' in '; nextPutAll: selector; cr].
-						 Notification signal: message.
-						 aCodeGen logger newLine; show: message].
-					 returnTypes size = 1 ifTrue:
-						[self returnType: returnTypes anyOne]]
-				ifFalse:
-					[self returnType: (aCodeGen implicitReturnTypeFor: selector)]]
-]
-
-{ #category : #'type inference' }
-TMethod >> inferReturnTypeIn: aCodeGen [
-	"Attempt to infer the return type of the receiver and answer if it changed."
-
-	| existingReturnType |
-	existingReturnType := returnType.
-	self inferReturnTypeFromReturnsIn: aCodeGen.
-	^existingReturnType ~= returnType
+	super initialize.
+	declarations := Dictionary new
 ]
 
 { #category : #accessing }
@@ -1372,7 +1351,7 @@ TMethod >> inlineGuardingConditional: aSendNode in: aCodeGen [
 			 map
 				at: node
 				put: (expr value ~~ evaluateIfTrue
-						ifTrue: [TGoToNode new setLabel: skipLabel label]
+						ifTrue: [TGoToNode label: skipLabel label]
 						ifFalse:
 							[node == lastNode
 								ifTrue: [TLabeledCommentNode new setComment: 'end ', aSendNode receiver selector, '; fall through']
@@ -1380,7 +1359,7 @@ TMethod >> inlineGuardingConditional: aSendNode in: aCodeGen [
 									[evaluateLabel ifNil:
 										[evaluateLabel := TLabeledCommentNode new setLabel:
 													(self unusedLabelForInlining: method)].
-									 TGoToNode new setLabel: evaluateLabel label]])]].
+									 TGoToNode label: evaluateLabel label]])]].
 	replacementTree replaceNodesIn: map.
 	replacementTree comment: {'inline ', aSendNode receiver selector}.
 	self addVarsDeclarationsAndLabelsOf: method except: method args.
@@ -1434,7 +1413,7 @@ TMethod >> inlineReturningConditional: aSendNode in: aCodeGen [
 									[label ifNil:
 										[label := TLabeledCommentNode new setLabel:
 													(self unusedLabelForInlining: method)].
-									 TGoToNode new setLabel: label label]])]].
+									 TGoToNode label: label label]])]].
 	replacementTree replaceNodesIn: map.
 	self addVarsDeclarationsAndLabelsOf: method except: method args.
 	replacementTree comment: {'inline ', aSendNode receiver selector}.
@@ -2397,7 +2376,7 @@ TMethod >> removeUnusedTempsAndNilIfRequiredIn: aCodeGen [
 				[:var| | varNode varType zeroNode |
 				 varNode := TVariableNode new setName: var; yourself.
 				 varType := aCodeGen typeFor: varNode in: self.
-				 zeroNode := TConstantNode new setValue: 0; yourself.
+				 zeroNode := TConstantNode value: 0.
 				 TAssignmentNode new
 					setVariable: varNode
 					expression: (((aCodeGen isIntegralCType: varType)
@@ -2553,12 +2532,18 @@ TMethod >> replaceSizeMessages [
 			argExpr := TSendNode new
 				setSelector: #+
 				receiver: n receiver
-				arguments: (Array with: (TConstantNode new setValue: 1)).
+				arguments: (Array with: (TConstantNode value: 1)).
 			n
 				setSelector: #sizeOfSTArrayFromCPrimitive:
 				receiver: (TVariableNode new setName: self vmNameString)
 				arguments: (Array with: argExpr)]].
 
+]
+
+{ #category : #'C code generation' }
+TMethod >> resetUsedVariablesCache [
+
+	usedVariablesCache := Set new
 ]
 
 { #category : #accessing }
@@ -2573,7 +2558,6 @@ TMethod >> returnType: aString [
 	"Set the type of the values returned by this method.
 	 This string will be used in the C declaration of this function.
 	 If the type exists as a symbol, use that."
-
 	returnType := aString isSymbol
 					ifTrue: [aString]
 					ifFalse: [(Symbol findInterned: aString) ifNil: [aString]]
@@ -2843,12 +2827,12 @@ TMethod >> transformReturnSubExpression: node toAssignmentOf: exitVar andGoto: e
 			[aBinaryBlock value: replacement value: false]
 		ifFalse:
 			[replacement := replacement
-								ifNil: [TGoToNode new setLabel: exitLabel; yourself]
+								ifNil: [TGoToNode label: exitLabel]
 								ifNotNil:
 									[TStmtListNode new
 										setArguments: #()
 										statements: {replacement.
-													  TGoToNode new setLabel: exitLabel; yourself};
+													  TGoToNode label: exitLabel};
 										yourself].
 			 aBinaryBlock value: replacement value: true]
 ]
@@ -2866,7 +2850,7 @@ TMethod >> transformReturns [
 			[(node expression isVariable and: [node expression name = 'self'])
 				ifTrue:
 					[returnType = #sqInt ifTrue:
-						[node setExpression: (TConstantNode new setValue: 0)]]
+						[node setExpression: (TConstantNode value: 0)]]
 				ifFalse:
 					[returnType = #void ifTrue:
 						[parent
@@ -3069,6 +3053,12 @@ TMethod >> unusedNamePrefixedBy: aString avoiding: usedNames [
 	 usedNames includes: newVarName] whileTrue:
 		[n := n + 1].
 	^usedNames add: newVarName
+]
+
+{ #category : #utilities }
+TMethod >> usedVariablesCache [
+	
+	^ usedVariablesCache
 ]
 
 { #category : #inlining }

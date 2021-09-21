@@ -572,12 +572,6 @@ VMClass >> cCoerce: value to: cTypeString [
 		ifNotNil: [value coerceTo: cTypeString sim: self]
 ]
 
-{ #category : #'translation support' }
-VMClass >> cPreprocessorDirective: codeString [
-	"For translation only; noop when running in Smalltalk."
-	<doNotGenerate>
-]
-
 { #category : #'C library simulation' }
 VMClass >> calloc: num _: size [ 
 
