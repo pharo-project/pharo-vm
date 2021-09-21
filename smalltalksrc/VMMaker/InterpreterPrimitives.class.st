@@ -71,7 +71,6 @@ Class {
 		'primFailCode',
 		'osErrorCode',
 		'exceptionPC',
-		'inFFIFlags',
 		'profileMethod',
 		'profileProcess',
 		'profileSemaphore',
@@ -112,7 +111,7 @@ InterpreterPrimitives class >> defineAtCompileTime: anObject [
 	 because the VM generated is specific to these varables."
 	anObject isSymbol ifFalse:
 		[^false].
-	(#(STACKVM COGVM COGMTVM SPURVM) includes: anObject) ifTrue:
+	(#(STACKVM COGVM SPURVM) includes: anObject) ifTrue:
 		[^false].
 	^VMBasicConstants namesDefinedAtCompileTime includes: anObject
 ]
@@ -1718,31 +1717,6 @@ InterpreterPrimitives >> primitiveFailFor: reasonCode [
 	 N.B. primitiveFailFor: PrimNoErr is expected to clear the primFailCode."
 	<api>
 	^primFailCode := reasonCode
-]
-
-{ #category : #'primitive support' }
-InterpreterPrimitives >> primitiveFailForFFIException: exceptionCode at: pc [
-	<var: 'exceptionCode' type: #usqLong>
-	<var: 'pc' type: #usqInt>
-	"Set PrimErrFFIException primitive failure and associated exceptionCode (a.k.a. 
-	 osErrorCode) and exceptionPC. Under control of the ffiExceptionResponse flag,
-	 if in a primitive with an error code and the inFFIFlags indicate we're in an FFI call,
-	 then fail the primitive.
-	 ffiExceptionResponse < 0 never fail
-	 ffiExceptionResponse = 0 fail if method has a primitive error code (default)
-	 ffiExceptionResponse > 0 always fail"
-	<api>
-	((inFFIFlags noMask: DisownVMForFFICall)	"i.e. not in an FFI call"
-	 or: [ffiExceptionResponse < 0]) ifTrue:		"i.e. never fail"
-		[^self].
-	osErrorCode := self cCoerceSimple: exceptionCode to: #sqLong.
-	exceptionPC := pc.
-	primFailCode := PrimErrFFIException.
-	(ffiExceptionResponse > 0					"always fail..."
-	 or: [(objectMemory isOopCompiledMethod: newMethod)
-		 and: [self methodUsesPrimitiveErrorCode: newMethod]]) ifTrue:
-		[self ownVM: DisownVMForFFICall. "To take ownership but importantly to reset inFFIFlags"
-		 self activateFailingPrimitiveMethod]
 ]
 
 { #category : #'primitive support' }

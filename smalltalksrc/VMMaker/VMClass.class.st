@@ -162,7 +162,7 @@ VMClass class >> initializeMiscConstants [
 
 	| omc |
 	VMBIGENDIAN class. "Mention this for the benefit of CCodeGenerator>>emitCConstantsOn:"
-	SPURVM := STACKVM := COGVM := COGMTVM := false.
+	SPURVM := STACKVM := COGVM := false.
 
 	InitializationOptions ifNil: [InitializationOptions := Dictionary new].
 	omc := InitializationOptions at: #ObjectMemory ifAbsent: [self error: 'Please specify an object memory'].
@@ -190,9 +190,8 @@ VMClass class >> initializeMiscConstants [
 		at: #VMBIGENDIAN	ifPresent: [:value| VMBIGENDIAN := value];
 		at: #ObjectMemory	ifPresent: [:value| SPURVM := value beginsWith: 'Spur'];
 		at: #STACKVM		ifPresent: [:value| STACKVM := value];
-		at: #COGVM		ifPresent: [:value| COGVM := InitializationOptions at: #COGVM];
-		at: #COGMTVM		ifPresent: [:value| COGMTVM := InitializationOptions at: #COGMTVM].
-
+		at: #COGVM		ifPresent: [:value| COGVM := InitializationOptions at: #COGVM].
+				
 	"consistency checks"
 	SPURVM
 		ifTrue:

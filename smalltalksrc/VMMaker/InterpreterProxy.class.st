@@ -233,11 +233,6 @@ InterpreterProxy >> copyBitsFrom: leftX to: rightX at: yValue [
 	bb copyBitsFrom: leftX to: rightX at: yValue.
 ]
 
-{ #category : #'FFI support' }
-InterpreterProxy >> disownVM: flags [
-	^self notYetImplementedError
-]
-
 { #category : #'special objects' }
 InterpreterProxy >> displayObject [
 	^Display
