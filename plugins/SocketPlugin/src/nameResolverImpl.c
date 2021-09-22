@@ -517,30 +517,6 @@ void sqResolverGetNameInfoServiceResultSize(char *name, sqInt nameSize)
 }
 
 
-sqInt sqResolverHostNameSize(void)
-{
-  char buf[MAXHOSTNAMELEN+1];
-  if (gethostname(buf, sizeof(buf)))
-    {
-      success(false);
-      return 0;
-    }
-  return strlen(buf);
-}
-
-
-void sqResolverHostNameResultSize(char *name, sqInt nameSize)
-{
-  char buf[MAXHOSTNAMELEN+1];
-  int len;
-  if (gethostname(buf, sizeof(buf)) || (nameSize < (len= strlen(buf))))
-    {
-      success(false);
-      return;
-    }
-  memcpy(name, buf, len);
-}
-
 void nameResolverInit(sqInt resolverSemaIndex){
   gethostname(localHostName, MAXHOSTNAMELEN);
   localHostAddress = nameToAddr(localHostName);
@@ -549,4 +525,88 @@ void nameResolverInit(sqInt resolverSemaIndex){
 
 void nameResolverFini(){
   resolverSema = 0;
+}
+
+sqInt resolverLocalName() {
+	char hostName[MAXHOSTNAMELEN];
+
+	if(gethostname(hostName, MAXHOSTNAMELEN) == -1){
+		success(false);
+		return interpreterProxy->nilObject();
+	}
+
+	sqInt hostNameLength = strlen(hostName);
+
+	sqInt hostNameOop = interpreterProxy->instantiateClassindexableSize(interpreterProxy->classByteArray(), hostNameLength);
+	if(interpreterProxy->failed()){
+		return interpreterProxy->nilObject();
+	}
+
+	memcpy(interpreterProxy->firstIndexableField(hostNameOop), hostName, hostNameLength);
+
+	return hostNameOop;
+}
+
+sqInt resolverLocalInterfaces(sqInt anArrayOop) {
+
+#ifndef _WIN32
+
+	struct ifaddrs *allInterfaces, *anInterface;
+	int s;
+	char host[NI_MAXHOST];
+	sqInt localAddr = 0;
+
+	sqInt index = 0;
+	sqInt anArraySize;
+	sqInt interfaceCount = 0;
+
+	if (getifaddrs(&allInterfaces) == -1) {
+		success(false);
+		return 0;
+	}
+
+	anArraySize = interpreterProxy->slotSizeOf(anArrayOop);
+
+	anInterface = allInterfaces;
+
+	while(anInterface != NULL){
+
+		if(index < anArraySize){
+
+			sqInt anInterfaceOop = interpreterProxy->fetchPointerofObject(index, anArrayOop);
+			sqInt interfaceNameSize = strlen(anInterface->ifa_name);
+			sqInt interfaceNameOop = interpreterProxy->instantiateClassindexableSize(interpreterProxy->classByteArray(), interfaceNameSize);
+
+			if(interpreterProxy->failed()){
+				logWarn("Cannot Allocate memory for instantiating a ByteArray of %d", interfaceNameSize);
+				success(false);
+				return 0;
+			}
+
+			memcpy(interpreterProxy->firstIndexableField(interfaceNameOop), anInterface->ifa_name, interfaceNameSize);
+
+			interpreterProxy->storePointerofObjectwithValue(0, anInterfaceOop, interfaceNameOop);
+
+			if(anInterface->ifa_addr){
+				updateAddressObject(interpreterProxy->fetchPointerofObject(1, anInterfaceOop), (struct sockaddr_storage *) anInterface->ifa_addr);
+			}
+
+			if(anInterface->ifa_netmask){
+				updateAddressObject(interpreterProxy->fetchPointerofObject(2, anInterfaceOop), (struct sockaddr_storage *) anInterface->ifa_netmask);
+			}
+
+			index ++;
+		}
+
+		interfaceCount ++;
+		anInterface = anInterface->ifa_next;
+	}
+
+	freeifaddrs(allInterfaces);
+
+	return interfaceCount;
+#else
+	success(false);
+	return 0;
+#endif
 }

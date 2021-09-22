@@ -111,3 +111,4 @@ void nameResolverFini();
 
 void updateAddressObject(sqInt socketAddressOop, struct sockaddr_storage * sockaddr);
 void updateSockAddressStruct(sqInt socketAddressOop, struct sockaddr_storage * sockaddr);
+socklen_t sockAddressStructSize(struct sockaddr_storage* saddr);

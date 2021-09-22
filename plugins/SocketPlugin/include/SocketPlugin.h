@@ -55,9 +55,6 @@ void  sqResolverGetNameInfoHostResultSize(char *name, sqInt nameSize);
 sqInt sqResolverGetNameInfoServiceSize(void);
 void  sqResolverGetNameInfoServiceResultSize(char *name, sqInt nameSize);
 
-sqInt sqResolverHostNameSize(void);
-void  sqResolverHostNameResultSize(char *name, sqInt nameSize);
-
 void socketConnectToAddress(SocketPtr s, sqInt socketAddressOop);
 void socketListenOn(SocketPtr s, sqInt socketAddressOop, int backlogSize);
 void socketBindTo(SocketPtr s, sqInt socketAddressOop);
@@ -66,6 +63,9 @@ sqInt socketReceiveUDPData(SocketPtr s, char *buf, sqInt bufSize, sqInt socketAd
 
 void socketLocalAddress(SocketPtr s, sqInt socketAddressOop);
 void socketRemoteAddress(SocketPtr s, sqInt socketAddressOop);
+
+sqInt resolverLocalInterfaces(sqInt anArrayOop);
+sqInt resolverLocalName();
 
 /* family */
 

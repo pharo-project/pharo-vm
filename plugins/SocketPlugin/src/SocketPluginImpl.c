@@ -1081,7 +1081,7 @@ void sqSocketSetReusable(SocketPtr s)
 void socketListenOn(SocketPtr s, sqInt socketAddressOop, int backlogSize) {
 
 	struct sockaddr_storage saddr;
-	socklen_t saddrSize = sizeof(struct sockaddr_in);
+	socklen_t saddrSize;
 	int lastError;
 
 	if (!socketValid(s))
@@ -1097,6 +1097,8 @@ void socketListenOn(SocketPtr s, sqInt socketAddressOop, int backlogSize) {
 	if(interpreterProxy->failed()){
 		return;
 	}
+
+	saddrSize = sockAddressStructSize(&saddr);
 
 	PSP(s)->multiListen = (backlogSize > 1);
 	logTrace("listenOnPortBacklogSize(%d, %ld)\n", SOCKET(s), backlogSize);
@@ -1121,7 +1123,7 @@ void socketListenOn(SocketPtr s, sqInt socketAddressOop, int backlogSize) {
 void socketBindTo(SocketPtr s, sqInt socketAddressOop) {
 
 	struct sockaddr_storage saddr;
-	socklen_t saddrSize = sizeof(struct sockaddr_in);
+	socklen_t saddrSize;
 
 	privateSocketStruct *pss = PSP(s);
 
@@ -1131,6 +1133,8 @@ void socketBindTo(SocketPtr s, sqInt socketAddressOop) {
 	}
 
 	updateSockAddressStruct(socketAddressOop, &saddr);
+	saddrSize = sockAddressStructSize(&saddr);
+
 	if(interpreterProxy->failed()){
 		return;
 	}
@@ -1150,7 +1154,7 @@ void socketConnectToAddress(SocketPtr s, sqInt socketAddressOop){
 	 */
 
 	struct sockaddr_storage saddr;
-	socklen_t saddrSize = sizeof(struct sockaddr_in);
+	socklen_t saddrSize;
 
 
 	if (!socketValid(s)) {
@@ -1164,6 +1168,8 @@ void socketConnectToAddress(SocketPtr s, sqInt socketAddressOop){
 	if(interpreterProxy->failed()){
 		return;
 	}
+
+	saddrSize = sockAddressStructSize(&saddr);
 
 	if (TCPSocketType != s->socketType) {
 
@@ -1216,7 +1222,7 @@ void socketConnectToAddress(SocketPtr s, sqInt socketAddressOop){
 sqInt socketSendUDPDataToAddress(SocketPtr s, sqInt socketAddressOop, char* buffer, size_t bufferLength) {
 
 	struct sockaddr_storage saddr;
-	socklen_t saddrSize = sizeof(struct sockaddr_in);
+	socklen_t saddrSize;
 
 	if (socketValid(s) && (TCPSocketType != s->socketType)) {
 
@@ -1224,6 +1230,8 @@ sqInt socketSendUDPDataToAddress(SocketPtr s, sqInt socketAddressOop, char* buff
 		if(interpreterProxy->failed()){
 			return 0;
 		}
+
+		saddrSize = sockAddressStructSize(&saddr);
 
 		logTrace("sendTo(%d)\n", SOCKET(s));
 
@@ -1248,7 +1256,7 @@ sqInt socketSendUDPDataToAddress(SocketPtr s, sqInt socketAddressOop, char* buff
 sqInt socketReceiveUDPData(SocketPtr s, char *buf, sqInt bufSize, sqInt socketAddressOop) {
 	int lastError;
 	struct sockaddr_storage saddr;
-	socklen_t saddrSize = sizeof(struct sockaddr_in);
+	socklen_t saddrSize = sizeof(struct sockaddr_storage);
 
 	if (socketValid(s) && (TCPSocketType != s->socketType)) /* --- UDP/RAW --- */
 	{
@@ -1275,7 +1283,7 @@ sqInt socketReceiveUDPData(SocketPtr s, char *buf, sqInt bufSize, sqInt socketAd
 
 void socketLocalAddress(SocketPtr s, sqInt socketAddressOop){
 	struct sockaddr_storage sockaddr;
-	socklen_t socklen = sizeof(struct sockaddr_in);
+	socklen_t socklen = sizeof(struct sockaddr_storage);
 
 
 	if(!socketValid(s)) {
@@ -1298,7 +1306,7 @@ void socketLocalAddress(SocketPtr s, sqInt socketAddressOop){
 
 void socketRemoteAddress(SocketPtr s, sqInt socketAddressOop){
 	struct sockaddr_storage sockaddr;
-	socklen_t socklen = sizeof(struct sockaddr_in);
+	socklen_t socklen = sizeof(struct sockaddr_storage);
 
 
 	if(!socketValid(s)) {
@@ -1338,7 +1346,7 @@ void socketRemoteAddress(SocketPtr s, sqInt socketAddressOop){
  * Addresses are represented by an object with:
  *
  * - A SmallInteger to identify the type of address (check translateSocketType to know the valid values)
- * - A ByteArray with the address information if it is a IPv4 or IPv6, and a byteString if it is a unix socket
+ * - A ByteArray with the address information if it is a IPv4 or IPv6, and a byteArray encoded in utf8 if it is a unix socket
  * - A SmallInteger with the port (if non unix address).
  */
 
@@ -1397,10 +1405,10 @@ void updateAddressObject(sqInt socketAddressOop, struct sockaddr_storage * socka
 	switch(sockaddr->ss_family){
 		case AF_UNIX:
 
-			addressInformation = interpreterProxy->instantiateClassindexableSize(interpreterProxy->classString(), addressLength);
+			addressInformation = interpreterProxy->instantiateClassindexableSize(interpreterProxy->classByteArray(), addressLength);
 
 			if(interpreterProxy->failed()){
-				logDebug("Cannot allocate string of size %d", addressLength);
+				logDebug("Cannot allocate ByteArray of size %d", addressLength);
 				return;
 			}
 
@@ -1515,5 +1523,15 @@ void updateSockAddressStruct(sqInt socketAddressOop, struct sockaddr_storage * s
 			logError("Invalid domain type: %d", domain);
 			success(false);
 			return;
+	}
+}
+
+socklen_t sockAddressStructSize(struct sockaddr_storage* saddr){
+	switch(saddr->ss_family){
+		case AF_UNIX: return sizeof(struct sockaddr_un);
+		case AF_INET: return sizeof(struct sockaddr_in);
+		case AF_INET6: return sizeof(struct sockaddr_in6);
+		default:
+			return -1;
 	}
 }
