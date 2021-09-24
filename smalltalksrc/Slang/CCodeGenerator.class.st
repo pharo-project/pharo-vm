@@ -3671,7 +3671,7 @@ CCodeGenerator >> localizeGlobalVariables [
 			(localized at: name) do:
 				[:var|
 				logger newLine; show: var, ' localised to ', name; cr]]].
-	elected do: [:ea| (variables includes: ea) ifTrue: [self checkDeleteVariable: ea]].
+
 	variables removeAllFoundIn: elected
 ]
 
