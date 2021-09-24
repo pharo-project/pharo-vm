@@ -117,7 +117,6 @@ Class {
 		'objectMemory',
 		'objectRepresentation',
 		'processor',
-		'threadManager',
 		'methodZone',
 		'methodZoneBase',
 		'codeBase',
@@ -463,7 +462,7 @@ Cogit class >> cog: aCompiledMethod selector: aSelector [
 
 { #category : #'in-image compilation' }
 Cogit class >> cog: aCompiledMethod selectorOrNumCopied: selectorOrNumCopied options: optionsDictionaryOrArray [
-	"StackToRegisterMappingCogit cog: (Integer >> #benchFib) selector: #benchFib options: #(COGMTVM false)"
+	"StackToRegisterMappingCogit cog: (Integer >> #benchFib) selector: #benchFib options: #()"
 	| cogit coInterpreter |
 	cogit := self initializedInstanceForTests: optionsDictionaryOrArray.
 	coInterpreter := cogit coInterpreter.
@@ -506,7 +505,7 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 			'ceEnclosingObjectTrampoline' 'numIRCs' 'indexOfIRC' 'theIRCs') do:
 				[:variableNotNeededInNormalVM|
 				aCCodeGenerator removeVariable: variableNotNeededInNormalVM].
-	aCCodeGenerator removeConstant: #COGMTVM. "this should be defined at compile time"
+
 	aCCodeGenerator
 		addHeaderFile:'<stddef.h>'; "for e.g. offsetof"
 		addHeaderFile:'"jit/jit.h"';
@@ -515,11 +514,7 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile:'"dispdbg.h"'; "must precede cointerp.h & cogit.h otherwise NoDbgRegParms gets screwed up"
 		addHeaderFile:'"cogmethod.h"'.
 	aCCodeGenerator
-		addHeaderFile:'#if COGMTVM';
-		addHeaderFile:'"cointerpmt.h"';
-		addHeaderFile:'#else';
 		addHeaderFile:'"cointerp.h"';
-		addHeaderFile:'#endif';
 		addHeaderFile:'"cogit.h"';
 		addHeaderFile:'<stdint.h>'.
 		
@@ -635,7 +630,7 @@ Cogit class >> defineAtCompileTime: anObject [
 	 because the VM generated is specific to these varables."
 	anObject isSymbol ifFalse:
 		[^false].
-	(#(STACKVM COGVM COGMTVM SPURVM) includes: anObject) ifTrue:
+	(#(STACKVM COGVM SPURVM) includes: anObject) ifTrue:
 		[^false].
 	^VMBasicConstants namesDefinedAtCompileTime includes: anObject
 ]
@@ -1386,7 +1381,6 @@ Cogit class >> notesAndQueries [
 { #category : #accessing }
 Cogit class >> numTrampolines [
 	^39 "31 + 4 each for self and super sends"
-		+ (COGMTVM ifTrue: [ 2 ] ifFalse: [ 0 ])
 
 	"self withAllSubclasses collect: [:c| {c. (c instVarNames select: [:ea| ea beginsWith: 'ce']) size}]"
 ]
@@ -8336,27 +8330,6 @@ Cogit >> generateTrampolines [
 
 ]
 
-{ #category : #initialization }
-Cogit >> generateVMOwnerLockFunctions [
-	| startAddress |
-	self cppIf: COGMTVM
-		ifTrue:
-			[self allocateOpcodes: 30 bytecodes: 0.
-			startAddress := methodZoneBase.
-			self zeroOpcodeIndex.
-			backEnd generateLowLevelTryLock: coInterpreter vmOwnerLockAddress.
-			self outputInstructionsForGeneratedRuntimeAt: startAddress.
-			self recordGeneratedRunTime: 'ceTryLockVMOwner' address: startAddress.
-			ceTryLockVMOwner := self cCoerceSimple: startAddress to: #'usqIntptr_t (*)(void)'.
-
-			startAddress := methodZoneBase.
-			self zeroOpcodeIndex.
-			backEnd generateLowLevelUnlock: coInterpreter vmOwnerLockAddress.
-			self outputInstructionsForGeneratedRuntimeAt: startAddress.
-			self recordGeneratedRunTime: 'ceUnlockVMOwner' address: startAddress.
-			ceUnlockVMOwner := self cCoerceSimple: startAddress to: #'void (*)(void)' ]
-]
-
 { #category : #'compile abstract instructions' }
 Cogit >> generatorAt: index [
 	<cmacro: '(index) (&generatorTable[index])'>
@@ -8749,7 +8722,6 @@ Cogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 	self enableCodeZoneWriteDuring: [
 		self maybeGenerateCheckFeatures.
 		self maybeGenerateICacheFlush.
-		self generateVMOwnerLockFunctions.
 		self genGetLeafCallStackPointer ].
 
 	self generateStackPointerCapture.
@@ -8782,8 +8754,7 @@ Cogit >> initializeProcessor [
 	self initializeProcessorStack: coInterpreter rumpCStackAddress.
 	self setCFramePointer: processor fp.
 	self setCStackPointer: processor sp.
-	threadManager ifNotNil:
-		[processor := MultiProcessor for: processor coInterpreter: coInterpreter]
+
 ]
 
 { #category : #initialization }
@@ -11650,7 +11621,6 @@ Cogit >> setInterpreter: aCoInterpreter [
 	<doNotGenerate>
 	coInterpreter := aCoInterpreter.
 	objectMemory := aCoInterpreter objectMemory.
-	threadManager := aCoInterpreter threadManager. "N.B. may be nil"
 	methodZone := self class methodZoneClass new.
 	objectRepresentation := objectMemory objectRepresentationClass
 								forCogit: self methodZone: methodZone.
@@ -11730,15 +11700,6 @@ Cogit >> setStackAlignment: stackAlignment expectedSPOffset: spOffset expectedFP
 	expectedFPAlignment := fpOffset \\ stackAlignment.
 	cStackAlignment := stackAlignment
 
-]
-
-{ #category : #initialization }
-Cogit >> setThreadManager: aCogThreadManager [
-	"Initialization of the code generator in the simulator.
-	 Used in the separate VM since this VM does not do a second initialization of the interpreter,
-	 only a second initialization of the objectMemory."
-	<doNotGenerate>
-	threadManager := aCogThreadManager "N.B. may be nil"
 ]
 
 { #category : #'simulation only' }
