@@ -1,6 +1,3 @@
-#ifndef PHAROVM_PHARO_H
-#define PHAROVM_PHARO_H
-
 #pragma once
 
 #include "exportDefinition.h"
@@ -23,6 +20,8 @@
 #ifdef _WIN32
 
 #include <windows.h>
+
+EXPORT(char*) formatMessageFromErrorCode(DWORD errorCode);
 
 #endif
 
@@ -83,5 +82,3 @@ void *readAddress(sqInt anExternalAddress);
 
 EXPORT(int) isVMRunOnWorkerThread();
 void setMaxStacksToPrint(sqInt anInteger);
-
-#endif //PHAROVM_PHARO_H

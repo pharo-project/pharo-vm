@@ -2,6 +2,11 @@
 
 I am a changelog... do not wait too much from me :D
 
+## v9.0.8
+- Improving AIO Support in windows to handle the maximum quantity of waiting on objects 
+- SIGEMT is not defined in all Linux as it depends on the architecture
+- Improving reporting of exception and version number
+
 ## v9.0.7
 
 - Ignore SIGPIPE and let send fail with an error instead of killing the process
