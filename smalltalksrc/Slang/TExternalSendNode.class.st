@@ -66,6 +66,13 @@ TExternalSendNode >> localizedVariables [
 ]
 
 { #category : #accessing }
+TExternalSendNode >> nodesDo: aBlock [
+
+	aBlock value: wrappedSendNode.
+	super nodesDo: aBlock
+]
+
+{ #category : #accessing }
 TExternalSendNode >> variableBindings [
 	^ variableBindings
 ]

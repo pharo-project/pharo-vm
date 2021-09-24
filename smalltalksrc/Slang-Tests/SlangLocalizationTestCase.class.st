@@ -324,9 +324,11 @@ SlangLocalizationTestCase >> testLocalizeSharedVariableShouldFailIfAllInlinedUse
 	ccg inlineDispatchesInMethodNamed: #interpret.
 	ccg pruneUnreachableMethods.
 	
+	self assert: (ccg methodNamed: #methodAlsoSharedLocalizedVariableBeforeInlining) notNil.
 
 	"This should not fail"
-	[ ccg localizeVariables: #( sharedVariableToLocalizeBeforeInlining ) inMethod: (ccg methodNamed: #interpret).
+	[
+	ccg localizeVariables: #( sharedVariableToLocalizeBeforeInlining ) inMethod: (ccg methodNamed: #interpret).
 		
 		"This should not arrive here"
 		self fail
