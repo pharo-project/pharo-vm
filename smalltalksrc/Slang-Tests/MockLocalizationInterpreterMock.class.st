@@ -38,6 +38,16 @@ MockLocalizationInterpreterMock class >> initializeWithAutoLocalizedVariableOnly
 ]
 
 { #category : #initialization }
+MockLocalizationInterpreterMock class >> initializeWithEscapingCall [
+
+	BytecodeTable := Array new: 1.
+	self table: BytecodeTable from:
+	#(
+	(  0  bytecodeWithEscapingCall)
+	)
+]
+
+{ #category : #initialization }
 MockLocalizationInterpreterMock class >> initializeWithExternalizedAutoLocalizedVariableInExpressionOnly [
 
 	BytecodeTable := Array new: 1.
@@ -102,7 +112,23 @@ MockLocalizationInterpreterMock >> bytecodeUsingSharedLocalizedVariableBeforeInl
 ]
 
 { #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeWithEscapingCall [
+
+	self foo: (autoLocalizedVariable := autoLocalizedVariable + 1)
+]
+
+{ #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> interpret [
+	<localizedVariable: #autoLocalizedVariable>
+
+	self dispatchOn: 1 in: BytecodeTable
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> interpretWithConflict [
+
+	"This method should create a conflict with automatically inlined arguments"
+	| arg1 |
 	<localizedVariable: #autoLocalizedVariable>
 
 	self dispatchOn: 1 in: BytecodeTable

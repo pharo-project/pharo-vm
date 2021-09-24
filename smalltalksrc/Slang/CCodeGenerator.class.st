@@ -3387,12 +3387,15 @@ CCodeGenerator >> inlineDispatchesInMethodNamed: selector [
 		inlineCaseStatementBranchesIn: self
 		withLocalizationReplacements: (variablesToLocalize collect: [ :v | 
 			v -> (TVariableNode named: #local_, v) ]) asDictionary.
+	
+	self lineariseExternalCallsIn: m.
+	
 	m parseTree nodesDo: [ :n | 
 		n isCaseStmt ifTrue: [ 
 			n
 				customizeShortCasesForDispatchVar: 'currentBytecode'
 				in: self
-				method: m ] ]
+				method: m ] ].
 ]
 
 { #category : #utilities }
@@ -3628,6 +3631,34 @@ CCodeGenerator >> isStructSend: aTSendNode [
 CCodeGenerator >> isVoidPointer: aCType [ "<String>"
 	"sigh..."
 	^#('void *' 'void*') includes: aCType asString
+]
+
+{ #category : #'automatic-localization' }
+CCodeGenerator >> lineariseExternalCallsIn: aTMethod [ 
+	
+	| replacementDictionary argumentAssignments newExternalSend |
+	replacementDictionary := Dictionary new.
+	aTMethod nodesDo: [ :e |
+		e isExternalSend ifTrue: [
+			argumentAssignments := e wrappedSendNode arguments collectWithIndex: [ :arg :index | | variableName |
+				variableName := aTMethod declareNonConflictingLocalNamedLike: 'arg', index asString.
+				TAssignmentNode 
+					variable: (TVariableNode named: variableName)
+					expression: arg.
+			].
+			newExternalSend := TExternalSendNode
+				send: (TSendNode
+					receiver: e wrappedSendNode receiver
+					selector: e wrappedSendNode selector
+					arguments: (argumentAssignments collect: [ :ass | ass variable ]))
+				variableBindings: e variableBindings.
+			replacementDictionary
+				at: e
+				put: (TStmtListNode statements: argumentAssignments , { newExternalSend } ).
+		 ].
+	].
+
+	aTMethod replaceNodesIn: replacementDictionary
 ]
 
 { #category : #utilities }

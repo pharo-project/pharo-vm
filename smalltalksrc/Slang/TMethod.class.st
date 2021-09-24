@@ -638,6 +638,19 @@ TMethod >> declarations [
 	^declarations
 ]
 
+{ #category : #'automatic-localization' }
+TMethod >> declareNonConflictingLocalNamedLike: aString [ 
+	
+	| maybeAllocatedName |
+	maybeAllocatedName := aString.
+	[locals includes: maybeAllocatedName]
+		whileTrue: [ maybeAllocatedName := maybeAllocatedName, '_' ].
+	
+	"Found a unique name, declare it and return it"
+	self localizeVariables: {maybeAllocatedName}.
+	^ maybeAllocatedName
+]
+
 { #category : #testing }
 TMethod >> definedAsMacro [
 	^properties notNil
@@ -2007,6 +2020,12 @@ TMethod >> nodeCount [
 	cnt := 0.
 	parseTree nodesDo: [ :n | cnt := cnt + 1 ].
 	^cnt
+]
+
+{ #category : #iterating }
+TMethod >> nodesDo: aBlock [
+
+	parseTree nodesDo: aBlock
 ]
 
 { #category : #utilities }
