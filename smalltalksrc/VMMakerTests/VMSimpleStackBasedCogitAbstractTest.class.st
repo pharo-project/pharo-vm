@@ -510,6 +510,7 @@ VMSimpleStackBasedCogitAbstractTest >> openMachineDebuggerAt: anAddress [
 	
 	^ VMMachineCodeDebugger new
 		cogit: cogit;
+		abstractInstructions: (self abstractInstructions);
 		machineSimulator: machineSimulator;
 		initialInstructionToDisassemble: anAddress;
 		openWithSpec.
