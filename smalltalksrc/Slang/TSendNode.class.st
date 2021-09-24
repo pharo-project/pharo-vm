@@ -10,6 +10,16 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance creation' }
+TSendNode class >> receiver: aReceiverNode selector: aString arguments: aCollection [ 
+	
+	^ self new
+		setSelector: aString
+		receiver: aReceiverNode
+		arguments: aCollection;
+		yourself
+]
+
 { #category : #accessing }
 TSendNode >> args [
 
@@ -38,6 +48,98 @@ TSendNode >> argumentsForInliningCodeGenerator: aCodeGen [
 		ifFalse: [arguments]
 ]
 
+{ #category : #tranforming }
+TSendNode >> asCASTAsFieldReferenceIn: aCodeGen [
+
+	| struct access member |
+	(aCodeGen isStructSend: self) ifFalse: [ ^ nil ].
+
+	struct := receiver asCASTExpressionIn: aCodeGen.
+	receiver isSend ifTrue: [ struct needsParentheses: true ].
+	member := CIdentifierNode name: (aCodeGen cFunctionNameFor: selector).
+	access := (receiver structTargetKindIn: aCodeGen) caseOf: { 
+			          ([ #pointer ]
+			           -> [ 
+			           CStructurePointerAccessNode
+				           structurePointer: struct
+				           member: member ]).
+			          ([ #struct ]
+			           -> [ CMemberAccessNode object: struct member: member ]) }.
+	arguments isEmpty ifFalse: [ 
+		self assert: arguments size = 1.
+		^ (CAssignmentNode
+			   lvalue: (access
+					    needsParentheses: false;
+					    yourself)
+			   rvalue: (arguments first asCASTExpressionIn: aCodeGen))
+			  needsParentheses: true;
+			  yourself ].
+	^ access
+		  needsParentheses: true;
+		  yourself
+]
+
+{ #category : #tranforming }
+TSendNode >> asCASTAsFunctionCallIn: aCodeGen [
+
+	"Translate this message send into a C function call"
+
+	| callNode |
+	callNode := CCallNode
+		            identifier:
+		            (CIdentifierNode name:
+			             (aCodeGen cFunctionNameFor: selector))
+		            arguments: OrderedCollection new.
+
+
+	"Only include the receiver as the first argument in certain cases.
+	 The receiver is always included if it is an expression.
+	 If it is a variable:
+		 If the vmClass says it is an implicit variable, don't include it.
+		 If the variable is 'self' and the method being called is not in
+		 the method set (i.e. it is some external code), don't include it."
+	(self shouldExcludeReceiverAsFirstArgument: aCodeGen) ifFalse: [ 
+		callNode arguments add:
+			((receiver structTargetKindIn: aCodeGen) == #struct
+				 ifTrue: [ CUnaryOperatorNode operator: #& expression: (receiver asCASTExpressionIn: aCodeGen) ]
+				 ifFalse: [ (receiver asCASTExpressionIn: aCodeGen) ]) ].
+	arguments do: [ :arg | callNode arguments add: (arg asCASTExpressionIn: aCodeGen)].
+
+	"Special case for pluggable modules. Replace messages to interpreterProxy
+	 by interpreterProxy->message(..) if the message is not builtin"
+	(aCodeGen shouldGenerateAsInterpreterProxySend: self) ifTrue: [ 
+		(aCodeGen noteUsedPluginFunction: selector) ifTrue: [ 
+			callNode := (CStructurePointerAccessNode 
+				            structurePointer:
+				            (CIdentifierNode name: 'interpreterProxy')
+				            member: callNode) ] ].
+	^ callNode
+]
+
+{ #category : #tranforming }
+TSendNode >> asCASTExpressionIn: aCCodeGenerator [
+
+	| construct |
+	construct := aCCodeGenerator 
+		             generateCASTForBuiltinAsArgumentConstructFor: self.
+	construct ifNil: [ 
+		construct := (self asCASTAsFieldReferenceIn: aCCodeGenerator) ifNotNil: [ :e | e] ifNil: [ 
+			self asCASTAsFunctionCallIn: aCCodeGenerator ]].
+	^ construct
+]
+
+{ #category : #tranforming }
+TSendNode >> asCASTIn: aCCodeGenerator [
+
+	| construct |
+	construct := aCCodeGenerator generateCASTForBuiltinConstructFor: self.
+	construct ifNil: [ 
+		construct := self asCASTAsFieldReferenceIn: aCCodeGenerator.
+		construct ifNil: [ 
+			construct := self asCASTAsFunctionCallIn: aCCodeGenerator ] ].
+	^ construct
+]
+
 { #category : #'inlining support' }
 TSendNode >> asTransformedConstantPerform [
 	"If the receiver is a send of perform: with a constant selector,
@@ -63,52 +165,62 @@ TSendNode >> bindVariableUsesIn: aDictionary [
 
 { #category : #transformations }
 TSendNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen [
+
 	"Answer either the receiver, if it contains no references to the given variables, or a new node with the given variables rebound.
 	 Attempt to constant-fold and answer a constant node commented with the original expression.
 	 Commenting with the original expression is important because it allows us to detect shared cases.
 	 e.g. currentBytecode bitAnd: 15 is the same in case 1 and case 17, but '1 /* 1 bitAnd: 15 */' differs
 	 from '1 /* 17 bitAnd: 15 */', whereas '1 /* currentBytecode bitAnd: 15 */' doesn't change."
+
 	| newReceiver newArguments |
-	
 	"Constant-fold shiftForWord, but not BytesPerWord"
-	((codeGen constantClass mostBasicConstantSelectors includes: selector)
-	 and: [(codeGen isBuiltinSelector: selector) not]) ifTrue:
-		[codeGen isConstantNode: self valueInto:
-			[:val|
-			 ^TConstantNode new
-				setValue: val;
-				yourself]].
-	newReceiver := receiver bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen.
-	newArguments := arguments collect: [:a| a bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen].
-	(newReceiver = receiver
-	 and: [newArguments = arguments]) ifTrue:
-		[^self].
-	(constantFold
-	 and: [newReceiver isConstant and: [newReceiver value isInteger
-	 and: [(newArguments allSatisfy: [:ea| ea isConstant and: [ea value isInteger]])
-	 and: [codeGen isBuiltinSelector: selector]]]]) ifTrue:
-		[| value |
-		value := [newReceiver value perform: selector withArguments: (newArguments collect: [:ea| ea value])]
-					on: Error
-					do: [:ea| nil].
-		 (value isInteger
-		 or: [value == true
-		 or: [value == false]]) ifTrue:
-			[^TConstantNode new
-				setValue: value;
-				"We assume Message prints its keywords and arguments interleaved.
+	((codeGen constantClass mostBasicConstantSelectors includes: selector) 
+		 and: [ (codeGen isBuiltinSelector: selector) not ]) ifTrue: [ 
+		codeGen
+			isConstantNode: self
+			valueInto: [ :val | ^ TConstantNode value: val ] ].
+	newReceiver := receiver
+		               bindVariableUsesIn: aDictionary
+		               andConstantFoldIf: constantFold
+		               in: codeGen.
+	newArguments := arguments collect: [ :a | 
+		                a
+			                bindVariableUsesIn: aDictionary
+			                andConstantFoldIf: constantFold
+			                in: codeGen ].
+	(newReceiver = receiver and: [ newArguments = arguments ]) ifTrue: [ 
+		^ self ].
+	(constantFold and: [ 
+		 newReceiver isConstant and: [ 
+			 newReceiver value isInteger and: [ 
+				 (newArguments allSatisfy: [ :ea | 
+					  ea isConstant and: [ ea value isInteger ] ]) and: [ 
+					 codeGen isBuiltinSelector: selector ] ] ] ]) ifTrue: [ 
+		| value |
+		value := [ 
+		         newReceiver value
+			         perform: selector
+			         withArguments: (newArguments collect: [ :ea | ea value ]) ]
+			         on: Error
+			         do: [ :ea | nil ].
+		(value isInteger or: [ value == true or: [ value == false ] ]) 
+			ifTrue: [ 
+				^ TConstantNode new
+					  setValue: value;
+					  "We assume Message prints its keywords and arguments interleaved.
 				 e.g. that (Message selector: #between:and: arguments: #(0 1)) printString = 'between: 0 and: 1'"
-				comment: (receiver isLeaf
-								ifTrue: [receiver printString]
-								ifFalse: ['(', receiver printString, ')']),
-							' ',
-							(Message selector: selector arguments: (arguments collect: [:ea| ea value])) printString;
-				yourself]].
-	^self shallowCopy
-		receiver: newReceiver;
-		arguments: newArguments;
-		yourself
-		
+					  comment: (receiver isLeaf
+							   ifTrue: [ receiver printString ]
+							   ifFalse: [ '(' , receiver printString , ')' ]) , ' '
+						  , (Message
+								   selector: selector
+								   arguments: (arguments collect: [ :ea | ea value ]))
+								  printString;
+					  yourself ] ].
+	^ self shallowCopy
+		  receiver: newReceiver;
+		  arguments: newArguments;
+		  yourself
 ]
 
 { #category : #transformations }
@@ -157,94 +269,6 @@ TSendNode >> copyWithoutReturn [
 									ifTrue: [arg copyWithoutReturn]
 									ifFalse: [arg]]);
 		yourself
-]
-
-{ #category : #'C code generation' }
-TSendNode >> emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen [
-	"Emit the receiver in a form that can be passed as an argument."
-
-	"If the selector is a built-in construct, translate it and return"
-	(aCodeGen emitBuiltinConstructAsArgumentFor: self on: aStream level: level) ifFalse:
-		["If it is a pointer dereference generate it"
-		(self emitCCodeAsFieldReferenceOn: aStream level: level generator: aCodeGen) ifFalse:
-			["Otherwise generate the vanilla C function call."
-			 self emitCCodeAsFunctionCallOn: aStream level: level generator: aCodeGen]]
-]
-
-{ #category : #'C code generation' }
-TSendNode >> emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen [
-	^self emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen
-]
-
-{ #category : #'C code generation' }
-TSendNode >> emitCCodeAsFieldReferenceOn: aStream level: level generator: aCodeGen [
-	"If appropriate, translate this message send as a pointer dereference"
-
-	| parenCount |
-	(aCodeGen isStructSend: self) ifFalse:
-		[^false].
-
-	parenCount := receiver isSend ifTrue: [2] ifFalse: [1].
-	aStream next: parenCount put: $(.
-	receiver  emitCCodeAsExpressionOn: aStream level: 0 generator: aCodeGen.
-	parenCount > 1 ifTrue:
-		[aStream nextPut: $)].
-	(receiver structTargetKindIn: aCodeGen) caseOf: {
-		[#pointer] -> [aStream nextPut: $-; nextPut: $>].
-		[#struct] -> [aStream nextPut: $.] }.
-	aStream nextPutAll: (aCodeGen cFunctionNameFor: selector).
-	arguments isEmpty ifFalse:
-		[self assert: arguments size = 1.
-		 aStream nextPutAll: ' = '.
-		 arguments first emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen].
-	aStream nextPut: $).
-	^true
-]
-
-{ #category : #'C code generation' }
-TSendNode >> emitCCodeAsFunctionCallOn: aStream level: level generator: aCodeGen [
-	"Translate this message send into a C function call"
-
-	selector == #break ifTrue:
-		[aStream nextPutAll: '/* send of break elided */'.
-		 ^self].
-
-	"Special case for pluggable modules. Replace messages to interpreterProxy
-	 by interpreterProxy->message(..) if the message is not builtin"
-	(aCodeGen shouldGenerateAsInterpreterProxySend: self) ifTrue:
-		[(aCodeGen noteUsedPluginFunction: selector) ifTrue:
-			[aStream nextPutAll: 'interpreterProxy->']].
-
-	aStream nextPutAll: (aCodeGen cFunctionNameFor: selector); nextPut: $(.
-
-	"Only include the receiver as the first argument in certain cases.
-	 The receiver is always included if it is an expression.
-	 If it is a variable:
-		 If the vmClass says it is an implicit variable, don't include it.
-		 If the variable is 'self' and the method being called is not in
-		 the method set (i.e. it is some external code), don't include it."
-	(self shouldExcludeReceiverAsFirstArgument: aCodeGen) ifFalse:
-		[(receiver structTargetKindIn: aCodeGen) == #struct ifTrue:
-			[aStream nextPut: $&].
-		 receiver emitCCodeOn: aStream level: level generator: aCodeGen.
-		 arguments isEmpty ifFalse:
-			[aStream nextPutAll: ', ']].
-	arguments
-		do: [ :arg| arg emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen]
-		separatedBy: [aStream nextPut: $,; space].
-	aStream nextPut: $)
-]
-
-{ #category : #'C code generation' }
-TSendNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-	"Emit the receiver as a statement."
-
-	"If the selector is a built-in construct, translate it and return"
-	(aCodeGen emitBuiltinConstructFor: self on: aStream level: level) ifFalse:
-		["If it is a pointer dereference generate it"
-		(self emitCCodeAsFieldReferenceOn: aStream level: level generator: aCodeGen) ifFalse:
-			["Otherwise generate the vanilla C function call."
-			 self emitCCodeAsFunctionCallOn: aStream level: level generator: aCodeGen]]
 ]
 
 { #category : #testing }
@@ -300,7 +324,7 @@ TSendNode >> isNonNullCCode [
 
 { #category : #testing }
 TSendNode >> isPreprocessorDirective [
-	^#(cPreprocessorDirective: cppIf:ifTrue:ifFalse: cppIf:ifTrue:) includes: selector
+	^#( cppIf:ifTrue:ifFalse: cppIf:ifTrue:) includes: selector
 ]
 
 { #category : #testing }
@@ -546,7 +570,7 @@ TSendNode >> structTargetKindIn: aCodeGen [
 	selector == #at: ifTrue:
 		[receiver isVariable ifTrue:
 			[(aCodeGen typeOfVariable: receiver name) ifNotNil:
-				[:type| | derefType |
+				[:type| 
 				 type last = $* ifFalse:
 					[^receiver structTargetKindIn: aCodeGen].
 				 (SlangStructType isTypeStruct: (aCodeGen

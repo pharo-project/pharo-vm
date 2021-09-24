@@ -448,7 +448,7 @@ SmartSyntaxPluginCodeGenerator >> generateAsIfVarAsValue: aNode on: aStream inde
 	fetchNode := TSendNode new
 					setSelector: #fetchPointer:ofObject:
 					receiver: (TVariableNode new setName: 'self')
-					arguments: { TConstantNode new setValue: index - 1. aNode receiver}.
+					arguments: { TConstantNode value: index - 1. aNode receiver}.
 	cName := aNode args third nameOrValue.
 	(class := Smalltalk classNamed: cName) isBehavior ifFalse: 
 		[^self error: 'third arg must identify class'].
@@ -600,23 +600,6 @@ SmartSyntaxPluginCodeGenerator >> generateDebugCode [
 { #category : #'debug code' }
 SmartSyntaxPluginCodeGenerator >> generateDebugCode: aBool [ 
 	debugFlag := aBool
-]
-
-{ #category : #'translating builtins' }
-SmartSyntaxPluginCodeGenerator >> generateDebugCode: aNode on: aStream indent: level [ 
-	"Generate the C debug code for this message onto the given stream, if  
-	compiled in debugMode."
-	self generateDebugCode
-		ifTrue: 
-			[aStream nextPutAll: '/* DebugCode... */';
-			 newLine.
-			aNode args first
-				emitCCodeOn: aStream
-				level: level
-				generator: self.
-			aStream tab: level.
-			aStream nextPutAll: '/* ...DebugCode */']
-		ifFalse: [aStream nextPutAll: '/* missing DebugCode */']
 ]
 
 { #category : #'translating builtins' }
@@ -788,7 +771,6 @@ SmartSyntaxPluginCodeGenerator >> initializeCTranslationDictionary [
 		"#new						#generateNew:on:indent:"				"unused, never implemented"
 		"#new:						#generateNewSize:on:indent:"			"unused, never implemented"
 		"#superclass					#generateSuperclass:on:indent:"	"unused, never implemented"
-		#debugCode:					#generateDebugCode:on:indent:
 	).
 
 	1 to: pairs size by: 2 do: [:i |

@@ -15,14 +15,9 @@ Class {
 		'BytecodeSetHasExtensions',
 		'BytesPerOop',
 		'BytesPerWord',
-		'COGMTVM',
 		'COGVM',
 		'CloneOnGC',
 		'CloneOnScavenge',
-		'DisownVMForFFICall',
-		'DisownVMForProcessorRelinquish',
-		'DisownVMForThreading',
-		'DisownVMLockOutFullGC',
 		'DoAssertionChecks',
 		'DoExpensiveAssertionChecks',
 		'FEATURE_FFI',
@@ -104,7 +99,7 @@ VMBasicConstants class >> namesDefinedAtCompileTime [
 	 will be emitted within #if defined(ANameDefinedAtCompileTime)...#endif."
 	^#(	VMBIGENDIAN
 		IMMUTABILITY
-		STACKVM COGVM COGMTVM SPURVM
+		STACKVM COGVM SPURVM
 		PharoVM								"Pharo vs Squeak"
 		CheckRememberedInTrampoline		"IMMUTABILITY"
 		LLDB									"As of lldb-370.0.42 Swift-3.1, passing funciton parameters to printOopsSuchThat fails with Internal error [IRForTarget]: Couldn't rewrite one of the arguments of a function call.  Turning off link time optimization with -fno-lto has no effect.  hence we define some debugging functions as being <option: LLDB>"

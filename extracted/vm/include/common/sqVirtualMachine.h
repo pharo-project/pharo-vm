@@ -305,11 +305,6 @@ typedef struct VirtualMachine {
 #endif
 
 #if VM_PROXY_MINOR > 10
-# if !SPURVM
-#	define DisownVMLockOutFullGC 1
-# endif
-  sqInt	(*disownVM)(sqInt flags);
-  sqInt	(*ownVM)   (sqInt threadIdAndFlags);
   void  (*addHighPriorityTickee)(void (*ticker)(void), unsigned periodms);
   void  (*addSynchronousTickee)(void (*ticker)(void), unsigned periodms, unsigned roundms);
   volatile usqLong (*utcMicroseconds)(void);
@@ -345,7 +340,6 @@ typedef struct VirtualMachine {
 #if VM_PROXY_MINOR > 13 /* OS Errors available in primitives; easy return forms (see above) */
   sqInt  (*primitiveFailForOSError)(sqLong osErrorCode);
   sqInt  (*methodReturnReceiver)(void);
-  sqInt  (*primitiveFailForFFIExceptionat)(usqLong exceptionCode, usqInt pc);
 #endif
 
 #if VM_PROXY_MINOR > 14 /* SmartSyntaxPlugin validation rewrite support */

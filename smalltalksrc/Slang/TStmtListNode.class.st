@@ -8,11 +8,11 @@ Class {
 	#category : #'Slang-AST'
 }
 
-{ #category : #accessing }
-TStmtListNode class >> statements: statements [
-
+{ #category : #'instance creation' }
+TStmtListNode class >> statements: aCollection [ 
+	
 	^ self new
-		setStatements: statements;
+		setStatements: aCollection;
 		yourself
 ]
 
@@ -87,6 +87,44 @@ TStmtListNode >> args [
 	^arguments
 ]
 
+{ #category : #tranforming }
+TStmtListNode >> asCASTExpressionIn: aBuilder [
+
+	| expressionList |
+	expressionList := CExpressionListNode new.
+	statements size == 1 ifTrue: [ 
+		^ statements first asCASTExpressionIn: aBuilder ].
+	statements withIndexDo: [ :node :idx | 
+		(node isLeaf and: [ node isLabel not and: [ idx < statements size ] ]) 
+			ifFalse: [ expressionList , (node asCASTExpressionIn: aBuilder) ] ].
+	^ expressionList
+]
+
+{ #category : #tranforming }
+TStmtListNode >> asCASTIn: aBuilder [
+	
+	^ self asCASTIn: aBuilder prependToEnd: nil
+]
+
+{ #category : #tranforming }
+TStmtListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
+
+	| collect |
+	collect := OrderedCollection new.
+
+	statements doWithIndex: [ :e :index | 
+		(e isLeaf and: [ 
+			 e isLabel not and: [ 
+				 aNodeOrNil isNil or: [ index < statements size ] ] ])
+			ifFalse: [ 
+				(aNodeOrNil notNil and: [ index = statements size ])
+					ifTrue: [ 
+					collect add: (e asCASTIn: aBuilder prependToEnd: aNodeOrNil) ]
+					ifFalse: [ collect add: (e asCASTIn: aBuilder) ] ]
+			ifTrue: [ CEmptyStatementNode new ] ].
+	^ CCompoundStatementNode statements: collect
+]
+
 { #category : #transformations }
 TStmtListNode >> asReturnNode [
 	self endsWithReturn ifTrue:
@@ -149,67 +187,6 @@ TStmtListNode >> copyWithoutReturn [
 		setArguments: arguments
 			statements: statements allButLast, {statements last copyWithoutReturn};
 		yourself
-]
-
-{ #category : #'C code generation' }
-TStmtListNode >> emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen [
-	| size |
-	(size := statements size) = 1 ifTrue:
-		[^statements first emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen].
-	"Get rid of the annoying newlines in ? : if-then-elses"
-	(size = 2 and: [statements first isComment and: [statements last isLeaf]]) ifTrue:
-		[statements first emitCCodeAsArgumentOn: aStream level: 0 generator: aCodeGen.
-		 aStream space.
-		 ^statements last emitCCodeAsArgumentOn: aStream level: 0 generator: aCodeGen].
-	aStream nextPut: $(. "N.B.  Comma binds weakest of all C operators."
-	statements withIndexDo:
-		[:s :idx| | p1 p2 |
-		p1 := aStream position.
-		s emitCCommentOn: aStream level: level generator: aCodeGen.
-		(s isLeaf and: [s isLabel not and: [idx < statements size]]) ifFalse:
-			[s emitCCodeAsArgumentOn: aStream level: level + 1 generator: aCodeGen].
-		p2 := aStream position.
-		(idx < size and: [p2 > p1]) ifTrue:
-			[((self endsWithCloseBracket: aStream)
-			  or: [s isComment]) ifFalse: [aStream nextPut: $,].
-			 aStream crtab: level]].
-	aStream nextPut: $)
-]
-
-{ #category : #'C code generation' }
-TStmtListNode >> emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen [
-	^self emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen
-]
-
-{ #category : #'C code generation' }
-TStmtListNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-
-	self emitCCodeOn: aStream prependToEnd: nil level: level generator: aCodeGen
-
-]
-
-{ #category : #'C code generation' }
-TStmtListNode >> emitCCodeOn: aStream prependToEnd: aNodeOrNil level: level generator: aCodeGen [
-	self emitCCommentOn: aStream level: level generator: aCodeGen.
-	statements withIndexDo:
-		[:s :idx| | position |
-		s emitCCommentOn: aStream level: level generator: aCodeGen.
-		(s isLeaf and: [s isLabel not and: [aNodeOrNil isNil or: [idx < statements size]]]) ifFalse:
-			[aStream peekLast ~~ Character tab ifTrue:
-				[aStream tab: level].
-			position := aStream position.
-			(aNodeOrNil notNil
-			 and: [idx = statements size])
-				ifTrue:
-					[s emitCCodeOn: aStream prependToEnd: aNodeOrNil level: level generator: aCodeGen]
-				ifFalse:
-					[s emitCCodeOn: aStream level: level generator: aCodeGen].
-			aStream position > position ifTrue:
-				[(self stream: aStream endsWithAnyOf: '};') ifFalse:
-					[s needsTrailingSemicolon ifTrue:
-						[aStream nextPut: $;]].
-					 aStream peekLast ~~ Character cr ifTrue:
-						[aStream cr]]]]
 ]
 
 { #category : #testing }

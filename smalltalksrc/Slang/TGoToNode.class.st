@@ -7,17 +7,22 @@ Class {
 	#category : #'Slang-AST'
 }
 
-{ #category : #'C code generation' }
-TGoToNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-	"Emit a C goto statement."
+{ #category : #'instance creation' }
+TGoToNode class >> label: aLabel [
 
-	aStream nextPutAll: 'goto '.
-	aStream nextPutAll: label.
+	^ self new
+		  setLabel: aLabel;
+		  yourself
 ]
 
-{ #category : #'C code generation' }
-TGoToNode >> emitCCodeOn: aStream prependToEnd: aNodeOrNil level: lev generator: gen [
-	self emitCCodeOn: aStream level: lev generator: gen
+{ #category : #tranforming }
+TGoToNode >> asCASTIn: aCCodeGenerator [ 
+	^ CGotoStatementNode identifier: label
+]
+
+{ #category : #tranforming }
+TGoToNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
+	^ self asCASTExpressionIn: aBuilder
 ]
 
 { #category : #testing }
