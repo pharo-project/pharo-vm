@@ -38,6 +38,16 @@ MockLocalizationInterpreterMock class >> initializeWithAutoLocalizedVariableOnly
 ]
 
 { #category : #initialization }
+MockLocalizationInterpreterMock class >> initializeWithExternalizedAutoLocalizedVariableInExpressionOnly [
+
+	BytecodeTable := Array new: 1.
+	self table: BytecodeTable from:
+	#(
+	(  0  bytecodeUsingExternalizedAutoLocalizedVariableAsExpression)
+	)
+]
+
+{ #category : #initialization }
 MockLocalizationInterpreterMock class >> initializeWithExternalizedAutoLocalizedVariableOnly [
 
 	BytecodeTable := Array new: 1.
@@ -64,6 +74,12 @@ MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariabl
 
 	autoLocalizedVariable := 17.
 	self nonInlinedMethodUsingAutolocalizedVariable
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsExpression [
+
+	self foo: self nonInlinedMethodUsingAutolocalizedVariable
 ]
 
 { #category : #'interpreter shell' }

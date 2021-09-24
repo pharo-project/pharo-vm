@@ -246,6 +246,12 @@ TParseNode >> isDefine [
 ]
 
 { #category : #testing }
+TParseNode >> isExternalSend [
+	
+	^ false
+]
+
+{ #category : #testing }
 TParseNode >> isGoTo [
 
 	^false

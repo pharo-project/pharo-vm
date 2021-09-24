@@ -1396,7 +1396,7 @@ TMethod >> inlineGuardingConditional: aSendNode in: aCodeGen [
 { #category : #inlining }
 TMethod >> inlineMethod: meth inCaseStatement: stmtNode withLocalizationReplacements: replacementDictionary [
 
-	| exitLabel newStatements externalizations sendReplacements internalizations |
+	| exitLabel newStatements sendReplacements |
 
 	"Perform the main inlining"
 	meth hasReturn
@@ -1425,19 +1425,9 @@ TMethod >> inlineMethod: meth inCaseStatement: stmtNode withLocalizationReplacem
 	sendReplacements := Dictionary new.
 	stmtNode nodesDo: [ :node | 
 		node isSend ifTrue: [ 
-			externalizations := replacementDictionary associations collect: [ 
-				                    :globalToLocalAssociation | 
-				                    TAssignmentNode
-					                    variableNamed: globalToLocalAssociation key
-					                    expression: globalToLocalAssociation value ].
-			internalizations := replacementDictionary associations collect: [ 
-				                    :globalToLocalAssociation | 
-				                    TAssignmentNode
-					                    variableNamed: globalToLocalAssociation value name
-					                    expression: (TVariableNode named: globalToLocalAssociation key) ].
 			sendReplacements
 				at: node
-				put: (TStmtListNode statements: externalizations , { node }, internalizations) ] ].
+				put: (TExternalSendNode send: node variableBindings: replacementDictionary) ] ].
 	^ stmtNode replaceNodesIn: sendReplacements
 ]
 

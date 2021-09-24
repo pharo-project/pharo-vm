@@ -28,27 +28,6 @@ SlangLocalizationTestCase >> setUp [
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testAutoLocalizeVariableAppendsInternalizationToSends [
-	
-	| interpretMethod case inlinedMethod sendStatementList |
-	MockLocalizationInterpreterMock initializeWithExternalizedAutoLocalizedVariableOnly.
-	ccg addClass: MockLocalizationInterpreterMock.
-	
-	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
-	ccg prepareMethods.
-	ccg inlineDispatchesInMethodNamed: #interpret.
-
-
-		"Assert that the send node is preceded by variable externalization"
-	interpretMethod := ccg methodNamed: #interpret.
-	case := interpretMethod statements second cases first.
-	inlinedMethod := case statements second method.
-	sendStatementList := inlinedMethod statements second statements.
-	self assert: sendStatementList second isSend.
-	self assert: sendStatementList third equals: (self internalizationOf: #autoLocalizedVariable)
-]
-
-{ #category : #tests }
 SlangLocalizationTestCase >> testAutoLocalizeVariableDefinesNewLocalVariable [
 	
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
@@ -93,27 +72,6 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableInternalizesAtTheBeginning 
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testAutoLocalizeVariablePrependsExternalizationToSends [
-	
-	| interpretMethod case inlinedMethod sendStatementList |
-	MockLocalizationInterpreterMock initializeWithExternalizedAutoLocalizedVariableOnly.
-	ccg addClass: MockLocalizationInterpreterMock.
-	
-	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
-	ccg prepareMethods.
-	ccg inlineDispatchesInMethodNamed: #interpret.
-
-
-	"Assert that the send node is preceded by variable externalization"
-	interpretMethod := ccg methodNamed: #interpret.
-	case := interpretMethod statements second cases first.
-	inlinedMethod := case statements second method.
-	sendStatementList := inlinedMethod statements second statements.
-	self assert: sendStatementList second isSend.
-	self assert: sendStatementList first equals: (self externalizationOf: #autoLocalizedVariable)
-]
-
-{ #category : #tests }
 SlangLocalizationTestCase >> testAutoLocalizeVariableReplacesByLocalOnInline [
 	
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
@@ -128,7 +86,28 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableReplacesByLocalOnInline [
 	interpretMethod := ccg methodNamed: #interpret.
 	case := interpretMethod statements second cases first.
 	variableNode := case statements second method statements first variable.
+
 	self assert: (variableNode isVariable and: [ variableNode name = #local_autoLocalizedVariable ]).
+]
+
+{ #category : #tests }
+SlangLocalizationTestCase >> testAutoLocalizeVariableWrapsSendsWithExternalSendNodes [
+	
+	| interpretMethod case inlinedMethod |
+	MockLocalizationInterpreterMock initializeWithExternalizedAutoLocalizedVariableInExpressionOnly.
+	ccg addClass: MockLocalizationInterpreterMock.
+	
+	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
+	ccg prepareMethods.
+	ccg inlineDispatchesInMethodNamed: #interpret.
+
+
+	"Assert that the send node is preceded by variable externalization"
+	interpretMethod := ccg methodNamed: #interpret.
+	case := interpretMethod statements second cases first.
+	inlinedMethod := case statements second method.
+
+	self assert: inlinedMethod statements first isExternalSend
 ]
 
 { #category : #tests }
