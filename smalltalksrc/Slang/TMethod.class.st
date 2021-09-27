@@ -2462,7 +2462,7 @@ TMethod >> renameVariablesUsing: aDictionary [
 			(aDictionary at: oldName ifAbsent: nil)
 				ifNotNil: [ :newName | 
 					| index |
-					index := decl indexOfWord: oldName.
+					index := decl findLastOccurrenceOfString: oldName startingAt: 1.
 					newDecls
 						at: newName
 						put:
