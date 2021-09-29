@@ -986,11 +986,55 @@ CogAbstractInstruction >> getDefaultCogCodeSize [
 	^1024 * 1024
 ]
 
+{ #category : #printing }
+CogAbstractInstruction >> getFormatFromOpCodeName: opcodeName [
+
+	| format |
+	format := ((CogRTLOpcodes classPool includesKey: opcodeName)
+		           ifTrue: [ CogRTLOpcodes ]
+		           ifFalse: [ self class ]) printFormatForOpcodeName:
+		          opcodeName.
+	^ format
+]
+
 { #category : #accessing }
 CogAbstractInstruction >> getJmpTarget [
 	"Get the target of a jump instruction.  Jumps have the target in the first operand."
 	<inline: true>
 	^cogit cCoerceSimple: (operands at: 0) to: #'AbstractInstruction *'
+]
+
+{ #category : #printing }
+CogAbstractInstruction >> getOperandsWithFormat: format [
+
+	| orneryOperands strOperands |
+	strOperands := OrderedCollection new.
+	orneryOperands := operands isCObjectAccessor
+		                  ifTrue: [ operands object ]
+		                  ifFalse: [ operands ].
+	orneryOperands withIndexDo: [ :operand :index | 
+		operand ifNotNil: [ 
+			(format notNil and: [ 
+				 'rf' includes: (format at: index ifAbsent: $-) ])
+				ifTrue: [ 
+					strOperands add: ((format at: index) = $r
+							 ifTrue: [ self nameForRegister: operand ]
+							 ifFalse: [ self nameForFPRegister: operand ]) ]
+				ifFalse: [ 
+					(operand isInteger) 
+						ifTrue: [ (operand > 16 and: [ opcode ~= Label ]) 
+							ifTrue: [ 
+								(operand allMask: 16r80000000) 
+									ifTrue: [ strOperands add: operand, '/', operand signedIntFromLong ].
+									strOperands add: operand asString, '/', (operand hex)]
+							ifFalse: [ 
+								strOperands add: operand.
+							] ]
+						ifFalse: [ strOperands add: operand symbolic ]
+				] 
+			] 
+		].
+	^ strOperands 
 ]
 
 { #category : #testing }
@@ -1413,50 +1457,83 @@ CogAbstractInstruction >> prepareStackToCallCFunctionInSmalltalkStack: anObject 
 ]
 
 { #category : #printing }
-CogAbstractInstruction >> printStateOn: aStream [
-	| opcodeName orneryOperands format |
-	<doNotGenerate> "Smalltalk-side only"
-	opcode ifNil:
-		[^self].
-	aStream space; nextPut: $(; nextPutAll: (opcodeName := self class nameForOpcode: opcode).
-	orneryOperands := operands isCObjectAccessor
-							ifTrue: [operands object]
-							ifFalse: [operands].
-	format := ((CogRTLOpcodes classPool includesKey: opcodeName)
-				ifTrue: [CogRTLOpcodes]
-				ifFalse: [self class]) printFormatForOpcodeName: opcodeName.
-	orneryOperands withIndexDo:
-		[:operand :index|
-		operand ifNotNil:
-			[aStream space.
-			 index >= (orneryOperands identityIndexOf: nil ifAbsent: [orneryOperands size + 1]) ifTrue:
-				[aStream print: index - 1; nextPut: $:].
-			 (format notNil and: ['rf' includes: (format at: index ifAbsent: $-)])
-				ifTrue: [aStream nextPutAll: ((format at: index) = $r
-												ifTrue: [self nameForRegister: operand]
-												ifFalse: [self nameForFPRegister: operand])]
-				ifFalse:
-					[aStream print: operand.
-					 (operand isInteger and: [operand > 16 and: [opcode ~= Label]]) ifTrue:
-						[(operand allMask: 16r80000000) ifTrue:
-							[aStream nextPut: $/; print: operand signedIntFromLong].
-						 aStream nextPut: $/.
-						 operand printOn: aStream base: 16]]]].
-	machineCodeSize ifNotNil:
-		[(machineCodeSize between: 1 and: machineCode size) ifTrue:
-			[0 to: machineCodeSize - 1 by: self codeGranularity do:
-				[:i|
-				 aStream space.
-				 (self machineCodeAt: i)
-					ifNil: [aStream nextPut: $.]
-					ifNotNil:
-						[:mc|
+CogAbstractInstruction >> printAddressOn: aStream [
+
+	address ifNotNil: [ 
+		aStream nextPut: $@.
+		address printOn: aStream base: 16 ]
+]
+
+{ #category : #printing }
+CogAbstractInstruction >> printMachineCodeOn: aStream [
+
+	machineCodeSize ifNotNil: [ 
+		(machineCodeSize between: 1 and: machineCode size) ifTrue: [ 
+			0 to: machineCodeSize - 1 by: self codeGranularity do: [ :i | 
+				aStream space.
+				(self machineCodeAt: i)
+					ifNil: [ aStream nextPut: $. ]
+					ifNotNil: [ :mc | 
 						mc isInteger
-							ifTrue: [mc printOn: aStream base: 16]
-							ifFalse: [mc printOn: aStream]]]]].
-	address ifNotNil:
-		[aStream nextPut: $@.
-		 address printOn: aStream base: 16].
+							ifTrue: [ mc printOn: aStream base: 16 ]
+							ifFalse: [ mc printOn: aStream ] ] ] ] ]
+]
+
+{ #category : #printing }
+CogAbstractInstruction >> printOperandsOn: aStream withFormat: format [
+
+	| orneryOperands |
+	orneryOperands := operands isCObjectAccessor
+		                  ifTrue: [ operands object ]
+		                  ifFalse: [ operands symbolic ].
+	orneryOperands withIndexDo: [ :operand :index | 
+		operand ifNotNil: [ 
+			aStream space.
+			index >= (orneryOperands
+				 identityIndexOf: nil
+				 ifAbsent: [ orneryOperands size + 1 ]) ifTrue: [ 
+				aStream
+					print: index - 1;
+					nextPut: $: ].
+			(format notNil and: [ 
+				 'rf' includes: (format at: index ifAbsent: $-) ])
+				ifTrue: [ 
+					aStream nextPutAll: ((format at: index) = $r
+							 ifTrue: [ self nameForRegister: operand ]
+							 ifFalse: [ self nameForFPRegister: operand ]) ]
+				ifFalse: [ 
+					aStream print: operand.
+					(operand isInteger and: [ operand > 16 and: [ opcode ~= Label ] ]) 
+						ifTrue: [ 
+							(operand allMask: 16r80000000) ifTrue: [ 
+								aStream
+									nextPut: $/;
+									print: operand signedIntFromLong ].
+							aStream nextPut: $/.
+							operand printOn: aStream base: 16 ] ] ] ]
+]
+
+{ #category : #printing }
+CogAbstractInstruction >> printStateOn: aStream [
+
+	<doNotGenerate>
+	| opcodeName format |
+	"Smalltalk-side only"
+	opcode ifNil: [ ^ self ].
+	
+	"Print opcode name"
+	aStream space;
+		nextPut: $(;
+		nextPutAll: (opcodeName := self class nameForOpcode: opcode).
+	"Get format"
+	format := self getFormatFromOpCodeName: opcodeName.
+	"Print operands"
+	self printOperandsOn: aStream withFormat: format.
+	"Print machine code"
+	self printMachineCodeOn: aStream.
+	"Print address"
+	self printAddressOn: aStream.
+
 	aStream nextPut: $)
 ]
 

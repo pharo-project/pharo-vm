@@ -71,6 +71,28 @@ VMMachineCodeDebuggerInstruction >> instruction: aLLVMInstruction [
 ]
 
 { #category : #accessing }
-VMMachineCodeDebuggerInstruction >> machineSimulator: anUnicornARMv8Simulator [ 
-	machineSimulator := anUnicornARMv8Simulator
+VMMachineCodeDebuggerInstruction >> machineSimulator [ 
+
+	^ machineSimulator
+]
+
+{ #category : #accessing }
+VMMachineCodeDebuggerInstruction >> machineSimulator: aProcessorSimulator [ 
+	machineSimulator := aProcessorSimulator
+]
+
+{ #category : #accessor }
+VMMachineCodeDebuggerInstruction >> usedRegisters [ 
+
+	"Detect any register name from an asm instruction"
+	| registerAliases cleanASM tokens usedRegisters |
+	registerAliases := self machineSimulator registerAliases.
+	"Clean and split the ASM"
+	cleanASM := self assemblyCodeString copyWithoutAll: ',()'.
+	tokens := cleanASM splitOn: [ :each | each isSeparator ].
+	"Check if any of the substring "
+	usedRegisters := tokens collect: [ :substring |  
+			          			  (registerAliases keyAtValue: substring asSymbol ifAbsent: [  ]) value ] 
+ 		                     thenSelect: [ :value | value isNotNil ].
+	^ usedRegisters removeDuplicates
 ]
