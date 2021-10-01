@@ -990,12 +990,12 @@ CoInterpreter >> baseFrameReturn [
 	self assert: (stackPages stackPageFor: theFP) = stackPage.
 	localSP := theSP.
 	localFP := theFP.
-	localIP := self pointerForOop: self internalStackTop.
-	localIP asUnsignedInteger < objectMemory startOfMemory ifTrue:
-		[localIP asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue:
+	instructionPointer := self pointerForOop: self internalStackTop.
+	instructionPointer asUnsignedInteger < objectMemory startOfMemory ifTrue:
+		[instructionPointer asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue:
 			["localIP in the cog method zone indicates a return to machine code."
 			 ^self returnToMachineCodeFrame].
-		 localIP := self pointerForOop: (self iframeSavedIP: localFP)].
+		 instructionPointer := self pointerForOop: (self iframeSavedIP: localFP)].
 	self assert: (self checkIsStillMarriedContext: contextToReturnTo currentFP: localFP).
 	self setMethod: (self iframeMethod: localFP).
 	self internalStackTopPut: localReturnValue.
@@ -2410,14 +2410,14 @@ CoInterpreter >> commonCallerReturn [
 		[self assert: localFP = stackPage baseFP.
 		 ^self baseFrameReturn].
 
-	localIP := self frameCallerSavedIP: localFP.
+	instructionPointer := self frameCallerSavedIP: localFP.
 	localSP := localFP + (self frameStackedReceiverOffset: localFP).
 	localFP := callersFPOrNull.
-	localIP asUnsignedInteger < objectMemory startOfMemory ifTrue:
-		[localIP asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue:
+	instructionPointer asUnsignedInteger < objectMemory startOfMemory ifTrue:
+		[instructionPointer asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue:
 			["localIP in the cog method zone indicates a return to machine code."
 			 ^self returnToMachineCodeFrame].
-		 localIP := self pointerForOop: (self iframeSavedIP: localFP)].
+		 instructionPointer := self pointerForOop: (self iframeSavedIP: localFP)].
 	self setMethod: (self iframeMethod: localFP).
 	self fetchNextBytecode.
 	self internalStackTopPut: localReturnValue
@@ -3086,8 +3086,7 @@ CoInterpreter >> externalWriteBackHeadStackPointer [
 CoInterpreter >> externalizeIPandSP [
 	"Copy the local instruction, stack and frame pointers to global variables for use in primitives and other functions outside the interpret loop."
 
-	self assert: localIP asUnsignedInteger ~= cogit ceReturnToInterpreterPC.
-	instructionPointer := self oopForPointer: localIP.
+	self assert: instructionPointer asUnsignedInteger ~= cogit ceReturnToInterpreterPC.
 	stackPointer := localSP.
 	framePointer := localFP
 ]
@@ -3709,7 +3708,7 @@ CoInterpreter >> ifBackwardsCheckForEvents: offsetToJumpBytecode [
 		ifTrue:
 			[(self methodWithHeaderShouldBeCogged: (objectMemory methodHeaderOf: method)) ifTrue:
 				[self externalizeIPandSP.
-				 self attemptToSwitchToMachineCode: (self oopForPointer: localIP) - offsetToJumpBytecode - method - objectMemory baseHeaderSize - 1
+				 self attemptToSwitchToMachineCode: (self oopForPointer: instructionPointer) - offsetToJumpBytecode - method - objectMemory baseHeaderSize - 1
 				 "If attemptToSwitchToMachineCode: returns the method could not be cogged, hence..."].
 			 "can't cog method; avoid asking to cog it again for the longest possible time."
 			 backwardJumpCountByte := 16r7F]
@@ -3875,7 +3874,7 @@ CoInterpreter >> instVar: offset ofContext: aContext [
 		[self assert: ReceiverIndex + (self stackPointerIndexForFrame: spouseFP) < (objectMemory lengthOf: aContext).
 		^objectMemory integerObjectOf: (self stackPointerIndexForFrame: spouseFP)].
 	offset = InstructionPointerIndex ifTrue:
-		[^self instructionPointerForFrame: spouseFP currentFP: localFP currentIP: (self oopForPointer: localIP)].
+		[^self instructionPointerForFrame: spouseFP currentFP: localFP currentIP: (self oopForPointer: instructionPointer)].
 	self error: 'bad index'.
 	^0
 ]
@@ -3940,7 +3939,7 @@ CoInterpreter >> internalActivateNewMethod [
 	rcvr := self internalStackValue: argumentCount. "could new rcvr be set at point of send?"
 	self assert: (objectMemory isOopForwarded: rcvr) not.
 
-	self internalPush: localIP.
+	self internalPush: instructionPointer.
 	self internalPush: localFP.
 	localFP := localSP.
 	self internalPush: newMethod.
@@ -3958,12 +3957,12 @@ CoInterpreter >> internalActivateNewMethod [
 		[:i | self internalPush: objectMemory nilObject].
 
 	"-1 to account for pre-increment in fetchNextBytecode"
-	localIP := self pointerForOop: (self initialIPForHeader: methodHeader method: newMethod) - 1.
+	instructionPointer := self pointerForOop: (self initialIPForHeader: methodHeader method: newMethod) - 1.
 
 	(self methodHeaderHasPrimitive: methodHeader) ifTrue:
 		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		 localIP := localIP + (self sizeOfCallPrimitiveBytecode: methodHeader).
+		 instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader).
 		 primFailCode ~= 0 ifTrue:
 			[self reapAndResetErrorCodeTo: localSP header: methodHeader]].
 
@@ -4003,7 +4002,7 @@ CoInterpreter >> internalExecuteNewMethod [
 			^nil]].
 	"if not primitive, or primitive failed, activate the method"
 	(self methodHasCogMethod: newMethod)
-		ifTrue: [self iframeSavedIP: localFP put: localIP asInteger.
+		ifTrue: [self iframeSavedIP: localFP put: instructionPointer asInteger.
 				instructionPointer := cogit ceReturnToInterpreterPC.
 				self externalizeFPandSP.
 				self activateCoggedNewMethod: true.
@@ -4053,7 +4052,6 @@ CoInterpreter >> internalizeIPandSP [
 	"Copy the instruction, stack and frame pointers to local variables for rapid access within the interpret loop."
 
 	self assert: instructionPointer ~= cogit ceReturnToInterpreterPC.
-	localIP := self pointerForOop: instructionPointer.
 	localSP := self pointerForOop: stackPointer.
 	localFP := self pointerForOop: framePointer.
 ]
@@ -4944,11 +4942,11 @@ CoInterpreter >> maybeReturnToMachineCodeFrame [
 	"If the frame we're returning to is a machine code one, then return to it.
 	 Otherwise, if it's an interpreter frame, load the saved ip."
 	<inline: true>
-	localIP asUnsignedInteger < objectMemory startOfMemory ifTrue:
-		[localIP asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue:
+	instructionPointer asUnsignedInteger < objectMemory startOfMemory ifTrue:
+		[instructionPointer asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue:
 			["localIP in the cog method zone indicates a return to machine code."
 			 ^self returnToMachineCodeFrame].
-		 localIP := self pointerForOop: (self iframeSavedIP: localFP)]
+		 instructionPointer := self pointerForOop: (self iframeSavedIP: localFP)]
 ]
 
 { #category : #'debug support' }
@@ -6212,14 +6210,14 @@ CoInterpreter >> returnToMachineCodeFrame [
 	"Return to the previous context/frame after assigning localIP, localSP and localFP."
 	<inline: true>
 	cogit assertCStackWellAligned.
-	self assert: localIP asUnsignedInteger < objectMemory startOfMemory.
+	self assert: instructionPointer asUnsignedInteger < objectMemory startOfMemory.
 	self assert: (self isMachineCodeFrame: localFP).
-	self assertValidExecutionPointe: localIP asUnsignedInteger r: localFP s: localSP imbar: false line: #'__LINE__'.
-	self internalStackTopPut: localIP.
+	self assertValidExecutionPointe: instructionPointer asUnsignedInteger r: localFP s: localSP imbar: false line: #'__LINE__'.
+	self internalStackTopPut: instructionPointer.
 	self internalPush: localReturnValue.
 	self externalizeFPandSP.
 	self cCode: '' inSmalltalk:
-		[self maybeCheckStackDepth: 1 sp: stackPointer pc: localIP].
+		[self maybeCheckStackDepth: 1 sp: stackPointer pc: instructionPointer].
 	cogit ceEnterCogCodePopReceiverReg
 	"NOTREACHED"
 ]
