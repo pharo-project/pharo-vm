@@ -554,31 +554,6 @@ EXPORT(int) __cdecl sqMessageBox(DWORD dwFlags, const char *titleString, const c
   return result;
 }
 
-EXPORT(char*) formatMessageFromErrorCode(DWORD errorCode){
-	LPWSTR wideBuffer;
-	char* buffer;
-	DWORD wideSize;
-
-	wideSize = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |  FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-	                NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-	                (LPWSTR) &wideBuffer, 0, NULL );
-
-	if(wideSize == 0){
-		return NULL;
-	}
-
-	int requiredSize = WideCharToMultiByte(CP_UTF8, 0, wideBuffer, -1, NULL, 0, NULL, 0);
-
-	buffer = malloc(requiredSize * sizeof(char));
-
-	WideCharToMultiByte(CP_UTF8, 0, wideBuffer, -1, buffer, requiredSize, NULL, 0);
-
-	LocalFree(wideBuffer);
-
-	return buffer;
-}
-
-
 EXPORT(void) printLastError(const TCHAR *prefix) {
   LPVOID lpMsgBuf;
   DWORD lastError;

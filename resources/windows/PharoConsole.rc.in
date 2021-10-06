@@ -1,4 +1,5 @@
 #include "windows.h"
+#include "win/resources.h"
 
 100 ICON "@Win32VMExecutableIcon@"
 
@@ -28,3 +29,5 @@ BEGIN
         VALUE "Translation", 0x409, 1252
     END
 END
+
+#include "dialogs.rc"
