@@ -16,6 +16,17 @@ TStmtListNode class >> statements: aCollection [
 		yourself
 ]
 
+{ #category : #comparing }
+TStmtListNode >> = aNode [
+
+	super = aNode ifFalse: [ ^ false ].
+	aNode isStmtList ifFalse: [ ^ false ].
+	statements size = aNode statements size ifFalse: [ ^ false ].
+	statements doWithIndex: [ :stmt :i | 
+		stmt = (aNode statements at: i) ifFalse: [ ^ false ] ].
+	^ true
+]
+
 { #category : #utilities }
 TStmtListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned assignments: assigned in: aCodeGen [
 	"Add any variables in variables that are read before written to readBeforeAssigned.
