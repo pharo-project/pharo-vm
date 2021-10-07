@@ -483,7 +483,14 @@ EXPORT(char*) getErrorLogNameInto(char* nameBuffer, int maxSize){
 
 	WideCharToMultiByte(CP_UTF8, 0, tempPathWide, -1, tempPath, (MAX_PATH + 1) * sizeof(WCHAR), NULL, 0);
 
-	snprintf(nameBuffer, maxSize, "%s\\pharo-%d.log", tempPath, pid);
+	int tempPathSize = strlen(tempPath);
+
+	/* Do we have a trailing slash at the end? */
+	if(tempPathSize > 0 && (tempPath[tempPathSize - 1] == '\\' || tempPath[tempPathSize - 1] == '/')){
+		snprintf(nameBuffer, maxSize, "%spharo-%d.log", tempPath, pid);
+	}else{
+		snprintf(nameBuffer, maxSize, "%s\\pharo-%d.log", tempPath, pid);
+	}
 
 	return nameBuffer;
 }
@@ -507,6 +514,7 @@ EXPORT(int) vfprintf_impl(FILE * stream, const char * format, va_list arg){
 	if(errorLog = getErrorLogFile()){
 		vfprintf(errorLog, format, arg);
 		fflush(errorLog);
+		notifyDebugWindow();
 	}
 
 	return vfprintf(stream, format, arg);

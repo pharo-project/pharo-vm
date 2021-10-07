@@ -66,5 +66,6 @@ EXPORT(char*) getErrorLogNameInto(char* nameBuffer, int maxSize);
 EXPORT(FILE*) getErrorLogFile();
 
 EXPORT(void) openDebugWindow(void* hwnd);
+EXPORT(void) notifyDebugWindow();
 
 #endif
