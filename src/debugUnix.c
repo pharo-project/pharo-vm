@@ -1,4 +1,5 @@
 #include "pharovm/pharo.h"
+#include <stdarg.h>
 
 #if __linux__
 
