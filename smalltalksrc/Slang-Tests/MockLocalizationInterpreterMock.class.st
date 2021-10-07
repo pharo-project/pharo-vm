@@ -5,7 +5,11 @@ Class {
 		'variableToLocalize',
 		'sharedVariableToLocalize',
 		'sharedVariableToLocalizeBeforeInlining',
-		'autoLocalizedVariable'
+		'autoLocalizedVariable',
+		'autoLocalizedVariable1',
+		'autoLocalizedVariable2',
+		'autoLocalizedVariable3',
+		'autoLocalizedVariable4'
 	],
 	#classVars : [
 		'BytecodeTable'
@@ -67,6 +71,16 @@ MockLocalizationInterpreterMock class >> initializeWithExternalizedAutoLocalized
 	)
 ]
 
+{ #category : #initialization }
+MockLocalizationInterpreterMock class >> initializeWithSafeEscapingCall [
+
+	BytecodeTable := Array new: 1.
+	self table: BytecodeTable from:
+	#(
+	(  0  bytecodeUsingSafeExternalCall)
+	)
+]
+
 { #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeToInline [
 
@@ -98,6 +112,12 @@ MockLocalizationInterpreterMock >> bytecodeUsingLocalizedVariable [
 	variableToLocalize := 42
 ]
 
+{ #category : #'as yet unclassified' }
+MockLocalizationInterpreterMock >> bytecodeUsingSafeExternalCall [
+
+	self nonInlinedMethodNotUsingAutolocalizedVariables: (autoLocalizedVariable := autoLocalizedVariable +1)
+]
+
 { #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeUsingSharedLocalizedVariable [
 
@@ -117,6 +137,21 @@ MockLocalizationInterpreterMock >> bytecodeWithEscapingCall [
 	self foo: (autoLocalizedVariable := autoLocalizedVariable + 1)
 ]
 
+{ #category : #'as yet unclassified' }
+MockLocalizationInterpreterMock >> foo2 [
+
+	<inline: false>
+	autoLocalizedVariable := 10
+]
+
+{ #category : #inline }
+MockLocalizationInterpreterMock >> foo: anObject [
+
+	<inline: false>
+	autoLocalizedVariable2 := 11.
+	self foo2
+]
+
 { #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> interpret [
 	<localizedVariable: #autoLocalizedVariable>
@@ -134,6 +169,56 @@ MockLocalizationInterpreterMock >> interpretWithConflict [
 	self dispatchOn: 1 in: BytecodeTable
 ]
 
+{ #category : #inline }
+MockLocalizationInterpreterMock >> interpretWithExternalCallBeforeDispatch [
+	
+	<localizedVariable: #autoLocalizedVariable>
+	self nonInlinedMethodUsingAutolocalizedVariable.
+	self dispatchOn: 1 in: BytecodeTable
+]
+
+{ #category : #inline }
+MockLocalizationInterpreterMock >> interpretWithLocalizedVariableConflict [
+
+	"This method should create a conflict with automatically inlined arguments"
+	| local_autoLocalizedVariable |
+	<localizedVariable: #autoLocalizedVariable>
+
+	self dispatchOn: 1 in: BytecodeTable
+]
+
+{ #category : #inline }
+MockLocalizationInterpreterMock >> interpretWithReturnExpression [
+
+	<localizedVariable: #autoLocalizedVariable>
+	self dispatchOn: 1 in: BytecodeTable.
+	true
+		ifTrue: [ ^ 2 + 2 ]
+		ifFalse: [ ^ 1 + 1 ]
+]
+
+{ #category : #inline }
+MockLocalizationInterpreterMock >> interpretWithReturnExpressionUpdatingAutoLocalizedVariable [
+
+	<localizedVariable: #autoLocalizedVariable>
+	<localizedVariable: #autoLocalizedVariable1>
+	self dispatchOn: 1 in: BytecodeTable.
+
+	^ autoLocalizedVariable := autoLocalizedVariable + 1
+]
+
+{ #category : #inline }
+MockLocalizationInterpreterMock >> interpretWithSeveralVariablesToLocalize [
+	
+	<localizedVariable: #autoLocalizedVariable>
+	<localizedVariable: #autoLocalizedVariable1>
+	<localizedVariable: #autoLocalizedVariable2>
+	<localizedVariable: #autoLocalizedVariable3>
+	<localizedVariable: #autoLocalizedVariable4>
+
+	self dispatchOn: 1 in: BytecodeTable
+]
+
 { #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> methodAlsoSharedLocalizedVariableBeforeInlining [
 
@@ -144,6 +229,20 @@ MockLocalizationInterpreterMock >> methodAlsoSharedLocalizedVariableBeforeInlini
 MockLocalizationInterpreterMock >> nonBytecodeUsingSharedLocalizedVariable [
 
 	sharedVariableToLocalize := 17
+]
+
+{ #category : #inline }
+MockLocalizationInterpreterMock >> nonInlinedMethodNotUsingAutolocalizedVariables [
+
+	<inline:false>
+	^ 10
+]
+
+{ #category : #inline }
+MockLocalizationInterpreterMock >> nonInlinedMethodNotUsingAutolocalizedVariables: anObject [
+
+	<inline:false>
+	^ anObject + 10
 ]
 
 { #category : #'interpreter shell' }
