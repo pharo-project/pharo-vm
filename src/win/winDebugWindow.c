@@ -6,8 +6,8 @@
 
 HWND debugWindowHWND;
 
-DWORD logLength;
-DWORD logPosition;
+long int logLength;
+long int logPosition;
 
 #define LOGBUFFER_SIZE 	4195
 #define LOG_LINES 		  29
@@ -15,7 +15,7 @@ DWORD logPosition;
 
 char* logBuffer;
 WCHAR* logBufferWide;
-DWORD logBufferUsedSize;
+long int logBufferUsedSize;
 
 extern int printCallStack();
 extern int printAllStacks();
@@ -213,7 +213,9 @@ void updateLogText(){
 
 	logLength = ftell(log);
 	logPosition = logLength - LOGBUFFER_SIZE;
-	logPosition = logPosition < 0 ? 0 : logPosition;
+
+	if(logPosition < 0)
+		logPosition = 0;
 
 	scrollInfo.cbSize = sizeof(SCROLLINFO);
 	scrollInfo.fMask = SIF_RANGE | SIF_POS;
