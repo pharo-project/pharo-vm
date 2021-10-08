@@ -21,8 +21,6 @@
 
 #include <windows.h>
 
-EXPORT(char*) formatMessageFromErrorCode(DWORD errorCode);
-
 #endif
 
 EXPORT(const char*) getSourceVersion();
