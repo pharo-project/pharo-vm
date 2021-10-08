@@ -30,6 +30,37 @@ EXPORT(void) printMachineCallStack(PCONTEXT ctx , FILE* output);
 DWORD threadIDs[MAX_THREADID_TO_REGISTER];
 int threadIDCount = 0;
 
+EXPORT(void) logErrorFromGetLastError(char* message){
+	DWORD errorCode = GetLastError();
+	char* errorMessage = formatMessageFromErrorCode(errorCode);
+	logError("%s: %d, %s", message, errorCode, errorMessage);
+	free(errorMessage);
+}
+
+EXPORT(char*) formatMessageFromErrorCode(int errorCode){
+	LPWSTR wideBuffer;
+	char* buffer;
+	DWORD wideSize;
+
+	wideSize = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |  FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+	                NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+	                (LPWSTR) &wideBuffer, 0, NULL );
+
+	if(wideSize == 0){
+		return NULL;
+	}
+
+	int requiredSize = WideCharToMultiByte(CP_UTF8, 0, wideBuffer, -1, NULL, 0, NULL, 0);
+
+	buffer = malloc(requiredSize * sizeof(char));
+
+	WideCharToMultiByte(CP_UTF8, 0, wideBuffer, -1, buffer, requiredSize, NULL, 0);
+
+	LocalFree(wideBuffer);
+
+	return buffer;
+}
+
 EXPORT(void) registerCurrentThreadToHandleExceptions(){
 
 	if(threadIDCount == MAX_THREADID_TO_REGISTER){
@@ -169,11 +200,11 @@ char* getExceptionMessage(LPEXCEPTION_POINTERS exp){
 extern void dumpPrimTraceLog(void);
 void reportStackState(LPEXCEPTION_POINTERS exp, char* date, FILE* output){
 
-	fprintf(output,"\n%s(%ld) at 0x%016llx - %s\n\n", getExceptionMessage(exp), exp->ExceptionRecord->ExceptionCode, (unsigned long long)exp->ExceptionRecord->ExceptionAddress, date);
-	fprintf(output,"%s\n%s\n\n", GetAttributeString(0), getVersionInfo(1));
+	fprintf_impl(output,"\n%s(%ld) at 0x%016llx - %s\n\n", getExceptionMessage(exp), exp->ExceptionRecord->ExceptionCode, (unsigned long long)exp->ExceptionRecord->ExceptionAddress, date);
+	fprintf_impl(output,"%s\n%s\n\n", GetAttributeString(0), getVersionInfo(1));
 
 
-	fprintf(output,"C stack backtrace & registers:\n");
+	fprintf_impl(output,"C stack backtrace & registers:\n");
 
 	CONTEXT ctx;
 
@@ -183,7 +214,7 @@ void reportStackState(LPEXCEPTION_POINTERS exp, char* date, FILE* output){
 
 	printMachineCallStack(&ctx, output);
 
-	fprintf(output, "\nMost recent primitives\n");
+	fprintf_impl(output, "\nMost recent primitives\n");
 	dumpPrimTraceLog();
 
 }
@@ -274,21 +305,21 @@ void printSymbolInfo(STACKFRAME64 *frame, FILE* output){
 	IMAGEHLP_LINE64 line;
 	line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
 
-	fprintf(output, "[0x%016llX] ", frame->AddrPC.Offset);
+	fprintf_impl(output, "[0x%016llX] ", frame->AddrPC.Offset);
 
 	//If I find the function name I print it.
 	if (SymFromAddr(GetCurrentProcess(), frame->AddrPC.Offset, &displacement64, symbol)) {
-		fprintf(output, "%s", symbol->Name);
+		fprintf_impl(output, "%s", symbol->Name);
 
 		if (SymGetLineFromAddr64(GetCurrentProcess(), frame->AddrPC.Offset, &displacement, &line)) {
-			fprintf(output, " (%s:%ld)", line.FileName, line.LineNumber);
+			fprintf_impl(output, " (%s:%ld)", line.FileName, line.LineNumber);
 		}
-		fprintf(output, "\n");
+		fprintf_impl(output, "\n");
 	}else{
 #if COGVM
 		printCogMethodFor(frame->AddrPC.Offset);
 #else
-		fprintf(output, "Cannot identify frame method");
+		fprintf_impl(output, "Cannot identify frame method");
 #endif
 	}
 
@@ -301,7 +332,7 @@ EXPORT(void) printMachineCallStack(PCONTEXT ctx, FILE* output){
 
 	captureStack(ctx, frames, NUMBER_OF_STACKS, 6);
 
-	fprintf(output,"\n\nC Callstack:\n\n");
+	fprintf_impl(output,"\n\nC Callstack:\n\n");
 
 	int i;
 	for(i = 0; i< NUMBER_OF_STACKS; i++){
@@ -316,7 +347,7 @@ EXPORT(void) printMachineCallStack(PCONTEXT ctx, FILE* output){
 
 	//	/* Do not attempt to report the stack until the VM is initialized!! */
 	//	if (!*(char **)stackLimitAddress()){
-	//		fprintf(output,"The VM is not initialized, cannot print the stack trace");
+	//		fprintf_impl(output,"The VM is not initialized, cannot print the stack trace");
 	//		return;
 	//	}
 
@@ -329,7 +360,7 @@ EXPORT(void) printMachineCallStack(PCONTEXT ctx, FILE* output){
 	ifValidWriteBackStackPointersSaveTo(fp,sp,&savedFP,&savedSP);
 #endif /* COGVM */
 
-	fprintf(output, "\n\nAll Smalltalk process stacks (active first):\n");
+	fprintf_impl(output, "\n\nAll Smalltalk process stacks (active first):\n");
 	fflush(output);
 
 	printAllStacks();
@@ -345,10 +376,10 @@ EXPORT(void) printMachineCallStack(PCONTEXT ctx, FILE* output){
 
 EXPORT(void) printRegisterState(PCONTEXT regs, FILE* output){
 
-	fprintf(output,"\n\nRegisters:\n");
+	fprintf_impl(output,"\n\nRegisters:\n");
 
 #if _M_IX86
-	fprintf(output,
+	fprintf_impl(output,
 		"ContextFlags: 0x%016lx\n"
 		"\teax 0x%016lx ebx 0x%016lx ecx 0x%016lx edx 0x%016lx\n"
 		"\tedi 0x%016lx esi 0x%016lx ebp 0x%016lx esp 0x%016lx\n"
@@ -358,7 +389,7 @@ EXPORT(void) printRegisterState(PCONTEXT regs, FILE* output){
 		regs->Edi, regs->Esi, regs->Ebp, regs->Esp,
 		regs->Eip);
 #elif _M_ARM64
-	fprintf(output,
+	fprintf_impl(output,
 		"ContextFlags: 0x%016lx\n"
 		"\tX0 0x%016lx X1 0x%016lx X2 0x%016lx X3 0x%016lx\n"
 		"\tX4 0x%016lx X5 0x%016lx X6 0x%016lx X7 0x%016lx\n"
@@ -380,7 +411,7 @@ EXPORT(void) printRegisterState(PCONTEXT regs, FILE* output){
 		regs->X28, regs->Fp, regs->Lr, regs->Sp,
 		regs->Pc);
 #else
-	fprintf(output,
+	fprintf_impl(output,
 			"ContextFlags: 0x%016llx\n"
 			"\trax 0x%016llx rbx 0x%016llx rcx 0x%016llx rdx 0x%016llx\n"
 			"\trdi 0x%016llx rsi 0x%016llx rbp 0x%016llx rsp 0x%016llx\n"
@@ -407,23 +438,85 @@ EXPORT(void) printStatusAfterError(){
 	crashDumpFile = fopen(crashdumpFileName, "a+");
 	vm_setVMOutputStream(crashDumpFile);
 
-	fprintf(crashDumpFile, "\n\nAll Smalltalk process stacks (active first):\n");
+	fprintf_impl(crashDumpFile, "\n\nAll Smalltalk process stacks (active first):\n");
 	fflush(crashDumpFile);
 
 	printAllStacks();
 
-	fprintf(crashDumpFile, "\nMost recent primitives\n");
+	fprintf_impl(crashDumpFile, "\nMost recent primitives\n");
 	dumpPrimTraceLog();
 
 	vm_setVMOutputStream(stderr);
 	fclose(crashDumpFile);
 
-	fprintf(stderr, "\n\nAll Smalltalk process stacks (active first):\n");
+	fprintf_impl(stderr, "\n\nAll Smalltalk process stacks (active first):\n");
 	fflush(stderr);
 
 	printAllStacks();
-	fprintf(stderr, "\nMost recent primitives\n");
+	fprintf_impl(stderr, "\nMost recent primitives\n");
 	dumpPrimTraceLog();
 
 	fflush(stderr);
 }
+
+EXPORT(int) fprintf_impl(FILE * stream, const char * format, ... ){
+	va_list list;
+	va_start(list, format);
+
+	int returnValue = vfprintf_impl(stream, format, list);
+
+	va_end(list);
+
+	return returnValue;
+}
+
+EXPORT(char*) getErrorLogNameInto(char* nameBuffer, int maxSize){
+
+	WCHAR tempPathWide[MAX_PATH + 1];
+	char tempPath[(MAX_PATH + 1) * sizeof(WCHAR)];
+	DWORD pid = GetCurrentProcessId();
+
+	if(GetTempPathW(MAX_PATH+1, tempPathWide) == 0){
+		snprintf(nameBuffer, maxSize, "pharo-%d.log", pid);
+		return nameBuffer;
+	}
+
+	WideCharToMultiByte(CP_UTF8, 0, tempPathWide, -1, tempPath, (MAX_PATH + 1) * sizeof(WCHAR), NULL, 0);
+
+	int tempPathSize = strlen(tempPath);
+
+	/* Do we have a trailing slash at the end? */
+	if(tempPathSize > 0 && (tempPath[tempPathSize - 1] == '\\' || tempPath[tempPathSize - 1] == '/')){
+		snprintf(nameBuffer, maxSize, "%spharo-%d.log", tempPath, pid);
+	}else{
+		snprintf(nameBuffer, maxSize, "%s\\pharo-%d.log", tempPath, pid);
+	}
+
+	return nameBuffer;
+}
+
+EXPORT(FILE*) getErrorLogFile(){
+	static FILE* errorLog = NULL;
+
+	char nameBuffer[MAX_PATH + 1];
+
+	if(errorLog == NULL){
+		errorLog = fopen(getErrorLogNameInto(nameBuffer, MAX_PATH+1), "w+");
+	}
+
+	return errorLog;
+}
+
+EXPORT(int) vfprintf_impl(FILE * stream, const char * format, va_list arg){
+
+	FILE* errorLog;
+
+	if(errorLog = getErrorLogFile()){
+		vfprintf(errorLog, format, arg);
+		fflush(errorLog);
+		notifyDebugWindow();
+	}
+
+	return vfprintf(stream, format, arg);
+}
+
