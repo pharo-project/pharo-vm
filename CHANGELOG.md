@@ -2,6 +2,11 @@
 
 I am a changelog... do not wait too much from me :D
 
+## v9.0.9
+- Fixing dependencies of functions with Variadic Arguments
+- Debug window and menu for Windows.
+- Fixing Version Numbers when is not a Release in the Resources File (Windows).
+
 ## v9.0.8
 - Improving AIO Support in windows to handle the maximum quantity of waiting on objects 
 - SIGEMT is not defined in all Linux as it depends on the architecture
