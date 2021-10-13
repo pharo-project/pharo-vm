@@ -425,12 +425,7 @@ VMMachineCodeDebugger >> inspectSelectedInstruction [
 ]
 
 { #category : #accessing }
-<<<<<<< HEAD
 VMMachineCodeDebugger >> irinstructions: aCollection [
-=======
-VMMachineCodeDebugger >> irinstructions: aCollection [
-
->>>>>>> 8346726d7... VMDebugger extension with IR
 	irinstructions := aCollection
 ]
 
