@@ -464,11 +464,13 @@ UnicornSimulator >> mapMemory: aMemory at: anAddress [
 ]
 
 { #category : #'memory-mapping' }
-UnicornSimulator >> mapMemoryInManager: aSlangMemoryManager [
+UnicornSimulator >> mapMemoryInManager: aMachineSimulatorMemoryManager [
 
-	aSlangMemoryManager regionsDo: [ :startAddress :region |
+	aMachineSimulatorMemoryManager regionsDo: [ :startAddress :region |
 		self mapMemory: region at: startAddress
-	]
+	].
+
+	aMachineSimulatorMemoryManager machineSimulator: self.
 ]
 
 { #category : #accessing }

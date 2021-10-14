@@ -61,6 +61,18 @@ VMObjectLayoutTests >> testHeaderOfObjectEncodesTheCorrectAmountOfSlots [
 			equals: objSize ]
 ]
 
+{ #category : #'tests - integerValues' }
+VMObjectLayoutTests >> testNegativeIntegerValuesInRange [
+
+	self assert: (memory isIntegerValue: memory minSmallInteger)
+]
+
+{ #category : #'tests - integerValues' }
+VMObjectLayoutTests >> testNegativeIntegerValuesNotInRange [
+	"An integer smaller than the smallest integer is not in a valid range"
+	self deny: (memory isIntegerValue: memory minSmallInteger - 1)
+]
+
 { #category : #tests }
 VMObjectLayoutTests >> testObjectAlignment [
 	| class objOop1 objOop2 instSpec |
@@ -251,6 +263,33 @@ VMObjectLayoutTests >> testObjectWithMoreThan254SlotsHasTwoHeaders [
 		bigOopHeader := memory baseHeader: objOop - objectHeaderSize.	"header before the main header"
 		numSlots := bigOopHeader bitAnd: mask.
 		self assert: numSlots equals: slots ]
+]
+
+{ #category : #'tests - integerValues' }
+VMObjectLayoutTests >> testPositiveIntegerBorderCase1 [
+	"Test of the border case when int = 2r000111111... . The highest possible value using usqInt encoding is (2**61) -1 since (2**61) can be confused with a pointer (on a 64 bits machine)
+	Regarding the cCode implementation, the sign bit can be lost if this test fails. The maxCInteger and numSmallIntegerTagBits guarantees the portability 
+	of the test on 32 and 64 bit computer. 
+	"
+	self deny: (memory isIntegerValue: memory maxCInteger >> memory numSmallIntegerTagBits)
+]
+
+{ #category : #'tests - integerValues' }
+VMObjectLayoutTests >> testPositiveIntegerBorderCase2 [
+"Test of the border case when int = 2r111000000 ... . Regarding the cCode implementation, the sign bit can be lost if this test fails. The maxCInteger and numSmallIntegerTagBits guaranties the portability of the test on 32 and 64 bit computer. "
+	self deny: (memory isIntegerValue: (memory maxCInteger >> memory numSmallIntegerTagBits) bitInvert) "<=> isIntegerValue: (0001111) bitInvert" 
+]
+
+{ #category : #'tests - integerValues' }
+VMObjectLayoutTests >> testPositiveIntegerValuesInRange [
+
+	self assert: (memory isIntegerValue: memory maxSmallInteger)
+]
+
+{ #category : #'tests - integerValues' }
+VMObjectLayoutTests >> testPositiveIntegerValuesNotInRange [
+
+	self deny: (memory isIntegerValue: memory maxSmallInteger + 1)
 ]
 
 { #category : #tests }

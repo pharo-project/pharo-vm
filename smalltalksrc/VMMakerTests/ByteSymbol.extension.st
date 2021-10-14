@@ -26,3 +26,9 @@ ByteSymbol >> forMemory: aMemory [
 
 	^ vmString
 ]
+
+{ #category : #'*VMMakerTests' }
+ByteSymbol >> forMethodBuilder: aBuilder [
+
+	^ self forMemory: aBuilder memory
+]

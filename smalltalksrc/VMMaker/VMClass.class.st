@@ -46,6 +46,12 @@ VMClass class >> bytesPerWord [
 	^ BytesPerWord 
 ]
 
+{ #category : #accessing }
+VMClass class >> bytesPerWord: anInteger [ 
+
+	^ BytesPerWord := anInteger
+]
+
 { #category : #'accessing class hierarchy' }
 VMClass class >> cogitClass [
 	"Answer the cogitClass in effect.  Ensure that StackInterpreter has a nil cogitClass."
@@ -156,7 +162,7 @@ VMClass class >> initializeMiscConstants [
 
 	| omc |
 	VMBIGENDIAN class. "Mention this for the benefit of CCodeGenerator>>emitCConstantsOn:"
-	SPURVM := STACKVM := COGVM := COGMTVM := false.
+	SPURVM := STACKVM := COGVM := false.
 
 	InitializationOptions ifNil: [InitializationOptions := Dictionary new].
 	omc := InitializationOptions at: #ObjectMemory ifAbsent: [self error: 'Please specify an object memory'].
@@ -184,9 +190,8 @@ VMClass class >> initializeMiscConstants [
 		at: #VMBIGENDIAN	ifPresent: [:value| VMBIGENDIAN := value];
 		at: #ObjectMemory	ifPresent: [:value| SPURVM := value beginsWith: 'Spur'];
 		at: #STACKVM		ifPresent: [:value| STACKVM := value];
-		at: #COGVM		ifPresent: [:value| COGVM := InitializationOptions at: #COGVM];
-		at: #COGMTVM		ifPresent: [:value| COGMTVM := InitializationOptions at: #COGMTVM].
-
+		at: #COGVM		ifPresent: [:value| COGVM := InitializationOptions at: #COGVM].
+				
 	"consistency checks"
 	SPURVM
 		ifTrue:
@@ -566,12 +571,6 @@ VMClass >> cCoerce: value to: cTypeString [
 		ifNotNil: [value coerceTo: cTypeString sim: self]
 ]
 
-{ #category : #'translation support' }
-VMClass >> cPreprocessorDirective: codeString [
-	"For translation only; noop when running in Smalltalk."
-	<doNotGenerate>
-]
-
 { #category : #'C library simulation' }
 VMClass >> calloc: num _: size [ 
 
@@ -721,7 +720,49 @@ VMClass >> localNameFor: aString [
 VMClass >> logError: aMessage [
 	
 	<doNotGenerate>
-	Warning signal: aMessage
+	self logError: aMessage withArgs: #()
+]
+
+{ #category : #'debug support' }
+VMClass >> logError: aFormat _: arg1 [
+	
+	<doNotGenerate>
+	self logError: aFormat withArgs: { arg1 }
+]
+
+{ #category : #'debug support' }
+VMClass >> logError: aFormat _: arg1 _: arg2 [
+	
+	<doNotGenerate>
+	self logError: aFormat withArgs: { arg1. arg2 }
+]
+
+{ #category : #'debug support' }
+VMClass >> logError: aFormat withArgs: args [
+	
+	<doNotGenerate>
+	Error signal: (aFormat printf: args)
+]
+
+{ #category : #'debug support' }
+VMClass >> logWarn: aMessage [
+	
+	<doNotGenerate>
+	self logWarn: aMessage withArgs: #()
+]
+
+{ #category : #'debug support' }
+VMClass >> logWarn: aMessage _: anArgument [
+	
+	<doNotGenerate>
+	self logWarn: aMessage withArgs: { anArgument }
+]
+
+{ #category : #'debug support' }
+VMClass >> logWarn: aFormat withArgs: args [
+	
+	<doNotGenerate>
+	(aFormat printf: args) traceCr
 ]
 
 { #category : #'memory access' }

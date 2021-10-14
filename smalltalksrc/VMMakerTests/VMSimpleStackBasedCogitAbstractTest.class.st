@@ -28,7 +28,7 @@ Class {
 		'CogCompilationConstants',
 		'CogMethodConstants',
 		'VMBytecodeConstants',
-		'VMSqueakClassIndices'
+		'VMClassIndices'
 	],
 	#category : #'VMMakerTests-JitTests'
 }
@@ -139,7 +139,7 @@ VMSimpleStackBasedCogitAbstractTest >> compileSpecialSend [
 	cogit ordinarySendTrampolineAt: sentSelector numArgs put: sendTrampolineAddress.
 	
 	self createFramefulCallFrom: callerAddress.
-	cogit byte0: 176 + (selectorIndex - 1 / 2).
+	cogit byte0: 96 + (selectorIndex - 1 / 2).
 	sendAddress := self compile: [ cogit genSpecialSelectorSend ].
 ]
 
@@ -391,7 +391,7 @@ VMSimpleStackBasedCogitAbstractTest >> initialCodeSize [
 VMSimpleStackBasedCogitAbstractTest >> initializationOptions [
 	
 	^ super initializationOptions, {
-		#bytecodeTableInitializer. #initializeBytecodeTableForSqueakV3PlusClosures}
+		#bytecodeTableInitializer. #initializeBytecodeTableForSistaV1}
 ]
 
 { #category : #running }
@@ -441,9 +441,7 @@ VMSimpleStackBasedCogitAbstractTest >> jitCompilerClass [
 VMSimpleStackBasedCogitAbstractTest >> jitMethod: aPharoCompiledMethod selector: aSelectorOop [
 
 	| methodOop |
-	"We are using V3 bytecode, so we need to recompile the method"
-	methodOop := self createMethodOopFromPharoMethod:
-		             aPharoCompiledMethod.
+	methodOop := self createMethodOopFromPharoMethod: aPharoCompiledMethod.
 	^ cogit cog: methodOop selector: aSelectorOop
 ]
 

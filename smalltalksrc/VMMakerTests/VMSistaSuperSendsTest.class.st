@@ -9,14 +9,14 @@ VMSistaSuperSendsTest >> initializationOptions [
 
 	^ super initializationOptions , { 
 		#MULTIPLEBYTECODESETS 		. true.
-		#bytecodeTableInitializer 	. #initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid }
+		#bytecodeTableInitializer 	. #initializeBytecodeTableForSistaV1 }
 ]
 
 { #category : #running }
 VMSistaSuperSendsTest >> jitOptions [
 
 	^ super jitOptions
-		  at: #bytecodeTableInitializer put: #initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid;
+		  at: #bytecodeTableInitializer put: #initializeBytecodeTableForSistaV1;
 		  yourself
 ]
 
@@ -40,14 +40,13 @@ VMSistaSuperSendsTest >> testSuperSendLiteralZeroWithZeroArgsMovesSelectorIndexC
 		bytecodes: #[ 
 			"Push literal variable"	16r11
 			"Directed super send" 	16rE1 16r40 16rEB 16r00 ];
-		buildMethod).
+		build).
 	startPC := interpreter startPCOfMethod: cogit methodObj.
 	sendAddress := self compile: [ 
 		cogit methodOrBlockNumTemps: 0.
 		cogit initSimStackForFramelessMethod: startPC.
 		cogit bytecodePC: startPC.
 		cogit endPC: (memory numBytesOf: cogit methodObj).
-		cogit bytecodeSetOffset: 256 "sista".
 	
 		
 		"Push receiver and arguments"

@@ -41,20 +41,8 @@ CogMethodSurrogate64 class >> offsetOf: aByteSymbol [
 		{	[#methodObject]		-> [8 + baseHeaderSize].
 			[#methodHeader]		-> [16 + baseHeaderSize].
 			[#selector]				-> [24 + baseHeaderSize].
-			[#blockEntryOffset]	-> [6 + baseHeaderSize].
+			[#picUsage]	-> [6 + baseHeaderSize].
 		}
-]
-
-{ #category : #accessing }
-CogMethodSurrogate64 >> blockEntryOffset [
-	^memory unsignedShortAt: address + 6 + baseHeaderSize
-]
-
-{ #category : #accessing }
-CogMethodSurrogate64 >> blockEntryOffset: aValue [
-	^memory
-		unsignedShortAt: address + baseHeaderSize + 6
-		put: aValue
 ]
 
 { #category : #accessing }
@@ -90,6 +78,18 @@ CogMethodSurrogate64 >> methodObject [
 CogMethodSurrogate64 >> methodObject: aValue [
 	^memory
 		unsignedLong64At: address + baseHeaderSize + 8
+		put: aValue
+]
+
+{ #category : #accessing }
+CogMethodSurrogate64 >> picUsage [
+	^memory unsignedShortAt: address + 6 + baseHeaderSize
+]
+
+{ #category : #accessing }
+CogMethodSurrogate64 >> picUsage: aValue [
+	^memory
+		unsignedShortAt: address + baseHeaderSize + 6
 		put: aValue
 ]
 

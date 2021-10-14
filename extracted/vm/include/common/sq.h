@@ -175,14 +175,6 @@ sqInt sqGetFilenameFromString(char * aCharBuffer, char * aFilenameString, sqInt 
 
 /* Interpreter entry points. */
 
-/* Disable Intel compiler inlining of error which is used for breakpoints */
-#ifdef __INTEL_COMPILER
-#   pragma auto_inline(off)
-#endif
-extern void error(char *s);
-#ifdef __INTEL_COMPILER
-#   pragma auto_inline(on)
-#endif
 sqInt checkedByteAt(sqInt byteAddress);
 sqInt checkedByteAtput(sqInt byteAddress, sqInt byte);
 sqInt checkedLongAt(sqInt byteAddress);
@@ -512,7 +504,7 @@ sqInt ioDisableImageWrite(void);
 
 #include "pharovm/imageAccess.h"
 
-size_t readImageFromFileHeapSizeStartingAt(sqImageFile f, usqInt desiredHeapSize, squeakFileOffsetType imageOffset);
+size_t readImageFromFileStartingAt(sqImageFile f, squeakFileOffsetType imageOffset);
 
 /* Clipboard (cut/copy/paste). */
 sqInt clipboardSize(void);

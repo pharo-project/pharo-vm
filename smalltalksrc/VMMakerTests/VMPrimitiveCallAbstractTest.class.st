@@ -38,7 +38,7 @@ VMPrimitiveCallAbstractTest >> createBaseFrame [
 	
 	baseMethod := methodBuilder newMethod
 		literals: { memory nilObject. memory nilObject }; 
-		buildMethod.
+		build.
 	
 	baseMethodIP := memory lastPointerOf: baseMethod.
 	

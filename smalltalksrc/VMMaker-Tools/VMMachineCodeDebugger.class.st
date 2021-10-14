@@ -38,7 +38,7 @@ VMMachineCodeDebugger class >> defaultSpec [
 					add: #disassembleAtPCButton;
 					yourself);
 			add: #stack;
-			yourself)
+			yourself);
 		yourself
 ]
 
@@ -265,7 +265,7 @@ VMMachineCodeDebugger >> initialDisassembly [
 { #category : #showing }
 VMMachineCodeDebugger >> initialExtent [
 
-	^ 1000@1000
+	^ 1000@600
 ]
 
 { #category : #showing }
@@ -460,8 +460,7 @@ VMMachineCodeDebugger >> refreshAll [
 	self refreshIRInstructions.
 	self refreshInstructions.
 	self refreshStack.
-
-	super openWithSpec.
+	self refreshRegisters.
 ]
 
 { #category : #showing }
@@ -531,6 +530,6 @@ VMMachineCodeDebugger >> step [
 
 { #category : #accessing }
 VMMachineCodeDebugger >> title [
-
+   
 	^ 'VM Debugger'
 ]

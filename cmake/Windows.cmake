@@ -20,6 +20,8 @@ if(NOT Win32VMExecutableIcon)
     set(Win32VMExecutableIcon "${Win32ResourcesFolder_OUT}/Pharo.ico")
 endif()
 
+include_directories(PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/resources/windows)
+
 set(Win32Resource "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_NAME}.rc")
 set(Win32ConsoleResource "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_CONSOLE_NAME}.rc")
 set(Win32DLLResource "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_NAME}DLL.rc")
@@ -45,7 +47,9 @@ set(EXTRACTED_SOURCES
 #Platform sources
     ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/win/sqWin32SpurAlloc.c
     ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/win/aioWin.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/debugWin.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/win/winDebug.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/win/winDebugMenu.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/win/winDebugWindow.c
 
 # Support sources
     ${CMAKE_CURRENT_SOURCE_DIR}/src/fileDialogWin32.c

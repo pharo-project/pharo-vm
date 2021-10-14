@@ -57,8 +57,8 @@ Class {
 	#pools : [
 		'CogMethodConstants',
 		'VMBasicConstants',
-		'VMObjectIndices',
-		'VMSqueakClassIndices'
+		'VMClassIndices',
+		'VMObjectIndices'
 	],
 	#category : #'VMMaker-Support'
 }
@@ -559,11 +559,6 @@ CurrentImageCoInterpreterFacade >> isReadMediatedContextInstVarIndex: index [
 	 account of potentially married contexts and fetch the state from the frame. method,
 	 closureOrNil and receiver can safely be fetched from the context without checking."
 	^index <= StackPointerIndex
-]
-
-{ #category : #accessing }
-CurrentImageCoInterpreterFacade >> isThreadedVM [
-	^false
 ]
 
 { #category : #'frame access' }
@@ -1151,13 +1146,6 @@ CurrentImageCoInterpreterFacade >> startPCOfMethodHeader: headerIntegerOop [
 	 but only if the CompiledMethod header formats match"
 ]
 
-{ #category : #accessing }
-CurrentImageCoInterpreterFacade >> startPCOrNilOfLiteral: literalOop in: methodOop [
-	^(literalOop isClosure
-	   and: [literalOop method == (objectMap keyAtValue: methodOop)]) ifTrue:
-		[literalOop startpc]
-]
-
 { #category : #testing }
 CurrentImageCoInterpreterFacade >> storePointer: index ofObject: objOop withValue: valueOop [ 
 	(self objectForOop: objOop)
@@ -1184,13 +1172,6 @@ CurrentImageCoInterpreterFacade >> stringOf: anOop [
 		ifFalse: [thing asString]) contractTo: 64
 ]
 
-{ #category : #testing }
-CurrentImageCoInterpreterFacade >> tempCountForBlockStartingAt: startpc in: methodOop [
-	^BlockLocalTempCounter
-		tempCountForBlockStartingAt: startpc
-		in: (self objectForOop: methodOop)
-]
-
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> tempCountOf: anOop [
 	^(self objectForOop: anOop) numTemps
@@ -1202,11 +1183,6 @@ CurrentImageCoInterpreterFacade >> temporaryCountOfMethodHeader: headerIntegerOo
 	"a.k.a.
 	^coInterpreter temporaryCountOfMethodHeader: headerIntegerOop,
 	 but only if the CompiledMethod header formats match"
-]
-
-{ #category : #accessing }
-CurrentImageCoInterpreterFacade >> threadManager [
-	^nil
 ]
 
 { #category : #accessing }

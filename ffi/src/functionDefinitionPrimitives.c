@@ -4,13 +4,13 @@
 #ifdef FEATURE_FFI
 #include "pThreadedFFI.h"
 
-void* defineFunctionWithAnd(ffi_type* parameters[], sqInt count, void* returnType){
+void* defineFunctionWithAnd(ffi_type* parameters[], sqInt count, void* returnType, ffi_abi abi){
 	ffi_cif* cif;
 	int returnCode; 
 	
 	cif = malloc(sizeof(ffi_cif));
 	
-	returnCode = ffi_prep_cif(cif, FFI_DEFAULT_ABI, count, returnType, parameters);
+	returnCode = ffi_prep_cif(cif, abi, count, returnType, parameters);
 	
 	if(returnCode != FFI_OK){
 		primitiveFailFor(returnCode);
@@ -22,13 +22,13 @@ void* defineFunctionWithAnd(ffi_type* parameters[], sqInt count, void* returnTyp
 	return cif;
 }
 
-void* defineVariadicFunction(ffi_type* parameters[], sqInt fixedArgsCount, sqInt totalArguments, void* returnType){
+void* defineVariadicFunction(ffi_type* parameters[], sqInt fixedArgsCount, sqInt totalArguments, void* returnType, ffi_abi abi){
 	ffi_cif* cif;
 	int returnCode; 
 	
 	cif = malloc(sizeof(ffi_cif));
 	
-	returnCode = ffi_prep_cif_var (cif, FFI_DEFAULT_ABI, fixedArgsCount, totalArguments, returnType, parameters);
+	returnCode = ffi_prep_cif_var (cif, abi, fixedArgsCount, totalArguments, returnType, parameters);
 	
 	
 	if(returnCode != FFI_OK){
@@ -52,22 +52,33 @@ PrimitiveWithDepth(primitiveDefineFunction, 2){
     sqInt count;
     void*handler;
     sqInt idx;
+    sqInt returnTypePosition;
     ffi_type** parameters;
     sqInt paramsArray;
     sqInt receiver;
     void*returnType;
+    ffi_abi abiToUse;
 
-	returnType = readAddress(stackValue(0));
+	if(methodArgumentCount() == 3){
+		abiToUse = stackIntegerValue(0);
+		returnTypePosition = 1;
+		checkFailed();
+	}else{
+		returnTypePosition = 0;
+		abiToUse = FFI_DEFAULT_ABI;
+	}
+
+	returnType = readAddress(stackValue(returnTypePosition));
 	checkFailed();
 
-	count = stSizeOf(stackValue(1));
+	count = stSizeOf(stackValue(returnTypePosition + 1));
 	checkFailed();
 
-	paramsArray = stackValue(1);
+	paramsArray = stackValue(returnTypePosition + 1);
 	checkFailed();
 
 	/* The parameters are freed by the primitiveFreeDefinition, if there is an error it is freed by #defineFunction:With:And: */
-	receiver = stackValue(2);
+	receiver = stackValue(returnTypePosition + 2);
 	checkFailed();
 
 	parameters = malloc(count*sizeof(void*));
@@ -76,7 +87,7 @@ PrimitiveWithDepth(primitiveDefineFunction, 2){
 	}
     checkFailed()
 
-	handler = defineFunctionWithAnd(parameters, count, returnType);
+	handler = defineFunctionWithAnd(parameters, count, returnType, abiToUse);
     checkFailed();
 
 	setHandler(receiver, handler);
@@ -98,22 +109,34 @@ PrimitiveWithDepth(primitiveDefineVariadicFunction, 2){
 	ffi_type** parameters;
 	sqInt paramsArray;
 	sqInt receiver;
+    sqInt fixedArgumentsPosition;
 	void*returnType;
+    ffi_abi abiToUse;
 
-	fixedArguments = stackIntegerValue(0);
+	if(methodArgumentCount() == 3){
+		abiToUse = stackIntegerValue(0);
+		fixedArgumentsPosition = 1;
+		checkFailed();
+	}else{
+		fixedArgumentsPosition = 0;
+		abiToUse = FFI_DEFAULT_ABI;
+	}
+
+
+	fixedArguments = stackIntegerValue(fixedArgumentsPosition);
 	checkFailed();
 
-	returnType = readAddress(stackValue(1));
+	returnType = readAddress(stackValue(fixedArgumentsPosition + 1));
 	checkFailed();
 
-	totalCount = stSizeOf(stackValue(2));
+	totalCount = stSizeOf(stackValue(fixedArgumentsPosition + 2));
 	checkFailed();
 
-	paramsArray = stackValue(2);
+	paramsArray = stackValue(fixedArgumentsPosition + 2);
 	checkFailed();
 
 	/* The parameters are freed by the primitiveFreeDefinition, if there is an error it is freed by #defineFunction:with:and:fixedArgumentsCount: */
-	receiver = stackValue(3);
+	receiver = stackValue(fixedArgumentsPosition + 3);
 	checkFailed();
 
 	parameters = malloc(totalCount*sizeof(void*));
@@ -122,7 +145,8 @@ PrimitiveWithDepth(primitiveDefineVariadicFunction, 2){
 	}
     checkFailed()
 
-	handler = defineVariadicFunction(parameters, fixedArguments, totalCount, returnType);
+	handler = defineVariadicFunction(parameters, fixedArguments, totalCount, returnType, abiToUse);
+
     checkFailed();
 
 	setHandler(receiver, handler);

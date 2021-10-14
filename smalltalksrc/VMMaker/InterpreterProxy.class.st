@@ -156,11 +156,6 @@ InterpreterProxy >> checkedIntegerValueOf: intOop [
 		ifFalse:[self primitiveFail. ^0].
 ]
 
-{ #category : #'FFI support' }
-InterpreterProxy >> classAlien [
-        ^Smalltalk at: #Alien ifAbsent: [nil]
-]
-
 { #category : #'special classes' }
 InterpreterProxy >> classArray [
 	^Array
@@ -184,26 +179,6 @@ InterpreterProxy >> classCharacter [
 { #category : #'FFI support' }
 InterpreterProxy >> classExternalAddress [
 	^Smalltalk at: #ExternalAddress ifAbsent:[nil]
-]
-
-{ #category : #'FFI support' }
-InterpreterProxy >> classExternalData [
-	^Smalltalk at: #ExternalData ifAbsent:[nil]
-]
-
-{ #category : #'FFI support' }
-InterpreterProxy >> classExternalFunction [
-	^Smalltalk at: #ExternalFunction ifAbsent:[nil]
-]
-
-{ #category : #'FFI support' }
-InterpreterProxy >> classExternalLibrary [
-	^Smalltalk at: #ExternalLibrary ifAbsent:[nil]
-]
-
-{ #category : #'FFI support' }
-InterpreterProxy >> classExternalStructure [
-	^Smalltalk at: #ExternalStructure ifAbsent:[nil]
 ]
 
 { #category : #'special classes' }
@@ -241,11 +216,6 @@ InterpreterProxy >> classString [
 	^ByteString
 ]
 
-{ #category : #'FFI support' }
-InterpreterProxy >> classUnsafeAlien [
-        ^Smalltalk at: #UnsafeAlien ifAbsent: [nil]
-]
-
 { #category : #'instance creation' }
 InterpreterProxy >> clone: oop [
 	^oop shallowCopy
@@ -261,11 +231,6 @@ InterpreterProxy >> copyBits [
 InterpreterProxy >> copyBitsFrom: leftX to: rightX at: yValue [
 	<returnTypeC: #sqInt>
 	bb copyBitsFrom: leftX to: rightX at: yValue.
-]
-
-{ #category : #'FFI support' }
-InterpreterProxy >> disownVM: flags [
-	^self notYetImplementedError
 ]
 
 { #category : #'special objects' }
@@ -381,12 +346,6 @@ InterpreterProxy >> floatValueOf: oop [
 	oop isFloat
 		ifTrue:[^oop]
 		ifFalse:[self primitiveFail. ^0.0].
-]
-
-{ #category : #other }
-InterpreterProxy >> fullDisplayUpdate [
-	<returnTypeC: #sqInt>
-	Display display
 ]
 
 { #category : #other }

@@ -6,7 +6,7 @@ Class {
 	],
 	#pools : [
 		'VMBasicConstants',
-		'VMSqueakClassIndices'
+		'VMClassIndices'
 	],
 	#category : #'VMMaker-OriginalTests'
 }

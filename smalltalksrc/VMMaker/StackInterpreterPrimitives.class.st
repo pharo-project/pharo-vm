@@ -572,12 +572,12 @@ StackInterpreterPrimitives >> marshallSInt32From: argumentArrayOop at: index int
 
 	| intHolder value |
 
-	value := self fetchInteger: index ofObject: argumentArrayOop.	
-	value > INT32_MAX ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-	value < INT32_MIN ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+	value := self signed32BitValueOf: (objectMemory fetchPointer: index ofObject: argumentArrayOop).
+
+	self failed ifTrue: [ ^self primitiveFailFor: PrimErrBadArgument ].
 
 	intHolder := self cCoerce: holder to: #'int32_t *'.
-	intHolder at: 0 put: (self fetchInteger: index ofObject: argumentArrayOop ).
+	intHolder at: 0 put: value.
 		
 ]
 
@@ -655,10 +655,10 @@ StackInterpreterPrimitives >> marshallUInt32From: argumentArrayOop at: index int
 
 	| intHolder value |
 	
-	value := self fetchInteger: index ofObject: argumentArrayOop.
-	value < 0 ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-	value > UINT32_MAX ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-		
+	value := self positive32BitValueOf: (objectMemory fetchPointer: index ofObject: argumentArrayOop).
+	
+	self failed ifTrue: [ ^self primitiveFailFor: PrimErrBadArgument ].
+			
 	intHolder := self cCoerce: holder to: #'uint32_t *'.
 	intHolder at: 0 put: value.
 		
@@ -974,22 +974,6 @@ StackInterpreterPrimitives >> primitiveClone [
 			newCopy = 0 ifTrue:
 				[^self primitiveFailFor: PrimErrNoMemory]].
 	self pop: argumentCount + 1 thenPush: newCopy
-]
-
-{ #category : #'control primitives' }
-StackInterpreterPrimitives >> primitiveClosureCopyWithCopiedValues [
-	| newClosure numArgs |
-	numArgs := self stackIntegerValue: 1.
-	self successful ifFalse:
-		[^self primitiveFail].
-
-	newClosure := self
-					closureIn: (self stackValue: 2)
-					numArgs: numArgs
-							"greater by 1 due to preIncrement of localIP"
-					instructionPointer: instructionPointer + 2 - (method+objectMemory baseHeaderSize)
-					copiedValues: self stackTop.
-	self pop: 3 thenPush: newClosure
 ]
 
 { #category : #'indexing primitives' }
@@ -4326,6 +4310,13 @@ StackInterpreterPrimitives >> readAddress: anOop [
 		ifFalse: [ self primitiveFail. ^ nil ].
 
 	^ objectMemory fetchPointer: 0 ofObject: anOop.
+]
+
+{ #category : #'I/O primitive support' }
+StackInterpreterPrimitives >> sqImageFile: imageFile Seek: position [
+
+	<doNotGenerate>
+	imageFile position: position
 ]
 
 { #category : #'object access primitives' }

@@ -7,6 +7,20 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance creation' }
+TConstantNode class >> value: aValue [
+
+	^ self new
+		  setValue: aValue;
+		  yourself
+]
+
+{ #category : #tranforming }
+TConstantNode >> asCASTIn: aBuilder [
+
+	^ CConstantNode value: (aBuilder cLiteralFor: value)
+]
+
 { #category : #transformations }
 TConstantNode >> asPrintfFormatStringNode [
 	^TPrintfFormatStringNode new
@@ -26,17 +40,6 @@ TConstantNode >> constantNumbericValueIfAtAllPossibleOrNilIn: aCCodeGen [
 TConstantNode >> constantNumbericValueOrNil [
 
 	^value isNumber ifTrue: [value]
-]
-
-{ #category : #'C code generation' }
-TConstantNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-	"Emit a C literal."
-	aStream nextPutAll: (aCodeGen cLiteralFor: value).
-	comment ifNotNil:
-		[aStream
-			nextPutAll: ' /* ';
-			nextPutAll: comment;
-			nextPutAll: ' */']
 ]
 
 { #category : #testing }

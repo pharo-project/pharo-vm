@@ -46,6 +46,7 @@ typedef struct sqSSL {
 
 static sqSSL **handleBuf = NULL;
 static sqInt handleMax = 0;
+static sqInt initialized = 0;
 
 
 #define MAX_HOSTNAME_LENGTH 253
@@ -240,7 +241,16 @@ sqInt sqVerifySAN(sqSSL* ssl, const GENERAL_NAME* sAN, const void* data, const s
 
 /* sqSetupSSL: Common SSL setup tasks */
 sqInt sqSetupSSL(sqSSL *ssl, int server) {
-	/* Fixme. Needs to use specified version */
+	if(!initialized){
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+		logTrace("Initializing using SSL_library_init");
+		SSL_library_init();
+#else
+		logTrace("Initializing using OPENSSL_init_ssl");
+		OPENSSL_init_ssl(0, NULL);
+#endif
+	}
+
 	logTrace("sqSetupSSL: setting method\n");
 
 	ssl->method = (SSL_METHOD*) SSLv23_method();
@@ -250,7 +260,10 @@ sqInt sqSetupSSL(sqSSL *ssl, int server) {
 	logTrace("sqSetupSSL: Disabling SSLv2 and SSLv3\n");
 	SSL_CTX_set_options(ssl->ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 
-	if(!ssl->ctx) ERR_print_errors_fp(stdout);
+	if(!ssl->ctx) {
+		ERR_print_errors_fp(stdout);
+		return 0;
+	}
 
 	logTrace("sqSetupSSL: setting cipher list\n");
 	SSL_CTX_set_cipher_list(ssl->ctx, "!ADH:HIGH:MEDIUM:@STRENGTH");
@@ -261,16 +274,20 @@ sqInt sqSetupSSL(sqSSL *ssl, int server) {
 
         if(SSL_CTX_use_certificate_file(ssl->ctx, ssl->certName, SSL_FILETYPE_PEM)<=0) {
 			ERR_print_errors_fp(stderr);
+			return 0;
 		}
 		if(SSL_CTX_use_PrivateKey_file(ssl->ctx, ssl->certName, SSL_FILETYPE_PEM)<=0) {
 			ERR_print_errors_fp(stderr);
+			return 0;
 		}
 	}
 
 	/* Set up trusted CA */
 	logTrace("sqSetupSSL: No root CA given; using default verify paths\n");
-	if(SSL_CTX_set_default_verify_paths(ssl->ctx) <=0)
+	if(SSL_CTX_set_default_verify_paths(ssl->ctx) <=0){
 		ERR_print_errors_fp(stderr);
+		return 0;
+	}
 
 	logTrace("sqSetupSSL: Creating SSL\n");
 	ssl->ssl = SSL_new(ssl->ctx);
