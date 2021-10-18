@@ -992,6 +992,8 @@ CogAbstractInstruction >> getDefaultCogCodeSize [
 { #category : #printing }
 CogAbstractInstruction >> getFormatFromOpCodeName: opcodeName [
 
+	<doNotGenerate>
+
 	| format |
 	format := ((CogRTLOpcodes classPool includesKey: opcodeName)
 		           ifTrue: [ CogRTLOpcodes ]
@@ -1009,6 +1011,8 @@ CogAbstractInstruction >> getJmpTarget [
 
 { #category : #printing }
 CogAbstractInstruction >> getOperandsWithFormat: format [
+
+	<doNotGenerate>
 
 	| orneryOperands strOperands |
 	strOperands := OrderedCollection new.
@@ -1465,6 +1469,8 @@ CogAbstractInstruction >> prepareStackToCallCFunctionInSmalltalkStack: anObject 
 { #category : #printing }
 CogAbstractInstruction >> printAddressOn: aStream [
 
+	<doNotGenerate>
+
 	address ifNotNil: [ 
 		aStream nextPut: $@.
 		address printOn: aStream base: 16 ]
@@ -1472,6 +1478,8 @@ CogAbstractInstruction >> printAddressOn: aStream [
 
 { #category : #printing }
 CogAbstractInstruction >> printMachineCodeOn: aStream [
+
+	<doNotGenerate>
 
 	machineCodeSize ifNotNil: [ 
 		(machineCodeSize between: 1 and: machineCode size) ifTrue: [ 
@@ -1487,6 +1495,8 @@ CogAbstractInstruction >> printMachineCodeOn: aStream [
 
 { #category : #printing }
 CogAbstractInstruction >> printOperandsOn: aStream withFormat: format [
+
+	<doNotGenerate>
 
 	| orneryOperands |
 	orneryOperands := operands isCObjectAccessor
