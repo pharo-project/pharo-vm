@@ -12,43 +12,6 @@ Class {
 }
 
 { #category : #'instance creation' }
-UnicornSimulator class >> ARMv5 [
-
-	^ UnicornARMv5Simulator new
-]
-
-{ #category : #'instance creation' }
-UnicornSimulator class >> ARMv8 [
-
-	^ UnicornARMv8Simulator new
-]
-
-{ #category : #'instance creation' }
-UnicornSimulator class >> IA32 [
-
-	^ UnicornI386Simulator new
-]
-
-{ #category : #'instance creation' }
-UnicornSimulator class >> X64 [
-
-	^ UnicornX64Simulator new
-]
-
-{ #category : #'instance creation' }
-UnicornSimulator class >> aarch64 [
-
-	^ UnicornARMv8Simulator new
-]
-
-{ #category : #'instance creation' }
-UnicornSimulator class >> riscv64 [
-
-	"TODO: Add riscv32 and possibly two subclasses for the RISCV simulator"
-	^ UnicornRISCVSimulator new
-]
-
-{ #category : #'instance creation' }
 UnicornSimulator class >> supportsISA: isa [
 
 	^ #( #ARMv5 #ARMv8 #IA32 #X64 #aarch64 #riscv64 ) includes: isa
@@ -102,7 +65,7 @@ UnicornSimulator >> doStartAt: startAddress until: until timeout: timeout count:
 	startTime := Time millisecondClockValue.
 	remainingTimeout := timeout.
 	remainingCount := count.
-
+	
 	[ true ]
 		whileTrue: [
 			[result :=  simulator
