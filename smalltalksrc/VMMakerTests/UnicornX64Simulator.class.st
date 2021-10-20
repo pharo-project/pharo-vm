@@ -10,6 +10,12 @@ UnicornX64Simulator >> arg0Register [
 	^ UcX86Registers rdi
 ]
 
+{ #category : #registers }
+UnicornX64Simulator >> arg1Register [
+	
+	^ UcX86Registers rsi
+]
+
 { #category : #'phisical-registers' }
 UnicornX64Simulator >> baseRegister [
 
@@ -68,10 +74,28 @@ UnicornX64Simulator >> disassembler [
 	^ LLVMDisassembler amd64
 ]
 
+{ #category : #registers }
+UnicornX64Simulator >> doublePrecisionFloatingPointRegister0 [
+
+	^ UcX86Registers xmm0
+]
+
 { #category : #'as yet unclassified' }
 UnicornX64Simulator >> doublePrecisionFloatingPointRegister0Value [
 
 	^ self readFloat64Register: UcX86Registers xmm0
+]
+
+{ #category : #registers }
+UnicornX64Simulator >> doublePrecisionFloatingPointRegister1 [
+
+	^ UcX86Registers xmm1
+]
+
+{ #category : #registers }
+UnicornX64Simulator >> doublePrecisionFloatingPointRegister2 [
+
+	^ UcX86Registers xmm2
 ]
 
 { #category : #'as yet unclassified' }
@@ -100,6 +124,12 @@ UnicornX64Simulator >> framePointerRegister [
 UnicornX64Simulator >> getReturnAddress [
 	
 	^ self peekAddress 
+]
+
+{ #category : #testing }
+UnicornX64Simulator >> hasLinkRegister [
+
+	^ false
 ]
 
 { #category : #initialization }
@@ -455,12 +485,6 @@ UnicornX64Simulator >> smashRegisterAccessors [
 	^#(rax: rbx: rcx: rdx: rsi: rdi: r8: r9: r10: r11: r12: r13: r14: r15:)
 ]
 
-{ #category : #'phisical-registers' }
-UnicornX64Simulator >> sp [
-
-	^ self rsp
-]
-
 { #category : #'virtual-registers' }
 UnicornX64Simulator >> stackPointerRegister [
 
@@ -472,12 +496,6 @@ UnicornX64Simulator >> temporaryRegister [
 	
 	"Both in System V and Windows"
 	^ UcX86Registers rax
-]
-
-{ #category : #accessing }
-UnicornX64Simulator >> temporaryRegisterValue [
-
-	^ self rax
 ]
 
 { #category : #accessing }

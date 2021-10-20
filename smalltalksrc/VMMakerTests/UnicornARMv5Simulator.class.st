@@ -204,17 +204,6 @@ UnicornARMv5Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstructio
 ]
 
 { #category : #registers }
-UnicornARMv5Simulator >> fp [
-	^ self readRegister: UcARMRegisters fp
-]
-
-{ #category : #registers }
-UnicornARMv5Simulator >> fp: anInteger [
-
-	self writeRegister: UcARMRegisters fp value: anInteger
-]
-
-{ #category : #registers }
 UnicornARMv5Simulator >> framePointerRegister [
 
 	^ UcARMRegisters fp
@@ -255,28 +244,6 @@ UnicornARMv5Simulator >> integerRegisterState [
 UnicornARMv5Simulator >> linkRegister [
 
 	^ UcARMRegisters lr
-]
-
-{ #category : #registers }
-UnicornARMv5Simulator >> lr [
-	^ self readRegister: UcARMRegisters lr
-]
-
-{ #category : #registers }
-UnicornARMv5Simulator >> lr: anInteger [
-
-	self writeRegister: UcARMRegisters lr value: anInteger
-]
-
-{ #category : #registers }
-UnicornARMv5Simulator >> pc [
-	^ self readRegister: UcARMRegisters pc
-]
-
-{ #category : #registers }
-UnicornARMv5Simulator >> pc: anInteger [
-
-	self writeRegister: UcARMRegisters pc value: anInteger
 ]
 
 { #category : #'as yet unclassified' }
@@ -504,11 +471,6 @@ UnicornARMv5Simulator >> smashCallerSavedRegistersWithValuesFrom: base by: step 
 UnicornARMv5Simulator >> smashRegisterAccessors [
 
 	^ #(r0: r1: r2: r3:)
-]
-
-{ #category : #registers }
-UnicornARMv5Simulator >> sp [
-	^ self readRegister: UcARMRegisters sp
 ]
 
 { #category : #registers }
