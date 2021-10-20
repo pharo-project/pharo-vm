@@ -10,18 +10,6 @@ UnicornI386Simulator >> arg0Register [
 	^ UcX86Registers esi
 ]
 
-{ #category : #'as yet unclassified' }
-UnicornI386Simulator >> argument0RegisterValue [
-	
-	^ self esi
-]
-
-{ #category : #accessing }
-UnicornI386Simulator >> argument0RegisterValue: anInteger [ 
-
-	self writeRegister: UcX86Registers esi value: anInteger
-]
-
 { #category : #registers }
 UnicornI386Simulator >> baseRegister [
 
@@ -212,11 +200,6 @@ UnicornI386Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstruction
 	^ registerName
 ]
 
-{ #category : #'as yet unclassified' }
-UnicornI386Simulator >> fp [
-	^ self readRegister: UcX86Registers ebp
-]
-
 { #category : #registers }
 UnicornI386Simulator >> framePointerRegister [
 	
@@ -240,11 +223,6 @@ UnicornI386Simulator >> integerRegisterState [
 
 	^{	self eax. self ebx. self ecx. self edx. self esp. self ebp. self esi. self edi.
 		self eip. self eflags }
-]
-
-{ #category : #'as yet unclassified' }
-UnicornI386Simulator >> pc [
-	^ self readRegister: UcX86Registers eip
 ]
 
 { #category : #'as yet unclassified' }
@@ -320,11 +298,6 @@ UnicornI386Simulator >> smashCallerSavedRegistersWithValuesFrom: base by: step i
 UnicornI386Simulator >> smashRegisterAccessors [
 
 	^#(eax: ebx: ecx: edx: esi: edi:)
-]
-
-{ #category : #'as yet unclassified' }
-UnicornI386Simulator >> sp [
-	^ self readRegister: UcX86Registers esp
 ]
 
 { #category : #registers }
