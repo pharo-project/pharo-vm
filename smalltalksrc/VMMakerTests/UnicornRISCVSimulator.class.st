@@ -64,6 +64,12 @@ UnicornRISCVSimulator >> createUnicorn [
 	^ Unicorn riscv64
 ]
 
+{ #category : #disassembling }
+UnicornRISCVSimulator >> disassembler [ 
+
+	^ LLVMRV64Disassembler riscv64
+]
+
 { #category : #'as yet unclassified' }
 UnicornRISCVSimulator >> doublePrecisionFloatingPointRegister0 [
 
