@@ -100,6 +100,12 @@ TExternalSendNode >> isSend [
 	^ true
 ]
 
+{ #category : #testing }
+TExternalSendNode >> isValueExpansion [
+	
+	^ wrappedSendNode isValueExpansion
+]
+
 { #category : #accessing }
 TExternalSendNode >> localizedVariables [
 	
