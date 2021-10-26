@@ -932,15 +932,17 @@ CoInterpreter >> attemptToSwitchToMachineCode: bcpc [
 
 { #category : #'return bytecodes' }
 CoInterpreter >> baseFrameReturn [
+
 	"Return from a baseFrame (the bottom frame in a stackPage).  The context to
 	 return to (which may be married) is stored in the first word of the stack."
+
 	<inline: true>
-	| contextToReturnTo retToContext theFP theSP thePage newPage frameAbove |
 	<var: #theFP type: #'char *'>
 	<var: #theSP type: #'char *'>
 	<var: #thePage type: #'StackPage *'>
 	<var: #newPage type: #'StackPage *'>
 	<var: #frameAbove type: #'char *'>
+	| contextToReturnTo retToContext theFP theSP thePage newPage frameAbove |
 	contextToReturnTo := self frameCallerContext: framePointer.
 
 	"The stack page is effectively free now, so free it.  We must free it to be
@@ -951,55 +953,64 @@ CoInterpreter >> baseFrameReturn [
 	 ordering invariant, use the assert-free version."
 	stackPages freeStackPageNoAssert: stackPage.
 	retToContext := objectMemory isContext: contextToReturnTo.
-	(retToContext
-	 and: [self isStillMarriedContext: contextToReturnTo])
-		ifTrue:
-			[theFP := self frameOfMarriedContext: contextToReturnTo.
-			 thePage := stackPages stackPageFor: theFP.
-			 theFP = thePage headFP
-				ifTrue:
-					[theSP := thePage headSP]
-				ifFalse:
-					["Returning to some interior frame, presumably because of a sender assignment.
+	(retToContext and: [ self isStillMarriedContext: contextToReturnTo ])
+		ifTrue: [ 
+			theFP := self frameOfMarriedContext: contextToReturnTo.
+			thePage := stackPages stackPageFor: theFP.
+			theFP = thePage headFP
+				ifTrue: [ theSP := thePage headSP ]
+				ifFalse: [ "Returning to some interior frame, presumably because of a sender assignment.
 					  Move the frames above to another page (they may be in use, e.g. via coroutining).
 					  Make the interior frame the top frame."
-					 frameAbove := self findFrameAbove: theFP inPage: thePage.
-					 "Since we've just deallocated a page we know that newStackPage won't deallocate an existing one."
-					 newPage := stackPages newStackPage.
-					 self assert: newPage = stackPage.
-					 self moveFramesIn: thePage through: frameAbove toPage: newPage.
-					 stackPages markStackPageMostRecentlyUsed: newPage.
-					 theFP := thePage headFP.
-					 theSP := thePage headSP]]
-		ifFalse:
-			[(retToContext
-			  and: [objectMemory isIntegerObject: (objectMemory fetchPointer: InstructionPointerIndex ofObject: contextToReturnTo)]) ifFalse:
-				[| contextToReturnFrom |
-				 contextToReturnFrom := stackPages longAt: stackPage baseAddress - objectMemory wordSize.
-				 self tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom: contextToReturnFrom
+					frameAbove := self findFrameAbove: theFP inPage: thePage.
+					"Since we've just deallocated a page we know that newStackPage won't deallocate an existing one."
+					newPage := stackPages newStackPage.
+					self assert: newPage = stackPage.
+					self moveFramesIn: thePage through: frameAbove toPage: newPage.
+					stackPages markStackPageMostRecentlyUsed: newPage.
+					theFP := thePage headFP.
+					theSP := thePage headSP ] ]
+		ifFalse: [ 
+			(retToContext and: [ 
+				 objectMemory isIntegerObject: (objectMemory
+						  fetchPointer: InstructionPointerIndex
+						  ofObject: contextToReturnTo) ]) ifFalse: [ 
+				| contextToReturnFrom |
+				contextToReturnFrom := stackPages longAt:
+					                       stackPage baseAddress
+					                       - objectMemory wordSize.
+				self
+					tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom:
+					contextToReturnFrom
 					to: contextToReturnTo
 					returnValue: localReturnValue.
-				^self externalCannotReturn: localReturnValue from: contextToReturnFrom].
-			 "We must void the instructionPointer to stop it being updated if makeBaseFrameFor:
+				^ self
+					  externalCannotReturn: localReturnValue
+					  from: contextToReturnFrom ].
+			"We must void the instructionPointer to stop it being updated if makeBaseFrameFor:
 			  cogs a method, which may cause a code compaction."
-			 instructionPointer := 0.
-			 thePage := self makeBaseFrameFor: contextToReturnTo.
-			 theFP := thePage headFP.
-			 theSP := thePage headSP].
+			instructionPointer := 0.
+			thePage := self makeBaseFrameFor: contextToReturnTo.
+			theFP := thePage headFP.
+			theSP := thePage headSP ].
 	self setStackPageAndLimit: thePage.
 	self assert: (stackPages stackPageFor: theFP) = stackPage.
 	stackPointer := theSP.
 	framePointer := theFP.
-	instructionPointer := self pointerForOop: self internalStackTop.
-	instructionPointer asUnsignedInteger < objectMemory startOfMemory ifTrue:
-		[instructionPointer asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue:
-			["localIP in the cog method zone indicates a return to machine code."
-			 ^self returnToMachineCodeFrame].
-		 instructionPointer := self pointerForOop: (self iframeSavedIP: framePointer)].
-	self assert: (self checkIsStillMarriedContext: contextToReturnTo currentFP: framePointer).
+	instructionPointer := self pointerForOop: self stackTop.
+	instructionPointer asUnsignedInteger < objectMemory startOfMemory 
+		ifTrue: [ 
+			instructionPointer asUnsignedInteger
+			~= cogit ceReturnToInterpreterPC ifTrue: [ "localIP in the cog method zone indicates a return to machine code." 
+				^ self returnToMachineCodeFrame ].
+			instructionPointer := self pointerForOop:
+				                      (self iframeSavedIP: framePointer) ].
+	self assert: (self
+			 checkIsStillMarriedContext: contextToReturnTo
+			 currentFP: framePointer).
 	self setMethod: (self iframeMethod: framePointer).
-	self internalStackTopPut: localReturnValue.
-	^self fetchNextBytecode
+	self stackTopPut: localReturnValue.
+	^ self fetchNextBytecode
 ]
 
 { #category : #hooks }
@@ -2401,26 +2412,31 @@ CoInterpreter >> commenceCogCompiledCodeCompaction [
 
 { #category : #'return bytecodes' }
 CoInterpreter >> commonCallerReturn [
+
 	"Return to the previous context/frame (sender for method activations, caller for block activations)."
+
 	<sharedCodeNamed: 'commonCallerReturn' inCase: #returnTopFromBlock>
-	| callersFPOrNull |
 	<var: #callersFPOrNull type: #'char *'>
+	| callersFPOrNull |
 	callersFPOrNull := self frameCallerFP: framePointer.
-	callersFPOrNull = 0 "baseFrame" ifTrue:
-		[self assert: framePointer = stackPage baseFP.
-		 ^self baseFrameReturn].
+	callersFPOrNull = 0 ifTrue: [ 
+		self assert: framePointer = stackPage baseFP.
+		^ self baseFrameReturn ]. "baseFrame"
 
 	instructionPointer := self frameCallerSavedIP: framePointer.
-	stackPointer := framePointer + (self frameStackedReceiverOffset: framePointer).
+	stackPointer := framePointer
+	                + (self frameStackedReceiverOffset: framePointer).
 	framePointer := callersFPOrNull.
-	instructionPointer asUnsignedInteger < objectMemory startOfMemory ifTrue:
-		[instructionPointer asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue:
-			["localIP in the cog method zone indicates a return to machine code."
-			 ^self returnToMachineCodeFrame].
-		 instructionPointer := self pointerForOop: (self iframeSavedIP: framePointer)].
+	instructionPointer asUnsignedInteger < objectMemory startOfMemory 
+		ifTrue: [ 
+			instructionPointer asUnsignedInteger
+			~= cogit ceReturnToInterpreterPC ifTrue: [ "localIP in the cog method zone indicates a return to machine code." 
+				^ self returnToMachineCodeFrame ].
+			instructionPointer := self pointerForOop:
+				                      (self iframeSavedIP: framePointer) ].
 	self setMethod: (self iframeMethod: framePointer).
 	self fetchNextBytecode.
-	self internalStackTopPut: localReturnValue
+	self stackTopPut: localReturnValue
 ]
 
 { #category : #'send bytecodes' }
@@ -2430,7 +2446,7 @@ CoInterpreter >> commonSendOrdinary [
 	the receiver and arguments have been pushed onto the stack,"
 	"Note: This method is inlined into the interpreter dispatch loop."
 	<sharedCodeNamed: 'commonSendOrdinary' inCase: #extSendBytecode>
-	self sendBreakpoint: messageSelector receiver: (self internalStackValue: argumentCount).
+	self sendBreakpoint: messageSelector receiver: (self stackValue: argumentCount).
 	cogit recordSendTrace ifTrue:
 		[self recordTrace: (objectMemory classForClassTag: lkupClassTag)
 			thing: messageSelector
@@ -2992,23 +3008,28 @@ CoInterpreter >> executeNewMethod [
 
 { #category : #'stack bytecodes' }
 CoInterpreter >> extendedStoreBytecodePop: popBoolean [
+
 	"Override to use itemporary:in:put:"
-	| descriptor variableType variableIndex value |
+
 	<inline: true>
+	| descriptor variableType variableIndex value |
 	descriptor := self fetchByte.
 	variableType := descriptor >> 6 bitAnd: 3.
 	variableIndex := descriptor bitAnd: 63.
-	value := self internalStackTop.
+	value := self stackTop.
 	popBoolean ifTrue: [ self pop: 1 ].
-	variableType = 0 ifTrue:
-		[objectMemory storePointerImmutabilityCheck: variableIndex ofObject: self receiver withValue: value.
-		^ self fetchNextBytecode.].
-	variableType = 1 ifTrue:
-		[ self fetchNextBytecode.
-		^self itemporary: variableIndex in: framePointer put: value].
-	variableType = 3 ifTrue:
-		[self storeLiteralVariable: variableIndex withValue: value.
-		^ self fetchNextBytecode.].
+	variableType = 0 ifTrue: [ 
+		objectMemory
+			storePointerImmutabilityCheck: variableIndex
+			ofObject: self receiver
+			withValue: value.
+		^ self fetchNextBytecode ].
+	variableType = 1 ifTrue: [ 
+		self fetchNextBytecode.
+		^ self itemporary: variableIndex in: framePointer put: value ].
+	variableType = 3 ifTrue: [ 
+		self storeLiteralVariable: variableIndex withValue: value.
+		^ self fetchNextBytecode ].
 	self error: 'illegal store'
 ]
 
@@ -3928,14 +3949,15 @@ CoInterpreter >> instructionPointerForFrame: spouseFP currentFP: currentFP curre
 
 { #category : #'message sending' }
 CoInterpreter >> internalActivateNewMethod [
-	| methodHeader numTemps rcvr switched |
-	<inline: true>
 
+	<inline: true>
+	| methodHeader numTemps rcvr switched |
 	methodHeader := self rawHeaderOf: newMethod.
 	self assert: (self isCogMethodReference: methodHeader) not.
 	numTemps := self temporaryCountOfMethodHeader: methodHeader.
-	self assert: argumentCount = (self argumentCountOfMethodHeader: methodHeader).
-	rcvr := self internalStackValue: argumentCount. "could new rcvr be set at point of send?"
+	self assert:
+		argumentCount = (self argumentCountOfMethodHeader: methodHeader).
+	rcvr := self stackValue: argumentCount. "could new rcvr be set at point of send?"
 	self assert: (objectMemory isOopForwarded: rcvr) not.
 
 	self push: instructionPointer.
@@ -3945,37 +3967,44 @@ CoInterpreter >> internalActivateNewMethod [
 	self setMethod: newMethod methodHeader: methodHeader.
 	self push: objectMemory nilObject. "FxThisContext field"
 	self push: (self
-						encodeFrameFieldHasContext: false
-						isBlock: false
-						numArgs: (self argumentCountOfMethodHeader: methodHeader)).
+			 encodeFrameFieldHasContext: false
+			 isBlock: false
+			 numArgs: (self argumentCountOfMethodHeader: methodHeader)).
 	self push: 0. "FoxIFSavedIP"
 	self push: rcvr.
 
 	"Initialize temps..."
-	argumentCount + 1 to: numTemps do:
-		[:i | self push: objectMemory nilObject].
+	argumentCount + 1 to: numTemps do: [ :i | 
+	self push: objectMemory nilObject ].
 
 	"-1 to account for pre-increment in fetchNextBytecode"
-	instructionPointer := self pointerForOop: (self initialIPForHeader: methodHeader method: newMethod) - 1.
+	instructionPointer := self pointerForOop:
+		                      (self
+			                       initialIPForHeader: methodHeader
+			                       method: newMethod) - 1.
 
-	(self methodHeaderHasPrimitive: methodHeader) ifTrue:
-		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
+	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		 instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader).
-		 primFailCode ~= 0 ifTrue:
-			[self reapAndResetErrorCodeTo: stackPointer header: methodHeader]].
+		instructionPointer := instructionPointer
+		                      +
+		                      (self sizeOfCallPrimitiveBytecode:
+			                       methodHeader).
+		primFailCode ~= 0 ifTrue: [ 
+			self reapAndResetErrorCodeTo: stackPointer header: methodHeader ] ].
 
 	self assert: (self frameNumArgs: framePointer) = argumentCount.
 	self assert: (self frameIsBlockActivation: framePointer) not.
 	self assert: (self frameHasContext: framePointer) not.
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
-	stackPointer < stackLimit ifTrue:
-		[self externalizeIPandSP.
-		 switched := self handleStackOverflowOrEventAllowContextSwitch:
-						(self canContextSwitchIfActivating: newMethod header: methodHeader).
-		 self returnToExecutive: true postContextSwitch: switched.
-		 self internalizeIPandSP]
+	stackPointer < stackLimit ifTrue: [ 
+		self externalizeIPandSP.
+		switched := self handleStackOverflowOrEventAllowContextSwitch:
+			            (self
+				             canContextSwitchIfActivating: newMethod
+				             header: methodHeader).
+		self returnToExecutive: true postContextSwitch: switched.
+		self internalizeIPandSP ]
 ]
 
 { #category : #'message sending' }
@@ -4261,11 +4290,13 @@ CoInterpreter >> longPushTemporaryVariableBytecode [
 
 { #category : #'stack bytecodes' }
 CoInterpreter >> longStoreTemporaryVariableBytecode [
+
 	"234		11101010	i i i i i i i i	Store Temporary Variable #iiiiiiii"
+
 	| index |
 	index := self fetchByte.
 	self fetchNextBytecode.
-	self itemporary: index in: framePointer put: self internalStackTop
+	self itemporary: index in: framePointer put: self stackTop
 ]
 
 { #category : #simulation }
@@ -5924,41 +5955,51 @@ CoInterpreter >> printSends [
 
 { #category : #'stack bytecodes' }
 CoInterpreter >> pushFullClosureNumArgs: numArgs copiedValues: numCopiedArg compiledBlock: compiledBlock receiverIsOnStack: receiverIsOnStack ignoreContext: ignoreContext [
+
 	"The compiler has pushed the values to be copied, if any. The receiver has been pushed on stack before if specified. 
 	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
 	 Sets outerContext, compiledBlock, numArgs and receiver as specified.."
+
 	<inline: true>
 	| numCopied newClosure context startIndex |
 	"No need to record the pushed copied values in the outerContext."
 	context := ignoreContext
-		ifTrue: [objectMemory nilObject ]
-		ifFalse: [self ensureFrameIsMarried: framePointer SP: stackPointer + (numCopiedArg * objectMemory bytesPerOop)].
+		           ifTrue: [ objectMemory nilObject ]
+		           ifFalse: [ 
+			           self
+				           ensureFrameIsMarried: framePointer
+				           SP:
+				           stackPointer
+				           + (numCopiedArg * objectMemory bytesPerOop) ].
 	newClosure := self
-					fullClosureIn: context 
-					numArgs: numArgs 
-					numCopiedValues: numCopiedArg 
-					compiledBlock: compiledBlock.
-	cogit recordSendTrace ifTrue:
-		[self recordTrace: TraceBlockCreation thing: newClosure source: TraceIsFromInterpreter].
+		              fullClosureIn: context
+		              numArgs: numArgs
+		              numCopiedValues: numCopiedArg
+		              compiledBlock: compiledBlock.
+	cogit recordSendTrace ifTrue: [ 
+		self
+			recordTrace: TraceBlockCreation
+			thing: newClosure
+			source: TraceIsFromInterpreter ].
 	receiverIsOnStack
-		ifFalse: 
-			[ startIndex := FullClosureFirstCopiedValueIndex.
-			   objectMemory storePointerUnchecked: FullClosureReceiverIndex
+		ifFalse: [ 
+			startIndex := FullClosureFirstCopiedValueIndex.
+			objectMemory
+				storePointerUnchecked: FullClosureReceiverIndex
 				ofObject: newClosure
 				withValue: self receiver.
 			numCopied := numCopiedArg ]
-		ifTrue:
-			[ startIndex := FullClosureReceiverIndex.
+		ifTrue: [ 
+			startIndex := FullClosureReceiverIndex.
 			numCopied := numCopiedArg + 1 ].
-	numCopied > 0 ifTrue:
-		[0 to: numCopied - 1 do:
-			[ :i |
-			"Assume: have just allocated a new BlockClosure; it must be young.
+	numCopied > 0 ifTrue: [ 
+		0 to: numCopied - 1 do: [ :i | "Assume: have just allocated a new BlockClosure; it must be young.
 			 Thus, can use unchecked stores."
-			 objectMemory storePointerUnchecked: i + startIndex
+			objectMemory
+				storePointerUnchecked: i + startIndex
 				ofObject: newClosure
-				withValue: (self internalStackValue: numCopied - i - 1)].
-		 self pop: numCopied].
+				withValue: (self stackValue: numCopied - i - 1) ].
+		self pop: numCopied ].
 	self fetchNextBytecode.
 	self push: newClosure
 ]
@@ -6205,17 +6246,25 @@ CoInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedCon
 
 { #category : #'return bytecodes' }
 CoInterpreter >> returnToMachineCodeFrame [
+
 	"Return to the previous context/frame after assigning localIP, localSP and localFP."
+
 	<inline: true>
 	cogit assertCStackWellAligned.
-	self assert: instructionPointer asUnsignedInteger < objectMemory startOfMemory.
+	self assert:
+		instructionPointer asUnsignedInteger < objectMemory startOfMemory.
 	self assert: (self isMachineCodeFrame: framePointer).
-	self assertValidExecutionPointe: instructionPointer asUnsignedInteger r: framePointer s: stackPointer imbar: false line: #'__LINE__'.
-	self internalStackTopPut: instructionPointer.
+	self
+		assertValidExecutionPointe: instructionPointer asUnsignedInteger
+		r: framePointer
+		s: stackPointer
+		imbar: false
+		line: #__LINE__.
+	self stackTopPut: instructionPointer.
 	self push: localReturnValue.
 	self externalizeFPandSP.
-	self cCode: '' inSmalltalk:
-		[self maybeCheckStackDepth: 1 sp: stackPointer pc: instructionPointer].
+	self cCode: '' inSmalltalk: [ 
+		self maybeCheckStackDepth: 1 sp: stackPointer pc: instructionPointer ].
 	cogit ceEnterCogCodePopReceiverReg
 	"NOTREACHED"
 ]
@@ -6561,28 +6610,42 @@ CoInterpreter >> startPCOfMethodHeader: aCompiledMethodHeader [
 
 { #category : #'stack bytecodes' }
 CoInterpreter >> storeAndPopTemporaryVariableBytecode [
+
 	<expandCases>
 	self
-		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
-			[self fetchNextBytecode.
-			 self itemporary: (currentBytecode bitAnd: 7) in: framePointer put: self internalStackTop.
-			 self pop: 1]
-		inSmalltalk: "Interpreter version has fetchNextBytecode out of order"
-			[self itemporary: (currentBytecode bitAnd: 7) in: framePointer put: self internalStackTop.
-			 self fetchNextBytecode.
-			 self pop: 1]
+		cCode: [ "this bytecode will be expanded so that refs to currentBytecode below will be constant"
+			self fetchNextBytecode.
+			self
+				itemporary: (currentBytecode bitAnd: 7)
+				in: framePointer
+				put: self stackTop.
+			self pop: 1 ]
+		inSmalltalk: [ "Interpreter version has fetchNextBytecode out of order"
+			self
+				itemporary: (currentBytecode bitAnd: 7)
+				in: framePointer
+				put: self stackTop.
+			self fetchNextBytecode.
+			self pop: 1 ]
 ]
 
 { #category : #'stack bytecodes' }
 CoInterpreter >> storeRemoteTemp: index inVectorAt: tempVectorIndex [
+
 	"Override to use itemporary:in:put:"
+
 	| tempVector |
 	tempVector := self itemporary: tempVectorIndex in: framePointer.
-	TempVectReadBarrier
-		ifTrue: 
-			[(objectMemory isForwarded: tempVector) ifTrue:
-				[tempVector := self unfollowTempVector: tempVector atIndex: tempVectorIndex in: framePointer]].
-	objectMemory storePointer: index ofObject: tempVector withValue: self internalStackTop
+	TempVectReadBarrier ifTrue: [ 
+		(objectMemory isForwarded: tempVector) ifTrue: [ 
+			tempVector := self
+				              unfollowTempVector: tempVector
+				              atIndex: tempVectorIndex
+				              in: framePointer ] ].
+	objectMemory
+		storePointer: index
+		ofObject: tempVector
+		withValue: self stackTop
 ]
 
 { #category : #'process primitive support' }

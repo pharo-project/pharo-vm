@@ -260,27 +260,27 @@ StackBuilderTest >> testOrderArgument2InBaseFrame [
 
 { #category : #'test-order' }
 StackBuilderTest >> testOrderContext [
-	self assert: (interpreter internalStackValue: self offsetContext)
+	self assert: (interpreter stackValue: self offsetContext)
 		equals: context
 ]
 
 { #category : #'test-order' }
 StackBuilderTest >> testOrderMethod [
-	self assert: (interpreter internalStackValue: self offsetMethod)
+	self assert: (interpreter stackValue: self offsetMethod)
 		equals: method
 ]
 
 { #category : #'test-order' }
 StackBuilderTest >> testOrderReceiver [
-	self assert: (interpreter internalStackValue: self offsetReceiver)
+	self assert: (interpreter stackValue: self offsetReceiver)
 		equals: receiver
 ]
 
 { #category : #'test-order' }
 StackBuilderTest >> testOrderStackElementIsReversed [
-	self assert: (interpreter internalStackValue: self offsetStackElement1)
+	self assert: (interpreter stackValue: self offsetStackElement1)
 		equals: stackElement1.
-	self assert: (interpreter internalStackValue: self offsetStackElement2)
+	self assert: (interpreter stackValue: self offsetStackElement2)
 		equals: stackElement2.
 ]
 
@@ -288,15 +288,15 @@ StackBuilderTest >> testOrderStackElementIsReversed [
 StackBuilderTest >> testOrderStackTopOfSuspendedProcessIsInstructionPointer [
 	"When a process is suspended, the Instruction Pointer is pushed on the stack of the frame.
 	It should be the last thing pushed, and therefore, be at the top. "
-	self assert: (interpreter internalStackValue: self offsetInstructionPointer) 
+	self assert: (interpreter stackValue: self offsetInstructionPointer) 
 		equals: instructionPointer.
 ]
 
 { #category : #'test-order' }
 StackBuilderTest >> testOrderTempIsReversed [
-	self assert: (interpreter internalStackValue: self offsetTemp1)
+	self assert: (interpreter stackValue: self offsetTemp1)
 		equals: temp1.
-	self assert: (interpreter internalStackValue: self offsetTemp2)
+	self assert: (interpreter stackValue: self offsetTemp2)
 		equals: temp2.
 ]
 

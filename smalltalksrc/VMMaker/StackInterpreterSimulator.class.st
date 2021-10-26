@@ -1199,16 +1199,6 @@ StackInterpreterSimulator >> loadNewPlugin: pluginString [
 		 entry]
 ]
 
-{ #category : #'spur bootstrap' }
-StackInterpreterSimulator >> localFP [
-	^framePointer
-]
-
-{ #category : #'spur bootstrap' }
-StackInterpreterSimulator >> localSP [
-	^stackPointer
-]
-
 { #category : #'memory access' }
 StackInterpreterSimulator >> longAt: byteAddress [
 	self deprecated.
