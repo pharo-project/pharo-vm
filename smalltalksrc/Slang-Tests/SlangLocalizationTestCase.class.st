@@ -73,8 +73,8 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableExternalizesAtTheEnd [
 	externalizationStatement := (ccg methodNamed: #interpret) statements last statements first.
 
 	self
-		assert: externalizationStatement
-		equals: (self externalizationOf: #autoLocalizedVariable)
+		assert: (externalizationStatement
+			isSameAs: (self externalizationOf: #autoLocalizedVariable))
 ]
 
 { #category : #tests }
@@ -119,16 +119,14 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturns [
 		interpretMethod statements last arguments first statements last statements last
 			isReturn.
 	self
-		assert:
-		interpretMethod statements last arguments first statements last statements first
-		equals: (self externalizationOf: #autoLocalizedVariable).
+		assert: (interpretMethod statements last arguments first statements last statements first
+			isSameAs: (self externalizationOf: #autoLocalizedVariable)).
 	self assert:
 		interpretMethod statements last arguments second statements first statements last
 			isReturn.
 	self
-		assert:
-		interpretMethod statements last arguments second statements first statements first
-		equals: (self externalizationOf: #autoLocalizedVariable)
+		assert: (interpretMethod statements last arguments second statements first statements first
+			isSameAs: (self externalizationOf: #autoLocalizedVariable))
 ]
 
 { #category : #tests }
@@ -325,24 +323,16 @@ SlangLocalizationTestCase >> testExternalEscapingSendNodeShouldBeTranslatedWithE
 { #category : #tests }
 SlangLocalizationTestCase >> testExternalEscapingSendNodeShouldBeTranslatedWithExternalizationAndInternalizationOutOfDispatch [
 	
-	| interpretMethod autolocalizedVariables |
+	| interpretMethod |
 	MockLocalizationInterpreterMock.
 	ccg addClass: MockLocalizationInterpreterMock.
 	
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
 	ccg prepareMethods.
-	autolocalizedVariables := ccg initAutoLocalizationOfVariablesIn: #interpretWithExternalCallBeforeDispatch.
 	ccg inlineDispatchesInMethodNamed: #interpretWithExternalCallBeforeDispatch.
-	ccg autoLocalizationOfVariablesIn: #interpretWithExternalCallBeforeDispatch withVariableBindings: autolocalizedVariables.
 
-	self assert: externalCall wrappedSendNode arguments first equals: argumentStatement variable.
-	self
-		assert: (argumentStatement expression isSameAs: (TAssignmentNode
-			variableNamed: 'local_autoLocalizedVariable'
-			expression:(TSendNode
-				receiver: (TVariableNode named: 'local_autoLocalizedVariable')
-				selector: #+
-				arguments: { TConstantNode value: 1 } )))
+	interpretMethod := ccg methodNamed: #interpretWithExternalCallBeforeDispatch.
+	self assert: interpretMethod statements second statements first isExternalSend
 ]
 
 { #category : #tests }

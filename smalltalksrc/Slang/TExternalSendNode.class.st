@@ -1,6 +1,6 @@
 Class {
 	#name : #TExternalSendNode,
-	#superclass : #Object,
+	#superclass : #TParseNode,
 	#instVars : [
 		'variableBindings',
 		'wrappedSendNode'
@@ -28,7 +28,7 @@ TExternalSendNode class >> send: aWrappedSendNode variableBindings: bindings [
 { #category : #tranforming }
 TExternalSendNode >> asCASTExpressionIn: aCodeGenerator [
 
-	self halt.
+	self notYetImplemented
 ]
 
 { #category : #tranforming }
@@ -51,6 +51,13 @@ TExternalSendNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constant
 			self shallowCopy
 				wrappedSendNode: newExpression;
 				yourself]
+]
+
+{ #category : #transformations }
+TExternalSendNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [ 
+	
+	(cautionaryBlock value: self) ifTrue: [^self].
+	wrappedSendNode := wrappedSendNode bindVariablesIn: aDictionary unless: cautionaryBlock
 ]
 
 { #category : #'c-translation' }
@@ -81,28 +88,10 @@ TExternalSendNode >> cInternalizationsIn: codeGenerator [
 	^ tAssignments collect: [ :e | e asCASTIn: codeGenerator ]
 ]
 
-{ #category : #testing }
-TExternalSendNode >> isCaseStmt [
-	
-	^ false
-]
-
-{ #category : #testing }
-TExternalSendNode >> isConstant [
-	
-	^ false
-]
-
 { #category : #accessing }
 TExternalSendNode >> isExternalSend [
 
 	^ true
-]
-
-{ #category : #testing }
-TExternalSendNode >> isLeaf [
-	
-	^ false
 ]
 
 { #category : #testing }
@@ -125,6 +114,13 @@ TExternalSendNode >> nodesDo: aBlock [
 	aBlock value: self
 ]
 
+{ #category : #accessing }
+TExternalSendNode >> nodesDo: aBlock parent: parent [
+
+	wrappedSendNode nodesDo: aBlock parent: self.
+	aBlock value: self value: parent
+]
+
 { #category : #asd }
 TExternalSendNode >> replaceNodesIn: aDictionary [
 
@@ -138,13 +134,6 @@ TExternalSendNode >> replaceNodesIn: aDictionary [
 TExternalSendNode >> selector [
 	
 	^ wrappedSendNode selector 
-]
-
-{ #category : #accessing }
-TExternalSendNode >> nodesDo: aBlock parent: parent [
-
-	wrappedSendNode nodesDo: aBlock parent: self.
-	aBlock value: self value: parent
 ]
 
 { #category : #accessing }
