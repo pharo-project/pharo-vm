@@ -4469,7 +4469,9 @@ CCodeGenerator >> pruneUnreachableMethods [
 				[visited add: m.
 				 (m isRealMethod
 				  and: [self shouldGenerateMethod: m]) ifTrue:
-					[neededSelectors addAll: m allCalls]]]].
+					[
+					self haltIf: [ m allCalls includes: #respondToUnknownBytecode ].
+					neededSelectors addAll: m allCalls]]]].
 	 neededSelectors size > previousSize]
 		whileTrue:
 			[previousSize := neededSelectors size].

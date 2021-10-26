@@ -652,7 +652,7 @@ StackInterpreterSimulator >> externalInstVar: index ofContext: aMarriedContext p
 
 { #category : #'interpreter shell' }
 StackInterpreterSimulator >> fetchByte [
-	^objectMemory byteAt: (localIP := localIP + 1).
+	^objectMemory byteAt: (instructionPointer := instructionPointer + 1).
 ]
 
 { #category : #'control primitives' }
@@ -900,7 +900,7 @@ StackInterpreterSimulator >> interpret [
 		 atEachStepBlock value. "N.B. may be nil"
 		 self dispatchOn: currentBytecode in: BytecodeTable.
 		 self incrementByteCount].
-	localIP := localIP - 1.  "undo the pre-increment of IP before returning"
+	instructionPointer := instructionPointer - 1.  "undo the pre-increment of IP before returning"
 	self externalizeIPandSP.
 	^nil
 ]
@@ -917,7 +917,7 @@ StackInterpreterSimulator >> interpretWhile: aFullBlockClosure [
 	[aFullBlockClosure value] whileTrue:
 		[self dispatchOn: currentBytecode in: BytecodeTable.
 		 self incrementByteCount].
-	localIP := localIP - 1.
+	instructionPointer := instructionPointer - 1.
 	"undo the pre-increment of IP before returning"
 	self externalizeIPandSP
 ]
@@ -1213,16 +1213,6 @@ StackInterpreterSimulator >> loadNewPlugin: pluginString [
 { #category : #'spur bootstrap' }
 StackInterpreterSimulator >> localFP [
 	^localFP
-]
-
-{ #category : #'spur bootstrap' }
-StackInterpreterSimulator >> localIP [
-	^localIP
-]
-
-{ #category : #'spur bootstrap' }
-StackInterpreterSimulator >> localIP: pc [
-	localIP := pc
 ]
 
 { #category : #'spur bootstrap' }
@@ -1567,7 +1557,7 @@ StackInterpreterSimulator >> printChar: aByte [
 StackInterpreterSimulator >> printCurrentBytecodeOn: aStream [
 	| code |
 	code := currentBytecode radix: 16.
-	aStream newLine; print: localIP - method - 3; tab.
+	aStream newLine; print: instructionPointer - method - 3; tab.
 	bytecodeSetSelector > 0 ifTrue:
 		[aStream nextPutAll: 'ALT '].
 	aStream
@@ -1793,7 +1783,7 @@ StackInterpreterSimulator >> run [
 	self initStackPages.
 	self loadInitialContext.
 	self initialEnterSmalltalkExecutive.
-	localIP := localIP - 1.
+	instructionPointer := instructionPointer - 1.
 	"undo the pre-increment of IP before returning"
 	self externalizeIPandSP
 ]
@@ -1809,13 +1799,13 @@ StackInterpreterSimulator >> runAtEachStep: aBlock [
 		 aBlock value: currentBytecode.
 		 self dispatchOn: currentBytecode in: BytecodeTable.
 		 self incrementByteCount].
-	localIP := localIP - 1.
+	instructionPointer := instructionPointer - 1.
 	"undo the pre-increment of IP before returning"
 	self externalizeIPandSP
 ]
 
 { #category : #testing }
-StackInterpreterSimulator >> runAtEachStep: aBlock breakCount: breakCount [
+StackInterpreterSimulator >> runAtEachStep: aBlock breakCount: aBreakCount [
 	self initStackPages.
 	self loadInitialContext.
 	self internalizeIPandSP.
@@ -1825,9 +1815,9 @@ StackInterpreterSimulator >> runAtEachStep: aBlock breakCount: breakCount [
 		 aBlock value: currentBytecode.
 		 self dispatchOn: currentBytecode in: BytecodeTable.
 		 self incrementByteCount.
-		 byteCount = breakCount ifTrue:
+		 byteCount = aBreakCount ifTrue:
 			[self halt]].
-	localIP := localIP - 1.
+	instructionPointer := instructionPointer - 1.
 	"undo the pre-increment of IP before returning"
 	self externalizeIPandSP
 ]
@@ -1846,7 +1836,7 @@ StackInterpreterSimulator >> runForNBytes: nBytecodes [
 	[byteCount < endCount] whileTrue:
 		[self dispatchOn: currentBytecode in: BytecodeTable.
 		 self incrementByteCount].
-	localIP := localIP - 1.
+	instructionPointer := instructionPointer - 1.
 	"undo the pre-increment of IP before returning"
 	self externalizeIPandSP
 ]
@@ -2264,70 +2254,6 @@ StackInterpreterSimulator >> updateStateOfSpouseContextForFrame: theFP WithSP: t
 	"(self frameContext: theFP) = 22163268 ifTrue:
 		[self halt]."
 	^super updateStateOfSpouseContextForFrame: theFP WithSP: theSP
-]
-
-{ #category : #UI }
-StackInterpreterSimulator >> utilitiesMenu: aMenuMorph [
-	aMenuMorph
-		add: 'toggle transcript' action: #toggleTranscript;
-		add: 'clone VM' action: #cloneSimulationWindow;
-		addLine;
-		add: 'print ext head frame' action: #printExternalHeadFrame;
-		add: 'print int head frame' action: #printHeadFrame;
-		add: 'short print ext frame & callers' action: [self shortPrintFrameAndCallers: framePointer];
-		add: 'short print int frame & callers' action: [self shortPrintFrameAndCallers: localFP];
-		add: 'long print ext frame & callers' action: [self printFrameAndCallers: framePointer SP: stackPointer];
-		add: 'long print int frame & callers' action: [self printFrameAndCallers: localFP SP: localSP];
-		add: 'print frame...' action: [(self promptHex: 'print frame') ifNotNil: [:fp| self printFrame: fp]];
-		add: 'print call stack' action: #printCallStack;
-		add: 'print stack call stack' action: #printStackCallStack;
-		add: 'print stack call stack of...' action: [(self promptHex: 'frame') ifNotNil: [:fp| self printStackCallStackOf: fp]];
-		add: 'print call stack of...' action: [(self promptHex: 'context or process oop') ifNotNil: [:obj| self printCallStackOf: obj]];
-		add: 'print call stack of frame...' action: [(self promptHex: 'frame') ifNotNil: [:fp| self printCallStackFP: fp]];
-		add: 'print all stacks' action: #printAllStacks;
-		add: 'write back local ptrs' action: [stackPointer := localSP. framePointer := localFP. instructionPointer := localIP.
-											self writeBackHeadFramePointers];
-		add: 'print prim trace log' action: #dumpPrimTraceLog;
-		addLine;
-		add: 'print oop...' action: [(self promptHex: 'print oop') ifNotNil: [:oop| self printOop: oop]];
-		add: 'long print oop...' action: [(self promptHex: 'print oop') ifNotNil: [:oop| self longPrintOop: oop]];
-		add: 'print context...' action: [(self promptHex: 'print context') ifNotNil: [:oop| self printContext: oop]];
-		addLine;
-		add: 'inspect object memory' target: objectMemory action: #inspect;
-		add: 'run leak checker' action: [Cursor execute showWhile: [self runLeakChecker]];
-		add: 'inspect interpreter' action: #inspect;
-		addLine;
-		add: 'set break count...' action: [|s| s := UIManager default request: 'break count (dec)'.
-											s notEmpty ifTrue: [breakCount := Integer readFrom: s readStream]];
-		add: 'set break selector...' action: [|s| s := UIManager default request: 'break selector (MNU:foo for MNU)'.
-											s notEmpty ifTrue:
-												[(s size > 4 and: [s beginsWith: 'MNU:'])
-													ifTrue: [self setBreakMNUSelector: (s allButFirst: 4)]
-													ifFalse: [self setBreakSelector: s]]];
-		add: 'turn valid exec ptrs assert o', (assertVEPAES ifTrue: ['ff'] ifFalse: ['n']) action: [assertVEPAES := assertVEPAES not];
-		add: 'click step' action: [self setClickStepBreakBlock];
-		add: (printSends
-				ifTrue: ['no print sends']
-				ifFalse: ['print sends'])
-			action: [self ensureDebugAtEachStepBlock.
-					printSends := printSends not];
-		"currently printReturns does nothing"
-		"add: (printReturns
-				ifTrue: ['no print returns']
-				ifFalse: ['print returns'])
-			action: [self ensureDebugAtEachStepBlock.
-					printReturns := printReturns not];"
-		add: (printBytecodeAtEachStep
-				ifTrue: ['no print bytecode each bytecode']
-				ifFalse: ['print bytecode each bytecode'])
-			action: [self ensureDebugAtEachStepBlock.
-					printBytecodeAtEachStep := printBytecodeAtEachStep not];
-		add: (printFrameAtEachStep
-				ifTrue: ['no print frame each bytecode']
-				ifFalse: ['print frame each bytecode'])
-			action: [self ensureDebugAtEachStepBlock.
-					printFrameAtEachStep := printFrameAtEachStep not].
-	^aMenuMorph
 ]
 
 { #category : #'debug support' }

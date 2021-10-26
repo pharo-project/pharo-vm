@@ -25,15 +25,6 @@ TAssignmentNode class >> variableNamed: aVariableName expression: anExpression [
 		  yourself
 ]
 
-{ #category : #comparing }
-TAssignmentNode >> = anotherNode [
-
-	super = anotherNode ifFalse: [ ^ false ].
-	variable = anotherNode variable ifFalse: [ ^ false ].
-	expression = anotherNode expression ifFalse: [ ^ false ].
-	^ true
-]
-
 { #category : #'C code generation' }
 TAssignmentNode >> asCASTExpressionIn: aCodeGen [
 
@@ -179,12 +170,6 @@ TAssignmentNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 TAssignmentNode >> expression [
 
 	^expression
-]
-
-{ #category : #comparing }
-TAssignmentNode >> hash [
-
-	^ variable hash + expression hash
 ]
 
 { #category : #testing }

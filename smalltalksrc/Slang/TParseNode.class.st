@@ -11,14 +11,6 @@ Class {
 }
 
 { #category : #utilities }
-TParseNode >> = anotherNode [
-
-	(anotherNode isKindOf: self species)
-		ifFalse: [ ^ false ].
-	^ comment = anotherNode comment
-]
-
-{ #category : #utilities }
 TParseNode >> allCalls [
 	"Answer a collection of selectors for the messages sent in this parse tree."
 
@@ -180,12 +172,6 @@ TParseNode >> hasExplicitReturn [
 TParseNode >> hasSideEffect [
 	"Answer if the parse tree rooted at this node has a side-effect or not.  By default assume it has.  Nodes that don't override."
 	^true
-]
-
-{ #category : #utilities }
-TParseNode >> hash [
-
-	^ comment hash
 ]
 
 { #category : #testing }

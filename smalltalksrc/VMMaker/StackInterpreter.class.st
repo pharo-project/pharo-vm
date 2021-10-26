@@ -317,7 +317,6 @@ Class {
 		'currentBytecode',
 		'bytecodeSetSelector',
 		'localFP',
-		'localIP',
 		'localSP',
 		'stackLimit',
 		'stackPage',
@@ -531,11 +530,11 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		declareVar: #sendTrace type: 'volatile int';
 		declareVar: #byteCount type: #usqInt.
 	"These need to be pointers or unsigned."
-	self declareC: #(instructionPointer method newMethod)
+	self declareC: #(method newMethod)
 		as: #usqInt
 		in: aCCodeGenerator.
 	"These are all pointers; char * because Slang has no support for C pointer arithmetic."
-	self declareC: #(localIP localSP localFP stackPointer framePointer stackLimit breakSelector)
+	self declareC: #(instructionPointer localSP localFP stackPointer framePointer stackLimit breakSelector)
 		as: #'char *'
 		in: aCCodeGenerator.
 	aCCodeGenerator
@@ -1503,7 +1502,7 @@ StackInterpreter class >> mustBeGlobal: var [
 
 { #category : #translation }
 StackInterpreter class >> namesOfVariablesToLocalize [
-	^#(currentBytecode localFP localIP localSP localReturnValue)
+	^#(currentBytecode localFP localSP localReturnValue)
 ]
 
 { #category : #translation }
@@ -2204,7 +2203,7 @@ StackInterpreter >> assertValidExecutionPointe: lip r: lfp s: lsp imbar: inInter
 { #category : #'debug support' }
 StackInterpreter >> assertValidExecutionPointers [
 	<doNotGenerate> "simulator only"
-	self assertValidExecutionPointe: localIP r: localFP s: localSP
+	self assertValidExecutionPointe: instructionPointer r: localFP s: localSP
 ]
 
 { #category : #'process primitive support' }
@@ -2265,7 +2264,7 @@ StackInterpreter >> baseFrameReturn [
 	localSP := theSP.
 	localFP := theFP.
 	self setMethod: (self frameMethod: localFP).
-	localIP := self pointerForOop: self internalStackTop.
+	instructionPointer := self pointerForOop: self internalStackTop.
 	self internalStackTopPut: localReturnValue.
 	self assert: (self checkIsStillMarriedContext: contextToReturnTo currentFP: localFP).
 	^self fetchNextBytecode
@@ -3612,7 +3611,7 @@ StackInterpreter >> callMappedInlinedPrimitive [
 			self fetchNextBytecode.
 			self sistaMappedInlinePrimitive: primIndex]
 		ifFalse: 
-			[localIP := localIP - 2.
+			[instructionPointer := instructionPointer - 2.
 			self respondToUnknownBytecode].
 ]
 
@@ -3633,25 +3632,25 @@ StackInterpreter >> callPrimitiveBytecode [
 			 byte2 < 128 ifTrue:
 				[header := objectMemory methodHeaderOf: method.
 				 ((self methodHeaderHasPrimitive: header)
-				  and: [localIP asUnsignedInteger
+				  and: [instructionPointer asUnsignedInteger
 						= (self initialIPForHeader: header method: method) + (self sizeOfCallPrimitiveBytecode: header)]) ifTrue:
 					[^self].
-				 localIP := localIP - 3.
+				 instructionPointer := instructionPointer - 3.
 				 ^self respondToUnknownBytecode].
 			 prim := byte2 - 128 << 8 + byte1.
 			 primSet := prim >> 13 bitAnd: 3.
 			 prim := prim bitAnd: 8191.
 			 primSet = 0 ifTrue: [^self sistaInlinePrimitive: prim].
 		
-			localIP := localIP - 3.
+			instructionPointer := instructionPointer - 3.
 			^self respondToUnknownBytecode]
 		ifFalse:
 			[| header |
 			 header := objectMemory methodHeaderOf: method.
 			 ((self methodHeaderHasPrimitive: header)
-			  and: [localIP asInteger = (self initialIPForHeader: header method: method)])
+			  and: [instructionPointer asInteger = (self initialIPForHeader: header method: method)])
 				ifTrue:
-					[localIP := localIP + (self sizeOfCallPrimitiveBytecode: header) - 1.
+					[instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: header) - 1.
 					 ^self fetchNextBytecode]
 				ifFalse:
 					[^self respondToUnknownBytecode]]
@@ -4565,7 +4564,7 @@ StackInterpreter >> commonCallerReturn [
 		[self assert: localFP = stackPage baseFP.
 		 ^self baseFrameReturn].
 
-	localIP := self frameCallerSavedIP: localFP.
+	instructionPointer := self frameCallerSavedIP: localFP.
 	localSP := localFP + (self frameStackedReceiverOffset: localFP).
 	localFP := callersFPOrNull.
 	self setMethod: (self frameMethod: localFP).
@@ -4678,12 +4677,12 @@ StackInterpreter >> commonReturn [
 
 	localFP = frameToReturnTo
 		ifTrue: "pop the saved IP, push the return value and continue."
-			[localIP := self pointerForOop: self internalStackTop]
+			[instructionPointer := self pointerForOop: self internalStackTop]
 		ifFalse:
 			[[callerFP := localFP.
 			  localFP := self frameCallerFP: localFP.
 			  localFP ~~ frameToReturnTo] whileTrue.
-			localIP := self frameCallerSavedIP: callerFP.
+			instructionPointer := self frameCallerSavedIP: callerFP.
 			localSP := (self frameCallerSP: callerFP) - objectMemory wordSize].
 	self maybeReturnToMachineCodeFrame.
 	self setMethod: (self frameMethod: localFP).
@@ -5644,7 +5643,7 @@ StackInterpreter >> extUnconditionalJump [
 	bcpcDelta := offset < 0 ifTrue: [numExtB * 2] ifFalse: [0].
 	extB := 0.
 	numExtB := 0.
-	localIP := localIP + offset.
+	instructionPointer := instructionPointer + offset.
 	self ifBackwardsCheckForEvents: offset + bcpcDelta.
 	self fetchNextBytecode
 ]
@@ -5925,7 +5924,6 @@ StackInterpreter >> externalizeFPandSP [
 StackInterpreter >> externalizeIPandSP [
 	"Copy the local instruction, stack and frame pointers to global variables for use in primitives and other functions outside the interpret loop."
 
-	instructionPointer := self oopForPointer: localIP.
 	stackPointer := localSP.
 	framePointer := localFP
 ]
@@ -5953,7 +5951,7 @@ StackInterpreter >> fetchArray: fieldIndex ofObject: objectPointer [
 StackInterpreter >> fetchByte [
 	"This method uses the preIncrement builtin function which has no Smalltalk equivalent. Thus, it must be overridden in the simulator."
 
-	^objectMemory byteAtPointer: localIP preIncrement
+	^objectMemory byteAtPointer: instructionPointer preIncrement
 ]
 
 { #category : #utilities }
@@ -7874,7 +7872,7 @@ StackInterpreter >> instVar: offset ofContext: aContext [
 		[self assert: ReceiverIndex + (self stackPointerIndexForFrame: spouseFP) < (objectMemory lengthOf: aContext).
 		^objectMemory integerObjectOf: (self stackPointerIndexForFrame: spouseFP)].
 	offset = InstructionPointerIndex ifTrue:
-		[^self instructionPointerForFrame: spouseFP currentFP: localFP currentIP: (self oopForPointer: localIP)].
+		[^self instructionPointerForFrame: spouseFP currentFP: localFP currentIP: (self oopForPointer: instructionPointer)].
 	self error: 'bad index'.
 	^0
 ]
@@ -7919,7 +7917,7 @@ StackInterpreter >> instVar: index ofContext: aMarriedContext put: anOop [
 	self internalizeIPandSP.
 	"Assigning various fields can force a divorce which can change the stackPage."
 	stackPages markStackPageMostRecentlyUsed: stackPage.
-	self assertValidExecutionPointe: localIP asUnsignedInteger r: localFP s: localSP imbar: true line: #'__LINE__'
+	self assertValidExecutionPointe: instructionPointer asUnsignedInteger r: localFP s: localSP imbar: true line: #'__LINE__'
 ]
 
 { #category : #'indexing primitive support' }
@@ -8028,7 +8026,7 @@ StackInterpreter >> internalActivateNewMethod [
 	rcvr := self internalStackValue: argumentCount. "could new rcvr be set at point of send?"
 	self assert: (objectMemory isOopForwarded: rcvr) not.
 
-	self internalPush: localIP.
+	self internalPush: instructionPointer.
 	self internalPush: localFP.
 	localFP := localSP.
 	self internalPush: newMethod.
@@ -8045,13 +8043,13 @@ StackInterpreter >> internalActivateNewMethod [
 	self internalPush: objectMemory nilObject ].
 
 	"-1 to account for pre-increment in fetchNextBytecode"
-	localIP := self pointerForOop:
+	instructionPointer := self pointerForOop:
 		           (self initialIPForHeader: methodHeader method: newMethod)
 		           - 1.
 
 	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		localIP := localIP
+		instructionPointer := instructionPointer
 		           + (self sizeOfCallPrimitiveBytecode: methodHeader).
 		primFailCode ~= 0 ifTrue: [ 
 			self reapAndResetErrorCodeTo: localSP header: methodHeader ] ].
@@ -8210,7 +8208,6 @@ StackInterpreter >> internalStackValue: offset put: aValue [
 { #category : #utilities }
 StackInterpreter >> internalizeIPandSP [
 	"Copy the instruction, stack and frame pointers to local variables for rapid access within the interpret loop."
-	localIP := self pointerForOop: instructionPointer.
 	localSP := self pointerForOop: stackPointer.
 	localFP := self pointerForOop: framePointer.
 ]
@@ -8228,7 +8225,7 @@ StackInterpreter >> interpret [
 	self initExtensions.
 	self fetchNextBytecode.
 	[true] whileTrue: [self dispatchOn: currentBytecode in: BytecodeTable].
-	localIP := localIP - 1.  "undo the pre-increment of IP before returning"
+	instructionPointer := instructionPointer - 1.  "undo the pre-increment of IP before returning"
 	self externalizeIPandSP.
 	^nil
 
@@ -8711,10 +8708,10 @@ StackInterpreter >> isWriteMediatedContextInstVarIndex: index [
 
 { #category : #'jump bytecodes' }
 StackInterpreter >> jump: offset [
-	localIP := localIP + offset + 1.
+	instructionPointer := instructionPointer + offset + 1.
 	self cppIf: MULTIPLEBYTECODESETS
-		ifTrue: [currentBytecode := (objectMemory byteAtPointer: localIP) + bytecodeSetSelector]
-		ifFalse: [currentBytecode := objectMemory byteAtPointer: localIP]
+		ifTrue: [currentBytecode := (objectMemory byteAtPointer: instructionPointer) + bytecodeSetSelector]
+		ifFalse: [currentBytecode := objectMemory byteAtPointer: instructionPointer]
 ]
 
 { #category : #'sista bytecodes' }
@@ -8731,24 +8728,24 @@ StackInterpreter >> jumpBinaryInlinePrimitive: primIndex [
 		 Not a forwarder, literal which is a Smi"
 		[16]	->	[self deny: (objectMemory isOopForwarded: test).
 					 self deny: (objectMemory isImmediate: test).
-					 (objectMemory isImmutable: test) ifFalse: [localIP := localIP + offset]].
+					 (objectMemory isImmutable: test) ifFalse: [instructionPointer := instructionPointer + offset]].
 		"7017	jumpIfReadOnly:
 		 Not a forwarder, literal which is a Smi"
 		[17]	->	[self deny: (objectMemory isOopForwarded: test).
 					 self deny: (objectMemory isImmediate: test).
-					 (objectMemory isImmutable: test) ifTrue: [localIP := localIP + offset]].
+					 (objectMemory isImmutable: test) ifTrue: [instructionPointer := instructionPointer + offset]].
 		"7018	jumpIfYoung:
 		 Not a forwarder, literal which is a Smi"
 		[18]	->	[self deny: (objectMemory isOopForwarded: test).
 					 self deny: (objectMemory isImmediate: test).
-					 (objectMemory isYoungObject: test) ifTrue: [localIP := localIP + offset]].
+					 (objectMemory isYoungObject: test) ifTrue: [instructionPointer := instructionPointer + offset]].
 		"7019	jumpIfOld:
 		 Not a forwarder, literal which is a Smi"
 		[19]	->	[self deny: (objectMemory isOopForwarded: test).
 					 self deny: (objectMemory isImmediate: test).
-					 (objectMemory isYoungObject: test) ifFalse: [localIP := localIP + offset]].
+					 (objectMemory isYoungObject: test) ifFalse: [instructionPointer := instructionPointer + offset]].
 	}.
-	localIP := localIP - 1. "we've already fetched, but we may have incorrectly fetched if jump"
+	instructionPointer := instructionPointer - 1. "we've already fetched, but we may have incorrectly fetched if jump"
 	self fetchNextBytecode.
 	self internalPop: 2.
 	
@@ -8772,13 +8769,13 @@ StackInterpreter >> jumpTrinaryInlinePrimitive: primIndex [
 			 self assert: (self objCouldBeClassObj: classObj).
 			 classTag := objectMemory fetchClassTagOf: test.
 			 classTag = (objectMemory rawClassTagForClass: classObj) ifTrue: 
-				[localIP := localIP + offset]].
+				[instructionPointer := instructionPointer + offset]].
 	[1] -> 	["8001	jumpIfNotInstanceOf:distance:
 			 Anything, literal which is a Behavior, literal which is a Smi"
 			 self assert: (self objCouldBeClassObj: classObj).
 			 classTag := objectMemory fetchClassTagOf: test.
 			 classTag = (objectMemory rawClassTagForClass: classObj) ifFalse: 
-				[localIP := localIP + offset]].
+				[instructionPointer := instructionPointer + offset]].
 	[2] -> 	["8002	jumpIfInstanceOfOneOf:distance:
 			 Anything, Array of behaviors, literal which is a Smi"
 			 self assert: (objectMemory isArrayNonImm: classObj).
@@ -8786,7 +8783,7 @@ StackInterpreter >> jumpTrinaryInlinePrimitive: primIndex [
 			0 to: (objectMemory numSlotsOf: classObj) asInteger - 1 do:
 			[:i |
 			 classTag = (objectMemory rawClassTagForClass: (objectMemory fetchPointer: i ofObject: classObj)) ifTrue:
-				[localIP := localIP + offset]]].
+				[instructionPointer := instructionPointer + offset]]].
 	[3] -> 	["8003	jumpIfNotInstanceOfOneOf:distance:
 			  Anything, Array of behaviors, literal which is a Smi"
 			 self assert: (objectMemory isArrayNonImm: classObj).
@@ -8794,12 +8791,12 @@ StackInterpreter >> jumpTrinaryInlinePrimitive: primIndex [
 			0 to: (objectMemory numSlotsOf: classObj) asInteger - 1 do:
 			[:i |
 			 classTag = (objectMemory rawClassTagForClass: (objectMemory fetchPointer: i ofObject: classObj)) ifTrue:
-				[localIP := localIP - 1.
+				[instructionPointer := instructionPointer - 1.
 				 self fetchNextBytecode.
 				 ^self internalPop: 3]].
-			localIP := localIP + offset].
+			instructionPointer := instructionPointer + offset].
 	}.
-	localIP := localIP - 1. "we've already fetched, but we may have incorrectly fetched if jump"
+	instructionPointer := instructionPointer - 1. "we've already fetched, but we may have incorrectly fetched if jump"
 	self fetchNextBytecode.
 	self internalPop: 3
 	
@@ -8816,7 +8813,7 @@ StackInterpreter >> jumpUnaryInlinePrimitive: primIndex [
 		[self assert: (objectMemory isIntegerObject: top). 
 		 self assert: (objectMemory integerValueOf: top) < 0.
 		"We've already fetched next bytecode, so we add -1"
-		 localIP := localIP + (objectMemory integerValueOf: top) - 1. 
+		 instructionPointer := instructionPointer + (objectMemory integerValueOf: top) - 1. 
 		 self fetchNextBytecode.
 		 ^self internalPop: 1].
 	^ self unknownInlinePrimitive	
@@ -9155,7 +9152,7 @@ StackInterpreter >> longStoreTemporaryVariableBytecode [
 StackInterpreter >> longUnconditionalJump [
 	| offset |
 	offset := (((currentBytecode bitAnd: 7) - 4) * 256) + self fetchByte.
-	localIP := localIP + offset.
+	instructionPointer := instructionPointer + offset.
 	self ifBackwardsCheckForEvents: offset.
 	self fetchNextBytecode
 ]
@@ -9632,11 +9629,11 @@ StackInterpreter >> mappedBackjumpAlwaysInterrupt [
 	top := self internalStackTop.
 	self assert: (objectMemory isIntegerObject: top).
 	offset := objectMemory integerObjectOf: top.
-	localIP := localIP - offset.
+	instructionPointer := instructionPointer - offset.
 	self internalPop: 1.
 	"+1 since this instr is 3 bytes not 2"
 	self ifBackwardsCheckForEvents: 0 - offset + 1. 
-	localIP := localIP - 1.
+	instructionPointer := instructionPointer - 1.
 	self fetchNextBytecode
 ]
 
@@ -13242,7 +13239,7 @@ StackInterpreter >> respondToUnknownBytecode [
 		[self error: 'Unknown bytecode'].
 	ourContext := self ensureFrameIsMarried: localFP SP: localSP.
 	"undo fetch of bytecode so that context's pc is pointing to the unknown bytecode."
-	localIP := localIP - 1.
+	instructionPointer := instructionPointer - 1.
 	self internalPush: ourContext.
 	argumentCount := 0.
 	self normalSend
@@ -15660,7 +15657,7 @@ StackInterpreter >> unconditionnalTrapBytecode [
 StackInterpreter >> undoFetchNextBytecode [
 	"Backup the ip when it has been incremented to fetch the next bytecode."
 
-	localIP := localIP - 1
+	instructionPointer := instructionPointer - 1
 ]
 
 { #category : #'compiled methods' }
@@ -15692,7 +15689,7 @@ StackInterpreter >> unknownBytecode [
 { #category : #'sista bytecodes' }
 StackInterpreter >> unknownInlinePrimitive [
 	<inline: true> "Should be inlined everywhere to access localIP"
-	localIP := localIP - 3.
+	instructionPointer := instructionPointer - 3.
 	self respondToUnknownBytecode
 ]
 

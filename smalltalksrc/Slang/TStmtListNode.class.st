@@ -233,6 +233,13 @@ TStmtListNode >> endsWithReturn [
 	  and: [statements last isReturn or: [statements last isReturningIf]]
 ]
 
+{ #category : #accessing }
+TStmtListNode >> initialize [
+
+	super initialize.
+	arguments := #()
+]
+
 { #category : #testing }
 TStmtListNode >> isNilStmtListNode [
 
@@ -303,6 +310,7 @@ TStmtListNode >> nodesDo: aBlock value: parent [
 { #category : #copying }
 TStmtListNode >> postCopy [
 
+1haltIf: [ arguments isNil ].
 	arguments := arguments copy.
 	statements := statements collect: [ :s | s copy ]
 ]
@@ -391,6 +399,7 @@ TStmtListNode >> returnsExpression [
 { #category : #accessing }
 TStmtListNode >> setArguments: argList [
 
+1haltIf: [ argList isNil ].
 	arguments := argList.
 ]
 
@@ -398,6 +407,7 @@ TStmtListNode >> setArguments: argList [
 TStmtListNode >> setArguments: argList statements: statementList [
 	"Initialize this method using the given information."
 
+1haltIf: [ argList isNil ].
 	arguments := argList.
 	statements := statementList.
 ]
