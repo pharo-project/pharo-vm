@@ -322,17 +322,25 @@ SlangLocalizationTestCase >> testExternalEscapingSendNodeShouldBeTranslatedWithE
 
 { #category : #tests }
 SlangLocalizationTestCase >> testExternalEscapingSendNodeShouldBeTranslatedWithExternalizationAndInternalizationOutOfDispatch [
-	
-	| interpretMethod |
+
+	| interpretMethod autolocalizedVariables |
 	MockLocalizationInterpreterMock.
 	ccg addClass: MockLocalizationInterpreterMock.
-	
+
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
 	ccg prepareMethods.
-	ccg inlineDispatchesInMethodNamed: #interpretWithExternalCallBeforeDispatch.
+	autolocalizedVariables := ccg initAutoLocalizationOfVariablesIn:
+		                          #interpretWithExternalCallBeforeDispatch.
+	ccg inlineDispatchesInMethodNamed:
+		#interpretWithExternalCallBeforeDispatch.
+	ccg
+		autoLocalizationOfVariablesIn:
+		#interpretWithExternalCallBeforeDispatch
+		withVariableBindings: autolocalizedVariables.
 
-	interpretMethod := ccg methodNamed: #interpretWithExternalCallBeforeDispatch.
-	self assert: interpretMethod statements second statements first isExternalSend
+	interpretMethod := ccg methodNamed:
+		                   #interpretWithExternalCallBeforeDispatch.
+	self assert: interpretMethod statements second isExternalSend
 ]
 
 { #category : #tests }
