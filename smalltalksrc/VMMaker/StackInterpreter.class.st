@@ -2332,7 +2332,7 @@ StackInterpreter >> binaryAtInlinePrimitive: primIndex [
 		[69]	->	[self assert: (objectMemory isLong64s: rec).
 					 self assert: argIntAdjusted < (objectMemory num64BitUnitsOf: rec).
 					 result := self positive64BitIntegerFor: (objectMemory fetchLong64: argIntAdjusted ofObject: rec)].}.
-		self internalPop: 1; internalStackTopPut: result
+		self pop: 1; internalStackTopPut: result
 ]
 
 { #category : #'sista inline primitives - binary' }
@@ -2348,7 +2348,7 @@ StackInterpreter >> binaryCompInlinePrimitive: primIndex [
 		 not a forwarder, not a forwarder => Boolean (optimised if one operand is a constant, Pipelined with ifTrue:ifFalse:)"
 		[39]	->	[result := ((self internalStackValue: 1) ~= self internalStackTop)].
 	}.
-	self internalPop: 1; internalStackTopPut: (objectMemory booleanObjectOf: result)
+	self pop: 1; internalStackTopPut: (objectMemory booleanObjectOf: result)
 ]
 
 { #category : #'sista inline primitives - binary' }
@@ -2440,7 +2440,7 @@ StackInterpreter >> binaryNewInlinePrimitive: primIndex [
 	self assert: (objectMemory isIntegerObject: top).
 	size := self positiveMachineIntegerValueOf: top.
 	result := objectMemory instantiateClass: classObj indexableSize: size.
-	self internalPop: 1; internalStackTopPut: result
+	self pop: 1; internalStackTopPut: result
 ]
 
 { #category : #'sista inline primitives - binary' }
@@ -2477,7 +2477,7 @@ StackInterpreter >> binarySmiArithmeticInlinePrimitive: primIndex [
 		 Smi, Smi => Smi (no overflow, optimised if one operand is a constant)"
 		[6]	->	[result := self quot: recInt ient: argInt].
 	}.
-	self internalPop: 1; internalStackTopPutIntegerObjectOf: result
+	self pop: 1; internalStackTopPutIntegerObjectOf: result
 ]
 
 { #category : #'sista inline primitives - binary' }
@@ -2511,7 +2511,7 @@ StackInterpreter >> binarySmiBitInlinePrimitive: primIndex [
 		[20]	->	[self assert: argInt >= 0.
 					 result := recInt >> argInt].
 	}.
-	self internalPop: 1; internalStackTopPutIntegerObjectOf: result
+	self pop: 1; internalStackTopPutIntegerObjectOf: result
 ]
 
 { #category : #'sista inline primitives - binary' }
@@ -2543,7 +2543,7 @@ StackInterpreter >> binarySmiCompInlinePrimitive: primIndex [
 		Smi, Smi => Boolean (optimised if one operand is a constant, Pipelined with ifTrue:ifFalse:)"
 		[37]	->	[result := (rcvr ~= top)].
 	}.
-	self internalPop: 1; internalStackTopPut: (objectMemory booleanObjectOf: result)
+	self pop: 1; internalStackTopPut: (objectMemory booleanObjectOf: result)
 ]
 
 { #category : #utilities }
@@ -2563,7 +2563,7 @@ StackInterpreter >> booleanCheatFalse [
 	| bytecode offset |
 
 	bytecode := self fetchByte.  "assume next bytecode is jumpIfFalse (99%)"
-	self internalPop: 2.
+	self pop: 2.
 	(bytecode < 160 and: [bytecode > 151]) ifTrue:  "short jumpIfFalse"
 		[^self jump: bytecode - 151].
 
@@ -2585,7 +2585,7 @@ StackInterpreter >> booleanCheatFalseSistaV1 [
 	| bytecode offset |
 
 	bytecode := self fetchByte.  "assume next bytecode is jumpIfFalse (99%)"
-	self internalPop: 2.
+	self pop: 2.
 	(bytecode < 199 and: [bytecode > 191]) ifTrue:  "short jumpIfFalse"
 		[^self jump: bytecode - 191].
 
@@ -2607,7 +2607,7 @@ StackInterpreter >> booleanCheatFalseV4 [
 	| bytecode offset |
 
 	bytecode := self fetchByte.  "assume next bytecode is jumpIfFalse (99%)"
-	self internalPop: 2.
+	self pop: 2.
 	(bytecode < 216 and: [bytecode > 207]) ifTrue:  "short jumpIfFalse"
 		[^self jump: bytecode - 207].
 
@@ -2639,7 +2639,7 @@ StackInterpreter >> booleanCheatTrue [
 	| bytecode offset |
 
 	bytecode := self fetchByte.  "assume next bytecode is jumpIfFalse (99%)"
-	self internalPop: 2.
+	self pop: 2.
 	(bytecode < 173 and: [bytecode > 151]) ifTrue:
 		[bytecode < 160 ifTrue: "short jumpIfFalse 152 - 159"
 			[^self fetchNextBytecode].
@@ -2664,7 +2664,7 @@ StackInterpreter >> booleanCheatTrueSistaV1 [
 	| bytecode offset |
 
 	bytecode := self fetchByte.  "assume next bytecode is jumpIfFalse (99%)"
-	self internalPop: 2.
+	self pop: 2.
 	bytecode >= 192 ifTrue:
 		[bytecode <= 199 ifTrue: "short jumpIfFalse 192 - 199"
 			[^self fetchNextBytecode].
@@ -2689,7 +2689,7 @@ StackInterpreter >> booleanCheatTrueV4 [
 	| bytecode offset |
 
 	bytecode := self fetchByte.  "assume next bytecode is jumpIfFalse (99%)"
-	self internalPop: 2.
+	self pop: 2.
 	bytecode >= 208 ifTrue:
 		[bytecode <= 215 ifTrue: "short jumpIfFalse 208 - 215"
 			[^self fetchNextBytecode].
@@ -5594,7 +5594,7 @@ StackInterpreter >> extStoreAndPopLiteralVariableBytecode [
 	| variableIndex value |
 	variableIndex := self fetchByte + (extA << 8).
 	value := self internalStackTop.
-	self internalPop: 1.
+	self pop: 1.
 	extA := 0.
 	self storeLiteralVariable: variableIndex withValue: value.
 	self fetchNextBytecode.
@@ -5607,7 +5607,7 @@ StackInterpreter >> extStoreAndPopReceiverVariableBytecode [
 	variableIndex := self fetchByte + (extA << 8).
 	extA := 0.
 	value := self internalStackTop.
-	self internalPop: 1.
+	self pop: 1.
 	self storeMaybeContextReceiverVariable: variableIndex withValue: value.
 	self fetchNextBytecode.
 ]
@@ -5683,7 +5683,7 @@ StackInterpreter >> extendedStoreBytecodePop: popBoolean [
 	variableType := descriptor >> 6 bitAnd: 3.
 	variableIndex := descriptor bitAnd: 63.
 	value := self internalStackTop.
-	popBoolean ifTrue: [ self internalPop: 1 ].
+	popBoolean ifTrue: [ self pop: 1 ].
 	variableType = 0 ifTrue:
 		[objectMemory storePointerImmutabilityCheck: variableIndex ofObject: self receiver withValue: value.
 		^ self fetchNextBytecode].
@@ -8120,12 +8120,6 @@ StackInterpreter >> internalMustBeBoolean [
 ]
 
 { #category : #'internal interpreter access' }
-StackInterpreter >> internalPop: nItems [
-	"In the StackInterpreter stacks grow down."
-	stackPointer := stackPointer + (nItems * objectMemory bytesPerOop)
-]
-
-{ #category : #'internal interpreter access' }
 StackInterpreter >> internalPop: nItems thenPush: oop [
 	"In the StackInterpreter stacks grow down."
 	stackPages longAtPointer: (stackPointer := stackPointer + ((nItems - 1) * objectMemory bytesPerOop)) put: oop
@@ -8740,7 +8734,7 @@ StackInterpreter >> jumpBinaryInlinePrimitive: primIndex [
 	}.
 	instructionPointer := instructionPointer - 1. "we've already fetched, but we may have incorrectly fetched if jump"
 	self fetchNextBytecode.
-	self internalPop: 2.
+	self pop: 2.
 	
 ]
 
@@ -8786,12 +8780,12 @@ StackInterpreter >> jumpTrinaryInlinePrimitive: primIndex [
 			 classTag = (objectMemory rawClassTagForClass: (objectMemory fetchPointer: i ofObject: classObj)) ifTrue:
 				[instructionPointer := instructionPointer - 1.
 				 self fetchNextBytecode.
-				 ^self internalPop: 3]].
+				 ^self pop: 3]].
 			instructionPointer := instructionPointer + offset].
 	}.
 	instructionPointer := instructionPointer - 1. "we've already fetched, but we may have incorrectly fetched if jump"
 	self fetchNextBytecode.
-	self internalPop: 3
+	self pop: 3
 	
 ]
 
@@ -8808,7 +8802,7 @@ StackInterpreter >> jumpUnaryInlinePrimitive: primIndex [
 		"We've already fetched next bytecode, so we add -1"
 		 instructionPointer := instructionPointer + (objectMemory integerValueOf: top) - 1. 
 		 self fetchNextBytecode.
-		 ^self internalPop: 1].
+		 ^self pop: 1].
 	^ self unknownInlinePrimitive	
 ]
 
@@ -8822,7 +8816,7 @@ StackInterpreter >> jumplfFalseBy: offset [
 			[boolean = objectMemory trueObject ifFalse:
 				[^self internalMustBeBoolean].
 			self fetchNextBytecode].
-	self internalPop: 1
+	self pop: 1
 ]
 
 { #category : #'jump bytecodes' }
@@ -8835,7 +8829,7 @@ StackInterpreter >> jumplfTrueBy: offset [
 			[boolean = objectMemory falseObject ifFalse:
 				[^self internalMustBeBoolean].
 			self fetchNextBytecode].
-	self internalPop: 1
+	self pop: 1
 ]
 
 { #category : #'message sending' }
@@ -9115,7 +9109,7 @@ StackInterpreter >> longPushTemporaryVariableBytecode [
 StackInterpreter >> longStoreAndPopTemporaryVariableBytecode [
 	"237		11101101	i i i i i i i i	Pop and Store Temporary Variable #iiiiiiii"
 	self longStoreTemporaryVariableBytecode.
-	self internalPop: 1
+	self pop: 1
 ]
 
 { #category : #'compiled methods' }
@@ -9623,7 +9617,7 @@ StackInterpreter >> mappedBackjumpAlwaysInterrupt [
 	self assert: (objectMemory isIntegerObject: top).
 	offset := objectMemory integerObjectOf: top.
 	instructionPointer := instructionPointer - offset.
-	self internalPop: 1.
+	self pop: 1.
 	"+1 since this instr is 3 bytes not 2"
 	self ifBackwardsCheckForEvents: 0 - offset + 1. 
 	instructionPointer := instructionPointer - 1.
@@ -9675,7 +9669,7 @@ StackInterpreter >> mappedImmcheckDataAtPut: primIndex [
 	argIntAdjusted := (objectMemory integerValueOf: arg1) - 1.
 	self assert: argIntAdjusted >= 0.
 	result := self internalStackTop.
-	self internalPop: 2; internalStackTopPut: result.
+	self pop: 2; internalStackTopPut: result.
 	(objectMemory isImmutable: rec) ifTrue: [^self cannotAssign: result to: rec withIndex: argIntAdjusted].
 	
 	primIndex caseOf: {
@@ -9726,7 +9720,7 @@ StackInterpreter >> mappedImmcheckMaybeContextStoreCheckPointerAtPut [
 	self assert: (objectMemory isIntegerObject: arg1).
 	argIntAdjusted := (objectMemory integerValueOf: arg1) - 1.
 	result := self internalStackTop.
-	self internalPop: 3.
+	self pop: 3.
 	self internalPush: result.
 	(self isWriteMediatedContextInstVarIndex: argIntAdjusted) 
 						ifFalse: [objectMemory storePointerImmutabilityCheck: argIntAdjusted ofObject: rec withValue: result]
@@ -9748,7 +9742,7 @@ StackInterpreter >> mappedImmcheckStoreCheckPointerAtPut [
 	self assert: argIntAdjusted >= 0.
 	self assert: argIntAdjusted < (objectMemory numSlotsOfAny: rec).
 	result := self internalStackTop.
-	self internalPop: 3.
+	self pop: 3.
 	self internalPush: result.
 	objectMemory
 		storePointerImmutabilityCheck: argIntAdjusted
@@ -10918,7 +10912,7 @@ StackInterpreter >> popStack [
 StackInterpreter >> popStackBytecode [
 
 	self fetchNextBytecode.
-	self internalPop: 1.
+	self pop: 1.
 
 ]
 
@@ -12600,7 +12594,7 @@ StackInterpreter >> pushFullClosureNumArgs: numArgs copiedValues: numCopiedArg c
 			 objectMemory storePointerUnchecked: i + startIndex
 				ofObject: newClosure
 				withValue: (self internalStackValue: numCopied - i - 1)].
-		 self internalPop: numCopied].
+		 self pop: numCopied].
 	self fetchNextBytecode.
 	self internalPush: newClosure
 ]
@@ -12728,7 +12722,7 @@ StackInterpreter >> pushNewArrayBytecode [
 				[:i|
 				"Assume: have just allocated a new Array; it must be young. Thus, can use unchecked stores."
 				objectMemory storePointerUnchecked: i ofObject: array withValue: (self internalStackValue: size - i - 1)].
-			 self internalPop: size]
+			 self pop: size]
 		ifFalse:
 			[0 to: size - 1 do:
 				[:i|
@@ -12919,7 +12913,7 @@ StackInterpreter >> quinaryInlinePrimitive: primIndex [
 		destLimit := (objectMemory integerValueOf: (self internalStackValue: 2)) - 1.
 		src := self internalStackValue: 1.
 		srcIndex := (objectMemory integerValueOf: (self internalStackValue: 0)) - 1.
-		self internalPop: 4.
+		self pop: 4.
 		destLimit < destIndex ifTrue: [^self].
 		(objectMemory isYoung: dest) ifFalse: [objectMemory possibleRootStoreInto: dest].
 		0 to: destLimit - destIndex do: 
@@ -14825,7 +14819,7 @@ StackInterpreter >> storeAndPopReceiverVariableBytecode [
 	rcvr := self receiver.
 	top := self internalStackTop.
 	instVarIndex := currentBytecode bitAnd: 7.
-	self internalPop: 1.
+	self pop: 1.
 	objectMemory
 		storePointerImmutabilityCheck: instVarIndex
 		ofObject: rcvr
@@ -14836,7 +14830,7 @@ StackInterpreter >> storeAndPopReceiverVariableBytecode [
 { #category : #'stack bytecodes' }
 StackInterpreter >> storeAndPopRemoteTempLongBytecode [
 	self storeRemoteTempLongBytecode.
-	self internalPop: 1
+	self pop: 1
 ]
 
 { #category : #'stack bytecodes' }
@@ -14846,11 +14840,11 @@ StackInterpreter >> storeAndPopTemporaryVariableBytecode [
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
 			[self fetchNextBytecode.
 			 self temporary: (currentBytecode bitAnd: 7) in: framePointer put: self internalStackTop.
-			 self internalPop: 1]
+			 self pop: 1]
 		inSmalltalk: "Interpreter version has fetchNextBytecode out of order"
 			[self temporary: (currentBytecode bitAnd: 7) in: framePointer put: self internalStackTop.
 			 self fetchNextBytecode.
-			 self internalPop: 1]
+			 self pop: 1]
 ]
 
 { #category : #utilities }
@@ -15313,7 +15307,7 @@ StackInterpreter >> trinaryAtPutInlinePrimitive: primIndex [
 					ofObject: rec
 					withValue: (objectMemory positive64BitValueOf: result).].
 	}.
-	 self internalPop: 2; internalStackTopPut: result
+	 self pop: 2; internalStackTopPut: result
 ]
 
 { #category : #'sista bytecodes' }
@@ -15342,14 +15336,14 @@ StackInterpreter >> trinaryInlinePrimitive: primIndex [
 	primIndex = 21 ifTrue: 
 		[ | str1 str2 word1 word2 len |
 		  len := objectMemory integerValueOf: self internalStackTop.
-		  len = 0 ifTrue: [^self internalPop: 2; internalStackTopPut: objectMemory trueObject].
+		  len = 0 ifTrue: [^self pop: 2; internalStackTopPut: objectMemory trueObject].
 		  str1 := self internalStackValue: 2.
   					  str2 := self internalStackValue: 1.
 		  0 to: len - 1 >> objectMemory shiftForWord do: [:i |
 			word1 := objectMemory fetchPointer: i ofObject: str1.
 			word2 := objectMemory fetchPointer: i ofObject: str2. 
-			word1 = word2 ifFalse: [^self internalPop: 2; internalStackTopPut: objectMemory falseObject] ].
-		 ^self internalPop: 2; internalStackTopPut: objectMemory trueObject ].
+			word1 = word2 ifFalse: [^self pop: 2; internalStackTopPut: objectMemory falseObject] ].
+		 ^self pop: 2; internalStackTopPut: objectMemory trueObject ].
 	self unknownInlinePrimitive
 ]
 

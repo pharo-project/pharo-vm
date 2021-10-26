@@ -2999,7 +2999,7 @@ CoInterpreter >> extendedStoreBytecodePop: popBoolean [
 	variableType := descriptor >> 6 bitAnd: 3.
 	variableIndex := descriptor bitAnd: 63.
 	value := self internalStackTop.
-	popBoolean ifTrue: [ self internalPop: 1 ].
+	popBoolean ifTrue: [ self pop: 1 ].
 	variableType = 0 ifTrue:
 		[objectMemory storePointerImmutabilityCheck: variableIndex ofObject: self receiver withValue: value.
 		^ self fetchNextBytecode.].
@@ -5958,7 +5958,7 @@ CoInterpreter >> pushFullClosureNumArgs: numArgs copiedValues: numCopiedArg comp
 			 objectMemory storePointerUnchecked: i + startIndex
 				ofObject: newClosure
 				withValue: (self internalStackValue: numCopied - i - 1)].
-		 self internalPop: numCopied].
+		 self pop: numCopied].
 	self fetchNextBytecode.
 	self internalPush: newClosure
 ]
@@ -6566,11 +6566,11 @@ CoInterpreter >> storeAndPopTemporaryVariableBytecode [
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
 			[self fetchNextBytecode.
 			 self itemporary: (currentBytecode bitAnd: 7) in: framePointer put: self internalStackTop.
-			 self internalPop: 1]
+			 self pop: 1]
 		inSmalltalk: "Interpreter version has fetchNextBytecode out of order"
 			[self itemporary: (currentBytecode bitAnd: 7) in: framePointer put: self internalStackTop.
 			 self fetchNextBytecode.
-			 self internalPop: 1]
+			 self pop: 1]
 ]
 
 { #category : #'stack bytecodes' }
