@@ -49,6 +49,13 @@ TVariableNode >> bindVariablesIn: aDictionary [
 	^ (aDictionary at: name ifAbsent: [^ self]) copy
 ]
 
+{ #category : #transformations }
+TVariableNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	(cautionaryBlock value: self) ifTrue: [^self].
+	^ (aDictionary at: name ifAbsent: [^ self]) copy
+]
+
 { #category : #testing }
 TVariableNode >> hasSideEffect [
 	"Answer if the parse tree rooted at this node has a side-effect or not."

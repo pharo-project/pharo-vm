@@ -73,6 +73,13 @@ TExternalSendNode >> nodesDo: aBlock [
 ]
 
 { #category : #accessing }
+TExternalSendNode >> nodesDo: aBlock parent: parent [
+
+	wrappedSendNode nodesDo: aBlock parent: self.
+	aBlock value: self value: parent
+]
+
+{ #category : #accessing }
 TExternalSendNode >> variableBindings [
 	^ variableBindings
 ]

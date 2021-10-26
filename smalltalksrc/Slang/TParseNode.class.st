@@ -111,6 +111,12 @@ TParseNode >> bindVariablesIn: aDictionary [
 	^self
 ]
 
+{ #category : #transformations }
+TParseNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	^self
+]
+
 { #category : #enumerating }
 TParseNode >> collect: aBlock [
 	| nodes |

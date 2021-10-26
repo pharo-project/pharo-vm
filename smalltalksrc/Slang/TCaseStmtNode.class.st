@@ -133,6 +133,14 @@ TCaseStmtNode >> bindVariablesIn: aDictionary [
 	cases := cases collect: [ :c | c bindVariablesIn: aDictionary ].
 ]
 
+{ #category : #transformations }
+TCaseStmtNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	(cautionaryBlock value: self) ifTrue: [^self].
+	expression := expression bindVariablesIn: aDictionary unless: cautionaryBlock.
+	cases := cases collect: [ :c | c bindVariablesIn: aDictionary unless: cautionaryBlock ].
+]
+
 { #category : #accessing }
 TCaseStmtNode >> cases [
 

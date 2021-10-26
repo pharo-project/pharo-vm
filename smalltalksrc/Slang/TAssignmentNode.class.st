@@ -136,7 +136,7 @@ TAssignmentNode >> asCASTValueExpansionIn: aCodeGen [
 	^ (TSendNode new
 		   setSelector: expression selector
 		   receiver: copy
-		   arguments: expression args) asCASTIn: aCodeGen
+		   arguments: expression arguments) asCASTIn: aCodeGen
 ]
 
 { #category : #transformations }
@@ -165,6 +165,14 @@ TAssignmentNode >> bindVariablesIn: aDictionary [
 
 	variable := variable bindVariablesIn: aDictionary.
 	expression := expression bindVariablesIn: aDictionary.
+]
+
+{ #category : #transformations }
+TAssignmentNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	(cautionaryBlock value: self) ifTrue: [^self].
+	variable := variable bindVariablesIn: aDictionary unless: cautionaryBlock.
+	expression := expression bindVariablesIn: aDictionary unless: cautionaryBlock.
 ]
 
 { #category : #accessing }

@@ -243,6 +243,14 @@ TSendNode >> bindVariablesIn: aDictionary [
 	arguments := arguments collect: [ :a | a bindVariablesIn: aDictionary ].
 ]
 
+{ #category : #transformations }
+TSendNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	(cautionaryBlock value: self) ifTrue: [^self].
+	receiver := receiver bindVariablesIn: aDictionary unless: cautionaryBlock.
+	arguments := arguments collect: [ :a | a bindVariablesIn: aDictionary unless: cautionaryBlock].
+]
+
 { #category : #accessing }
 TSendNode >> constantNumbericValueIfAtAllPossibleOrNilIn: aCCodeGen [
 	"This is a version of constantNumbericValueOrNil for type checking rather than code generation.
@@ -348,15 +356,14 @@ TSendNode >> isReturningIf [
 
 { #category : #comparing }
 TSendNode >> isSameAs: aTParseNode [
-	(aTParseNode isSend
-	 and: [selector == aTParseNode selector
-	 and: [receiver isSameAs: aTParseNode receiver]]) ifFalse:
-		[^false].
-	arguments with: aTParseNode args do:
-		[:a :b|
-		(a isSameAs: b) ifFalse:
-			[^false]].
-	^true
+
+	(aTParseNode isSend and: [ 
+		 selector == aTParseNode selector and: [ 
+			 receiver isSameAs: aTParseNode receiver ] ]) ifFalse: [ ^ false ].
+	arguments
+		with: aTParseNode arguments
+		do: [ :a :b | (a isSameAs: b) ifFalse: [ ^ false ] ].
+	^ true
 ]
 
 { #category : #'C code generation' }

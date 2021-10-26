@@ -38,6 +38,14 @@ TInlineNode >> bindVariablesIn: aDictionary [
 
 ]
 
+{ #category : #transformations }
+TInlineNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	(cautionaryBlock value: self) ifTrue: [^self].
+	method := method bindVariablesIn: aDictionary unless: cautionaryBlock.
+
+]
+
 { #category : #testing }
 TInlineNode >> isInline [
 	^true
