@@ -804,7 +804,7 @@ CogVMSimulator >> ensureContextIsExecutionSafeAfterAssignToStackPointer: aContex
 { #category : #testing }
 CogVMSimulator >> ensureDebugAtEachStepBlock [
 	atEachStepBlock := [printFrameAtEachStep ifTrue:
-							[self printFrame: localFP WithSP: localSP].
+							[self printFrame: framePointer WithSP: localSP].
 						 printBytecodeAtEachStep ifTrue:
 							[self printCurrentBytecodeOn: transcript.
 							 transcript cr; flush].
@@ -1667,7 +1667,7 @@ CogVMSimulator >> isWidowedContext: aOnceMarriedContext [
 	 If it is not, turn it into a bereaved single context."
 	(stackPages isFree: stackPage) ifFalse: "in baseReturn the active page has been freed."
 		[((stackPages somePageHasHeadFrameFP: framePointer)
-		  or: [(stackPages somePageHasHeadFrameFP: localFP)
+		  or: [(stackPages somePageHasHeadFrameFP: framePointer)
 		  or: [stackPages allPagesFree]]) ifFalse:
 			[(thisContext sender sender method = (CoInterpreter >> #baseFrameReturn)
 			  or: [thisContext sender sender method = (CoInterpreter >> #ceBaseFrameReturn:)]) ifFalse:
@@ -2440,7 +2440,7 @@ CogVMSimulator >> printHexnpnp: anInteger [
 
 { #category : #'debug printing' }
 CogVMSimulator >> printLCS [
-	self printCallStackFP: localFP
+	self printCallStackFP: framePointer
 ]
 
 { #category : #'debug printing' }
@@ -2768,11 +2768,6 @@ CogVMSimulator >> tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom: con
 ]
 
 { #category : #testing }
-CogVMSimulator >> test [
-	self testBreakCount: -1 printSends: true printFrames: false printBytecodes: false
-]
-
-{ #category : #testing }
 CogVMSimulator >> testBecome [
 	"Become some young things.  AA testBecome    "
 	| array list1 list2 p1 p2 p3 p4 |
@@ -2803,19 +2798,6 @@ CogVMSimulator >> testBecome [
 ]
 
 { #category : #testing }
-CogVMSimulator >> testBreakCount: breakCount printSends: shouldPrintSends printFrames: shouldPrintFrames printBytecodes: shouldPrintBytecodes [
-	self initStackPages.
-	self loadInitialContext.
-	transcript clear.
-	quitBlock := [^self close].
-	printSends := true & shouldPrintSends. "true & foo allows evaluating printFoo := true in the debugger"
-	printFrameAtEachStep := true & shouldPrintFrames.
-	printBytecodeAtEachStep := true & shouldPrintBytecodes.
-	self ensureDebugAtEachStepBlock.
-	self initialEnterSmalltalkExecutive
-]
-
-{ #category : #testing }
 CogVMSimulator >> testPCMapping [
 	objectMemory allObjectsDo:
 		[:o|
@@ -2837,11 +2819,6 @@ CogVMSimulator >> testPCMapping [
 					 cogit testMcToBcPcMappingForMethod: (self cogMethodOf: o)]
 				ifFalse:
 					[transcript nextPutAll: 'failed to compile method '; print: o; cr; flush]]]
-]
-
-{ #category : #testing }
-CogVMSimulator >> testWithBytecodePrint [
-	self testBreakCount: -1 printSends: true printFrames: false printBytecodes: true
 ]
 
 { #category : #UI }

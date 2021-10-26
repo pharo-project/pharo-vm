@@ -155,7 +155,7 @@ StackInterpreterSimulator >> atEachStepBlock: aBlock [
 { #category : #'return bytecodes' }
 StackInterpreterSimulator >> baseFrameReturn [
 	| contextToReturnTo |
-	contextToReturnTo := self frameCallerContext: localFP.
+	contextToReturnTo := self frameCallerContext: framePointer.
 	((objectMemory isContext: contextToReturnTo)
 	 and: [self isMarriedOrWidowedContext: contextToReturnTo]) ifTrue:
 		[(self checkIsStillMarriedContext: contextToReturnTo currentFP: nil) ifFalse:
@@ -615,17 +615,6 @@ StackInterpreterSimulator >> endPCOf: aMethod [
 	^end
 ]
 
-{ #category : #testing }
-StackInterpreterSimulator >> ensureDebugAtEachStepBlock [
-	atEachStepBlock := [printFrameAtEachStep ifTrue:
-							[self printFrame: localFP WithSP: localSP].
-						 printBytecodeAtEachStep ifTrue:
-							[self printCurrentBytecodeOn: transcript.
-							 transcript cr; flush].
-						 byteCount = breakCount ifTrue:
-							["printFrameAtEachStep :=" printBytecodeAtEachStep := true]]
-]
-
 { #category : #'debugging traps' }
 StackInterpreterSimulator >> externalDivorceFrame: theFP andContext: ctxt [
 	"(theFP = -208 or: [ctxt = 22189568]) ifTrue:
@@ -637,9 +626,9 @@ StackInterpreterSimulator >> externalDivorceFrame: theFP andContext: ctxt [
 StackInterpreterSimulator >> externalInstVar: index ofContext: aMarriedContext put: anOop [
 	| imMarried shesMarried result |
 	index == SenderIndex ifTrue:
-		[imMarried := self checkIsStillMarriedContext: aMarriedContext currentFP: localFP.
+		[imMarried := self checkIsStillMarriedContext: aMarriedContext currentFP: framePointer.
 		(objectMemory isContext: anOop) ifTrue:
-			[shesMarried := self checkIsStillMarriedContext: anOop currentFP: localFP.
+			[shesMarried := self checkIsStillMarriedContext: anOop currentFP: framePointer.
 			 "self shortPrintContext: aMarriedContext.
 			  self shortPrintContext: anOop"]].
 	result := super externalInstVar: index ofContext: aMarriedContext put: anOop.
@@ -837,9 +826,9 @@ StackInterpreterSimulator >> initializePluginEntries [
 StackInterpreterSimulator >> instVar: index ofContext: aMarriedContext put: anOop [
 	| imMarried shesMarried result |
 	index == SenderIndex ifTrue:
-		[imMarried := self checkIsStillMarriedContext: aMarriedContext currentFP: localFP.
+		[imMarried := self checkIsStillMarriedContext: aMarriedContext currentFP: framePointer.
 		(objectMemory isContext: anOop) ifTrue:
-			[shesMarried := self checkIsStillMarriedContext: anOop currentFP: localFP.
+			[shesMarried := self checkIsStillMarriedContext: anOop currentFP: framePointer.
 			"self cr.
 			self shortPrintContext: aMarriedContext.
 			self shortPrintContext: anOop.
@@ -1212,7 +1201,7 @@ StackInterpreterSimulator >> loadNewPlugin: pluginString [
 
 { #category : #'spur bootstrap' }
 StackInterpreterSimulator >> localFP [
-	^localFP
+	^framePointer
 ]
 
 { #category : #'spur bootstrap' }
@@ -1684,7 +1673,7 @@ StackInterpreterSimulator >> printHexnpnp: anInteger [
 
 { #category : #'debug printing' }
 StackInterpreterSimulator >> printLCS [
-	self printCallStackFP: localFP
+	self printCallStackFP: framePointer
 ]
 
 { #category : #'debug printing' }
@@ -2067,32 +2056,6 @@ StackInterpreterSimulator >> tab [
 ]
 
 { #category : #testing }
-StackInterpreterSimulator >> test [
-	self initStackPages.
-	self loadInitialContext.
-	transcript clear.
-	byteCount := 0.
-	breakCount := -1.
-	quitBlock := [^self close].
-	printSends := printReturns := true.
-	self internalizeIPandSP.
-	self fetchNextBytecode.
-	[true] whileTrue:
-		[self assertValidExecutionPointers.
-		 printFrameAtEachStep ifTrue:
-			[self printFrame: localFP WithSP: localSP].
-		 printBytecodeAtEachStep ifTrue:
-			[self printCurrentBytecodeOn: Transcript.
-			 Transcript cr; flush].
-		 self dispatchOn: currentBytecode in: BytecodeTable.
-		 self incrementByteCount.
-		 byteCount = breakCount ifTrue:
-			["printFrameAtEachStep :=" printBytecodeAtEachStep := true.
-			 self halt: 'hit breakCount break-point']].
-	self externalizeIPandSP
-]
-
-{ #category : #testing }
 StackInterpreterSimulator >> test1 [
 	self initStackPages.
 	self loadInitialContext.
@@ -2156,33 +2119,6 @@ StackInterpreterSimulator >> testBecome [
 	(objectMemory fetchPointer: 1 ofObject: list1) = p4 ifFalse: [self halt].
 	(objectMemory fetchPointer: 0 ofObject: list2) = p1 ifFalse: [self halt].
 	(objectMemory fetchPointer: 1 ofObject: list2) = p2 ifFalse: [self halt].
-]
-
-{ #category : #testing }
-StackInterpreterSimulator >> testBreakCount: breakCount printSends: shouldPrintSends printFrames: shouldPrintFrames printBytecodes: shouldPrintBytecodes [
-	self initStackPages.
-	self loadInitialContext.
-	transcript clear.
-	byteCount := 0.
-	quitBlock := [^self close].
-	printSends := true & shouldPrintSends. "true & foo allows evaluating printFoo := true in the debugger"
-	printFrameAtEachStep := true & shouldPrintFrames.
-	printBytecodeAtEachStep := true & shouldPrintBytecodes.
-	self internalizeIPandSP.
-	self fetchNextBytecode.
-	[true] whileTrue:
-		[self assertValidExecutionPointers.
-		 printFrameAtEachStep ifTrue:
-			[self printFrame: localFP WithSP: localSP].
-		 printBytecodeAtEachStep ifTrue:
-			[self printCurrentBytecodeOn: Transcript.
-			 Transcript cr; flush].
-		 self dispatchOn: currentBytecode in: BytecodeTable.
-		 self incrementByteCount.
-		 byteCount = breakCount ifTrue:
-			["printFrameAtEachStep :=" printBytecodeAtEachStep := true.
-			 self halt: 'hit breakCount break-point']].
-	self externalizeIPandSP
 ]
 
 { #category : #testing }
