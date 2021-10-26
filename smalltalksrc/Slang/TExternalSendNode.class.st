@@ -1,12 +1,20 @@
 Class {
 	#name : #TExternalSendNode,
-	#superclass : #TParseNode,
+	#superclass : #Object,
 	#instVars : [
 		'variableBindings',
 		'wrappedSendNode'
 	],
 	#category : #'Slang-AST'
 }
+
+{ #category : #'instance-creation' }
+TExternalSendNode class >> receiver: aReceiverNode selector: aString arguments: aCollection  variableBindings: bindings [
+
+	^ (self receiver: aReceiverNode selector: aString arguments: aCollection)
+		variableBindings: bindings;
+		yourself
+]
 
 { #category : #'instance-creation' }
 TExternalSendNode class >> send: aWrappedSendNode variableBindings: bindings [
@@ -18,11 +26,31 @@ TExternalSendNode class >> send: aWrappedSendNode variableBindings: bindings [
 ]
 
 { #category : #tranforming }
+TExternalSendNode >> asCASTExpressionIn: aCodeGenerator [
+
+	self halt.
+]
+
+{ #category : #tranforming }
 TExternalSendNode >> asCASTIn: aCodeGenerator [
 
 	^ CCompoundStatementNode statements: (self cExternalizationsIn: aCodeGenerator)
 		  , { (wrappedSendNode asCASTIn: aCodeGenerator) }
 		  , (self cInternalizationsIn: aCodeGenerator)
+]
+
+{ #category : #transformations }
+TExternalSendNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen [
+
+	| newExpression |
+	newExpression := wrappedSendNode bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen.
+	^newExpression = wrappedSendNode
+		ifTrue: [self]
+		ifFalse: [
+			self haltIf: [ newExpression isSend not ].
+			self shallowCopy
+				wrappedSendNode: newExpression;
+				yourself]
 ]
 
 { #category : #'c-translation' }
@@ -53,9 +81,33 @@ TExternalSendNode >> cInternalizationsIn: codeGenerator [
 	^ tAssignments collect: [ :e | e asCASTIn: codeGenerator ]
 ]
 
+{ #category : #testing }
+TExternalSendNode >> isCaseStmt [
+	
+	^ false
+]
+
+{ #category : #testing }
+TExternalSendNode >> isConstant [
+	
+	^ false
+]
+
 { #category : #accessing }
 TExternalSendNode >> isExternalSend [
 
+	^ true
+]
+
+{ #category : #testing }
+TExternalSendNode >> isLeaf [
+	
+	^ false
+]
+
+{ #category : #testing }
+TExternalSendNode >> isSend [
+	
 	^ true
 ]
 
@@ -65,11 +117,27 @@ TExternalSendNode >> localizedVariables [
 	^ variableBindings keys
 ]
 
-{ #category : #accessing }
+{ #category : #asd }
 TExternalSendNode >> nodesDo: aBlock [
+	"Apply aBlock to all nodes in the receiver.
+	 N.B. This is assumed to be bottom-up, leaves first."
+	wrappedSendNode nodesDo: aBlock.
+	aBlock value: self
+]
 
-	aBlock value: wrappedSendNode.
-	super nodesDo: aBlock
+{ #category : #asd }
+TExternalSendNode >> replaceNodesIn: aDictionary [
+
+	^aDictionary at: self ifAbsent: [ | newNode |
+		newNode := wrappedSendNode replaceNodesIn: aDictionary.
+		wrappedSendNode := newNode.
+		self]
+]
+
+{ #category : #accessing }
+TExternalSendNode >> selector [
+	
+	^ wrappedSendNode selector 
 ]
 
 { #category : #accessing }

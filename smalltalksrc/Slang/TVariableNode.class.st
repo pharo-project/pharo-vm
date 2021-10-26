@@ -15,13 +15,6 @@ TVariableNode class >> named: aName [
 		yourself
 ]
 
-{ #category : #transformations }
-TVariableNode >> = anotherNode [
-
-	super = anotherNode ifFalse: [ ^ false ].
-	^ name = anotherNode name
-]
-
 { #category : #tranforming }
 TVariableNode >> asCASTIn: aBuilder [
 

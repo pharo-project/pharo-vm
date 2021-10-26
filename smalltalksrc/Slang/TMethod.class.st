@@ -183,7 +183,7 @@ TMethod >> argAssignmentsFor: meth send: aSendNode except: elidedArgs in: aCodeG
 	| stmtList substitutionDict argList |
 	meth args size > (argList := aSendNode arguments) size ifTrue: [ 
 		self assert: (meth args first beginsWith: 'self_in_').
-		argList := { aSendNode receiver } , aSendNode args ].
+		argList := { aSendNode receiver } , aSendNode arguments ].
 
 	stmtList := OrderedCollection new: argList size.
 	substitutionDict := Dictionary new: argList size.
@@ -479,15 +479,20 @@ TMethod >> buildCaseStmt: aSendNode in: aCodeGen [
 
 { #category : #transformations }
 TMethod >> buildSwitchStmt: aSendNode parent: parentNode [
+
 	"Build a switch statement node for the given send of caseOf: or caseOf:otherwise:."
+
 	| switch |
 	switch := TSwitchStmtNode new
-				expression: aSendNode receiver
-				cases: aSendNode args first
-				otherwiseOrNil: (aSendNode args at: 2 ifAbsent: [nil]).
-	(aSendNode receiver isVariable or: [parentNode isStmtList]) ifFalse:
-		[switch switchVariable: (locals add: (self extraVariableName: 'switch'))].
-	^switch
+		          expression: aSendNode receiver
+		          cases: aSendNode arguments first
+		          otherwiseOrNil:
+		          (aSendNode arguments at: 2 ifAbsent: [ nil ]).
+	(aSendNode receiver isVariable or: [ parentNode isStmtList ]) 
+		ifFalse: [ 
+			switch switchVariable:
+				(locals add: (self extraVariableName: 'switch')) ].
+	^ switch
 ]
 
 { #category : #'inlining support' }
@@ -795,31 +800,39 @@ TMethod >> ensureConditionalAssignmentsAreTransformedIn: aCodeGen [
 
 { #category : #transformations }
 TMethod >> ensureToByDoLoopLimitIsSafeAndEfficient: node in: aCodeGen [
+
 	"For both safety and efficiency, make sure that to:[by:]do: loops
 	 with complex limits have a variable to hold the limit expression.
 	 In C the limit expression is evaluated each time round the loop
 	 so if the loop has side-effects (which it usually will), the C compiler
 	 may not be able to optimize the limit expression itself."
+
 	| limitExpr hasSideEffects |
-	 limitExpr := node args first.
-	 hasSideEffects := limitExpr anySatisfy:
-						[:subNode|
-						subNode isSend
-						and: [(aCodeGen isBuiltinSelector: subNode selector) not
-						and: [(aCodeGen isStructSend: subNode) not]]].
-	 node args size = 4
-		ifTrue:
-			[hasSideEffects
-				ifTrue: [locals add: node args last name]
-				ifFalse: [node arguments: node args allButLast]]
-		ifFalse: "If the expression is complex but as yet there is no limit variable, add it"
-			[hasSideEffects ifTrue:
-				[| var |
-				 var := self unusedNamePrefixedBy: 'toDoLimit' avoiding: locals. "N.B. adds it to locals!!"
-				 node arguments: node args, {TVariableNode new setName: var; yourself}.
-				 declarations
-					at: node args third args first
-					ifPresent: [:decl| self declarationAt: var put: (self typeFor: node args third args first in: aCodeGen), ' ', var]]]
+	limitExpr := node arguments first.
+	hasSideEffects := limitExpr anySatisfy: [ :subNode | 
+		                  subNode isSend and: [ 
+			                  (aCodeGen isBuiltinSelector: subNode selector)
+				                  not and: [ (aCodeGen isStructSend: subNode) not ] ] ].
+	node arguments size = 4
+		ifTrue: [ 
+			hasSideEffects
+				ifTrue: [ locals add: node arguments last name ]
+				ifFalse: [ node arguments: node arguments allButLast ] ]
+		ifFalse: [ "If the expression is complex but as yet there is no limit variable, add it"
+			hasSideEffects ifTrue: [ 
+				| var |
+				var := self unusedNamePrefixedBy: 'toDoLimit' avoiding: locals. "N.B. adds it to locals!!"
+				node arguments: node arguments , { (TVariableNode new
+						 setName: var;
+						 yourself) }.
+				declarations
+					at: node arguments third args first
+					ifPresent: [ :decl | 
+						self
+							declarationAt: var
+							put:
+								(self typeFor: node arguments third args first in: aCodeGen)
+								, ' ' , var ] ] ]
 ]
 
 { #category : #inlining }
@@ -985,6 +998,7 @@ TMethod >> extractExpandCaseDirective [
 
 { #category : #transformations }
 TMethod >> extractExportDirective [
+
 	"Scan the top-level statements for an inlining directive of the form:
 
 		self export: <boolean>
@@ -992,10 +1006,10 @@ TMethod >> extractExportDirective [
 	 and remove the directive from the method body. Answer the
 	 argument of the directive or false if there is no export directive."
 
-	^self
-		extractDirective: #export:
-		valueBlock: [:sendNode| sendNode args first value ~= false]
-		default: false
+	^ self
+		  extractDirective: #export:
+		  valueBlock: [ :sendNode | sendNode arguments first value ~= false ]
+		  default: false
 ]
 
 { #category : #'inlining support' }
@@ -1047,6 +1061,7 @@ TMethod >> extractSharedCase [
 
 { #category : #transformations }
 TMethod >> extractStaticDirective [
+
 	"Scan the top-level statements for an inlining directive of the form:
 
 		self static: <boolean>
@@ -1054,10 +1069,10 @@ TMethod >> extractStaticDirective [
 	 and remove the directive from the method body. Answer the
 	 argument of the directive or true if there is no static directive."
 
-	^self
-		extractDirective: #static:
-		valueBlock: [:sendNode| sendNode args first value ~= false]
-		default: (export or: [ self isAPIMethod ]) not
+	^ self
+		  extractDirective: #static:
+		  valueBlock: [ :sendNode | sendNode arguments first value ~= false ]
+		  default: (export or: [ self isAPIMethod ]) not
 ]
 
 { #category : #'primitive compilation' }
@@ -1240,23 +1255,27 @@ TMethod >> inline: aBoolean [
 
 { #category : #inlining }
 TMethod >> inlineBuiltin: aSendNode in: aCodeGen [
+
 	| sel meth inlinedReplacement |
-	(aSendNode selector beginsWith: 'perform:') ifTrue:
-		[^self inlineFunctionCall: aSendNode asTransformedConstantPerform in: aCodeGen].
+	(aSendNode selector beginsWith: 'perform:') ifTrue: [ 
+		^ self
+			  inlineFunctionCall: aSendNode asTransformedConstantPerform
+			  in: aCodeGen ].
 	sel := aSendNode receiver selector.
 	meth := aCodeGen methodNamed: sel.
-	(meth notNil and: [meth inline == true]) ifFalse: [^nil].
-	(meth isFunctionalIn: aCodeGen) ifTrue:
-		[inlinedReplacement := (aCodeGen methodNamed: aSendNode receiver selector) copy
-									inlineFunctionCall: aSendNode receiver
-									in: aCodeGen.
-		 ^TSendNode new
-			setSelector: aSendNode selector
-			receiver: inlinedReplacement
-			arguments: aSendNode args copy].
-	(self isInlineableConditional: aSendNode in: aCodeGen) ifTrue:
-		[^self inlineConditional: aSendNode in: aCodeGen].
-	^nil
+	(meth notNil and: [ meth inline == true ]) ifFalse: [ ^ nil ].
+	(meth isFunctionalIn: aCodeGen) ifTrue: [ 
+		inlinedReplacement := (aCodeGen methodNamed:
+			                       aSendNode receiver selector) copy
+			                      inlineFunctionCall: aSendNode receiver
+			                      in: aCodeGen.
+		^ TSendNode new
+			  setSelector: aSendNode selector
+			  receiver: inlinedReplacement
+			  arguments: aSendNode arguments copy ].
+	(self isInlineableConditional: aSendNode in: aCodeGen) ifTrue: [ 
+		^ self inlineConditional: aSendNode in: aCodeGen ].
+	^ nil
 ]
 
 { #category : #inlining }
@@ -1301,16 +1320,18 @@ TMethod >> inlineCodeOrNilForStatement: aNode returningNodes: returningNodes in:
 
 { #category : #inlining }
 TMethod >> inlineConditional: aSendNode in: aCodeGen [
+
 	"If possible answer the inlining of a conditional, otherwise answer nil.
 	 Currently the only pattern we support is
 		aSend ifTrue:/ifFalse: [...]
 	 where aSend is marked inline and always answers booleans."
+
 	self assert: (self isInlineableConditional: aSendNode in: aCodeGen).
-	self assert: aSendNode args first isStmtList.
-	^(aSendNode args first statements size = 1
-	  and: [aSendNode args first statements first isReturn])
-		ifTrue: [self inlineReturningConditional: aSendNode in: aCodeGen]
-		ifFalse: [self inlineGuardingConditional: aSendNode in: aCodeGen]
+	self assert: aSendNode arguments first isStmtList.
+	^ (aSendNode arguments first statements size = 1 and: [ 
+		   aSendNode arguments first statements first isReturn ])
+		  ifTrue: [ self inlineReturningConditional: aSendNode in: aCodeGen ]
+		  ifFalse: [ self inlineGuardingConditional: aSendNode in: aCodeGen ]
 ]
 
 { #category : #inlining }
@@ -1353,50 +1374,56 @@ TMethod >> inlineFunctionCall: aSendNode in: aCodeGen [
 
 { #category : #inlining }
 TMethod >> inlineGuardingConditional: aSendNode in: aCodeGen [
+
 	"Inline
 		aSend ifTrue:/ifFalse: [statements]
 	 where aSend is inlineable and always answers booleans.  We convert
 	 the boolean returns in aSend to jumps."
+
 	| evaluateIfTrue replacementTree map lastNode evaluateLabel skipLabel method |
 	self assert: self == aCodeGen currentMethod.
 	self assert: (self isInlineableConditional: aSendNode in: aCodeGen).
 	aCodeGen maybeBreakForInlineOf: aSendNode in: self.
 	evaluateIfTrue := aSendNode selector = #ifTrue:.
 	method := (aCodeGen methodNamed: aSendNode receiver selector) copy.
-	replacementTree := method inlineFunctionCall: aSendNode receiver in: aCodeGen.
+	replacementTree := method
+		                   inlineFunctionCall: aSendNode receiver
+		                   in: aCodeGen.
 	map := Dictionary new.
-	(replacementTree statements last isReturn
-	 and: [replacementTree statements last expression value = evaluateIfTrue]) ifTrue:
-		[lastNode := replacementTree statements last].
+	(replacementTree statements last isReturn and: [ 
+		 replacementTree statements last expression value = evaluateIfTrue ]) 
+		ifTrue: [ lastNode := replacementTree statements last ].
 	skipLabel := TLabeledCommentNode new setLabel:
-					(self unusedLabelForInlining: method).
-	replacementTree nodesDo:
-		[:node| | expr |
-		 node isReturn ifTrue:
-			[expr := node expression.
-			 self assert: (expr isConstant and: [#(true false) includes: expr value]).
-			 map
-				at: node
-				put: (expr value ~~ evaluateIfTrue
-						ifTrue: [TGoToNode label: skipLabel label]
-						ifFalse:
-							[node == lastNode
-								ifTrue: [TLabeledCommentNode new setComment: 'end ', aSendNode receiver selector, '; fall through']
-								ifFalse:
-									[evaluateLabel ifNil:
-										[evaluateLabel := TLabeledCommentNode new setLabel:
-													(self unusedLabelForInlining: method)].
-									 TGoToNode label: evaluateLabel label]])]].
+		             (self unusedLabelForInlining: method).
+	replacementTree nodesDo: [ :node | 
+		| expr |
+		node isReturn ifTrue: [ 
+			expr := node expression.
+			self assert:
+				(expr isConstant and: [ #( true false ) includes: expr value ]).
+			map at: node put: (expr value ~~ evaluateIfTrue
+					 ifTrue: [ TGoToNode label: skipLabel label ]
+					 ifFalse: [ 
+						 node == lastNode
+							 ifTrue: [ 
+								 TLabeledCommentNode new setComment:
+									 'end ' , aSendNode receiver selector , '; fall through' ]
+							 ifFalse: [ 
+								 evaluateLabel ifNil: [ 
+									 evaluateLabel := TLabeledCommentNode new setLabel:
+										                  (self unusedLabelForInlining: method) ].
+								 TGoToNode label: evaluateLabel label ] ]) ] ].
 	replacementTree replaceNodesIn: map.
-	replacementTree comment: {'inline ', aSendNode receiver selector}.
+	replacementTree comment:
+		{ ('inline ' , aSendNode receiver selector) }.
 	self addVarsDeclarationsAndLabelsOf: method except: method args.
-	^TStmtListNode new
-		setArguments: #()
-		statements:
-			(evaluateLabel
-				ifNil: [replacementTree statements, aSendNode args first statements, {skipLabel}]
-				ifNotNil:
-					[replacementTree statements, {evaluateLabel}, aSendNode args first statements, {skipLabel}])
+	^ TStmtListNode new setArguments: #(  ) statements: (evaluateLabel
+			   ifNil: [ 
+				   replacementTree statements
+				   , aSendNode arguments first statements , { skipLabel } ]
+			   ifNotNil: [ 
+				   replacementTree statements , { evaluateLabel }
+				   , aSendNode arguments first statements , { skipLabel } ])
 ]
 
 { #category : #inlining }
@@ -1426,55 +1453,62 @@ TMethod >> inlineMethod: meth inCaseStatement: stmtNode withLocalizationReplacem
 
 { #category : #inlining }
 TMethod >> inlineReturningConditional: aSendNode in: aCodeGen [
+
 	"Inline
 		aSend ifTrue:/ifFalse: [^expr]
 	 where aSend is inlineable and always answers booleans.  We inline ^expr
 	 into aSend."
+
 	| returnIfTrue returnNode replacementTree map lastNode label method |
 	self assert: self == aCodeGen currentMethod.
 	self assert: (self isInlineableConditional: aSendNode in: aCodeGen).
 	aCodeGen maybeBreakForInlineOf: aSendNode receiver in: self.
 	returnIfTrue := aSendNode selector = #ifTrue:.
-	returnNode := aSendNode args first.
+	returnNode := aSendNode arguments first.
 	method := (aCodeGen methodNamed: aSendNode receiver selector) copy.
-	replacementTree := method inlineFunctionCall: aSendNode receiver in: aCodeGen.
+	replacementTree := method
+		                   inlineFunctionCall: aSendNode receiver
+		                   in: aCodeGen.
 	map := Dictionary new.
 	"The last node is either a return or a boolean constant."
 	lastNode := replacementTree statements last.
 	replacementTree statements last isReturn
-		ifTrue:
-			[replacementTree statements last expression value == returnIfTrue ifTrue:
-				[lastNode := nil "i.e. take the fall-through path and /don't/ return"]]
-		ifFalse:
-			[self assert: (lastNode isConstant and: [#(true false) includes: lastNode value]).
-			 lastNode value == returnIfTrue ifTrue: "i.e. /do/ return"
-				[map at: lastNode put: returnNode]].
-	replacementTree nodesDo:
-		[:node| | expr |
-		 node isReturn ifTrue:
-			[expr := node expression.
-			 self assert: (expr isConstant and: [#(true false) includes: expr value]).
-			 map
-				at: node
-				put: (expr value == returnIfTrue
-						ifTrue: [returnNode]
-						ifFalse:
-							[node == lastNode
-								ifTrue: [TLabeledCommentNode new setComment: 'end ', aSendNode receiver selector, '; fall through']
-								ifFalse:
-									[label ifNil:
-										[label := TLabeledCommentNode new setLabel:
-													(self unusedLabelForInlining: method)].
-									 TGoToNode label: label label]])]].
+		ifTrue: [ 
+			replacementTree statements last expression value == returnIfTrue 
+				ifTrue: [ 
+					lastNode := nil "i.e. take the fall-through path and /don't/ return" ] ]
+		ifFalse: [ 
+			self assert:
+				(lastNode isConstant and: [ 
+					 #( true false ) includes: lastNode value ]).
+			lastNode value == returnIfTrue ifTrue: [ "i.e. /do/ return" 
+				map at: lastNode put: returnNode ] ].
+	replacementTree nodesDo: [ :node | 
+		| expr |
+		node isReturn ifTrue: [ 
+			expr := node expression.
+			self assert:
+				(expr isConstant and: [ #( true false ) includes: expr value ]).
+			map at: node put: (expr value == returnIfTrue
+					 ifTrue: [ returnNode ]
+					 ifFalse: [ 
+						 node == lastNode
+							 ifTrue: [ 
+								 TLabeledCommentNode new setComment:
+									 'end ' , aSendNode receiver selector , '; fall through' ]
+							 ifFalse: [ 
+								 label ifNil: [ 
+									 label := TLabeledCommentNode new setLabel:
+										          (self unusedLabelForInlining: method) ].
+								 TGoToNode label: label label ] ]) ] ].
 	replacementTree replaceNodesIn: map.
 	self addVarsDeclarationsAndLabelsOf: method except: method args.
-	replacementTree comment: {'inline ', aSendNode receiver selector}.
-	^label
-		ifNil: [replacementTree]
-		ifNotNil:
-			[TStmtListNode new
-				setArguments: #()
-				statements: {replacementTree. label}]
+	replacementTree comment:
+		{ ('inline ' , aSendNode receiver selector) }.
+	^ label ifNil: [ replacementTree ] ifNotNil: [ 
+		  TStmtListNode new setArguments: #(  ) statements: { 
+				  replacementTree.
+				  label } ]
 ]
 
 { #category : #inlining }
@@ -1570,24 +1604,25 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 
 { #category : #inlining }
 TMethod >> inlineableFunctionCall: aNode in: aCodeGen [
+
 	"Answer if the given send node is a call to a 'functional' method--a method whose body is a single return statement of some expression and whose actual parameters can all be directly substituted."
 
 	aCodeGen maybeBreakForTestToInline: aNode in: self.
-	aNode isSend ifFalse:
-		[^false].
-	^(aCodeGen methodNamed: aNode selector)
-		ifNil:
-			[aNode asTransformedConstantPerform
-				ifNil: [self isInlineableConditional: aNode in: aCodeGen]
-				ifNotNil: [:n| self inlineableFunctionCall: n in: aCodeGen]]
-		ifNotNil:
-			[:m|
-			 (m ~~ self
-			  and: [((m isFunctionalIn: aCodeGen) or: [m mustBeInlined and: [m isComplete]])
-			  and: [m mayBeInlined
-			  and: [(aCodeGen mayInline: m selector)
-			  and: [aNode args allSatisfy: [:a| self isSubstitutableNode: a intoMethod: m in: aCodeGen]]]]])
-			 or: [m checkForRequiredInlinability]]
+	aNode isSend ifFalse: [ ^ false ].
+	^ (aCodeGen methodNamed: aNode selector)
+		  ifNil: [ 
+			  aNode asTransformedConstantPerform
+				  ifNil: [ self isInlineableConditional: aNode in: aCodeGen ]
+				  ifNotNil: [ :n | self inlineableFunctionCall: n in: aCodeGen ] ]
+		  ifNotNil: [ :m | 
+			  (m ~~ self and: [ 
+				   ((m isFunctionalIn: aCodeGen) or: [ 
+					    m mustBeInlined and: [ m isComplete ] ]) and: [ 
+					   m mayBeInlined and: [ 
+						   (aCodeGen mayInline: m selector) and: [ 
+							   aNode arguments allSatisfy: [ :a | 
+								   self isSubstitutableNode: a intoMethod: m in: aCodeGen ] ] ] ] ]) 
+				  or: [ m checkForRequiredInlinability ] ]
 ]
 
 { #category : #inlining }
@@ -1667,21 +1702,25 @@ TMethod >> isComplete [
 
 { #category : #inlining }
 TMethod >> isConditionalToBeTransformedForAssignment: aSend in: aCodeGen [
+
 	"Answer if a send is of the form
 		e1
 			ifTrue: [e2 ifTrue: [self m1] ifFalse: [self m2]]
 			ifFalse: [self m3]
 	 such that at least one of the sends mN may be inlined.."
 
-	^(#(ifTrue:ifFalse: ifFalse:ifTrue:) includes: aSend selector)
-	   and: [aSend args anySatisfy:
-			[:arg| | stmt |
-			self assert: arg isStmtList.
-			arg statements size > 1
-			or: [(stmt := arg statements first) isSwitch
-			or: [stmt isSend
-				and: [(aCodeGen mayInline: stmt selector)
-					or: [self isConditionalToBeTransformedForAssignment: stmt in: aCodeGen]]]]]]
+	^ (#( #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: aSend selector) 
+		  and: [ 
+			  aSend arguments anySatisfy: [ :arg | 
+				  | stmt |
+				  self assert: arg isStmtList.
+				  arg statements size > 1 or: [ 
+					  (stmt := arg statements first) isSwitch or: [ 
+						  stmt isSend and: [ 
+							  (aCodeGen mayInline: stmt selector) or: [ 
+								  self
+									  isConditionalToBeTransformedForAssignment: stmt
+									  in: aCodeGen ] ] ] ] ] ]
 ]
 
 { #category : #inlining }
@@ -2745,6 +2784,7 @@ TMethod >> statementsFor: sourceText varName: varName [
 
 { #category : #inlining }
 TMethod >> statementsListsForInliningIn: aCodeGen [
+
 	"Answer a collection of statement list nodes that are candidates for inlining.
 	 Currently, we cannot inline into the argument blocks of and: and or: messages.
 	 We do not want to inline code strings within cCode:inSmalltalk: blocks (those with a
@@ -2754,46 +2794,43 @@ TMethod >> statementsListsForInliningIn: aCodeGen [
 	| stmtLists |
 	stmtLists := OrderedCollection new: 10.
 	parseTree
-		nodesDo:
-			[:node|
-			node isStmtList ifTrue: [stmtLists add: node]]
-		unless:
-			[:node|
-			node isSend
-			and: [node selector == #cCode:inSmalltalk:
-				or: [aCodeGen isAssertSelector: node selector]]].
-	parseTree nodesDo:
-		[:node|
-		node isSend ifTrue:
-			[node selector = #cCode:inSmalltalk: ifTrue:
-				[node nodesDo:
-					[:ccisNode| stmtLists remove: ccisNode ifAbsent: []]].
-			 (node selector = #cppIf:ifTrue:ifFalse: or: [node selector = #cppIf:ifTrue:]) ifTrue:
-				[node args first nodesDo:
-					[:inCondNode| stmtLists remove: inCondNode ifAbsent: []]].
-			((node selector = #and:) or: [node selector = #or:]) ifTrue:
-				"Note: the PP 2.3 compiler produces two arg nodes for these selectors"
-				[stmtLists remove: node args first ifAbsent: [].
-				stmtLists remove: node args last ifAbsent: []].
-			(#(	#ifTrue: #ifFalse: #ifTrue:ifFalse: #ifFalse:ifTrue:
-				#ifNil: #ifNotNil: #ifNil:ifNotNil: #ifNotNil:ifNil: ) includes: node selector) ifTrue:
-				[stmtLists remove: node receiver ifAbsent: []].
-			(#(whileTrue whileTrue: whilefalse whileFalse:) includes: node selector) ifTrue:
-				"Allow inlining if it is a [...] whileTrue/whileFalse.
+		nodesDo: [ :node | node isStmtList ifTrue: [ stmtLists add: node ] ]
+		unless: [ :node | 
+			node isSend and: [ 
+				node selector == #cCode:inSmalltalk: or: [ 
+					aCodeGen isAssertSelector: node selector ] ] ].
+	parseTree nodesDo: [ :node | 
+		node isSend ifTrue: [ 
+			node selector = #cCode:inSmalltalk: ifTrue: [ 
+				node nodesDo: [ :ccisNode | 
+					stmtLists remove: ccisNode ifAbsent: [  ] ] ].
+			(node selector = #cppIf:ifTrue:ifFalse: or: [ 
+				 node selector = #cppIf:ifTrue: ]) ifTrue: [ 
+				node arguments first nodesDo: [ :inCondNode | 
+					stmtLists remove: inCondNode ifAbsent: [  ] ] ].
+			(node selector = #and: or: [ node selector = #or: ]) ifTrue: [ "Note: the PP 2.3 compiler produces two arg nodes for these selectors"
+				stmtLists remove: node arguments first ifAbsent: [  ].
+				stmtLists remove: node arguments last ifAbsent: [  ] ].
+			(#( #ifTrue: #ifFalse: #ifTrue:ifFalse: #ifFalse:ifTrue:
+			    #ifNil: #ifNotNil: #ifNil:ifNotNil: #ifNotNil:ifNil: ) 
+				 includes: node selector) ifTrue: [ 
+				stmtLists remove: node receiver ifAbsent: [  ] ].
+			(#( whileTrue whileTrue: whilefalse whileFalse: ) includes:
+				 node selector) ifTrue: [ "Allow inlining if it is a [...] whileTrue/whileFalse.
 				This is identified by having more than one statement in the 
 				receiver block in which case the C code wouldn't work anyways"
-				[node receiver statements size = 1 ifTrue:
-					[stmtLists remove: node receiver ifAbsent: []]].
-			(node selector = #to:do:) ifTrue:
-				[stmtLists remove: node receiver ifAbsent: [].
-				stmtLists remove: node args first ifAbsent: []].
-			(node selector = #to:by:do:) ifTrue:
-				[stmtLists remove: node receiver ifAbsent: [].
-				stmtLists remove: node args first ifAbsent: [].
-				stmtLists remove: node args second ifAbsent: []]].
-		node isCaseStmt ifTrue: "don't inline cases"
-			[node cases do: [:case| stmtLists remove: case ifAbsent: []]]].
-	^stmtLists
+				node receiver statements size = 1 ifTrue: [ 
+					stmtLists remove: node receiver ifAbsent: [  ] ] ].
+			node selector = #to:do: ifTrue: [ 
+				stmtLists remove: node receiver ifAbsent: [  ].
+				stmtLists remove: node args first ifAbsent: [  ] ].
+			node selector = #to:by:do: ifTrue: [ 
+				stmtLists remove: node receiver ifAbsent: [  ].
+				stmtLists remove: node arguments first ifAbsent: [  ].
+				stmtLists remove: node arguments second ifAbsent: [  ] ] ].
+		node isCaseStmt ifTrue: [ "don't inline cases" 
+			node cases do: [ :case | stmtLists remove: case ifAbsent: [  ] ] ] ].
+	^ stmtLists
 ]
 
 { #category : #accessing }
@@ -2861,6 +2898,7 @@ TMethod >> terminateConditionalDefineFor: compileTimeOptionPragmas on: aStream [
 
 { #category : #inlining }
 TMethod >> transformConditionalAssignment: node in: aCodeGen [
+
 	"If possible answer the transformation of code of the form
 		var := e1
 				ifTrue: [e2 ifTrue: [self m1] ifFalse: [self m2]]
@@ -2872,15 +2910,17 @@ TMethod >> transformConditionalAssignment: node in: aCodeGen [
 	 to allow inlining of m1, m2, et al.  Otherwise answer nil."
 
 	| expr |
-	^(node isAssignment
-	   and: [(expr := node expression) isSend
-	   and: [(#(ifTrue:ifFalse: ifFalse:ifTrue:) includes: expr selector)
-	   and: [self isConditionalToBeTransformedForAssignment: expr  in: aCodeGen]]]) ifTrue:
-		[expr copy
-			arguments:
-				(expr args collect:
-					[:stmtList| stmtList copy assignLastExpressionTo: node variable]);
-			yourself]
+	^ (node isAssignment and: [ 
+		   (expr := node expression) isSend and: [ 
+			   (#( #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: expr selector) 
+				   and: [ 
+				   self
+					   isConditionalToBeTransformedForAssignment: expr
+					   in: aCodeGen ] ] ]) ifTrue: [ 
+		  expr copy
+			  arguments: (expr arguments collect: [ :stmtList | 
+						   stmtList copy assignLastExpressionTo: node variable ]);
+			  yourself ]
 ]
 
 { #category : #inlining }
@@ -3008,45 +3048,49 @@ TMethod >> tryToInlineMethodExpressionsIn: aCodeGen [
 
 { #category : #inlining }
 TMethod >> tryToInlineMethodStatementsIn: aCodeGen statementListsInto: aBlock [
+
 	"Expand any (complete) inline methods sent by this method as top-level statements.
 	 Answer if anything was inlined."
 
 	| stmtLists didSomething newStatements returningNodes |
 	didSomething := false.
 	returningNodes := Set new.
-	parseTree nodesDo:
-		[:node|
-		node isReturn ifTrue:
-			[returningNodes add: node expression.
-			 node expression isConditionalSend ifTrue:
-				[returningNodes addAll: (node expression args collect: [:stmtList| stmtList statements last])]]].
+	parseTree nodesDo: [ :node | 
+		node isReturn ifTrue: [ 
+			returningNodes add: node expression.
+			node expression isConditionalSend ifTrue: [ 
+				returningNodes addAll:
+					(node expression arguments collect: [ :stmtList | 
+						 stmtList statements last ]) ] ] ].
 	stmtLists := self statementsListsForInliningIn: aCodeGen.
-	stmtLists do:
-		[:stmtList|
+	stmtLists do: [ :stmtList | 
 		newStatements := OrderedCollection new: stmtList statements size.
-		stmtList statements do:
-			[:stmt|
-			(self inlineCodeOrNilForStatement: stmt returningNodes: returningNodes in: aCodeGen)
-				ifNil: [newStatements addLast: stmt]
-				ifNotNil: [:inlinedStmts|
+		stmtList statements do: [ :stmt | 
+			(self
+				 inlineCodeOrNilForStatement: stmt
+				 returningNodes: returningNodes
+				 in: aCodeGen)
+				ifNil: [ newStatements addLast: stmt ]
+				ifNotNil: [ :inlinedStmts | 
 					didSomething := true.
-					newStatements addAllLast: inlinedStmts]].
-		stmtList setStatements: newStatements asArray].
+					newStatements addAllLast: inlinedStmts ] ].
+		stmtList setStatements: newStatements asArray ].
 
 	"This is a hack; forgive me. The inlining above tends to keep return statements in statement lists.
 	 In the case of returning ifs we don't want the returns in case the returning if is generated as an expression."
-	returningNodes do:
-		[:returningNode|
-		 (returningNode isConditionalSend
-		  and: [returningNode args anySatisfy: [:alternativeNode| alternativeNode endsWithReturn]]) ifTrue:
-			[returningNode args withIndexDo:
-				[:alternativeNode :index|
-				 alternativeNode endsWithReturn ifTrue:
-					[returningNode args at: index put: alternativeNode copyWithoutReturn]]]].
+	returningNodes do: [ :returningNode | 
+		(returningNode isConditionalSend and: [ 
+			 returningNode arguments anySatisfy: [ :alternativeNode | 
+				 alternativeNode endsWithReturn ] ]) ifTrue: [ 
+			returningNode arguments withIndexDo: [ :alternativeNode :index | 
+				alternativeNode endsWithReturn ifTrue: [ 
+					returningNode arguments
+						at: index
+						put: alternativeNode copyWithoutReturn ] ] ] ].
 
 	aBlock value: stmtLists.
 
-	^didSomething
+	^ didSomething
 ]
 
 { #category : #inlining }
@@ -3138,15 +3182,13 @@ TMethod >> usedVariablesCache [
 
 { #category : #inlining }
 TMethod >> usesVariableUninlinably: argName in: aCodeGen [
-	^parseTree anySatisfy:
-		[:node|
-		node isSend
-		and: [(aCodeGen isAssertSelector: node selector)
-		and: [node args anySatisfy:
-				[:argNode|
-				 argNode anySatisfy:
-					[:subNode|
-					 subNode isVariable and: [subNode name = argName]]]]]]
+
+	^ parseTree anySatisfy: [ :node | 
+		  node isSend and: [ 
+			  (aCodeGen isAssertSelector: node selector) and: [ 
+				  node arguments anySatisfy: [ :argNode | 
+					  argNode anySatisfy: [ :subNode | 
+						  subNode isVariable and: [ subNode name = argName ] ] ] ] ] ]
 ]
 
 { #category : #utilities }

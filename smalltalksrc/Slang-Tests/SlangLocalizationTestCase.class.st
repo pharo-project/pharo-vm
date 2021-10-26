@@ -140,8 +140,7 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableInternalizesAtTheBeginning 
 	internalizationStatement := (ccg methodNamed: #interpret) statements first.
 
 	self
-		assert: internalizationStatement
-		equals: (self internalizationOf: #autoLocalizedVariable)
+		assert: (internalizationStatement isSameAs: (self internalizationOf: #autoLocalizedVariable))
 ]
 
 { #category : #tests }
@@ -339,13 +338,12 @@ SlangLocalizationTestCase >> testLinearizationOfExternalCalls [
 
 	self assert: externalCall wrappedSendNode arguments first equals: argumentStatement variable.
 	self
-		assert: argumentStatement expression
-		equals: (TAssignmentNode
+		assert: (argumentStatement expression isSameAs: (TAssignmentNode
 			variableNamed: 'local_autoLocalizedVariable'
 			expression:(TSendNode
 				receiver: (TVariableNode named: 'local_autoLocalizedVariable')
 				selector: #+
-				arguments: { TConstantNode value: 1 } ))
+				arguments: { TConstantNode value: 1 } )))
 ]
 
 { #category : #tests }

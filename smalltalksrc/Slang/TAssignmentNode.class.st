@@ -25,15 +25,6 @@ TAssignmentNode class >> variableNamed: aVariableName expression: anExpression [
 		  yourself
 ]
 
-{ #category : #comparing }
-TAssignmentNode >> = anotherNode [
-
-	super = anotherNode ifFalse: [ ^ false ].
-	variable = anotherNode variable ifFalse: [ ^ false ].
-	expression = anotherNode expression ifFalse: [ ^ false ].
-	^ true
-]
-
 { #category : #'C code generation' }
 TAssignmentNode >> asCASTExpressionIn: aCodeGen [
 
@@ -136,7 +127,7 @@ TAssignmentNode >> asCASTValueExpansionIn: aCodeGen [
 	^ (TSendNode new
 		   setSelector: expression selector
 		   receiver: copy
-		   arguments: expression args) asCASTIn: aCodeGen
+		   arguments: expression arguments) asCASTIn: aCodeGen
 ]
 
 { #category : #transformations }
@@ -171,12 +162,6 @@ TAssignmentNode >> bindVariablesIn: aDictionary [
 TAssignmentNode >> expression [
 
 	^expression
-]
-
-{ #category : #comparing }
-TAssignmentNode >> hash [
-
-	^ variable hash + expression hash
 ]
 
 { #category : #testing }

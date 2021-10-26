@@ -523,8 +523,9 @@ MLVMCCodeGenerator >> unusedConstants [
 
 { #category : #'C code generator' }
 MLVMCCodeGenerator >> validateCppIf: nodeOrNil withValue: value [
+
 	(self vmClass notNil and: [ 
-		 nodeOrNil args first isConstant and: [ 
+		 nodeOrNil arguments first isConstant and: [ 
 			 value isSymbol and: [ 
 				 (self vmClass defineAtCompileTime: value) not and: [ 
 					 (self vmClass bindingOf: value) notNil ] ] ] ]) ifTrue: [ 

@@ -241,9 +241,9 @@ VMPluginCodeGenerator >> generateCASTRemapOopIn: aTSendNode [
 ]
 
 { #category : #'CAST translation' }
-VMPluginCodeGenerator >> generateCASTSpurRemapOopIn: aTSendNode [ 
+VMPluginCodeGenerator >> generateCASTSpurRemapOopIn: aTSendNode [
 
-	^ aTSendNode args second asCASTIn: self
+	^ aTSendNode arguments second asCASTIn: self
 ]
 
 { #category : #'C translation' }

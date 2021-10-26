@@ -82,6 +82,18 @@ MockLocalizationInterpreterMock class >> initializeWithSafeEscapingCall [
 ]
 
 { #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeInliningSharedMethod [
+
+	self sharedMethod
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeNotInliningSharedMethod [
+
+	self sharedMethod
+]
+
+{ #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeToInline [
 
 	"Do nothing"
@@ -250,4 +262,11 @@ MockLocalizationInterpreterMock >> nonInlinedMethodUsingAutolocalizedVariable [
 
 	<inline:false>
 	^ autoLocalizedVariable
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> sharedMethod [
+
+	<sharedCodeInCase: #bytecodeInliningSharedMethod>
+	^ 1
 ]
