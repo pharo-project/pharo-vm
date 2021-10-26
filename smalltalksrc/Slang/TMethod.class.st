@@ -906,6 +906,17 @@ TMethod >> export: aBoolean [
 	export := aBoolean
 ]
 
+{ #category : #'automatic-localization' }
+TMethod >> externalCallsIn: codeGenerator [
+
+	| calls |
+	calls := Set new.
+	parseTree nodesDo: [ :node | 
+		(codeGenerator isFunctionCall: node) ifTrue: [ 
+			calls add: node selector ] ].
+	^ calls
+]
+
 { #category : #initialization }
 TMethod >> extraVariableName: root [
 	extraVariableNumber := extraVariableNumber
@@ -1007,6 +1018,7 @@ TMethod >> extractInlineDirective [
 
 { #category : #transformations }
 TMethod >> extractSharedCase [
+
 	"Scan the pragmas for an shared case directive of the form:
 		<sharedCodeNamed: 'sharedLabel' inCase: 'sharedCase'.>
 		<sharedCodeInCase: 'sharedCase'.>
@@ -1015,19 +1027,21 @@ TMethod >> extractSharedCase [
 		self sharedCodeInCase: 'sharedCase'.
 	in which case remove the directive from the method body."
 
-	self extractDirective: #sharedCodeNamed:inCase:
-		valueBlock: [:sendNode|
-			args isEmpty ifFalse:
-				[self error: 'Cannot share code sections in methods with arguments'].
-			sharedLabel := sendNode args first value.
-			sharedCase := sendNode args last value]
+	self
+		extractDirective: #sharedCodeNamed:inCase:
+		valueBlock: [ :sendNode | 
+			args isEmpty ifFalse: [ 
+				self error: 'Cannot share code sections in methods with arguments' ].
+			sharedLabel := sendNode arguments first value.
+			sharedCase := sendNode arguments last value ]
 		default: nil.
-	self extractDirective: #sharedCodeInCase:
-		valueBlock: [:sendNode|
-			args isEmpty ifFalse:
-				[self error: 'Cannot share code sections in methods with arguments'].
+	self
+		extractDirective: #sharedCodeInCase:
+		valueBlock: [ :sendNode | 
+			args isEmpty ifFalse: [ 
+				self error: 'Cannot share code sections in methods with arguments' ].
 			sharedLabel := selector.
-			sharedCase := sendNode args last value]
+			sharedCase := sendNode arguments last value ]
 		default: nil
 ]
 
@@ -1388,8 +1402,7 @@ TMethod >> inlineGuardingConditional: aSendNode in: aCodeGen [
 { #category : #inlining }
 TMethod >> inlineMethod: meth inCaseStatement: stmtNode withLocalizationReplacements: replacementDictionary [
 
-	| exitLabel newStatements sendReplacements |
-
+	| exitLabel newStatements |
 	"Perform the main inlining"
 	meth hasReturn
 		ifTrue: [ 
@@ -1409,18 +1422,6 @@ TMethod >> inlineMethod: meth inCaseStatement: stmtNode withLocalizationReplacem
 		addFirst: (TLabeledCommentNode new setComment: meth selector).
 
 	stmtNode setStatements: newStatements.
-
-	"Replace all localized variables by their localized versions"
-	stmtNode bindVariablesIn: replacementDictionary.
-
-	"Wrap sends with externalization/internalization statements"
-	sendReplacements := Dictionary new.
-	stmtNode nodesDo: [ :node | 
-		node isSend ifTrue: [ 
-			sendReplacements
-				at: node
-				put: (TExternalSendNode send: node variableBindings: replacementDictionary) ] ].
-	^ stmtNode replaceNodesIn: sendReplacements
 ]
 
 { #category : #inlining }

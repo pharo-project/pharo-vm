@@ -15,6 +15,12 @@ TConstantNode class >> value: aValue [
 		  yourself
 ]
 
+{ #category : #comparing }
+TConstantNode >> = aNode [
+
+	^ aNode isConstant and: [ value = aNode value ]
+]
+
 { #category : #tranforming }
 TConstantNode >> asCASTIn: aBuilder [
 

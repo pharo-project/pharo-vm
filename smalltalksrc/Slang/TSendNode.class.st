@@ -20,6 +20,19 @@ TSendNode class >> receiver: aReceiverNode selector: aString arguments: aCollect
 		yourself
 ]
 
+{ #category : #comparing }
+TSendNode >> = aNode [
+
+	super = aNode ifFalse: [ ^ false ].
+	aNode isSend ifFalse: [ ^ false ].
+	selector = aNode selector ifFalse: [ ^ false ].
+	receiver = aNode receiver ifFalse: [ ^ false ].
+	arguments size = aNode arguments size ifFalse: [ ^ false ].
+	arguments doWithIndex: [ :arg :i | 
+		(arg = (aNode arguments at: i)) ifFalse: [ ^ false ] ].
+	^ true
+]
+
 { #category : #accessing }
 TSendNode >> args [
 

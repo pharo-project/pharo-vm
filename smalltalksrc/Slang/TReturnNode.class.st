@@ -15,6 +15,15 @@ TReturnNode class >> expression: anExpression [
 		yourself
 ]
 
+{ #category : #comparing }
+TReturnNode >> = aNode [
+
+	super = aNode ifFalse: [ ^false ].
+	aNode isReturn ifFalse: [ ^false ].
+	expression = aNode expression ifFalse: [ ^ false ].
+	^ true
+]
+
 { #category : #tranforming }
 TReturnNode >> asCASTIn: aBuilder [
 
