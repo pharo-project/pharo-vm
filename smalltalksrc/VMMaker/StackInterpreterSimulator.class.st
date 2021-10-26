@@ -1206,7 +1206,7 @@ StackInterpreterSimulator >> localFP [
 
 { #category : #'spur bootstrap' }
 StackInterpreterSimulator >> localSP [
-	^localSP
+	^stackPointer
 ]
 
 { #category : #'memory access' }

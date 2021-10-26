@@ -801,17 +801,6 @@ CogVMSimulator >> ensureContextIsExecutionSafeAfterAssignToStackPointer: aContex
 	^super ensureContextIsExecutionSafeAfterAssignToStackPointer: aContext
 ]
 
-{ #category : #testing }
-CogVMSimulator >> ensureDebugAtEachStepBlock [
-	atEachStepBlock := [printFrameAtEachStep ifTrue:
-							[self printFrame: framePointer WithSP: localSP].
-						 printBytecodeAtEachStep ifTrue:
-							[self printCurrentBytecodeOn: transcript.
-							 transcript cr; flush].
-						 byteCount = breakCount ifTrue:
-							["printFrameAtEachStep :=" printBytecodeAtEachStep := true]]
-]
-
 { #category : #'frame access' }
 CogVMSimulator >> ensureMethodIsCogged: methodObj maybeClosure: maybeClosure [
 	"Uncomment this to compact frequently and hence test if clients are ready for the shock."

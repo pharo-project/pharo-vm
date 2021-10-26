@@ -316,7 +316,6 @@ Class {
 	#instVars : [
 		'currentBytecode',
 		'bytecodeSetSelector',
-		'localSP',
 		'stackLimit',
 		'stackPage',
 		'stackPages',
@@ -533,7 +532,7 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		as: #usqInt
 		in: aCCodeGenerator.
 	"These are all pointers; char * because Slang has no support for C pointer arithmetic."
-	self declareC: #(instructionPointer localSP stackPointer framePointer stackLimit breakSelector)
+	self declareC: #(instructionPointer stackPointer framePointer stackLimit breakSelector)
 		as: #'char *'
 		in: aCCodeGenerator.
 	aCCodeGenerator
@@ -2202,7 +2201,7 @@ StackInterpreter >> assertValidExecutionPointe: lip r: lfp s: lsp imbar: inInter
 { #category : #'debug support' }
 StackInterpreter >> assertValidExecutionPointers [
 	<doNotGenerate> "simulator only"
-	self assertValidExecutionPointe: instructionPointer r: framePointer s: localSP
+	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer
 ]
 
 { #category : #'process primitive support' }
@@ -2260,7 +2259,7 @@ StackInterpreter >> baseFrameReturn [
 			 stackPages freeStackPageNoAssert: stackPage "for a short time invariant is violated; assert follows"].
 	self setStackPageAndLimit: thePage.
 	self assert: (stackPages stackPageFor: theFP) = stackPage.
-	localSP := theSP.
+	stackPointer := theSP.
 	framePointer := theFP.
 	self setMethod: (self frameMethod: framePointer).
 	instructionPointer := self pointerForOop: self internalStackTop.
@@ -4564,7 +4563,7 @@ StackInterpreter >> commonCallerReturn [
 		 ^self baseFrameReturn].
 
 	instructionPointer := self frameCallerSavedIP: framePointer.
-	localSP := framePointer + (self frameStackedReceiverOffset: framePointer).
+	stackPointer := framePointer + (self frameStackedReceiverOffset: framePointer).
 	framePointer := callersFPOrNull.
 	self setMethod: (self frameMethod: framePointer).
 	self fetchNextBytecode.
@@ -4667,7 +4666,7 @@ StackInterpreter >> commonReturn [
 					 self markContextAsDead: currentCtx.
 					 currentCtx := nextCntx]].
 		 self setStackPageAndLimit: newPage.
-		 localSP := stackPage headSP.
+		 stackPointer := stackPage headSP.
 		 framePointer := stackPage headFP].
 
 	"Two cases.  Returning to the top frame on a new page or an interior frame on the current page.
@@ -4682,7 +4681,7 @@ StackInterpreter >> commonReturn [
 			  framePointer := self frameCallerFP: framePointer.
 			  framePointer ~~ frameToReturnTo] whileTrue.
 			instructionPointer := self frameCallerSavedIP: callerFP.
-			localSP := (self frameCallerSP: callerFP) - objectMemory wordSize].
+			stackPointer := (self frameCallerSP: callerFP) - objectMemory wordSize].
 	self maybeReturnToMachineCodeFrame.
 	self setMethod: (self frameMethod: framePointer).
 	self fetchNextBytecode.
@@ -5522,7 +5521,7 @@ StackInterpreter >> extPushPseudoVariable [
 	| theThingToPush |
 	extB
 		caseOf: {
-			[0]	->	[theThingToPush := self ensureFrameIsMarried: framePointer SP: localSP].
+			[0]	->	[theThingToPush := self ensureFrameIsMarried: framePointer SP: stackPointer].
 			[1]	->	[theThingToPush := self activeProcess] }
 		otherwise:
 			[self respondToUnknownBytecode].
@@ -5913,17 +5912,13 @@ StackInterpreter >> externalWriteBackHeadFramePointers [
 { #category : #utilities }
 StackInterpreter >> externalizeFPandSP [
 	"Copy the frame and stack pointers to global variables for use in primitives and other functions outside the interpret loop."
-	self assert: (localSP < stackPage baseAddress
-				and: [localSP > (stackPage realStackLimit - (LargeContextSlots * objectMemory bytesPerOop))]).
-	stackPointer := localSP.
-	framePointer := framePointer
+	self assert: (stackPointer < stackPage baseAddress
+				and: [stackPointer > (stackPage realStackLimit - (LargeContextSlots * objectMemory bytesPerOop))]).
 ]
 
 { #category : #utilities }
 StackInterpreter >> externalizeIPandSP [
 	"Copy the local instruction, stack and frame pointers to global variables for use in primitives and other functions outside the interpret loop."
-
-	stackPointer := localSP.
 ]
 
 { #category : #'primitive support' }
@@ -7317,7 +7312,7 @@ StackInterpreter >> handleForwardedSendFaultForTag: classTag [
 StackInterpreter >> handleSpecialSelectorSendFaultFor: obj [
 	<inline: true>
 	<option: #SpurObjectMemory>
-	^self handleSpecialSelectorSendFaultFor: obj fp: framePointer sp: localSP
+	^self handleSpecialSelectorSendFaultFor: obj fp: framePointer sp: stackPointer
 ]
 
 { #category : #'message sending' }
@@ -7494,7 +7489,7 @@ StackInterpreter >> ifBackwardsCheckForEvents: offset [
 	"Backward jump means we're in a loop; check for possible interrupts."
 	<inline: true>
 	(offset < 0
-	 and: [localSP < stackLimit]) ifTrue:
+	 and: [stackPointer < stackLimit]) ifTrue:
 		[self externalizeIPandSP.
 		 self checkForEventsMayContextSwitch: true.
 		 self browserPluginReturnIfNeeded.
@@ -7901,7 +7896,7 @@ StackInterpreter >> instVar: index ofContext: aMarriedContext put: anOop [
 		 onCurrentPage
 			ifTrue:
 				[framePointer := stackPage headFP.
-				 localSP := stackPage headSP]
+				 stackPointer := stackPage headSP]
 			ifFalse:
 				[stackPages markStackPageMostRecentlyUsed: stackPage].
 		 ^nil].
@@ -7915,7 +7910,7 @@ StackInterpreter >> instVar: index ofContext: aMarriedContext put: anOop [
 	self internalizeIPandSP.
 	"Assigning various fields can force a divorce which can change the stackPage."
 	stackPages markStackPageMostRecentlyUsed: stackPage.
-	self assertValidExecutionPointe: instructionPointer asUnsignedInteger r: framePointer s: localSP imbar: true line: #'__LINE__'
+	self assertValidExecutionPointe: instructionPointer asUnsignedInteger r: framePointer s: stackPointer imbar: true line: #'__LINE__'
 ]
 
 { #category : #'indexing primitive support' }
@@ -8003,7 +7998,7 @@ StackInterpreter >> integerArg: index [
 StackInterpreter >> internalAboutToReturn: resultOop through: aContext [
 	| ourContext |
 	<inline: true>
-	ourContext := self ensureFrameIsMarried: framePointer SP: localSP.
+	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
 	self internalPush: ourContext.
 	self internalPush: resultOop.
 	self internalPush: aContext.
@@ -8026,7 +8021,7 @@ StackInterpreter >> internalActivateNewMethod [
 
 	self internalPush: instructionPointer.
 	self internalPush: framePointer.
-	framePointer := localSP.
+	framePointer := stackPointer.
 	self internalPush: newMethod.
 	self setMethod: newMethod methodHeader: methodHeader.
 	self internalPush: (self
@@ -8050,14 +8045,14 @@ StackInterpreter >> internalActivateNewMethod [
 		instructionPointer := instructionPointer
 		           + (self sizeOfCallPrimitiveBytecode: methodHeader).
 		primFailCode ~= 0 ifTrue: [ 
-			self reapAndResetErrorCodeTo: localSP header: methodHeader ] ].
+			self reapAndResetErrorCodeTo: stackPointer header: methodHeader ] ].
 
 	self assert: (self frameNumArgs: framePointer) = argumentCount.
 	self assert: (self frameIsBlockActivation: framePointer) not.
 	self assert: (self frameHasContext: framePointer) not.
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
-	localSP < stackLimit ifTrue: [ 
+	stackPointer < stackLimit ifTrue: [ 
 		self externalizeIPandSP.
 		self handleStackOverflowOrEventAllowContextSwitch:
 			(self canContextSwitchIfActivating: newMethod header: methodHeader).
@@ -8068,7 +8063,7 @@ StackInterpreter >> internalActivateNewMethod [
 StackInterpreter >> internalCannotReturn: resultOop [
 	| ourContext |
 	<inline: true>
-	ourContext := self ensureFrameIsMarried: framePointer SP: localSP.
+	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
 	self internalPush: ourContext.
 	self internalPush: resultOop.
 	messageSelector := objectMemory splObj: SelectorCannotReturn.
@@ -8127,28 +8122,28 @@ StackInterpreter >> internalMustBeBoolean [
 { #category : #'internal interpreter access' }
 StackInterpreter >> internalPop: nItems [
 	"In the StackInterpreter stacks grow down."
-	localSP := localSP + (nItems * objectMemory bytesPerOop)
+	stackPointer := stackPointer + (nItems * objectMemory bytesPerOop)
 ]
 
 { #category : #'internal interpreter access' }
 StackInterpreter >> internalPop: nItems thenPush: oop [
 	"In the StackInterpreter stacks grow down."
-	stackPages longAtPointer: (localSP := localSP + ((nItems - 1) * objectMemory bytesPerOop)) put: oop
+	stackPages longAtPointer: (stackPointer := stackPointer + ((nItems - 1) * objectMemory bytesPerOop)) put: oop
 ]
 
 { #category : #'internal interpreter access' }
 StackInterpreter >> internalPopStack [
 	"In the StackInterpreter stacks grow down."
 	| top |
-	top := stackPages longAt: localSP.
-	localSP := localSP + objectMemory bytesPerOop.
+	top := stackPages longAt: stackPointer.
+	stackPointer := stackPointer + objectMemory bytesPerOop.
 	^top
 ]
 
 { #category : #'internal interpreter access' }
 StackInterpreter >> internalPush: object [
 	"In the StackInterpreter stacks grow down."
-	stackPages longAtPointer: (localSP := localSP - objectMemory bytesPerOop) put: object
+	stackPages longAtPointer: (stackPointer := stackPointer - objectMemory bytesPerOop) put: object
 ]
 
 { #category : #'primitive support' }
@@ -8176,13 +8171,13 @@ StackInterpreter >> internalQuickPrimitiveResponse [
 { #category : #'internal interpreter access' }
 StackInterpreter >> internalStackTop [
 
-	^stackPages longAtPointer: localSP
+	^stackPages longAtPointer: stackPointer
 ]
 
 { #category : #'internal interpreter access' }
 StackInterpreter >> internalStackTopPut: aValue [
 
-	^stackPages longAtPointer: localSP put: aValue
+	^stackPages longAtPointer: stackPointer put: aValue
 ]
 
 { #category : #'internal interpreter access' }
@@ -8194,19 +8189,19 @@ StackInterpreter >> internalStackTopPutIntegerObjectOf: aValue [
 { #category : #'internal interpreter access' }
 StackInterpreter >> internalStackValue: offset [
 	"In the StackInterpreter stacks grow down."
-	^stackPages longAtPointer: localSP + (offset * objectMemory bytesPerOop)
+	^stackPages longAtPointer: stackPointer + (offset * objectMemory bytesPerOop)
 ]
 
 { #category : #'internal interpreter access' }
 StackInterpreter >> internalStackValue: offset put: aValue [
 	"In the StackInterpreter stacks grow down."
-	^stackPages longAtPointer: localSP + (offset * objectMemory bytesPerOop) put: aValue
+	^stackPages longAtPointer: stackPointer + (offset * objectMemory bytesPerOop) put: aValue
 ]
 
 { #category : #utilities }
 StackInterpreter >> internalizeIPandSP [
 	"Copy the instruction, stack and frame pointers to local variables for rapid access within the interpret loop."
-	localSP := self pointerForOop: stackPointer
+	stackPointer := self pointerForOop: stackPointer
 ]
 
 { #category : #'interpreter shell' }
@@ -11853,7 +11848,7 @@ StackInterpreter >> printHeadFrame [
 	
 	Do not generate this function as there is no way to properly translate it to C.
 	Translating this function requires access to localFP and localSP which are local variables in the interpreter loop function, thus, they are not accessible from within this function."
-	self printFrame: framePointer WithSP: localSP
+	self printFrame: framePointer WithSP: stackPointer
 ]
 
 { #category : #'debug printing' }
@@ -12497,7 +12492,7 @@ StackInterpreter >> push: object [
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushActiveContextBytecode [
 	| ourContext |
-	ourContext := self ensureFrameIsMarried: framePointer SP: localSP.
+	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
 	self fetchNextBytecode.
 	self internalPush: ourContext
 ]
@@ -12581,7 +12576,7 @@ StackInterpreter >> pushFullClosureNumArgs: numArgs copiedValues: numCopiedArg c
 	"No need to record the pushed copied values in the outerContext."
 	context := ignoreContext
 		ifTrue: [objectMemory nilObject ]
-		ifFalse: [self ensureFrameIsMarried: framePointer SP: localSP + (numCopiedArg * objectMemory bytesPerOop)].
+		ifFalse: [self ensureFrameIsMarried: framePointer SP: stackPointer + (numCopiedArg * objectMemory bytesPerOop)].
 	newClosure := self
 					fullClosureIn: context 
 					numArgs: numArgs 
@@ -13220,7 +13215,7 @@ StackInterpreter >> respondToSistaTrap [
 	| ourContext |
 	<sharedCodeInCase: #unconditionnalTrapBytecode>
 	messageSelector := objectMemory splObj: SelectorSistaTrap.
-	ourContext := self ensureFrameIsMarried: framePointer SP: localSP.
+	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
 	self internalPush: ourContext.
 	argumentCount := 0.
 	self normalSend
@@ -13235,7 +13230,7 @@ StackInterpreter >> respondToUnknownBytecode [
 	(messageSelector isNil
 	or: [messageSelector = objectMemory nilObject]) ifTrue:
 		[self error: 'Unknown bytecode'].
-	ourContext := self ensureFrameIsMarried: framePointer SP: localSP.
+	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
 	"undo fetch of bytecode so that context's pc is pointing to the unknown bytecode."
 	instructionPointer := instructionPointer - 1.
 	self internalPush: ourContext.
@@ -14123,7 +14118,7 @@ StackInterpreter >> showDisplayBits: aForm Left: l Top: t Right: r Bottom: b [
 StackInterpreter >> shuffleArgumentsAndStoreAbsentReceiver: theReceiver [
 	"For the absent receiver sends move the arguments up the stack and store the supplied receiver."
 	<inline: true>
-	localSP := localSP - objectMemory bytesPerOop. "a.k.a. self internalPush: anything"
+	stackPointer := stackPointer - objectMemory bytesPerOop. "a.k.a. self internalPush: anything"
 	1 to: argumentCount do:
 		[:i| | oop |
 		oop := self internalStackValue: i.
@@ -15964,7 +15959,7 @@ StackInterpreter >> wordSwapped: w [
 { #category : #'stack pages' }
 StackInterpreter >> writeBackHeadFramePointers [
 	self assert: stackPage = stackPages mostRecentlyUsedPage.
-	self setHeadFP: framePointer andSP: localSP inPage: stackPage.
+	self setHeadFP: framePointer andSP: stackPointer inPage: stackPage.
 	self assert: stackPages pageListIsWellFormed
 ]
 

@@ -988,7 +988,7 @@ CoInterpreter >> baseFrameReturn [
 			 theSP := thePage headSP].
 	self setStackPageAndLimit: thePage.
 	self assert: (stackPages stackPageFor: theFP) = stackPage.
-	localSP := theSP.
+	stackPointer := theSP.
 	framePointer := theFP.
 	instructionPointer := self pointerForOop: self internalStackTop.
 	instructionPointer asUnsignedInteger < objectMemory startOfMemory ifTrue:
@@ -2411,7 +2411,7 @@ CoInterpreter >> commonCallerReturn [
 		 ^self baseFrameReturn].
 
 	instructionPointer := self frameCallerSavedIP: framePointer.
-	localSP := framePointer + (self frameStackedReceiverOffset: framePointer).
+	stackPointer := framePointer + (self frameStackedReceiverOffset: framePointer).
 	framePointer := callersFPOrNull.
 	instructionPointer asUnsignedInteger < objectMemory startOfMemory ifTrue:
 		[instructionPointer asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue:
@@ -3087,7 +3087,7 @@ CoInterpreter >> externalizeIPandSP [
 	"Copy the local instruction, stack and frame pointers to global variables for use in primitives and other functions outside the interpret loop."
 
 	self assert: instructionPointer asUnsignedInteger ~= cogit ceReturnToInterpreterPC.
-	stackPointer := localSP.
+	stackPointer := stackPointer.
 ]
 
 { #category : #'debug support' }
@@ -3690,7 +3690,7 @@ CoInterpreter >> ifBackwardsCheckForEvents: offsetToJumpBytecode [
 	offsetToJumpBytecode >= 0 ifTrue:
 		[^self].
 
-	localSP < stackLimit ifTrue:
+	stackPointer < stackLimit ifTrue:
 		[self externalizeIPandSP.
 		 switched := self checkForEventsMayContextSwitch: true.
 		 self returnToExecutive: true postContextSwitch: switched.
@@ -3940,7 +3940,7 @@ CoInterpreter >> internalActivateNewMethod [
 
 	self internalPush: instructionPointer.
 	self internalPush: framePointer.
-	framePointer := localSP.
+	framePointer := stackPointer.
 	self internalPush: newMethod.
 	self setMethod: newMethod methodHeader: methodHeader.
 	self internalPush: objectMemory nilObject. "FxThisContext field"
@@ -3963,14 +3963,14 @@ CoInterpreter >> internalActivateNewMethod [
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
 		 instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader).
 		 primFailCode ~= 0 ifTrue:
-			[self reapAndResetErrorCodeTo: localSP header: methodHeader]].
+			[self reapAndResetErrorCodeTo: stackPointer header: methodHeader]].
 
 	self assert: (self frameNumArgs: framePointer) = argumentCount.
 	self assert: (self frameIsBlockActivation: framePointer) not.
 	self assert: (self frameHasContext: framePointer) not.
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
-	localSP < stackLimit ifTrue:
+	stackPointer < stackLimit ifTrue:
 		[self externalizeIPandSP.
 		 switched := self handleStackOverflowOrEventAllowContextSwitch:
 						(self canContextSwitchIfActivating: newMethod header: methodHeader).
@@ -4051,7 +4051,7 @@ CoInterpreter >> internalizeIPandSP [
 	"Copy the instruction, stack and frame pointers to local variables for rapid access within the interpret loop."
 
 	self assert: instructionPointer ~= cogit ceReturnToInterpreterPC.
-	localSP := self pointerForOop: stackPointer
+	stackPointer := self pointerForOop: stackPointer
 ]
 
 { #category : #'trampoline support' }
@@ -5932,7 +5932,7 @@ CoInterpreter >> pushFullClosureNumArgs: numArgs copiedValues: numCopiedArg comp
 	"No need to record the pushed copied values in the outerContext."
 	context := ignoreContext
 		ifTrue: [objectMemory nilObject ]
-		ifFalse: [self ensureFrameIsMarried: framePointer SP: localSP + (numCopiedArg * objectMemory bytesPerOop)].
+		ifFalse: [self ensureFrameIsMarried: framePointer SP: stackPointer + (numCopiedArg * objectMemory bytesPerOop)].
 	newClosure := self
 					fullClosureIn: context 
 					numArgs: numArgs 
@@ -6210,7 +6210,7 @@ CoInterpreter >> returnToMachineCodeFrame [
 	cogit assertCStackWellAligned.
 	self assert: instructionPointer asUnsignedInteger < objectMemory startOfMemory.
 	self assert: (self isMachineCodeFrame: framePointer).
-	self assertValidExecutionPointe: instructionPointer asUnsignedInteger r: framePointer s: localSP imbar: false line: #'__LINE__'.
+	self assertValidExecutionPointe: instructionPointer asUnsignedInteger r: framePointer s: stackPointer imbar: false line: #'__LINE__'.
 	self internalStackTopPut: instructionPointer.
 	self internalPush: localReturnValue.
 	self externalizeFPandSP.
