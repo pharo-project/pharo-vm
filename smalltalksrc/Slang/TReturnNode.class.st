@@ -87,6 +87,13 @@ TReturnNode >> bindVariablesIn: aDictionary [
 ]
 
 { #category : #transformations }
+TReturnNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	(cautionaryBlock value: self) ifTrue: [^self].	
+	expression := expression bindVariablesIn: aDictionary unless: cautionaryBlock.
+]
+
+{ #category : #transformations }
 TReturnNode >> copyWithoutReturn [
 	^expression
 ]

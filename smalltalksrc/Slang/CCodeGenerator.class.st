@@ -473,6 +473,32 @@ CCodeGenerator >> asmLabelNodeFor: selector [
 			arguments: { CIdentifierNode name: label }
 ]
 
+{ #category : #'automatic-localization' }
+CCodeGenerator >> autoLocalizationOfVariablesIn: selector withVariableBindings: replacementDict [
+
+	| m |
+	(m := self methodNamed: selector) ifNil: [ ^ self ].
+	(replacementDict isNil or: [ replacementDict isEmpty ]) ifTrue: [ ^ self ].
+	"Wrap sends with externalization/internalization statements"
+	self wrapExternalCallsIn: m withVariableBindings: replacementDict.
+	"Replace all localized variables by their localized versions"
+	m parseTree
+		bindVariablesIn: (replacementDict collect: [ :asso | 
+				 asso key -> (TVariableNode named: asso value) ]) asDictionary
+		unless: [ :node | 
+			node isTMethod not and: [ 
+				node isReturn or: [ node isExternalSend ] ] ].
+	"self lineariseExternalCallsIn: m."
+	self
+		externalizeAtReturnsIn: m
+		withVariablesToLocalize: replacementDict.
+	"Intitilize local versions with globals values at the beginning of the function."
+	replacementDict do: [ :asso | 
+		m statements addFirst: (TAssignmentNode
+				 variable: (TVariableNode named: asso value)
+				 expression: (TVariableNode named: asso key)) ]
+]
+
 { #category : #utilities }
 CCodeGenerator >> baseTypeForPointerType: aCType [
 	"Answer the type of the referent of a pointer type."
@@ -975,7 +1001,7 @@ CCodeGenerator >> doInlining: inlineFlag [
 CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag [
 	"Emit C code for all methods in the code base onto the given stream. All inlined method calls should already have been expanded."
 
-	| verbose methodList |
+	| verbose methodList autoLocalizationBindings |
 	"method preparation"
 	verbose := false.
 	self prepareMethods.
@@ -985,8 +1011,9 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 		logger cr.
 	].
 	assertionFlag ifFalse: [ self removeAssertions ].
+	autoLocalizationBindings := self initAutoLocalizationOfVariablesIn: #interpret.
 	self doInlining: inlineFlag.
-
+	self autoLocalizationOfVariablesIn: #interpret withVariableBindings: autoLocalizationBindings.
 	"code generation"
 	"If we're outputting the VM put the main interpreter loop first for two reasons.
 	 1, so that the dispdbg.h header included at the bytecode dispatch can define
@@ -1272,14 +1299,12 @@ CCodeGenerator >> externalizeAtReturnsIn: aTMethod withVariablesToLocalize: vari
 
 	| replacementDictionary variablesReplacementDict |
 	replacementDictionary := Dictionary new.
-	variablesReplacementDict := (variablesReplacement collect:
-		                            [ :each | 
-		                            each value
-		                            -> (TVariableNode named: each key) ])
-			                            asDictionary.
+	variablesReplacementDict := (variablesReplacement collect: [ :each | 
+		                             each value
+		                             -> (TVariableNode named: each key) ])
+		                            asDictionary.
 	aTMethod nodesDo: [ :e | 
-		e isReturn ifTrue: [ 
-			e bindVariablesIn: variablesReplacementDict.
+		e isReturn ifTrue: [
 			replacementDictionary
 				at: e
 				put:
@@ -3141,6 +3166,27 @@ CCodeGenerator >> inferTypes [
 		inferTypes
 ]
 
+{ #category : #'automatic-localization' }
+CCodeGenerator >> initAutoLocalizationOfVariablesIn: selector [
+	"Create local variable versions of variables to localize. Add them in locals of the method described by selector."
+	| variablesToLocalize m variablesToLocalizeAssociations |
+	(m := self methodNamed: selector) ifNil: [ ^ nil ].
+	variablesToLocalize := Set new.
+	"Look for variables to localize, hinted by localizedVariable: pragma."
+	m properties pragmasDo: [ :pragma | 
+		pragma selector = #localizedVariable: ifTrue: [ 
+			variablesToLocalize add: pragma arguments first ] ].
+	"If there is no localizedVariable: pragma, nothing to do."
+	variablesToLocalize ifEmpty: [ ^ nil ].
+	
+	variablesToLocalizeAssociations := OrderedCollection new.
+	variablesToLocalize do: [ :e | 
+		| localName |
+		localName := m declareNonConflictingLocalNamedLike: #local_ , e.
+		variablesToLocalizeAssociations add: e -> localName ].
+	^ variablesToLocalizeAssociations 
+]
+
 { #category : #'initialize-release' }
 CCodeGenerator >> initialize [
 	translationDict := Dictionary new.
@@ -3393,59 +3439,11 @@ CCodeGenerator >> inlineDispatchesInMethodNamed: selector [
 	"Inline dispatches (case statements) in the method with the given name.
 	Then localize variables"
 
-	| m variablesToLocalize replacementDict sendReplacements variablesToLocalizeAssociations methodsReferencesToVarsToLocalize |
+	| m |
 	(m := self methodNamed: selector) ifNil: [ ^ self ].
 
-	variablesToLocalize := Set new.
-	replacementDict := Dictionary new.
-	"Look for variables to localize, hinted by localizedVariable: pragma."
-	m properties pragmasDo: [ :pragma | 
-		pragma selector = #localizedVariable: ifTrue: [ 
-			variablesToLocalize add: pragma arguments first ] ].
-	variablesToLocalizeAssociations := OrderedCollection new.
-	variablesToLocalize do: [ :e | 
-		| localName |
-		localName := m declareNonConflictingLocalNamedLike: #local_ , e.
-		variablesToLocalizeAssociations add: e -> localName.
-		replacementDict at: e put: (TVariableNode named: localName) ].
+	m inlineCaseStatementBranchesIn: self.
 
-	m
-		inlineCaseStatementBranchesIn: self
-		withLocalizationReplacements: replacementDict.
-	"Replace all localized variables by their localized versions"
-	m parseTree bindVariablesIn: replacementDict.
-	"Wrap sends with externalization/internalization statements"
-	sendReplacements := Dictionary new.
-	methodsReferencesToVarsToLocalize := Dictionary new.
-
-	m parseTree
-		nodesDo: [ :node | 
-			(node isSend and: [ self isFunctionCall: node ]) ifTrue: [ 
-				| externalVars |
-				externalVars := self
-					                localizedVariablesReferences: variablesToLocalize
-					                inMethod: node selector
-					                withDictionary: methodsReferencesToVarsToLocalize.
-
-				externalVars ifNotEmpty: [
-					sendReplacements at: node put: (TExternalSendNode
-							 send: node
-							 variableBindings:
-							 (externalVars collect: [ :var | 
-								  var -> (replacementDict at: var) ]) asDictionary) ] ] ]
-		unless: [ :e | e isReturn ].
-	sendReplacements ifNotEmpty: [ 
-		m parseTree replaceNodesIn: sendReplacements ].
-
-	self lineariseExternalCallsIn: m.
-
-	self
-		externalizeAtReturnsIn: m
-		withVariablesToLocalize: variablesToLocalizeAssociations.
-	variablesToLocalize do: [ :e | 
-		m statements addFirst: (TAssignmentNode
-				 variable: (replacementDict at: e)
-				 expression: (TVariableNode named: e)) ].
 	m parseTree nodesDo: [ :n | 
 		n isCaseStmt ifTrue: [ 
 			n
@@ -3788,27 +3786,29 @@ CCodeGenerator >> localizeVariables: varsList inMethod: m [
 ]
 
 { #category : #'automatic-localization' }
-CCodeGenerator >> localizedVariablesReferences: variablesToLocalize inMethod: selector withDictionary: associationDictionary [
+CCodeGenerator >> localizedVariablesReferences: variablesToLocalize inMethod: selector calledBy: caller withDictionary: associationDictionary [
 
 	"Return the references to global variables that are in variablesToLocalize in method selector."
 
 	| currentMeth externalCalls globalReferences variablesReferences |
 	associationDictionary at: selector ifPresent: [ :vars | ^ vars ].
 	currentMeth := self methodNamed: selector.
-	externalCalls := currentMeth externalCallsIn: self.
+	externalCalls := (currentMeth externalCallsIn: self) reject: [ :sel | 
+		                 sel = selector or: [ sel = caller ] ].
 	globalReferences := currentMeth freeVariableReferences.
 	variablesReferences := (variablesToLocalize select: [ :var | 
 		                        globalReferences includes: var ]) asSet.
-	externalCalls ifEmpty: [ 
-		associationDictionary at: selector put: variablesReferences.
+	associationDictionary at: selector put: variablesReferences.
+	externalCalls ifEmpty: [
 		^ variablesReferences ].
 
 	externalCalls do: [ :s | 
-		variablesReferences addAll: (self
-				 localizedVariablesReferences: variablesToLocalize
-				 inMethod: s
-				 withDictionary: associationDictionary) ].
-	associationDictionary at: selector put: variablesReferences.
+		(associationDictionary includesKey: s) ifFalse: [ 
+			(associationDictionary at: selector) addAll: (self
+					 localizedVariablesReferences: variablesToLocalize
+					 inMethod: s
+					 calledBy: selector
+					 withDictionary: associationDictionary) ] ].
 	^ variablesReferences
 ]
 
@@ -5433,4 +5433,40 @@ CCodeGenerator >> wordSize [
 CCodeGenerator >> wordSize: aValue [
 
 	wordSize := aValue
+]
+
+{ #category : #'automatic-localization' }
+CCodeGenerator >> wrapExternalCallsIn: tMethod withVariableBindings: replacementDict [
+
+	"Wrap external calls with TExternalSendNode."
+
+	| sendReplacements methodsReferencesToVarsToLocalize variablesDict |
+	variablesDict := (replacementDict collect: [ :asso | 
+		                  asso key -> (TVariableNode named: asso value) ])
+		                 asDictionary.
+
+
+	sendReplacements := Dictionary new.
+	methodsReferencesToVarsToLocalize := Dictionary new.
+	tMethod parseTree
+		nodesDo: [ :node :parent | 
+			(node isSend and: [ self isFunctionCall: node ]) ifTrue: [ 
+				| externalVars |
+				externalVars := self
+					                localizedVariablesReferences:
+					                (replacementDict collect: [ :asso | asso key ])
+					                inMethod: node selector
+										 calledBy: nil
+					                withDictionary: methodsReferencesToVarsToLocalize.
+
+				externalVars ifNotEmpty: [ 
+					sendReplacements at: node put: (TExternalSendNode
+							 send: node
+							 variableBindings:
+								 (externalVars collect: [ :var | 
+									  var -> (variablesDict at: var) ]) asDictionary) ] ] ]
+		parent: nil
+		unless: [ :e :parent | e isReturn ].
+	sendReplacements ifNotEmpty: [ 
+		tMethod parseTree replaceNodesIn: sendReplacements ]
 ]

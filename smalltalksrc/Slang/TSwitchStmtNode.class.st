@@ -209,6 +209,19 @@ TSwitchStmtNode >> bindVariablesIn: aDictionary [
 		[otherwiseOrNil := otherwiseOrNil bindVariablesIn: aDictionary]
 ]
 
+{ #category : #transformations }
+TSwitchStmtNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	(cautionaryBlock value: self) ifTrue: [^self].
+	expression := expression bindVariablesIn: aDictionary unless: cautionaryBlock.
+	cases := (cases collect:
+				[:pair| "<Array with: <Array with: ParseTreeNode> with: TStmtListNode"
+				{ pair first collect: [:labelNode| labelNode bindVariablesIn: aDictionary unless: cautionaryBlock].
+				   pair last bindVariablesIn: aDictionary unless: cautionaryBlock }]).
+	otherwiseOrNil ifNotNil:
+		[otherwiseOrNil := otherwiseOrNil bindVariablesIn: aDictionary unless: cautionaryBlock]
+]
+
 { #category : #accessing }
 TSwitchStmtNode >> cases [
 	"Answer the value of cases"

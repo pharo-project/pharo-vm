@@ -158,6 +158,14 @@ TAssignmentNode >> bindVariablesIn: aDictionary [
 	expression := expression bindVariablesIn: aDictionary.
 ]
 
+{ #category : #transformations }
+TAssignmentNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	(cautionaryBlock value: self) ifTrue: [^self].
+	variable := variable bindVariablesIn: aDictionary unless: cautionaryBlock.
+	expression := expression bindVariablesIn: aDictionary unless: cautionaryBlock.
+]
+
 { #category : #accessing }
 TAssignmentNode >> expression [
 

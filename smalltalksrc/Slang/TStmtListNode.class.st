@@ -188,6 +188,13 @@ TStmtListNode >> bindVariablesIn: aDictionary [
 	statements := statements collect: [ :s | s bindVariablesIn: aDictionary ].
 ]
 
+{ #category : #transformations }
+TStmtListNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	(cautionaryBlock value: self) ifTrue: [^self].
+	statements := statements collect: [ :s | s bindVariablesIn: aDictionary unless: cautionaryBlock].
+]
+
 { #category : #enumerating }
 TStmtListNode >> children [
 

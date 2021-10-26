@@ -37,6 +37,14 @@ TBraceCaseNode >> bindVariablesIn: aDictionary [
 	cases := cases collect: [:node| node bindVariablesIn: aDictionary]
 ]
 
+{ #category : #transformations }
+TBraceCaseNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	(cautionaryBlock value: self) ifTrue: [^self].
+	caseLabels := caseLabels collect: [:node| node bindVariablesIn: aDictionary unless: cautionaryBlock].
+	cases := cases collect: [:node| node bindVariablesIn: aDictionary unless: cautionaryBlock]
+]
+
 { #category : #accessing }
 TBraceCaseNode >> caseLabels [
 	"Answer the value of caseLabels"

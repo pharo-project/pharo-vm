@@ -161,7 +161,7 @@ TMethod >> allReferencedVariablesUsing: aCodeGen [
 		nodesWithParentsDo:
 			[:node :parent|
 			node isVariable ifTrue: [refs add: node name asString].
-			node isStmtList ifTrue: [refs addAll: node args].
+			node isStmtList ifTrue: [ node args ifNotNil: [ refs addAll: node args ]].
 			(node isSend
 			 and: [node selector value beginsWith: #cCode:]) ifTrue:
 				[aCodeGen addVariablesInVerbatimCIn: node to: refs]]
@@ -440,6 +440,14 @@ TMethod >> bindVariablesIn: constantDictionary [
 ]
 
 { #category : #transformations }
+TMethod >> bindVariablesIn: constantDictionary unless: cautionaryBlock [
+	"Class variables are used as constants. This method replaces all references to class variables in the body of this method with the corresponding constant looked up in the class pool dictionary of the source class. The source class class variables should be initialized before this method is called."
+
+	(cautionaryBlock value: self) ifTrue: [^self].
+	parseTree := parseTree bindVariablesIn: constantDictionary unless: cautionaryBlock.
+]
+
+{ #category : #transformations }
 TMethod >> buildCaseStmt: aSendNode in: aCodeGen [
 
 	"Build a case statement node for the given send of dispatchOn:in:."
@@ -644,16 +652,18 @@ TMethod >> declarations [
 ]
 
 { #category : #'automatic-localization' }
-TMethod >> declareNonConflictingLocalNamedLike: aString [ 
-	
-	| maybeAllocatedName |
-	maybeAllocatedName := aString.
-	[locals includes: maybeAllocatedName]
-		whileTrue: [ maybeAllocatedName := maybeAllocatedName, '_' ].
-	
-	"Found a unique name, declare it and return it"
-	self localizeVariables: {maybeAllocatedName}.
-	^ maybeAllocatedName
+TMethod >> declareNonConflictingLocalNamedLike: aString [
+
+	| definedVariables n newVarName |
+	definedVariables := (locals , args) asSet.
+	n := 1.
+	newVarName := aString.
+	[ definedVariables includes: newVarName ] whileTrue: [ 
+		newVarName := aString , n printString.
+		n := n + 1 ].
+
+	locals add: newVarName.
+	^ newVarName
 ]
 
 { #category : #testing }
@@ -1279,7 +1289,7 @@ TMethod >> inlineBuiltin: aSendNode in: aCodeGen [
 ]
 
 { #category : #inlining }
-TMethod >> inlineCaseStatementBranchesIn: aCodeGen withLocalizationReplacements: replacementDictionary [
+TMethod >> inlineCaseStatementBranchesIn: aCodeGen [
 
 	parseTree nodesDo: [ :n | 
 		n isCaseStmt ifTrue: [ 
@@ -1288,11 +1298,8 @@ TMethod >> inlineCaseStatementBranchesIn: aCodeGen withLocalizationReplacements:
 				(stmt := stmtNode statements first) isSend ifTrue: [ 
 					(meth := aCodeGen methodNamed: stmt selector) ifNotNil: [ 
 						(meth hasUnrenamableCCode not and: [ meth args isEmpty ]) 
-							ifTrue: [
-								self
-									inlineMethod: meth copy
-									inCaseStatement: stmtNode
-									withLocalizationReplacements: replacementDictionary ] ] ] ] ] ]
+							ifTrue: [ 
+							self inlineMethod: meth copy inCaseStatement: stmtNode ] ] ] ] ] ]
 ]
 
 { #category : #inlining }
@@ -1427,7 +1434,7 @@ TMethod >> inlineGuardingConditional: aSendNode in: aCodeGen [
 ]
 
 { #category : #inlining }
-TMethod >> inlineMethod: meth inCaseStatement: stmtNode withLocalizationReplacements: replacementDictionary [
+TMethod >> inlineMethod: meth inCaseStatement: stmtNode [
 
 	| exitLabel newStatements |
 	"Perform the main inlining"
