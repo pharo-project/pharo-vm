@@ -2575,7 +2575,7 @@ StackInterpreter >> booleanCheatFalse [
 	self cppIf: MULTIPLEBYTECODESETS
 		ifTrue: [currentBytecode := bytecode + bytecodeSetSelector]
 		ifFalse: [currentBytecode := bytecode].
-	self internalPush: objectMemory falseObject
+	self push: objectMemory falseObject
 ]
 
 { #category : #utilities }
@@ -2597,7 +2597,7 @@ StackInterpreter >> booleanCheatFalseSistaV1 [
 	self cppIf: MULTIPLEBYTECODESETS
 		ifTrue: [currentBytecode := bytecode + bytecodeSetSelector]
 		ifFalse: [currentBytecode := bytecode].
-	self internalPush: objectMemory falseObject
+	self push: objectMemory falseObject
 ]
 
 { #category : #utilities }
@@ -2619,7 +2619,7 @@ StackInterpreter >> booleanCheatFalseV4 [
 	self cppIf: MULTIPLEBYTECODESETS
 		ifTrue: [currentBytecode := bytecode + bytecodeSetSelector]
 		ifFalse: [currentBytecode := bytecode].
-	self internalPush: objectMemory falseObject
+	self push: objectMemory falseObject
 ]
 
 { #category : #utilities }
@@ -2654,7 +2654,7 @@ StackInterpreter >> booleanCheatTrue [
 	self cppIf: MULTIPLEBYTECODESETS
 		ifTrue: [currentBytecode := bytecode + bytecodeSetSelector]
 		ifFalse: [currentBytecode := bytecode].
-	self internalPush: objectMemory trueObject
+	self push: objectMemory trueObject
 ]
 
 { #category : #utilities }
@@ -2679,7 +2679,7 @@ StackInterpreter >> booleanCheatTrueSistaV1 [
 	self cppIf: MULTIPLEBYTECODESETS
 		ifTrue: [currentBytecode := bytecode + bytecodeSetSelector]
 		ifFalse: [currentBytecode := bytecode].
-	self internalPush: objectMemory trueObject
+	self push: objectMemory trueObject
 ]
 
 { #category : #utilities }
@@ -2704,7 +2704,7 @@ StackInterpreter >> booleanCheatTrueV4 [
 	self cppIf: MULTIPLEBYTECODESETS
 		ifTrue: [currentBytecode := bytecode + bytecodeSetSelector]
 		ifFalse: [currentBytecode := bytecode].
-	self internalPush: objectMemory trueObject
+	self push: objectMemory trueObject
 ]
 
 { #category : #utilities }
@@ -2734,7 +2734,7 @@ StackInterpreter >> bytecodePrimAdd [
 	(objectMemory areIntegers: rcvr and: arg)
 		ifTrue: [result := (objectMemory integerValueOf: rcvr) + (objectMemory integerValueOf: arg).
 				(objectMemory isIntegerValue: result) ifTrue:
-					[self internalPop: 2 thenPush: (objectMemory integerObjectOf: result).
+					[self pop: 2 thenPush: (objectMemory integerObjectOf: result).
 					^ self fetchNextBytecode "success"]]
 		ifFalse: [self initPrimCall.
 				self externalizeIPandSP.
@@ -2779,7 +2779,7 @@ StackInterpreter >> bytecodePrimAt [
 			[result := self commonVariable: rcvr at: (objectMemory integerValueOf: index) cacheIndex: atIx].
 		 self successful ifTrue:
 			[self fetchNextBytecode.
-			 ^self internalPop: 2 thenPush: result].
+			 ^self pop: 2 thenPush: result].
 		 self initPrimCall].
 
 	messageSelector := self specialSelector: 16.
@@ -2830,7 +2830,7 @@ StackInterpreter >> bytecodePrimAtPut [
 			[self commonVariable: rcvr at: (objectMemory integerValueOf: index) put: value cacheIndex: atIx].
 		 self successful ifTrue:
 			[self fetchNextBytecode.
-			 ^self internalPop: 3 thenPush: value].
+			 ^self pop: 3 thenPush: value].
 		 self initPrimCall].
 
 	messageSelector := self specialSelector: 17.
@@ -2845,7 +2845,7 @@ StackInterpreter >> bytecodePrimBitAnd [
 	rcvr := self internalStackValue: 1.
 	((objectMemory isIntegerObject: arg)
 	 and: [objectMemory isIntegerObject: rcvr]) ifTrue:
-		[self internalPop: 2 thenPush: (arg bitAnd: rcvr).
+		[self pop: 2 thenPush: (arg bitAnd: rcvr).
 		 ^self fetchNextBytecode "success"].
 
 	self initPrimCall.
@@ -2867,7 +2867,7 @@ StackInterpreter >> bytecodePrimBitOr [
 	rcvr := self internalStackValue: 1.
 	((objectMemory isIntegerObject: arg)
 	 and: [objectMemory isIntegerObject: rcvr]) ifTrue:
-		[self internalPop: 2 thenPush: (arg bitOr: rcvr).
+		[self pop: 2 thenPush: (arg bitOr: rcvr).
 		 ^self fetchNextBytecode "success"].
 
 	self initPrimCall.
@@ -2911,7 +2911,7 @@ StackInterpreter >> bytecodePrimDiv [
 	| quotient |
 	self initPrimCall.
 	quotient := self doPrimitiveDiv: (self internalStackValue: 1) by: (self internalStackValue: 0).
-	self successful ifTrue: [self internalPop: 2 thenPush: (objectMemory integerObjectOf: quotient).
+	self successful ifTrue: [self pop: 2 thenPush: (objectMemory integerObjectOf: quotient).
 		^ self fetchNextBytecode "success"].
 
 	messageSelector := self specialSelector: 13.
@@ -2931,7 +2931,7 @@ StackInterpreter >> bytecodePrimDivide [
 				ifTrue: [result := rcvr // arg.
 					"generates C / operation"
 					(objectMemory isIntegerValue: result)
-						ifTrue: [self internalPop: 2 thenPush: (objectMemory integerObjectOf: result).
+						ifTrue: [self pop: 2 thenPush: (objectMemory integerObjectOf: result).
 							^ self fetchNextBytecode"success"]]]
 		ifFalse: [self initPrimCall.
 			self externalizeIPandSP.
@@ -3291,7 +3291,7 @@ StackInterpreter >> bytecodePrimMakePoint [
 		 objectMemory "No need to check since new object is always new."
 			storePointerUnchecked: XIndex ofObject: pt withValue: rcvr;
 			storePointerUnchecked: YIndex ofObject: pt withValue: arg.
-		 self internalPop: 2 thenPush: pt.
+		 self pop: 2 thenPush: pt.
 		 ^self fetchNextBytecode "success"].
 
 	messageSelector := self specialSelector: 11.
@@ -3305,7 +3305,7 @@ StackInterpreter >> bytecodePrimMod [
 	self initPrimCall.
 	mod := self doPrimitiveMod: (self internalStackValue: 1) by: (self internalStackValue: 0).
 	self successful ifTrue:
-		[self internalPop: 2 thenPush: (objectMemory integerObjectOf: mod).
+		[self pop: 2 thenPush: (objectMemory integerObjectOf: mod).
 		^ self fetchNextBytecode "success"].
 
 	messageSelector := self specialSelector: 10.
@@ -3332,7 +3332,7 @@ StackInterpreter >> bytecodePrimMultiply [
 					ifFalse:
 						[result := rcvr * arg.
 						oop := objectMemory integerObjectOf: result.
-      					self internalPop: 2 thenPush: oop.
+      					self pop: 2 thenPush: oop.
 						^self fetchNextBytecode "success"]]
 		ifFalse: [self initPrimCall.
 				self externalizeIPandSP.
@@ -3536,7 +3536,7 @@ StackInterpreter >> bytecodePrimSubtract [
 	(objectMemory areIntegers: rcvr and: arg)
 		ifTrue: [result := (objectMemory integerValueOf: rcvr) - (objectMemory integerValueOf: arg).
 				(objectMemory isIntegerValue: result) ifTrue:
-					[self internalPop: 2 thenPush: (objectMemory integerObjectOf: result).
+					[self pop: 2 thenPush: (objectMemory integerObjectOf: result).
 					^self fetchNextBytecode "success"]]
 		ifFalse: [self initPrimCall.
 				self externalizeIPandSP.
@@ -3764,9 +3764,9 @@ StackInterpreter >> canContextSwitchIfActivating: theMethod header: methodHeader
 StackInterpreter >> cannotAssign: resultObj to: targetObj withIndex: index [
 	<option: #IMMUTABILITY>
 	<inline: true> "because of use of normalSend..."
-	self internalPush: targetObj.
-	self internalPush: resultObj.
-	self internalPush: (objectMemory integerObjectOf: index + 1).
+	self push: targetObj.
+	self push: resultObj.
+	self push: (objectMemory integerObjectOf: index + 1).
 	messageSelector := self splObj: SelectorAttemptToAssign.
 	argumentCount := 2.
 	^ self normalSend
@@ -5033,7 +5033,7 @@ StackInterpreter >> directedSuperclassSend [
 	"<sharedCodeInCase: #extSendSuperBytecode>"
 	<option: #BytecodeSetHasDirectedSuperSend>
 	| class superclass |
-	class := self internalPopStack.
+	class := self popStack.
 	(objectMemory isForwarded: class) ifTrue:
 		[class := objectMemory followForwarded: class].
 	superclass := self superclassOf: class.
@@ -5238,7 +5238,7 @@ StackInterpreter >> dumpPrimTraceLog [
 StackInterpreter >> duplicateTopBytecode [
 
 	self fetchNextBytecode.
-	self internalPush: self internalStackTop.
+	self push: self internalStackTop.
 
 ]
 
@@ -5457,7 +5457,7 @@ StackInterpreter >> extPushCharacterBytecode [
 	| value |
 	value := self fetchByte + (extB << 8).
 	self fetchNextBytecode.
-	self internalPush: (objectMemory characterObjectOf: value).
+	self push: (objectMemory characterObjectOf: value).
 	numExtB := extB := 0
 ]
 
@@ -5492,7 +5492,7 @@ StackInterpreter >> extPushIntegerBytecode [
 	self fetchNextBytecode.
 	extB := 0.
 	numExtB := 0.
-	self internalPush: (objectMemory integerObjectOf: value)
+	self push: (objectMemory integerObjectOf: value)
 ]
 
 { #category : #'stack bytecodes' }
@@ -5526,7 +5526,7 @@ StackInterpreter >> extPushPseudoVariable [
 		otherwise:
 			[self respondToUnknownBytecode].
 	self fetchNextBytecode.
-	self internalPush: theThingToPush.
+	self push: theThingToPush.
 	extB := 0.
 	numExtB := 0.
 ]
@@ -7999,9 +7999,9 @@ StackInterpreter >> internalAboutToReturn: resultOop through: aContext [
 	| ourContext |
 	<inline: true>
 	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
-	self internalPush: ourContext.
-	self internalPush: resultOop.
-	self internalPush: aContext.
+	self push: ourContext.
+	self push: resultOop.
+	self push: aContext.
 	messageSelector := objectMemory splObj: SelectorAboutToReturn.
 	argumentCount := 2.
 	^self normalSend
@@ -8019,21 +8019,21 @@ StackInterpreter >> internalActivateNewMethod [
 	rcvr := self internalStackValue: argumentCount. "could new rcvr be set at point of send?"
 	self assert: (objectMemory isOopForwarded: rcvr) not.
 
-	self internalPush: instructionPointer.
-	self internalPush: framePointer.
+	self push: instructionPointer.
+	self push: framePointer.
 	framePointer := stackPointer.
-	self internalPush: newMethod.
+	self push: newMethod.
 	self setMethod: newMethod methodHeader: methodHeader.
-	self internalPush: (self
+	self push: (self
 			 encodeFrameFieldHasContext: false
 			 isBlock: false
 			 numArgs: (self argumentCountOfMethodHeader: methodHeader)).
-	self internalPush: objectMemory nilObject. "FxThisContext field"
-	self internalPush: rcvr.
+	self push: objectMemory nilObject. "FxThisContext field"
+	self push: rcvr.
 
 	"Initialize temps..."
 	argumentCount + 1 to: numTemps do: [ :i | 
-	self internalPush: objectMemory nilObject ].
+	self push: objectMemory nilObject ].
 
 	"-1 to account for pre-increment in fetchNextBytecode"
 	instructionPointer := self pointerForOop:
@@ -8064,8 +8064,8 @@ StackInterpreter >> internalCannotReturn: resultOop [
 	| ourContext |
 	<inline: true>
 	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
-	self internalPush: ourContext.
-	self internalPush: resultOop.
+	self push: ourContext.
+	self push: resultOop.
 	messageSelector := objectMemory splObj: SelectorCannotReturn.
 	argumentCount := 1.
 	^self normalSend
@@ -8117,27 +8117,6 @@ StackInterpreter >> internalMustBeBoolean [
 	messageSelector := objectMemory splObj: SelectorMustBeBoolean.
 	argumentCount := 0.
 	self normalSend
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> internalPop: nItems thenPush: oop [
-	"In the StackInterpreter stacks grow down."
-	stackPages longAtPointer: (stackPointer := stackPointer + ((nItems - 1) * objectMemory bytesPerOop)) put: oop
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> internalPopStack [
-	"In the StackInterpreter stacks grow down."
-	| top |
-	top := stackPages longAt: stackPointer.
-	stackPointer := stackPointer + objectMemory bytesPerOop.
-	^top
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> internalPush: object [
-	"In the StackInterpreter stacks grow down."
-	stackPages longAtPointer: (stackPointer := stackPointer - objectMemory bytesPerOop) put: object
 ]
 
 { #category : #'primitive support' }
@@ -9102,7 +9081,7 @@ StackInterpreter >> longPushTemporaryVariableBytecode [
 	| index |
 	index := self fetchByte.
 	self fetchNextBytecode.
-	self internalPush: (self temporary: index in: framePointer)
+	self push: (self temporary: index in: framePointer)
 ]
 
 { #category : #'stack bytecodes' }
@@ -9629,7 +9608,7 @@ StackInterpreter >> mappedDirectCall [
 	"250	directCall
 	literal index of the method to call on top of stack =>  (variable number of parameters)"
 	|methodHeader localPrimIndex methodIndex|
-	methodIndex := self internalPopStack. "Can't write this inside next line for Slang inliner"
+	methodIndex := self popStack. "Can't write this inside next line for Slang inliner"
 	newMethod := self literal: (objectMemory integerValueOf: methodIndex).
 	self assert: (objectMemory isCompiledMethod: newMethod).
 	methodHeader := objectMemory methodHeaderOf: newMethod.
@@ -9721,7 +9700,7 @@ StackInterpreter >> mappedImmcheckMaybeContextStoreCheckPointerAtPut [
 	argIntAdjusted := (objectMemory integerValueOf: arg1) - 1.
 	result := self internalStackTop.
 	self pop: 3.
-	self internalPush: result.
+	self push: result.
 	(self isWriteMediatedContextInstVarIndex: argIntAdjusted) 
 						ifFalse: [objectMemory storePointerImmutabilityCheck: argIntAdjusted ofObject: rec withValue: result]
 						ifTrue: [self externalizeIPandSP.
@@ -9743,7 +9722,7 @@ StackInterpreter >> mappedImmcheckStoreCheckPointerAtPut [
 	self assert: argIntAdjusted < (objectMemory numSlotsOfAny: rec).
 	result := self internalStackTop.
 	self pop: 3.
-	self internalPush: result.
+	self push: result.
 	objectMemory
 		storePointerImmutabilityCheck: argIntAdjusted
 		ofObject: rec
@@ -12488,7 +12467,7 @@ StackInterpreter >> pushActiveContextBytecode [
 	| ourContext |
 	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
 	self fetchNextBytecode.
-	self internalPush: ourContext
+	self push: ourContext
 ]
 
 { #category : #'internal interpreter access' }
@@ -12501,7 +12480,7 @@ StackInterpreter >> pushBool: trueOrFalse [
 StackInterpreter >> pushConstantFalseBytecode [
 
 	self fetchNextBytecode.
-	self internalPush: objectMemory falseObject.
+	self push: objectMemory falseObject.
 
 ]
 
@@ -12509,7 +12488,7 @@ StackInterpreter >> pushConstantFalseBytecode [
 StackInterpreter >> pushConstantMinusOneBytecode [
 
 	self fetchNextBytecode.
-	self internalPush: ConstMinusOne.
+	self push: ConstMinusOne.
 
 ]
 
@@ -12517,7 +12496,7 @@ StackInterpreter >> pushConstantMinusOneBytecode [
 StackInterpreter >> pushConstantNilBytecode [
 
 	self fetchNextBytecode.
-	self internalPush: objectMemory nilObject.
+	self push: objectMemory nilObject.
 
 ]
 
@@ -12525,7 +12504,7 @@ StackInterpreter >> pushConstantNilBytecode [
 StackInterpreter >> pushConstantOneBytecode [
 
 	self fetchNextBytecode.
-	self internalPush: ConstOne.
+	self push: ConstOne.
 
 ]
 
@@ -12533,7 +12512,7 @@ StackInterpreter >> pushConstantOneBytecode [
 StackInterpreter >> pushConstantTrueBytecode [
 
 	self fetchNextBytecode.
-	self internalPush: objectMemory trueObject.
+	self push: objectMemory trueObject.
 
 ]
 
@@ -12541,7 +12520,7 @@ StackInterpreter >> pushConstantTrueBytecode [
 StackInterpreter >> pushConstantTwoBytecode [
 
 	self fetchNextBytecode.
-	self internalPush: ConstTwo.
+	self push: ConstTwo.
 
 ]
 
@@ -12549,7 +12528,7 @@ StackInterpreter >> pushConstantTwoBytecode [
 StackInterpreter >> pushConstantZeroBytecode [
 
 	self fetchNextBytecode.
-	self internalPush: ConstZero.
+	self push: ConstZero.
 
 ]
 
@@ -12596,7 +12575,7 @@ StackInterpreter >> pushFullClosureNumArgs: numArgs copiedValues: numCopiedArg c
 				withValue: (self internalStackValue: numCopied - i - 1)].
 		 self pop: numCopied].
 	self fetchNextBytecode.
-	self internalPush: newClosure
+	self push: newClosure
 ]
 
 { #category : #'internal interpreter access' }
@@ -12608,7 +12587,7 @@ StackInterpreter >> pushInteger: integerValue [
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushLiteralConstant: literalIndex [
 
-	self internalPush: (self literal: literalIndex).
+	self push: (self literal: literalIndex).
 ]
 
 { #category : #'stack bytecodes' }
@@ -12647,10 +12626,10 @@ StackInterpreter >> pushLiteralVariable: literalIndex [
 			 litVar := self literal: literalIndex.
 			 (objectMemory isForwarded: litVar) ifTrue:
 				[litVar := self unfollow: litVar atIndex: literalIndex].
-			 self internalPush:
+			 self push:
 				(objectMemory fetchPointer: ValueIndex ofObject: litVar)]
 		ifFalse:
-			[self internalPush:
+			[self push:
 				(objectMemory fetchPointer: ValueIndex ofObject: (self literal: literalIndex))]
 ]
 
@@ -12679,9 +12658,9 @@ StackInterpreter >> pushMaybeContext: obj receiverVariable: fieldIndex [
 	((self isReadMediatedContextInstVarIndex: fieldIndex)
 	and: [objectMemory isContextNonImm: obj])
 		ifTrue:
-			[self internalPush: (self instVar: fieldIndex ofContext: obj)]
+			[self push: (self instVar: fieldIndex ofContext: obj)]
 		ifFalse:
-			[self internalPush: (objectMemory fetchPointer: fieldIndex ofObject: obj)]
+			[self push: (objectMemory fetchPointer: fieldIndex ofObject: obj)]
 ]
 
 { #category : #'stack bytecodes' }
@@ -12727,21 +12706,21 @@ StackInterpreter >> pushNewArrayBytecode [
 			[0 to: size - 1 do:
 				[:i|
 				objectMemory storePointerUnchecked: i ofObject: array withValue: objectMemory nilObject]].
-	self internalPush: array
+	self push: array
 ]
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushReceiverBytecode [
 
 	self fetchNextBytecode.
-	self internalPush: self receiver.
+	self push: self receiver.
 
 ]
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushReceiverVariable: fieldIndex [
 
-	self internalPush: (objectMemory fetchPointer: fieldIndex ofObject: self receiver).
+	self push: (objectMemory fetchPointer: fieldIndex ofObject: self receiver).
 ]
 
 { #category : #'stack bytecodes' }
@@ -12764,7 +12743,7 @@ StackInterpreter >> pushRemoteTemp: index inVectorAt: tempVectorIndex [
 		ifTrue: 
 			[(objectMemory isForwarded: tempVector) ifTrue:
 				[tempVector := self unfollowTempVector: tempVector atIndex: tempVectorIndex in: framePointer]].
-	self internalPush: (objectMemory fetchPointer: index ofObject: tempVector)
+	self push: (objectMemory fetchPointer: index ofObject: tempVector)
 ]
 
 { #category : #'stack bytecodes' }
@@ -12779,7 +12758,7 @@ StackInterpreter >> pushRemoteTempLongBytecode [
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushTemporaryVariable: temporaryIndex [
 
-	self internalPush: (self temporary: temporaryIndex in: framePointer).
+	self push: (self temporary: temporaryIndex in: framePointer).
 ]
 
 { #category : #'stack bytecodes' }
@@ -13210,7 +13189,7 @@ StackInterpreter >> respondToSistaTrap [
 	<sharedCodeInCase: #unconditionnalTrapBytecode>
 	messageSelector := objectMemory splObj: SelectorSistaTrap.
 	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
-	self internalPush: ourContext.
+	self push: ourContext.
 	argumentCount := 0.
 	self normalSend
 ]
@@ -13227,7 +13206,7 @@ StackInterpreter >> respondToUnknownBytecode [
 	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
 	"undo fetch of bytecode so that context's pc is pointing to the unknown bytecode."
 	instructionPointer := instructionPointer - 1.
-	self internalPush: ourContext.
+	self push: ourContext.
 	argumentCount := 0.
 	self normalSend
 ]

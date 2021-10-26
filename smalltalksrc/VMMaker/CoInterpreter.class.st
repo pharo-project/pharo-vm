@@ -3938,22 +3938,22 @@ CoInterpreter >> internalActivateNewMethod [
 	rcvr := self internalStackValue: argumentCount. "could new rcvr be set at point of send?"
 	self assert: (objectMemory isOopForwarded: rcvr) not.
 
-	self internalPush: instructionPointer.
-	self internalPush: framePointer.
+	self push: instructionPointer.
+	self push: framePointer.
 	framePointer := stackPointer.
-	self internalPush: newMethod.
+	self push: newMethod.
 	self setMethod: newMethod methodHeader: methodHeader.
-	self internalPush: objectMemory nilObject. "FxThisContext field"
-	self internalPush: (self
+	self push: objectMemory nilObject. "FxThisContext field"
+	self push: (self
 						encodeFrameFieldHasContext: false
 						isBlock: false
 						numArgs: (self argumentCountOfMethodHeader: methodHeader)).
-	self internalPush: 0. "FoxIFSavedIP"
-	self internalPush: rcvr.
+	self push: 0. "FoxIFSavedIP"
+	self push: rcvr.
 
 	"Initialize temps..."
 	argumentCount + 1 to: numTemps do:
-		[:i | self internalPush: objectMemory nilObject].
+		[:i | self push: objectMemory nilObject].
 
 	"-1 to account for pre-increment in fetchNextBytecode"
 	instructionPointer := self pointerForOop: (self initialIPForHeader: methodHeader method: newMethod) - 1.
@@ -4256,7 +4256,7 @@ CoInterpreter >> longPushTemporaryVariableBytecode [
 	| index |
 	index := self fetchByte.
 	self fetchNextBytecode.
-	self internalPush: (self itemporary: index in: framePointer)
+	self push: (self itemporary: index in: framePointer)
 ]
 
 { #category : #'stack bytecodes' }
@@ -5960,7 +5960,7 @@ CoInterpreter >> pushFullClosureNumArgs: numArgs copiedValues: numCopiedArg comp
 				withValue: (self internalStackValue: numCopied - i - 1)].
 		 self pop: numCopied].
 	self fetchNextBytecode.
-	self internalPush: newClosure
+	self push: newClosure
 ]
 
 { #category : #'stack bytecodes' }
@@ -5972,13 +5972,13 @@ CoInterpreter >> pushRemoteTemp: index inVectorAt: tempVectorIndex [
 		ifTrue: 
 			[(objectMemory isForwarded: tempVector) ifTrue:
 				[tempVector := self unfollowTempVector: tempVector atIndex: tempVectorIndex in: framePointer]].
-	self internalPush: (objectMemory fetchPointer: index ofObject: tempVector)
+	self push: (objectMemory fetchPointer: index ofObject: tempVector)
 ]
 
 { #category : #'stack bytecodes' }
 CoInterpreter >> pushTemporaryVariable: temporaryIndex [
 	"Override to use itemporary:in:put:"
-	self internalPush: (self itemporary: temporaryIndex in: framePointer)
+	self push: (self itemporary: temporaryIndex in: framePointer)
 ]
 
 { #category : #'cog jit support' }
@@ -6212,7 +6212,7 @@ CoInterpreter >> returnToMachineCodeFrame [
 	self assert: (self isMachineCodeFrame: framePointer).
 	self assertValidExecutionPointe: instructionPointer asUnsignedInteger r: framePointer s: stackPointer imbar: false line: #'__LINE__'.
 	self internalStackTopPut: instructionPointer.
-	self internalPush: localReturnValue.
+	self push: localReturnValue.
 	self externalizeFPandSP.
 	self cCode: '' inSmalltalk:
 		[self maybeCheckStackDepth: 1 sp: stackPointer pc: instructionPointer].
