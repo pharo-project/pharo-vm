@@ -113,8 +113,10 @@ def runBuild(platformName, configuration, headless = true){
 	additionalParameters += headless ? "" : "-DALWAYS_INTERACTIVE=1 "
 	additionalParameters += isRelease() ? "-DBUILD_IS_RELEASE=ON " : "-DBUILD_IS_RELEASE=OFF "
 
-	if(configuaration == 'StackVM'){
+	if(configuration == 'StackVM'){
 		additionalParameters += "-DFEATURE_MESSAGE_COUNT=TRUE "
+		platform = "${platform}-StackVM"
+		buildDirectory = "build-StackVM"
 	}
 
 	stage("Checkout-${platform}"){
