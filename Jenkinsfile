@@ -113,6 +113,10 @@ def runBuild(platformName, configuration, headless = true){
 	additionalParameters += headless ? "" : "-DALWAYS_INTERACTIVE=1 "
 	additionalParameters += isRelease() ? "-DBUILD_IS_RELEASE=ON " : "-DBUILD_IS_RELEASE=OFF "
 
+	if(configuaration == 'StackVM'){
+		additionalParameters += "-DFEATURE_MESSAGE_COUNT=TRUE "
+	}
+
 	stage("Checkout-${platform}"){
 		dir('repository') {
 			checkout scm
@@ -405,6 +409,9 @@ try{
 			node(platform){
 				timeout(30){
 					runBuild(platform, "CoInterpreter")
+				}
+				timeout(30){
+					runBuild(platform, "StackVM")
 				}
 				timeout(30){
 					// Only build the Stock replacement version in the main branch
