@@ -621,8 +621,8 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		declareC: 'jmp_buf reenterInterpreter; /* private export */'.
 	
 	aCCodeGenerator
-		var: #messageCount
-		type: #'usqInt'.
+			var: #messageCount
+			type: #'usqInt'.
 	
 	aCCodeGenerator removeVariable: #'libFFI'.
 	LibFFIConstants classVariables do: [ :e | aCCodeGenerator removeConstant: e name ].
@@ -11833,16 +11833,22 @@ StackInterpreter >> primitiveObject: actualReceiver perform: selector withArgume
 	^nil
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'primitives message counting' }
 StackInterpreter >> primitiveStartProfiling [
 
-	messageCount := 0
+	self cppIf: FEATURE_MESSAGE_COUNT 
+		ifTrue: [ messageCount := 0 ] 
+		ifFalse: [ self primitiveFailFor: PrimErrUnsupported ]
+
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'primitives message counting' }
 StackInterpreter >> primitiveStopProfiling [
 
-	self pop: 1 thenPushInteger: messageCount
+	self cppIf: FEATURE_MESSAGE_COUNT 
+		ifTrue: [ self pop: 1 thenPushInteger: messageCount ] 
+		ifFalse: [ self primitiveFailFor: PrimErrUnsupported ]
+	
 ]
 
 { #category : #'as yet unclassified' }
