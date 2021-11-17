@@ -15,7 +15,8 @@ message(STATUS "CMAKE_GENERATOR=${CMAKE_GENERATOR}")
 
 # Build options
 option(FEATURE_FFI										"Enable FFI"																 ON)
-option(FEATURE_THREADED_FFI								"Enable Threaded (running in another thread) FFI"							 ON)
+option(FEATURE_THREADED_FFI								"Enable Threaded (running in another thread) FFI"							ON)
+option(FEATURE_MESSAGE_COUNT							"Enable the option to count messages, only valid for StackVM"				 OFF)
 option(FEATURE_NETWORK									"Enable network and sockets"												 ON)
 option(FEATURE_LIB_SDL2									"Build SDL2 support"														 ON)
 option(FEATURE_LIB_CAIRO								"Build Cairo support"														 ON)
@@ -247,7 +248,7 @@ elseif(WIN)
     SET(CMAKE_SYSTEM_NAME Windows)
 
     add_compile_definitions(WIN32_LEAN_AND_MEAN)
-    add_compile_definitions(NO_ISNAN NO_SERVICE "'VM_LABEL(foo)=0'" LSB_FIRST=1 AllocationCheckFiller=0xADD4E55)
+    add_compile_definitions(NO_ISNAN NO_SERVICE LSB_FIRST=1 AllocationCheckFiller=0xADD4E55)
 
     #Setting minimal Windows Version to VISTA
     add_compile_definitions(_WIN32_WINNT=0x0600 WINVER=0x0600 NTDDI_VERSION=0x06000000 WIN64=1)
@@ -288,10 +289,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS}
 add_compile_definitions(IMMUTABILITY=1)
 add_compile_definitions(COGMTVM=0)
 add_compile_definitions(PharoVM=1)
-
-#We require that VM_LABEL does nothing.
-#We should actually cleanup all the places where this is set/used in the VM
-add_compile_definitions("VM_LABEL\(foo\)=0")
 
 #
 # This definition is used to improve the logging of the messages, to cut-down the path
@@ -448,7 +445,6 @@ if(${FEATURE_FFI})
     endif()
 endif()
 
-
 set(VM_SOURCES
     ${SUPPORT_SOURCES}
     ${GENERATED_SOURCES}
@@ -488,6 +484,11 @@ if (${FEATURE_FFI})
     endif()
 endif()
 
+
+if(${FEATURE_MESSAGE_COUNT})
+    target_compile_definitions(${VM_LIBRARY_NAME} 
+        PRIVATE FEATURE_MESSAGE_COUNT=1)
+endif()
 
 #If in OSX, configure creation of Bundle
 if(OSX)

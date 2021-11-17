@@ -67,4 +67,11 @@
 
 #define ALWAYS_INTERACTIVE @ALWAYS_INTERACTIVE@
 
+/*
+ * We require that VM_LABEL does nothing.
+ * We should actually cleanup all the places where this is set/used in the VM
+ */
+
+#define VM_LABEL(foo)		0
+
 #endif //PHAROVM_CONFIG_H

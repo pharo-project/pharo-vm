@@ -414,7 +414,8 @@ Class {
 		'maxStacksToPrint',
 		'maxStackMessagePrinted',
 		'libFFI',
-		'codeGeneratorToComputeAccessorDepth'
+		'codeGeneratorToComputeAccessorDepth',
+		'messageCount'
 	],
 	#classVars : [
 		'AccessModifierPrivate',
@@ -618,7 +619,11 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	aCCodeGenerator
 		var: #reenterInterpreter
 		declareC: 'jmp_buf reenterInterpreter; /* private export */'.
-		
+	
+	aCCodeGenerator
+			var: #messageCount
+			type: #'usqInt'.
+	
 	aCCodeGenerator removeVariable: #'libFFI'.
 	LibFFIConstants classVariables do: [ :e | aCCodeGenerator removeConstant: e name ].
 ]
@@ -1217,8 +1222,8 @@ StackInterpreter class >> initializePrimitiveTable [
 		(63 primitiveStringAt)
 		(64 primitiveStringAtPut)
 		"The stream primitives no longer pay their way; normal Smalltalk code is faster."
-		(65 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called")"was primitiveNext"
-		(66 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called") "was primitiveNextPut"
+		(65 primitiveStartProfiling)"was primitiveNext"
+		(66 primitiveStopProfiling) "was primitiveNextPut"
 		(67 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called") "was primitiveAtEnd"
 
 		"StorageManagement Primitives (68-79)"
@@ -5017,6 +5022,7 @@ StackInterpreter >> commonSendOrdinary [
 	self sendBreakpoint: messageSelector receiver: (self internalStackValue: argumentCount).
 	self printSends ifTrue:
 		[self printActivationNameForSelector: messageSelector startClass: (objectMemory classForClassTag: lkupClassTag); cr].
+	messageCount := messageCount + 1.
 	self internalFindNewMethodOrdinary.
 	self internalExecuteNewMethod.
 	self fetchNextBytecode
@@ -11825,6 +11831,24 @@ StackInterpreter >> primitiveObject: actualReceiver perform: selector withArgume
 	self executeNewMethod.
 	self initPrimCall.  "Recursive xeq affects primErrorCode"
 	^nil
+]
+
+{ #category : #'primitives message counting' }
+StackInterpreter >> primitiveStartProfiling [
+
+	self cppIf: FEATURE_MESSAGE_COUNT 
+		ifTrue: [ messageCount := 0 ] 
+		ifFalse: [ self primitiveFailFor: PrimErrUnsupported ]
+
+]
+
+{ #category : #'primitives message counting' }
+StackInterpreter >> primitiveStopProfiling [
+
+	self cppIf: FEATURE_MESSAGE_COUNT 
+		ifTrue: [ self pop: 1 thenPushInteger: messageCount ] 
+		ifFalse: [ self primitiveFailFor: PrimErrUnsupported ]
+	
 ]
 
 { #category : #'as yet unclassified' }
