@@ -115,7 +115,7 @@ def runBuild(platformName, configuration, headless = true){
 
 	if(configuration == 'StackVM'){
 		additionalParameters += "-DFEATURE_MESSAGE_COUNT=TRUE "
-		platform = "${platform}-StackVM"
+		platform = "${platformName}-StackVM"
 		buildDirectory = "build-StackVM"
 	}
 
@@ -326,6 +326,30 @@ def uploadStockReplacement(platform, configuration, archiveName, isStableRelease
 	}
 }
 
+def uploadStackVM(platform, configuration, archiveName, isStableRelease = false){
+
+	cleanWs()
+
+	unstash name: "packages-${archiveName}-${configuration}"
+
+	def wordSize = is32Bits(platform) ? "32" : "64"
+	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build-StackVM/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
+
+	sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
+		sh "scp -o StrictHostKeyChecking=no \
+		${expandedBinaryFileName} \
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}"
+		sh "scp -o StrictHostKeyChecking=no \
+		${expandedBinaryFileName} \
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/latestStackVM${mainBranchVersion()}.zip"
+
+		if(isStableRelease){
+			sh "scp -o StrictHostKeyChecking=no \
+			${expandedBinaryFileName} \
+			pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/stableStackVM${mainBranchVersion()}.zip"
+		}
+	}
+}
 
 def isPullRequest() {
   return env.CHANGE_ID != null
@@ -352,6 +376,7 @@ def uploadPackages(platformNames){
 			for (platformName in platformNames) {
 				upload(platformName, "CoInterpreter", platformName, releaseFlag)
 				uploadStockReplacement(platformName, "CoInterpreter", "${platformName}-stockReplacement",releaseFlag)
+				uploadStackVM(platformName, "StackVM", "${platformName}-StackVM",releaseFlag)
 			}
 		}
 	}
