@@ -335,6 +335,10 @@ def uploadStackVM(platform, configuration, archiveName, isStableRelease = false)
 	def wordSize = is32Bits(platform) ? "32" : "64"
 	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build-StackVM/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
 
+	sh(script: "cp build-StackVM/build/packages/PharoVM-*-${archiveName}-bin.zip build-StackVM/build/packages/PharoVM-*-${archiveName}-StackVM-bin.zip").trim()
+
+	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build-StackVM/build/packages/PharoVM-*-${archiveName}-StackVM-bin.zip").trim()
+
 	sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
@@ -376,7 +380,7 @@ def uploadPackages(platformNames){
 			for (platformName in platformNames) {
 				upload(platformName, "CoInterpreter", platformName, releaseFlag)
 				uploadStockReplacement(platformName, "CoInterpreter", "${platformName}-stockReplacement",releaseFlag)
-				uploadStackVM(platformName, "StackVM", "${platformName}-StackVM",releaseFlag)
+				uploadStackVM(platformName, "StackVM", platformName, releaseFlag)
 			}
 		}
 	}
