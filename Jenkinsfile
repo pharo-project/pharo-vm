@@ -328,6 +328,9 @@ def uploadStockReplacement(platform, configuration, archiveName, isStableRelease
 
 def uploadStackVM(platform, configuration, archiveName, isStableRelease = false){
 
+	if(platform == 'Linux-aarch64' || platform == 'Linux-armv7l')
+		return;
+
 	cleanWs()
 
 	unstash name: "packages-${archiveName}-StackVM-${configuration}"
