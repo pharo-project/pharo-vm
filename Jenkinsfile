@@ -334,7 +334,7 @@ def uploadStackVM(platform, configuration, archiveName, isStableRelease = false)
 
 	def wordSize = is32Bits(platform) ? "32" : "64"
 
-	sh(script: "cp build-StackVM/build/packages/PharoVM-*-${archiveName}-bin.zip build-StackVM/build/packages/PharoVM-*-${archiveName}-StackVM-bin.zip").trim()
+	sh(script: "cp build-StackVM/build/packages/PharoVM-*-${archiveName}-bin.zip build-StackVM/build/packages/PharoVM-*-${archiveName}-StackVM-bin.zip")
 
 	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build-StackVM/build/packages/PharoVM-*-${archiveName}-StackVM-bin.zip").trim()
 
