@@ -330,7 +330,7 @@ def uploadStackVM(platform, configuration, archiveName, isStableRelease = false)
 
 	cleanWs()
 
-	unstash name: "packages-${archiveName}-${configuration}"
+	unstash name: "packages-${archiveName}-StackVM-${configuration}"
 
 	def wordSize = is32Bits(platform) ? "32" : "64"
 
