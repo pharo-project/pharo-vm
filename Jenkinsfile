@@ -336,11 +336,11 @@ def uploadStackVM(platform, configuration, archiveName, isStableRelease = false)
 	unstash name: "packages-${archiveName}-StackVM-${configuration}"
 
 	def wordSize = is32Bits(platform) ? "32" : "64"
-
-	sh(script: "cp build-StackVM/build/packages/PharoVM-*-${archiveName}-bin.zip build-StackVM/build/packages/PharoVM-*-${archiveName}-StackVM-bin.zip")
-
-	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build-StackVM/build/packages/PharoVM-*-${archiveName}-StackVM-bin.zip").trim()
-
+	def oldName = sh(returnStdout: true, script: "ls build-stockReplacement/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
+	def expandedBinaryFileName = oldName.replaceAll("-bin.zip", "-StackVM-bin.zip")
+	
+	sh(script: "cp ${oldName} ${expandedBinaryFileName}")
+	
 	sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \

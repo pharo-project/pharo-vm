@@ -52,6 +52,8 @@ else()
 endif(BUILD_IS_RELEASE)
 
 message(STATUS "Building version ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+message(STATUS "Commit hash ${GIT_COMMIT_HASH} : ${GIT_COMMIT_DATE}")
+
 
 # Visual Studio stores user build settings in file 'CmakeSettings.json'.  We would like to manage that via a project template.
 # To push out new template, update 'template_uuid' field in 'template_file' with value from https://www.uuidgenerator.net/
@@ -122,6 +124,9 @@ if(MSVC AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     set(CMAKE_SYSTEM_PROCESSOR ${MSVC_CXX_ARCHITECTURE_ID})
 endif()
 message(STATUS "Compiling for architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+
+get_platform_name(FULL_PLATFORM_NAME)
+message(STATUS "Full Platform name: ${FULL_PLATFORM_NAME}")
 
 # Windows setjmp does not work as Unix's
 # by it default will unwind the stack, which is not possible in generated code
