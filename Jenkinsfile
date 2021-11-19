@@ -113,6 +113,12 @@ def runBuild(platformName, configuration, headless = true){
 	additionalParameters += headless ? "" : "-DALWAYS_INTERACTIVE=1 "
 	additionalParameters += isRelease() ? "-DBUILD_IS_RELEASE=ON " : "-DBUILD_IS_RELEASE=OFF "
 
+	if(configuration == 'StackVM'){
+		additionalParameters += "-DFEATURE_MESSAGE_COUNT=TRUE "
+		platform = "${platformName}-StackVM"
+		buildDirectory = "build-StackVM"
+	}
+
 	stage("Checkout-${platform}"){
 		dir('repository') {
 			checkout scm
@@ -321,6 +327,36 @@ def uploadStockReplacement(platform, configuration, archiveName, isStableRelease
 	}
 }
 
+def uploadStackVM(platform, configuration, archiveName, isStableRelease = false){
+
+	if(platform == 'Linux-aarch64' || platform == 'Linux-armv7l')
+		return;
+
+	cleanWs()
+
+	unstash name: "packages-${archiveName}-StackVM-${configuration}"
+
+	def wordSize = is32Bits(platform) ? "32" : "64"
+	def oldName = sh(returnStdout: true, script: "ls build-stockReplacement/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
+	def expandedBinaryFileName = oldName.replaceAll("-bin.zip", "-StackVM-bin.zip")
+	
+	sh(script: "cp ${oldName} ${expandedBinaryFileName}")
+	
+	sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
+		sh "scp -o StrictHostKeyChecking=no \
+		${expandedBinaryFileName} \
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}"
+		sh "scp -o StrictHostKeyChecking=no \
+		${expandedBinaryFileName} \
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/latestStackVM${mainBranchVersion()}.zip"
+
+		if(isStableRelease){
+			sh "scp -o StrictHostKeyChecking=no \
+			${expandedBinaryFileName} \
+			pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/stableStackVM${mainBranchVersion()}.zip"
+		}
+	}
+}
 
 def isPullRequest() {
   return env.CHANGE_ID != null
@@ -347,6 +383,7 @@ def uploadPackages(platformNames){
 			for (platformName in platformNames) {
 				upload(platformName, "CoInterpreter", platformName, releaseFlag)
 				uploadStockReplacement(platformName, "CoInterpreter", "${platformName}-stockReplacement",releaseFlag)
+				uploadStackVM(platformName, "StackVM", platformName, releaseFlag)
 			}
 		}
 	}
@@ -406,6 +443,9 @@ try{
 			node(platform){
 				timeout(30){
 					runBuild(platform, "CoInterpreter")
+				}
+				timeout(30){
+					runBuild(platform, "StackVM")
 				}
 				timeout(30){
 					// Only build the Stock replacement version in the main branch
