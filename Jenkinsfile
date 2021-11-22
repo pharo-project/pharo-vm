@@ -336,7 +336,7 @@ def uploadStackVM(platform, configuration, archiveName, isStableRelease = false)
 	unstash name: "packages-${archiveName}-StackVM-${configuration}"
 
 	def wordSize = is32Bits(platform) ? "32" : "64"
-	def oldName = sh(returnStdout: true, script: "ls build-stockReplacement/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
+	def oldName = sh(returnStdout: true, script: "ls build-StackVM/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
 	def expandedBinaryFileName = oldName.replaceAll("-bin.zip", "-StackVM-bin.zip")
 	
 	sh(script: "cp ${oldName} ${expandedBinaryFileName}")
