@@ -477,6 +477,11 @@ EXPORT(long) aioPoll(long microSeconds){
 		waitingHandles[i] = sliceWaitForMultipleObjects(allHandles, initialIndex, sizeToProcess, microSeconds);
 
 		if(waitingHandles[i] == NULL){
+
+			for(int j=1; j < i; j++){
+				CloseHandle(waitingHandles[j]);
+			}
+
 			free(waitingHandles);
 			free(allHandles);
 
@@ -488,6 +493,15 @@ EXPORT(long) aioPoll(long microSeconds){
 	}
 
 	returnValue = WaitForMultipleObjectsEx(numberOfThreads + 1, waitingHandles, FALSE, microSeconds / 1000, FALSE);
+
+	/*
+	 * Closing handles
+	 */
+
+	for(int i=1; i <= numberOfThreads; i++){
+		CloseHandle(waitingHandles[i]);
+	}
+
 
 	if(returnValue == WAIT_TIMEOUT){
 		heartbeat_poll_exit(microSeconds);
