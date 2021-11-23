@@ -719,17 +719,32 @@ InterpreterPrimitives >> primitiveAdd2 [
 	maybeSmallInteger2 := self stackValue: 1.
 	
 	(objectMemory isIntegerObject: maybeSmallInteger)
-		ifFalse: [ self primitiveFail ].
+		ifFalse: [ ^ self primitiveFail ].
 	(objectMemory isIntegerObject: maybeSmallInteger2)
-		ifFalse: [ self primitiveFail ].
+		ifFalse: [ ^ self primitiveFail ].
 
 	"Check for overflow"
 	result := self
 		sumInteger: (self withoutSmallIntegerTags2: maybeSmallInteger)
 		withInteger: maybeSmallInteger2
-		ifOverflow: [ self primitiveFail ].
+		ifOverflow: [ ^ self primitiveFail ].
 
 	self pop: 2 thenPush: result
+]
+
+{ #category : #'arithmetic integer primitives' }
+InterpreterPrimitives >> primitiveAdd3 [
+	<numberOfArguments: 1>
+	| v1 v0 integer1 integer0 |
+	v1 := self stackValue: 1.
+	(objectMemory isIntegerObject: v1)
+		ifTrue: [ integer1 := objectMemory integerValueOf: v1 ]
+		ifFalse: [ ^ self primitiveFail ].
+	v0 := self stackValue: 0.
+	(objectMemory isIntegerObject: v0)
+		ifTrue: [ integer0 := objectMemory integerValueOf: v0 ]
+		ifFalse: [ ^ self primitiveFail ].
+	self pop2AndPushIntegerIfOK: integer1 + integer0
 ]
 
 { #category : #'arithmetic largeint primitives' }
@@ -5575,9 +5590,7 @@ InterpreterPrimitives >> successful [
 	 primFailCode is non-zero a primitive has failed.  If primFailCode
 	 is greater than one then its value indicates the reason for failure."
 	<inline: true>
-	
-	"In C, non-zero is true, so avoid computation by using not the C version."
-	^self cCode: [primFailCode not] inSmalltalk: [primFailCode = 0]
+	^ primFailCode = 0
 ]
 
 { #category : #'arithmetic integer primitives' }
