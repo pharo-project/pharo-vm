@@ -125,9 +125,6 @@ if(MSVC AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
 endif()
 message(STATUS "Compiling for architecture: ${CMAKE_SYSTEM_PROCESSOR}")
 
-get_platform_name(FULL_PLATFORM_NAME)
-message(STATUS "Full Platform name: ${FULL_PLATFORM_NAME}")
-
 # Windows setjmp does not work as Unix's
 # by it default will unwind the stack, which is not possible in generated code
 # setjmp has an extra argument not exposed in C to avoid unwinding
@@ -285,6 +282,9 @@ elseif(UNIX)
         set(VM_TARGET_OS "${CMAKE_SYSTEM_NAME}")
     endif()
 endif()
+
+get_platform_name(FULL_PLATFORM_NAME)
+message(STATUS "Full Platform name: ${FULL_PLATFORM_NAME}")
 
 set(OPTIMIZATION_FLAGS "")
 
