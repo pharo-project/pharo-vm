@@ -25,7 +25,7 @@ This project is continuously built and test in the CI infrastructure located at:
 For building the VM it is required the following set of tools:
 
 - A working Pharo
-- CMake (at least version 2.8.4)
+- CMake (at least version 3.7.2)
 - CLang 
 - Binutils (make and friends) 
 - wget
