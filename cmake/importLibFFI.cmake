@@ -46,7 +46,7 @@ function(build_ffi)
   add_dependencies(${VM_LIBRARY_NAME} libffi_copy)
 endfunction()
 
-if(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES AND NOT(OSX AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64"))
+if(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES)
   #Download FFI binaries directly
   build_FFI()
 else()
