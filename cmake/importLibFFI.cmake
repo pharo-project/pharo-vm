@@ -15,7 +15,7 @@ function(build_ffi)
 
 	download_project(PROJ   libffi
 		GIT_REPOSITORY      https://github.com/pharo-project/libffi.git
-        GIT_TAG             "v3.3-cmake"
+        GIT_TAG             "v3.4.2-cmake"
         ${UPDATE_DISCONNECTED_IF_AVAILABLE}
 	)
 
