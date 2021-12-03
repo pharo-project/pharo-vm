@@ -7777,7 +7777,8 @@ StackInterpreter >> initialize [
 	debugCallbackInvokes := debugCallbackPath := debugCallbackReturns := 0.
 	statForceInterruptCheck := statStackOverflow := statCheckForEvents :=
 	statProcessSwitch := statIOProcessEvents := statStackPageDivorce :=
-	statIdleUsecs := 0
+	statIdleUsecs := 0.
+	messageCount := 0.
 ]
 
 { #category : #initialization }
