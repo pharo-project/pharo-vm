@@ -1145,3 +1145,111 @@ VMPrimitiveTest >> testPrimitiveStringAtPutShouldNotModifyStringIfFailedWhenNonC
 
 	self assert: string contentEquals: (self newString: 'po')
 ]
+
+{ #category : #'tests - primitiveSubtract' }
+VMPrimitiveTest >> testSubtractTwoIntegersOverflow [
+
+	interpreter push: (self memory integerObjectOf: self memory maxSmallInteger).
+	interpreter push: (self memory integerObjectOf: -1).
+	interpreter primitiveSubtract.
+
+	self assert: interpreter failed
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMPrimitiveTest >> testSubtractTwoIntegersOverflowDoesNotPopArguments [
+
+	"Marker"
+	| marker |
+	marker := self memory integerObjectOf: 17.
+	interpreter push: marker.
+
+	interpreter push: (self memory integerObjectOf: self memory maxSmallInteger).
+	interpreter push: (self memory integerObjectOf: -1).
+	interpreter primitiveSubtract.
+
+	interpreter popStack; popStack.
+	self assert: interpreter popStack equals: marker
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMPrimitiveTest >> testSubtractTwoIntegersPopsArguments [
+	| marker |
+	"Marker"
+	marker := self memory integerObjectOf: 17.
+	interpreter push: marker.
+
+	interpreter push: (self memory integerObjectOf: 1).
+	interpreter push: (self memory integerObjectOf: 2).
+	interpreter primitiveSubtract.
+	
+	"Pop result"
+	interpreter popStack.
+
+	self assert: interpreter popStack equals: marker
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMPrimitiveTest >> testSubtractTwoIntegersResult [
+
+	interpreter push: (self memory integerObjectOf: 1).
+	interpreter push: (self memory integerObjectOf: 2).
+	interpreter primitiveSubtract.
+
+	self assert: interpreter successful.
+	self assert: (self memory integerValueOf: interpreter popStack) equals: -1
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMPrimitiveTest >> testSubtractTwoNegativeIntegersPopsArguments [
+	| marker |
+	"Marker"
+	marker := self memory integerObjectOf: 17.
+	interpreter push: marker.
+
+	interpreter push: (self memory integerObjectOf: -1).
+	interpreter push: (self memory integerObjectOf: -2).
+	interpreter primitiveSubtract.
+	
+	"Pop result"
+	interpreter popStack.
+
+	self assert: interpreter popStack equals: marker
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMPrimitiveTest >> testSubtractTwoNegativeIntegersResult [
+
+	interpreter push: (self memory integerObjectOf: -1).
+	interpreter push: (self memory integerObjectOf: -2).
+	interpreter primitiveSubtract.
+
+	self assert: interpreter successful.
+	self assert: (self memory integerValueOf: interpreter popStack) equals: 1
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMPrimitiveTest >> testSubtractTwoNegativeIntegersUnderflow [
+
+	interpreter push: (self memory integerObjectOf: self memory minSmallInteger).
+	interpreter push: (self memory integerObjectOf: 1).
+	interpreter primitiveSubtract.
+
+	self assert: interpreter failed
+]
+
+{ #category : #'tests - primitiveSubtract' }
+VMPrimitiveTest >> testSubtractTwoNegativeIntegersUnderflowDoesNotPopArguments [
+
+	"Marker"
+	| marker |
+	marker := self memory integerObjectOf: 17.
+	interpreter push: marker.
+
+	interpreter push: (self memory integerObjectOf: self memory minSmallInteger).
+	interpreter push: (self memory integerObjectOf: 1).
+	interpreter primitiveSubtract.
+
+	interpreter popStack; popStack.
+	self assert: interpreter popStack equals: marker
+]
