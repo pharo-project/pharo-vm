@@ -2523,6 +2523,12 @@ SpurMemoryManager >> arrayValueOf: arrayOop [
 	^coInterpreter arrayValueOf: arrayOop
 ]
 
+{ #category : #'type-support' }
+SpurMemoryManager >> asSignedPlatformInteger: anInteger [ 
+	
+	self subclassResponsibility
+]
+
 { #category : #'free space' }
 SpurMemoryManager >> assertFreeChunkPrevHeadZero [
 	|min|
@@ -8760,6 +8766,11 @@ SpurMemoryManager >> maxCInteger [
 	self subclassResponsibility
 ]
 
+{ #category : #'interpreter access' }
+SpurMemoryManager >> maxCSignedInteger [
+	self subclassResponsibility
+]
+
 { #category : #accessing }
 SpurMemoryManager >> maxIdentityHash [
 	^self identityHashHalfWordMask
@@ -8974,6 +8985,12 @@ SpurMemoryManager >> methodReturnValue: oop [
 	"hack around the CoInterpreter/ObjectMemory split refactoring"
 	<doNotGenerate>
 	^coInterpreter methodReturnValue: oop
+]
+
+{ #category : #'interpreter access' }
+SpurMemoryManager >> minCSignedInteger [
+
+	^ self maxCSignedInteger negated - 1
 ]
 
 { #category : #allocation }

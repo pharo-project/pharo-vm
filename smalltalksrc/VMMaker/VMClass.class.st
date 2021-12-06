@@ -545,7 +545,7 @@ VMClass >> asserta: aBooleanExpression l: linenum [
 	^self asserta: aBooleanExpression
 ]
 
-{ #category : #'memory access' }
+{ #category : #'type-support' }
 VMClass >> cCoerce: value to: cTypeString [
 	"Type coercion. For translation a cast will be emmitted. When running in Smalltalk
 	  answer a suitable wrapper for correct indexing."

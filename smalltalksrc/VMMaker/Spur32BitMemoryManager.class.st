@@ -159,6 +159,12 @@ Spur32BitMemoryManager >> allocateSlotsInOldSpace: numSlots bytes: totalBytes fo
 	^chunk
 ]
 
+{ #category : #'type-support' }
+Spur32BitMemoryManager >> asSignedPlatformInteger: anInteger [ 
+	
+	^ anInteger signedIntFromLong
+]
+
 { #category : #snapshot }
 Spur32BitMemoryManager >> byteSwapped: w [
 	"Answer the given integer with its bytes in the reverse order."
@@ -742,6 +748,11 @@ Spur32BitMemoryManager >> logBytesPerOop [
 { #category : #'interpreter access' }
 Spur32BitMemoryManager >> maxCInteger [
 	^16rFFFFFFFF
+]
+
+{ #category : #'interpreter access' }
+Spur32BitMemoryManager >> maxCSignedInteger [
+	^16r7FFFFFFF
 ]
 
 { #category : #instantiation }

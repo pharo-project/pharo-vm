@@ -555,7 +555,7 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveAddReturnsAnSmallInteger [
 	self
 		prepareStackForSendReceiver: (memory integerObjectOf: 42)
 		arguments: { memory integerObjectOf: 52 }.
-	1halt.
+
 	self runFrom: primitiveAddress until: callerAddress.
 	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 94).
 ]

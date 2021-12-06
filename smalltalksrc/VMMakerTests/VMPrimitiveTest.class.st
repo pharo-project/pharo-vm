@@ -66,6 +66,114 @@ VMPrimitiveTest >> tearDown [
 	super tearDown
 ]
 
+{ #category : #'tests - primitiveAdd' }
+VMPrimitiveTest >> testAddTwoIntegersOverflow [
+
+	interpreter push: (self memory integerObjectOf: self memory maxSmallInteger).
+	interpreter push: (self memory integerObjectOf: 1).
+	interpreter primitiveAdd.
+
+	self assert: interpreter failed
+]
+
+{ #category : #'tests - primitiveAdd' }
+VMPrimitiveTest >> testAddTwoIntegersOverflowDoesNotPopArguments [
+
+	"Marker"
+	| marker |
+	marker := self memory integerObjectOf: 17.
+	interpreter push: marker.
+
+	interpreter push: (self memory integerObjectOf: self memory maxSmallInteger).
+	interpreter push: (self memory integerObjectOf: 1).
+	interpreter primitiveAdd.
+
+	interpreter popStack; popStack.
+	self assert: interpreter popStack equals: marker
+]
+
+{ #category : #'tests - primitiveAdd' }
+VMPrimitiveTest >> testAddTwoIntegersPopsArguments [
+	| marker |
+	"Marker"
+	marker := self memory integerObjectOf: 17.
+	interpreter push: marker.
+
+	interpreter push: (self memory integerObjectOf: 1).
+	interpreter push: (self memory integerObjectOf: 2).
+	interpreter primitiveAdd.
+	
+	"Pop result"
+	interpreter popStack.
+
+	self assert: interpreter popStack equals: marker
+]
+
+{ #category : #'tests - primitiveAdd' }
+VMPrimitiveTest >> testAddTwoIntegersResult [
+
+	interpreter push: (self memory integerObjectOf: 1).
+	interpreter push: (self memory integerObjectOf: 2).
+	interpreter primitiveAdd.
+
+	self assert: interpreter successful.
+	self assert: (self memory integerValueOf: interpreter popStack) equals: 3
+]
+
+{ #category : #'tests - primitiveAdd' }
+VMPrimitiveTest >> testAddTwoNegativeIntegersPopsArguments [
+	| marker |
+	"Marker"
+	marker := self memory integerObjectOf: 17.
+	interpreter push: marker.
+
+	interpreter push: (self memory integerObjectOf: -1).
+	interpreter push: (self memory integerObjectOf: -2).
+	interpreter primitiveAdd.
+	
+	"Pop result"
+	interpreter popStack.
+
+	self assert: interpreter popStack equals: marker
+]
+
+{ #category : #'tests - primitiveAdd' }
+VMPrimitiveTest >> testAddTwoNegativeIntegersResult [
+
+	interpreter push: (self memory integerObjectOf: -1).
+	interpreter push: (self memory integerObjectOf: -2).
+	interpreter primitiveAdd.
+
+	self assert: interpreter successful.
+	self assert: (self memory integerValueOf: interpreter popStack) equals: -3
+]
+
+{ #category : #'tests - primitiveAdd' }
+VMPrimitiveTest >> testAddTwoNegativeIntegersUnderflow [
+
+	interpreter push: (self memory integerObjectOf: self memory minSmallInteger).
+	interpreter push: (self memory integerObjectOf: -1).
+	interpreter primitiveAdd.
+
+	self assert: interpreter failed
+]
+
+{ #category : #'tests - primitiveAdd' }
+VMPrimitiveTest >> testAddTwoNegativeIntegersUnderflowDoesNotPopArguments [
+
+	"Marker"
+	| marker |
+	marker := self memory integerObjectOf: 17.
+	interpreter push: marker.
+
+	interpreter push: (self memory integerObjectOf: self memory minSmallInteger).
+	interpreter push: (self memory integerObjectOf: -1).
+	interpreter primitiveAdd.
+
+	interpreter popStack; popStack.
+	self assert: interpreter popStack equals: marker
+]
+
 { #category : #'tests - become' }
 VMPrimitiveTest >> testPrimitiveArrayBecomeCreatesForwardersForObjectsOfDifferentSize [
 	| class1 class2 object1 object2 array1 array2 |

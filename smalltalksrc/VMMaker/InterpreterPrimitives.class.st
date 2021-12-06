@@ -707,7 +707,24 @@ InterpreterPrimitives >> positiveMachineIntegerValueOf: oop [
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveAdd [
 	<numberOfArguments: 1>
-	self pop2AndPushIntegerIfOK: (self stackIntegerValue: 1) + (self stackIntegerValue: 0)
+	
+	| maybeSmallInteger maybeSmallInteger2 result |
+
+	maybeSmallInteger := self stackValue: 0.
+	maybeSmallInteger2 := self stackValue: 1.
+	
+	(objectMemory isIntegerObject: maybeSmallInteger)
+		ifFalse: [ ^ self primitiveFail ].
+	(objectMemory isIntegerObject: maybeSmallInteger2)
+		ifFalse: [ ^ self primitiveFail ].
+
+	"Check for overflow"
+	result := self
+		sumInteger: (self withoutSmallIntegerTags2: maybeSmallInteger)
+		withInteger: maybeSmallInteger2
+		ifOverflow: [ ^ self primitiveFail ].
+
+	self pop: 2 thenPush: result
 ]
 
 { #category : #'arithmetic integer primitives' }
@@ -779,6 +796,12 @@ InterpreterPrimitives >> primitiveAddLargeIntegers [
 					resultIsNegative := bIsNegative]].
 	oopResult := self magnitude64BitIntegerFor: result neg: resultIsNegative.
 	self successful ifTrue:[self pop: 2 thenPush: oopResult].
+]
+
+{ #category : #'arithmetic integer primitives' }
+InterpreterPrimitives >> primitiveAddOld [
+	<numberOfArguments: 1>
+	self pop2AndPushIntegerIfOK: (self stackIntegerValue: 1) + (self stackIntegerValue: 0)
 ]
 
 { #category : #'object access primitives' }
@@ -4881,6 +4904,26 @@ InterpreterPrimitives >> primitiveSubtract [
 	self pop2AndPushIntegerIfOK: (self stackIntegerValue: 1) - (self stackIntegerValue: 0)
 ]
 
+{ #category : #'arithmetic integer primitives' }
+InterpreterPrimitives >> primitiveSubtract2 [
+	<numberOfArguments:1>
+	| argumentOop receiverOop result |
+	
+	argumentOop := self stackValue: 0.
+	(objectMemory isIntegerObject: argumentOop)
+		ifFalse: [ ^ self primitiveFail ].
+
+	receiverOop := self stackValue: 1.
+	(objectMemory isIntegerObject: receiverOop)
+		ifFalse: [ ^ self primitiveFail ].	
+	
+	result := (objectMemory integerValueOf: receiverOop) - (objectMemory integerValueOf: argumentOop).
+	(objectMemory isIntegerValue: result)
+		ifFalse: [ ^ self primitiveFail ].
+	
+	self pop: 2 thenPush: (objectMemory integerObjectOf: result)
+]
+
 { #category : #'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveSubtractLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
@@ -5593,12 +5636,23 @@ InterpreterPrimitives >> successful [
 	^ primFailCode = 0
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : #arithmetic }
 InterpreterPrimitives >> sumInteger: anInteger withInteger: anotherInteger ifOverflow: aBlock [
 
+	"Sum two signed integers and detect signed overflow.
+	Arguments "
+
 	"Overflow!"
-	anInteger > objectMemory maxCInteger - anotherInteger
+	| signedInt1 signedInt2 |
+	signedInt1 := objectMemory asSignedPlatformInteger: anInteger.
+	signedInt2 := objectMemory asSignedPlatformInteger: anotherInteger.
+
+	signedInt1 > (objectMemory maxCSignedInteger - signedInt2)
 		ifTrue: aBlock.
 
-	^ anInteger + anotherInteger
+	"Underflow!"
+	signedInt1 < (objectMemory minCSignedInteger - signedInt2)
+		ifTrue: aBlock.
+
+	^ signedInt1 + signedInt2
 ]

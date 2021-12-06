@@ -170,6 +170,12 @@ Spur64BitMemoryManager >> allocateSlotsInOldSpace: numSlots bytes: totalBytes fo
 	^chunk
 ]
 
+{ #category : #'type-support' }
+Spur64BitMemoryManager >> asSignedPlatformInteger: anInteger [ 
+	
+	^ anInteger signedIntFromLong64
+]
+
 { #category : #snapshot }
 Spur64BitMemoryManager >> byteSwapped: w [
 	"Answer the given integer with its bytes in the reverse order."
@@ -833,6 +839,11 @@ Spur64BitMemoryManager >> maxCInteger [
 	^16rFFFFFFFFFFFFFFFF
 ]
 
+{ #category : #'interpreter access' }
+Spur64BitMemoryManager >> maxCSignedInteger [
+	^16r7FFFFFFFFFFFFFFF
+]
+
 { #category : #instantiation }
 Spur64BitMemoryManager >> maxSlotsForAlloc [
 	"Answer the maximum number of slots we are willing to attempt to allocate in an object.
@@ -862,6 +873,12 @@ Spur64BitMemoryManager >> methodDictionaryHash: oop mask: mask [
 	^mask bitAnd: ((self isImmediate: oop)
 						ifTrue: [self integerValueOf: oop] "this will fail for SmallFloat64 but we don't care"
 						ifFalse: [self rawHashBitsOf: oop]) "If no hash then it isn't in the dictionary..."
+]
+
+{ #category : #'interpreter access' }
+Spur64BitMemoryManager >> minCInteger [
+	"-maxInt - 1"
+	^-16r10000000000000000
 ]
 
 { #category : #'interpreter access' }
