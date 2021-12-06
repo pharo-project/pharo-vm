@@ -15,7 +15,8 @@ Class {
 		'firstSegSize',
 		'freeOldSpaceInImage',
 		'swapBytes',
-		'hdrLastHash'
+		'hdrLastHash',
+		'imageFormat'
 	],
 	#category : #'VMMaker-JIT'
 }
@@ -177,6 +178,18 @@ SpurImageHeaderStruct >> headerSize [
 SpurImageHeaderStruct >> headerSize: anObject [
 
 	headerSize := anObject
+]
+
+{ #category : #accessing }
+SpurImageHeaderStruct >> imageFormat [
+
+	^ imageFormat
+]
+
+{ #category : #accessing }
+SpurImageHeaderStruct >> imageFormat: anObject [
+
+	imageFormat := anObject
 ]
 
 { #category : #accessing }

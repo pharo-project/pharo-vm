@@ -4086,34 +4086,6 @@ StackInterpreter >> checkForStackOverflow [
 		[self handleStackOverflow]
 ]
 
-{ #category : #'image save/restore' }
-StackInterpreter >> checkImageVersionFrom: f [
-	"Read and verify the image file version number and return true if the the given image file needs to be byte-swapped. As a side effect, position the file stream just after the version number of the image header. This code prints a warning and does a hard-exit if it cannot find a valid version number."
-	"This code is based on C code by Ian Piumarta."
-
-	<inline: false>
-	| version firstVersion |
-	<var: #f type: #sqImageFile>
-	<var: #imageOffset type: #squeakFileOffsetType>
-
-	"check the version number"
-	version := firstVersion := self getWord32FromFile: f swap: false.
-	(self readableFormat: version) ifTrue: [^ false].
-
-	"try with bytes reversed"
-	(self readableFormat: version byteSwap32) ifTrue: [^ true].
-
-	"hard failure; abort"
-	self logError: 'Invalid image format: detected version %d, expected version %d' 
-		_: firstVersion 
-		_: self imageFormatVersion.
-	
-	self ioExitWithErrorCode: 1.
-	
-	"This is needed by Slang"
-	^false	
-]
-
 { #category : #'object memory support' }
 StackInterpreter >> checkInterpreterIntegrity [
 	"Perform an integrity/leak check using the heapMap.  Assume
@@ -5036,6 +5008,22 @@ StackInterpreter >> defaultNumStackPages [
 	^objectMemory hasSpurMemoryManagerAPI
 		ifTrue: [50]
 		ifFalse: [160]
+]
+
+{ #category : #accessing }
+StackInterpreter >> desiredEdenBytes [
+
+	<doNotGenerate>
+	
+	^ desiredEdenBytes
+]
+
+{ #category : #accessing }
+StackInterpreter >> desiredNumStackPages [
+	
+	<doNotGenerate>
+	
+	^ desiredNumStackPages
 ]
 
 { #category : #'debug support' }
@@ -5964,6 +5952,55 @@ StackInterpreter >> externalizeIPandSP [
 	instructionPointer := self oopForPointer: localIP.
 	stackPointer := localSP.
 	framePointer := localFP
+]
+
+{ #category : #accessing }
+StackInterpreter >> extraVMMemory [
+
+	<doNotGenerate>
+
+	^ extraVMMemory
+]
+
+{ #category : #accessing }
+StackInterpreter >> extraVMMemory: anInteger [ 
+
+	<doNotGenerate>
+	extraVMMemory := anInteger
+]
+
+{ #category : #'image save/restore' }
+StackInterpreter >> extractImageVersionFrom: file into: header [
+	"Read and verify the image file version number and return true if the the given image file needs to be byte-swapped. As a side effect, position the file stream just after the version number of the image header. This code prints a warning and does a hard-exit if it cannot find a valid version number."
+	"This code is based on C code by Ian Piumarta."
+
+	<inline: false>
+	| version firstVersion |
+	<var: #file type: #sqImageFile>
+	<var: #imageOffset type: #squeakFileOffsetType>
+	<var: #header type: #SpurImageHeaderStruct>
+
+	"check the version number"
+	version := firstVersion := self getWord32FromFile: file swap: false.
+	(self readableFormat: version) ifTrue: [
+		header imageFormat: version.
+		header swapBytes: false.
+		^ self].
+
+	"try with bytes reversed"
+	(self readableFormat: version byteSwap32) 
+		ifTrue: [
+			header imageFormat: version byteSwap32.
+			header swapBytes: true.
+			^ self].
+
+	"hard failure; abort"
+	self logError: 'Invalid image format: detected version %d, expected version %d' 
+		_: firstVersion 
+		_: self imageFormatVersion.
+	
+	self ioExitWithErrorCode: 1.
+
 ]
 
 { #category : #'primitive support' }
@@ -10151,6 +10188,13 @@ StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 
 ]
 
+{ #category : #accessing }
+StackInterpreter >> maxExtSemTabSizeSet [
+	
+	<doNotGenerate>
+	^ maxExtSemTabSizeSet
+]
+
 { #category : #'primitive support' }
 StackInterpreter >> maybeFailForLastObjectOverwrite [
 	<inline: true>
@@ -12989,39 +13033,46 @@ StackInterpreter >> quinaryInlinePrimitive: primIndex [
 StackInterpreter >> readHeaderFrom: f startingAt: headerStart [
 
 	<var: #f type: #sqImageFile>
-	<var: #headerStart type: #'squeakFileOffsetType'>
-	<var: #header type: #'SpurImageHeaderStruct'>
-	<returnTypeC: #'SpurImageHeaderStruct'>
-
+	<var: #headerStart type: #squeakFileOffsetType>
+	<var: #header type: #SpurImageHeaderStruct>
+	<returnTypeC: #SpurImageHeaderStruct>
 	| header |
-	
-	self simulationOnly: [ header := SpurImageHeaderStruct new].
+	self simulationOnly: [ header := SpurImageHeaderStruct new ].
 
-	header swapBytes: (self checkImageVersionFrom: f).
+	self extractImageVersionFrom: f into: header.
 
 	header headerSize: (self getWord32FromFile: f swap: header swapBytes).
 	header dataSize: (self getLongFromFile: f swap: header swapBytes).
 	header oldBaseAddr: (self getLongFromFile: f swap: header swapBytes).
-	header initialSpecialObjectsOop: (self getLongFromFile: f swap: header swapBytes).
-	
-	header hdrLastHash: (self getLongFromFile: f swap: header swapBytes).	
-	
-	"savedWindowSize :=" self getLongFromFile: f swap: header swapBytes.
+	header initialSpecialObjectsOop:
+		(self getLongFromFile: f swap: header swapBytes).
+
+	header hdrLastHash: (self getLongFromFile: f swap: header swapBytes).
+
+	"savedWindowSize :="
+	self getLongFromFile: f swap: header swapBytes.
 	header headerFlags: (self getLongFromFile: f swap: header swapBytes).
 
-	header extraVMMemory: (self getWord32FromFile: f swap: header swapBytes).
-	header hdrNumStackPages: (self getShortFromFile: f swap: header swapBytes).
+	header extraVMMemory:
+		(self getWord32FromFile: f swap: header swapBytes).
+	header hdrNumStackPages:
+		(self getShortFromFile: f swap: header swapBytes).
 	"This slot holds the size of the native method zone in 1k units. (pad to word boundary)."
-	header hdrCogCodeSize: ((self getShortFromFile: f swap: header swapBytes) * 1024).
-	header hdrEdenBytes: (self getWord32FromFile: f swap: header swapBytes).
+	header hdrCogCodeSize:
+		(self getShortFromFile: f swap: header swapBytes) * 1024.
+	header hdrEdenBytes:
+		(self getWord32FromFile: f swap: header swapBytes).
 
-	header hdrMaxExtSemTabSize: (self getShortFromFile: f swap: header swapBytes).
+	header hdrMaxExtSemTabSize:
+		(self getShortFromFile: f swap: header swapBytes).
 	"pad to word boundary.  This slot can be used for anything else that will fit in 16 bits.
 	 Preserve it to be polite to other VMs."
-	"the2ndUnknownShort :=" self getShortFromFile: f swap: header swapBytes.
+	"the2ndUnknownShort :="
+	self getShortFromFile: f swap: header swapBytes.
 	header firstSegSize: (self getLongFromFile: f swap: header swapBytes).
 
-	header freeOldSpaceInImage:(self getLongFromFile: f swap: header swapBytes).
+	header freeOldSpaceInImage:
+		(self getLongFromFile: f swap: header swapBytes).
 
 	"position file after the header"
 	self sqImageFile: f Seek: headerStart + header headerSize.
