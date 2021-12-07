@@ -1097,6 +1097,13 @@ VMClass >> singleFloatAtPointer: pointer put: value [
 	self halt.
 ]
 
+{ #category : #'I/O primitive support' }
+VMClass >> sqImageFile: imageFile Seek: position [
+
+	<doNotGenerate>
+	imageFile position: position
+]
+
 { #category : #'simulation support' }
 VMClass >> sqLowLevelMFence [
 	<doNotGenerate>
