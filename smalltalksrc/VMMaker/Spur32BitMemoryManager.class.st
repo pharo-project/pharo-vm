@@ -57,108 +57,6 @@ Spur32BitMemoryManager >> addressAfter: objOop [
 	^objOop + self baseHeaderSize + (numSlots + (numSlots bitAnd: 1) bitShift: self shiftForWord)
 ]
 
-{ #category : #allocation }
-Spur32BitMemoryManager >> allocateSlots: numSlots format: formatField classIndex: classIndex isPinned: isPinned [
-	"Allocate an object with numSlots space.  If there is room beneath scavengeThreshold
-	 allocate in newSpace, otherwise alocate in oldSpace.  If there is not room in newSpace
-	 and a scavenge is not already scheduled, schedule a scavenge."
-	<inline: true>
-	| numBytes newObj hasToScheduleScavenge |
-	"Object headers are 8 bytes in length if the slot size fits in the num slots field (max implies overflow),
-	 16 bytes otherwise (num slots in preceding word).
-	 Objects always have at least one slot, for the forwarding pointer,
-	 and are multiples of 8 bytes in length."
-	numSlots >= self numSlotsMask
-		ifTrue:
-			[newObj := freeStart + self baseHeaderSize.
-			 numBytes := self largeObjectBytesForSlots: numSlots]
-		ifFalse:
-			[newObj := freeStart.
-			 numBytes := self smallObjectBytesForSlots: numSlots].
-	
-	hasToScheduleScavenge := freeStart + numBytes > scavengeThreshold.
-	
-	(hasToScheduleScavenge or: [isPinned]) ifTrue:[ 
-		hasToScheduleScavenge ifTrue: [needGCFlag 	ifFalse: [self scheduleScavenge]].
-		
-		isPinned 
-			ifTrue: [ 
-				^self 
-					allocateSlotsForPinningInOldSpace: numSlots 
-					bytes: numBytes format: formatField classIndex: classIndex ]
-			ifFalse: [ 
-				^self 
-					allocateSlotsInOldSpace: numSlots 
-					bytes: numBytes format: formatField classIndex: classIndex ]].
-
-	numSlots >= self numSlotsMask
-		ifTrue: "for header parsing we put a saturated slot count in the prepended overflow size word"
-			[self flag: #endianness.
-			 self longAt: freeStart put: numSlots.
-			 self longAt: freeStart + 4 put: self numSlotsMask << self numSlotsHalfShift.
-			 self long64At: newObj put: (self headerForSlots: self numSlotsMask format: formatField classIndex: classIndex)]
-		ifFalse:
-			[self long64At: newObj put: (self headerForSlots: numSlots format: formatField classIndex: classIndex)].
-	self assert: numBytes \\ self allocationUnit = 0.
-	self assert: newObj \\ self allocationUnit = 0.
-	freeStart := freeStart + numBytes.
-	^newObj
-]
-
-{ #category : #allocation }
-Spur32BitMemoryManager >> allocateSlotsForPinningInOldSpace: numSlots bytes: totalBytes format: formatField classIndex: classIndex [
-	"Answer the oop of a chunk of space in oldSpace with numSlots slots.  Try and
-	 allocate in a segment that already includes pinned objects.  The header of the
-	 result will have been filled-in but not the contents."
-	<var: #totalBytes type: #usqInt>
-	<inline: false>
-	| chunk |
-	chunk := self allocateOldSpaceChunkOfBytes: totalBytes
-				   suchThat: [:f| (segmentManager segmentContainingObj: f) containsPinned].
-	chunk ifNil:
-		[chunk := self allocateOldSpaceChunkOfBytes: totalBytes.
-		 chunk ifNil:
-			[^nil].
-		 (segmentManager segmentContainingObj: chunk) containsPinned: true].
-	numSlots >= self numSlotsMask ifTrue: "for header parsing we put a saturated slot count in the prepended overflow size word"
-		[self flag: #endianness.
-		 self longAt: chunk put: numSlots.
-		 self longAt: chunk + 4 put: self numSlotsMask << self numSlotsHalfShift.
-		 self long64At: chunk + self baseHeaderSize
-			 put: ((self headerForSlots: self numSlotsMask format: formatField classIndex: classIndex)
-					bitOr: 1 << self pinnedBitShift).
-		 self checkFreeSpace: GCModeNewSpace.
-		 ^chunk + self baseHeaderSize].
-	self long64At: chunk
-		put: ((self headerForSlots: numSlots format: formatField classIndex: classIndex)
-					bitOr: 1 << self pinnedBitShift).
-	self checkFreeSpace: GCModeNewSpace.
-	^chunk
-]
-
-{ #category : #allocation }
-Spur32BitMemoryManager >> allocateSlotsInOldSpace: numSlots bytes: totalBytes format: formatField classIndex: classIndex [
-	"Answer the oop of a chunk of space in oldSpace with numSlots slots.  The header
-	 will have been filled-in but not the contents.  If no memory is available answer nil."
-	<var: #totalBytes type: #usqInt>
-	<inline: false>
-	| chunk |
-	chunk := self allocateOldSpaceChunkOfBytes: totalBytes.
-	chunk ifNil:
-		[^nil].
-	numSlots >= self numSlotsMask ifTrue: "for header parsing we put a saturated slot count in the prepended overflow size word"
-		[self flag: #endianness.
-		 self longAt: chunk put: numSlots.
-		 self longAt: chunk + 4 put: self numSlotsMask << self numSlotsHalfShift.
-		 self long64At: chunk + self baseHeaderSize
-			put: (self headerForSlots: self numSlotsMask format: formatField classIndex: classIndex).
-		 self checkFreeSpace: GCModeNewSpace.
-		 ^chunk + self baseHeaderSize].
-	self long64At: chunk put: (self headerForSlots: numSlots format: formatField classIndex: classIndex).
-	self checkFreeSpace: GCModeNewSpace.
-	^chunk
-]
-
 { #category : #'type-support' }
 Spur32BitMemoryManager >> asSignedPlatformInteger: anInteger [ 
 	
@@ -767,14 +665,6 @@ Spur32BitMemoryManager >> maxSmallInteger [
 	^16r3FFFFFFF
 ]
 
-{ #category : #simulation }
-Spur32BitMemoryManager >> memoryClass [
-	<doNotGenerate>
-	^SpurSimulatedMemory"self endianness == #little
-		ifTrue: [LittleEndianBitmap]
-		ifFalse: [Bitmap]"
-]
-
 { #category : #'interpreter access' }
 Spur32BitMemoryManager >> methodDictionaryHash: oop mask: mask [
 	<inline: true>
@@ -788,12 +678,6 @@ Spur32BitMemoryManager >> methodDictionaryHash: oop mask: mask [
 { #category : #'interpreter access' }
 Spur32BitMemoryManager >> minSmallInteger [
 	^-16r40000000
-]
-
-{ #category : #simulation }
-Spur32BitMemoryManager >> newInputEventAccessorOfSize: numElements [
-	<doNotGenerate>
-	^CArrayAccessor on: (IntegerArray new: 8)
 ]
 
 { #category : #'free space' }
@@ -896,12 +780,6 @@ Spur32BitMemoryManager >> rtRefCountOf: obj put: refCount [
 	header := header bitAnd: (7 << self rememberedBitShift) bitInvert32.
 	header := header + (refCount << self rememberedBitShift).
 	self longAt: obj put: header
-]
-
-{ #category : #'image segment in/out' }
-Spur32BitMemoryManager >> savedOutHashFillValue [
-	<inline: true>
-	^self maxIdentityHash + 1
 ]
 
 { #category : #'header access' }

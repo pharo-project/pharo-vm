@@ -10,9 +10,19 @@ function(find_system_Freetype)
 endfunction()
 
 function(download_Freetype)
-  if (WIN OR OSX)
-    # Download it for now, except for linuxes
-    add_third_party_dependency("freetype-2.9.1")
+  if (WIN)
+	add_third_party_dependency("freetype-2.9.1")
+  elseif(OSX)
+    If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64")
+      add_third_party_dependency("freetype-2.10.0")
+      add_third_party_dependency("fontconfig-2.13.1")
+    else()
+      add_third_party_dependency("freetype-2.9.1")
+    endif()
+  else() # linuxes, only for ARM
+    If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv7l" OR (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64"))
+      add_third_party_dependency("freetype-2.10.0")
+    endif()    
   endif()
 endfunction()
 

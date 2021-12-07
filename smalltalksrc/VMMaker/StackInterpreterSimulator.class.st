@@ -356,12 +356,6 @@ StackInterpreterSimulator >> clipboardSize [
 	^ Clipboard clipboardText size
 ]
 
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> clipboardWrite: sz From: actualDataAddress At: ignored [
-
-	Clipboard clipboardText: (self stringOf: actualDataAddress - objectMemory baseHeaderSize)
-]
-
 { #category : #'debug support' }
 StackInterpreterSimulator >> cloneSimulation [
 	| savedAtEachStepBlock savedDisplayView savedDisplayForm savedQuitBlock savedTranscript |
@@ -397,6 +391,19 @@ StackInterpreterSimulator >> cloneSimulationWindow [
 { #category : #initialization }
 StackInterpreterSimulator >> close [  "close any files that ST may have opened, etc"
 	pluginList do: [:assoc| | plugin | plugin := assoc value. plugin ~~ self ifTrue: [plugin close]]
+]
+
+{ #category : #'primitive support' }
+StackInterpreterSimulator >> codeGeneratorToComputeAccessorDepth [
+
+	^ codeGeneratorToComputeAccessorDepth ifNil: [
+		^(VMMaker new
+			vmmakerConfiguration: VMMakerConfiguration;
+			buildCodeGeneratorForInterpreter: self class primitivesClass
+			includeAPIMethods: false
+			initializeClasses: false)
+				logger: self transcript;
+				yourself ]
 ]
 
 { #category : #'simulation only' }
@@ -695,26 +702,6 @@ StackInterpreterSimulator >> framePointer [
 	^framePointer
 ]
 
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> fullDisplay [
-	| primFailCodeValue |
-	displayForm ifNil: [^self].
-	primFailCodeValue := primFailCode.
-	self initPrimCall.
-	self updateDisplayLeft: 0 Top: 0 Right: displayWidth Bottom: displayHeight.
-	primFailCode := primFailCodeValue
-]
-
-{ #category : #'debug support' }
-StackInterpreterSimulator >> fullDisplayUpdate [
-	"Preserve self successful when call asynchronously from Simulator"
-	| primFailCodeValue |
-	primFailCodeValue := primFailCode.
-	self initPrimCall.
-	super fullDisplayUpdate.
-	primFailCode := primFailCodeValue
-]
-
 { #category : #'interpreter shell' }
 StackInterpreterSimulator >> functionPointerFor: primIndex inClass: lookupClass [
 	"Override Interpreter to handle the external primitives caching.  See also
@@ -995,11 +982,6 @@ StackInterpreterSimulator >> ioGetNextEvent: evtBuf [
 			[:i| (evt at: i) ifNotNil: [:val| evtBuf at: (i - 1) put: val asInteger]]]
 ]
 
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> ioHasDisplayDepth: depth [
-	^Display supportsDisplayDepth: depth
-]
-
 { #category : #'I/O primitives support' }
 StackInterpreterSimulator >> ioHeartbeatMilliseconds [
 	^1
@@ -1159,44 +1141,11 @@ StackInterpreterSimulator >> ioScreenSize [
 	^extent x << 16 + extent y
 ]
 
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> ioSetInputSemaphore: index [
-
-	self primitiveFail
-]
-
 { #category : #'process primitive support' }
 StackInterpreterSimulator >> ioSetMaxExtSemTableSize: anInteger [
 	"Inform the VM of the maximum size the image will grow the exernal semaphore table (specialObjectsArray at: 39) to.
 	 This allows the VM to allocate storage such that external semaphores can be signalled without locking."
 	extSemTabSize := anInteger
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> ioShow: destBits D: w i: h s: d p: left l: right a: top y: bottom [
-	"This is the simulator's implementation of ioShowDisplay."
-	| raster pixPerWord simDisp realDisp rect |
-	displayForm ifNil: [^self].
-	displayBits = 0 ifTrue: [^self].
-	pixPerWord := 32 // d.
-	raster := displayForm width + (pixPerWord - 1) // pixPerWord.
-	simDisp := Form new hackBits: objectMemory memory.
-	displayForm unhibernate.
-	realDisp := Form new hackBits: displayForm bits.
-	realDisp
-		copy: (0 @ (top * raster) extent: 4 @ (bottom - top * raster))
-		from: 0 @ (destBits // 4 + (top * raster))
-		in: simDisp
-		rule: Form over.
-	displayView ifNotNil: [^displayView changed].
-	
-	"If running without a view, just blat the bits onto the screen..."
-	rect := 0 @ top corner: displayForm width @ bottom.
-	Display
-		copy: (rect translateBy: self displayLocation)
-		from: rect topLeft
-		in: displayForm
-		rule: Form over
 ]
 
 { #category : #'process primitive support' }
@@ -1498,202 +1447,29 @@ StackInterpreterSimulator >> nextShortFrom: aStream [
 	^self subclassResponsibility
 ]
 
-{ #category : #UI }
-StackInterpreterSimulator >> openAsMorph [
-	"Open a morphic view on this simulation."
-	| localImageName borderWidth window |
-	localImageName := imageName
-							ifNotNil: [self localNameFor: imageName]
-							ifNil: [' synthetic image'].
-	window := (SystemWindow labelled: 'Simulation of ', localImageName) model: self.
-	window paneColor: self windowColorToUse.
-
-	window addMorph: (displayView := SimulatorImageMorph new image: displayForm)
-			frame: (0@0 corner: 1@0.8).
-	displayView activeHand addEventListener: self.
-	eventTransformer := SimulatorEventTransformer new.
-
-	transcript := TranscriptStream on: (String new: 10000).
-	window addMorph: (PluggableTextMorph
-							on: transcript text: nil accept: nil
-							readSelection: nil menu: #codePaneMenu:shifted:)
-			frame: (0@0.8 corner: 0.7@1).
-	window addMorph: (PluggableTextMorph on: self
-						text: #byteCountText accept: nil
-						readSelection: nil menu: #utilitiesMenu:) hideScrollBarsIndefinitely
-			frame: (0.7@0.8 corner: 1@1).
-
-	borderWidth := [SystemWindow borderWidth] "Squeak 4.1"
-						on: MessageNotUnderstood
-						do: [:ex| 0]. "3.8"
-	borderWidth := borderWidth + window borderWidth.
-	window openInWorldExtent: (self desiredDisplayExtent
-								+ (2 * borderWidth@borderWidth)
-								+ (0@window labelHeight)
-								* (1@(1/0.8))) rounded.
-	^window
-]
-
-{ #category : #UI }
-StackInterpreterSimulator >> openAsMorphNoTranscript [
-	"Open a morphic view on this simulation."
-	| localImageName borderWidth window |
-	localImageName := imageName
-							ifNotNil: [self localNameFor: imageName]
-							ifNil: [' synthetic image'].
-	window := (SystemWindow labelled: 'Simulation of ', localImageName) model: self.
-	window paneColor: self windowColorToUse.
-
-	window addMorph: (displayView := SimulatorImageMorph new image: displayForm)
-			frame: (0@0 corner: 1@0.95).
-	displayView activeHand addEventListener: self.
-	eventTransformer := SimulatorEventTransformer new.
-
-	window addMorph: (PluggableTextMorph on: self
-						text: #byteCountText accept: nil
-						readSelection: nil menu: #utilitiesMenu:) hideScrollBarsIndefinitely
-		frame: (0@0.95 corner: 1@1).
-
-	borderWidth := [SystemWindow borderWidth] "Squeak 4.1"
-						on: MessageNotUnderstood
-						do: [:ex| 0]. "3.8"
-	borderWidth := borderWidth + window borderWidth.
-	window openInWorldExtent: (self desiredDisplayExtent
-								+ (2 * borderWidth@borderWidth)
-								+ (0@window labelHeight)
-								* (1@(1/0.95))) rounded
-]
-
-{ #category : #UI }
-StackInterpreterSimulator >> openAsSimulatorMorph [
-	"Open a morphic view on this simulation. ala Bert Freudenberg's
-	SqueakJS http://lively-web.org/users/bert/squeak.html	"
-	| localImageName borderWidth window |
-	localImageName := imageName
-							ifNil: [' synthetic image']
-							ifNotNil: [self localNameFor: imageName].
-
-	transcript := TranscriptStream on: (String new: 10000).
-
-	window := SimulatorMorph	
-					withVMSimulator: self 
-					title: 'Simulation of ' , localImageName, ' (beta)'
-					transcript: transcript.				
-
-	borderWidth := [SimulatorMorph borderWidth] "Squeak 4.1"
-						on: MessageNotUnderstood
-						do: [:ex | 0].
-	"3.8"
-	borderWidth := borderWidth + window borderWidth.
-	window openInWorldExtent: (self desiredDisplayExtent + (2 * borderWidth) + (0 @ window labelHeight) * (1 @ (1 / 0.8))) rounded.
-	^window
-]
-
 { #category : #initialization }
 StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
-	"StackInterpreterSimulator new openOn: 'clone.im' extraMemory: 100000"
 
-	| f version headerSize dataSize count oldBaseAddr bytesToShift swapBytes
-	  headerFlags heapBase firstSegSize heapSize
-	  hdrNumStackPages hdrEdenBytes hdrMaxExtSemTabSize allocationReserve |
+	"CogVMSimulator new openOn: 'clone.im' extraMemory: 100000"
+
+	| f |
+	
 	"open image file and read the header"
+	memoryManager := MachineSimulatorMemoryManager new.
+	objectMemory memoryManager: memoryManager.
+	memoryManager wordSize: objectMemory wordSize.
 
-	(f := self openImageFileNamed: fileName) ifNil: [^self].
+	(f := self openImageFileNamed: fileName) ifNil: [ ^ self ].
 
 	"Set the image name and the first argument; there are
 	 no arguments during simulation unless set explicitly."
-	systemAttributes at: 1 put: fileName; at: 2 put: nil.
+	systemAttributes
+		at: 1 put: fileName;
+		at: 2 put: nil.
 
-	["begin ensure block..."
-	imageName := f fullName.
-	f binary.
+	[ self readImageFromFile: f StartingAt: 0 ] 
+		ensure: [ f close ].
 
-	version := self getWord32FromFile: f swap: false.  "current version: 16r1968 (=6504) vive la revolucion!"
-	(self readableFormat: version)
-		ifTrue: [swapBytes := false]
-		ifFalse: [(version := objectMemory byteSwapped: version) = self imageFormatVersion
-					ifTrue: [swapBytes := true]
-					ifFalse: [self error: 'incomaptible image format']].
-	headerSize := self getWord32FromFile: f swap: swapBytes.
-	dataSize := self getLongFromFile: f swap: swapBytes.  "length of heap in file"
-	oldBaseAddr := self getLongFromFile: f swap: swapBytes.  "object memory base address of image"
-	objectMemory specialObjectsOop: (self getLongFromFile: f swap: swapBytes).
-	objectMemory lastHash: (self getLongFromFile: f swap: swapBytes).  "Should be loaded from, and saved to the image header"
-
-	savedWindowSize	:= self getLongFromFile: f swap: swapBytes.
-	headerFlags		:= self getLongFromFile: f swap: swapBytes.
-	self setImageHeaderFlagsFrom: headerFlags.
-	extraVMMemory	:= self getWord32FromFile: f swap: swapBytes.
-	hdrNumStackPages	:= self getShortFromFile: f swap: swapBytes.
-	"4 stack pages is small.  Should be able to run with as few as
-	 three. 4 should be comfortable but slow.  8 is a reasonable
-	 default. Can be changed via vmParameterAt: 43 put: n"
-	numStackPages := desiredNumStackPages ~= 0
-						ifTrue: [desiredNumStackPages]
-						ifFalse: [hdrNumStackPages = 0
-									ifTrue: [self defaultNumStackPages]
-									ifFalse: [hdrNumStackPages]].
-	desiredNumStackPages := hdrNumStackPages.
-	"pad to word boundary.  This slot can be used for anything else that will fit in 16 bits.
-	 It is used for the cog code size in Cog.  Preserve it to be polite to other VMs."
-	theUnknownShort	:= self getShortFromFile: f swap: swapBytes.
-	self assert: f position = (objectMemory wordSize = 4 ifTrue: [40] ifFalse: [64]).
-	hdrEdenBytes		:= self getWord32FromFile: f swap: swapBytes.
-	objectMemory edenBytes: (hdrEdenBytes = 0
-							ifTrue: [objectMemory defaultEdenBytes]
-							ifFalse: [hdrEdenBytes]).
-	desiredEdenBytes := hdrEdenBytes.
-	hdrMaxExtSemTabSize := self getShortFromFile: f swap: swapBytes.
-	hdrMaxExtSemTabSize ~= 0 ifTrue:
-		[self setMaxExtSemSizeTo: hdrMaxExtSemTabSize].
-	"pad to word boundary.  This slot can be used for anything else that will fit in 16 bits.
-	 Preserve it to be polite to other VMs."
-	the2ndUnknownShort	:= self getShortFromFile: f swap: swapBytes.
-	self assert: f position = (objectMemory wordSize = 4 ifTrue: [48] ifFalse: [72]).
-	firstSegSize := self getLongFromFile: f swap: swapBytes.
-	objectMemory firstSegmentSize: firstSegSize.
-	"compare memory requirements with availability"
-	allocationReserve := self interpreterAllocationReserveBytes.
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[| freeOldSpaceInImage headroom |
-			 freeOldSpaceInImage := self getLongFromFile: f swap: swapBytes.
-			 headroom := objectMemory
-							initialHeadroom: extraVMMemory
-							givenFreeOldSpaceInImage: freeOldSpaceInImage.
-			 heapSize := objectMemory roundUpHeapSize:
-						   dataSize
-						+ headroom
-						+ objectMemory newSpaceBytes
-						+ (headroom > allocationReserve
-							ifTrue: [0]
-							ifFalse: [allocationReserve])]
-		ifFalse:
-			[heapSize :=  dataSize
-						+ extraBytes
-						+ objectMemory newSpaceBytes
-						+ (extraBytes > allocationReserve
-							ifTrue: [0]
-							ifFalse: [allocationReserve])].
-	"allocate interpreter memory"
-	heapBase := objectMemory startOfMemory.
-	objectMemory
-		setHeapBase: heapBase
-		memoryLimit: heapBase + heapSize
-		endOfMemory: heapBase + dataSize. "bogus for Spur"
-	objectMemory allocateMemoryOfSize: objectMemory memoryLimit.
-	"read in the image in bulk, then swap the bytes if necessary"
-	f position: headerSize.
-	count := objectMemory readHeapFromImageFile: f dataBytes: dataSize.
-	count ~= dataSize ifTrue: [self halt]]
-		ensure: [f close].
-
-	self ensureImageFormatIsUpToDate: swapBytes.
-
-	bytesToShift := objectMemory memoryBaseForImageRead - oldBaseAddr.  "adjust pointers for zero base address"
-	UIManager default
-		informUser: 'Relocating object pointers...'
-		during: [self initializeInterpreter: bytesToShift]
 ]
 
 { #category : #accessing }
@@ -1754,12 +1530,6 @@ StackInterpreterSimulator >> primitiveAtPut [
 	^super primitiveAtPut
 ]
 
-{ #category : #'other primitives' }
-StackInterpreterSimulator >> primitiveBeep [
-
-	Beeper beep.
-]
-
 { #category : #'debugging traps' }
 StackInterpreterSimulator >> primitiveContextAt [
 	"self halt."
@@ -1816,32 +1586,6 @@ StackInterpreterSimulator >> primitiveIdentityHash [
 	and: [(self stringOf: oop) = 'smallSelect']]) ifTrue:
 		[self halt]."
 	^super primitiveIdentityHash
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> primitiveKbdNext [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdNext]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> primitiveKbdPeek [
-
-	self pop: 1.
-	Sensor keyboardPressed
-		ifTrue: [self pushInteger: Sensor primKbdPeek]
-		ifFalse: [self push: objectMemory nilObject]
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> primitiveMouseButtons [
-	| buttons |
-	self pop: 1.
-	buttons := Sensor primMouseButtons.
-	self pushInteger: buttons
 ]
 
 { #category : #'debugging traps' }
@@ -2294,6 +2038,11 @@ StackInterpreterSimulator >> setDisplayForm: aForm [
 	displayForm := aForm
 ]
 
+{ #category : #accessing }
+StackInterpreterSimulator >> setImageName: aString [ 
+	imageName := aString
+]
+
 { #category : #'debug printing' }
 StackInterpreterSimulator >> shortPrintContext: aContext [
 	transcript newLine.
@@ -2594,6 +2343,13 @@ StackInterpreterSimulator >> testBreakCount: breakCount printSends: shouldPrintS
 StackInterpreterSimulator >> testWithFramePrint [
 	printFrameAtEachStep := printBytecodeAtEachStep := true.
 	self test
+]
+
+{ #category : #'I/O primitives support' }
+StackInterpreterSimulator >> time: ignored [
+	"Simulate the glibc time() function"
+
+	^ DateAndTime now asUnixTime 
 ]
 
 { #category : #UI }

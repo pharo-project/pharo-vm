@@ -37,8 +37,13 @@ EXPORT(int) getLogLevel(){
 	return max_error_level;
 }
 
+EXPORT(int) isLogDebug(){
+	return getLogLevel() >= LOG_DEBUG;
+}
+
 void error(char *errorMessage){
     logError(errorMessage);
+	printStatusAfterError();
     abort();
 }
 

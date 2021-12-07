@@ -6,3 +6,9 @@ Array >> forMemory: aMemory [
 	^ aMemory newArrayWith:
 		  (self collect: [ :anElement | anElement forMemory: aMemory ])
 ]
+
+{ #category : #'*VMMakerTests' }
+Array >> forMethodBuilder: aBuilder [
+
+	^ self forMemory: aBuilder memory
+]

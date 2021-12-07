@@ -144,7 +144,7 @@ VMSpurScavengerTest >> testContextInStackShouldSurviveScanvenge [
 
 	| newObjectOop newObjectHash newObjectAddress |	
 	
-	stackBuilder addNewFrame method: methodBuilder newMethod buildMethod.
+	stackBuilder addNewFrame method: methodBuilder newMethod build.
 	stackBuilder buildStack.
 	newObjectOop := interpreter ensureFrameIsMarried: interpreter framePointer  SP: interpreter stackPointer.
 	newObjectHash := (memory hashBitsOf: newObjectOop).
@@ -369,13 +369,14 @@ VMSpurScavengerTest >> testOverflowRememberedSetShouldMakeItGrow [
 	originalLimit := memory scavenger rememberedSetLimit.
 
 	"Create as many objects for the remembered set + 1"
-	oldObjectRootAddress := self newObjectWithSlots: originalLimit + 1.
+	oldObjectRootAddress := self newOldSpaceObjectWithSlots: originalLimit + 1.
 	1 to: originalLimit + 1 do: [ :i | 
 		memory
 			storePointer: i - 1
 			ofObject: oldObjectRootAddress
 			withValue: (self newObjectWithSlots: 1).
 	].
+
 	"Flush them to the old space"
 	memory coInterpreter method: oldObjectRootAddress.
 	memory flushNewSpace.

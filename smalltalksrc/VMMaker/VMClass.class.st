@@ -4,6 +4,9 @@ I am an abstract superclass for all classes in the VM that want to maintain a so
 Class {
 	#name : #VMClass,
 	#superclass : #SlangClass,
+	#instVars : [
+		'memoryManager'
+	],
 	#classVars : [
 		'DefaultBase',
 		'InitializationOptions'
@@ -41,6 +44,12 @@ VMClass class >> bytesPerOop [
 VMClass class >> bytesPerWord [
 	
 	^ BytesPerWord 
+]
+
+{ #category : #accessing }
+VMClass class >> bytesPerWord: anInteger [ 
+
+	^ BytesPerWord := anInteger
 ]
 
 { #category : #'accessing class hierarchy' }
@@ -155,9 +164,6 @@ VMClass class >> initializeMiscConstants [
 	VMBIGENDIAN class. "Mention this for the benefit of CCodeGenerator>>emitCConstantsOn:"
 	SPURVM := STACKVM := COGVM := COGMTVM := false.
 
-	"Assignment needs to be in here to recognized this constant as a compile-time defined macro"
-	FEATURE_FFI := FEATURE_THREADED_FFI := false.
-
 	InitializationOptions ifNil: [InitializationOptions := Dictionary new].
 	omc := InitializationOptions at: #ObjectMemory ifAbsent: [self error: 'Please specify an object memory'].
 
@@ -170,6 +176,8 @@ VMClass class >> initializeMiscConstants [
 	"Use ifAbsentPut: so that they will get copied back to the
 	 VMMaker's options and dead code will likely be eliminated."
 	PharoVM := InitializationOptions at: #PharoVM ifAbsentPut: [false].
+	FEATURE_FFI := InitializationOptions at: #FEATURE_FFI ifAbsentPut: [false].
+	FEATURE_THREADED_FFI := InitializationOptions at: #FEATURE_THREADED_FFI ifAbsentPut: [false].
 	SistaVM := InitializationOptions at: #SistaVM ifAbsentPut: [false].
 	TempVectReadBarrier := InitializationOptions at: #TempVectReadBarrier ifAbsentPut: [false].
 	MULTIPLEBYTECODESETS := InitializationOptions at: #MULTIPLEBYTECODESETS ifAbsentPut: [false].
@@ -459,10 +467,19 @@ VMClass >> addressOf: anObject put: aBlock [
 ]
 
 { #category : #'C library simulation' }
-VMClass >> alloca: size [
+VMClass >> alloca: desiredSize [
 	"Simulation of alloca(3)"
 	<doNotGenerate>
-	^CArrayAccessor on: (ByteArray new: size)
+	| address |
+	address := 0 "Does not really matter for now".
+	^ CNewArrayAccessor new
+		setObject: (SlangMemoryRegion new
+			start: address;
+			memory: (ByteArray new: desiredSize);
+			originallyRequestedMemory: desiredSize;
+			yourself);
+		address: address;
+		yourself
 ]
 
 { #category : #'C library extensions' }
@@ -706,6 +723,55 @@ VMClass >> localNameFor: aString [
 	^ aString asFileReference basename
 ]
 
+{ #category : #'debug support' }
+VMClass >> logError: aMessage [
+	
+	<doNotGenerate>
+	self logError: aMessage withArgs: #()
+]
+
+{ #category : #'debug support' }
+VMClass >> logError: aFormat _: arg1 [
+	
+	<doNotGenerate>
+	self logError: aFormat withArgs: { arg1 }
+]
+
+{ #category : #'debug support' }
+VMClass >> logError: aFormat _: arg1 _: arg2 [
+	
+	<doNotGenerate>
+	self logError: aFormat withArgs: { arg1. arg2 }
+]
+
+{ #category : #'debug support' }
+VMClass >> logError: aFormat withArgs: args [
+	
+	<doNotGenerate>
+	Error signal: (aFormat printf: args)
+]
+
+{ #category : #'debug support' }
+VMClass >> logWarn: aMessage [
+	
+	<doNotGenerate>
+	self logWarn: aMessage withArgs: #()
+]
+
+{ #category : #'debug support' }
+VMClass >> logWarn: aMessage _: anArgument [
+	
+	<doNotGenerate>
+	self logWarn: aMessage withArgs: { anArgument }
+]
+
+{ #category : #'debug support' }
+VMClass >> logWarn: aFormat withArgs: args [
+	
+	<doNotGenerate>
+	(aFormat printf: args) traceCr
+]
+
 { #category : #'memory access' }
 VMClass >> long64AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
@@ -752,7 +818,13 @@ VMClass >> majorVersion [
 { #category : #'C library simulation' }
 VMClass >> malloc: size [
 	<doNotGenerate>
-	^CArrayAccessor on: (ByteArray new: size)
+	| address region |
+	address := memoryManager allocate: size.
+	region := memoryManager regionAtAddress: address.
+	^ CNewArrayAccessor new
+		setObject: region;
+		address: address;
+		yourself
 ]
 
 { #category : #'C library simulation' }
@@ -820,6 +892,18 @@ VMClass >> memmove: destAddress _: sourceAddress _: bytes [
 		ifFalse:
 			[0 to: bytes - 4 by: 4 do:
 				[:i| self longAt: dst + i put: (self longAt: src + i)]]
+]
+
+{ #category : #accessing }
+VMClass >> memoryManager [
+	<doNotGenerate>
+	^ memoryManager
+]
+
+{ #category : #accessing }
+VMClass >> memoryManager: aMemoryManager [
+	<doNotGenerate>
+	memoryManager := aMemoryManager
 ]
 
 { #category : #'simulation support' }
@@ -977,6 +1061,13 @@ VMClass >> promptNum: string [
 	s := s withBlanksTrimmed.
 	^s notEmpty ifTrue:
 		[Number readFrom: s readStream]
+]
+
+{ #category : #'C library simulation' }
+VMClass >> realloc: originalAddress _: desiredSize [
+
+	<doNotGenerate>
+	^ memoryManager reallocate: originalAddress withSize: desiredSize
 ]
 
 { #category : #arithmetic }
@@ -1181,7 +1272,7 @@ VMClass >> uint32AtPointer: pointer put: value [
 	 pointer is a raw address, and the result is an 32 bit integer."
 	<doNotGenerate>
 
-	^self longAt: pointer put: value
+	^self long32At: pointer put: value
 ]
 
 { #category : #'memory access' }

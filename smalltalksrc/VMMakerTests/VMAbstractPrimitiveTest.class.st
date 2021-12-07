@@ -4,8 +4,8 @@ Class {
 	#pools : [
 		'VMBasicConstants',
 		'VMBytecodeConstants',
-		'VMObjectIndices',
-		'VMSqueakClassIndices'
+		'VMClassIndices',
+		'VMObjectIndices'
 	],
 	#category : #VMMakerTests
 }

@@ -222,17 +222,6 @@ Spur32BitMMLESimulator >> intAt: byteAddress put: a32BitValue [
 	^self longAt: byteAddress put: (a32BitValue bitAnd: 16rFFFFFFFF)
 ]
 
-{ #category : #'image segment in/out' }
-Spur32BitMMLESimulator >> loadImageSegmentFrom: segmentWordArray outPointers: outPointerArray [
-	self leakCheckImageSegments ifTrue:
-		[parent ifNil:
-			[| result |
-			 self halt.
-			 result := coInterpreter cloneSimulation objectMemory loadImageSegmentFrom: segmentWordArray outPointers: outPointerArray.
-			 Smalltalk garbageCollect]].
-	^super loadImageSegmentFrom: segmentWordArray outPointers: outPointerArray
-]
-
 { #category : #'memory access' }
 Spur32BitMMLESimulator >> long32At: byteAddress [
 	"Answer the 32-bit word at byteAddress which must be 0 mod 4."
@@ -252,8 +241,8 @@ Spur32BitMMLESimulator >> long64At: byteAddress [
 	"memory is a Bitmap, a 32-bit indexable array of bits"
 	| hiWord loWord |
 	byteAddress \\ 8 ~= 0 ifTrue: [self unalignedAccessError].
-	loWord := memory at: byteAddress // 4 + 1.
-	hiWord := memory at: byteAddress // 4 + 2.
+	loWord := memoryManager unsignedLong32At: byteAddress.
+	hiWord := memoryManager unsignedLong32At: byteAddress + 4.
 	^hiWord = 0
 		ifTrue: [loWord]
 		ifFalse: [(hiWord bitShift: 32) + loWord]
@@ -270,9 +259,8 @@ Spur32BitMMLESimulator >> long64At: byteAddress put: a64BitValue [
 
 { #category : #'memory access' }
 Spur32BitMMLESimulator >> longAt: byteAddress [
-	"Note: Adjusted for Smalltalk's 1-based array indexing."
-	byteAddress \\ 4 ~= 0 ifTrue: [self unalignedAccessError].
-	^memory at: byteAddress // 4 + 1
+
+	^ memoryManager unsignedLong32At: byteAddress
 ]
 
 { #category : #'memory access' }
@@ -282,15 +270,7 @@ Spur32BitMMLESimulator >> longAt: byteAddress put: a32BitValue [
 		[self halt]."
 	"(byteAddress between: 16r33FBB8 and: 16r33FBCF) ifTrue:
 		[self halt]."
-	byteAddress \\ 4 ~= 0 ifTrue: [self unalignedAccessError].
-	^memory at: byteAddress // 4 + 1 put: a32BitValue
-]
-
-{ #category : #'image segment in/out' }
-Spur32BitMMLESimulator >> mapOopsFrom: segStart to: segAddr outPointers: outPointerArray outHashes: savedOutHashes [
-	self leakCheckImageSegments ifTrue:
-		[self halt].
-	^super mapOopsFrom: segStart to: segAddr outPointers: outPointerArray outHashes: savedOutHashes
+	memoryManager unsignedLong32At: byteAddress put: a32BitValue
 ]
 
 { #category : #'gc - global' }
@@ -348,13 +328,6 @@ Spur32BitMMLESimulator >> parent [
 Spur32BitMMLESimulator >> parent: anObject [
 
 	parent := anObject
-]
-
-{ #category : #'image segment in/out' }
-Spur32BitMMLESimulator >> return: errCode restoringObjectsIn: firstArray savedFirstFields: savedFirstFields and: secondArray savedHashes: savedHashes [
-	self leakCheckImageSegments ifTrue:
-		[self halt: errCode printString].
-	^super return: errCode restoringObjectsIn: firstArray savedFirstFields: savedFirstFields and: secondArray savedHashes: savedHashes
 ]
 
 { #category : #'debug support' }
@@ -429,17 +402,6 @@ Spur32BitMMLESimulator >> shortAt: byteAddress put: a16BitValue [
 Spur32BitMMLESimulator >> storeFloatAt: floatBitsAddress from: aFloat [
 	self long32At: floatBitsAddress put: (aFloat at: 2).
 	self long32At: floatBitsAddress+4 put: (aFloat at: 1)
-]
-
-{ #category : #'image segment in/out' }
-Spur32BitMMLESimulator >> storeImageSegmentInto: segmentWordArray outPointers: outPointerArray roots: arrayOfRoots [
-	self leakCheckImageSegments ifTrue:
-		[parent ifNil:
-			[| result |
-			 self halt.
-			 result := coInterpreter cloneSimulation objectMemory storeImageSegmentInto: segmentWordArray outPointers: outPointerArray roots: arrayOfRoots.
-			 Smalltalk garbageCollect]].
-	^super storeImageSegmentInto: segmentWordArray outPointers: outPointerArray roots: arrayOfRoots
 ]
 
 { #category : #'ad-hoc tests' }

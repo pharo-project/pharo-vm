@@ -24,7 +24,12 @@ macro(addIndependentLibraryWithRPATH NAME)
 endmacro()
 
 macro(get_platform_name VARNAME)
+  # See https://github.com/pharo-project/opensmalltalk-vm/issues/270
+  if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "^(AMD64|x64)$")
+    set(${VARNAME} ${CMAKE_SYSTEM_NAME}-x86_64)
+  else()
     set(${VARNAME} ${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR})
+  endif()
 endmacro()
 
 macro(get_full_platform_name_with_osx VARNAME)
@@ -83,29 +88,6 @@ macro(add_third_party_dependency NAME)
     add_third_party_dependency_with_baseurl(${NAME} ${BASE_URL})
 endmacro()
 
-macro(get_commit_hash VARNAME)
-    execute_process(
-        COMMAND git log -1 --format=%h
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE ${VARNAME}
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-endmacro()
-
-macro(get_git_describe VARNAME)
-    execute_process(
-        COMMAND git describe --always
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE ${VARNAME}
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-endmacro()
-
-macro(get_git_date VARNAME)
-    execute_process(
-        COMMAND git log -1 --format=%ai
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE ${VARNAME}
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-endmacro()
 
 #
 # Compatibility with old CMAKE versions to remove, as fast as posible

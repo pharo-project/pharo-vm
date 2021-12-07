@@ -26,7 +26,7 @@ CogStackPageSurrogate >> address [
 CogStackPageSurrogate >> address: theAddress simulator: aCoInterpreterSimulator zoneBase: base zoneLimit: limit [
 	address := theAddress.
 	stackPages := aCoInterpreterSimulator stackPages.
-	memory := aCoInterpreterSimulator memory.
+	memory := aCoInterpreterSimulator memoryManager.
 	zoneBase := base.
 	zoneLimit := limit
 ]

@@ -5,6 +5,8 @@
 
 extern void setMaxStacksToPrint(sqInt anInteger);
 extern void setMaxOldSpaceSize(sqInt anInteger);
+extern void setDesiredCogCodeSize(sqInt anInteger);
+extern void setDesiredEdenBytes(sqLong anInteger);
 
 #if defined(__GNUC__) && ( defined(i386) || defined(__i386) || defined(__i386__)  \
 			|| defined(i486) || defined(__i486) || defined (__i486__) \
@@ -31,7 +33,7 @@ void mtfsfi(unsigned long long fpscr)
 static int loadPharoImage(const char* fileName);
 static void* runVMThread(void* p);
 static int runOnMainThread(VMParameters *parameters);
-#if PHARO_VM_IN_WORKER_THREAD
+#ifdef PHARO_VM_IN_WORKER_THREAD
 static int runOnWorkerThread(VMParameters *parameters);
 #endif
 
@@ -56,12 +58,23 @@ EXPORT(int) vm_init(VMParameters* parameters)
 
     ioInitTime();
 
-#if PHARO_VM_IN_WORKER_THREAD
+#ifdef PHARO_VM_IN_WORKER_THREAD
     ioVMThread = ioCurrentOSThread();
 #endif
+
 	ioInitExternalSemaphores();
 	setMaxStacksToPrint(parameters->maxStackFramesToPrint);
 	setMaxOldSpaceSize(parameters->maxOldSpaceSize);
+  setDesiredEdenBytes(parameters->edenSize);
+
+	if(parameters->maxCodeSize > 0) {
+#ifndef COGVM
+		logError("StackVM does not accept maxCodeSize");
+#else
+		logInfo("Setting codeSize to: %ld", parameters->maxCodeSize);
+		setDesiredCogCodeSize(parameters->maxCodeSize);
+#endif
+	}
 
 	aioInit();
 
@@ -86,12 +99,12 @@ vm_main_with_parameters(VMParameters *parameters)
 		return 1;
 	}
 
-	if(parameters->isDefaultImage && !parameters->defaultImageFound)
-	{
+	if(parameters->isDefaultImage && !parameters->defaultImageFound){
 		////logError("No image has been specified, and no default image has been found.\n");
 		vm_printUsageTo(stdout);
 		return 0;
 	}
+
 	installErrorHandlers();
 
 	setProcessArguments(parameters->processArgc, parameters->processArgv);
@@ -99,10 +112,10 @@ vm_main_with_parameters(VMParameters *parameters)
 
 	logInfo("Opening Image: %s\n", parameters->imageFileName);
 
-    //This initialization is required because it makes awful, awful, awful code to calculate
-    //the location of the machine code.
-    //Luckily, it can be cached.
-    osCogStackPageHeadroom();
+	//This initialization is required because it makes awful, awful, awful code to calculate
+	//the location of the machine code.
+	//Luckily, it can be cached.
+	osCogStackPageHeadroom();
 
 	// Retrieve the working directory.
 	char *workingDirectoryBuffer = (char*)calloc(1, FILENAME_MAX+1);
@@ -130,7 +143,7 @@ vm_main_with_parameters(VMParameters *parameters)
 	LOG_SIZEOF(float);
 	LOG_SIZEOF(double);
 
-#if PHARO_VM_IN_WORKER_THREAD
+#ifdef PHARO_VM_IN_WORKER_THREAD
     vmRunOnWorkerThread = vm_parameter_vector_has_element(&parameters->vmParameters, "--worker");
 
     return vmRunOnWorkerThread
@@ -154,7 +167,9 @@ vm_main(int argc, const char** argv, const char** env)
 	parameters.processArgv = argv;
 	parameters.environmentVector = env;
 	parameters.maxStackFramesToPrint = 0;
+	parameters.maxCodeSize = 0;
 	parameters.maxOldSpaceSize = 0;
+	parameters.edenSize = 0;
 
 	// Did we succeed on parsing the parameters?
 	VMErrorCode error = vm_parameters_parse(argc, argv, &parameters);
@@ -210,7 +225,7 @@ loadPharoImage(const char* fileName)
     imageSize = sqImageFilePosition(imageFile);
     sqImageFileSeek(imageFile, 0);
 
-    readImageFromFileHeapSizeStartingAt(imageFile, 0, 0);
+    readImageFromFileStartingAt(imageFile, 0);
     sqImageFileClose(imageFile);
 
     char* fullImageName = alloca(FILENAME_MAX);
@@ -247,7 +262,7 @@ runOnMainThread(VMParameters *parameters)
     return 0;
 }
 
-#if PHARO_VM_IN_WORKER_THREAD
+#ifdef PHARO_VM_IN_WORKER_THREAD
 static int
 runOnWorkerThread(VMParameters *parameters)
 {

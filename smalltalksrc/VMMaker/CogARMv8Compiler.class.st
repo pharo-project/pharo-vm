@@ -1882,7 +1882,7 @@ CogARMv8Compiler >> concretizeLoadEffectiveAddressMwrR [
 	"destReg = srcReg (which contains an address) + offset"
 
 	<inline: true>
-	| srcReg offset destReg instrOffset |
+	| srcReg offset destReg |
 	offset := operands at: 0.
 	srcReg := operands at: 1.
 	destReg := operands at: 2.
@@ -2761,13 +2761,15 @@ CogARMv8Compiler >> concretizePrefetchAw [
 						offset: addressOperand - cogit varBaseAddress).
 			^ machineCodeSize := 4 ].
 	
-	self notYetImplemented.
-	
 	instrOffset := self moveCw: addressOperand intoR: ConcreteIPReg.
-	"pld	[ConcreteIPReg]"
+	"We fetch using the ConcreteIPReg"
+
 	self
 		machineCodeAt: instrOffset
-		put: (self pld: ConcreteIPReg plus: 1 offset: 0).
+		put: (self
+						prefetchMemory: 0 "prefetchFlags: load in L1 KEEP" 
+						sourceRegister: ConcreteIPReg
+						offset: 0).
 	^ machineCodeSize := instrOffset + 4
 ]
 
@@ -3147,6 +3149,19 @@ CogARMv8Compiler >> conditionOrNil [
 CogARMv8Compiler >> conditionOrNil: condCode [
 "has to be named oddly like this to satisfay i-var code gen translating rules"
 	^conditionOrNil := condCode
+]
+
+{ #category : #simulation }
+CogARMv8Compiler >> configureStackAlignment [
+	
+	<doNotGenerate>
+	"As for the ARMv8 Arm® Architecture Reference Manual
+	
+	D1.8.2 SP alignment checking
+	A misaligned stack pointer is where bits[3:0] of the stack pointer are not 0b0000, when the stack pointer is used as the base address of the calculation, regardless of any offset applied by the instruction.
+	
+	Meaning that the stack should be aligned to 16 bytes"
+	cogit setStackAlignment: 16 expectedSPOffset: 0 expectedFPOffset: 0.
 ]
 
 { #category : #'generate machine code' }
@@ -3691,19 +3706,6 @@ VCVTW. regB, regA - ARM_ARM v7 DDI10406.pdf pp. A8-576-8"
 ]
 
 { #category : #'ARM convenience instructions' }
-CogARMv8Compiler >> fstd: fpReg rn: addrReg plus: u imm: immediate8bitValue [
-"FSTD or VSTR instruction to move a value to address in an ARM addrReg +/- offset<<2 from an fpu double fpReg
-FSTD fpReg, addrReg, #offset - ARM_ARM v5 DDI 01001.pdf pp. C4-101
-VSTR.64 fpReg, addrReg, #offset - ARM_ARM v7 DDI10406 pp. A8-780-1"
-	<inline: true>
-	"Note that
-		offset is <<2 to make byte address 
-		u =1 -> addrReg + offset<<2
-		u=0 -> addrReg - offset<<2"
-	^(((2r11101101000000000000101100000000 bitOr:(addrReg <<16)) bitOr: fpReg<<12) bitOr: u<<23) bitOr: immediate8bitValue
-]
-
-{ #category : #'ARM convenience instructions' }
 CogARMv8Compiler >> fsubd: destReg with: srcReg [
 "FSUBD or VSUB instruction to subtract double srcReg from double destREg and stick result in double destReg
 FSUBD destReg, destReg, srcReg - ARM_ARM v5 DDI 01001.pdf pp. C4-112
@@ -3766,7 +3768,7 @@ CogARMv8Compiler >> genLoadCStackPointer [
 	"Load the stack pointer register with that of the C stack, effecting
 	 a switch to the C stack.  Used when machine code calls into the
 	 CoInterpreter run-time (e.g. to invoke interpreter primitives)."
-	cogit MoveAw: cogit cStackPointerAddress R: SPReg.
+	cogit MoveAw: cogit cStackPointerAddress R: SP.
 	^0
 ]
 
@@ -4166,18 +4168,22 @@ CogARMv8Compiler >> inverseOpcodeFor: armOpcode [
 			 -1]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #testing }
 CogARMv8Compiler >> is12BitValue: constant ifTrue: aTrueBlock ifFalse: aFalseBlock [ 
 	
 	<inline: true>
+	<var: #signedConstant type: #sqInt>
 	
-	^ constant abs <= 2047 "(2 raisedTo: 11) - 1"
+	| signedConstant |
+	signedConstant := cogit cCoerceSimple: constant to: #sqInt.
+	
+	^ signedConstant abs <= 2047 "(2 raisedTo: 11) - 1"
 		ifTrue: [ | twoComplement |
 			"Two complement using 12 bits"
-			twoComplement := constant >= 0
-				ifTrue: [ constant ]
-				ifFalse: [ 16rfff - constant abs + 1 ].
-			aTrueBlock value: constant >= 0 value: twoComplement ]
+			twoComplement := signedConstant >= 0
+				ifTrue: [ signedConstant ]
+				ifFalse: [ 16rfff - signedConstant abs + 1 ].
+			aTrueBlock value: signedConstant >= 0 value: twoComplement ]
 		ifFalse: [aFalseBlock value]
 ]
 
@@ -5093,7 +5099,7 @@ CogARMv8Compiler >> outputMachineCodeAt: targetAddress [
 	<inline: true>
 	0 to: machineCodeSize - 1 by: 4 do:
 		[:j|
-		objectMemory long32At: targetAddress + j put: (machineCode at: j // 4)]
+		objectMemory uint32AtPointer: targetAddress + j put: (machineCode at: j // 4)]
 ]
 
 { #category : #'generate machine code' }
@@ -5103,14 +5109,6 @@ CogARMv8Compiler >> padIfPossibleWithStopsFrom: startAddr to: endAddr [
 	self stopsFrom: startAddr to: endAddr - nullBytes.
 	endAddr - nullBytes + 1 to: endAddr 
 		do: [ :p | objectMemory byteAt: p put: 16rFF]
-]
-
-{ #category : #encoding }
-CogARMv8Compiler >> pld: baseReg plus: u offset: immediate [
-	"hint to memory that we will want to read from baseReg +/- imediate sometime soon
-	PLD baseReg, immediate  - ARM_ARM v7 DDI10406 pp. A8-236-7"
-	<inline: true>
-	^ 2r11110101010100001111000000000000 bitOr: (baseReg<<16 bitOr:(u <<23 bitOr: immediate))
 ]
 
 { #category : #assembler }
@@ -5151,7 +5149,7 @@ CogARMv8Compiler >> prepareStackToCallCFunctionInSmalltalkStack: anObject [
 
 	"ARMv8 should be aligned to 16 bytes"
 
-	cogit AndCq: ((1 << 64) - 16) R: Extra2Reg. 
+	cogit AndCq: 16rFFFFFFFFFFFFFFF0 R: Extra2Reg. 
 	cogit MoveR: Extra2Reg R: SP.
 ]
 
@@ -5684,7 +5682,7 @@ CogARMv8Compiler >> strBaseRegister: baseReg positiveOffset: immediate12bitValue
 	STR <Dt>, [<Xn|SP>{, #<pimm>}]
 	"
 
-	^ (size bitOr: 2r11) << 30
+	^ (size bitAnd: 2r11) << 30
 		bitOr: (2r111101 << 24
 		bitOr: ((immediate12bitValue / 8 bitAnd: 16rfff) << 10
 		bitOr: ((baseReg bitAnd: 16r1f) << 5

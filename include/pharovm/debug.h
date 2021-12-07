@@ -21,6 +21,7 @@ EXPORT(void) logAssert(const char* fileName, const char* functionName, int line,
 
 EXPORT(void) registerCurrentThreadToHandleExceptions();
 EXPORT(void) installErrorHandlers();
+EXPORT(int) isLogDebug();
 
 //This variable is set externally by CMAKE
 #ifndef SOURCE_PATH_SIZE
@@ -48,3 +49,5 @@ EXPORT(void) logMessageFromErrno(int level, const char* msg, const char* fileNam
 
 int vm_printf( const char * format, ... );
 void vm_setVMOutputStream(FILE * stream);
+
+EXPORT(void) printStatusAfterError();

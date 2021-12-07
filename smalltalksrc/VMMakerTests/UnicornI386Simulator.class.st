@@ -40,6 +40,39 @@ UnicornI386Simulator >> cResultRegister [
 	^ self eax
 ]
 
+{ #category : #'c calling convention' }
+UnicornI386Simulator >> carg0 [
+
+	"Stack value 0 is return address"
+	^ self stackValueAt: 1
+]
+
+{ #category : #registers }
+UnicornI386Simulator >> carg0Register [
+	self shouldBeImplemented.
+]
+
+{ #category : #'c calling convention' }
+UnicornI386Simulator >> carg1 [
+
+	"Stack value 0 is return address"
+	^ self stackValueAt: 2
+]
+
+{ #category : #'c calling convention' }
+UnicornI386Simulator >> carg2 [
+
+	"Stack value 0 is return address"
+	^ self stackValueAt: 3
+]
+
+{ #category : #'c calling convention' }
+UnicornI386Simulator >> carg3 [
+
+	"Stack value 0 is return address"
+	^ self stackValueAt: 4
+]
+
 { #category : #registers }
 UnicornI386Simulator >> classRegister [
 
@@ -227,8 +260,8 @@ UnicornI386Simulator >> postCallArgumentsNumArgs: numArgs in: aMemory [
 	 beyond the pushed return address and saved frame pointer.
 	 For compatibility with Cog/Slang we answer unsigned values."
 
-	^ (9 to: numArgs * 4 + 5 by: 4) collect: [ :i | 
-		  aMemory unsignedLongAt: self ebp + i ]
+	^ (8 to: numArgs * 4 + 4 by: 4) collect: [ :i | 
+		  memory longAt: self ebp + i ]
 ]
 
 { #category : #registers }
@@ -246,7 +279,7 @@ UnicornI386Simulator >> registerList [
 { #category : #'as yet unclassified' }
 UnicornI386Simulator >> retpcIn: aMemory [
 
-	^ aMemory unsignedLongAt: self ebp + 5
+	^ memory longAt: self ebp + 4
 ]
 
 { #category : #registers }
@@ -304,6 +337,13 @@ UnicornI386Simulator >> sp [
 UnicornI386Simulator >> stackPointerRegister [
 	
 	^ UcX86Registers esp
+]
+
+{ #category : #registers }
+UnicornI386Simulator >> temporaryRegister [
+	
+	"Assume SysV"
+	^ UcX86Registers eax
 ]
 
 { #category : #accessing }

@@ -13,29 +13,87 @@ typedef struct VMParameterSpec_
 	vm_parameter_process_function function;
 } VMParameterSpec;
 
+/*
+* Parse a text in the form [anInteger]k|K|m|M|g|G
+* Return the number of bytes represented by the text.
+* Return VM_ERROR_INVALID_PARAMETER_VALUE in case of error
+*  (the text is not prefixed by a number or it is negative number)
+*
+* E.g., 2M => 2 * 1024 * 1024
+*/
+long long parseByteSize(const char* text){
+	long long intValue = 0;
+	int multiplier = 1;
+	int argumentLength = 0;
+	char* argument = alloca(255);
+
+	strncpy(argument, text, 255);
+	argument[254] = 0;
+
+	if(strlen(argument) > 0){
+		argumentLength = strlen(argument);
+		char lastCharacter = argument[argumentLength - 1];
+
+		switch(lastCharacter){
+			case 'k':
+			case 'K':
+				multiplier = 1024;
+				argument[argumentLength - 1] = '\0';
+				break;
+			case 'm':
+			case 'M':
+				multiplier = 1024 * 1024;
+				argument[argumentLength - 1] = '\0';
+				break;
+			case 'g':
+			case 'G':
+				multiplier = 1024 * 1024 * 1024;
+				argument[argumentLength - 1] = '\0';
+				break;
+			default:
+				break;
+		}
+	}
+
+	errno = 0;
+	intValue = strtoll(argument, NULL, 10);
+
+	if(errno != 0 || intValue < 0)
+	{
+		return VM_ERROR_INVALID_PARAMETER_VALUE;
+	}
+
+	return intValue * multiplier;
+}
+
 void vm_printUsageTo(FILE *out);
 static VMErrorCode processHelpOption(const char *argument, VMParameters * params);
 static VMErrorCode processPrintVersionOption(const char *argument, VMParameters * params);
 static VMErrorCode processLogLevelOption(const char *argument, VMParameters * params);
 static VMErrorCode processMaxFramesToPrintOption(const char *argument, VMParameters * params);
 static VMErrorCode processMaxOldSpaceSizeOption(const char *argument, VMParameters * params);
+static VMErrorCode processMaxCodeSpaceSizeOption(const char *argument, VMParameters * params);
+static VMErrorCode processEdenSizeOption(const char *argument, VMParameters * params);
 
 static const VMParameterSpec vm_parameters_spec[] =
 {
-	{.name = "headless", .hasArgument = false, .function = NULL},
-    {.name = "worker", .hasArgument = false, .function = NULL},
-	{.name = "interactive", .hasArgument = false, .function = NULL}, // For pharo-ui scripts.
-	{.name = "vm-display-null", .hasArgument = false, .function = NULL}, // For Smalltalk CI.
-	{.name = "help", .hasArgument = false, .function = processHelpOption},
-	{.name = "h", .hasArgument = false, .function = processHelpOption},
-	{.name = "version", .hasArgument = false, .function = processPrintVersionOption},
-	{.name = "logLevel", .hasArgument = true, .function = processLogLevelOption},
-	{.name = "maxFramesToLog", .hasArgument = true, .function = processMaxFramesToPrintOption},
-	{.name = "maxOldSpaceSize", .hasArgument = true, .function = processMaxOldSpaceSizeOption},
-
+  {.name = "headless", .hasArgument = false, .function = NULL},
+#ifdef PHARO_VM_IN_WORKER_THREAD
+  {.name = "worker", .hasArgument = false, .function = NULL},
+#endif
+  {.name = "interactive", .hasArgument = false, .function = NULL}, // For pharo-ui scripts.
+  {.name = "vm-display-null", .hasArgument = false, .function = NULL}, // For Smalltalk CI.
+  {.name = "help", .hasArgument = false, .function = processHelpOption},
+  {.name = "h", .hasArgument = false, .function = processHelpOption},
+  {.name = "version", .hasArgument = false, .function = processPrintVersionOption},
+  {.name = "logLevel", .hasArgument = true, .function = processLogLevelOption},
+  {.name = "maxFramesToLog", .hasArgument = true, .function = processMaxFramesToPrintOption},
+  {.name = "maxOldSpaceSize", .hasArgument = true, .function = processMaxOldSpaceSizeOption},
+  {.name = "codeSize", .hasArgument = true, .function = processMaxCodeSpaceSizeOption},
+  {.name = "edenSize", .hasArgument = true, .function = processEdenSizeOption},
 #ifdef __APPLE__
-	// This parameter is passed by the XCode debugger.
-	{.name = "NSDocumentRevisionsDebugMode", .hasArgument = false, .function = NULL},
+  // This parameter is passed by the XCode debugger.
+  {.name = "NSDocumentRevisionsDebugMode", .hasArgument = false, .function = NULL},
 #endif
 };
 
@@ -286,7 +344,6 @@ VMErrorCode
 vm_parameters_ensure_interactive_image_parameter(VMParameters* parameters)
 {
 	const char* interactiveParameter = "--interactive";
-	const char* headlessParameter = "--headless";
 	VMErrorCode error;
 
 	if (parameters->isInteractiveSession)
@@ -302,6 +359,8 @@ vm_parameters_ensure_interactive_image_parameter(VMParameters* parameters)
 
 #if ALWAYS_INTERACTIVE
 
+	const char* headlessParameter = "--headless";
+	
 	/*
 	 * If the macro ALWAYS_INTERACTIVE is set, we invert the logic of headless / interactive
 	 * This is to mimic the old VM behavior
@@ -346,14 +405,20 @@ vm_printUsageTo(FILE *out)
 #else
 "  --headless                   Run in headless (no window) mode (default: true)\n"
 #endif
+#ifdef PHARO_VM_IN_WORKER_THREAD
 "  --worker                     Run in worker thread (default: false)\n"
-"  --logLevel=<level>     	    Sets the log level (ERROR, WARN, INFO or DEBUG)\n"
+#endif
+"  --logLevel=<level>           Sets the log level number (ERROR(1), WARN(2), INFO(3), DEBUG(4), TRACE(5))\n"
 "  --version                    Print version information, then exit\n"
-"  --maxFramesToLog=<cant>		Sets the max numbers of Smalltalk frames to log\n"
+"  --maxFramesToLog=<cant>      Sets the max numbers of Smalltalk frames to log\n"
 "  --maxOldSpaceSize=<bytes>    Sets the max size of the old space. As the other\n"
 "                               spaces are fixed (or calculated from this) with\n"
 "                               this parameter is possible to set the total size.\n"
-"                               It is possible to use M(MB) and G(GB)."
+"                               It is possible to use k(kB), M(MB) and G(GB).\n"
+"  --codeSize=<size>[mk]        Sets the max size of code zone.\n"
+"                               It is possible to use k(kB), M(MB) and G(GB).\n"
+"  --edenSize=<size>[mk]        Sets the size of eden\n"
+"                               It is possible to use k(kB), M(MB) and G(GB).\n"
 "\n"
 "Notes:\n"
 "\n"
@@ -402,45 +467,50 @@ processMaxFramesToPrintOption(const char* value, VMParameters * params)
 static VMErrorCode
 processMaxOldSpaceSizeOption(const char* originalArgument, VMParameters * params)
 {
-	int intValue = 0;
-	int multiplier = 1;
-	int argumentLength = 0;
-	char* argument = alloca(255);
+	long long intValue = parseByteSize(originalArgument);
 
-	strncpy(argument, originalArgument, 255);
-	argument[254] = 0;
-
-	if(strlen(argument) > 0){
-		argumentLength = strlen(argument);
-		char lastCharacter = argument[argumentLength - 1];
-
-		switch(lastCharacter){
-			case 'm':
-			case 'M':
-				multiplier = 1024 * 1024;
-				argument[argumentLength - 1] = '\0';
-				break;
-			case 'g':
-			case 'G':
-				multiplier = 1024 * 1024 * 1024;
-				argument[argumentLength - 1] = '\0';
-				break;
-			default:
-				break;
-		}
-	}
-
-	errno = 0;
-	intValue = strtol(argument, NULL, 10);
-
-	if(errno != 0 || intValue < 0)
+	if(intValue < 0)
 	{
-		logError("Invalid option for maxFramesToLog: %s\n", originalArgument);
+		logError("Invalid option for maxOldSpaceSize: %s\n", originalArgument);
+		vm_printUsageTo(stderr);
+		return VM_ERROR_INVALID_PARAMETER_VALUE;
+	}
+	
+	params->maxOldSpaceSize = intValue ;
+
+	return VM_SUCCESS;
+}
+
+static VMErrorCode
+processMaxCodeSpaceSizeOption(const char* originalArgument, VMParameters * params)
+{
+	long long intValue = parseByteSize(originalArgument);
+
+	if(intValue < 0)
+	{
+		logError("Invalid option for codeSize: %s\n", originalArgument);
 		vm_printUsageTo(stderr);
 		return VM_ERROR_INVALID_PARAMETER_VALUE;
 	}
 
-	params->maxOldSpaceSize = intValue * multiplier;
+	params->maxCodeSize = intValue;
+
+	return VM_SUCCESS;
+}
+
+static VMErrorCode
+processEdenSizeOption(const char* originalArgument, VMParameters * params)
+{
+	long long intValue = parseByteSize(originalArgument);
+
+	if(intValue < 0)
+	{
+		logError("Invalid option for eden: %s\n", originalArgument);
+		vm_printUsageTo(stderr);
+		return VM_ERROR_INVALID_PARAMETER_VALUE;
+	}
+
+	params->edenSize = intValue;
 
 	return VM_SUCCESS;
 }

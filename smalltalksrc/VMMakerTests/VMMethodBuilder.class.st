@@ -15,9 +15,9 @@ Class {
 }
 
 { #category : #building }
-VMMethodBuilder >> buildMethod [
-	self instantiateMethod.
-	self fillMethod.
+VMMethodBuilder >> build [
+	self instantiate.
+	self fillInstance.
 	^ method
 ]
 
@@ -68,21 +68,21 @@ VMMethodBuilder >> fillFromPharoMethod: aCompiledMethod [
 ]
 
 { #category : #filling }
+VMMethodBuilder >> fillInstance [
+	self putHeaderInMethod.
+	self putLiteralInMethod.
+	self putBytecodesInMethod.
+]
+
+{ #category : #filling }
 VMMethodBuilder >> fillLiteralsFromPharo: pharoLiterals [ 
 
 	literals := pharoLiterals collectWithIndex: [ :aLiteral :anIndex | | value |
 
 		"I Skip the last 2 literals (selector/additional, association)"
 		anIndex < (pharoLiterals size - 1)
-			ifTrue: [ aLiteral forMemory: memory. ]
-			ifFalse: [ memory nilObject ]].
-]
-
-{ #category : #filling }
-VMMethodBuilder >> fillMethod [
-	self putHeaderInMethod.
-	self putLiteralInMethod.
-	self putBytecodesInMethod.
+			ifTrue: [ aLiteral forMethodBuilder: self ]
+			ifFalse: [ memory nilObject ] ]
 ]
 
 { #category : #initialization }
@@ -99,8 +99,36 @@ VMMethodBuilder >> initialize [
 	slotSize := nil.
 ]
 
+{ #category : #accessing }
+VMMethodBuilder >> inspectMethodIn: aBuilder [
+	<inspectorPresentationOrder: 0 title: 'Items'> 
+
+	| items |
+	items :={
+		#currentMethodOop -> method.
+		#literals -> literals.
+		#numberOfArguments -> numberOfArguments.
+		#bytecodes -> bytecodes.
+		#context -> (isSmall ifTrue: [ 'Small context '] ifFalse: [ 'Big context' ] ).
+		#isPrimitive ->  isPrimitive.
+		#slotSize ->  slotSize.
+		 }.
+	
+	^ aBuilder newTable 
+		addColumn: (SpStringTableColumn 
+			title: 'Key'
+			evaluated: [ :each | StObjectPrinter asTruncatedTextFrom: each key ])
+			beSortable;
+		addColumn: (SpStringTableColumn 
+			title: 'Value' 
+			evaluated: [ :each | StObjectPrinter asTruncatedTextFrom: each value ])
+			beSortable;
+		items: items;
+		yourself
+]
+
 { #category : #building }
-VMMethodBuilder >> instantiateMethod [
+VMMethodBuilder >> instantiate [
 	slotSize := literals size 
 			+ (bytecodes size / memory wordSize) ceiling
 			+ 1 "method header".
@@ -150,6 +178,15 @@ VMMethodBuilder >> literals: anObject [
 { #category : #accessing }
 VMMethodBuilder >> method [
 	^ method
+]
+
+{ #category : #building }
+VMMethodBuilder >> newCompiledBlockBuilder [
+	
+	^ VMCompiledBlockBuilder new
+		interpreter: interpreter;
+		memory: memory;
+		yourself
 ]
 
 { #category : #building }

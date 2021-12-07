@@ -67,20 +67,22 @@ target_link_libraries(FileAttributesPlugin PRIVATE FilePlugin)
 # UUIDPlugin
 #
 
-message(STATUS "Adding plugin: UUIDPlugin")
+if(NOT OPENBSD)
+    message(STATUS "Adding plugin: UUIDPlugin")
 
-file(GLOB UUIDPlugin_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/UUIDPlugin/common/*.c   
-)
+    file(GLOB UUIDPlugin_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/plugins/UUIDPlugin/common/*.c
+    )
 
-addLibraryWithRPATH(UUIDPlugin ${UUIDPlugin_SOURCES})
-if(WIN)
-    target_link_libraries(UUIDPlugin PRIVATE "-lole32")
-elseif(UNIX AND NOT OSX)
-   #find_path(LIB_UUID_INCLUDE_DIR uuid.h PATH_SUFFIXES uuid)
-    find_library(LIB_UUID_LIBRARY uuid)
-    message(STATUS "Using uuid library:" ${LIB_UUID_LIBRARY}) 
-    target_link_libraries(UUIDPlugin PRIVATE ${LIB_UUID_LIBRARY})
+    addLibraryWithRPATH(UUIDPlugin ${UUIDPlugin_SOURCES})
+    if(WIN)
+        target_link_libraries(UUIDPlugin PRIVATE "-lole32")
+    elseif(UNIX AND NOT OSX)
+       #find_path(LIB_UUID_INCLUDE_DIR uuid.h PATH_SUFFIXES uuid)
+        find_library(LIB_UUID_LIBRARY uuid)
+        message(STATUS "Using uuid library:" ${LIB_UUID_LIBRARY})
+        target_link_libraries(UUIDPlugin PRIVATE ${LIB_UUID_LIBRARY})
+    endif()
 endif()
 
 #
@@ -97,7 +99,8 @@ endif()
 # Surface Plugin
 #
 
-add_vm_plugin(SurfacePlugin)
+add_vm_plugin(SurfacePlugin 
+	${PHARO_CURRENT_GENERATED}/plugins/src/SurfacePlugin/SurfacePlugin.c)
 
 #
 # LargeIntegers Plugin
@@ -199,10 +202,10 @@ if(OSX)
         ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/common
         ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/osx
     )
-    
+
     file(GLOB SqueakSSL_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/common/*.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/osx/*.c   
+        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/osx/*.c
     )
 else()
     if(WIN)
@@ -210,20 +213,20 @@ else()
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/common
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/win
         )
-        
+
         file(GLOB SqueakSSL_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/common/*.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/win/*.c   
-        )    
+            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/win/*.c
+        )
     else()
         include_directories(
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/common
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/include/unix
         )
-        
+
         file(GLOB SqueakSSL_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/common/*.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/unix/*.c   
+            ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/SqueakSSL/src/unix/*.c
         )
     endif()
 endif()
@@ -237,7 +240,7 @@ elseif(WIN)
     target_link_libraries(SqueakSSL PRIVATE Crypt32 Secur32)
 else()
     find_package(OpenSSL REQUIRED)
-    target_link_libraries(SqueakSSL PRIVATE OpenSSL::SSL OpenSSL::Crypto)    
+    target_link_libraries(SqueakSSL PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 endif()
 
 

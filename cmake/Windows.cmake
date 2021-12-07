@@ -4,9 +4,22 @@ set(VM_EXECUTABLE_CONSOLE_NAME "${VM_EXECUTABLE_NAME}Console")
 set(VM_VERSION_FILEVERSION "${APPNAME}VM-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${GIT_COMMIT_HASH}")
 
 set(Win32ResourcesFolder "${CMAKE_CURRENT_SOURCE_DIR}/resources/windows")
-if(NOT Win32VMExecutableIcon)
-    set(Win32VMExecutableIcon "${Win32ResourcesFolder}/Pharo.ico")
+
+if(${CYGWIN})
+  # transform the path into a windows path with unix backslashes C:/bla/blu
+  # this is the path required to send as argument to libraries outside of the control of cygwin (like pharo itself)
+  execute_process(
+  	COMMAND cygpath ${Win32ResourcesFolder} --mixed
+  	OUTPUT_VARIABLE Win32ResourcesFolder_OUT
+  	OUTPUT_STRIP_TRAILING_WHITESPACE)
+else()
+  set(Win32ResourcesFolder_OUT ${Win32ResourcesFolder})
 endif()
+
+if(NOT Win32VMExecutableIcon)
+    set(Win32VMExecutableIcon "${Win32ResourcesFolder_OUT}/Pharo.ico")
+endif()
+
 set(Win32Resource "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_NAME}.rc")
 set(Win32ConsoleResource "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_CONSOLE_NAME}.rc")
 set(Win32DLLResource "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_NAME}DLL.rc")
@@ -90,6 +103,11 @@ macro(configure_installables INSTALL_COMPONENT)
           FILES_MATCHING PATTERN *.dll
           PERMISSIONS OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
+	install(
+		FILES "${Win32Manifest}" "${Win32ConsoleManifest}"
+		DESTINATION "./"
+        COMPONENT ${INSTALL_COMPONENT})
+
     install(
           DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/vm/"
           USE_SOURCE_PERMISSIONS
@@ -132,11 +150,19 @@ macro(add_required_libs_per_platform)
 	target_link_libraries(${VM_LIBRARY_NAME} uuid)
     # Disable Safe Structured Exception Handling
     #target_link_libraries(${VM_LIBRARY_NAME} "$<$<CXX_COMPILER_ID:MSVC>:-SAFESEH:NO>")
-
-
-	if(${CYGWIN})
+	
+	# pthread is required by tffi and the vm itself. We should always link to it.
+	if (${FEATURE_LIB_PTHREADW32})		
+		find_package(PTHREADW32)
+		if(PTHREADW32_FOUND)
+			target_link_libraries(${VM_LIBRARY_NAME} PTHREADW32::lib)
+		else()
+			message(FATAL_ERROR "PTHREADW32 not found. Provide the path in PTHREADW32_DIR env.variable")
+		endif()
+	else()
 		target_link_libraries(${VM_LIBRARY_NAME} pthread)
 	endif()
+
 	target_link_libraries(${VM_EXECUTABLE_NAME} Ole32)
 	target_link_libraries(${VM_EXECUTABLE_NAME} comctl32)
 	target_link_libraries(${VM_EXECUTABLE_NAME} uuid)

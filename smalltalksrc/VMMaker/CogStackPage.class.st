@@ -42,7 +42,7 @@ CogStackPage class >> getter: getter bitPosition: bitPosition bitWidth: bitWidth
 		endByte := bitPosition + bitWidth - 1 // 8.
 		self assert: bitPosition \\ 8 = 0.
 
-		accessor := #('byte' 'short' 'long' 'long')
+		accessor := #('byte' 'short' 'long32' 'long32')
 							at: endByte - startByte + 1
 							ifAbsent: ['long64'].
 		s	nextPutAll: getter; crtab: 1; nextPut: $^.
@@ -54,7 +54,7 @@ CogStackPage class >> getter: getter bitPosition: bitPosition bitWidth: bitWidth
 			[s nextPutAll: 'stackPages surrogateAtAddress: ('].
 		s nextPutAll: 'memory ';
 		   nextPutAll: accessor;
-		   nextPutAll: 'At: address + '; print: startByte + 1.
+		   nextPutAll: 'At: address + '; print: startByte.
 		(typeOrNil notNil and: ['*StackPage*' match: typeOrNil]) ifTrue:
 			[s nextPut: $)]]
 
@@ -105,7 +105,7 @@ CogStackPage class >> setter: getter bitPosition: bitPosition bitWidth: bitWidth
 		endByte := bitPosition + bitWidth - 1 // 8.
 		self assert: bitPosition \\ 8 = 0.
 
-		accessor := #('byte' 'short' 'long' 'long')
+		accessor := #('byte' 'short' 'long32' 'long32')
 							at: endByte - startByte + 1
 							ifAbsent: ['long64'].
 		s	nextPutAll: getter; nextPutAll: ': aValue'; crtab: 1;
@@ -119,7 +119,7 @@ CogStackPage class >> setter: getter bitPosition: bitPosition bitWidth: bitWidth
 		(typeOrNil notNil and: ['*StackPage*' match: typeOrNil]) ifFalse:
 			[s nextPut: $^].
 		s nextPutAll: 'memory ';
-		   nextPutAll: accessor; nextPutAll: 'At: address + '; print: startByte + 1;
+		   nextPutAll: accessor; nextPutAll: 'At: address + '; print: startByte;
 		   nextPutAll: ' put: aValue'.
 		(typeOrNil notNil and: ['*StackPage*' match: typeOrNil]) ifTrue:
 			[s nextPutAll: ' asInteger.'; crtab: 1; nextPutAll: '^aValue']]

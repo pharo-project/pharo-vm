@@ -18,22 +18,23 @@ sqInt arrayObjectSize(sqInt array);
 // clean ending for a primitive
 
 // Inline  functions need to be defined in the file that uses them. Thus define them at the header level
-inline sqInt getReceiver() {
+static inline sqInt getReceiver() {
     return stackValue(methodArgumentCount());
 }
-
-inline void primitiveEnd() {
+// these must be made static else they cause trouble with no-opt -O0 builds
+// because the compiler doesn't inline them with -O0
+static inline void primitiveEnd() {
     //pop all execept receiver, which will be answered (^self)
     pop(methodArgumentCount());
 }
 
-inline void primitiveEndReturn(sqInt ret) {
+static inline void primitiveEndReturn(sqInt ret) {
     //pop all including receiver, we are answering our own result
     pop(methodArgumentCount() + 1);
     push(ret);
 }
 
-inline void primitiveEndReturnInteger(sqInt ret) {
+static inline void primitiveEndReturnInteger(sqInt ret) {
     pop(methodArgumentCount() + 1);
     pushInteger(ret);
 }

@@ -67,109 +67,6 @@ Spur64BitMemoryManager >> addressAfter: objOop [
 	^objOop + self baseHeaderSize + (numSlots bitShift: self shiftForWord)
 ]
 
-{ #category : #allocation }
-Spur64BitMemoryManager >> allocateSlots: numSlots format: formatField classIndex: classIndex isPinned: isPinned [
-	"Allocate an object with numSlots space.  If there is room beneath scavengeThreshold
-	 allocate in newSpace, otherwise alocate in oldSpace.  If there is not room in newSpace
-	 and a scavenge is not already scheduled, schedule a scavenge."
-	<inline: true>
-	| numBytes newObj hasToScheduleScavenge |
-	"Object headers are 8 bytes in length if the slot size fits in the num slots field (max implies overflow),
-	 16 bytes otherwise (num slots in preceding word).
-	 Objects always have at least one slot, for the forwarding pointer,
-	 and are multiples of 8 bytes in length."
-	numSlots >= self numSlotsMask
-		ifTrue:
-			[numSlots >> 56 > 0 ifTrue:
-				[^nil]. "overflow size must fit in 56-bits"
-			 newObj := freeStart + self baseHeaderSize.
-			 numBytes := self largeObjectBytesForSlots: numSlots]
-		ifFalse:
-			[newObj := freeStart.
-			 numBytes := self smallObjectBytesForSlots: numSlots].
-	
-	hasToScheduleScavenge := freeStart + numBytes > scavengeThreshold.
-	
-	(hasToScheduleScavenge or: [isPinned]) ifTrue:
-		[ hasToScheduleScavenge 
-			ifTrue: [needGCFlag 	ifFalse: [self scheduleScavenge]].
-		
-		  isPinned 
-			ifTrue: [ 
-				^self 
-					allocateSlotsForPinningInOldSpace: numSlots 
-					bytes: numBytes format: formatField classIndex: classIndex ]
-			ifFalse: [ 
-				^self 
-					allocateSlotsInOldSpace: numSlots 
-					bytes: numBytes format: formatField classIndex: classIndex ]].
-	
-	numSlots >= self numSlotsMask
-		ifTrue: "for header parsing we put a saturated slot count in the prepended overflow size word"
-			[self flag: #endianness.
-			 self longAt: freeStart put: self numSlotsMask << self numSlotsFullShift + numSlots.
-			 self longAt: newObj put: (self headerForSlots: self numSlotsMask format: formatField classIndex: classIndex)]
-		ifFalse:
-			[self longAt: newObj put: (self headerForSlots: numSlots format: formatField classIndex: classIndex)].
-	self assert: numBytes \\ self allocationUnit = 0.
-	self assert: newObj \\ self allocationUnit = 0.
-	freeStart := freeStart + numBytes.
-	^newObj
-]
-
-{ #category : #allocation }
-Spur64BitMemoryManager >> allocateSlotsForPinningInOldSpace: numSlots bytes: totalBytes format: formatField classIndex: classIndex [
-	"Answer the oop of a chunk of space in oldSpace with numSlots slots.  Try and
-	 allocate in a segment that already includes pinned objects.  The header of the
-	 result will have been filled-in but not the contents."
-	<var: #totalBytes type: #usqInt>
-	<inline: false>
-	| chunk |
-	chunk := self allocateOldSpaceChunkOfBytes: totalBytes
-				   suchThat: [:f| (segmentManager segmentContainingObj: f) containsPinned].
-	chunk ifNil:
-		[chunk := self allocateOldSpaceChunkOfBytes: totalBytes.
-		 chunk ifNil:
-			[^nil].
-		 (segmentManager segmentContainingObj: chunk) containsPinned: true].
-	numSlots >= self numSlotsMask ifTrue: "for header parsing we put a saturated slot count in the prepended overflow size word"
-		[self longAt: chunk
-			put: numSlots + (self numSlotsMask << self numSlotsFullShift).
-		 self longAt: chunk + self baseHeaderSize
-			put: ((self headerForSlots: self numSlotsMask format: formatField classIndex: classIndex)
-					bitOr: 1 << self pinnedBitShift).
-		 self checkFreeSpace: GCModeNewSpace.
-		 ^chunk + self baseHeaderSize].
-	self longAt: chunk
-		put: ((self headerForSlots: numSlots format: formatField classIndex: classIndex)
-				bitOr: 1 << self pinnedBitShift).
-	self checkFreeSpace: GCModeNewSpace.
-	^chunk
-]
-
-{ #category : #allocation }
-Spur64BitMemoryManager >> allocateSlotsInOldSpace: numSlots bytes: totalBytes format: formatField classIndex: classIndex [
-	"Answer the oop of a chunk of space in oldSpace with numSlots slots.  The header
-	 will have been filled-in but not the contents.  If no memory is available answer nil."
-	<var: #totalBytes type: #usqInt>
-	<inline: false>
-	| chunk |
-	chunk := self allocateOldSpaceChunkOfBytes: totalBytes.
-	chunk ifNil:
-		[^nil].
-	numSlots >= self numSlotsMask ifTrue: "for header parsing we put a saturated slot count in the prepended overflow size word"
-		[self longAt: chunk
-			put: numSlots + (self numSlotsMask << self numSlotsFullShift).
-		 self longAt: chunk + self baseHeaderSize
-			put: (self headerForSlots: self numSlotsMask format: formatField classIndex: classIndex).
-		 self checkFreeSpace: GCModeNewSpace.
-		 ^chunk + self baseHeaderSize].
-	self longAt: chunk
-		put: (self headerForSlots: numSlots format: formatField classIndex: classIndex).
-	self checkFreeSpace: GCModeNewSpace.
-	^chunk
-]
-
 { #category : #'type-support' }
 Spur64BitMemoryManager >> asSignedPlatformInteger: anInteger [ 
 	
@@ -856,17 +753,6 @@ Spur64BitMemoryManager >> maxSmallInteger [
 	^16rFFFFFFFFFFFFFFF
 ]
 
-{ #category : #simulation }
-Spur64BitMemoryManager >> memoryClass [
-	"Answer the class to use for the memory inst var in simulation.
-	 Answer nil if a suitable class isn't available.  This version emulates 64-bit access given a 32-bit element array."
-	<doNotGenerate>
-	
-	^ SpurSimulatedMemory "self endianness == #little
-		ifTrue: [LittleEndianBitmap]
-		ifFalse: [Bitmap]"
-]
-
 { #category : #'interpreter access' }
 Spur64BitMemoryManager >> methodDictionaryHash: oop mask: mask [
 	<inline: true>
@@ -890,25 +776,6 @@ Spur64BitMemoryManager >> minSmallInteger [
 Spur64BitMemoryManager >> negativeSmallFloatZero [
 	<inline: true>
 	^self smallFloatSignBit + self smallFloatTag
-]
-
-{ #category : #simulation }
-Spur64BitMemoryManager >> newInputEventAccessorOfSize: numElements [
-	<doNotGenerate>
-	self flag: #endianness.
-	^(CPluggableAccessor on: (WordArray new: 16))
-		atBlock: [:obj :idx| | v pidx2 |
-				pidx2 := (idx - 1) * 2.
-				v := (obj at: pidx2 + 1) + ((obj at: pidx2 + 2) << 32).
-				v >> 63 > 0 ifTrue:
-					[v := v - (1 << 64)].
-				v]
-		atPutBlock: [:obj :idx :val| |pidx2|
-					pidx2 := (idx - 1) * 2.
-					obj at: pidx2 + 1 put: (val bitAnd: 16rFFFFFFFF).
-					obj at: pidx2 + 2 put: (val >> 32 bitAnd: 16rFFFFFFFF).
-					val];
-		objectSize: 8
 ]
 
 { #category : #'free space' }
@@ -1052,12 +919,6 @@ Spur64BitMemoryManager >> rtRefCountOf: obj put: refCount [
 	header := header bitAnd: (7 << self rememberedBitShift) bitInvert64.
 	header := header + (refCount << self rememberedBitShift).
 	self longAt: obj put: header
-]
-
-{ #category : #'image segment in/out' }
-Spur64BitMemoryManager >> savedOutHashFillValue [
-	<inline: true>
-	^self maxIdentityHash + 1 << 32 + (self maxIdentityHash + 1)
 ]
 
 { #category : #'header access' }

@@ -4,7 +4,6 @@ macro(add_vm_plugin NAME)
 
     if(OSX)
         file(GLOB ${NAME}_SOURCES
-            ${${NAME}_SOURCES_EXTRA}
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/${NAME}/src/common/*.c   
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/${NAME}/src/osx/*.c   
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/${NAME}/src/unix/*.c 
@@ -16,7 +15,6 @@ macro(add_vm_plugin NAME)
         )        
     elseif(UNIX)
         file(GLOB ${NAME}_SOURCES
-            ${${NAME}_SOURCES_EXTRA}
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/${NAME}/src/common/*.c   
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/${NAME}/src/unix/*.c 
         )         
@@ -26,7 +24,6 @@ macro(add_vm_plugin NAME)
         )
     else()
         file(GLOB ${NAME}_SOURCES
-            ${${NAME}_SOURCES_EXTRA}       
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/${NAME}/src/common/*.c   
             ${CMAKE_CURRENT_SOURCE_DIR}/extracted/plugins/${NAME}/src/win/*.c 
         )                 
@@ -38,5 +35,5 @@ macro(add_vm_plugin NAME)
 
     message(STATUS "Adding plugin: ${NAME}")    
 
-    addLibraryWithRPATH(${NAME} ${${NAME}_SOURCES})
+    addLibraryWithRPATH(${NAME} ${${NAME}_SOURCES} ${${NAME}_SOURCES_EXTRA})
 endmacro()

@@ -36,21 +36,12 @@ static char  *maxAppAddr;	/* SYSTEM_INFO lpMaximumApplicationAddress */
 # define roundDownToPage(v) ((v)&pageMask)
 # define roundUpToPage(v) (((v)+pageSize-1)&pageMask)
 
-/************************************************************************/
-/* sqAllocateMemory: Initialize virtual memory                          */
-/************************************************************************/
-usqInt
-sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseAddress)
-{
-	char *hint, *address, *alloc;
+void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
+	
+	char *address, *alloc;
 	usqIntptr_t alignment;
 	sqInt allocBytes;
 	SYSTEM_INFO sysInfo;
-
-	if (pageSize) {
-		logError("sqAllocateMemory have already been called");
-		exit(1);
-	}
 
 	/* determine page boundaries & available address space */
 	GetSystemInfo(&sysInfo);
@@ -59,20 +50,39 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 	minAppAddr = sysInfo.lpMinimumApplicationAddress;
 	maxAppAddr = sysInfo.lpMaximumApplicationAddress;
 
-#if __MINGW32__
-	/* choose a suitable starting point. In MinGW the malloc heap is below the
-	 * program, so take the max of a malloc and something from uninitialized
-	 * data.
-	 */
-	hint = malloc(1);
-	free(hint);
-	hint = max(hint, (char*)&fIsConsole);
-#else
-	hint = desiredBaseAddress;
-#endif
+	alignment = max(pageSize,1024*1024);
+	address = (char *)(((usqInt)desiredPosition + alignment - 1) & ~(alignment - 1));
+
+	alloc = sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto(roundUpToPage(desiredSize), address, &allocBytes);
+
+	if (!alloc) {
+		logErrorFromErrno("Could not allocate JIT memory");
+		exit(1);
+	}
+	return alloc;
+}
+
+
+/************************************************************************/
+/* sqAllocateMemory: Initialize virtual memory                          */
+/************************************************************************/
+usqInt
+sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseAddress)
+{
+	char *address, *alloc;
+	usqIntptr_t alignment;
+	sqInt allocBytes;
+	SYSTEM_INFO sysInfo;
+
+	/* determine page boundaries & available address space */
+	GetSystemInfo(&sysInfo);
+	pageSize = sysInfo.dwPageSize;
+	pageMask = ~(pageSize - 1);
+	minAppAddr = sysInfo.lpMinimumApplicationAddress;
+	maxAppAddr = sysInfo.lpMaximumApplicationAddress;
 
 	alignment = max(pageSize,1024*1024);
-	address = (char *)(((usqInt)hint + alignment - 1) & ~(alignment - 1));
+	address = (char *)(((usqInt)desiredBaseAddress + alignment - 1) & ~(alignment - 1));
 
 	alloc = sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto
 				(roundUpToPage(desiredHeapSize), address, &allocBytes);

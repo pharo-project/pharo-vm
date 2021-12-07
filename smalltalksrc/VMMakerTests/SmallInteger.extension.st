@@ -1,9 +1,15 @@
 Extension { #name : #SmallInteger }
 
 { #category : #'*VMMakerTests' }
-SmallInteger >> forMemory: aMemory [
+SmallInteger >> forMemory: memory [
 	
-	(self > aMemory maxSmallInteger or: [ self < aMemory minSmallInteger ]) ifTrue: [ self halt ].
+	(self > memory maxSmallInteger or: [ self < memory minSmallInteger ]) ifTrue: [ self halt ].
 	
-	^ aMemory integerObjectOf: self
+	^ memory integerObjectOf: self
+]
+
+{ #category : #'*VMMakerTests' }
+SmallInteger >> forMethodBuilder: aBuilder [
+
+	^ self forMemory: aBuilder memory
 ]

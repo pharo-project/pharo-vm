@@ -4,10 +4,8 @@ Class {
 	#instVars : [
 		'ceScheduleScavengeTrampoline',
 		'ceSmallActiveContextInMethodTrampoline',
-		'ceSmallActiveContextInBlockTrampoline',
 		'ceSmallActiveContextInFullBlockTrampoline',
 		'ceLargeActiveContextInMethodTrampoline',
-		'ceLargeActiveContextInBlockTrampoline',
 		'ceLargeActiveContextInFullBlockTrampoline',
 		'ceStoreCheckContextReceiverTrampoline',
 		'ceStoreTrampolines',
@@ -20,7 +18,7 @@ Class {
 	],
 	#pools : [
 		'VMBytecodeConstants',
-		'VMSqueakClassIndices'
+		'VMClassIndices'
 	],
 	#category : #'VMMaker-JIT'
 }
@@ -223,18 +221,6 @@ CogObjectRepresentationForSpur >> canPinObjects [
 ]
 
 { #category : #accessing }
-CogObjectRepresentationForSpur >> ceLargeActiveContextInBlockTrampoline [
-	<doNotGenerate>
-	^ ceLargeActiveContextInBlockTrampoline
-]
-
-{ #category : #accessing }
-CogObjectRepresentationForSpur >> ceLargeActiveContextInBlockTrampoline: anInteger [ 
-	<doNotGenerate>
-	ceLargeActiveContextInBlockTrampoline := anInteger
-]
-
-{ #category : #accessing }
 CogObjectRepresentationForSpur >> ceLargeActiveContextInFullBlockTrampoline [
 	<doNotGenerate>
 	^ ceLargeActiveContextInFullBlockTrampoline
@@ -262,18 +248,6 @@ CogObjectRepresentationForSpur >> ceLargeActiveContextInMethodTrampoline: anInte
 CogObjectRepresentationForSpur >> ceScheduleScavengeTrampoline: anAddress [
 	<doNotGenerate>
 	ceScheduleScavengeTrampoline := anAddress
-]
-
-{ #category : #accessing }
-CogObjectRepresentationForSpur >> ceSmallActiveContextInBlockTrampoline [
-	<doNotGenerate>
-	^ ceSmallActiveContextInBlockTrampoline
-]
-
-{ #category : #accessing }
-CogObjectRepresentationForSpur >> ceSmallActiveContextInBlockTrampoline: anInteger [ 
-	<doNotGenerate>
-	ceSmallActiveContextInBlockTrampoline := anInteger
 ]
 
 { #category : #accessing }
@@ -499,27 +473,6 @@ CogObjectRepresentationForSpur >> genConvertSmallIntegerToCharacterInReg: reg [
 ]
 
 { #category : #'bytecode generator support' }
-CogObjectRepresentationForSpur >> genCreateClosureAt: bcpc numArgs: numArgs numCopied: numCopied contextNumArgs: ctxtNumArgs large: isLargeCtxt inBlock: isInBlock [
-	"Create a closure with the given startpc, numArgs and numCopied
-	 within a context with ctxtNumArgs, large if isLargeCtxt that is in a
-	 block if isInBlock.  If numCopied > 0 pop those values off the stack."
-	self genNoPopCreateClosureAt: bcpc
-		numArgs: numArgs
-		numCopied: numCopied
-		contextNumArgs: ctxtNumArgs
-		large: isLargeCtxt
-		inBlock: isInBlock.
-	1 to: numCopied do:
-		[:i|
-		cogit
-			PopR: TempReg;
-			MoveR: TempReg
-				Mw: numCopied - i + ClosureFirstCopiedValueIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize
-					r: ReceiverResultReg].
-	^0
-]
-
-{ #category : #'bytecode generator support' }
 CogObjectRepresentationForSpur >> genCreateFullClosure: compiledBlock numArgs: numArgs numCopied: numCopied ignoreContext: ignoreContext contextNumArgs: contextNumArgs large: contextIsLarge inBlock: contextIsBlock [
 	"Create a full closure with the given values."
 	| numSlots byteSize header skip |
@@ -550,11 +503,11 @@ CogObjectRepresentationForSpur >> genCreateFullClosure: compiledBlock numArgs: n
 	skip jmpTarget: cogit Label.
 
 	cogit
-		MoveR: ClassReg Mw: ClosureOuterContextIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg;
+		MoveR: ClassReg Mw: FullClosureOuterContextIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg;
 		genMoveConstant: compiledBlock R: TempReg;
-		MoveR: TempReg Mw: ClosureStartPCIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg;
+		MoveR: TempReg Mw: FullClosureCompiledBlockIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg;
 		MoveCq: (objectMemory integerObjectOf: numArgs) R: TempReg;
-		MoveR: TempReg Mw: ClosureNumArgsIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg.
+		MoveR: TempReg Mw: FullClosureNumArgsIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg.
 	^0
 ]
 
@@ -726,10 +679,6 @@ CogObjectRepresentationForSpur >> genGetActiveContextLarge: isLarge inBlock: isI
 	"now get the home CogMethod into ClassReg and save for post-instantiation."
 	isInBlock caseOf: {
 	[InFullBlock]	-> [cogit SubCq: 3 R: ClassReg]. "-3 is -(hasContext+isBlock) flags"
-	[InVanillaBlock]	-> [cogit
-							SubCq: 3 R: ClassReg; "-3 is -(hasContext+isBlock) flags"
-							MoveM16: 0 r: ClassReg R: TempReg;
-							SubR: TempReg R: ClassReg].
 	[0]				-> [cogit SubCq: 1 R: ClassReg]. "-1 is hasContext flag" }.
 
 	"instantiate the context..."
@@ -863,11 +812,9 @@ CogObjectRepresentationForSpur >> genGetActiveContextNumArgs: numArgs large: isL
 	routine := isLargeContext
 				ifFalse: [isInBlock caseOf: {
 						[0]				-> [ceSmallActiveContextInMethodTrampoline].
-						[InVanillaBlock]	-> [ceSmallActiveContextInBlockTrampoline].
 						[InFullBlock]	-> [ceSmallActiveContextInFullBlockTrampoline] }]
 				ifTrue: [isInBlock caseOf: {
 						[0]				-> [ceLargeActiveContextInMethodTrampoline].
-						[InVanillaBlock]	-> [ceLargeActiveContextInBlockTrampoline].
 						[InFullBlock]	-> [ceLargeActiveContextInFullBlockTrampoline] }].
 	cogit
 		MoveCq: numArgs R: SendNumArgsReg;
@@ -1261,43 +1208,6 @@ CogObjectRepresentationForSpur >> genNewHashTrampoline: saveRegs called: name [
 		pushLinkReg: true
 		resultReg: ReceiverResultReg
 		appendOpcodes: false
-]
-
-{ #category : #'bytecode generator support' }
-CogObjectRepresentationForSpur >> genNoPopCreateClosureAt: bcpc numArgs: numArgs numCopied: numCopied contextNumArgs: ctxtNumArgs large: isLargeCtxt inBlock: isInBlock [
-	"Create a closure with the given startpc, numArgs and numCopied
-	 within a context with ctxtNumArgs, large if isLargeCtxt that is in a
-	 block if isInBlock.  Do /not/ initialize the copied values."
-	| numSlots byteSize header skip |
-	<var: #skip type: #'AbstractInstruction *'>
-
-	"First get thisContext into ReceiverResultRega and thence in ClassReg."
-	self genGetActiveContextNumArgs: ctxtNumArgs large: isLargeCtxt inBlock: isInBlock.
-	cogit MoveR: ReceiverResultReg R: ClassReg.
-
-	numSlots := ClosureFirstCopiedValueIndex + numCopied.
-	byteSize := objectMemory smallObjectBytesForSlots: numSlots.
-	header := objectMemory
-					headerForSlots: numSlots
-					format: objectMemory indexablePointersFormat
-					classIndex: ClassBlockClosureCompactIndex.
-	cogit MoveAw: objectMemory freeStartAddress R: ReceiverResultReg.
-	self genStoreHeader: header intoNewInstance: ReceiverResultReg using: TempReg.
-	cogit
-		LoadEffectiveAddressMw: byteSize r: ReceiverResultReg R: TempReg;
-		MoveR: TempReg Aw: objectMemory freeStartAddress;
-		CmpCq: objectMemory getScavengeThreshold R: TempReg.
-	skip := cogit JumpBelow: 0.
-	cogit CallRT: ceScheduleScavengeTrampoline.
-	skip jmpTarget: cogit Label.
-
-	cogit
-		MoveR: ClassReg Mw: ClosureOuterContextIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg;
-		MoveCq: (objectMemory integerObjectOf: bcpc) R: TempReg;
-		MoveR: TempReg Mw: ClosureStartPCIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg;
-		MoveCq: (objectMemory integerObjectOf: numArgs) R: TempReg;
-		MoveR: TempReg Mw: ClosureNumArgsIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg.
-	^0
 ]
 
 { #category : #'primitive generators' }
@@ -3038,11 +2948,9 @@ CogObjectRepresentationForSpur >> generateObjectRepresentationTrampolines [
 											called: 'ceScheduleScavengeTrampoline'
 											regsToSave: CallerSavedRegisterMask.
 	ceSmallActiveContextInMethodTrampoline := self genActiveContextTrampolineLarge: false inBlock: 0 called: 'ceSmallMethodContext'.
-	ceSmallActiveContextInBlockTrampoline := self genActiveContextTrampolineLarge: false inBlock: InVanillaBlock called: 'ceSmallBlockContext'.
 	SistaV1BytecodeSet ifTrue:
 		[ceSmallActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: false inBlock: InFullBlock called: 'ceSmallFullBlockContext'].
 	ceLargeActiveContextInMethodTrampoline := self genActiveContextTrampolineLarge: true inBlock: 0 called: 'ceLargeMethodContext'.
-	ceLargeActiveContextInBlockTrampoline := self genActiveContextTrampolineLarge: true inBlock: InVanillaBlock called: 'ceLargeBlockContext'.
 	SistaV1BytecodeSet ifTrue:
 		[ceLargeActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: true inBlock: InFullBlock called: 'ceLargeFullBlockContext'].
 ]

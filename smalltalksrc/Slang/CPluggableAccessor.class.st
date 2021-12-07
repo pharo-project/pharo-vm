@@ -19,12 +19,12 @@ CPluggableAccessor >> asInteger [
 
 { #category : #accessing }
 CPluggableAccessor >> at: index [
-	^readBlock value: object value: index + offset + 1
+	^readBlock value: object value: index + offset
 ]
 
 { #category : #accessing }
 CPluggableAccessor >> at: index put: value [
-	^writeBlock value: object value: index + offset + 1 value: value
+	^writeBlock value: object value: index + offset value: value
 ]
 
 { #category : #initialize }

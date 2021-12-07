@@ -97,16 +97,9 @@ UnicornProcessor >> initializeStackFor: aCompiler [
 	"Initialize the machine code simulator"
 	machineSimulator := UnicornSimulator perform: aCompiler backend class ISA asSymbol.
 	machineSimulator memory: aCompiler objectMemory.
-	aCompiler objectMemory memory memoryObject pinInMemory.
-	machineSimulator mapMemory: aCompiler objectMemory memory memoryObject at: aCompiler objectMemory memory initialAddress "just some address not 0".
-	
-	"As for the ARMv8 Arm® Architecture Reference Manual
-	
-	D1.8.2 SP alignment checking
-	A misaligned stack pointer is where bits[3:0] of the stack pointer are not 0b0000, when the stack pointer is used as the base address of the calculation, regardless of any offset applied by the instruction.
-	
-	Meaning that the stack should be aligned to 16 bytes"
-	aCompiler setStackAlignment: 16 expectedSPOffset: 0 expectedFPOffset: 0.
+	machineSimulator mapMemoryInManager: aCompiler objectMemory memoryManager.
+
+	aCompiler backend configureStackAlignment
 ]
 
 { #category : #'as yet unclassified' }
@@ -115,13 +108,13 @@ UnicornProcessor >> integerRegisterState [
 	^ machineSimulator integerRegisterState 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #registers }
 UnicornProcessor >> linkRegisterValue [
 	
 	^ machineSimulator linkRegisterValue 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #registers }
 UnicornProcessor >> lr: anInteger [ 
 
 	machineSimulator lr: anInteger
@@ -138,7 +131,7 @@ UnicornProcessor >> machineSimulator: aMachineSimulator [
 	machineSimulator := aMachineSimulator
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #registers }
 UnicornProcessor >> pc [
 	
 	^ machineSimulator instructionPointerValue
@@ -168,25 +161,25 @@ UnicornProcessor >> pushWord: anInteger [
 	machineSimulator pushWord: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #registers }
 UnicornProcessor >> r0: anInteger [ 
 
 	^ machineSimulator r0: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #registers }
 UnicornProcessor >> r10: anInteger [ 
 	
 	machineSimulator r10: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #registers }
 UnicornProcessor >> r11: anInteger [ 
 	
 	machineSimulator r11: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #registers }
 UnicornProcessor >> r1: anInteger [ 
 	
 	^ machineSimulator r1: anInteger 
@@ -198,31 +191,55 @@ UnicornProcessor >> r2: anInteger [
 	machineSimulator r2: anInteger 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #registers }
+UnicornProcessor >> r3: anInteger [ 
+	
+	machineSimulator r3: anInteger 
+]
+
+{ #category : #registers }
+UnicornProcessor >> r4: anInteger [ 
+	
+	machineSimulator r4: anInteger 
+]
+
+{ #category : #registers }
 UnicornProcessor >> r5: anInteger [ 
 
 	machineSimulator r5: anInteger 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #registers }
 UnicornProcessor >> r6: anInteger [ 
 	
 	machineSimulator r6: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
+UnicornProcessor >> r8 [
+
+	^ machineSimulator r8
+]
+
+{ #category : #accessing }
+UnicornProcessor >> r8: anInteger [ 
+	
+	machineSimulator r8: anInteger 
+]
+
+{ #category : #registers }
 UnicornProcessor >> r9: anInteger [
 	
 	machineSimulator r9: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #registers }
 UnicornProcessor >> r9b: anInteger [ 
 
 	machineSimulator r9b: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #registers }
 UnicornProcessor >> rax: anInteger [ 
 	
 	machineSimulator rax: anInteger
@@ -246,7 +263,7 @@ UnicornProcessor >> rdx: anInteger [
 	machineSimulator rdx: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #registers }
 UnicornProcessor >> retpcIn: aSpurSimulatedMemory [ 
 
 	^ machineSimulator retpcIn: aSpurSimulatedMemory 
@@ -273,7 +290,7 @@ UnicornProcessor >> runUntil: anAddress [
 
 	^ machineSimulator startAt: machineSimulator instructionPointerValue
 		until: anAddress
-		timeout: 1000
+		timeout: 100000 "microseconds = 100ms"
 		count: 0
 ]
 

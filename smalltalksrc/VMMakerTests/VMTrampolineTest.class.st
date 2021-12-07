@@ -8,7 +8,7 @@ Class {
 	],
 	#pools : [
 		'CogAbstractRegisters',
-		'VMSqueakClassIndices'
+		'VMClassIndices'
 	],
 	#category : #'VMMakerTests-JitTests'
 }
@@ -78,7 +78,7 @@ VMTrampolineTest >> testCallEnilopmartSucceedsExecution [
 	"Initialize with some stack pointer and frame pointer"
 	baseMethod := methodBuilder newMethod
 		literals: { memory nilObject. memory nilObject }; 
-		buildMethod.
+		build.
 	
 	baseMethodIP := memory lastPointerOf: baseMethod.
 	

@@ -74,10 +74,7 @@ CoInterpreterStackPages >> initializeStack: theStackPages numSlots: stackSlots p
 	| numPages page structStackPageSize pageStructBase count |
 	<var: #page type: #'StackPage *'>
 	<var: #pageStructBase type: #'char *'>
-	self cCode: []
-		inSmalltalk:
-			["self assert: objectMemory startOfMemory - coInterpreter cogCodeSize - Cogit guardPageSize - coInterpreter methodCacheSize - coInterpreter primTraceLogSize - coInterpreter rumpCStackSize
-					= (stackSlots * objectMemory wordSize roundUpTo: objectMemory allocationUnit)"].
+
 	structStackPageSize := coInterpreter sizeof: CogStackPage.
 	bytesPerPage := slotsPerPage * objectMemory wordSize.
 	numPages := coInterpreter numStkPages.
@@ -86,6 +83,7 @@ CoInterpreterStackPages >> initializeStack: theStackPages numSlots: stackSlots p
 	 subtracting BytesPerWord from baseAddress and lastAddress in the init loop below we simply
 	 push the stackPage array up one word to avoid the overlap.  This word is extraStackBytes."
 	pageStructBase := theStackPages + (numPages * bytesPerPage) + objectMemory wordSize.
+	
 	pages := self cCode: [self cCoerceSimple: pageStructBase to: #'StackPage *']
 				  inSmalltalk:
 					[pageMap := Dictionary new.
@@ -94,8 +92,8 @@ CoInterpreterStackPages >> initializeStack: theStackPages numSlots: stackSlots p
 						 CogStackPage surrogateClass new
 							address: pageStructBase + (i * structStackPageSize)
 							simulator: coInterpreter
-							zoneBase: coInterpreter stackZoneBase
-							zoneLimit: objectMemory startOfMemory])
+							zoneBase: minStackAddress
+							zoneLimit: maxStackAddress])
 						do: [:pageSurrogate|
 							pageMap at: pageSurrogate address put: pageSurrogate];
 						yourself].
@@ -117,10 +115,6 @@ CoInterpreterStackPages >> initializeStack: theStackPages numSlots: stackSlots p
 	"Now compute stackBasePlus1 so that the pageIndexFor: call maps all addresses from
 	 aPage baseAddress to aBase limitAddress + 1 to the same index (stacks grow down)"
 	stackBasePlus1 := (self cCoerceSimple: theStackPages to: #'char *') + 1.
-	self cCode: []
-		inSmalltalk:
-			[minStackAddress := theStackPages.
-			 maxStackAddress := theStackPages + (numPages * bytesPerPage) + objectMemory wordSize - 1].
 
 	"The overflow limit is the amount of stack to retain when moving frames from an overflowing
 	 stack to reduce thrashing.  See stackOverflowOrEvent:mayContextSwitch:"
@@ -166,7 +160,11 @@ CoInterpreterStackPages >> initializeWithByteSize: byteSize "<Integer>" for: anI
 	<doNotGenerate>
 	coInterpreter := anInterpreter.
 	objectMemory := coInterpreter objectMemory.
-	^anInterpreter stackZoneBase
+		
+	minStackAddress := objectMemory memoryManager allocate: byteSize.
+	maxStackAddress := minStackAddress + byteSize.
+	
+	^ minStackAddress 
 ]
 
 { #category : #'memory access' }
@@ -188,7 +186,7 @@ CoInterpreterStackPages >> longAt: byteAddress put: a32Or64BitValue [
 CoInterpreterStackPages >> memIndexFor: byteAddress [
 	"Map an address into the stack zone into a word index into the slots in the stack zone."
 	<doNotGenerate>
-	^(self oopForPointer: byteAddress) - coInterpreter stackZoneBase - 1 // objectMemory wordSize + 1
+	^(self oopForPointer: byteAddress) - minStackAddress - 1 // objectMemory wordSize + 1
 ]
 
 { #category : #'as yet unclassified' }

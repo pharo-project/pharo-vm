@@ -9,11 +9,21 @@
 
 #endif
 
+#if __APPLE__
+
+#define _XOPEN_SOURCE
+#include <ucontext.h>
+
+#endif
+
+
 #ifdef HAVE_EXECINFO_H
 # include <execinfo.h>
 #endif
 
 #include <signal.h>
+#include <string.h>
+
 
 #define BACKTRACE_DEPTH 64
 
@@ -36,11 +46,10 @@ void doReport(char* fault, ucontext_t *uap){
 	char crashdumpFileName[PATH_MAX+1];
 	FILE *crashDumpFile;
 
-
 	ctime_r(&now,ctimebuf);
 
-
 	//This is awful but replace the stdout to print all the messages in the file.
+	crashdumpFileName[0] = 0;
 	getCrashDumpFilenameInto(crashdumpFileName);
 	crashDumpFile = fopen(crashdumpFileName, "a+");
 	vm_setVMOutputStream(crashDumpFile);
@@ -63,24 +72,32 @@ void sigusr1(int sig, siginfo_t *info, ucontext_t *uap)
 	errno = saved_errno;
 }
 
+
 static int inFault = 0;
 
 void sigsegv(int sig, siginfo_t *info, ucontext_t *uap)
 {
-	char *fault = sig == SIGSEGV
-					? "Segmentation fault"
-					: (sig == SIGBUS
-						? "Bus error"
-						: (sig == SIGILL
-							? "Illegal instruction"
-							: "Unknown signal"));
+	char *fault = strsignal(sig);
 
-	if (!inFault) {
-		inFault = 1;
+	doReport(fault, uap);
+
+	exit(-1);
+}
+
+void terminateHandler(int sig, siginfo_t *info, ucontext_t *uap)
+{
+	char *fault = strsignal(sig);
+
+	logWarn("VM terminated with signal %s", fault);
+
+	if(getLogLevel() >= LOG_DEBUG){		
 		doReport(fault, uap);
 	}
-	abort();
+
+	logWarn("Exiting with error code 1");	
+	exit(1);
 }
+
 
 /*
  * Useful if we want to filter which are the threads to monitor
@@ -90,19 +107,45 @@ EXPORT(void) registerCurrentThreadToHandleExceptions(){
 }
 
 EXPORT(void) installErrorHandlers(){
-	struct sigaction sigusr1_handler_action, sigsegv_handler_action;
+	struct sigaction sigusr1_handler_action, sigsegv_handler_action, term_handler_action, sigpipe_handler_action;
 
 	sigsegv_handler_action.sa_sigaction = (void (*)(int, siginfo_t *, void *))sigsegv;
 	sigsegv_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
 	sigemptyset(&sigsegv_handler_action.sa_mask);
-    (void)sigaction(SIGBUS, &sigsegv_handler_action, 0);
-    (void)sigaction(SIGILL, &sigsegv_handler_action, 0);
-    (void)sigaction(SIGSEGV, &sigsegv_handler_action, 0);
 
+#ifdef SIGEMT
+	sigaction(SIGEMT, &sigsegv_handler_action, 0);
+#endif
+	sigaction(SIGFPE, &sigsegv_handler_action, 0);
+
+	sigaction(SIGTRAP, &sigsegv_handler_action, 0);
+	sigaction(SIGQUIT, &sigsegv_handler_action, 0);
+
+	sigaction(SIGBUS, &sigsegv_handler_action, 0);
+	sigaction(SIGILL, &sigsegv_handler_action, 0);
+	sigaction(SIGSEGV, &sigsegv_handler_action, 0);
+	sigaction(SIGSYS, &sigsegv_handler_action, 0);
+	sigaction(SIGALRM, &sigsegv_handler_action, 0);
+	sigaction(SIGABRT, &sigsegv_handler_action, 0);
+
+	term_handler_action.sa_sigaction = (void (*)(int, siginfo_t *, void *))terminateHandler;
+	term_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
+
+	sigaction(SIGHUP, &term_handler_action, 0);
+	sigaction(SIGTERM, &term_handler_action, 0);
+	
+	sigaction(SIGKILL, &term_handler_action, 0);
+
+	//Ignore all broken pipe signals. They will be reported as normal errors by send() and write()
+	//Otherwise SIGPIPE kill the process without allowing any recovery or treatment
+	sigpipe_handler_action.sa_sigaction = (void (*)(int, siginfo_t *, void *))SIG_IGN;
+	sigpipe_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
+	sigaction(SIGPIPE, &sigpipe_handler_action, 0);
+	
 	sigusr1_handler_action.sa_sigaction = (void (*)(int, siginfo_t *, void *))sigusr1;
 	sigusr1_handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
 	sigemptyset(&sigusr1_handler_action.sa_mask);
-    (void)sigaction(SIGUSR1, &sigusr1_handler_action, 0);
+	sigaction(SIGUSR1, &sigusr1_handler_action, 0);
 }
 
 void * printRegisterState(ucontext_t *uap, FILE* output)
@@ -164,6 +207,55 @@ void * printRegisterState(ucontext_t *uap, FILE* output)
 	        regs->r[8],regs->r[9],regs->r[10],regs->r[11],
 	        regs->r[12], regs->sp, regs->lr, regs->pc, regs->cpsr);
 	return (void *)(regs->pc);
+# elif __APPLE__ && defined(__aarch64__)
+	_STRUCT_ARM_THREAD_STATE64 *regs = &uap->uc_mcontext->__ss;
+
+	fprintf(output,
+			"\t x00 0x%016llx x01 0x%016llx x02 0x%016llx x03 0x%016llx\n"
+			"\t x04 0x%016llx x05 0x%016llx x06 0x%016llx x07 0x%016llx\n"
+			"\t x08 0x%016llx x09 0x%016llx x10 0x%016llx x11 0x%016llx\n"
+			"\t x12 0x%016llx x13 0x%016llx x14 0x%016llx x15 0x%016llx\n"
+			"\t x16 0x%016llx x17 0x%016llx x18 0x%016llx x19 0x%016llx\n"
+			"\t x20 0x%016llx x21 0x%016llx x22 0x%016llx x23 0x%016llx\n"
+			"\t x24 0x%016llx x25 0x%016llx x26 0x%016llx x27 0x%016llx\n"
+			"\t x28 0x%016llx  FP 0x%016llx  LR 0x%016llx  SP 0x%016llx\n"
+			"\t  PC 0x%016llx  STATE 0x%016llx\n",
+
+            regs->__x[0],
+            regs->__x[1],
+            regs->__x[2],
+            regs->__x[3],
+            regs->__x[4],
+            regs->__x[5],
+            regs->__x[6],
+            regs->__x[7],
+            regs->__x[8],
+            regs->__x[9],
+            regs->__x[10],
+            regs->__x[11],
+            regs->__x[12],
+            regs->__x[13],
+            regs->__x[14],
+            regs->__x[15],
+            regs->__x[16],
+            regs->__x[17],
+            regs->__x[18],
+            regs->__x[19],
+            regs->__x[20],
+            regs->__x[21],
+            regs->__x[22],
+            regs->__x[23],
+            regs->__x[24],
+            regs->__x[25],
+            regs->__x[26],
+            regs->__x[27],
+            regs->__x[28],
+            regs->__fp,
+            regs->__lr,
+            regs->__sp,
+            regs->__pc,
+            (__uint64_t)regs->__cpsr);
+    return (void*)(regs->__pc); 
 #elif __FreeBSD__ && __i386__
 	struct mcontext *regs = &uap->uc_mcontext;
 	fprintf(output,
@@ -253,6 +345,22 @@ void * printRegisterState(ucontext_t *uap, FILE* output)
 #endif
 }
 
+static int runningInVMThread(){
+
+/*
+	IF THE VM is compiled without support for PTHREAD we assume that we are in the VM thread
+*/
+	
+#ifdef PHARO_VM_IN_WORKER_THREAD
+	return ioOSThreadsEqual(ioCurrentOSThread(),getVMOSThread());
+#else
+	return 1;
+#endif
+	
+}
+
+static sqInt printingStack = false;
+
 void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap, FILE* output)
 {
 #if !defined(NOEXECINFO)
@@ -261,7 +369,6 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 	int depth;
 #endif
 	/* flag prevents recursive error when trying to print a broken stack */
-	static sqInt printingStack = false;
 
 #if COGVM
 	/* Testing stackLimit tells us whether the VM is initialized. */
@@ -291,8 +398,8 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 	fflush(output); /* backtrace_symbols_fd uses unbuffered i/o */
 	backtrace_symbols_fd(addrs, depth + 1, fileno(output));
 #endif
-
-	if (ioOSThreadsEqual(ioCurrentOSThread(),getVMOSThread())) {
+	
+	if (runningInVMThread()) {
 		if (!printingStack) {
 #if COGVM
 			/* If we're in generated machine code then the only way the stack
@@ -328,6 +435,9 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 # elif defined(__arm__) || defined(__arm32__) || defined(ARM32)
 			void *fp = (void *)(uap ? uap->uc_mcontext.arm_fp: 0);
 			void *sp = (void *)(uap ? uap->uc_mcontext.arm_sp: 0);
+# elif defined(__aarch64__) && __APPLE__
+			void *fp = (void *)(uap ? uap->uc_mcontext->__ss.__fp: 0); 
+			void *sp = (void *)(uap ? uap->uc_mcontext->__ss.__sp: 0);
 # elif defined(__aarch64__)
 			void *fp = (void *)(uap ? uap->uc_mcontext.regs[29]: 0); // This is the Register that we are using for the FramePointer
 			void *sp = (void *)(uap ? uap->uc_mcontext.sp: 0);
@@ -355,8 +465,10 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 #endif
 		}
 	}
-	else
-		fprintf(output,"\nCan't dump Smalltalk stack(s). Not in VM thread\n");
+	else {
+		fprintf(output,"\nNot in VM thread.\n");
+	}
+
 #if STACKVM
 	fprintf(output, "\nMost recent primitives\n");
 	dumpPrimTraceLog();
@@ -367,4 +479,17 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 #endif
 	fprintf(output,"\n\t(%s)\n", msg);
 	fflush(output);
+}
+
+EXPORT(void) printStatusAfterError(){
+	
+	ucontext_t uap;
+	
+	getcontext(&uap);
+	
+	int saved_errno = errno;
+
+	doReport("VM Error", &uap);
+
+	errno = saved_errno;
 }

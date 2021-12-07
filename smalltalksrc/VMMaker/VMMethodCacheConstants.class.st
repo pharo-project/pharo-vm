@@ -22,18 +22,7 @@ Class {
 		'MethodCachePrim',
 		'MethodCachePrimFunction',
 		'MethodCacheSelector',
-		'MethodCacheSize',
-		'NSMethodCacheActualReceiver',
-		'NSMethodCacheCallingMethod',
-		'NSMethodCacheClassTag',
-		'NSMethodCacheDepthOrLookupRule',
-		'NSMethodCacheEntries',
-		'NSMethodCacheEntrySize',
-		'NSMethodCacheMask',
-		'NSMethodCachePrimFunction',
-		'NSMethodCacheSelector',
-		'NSMethodCacheSize',
-		'NSMethodCacheTargetMethod'
+		'MethodCacheSize'
 	],
 	#category : #'VMMaker-Interpreter'
 }

@@ -41,9 +41,9 @@ VMStructType class >> checkGenerateSurrogate: surrogateClass bytesPerWord: bytes
 	 CogBlockMethod checkGenerateSurrogate: CogBlockMethodSurrogate64 bytesPerWord: 8.
 	 CogMethod checkGenerateSurrogate: CogMethodSurrogate64 bytesPerWord: 8"
 	| accessors oldBytesPerWord |
-	oldBytesPerWord := BytesPerWord.
-	accessors := [self fieldAccessorSourceFor: surrogateClass bytesPerWord: (BytesPerWord := bytesPerWord)]
-					ensure: [BytesPerWord := oldBytesPerWord].
+	oldBytesPerWord := VMMakerConfiguration bytesPerWord.
+	accessors := [self fieldAccessorSourceFor: surrogateClass bytesPerWord: (VMMakerConfiguration bytesPerWord:  bytesPerWord)]
+					ensure: [VMMakerConfiguration bytesPerWord: oldBytesPerWord].
 	accessors keysAndValuesDo:
 		[:mr :source|
 		source ~= mr sourceString ifTrue:
@@ -183,10 +183,10 @@ VMStructType class >> getter: getter bitPosition: bitPosition bitWidth: bitWidth
 		shift ~= 0 ifTrue:
 			[s nextPut: $(].
 		s nextPutAll: 'memory unsigned';
-		   nextPutAll: (#('Byte' 'Short' 'Long' 'Long')
+		   nextPutAll: (#('Byte' 'Short' 'Long32' 'Long32')
 							at: endByte - startByte + 1
 							ifAbsent: ['Long64']);
-		  nextPutAll: 'At: address + '; print: startByte + 1.
+		  nextPutAll: 'At: address + '; print: startByte.
 		(self offsetForInstVar: getter) ifNotNil:
 			[:offsetExpr| s nextPutAll: ' + '; nextPutAll: offsetExpr].
 		shift ~= 0 ifTrue:
@@ -276,7 +276,7 @@ VMStructType class >> setter: getter bitPosition: bitPosition bitWidth: bitWidth
 		shift := bitPosition \\ 8.
 		alignedPowerOf2 := (#(8 16 32 64) includes: bitWidth) and: [shift = 0].
 		accessor := 'unsigned'
-					, (#('Byte' 'Short' 'Long' 'Long')
+					, (#('Byte' 'Short' 'Long32' 'Long32')
 							at: endByte - startByte + 1
 							ifAbsent: ['Long64'])
 					, 'At: address + '.
@@ -292,12 +292,12 @@ VMStructType class >> setter: getter bitPosition: bitPosition bitWidth: bitWidth
 		alignedPowerOf2 ifTrue:
 			[s nextPut: $^].
 		s nextPutAll: 'memory';
-		  crtab: 2; nextPutAll: accessor; print: startByte + 1.
+		  crtab: 2; nextPutAll: accessor; print: startByte.
 		s crtab: 2; nextPutAll: 'put: '.
 		typeOrNil ifNotNil:
 			[s nextPut: $(].
 		alignedPowerOf2 ifFalse:
-			[s nextPutAll: '((memory '; nextPutAll: accessor; print: startByte + 1;
+			[s nextPutAll: '((memory '; nextPutAll: accessor; print: startByte;
 			    nextPutAll: ') bitAnd: '; nextPutAll: (mask - ((1 << bitWidth - 1) << shift)) hex;
 			    nextPutAll: ') + '].
 		expr := typeOrNil caseOf: {

@@ -50,6 +50,34 @@ UnicornX64Simulator >> cReturnRegisterValue: anInteger [
 	self rax: anInteger
 ]
 
+{ #category : #registers }
+UnicornX64Simulator >> carg0Register [
+	
+	"Assume SysV"
+	^ UcX86Registers rdi
+]
+
+{ #category : #registers }
+UnicornX64Simulator >> carg1Register [
+	
+	"Assume SysV"
+	^ UcX86Registers rsi
+]
+
+{ #category : #registers }
+UnicornX64Simulator >> carg2Register [
+	
+	"Assume SysV"
+	^ UcX86Registers rdx
+]
+
+{ #category : #registers }
+UnicornX64Simulator >> carg3Register [
+
+	"Assume SysV"
+	^ UcX86Registers rcx
+]
+
 { #category : #'virtual-registers' }
 UnicornX64Simulator >> classRegister [
 	
@@ -465,6 +493,13 @@ UnicornX64Simulator >> sp [
 UnicornX64Simulator >> stackPointerRegister [
 
 	^ UcX86Registers rsp
+]
+
+{ #category : #registers }
+UnicornX64Simulator >> temporaryRegister [
+	
+	"Both in System V and Windows"
+	^ UcX86Registers rax
 ]
 
 { #category : #accessing }

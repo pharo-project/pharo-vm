@@ -171,6 +171,7 @@ VMMaker class >> forceNewFileNamed: aFilename [
 
 	| inner |
 	inner := aFilename asFileReference writeStream.
+	inner truncate.
 	
 	^ (ZnNewLineWriterStream on: inner)
 		forLf;
@@ -510,7 +511,7 @@ VMMaker >> couldNotOpenFile: fileName [
 { #category : #initialize }
 VMMaker >> createCodeGenerator [
 "set up a CCodeGenerator for this VMMaker"
-	^CCodeGenerator new
+	^MLVMCCodeGenerator new
 		vmMaker: self;
 		logger: logger;
 		options: optionsDictionary;
