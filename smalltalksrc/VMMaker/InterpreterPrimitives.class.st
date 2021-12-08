@@ -5054,17 +5054,14 @@ InterpreterPrimitives >> sumInteger: anInteger withInteger: anotherInteger ifOve
 	"Sum two signed integers and detect signed overflow.
 	Arguments "
 
-	"Overflow!"
 	| signedInt1 signedInt2 |
 	signedInt1 := objectMemory asSignedPlatformInteger: anInteger.
 	signedInt2 := objectMemory asSignedPlatformInteger: anotherInteger.
 
-	signedInt1 > (objectMemory maxCSignedInteger - signedInt2)
-		ifTrue: aBlock.
-
-	"Underflow!"
-	signedInt1 < (objectMemory minCSignedInteger - signedInt2)
-		ifTrue: aBlock.
+	"Check overflow or underlow"
+	(signedInt1 > (objectMemory maxCSignedInteger - signedInt2)
+		or: [ signedInt1 < (objectMemory minCSignedInteger - signedInt2) ])
+			ifTrue: aBlock.
 
 	^ signedInt1 + signedInt2
 ]
