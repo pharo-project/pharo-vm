@@ -68,6 +68,8 @@ Class {
 		'R23',
 		'R24',
 		'R25',
+		'R26',
+		'R27',
 		'R3',
 		'R4',
 		'R5',
@@ -166,6 +168,8 @@ CogARMv8Compiler class >> initialize [
 	R23 := 23.
 	R24 := 24.
 	R25 := 25.
+	R26 := 26.
+	R27 := 27.
 
 	SP := 31.
 	LR := 30.
@@ -279,6 +283,8 @@ CogARMv8Compiler class >> initializeAbstractRegisters [
 	Extra0Reg			:= R19. "These are callee saved registers"
 	Extra1Reg			:= R20.
 	Extra2Reg			:= R21.
+	Extra3Reg			:= R26.
+	Extra4Reg			:= R27.
 	VarBaseReg		:= R24.	"Must be callee saved" self assert: ConcreteVarBaseReg = R24.
 	RISCTempReg		:= R16.	"a.k.a. IP" self assert: ConcreteIPReg = R16.
 	LinkReg				:= LR. "X30"
