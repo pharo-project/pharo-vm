@@ -7,6 +7,15 @@ Class {
 	#category : #'VMMaker-Support'
 }
 
+{ #category : #'instance creation' }
+ImageReader class >> newWithMemory: memory [
+
+	| imageReader |
+	imageReader := self new.
+	imageReader objectMemory: memory.
+	^ imageReader
+]
+
 { #category : #accessing }
 ImageReader >> extractImageVersionFrom: file into: header [
 	"Read and verify the image file version number and return true if the the given image file needs to be byte-swapped. As a side effect, position the file stream just after the version number of the image header. This code prints a warning and does a hard-exit if it cannot find a valid version number."
@@ -109,6 +118,8 @@ ImageReader >> imageFormatVersion [
 	"Return a magic constant that changes when the image format changes.
 	 Since the image reading code uses this to detect byte ordering, one
 	 must avoid version numbers that are invariant under byte reversal."
+	
+	"THIS METHOD KEEP DUPLICATED IN StackInterpreter UNTIL SPLIT IMAGE WRITTER"
 	<doNotGenerate>
 	self assert: (objectMemory imageFormatVersion anyMask: 16) = objectMemory hasSpurMemoryManagerAPI.
 	^objectMemory imageFormatVersion

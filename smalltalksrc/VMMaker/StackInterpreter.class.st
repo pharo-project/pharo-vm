@@ -1693,7 +1693,7 @@ StackInterpreter class >> requiredMethodNames: options [
 		primitiveFail primitiveFailFor: primitiveFlushExternalPrimitives printAllStacks printCallStack printContext:
 			printExternalHeadFrame printFramesInPage: printFrame: printHeadFrame printMemory printOop:
 				printStackPages printStackPageList printStackPagesInUse printStackPageListInUse
-		readableFormat: readImageFromFile:StartingAt:
+		readImageFromFile:StartingAt:
 		setFullScreenFlag: setInterruptKeycode: setInterruptPending: setInterruptCheckChain:
 			setSavedWindowSize: success:
 		validInstructionPointer:inMethod:framePointer:) asSet.
@@ -5969,40 +5969,6 @@ StackInterpreter >> extraVMMemory: anInteger [
 	extraVMMemory := anInteger
 ]
 
-{ #category : #'image save/restore' }
-StackInterpreter >> extractImageVersionFrom: file into: header [
-	"Read and verify the image file version number and return true if the the given image file needs to be byte-swapped. As a side effect, position the file stream just after the version number of the image header. This code prints a warning and does a hard-exit if it cannot find a valid version number."
-	"This code is based on C code by Ian Piumarta."
-
-	<inline: false>
-	| version firstVersion |
-	<var: #file type: #sqImageFile>
-	<var: #imageOffset type: #squeakFileOffsetType>
-	<var: #header type: #SpurImageHeaderStruct>
-
-	"check the version number"
-	version := firstVersion := self getWord32FromFile: file swap: false.
-	(self readableFormat: version) ifTrue: [
-		header imageFormat: version.
-		header swapBytes: false.
-		^ self].
-
-	"try with bytes reversed"
-	(self readableFormat: version byteSwap32) 
-		ifTrue: [
-			header imageFormat: version byteSwap32.
-			header swapBytes: true.
-			^ self].
-
-	"hard failure; abort"
-	self logError: 'Invalid image format: detected version %d, expected version %d' 
-		_: firstVersion 
-		_: self imageFormatVersion.
-	
-	self ioExitWithErrorCode: 1.
-
-]
-
 { #category : #'primitive support' }
 StackInterpreter >> failUnbalancedPrimitive [
 	"not inlined for breakpoint value..."
@@ -7245,24 +7211,6 @@ StackInterpreter >> getInterruptPending [
 	^interruptPending
 ]
 
-{ #category : #'image save/restore' }
-StackInterpreter >> getLongFromFile: aFile swap: swapFlag [
-	"Answer the next 32 or 64 bit word read from aFile, byte-swapped according to the swapFlag."
-	<var: #aFile type: #sqImageFile>
-	<var: #w type: #usqInt>
-	| w |
-	w := 0.
-	self cCode: [self
-					sq: (self addressOf: w)
-					Image: (self sizeof: w)
-					File: 1
-					Read: aFile]
-		inSmalltalk: [w := objectMemory nextLongFrom: aFile].
-	^swapFlag
-		ifTrue: [objectMemory byteSwapped: w]
-		ifFalse: [w]
-]
-
 { #category : #'internal interpreter access' }
 StackInterpreter >> getMethodCompilationCount [
 	"This is nil in the StackVM"
@@ -7285,25 +7233,6 @@ StackInterpreter >> getNextWakeupUsecs [
 { #category : #'plugin primitive support' }
 StackInterpreter >> getSavedWindowSize [
 	^savedWindowSize
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> getShortFromFile: aFile swap: swapFlag [
-	"Answer the next 16 bit word read from aFile, byte-swapped according to the swapFlag."
-
-	<var: #aFile type: #sqImageFile>
-	| w |
-	<var: #w type: #'unsigned short'>
-	w := 0.
-	self cCode: [self
-					sq: (self addressOf: w)
-					Image: (self sizeof: #'unsigned short')
-					File: 1
-					Read: aFile]
-		inSmalltalk: [w := objectMemory nextShortFrom: aFile].
-	^swapFlag
-		ifTrue: [((w >> 8) bitAnd: 16rFF) bitOr: ((w bitAnd: 16rFF) << 8)]
-		ifFalse: [w]
 ]
 
 { #category : #'internal interpreter access' }
@@ -7331,25 +7260,6 @@ StackInterpreter >> getThisSessionID [
 	"return the global session ID value"
 	<inline: false>
 	^globalSessionID
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> getWord32FromFile: aFile swap: swapFlag [
-	"Answer the next 32 bit word read from aFile, byte-swapped according to the swapFlag."
-
-	<var: #aFile type: #sqImageFile>
-	| w |
-	<var: #w type: #int>
-	w := 0.
-	self cCode: [self
-					sq: (self addressOf: w)
-					Image: (self sizeof: #int)
-					File: 1
-					Read: aFile]
-		inSmalltalk: [w := objectMemory nextWord32From: aFile].
-	^swapFlag
-		ifTrue: [w byteSwap32]
-		ifFalse: [w]
 ]
 
 { #category : #'message sending' }
@@ -7641,13 +7551,6 @@ StackInterpreter >> iframeMethod: theFP [
 	<var: #theFP type: #'char *'>
 	<returnTypeC: #usqInt>
 	^stackPages longAt: theFP + FoxMethod
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> imageFormatCompatibilityVersion [
-	"This VM is backward-compatible with the immediately preceding version."
-
-	^objectMemory wordSize = 4 ifTrue: [6504] ifFalse: [68002]
 ]
 
 { #category : #'image save/restore' }
@@ -13030,57 +12933,6 @@ StackInterpreter >> quinaryInlinePrimitive: primIndex [
 ]
 
 { #category : #'image save/restore' }
-StackInterpreter >> readHeaderFrom: f startingAt: headerStart [
-
-	<var: #f type: #sqImageFile>
-	<var: #headerStart type: #squeakFileOffsetType>
-	<var: #header type: #SpurImageHeaderStruct>
-	<returnTypeC: #SpurImageHeaderStruct>
-	| header |
-	self simulationOnly: [ header := SpurImageHeaderStruct new ].
-
-	self extractImageVersionFrom: f into: header.
-
-	header headerSize: (self getWord32FromFile: f swap: header swapBytes).
-	header dataSize: (self getLongFromFile: f swap: header swapBytes).
-	header oldBaseAddr: (self getLongFromFile: f swap: header swapBytes).
-	header initialSpecialObjectsOop:
-		(self getLongFromFile: f swap: header swapBytes).
-
-	header hdrLastHash: (self getLongFromFile: f swap: header swapBytes).
-
-	"savedWindowSize :="
-	self getLongFromFile: f swap: header swapBytes.
-	header headerFlags: (self getLongFromFile: f swap: header swapBytes).
-
-	header extraVMMemory:
-		(self getWord32FromFile: f swap: header swapBytes).
-	header hdrNumStackPages:
-		(self getShortFromFile: f swap: header swapBytes).
-	"This slot holds the size of the native method zone in 1k units. (pad to word boundary)."
-	header hdrCogCodeSize:
-		(self getShortFromFile: f swap: header swapBytes) * 1024.
-	header hdrEdenBytes:
-		(self getWord32FromFile: f swap: header swapBytes).
-
-	header hdrMaxExtSemTabSize:
-		(self getShortFromFile: f swap: header swapBytes).
-	"pad to word boundary.  This slot can be used for anything else that will fit in 16 bits.
-	 Preserve it to be polite to other VMs."
-	"the2ndUnknownShort :="
-	self getShortFromFile: f swap: header swapBytes.
-	header firstSegSize: (self getLongFromFile: f swap: header swapBytes).
-
-	header freeOldSpaceInImage:
-		(self getLongFromFile: f swap: header swapBytes).
-
-	"position file after the header"
-	self sqImageFile: f Seek: headerStart + header headerSize.
-
-	^ header
-]
-
-{ #category : #'image save/restore' }
 StackInterpreter >> readImageFromFile: f StartingAt: headerStart [
 
 	"Read an image from the given file stream, allocating an amount of memory to its object heap.
@@ -13111,7 +12963,7 @@ StackInterpreter >> readImageFromFile: f StartingAt: headerStart [
 	metaclassNumSlots := 6. "guess Metaclass instSize"
 	classNameIndex := 6. "guess (Class instVarIndexFor: 'name' ifAbsent: []) - 1"
 
-	header := self readHeaderFrom: f startingAt: headerStart.
+	header := (ImageReader newWithMemory: objectMemory) readHeaderFrom: f startingAt: headerStart.
 
 	objectMemory specialObjectsOop: header initialSpecialObjectsOop.
 	objectMemory lastHash: header hdrLastHash.
@@ -13147,16 +12999,6 @@ StackInterpreter >> readImageFromFile: f StartingAt: headerStart [
 	self allocateMemoryForImage: f withHeader: header.
 
 	^ header dataSize
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> readableFormat: imageVersion [
-	"Anwer true if images of the given format are readable by this interpreter.
-	 Allows a virtual machine to accept selected older image formats."
-
-	^imageVersion = self imageFormatVersion "Float words in platform-order"
-	   or: [objectMemory hasSpurMemoryManagerAPI not "No compatibility version for Spur as yet"
-			and: [imageVersion = self imageFormatCompatibilityVersion]] "Float words in BigEndian order"
 ]
 
 { #category : #'primitive support' }
