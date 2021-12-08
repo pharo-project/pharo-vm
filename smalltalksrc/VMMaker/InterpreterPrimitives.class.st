@@ -556,6 +556,31 @@ InterpreterPrimitives >> maybeInlinePositive32BitValueOf: oop [
 			^self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int']
 ]
 
+{ #category : #arithmetic }
+InterpreterPrimitives >> multiplySmallInteger: anInteger withSmallInteger: anotherInteger ifOverflow: aBlock [
+
+	"Multiply two signed integers and detect signed overflow"
+
+	| a b result |
+	a := objectMemory integerValueOf: anInteger.
+	b := objectMemory integerValueOf: anotherInteger.
+
+	(a > 0
+		 ifTrue: [ 
+			 b > 0
+				 ifTrue: [ a > (objectMemory maxSmallInteger / b) ]
+				 ifFalse: [ b < (objectMemory minSmallInteger / a) ] ]
+		 ifFalse: [ 
+			 b > 0
+				 ifTrue: [ a < (objectMemory minSmallInteger / b) ]
+				 ifFalse: [ 
+				 a ~= 0 and: [ b < (objectMemory maxSmallInteger / a) ] ] ])
+		ifTrue: aBlock.
+
+	result := a * b.
+	^ objectMemory integerObjectOf: result
+]
+
 { #category : #'simulation support' }
 InterpreterPrimitives >> newMethod: oop [
 	<doNotGenerate>
@@ -2755,22 +2780,21 @@ InterpreterPrimitives >> primitiveModLargeIntegers [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveMultiply [
-	| integerRcvr integerArg integerResult overflow |
-	integerRcvr := self stackIntegerValue: 1.
-	integerArg := self stackIntegerValue: 0.
-	self successful ifTrue:
-		[overflow := integerRcvr > 0
-					ifTrue:  [integerArg > 0
-						ifTrue: [integerRcvr > (objectMemory maxSmallInteger / integerArg)]
-						ifFalse: [integerArg < (objectMemory minSmallInteger / integerRcvr)]]
-					ifFalse: [integerArg > 0
-						ifTrue: [integerRcvr < (objectMemory minSmallInteger / integerArg)]
-						ifFalse: [(integerRcvr < 0) and: [integerArg < (objectMemory maxSmallInteger / integerRcvr)]]].
-		overflow
-			ifTrue: [self primitiveFail]
-			ifFalse:
-				[integerResult := integerRcvr * integerArg.
-				self pop: 2 thenPush: (objectMemory integerObjectOf: integerResult)]]
+	| integerRcvr integerArg result |
+	integerRcvr := self stackValue: 1.
+	integerArg := self stackValue: 0.
+
+	(objectMemory isIntegerObject: integerRcvr)
+		ifFalse: [ ^ self primitiveFail ].
+	(objectMemory isIntegerObject: integerArg)
+		ifFalse: [ ^ self primitiveFail ].
+
+	result := self
+		multiplySmallInteger: integerRcvr
+		withSmallInteger: integerArg
+		ifOverflow: [ ^ self primitiveFail ].
+	
+	self pop: 2 thenPush: result
 ]
 
 { #category : #'arithmetic largeint primitives' }
@@ -4342,8 +4366,25 @@ InterpreterPrimitives >> primitiveStringReplace [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveSubtract [
+	<numberOfArguments: 1>
+	
+	| maybeSmallInteger maybeSmallInteger2 result |
 
-	self pop2AndPushIntegerIfOK: (self stackIntegerValue: 1) - (self stackIntegerValue: 0)
+	maybeSmallInteger := self stackValue: 1.
+	maybeSmallInteger2 := self stackValue: 0.
+	
+	(objectMemory isIntegerObject: maybeSmallInteger)
+		ifFalse: [ ^ self primitiveFail ].
+	(objectMemory isIntegerObject: maybeSmallInteger2)
+		ifFalse: [ ^ self primitiveFail ].
+
+	"Check for overflow"
+	result := self
+		subSmallInteger: maybeSmallInteger
+		withSmallInteger: maybeSmallInteger2
+		ifOverflow: [ ^ self primitiveFail ].
+
+	self pop: 2 thenPush: result
 ]
 
 { #category : #'arithmetic integer primitives' }
@@ -5022,6 +5063,20 @@ InterpreterPrimitives >> stackIntegerValue: aValue [
 	self subclassResponsibility
 ]
 
+{ #category : #arithmetic }
+InterpreterPrimitives >> subSmallInteger: anInteger withSmallInteger: anotherInteger ifOverflow: aBlock [
+
+	"Subtract two signed integers and detect signed overflow"
+
+	| a b result |
+	a := objectMemory integerValueOf: anInteger.
+	b := objectMemory integerValueOf: anotherInteger.
+	
+	result := a - b.
+	(objectMemory isIntegerValue: result) ifFalse: aBlock.
+	^ objectMemory integerObjectOf: result
+]
+
 { #category : #'primitive support' }
 InterpreterPrimitives >> success: successBoolean [
 	"Set the state of the primitive failure code/success flag, iff successBoolean
@@ -5051,8 +5106,7 @@ InterpreterPrimitives >> successful [
 { #category : #arithmetic }
 InterpreterPrimitives >> sumInteger: anInteger withInteger: anotherInteger ifOverflow: aBlock [
 
-	"Sum two signed integers and detect signed overflow.
-	Arguments "
+	"Sum two signed integers and detect signed overflow"
 
 	| signedInt1 signedInt2 |
 	signedInt1 := objectMemory asSignedPlatformInteger: anInteger.
@@ -5069,8 +5123,7 @@ InterpreterPrimitives >> sumInteger: anInteger withInteger: anotherInteger ifOve
 { #category : #arithmetic }
 InterpreterPrimitives >> sumSmallInteger: anInteger withSmallInteger: anotherInteger ifOverflow: aBlock [
 
-	"Sum two signed integers and detect signed overflow.
-	Arguments "
+	"Sum two signed integers and detect signed overflow"
 
 	| a b result |
 	a := objectMemory integerValueOf: anInteger.
@@ -5078,5 +5131,5 @@ InterpreterPrimitives >> sumSmallInteger: anInteger withSmallInteger: anotherInt
 	
 	result := a + b.
 	(objectMemory isIntegerValue: result) ifFalse: aBlock.
-	^ result
+	^ objectMemory integerObjectOf: result
 ]
