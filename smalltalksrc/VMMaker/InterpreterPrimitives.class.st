@@ -732,8 +732,8 @@ InterpreterPrimitives >> primitiveAdd [
 
 	"Check for overflow"
 	result := self
-		sumInteger: (self withoutSmallIntegerTags2: maybeSmallInteger)
-		withInteger: maybeSmallInteger2
+		sumSmallInteger: maybeSmallInteger
+		withSmallInteger: maybeSmallInteger2
 		ifOverflow: [ ^ self primitiveFail ].
 
 	self pop: 2 thenPush: result
@@ -5064,4 +5064,19 @@ InterpreterPrimitives >> sumInteger: anInteger withInteger: anotherInteger ifOve
 			ifTrue: aBlock.
 
 	^ signedInt1 + signedInt2
+]
+
+{ #category : #arithmetic }
+InterpreterPrimitives >> sumSmallInteger: anInteger withSmallInteger: anotherInteger ifOverflow: aBlock [
+
+	"Sum two signed integers and detect signed overflow.
+	Arguments "
+
+	| a b result |
+	a := objectMemory integerValueOf: anInteger.
+	b := objectMemory integerValueOf: anotherInteger.
+	
+	result := a + b.
+	(objectMemory isIntegerValue: result) ifFalse: aBlock.
+	^ result
 ]
