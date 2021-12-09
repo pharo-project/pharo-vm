@@ -1,15 +1,24 @@
 Class {
 	#name : #VMSpurImageFormatTest,
 	#superclass : #VMSpurInitializedOldSpaceTest,
+	#instVars : [
+		'imageReader'
+	],
 	#category : #'VMMakerTests-MemoryTests'
 }
+
+{ #category : #tests }
+VMSpurImageFormatTest >> imageFileName [
+
+	^ 'lala.image'
+]
 
 { #category : #tests }
 VMSpurImageFormatTest >> readHeader [
 
 	| header |
-	header := 'lala.image' asFileReference binaryReadStreamDo: [ :f | 
-		          interpreter readHeaderFrom: f startingAt: 0 ].
+	header := self imageFileName asFileReference binaryReadStreamDo: [ :f | 
+		          imageReader readHeaderFrom: f startingAt: 0 ].
 	^ header
 ]
 
@@ -24,11 +33,13 @@ VMSpurImageFormatTest >> setUp [
 
 	interpreter extraVMMemory: 0.
 
-	interpreter imageName: 'lala.image'.
+	interpreter imageName: self imageFileName.
 	interpreter preemptionYields: false.
 	interpreter setImageHeaderFlagsFrom: 0.
 	
 	interpreter writeImageFileIO.
+	
+	imageReader := ImageReader newWithMemory: memory
 ]
 
 { #category : #tests }

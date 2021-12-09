@@ -1052,15 +1052,6 @@ CogVMSimulator >> functionPointerForCompiledMethod: methodObj primitiveIndex: pr
 	^self mapFunctionToAddress: (super functionPointerForCompiledMethod: methodObj primitiveIndex: primIndex)
 ]
 
-{ #category : #'image save/restore' }
-CogVMSimulator >> getShortFromFile: aFile swap: swapFlag [
-	| aShort |
-	aShort := self nextShortFrom: aFile.
-	^swapFlag 
-		ifTrue: [(aShort bitShift: -8) + ((aShort bitAnd: 16rFF) bitShift: 8)]
-		ifFalse: [aShort]
-]
-
 { #category : #'memory access' }
 CogVMSimulator >> halfWordHighInLong32: long32 [
 	^self subclassResponsibility

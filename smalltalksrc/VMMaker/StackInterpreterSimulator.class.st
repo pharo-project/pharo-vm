@@ -718,15 +718,6 @@ StackInterpreterSimulator >> getErrorObjectFromPrimFailCode [
 	^super getErrorObjectFromPrimFailCode
 ]
 
-{ #category : #'image save/restore' }
-StackInterpreterSimulator >> getShortFromFile: aFile swap: swapFlag [
-	| aShort |
-	aShort := self nextShortFrom: aFile.
-	^swapFlag 
-		ifTrue: [(aShort bitShift: -8) + ((aShort bitAnd: 16rFF) bitShift: 8)]
-		ifFalse: [aShort]
-]
-
 { #category : #'memory access' }
 StackInterpreterSimulator >> halfWordHighInLong32: long32 [
 	^self subclassResponsibility
