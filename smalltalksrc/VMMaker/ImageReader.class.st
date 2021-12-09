@@ -16,7 +16,7 @@ ImageReader class >> newWithMemory: memory [
 	^ imageReader
 ]
 
-{ #category : #accessing }
+{ #category : #reading }
 ImageReader >> extractImageVersionFrom: file into: header [
 	"Read and verify the image file version number and return true if the the given image file needs to be byte-swapped. As a side effect, position the file stream just after the version number of the image header. This code prints a warning and does a hard-exit if it cannot find a valid version number."
 	"This code is based on C code by Ian Piumarta."
@@ -50,7 +50,7 @@ ImageReader >> extractImageVersionFrom: file into: header [
 
 ]
 
-{ #category : #accessing }
+{ #category : #reading }
 ImageReader >> getLongFromFile: aFile swap: swapFlag [
 	"Answer the next 32 or 64 bit word read from aFile, byte-swapped according to the swapFlag."
 	<var: #aFile type: #sqImageFile>
@@ -68,7 +68,7 @@ ImageReader >> getLongFromFile: aFile swap: swapFlag [
 		ifFalse: [w]
 ]
 
-{ #category : #accessing }
+{ #category : #reading }
 ImageReader >> getShortFromFile: aFile swap: swapFlag [
 	"Answer the next 16 bit word read from aFile, byte-swapped according to the swapFlag."
 
@@ -87,7 +87,7 @@ ImageReader >> getShortFromFile: aFile swap: swapFlag [
 		ifFalse: [w]
 ]
 
-{ #category : #accessing }
+{ #category : #reading }
 ImageReader >> getWord32FromFile: aFile swap: swapFlag [
 	"Answer the next 32 bit word read from aFile, byte-swapped according to the swapFlag."
 
@@ -106,14 +106,14 @@ ImageReader >> getWord32FromFile: aFile swap: swapFlag [
 		ifFalse: [w]
 ]
 
-{ #category : #accessing }
+{ #category : #reading }
 ImageReader >> imageFormatCompatibilityVersion [
 	"This VM is backward-compatible with the immediately preceding version."
 
 	^objectMemory wordSize = 4 ifTrue: [6504] ifFalse: [68002]
 ]
 
-{ #category : #accessing }
+{ #category : #reading }
 ImageReader >> imageFormatVersion [
 	"Return a magic constant that changes when the image format changes.
 	 Since the image reading code uses this to detect byte ordering, one
@@ -132,7 +132,7 @@ ImageReader >> objectMemory: memory [
 	objectMemory := memory
 ]
 
-{ #category : #accessing }
+{ #category : #reading }
 ImageReader >> readHeaderFrom: f startingAt: headerStart [
 
 	<var: #f type: #sqImageFile>
@@ -183,7 +183,7 @@ ImageReader >> readHeaderFrom: f startingAt: headerStart [
 	^ header
 ]
 
-{ #category : #accessing }
+{ #category : #reading }
 ImageReader >> readableFormat: imageVersion [
 	"Anwer true if images of the given format are readable by this interpreter.
 	 Allows a virtual machine to accept selected older image formats."
