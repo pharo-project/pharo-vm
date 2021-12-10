@@ -876,6 +876,7 @@ Cogit class >> initializeAnnotationConstants [
 	IsSendCall := 7.
 	"These are formed by combining IsSendCall and IsAnnotationExtension annotations."
 	IsSuperSend := 8.
+
 	IsDirectedSuperSend := BytecodeSetHasDirectedSuperSend ifTrue: [9].
 	IsDirectedSuperBindingSend := BytecodeSetHasDirectedSuperSend ifTrue: [10].
 
@@ -1027,8 +1028,8 @@ Cogit class >> initializeWithOptions: optionsDictionary [
 	self initializeMiscConstants. "must precede other initialization."
 	self initializeErrorCodes.
 	self initializeCogMethodConstants.
-	self initializeAnnotationConstants.
 	self initializeBytecodeTable.
+	self initializeAnnotationConstants.
 	self initializeNumTrampolines.
 	self initializePrimitiveTable
 ]
