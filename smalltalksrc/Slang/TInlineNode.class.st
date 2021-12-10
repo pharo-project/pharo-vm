@@ -7,6 +7,12 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #tranforming }
+TInlineNode >> asCASTIn: aBuilder [
+
+	^ method asCASTInlinedIn: aBuilder
+]
+
 { #category : #transformations }
 TInlineNode >> bindVariableUsesIn: aDictionary [
 	method := method bindVariableUsesIn: aDictionary.
@@ -23,12 +29,6 @@ TInlineNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold i
 		ifFalse: [self shallowCopy
 					method: newMethod;
 					yourself]
-]
-
-{ #category : #'C code generation' }
-TInlineNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-	method emitInlineOn: aStream level: level generator: aCodeGen.
-
 ]
 
 { #category : #testing }
