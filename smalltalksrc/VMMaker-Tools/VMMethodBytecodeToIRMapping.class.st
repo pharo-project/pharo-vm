@@ -25,7 +25,6 @@ VMMethodBytecodeToIRMapping >> computeIR [
 		cog: method
 		selectorOrNumCopied: (method isCompiledBlock ifFalse: [ method selector ] ifTrue: [ method numTemps ])
 		options: #(
-			COGMTVM false
 			ObjectMemory Spur64BitCoMemoryManager
 			ISA aarch64
 			#bytecodeTableInitializer initializeBytecodeTableForSistaV1).

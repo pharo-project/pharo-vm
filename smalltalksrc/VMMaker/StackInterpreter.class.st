@@ -412,7 +412,8 @@ Class {
 		'maxStackMessagePrinted',
 		'libFFI',
 		'codeGeneratorToComputeAccessorDepth',
-		'showSurfaceFn'
+		'showSurfaceFn',
+		'messageCount'
 	],
 	#classVars : [
 		'AccessModifierPrivate',
@@ -616,7 +617,11 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	aCCodeGenerator
 		var: #reenterInterpreter
 		declareC: 'jmp_buf reenterInterpreter; /* private export */'.
-		
+	
+	aCCodeGenerator
+			var: #messageCount
+			type: #'usqInt'.
+	
 	aCCodeGenerator removeVariable: #'libFFI'.
 	LibFFIConstants classVariables do: [ :e | aCCodeGenerator removeConstant: e name ].
 ]
@@ -987,13 +992,6 @@ StackInterpreter class >> initializeMiscConstants [
 
 	ReturnToInterpreter := 1. "setjmp/longjmp code."
 
-	"N.B. some of these DisownFlags are replicated in platforms/Cross/vm/sqVirtualMachine.h.
-	 Hence they should always be initialized.  Because of a hack with callbacks in the non-threaded
-	 VM they must not conflct with the VM's tag bits."
-	DisownVMLockOutFullGC := 8.
-	DisownVMForFFICall := 16.
-	DisownVMForThreading := 32
-
 ]
 
 { #category : #initialization }
@@ -1089,10 +1087,10 @@ StackInterpreter class >> initializePrimitiveTable [
 		(62 primitiveSize)
 		(63 primitiveStringAt)
 		(64 primitiveStringAtPut)
-		
-		(65 primitiveFail)
-		(66 primitiveFail)
-		(67 primitiveFail)
+		"The stream primitives no longer pay their way; normal Smalltalk code is faster."
+		(65 primitiveStartProfiling)"was primitiveNext"
+		(66 primitiveStopProfiling) "was primitiveNextPut"
+		(67 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called") "was primitiveAtEnd"
 
 		"StorageManagement Primitives (68-79)"
 		(68 primitiveObjectAt)
@@ -1805,10 +1803,6 @@ StackInterpreter class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord ge
 	(InitializationOptions at: #SpurObjectMemory ifAbsent: false) ifTrue:
 		[aCCodeGenerator putDefineOf: #SPURVM as: 1 on: aStream].
 
-	aCCodeGenerator
-		putDefineOf: #DisownVMLockOutFullGC as: DisownVMLockOutFullGC on: aStream;
-		putDefineOf: #DisownVMForFFICall as: DisownVMForFFICall on: aStream;
-		putDefineOf: #DisownVMForThreading as: DisownVMForThreading on: aStream
 ]
 
 { #category : #simulation }
@@ -4742,6 +4736,7 @@ StackInterpreter >> commonSendOrdinary [
 	self sendBreakpoint: messageSelector receiver: (self internalStackValue: argumentCount).
 	self printSends ifTrue:
 		[self printActivationNameForSelector: messageSelector startClass: (objectMemory classForClassTag: lkupClassTag); cr].
+	messageCount := messageCount + 1.
 	self internalFindNewMethodOrdinary.
 	self internalExecuteNewMethod.
 	self fetchNextBytecode
@@ -5090,57 +5085,6 @@ StackInterpreter >> directedSuperclassSend [
 	self ensureReceiverUnforwarded.
 	self assert: lkupClassTag ~= objectMemory nilObject.
 	self commonSendOrdinary
-]
-
-{ #category : #'vm scheduling' }
-StackInterpreter >> disownVM: flags [
-	<api>
-	<inline: false>
-	"Release the VM to other threads and answer the current thread's index.
-	 Currently valid flags for the non-threaded VM are:
-		DisownVMLockOutFullGC	- prevent fullGCs while this thread disowns the VM
-		DisownVMForFFICall			- informs the VM that it is entering an FFI call
-
-	 This is the entry-point for plugins and primitives that wish to release the VM while
-	 performing some operation that may potentially block, and for callbacks returning
-	 back to some blocking operation.  While this exists for the threaded FFI VM we use
-	 it to reset newMethod and the argumentCount after a callback."
-	self assert: primFailCode = 0.
-
-	"Hack encodings of client state.  We use non-immediates (bottom three bits clear)
-	 for FFI/Plugin doing
-		save := self disownVM: FLAGS. ... callout ... self ownVM: save.
-	 We use immediate integer (bottom bit 1) for callbacks doing
-		save := self ownVM: 0. ... callback ... self disownVM: save. return to C"
-	self assert: ((objectMemory isImmediate: flags)
-				ifFalse:
-					[flags = (flags bitAnd: DisownVMLockOutFullGC+DisownVMForFFICall+DisownVMForThreading)
-					 and: [flags anyMask: DisownVMForFFICall]]
-				ifTrue:
-					[(objectMemory isIntegerObject: flags)
-					 and: [(objectMemory integerValueOf: flags)
-							between: 0
-							and: (self argumentCountOfMethodHeader: -1)]]).
-
-	"If DisownVMForFFICall this is from the FFI plugin and we're making a callout; remember the fact."
-	(((objectMemory isImmediate: flags)) not
-	 and: [flags anyMask: DisownVMForFFICall]) ifTrue:
-		[self assert: ((objectMemory isOopCompiledMethod: newMethod)
-				and: [(self argumentCountOf: newMethod) = argumentCount]).
-		 inFFIFlags := DisownVMForFFICall.
-		 ^flags].
-
-	self assert: ((objectMemory isIntegerObject: flags)
-				and: [(objectMemory integerValueOf: flags)
-						between: 0
-						and: (self argumentCountOfMethodHeader: -1)]).
-
-	"Otherwise this is a callback return; restore argumentCount and newMethod as per the ownVM: on callback."
-	argumentCount := objectMemory integerValueOf: flags.
-	newMethod := self popStack.
-	self assert: ((objectMemory isOopCompiledMethod: newMethod)
-				and: [(self argumentCountOf: newMethod) = argumentCount]).
-	^0
 ]
 
 { #category : #'message sending' }
@@ -7268,6 +7212,7 @@ StackInterpreter >> getInterruptPending [
 StackInterpreter >> getLongFromFile: aFile swap: swapFlag [
 	"Answer the next 32 or 64 bit word read from aFile, byte-swapped according to the swapFlag."
 	<var: #aFile type: #sqImageFile>
+	<var: #w type: #usqInt>
 	| w |
 	w := 0.
 	self cCode: [self
@@ -7832,7 +7777,8 @@ StackInterpreter >> initialize [
 	debugCallbackInvokes := debugCallbackPath := debugCallbackReturns := 0.
 	statForceInterruptCheck := statStackOverflow := statCheckForEvents :=
 	statProcessSwitch := statIOProcessEvents := statStackPageDivorce :=
-	statIdleUsecs := 0
+	statIdleUsecs := 0.
+	messageCount := 0.
 ]
 
 { #category : #initialization }
@@ -10903,43 +10849,6 @@ StackInterpreter >> openOn: fileName [
 	self openOn: fileName extraMemory: 2500000
 ]
 
-{ #category : #'vm scheduling' }
-StackInterpreter >> ownVM: threadIndexAndFlags [
-	<api>
-	<inline: false>
-	"This is the entry-point for plugins and primitives that wish to reacquire the VM after having
-	 released it via disownVM or callbacks that want to acquire it without knowing their ownership
-	 status.  While this exists for the threaded FFI VM we use it to reset newMethod and the
-	 argumentCount after a callback.
-
-	 Answer -1 if the current thread is unknown to the VM and fails to take ownership."
-	<var: 'amInVMThread' declareC: 'extern sqInt amInVMThread(void)'>
-	self cppIf: COGMTVM
-		ifTrue:
-			[self amInVMThread ifFalse:
-				[^-1]].
-
-	self assert: ((objectMemory isOopCompiledMethod: newMethod)
-				and: [(self argumentCountOf: newMethod) = argumentCount]).
-
-	"Hack encodings of client state.  We use non-immediates (bottom three bits clear)
-	 for FFI/Plugin doing
-		save := self disownVM: FLAGS. ... callout ... self ownVM: save.
-	 We use immediate integer (bottom bit 1) for callbacks doing
-		save := self ownVM: 0. ... callback ... self disownVM: save. return to C"
-
-	"If DisownVMForFFICall this is from the FFI plugin and we're returning from a callout."
-	(threadIndexAndFlags anyMask: DisownVMForFFICall) ifTrue:
-		[inFFIFlags := 0.
-		 ^threadIndexAndFlags].
-
-	"Otherwise this is a callback; stash newMethod on the stack and encode
-	 argumentCount in the flags retrieved when the calback calls disownVM:."
-	self assert: primFailCode = 0.
-	self push: newMethod.
-	^objectMemory integerObjectOf: argumentCount
-]
-
 { #category : #'as yet unclassified' }
 StackInterpreter >> page: aCogStackPage [ 
 	self shouldBeImplemented.
@@ -11423,6 +11332,24 @@ StackInterpreter >> primitiveObject: actualReceiver perform: selector withArgume
 	self executeNewMethod.
 	self initPrimCall.  "Recursive xeq affects primErrorCode"
 	^nil
+]
+
+{ #category : #'primitives message counting' }
+StackInterpreter >> primitiveStartProfiling [
+
+	self cppIf: FEATURE_MESSAGE_COUNT 
+		ifTrue: [ messageCount := 0 ] 
+		ifFalse: [ self primitiveFailFor: PrimErrUnsupported ]
+
+]
+
+{ #category : #'primitives message counting' }
+StackInterpreter >> primitiveStopProfiling [
+
+	self cppIf: FEATURE_MESSAGE_COUNT 
+		ifTrue: [ self pop: 1 thenPushInteger: messageCount ] 
+		ifFalse: [ self primitiveFailFor: PrimErrUnsupported ]
+	
 ]
 
 { #category : #'as yet unclassified' }

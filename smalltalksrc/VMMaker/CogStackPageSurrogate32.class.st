@@ -25,7 +25,7 @@ Class {
 
 { #category : #accessing }
 CogStackPageSurrogate32 class >> alignedByteSize [
-	^44
+	^40
 ]
 
 { #category : #accessing }
@@ -85,13 +85,13 @@ CogStackPageSurrogate32 >> lastAddress: aValue [
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> nextPage [
-	^stackPages surrogateAtAddress: (memory unsignedLong32At: address + 36)
+	^stackPages surrogateAtAddress: (memory unsignedLong32At: address + 32)
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> nextPage: aValue [
-	self assert: (address + 36 >= zoneBase and: [address + 39 < zoneLimit]).
-	memory unsignedLong32At: address + 36 put: aValue asInteger.
+	self assert: (address + 32 >= zoneBase and: [address + 35 < zoneLimit]).
+	memory unsignedLong32At: address + 32 put: aValue asInteger.
 	^aValue
 ]
 
@@ -108,13 +108,13 @@ CogStackPageSurrogate32 >> padToWord: aValue [
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> prevPage [
-	^stackPages surrogateAtAddress: (memory unsignedLong32At: address + 40)
+	^stackPages surrogateAtAddress: (memory unsignedLong32At: address + 36)
 ]
 
 { #category : #accessing }
 CogStackPageSurrogate32 >> prevPage: aValue [
-	self assert: (address + 40 >= zoneBase and: [address + 43 < zoneLimit]).
-	memory unsignedLong32At: address + 40 put: aValue asInteger.
+	self assert: (address + 36 >= zoneBase and: [address + 39 < zoneLimit]).
+	memory unsignedLong32At: address + 36 put: aValue asInteger.
 	^aValue
 ]
 

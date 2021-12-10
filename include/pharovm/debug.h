@@ -45,9 +45,30 @@ EXPORT(int) isLogDebug();
 
 EXPORT(void) logMessageFromErrno(int level, const char* msg, const char* fileName, const char* functionName, int line);
 
+void error(char* aMessage);
+
+
 #include <stdio.h>
 
-int vm_printf( const char * format, ... );
+int vm_printf(const char * format, ... );
 void vm_setVMOutputStream(FILE * stream);
 
+// Internal implementations of fprintf and vfprintf, so the different OS can reimplement if needed
+
+EXPORT(int) fprintf_impl(FILE * stream, const char * format, ... );
+EXPORT(int) vfprintf_impl(FILE * stream, const char * format, va_list arg);
+
 EXPORT(void) printStatusAfterError();
+
+#ifdef _WIN32
+
+EXPORT(char*) formatMessageFromErrorCode(int errorCode);
+EXPORT(void) logErrorFromGetLastError(char* msg);
+
+EXPORT(char*) getErrorLogNameInto(char* nameBuffer, int maxSize);
+EXPORT(FILE*) getErrorLogFile();
+
+EXPORT(void) openDebugWindow(void* hwnd);
+EXPORT(void) notifyDebugWindow();
+
+#endif
