@@ -718,6 +718,14 @@ VMClass >> localNameFor: aString [
 	^ aString asFileReference basename
 ]
 
+{ #category : #logging }
+VMClass >> logDebug: aFormat _: aParameter [
+
+	<doNotGenerate>
+
+	(aFormat printf: { aParameter }) traceCr
+]
+
 { #category : #'debug support' }
 VMClass >> logError: aMessage [
 	

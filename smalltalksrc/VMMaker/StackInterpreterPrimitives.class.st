@@ -438,14 +438,6 @@ StackInterpreterPrimitives >> logDebug: aString [
 	aString traceCr.
 ]
 
-{ #category : #logging }
-StackInterpreterPrimitives >> logDebug: aFormat _: aParameter [
-
-	<doNotGenerate>
-
-	(aFormat printf: { aParameter }) traceCr
-]
-
 { #category : #'object access primitives' }
 StackInterpreterPrimitives >> markFrame: theFPInt [
 	stackPages

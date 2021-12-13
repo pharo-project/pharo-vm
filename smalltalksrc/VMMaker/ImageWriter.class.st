@@ -97,83 +97,109 @@ ImageWriter >> putWord32: aWord32 toFile: aFile [
 	interpreter success: objectsWritten = 1
 ]
 
-{ #category : #writing }
-ImageWriter >> writeImageFile: header [
-
-	"Write the image header and heap contents to imageFile for snapshot.
-	 c.f. writeImageFileIO.  The game below is to maintain 64-bit alignment
-	 for all putLong:toFile: occurrences."
+{ #category : #'accessing - files' }
+ImageWriter >> sqImage: file File: imageName StartLocation: location [
 
 	<doNotGenerate>
-	| headerSize  |
+	^0
+]
 
+{ #category : #'accessing - files' }
+ImageWriter >> sqImageFile: imageName Open: fileMode [
+
+	<doNotGenerate>
+	^imageName asFileReference binaryWriteStream
+]
+
+{ #category : #'accessing - files' }
+ImageWriter >> sqImageFileClose: file [
+
+	<doNotGenerate>
+	file close
+]
+
+{ #category : #'accessing - files' }
+ImageWriter >> sqImageFilePosition: file [
+
+	<doNotGenerate>
+	^file position
+]
+
+{ #category : #writing }
+ImageWriter >> writeImageFile: header [
+	"Write the image header and heap contents to imageFile for snapshot. c.f. writeImageFileIOSimulation.
+	 The game below is to maintain 64-bit alignment for all putLong:toFile: occurrences."
+	<inline: #never>
+	| headerStart headerSize imageName f imageBytes bytesWritten |
+	<var: #headerStart type: #squeakFileOffsetType>
+	<var: #imageName declareC: 'extern char imageName[]'>
+	<var: #f type: #sqImageFile>
+	<var: #sCWIfn type: #'void *'> "?"
+
+	headerStart := 0.  
 	headerSize := header headerSize.
+	imageName := interpreter imageName.
 
-	interpreter imageName asFileReference binaryWriteStreamDo: [ :file | 
-		self putWord32: header imageFormat toFile: file.
-		self putWord32: headerSize toFile: file.
+	self logDebug: 'Writing snapshot file %s' _: imageName.
 
-		{ 
-			header dataSize.
-			header oldBaseAddr.
-			header initialSpecialObjectsOop.
-			header hdrLastHash.
-			header screenSize.
-			header headerFlags 
-		} do: [ :long | 
-			self putLong: long toFile: file 
-		].
+	f := self sqImageFile: imageName Open: 'wb'.
+	f = nil ifTrue: "could not open the image file for writing"
+		[^self primitiveFail].
 
-		self putWord32: header extraVMMemory toFile: file.
+	imageBytes := header dataSize.
+	headerStart := self sqImage: f File: imageName StartLocation: headerSize + imageBytes.
+	self cCode: '/* Note: on Unix systems one could put an exec command here, padded to 512 bytes */'.
+	"position file to start of header"
+	self sqImageFile: f Seek: headerStart.
 
-		{ 
-			header hdrNumStackPages.
-			header hdrCogCodeSize 
-		} do: [ :short | 
-			self putShort: short toFile: file 
-		].
+	self putWord32: header imageFormat toFile: f.
+	self putWord32: headerSize toFile: f.
+	self putLong: imageBytes toFile: f.
+	self putLong: header oldBaseAddr toFile: f.
+	self putLong: header initialSpecialObjectsOop toFile: f.
+	self putLong: header hdrLastHash toFile: f.
+	self putLong: header screenSize toFile: f.
+	self putLong: header headerFlags toFile: f.
+	self putWord32: header extraVMMemory toFile: f.
+	self putShort: header hdrNumStackPages toFile: f.
+	self putShort: header hdrCogCodeSize toFile: f.
+	self putWord32: header hdrEdenBytes toFile: f.
+	self putShort: header hdrMaxExtSemTabSize toFile: f.
+	self putShort: 0 toFile: f. "the2ndUnknownShort"
 
-		self putWord32: header hdrEdenBytes toFile: file.
+	objectMemory hasSpurMemoryManagerAPI
+		ifTrue:
+			[self putLong: objectMemory firstSegmentBytes toFile: f.
+			 self putLong: objectMemory bytesLeftInOldSpace toFile: f.
+			 2 timesRepeat: [self putLong: 0 toFile: f]	"Pad the rest of the header."]
+		ifFalse:
+			[4 timesRepeat: [self putLong: 0 toFile: f]].  "Pad the rest of the header."
 
-		{ 
-			header hdrMaxExtSemTabSize.
-			0 
-		} do: [ :short | 
-			self putShort: short toFile: file 
-		].
+	 objectMemory wordSize = 8 ifTrue:
+		[3 timesRepeat: [self putLong: 0 toFile: f]]. "Pad the rest of the header."
 
-		objectMemory hasSpurMemoryManagerAPI
-			ifTrue: [ 
-				| bytesWritten |
-				self putLong: header firstSegSize toFile: file.
-				self putLong: header freeOldSpaceInImage toFile: file.
-				
-				2 timesRepeat: [ "Pad the rest of the header." 
-					self putLong: 0 toFile: file ].
-				objectMemory wordSize = 8 ifTrue: [ 
-					3 timesRepeat: [ self putLong: 0 toFile: file ] ].
+	self assert: headerStart + headerSize = (self sqImageFilePosition: f).
 
-				self assert: file position = headerSize.
-				"Position the file after the header."
-				file position: headerSize.
+	"position file after the header"
+	self sqImageFile: f Seek: headerStart + headerSize.
 
-				bytesWritten := objectMemory writeImageSegmentsToFile: file.
-				self assert: bytesWritten = objectMemory imageSizeToWrite ]
-			ifFalse: [ "Pad the rest of the header."
-				4 timesRepeat: [ self putLong: 0 toFile: file ].
-				objectMemory wordSize = 8 ifTrue: [ 
-					3 timesRepeat: [ self putLong: 0 toFile: file ] ].
+	interpreter successful ifFalse: "file write or seek failure"
+		[self sqImageFileClose: f.
+		 ^nil].
 
-				self assert: file position = headerSize.
-				"Position the file after the header."
-				file position: headerSize.
+	"write the image data"
+	objectMemory hasSpurMemoryManagerAPI
+		ifTrue:
+			[bytesWritten := objectMemory writeImageSegmentsToFile: f]
+		ifFalse:
+			[bytesWritten := self sq: (self pointerForOop: objectMemory baseAddressOfImage)
+								Image: (self sizeof: #char)
+								File: imageBytes
+								Write: f].
 
-				"Write the object memory."
-				objectMemory baseAddressOfImage // 4 + 1 to:
-				objectMemory baseAddressOfImage + objectMemory imageSizeToWrite
-				// 4 do: [ :index | 
-				self putLong: (objectMemory memory at: index) toFile: file ] ].
+	interpreter success: bytesWritten = imageBytes.
+	self sqImageFileClose: f.
+	
+	self logDebug: 'Snapshot file %s done' _: imageName.
 
-		interpreter success: true 
-	]
 ]
