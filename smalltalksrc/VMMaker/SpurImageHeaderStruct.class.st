@@ -16,7 +16,8 @@ Class {
 		'freeOldSpaceInImage',
 		'swapBytes',
 		'hdrLastHash',
-		'imageFormat'
+		'imageFormat',
+		'screenSize'
 	],
 	#category : #'VMMaker-JIT'
 }
@@ -214,6 +215,18 @@ SpurImageHeaderStruct >> oldBaseAddr [
 SpurImageHeaderStruct >> oldBaseAddr: anObject [
 
 	oldBaseAddr := anObject
+]
+
+{ #category : #accessing }
+SpurImageHeaderStruct >> screenSize [
+
+	^ screenSize
+]
+
+{ #category : #accessing }
+SpurImageHeaderStruct >> screenSize: anObject [
+
+	screenSize := anObject
 ]
 
 { #category : #accessing }

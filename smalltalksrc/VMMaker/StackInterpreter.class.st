@@ -7410,6 +7410,14 @@ StackInterpreter >> hasProfileSemaphore [
 	^ profileSemaphore ~= objectMemory nilObject
 ]
 
+{ #category : #'image save/restore' }
+StackInterpreter >> headerSize [
+	"header size in bytes; do not change!"
+	^ objectMemory wordSize = 4
+		  ifTrue: [ 64 ]
+		  ifFalse: [ 128 ]
+]
+
 { #category : #'stack pages' }
 StackInterpreter >> highBit: anUnsignedValue [ 
 	"This is a C implementation needed by ioSetMaxExtSemTableSize
@@ -10553,6 +10561,40 @@ StackInterpreter >> nativeStackSize [
 	^ 4 *1024 * 1024
 ]
 
+{ #category : #'image save/restore' }
+StackInterpreter >> newHeader [
+
+	<doNotGenerate>
+	| header |
+
+	header := SpurImageHeaderStruct new.
+
+	header imageFormat: self imageFormatVersion.	
+	header swapBytes: false. "TO CHECK, depends of image format"
+	header headerSize: self headerSize.
+	header dataSize: objectMemory imageSizeToWrite.
+	header oldBaseAddr: objectMemory baseAddressOfImage.
+	header initialSpecialObjectsOop: objectMemory specialObjectsOop.
+	header hdrLastHash: objectMemory lastHash.
+	header screenSize: self ioScreenSize.
+	header headerFlags: self getImageHeaderFlags.
+	header extraVMMemory: (self extraVMMemory ifNil: [ 0 ]).
+	header hdrNumStackPages: self desiredNumStackPages.
+	header hdrCogCodeSize: self unknownShortOrCodeSizeInKs.
+	header hdrEdenBytes: self desiredEdenBytes.
+
+	header hdrMaxExtSemTabSize: (
+		self maxExtSemTabSizeSet
+				 ifTrue: [ self ioGetMaxExtSemTableSize ]
+				 ifFalse: [ 0 ]
+	).
+
+	header firstSegSize: objectMemory firstSegmentBytes.
+	header freeOldSpaceInImage: objectMemory bytesLeftInOldSpace.
+
+	^header
+]
+
 { #category : #accessing }
 StackInterpreter >> newMethod [
 	<doNotGenerate>
@@ -12813,48 +12855,6 @@ StackInterpreter >> pushedReceiverOrClosureOfFrame: theFP [
 	^stackPages longAt: theFP + (self frameStackedReceiverOffset: theFP)
 ]
 
-{ #category : #'image save/restore' }
-StackInterpreter >> putLong: aLong toFile: aFile [
-	"Append aLong to aFile in this platform's 'natural' byte order.  aLong is either 32 or 64 bits,
-	 depending on ObjectMemory.  (Bytes will be swapped, if necessary, when the image is read
-	 on a different platform.) Set successFlag to false if the write fails."
-
-	<var: #aLong type: #sqInt>
-	<var: #aFile type: #sqImageFile>
-	<inline: false>
-	| objectsWritten |
-	objectsWritten := self
-						cCode: [self sq: (self addressOf: aLong) Image: (self sizeof: #sqInt) File: 1 Write: aFile]
-						inSmalltalk:
-							[| value |
-							 value := aLong.
-							 objectMemory wordSize timesRepeat:
-								[aFile nextPut: (value bitAnd: 16rFF).
-								 value := value >> 8].
-							 1].
-	self success: objectsWritten = 1
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> putShort: aShort toFile: aFile [
-	"Append the 16-bit aShort to aFile in this platform's 'natural' byte order.
-	 (Bytes will be swapped, if necessary, when the image is read on a
-	 different platform.) Set successFlag to false if the write fails."
-
-	<var: #aShort type: #short>
-	<var: #aFile type: #sqImageFile>
-	<inline: false>
-	| objectsWritten |
-	objectsWritten := self
-						cCode: [self sq: (self addressOf: aShort) Image: (self sizeof: #short) File: 1 Write: aFile]
-						inSmalltalk:
-							[aFile
-								nextPut: (aShort bitAnd: 16rFF);
-								nextPut: (aShort >> 8 bitAnd: 16rFF).
-							 1].
-	self success: objectsWritten = 1
-]
-
 { #category : #'process primitive support' }
 StackInterpreter >> putToSleep: aProcess yieldingIf: yieldImplicitly [
 	"Save the given process on the scheduler process list for its priority,
@@ -12871,28 +12871,6 @@ StackInterpreter >> putToSleep: aProcess yieldingIf: yieldImplicitly [
 	yieldImplicitly
 		ifTrue: [self addLastLink: aProcess toList: processList]
 		ifFalse: [self addFirstLink: aProcess toList: processList]
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> putWord32: aWord32 toFile: aFile [
-	"Append aWord32 to aFile in this platform's 'natural' byte order.  aWord32 is 32 bits,
-	 depending on ObjectMemory.  (Bytes will be swapped, if necessary, when the image is read
-	 on a different platform.) Set successFlag to false if the write fails."
-
-	<var: #aWord32 type: #int>
-	<var: #aFile type: #sqImageFile>
-	<inline: false>
-	| objectsWritten |
-	objectsWritten := self
-						cCode: [self sq: (self addressOf: aWord32) Image: 4 File: 1 Write: aFile]
-						inSmalltalk:
-							[| value |
-							 value := aWord32.
-							 4 timesRepeat:
-								[aFile nextPut: (value bitAnd: 16rFF).
-								 value := value >> 8].
-							 1].
-	self success: objectsWritten = 1
 ]
 
 { #category : #'sista bytecodes' }
@@ -15917,17 +15895,19 @@ StackInterpreter >> writeImageFileIO [
 	"Write the image header and heap contents to imageFile for snapshot. c.f. writeImageFileIOSimulation.
 	 The game below is to maintain 64-bit alignment for all putLong:toFile: occurrences."
 	<inline: #never>
-	| imageName headerStart headerSize f imageBytes bytesWritten sCWIfn okToWrite |
+	| imageName headerStart headerSize f imageBytes bytesWritten sCWIfn okToWrite imageWriter |
 	<var: #f type: #sqImageFile>
 	<var: #headerStart type: #squeakFileOffsetType>
 	<var: #sCWIfn type: #'void *'>
 	<var: #imageName declareC: 'extern char imageName[]'>
 
-	self cCode: [] inSmalltalk: [imageName := 'sooth compiler'. ^self writeImageFileIOSimulation].
-	
+	imageWriter := ImageWriter newWithMemory: objectMemory andInterpreter: self.
+
+	self simulationOnly: [ imageName := 'sooth compiler'. ^imageWriter writeImageFile: self newHeader ].
+
 	"local constants"
 	headerStart := 0.  
-	headerSize := objectMemory wordSize = 4 ifTrue: [64] ifFalse: [128].  "header size in bytes; do not change!"
+	headerSize := self headerSize.
 
 	self logDebug: 'Writing snapshot file %s' _: imageName.
 
@@ -15941,30 +15921,30 @@ StackInterpreter >> writeImageFileIO [
 	"position file to start of header"
 	self sqImageFile: f Seek: headerStart.
 
-	self putWord32: self imageFormatVersion toFile: f.
-	self putWord32: headerSize toFile: f.
-	self putLong: imageBytes toFile: f.
-	self putLong: objectMemory baseAddressOfImage toFile: f.
-	self putLong: objectMemory specialObjectsOop toFile: f.
-	self putLong: objectMemory newObjectHash toFile: f.
-	self putLong: self getSnapshotScreenSize toFile: f.
-	self putLong: self getImageHeaderFlags toFile: f.
-	self putWord32: extraVMMemory toFile: f.
-	self putShort: desiredNumStackPages toFile: f.
-	self putShort: self unknownShortOrCodeSizeInKs toFile: f.
-	self putWord32: desiredEdenBytes toFile: f.
-	self putShort: (maxExtSemTabSizeSet ifTrue: [self ioGetMaxExtSemTableSize] ifFalse: [0]) toFile: f.
-	self putShort: the2ndUnknownShort toFile: f.
+	imageWriter putWord32: self imageFormatVersion toFile: f.
+	imageWriter putWord32: headerSize toFile: f.
+	imageWriter putLong: imageBytes toFile: f.
+	imageWriter putLong: objectMemory baseAddressOfImage toFile: f.
+	imageWriter putLong: objectMemory specialObjectsOop toFile: f.
+	imageWriter putLong: objectMemory newObjectHash toFile: f.
+	imageWriter putLong: self getSnapshotScreenSize toFile: f.
+	imageWriter putLong: self getImageHeaderFlags toFile: f.
+	imageWriter putWord32: extraVMMemory toFile: f.
+	imageWriter putShort: desiredNumStackPages toFile: f.
+	imageWriter putShort: self unknownShortOrCodeSizeInKs toFile: f.
+	imageWriter putWord32: desiredEdenBytes toFile: f.
+	imageWriter putShort: (maxExtSemTabSizeSet ifTrue: [self ioGetMaxExtSemTableSize] ifFalse: [0]) toFile: f.
+	imageWriter putShort: the2ndUnknownShort toFile: f.
 	objectMemory hasSpurMemoryManagerAPI
 		ifTrue:
-			[self putLong: objectMemory firstSegmentBytes toFile: f.
-			 self putLong: objectMemory bytesLeftInOldSpace toFile: f.
-			 2 timesRepeat: [self putLong: 0 toFile: f]	"Pad the rest of the header."]
+			[imageWriter putLong: objectMemory firstSegmentBytes toFile: f.
+			 imageWriter putLong: objectMemory bytesLeftInOldSpace toFile: f.
+			 2 timesRepeat: [imageWriter putLong: 0 toFile: f]	"Pad the rest of the header."]
 		ifFalse:
-			[4 timesRepeat: [self putLong: 0 toFile: f]].  "Pad the rest of the header."
+			[4 timesRepeat: [imageWriter putLong: 0 toFile: f]].  "Pad the rest of the header."
 
 	 objectMemory wordSize = 8 ifTrue:
-		[3 timesRepeat: [self putLong: 0 toFile: f]]. "Pad the rest of the header."
+		[3 timesRepeat: [imageWriter putLong: 0 toFile: f]]. "Pad the rest of the header."
 
 	self assert: headerStart + headerSize = (self sqImageFilePosition: f).
 	"position file after the header"
@@ -15987,73 +15967,6 @@ StackInterpreter >> writeImageFileIO [
 	self sqImageFileClose: f.
 	
 	self logDebug: 'Snapshot file %s done' _: imageName.
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> writeImageFileIOSimulation [
-	"Write the image header and heap contents to imageFile for snapshot.
-	 c.f. writeImageFileIO.  The game below is to maintain 64-bit alignment
-	 for all putLong:toFile: occurrences."
-	<doNotGenerate>
-	| headerSize |
-	headerSize := objectMemory wordSize = 4 ifTrue: [64] ifFalse: [128].
-
-	self imageName asFileReference binaryWriteStreamDo: [ :file |
-			 self putWord32: self imageFormatVersion toFile: file.
-			 self putWord32: headerSize toFile: file.
-			{
-		objectMemory imageSizeToWrite.
-		objectMemory baseAddressOfImage.
-		objectMemory specialObjectsOop.
-		objectMemory lastHash.
-		self ioScreenSize.
-		self getImageHeaderFlags
-	 }
-		do: [:long | self putLong: long toFile: file].		
-
-	 self putWord32: (extraVMMemory ifNil: [0]) toFile: file.
-	 {	desiredNumStackPages. self unknownShortOrCodeSizeInKs } do:
-		[:short| self putShort: short toFile: file].
-
-	 self putWord32: desiredEdenBytes toFile: file.
-
-	 {	maxExtSemTabSizeSet ifTrue: [self ioGetMaxExtSemTableSize] ifFalse: [0]. 0 } do:
-		[:short| self putShort: short toFile: file].
-
-	 objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[| bytesWritten |
-			 self putLong: objectMemory firstSegmentBytes toFile: file.
-			 self putLong: objectMemory bytesLeftInOldSpace toFile: file.
-			 2 timesRepeat: [self putLong: 0 toFile: file] "Pad the rest of the header.".
-			 objectMemory wordSize = 8 ifTrue:
-				[3 timesRepeat: [self putLong: 0 toFile: file]].
-
-			 self assert: file position = headerSize.
-			"Position the file after the header."
-			file position: headerSize.
-			bytesWritten := objectMemory writeImageSegmentsToFile: file.
-			self assert: bytesWritten = objectMemory imageSizeToWrite]
-		ifFalse:
-			["Pad the rest of the header."
-			 4 timesRepeat: [self putLong: 0 toFile: file].
-			 objectMemory wordSize = 8 ifTrue:
-				[3 timesRepeat: [self putLong: 0 toFile: file]].
-
-			 self assert: file position = headerSize.
-			 "Position the file after the header."
-			 file position: headerSize.
-
-			 "Write the object memory."
-			 objectMemory baseAddressOfImage // 4 + 1
-				to: objectMemory baseAddressOfImage + objectMemory imageSizeToWrite // 4
-				do: [:index |
-					self
-						putLong: (objectMemory memory at: index)
-						toFile: file]].
-	
-	 self success: true
-	]
 ]
 
 { #category : #'stack pages' }
