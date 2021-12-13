@@ -34,6 +34,16 @@ ImageWriter >> objectMemory: memory [
 ]
 
 { #category : #writing }
+ImageWriter >> padHeader: emptySize toFile: f [
+
+	emptySize timesRepeat: [self putLong: 0 toFile: f].
+	
+	objectMemory wordSize = 8 ifTrue:
+		[3 timesRepeat: [self putLong: 0 toFile: f]]. "Pad the rest of the header."
+
+]
+
+{ #category : #writing }
 ImageWriter >> putLong: aLong toFile: aFile [
 	"Append aLong to aFile in this platform's 'natural' byte order.  aLong is either 32 or 64 bits,
 	 depending on ObjectMemory.  (Bytes will be swapped, if necessary, when the image is read
@@ -126,6 +136,26 @@ ImageWriter >> sqImageFilePosition: file [
 ]
 
 { #category : #writing }
+ImageWriter >> writeHeader: header toFile: f [
+
+	self putWord32: header imageFormat toFile: f.
+	self putWord32: header headerSize toFile: f.
+	self putLong: header dataSize toFile: f.
+	self putLong: header oldBaseAddr toFile: f.
+	self putLong: header initialSpecialObjectsOop toFile: f.
+	self putLong: header hdrLastHash toFile: f.
+	self putLong: header screenSize toFile: f.
+	self putLong: header headerFlags toFile: f.
+	self putWord32: header extraVMMemory toFile: f.
+	self putShort: header hdrNumStackPages toFile: f.
+	self putShort: header hdrCogCodeSize toFile: f.
+	self putWord32: header hdrEdenBytes toFile: f.
+	self putShort: header hdrMaxExtSemTabSize toFile: f.
+	self putShort: 0 toFile: f. "the2ndUnknownShort"
+
+]
+
+{ #category : #writing }
 ImageWriter >> writeImageFile: header [
 	"Write the image header and heap contents to imageFile for snapshot. c.f. writeImageFileIOSimulation.
 	 The game below is to maintain 64-bit alignment for all putLong:toFile: occurrences."
@@ -152,35 +182,19 @@ ImageWriter >> writeImageFile: header [
 	"position file to start of header"
 	self sqImageFile: f Seek: headerStart.
 
-	self putWord32: header imageFormat toFile: f.
-	self putWord32: headerSize toFile: f.
-	self putLong: imageBytes toFile: f.
-	self putLong: header oldBaseAddr toFile: f.
-	self putLong: header initialSpecialObjectsOop toFile: f.
-	self putLong: header hdrLastHash toFile: f.
-	self putLong: header screenSize toFile: f.
-	self putLong: header headerFlags toFile: f.
-	self putWord32: header extraVMMemory toFile: f.
-	self putShort: header hdrNumStackPages toFile: f.
-	self putShort: header hdrCogCodeSize toFile: f.
-	self putWord32: header hdrEdenBytes toFile: f.
-	self putShort: header hdrMaxExtSemTabSize toFile: f.
-	self putShort: 0 toFile: f. "the2ndUnknownShort"
+	self writeHeader: header toFile: f.
 
 	objectMemory hasSpurMemoryManagerAPI
 		ifTrue:
 			[self putLong: objectMemory firstSegmentBytes toFile: f.
 			 self putLong: objectMemory bytesLeftInOldSpace toFile: f.
-			 2 timesRepeat: [self putLong: 0 toFile: f]	"Pad the rest of the header."]
+			 self padHeader: 2 toFile: f]
 		ifFalse:
-			[4 timesRepeat: [self putLong: 0 toFile: f]].  "Pad the rest of the header."
+			[self padHeader: 4 toFile: f].
 
-	 objectMemory wordSize = 8 ifTrue:
-		[3 timesRepeat: [self putLong: 0 toFile: f]]. "Pad the rest of the header."
-
-	self assert: headerStart + headerSize = (self sqImageFilePosition: f).
 
 	"position file after the header"
+	self assert: headerStart + headerSize = (self sqImageFilePosition: f).
 	self sqImageFile: f Seek: headerStart + headerSize.
 
 	interpreter successful ifFalse: "file write or seek failure"
