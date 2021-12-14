@@ -156,11 +156,11 @@ ImageWriter >> writeHeader: header toFile: f [
 ]
 
 { #category : #writing }
-ImageWriter >> writeImageFile: header [
+ImageWriter >> writeImageFile: imageName fromHeader: header [
 	"Write the image header and heap contents to imageFile for snapshot. c.f. writeImageFileIOSimulation.
 	 The game below is to maintain 64-bit alignment for all putLong:toFile: occurrences."
 	<inline: #never>
-	| headerStart headerSize imageName f imageBytes bytesWritten |
+	| headerStart headerSize f imageBytes bytesWritten |
 	<var: #headerStart type: #squeakFileOffsetType>
 	<var: #imageName declareC: 'extern char imageName[]'>
 	<var: #f type: #sqImageFile>
@@ -168,7 +168,6 @@ ImageWriter >> writeImageFile: header [
 
 	headerStart := 0.  
 	headerSize := header headerSize.
-	imageName := interpreter imageName.
 
 	self logDebug: 'Writing snapshot file %s' _: imageName.
 

@@ -15894,7 +15894,7 @@ StackInterpreter >> writeImageFileIO [
 
 	imageWriter := ImageWriter newWithMemory: objectMemory andInterpreter: self.
 	
-	^imageWriter writeImageFile: self newHeader
+	^imageWriter writeImageFile: self imageName fromHeader: self newHeader
 
 ]
 
