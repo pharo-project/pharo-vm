@@ -7563,11 +7563,7 @@ StackInterpreter >> iframeMethod: theFP [
 
 { #category : #'image save/restore' }
 StackInterpreter >> imageFormatVersion [
-	"Return a magic constant that changes when the image format changes.
-	 Since the image reading code uses this to detect byte ordering, one
-	 must avoid version numbers that are invariant under byte reversal."
 	<doNotGenerate>
-	self assert: (objectMemory imageFormatVersion anyMask: 16) = objectMemory hasSpurMemoryManagerAPI.
 	^objectMemory imageFormatVersion
 ]
 
@@ -10569,8 +10565,7 @@ StackInterpreter >> newHeader [
 
 	header := SpurImageHeaderStruct new.
 
-	header imageFormat: self imageFormatVersion.	
-	header swapBytes: false. "TO CHECK, depends of image format"
+	header imageFormat: self imageFormatVersion.
 	header headerSize: self headerSize.
 	header dataSize: objectMemory imageSizeToWrite.
 	header oldBaseAddr: objectMemory baseAddressOfImage.
