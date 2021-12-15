@@ -4631,7 +4631,6 @@ VMPrimitiveTest >> testSubtractTwoIntegersOverflow [
 
 	interpreter push: (self memory integerObjectOf: self memory maxSmallInteger).
 	interpreter push: (self memory integerObjectOf: -1).
-	1halt.
 	interpreter primitiveSubtract.
 
 	self assert: interpreter failed
