@@ -1,19 +1,11 @@
 Class {
 	#name : #SlangMethodPrototypeTranslationTest,
-	#superclass : #ParametrizedTestCase,
+	#superclass : #TestCase,
 	#instVars : [
-		'generator',
-		'translationStrategy'
+		'generator'
 	],
 	#category : #'Slang-Tests'
 }
-
-{ #category : #'building suites' }
-SlangMethodPrototypeTranslationTest class >> testParameters [ 
-
-	^ ParametrizedTestMatrix new
-		forSelector: #translationStrategy addOptions: { #slangTranslate . #astTranslate }
-]
 
 { #category : #helpers }
 SlangMethodPrototypeTranslationTest >> astTranslate: tMethod inStream: aWriteStream [
@@ -53,19 +45,5 @@ SlangMethodPrototypeTranslationTest >> testMethodPrototype [
 SlangMethodPrototypeTranslationTest >> translate: tast [
 
 	^ String streamContents: [ :str | 
-		self
-			perform: (translationStrategy , #':inStream:') asSymbol
-			withArguments: { tast . str } ]
-]
-
-{ #category : #accessing }
-SlangMethodPrototypeTranslationTest >> translationStrategy [
-
-	^ translationStrategy
-]
-
-{ #category : #accessing }
-SlangMethodPrototypeTranslationTest >> translationStrategy: anObject [
-
-	translationStrategy := anObject
+		self astTranslate: tast inStream: str ]
 ]
