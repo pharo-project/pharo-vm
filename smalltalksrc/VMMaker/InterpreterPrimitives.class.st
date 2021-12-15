@@ -764,43 +764,6 @@ InterpreterPrimitives >> primitiveAdd [
 	self pop: 2 thenPush: result
 ]
 
-{ #category : #'arithmetic integer primitives' }
-InterpreterPrimitives >> primitiveAdd2 [
-	<numberOfArguments: 1>
-	
-	| maybeSmallInteger maybeSmallInteger2 result |
-	maybeSmallInteger := self stackValue: 0.
-	maybeSmallInteger2 := self stackValue: 1.
-	
-	(objectMemory isIntegerObject: maybeSmallInteger)
-		ifFalse: [ ^ self primitiveFail ].
-	(objectMemory isIntegerObject: maybeSmallInteger2)
-		ifFalse: [ ^ self primitiveFail ].
-
-	"Check for overflow"
-	result := self
-		sumInteger: (self withoutSmallIntegerTags2: maybeSmallInteger)
-		withInteger: maybeSmallInteger2
-		ifOverflow: [ ^ self primitiveFail ].
-
-	self pop: 2 thenPush: result
-]
-
-{ #category : #'arithmetic integer primitives' }
-InterpreterPrimitives >> primitiveAdd3 [
-	<numberOfArguments: 1>
-	| v1 v0 integer1 integer0 |
-	v1 := self stackValue: 1.
-	(objectMemory isIntegerObject: v1)
-		ifTrue: [ integer1 := objectMemory integerValueOf: v1 ]
-		ifFalse: [ ^ self primitiveFail ].
-	v0 := self stackValue: 0.
-	(objectMemory isIntegerObject: v0)
-		ifTrue: [ integer0 := objectMemory integerValueOf: v0 ]
-		ifFalse: [ ^ self primitiveFail ].
-	self pop2AndPushIntegerIfOK: integer1 + integer0
-]
-
 { #category : #'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveAddLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
@@ -5101,23 +5064,6 @@ InterpreterPrimitives >> successful [
 	 is greater than one then its value indicates the reason for failure."
 	<inline: true>
 	^ primFailCode = 0
-]
-
-{ #category : #arithmetic }
-InterpreterPrimitives >> sumInteger: anInteger withInteger: anotherInteger ifOverflow: aBlock [
-
-	"Sum two signed integers and detect signed overflow"
-
-	| signedInt1 signedInt2 |
-	signedInt1 := objectMemory asSignedPlatformInteger: anInteger.
-	signedInt2 := objectMemory asSignedPlatformInteger: anotherInteger.
-
-	"Check overflow or underlow"
-	(signedInt1 > (objectMemory maxCSignedInteger - signedInt2)
-		or: [ signedInt1 < (objectMemory minCSignedInteger - signedInt2) ])
-			ifTrue: aBlock.
-
-	^ signedInt1 + signedInt2
 ]
 
 { #category : #arithmetic }
