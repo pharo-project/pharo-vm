@@ -109,8 +109,8 @@ if(GENERATE_SOURCES)
     ExternalProject_Add(
             build_vmmaker_get_image
 
-            URL https://files.pharo.org/image/100/Pharo10-SNAPSHOT.build.341.sha.a807a07.arch.64bit.zip
-            URL_HASH SHA256=a8b1ef14daf5013579a363d07d33f0ab516bfda6f90ead1e4ad56a6d0b9dcc75
+            URL https://files.pharo.org/image/100/Pharo10-SNAPSHOT.build.349.sha.3e26baf.arch.64bit.zip
+            URL_HASH SHA256=92ca96c8a9eea320b0fef5043d9b89a8cfdbfc4a0d6a5552de33d4cd2fb525a4
             BUILD_COMMAND ${VMMAKER_VM} --headless ${VMMAKER_DIR}/image/Pharo10-SNAPSHOT-64bit-a807a07.image --no-default-preferences save VMMaker
             COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences --save --quit "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}" "${ICEBERG_DEFAULT_REMOTE}"
             UPDATE_COMMAND      echo 
