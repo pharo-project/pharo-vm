@@ -2552,6 +2552,9 @@ InterpreterPrimitives >> primitiveLessOrEqualLargeIntegers [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveLessThan [
+
+	<numberOfArguments: 1>
+
 	| integerReceiver integerArgument |
 	integerArgument := self stackTop.
 	integerReceiver := self stackValue: 1.
