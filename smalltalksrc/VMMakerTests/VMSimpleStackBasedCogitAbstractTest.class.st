@@ -391,6 +391,7 @@ VMSimpleStackBasedCogitAbstractTest >> initialCodeSize [
 VMSimpleStackBasedCogitAbstractTest >> initializationOptions [
 	
 	^ super initializationOptions, {
+		#MULTIPLEBYTECODESETS. true.
 		#bytecodeTableInitializer. #initializeBytecodeTableForSistaV1}
 ]
 
@@ -441,7 +442,9 @@ VMSimpleStackBasedCogitAbstractTest >> jitCompilerClass [
 VMSimpleStackBasedCogitAbstractTest >> jitMethod: aPharoCompiledMethod selector: aSelectorOop [
 
 	| methodOop |
-	methodOop := self createMethodOopFromPharoMethod: aPharoCompiledMethod.
+
+	methodOop := self createMethodOopFromPharoMethod:aPharoCompiledMethod.
+
 	^ cogit cog: methodOop selector: aSelectorOop
 ]
 
@@ -451,6 +454,8 @@ VMSimpleStackBasedCogitAbstractTest >> jitOptions [
 	^ Dictionary newFromPairs: { 
 		#ISA. isa.
 		#IMMUTABILITY. false.
+		#MULTIPLEBYTECODESETS. true.
+		#bytecodeTableInitializer. #initializeBytecodeTableForSistaV1.	
 		#ObjectMemory. self memoryClass name }
 ]
 

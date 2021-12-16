@@ -16,8 +16,7 @@ Class {
 		'methodCacheSize',
 		'rumpCStackSize',
 		'wordSize',
-		'methodBuilder',
-		'bytecodeMethod'
+		'methodBuilder'
 	],
 	#pools : [
 		'VMBasicConstants',
@@ -62,14 +61,9 @@ VMSpurMemoryManagerTest >> createActiveProcess [
 VMSpurMemoryManagerTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod [
 
 	| methodOop |
-	bytecodeMethod := aPharoCompiledMethod methodClass compiler
-		            encoderClass: EncoderForSistaV1;
-		            options: #( + optionFullBlockClosure );
-		            compile: aPharoCompiledMethod sourceCode.
-
 	methodOop := methodBuilder
-		             fillFromPharoMethod: bytecodeMethod;
-		             build.
+		             fillFromPharoMethod: aPharoCompiledMethod;
+		             buildMethod.
 	^ methodOop
 ]
 
@@ -85,7 +79,7 @@ VMSpurMemoryManagerTest >> initializationOptions [
 		  #BytesPerWord.
 		  self wordSize.
 		  #ObjectMemory.
-		  memory class name }
+		  memory class name}
 ]
 
 { #category : #helpers }
@@ -175,8 +169,8 @@ VMSpurMemoryManagerTest >> initializeSpecialSelectors [
 		memory
 			storePointer: anIndex - 1
 			ofObject: specialSelectorsArrayOop
-			withValue: (anElement forMemory: memory) ].
-		
+			withValue: (anElement forMemory: memory inMethod: nil) ].
+
 	memory splObj: SpecialSelectors put: specialSelectorsArrayOop
 ]
 
@@ -511,7 +505,7 @@ VMSpurMemoryManagerTest >> setUp [
 	"Schedule a GC, so it does not try to schedule one"
 	memory needGCFlag: 1.
 	
-	methodBuilder := VMMethodBuilder new
+	methodBuilder := VMCompiledCodeBuilder new
 		interpreter: interpreter; 
 		memory: memory;
 		yourself.
@@ -576,7 +570,7 @@ VMSpurMemoryManagerTest >> setUpUsingImage [
 	newSpaceSize := memory oldSpaceStart -memory newSpaceStart.
 	oldSpaceSize := memory oldSpaceSize.
 	
-	methodBuilder := VMMethodBuilder new
+	methodBuilder := VMCompiledCodeBuilder new
 		interpreter: interpreter; 
 		memory: memory;
 		yourself.
