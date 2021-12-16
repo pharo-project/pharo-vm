@@ -387,14 +387,6 @@ VMSimpleStackBasedCogitAbstractTest >> initialCodeSize [
 	^ 4 * 1024
 ]
 
-{ #category : #helpers }
-VMSimpleStackBasedCogitAbstractTest >> initializationOptions [
-	
-	^ super initializationOptions, {
-		#MULTIPLEBYTECODESETS. true.
-		#bytecodeTableInitializer. #initializeBytecodeTableForSistaV1}
-]
-
 { #category : #running }
 VMSimpleStackBasedCogitAbstractTest >> initializeInitialStackFrame [
 
@@ -454,7 +446,6 @@ VMSimpleStackBasedCogitAbstractTest >> jitOptions [
 	^ Dictionary newFromPairs: { 
 		#ISA. isa.
 		#IMMUTABILITY. false.
-		#MULTIPLEBYTECODESETS. true.
 		#bytecodeTableInitializer. #initializeBytecodeTableForSistaV1.	
 		#ObjectMemory. self memoryClass name }
 ]

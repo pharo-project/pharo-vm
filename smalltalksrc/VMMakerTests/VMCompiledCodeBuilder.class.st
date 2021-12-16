@@ -21,6 +21,16 @@ VMCompiledCodeBuilder >> address [
 	^ method
 ]
 
+{ #category : #deprecated }
+VMCompiledCodeBuilder >> build [
+
+	self
+		deprecated: 'Use #buildMethod instead'
+		transformWith: '`@r build' -> '`@r buildMethod'.
+
+	^ self buildMethod
+]
+
 { #category : #building }
 VMCompiledCodeBuilder >> buildMethod [
 	self instantiateMethod.
@@ -31,8 +41,7 @@ VMCompiledCodeBuilder >> buildMethod [
 { #category : #building }
 VMCompiledCodeBuilder >> buildMethodHeader [
 
-	^ memory minSmallInteger "Alternate Bytecode set to force Sista"
-		+ (numberOfArguments bitShift: 24)
+	^  (numberOfArguments bitShift: 24)
 		+ (numberOfTemporaries bitShift: 18) 
 		+ (isSmall ifTrue: [ 0 ] ifFalse: [ 1 bitShift: 17 ])
 		+ literals size 
