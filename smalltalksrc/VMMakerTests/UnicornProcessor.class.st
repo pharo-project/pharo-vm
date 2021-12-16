@@ -10,7 +10,7 @@ Class {
 { #category : #'as yet unclassified' }
 UnicornProcessor >> cResultRegister [
 	
-	^ machineSimulator cResultRegister
+	^ machineSimulator cResultRegisterValue
 ]
 
 { #category : #'as yet unclassified' }
