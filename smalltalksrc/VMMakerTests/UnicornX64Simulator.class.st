@@ -25,7 +25,7 @@ UnicornX64Simulator >> baseRegister [
 { #category : #'as yet unclassified' }
 UnicornX64Simulator >> cResultRegister [
 	
-	^ self rax
+	^ UcX86Registers rax
 ]
 
 { #category : #registers }
@@ -451,6 +451,13 @@ UnicornX64Simulator >> simulateJumpCallOf: address memory: aMemory [
 	self pushWord: self rbp.
 	self rbp: self rsp.
 
+	self rip: address
+]
+
+{ #category : #'as yet unclassified' }
+UnicornX64Simulator >> simulateLeafCallOf: address nextpc: nextpc memory: aMemory [
+
+	self pushWord: nextpc.
 	self rip: address
 ]
 

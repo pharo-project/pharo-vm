@@ -19,7 +19,7 @@ UnicornI386Simulator >> baseRegister [
 { #category : #'as yet unclassified' }
 UnicornI386Simulator >> cResultRegister [
 
-	^ self eax
+	^ UcX86Registers eax
 ]
 
 { #category : #'c calling convention' }

@@ -1,11 +1,8 @@
 Class {
 	#name : #UnicornSimulator,
-	#superclass : #Object,
+	#superclass : #ProcessorSimulator,
 	#instVars : [
-		'unicorn',
 		'stopReason',
-		'memory',
-		'registerAliases',
 		'invalidAccessHandler'
 	],
 	#category : #'VMMakerTests-Unicorn'
@@ -23,39 +20,6 @@ UnicornSimulator >> createUnicorn [
 	self subclassResponsibility
 ]
 
-{ #category : #disassembling }
-UnicornSimulator >> disassembleCurrentInstruction [
-
-	^ (self disassembleFrom: self instructionPointerValue opcodes: 1) first
-]
-
-{ #category : #disassembling }
-UnicornSimulator >> disassembleFrom: anIndex opcodes: numberOfInstructions [
-
-	^ self disassembler
-		printImmediatesInHexa;
-		disassembleNext: numberOfInstructions
-		instructionsIn: (memory memoryManager copyFrom: anIndex to: anIndex + (numberOfInstructions * 50) "rough estimate")
-		startAddress: anIndex
-		pc: self instructionPointerValue
-]
-
-{ #category : #disassembling }
-UnicornSimulator >> disassembleFrom: start to: stop [
-
-	^ self disassembler
-		printImmediatesInHexa;
-		disassembleNext: 1000
-		instructionsIn: (memory memory copyFrom: start to: stop)
-		startAddress: start
-		pc: self instructionPointerValue
-]
-
-{ #category : #disassembling }
-UnicornSimulator >> disassembler [
-	self subclassResponsibility
-]
-
 { #category : #executing }
 UnicornSimulator >> doStartAt: startAddress until: until timeout: timeout count: count [
 
@@ -65,7 +29,6 @@ UnicornSimulator >> doStartAt: startAddress until: until timeout: timeout count:
 	startTime := Time millisecondClockValue.
 	remainingTimeout := timeout.
 	remainingCount := count.
-	
 	[ true ]
 		whileTrue: [
 			[result :=  simulator
@@ -80,7 +43,7 @@ UnicornSimulator >> doStartAt: startAddress until: until timeout: timeout count:
 						error signal ].
 
 			"If execution did not stop because of a stop reason, verify the error code"
-			unicorn verifyErrorCode: result]
+			simulator verifyErrorCode: result]
 				on: UnicornInvalidMemoryAccess do: [ :invalidAccess |
 
 					self instructionPointerRegisterValue = until ifTrue: [ ^ 0 ].
@@ -91,7 +54,7 @@ UnicornSimulator >> doStartAt: startAddress until: until timeout: timeout count:
 			stopReason ifNotNil: [ ^ result ].
 
 			count ~= 0 ifTrue: [ | lastCount |
-				lastCount := unicorn lastInstructionCount.
+				lastCount := simulator lastInstructionCount.
 				remainingCount := remainingCount - lastCount.
 				remainingCount <= 0 ifTrue: [ ^ result ]].
 
@@ -104,7 +67,6 @@ UnicornSimulator >> doStartAt: startAddress until: until timeout: timeout count:
 						UnicornTimeout new
 								target: until;
 								signal ]].
-
 			self instructionPointerRegisterValue = until
 				ifTrue: [ ^ result ]]
 ]
@@ -133,16 +95,11 @@ UnicornSimulator >> handleInvalidAccess: invalidAccess [
 	^ hasToContinue
 ]
 
-{ #category : #testing }
-UnicornSimulator >> hasLinkRegister [
-	^ false
-]
-
 { #category : #initialization }
 UnicornSimulator >> initialize [
 
 	super initialize.
-	unicorn := self createUnicorn.
+	simulator := self createUnicorn.
 	self initializeUnicorn.
 
 	registerAliases := Dictionary new.
@@ -154,18 +111,12 @@ UnicornSimulator >> initialize [
 ]
 
 { #category : #initialization }
-UnicornSimulator >> initializeRegisterAliases [
-
-	"Hook for subclasses"
-]
-
-{ #category : #initialization }
 UnicornSimulator >> initializeUnicorn [
 
-	unicorn
+	simulator
 		registerInvalidMemoryAccessHook: UcHookType invalidMemoryAccess value
 		doing: [ :type :address :size :value |
-			unicorn stop.
+			simulator stop.
 			stopReason := UnicornInvalidMemoryAccess new
 				type: type;
 				address: address;
@@ -173,30 +124,6 @@ UnicornSimulator >> initializeUnicorn [
 				value: value;
 				yourself.
 			false ]
-]
-
-{ #category : #registers }
-UnicornSimulator >> instructionPointerRegister [
-
-	^ self subclassResponsibility
-]
-
-{ #category : #registers }
-UnicornSimulator >> instructionPointerValue [
-
-	^ self readRegister: self instructionPointerRegister
-]
-
-{ #category : #registers }
-UnicornSimulator >> instructionPointerValue: aValue [
-
-	^ self writeRegister: self instructionPointerRegister value: aValue
-]
-
-{ #category : #'as yet unclassified' }
-UnicornSimulator >> integerRegisterState [
-
-	self subclassResponsibility
 ]
 
 { #category : #'handling invalid accesses' }
@@ -207,7 +134,7 @@ UnicornSimulator >> invalidAccessHandler: aFullBlockClosure [
 { #category : #initialization }
 UnicornSimulator >> registerHook: aBlock atAddress: anAddress [
 
-	unicorn
+	simulator
 		registerInvalidMemoryAccessHook: UcHookType fetchingAccess value
 		doing: [ :type :address :size :value | address = anAddress ifTrue: aBlock ]
 ]
