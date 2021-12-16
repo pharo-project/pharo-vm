@@ -1691,21 +1691,15 @@ InterpreterPrimitives >> primitiveEnterCriticalSection [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveEqual [
-	| integerReceiver integerArgument result |
+	| integerReceiver integerArgument |
+	
+	<numberOfArguments: 1>
+	
 	integerArgument := self stackTop.
 	integerReceiver := self stackValue: 1.
 	(objectMemory areIntegers: integerReceiver and: integerArgument)
 		ifTrue: [self pop: 2 thenPushBool: integerReceiver = integerArgument]
-		ifFalse:
-			[result := objectMemory hasSixtyFourBitImmediates
-						ifTrue:
-							[(self signed64BitValueOf: integerReceiver)
-								= (self signed64BitValueOf: integerArgument)]
-						ifFalse:
-							[(self positiveMachineIntegerValueOf: integerReceiver)
-								= (self positiveMachineIntegerValueOf: integerArgument)].
-			 self successful ifTrue:
-				[self pop: 2 thenPushBool: result]]
+		ifFalse: [self primitiveFail]
 ]
 
 { #category : #'arithmetic largeint primitives' }
@@ -2187,6 +2181,8 @@ InterpreterPrimitives >> primitiveGetenv: aByteStringOrByteArray [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveGreaterOrEqual [
+
+	<numberOfArguments: 1>
 	| integerReceiver integerArgument |
 	integerArgument := self stackTop.
 	integerReceiver := self stackValue: 1.
@@ -2215,6 +2211,8 @@ InterpreterPrimitives >> primitiveGreaterOrEqualLargeIntegers [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveGreaterThan [
+
+	<numberOfArguments: 1>
 	| integerReceiver integerArgument |
 	integerArgument := self stackTop.
 	integerReceiver := self stackValue: 1.
@@ -2524,6 +2522,8 @@ InterpreterPrimitives >> primitiveIsWindowObscured [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveLessOrEqual [
+
+	<numberOfArguments: 1>
 	| integerReceiver integerArgument |
 	integerArgument := self stackTop.
 	integerReceiver := self stackValue: 1.
