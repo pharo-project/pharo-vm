@@ -37,7 +37,7 @@ UnicornARMv8Simulator >> baseRegister [
 { #category : #accessing }
 UnicornARMv8Simulator >> cResultRegister [
 	
-	^ self x0
+	^ UcARM64Registers x0
 ]
 
 { #category : #registers }
@@ -91,10 +91,10 @@ UnicornARMv8Simulator >> cpacr_el1: anInteger [
 { #category : #'as yet unclassified' }
 UnicornARMv8Simulator >> createUnicorn [
 
-	unicorn := Unicorn arm64.
+	simulator := Unicorn arm64.
 	"Enable floating point..."
 	self cpacr_el1: (self cpacr_el1 bitOr: 2r11 << 20).
-	^ unicorn
+	^ simulator
 ]
 
 { #category : #disassembling }
@@ -136,14 +136,6 @@ UnicornARMv8Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstructio
 UnicornARMv8Simulator >> framePointerRegister [
 	
 	^ UcARM64Registers fp
-]
-
-{ #category : #accessing }
-UnicornARMv8Simulator >> getLastAddress: abstractInstructions [ 
-	
-	| last |
-	last := (abstractInstructions reject: [ :e | e isLiteral ]) last.
-	^ last address + last machineCodeSize 
 ]
 
 { #category : #accessing }

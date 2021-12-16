@@ -4,6 +4,7 @@ Class {
 	#instVars : [
 		'simulator',
 		'registerAliases',
+		'registerSmalltalkAliases',
 		'memory'
 	],
 	#category : #VMMakerTests
@@ -43,11 +44,11 @@ ProcessorSimulator class >> aarch64 [
 ProcessorSimulator class >> riscv64 [
 
 	"TODO: Add riscv32 and possibly two subclasses for the RISCV simulator"
-	"^ UnicornRISCVSimulator new"
-	^ SpikeRISCVSimulator new
+	^ UnicornRISCVSimulator new
+	"^ SpikeRISCVSimulator new"
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'instance creation' }
 ProcessorSimulator class >> simulatorFor: isa [
 
 	^ (self subclasses detect: [ :each | each supportsISA: isa ]) perform: isa asSymbol
@@ -57,6 +58,12 @@ ProcessorSimulator class >> simulatorFor: isa [
 ProcessorSimulator >> aliasForRegister: aRegisterName [
 
 	^ registerAliases at: aRegisterName ifAbsent: [ '' ]
+]
+
+{ #category : #accessing }
+ProcessorSimulator >> aliasSmalltalkForRegister: aRegisterName [
+
+	^ registerSmalltalkAliases at: aRegisterName ifAbsent: [ '' ]
 ]
 
 { #category : #registers }
@@ -309,7 +316,7 @@ ProcessorSimulator >> doublePrecisionFloatingPointRegister2Value [
 { #category : #disassembling }
 ProcessorSimulator >> extractDestinationRegisterFromAssembly: aLLVMInstruction [
 
-	self subclassResponsibility
+	^  (aLLVMInstruction assemblyCodeString substrings: String tab, ',') second trimBoth
 ]
 
 { #category : #memory }
@@ -349,9 +356,11 @@ ProcessorSimulator >> framePointerRegisterValue: aValue [
 ]
 
 { #category : #accessing }
-ProcessorSimulator >> getLastAddress: abstractInstructions [
-
-	^ abstractInstructions last address + abstractInstructions last machineCodeSize
+ProcessorSimulator >> getLastAddress: abstractInstructions [ 
+	
+	| last |
+	last := (abstractInstructions reject: [ :e | e isLiteral ]) last.
+	^ last address + last machineCodeSize 
 ]
 
 { #category : #testing }
@@ -361,7 +370,23 @@ ProcessorSimulator >> hasLinkRegister [
 ]
 
 { #category : #initialization }
+ProcessorSimulator >> initialize [ 
+
+	super initialize.
+	registerAliases := Dictionary new.
+	registerSmalltalkAliases := Dictionary new.
+	self initializeRegisterAliases.
+	self initializeRegisterSmalltalkAliases.
+]
+
+{ #category : #initialization }
 ProcessorSimulator >> initializeRegisterAliases [
+
+	"Hook for subclasses"
+]
+
+{ #category : #initialization }
+ProcessorSimulator >> initializeRegisterSmalltalkAliases [
 
 	"Hook for subclasses"
 ]
@@ -624,11 +649,12 @@ ProcessorSimulator >> registerAliases [
 { #category : #registers }
 ProcessorSimulator >> registerDescriptors [
 
-	^ self registerList collect: [ :e |
-		UnicornRegisterDescriptor new
+	^ self registerList collect: [ :reg |
+		RegisterDescriptor new
 			simulator: self;
-			alias: (self aliasForRegister: e);
-			name: e;
+			alias: (self aliasForRegister: reg);
+			smalltalkAlias: (self aliasSmalltalkForRegister: reg);
+			name: reg;
 			yourself ]
 ]
 
@@ -653,7 +679,7 @@ ProcessorSimulator >> returnRegisterValue: aValue [
 { #category : #registers }
 ProcessorSimulator >> sendNumberOfArgumentsRegister [
 
-	self subclassResponsibility
+	^ SpikeRISCVRegisters x25
 ]
 
 { #category : #registers }

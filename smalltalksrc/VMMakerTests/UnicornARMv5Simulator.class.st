@@ -6,7 +6,7 @@ Class {
 
 { #category : #registers }
 UnicornARMv5Simulator >> arg0Register [
-
+	
 	^ UcARMRegisters r3
 ]
 
@@ -24,54 +24,54 @@ UnicornARMv5Simulator >> baseRegister [
 
 { #category : #'c calling convention' }
 UnicornARMv5Simulator >> cResultRegister [
-
-	^ self r0
+	
+	^ UcARMRegisters r0
 ]
 
 { #category : #'c calling convention' }
 UnicornARMv5Simulator >> carg0Register [
-
+	
 	^ UcARMRegisters r0
 ]
 
 { #category : #'c calling convention' }
 UnicornARMv5Simulator >> carg1Register [
-
+	
 	^ UcARMRegisters r1
 ]
 
 { #category : #'c calling convention' }
 UnicornARMv5Simulator >> carg2Register [
-
+	
 	^ UcARMRegisters r2
 ]
 
 { #category : #'c calling convention' }
 UnicornARMv5Simulator >> carg3Register [
-
+	
 	^ UcARMRegisters r3
 ]
 
 { #category : #registers }
 UnicornARMv5Simulator >> classRegister [
-
+	
 	^ UcARMRegisters r8
 ]
 
 { #category : #'as yet unclassified' }
-UnicornARMv5Simulator >> convertIntegerToInternal: anInteger [
+UnicornARMv5Simulator >> convertIntegerToInternal: anInteger [ 
 
 	anInteger < 0 ifFalse: [ ^ anInteger ].
-
+	
 	^ 16rFFFFFFFF - anInteger abs + 1
 ]
 
 { #category : #'as yet unclassified' }
 UnicornARMv5Simulator >> convertInternalToInteger: aTwoComplementNumber [
 
-	(aTwoComplementNumber bitAnd: 1 << 31) = 0 ifTrue: [
+	(aTwoComplementNumber bitAnd: 1 << 31) = 0 ifTrue: [ 
 		^ aTwoComplementNumber ].
-
+	
 	^ aTwoComplementNumber - 16rFFFFFFFF - 1
 ]
 
@@ -90,7 +90,7 @@ UnicornARMv5Simulator >> createUnicorn [
 "
 
 	| bytes mappedMemory |
-	bytes := #[
+	bytes := #[ 
 	16r0f 16r36 16ra0 16re3
 	16r50 16r3f 16r01 16ree
 	16r6f 16rf0 16r7f 16rf5
@@ -102,19 +102,19 @@ UnicornARMv5Simulator >> createUnicorn [
 	Create a region of 4KB and map it also at a multiple of 4KB."
 	mappedMemory := ByteArray new: 4096.
 	mappedMemory replaceFrom: 1 to: bytes size with: bytes.
-	unicorn := Unicorn arm.
-	unicorn mapHostMemory: mappedMemory atAddress: 4096 withPermissions: UnicornConstants permissionAll.
+	simulator := Unicorn arm.
+	simulator mapHostMemory: mappedMemory atAddress: 4096 withPermissions: UnicornConstants permissionAll.
 
-	unicorn doStartAt: 4096 until: 0 timeout: 0 count: 5 "instructions".
+	simulator doStartAt: 4096 until: 0 timeout: 0 count: 5 "instructions".
 
 	"Cleanup: unmap the memory so the ByteArray can be safely get garbage collected and that memory region can be reused"
-	unicorn unmapMemoryAt: 4096 size: 4096.
-	^ unicorn
+	simulator unmapMemoryAt: 4096 size: 4096.
+	^ simulator
 ]
 
 { #category : #disassembling }
 UnicornARMv5Simulator >> disassembler [
-
+	
 	^ LLVMARMDisassembler armv7
 ]
 
@@ -123,7 +123,7 @@ UnicornARMv5Simulator >> doStartAt: startAddress until: until timeout: timeout c
 
 	| actualCount result error startTime remainingTimeout currentTime |
 
-	"This implementation is almost the same, because ARMv5 does not accept correctly to run
+	"This implementation is almost the same, because ARMv5 does not accept correctly to run 
 	more than one instruction. It has the problem that it misses the count or the current address"
 
 	actualCount := 0.
@@ -132,41 +132,41 @@ UnicornARMv5Simulator >> doStartAt: startAddress until: until timeout: timeout c
 	remainingTimeout := timeout.
 
 	[ true ]
-		whileTrue: [
+		whileTrue: [ 
 			[result :=  simulator
 				startAt: self instructionPointerRegisterValue
 				until: 0
 				timeout: 0
 				count: 1.
-
-				stopReason ifNotNil: [
+					
+				stopReason ifNotNil: [ 
 						error := stopReason.
 						stopReason := nil.
 						error signal ].
-
+		
 			"If execution did not stop because of a stop reason, verify the error code"
-			unicorn verifyErrorCode: result.
+			simulator verifyErrorCode: result.
 
-
-					actualCount := actualCount + 1]
+			
+					actualCount := actualCount + 1] 
 				on: UnicornInvalidMemoryAccess do: [ :invalidAccess |
 					self instructionPointerRegisterValue = until ifTrue: [ ^ 0 ].
-
+					
 					(self handleInvalidAccess: invalidAccess)
 						ifFalse: [ ^ result ].
-
+						
 					actualCount := actualCount + 1 ].
-
+			
 			stopReason ifNotNil: [ ^ result ].
 			count = actualCount ifTrue: [ ^ result ].
 
 
-			timeout ~= 0 ifTrue: [
+			timeout ~= 0 ifTrue: [  
 				currentTime := Time millisecondClockValue.
 				remainingTimeout := remainingTimeout - (currentTime - startTime).
-
+				
 				remainingTimeout <= 0
-					ifTrue: [
+					ifTrue: [ 	
 						UnicornTimeout new
 								target: until;
 								signal ]].
@@ -193,33 +193,25 @@ UnicornARMv5Simulator >> doublePrecisionFloatingPointRegister2 [
 ]
 
 { #category : #'as yet unclassified' }
-UnicornARMv5Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstruction [
-
-	"In ARM, instructions are usually encoded asSpotterCandidateLink
-
+UnicornARMv5Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstruction [ 
+	
+	"In ARM, instructions are usually encoded asSpotterCandidateLink 
+	
 	INST Destination, Source
 	"
-
+	
 	^ (aLLVMInstruction assemblyCodeString substrings: String tab, ',') second trimBoth.
 ]
 
 { #category : #registers }
 UnicornARMv5Simulator >> framePointerRegister [
-
+	
 	^ UcARMRegisters fp
 ]
 
 { #category : #accessing }
-UnicornARMv5Simulator >> getLastAddress: abstractInstructions [
-
-	| last |
-	last := (abstractInstructions reject: [ :e | e isLiteral ]) last.
-	^ last address + last machineCodeSize
-]
-
-{ #category : #accessing }
 UnicornARMv5Simulator >> getReturnAddress [
-
+	
 	^ self linkRegisterValue
 ]
 
@@ -236,29 +228,29 @@ UnicornARMv5Simulator >> instructionPointerRegister [
 
 { #category : #'as yet unclassified' }
 UnicornARMv5Simulator >> integerRegisterState [
-
+	
 	^ #()
 ]
 
 { #category : #registers }
 UnicornARMv5Simulator >> linkRegister [
-
+	
 	^ UcARMRegisters lr
 ]
 
 { #category : #'as yet unclassified' }
-UnicornARMv5Simulator >> postCallArgumentsNumArgs: numArgs in: aMemory [
+UnicornARMv5Simulator >> postCallArgumentsNumArgs: numArgs in: aMemory [ 
 	"Answer an argument vector of the requested size after a vanilla
 	 ABI call. For ARM the Procedure Calling Specification can be found in IHI0042D_aapcs.pdf.
 	On ARM this typically means accessing r0 through r3 and fetching additional arguments from the stack, acording to pages 20f. aapcs.
 	We assume that all arguments are single word arguments, which can not be supplied on co-processor-registers.
 	 For compatibility with Cog/Slang we answer unsigned values."
-
+	
 	^(1 to: numArgs) collect: [:i |
-		i < 5
+		i < 5 
 			ifTrue: [self perform: (self registerStateGetters at: i)]
 			"ARM uses a full descending stack. Directly after calling a procedure, nothing but the arguments are pushed."
-			ifFalse: [memory unsignedLongAt: self sp + (i-5)*4 bigEndian: false]].
+			ifFalse: [memory unsignedLongAt: self sp + (i-5)*4 bigEndian: false]].	
 ]
 
 { #category : #registers }
@@ -267,8 +259,8 @@ UnicornARMv5Simulator >> r0 [
 ]
 
 { #category : #registers }
-UnicornARMv5Simulator >> r0: anInteger [
-
+UnicornARMv5Simulator >> r0: anInteger [ 
+	
 	^ self writeRegister: UcARMRegisters r0 value: anInteger
 ]
 
@@ -283,32 +275,32 @@ UnicornARMv5Simulator >> r10 [
 ]
 
 { #category : #registers }
-UnicornARMv5Simulator >> r10: anInteger [
-
+UnicornARMv5Simulator >> r10: anInteger [ 
+	
 	^ self writeRegister: UcARMRegisters r10 value: anInteger
 ]
 
 { #category : #registers }
-UnicornARMv5Simulator >> r11: anInteger [
-
+UnicornARMv5Simulator >> r11: anInteger [ 
+	
 	^ self writeRegister: UcARMRegisters r11 value: anInteger
 ]
 
 { #category : #accessing }
 UnicornARMv5Simulator >> r12 [
-
+	
 	^ self readRegister: UcARMRegisters r12
 ]
 
 { #category : #registers }
-UnicornARMv5Simulator >> r12: anInteger [
+UnicornARMv5Simulator >> r12: anInteger [ 
 
 	self writeRegister: UcARMRegisters r12 value: anInteger
 ]
 
 { #category : #registers }
-UnicornARMv5Simulator >> r1: anInteger [
-
+UnicornARMv5Simulator >> r1: anInteger [ 
+	
 	^ self writeRegister: UcARMRegisters r1 value: anInteger
 ]
 
@@ -318,8 +310,8 @@ UnicornARMv5Simulator >> r2 [
 ]
 
 { #category : #registers }
-UnicornARMv5Simulator >> r2: anInteger [
-
+UnicornARMv5Simulator >> r2: anInteger [ 
+	
 	^ self writeRegister: UcARMRegisters r2 value: anInteger
 ]
 
@@ -329,8 +321,8 @@ UnicornARMv5Simulator >> r3 [
 ]
 
 { #category : #registers }
-UnicornARMv5Simulator >> r3: anInteger [
-
+UnicornARMv5Simulator >> r3: anInteger [ 
+	
 	^ self writeRegister: UcARMRegisters r3 value: anInteger
 ]
 
@@ -340,8 +332,8 @@ UnicornARMv5Simulator >> r4 [
 ]
 
 { #category : #registers }
-UnicornARMv5Simulator >> r4: anInteger [
-
+UnicornARMv5Simulator >> r4: anInteger [ 
+	
 	^ self writeRegister: UcARMRegisters r4 value: anInteger
 ]
 
@@ -351,8 +343,8 @@ UnicornARMv5Simulator >> r5 [
 ]
 
 { #category : #registers }
-UnicornARMv5Simulator >> r5: anInteger [
-
+UnicornARMv5Simulator >> r5: anInteger [ 
+	
 	^ self writeRegister: UcARMRegisters r5 value: anInteger
 ]
 
@@ -362,8 +354,8 @@ UnicornARMv5Simulator >> r6 [
 ]
 
 { #category : #registers }
-UnicornARMv5Simulator >> r6: anInteger [
-
+UnicornARMv5Simulator >> r6: anInteger [ 
+	
 	^ self writeRegister: UcARMRegisters r6 value: anInteger
 ]
 
@@ -373,8 +365,8 @@ UnicornARMv5Simulator >> r7 [
 ]
 
 { #category : #registers }
-UnicornARMv5Simulator >> r7: anInteger [
-
+UnicornARMv5Simulator >> r7: anInteger [ 
+	
 	^ self writeRegister: UcARMRegisters r7 value: anInteger
 ]
 
@@ -384,8 +376,8 @@ UnicornARMv5Simulator >> r8 [
 ]
 
 { #category : #registers }
-UnicornARMv5Simulator >> r8: anInteger [
-
+UnicornARMv5Simulator >> r8: anInteger [ 
+	
 	^ self writeRegister: UcARMRegisters r8 value: anInteger
 ]
 
@@ -395,14 +387,14 @@ UnicornARMv5Simulator >> r9 [
 ]
 
 { #category : #registers }
-UnicornARMv5Simulator >> r9: anInteger [
-
+UnicornARMv5Simulator >> r9: anInteger [ 
+	
 	^ self writeRegister: UcARMRegisters r9 value: anInteger
 ]
 
 { #category : #registers }
 UnicornARMv5Simulator >> receiverRegister [
-
+	
 	^ UcARMRegisters r5
 ]
 
@@ -414,12 +406,12 @@ UnicornARMv5Simulator >> registerList [
 
 { #category : #'as yet unclassified' }
 UnicornARMv5Simulator >> registerStateGetters [
-
+	
 	^#(r0 r1 r2 r3 r4)
 ]
 
 { #category : #'as yet unclassified' }
-UnicornARMv5Simulator >> retpcIn: aMemory [
+UnicornARMv5Simulator >> retpcIn: aMemory [ 
 	"The return address is on the stack, having been pushed by either
 	 simulateCallOf:nextpc:memory: or simulateJumpCallOf:memory:"
 	^memory longAt: self fp + 4
@@ -427,7 +419,7 @@ UnicornARMv5Simulator >> retpcIn: aMemory [
 
 { #category : #registers }
 UnicornARMv5Simulator >> sendNumberOfArgumentsRegister [
-
+	
 	^ UcARMRegisters r6
 ]
 
@@ -436,7 +428,7 @@ UnicornARMv5Simulator >> simulateJumpCallOf: address memory: aMemory [
 	"Simulate a frame-building jump of address.  Build a frame since
 	a) this is used for calls into the run-time which are unlikely to be leaf-calls"
 	"This method builds a stack frame as expected by the simulator, not as defined by ARM aapcs-abi.
-	In ARM aapcs, every method can define for itself, wether it wants to push lr (nextpc), and wether it
+	In ARM aapcs, every method can define for itself, wether it wants to push lr (nextpc), and wether it 
 	uses a frame pointer. The standard never mentions a fp. It merely defines r4-r11 to be callee-saved."
 
 	self assert: self sp \\ 8 = 0. "This check ensures, that we conform with ARM abi. Before doing anything to the stack, we ensure 2-word alignment."
@@ -475,13 +467,13 @@ UnicornARMv5Simulator >> smashRegisterAccessors [
 
 { #category : #registers }
 UnicornARMv5Simulator >> stackPointerRegister [
-
+	
 	^ UcARMRegisters sp
 ]
 
 { #category : #registers }
 UnicornARMv5Simulator >> temporaryRegister [
-
+	
 	^ UcARMRegisters r2
 ]
 
