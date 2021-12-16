@@ -10560,7 +10560,6 @@ StackInterpreter >> nativeStackSize [
 { #category : #'image save/restore' }
 StackInterpreter >> newHeader [
 
-	<doNotGenerate>
 	| header |
 
 	header := SpurImageHeaderStruct new.
