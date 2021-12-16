@@ -4991,6 +4991,13 @@ StackInterpreter >> createActualMessageTo: lookupClass [
 	argumentCount := 1
 ]
 
+{ #category : #accessing }
+StackInterpreter >> currentBytecode [
+
+	<doNotGenerate>
+	^ currentBytecode
+]
+
 { #category : #'stack pages' }
 StackInterpreter >> defaultNativeStackFrameSize [
 	"default native stack frame size"

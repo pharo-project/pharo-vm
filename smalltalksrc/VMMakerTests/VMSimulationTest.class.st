@@ -16,7 +16,6 @@ VMSimulationTest >> testSetUpJITSimulationReadsImage [
 	    #ObjectMemory -> #Spur64BitCoMemoryManager.
 	    #ISA -> #aarch64.
 	    #BytesPerWord -> 8.
-	    #MULTIPLEBYTECODESETS -> true.
 	    #bytecodeTableInitializer -> #initializeBytecodeTableForSistaV1.
 	} asDictionary.
 
@@ -37,7 +36,6 @@ VMSimulationTest >> testSetUpNonJITSimulationReadsImage [
 	options := {
 	    #ObjectMemory -> #Spur64BitMemoryManager.
 	    #BytesPerWord -> 8.
-	    #MULTIPLEBYTECODESETS -> true.
 	    #bytecodeTableInitializer -> #initializeBytecodeTableForSistaV1.
 	} asDictionary.
 

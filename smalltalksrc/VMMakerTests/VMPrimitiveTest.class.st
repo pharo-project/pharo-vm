@@ -55,24 +55,30 @@ VMPrimitiveTest >> newArrayWith: aCollection [
 
 { #category : #running }
 VMPrimitiveTest >> setUp [
-	
+
 	"taken from VMSimpleStackBasedCogitBytecodeTest >> #setup"
+
 	| newMethod ctx page |
 	super setUp.
 
 	"Create the root context with a valid method"
 	"Let's create a method with enough size. It should have at least a literal (4 or 8 bytes depending the word size) and some bytecodes, so we can put the IP inside the method"
-	newMethod := methodBuilder newMethod build.
-	
+	newMethod := methodBuilder newMethod buildMethod.
+
 	"The context has 5 (in 32 bits) or 9 (in 64 bits) as initial IP, as method has at least one literal"
-	ctx := self newSmallContextReceiver: memory nilObject method: newMethod arguments: #() temporaries: #() ip: self wordSize + 1.
-	
+	ctx := self
+		       newSmallContextReceiver: memory nilObject
+		       method: newMethod
+		       arguments: #(  )
+		       temporaries: #(  )
+		       ip: self wordSize + 1.
+
 	page := interpreter makeBaseFrameFor: ctx.
 	interpreter setStackPointersFromPage: page.
 	interpreter setStackPageAndLimit: page.
-	
+
 	self setUpScheduler.
-	imageName := VMPrimitiveTest name 
+	imageName := VMPrimitiveTest name
 ]
 
 { #category : #'tests - primitiveIdentical' }
@@ -3053,14 +3059,15 @@ VMPrimitiveTest >> testPrimitiveSetImmutabilityOfObjectAsTrueSetsImmutability [
 VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForContext [
 
 	| method |
-	method := methodBuilder newMethod build.
-	
+	method := methodBuilder newMethod buildMethod.
+
 	interpreter push: method.
 	interpreter primitiveSize.
-	
-	"One literal + 10 bytecodes"
-	self assert: interpreter stackTop equals: (memory integerObjectOf: (10 + wordSize)).
 
+	"One literal + 10 bytecodes"
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: 10 + wordSize)
 ]
 
 { #category : #'tests - primitiveSize' }
@@ -3080,14 +3087,15 @@ VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForIndexableObject [
 VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForMethod [
 
 	| method |
-	method := methodBuilder newMethod build.
-	
+	method := methodBuilder newMethod buildMethod.
+
 	interpreter push: method.
 	interpreter primitiveSize.
-	
-	"One literal + 10 bytecodes"
-	self assert: interpreter stackTop equals: (memory integerObjectOf: (10 + wordSize)).
 
+	"One literal + 10 bytecodes"
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: 10 + wordSize)
 ]
 
 { #category : #'tests - primitiveSize' }
@@ -4372,35 +4380,44 @@ VMPrimitiveTest >> testPrimitiveSmallFloatSubtractPopsOperands [
 
 { #category : #'tests - snapshot' }
 VMPrimitiveTest >> testPrimitiveSnapshotContextsShouldBeTenured [
-	| method frame contextOop contextIdentityHash suspendedContext |
 
-	interpreter pluginList: #(). 
+	| method frame contextOop contextIdentityHash suspendedContext |
+	interpreter pluginList: #(  ).
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
-	method := methodBuilder newMethod build.
-	frame := stackBuilder addNewFrame method: method ; yourself.
+	method := methodBuilder newMethod buildMethod.
+	frame := stackBuilder addNewFrame
+		         method: method;
+		         yourself.
 	stackBuilder buildStack.
-	
-	contextOop := interpreter ensureFrameIsMarried: frame framePointer SP: frame stackPointer.
+
+	contextOop := interpreter
+		              ensureFrameIsMarried: frame framePointer
+		              SP: frame stackPointer.
 	contextIdentityHash := memory hashBitsOf: contextOop.
-	
+
 	interpreter instructionPointer: method + 17.
 	interpreter imageName: imageName.
 	interpreter setImageHeaderFlagsFrom: 0.
-	
+
 	interpreter primitiveSnapshot.
-	
-	suspendedContext := memory fetchPointer: SuspendedContextIndex ofObject: memory memoryActiveProcess.
-	self assert: (memory hashBitsOf: suspendedContext) equals: contextIdentityHash.
+
+	suspendedContext := memory
+		                    fetchPointer: SuspendedContextIndex
+		                    ofObject: memory memoryActiveProcess.
+	self
+		assert: (memory hashBitsOf: suspendedContext)
+		equals: contextIdentityHash
 ]
 
 { #category : #'tests - snapshot' }
 VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
+
 	| method file |
-	interpreter pluginList: #(). 
+	interpreter pluginList: #(  ).
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
-	method := methodBuilder newMethod build.
+	method := methodBuilder newMethod buildMethod.
 
 	stackBuilder addNewFrame method: method.
 	stackBuilder buildStack.
@@ -4410,38 +4427,38 @@ VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
 	interpreter imageName: imageName.
 	interpreter setImageHeaderFlagsFrom: 0.
 	interpreter primitiveSnapshot.
-	
+
 	file := imageName asFileReference.
 
 	self assert: file exists.
-	self assert: file size > 0.
-
-
+	self assert: file size > 0
 ]
 
 { #category : #'tests - snapshot' }
 VMPrimitiveTest >> testPrimitiveSnapshotNewKeptObjectShouldBeTenured [
+
 	| method object objectHash |
-	interpreter pluginList: #(). 
+	interpreter pluginList: #(  ).
 
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
-	
-	method := methodBuilder newMethod build.
+
+	method := methodBuilder newMethod buildMethod.
 	stackBuilder addNewFrame method: method.
 	stackBuilder buildStack.
 	interpreter instructionPointer: method + 17.
 	interpreter imageName: imageName.
 	interpreter setImageHeaderFlagsFrom: 0.
-	
+
 	object := self newObjectWithSlots: 0.
 	self keepObjectInVMVariable1: object.
 	objectHash := memory hashBitsOf: object.
-	
+
 	interpreter primitiveSnapshot.
 
-	self assert: (memory hashBitsOf: self keptObjectInVMVariable1) equals: objectHash
-
+	self
+		assert: (memory hashBitsOf: self keptObjectInVMVariable1)
+		equals: objectHash
 ]
 
 { #category : #'tests - primitiveAtPut' }
