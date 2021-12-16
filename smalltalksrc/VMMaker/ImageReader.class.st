@@ -139,7 +139,7 @@ ImageReader >> readHeaderFrom: f startingAt: headerStart [
 	<var: #header type: #SpurImageHeaderStruct>
 	<returnTypeC: #SpurImageHeaderStruct>
 	| header |
-	self simulationOnly: [ header := SpurImageHeaderStruct new ]. "It's ok this simulationOnly: ?"
+	self simulationOnly: [ header := SpurImageHeaderStruct new ].
 
 	self extractImageVersionFrom: f into: header.
 
