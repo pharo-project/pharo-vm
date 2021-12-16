@@ -69,7 +69,6 @@ VMBlockTest >> methodWithLocalReturningABlock [
 	^ [ a ]
 ]
 
-<<<<<<< HEAD
 { #category : #supports }
 VMBlockTest >> setUp [
 
