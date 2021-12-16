@@ -118,8 +118,7 @@ ImageReader >> imageFormatVersion [
 	"Return a magic constant that changes when the image format changes.
 	 Since the image reading code uses this to detect byte ordering, one
 	 must avoid version numbers that are invariant under byte reversal."
-	
-	"THIS METHOD KEEP DUPLICATED IN StackInterpreter UNTIL SPLIT IMAGE WRITTER"
+
 	<doNotGenerate>
 	self assert: (objectMemory imageFormatVersion anyMask: 16) = objectMemory hasSpurMemoryManagerAPI.
 	^objectMemory imageFormatVersion
