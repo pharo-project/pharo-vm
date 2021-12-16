@@ -120,8 +120,14 @@ ProcessorSimulator >> cResultRegister [
 	^ self subclassResponsibility
 ]
 
+{ #category : #registers }
+ProcessorSimulator >> cResultRegisterValue [
+
+	^ self readRegister: self cResultRegister
+]
+
 { #category : #'c calling convention' }
-ProcessorSimulator >> cReturnRegisterValue: aValue [
+ProcessorSimulator >> cResultRegisterValue: aValue [
 
 	self writeRegister: self cResultRegister value: aValue
 ]
@@ -366,7 +372,7 @@ ProcessorSimulator >> getLastAddress: abstractInstructions [
 { #category : #testing }
 ProcessorSimulator >> hasLinkRegister [
 
-	self subclassResponsibility
+	^ false
 ]
 
 { #category : #initialization }

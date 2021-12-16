@@ -16,7 +16,7 @@ UnicornProcessor >> cResultRegister [
 { #category : #'as yet unclassified' }
 UnicornProcessor >> cResultRegister: anInteger [ 
 	
-	machineSimulator cReturnRegisterValue: anInteger
+	machineSimulator cResultRegisterValue: anInteger
 ]
 
 { #category : #'as yet unclassified' }
