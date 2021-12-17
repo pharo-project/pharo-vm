@@ -2250,6 +2250,14 @@ Cogit >> JumpLongZero: jumpTarget [
 ]
 
 { #category : #'abstract instructions' }
+Cogit >> JumpMultiplyNoOverflow: jumpTarget [
+	<inline: true>
+	<returnTypeC: #'AbstractInstruction *'>
+	<var: #jumpTarget type: #'void *'>
+	^ backEnd genJumpMultiplyNoOverflow: jumpTarget
+]
+
+{ #category : #'abstract instructions' }
 Cogit >> JumpMultiplyOverflow: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>

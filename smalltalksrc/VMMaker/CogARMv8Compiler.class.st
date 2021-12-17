@@ -3762,6 +3762,14 @@ CogARMv8Compiler >> genDivR: abstractRegDenominator R: abstractRegNumerator Quo:
 ]
 
 { #category : #'abstract instructions' }
+CogARMv8Compiler >> genJumpMultiplyNoOverflow: jumpTarget [
+	<inline: true>
+	<returnTypeC: #'AbstractInstruction *'>
+	<var: #jumpTarget type: #'void *'>
+	^cogit JumpZero: jumpTarget
+]
+
+{ #category : #'abstract instructions' }
 CogARMv8Compiler >> genJumpMultiplyOverflow: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
