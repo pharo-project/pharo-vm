@@ -65,7 +65,7 @@ RBMessageNode >> asTranslatorNodeIn: aTMethod [
 	
 	"If in the form of ifNil: [ :obj | ], replace that by an assignment and an ifFalse"
 	((usedSelector == #ifNotNil:) and: [ args first args notEmpty ]) ifTrue: [
-		^ TStmtListNode new
+		^ TStatementListNode new
 			setArguments: #();
 			setStatements: {
 				TAssignmentNode new
@@ -101,7 +101,7 @@ RBMessageNode >> asTranslatorNodeIn: aTMethod [
 
 		"If there is a variable we should epand the message as a statement"
 		blockWithPossibleArgument args notEmpty ifTrue: [ 
-			^ TStmtListNode new
+			^ TStatementListNode new
 				setArguments: #();
 				setStatements: {
 					TAssignmentNode new
@@ -139,7 +139,7 @@ RBMessageNode >> asTranslatorNodeIn: aTMethod [
 	(args size > usedSelector numArgs and: [usedSelector ~~ #to:by:do:]) ifTrue: "to:by:do: has iLimiT hidden in last arg"
 		["prune the extra blocks left by ifTrue:, ifFalse:, and: & or:"
 		 self assert: args size - usedSelector numArgs = 1.
-		 self assert: (args last isStmtList
+		 self assert: (args last isStatementList
 					  and: [args last statements size = 1
 					  and: [(args last statements first isVariable
 							or: [args last statements first isConstant])

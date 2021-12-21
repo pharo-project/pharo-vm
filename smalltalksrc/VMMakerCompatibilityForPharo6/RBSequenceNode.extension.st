@@ -9,10 +9,10 @@ RBSequenceNode >> asTranslatorNodeIn: aTMethod [
 		[:s | | newS |
 		 newS := s asTranslatorNodeIn: aTMethod.
 		 "inline the statement list returned when a CascadeNode is translated and/or when ifNotNil: is transformed"
-		 newS isStmtList
+		 newS isStatementList
 			ifTrue:  [statementList addAll: newS statements]
 			ifFalse: [statementList add: newS]].
-	^TStmtListNode new
+	^TStatementListNode new
 		setArguments: (parent isMethod
 							ifTrue: [#()]
 							ifFalse: [parent arguments asArray collect: [:arg | arg name]])

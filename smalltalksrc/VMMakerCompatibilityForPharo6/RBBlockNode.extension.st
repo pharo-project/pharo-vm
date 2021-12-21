@@ -9,13 +9,13 @@ RBBlockNode >> asTranslatorNodeIn: aTMethod [
 		[:s | | newS |
 		 newS := s asTranslatorNodeIn: aTMethod.
 		 "inline the statement list returned when a CascadeNode is translated and/or when ifNotNil: is transformed"
-		 newS isStmtList
+		 newS isStatementList
 			ifTrue:  [statementList addAll: newS statements]
 			ifFalse: [statementList add: newS]].
 	statementList ifEmpty: [ 
 		statementList add: (TVariableNode new setName: 'nil').
 	].
-	^TStmtListNode new
+	^TStatementListNode new
 		setArguments: (arguments asArray collect: [:arg | arg name])
 		statements: statementList;
 		comment: self commentOrNil

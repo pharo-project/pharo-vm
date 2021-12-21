@@ -8,7 +8,7 @@ RBReturnNode >> asTranslatorNodeIn: aTMethod [
 	(value isMessage
 	 and: [value receiver isVariable
 	 and: [value receiver name = 'super'
-	 and: [exprTranslation isStmtList]]]) ifTrue:
+	 and: [exprTranslation isStatementList]]]) ifTrue:
 		["super expansions containing returns are fine, and (as of 6/25/2012 19:27) the last
 		  return is elided from the expansion by TMethod>>superExpansionNodeFor:args:. 
 		  So we need to ensure the last expression is a return and simply reuse any other
