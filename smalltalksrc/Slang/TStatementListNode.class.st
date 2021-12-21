@@ -1,5 +1,5 @@
 Class {
-	#name : #TStmtListNode,
+	#name : #TStatementListNode,
 	#superclass : #TParseNode,
 	#instVars : [
 		'arguments',
@@ -9,7 +9,7 @@ Class {
 }
 
 { #category : #'instance creation' }
-TStmtListNode class >> statements: aCollection [ 
+TStatementListNode class >> statements: aCollection [ 
 	
 	^ self new
 		setStatements: aCollection;
@@ -17,10 +17,10 @@ TStmtListNode class >> statements: aCollection [
 ]
 
 { #category : #comparing }
-TStmtListNode >> = aNode [
+TStatementListNode >> = aNode [
 
 	super = aNode ifFalse: [ ^ false ].
-	aNode isStmtList ifFalse: [ ^ false ].
+	aNode isStatementList ifFalse: [ ^ false ].
 	statements size = aNode statements size ifFalse: [ ^ false ].
 	statements doWithIndex: [ :stmt :i | 
 		stmt = (aNode statements at: i) ifFalse: [ ^ false ] ].
@@ -28,7 +28,7 @@ TStmtListNode >> = aNode [
 ]
 
 { #category : #utilities }
-TStmtListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned assignments: assigned in: aCodeGen [
+TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned assignments: assigned in: aCodeGen [
 
 	"Add any variables in variables that are read before written to readBeforeAssigned.
 	 Add unconditional assignments to assigned.  For convenience answer assigned."
@@ -67,7 +67,7 @@ TStmtListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned assig
 					(#( ifTrue: ifFalse: ifNil: ifNotNil: ) intersection:
 						 node selector keywords) notEmpty
 						ifTrue: [ "First find assignments in the expression..."
-							(TStmtListNode new
+							(TStatementListNode new
 								 setStatements: { node receiver };
 								 yourself)
 								addReadBeforeAssignedIn: variables
@@ -77,7 +77,7 @@ TStmtListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned assig
 							"Now find read-before-written in each arm, and collect the assignments to spot those assigned in both arms"
 							conditionalAssignments := node arguments
 								                          collect: [ :block | 
-									                          block isStmtList ifTrue: [ 
+									                          block isStatementList ifTrue: [ 
 										                          block
 											                          addReadBeforeAssignedIn:
 											                          variables
@@ -98,13 +98,13 @@ TStmtListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned assig
 ]
 
 { #category : #accessing }
-TStmtListNode >> args [
+TStatementListNode >> args [
 
 	^arguments
 ]
 
 { #category : #tranforming }
-TStmtListNode >> asCASTExpressionIn: aBuilder [
+TStatementListNode >> asCASTExpressionIn: aBuilder [
 
 	| expressionList |
 	expressionList := CExpressionListNode new.
@@ -117,13 +117,13 @@ TStmtListNode >> asCASTExpressionIn: aBuilder [
 ]
 
 { #category : #tranforming }
-TStmtListNode >> asCASTIn: aBuilder [
+TStatementListNode >> asCASTIn: aBuilder [
 	
 	^ self asCASTIn: aBuilder prependToEnd: nil
 ]
 
 { #category : #tranforming }
-TStmtListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
+TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 
 	| collect |
 	collect := OrderedCollection new.
@@ -142,7 +142,7 @@ TStmtListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 ]
 
 { #category : #transformations }
-TStmtListNode >> asReturnNode [
+TStatementListNode >> asReturnNode [
 	self endsWithReturn ifTrue:
 		[^self].
 	^self class new
@@ -152,7 +152,7 @@ TStmtListNode >> asReturnNode [
 ]
 
 { #category : #transformations }
-TStmtListNode >> assignLastExpressionTo: variableNode [
+TStatementListNode >> assignLastExpressionTo: variableNode [
 	"Destructively transform the receiver so that its last expression is assigned to the argument."
 	| index |
 	index := statements findLast: [:expr| (expr isGoTo or: [expr isLabel]) not].
@@ -164,13 +164,13 @@ TStmtListNode >> assignLastExpressionTo: variableNode [
 ]
 
 { #category : #transformations }
-TStmtListNode >> bindVariableUsesIn: aDictionary [
+TStatementListNode >> bindVariableUsesIn: aDictionary [
 
 	statements := statements collect: [ :s | s bindVariableUsesIn: aDictionary ].
 ]
 
 { #category : #transformations }
-TStmtListNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen [
+TStatementListNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen [
 	"Answer either the receiver, if it contains no references to the given variables, or a new node with the given variables rebound."
 	| newStatements |
 	newStatements := statements collect: [:s| s bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen].
@@ -183,26 +183,26 @@ TStmtListNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold
 ]
 
 { #category : #transformations }
-TStmtListNode >> bindVariablesIn: aDictionary [
+TStatementListNode >> bindVariablesIn: aDictionary [
 
 	statements := statements collect: [ :s | s bindVariablesIn: aDictionary ].
 ]
 
 { #category : #transformations }
-TStmtListNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+TStatementListNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
 	statements := statements collect: [ :s | s bindVariablesIn: aDictionary unless: cautionaryBlock].
 ]
 
 { #category : #enumerating }
-TStmtListNode >> children [
+TStatementListNode >> children [
 
 	^ statements
 ]
 
 { #category : #transformations }
-TStmtListNode >> copyWithoutReturn [
+TStatementListNode >> copyWithoutReturn [
 	self assert: self endsWithReturn.
 	statements size = 1 ifTrue:
 		[^statements last expression].
@@ -213,7 +213,7 @@ TStmtListNode >> copyWithoutReturn [
 ]
 
 { #category : #testing }
-TStmtListNode >> endsWithCloseBracket: aStream [
+TStatementListNode >> endsWithCloseBracket: aStream [
 	"Answer true if the given stream ends in a $} character."
 
 	| ch pos |
@@ -226,22 +226,29 @@ TStmtListNode >> endsWithCloseBracket: aStream [
 ]
 
 { #category : #testing }
-TStmtListNode >> endsWithReturn [
+TStatementListNode >> endsWithReturn [
 	"Answer true if the last statement of this lock is a return."
 
 	^statements notEmpty
 	  and: [statements last isReturn or: [statements last isReturningIf]]
 ]
 
+{ #category : #flattening }
+TStatementListNode >> flattened [
+	
+	^ statements flatCollect: [ :each |
+		each flattened ]
+]
+
 { #category : #accessing }
-TStmtListNode >> initialize [
+TStatementListNode >> initialize [
 
 	super initialize.
 	arguments := #()
 ]
 
 { #category : #testing }
-TStmtListNode >> isNilStmtListNode [
+TStatementListNode >> isNilStmtListNode [
 
 	|stmt|
 	statements size = 1 ifFalse: [^false].
@@ -250,8 +257,8 @@ TStmtListNode >> isNilStmtListNode [
 ]
 
 { #category : #testing }
-TStmtListNode >> isSameAs: aTParseNode [
-	(aTParseNode isStmtList
+TStatementListNode >> isSameAs: aTParseNode [
+	(aTParseNode isStatementList
 	 and: [statements size = aTParseNode statements size]) ifFalse:
 		[^false].
 	statements with: aTParseNode statements do:
@@ -262,13 +269,13 @@ TStmtListNode >> isSameAs: aTParseNode [
 ]
 
 { #category : #testing }
-TStmtListNode >> isStmtList [
+TStatementListNode >> isStatementList [
 
 	^true
 ]
 
 { #category : #enumerating }
-TStmtListNode >> nodesDo: aBlock [
+TStatementListNode >> nodesDo: aBlock [
 	"Apply aBlock to all nodes in the receiver.
 	 N.B. This is assumed to be bottom-up, leaves first."
 	statements do: [ :s | s nodesDo: aBlock ].	
@@ -276,7 +283,7 @@ TStmtListNode >> nodesDo: aBlock [
 ]
 
 { #category : #enumerating }
-TStmtListNode >> nodesDo: aBlock parent: parent [
+TStatementListNode >> nodesDo: aBlock parent: parent [
 	"Apply aBlock to all nodes in the receiver with each node's parent.
 	 N.B. This is assumed to be bottom-up, leaves first."
 	statements do: [:s| s nodesDo: aBlock parent: self].
@@ -284,7 +291,7 @@ TStmtListNode >> nodesDo: aBlock parent: parent [
 ]
 
 { #category : #enumerating }
-TStmtListNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
+TStatementListNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 
 	(cautionaryBlock value: self value: parent) ifTrue: [^self].
 	statements do: [ :s | s nodesDo: aBlock parent: self unless: cautionaryBlock].
@@ -292,7 +299,7 @@ TStmtListNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 ]
 
 { #category : #enumerating }
-TStmtListNode >> nodesDo: aBlock unless: cautionaryBlock [
+TStatementListNode >> nodesDo: aBlock unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
 	statements do: [ :s | s nodesDo: aBlock unless: cautionaryBlock ].	
@@ -300,7 +307,7 @@ TStmtListNode >> nodesDo: aBlock unless: cautionaryBlock [
 ]
 
 { #category : #enumerating }
-TStmtListNode >> nodesDo: aBlock value: parent [
+TStatementListNode >> nodesDo: aBlock value: parent [
 	"Apply aBlock to all nodes in the receiver with each node's parent.
 	 N.B. This is assumed to be bottom-up, leaves first."
 	statements do: [:s| s nodesDo: aBlock parent: self.].	
@@ -308,7 +315,7 @@ TStmtListNode >> nodesDo: aBlock value: parent [
 ]
 
 { #category : #copying }
-TStmtListNode >> postCopy [
+TStatementListNode >> postCopy [
 
 1haltIf: [ arguments isNil ].
 	arguments := arguments copy.
@@ -316,7 +323,7 @@ TStmtListNode >> postCopy [
 ]
 
 { #category : #printing }
-TStmtListNode >> printOn: aStream level: level [
+TStatementListNode >> printOn: aStream level: level [
 
 	statements size > 1 ifTrue: [ aStream crtab: level + 1 ].
 	aStream nextPut: $[.
@@ -328,7 +335,7 @@ TStmtListNode >> printOn: aStream level: level [
 ]
 
 { #category : #printing }
-TStmtListNode >> printStatementsOn: aStream level: level [
+TStatementListNode >> printStatementsOn: aStream level: level [
 
 	statements
 		do: [:s| s printOn: aStream level: level]
@@ -336,7 +343,7 @@ TStmtListNode >> printStatementsOn: aStream level: level [
 ]
 
 { #category : #transformations }
-TStmtListNode >> removeAssertions [
+TStatementListNode >> removeAssertions [
 	| newStatements |
 	newStatements := OrderedCollection new: statements size.
 	statements do: [ :stmt |
@@ -348,7 +355,7 @@ TStmtListNode >> removeAssertions [
 ]
 
 { #category : #'inlining support' }
-TStmtListNode >> renameLabelsForInliningInto: aTMethod [
+TStatementListNode >> renameLabelsForInliningInto: aTMethod [
 	"TMethod already has a method for this; hijack it..."
 	| labels |
 	labels := OrderedCollection new.
@@ -361,21 +368,21 @@ TStmtListNode >> renameLabelsForInliningInto: aTMethod [
 ]
 
 { #category : #transformations }
-TStmtListNode >> replaceChild: aNode with: bNode [ 
+TStatementListNode >> replaceChild: aNode with: bNode [ 
 	statements := Array streamContents:
 					[:s|
 					statements do:
 						[:node|
 						node == aNode
 							ifTrue:
-								[bNode isStmtList
+								[bNode isStatementList
 									ifTrue: [s nextPutAll: bNode statements]
 									ifFalse: [s nextPut: bNode]]
 							ifFalse: [s nextPut: node]]]
 ]
 
 { #category : #transformations }
-TStmtListNode >> replaceNodesIn: aDictionary [
+TStatementListNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
 		statements := statements collect: [ :s | s replaceNodesIn: aDictionary ].
@@ -383,7 +390,7 @@ TStmtListNode >> replaceNodesIn: aDictionary [
 ]
 
 { #category : #testing }
-TStmtListNode >> returnsExpression [
+TStatementListNode >> returnsExpression [
 	"Answer true if the last statement of this block is a return of some expression, not merely self or nil."
 
 	statements isEmpty ifTrue:
@@ -397,14 +404,14 @@ TStmtListNode >> returnsExpression [
 ]
 
 { #category : #accessing }
-TStmtListNode >> setArguments: argList [
+TStatementListNode >> setArguments: argList [
 
 1haltIf: [ argList isNil ].
 	arguments := argList.
 ]
 
 { #category : #accessing }
-TStmtListNode >> setArguments: argList statements: statementList [
+TStatementListNode >> setArguments: argList statements: statementList [
 	"Initialize this method using the given information."
 
 1haltIf: [ argList isNil ].
@@ -413,24 +420,24 @@ TStmtListNode >> setArguments: argList statements: statementList [
 ]
 
 { #category : #accessing }
-TStmtListNode >> setStatements: stmtList [
+TStatementListNode >> setStatements: stmtList [
 
 	statements := stmtList asOrderedCollection.
 ]
 
 { #category : #inlining }
-TStmtListNode >> shouldExpand [
+TStatementListNode >> shouldExpand [
 	^(statements detect: [:stmt| stmt isInline]) shouldExpand
 ]
 
 { #category : #accessing }
-TStmtListNode >> statements [
+TStatementListNode >> statements [
 
 	^statements
 ]
 
 { #category : #'type inference' }
-TStmtListNode >> typeOrNilFrom: aCodeGenerator in: aTMethod [
+TStatementListNode >> typeOrNilFrom: aCodeGenerator in: aTMethod [
 	^statements isEmpty ifFalse:
 		[statements last typeOrNilFrom: aCodeGenerator in: aTMethod]
 ]

@@ -25,9 +25,9 @@ SlangTyper >> addTypesFor: node inMethod: method to: typeSet [
 
 	| expr |
 	expr := node.
-	[ expr isAssignment or: [ expr isStmtList ] ] whileTrue: [ 
+	[ expr isAssignment or: [ expr isStatementList ] ] whileTrue: [ 
 		expr isAssignment ifTrue: [ expr := expr variable ].
-		expr isStmtList ifTrue: [ expr := expr statements last ] ].
+		expr isStatementList ifTrue: [ expr := expr statements last ] ].
 	expr isSend ifTrue: [ 
 		(#( ifTrue: ifFalse: #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes:
 			 expr selector) ifTrue: [ 

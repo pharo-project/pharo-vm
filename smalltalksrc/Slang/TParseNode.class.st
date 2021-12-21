@@ -159,6 +159,12 @@ TParseNode >> endsWithReturn [
 	^false
 ]
 
+{ #category : #flattenin }
+TParseNode >> flattened [
+	
+	^ { self }
+]
+
 { #category : #testing }
 TParseNode >> hasExplicitReturn [
 
@@ -281,7 +287,7 @@ TParseNode >> isSend [
 ]
 
 { #category : #testing }
-TParseNode >> isStmtList [
+TParseNode >> isStatementList [
 
 	^false
 ]
@@ -305,6 +311,37 @@ TParseNode >> isTParseNode [
 TParseNode >> isVariable [
 
 	^false
+]
+
+{ #category : #linearization }
+TParseNode >> linearizeIn: aCodeGenerator [
+
+	"I am a statement. Linearize myself until I find a block."
+
+	| replacementDictionary rewrittenStatement callsInStatement replacementBlock replacementsSoFar |
+	replacementDictionary := Dictionary new.
+	
+	callsInStatement := OrderedCollection new.
+	self
+		nodesDo: [ :node | 
+			((aCodeGenerator isFunctionCall: node) or: [
+				aCodeGenerator isDynamicCall: node ])
+					ifTrue: [ callsInStatement add: node ] ]
+		unless: [ :unlessNode | unlessNode isStatementList ].
+	
+	replacementBlock := OrderedCollection new.
+	replacementsSoFar := Dictionary new.
+	callsInStatement do: [ :e | 
+		| variableNode |
+		variableNode := TVariableNode named:
+			                't' , replacementBlock size asString.
+		replacementBlock add: (TAssignmentNode
+				 variable: variableNode
+				 expression: (e replaceNodesIn: replacementsSoFar)).
+		replacementsSoFar at: e put: variableNode ].
+	rewrittenStatement := self replaceNodesIn: replacementsSoFar.
+	replacementBlock add: rewrittenStatement.
+	^ TStatementListNode statements: replacementBlock
 ]
 
 { #category : #accessing }

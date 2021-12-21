@@ -479,8 +479,11 @@ CCodeGenerator >> autoLocalizationOfVariablesIn: selector withVariableBindings: 
 	| m |
 	(m := self methodNamed: selector) ifNil: [ ^ self ].
 	(replacementDict isNil or: [ replacementDict isEmpty ]) ifTrue: [ ^ self ].
+
+	"self linearizeExternalCallsIn: m."
 	"Wrap sends with externalization/internalization statements"
 	self wrapExternalCallsIn: m withVariableBindings: replacementDict.
+
 	"Replace all localized variables by their localized versions"
 	m parseTree
 		bindVariablesIn: (replacementDict collect: [ :asso | 
@@ -488,15 +491,17 @@ CCodeGenerator >> autoLocalizationOfVariablesIn: selector withVariableBindings: 
 		unless: [ :node | 
 			node isTMethod not and: [ 
 				node isReturn or: [ node isExternalSend ] ] ].
-	"self lineariseExternalCallsIn: m."
-	self
-		externalizeAtReturnsIn: m
-		withVariablesToLocalize: replacementDict.
-	"Intitilize local versions with globals values at the beginning of the function."
+		
+	"Localize global values at the beginning of the function
+	AND externalize local values on each return"
 	replacementDict do: [ :asso | 
 		m statements addFirst: (TAssignmentNode
 				 variable: (TVariableNode named: asso value)
-				 expression: (TVariableNode named: asso key)) ]
+				 expression: (TVariableNode named: asso key)) ].
+	self
+		externalizeAtReturnsIn: m
+		withVariablesToLocalize: replacementDict.
+
 ]
 
 { #category : #utilities }
@@ -1308,7 +1313,7 @@ CCodeGenerator >> externalizeAtReturnsIn: aTMethod withVariablesToLocalize: vari
 			replacementDictionary
 				at: e
 				put:
-					(TStmtListNode statements:
+					(TStatementListNode statements:
 						 (variablesReplacement collect: [ :each | 
 							  TAssignmentNode
 								  variableNamed: each key
@@ -1778,7 +1783,7 @@ CCodeGenerator >> generateCASTDivide: tast [
 CCodeGenerator >> generateCASTDoWhile: boolean loop: tast [
 
 	| block  cond|
-	block := (TStmtListNode new setStatements:
+	block := (TStatementListNode new setStatements:
 		          tast receiver statements allButLast) asCASTIn: self.
 	cond := (tast receiver statements last asCASTExpressionIn: self).
 	^ CDoStatementNode
@@ -2889,7 +2894,7 @@ CCodeGenerator >> generateCASTValue: tast [
 	 to body with formals substituted for by actuals."
 
 	| substitution substitutionDict newLabels castStatements |
-	self assert: tast receiver isStmtList.
+	self assert: tast receiver isStatementList.
 	self assert: tast receiver args size = tast arguments size.
 	castStatements := CCompoundStatementNode statements:
 		                  OrderedCollection new.
@@ -2924,7 +2929,7 @@ CCodeGenerator >> generateCASTValueAsArgument: tast [
 	 to body with formals substituted for by actuals."
 
 	| substitution substitutionDict newLabels |
-	self assert: tast receiver isStmtList.
+	self assert: tast receiver isStatementList.
 	self assert: tast receiver args size = tast arguments size.
 	substitution := tast receiver copy.
 	substitution renameLabelsForInliningInto: currentMethod.
@@ -2974,7 +2979,7 @@ CCodeGenerator >> generateCASTWhileForeverBreakIf: boolean loop: tast [
 	| block if cond |
 	cond := (tast receiver statements last asCASTExpressionIn: self).
 	if := CIfStatementNode if: (boolean ifTrue: [ cond ] ifFalse: [ CUnaryOperatorNode operator: #! expression: cond ]) then: (CBreakStatementNode new).
-	block := (TStmtListNode new setStatements: tast receiver statements allButLast) asCASTIn: self.
+	block := (TStatementListNode new setStatements: tast receiver statements allButLast) asCASTIn: self.
 	block add: if.
 	block addAll: (tast arguments first asCASTIn: self).
 
@@ -3553,6 +3558,13 @@ CCodeGenerator >> isConstantNode: aNode valueInto: aBlock [
 	^ false
 ]
 
+{ #category : #utilities }
+CCodeGenerator >> isDynamicCall: aNode [
+	"Dynamic calls are calls to functions/methods determined at runtime.
+	It's important to know when we are doing a dynamic call because many optimizations do not apply in such cases"
+	^ aNode isSend and: [ aNode selector beginsWith: 'perform:' ]
+]
+
 { #category : #inlining }
 CCodeGenerator >> isFloatingPointCType: aCType [ "<String>"
 	^#('float' 'double' 'long double') includes: aCType asString
@@ -3697,31 +3709,23 @@ CCodeGenerator >> isVoidPointer: aCType [ "<String>"
 ]
 
 { #category : #'automatic-localization' }
-CCodeGenerator >> lineariseExternalCallsIn: aTMethod [ 
+CCodeGenerator >> linearizeExternalCallsIn: aTMethod [ 
 	
-	| replacementDictionary argumentAssignments newExternalSend |
+	"Should be applied after inlining.
+	Linearize all calls inside this method"
+	| replacementDictionary statementListsToLinearize |
 	replacementDictionary := Dictionary new.
-	aTMethod nodesDo: [ :e |
-		e isExternalSend ifTrue: [
-			argumentAssignments := e wrappedSendNode arguments collectWithIndex: [ :arg :index | | variableName |
-				variableName := aTMethod declareNonConflictingLocalNamedLike: 'arg', index asString.
-				TAssignmentNode 
-					variable: (TVariableNode named: variableName)
-					expression: arg.
-			].
-			newExternalSend := TExternalSendNode
-				send: (TSendNode
-					receiver: e wrappedSendNode receiver
-					selector: e wrappedSendNode selector
-					arguments: (argumentAssignments collect: [ :ass | ass variable ]))
-				variableBindings: e variableBindings.
-			replacementDictionary
-				at: e
-				put: (TStmtListNode statements: argumentAssignments , { newExternalSend } ).
-		 ].
-	].
 
-	aTMethod replaceNodesIn: replacementDictionary
+	statementListsToLinearize := aTMethod parseTree select: [ :e | e isStatementList ].
+	statementListsToLinearize do: [ :statementList |
+		statementList statements do: [ :statement | | replacement |
+			replacement := statement linearizeIn: self.
+			aTMethod replaceNodesIn: { statement -> replacement } asDictionary
+		].
+		aTMethod replaceNodesIn: { 
+			statementList -> (TStatementListNode statements: statementList flattened) } asDictionary.
+	].
+	aTMethod flatten
 ]
 
 { #category : #utilities }
@@ -3783,33 +3787,6 @@ CCodeGenerator >> localizeVariables: varsList inMethod: m [
 				declarationAt: v asString
 				put: (variableDeclarations at: varString).
 			variableDeclarations removeKey: varString ] ]
-]
-
-{ #category : #'automatic-localization' }
-CCodeGenerator >> localizedVariablesReferences: variablesToLocalize inMethod: selector calledBy: caller withDictionary: associationDictionary [
-
-	"Return the references to global variables that are in variablesToLocalize in method selector."
-
-	| currentMeth externalCalls globalReferences variablesReferences |
-	associationDictionary at: selector ifPresent: [ :vars | ^ vars ].
-	currentMeth := self methodNamed: selector.
-	externalCalls := (currentMeth externalCallsIn: self) reject: [ :sel | 
-		                 sel = selector or: [ sel = caller ] ].
-	globalReferences := currentMeth freeVariableReferences.
-	variablesReferences := (variablesToLocalize select: [ :var | 
-		                        globalReferences includes: var ]) asSet.
-	associationDictionary at: selector put: variablesReferences.
-	externalCalls ifEmpty: [
-		^ variablesReferences ].
-
-	externalCalls do: [ :s | 
-		(associationDictionary includesKey: s) ifFalse: [ 
-			(associationDictionary at: selector) addAll: (self
-					 localizedVariablesReferences: variablesToLocalize
-					 inMethod: s
-					 calledBy: selector
-					 withDictionary: associationDictionary) ] ].
-	^ variablesReferences
 ]
 
 { #category : #utilities }
@@ -4048,7 +4025,7 @@ CCodeGenerator >> nilOrBooleanConstantReceiverOf: aNode [
 			 self isNilConstantReceiverOf: aNode ]) ifTrue: [ 
 			^ aNode selector == #isNil ].
 		((#( or: and: ) includes: aNode selector) and: [ 
-			 aNode arguments last isStmtList and: [ 
+			 aNode arguments last isStatementList and: [ 
 				 aNode arguments last statements size = 1 ] ]) ifTrue: [ 
 			(self nilOrBooleanConstantReceiverOf: aNode receiver) ifNotNil: [ 
 				:rcvr | 
@@ -4512,6 +4489,41 @@ CCodeGenerator >> putDefineOf: aConstantNameString as: valueOrValueString on: aS
 		cr
 ]
 
+{ #category : #'automatic-localization' }
+CCodeGenerator >> referencedVariablesIn: variablesToLocalize inSend: sendNode calledBy: caller withDictionary: associationDictionary [
+	"Return the references to global variables that are in variablesToLocalize in method selector."
+
+	| currentMeth externalCalls globalReferences variablesReferences |
+	associationDictionary at: sendNode selector ifPresent: [ :vars | ^ vars ].
+	
+	"If it is a dynamic call, be conservative: assume all variables to localize may be touched"
+	(self isDynamicCall: sendNode)
+		ifTrue: [ ^ variablesToLocalize ].
+	
+	currentMeth := self methodNamed: sendNode selector.
+	
+	"Otherwise, compute the subset of variablesToLocalize referenced in the method"
+	externalCalls := (currentMeth externalCallsIn: self) reject: [ :call | 
+		call selector = sendNode selector or: [ call selector = caller ] ].
+	globalReferences := currentMeth freeVariableReferences.
+	variablesReferences := (variablesToLocalize select: [ :var | 
+		                        globalReferences includes: var ]) asSet.
+	associationDictionary at: sendNode selector put: variablesReferences.
+	externalCalls ifEmpty: [
+		^ variablesReferences ].
+
+	externalCalls do: [ :externalCall | 
+		(associationDictionary includesKey: externalCall selector) ifFalse: [
+			| subreferences |
+			subreferences := self
+				 referencedVariablesIn: variablesToLocalize
+				 inSend: externalCall
+				 calledBy: sendNode selector
+				 withDictionary: associationDictionary.
+			(associationDictionary at: sendNode selector) addAll: subreferences ] ].
+	^ variablesReferences
+]
+
 { #category : #inlining }
 CCodeGenerator >> removeAssertions [
 	"Remove all assertions in method bodies.  This is for the benefit of inlining, which
@@ -4520,15 +4532,10 @@ CCodeGenerator >> removeAssertions [
 
 	| newMethods |
 	newMethods := Dictionary new.
-	'Removing assertions...'
-		displayProgressAt: Sensor cursorPoint
-		from: 0 to: methods size
-		during: [ :bar |
-			methods doWithIndex: [ :m :i |
-				bar value: i.
-				m isAssertion ifFalse: [
-					newMethods at: m selector put: m.
-					m removeAssertions]]].
+	methods doWithIndex: [ :m :i |
+		m isAssertion ifFalse: [
+			newMethods at: m selector put: m.
+			m removeAssertions]].
 	methods := newMethods.
 ]
 
@@ -5438,35 +5445,34 @@ CCodeGenerator >> wordSize: aValue [
 { #category : #'automatic-localization' }
 CCodeGenerator >> wrapExternalCallsIn: tMethod withVariableBindings: replacementDict [
 
-	"Wrap external calls with TExternalSendNode."
+	"Wrap external calls with TExternalSendNode.
+	We should also wrap conservatively all macro methods, because they may contain calls"
 
 	| sendReplacements methodsReferencesToVarsToLocalize variablesDict |
 	variablesDict := (replacementDict collect: [ :asso | 
 		                  asso key -> (TVariableNode named: asso value) ])
 		                 asDictionary.
 
-
 	sendReplacements := Dictionary new.
 	methodsReferencesToVarsToLocalize := Dictionary new.
-	tMethod parseTree
-		nodesDo: [ :node :parent | 
-			(node isSend and: [ self isFunctionCall: node ]) ifTrue: [ 
-				| externalVars |
-				externalVars := self
-					                localizedVariablesReferences:
-					                (replacementDict collect: [ :asso | asso key ])
-					                inMethod: node selector
-										 calledBy: nil
-					                withDictionary: methodsReferencesToVarsToLocalize.
+	"Apply externalization/localization of variables around 
+	 - static function calls
+	 - dynamic function calls (perform & co)"
+	(tMethod externalCallsIn: self) do: [ :sendNode |
+		| variablesToExternalize |
+		"Optimization: only externalize/localize variables in usage in those methods"
+		variablesToExternalize := self
+			referencedVariablesIn: (replacementDict collect: [ :asso | asso key ])
+			inSend: sendNode
+			calledBy: nil
+			withDictionary: methodsReferencesToVarsToLocalize.
 
-				externalVars ifNotEmpty: [ 
-					sendReplacements at: node put: (TExternalSendNode
-							 send: node
-							 variableBindings:
-								 (externalVars collect: [ :var | 
-									  var -> (variablesDict at: var) ]) asDictionary) ] ] ]
-		parent: nil
-		unless: [ :e :parent | e isReturn ].
+		variablesToExternalize ifNotEmpty: [
+			sendReplacements at: sendNode put: (TExternalSendNode
+					 send: sendNode
+					 variableBindings:
+						 (variablesToExternalize collect: [ :var | 
+							  var -> (variablesDict at: var) ]) asDictionary) ] ].
 	sendReplacements ifNotEmpty: [ 
 		tMethod parseTree replaceNodesIn: sendReplacements ]
 ]

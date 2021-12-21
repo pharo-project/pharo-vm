@@ -15,6 +15,12 @@ TVariableNode class >> named: aName [
 		yourself
 ]
 
+{ #category : #'instance creation' }
+TVariableNode class >> selfNode [
+
+	^ self named: 'self'
+]
+
 { #category : #tranforming }
 TVariableNode >> asCASTIn: aBuilder [
 

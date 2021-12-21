@@ -148,7 +148,7 @@ SmartSyntaxPluginTMethod >> fixUpReturns [
 	"Replace each return statement in this method with (a) the given postlog, (b) code to pop the receiver and the given number of arguments, and (c) code to push the integer result and return."
 
 	parseTree nodesDo: [:node |
-		node isStmtList ifTrue: [
+		node isStatementList ifTrue: [
 			node setStatements: (Array streamContents:
 				[:sStream |
 				 node statements do: 
@@ -502,9 +502,9 @@ SmartSyntaxPluginTMethod >> statementGuardedWithSuccess: aTParseNodeOrSequenceTh
 					setSelector: #failed
 					receiver: (TVariableNode new setName: 'interpreterProxy')
 					arguments: #())
-		arguments: {(aTParseNodeOrSequenceThereof isTParseNode and: [aTParseNodeOrSequenceThereof isStmtList])
+		arguments: {(aTParseNodeOrSequenceThereof isTParseNode and: [aTParseNodeOrSequenceThereof isStatementList])
 						ifTrue: [aTParseNodeOrSequenceThereof]
-						ifFalse: [TStmtListNode new
+						ifFalse: [TStatementListNode new
 									setArguments: #()
 									statements: (aTParseNodeOrSequenceThereof isCollection
 													ifTrue: [aTParseNodeOrSequenceThereof]

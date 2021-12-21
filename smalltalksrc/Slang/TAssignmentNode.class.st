@@ -28,7 +28,7 @@ TAssignmentNode class >> variableNamed: aVariableName expression: anExpression [
 { #category : #'C code generation' }
 TAssignmentNode >> asCASTExpressionIn: aCodeGen [
 
-	(expression isStmtList and: [ expression statements size > 1 ]) 
+	(expression isStatementList and: [ expression statements size > 1 ]) 
 		ifTrue: [ ^ self asCASTStatementListExpansionAsExpression: aCodeGen ].
 	^ (self asCASTIn: aCodeGen)
 		  needsParentheses: true;
@@ -65,7 +65,7 @@ TAssignmentNode >> asCASTIn: aBuilder [
 					   lvalue: (CIdentifierNode name: variable name)
 					   rvalue: (CIdentifierNode name: 'aLiteralArray')) } ].
 
-	(expression isStmtList and: [ expression statements size > 1 ]) 
+	(expression isStatementList and: [ expression statements size > 1 ]) 
 		ifTrue: [ 
 			^ expression copy
 				  assignLastExpressionTo: variable;

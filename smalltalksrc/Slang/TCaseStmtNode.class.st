@@ -389,7 +389,7 @@ TCaseStmtNode >> setExpression: aNode selectors: selectorList arguments: anArray
 			firsts add: firstInRun.
 			lasts add: i - 2.
 			stmt := TSendNode new setSelector: lastSel receiver: selfNode arguments: anArray.
-			cases add: (TStmtListNode new setArguments: #() statements: (Array with: stmt)).
+			cases add: (TStatementListNode new setArguments: #() statements: (Array with: stmt)).
 			lastSel := sel.
 			firstInRun := i - 1.
 		].
@@ -397,5 +397,5 @@ TCaseStmtNode >> setExpression: aNode selectors: selectorList arguments: anArray
 	firsts add: firstInRun.
 	lasts add: selectorList size - 1.
 	stmt := TSendNode new setSelector: lastSel receiver: selfNode arguments: anArray.
-	cases add: (TStmtListNode new setArguments: #() statements: (Array with: stmt)).
+	cases add: (TStatementListNode new setArguments: #() statements: (Array with: stmt)).
 ]

@@ -102,6 +102,16 @@ MockLocalizationInterpreterMock class >> initializeWithInlinedMethodCall [
 ]
 
 { #category : #initialization }
+MockLocalizationInterpreterMock class >> initializeWithMacroCall [
+
+	BytecodeTable := Array new: 1.
+	self table: BytecodeTable from:
+	#(
+	(  0  bytecodeUsingMacro)
+	)
+]
+
+{ #category : #initialization }
 MockLocalizationInterpreterMock class >> initializeWithSafeEscapingCall [
 
 	BytecodeTable := Array new: 1.
@@ -113,12 +123,6 @@ MockLocalizationInterpreterMock class >> initializeWithSafeEscapingCall [
 
 { #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeInliningSharedMethod [
-
-	self sharedMethod
-]
-
-{ #category : #'interpreter shell' }
-MockLocalizationInterpreterMock >> bytecodeNotInliningSharedMethod [
 
 	self sharedMethod
 ]
@@ -149,6 +153,28 @@ MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariabl
 ]
 
 { #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsExpressionInAssignment [
+
+	| foo |
+	foo := self foo: self nonInlinedMethodUsingAutolocalizedVariable.
+	^ foo
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsExpressionInReturn [
+
+	^ self foo: self nonInlinedMethodUsingAutolocalizedVariable
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableInNestedLexicalScope [
+
+	true ifTrue: [
+		self foo: self nonInlinedMethodUsingAutolocalizedVariable
+	]
+]
+
+{ #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeUsingInlinedCall [
 
 	self inlinedMethodUsingExternalCall
@@ -160,7 +186,13 @@ MockLocalizationInterpreterMock >> bytecodeUsingLocalizedVariable [
 	variableToLocalize := 42
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingMacro [
+
+	self macroMethod
+]
+
+{ #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeUsingSafeExternalCall [
 
 	self nonInlinedMethodNotUsingAutolocalizedVariables: (autoLocalizedVariable := autoLocalizedVariable +1)
@@ -197,7 +229,7 @@ MockLocalizationInterpreterMock >> bytecodeWithEscapingCallAsArgumentOfExternalC
 	self foo: self nonInlinedMethodUsingAutolocalizedVariable1
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> foo2 [
 
 	<inline: false>
@@ -224,16 +256,6 @@ MockLocalizationInterpreterMock >> inlinedMethodUsingExternalCall [
 
 { #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> interpret [
-	<localizedVariable: #autoLocalizedVariable>
-
-	self dispatchOn: 1 in: BytecodeTable
-]
-
-{ #category : #'interpreter shell' }
-MockLocalizationInterpreterMock >> interpretWithConflict [
-
-	"This method should create a conflict with automatically inlined arguments"
-	| arg1 |
 	<localizedVariable: #autoLocalizedVariable>
 
 	self dispatchOn: 1 in: BytecodeTable
@@ -290,6 +312,11 @@ MockLocalizationInterpreterMock >> interpretWithSeveralVariablesToLocalize [
 ]
 
 { #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> macroMethod [
+	<cmacro: 'doesnotmatter'>
+]
+
+{ #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> methodAlsoSharedLocalizedVariableBeforeInlining [
 
 	sharedVariableToLocalizeBeforeInlining := 17
@@ -299,13 +326,6 @@ MockLocalizationInterpreterMock >> methodAlsoSharedLocalizedVariableBeforeInlini
 MockLocalizationInterpreterMock >> nonBytecodeUsingSharedLocalizedVariable [
 
 	sharedVariableToLocalize := 17
-]
-
-{ #category : #inline }
-MockLocalizationInterpreterMock >> nonInlinedMethodNotUsingAutolocalizedVariables [
-
-	<inline:false>
-	^ 10
 ]
 
 { #category : #inline }

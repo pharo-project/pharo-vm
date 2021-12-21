@@ -42,7 +42,7 @@ TSwitchStmtNode >> asCASTExpressionIn: aBuilder [
 								             left: (var value: i)
 								             right: ((labels at: j) asCASTExpressionIn: aBuilder))
 						            then:
-							            ((TStmtListNode new
+							            ((TStatementListNode new
 								              setArguments: #(  )
 								              statements: case statements) 
 								             asCASTExpressionIn: aBuilder)
@@ -66,7 +66,7 @@ TSwitchStmtNode >> asCASTExpressionIn: aBuilder [
 								             left: (var value: i)
 								             right: ((labels at: j) asCASTExpressionIn: aBuilder))
 						            then:
-							            ((TStmtListNode new
+							            ((TStatementListNode new
 								              setArguments: #(  )
 								              statements: case statements) 
 								             asCASTExpressionIn: aBuilder)

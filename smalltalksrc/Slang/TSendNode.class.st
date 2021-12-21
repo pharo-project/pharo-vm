@@ -11,6 +11,12 @@ Class {
 }
 
 { #category : #'instance creation' }
+TSendNode class >> receiver: aReceiverNode selector: aString [
+	
+	^ self receiver: aReceiverNode selector: aString arguments: #()
+]
+
+{ #category : #'instance creation' }
 TSendNode class >> receiver: aReceiverNode selector: aString arguments: aCollection [ 
 	
 	^ self new
@@ -386,7 +392,7 @@ TSendNode >> isStructReference: varNode in: aCodeGen [
 { #category : #testing }
 TSendNode >> isValueExpansion [
 	"Answer if the receiver is of the form literalBlock value[: arg]"
-	^receiver isStmtList
+	^receiver isStatementList
 	 and: [selector keywords allSatisfy: [:k| #('value' 'value:') includes: k]]
 ]
 

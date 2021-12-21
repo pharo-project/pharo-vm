@@ -127,6 +127,12 @@ TExternalSendNode >> nodesDo: aBlock parent: parent [
 	aBlock value: self value: parent
 ]
 
+{ #category : #transformations }
+TExternalSendNode >> printOn: aStream level: level [
+	
+	wrappedSendNode printOn: aStream level: level
+]
+
 { #category : #asd }
 TExternalSendNode >> replaceNodesIn: aDictionary [
 

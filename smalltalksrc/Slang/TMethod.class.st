@@ -161,7 +161,7 @@ TMethod >> allReferencedVariablesUsing: aCodeGen [
 		nodesWithParentsDo:
 			[:node :parent|
 			node isVariable ifTrue: [refs add: node name asString].
-			node isStmtList ifTrue: [ node args ifNotNil: [ refs addAll: node args ]].
+			node isStatementList ifTrue: [ node args ifNotNil: [ refs addAll: node args ]].
 			(node isSend
 			 and: [node selector value beginsWith: #cCode:]) ifTrue:
 				[aCodeGen addVariablesInVerbatimCIn: node to: refs]]
@@ -496,7 +496,7 @@ TMethod >> buildSwitchStmt: aSendNode parent: parentNode [
 		          cases: aSendNode arguments first
 		          otherwiseOrNil:
 		          (aSendNode arguments at: 2 ifAbsent: [ nil ]).
-	(aSendNode receiver isVariable or: [ parentNode isStmtList ]) 
+	(aSendNode receiver isVariable or: [ parentNode isStatementList ]) 
 		ifFalse: [ 
 			switch switchVariable:
 				(locals add: (self extraVariableName: 'switch')) ].
@@ -667,10 +667,19 @@ TMethod >> declareNonConflictingLocalNamedLike: aString [
 ]
 
 { #category : #testing }
+TMethod >> definedAsComplexMacro [
+	^properties notNil and: [(properties includesKey: #cmacro:)]
+]
+
+{ #category : #testing }
 TMethod >> definedAsMacro [
-	^properties notNil
-	  and: [(properties includesKey: #cmacro:)
-		or: [properties includesKey: #cmacro]]
+	^self definedAsComplexMacro or: [
+		self definedAsValueMacro ]
+]
+
+{ #category : #testing }
+TMethod >> definedAsValueMacro [
+	^properties notNil and: [(properties includesKey: #cmacro)]
 ]
 
 { #category : #accessing }
@@ -909,9 +918,9 @@ TMethod >> exitVar: exitVar label: exitLabel [
 	"Now flatten any new statement lists..."
 	parseTree nodesDo:
 		[:node| | list |
-		(node isStmtList
+		(node isStatementList
 		 and: [node statements notEmpty
-		 and: [node statements last isStmtList]]) ifTrue:
+		 and: [node statements last isStatementList]]) ifTrue:
 			[list := node statements last statements.
 			 node statements removeLast; addAllLast: list]].
 	^labelUsed
@@ -935,8 +944,8 @@ TMethod >> externalCallsIn: codeGenerator [
 	| calls |
 	calls := Set new.
 	parseTree nodesDo: [ :node | 
-		(codeGenerator isFunctionCall: node) ifTrue: [ 
-			calls add: node selector ] ].
+		((codeGenerator isFunctionCall: node) or: [ codeGenerator isDynamicCall: node ])
+			ifTrue: [ calls add: node ] ].
 	^ calls
 ]
 
@@ -1113,7 +1122,7 @@ TMethod >> fixUpReturns: argCount postlog: postlog [
 
 	| newStmts |
 	parseTree nodesDo: [:node |
-		node isStmtList ifTrue: [
+		node isStatementList ifTrue: [
 			newStmts := OrderedCollection new: 100.
 			node statements do: [:stmt |
 				stmt isReturn
@@ -1137,6 +1146,12 @@ TMethod >> fixUpReturns: argCount postlog: postlog [
 						newStmts addLast: stmt]].
 			node setStatements: newStmts asArray]].
 
+]
+
+{ #category : #flattenning }
+TMethod >> flatten [
+	
+	parseTree := TStatementListNode statements: parseTree flattened
 ]
 
 { #category : #utilities }
@@ -1334,7 +1349,7 @@ TMethod >> inlineConditional: aSendNode in: aCodeGen [
 	 where aSend is marked inline and always answers booleans."
 
 	self assert: (self isInlineableConditional: aSendNode in: aCodeGen).
-	self assert: aSendNode arguments first isStmtList.
+	self assert: aSendNode arguments first isStatementList.
 	^ (aSendNode arguments first statements size = 1 and: [ 
 		   aSendNode arguments first statements first isReturn ])
 		  ifTrue: [ self inlineReturningConditional: aSendNode in: aCodeGen ]
@@ -1424,7 +1439,7 @@ TMethod >> inlineGuardingConditional: aSendNode in: aCodeGen [
 	replacementTree comment:
 		{ ('inline ' , aSendNode receiver selector) }.
 	self addVarsDeclarationsAndLabelsOf: method except: method args.
-	^ TStmtListNode new setArguments: #(  ) statements: (evaluateLabel
+	^ TStatementListNode new setArguments: #(  ) statements: (evaluateLabel
 			   ifNil: [ 
 				   replacementTree statements
 				   , aSendNode arguments first statements , { skipLabel } ]
@@ -1513,7 +1528,7 @@ TMethod >> inlineReturningConditional: aSendNode in: aCodeGen [
 	replacementTree comment:
 		{ ('inline ' , aSendNode receiver selector) }.
 	^ label ifNil: [ replacementTree ] ifNotNil: [ 
-		  TStmtListNode new setArguments: #(  ) statements: { 
+		  TStatementListNode new setArguments: #(  ) statements: { 
 				  replacementTree.
 				  label } ]
 ]
@@ -1720,7 +1735,7 @@ TMethod >> isConditionalToBeTransformedForAssignment: aSend in: aCodeGen [
 		  and: [ 
 			  aSend arguments anySatisfy: [ :arg | 
 				  | stmt |
-				  self assert: arg isStmtList.
+				  self assert: arg isStatementList.
 				  arg statements size > 1 or: [ 
 					  (stmt := arg statements first) isSwitch or: [ 
 						  stmt isSend and: [ 
@@ -1817,7 +1832,7 @@ TMethod >> isNode: aNode substitutableFor: argName inMethod: targetMeth in: aCod
 
 	"For now allow literal blocks to be substituted.  They better be accessed only
 	 with value[:value:*] messages though!"
-	aNode isStmtList ifTrue: [^true].
+	aNode isStatementList ifTrue: [^true].
 
 	"Don't inline expressions unless type-compatible,"
 	aNode isSend ifTrue:
@@ -1904,7 +1919,7 @@ TMethod >> isSubstitutableNode: aNode intoMethod: targetMeth in: aCodeGen [
 
 	"For now allow literal blocks to be substituted.  They better be accessed only
 	 with value[:value:*] messages though!"
-	aNode isStmtList ifTrue: [^true].
+	aNode isStatementList ifTrue: [^true].
 
 	(aNode isSend
 	 and: [aNode numArgs = 0
@@ -2613,7 +2628,7 @@ TMethod >> renameVariablesUsing: aDictionary [
 		nodesDo: [ :node | 
 			(node isVariable and: [ aDictionary includesKey: node name ])
 				ifTrue: [ node setName: (aDictionary at: node name) ].
-			(node isStmtList and: [ node args size > 0 ])
+			(node isStatementList and: [ node args size > 0 ])
 				ifTrue: [ node
 						setArguments: (node args collect: [ :arg | aDictionary at: arg ifAbsent: [ arg ] ]) ] ]
 ]
@@ -2759,7 +2774,7 @@ TMethod >> smalltalkSelector [
 { #category : #accessing }
 TMethod >> statements [
 
-	parseTree isStmtList
+	parseTree isStatementList
 		ifFalse: [ self error: 'expected method parse tree to be a TStmtListNode' ].
 	((parseTree args = nil) or: [parseTree args isEmpty])
 		ifFalse: [ self error: 'expected method parse tree to have no args' ].
@@ -2801,7 +2816,7 @@ TMethod >> statementsListsForInliningIn: aCodeGen [
 	| stmtLists |
 	stmtLists := OrderedCollection new: 10.
 	parseTree
-		nodesDo: [ :node | node isStmtList ifTrue: [ stmtLists add: node ] ]
+		nodesDo: [ :node | node isStatementList ifTrue: [ stmtLists add: node ] ]
 		unless: [ :node | 
 			node isSend and: [ 
 				node selector == #cCode:inSmalltalk: or: [ 
@@ -2951,7 +2966,7 @@ TMethod >> transformReturnSubExpression: node toAssignmentOf: exitVar andGoto: e
 			[replacement := replacement
 								ifNil: [TGoToNode label: exitLabel]
 								ifNotNil:
-									[TStmtListNode new
+									[TStatementListNode new
 										setArguments: #()
 										statements: {replacement.
 													  TGoToNode label: exitLabel};
@@ -2977,7 +2992,7 @@ TMethod >> transformReturns [
 					[returnType = #void ifTrue:
 						[parent
 							replaceChild: node
-							with: (TStmtListNode new
+							with: (TStatementListNode new
 									setArguments: #()
 									statements: {node expression.
 												  TReturnNode new 
