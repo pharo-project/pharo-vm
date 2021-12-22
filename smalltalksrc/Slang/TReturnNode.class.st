@@ -24,6 +24,12 @@ TReturnNode >> = aNode [
 	^ true
 ]
 
+{ #category : #visiting }
+TReturnNode >> accept: aVisitor [
+	
+	^ aVisitor visitReturnNode: self
+]
+
 { #category : #tranforming }
 TReturnNode >> asCASTIn: aBuilder [
 
@@ -91,6 +97,12 @@ TReturnNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].	
 	expression := expression bindVariablesIn: aDictionary unless: cautionaryBlock.
+]
+
+{ #category : #accessing }
+TReturnNode >> children [
+
+	^ { expression }
 ]
 
 { #category : #transformations }

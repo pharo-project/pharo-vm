@@ -27,6 +27,12 @@ TStatementListNode >> = aNode [
 	^ true
 ]
 
+{ #category : #visiting }
+TStatementListNode >> accept: aVisitor [ 
+	
+	^ aVisitor visitStatementListNode: self
+]
+
 { #category : #utilities }
 TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned assignments: assigned in: aCodeGen [
 
@@ -95,6 +101,14 @@ TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned 
 						ifFalse: [ false ] ]
 				ifFalse: [ false ] ].
 	^ assigned
+]
+
+{ #category : #enumerating }
+TStatementListNode >> allStatementsDo: aFullBlockClosure [ 
+	
+	statements do: [ :statement |
+		aFullBlockClosure value: statement.
+		statement allStatementsDo: aFullBlockClosure ].
 ]
 
 { #category : #accessing }
@@ -235,7 +249,7 @@ TStatementListNode >> endsWithReturn [
 
 { #category : #flattening }
 TStatementListNode >> flattened [
-	
+
 	^ statements flatCollect: [ :each |
 		each flattened ]
 ]

@@ -7,6 +7,12 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #visiting }
+TInlineNode >> accept: aVisitor [
+	
+	^ aVisitor visitInlineNode: self
+]
+
 { #category : #tranforming }
 TInlineNode >> asCASTIn: aBuilder [
 
@@ -44,6 +50,12 @@ TInlineNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 	(cautionaryBlock value: self) ifTrue: [^self].
 	method := method bindVariablesIn: aDictionary unless: cautionaryBlock.
 
+]
+
+{ #category : #accessing }
+TInlineNode >> children [
+
+	^ { method }
 ]
 
 { #category : #testing }

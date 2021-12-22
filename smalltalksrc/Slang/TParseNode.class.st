@@ -10,6 +10,12 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #visiting }
+TParseNode >> accept: aVisitor [
+
+	self subclassResponsibility
+]
+
 { #category : #utilities }
 TParseNode >> allCalls [
 	"Answer a collection of selectors for the messages sent in this parse tree."
@@ -37,6 +43,12 @@ TParseNode >> allSatisfy: aBlock unless: cautionaryBlock [
 		nodesDo: [:n| (aBlock value: n) ifFalse: [^false]]
 		unless: cautionaryBlock.
 	^true
+]
+
+{ #category : #enumerating }
+TParseNode >> allStatementsDo: aFullBlockClosure [ 
+	
+	self children do: [ :child | child allStatementsDo: aFullBlockClosure ]
 ]
 
 { #category : #enumerating }
@@ -112,9 +124,8 @@ TParseNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 { #category : #enumerating }
 TParseNode >> collect: aBlock [
 	| nodes |
-	self halt. "This is a misnomer; should be deleted"
 	nodes := OrderedCollection new.
-	self nodesDo: [:n| (aBlock value: n) ifTrue: [nodes add: n]].
+	self nodesDo: [:n| nodes add: (aBlock value: n) ].
 	^nodes
 ]
 
@@ -316,8 +327,30 @@ TParseNode >> isVariable [
 { #category : #linearization }
 TParseNode >> linearizeIn: aCodeGenerator [
 
-	"I am a statement. Linearize myself until I find a block."
+	"I am a statement. Linearize all calls in myself until I find a block.
+	For example, I transform statements of the form:
+	
+	> self foo: self nonInlinedMethodUsingAutolocalizedVariable
+	
+	into
+	
+	> t0 := self nonInlinedMethodUsingAutolocalizedVariable
+	> t1 := self foo: t0
+	
+	Such localization happens on a per-block basis:
+	
+	> someExpression ifTrue: [
+	>		self foo: self nonInlinedMethodUsingAutolocalizedVariable
+	> ]
 
+	into
+	
+	> someExpression ifTrue: [
+	> 	| t0 t1 |
+	> 	t0 := self nonInlinedMethodUsingAutolocalizedVariable.
+	> 	t1 := self foo: t0
+	> ]
+	"
 	| replacementDictionary rewrittenStatement callsInStatement replacementBlock replacementsSoFar |
 	replacementDictionary := Dictionary new.
 	

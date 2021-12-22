@@ -21,6 +21,12 @@ TVariableNode class >> selfNode [
 	^ self named: 'self'
 ]
 
+{ #category : #visiting }
+TVariableNode >> accept: aVisitor [
+	
+	^ aVisitor visitVariableNode: self
+]
+
 { #category : #tranforming }
 TVariableNode >> asCASTIn: aBuilder [
 
@@ -53,6 +59,12 @@ TVariableNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
 	^ (aDictionary at: name ifAbsent: [^ self]) copy
+]
+
+{ #category : #accessing }
+TVariableNode >> children [
+	
+	^ #()
 ]
 
 { #category : #testing }

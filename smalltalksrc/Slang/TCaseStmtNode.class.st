@@ -32,6 +32,12 @@ TCaseStmtNode class >> newWithExpression: anExpression selectors: aCollectionOfS
 		yourself
 ]
 
+{ #category : #visiting }
+TCaseStmtNode >> accept: aVisitor [
+	
+	^ aVisitor visitCastStatementNode: self
+]
+
 { #category : #tranforming }
 TCaseStmtNode >> asCASTIn: aBuilder [
 	
@@ -145,6 +151,12 @@ TCaseStmtNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 TCaseStmtNode >> cases [
 
 	^cases
+]
+
+{ #category : #accessing }
+TCaseStmtNode >> children [
+	
+	^ { expression }, cases
 ]
 
 { #category : #transformations }

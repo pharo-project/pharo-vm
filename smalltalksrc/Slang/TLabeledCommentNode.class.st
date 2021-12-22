@@ -27,6 +27,12 @@ TLabeledCommentNode class >> withComment: aComment [
 		yourself
 ]
 
+{ #category : #visiting }
+TLabeledCommentNode >> accept: aVisitor [
+	
+	^ aVisitor visitLabeledCommentNode: self
+]
+
 { #category : #tranforming }
 TLabeledCommentNode >> asCASTIn: aBuilder [
 
@@ -69,6 +75,12 @@ TLabeledCommentNode >> asmLabel [
 TLabeledCommentNode >> asmLabel: labelString [
 
 	asmLabel := labelString
+]
+
+{ #category : #accessing }
+TLabeledCommentNode >> children [
+	
+	^ #()
 ]
 
 { #category : #testing }

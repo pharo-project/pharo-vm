@@ -173,6 +173,22 @@ TMethod >> allReferencedVariablesUsing: aCodeGen [
 	^refs
 ]
 
+{ #category : #accessing }
+TMethod >> allStatements [
+
+	| statements |
+	statements := OrderedCollection new.
+	self allStatementsDo: [ :statement | statements add: statement ].
+	^ statements
+]
+
+{ #category : #accessing }
+TMethod >> allStatementsDo: aFullBlockClosure [ 
+
+	"Iterate all statements in the tree with a block closure"
+	parseTree allStatementsDo: aFullBlockClosure
+]
+
 { #category : #inlining }
 TMethod >> argAssignmentsFor: meth send: aSendNode except: elidedArgs in: aCodeGen [
 
@@ -563,6 +579,12 @@ TMethod >> checkedDeclarationAt: aVariableName put: aDeclaration in: aCCodeGen [
 			ifNotNil: [aCCodeGen logger show: msg; cr]
 			ifNil: [self error: msg]].
 	^self declarationAt: aVariableName  "<String>" put: aDeclaration
+]
+
+{ #category : #accessing }
+TMethod >> children [
+	
+	^ { parseTree }
 ]
 
 { #category : #accessing }
@@ -1660,6 +1682,13 @@ TMethod >> inlineableSend: aNode in: aCodeGen [
 	 and: [m mayBeInlined
 	 and: [(m isComplete and: [aCodeGen mayInline: m selector])
 		or: [m checkForRequiredInlinability]]]]
+]
+
+{ #category : #accessing }
+TMethod >> inspectionTree [
+	<inspectorPresentationOrder: 35 title: 'Tree'>
+
+	^ parseTree inspectionTree
 ]
 
 { #category : #'primitive compilation' }

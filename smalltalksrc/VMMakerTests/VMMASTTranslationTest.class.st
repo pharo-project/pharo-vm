@@ -138,8 +138,8 @@ VMMASTTranslationTest >> testComplexIfNilIfNotNilWithArgument [
 	conditional := translation parseTree statements second.
 	self assert: conditional isSend.
 	self assert: conditional selector equals: #ifTrue:ifFalse:.
-	self assert: conditional args first isStmtList.
-	self assert: conditional args second isStmtList.
+	self assert: conditional args first isStatementList.
+	self assert: conditional args second isStatementList.
 	self assert: conditional args first args isEmpty.
 	self assert: conditional args second args notEmpty.
 	
@@ -170,8 +170,8 @@ VMMASTTranslationTest >> testComplexIfNotNilIfNilWithArgument [
 	conditional := translation parseTree statements second.
 	self assert: conditional isSend.
 	self assert: conditional selector equals: #ifTrue:ifFalse:.
-	self assert: conditional args first isStmtList.
-	self assert: conditional args second isStmtList.
+	self assert: conditional args first isStatementList.
+	self assert: conditional args second isStatementList.
 	self assert: conditional args first args isEmpty.
 	self assert: conditional args second args notEmpty.
 	
@@ -199,7 +199,7 @@ VMMASTTranslationTest >> testComplexIfNotNilWithArgument [
 	conditional := translation parseTree statements second.
 	self assert: conditional isSend.
 	self assert: conditional selector equals: #ifFalse:.
-	self assert: conditional args first isStmtList.
+	self assert: conditional args first isStatementList.
 	self assert: conditional args first args notEmpty.
 	
 	condition := conditional receiver.

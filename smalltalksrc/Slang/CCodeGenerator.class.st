@@ -480,10 +480,6 @@ CCodeGenerator >> autoLocalizationOfVariablesIn: selector withVariableBindings: 
 	(m := self methodNamed: selector) ifNil: [ ^ self ].
 	(replacementDict isNil or: [ replacementDict isEmpty ]) ifTrue: [ ^ self ].
 
-	"self linearizeExternalCallsIn: m."
-	"Wrap sends with externalization/internalization statements"
-	self wrapExternalCallsIn: m withVariableBindings: replacementDict.
-
 	"Replace all localized variables by their localized versions"
 	m parseTree
 		bindVariablesIn: (replacementDict collect: [ :asso | 
@@ -491,16 +487,21 @@ CCodeGenerator >> autoLocalizationOfVariablesIn: selector withVariableBindings: 
 		unless: [ :node | 
 			node isTMethod not and: [ 
 				node isReturn or: [ node isExternalSend ] ] ].
-		
+
+	self linearizeExternalCallsIn: m.
+
+	"Wrap sends with externalization/internalization statements"
+	self wrapStatements: m withVariableBindings: replacementDict.
+
 	"Localize global values at the beginning of the function
 	AND externalize local values on each return"
 	replacementDict do: [ :asso | 
 		m statements addFirst: (TAssignmentNode
 				 variable: (TVariableNode named: asso value)
 				 expression: (TVariableNode named: asso key)) ].
-	self
+	"self
 		externalizeAtReturnsIn: m
-		withVariablesToLocalize: replacementDict.
+		withVariablesToLocalize: replacementDict."
 
 ]
 
@@ -1297,6 +1298,14 @@ CCodeGenerator >> exportedPrimitiveNames [
 	"Return an array of all exported primitives"
 	^methods select:[:m| m export] thenCollect:[:m| self cFunctionNameFor: m selector].
 
+]
+
+{ #category : #'automatic-localization' }
+CCodeGenerator >> externalizationOf: aVariableName [
+
+	^ (TAssignmentNode
+			variableNamed: aVariableName
+			expression: (TVariableNode named: #local_, aVariableName))
 ]
 
 { #category : #'automatic-localization' }
@@ -3463,6 +3472,14 @@ CCodeGenerator >> instVarNamesForClass: aClass [
 
 ]
 
+{ #category : #'automatic-localization' }
+CCodeGenerator >> internalizationOf: aVariableName [
+
+	^ (TAssignmentNode
+			variableNamed: #local_, aVariableName
+			expression: (TVariableNode named: aVariableName))
+]
+
 { #category : #'C translation' }
 CCodeGenerator >> is32Bit [
 	^ self wordSize = 4
@@ -5443,36 +5460,48 @@ CCodeGenerator >> wordSize: aValue [
 ]
 
 { #category : #'automatic-localization' }
-CCodeGenerator >> wrapExternalCallsIn: tMethod withVariableBindings: replacementDict [
+CCodeGenerator >> wrapStatementWithExternalizationAndLocalizations: statement ofLocalizedVariables: localizedVariables [
 
-	"Wrap external calls with TExternalSendNode.
-	We should also wrap conservatively all macro methods, because they may contain calls"
+	| collector variablesToExternalize replacementStatements |
 
-	| sendReplacements methodsReferencesToVarsToLocalize variablesDict |
+	"Optimization: only externalize/localize variables used by the statement's called functions"
+	collector := MLVMVariableAccessCollector
+		             inCodeGenerator: self
+		             fromGlobals: localizedVariables.
+	statement accept: collector.
+
+	"Sorted to guarantee determinism in the output"
+	variablesToExternalize := collector accessedVariables sorted.
+	variablesToExternalize ifEmpty: [ ^ statement ].
+
+	"Wrap the statement with externalization/localizations"
+	replacementStatements := OrderedCollection new.
+	replacementStatements addAll: (variablesToExternalize collect: [ :e | self externalizationOf: e ]).
+	replacementStatements add: statement.
+	statement isReturn ifFalse: [ 
+		replacementStatements addAll: (variablesToExternalize collect: [ :e | self internalizationOf: e ]) ].
+	^ TStatementListNode statements: replacementStatements
+]
+
+{ #category : #'automatic-localization' }
+CCodeGenerator >> wrapStatements: tMethod withVariableBindings: replacementDict [
+
+	"Wrap statements with external calls with TExternalSendNode"
+
+	| methodsReferencesToVarsToLocalize variablesDict |
 	variablesDict := (replacementDict collect: [ :asso | 
 		                  asso key -> (TVariableNode named: asso value) ])
 		                 asDictionary.
 
-	sendReplacements := Dictionary new.
 	methodsReferencesToVarsToLocalize := Dictionary new.
 	"Apply externalization/localization of variables around 
 	 - static function calls
 	 - dynamic function calls (perform & co)"
-	(tMethod externalCallsIn: self) do: [ :sendNode |
-		| variablesToExternalize |
-		"Optimization: only externalize/localize variables in usage in those methods"
-		variablesToExternalize := self
-			referencedVariablesIn: (replacementDict collect: [ :asso | asso key ])
-			inSend: sendNode
-			calledBy: nil
-			withDictionary: methodsReferencesToVarsToLocalize.
-
-		variablesToExternalize ifNotEmpty: [
-			sendReplacements at: sendNode put: (TExternalSendNode
-					 send: sendNode
-					 variableBindings:
-						 (variablesToExternalize collect: [ :var | 
-							  var -> (variablesDict at: var) ]) asDictionary) ] ].
-	sendReplacements ifNotEmpty: [ 
-		tMethod parseTree replaceNodesIn: sendReplacements ]
+	
+	tMethod allStatements do: [ :statement | | replacement |
+		replacement := self
+			wrapStatementWithExternalizationAndLocalizations: statement
+			ofLocalizedVariables: (replacementDict collect: [ :asso | asso key ]).
+		tMethod replaceNodesIn: { statement -> replacement } asDictionary
+	].
 ]

@@ -25,6 +25,12 @@ TAssignmentNode class >> variableNamed: aVariableName expression: anExpression [
 		  yourself
 ]
 
+{ #category : #visiting }
+TAssignmentNode >> accept: aVisitor [ 
+	
+	^ aVisitor visitAssignmentNode: self
+]
+
 { #category : #'C code generation' }
 TAssignmentNode >> asCASTExpressionIn: aCodeGen [
 
@@ -164,6 +170,12 @@ TAssignmentNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 	(cautionaryBlock value: self) ifTrue: [^self].
 	variable := variable bindVariablesIn: aDictionary unless: cautionaryBlock.
 	expression := expression bindVariablesIn: aDictionary unless: cautionaryBlock.
+]
+
+{ #category : #accessing }
+TAssignmentNode >> children [
+	
+	^ { variable . expression }
 ]
 
 { #category : #accessing }

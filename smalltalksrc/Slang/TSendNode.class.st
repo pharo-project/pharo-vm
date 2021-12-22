@@ -39,6 +39,12 @@ TSendNode >> = aNode [
 	^ true
 ]
 
+{ #category : #visiting }
+TSendNode >> accept: aVisitor [
+	
+	^ aVisitor visitSendNode: self
+]
+
 { #category : #accessing }
 TSendNode >> args [
 
@@ -255,6 +261,12 @@ TSendNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 	(cautionaryBlock value: self) ifTrue: [^self].
 	receiver := receiver bindVariablesIn: aDictionary unless: cautionaryBlock.
 	arguments := arguments collect: [ :a | a bindVariablesIn: aDictionary unless: cautionaryBlock].
+]
+
+{ #category : #accessing }
+TSendNode >> children [
+	
+	^ { receiver }, arguments
 ]
 
 { #category : #accessing }
