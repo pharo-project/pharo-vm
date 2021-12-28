@@ -2594,7 +2594,7 @@ CCodeGenerator >> generateCASTShiftLeft: tast [
 	finalNode := CBinaryOperatorNode
 		             operator: #<<
 		             left: leftNode
-		             right: (arg asCASTIn: self).
+		             right: (arg asCASTExpressionIn: self).
 	mustCastBackToSign := typeIsUnsigned not.
 	mustCastBackToSign ifTrue: [ 
 		| promotedType |
@@ -2633,7 +2633,7 @@ CCodeGenerator >> generateCASTShiftRight: tast [
 	^ CBinaryOperatorNode
 		  operator: #>>
 		  left: rcvr
-		  right: (tast arguments first asCASTIn: self)
+		  right: (tast arguments first asCASTExpressionIn: self)
 ]
 
 { #category : #'CAST translation' }
