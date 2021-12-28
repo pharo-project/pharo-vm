@@ -184,8 +184,8 @@ TSendNode >> asTransformedConstantPerform [
 { #category : #transformations }
 TSendNode >> bindVariableUsesIn: aDictionary [
 
-	receiver := receiver bindVariableUsesIn: aDictionary.
-	arguments := arguments collect: [ :a | a bindVariableUsesIn: aDictionary ].
+	self receiver: (receiver bindVariableUsesIn: aDictionary).
+	self arguments: (arguments collect: [ :a | a bindVariableUsesIn: aDictionary ]).
 ]
 
 { #category : #transformations }
@@ -251,16 +251,16 @@ TSendNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in:
 { #category : #transformations }
 TSendNode >> bindVariablesIn: aDictionary [
 
-	receiver := receiver bindVariablesIn: aDictionary.
-	arguments := arguments collect: [ :a | a bindVariablesIn: aDictionary ].
+	self receiver: (receiver bindVariablesIn: aDictionary).
+	self arguments: (arguments collect: [ :a | a bindVariablesIn: aDictionary ]).
 ]
 
 { #category : #transformations }
 TSendNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
-	receiver := receiver bindVariablesIn: aDictionary unless: cautionaryBlock.
-	arguments := arguments collect: [ :a | a bindVariablesIn: aDictionary unless: cautionaryBlock].
+	self receiver: (receiver bindVariablesIn: aDictionary unless: cautionaryBlock).
+	self arguments: (arguments collect: [ :a | a bindVariablesIn: aDictionary unless: cautionaryBlock]).
 ]
 
 { #category : #accessing }
@@ -467,8 +467,8 @@ TSendNode >> numArgs [
 { #category : #copying }
 TSendNode >> postCopy [
 
-	receiver := receiver copy.
-	arguments := (arguments collect: [ :arg | arg copy ])
+	self receiver: receiver copy.
+	self arguments: (arguments collect: [ :arg | arg copy ])
 ]
 
 { #category : #printing }
@@ -519,8 +519,8 @@ TSendNode >> removeAssertions [
 TSendNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
-		receiver := receiver replaceNodesIn: aDictionary.
-		arguments := arguments collect: [ :a | a replaceNodesIn: aDictionary ].
+		self receiver: (receiver replaceNodesIn: aDictionary).
+		self arguments: (arguments collect: [ :a | a replaceNodesIn: aDictionary ]).
 		self]
 ]
 
@@ -538,18 +538,15 @@ TSendNode >> selector: aSymbol [
 { #category : #accessing }
 TSendNode >> setSelector: aSymbol receiver: rcvrNode arguments: argList [
 
-	selector := aSymbol.
-	receiver := rcvrNode.
-	arguments := argList asArray.
-	isBuiltinOperator := false.
+	^ self setSelector: aSymbol receiver: rcvrNode arguments: argList isBuiltInOp: false
 ]
 
 { #category : #accessing }
 TSendNode >> setSelector: aSymbol receiver: rcvrNode arguments: argList isBuiltInOp: builtinFlag [
 
 	selector := aSymbol.
-	receiver := rcvrNode.
-	arguments := argList asArray.
+	self receiver: rcvrNode.
+	self arguments: argList asArray.
 	isBuiltinOperator := builtinFlag.
 ]
 

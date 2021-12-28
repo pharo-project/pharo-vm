@@ -3,7 +3,8 @@ Class {
 	#superclass : #TParseNode,
 	#instVars : [
 		'caseLabels',
-		'cases'
+		'cases',
+		'oldCases'
 	],
 	#category : #'Slang-AST'
 }
@@ -11,8 +12,8 @@ Class {
 { #category : #transformations }
 TBraceCaseNode >> bindVariableUsesIn: aDictionary [
 
-	caseLabels := caseLabels collect: [:node| node bindVariableUsesIn: aDictionary].
-	cases := cases collect: [:node| node bindVariableUsesIn: aDictionary]
+	self caseLabels: (caseLabels collect: [:node| node bindVariableUsesIn: aDictionary]).
+	self cases: (cases collect: [:node| node bindVariableUsesIn: aDictionary])
 ]
 
 { #category : #transformations }
@@ -33,16 +34,16 @@ TBraceCaseNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFol
 { #category : #transformations }
 TBraceCaseNode >> bindVariablesIn: aDictionary [
 
-	caseLabels := caseLabels collect: [:node| node bindVariablesIn: aDictionary].
-	cases := cases collect: [:node| node bindVariablesIn: aDictionary]
+	self caseLabels: (caseLabels collect: [:node| node bindVariablesIn: aDictionary]).
+	self cases: (cases collect: [:node| node bindVariablesIn: aDictionary])
 ]
 
 { #category : #transformations }
 TBraceCaseNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
-	caseLabels := caseLabels collect: [:node| node bindVariablesIn: aDictionary unless: cautionaryBlock].
-	cases := cases collect: [:node| node bindVariablesIn: aDictionary unless: cautionaryBlock]
+	self caseLabels: (caseLabels collect: [:node| node bindVariablesIn: aDictionary unless: cautionaryBlock]).
+	self cases: (cases collect: [:node| node bindVariablesIn: aDictionary unless: cautionaryBlock])
 ]
 
 { #category : #accessing }
@@ -56,7 +57,14 @@ TBraceCaseNode >> caseLabels [
 TBraceCaseNode >> caseLabels: anObject [
 	"Set the value of caseLabels"
 
-	caseLabels := anObject
+	| oldLabels |
+	oldLabels := caseLabels.
+	caseLabels := anObject.
+	caseLabels do: [ :e | e parent: self ].
+	
+	oldLabels ifNil: [ ^ self ].
+	(oldLabels difference: caseLabels)
+		do: [ :e | e parent: nil ]
 ]
 
 { #category : #accessing }
@@ -70,7 +78,14 @@ TBraceCaseNode >> cases [
 TBraceCaseNode >> cases: anObject [
 	"Set the value of cases"
 
-	cases := anObject
+	oldCases := cases.
+	cases := anObject.
+	
+	cases do: [ :e | e parent: self ].
+	
+	oldCases ifNil: [ ^ self ].
+	(oldCases difference: cases)
+		do: [ :e | e parent: nil ].
 ]
 
 { #category : #enumerating }
@@ -121,8 +136,8 @@ TBraceCaseNode >> nodesDo: aBlock unless: cautionaryBlock [
 TBraceCaseNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
-		caseLabels := caseLabels collect: [:node| node replaceNodesIn: aDictionary].
-		cases := cases collect: [:node| node replaceNodesIn: aDictionary].
+		self caseLabels: (caseLabels collect: [:node| node replaceNodesIn: aDictionary]).
+		self cases: (cases collect: [:node| node replaceNodesIn: aDictionary]).
 		self]
 ]
 

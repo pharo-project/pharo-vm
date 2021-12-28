@@ -5,6 +5,7 @@ Class {
 	#name : #TParseNode,
 	#superclass : #Object,
 	#instVars : [
+		'parent',
 		'comment'
 	],
 	#category : #'Slang-AST'
@@ -480,6 +481,18 @@ TParseNode >> occurrencesOf: aNode [
 	^count
 ]
 
+{ #category : #accessing }
+TParseNode >> parent [
+
+	^ parent
+]
+
+{ #category : #accessing }
+TParseNode >> parent: anObject [
+
+	parent := anObject
+]
+
 { #category : #printing }
 TParseNode >> printOn: aStream [ 
 	"Append a description of the receiver onto the given stream."
@@ -497,6 +510,18 @@ TParseNode >> printOn: aStream level: anInteger [
 { #category : #transformations }
 TParseNode >> removeAssertions [
 	"default: do nothing"
+]
+
+{ #category : #transformations }
+TParseNode >> replaceBy: aNode [
+
+	self parent replaceChild: self with: aNode
+]
+
+{ #category : #transformations }
+TParseNode >> replaceChild: aNode with: aReplacementNode [
+
+	self subclassResponsibility
 ]
 
 { #category : #transformations }

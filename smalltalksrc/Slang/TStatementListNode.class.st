@@ -9,10 +9,18 @@ Class {
 }
 
 { #category : #'instance creation' }
+TStatementListNode class >> parameters: parameters statements: statementList [
+	
+	^ self new
+		setArguments: parameters statements: statementList
+		yourself
+]
+
+{ #category : #'instance creation' }
 TStatementListNode class >> statements: aCollection [ 
 	
 	^ self new
-		setStatements: aCollection;
+		statements: aCollection;
 		yourself
 ]
 
@@ -74,7 +82,7 @@ TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned 
 						 node selector keywords) notEmpty
 						ifTrue: [ "First find assignments in the expression..."
 							(TStatementListNode new
-								 setStatements: { node receiver };
+								 statements: { node receiver };
 								 yourself)
 								addReadBeforeAssignedIn: variables
 								to: readBeforeAssigned
@@ -180,33 +188,39 @@ TStatementListNode >> assignLastExpressionTo: variableNode [
 { #category : #transformations }
 TStatementListNode >> bindVariableUsesIn: aDictionary [
 
-	statements := statements collect: [ :s | s bindVariableUsesIn: aDictionary ].
+	self statements: (statements collect: [ :s | s bindVariableUsesIn: aDictionary ]).
 ]
 
 { #category : #transformations }
 TStatementListNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen [
+
 	"Answer either the receiver, if it contains no references to the given variables, or a new node with the given variables rebound."
+
 	| newStatements |
-	newStatements := statements collect: [:s| s bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen].
-	^newStatements = statements
-		ifTrue: [self]
-		ifFalse:
-			[self shallowCopy
-				setStatements: newStatements;
-				yourself]
+	newStatements := statements collect: [ :s | 
+		                 s
+			                 bindVariableUsesIn: aDictionary
+			                 andConstantFoldIf: constantFold
+			                 in: codeGen ].
+	^ newStatements = statements
+		  ifTrue: [ self ]
+		  ifFalse: [ 
+			  self shallowCopy
+				  statements: newStatements;
+				  yourself ]
 ]
 
 { #category : #transformations }
 TStatementListNode >> bindVariablesIn: aDictionary [
 
-	statements := statements collect: [ :s | s bindVariablesIn: aDictionary ].
+	self statements: (statements collect: [ :s | s bindVariablesIn: aDictionary ]).
 ]
 
 { #category : #transformations }
 TStatementListNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
-	statements := statements collect: [ :s | s bindVariablesIn: aDictionary unless: cautionaryBlock].
+	self statements: (statements collect: [ :s | s bindVariablesIn: aDictionary unless: cautionaryBlock]).
 ]
 
 { #category : #enumerating }
@@ -328,12 +342,17 @@ TStatementListNode >> nodesDo: aBlock value: parent [
 	aBlock value: self value: parent
 ]
 
+{ #category : #accessing }
+TStatementListNode >> parameterNames [
+	
+	^ arguments
+]
+
 { #category : #copying }
 TStatementListNode >> postCopy [
 
-1haltIf: [ arguments isNil ].
 	arguments := arguments copy.
-	statements := statements collect: [ :s | s copy ]
+	self statements: (statements collect: [ :s | s copy ])
 ]
 
 { #category : #printing }
@@ -383,7 +402,7 @@ TStatementListNode >> renameLabelsForInliningInto: aTMethod [
 
 { #category : #transformations }
 TStatementListNode >> replaceChild: aNode with: bNode [ 
-	statements := Array streamContents:
+	self statements: (Array streamContents:
 					[:s|
 					statements do:
 						[:node|
@@ -392,14 +411,14 @@ TStatementListNode >> replaceChild: aNode with: bNode [
 								[bNode isStatementList
 									ifTrue: [s nextPutAll: bNode statements]
 									ifFalse: [s nextPut: bNode]]
-							ifFalse: [s nextPut: node]]]
+							ifFalse: [s nextPut: node]]])
 ]
 
 { #category : #transformations }
 TStatementListNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
-		statements := statements collect: [ :s | s replaceNodesIn: aDictionary ].
+		self statements: (statements collect: [ :s | s replaceNodesIn: aDictionary ]).
 		self]
 ]
 
@@ -420,23 +439,23 @@ TStatementListNode >> returnsExpression [
 { #category : #accessing }
 TStatementListNode >> setArguments: argList [
 
-1haltIf: [ argList isNil ].
 	arguments := argList.
 ]
 
 { #category : #accessing }
 TStatementListNode >> setArguments: argList statements: statementList [
 	"Initialize this method using the given information."
-
-1haltIf: [ argList isNil ].
 	arguments := argList.
-	statements := statementList.
+	self statements: statementList.
 ]
 
 { #category : #accessing }
 TStatementListNode >> setStatements: stmtList [
 
-	statements := stmtList asOrderedCollection.
+	self
+		deprecated: 'Call statements: pliz'
+		transformWith: '`@receiver setStatements: `@arg' -> '`@receiver statements: `@arg'.
+	self statements: stmtList.
 ]
 
 { #category : #inlining }
@@ -448,6 +467,19 @@ TStatementListNode >> shouldExpand [
 TStatementListNode >> statements [
 
 	^statements
+]
+
+{ #category : #accessing }
+TStatementListNode >> statements: anObject [
+
+	| oldStatements |
+	oldStatements := statements.
+	statements := anObject asOrderedCollection.
+	statements do: [ :e | e parent: self ].
+	
+	oldStatements ifNil: [ ^ self ].
+	(oldStatements difference: statements)
+		do: [ :e | e parent: nil ].
 ]
 
 { #category : #'type inference' }

@@ -140,7 +140,7 @@ TAssignmentNode >> asCASTValueExpansionIn: aCodeGen [
 TAssignmentNode >> bindVariableUsesIn: aDictionary [
 	"Do NOT bind the variable on the left-hand-side of an assignment statement."
 	"was bindVariablesIn:"
-	expression := expression bindVariableUsesIn: aDictionary.
+	self expression: (expression bindVariableUsesIn: aDictionary).
 
 ]
 
@@ -160,16 +160,16 @@ TAssignmentNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFo
 { #category : #transformations }
 TAssignmentNode >> bindVariablesIn: aDictionary [
 
-	variable := variable bindVariablesIn: aDictionary.
-	expression := expression bindVariablesIn: aDictionary.
+	self variable: (variable bindVariablesIn: aDictionary).
+	self expression: (expression bindVariablesIn: aDictionary).
 ]
 
 { #category : #transformations }
 TAssignmentNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
-	variable := variable bindVariablesIn: aDictionary unless: cautionaryBlock.
-	expression := expression bindVariablesIn: aDictionary unless: cautionaryBlock.
+	self variable: (variable bindVariablesIn: aDictionary unless: cautionaryBlock).
+	self expression: (expression bindVariablesIn: aDictionary unless: cautionaryBlock).
 ]
 
 { #category : #accessing }
@@ -182,6 +182,19 @@ TAssignmentNode >> children [
 TAssignmentNode >> expression [
 
 	^expression
+]
+
+{ #category : #accessing }
+TAssignmentNode >> expression: anExpression [
+
+	| oldExpression |
+	oldExpression := expression.
+	expression := anExpression.
+	expression parent: self.
+
+	oldExpression ifNil: [ ^ self ].
+	oldExpression ~= variable
+		ifTrue: [ oldExpression parent: nil ]
 ]
 
 { #category : #testing }
@@ -249,8 +262,8 @@ TAssignmentNode >> nodesDo: aBlock unless: cautionaryBlock [
 { #category : #copying }
 TAssignmentNode >> postCopy [
 
-	variable := variable copy.
-	expression := expression copy
+	self variable: variable copy.
+	self expression: expression copy
 ]
 
 { #category : #'C code generation' }
@@ -279,25 +292,28 @@ TAssignmentNode >> removeAssertions [
 ]
 
 { #category : #transformations }
+TAssignmentNode >> replaceChild: aNode with: aReplacementNode [
+
+	variable == aNode ifTrue: [ 
+		self variable: aReplacementNode ].
+	expression == aNode ifTrue: [ 
+		self expression: aReplacementNode ]
+]
+
+{ #category : #transformations }
 TAssignmentNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
-		variable := variable replaceNodesIn: aDictionary.
-		expression := expression replaceNodesIn: aDictionary.
+		self variable: (variable replaceNodesIn: aDictionary).
+		self expression: (expression replaceNodesIn: aDictionary).
 		self]
-]
-
-{ #category : #accessing }
-TAssignmentNode >> setExpression: expressionNode [
-
-	expression := expressionNode
 ]
 
 { #category : #accessing }
 TAssignmentNode >> setVariable: varNode expression: expressionNode [
 	self assert: (expressionNode isGoTo or: [expressionNode isLabel]) not.
-	variable := varNode.
-	expression := expressionNode.
+	self variable: varNode.
+	self expression: expressionNode.
 ]
 
 { #category : #testing }
@@ -319,6 +335,19 @@ TAssignmentNode >> typeOrNilFrom: aCodeGenerator in: aTMethod [
 TAssignmentNode >> variable [
 
 	^variable
+]
+
+{ #category : #accessing }
+TAssignmentNode >> variable: anObject [
+
+	| oldVariable |
+	oldVariable := variable.
+	variable := anObject.
+	variable parent: self.
+	
+	oldVariable ifNil: [ ^ self ].
+	oldVariable ~= variable
+		ifTrue: [ oldVariable parent: nil ]
 ]
 
 { #category : #accessing }

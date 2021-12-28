@@ -157,7 +157,7 @@ TSwitchStmtNode >> asCASTIn: aBuilder addToEndOfCases: aNodeToPrependOrNil [
 						               defaultExpr.
 						               (TConstantNode value: type) } ].
 		statements add:
-			((aNodeToPrependOrNil copy setExpression: defaultExpr) asCASTIn:
+			((aNodeToPrependOrNil copy expression: defaultExpr) asCASTIn:
 				 aBuilder) ].
 	^ CSwitchStatementNode
 		  if: (expression asCASTExpressionIn: aBuilder)
@@ -234,6 +234,14 @@ TSwitchStmtNode >> cases: anObject [
 	"Set the value of cases"
 
 	cases := anObject
+]
+
+{ #category : #accessing }
+TSwitchStmtNode >> children [
+	
+	^ { expression },
+		cases flattened,
+		(otherwiseOrNil ifNil: [ #() ] ifNotNil: [ {otherwiseOrNil} ])
 ]
 
 { #category : #'instance initialization' }

@@ -731,17 +731,18 @@ TMethod >> determineTypeFor: aNode in: aCodeGen [
 
 { #category : #transformations }
 TMethod >> elideAnyFinalReturn [
+
 	"For super expansions we need to eliminate any final return to prevent premature exit.
 	 Anything meaningful in the returned expression must be retained."
 
 	| stmtList expr |
 	stmtList := parseTree statements asOrderedCollection.
-	stmtList last isReturn ifTrue:
-		[expr := stmtList last expression.
-		 (expr isVariable and: [expr name = 'self'])
-			ifTrue: [stmtList := stmtList allButLast]
-			ifFalse: [stmtList at: stmtList size put: expr].
-		parseTree setStatements: stmtList]
+	stmtList last isReturn ifTrue: [ 
+		expr := stmtList last expression.
+		(expr isVariable and: [ expr name = 'self' ])
+			ifTrue: [ stmtList := stmtList allButLast ]
+			ifFalse: [ stmtList at: stmtList size put: expr ].
+		parseTree statements: stmtList ]
 ]
 
 { #category : #'C code generation' }
@@ -1492,7 +1493,7 @@ TMethod >> inlineMethod: meth inCaseStatement: stmtNode [
 		addFirst: meth asInlineNode;
 		addFirst: (TLabeledCommentNode new setComment: meth selector).
 
-	stmtNode setStatements: newStatements.
+	stmtNode statements: newStatements
 ]
 
 { #category : #inlining }
@@ -2090,7 +2091,7 @@ TMethod >> newCascadeTempFor: aTParseNode [
 						[:node|
 						(node isAssignment
 						 and: [node variable name = varName]) ifTrue:
-							[node setExpression: (TSendNode new
+							[node expression: (TSendNode new
 													setSelector: #addressOf:
 													receiver: (TVariableNode new setName: 'self')
 													arguments: {node expression})]]].
@@ -2410,6 +2411,7 @@ TMethod >> readsVariable: variableName [
 
 { #category : #transformations }
 TMethod >> recordDeclarationsIn: aCCodeGen [
+
 	"Record C type declarations of the forms
 		<returnTypeC: 'float'>
 		<var: #foo declareC: 'float foo'>
@@ -2421,56 +2423,50 @@ TMethod >> recordDeclarationsIn: aCCodeGen [
 	 and remove the declarations from the method body."
 
 	| newStatements |
-	properties pragmas notEmpty
-		ifTrue: [ properties pragmas
-				do: [ :pragma | 
-					pragma selector == #var:declareC:
-						ifTrue: [ self
-								checkedDeclarationAt: pragma arguments first asString
-								put: pragma arguments last
-								in: aCCodeGen ].
-					pragma selector == #var:type:
-						ifTrue: [ | varName varType |
-							varName := pragma arguments first asString.
-							varType := aCCodeGen
-								conventionalTypeForType: pragma arguments last.
-							varType last == $*
-								ifFalse: [ varType := varType , ' ' ].
-							self
-								checkedDeclarationAt: varName
-								put: varType , varName
-								in: aCCodeGen ].
-					pragma selector = #returnTypeC:
-						ifTrue: [ self returnType: pragma arguments last ].
-					pragma selector = #doNotGenerate:
-						ifTrue: [ locals remove: pragma arguments last ] ].
-			^ self ].
+	properties pragmas notEmpty ifTrue: [ 
+		properties pragmas do: [ :pragma | 
+			pragma selector == #var:declareC: ifTrue: [ 
+				self
+					checkedDeclarationAt: pragma arguments first asString
+					put: pragma arguments last
+					in: aCCodeGen ].
+			pragma selector == #var:type: ifTrue: [ 
+				| varName varType |
+				varName := pragma arguments first asString.
+				varType := aCCodeGen conventionalTypeForType:
+					           pragma arguments last.
+				varType last == $* ifFalse: [ varType := varType , ' ' ].
+				self
+					checkedDeclarationAt: varName
+					put: varType , varName
+					in: aCCodeGen ].
+			pragma selector = #returnTypeC: ifTrue: [ 
+				self returnType: pragma arguments last ].
+			pragma selector = #doNotGenerate: ifTrue: [ 
+				locals remove: pragma arguments last ] ].
+		^ self ].
 	newStatements := OrderedCollection new: parseTree statements size.
-	parseTree statements
-		do: [ :stmt | 
-			| isDeclaration |
-			isDeclaration := false.
-			stmt isSend
-				ifTrue: [ stmt selector == #var:declareC:
-						ifTrue: [ isDeclaration := true.
-							self
-								declarationAt: stmt args first value asString
-								put: stmt args last value ].
-					stmt selector == #var:type:
-						ifTrue: [ | varName varType |
-							isDeclaration := true.
-							varName := stmt args first value asString.
-							varType := aCCodeGen
-								conventionalTypeForType: stmt args last value.
-							varType last == $*
-								ifFalse: [ varType := varType , ' ' ].
-							self declarationAt: varName put: varType , varName ].
-					stmt selector = #returnTypeC:
-						ifTrue: [ isDeclaration := true.
-							returnType := stmt args last value ] ].
-			isDeclaration
-				ifFalse: [ newStatements add: stmt ] ].
-	parseTree setStatements: newStatements asArray
+	parseTree statements do: [ :stmt | 
+		| isDeclaration |
+		isDeclaration := false.
+		stmt isSend ifTrue: [ 
+			stmt selector == #var:declareC: ifTrue: [ 
+				isDeclaration := true.
+				self
+					declarationAt: stmt args first value asString
+					put: stmt args last value ].
+			stmt selector == #var:type: ifTrue: [ 
+				| varName varType |
+				isDeclaration := true.
+				varName := stmt args first value asString.
+				varType := aCCodeGen conventionalTypeForType: stmt args last value.
+				varType last == $* ifFalse: [ varType := varType , ' ' ].
+				self declarationAt: varName put: varType , varName ].
+			stmt selector = #returnTypeC: ifTrue: [ 
+				isDeclaration := true.
+				returnType := stmt args last value ] ].
+		isDeclaration ifFalse: [ newStatements add: stmt ] ].
+	parseTree statements: newStatements asArray
 ]
 
 { #category : #accessing }
@@ -2490,6 +2486,7 @@ TMethod >> removeAssertions [
 
 { #category : #transformations }
 TMethod >> removeFinalSelfReturnIn: aCodeGenOrNil [
+
 	"The Smalltalk parser automatically adds the statement '^self' to the end of methods
 	 without explicit returns.  This method removes such statements, since in most VMMaker
 	 classes (except struct classes) the generated code has no notion of 'self' anyway.
@@ -2498,19 +2495,23 @@ TMethod >> removeFinalSelfReturnIn: aCodeGenOrNil [
 	 return type accordingly."
 
 	| lastStmt |
-	parseTree statements isEmpty ifTrue: [^self].
-	((lastStmt := parseTree statements last) isReturn
-	 and: [lastStmt expression isVariable
-	 and: ['self' = lastStmt expression name]]) ifTrue:
-		[| tokens |
-		tokens := Scanner new scanTokens: (definingClass sourceCodeAt: selector ifAbsent: ['']).
-		(tokens size < 2
-		 or: [(tokens last: 2) ~= #(#'^' 'self')]) ifTrue:
-			[parseTree setStatements: parseTree statements allButLast.
-			 (returnType isNil
-			  and: [aCodeGenOrNil notNil
-			  and: [parseTree noneSatisfy: [:node| node isReturn and: [node expression isVariable not or: [node expression name ~= 'self']]]]]) ifTrue:
-				[self returnType: (aCodeGenOrNil implicitReturnTypeFor: selector)]]]
+	parseTree statements isEmpty ifTrue: [ ^ self ].
+	((lastStmt := parseTree statements last) isReturn and: [ 
+		 lastStmt expression isVariable and: [ 
+			 'self' = lastStmt expression name ] ]) ifTrue: [ 
+		| tokens |
+		tokens := Scanner new scanTokens:
+			          (definingClass sourceCodeAt: selector ifAbsent: [ '' ]).
+		(tokens size < 2 or: [ (tokens last: 2) ~= #( #'^' 'self' ) ]) 
+			ifTrue: [ 
+				parseTree statements: parseTree statements allButLast.
+				(returnType isNil and: [ 
+					 aCodeGenOrNil notNil and: [ 
+						 parseTree noneSatisfy: [ :node | 
+							 node isReturn and: [ 
+								 node expression isVariable not or: [ 
+									 node expression name ~= 'self' ] ] ] ] ]) ifTrue: [ 
+					self returnType: (aCodeGenOrNil implicitReturnTypeFor: selector) ] ] ]
 ]
 
 { #category : #utilities }
@@ -3117,6 +3118,8 @@ TMethod >> tryToInlineMethodStatementsIn: aCodeGen statementListsInto: aBlock [
 	stmtLists do: [ :stmtList | 
 		newStatements := OrderedCollection new: stmtList statements size.
 		stmtList statements do: [ :stmt | 
+			1 haltIf: [ 
+				stmt isSend and: [ stmt selector = #initStackPagesAndInterpret ] ].
 			(self
 				 inlineCodeOrNilForStatement: stmt
 				 returningNodes: returningNodes
@@ -3125,7 +3128,7 @@ TMethod >> tryToInlineMethodStatementsIn: aCodeGen statementListsInto: aBlock [
 				ifNotNil: [ :inlinedStmts | 
 					didSomething := true.
 					newStatements addAllLast: inlinedStmts ] ].
-		stmtList setStatements: newStatements asArray ].
+		stmtList statements: newStatements asArray ].
 
 	"This is a hack; forgive me. The inlining above tends to keep return statements in statement lists.
 	 In the case of returning ifs we don't want the returns in case the returning if is generated as an expression."

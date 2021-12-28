@@ -15,6 +15,12 @@ TGoToNode class >> label: aLabel [
 		  yourself
 ]
 
+{ #category : #visiting }
+TGoToNode >> accept: aVisitor [ 
+	
+	^ aVisitor visitGoToNode: self
+]
+
 { #category : #tranforming }
 TGoToNode >> asCASTIn: aCCodeGenerator [ 
 	^ CGotoStatementNode identifier: label
@@ -23,6 +29,12 @@ TGoToNode >> asCASTIn: aCCodeGenerator [
 { #category : #tranforming }
 TGoToNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 	^ self asCASTExpressionIn: aBuilder
+]
+
+{ #category : #accessing }
+TGoToNode >> children [
+	
+	^ #()
 ]
 
 { #category : #testing }
