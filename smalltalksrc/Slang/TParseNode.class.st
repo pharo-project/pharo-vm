@@ -352,7 +352,7 @@ TParseNode >> linearizeIn: aCodeGenerator [
 	> 	t1 := self foo: t0
 	> ]
 	"
-	| replacementDictionary rewrittenStatement callsInStatement replacementBlock replacementsSoFar |
+	| replacementDictionary rewrittenStatement callsInStatement replacementBlock replacementsSoFar variables |
 	replacementDictionary := Dictionary new.
 	
 	callsInStatement := OrderedCollection new.
@@ -364,18 +364,20 @@ TParseNode >> linearizeIn: aCodeGenerator [
 		unless: [ :unlessNode | unlessNode isStatementList ].
 	
 	replacementBlock := OrderedCollection new.
+	variables := OrderedCollection new.
 	replacementsSoFar := Dictionary new.
 	callsInStatement do: [ :e | 
 		| variableNode |
-		variableNode := TVariableNode named:
-			                't' , replacementBlock size asString.
+		variableNode := TVariableNode named: 't' , replacementBlock size asString.
+		variables add: variableNode name.
 		replacementBlock add: (TAssignmentNode
 				 variable: variableNode
 				 expression: (e replaceNodesIn: replacementsSoFar)).
 		replacementsSoFar at: e put: variableNode ].
 	rewrittenStatement := self replaceNodesIn: replacementsSoFar.
 	replacementBlock add: rewrittenStatement.
-	^ TStatementListNode statements: replacementBlock
+
+	^ TStatementListNode parameters: variables statements: replacementBlock 
 ]
 
 { #category : #accessing }
