@@ -15,6 +15,12 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #visiting }
+TSwitchStmtNode >> accept: aVisitor [
+	
+	^ aVisitor visitSwitchStatementNode: self
+]
+
 { #category : #transforming }
 TSwitchStmtNode >> asCASTExpressionIn: aBuilder [
 

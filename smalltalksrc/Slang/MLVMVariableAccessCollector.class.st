@@ -107,6 +107,12 @@ MLVMVariableAccessCollector >> visitConstantNode: aTConstantNode [
 ]
 
 { #category : #visiting }
+MLVMVariableAccessCollector >> visitGoToNode: aTGoToNode [ 
+	
+	"Nothing"
+]
+
+{ #category : #visiting }
 MLVMVariableAccessCollector >> visitInlineNode: aTInlineNode [
 	
 	"Do not recurse on children of an inline statement.
@@ -138,6 +144,14 @@ MLVMVariableAccessCollector >> visitSendNode: aTSendNode [
 MLVMVariableAccessCollector >> visitStatementListNode: aTStatementListNode [ 
 	
 	aTStatementListNode statements do: [ :e | e accept: self ]
+]
+
+{ #category : #visiting }
+MLVMVariableAccessCollector >> visitSwitchStatementNode: aTSwitchStmtNode [ 
+	
+	"Do not recurse on children of a case statement.
+	Children will be recursed as separate statements"
+	aTSwitchStmtNode expression accept: self
 ]
 
 { #category : #visiting }
