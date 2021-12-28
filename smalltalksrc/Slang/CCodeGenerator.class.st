@@ -3737,12 +3737,10 @@ CCodeGenerator >> linearizeExternalCallsIn: aTMethod [
 	statementListsToLinearize do: [ :statementList |
 		statementList statements do: [ :statement | | replacement |
 			replacement := statement linearizeIn: self.
-			aTMethod replaceNodesIn: { statement -> replacement } asDictionary
+			aTMethod localizeVariables: replacement parameterNames.
+			statement replaceBy: replacement
 		].
-		aTMethod replaceNodesIn: { 
-			statementList -> (TStatementListNode statements: statementList flattened) } asDictionary.
-	].
-	aTMethod flatten
+	]
 ]
 
 { #category : #utilities }
@@ -5502,6 +5500,6 @@ CCodeGenerator >> wrapStatements: tMethod withVariableBindings: replacementDict 
 		replacement := self
 			wrapStatementWithExternalizationAndLocalizations: statement
 			ofLocalizedVariables: (replacementDict collect: [ :asso | asso key ]).
-		tMethod replaceNodesIn: { statement -> replacement } asDictionary
+		statement replaceBy: replacement.
 	].
 ]
