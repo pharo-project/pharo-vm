@@ -102,6 +102,13 @@ TLabeledCommentNode >> isLeaf [
 	^true
 ]
 
+{ #category : #comparing }
+TLabeledCommentNode >> isSameAs: anotherNode [ 
+	
+	^anotherNode isLabel
+	 and: [comment = anotherNode comment]
+]
+
 { #category : #accessing }
 TLabeledCommentNode >> label [
 

@@ -43,6 +43,13 @@ TGoToNode >> isGoTo [
 	^true
 ]
 
+{ #category : #comparing }
+TGoToNode >> isSameAs: aTGoToNode [ 
+	
+	^ aTGoToNode isGoTo
+		and: [ label = aTGoToNode label ]
+]
+
 { #category : #accessing }
 TGoToNode >> label [
 

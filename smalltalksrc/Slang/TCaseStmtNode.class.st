@@ -232,6 +232,22 @@ TCaseStmtNode >> isCaseStmt [
 	^true
 ]
 
+{ #category : #comparing }
+TCaseStmtNode >> isSameAs: anotherNode [
+
+	anotherNode isCaseStmt ifFalse: [ ^ false ].
+	(expression isSameAs: anotherNode expression)
+		ifFalse: [ ^ false ].
+	
+	cases size ~= anotherNode cases size ifTrue: [ ^ false ].
+	cases with: anotherNode cases collect: [ :case1 :case2 |
+		(case1 isSameAs: case2)
+	].
+
+	"Apparently it went ok after all this"
+	^ true
+]
+
 { #category : #enumerating }
 TCaseStmtNode >> nodesDo: aBlock [
 	"Apply aBlock to all nodes in the receiver.

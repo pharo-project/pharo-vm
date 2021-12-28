@@ -63,6 +63,14 @@ TInlineNode >> isInline [
 	^true
 ]
 
+{ #category : #comparing }
+TInlineNode >> isSameAs: anotherNode [
+	
+	^ anotherNode isInline
+		and: [ method selector = anotherNode method selector
+			and: [ method parseTree isSameAs: anotherNode method parseTree ] ]
+]
+
 { #category : #accessing }
 TInlineNode >> method [
 	^method

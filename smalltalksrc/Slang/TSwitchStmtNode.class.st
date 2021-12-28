@@ -294,6 +294,25 @@ TSwitchStmtNode >> expression: expr cases: aTBraceNode otherwiseOrNil: otherwise
 	self otherwiseOrNil: otherwiseOrNilNode
 ]
 
+{ #category : #comparing }
+TSwitchStmtNode >> isSameAs: anotherNode [
+
+	anotherNode isSwitch ifFalse: [ ^ false ].
+	(expression isSameAs: anotherNode expression)
+		ifFalse: [ ^ false ].
+	
+	cases size ~= anotherNode cases size ifTrue: [ ^ false ].
+	cases with: anotherNode cases do: [ :case1 :case2 |
+		case1 first = case2 first
+			ifFalse: [ ^ false ].
+		(case1 second isSameAs: case2 second)
+			ifFalse: [ ^ false ]
+	].
+
+	"Apparently it went ok after all this"
+	^ true
+]
+
 { #category : #testing }
 TSwitchStmtNode >> isSwitch [
 	^true
