@@ -1792,7 +1792,7 @@ CCodeGenerator >> generateCASTDivide: tast [
 CCodeGenerator >> generateCASTDoWhile: boolean loop: tast [
 
 	| block  cond|
-	block := (TStatementListNode new setStatements:
+	block := (TStatementListNode statements:
 		          tast receiver statements allButLast) asCASTIn: self.
 	cond := (tast receiver statements last asCASTExpressionIn: self).
 	^ CDoStatementNode
@@ -2988,7 +2988,7 @@ CCodeGenerator >> generateCASTWhileForeverBreakIf: boolean loop: tast [
 	| block if cond |
 	cond := (tast receiver statements last asCASTExpressionIn: self).
 	if := CIfStatementNode if: (boolean ifTrue: [ cond ] ifFalse: [ CUnaryOperatorNode operator: #! expression: cond ]) then: (CBreakStatementNode new).
-	block := (TStatementListNode new setStatements: tast receiver statements allButLast) asCASTIn: self.
+	block := (TStatementListNode statements: tast receiver statements allButLast) asCASTIn: self.
 	block add: if.
 	block addAll: (tast arguments first asCASTIn: self).
 
