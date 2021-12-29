@@ -163,7 +163,7 @@ TSwitchStmtNode >> asCASTIn: aBuilder addToEndOfCases: aNodeToPrependOrNil [
 						               defaultExpr.
 						               (TConstantNode value: type) } ].
 		statements add:
-			((aNodeToPrependOrNil copy expression: defaultExpr) asCASTIn:
+			((aNodeToPrependOrNil copy setExpression: defaultExpr) asCASTIn:
 				 aBuilder) ].
 	^ CSwitchStatementNode
 		  if: (expression asCASTExpressionIn: aBuilder)
