@@ -2177,7 +2177,7 @@ CCodeGenerator >> generateCASTInlineCCode: aTSendNode [
 		self noteVariableUsageInString: aTSendNode arguments first value.
 		^ CRawCodeNode code: aTSendNode arguments first value ].
 
-	^ aTSendNode args first asCASTIn: self
+	^ aTSendNode arguments first asCASTIn: self
 ]
 
 { #category : #'CAST translation' }
@@ -2192,7 +2192,7 @@ CCodeGenerator >> generateCASTInlineCCodeAsArgument: aTSendNode [
 		self noteVariableUsageInString: aTSendNode arguments first value.
 		^ CRawCodeNode code: aTSendNode arguments first value ].
 
-	^ aTSendNode args first asCASTExpressionIn: self
+	^ aTSendNode arguments first asCASTExpressionIn: self
 ]
 
 { #category : #'CAST translation' }
@@ -2846,15 +2846,17 @@ CCodeGenerator >> generateCASTToByDoUntil: limitExpr iterativeVariable: itVar ne
 CCodeGenerator >> generateCASTToDo: tast [
 
 	| iterationVar init until step |
-	(tast args last args size = 1) ifFalse: [
-		self error: 'wrong number of block arguments'.
-	].
+	tast arguments last args size = 1 ifFalse: [ 
+		self error: 'wrong number of block arguments' ].
 	iterationVar := tast arguments last args first.
 	init := CAssignmentNode
 		        lvalue: (CIdentifierNode name: iterationVar)
 		        rvalue: (tast receiver asCASTExpressionIn: self).
 	self noteUsedVariableName: iterationVar.
-	until := self generateCASTToByDoUntil: tast arguments first iterativeVariable: iterationVar negative: false.
+	until := self
+		         generateCASTToByDoUntil: tast arguments first
+		         iterativeVariable: iterationVar
+		         negative: false.
 	step := CIncrementNode object: (CIdentifierNode name: iterationVar).
 	^ CForStatementNode
 		  init: { init }
