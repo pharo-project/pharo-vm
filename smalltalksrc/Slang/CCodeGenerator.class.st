@@ -3740,7 +3740,11 @@ CCodeGenerator >> linearizeExternalCallsIn: aTMethod [
 	| replacementDictionary statementListsToLinearize |
 	replacementDictionary := Dictionary new.
 
-	statementListsToLinearize := aTMethod parseTree select: [ :e | e isStatementList ].
+	statementListsToLinearize := aTMethod parseTree select: [ :e | 
+		e isStatementList and: [
+			e parent notNil and: [
+				e parent isSend not
+					or: [ e parent parent isStatementList ] ]] ].
 	statementListsToLinearize do: [ :statementList |
 		statementList statements do: [ :statement | | replacement previousParent |
 			previousParent := statement parent.

@@ -21,15 +21,6 @@ TStatementListNode class >> declarations: declarations statements: aCollection [
 ]
 
 { #category : #'instance creation' }
-TStatementListNode class >> locals: locals statements: aCollection [ 
-	
-	^ self new
-		locals: locals;
-		statements: aCollection;
-		yourself
-]
-
-{ #category : #'instance creation' }
 TStatementListNode class >> parameters: parameters statements: statementList [
 	
 	^ self new
@@ -319,6 +310,7 @@ TStatementListNode >> flattened [
 TStatementListNode >> initialize [
 
 	super initialize.
+	declarations := Dictionary new.
 	locals := #().
 	arguments := #()
 ]
