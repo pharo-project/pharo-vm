@@ -2502,6 +2502,13 @@ TMethod >> removeFinalSelfReturnIn: aCodeGenOrNil [
 ]
 
 { #category : #utilities }
+TMethod >> removeLocal: local [
+
+	cachedLocals := nil.
+	self locals remove: local
+]
+
+{ #category : #utilities }
 TMethod >> removeUnusedTempsAndNilIfRequiredIn: aCodeGen [
 	"Remove all of the unused temps in this method. Answer a set of the references.
 	 As a side-effect introduce explicit temp := nil statements for temps that are
