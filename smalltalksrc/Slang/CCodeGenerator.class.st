@@ -784,7 +784,7 @@ CCodeGenerator >> checkForGlobalUsage: vars in: aTMethod [
 			[(globalVariableUsage at: var ifAbsentPut: [Set new])
 				add: aTMethod selector]].
 	aTMethod clearReferencesToGlobalStruct.
-	(aTMethod locals select: [:l| self reservedWords includes: l]) do:
+	(aTMethod allLocals select: [:l| self reservedWords includes: l]) do:
 		[:l| | em |
 		em := aTMethod definingClass name, '>>', aTMethod smalltalkSelector, ' has variable that is a C reserved word: ', l.
 		self error: em.
@@ -864,22 +864,14 @@ CCodeGenerator >> compileTimeOptions: aCollection [
 
 { #category : #utilities }
 CCodeGenerator >> compileToTMethodSelector: selector in: aClass [
-	"Compile a method to a TMethod"
-	^(aClass >> selector) asTranslationMethodOfClass: self translationMethodClass forCodeGenerator: self.
 
-	"was:
-	| implementingClass |
-	implementingClass := aClass.
-	^(Compiler new
-		parse: ([aClass sourceCodeAt: selector]
-					on: KeyNotFound
-					do: [:ex| ""Quick hack for simulating Pharo images...""
-						(PharoVM and: [aClass == String class and: [selector == #findSubstringViaPrimitive:in:startingAt:matchTable:]]) ifFalse:
-							[ex pass].
-						(implementingClass := ByteString) sourceCodeAt: #findSubstring:in:startingAt:matchTable:])
-		in: implementingClass
-		notifying: nil)
-			asTranslationMethodOfClass: self translationMethodClass"
+	"Compile a method to a TMethod"
+
+	^ (aClass >> selector
+		asTranslationMethodOfClass: self translationMethodClass
+		forCodeGenerator: self)
+			expandSuperSendsIn: self;
+			yourself
 ]
 
 { #category : #public }
@@ -4272,7 +4264,7 @@ CCodeGenerator >> prepareMethods [
 	globals addAll: variables.
 	methods do:
 		[:m |
-		m locals, m args do:
+		m allLocals, m args do:
 			[:var |
 			(globals includes: var) ifTrue:
 				[self error: 'Local variable ''', var, ''' may mask global when inlining ', m selector].
@@ -4352,7 +4344,7 @@ CCodeGenerator >> printUnboundVariableReferenceWarnings [
 	methods do: [ :m | | knownVars |
 		knownVars := globalVars copy.
 		m args do: [ :var | knownVars add: var ].
-		m locals do: [ :var | knownVars add: var ].
+		m allLocals do: [ :var | knownVars add: var ].
 		m freeVariableReferences do: [ :varName |
 			(knownVars includes: varName) ifFalse: [
 				(undefinedRefs includesKey: varName)
@@ -5192,11 +5184,11 @@ CCodeGenerator >> typeForDereference: sendNode in: aTMethod [
 CCodeGenerator >> typeOfVariable: varName [ "<String>"
 	self assert: varName isString.
 	scopeStack reverseDo:
-		[:dict|
-		(dict includesKey: varName) ifTrue:
+		[:scope|
+		(scope declarations includesKey: varName) ifTrue:
 			[^self
 				extractTypeFor: varName
-				fromDeclaration: (dict at: varName)]].
+				fromDeclaration: (scope declarations at: varName)]].
 	(variableDeclarations
 		at: varName
 		ifAbsent:

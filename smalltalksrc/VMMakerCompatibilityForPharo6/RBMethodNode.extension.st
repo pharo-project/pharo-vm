@@ -58,7 +58,7 @@ RBMethodNode >> asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCod
 		setSelector: selector
 		definingClass: compilationContext getClass
 		args: arguments
-		locals: ((self allDefinedVariables copyWithoutAll: (arguments collect: #name)) collect: [:string| string -> string])
+		locals: #()
 		block: (body lastIsReturn
 					ifTrue: [body]
 					ifFalse: [body shallowCopy

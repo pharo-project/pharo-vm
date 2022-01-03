@@ -13,10 +13,6 @@ RBMessageNode >> asTranslatorNodeIn: aTMethod [
 	| usedSelector rcvrOrNil args |
 	usedSelector := selector value.
 	rcvrOrNil := receiver ifNotNil: [receiver asTranslatorNodeIn: aTMethod].
-	(rcvrOrNil notNil
-	and: [rcvrOrNil isVariable
-	and: [rcvrOrNil name = 'super']]) ifTrue:
-		[^aTMethod superExpansionNodeFor: usedSelector args: arguments].
 	usedSelector == #halt ifTrue: [^rcvrOrNil].
 	(usedSelector == #cCode:inSmalltalk: "extracting here rather than in translation allows inlining in the block."
 	  or: [usedSelector == #cCode:]) ifTrue:

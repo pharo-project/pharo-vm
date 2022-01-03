@@ -13,6 +13,7 @@ RBSequenceNode >> asTranslatorNodeIn: aTMethod [
 			ifTrue:  [statementList addAll: newS statements]
 			ifFalse: [statementList add: newS]].
 	^TStatementListNode new
+		locals: (self temporaries collect: [:e | e name ]);
 		setArguments: (parent isMethod
 							ifTrue: [#()]
 							ifFalse: [parent arguments asArray collect: [:arg | arg name]])

@@ -2,6 +2,7 @@ Class {
 	#name : #TStatementListNode,
 	#superclass : #TParseNode,
 	#instVars : [
+		'locals',
 		'arguments',
 		'statements'
 	],
@@ -272,6 +273,7 @@ TStatementListNode >> flattened [
 TStatementListNode >> initialize [
 
 	super initialize.
+	locals := #().
 	arguments := #()
 ]
 
@@ -300,6 +302,18 @@ TStatementListNode >> isSameAs: aTParseNode [
 TStatementListNode >> isStatementList [
 
 	^true
+]
+
+{ #category : #accessing }
+TStatementListNode >> locals [
+
+	^ locals
+]
+
+{ #category : #accessing }
+TStatementListNode >> locals: anObject [
+
+	locals := anObject
 ]
 
 { #category : #enumerating }

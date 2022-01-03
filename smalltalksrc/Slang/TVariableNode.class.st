@@ -132,7 +132,7 @@ TVariableNode >> structTargetKindIn: aCodeGen [
 
 { #category : #'type inference' }
 TVariableNode >> typeOrNilFrom: aCodeGenerator in: aTMethod [
-	^aTMethod typeFor: self in: aCodeGenerator
+	^aTMethod typeFor: self name in: aCodeGenerator
 ]
 
 { #category : #accessing }

@@ -85,7 +85,7 @@ SlangTyper >> inferReturnTypeFromReturnsOf: aMethod [
 	codeGenerator maybeBreakForTestToInline: aMethod selector in: aMethod.
 	aMethod returnType ifNotNil: [ ^ self ].
 	codeGenerator
-		pushScope: aMethod declarations
+		pushScope: aMethod
 		while:
 			[| hasReturn returnTypes |
 			 hasReturn := false.
@@ -209,7 +209,7 @@ SlangTyper >> inferTypesForImplicitlyTypedVariablesIn: aMethod [
 
 	alreadyExplicitlyTypedOrNotToBeTyped := aMethod declarations keys
 		                                        asSet.
-	asYetUntyped := aMethod locals copyWithoutAll:
+	asYetUntyped := aMethod allLocals copyWithoutAll:
 		                alreadyExplicitlyTypedOrNotToBeTyped.
 	mustBeSigned := Set new.
 	newDeclarations := Dictionary new.
@@ -218,7 +218,7 @@ SlangTyper >> inferTypesForImplicitlyTypedVariablesIn: aMethod [
 		| type var |
 		"If there is something of the form i >= 0, then i should be signed, not unsigned."
 		(node isSend and: [ 
-			 (aMethod locals includes: (var := node receiver variableNameOrNil)) 
+			 (aMethod allLocals includes: (var := node receiver variableNameOrNil)) 
 				 and: [ 
 					 (#( <= < >= > ) includes: node selector) and: [ 
 						 node arguments first isConstant and: [ 
@@ -228,7 +228,7 @@ SlangTyper >> inferTypesForImplicitlyTypedVariablesIn: aMethod [
 		"if an assignment to an untyped local of a known type, set the local's type to that type.
 		 Only observe known sends (methods in the current set) and typed local variables."
 		(node isAssignment and: [ 
-			 (aMethod locals includes: (var := node variable name)) and: [ 
+			 (aMethod allLocals includes: (var := node variable name)) and: [ 
 				 (alreadyExplicitlyTypedOrNotToBeTyped includes: var) not ] ]) 
 			ifTrue: [ "don't be fooled by previously inferred types"
 				type := self
