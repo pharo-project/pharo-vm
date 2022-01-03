@@ -408,6 +408,16 @@ TSendNode >> isValueExpansion [
 	 and: [selector keywords allSatisfy: [:k| #('value' 'value:') includes: k]]
 ]
 
+{ #category : #linearization }
+TSendNode >> linearizeIn: aCodeGenerator [
+
+	"Do not linearize assert calls, otherwise this may change the semantics"
+	(aCodeGenerator isAssertSelector: selector)
+		ifTrue: [ ^ self ].
+	
+	^ super linearizeIn: aCodeGenerator
+]
+
 { #category : #accessing }
 TSendNode >> name [
 	

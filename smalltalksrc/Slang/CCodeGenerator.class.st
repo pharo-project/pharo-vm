@@ -3745,7 +3745,6 @@ CCodeGenerator >> linearizeExternalCallsIn: aTMethod [
 		statementList statements do: [ :statement | | replacement previousParent |
 			previousParent := statement parent.
 			replacement := statement linearizeIn: self.
-			aTMethod localizeVariables: replacement parameterNames.
 
 			"Do not ask the child to replace itself, as it may have been already moved"
 			previousParent replaceChild: statement with: replacement.
