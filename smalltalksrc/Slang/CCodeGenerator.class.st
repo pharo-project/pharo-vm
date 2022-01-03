@@ -918,6 +918,12 @@ CCodeGenerator >> currentMethod: aTMethod [
 	currentMethod := aTMethod
 ]
 
+{ #category : #declarations }
+CCodeGenerator >> declarationAt: aString ifAbsent: aFullBlockClosure [ 
+	
+	^ (self typeOfVariable: aString) ifNil: aFullBlockClosure
+]
+
 { #category : #public }
 CCodeGenerator >> declareModuleName: nameString [
 	"add the declaration of a module name, version and local/external tag"

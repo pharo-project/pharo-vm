@@ -3,11 +3,31 @@ Class {
 	#superclass : #TParseNode,
 	#instVars : [
 		'locals',
+		'declarations',
 		'arguments',
 		'statements'
 	],
 	#category : #'Slang-AST'
 }
+
+{ #category : #'instance creation' }
+TStatementListNode class >> declarations: declarations statements: aCollection [ 
+	
+	^ self new
+		declarations: declarations;
+		locals: declarations keys;
+		statements: aCollection;
+		yourself
+]
+
+{ #category : #'instance creation' }
+TStatementListNode class >> locals: locals statements: aCollection [ 
+	
+	^ self new
+		locals: locals;
+		statements: aCollection;
+		yourself
+]
 
 { #category : #'instance creation' }
 TStatementListNode class >> parameters: parameters statements: statementList [
@@ -148,12 +168,12 @@ TStatementListNode >> asCASTIn: aBuilder [
 { #category : #tranforming }
 TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 
-	| declarations collect |
-	declarations := OrderedCollection new.
+	| cDeclarations collect |
+	cDeclarations := OrderedCollection new.
 	collect := OrderedCollection new.
 
 	self locals do: [ :var |
-		declarations add: (CRawCodeNode code: (aBuilder currentMethod
+		cDeclarations add: (CRawCodeNode code: (aBuilder
 		  declarationAt: var
 		  ifAbsent: [ aBuilder defaultType , ' ' , var ])) ].
 
@@ -167,7 +187,7 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 					collect add: (e asCASTIn: aBuilder prependToEnd: aNodeOrNil) ]
 					ifFalse: [ collect add: (e asCASTIn: aBuilder) ] ]
 			ifTrue: [ CEmptyStatementNode new ] ].
-	^ CCompoundStatementNode declarations: declarations statements: collect
+	^ CCompoundStatementNode declarations: cDeclarations statements: collect
 ]
 
 { #category : #transformations }
@@ -245,6 +265,18 @@ TStatementListNode >> copyWithoutReturn [
 		setArguments: arguments
 			statements: statements allButLast, {statements last copyWithoutReturn};
 		yourself
+]
+
+{ #category : #accessing }
+TStatementListNode >> declarations [
+
+	^ declarations
+]
+
+{ #category : #accessing }
+TStatementListNode >> declarations: anObject [
+
+	declarations := anObject
 ]
 
 { #category : #testing }
