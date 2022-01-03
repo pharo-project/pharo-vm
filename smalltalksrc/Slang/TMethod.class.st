@@ -81,9 +81,9 @@ TMethod >> addCASTLocalsIn: aCASTBlock generator: aCodeGen [
 					  ifFalse: [ 'DECL_MAYBE_SQ_GLOBAL_STRUCT' ])) ].
 	maybeExternFunctions := (declarations select: [ :decl | 
 		                         decl beginsWith: 'extern' ]) keys.
-	
-	(self allLocals isEmpty and: [ maybeExternFunctions isEmpty ]) ifFalse: [ 
-		(aCodeGen sortStrings: self allLocals , maybeExternFunctions) do: [ :var | 
+
+	(self locals isEmpty and: [ maybeExternFunctions isEmpty ]) ifFalse: [ 
+		(aCodeGen sortStrings: self locals , maybeExternFunctions) do: [ :var | 
 			| decl |
 			decl := self
 				        declarationAt: var
