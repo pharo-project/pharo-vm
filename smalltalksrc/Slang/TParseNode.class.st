@@ -384,7 +384,6 @@ TParseNode >> linearizeIn: aCodeGenerator [
 					 expression: (e replaceNodesIn: replacementsSoFar).
 			declarations at: variableNode name put: (aCodeGenerator typeFor: valueNode in: aCodeGenerator currentMethod).
 			replacementBlock add: valueNode.
-			
 			replacementsSoFar at: e put: variableNode ].
 	rewrittenStatement := self replaceNodesIn: replacementsSoFar.
 	replacementBlock add: rewrittenStatement.

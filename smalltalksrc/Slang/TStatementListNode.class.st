@@ -162,7 +162,9 @@ TStatementListNode >> asCASTExpressionIn: aBuilder [
 { #category : #tranforming }
 TStatementListNode >> asCASTIn: aBuilder [
 	
-	^ self asCASTIn: aBuilder prependToEnd: nil
+	^ aBuilder
+		pushScope: self
+		while: [ self asCASTIn: aBuilder prependToEnd: nil ]
 ]
 
 { #category : #tranforming }
@@ -270,7 +272,7 @@ TStatementListNode >> copyWithoutReturn [
 { #category : #accessing }
 TStatementListNode >> declarations [
 
-	^ declarations
+	^ declarations ifNil: [ declarations := Dictionary new ]
 ]
 
 { #category : #accessing }

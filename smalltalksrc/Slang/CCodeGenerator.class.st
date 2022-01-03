@@ -921,7 +921,10 @@ CCodeGenerator >> currentMethod: aTMethod [
 { #category : #declarations }
 CCodeGenerator >> declarationAt: aString ifAbsent: aFullBlockClosure [ 
 	
-	^ (self typeOfVariable: aString) ifNil: aFullBlockClosure
+	| type |
+	type := (self typeOfVariable: aString) ifNil: [
+		^ aFullBlockClosure value ].
+	^ type , ' ', aString
 ]
 
 { #category : #public }
