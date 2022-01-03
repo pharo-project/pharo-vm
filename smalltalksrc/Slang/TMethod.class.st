@@ -862,7 +862,7 @@ TMethod >> ensureToByDoLoopLimitIsSafeAndEfficient: node in: aCodeGen [
 			hasSideEffects
 				ifTrue: [ 
 					cachedLocals := nil.
-					self locals add: node arguments last name ]
+					self addLocal: node arguments last name ]
 				ifFalse: [ node arguments: node arguments allButLast ] ]
 		ifFalse: [ "If the expression is complex but as yet there is no limit variable, add it"
 			hasSideEffects ifTrue: [ 
