@@ -82,8 +82,8 @@ TMethod >> addCASTLocalsIn: aCASTBlock generator: aCodeGen [
 	maybeExternFunctions := (declarations select: [ :decl | 
 		                         decl beginsWith: 'extern' ]) keys.
 
-	(self locals isEmpty and: [ maybeExternFunctions isEmpty ]) ifFalse: [ 
-		(aCodeGen sortStrings: self locals , maybeExternFunctions) do: [ :var | 
+	(self allLocalLocals isEmpty and: [ maybeExternFunctions isEmpty ]) ifFalse: [ 
+		(aCodeGen sortStrings: self allLocalLocals , maybeExternFunctions) do: [ :var | 
 			| decl |
 			decl := self
 				        declarationAt: var
@@ -148,6 +148,20 @@ TMethod >> allCalls [
 	"Answer a collection of selectors for the messages sent by this method."
 
 	^parseTree allCalls
+]
+
+{ #category : #accessing }
+TMethod >> allLocalLocals [
+	"The merge of locals and declarations (don't ask)"
+
+	| allLocals |
+	allLocals := Set new.
+	allLocals addAll: self locals.
+	self nodesDo: [ :node |
+		node isStatementList ifTrue: [ 
+			allLocals addAll: node arguments.
+			allLocals addAll: node locals ] ].
+	^ allLocals
 ]
 
 { #category : #accessing }
