@@ -146,46 +146,46 @@ Gnuifier >> gnuifyFrom: inputFile to: outFileStream [
 								inInterpret
 									ifTrue: [ "working inside interpret(); translate the switch statement"
 										
-										(inLine beginsWith: '						case ') ifTrue: [ 
-											| tokens |
-											
-											tokens := inLine findTokens: '	 :'.
-											outLine := '						CASE(' , tokens second , ')'.
-											tokens size > 2 ifTrue: [ 
-												(tokens allButFirst: 2) do: [ :token | 
-													outLine := outLine , ' ' , token ] ] ].
-										inLine = '						break;' ifTrue: [ outLine := '						BREAK;' ].
-										inLine = '}' ifTrue: [ "all finished with interpret()" 
-											inInterpret := false ] ]
+										(inLine beginsWith: '				case ') ifTrue: [ 
+									| tokens |
+									
+									tokens := inLine findTokens: '	 :'.
+									outLine := '				CASE(' , tokens second , ')'.
+									tokens size > 2 ifTrue: [ 
+								(tokens allButFirst: 2) do: [ :token | 
+									outLine := outLine , ' ' , token ] ] ].
+								inLine = '				break;' ifTrue: [ outLine := '				BREAK;' ].
+								inLine = '}' ifTrue: [ "all finished with interpret()" 
+									inInterpret := false ] ]
+							ifFalse: [ 
+								beforePrimitiveResponse
+									ifTrue: [ 
+								(inLine beginsWith: 'primitiveResponse(') ifTrue: [ "into primitiveResponse we go"
+									beforePrimitiveResponse := false.
+									inPrimitiveResponse := true.
+									extraOutLine := '    PRIM_TABLE;' ] ]
 									ifFalse: [ 
-										beforePrimitiveResponse
-											ifTrue: [ 
-												(inLine beginsWith: 'primitiveResponse(') ifTrue: [ "into primitiveResponse we go"
-													beforePrimitiveResponse := false.
-													inPrimitiveResponse := true.
-													extraOutLine := '    PRIM_TABLE;' ] ]
-											ifFalse: [ 
-												inPrimitiveResponse ifTrue: [ 
-													1halt.
-													inLine = '	switch (primitiveIndex) {' ifTrue: [ 
-														extraOutLine := outLine.
-														outLine := '	PRIM_DISPATCH;' ].
-													inLine = '	switch (GIV(primitiveIndex)) {' ifTrue: [ 
-														extraOutLine := outLine.
-														outLine := '	PRIM_DISPATCH;' ].
-													(inLine beginsWith: '	case ') ifTrue: [ 
-														| caseLabel |
-														caseLabel := (inLine findTokens: '	 :') second.
-														outLine := '	CASE(' , caseLabel , ')' ].
-													inLine = '}' ifTrue: [ inPrimitiveResponse := false ] ] ] ] ] ].
+								inPrimitiveResponse ifTrue: [ 
+									1halt.
+									inLine = '	switch (primitiveIndex) {' ifTrue: [ 
+										extraOutLine := outLine.
+										outLine := '	PRIM_DISPATCH;' ].
+									inLine = '	switch (GIV(primitiveIndex)) {' ifTrue: [ 
+										extraOutLine := outLine.
+										outLine := '	PRIM_DISPATCH;' ].
+									(inLine beginsWith: '	case ') ifTrue: [ 
+										| caseLabel |
+										caseLabel := (inLine findTokens: '	 :') second.
+										outLine := '	CASE(' , caseLabel , ')' ].
+									inLine = '}' ifTrue: [ inPrimitiveResponse := false ] ] ] ] ] ].
 
 				outFileStream
 					nextPutAll: outLine;
 					cr.
 				extraOutLine ifNotNil: [ 
 					outFileStream
-						nextPutAll: extraOutLine;
-						cr ] ] ].
+				nextPutAll: extraOutLine;
+				cr ] ] ].
 
 	outFileStream close
 ]
