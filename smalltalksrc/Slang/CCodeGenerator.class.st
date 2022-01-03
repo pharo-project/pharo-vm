@@ -2784,10 +2784,10 @@ CCodeGenerator >> generateCASTToByDo: tast [
 
 	| blockExpr iterationVar until step mayHaveSideEffects inits limitVar limitExpr |
 	blockExpr := tast arguments third.
-	blockExpr args size = 1 ifFalse: [ 
+	blockExpr arguments size = 1 ifFalse: [ 
 		self error: 'wrong number of block arguments' ].
 	inits := OrderedCollection new.
-	iterationVar := blockExpr args first.
+	iterationVar := blockExpr arguments first.
 	limitExpr := tast arguments first.
 	inits add: (CAssignmentNode
 			 lvalue: (CIdentifierNode name: iterationVar)
@@ -2810,12 +2810,13 @@ CCodeGenerator >> generateCASTToByDo: tast [
 		        operator: '+='
 		        rvalue: (tast arguments second asCASTExpressionIn: self).
 	^ CCompoundStatementNode
-		declarations: {(CRawCodeNode code: self defaultType, ' ', iterationVar)}
-		statements: { CForStatementNode
-		  init: inits
-		  until: until
-		  step: { step }
-		  statement: (blockExpr asCASTIn: self) }
+		  declarations:
+		  { (CRawCodeNode code: self defaultType , ' ' , iterationVar) }
+		  statements: { (CForStatementNode
+				   init: inits
+				   until: until
+				   step: { step }
+				   statement: (blockExpr asCASTIn: self)) }
 ]
 
 { #category : #'CAST translation' }
@@ -2911,21 +2912,23 @@ CCodeGenerator >> generateCASTValue: tast [
 
 	| substitution substitutionDict newLabels castStatements |
 	self assert: tast receiver isStatementList.
-	self assert: tast receiver args size = tast arguments size.
+	self assert: tast receiver arguments size = tast arguments size.
 	castStatements := CCompoundStatementNode statements:
 		                  OrderedCollection new.
 	castStatements needsBrackets: false.
 	substitution := tast receiver copy.
 	substitution renameLabelsForInliningInto: currentMethod.
 	substitutionDict := Dictionary new: tast arguments size * 2.
-	tast receiver args with: tast arguments do: [ :argName :exprNode | 
-		exprNode isLeaf
-			ifTrue: [ substitutionDict at: argName put: exprNode ]
-			ifFalse: [ 
-				castStatements add: (CAssignmentNode
-						 lvalue: (CIdentifierNode name: argName)
-						 rvalue: (exprNode asCASTExpressionIn: self)).
-				self noteUsedVariableName: argName ] ].
+	tast receiver arguments
+		with: tast arguments
+		do: [ :argName :exprNode | 
+			exprNode isLeaf
+				ifTrue: [ substitutionDict at: argName put: exprNode ]
+				ifFalse: [ 
+					castStatements add: (CAssignmentNode
+							 lvalue: (CIdentifierNode name: argName)
+							 rvalue: (exprNode asCASTExpressionIn: self)).
+					self noteUsedVariableName: argName ] ].
 	substitution bindVariablesIn: substitutionDict.
 	castStatements add: (substitution asCASTIn: self).
 	newLabels := Set withAll: currentMethod labels.
@@ -2946,11 +2949,11 @@ CCodeGenerator >> generateCASTValueAsArgument: tast [
 
 	| substitution substitutionDict newLabels |
 	self assert: tast receiver isStatementList.
-	self assert: tast receiver args size = tast arguments size.
+	self assert: tast receiver arguments size = tast arguments size.
 	substitution := tast receiver copy.
 	substitution renameLabelsForInliningInto: currentMethod.
 	substitutionDict := Dictionary new: tast arguments size * 2.
-	tast receiver args
+	tast receiver arguments
 		with: tast arguments
 		do: [ :argName :exprNode | 
 		substitutionDict at: argName put: exprNode ].

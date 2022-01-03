@@ -167,25 +167,25 @@ TMethod >> allLocals [
 
 { #category : #accessing }
 TMethod >> allReferencedVariablesUsing: aCodeGen [
+
 	"Answer the set of all variables referenced in the receiver."
+
 	| refs |
 	refs := Set new.
 	"Find all the variable names referenced in this method.
 	 Don't descend into conditionals that won't be generated."
 	parseTree
-		nodesWithParentsDo:
-			[:node :parent|
-			node isVariable ifTrue: [refs add: node name asString].
-			node isStatementList ifTrue: [ node args ifNotNil: [ refs addAll: node args ]].
-			(node isSend
-			 and: [node selector value beginsWith: #cCode:]) ifTrue:
-				[aCodeGen addVariablesInVerbatimCIn: node to: refs]]
-		unless:
-			[:node :parent|
-			parent notNil
-			and: [parent isSend
-			and: [aCodeGen nodeIsDeadCode: node withParent: parent]]].
-	^refs
+		nodesWithParentsDo: [ :node :parent | 
+			node isVariable ifTrue: [ refs add: node name asString ].
+			node isStatementList ifTrue: [ 
+				node arguments ifNotNil: [ refs addAll: node arguments ] ].
+			(node isSend and: [ node selector value beginsWith: #cCode: ]) 
+				ifTrue: [ aCodeGen addVariablesInVerbatimCIn: node to: refs ] ]
+		unless: [ :node :parent | 
+			parent notNil and: [ 
+				parent isSend and: [ 
+					aCodeGen nodeIsDeadCode: node withParent: parent ] ] ].
+	^ refs
 ]
 
 { #category : #accessing }
@@ -867,18 +867,21 @@ TMethod >> ensureToByDoLoopLimitIsSafeAndEfficient: node in: aCodeGen [
 		ifFalse: [ "If the expression is complex but as yet there is no limit variable, add it"
 			hasSideEffects ifTrue: [ 
 				| var |
-				var := self unusedNamePrefixedBy: 'toDoLimit' avoiding: self locals. "N.B. adds it to locals!!"
+				var := self
+					       unusedNamePrefixedBy: 'toDoLimit'
+					       avoiding: self locals. "N.B. adds it to locals!!"
 				node arguments: node arguments , { (TVariableNode new
 						 setName: var;
 						 yourself) }.
 				declarations
-					at: node arguments third args first
+					at: node arguments third arguments first
 					ifPresent: [ :decl | 
 						self
 							declarationAt: var
 							put:
-								(self typeFor: node arguments third args first in: aCodeGen)
-								, ' ' , var ] ] ]
+								(self
+									 typeFor: node arguments third arguments first
+									 in: aCodeGen) , ' ' , var ] ] ]
 ]
 
 { #category : #inlining }
@@ -2609,59 +2612,53 @@ TMethod >> renameLabelsUsing: aDictionary [
 
 { #category : #'inlining support' }
 TMethod >> renameVariablesUsing: aDictionary [
+
 	"Rename all variables according to old->new mappings of the given dictionary."
 
 	| newDecls newProperties |
-	aDictionary isEmpty
-		ifTrue: [ ^ self ].
+	aDictionary isEmpty ifTrue: [ ^ self ].
 
 	"map args and locals"
-	args := args
-		collect: [ :arg | aDictionary at: arg ifAbsent: [ arg ] ].
-	
+	args := args collect: [ :arg | aDictionary at: arg ifAbsent: [ arg ] ].
+
 	cachedLocals := nil.
-	self locals: (self locals collect: [ :v | aDictionary at: v ifAbsent: [ v ] ]).
+	self locals:
+		(self locals collect: [ :v | aDictionary at: v ifAbsent: [ v ] ]).
 
 	"map declarations"
 	newDecls := declarations species new.
-	declarations
-		keysAndValuesDo: [ :oldName :decl | 
-			(aDictionary at: oldName ifAbsent: nil)
-				ifNotNil: [ :newName | 
-					| index |
-					index := decl indexOfWord: oldName.
-					newDecls
-						at: newName
-						put:
-							(index ~= 0
-								ifTrue: [ decl
-										copyReplaceFrom: index
-										to: index + oldName size - 1
-										with: newName ]
-								ifFalse: [ decl ]) ]
-				ifNil: [ newDecls at: oldName put: decl ] ].
+	declarations keysAndValuesDo: [ :oldName :decl | 
+		(aDictionary at: oldName ifAbsent: nil)
+			ifNotNil: [ :newName | 
+				| index |
+				index := decl indexOfWord: oldName.
+				newDecls at: newName put: (index ~= 0
+						 ifTrue: [ 
+							 decl
+								 copyReplaceFrom: index
+								 to: index + oldName size - 1
+								 with: newName ]
+						 ifFalse: [ decl ]) ]
+			ifNil: [ newDecls at: oldName put: decl ] ].
 	self newDeclarations: newDecls.
 	newProperties := properties copy.
-	newProperties pragmas
-		do: [ :pragma | 
-			| mappedArgs |
-			mappedArgs := pragma arguments
-				collect: [ :arg | 
-					arg isString
-						ifTrue: [ aDictionary at: arg ifAbsent: arg ]
-						ifFalse: [ arg ] ].
-			mappedArgs ~= pragma arguments
-				ifTrue: [ pragma arguments: mappedArgs ] ].
+	newProperties pragmas do: [ :pragma | 
+		| mappedArgs |
+		mappedArgs := pragma arguments collect: [ :arg | 
+			              arg isString
+				              ifTrue: [ aDictionary at: arg ifAbsent: arg ]
+				              ifFalse: [ arg ] ].
+		mappedArgs ~= pragma arguments ifTrue: [ 
+			pragma arguments: mappedArgs ] ].
 	self properties: newProperties.
 
 	"map variable names in parse tree"
-	parseTree
-		nodesDo: [ :node | 
-			(node isVariable and: [ aDictionary includesKey: node name ])
-				ifTrue: [ node setName: (aDictionary at: node name) ].
-			(node isStatementList and: [ node args size > 0 ])
-				ifTrue: [ node
-						setArguments: (node args collect: [ :arg | aDictionary at: arg ifAbsent: [ arg ] ]) ] ]
+	parseTree nodesDo: [ :node | 
+		(node isVariable and: [ aDictionary includesKey: node name ]) 
+			ifTrue: [ node setName: (aDictionary at: node name) ].
+		(node isStatementList and: [ node arguments size > 0 ]) ifTrue: [ 
+			node setArguments: (node arguments collect: [ :arg | 
+					 aDictionary at: arg ifAbsent: [ arg ] ]) ] ]
 ]
 
 { #category : #'inlining support' }
@@ -2806,12 +2803,12 @@ TMethod >> smalltalkSelector [
 { #category : #accessing }
 TMethod >> statements [
 
-	parseTree isStatementList
-		ifFalse: [ self error: 'expected method parse tree to be a TStmtListNode' ].
-	((parseTree args = nil) or: [parseTree args isEmpty])
+	parseTree isStatementList ifFalse: [ 
+		self error: 'expected method parse tree to be a TStmtListNode' ].
+	(parseTree arguments = nil or: [ parseTree arguments isEmpty ]) 
 		ifFalse: [ self error: 'expected method parse tree to have no args' ].
 
-	^parseTree statements
+	^ parseTree statements
 ]
 
 { #category : #'primitive compilation' }

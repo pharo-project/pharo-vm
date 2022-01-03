@@ -78,14 +78,15 @@ TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned 
 			node isSend
 				ifTrue: [ "First deal with implicit assignments..."
 					node isValueExpansion ifTrue: [ 
-						assigned addAll: node receiver args ].
+						assigned addAll: node receiver arguments ].
 					(#( #memcpy:_:_: #memmove:_:_: ) includes: node selector) 
 						ifTrue: [ 
 							assigned add:
 								(node arguments first detect: [ :subnode | subnode isVariable ])
 									name ].
 					(#( #to:do: #to:by:do: ) includes: node selector) ifTrue: [ 
-						assigned addAll: (node arguments at: node selector numArgs) args.
+						assigned addAll:
+							(node arguments at: node selector numArgs) arguments.
 						mayHaveSideEffects := node arguments size = 4. "See TMethod>>prepareMethodIn:"
 						mayHaveSideEffects ifTrue: [ 
 							assigned add: node arguments last name ] ].
@@ -133,6 +134,14 @@ TStatementListNode >> allStatementsDo: aFullBlockClosure [
 
 { #category : #accessing }
 TStatementListNode >> args [
+	self
+		deprecated: 'use #arguments instead'
+		transformWith: '`@rec args' -> '`@rec arguments'.
+	^arguments
+]
+
+{ #category : #accessing }
+TStatementListNode >> arguments [
 
 	^arguments
 ]
