@@ -148,8 +148,14 @@ TStatementListNode >> asCASTIn: aBuilder [
 { #category : #tranforming }
 TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 
-	| collect |
+	| declarations collect |
+	declarations := OrderedCollection new.
 	collect := OrderedCollection new.
+
+	self locals do: [ :var |
+		declarations add: (CRawCodeNode code: (aBuilder currentMethod
+		  declarationAt: var
+		  ifAbsent: [ aBuilder defaultType , ' ' , var ])) ].
 
 	statements doWithIndex: [ :e :index | 
 		(e isLeaf and: [ 
@@ -161,7 +167,7 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 					collect add: (e asCASTIn: aBuilder prependToEnd: aNodeOrNil) ]
 					ifFalse: [ collect add: (e asCASTIn: aBuilder) ] ]
 			ifTrue: [ CEmptyStatementNode new ] ].
-	^ CCompoundStatementNode statements: collect
+	^ CCompoundStatementNode declarations: declarations statements: collect
 ]
 
 { #category : #transformations }
