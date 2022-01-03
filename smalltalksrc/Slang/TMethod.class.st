@@ -108,6 +108,13 @@ TMethod >> addLabelsTo: aTMethod [
 	aTMethod labels addAll: labels
 ]
 
+{ #category : #accessing }
+TMethod >> addLocal: aString [
+
+	cachedLocals := nil.
+	self locals add: aString
+]
+
 { #category : #initialization }
 TMethod >> addTypeForSelf [
 	"If self should be typed then add a suitable type declaration.
@@ -223,12 +230,8 @@ TMethod >> argAssignmentsFor: meth send: aSendNode except: elidedArgs in: aCodeG
 						 typeCompatibleWith: argName
 						 inliningInto: meth
 						 in: self).
-					
-				cachedLocals := nil.
-				self locals
-					remove: argName
-					ifAbsent: [ self assert: (argName beginsWith: 'self_in_')
-				].
+
+				self removeLocal: argName.
 				declarations removeKey: argName ifAbsent: nil ]
 			ifFalse: [ "Add an assignment for anything except an unused self_in_foo argument"
 				(elidedArgs includes: argName) ifFalse: [ 
@@ -1392,6 +1395,7 @@ TMethod >> inlineConditional: aSendNode in: aCodeGen [
 
 { #category : #inlining }
 TMethod >> inlineFunctionCall: aSendNode in: aCodeGen [
+
 	"Answer the body of the called function, substituting the actual
 	 parameters for the formal argument variables in the method body.
 	 Assume caller has established that:
@@ -1401,32 +1405,28 @@ TMethod >> inlineFunctionCall: aSendNode in: aCodeGen [
 	| sel meth doNotRename argsForInlining substitutionDict |
 	sel := aSendNode selector.
 	meth := (aCodeGen methodNamed: sel) copy.
-	meth ifNil:
-		[^self inlineBuiltin: aSendNode in: aCodeGen].
+	meth ifNil: [ ^ self inlineBuiltin: aSendNode in: aCodeGen ].
 	doNotRename := Set withAll: args.
-	argsForInlining := aSendNode argumentsForInliningCodeGenerator: aCodeGen.
-	meth args with: argsForInlining do:
-		[ :argName :exprNode |
-		exprNode isLeaf ifTrue:
-			[doNotRename add: argName]].
-	(meth statements size = 2
-	and: [meth statements first isSend
-	and: [meth statements first selector == #flag:]]) ifTrue:
-		[meth statements removeFirst].
+	argsForInlining := aSendNode argumentsForInliningCodeGenerator:
+		                   aCodeGen.
+	meth args with: argsForInlining do: [ :argName :exprNode | 
+		exprNode isLeaf ifTrue: [ doNotRename add: argName ] ].
+	(meth statements size = 2 and: [ 
+		 meth statements first isSend and: [ 
+			 meth statements first selector == #flag: ] ]) ifTrue: [ 
+		meth statements removeFirst ].
 	meth renameVarsForInliningInto: self except: doNotRename in: aCodeGen.
 	meth renameLabelsForInliningInto: self.
 	self addVarsDeclarationsAndLabelsOf: meth except: doNotRename.
 	substitutionDict := Dictionary new: meth args size * 2.
-	meth args with: argsForInlining do:
-		[ :argName :exprNode |
+	meth args with: argsForInlining do: [ :argName :exprNode | 
 		substitutionDict at: argName put: exprNode.
-		(doNotRename includes: argName) ifFalse: [
-			cachedLocals := nil.
-			self locals remove: argName]].
+		(doNotRename includes: argName) ifFalse: [ 
+			self removeLocal: argName ] ].
 	meth parseTree bindVariablesIn: substitutionDict.
-	^meth parseTree endsWithReturn
-		ifTrue: [meth parseTree copyWithoutReturn]
-		ifFalse: [meth parseTree]
+	^ meth parseTree endsWithReturn
+		  ifTrue: [ meth parseTree copyWithoutReturn ]
+		  ifFalse: [ meth parseTree ]
 ]
 
 { #category : #inlining }
@@ -2542,26 +2542,28 @@ TMethod >> removeUnusedTempsAndNilIfRequiredIn: aCodeGen [
 
 { #category : #utilities }
 TMethod >> removeUnusedTempsIn: aCodeGen [
+
 	"Remove all of the unused temps in this method. Answer a set of the references."
+
 	"After inlining some variable references are now obsolete, we could fix them there
 	 but the code seems a bit complicated, the other choice to to rebuild the locals
 	 before extruding. This is done here"
+
 	| usedVariables |
 	usedVariables := self allReferencedVariablesUsing: aCodeGen.
 	"reset the locals to be only those still referred to"
-	self locals copy do:
-		[:local|
-		 (usedVariables includes: local) ifFalse:
-			[(((declarations at: local ifAbsent: ['']) includesSubstring: 'static')
-			  or: [(declarations at: local ifAbsent: ['']) includesSubstring: 'extern'])
-				ifFalse:
-					[
-					cachedLocals := nil.
-					self locals remove: local.
-					 declarations removeKey: local ifAbsent: []]
-				ifTrue:
-					[usedVariables add: local "In case this is a function declaration, e.g. amInVMThread in ownVM:"]]].
-	^usedVariables
+	self locals copy do: [ :local | 
+		(usedVariables includes: local) ifFalse: [ 
+			(((declarations at: local ifAbsent: [ '' ]) includesSubstring:
+				  'static') or: [ 
+				 (declarations at: local ifAbsent: [ '' ]) includesSubstring:
+					 'extern' ])
+				ifFalse: [ 
+					self removeLocal: local.
+					declarations removeKey: local ifAbsent: [  ] ]
+				ifTrue: [ 
+					usedVariables add: local "In case this is a function declaration, e.g. amInVMThread in ownVM:" ] ] ].
+	^ usedVariables
 ]
 
 { #category : #'inlining support' }

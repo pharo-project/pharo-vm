@@ -3765,7 +3765,7 @@ CCodeGenerator >> localizeGlobalVariables [
 				(procedure isRealMethod
 				 and: [self shouldGenerateMethod: procedure]) ifTrue:
 					[(localized at: name ifAbsentPut: [SortedCollection new]) add: key.
-					elected add: (procedure locals add: key).
+					elected add: (procedure addLocal: key).
 					newDeclaration := variableDeclarations at: key ifAbsent: ['sqInt ', key].
 					(self initializerForInstVar: key inStartClass: procedure definingClass) ifNotNil:
 						[:initializerNode|
@@ -4499,41 +4499,6 @@ CCodeGenerator >> putDefineOf: aConstantNameString as: valueOrValueString on: aS
 		space;
 		nextPutAll: valueOrValueString asString;
 		cr
-]
-
-{ #category : #'automatic-localization' }
-CCodeGenerator >> referencedVariablesIn: variablesToLocalize inSend: sendNode calledBy: caller withDictionary: associationDictionary [
-	"Return the references to global variables that are in variablesToLocalize in method selector."
-
-	| currentMeth externalCalls globalReferences variablesReferences |
-	associationDictionary at: sendNode selector ifPresent: [ :vars | ^ vars ].
-	
-	"If it is a dynamic call, be conservative: assume all variables to localize may be touched"
-	(self isDynamicCall: sendNode)
-		ifTrue: [ ^ variablesToLocalize ].
-	
-	currentMeth := self methodNamed: sendNode selector.
-	
-	"Otherwise, compute the subset of variablesToLocalize referenced in the method"
-	externalCalls := (currentMeth externalCallsIn: self) reject: [ :call | 
-		call selector = sendNode selector or: [ call selector = caller ] ].
-	globalReferences := currentMeth freeVariableReferences.
-	variablesReferences := (variablesToLocalize select: [ :var | 
-		                        globalReferences includes: var ]) asSet.
-	associationDictionary at: sendNode selector put: variablesReferences.
-	externalCalls ifEmpty: [
-		^ variablesReferences ].
-
-	externalCalls do: [ :externalCall | 
-		(associationDictionary includesKey: externalCall selector) ifFalse: [
-			| subreferences |
-			subreferences := self
-				 referencedVariablesIn: variablesToLocalize
-				 inSend: externalCall
-				 calledBy: sendNode selector
-				 withDictionary: associationDictionary.
-			(associationDictionary at: sendNode selector) addAll: subreferences ] ].
-	^ variablesReferences
 ]
 
 { #category : #inlining }
