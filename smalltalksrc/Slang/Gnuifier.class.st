@@ -129,12 +129,12 @@ Gnuifier >> gnuifyFrom: inputFile to: outFileStream [
 								(inLine findString: 'register struct foo * foo = &fum;') > 0 
 									ifTrue: [ 
 									outLine := 'register struct foo * foo FOO_REG = &fum;' ].
-								(inLine findString: ' localIP;') > 0 ifTrue: [ 
-									outLine := '	register char* localIP IP_REG;' ].
-								(inLine findString: ' localFP;') > 0 ifTrue: [ 
-									outLine := '	register char* localFP FP_REG;' ].
-								(inLine findString: ' localSP;') > 0 ifTrue: [ 
-									outLine := '	register char* localSP SP_REG;' ].
+								(inLine findString: ' local_instructionPointer;') > 0 ifTrue: [ 
+									outLine := '	register char* local_instructionPointer IP_REG;' ].
+								(inLine findString: ' local_framePointer;') > 0 ifTrue: [ 
+									outLine := '	register char* local_framePointer FP_REG;' ].
+								(inLine findString: ' local_stackPointer;') > 0 ifTrue: [ 
+									outLine := '	register char* local_stackPointer SP_REG;' ].
 								(inLine findString: ' currentBytecode;') > 0 ifTrue: [ 
 									outLine := '	register sqInt currentBytecode CB_REG;' ].
 								inLine isEmpty ifTrue: [ "reached end of variables"
@@ -146,15 +146,15 @@ Gnuifier >> gnuifyFrom: inputFile to: outFileStream [
 								inInterpret
 									ifTrue: [ "working inside interpret(); translate the switch statement"
 										
-										(inLine beginsWith: '				case ') ifTrue: [ 
+										(inLine beginsWith: '						case ') ifTrue: [ 
 											| tokens |
 											
 											tokens := inLine findTokens: '	 :'.
-											outLine := '				CASE(' , tokens second , ')'.
+											outLine := '						CASE(' , tokens second , ')'.
 											tokens size > 2 ifTrue: [ 
 												(tokens allButFirst: 2) do: [ :token | 
 													outLine := outLine , ' ' , token ] ] ].
-										inLine = '				break;' ifTrue: [ outLine := '				BREAK;' ].
+										inLine = '						break;' ifTrue: [ outLine := '						BREAK;' ].
 										inLine = '}' ifTrue: [ "all finished with interpret()" 
 											inInterpret := false ] ]
 									ifFalse: [ 
