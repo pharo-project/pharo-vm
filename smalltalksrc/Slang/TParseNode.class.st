@@ -328,7 +328,13 @@ TParseNode >> isVariable [
 { #category : #linearization }
 TParseNode >> linearizeIn: aCodeGenerator [
 
-	"I am a statement. Linearize all calls in myself until I find a block.
+	"Remove a linearized version of myself where calls become statements
+	and nested calls are assigned to variables.
+	I stop on receiver/arguments that are blocks.
+	Remove unused variables locally.
+	
+	Precondition: I am a statement.
+	
 	For example, I transform statements of the form:
 	
 	> self foo: self nonInlinedMethodUsingAutolocalizedVariable
@@ -366,14 +372,18 @@ TParseNode >> linearizeIn: aCodeGenerator [
 	replacementBlock := OrderedCollection new.
 	variables := OrderedCollection new.
 	replacementsSoFar := Dictionary new.
-	callsInStatement do: [ :e | 
-		| variableNode |
-		variableNode := TVariableNode named: 't' , replacementBlock size asString.
-		variables add: variableNode name.
-		replacementBlock add: (TAssignmentNode
-				 variable: variableNode
-				 expression: (e replaceNodesIn: replacementsSoFar)).
-		replacementsSoFar at: e put: variableNode ].
+
+	"Apply linearization to all nodes except itself"
+	callsInStatement
+		select: [ :e | e ~= self ]
+		thenDo: [ :e | 
+			| variableNode |
+			variableNode := TVariableNode named: 't' , replacementBlock size asString.
+			variables add: variableNode name.
+			replacementBlock add: (TAssignmentNode
+					 variable: variableNode
+					 expression: (e replaceNodesIn: replacementsSoFar)).
+			replacementsSoFar at: e put: variableNode ].
 	rewrittenStatement := self replaceNodesIn: replacementsSoFar.
 	replacementBlock add: rewrittenStatement.
 

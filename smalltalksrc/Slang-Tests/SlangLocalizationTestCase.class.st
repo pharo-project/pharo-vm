@@ -193,7 +193,7 @@ SlangLocalizationTestCase >> testExternalEscapingAsArgument [
 { #category : #tests }
 SlangLocalizationTestCase >> testExternalEscapingAsArgumentOfExternalCall [
 	
-	| interpretMethod case externalCall cast printedString inlinedMethod |
+	| interpretMethod case cast printedString inlinedMethod |
 	interpretMethod := self applyManyLocalizationsToInterpretWith: #initializeWithEscapingCallAsArgumentOfExternalCall.
 
 	"Assert that the send node is preceded by variable externalization"
@@ -214,7 +214,7 @@ bytecodeWithEscapingCallAsArgumentOfExternalCall(void)
 		autoLocalizedVariable = local_autoLocalizedVariable;
 		autoLocalizedVariable1 = local_autoLocalizedVariable1;
 		autoLocalizedVariable2 = local_autoLocalizedVariable2;
-		t1 = foo(t0);
+		foo(t0);
 		local_autoLocalizedVariable = autoLocalizedVariable;
 		local_autoLocalizedVariable1 = autoLocalizedVariable1;
 		local_autoLocalizedVariable2 = autoLocalizedVariable2;
@@ -246,7 +246,7 @@ bytecodeUsingInlinedCall(void)
 		/* begin inlinedMethodUsingExternalCall */
 		autoLocalizedVariable = local_autoLocalizedVariable;
 		autoLocalizedVariable1 = local_autoLocalizedVariable1;
-		t0 = foo2();
+		foo2();
 		local_autoLocalizedVariable = autoLocalizedVariable;
 		local_autoLocalizedVariable1 = autoLocalizedVariable1;
 	}
@@ -276,7 +276,7 @@ bytecodeWithEscapingCall(void)
 {
 	{
 		autoLocalizedVariable = local_autoLocalizedVariable;
-		t0 = foo((local_autoLocalizedVariable += 1));
+		foo((local_autoLocalizedVariable += 1));
 		local_autoLocalizedVariable = autoLocalizedVariable;
 	}
 	return 0;
@@ -287,7 +287,7 @@ bytecodeWithEscapingCall(void)
 { #category : #tests }
 SlangLocalizationTestCase >> testExternalSendNodeExternalizeAndInternalizeOnlyNeededVariables [
 	
-	| interpretMethod case inlinedMethod externalCall cast printedString |
+	| interpretMethod case inlinedMethod cast printedString |
 
 	interpretMethod := self applyManyLocalizationsToInterpretWith: #initializeWithEscapingCall.
 
@@ -305,7 +305,7 @@ bytecodeWithEscapingCall(void)
 		autoLocalizedVariable = local_autoLocalizedVariable;
 		autoLocalizedVariable1 = local_autoLocalizedVariable1;
 		autoLocalizedVariable2 = local_autoLocalizedVariable2;
-		t0 = foo((local_autoLocalizedVariable += 1));
+		foo((local_autoLocalizedVariable += 1));
 		local_autoLocalizedVariable = autoLocalizedVariable;
 		local_autoLocalizedVariable1 = autoLocalizedVariable1;
 		local_autoLocalizedVariable2 = autoLocalizedVariable2;
@@ -338,7 +338,7 @@ bytecodeUsingExternalizedAutoLocalizedVariableAsExpression(void)
 		t0 = nonInlinedMethodUsingAutolocalizedVariable();
 		local_autoLocalizedVariable = autoLocalizedVariable;
 		autoLocalizedVariable = local_autoLocalizedVariable;
-		t1 = foo(t0);
+		foo(t0);
 		local_autoLocalizedVariable = autoLocalizedVariable;
 	}
 	return 0;
@@ -362,9 +362,9 @@ SlangLocalizationTestCase >> testLinearizeCallsInNestedLexicalScope [
 		]
 	After
 		true ifTrue: [
-			| t0 t1 |
+			| t0 |
 			t0 := self nonInlinedMethodUsingAutolocalizedVariable.
-			t1 := self foo: t0
+			self foo: t0
 		] "
 
 	ifBlock := methodToLinearize statements first arguments first.
@@ -376,12 +376,10 @@ SlangLocalizationTestCase >> testLinearizeCallsInNestedLexicalScope [
 					receiver: TVariableNode selfNode
 					selector: #nonInlinedMethodUsingAutolocalizedVariable))).
 	self assert: (ifBlock statements second
-			isSameAs: (TAssignmentNode
-				variableNamed: 't1'
-				expression: (TSendNode
+			isSameAs: (TSendNode
 					receiver: TVariableNode selfNode
 					selector: #foo:
-					arguments: { TVariableNode named: 't0' })))
+					arguments: { TVariableNode named: 't0' }))
 ]
 
 { #category : #'tests - linearization' }
@@ -398,7 +396,7 @@ SlangLocalizationTestCase >> testLinearizeNestedCalls [
 		self foo: self nonInlinedMethodUsingAutolocalizedVariable.
 	After
 		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
-		t1 := self foo: t0"
+		self foo: t0"
 
 	self assert: (methodToLinearize statements first
 			isSameAs: (TAssignmentNode
@@ -407,12 +405,11 @@ SlangLocalizationTestCase >> testLinearizeNestedCalls [
 					receiver: TVariableNode selfNode
 					selector: #nonInlinedMethodUsingAutolocalizedVariable))).
 	self assert: (methodToLinearize statements second
-			isSameAs: (TAssignmentNode
-				variableNamed: 't1'
-				expression: (TSendNode
+			isSameAs: (TSendNode
 					receiver: TVariableNode selfNode
 					selector: #foo:
-					arguments: { TVariableNode named: 't0' })))
+					arguments: { TVariableNode named: 't0' })).
+	self assert: methodToLinearize statements size equals: 3.
 ]
 
 { #category : #'tests - linearization' }
@@ -429,16 +426,14 @@ SlangLocalizationTestCase >> testLinearizeNestedCallsDefinesIntermediateVariable
 		self foo: self nonInlinedMethodUsingAutolocalizedVariable.
 	After
 		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
-		t1 := self foo: t0
+		self foo: t0
 		
-		=> both t0 and t1 should be defined in the method"
+		=> t0 should be defined in the method"
 	
 	self assert: (methodToLinearize locals includes: 't0').
-	self assert: (methodToLinearize locals includes: 't1')
-
 ]
 
-{ #category : #'tests - linearization' }
+{ #category : #'tests - initialization' }
 SlangLocalizationTestCase >> testLinearizeNestedCallsWithAssignment [
 
 	| methodToLinearize |
@@ -521,14 +516,12 @@ SlangLocalizationTestCase >> testLinearizeSingleCalls [
 	"Before it was 
 		self inlinedMethodUsingExternalCall.
 	After
-		t0 := self inlinedMethodUsingExternalCall"
+		self inlinedMethodUsingExternalCall"
 
 	self assert: (methodToLinearize statements first
-			isSameAs: (TAssignmentNode
-				variableNamed: 't0'
-				expression: (TSendNode
+			isSameAs: (TSendNode
 					receiver: TVariableNode selfNode
-					selector: #inlinedMethodUsingExternalCall)))
+					selector: #inlinedMethodUsingExternalCall))
 ]
 
 { #category : #'tests - old localization' }
@@ -598,5 +591,5 @@ SlangLocalizationTestCase >> testNoExternalSendNodeOnSafeExternalCall [
 	
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
-	self assert: printedString equals: 't0 = nonInlinedMethodNotUsingAutolocalizedVariables((local_autoLocalizedVariable += 1))'
+	self assert: printedString equals: 'nonInlinedMethodNotUsingAutolocalizedVariables((local_autoLocalizedVariable += 1))'
 ]
