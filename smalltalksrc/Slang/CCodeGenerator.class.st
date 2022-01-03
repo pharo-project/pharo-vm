@@ -5424,6 +5424,9 @@ CCodeGenerator >> wrapStatementWithExternalizationAndLocalizations: statement of
 
 	| collector variablesToExternalize replacementStatements |
 
+	"If the statement to wrap is already a statement list, do not wrap it, we are going to wrap its children"
+	statement isStatementList ifTrue: [ ^ statement ].
+	
 	"Optimization: only externalize/localize variables used by the statement's called functions"
 	collector := MLVMVariableAccessCollector
 		             inCodeGenerator: self

@@ -262,6 +262,12 @@ TStatementListNode >> endsWithReturn [
 	  and: [statements last isReturn or: [statements last isReturningIf]]
 ]
 
+{ #category : #accessing }
+TStatementListNode >> first [
+	
+	^ self statements first
+]
+
 { #category : #flattening }
 TStatementListNode >> flattened [
 
@@ -415,17 +421,12 @@ TStatementListNode >> renameLabelsForInliningInto: aTMethod [
 ]
 
 { #category : #transformations }
-TStatementListNode >> replaceChild: aNode with: bNode [ 
-	self statements: (Array streamContents:
-					[:s|
-					statements do:
-						[:node|
-						node == aNode
-							ifTrue:
-								[bNode isStatementList
-									ifTrue: [s nextPutAll: bNode statements]
-									ifFalse: [s nextPut: bNode]]
-							ifFalse: [s nextPut: node]]])
+TStatementListNode >> replaceChild: aNode with: bNode [
+
+	self statements: (statements collect: [ :node |
+		node == aNode
+			ifTrue: [ bNode ]
+			ifFalse: [ node ] ])
 ]
 
 { #category : #transformations }
@@ -489,11 +490,7 @@ TStatementListNode >> statements: anObject [
 	| oldStatements |
 	oldStatements := statements.
 	statements := anObject asOrderedCollection.
-	statements do: [ :e | e parent: self ].
-	
-	oldStatements ifNil: [ ^ self ].
-	(oldStatements difference: statements)
-		do: [ :e | e parent: nil ].
+	statements do: [ :e | e parent: self ]
 ]
 
 { #category : #'type inference' }

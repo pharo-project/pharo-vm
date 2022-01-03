@@ -97,7 +97,7 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableExternalizesAtTheEnd [
 
 	| externalizationStatement interpretMethod |
 	interpretMethod := self applyLocalizationTo: #interpret.
-	externalizationStatement := (interpretMethod statements last: 2) first.
+	externalizationStatement := interpretMethod statements last first first.
 
 	self assert: (externalizationStatement isSameAs:
 			 (self externalizationOf: #autoLocalizedVariable))
@@ -111,12 +111,16 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturnRef
 	| interpretMethod printedString |
 	interpretMethod := self applyLocalizationTo: #interpretWithReturnExpressionUpdatingAutoLocalizedVariable.
 	printedString := String streamContents: [ :str | 
-		                 ((TStatementListNode statements: (interpretMethod statements last: 3)) asCASTIn: ccg) 
+		                 ((TStatementListNode statements: interpretMethod statements last) asCASTIn: ccg) 
 			                 prettyPrintOn: str ].
 	self assert: printedString equals: '{
-	autoLocalizedVariable = local_autoLocalizedVariable;
-	autoLocalizedVariable1 = local_autoLocalizedVariable1;
-	return (autoLocalizedVariable += 1);
+	{
+		{
+			autoLocalizedVariable = local_autoLocalizedVariable;
+			autoLocalizedVariable1 = local_autoLocalizedVariable1;
+			return (autoLocalizedVariable += 1);
+		}
+	}
 }'
 ]
 
@@ -128,15 +132,15 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturns [
 	| interpretMethod sendNode |
 	interpretMethod := self applyLocalizationTo: #interpretWithReturnExpression.
 
-	sendNode := interpretMethod statements fourth.
-	self assert: sendNode arguments first statements last isReturn.
+	sendNode := interpretMethod statements last statements first statements second..
+	self assert: sendNode arguments first statements first statements first statements last isReturn.
 	self
-		assert: (sendNode arguments first statements first
+		assert: (sendNode arguments first statements first statements first statements first
 		isSameAs: (self externalizationOf: #autoLocalizedVariable)).
 
-	self assert: sendNode arguments second statements last isReturn.
+	self assert: sendNode arguments second statements first statements first statements last isReturn.
 	self
-		assert: (sendNode arguments second statements first
+		assert: (sendNode arguments second statements first statements first statements first
 		isSameAs: (self externalizationOf: #autoLocalizedVariable)).
 ]
 
@@ -160,8 +164,8 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableReplacesByLocalOnInline [
 	interpretMethod := self applyLocalizationToInterpretWith: #initializeWithAutoLocalizedVariableOnly.
 	
 	"Fail if we find some node inside the case that uses the localized variable"
-	case := interpretMethod statements second cases first.
-	variableNode := case statements second method statements first variable.
+	case := interpretMethod statements second statements first cases first.
+	variableNode := case statements second statements first method statements first statements first variable.
 
 	self assert: (variableNode isVariable and: [ variableNode name = #local_autoLocalizedVariable ]).
 ]
@@ -169,22 +173,24 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableReplacesByLocalOnInline [
 { #category : #tests }
 SlangLocalizationTestCase >> testExternalEscapingAsArgument [
 	
-	| interpretMethod case cast printedString inlinedMethod |
+	| interpretMethod case cast printedString inlinedMethod linearizedBlock |
 	interpretMethod := self applyLocalizationToInterpretWith: #initializeWithEscapingCallAsArgument.
 
 	"Assert that the send node is preceded by variable externalization"
-	case := interpretMethod statements second cases first.
-	inlinedMethod := case statements second method.
-
-	cast := inlinedMethod parseTree asCASTIn: ccg.
+	case := interpretMethod statements second statements first cases first.
+	inlinedMethod := case statements second statements first method.
+	linearizedBlock := inlinedMethod statements first.
+	cast := linearizedBlock asCASTIn: ccg.
 	
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
 	self assert: printedString equals:
 '{
-	autoLocalizedVariable = local_autoLocalizedVariable;
-	t0 = foo2();
-	local_autoLocalizedVariable = autoLocalizedVariable;
+	{
+		autoLocalizedVariable = local_autoLocalizedVariable;
+		t0 = foo2();
+		local_autoLocalizedVariable = autoLocalizedVariable;
+	}
 	if (1 == t0) {
 	}
 }'
@@ -193,24 +199,24 @@ SlangLocalizationTestCase >> testExternalEscapingAsArgument [
 { #category : #tests }
 SlangLocalizationTestCase >> testExternalEscapingAsArgumentOfExternalCall [
 	
-	| interpretMethod case cast printedString inlinedMethod |
+	| interpretMethod case cast printedString inlinedMethod linearizedBlock |
 	interpretMethod := self applyManyLocalizationsToInterpretWith: #initializeWithEscapingCallAsArgumentOfExternalCall.
 
 	"Assert that the send node is preceded by variable externalization"
-	case := interpretMethod statements sixth cases first.
-	inlinedMethod := case statements second method.
+	case := interpretMethod statements sixth statements first cases first.
+	inlinedMethod := case statements second statements first method.
+	linearizedBlock := inlinedMethod statements first.
+	cast := linearizedBlock asCASTIn: ccg.
 
-	cast := inlinedMethod asCASTIn: ccg.	
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
-	self assert: printedString equals: '/* MockLocalizationInterpreterMock>>#bytecodeWithEscapingCallAsArgumentOfExternalCall */
-static sqInt
-bytecodeWithEscapingCallAsArgumentOfExternalCall(void)
-{
+	self assert: printedString equals: '{
 	{
 		autoLocalizedVariable1 = local_autoLocalizedVariable1;
 		t0 = nonInlinedMethodUsingAutolocalizedVariable1();
 		local_autoLocalizedVariable1 = autoLocalizedVariable1;
+	}
+	{
 		autoLocalizedVariable = local_autoLocalizedVariable;
 		autoLocalizedVariable1 = local_autoLocalizedVariable1;
 		autoLocalizedVariable2 = local_autoLocalizedVariable2;
@@ -219,88 +225,73 @@ bytecodeWithEscapingCallAsArgumentOfExternalCall(void)
 		local_autoLocalizedVariable1 = autoLocalizedVariable1;
 		local_autoLocalizedVariable2 = autoLocalizedVariable2;
 	}
-	return 0;
-}
-'.
+}'.
 ]
 
 { #category : #tests }
 SlangLocalizationTestCase >> testExternalEscapingSendNodeInInlinedMethod [
 	
-	| interpretMethod case inlinedMethod cast printedString |
+	| interpretMethod case inlinedMethod cast printedString linearizedBlock |
 	interpretMethod := self applyManyLocalizationsToInterpretWith: #initializeWithInlinedMethodCall.
 
 	"Assert that the send node is preceded by variable externalization"
-	case := interpretMethod statements sixth cases first.
-	inlinedMethod := case statements second method.
-
-	cast := inlinedMethod asCASTIn: ccg.
+	case := interpretMethod statements sixth statements first cases first.
+	inlinedMethod := case statements second statements first method.
+	linearizedBlock := inlinedMethod statements second.
+	cast := linearizedBlock asCASTIn: ccg.
 	
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
-	self assert: printedString equals: '/* MockLocalizationInterpreterMock>>#bytecodeUsingInlinedCall */
-static sqInt
-bytecodeUsingInlinedCall(void)
-{
+	self assert: printedString equals: '{
 	{
-		/* begin inlinedMethodUsingExternalCall */
 		autoLocalizedVariable = local_autoLocalizedVariable;
 		autoLocalizedVariable1 = local_autoLocalizedVariable1;
 		foo2();
 		local_autoLocalizedVariable = autoLocalizedVariable;
 		local_autoLocalizedVariable1 = autoLocalizedVariable1;
 	}
-	return 0;
-}
-'
+}'
 ]
 
 { #category : #tests }
 SlangLocalizationTestCase >> testExternalEscapingSendNodeShouldBeTranslatedWithExternalizationAndInternalization [
 	
-	| interpretMethod case inlinedMethod cast printedString |
+	| interpretMethod case inlinedMethod cast printedString linearizedBlock |
 
 	interpretMethod := self applyLocalizationToInterpretWith: #initializeWithEscapingCall.
 
 	"Assert that the send node is preceded by variable externalization"
-	case := interpretMethod statements second cases first.
-	inlinedMethod := case statements second method.
+	case := interpretMethod statements second statements first cases first.
+	inlinedMethod := case statements second statements first method.
+	linearizedBlock := inlinedMethod statements first.
+	cast := linearizedBlock asCASTIn: ccg.
 
-	cast := inlinedMethod asCASTIn: ccg.
-	
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
-	self assert: printedString equals: '/* MockLocalizationInterpreterMock>>#bytecodeWithEscapingCall */
-static sqInt
-bytecodeWithEscapingCall(void)
-{
+	self assert: printedString equals: '{
 	{
 		autoLocalizedVariable = local_autoLocalizedVariable;
 		foo((local_autoLocalizedVariable += 1));
 		local_autoLocalizedVariable = autoLocalizedVariable;
 	}
-	return 0;
-}
-'
+}'
 ]
 
 { #category : #tests }
 SlangLocalizationTestCase >> testExternalSendNodeExternalizeAndInternalizeOnlyNeededVariables [
 	
-	| interpretMethod case inlinedMethod cast printedString |
+	| interpretMethod case inlinedMethod cast printedString linearizedBlock |
 
 	interpretMethod := self applyManyLocalizationsToInterpretWith: #initializeWithEscapingCall.
 
 	"Assert that the send node is preceded by variable externalization"
-	case := interpretMethod statements sixth cases first.
-	inlinedMethod := case statements second method.
-	cast := inlinedMethod asCASTIn: ccg.
+	case := interpretMethod statements sixth statements first cases first.
+	inlinedMethod := case statements second statements first method.
+	linearizedBlock := inlinedMethod statements first.
+	cast := linearizedBlock asCASTIn: ccg.
 
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
-	self assert: printedString equals: '/* MockLocalizationInterpreterMock>>#bytecodeWithEscapingCall */
-static sqInt
-bytecodeWithEscapingCall(void)
-{
+	self assert: printedString equals: '{
 	{
 		autoLocalizedVariable = local_autoLocalizedVariable;
 		autoLocalizedVariable1 = local_autoLocalizedVariable1;
@@ -310,40 +301,36 @@ bytecodeWithEscapingCall(void)
 		local_autoLocalizedVariable1 = autoLocalizedVariable1;
 		local_autoLocalizedVariable2 = autoLocalizedVariable2;
 	}
-	return 0;
-}
-'
+}'
 ]
 
 { #category : #tests }
 SlangLocalizationTestCase >> testExternalSendNodeShouldBeTranslatedWithExternalizationAndInternalization [
 	
-	| interpretMethod case inlinedMethod cast printedString |
+	| interpretMethod case inlinedMethod cast printedString linearizedBlock |
 	interpretMethod := self
 		applyLocalizationToInterpretWith: #initializeWithExternalizedAutoLocalizedVariableInExpressionOnly.
 
 	"Assert that the send node is preceded by variable externalization"
-	case := interpretMethod statements second cases first.
-	inlinedMethod := case statements second method.
-
-	cast := inlinedMethod asCASTIn: ccg.
+	case := interpretMethod statements second statements first cases first.
+	inlinedMethod := case statements second statements first method.
+	linearizedBlock := inlinedMethod statements first.
+	
+	cast := linearizedBlock asCASTIn: ccg.
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
-	self assert: printedString equals: '/* MockLocalizationInterpreterMock>>#bytecodeUsingExternalizedAutoLocalizedVariableAsExpression */
-static sqInt
-bytecodeUsingExternalizedAutoLocalizedVariableAsExpression(void)
-{
+	self assert: printedString equals: '{
 	{
 		autoLocalizedVariable = local_autoLocalizedVariable;
 		t0 = nonInlinedMethodUsingAutolocalizedVariable();
 		local_autoLocalizedVariable = autoLocalizedVariable;
+	}
+	{
 		autoLocalizedVariable = local_autoLocalizedVariable;
 		foo(t0);
 		local_autoLocalizedVariable = autoLocalizedVariable;
 	}
-	return 0;
-}
-'
+}'
 ]
 
 { #category : #'tests - linearization' }
@@ -367,7 +354,7 @@ SlangLocalizationTestCase >> testLinearizeCallsInNestedLexicalScope [
 			self foo: t0
 		] "
 
-	ifBlock := methodToLinearize statements first arguments first.
+	ifBlock := methodToLinearize statements first statements first arguments first statements first.
 	
 	self assert: (ifBlock statements first
 			isSameAs: (TAssignmentNode
@@ -385,7 +372,7 @@ SlangLocalizationTestCase >> testLinearizeCallsInNestedLexicalScope [
 { #category : #'tests - linearization' }
 SlangLocalizationTestCase >> testLinearizeNestedCalls [
 
-	| methodToLinearize |
+	| methodToLinearize replacementBlock |
 	ccg addClass: MockLocalizationInterpreterMock.
 	methodToLinearize := ccg methodNamed: #bytecodeUsingExternalizedAutoLocalizedVariableAsExpression.
 	
@@ -398,18 +385,19 @@ SlangLocalizationTestCase >> testLinearizeNestedCalls [
 		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
 		self foo: t0"
 
-	self assert: (methodToLinearize statements first
+	replacementBlock := methodToLinearize statements first.
+	self assert: (replacementBlock statements first
 			isSameAs: (TAssignmentNode
 				variableNamed: 't0'
 				expression: (TSendNode
 					receiver: TVariableNode selfNode
 					selector: #nonInlinedMethodUsingAutolocalizedVariable))).
-	self assert: (methodToLinearize statements second
+	self assert: (replacementBlock statements second
 			isSameAs: (TSendNode
 					receiver: TVariableNode selfNode
 					selector: #foo:
 					arguments: { TVariableNode named: 't0' })).
-	self assert: methodToLinearize statements size equals: 3.
+	self assert: replacementBlock statements size equals: 2.
 ]
 
 { #category : #'tests - linearization' }
@@ -436,7 +424,7 @@ SlangLocalizationTestCase >> testLinearizeNestedCallsDefinesIntermediateVariable
 { #category : #'tests - initialization' }
 SlangLocalizationTestCase >> testLinearizeNestedCallsWithAssignment [
 
-	| methodToLinearize |
+	| methodToLinearize replacementBlock |
 	ccg addClass: MockLocalizationInterpreterMock.
 	methodToLinearize := ccg methodNamed: #bytecodeUsingExternalizedAutoLocalizedVariableAsExpressionInAssignment.
 	
@@ -449,21 +437,22 @@ SlangLocalizationTestCase >> testLinearizeNestedCallsWithAssignment [
 		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
 		t1 := self foo: t0.
 		foo := t1"
-		
-	self assert: (methodToLinearize statements first
+	
+	replacementBlock := methodToLinearize statements first.
+	self assert: (replacementBlock statements first
 			isSameAs: (TAssignmentNode
 				variableNamed: 't0'
 				expression: (TSendNode
 					receiver: TVariableNode selfNode
 					selector: #nonInlinedMethodUsingAutolocalizedVariable))).
-	self assert: (methodToLinearize statements second
+	self assert: (replacementBlock statements second
 			isSameAs: (TAssignmentNode
 				variableNamed: 't1'
 				expression: (TSendNode
 					receiver: TVariableNode selfNode
 					selector: #foo:
 					arguments: { TVariableNode named: 't0' }))).
-	self assert: (methodToLinearize statements third
+	self assert: (replacementBlock statements third
 			isSameAs: (TAssignmentNode
 				variableNamed: 'foo'
 				expression: (TVariableNode named: 't1')))
@@ -472,7 +461,7 @@ SlangLocalizationTestCase >> testLinearizeNestedCallsWithAssignment [
 { #category : #'tests - linearization' }
 SlangLocalizationTestCase >> testLinearizeNestedCallsWithReturn [
 
-	| methodToLinearize |
+	| methodToLinearize replacementBlock |
 	ccg addClass: MockLocalizationInterpreterMock.
 	methodToLinearize := ccg methodNamed: #bytecodeUsingExternalizedAutoLocalizedVariableAsExpressionInReturn.
 	
@@ -485,28 +474,29 @@ SlangLocalizationTestCase >> testLinearizeNestedCallsWithReturn [
 		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
 		t1 := self foo: t0.
 		^ t1"
-		
-	self assert: (methodToLinearize statements first
+	
+	replacementBlock := methodToLinearize statements first.
+	self assert: (replacementBlock statements first
 			isSameAs: (TAssignmentNode
 				variableNamed: 't0'
 				expression: (TSendNode
 					receiver: TVariableNode selfNode
 					selector: #nonInlinedMethodUsingAutolocalizedVariable))).
-	self assert: (methodToLinearize statements second
+	self assert: (replacementBlock statements second
 			isSameAs: (TAssignmentNode
 				variableNamed: 't1'
 				expression: (TSendNode
 					receiver: TVariableNode selfNode
 					selector: #foo:
 					arguments: { TVariableNode named: 't0' }))).
-	self assert: (methodToLinearize statements third
+	self assert: (replacementBlock statements third
 			isSameAs: (TReturnNode expression: (TVariableNode named: 't1')))
 ]
 
 { #category : #'tests - linearization' }
 SlangLocalizationTestCase >> testLinearizeSingleCalls [
 
-	| methodToLinearize |
+	| methodToLinearize replacementBlock |
 	ccg addClass: MockLocalizationInterpreterMock.
 	methodToLinearize := ccg methodNamed: #bytecodeUsingInlinedCall.
 	
@@ -518,7 +508,8 @@ SlangLocalizationTestCase >> testLinearizeSingleCalls [
 	After
 		self inlinedMethodUsingExternalCall"
 
-	self assert: (methodToLinearize statements first
+	replacementBlock := methodToLinearize statements first.
+	self assert: (replacementBlock statements first
 			isSameAs: (TSendNode
 					receiver: TVariableNode selfNode
 					selector: #inlinedMethodUsingExternalCall))
@@ -583,13 +574,15 @@ SlangLocalizationTestCase >> testNoExternalSendNodeOnSafeExternalCall [
 	interpretMethod := self applyManyLocalizationsToInterpretWith: #initializeWithSafeEscapingCall.
 
 	"Assert that the send node is preceded by variable externalization"
-	case := interpretMethod statements sixth cases first.
-	inlinedMethod := case statements second method.
+	case := interpretMethod statements sixth statements first cases first.
+	inlinedMethod := case statements second statements first method.
 
 	externalCall := inlinedMethod statements first.
 	cast := externalCall asCASTIn: ccg.
 	
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
-	self assert: printedString equals: 'nonInlinedMethodNotUsingAutolocalizedVariables((local_autoLocalizedVariable += 1))'
+	self assert: printedString equals: '{
+	nonInlinedMethodNotUsingAutolocalizedVariables((local_autoLocalizedVariable += 1));
+}'
 ]
