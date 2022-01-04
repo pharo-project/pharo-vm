@@ -121,10 +121,27 @@ MockLocalizationInterpreterMock class >> initializeWithSafeEscapingCall [
 	)
 ]
 
+{ #category : #initialization }
+MockLocalizationInterpreterMock class >> initializeWithoutAutoLocalizedVariable [
+
+	BytecodeTable := Array new: 1.
+	self table: BytecodeTable from:
+	#(
+	(  0  bytecodeNotUsingAutoLocalizedVariable)
+	)
+]
+
 { #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeInliningSharedMethod [
 
 	self sharedMethod
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeNotUsingAutoLocalizedVariable [
+
+	"None of these use localized variables"	
+	self nonInlinedMethodNotUsingAutolocalizedVariables: self nonInlinedMethodNotUsingAutolocalizedVariables
 ]
 
 { #category : #'interpreter shell' }
@@ -326,6 +343,13 @@ MockLocalizationInterpreterMock >> methodAlsoSharedLocalizedVariableBeforeInlini
 MockLocalizationInterpreterMock >> nonBytecodeUsingSharedLocalizedVariable [
 
 	sharedVariableToLocalize := 17
+]
+
+{ #category : #inline }
+MockLocalizationInterpreterMock >> nonInlinedMethodNotUsingAutolocalizedVariables [
+
+	<inline:false>
+	^ 10
 ]
 
 { #category : #inline }

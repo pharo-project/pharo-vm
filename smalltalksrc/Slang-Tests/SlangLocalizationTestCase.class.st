@@ -58,11 +58,10 @@ SlangLocalizationTestCase >> internalizationOf: aVariableName [
 SlangLocalizationTestCase >> linearizedBlockOfCaseMethod: aTMethod [ 
 
 	| case inlinedMethod |
-	case := (aTMethod statements detect: [ :e | 
-		e children anySatisfy: [ :c | c isCaseStmt ] ]) first cases first.
-	inlinedMethod := case statements second first method.
+	case := (aTMethod detect: [ :e | e isCaseStmt ]) cases first.
+	inlinedMethod := (case detect: [ :e | e isInline ]) method.
 	"Return the first non label, to avoid the labels introduced by inlining"
-	^ inlinedMethod statements detect: [ :e | e first isLabel not ]
+	^ inlinedMethod statements detect: [ :e | e isLabel not and: [ e isStatementList not or: [ e first isLabel not ]] ]
 ]
 
 { #category : #running }
@@ -101,6 +100,20 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableDefinesNewLocalVariables [
 	method := (ccg methodNamed: #interpretWithSeveralVariablesToLocalize).
 	self assert: ( method locals includes: #local_autoLocalizedVariable1).
 	self assert: (method locals includes: #local_autoLocalizedVariable)
+]
+
+{ #category : #tests }
+SlangLocalizationTestCase >> testAutoLocalizeVariableDoesNotLineariseUnnecessaryStatements [
+
+	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
+
+	| interpretMethod printedString block |
+	interpretMethod := self applyLocalizationToInterpretWith: #initializeWithoutAutoLocalizedVariable.
+	block := self linearizedBlockOfCaseMethod: interpretMethod.
+
+	printedString := String streamContents: [ :str | (block asCASTIn: ccg) prettyPrintOn: str ].
+
+	self assert: printedString equals: 'nonInlinedMethodNotUsingAutolocalizedVariables(nonInlinedMethodNotUsingAutolocalizedVariables())'
 ]
 
 { #category : #tests }
@@ -178,8 +191,8 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableReplacesByLocalOnInline [
 	interpretMethod := self applyLocalizationToInterpretWith: #initializeWithAutoLocalizedVariableOnly.
 	
 	"Fail if we find some node inside the case that uses the localized variable"
-	case := interpretMethod statements second first cases first.
-	variableNode := case statements second first method first first variable.
+	case := (interpretMethod detect: [:e | e isCaseStmt ]) cases first.
+	variableNode := (case detect: [ :e | e isAssignment ]) variable.
 
 	self assert: (variableNode isVariable and: [ variableNode name = #local_autoLocalizedVariable ]).
 ]
@@ -356,7 +369,10 @@ SlangLocalizationTestCase >> testLinearizeCallsInNestedLexicalScope [
 	
 	ccg prepareMethods.
 	ccg currentMethod: methodToLinearize.
-	ccg linearizeExternalCallsIn: methodToLinearize.
+	ccg
+		linearizeExternalCallsIn: methodToLinearize
+		withVariableBindings: ((ccg initAutoLocalizationOfVariablesIn: #interpret) asDictionary
+			collect: [:n| TVariableNode named: n]).
 
 	"Before it was 
 		true ifTrue: [
@@ -393,7 +409,10 @@ SlangLocalizationTestCase >> testLinearizeNestedCalls [
 	
 	ccg prepareMethods.
 	ccg currentMethod: methodToLinearize.
-	ccg linearizeExternalCallsIn: methodToLinearize.
+	ccg
+		linearizeExternalCallsIn: methodToLinearize
+		withVariableBindings: ((ccg initAutoLocalizationOfVariablesIn: #interpret) asDictionary
+			collect: [:n| TVariableNode named: n]).
 
 	"Before it was 
 		self foo: self nonInlinedMethodUsingAutolocalizedVariable.
@@ -425,7 +444,10 @@ SlangLocalizationTestCase >> testLinearizeNestedCallsWithAssignment [
 	
 	ccg prepareMethods.
 	ccg currentMethod: methodToLinearize.
-	ccg linearizeExternalCallsIn: methodToLinearize.
+	ccg
+		linearizeExternalCallsIn: methodToLinearize
+		withVariableBindings: ((ccg initAutoLocalizationOfVariablesIn: #interpret) asDictionary
+			collect: [:n| TVariableNode named: n]).
 
 	"Before it was 
 		foo := self foo: self nonInlinedMethodUsingAutolocalizedVariable.
@@ -463,7 +485,10 @@ SlangLocalizationTestCase >> testLinearizeNestedCallsWithReturn [
 	
 	ccg prepareMethods.
 	ccg currentMethod: methodToLinearize.
-	ccg linearizeExternalCallsIn: methodToLinearize.
+	ccg
+		linearizeExternalCallsIn: methodToLinearize
+		withVariableBindings: ((ccg initAutoLocalizationOfVariablesIn: #interpret) asDictionary
+			collect: [:n| TVariableNode named: n]).
 
 	"Before it was 
 		^ self foo: self nonInlinedMethodUsingAutolocalizedVariable.
@@ -499,7 +524,10 @@ SlangLocalizationTestCase >> testLinearizeSingleCalls [
 	
 	ccg prepareMethods.
 	ccg currentMethod: methodToLinearize.
-	ccg linearizeExternalCallsIn: methodToLinearize.
+	ccg
+		linearizeExternalCallsIn: methodToLinearize
+		withVariableBindings: ((ccg initAutoLocalizationOfVariablesIn: #interpret) asDictionary
+			collect: [:n| TVariableNode named: n]).
 
 	"Before it was 
 		self inlinedMethodUsingExternalCall.
@@ -577,10 +605,5 @@ SlangLocalizationTestCase >> testNoExternalSendNodeOnSafeExternalCall [
 	
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
-	self assert: printedString equals: '{
-	sqInt t0;
-
-	t0 = (local_autoLocalizedVariable += 1);
-	nonInlinedMethodNotUsingAutolocalizedVariables(t0);
-}'
+	self assert: printedString equals: 'nonInlinedMethodNotUsingAutolocalizedVariables((local_autoLocalizedVariable += 1))'
 ]

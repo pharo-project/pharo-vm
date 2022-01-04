@@ -113,7 +113,11 @@ TVariableNode >> nodesDo: aBlock parent: parent [
 { #category : #printing }
 TVariableNode >> printOn: aStream level: level [
 
-	aStream nextPutAll: name.
+	super printOn: aStream level: level.
+	aStream
+		nextPutAll: '(';
+		nextPutAll: name;
+		nextPutAll: ')'
 ]
 
 { #category : #accessing }

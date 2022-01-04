@@ -737,6 +737,12 @@ TMethod >> deny: aBooleanOrBlock [
 	aBooleanOrBlock value ifTrue: [AssertionFailure signal: 'Assertion failed']
 ]
 
+{ #category : #enumerating }
+TMethod >> detect: aFullBlockClosure [ 
+	
+	^ parseTree detect: aFullBlockClosure
+]
+
 { #category : #'C code generation' }
 TMethod >> determineTypeFor: aNode in: aCodeGen [
 	aNode isSend ifTrue:

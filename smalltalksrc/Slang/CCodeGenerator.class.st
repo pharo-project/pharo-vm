@@ -474,27 +474,28 @@ CCodeGenerator >> asmLabelNodeFor: selector [
 ]
 
 { #category : #'automatic-localization' }
-CCodeGenerator >> autoLocalizationOfVariablesIn: selector withVariableBindings: replacementDict [
+CCodeGenerator >> autoLocalizationOfVariablesIn: selector withVariableBindings: replacementList [
 
-	| m |
+	| m replacementDict |
 	(m := self methodNamed: selector) ifNil: [ ^ self ].
-	(replacementDict isNil or: [ replacementDict isEmpty ]) ifTrue: [ ^ self ].
+	(replacementList isNil or: [ replacementList isEmpty ]) ifTrue: [ ^ self ].
 
+	replacementDict := (replacementList collect: [ :asso | 
+				 asso key -> (TVariableNode named: asso value) ]) asDictionary.
 	"Replace all localized variables by their localized versions"
 	m parseTree
-		bindVariablesIn: (replacementDict collect: [ :asso | 
-				 asso key -> (TVariableNode named: asso value) ]) asDictionary.
+		bindVariablesIn: replacementDict.
 
-	self linearizeExternalCallsIn: m.
+	self linearizeExternalCallsIn: m  withVariableBindings: replacementDict.
 
 	"Wrap sends with externalization/internalization statements"
 	self wrapStatements: m withVariableBindings: replacementDict.
 
 	"Localize global values at the beginning of the function
 	AND externalize local values on each return"
-	replacementDict do: [ :asso | 
+	replacementDict associationsDo: [ :asso | 
 		m statements addFirst: (TAssignmentNode
-				 variable: (TVariableNode named: asso value)
+				 variable: asso value copy
 				 expression: (TVariableNode named: asso key)) ].
 ]
 
@@ -3716,24 +3717,26 @@ CCodeGenerator >> isVoidPointer: aCType [ "<String>"
 ]
 
 { #category : #'automatic-localization' }
-CCodeGenerator >> linearizeExternalCallsIn: aTMethod [ 
-	
+CCodeGenerator >> linearizeExternalCallsIn: aTMethod withVariableBindings: replacementDict [
+
 	"Should be applied after inlining.
 	Linearize all calls inside this method"
+
 	| replacementDictionary statementListsToLinearize |
 	replacementDictionary := Dictionary new.
 
-	statementListsToLinearize := aTMethod parseTree select: [ :e | 
-		e isStatementList ].
-	statementListsToLinearize do: [ :statementList |
-		statementList statements do: [ :statement | | replacement previousParent |
-			previousParent := statement parent.
-			replacement := statement linearizeIn: self.
+	statementListsToLinearize := aTMethod parseTree select: [ :e | e isStatementList ].
+	statementListsToLinearize do: [ :statementList | 
+		statementList statements do: [ :statement | 
+			| replacement previousParent |
+			(self
+				 shouldLinearizeStatement: statement
+				 withVariableBindings: replacementDict) ifTrue: [ 
+					previousParent := statement parent.
+					replacement := statement linearizeIn: self.
 
-			"Do not ask the child to replace itself, as it may have been already moved"
-			previousParent replaceChild: statement with: replacement.
-		].
-	]
+					"Do not ask the child to replace itself, as it may have been already moved"
+					previousParent replaceChild: statement with: replacement ] ] ]
 ]
 
 { #category : #utilities }
@@ -4803,6 +4806,17 @@ CCodeGenerator >> shouldIncludeMethodFor: aClass selector: selector [
 	^ true
 ]
 
+{ #category : #'automatic-localization' }
+CCodeGenerator >> shouldLinearizeStatement: statement withVariableBindings: replacementDict [
+
+	"Optimization: only externalize/localize variables used by the statement's called functions"
+	| collector |
+	collector := MLVMVariableAccessCollector
+		             inCodeGenerator: self
+		             fromGlobals: replacementDict keys.
+	^ (statement accept: collector) accessedVariables notEmpty
+]
+
 { #category : #'type inference' }
 CCodeGenerator >> signedTypeForIntegralType: aCTypeString [
 	(aCTypeString beginsWith: 'unsigned ') ifTrue:
@@ -5446,13 +5460,6 @@ CCodeGenerator >> wrapStatementWithExternalizationAndLocalizations: statement of
 CCodeGenerator >> wrapStatements: tMethod withVariableBindings: replacementDict [
 
 	"Wrap statements with external calls with TExternalSendNode"
-
-	| methodsReferencesToVarsToLocalize variablesDict |
-	variablesDict := (replacementDict collect: [ :asso | 
-		                  asso key -> (TVariableNode named: asso value) ])
-		                 asDictionary.
-
-	methodsReferencesToVarsToLocalize := Dictionary new.
 	"Apply externalization/localization of variables around 
 	 - static function calls
 	 - dynamic function calls (perform & co)"
@@ -5461,7 +5468,7 @@ CCodeGenerator >> wrapStatements: tMethod withVariableBindings: replacementDict 
 		oldParent := statement parent.
 		replacement := self
 			wrapStatementWithExternalizationAndLocalizations: statement
-			ofLocalizedVariables: (replacementDict collect: [ :asso | asso key ]).
+			ofLocalizedVariables: replacementDict keys.
 		oldParent replaceChild: statement with: replacement.
 	].
 ]
