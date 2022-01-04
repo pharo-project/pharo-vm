@@ -363,10 +363,11 @@ TParseNode >> linearizeIn: aCodeGenerator [
 	
 	callsInStatement := OrderedCollection new.
 	self
-		nodesDo: [ :node | 
-			((aCodeGenerator isFunctionCall: node) or: [
-				aCodeGenerator isDynamicCall: node ])
-					ifTrue: [ callsInStatement add: node ] ]
+		nodesDo: [ :node |
+			(node isAssignment or: [ 
+				(aCodeGenerator isFunctionCall: node) or: [
+					aCodeGenerator isDynamicCall: node ]])
+						ifTrue: [ callsInStatement add: node ] ]
 		unless: [ :unlessNode | unlessNode isStatementList ].
 	
 	replacementBlock := OrderedCollection new.
@@ -382,7 +383,7 @@ TParseNode >> linearizeIn: aCodeGenerator [
 			valueNode := TAssignmentNode
 					 variable: variableNode
 					 expression: (e replaceNodesIn: replacementsSoFar).
-			declarations at: variableNode name put: (aCodeGenerator typeFor: valueNode in: aCodeGenerator currentMethod).
+			declarations at: variableNode name put: (aCodeGenerator typeFor: valueNode in: aCodeGenerator currentMethod) , ' ', variableNode name.
 			replacementBlock add: valueNode.
 			replacementsSoFar at: e put: variableNode ].
 	rewrittenStatement := self replaceNodesIn: replacementsSoFar.

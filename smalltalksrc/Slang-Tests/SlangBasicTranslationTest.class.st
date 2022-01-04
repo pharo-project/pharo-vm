@@ -953,10 +953,11 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenArr
 	self
 		assert: translation
 		equals: '{
-	int * bar;
-	int[17] foo;
 	VM_LABEL(methodUsingSingleArrayVariable);
 	{
+		int * bar;
+		int[17] foo;
+
 		bar = foo;
 	}
 }'
@@ -971,10 +972,11 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenExt
 	self
 		assert: translation
 		equals: '{
-	sqInt bar;
-	external int foo;
 	VM_LABEL(methodUsingSingleExternalVariable);
 	{
+		sqInt bar;
+		external int foo;
+
 		bar = foo;
 	}
 }'
@@ -989,10 +991,11 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenIni
 	self
 		assert: translation
 		equals: '{
-	sqInt bar;
-	sqInt foo;
 	VM_LABEL(methodUsingSingleNonInitializedVariable);
 	{
+		sqInt bar;
+		sqInt foo;
+
 		foo = 0;
 		bar = foo;
 	}
@@ -1008,10 +1011,11 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenSta
 	self
 		assert: translation
 		equals: '{
-	int bar;
-	static int foo;
 	VM_LABEL(methodUsingSingleStaticVariable);
 	{
+		int bar;
+		static int foo;
+
 		bar = foo;
 	}
 }'
@@ -1026,9 +1030,11 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotRemoveExternalTemp [
 	self
 		assert: translation
 		equals: '{
-	extern int foo;
 	VM_LABEL(methodDefiningSingleExternVariable);
 	{
+		extern int foo;
+
+
 	}
 }'
 ]
@@ -1042,9 +1048,11 @@ SlangBasicTranslationTest >> testInlineNodeDoesNotRemoveStaticTemp [
 	self
 		assert: translation
 		equals: '{
-	static int foo;
 	VM_LABEL(methodDefiningSingleStaticVariable);
 	{
+		static int foo;
+
+
 	}
 }'
 ]
@@ -1075,13 +1083,14 @@ SlangBasicTranslationTest >> testInlineNodeSortsLocalTemps [
 	self
 		assert: translation
 		equals: '{
-	sqInt aaa;
-	sqInt bar;
-	sqInt ddd;
-	sqInt foo;
-	sqInt zzz;
 	VM_LABEL(methodWithUnsortedTemps);
 	{
+		sqInt aaa;
+		sqInt bar;
+		sqInt ddd;
+		sqInt foo;
+		sqInt zzz;
+
 		aaa = 0;
 		foo = 0;
 		zzz = 0;
@@ -5253,8 +5262,12 @@ SlangBasicTranslationTest >> testSendToByDo [
 						          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'for (i = 1; i <= 10; i += 2) {
-	var -= 7;
+	self assert: translation trimBoth equals: '{
+	sqInt i;
+
+	for (i = 1; i <= 10; i += 2) {
+		var -= 7;
+	};
 }'
 ]
 
@@ -5292,8 +5305,12 @@ SlangBasicTranslationTest >> testSendToByDoLimitExpressionHasSideEffect [
 
 	self
 		assert: translation trimBoth
-		equals: 'for (i = 1, toDoLimit = foo(var); i <= toDoLimit; i += 2) {
-	var -= 7;
+		equals: '{
+	sqInt i;
+
+	for (i = 1, toDoLimit = foo(var); i <= toDoLimit; i += 2) {
+		var -= 7;
+	};
 }'
 ]
 
@@ -5322,8 +5339,12 @@ SlangBasicTranslationTest >> testSendToByDoWithNegativeStep [
 						          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'for (i = 10; i >= 0; i += -2) {
-	var -= 7;
+	self assert: translation trimBoth equals: '{
+	sqInt i;
+
+	for (i = 10; i >= 0; i += -2) {
+		var -= 7;
+	};
 }'
 ]
 
@@ -5361,8 +5382,12 @@ SlangBasicTranslationTest >> testSendToByDoWithOperationReceiver [
 
 	self
 		assert: translation trimBoth
-		equals: 'for (i = 1 + (foo(1, 2)); i <= 10; i += 2) {
-	var -= 7;
+		equals: '{
+	sqInt i;
+
+	for (i = 1 + (foo(1, 2)); i <= 10; i += 2) {
+		var -= 7;
+	};
 }'
 ]
 
@@ -5400,8 +5425,12 @@ SlangBasicTranslationTest >> testSendToByDoWithOperationUpdate [
 
 	self
 		assert: translation trimBoth
-		equals: 'for (i = 1; i <= 10; i += 1 + (foo(1, 2))) {
-	var -= 7;
+		equals: '{
+	sqInt i;
+
+	for (i = 1; i <= 10; i += 1 + (foo(1, 2))) {
+		var -= 7;
+	};
 }'
 ]
 
@@ -5429,8 +5458,12 @@ SlangBasicTranslationTest >> testSendToDo [
 						          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'for (i = 1; i <= 10; i++) {
-	var -= 7;
+	self assert: translation trimBoth equals: '{
+	sqInt i;
+
+	for (i = 1; i <= 10; i++) {
+		var -= 7;
+	};
 }'
 ]
 
@@ -5466,8 +5499,12 @@ SlangBasicTranslationTest >> testSendToDoAvoidUnderflowingOfLimitExpression [
 
 	self
 		assert: translation trimBoth
-		equals: 'for (i = 1; i < foo; i++) {
-	var -= 7;
+		equals: '{
+	sqInt i;
+
+	for (i = 1; i < foo; i++) {
+		var -= 7;
+	};
 }'
 ]
 
@@ -5501,8 +5538,12 @@ SlangBasicTranslationTest >> testSendToDoLimitExpressionHasSideEffect [
 
 	self
 		assert: translation trimBoth
-		equals: 'for (i = 1; i <= (foo(var)); i++) {
-	var -= 7;
+		equals: '{
+	sqInt i;
+
+	for (i = 1; i <= (foo(var)); i++) {
+		var -= 7;
+	};
 }'
 ]
 
@@ -5536,8 +5577,12 @@ SlangBasicTranslationTest >> testSendToDoWithOperationReceiver [
 						          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'for (i = 1 + (foo(1, 2)); i <= 10; i++) {
-	var -= 7;
+	self assert: translation trimBoth equals: '{
+	sqInt i;
+
+	for (i = 1 + (foo(1, 2)); i <= 10; i++) {
+		var -= 7;
+	};
 }'
 ]
 

@@ -426,11 +426,6 @@ TMethod >> asCASTInlinedIn: aBuilder [
 	self removeUnusedTempsAndNilIfRequiredIn: aBuilder.
 	compoundStatement := CCompoundStatementNode new.
 	
-	self locals ifNotEmpty: [ 
-		(aBuilder sortStrings: self locals) do: [ :var | 
-			compoundStatement add: (CRawCodeNode code: (self
-						  declarationAt: var
-						  ifAbsent: [ aBuilder defaultType , ' ' , var ])) ] ].
 	compoundStatement add: (aBuilder asmLabelNodeFor: selector ).
 	aBuilder
 		pushScope: self
@@ -677,7 +672,13 @@ TMethod >> declarationAt: aVariableName ifAbsent: absentBlock [
 ]
 
 { #category : #accessing }
+TMethod >> declarationAt: aVariableName ifPresent: presentBlock [
+	^declarations at: aVariableName ifPresent: presentBlock
+]
+
+{ #category : #accessing }
 TMethod >> declarationAt: aVariableName  "<String>" put: aDeclaration [ "<String>" "^aDeclaration"
+
 	^declarations at: aVariableName put: aDeclaration
 ]
 
@@ -1168,6 +1169,12 @@ TMethod >> findReadBeforeAssignedIn: variables in: aCodeGen [
 		assignments: Set new
 		in: aCodeGen.
 	^readBeforeAssigned
+]
+
+{ #category : #accessing }
+TMethod >> first [
+	
+	^ self statements first
 ]
 
 { #category : #'primitive compilation' }
@@ -2021,6 +2028,12 @@ TMethod >> labels [
 TMethod >> labels: aCollection [
 
 	labels := aCollection asSet
+]
+
+{ #category : #accessing }
+TMethod >> last [
+	
+	^ parseTree last
 ]
 
 { #category : #inlining }

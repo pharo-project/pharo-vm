@@ -173,11 +173,10 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 	| cDeclarations collect |
 	cDeclarations := OrderedCollection new.
 	collect := OrderedCollection new.
-
-	self locals do: [ :var |
+	(aBuilder sortStrings: self locals asSet) do: [ :var |
 		cDeclarations add: (CRawCodeNode code: (aBuilder
 		  declarationAt: var
-		  ifAbsent: [ aBuilder defaultType , ' ' , var ])) ].
+		  ifAbsent: [ aBuilder defaultType, ' ' , var ])) ].
 
 	statements doWithIndex: [ :e :index | 
 		(e isLeaf and: [ 
@@ -269,6 +268,12 @@ TStatementListNode >> copyWithoutReturn [
 		yourself
 ]
 
+{ #category : #declarations }
+TStatementListNode >> declarationAt: aString ifPresent: aFullBlockClosure [ 
+	
+	^ declarations at: aString ifPresent: aFullBlockClosure
+]
+
 { #category : #accessing }
 TStatementListNode >> declarations [
 
@@ -349,6 +354,12 @@ TStatementListNode >> isSameAs: aTParseNode [
 TStatementListNode >> isStatementList [
 
 	^true
+]
+
+{ #category : #accessing }
+TStatementListNode >> last [
+	
+	^ self statements last
 ]
 
 { #category : #accessing }
@@ -490,6 +501,12 @@ TStatementListNode >> returnsExpression [
 		[^true].
 	^statements last variable ~= 'self'
 	  and: [statements last variable ~= 'nil']
+]
+
+{ #category : #accessing }
+TStatementListNode >> second [
+	
+	^ self statements second
 ]
 
 { #category : #accessing }

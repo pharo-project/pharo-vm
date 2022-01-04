@@ -483,10 +483,7 @@ CCodeGenerator >> autoLocalizationOfVariablesIn: selector withVariableBindings: 
 	"Replace all localized variables by their localized versions"
 	m parseTree
 		bindVariablesIn: (replacementDict collect: [ :asso | 
-				 asso key -> (TVariableNode named: asso value) ]) asDictionary
-		unless: [ :node | 
-			node isTMethod not and: [ 
-				node isReturn or: [ node isExternalSend ] ] ].
+				 asso key -> (TVariableNode named: asso value) ]) asDictionary.
 
 	self linearizeExternalCallsIn: m.
 
@@ -499,10 +496,6 @@ CCodeGenerator >> autoLocalizationOfVariablesIn: selector withVariableBindings: 
 		m statements addFirst: (TAssignmentNode
 				 variable: (TVariableNode named: asso value)
 				 expression: (TVariableNode named: asso key)) ].
-	"self
-		externalizeAtReturnsIn: m
-		withVariablesToLocalize: replacementDict."
-
 ]
 
 { #category : #utilities }
@@ -918,13 +911,21 @@ CCodeGenerator >> currentMethod: aTMethod [
 	currentMethod := aTMethod
 ]
 
-{ #category : #declarations }
-CCodeGenerator >> declarationAt: aString ifAbsent: aFullBlockClosure [ 
-	
-	| type |
-	type := (self typeOfVariable: aString) ifNil: [
-		^ aFullBlockClosure value ].
-	^ type , ' ', aString
+{ #category : #'C code generator' }
+CCodeGenerator >> declarationAt: aVariableName ifAbsent: absentBlock [
+
+	scopeStack reverseDo: [:scope|
+		scope declarationAt: aVariableName ifPresent: [ :declaration | ^ declaration ] ].
+	variableDeclarations
+		at: aVariableName
+		ifPresent: [ :declaration | ^ declaration ].
+	^(constants at: aVariableName ifAbsent: [ ^ absentBlock value ]) ifNotNil:
+		[:const|
+		const value isInteger
+			ifTrue: [self defaultType]
+			ifFalse:
+				[const value isFloat ifTrue:
+					[#double]]]
 ]
 
 { #category : #public }
@@ -1307,28 +1308,6 @@ CCodeGenerator >> externalizationOf: aVariableName [
 	^ (TAssignmentNode
 			variableNamed: aVariableName
 			expression: (TVariableNode named: #local_, aVariableName))
-]
-
-{ #category : #'automatic-localization' }
-CCodeGenerator >> externalizeAtReturnsIn: aTMethod withVariablesToLocalize: variablesReplacement [
-
-	| replacementDictionary variablesReplacementDict |
-	replacementDictionary := Dictionary new.
-	variablesReplacementDict := (variablesReplacement collect: [ :each | 
-		                             each value
-		                             -> (TVariableNode named: each key) ])
-		                            asDictionary.
-	aTMethod nodesDo: [ :e | 
-		e isReturn ifTrue: [
-			replacementDictionary
-				at: e
-				put:
-					(TStatementListNode statements:
-						 (variablesReplacement collect: [ :each | 
-							  TAssignmentNode
-								  variableNamed: each key
-								  expression: (TVariableNode named: each value) ]) , { e }) ] ].
-	aTMethod replaceNodesIn: replacementDictionary
 ]
 
 { #category : #utilities }
@@ -2850,9 +2829,9 @@ CCodeGenerator >> generateCASTToByDoUntil: limitExpr iterativeVariable: itVar ne
 CCodeGenerator >> generateCASTToDo: tast [
 
 	| iterationVar init until step |
-	tast arguments last args size = 1 ifFalse: [ 
+	tast arguments last arguments size = 1 ifFalse: [ 
 		self error: 'wrong number of block arguments' ].
-	iterationVar := tast arguments last args first.
+	iterationVar := tast arguments last arguments first.
 	init := CAssignmentNode
 		        lvalue: (CIdentifierNode name: iterationVar)
 		        rvalue: (tast receiver asCASTExpressionIn: self).
@@ -2863,12 +2842,13 @@ CCodeGenerator >> generateCASTToDo: tast [
 		         negative: false.
 	step := CIncrementNode object: (CIdentifierNode name: iterationVar).
 	^ CCompoundStatementNode
-		declarations: {(CRawCodeNode code: self defaultType, ' ', iterationVar)}
-		statements: { CForStatementNode
-		  init: { init }
-		  until: until
-		  step: { step }
-		  statement: (tast arguments last asCASTIn: self) }
+		  declarations:
+		  { (CRawCodeNode code: self defaultType , ' ' , iterationVar) }
+		  statements: { (CForStatementNode
+				   init: { init }
+				   until: until
+				   step: { step }
+				   statement: (tast arguments last asCASTIn: self)) }
 ]
 
 { #category : #'CAST translation' }
@@ -3744,10 +3724,7 @@ CCodeGenerator >> linearizeExternalCallsIn: aTMethod [
 	replacementDictionary := Dictionary new.
 
 	statementListsToLinearize := aTMethod parseTree select: [ :e | 
-		e isStatementList and: [
-			e parent notNil and: [
-				e parent isSend not
-					or: [ e parent parent isStatementList ] ]] ].
+		e isStatementList ].
 	statementListsToLinearize do: [ :statementList |
 		statementList statements do: [ :statement | | replacement previousParent |
 			previousParent := statement parent.
@@ -5480,7 +5457,7 @@ CCodeGenerator >> wrapStatements: tMethod withVariableBindings: replacementDict 
 	 - static function calls
 	 - dynamic function calls (perform & co)"
 	
-	tMethod allStatements do: [ :statement | | replacement oldParent |
+	tMethod allStatements withIndexDo: [ :statement :i | | replacement oldParent |
 		oldParent := statement parent.
 		replacement := self
 			wrapStatementWithExternalizationAndLocalizations: statement

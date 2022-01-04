@@ -113,10 +113,10 @@ SLInterpreterThreadingTest >> testReplaceLocalFPInterpreterVariablesByItsGnuDefi
 	| gnuified |
 	gnuified := self gnuify: 'sqInt
 interpret(void){
- localFP;
+ local_framePointer;
 }'.
 	
-	self assert: (gnuified lineNumber: 6) equals: '	register char* localFP FP_REG;'
+	self assert: (gnuified lineNumber: 6) equals: '	register char* local_framePointer FP_REG;'
 ]
 
 { #category : #tests }
@@ -125,10 +125,10 @@ SLInterpreterThreadingTest >> testReplaceLocalIPInterpreterVariablesByItsGnuDefi
 	| gnuified |
 	gnuified := self gnuify: 'sqInt
 interpret(void){
- localIP;
+ local_instructionPointer;
 }'.
 	
-	self assert: (gnuified lineNumber: 6) equals: '	register char* localIP IP_REG;'
+	self assert: (gnuified lineNumber: 6) equals: '	register char* local_instructionPointer IP_REG;'
 ]
 
 { #category : #tests }
@@ -137,8 +137,8 @@ SLInterpreterThreadingTest >> testReplaceLocalSPInterpreterVariablesByItsGnuDefi
 	| gnuified |
 	gnuified := self gnuify: 'sqInt 
 interpret(void){
- localSP;
+ local_stackPointer;
 }'.
 	
-	self assert: (gnuified lineNumber: 6) equals: '	register char* localSP SP_REG;'
+	self assert: (gnuified lineNumber: 6) equals: '	register char* local_stackPointer SP_REG;'
 ]

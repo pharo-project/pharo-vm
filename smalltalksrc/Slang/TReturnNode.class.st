@@ -11,7 +11,7 @@ Class {
 TReturnNode class >> expression: anExpression [
 
 	^ self new
-		setExpression: anExpression;
+		expression: anExpression;
 		yourself
 ]
 
@@ -120,6 +120,12 @@ TReturnNode >> endsWithReturn [
 TReturnNode >> expression [
 
 	^expression
+]
+
+{ #category : #accessing }
+TReturnNode >> expression: anExpression [
+
+	expression := anExpression
 ]
 
 { #category : #testing }
