@@ -2,7 +2,6 @@ Class {
 	#name : #SpurImageHeaderStruct,
 	#superclass : #VMStructType,
 	#instVars : [
-		'headerSize',
 		'dataSize',
 		'oldBaseAddr',
 		'initialSpecialObjectsOop',
@@ -17,9 +16,10 @@ Class {
 		'swapBytes',
 		'hdrLastHash',
 		'imageFormat',
-		'screenSize'
+		'screenSize',
+		'imageHeaderSize'
 	],
-	#category : #'VMMaker-JIT'
+	#category : #'VMMaker-ImageFormat'
 }
 
 { #category : #'simulation only' }
@@ -170,18 +170,6 @@ SpurImageHeaderStruct >> headerFlags: anObject [
 ]
 
 { #category : #accessing }
-SpurImageHeaderStruct >> headerSize [
-
-	^ headerSize
-]
-
-{ #category : #accessing }
-SpurImageHeaderStruct >> headerSize: anObject [
-
-	headerSize := anObject
-]
-
-{ #category : #accessing }
 SpurImageHeaderStruct >> imageFormat [
 
 	^ imageFormat
@@ -191,6 +179,18 @@ SpurImageHeaderStruct >> imageFormat [
 SpurImageHeaderStruct >> imageFormat: anObject [
 
 	imageFormat := anObject
+]
+
+{ #category : #accessing }
+SpurImageHeaderStruct >> imageHeaderSize [
+
+	^ imageHeaderSize
+]
+
+{ #category : #accessing }
+SpurImageHeaderStruct >> imageHeaderSize: anObject [
+
+	imageHeaderSize := anObject
 ]
 
 { #category : #accessing }

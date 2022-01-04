@@ -240,20 +240,20 @@ VMSimpleStackBasedCogitBytecodeTest >> testJumpForwardJumpsOverAnInstruction [
 		compile: [ 
 			| fixup nextOpcodeIndex |
 			cogit byte0: 144.
-			cogit bytecodePC: 8. "The method has a header so, the first bytecode is in offset 8"
+			cogit bytecodePC: 16. "The method has a header so, the first bytecode is in offset 8"
 			cogit genShortUnconditionalJump.
 
 			cogit byte0: 122.
-			cogit bytecodePC: 9.
+			cogit bytecodePC: 17.
 			cogit genReturnFalse.
 
 			cogit byte0: 121.
-			cogit bytecodePC: 10.
+			cogit bytecodePC: 18.
 			"We need to store the value to know if the bytecode has generated instructions"
 			nextOpcodeIndex := cogit getOpcodeIndex.
 			cogit genReturnTrue.
 			"As the bytecode is the target of a jump it has a fixup. We need to process it"
-			fixup := cogit fixupAt: 10.
+			fixup := cogit fixupAt: 18.
 			cogit
 				patchFixupTargetIfNeeded: fixup
 				nextOpcodeIndex: nextOpcodeIndex ]

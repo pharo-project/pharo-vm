@@ -14,6 +14,7 @@ SlangMemoryManager >> allocate: desiredSize [
 
 	| allocatedAddress newMemoryRegion allocatedSize newMemory |
 	"Allocate chunks multiple of 4KB, as they are required by the machine code simulator"
+
 	allocatedSize := (desiredSize / 4096) ceiling * 4096.
 
 	allocatedAddress := nextAvailableAddress.

@@ -2060,7 +2060,7 @@ StackInterpreter >> allocateHeapMemoryForImage: f withHeader: header desiredStar
 			 allocateMemory: heapSize
 			 minimum: minimumMemory
 			 imageFile: f
-			 headerSize: header headerSize
+			 headerSize: header imageHeaderSize
 			 desiredPosition: desiredPositionOfHeap) asUnsignedInteger.
 			
 	objectMemory memory ifNil: [ self insufficientMemoryAvailableError ].
@@ -7417,14 +7417,6 @@ StackInterpreter >> hasProfileSemaphore [
 	^ profileSemaphore ~= objectMemory nilObject
 ]
 
-{ #category : #'image save/restore' }
-StackInterpreter >> headerSize [
-	"header size in bytes; do not change!"
-	^ objectMemory wordSize = 4
-		  ifTrue: [ 64 ]
-		  ifFalse: [ 128 ]
-]
-
 { #category : #'stack pages' }
 StackInterpreter >> highBit: anUnsignedValue [ 
 	"This is a C implementation needed by ioSetMaxExtSemTableSize
@@ -7770,6 +7762,7 @@ StackInterpreter >> initializeGlobalSessionID [
 
 { #category : #initialization }
 StackInterpreter >> initializeInterpreter: bytesToShift [
+	
 	"Initialize Interpreter state before starting execution of a new image."
 	interpreterProxy := self sqGetInterpreterProxy.
 	self dummyReferToProxy.
@@ -7785,7 +7778,7 @@ StackInterpreter >> initializeInterpreter: bytesToShift [
 	profileSemaphore := profileProcess := profileMethod := objectMemory nilObject.
 	self initializeGlobalSessionID.
 	metaAccessorDepth := -2.
-	super initializeInterpreter: bytesToShift
+
 ]
 
 { #category : #'stack pages' }
@@ -10572,7 +10565,10 @@ StackInterpreter >> newHeader [
 	header := SpurImageHeaderStruct new.
 
 	header imageFormat: self imageFormatVersion.
-	header headerSize: self headerSize.
+
+	"header size in bytes; do not change!"
+	header imageHeaderSize: 	(objectMemory wordSize = 4 ifTrue: [ 64 ] ifFalse: [ 128 ]).
+	
 	header dataSize: objectMemory imageSizeToWrite.
 	header oldBaseAddr: objectMemory baseAddressOfImage.
 	header initialSpecialObjectsOop: objectMemory specialObjectsOop.
@@ -12942,7 +12938,7 @@ StackInterpreter >> readImageFromFile: f StartingAt: headerStart [
 	metaclassNumSlots := 6. "guess Metaclass instSize"
 	classNameIndex := 6. "guess (Class instVarIndexFor: 'name' ifAbsent: []) - 1"
 
-	header := (ImageReader newWithMemory: objectMemory) readHeaderFrom: f startingAt: headerStart.
+	header := (SpurImageReader newWithMemory: objectMemory andInterpreter: self) readHeaderFrom: f startingAt: headerStart.
 
 	objectMemory specialObjectsOop: header initialSpecialObjectsOop.
 	objectMemory lastHash: header hdrLastHash.
@@ -15898,7 +15894,7 @@ StackInterpreter >> writeImageFileIO [
 
 	| imageWriter |
 
-	imageWriter := ImageWriter newWithMemory: objectMemory andInterpreter: self.
+	imageWriter := SpurImageWriter newWithMemory: objectMemory andInterpreter: self.
 	
 	^imageWriter writeImageFile: self imageName fromHeader: self newHeader
 

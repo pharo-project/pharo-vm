@@ -1,23 +1,25 @@
 Class {
-	#name : #ImageReader,
+	#name : #SpurImageReader,
 	#superclass : #VMClass,
 	#instVars : [
-		'objectMemory'
+		'objectMemory',
+		'interpreter'
 	],
-	#category : #'VMMaker-Support'
+	#category : #'VMMaker-ImageFormat'
 }
 
 { #category : #'instance creation' }
-ImageReader class >> newWithMemory: memory [
+SpurImageReader class >> newWithMemory: memory andInterpreter: anInterpreter [
 
 	| imageReader |
 	imageReader := self new.
 	imageReader objectMemory: memory.
+	imageReader interpreter: anInterpreter.
 	^ imageReader
 ]
 
 { #category : #reading }
-ImageReader >> extractImageVersionFrom: file into: header [
+SpurImageReader >> extractImageVersionFrom: file into: header [
 	"Read and verify the image file version number and return true if the the given image file needs to be byte-swapped. As a side effect, position the file stream just after the version number of the image header. This code prints a warning and does a hard-exit if it cannot find a valid version number."
 	"This code is based on C code by Ian Piumarta."
 
@@ -51,7 +53,7 @@ ImageReader >> extractImageVersionFrom: file into: header [
 ]
 
 { #category : #reading }
-ImageReader >> getLongFromFile: aFile swap: swapFlag [
+SpurImageReader >> getLongFromFile: aFile swap: swapFlag [
 	"Answer the next 32 or 64 bit word read from aFile, byte-swapped according to the swapFlag."
 	<var: #aFile type: #sqImageFile>
 	<var: #w type: #usqInt>
@@ -69,7 +71,7 @@ ImageReader >> getLongFromFile: aFile swap: swapFlag [
 ]
 
 { #category : #reading }
-ImageReader >> getShortFromFile: aFile swap: swapFlag [
+SpurImageReader >> getShortFromFile: aFile swap: swapFlag [
 	"Answer the next 16 bit word read from aFile, byte-swapped according to the swapFlag."
 
 	<var: #aFile type: #sqImageFile>
@@ -88,7 +90,7 @@ ImageReader >> getShortFromFile: aFile swap: swapFlag [
 ]
 
 { #category : #reading }
-ImageReader >> getWord32FromFile: aFile swap: swapFlag [
+SpurImageReader >> getWord32FromFile: aFile swap: swapFlag [
 	"Answer the next 32 bit word read from aFile, byte-swapped according to the swapFlag."
 
 	<var: #aFile type: #sqImageFile>
@@ -107,14 +109,14 @@ ImageReader >> getWord32FromFile: aFile swap: swapFlag [
 ]
 
 { #category : #reading }
-ImageReader >> imageFormatCompatibilityVersion [
+SpurImageReader >> imageFormatCompatibilityVersion [
 	"This VM is backward-compatible with the immediately preceding version."
 
 	^objectMemory wordSize = 4 ifTrue: [6504] ifFalse: [68002]
 ]
 
 { #category : #reading }
-ImageReader >> imageFormatVersion [
+SpurImageReader >> imageFormatVersion [
 	"Return a magic constant that changes when the image format changes.
 	 Since the image reading code uses this to detect byte ordering, one
 	 must avoid version numbers that are invariant under byte reversal."
@@ -125,14 +127,26 @@ ImageReader >> imageFormatVersion [
 ]
 
 { #category : #accessing }
-ImageReader >> objectMemory: memory [
+SpurImageReader >> interpreter [
+
+	^ interpreter
+]
+
+{ #category : #accessing }
+SpurImageReader >> interpreter: anObject [
+
+	interpreter := anObject
+]
+
+{ #category : #accessing }
+SpurImageReader >> objectMemory: memory [
 
 	<doNotGenerate>
 	objectMemory := memory
 ]
 
 { #category : #reading }
-ImageReader >> readHeaderFrom: f startingAt: headerStart [
+SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 
 	<var: #f type: #sqImageFile>
 	<var: #headerStart type: #squeakFileOffsetType>
@@ -177,13 +191,13 @@ ImageReader >> readHeaderFrom: f startingAt: headerStart [
 		(self getLongFromFile: f swap: header swapBytes).
 
 	"position file after the header"
-	self sqImageFile: f Seek: headerStart + header headerSize.
+	self sqImageFile: f Seek: headerStart + header imageHeaderSize.
 
 	^ header
 ]
 
 { #category : #reading }
-ImageReader >> readableFormat: imageVersion [
+SpurImageReader >> readableFormat: imageVersion [
 	"Anwer true if images of the given format are readable by this interpreter.
 	 Allows a virtual machine to accept selected older image formats."
 

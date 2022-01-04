@@ -77,7 +77,6 @@ Class {
 		'nextProfileTick',
 		'preemptionYields',
 		'newFinalization',
-		'sHEAFn',
 		'ffiExceptionResponse'
 	],
 	#classVars : [
@@ -292,11 +291,6 @@ InterpreterPrimitives >> initialize [
 	"Here we can initialize the variables C initializes to zero.  #initialize methods do /not/ get translated."
 	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := inFFIFlags := ffiExceptionResponse := 0.
 	newFinalization := false
-]
-
-{ #category : #initialization }
-InterpreterPrimitives >> initializeInterpreter: bytesToShift [
-	sHEAFn := self ioLoadFunction: 'secHasEnvironmentAccess' From: 'SecurityPlugin'
 ]
 
 { #category : #'simulation support' }
@@ -2073,8 +2067,6 @@ InterpreterPrimitives >> primitiveGetenv [
 	<export: true>
 	<var: #key type: #'char *'>
 	<var: #var type: #'char *'>
-	sHEAFn ~= 0 ifTrue: "secHasEnvironmentAccess"
-		[self sHEAFn ifFalse: [^self primitiveFailFor: PrimErrInappropriate]].
 	key := self cStringOrNullFor: self stackTop.
 	key = 0 ifTrue:
 		[self successful ifTrue:
@@ -4752,12 +4744,6 @@ InterpreterPrimitives >> rawCompare: string1 length: strLength1 with: string2 le
 	
 	
 	
-]
-
-{ #category : #'simulation support' }
-InterpreterPrimitives >> sHEAFn [
-	<doNotGenerate>
-	^true
 ]
 
 { #category : #'primitive support' }

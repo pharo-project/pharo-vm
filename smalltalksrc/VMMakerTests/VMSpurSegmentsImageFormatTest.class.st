@@ -4,19 +4,6 @@ Class {
 	#category : #'VMMakerTests-MemoryTests'
 }
 
-{ #category : #actions }
-VMSpurSegmentsImageFormatTest >> saveImage [
-
-	interpreter extraVMMemory: 0.
-
-	interpreter imageName: self imageFileName.
-	interpreter preemptionYields: false.
-	interpreter setImageHeaderFlagsFrom: 0.
-	
-	interpreter writeImageFileIO.
-
-]
-
 { #category : #tests }
 VMSpurSegmentsImageFormatTest >> testImageWithTwoSegmentsHasCorrectSizeForFirstSegment [
 

@@ -6481,7 +6481,10 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	self assert: (self isEmptyObjStack: weaklingStack).
 
 	self initializeFreeSpacePostLoad: freeListObj.
+	
 	segmentManager collapseSegmentsPostSwizzle.
+	segmentManager assertBridge.
+	
 	self updateFreeLists.
 	self computeFreeSpacePostSwizzle.
 	compactor postSwizzleAction.
@@ -6528,7 +6531,9 @@ SpurMemoryManager >> initializePostBootstrap [
 	freeOldSpaceStart := freeStart.
 	freeStart := scavenger eden start.
 	pastSpaceStart := scavenger pastSpace start.
-	scavengeThreshold := scavenger eden limit - (scavenger edenBytes // 64)
+	scavengeThreshold := scavenger eden limit
+							- coInterpreter interpreterAllocationReserveBytes.
+
 ]
 
 { #category : #'gc - global' }
@@ -10854,7 +10859,7 @@ SpurMemoryManager >> scavengingGCTenuringIf: tenuringCriterion [
 	"Run the scavenger."
 	<inline: false>
 	self assert: remapBufferCount = 0.
-	(self asserta: scavenger eden limit - freeStart > coInterpreter interpreterAllocationReserveBytes) ifFalse:
+	(self asserta: scavenger eden limit - freeStart >= coInterpreter interpreterAllocationReserveBytes) ifFalse:
 		[coInterpreter tab;
 			printNum: scavenger eden limit - freeStart; space;
 			printNum: coInterpreter interpreterAllocationReserveBytes; space;

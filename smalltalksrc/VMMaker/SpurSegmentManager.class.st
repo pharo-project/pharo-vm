@@ -182,6 +182,13 @@ SpurSegmentManager >> allocateOrExtendSegmentInfos [
 	numSegInfos := newNumSegs
 ]
 
+{ #category : #asserting }
+SpurSegmentManager >> assertBridge [
+
+	self assert: (manager isSegmentBridge: (self bridgeAt: 0)).
+	self assert: (manager numSlotsOfAny: (self bridgeAt: 0)) = 0
+]
+
 { #category : #bridges }
 SpurSegmentManager >> bridgeAt: segIndex [
 	^self bridgeFor: (self addressOf: (segments at: segIndex))
@@ -242,12 +249,8 @@ SpurSegmentManager >> collapseSegmentsPostSwizzle [
 	manager bootstrapping ifTrue:
 		["finally plant a bridge at the end of the coalesced segment and cut back the
 		  manager's notion of the end of memory to immediately before the bridge."
-		 self assert: manager endOfMemory = (segments at: 0) segLimit.
-		 manager
-			initSegmentBridgeWithBytes: manager bridgeSize
-			at: manager endOfMemory - manager bridgeSize].
-	self assert: (manager isSegmentBridge: (self bridgeAt: 0)).
-	self assert: (manager numSlotsOfAny: (self bridgeAt: 0)) = 0
+		 self plantBridgeAtTheEndOfMemory].
+
 ]
 
 { #category : #'simulation only' }
@@ -459,6 +462,15 @@ SpurSegmentManager >> notePinned: objOop [
 SpurSegmentManager >> numSegments [
 	<cmacro: '() GIV(numSegments)'>
 	^numSegments
+]
+
+{ #category : #bootstrapping }
+SpurSegmentManager >> plantBridgeAtTheEndOfMemory [
+
+	self assert: manager endOfMemory = (segments at: 0) segLimit.
+	manager
+		initSegmentBridgeWithBytes: manager bridgeSize
+		at: manager endOfMemory - manager bridgeSize
 ]
 
 { #category : #snapshot }

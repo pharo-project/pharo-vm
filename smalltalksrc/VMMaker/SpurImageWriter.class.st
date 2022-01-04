@@ -1,15 +1,15 @@
 Class {
-	#name : #ImageWriter,
+	#name : #SpurImageWriter,
 	#superclass : #VMClass,
 	#instVars : [
 		'objectMemory',
 		'interpreter'
 	],
-	#category : #'VMMaker-Support'
+	#category : #'VMMaker-ImageFormat'
 }
 
 { #category : #'instance creation' }
-ImageWriter class >> newWithMemory: memory andInterpreter: anInterpreter [
+SpurImageWriter class >> newWithMemory: memory andInterpreter: anInterpreter [
 
 
 	| imageWriter |
@@ -20,21 +20,21 @@ ImageWriter class >> newWithMemory: memory andInterpreter: anInterpreter [
 ]
 
 { #category : #accessing }
-ImageWriter >> interpreter: anInterpreter [
+SpurImageWriter >> interpreter: anInterpreter [
 
 	<doNotGenerate>
 	interpreter := anInterpreter
 ]
 
 { #category : #accessing }
-ImageWriter >> objectMemory: memory [
+SpurImageWriter >> objectMemory: memory [
 
 	<doNotGenerate>
 	objectMemory := memory
 ]
 
 { #category : #writing }
-ImageWriter >> padHeader: emptySize toFile: f [
+SpurImageWriter >> padHeader: emptySize toFile: f [
 
 	emptySize timesRepeat: [self putLong: 0 toFile: f].
 	
@@ -44,7 +44,7 @@ ImageWriter >> padHeader: emptySize toFile: f [
 ]
 
 { #category : #writing }
-ImageWriter >> putLong: aLong toFile: aFile [
+SpurImageWriter >> putLong: aLong toFile: aFile [
 	"Append aLong to aFile in this platform's 'natural' byte order.  aLong is either 32 or 64 bits,
 	 depending on ObjectMemory.  (Bytes will be swapped, if necessary, when the image is read
 	 on a different platform.) Set successFlag to false if the write fails."
@@ -66,7 +66,7 @@ ImageWriter >> putLong: aLong toFile: aFile [
 ]
 
 { #category : #writing }
-ImageWriter >> putShort: aShort toFile: aFile [
+SpurImageWriter >> putShort: aShort toFile: aFile [
 	"Append the 16-bit aShort to aFile in this platform's 'natural' byte order.
 	 (Bytes will be swapped, if necessary, when the image is read on a
 	 different platform.) Set successFlag to false if the write fails."
@@ -86,7 +86,7 @@ ImageWriter >> putShort: aShort toFile: aFile [
 ]
 
 { #category : #writing }
-ImageWriter >> putWord32: aWord32 toFile: aFile [
+SpurImageWriter >> putWord32: aWord32 toFile: aFile [
 	"Append aWord32 to aFile in this platform's 'natural' byte order.  aWord32 is 32 bits,
 	 depending on ObjectMemory.  (Bytes will be swapped, if necessary, when the image is read
 	 on a different platform.) Set successFlag to false if the write fails."
@@ -108,38 +108,38 @@ ImageWriter >> putWord32: aWord32 toFile: aFile [
 ]
 
 { #category : #'accessing - files' }
-ImageWriter >> sqImage: file File: imageName StartLocation: location [
+SpurImageWriter >> sqImage: file File: imageName StartLocation: location [
 
 	<doNotGenerate>
 	^0
 ]
 
 { #category : #'accessing - files' }
-ImageWriter >> sqImageFile: imageName Open: fileMode [
+SpurImageWriter >> sqImageFile: imageName Open: fileMode [
 
 	<doNotGenerate>
 	^imageName asFileReference binaryWriteStream
 ]
 
 { #category : #'accessing - files' }
-ImageWriter >> sqImageFileClose: file [
+SpurImageWriter >> sqImageFileClose: file [
 
 	<doNotGenerate>
 	file close
 ]
 
 { #category : #'accessing - files' }
-ImageWriter >> sqImageFilePosition: file [
+SpurImageWriter >> sqImageFilePosition: file [
 
 	<doNotGenerate>
 	^file position
 ]
 
 { #category : #writing }
-ImageWriter >> writeHeader: header toFile: f [
+SpurImageWriter >> writeHeader: header toFile: f [
 
 	self putWord32: header imageFormat toFile: f.
-	self putWord32: header headerSize toFile: f.
+	self putWord32: header imageHeaderSize toFile: f.
 	self putLong: header dataSize toFile: f.
 	self putLong: header oldBaseAddr toFile: f.
 	self putLong: header initialSpecialObjectsOop toFile: f.
@@ -156,18 +156,17 @@ ImageWriter >> writeHeader: header toFile: f [
 ]
 
 { #category : #writing }
-ImageWriter >> writeImageFile: imageName fromHeader: header [
+SpurImageWriter >> writeImageFile: imageName fromHeader: header [
 	"Write the image header and heap contents to imageFile for snapshot. c.f. writeImageFileIOSimulation.
 	 The game below is to maintain 64-bit alignment for all putLong:toFile: occurrences."
 	<inline: #never>
-	| headerStart headerSize f imageBytes bytesWritten |
+	| headerStart imageHeaderSize f imageBytes bytesWritten |
 	<var: #headerStart type: #squeakFileOffsetType>
 	<var: #imageName declareC: 'extern char imageName[]'>
 	<var: #f type: #sqImageFile>
-	<var: #sCWIfn type: #'void *'> "?"
 
 	headerStart := 0.  
-	headerSize := header headerSize.
+	imageHeaderSize := header imageHeaderSize.
 
 	self logDebug: 'Writing snapshot file %s' _: imageName.
 
@@ -176,7 +175,7 @@ ImageWriter >> writeImageFile: imageName fromHeader: header [
 		[^self primitiveFail].
 
 	imageBytes := header dataSize.
-	headerStart := self sqImage: f File: imageName StartLocation: headerSize + imageBytes.
+	headerStart := self sqImage: f File: imageName StartLocation: imageHeaderSize + imageBytes.
 	self cCode: '/* Note: on Unix systems one could put an exec command here, padded to 512 bytes */'.
 	"position file to start of header"
 	self sqImageFile: f Seek: headerStart.
@@ -193,8 +192,8 @@ ImageWriter >> writeImageFile: imageName fromHeader: header [
 
 
 	"position file after the header"
-	self assert: headerStart + headerSize = (self sqImageFilePosition: f).
-	self sqImageFile: f Seek: headerStart + headerSize.
+	self assert: headerStart + imageHeaderSize = (self sqImageFilePosition: f).
+	self sqImageFile: f Seek: headerStart + imageHeaderSize.
 
 	interpreter successful ifFalse: "file write or seek failure"
 		[self sqImageFileClose: f.

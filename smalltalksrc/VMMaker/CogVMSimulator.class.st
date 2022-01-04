@@ -2152,11 +2152,14 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 
 	| f |
 	
-	"open image file and read the header"
-	memoryManager := MachineSimulatorMemoryManager new.
-	objectMemory memoryManager: memoryManager.
-	memoryManager wordSize: objectMemory wordSize.
+	"We set the memory manager if it is not already set"	
+	memoryManager ifNil: [	
+		memoryManager := MachineSimulatorMemoryManager new.
+		objectMemory memoryManager: memoryManager.
+		memoryManager wordSize: objectMemory wordSize.
+	].
 
+	"open image file and read the header"
 	(f := self openImageFileNamed: fileName) ifNil: [ ^ self ].
 
 	"Set the image name and the first argument; there are

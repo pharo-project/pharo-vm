@@ -22,14 +22,30 @@ VMAbstractImageFormatTest >> readHeader [
 	^ header
 ]
 
+{ #category : #actions }
+VMAbstractImageFormatTest >> saveImage [
+
+	interpreter extraVMMemory: 0.
+
+	interpreter imageName: self imageFileName.
+	interpreter preemptionYields: false.
+	interpreter setImageHeaderFlagsFrom: 0.
+	
+	interpreter writeImageFileIO.
+
+]
+
 { #category : #running }
 VMAbstractImageFormatTest >> setUp [
 
 	super setUp.
 	
-	memory bootstrapping: false.
+	"Objects should be registerd in Special Object Array, as they are validated while loading"
+	memory splObj: NilObject put: memory nilObject.
+	memory splObj: FalseObject put: memory falseObject.
+	memory splObj: TrueObject put: memory trueObject.	
 	
-	imageReader := ImageReader newWithMemory: memory
+	imageReader := SpurImageReader newWithMemory: memory andInterpreter: interpreter 
 ]
 
 { #category : #running }
