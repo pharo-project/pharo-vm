@@ -16,12 +16,14 @@ SlangMemoryManager >> allocate: desiredSize [
 ]
 
 { #category : #allocating }
-SlangMemoryManager >> allocate: desiredSize desiredPosition: desiredPosition [ 
+SlangMemoryManager >> allocate: desiredSize desiredPosition: desiredPos [ 
 
-	| allocatedAddress newMemoryRegion allocatedSize newMemory |
+	| allocatedAddress newMemoryRegion allocatedSize newMemory desiredPosition |
 	"Allocate chunks multiple of 4KB, as they are required by the machine code simulator"
 
 	allocatedSize := (desiredSize / 4096) ceiling * 4096.
+
+	desiredPosition := (desiredPos / 4096) ceiling * 4096.
 
 	self assert: desiredPosition \\ 4096 = 0.
 
