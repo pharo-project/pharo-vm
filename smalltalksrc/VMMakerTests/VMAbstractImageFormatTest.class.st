@@ -25,7 +25,7 @@ VMAbstractImageFormatTest >> readHeader [
 { #category : #actions }
 VMAbstractImageFormatTest >> saveImage [
 
-	interpreter extraVMMemory: 0.
+	interpreter setExtraVMMemory: 0.
 
 	interpreter imageName: self imageFileName.
 	interpreter preemptionYields: false.

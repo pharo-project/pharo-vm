@@ -8,6 +8,15 @@ Class {
 	#category : #'VMMaker-ImageFormat'
 }
 
+{ #category : #translation }
+SpurImageWriter class >> declareCVarsIn: aCCodeGenerator [
+
+	aCCodeGenerator
+		removeVariable: 'objectMemory';
+		removeVariable: 'interpreter'.
+
+]
+
 { #category : #'instance creation' }
 SpurImageWriter class >> newWithMemory: memory andInterpreter: anInterpreter [
 
@@ -156,26 +165,28 @@ SpurImageWriter >> writeHeader: header toFile: f [
 ]
 
 { #category : #writing }
-SpurImageWriter >> writeImageFile: imageName fromHeader: header [
+SpurImageWriter >> writeImageFile: imageFileName fromHeader: header [
 	"Write the image header and heap contents to imageFile for snapshot. c.f. writeImageFileIOSimulation.
 	 The game below is to maintain 64-bit alignment for all putLong:toFile: occurrences."
-	<inline: #never>
+
 	| headerStart imageHeaderSize f imageBytes bytesWritten |
+
 	<var: #headerStart type: #squeakFileOffsetType>
-	<var: #imageName declareC: 'extern char imageName[]'>
+	<var: #imageFileName declareC: 'char *imageFileName'>
 	<var: #f type: #sqImageFile>
+	<var: #header type: #SpurImageHeaderStruct>
 
 	headerStart := 0.  
 	imageHeaderSize := header imageHeaderSize.
 
-	self logDebug: 'Writing snapshot file %s' _: imageName.
+	self logDebug: 'Writing snapshot file %s' _: imageFileName.
 
-	f := self sqImageFile: imageName Open: 'wb'.
+	f := self sqImageFile: imageFileName Open: 'wb'.
 	f = nil ifTrue: "could not open the image file for writing"
 		[^self primitiveFail].
 
 	imageBytes := header dataSize.
-	headerStart := self sqImage: f File: imageName StartLocation: imageHeaderSize + imageBytes.
+	headerStart := self sqImage: f File: imageFileName StartLocation: imageHeaderSize + imageBytes.
 	self cCode: '/* Note: on Unix systems one could put an exec command here, padded to 512 bytes */'.
 	"position file to start of header"
 	self sqImageFile: f Seek: headerStart.
@@ -212,6 +223,5 @@ SpurImageWriter >> writeImageFile: imageName fromHeader: header [
 	interpreter success: bytesWritten = imageBytes.
 	self sqImageFileClose: f.
 	
-	self logDebug: 'Snapshot file %s done' _: imageName.
-
+	self logDebug: 'Snapshot file %s done' _: imageFileName.
 ]

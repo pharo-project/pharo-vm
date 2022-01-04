@@ -8,6 +8,15 @@ Class {
 	#category : #'VMMaker-ImageFormat'
 }
 
+{ #category : #translation }
+SpurImageReader class >> declareCVarsIn: aCCodeGenerator [
+
+	aCCodeGenerator
+		removeVariable: 'objectMemory';
+		removeVariable: 'interpreter'.
+
+]
+
 { #category : #'instance creation' }
 SpurImageReader class >> newWithMemory: memory andInterpreter: anInterpreter [
 
@@ -129,11 +138,15 @@ SpurImageReader >> imageFormatVersion [
 { #category : #accessing }
 SpurImageReader >> interpreter [
 
+	<doNotGenerate>
+
 	^ interpreter
 ]
 
 { #category : #accessing }
 SpurImageReader >> interpreter: anObject [
+
+	<doNotGenerate>
 
 	interpreter := anObject
 ]
@@ -152,7 +165,9 @@ SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 	<var: #headerStart type: #squeakFileOffsetType>
 	<var: #header type: #SpurImageHeaderStruct>
 	<returnTypeC: #SpurImageHeaderStruct>
+	
 	| header |
+	
 	self simulationOnly: [ header := SpurImageHeaderStruct new ].
 
 	self extractImageVersionFrom: f into: header.

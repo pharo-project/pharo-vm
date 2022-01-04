@@ -413,7 +413,9 @@ Class {
 		'libFFI',
 		'codeGeneratorToComputeAccessorDepth',
 		'showSurfaceFn',
-		'messageCount'
+		'messageCount',
+		'imageReader',
+		'imageWriter'
 	],
 	#classVars : [
 		'AccessModifierPrivate',
@@ -495,7 +497,9 @@ StackInterpreter class >> ancilliaryClasses [
 		InterpreterStackPages.
 		LibFFI.
 		CogStackPage.
-		SpurImageHeaderStruct}
+		SpurImageHeaderStruct.
+		SpurImageReader.
+		SpurImageWriter}
 ]
 
 { #category : #constants }
@@ -624,6 +628,10 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	
 	aCCodeGenerator removeVariable: #'libFFI'.
 	LibFFIConstants classVariables do: [ :e | aCCodeGenerator removeConstant: e name ].
+	
+	aCCodeGenerator 
+		removeVariable: 'imageReader';
+		removeVariable: 'imageWriter'
 ]
 
 { #category : #translation }
@@ -5017,22 +5025,6 @@ StackInterpreter >> defaultNumStackPages [
 		ifFalse: [160]
 ]
 
-{ #category : #accessing }
-StackInterpreter >> desiredEdenBytes [
-
-	<doNotGenerate>
-	
-	^ desiredEdenBytes
-]
-
-{ #category : #accessing }
-StackInterpreter >> desiredNumStackPages [
-	
-	<doNotGenerate>
-	
-	^ desiredNumStackPages
-]
-
 { #category : #'debug support' }
 StackInterpreter >> detailedSymbolicMethod: aMethod [
 	<doNotGenerate>
@@ -5959,21 +5951,6 @@ StackInterpreter >> externalizeIPandSP [
 	instructionPointer := self oopForPointer: localIP.
 	stackPointer := localSP.
 	framePointer := localFP
-]
-
-{ #category : #accessing }
-StackInterpreter >> extraVMMemory [
-
-	<doNotGenerate>
-
-	^ extraVMMemory
-]
-
-{ #category : #accessing }
-StackInterpreter >> extraVMMemory: anInteger [ 
-
-	<doNotGenerate>
-	extraVMMemory := anInteger
 ]
 
 { #category : #'primitive support' }
@@ -7158,6 +7135,18 @@ StackInterpreter >> getDesiredCogCodeSize [
 	^objectMemory nilObject
 ]
 
+{ #category : #accessing }
+StackInterpreter >> getDesiredEdenBytes [
+
+	^ desiredEdenBytes
+]
+
+{ #category : #accessing }
+StackInterpreter >> getDesiredNumStackPages [
+	
+	^ desiredNumStackPages
+]
+
 { #category : #'message sending' }
 StackInterpreter >> getErrorObjectFromPrimFailCode [
 	"Answer the errorCode object to supply to a failing primitive method that accepts one.
@@ -7191,6 +7180,12 @@ StackInterpreter >> getExternalSemaphoreWithIndex: index [
 	^ sema
 ]
 
+{ #category : #accessing }
+StackInterpreter >> getExtraVMMemory [
+
+	^ extraVMMemory
+]
+
 { #category : #'plugin primitive support' }
 StackInterpreter >> getFullScreenFlag [
 	^fullScreenFlag
@@ -7216,6 +7211,12 @@ StackInterpreter >> getImageHeaderFlags [
 { #category : #'plugin primitive support' }
 StackInterpreter >> getInterruptPending [
 	^interruptPending
+]
+
+{ #category : #accessing }
+StackInterpreter >> getMaxExtSemTabSizeSet [
+	
+	^ maxExtSemTabSizeSet
 ]
 
 { #category : #'internal interpreter access' }
@@ -10095,13 +10096,6 @@ StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 
 ]
 
-{ #category : #accessing }
-StackInterpreter >> maxExtSemTabSizeSet [
-	
-	<doNotGenerate>
-	^ maxExtSemTabSizeSet
-]
-
 { #category : #'primitive support' }
 StackInterpreter >> maybeFailForLastObjectOverwrite [
 	<inline: true>
@@ -10560,28 +10554,33 @@ StackInterpreter >> nativeStackSize [
 { #category : #'image save/restore' }
 StackInterpreter >> newHeader [
 
-	| header |
+	| header sizeToWrite |
 
-	header := SpurImageHeaderStruct new.
+	<var: #header type: #'SpurImageHeaderStruct'>
+	<returnTypeC: #SpurImageHeaderStruct>	
+
+	self simulationOnly: [ header := SpurImageHeaderStruct new ].
 
 	header imageFormat: self imageFormatVersion.
 
 	"header size in bytes; do not change!"
 	header imageHeaderSize: 	(objectMemory wordSize = 4 ifTrue: [ 64 ] ifFalse: [ 128 ]).
 	
-	header dataSize: objectMemory imageSizeToWrite.
+	sizeToWrite := objectMemory imageSizeToWrite.
+	header dataSize: sizeToWrite.
+
 	header oldBaseAddr: objectMemory baseAddressOfImage.
 	header initialSpecialObjectsOop: objectMemory specialObjectsOop.
 	header hdrLastHash: objectMemory lastHash.
 	header screenSize: self ioScreenSize.
 	header headerFlags: self getImageHeaderFlags.
-	header extraVMMemory: (self extraVMMemory ifNil: [ 0 ]).
-	header hdrNumStackPages: self desiredNumStackPages.
+	header extraVMMemory: (self getExtraVMMemory ifNil: [ 0 ]).
+	header hdrNumStackPages: self getDesiredNumStackPages.
 	header hdrCogCodeSize: self unknownShortOrCodeSizeInKs.
-	header hdrEdenBytes: self desiredEdenBytes.
+	header hdrEdenBytes: self getDesiredEdenBytes.
 
 	header hdrMaxExtSemTabSize: (
-		self maxExtSemTabSizeSet
+		self getMaxExtSemTabSizeSet
 				 ifTrue: [ self ioGetMaxExtSemTableSize ]
 				 ifFalse: [ 0 ]
 	).
@@ -12938,7 +12937,7 @@ StackInterpreter >> readImageFromFile: f StartingAt: headerStart [
 	metaclassNumSlots := 6. "guess Metaclass instSize"
 	classNameIndex := 6. "guess (Class instVarIndexFor: 'name' ifAbsent: []) - 1"
 
-	header := (SpurImageReader newWithMemory: objectMemory andInterpreter: self) readHeaderFrom: f startingAt: headerStart.
+	header := imageReader readHeaderFrom: f startingAt: headerStart.
 
 	objectMemory specialObjectsOop: header initialSpecialObjectsOop.
 	objectMemory lastHash: header hdrLastHash.
@@ -13560,6 +13559,12 @@ StackInterpreter >> setDesiredEdenBytes: bytes [
 	<var: #bytes type: #usqLong>
 	desiredEdenBytes := bytes.
 	^0
+]
+
+{ #category : #accessing }
+StackInterpreter >> setExtraVMMemory: anInteger [ 
+
+	extraVMMemory := anInteger
 ]
 
 { #category : #'frame access' }
@@ -15888,15 +15893,22 @@ StackInterpreter >> writeBackHeadFramePointers [
 ]
 
 { #category : #'image save/restore' }
+StackInterpreter >> writeImageFile: imageName fromHeader: header [
+
+	<doNotGenerate>
+	^ imageWriter writeImageFile: imageName fromHeader: header
+
+]
+
+{ #category : #'image save/restore' }
 StackInterpreter >> writeImageFileIO [
-	"Write the image header and heap contents to imageFile for snapshot. c.f. writeImageFileIOSimulation.
-	 The game below is to maintain 64-bit alignment for all putLong:toFile: occurrences."
+	"Write the image header and heap contents to imageFile for snapshot. 
+	The game below is to maintain 64-bit alignment for all putLong:toFile: occurrences."
 
-	| imageWriter |
-
-	imageWriter := SpurImageWriter newWithMemory: objectMemory andInterpreter: self.
-	
-	^imageWriter writeImageFile: self imageName fromHeader: self newHeader
+	| imageName |
+	"The image name is defined as a extern char[] variable"
+	self simulationOnly: [ imageName := self imageName ].
+	self writeImageFile: imageName fromHeader: self newHeader
 
 ]
 

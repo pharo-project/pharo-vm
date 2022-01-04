@@ -63,7 +63,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectDesiredEdenSize [
 
 	header := self readHeader.
 
-	self assert: header hdrEdenBytes equals: interpreter desiredEdenBytes
+	self assert: header hdrEdenBytes equals: interpreter getDesiredEdenBytes
 ]
 
 { #category : #tests }
@@ -73,7 +73,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectDesiredNumberStackP
 
 	header := self readHeader.
 
-	self assert: header hdrNumStackPages equals: interpreter desiredNumStackPages
+	self assert: header hdrNumStackPages equals: interpreter getDesiredNumStackPages
 ]
 
 { #category : #tests }
@@ -83,7 +83,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectExternalSemaphoreTa
 
 	header := self readHeader.
 
-	self assert: header hdrMaxExtSemTabSize equals: (interpreter maxExtSemTabSizeSet ifTrue: [interpreter ioGetMaxExtSemTableSize] ifFalse: [0])
+	self assert: header hdrMaxExtSemTabSize equals: (interpreter getMaxExtSemTabSizeSet ifTrue: [interpreter ioGetMaxExtSemTableSize] ifFalse: [0])
 ]
 
 { #category : #tests }
@@ -93,7 +93,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectExtraVMMemory [
 
 	header := self readHeader.
 
-	self assert: header extraVMMemory equals: interpreter extraVMMemory
+	self assert: header extraVMMemory equals: interpreter getExtraVMMemory
 ]
 
 { #category : #tests }

@@ -224,9 +224,6 @@ CogVMSimulator >> basicInitialize [
 	 and: [VMClass initializationOptions at: #CheckStackDepth ifAbsent: [true]]) ifTrue:
 		[debugStackDepthDictionary := Dictionary new].
 
-	cogThreadManager ifNotNil:
-		[super initialize].
-
 	self assert: ConstMinusOne = (objectMemory integerObjectOf: -1).
 
 	cogMethodZone := cogit methodZone. "Because Slang can't remove intermediate implicit receivers (cogit methodZone foo doesn't reduce to foo())"
@@ -273,6 +270,9 @@ CogVMSimulator >> basicInitialize [
 	
 	"This will be overriden when calling initializePluginEntries"
 	mappedPluginEntries := OrderedCollection new.
+	
+	imageReader := SpurImageReader newWithMemory: objectMemory andInterpreter: self.
+	imageWriter := SpurImageWriter newWithMemory: objectMemory andInterpreter: self	
 ]
 
 { #category : #hooks }

@@ -99,8 +99,7 @@ Class {
 InterpreterPrimitives class >> declareCVarsIn: aCCodeGen [
 	aCCodeGen
 		var: 'osErrorCode' type: #sqLong;
-		var: 'exceptionPC' type: #usqInt;
-		var: 'sHEAFn' declareC: 'int (*sHEAFn)() = 0' "the hasEnvironmentAccess function"
+		var: 'exceptionPC' type: #usqInt
 ]
 
 { #category : #'C translation' }
