@@ -157,7 +157,7 @@ SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 
 	self extractImageVersionFrom: f into: header.
 
-	header headerSize: (self getWord32FromFile: f swap: header swapBytes).
+	header imageHeaderSize: (self getWord32FromFile: f swap: header swapBytes).
 	header dataSize: (self getLongFromFile: f swap: header swapBytes).
 	header oldBaseAddr: (self getLongFromFile: f swap: header swapBytes).
 	header initialSpecialObjectsOop:

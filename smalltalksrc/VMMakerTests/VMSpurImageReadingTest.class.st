@@ -1,6 +1,9 @@
 Class {
 	#name : #VMSpurImageReadingTest,
 	#superclass : #VMAbstractImageFormatTest,
+	#instVars : [
+		'originalNilObjectIdentityHash'
+	],
 	#category : #'VMMakerTests-MemoryTests'
 }
 
@@ -17,31 +20,20 @@ VMSpurImageReadingTest >> setUp [
 
 	self assert: interpreter successful.
 
-	interpreter desiredEdenBytes: memory edenBytes.
+	originalNilObjectIdentityHash := memory hashBitsOf: memory nilObject.
 
 	self saveImage.
 	
 ]
 
 { #category : #initialization }
-VMSpurImageReadingTest >> testReadingSavedImageHasSameHeader [
-
-	| memoryManager primitiveLogSize originalNilObject newSpaceStartOffset |
+VMSpurImageReadingTest >> testSavedImageSavesObject [
 	
-	
-	originalNilObject := memory nilObject.
+	| memoryManager |
 	
 	memoryManager := MachineSimulatorMemoryManager new.
 	memoryManager initialAddress: initialAddress.
 	memoryManager wordSize: self wordSize.
-
-	primitiveLogSize := self roundToPageSize: self primitiveTraceLogSize.
-
-	newSpaceStartOffset := self initialCodeSize + stackSpaceSize
-	                 + methodCacheSize + primitiveLogSize
-	                 + rumpCStackSize.
-
-	memoryManager allocate: newSpaceStartOffset.
 
 	interpreter := self newInterpreter.
 	interpreter memoryManager: memoryManager.
@@ -53,6 +45,5 @@ VMSpurImageReadingTest >> testReadingSavedImageHasSameHeader [
 	
 	interpreter openOn: self imageFileName extraMemory: 0.
 	
-	self assert: originalNilObject - memory nilObject equals: 0
-
+	self assert: originalNilObjectIdentityHash equals: (memory hashBitsOf: memory nilObject).
 ]
