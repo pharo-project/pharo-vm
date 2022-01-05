@@ -2788,11 +2788,12 @@ TMethod >> setSelector: sel definingClass: class args: argList locals: localList
 	selector := sel.
 	definingClass := class.
 	args := argList asOrderedCollection collect: [:arg | arg name].
+
+	declarations := Dictionary new.
 	
 	parseTree := aBlockNode. "hack; allows nodes to find their parent, etc"
 	parseTree := aBlockNode asTranslatorNodeIn: self.
 
-	declarations := Dictionary new.
 	self addTypeForSelf.
 	primitive := aNumber.
 	properties := methodProperties.
