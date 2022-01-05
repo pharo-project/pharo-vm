@@ -1787,6 +1787,7 @@ CCodeGenerator >> generateCASTDoWhile: boolean loop: tast [
 	| block  cond parent |
 	parent := (TStatementListNode
 		declarations: tast receiver declarations
+		locals: tast receiver locals
 		statements: {  }) asCASTIn: self.
 	
 	block := (TStatementListNode statements:

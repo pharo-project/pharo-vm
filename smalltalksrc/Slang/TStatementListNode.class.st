@@ -12,6 +12,16 @@ Class {
 }
 
 { #category : #'instance creation' }
+TStatementListNode class >> declarations: declarations locals: locals statements: aCollection [ 
+	
+	^ self new
+		declarations: declarations;
+		locals: locals;
+		statements: aCollection;
+		yourself
+]
+
+{ #category : #'instance creation' }
 TStatementListNode class >> declarations: declarations statements: aCollection [ 
 	
 	^ self new

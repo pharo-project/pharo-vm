@@ -5901,7 +5901,8 @@ SlangBasicTranslationTest >> testSendWhileTrueWithTemporary [
 	send := TSendNode new
 		        setSelector: #whileTrue
 		        receiver: (TStatementListNode
-						declarations: { 'var' -> 'int var' } asDictionary
+						declarations: Dictionary new
+						locals: #( temp )
 						statements: { 
 					         (TAssignmentNode new
 						          setVariable: variable
@@ -5914,7 +5915,43 @@ SlangBasicTranslationTest >> testSendWhileTrueWithTemporary [
 	translation := self translate: send.
 
 	self assert: translation trimBoth equals: '{
-	int var;
+	sqInt temp;
+
+	do{
+		var -= 7;
+	}while(var >= 21);
+}'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendWhileTrueWithTemporaryDeclaration [
+
+	"[ | temp | var := var - 7. var >= 21 ] whileTrue"
+
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #whileTrue
+		        receiver: (TStatementListNode
+						declarations: { 'temp' -> 'int temp' } asDictionary
+						statements: { 
+					         (TAssignmentNode new
+						          setVariable: variable
+						          expression: expression).
+					         (TSendNode new
+						          setSelector: #>=
+						          receiver: (TVariableNode new setName: 'var')
+						          arguments: { (TConstantNode value: 21) }) })
+		        arguments: {  }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '{
+	int temp;
 
 	do{
 		var -= 7;
