@@ -2167,7 +2167,6 @@ CCodeGenerator >> generateCASTInlineCCode: aTSendNode [
 			So it was printing it in a new line" 
 			self error: 'unsupported' ].
 
-		self noteVariableUsageInString: aTSendNode arguments first value.
 		^ CRawCodeNode code: aTSendNode arguments first value ].
 
 	^ aTSendNode arguments first asCASTIn: self
@@ -2182,7 +2181,6 @@ CCodeGenerator >> generateCASTInlineCCodeAsArgument: aTSendNode [
 			So it was printing it in a new line" 
 			self error: 'unsupported' ].
 
-		self noteVariableUsageInString: aTSendNode arguments first value.
 		^ CRawCodeNode code: aTSendNode arguments first value ].
 
 	^ aTSendNode arguments first asCASTExpressionIn: self
@@ -4196,15 +4194,6 @@ CCodeGenerator >> nonStructClassesForTranslationClasses: classes [
 CCodeGenerator >> noteUsedVariableName: variableName [
 
 	self currentScope noteUsedVariableName: variableName
-]
-
-{ #category : #utilities }
-CCodeGenerator >> noteVariableUsageInString: aString [
-
-	(Scanner new typedScanTokens: aString) do: [ :token | 
-		(token isString and: [ 
-			 token first isLetter or: [ token first == $_ ] ]) ifTrue: [ 
-			self noteUsedVariableName: token ] ]
 ]
 
 { #category : #utilities }

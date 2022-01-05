@@ -299,6 +299,14 @@ InterpreterPrimitives >> initializeInterpreter: bytesToShift [
 	sHEAFn := self ioLoadFunction: 'secHasEnvironmentAccess' From: 'SecurityPlugin'
 ]
 
+{ #category : #'process primitives' }
+InterpreterPrimitives >> ioClearProfile [
+	
+	<doNotGenerate>
+	"No simulation version for this yet"
+	self notYetImplemented
+]
+
 { #category : #'simulation support' }
 InterpreterPrimitives >> ioGetCurrentWorkingDirectory: aCStringHolder maxLength: maxLength [
 	<doNotGenerate>
@@ -1190,7 +1198,7 @@ InterpreterPrimitives >> primitiveClass [
 { #category : #'process primitives' }
 InterpreterPrimitives >> primitiveClearVMProfile [
 	"Primitive. Void the VM profile histograms."
-	self cCode: 'ioClearProfile()'.
+	self ioClearProfile.
 	self pop: argumentCount
 ]
 
