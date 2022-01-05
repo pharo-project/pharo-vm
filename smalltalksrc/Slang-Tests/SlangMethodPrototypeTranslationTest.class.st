@@ -27,7 +27,6 @@ SlangMethodPrototypeTranslationTest >> setUp [
 	generator vmMaker vmmakerConfiguration: VMMakerConfiguration.
 	generator currentMethod: (TMethod new
 		labels: Set new;
-		resetUsedVariablesCache;
 		yourself).
 ]
 

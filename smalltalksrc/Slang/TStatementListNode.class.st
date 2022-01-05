@@ -5,7 +5,8 @@ Class {
 		'locals',
 		'declarations',
 		'arguments',
-		'statements'
+		'statements',
+		'usedVariables'
 	],
 	#category : #'Slang-AST'
 }
@@ -173,22 +174,6 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 	| cDeclarations collect methodIsVolatile |
 	cDeclarations := OrderedCollection new.
 	collect := OrderedCollection new.
-	
-	methodIsVolatile := aBuilder currentMethod isVolatile.
-	aBuilder currentMethod refersToGlobalStruct ifTrue: [ 
-		cDeclarations add:
-			(CIdentifierNode name: (methodIsVolatile
-					  ifTrue: [ 'DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT' ]
-					  ifFalse: [ 'DECL_MAYBE_SQ_GLOBAL_STRUCT' ])) ].
-	
-	(aBuilder sortStrings: self locals asSet) do: [ :var | | declaration |
-		declaration := aBuilder
-		  declarationAt: var
-		  ifAbsent: [ aBuilder defaultType, ' ' , var ].
-		
-		methodIsVolatile ifTrue: [ declaration := 'volatile ' , declaration ].
-		cDeclarations add: (CRawCodeNode code: declaration)
-	].
 
 	statements doWithIndex: [ :e :index | 
 		(e isLeaf and: [ 
@@ -200,6 +185,24 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 					collect add: (e asCASTIn: aBuilder prependToEnd: aNodeOrNil) ]
 					ifFalse: [ collect add: (e asCASTIn: aBuilder) ] ]
 			ifTrue: [ CEmptyStatementNode new ] ].
+	
+	"We should collect the variable declarations after generating the body, because the body generation will record used yet non declared variables"
+	methodIsVolatile := aBuilder currentMethod isVolatile.
+	aBuilder currentMethod refersToGlobalStruct ifTrue: [ 
+		cDeclarations add:
+			(CIdentifierNode name: (methodIsVolatile
+					  ifTrue: [ 'DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT' ]
+					  ifFalse: [ 'DECL_MAYBE_SQ_GLOBAL_STRUCT' ])) ].
+
+	(aBuilder sortStrings: (self locals asSet, self usedVariables) asSet) do: [ :var | | declaration |
+		declaration := aBuilder
+		  declarationAt: var
+		  ifAbsent: [ aBuilder defaultType, ' ' , var ].
+
+		methodIsVolatile ifTrue: [ declaration := 'volatile ' , declaration ].
+		cDeclarations add: (CRawCodeNode code: declaration)
+	].		
+
 	^ CCompoundStatementNode declarations: cDeclarations statements: collect
 ]
 
@@ -337,6 +340,7 @@ TStatementListNode >> initialize [
 
 	super initialize.
 	declarations := Dictionary new.
+	usedVariables := Set new.
 	locals := #().
 	arguments := #()
 ]
@@ -424,6 +428,12 @@ TStatementListNode >> nodesDo: aBlock value: parent [
 	 N.B. This is assumed to be bottom-up, leaves first."
 	statements do: [:s| s nodesDo: aBlock parent: self.].	
 	aBlock value: self value: parent
+]
+
+{ #category : #accessing }
+TStatementListNode >> noteUsedVariableName: aString [ 
+
+	usedVariables add: aString
 ]
 
 { #category : #accessing }
@@ -567,4 +577,10 @@ TStatementListNode >> statements: anObject [
 TStatementListNode >> typeOrNilFrom: aCodeGenerator in: aTMethod [
 	^statements isEmpty ifFalse:
 		[statements last typeOrNilFrom: aCodeGenerator in: aTMethod]
+]
+
+{ #category : #accessing }
+TStatementListNode >> usedVariables [
+	
+	^ usedVariables
 ]

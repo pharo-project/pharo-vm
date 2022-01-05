@@ -480,12 +480,15 @@ CCodeGenerator >> autoLocalizationOfVariablesIn: selector withVariableBindings: 
 	(m := self methodNamed: selector) ifNil: [ ^ self ].
 	(replacementList isNil or: [ replacementList isEmpty ]) ifTrue: [ ^ self ].
 
+	self currentMethod: m.
+
 	replacementDict := (replacementList collect: [ :asso | 
 				 asso key -> (TVariableNode named: asso value) ]) asDictionary.
 	"Replace all localized variables by their localized versions"
 	m parseTree
 		bindVariablesIn: replacementDict.
 
+	
 	self linearizeExternalCallsIn: m  withVariableBindings: replacementDict.
 
 	"Wrap sends with externalization/internalization statements"
@@ -903,13 +906,16 @@ CCodeGenerator >> conventionalTypeForType: aCTypeString [
 
 { #category : #accessing }
 CCodeGenerator >> currentMethod [
-	^currentMethod
+	
+	"The method is the bottom of the scope stack"
+	^ scopeStack first
 ]
 
 { #category : #accessing }
 CCodeGenerator >> currentMethod: aTMethod [
-	previousCommenter := nil.
-	currentMethod := aTMethod
+	
+	scopeStack := OrderedCollection with: aTMethod.
+	previousCommenter := nil
 ]
 
 { #category : #'C code generator' }
@@ -990,7 +996,7 @@ CCodeGenerator >> doBasicInlining: inlineFlagOrSymbol [
 			during: [:bar |
 				(self sortMethods: methods) doWithIndex: [:m :i |
 					bar value: i.
-					currentMethod := m.
+					self currentMethod: m.
 					(m tryToInlineMethodsIn: self)
 						ifTrue: [progress := true]]]].
 
@@ -1427,7 +1433,7 @@ CCodeGenerator >> generateBytesPerWord: msgNode on: aStream indent: level [
 CCodeGenerator >> generateCASTAbs: tast [
 
 	| type strippedType absFun |
-	type := self typeFor: tast receiver in: currentMethod.
+	type := self typeFor: tast receiver in: self currentMethod.
 	strippedType := (type beginsWith: 'unsigned ')
 		ifTrue: [type allButFirst: 'unsigned ' size]
 		ifFalse: [(type beginsWith: 'u')
@@ -2028,6 +2034,9 @@ CCodeGenerator >> generateCASTIfNilIfNotNilAsArgument: tast [
 CCodeGenerator >> generateCASTIfNotNil: tast [
 
 	(self isNilConstantReceiverOf: tast) ifFalse: [ 
+		tast arguments first arguments do: [ :argName |
+			self noteUsedVariableName: argName
+		].
 		^ CIfStatementNode
 			  if: (tast receiver asCASTExpressionIn: self)
 			  then: (tast arguments first asCASTIn: self) ].
@@ -2230,7 +2239,7 @@ CCodeGenerator >> generateCASTIntegerObjectOf: msgNode [
 		(int)(16r1FFFFF << 3) = (int)16rFFFFFFF8 = -8
 	 whereas
 		(long)(16r1FFFFF << 3) = (long) 16rFFFFFFF8 = 4294967288."
-	type := self typeFor: expr in: currentMethod.
+	type := self typeFor: expr in: self currentMethod.
 	typeIsUnsigned := type first = $u.
 	mustCastToUnsigned := typeIsUnsigned not or: [ 
 		                      (self sizeOfIntegralCType: type)
@@ -2551,7 +2560,7 @@ CCodeGenerator >> generateCASTShiftLeft: tast [
 			  right: (arg asCASTIn: self) ].
 	receiverNode := tast receiver asCASTExpressionIn: self.
 	leftNode := receiverNode.
-	type := self typeFor: rcvr in: currentMethod.
+	type := self typeFor: rcvr in: self currentMethod.
 	castToLong := castToLong and: [ 
 		              (self sizeOfIntegralCType: type)
 		              < (self sizeOfIntegralCType: #usqLong) ].
@@ -2898,7 +2907,7 @@ CCodeGenerator >> generateCASTValue: tast [
 		                  OrderedCollection new.
 	castStatements needsBrackets: false.
 	substitution := tast receiver copy.
-	substitution renameLabelsForInliningInto: currentMethod.
+	substitution renameLabelsForInliningInto: self currentMethod.
 	substitutionDict := Dictionary new: tast arguments size * 2.
 	tast receiver arguments
 		with: tast arguments
@@ -2912,13 +2921,13 @@ CCodeGenerator >> generateCASTValue: tast [
 					self noteUsedVariableName: argName ] ].
 	substitution bindVariablesIn: substitutionDict.
 	castStatements add: (substitution asCASTIn: self).
-	newLabels := Set withAll: currentMethod labels.
+	newLabels := Set withAll: self currentMethod labels.
 	substitution nodesDo: [ :node | 
 		node isLabel ifTrue: [ 
 			node label ifNotNil: [ :label | newLabels add: label ] ] ].
 	"now add the new labels so that a subsequent inline of
 	 the same block will be renamed with different labels."
-	currentMethod labels: newLabels.
+	self currentMethod labels: newLabels.
 	^ castStatements
 ]
 
@@ -2932,19 +2941,19 @@ CCodeGenerator >> generateCASTValueAsArgument: tast [
 	self assert: tast receiver isStatementList.
 	self assert: tast receiver arguments size = tast arguments size.
 	substitution := tast receiver copy.
-	substitution renameLabelsForInliningInto: currentMethod.
+	substitution renameLabelsForInliningInto: self currentMethod.
 	substitutionDict := Dictionary new: tast arguments size * 2.
 	tast receiver arguments
 		with: tast arguments
 		do: [ :argName :exprNode | 
 		substitutionDict at: argName put: exprNode ].
-	newLabels := Set withAll: currentMethod labels.
+	newLabels := Set withAll: self currentMethod labels.
 	substitution nodesDo: [ :node | 
 		node isLabel ifTrue: [ 
 			node label ifNotNil: [ :label | newLabels add: label ] ] ].
 	"now add the new labels so that a subsequent inline of
 	 the same block will be renamed with different labels."
-	currentMethod labels: newLabels.
+	self currentMethod labels: newLabels.
 	^ substitution
 		  bindVariablesIn: substitutionDict;
 		  asCASTExpressionIn: self
@@ -4182,18 +4191,17 @@ CCodeGenerator >> nonStructClassesForTranslationClasses: classes [
 
 { #category : #utilities }
 CCodeGenerator >> noteUsedVariableName: variableName [
-	currentMethod ifNotNil:
-		[:m| m noteUsedVariableName: variableName]
+
+	self currentScope noteUsedVariableName: variableName
 ]
 
 { #category : #utilities }
 CCodeGenerator >> noteVariableUsageInString: aString [
-	currentMethod ifNotNil:
-		[:m|
-		 (Scanner new typedScanTokens: aString) do:
-			[:token|
-			 (token isString and: [token first isLetter or: [token first == $_]]) ifTrue:
-				[m noteUsedVariableName: token]]]
+
+	(Scanner new typedScanTokens: aString) do: [ :token | 
+		(token isString and: [ 
+			 token first isLetter or: [ token first == $_ ] ]) ifTrue: [ 
+			self noteUsedVariableName: token ] ]
 ]
 
 { #category : #utilities }
@@ -4473,8 +4481,15 @@ CCodeGenerator >> pruneUnreachableMethods [
 ]
 
 { #category : #'C code generator' }
-CCodeGenerator >> pushScope: variableToType "<Dictionary>" while: aBlock [
-	scopeStack addLast: variableToType.
+CCodeGenerator >> pushScope: aScope [
+
+	scopeStack addLast: aScope
+]
+
+{ #category : #'C code generator' }
+CCodeGenerator >> pushScope: aScope while: aBlock [
+	
+	self pushScope: aScope.
 	^aBlock ensure: [scopeStack removeLast]
 ]
 

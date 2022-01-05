@@ -97,8 +97,10 @@ SlangBasicTranslationTest >> setUp [
 	generator vmMaker vmmakerConfiguration: VMMakerConfiguration.
 	generator currentMethod: (TMethod new
 		labels: Set new;
-		resetUsedVariablesCache;
+		definingClass: self class;
+		selector: #setUp;
 		yourself).
+	generator pushScope: TStatementListNode new.
 	
 	"The translator accesses it directly using class variables..."
 	SpurMemoryManager initBytesPerWord: 8.
@@ -2318,19 +2320,20 @@ SlangBasicTranslationTest >> testSendCCodeInSmalltalkWithString [
 { #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendCCodeInSmalltalkWithStringNotesVariables [
 
-	| translation send |
+	| translation send scope |
 	send := TSendNode new
 		        setSelector: #cCode:inSmalltalk:
 		        receiver: (TVariableNode new setName: 'self')
 		        arguments: { 
 					TConstantNode value: 'some 1 _underscoreToo #yep'.
 					'unused' }.
-	translation := self translate: send.
+	scope := TStatementListNode statements: { send }.
+	translation := self translate: scope.
 
-	self assert: (generator currentMethod usedVariablesCache includes: 'some').
-	self assert: (generator currentMethod usedVariablesCache includes: '_underscoreToo').
-	self assert: (generator currentMethod usedVariablesCache includes: 'yep').
-	self deny: (generator currentMethod usedVariablesCache includes: '1').
+	self assert: (scope usedVariables includes: 'some').
+	self assert: (scope usedVariables includes: '_underscoreToo').
+	self assert: (scope usedVariables includes: 'yep').
+	self deny: (scope usedVariables includes: '1').
 ]
 
 { #category : #'tests-builtins' }
@@ -2362,17 +2365,18 @@ SlangBasicTranslationTest >> testSendCCodeWithString [
 { #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendCCodeWithStringNotesVariables [
 
-	| translation send |
+	| translation send scope |
 	send := TSendNode new
 		        setSelector: #cCode:
 		        receiver: (TVariableNode new setName: 'self')
 		        arguments: { TConstantNode value: 'some 1 _underscoreToo #yep' }.
-	translation := self translate: send.
+	scope := TStatementListNode statements: { send }.
+	translation := self translate: scope.
 
-	self assert: (generator currentMethod usedVariablesCache includes: 'some').
-	self assert: (generator currentMethod usedVariablesCache includes: '_underscoreToo').
-	self assert: (generator currentMethod usedVariablesCache includes: 'yep').
-	self deny: (generator currentMethod usedVariablesCache includes: '1').
+	self assert: (scope usedVariables includes: 'some').
+	self assert: (scope usedVariables includes: '_underscoreToo').
+	self assert: (scope usedVariables includes: 'yep').
+	self deny: (scope usedVariables includes: '1').
 ]
 
 { #category : #'tests-assignment' }
@@ -3595,6 +3599,38 @@ SlangBasicTranslationTest >> testSendIfNotNilIfNilWithNilConstantReceiver [
 	self assert: translation trimBoth equals: '{
 	b = 1;
 	c = 7;
+}'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendIfNotNilWithArgument [
+
+	| translation send |
+	generator generateDeadCode: true.
+	send := TSendNode new
+		        setSelector: #ifNotNil:
+		        receiver: (TSendNode new
+				         setSelector: #foo
+				         receiver: (TVariableNode new setName: 'self')
+				         arguments: { (TVariableNode new setName: 'x') })
+		        arguments: { (TStatementListNode
+				         parameters: #( c )
+				         statements: { (TAssignmentNode new
+						          setVariable: (TVariableNode new setName: 'a')
+						          expression: (TVariableNode new setName: 'c')) }) }.
+	generator currentMethod parseTree: (TStatementListNode statements: { send }).
+	translation := self translate: generator currentMethod.
+
+	self assert: translation trimBoth equals: '/* SlangBasicTranslationTest>>#setUp */
+sqInt
+setUp(void)
+{
+	sqInt c;
+
+	if (foo(x)) {
+		a = c;
+	}
+	return 0;
 }'
 ]
 
@@ -5167,7 +5203,7 @@ SlangBasicTranslationTest >> testSendSignedRightBitShiftVariable64Bits [
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((sqInt) a ) >> 3'
+	self assert: translation equals: '((sqLong) a ) >> 3'
 ]
 
 { #category : #'tests-assignment' }

@@ -25,7 +25,6 @@ Class {
 		'static',
 		'writtenToGlobalVarsCache',
 		'functionAttributes',
-		'usedVariablesCache',
 		'cachedLocals'
 	],
 	#classVars : [
@@ -389,7 +388,6 @@ TMethod >> asCASTIn: aCodeGen [
 
 	| compoundStatement functionDefinition body|
 	aCodeGen currentMethod: self.
-	self resetUsedVariablesCache.
 	compoundStatement := CCompoundStatementNode new
 		                     needsBrackets: false;
 		                     yourself.
@@ -412,9 +410,6 @@ TMethod >> asCASTIn: aCodeGen [
 		pushScope: self
 		while: [ body := (parseTree asCASTIn: aCodeGen) ].
 	functionDefinition body: body.
-
-	"Generation will note used variables in usedVariablesCache"
-	usedVariablesCache := nil.
 	
 	((returnType = #void) not and: [parseTree endsWithReturn not]) ifTrue: [
 		functionDefinition body
@@ -1340,6 +1335,9 @@ TMethod >> incompleteSendsIn: aCodeGen [
 TMethod >> initialize [
 
 	super initialize.
+	labels := args := #().
+	properties := Dictionary new.
+	export := false.
 	declarations := Dictionary new.
 	self clearReferencesToGlobalStruct
 ]
@@ -2193,12 +2191,6 @@ TMethod >> nodesDo: aBlock [
 	parseTree nodesDo: aBlock
 ]
 
-{ #category : #utilities }
-TMethod >> noteUsedVariableName: token [
-	usedVariablesCache ifNotNil:
-		[usedVariablesCache add: token]
-]
-
 { #category : #'C code generation' }
 TMethod >> outputConditionalDefineFor: compileTimeOptionPragmas on: aStream [
 	aStream nextPutAll: '#if '.
@@ -2752,12 +2744,6 @@ TMethod >> replaceSizeMessages [
 
 ]
 
-{ #category : #'C code generation' }
-TMethod >> resetUsedVariablesCache [
-
-	usedVariablesCache := Set new
-]
-
 { #category : #accessing }
 TMethod >> returnType [
 	"The type of the values returned by this method. This string will be used in the C declaration of this function."
@@ -3272,12 +3258,6 @@ TMethod >> unusedNamePrefixedBy: aString avoiding: usedNames [
 	 usedNames includes: newVarName] whileTrue:
 		[n := n + 1].
 	^usedNames add: newVarName
-]
-
-{ #category : #utilities }
-TMethod >> usedVariablesCache [
-	
-	^ usedVariablesCache
 ]
 
 { #category : #inlining }
