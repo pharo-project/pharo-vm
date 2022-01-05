@@ -918,6 +918,12 @@ CCodeGenerator >> currentMethod: aTMethod [
 	previousCommenter := nil
 ]
 
+{ #category : #accessing }
+CCodeGenerator >> currentScope [
+	
+	^ scopeStack last
+]
+
 { #category : #'C code generator' }
 CCodeGenerator >> declarationAt: aVariableName ifAbsent: absentBlock [
 
@@ -2034,9 +2040,6 @@ CCodeGenerator >> generateCASTIfNilIfNotNilAsArgument: tast [
 CCodeGenerator >> generateCASTIfNotNil: tast [
 
 	(self isNilConstantReceiverOf: tast) ifFalse: [ 
-		tast arguments first arguments do: [ :argName |
-			self noteUsedVariableName: argName
-		].
 		^ CIfStatementNode
 			  if: (tast receiver asCASTExpressionIn: self)
 			  then: (tast arguments first asCASTIn: self) ].

@@ -163,6 +163,10 @@ TStatementListNode >> asCASTExpressionIn: aBuilder [
 { #category : #tranforming }
 TStatementListNode >> asCASTIn: aBuilder [
 	
+	"Push the argument before pushing myself in the scope stack.
+	This makes the variable available my the parent scope"
+	self arguments do: [ :e | aBuilder noteUsedVariableName: e ].
+
 	^ aBuilder
 		pushScope: self
 		while: [ self asCASTIn: aBuilder prependToEnd: nil ]

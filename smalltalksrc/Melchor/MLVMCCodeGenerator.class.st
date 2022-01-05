@@ -82,12 +82,6 @@ MLVMCCodeGenerator >> constants [
 	^ constants keys reject: [ :any | unused includes: any ]
 ]
 
-{ #category : #accessing }
-MLVMCCodeGenerator >> currentScope [
-	
-	^ scopeStack last
-]
-
 { #category : #'C code generator' }
 MLVMCCodeGenerator >> declaredConstants [
 	| unused |
