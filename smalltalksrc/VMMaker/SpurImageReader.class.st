@@ -36,7 +36,7 @@ SpurImageReader >> extractImageVersionFrom: file into: header [
 	| version firstVersion |
 	<var: #file type: #sqImageFile>
 	<var: #imageOffset type: #squeakFileOffsetType>
-	<var: #header type: #SpurImageHeaderStruct>
+	<var: #header type: #'SpurImageHeaderStruct *'>
 
 	"check the version number"
 	version := firstVersion := self getWord32FromFile: file swap: false.
@@ -170,7 +170,7 @@ SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 	
 	self simulationOnly: [ header := SpurImageHeaderStruct new ].
 
-	self extractImageVersionFrom: f into: header.
+	self extractImageVersionFrom: f into: (self addressOf: header).
 
 	header imageHeaderSize: (self getWord32FromFile: f swap: header swapBytes).
 	header dataSize: (self getLongFromFile: f swap: header swapBytes).
@@ -209,6 +209,56 @@ SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 	self sqImageFile: f Seek: headerStart + header imageHeaderSize.
 
 	^ header
+]
+
+{ #category : #reading }
+SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
+
+	"Read an image from the given file stream, allocating an amount of memory to its object heap.
+	
+	 This routine will attempt to provide at least extraVMMemory's
+	 ammount of free space after the image is loaded, taking any free space in teh image into account.
+	 extraVMMemory is stored in the image header and is accessible as vmParameterAt: 23.  If
+	 extraVMMemory is 0, the value defaults to the default grow headroom.  Fail if the image has an
+	 unknown format or if sufficient memory cannot be allocated.
+
+	 Details: This method detects when the image was stored on a machine with the opposite byte
+	 ordering from this machine and swaps the bytes automatically. Furthermore, it allows the header
+	 information to start 512 bytes into the file, since some file transfer programs for the Macintosh
+	 apparently prepend a Mac-specific header of this size. Note that this same 512 bytes of prefix
+	 area could also be used to store an exec command on Unix systems, allowing one to launch
+	 Smalltalk by invoking the image name as a command."
+
+	<var: #f type: #sqImageFile>
+	<var: #headerStart type: #'squeakFileOffsetType'>
+
+	<var: #heapSize type: #usqInt>
+	<var: #minimumMemory type: #usqInt>
+	<var: #allocationReserve type: #usqInt>
+	<var: #header type: #'SpurImageHeaderStruct'>
+
+	| header |
+
+	header := self readHeaderFrom: f startingAt: headerStart.
+
+	objectMemory specialObjectsOop: header initialSpecialObjectsOop.
+	objectMemory lastHash: header hdrLastHash.
+	
+	interpreter setImageHeaderFlagsFrom: header headerFlags.
+	interpreter setExtraVMMemory: header extraVMMemory.
+
+	interpreter setNumStackPages: header hdrNumStackPages.
+
+	interpreter initializeObjectMemoryWithEdenBytes: header hdrEdenBytes.
+
+	header hdrMaxExtSemTabSize ~= 0 ifTrue: [ 
+		interpreter setMaxExtSemSizeTo: header hdrMaxExtSemTabSize ].
+	
+	objectMemory firstSegmentSize: header firstSegSize.
+
+	interpreter allocateMemoryForImage: f withHeader: header.
+
+	^ header dataSize
 ]
 
 { #category : #reading }

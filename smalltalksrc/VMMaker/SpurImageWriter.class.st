@@ -211,14 +211,7 @@ SpurImageWriter >> writeImageFile: imageFileName fromHeader: header [
 		 ^nil].
 
 	"write the image data"
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[bytesWritten := objectMemory writeImageSegmentsToFile: f]
-		ifFalse:
-			[bytesWritten := self sq: (self pointerForOop: objectMemory baseAddressOfImage)
-								Image: (self sizeof: #char)
-								File: imageBytes
-								Write: f].
+	bytesWritten := objectMemory writeImageSegmentsToFile: f.
 
 	interpreter success: bytesWritten = imageBytes.
 	self sqImageFileClose: f.
