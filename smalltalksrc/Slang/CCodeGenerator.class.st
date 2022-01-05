@@ -1784,13 +1784,18 @@ CCodeGenerator >> generateCASTDivide: tast [
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTDoWhile: boolean loop: tast [
 
-	| block  cond|
+	| block  cond parent |
+	parent := (TStatementListNode
+		declarations: tast receiver declarations
+		statements: {  }) asCASTIn: self.
+	
 	block := (TStatementListNode statements:
 		          tast receiver statements allButLast) asCASTIn: self.
 	cond := (tast receiver statements last asCASTExpressionIn: self).
-	^ CDoStatementNode
+	parent statements: {CDoStatementNode
 		  while: (boolean ifTrue: [ cond ] ifFalse: [ CUnaryOperatorNode operator: #! expression: cond ])
-		  statement: block
+		  statement: block}.
+	^ parent
 ]
 
 { #category : #'CAST translation' }

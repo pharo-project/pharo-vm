@@ -2318,25 +2318,6 @@ SlangBasicTranslationTest >> testSendCCodeInSmalltalkWithString [
 ]
 
 { #category : #'tests-builtins' }
-SlangBasicTranslationTest >> testSendCCodeInSmalltalkWithStringNotesVariables [
-
-	| translation send scope |
-	send := TSendNode new
-		        setSelector: #cCode:inSmalltalk:
-		        receiver: (TVariableNode new setName: 'self')
-		        arguments: { 
-					TConstantNode value: 'some 1 _underscoreToo #yep'.
-					'unused' }.
-	scope := TStatementListNode statements: { send }.
-	translation := self translate: scope.
-
-	self assert: (scope usedVariables includes: 'some').
-	self assert: (scope usedVariables includes: '_underscoreToo').
-	self assert: (scope usedVariables includes: 'yep').
-	self deny: (scope usedVariables includes: '1').
-]
-
-{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendCCodeWithNonConstant [
 
 	| translation send |
@@ -2360,23 +2341,6 @@ SlangBasicTranslationTest >> testSendCCodeWithString [
 	translation := self translate: send.
 
 	self assert: translation equals: 'some string'
-]
-
-{ #category : #'tests-builtins' }
-SlangBasicTranslationTest >> testSendCCodeWithStringNotesVariables [
-
-	| translation send scope |
-	send := TSendNode new
-		        setSelector: #cCode:
-		        receiver: (TVariableNode new setName: 'self')
-		        arguments: { TConstantNode value: 'some 1 _underscoreToo #yep' }.
-	scope := TStatementListNode statements: { send }.
-	translation := self translate: scope.
-
-	self assert: (scope usedVariables includes: 'some').
-	self assert: (scope usedVariables includes: '_underscoreToo').
-	self assert: (scope usedVariables includes: 'yep').
-	self deny: (scope usedVariables includes: '1').
 ]
 
 { #category : #'tests-assignment' }
@@ -5818,9 +5782,11 @@ SlangBasicTranslationTest >> testSendWhileFalseWithoutArguments [
 		        arguments: {  }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'do{
-	var -= 7;
-}while(!(var >= 21))'
+	self assert: translation trimBoth equals: '{
+	do{
+		var -= 7;
+	}while(!(var >= 21));
+}'
 ]
 
 { #category : #'tests-builtins' }
@@ -5885,9 +5851,11 @@ SlangBasicTranslationTest >> testSendWhileTrueWithNilAsArgument [
 				         { (TVariableNode new setName: 'nil') }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'do{
-	var -= 7;
-}while(a && b)'
+	self assert: translation trimBoth equals: '{
+	do{
+		var -= 7;
+	}while(a && b);
+}'
 ]
 
 { #category : #'tests-builtins' }
@@ -5919,6 +5887,42 @@ SlangBasicTranslationTest >> testSendWhileTrueWithOneStatementInReceiverBlock [
 ]
 
 { #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendWhileTrueWithTemporary [
+
+	"[ | temp | var := var - 7. var >= 21 ] whileTrue"
+
+	| translation send variable expression |
+	variable := TVariableNode new setName: 'var'.
+
+	expression := TSendNode new
+		              setSelector: #-
+		              receiver: variable
+		              arguments: { (TConstantNode value: 7) }.
+	send := TSendNode new
+		        setSelector: #whileTrue
+		        receiver: (TStatementListNode
+						declarations: { 'var' -> 'int var' } asDictionary
+						statements: { 
+					         (TAssignmentNode new
+						          setVariable: variable
+						          expression: expression).
+					         (TSendNode new
+						          setSelector: #>=
+						          receiver: (TVariableNode new setName: 'var')
+						          arguments: { (TConstantNode value: 21) }) })
+		        arguments: {  }.
+	translation := self translate: send.
+
+	self assert: translation trimBoth equals: '{
+	int var;
+
+	do{
+		var -= 7;
+	}while(var >= 21);
+}'
+]
+
+{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendWhileTrueWithoutArguments [
 
 	"[ var := var - 7. var >= 21 ] whileTrue"
@@ -5943,9 +5947,11 @@ SlangBasicTranslationTest >> testSendWhileTrueWithoutArguments [
 		        arguments: {  }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'do{
-	var -= 7;
-}while(var >= 21)'
+	self assert: translation trimBoth equals: '{
+	do{
+		var -= 7;
+	}while(var >= 21);
+}'
 ]
 
 { #category : #'tests-assignment' }
