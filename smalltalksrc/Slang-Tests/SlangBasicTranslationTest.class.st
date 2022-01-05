@@ -1239,8 +1239,6 @@ SlangBasicTranslationTest >> testMethodConditionalCompilationWithAnOption [
 static sqInt
 methodWithAnOptionPragma(void)
 {
-	{
-	}
 	return 0;
 }
 
@@ -1262,8 +1260,6 @@ SlangBasicTranslationTest >> testMethodConditionalCompilationWithSeveralOptions 
 static sqInt
 methodWithOptionPragma(void)
 {
-	{
-	}
 	return 0;
 }
 
@@ -1307,13 +1303,109 @@ SlangBasicTranslationTest >> testMethodLocals [
 	tMethod recordDeclarationsIn: generator.
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
+	
 	self
-		assert: (translation lineNumber: 5) , self newLine
-			, (translation lineNumber: 6) , self newLine
-			, (translation lineNumber: 7)
-		equals: '	int a;
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodWithLocalVariables */
+static float
+methodWithLocalVariables(void)
+{
+	int a;
 	int b;
-	float foo;'
+	float foo;
+
+	foo = 1.2;
+	a = 1;
+	b = 1;
+	return (a + b) + foo;
+}'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodLocalsWithGlobalStruct [
+	
+	"Test method local variables printing."
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodWithLocalVariables.
+	tMethod referencesGlobalStruct.
+	tMethod recordDeclarationsIn: generator.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodWithLocalVariables */
+static float
+methodWithLocalVariables(void)
+{
+	DECL_MAYBE_SQ_GLOBAL_STRUCT;
+	int a;
+	int b;
+	float foo;
+
+	foo = 1.2;
+	a = 1;
+	b = 1;
+	return (a + b) + foo;
+}'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodLocalsWithGlobalStructAndVolatile [
+	
+	"Test method local variables printing."
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodWithLocalVariables.
+	tMethod referencesGlobalStruct.
+	tMethod recordDeclarationsIn: generator.
+	tMethod properties: { #volatile -> true } asDictionary.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodWithLocalVariables */
+static float
+methodWithLocalVariables(void)
+{
+	DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT;
+	volatile int a;
+	volatile int b;
+	volatile float foo;
+
+	foo = 1.2;
+	a = 1;
+	b = 1;
+	return (a + b) + foo;
+}'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodLocalsWithVolatile [
+	
+	"Test method local variables printing."
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodWithLocalVariables.
+	tMethod recordDeclarationsIn: generator.
+	tMethod properties: { #volatile -> true } asDictionary.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodWithLocalVariables */
+static float
+methodWithLocalVariables(void)
+{
+	volatile int a;
+	volatile int b;
+	volatile float foo;
+
+	foo = 1.2;
+	a = 1;
+	b = 1;
+	return (a + b) + foo;
+}'
 ]
 
 { #category : #'tests-method' }
@@ -1458,8 +1550,6 @@ SlangBasicTranslationTest >> testMethodWithReturnTypeWithoutReturnReturnsZero [
 static sqInt
 methodWithoutReturn(void)
 {
-	{
-	}
 	return 0;
 }'
 ]

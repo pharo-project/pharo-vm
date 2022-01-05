@@ -170,13 +170,25 @@ TStatementListNode >> asCASTIn: aBuilder [
 { #category : #tranforming }
 TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 
-	| cDeclarations collect |
+	| cDeclarations collect methodIsVolatile |
 	cDeclarations := OrderedCollection new.
 	collect := OrderedCollection new.
-	(aBuilder sortStrings: self locals asSet) do: [ :var |
-		cDeclarations add: (CRawCodeNode code: (aBuilder
+	
+	methodIsVolatile := aBuilder currentMethod isVolatile.
+	aBuilder currentMethod refersToGlobalStruct ifTrue: [ 
+		cDeclarations add:
+			(CIdentifierNode name: (methodIsVolatile
+					  ifTrue: [ 'DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT' ]
+					  ifFalse: [ 'DECL_MAYBE_SQ_GLOBAL_STRUCT' ])) ].
+	
+	(aBuilder sortStrings: self locals asSet) do: [ :var | | declaration |
+		declaration := aBuilder
 		  declarationAt: var
-		  ifAbsent: [ aBuilder defaultType, ' ' , var ])) ].
+		  ifAbsent: [ aBuilder defaultType, ' ' , var ].
+		
+		methodIsVolatile ifTrue: [ declaration := 'volatile ' , declaration ].
+		cDeclarations add: (CRawCodeNode code: declaration)
+	].
 
 	statements doWithIndex: [ :e :index | 
 		(e isLeaf and: [ 

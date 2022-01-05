@@ -82,18 +82,20 @@ TMethod >> addCASTLocalsIn: aCASTBlock generator: aCodeGen [
 	maybeExternFunctions := (declarations select: [ :decl | 
 		                         decl beginsWith: 'extern' ]) keys.
 
-	(self allLocalLocals isEmpty and: [ maybeExternFunctions isEmpty ]) ifFalse: [ 
-		(aCodeGen sortStrings: self allLocalLocals , maybeExternFunctions) do: [ :var | 
-			| decl |
-			decl := self
-				        declarationAt: var
-				        ifAbsent: [ aCodeGen defaultType , ' ' , var ].
-			(volatileVariables or: [ 
-				 (decl beginsWith: 'static') or: [ 
-					 (decl beginsWith: 'extern') or: [ 
-						 usedVariablesCache includes: var ] ] ]) ifTrue: [ 
-				volatileVariables ifTrue: [ decl := 'volatile ' , decl ].
-				aCASTBlock declarations add: (CRawCodeNode code: decl) ] ] ]
+	(self allLocalLocals isEmpty and: [ maybeExternFunctions isEmpty ]) 
+		ifFalse: [ 
+			(aCodeGen sortStrings: self allLocalLocals , maybeExternFunctions) 
+				do: [ :var | 
+					| decl |
+					decl := self
+						        declarationAt: var
+						        ifAbsent: [ aCodeGen defaultType , ' ' , var ].
+					(volatileVariables or: [ 
+						 (decl beginsWith: 'static') or: [ 
+							 (decl beginsWith: 'extern') or: [ 
+								 self usedVariablesCache includes: var ] ] ]) ifTrue: [ 
+						volatileVariables ifTrue: [ decl := 'volatile ' , decl ].
+						aCASTBlock declarations add: (CRawCodeNode code: decl) ] ] ]
 ]
 
 { #category : #accessing }
@@ -404,18 +406,24 @@ TMethod >> asCASTIn: aCodeGen [
 					  space ])).
 	functionDefinition := self
 		                      asCASTFunctionPrototypeIn: aCodeGen
-		                      isPrototype: false.
-	functionDefinition body: CCompoundStatementNode new.
+		                     isPrototype: false.
+	
 	aCodeGen
 		pushScope: self
-		while: [ body := (parseTree asCASTIn: aCodeGen) ]. "Generation will note used variables in usedVariablesCache"
-	self addCASTLocalsIn: functionDefinition body generator: aCodeGen.
-	functionDefinition body add: body.
+		while: [ body := (parseTree asCASTIn: aCodeGen) ].
+	functionDefinition body: body.
+
+	"Generation will note used variables in usedVariablesCache"
 	usedVariablesCache := nil.
+	
 	((returnType = #void) not and: [parseTree endsWithReturn not]) ifTrue: [
-		functionDefinition body add: (CReturnStatementNode expression: (CConstantNode value: 0))].
-	functionDefinition := self addCASTConditionalCompilationFor: functionDefinition generator: aCodeGen.
-	compoundStatement add: functionDefinition.
+		functionDefinition body
+			add: (CReturnStatementNode expression: (CConstantNode value: 0))
+	].
+	
+	compoundStatement add: (self
+		addCASTConditionalCompilationFor: functionDefinition
+		generator: aCodeGen).
 	^ compoundStatement
 ]
 
@@ -1332,7 +1340,8 @@ TMethod >> incompleteSendsIn: aCodeGen [
 TMethod >> initialize [
 
 	super initialize.
-	declarations := Dictionary new
+	declarations := Dictionary new.
+	self clearReferencesToGlobalStruct
 ]
 
 { #category : #accessing }
@@ -2022,6 +2031,12 @@ TMethod >> isSubstitutableNode: aNode intoMethod: targetMeth in: aCodeGen [
 { #category : #testing }
 TMethod >> isTMethod [
 	^true
+]
+
+{ #category : #testing }
+TMethod >> isVolatile [
+	
+	^ self hasProperties and: [properties includesKey: #volatile]
 ]
 
 { #category : #accessing }
