@@ -132,10 +132,10 @@ TMethod >> addTypeForSelf [
 TMethod >> addVarsDeclarationsAndLabelsOf: methodToBeInlined except: doNotRename [
 	"Prepare to inline the body of the given method into the receiver by making the args and locals of the argument to the receiver be locals of the receiver. Record any type declarations for these variables. Record labels. Assumes that the variables have already be renamed to avoid name clashes."
 
-	self locals: (self locals
+	self locals
 		addAll: (methodToBeInlined args reject: [ :v | doNotRename includes: v]);
 		addAll: (methodToBeInlined locals reject: [ :v | doNotRename includes: v]);
-		yourself).
+		yourself.
 	methodToBeInlined declarations keysAndValuesDo:
 		[ :v :decl |
 		(doNotRename includes: v) ifFalse:
@@ -2793,6 +2793,7 @@ TMethod >> setSelector: sel definingClass: class args: argList locals: localList
 	
 	parseTree := aBlockNode. "hack; allows nodes to find their parent, etc"
 	parseTree := aBlockNode asTranslatorNodeIn: self.
+	parseTree locals addAll: (localList  collect: [:arg | arg name]).
 
 	self addTypeForSelf.
 	primitive := aNumber.
