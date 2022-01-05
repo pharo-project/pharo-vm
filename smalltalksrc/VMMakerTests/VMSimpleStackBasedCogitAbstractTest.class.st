@@ -615,7 +615,7 @@ VMSimpleStackBasedCogitAbstractTest >> pushAddress: anInteger [
 
 	| aByteArray |
 	aByteArray := ByteArray new: self wordSize.
-	aByteArray integerAt: 1 put: anInteger size: self wordSize signed: false.
+	aByteArray integerAt: 1 put: anInteger size: self wordSize signed: anInteger < 0.
 	self push: aByteArray
 ]
 

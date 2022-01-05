@@ -825,7 +825,7 @@ UnicornSimulator >> writeRegister: aRegister value: anInteger [
 
 	| value |
 	value := ByteArray new: self wordSize.
-	value integerAt: 1 put: anInteger size: self wordSize signed: false.
+	value integerAt: 1 put: anInteger size: self wordSize signed: anInteger < 0.
 	unicorn register: aRegister value write: value.
 
 ]
