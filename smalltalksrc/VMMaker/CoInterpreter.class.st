@@ -719,7 +719,7 @@ CoInterpreter >> allocateMemoryForImage: f withHeader: header [
 
 	self allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: desiredPositionOfHeap.
 	
-	self loadImageFromFile: f withHeader: header.
+	imageReader loadImageFromFile: f withHeader: header.
 	
 	self beforeCodeZoneInitialization.
 

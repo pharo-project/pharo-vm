@@ -2144,7 +2144,7 @@ StackInterpreter >> allocateMemoryForImage: f withHeader: header [
 
 	self allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: header oldBaseAddr.
 	
-	self loadImageFromFile: f withHeader: header 
+	imageReader loadImageFromFile: f withHeader: header 
 ]
 
 { #category : #'compiled methods' }
@@ -8951,27 +8951,6 @@ StackInterpreter >> loadBitBltFrom: bb [
 	fn := self ioLoadFunction: 'loadBitBltFrom' From: 'BitBltPlugin'.
 	fn = 0 ifTrue: [^self primitiveFail].
 	^self cCode: '((sqInt (*)(sqInt))fn)(bb)'
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> loadImageFromFile: f withHeader: header [ 
-
-	<var: #f type: #sqImageFile>
-	<var: #header type: #'SpurImageHeaderStruct'>	
-	
-	"read in the image in bulk, then swap the bytes if necessary"
-	| bytesRead bytesToShift |
-	bytesRead := objectMemory
-		             readHeapFromImageFile: f
-		             dataBytes: header dataSize.
-	bytesRead ~= header dataSize ifTrue: [ self unableToReadImageError ].
-
-	self ensureImageFormatIsUpToDate: header swapBytes.
-
-	"compute difference between old and new memory base addresses"
-	bytesToShift := objectMemory memoryBaseForImageRead - header oldBaseAddr.
-	self initializeInterpreter: bytesToShift. "adjusts all oops to new location"
-
 ]
 
 { #category : #initialization }

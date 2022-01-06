@@ -1,37 +1,8 @@
 Class {
 	#name : #SpurImageReader,
-	#superclass : #VMClass,
-	#instVars : [
-		'objectMemory',
-		'interpreter'
-	],
+	#superclass : #AbstractImageAccess,
 	#category : #'VMMaker-ImageFormat'
 }
-
-{ #category : #translation }
-SpurImageReader class >> declareCVarsIn: aCCodeGenerator [
-
-	aCCodeGenerator
-		removeVariable: 'objectMemory';
-		removeVariable: 'interpreter'.
-
-]
-
-{ #category : #translation }
-SpurImageReader class >> implicitReturnTypeFor: aSelector [
-	"Answer the return type for methods that don't have an explicit return."
-	^#void
-]
-
-{ #category : #'instance creation' }
-SpurImageReader class >> newWithMemory: memory andInterpreter: anInterpreter [
-
-	| imageReader |
-	imageReader := self new.
-	imageReader objectMemory: memory.
-	imageReader interpreter: anInterpreter.
-	^ imageReader
-]
 
 { #category : #reading }
 SpurImageReader >> extractImageVersionFrom: file into: header [
@@ -155,6 +126,28 @@ SpurImageReader >> interpreter: anObject [
 	<doNotGenerate>
 
 	interpreter := anObject
+]
+
+{ #category : #reading }
+SpurImageReader >> loadImageFromFile: f withHeader: header [ 
+
+	<var: #f type: #sqImageFile>
+	<var: #header type: #'SpurImageHeaderStruct'>	
+	
+	"read in the image in bulk, then swap the bytes if necessary"
+	| bytesRead bytesToShift |
+	bytesRead := objectMemory
+		             readHeapFromImageFile: f
+		             dataBytes: header dataSize.
+
+	bytesRead ~= header dataSize ifTrue: [ interpreter unableToReadImageError ].
+
+	interpreter ensureImageFormatIsUpToDate: header swapBytes.
+
+	"compute difference between old and new memory base addresses"
+	bytesToShift := objectMemory memoryBaseForImageRead - header oldBaseAddr.
+	interpreter initializeInterpreter: bytesToShift. "adjusts all oops to new location"
+
 ]
 
 { #category : #accessing }

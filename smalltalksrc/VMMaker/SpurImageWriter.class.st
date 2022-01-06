@@ -1,38 +1,8 @@
 Class {
 	#name : #SpurImageWriter,
-	#superclass : #VMClass,
-	#instVars : [
-		'objectMemory',
-		'interpreter'
-	],
+	#superclass : #AbstractImageAccess,
 	#category : #'VMMaker-ImageFormat'
 }
-
-{ #category : #translation }
-SpurImageWriter class >> declareCVarsIn: aCCodeGenerator [
-
-	aCCodeGenerator
-		removeVariable: 'objectMemory';
-		removeVariable: 'interpreter'.
-
-]
-
-{ #category : #translation }
-SpurImageWriter class >> implicitReturnTypeFor: aSelector [
-	"Answer the return type for methods that don't have an explicit return."
-	^#void
-]
-
-{ #category : #'instance creation' }
-SpurImageWriter class >> newWithMemory: memory andInterpreter: anInterpreter [
-
-
-	| imageWriter |
-	imageWriter := self new.
-	imageWriter objectMemory: memory.
-	imageWriter interpreter: anInterpreter.
-	^ imageWriter
-]
 
 { #category : #accessing }
 SpurImageWriter >> interpreter: anInterpreter [
