@@ -5439,7 +5439,7 @@ CCodeGenerator >> wrapStatementWithExternalizationAndLocalizations: statement of
 	potentialCall := statement isAssignment ifTrue: [ statement expression ] ifFalse: [ statement ].
 	((self isFunctionCall: potentialCall)
 		or: [ self isDynamicCall: potentialCall ])
-			ifFalse: [ ^ potentialCall ].
+			ifFalse: [ ^ statement ].
 	
 	"Optimization: only externalize/localize variables used by the statement's called functions"
 	collector := MLVMVariableAccessCollector
