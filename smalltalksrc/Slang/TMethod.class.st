@@ -454,12 +454,13 @@ TMethod >> asInlineNode [
 TMethod >> bindClassVariablesIn: constantDictionary [
 	"Class variables are used as constants. This method replaces all references to class variables in the body of this method with the corresponding constant looked up in the class pool dictionary of the source class. The source class class variables should be initialized before this method is called."
 
-	parseTree := parseTree bindVariablesIn: constantDictionary.
+	self parseTree: (parseTree bindVariablesIn: constantDictionary)
 ]
 
 { #category : #transformations }
 TMethod >> bindVariableUsesIn: aDictionary [
-	parseTree := parseTree bindVariableUsesIn: aDictionary.
+
+	self parseTree: (parseTree bindVariableUsesIn: aDictionary)
 ]
 
 { #category : #transformations }
@@ -478,7 +479,7 @@ TMethod >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: c
 TMethod >> bindVariablesIn: constantDictionary [
 	"Class variables are used as constants. This method replaces all references to class variables in the body of this method with the corresponding constant looked up in the class pool dictionary of the source class. The source class class variables should be initialized before this method is called."
 
-	parseTree := parseTree bindVariablesIn: constantDictionary.
+	self parseTree: (parseTree bindVariablesIn: constantDictionary)
 ]
 
 { #category : #transformations }
@@ -486,7 +487,7 @@ TMethod >> bindVariablesIn: constantDictionary unless: cautionaryBlock [
 	"Class variables are used as constants. This method replaces all references to class variables in the body of this method with the corresponding constant looked up in the class pool dictionary of the source class. The source class class variables should be initialized before this method is called."
 
 	(cautionaryBlock value: self) ifTrue: [^self].
-	parseTree := parseTree bindVariablesIn: constantDictionary unless: cautionaryBlock.
+	self parseTree: (parseTree bindVariablesIn: constantDictionary unless: cautionaryBlock).
 ]
 
 { #category : #transformations }
@@ -1221,7 +1222,7 @@ TMethod >> fixUpReturns: argCount postlog: postlog [
 { #category : #flattenning }
 TMethod >> flatten [
 	
-	parseTree := TStatementListNode statements: parseTree flattened
+	self parseTree: (TStatementListNode statements: parseTree flattened)
 ]
 
 { #category : #utilities }
@@ -2215,6 +2216,7 @@ TMethod >> parseTree: aNode [
 	"Set the parse tree of this method."
 
 	parseTree := aNode.
+	parseTree parent: self.
 ]
 
 { #category : #'primitive compilation' }
@@ -2232,7 +2234,7 @@ TMethod >> postCopy [
 	args := args copy.
 	self locals: self locals copy.
 	declarations := declarations copy.
-	parseTree := parseTree copy.
+	self parseTree: parseTree copy.
 	labels := labels copy
 ]
 
@@ -2723,7 +2725,7 @@ TMethod >> renameVarsForInliningInto: destMethod except: doNotRename in: aCodeGe
 
 { #category : #transformations }
 TMethod >> replaceNodesIn: map [
-	parseTree := parseTree replaceNodesIn: map.
+	self parseTree: (parseTree replaceNodesIn: map)
 ]
 
 { #category : #'primitive compilation' }
@@ -2792,8 +2794,8 @@ TMethod >> setSelector: sel definingClass: class args: argList locals: localList
 	declarations := Dictionary new.
 	
 	parseTree := aBlockNode. "hack; allows nodes to find their parent, etc"
-	parseTree := aBlockNode asTranslatorNodeIn: self.
-	parseTree locals addAll: (localList  collect: [:arg | arg name]).
+	self parseTree: (aBlockNode asTranslatorNodeIn: self).
+	parseTree locals: (localList  collect: [:arg | arg name]).
 
 	self addTypeForSelf.
 	primitive := aNumber.

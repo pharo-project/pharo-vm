@@ -482,7 +482,7 @@ SmartSyntaxPluginTMethod >> setSelector: sel definingClass: class args: argList 
 	primitive := aNumber.
 	properties := methodProperties.
 	comment := aComment.
-	parseTree := aBlockNode asTranslatorNodeIn: self.
+	self parseTree: (aBlockNode asTranslatorNodeIn: self).
 	labels := Set new.
 	complete := false.  "set to true when all possible inlining has been done"
 	export := self extractExportDirective.
