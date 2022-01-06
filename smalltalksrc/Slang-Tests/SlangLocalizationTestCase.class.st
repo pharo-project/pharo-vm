@@ -304,6 +304,28 @@ SlangLocalizationTestCase >> testExternalEscapingSendNodeShouldBeTranslatedWithE
 ]
 
 { #category : #tests }
+SlangLocalizationTestCase >> testExternalPerform [
+	
+	| interpretMethod cast printedString linearizedBlock |
+	interpretMethod := self applyLocalizationToInterpretWith: #initializeWithPerform.
+
+	"Assert that the send node is preceded by variable externalization"
+	linearizedBlock := self linearizedBlockOfCaseMethod: interpretMethod.
+	cast := linearizedBlock asCASTIn: ccg.
+	
+	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
+	
+	self assert: printedString equals:
+'{
+	{
+		autoLocalizedVariable = local_autoLocalizedVariable;
+		foo();
+		local_autoLocalizedVariable = autoLocalizedVariable;
+	}
+}'
+]
+
+{ #category : #tests }
 SlangLocalizationTestCase >> testExternalSendNodeExternalizeAndInternalizeOnlyNeededVariables [
 	
 	| interpretMethod cast printedString linearizedBlock |

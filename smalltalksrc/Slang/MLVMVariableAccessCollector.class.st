@@ -135,6 +135,11 @@ MLVMVariableAccessCollector >> visitReturnNode: aTReturnNode [
 { #category : #visiting }
 MLVMVariableAccessCollector >> visitSendNode: aTSendNode [ 
 	
+	(codeGenerator isDynamicCall: aTSendNode)
+		ifTrue: [
+			accessedVariables addAll: variableSubset.
+			^ self ].
+
 	aTSendNode receiver accept: self.
 	aTSendNode arguments do: [ :argument | argument accept: self ].
 	self analyzeCallGraphFromMessageSend: aTSendNode

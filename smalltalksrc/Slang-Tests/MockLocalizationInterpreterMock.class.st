@@ -112,6 +112,16 @@ MockLocalizationInterpreterMock class >> initializeWithMacroCall [
 ]
 
 { #category : #initialization }
+MockLocalizationInterpreterMock class >> initializeWithPerform [
+
+	BytecodeTable := Array new: 1.
+	self table: BytecodeTable from:
+	#(
+	(  0  bytecodeWithPerform)
+	)
+]
+
+{ #category : #initialization }
 MockLocalizationInterpreterMock class >> initializeWithSafeEscapingCall [
 
 	BytecodeTable := Array new: 1.
@@ -244,6 +254,12 @@ MockLocalizationInterpreterMock >> bytecodeWithEscapingCallAsArgument [
 MockLocalizationInterpreterMock >> bytecodeWithEscapingCallAsArgumentOfExternalCall [
 
 	self foo: self nonInlinedMethodUsingAutolocalizedVariable1
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeWithPerform [
+
+	self perform: #foo
 ]
 
 { #category : #'interpreter shell' }
