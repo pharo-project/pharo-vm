@@ -13,6 +13,98 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance-creation' }
+TCaseStmtNode class >> newWithExpression: anExpression cases: cases [
+	
+	^ self new
+		setExpression: anExpression
+		cases: cases;
+		yourself
+]
+
+{ #category : #'instance-creation' }
+TCaseStmtNode class >> newWithExpression: anExpression selectors: aCollectionOfSelectors arguments: arguments [
+	
+	^ self new
+		setExpression: anExpression
+		selectors: aCollectionOfSelectors
+		arguments: arguments;
+		yourself
+]
+
+{ #category : #tranforming }
+TCaseStmtNode >> asCASTIn: aBuilder [
+	
+	| statements expansions duplicates switchStatement result |
+	statements := CCompoundStatementNode new.
+	
+	expansions := aBuilder suppressAsmLabelsWhile: [
+		cases collect: [:case| self filterCommentsFrom:
+			(String streamContents: [:s| (case asCASTIn: aBuilder) prettyPrintOn: s ] ) ] ].
+	
+	duplicates := Set new.
+	1 to: cases size do: [:i| | case lastCase |
+		"If case bodies are the same, keep only one."
+		(duplicates includes: i) ifFalse: [
+			"Cases are nested.
+			We iterate from the last case to the first case so the nesting order remains the same as the defined one"
+			(duplicates addAll: ((cases size to: i by: -1) select: [:j| (expansions at: i) = (expansions at: j)])) do: [:k|
+				(lasts at: k) to: (firsts at: k) by: -1 do: [ :caseIndex |
+					case := CLabeledStatementNode case: (CConstantNode value: caseIndex) statement: case.
+					"Remember the last case, will be the one attached to the statement"
+					lastCase ifNil: [ lastCase := case ].
+			]].
+			lastCase statement: ((cases at: i) asCASTIn: aBuilder).
+			statements add: case.
+			statements add: CBreakStatementNode new]].
+	
+	switchStatement := CSwitchStatementNode
+		if: (expression asCASTExpressionIn: aBuilder)
+		statement: statements.
+	
+	(expression isVariable and: [expression name = 'currentBytecode']) ifFalse: [ ^ switchStatement ].
+	
+	result := CCompoundStatementNode new.
+	result needsBrackets: false.
+	result add: (CCallNode identifier: (CIdentifierNode name: 'bytecodeDispatchDebugHook')).
+	result add: (aBuilder asmLabelNodeFor: 'bytecodeDispatch').
+	result add: switchStatement.
+	^ result
+]
+
+{ #category : #tranforming }
+TCaseStmtNode >> asCASTIn: aBuilder addToEndOfCases: aNodeToPrepend [
+	
+	| statements |
+	statements := CCompoundStatementNode new.
+	
+	cases withIndexDo: [:case :i| | ccase lastCase |
+		"If case bodies are the same, keep only one."
+		"Cases are nested.
+		We iterate from the last case to the first case so the nesting order remains the same as the defined one"
+		(lasts at: i) to: (firsts at: i) by: -1 do: [ :caseIndex |
+			ccase := CLabeledStatementNode case: (CConstantNode value: caseIndex) statement: ccase.
+			"Remember the last case, will be the one attached to the statement"
+			lastCase ifNil: [ lastCase := ccase ].
+		].
+		lastCase statement: (case asCASTIn: aBuilder prependToEnd: aNodeToPrepend).
+		statements add: ccase.
+		(aNodeToPrepend notNil and: [aNodeToPrepend isReturn]) ifFalse: [
+			statements add: CBreakStatementNode new ]
+	].
+	
+	statements add: (CLabeledStatementNode defaultDoing: ((CCompoundStatementNode statements: {
+		CCallNode
+			identifier: (CIdentifierNode name: 'error')
+			arguments: { CStringLiteralNode value: 'Case not found' }.
+		CReturnStatementNode expression: (CConstantNode value: -1).
+	}) needsBrackets: false; yourself)).
+	
+	^ CSwitchStatementNode
+		if: (expression asCASTExpressionIn: aBuilder)
+		statement: statements
+]
+
 { #category : #transformations }
 TCaseStmtNode >> bindVariableUsesIn: aDictionary [
 
@@ -56,7 +148,7 @@ TCaseStmtNode >> customizeCase: caseParseTree forVar: varName from: firstIndex t
 	firstIndex to: lastIndex do:
 		[ :caseIndex |
 		dict := Dictionary new.
-		dict at: varName put: (TConstantNode new setValue: caseIndex).
+		dict at: varName put: (TConstantNode value: caseIndex).
 		newCase := caseParseTree copy bindVariableUsesIn: dict andConstantFoldIf: true in: codeGen.
 		self processSharedCodeBlocks: newCase forCase: caseIndex in: codeGen method: aTMethod expandedCases: seen.
 		newCases addLast: newCase].
@@ -94,75 +186,6 @@ TCaseStmtNode >> customizeShortCasesForDispatchVar: varName in: codeGen method: 
 	firsts := newFirsts asArray.
 	lasts := newLasts asArray.
 	cases := newCases asArray
-]
-
-{ #category : #'C code generation' }
-TCaseStmtNode >> emitCCodeOn: aStream addToEndOfCases: aNodeOrNil level: level generator: aCodeGen [
-
-	| indent |
-	indent := String new: level withAll: Character tab.
-	aStream crtab: level.
-	aStream nextPutAll: 'switch ('.
-	expression emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen.
-	aStream nextPutAll: ') {'; cr.
-	cases withIndexDo:
-		[:case :i|
-		(firsts at: i) to: (lasts at: i) do:
-			[ :caseIndex |
-			aStream nextPutAll: indent; nextPutAll: 'case '; print: caseIndex; nextPut: $:; cr].
-		  case emitCCodeOn: aStream prependToEnd: aNodeOrNil level: level + 1 generator: aCodeGen.
-		  (aNodeOrNil notNil and: [aNodeOrNil isReturn]) ifFalse:
-			[aStream crtab: level + 1; nextPutAll: 'break;']].
-	aStream
-		crtab: level;
-		nextPutAll: 'default:';
-		crtab: level + 1;
-		nextPutAll: 'error("Case not found");'.
-	aNodeOrNil ifNotNil:
-		[aStream crtab: level + 1.
-		 (aNodeOrNil copy setExpression: (TConstantNode new setValue: -1))
-			emitCCodeOn: aStream level: level generator: aCodeGen.
-		 aStream nextPut: $;].
-	aStream
-		crtab: level;
-		nextPut: $}
-]
-
-{ #category : #'C code generation' }
-TCaseStmtNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-	| printMod expansions duplicates |
-	printMod := false.
-	(expression isVariable
-	 and: [expression name = 'currentBytecode']) ifTrue:
-		[printMod := true.
-		 aStream nextPutAll: 'bytecodeDispatchDebugHook();'; cr; crtab: level.
-		 aCodeGen outputAsmLabel: 'bytecodeDispatch' on: aStream.
-		 aStream crtab: level].
-	aStream nextPutAll: 'switch ('.
-	expression emitCCodeOn: aStream level: level generator: aCodeGen.
-	aStream nextPutAll: ') {'; cr.
-	expansions := aCodeGen suppressAsmLabelsWhile:
-						[cases collect:
-							[:case|
-							self filterCommentsFrom:
-								(String streamContents:
-									[:s|
-									case emitCCodeOn: s level: 0 generator: aCodeGen])]].
-	duplicates := Set new.
-	1 to: cases size do:
-		[:i|
-		(duplicates includes: i) ifFalse:
-			[(duplicates addAll: ((i to: cases size) select: [:j| (expansions at: i) = (expansions at: j)])) do:
-				[:k|
-				(firsts at: k) to: (lasts at: k) do:
-					[:caseIndex|
-					aStream tab: level; nextPutAll: 'case '; print: caseIndex; nextPut: $:.
-					(caseIndex > 255 and: [printMod]) ifTrue:
-						[aStream nextPutAll: ' /*'; print: (caseIndex bitAnd: 255); nextPutAll: '*/'].
-					aStream cr]].
-			(cases at: i) emitCCodeOn: aStream level: level + 1 generator: aCodeGen.
-			aStream tab: level + 1; nextPutAll: 'break;'; cr]].
-	aStream tab: level; nextPut: $}
 ]
 
 { #category : #accessing }
@@ -297,7 +320,7 @@ TCaseStmtNode >> processSharedCodeBlocks: caseTree forCase: caseIndex in: codeGe
 											addLabelsTo: aTMethod;
 											asInlineNode])]
 				ifFalse:
-					[map at: node put: (TGoToNode new setLabel: meth sharedLabel)]]].
+					[map at: node put: (TGoToNode label: meth sharedLabel)]]].
 	 caseTree replaceNodesIn: map.
 	 "recursively expand"
 	 sharedNode notNil]

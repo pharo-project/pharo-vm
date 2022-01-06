@@ -53,44 +53,20 @@ FakeStdinStream >> isFakeStdinStream [
 FakeStdinStream >> next [
 	"Answer the next object in the Stream represented by the receiver.
 	 If there are no more elements in the stream fill up the buffer by prompting for input"
-	| sem threadIndex inputLine next |
+	| inputLine next |
 	position >= readLimit ifTrue:
-		[simulator isThreadedVM
-			ifTrue:
-				["(simulator cogit singleStep not
-				  and: [UIManager confirm: 'Single step?']) ifTrue:
-					[simulator cogit singleStep: true]."
-				 threadIndex := simulator disownVM: DisownVMLockOutFullGC.
-				 simulator forceInterruptCheckFromHeartbeat.
-				 sem := Semaphore new.
-				 WorldState addDeferredUIMessage:
-					[inputLine := UIManager default request: 'Input please!'.
-					 sem signal].
-				 sem wait]
-			ifFalse: "simulate line-oriented input"
-				[inputLine := ((Smalltalk classNamed: #FillInTheBlankMorph)
-								ifNotNil: "Squeak"
-									[:fITBM|
-									 fITBM
-										request: 'Input please!'
-										initialAnswer: ''
-										centerAt: ActiveHand cursorPoint
-										inWorld: ActiveWorld
-										onCancelReturn: nil
-										acceptOnCR: true]
-								ifNil: "Pharo; onCancelReturn: nil is the default here"
-									[UIManager default 
+		[
+		 inputLine := UIManager default 
 										request: 'Input please!' 
-										initialAnswer: '']).
-				inputLine ifNil: [self atEnd: true. ^nil]].
+										initialAnswer: ''.
+		 inputLine ifNil: [self atEnd: true. ^nil].
+		 
 		 collection size <= inputLine size ifTrue:
 			[collection := collection species new: inputLine size + 1].
 		 collection
 			replaceFrom: 1 to: inputLine size with: inputLine startingAt: 1;
 		 	at: (readLimit := inputLine size + 1) put: Character lf.
-		 position := 0.
-		 simulator isThreadedVM ifTrue:
-			[simulator ownVM: threadIndex]].
+		 position := 0 ].
 	next := collection at: (position := position + 1).
 	^next
 	

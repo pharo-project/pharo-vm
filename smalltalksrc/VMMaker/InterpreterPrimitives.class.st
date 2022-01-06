@@ -71,7 +71,6 @@ Class {
 		'primFailCode',
 		'osErrorCode',
 		'exceptionPC',
-		'inFFIFlags',
 		'profileMethod',
 		'profileProcess',
 		'profileSemaphore',
@@ -112,7 +111,7 @@ InterpreterPrimitives class >> defineAtCompileTime: anObject [
 	 because the VM generated is specific to these varables."
 	anObject isSymbol ifFalse:
 		[^false].
-	(#(STACKVM COGVM COGMTVM SPURVM) includes: anObject) ifTrue:
+	(#(STACKVM COGVM SPURVM) includes: anObject) ifTrue:
 		[^false].
 	^VMBasicConstants namesDefinedAtCompileTime includes: anObject
 ]
@@ -1655,21 +1654,15 @@ InterpreterPrimitives >> primitiveEnterCriticalSection [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveEqual [
-	| integerReceiver integerArgument result |
+	| integerReceiver integerArgument |
+	
+	<numberOfArguments: 1>
+	
 	integerArgument := self stackTop.
 	integerReceiver := self stackValue: 1.
 	(objectMemory areIntegers: integerReceiver and: integerArgument)
 		ifTrue: [self pop: 2 thenPushBool: integerReceiver = integerArgument]
-		ifFalse:
-			[result := objectMemory hasSixtyFourBitImmediates
-						ifTrue:
-							[(self signed64BitValueOf: integerReceiver)
-								= (self signed64BitValueOf: integerArgument)]
-						ifFalse:
-							[(self positiveMachineIntegerValueOf: integerReceiver)
-								= (self positiveMachineIntegerValueOf: integerArgument)].
-			 self successful ifTrue:
-				[self pop: 2 thenPushBool: result]]
+		ifFalse: [self primitiveFail]
 ]
 
 { #category : #'arithmetic largeint primitives' }
@@ -1766,31 +1759,6 @@ InterpreterPrimitives >> primitiveFailFor: reasonCode [
 	 N.B. primitiveFailFor: PrimNoErr is expected to clear the primFailCode."
 	<api>
 	^primFailCode := reasonCode
-]
-
-{ #category : #'primitive support' }
-InterpreterPrimitives >> primitiveFailForFFIException: exceptionCode at: pc [
-	<var: 'exceptionCode' type: #usqLong>
-	<var: 'pc' type: #usqInt>
-	"Set PrimErrFFIException primitive failure and associated exceptionCode (a.k.a. 
-	 osErrorCode) and exceptionPC. Under control of the ffiExceptionResponse flag,
-	 if in a primitive with an error code and the inFFIFlags indicate we're in an FFI call,
-	 then fail the primitive.
-	 ffiExceptionResponse < 0 never fail
-	 ffiExceptionResponse = 0 fail if method has a primitive error code (default)
-	 ffiExceptionResponse > 0 always fail"
-	<api>
-	((inFFIFlags noMask: DisownVMForFFICall)	"i.e. not in an FFI call"
-	 or: [ffiExceptionResponse < 0]) ifTrue:		"i.e. never fail"
-		[^self].
-	osErrorCode := self cCoerceSimple: exceptionCode to: #sqLong.
-	exceptionPC := pc.
-	primFailCode := PrimErrFFIException.
-	(ffiExceptionResponse > 0					"always fail..."
-	 or: [(objectMemory isOopCompiledMethod: newMethod)
-		 and: [self methodUsesPrimitiveErrorCode: newMethod]]) ifTrue:
-		[self ownVM: DisownVMForFFICall. "To take ownership but importantly to reset inFFIFlags"
-		 self activateFailingPrimitiveMethod]
 ]
 
 { #category : #'primitive support' }
@@ -2176,6 +2144,8 @@ InterpreterPrimitives >> primitiveGetenv: aByteStringOrByteArray [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveGreaterOrEqual [
+
+	<numberOfArguments: 1>
 	| integerReceiver integerArgument |
 	integerArgument := self stackTop.
 	integerReceiver := self stackValue: 1.
@@ -2204,6 +2174,8 @@ InterpreterPrimitives >> primitiveGreaterOrEqualLargeIntegers [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveGreaterThan [
+
+	<numberOfArguments: 1>
 	| integerReceiver integerArgument |
 	integerArgument := self stackTop.
 	integerReceiver := self stackValue: 1.
@@ -2513,6 +2485,8 @@ InterpreterPrimitives >> primitiveIsWindowObscured [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveLessOrEqual [
+
+	<numberOfArguments: 1>
 	| integerReceiver integerArgument |
 	integerArgument := self stackTop.
 	integerReceiver := self stackValue: 1.
@@ -2541,6 +2515,9 @@ InterpreterPrimitives >> primitiveLessOrEqualLargeIntegers [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveLessThan [
+
+	<numberOfArguments: 1>
+
 	| integerReceiver integerArgument |
 	integerArgument := self stackTop.
 	integerReceiver := self stackValue: 1.
@@ -5076,6 +5053,8 @@ InterpreterPrimitives >> sumSmallInteger: anInteger withSmallInteger: anotherInt
 	b := objectMemory integerValueOf: anotherInteger.
 	
 	result := a + b.
-	(objectMemory isIntegerValue: result) ifFalse: aBlock.
-	^ objectMemory integerObjectOf: result
+
+	^(objectMemory isIntegerValue: result) 
+		ifTrue: [ objectMemory integerObjectOf: result ]
+		ifFalse: aBlock
 ]

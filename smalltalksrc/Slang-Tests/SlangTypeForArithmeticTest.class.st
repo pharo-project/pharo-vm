@@ -11,8 +11,8 @@ Class {
 { #category : #running }
 SlangTypeForArithmeticTest >> setUp [
 	super setUp.
-	ccg addClass: SlangTypeForDereferenceTestClass
-
+	ccg addClass: SlangTypeForDereferenceTestClass.
+	ccg inferTypes.
 ]
 
 { #category : #tests }
@@ -21,7 +21,8 @@ SlangTypeForArithmeticTest >> testAtOnMatrix [
 	tMethod := ccg methodNamed: #aMethodReturningAnAtOnAMatrix.
 	
 	self assert: tMethod isNotNil.
-	self assert: (ccg typeFor: tMethod statements first expression in: tMethod) equals: #sqInt."at: node"
-	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #sqInt."returnNode"
-	self assert: tMethod returnType equals: #sqInt. " euuu, looks weird. Did i do something wrong?"
+	self assert: (ccg typeFor: tMethod statements first expression in: tMethod) equals: #'int *'."at: node"
+	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #'int *'."returnNode"
+	
+	self assertReturnTypeOf: tMethod equalsHarmonized: #'int *'
 ]

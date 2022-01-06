@@ -181,7 +181,6 @@ char *cStringOrNullFor(sqInt);
 sqInt statNumGCs(void);
 sqInt stringForCString(const char *);
 sqInt primitiveFailForOSError(sqLong);
-sqInt primitiveFailForFFIExceptionat(usqLong exceptionCode, usqInt pc);
 #endif
 #if VM_PROXY_MINOR > 14 /* SmartSyntaxPlugin validation rewrite support */
 sqInt isBooleanObject(sqInt oop);
@@ -254,10 +253,6 @@ extern void (*setInterruptCheckChain(void (*aFunction)(void)))();
 void (*setInterruptCheckChain(void (*aFunction)(void)))() { return 0; }
 #endif
 
-#if VM_PROXY_MINOR > 10
-extern sqInt disownVM(sqInt flags);
-extern sqInt ownVM(sqInt threadIdAndFlags);
-#endif /* VM_PROXY_MINOR > 10 */
 extern sqInt isYoung(sqInt);
 
 /* High-priority and synchronous ticker function support. */
@@ -477,8 +472,6 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 #endif
 
 #if VM_PROXY_MINOR > 10
-	VM->disownVM = disownVM;
-	VM->ownVM = ownVM;
 	VM->addHighPriorityTickee = addHighPriorityTickee;
 	VM->addSynchronousTickee = addSynchronousTickee;
 	VM->utcMicroseconds = ioUTCMicroseconds;
@@ -515,7 +508,6 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 	VM->statNumGCs = statNumGCs;
 	VM->stringForCString = stringForCString;
 	VM->primitiveFailForOSError = primitiveFailForOSError;
-	VM->primitiveFailForFFIExceptionat = primitiveFailForFFIExceptionat;
 #endif
 
 #if VM_PROXY_MINOR > 14 /* SmartSyntaxPlugin validation rewrite support */

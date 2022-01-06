@@ -1,3 +1,6 @@
+"
+some comment
+"
 Class {
 	#name : #TLabeledCommentNode,
 	#superclass : #TParseNode,
@@ -9,6 +12,54 @@ Class {
 }
 
 { #category : #accessing }
+TLabeledCommentNode class >> label: aLabel [
+
+	^ self new
+		setLabel: aLabel;
+		yourself
+]
+
+{ #category : #accessing }
+TLabeledCommentNode class >> withComment: aComment [
+
+	^ self new
+		setComment: aComment;
+		yourself
+]
+
+{ #category : #tranforming }
+TLabeledCommentNode >> asCASTIn: aBuilder [
+
+	| result |
+	result := CCompoundStatementNode new.
+	result needsBrackets: false.
+
+	label ifNotNil: [ 	| labelledNode |
+		labelledNode := CLabeledStatementNode new.		
+		labelledNode label: (CIdentifierNode name: label).
+		labelledNode statement: CEmptyStatementNode new.
+		result add: labelledNode ].	
+
+
+	comment ifNotNil: [ | commentNode |
+		(aBuilder previousCommentMarksInlining: (label isNil and: [asmLabel isNil and: [comment beginsWith: 'begin ']]))
+			ifTrue: [ ^ result ].
+		commentNode := CEmptyStatementNode new.
+		commentNode comments: { self comment }.
+		commentNode needsSeparator: false.
+		result add: commentNode.
+		aBuilder previousCommenter: self].
+
+	(asmLabel notNil "only output labels in the interpret function."
+	 and: [aBuilder currentMethod selector == #interpret]) ifTrue: [ | asmLabelNode |
+		asmLabelNode := aBuilder asmLabelNodeFor: asmLabel.
+		result add: asmLabelNode
+	].	
+
+	^ result
+]
+
+{ #category : #accessing }
 TLabeledCommentNode >> asmLabel [
 
 	^asmLabel
@@ -18,27 +69,6 @@ TLabeledCommentNode >> asmLabel [
 TLabeledCommentNode >> asmLabel: labelString [
 
 	asmLabel := labelString
-]
-
-{ #category : #'C code generation' }
-TLabeledCommentNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-	"Emit a C comment with optional label."
-
-	self printOptionalLabelOn: aStream.
-	comment ifNotNil:
-		[(aCodeGen previousCommentMarksInlining: (label isNil and: [asmLabel isNil and: [comment beginsWith: 'begin ']])) ifTrue:
-			[^true].
-		 aStream nextPutAll: '/* '; nextPutAll: comment; nextPutAll: ' */'.
-		 aCodeGen previousCommenter: self].
-	(asmLabel notNil "only output labels in the interpret function."
-	 and: [aCodeGen currentMethod selector == #interpret]) ifTrue:
-		[aStream crtab: level.
-		 aCodeGen outputAsmLabel: asmLabel on: aStream]
-]
-
-{ #category : #'C code generation' }
-TLabeledCommentNode >> emitCCommentOn: aStream level: level generator: aCodeGen [
-	"Override to avoid outputting comments since this is done explicitly in statement lists."
 ]
 
 { #category : #testing }
@@ -93,12 +123,13 @@ TLabeledCommentNode >> printOn: aStream level: level [
 { #category : #printing }
 TLabeledCommentNode >> printOptionalLabelOn: aStream [
 
-	label ifNotNil:
-		[self unindentTabs: aStream.
-		 aStream
+	label ifNotNil: [ 
+		self unindentTabs: aStream.
+		aStream
 			nextPutAll: label;
 			nextPut: $:;
-			tab]
+			cr;
+			nextPut: $; ]
 ]
 
 { #category : #accessing }

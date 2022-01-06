@@ -49,7 +49,7 @@ MLPluginAccessorDepthCalculator >> actualsForMethod: aTMethod [
 		 TSendNode new
 			setSelector: #stackValue:
 			receiver: (TVariableNode new setName: 'interpreterProxy')
-			arguments: {TConstantNode new setValue: i}]
+			arguments: {TConstantNode value: i}]
 ]
 
 { #category : #'spur primitive compilation' }

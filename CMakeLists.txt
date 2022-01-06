@@ -15,7 +15,8 @@ message(STATUS "CMAKE_GENERATOR=${CMAKE_GENERATOR}")
 
 # Build options
 option(FEATURE_FFI										"Enable FFI"																 ON)
-option(FEATURE_THREADED_FFI								"Enable Threaded (running in another thread) FFI"							 ON)
+option(FEATURE_THREADED_FFI								"Enable Threaded (running in another thread) FFI"							ON)
+option(FEATURE_MESSAGE_COUNT							"Enable the option to count messages, only valid for StackVM"				 OFF)
 option(FEATURE_NETWORK									"Enable network and sockets"												 ON)
 option(FEATURE_LIB_SDL2									"Build SDL2 support"														 ON)
 option(FEATURE_LIB_CAIRO								"Build Cairo support"														 ON)
@@ -42,14 +43,17 @@ extractVCSInformation(GIT_COMMIT_HASH GIT_DESCRIBE GIT_COMMIT_DATE)
 
 set(VERSION_MAJOR 10)
 set(VERSION_MINOR 0)
+set(VERSION_PATCH_NUMBER 0)
 
 if(BUILD_IS_RELEASE)
-	set(VERSION_PATCH "0")
+	set(VERSION_PATCH "${VERSION_PATCH_NUMBER}")
 else()
-	set(VERSION_PATCH "0-${GIT_COMMIT_HASH}")
+	set(VERSION_PATCH "${VERSION_PATCH_NUMBER}-${GIT_COMMIT_HASH}")
 endif(BUILD_IS_RELEASE)
 
 message(STATUS "Building version ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+message(STATUS "Commit hash ${GIT_COMMIT_HASH} : ${GIT_COMMIT_DATE}")
+
 
 # Visual Studio stores user build settings in file 'CmakeSettings.json'.  We would like to manage that via a project template.
 # To push out new template, update 'template_uuid' field in 'template_file' with value from https://www.uuidgenerator.net/
@@ -246,7 +250,7 @@ elseif(WIN)
     SET(CMAKE_SYSTEM_NAME Windows)
 
     add_compile_definitions(WIN32_LEAN_AND_MEAN)
-    add_compile_definitions(NO_ISNAN NO_SERVICE "'VM_LABEL(foo)=0'" LSB_FIRST=1 AllocationCheckFiller=0xADD4E55)
+    add_compile_definitions(NO_ISNAN NO_SERVICE LSB_FIRST=1 AllocationCheckFiller=0xADD4E55)
 
     #Setting minimal Windows Version to VISTA
     add_compile_definitions(_WIN32_WINNT=0x0600 WINVER=0x0600 NTDDI_VERSION=0x06000000 WIN64=1)
@@ -279,6 +283,9 @@ elseif(UNIX)
     endif()
 endif()
 
+get_platform_name(FULL_PLATFORM_NAME)
+message(STATUS "Full Platform name: ${FULL_PLATFORM_NAME}")
+
 set(OPTIMIZATION_FLAGS "")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
@@ -287,10 +294,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS}
 add_compile_definitions(IMMUTABILITY=1)
 add_compile_definitions(COGMTVM=0)
 add_compile_definitions(PharoVM=1)
-
-#We require that VM_LABEL does nothing.
-#We should actually cleanup all the places where this is set/used in the VM
-add_compile_definitions("VM_LABEL\(foo\)=0")
 
 #
 # This definition is used to improve the logging of the messages, to cut-down the path
@@ -447,7 +450,6 @@ if(${FEATURE_FFI})
     endif()
 endif()
 
-
 set(VM_SOURCES
     ${SUPPORT_SOURCES}
     ${GENERATED_SOURCES}
@@ -487,6 +489,11 @@ if (${FEATURE_FFI})
     endif()
 endif()
 
+
+if(${FEATURE_MESSAGE_COUNT})
+    target_compile_definitions(${VM_LIBRARY_NAME} 
+        PRIVATE FEATURE_MESSAGE_COUNT=1)
+endif()
 
 #If in OSX, configure creation of Bundle
 if(OSX)

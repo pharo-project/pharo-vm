@@ -4631,6 +4631,7 @@ VMPrimitiveTest >> testSubtractTwoIntegersOverflow [
 
 	interpreter push: (self memory integerObjectOf: self memory maxSmallInteger).
 	interpreter push: (self memory integerObjectOf: -1).
+
 	interpreter primitiveSubtract.
 
 	self assert: interpreter failed
@@ -4732,4 +4733,32 @@ VMPrimitiveTest >> testSubtractTwoNegativeIntegersUnderflowDoesNotPopArguments [
 
 	interpreter popStack; popStack.
 	self assert: interpreter popStack equals: marker
+]
+
+{ #category : #running }
+VMPrimitiveTest >> testSumSmallIntegersWithOverflow [
+
+
+	| a b ifOverflowValue result |
+	a := memory integerObjectOf: memory maxSmallInteger.
+	b := memory integerObjectOf: 10.
+	ifOverflowValue := memory integerObjectOf: 99.
+	
+	result := interpreter sumSmallInteger: a withSmallInteger: b ifOverflow: [ ifOverflowValue ].
+	
+	self assert: result equals: ifOverflowValue
+]
+
+{ #category : #running }
+VMPrimitiveTest >> testSumSmallIntegersWithoutOverflow [
+
+	| a b ifOverflowValue expectedResult result |
+	a := memory integerObjectOf: 42.
+	b := memory integerObjectOf: 10.
+	ifOverflowValue := memory integerObjectOf: 99.
+	expectedResult := memory integerObjectOf: 52.
+	
+	result := interpreter sumSmallInteger: a withSmallInteger: b ifOverflow: [ ifOverflowValue ].
+	
+	self assert: result equals: expectedResult
 ]
