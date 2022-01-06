@@ -208,7 +208,7 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 					  ifTrue: [ 'DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT' ]
 					  ifFalse: [ 'DECL_MAYBE_SQ_GLOBAL_STRUCT' ])) ].
 
-	(aBuilder sortStrings: (self locals asSet, self usedVariables) asSet) do: [ :var | | declaration |
+	(aBuilder sortStrings: self locals asSet) do: [ :var | | declaration |
 		declaration := aBuilder
 		  declarationAt: var
 		  ifAbsent: [ aBuilder defaultType, ' ' , var ].
