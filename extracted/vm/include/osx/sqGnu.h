@@ -50,7 +50,7 @@
     #define BREAK		goto *jumpTableR[currentBytecode]
     #define PPC_REG_JUMP	; register void **jumpTableR JP_REG; jumpTableR = &jumpTable[0]
 #else
-    #define BREAK		goto *jumpTable[currentBytecode]
+    #define BREAK		(GIV(local_stackPointer) < ((GIV(stackPage)->baseAddress))) && (GIV(local_stackPointer) > (((GIV(stackPage)->realStackLimit)) - (LargeContextSlots * BytesPerOop))); goto *jumpTable[currentBytecode]
     #define PPC_REG_JUMP	
 #endif
 
