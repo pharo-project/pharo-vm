@@ -5439,12 +5439,13 @@ CCodeGenerator >> wordSize: aValue [
 { #category : #'automatic-localization' }
 CCodeGenerator >> wrapStatementWithExternalizationAndLocalizations: statement ofLocalizedVariables: localizedVariables [
 
-	| collector variablesToExternalize replacementStatements |
+	| collector variablesToExternalize replacementStatements potentialCall |
 
-	"Only non inlined sends should be wrapped"
-	((self isFunctionCall: statement)
-		or: [ self isDynamicCall: statement ])
-			ifFalse: [ ^ statement ].
+	"Only non inlined sends, or message sends in assignments `tx := send` should be wrapped"
+	potentialCall := statement isAssignment ifTrue: [ statement expression ] ifFalse: [ statement ].
+	((self isFunctionCall: potentialCall)
+		or: [ self isDynamicCall: potentialCall ])
+			ifFalse: [ ^ potentialCall ].
 	
 	"Optimization: only externalize/localize variables used by the statement's called functions"
 	collector := MLVMVariableAccessCollector
