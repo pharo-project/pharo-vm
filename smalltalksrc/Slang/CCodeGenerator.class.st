@@ -2799,14 +2799,11 @@ CCodeGenerator >> generateCASTToByDo: tast [
 		        lvalue: (CIdentifierNode name: iterationVar)
 		        operator: '+='
 		        rvalue: (tast arguments second asCASTExpressionIn: self).
-	^ CCompoundStatementNode
-		  declarations:
-		  { (CRawCodeNode code: self defaultType , ' ' , iterationVar) }
-		  statements: { (CForStatementNode
-				   init: inits
-				   until: until
-				   step: { step }
-				   statement: (blockExpr asCASTIn: self)) }
+	^ CForStatementNode
+		  init: inits
+		  until: until
+		  step: { step }
+		  statement: (blockExpr asCASTIn: self)
 ]
 
 { #category : #'CAST translation' }
