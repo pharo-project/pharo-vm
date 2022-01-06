@@ -5441,8 +5441,8 @@ CCodeGenerator >> wrapStatementWithExternalizationAndLocalizations: statement of
 
 	| collector variablesToExternalize replacementStatements |
 
-	"If the statement to wrap is already a statement list, do not wrap it, we are going to wrap its children"
-	statement isStatementList ifTrue: [ ^ statement ].
+	"Only non inlined sends should be wrapped"
+	statement isSend ifFalse: [ ^ statement ].
 	
 	"Optimization: only externalize/localize variables used by the statement's called functions"
 	collector := MLVMVariableAccessCollector
@@ -5471,7 +5471,7 @@ CCodeGenerator >> wrapStatements: tMethod withVariableBindings: replacementDict 
 	 - static function calls
 	 - dynamic function calls (perform & co)"
 	
-	tMethod allStatements withIndexDo: [ :statement :i | | replacement oldParent |
+	tMethod allStatements do: [ :statement | | replacement oldParent |
 		oldParent := statement parent.
 		replacement := self
 			wrapStatementWithExternalizationAndLocalizations: statement
