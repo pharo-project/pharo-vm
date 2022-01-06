@@ -5442,7 +5442,7 @@ CCodeGenerator >> wrapStatementWithExternalizationAndLocalizations: statement of
 	| collector variablesToExternalize replacementStatements |
 
 	"Only non inlined sends should be wrapped"
-	statement isSend ifFalse: [ ^ statement ].
+	(self isFunctionCall: statement) ifFalse: [ ^ statement ].
 	
 	"Optimization: only externalize/localize variables used by the statement's called functions"
 	collector := MLVMVariableAccessCollector
