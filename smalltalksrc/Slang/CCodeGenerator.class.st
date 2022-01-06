@@ -2852,14 +2852,11 @@ CCodeGenerator >> generateCASTToDo: tast [
 		         iterativeVariable: iterationVar
 		         negative: false.
 	step := CIncrementNode object: (CIdentifierNode name: iterationVar).
-	^ CCompoundStatementNode
-		  declarations:
-		  { (CRawCodeNode code: self defaultType , ' ' , iterationVar) }
-		  statements: { (CForStatementNode
-				   init: { init }
-				   until: until
-				   step: { step }
-				   statement: (tast arguments last asCASTIn: self)) }
+	^ CForStatementNode
+		  init: { init }
+		  until: until
+		  step: { step }
+		  statement: (tast arguments last asCASTIn: self)
 ]
 
 { #category : #'CAST translation' }
