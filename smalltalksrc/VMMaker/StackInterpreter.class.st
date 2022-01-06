@@ -630,8 +630,10 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	LibFFIConstants classVariables do: [ :e | aCCodeGenerator removeConstant: e name ].
 	
 	aCCodeGenerator 
-		removeVariable: 'imageReader';
-		removeVariable: 'imageWriter'
+		"this variable is not used in the exported code, so it has to be removed.
+		If it is changed, it should be marked with type implicit"
+		removeVariable: 'imageReader'; 
+		var: 'imageWriter' type: #implicit. 
 ]
 
 { #category : #translation }
@@ -1701,7 +1703,6 @@ StackInterpreter class >> requiredMethodNames: options [
 		primitiveFail primitiveFailFor: primitiveFlushExternalPrimitives printAllStacks printCallStack printContext:
 			printExternalHeadFrame printFramesInPage: printFrame: printHeadFrame printMemory printOop:
 				printStackPages printStackPageList printStackPagesInUse printStackPageListInUse
-		readImageFromFile:StartingAt:
 		setFullScreenFlag: setInterruptKeycode: setInterruptPending: setInterruptCheckChain:
 			setSavedWindowSize: success:
 		validInstructionPointer:inMethod:framePointer:) asSet.
@@ -12924,14 +12925,6 @@ StackInterpreter >> quinaryInlinePrimitive: primIndex [
 	self unknownInlinePrimitive
 ]
 
-{ #category : #'image save/restore' }
-StackInterpreter >> readImageFromFile: f StartingAt: headerStart [
-
-	<doNotGenerate>
-
-	^ imageReader readImageFromFile: f StartingAt: headerStart
-]
-
 { #category : #'primitive support' }
 StackInterpreter >> reapAndResetErrorCodeTo: theSP header: methodHeader [
 	"Assuming the primFailCode is non-zero, check if the method consumes the error code
@@ -15871,14 +15864,6 @@ StackInterpreter >> writeBackHeadFramePointers [
 ]
 
 { #category : #'image save/restore' }
-StackInterpreter >> writeImageFile: imageName fromHeader: header [
-
-	<doNotGenerate>
-	^ imageWriter writeImageFile: imageName fromHeader: header
-
-]
-
-{ #category : #'image save/restore' }
 StackInterpreter >> writeImageFileIO [
 	"Write the image header and heap contents to imageFile for snapshot. 
 	The game below is to maintain 64-bit alignment for all putLong:toFile: occurrences."
@@ -15889,7 +15874,7 @@ StackInterpreter >> writeImageFileIO [
 	
 	"The image name is defined as a extern char[] variable"
 	self simulationOnly: [ imageName := self imageName ].
-	self writeImageFile: imageName fromHeader: self newHeader
+	imageWriter writeImageFile: imageName fromHeader: self newHeader
 
 ]
 

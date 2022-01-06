@@ -17,6 +17,12 @@ SpurImageWriter class >> declareCVarsIn: aCCodeGenerator [
 
 ]
 
+{ #category : #translation }
+SpurImageWriter class >> implicitReturnTypeFor: aSelector [
+	"Answer the return type for methods that don't have an explicit return."
+	^#void
+]
+
 { #category : #'instance creation' }
 SpurImageWriter class >> newWithMemory: memory andInterpreter: anInterpreter [
 

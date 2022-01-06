@@ -17,6 +17,12 @@ SpurImageReader class >> declareCVarsIn: aCCodeGenerator [
 
 ]
 
+{ #category : #translation }
+SpurImageReader class >> implicitReturnTypeFor: aSelector [
+	"Answer the return type for methods that don't have an explicit return."
+	^#void
+]
+
 { #category : #'instance creation' }
 SpurImageReader class >> newWithMemory: memory andInterpreter: anInterpreter [
 
@@ -237,6 +243,8 @@ SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 	<var: #allocationReserve type: #usqInt>
 	<var: #header type: #'SpurImageHeaderStruct'>
 
+	<api>
+	
 	| header |
 
 	header := self readHeaderFrom: f startingAt: headerStart.

@@ -2168,7 +2168,7 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 		at: 1 put: fileName;
 		at: 2 put: nil.
 
-	[ self readImageFromFile: f StartingAt: 0 ] 
+	[ imageReader readImageFromFile: f StartingAt: 0 ] 
 		ensure: [ f close ].
 
 ]
