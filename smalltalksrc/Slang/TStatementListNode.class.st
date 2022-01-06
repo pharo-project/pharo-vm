@@ -202,7 +202,7 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 	
 	"We should collect the variable declarations after generating the body, because the body generation will record used yet non declared variables"
 	methodIsVolatile := aBuilder currentMethod isVolatile.
-	aBuilder currentMethod refersToGlobalStruct ifTrue: [ 
+	(self parent isTMethod and: [ self parent refersToGlobalStruct ]) ifTrue: [ 
 		cDeclarations add:
 			(CIdentifierNode name: (methodIsVolatile
 					  ifTrue: [ 'DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT' ]
