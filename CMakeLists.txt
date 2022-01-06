@@ -257,7 +257,7 @@ elseif(UNIX)
     set(CMAKE_CURRENT_SOURCE_DIR_TO_OUT ${CMAKE_CURRENT_SOURCE_DIR})
     set(CMAKE_CURRENT_BINARY_DIR_TO_OUT ${CMAKE_CURRENT_BINARY_DIR})
 
-    set(COMMON_FLAGS "-O0 -Wall -Werror=implicit-function-declaration")
+    set(COMMON_FLAGS "-O2 -Wall -Werror=implicit-function-declaration")
 
     add_compile_definitions(LSB_FIRST=1)
 
@@ -281,8 +281,8 @@ endif()
 
 set(OPTIMIZATION_FLAGS "")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DDEBUGVM=0")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DDEBUGVM=0")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
 
 add_compile_definitions(IMMUTABILITY=1)
 add_compile_definitions(COGMTVM=0)
