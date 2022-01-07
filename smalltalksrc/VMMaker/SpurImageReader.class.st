@@ -38,7 +38,7 @@ SpurImageReader >> extractImageVersionFrom: file into: header [
 
 ]
 
-{ #category : #reading }
+{ #category : #'file operations' }
 SpurImageReader >> getLongFromFile: aFile swap: swapFlag [
 	"Answer the next 32 or 64 bit word read from aFile, byte-swapped according to the swapFlag."
 	<var: #aFile type: #sqImageFile>
@@ -56,7 +56,7 @@ SpurImageReader >> getLongFromFile: aFile swap: swapFlag [
 		ifFalse: [w]
 ]
 
-{ #category : #reading }
+{ #category : #'file operations' }
 SpurImageReader >> getShortFromFile: aFile swap: swapFlag [
 	"Answer the next 16 bit word read from aFile, byte-swapped according to the swapFlag."
 
@@ -75,7 +75,7 @@ SpurImageReader >> getShortFromFile: aFile swap: swapFlag [
 		ifFalse: [w]
 ]
 
-{ #category : #reading }
+{ #category : #'file operations' }
 SpurImageReader >> getWord32FromFile: aFile swap: swapFlag [
 	"Answer the next 32 bit word read from aFile, byte-swapped according to the swapFlag."
 
@@ -112,49 +112,28 @@ SpurImageReader >> imageFormatVersion [
 	^objectMemory imageFormatVersion
 ]
 
-{ #category : #accessing }
-SpurImageReader >> interpreter [
-
-	<doNotGenerate>
-
-	^ interpreter
-]
-
-{ #category : #accessing }
-SpurImageReader >> interpreter: anObject [
-
-	<doNotGenerate>
-
-	interpreter := anObject
-]
-
 { #category : #reading }
-SpurImageReader >> loadImageFromFile: f withHeader: header [ 
+SpurImageReader >> loadImageFromFile: f withHeader: header [
+
+	"read in the image in bulk, then swap the bytes if necessary"
 
 	<var: #f type: #sqImageFile>
-	<var: #header type: #'SpurImageHeaderStruct'>	
-	
-	"read in the image in bulk, then swap the bytes if necessary"
+	<var: #header type: #SpurImageHeaderStruct>
 	| bytesRead bytesToShift |
-	bytesRead := objectMemory
-		             readHeapFromImageFile: f
-		             dataBytes: header dataSize.
+	bytesRead := self readSegmentsFromImageFile: f header: header.
 
-	bytesRead ~= header dataSize ifTrue: [ interpreter unableToReadImageError ].
+	bytesRead ~= header dataSize ifTrue: [ 
+		interpreter unableToReadImageError ].
 
 	interpreter ensureImageFormatIsUpToDate: header swapBytes.
 
 	"compute difference between old and new memory base addresses"
-	bytesToShift := objectMemory memoryBaseForImageRead - header oldBaseAddr.
-	interpreter initializeInterpreter: bytesToShift. "adjusts all oops to new location"
+	bytesToShift := objectMemory memoryBaseForImageRead
+	                - header oldBaseAddr.
 
-]
-
-{ #category : #accessing }
-SpurImageReader >> objectMemory: memory [
-
-	<doNotGenerate>
-	objectMemory := memory
+	segmentManager adjustSegmentSwizzlesBy: bytesToShift.
+	
+	interpreter initializeInterpreter: bytesToShift "adjusts all oops to new location"
 ]
 
 { #category : #reading }
@@ -255,11 +234,74 @@ SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 	header hdrMaxExtSemTabSize ~= 0 ifTrue: [ 
 		interpreter setMaxExtSemSizeTo: header hdrMaxExtSemTabSize ].
 	
-	objectMemory firstSegmentSize: header firstSegSize.
-
 	interpreter allocateMemoryForImage: f withHeader: header.
 
 	^ header dataSize
+]
+
+{ #category : #segments }
+SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
+
+	"Read numBytes of image data from f into memory at memoryBaseForImageRead.
+	 Answer the number of bytes written.  In addition, read each segment, build up the
+	 segment info for swizzling, while eliminating the bridge objects at the end of each
+	 segment that specify the distance to and the size of the subsequent segment."
+
+	<var: #f type: #sqImageFile>
+	<inline: false>
+	<var: 'segInfo' type: #'SpurSegmentInfo *'>
+	<var: 'aHeader' type: #SpurImageHeaderStruct>
+	| bytesRead totalBytesRead bridgehead bridge nextSegmentSize oldBase newBase bridgeSpan |
+	segmentManager clearSegments.
+	segmentManager allocateOrExtendSegmentInfos.
+
+	"segment sizes include the two-header-word bridge at the end of each segment."
+	totalBytesRead := 0.
+	oldBase := 0. "N.B. still must be adjusted by oldBaseAddr. It starts in 0. Then it is adjusted in #adjustSegmentSwizzlesBy:"
+	newBase := objectMemory oldSpaceStart.
+	nextSegmentSize := aHeader firstSegSize.
+	bridgehead := aHeader firstSegSize + objectMemory oldSpaceStart
+	              - objectMemory bridgeSize.
+
+	[ 
+	segmentManager withNewSegmentDo: [ :segInfo | 
+		segInfo
+			segStart: oldBase;
+			"N.B. still must be adjusted by oldBaseAddr. The real value is adjusted in #adjustSegmentSwizzlesBy:"
+			segSize: nextSegmentSize;
+			swizzle: newBase - oldBase "N.B. still must be adjusted by oldBaseAddr. The real value is adjusted in #adjustSegmentSwizzlesBy:" ].
+
+	bytesRead := self
+		             sq: (self pointerForOop: newBase)
+		             Image: (self sizeof: #char)
+		             File: nextSegmentSize
+		             Read: f.
+
+	bytesRead > 0 ifTrue: [ totalBytesRead := totalBytesRead + bytesRead ].
+
+	bytesRead ~= nextSegmentSize ifTrue: [ 
+		interpreter unableToReadImageError ].
+
+	bridge := bridgehead + objectMemory baseHeaderSize.
+	bridgeSpan := (objectMemory rawNumSlotsOf: bridgehead) = 0
+		              ifTrue: [ 0 ]
+		              ifFalse: [ 
+			              objectMemory bytesPerOop
+			              * (objectMemory rawOverflowSlotsOf: bridge) ].
+	oldBase := oldBase + nextSegmentSize + bridgeSpan.
+	newBase := newBase + nextSegmentSize - objectMemory bridgeSize.
+	nextSegmentSize := (objectMemory long64At: bridge) asUnsignedInteger.
+	nextSegmentSize ~= 0 ] whileTrue: [ 
+		bridgehead := bridgehead - objectMemory bridgeSize + nextSegmentSize ].
+
+	"newBase should point just past the last bridge. all others should have been eliminated."
+	self assert: newBase - objectMemory oldSpaceStart = (totalBytesRead
+		 - (segmentManager numSegments * objectMemory bridgeSize)).
+
+	"set freeOldSpaceStart now for adjustAllOopsBy:"
+	objectMemory setFreeOldSpaceStart: newBase.
+
+	^ totalBytesRead
 ]
 
 { #category : #reading }
@@ -270,4 +312,18 @@ SpurImageReader >> readableFormat: imageVersion [
 	^imageVersion = self imageFormatVersion "Float words in platform-order"
 	   or: [objectMemory hasSpurMemoryManagerAPI not "No compatibility version for Spur as yet"
 			and: [imageVersion = self imageFormatCompatibilityVersion]] "Float words in BigEndian order"
+]
+
+{ #category : #'file operations' }
+SpurImageReader >> sq: startingAddress Image: byteSize File: bytesToRead Read: aZnBufferedReadStream [ 
+
+	<doNotGenerate>
+	| region |
+
+	region := objectMemory memoryManager regionForAddress: startingAddress.
+
+	^ aZnBufferedReadStream
+		readInto: region memory
+		startingAt: startingAddress - region start + 1
+		count: bytesToRead
 ]

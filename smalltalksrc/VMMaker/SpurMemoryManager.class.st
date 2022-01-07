@@ -5040,14 +5040,6 @@ SpurMemoryManager >> firstSegmentBytes [
 	^segmentManager firstSegmentBytes
 ]
 
-{ #category : #snapshot }
-SpurMemoryManager >> firstSegmentSize: firstSegmentSize [
-	<doNotGenerate>
-	"even an empty segment needs a bridge ;-)"
-	self assert: firstSegmentSize >= (2 * self baseHeaderSize).
-	segmentManager firstSegmentSize: firstSegmentSize
-]
-
 { #category : #'header formats' }
 SpurMemoryManager >> firstShortFormat [
 	<api>
@@ -6455,7 +6447,6 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 		[self
 			initSegmentBridgeWithBytes: self bridgeSize
 			at: endOfMemory - self bridgeSize].
-	segmentManager adjustSegmentSwizzlesBy: bytesToShift.
 	"image may be at a different address; adjust oops for new location"
 	self adjustAllOopsBy: bytesToShift.
 	specialObjectsOop := segmentManager swizzleObj: specialObjectsOop.
@@ -10495,14 +10486,6 @@ SpurMemoryManager >> readFloat64AtPointer: aCArrayAccessor [
 	| floatPtr |
 	floatPtr := self cCoerce: (aCArrayAccessor) to: #'double *'.
 	^ floatPtr at: 0
-]
-
-{ #category : #snapshot }
-SpurMemoryManager >> readHeapFromImageFile: f dataBytes: numBytes [
-	"Read numBytes of image data from f into memory at memoryBaseForImageRead.
-	 Answer the number of bytes written."
-	<doNotGenerate>
-	^segmentManager readHeapFromImageFile: f dataBytes: numBytes
 ]
 
 { #category : #'ffi - helpers' }

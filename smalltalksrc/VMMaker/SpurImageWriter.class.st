@@ -4,20 +4,6 @@ Class {
 	#category : #'VMMaker-ImageFormat'
 }
 
-{ #category : #accessing }
-SpurImageWriter >> interpreter: anInterpreter [
-
-	<doNotGenerate>
-	interpreter := anInterpreter
-]
-
-{ #category : #accessing }
-SpurImageWriter >> objectMemory: memory [
-
-	<doNotGenerate>
-	objectMemory := memory
-]
-
 { #category : #writing }
 SpurImageWriter >> padHeader: emptySize toFile: f [
 

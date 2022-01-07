@@ -3,7 +3,8 @@ Class {
 	#superclass : #VMClass,
 	#instVars : [
 		'objectMemory',
-		'interpreter'
+		'interpreter',
+		'segmentManager'
 	],
 	#category : #'VMMaker-ImageFormat'
 }
@@ -13,8 +14,8 @@ AbstractImageAccess class >> declareCVarsIn: aCCodeGenerator [
 
 	aCCodeGenerator
 		removeVariable: 'objectMemory';
-		removeVariable: 'interpreter'.
-
+		removeVariable: 'interpreter';
+		removeVariable: 'segmentManager'
 ]
 
 { #category : #translation }
@@ -26,9 +27,42 @@ AbstractImageAccess class >> implicitReturnTypeFor: aSelector [
 { #category : #'instance creation' }
 AbstractImageAccess class >> newWithMemory: memory andInterpreter: anInterpreter [
 
-	| imageReader |
-	imageReader := self new.
-	imageReader objectMemory: memory.
-	imageReader interpreter: anInterpreter.
-	^ imageReader
+	| newInstance |
+	
+	newInstance := self new.
+	newInstance objectMemory: memory.
+	newInstance interpreter: anInterpreter.
+	newInstance segmentManager: memory segmentManager.
+	
+	^ newInstance
+]
+
+{ #category : #accessing }
+AbstractImageAccess >> interpreter [
+
+	<doNotGenerate>
+
+	^ interpreter
+]
+
+{ #category : #accessing }
+AbstractImageAccess >> interpreter: anObject [
+
+	<doNotGenerate>
+
+	interpreter := anObject
+]
+
+{ #category : #accessing }
+AbstractImageAccess >> objectMemory: memory [
+
+	<doNotGenerate>
+	objectMemory := memory
+]
+
+{ #category : #accessing }
+AbstractImageAccess >> segmentManager: anObject [
+
+	<doNotGenerate>
+	segmentManager := anObject
 ]
