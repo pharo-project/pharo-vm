@@ -19,6 +19,14 @@ SLTestDeclarations >> testAllLocalsReturnsBlockLocals [
 ]
 
 { #category : #tests }
+SLTestDeclarations >> testBlockLocalsAreHoisted [
+
+	self
+		assertCollection: (ccg methodNamed: #methodWithBlockLocalDeclaration) locals
+		hasSameElements: #(var)
+]
+
+{ #category : #tests }
 SLTestDeclarations >> testDefaultTypeOfVariableNotInScope [
 
 	self assert: (ccg typeOfVariable: #var) isNil
@@ -52,12 +60,6 @@ SLTestDeclarations >> testLocalVariableWithoutDeclaration [
 		pushScope: (ccg methodNamed: #methodWithLocal)
 		while: [ type := ccg typeOfVariable: #var ].
 	self assert: type isNil
-]
-
-{ #category : #tests }
-SLTestDeclarations >> testLocalsDoesNotReturnBlockLocals [
-
-	self assert: (ccg methodNamed: #methodWithBlockLocalDeclaration) locals isEmpty
 ]
 
 { #category : #tests }

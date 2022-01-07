@@ -159,7 +159,7 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturns [
 	| interpretMethod sendNode |
 	interpretMethod := self applyLocalizationTo: #interpretWithReturnExpression.
 
-	sendNode := interpretMethod last first second.
+	sendNode := interpretMethod last first.
 	self assert: sendNode arguments first first first last isReturn.
 	self
 		assert: (sendNode arguments first first first first

@@ -488,8 +488,7 @@ CCodeGenerator >> autoLocalizationOfVariablesIn: selector withVariableBindings: 
 	m parseTree
 		bindVariablesIn: replacementDict.
 
-	
-	self linearizeExternalCallsIn: m  withVariableBindings: replacementDict.
+	self linearizeExternalCallsIn: m withVariableBindings: replacementDict.
 
 	"Wrap sends with externalization/internalization statements"
 	self wrapStatements: m withVariableBindings: replacementDict.
@@ -5437,9 +5436,10 @@ CCodeGenerator >> wrapStatementWithExternalizationAndLocalizations: statement of
 
 	"Only non inlined sends, or message sends in assignments `tx := send` should be wrapped"
 	potentialCall := statement isAssignment ifTrue: [ statement expression ] ifFalse: [ statement ].
-	((self isFunctionCall: potentialCall)
-		or: [ self isDynamicCall: potentialCall ])
-			ifFalse: [ ^ statement ].
+	(potentialCall isReturn or: [
+		(self isFunctionCall: potentialCall)
+			or: [ self isDynamicCall: potentialCall ]])
+				ifFalse: [ ^ statement ].
 	
 	"Optimization: only externalize/localize variables used by the statement's called functions"
 	collector := MLVMVariableAccessCollector
@@ -5467,7 +5467,6 @@ CCodeGenerator >> wrapStatements: tMethod withVariableBindings: replacementDict 
 	"Apply externalization/localization of variables around 
 	 - static function calls
 	 - dynamic function calls (perform & co)"
-	
 	tMethod allStatements do: [ :statement | | replacement oldParent |
 		oldParent := statement parent.
 		replacement := self

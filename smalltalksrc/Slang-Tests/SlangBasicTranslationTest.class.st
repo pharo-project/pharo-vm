@@ -3567,38 +3567,6 @@ SlangBasicTranslationTest >> testSendIfNotNilIfNilWithNilConstantReceiver [
 ]
 
 { #category : #'tests-builtins' }
-SlangBasicTranslationTest >> testSendIfNotNilWithArgument [
-
-	| translation send |
-	generator generateDeadCode: true.
-	send := TSendNode new
-		        setSelector: #ifNotNil:
-		        receiver: (TSendNode new
-				         setSelector: #foo
-				         receiver: (TVariableNode new setName: 'self')
-				         arguments: { (TVariableNode new setName: 'x') })
-		        arguments: { (TStatementListNode
-				         parameters: #( c )
-				         statements: { (TAssignmentNode new
-						          setVariable: (TVariableNode new setName: 'a')
-						          expression: (TVariableNode new setName: 'c')) }) }.
-	generator currentMethod parseTree: (TStatementListNode statements: { send }).
-	translation := self translate: generator currentMethod.
-
-	self assert: translation trimBoth equals: '/* SlangBasicTranslationTest>>#setUp */
-sqInt
-setUp(void)
-{
-	sqInt c;
-
-	if (foo(x)) {
-		a = c;
-	}
-	return 0;
-}'
-]
-
-{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendIfNotNilWithNilConstantReceiver [
 
 	| translation send |
@@ -5352,12 +5320,8 @@ SlangBasicTranslationTest >> testSendToByDo [
 						          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: '{
-	sqInt i;
-
-	for (i = 1; i <= 10; i += 2) {
-		var -= 7;
-	};
+	self assert: translation trimBoth equals: 'for (i = 1; i <= 10; i += 2) {
+	var -= 7;
 }'
 ]
 
@@ -5395,12 +5359,8 @@ SlangBasicTranslationTest >> testSendToByDoLimitExpressionHasSideEffect [
 
 	self
 		assert: translation trimBoth
-		equals: '{
-	sqInt i;
-
-	for (i = 1, toDoLimit = foo(var); i <= toDoLimit; i += 2) {
-		var -= 7;
-	};
+		equals: 'for (i = 1, toDoLimit = foo(var); i <= toDoLimit; i += 2) {
+	var -= 7;
 }'
 ]
 
@@ -5429,12 +5389,8 @@ SlangBasicTranslationTest >> testSendToByDoWithNegativeStep [
 						          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: '{
-	sqInt i;
-
-	for (i = 10; i >= 0; i += -2) {
-		var -= 7;
-	};
+	self assert: translation trimBoth equals: 'for (i = 10; i >= 0; i += -2) {
+	var -= 7;
 }'
 ]
 
@@ -5472,12 +5428,8 @@ SlangBasicTranslationTest >> testSendToByDoWithOperationReceiver [
 
 	self
 		assert: translation trimBoth
-		equals: '{
-	sqInt i;
-
-	for (i = 1 + (foo(1, 2)); i <= 10; i += 2) {
-		var -= 7;
-	};
+		equals: 'for (i = 1 + (foo(1, 2)); i <= 10; i += 2) {
+	var -= 7;
 }'
 ]
 
@@ -5515,12 +5467,8 @@ SlangBasicTranslationTest >> testSendToByDoWithOperationUpdate [
 
 	self
 		assert: translation trimBoth
-		equals: '{
-	sqInt i;
-
-	for (i = 1; i <= 10; i += 1 + (foo(1, 2))) {
-		var -= 7;
-	};
+		equals: 'for (i = 1; i <= 10; i += 1 + (foo(1, 2))) {
+	var -= 7;
 }'
 ]
 
@@ -5548,12 +5496,8 @@ SlangBasicTranslationTest >> testSendToDo [
 						          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: '{
-	sqInt i;
-
-	for (i = 1; i <= 10; i++) {
-		var -= 7;
-	};
+	self assert: translation trimBoth equals: 'for (i = 1; i <= 10; i++) {
+	var -= 7;
 }'
 ]
 
@@ -5589,12 +5533,8 @@ SlangBasicTranslationTest >> testSendToDoAvoidUnderflowingOfLimitExpression [
 
 	self
 		assert: translation trimBoth
-		equals: '{
-	sqInt i;
-
-	for (i = 1; i < foo; i++) {
-		var -= 7;
-	};
+		equals: 'for (i = 1; i < foo; i++) {
+	var -= 7;
 }'
 ]
 
@@ -5628,12 +5568,8 @@ SlangBasicTranslationTest >> testSendToDoLimitExpressionHasSideEffect [
 
 	self
 		assert: translation trimBoth
-		equals: '{
-	sqInt i;
-
-	for (i = 1; i <= (foo(var)); i++) {
-		var -= 7;
-	};
+		equals: 'for (i = 1; i <= (foo(var)); i++) {
+	var -= 7;
 }'
 ]
 
@@ -5667,12 +5603,8 @@ SlangBasicTranslationTest >> testSendToDoWithOperationReceiver [
 						          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: '{
-	sqInt i;
-
-	for (i = 1 + (foo(1, 2)); i <= 10; i++) {
-		var -= 7;
-	};
+	self assert: translation trimBoth equals: 'for (i = 1 + (foo(1, 2)); i <= 10; i++) {
+	var -= 7;
 }'
 ]
 
@@ -5782,11 +5714,9 @@ SlangBasicTranslationTest >> testSendWhileFalseWithoutArguments [
 		        arguments: {  }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: '{
-	do{
-		var -= 7;
-	}while(!(var >= 21));
-}'
+	self assert: translation trimBoth equals: 'do{
+	var -= 7;
+}while(!(var >= 21))'
 ]
 
 { #category : #'tests-builtins' }
@@ -5851,11 +5781,9 @@ SlangBasicTranslationTest >> testSendWhileTrueWithNilAsArgument [
 				         { (TVariableNode new setName: 'nil') }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: '{
-	do{
-		var -= 7;
-	}while(a && b);
-}'
+	self assert: translation trimBoth equals: 'do{
+	var -= 7;
+}while(a && b)'
 ]
 
 { #category : #'tests-builtins' }
@@ -5914,13 +5842,9 @@ SlangBasicTranslationTest >> testSendWhileTrueWithTemporary [
 		        arguments: {  }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: '{
-	sqInt temp;
-
-	do{
-		var -= 7;
-	}while(var >= 21);
-}'
+	self assert: translation trimBoth equals: 'do{
+	var -= 7;
+}while(var >= 21)'
 ]
 
 { #category : #'tests-builtins' }
@@ -5950,13 +5874,9 @@ SlangBasicTranslationTest >> testSendWhileTrueWithTemporaryDeclaration [
 		        arguments: {  }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: '{
-	int temp;
-
-	do{
-		var -= 7;
-	}while(var >= 21);
-}'
+	self assert: translation trimBoth equals: 'do{
+	var -= 7;
+}while(var >= 21)'
 ]
 
 { #category : #'tests-builtins' }
@@ -5984,11 +5904,9 @@ SlangBasicTranslationTest >> testSendWhileTrueWithoutArguments [
 		        arguments: {  }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: '{
-	do{
-		var -= 7;
-	}while(var >= 21);
-}'
+	self assert: translation trimBoth equals: 'do{
+	var -= 7;
+}while(var >= 21)'
 ]
 
 { #category : #'tests-assignment' }
