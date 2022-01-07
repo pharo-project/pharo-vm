@@ -205,20 +205,22 @@ SlangLocalizationTestCase >> testExternalEscapingAsArgument [
 
 	"Assert that the send node is preceded by variable externalization"
 	linearizedBlock := self linearizedBlockOfCaseMethod: interpretMethod.
-	cast := linearizedBlock asCASTIn: ccg.
+	cast := linearizedBlock parent asCASTIn: ccg.
 	
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
 	self assert: printedString equals:
 '{
-	sqInt t0;
-
 	{
-		autoLocalizedVariable = local_autoLocalizedVariable;
-		t0 = foo2();
-		local_autoLocalizedVariable = autoLocalizedVariable;
-	}
-	if (1 == t0) {
+		sqInt t0;
+
+		{
+			autoLocalizedVariable = local_autoLocalizedVariable;
+			t0 = foo2();
+			local_autoLocalizedVariable = autoLocalizedVariable;
+		}
+		if (1 == t0) {
+		}
 	}
 }'
 ]
@@ -299,6 +301,42 @@ SlangLocalizationTestCase >> testExternalEscapingSendNodeShouldBeTranslatedWithE
 		autoLocalizedVariable = local_autoLocalizedVariable;
 		foo(t0);
 		local_autoLocalizedVariable = autoLocalizedVariable;
+	}
+}'
+]
+
+{ #category : #tests }
+SlangLocalizationTestCase >> testExternalEscapingStatementInConditionalBody [
+	
+	| interpretMethod cast printedString linearizedBlock |
+	interpretMethod := self applyLocalizationToInterpretWith: #initializeWithIfStatement.
+
+	"Assert that the send node is preceded by variable externalization"
+	linearizedBlock := self linearizedBlockOfCaseMethod: interpretMethod.
+	cast := linearizedBlock parent asCASTIn: ccg.
+	
+	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
+	
+	"The if statement should not be wrapped. Only the inner statements"
+	self assert: printedString equals:
+'{
+	{
+		if (1) {
+			{
+				sqInt t0;
+
+				{
+					autoLocalizedVariable = local_autoLocalizedVariable;
+					t0 = nonInlinedMethodUsingAutolocalizedVariable();
+					local_autoLocalizedVariable = autoLocalizedVariable;
+				}
+				{
+					autoLocalizedVariable = local_autoLocalizedVariable;
+					foo(t0);
+					local_autoLocalizedVariable = autoLocalizedVariable;
+				}
+			}
+		}
 	}
 }'
 ]

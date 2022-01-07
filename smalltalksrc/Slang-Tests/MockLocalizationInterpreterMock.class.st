@@ -92,6 +92,16 @@ MockLocalizationInterpreterMock class >> initializeWithExternalizedAutoLocalized
 ]
 
 { #category : #initialization }
+MockLocalizationInterpreterMock class >> initializeWithIfStatement [
+
+	BytecodeTable := Array new: 1.
+	self table: BytecodeTable from:
+	#(
+	(  0  bytecodeUsingExternalizedAutoLocalizedVariableInNestedLexicalScope)
+	)
+]
+
+{ #category : #initialization }
 MockLocalizationInterpreterMock class >> initializeWithInlinedMethodCall [
 
 	BytecodeTable := Array new: 1.
