@@ -5371,12 +5371,6 @@ CoInterpreter >> nextProfileTickLow [
 	^nextProfileTick bitAnd: 16rFFFFFFFF
 ]
 
-{ #category : #simulation }
-CoInterpreter >> nilLocalFP [
-	<doNotGenerate>
-	framePointer := nil
-]
-
 { #category : #'cog jit support' }
 CoInterpreter >> nilUncoggableMethods [
 	<inline: true>

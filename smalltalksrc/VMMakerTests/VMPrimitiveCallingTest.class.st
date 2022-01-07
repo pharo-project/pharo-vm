@@ -55,7 +55,6 @@ VMPrimitiveCallingTest >> setUp [
 VMPrimitiveCallingTest >> testCallingNamedPrimitiveTakingTracesWithInvalidNumbersExecutesFailbackCode [
 
 	| callingMethod |
-
 	callingMethod := self jitMethod: (self findMethod: #methodThatCallNamedPrimitive:).
 
 	self initStack.	
