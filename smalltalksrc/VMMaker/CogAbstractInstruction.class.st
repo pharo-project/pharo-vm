@@ -815,6 +815,14 @@ CogAbstractInstruction >> genJumpFPNotEqual: jumpTarget [
 ]
 
 { #category : #'abstract instructions' }
+CogAbstractInstruction >> genJumpMultiplyNoOverflow: jumpTarget [
+	<inline: true>
+	<returnTypeC: #'AbstractInstruction *'>
+	<var: #jumpTarget type: #'void *'>
+	^cogit JumpNoOverflow: jumpTarget
+]
+
+{ #category : #'abstract instructions' }
 CogAbstractInstruction >> genJumpMultiplyOverflow: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>

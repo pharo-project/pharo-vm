@@ -27,22 +27,11 @@ VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument
 	^ self executePrimitiveWithReceiver: receiverOop withArguments: { argumentOop }
 ]
 
-{ #category : #utils }
+{ #category : #helpers }
 VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument: firstArgumentOop and: secondArgumentOop [ 
 
-	"Simulate a primitive execution having an object as receiver and a single argument
-	  - the receiver goes to the receiver register
-	  - the arguments should be pushed to the stack
-	If we are in a system without a link register, we need to push the caller IP to the stack to simulate a call"
-
-	self prepareStackForSendReceiver: receiverOop arguments: { firstArgumentOop. secondArgumentOop }.
+	^ self executePrimitiveWithReceiver: receiverOop withArguments:  { firstArgumentOop. secondArgumentOop }.
 	
-"	machineSimulator instructionPointerValue: initialAddress.
-	self openMachineDebugger.
-	1halt.
-
-"	self runUntilReturn.
-
 ]
 
 { #category : #helpers }
@@ -53,7 +42,7 @@ VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument
 	  - the argument should be pushed to the stack
 	If we are in a system without a link register, we need to push the caller IP to the stack to simulate a call"
 	
-	self prepareStackForSendReceiver: receiverOop arguments: aCollection.
+	self prepareStackForSendReceiver: (self twoComplementFor: receiverOop) arguments: (aCollection collect: [ :arg | self twoComplementFor: arg ]).
 	self runUntilReturn.
 
 ]
@@ -115,4 +104,10 @@ VMJittedPrimitivesTest >> setUp [
 		
 	memory classExternalAddress: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0) ).
 	
+]
+
+{ #category : #helpers }
+VMJittedPrimitivesTest >> twoComplementFor: aNumber [
+
+	^ aNumber twoComplementOfBitSize: self wordSize * 8
 ]
