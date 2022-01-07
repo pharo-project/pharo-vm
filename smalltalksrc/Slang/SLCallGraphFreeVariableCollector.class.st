@@ -25,16 +25,23 @@ SLCallGraphFreeVariableCollector >> initialize [
 
 	super initialize.
 	freeVariablesPerMethod := Dictionary new.
-	accumulatedFreeVariables := Set new.
+	accumulatedFreeVariables := OrderedCollection new.
 ]
 
 { #category : #hooks }
 SLCallGraphFreeVariableCollector >> postVisitMethod: aMethod [
 
 	"This are all variables accessed by this method and its children"
-	accumulatedFreeVariables addAll: aMethod freeVariableReferences.
+	| myVariables parentVariables |
+	myVariables := accumulatedFreeVariables removeLast.
+	myVariables addAll: aMethod freeVariableReferences.
 	
-	freeVariablesPerMethod at: aMethod selector put: accumulatedFreeVariables copy.
+	freeVariablesPerMethod at: aMethod selector put: myVariables.
+	
+	"Now accumulate my variables in my parent one's, if I'm not the top one"
+	accumulatedFreeVariables ifEmpty: [ ^ self ].
+	parentVariables := accumulatedFreeVariables last.
+	parentVariables addAll: myVariables
 ]
 
 { #category : #hooks }
@@ -44,30 +51,7 @@ SLCallGraphFreeVariableCollector >> preVisitMethod: aMethod [
 	It can be called many times and it will cut as soon as it finds a method found in a previous invocation"
 	freeVariablesPerMethod at: aMethod selector ifPresent: [ ^ false "stop" ].
 
+	accumulatedFreeVariables addLast: OrderedCollection new.
 	"Continue"
 	^ true
-]
-
-{ #category : #accessing }
-SLCallGraphFreeVariableCollector >> resetAccumulatedFreeVariables [
-
-	accumulatedFreeVariables := Set new.
-]
-
-{ #category : #api }
-SLCallGraphFreeVariableCollector >> startFromMethod: aMethod [
-
-	super	startFromMethod: aMethod.
-	
-	"Clean up the accumulated variables upon return"
-	self resetAccumulatedFreeVariables
-]
-
-{ #category : #api }
-SLCallGraphFreeVariableCollector >> startFromSelector: aSelector [
-
-	super	startFromSelector: aSelector.
-	
-	"Clean up the accumulated variables upon return"
-	self resetAccumulatedFreeVariables
 ]
