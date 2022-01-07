@@ -246,7 +246,7 @@ TMethod >> argAssignmentsFor: meth send: aSendNode except: elidedArgs in: aCodeG
 						 inliningInto: meth
 						 in: self).
 
-				self removeLocal: argName.
+				self removeLocal: argName ifAbsent: [self assert: (argName beginsWith: 'self_in_')].
 				declarations removeKey: argName ifAbsent: nil ]
 			ifFalse: [ "Add an assignment for anything except an unused self_in_foo argument"
 				(elidedArgs includes: argName) ifFalse: [ 
@@ -979,16 +979,6 @@ TMethod >> exitVar: exitVar label: exitLabel [
 			[list := node statements last statements.
 			 node statements removeLast; addAllLast: list]].
 	^labelUsed
-]
-
-{ #category : #transformation }
-TMethod >> expandSuperSendsIn: aCCodeGeneratorGlobalStructure [ 
-
-	self nodesDo: [ :e |
-		(e isSend and: [ e receiver isVariable
-			and: [ e receiver name = 'super' ]]) ifTrue: [
-			e replaceBy: (self superExpansionNodeFor: e selector args: e arguments) ] ]
-	
 ]
 
 { #category : #accessing }
@@ -2554,6 +2544,13 @@ TMethod >> removeLocal: local [
 ]
 
 { #category : #utilities }
+TMethod >> removeLocal: local ifAbsent: aBlock [
+
+	cachedLocals := nil.
+	self locals remove: local ifAbsent: aBlock
+]
+
+{ #category : #utilities }
 TMethod >> removeUnusedTempsAndNilIfRequiredIn: aCodeGen [
 	"Remove all of the unused temps in this method. Answer a set of the references.
 	 As a side-effect introduce explicit temp := nil statements for temps that are
@@ -2797,7 +2794,9 @@ TMethod >> setSelector: sel definingClass: class args: argList locals: localList
 
 	declarations := Dictionary new.
 	
-	parseTree := aBlockNode. "hack; allows nodes to find their parent, etc"
+	"hack; allows nodes to find their parent, etc"
+	parseTree := TStatementListNode new.
+	parseTree locals: (localList  collect: [:arg | arg name]).
 	self parseTree: (aBlockNode asTranslatorNodeIn: self).
 	parseTree locals: (localList  collect: [:arg | arg name]).
 
@@ -2951,10 +2950,15 @@ TMethod >> superExpansionNodeFor: aSelector args: argumentNodes [
 							superTMethod definingClass name, '>>', aSelector,
 							(String with: $. with: Character cr),
 							'For super expansions to be translated correctly each argument must be a variable with the same name as the corresponding argument in the super method.'].
-			(commonVars := superTMethod locals intersection: self locals) notEmpty ifTrue:
-				[varMap := Dictionary new.
+			(commonVars := superTMethod locals intersection: self locals) notEmpty ifTrue: [
+				| allLocals |
+				varMap := Dictionary new.
+				"The merge of locals and declarations (don't ask)"
+				allLocals := (declarations keys asSet reject: [:k| (declarations at: k) == #implicit])
+					addAll: self locals;
+					yourself.
 				 commonVars do:
-					[:k| varMap at: k put: (superTMethod unusedNamePrefixedBy: k avoiding: self allLocals)].
+					[:k| varMap at: k put: (superTMethod unusedNamePrefixedBy: k avoiding: allLocals)].
 				 superTMethod renameVariablesUsing: varMap].
 			self mergePropertiesOfSuperMethod: superTMethod.
 			self assert: (superTMethod locals allSatisfy: [:var| (self locals includes: var) not]).

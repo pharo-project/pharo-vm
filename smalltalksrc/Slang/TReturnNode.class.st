@@ -58,7 +58,6 @@ TReturnNode >> asCASTIn: aBuilder [
 		^ (CCompoundStatementNode statements: statements)
 			needsBrackets: false "Slang compatibility";
 			yourself ].
-	
 	^ CReturnStatementNode expression: (expression asCASTExpressionIn: aBuilder)
 ]
 
@@ -70,7 +69,7 @@ TReturnNode >> asReturnNode [
 { #category : #transformations }
 TReturnNode >> bindVariableUsesIn: aDictionary [
 
-	expression := expression bindVariableUsesIn: aDictionary.
+	self expression: (expression bindVariableUsesIn: aDictionary)
 ]
 
 { #category : #transformations }
@@ -89,14 +88,14 @@ TReturnNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold i
 { #category : #transformations }
 TReturnNode >> bindVariablesIn: aDictionary [
 
-	expression := expression bindVariablesIn: aDictionary.
+	self expression: (expression bindVariablesIn: aDictionary)
 ]
 
 { #category : #transformations }
 TReturnNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].	
-	expression := expression bindVariablesIn: aDictionary unless: cautionaryBlock.
+	self expression: (expression bindVariablesIn: aDictionary unless: cautionaryBlock)
 ]
 
 { #category : #accessing }
@@ -125,7 +124,8 @@ TReturnNode >> expression [
 { #category : #accessing }
 TReturnNode >> expression: anExpression [
 
-	expression := anExpression
+	expression := anExpression.
+	expression parent: self.
 ]
 
 { #category : #testing }
@@ -176,7 +176,7 @@ TReturnNode >> nodesDo: aBlock unless: cautionaryBlock [
 { #category : #copying }
 TReturnNode >> postCopy [
 
-	expression := expression copy
+	self expression: expression copy
 ]
 
 { #category : #'C code generation' }
@@ -204,17 +204,24 @@ TReturnNode >> removeAssertions [
 ]
 
 { #category : #transformations }
+TReturnNode >> replaceChild: aNode with: aReplacementNode [
+
+	expression == aNode ifFalse: [ self error: 'Node is not a child of current node' ].
+	self expression: aReplacementNode
+]
+
+{ #category : #transformations }
 TReturnNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
-		expression := expression replaceNodesIn: aDictionary.
+		self expression: (expression replaceNodesIn: aDictionary).
 		self]
 ]
 
 { #category : #accessing }
 TReturnNode >> setExpression: aNode [
 
-	expression := aNode.
+	self expression: aNode
 ]
 
 { #category : #'type inference' }

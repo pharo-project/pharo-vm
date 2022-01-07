@@ -835,11 +835,9 @@ CCodeGenerator >> compileToTMethodSelector: selector in: aClass [
 
 	"Compile a method to a TMethod"
 
-	^ (aClass >> selector
+	^ aClass >> selector
 		asTranslationMethodOfClass: self translationMethodClass
-		forCodeGenerator: self)
-			expandSuperSendsIn: self;
-			yourself
+		forCodeGenerator: self
 ]
 
 { #category : #public }

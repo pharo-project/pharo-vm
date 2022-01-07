@@ -2,9 +2,7 @@ Extension { #name : #RBMessageNode }
 
 { #category : #'*VMMakerCompatibilityForPharo6-C translation' }
 RBMessageNode >> asTranslatorNodeIn: aTMethod [
-
 	"Answer a TParseNode subclass equivalent of me"
-
 	"selector is sometimes a Symbol, sometimes a SelectorNode!
 	 On top of this, numArgs is needed due to the (truly grody) use of
 	 arguments as a place to store the extra expressions needed to generate
@@ -12,11 +10,13 @@ RBMessageNode >> asTranslatorNodeIn: aTMethod [
 
 	 Expand super nodes in place. Elide sends of halt so that halts can be
 	 sprinkled through the simulator but will be eliminated from the generated C."
-
 	| usedSelector rcvrOrNil args |
 	usedSelector := selector value.
-	rcvrOrNil := receiver ifNotNil: [ 
-		             receiver asTranslatorNodeIn: aTMethod ].
+	rcvrOrNil := receiver ifNotNil: [receiver asTranslatorNodeIn: aTMethod].
+	(rcvrOrNil notNil
+	and: [rcvrOrNil isVariable
+	and: [rcvrOrNil name = 'super']]) ifTrue: [
+		^aTMethod superExpansionNodeFor: usedSelector args: arguments].
 	usedSelector == #halt ifTrue: [ ^ rcvrOrNil ].
 	(usedSelector == #cCode:inSmalltalk: or: [ usedSelector == #cCode: ]) 
 		ifTrue: [ 
