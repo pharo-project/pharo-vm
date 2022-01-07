@@ -24,7 +24,7 @@ BaselineOfVMMaker >> baseline: spec [
 			
 			"Melchor is a VM-oriented Slang"
 			spec package: 'Melchor' with: [
-				spec requires: #('Slang') ].
+				spec requires: #('Slang' 'Slang-Tests') ].
 			
 			"External Dependencies"
 			spec baseline: 'SmaCC-GLR' with: [ 

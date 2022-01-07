@@ -17,19 +17,6 @@ SlangMethodPrototypeTranslationTest >> astTranslate: tMethod inStream: aWriteStr
 	cAST acceptVisitor: prettyPrinter
 ]
 
-{ #category : #running }
-SlangMethodPrototypeTranslationTest >> setUp [
-
-	super setUp.
-
-	generator := MLVMCCodeGenerator new.
-	generator vmMaker: VMMaker new.
-	generator vmMaker vmmakerConfiguration: VMMakerConfiguration.
-	generator currentMethod: (TMethod new
-		labels: Set new;
-		yourself).
-]
-
 { #category : #'test-prototype' }
 SlangMethodPrototypeTranslationTest >> testMethodPrototype [
 	
