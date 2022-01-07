@@ -29,11 +29,6 @@ UnicornI386Simulator >> carg0 [
 	^ self stackValueAt: 1
 ]
 
-{ #category : #registers }
-UnicornI386Simulator >> carg0Register [
-	self shouldBeImplemented.
-]
-
 { #category : #'c calling convention' }
 UnicornI386Simulator >> carg1 [
 
@@ -74,9 +69,9 @@ UnicornI386Simulator >> disassembler [
 ]
 
 { #category : #'as yet unclassified' }
-UnicornI386Simulator >> doublePrecisionFloatingPointRegister0Value [
+UnicornI386Simulator >> doublePrecisionFloatingPointRegister0 [
 
-	^ self readFloat64Register: UcX86Registers xmm0
+	^ UcX86Registers xmm0
 ]
 
 { #category : #accessing }
@@ -212,6 +207,12 @@ UnicornI386Simulator >> getReturnAddress [
 	^ self peekAddress
 ]
 
+{ #category : #'as yet unclassified' }
+UnicornI386Simulator >> hasLinkRegister [ 
+
+	^ false
+]
+
 { #category : #registers }
 UnicornI386Simulator >> instructionPointerRegister [
 	
@@ -311,12 +312,6 @@ UnicornI386Simulator >> temporaryRegister [
 	
 	"Assume SysV"
 	^ UcX86Registers eax
-]
-
-{ #category : #accessing }
-UnicornI386Simulator >> temporaryRegisterValue [
-	
-	^ self eax
 ]
 
 { #category : #accessing }

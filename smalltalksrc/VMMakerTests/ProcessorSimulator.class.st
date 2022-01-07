@@ -97,6 +97,12 @@ ProcessorSimulator >> arg1RegisterValue [
 ]
 
 { #category : #registers }
+ProcessorSimulator >> arg1RegisterValue: aValue [
+
+	^ self writeRegister: self arg1Register value: aValue
+]
+
+{ #category : #registers }
 ProcessorSimulator >> baseRegister [
 
 	self subclassResponsibility
@@ -272,15 +278,15 @@ ProcessorSimulator >> doublePrecisionFloatingPointRegister0 [
 ]
 
 { #category : #registers }
-ProcessorSimulator >> doublePrecisionFloatingPointRegister0: aValue [
-
-	^ self writeFloat64Register: self doublePrecisionFloatingPointRegister0 value: aValue
-]
-
-{ #category : #registers }
 ProcessorSimulator >> doublePrecisionFloatingPointRegister0Value [
 
 	^ self readFloat64Register: self doublePrecisionFloatingPointRegister0
+]
+
+{ #category : #registers }
+ProcessorSimulator >> doublePrecisionFloatingPointRegister0Value: aValue [
+
+	^ self writeFloat64Register: self doublePrecisionFloatingPointRegister0 value: aValue
 ]
 
 { #category : #registers }
@@ -290,15 +296,15 @@ ProcessorSimulator >> doublePrecisionFloatingPointRegister1 [
 ]
 
 { #category : #registers }
-ProcessorSimulator >> doublePrecisionFloatingPointRegister1: aValue [
-
-	^ self writeFloat64Register: self doublePrecisionFloatingPointRegister1 value: aValue
-]
-
-{ #category : #registers }
 ProcessorSimulator >> doublePrecisionFloatingPointRegister1Value [
 
 	^ self readFloat64Register: self doublePrecisionFloatingPointRegister1
+]
+
+{ #category : #registers }
+ProcessorSimulator >> doublePrecisionFloatingPointRegister1Value: aValue [
+
+	^ self writeFloat64Register: self doublePrecisionFloatingPointRegister1 value: aValue
 ]
 
 { #category : #registers }
@@ -308,15 +314,15 @@ ProcessorSimulator >> doublePrecisionFloatingPointRegister2 [
 ]
 
 { #category : #registers }
-ProcessorSimulator >> doublePrecisionFloatingPointRegister2: aValue [
-
-	^ self writeFloat64Register: self doublePrecisionFloatingPointRegister2 value: aValue
-]
-
-{ #category : #registers }
 ProcessorSimulator >> doublePrecisionFloatingPointRegister2Value [
 
 	^ self readFloat64Register: self doublePrecisionFloatingPointRegister2
+]
+
+{ #category : #registers }
+ProcessorSimulator >> doublePrecisionFloatingPointRegister2Value: aValue [
+
+	^ self writeFloat64Register: self doublePrecisionFloatingPointRegister2 value: aValue
 ]
 
 { #category : #disassembling }
@@ -641,12 +647,6 @@ ProcessorSimulator >> register: anIndex readInto: aByteArray [
 ]
 
 { #category : #registers }
-ProcessorSimulator >> register: aRegisterIndex write: aByteArray [
-
-	simulator register: aRegisterIndex readInto: aByteArray
-]
-
-{ #category : #registers }
 ProcessorSimulator >> registerAliases [
 
 	^ registerAliases
@@ -673,11 +673,6 @@ ProcessorSimulator >> registerList [
 { #category : #registers }
 ProcessorSimulator >> sendNumberOfArgumentsRegister [
 
-	^ SpikeRISCVRegisters x25
-]
-
-{ #category : #registers }
-ProcessorSimulator >> sendNumberOfArgumentsRegister: anInteger [
 	self shouldBeImplemented.
 ]
 
