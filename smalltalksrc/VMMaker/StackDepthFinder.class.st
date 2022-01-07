@@ -1,29 +1,22 @@
 Class {
 	#name : #StackDepthFinder,
-	#superclass : #InstructionStream,
+	#superclass : #InstructionClient,
 	#instVars : [
 		'stackp',
 		'joins',
 		'encoderClass',
-		'deadCode'
+		'deadCode',
+		'instructionStream'
 	],
 	#category : #'VMMaker-Support'
 }
 
-{ #category : #accessing }
-StackDepthFinder >> allStackPointers [
-	"Answer a Dictionary from method to Array of stack pointers for all methods ioncluded in the receiver's method."
-	"(StackDepthFinder on: StackDepthFinder >> #allStackPointers) allStackPointers"
-	| allStackPointers method endPC |
-	allStackPointers := Dictionary new.
-	allStackPointers at: (method := self method) put: self stackPointers.
-	endPC := pc.
-	method nestedBlockMethods do:
-		[:blockMethod|
-		self method: blockMethod pc: blockMethod initialPC.
-		allStackPointers at: blockMethod put: self stackPointers].
-	self method: method pc: endPC.
-	^allStackPointers
+{ #category : #'instance creation' }
+StackDepthFinder class >> on: aVMCompiledMethodProxy [ 
+	
+	^ self new
+		method: aVMCompiledMethodProxy pc: aVMCompiledMethodProxy initialPC;
+		yourself
 ]
 
 { #category : #'instruction decoding' }
@@ -52,32 +45,6 @@ StackDepthFinder >> branchIfNotInstanceOf: behaviorOrArrayOfBehavior distance: d
 ]
 
 { #category : #'instruction decoding' }
-StackDepthFinder >> callInlinePrimitive: primitiveIndex [
-	"The convention for inline primitives is that the argument count is primitiveIndex // 1000 - 1,
-	 so receiverless 0-arg prims are from 0 to 999 (does this even make sense?), 0-arg prims
-	 are from 1 to 1999, 2-arg prims from 1000 to 1999, and so on.
-	 Primitives over 6000 are jumps."
-	primitiveIndex >= 6000 ifTrue: [
-		| upperByte delta |
-		 self drop: (primitiveIndex - 4999) // 1000.
-		 upperByte := self method at: pc - 6.
-		 upperByte > 127 ifTrue: [upperByte := upperByte - 256].
-		 delta := upperByte << 8 + (self method at: pc - 4).
-		 delta < 0
-			ifTrue:
-				[(joins at: pc + delta) ~= stackp ifTrue: [(Notification new tag: #'bad join'; signal)]]
-			ifFalse:
-				[joins at: pc + delta put: stackp].
-		^ self ].
-	self drop: (primitiveIndex // 1000 - 1 max: 0)
-]
-
-{ #category : #'instruction decoding' }
-StackDepthFinder >> callMappedInlinePrimitive: primIndex [
-	self drop: (primIndex // 50 - 1 max: 0)
-]
-
-{ #category : #'instruction decoding' }
 StackDepthFinder >> callPrimitive: primitiveIndex [
 	"Call Primitive bytecode."
 	"Phhh.... stackDeltaForPrimitive:in: is in BytecodeSets.  But since the default response
@@ -87,50 +54,6 @@ StackDepthFinder >> callPrimitive: primitiveIndex [
 		do: [:ex|
 			ex message selector ~~ #stackDeltaForPrimitive:in: ifTrue:
 				[ex pass]]
-]
-
-{ #category : #accessing }
-StackDepthFinder >> containsMismatchedJoin [
-	| end |
-	end := self method endPC.
-	[[self pc <= end]
-		whileTrue:
-			[((joins at: pc) notNil and: [stackp ~= (joins at: pc)]) ifTrue: [^true].
-			 self interpretNextInstructionFor: self]]
-		on: Notification
-		do: [:ex|
-			ex tag == #'bad join' ifTrue: [^true].
-			ex pass].
-	^false
-
-	"StackDepthFinder methodDict values collect: [:m| (StackDepthFinder on: m) stackPointers]"
-	"StackDepthFinder methodDict values select: [:m| (StackDepthFinder on: m) containsMismatchedJoin]"
-
-	"| jumpers |
-	 jumpers := CompiledMethod allInstances select:
-						[:cm| | is |
-						is := InstructionStream on: cm.
-						is scanFor: [:ign| is willJump]].
-	(jumpers select: [:cm| (StackDepthFinder on: cm) containsMismatchedJoin])
-			asSortedCollection: [:cm1 :cm2| cm1 endPC <= cm2 endPC]"
-
-	"| jumpers |
-	 jumpers := CompiledMethod allInstances select:
-						[:cm| | is |
-						is := InstructionStream on: cm.
-						is scanFor: [:ign| is willJump]].
-	(jumpers reject: [:cm| (StackDepthFinder on: cm) containsMismatchedJoin])
-			asSortedCollection: [:cm1 :cm2| cm1 endPC <= cm2 endPC]"
-
-	"| jumpers result |
-	 jumpers := CompiledMethod allInstances select:
-						[:cm| | is |
-						is := InstructionStream on: cm.
-						is scanFor: [:ign| is willJump]].
-	result := (jumpers select: [:cm| (StackDepthFinder on: cm) containsMismatchedJoin])
-				asSortedCollection: [:cm1 :cm2| cm1 endPC <= cm2 endPC].
-	 SystemNavigation new browseMessageList: (result collect: [:ea| ea methodReference]) name: 'mismatched joins'.
-	 result"
 ]
 
 { #category : #'instruction decoding' }
@@ -150,9 +73,9 @@ StackDepthFinder >> doJump: delta [
 		[^self].
 	delta < 0
 		ifTrue:
-			[(joins at: pc + delta) ~= stackp ifTrue: [(Notification new tag: #'bad join'; signal)]]
+			[(joins at: self pc + delta) ~= stackp ifTrue: [(Notification new tag: #'bad join'; signal)]]
 		ifFalse:
-			[joins at: pc + delta put: stackp]
+			[joins at: self pc + delta put: stackp]
 ]
 
 { #category : #'instruction decoding' }
@@ -191,12 +114,12 @@ StackDepthFinder >> encoderClass: anObject [
 
 { #category : #decoding }
 StackDepthFinder >> interpretNextInstructionFor: client [
-	(deadCode and: [(joins at: pc) notNil]) ifTrue:
+	(deadCode and: [(joins at: self pc) notNil]) ifTrue:
 		[deadCode := false].
-	joins at: pc put: stackp.
+	joins at: self pc put: stackp.
 	^encoderClass
 		ifNil: [super interpretNextInstructionFor: client]
-		ifNotNil: [encoderClass interpretNextInstructionFor: client in: self]
+		ifNotNil: [encoderClass interpretNextInstructionFor: client in: instructionStream]
 ]
 
 { #category : #accessing }
@@ -218,11 +141,17 @@ StackDepthFinder >> jump: delta if: condition [
 	self doJump: delta
 ]
 
+{ #category : #accessing }
+StackDepthFinder >> method [
+	
+	^ instructionStream method
+]
+
 { #category : #private }
 StackDepthFinder >> method: method pc: startpc [
-	super method: method pc: startpc.
 	"The + 1 is there for full blocks ending with non local return,
 	as the following pc is mapped and beyong endPC"
+	instructionStream := InstructionStream on: method pc: startpc.
 	joins := Array new: method endPC + 1.
 	stackp := method numTemps.
 	deadCode := false
@@ -245,6 +174,12 @@ StackDepthFinder >> methodReturnTop [
 	"Return Top Of Stack bytecode."
 	self drop.
 	self resetStackAfterBranchOrReturn
+]
+
+{ #category : #accessing }
+StackDepthFinder >> pc [
+
+	^ instructionStream pc
 ]
 
 { #category : #'instruction decoding' }
@@ -373,8 +308,8 @@ StackDepthFinder >> pushTemporaryVariable: offset [
 
 { #category : #'stack depth' }
 StackDepthFinder >> resetStackAfterBranchOrReturn [
-	pc <= joins size ifTrue:
-		[(joins at: pc) ifNil:
+	self pc <= joins size ifTrue:
+		[(joins at: self pc) ifNil:
 			["We would like to raise an error here, but we can't because the bytecode
 			  compiler doesn't remove dead code.  e.g. the following doesn't reach ^nil
 			  but is legal Smalltalk:
@@ -384,7 +319,7 @@ StackDepthFinder >> resetStackAfterBranchOrReturn [
 				^nil"
 				deadCode := true.
 				^self].
-		 stackp := joins at: pc]
+		 stackp := joins at: self pc]
 ]
 
 { #category : #'instruction decoding' }
@@ -420,13 +355,6 @@ StackDepthFinder >> sendToAbsentSelf: selector numArgs: numArgs [
 ]
 
 { #category : #accessing }
-StackDepthFinder >> stackPointerAt: aPC [ 
-	[pc < aPC] whileTrue:
-		[self interpretNextInstructionFor: self].
-	^pc = aPC ifTrue: [stackp]
-]
-
-{ #category : #accessing }
 StackDepthFinder >> stackPointers [
 	"Collect the stack depth for each bytecode in the method.
 	 For the convenience of clients, write the stack depth for extended bytecodes
@@ -435,12 +363,12 @@ StackDepthFinder >> stackPointers [
 	"endPC +1 because of full blocks that can end with NLR effectively mapping the pc right after the end PC"
 	stackPointers :=  Array new: (end := (method := self method) endPC) + 1.
 	encoderClass ifNil: [encoderClass := method encoderClass].
-	[pc <= end] whileTrue:
-		[stackPointers at: pc put: stackp.
-		 encoderClass extensionsAt: pc in: method into:
+	[self pc <= end] whileTrue:
+		[stackPointers at: self pc put: stackp.
+		 encoderClass extensionsAt: self pc in: method into:
 			[:extA :extB :delta|
 			2 to: delta by: 2 do: [ :dlt |
-				stackPointers at: pc + dlt put: stackp]].
+				stackPointers at: self pc + dlt put: stackp]].
 		 self interpretNextInstructionFor: self].
 	^stackPointers
 ]

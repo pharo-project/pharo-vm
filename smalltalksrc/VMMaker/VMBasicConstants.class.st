@@ -21,6 +21,7 @@ Class {
 		'DoAssertionChecks',
 		'DoExpensiveAssertionChecks',
 		'FEATURE_FFI',
+		'FEATURE_MESSAGE_COUNT',
 		'FEATURE_THREADED_FFI',
 		'GCCheckPrimCall',
 		'GCModeBecome',
@@ -121,7 +122,8 @@ VMBasicConstants class >> namesDefinedAtCompileTime [
 		WIN64 _WIN64 _WIN64_WCE
 		
 		FEATURE_FFI
-		FEATURE_THREADED_FFI)
+		FEATURE_THREADED_FFI
+		FEATURE_MESSAGE_COUNT)
 ]
 
 { #category : #'C translation' }

@@ -407,7 +407,8 @@ Class {
 		'maxStackMessagePrinted',
 		'libFFI',
 		'codeGeneratorToComputeAccessorDepth',
-		'showSurfaceFn'
+		'showSurfaceFn',
+		'messageCount'
 	],
 	#classVars : [
 		'AccessModifierPrivate',
@@ -611,7 +612,11 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	aCCodeGenerator
 		var: #reenterInterpreter
 		declareC: 'jmp_buf reenterInterpreter; /* private export */'.
-		
+	
+	aCCodeGenerator
+			var: #messageCount
+			type: #'usqInt'.
+	
 	aCCodeGenerator removeVariable: #'libFFI'.
 	LibFFIConstants classVariables do: [ :e | aCCodeGenerator removeConstant: e name ].
 ]
@@ -1077,10 +1082,10 @@ StackInterpreter class >> initializePrimitiveTable [
 		(62 primitiveSize)
 		(63 primitiveStringAt)
 		(64 primitiveStringAtPut)
-		
-		(65 primitiveFail)
-		(66 primitiveFail)
-		(67 primitiveFail)
+		"The stream primitives no longer pay their way; normal Smalltalk code is faster."
+		(65 primitiveStartProfiling)"was primitiveNext"
+		(66 primitiveStopProfiling) "was primitiveNextPut"
+		(67 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called") "was primitiveAtEnd"
 
 		"StorageManagement Primitives (68-79)"
 		(68 primitiveObjectAt)
@@ -4746,6 +4751,7 @@ StackInterpreter >> commonSendOrdinary [
 	self sendBreakpoint: messageSelector receiver: (self stackValue: argumentCount).
 	self printSends ifTrue:
 		[self printActivationNameForSelector: messageSelector startClass: (objectMemory classForClassTag: lkupClassTag); cr].
+	messageCount := messageCount + 1.
 	self internalFindNewMethodOrdinary.
 	self internalExecuteNewMethod.
 	self fetchNextBytecode
@@ -5026,6 +5032,13 @@ StackInterpreter >> createActualMessageTo: lookupClass [
 	self push: message.
 
 	argumentCount := 1
+]
+
+{ #category : #accessing }
+StackInterpreter >> currentBytecode [
+
+	<doNotGenerate>
+	^ currentBytecode
 ]
 
 { #category : #'stack pages' }
@@ -7800,7 +7813,8 @@ StackInterpreter >> initialize [
 	debugCallbackInvokes := debugCallbackPath := debugCallbackReturns := 0.
 	statForceInterruptCheck := statStackOverflow := statCheckForEvents :=
 	statProcessSwitch := statIOProcessEvents := statStackPageDivorce :=
-	statIdleUsecs := 0
+	statIdleUsecs := 0.
+	messageCount := 0.
 ]
 
 { #category : #initialization }
@@ -11348,6 +11362,24 @@ StackInterpreter >> primitiveObject: actualReceiver perform: selector withArgume
 	self executeNewMethod.
 	self initPrimCall.  "Recursive xeq affects primErrorCode"
 	^nil
+]
+
+{ #category : #'primitives message counting' }
+StackInterpreter >> primitiveStartProfiling [
+
+	self cppIf: FEATURE_MESSAGE_COUNT 
+		ifTrue: [ messageCount := 0 ] 
+		ifFalse: [ self primitiveFailFor: PrimErrUnsupported ]
+
+]
+
+{ #category : #'primitives message counting' }
+StackInterpreter >> primitiveStopProfiling [
+
+	self cppIf: FEATURE_MESSAGE_COUNT 
+		ifTrue: [ self pop: 1 thenPushInteger: messageCount ] 
+		ifFalse: [ self primitiveFailFor: PrimErrUnsupported ]
+	
 ]
 
 { #category : #'as yet unclassified' }

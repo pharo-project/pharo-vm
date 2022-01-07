@@ -509,6 +509,7 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 	aCCodeGenerator
 		addHeaderFile:'<stddef.h>'; "for e.g. offsetof"
 		addHeaderFile:'"jit/jit.h"';
+		addHeaderFile:'"debug.h"';		
 		addHeaderFile:'"sqCogStackAlignment.h"';
 		addHeaderFile:'"dispdbg.h"'; "must precede cointerp.h & cogit.h otherwise NoDbgRegParms gets screwed up"
 		addHeaderFile:'"cogmethod.h"'.
@@ -843,6 +844,7 @@ Cogit class >> initializeAnnotationConstants [
 	IsSendCall := 7.
 	"These are formed by combining IsSendCall and IsAnnotationExtension annotations."
 	IsSuperSend := 8.
+
 	IsDirectedSuperSend := BytecodeSetHasDirectedSuperSend ifTrue: [9].
 	IsDirectedSuperBindingSend := BytecodeSetHasDirectedSuperSend ifTrue: [10].
 
@@ -1264,8 +1266,8 @@ Cogit class >> initializeWithOptions: optionsDictionary [
 	self initializeMiscConstants. "must precede other initialization."
 	self initializeErrorCodes.
 	self initializeCogMethodConstants.
-	self initializeAnnotationConstants.
 	self initializeBytecodeTable.
+	self initializeAnnotationConstants.
 	self initializeNumTrampolines.
 	self initializePrimitiveTable
 ]

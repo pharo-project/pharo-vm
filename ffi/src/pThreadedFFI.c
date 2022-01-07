@@ -1,7 +1,7 @@
 #include "pThreadedFFI.h"
 #include "worker.h"
 
-Worker *mainThreadWorker = NULL;
+EXPORT(Worker*) mainThreadWorker = NULL;
 
 EXPORT(sqInt)
 runMainThreadWorker() {

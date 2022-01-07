@@ -1,7 +1,7 @@
 Extension { #name : #ByteSymbol }
 
 { #category : #'*VMMakerTests' }
-ByteSymbol >> forMemory: aMemory [ 
+ByteSymbol >> forMemory: aMemory inMethod: anObject [ 
 
 	| vmString instSpec numSlots |
 

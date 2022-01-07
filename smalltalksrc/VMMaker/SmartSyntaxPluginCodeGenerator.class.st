@@ -762,7 +762,7 @@ SmartSyntaxPluginCodeGenerator >> initializeCTranslationDictionary [
 		#isWords					#generateIsWords:on:indent:
 		#isWordsOrBytes				#generateIsWordsOrBytes:on:indent:
 		#isPointers					#generateIsPointers:on:indent:
-		#isNil						#generateIsNil:on:indent:
+		#isNil						#generateCASTIsNil:
 		#isMemberOf:				#generateIsMemberOf:on:indent:
 		#isKindOf:					#generateIsKindOf:on:indent:
 

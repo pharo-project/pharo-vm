@@ -2669,19 +2669,23 @@ TMethod >> renameVariablesUsing: aDictionary [
 
 	"map declarations"
 	newDecls := declarations species new.
-	declarations keysAndValuesDo: [ :oldName :decl | 
-		(aDictionary at: oldName ifAbsent: nil)
-			ifNotNil: [ :newName | 
-				| index |
-				index := decl indexOfWord: oldName.
-				newDecls at: newName put: (index ~= 0
-						 ifTrue: [ 
-							 decl
-								 copyReplaceFrom: index
-								 to: index + oldName size - 1
-								 with: newName ]
-						 ifFalse: [ decl ]) ]
-			ifNil: [ newDecls at: oldName put: decl ] ].
+
+	declarations
+		keysAndValuesDo: [ :oldName :decl | 
+			(aDictionary at: oldName ifAbsent: nil)
+				ifNotNil: [ :newName | 
+					| index |
+					index := decl findLastOccurrenceOfString: oldName startingAt: 1.
+					newDecls
+						at: newName
+						put:
+							(index ~= 0
+								ifTrue: [ decl
+										copyReplaceFrom: index
+										to: index + oldName size - 1
+										with: newName ]
+								ifFalse: [ decl ]) ]
+				ifNil: [ newDecls at: oldName put: decl ] ].
 	self newDeclarations: newDecls.
 	newProperties := properties copy.
 	newProperties pragmas do: [ :pragma | 
