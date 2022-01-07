@@ -80,12 +80,6 @@ UnicornX64Simulator >> doublePrecisionFloatingPointRegister0 [
 	^ UcX86Registers xmm0
 ]
 
-{ #category : #'as yet unclassified' }
-UnicornX64Simulator >> doublePrecisionFloatingPointRegister0Value [
-
-	^ self readFloat64Register: UcX86Registers xmm0
-]
-
 { #category : #registers }
 UnicornX64Simulator >> doublePrecisionFloatingPointRegister1 [
 
@@ -106,12 +100,6 @@ UnicornX64Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstruction 
 	(registerName beginsWith: '%')
 		ifTrue: [ registerName := registerName allButFirst ].
 	^ registerName
-]
-
-{ #category : #'phisical-registers' }
-UnicornX64Simulator >> fp [
-
-	^ self rbp
 ]
 
 { #category : #'virtual-registers' }
@@ -153,11 +141,6 @@ UnicornX64Simulator >> instructionPointerRegister [
 UnicornX64Simulator >> integerRegisterState [
 	
 	^ #()
-]
-
-{ #category : #'as yet unclassified' }
-UnicornX64Simulator >> pc [
-	^ self rip
 ]
 
 { #category : #'as yet unclassified' }
@@ -495,7 +478,7 @@ UnicornX64Simulator >> smashRegisterAccessors [
 { #category : #'virtual-registers' }
 UnicornX64Simulator >> stackPointerRegister [
 
-	^ UcX86Registers rsp
+	^ UcX86Registers esp
 ]
 
 { #category : #registers }
