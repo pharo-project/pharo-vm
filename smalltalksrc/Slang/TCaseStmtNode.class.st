@@ -35,7 +35,7 @@ TCaseStmtNode class >> newWithExpression: anExpression selectors: aCollectionOfS
 { #category : #visiting }
 TCaseStmtNode >> accept: aVisitor [
 	
-	^ aVisitor visitCastStatementNode: self
+	^ aVisitor visitCaseStatementNode: self
 ]
 
 { #category : #tranforming }

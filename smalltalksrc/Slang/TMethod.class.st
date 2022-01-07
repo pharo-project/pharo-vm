@@ -387,7 +387,6 @@ TMethod >> asCASTFunctionPrototypeIn: aCodeGen isPrototype: isPrototype [
 TMethod >> asCASTIn: aCodeGen [
 
 	| compoundStatement functionDefinition body|
-	1haltIf: [ selector == #interpret ].
 	aCodeGen currentMethod: self.
 	compoundStatement := CCompoundStatementNode new
 		                     needsBrackets: false;

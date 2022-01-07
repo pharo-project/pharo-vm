@@ -1,0 +1,73 @@
+"
+I am a callgraph visitor that computes the free variables used recursively by a method and its callees.
+
+I keep inside a cache of (selector -> list of free variables).
+I can be called many times and i will cut as soon as i finds a method found in a previous invocation.
+"
+Class {
+	#name : #SLCallGraphFreeVariableCollector,
+	#superclass : #SLCallGraphVisitor,
+	#instVars : [
+		'accumulatedFreeVariables',
+		'freeVariablesPerMethod'
+	],
+	#category : #'Slang-Optimizations'
+}
+
+{ #category : #accessing }
+SLCallGraphFreeVariableCollector >> freeVariablesUsedByMethodNamed: aSelector [
+
+	^ freeVariablesPerMethod at: aSelector ifAbsent: [ ^ #() ]
+]
+
+{ #category : #initialization }
+SLCallGraphFreeVariableCollector >> initialize [
+
+	super initialize.
+	freeVariablesPerMethod := Dictionary new.
+	accumulatedFreeVariables := Set new.
+]
+
+{ #category : #hooks }
+SLCallGraphFreeVariableCollector >> postVisitMethod: aMethod [
+
+	"This are all variables accessed by this method and its children"
+	accumulatedFreeVariables addAll: aMethod freeVariableReferences.
+	
+	freeVariablesPerMethod at: aMethod selector put: accumulatedFreeVariables copy.
+]
+
+{ #category : #hooks }
+SLCallGraphFreeVariableCollector >> preVisitMethod: aMethod [
+
+	"Work as a cache to make this instance reusable.
+	It can be called many times and it will cut as soon as it finds a method found in a previous invocation"
+	freeVariablesPerMethod at: aMethod selector ifPresent: [ ^ false "stop" ].
+
+	"Continue"
+	^ true
+]
+
+{ #category : #accessing }
+SLCallGraphFreeVariableCollector >> resetAccumulatedFreeVariables [
+
+	accumulatedFreeVariables := Set new.
+]
+
+{ #category : #api }
+SLCallGraphFreeVariableCollector >> startFromMethod: aMethod [
+
+	super	startFromMethod: aMethod.
+	
+	"Clean up the accumulated variables upon return"
+	self resetAccumulatedFreeVariables
+]
+
+{ #category : #api }
+SLCallGraphFreeVariableCollector >> startFromSelector: aSelector [
+
+	super	startFromSelector: aSelector.
+	
+	"Clean up the accumulated variables upon return"
+	self resetAccumulatedFreeVariables
+]
