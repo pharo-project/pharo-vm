@@ -478,7 +478,7 @@ UnicornX64Simulator >> smashRegisterAccessors [
 { #category : #'virtual-registers' }
 UnicornX64Simulator >> stackPointerRegister [
 
-	^ UcX86Registers esp
+	^ UcX86Registers rsp
 ]
 
 { #category : #registers }
