@@ -94,7 +94,7 @@ VMSimpleStackBasedCogitBytecodeTest >> doTestReturnReturnsObjectInReturnRegister
 	self compile: compilationBlock.
 	self runUntilReturn.
 
-	self assert: machineSimulator returnRegisterValue equals: anAddress
+	self assert: machineSimulator receiverRegisterValue equals: anAddress
 ]
 
 { #category : #'tests - single bytecode - return' }
@@ -1436,7 +1436,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsPushesRetu
 	self runFrom: sendAddress until: sendTrampolineAddress.
 		
 	"Now return from called function/method and execute until the end of the send instruction"
-	machineSimulator returnRegisterValue: (memory integerObjectOf: 42).
+	machineSimulator receiverRegisterValue: (memory integerObjectOf: 42).
 	self runFrom: machineSimulator instructionPointerRegisterValue until: self getLastAddress.
 	
 	self assert: self popAddress equals: (memory integerObjectOf: 42).
@@ -1564,7 +1564,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendOneArgSpecialMessagePushesReturnV
 	self runFrom: sendAddress until: sendTrampolineAddress.
 	
 	"Now return from called function/method and execute until the end of the send instruction"
-	machineSimulator returnRegisterValue: (memory integerObjectOf: 42).
+	machineSimulator receiverRegisterValue: (memory integerObjectOf: 42).
 	self runFrom: machineSimulator instructionPointerRegisterValue until: self getLastAddress.
 	
 	self assert: self popAddress equals: (memory integerObjectOf: 42).
@@ -1673,7 +1673,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendTwoArgSpecialMessagePushesReturnV
 	self runFrom: sendAddress until: sendTrampolineAddress.
 	
 	"Now return from called function/method and execute until the end of the send instruction"
-	machineSimulator returnRegisterValue: (memory integerObjectOf: 42).
+	machineSimulator receiverRegisterValue: (memory integerObjectOf: 42).
 	self runFrom: machineSimulator instructionPointerRegisterValue until: self getLastAddress.
 	
 	self assert: self popAddress equals: (memory integerObjectOf: 42).
@@ -1766,7 +1766,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendZeroArgSpecialMessagePushesReturn
 	self runFrom: sendAddress until: sendTrampolineAddress.
 	
 	"Now return from called function/method and execute until the end of the send instruction"
-	machineSimulator returnRegisterValue: (memory integerObjectOf: 42).
+	machineSimulator receiverRegisterValue: (memory integerObjectOf: 42).
 	self runFrom: machineSimulator instructionPointerRegisterValue until: self getLastAddress.
 	
 	self assert: self popAddress equals: (memory integerObjectOf: 42).

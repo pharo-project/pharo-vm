@@ -7,7 +7,7 @@ Class {
 		'registerSmalltalkAliases',
 		'memory'
 	],
-	#category : #VMMakerTests
+	#category : #'VMMakerTests-Unicorn'
 }
 
 { #category : #'instance creation' }
@@ -668,18 +668,6 @@ ProcessorSimulator >> registerDescriptors [
 ProcessorSimulator >> registerList [
 
 	self subclassResponsibility
-]
-
-{ #category : #registers }
-ProcessorSimulator >> returnRegisterValue [
-
-	^ self receiverRegisterValue
-]
-
-{ #category : #registers }
-ProcessorSimulator >> returnRegisterValue: aValue [
-
-	^ self receiverRegisterValue: aValue
 ]
 
 { #category : #registers }
