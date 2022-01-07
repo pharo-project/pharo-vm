@@ -138,7 +138,7 @@ SLAutomaticLocalization >> linearizeExternalCallsIn: aTMethod withVariableBindin
 			| replacement previousParent |
 			(self
 				 shouldLinearizeStatement: statement
-				 withVariableBindings: replacementDict) ifTrue: [ 
+				 withVariableBindings: replacementDict keys) ifTrue: [ 
 					previousParent := statement parent.
 					replacement := statement linearizeIn: codeGenerator.
 
@@ -160,10 +160,10 @@ SLAutomaticLocalization >> localizableVariablesInStatement: statement withVariab
 ]
 
 { #category : #applying }
-SLAutomaticLocalization >> shouldLinearizeStatement: statement withVariableBindings: replacementDict [
+SLAutomaticLocalization >> shouldLinearizeStatement: statement withVariableBindings: localizedVariables [
 
 	"Optimization: only externalize/localize variables used by the statement's called functions"
-	^ (self localizableVariablesInStatement: statement withVariableBindings: replacementDict) notEmpty
+	^ (self localizableVariablesInStatement: statement withVariableBindings: localizedVariables) notEmpty
 ]
 
 { #category : #applying }

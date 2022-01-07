@@ -149,7 +149,9 @@ SLLocalizableVariableCollector >> visitSendNode: aTSendNode [
 	aTSendNode arguments do: [ :argument | argument accept: self ].
 
 	callgraphVariableCollector startFromSelector: aTSendNode selector.
-	localizableVariables addAll: (callgraphVariableCollector freeVariablesUsedByMethodNamed: aTSendNode selector)
+	(callgraphVariableCollector freeVariablesUsedByMethodNamed: aTSendNode selector)
+		select: [ :each | localizableCandidateVariables includes: each ]
+		thenDo: [ :each | localizableVariables add: each ]
 ]
 
 { #category : #visiting }
