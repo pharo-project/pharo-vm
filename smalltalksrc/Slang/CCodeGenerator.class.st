@@ -473,34 +473,6 @@ CCodeGenerator >> asmLabelNodeFor: selector [
 			arguments: { CIdentifierNode name: label }
 ]
 
-{ #category : #'automatic-localization' }
-CCodeGenerator >> autoLocalizationOfVariablesIn: selector withVariableBindings: replacementList [
-
-	| m replacementDict |
-	(m := self methodNamed: selector) ifNil: [ ^ self ].
-	(replacementList isNil or: [ replacementList isEmpty ]) ifTrue: [ ^ self ].
-
-	self currentMethod: m.
-
-	replacementDict := (replacementList collect: [ :asso | 
-				 asso key -> (TVariableNode named: asso value) ]) asDictionary.
-	"Replace all localized variables by their localized versions"
-	m parseTree
-		bindVariablesIn: replacementDict.
-
-	self linearizeExternalCallsIn: m withVariableBindings: replacementDict.
-
-	"Wrap sends with externalization/internalization statements"
-	self wrapStatements: m withVariableBindings: replacementDict.
-
-	"Localize global values at the beginning of the function
-	AND externalize local values on each return"
-	replacementDict associationsDo: [ :asso | 
-		m statements addFirst: (TAssignmentNode
-				 variable: asso value copy
-				 expression: (TVariableNode named: asso key)) ].
-]
-
 { #category : #utilities }
 CCodeGenerator >> baseTypeForPointerType: aCType [
 	"Answer the type of the referent of a pointer type."
@@ -1021,7 +993,7 @@ CCodeGenerator >> doInlining: inlineFlag [
 CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag [
 	"Emit C code for all methods in the code base onto the given stream. All inlined method calls should already have been expanded."
 
-	| verbose methodList autoLocalizationBindings |
+	| verbose methodList |
 	"method preparation"
 	verbose := false.
 	self prepareMethods.
@@ -1031,9 +1003,13 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 		logger cr.
 	].
 	assertionFlag ifFalse: [ self removeAssertions ].
-	autoLocalizationBindings := self initAutoLocalizationOfVariablesIn: #interpret.
+
 	self doInlining: inlineFlag.
-	self autoLocalizationOfVariablesIn: #interpret withVariableBindings: autoLocalizationBindings.
+	
+	SLAutomaticLocalization new
+		codeGenerator: self;
+		applyMethodNamed: #interpret.
+
 	"code generation"
 	"If we're outputting the VM put the main interpreter loop first for two reasons.
 	 1, so that the dispdbg.h header included at the bytecode dispatch can define
@@ -1312,14 +1288,6 @@ CCodeGenerator >> exportedPrimitiveNames [
 	"Return an array of all exported primitives"
 	^methods select:[:m| m export] thenCollect:[:m| self cFunctionNameFor: m selector].
 
-]
-
-{ #category : #'automatic-localization' }
-CCodeGenerator >> externalizationOf: aVariableName [
-
-	^ (TAssignmentNode
-			variableNamed: aVariableName
-			expression: (TVariableNode named: #local_, aVariableName))
 ]
 
 { #category : #utilities }
@@ -3466,14 +3434,6 @@ CCodeGenerator >> instVarNamesForClass: aClass [
 
 ]
 
-{ #category : #'automatic-localization' }
-CCodeGenerator >> internalizationOf: aVariableName [
-
-	^ (TAssignmentNode
-			variableNamed: #local_, aVariableName
-			expression: (TVariableNode named: aVariableName))
-]
-
 { #category : #'C translation' }
 CCodeGenerator >> is32Bit [
 	^ self wordSize = 4
@@ -3717,29 +3677,6 @@ CCodeGenerator >> isStructSend: aTSendNode [
 CCodeGenerator >> isVoidPointer: aCType [ "<String>"
 	"sigh..."
 	^#('void *' 'void*') includes: aCType asString
-]
-
-{ #category : #'automatic-localization' }
-CCodeGenerator >> linearizeExternalCallsIn: aTMethod withVariableBindings: replacementDict [
-
-	"Should be applied after inlining.
-	Linearize all calls inside this method"
-
-	| replacementDictionary statementListsToLinearize |
-	replacementDictionary := Dictionary new.
-
-	statementListsToLinearize := aTMethod parseTree select: [ :e | e isStatementList ].
-	statementListsToLinearize do: [ :statementList | 
-		statementList statements do: [ :statement | 
-			| replacement previousParent |
-			(self
-				 shouldLinearizeStatement: statement
-				 withVariableBindings: replacementDict) ifTrue: [ 
-					previousParent := statement parent.
-					replacement := statement linearizeIn: self.
-
-					"Do not ask the child to replace itself, as it may have been already moved"
-					previousParent replaceChild: statement with: replacement ] ] ]
 ]
 
 { #category : #utilities }
@@ -4806,17 +4743,6 @@ CCodeGenerator >> shouldIncludeMethodFor: aClass selector: selector [
 	^ true
 ]
 
-{ #category : #'automatic-localization' }
-CCodeGenerator >> shouldLinearizeStatement: statement withVariableBindings: replacementDict [
-
-	"Optimization: only externalize/localize variables used by the statement's called functions"
-	| collector |
-	collector := MLVMVariableAccessCollector
-		             inCodeGenerator: self
-		             fromGlobals: replacementDict keys.
-	^ (statement accept: collector) accessedVariables notEmpty
-]
-
 { #category : #'type inference' }
 CCodeGenerator >> signedTypeForIntegralType: aCTypeString [
 	(aCTypeString beginsWith: 'unsigned ') ifTrue:
@@ -5427,51 +5353,4 @@ CCodeGenerator >> wordSize [
 CCodeGenerator >> wordSize: aValue [
 
 	wordSize := aValue
-]
-
-{ #category : #'automatic-localization' }
-CCodeGenerator >> wrapStatementWithExternalizationAndLocalizations: statement ofLocalizedVariables: localizedVariables [
-
-	| collector variablesToExternalize replacementStatements potentialCall |
-
-	"Only non inlined sends, or message sends in assignments `tx := send` should be wrapped"
-	potentialCall := statement isAssignment ifTrue: [ statement expression ] ifFalse: [ statement ].
-	(potentialCall isReturn or: [
-		(self isFunctionCall: potentialCall)
-			or: [ self isDynamicCall: potentialCall ]])
-				ifFalse: [ ^ statement ].
-	
-	"Optimization: only externalize/localize variables used by the statement's called functions"
-	collector := MLVMVariableAccessCollector
-		             inCodeGenerator: self
-		             fromGlobals: localizedVariables.
-	statement accept: collector.
-
-	"Sorted to guarantee determinism in the output"
-	variablesToExternalize := collector accessedVariables sorted.
-	variablesToExternalize ifEmpty: [ ^ statement ].
-
-	"Wrap the statement with externalization/localizations"
-	replacementStatements := OrderedCollection new.
-	replacementStatements addAll: (variablesToExternalize collect: [ :e | self externalizationOf: e ]).
-	replacementStatements add: statement.
-	statement isReturn ifFalse: [ 
-		replacementStatements addAll: (variablesToExternalize collect: [ :e | self internalizationOf: e ]) ].
-	^ TStatementListNode statements: replacementStatements
-]
-
-{ #category : #'automatic-localization' }
-CCodeGenerator >> wrapStatements: tMethod withVariableBindings: replacementDict [
-
-	"Wrap statements with external calls with TExternalSendNode"
-	"Apply externalization/localization of variables around 
-	 - static function calls
-	 - dynamic function calls (perform & co)"
-	tMethod allStatements do: [ :statement | | replacement oldParent |
-		oldParent := statement parent.
-		replacement := self
-			wrapStatementWithExternalizationAndLocalizations: statement
-			ofLocalizedVariables: replacementDict keys.
-		oldParent replaceChild: statement with: replacement.
-	].
 ]

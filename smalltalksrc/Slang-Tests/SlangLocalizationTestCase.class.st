@@ -7,16 +7,16 @@ Class {
 { #category : #running }
 SlangLocalizationTestCase >> applyLocalizationTo: interpreterSelector [
 
-	| interpretMethod autolocalizedVariables |
+	| interpretMethod |
 	ccg addClass: MockLocalizationInterpreterMock.
 	ccg prepareMethods.
-	autolocalizedVariables := ccg initAutoLocalizationOfVariablesIn:
-		                          interpreterSelector.
 	ccg inlineDispatchesInMethodNamed: interpreterSelector.
 	ccg doBasicInlining: true.
-	ccg
-		autoLocalizationOfVariablesIn: interpreterSelector
-		withVariableBindings: autolocalizedVariables.
+
+	SLAutomaticLocalization new
+		codeGenerator: ccg;
+		applyMethodNamed: interpreterSelector.
+	
 	interpretMethod := ccg methodNamed: interpreterSelector.
 	ccg currentMethod: interpretMethod.
 	^ interpretMethod
@@ -429,7 +429,8 @@ SlangLocalizationTestCase >> testLinearizeCallsInNestedLexicalScope [
 	
 	ccg prepareMethods.
 	ccg currentMethod: methodToLinearize.
-	ccg
+	SLAutomaticLocalization new
+		codeGenerator: ccg;
 		linearizeExternalCallsIn: methodToLinearize
 		withVariableBindings: ((ccg initAutoLocalizationOfVariablesIn: #interpret) asDictionary
 			collect: [:n| TVariableNode named: n]).
@@ -469,7 +470,8 @@ SlangLocalizationTestCase >> testLinearizeNestedCalls [
 	
 	ccg prepareMethods.
 	ccg currentMethod: methodToLinearize.
-	ccg
+	SLAutomaticLocalization new
+		codeGenerator: ccg;
 		linearizeExternalCallsIn: methodToLinearize
 		withVariableBindings: ((ccg initAutoLocalizationOfVariablesIn: #interpret) asDictionary
 			collect: [:n| TVariableNode named: n]).
@@ -504,7 +506,8 @@ SlangLocalizationTestCase >> testLinearizeNestedCallsWithAssignment [
 	
 	ccg prepareMethods.
 	ccg currentMethod: methodToLinearize.
-	ccg
+	SLAutomaticLocalization new
+		codeGenerator: ccg;
 		linearizeExternalCallsIn: methodToLinearize
 		withVariableBindings: ((ccg initAutoLocalizationOfVariablesIn: #interpret) asDictionary
 			collect: [:n| TVariableNode named: n]).
@@ -545,7 +548,8 @@ SlangLocalizationTestCase >> testLinearizeNestedCallsWithReturn [
 	
 	ccg prepareMethods.
 	ccg currentMethod: methodToLinearize.
-	ccg
+	SLAutomaticLocalization new
+		codeGenerator: ccg;
 		linearizeExternalCallsIn: methodToLinearize
 		withVariableBindings: ((ccg initAutoLocalizationOfVariablesIn: #interpret) asDictionary
 			collect: [:n| TVariableNode named: n]).
@@ -584,7 +588,8 @@ SlangLocalizationTestCase >> testLinearizeSingleCalls [
 	
 	ccg prepareMethods.
 	ccg currentMethod: methodToLinearize.
-	ccg
+	SLAutomaticLocalization new
+		codeGenerator: ccg;
 		linearizeExternalCallsIn: methodToLinearize
 		withVariableBindings: ((ccg initAutoLocalizationOfVariablesIn: #interpret) asDictionary
 			collect: [:n| TVariableNode named: n]).
