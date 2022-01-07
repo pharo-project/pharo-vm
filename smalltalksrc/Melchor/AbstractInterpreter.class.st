@@ -1,7 +1,7 @@
 Class {
 	#name : #AbstractInterpreter,
 	#superclass : #VMClass,
-	#category : #'VMMaker-Interpreter'
+	#category : #Melchor
 }
 
 { #category : #initialization }

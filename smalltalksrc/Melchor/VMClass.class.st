@@ -18,7 +18,7 @@ Class {
 	#classInstVars : [
 		'timeStamp'
 	],
-	#category : #'VMMaker-Support'
+	#category : #Melchor
 }
 
 { #category : #translation }

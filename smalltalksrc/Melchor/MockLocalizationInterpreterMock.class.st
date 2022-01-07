@@ -14,7 +14,7 @@ Class {
 	#classVars : [
 		'BytecodeTable'
 	],
-	#category : #'Slang-Tests'
+	#category : #Melchor
 }
 
 { #category : #initialization }

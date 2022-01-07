@@ -1,11 +1,11 @@
 Class {
-	#name : #SlangLocalizationTestCase,
+	#name : #MLLocalizationTestCase,
 	#superclass : #SlangAbstractTestCase,
-	#category : #'Slang-Tests'
+	#category : #Melchor
 }
 
 { #category : #running }
-SlangLocalizationTestCase >> applyLocalizationTo: interpreterSelector [
+MLLocalizationTestCase >> applyLocalizationTo: interpreterSelector [
 
 	| interpretMethod |
 	ccg addClass: MockLocalizationInterpreterMock.
@@ -23,7 +23,7 @@ SlangLocalizationTestCase >> applyLocalizationTo: interpreterSelector [
 ]
 
 { #category : #running }
-SlangLocalizationTestCase >> applyLocalizationToInterpretWith: initializationSelector [
+MLLocalizationTestCase >> applyLocalizationToInterpretWith: initializationSelector [
 	
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
 	MockLocalizationInterpreterMock perform: initializationSelector.
@@ -31,7 +31,7 @@ SlangLocalizationTestCase >> applyLocalizationToInterpretWith: initializationSel
 ]
 
 { #category : #running }
-SlangLocalizationTestCase >> applyManyLocalizationsToInterpretWith: initializationSelector [
+MLLocalizationTestCase >> applyManyLocalizationsToInterpretWith: initializationSelector [
 	
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
 	MockLocalizationInterpreterMock perform: initializationSelector.
@@ -39,7 +39,7 @@ SlangLocalizationTestCase >> applyManyLocalizationsToInterpretWith: initializati
 ]
 
 { #category : #running }
-SlangLocalizationTestCase >> externalizationOf: aVariableName [
+MLLocalizationTestCase >> externalizationOf: aVariableName [
 
 	^ (TAssignmentNode
 			variableNamed: aVariableName
@@ -47,7 +47,7 @@ SlangLocalizationTestCase >> externalizationOf: aVariableName [
 ]
 
 { #category : #running }
-SlangLocalizationTestCase >> internalizationOf: aVariableName [
+MLLocalizationTestCase >> internalizationOf: aVariableName [
 
 	^ (TAssignmentNode
 			variableNamed: #local_, aVariableName
@@ -55,7 +55,7 @@ SlangLocalizationTestCase >> internalizationOf: aVariableName [
 ]
 
 { #category : #helpers }
-SlangLocalizationTestCase >> linearizedBlockOfCaseMethod: aTMethod [ 
+MLLocalizationTestCase >> linearizedBlockOfCaseMethod: aTMethod [ 
 
 	| case inlinedMethod |
 	case := (aTMethod detect: [ :e | e isCaseStmt ]) cases first.
@@ -65,14 +65,14 @@ SlangLocalizationTestCase >> linearizedBlockOfCaseMethod: aTMethod [
 ]
 
 { #category : #running }
-SlangLocalizationTestCase >> setUp [
+MLLocalizationTestCase >> setUp [
 
 	super setUp.
 	MockLocalizationInterpreterMock initialize.
 ]
 
 { #category : #'tests - initialization' }
-SlangLocalizationTestCase >> testAutoLocalizeVariableDefinesNewLocalVariable [
+MLLocalizationTestCase >> testAutoLocalizeVariableDefinesNewLocalVariable [
 	
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
 	ccg addClass: MockLocalizationInterpreterMock.
@@ -82,7 +82,7 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableDefinesNewLocalVariable [
 ]
 
 { #category : #'tests - initialization' }
-SlangLocalizationTestCase >> testAutoLocalizeVariableDefinesNewLocalVariableWhenNameConflict [
+MLLocalizationTestCase >> testAutoLocalizeVariableDefinesNewLocalVariableWhenNameConflict [
 	
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
 	ccg addClass: MockLocalizationInterpreterMock.
@@ -91,7 +91,7 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableDefinesNewLocalVariableWhen
 ]
 
 { #category : #'tests - initialization' }
-SlangLocalizationTestCase >> testAutoLocalizeVariableDefinesNewLocalVariables [
+MLLocalizationTestCase >> testAutoLocalizeVariableDefinesNewLocalVariables [
 	
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
 	| method |
@@ -103,7 +103,7 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableDefinesNewLocalVariables [
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testAutoLocalizeVariableDoesNotLineariseUnnecessaryStatements [
+MLLocalizationTestCase >> testAutoLocalizeVariableDoesNotLineariseUnnecessaryStatements [
 
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
 
@@ -117,7 +117,7 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableDoesNotLineariseUnnecessary
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testAutoLocalizeVariableExternalizesAtTheEnd [
+MLLocalizationTestCase >> testAutoLocalizeVariableExternalizesAtTheEnd [
 
 	| externalizationStatement interpretMethod |
 	interpretMethod := self applyLocalizationTo: #interpret.
@@ -128,7 +128,7 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableExternalizesAtTheEnd [
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturnReferenchingAutoLocalizedVariable [
+MLLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturnReferenchingAutoLocalizedVariable [
 
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
 
@@ -152,7 +152,7 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturnRef
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturns [
+MLLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturns [
 
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
 
@@ -172,7 +172,7 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturns [
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testAutoLocalizeVariableInternalizesAtTheBeginning [
+MLLocalizationTestCase >> testAutoLocalizeVariableInternalizesAtTheBeginning [
 
 	| internalizationStatement interpretMethod |
 	interpretMethod := self applyLocalizationTo: #interpret.
@@ -184,7 +184,7 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableInternalizesAtTheBeginning 
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testAutoLocalizeVariableReplacesByLocalOnInline [
+MLLocalizationTestCase >> testAutoLocalizeVariableReplacesByLocalOnInline [
 	
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
 	| interpretMethod variableNode case |
@@ -198,7 +198,7 @@ SlangLocalizationTestCase >> testAutoLocalizeVariableReplacesByLocalOnInline [
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testExternalEscapingAsArgument [
+MLLocalizationTestCase >> testExternalEscapingAsArgument [
 	
 	| interpretMethod cast printedString linearizedBlock |
 	interpretMethod := self applyLocalizationToInterpretWith: #initializeWithEscapingCallAsArgument.
@@ -226,7 +226,7 @@ SlangLocalizationTestCase >> testExternalEscapingAsArgument [
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testExternalEscapingAsArgumentOfExternalCall [
+MLLocalizationTestCase >> testExternalEscapingAsArgumentOfExternalCall [
 	
 	| interpretMethod cast printedString linearizedBlock |
 	interpretMethod := self applyManyLocalizationsToInterpretWith: #initializeWithEscapingCallAsArgumentOfExternalCall.
@@ -258,7 +258,7 @@ SlangLocalizationTestCase >> testExternalEscapingAsArgumentOfExternalCall [
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testExternalEscapingSendNodeInInlinedMethod [
+MLLocalizationTestCase >> testExternalEscapingSendNodeInInlinedMethod [
 	
 	| interpretMethod cast printedString linearizedBlock |
 	interpretMethod := self applyManyLocalizationsToInterpretWith: #initializeWithInlinedMethodCall.
@@ -281,7 +281,7 @@ SlangLocalizationTestCase >> testExternalEscapingSendNodeInInlinedMethod [
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testExternalEscapingSendNodeShouldBeTranslatedWithExternalizationAndInternalization [
+MLLocalizationTestCase >> testExternalEscapingSendNodeShouldBeTranslatedWithExternalizationAndInternalization [
 	
 	| interpretMethod cast printedString linearizedBlock |
 
@@ -306,7 +306,7 @@ SlangLocalizationTestCase >> testExternalEscapingSendNodeShouldBeTranslatedWithE
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testExternalEscapingStatementInConditionalBody [
+MLLocalizationTestCase >> testExternalEscapingStatementInConditionalBody [
 	
 	| interpretMethod cast printedString linearizedBlock |
 	interpretMethod := self applyLocalizationToInterpretWith: #initializeWithIfStatement.
@@ -342,7 +342,7 @@ SlangLocalizationTestCase >> testExternalEscapingStatementInConditionalBody [
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testExternalPerform [
+MLLocalizationTestCase >> testExternalPerform [
 	
 	| interpretMethod cast printedString linearizedBlock |
 	interpretMethod := self applyLocalizationToInterpretWith: #initializeWithPerform.
@@ -364,7 +364,7 @@ SlangLocalizationTestCase >> testExternalPerform [
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testExternalSendNodeExternalizeAndInternalizeOnlyNeededVariables [
+MLLocalizationTestCase >> testExternalSendNodeExternalizeAndInternalizeOnlyNeededVariables [
 	
 	| interpretMethod cast printedString linearizedBlock |
 
@@ -392,7 +392,7 @@ SlangLocalizationTestCase >> testExternalSendNodeExternalizeAndInternalizeOnlyNe
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testExternalSendNodeShouldBeTranslatedWithExternalizationAndInternalization [
+MLLocalizationTestCase >> testExternalSendNodeShouldBeTranslatedWithExternalizationAndInternalization [
 	
 	| interpretMethod cast printedString linearizedBlock |
 	interpretMethod := self
@@ -421,7 +421,7 @@ SlangLocalizationTestCase >> testExternalSendNodeShouldBeTranslatedWithExternali
 ]
 
 { #category : #'tests - linearization' }
-SlangLocalizationTestCase >> testLinearizeCallsInNestedLexicalScope [
+MLLocalizationTestCase >> testLinearizeCallsInNestedLexicalScope [
 
 	| methodToLinearize ifBlock |
 	ccg addClass: MockLocalizationInterpreterMock.
@@ -462,7 +462,7 @@ SlangLocalizationTestCase >> testLinearizeCallsInNestedLexicalScope [
 ]
 
 { #category : #'tests - linearization' }
-SlangLocalizationTestCase >> testLinearizeNestedCalls [
+MLLocalizationTestCase >> testLinearizeNestedCalls [
 
 	| methodToLinearize replacementBlock |
 	ccg addClass: MockLocalizationInterpreterMock.
@@ -498,7 +498,7 @@ SlangLocalizationTestCase >> testLinearizeNestedCalls [
 ]
 
 { #category : #'tests - initialization' }
-SlangLocalizationTestCase >> testLinearizeNestedCallsWithAssignment [
+MLLocalizationTestCase >> testLinearizeNestedCallsWithAssignment [
 
 	| methodToLinearize replacementBlock |
 	ccg addClass: MockLocalizationInterpreterMock.
@@ -540,7 +540,7 @@ SlangLocalizationTestCase >> testLinearizeNestedCallsWithAssignment [
 ]
 
 { #category : #'tests - linearization' }
-SlangLocalizationTestCase >> testLinearizeNestedCallsWithReturn [
+MLLocalizationTestCase >> testLinearizeNestedCallsWithReturn [
 
 	| methodToLinearize replacementBlock |
 	ccg addClass: MockLocalizationInterpreterMock.
@@ -580,7 +580,7 @@ SlangLocalizationTestCase >> testLinearizeNestedCallsWithReturn [
 ]
 
 { #category : #'tests - linearization' }
-SlangLocalizationTestCase >> testLinearizeSingleCalls [
+MLLocalizationTestCase >> testLinearizeSingleCalls [
 
 	| methodToLinearize replacementBlock |
 	ccg addClass: MockLocalizationInterpreterMock.
@@ -607,7 +607,7 @@ SlangLocalizationTestCase >> testLinearizeSingleCalls [
 ]
 
 { #category : #'tests - old localization' }
-SlangLocalizationTestCase >> testLocalizeSharedVariableShouldFail [
+MLLocalizationTestCase >> testLocalizeSharedVariableShouldFail [
 	
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
 	ccg addClass: MockLocalizationInterpreterMock.
@@ -622,7 +622,7 @@ SlangLocalizationTestCase >> testLocalizeSharedVariableShouldFail [
 ]
 
 { #category : #'tests - old localization' }
-SlangLocalizationTestCase >> testLocalizeSharedVariableShouldFailIfAllInlinedUsesAreNotInlined [
+MLLocalizationTestCase >> testLocalizeSharedVariableShouldFailIfAllInlinedUsesAreNotInlined [
 	
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
 	ccg addClass: MockLocalizationInterpreterMock.
@@ -644,7 +644,7 @@ SlangLocalizationTestCase >> testLocalizeSharedVariableShouldFailIfAllInlinedUse
 ]
 
 { #category : #'tests - old localization' }
-SlangLocalizationTestCase >> testLocalizeSharedVariableShouldNotFailIfAllUsesAreInlined [
+MLLocalizationTestCase >> testLocalizeSharedVariableShouldNotFailIfAllUsesAreInlined [
 	
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
 	ccg addClass: MockLocalizationInterpreterMock.
@@ -659,7 +659,7 @@ SlangLocalizationTestCase >> testLocalizeSharedVariableShouldNotFailIfAllUsesAre
 ]
 
 { #category : #tests }
-SlangLocalizationTestCase >> testNoExternalSendNodeOnSafeExternalCall [
+MLLocalizationTestCase >> testNoExternalSendNodeOnSafeExternalCall [
 	
 	| interpretMethod cast printedString linearizedBlock |
 	interpretMethod := self applyManyLocalizationsToInterpretWith: #initializeWithSafeEscapingCall.
