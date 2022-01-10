@@ -2792,19 +2792,19 @@ TMethod >> setSelector: sel definingClass: class args: argList locals: localList
 	selector := sel.
 	definingClass := class.
 	args := argList asOrderedCollection collect: [:arg | arg name].
-
 	declarations := Dictionary new.
-	
-	"hack; allows nodes to find their parent, etc"
-	tempParseTree := parseTree := TStatementListNode new.
-	self parseTree: (aBlockNode asTranslatorNodeIn: self).
-	self locals: tempParseTree locals, (localList  collect: [:arg | arg name]).
-
 	self addTypeForSelf.
 	primitive := aNumber.
 	properties := methodProperties.
 	comment := aComment.
 	labels := Set new.
+	
+	"hack; allows nodes to find their parent, etc"
+	tempParseTree := parseTree := TStatementListNode new.
+	self parseTree: (aBlockNode asTranslatorNodeIn: self).
+	self locals: tempParseTree locals, (localList  collect: [:arg | arg name]).
+	
+	
 	complete := false.  "set to true when all possible inlining has been done"
 	export := self extractExportDirective.
 	static := self extractStaticDirective.
