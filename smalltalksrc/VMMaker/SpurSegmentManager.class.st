@@ -709,62 +709,11 @@ SpurSegmentManager >> withNewSegmentDo: aClosure [
 ]
 
 { #category : #snapshot }
-SpurSegmentManager >> writeImageSegmentsToFile: aBinaryStream [
-	<var: 'aBinaryStream' type: #sqImageFile>
-	<inline: false>
-	| total |
-	self assert: (manager endOfMemory = (segments at: numSegments - 1) segLimit
-				 or: [manager endOfMemory + manager bridgeSize = (segments at: numSegments - 1) segLimit]).
+SpurSegmentManager >> withNonEmptySegmentsDo: aBlockClosure [
 
-	self assert: (segments at: 0) segSize > 0.
-	total := 0.
-	0 to: numSegments - 1 do:
+	0 to: self numSegments - 1 do:
 		[:i|
-		(segments at: i) segSize > manager bridgeSize ifTrue:
-			[total := total + (self writeSegment: (self addressOf: (segments at: i))
-								nextSegment: (self nextNonEmptySegmentAfter: i)
-								toFile: aBinaryStream)]].
-	^total
-]
+		(segments at: i) segSize > manager bridgeSize 
+			ifTrue: [ aBlockClosure value: (self addressOf: (segments at: i)) value: i]].
 
-{ #category : #snapshot }
-SpurSegmentManager >> writeSegment: segment nextSegment: nextSegment toFile: aBinaryStream [
-	"Write the segment contents, the size of and the distance to the next segment to aBinaryStream."
-	<var: 'segment' type: #'SpurSegmentInfo *'>
-	<var: 'nextSegment' type: #'SpurSegmentInfo *'>
-	<var: 'aBinaryStream' type: #sqImageFile>
-	| pier1 pier2 firstSavedBridgeWord secondSavedBridgeWord nWritten |
-	<var: 'firstSavedBridgeWord' type: #usqLong>
-	<var: 'secondSavedBridgeWord' type: #usqLong>
-	pier1 := segment segLimit - manager bridgeSize.
-	pier2 := pier1 + manager baseHeaderSize.
-	self assert: (self isValidSegmentBridge: (self bridgeFor: segment)).
-	self assert: (manager startOfObject: (self bridgeFor: segment)) = pier1.
-	"Temporarily change the bridge to bridge to the next non-empty segment.
-	 The first double word of the bridge includes the bridge size in slots, and
-	 hence specifies the distance to the next segment. The following double
-	 word is replaced by the size of the next segment, or 0 if there isn't one."
-	firstSavedBridgeWord := manager long64At: pier1.
-	secondSavedBridgeWord := manager long64At: pier2.
-	self bridgeFrom: segment to: nextSegment.
-	manager
-		long64At: pier2
-		put: (nextSegment ifNil: [0] ifNotNil: [nextSegment segSize]).
-	nWritten := self cCode:
-						[self
-							sq: segment segStart asVoidPointer
-							Image: 1
-							File: segment segSize
-							Write: aBinaryStream]
-					inSmalltalk: [ | region |
-						region := (manager memoryManager regionForAddress: segment segStart).
-						aBinaryStream
-							next: segment segSize
-							putAll: region memory
-							startingAt: segment segStart - region start + 1.
-						 segment segSize].
-	manager
-		long64At: pier1 put: firstSavedBridgeWord;
-		long64At: pier2 put: secondSavedBridgeWord.
-	^nWritten
 ]

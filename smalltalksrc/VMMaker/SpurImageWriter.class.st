@@ -128,55 +128,137 @@ SpurImageWriter >> writeHeader: header toFile: f [
 
 { #category : #writing }
 SpurImageWriter >> writeImageFile: imageFileName fromHeader: header [
+
 	"Write the image header and heap contents to imageFile for snapshot. c.f. writeImageFileIOSimulation.
 	 The game below is to maintain 64-bit alignment for all putLong:toFile: occurrences."
-
-	| headerStart imageHeaderSize f imageBytes bytesWritten |
 
 	<var: #headerStart type: #squeakFileOffsetType>
 	<var: #imageFileName declareC: 'char *imageFileName'>
 	<var: #f type: #sqImageFile>
 	<var: #header type: #SpurImageHeaderStruct>
-
-	headerStart := 0.  
+	| headerStart imageHeaderSize f imageBytes bytesWritten |
+	headerStart := 0.
 	imageHeaderSize := header imageHeaderSize.
 
 	self logDebug: 'Writing snapshot file %s' _: imageFileName.
 
 	f := self sqImageFile: imageFileName Open: 'wb'.
-	f = nil ifTrue: "could not open the image file for writing"
-		[^self primitiveFail].
+	f ifNil: [ "could not open the image file for writing" 
+		^ self primitiveFail ].
 
 	imageBytes := header dataSize.
-	headerStart := self sqImage: f File: imageFileName StartLocation: imageHeaderSize + imageBytes.
-	self cCode: '/* Note: on Unix systems one could put an exec command here, padded to 512 bytes */'.
+	headerStart := self
+		               sqImage: f
+		               File: imageFileName
+		               StartLocation: imageHeaderSize + imageBytes.
+	self cCode:
+		'/* Note: on Unix systems one could put an exec command here, padded to 512 bytes */'.
 	"position file to start of header"
 	self sqImageFile: f Seek: headerStart.
 
 	self writeHeader: header toFile: f.
 
 	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[self putLong: objectMemory firstSegmentBytes toFile: f.
-			 self putLong: objectMemory bytesLeftInOldSpace toFile: f.
-			 self padHeader: 2 toFile: f]
-		ifFalse:
-			[self padHeader: 4 toFile: f].
+		ifTrue: [ 
+			self putLong: objectMemory firstSegmentBytes toFile: f.
+			self putLong: objectMemory bytesLeftInOldSpace toFile: f.
+			self padHeader: 2 toFile: f ]
+		ifFalse: [ self padHeader: 4 toFile: f ].
 
 
 	"position file after the header"
-	self assert: headerStart + imageHeaderSize = (self sqImageFilePosition: f).
+	self assert:
+		headerStart + imageHeaderSize = (self sqImageFilePosition: f).
 	self sqImageFile: f Seek: headerStart + imageHeaderSize.
 
-	interpreter successful ifFalse: "file write or seek failure"
-		[self sqImageFileClose: f.
-		 ^nil].
+	interpreter successful ifFalse: [ "file write or seek failure"
+		self sqImageFileClose: f.
+		^ nil ].
 
 	"write the image data"
-	bytesWritten := objectMemory writeImageSegmentsToFile: f.
+	bytesWritten := self writeImageSegmentsToFile: f.
 
 	interpreter success: bytesWritten = imageBytes.
 	self sqImageFileClose: f.
+
+	self logDebug: 'Snapshot file %s done' _: imageFileName
+]
+
+{ #category : #writing }
+SpurImageWriter >> writeImageSegmentsToFile: aBinaryStream [
+
+	<var: 'aBinaryStream' type: #sqImageFile>
+	<var: 'aSegment' type:#'SpurSegmentInfo *'>
+	<inline: false>
+
+	| total |
 	
-	self logDebug: 'Snapshot file %s done' _: imageFileName.
+	self assert: (objectMemory endOfMemory = segmentManager lastSegment segLimit
+				 or: [objectMemory endOfMemory + objectMemory bridgeSize = segmentManager lastSegment segLimit]).
+
+	self assert: segmentManager firstSegmentBytes > 0.
+	
+	total := 0.
+
+	segmentManager withNonEmptySegmentsDo: [ :aSegment :segmentIndex | 
+		total := total + (self writeSegment: aSegment
+								nextSegment: (segmentManager nextNonEmptySegmentAfter: segmentIndex)
+								toFile: aBinaryStream) ].
+	
+	^total
+]
+
+{ #category : #writing }
+SpurImageWriter >> writeSegment: segment nextSegment: nextSegment toFile: aBinaryStream [
+
+	"Write the segment contents, the size of and the distance to the next segment to aBinaryStream."
+
+	<var: 'segment' type: #'SpurSegmentInfo *'>
+	<var: 'nextSegment' type: #'SpurSegmentInfo *'>
+	<var: 'aBinaryStream' type: #sqImageFile>
+	<var: 'firstSavedBridgeWord' type: #usqLong>
+	<var: 'secondSavedBridgeWord' type: #usqLong>
+
+	| pier1 pier2 firstSavedBridgeWord secondSavedBridgeWord nWritten |
+
+	pier1 := segment segLimit - objectMemory bridgeSize.
+	pier2 := pier1 + objectMemory baseHeaderSize.
+	
+	self assert: (segmentManager isValidSegmentBridge: (segmentManager bridgeFor: segment)).
+	self assert: (objectMemory startOfObject: (segmentManager bridgeFor: segment)) = pier1.
+	
+	"Temporarily change the bridge to bridge to the next non-empty segment.
+	 The first double word of the bridge includes the bridge size in slots, and
+	 hence specifies the distance to the next segment. The following double
+	 word is replaced by the size of the next segment, or 0 if there isn't one."
+	
+	firstSavedBridgeWord := objectMemory long64At: pier1.
+	secondSavedBridgeWord := objectMemory long64At: pier2.
+	
+	segmentManager bridgeFrom: segment to: nextSegment.
+	
+	objectMemory
+		long64At: pier2
+		put: (nextSegment ifNil: [0] ifNotNil: [nextSegment segSize]).
+	
+	nWritten := self cCode:
+						[self
+							sq: segment segStart asVoidPointer
+							Image: 1
+							File: segment segSize
+							Write: aBinaryStream]
+					inSmalltalk: [ | region |
+						region := (objectMemory memoryManager regionForAddress: segment segStart).
+
+						aBinaryStream
+							next: segment segSize
+							putAll: region memory
+							startingAt: segment segStart - region start + 1.
+						segment segSize].
+
+	objectMemory
+		long64At: pier1 put: firstSavedBridgeWord;
+		long64At: pier2 put: secondSavedBridgeWord.
+
+	^nWritten
 ]

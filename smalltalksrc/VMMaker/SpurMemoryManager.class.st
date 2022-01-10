@@ -12775,12 +12775,6 @@ SpurMemoryManager >> writeEnableMemory [
 		[memory := memory array]
 ]
 
-{ #category : #snapshot }
-SpurMemoryManager >> writeImageSegmentsToFile: aBinaryStream [
-	<doNotGenerate>
-	^segmentManager writeImageSegmentsToFile: aBinaryStream
-]
-
 { #category : #simulation }
 SpurMemoryManager >> writeProtectMemory [
 	<doNotGenerate>
