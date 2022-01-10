@@ -3,7 +3,11 @@ Extension { #name : #RBBlockNode }
 { #category : #'*VMMakerCompatibilityForPharo6-C translation' }
 RBBlockNode >> asTranslatorNodeIn: aTMethod [
 	
-	^ body asTranslatorNodeIn: aTMethod
+	body := body asTranslatorNodeIn: aTMethod.
+	body statements ifEmpty: [ 
+		body statements add: (TVariableNode new setName: 'nil').
+	].
+	^ body
 ]
 
 { #category : #'*VMMakerCompatibilityForPharo6-testing' }
