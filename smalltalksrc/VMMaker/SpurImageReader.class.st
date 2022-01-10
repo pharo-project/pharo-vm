@@ -130,8 +130,6 @@ SpurImageReader >> loadImageFromFile: f withHeader: header [
 	"compute difference between old and new memory base addresses"
 	bytesToShift := objectMemory memoryBaseForImageRead
 	                - header oldBaseAddr.
-
-	segmentManager adjustSegmentSwizzlesBy: bytesToShift.
 	
 	interpreter initializeInterpreter: bytesToShift "adjusts all oops to new location"
 ]
@@ -257,7 +255,7 @@ SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 
 	"segment sizes include the two-header-word bridge at the end of each segment."
 	totalBytesRead := 0.
-	oldBase := 0. "N.B. still must be adjusted by oldBaseAddr. It starts in 0. Then it is adjusted in #adjustSegmentSwizzlesBy:"
+	oldBase := aHeader oldBaseAddr.
 	newBase := objectMemory oldSpaceStart.
 	nextSegmentSize := aHeader firstSegSize.
 	bridgehead := aHeader firstSegSize + objectMemory oldSpaceStart
@@ -267,9 +265,8 @@ SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 	segmentManager withNewSegmentDo: [ :segInfo | 
 		segInfo
 			segStart: oldBase;
-			"N.B. still must be adjusted by oldBaseAddr. The real value is adjusted in #adjustSegmentSwizzlesBy:"
 			segSize: nextSegmentSize;
-			swizzle: newBase - oldBase "N.B. still must be adjusted by oldBaseAddr. The real value is adjusted in #adjustSegmentSwizzlesBy:" ].
+			swizzle: newBase - oldBase ].
 
 	bytesRead := self
 		             sq: (self pointerForOop: newBase)
@@ -297,6 +294,9 @@ SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 	"newBase should point just past the last bridge. all others should have been eliminated."
 	self assert: newBase - objectMemory oldSpaceStart = (totalBytesRead
 		 - (segmentManager numSegments * objectMemory bridgeSize)).
+
+	"Segments has correct swizzle values, so it can be used to swizzle objects"
+	segmentManager setCanSwizzle: true.
 
 	"set freeOldSpaceStart now for adjustAllOopsBy:"
 	objectMemory setFreeOldSpaceStart: newBase.
