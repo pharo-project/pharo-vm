@@ -7603,43 +7603,40 @@ StackInterpreter >> initStackPageGC [
 
 { #category : #initialization }
 StackInterpreter >> initStackPages [
-	"Initialize the stackPages.  This version is only for simulation
-	 because Slang refuses to inline it, which makes the alloca invalid."
-	| stackPageBytes stackPagesBytes theStackMemory |
-	stackPageBytes := self stackPageByteSize.
-	stackPagesBytes := self computeStackZoneSize.
-	theStackMemory := self
-							cCode: [self alloca: stackPagesBytes]
-							inSmalltalk: [stackPages initializeWithByteSize: stackPagesBytes for: self].
-	self cCode: [self me: theStackMemory ms: 0 et: stackPagesBytes].
-	stackPages
-		initializeStack: theStackMemory
-		numSlots: stackPagesBytes / objectMemory wordSize
-		pageSize: stackPageBytes / objectMemory wordSize
-]
 
-{ #category : #initialization }
-StackInterpreter >> initStackPagesAndInterpret [
-	"Initialize the stack pages and enter interpret. Use alloca'ed memory so that when
+	"Initialize the stack pages. Use alloca'ed memory so that when
 	 we have a JIT its stack pointer will be on the native stack since alloca allocates
 	 memory on the stack. Certain thread systems use the native stack pointer as the
 	 frame ID so putting the stack anywhere else can confuse the thread system."
 
-	"This should be in its own initStackPages method but Slang can't inline
-	 C code strings."
-	| stackPageBytes stackPagesBytes theStackMemory |
+	<inline: true>
 	<var: #theStackMemory type: #'void *'>
+	| stackPageBytes stackPagesBytes theStackMemory |
 	stackPageBytes := self stackPageByteSize.
 	stackPagesBytes := self computeStackZoneSize.
 	theStackMemory := self
-							cCode: [self alloca: stackPagesBytes]
-							inSmalltalk: [stackPages initializeWithByteSize: stackPagesBytes for: self].
-	self cCode: [self me: theStackMemory ms: 0 et: stackPagesBytes].
+		                  cCode: [ self alloca: stackPagesBytes ]
+		                  inSmalltalk: [ 
+		                  stackPages
+			                  initializeWithByteSize: stackPagesBytes
+			                  for: self ].
+	self cCode: [ self me: theStackMemory ms: 0 et: stackPagesBytes ].
 	stackPages
 		initializeStack: theStackMemory
 		numSlots: stackPagesBytes / objectMemory wordSize
 		pageSize: stackPageBytes / objectMemory wordSize.
 
+	self
+		stackPagesInitializedAt: theStackMemory
+		totalSize: stackPagesBytes
+		pageSize: stackPageBytes
+]
+
+{ #category : #initialization }
+StackInterpreter >> initStackPagesAndInterpret [
+
+	self initStackPages.
+	
 	"Once the stack pages are initialized we can continue to bootstrap the system."
 	self loadInitialContext.
 	"We're ready for the heartbeat (poll interrupt)"
@@ -14565,6 +14562,12 @@ StackInterpreter >> stackPagesClass [
 	^VMBIGENDIAN
 		ifTrue: [InterpreterStackPagesMSB]
 		ifFalse: [InterpreterStackPagesLSB]
+]
+
+{ #category : #initialization }
+StackInterpreter >> stackPagesInitializedAt: theStackMemory totalSize: stackPagesBytes pageSize: stackPageBytes [
+
+	"Nothing to do, a nice hook for CoInterpreter"
 ]
 
 { #category : #accessing }
