@@ -2788,6 +2788,7 @@ TMethod >> selector: newSelector [
 TMethod >> setSelector: sel definingClass: class args: argList locals: localList block: aBlockNode primitive: aNumber properties: methodProperties comment: aComment [
 	"Initialize this method using the given information."
 
+	| tempParseTree |
 	selector := sel.
 	definingClass := class.
 	args := argList asOrderedCollection collect: [:arg | arg name].
@@ -2795,10 +2796,9 @@ TMethod >> setSelector: sel definingClass: class args: argList locals: localList
 	declarations := Dictionary new.
 	
 	"hack; allows nodes to find their parent, etc"
-	parseTree := TStatementListNode new.
-	parseTree locals: (localList  collect: [:arg | arg name]).
+	tempParseTree := parseTree := TStatementListNode new.
 	self parseTree: (aBlockNode asTranslatorNodeIn: self).
-	parseTree locals: (localList  collect: [:arg | arg name]).
+	self locals: tempParseTree locals, (localList  collect: [:arg | arg name]).
 
 	self addTypeForSelf.
 	primitive := aNumber.
