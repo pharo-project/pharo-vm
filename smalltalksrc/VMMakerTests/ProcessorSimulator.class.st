@@ -337,6 +337,12 @@ ProcessorSimulator >> finishMappingMemory [
 	self subclassResponsibility
 ]
 
+{ #category : #registers }
+ProcessorSimulator >> flushICacheFrom: startAddress to: endAddress [
+
+	simulator removeInstructionCacheFrom: startAddress to: endAddress
+]
+
 { #category : #shortcut }
 ProcessorSimulator >> fp [
 
