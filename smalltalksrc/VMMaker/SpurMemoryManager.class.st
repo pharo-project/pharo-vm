@@ -2690,11 +2690,6 @@ SpurMemoryManager >> averageObjectSizeInBytes [
 	^8 * self bytesPerOop
 ]
 
-{ #category : #snapshot }
-SpurMemoryManager >> baseAddressOfImage [
-	^oldSpaceStart
-]
-
 { #category : #'header access' }
 SpurMemoryManager >> baseHeader: obj [
 	^self long64At: obj
@@ -8548,12 +8543,6 @@ SpurMemoryManager >> memoryActiveProcess: anOop [
 
 	self storePointer: ActiveProcessIndex ofObject: self memorySchedulerPointer withValue: anOop
 	
-]
-
-{ #category : #snapshot }
-SpurMemoryManager >> memoryBaseForImageRead [
-	"Answer the address to read the image into."
-	^oldSpaceStart
 ]
 
 { #category : #simulation }

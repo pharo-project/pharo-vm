@@ -128,8 +128,7 @@ SpurImageReader >> loadImageFromFile: f withHeader: header [
 	interpreter ensureImageFormatIsUpToDate: header swapBytes.
 
 	"compute difference between old and new memory base addresses"
-	bytesToShift := objectMemory memoryBaseForImageRead
-	                - header oldBaseAddr.
+	bytesToShift := objectMemory oldSpaceStart - header oldBaseAddr.
 	
 	interpreter initializeInterpreter: bytesToShift "adjusts all oops to new location"
 ]

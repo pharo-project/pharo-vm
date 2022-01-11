@@ -10548,7 +10548,7 @@ StackInterpreter >> newHeader [
 	sizeToWrite := objectMemory imageSizeToWrite.
 	header dataSize: sizeToWrite.
 
-	header oldBaseAddr: objectMemory baseAddressOfImage.
+	header oldBaseAddr: objectMemory oldSpaceStart.
 	header initialSpecialObjectsOop: objectMemory specialObjectsOop.
 	header hdrLastHash: objectMemory lastHash.
 	header screenSize: self ioScreenSize.

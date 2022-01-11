@@ -23,7 +23,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectBaseAddress [
 
 	header := self readHeader.
 
-	self assert: header oldBaseAddr equals: memory baseAddressOfImage
+	self assert: header oldBaseAddr equals: memory oldSpaceStart
 ]
 
 { #category : #tests }
