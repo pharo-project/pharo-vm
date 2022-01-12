@@ -1943,17 +1943,10 @@ SpurMemoryManager >> allocateLargestFreeChunk [
 ]
 
 { #category : #testing }
-SpurMemoryManager >> allocateMemoryOfSize: memoryBytes [
-	<doNotGenerate>
-
-	^ memoryManager allocate: memoryBytes
-]
-
-{ #category : #testing }
 SpurMemoryManager >> allocateMemoryOfSize: memoryBytes initialAddress: initialAddress [
 	<doNotGenerate>
 
-	^ memoryManager allocate: memoryBytes
+	^ memoryManager allocate: memoryBytes desiredPosition: initialAddress
 ]
 
 { #category : #'spur bootstrap' }
