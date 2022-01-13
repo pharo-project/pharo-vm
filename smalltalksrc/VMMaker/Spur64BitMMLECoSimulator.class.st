@@ -271,15 +271,6 @@ Spur64BitMMLECoSimulator >> markAndTrace: objOop [
 	^super markAndTrace: objOop
 ]
 
-{ #category : #snapshot }
-Spur64BitMMLECoSimulator >> memoryBaseForImageRead [
-	"Answer the address to read the image into.  Override so that when bootstrapping,
-	 the segmentManager's segments are undisturbed in adjustSegmentSwizzlesBy:"
-	^bootstrapping
-		ifTrue: [0] 
-		ifFalse: [super memoryBaseForImageRead]
-]
-
 { #category : #initialization }
 Spur64BitMMLECoSimulator >> nextLongFrom: aStream [
 	"Read a 32- or 64-bit quantity from the given (binary) stream."

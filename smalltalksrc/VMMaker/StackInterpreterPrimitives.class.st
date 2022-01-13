@@ -438,14 +438,6 @@ StackInterpreterPrimitives >> logDebug: aString [
 	aString traceCr.
 ]
 
-{ #category : #logging }
-StackInterpreterPrimitives >> logDebug: aFormat _: aParameter [
-
-	<doNotGenerate>
-
-	(aFormat printf: { aParameter }) traceCr
-]
-
 { #category : #'object access primitives' }
 StackInterpreterPrimitives >> markFrame: theFPInt [
 	stackPages
@@ -4310,13 +4302,6 @@ StackInterpreterPrimitives >> readAddress: anOop [
 		ifFalse: [ self primitiveFail. ^ nil ].
 
 	^ objectMemory fetchPointer: 0 ofObject: anOop.
-]
-
-{ #category : #'I/O primitive support' }
-StackInterpreterPrimitives >> sqImageFile: imageFile Seek: position [
-
-	<doNotGenerate>
-	imageFile position: position
 ]
 
 { #category : #'object access primitives' }

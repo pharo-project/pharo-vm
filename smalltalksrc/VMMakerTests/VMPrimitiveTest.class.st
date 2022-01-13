@@ -26,6 +26,18 @@ VMPrimitiveTest >> assert: anOop contentEquals: oopToCompare [
 	
 ]
 
+{ #category : #'as yet unclassified' }
+VMPrimitiveTest >> fillNewSpace [
+
+	"Allocate enough space to generate a full new space"
+
+	self assert: (memory
+			 allocateSlots: (memory scavengeThreshold - memory freeStart
+				  - (2 * memory baseHeaderSize) roundDownTo: 8) // self wordSize
+			 format: memory arrayFormat
+			 classIndex: memory arrayClassIndexPun) isNotNil
+]
+
 { #category : #'tests - primitiveGreaterOrEqual' }
 VMPrimitiveTest >> installFloatClass [
 
@@ -42,7 +54,7 @@ VMPrimitiveTest >> installFloatClass [
 	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'instance creation' }
 VMPrimitiveTest >> newArrayWith: aCollection [ 
 	| array |
 	array := self newObjectWithSlots: aCollection size format: memory arrayFormat classIndex: memory arrayClassIndexPun.
@@ -2478,11 +2490,8 @@ VMPrimitiveTest >> testPrimitiveNewCreatesTheObjectWithCorrectSize [
 { #category : #'tests - primitiveNew' }
 VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceAllocatesInOldSpace [
 	| class |
-	"Allocate enough space to generate a full new space"
-	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 1
-				format: memory arrayFormat
-				classIndex: memory arrayClassIndexPun) isNotNil.
+
+	self fillNewSpace.
 
 	class := self newClassInOldSpaceWithSlots: 256 instSpec: memory nonIndexablePointerFormat.
 	interpreter push: class.
@@ -2495,11 +2504,8 @@ VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceAllocatesInOldSpace [
 { #category : #'tests - primitiveNew' }
 VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceScheduleGC [
 	| class |
-	"Allocate enough space to generate a full new space"
-	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 1
-				format: memory arrayFormat
-				classIndex: memory arrayClassIndexPun) isNotNil.
+
+	self fillNewSpace.
 	
 	class := self newClassInOldSpaceWithSlots: 256 instSpec: memory nonIndexablePointerFormat.
 	
@@ -2537,11 +2543,7 @@ VMPrimitiveTest >> testPrimitiveNewPinnedObjectInFullNewSpaceIsSchedulingGC [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 3 instSpec: memory nonIndexablePointerFormat.
 
-	"Allocate enough space to generate a full new space"
-	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 3
-				format: memory arrayFormat
-				classIndex: memory arrayClassIndexPun) isNotNil.
+	self fillNewSpace.
 
 	self deny: memory needGCFlag.
 	
@@ -2652,12 +2654,8 @@ VMPrimitiveTest >> testPrimitiveNewWithArgCreatesTheObjectWithCorrectSize [
 VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceAllocatesInOldSpace [
 	| newObj class |
 
-	"Allocate enough space to generate a full new space"
-	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 1
-				format: memory arrayFormat
-				classIndex: memory arrayClassIndexPun) isNotNil.
-
+	self fillNewSpace.
+	
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
 
 	interpreter push: class.
@@ -2674,12 +2672,8 @@ VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceAllocatesInOldSpace [
 VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceScheduleGC [
 	| class |
 
-	"Allocate enough space to generate a full new space"
-	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 1
-				format: memory arrayFormat
-				classIndex: memory arrayClassIndexPun) isNotNil.
-
+	self fillNewSpace.
+	
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
 
 	interpreter push: class.

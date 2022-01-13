@@ -16,7 +16,8 @@ Class {
 		'methodCacheSize',
 		'rumpCStackSize',
 		'wordSize',
-		'methodBuilder'
+		'methodBuilder',
+		'edenSize'
 	],
 	#pools : [
 		'VMBasicConstants',
@@ -68,6 +69,12 @@ VMSpurMemoryManagerTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod 
 ]
 
 { #category : #accessing }
+VMSpurMemoryManagerTest >> edenSize [
+	
+	^ 2 * 1024 + interpreter interpreterAllocationReserveBytes
+]
+
+{ #category : #accessing }
 VMSpurMemoryManagerTest >> initialCodeSize [
 	^ 0
 ]
@@ -108,11 +115,14 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForFullGC [
 VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 
 	| freeListOop firstClassTablePage |
-	memory coInterpreter bootstrapping: true.
 
 	"Initialize old space with free list, class table, hidden roots and remembered set to be able to scavenge"
 	memory initializeFreeList.
+
 	memory segmentManager collapseSegmentsPostSwizzle.
+	memory segmentManager plantBridgeAtTheEndOfMemory.
+	memory segmentManager assertBridge.
+
 	memory updateFreeLists.
 	memory initializeOldSpaceFirstFree: memory freeOldSpaceStart.
 
@@ -461,10 +471,15 @@ VMSpurMemoryManagerTest >> setUp [
 	| memoryManager |
 	super setUp.
 
+	interpreter := self newInterpreter.
+
 	"100 k at least to put the class table in the old space.
 	Get total size be a multiple of 4K so Unicorn CPU emulator accepts it"
-	oldSpaceSize := 999 * 1024.
- 	newSpaceSize := 1 * 1024.
+	oldSpaceSize := 2048 * 1024.
+	edenSize := self edenSize.
+
+	"Check #scavengerDenominator in SpurMemoryManager"
+ 	newSpaceSize := self roundToPageSize: (edenSize * 7 / 5).
 	stackSpaceSize := 9 * 4096.
 	methodCacheSize := 4096 * self wordSize.
 	rumpCStackSize := 0.
@@ -479,16 +494,13 @@ VMSpurMemoryManagerTest >> setUp [
 	memoryManager initialAddress: initialAddress.
 	memoryManager wordSize: self wordSize.
 	
-	interpreter := self newInterpreter.
 	interpreter memoryManager: memoryManager.
 
 	memory := interpreter objectMemory.
 	memory memoryManager: memoryManager.	
 	memory coInterpreter: interpreter.
 	interpreter objectMemory: memory.
-	
-	memory bootstrapping: true.
-	
+		
 	memory
 		allocateMemoryOfSize: oldSpaceSize
 		newSpaceSize: newSpaceSize
@@ -498,9 +510,16 @@ VMSpurMemoryManagerTest >> setUp [
 		primitiveTraceLogSize: (self roundToPageSize: self primitiveTraceLogSize)
 		rumpCStackSize: rumpCStackSize
 		initialAddress: initialAddress.
+			
 	memory initializePostBootstrap.
 	memory setHeapSizeAtPreviousGC.
+
+	self assert: memory objectMemory scavenger eden size > interpreter interpreterAllocationReserveBytes.
+	self assert: memory objectMemory scavengeThreshold + interpreter interpreterAllocationReserveBytes <= memory objectMemory scavenger eden limit.
+
 	memory segmentManager collapseSegmentsPostSwizzle.
+	memory segmentManager plantBridgeAtTheEndOfMemory.
+	memory segmentManager assertBridge.
 	
 	"Schedule a GC, so it does not try to schedule one"
 	memory needGCFlag: 1.
@@ -567,7 +586,7 @@ VMSpurMemoryManagerTest >> setUpUsingImage [
 	objectHeaderSize := 8 "bytes. Always.".
 	emptyObjectSize := objectHeaderSize + 8 "minimum required single empty slot, to use for forwarders".
 	
-	newSpaceSize := memory oldSpaceStart -memory newSpaceStart.
+	newSpaceSize := memory newSpaceLimit - memory newSpaceStart.
 	oldSpaceSize := memory oldSpaceSize.
 	
 	methodBuilder := VMCompiledCodeBuilder new
