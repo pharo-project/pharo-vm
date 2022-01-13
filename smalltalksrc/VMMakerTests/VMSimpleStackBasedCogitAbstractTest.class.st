@@ -752,6 +752,8 @@ VMSimpleStackBasedCogitAbstractTest >> setUp [
 
 	memory coInterpreter numStackPages: 8.
 
+	machineSimulator flushICacheFrom: cogit cogCodeBase to: initialAddress + self initialCodeSize. 
+
 	self initializeOldSpaceForScavenger.
 	self initializeStackMemory.
 	self initializeInitialStackFrame.	
