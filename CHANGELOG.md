@@ -2,6 +2,13 @@
 
 I am a changelog... do not wait too much from me :D
 
+## v9.0.11
+
+- Include FloatArrayPlugin in the build
+- Updating SDL2 to 2.0.18 for OSX X86_64
+- Using Pharo 10 image as VMMaker image
+- Fixing issue in message counting on non JIT VM
+
 ## v9.0.10
 
 - Improving error messages when looking for a symbol in Windows, and exporting symbol used when using worker thread.
