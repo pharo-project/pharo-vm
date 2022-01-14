@@ -79,9 +79,9 @@ Spur64BitCoMemoryManager >> checkMemoryMap [
 	self assert: (self isOldObject: newSpaceStart) not.
 	self assert: (self isOldObject: newSpaceLimit - self wordSize) not.
 	self assert: (self isYoungObject: newSpaceLimit) not.
-	self assert: (self isYoungObject: oldSpaceStart) not.
+	self assert: (self isYoungObject: memoryMap oldSpaceStart) not.
 	self assert: (self isYoungObject: endOfMemory) not.
-	self assert: (self isOldObject: oldSpaceStart).
+	self assert: (self isOldObject: memoryMap oldSpaceStart).
 	self assert: (self isOldObject: endOfMemory).
 
 	"we would like the following to be true, but we either choose one boundary check for
@@ -158,7 +158,7 @@ Spur64BitCoMemoryManager >> headerWhileForwardingOf: aCompiledMethodObjOop [
 Spur64BitCoMemoryManager >> initializeFreeSpaceForFacadeFrom: base to: limit [
 	"c.f. initializeFreeSpacePostLoad: freeListObj."
 	| freeListObj freeBytes |
-	newSpaceLimit := oldSpaceStart := freeStart := base.
+	memoryMap oldSpaceStart: (newSpaceLimit := freeStart := base).
 	endOfMemory := limit.
 	scavengeThreshold := limit * 3 // 4.
 	segmentManager initSegmentForInImageCompilationFrom: base to: limit.

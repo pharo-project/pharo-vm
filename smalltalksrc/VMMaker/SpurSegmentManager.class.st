@@ -232,8 +232,8 @@ SpurSegmentManager >> collapseSegmentsPostSwizzle [
 				[self allocateOrExtendSegmentInfos]].
 	numSegments := 1.
 	(segments at: 0)
-		segStart: manager oldSpaceStart;
-		segSize: (totalHeapSizeIncludingBridges := manager endOfMemory - manager oldSpaceStart).
+		segStart: manager getMemoryMap oldSpaceStart;
+		segSize: (totalHeapSizeIncludingBridges := manager endOfMemory - manager getMemoryMap oldSpaceStart).
 	manager bootstrapping ifTrue:
 		["finally plant a bridge at the end of the coalesced segment and cut back the
 		  manager's notion of the end of memory to immediately before the bridge."
@@ -243,7 +243,7 @@ SpurSegmentManager >> collapseSegmentsPostSwizzle [
 
 { #category : #'simulation only' }
 SpurSegmentManager >> computeTotalHeapSizeIncludingBridges [
-	totalHeapSizeIncludingBridges := manager endOfMemory - manager oldSpaceStart
+	totalHeapSizeIncludingBridges := manager endOfMemory - manager getMemoryMap oldSpaceStart
 ]
 
 { #category : #'growing/shrinking memory' }

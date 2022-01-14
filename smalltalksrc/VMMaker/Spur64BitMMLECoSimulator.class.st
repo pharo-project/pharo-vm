@@ -73,11 +73,6 @@ Spur64BitMMLECoSimulator >> coInterpreter: aCoInterpreter cogit: aCogit [
 	compactor coInterpreter: aCoInterpreter
 ]
 
-{ #category : #'simulation only' }
-Spur64BitMMLECoSimulator >> cogCodeBase [
-	^ memory initialAddress + Cogit guardPageSize
-]
-
 { #category : #'debug support' }
 Spur64BitMMLECoSimulator >> eek [
 	self halt

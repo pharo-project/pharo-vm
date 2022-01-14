@@ -251,7 +251,7 @@ VMSpurMemoryManagerTest >> newClassInOldSpaceWithSlots: numberOfSlots instSpec: 
 VMSpurMemoryManagerTest >> newInterpreter [
 
 	memory := self newMemory.
-
+	
 	self interpreterClass
 		initializeWithOptions: self initializationOptions
 		objectMemoryClass: memory class.
@@ -495,6 +495,7 @@ VMSpurMemoryManagerTest >> setUp [
 	memoryManager wordSize: self wordSize.
 	
 	interpreter memoryManager: memoryManager.
+	memory initializeMemoryMap.
 
 	memory := interpreter objectMemory.
 	memory memoryManager: memoryManager.	

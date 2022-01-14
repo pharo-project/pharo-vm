@@ -128,7 +128,7 @@ SpurImageReader >> loadImageFromFile: f withHeader: header [
 	interpreter ensureImageFormatIsUpToDate: header swapBytes.
 
 	"compute difference between old and new memory base addresses"
-	bytesToShift := objectMemory oldSpaceStart - header oldBaseAddr.
+	bytesToShift := objectMemory getMemoryMap oldSpaceStart - header oldBaseAddr.
 	
 	interpreter initializeInterpreter: bytesToShift "adjusts all oops to new location"
 ]
@@ -216,6 +216,8 @@ SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 	
 	| header |
 
+	objectMemory initializeMemoryMap.
+
 	header := self readHeaderFrom: f startingAt: headerStart.
 
 	objectMemory specialObjectsOop: header initialSpecialObjectsOop.
@@ -255,9 +257,9 @@ SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 	"segment sizes include the two-header-word bridge at the end of each segment."
 	totalBytesRead := 0.
 	oldBase := aHeader oldBaseAddr.
-	newBase := objectMemory oldSpaceStart.
+	newBase := objectMemory getMemoryMap oldSpaceStart.
 	nextSegmentSize := aHeader firstSegSize.
-	bridgehead := aHeader firstSegSize + objectMemory oldSpaceStart
+	bridgehead := aHeader firstSegSize + objectMemory getMemoryMap oldSpaceStart
 	              - objectMemory bridgeSize.
 
 	[ 
@@ -291,7 +293,7 @@ SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 		bridgehead := bridgehead - objectMemory bridgeSize + nextSegmentSize ].
 
 	"newBase should point just past the last bridge. all others should have been eliminated."
-	self assert: newBase - objectMemory oldSpaceStart = (totalBytesRead
+	self assert: newBase - objectMemory getMemoryMap oldSpaceStart = (totalBytesRead
 		 - (segmentManager numSegments * objectMemory bridgeSize)).
 
 	"Segments has correct swizzle values, so it can be used to swizzle objects"

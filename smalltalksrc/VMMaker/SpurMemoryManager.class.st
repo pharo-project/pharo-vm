@@ -547,14 +547,13 @@ Class {
 		'scavenger',
 		'segmentManager',
 		'compactor',
-		'memory',
 		'freeStart',
+		'memoryMap',
 		'freeOldSpaceStart',
 		'scavengeThreshold',
 		'newSpaceStart',
 		'newSpaceLimit',
 		'edenBytes',
-		'oldSpaceStart',
 		'nilObj',
 		'falseObj',
 		'trueObj',
@@ -656,7 +655,7 @@ Class {
 { #category : #translation }
 SpurMemoryManager class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
-	^{	SpurGenerationScavenger. SpurScavengeLogRecord. SpurSegmentManager. SpurSegmentInfo }, 
+	^{	SpurGenerationScavenger. SpurScavengeLogRecord. SpurSegmentManager. SpurSegmentInfo. VMMemoryMap }, 
 		self compactorClass classesForTranslation,
 		SpurNewSpaceSpace withAllSubclasses
 		
@@ -712,8 +711,8 @@ SpurMemoryManager class >> compactorClass [
 
 { #category : #translation }
 SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
-	self declareCAsOop: #(	memory freeStart scavengeThreshold newSpaceStart newSpaceLimit pastSpaceStart
-							lowSpaceThreshold freeOldSpaceStart oldSpaceStart endOfMemory)
+	self declareCAsOop: #(freeStart scavengeThreshold newSpaceStart newSpaceLimit pastSpaceStart
+							lowSpaceThreshold freeOldSpaceStart endOfMemory)
 		in: aCCodeGenerator.
 	self declareCAsUSqLong: (self allInstVarNames select: [:ivn| ivn endsWith: 'Usecs']), #(statAllocatedBytes)
 		in: aCCodeGenerator.
@@ -734,7 +733,10 @@ SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
 		declareC: 'sqInt remapBuffer[RemapBufferSize + 1 /* ', (RemapBufferSize + 1) printString, ' */]'.
 	aCCodeGenerator
 		var: #extraRoots
-		declareC: 'sqInt *extraRoots[ExtraRootsSize + 1 /* ', (ExtraRootsSize + 1) printString, ' */]'
+		declareC: 'sqInt *extraRoots[ExtraRootsSize + 1 /* ', (ExtraRootsSize + 1) printString, ' */]'.
+		
+	aCCodeGenerator 
+		var: #memoryMap type: #'VMMemoryMap *'
 ]
 
 { #category : #'api characterization' }
@@ -1390,7 +1392,7 @@ SpurMemoryManager >> adjustAllOopsBy: bytesToShift [
 	self countNumClassPagesPreSwizzle: bytesToShift.
 	(bytesToShift ~= 0
 	 or: [segmentManager numSegments > 1]) ifTrue:
-		[obj := self objectStartingAt: oldSpaceStart.
+		[obj := self objectStartingAt: memoryMap oldSpaceStart.
 		 [self oop: obj isLessThan: freeOldSpaceStart] whileTrue:
 			[classIndex := self classIndexOf: obj.
 			 classIndex >= self isForwardedObjectClassIndexPun
@@ -1984,7 +1986,7 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 		initialAddress: initialAddress
 ]
 
-{ #category : #asd }
+{ #category : #initialization }
 SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceBytes stackSize: stackBytes codeSize: codeBytes methodCacheSize: methodCacheSize primitiveTraceLogSize: primitiveLogSize rumpCStackSize: rumpCStackSize initialAddress: initialAddress [
 
 	"Intialize the receiver for bootsraping an image.
@@ -1993,7 +1995,7 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 	 will be set to sane values."
 
 	<doNotGenerate>
-	| allocatedMemory newSpaceStartOffset |
+	| allocatedMemory newSpaceStartOffset allocatedAddress |
 
 	self assert: (memoryBytes \\ self allocationUnit = 0 and: [ 
 			 newSpaceBytes \\ self allocationUnit = 0 and: [ 
@@ -2008,14 +2010,17 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 		memoryManager := SlangMemoryManager new.
 		memoryManager wordSize: self wordSize ].
 
-	memory := self
+	allocatedAddress := self
 		allocateMemoryOfSize: allocatedMemory
 		initialAddress: initialAddress.
+		
+	self assert: allocatedAddress = initialAddress.
+		
 	newSpaceStart := initialAddress + newSpaceStartOffset.
 	endOfMemory := freeOldSpaceStart := initialAddress + allocatedMemory.
 	"leave newSpace empty for the bootstrap"
 	freeStart := newSpaceBytes + newSpaceStart.
-	oldSpaceStart := newSpaceLimit := newSpaceBytes + newSpaceStart.
+	memoryMap oldSpaceStart: (newSpaceLimit := newSpaceBytes + newSpaceStart).
 	scavengeThreshold := allocatedMemory. "i.e. /don't/ scavenge."
 	scavenger := SpurGenerationScavenger simulatorClass new.
 	scavenger manager: self.
@@ -3375,10 +3380,10 @@ SpurMemoryManager >> checkMemoryMap [
 	self assert: (self isOldObject: newSpaceStart) not.
 	self assert: (self isOldObject: newSpaceLimit - self wordSize) not.
 	self assert: (self isYoungObject: newSpaceLimit) not.
-	self assert: (self isYoungObject: oldSpaceStart) not.
+	self assert: (self isYoungObject: memoryMap oldSpaceStart) not.
 	self assert: (self isYoungObject: endOfMemory) not.
 	self assert: (self isOldObject: newSpaceLimit).
-	self assert: (self isOldObject: oldSpaceStart).
+	self assert: (self isOldObject: memoryMap oldSpaceStart).
 	self assert: (self isOldObject: endOfMemory)
 ]
 
@@ -4186,7 +4191,7 @@ SpurMemoryManager >> countNumClassPagesPreSwizzle: bytesToShift [
 	"Compute the used size of the class table before swizzling.  Needed to
 	 initialize the classTableBitmap which is populated during adjustAllOopsBy:"
 	| firstObj classTableRoot nilObjPreSwizzle |
-	firstObj := self objectStartingAt: oldSpaceStart. "a.k.a. nilObj"
+	firstObj := self objectStartingAt: memoryMap oldSpaceStart. "a.k.a. nilObj"
 	"first five objects are nilObj, falseObj, trueObj, freeListsObj, classTableRootObj"
 	classTableRoot := self noInlineObjectAfter:
 							(self noInlineObjectAfter:
@@ -4196,7 +4201,7 @@ SpurMemoryManager >> countNumClassPagesPreSwizzle: bytesToShift [
 										limit: endOfMemory)
 								limit: endOfMemory)
 							limit: endOfMemory.
-	nilObjPreSwizzle := oldSpaceStart - bytesToShift.
+	nilObjPreSwizzle := memoryMap oldSpaceStart - bytesToShift.
 	numClassTablePages := self numSlotsOf: classTableRoot.
 	self assert: numClassTablePages = (self classTableRootSlots + self hiddenRootSlots).
 	2 to: numClassTablePages - 1 do:
@@ -4919,7 +4924,7 @@ SpurMemoryManager >> fireAllUnscannedEphemerons [
 { #category : #'object enumeration' }
 SpurMemoryManager >> firstAccessibleObject [
 	<inline: false>
-	self assert: nilObj = oldSpaceStart.
+	self assert: nilObj = memoryMap oldSpaceStart.
 	"flush newSpace to settle the enumeration."
 	self flushNewSpace.
 	^nilObj
@@ -5714,6 +5719,12 @@ SpurMemoryManager >> getMaxOldSpaceSize [
 
 ]
 
+{ #category : #accessing }
+SpurMemoryManager >> getMemoryMap [
+
+	^ memoryMap
+]
+
 { #category : #'simulation only' }
 SpurMemoryManager >> getStackPointer [
 	"hack around the CoInterpreter/ObjectMemory split refactoring"
@@ -6313,7 +6324,7 @@ SpurMemoryManager >> initialize [
 	scavenger := SpurGenerationScavenger simulatorClass new manager: self; yourself.
 	segmentManager := SpurSegmentManager simulatorClass new manager: self; yourself.
 	compactor := self class compactorClass simulatorClass new manager: self; yourself.
-
+	
 	"We can also initialize here anything that is only for simulation."
 	heapMap := CogCheck32BitHeapMap new.
 
@@ -6404,6 +6415,16 @@ SpurMemoryManager >> initializeMarkStack [
 	self ensureRoomOnObjStackAt: MarkStackRootIndex
 ]
 
+{ #category : #initialization }
+SpurMemoryManager >> initializeMemoryMap [ 
+
+	self 
+		cCode: [ memoryMap := self cCoerce: (self malloc: (self sizeof: VMMemoryMap))  to: #'VMMemoryMap *'] 
+		inSmalltalk: [ 
+			memoryMap := VMMemoryMap new.
+			memoryMap memoryManager: memoryManager ]
+]
+
 { #category : #'gc - scavenging' }
 SpurMemoryManager >> initializeNewSpaceVariables [
 	<inline: #never>
@@ -6447,7 +6468,7 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	"In Cog we insist that nil, true & false are next to each other (Cogit generates tighter
 	 conditional branch code as a result).  In addition, Spur places the free lists and
 	 class table root page immediately following them."
-	self assert: nilObj = oldSpaceStart.
+	self assert: nilObj = memoryMap oldSpaceStart.
 	self assert: falseObj = (self oldSpaceObjectAfter: nilObj).
 	self assert: trueObj = (self oldSpaceObjectAfter: falseObj).
 	freeListObj := self oldSpaceObjectAfter: trueObj.
@@ -7106,7 +7127,7 @@ SpurMemoryManager >> isInOldSpace: address [
 	<api>
 	^self
 		oop: address
-		isGreaterThanOrEqualTo: oldSpaceStart
+		isGreaterThanOrEqualTo: memoryMap oldSpaceStart
 		andLessThan: endOfMemory
 ]
 
@@ -7299,7 +7320,7 @@ SpurMemoryManager >> isOldObject: objOop [
 	<api>
 	"Answer if obj is old. Require that obj is non-immediate."
 	self assert: (self isNonImmediate: objOop).
-	^self oop: objOop isGreaterThanOrEqualTo: oldSpaceStart
+	^self oop: objOop isGreaterThanOrEqualTo: memoryMap oldSpaceStart
 ]
 
 { #category : #'object testing' }
@@ -8511,19 +8532,6 @@ SpurMemoryManager >> memmove: destAddress _: sourceAddress _: bytes [
 ]
 
 { #category : #accessing }
-SpurMemoryManager >> memory [
-	<cmacro: '() GIV(memory)'>
-
-	^memory
-]
-
-{ #category : #accessing }
-SpurMemoryManager >> memory: aValue [
-
-	^memory := aValue
-]
-
-{ #category : #accessing }
 SpurMemoryManager >> memoryActiveProcess [
 
 	^ self fetchPointer: ActiveProcessIndex ofObject: self memorySchedulerPointer
@@ -9465,12 +9473,6 @@ SpurMemoryManager >> oldSpaceObjectAfter: objOop [
 { #category : #accessing }
 SpurMemoryManager >> oldSpaceSize [
 	^segmentManager totalBytesInSegments
-]
-
-{ #category : #accessing }
-SpurMemoryManager >> oldSpaceStart [
-	<cmacro: '() GIV(oldSpaceStart)'>
-	^oldSpaceStart
 ]
 
 { #category : #'become implementation' }
@@ -10698,7 +10700,7 @@ SpurMemoryManager >> reverseBytesIn32BitWordsIn: segmentWordArray [
 
 { #category : #snapshot }
 SpurMemoryManager >> reverseBytesInMemory [
-	self reverseBytesFrom: oldSpaceStart to: endOfMemory
+	self reverseBytesFrom: memoryMap oldSpaceStart to: endOfMemory
 ]
 
 { #category : #scavenger }
@@ -10993,7 +10995,7 @@ SpurMemoryManager >> setHeapBase: baseOfHeap memoryLimit: memLimit endOfMemory: 
 	freeStart := scavenger eden start.
 	pastSpaceStart := scavenger pastSpace start.
 
-	oldSpaceStart := newSpaceLimit.
+	memoryMap oldSpaceStart: newSpaceLimit.
 	freeOldSpaceStart := memEnd.
 	endOfMemory := memLimit.
 

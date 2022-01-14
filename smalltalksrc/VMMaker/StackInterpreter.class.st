@@ -2048,7 +2048,7 @@ StackInterpreter >> allocateHeapMemoryForImage: f withHeader: header desiredStar
 	<var: #f type: #sqImageFile>
 	<var: #header type: #'SpurImageHeaderStruct'>
 
-	| allocationReserve headroom heapSize minimumMemory |
+	| allocationReserve headroom heapSize minimumMemory allocatedAddress |
 	
 	allocationReserve := self interpreterAllocationReserveBytes.
 
@@ -2065,19 +2065,19 @@ StackInterpreter >> allocateHeapMemoryForImage: f withHeader: header desiredStar
 	                 + allocationReserve.
 
 	"allocate a contiguous block of memory for the heap"
-	objectMemory memory: (self
+	allocatedAddress := (self
 			 allocateMemory: heapSize
 			 minimum: minimumMemory
 			 imageFile: f
 			 headerSize: header imageHeaderSize
 			 desiredPosition: desiredPositionOfHeap) asUnsignedInteger.
 			
-	objectMemory memory ifNil: [ self insufficientMemoryAvailableError ].
+	allocatedAddress ifNil: [ self insufficientMemoryAvailableError ].
 
 	^ objectMemory
-		setHeapBase: objectMemory memory
-		memoryLimit: objectMemory memory + heapSize
-		endOfMemory: objectMemory memory + header dataSize.
+		setHeapBase: allocatedAddress
+		memoryLimit: allocatedAddress + heapSize
+		endOfMemory: allocatedAddress + header dataSize.
 
 ]
 
@@ -10548,7 +10548,7 @@ StackInterpreter >> newHeader [
 	sizeToWrite := objectMemory imageSizeToWrite.
 	header dataSize: sizeToWrite.
 
-	header oldBaseAddr: objectMemory oldSpaceStart.
+	header oldBaseAddr: objectMemory getMemoryMap oldSpaceStart.
 	header initialSpecialObjectsOop: objectMemory specialObjectsOop.
 	header hdrLastHash: objectMemory lastHash.
 	header screenSize: self ioScreenSize.
