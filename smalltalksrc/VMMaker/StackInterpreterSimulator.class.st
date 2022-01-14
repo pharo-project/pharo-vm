@@ -2517,15 +2517,6 @@ StackInterpreterSimulator >> windowIsClosing [
 			do: [:ex|]]	"Cause return from #test, et al"
 ]
 
-{ #category : #'debug printing' }
-StackInterpreterSimulator >> withMemoryProtectionDo: aBlock [
-	objectMemory writeProtectMemory.
-	stackPages writeProtectMemory.
-	^aBlock ensure:
-		[objectMemory writeEnableMemory.
-		 stackPages writeEnableMemory]
-]
-
 { #category : #'frame access' }
 StackInterpreterSimulator >> withoutSmallIntegerTags: anInteger [
 	| signBit |

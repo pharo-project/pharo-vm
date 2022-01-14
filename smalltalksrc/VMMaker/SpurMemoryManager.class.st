@@ -4155,14 +4155,6 @@ SpurMemoryManager >> containsOnlyValidBecomeObjects: array1 and: array2 twoWay: 
 	^0
 ]
 
-{ #category : #simulation }
-SpurMemoryManager >> convertToArray [
-	<doNotGenerate>
-	"I dont believe it -- this *just works*"
-1halt.
-	memory:= memory as: Array
-]
-
 { #category : #'debug support' }
 SpurMemoryManager >> countMarkedAndUnmarkdObjects: printFlags [
 	"print the count of marked and unmarked objects.
@@ -6253,12 +6245,12 @@ SpurMemoryManager >> initSegmentBridgeWithBytes: numBytes at: address [
 SpurMemoryManager >> initSpaceForAllocationCheck: aNewSpace limit: limit [
 	<var: 'aNewSpace' type: #'SpurNewSpaceSpace *'>
 	<var: 'limit' type: #usqInt>
-	memory ifNotNil:
-		[self checkAllocFiller ifTrue:
+	
+	self checkAllocFiller ifTrue:
 			[aNewSpace start
 				to: limit - 1
 				by: self wordSize
-				do: [:p| self longAt: p put: p]]]
+				do: [:p| self longAt: p put: p]]
 ]
 
 { #category : #snapshot }
@@ -12749,20 +12741,4 @@ SpurMemoryManager >> wordSize [
 { #category : #'class table puns' }
 SpurMemoryManager >> wordSizeClassIndexPun [
 	^self subclassResponsibility
-]
-
-{ #category : #simulation }
-SpurMemoryManager >> writeEnableMemory [
-	<doNotGenerate>
-	1halt.
-	memory class == ReadOnlyArrayWrapper ifTrue:
-		[memory := memory array]
-]
-
-{ #category : #simulation }
-SpurMemoryManager >> writeProtectMemory [
-	<doNotGenerate>
-	1halt.
-	memory class ~~ ReadOnlyArrayWrapper ifTrue:
-		[memory := ReadOnlyArrayWrapper around: memory]
 ]

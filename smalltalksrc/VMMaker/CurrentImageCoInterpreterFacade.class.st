@@ -705,11 +705,6 @@ CurrentImageCoInterpreterFacade >> mcprimFunctionForPrimitiveIndex: primIndex [
 ]
 
 { #category : #accessing }
-CurrentImageCoInterpreterFacade >> memory [
-	^memory
-]
-
-{ #category : #accessing }
 CurrentImageCoInterpreterFacade >> methodCacheAddress [
 	"Use the top half of memory for variables, methodcache and rumpCStack,
 	 and the bottom half for allocating code and objects:

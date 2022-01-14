@@ -1973,11 +1973,6 @@ CogVMSimulator >> mcprimFunctionForPrimitiveIndex: primIndex [
 	^self mapFunctionToAddress: (super mcprimFunctionForPrimitiveIndex: primIndex)
 ]
 
-{ #category : #accessing }
-CogVMSimulator >> memory [
-	^objectMemory memory
-]
-
 { #category : #'spur bootstrap' }
 CogVMSimulator >> methodCache [
 	^methodCache
@@ -3183,15 +3178,6 @@ CogVMSimulator >> windowIsClosing [
 		[effectiveQuitBlock value]
 			on: BlockCannotReturn
 			do: [:ex|]]	"Cause return from #test, et al"
-]
-
-{ #category : #'debug printing' }
-CogVMSimulator >> withMemoryProtectionDo: aBlock [
-	objectMemory writeProtectMemory.
-	stackPages writeProtectMemory.
-	^aBlock ensure:
-		[objectMemory writeEnableMemory.
-		 stackPages writeEnableMemory]
 ]
 
 { #category : #'frame access' }
