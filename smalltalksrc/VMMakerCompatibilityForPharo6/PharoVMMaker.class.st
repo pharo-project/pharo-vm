@@ -60,7 +60,7 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager [
 			including: #()
 			configuration: VMMakerConfiguration)
 				stopOnErrors: stopOnErrors;
-				internal: #() external: #(FilePlugin SurfacePlugin);
+				internal: #() external: #(FilePlugin SurfacePlugin FloatArrayPlugin);
 				generateInterpreterFile;
 				generateCogitFiles;
 				generateExternalPlugins] valueSupplyingAnswer:true.]

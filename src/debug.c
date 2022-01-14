@@ -102,21 +102,21 @@ EXPORT(void) logMessage(int level, const char* fileName, const char* functionNam
 	//Printing the header.
 	// Ex: [DEBUG] 2017-11-14 21:57:53,661 functionName (filename:line) - This is a debug log message.
 
-	fprintf(outputStream, "[%-5s] %s.%03d %s (%s:%d):", severityName[level - 1], timestamp, 0 /* milliseconds */ , functionName, fileName, line);
+	fprintf_impl(outputStream, "[%-5s] %s.%03d %s (%s:%d):", severityName[level - 1], timestamp, 0 /* milliseconds */ , functionName, fileName, line);
 
 	//Printint the message from the var_args.
 	va_list list;
 	va_start(list, line);
 
 	format = va_arg(list, char*);
-	vfprintf(outputStream, format, list);
+	vfprintf_impl(outputStream, format, list);
 
 	va_end(list);
 
 	int formatLength = strlen(format);
 
 	if(formatLength == 0 || format[formatLength - 1] != '\n'){
-		fprintf(outputStream,"\n");
+		fprintf_impl(outputStream,"\n");
 	}
 
 	fflush(outputStream);
@@ -214,7 +214,7 @@ vm_printf(const char * format, ... ){
 		outputStream = stdout;
 	}
 
-	int returnValue = vfprintf(outputStream, format, list);
+	int returnValue = vfprintf_impl(outputStream, format, list);
 
 	va_end(list);
 

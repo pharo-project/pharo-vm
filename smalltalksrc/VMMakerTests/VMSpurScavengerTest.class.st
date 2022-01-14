@@ -258,7 +258,9 @@ VMSpurScavengerTest >> testInterpreterProfileSemaphoreShouldSurviveScanvenge [
 VMSpurScavengerTest >> testMethodInStackShouldSurviveScanvenge [
 
 	| newObjectOop newObjectHash newObjectAddress |
+
 	newObjectOop := self newZeroSizedObject.
+	
 	newObjectHash := (memory hashBitsOf: newObjectOop).
 	
 	stackBuilder addNewFrame method: newObjectOop.

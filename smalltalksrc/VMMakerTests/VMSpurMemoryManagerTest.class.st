@@ -62,13 +62,8 @@ VMSpurMemoryManagerTest >> createActiveProcess [
 VMSpurMemoryManagerTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod [
 
 	| methodOop |
-	v3Method := aPharoCompiledMethod methodClass compiler
-		            encoderClass: EncoderForV3PlusClosures;
-		            options: #( - optionFullBlockClosure );
-		            compile: aPharoCompiledMethod sourceCode.
-
 	methodOop := methodBuilder
-		             fillFromPharoMethod: v3Method;
+		             fillFromPharoMethod: aPharoCompiledMethod;
 		             buildMethod.
 	^ methodOop
 ]
@@ -85,7 +80,7 @@ VMSpurMemoryManagerTest >> initializationOptions [
 		  #BytesPerWord.
 		  self wordSize.
 		  #ObjectMemory.
-		  memory class name }
+		  memory class name}
 ]
 
 { #category : #helpers }
@@ -162,6 +157,22 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 	
 	memory scavengingGCTenuringIf: 1.
 	self deny: memory needGCFlag.
+]
+
+{ #category : #running }
+VMSpurMemoryManagerTest >> initializeSpecialSelectors [
+
+	| specialSelectorsArrayOop |
+	specialSelectorsArrayOop := self newOldSpaceObjectWithSlots:
+		                            Smalltalk specialSelectors size.
+
+	Smalltalk specialSelectors withIndexDo: [ :anElement :anIndex | 
+		memory
+			storePointer: anIndex - 1
+			ofObject: specialSelectorsArrayOop
+			withValue: (anElement forMemory: memory inMethod: nil) ].
+
+	memory splObj: SpecialSelectors put: specialSelectorsArrayOop
 ]
 
 { #category : #accessor }
@@ -495,7 +506,7 @@ VMSpurMemoryManagerTest >> setUp [
 	"Schedule a GC, so it does not try to schedule one"
 	memory needGCFlag: 1.
 	
-	methodBuilder := VMMethodBuilder new
+	methodBuilder := VMCompiledCodeBuilder new
 		interpreter: interpreter; 
 		memory: memory;
 		yourself.
@@ -560,7 +571,7 @@ VMSpurMemoryManagerTest >> setUpUsingImage [
 	newSpaceSize := memory oldSpaceStart -memory newSpaceStart.
 	oldSpaceSize := memory oldSpaceSize.
 	
-	methodBuilder := VMMethodBuilder new
+	methodBuilder := VMCompiledCodeBuilder new
 		interpreter: interpreter; 
 		memory: memory;
 		yourself.
