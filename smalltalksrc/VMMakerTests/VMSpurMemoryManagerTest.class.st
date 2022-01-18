@@ -151,7 +151,7 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 	memory initializeFreeSpacePostLoad: freeListOop.
 	memory computeFreeSpacePostSwizzle.
 		
-	memory endOfMemory: memory endOfMemory + memory bridgeSize.
+	memory getMemoryMap oldSpaceEnd: memory getMemoryMap oldSpaceEnd + memory bridgeSize.
 	
 	memory initializeOldSpaceFirstFree: (memory addressAfter: freeListOop).
 	

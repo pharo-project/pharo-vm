@@ -211,7 +211,7 @@ SpurSegmentManager >> checkSegments [
 		[:i|
 		self assert: (manager addressCouldBeObj: (segments at: i) segStart).
 		self assert: (self isValidSegmentBridge: (self bridgeAt: i))].
-	self assert: (segments at: numSegments - 1) segLimit - manager bridgeSize = manager endOfMemory
+	self assert: (segments at: numSegments - 1) segLimit - manager bridgeSize = manager getMemoryMap oldSpaceEnd 
 ]
 
 { #category : #loading }
@@ -233,7 +233,7 @@ SpurSegmentManager >> collapseSegmentsPostSwizzle [
 	numSegments := 1.
 	(segments at: 0)
 		segStart: manager getMemoryMap oldSpaceStart;
-		segSize: (totalHeapSizeIncludingBridges := manager endOfMemory - manager getMemoryMap oldSpaceStart).
+		segSize: (totalHeapSizeIncludingBridges := manager getMemoryMap oldSpaceEnd - manager getMemoryMap oldSpaceStart).
 	manager bootstrapping ifTrue:
 		["finally plant a bridge at the end of the coalesced segment and cut back the
 		  manager's notion of the end of memory to immediately before the bridge."
@@ -243,7 +243,7 @@ SpurSegmentManager >> collapseSegmentsPostSwizzle [
 
 { #category : #'simulation only' }
 SpurSegmentManager >> computeTotalHeapSizeIncludingBridges [
-	totalHeapSizeIncludingBridges := manager endOfMemory - manager getMemoryMap oldSpaceStart
+	totalHeapSizeIncludingBridges := manager getMemoryMap oldSpaceEnd - manager getMemoryMap oldSpaceStart
 ]
 
 { #category : #'growing/shrinking memory' }
@@ -392,7 +392,7 @@ SpurSegmentManager >> isInSegments: address [
 { #category : #testing }
 SpurSegmentManager >> isValidSegmentBridge: objOop [
 	"bridges bridge the gaps between segments. They are the last object in each segment."
-	^((manager addressCouldBeObj: objOop) or: [objOop = manager endOfMemory])
+	^((manager addressCouldBeObj: objOop) or: [objOop = manager getMemoryMap oldSpaceEnd])
 	  and: [(manager isSegmentBridge: objOop)
 	  and: [(manager hasOverflowHeader: objOop)
 		or: [(manager numSlotsOfAny: objOop) = 0]]]
@@ -449,10 +449,10 @@ SpurSegmentManager >> numSegments [
 { #category : #bootstrapping }
 SpurSegmentManager >> plantBridgeAtTheEndOfMemory [
 
-	self assert: manager endOfMemory = (segments at: 0) segLimit.
+	self assert: manager getMemoryMap oldSpaceEnd = (segments at: 0) segLimit.
 	manager
 		initSegmentBridgeWithBytes: manager bridgeSize
-		at: manager endOfMemory - manager bridgeSize
+		at: manager getMemoryMap oldSpaceEnd - manager bridgeSize
 ]
 
 { #category : #snapshot }
@@ -461,10 +461,10 @@ SpurSegmentManager >> postSnapshot [
 	<inline: false>
 	| seg |
 	<var: #seg type: #'SpurSegmentInfo *'>
-	"Set endOfMemory first, to avoid assert fails in freeChunkWithBytes:at:."
+	"Set oldSpaceEnd first, to avoid assert fails in freeChunkWithBytes:at:."
 	seg := self addressOf: (segments at: numSegments - 1).
 	seg lastFreeObject
-		ifNil: [self assert: manager endOfMemory = (seg segLimit - manager bridgeSize)]
+		ifNil: [self assert: manager getMemoryMap oldSpaceEnd = (seg segLimit - manager bridgeSize)]
 		ifNotNil: [manager setEndOfMemory: seg savedSegSize + seg segStart - manager bridgeSize].
 
 	numSegments - 1 to: 0 by: -1 do:
@@ -513,7 +513,7 @@ SpurSegmentManager >> prepareForSnapshot [
 		[:freeChunk| | node next seg |
 		 node := freeChunk.
 		 [node ~= 0] whileTrue:
-			[next := manager objectAfter: node limit: manager endOfMemory.
+			[next := manager objectAfter: node limit: manager getMemoryMap oldSpaceEnd .
 			 (manager isSegmentBridge: next)
 				ifTrue:
 					[seg := self segmentContainingObj: node.

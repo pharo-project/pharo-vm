@@ -80,9 +80,9 @@ Spur32BitCoMemoryManager >> checkMemoryMap [
 	self assert: (self isOldObject: newSpaceLimit - self wordSize) not.
 	self assert: (self isYoungObject: newSpaceLimit) not.
 	self assert: (self isYoungObject: memoryMap oldSpaceStart) not.
-	self assert: (self isYoungObject: endOfMemory) not.
+	self assert: (self isYoungObject: memoryMap oldSpaceEnd) not.
 	self assert: (self isOldObject: memoryMap oldSpaceStart).
-	self assert: (self isOldObject: endOfMemory).
+	self assert: (self isOldObject: memoryMap oldSpaceEnd).
 
 	"we would like the following to be true, but we either choose one boundary check for
 	 cogMethods vs objects (isMachineCodeFrame: et al) or one boundary check for
@@ -152,7 +152,8 @@ Spur32BitCoMemoryManager >> initializeFreeSpaceForFacadeFrom: base to: limit [
 	"c.f. initializeFreeSpacePostLoad: freeListObj."
 	| freeListObj freeBytes |
 	memoryMap oldSpaceStart: (newSpaceLimit := freeStart := base).
-	endOfMemory := limit.
+	memoryMap oldSpaceEnd: limit.
+	
 	scavengeThreshold := limit * 3 // 4.
 	segmentManager initSegmentForInImageCompilationFrom: base to: limit.
 	freeListObj := self allocateSlots: self numFreeLists

@@ -195,16 +195,16 @@ SpurPlanningCompactor >> check: obj [
 
 { #category : #private }
 SpurPlanningCompactor >> coalesceFrom: maybeStartOfFree [
-	"manager printOopsFrom: maybeStartOfFree to: manager endOfMemory"
+	"manager printOopsFrom: maybeStartOfFree to: manager getMemoryMap oldSpaceEnd"
 	<var: 'maybeStartOfFree' type: #usqInt>
 	|obj next objBytes nextBytes|
 	<var: 'obj' type: #usqInt>
 	<var: 'next' type: #usqInt>
-	maybeStartOfFree >= manager endOfMemory ifTrue:
+	maybeStartOfFree >= manager getMemoryMap oldSpaceEnd ifTrue:
 		[^self].
 	obj := manager objectStartingAt: maybeStartOfFree.
 	[next := manager oldSpaceObjectAfter: obj.
-	 next < manager endOfMemory] whileTrue:
+	 next < manager getMemoryMap oldSpaceEnd] whileTrue:
 		[((manager isFreeObject: obj) and: [manager isFreeObject: next])
 			ifTrue:
 				[objBytes := manager bytesInObject: obj.
@@ -347,7 +347,7 @@ SpurPlanningCompactor >> copyAndUnmarkMobileObjects [
 							ifFalse:
 								[firstFreeObject := previousPin].
 						^false]]]].
-	self freeFrom: toFinger upTo: manager endOfMemory nextObject: (previousPin ifNil: [objectAfterLastMobileObject ifNil: [manager objectAfter: firstFreeObject]]).
+	self freeFrom: toFinger upTo: manager getMemoryMap oldSpaceEnd nextObject: (previousPin ifNil: [objectAfterLastMobileObject ifNil: [manager objectAfter: firstFreeObject]]).
 	self coalesceFrom: toFinger.
 	^true
 ]
@@ -384,13 +384,13 @@ SpurPlanningCompactor >> findHighestSuitableFreeBlock: spaceEstimate [
 	"If a freeBlock of size at least spaceEstimate exists high enough in the heap, choose it.
 	 Ignoring pinned objects for now, the total ammount of shrinkage is expected to be
 	 at least totalFreeOldSpace (because of collected objects).  So any free chunk which is
-	 at or above endOfMemory - totalFreeOldSpace should not be corrupted during compaction.
+	 at or above oldSpaceEnd - totalFreeOldSpace should not be corrupted during compaction.
 	 Let's play with this for a while and see how we get on."
 	<inline: true>
 	manager findLargestFreeChunk ifNotNil:
 		[:largestFreeChunk|
 		((manager bytesInObject: largestFreeChunk) >= spaceEstimate
-		 and: [largestFreeChunk asUnsignedInteger > (manager endOfMemory - manager freeSize) asUnsignedInteger]) ifTrue:
+		 and: [largestFreeChunk asUnsignedInteger > (manager getMemoryMap oldSpaceEnd - manager freeSize) asUnsignedInteger]) ifTrue:
 			[^largestFreeChunk]].
 	^nil
 ]
@@ -471,7 +471,7 @@ SpurPlanningCompactor >> initializeScanCheckingForFullyCompactedHeap [
 	self reinitializeScanFrom: manager hiddenRootsObject.
 	firstFreeObject ifNil:
 		[self error: 'uncompactable heap; no unmarked objects found'].
-	^firstMobileObject >= manager endOfMemory
+	^firstMobileObject >= manager getMemoryMap oldSpaceEnd 
 ]
 
 { #category : #private }
@@ -613,7 +613,7 @@ SpurPlanningCompactor >> reinitializeScanFrom: initialObject [
 	"Search for firstFreeObject and firstMobileObject from initialObject, which is the
 	 hiddenRootsObject on the first pass, and the objectAfterLastMobileObject on
 	 subsequent passes)."
-	firstMobileObject := manager endOfMemory.
+	firstMobileObject := manager getMemoryMap oldSpaceEnd.
 	firstFreeObject := self scanForFirstFreeAndFirstMobileObjectFrom: initialObject.
 	firstFreeObject ifNotNil:
 		[mobileStart := manager startOfObject: firstFreeObject].
@@ -719,7 +719,7 @@ SpurPlanningCompactor >> selectSavedFirstFieldsSpace [
 	 the alternatives can't be had."
 	<inline: true>
 	| spaceEstimate sizeOfEden |
-	spaceEstimate := manager endOfMemory - manager firstObject // 40.
+	spaceEstimate := manager getMemoryMap oldSpaceEnd - manager firstObject // 40.
 	sizeOfEden := scavenger eden limit - scavenger eden start.
 	spaceEstimate > sizeOfEden ifTrue:
 		[(self findHighestSuitableFreeBlock: spaceEstimate) ifNotNil:

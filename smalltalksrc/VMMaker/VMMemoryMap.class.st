@@ -3,7 +3,8 @@ Class {
 	#superclass : #VMStructType,
 	#instVars : [
 		'memoryManager',
-		'oldSpaceStart'
+		'oldSpaceStart',
+		'oldSpaceEnd'
 	],
 	#category : #'VMMaker-Memory'
 }
@@ -31,6 +32,17 @@ VMMemoryMap >> memoryManager [
 VMMemoryMap >> memoryManager: anObject [
 
 	memoryManager := anObject
+]
+
+{ #category : #accessing }
+VMMemoryMap >> oldSpaceEnd [
+	^ oldSpaceEnd
+]
+
+{ #category : #accessing }
+VMMemoryMap >> oldSpaceEnd: anInteger [ 
+	
+	oldSpaceEnd := anInteger
 ]
 
 { #category : #accessing }

@@ -351,8 +351,8 @@ Spur32BitMMLECoSimulator >> setUpForUseByFacade: aCurrentImageCoInterpreterFacad
 	<doNotGenerate>
 	self edenBytes: 0.
 	self setHeapBase: self freeStart
-		memoryLimit: self endOfMemory
-		endOfMemory: self endOfMemory
+		memoryLimit: memoryMap oldSpaceEnd
+		endOfMemory: memoryMap oldSpaceEnd
 ]
 
 { #category : #'memory access' }

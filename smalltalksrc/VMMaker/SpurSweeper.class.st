@@ -33,8 +33,8 @@ SpurSweeper >> bulkFreeChunkFrom: objOop [
 			[self assert: (manager isFreeObject: currentObj) not.
 			 scavenger forgetObject: currentObj].
 	next := manager objectStartingAt: start + bytes.
-	self assert: ((manager oop: next isLessThan: manager endOfMemory)
-		or: [next = manager endOfMemory and: [(self canUseAsFreeSpace: next) not]]).
+	self assert: ((manager oop: next isLessThan: manager getMemoryMap oldSpaceEnd)
+		or: [next = manager getMemoryMap oldSpaceEnd and: [(self canUseAsFreeSpace: next) not]]).
 	self canUseAsFreeSpace: next] 
 		whileTrue: [currentObj := next].
 	
@@ -62,11 +62,11 @@ SpurSweeper >> globalSweep [
 
 	| currentEntity |
 	currentEntity := manager firstObject.
-	[self oop: currentEntity isLessThan: manager endOfMemory] whileTrue:
+	[self oop: currentEntity isLessThan: manager getMemoryMap oldSpaceEnd] whileTrue:
 		[(self canUseAsFreeSpace: currentEntity) 
 			ifTrue: [currentEntity := self bulkFreeChunkFrom: currentEntity]
 			ifFalse: [self unmark: currentEntity].
-		 currentEntity := manager objectAfter: currentEntity limit: manager endOfMemory].
+		 currentEntity := manager objectAfter: currentEntity limit: manager getMemoryMap oldSpaceEnd].
 			
 	manager checkFreeSpace: GCModeFull.
 	manager unmarkSurvivingObjectsForCompact.

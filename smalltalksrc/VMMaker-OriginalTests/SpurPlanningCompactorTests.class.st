@@ -174,7 +174,7 @@ SpurPlanningCompactorTests >> testRandomAssortment: random with: theVM [
 	"useful pre-compaction printing:"
 	false ifTrue:
 		[liveCount := pinCount := 0.
-		 om allOldSpaceEntitiesFrom: (om objectAfter: lastObj) to: (om objectBefore: om endOfMemory) do:
+		 om allOldSpaceEntitiesFrom: (om objectAfter: lastObj) to: (om objectBefore: om getMemoryMap oldSpaceEnd) do:
 			[:o|
 			om coInterpreter print:
 				((om isMarked: o)
@@ -184,7 +184,7 @@ SpurPlanningCompactorTests >> testRandomAssortment: random with: theVM [
 								printPaddedWith: Character space to: 3 base: 10), ' '] 
 					ifFalse: ['     ']).
 			 om printEntity: o].
-		 om allOldSpaceEntitiesFrom: (om objectAfter: lastObj) to: (om objectBefore: om endOfMemory) do:
+		 om allOldSpaceEntitiesFrom: (om objectAfter: lastObj) to: (om objectBefore: om getMemoryMap oldSpaceEnd) do:
 			[:o|
 			((om isMarked: o) and: [om isPinned: o]) ifTrue:
 				[om printEntity: o]]].
@@ -197,7 +197,7 @@ SpurPlanningCompactorTests >> testRandomAssortment: random with: theVM [
 	"useful post-compaction printing:"
 	false ifTrue:
 		[liveCount := pinCount := 0.
-		 om allOldSpaceEntitiesFrom: (om objectAfter: lastObj) to: (om objectBefore: om endOfMemory) do:
+		 om allOldSpaceEntitiesFrom: (om objectAfter: lastObj) to: (om objectBefore: om getMemoryMap oldSpaceEnd) do:
 			[:o|
 			om coInterpreter print:
 				((om isFreeObject: o)
@@ -207,7 +207,7 @@ SpurPlanningCompactorTests >> testRandomAssortment: random with: theVM [
 								printPaddedWith: Character space to: 3 base: 10), ' '] 
 					ifTrue: ['     ']).
 			 om printEntity: o].
-		 om allOldSpaceEntitiesFrom: (om objectAfter: lastObj) to: (om objectBefore: om endOfMemory) do:
+		 om allOldSpaceEntitiesFrom: (om objectAfter: lastObj) to: (om objectBefore: om getMemoryMap oldSpaceEnd) do:
 			[:o|
 			(om isPinned: o) ifTrue:
 				[om printEntity: o]]].
@@ -229,7 +229,7 @@ SpurPlanningCompactorTests >> testRandomAssortment: random with: theVM [
 	obj := lastObj.
 	1 to: totalLive + totalPinned do:
 		[:n| | expectedFill actualFill |
-		 [obj := om objectAfter: obj. (om isEnumerableObject: obj) or: [obj >= om endOfMemory]] whileFalse.
+		 [obj := om objectAfter: obj. (om isEnumerableObject: obj) or: [obj >= om getMemoryMap oldSpaceEnd]] whileFalse.
 		 expectedFill := (om isPinned: obj)
 							ifTrue: [pinFill + (pinCount := pinCount + 1)]
 							ifFalse: [liveFill + (liveCount := liveCount + 1)].
@@ -237,7 +237,7 @@ SpurPlanningCompactorTests >> testRandomAssortment: random with: theVM [
 			[:i| self assert: expectedFill equals: (actualFill := om fetchPointer: i - 1 ofObject: obj)]].
 	"They should be the last objects..."
 	self assert: (om isFreeObject: (om objectAfter: obj)).
-	self assert: om endOfMemory equals: (om addressAfter: (om objectAfter: obj)).
+	self assert: om getMemoryMap oldSpaceEnd equals: (om addressAfter: (om objectAfter: obj)).
 	self checkForLeaksIn: om
 ]
 
@@ -314,7 +314,7 @@ SpurPlanningCompactorTests >> testRandomAssortmentWithNewSegment: random with: t
 	"useful pre-compaction printing:"
 	false ifTrue:
 		[liveCount := pinCount := 0.
-		 om allOldSpaceEntitiesFrom: (om objectAfter: lastObj) to: (om objectBefore: om endOfMemory) do:
+		 om allOldSpaceEntitiesFrom: (om objectAfter: lastObj) to: (om objectBefore: om getMemoryMap oldSpaceEnd) do:
 			[:o|
 			om coInterpreter print:
 				((om isMarked: o)
@@ -324,7 +324,7 @@ SpurPlanningCompactorTests >> testRandomAssortmentWithNewSegment: random with: t
 								printPaddedWith: Character space to: 3 base: 10), ' '] 
 					ifFalse: ['     ']).
 			 om printEntity: o].
-		 om allOldSpaceEntitiesFrom: (om objectAfter: lastObj) to: (om objectBefore: om endOfMemory) do:
+		 om allOldSpaceEntitiesFrom: (om objectAfter: lastObj) to: (om objectBefore: om getMemoryMap oldSpaceEnd) do:
 			[:o|
 			((om isMarked: o) and: [om isPinned: o]) ifTrue:
 				[om printEntity: o]]].
@@ -337,7 +337,7 @@ SpurPlanningCompactorTests >> testRandomAssortmentWithNewSegment: random with: t
 	"useful post-compaction printing:"
 	false ifTrue:
 		[liveCount := pinCount := 0.
-		 om allOldSpaceEntitiesFrom: (om objectAfter: lastObj) to: (om objectBefore: om endOfMemory) do:
+		 om allOldSpaceEntitiesFrom: (om objectAfter: lastObj) to: (om objectBefore: om getMemoryMap oldSpaceEnd) do:
 			[:o|
 			om coInterpreter print:
 				((om isFreeObject: o)
@@ -347,7 +347,7 @@ SpurPlanningCompactorTests >> testRandomAssortmentWithNewSegment: random with: t
 								printPaddedWith: Character space to: 3 base: 10), ' '] 
 					ifTrue: ['     ']).
 			 om printEntity: o].
-		 om allOldSpaceEntitiesFrom: (om objectAfter: lastObj) to: (om objectBefore: om endOfMemory) do:
+		 om allOldSpaceEntitiesFrom: (om objectAfter: lastObj) to: (om objectBefore: om getMemoryMap oldSpaceEnd) do:
 			[:o|
 			(om isPinned: o) ifTrue:
 				[om printEntity: o]]].
@@ -369,7 +369,7 @@ SpurPlanningCompactorTests >> testRandomAssortmentWithNewSegment: random with: t
 	obj := lastObj.
 	1 to: totalLive + totalPinned do:
 		[:n| | expectedFill actualFill |
-		 [obj := om objectAfter: obj. (om isEnumerableObject: obj) or: [obj >= om endOfMemory]] whileFalse.
+		 [obj := om objectAfter: obj. (om isEnumerableObject: obj) or: [obj >= om getMemoryMap oldSpaceEnd]] whileFalse.
 		 expectedFill := (om isPinned: obj)
 							ifTrue: [pinFill + (pinCount := pinCount + 1)]
 							ifFalse: [liveFill + (liveCount := liveCount + 1)].
@@ -381,7 +381,7 @@ SpurPlanningCompactorTests >> testRandomAssortmentWithNewSegment: random with: t
 	self assert: (om isFreeObject: (om objectAfter: obj)).
 	self assert: (om isSegmentBridge: (om objectAfter: (om objectAfter: obj))).
 	self assert: (om isFreeObject: (om objectAfter: (om objectAfter: (om objectAfter: obj)))).
-	self assert: om endOfMemory equals: (om addressAfter: (om objectAfter: (om objectAfter: (om objectAfter: obj)))).
+	self assert: om getMemoryMap oldSpaceEnd equals: (om addressAfter: (om objectAfter: (om objectAfter: (om objectAfter: obj)))).
 
 	"And the memory should shrink if the shrinkThreshold is low enough"
 	om shrinkThreshold: om growHeadroom.
@@ -463,7 +463,7 @@ SpurPlanningCompactorTests >> testRunOfContiguousPinnedObjects [
 	0 to: 99 do: [:i| self assert: 16rAA55AA55 equals: (om fetchPointer: i ofObject: obj)].
 	"It should be the last object..."
 	self assert: (om isFreeObject: (om objectAfter: obj)).
-	self assert: om endOfMemory equals: (om addressAfter: (om objectAfter: obj))
+	self assert: om getMemoryMap oldSpaceEnd equals: (om addressAfter: (om objectAfter: obj))
 		
 ]
 
@@ -522,7 +522,7 @@ SpurPlanningCompactorTests >> testRunOfNonContiguousPinnedObjects [
 	0 to: 99 do: [:i| self assert: 16rAA55AA55 equals: (om fetchPointer: i ofObject: obj)].
 	"It should be the last object..."
 	self assert: (om isFreeObject: (om objectAfter: obj)).
-	self assert: om endOfMemory equals: (om addressAfter: (om objectAfter: obj))
+	self assert: om getMemoryMap oldSpaceEnd equals: (om addressAfter: (om objectAfter: obj))
 		
 ]
 
@@ -589,7 +589,7 @@ SpurPlanningCompactorTests >> testRunOfNonContiguousPinnedObjectsWithSpaceInBetw
 		 obj := om objectAfter: obj].
 	"They should be the last objects..."
 	self assert: (om isFreeObject: obj).
-	self assert: om endOfMemory equals: (om addressAfter: obj)
+	self assert: om getMemoryMap oldSpaceEnd equals: (om addressAfter: obj)
 		
 ]
 
@@ -645,7 +645,7 @@ SpurPlanningCompactorTests >> testRunOfObjectsWithExtraSegment [
 	self assert: (om isFreeObject: obj).
 	self assert: (om isSegmentBridge: (om objectAfter: obj)).
 	self assert: (om isFreeObject: (om objectAfter: (om objectAfter: obj))).
-	self assert: om endOfMemory equals: (om addressAfter: (om objectAfter: (om objectAfter: obj))).
+	self assert: om getMemoryMap oldSpaceEnd equals: (om addressAfter: (om objectAfter: (om objectAfter: obj))).
 
 	"And the memory should shrink if the shrinkThreshold is low enough"
 	om shrinkThreshold: om growHeadroom.

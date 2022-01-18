@@ -103,7 +103,7 @@ SpurSelectiveCompactor >> compactSegment: segInfo freeStart: initialFreeStart se
 				 manager forward: currentEntity to: (manager objectStartingAt: fillStart).
 				 fillStart := fillStart + bytesToCopy.
 				 self assert: (self oop: fillStart isLessThan: (segmentToFill segLimit - manager bridgeSize))].
-		 currentEntity := manager objectAfter: currentEntity limit: manager endOfMemory].
+		 currentEntity := manager objectAfter: currentEntity limit: manager getMemoryMap oldSpaceEnd].
 	self assert: currentEntity = bridge.
 	^ fillStart
 ]
@@ -170,7 +170,7 @@ SpurSelectiveCompactor >> findAndSetSegmentToFill [
 		[:i| 
 		 segInfo := self addressOf: (manager segmentManager segments at: i).
 		 firstEntity := manager objectStartingAt: segInfo segStart.
-		 ((manager isFreeObject: firstEntity) and: [(manager objectAfter: firstEntity limit: manager endOfMemory) = (manager segmentManager bridgeFor: segInfo)])
+		 ((manager isFreeObject: firstEntity) and: [(manager objectAfter: firstEntity limit: manager getMemoryMap oldSpaceEnd) = (manager segmentManager bridgeFor: segInfo)])
 			ifTrue: [segmentToFill := segInfo. ^i]].
 	^-1
 	
@@ -245,7 +245,7 @@ SpurSelectiveCompactor >> globalSweepAndSegmentOccupationAnalysis [
 	nextBridge := manager segmentManager bridgeAt: 0.
 	segmentIndex := currentUnused := currentUsed := 0.
 	self setLastLilliputianChunkAtindex: 0 to: 0.
-	[self oop: currentEntity isLessThan: manager endOfMemory] whileTrue:
+	[self oop: currentEntity isLessThan: manager getMemoryMap oldSpaceEnd] whileTrue:
 		[currentEntity = nextBridge "End of segment, set occupation"
 			ifTrue: 
 				[self 
@@ -264,7 +264,7 @@ SpurSelectiveCompactor >> globalSweepAndSegmentOccupationAnalysis [
 					ifFalse: 
 						[self unmark: currentEntity.
 						 currentUsed := currentUsed + (manager bytesInObject: currentEntity)]].
-		 currentEntity := manager objectAfter: currentEntity limit: manager endOfMemory].
+		 currentEntity := manager objectAfter: currentEntity limit: manager getMemoryMap oldSpaceEnd].
 	"set last segment details"	
 	self 
 		setOccupationAtIndex: segmentIndex

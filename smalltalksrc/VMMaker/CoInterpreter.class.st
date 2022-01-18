@@ -3807,7 +3807,7 @@ CoInterpreter >> iframeSavedIP: theFP put: savedIP [
 CoInterpreter >> initStackPagesAndInterpret [
 
 	self sqMakeMemoryNotExecutableFrom: objectMemory startOfMemory asUnsignedInteger
-		To: objectMemory memoryLimit asUnsignedInteger.
+		To: objectMemory getMemoryMap oldSpaceEnd asUnsignedInteger.
 
 	self initStackPages.
 

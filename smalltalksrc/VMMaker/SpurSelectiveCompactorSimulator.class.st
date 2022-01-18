@@ -24,7 +24,7 @@ SpurSelectiveCompactorSimulator >> checkOnlyForwardersOrWordNonImm: segInfo [
 	[self oop: currentEntity isLessThan: bridge] whileTrue: 
 		[self assert: ((manager isWordsNonImm: currentEntity) or: [manager isForwarded: currentEntity]).
 		 prevEntity := currentEntity.
-		 currentEntity := manager objectAfter: currentEntity limit: manager endOfMemory].
+		 currentEntity := manager objectAfter: currentEntity limit: manager getMemoryMap oldSpaceEnd].
 	self assert: currentEntity = bridge.
 	self talkNoCr: ' OK'.
 ]
@@ -40,9 +40,9 @@ SpurSelectiveCompactorSimulator >> checkSegmentToFillLooksAllRight [
 	[self oop: currentEntity isLessThan: bridge] whileTrue: 
 		[(manager isFreeObject: currentEntity) 
 			ifTrue: "should be last entity"
-				[self assert: (manager objectAfter: currentEntity limit: manager endOfMemory) = bridge.
+				[self assert: (manager objectAfter: currentEntity limit: manager getMemoryMap oldSpaceEnd) = bridge.
 				 manager assertValidFreeObject: currentEntity].
-		 currentEntity := manager objectAfter: currentEntity limit: manager endOfMemory].
+		 currentEntity := manager objectAfter: currentEntity limit: manager getMemoryMap oldSpaceEnd].
 	"End of iteration should end on bridge"
 	self assert: currentEntity = bridge.
 	self talkNoCr: ' OK'.
@@ -60,7 +60,7 @@ SpurSelectiveCompactorSimulator >> checkSegmentsIterable [
 		 bridge := manager segmentManager bridgeFor: segInfo.
 		 currentEntity := manager objectStartingAt: segInfo segStart.
 		 [self oop: currentEntity isLessThan: bridge] whileTrue: 
-			[currentEntity := manager objectAfter: currentEntity limit: manager endOfMemory].
+			[currentEntity := manager objectAfter: currentEntity limit: manager getMemoryMap oldSpaceEnd].
 		 "End of iteration should end on bridge"
 		 self assert: currentEntity = bridge.].
 	self talkNoCr: ' OK'.
