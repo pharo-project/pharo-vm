@@ -94,7 +94,7 @@ VMSimpleStackBasedCogitBytecodeTest >> doTestReturnReturnsObjectInReturnRegister
 	self compile: compilationBlock.
 	self runUntilReturn.
 
-	self assert: machineSimulator returnRegisterValue equals: anAddress
+	self assert: machineSimulator receiverRegisterValue equals: anAddress
 ]
 
 { #category : #'tests - single bytecode - return' }
@@ -986,7 +986,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForFullBlockWithFullFr
 	
 	self runFrom: method until: cogit ceLargeActiveContextInFullBlockTrampoline.
 	
-	self assert: machineSimulator instructionPointerValue equals: cogit ceLargeActiveContextInFullBlockTrampoline.
+	self assert: machineSimulator instructionPointerRegisterValue equals: cogit ceLargeActiveContextInFullBlockTrampoline.
 	self assert: machineSimulator sendNumberOfArgumentsRegisterValue equals: numberOfArguments.
 ]
 
@@ -1015,7 +1015,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForFullBlockWithSmallF
 	
 	self runFrom: method until: cogit ceSmallActiveContextInFullBlockTrampoline.
 	
-	self assert: machineSimulator instructionPointerValue equals: cogit ceSmallActiveContextInFullBlockTrampoline.
+	self assert: machineSimulator instructionPointerRegisterValue equals: cogit ceSmallActiveContextInFullBlockTrampoline.
 	self assert: machineSimulator sendNumberOfArgumentsRegisterValue equals: numberOfArguments.
 ]
 
@@ -1043,7 +1043,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForMethodWithLargeFram
 	
 	self runFrom: method until: cogit ceLargeActiveContextInMethodTrampoline.
 	
-	self assert: machineSimulator instructionPointerValue equals: cogit ceLargeActiveContextInMethodTrampoline.
+	self assert: machineSimulator instructionPointerRegisterValue equals: cogit ceLargeActiveContextInMethodTrampoline.
 	self assert: machineSimulator sendNumberOfArgumentsRegisterValue equals: numberOfArguments.
 ]
 
@@ -1071,7 +1071,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForMethodWithSmallFram
 	
 	self runFrom: method until: cogit ceSmallActiveContextInMethodTrampoline.
 	
-	self assert: machineSimulator instructionPointerValue equals: cogit ceSmallActiveContextInMethodTrampoline.
+	self assert: machineSimulator instructionPointerRegisterValue equals: cogit ceSmallActiveContextInMethodTrampoline.
 	self assert: machineSimulator sendNumberOfArgumentsRegisterValue equals: numberOfArguments.
 ]
 
@@ -1100,7 +1100,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForVanillaBlockWithLar
 	
 	self runFrom: method until: cogit ceLargeActiveContextInBlockTrampoline.
 	
-	self assert: machineSimulator instructionPointerValue equals: cogit ceLargeActiveContextInBlockTrampoline.
+	self assert: machineSimulator instructionPointerRegisterValue equals: cogit ceLargeActiveContextInBlockTrampoline.
 	self assert: machineSimulator sendNumberOfArgumentsRegisterValue equals: numberOfArguments.
 ]
 
@@ -1129,7 +1129,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForVanillaBlockWithSma
 	
 	self runFrom: method until: cogit ceSmallActiveContextInBlockTrampoline.
 	
-	self assert: machineSimulator instructionPointerValue equals: cogit ceSmallActiveContextInBlockTrampoline.
+	self assert: machineSimulator instructionPointerRegisterValue equals: cogit ceSmallActiveContextInBlockTrampoline.
 	self assert: machineSimulator sendNumberOfArgumentsRegisterValue equals: numberOfArguments.
 ]
 
@@ -1436,8 +1436,8 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsPushesRetu
 	self runFrom: sendAddress until: sendTrampolineAddress.
 		
 	"Now return from called function/method and execute until the end of the send instruction"
-	machineSimulator returnRegisterValue: (memory integerObjectOf: 42).
-	self runFrom: machineSimulator instructionPointerValue until: self getLastAddress.
+	machineSimulator receiverRegisterValue: (memory integerObjectOf: 42).
+	self runFrom: machineSimulator instructionPointerRegisterValue until: self getLastAddress.
 	
 	self assert: self popAddress equals: (memory integerObjectOf: 42).
 ]
@@ -1564,8 +1564,8 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendOneArgSpecialMessagePushesReturnV
 	self runFrom: sendAddress until: sendTrampolineAddress.
 	
 	"Now return from called function/method and execute until the end of the send instruction"
-	machineSimulator returnRegisterValue: (memory integerObjectOf: 42).
-	self runFrom: machineSimulator instructionPointerValue until: self getLastAddress.
+	machineSimulator receiverRegisterValue: (memory integerObjectOf: 42).
+	self runFrom: machineSimulator instructionPointerRegisterValue until: self getLastAddress.
 	
 	self assert: self popAddress equals: (memory integerObjectOf: 42).
 ]
@@ -1673,8 +1673,8 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendTwoArgSpecialMessagePushesReturnV
 	self runFrom: sendAddress until: sendTrampolineAddress.
 	
 	"Now return from called function/method and execute until the end of the send instruction"
-	machineSimulator returnRegisterValue: (memory integerObjectOf: 42).
-	self runFrom: machineSimulator instructionPointerValue until: self getLastAddress.
+	machineSimulator receiverRegisterValue: (memory integerObjectOf: 42).
+	self runFrom: machineSimulator instructionPointerRegisterValue until: self getLastAddress.
 	
 	self assert: self popAddress equals: (memory integerObjectOf: 42).
 ]
@@ -1766,8 +1766,8 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendZeroArgSpecialMessagePushesReturn
 	self runFrom: sendAddress until: sendTrampolineAddress.
 	
 	"Now return from called function/method and execute until the end of the send instruction"
-	machineSimulator returnRegisterValue: (memory integerObjectOf: 42).
-	self runFrom: machineSimulator instructionPointerValue until: self getLastAddress.
+	machineSimulator receiverRegisterValue: (memory integerObjectOf: 42).
+	self runFrom: machineSimulator instructionPointerRegisterValue until: self getLastAddress.
 	
 	self assert: self popAddress equals: (memory integerObjectOf: 42).
 ]
