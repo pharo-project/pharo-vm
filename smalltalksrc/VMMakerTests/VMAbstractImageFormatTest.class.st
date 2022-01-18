@@ -24,12 +24,6 @@ VMAbstractImageFormatTest >> readHeader [
 
 { #category : #actions }
 VMAbstractImageFormatTest >> saveImage [
-
-	interpreter setExtraVMMemory: 0.
-
-	interpreter imageName: self imageFileName.
-	interpreter preemptionYields: false.
-	interpreter setImageHeaderFlagsFrom: 0.
 	
 	interpreter writeImageFileIO.
 
@@ -44,6 +38,11 @@ VMAbstractImageFormatTest >> setUp [
 	memory splObj: NilObject put: memory nilObject.
 	memory splObj: FalseObject put: memory falseObject.
 	memory splObj: TrueObject put: memory trueObject.	
+	
+	interpreter setExtraVMMemory: 0.
+	interpreter imageName: self imageFileName.
+	interpreter preemptionYields: false.
+	interpreter setImageHeaderFlagsFrom: 0.
 	
 	imageReader := SpurImageReader newWithMemory: memory andInterpreter: interpreter 
 ]
