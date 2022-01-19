@@ -212,8 +212,8 @@ StackInterpreterSimulator >> basicInitialize [
 	"This will be overriden when calling initializePluginEntries"
 	mappedPluginEntries := OrderedCollection new.
 	
-	imageReader := SpurImageReader newWithMemory: objectMemory andInterpreter: self.
-	imageWriter := SpurImageWriter newWithMemory: objectMemory andInterpreter: self
+	imageReader := self class imageReaderClass newWithMemory: objectMemory andInterpreter: self.
+	imageWriter := self class imageWriterClass newWithMemory: objectMemory andInterpreter: self	
 ]
 
 { #category : #utilities }

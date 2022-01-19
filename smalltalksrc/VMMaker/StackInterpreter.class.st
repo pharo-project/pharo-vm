@@ -498,8 +498,8 @@ StackInterpreter class >> ancilliaryClasses [
 		LibFFI.
 		CogStackPage.
 		SpurImageHeaderStruct.
-		SpurImageReader.
-		SpurImageWriter}
+		self imageReaderClass.
+		self imageWriterClass}
 ]
 
 { #category : #constants }
@@ -634,6 +634,22 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		If it is changed, it should be marked with type implicit"
 		removeVariable: 'imageReader'; 
 		var: 'imageWriter' type: #implicit. 
+]
+
+{ #category : #'as yet unclassified' }
+StackInterpreter class >> imageReaderClass [
+
+	^Smalltalk at: (InitializationOptions
+					at: #ImageReader
+					ifAbsent: [ #SpurImageReader ])
+]
+
+{ #category : #'as yet unclassified' }
+StackInterpreter class >> imageWriterClass [
+
+	^Smalltalk at: (InitializationOptions
+					at: #ImageWriter
+					ifAbsent: [ #SpurImageWriter ])
 ]
 
 { #category : #translation }

@@ -2,15 +2,56 @@ Class {
 	#name : #VMAbstractImageFormatTest,
 	#superclass : #VMSpurInitializedOldSpaceTest,
 	#instVars : [
-		'imageReader'
+		'imageReader',
+		'imageReaderClass',
+		'imageWriterClass'
 	],
 	#category : #'VMMakerTests-MemoryTests'
 }
 
 { #category : #tests }
+VMAbstractImageFormatTest class >> testParameters [ 
+
+	^ super testParameters * { 
+		{ #imageReaderClass -> SpurImageReader. #imageWriterClass -> SpurImageWriter }.
+		{ #imageReaderClass -> STONImageReader. #imageWriterClass -> STONImageWriter }.
+	}
+]
+
+{ #category : #tests }
 VMAbstractImageFormatTest >> imageFileName [
 
 	^ 'lala.image'
+]
+
+{ #category : #accessing }
+VMAbstractImageFormatTest >> imageReaderClass [
+
+	^ imageReaderClass
+]
+
+{ #category : #accessing }
+VMAbstractImageFormatTest >> imageReaderClass: anObject [
+
+	imageReaderClass := anObject
+]
+
+{ #category : #accessing }
+VMAbstractImageFormatTest >> imageWriterClass [
+
+	^ imageWriterClass
+]
+
+{ #category : #accessing }
+VMAbstractImageFormatTest >> imageWriterClass: anObject [
+
+	imageWriterClass := anObject
+]
+
+{ #category : #accessing }
+VMAbstractImageFormatTest >> initializationOptions [
+
+	^ super initializationOptions, { #ImageReader.  imageReaderClass name. #ImageWriter. imageWriterClass name }
 ]
 
 { #category : #tests }
@@ -44,7 +85,7 @@ VMAbstractImageFormatTest >> setUp [
 	interpreter preemptionYields: false.
 	interpreter setImageHeaderFlagsFrom: 0.
 	
-	imageReader := SpurImageReader newWithMemory: memory andInterpreter: interpreter 
+	imageReader := imageReaderClass newWithMemory: memory andInterpreter: interpreter 
 ]
 
 { #category : #running }
