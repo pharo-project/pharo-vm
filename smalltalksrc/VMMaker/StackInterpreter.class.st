@@ -7568,6 +7568,12 @@ StackInterpreter >> imageFormatVersion [
 	^objectMemory imageFormatVersion
 ]
 
+{ #category : #accessing }
+StackInterpreter >> imageReader [
+	<doNotGenerate>
+	^ imageReader
+]
+
 { #category : #'plugin primitive support' }
 StackInterpreter >> includesBehavior: aClass ThatOf: aSuperclass [
 	"Return the equivalent of 
@@ -10812,14 +10818,6 @@ StackInterpreter >> okayInterpreterObjects [
 		].
 	].
 	self okayStackZone.
-]
-
-{ #category : #'simulation support' }
-StackInterpreter >> openImageFileNamed: fileName [
-	"Attempt to open fileName or fileName, '.image'"
-	<doNotGenerate>
-	self setImageName: fileName.
-	^ fileName asFileReference binaryReadStream
 ]
 
 { #category : #simulation }

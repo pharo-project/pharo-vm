@@ -57,10 +57,7 @@ VMAbstractImageFormatTest >> initializationOptions [
 { #category : #tests }
 VMAbstractImageFormatTest >> readHeader [
 
-	| header |
-	header := self imageFileName asFileReference binaryReadStreamDo: [ :f | 
-		          imageReader readHeaderFrom: f startingAt: 0 ].
-	^ header
+	^ imageReader readHeaderFromImage: self imageFileName
 ]
 
 { #category : #actions }

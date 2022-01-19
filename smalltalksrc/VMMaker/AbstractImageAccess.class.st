@@ -37,6 +37,22 @@ AbstractImageAccess class >> newWithMemory: memory andInterpreter: anInterpreter
 	^ newInstance
 ]
 
+{ #category : #reading }
+AbstractImageAccess >> initializeInterpreterFromHeader: header withBytes: bytesRead [
+
+	| bytesToShift |
+
+	bytesRead ~= header dataSize ifTrue: [ 
+		interpreter unableToReadImageError ].
+
+	interpreter ensureImageFormatIsUpToDate: header swapBytes.
+
+	"compute difference between old and new memory base addresses"
+	bytesToShift := objectMemory getMemoryMap oldSpaceStart - header oldBaseAddr.
+	
+	interpreter initializeInterpreter: bytesToShift "adjusts all oops to new location"
+]
+
 { #category : #accessing }
 AbstractImageAccess >> interpreter [
 
@@ -51,6 +67,26 @@ AbstractImageAccess >> interpreter: anObject [
 	<doNotGenerate>
 
 	interpreter := anObject
+]
+
+{ #category : #reading }
+AbstractImageAccess >> loadHeaderToMemory: header [
+
+	objectMemory initializeMemoryMap.
+
+	objectMemory specialObjectsOop: header initialSpecialObjectsOop.
+	objectMemory lastHash: header hdrLastHash.
+	
+	interpreter setImageHeaderFlagsFrom: header headerFlags.
+	interpreter setExtraVMMemory: header extraVMMemory.
+
+	interpreter setNumStackPages: header hdrNumStackPages.
+
+	interpreter initializeObjectMemoryWithEdenBytes: header hdrEdenBytes.
+
+	header hdrMaxExtSemTabSize ~= 0 ifTrue: [ 
+		interpreter setMaxExtSemSizeTo: header hdrMaxExtSemTabSize ].
+
 ]
 
 { #category : #accessing }

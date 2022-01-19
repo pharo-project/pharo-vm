@@ -112,25 +112,19 @@ SpurImageReader >> imageFormatVersion [
 	^objectMemory imageFormatVersion
 ]
 
-{ #category : #reading }
+{ #category : #api }
 SpurImageReader >> loadImageFromFile: f withHeader: header [
 
 	"read in the image in bulk, then swap the bytes if necessary"
 
 	<var: #f type: #sqImageFile>
 	<var: #header type: #SpurImageHeaderStruct>
-	| bytesRead bytesToShift |
+	| bytesRead |
+
 	bytesRead := self readSegmentsFromImageFile: f header: header.
 
-	bytesRead ~= header dataSize ifTrue: [ 
-		interpreter unableToReadImageError ].
+	self initializeInterpreterFromHeader: header withBytes: bytesRead
 
-	interpreter ensureImageFormatIsUpToDate: header swapBytes.
-
-	"compute difference between old and new memory base addresses"
-	bytesToShift := objectMemory getMemoryMap oldSpaceStart - header oldBaseAddr.
-	
-	interpreter initializeInterpreter: bytesToShift "adjusts all oops to new location"
 ]
 
 { #category : #reading }
@@ -186,6 +180,15 @@ SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 	^ header
 ]
 
+{ #category : #api }
+SpurImageReader >> readHeaderFromImage: anImageName [
+
+	| header |
+	header := anImageName asFileReference binaryReadStreamDo: [ :f | 
+		          self readHeaderFrom: f startingAt: 0 ].
+	^ header
+]
+
 { #category : #reading }
 SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 
@@ -216,26 +219,19 @@ SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 	
 	| header |
 
-	objectMemory initializeMemoryMap.
-
 	header := self readHeaderFrom: f startingAt: headerStart.
 
-	objectMemory specialObjectsOop: header initialSpecialObjectsOop.
-	objectMemory lastHash: header hdrLastHash.
-	
-	interpreter setImageHeaderFlagsFrom: header headerFlags.
-	interpreter setExtraVMMemory: header extraVMMemory.
+	self loadHeaderToMemory: header.
 
-	interpreter setNumStackPages: header hdrNumStackPages.
-
-	interpreter initializeObjectMemoryWithEdenBytes: header hdrEdenBytes.
-
-	header hdrMaxExtSemTabSize ~= 0 ifTrue: [ 
-		interpreter setMaxExtSemSizeTo: header hdrMaxExtSemTabSize ].
-	
 	interpreter allocateMemoryForImage: f withHeader: header.
 
 	^ header dataSize
+]
+
+{ #category : #api }
+SpurImageReader >> readImageNamed: anImageName [
+	
+	^ self readImageFromFile: anImageName asFileReference binaryReadStream StartingAt: 0  
 ]
 
 { #category : #segments }
