@@ -1,11 +1,11 @@
 Class {
-	#name : #STONImageReader,
-	#superclass : #AbstractSTONImageAccess,
+	#name : #ComposedImageReader,
+	#superclass : #AbstractComposedImageAccess,
 	#category : #'VMMaker-ImageFormat'
 }
 
 { #category : #api }
-STONImageReader >> readHeaderFromImage: anImageFileName [
+ComposedImageReader >> readHeaderFromImage: anImageFileName [
 
 	| header |
 	header := (self headerFile: anImageFileName) readStreamDo: [ :f | 
@@ -17,7 +17,7 @@ STONImageReader >> readHeaderFromImage: anImageFileName [
 ]
 
 { #category : #api }
-STONImageReader >> readImageNamed: anImageName [
+ComposedImageReader >> readImageNamed: anImageName [
 	
 	| header imageFile |
 
@@ -31,7 +31,7 @@ STONImageReader >> readImageNamed: anImageName [
 ]
 
 { #category : #reading }
-STONImageReader >> readSTONFrom: f [
+ComposedImageReader >> readSTONFrom: f [
 
 	<var: #f type: #sqImageFile>
 	<returnTypeC: #SpurImageHeaderStruct>
@@ -40,14 +40,14 @@ STONImageReader >> readSTONFrom: f [
 ]
 
 { #category : #api }
-STONImageReader >> readSegmentMetadata: segmentIndex fromFile: imageFile [
+ComposedImageReader >> readSegmentMetadata: segmentIndex fromFile: imageFile [
 
 	^ (self segmentMetadataFile: segmentIndex fromFile: imageFile) 
 		  readStreamDo: [ :f | self readSTONFrom: f ]
 ]
 
 { #category : #reading }
-STONImageReader >> readSegmentsFromImageFile: imageFile header: aHeader [
+ComposedImageReader >> readSegmentsFromImageFile: imageFile header: aHeader [
 
 	"Compare with SpurImageReader >> readSegmentsFromImageFile:header:"
 
@@ -116,7 +116,7 @@ STONImageReader >> readSegmentsFromImageFile: imageFile header: aHeader [
 ]
 
 { #category : #reading }
-STONImageReader >> sq: startingAddress readSegment: segmentIndex File: bytesToRead Read: imageFile [
+ComposedImageReader >> sq: startingAddress readSegment: segmentIndex File: bytesToRead Read: imageFile [
 
 	<doNotGenerate>
 	| region |

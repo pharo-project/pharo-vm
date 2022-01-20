@@ -1,11 +1,11 @@
 Class {
-	#name : #AbstractSTONImageAccess,
+	#name : #AbstractComposedImageAccess,
 	#superclass : #AbstractImageAccess,
 	#category : #'VMMaker-ImageFormat'
 }
 
 { #category : #'file operations' }
-AbstractSTONImageAccess >> headerFile: imageFileName [
+AbstractComposedImageAccess >> headerFile: imageFileName [
 
 	| imageFile |
 	imageFile := self imageFile: imageFileName.
@@ -14,7 +14,7 @@ AbstractSTONImageAccess >> headerFile: imageFileName [
 ]
 
 { #category : #'file operations' }
-AbstractSTONImageAccess >> imageFile: imageFileName [
+AbstractComposedImageAccess >> imageFile: imageFileName [
 
 	| imageFile |
 	imageFile := imageFileName asFileReference.
@@ -24,13 +24,13 @@ AbstractSTONImageAccess >> imageFile: imageFileName [
 ]
 
 { #category : #'file operations' }
-AbstractSTONImageAccess >> isSegmentMetadata: file [
+AbstractComposedImageAccess >> isSegmentMetadata: file [
 
 	^ file extension = 'ston' and: [ file basename beginsWith: 'seg' ]
 ]
 
 { #category : #'file operations' }
-AbstractSTONImageAccess >> segmentDataFile: segmentIndex fromFile: imageFile [
+AbstractComposedImageAccess >> segmentDataFile: segmentIndex fromFile: imageFile [
 
 	| segmentDataFileName |
 	segmentDataFileName := 'seg' , segmentIndex asString , '.data'.
@@ -39,7 +39,7 @@ AbstractSTONImageAccess >> segmentDataFile: segmentIndex fromFile: imageFile [
 ]
 
 { #category : #'file operations' }
-AbstractSTONImageAccess >> segmentDataFile: segmentIndex inImage: imageFileName [
+AbstractComposedImageAccess >> segmentDataFile: segmentIndex inImage: imageFileName [
 
 	| imageFile |
 	imageFile := self imageFile: imageFileName.
@@ -48,7 +48,7 @@ AbstractSTONImageAccess >> segmentDataFile: segmentIndex inImage: imageFileName 
 ]
 
 { #category : #'file operations' }
-AbstractSTONImageAccess >> segmentMetadataFile: segmentIndex fromFile: imageFile [
+AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex fromFile: imageFile [
 
 	| segmentDataFileName |
 	segmentDataFileName := 'seg' , segmentIndex asString , '.ston'.
@@ -57,7 +57,7 @@ AbstractSTONImageAccess >> segmentMetadataFile: segmentIndex fromFile: imageFile
 ]
 
 { #category : #'file operations' }
-AbstractSTONImageAccess >> segmentMetadataFile: segmentIndex inImage: imageFileName [
+AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex inImage: imageFileName [
 
 	| imageFile |
 	imageFile := self imageFile: imageFileName.

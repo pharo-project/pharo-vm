@@ -1,11 +1,11 @@
 Class {
-	#name : #STONImageWriter,
-	#superclass : #AbstractSTONImageAccess,
+	#name : #ComposedImageWriter,
+	#superclass : #AbstractComposedImageAccess,
 	#category : #'VMMaker-ImageFormat'
 }
 
 { #category : #api }
-STONImageWriter >> writeImageFile: imageFileName fromHeader: header [
+ComposedImageWriter >> writeImageFile: imageFileName fromHeader: header [
 
 	| bytesWritten |
 
@@ -19,7 +19,7 @@ STONImageWriter >> writeImageFile: imageFileName fromHeader: header [
 ]
 
 { #category : #writing }
-STONImageWriter >> writeImageSegments: imageFileName [
+ComposedImageWriter >> writeImageSegments: imageFileName [
 
 	"Almost duplicated from SpurImageWriter >> writeImageSegmentsToFile:"
 
@@ -42,7 +42,7 @@ STONImageWriter >> writeImageSegments: imageFileName [
 ]
 
 { #category : #writing }
-STONImageWriter >> writeSTON: ston toFile: f [
+ComposedImageWriter >> writeSTON: ston toFile: f [
 
 	STON writer
 		on: f;
@@ -50,7 +50,7 @@ STONImageWriter >> writeSTON: ston toFile: f [
 ]
 
 { #category : #writing }
-STONImageWriter >> writeSegment: segment nextIndex: segmentIndex inImage: imageFileName [
+ComposedImageWriter >> writeSegment: segment nextIndex: segmentIndex inImage: imageFileName [
 
 	| metadata |
 

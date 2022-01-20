@@ -1,11 +1,11 @@
 Class {
-	#name : #VMSpurSegmentsImageFormatTest,
+	#name : #VMSegmentsImageFormatTest,
 	#superclass : #VMAbstractImageFormatTest,
 	#category : #'VMMakerTests-MemoryTests'
 }
 
 { #category : #tests }
-VMSpurSegmentsImageFormatTest >> testImageWithTwoSegmentsHasCorrectSizeForFirstSegment [
+VMSegmentsImageFormatTest >> testImageWithTwoSegmentsHasCorrectSizeForFirstSegment [
 
 	| header newSegmentSize |
 	
@@ -24,7 +24,7 @@ VMSpurSegmentsImageFormatTest >> testImageWithTwoSegmentsHasCorrectSizeForFirstS
 ]
 
 { #category : #tests }
-VMSpurSegmentsImageFormatTest >> testImageWithTwoSegmentsHasCorrectSizeForFullImage [
+VMSegmentsImageFormatTest >> testImageWithTwoSegmentsHasCorrectSizeForFullImage [
 
 	| header newSegmentSize |
 	
@@ -47,7 +47,7 @@ VMSpurSegmentsImageFormatTest >> testImageWithTwoSegmentsHasCorrectSizeForFullIm
 ]
 
 { #category : #tests }
-VMSpurSegmentsImageFormatTest >> testImageWithTwoSegmentsRespectGrowHeadroomWhenIsBigger [
+VMSegmentsImageFormatTest >> testImageWithTwoSegmentsRespectGrowHeadroomWhenIsBigger [
 
 	| newSegmentSize |
 	
@@ -60,7 +60,7 @@ VMSpurSegmentsImageFormatTest >> testImageWithTwoSegmentsRespectGrowHeadroomWhen
 ]
 
 { #category : #tests }
-VMSpurSegmentsImageFormatTest >> testImageWithTwoSegmentsRespectGrowHeadroomWhenIsSmaller [
+VMSegmentsImageFormatTest >> testImageWithTwoSegmentsRespectGrowHeadroomWhenIsSmaller [
 
 	| newSegmentSize |
 	
@@ -75,7 +75,7 @@ VMSpurSegmentsImageFormatTest >> testImageWithTwoSegmentsRespectGrowHeadroomWhen
 ]
 
 { #category : #tests }
-VMSpurSegmentsImageFormatTest >> testMinimalImageHasASingleSegment [
+VMSegmentsImageFormatTest >> testMinimalImageHasASingleSegment [
 
 
 	| header |
