@@ -38,7 +38,7 @@ VMSpurNewSpaceStructureTest >> testInstantiateNewObjectWithSlotMovesFreeStartAft
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryEdenEndIsAtTheStartOfOldSpace [
 
-	self assert: memory scavenger eden limit equals: memory newSpaceLimit 
+	self assert: memory scavenger eden limit equals: memory getMemoryMap newSpaceEnd 
 ]
 
 { #category : #'tests-1-memory-initialization' }
@@ -84,13 +84,13 @@ VMSpurNewSpaceStructureTest >> testNewMemoryLimitIsSumOfSpaces [
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryNewSpaceLimitIsNewSpaceStartPlusSize [
 	
-	self assert: memory newSpaceLimit equals: newSpaceSize + stackSpaceSize + initialAddress	+ self primitiveTraceLogSize + methodCacheSize 
+	self assert: memory getMemoryMap newSpaceEnd equals: newSpaceSize + stackSpaceSize + initialAddress	+ self primitiveTraceLogSize + methodCacheSize 
 ]
 
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryNewSpaceStartIsStackSize [
 
-	self assert: memory newSpaceStart equals: stackSpaceSize + initialAddress + self primitiveTraceLogSize + methodCacheSize 
+	self assert: memory getMemoryMap newSpaceStart equals: stackSpaceSize + initialAddress + self primitiveTraceLogSize + methodCacheSize 
 ]
 
 { #category : #'tests-1-memory-initialization' }
@@ -111,7 +111,7 @@ VMSpurNewSpaceStructureTest >> testNewMemoryPastSpaceFreeStartIsAtPastSpaceStart
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryPastSpaceIsAtTheStartOfNewSpace [
 	
-	self assert: memory scavenger pastSpace start equals: memory newSpaceStart
+	self assert: memory scavenger pastSpace start equals: memory getMemoryMap newSpaceStart
 ]
 
 { #category : #'tests-1-memory-initialization' }

@@ -587,7 +587,7 @@ VMSpurMemoryManagerTest >> setUpUsingImage [
 	objectHeaderSize := 8 "bytes. Always.".
 	emptyObjectSize := objectHeaderSize + 8 "minimum required single empty slot, to use for forwarders".
 	
-	newSpaceSize := memory newSpaceLimit - memory newSpaceStart.
+	newSpaceSize := memory getMemoryMap newSpaceEnd - memory getMemoryMap newSpaceStart.
 	oldSpaceSize := memory oldSpaceSize.
 	
 	methodBuilder := VMCompiledCodeBuilder new

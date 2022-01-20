@@ -74,11 +74,11 @@ Spur64BitCoMemoryManager >> checkMemoryMap [
 	 Being young would cause them to be scavenged.
 	 Being old would cause them to be remembered if stored into (but wait, they don't get stored into)."
 
-	self assert: (self isYoungObject: newSpaceStart).
-	self assert: (self isYoungObject: newSpaceLimit - self wordSize).
-	self assert: (self isOldObject: newSpaceStart) not.
-	self assert: (self isOldObject: newSpaceLimit - self wordSize) not.
-	self assert: (self isYoungObject: newSpaceLimit) not.
+	self assert: (self isYoungObject: memoryMap newSpaceStart).
+	self assert: (self isYoungObject: memoryMap newSpaceEnd - self wordSize).
+	self assert: (self isOldObject: memoryMap newSpaceStart) not.
+	self assert: (self isOldObject: memoryMap newSpaceEnd - self wordSize) not.
+	self assert: (self isYoungObject: memoryMap newSpaceEnd) not.
 	self assert: (self isYoungObject: memoryMap oldSpaceStart) not.
 	self assert: (self isYoungObject: memoryMap oldSpaceEnd) not.
 	self assert: (self isOldObject: memoryMap oldSpaceStart).
@@ -158,7 +158,8 @@ Spur64BitCoMemoryManager >> headerWhileForwardingOf: aCompiledMethodObjOop [
 Spur64BitCoMemoryManager >> initializeFreeSpaceForFacadeFrom: base to: limit [
 	"c.f. initializeFreeSpacePostLoad: freeListObj."
 	| freeListObj freeBytes |
-	memoryMap oldSpaceStart: (newSpaceLimit := freeStart := base).
+	memoryMap newSpaceEnd: (freeStart := base).
+	memoryMap oldSpaceStart: memoryMap newSpaceEnd.
 	memoryMap oldSpaceEnd: limit.
 	scavengeThreshold := limit * 3 // 4.
 	segmentManager initSegmentForInImageCompilationFrom: base to: limit.
@@ -205,15 +206,15 @@ Spur64BitCoMemoryManager >> isReallyYoungObject: objOop [
 	<api>
 	"Answer if obj is young. Require that obj is non-immediate. Override to filter-out Cog methods"
 	self assert: (self isNonImmediate: objOop).
-	^(self oop: objOop isLessThan: newSpaceLimit)
-	  and: [self oop: objOop isGreaterThanOrEqualTo: newSpaceStart]
+	^(self oop: objOop isLessThan: memoryMap newSpaceEnd)
+	  and: [self oop: objOop isGreaterThanOrEqualTo: memoryMap newSpaceStart]
 ]
 
 { #category : #compaction }
 Spur64BitCoMemoryManager >> methodHeaderFromSavedFirstField: field [
 	(self isIntegerObject: field) ifTrue:
 		[^field].
-	self assert: ((self isNonImmediate: field) and: [field < newSpaceStart]).
+	self assert: ((self isNonImmediate: field) and: [field < memoryMap newSpaceStart]).
 	self assert: (coInterpreter cCoerceSimple: field to: #'CogMethod *') objectHeader
 				= self nullHeaderForMachineCodeMethod.
 	^(coInterpreter cCoerceSimple: field to: #'CogMethod *') methodHeader
@@ -232,7 +233,7 @@ Spur64BitCoMemoryManager >> methodHeaderOf: methodObj [
 	^(self isIntegerObject: header)
 		ifTrue: [header]
 		ifFalse:
-			[self assert: header asUnsignedInteger < newSpaceStart.
+			[self assert: header asUnsignedInteger < memoryMap newSpaceStart.
 			 self assert: (coInterpreter cCoerceSimple: header to: #'CogMethod *') objectHeader
 						= self nullHeaderForMachineCodeMethod.
 			(coInterpreter cCoerceSimple: header to: #'CogMethod *') methodHeader]

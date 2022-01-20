@@ -551,8 +551,6 @@ Class {
 		'memoryMap',
 		'freeOldSpaceStart',
 		'scavengeThreshold',
-		'newSpaceStart',
-		'newSpaceLimit',
 		'edenBytes',
 		'nilObj',
 		'falseObj',
@@ -710,7 +708,7 @@ SpurMemoryManager class >> compactorClass [
 
 { #category : #translation }
 SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
-	self declareCAsOop: #(freeStart scavengeThreshold newSpaceStart newSpaceLimit pastSpaceStart
+	self declareCAsOop: #(freeStart scavengeThreshold pastSpaceStart
 							lowSpaceThreshold freeOldSpaceStart)
 		in: aCCodeGenerator.
 	self declareCAsUSqLong: (self allInstVarNames select: [:ivn| ivn endsWith: 'Usecs']), #(statAllocatedBytes)
@@ -2015,16 +2013,19 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 		
 	self assert: allocatedAddress = initialAddress.
 		
-	newSpaceStart := initialAddress + newSpaceStartOffset.
+	memoryMap newSpaceStart: initialAddress + newSpaceStartOffset.
 	memoryMap oldSpaceEnd: (freeOldSpaceStart := initialAddress + allocatedMemory).
 	"leave newSpace empty for the bootstrap"
-	freeStart := newSpaceBytes + newSpaceStart.
-	memoryMap oldSpaceStart: (newSpaceLimit := newSpaceBytes + newSpaceStart).
+	freeStart := newSpaceBytes + memoryMap newSpaceStart.
+
+	memoryMap newSpaceEnd: newSpaceBytes + memoryMap newSpaceStart.
+	memoryMap oldSpaceStart: memoryMap newSpaceEnd.
+	
 	scavengeThreshold := allocatedMemory. "i.e. /don't/ scavenge."
 	scavenger := SpurGenerationScavenger simulatorClass new.
 	scavenger manager: self.
 	scavenger
-		newSpaceStart: newSpaceStart
+		newSpaceStart: memoryMap newSpaceStart
 		newSpaceBytes: newSpaceBytes
 		survivorBytes: newSpaceBytes // self scavengerDenominator.
 	compactor := self class compactorClass simulatorClass new
@@ -2992,7 +2993,7 @@ SpurMemoryManager >> characterValueOf: oop [
 { #category : #'debug support' }
 SpurMemoryManager >> cheapAddressCouldBeInHeap: address [ 
 	^(address bitAnd: self wordSize - 1) = 0
-	  and: [(self oop: address isGreaterThanOrEqualTo: newSpaceStart)
+	  and: [(self oop: address isGreaterThanOrEqualTo: memoryMap newSpaceStart)
 	  and: [self oop: address isLessThan: memoryMap oldSpaceEnd]]
 ]
 
@@ -3000,7 +3001,7 @@ SpurMemoryManager >> cheapAddressCouldBeInHeap: address [
 SpurMemoryManager >> cheapIsInMemory: address [
 	"Answer if the given address is in ST object memory.  For simulation only."
 	<doNotGenerate>
-	^address >= newSpaceStart and: [address < memoryMap oldSpaceEnd]
+	^address >= memoryMap newSpaceStart and: [address < memoryMap oldSpaceEnd]
 ]
 
 { #category : #allocation }
@@ -3373,14 +3374,14 @@ SpurMemoryManager >> checkHeapIntegrity: excludeUnmarkedObjs classIndicesShouldB
 
 { #category : #'debug support' }
 SpurMemoryManager >> checkMemoryMap [
-	self assert: (self isYoungObject: newSpaceStart).
-	self assert: (self isYoungObject: newSpaceLimit - self wordSize).
-	self assert: (self isOldObject: newSpaceStart) not.
-	self assert: (self isOldObject: newSpaceLimit - self wordSize) not.
-	self assert: (self isYoungObject: newSpaceLimit) not.
+	self assert: (self isYoungObject: memoryMap newSpaceStart).
+	self assert: (self isYoungObject: memoryMap newSpaceEnd - self wordSize).
+	self assert: (self isOldObject: memoryMap newSpaceStart) not.
+	self assert: (self isOldObject: memoryMap newSpaceEnd - self wordSize) not.
+	self assert: (self isYoungObject: memoryMap newSpaceEnd) not.
 	self assert: (self isYoungObject: memoryMap oldSpaceStart) not.
 	self assert: (self isYoungObject: memoryMap oldSpaceEnd) not.
-	self assert: (self isOldObject: newSpaceLimit).
+	self assert: (self isOldObject: memoryMap newSpaceEnd).
 	self assert: (self isOldObject: memoryMap oldSpaceStart).
 	self assert: (self isOldObject: memoryMap oldSpaceEnd)
 ]
@@ -3434,7 +3435,7 @@ SpurMemoryManager >> checkOkayYoungReferrer: obj [
 	 is in remembered set.  Answer true if OK.  Otherwise print reason and answer false.
 	 Assumes the object contains young references."
 
-	(self oop: obj isLessThan: newSpaceLimit) ifTrue:
+	(self oop: obj isLessThan: memoryMap newSpaceEnd) ifTrue:
 		[^true].
 
 	(self isRemembered: obj) ifFalse:
@@ -5116,7 +5117,7 @@ SpurMemoryManager >> flushNewSpace [
 	 threshold above everything in newSpace, i.e. newSpaceLimit."
 	| savedTenuringThreshold |
 	savedTenuringThreshold := scavenger getRawTenuringThreshold.
-	scavenger setRawTenuringThreshold: newSpaceLimit.
+	scavenger setRawTenuringThreshold: memoryMap newSpaceEnd.
 	self scavengingGCTenuringIf: TenureByAge.
 	scavenger setRawTenuringThreshold: savedTenuringThreshold.
 	self assert: scavenger rememberedSetSize = 0.
@@ -6412,8 +6413,9 @@ SpurMemoryManager >> initializeNewSpaceVariables [
 	scavengeThreshold := scavenger eden limit
 							- (scavenger edenBytes // 64)
 							- coInterpreter interpreterAllocationReserveBytes.
-	newSpaceStart := scavenger pastSpace start min: scavenger futureSpace start.
-	self assert: newSpaceStart < scavenger eden start.
+	memoryMap newSpaceStart: (scavenger pastSpace start min: scavenger futureSpace start).
+	self assert: memoryMap newSpaceStart < scavenger eden start.
+	
 	self initSpaceForAllocationCheck: (self addressOf: scavenger eden) limit: scavengeThreshold
 ]
 
@@ -7096,8 +7098,8 @@ SpurMemoryManager >> isInMemory: address [
 
 { #category : #'object testing' }
 SpurMemoryManager >> isInNewSpace: objOop [
-	^(self oop: objOop isLessThan: newSpaceLimit)
-	  and: [self oop: objOop isGreaterThanOrEqualTo: newSpaceStart]
+	^(self oop: objOop isLessThan: memoryMap newSpaceEnd)
+	  and: [self oop: objOop isGreaterThanOrEqualTo: memoryMap newSpaceStart]
 ]
 
 { #category : #'object testing' }
@@ -7649,7 +7651,7 @@ SpurMemoryManager >> isYoung: oop [
 	<api>
 	"Answer if oop is young."
 	^(self isNonImmediate: oop)
-	 and: [self oop: oop isLessThan: newSpaceLimit]
+	 and: [self oop: oop isLessThan: memoryMap newSpaceEnd]
 ]
 
 { #category : #'object testing' }
@@ -7657,7 +7659,7 @@ SpurMemoryManager >> isYoungObject: objOop [
 	<api>
 	"Answer if obj is young. Require that obj is non-immediate."
 	self assert: (self isNonImmediate: objOop).
-	^self oop: objOop isLessThan: newSpaceLimit
+	^self oop: objOop isLessThan: memoryMap newSpaceEnd
 ]
 
 { #category : #'object access' }
@@ -8789,12 +8791,6 @@ SpurMemoryManager >> newSpaceIsEmpty [
 	  and: [pastSpaceStart = scavenger pastSpace start]
 ]
 
-{ #category : #accessing }
-SpurMemoryManager >> newSpaceLimit [
-	<cmacro: '() GIV(newSpaceLimit)'>
-	^newSpaceLimit
-]
-
 { #category : #'gc - scavenging' }
 SpurMemoryManager >> newSpaceRefCountMask [
 	"The three bit field { isGrey, isPinned, isRemembered } is for bits
@@ -8811,11 +8807,6 @@ SpurMemoryManager >> newSpaceRefCountMask [
 SpurMemoryManager >> newSpaceSize [
 	^(freeStart - scavenger eden start)
 	 + (pastSpaceStart - scavenger pastSpace start)
-]
-
-{ #category : #accessing }
-SpurMemoryManager >> newSpaceStart [
-	^newSpaceStart
 ]
 
 { #category : #'primitive support' }
@@ -9295,7 +9286,7 @@ SpurMemoryManager >> objectAfter: objOop [
 	    an object doesn't have a saturated size field it must be a single-header object.  If the word following
 	   does have a saturated slotSize it must be the overflow size word."
 	<inline: false>
-	(self oop: objOop isLessThan: newSpaceLimit) ifTrue:
+	(self oop: objOop isLessThan: memoryMap newSpaceEnd) ifTrue:
 		[(self isInEden: objOop) ifTrue:
 			[^self objectAfter: objOop limit: freeStart].
 		 (self isInPastSpace: objOop) ifTrue:
@@ -9319,7 +9310,7 @@ SpurMemoryManager >> objectBefore: objOop [
 	<api>
 	| prev |
 	prev := nil.
-	(self oop: objOop isLessThan: newSpaceLimit) ifTrue:
+	(self oop: objOop isLessThan: memoryMap newSpaceEnd) ifTrue:
 		[self allNewSpaceEntitiesDo:
 			[:o|
 			 (self oop: o isGreaterThanOrEqualTo: objOop) ifTrue:
@@ -10812,7 +10803,7 @@ SpurMemoryManager >> scavengingGCTenuringIf: tenuringCriterion [
 		preGCAction: GCModeNewSpace;
 		"would prefer this to be in mapInterpreterOops, but
 		 compatibility with ObjectMemory dictates it goes here."
-		flushMethodCacheFrom: newSpaceStart to: newSpaceLimit.
+		flushMethodCacheFrom: memoryMap newSpaceStart to: memoryMap newSpaceEnd.
 	needGCFlag := false.
 
 	gcStartUsecs := coInterpreter ioUTCMicrosecondsNow.
@@ -10961,16 +10952,17 @@ SpurMemoryManager >> setHeapBase: baseOfHeap memoryLimit: memLimit endOfMemory: 
 	<inline: #never>
 	| reserve |
 	reserve := coInterpreter interpreterAllocationReserveBytes.
-	newSpaceStart := baseOfHeap.
-	newSpaceLimit := baseOfHeap + edenBytes + reserve.
-	scavenger newSpaceStart: newSpaceStart
-				newSpaceBytes: newSpaceLimit - newSpaceStart
-				survivorBytes: newSpaceLimit - newSpaceStart - reserve // self scavengerDenominator.
+	memoryMap newSpaceStart: baseOfHeap.
+	memoryMap newSpaceEnd: baseOfHeap + edenBytes + reserve.
+	
+	scavenger newSpaceStart: memoryMap newSpaceStart
+				newSpaceBytes: memoryMap newSpaceEnd - memoryMap newSpaceStart
+				survivorBytes: memoryMap newSpaceEnd - memoryMap newSpaceStart - reserve // self scavengerDenominator.
 
 	freeStart := scavenger eden start.
 	pastSpaceStart := scavenger pastSpace start.
 
-	memoryMap oldSpaceStart: newSpaceLimit.
+	memoryMap oldSpaceStart: memoryMap newSpaceEnd.
 	freeOldSpaceStart := memEnd.
 	memoryMap oldSpaceEnd: memLimit.
 
@@ -11692,7 +11684,7 @@ SpurMemoryManager >> storeByte: byteIndex ofObject: oop withValue: valueByte [
 SpurMemoryManager >> storeCheckBoundary [
 	"A renaming for the Cogit, which couldn't make sense of GIV(newSpaceLimit)"
 	<api>
-	^newSpaceLimit
+	^memoryMap newSpaceEnd
 ]
 
 { #category : #'simulation only' }

@@ -332,7 +332,7 @@ SpurSegmentManager >> initializeFromFreeChunks: freeChunks [
 					[:i| | bridge start size |
 					bridge := freeChunks at: i.
 					start := i = 1
-								ifTrue: [manager newSpaceLimit]
+								ifTrue: [manager getMemoryMap newSpaceEnd]
 								ifFalse: [manager addressAfter: (freeChunks at: i - 1)].
 					size := bridge + manager baseHeaderSize - start.
 					SpurSegmentInfo new

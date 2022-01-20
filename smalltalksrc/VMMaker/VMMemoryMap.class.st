@@ -4,7 +4,9 @@ Class {
 	#instVars : [
 		'memoryManager',
 		'oldSpaceStart',
-		'oldSpaceEnd'
+		'oldSpaceEnd',
+		'newSpaceStart',
+		'newSpaceEnd'
 	],
 	#category : #'VMMaker-Memory'
 }
@@ -32,6 +34,30 @@ VMMemoryMap >> memoryManager [
 VMMemoryMap >> memoryManager: anObject [
 
 	memoryManager := anObject
+]
+
+{ #category : #accessing }
+VMMemoryMap >> newSpaceEnd [
+
+	^ newSpaceEnd
+]
+
+{ #category : #accessing }
+VMMemoryMap >> newSpaceEnd: anObject [
+
+	newSpaceEnd := anObject
+]
+
+{ #category : #accessing }
+VMMemoryMap >> newSpaceStart [
+
+	^ newSpaceStart
+]
+
+{ #category : #accessing }
+VMMemoryMap >> newSpaceStart: anObject [
+
+	newSpaceStart := anObject
 ]
 
 { #category : #accessing }

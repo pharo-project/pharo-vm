@@ -399,7 +399,7 @@ SpurGenerationScavenger >> corpseForCorpseOffset: corpseOffset [
 	 non-future newSpace and use this to implement lists for weak array and
 	 ephemeron processing.  27 bits of 8 byte allocationUnits units is 2 ^ 30
 	 bytes, or 1Gb, big enough for newSpace for a good few years yet."
-	^corpseOffset - 1 << manager shiftForAllocationUnit + manager newSpaceStart
+	^corpseOffset - 1 << manager shiftForAllocationUnit + manager getMemoryMap newSpaceStart
 ]
 
 { #category : #'weakness and ephemerality' }
@@ -411,7 +411,7 @@ SpurGenerationScavenger >> corpseOffsetOf: corpse [
 	 bytes or 1Gb, big enough for newSpace for a good few years yet.  Add
 	 one to ensure that a corpse offset is always non-zero, even when it is
 	 that of the first object in newSpace."
-	^corpse - manager newSpaceStart >> manager shiftForAllocationUnit + 1
+	^corpse - manager getMemoryMap newSpaceStart >> manager shiftForAllocationUnit + 1
 ]
 
 { #category : #accessing }
