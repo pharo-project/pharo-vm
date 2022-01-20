@@ -71,6 +71,21 @@ AbstractImageAccess >> extractImageVersionFrom: fileVersion into: header [
 
 ]
 
+{ #category : #segments }
+AbstractImageAccess >> finalizeSegmentsRead: totalBytesRead newBase: newBase [
+
+	"newBase should point just past the last bridge. all others should have been eliminated."
+	self assert: newBase - objectMemory getMemoryMap oldSpaceStart = (totalBytesRead
+		 - (segmentManager numSegments * objectMemory bridgeSize)).
+
+	"Segments has correct swizzle values, so it can be used to swizzle objects"
+	segmentManager setCanSwizzle: true.
+
+	"set freeOldSpaceStart now for adjustAllOopsBy:"
+	objectMemory setFreeOldSpaceStart: newBase.
+
+]
+
 { #category : #reading }
 AbstractImageAccess >> imageFormatCompatibilityVersion [
 	"This VM is backward-compatible with the immediately preceding version."
@@ -163,7 +178,14 @@ AbstractImageAccess >> objectMemory: memory [
 	objectMemory := memory
 ]
 
-{ #category : #reading }
+{ #category : #segments }
+AbstractImageAccess >> prepareSegmentsToRead [
+
+	segmentManager clearSegments.
+	segmentManager allocateOrExtendSegmentInfos
+]
+
+{ #category : #segments }
 AbstractImageAccess >> readSegmentsFromImageFile: imageFile header: header [
 
 	self subclassResponsibility 

@@ -181,8 +181,8 @@ SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
 	<var: 'aHeader' type: #SpurImageHeaderStruct>
 	| bytesRead totalBytesRead bridgehead bridge nextSegmentSize oldBase newBase bridgeSpan |
-	segmentManager clearSegments.
-	segmentManager allocateOrExtendSegmentInfos.
+
+	self prepareSegmentsToRead.
 
 	"segment sizes include the two-header-word bridge at the end of each segment."
 	totalBytesRead := 0.
@@ -222,15 +222,7 @@ SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 	nextSegmentSize ~= 0 ] whileTrue: [ 
 		bridgehead := bridgehead - objectMemory bridgeSize + nextSegmentSize ].
 
-	"newBase should point just past the last bridge. all others should have been eliminated."
-	self assert: newBase - objectMemory getMemoryMap oldSpaceStart = (totalBytesRead
-		 - (segmentManager numSegments * objectMemory bridgeSize)).
-
-	"Segments has correct swizzle values, so it can be used to swizzle objects"
-	segmentManager setCanSwizzle: true.
-
-	"set freeOldSpaceStart now for adjustAllOopsBy:"
-	objectMemory setFreeOldSpaceStart: newBase.
+	self finalizeSegmentsRead: totalBytesRead newBase: newBase.
 
 	^ totalBytesRead
 ]

@@ -24,16 +24,10 @@ AbstractComposedImageAccess >> imageFile: imageFileName [
 ]
 
 { #category : #'file operations' }
-AbstractComposedImageAccess >> isSegmentMetadata: file [
-
-	^ file extension = 'ston' and: [ file basename beginsWith: 'seg' ]
-]
-
-{ #category : #'file operations' }
 AbstractComposedImageAccess >> segmentDataFile: segmentIndex fromFile: imageFile [
 
 	| segmentDataFileName |
-	segmentDataFileName := 'seg' , segmentIndex asString , '.data'.
+	segmentDataFileName := (self segmentFileNameWithoutExtension: segmentIndex) , '.data'.
 
 	^ imageFile / segmentDataFileName
 ]
@@ -48,10 +42,16 @@ AbstractComposedImageAccess >> segmentDataFile: segmentIndex inImage: imageFileN
 ]
 
 { #category : #'file operations' }
+AbstractComposedImageAccess >> segmentFileNameWithoutExtension: segmentIndex [
+
+	^ 'seg' , segmentIndex asString
+]
+
+{ #category : #'file operations' }
 AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex fromFile: imageFile [
 
 	| segmentDataFileName |
-	segmentDataFileName := 'seg' , segmentIndex asString , '.ston'.
+	segmentDataFileName := (self segmentFileNameWithoutExtension: segmentIndex) , '.ston'.
 
 	^ imageFile / segmentDataFileName
 ]

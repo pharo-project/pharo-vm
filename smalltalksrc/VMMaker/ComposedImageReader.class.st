@@ -46,7 +46,7 @@ ComposedImageReader >> readSegmentMetadata: segmentIndex fromFile: imageFile [
 		  readStreamDo: [ :f | self readSTONFrom: f ]
 ]
 
-{ #category : #reading }
+{ #category : #segments }
 ComposedImageReader >> readSegmentsFromImageFile: imageFile header: aHeader [
 
 	"Compare with SpurImageReader >> readSegmentsFromImageFile:header:"
@@ -55,10 +55,9 @@ ComposedImageReader >> readSegmentsFromImageFile: imageFile header: aHeader [
 	<inline: false>
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
 	<var: 'aHeader' type: #SpurImageHeaderStruct>
-	| bytesRead totalBytesRead bridgehead bridge segmentSize oldBase newBase segmentIndex existNextSegment |
+	| bytesRead totalBytesRead segmentSize oldBase newBase segmentIndex existsNextSegment |
 
-	segmentManager clearSegments.
-	segmentManager allocateOrExtendSegmentInfos.
+	self prepareSegmentsToRead.
 
 	"segment sizes include the two-header-word bridge at the end of each segment."
 	segmentIndex := 0. 
@@ -90,32 +89,23 @@ ComposedImageReader >> readSegmentsFromImageFile: imageFile header: aHeader [
 
 	"Check if exist next segment"
 	segmentIndex := segmentIndex + 1. 
-	existNextSegment := (imageFile childrenMatching: 'seg' , segmentIndex asString , '*' ) isNotEmpty.
+	existsNextSegment := imageFile hasChildrenMatching: (self segmentFileNameWithoutExtension: segmentIndex) , '*'.
 	
-	existNextSegment ifTrue: [ | nextSegmentMetadata |
+	existsNextSegment ifTrue: [ | nextSegmentMetadata |
 			nextSegmentMetadata := self readSegmentMetadata: segmentIndex fromFile: imageFile.
 			oldBase := nextSegmentMetadata segStart.
 			segmentSize := nextSegmentMetadata segSize.
 		].
 	
-	existNextSegment
+	existsNextSegment
 	] whileTrue.
 
-	"newBase should point just past the last bridge. all others should have been eliminated."
-	self assert:
-		newBase - objectMemory getMemoryMap oldSpaceStart = (totalBytesRead
-		 - (segmentManager numSegments * objectMemory bridgeSize)).
-
-	"Segments has correct swizzle values, so it can be used to swizzle objects"
-	segmentManager setCanSwizzle: true.
-
-	"set freeOldSpaceStart now for adjustAllOopsBy:"
-	objectMemory setFreeOldSpaceStart: newBase.
+	self finalizeSegmentsRead: totalBytesRead newBase: newBase.
 
 	^ totalBytesRead
 ]
 
-{ #category : #reading }
+{ #category : #segments }
 ComposedImageReader >> sq: startingAddress readSegment: segmentIndex File: bytesToRead Read: imageFile [
 
 	<doNotGenerate>
