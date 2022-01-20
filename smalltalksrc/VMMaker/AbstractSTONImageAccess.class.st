@@ -5,8 +5,62 @@ Class {
 }
 
 { #category : #'file operations' }
-AbstractSTONImageAccess >> headerFileName: imageFileName [
+AbstractSTONImageAccess >> headerFile: imageFileName [
 
-	self flag: #TODO.
-	^ imageFileName", '/header.ston'"
+	| imageFile |
+	imageFile := self imageFile: imageFileName.
+
+	^ imageFile / 'header.ston'
+]
+
+{ #category : #'file operations' }
+AbstractSTONImageAccess >> imageFile: imageFileName [
+
+	| imageFile |
+	imageFile := imageFileName asFileReference.
+	imageFile ensureCreateDirectory.
+	
+	^ imageFile
+]
+
+{ #category : #'file operations' }
+AbstractSTONImageAccess >> isSegmentMetadata: file [
+
+	^ file extension = 'ston' and: [ file basename beginsWith: 'seg' ]
+]
+
+{ #category : #'file operations' }
+AbstractSTONImageAccess >> segmentDataFile: segmentIndex fromFile: imageFile [
+
+	| segmentDataFileName |
+	segmentDataFileName := 'seg' , segmentIndex asString , '.data'.
+
+	^ imageFile / segmentDataFileName
+]
+
+{ #category : #'file operations' }
+AbstractSTONImageAccess >> segmentDataFile: segmentIndex inImage: imageFileName [
+
+	| imageFile |
+	imageFile := self imageFile: imageFileName.
+
+	^ self segmentDataFile: segmentIndex fromFile: imageFile 
+]
+
+{ #category : #'file operations' }
+AbstractSTONImageAccess >> segmentMetadataFile: segmentIndex fromFile: imageFile [
+
+	| segmentDataFileName |
+	segmentDataFileName := 'seg' , segmentIndex asString , '.ston'.
+
+	^ imageFile / segmentDataFileName
+]
+
+{ #category : #'file operations' }
+AbstractSTONImageAccess >> segmentMetadataFile: segmentIndex inImage: imageFileName [
+
+	| imageFile |
+	imageFile := self imageFile: imageFileName.
+
+	^ self segmentMetadataFile: segmentIndex fromFile: imageFile 
 ]

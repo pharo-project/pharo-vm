@@ -4,40 +4,6 @@ Class {
 	#category : #'VMMaker-ImageFormat'
 }
 
-{ #category : #reading }
-SpurImageReader >> extractImageVersionFrom: file into: header [
-	"Read and verify the image file version number and return true if the the given image file needs to be byte-swapped. As a side effect, position the file stream just after the version number of the image header. This code prints a warning and does a hard-exit if it cannot find a valid version number."
-	"This code is based on C code by Ian Piumarta."
-
-	<inline: false>
-	| version firstVersion |
-	<var: #file type: #sqImageFile>
-	<var: #imageOffset type: #squeakFileOffsetType>
-	<var: #header type: #'SpurImageHeaderStruct *'>
-
-	"check the version number"
-	version := firstVersion := self getWord32FromFile: file swap: false.
-	(self readableFormat: version) ifTrue: [
-		header imageFormat: version.
-		header swapBytes: false.
-		^ self].
-
-	"try with bytes reversed"
-	(self readableFormat: version byteSwap32) 
-		ifTrue: [
-			header imageFormat: version byteSwap32.
-			header swapBytes: true.
-			^ self].
-
-	"hard failure; abort"
-	self logError: 'Invalid image format: detected version %d, expected version %d' 
-		_: firstVersion 
-		_: self imageFormatVersion.
-	
-	self ioExitWithErrorCode: 1.
-
-]
-
 { #category : #'file operations' }
 SpurImageReader >> getLongFromFile: aFile swap: swapFlag [
 	"Answer the next 32 or 64 bit word read from aFile, byte-swapped according to the swapFlag."
@@ -95,39 +61,6 @@ SpurImageReader >> getWord32FromFile: aFile swap: swapFlag [
 ]
 
 { #category : #reading }
-SpurImageReader >> imageFormatCompatibilityVersion [
-	"This VM is backward-compatible with the immediately preceding version."
-
-	^objectMemory wordSize = 4 ifTrue: [6504] ifFalse: [68002]
-]
-
-{ #category : #reading }
-SpurImageReader >> imageFormatVersion [
-	"Return a magic constant that changes when the image format changes.
-	 Since the image reading code uses this to detect byte ordering, one
-	 must avoid version numbers that are invariant under byte reversal."
-
-	<doNotGenerate>
-	self assert: (objectMemory imageFormatVersion anyMask: 16) = objectMemory hasSpurMemoryManagerAPI.
-	^objectMemory imageFormatVersion
-]
-
-{ #category : #api }
-SpurImageReader >> loadImageFromFile: f withHeader: header [
-
-	"read in the image in bulk, then swap the bytes if necessary"
-
-	<var: #f type: #sqImageFile>
-	<var: #header type: #SpurImageHeaderStruct>
-	| bytesRead |
-
-	bytesRead := self readSegmentsFromImageFile: f header: header.
-
-	self initializeInterpreterFromHeader: header withBytes: bytesRead
-
-]
-
-{ #category : #reading }
 SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 
 	<var: #f type: #sqImageFile>
@@ -135,11 +68,12 @@ SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 	<var: #header type: #SpurImageHeaderStruct>
 	<returnTypeC: #SpurImageHeaderStruct>
 	
-	| header |
+	| header version |
 	
 	self simulationOnly: [ header := SpurImageHeaderStruct new ].
-
-	self extractImageVersionFrom: f into: (self addressOf: header).
+	
+	version := self getWord32FromFile: f swap: false.
+	self extractImageVersionFrom: version into: (self addressOf: header).
 
 	header imageHeaderSize: (self getWord32FromFile: f swap: header swapBytes).
 	header dataSize: (self getLongFromFile: f swap: header swapBytes).
@@ -299,16 +233,6 @@ SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 	objectMemory setFreeOldSpaceStart: newBase.
 
 	^ totalBytesRead
-]
-
-{ #category : #reading }
-SpurImageReader >> readableFormat: imageVersion [
-	"Anwer true if images of the given format are readable by this interpreter.
-	 Allows a virtual machine to accept selected older image formats."
-
-	^imageVersion = self imageFormatVersion "Float words in platform-order"
-	   or: [objectMemory hasSpurMemoryManagerAPI not "No compatibility version for Spur as yet"
-			and: [imageVersion = self imageFormatCompatibilityVersion]] "Float words in BigEndian order"
 ]
 
 { #category : #'file operations' }

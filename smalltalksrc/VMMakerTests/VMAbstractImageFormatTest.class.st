@@ -88,6 +88,6 @@ VMAbstractImageFormatTest >> setUp [
 { #category : #running }
 VMAbstractImageFormatTest >> tearDown [
 
-	self imageFileName asFileReference ensureDelete.
+	self imageFileName asFileReference ensureDeleteAll.
 	super tearDown.
 ]
