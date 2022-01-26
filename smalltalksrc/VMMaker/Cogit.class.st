@@ -513,7 +513,9 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile:'"sqCogStackAlignment.h"';
 		addHeaderFile:'"dispdbg.h"'; "must precede cointerp.h & cogit.h otherwise NoDbgRegParms gets screwed up"
 		addHeaderFile:'"cogmethod.h"'.
+
 	aCCodeGenerator
+		addHeaderFile:'"vmMemoryMap.h"';	
 		addHeaderFile:'"cointerp.h"';
 		addHeaderFile:'"cogit.h"';
 		addHeaderFile:'<stdint.h>'.

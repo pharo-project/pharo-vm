@@ -480,7 +480,9 @@ StackInterpreter class >> additionalHeadersDo: aBinaryBlock [
 	 any additional header files that need to be generated."
 	aBinaryBlock
 		value: 'vmCallback.h'
-		value: self vmCallbackHeader
+		value: self vmCallbackHeader.
+	
+	VMMemoryMap generateHeader: aBinaryBlock
 ]
 
 { #category : #translation }
@@ -498,6 +500,7 @@ StackInterpreter class >> ancilliaryClasses [
 		LibFFI.
 		CogStackPage.
 		SpurImageHeaderStruct.
+		AbstractImageAccess. "I am putting the abstract superclass... because I cannot make it work else"
 		self imageReaderClass.
 		self imageWriterClass}
 ]
@@ -521,6 +524,7 @@ StackInterpreter class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile:'"vmCallback.h"';
 		addHeaderFile:'"sqMemoryFence.h"';
 		addHeaderFile:'"dispdbg.h"';
+		addHeaderFile:'"vmMemoryMap.h"';
 
 "This cannot be properly expressed in slang.
 If ffi is put as a separate header, slang will sort the header and put it outside the #ifdef"

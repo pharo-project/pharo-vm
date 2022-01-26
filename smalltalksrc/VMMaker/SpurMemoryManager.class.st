@@ -5701,6 +5701,9 @@ SpurMemoryManager >> getMaxOldSpaceSize [
 { #category : #accessing }
 SpurMemoryManager >> getMemoryMap [
 
+	<api>
+	<returnTypeC: #'VMMemoryMap *'> 
+
 	^ memoryMap
 ]
 

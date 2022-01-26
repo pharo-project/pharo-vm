@@ -42,7 +42,6 @@ AbstractImageAccess >> extractImageVersionFrom: fileVersion into: header [
 	"Read and verify the image file version number and return true if the the given image file needs to be byte-swapped. As a side effect, position the file stream just after the version number of the image header. This code prints a warning and does a hard-exit if it cannot find a valid version number."
 	"This code is based on C code by Ian Piumarta."
 
-	<inline: false>
 	| version firstVersion |
 	<var: #file type: #sqImageFile>
 	<var: #imageOffset type: #squeakFileOffsetType>

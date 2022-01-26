@@ -18,10 +18,32 @@ VMMemoryMap class >> filteredInstVarNames [
 ]
 
 { #category : #translation }
+VMMemoryMap class >> generateHeader: aBinaryBlock [
+
+	aBinaryBlock
+		value: 'vmMemoryMap.h'
+		value: (String streamContents: [ :s | 
+				 self printTypedefOn: s.
+				 s cr ])
+]
+
+{ #category : #translation }
 VMMemoryMap class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 
 	self filteredInstVarNames do: [ :aName |
 		aBinaryBlock value: aName value: #'usqInt'  ]
+]
+
+{ #category : #translation }
+VMMemoryMap class >> needsTypeTag [
+
+	^true
+]
+
+{ #category : #translation }
+VMMemoryMap class >> shouldBeGenerated [
+
+	^ false
 ]
 
 { #category : #accessing }
@@ -85,6 +107,8 @@ VMMemoryMap >> oldSpaceStart: anObject [
 
 { #category : #accessing }
 VMMemoryMap >> startOfObjectMemory [
+	
+	<api>
 	
 	"The first object space in the memory map is the newSpace."
 	^ self newSpaceStart 

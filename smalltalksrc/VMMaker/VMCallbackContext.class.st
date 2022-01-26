@@ -62,7 +62,7 @@ VMCallbackContext class >> printTypedefOn: aStream [
 		newLine
 ]
 
-{ #category : #asserting }
+{ #category : #translation }
 VMCallbackContext class >> shouldBeGenerated [
 
 	^ false

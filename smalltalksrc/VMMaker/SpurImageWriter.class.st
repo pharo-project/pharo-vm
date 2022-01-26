@@ -189,7 +189,6 @@ SpurImageWriter >> writeImageSegmentsToFile: aBinaryStream [
 
 	<var: 'aBinaryStream' type: #sqImageFile>
 	<var: 'aSegment' type:#'SpurSegmentInfo *'>
-	<inline: false>
 
 	| total |
 	

@@ -177,7 +177,6 @@ SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 	 segment that specify the distance to and the size of the subsequent segment."
 
 	<var: #f type: #sqImageFile>
-	<inline: false>
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
 	<var: 'aHeader' type: #SpurImageHeaderStruct>
 	| bytesRead totalBytesRead bridgehead bridge nextSegmentSize oldBase newBase bridgeSpan |
