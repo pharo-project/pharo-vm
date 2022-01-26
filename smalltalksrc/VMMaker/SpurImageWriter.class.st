@@ -126,7 +126,7 @@ SpurImageWriter >> writeHeader: header toFile: f [
 
 ]
 
-{ #category : #writing }
+{ #category : #api }
 SpurImageWriter >> writeImageFile: imageFileName fromHeader: header [
 
 	"Write the image header and heap contents to imageFile for snapshot. c.f. writeImageFileIOSimulation.

@@ -1,5 +1,5 @@
 Class {
-	#name : #VMSpurImageReadingTest,
+	#name : #VMImageReadingTest,
 	#superclass : #VMAbstractImageFormatTest,
 	#instVars : [
 		'originalNilObjectIdentityHash'
@@ -8,7 +8,7 @@ Class {
 }
 
 { #category : #utilities }
-VMSpurImageReadingTest >> loadImage [
+VMImageReadingTest >> loadImage [
 
 	| memoryManager |
 	
@@ -29,7 +29,7 @@ VMSpurImageReadingTest >> loadImage [
 ]
 
 { #category : #initialization }
-VMSpurImageReadingTest >> setUp [
+VMImageReadingTest >> setUp [
 
 	super setUp.
 
@@ -46,7 +46,7 @@ VMSpurImageReadingTest >> setUp [
 ]
 
 { #category : #tests }
-VMSpurImageReadingTest >> testSavedImageSavesObject [
+VMImageReadingTest >> testSavedImageSavesObject [
 	
 	self saveImage.	
 	self loadImage.
@@ -55,7 +55,7 @@ VMSpurImageReadingTest >> testSavedImageSavesObject [
 ]
 
 { #category : #tests }
-VMSpurImageReadingTest >> testSavingImageWithThreeSegmentsIsCorrectlySqueezed [
+VMImageReadingTest >> testSavingImageWithThreeSegmentsIsCorrectlySqueezed [
 	
 	| firstNewSegmentSize secondNewSegmentSize obj newObj originalObjHash |
 	firstNewSegmentSize := memory growOldSpaceByAtLeast: 12 * 1024.
