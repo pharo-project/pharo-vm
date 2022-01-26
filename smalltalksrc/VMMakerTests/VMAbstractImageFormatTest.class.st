@@ -2,10 +2,21 @@ Class {
 	#name : #VMAbstractImageFormatTest,
 	#superclass : #VMSpurInitializedOldSpaceTest,
 	#instVars : [
-		'imageReader'
+		'imageReader',
+		'imageReaderClass',
+		'imageWriterClass'
 	],
 	#category : #'VMMakerTests-MemoryTests'
 }
+
+{ #category : #tests }
+VMAbstractImageFormatTest class >> testParameters [ 
+
+	^ super testParameters * { 
+		{ #imageReaderClass -> SpurImageReader. #imageWriterClass -> SpurImageWriter }.
+		{ #imageReaderClass -> ComposedImageReader. #imageWriterClass -> ComposedImageWriter }.
+	}
+]
 
 { #category : #tests }
 VMAbstractImageFormatTest >> imageFileName [
@@ -13,23 +24,44 @@ VMAbstractImageFormatTest >> imageFileName [
 	^ 'lala.image'
 ]
 
+{ #category : #accessing }
+VMAbstractImageFormatTest >> imageReaderClass [
+
+	^ imageReaderClass
+]
+
+{ #category : #accessing }
+VMAbstractImageFormatTest >> imageReaderClass: anObject [
+
+	imageReaderClass := anObject
+]
+
+{ #category : #accessing }
+VMAbstractImageFormatTest >> imageWriterClass [
+
+	^ imageWriterClass
+]
+
+{ #category : #accessing }
+VMAbstractImageFormatTest >> imageWriterClass: anObject [
+
+	imageWriterClass := anObject
+]
+
+{ #category : #accessing }
+VMAbstractImageFormatTest >> initializationOptions [
+
+	^ super initializationOptions, { #ImageReader.  imageReaderClass name. #ImageWriter. imageWriterClass name }
+]
+
 { #category : #tests }
 VMAbstractImageFormatTest >> readHeader [
 
-	| header |
-	header := self imageFileName asFileReference binaryReadStreamDo: [ :f | 
-		          imageReader readHeaderFrom: f startingAt: 0 ].
-	^ header
+	^ imageReader readHeaderFromImage: self imageFileName
 ]
 
 { #category : #actions }
 VMAbstractImageFormatTest >> saveImage [
-
-	interpreter setExtraVMMemory: 0.
-
-	interpreter imageName: self imageFileName.
-	interpreter preemptionYields: false.
-	interpreter setImageHeaderFlagsFrom: 0.
 	
 	interpreter writeImageFileIO.
 
@@ -45,12 +77,17 @@ VMAbstractImageFormatTest >> setUp [
 	memory splObj: FalseObject put: memory falseObject.
 	memory splObj: TrueObject put: memory trueObject.	
 	
-	imageReader := SpurImageReader newWithMemory: memory andInterpreter: interpreter 
+	interpreter setExtraVMMemory: 0.
+	interpreter imageName: self imageFileName.
+	interpreter preemptionYields: false.
+	interpreter setImageHeaderFlagsFrom: 0.
+	
+	imageReader := imageReaderClass newWithMemory: memory andInterpreter: interpreter 
 ]
 
 { #category : #running }
 VMAbstractImageFormatTest >> tearDown [
 
-	self imageFileName asFileReference ensureDelete.
+	self imageFileName asFileReference ensureDeleteAll.
 	super tearDown.
 ]

@@ -1,11 +1,11 @@
 Class {
-	#name : #VMSpurImageHeaderWritingTest,
+	#name : #VMImageHeaderWritingTest,
 	#superclass : #VMAbstractImageFormatTest,
 	#category : #'VMMakerTests-MemoryTests'
 }
 
 { #category : #running }
-VMSpurImageHeaderWritingTest >> setUp [
+VMImageHeaderWritingTest >> setUp [
 
 	super setUp.
 	
@@ -17,7 +17,7 @@ VMSpurImageHeaderWritingTest >> setUp [
 ]
 
 { #category : #tests }
-VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectBaseAddress [
+VMImageHeaderWritingTest >> testWritingImageWritesCorrectBaseAddress [
 
 	| header |
 
@@ -27,7 +27,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectBaseAddress [
 ]
 
 { #category : #tests }
-VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectBytesLeftInOldSpace [
+VMImageHeaderWritingTest >> testWritingImageWritesCorrectBytesLeftInOldSpace [
 
 	| header |
 
@@ -37,7 +37,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectBytesLeftInOldSpace
 ]
 
 { #category : #tests }
-VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectCodeSize [
+VMImageHeaderWritingTest >> testWritingImageWritesCorrectCodeSize [
 
 	| header |
 
@@ -47,7 +47,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectCodeSize [
 ]
 
 { #category : #tests }
-VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectDataSize [
+VMImageHeaderWritingTest >> testWritingImageWritesCorrectDataSize [
 
 	| header |
 
@@ -57,7 +57,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectDataSize [
 ]
 
 { #category : #tests }
-VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectDesiredEdenSize [
+VMImageHeaderWritingTest >> testWritingImageWritesCorrectDesiredEdenSize [
 
 	| header |
 
@@ -67,7 +67,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectDesiredEdenSize [
 ]
 
 { #category : #tests }
-VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectDesiredNumberStackPages [
+VMImageHeaderWritingTest >> testWritingImageWritesCorrectDesiredNumberStackPages [
 
 	| header |
 
@@ -77,7 +77,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectDesiredNumberStackP
 ]
 
 { #category : #tests }
-VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectExternalSemaphoreTable [
+VMImageHeaderWritingTest >> testWritingImageWritesCorrectExternalSemaphoreTable [
 
 	| header |
 
@@ -87,7 +87,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectExternalSemaphoreTa
 ]
 
 { #category : #tests }
-VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectExtraVMMemory [
+VMImageHeaderWritingTest >> testWritingImageWritesCorrectExtraVMMemory [
 
 	| header |
 
@@ -97,7 +97,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectExtraVMMemory [
 ]
 
 { #category : #tests }
-VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectFirstSegmentSize [
+VMImageHeaderWritingTest >> testWritingImageWritesCorrectFirstSegmentSize [
 
 	| header |
 
@@ -107,7 +107,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectFirstSegmentSize [
 ]
 
 { #category : #tests }
-VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectHeaderFlags [
+VMImageHeaderWritingTest >> testWritingImageWritesCorrectHeaderFlags [
 
 	| header |
 
@@ -117,7 +117,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectHeaderFlags [
 ]
 
 { #category : #tests }
-VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectHeaderSize [
+VMImageHeaderWritingTest >> testWritingImageWritesCorrectHeaderSize [
 
 	| header expectedHeaderSize |
 
@@ -129,7 +129,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectHeaderSize [
 ]
 
 { #category : #tests }
-VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectImageFormat [
+VMImageHeaderWritingTest >> testWritingImageWritesCorrectImageFormat [
 
 	| header |
 
@@ -139,7 +139,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectImageFormat [
 ]
 
 { #category : #tests }
-VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectNextObjectHash [
+VMImageHeaderWritingTest >> testWritingImageWritesCorrectNextObjectHash [
 
 	| header |
 
@@ -149,7 +149,7 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectNextObjectHash [
 ]
 
 { #category : #tests }
-VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectSpecialObjectsArrayOop [
+VMImageHeaderWritingTest >> testWritingImageWritesCorrectSpecialObjectsArrayOop [
 
 	| header |
 
