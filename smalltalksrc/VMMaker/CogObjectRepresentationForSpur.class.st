@@ -305,13 +305,13 @@ CogObjectRepresentationForSpur >> checkValidOopReference: anOop [
 
 { #category : #'garbage collection' }
 CogObjectRepresentationForSpur >> couldBeDerivedObject: bodyAddress [
-	^self oop: bodyAddress - objectMemory baseHeaderSize isGreaterThanOrEqualTo: objectMemory startOfMemory
+	^self oop: bodyAddress - objectMemory baseHeaderSize isGreaterThanOrEqualTo: objectMemory getMemoryMap startOfObjectMemory
 ]
 
 { #category : #'garbage collection' }
 CogObjectRepresentationForSpur >> couldBeObject: literal [
 	^(objectMemory isNonImmediate: literal)
-	  and: [self oop: literal isGreaterThanOrEqualTo: objectMemory startOfMemory]
+	  and: [self oop: literal isGreaterThanOrEqualTo: objectMemory getMemoryMap startOfObjectMemory]
 ]
 
 { #category : #'bytecode generator support' }

@@ -76,7 +76,6 @@ Class {
 		'gcMode',
 		'cogCodeSize',
 		'desiredCogCodeSize',
-		'heapBase',
 		'lastCoggableInterpretedBlockMethod',
 		'deferSmash',
 		'deferredSmash',
@@ -163,7 +162,6 @@ CoInterpreter class >> declareCVarsIn: aCCodeGenerator [
 		declareInterpreterVersionIn: aCCodeGenerator
 		defaultName: aCCodeGenerator interpreterVersion.
 	aCCodeGenerator
-		var: #heapBase type: #usqInt;
 		var: #statCodeCompactionUsecs type: #usqLong;
 		var: #maxLiteralCountForCompile
 			declareC: 'sqInt maxLiteralCountForCompile = MaxLiteralCountForCompile /* ', MaxLiteralCountForCompile printString, ' */';
@@ -544,7 +542,7 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 	 the last block method we failed to compile and avoid recompiling it."
 	(self methodWithHeaderShouldBeCogged: methodHeader)
 		ifTrue:
-			[(instructionPointer < objectMemory startOfMemory "If from machine code (via value primitive) attempt jitting"
+			[(instructionPointer < objectMemory getMemoryMap startOfObjectMemory "If from machine code (via value primitive) attempt jitting"
 			  or: [theMethod = lastCoggableInterpretedBlockMethod]) "If from interpreter and repeat block, attempt jitting"
 				ifTrue:
 					[theMethod ~= lastUncoggableInterpretedBlockMethod ifTrue:
@@ -570,7 +568,7 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 	 then make sure we restore the saved instruction pointer and avoid pushing
 	 ceReturnToInterpreterPC which is only valid between an interpreter caller
 	 frame and a machine code callee frame."
-	(inInterpreter := instructionPointer >= objectMemory startOfMemory) ifFalse:
+	(inInterpreter := instructionPointer >= objectMemory getMemoryMap startOfObjectMemory) ifFalse:
 		[instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
 			[instructionPointer := self iframeSavedIP: framePointer]].
 
@@ -630,7 +628,7 @@ CoInterpreter >> activateNewMethod [
 	 then make sure we restore the saved instruction pointer and avoid pushing
 	 ceReturnToInterpreterPC which is only valid between an interpreter caller
 	 frame and a machine code callee frame."
-	(inInterpreter := instructionPointer >= objectMemory startOfMemory) ifFalse:
+	(inInterpreter := instructionPointer >= objectMemory getMemoryMap startOfObjectMemory) ifFalse:
 		[instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
 			[instructionPointer := self iframeSavedIP: framePointer]].
 	self push: instructionPointer.
@@ -672,18 +670,6 @@ CoInterpreter >> addNewMethodToCache: classObj [
 		[primitiveFunctionPointer := #primitiveInvokeObjectAsMethod.
 		^self].
 	super addNewMethodToCache: classObj
-]
-
-{ #category : #'image save/restore' }
-CoInterpreter >> allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: desiredPositionOfHeap [ 
-
-	<var: #f type: #sqImageFile>
-	<var: #header type: #'SpurImageHeaderStruct'>
-
-	"We set the heapBase in the interpreter. It is only used by the CoInterpreter"
-	heapBase := super allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: desiredPositionOfHeap.
-	^ heapBase
-	
 ]
 
 { #category : #allocating }
@@ -991,7 +977,7 @@ CoInterpreter >> baseFrameReturn [
 	localSP := theSP.
 	localFP := theFP.
 	localIP := self pointerForOop: self internalStackTop.
-	localIP asUnsignedInteger < objectMemory startOfMemory ifTrue:
+	localIP asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory ifTrue:
 		[localIP asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue:
 			["localIP in the cog method zone indicates a return to machine code."
 			 ^self returnToMachineCodeFrame].
@@ -1119,7 +1105,7 @@ CoInterpreter >> callbackEnter: callbackID [
 	jmpDepth := jmpDepth + 1.
 
 	wasInMachineCode := self isMachineCodeFrame: framePointer.
-	calledFromMachineCode := instructionPointer <= objectMemory startOfMemory.
+	calledFromMachineCode := instructionPointer <= objectMemory getMemoryMap startOfObjectMemory.
 
 	"Suspend the currently active process"
 	suspendedCallbacks at: jmpDepth put: self activeProcess.
@@ -1173,7 +1159,7 @@ CoInterpreter >> callbackEnter: callbackID [
 	self assert: wasInMachineCode = (self isMachineCodeFrame: framePointer).
 	calledFromMachineCode
 		ifTrue:
-			[instructionPointer asUnsignedInteger >= objectMemory startOfMemory ifTrue:
+			[instructionPointer asUnsignedInteger >= objectMemory getMemoryMap startOfObjectMemory ifTrue:
 				[self iframeSavedIP: framePointer put: instructionPointer.
 				 instructionPointer := cogit ceReturnToInterpreterPC]]
 		ifFalse:
@@ -1181,7 +1167,7 @@ CoInterpreter >> callbackEnter: callbackID [
 			  above it will remain an interpreted frame because the context's pc would
 			  remain a bytecode pc.  So the instructionPointer must also be a bytecode pc."
 			 self assert: (self isMachineCodeFrame: framePointer) not.
-			 self assert: instructionPointer > objectMemory startOfMemory].
+			 self assert: instructionPointer > objectMemory getMemoryMap startOfObjectMemory].
 	self assert: primFailCode = 0.
 	jmpDepth := jmpDepth-1.
 	^true
@@ -2340,7 +2326,7 @@ CoInterpreter >> cogMethodOf: aMethodOop [
 	| methodHeader |
 	methodHeader := self rawHeaderOf: aMethodOop.
 	self assert: ((objectMemory isNonImmediate: methodHeader)
-				and: [methodHeader asUnsignedInteger < objectMemory startOfMemory]).
+				and: [methodHeader asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory]).
 	^self cCoerceSimple: methodHeader to: #'CogMethod *'
 ]
 
@@ -2413,7 +2399,7 @@ CoInterpreter >> commonCallerReturn [
 	localIP := self frameCallerSavedIP: localFP.
 	localSP := localFP + (self frameStackedReceiverOffset: localFP).
 	localFP := callersFPOrNull.
-	localIP asUnsignedInteger < objectMemory startOfMemory ifTrue:
+	localIP asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory ifTrue:
 		[localIP asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue:
 			["localIP in the cog method zone indicates a return to machine code."
 			 ^self returnToMachineCodeFrame].
@@ -2803,7 +2789,7 @@ CoInterpreter >> ensurePushedInstructionPointer [
 	 from the interpreter, either directly or via a machine code primitive.  We
 	 could have come from machine code.  The instructionPointer tells us where
 	 from.  Make sure the instruction pointer is pushed and/or saved."
-	instructionPointer asUnsignedInteger >= objectMemory startOfMemory
+	instructionPointer asUnsignedInteger >= objectMemory getMemoryMap startOfObjectMemory
 		ifTrue:
 			"invoked directly from the interpreter"
 			[self iframeSavedIP: framePointer put: instructionPointer.
@@ -2958,7 +2944,7 @@ CoInterpreter >> executeNewMethod [
 	 the method cache (i.e. primitivePerform et al).
 	 Eagerly compile it if appropriate so that doits are fast."
 	| methodHeader inInterpreter |
-	inInterpreter := instructionPointer >= objectMemory startOfMemory.
+	inInterpreter := instructionPointer >= objectMemory getMemoryMap startOfObjectMemory.
 	primitiveFunctionPointer ~= 0 ifTrue:
 		[self isPrimitiveFunctionPointerAnIndex ifTrue:
 			[self externalQuickPrimitiveResponse.
@@ -2982,7 +2968,7 @@ CoInterpreter >> executeNewMethod [
 	"if not primitive, or primitive failed, activate the method"
 	(self isCogMethodReference: methodHeader)
 		ifTrue:
-			[instructionPointer asUnsignedInteger >= objectMemory startOfMemory ifTrue:
+			[instructionPointer asUnsignedInteger >= objectMemory getMemoryMap startOfObjectMemory ifTrue:
 				[self iframeSavedIP: framePointer put: instructionPointer asInteger.
 				 instructionPointer := cogit ceReturnToInterpreterPC].
 			self activateCoggedNewMethod: inInterpreter]
@@ -3653,18 +3639,6 @@ CoInterpreter >> handleMNU: selectorIndex InMachineCodeTo: rcvr classForMessage:
 	"NOTREACHED"
 ]
 
-{ #category : #accessing }
-CoInterpreter >> heapBase [
-	<cmacro: '() heapBase'>
-	^heapBase
-]
-
-{ #category : #accessing }
-CoInterpreter >> heapBase: anInteger [ 
-	<doNotGenerate>
-	heapBase := anInteger
-]
-
 { #category : #'message sending' }
 CoInterpreter >> ifAppropriateCompileToNativeCode: aMethodObj selector: selector [
 	| methodHeader cogMethod |
@@ -3806,7 +3780,7 @@ CoInterpreter >> iframeSavedIP: theFP put: savedIP [
 { #category : #initialization }
 CoInterpreter >> initStackPagesAndInterpret [
 
-	self sqMakeMemoryNotExecutableFrom: objectMemory startOfMemory asUnsignedInteger
+	self sqMakeMemoryNotExecutableFrom: objectMemory getMemoryMap startOfObjectMemory asUnsignedInteger
 		To: objectMemory getMemoryMap oldSpaceEnd asUnsignedInteger.
 
 	self initStackPages.
@@ -4045,7 +4019,7 @@ CoInterpreter >> interpretAddress [
 	<api>
 	<returnTypeC: #usqInt>
 	^self cCode: [(self addressOf: #interpret) asUnsignedInteger]
-		inSmalltalk: [heapBase]
+		inSmalltalk: [objectMemory getMemoryMap startOfObjectMemory]
 ]
 
 { #category : #'message sending' }
@@ -4138,7 +4112,7 @@ CoInterpreter >> isCogCompiledCodeCompactionCalledFor [
 CoInterpreter >> isCogMethodReference: methodHeader [
 	<api>
 	self assert: ((objectMemory isIntegerObject: methodHeader)
-				or: [methodHeader asUnsignedInteger < objectMemory startOfMemory
+				or: [methodHeader asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory
 					and: [methodHeader asUnsignedInteger >= cogit minCogMethodAddress]]).
 	^objectMemory isNonIntegerObject: methodHeader
 ]
@@ -4146,12 +4120,12 @@ CoInterpreter >> isCogMethodReference: methodHeader [
 { #category : #'frame access' }
 CoInterpreter >> isMachineCodeFrame: theFP [ 
 	<var: #theFP type: #'char *'>
-	^(stackPages longAt: theFP + FoxMethod) asUnsignedInteger < objectMemory startOfMemory
+	^(stackPages longAt: theFP + FoxMethod) asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory
 ]
 
 { #category : #'debug support' }
 CoInterpreter >> isMachineCodeIP: anInstrPointer [
-	^anInstrPointer < objectMemory startOfMemory
+	^anInstrPointer < objectMemory getMemoryMap startOfObjectMemory
 ]
 
 { #category : #'internal interpreter access' }
@@ -4196,7 +4170,7 @@ CoInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 	self assert: (objectMemory isOopForwarded: rcvr) not.
 
 	(cogMethod notNil
-	and: [instructionPointer asUnsignedInteger >= objectMemory startOfMemory]) ifTrue:
+	and: [instructionPointer asUnsignedInteger >= objectMemory getMemoryMap startOfObjectMemory]) ifTrue:
 		[self iframeSavedIP: framePointer put: instructionPointer.
 		 instructionPointer := cogit ceReturnToInterpreterPC].
 	self push: instructionPointer.
@@ -4788,7 +4762,7 @@ CoInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 	 no temporaries.  Note that we still set the stack pointer to its current value, but stack
 	 contents other than the arguments are nil."
 	methodFieldOrObj := self frameMethodField: theFP.
-	methodFieldOrObj asUnsignedInteger < objectMemory startOfMemory "inline (self isMachineCodeFrame: theFP)"
+	methodFieldOrObj asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory "inline (self isMachineCodeFrame: theFP)"
 		ifTrue:
 			[| cogMethod |
 			 stackPages
@@ -4922,7 +4896,7 @@ CoInterpreter >> maybeReturnToMachineCodeFrame [
 	"If the frame we're returning to is a machine code one, then return to it.
 	 Otherwise, if it's an interpreter frame, load the saved ip."
 	<inline: true>
-	localIP asUnsignedInteger < objectMemory startOfMemory ifTrue:
+	localIP asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory ifTrue:
 		[localIP asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue:
 			["localIP in the cog method zone indicates a return to machine code."
 			 ^self returnToMachineCodeFrame].
@@ -5184,7 +5158,7 @@ CoInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 	self setHeadFP: oldPage headFP + delta andSP: newSP inPage: newPage.
 	newPage baseFP: newFP.
 	callerIP := self oopForPointer: (self frameCallerSavedIP: theFP).
-	callerIP asUnsignedInteger >= objectMemory startOfMemory ifTrue:
+	callerIP asUnsignedInteger >= objectMemory getMemoryMap startOfObjectMemory ifTrue:
 		[self iframeSavedIP: callerFP put: callerIP.
 		 callerIP := cogit ceReturnToInterpreterPC].
 	stackPages longAt: theFP + stackedReceiverOffset put: callerIP.
@@ -5520,7 +5494,7 @@ CoInterpreter >> primitiveFailAddress [
 	<api>
 	<returnTypeC: #usqInt>
 	^self cCode: [(self addressOf: #primitiveFail) asUnsignedInteger]
-		inSmalltalk: [heapBase]
+		inSmalltalk: [objectMemory getMemoryMap startOfObjectMemory]
 ]
 
 { #category : #'cog jit support' }
@@ -6190,7 +6164,7 @@ CoInterpreter >> returnToMachineCodeFrame [
 	"Return to the previous context/frame after assigning localIP, localSP and localFP."
 	<inline: true>
 	cogit assertCStackWellAligned.
-	self assert: localIP asUnsignedInteger < objectMemory startOfMemory.
+	self assert: localIP asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory.
 	self assert: (self isMachineCodeFrame: localFP).
 	self assertValidExecutionPointe: localIP asUnsignedInteger r: localFP s: localSP imbar: false line: #'__LINE__'.
 	self internalStackTopPut: localIP.
@@ -6323,7 +6297,7 @@ CoInterpreter >> setImageHeaderFlagsFrom: headerFlags [
 
 { #category : #'internal interpreter access' }
 CoInterpreter >> setMethod: aMethodObj [
-	self assert: aMethodObj asUnsignedInteger >= objectMemory startOfMemory.
+	self assert: aMethodObj asUnsignedInteger >= objectMemory getMemoryMap startOfObjectMemory.
 	super setMethod: aMethodObj
 ]
 
@@ -6832,7 +6806,7 @@ CoInterpreter >> validInstructionPointer: instrPointer inMethod: aMethod framePo
 				theInstrPointer := instrPointer.
 				header := self rawHeaderOf: aMethod.
 				((self isCogMethodReference: header)
-				   and: [theInstrPointer < objectMemory startOfMemory]) ifTrue:
+				   and: [theInstrPointer < objectMemory getMemoryMap startOfObjectMemory]) ifTrue:
 				 	[cogMethod := self cCoerceSimple: header to: #'CogMethod *'.
 				 	 ^theInstrPointer >= (header + (cogit sizeof: CogMethod))
 				 	 and: [theInstrPointer < (header + cogMethod blockSize)]]].

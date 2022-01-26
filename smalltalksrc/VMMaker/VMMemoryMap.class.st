@@ -82,3 +82,10 @@ VMMemoryMap >> oldSpaceStart: anObject [
 
 	oldSpaceStart := anObject
 ]
+
+{ #category : #accessing }
+VMMemoryMap >> startOfObjectMemory [
+	
+	"The first object space in the memory map is the newSpace."
+	^ self newSpaceStart 
+]

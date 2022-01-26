@@ -1204,10 +1204,6 @@ CogVMSimulator >> initStackPagesForTests [
 	stackPages := self stackPagesClass new setInterpreter: self.
 	objectMemory memoryManager allocate: 1024 * 1024.
 	cogCodeSize := 0.
-	heapBase := self methodCacheSize
-				+ self primTraceLogSize
-				+ self rumpCStackSize
-				+ self computeStackZoneSize.
 	self initStackPages
 ]
 
@@ -2585,7 +2581,7 @@ CogVMSimulator >> printNum: anInteger [
 { #category : #'rump c stack' }
 CogVMSimulator >> printRumpCStackTo: address [
 	self assert: (self isOnRumpCStack: address).
-	heapBase - objectMemory wordSize
+	objectMemory getMemoryMap startOfObjectMemory - objectMemory wordSize
 		to: address
 		by: objectMemory wordSize negated
 		do:
@@ -2617,7 +2613,7 @@ CogVMSimulator >> printStringOf: oop on: aStream [
 	| fmt cnt i |
 	(objectMemory isIntegerObject: oop) ifTrue:
 		[^nil].
-	(oop between: objectMemory startOfMemory and: objectMemory freeStart) ifFalse:
+	(oop between: objectMemory getMemoryMap startOfObjectMemory and: objectMemory freeStart) ifFalse:
 		[^nil].
 	(oop bitAnd: (objectMemory wordSize - 1)) ~= 0 ifTrue:
 		[^nil].
@@ -2876,11 +2872,6 @@ CogVMSimulator >> startInContextSuchThat: aBlock [
 	self storeInteger: StackPointerIndex
 		ofObject: context
 		withValue: (self fetchStackPointerOf: context) + 1
-]
-
-{ #category : #'debugging traps' }
-CogVMSimulator >> startOfMemory [
-	self shouldNotImplement
 ]
 
 { #category : #'simulation only' }

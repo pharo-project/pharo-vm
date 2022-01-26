@@ -2189,11 +2189,6 @@ StackInterpreterSimulator >> startInSender [
 		withValue: (self fetchStackPointerOf: senderContext) + 1
 ]
 
-{ #category : #initialization }
-StackInterpreterSimulator >> startOfMemory [
-	self shouldNotImplement
-]
-
 { #category : #'debugging traps' }
 StackInterpreterSimulator >> success: successBoolean [
 	"successBoolean ifFalse:

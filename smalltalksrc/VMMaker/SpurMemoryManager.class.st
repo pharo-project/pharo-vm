@@ -11489,14 +11489,6 @@ SpurMemoryManager >> stackValue: offset ofObjStack: objStackPage [
 	^self stackValue: offset - topx ofObjStack: nextPage
 ]
 
-{ #category : #accessing }
-SpurMemoryManager >> startOfMemory [
-	"Return the start of object memory. Use a macro so as not to punish the debug VM."
-	<cmacro: '() GIV(memory)'>
-	<returnTypeC: #usqInt>
-	^0
-]
-
 { #category : #'object enumeration' }
 SpurMemoryManager >> startOfObject: objOop [
 	"Answer the start of objOop, which is either the address of the overflow
