@@ -1459,6 +1459,21 @@ StackInterpreter class >> initializeWithOptions: optionsDictionary [
 	self initializeStreamIndices
 ]
 
+{ #category : #'class initialization' }
+StackInterpreter class >> initializeWithOptions: optionsDictionaryOrArray objectMemoryClass: objectMemoryClassOrNil [
+	"The relevant ObjectMemory and Interpreter classes must be initialized in order.
+	 This happens notionally every time we start the simulator,
+	 but in fact happens when ever we instantiate a simulator."
+	InitializationOptions := optionsDictionaryOrArray isArray
+							ifTrue: [Dictionary newFromPairs: optionsDictionaryOrArray]
+							ifFalse: [optionsDictionaryOrArray].
+
+	(objectMemoryClassOrNil ifNil: [self objectMemoryClass])
+		initializeWithOptions: InitializationOptions.
+
+	self initializeWithOptions: InitializationOptions
+]
+
 { #category : #accessing }
 StackInterpreter class >> interpreterVersion [ 
 	^ 'Stack'
@@ -2310,6 +2325,34 @@ StackInterpreter >> baseFrameReturn [
 	self internalStackTopPut: localReturnValue.
 	self assert: (self checkIsStillMarriedContext: contextToReturnTo currentFP: localFP).
 	^self fetchNextBytecode
+]
+
+{ #category : #initialization }
+StackInterpreter >> basicInitialize [
+	"The primary responsibility of this method is to allocate
+	 Smalltalk Arrays for variables that will be declared as statically-allocated
+	 global arrays in the translated code."
+
+	objectMemory ifNil:
+		[objectMemory := self class objectMemoryClass simulatorClass new].
+	objectMemory coInterpreter: self.
+
+	self assert: ConstMinusOne = (objectMemory integerObjectOf: -1).
+
+	methodCache := Array new: MethodCacheSize.
+	self initializeAtCache.
+	self flushMethodCache.
+	gcSemaphoreIndex := 0.
+	externalPrimitiveTable := CArrayAccessor on: (Array
+		new: MaxExternalPrimitiveTableSize
+		withAll: 0).
+	externalPrimitiveTableFirstFreeIndex := 0.
+	primitiveTable := self class primitiveTable copy.
+	desiredNumStackPages := desiredEdenBytes := 0.
+	"This is initialized on loading the image, but convenient for testing stack page values..."
+	numStackPages := self defaultNumStackPages. 
+
+	suppressHeartbeatFlag := false.
 ]
 
 { #category : #'frame access' }
@@ -7809,6 +7852,7 @@ StackInterpreter >> initialIPForHeader: methodHeader method: theMethod [
 StackInterpreter >> initialize [
 	"Here we can initialize the variables C initializes to zero.  #initialize methods do /not/ get translated."
 	super initialize.
+
 	checkAllocFiller := false. "must precede initializeObjectMemory:"
 	stackLimit := 0. "This is also the initialization flag for the stack system."
 	stackPage := overflowedPage := 0.
@@ -7833,6 +7877,12 @@ StackInterpreter >> initialize [
 	statForceInterruptCheck := statStackOverflow := statCheckForEvents :=
 	statProcessSwitch := statIOProcessEvents := statStackPageDivorce :=
 	statIdleUsecs := 0
+]
+
+{ #category : #initialization }
+StackInterpreter >> initializeAtCache [
+
+	atCache := Array new: AtCacheTotalSize.
 ]
 
 { #category : #initialization }
@@ -15310,6 +15360,12 @@ StackInterpreter >> temporaryLocation: offset in: theFP numArgs: numArgs [
 StackInterpreter >> thisClassIndex [
 	<doNotGenerate>
 	^thisClassIndex
+]
+
+{ #category : #simulation }
+StackInterpreter >> threadManager [
+	<doNotGenerate>
+	^nil
 ]
 
 { #category : #simulation }
