@@ -1,6 +1,8 @@
 Class {
 	#name : #Spur32BitMMLECoSimulator,
 	#superclass : #Spur32BitCoMemoryManager,
+	#traits : 'TVMSpurMemoryManagerSimulator',
+	#classTraits : 'TVMSpurMemoryManagerSimulator classTrait',
 	#instVars : [
 		'parent',
 		'bootstrapping'
@@ -342,17 +344,6 @@ Spur32BitMMLECoSimulator >> setIsMarkedOf: objOop to: aBoolean [
 			currentFP: coInterpreter framePointer)
 	 and: [(coInterpreter stackPages stackPageFor: (coInterpreter frameOfMarriedContext: objOop)) trace = 0]]]) ifTrue:
 		[self halt]"
-]
-
-{ #category : #'debug support' }
-Spur32BitMMLECoSimulator >> setUpForUseByFacade: aCurrentImageCoInterpreterFacade [
-	"Make sure that eden etc are initialized, so that methods can be printed.
-	 This is really to make addressCouldBeObj: et al work."
-	<doNotGenerate>
-	self edenBytes: 0.
-	self setHeapBase: self freeStart
-		memoryLimit: memoryMap oldSpaceEnd
-		endOfMemory: memoryMap oldSpaceEnd
 ]
 
 { #category : #'memory access' }

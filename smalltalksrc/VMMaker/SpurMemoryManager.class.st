@@ -652,7 +652,8 @@ Class {
 { #category : #translation }
 SpurMemoryManager class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
-	^{	SpurGenerationScavenger. SpurScavengeLogRecord. SpurSegmentManager. SpurSegmentInfo. VMMemoryMap }, 
+	^{	SpurGenerationScavenger. SpurScavengeLogRecord. SpurSegmentManager. SpurSegmentInfo. VMMemoryMap. 
+		VMMemoryMapConfiguration. VMMemoryMapConfiguration forWordsize: self objectMemoryClass wordSize }, 
 		self compactorClass classesForTranslation,
 		SpurNewSpaceSpace withAllSubclasses
 		
@@ -1946,41 +1947,6 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes initialAddress: initialAd
 	<doNotGenerate>
 
 	^ memoryManager allocate: memoryBytes desiredPosition: initialAddress
-]
-
-{ #category : #'spur bootstrap' }
-SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceBytes stackSize: stackBytes codeSize: codeBytes [
-	"Intialize the receiver for bootsraping an image.
-	 Set up a large oldSpace and an empty newSpace and set-up freeStart and scavengeThreshold
-	 to allocate in oldSpace.  Later on (in initializePostBootstrap) freeStart and scavengeThreshold
-	 will be set to sane values."
-	<doNotGenerate>
-
-	self
-		allocateMemoryOfSize: memoryBytes
-		newSpaceSize: newSpaceBytes
-		stackSize: stackBytes
-		codeSize: codeBytes
-		initialAddress: 0
-]
-
-{ #category : #'spur bootstrap' }
-SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceBytes stackSize: stackBytes codeSize: codeBytes initialAddress: initialAddress [
-	"Intialize the receiver for bootsraping an image.
-	 Set up a large oldSpace and an empty newSpace and set-up freeStart and scavengeThreshold
-	 to allocate in oldSpace.  Later on (in initializePostBootstrap) freeStart and scavengeThreshold
-	 will be set to sane values."
-	<doNotGenerate>
-	
-	self
-		allocateMemoryOfSize: memoryBytes
-		newSpaceSize: newSpaceBytes
-		stackSize: stackBytes
-		codeSize: codeBytes
-		methodCacheSize: 0
-		primitiveTraceLogSize: 0
-		rumpCStackSize: 0
-		initialAddress: initialAddress
 ]
 
 { #category : #initialization }
@@ -4203,6 +4169,18 @@ SpurMemoryManager >> countNumClassPagesPreSwizzle: bytesToShift [
 	
 ]
 
+{ #category : #initialization }
+SpurMemoryManager >> createMemoryMap [ 
+
+	self 
+		cCode: [ memoryMap := self cCoerce: (self malloc: (self sizeof: VMMemoryMap))  to: #'VMMemoryMap *'] 
+		inSmalltalk: [ 
+			memoryMap := VMMemoryMap new.
+			memoryMap memoryManager: memoryManager ].
+		
+	memoryMap initializeMemoryMap.
+]
+
 { #category : #'allocation accounting' }
 SpurMemoryManager >> currentAllocatedBytes [
 	"Compute the current allocated bytes since last set.
@@ -6374,6 +6352,23 @@ SpurMemoryManager >> initializeFreeSpacePostLoad: freeListObj [
 			 freeLists at: i put: (segmentManager swizzleObj: (freeLists at: i))]]
 ]
 
+{ #category : #snapshot }
+SpurMemoryManager >> initializeFromMemoryMap [
+
+	| reserve |
+	reserve := coInterpreter interpreterAllocationReserveBytes.
+	
+	scavenger newSpaceStart: memoryMap newSpaceStart
+				newSpaceBytes: memoryMap newSpaceEnd - memoryMap newSpaceStart
+				survivorBytes: memoryMap newSpaceEnd - memoryMap newSpaceStart - reserve // self scavengerDenominator.
+
+	freeStart := scavenger eden start.
+	pastSpaceStart := scavenger pastSpace start.
+
+	freeOldSpaceStart := memoryMap oldSpaceEnd.
+
+]
+
 { #category : #allocation }
 SpurMemoryManager >> initializeHeaderOfStartAddress: startAddress numSlots: numSlots format: formatField classIndex: classIndex pinned: isPinned [	
 
@@ -6395,16 +6390,6 @@ SpurMemoryManager >> initializeHeaderOfStartAddress: startAddress numSlots: numS
 { #category : #'gc - global' }
 SpurMemoryManager >> initializeMarkStack [
 	self ensureRoomOnObjStackAt: MarkStackRootIndex
-]
-
-{ #category : #initialization }
-SpurMemoryManager >> initializeMemoryMap [ 
-
-	self 
-		cCode: [ memoryMap := self cCoerce: (self malloc: (self sizeof: VMMemoryMap))  to: #'VMMemoryMap *'] 
-		inSmalltalk: [ 
-			memoryMap := VMMemoryMap new.
-			memoryMap memoryManager: memoryManager ]
 ]
 
 { #category : #'gc - scavenging' }
@@ -10940,36 +10925,6 @@ SpurMemoryManager >> setHashBitsOf: objOop to: hash [
 	self assert: (hash between: 0 and: self identityHashHalfWordMask).
 	self long32At: objOop + 4
 		put: ((self long32At: objOop + 4) bitClear: self identityHashHalfWordMask) + hash
-]
-
-{ #category : #snapshot }
-SpurMemoryManager >> setHeapBase: baseOfHeap memoryLimit: memLimit endOfMemory: memEnd [
-	"Set the dimensions of the heap, answering the start of oldSpace. edenBytes holds the desired ``size of eden''
-	 which is actually the total size of new space minus the reserve.  edenBytes is then divided up between eden
-	 and the two survivor spaces, where each survivor space is a scavengerDenominator (one seventh) of the total."
-	"Transcript
-		cr; nextPutAll: 'heapBase: '; print: baseOfHeap; nextPut: $/; nextPutAll: baseOfHeap hex;
-		nextPutAll: ' memLimit '; print: memLimit; nextPut: $/; nextPutAll: memLimit hex;
-		nextPutAll: ' memEnd '; print: memEnd; nextPut: $/; nextPutAll: memEnd hex; cr; flush."
-	"This is more than a little counter-intuitive.  Eden must include interpreterAllocationReserveBytes."
-	<inline: #never>
-	| reserve |
-	reserve := coInterpreter interpreterAllocationReserveBytes.
-	memoryMap newSpaceStart: baseOfHeap.
-	memoryMap newSpaceEnd: baseOfHeap + edenBytes + reserve.
-	
-	scavenger newSpaceStart: memoryMap newSpaceStart
-				newSpaceBytes: memoryMap newSpaceEnd - memoryMap newSpaceStart
-				survivorBytes: memoryMap newSpaceEnd - memoryMap newSpaceStart - reserve // self scavengerDenominator.
-
-	freeStart := scavenger eden start.
-	pastSpaceStart := scavenger pastSpace start.
-
-	memoryMap oldSpaceStart: memoryMap newSpaceEnd.
-	freeOldSpaceStart := memEnd.
-	memoryMap oldSpaceEnd: memLimit.
-
-	^baseOfHeap
 ]
 
 { #category : #accessing }

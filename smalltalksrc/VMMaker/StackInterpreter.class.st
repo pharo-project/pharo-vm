@@ -2063,45 +2063,6 @@ StackInterpreter >> allOnesAsCharStar [
 ]
 
 { #category : #'image save/restore' }
-StackInterpreter >> allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: desiredPositionOfHeap [ 
-
-	<var: #f type: #sqImageFile>
-	<var: #header type: #'SpurImageHeaderStruct'>
-
-	| allocationReserve headroom heapSize minimumMemory allocatedAddress |
-	
-	allocationReserve := self interpreterAllocationReserveBytes.
-
-	headroom := objectMemory
-		            initialHeadroom: extraVMMemory
-		            givenFreeOldSpaceInImage: header freeOldSpaceInImage.
-	heapSize := objectMemory roundUpHeapSize:
-		            header dataSize + headroom + objectMemory newSpaceBytes
-		            + (headroom > allocationReserve
-				             ifTrue: [ 0 ]
-				             ifFalse: [ allocationReserve ]).
-
-	minimumMemory := header dataSize + objectMemory newSpaceBytes
-	                 + allocationReserve.
-
-	"allocate a contiguous block of memory for the heap"
-	allocatedAddress := (self
-			 allocateMemory: heapSize
-			 minimum: minimumMemory
-			 imageFile: f
-			 headerSize: header imageHeaderSize
-			 desiredPosition: desiredPositionOfHeap) asUnsignedInteger.
-			
-	allocatedAddress ifNil: [ self insufficientMemoryAvailableError ].
-
-	^ objectMemory
-		setHeapBase: allocatedAddress
-		memoryLimit: allocatedAddress + heapSize
-		endOfMemory: allocatedAddress + header dataSize.
-
-]
-
-{ #category : #'image save/restore' }
 StackInterpreter >> allocateJITMemory: desiredSize desiredPosition: desiredPosition [
 	
 	<inline: true>
@@ -2110,61 +2071,30 @@ StackInterpreter >> allocateJITMemory: desiredSize desiredPosition: desiredPosit
 	^self pointerForOop: (self allocateJITMemory: desiredSize _: desiredPosition)
 ]
 
-{ #category : #allocating }
-StackInterpreter >> allocateMemory: desiredSize Minimum: minimumSize ImageFile: imageFile HeaderSize: headerSize BaseAddress: baseAddress [ 
-	
-	<doNotGenerate>
-	^ memoryManager allocate: desiredSize desiredPosition: baseAddress
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> allocateMemory: heapSize minimum: minimumMemory imageFile: fileStream headerSize: headerSize [
-	"Translate to C function call with (case sensitive) camelCase. The purpose of this
-	 method is to document the translation.
-	 The default implementation is sqAllocateMemory(minimumMemory, heapSize). This may
-	 be redefined to make use of the image file and header size parameters for efficient
-	 implementation with mmap().
-	 See CCodeGenerator>>writeDefaultMacrosOn: which specifies a default implementation."
-
-	<inline: true>
-	<returnTypeC: #'char *'>
-	<var: #fileStream type: #sqImageFile>
-	^self pointerForOop: (self
-							allocateMemory: heapSize
-							Minimum: minimumMemory
-							ImageFile: fileStream
-							HeaderSize: headerSize)
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> allocateMemory: heapSize minimum: minimumMemory imageFile: fileStream headerSize: headerSize desiredPosition: desiredBaseAddress [
-	"Translate to C function call with (case sensitive) camelCase. The purpose of this
-	 method is to document the translation.
-	 The default implementation is sqAllocateMemory(minimumMemory, heapSize). This may
-	 be redefined to make use of the image file and header size parameters for efficient
-	 implementation with mmap().
-	 See CCodeGenerator>>writeDefaultMacrosOn: which specifies a default implementation."
-
-	<inline: true>
-	<returnTypeC: #'char *'>
-	<var: #fileStream type: #sqImageFile>
-	^self pointerForOop: (self
-							allocateMemory: heapSize
-							Minimum: minimumMemory
-							ImageFile: fileStream
-							HeaderSize: headerSize
-							BaseAddress: desiredBaseAddress)
-]
-
 { #category : #'image save/restore' }
 StackInterpreter >> allocateMemoryForImage: f withHeader: header [
 
 	<var: #f type: #sqImageFile>
-	<var: #header type: #'SpurImageHeaderStruct'>
+	<var: #header type: #SpurImageHeaderStruct>
+	self allocateMemoryForImageHeader: header desiredStartingAddress: header oldBaseAddr.
 
-	self allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: header oldBaseAddr.
-	
-	imageReader loadImageFromFile: f withHeader: header 
+	imageReader loadImageFromFile: f withHeader: header
+]
+
+{ #category : #'image save/restore' }
+StackInterpreter >> allocateMemoryForImageHeader: header desiredStartingAddress: desiredPositionOfHeap [
+
+	<var: #header type: #SpurImageHeaderStruct>
+
+	objectMemory getMemoryMap 
+		allocationReserve: self interpreterAllocationReserveBytes;
+		initialOldSpaceSize: header dataSize;
+		initialNewSpaceSize: objectMemory newSpaceBytes;
+		initialHeadroom: (objectMemory initialHeadroom: extraVMMemory givenFreeOldSpaceInImage: header freeOldSpaceInImage);
+		allocateHeap.
+		
+	^ objectMemory initializeFromMemoryMap.
+
 ]
 
 { #category : #'compiled methods' }

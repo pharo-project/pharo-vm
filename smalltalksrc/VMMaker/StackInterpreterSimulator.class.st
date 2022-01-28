@@ -850,11 +850,6 @@ StackInterpreterSimulator >> instVar: index ofContext: aMarriedContext put: anOo
 ]
 
 { #category : #'interpreter shell' }
-StackInterpreterSimulator >> insufficientMemoryAvailableError [
-	self error: 'Failed to allocate memory for the heap'
-]
-
-{ #category : #'interpreter shell' }
 StackInterpreterSimulator >> insufficientMemorySpecifiedError [
 	self error: 'Insufficient memory for this image'
 ]

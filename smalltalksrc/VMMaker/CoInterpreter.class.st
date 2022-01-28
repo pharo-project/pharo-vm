@@ -683,17 +683,15 @@ CoInterpreter >> allocateJITMemory: desiredSize _: desiredPosition [
 CoInterpreter >> allocateMemoryForImage: f withHeader: header [
 
 	<var: #f type: #sqImageFile>
-	<var: #header type: #'SpurImageHeaderStruct'>
-
+	<var: #header type: #SpurImageHeaderStruct>
 	| cogCodeBase desiredPositionOfHeap |
-
 	cogCodeSize := desiredCogCodeSize ~= 0
 		               ifTrue: [ desiredCogCodeSize ]
 		               ifFalse: [ 
 			               header hdrCogCodeSize = 0
 				               ifTrue: [ cogit defaultCogCodeSize ]
 				               ifFalse: [ header hdrCogCodeSize ] ].
-			
+
 	cogCodeSize := cogCodeSize min: cogit maxCogCodeSize.
 
 	cogCodeBase := self
@@ -701,19 +699,18 @@ CoInterpreter >> allocateMemoryForImage: f withHeader: header [
 		               desiredPosition: header oldBaseAddr - cogCodeSize.
 
 	"We want to avoid the swizzle in case the allocation of the code space is much below in the address space than the requested one"
-	desiredPositionOfHeap := cogCodeBase + cogCodeSize max: header oldBaseAddr.
+	desiredPositionOfHeap := cogCodeBase + cogCodeSize max:
+		                         header oldBaseAddr.
 
-	self allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: desiredPositionOfHeap.
-	
+	self allocateMemoryForImageHeader: header desiredStartingAddress: desiredPositionOfHeap.
+
 	imageReader loadImageFromFile: f withHeader: header.
-	
+
 	self beforeCodeZoneInitialization.
 
 	cogit
 		initializeCodeZoneFrom: cogCodeBase
-		upTo: cogCodeBase + cogCodeSize.
-
-
+		upTo: cogCodeBase + cogCodeSize
 ]
 
 { #category : #'cog jit support' }

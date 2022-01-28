@@ -29,6 +29,12 @@ SlangClass class >> defineAtCompileTime: anObject [
 ]
 
 { #category : #translation }
+SlangClass class >> implicitVariables [
+
+	^ #()
+]
+
+{ #category : #translation }
 SlangClass class >> isStructClass [
 	"The various VMStructType classes override this."
 	^false

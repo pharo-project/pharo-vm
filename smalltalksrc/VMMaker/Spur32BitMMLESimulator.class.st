@@ -1,6 +1,8 @@
 Class {
 	#name : #Spur32BitMMLESimulator,
 	#superclass : #Spur32BitMemoryManager,
+	#traits : 'TVMSpurMemoryManagerSimulator',
+	#classTraits : 'TVMSpurMemoryManagerSimulator classTrait',
 	#instVars : [
 		'parent',
 		'bootstrapping'

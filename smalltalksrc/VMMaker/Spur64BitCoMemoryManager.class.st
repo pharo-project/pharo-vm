@@ -154,30 +154,6 @@ Spur64BitCoMemoryManager >> headerWhileForwardingOf: aCompiledMethodObjOop [
 	^self baseHeader: aCompiledMethodObjOop
 ]
 
-{ #category : #'simulation only' }
-Spur64BitCoMemoryManager >> initializeFreeSpaceForFacadeFrom: base to: limit [
-	"c.f. initializeFreeSpacePostLoad: freeListObj."
-	| freeListObj freeBytes |
-	memoryMap newSpaceEnd: (freeStart := base).
-	memoryMap oldSpaceStart: memoryMap newSpaceEnd.
-	memoryMap oldSpaceEnd: limit.
-	scavengeThreshold := limit * 3 // 4.
-	segmentManager initSegmentForInImageCompilationFrom: base to: limit.
-	freeListObj := self allocateSlots: self numFreeLists
-						format: self wordIndexableFormat
-						classIndex: self wordSizeClassIndexPun.
-	freeLists := self firstIndexableField: freeListObj.
-	freeListsMask := 0.
-	0 to: self numFreeLists - 1 do:
-		[:i|
-		(freeLists at: i) ~= 0 ifTrue:
-			[freeListsMask := freeListsMask bitOr: (1 << i).
-			 freeLists at: i put: (segmentManager swizzleObj: (freeLists at: i))]].
-	freeBytes := segmentManager lastSegment segLimit - self bridgeSize - freeStart.
-	freeLists at: 0 put: (self initFreeChunkWithBytes: freeBytes at: freeStart).
-	totalFreeOldSpace := freeBytes
-]
-
 { #category : #'class table' }
 Spur64BitCoMemoryManager >> isForwardedClassIndex: maybeClassIndex [
 	"A lenient tester of forwarded class indices for inline cache management in the Cogit."
@@ -294,17 +270,6 @@ Spur64BitCoMemoryManager >> scavengeThresholdAddress [
 	<returnTypeC: #usqInt>
 	^self cCode: [(self addressOf: scavengeThreshold) asUnsignedInteger]
 		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #getScavengeThreshold in: self]
-]
-
-{ #category : #'debug support' }
-Spur64BitCoMemoryManager >> setUpForUseByFacade: aCurrentImageCoInterpreterFacade [
-	"Make sure that eden etc are initialized, so that methods can be printed.
-	 This is really to make addressCouldBeObj: et al work."
-	<doNotGenerate>
-	self edenBytes: 0.
-	self setHeapBase: self freeStart
-		memoryLimit: memoryMap oldSpaceEnd
-		endOfMemory: memoryMap oldSpaceEnd
 ]
 
 { #category : #'trampoline support' }

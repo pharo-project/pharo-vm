@@ -6,7 +6,12 @@ Class {
 		'oldSpaceStart',
 		'oldSpaceEnd',
 		'newSpaceStart',
-		'newSpaceEnd'
+		'newSpaceEnd',
+		'allocationReserve',
+		'initialOldSpaceSize',
+		'initialNewSpaceSize',
+		'initialHeadroom',
+		'memoryMapConfiguration'
 	],
 	#category : #'VMMaker-Memory'
 }
@@ -14,7 +19,7 @@ Class {
 { #category : #translation }
 VMMemoryMap class >> filteredInstVarNames [
 
-	^ super filteredInstVarNames copyWithout: #memoryManager
+	^ super filteredInstVarNames copyWithoutAll: #(memoryManager memoryMapConfiguration)
 ]
 
 { #category : #translation }
@@ -28,10 +33,17 @@ VMMemoryMap class >> generateHeader: aBinaryBlock [
 ]
 
 { #category : #translation }
+VMMemoryMap class >> implicitVariables [
+
+	^ #(memoryMapConfiguration)
+]
+
+{ #category : #translation }
 VMMemoryMap class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 
 	self filteredInstVarNames do: [ :aName |
-		aBinaryBlock value: aName value: #'usqInt'  ]
+		aBinaryBlock value: aName value: #'usqInt'  ].
+
 ]
 
 { #category : #translation }
@@ -44,6 +56,107 @@ VMMemoryMap class >> needsTypeTag [
 VMMemoryMap class >> shouldBeGenerated [
 
 	^ false
+]
+
+{ #category : #allocating }
+VMMemoryMap >> allocateHeap [
+	<inline: false>
+	self allocateNewObjectsSpace.
+	self allocateOldObjectsSpace.
+]
+
+{ #category : #private }
+VMMemoryMap >> allocateMemory: desiredSize BaseAddress: baseAddress [
+
+	<doNotGenerate>
+	^ memoryManager allocate: desiredSize desiredPosition: baseAddress
+]
+
+{ #category : #private }
+VMMemoryMap >> allocateNewObjectsSpace [
+	
+	| newSpaceSize |
+	
+	newSpaceSize := self initialNewSpaceSize + self allocationReserve.
+	
+	self newSpaceStart: (self allocateMemory: newSpaceSize BaseAddress: memoryMapConfiguration newSpaceInitialAddress).
+	
+	self newSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
+	
+	self newSpaceEnd: self newSpaceStart + newSpaceSize.
+]
+
+{ #category : #private }
+VMMemoryMap >> allocateOldObjectsSpace [
+
+	| sizeToAllocate |
+
+	sizeToAllocate := self initialOldSpaceSize + self initialHeadroom.
+
+	self oldSpaceStart: (self allocateMemory: sizeToAllocate BaseAddress: memoryMapConfiguration oldSpaceInitialAddress).
+
+	self oldSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
+
+	self oldSpaceEnd: self oldSpaceStart + sizeToAllocate
+]
+
+{ #category : #accessing }
+VMMemoryMap >> allocationReserve [
+	^ allocationReserve
+]
+
+{ #category : #accessing }
+VMMemoryMap >> allocationReserve: anInteger [ 
+
+	allocationReserve := anInteger 
+]
+
+{ #category : #accessing }
+VMMemoryMap >> initialHeadroom [
+	^ initialHeadroom
+]
+
+{ #category : #accessing }
+VMMemoryMap >> initialHeadroom: anInteger [ 
+	
+	initialHeadroom := anInteger 
+]
+
+{ #category : #accessing }
+VMMemoryMap >> initialNewSpaceSize [
+	^ initialNewSpaceSize
+]
+
+{ #category : #accessing }
+VMMemoryMap >> initialNewSpaceSize: anInteger [ 
+	
+	initialNewSpaceSize := anInteger
+]
+
+{ #category : #accessing }
+VMMemoryMap >> initialOldSpaceSize [
+	^ initialOldSpaceSize
+]
+
+{ #category : #accessing }
+VMMemoryMap >> initialOldSpaceSize: anInteger [ 
+
+	initialOldSpaceSize := anInteger
+]
+
+{ #category : #initialization }
+VMMemoryMap >> initializeMemoryMap [
+
+	self cCode: [  ] inSmalltalk: [ 
+		memoryMapConfiguration := VMMemoryMapConfiguration forWordsize:
+			                          self class objectMemoryClass wordSize ]
+]
+
+{ #category : #private }
+VMMemoryMap >> insufficientMemoryAvailableError [
+
+	<doNotGenerate>
+	self error.
 ]
 
 { #category : #accessing }
@@ -112,4 +225,12 @@ VMMemoryMap >> startOfObjectMemory [
 	
 	"The first object space in the memory map is the newSpace."
 	^ self newSpaceStart 
+]
+
+{ #category : #accessing }
+VMMemoryMap >> wordSize: anInteger [ 
+
+	<doNotGenerate>
+
+	wordSize := anInteger
 ]

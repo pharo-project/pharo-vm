@@ -1284,11 +1284,6 @@ CogVMSimulator >> instVar: index ofContext: aMarriedContext put: anOop [
 ]
 
 { #category : #'interpreter shell' }
-CogVMSimulator >> insufficientMemoryAvailableError [
-	self error: 'Failed to allocate memory for the heap'
-]
-
-{ #category : #'interpreter shell' }
 CogVMSimulator >> insufficientMemorySpecifiedError [
 	self error: 'Insufficient memory for this image'
 ]

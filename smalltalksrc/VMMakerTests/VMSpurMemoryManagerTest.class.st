@@ -495,7 +495,7 @@ VMSpurMemoryManagerTest >> setUp [
 	memoryManager wordSize: self wordSize.
 	
 	interpreter memoryManager: memoryManager.
-	memory initializeMemoryMap.
+	memory createMemoryMap.
 
 	memory := interpreter objectMemory.
 	memory memoryManager: memoryManager.	

@@ -138,7 +138,7 @@ AbstractImageAccess >> interpreter: anObject [
 { #category : #reading }
 AbstractImageAccess >> loadHeaderToMemory: header [
 
-	objectMemory initializeMemoryMap.
+	objectMemory createMemoryMap.
 
 	objectMemory specialObjectsOop: header initialSpecialObjectsOop.
 	objectMemory lastHash: header hdrLastHash.
