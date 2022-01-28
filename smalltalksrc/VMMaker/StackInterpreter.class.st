@@ -14701,6 +14701,26 @@ StackInterpreter >> spurPostBecomeAction: theBecomeEffectsFlags [
 ]
 
 { #category : #'indexing primitive support' }
+StackInterpreter >> stContext: context at: index format: format fixedFields: fixedFields [
+
+	| stSize |
+	stSize := self stackPointerForMaybeMarriedContext: context.
+
+	((self oop: index isGreaterThanOrEqualTo: 1)
+	 and: [(self oop: index isLessThanOrEqualTo: stSize)
+	 and: [self isStillMarriedContext: context]]) ifTrue:
+		[^self noInlineTemporary: index - 1 in: (self frameOfMarriedContext: context)].
+
+	"Duplicated from stObject:at:"
+	((self oop: index isGreaterThanOrEqualTo: (objectMemory firstValidIndexOfIndexableObject: context withFormat: format))
+	 and: [self oop: index isLessThanOrEqualTo: stSize]) ifTrue:
+		[^self subscript: context with: (index + fixedFields) format: format].
+
+	self primitiveFailFor: (format <= 1 ifTrue: [PrimErrBadReceiver] ifFalse: [PrimErrBadIndex]).
+	^0
+]
+
+{ #category : #'indexing primitive support' }
 StackInterpreter >> stObject: array at: index [
 	"Return what ST would return for <obj> at: index."
 
@@ -14712,14 +14732,9 @@ StackInterpreter >> stObject: array at: index [
 	fixedFields := objectMemory fixedFieldsOf: array format: fmt length: totalLength.
 	(fmt = objectMemory indexablePointersFormat
 	 and: [objectMemory isContextHeader: hdr])
-		ifTrue:
-			[
-			stSize := self stackPointerForMaybeMarriedContext: array.
-			((self oop: index isGreaterThanOrEqualTo: 1)
-			 and: [(self oop: index isLessThanOrEqualTo: stSize)
-			 and: [self isStillMarriedContext: array]]) ifTrue:
-				[^self noInlineTemporary: index - 1 in: (self frameOfMarriedContext: array)]]
-		ifFalse: [stSize := totalLength - fixedFields].
+		ifTrue: [ ^ self stContext: array at: index format: fmt fixedFields: fixedFields ].
+	
+	stSize := totalLength - fixedFields.
 	((self oop: index isGreaterThanOrEqualTo: (objectMemory firstValidIndexOfIndexableObject: array withFormat: fmt))
 	 and: [self oop: index isLessThanOrEqualTo: stSize]) ifTrue:
 		[^self subscript: array with: (index + fixedFields) format: fmt].
