@@ -91,6 +91,11 @@ VMFrameBuilder >> argumentSize: anObject [
 ]
 
 { #category : #configuring }
+VMFrameBuilder >> beActive [
+	isSuspended := false
+]
+
+{ #category : #configuring }
 VMFrameBuilder >> beSuspended [
 	isSuspended := true
 ]
@@ -249,7 +254,7 @@ VMFrameBuilder >> isSuspended [
 
 { #category : #context }
 VMFrameBuilder >> marryToContext [
-	interpreter ensureFrameIsMarried: myFramePointer SP: myStackPointer
+	^ interpreter ensureFrameIsMarried: myFramePointer SP: myStackPointer
 ]
 
 { #category : #accessing }
@@ -312,7 +317,8 @@ VMFrameBuilder >> pushYourself [
 				ofObject: context
 				withValue: (interpreter withSmallIntegerTags: page baseFP)	""SenderIndex"" ]."
 				
-	isSuspended ifTrue: [ interpreter push: instructionPointer ].
+	isSuspended ifTrue: [ 
+		interpreter push: instructionPointer ].
 	
 	myStackPointer:= interpreter stackPointer.
 	myFramePointer := interpreter framePointer.

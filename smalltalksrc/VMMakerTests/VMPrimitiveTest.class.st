@@ -53,6 +53,23 @@ VMPrimitiveTest >> newArrayWith: aCollection [
 	
 ]
 
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> newContextWithTemps: temps [
+
+	| method topFrame |
+	method := methodBuilder newMethod; numberOfTemporaries: temps size; build.
+	2 timesRepeat: [ 
+		topFrame := stackBuilder addNewFrame 
+			method: method;
+			temps: temps;
+			beSuspended
+	].
+	topFrame beActive.
+	
+	^ stackBuilder buildStack marryToContext	
+	
+]
+
 { #category : #running }
 VMPrimitiveTest >> setUp [
 	
@@ -601,6 +618,58 @@ VMPrimitiveTest >> testPrimitiveAtFailsForNonIntegerArgument [
 	
 	self assert: interpreter failed.
 	self assert: interpreter primFailCode equals: PrimErrBadArgument. 
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveAtForDivorcedContext [
+
+	| context |
+	self setUpContextClass.
+	context := self newContextWithTemps: { memory falseObject }.
+	
+	"Divorcing requires the instruction pointer pushed in the top of the frame's stack"
+	self interpret: [	interpreter internalPush: interpreter instructionPointer ].		
+	interpreter externalDivorceFrame: interpreter framePointer andContext: context.
+
+	interpreter push: context.
+	interpreter push: (memory integerObjectOf: 1).	
+	interpreter primitiveAt. 
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: memory falseObject. 
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveAtForMarriedContext [
+
+	| context |
+
+	context := self newContextWithTemps: { memory falseObject }.
+	
+	interpreter push: context.
+	interpreter push: (memory integerObjectOf: 1).	
+	interpreter primitiveAt. 
+	
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: memory falseObject. 
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveAtForWidowedContext [
+
+	| context |
+	self setUpContextClass.
+	context := self newContextWithTemps: { }.
+	interpreter printOop: context.
+	self interpret: [	interpreter returnTopFromMethod ].		
+	interpreter externalWriteBackHeadFramePointers.
+	self assert: (interpreter isWidowedContext: context).
+
+	interpreter push: context.
+	interpreter push: (memory integerObjectOf: 1).	
+	interpreter primitiveAt. 
+
+	self assert: interpreter failed
 ]
 
 { #category : #'tests - primitiveAtPut' }

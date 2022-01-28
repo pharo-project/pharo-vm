@@ -14716,7 +14716,8 @@ StackInterpreter >> stObject: array at: index [
 	(fmt = objectMemory indexablePointersFormat
 	 and: [objectMemory isContextHeader: hdr])
 		ifTrue:
-			[stSize := self stackPointerForMaybeMarriedContext: array.
+			[
+			stSize := self stackPointerForMaybeMarriedContext: array.
 			((self oop: index isGreaterThanOrEqualTo: 1)
 			 and: [(self oop: index isLessThanOrEqualTo: stSize)
 			 and: [self isStillMarriedContext: array]]) ifTrue:
