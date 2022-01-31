@@ -54,7 +54,6 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compiler
 	Author useAuthor: 'vmMaker' during: [
 	
 		VMMakerConfiguration initializeForPharo.
-		(interpreterClass bindingOf: #COGMTVM) value: false.
 
 		platformDirectory := self platformDirectoryFor: memoryManager.
 
@@ -63,9 +62,8 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compiler
 		(VMMaker
 			makerFor: interpreterClass
 			and: compilerClass
-			with: {#COGMTVM. false.
-					#ObjectMemory. memoryManager name.
-					#bytecodeTableInitializer. #initializeBytecodeTableForSistaV1} , options
+			with: {#ObjectMemory. memoryManager name.
+					 #bytecodeTableInitializer. #initializeBytecodeTableForSistaV1} , options
 			to: platformDirectory
 			platformDir:platformDirectory
 			including: #()

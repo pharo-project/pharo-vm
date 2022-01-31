@@ -92,8 +92,7 @@ Class {
 		'flagInterpretedMethods',
 		'maxLiteralCountForCompile',
 		'minBackwardJumpCountForCompile',
-		'initialMemoryAddress',
-		'rumpCStackBase'
+		'initialMemoryAddress'
 	],
 	#classVars : [
 		'CSCallbackEnter',
@@ -101,13 +100,9 @@ Class {
 		'CSCheckEvents',
 		'CSEnterCriticalSection',
 		'CSExitCriticalSection',
-		'CSOwnVM',
 		'CSResume',
 		'CSSignal',
 		'CSSuspend',
-		'CSSwitchIfNeccessary',
-		'CSThreadBind',
-		'CSThreadSchedulingLoop',
 		'CSWait',
 		'CSYield',
 		'HasBeenReturnedFromMCPC',
@@ -121,18 +116,14 @@ Class {
 		'TraceBufferSize',
 		'TraceCodeCompaction',
 		'TraceContextSwitch',
-		'TraceDisownVM',
 		'TraceFullGC',
 		'TraceIncrementalGC',
 		'TraceIsFromInterpreter',
 		'TraceIsFromMachineCode',
-		'TraceOwnVM',
-		'TracePreemptDisowningThread',
 		'TracePrimitiveFailure',
 		'TracePrimitiveRetry',
 		'TraceSources',
 		'TraceStackOverflow',
-		'TraceThreadSwitch',
 		'TraceVMCallback',
 		'TraceVMCallbackReturn'
 	],
@@ -166,9 +157,7 @@ CoInterpreter class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile:'"sqCogStackAlignment.h"';
 		addHeaderFile:'"cogmethod.h"'.
 	aCCodeGenerator
-		addHeaderFile: (aCCodeGenerator vmClass isThreadedVM 
-			ifTrue: ['"cointerpmt.h"'] 
-			ifFalse: ['"cointerp.h"']);
+		addHeaderFile: '"cointerp.h"';
 		addHeaderFile:'"cogit.h"'.
 	aCCodeGenerator vmClass
 		declareInterpreterVersionIn: aCCodeGenerator
@@ -315,10 +304,6 @@ CoInterpreter class >> initializeMiscConstants [
 	TraceIncrementalGC := self objectMemoryClass basicNew integerObjectOf: 4.
 	TraceFullGC := self objectMemoryClass basicNew integerObjectOf: 5.
 	TraceCodeCompaction := self objectMemoryClass basicNew integerObjectOf: 6.
-	TraceOwnVM := self objectMemoryClass basicNew integerObjectOf: 7.
-	TraceDisownVM := self objectMemoryClass basicNew integerObjectOf: 8.
-	TraceThreadSwitch := self objectMemoryClass basicNew integerObjectOf: 9.
-	TracePreemptDisowningThread := self objectMemoryClass basicNew integerObjectOf: 10.
 	TraceVMCallback := self objectMemoryClass basicNew integerObjectOf: 11.
 	TraceVMCallbackReturn := self objectMemoryClass basicNew integerObjectOf: 12.
 	TraceStackOverflow := self objectMemoryClass basicNew integerObjectOf: 13.
@@ -337,12 +322,8 @@ CoInterpreter class >> initializeMiscConstants [
 	CSWait := 10.
 	CSYield := 11.
 	CSCheckEvents := 12.
-	CSThreadSchedulingLoop := 13.
-	CSOwnVM := 14.
-	CSThreadBind := 15.
-	CSSwitchIfNeccessary := 16.
 
-	TraceSources := CArrayAccessor on: #('?' 'm' 'i' 'callbackEnter' 'callbackLeave' 'enterCritical' 'exitCritical' 'resume' 'signal'  'suspend' 'wait' 'yield' 'eventcheck' 'threadsched' 'ownVM' 'bindToThread' 'switchIfNecessary').
+	TraceSources := CArrayAccessor on: #('?' 'm' 'i' 'callbackEnter' 'callbackLeave' 'enterCritical' 'exitCritical' 'resume' 'signal'  'suspend' 'wait' 'yield' 'eventcheck' ).
 
 	"this is simulation only"
 	RumpCStackSize := 4096
@@ -424,11 +405,6 @@ CoInterpreter class >> isNonArgumentImplicitReceiverVariableName: aString [
 	  or: [self objectMemoryClass isNonArgumentImplicitReceiverVariableName: aString]
 ]
 
-{ #category : #testing }
-CoInterpreter class >> isThreadedVM [
-	^false
-]
-
 { #category : #translation }
 CoInterpreter class >> mustBeGlobal: var [
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
@@ -489,8 +465,7 @@ CoInterpreter class >> specialValueForConstant: constantName default: defaultVal
 CoInterpreter class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord generator: aCCodeGenerator [
 	super writeVMHeaderTo: aStream bytesPerWord: bytesPerWord generator: aCCodeGenerator.
 	aCCodeGenerator
-		putDefineOf: #COGVM as: 1 on: aStream;
-		putConditionalDefineOf: #COGMTVM as: 0 comment: nil on: aStream.
+		putDefineOf: #COGVM as: 1 on: aStream.
 	aStream cr
 ]
 
@@ -4249,12 +4224,6 @@ CoInterpreter >> isMachineCodeFrame: theFP [
 { #category : #'debug support' }
 CoInterpreter >> isMachineCodeIP: anInstrPointer [
 	^anInstrPointer < objectMemory startOfMemory
-]
-
-{ #category : #simulation }
-CoInterpreter >> isThreadedVM [
-	<doNotGenerate>
-	^false
 ]
 
 { #category : #'internal interpreter access' }

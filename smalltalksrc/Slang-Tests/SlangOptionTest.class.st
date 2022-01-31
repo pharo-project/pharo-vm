@@ -11,7 +11,7 @@ Class {
 { #category : #running }
 SlangOptionTest >> setUp [
 	super setUp.
-	slang := CCodeGenerator new.
+	slang := MLVMCCodeGenerator new.
 	
 	slang environment: SystemDictionary new.
 	slang environment at: SlangCogitSubclass name put: SlangCogitSubclass.

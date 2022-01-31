@@ -1,4 +1,5 @@
 #include "pharovm/pharo.h"
+#include <stdarg.h>
 
 #if __linux__
 
@@ -152,7 +153,7 @@ void * printRegisterState(ucontext_t *uap, FILE* output)
 {
 #if __linux__ && __i386__
 	greg_t *regs = uap->uc_mcontext.gregs;
-	fprintf(output,
+	fprintf_impl(output,
 			"\teax 0x%08x ebx 0x%08x ecx 0x%08x edx 0x%08x\n"
 			"\tedi 0x%08x esi 0x%08x ebp 0x%08x esp 0x%08x\n"
 			"\teip 0x%08x\n",
@@ -162,7 +163,7 @@ void * printRegisterState(ucontext_t *uap, FILE* output)
 	return (void *)regs[REG_EIP];
 #elif __APPLE__ && __DARWIN_UNIX03 && __i386__
 	_STRUCT_X86_THREAD_STATE32 *regs = &uap->uc_mcontext->__ss;
-	fprintf(output,
+	fprintf_impl(output,
 			"\teax 0x%08x ebx 0x%08x ecx 0x%08x edx 0x%08x\n"
 			"\tedi 0x%08x esi 0x%08x ebp 0x%08x esp 0x%08x\n"
 			"\teip 0x%08x\n",
@@ -172,7 +173,7 @@ void * printRegisterState(ucontext_t *uap, FILE* output)
 	return (void *)(regs->__eip);
 #elif __APPLE__ && __i386__
 	_STRUCT_X86_THREAD_STATE32 *regs = &uap->uc_mcontext->ss;
-	fprintf(output,
+	fprintf_impl(output,
 			"\teax 0x%08x ebx 0x%08x ecx 0x%08x edx 0x%08x\n"
 			"\tedi 0x%08x esi 0x%08x ebp 0x%08x esp 0x%08x\n"
 			"\teip 0x%08x\n",
@@ -182,7 +183,7 @@ void * printRegisterState(ucontext_t *uap, FILE* output)
 	return (void *)(regs->eip);
 #elif __APPLE__ && __x86_64__
 	_STRUCT_X86_THREAD_STATE64 *regs = &uap->uc_mcontext->__ss;
-	fprintf(output,
+	fprintf_impl(output,
 			"\trax 0x%016llx rbx 0x%016llx rcx 0x%016llx rdx 0x%016llx\n"
 			"\trdi 0x%016llx rsi 0x%016llx rbp 0x%016llx rsp 0x%016llx\n"
 			"\tr8  0x%016llx r9  0x%016llx r10 0x%016llx r11 0x%016llx\n"
@@ -196,7 +197,7 @@ void * printRegisterState(ucontext_t *uap, FILE* output)
 	return (void *)(regs->__rip);
 # elif __APPLE__ && (defined(__arm__) || defined(__arm32__))
 	_STRUCT_ARM_THREAD_STATE *regs = &uap->uc_mcontext->ss;
-	fprintf(output,
+	fprintf_impl(output,
 			"\t r0 0x%08x r1 0x%08x r2 0x%08x r3 0x%08x\n"
 	        "\t r4 0x%08x r5 0x%08x r6 0x%08x r7 0x%08x\n"
 	        "\t r8 0x%08x r9 0x%08x r10 0x%08x fp 0x%08x\n"
@@ -210,7 +211,7 @@ void * printRegisterState(ucontext_t *uap, FILE* output)
 # elif __APPLE__ && defined(__aarch64__)
 	_STRUCT_ARM_THREAD_STATE64 *regs = &uap->uc_mcontext->__ss;
 
-	fprintf(output,
+	fprintf_impl(output,
 			"\t x00 0x%016llx x01 0x%016llx x02 0x%016llx x03 0x%016llx\n"
 			"\t x04 0x%016llx x05 0x%016llx x06 0x%016llx x07 0x%016llx\n"
 			"\t x08 0x%016llx x09 0x%016llx x10 0x%016llx x11 0x%016llx\n"
@@ -258,7 +259,7 @@ void * printRegisterState(ucontext_t *uap, FILE* output)
     return (void*)(regs->__pc); 
 #elif __FreeBSD__ && __i386__
 	struct mcontext *regs = &uap->uc_mcontext;
-	fprintf(output,
+	fprintf_impl(output,
 			"\teax 0x%08x ebx 0x%08x ecx 0x%08x edx 0x%08x\n"
 			"\tedi 0x%08x esi 0x%08x ebp 0x%08x esp 0x%08x\n"
 			"\teip 0x%08x\n",
@@ -268,7 +269,7 @@ void * printRegisterState(ucontext_t *uap, FILE* output)
 	return regs->mc_eip;
 #elif __linux__ && __x86_64__
 	greg_t *regs = uap->uc_mcontext.gregs;
-	fprintf(output,
+	fprintf_impl(output,
 			"\trax 0x%08llx rbx 0x%08llx rcx 0x%08llx rdx 0x%08llx\n"
 			"\trdi 0x%08llx rsi 0x%08llx rbp 0x%08llx rsp 0x%08llx\n"
 			"\tr8  0x%08llx r9  0x%08llx r10 0x%08llx r11 0x%08llx\n"
@@ -282,7 +283,7 @@ void * printRegisterState(ucontext_t *uap, FILE* output)
 	return (void*)regs[REG_RIP];
 # elif __linux__ && (defined(__arm__) || defined(__arm32__) || defined(ARM32))
 	struct sigcontext *regs = &uap->uc_mcontext;
-	fprintf(output,
+	fprintf_impl(output,
 			"\t r0 0x%08x r1 0x%08x r2 0x%08x r3 0x%08x\n"
 	        "\t r4 0x%08x r5 0x%08x r6 0x%08x r7 0x%08x\n"
 	        "\t r8 0x%08x r9 0x%08x r10 0x%08x fp 0x%08x\n"
@@ -293,7 +294,7 @@ void * printRegisterState(ucontext_t *uap, FILE* output)
 	        regs->arm_ip, regs->arm_sp, regs->arm_lr, regs->arm_pc);
 	return regs->arm_pc;
 # elif __linux__ && defined(__aarch64__)
-	fprintf(output,
+	fprintf_impl(output,
 			"\t x00 0x%016llx x01 0x%016llx x02 0x%016llx x03 0x%016llx\n"
 			"\t x04 0x%016llx x05 0x%016llx x06 0x%016llx x07 0x%016llx\n"
 			"\t x08 0x%016llx x09 0x%016llx x10 0x%016llx x11 0x%016llx\n"
@@ -340,7 +341,7 @@ void * printRegisterState(ucontext_t *uap, FILE* output)
             uap->uc_mcontext.pstate);
     return (void*)uap->uc_mcontext.pc; 
 #else
-	fprintf(output,"don't know how to derive register state from a ucontext_t on this platform\n");
+	fprintf_impl(output,"don't know how to derive register state from a ucontext_t on this platform\n");
 	return 0;
 #endif
 }
@@ -375,8 +376,8 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 	extern usqInt stackLimitAddress(void);
 #endif
 
-	fprintf(output,"\n%s%s%s\n\n", msg, date ? " " : "", date ? date : "");
-	fprintf(output,"%s\n%s\n\n", GetAttributeString(0), getVersionInfo(1));
+	fprintf_impl(output,"\n%s%s%s\n\n", msg, date ? " " : "", date ? date : "");
+	fprintf_impl(output,"%s\n%s\n\n", GetAttributeString(0), getVersionInfo(1));
 
 #if COGVM
 	/* Do not attempt to report the stack until the VM is initialized!! */
@@ -385,7 +386,7 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 #endif
 
 #ifdef HAVE_EXECINFO_H
-	fprintf(output,"C stack backtrace & registers:\n");
+	fprintf_impl(output,"C stack backtrace & registers:\n");
 	if (uap) {
 		addrs[0] = printRegisterState(uap, output);
 		depth = 1 + backtrace(addrs + 1, BACKTRACE_DEPTH);
@@ -451,11 +452,11 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 
 			printingStack = true;
 			if (printAll) {
-				fprintf(output, "\n\nAll Smalltalk process stacks (active first):\n");
+				fprintf_impl(output, "\n\nAll Smalltalk process stacks (active first):\n");
 				printAllStacks();
 			}
 			else {
-				fprintf(output,"\n\nSmalltalk stack dump:\n");
+				fprintf_impl(output,"\n\nSmalltalk stack dump:\n");
 				printCallStack();
 			}
 			printingStack = false;
@@ -466,18 +467,18 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 		}
 	}
 	else {
-		fprintf(output,"\nNot in VM thread.\n");
+		fprintf_impl(output,"\nNot in VM thread.\n");
 	}
 
 #if STACKVM
-	fprintf(output, "\nMost recent primitives\n");
+	fprintf_impl(output, "\nMost recent primitives\n");
 	dumpPrimTraceLog();
 # if COGVM
-	fprintf(output,"\n");
+	fprintf_impl(output,"\n");
 	reportMinimumUnusedHeadroom();
 # endif
 #endif
-	fprintf(output,"\n\t(%s)\n", msg);
+	fprintf_impl(output,"\n\t(%s)\n", msg);
 	fflush(output);
 }
 
@@ -493,3 +494,19 @@ EXPORT(void) printStatusAfterError(){
 
 	errno = saved_errno;
 }
+
+EXPORT(int) fprintf_impl(FILE * stream, const char * format, ... ){
+	va_list list;
+	va_start(list, format);
+
+	int returnValue = vfprintf(stream, format, list);
+
+	va_end(list);
+
+	return returnValue;
+}
+
+EXPORT(int) vfprintf_impl(FILE * stream, const char * format, va_list arg){
+	return vfprintf(stream, format, arg);
+}
+

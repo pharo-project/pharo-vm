@@ -2,6 +2,24 @@
 
 I am a changelog... do not wait too much from me :D
 
+## v9.0.10
+
+- Improving error messages when looking for a symbol in Windows, and exporting symbol used when using worker thread.
+- Adding message counting primitives in the interpreter
+- Adding a compile time option to generate or not the counting of messages
+- Adding generation of StackVM
+- Fixing memory issue with spawned threads in AIO.
+
+## v9.0.9
+- Fixing dependencies of functions with Variadic Arguments
+- Debug window and menu for Windows.
+- Fixing Version Numbers when is not a Release in the Resources File (Windows).
+
+## v9.0.8
+- Improving AIO Support in windows to handle the maximum quantity of waiting on objects 
+- SIGEMT is not defined in all Linux as it depends on the architecture
+- Improving reporting of exception and version number
+
 ## v9.0.7
 
 - Ignore SIGPIPE and let send fail with an error instead of killing the process

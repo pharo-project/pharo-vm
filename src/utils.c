@@ -220,12 +220,12 @@ EXPORT(void) setVMPath(const char* name){
 	strcpy(vmFullPath, name);
 #endif
 
-	int bufferSize = strlen(name) + 1;
-
 #if __APPLE__
 	fillApplicationDirectory(vmPath);
 
 #else
+	int bufferSize = strlen(name) + 1;
+
 	char* tmpBasedir = (char*)alloca(bufferSize);
 
 	getBasePath(name, tmpBasedir, bufferSize);

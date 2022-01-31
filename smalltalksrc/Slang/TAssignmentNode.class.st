@@ -8,6 +8,120 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance creation' }
+TAssignmentNode class >> variable: aVariable expression: anExpression [
+
+	^ self new
+		setVariable: aVariable
+		expression: anExpression;
+		yourself
+]
+
+{ #category : #'C code generation' }
+TAssignmentNode >> asCASTExpressionIn: aCodeGen [
+
+	(expression isStmtList and: [ expression statements size > 1 ]) 
+		ifTrue: [ ^ self asCASTStatementListExpansionAsExpression: aCodeGen ].
+	^ (self asCASTIn: aCodeGen)
+		  needsParentheses: true;
+		  yourself
+]
+
+{ #category : #tranforming }
+TAssignmentNode >> asCASTIn: aBuilder [
+
+	| type |
+	expression isSwitch ifTrue:
+		[ ^ expression asCASTIn: aBuilder addToEndOfCases: self ].
+	expression isLiteralArrayDeclaration ifTrue: [ 
+		|literalArrayNode |
+		type := expression args last value.
+		self assert: type last = $*.
+
+		"Transform the literal array declaration to a C block containing:
+		  - a static literal array declaration
+	 	  - an assigment from this literal array to the assigned variable "
+		literalArrayNode := expression args first value collect: [ :e | 
+			                    CConstantNode value: e ].
+		^ CCompoundStatementNode
+			  declarations: { (CDeclarationNode
+					   specifiers: { 
+							   'static'.
+							   type allButLast }
+					   declarator: (CInitDeclaratorNode
+							    declarator:
+							    (CArrayDeclaratorNode identifier: 'aLiteralArray')
+							    initializer:
+							    (CGLRInitializerNode initializers: literalArrayNode))) }
+			  statements: { (CAssignmentNode
+					   lvalue: (CIdentifierNode name: variable name)
+					   rvalue: (CIdentifierNode name: 'aLiteralArray')) } ].
+
+	(expression isStmtList and: [ expression statements size > 1 ]) 
+		ifTrue: [ 
+			^ expression copy
+				  assignLastExpressionTo: variable;
+				  asCASTIn: aBuilder ].
+	self isVariableUpdatingAssignment ifTrue: [ 
+		^ CAssignmentNode
+			  lvalue: (variable asCASTIn: aBuilder)
+			  operator: expression selector , '='
+			  rvalue: (expression arguments first asCASTExpressionIn: aBuilder) ].
+	(expression isSend and: [ expression isValueExpansion ]) ifTrue: [ 
+		^ self asCASTValueExpansionIn: aBuilder ].
+
+	^ CAssignmentNode
+		  lvalue: (variable asCASTIn: aBuilder)
+		  rvalue: (expression asCASTExpressionIn: aBuilder)
+]
+
+{ #category : #'C code generation' }
+TAssignmentNode >> asCASTStatementListExpansionAsExpression: aCodeGen [
+	(variable isSameAs: expression statements last) ifTrue:
+		[^ expression asCASTExpressionIn: aCodeGen].
+	^ expression copy
+		assignLastExpressionTo: variable;
+		asCASTExpressionIn: aCodeGen
+]
+
+{ #category : #'C code generation' }
+TAssignmentNode >> asCASTValueExpansionIn: aCodeGen [
+
+	| stmtList lastStmt copy |
+	"Transform assignments of the form:
+	
+	var := [ a . block . lastexpression ] value.
+	
+	into:
+	
+	[ a . block . var := lastExpression ] value.
+	
+	Takes into account variants of #value and #value:.
+	"
+	self assert: (expression isSend and: [ expression isValueExpansion ]).
+
+	stmtList := expression receiver.
+	lastStmt := stmtList statements last.
+
+	"Optimization. If the expression looks like:
+	
+	var := [ ... var ] value.
+	
+	Emit directly the block without the last statement, as the assignment has no impact in the translation.
+	"
+	stmtList statements last = variable ifTrue: [ 
+		^ expression asCASTIn: aCodeGen ].
+	copy := stmtList copy.
+	copy statements
+		at: stmtList statements size
+		put:
+		(TAssignmentNode new setVariable: variable expression: lastStmt).
+	^ (TSendNode new
+		   setSelector: expression selector
+		   receiver: copy
+		   arguments: expression args) asCASTIn: aCodeGen
+]
+
 { #category : #transformations }
 TAssignmentNode >> bindVariableUsesIn: aDictionary [
 	"Do NOT bind the variable on the left-hand-side of an assignment statement."
@@ -34,105 +148,6 @@ TAssignmentNode >> bindVariablesIn: aDictionary [
 
 	variable := variable bindVariablesIn: aDictionary.
 	expression := expression bindVariablesIn: aDictionary.
-]
-
-{ #category : #'C code generation' }
-TAssignmentNode >> emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen [
-	^self emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen
-]
-
-{ #category : #'C code generation' }
-TAssignmentNode >> emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen [
-	(expression isStmtList and: [expression statements size > 1]) ifTrue:
-		[^self emitStatementListExpansionAsExpression: expression on: aStream level: level generator: aCodeGen].
-	aStream nextPut: $(.
-	self emitCCodeOn: aStream level: level generator: aCodeGen.
-	aStream nextPut: $)
-]
-
-{ #category : #'C code generation' }
-TAssignmentNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-	expression isSwitch ifTrue:
-		[^expression emitCCodeOn: aStream addToEndOfCases: self level: level generator: aCodeGen].
-	expression isLiteralArrayDeclaration ifTrue:
-		[^self emitLiteralArrayDeclarationOn: aStream level: level generator: aCodeGen].
-	(expression isSend and: [expression isValueExpansion]) ifTrue:
-		[^self emitValueExpansionOn: aStream level: level generator: aCodeGen].
-	(expression isStmtList and: [expression statements size > 1]) ifTrue:
-		[^self emitStatementListExpansion: expression on: aStream level: level generator: aCodeGen].
-	variable emitCCodeOn: aStream level: level generator: aCodeGen.
-	self isVariableUpdatingAssignment
-		ifTrue:
-			[aStream
-				space;
-				nextPutAll: expression selector;	"+ or -"
-				nextPut: $=;
-				space.
-			expression args first emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen]
-		ifFalse:
-			[aStream space; nextPut: $=; space.
-			 expression emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen]
-]
-
-{ #category : #'C code generation' }
-TAssignmentNode >> emitLiteralArrayDeclarationOn: aStream level: level generator: aCCodeGen [
-	| type |
-	type := expression args last value.
-	self assert: type last = $*.
-	aStream
-		crtab: level;
-		nextPutAll: '{ static ';
-		nextPutAll: (aCCodeGen
-						arrayInitializerCalled: 'aLiteralArray'
-						for: expression args first value
-						sizeString: nil
-						type: type allButLast) withBlanksTrimmed;
-		nextPut: $;;
-		crtab: level + 1;
-		nextPutAll: variable name;
-		nextPutAll: ' = aLiteralArray;';
-		crtab: level;
-		nextPut: $};
-		cr
-]
-
-{ #category : #'C code generation' }
-TAssignmentNode >> emitStatementListExpansion: stmtList on: aStream level: level generator: aCodeGen [
-	stmtList statements last = variable ifTrue:
-		[^expression emitCCodeOn: aStream level: level generator: aCodeGen].
-	stmtList copy
-		assignLastExpressionTo: variable;
-		emitCCodeOn: aStream level: level generator: aCodeGen
-]
-
-{ #category : #'C code generation' }
-TAssignmentNode >> emitStatementListExpansionAsExpression: stmtList on: aStream level: level generator: aCodeGen [
-	stmtList statements last = variable ifTrue:
-		[^expression emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen].
-	stmtList copy
-		assignLastExpressionTo: variable;
-		emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen
-]
-
-{ #category : #'C code generation' }
-TAssignmentNode >> emitValueExpansionOn: aStream level: level generator: aCodeGen [
-	| stmtList lastStmt copy |
-	self assert: (expression isSend and: [expression isValueExpansion]).
-	stmtList := expression receiver.
-	lastStmt := stmtList statements last.
-	lastStmt = variable ifTrue:
-		[^expression emitCCodeOn: aStream level: level generator: aCodeGen].
-	copy := stmtList copy.
-	copy statements
-		at: stmtList statements size
-		put: (TAssignmentNode new
-				setVariable: variable
-				expression: lastStmt).
-	(TSendNode new
-			setSelector: expression selector
-			receiver: copy
-			arguments: expression args)
-		emitCCodeOn: aStream level: level generator: aCodeGen.
 ]
 
 { #category : #accessing }
@@ -211,15 +226,14 @@ TAssignmentNode >> postCopy [
 ]
 
 { #category : #'C code generation' }
-TAssignmentNode >> prependCCodeOn: aStream level: level generator: aCodeGen [
-	variable emitCCodeOn: aStream level: level generator: aCodeGen.
-	aStream
-		space;
-		nextPutAll: (self isVariableUpdatingAssignment
-						ifTrue: [expression selector "+ or -"]
-						ifFalse: ['']);
-		nextPut: $=;
-		space
+TAssignmentNode >> prependCASTIn: aBuilder expression: nodeExp [
+
+	^ CAssignmentNode
+		  lvalue: (variable asCASTExpressionIn: aBuilder)
+		  operator: (self isVariableUpdatingAssignment
+				   ifTrue: [ expression selector "+ or -" ]
+				   ifFalse: [ '' ]) , '='
+		  rvalue: (nodeExp asCASTExpressionIn: aBuilder)
 ]
 
 { #category : #printing }

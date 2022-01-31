@@ -4296,13 +4296,6 @@ SpurMemoryManager >> detachFreeObject: freeChunk [
 	self unlinkFreeChunk: freeChunk chunkBytes: chunkBytes
 ]
 
-{ #category : #'simulation only' }
-SpurMemoryManager >> disownVM: flags [
-	"hack around the CoInterpreter/ObjectMemory split refactoring"
-	<doNotGenerate>
-	^coInterpreter disownVM: flags
-]
-
 { #category : #'allocation accounting' }
 SpurMemoryManager >> doAllocationAccountingForScavenge [
 	<inline: true>
@@ -9561,13 +9554,6 @@ SpurMemoryManager >> outerContextOf: aBlockClosureOop [
 	^ self fetchPointer: FullClosureOuterContextIndex ofObject: aBlockClosureOop
 ]
 
-{ #category : #'simulation only' }
-SpurMemoryManager >> ownVM: flags [
-	"hack around the CoInterpreter/ObjectMemory split refactoring"
-	<doNotGenerate>
-	^coInterpreter ownVM: flags
-]
-
 { #category : #accessing }
 SpurMemoryManager >> pastSpaceStart [
 	<cmacro: '() GIV(pastSpaceStart)'>
@@ -9819,13 +9805,6 @@ SpurMemoryManager >> primitiveFailFor: reasonCode [
 	"hack around the CoInterpreter/ObjectMemory split refactoring"
 	<doNotGenerate>
 	^coInterpreter primitiveFailFor: reasonCode
-]
-
-{ #category : #'simulation only' }
-SpurMemoryManager >> primitiveFailForFFIException: errorCode at: pc [
-	"hack around the CoInterpreter/ObjectMemory split refactoring"
-	<doNotGenerate>
-	^coInterpreter primitiveFailForFFIException: errorCode at: pc
 ]
 
 { #category : #'simulation only' }

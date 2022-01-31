@@ -121,16 +121,6 @@ VMMaker class >> activeVMMakerClassFor: platformName [
 ]
 
 { #category : #'confs-support' }
-VMMaker class >> chooseCoInterpreterClassIfAbsent: ifAbsentBlock [
-	^Smalltalk classNamed:
-		 ([:choices|
-		   choices
-			at: (UIManager default chooseFrom: choices)
-			ifAbsent: ifAbsentBlock]
-				value: #(CoInterpreter CoInterpreterMT))
-]
-
-{ #category : #'confs-support' }
 VMMaker class >> configurationNameFromSelector: aSelector [
 	^(aSelector piecesCutWhere: [:a :b| a isLowercase and: [b isUppercase]]) allButFirst fold: [:a :b| a, ' ', b]
 ]
@@ -170,8 +160,8 @@ VMMaker class >> forceNewFileNamed: aFilename [
 		The Microsoft and old MacOS classic C compilers all accept lf format files."
 
 	| inner |
+	aFilename asFileReference ensureDelete.
 	inner := aFilename asFileReference writeStream.
-	inner truncate.
 	
 	^ (ZnNewLineWriterStream on: inner)
 		forLf;

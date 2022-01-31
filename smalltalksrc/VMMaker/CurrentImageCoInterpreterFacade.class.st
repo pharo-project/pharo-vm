@@ -561,11 +561,6 @@ CurrentImageCoInterpreterFacade >> isReadMediatedContextInstVarIndex: index [
 	^index <= StackPointerIndex
 ]
 
-{ #category : #accessing }
-CurrentImageCoInterpreterFacade >> isThreadedVM [
-	^false
-]
-
 { #category : #'frame access' }
 CurrentImageCoInterpreterFacade >> isWriteMediatedContextInstVarIndex: index [
 	"Writing any inst vars of a context must take account of potentially married contexts
@@ -1188,11 +1183,6 @@ CurrentImageCoInterpreterFacade >> temporaryCountOfMethodHeader: headerIntegerOo
 	"a.k.a.
 	^coInterpreter temporaryCountOfMethodHeader: headerIntegerOop,
 	 but only if the CompiledMethod header formats match"
-]
-
-{ #category : #accessing }
-CurrentImageCoInterpreterFacade >> threadManager [
-	^nil
 ]
 
 { #category : #accessing }

@@ -1154,11 +1154,6 @@ StackInterpreterSimulator >> isPrimitiveFunctionPointerAnIndex [
 	  and: [primitiveFunctionPointer <= MaxQuickPrimitiveIndex]]
 ]
 
-{ #category : #testing }
-StackInterpreterSimulator >> isThreadedVM [
-	^false
-]
-
 { #category : #'compiled methods' }
 StackInterpreterSimulator >> literal: offset [
 	"trap pushes of forwarded literals to help debug following forwarded primitive args.
