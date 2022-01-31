@@ -76,7 +76,8 @@ VMPrimitiveTest >> setUp [
 	"taken from VMSimpleStackBasedCogitBytecodeTest >> #setup"
 	| newMethod ctx page |
 	super setUp.
-
+	self setUpContextClass.
+	
 	"Create the root context with a valid method"
 	"Let's create a method with enough size. It should have at least a literal (4 or 8 bytes depending the word size) and some bytecodes, so we can put the IP inside the method"
 	newMethod := methodBuilder newMethod build.
@@ -624,7 +625,6 @@ VMPrimitiveTest >> testPrimitiveAtFailsForNonIntegerArgument [
 VMPrimitiveTest >> testPrimitiveAtForDivorcedContext [
 
 	| context |
-	self setUpContextClass.
 	context := self newContextWithTemps: { memory falseObject }.
 	
 	"Divorcing requires the instruction pointer pushed in the top of the frame's stack"
@@ -643,7 +643,6 @@ VMPrimitiveTest >> testPrimitiveAtForDivorcedContext [
 VMPrimitiveTest >> testPrimitiveAtForMarriedContext [
 
 	| context |
-
 	context := self newContextWithTemps: { memory falseObject }.
 	
 	interpreter push: context.
@@ -658,7 +657,6 @@ VMPrimitiveTest >> testPrimitiveAtForMarriedContext [
 VMPrimitiveTest >> testPrimitiveAtForWidowedContext [
 
 	| context |
-	self setUpContextClass.
 	context := self newContextWithTemps: { }.
 	interpreter printOop: context.
 	self interpret: [	interpreter returnTopFromMethod ].		
