@@ -80,3 +80,5 @@ void *readAddress(sqInt anExternalAddress);
 
 EXPORT(int) isVMRunOnWorkerThread();
 void setMaxStacksToPrint(sqInt anInteger);
+
+#define allocateMemoryBaseAddress(a, b) sqAllocateMemory(a, a, b)
