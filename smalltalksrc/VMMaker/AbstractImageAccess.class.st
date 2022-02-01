@@ -37,6 +37,17 @@ AbstractImageAccess class >> newWithMemory: memory andInterpreter: anInterpreter
 	^ newInstance
 ]
 
+{ #category : #'accessing - files' }
+AbstractImageAccess >> beginWriteImageSegments [
+
+	self assert:
+		(objectMemory getMemoryMap oldSpaceEnd = segmentManager lastSegment segLimit 
+		or: [ objectMemory getMemoryMap oldSpaceEnd + objectMemory bridgeSize = segmentManager lastSegment segLimit ]).
+
+	self assert: segmentManager firstSegmentBytes > 0.
+
+]
+
 { #category : #reading }
 AbstractImageAccess >> extractImageVersionFrom: fileVersion into: header [
 	"Read and verify the image file version number and return true if the the given image file needs to be byte-swapped. As a side effect, position the file stream just after the version number of the image header. This code prints a warning and does a hard-exit if it cannot find a valid version number."
@@ -205,4 +216,33 @@ AbstractImageAccess >> segmentManager: anObject [
 
 	<doNotGenerate>
 	segmentManager := anObject
+]
+
+{ #category : #'accessing - files' }
+AbstractImageAccess >> sq: segStart Image: n File: segSize Write: file [
+
+	<doNotGenerate>
+	| region |
+	region := objectMemory memoryManager regionForAddress: segStart.
+
+	file
+		next: segSize
+		putAll: region memory
+		startingAt: segStart - region start + 1.
+	
+	^ segSize
+]
+
+{ #category : #'accessing - files' }
+AbstractImageAccess >> sqImageFile: imageName Open: fileMode [
+
+	<doNotGenerate>
+	^imageName asFileReference binaryWriteStream
+]
+
+{ #category : #'accessing - files' }
+AbstractImageAccess >> sqImageFileClose: file [
+
+	<doNotGenerate>
+	file close
 ]

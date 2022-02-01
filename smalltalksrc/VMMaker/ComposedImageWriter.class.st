@@ -4,41 +4,57 @@ Class {
 	#category : #'VMMaker-ImageFormat'
 }
 
+{ #category : #writing }
+ComposedImageWriter >> writeHeaderFile: imageFileName fromHeader: header [
+
+	<var: #file type: #sqImageFile> "ImageFile ?"
+	| file |
+
+	file := self sqImageSTONFile: (self headerFile: imageFileName) Open: 'wb'.
+	file ifNil: [ "could not open the file for writing" 
+		^ self primitiveFail ].
+
+	self writeSTON: header toFile: file.
+
+	self sqImageFileClose: file.
+
+]
+
 { #category : #api }
 ComposedImageWriter >> writeImageFile: imageFileName fromHeader: header [
 
+	"Write one image header file + many segments files (metadata & data per segment)"
+
+	<var: #imageFileName declareC: 'char *imageFileName'>
+	<var: #header type: #SpurImageHeaderStruct> "TODO: Rename this class"
 	| bytesWritten |
 
-	(self headerFile: imageFileName) writeStreamDo: [ :file | 
-		self writeSTON: header toFile: file ].
+	self logDebug: 'Writing snapshot %s' _: imageFileName.
+
+	self writeHeaderFile: imageFileName fromHeader: header.
+
+	self flag: #TODO. "success: header imageHeaderSize "
 
 	bytesWritten := self writeImageSegments: imageFileName.
 
-	interpreter success: bytesWritten = header dataSize "Is it neccessary?"
-
+	interpreter success: bytesWritten = header dataSize 
 ]
 
 { #category : #writing }
 ComposedImageWriter >> writeImageSegments: imageFileName [
 
-	"Almost duplicated from SpurImageWriter >> writeImageSegmentsToFile:"
+	<var: 'aBinaryStream' type: #sqImageFile>
+	<var: 'aSegment' type:#'SpurSegmentInfo *'>
 
-	| total |
-	self assert:
-		(objectMemory getMemoryMap oldSpaceEnd = segmentManager lastSegment segLimit 
-		or: [ objectMemory getMemoryMap oldSpaceEnd + objectMemory bridgeSize = segmentManager lastSegment segLimit ]).
+	self beginWriteImageSegments.
 
-	self assert: segmentManager firstSegmentBytes > 0.
+	^ segmentManager withNonEmptySegmentsDo: [ :aSegment :segmentIndex | 
+		self
+          writeSegment: aSegment
+          nextIndex: segmentIndex
+			 inImage: imageFileName ].
 
-	total := 0.
 
-	segmentManager withNonEmptySegmentsDo: [ :aSegment :segmentIndex | 
-		total := total + (self
-			          writeSegment: aSegment
-			          nextIndex: segmentIndex
-						 inImage: imageFileName)].
-
-	^ total
 ]
 
 { #category : #writing }
@@ -52,33 +68,44 @@ ComposedImageWriter >> writeSTON: ston toFile: f [
 { #category : #writing }
 ComposedImageWriter >> writeSegment: segment nextIndex: segmentIndex inImage: imageFileName [
 
+	| metadataFile dataFile nWritten |
+
+	metadataFile := self sqImageSTONFile: (self segmentMetadataFile: segmentIndex inImage: imageFileName) Open: 'wb'.
+	metadataFile ifNil: [ "could not open the file for writing" 
+		^ self primitiveFail ].
+
+	self writeSegmentMetadata: segment toFile: metadataFile.
+
+	self sqImageFileClose: metadataFile.
+
+
+	dataFile := self sqImageFile: (self segmentDataFile: segmentIndex inImage: imageFileName) Open: 'wb'.
+	dataFile ifNil: [ "could not open the file for writing" 
+		^ self primitiveFail ].
+
+	nWritten := self
+						sq: segment segStart asVoidPointer
+						Image: 1
+						File: segment segSize
+						Write: dataFile.
+
+	self sqImageFileClose: dataFile.
+
+
+	^ nWritten
+]
+
+{ #category : #writing }
+ComposedImageWriter >> writeSegmentMetadata: segment toFile: file [
+
+	<var: #metadata type: #ComposedSegmentMetadataStruct>
 	| metadata |
 
-	metadata := ComposedSegmentMetadataStruct new.
+	self simulationOnly: [ metadata := ComposedSegmentMetadataStruct new. ].
 	metadata segStart: segment segStart.
 	metadata segSize: segment segSize.
 
-	self 	cCode: [ "TODO" ] 
-			inSmalltalk: [ 
-				(self segmentMetadataFile: segmentIndex inImage: imageFileName) writeStreamDo: [ :file |
-					self writeSTON: metadata toFile: file 
-				]	
-			].
+	self writeSTON: metadata toFile: file 	
 
 
-	self 	cCode: [ "TODO" ] 
-			inSmalltalk: [ 
-				| region |
-				region := objectMemory memoryManager regionForAddress: segment segStart.
-
-				(self segmentDataFile: segmentIndex inImage: imageFileName) binaryWriteStreamDo: [ :file |
-					file
-						next: segment segSize
-						putAll: region memory
-						startingAt: segment segStart - region start + 1
-				]
-					
-			].
-
-	^ segment segSize
 ]

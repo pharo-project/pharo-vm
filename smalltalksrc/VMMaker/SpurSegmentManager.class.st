@@ -711,9 +711,15 @@ SpurSegmentManager >> withNewSegmentDo: aClosure [
 { #category : #snapshot }
 SpurSegmentManager >> withNonEmptySegmentsDo: aBlockClosure [
 
-	0 to: self numSegments - 1 do:
-		[:i|
-		(segments at: i) segSize > manager bridgeSize 
-			ifTrue: [ aBlockClosure value: (self addressOf: (segments at: i)) value: i]].
+	| total |
+	total := 0.
 
+	0 to: self numSegments - 1 do:
+		[ :i |
+		(segments at: i) segSize > manager bridgeSize 
+			ifTrue: [ 
+				total := total + (aBlockClosure value: (self addressOf: (segments at: i)) value: i)]
+		].
+
+	^ total
 ]

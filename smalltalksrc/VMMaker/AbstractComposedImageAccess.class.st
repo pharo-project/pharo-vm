@@ -64,3 +64,10 @@ AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex inImage: imageF
 
 	^ self segmentMetadataFile: segmentIndex fromFile: imageFile 
 ]
+
+{ #category : #'accessing - files' }
+AbstractComposedImageAccess >> sqImageSTONFile: file Open: fileMode [
+
+	<doNotGenerate>
+	^file asFileReference writeStream
+]
