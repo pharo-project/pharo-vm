@@ -12,12 +12,25 @@ Class {
 { #category : #allocating }
 SlangMemoryManager >> allocate: desiredSize [
 
-	| allocatedAddress newMemoryRegion allocatedSize newMemory |
+	^ self allocate: desiredSize desiredPosition: nextAvailableAddress
+]
+
+{ #category : #allocating }
+SlangMemoryManager >> allocate: desiredSize desiredPosition: desiredPos [ 
+
+	| allocatedAddress newMemoryRegion allocatedSize newMemory desiredPosition |
 	"Allocate chunks multiple of 4KB, as they are required by the machine code simulator"
+
 	allocatedSize := (desiredSize / 4096) ceiling * 4096.
 
-	allocatedAddress := nextAvailableAddress.
-	nextAvailableAddress := nextAvailableAddress + allocatedSize.
+	desiredPosition := (desiredPos / 4096) ceiling * 4096.
+
+	self assert: desiredPosition \\ 4096 = 0.
+
+	allocatedAddress := desiredPosition max: nextAvailableAddress.
+	self assert: allocatedAddress \\ 4096 = 0.
+
+	nextAvailableAddress := desiredPosition + allocatedSize.
 
 	"Warrantee that memory regions do not move, for simulation purposes with the FFI"
 	newMemory := ByteArray new: allocatedSize.
@@ -34,12 +47,6 @@ SlangMemoryManager >> allocate: desiredSize [
 		size: desiredSize
 		address: allocatedAddress.
 	^ allocatedAddress
-]
-
-{ #category : #allocating }
-SlangMemoryManager >> allocate: desiredSize desiredPosition: desiredPosition [ 
-
-	^ self allocate: desiredSize
 ]
 
 { #category : #allocating }

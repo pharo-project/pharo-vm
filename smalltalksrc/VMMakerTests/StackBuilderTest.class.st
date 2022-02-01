@@ -34,20 +34,28 @@ Class {
 
 { #category : #offset }
 StackBuilderTest >> addFullFrame [
+
 	| frame |
-	method := methodBuilder newMethod numberOfTemporaries: 2; numberOfArguments: 2; build.
+	method := methodBuilder newMethod
+		          numberOfTemporaries: 2;
+		          numberOfArguments: 2;
+		          buildMethod.
 
 	frame := stackBuilder addNewFrame.
 	instructionPointer := method + 17.
 	frame beSuspendedAt: instructionPointer.
-	
+
 	stackElement1 := memory integerObjectOf: 4.
 	stackElement2 := memory integerObjectOf: 5.
-	frame stack: { stackElement1. stackElement2 }.
-	
+	frame stack: { 
+			stackElement1.
+			stackElement2 }.
+
 	temp1 := memory integerObjectOf: 6.
 	temp2 := memory integerObjectOf: 7.
-	frame temps: { temp1. temp2 }.
+	frame temps: { 
+			temp1.
+			temp2 }.
 
 	receiver := memory integerObjectOf: 8.
 	frame receiver: receiver.
@@ -55,7 +63,7 @@ StackBuilderTest >> addFullFrame [
 	frame context: context.
 
 	frame method: method.
-	^ frame 
+	^ frame
 ]
 
 { #category : #offset }
@@ -165,9 +173,10 @@ StackBuilderTest >> testFrameHasMoreArgumentsThanMethodShouldFail [
 	| frame |
 	stackBuilder reset.
 
-	method := methodBuilder newMethod build.
+	method := methodBuilder newMethod buildMethod.
 	frame := stackBuilder addNewFrame.
-	frame method: method;
+	frame
+		method: method;
 		argumentSize: 1.
 
 	self should: [ stackBuilder buildStack ] raise: Error
@@ -175,13 +184,14 @@ StackBuilderTest >> testFrameHasMoreArgumentsThanMethodShouldFail [
 
 { #category : #'test-setFromMethod' }
 StackBuilderTest >> testFrameHasMoreTemporariesThanMethodShouldFail [
-	
+
 	| frame |
 	stackBuilder reset.
-	
-	method := methodBuilder newMethod build.
+
+	method := methodBuilder newMethod buildMethod.
 	frame := stackBuilder addNewFrame.
-	frame method: method;
+	frame
+		method: method;
 		temps: { memory nilObject }.
 
 	self should: [ stackBuilder buildStack ] raise: Error
@@ -206,11 +216,12 @@ StackBuilderTest >> testHeadFramePointerCallerIsNotBaseFramePointer [
 { #category : #'test-setFromMethod' }
 StackBuilderTest >> testInstructionPointerIsSetBeforeFirstBytecodeOfLastMethodPushed [
 
-	method := methodBuilder newMethod build.
-	stackBuilder addNewFrame method: method. 
+	method := methodBuilder newMethod buildMethod.
+	stackBuilder addNewFrame method: method.
 	stackBuilder buildStack.
-	
-	self assert: interpreter instructionPointer
+
+	self
+		assert: interpreter instructionPointer
 		equals: (methodBuilder bytecodeAt: 0 forMethod: method)
 ]
 
@@ -221,13 +232,16 @@ StackBuilderTest >> testMethodHasMoreArgumentsThanFrameShouldUpdateFrame [
 	stackBuilder reset.
 
 	argNum := 1.
-	method := methodBuilder newMethod ; numberOfArguments: argNum ; build.
+	method := methodBuilder
+		          newMethod;
+		          numberOfArguments: argNum;
+		          buildMethod.
 	frame := stackBuilder addNewFrame.
 	frame method: method.
 
 	self assert: frame argumentSize equals: 0.
 	stackBuilder buildStack.
-	self assert: frame argumentSize equals: argNum.
+	self assert: frame argumentSize equals: argNum
 ]
 
 { #category : #'test-setFromMethod' }
@@ -237,13 +251,18 @@ StackBuilderTest >> testMethodHasMoreTemporariesThanFrameShouldUpdateFrame [
 	stackBuilder reset.
 
 	tempNum := 1.
-	method := methodBuilder newMethod ; numberOfTemporaries: tempNum ; build.
+	method := methodBuilder
+		          newMethod;
+		          numberOfTemporaries: tempNum;
+		          buildMethod.
 	frame := stackBuilder addNewFrame.
 	frame method: method.
 
 	self assert: frame temps isEmpty.
 	stackBuilder buildStack.
-	self assert: frame temps equals: (OrderedCollection new: tempNum withAll: memory nilObject).
+	self
+		assert: frame temps
+		equals: (OrderedCollection new: tempNum withAll: memory nilObject)
 ]
 
 { #category : #'test-order' }

@@ -211,6 +211,9 @@ StackInterpreterSimulator >> basicInitialize [
 	
 	"This will be overriden when calling initializePluginEntries"
 	mappedPluginEntries := OrderedCollection new.
+	
+	imageReader := SpurImageReader newWithMemory: objectMemory andInterpreter: self.
+	imageWriter := SpurImageWriter newWithMemory: objectMemory andInterpreter: self
 ]
 
 { #category : #utilities }
@@ -716,15 +719,6 @@ StackInterpreterSimulator >> functionPointerFor: primIndex inClass: lookupClass 
 StackInterpreterSimulator >> getErrorObjectFromPrimFailCode [
 	(primFailCode > 1 and: [(#(primitiveNew primitiveNewWithArg primitiveFetchNextMourner primitiveAdoptInstance) includes: primitiveFunctionPointer) not]) ifTrue: [self halt].
 	^super getErrorObjectFromPrimFailCode
-]
-
-{ #category : #'image save/restore' }
-StackInterpreterSimulator >> getShortFromFile: aFile swap: swapFlag [
-	| aShort |
-	aShort := self nextShortFrom: aFile.
-	^swapFlag 
-		ifTrue: [(aShort bitShift: -8) + ((aShort bitAnd: 16rFF) bitShift: 8)]
-		ifFalse: [aShort]
 ]
 
 { #category : #'memory access' }
@@ -1449,11 +1443,14 @@ StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
 
 	| f |
 	
-	"open image file and read the header"
-	memoryManager := MachineSimulatorMemoryManager new.
-	objectMemory memoryManager: memoryManager.
-	memoryManager wordSize: objectMemory wordSize.
+	"We set the memory manager if it is not already set"	
+	memoryManager ifNil: [	
+		memoryManager := MachineSimulatorMemoryManager new.
+		objectMemory memoryManager: memoryManager.
+		memoryManager wordSize: objectMemory wordSize.
+	].
 
+	"open image file and read the header"
 	(f := self openImageFileNamed: fileName) ifNil: [ ^ self ].
 
 	"Set the image name and the first argument; there are
@@ -1462,7 +1459,7 @@ StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
 		at: 1 put: fileName;
 		at: 2 put: nil.
 
-	[ self readImageFromFile: f StartingAt: 0 ] 
+	[ imageReader readImageFromFile: f StartingAt: 0 ] 
 		ensure: [ f close ].
 
 ]

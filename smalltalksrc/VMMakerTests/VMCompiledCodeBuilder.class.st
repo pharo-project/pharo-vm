@@ -1,30 +1,47 @@
 Class {
-	#name : #VMMethodBuilder,
+	#name : #VMCompiledCodeBuilder,
 	#superclass : #VMAbstractBuilder,
 	#instVars : [
-		'literals',
-		'numberOfArguments',
+		'slotSize',
 		'numberOfTemporaries',
-		'bytecodes',
 		'isSmall',
-		'isPrimitive',
+		'literals',
 		'method',
-		'slotSize'
+		'bytecodes',
+		'numberOfArguments',
+		'isPrimitive',
+		'originalLiterals'
 	],
 	#category : #'VMMakerTests-Builders'
 }
 
+{ #category : #accessing }
+VMCompiledCodeBuilder >> address [
+	
+	^ method
+]
+
+{ #category : #deprecated }
+VMCompiledCodeBuilder >> build [
+
+	self
+		deprecated: 'Use #buildMethod instead'
+		transformWith: '`@r build' -> '`@r buildMethod'.
+
+	^ self buildMethod
+]
+
 { #category : #building }
-VMMethodBuilder >> build [
-	self instantiate.
-	self fillInstance.
+VMCompiledCodeBuilder >> buildMethod [
+	self instantiateMethod.
+	self fillMethod.
 	^ method
 ]
 
 { #category : #building }
-VMMethodBuilder >> buildMethodHeader [
+VMCompiledCodeBuilder >> buildMethodHeader [
 
-	^ (numberOfArguments bitShift: 24)
+	^  (numberOfArguments bitShift: 24)
 		+ (numberOfTemporaries bitShift: 18) 
 		+ (isSmall ifTrue: [ 0 ] ifFalse: [ 1 bitShift: 17 ])
 		+ literals size 
@@ -32,7 +49,7 @@ VMMethodBuilder >> buildMethodHeader [
 ]
 
 { #category : #helper }
-VMMethodBuilder >> bytecodeAt: anIndex forMethod: aMethodOop [
+VMCompiledCodeBuilder >> bytecodeAt: anIndex forMethod: aMethodOop [
 	| methodHeader |
 	"1 based"
 	methodHeader := memory methodHeaderOf: aMethodOop.
@@ -42,22 +59,24 @@ VMMethodBuilder >> bytecodeAt: anIndex forMethod: aMethodOop [
 ]
 
 { #category : #accessing }
-VMMethodBuilder >> bytecodes [
+VMCompiledCodeBuilder >> bytecodes [
 	^ bytecodes
 ]
 
 { #category : #accessing }
-VMMethodBuilder >> bytecodes: anObject [
+VMCompiledCodeBuilder >> bytecodes: anObject [
 	bytecodes := anObject
 ]
 
-{ #category : #constants }
-VMMethodBuilder >> compiledMethodClassIndex [
+{ #category : #filling }
+VMCompiledCodeBuilder >> classIndexToUse [
+	
+	"This is not used anymore by the VM but we have to put something."
 	^ 16
 ]
 
 { #category : #filling }
-VMMethodBuilder >> fillFromPharoMethod: aCompiledMethod [ 
+VMCompiledCodeBuilder >> fillFromPharoMethod: aCompiledMethod [ 
 
 	self newMethod.
 	self numberOfTemporaries: aCompiledMethod numTemps.
@@ -68,27 +87,25 @@ VMMethodBuilder >> fillFromPharoMethod: aCompiledMethod [
 ]
 
 { #category : #filling }
-VMMethodBuilder >> fillInstance [
+VMCompiledCodeBuilder >> fillLiteralsFromPharo: pharoLiterals [
+
+	originalLiterals := pharoLiterals copy.
+	literals := originalLiterals collect: [ :e | memory nilObject ].
+
+]
+
+{ #category : #filling }
+VMCompiledCodeBuilder >> fillMethod [
 	self putHeaderInMethod.
 	self putLiteralInMethod.
 	self putBytecodesInMethod.
 ]
 
-{ #category : #filling }
-VMMethodBuilder >> fillLiteralsFromPharo: pharoLiterals [ 
-
-	literals := pharoLiterals collectWithIndex: [ :aLiteral :anIndex | | value |
-
-		"I Skip the last 2 literals (selector/additional, association)"
-		anIndex < (pharoLiterals size - 1)
-			ifTrue: [ aLiteral forMethodBuilder: self ]
-			ifFalse: [ memory nilObject ] ]
-]
-
 { #category : #initialization }
-VMMethodBuilder >> initialize [
+VMCompiledCodeBuilder >> initialize [
 	bytecodes := #[1 2 3 4 5 6 7 8 9 0].
 	literals := OrderedCollection new. 
+	originalLiterals := OrderedCollection new.
 	isSmall := true.
 	isPrimitive := false.
 	numberOfArguments := 0.
@@ -99,8 +116,8 @@ VMMethodBuilder >> initialize [
 	slotSize := nil.
 ]
 
-{ #category : #accessing }
-VMMethodBuilder >> inspectMethodIn: aBuilder [
+{ #category : #inspecting }
+VMCompiledCodeBuilder >> inspectMethodIn: aBuilder [
 	<inspectorPresentationOrder: 0 title: 'Items'> 
 
 	| items |
@@ -128,94 +145,86 @@ VMMethodBuilder >> inspectMethodIn: aBuilder [
 ]
 
 { #category : #building }
-VMMethodBuilder >> instantiate [
+VMCompiledCodeBuilder >> instantiateMethod [
 	slotSize := literals size 
 			+ (bytecodes size / memory wordSize) ceiling
 			+ 1 "method header".
 	method := 
 		memory allocateSlotsInOldSpace: slotSize
 		format: (memory compiledMethodFormatForNumBytes: bytecodes size)
-		classIndex: self compiledMethodClassIndex.
+		classIndex: self classIndexToUse.
 	
 	method ifNotNil: [ memory fillObj: method numSlots: slotSize with: memory nilObject ].
 ]
 
 { #category : #accessing }
-VMMethodBuilder >> isPrimitive [
+VMCompiledCodeBuilder >> isPrimitive [
 	^ isPrimitive
 ]
 
 { #category : #accessing }
-VMMethodBuilder >> isPrimitive: anObject [
+VMCompiledCodeBuilder >> isPrimitive: anObject [
 	isPrimitive := anObject
 ]
 
 { #category : #accessing }
-VMMethodBuilder >> isSmall [
+VMCompiledCodeBuilder >> isSmall [
 	^ isSmall
 ]
 
 { #category : #accessing }
-VMMethodBuilder >> isSmall: anObject [
+VMCompiledCodeBuilder >> isSmall: anObject [
 	isSmall := anObject
 ]
 
-{ #category : #constants }
-VMMethodBuilder >> literalAt: anIndex put: anOop [
+{ #category : #accessing }
+VMCompiledCodeBuilder >> literalAt: anIndex put: anOop [
 	self collection: literals at: anIndex put: anOop
 ]
 
 { #category : #accessing }
-VMMethodBuilder >> literals [
+VMCompiledCodeBuilder >> literals [
 	^ literals
 ]
 
 { #category : #accessing }
-VMMethodBuilder >> literals: anObject [
-	literals := anObject
+VMCompiledCodeBuilder >> literals: anObject [
+	literals := anObject.
+
 ]
 
 { #category : #accessing }
-VMMethodBuilder >> method [
+VMCompiledCodeBuilder >> method [
 	^ method
 ]
 
 { #category : #building }
-VMMethodBuilder >> newCompiledBlockBuilder [
-	
-	^ VMCompiledBlockBuilder new
-		interpreter: interpreter;
-		memory: memory;
-		yourself
-]
-
-{ #category : #building }
-VMMethodBuilder >> newMethod [
+VMCompiledCodeBuilder >> newMethod [
 	self initialize.
 ]
 
 { #category : #accessing }
-VMMethodBuilder >> numberOfArguments [
+VMCompiledCodeBuilder >> numberOfArguments [
 	^ numberOfArguments
 ]
 
 { #category : #accessing }
-VMMethodBuilder >> numberOfArguments: anObject [
+VMCompiledCodeBuilder >> numberOfArguments: anObject [
 	numberOfArguments := anObject
 ]
 
 { #category : #accessing }
-VMMethodBuilder >> numberOfTemporaries [
+VMCompiledCodeBuilder >> numberOfTemporaries [
 	^ numberOfTemporaries
 ]
 
 { #category : #accessing }
-VMMethodBuilder >> numberOfTemporaries: anObject [
+VMCompiledCodeBuilder >> numberOfTemporaries: anObject [
 	numberOfTemporaries := anObject
 ]
 
 { #category : #filling }
-VMMethodBuilder >> putBytecodesInMethod [
+VMCompiledCodeBuilder >> putBytecodesInMethod [
 	bytecodes doWithIndex:[ :aBytecode :anIndex | 
 		memory storeByte: 
 			(memory wordSize "First word is the header"
@@ -228,7 +237,7 @@ VMMethodBuilder >> putBytecodesInMethod [
 ]
 
 { #category : #filling }
-VMMethodBuilder >> putHeaderInMethod [
+VMCompiledCodeBuilder >> putHeaderInMethod [
 	memory storePointer: 0 
 		ofObject: method
 		withValue: (memory integerObjectOf: self buildMethodHeader)
@@ -236,20 +245,34 @@ VMMethodBuilder >> putHeaderInMethod [
 ]
 
 { #category : #filling }
-VMMethodBuilder >> putLiteralInMethod [
+VMCompiledCodeBuilder >> putLiteralInMethod [
+
+	originalLiterals doWithIndex: [ :aLiteral :anIndex | 
+		"I will only transform the literals that has not been overriden."
+		"I Skip the last 2 literals (selector/additional, association)"
+		((literals at: anIndex) = memory nilObject and: [ 
+			 anIndex < (originalLiterals size - 1) ]) ifTrue: [ 
+			literals
+				at: anIndex
+				put: (aLiteral forMemory: memory inMethod: self) ] ].
+
 	"the vm is 0 based, but anIndex will take the values 1 --- n,
 	and the 0 indexed element is the header so it's okay."
-	literals doWithIndex: [ :aLiteral :anIndex |
-		memory
-			storePointer: anIndex
-			ofObject: method
-			withValue: aLiteral.		
-		 ]
+	literals doWithIndex: [ :aLiteral :anIndex | 
+		memory storePointer: anIndex ofObject: method withValue: aLiteral ]
+]
 
+{ #category : #filling }
+VMCompiledCodeBuilder >> setOuterCode: aVMCompiledCodeBuilder [ 
+
+	"In the case of CompiledBlocks we need to put the outerCode object (the last literal).
+	We use the number of literals, as the VM is 0 based but the header is occupying the 0th index, everything works"
+
+	literals at: literals size put: aVMCompiledCodeBuilder address
 ]
 
 { #category : #accessing }
-VMMethodBuilder >> slotSize [
+VMCompiledCodeBuilder >> slotSize [
 	"Do not set by hand !"
 	^ slotSize
 ]
