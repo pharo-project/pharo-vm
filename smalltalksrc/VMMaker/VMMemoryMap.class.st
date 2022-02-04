@@ -148,8 +148,8 @@ VMMemoryMap >> initialOldSpaceSize: anInteger [
 VMMemoryMap >> initializeMemoryMap [
 
 	self cCode: [  ] inSmalltalk: [ 
-		memoryMapConfiguration := VMMemoryMapConfiguration forWordsize:
-			                          self class objectMemoryClass wordSize ]
+		memoryMapConfiguration := (VMMemoryMapConfiguration forWordsize:
+			                          self class objectMemoryClass wordSize) new ]
 ]
 
 { #category : #private }

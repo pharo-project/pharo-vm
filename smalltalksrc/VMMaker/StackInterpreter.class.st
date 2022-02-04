@@ -500,7 +500,10 @@ StackInterpreter class >> ancilliaryClasses [
 		LibFFI.
 		CogStackPage.
 		SpurImageHeaderStruct.
-		AbstractImageAccess. "I am putting the abstract superclass... because I cannot make it work else"
+		ComposedSegmentMetadataStruct.
+		"I am putting the abstract superclasses... because I cannot make it work else"
+		AbstractImageAccess.
+		AbstractComposedImageAccess.
 		self imageReaderClass.
 		self imageWriterClass}
 ]
@@ -653,7 +656,7 @@ StackInterpreter class >> imageWriterClass [
 
 	^Smalltalk at: (InitializationOptions
 					at: #ImageWriter
-					ifAbsent: [ #SpurImageWriter ])
+					ifAbsent: [ #ComposedImageWriter ])
 ]
 
 { #category : #translation }

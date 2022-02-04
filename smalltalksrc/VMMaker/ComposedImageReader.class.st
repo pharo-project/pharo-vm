@@ -7,6 +7,7 @@ Class {
 { #category : #api }
 ComposedImageReader >> readHeaderFromImage: anImageFileName [
 
+	<var: #header type: #SpurImageHeaderStruct>
 	| header |
 	header := (self headerFile: anImageFileName) readStreamDo: [ :f | 
 		          self readSTONFrom: f ].
@@ -18,7 +19,10 @@ ComposedImageReader >> readHeaderFromImage: anImageFileName [
 
 { #category : #api }
 ComposedImageReader >> readImageNamed: anImageName [
-	
+
+	<var: #header type: #'SpurImageHeaderStruct'>
+	<var: #anImageName declareC: 'char *imageFileName'>
+
 	| header imageFile |
 
 	imageFile := self imageFile: anImageName.
@@ -39,7 +43,7 @@ ComposedImageReader >> readSTONFrom: f [
 	^ STON reader on: f; next
 ]
 
-{ #category : #api }
+{ #category : #segments }
 ComposedImageReader >> readSegmentMetadata: segmentIndex fromFile: imageFile [
 
 	^ (self segmentMetadataFile: segmentIndex fromFile: imageFile) 

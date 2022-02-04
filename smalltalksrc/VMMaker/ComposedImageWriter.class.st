@@ -1,8 +1,18 @@
 Class {
 	#name : #ComposedImageWriter,
 	#superclass : #AbstractComposedImageAccess,
+	#instVars : [
+		'stonWriter'
+	],
 	#category : #'VMMaker-ImageFormat'
 }
+
+{ #category : #writing }
+ComposedImageWriter >> initialize [ 
+
+	super initialize .
+	stonWriter := STON writer.
+]
 
 { #category : #writing }
 ComposedImageWriter >> writeHeaderFile: imageFileName fromHeader: header [
@@ -10,11 +20,11 @@ ComposedImageWriter >> writeHeaderFile: imageFileName fromHeader: header [
 	<var: #file type: #sqImageFile> "ImageFile ?"
 	| file |
 
-	file := self sqImageSTONFile: (self headerFile: imageFileName) Open: 'wb'.
+	file := self vmImageSTONFile: (self headerFile: imageFileName) Open: 'wb'.
 	file ifNil: [ "could not open the file for writing" 
 		^ self primitiveFail ].
 
-	self writeSTON: header toFile: file.
+	self writeHeaderSTON: header toFile: file.
 
 	self sqImageFileClose: file.
 
@@ -33,7 +43,7 @@ ComposedImageWriter >> writeImageFile: imageFileName fromHeader: header [
 
 	self writeHeaderFile: imageFileName fromHeader: header.
 
-	self flag: #TODO. "success: header imageHeaderSize "
+	self flag: #TODO. "success: header imageHeaderSize?"
 
 	bytesWritten := self writeImageSegments: imageFileName.
 
@@ -43,7 +53,6 @@ ComposedImageWriter >> writeImageFile: imageFileName fromHeader: header [
 { #category : #writing }
 ComposedImageWriter >> writeImageSegments: imageFileName [
 
-	<var: 'aBinaryStream' type: #sqImageFile>
 	<var: 'aSegment' type:#'SpurSegmentInfo *'>
 
 	self beginWriteImageSegments.
@@ -58,11 +67,11 @@ ComposedImageWriter >> writeImageSegments: imageFileName [
 ]
 
 { #category : #writing }
-ComposedImageWriter >> writeSTON: ston toFile: f [
+ComposedImageWriter >> writeSTON: struct toFile: f [
 
-	STON writer
+	stonWriter
 		on: f;
-		nextPut: ston
+		nextPut: struct
 ]
 
 { #category : #writing }
@@ -70,7 +79,7 @@ ComposedImageWriter >> writeSegment: segment nextIndex: segmentIndex inImage: im
 
 	| metadataFile dataFile nWritten |
 
-	metadataFile := self sqImageSTONFile: (self segmentMetadataFile: segmentIndex inImage: imageFileName) Open: 'wb'.
+	metadataFile := self vmImageSTONFile: (self segmentMetadataFile: segmentIndex inImage: imageFileName) Open: 'wb'.
 	metadataFile ifNil: [ "could not open the file for writing" 
 		^ self primitiveFail ].
 

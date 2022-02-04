@@ -13,8 +13,8 @@ Class {
 VMAbstractImageFormatTest class >> testParameters [ 
 
 	^ super testParameters * { 
-		{ #imageReaderClass -> SpurImageReader. #imageWriterClass -> SpurImageWriter }.
 		{ #imageReaderClass -> ComposedImageReader. #imageWriterClass -> ComposedImageWriter }.
+		{ #imageReaderClass -> SpurImageReader. #imageWriterClass -> SpurImageWriter }.
 	}
 ]
 
