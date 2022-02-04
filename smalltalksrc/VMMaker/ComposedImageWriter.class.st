@@ -7,6 +7,39 @@ Class {
 	#category : #'VMMaker-ImageFormat'
 }
 
+{ #category : #'file primitives' }
+ComposedImageWriter >> fprintf: aStream _: format [ 
+
+	<doNotGenerate>
+	^ self fprintf: aStream format: format arguments: { }
+]
+
+{ #category : #'file primitives' }
+ComposedImageWriter >> fprintf: aStream _: format _: aValue [ 
+
+	<doNotGenerate>
+	^ self fprintf: aStream format: format arguments: { aValue }
+]
+
+{ #category : #'file primitives' }
+ComposedImageWriter >> fprintf: aStream _: format _: aValue _: otherValue [
+
+	<doNotGenerate>
+	^ self fprintf: aStream format: format arguments: { aValue. otherValue }
+]
+
+{ #category : #'file primitives' }
+ComposedImageWriter >> fprintf: aStream format: aFormat arguments: arguments [
+
+	<doNotGenerate>
+	| printf |
+	printf := PrintfFormatString new setFormat: aFormat.
+	
+	aStream nextPutAll: (printf
+			 printf: arguments;
+			 string)
+]
+
 { #category : #writing }
 ComposedImageWriter >> initialize [ 
 
@@ -28,6 +61,23 @@ ComposedImageWriter >> writeHeaderFile: imageFileName fromHeader: header [
 
 	self sqImageFileClose: file.
 
+]
+
+{ #category : #writing }
+ComposedImageWriter >> writeHeaderSTON: header toFile: f [
+
+	| fieldHasNilValue |
+
+	header withStructNameDo: [ :name | self fprintf: f _: '%s {\n' _: name ].
+	header withFieldsDo: [ :fieldName :fieldValue |
+		fieldValue 
+			ifNil: [ 	fieldHasNilValue := true ]
+			ifNotNil: [  
+				fieldHasNilValue := false.			
+				self fprintf: f _: '\t#%s : %ld' _: fieldName _: fieldValue ]]
+		separatedBy: [ fieldHasNilValue ifFalse: [self fprintf: f _: ',\n'] ].
+		
+	self fprintf: f _: '\n}'. 
 ]
 
 { #category : #api }
