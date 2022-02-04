@@ -70,14 +70,13 @@ VMByteCodesTest >> firstStoreAndPopTemporaryVariableBytecode [
 { #category : #'tests-pushThisContext' }
 VMByteCodesTest >> interpretWithFrame: aBlock [
 
-	callingFrame := stackBuilder addNewFrame
-		method: methodBuilder newMethod build.
-	topFrame := stackBuilder addNewFrame
-		method: methodBuilder newMethod build.
+	callingFrame := stackBuilder addNewFrame method:
+		                methodBuilder newMethod buildMethod.
+	topFrame := stackBuilder addNewFrame method:
+		            methodBuilder newMethod buildMethod.
 	stackBuilder buildStack.
-	
-	self interpret: aBlock.
 
+	self interpret: aBlock
 ]
 
 { #category : #'tests-push-simple' }
@@ -146,35 +145,44 @@ VMByteCodesTest >> testAccessingSenderOfContextShouldReturnContextOfSender [
 VMByteCodesTest >> testBytecodePopIntoReceiverWithReadOnlySendsAttemptToAssignMethod [
 
 	| class object objectToPutInSlot attemptToAssignMethod attemptToAssignSelector aMethodDictionary |
-	
-	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.	
+	class := self
+		         newClassInOldSpaceWithSlots: 0
+		         instSpec: memory arrayFormat.
 	object := memory instantiateClass: class indexableSize: 1.
 	attemptToAssignSelector := memory integerObjectOf: 2.
-	attemptToAssignMethod := methodBuilder newMethod numberOfArguments: 2 ; build.
+	attemptToAssignMethod := methodBuilder newMethod
+		                         numberOfArguments: 2;
+		                         buildMethod.
 	self setUpMethodDictionaryIn: class.
-	aMethodDictionary := memory fetchPointer: MethodDictionaryIndex ofObject: class.
-	self installSelector: attemptToAssignSelector method: attemptToAssignMethod inMethodDictionary: aMethodDictionary.
-	
+	aMethodDictionary := memory
+		                     fetchPointer: MethodDictionaryIndex
+		                     ofObject: class.
+	self
+		installSelector: attemptToAssignSelector
+		method: attemptToAssignMethod
+		inMethodDictionary: aMethodDictionary.
+
 	memory splObj: SelectorAttemptToAssign put: attemptToAssignSelector.
 
-	memory setIsImmutableOf: object to: true. 
-	
+	memory setIsImmutableOf: object to: true.
+
 	objectToPutInSlot := memory instantiateClass: class indexableSize: 1.
-	
+
 	stackBuilder addNewFrame
 		receiver: object;
-		stack:  { objectToPutInSlot }.
+		stack: { objectToPutInSlot }.
 	stackBuilder buildStack.
-	
+
 	interpreter methodDictLinearSearchLimit: 3.
 	interpreter setBreakSelector: nil.
 	interpreter currentBytecode: 200.
 
-	self interpret:[ interpreter storeAndPopReceiverVariableBytecode ].
+	self interpret: [ interpreter storeAndPopReceiverVariableBytecode ].
 
-	topFrame := VMStackFrame newFramePointer: (interpreter framePointer) withInterpreter: interpreter.
-	self assert: topFrame method equals: attemptToAssignMethod.
-
+	topFrame := VMStackFrame
+		            newFramePointer: interpreter framePointer
+		            withInterpreter: interpreter.
+	self assert: topFrame method equals: attemptToAssignMethod
 ]
 
 { #category : #'tests-push-simple' }
@@ -401,33 +409,35 @@ VMByteCodesTest >> testPushThisContextTwiceMarriesOnce [
 ]
 
 { #category : #'tests-push-simple' }
-VMByteCodesTest >> testReturnFalse [	
+VMByteCodesTest >> testReturnFalse [
+
 	"We need to return to a method.
 	So the method of the first stack should have a compiled method in the method field of the stack.
 	using memory trueObject simulates that behavior."
-	stackBuilder addNewFrame method: methodBuilder newMethod build.
+
+	stackBuilder addNewFrame method: methodBuilder newMethod buildMethod.
 	stackBuilder addNewFrame.
 	stackBuilder buildStack.
 
 	self
 		assert: [ self interpret: [ interpreter returnFalse ] ]
 		returned: memory falseObject
-
 ]
 
 { #category : #'tests-push-simple' }
-VMByteCodesTest >> testReturnTrue [	
+VMByteCodesTest >> testReturnTrue [
+
 	"We need to return to a method.
 	So the method of the first stack should have a compiled method in the method field of the stack.
 	using memory trueObject simulates that behavior."
-	stackBuilder addNewFrame method: methodBuilder newMethod build.
+
+	stackBuilder addNewFrame method: methodBuilder newMethod buildMethod.
 	stackBuilder addNewFrame.
 	stackBuilder buildStack.
 
 	self
 		assert: [ self interpret: [ interpreter returnTrue ] ]
 		returned: memory trueObject
-
 ]
 
 { #category : #'tests-pushThisContext' }
@@ -446,41 +456,49 @@ VMByteCodesTest >> testReturnsMarriedFrameWidowsContext [
 
 { #category : #'tests-send' }
 VMByteCodesTest >> testSendMessageWithTwoArgumentsMakeAFrame [
-	
+
 	| selectorOop aMethod aMethodToActivate receiver receiverClass aMethodDictionary arg1 arg2 |
 	selectorOop := memory integerObjectOf: 42.
 	methodBuilder newMethod literals: { selectorOop }.
-	aMethod := methodBuilder build.
-	aMethodToActivate := 	methodBuilder newMethod numberOfArguments: 2 ; build.
+	aMethod := methodBuilder buildMethod.
+	aMethodToActivate := methodBuilder newMethod
+		                     numberOfArguments: 2;
+		                     buildMethod.
 	receiver := memory integerObjectOf: 41.
 	receiverClass := self setSmallIntegerClassIntoClassTable.
 	self setUpMethodDictionaryIn: receiverClass.
-	aMethodDictionary := memory fetchPointer: MethodDictionaryIndex ofObject: receiverClass.  
-	
-	self installSelector: selectorOop method: aMethodToActivate  inMethodDictionary: aMethodDictionary.
-	arg1 :=memory integerObjectOf: 1.
-	arg2 :=memory integerObjectOf: 2.
-	stackBuilder addNewFrame 
-	method: aMethod;
-	stack: {receiver . arg1 . arg2}.
+	aMethodDictionary := memory
+		                     fetchPointer: MethodDictionaryIndex
+		                     ofObject: receiverClass.
+
+	self
+		installSelector: selectorOop
+		method: aMethodToActivate
+		inMethodDictionary: aMethodDictionary.
+	arg1 := memory integerObjectOf: 1.
+	arg2 := memory integerObjectOf: 2.
+	stackBuilder addNewFrame
+		method: aMethod;
+		stack: { 
+				receiver.
+				arg1.
+				arg2 }.
 	stackBuilder buildStack.
-	
+
 	interpreter methodDictLinearSearchLimit: 3.
 	interpreter setBreakSelector: nil.
 	interpreter method: aMethod.
 	interpreter currentBytecode: 240.
 
-	self interpret:[	interpreter sendLiteralSelector2ArgsBytecode ].
-
-	
-	self assert: (VMStackFrame newFramePointer: (interpreter framePointer) withInterpreter: interpreter) receiver equals: receiver.
-	self assert: interpreter stackTop equals: receiver.
+	self interpret: [ interpreter sendLiteralSelector2ArgsBytecode ].
 
 
-	
-	
-	
-	
+	self
+		assert: (VMStackFrame
+				 newFramePointer: interpreter framePointer
+				 withInterpreter: interpreter) receiver
+		equals: receiver.
+	self assert: interpreter stackTop equals: receiver
 ]
 
 { #category : #'tests-push-simple' }

@@ -17,7 +17,7 @@ Class {
 		'rumpCStackSize',
 		'wordSize',
 		'methodBuilder',
-		'bytecodeMethod'
+		'edenSize'
 	],
 	#pools : [
 		'VMBasicConstants',
@@ -62,15 +62,16 @@ VMSpurMemoryManagerTest >> createActiveProcess [
 VMSpurMemoryManagerTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod [
 
 	| methodOop |
-	bytecodeMethod := aPharoCompiledMethod methodClass compiler
-		            encoderClass: EncoderForSistaV1;
-		            options: #( + optionFullBlockClosure );
-		            compile: aPharoCompiledMethod sourceCode.
-
 	methodOop := methodBuilder
-		             fillFromPharoMethod: bytecodeMethod;
-		             build.
+		             fillFromPharoMethod: aPharoCompiledMethod;
+		             buildMethod.
 	^ methodOop
+]
+
+{ #category : #accessing }
+VMSpurMemoryManagerTest >> edenSize [
+	
+	^ 2 * 1024 + interpreter interpreterAllocationReserveBytes
 ]
 
 { #category : #accessing }
@@ -85,7 +86,7 @@ VMSpurMemoryManagerTest >> initializationOptions [
 		  #BytesPerWord.
 		  self wordSize.
 		  #ObjectMemory.
-		  memory class name }
+		  memory class name}
 ]
 
 { #category : #helpers }
@@ -114,11 +115,14 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForFullGC [
 VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 
 	| freeListOop firstClassTablePage |
-	memory coInterpreter bootstrapping: true.
 
 	"Initialize old space with free list, class table, hidden roots and remembered set to be able to scavenge"
 	memory initializeFreeList.
+
 	memory segmentManager collapseSegmentsPostSwizzle.
+	memory segmentManager plantBridgeAtTheEndOfMemory.
+	memory segmentManager assertBridge.
+
 	memory updateFreeLists.
 	memory initializeOldSpaceFirstFree: memory freeOldSpaceStart.
 
@@ -175,8 +179,8 @@ VMSpurMemoryManagerTest >> initializeSpecialSelectors [
 		memory
 			storePointer: anIndex - 1
 			ofObject: specialSelectorsArrayOop
-			withValue: (anElement forMemory: memory) ].
-		
+			withValue: (anElement forMemory: memory inMethod: nil) ].
+
 	memory splObj: SpecialSelectors put: specialSelectorsArrayOop
 ]
 
@@ -467,10 +471,15 @@ VMSpurMemoryManagerTest >> setUp [
 	| memoryManager |
 	super setUp.
 
+	interpreter := self newInterpreter.
+
 	"100 k at least to put the class table in the old space.
 	Get total size be a multiple of 4K so Unicorn CPU emulator accepts it"
-	oldSpaceSize := 999 * 1024.
- 	newSpaceSize := 1 * 1024.
+	oldSpaceSize := 2048 * 1024.
+	edenSize := self edenSize.
+
+	"Check #scavengerDenominator in SpurMemoryManager"
+ 	newSpaceSize := self roundToPageSize: (edenSize * 7 / 5).
 	stackSpaceSize := 9 * 4096.
 	methodCacheSize := 4096 * self wordSize.
 	rumpCStackSize := 0.
@@ -485,16 +494,13 @@ VMSpurMemoryManagerTest >> setUp [
 	memoryManager initialAddress: initialAddress.
 	memoryManager wordSize: self wordSize.
 	
-	interpreter := self newInterpreter.
 	interpreter memoryManager: memoryManager.
 
 	memory := interpreter objectMemory.
 	memory memoryManager: memoryManager.	
 	memory coInterpreter: interpreter.
 	interpreter objectMemory: memory.
-	
-	memory bootstrapping: true.
-	
+		
 	memory
 		allocateMemoryOfSize: oldSpaceSize
 		newSpaceSize: newSpaceSize
@@ -504,14 +510,21 @@ VMSpurMemoryManagerTest >> setUp [
 		primitiveTraceLogSize: (self roundToPageSize: self primitiveTraceLogSize)
 		rumpCStackSize: rumpCStackSize
 		initialAddress: initialAddress.
+			
 	memory initializePostBootstrap.
 	memory setHeapSizeAtPreviousGC.
+
+	self assert: memory objectMemory scavenger eden size > interpreter interpreterAllocationReserveBytes.
+	self assert: memory objectMemory scavengeThreshold + interpreter interpreterAllocationReserveBytes <= memory objectMemory scavenger eden limit.
+
 	memory segmentManager collapseSegmentsPostSwizzle.
+	memory segmentManager plantBridgeAtTheEndOfMemory.
+	memory segmentManager assertBridge.
 	
 	"Schedule a GC, so it does not try to schedule one"
 	memory needGCFlag: 1.
 	
-	methodBuilder := VMMethodBuilder new
+	methodBuilder := VMCompiledCodeBuilder new
 		interpreter: interpreter; 
 		memory: memory;
 		yourself.
@@ -590,10 +603,10 @@ VMSpurMemoryManagerTest >> setUpUsingImage [
 	objectHeaderSize := 8 "bytes. Always.".
 	emptyObjectSize := objectHeaderSize + 8 "minimum required single empty slot, to use for forwarders".
 	
-	newSpaceSize := memory oldSpaceStart -memory newSpaceStart.
+	newSpaceSize := memory newSpaceLimit - memory newSpaceStart.
 	oldSpaceSize := memory oldSpaceSize.
 	
-	methodBuilder := VMMethodBuilder new
+	methodBuilder := VMCompiledCodeBuilder new
 		interpreter: interpreter; 
 		memory: memory;
 		yourself.

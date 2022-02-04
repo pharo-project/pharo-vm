@@ -26,6 +26,18 @@ VMPrimitiveTest >> assert: anOop contentEquals: oopToCompare [
 	
 ]
 
+{ #category : #'as yet unclassified' }
+VMPrimitiveTest >> fillNewSpace [
+
+	"Allocate enough space to generate a full new space"
+
+	self assert: (memory
+			 allocateSlots: (memory scavengeThreshold - memory freeStart
+				  - (2 * memory baseHeaderSize) roundDownTo: 8) // self wordSize
+			 format: memory arrayFormat
+			 classIndex: memory arrayClassIndexPun) isNotNil
+]
+
 { #category : #'tests - primitiveGreaterOrEqual' }
 VMPrimitiveTest >> installFloatClass [
 
@@ -42,7 +54,7 @@ VMPrimitiveTest >> installFloatClass [
 	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'instance creation' }
 VMPrimitiveTest >> newArrayWith: aCollection [ 
 	| array |
 	array := self newObjectWithSlots: aCollection size format: memory arrayFormat classIndex: memory arrayClassIndexPun.
@@ -2614,11 +2626,8 @@ VMPrimitiveTest >> testPrimitiveNewCreatesTheObjectWithCorrectSize [
 { #category : #'tests - primitiveNew' }
 VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceAllocatesInOldSpace [
 	| class |
-	"Allocate enough space to generate a full new space"
-	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 1
-				format: memory arrayFormat
-				classIndex: memory arrayClassIndexPun) isNotNil.
+
+	self fillNewSpace.
 
 	class := self newClassInOldSpaceWithSlots: 256 instSpec: memory nonIndexablePointerFormat.
 	interpreter push: class.
@@ -2631,11 +2640,8 @@ VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceAllocatesInOldSpace [
 { #category : #'tests - primitiveNew' }
 VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceScheduleGC [
 	| class |
-	"Allocate enough space to generate a full new space"
-	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 1
-				format: memory arrayFormat
-				classIndex: memory arrayClassIndexPun) isNotNil.
+
+	self fillNewSpace.
 	
 	class := self newClassInOldSpaceWithSlots: 256 instSpec: memory nonIndexablePointerFormat.
 	
@@ -2673,11 +2679,7 @@ VMPrimitiveTest >> testPrimitiveNewPinnedObjectInFullNewSpaceIsSchedulingGC [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 3 instSpec: memory nonIndexablePointerFormat.
 
-	"Allocate enough space to generate a full new space"
-	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 3
-				format: memory arrayFormat
-				classIndex: memory arrayClassIndexPun) isNotNil.
+	self fillNewSpace.
 
 	self deny: memory needGCFlag.
 	
@@ -2788,12 +2790,8 @@ VMPrimitiveTest >> testPrimitiveNewWithArgCreatesTheObjectWithCorrectSize [
 VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceAllocatesInOldSpace [
 	| newObj class |
 
-	"Allocate enough space to generate a full new space"
-	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 1
-				format: memory arrayFormat
-				classIndex: memory arrayClassIndexPun) isNotNil.
-
+	self fillNewSpace.
+	
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
 
 	interpreter push: class.
@@ -2810,12 +2808,8 @@ VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceAllocatesInOldSpace [
 VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceScheduleGC [
 	| class |
 
-	"Allocate enough space to generate a full new space"
-	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 1
-				format: memory arrayFormat
-				classIndex: memory arrayClassIndexPun) isNotNil.
-
+	self fillNewSpace.
+	
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
 
 	interpreter push: class.
@@ -3195,14 +3189,15 @@ VMPrimitiveTest >> testPrimitiveSetImmutabilityOfObjectAsTrueSetsImmutability [
 VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForContext [
 
 	| method |
-	method := methodBuilder newMethod build.
-	
+	method := methodBuilder newMethod buildMethod.
+
 	interpreter push: method.
 	interpreter primitiveSize.
-	
-	"One literal + 10 bytecodes"
-	self assert: interpreter stackTop equals: (memory integerObjectOf: (10 + wordSize)).
 
+	"One literal + 10 bytecodes"
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: 10 + wordSize)
 ]
 
 { #category : #'tests - primitiveSize' }
@@ -3222,14 +3217,15 @@ VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForIndexableObject [
 VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForMethod [
 
 	| method |
-	method := methodBuilder newMethod build.
-	
+	method := methodBuilder newMethod buildMethod.
+
 	interpreter push: method.
 	interpreter primitiveSize.
-	
-	"One literal + 10 bytecodes"
-	self assert: interpreter stackTop equals: (memory integerObjectOf: (10 + wordSize)).
 
+	"One literal + 10 bytecodes"
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: 10 + wordSize)
 ]
 
 { #category : #'tests - primitiveSize' }
@@ -4514,35 +4510,44 @@ VMPrimitiveTest >> testPrimitiveSmallFloatSubtractPopsOperands [
 
 { #category : #'tests - snapshot' }
 VMPrimitiveTest >> testPrimitiveSnapshotContextsShouldBeTenured [
-	| method frame contextOop contextIdentityHash suspendedContext |
 
-	interpreter pluginList: #(). 
+	| method frame contextOop contextIdentityHash suspendedContext |
+	interpreter pluginList: #(  ).
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
-	method := methodBuilder newMethod build.
-	frame := stackBuilder addNewFrame method: method ; yourself.
+	method := methodBuilder newMethod buildMethod.
+	frame := stackBuilder addNewFrame
+		         method: method;
+		         yourself.
 	stackBuilder buildStack.
-	
-	contextOop := interpreter ensureFrameIsMarried: frame framePointer SP: frame stackPointer.
+
+	contextOop := interpreter
+		              ensureFrameIsMarried: frame framePointer
+		              SP: frame stackPointer.
 	contextIdentityHash := memory hashBitsOf: contextOop.
-	
+
 	interpreter instructionPointer: method + 17.
 	interpreter imageName: imageName.
 	interpreter setImageHeaderFlagsFrom: 0.
-	
+
 	interpreter primitiveSnapshot.
-	
-	suspendedContext := memory fetchPointer: SuspendedContextIndex ofObject: memory memoryActiveProcess.
-	self assert: (memory hashBitsOf: suspendedContext) equals: contextIdentityHash.
+
+	suspendedContext := memory
+		                    fetchPointer: SuspendedContextIndex
+		                    ofObject: memory memoryActiveProcess.
+	self
+		assert: (memory hashBitsOf: suspendedContext)
+		equals: contextIdentityHash
 ]
 
 { #category : #'tests - snapshot' }
 VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
+
 	| method file |
-	interpreter pluginList: #(). 
+	interpreter pluginList: #(  ).
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
-	method := methodBuilder newMethod build.
+	method := methodBuilder newMethod buildMethod.
 
 	stackBuilder addNewFrame method: method.
 	stackBuilder buildStack.
@@ -4552,38 +4557,38 @@ VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
 	interpreter imageName: imageName.
 	interpreter setImageHeaderFlagsFrom: 0.
 	interpreter primitiveSnapshot.
-	
+
 	file := imageName asFileReference.
 
 	self assert: file exists.
-	self assert: file size > 0.
-
-
+	self assert: file size > 0
 ]
 
 { #category : #'tests - snapshot' }
 VMPrimitiveTest >> testPrimitiveSnapshotNewKeptObjectShouldBeTenured [
+
 	| method object objectHash |
-	interpreter pluginList: #(). 
+	interpreter pluginList: #(  ).
 
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
-	
-	method := methodBuilder newMethod build.
+
+	method := methodBuilder newMethod buildMethod.
 	stackBuilder addNewFrame method: method.
 	stackBuilder buildStack.
 	interpreter instructionPointer: method + 17.
 	interpreter imageName: imageName.
 	interpreter setImageHeaderFlagsFrom: 0.
-	
+
 	object := self newObjectWithSlots: 0.
 	self keepObjectInVMVariable1: object.
 	objectHash := memory hashBitsOf: object.
-	
+
 	interpreter primitiveSnapshot.
 
-	self assert: (memory hashBitsOf: self keptObjectInVMVariable1) equals: objectHash
-
+	self
+		assert: (memory hashBitsOf: self keptObjectInVMVariable1)
+		equals: objectHash
 ]
 
 { #category : #'tests - primitiveAtPut' }
