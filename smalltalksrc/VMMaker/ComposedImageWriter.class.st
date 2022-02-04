@@ -1,59 +1,16 @@
 Class {
 	#name : #ComposedImageWriter,
 	#superclass : #AbstractComposedImageAccess,
-	#instVars : [
-		'stonWriter'
-	],
 	#category : #'VMMaker-ImageFormat'
 }
-
-{ #category : #'file primitives' }
-ComposedImageWriter >> fprintf: aStream _: format [ 
-
-	<doNotGenerate>
-	^ self fprintf: aStream format: format arguments: { }
-]
-
-{ #category : #'file primitives' }
-ComposedImageWriter >> fprintf: aStream _: format _: aValue [ 
-
-	<doNotGenerate>
-	^ self fprintf: aStream format: format arguments: { aValue }
-]
-
-{ #category : #'file primitives' }
-ComposedImageWriter >> fprintf: aStream _: format _: aValue _: otherValue [
-
-	<doNotGenerate>
-	^ self fprintf: aStream format: format arguments: { aValue. otherValue }
-]
-
-{ #category : #'file primitives' }
-ComposedImageWriter >> fprintf: aStream format: aFormat arguments: arguments [
-
-	<doNotGenerate>
-	| printf |
-	printf := PrintfFormatString new setFormat: aFormat.
-	
-	aStream nextPutAll: (printf
-			 printf: arguments;
-			 string)
-]
-
-{ #category : #writing }
-ComposedImageWriter >> initialize [ 
-
-	super initialize .
-	stonWriter := STON writer.
-]
 
 { #category : #writing }
 ComposedImageWriter >> writeHeaderFile: imageFileName fromHeader: header [
 
-	<var: #file type: #sqImageFile> "ImageFile ?"
+	<var: #file type: #sqImageFile>
 	| file |
 
-	file := self vmImageSTONFile: (self headerFile: imageFileName) Open: 'wb'.
+	file := self sqImageFile: (self headerFile: imageFileName) Open: 'w'.
 	file ifNil: [ "could not open the file for writing" 
 		^ self primitiveFail ].
 
@@ -64,20 +21,9 @@ ComposedImageWriter >> writeHeaderFile: imageFileName fromHeader: header [
 ]
 
 { #category : #writing }
-ComposedImageWriter >> writeHeaderSTON: header toFile: f [
+ComposedImageWriter >> writeHeaderSTON: header toFile: f [ 
 
-	| fieldHasNilValue |
-
-	header withStructNameDo: [ :name | self fprintf: f _: '%s {\n' _: name ].
-	header withFieldsDo: [ :fieldName :fieldValue |
-		fieldValue 
-			ifNil: [ 	fieldHasNilValue := true ]
-			ifNotNil: [  
-				fieldHasNilValue := false.			
-				self fprintf: f _: '\t#%s : %ld' _: fieldName _: fieldValue ]]
-		separatedBy: [ fieldHasNilValue ifFalse: [self fprintf: f _: ',\n'] ].
-		
-	self fprintf: f _: '\n}'. 
+	self writeSTON: header toFile: f
 ]
 
 { #category : #api }
@@ -119,9 +65,19 @@ ComposedImageWriter >> writeImageSegments: imageFileName [
 { #category : #writing }
 ComposedImageWriter >> writeSTON: struct toFile: f [
 
-	stonWriter
-		on: f;
-		nextPut: struct
+	<inline: true>
+	| fieldHasNilValue |
+
+	struct withStructNameDo: [ :name | self fprintf: f _: '%s {\n' _: name ].
+	struct withFieldsDo: [ :fieldName :fieldValue |
+		fieldValue 
+			ifNil: [ 	fieldHasNilValue := true ]
+			ifNotNil: [  
+				fieldHasNilValue := false.			
+				self fprintf: f _: '\t#%s : %ld' _: fieldName _: fieldValue ]]
+		separatedBy: [ fieldHasNilValue ifFalse: [self fprintf: f _: ',\n'] ].
+		
+	self fprintf: f _: '\n}'. 
 ]
 
 { #category : #writing }
@@ -129,7 +85,7 @@ ComposedImageWriter >> writeSegment: segment nextIndex: segmentIndex inImage: im
 
 	| metadataFile dataFile nWritten |
 
-	metadataFile := self vmImageSTONFile: (self segmentMetadataFile: segmentIndex inImage: imageFileName) Open: 'wb'.
+	metadataFile := self sqImageFile: (self segmentMetadataFile: segmentIndex inImage: imageFileName) Open: 'w'.
 	metadataFile ifNil: [ "could not open the file for writing" 
 		^ self primitiveFail ].
 
@@ -164,7 +120,16 @@ ComposedImageWriter >> writeSegmentMetadata: segment toFile: file [
 	metadata segStart: segment segStart.
 	metadata segSize: segment segSize.
 
-	self writeSTON: metadata toFile: file 	
+	self writeSegmentSTON: metadata toFile: file 	
 
 
+]
+
+{ #category : #writing }
+ComposedImageWriter >> writeSegmentSTON: segmentMetadata toFile: f [ 
+
+	<var: #f type: #sqImageFile>
+	<var: #segmentMetadata type: #ComposedSegmentMetadataStruct>
+
+	self writeSTON: segmentMetadata toFile: f
 ]

@@ -4,6 +4,39 @@ Class {
 	#category : #'VMMaker-ImageFormat'
 }
 
+{ #category : #'file primitives' }
+AbstractComposedImageAccess >> fprintf: aStream _: format [ 
+
+	<doNotGenerate>
+	^ self fprintf: aStream format: format arguments: { }
+]
+
+{ #category : #'file primitives' }
+AbstractComposedImageAccess >> fprintf: aStream _: format _: aValue [ 
+
+	<doNotGenerate>
+	^ self fprintf: aStream format: format arguments: { aValue }
+]
+
+{ #category : #'file primitives' }
+AbstractComposedImageAccess >> fprintf: aStream _: format _: aValue _: otherValue [
+
+	<doNotGenerate>
+	^ self fprintf: aStream format: format arguments: { aValue. otherValue }
+]
+
+{ #category : #'file primitives' }
+AbstractComposedImageAccess >> fprintf: aStream format: aFormat arguments: arguments [
+
+	<doNotGenerate>
+	| printf |
+	printf := PrintfFormatString new setFormat: aFormat.
+	
+	aStream nextPutAll: (printf
+			 printf: arguments;
+			 string)
+]
+
 { #category : #'file operations' }
 AbstractComposedImageAccess >> headerFile: imageFileName [
 
@@ -119,11 +152,4 @@ AbstractComposedImageAccess >> vmConcatPath: dirPath File: fileName [
 	fullPath := self stretch: prefix cat: fileName.
 	self free: prefix.
 	^ fullPath
-]
-
-{ #category : #'accessing - files' }
-AbstractComposedImageAccess >> vmImageSTONFile: file Open: fileMode [
-
-	<doNotGenerate>
-	^file asFileReference writeStream
 ]

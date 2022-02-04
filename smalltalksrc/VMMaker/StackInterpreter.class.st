@@ -640,7 +640,8 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		"this variable is not used in the exported code, so it has to be removed.
 		If it is changed, it should be marked with type implicit"
 		removeVariable: 'imageReader'; 
-		var: 'imageWriter' type: #implicit. 
+		removeVariable: 'imageWriter'.
+
 ]
 
 { #category : #'as yet unclassified' }

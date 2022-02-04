@@ -191,11 +191,11 @@ CCodeGeneratorGlobalStructure >> generateCASTWithFieldsDo: aTSendNode [
 	self assert: aTSendNode arguments first args size = 2.
 	self assert: aTSendNode arguments second args size = 0.
 
-	
 	fieldBlock := aTSendNode arguments first.
 	blockSeparatorStatements := aTSendNode arguments second statements.
 	
-	structType := self typeOfVariable: aTSendNode receiver name.
+	structType := self structTypeFor: aTSendNode receiver.
+	
 	allFieldArguments := structType asClass allSlots collect: [ :slot |
 		{
 			TConstantNode value: slot name asString. 
@@ -218,7 +218,7 @@ CCodeGeneratorGlobalStructure >> generateCASTWithStructNameDo: aTSendNode [
 	self assert: aTSendNode arguments size = 1.
 	self assert: aTSendNode arguments first args size = 1.
 	
-	structType := self typeOfVariable: aTSendNode receiver name.
+	structType := self structTypeFor: aTSendNode receiver.
 	
 	aBlock := aTSendNode arguments first.
 	argumentName := aTSendNode arguments first args first.
@@ -292,4 +292,17 @@ CCodeGeneratorGlobalStructure >> structDefDefine: aString [
 '0' - which would mean never do it
 '1' - which would mean always do it"
 	structDefDefine := aString
+]
+
+{ #category : #'CAST translation' }
+CCodeGeneratorGlobalStructure >> structTypeFor: structNode [
+
+	structNode isVariable ifTrue: [ 
+		^ self typeOfVariable: structNode name ].
+
+	(structNode isSend and: [ structNode selector = #cCoerceSimple:to: ]) ifTrue: [ 
+		^ structNode arguments second value ].
+	
+	self error.
+
 ]

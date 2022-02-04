@@ -237,7 +237,10 @@ AbstractImageAccess >> sq: segStart Image: n File: segSize Write: file [
 AbstractImageAccess >> sqImageFile: imageName Open: fileMode [
 
 	<doNotGenerate>
-	^imageName asFileReference binaryWriteStream
+	^ (fileMode includesSubstring: 'b')
+		ifTrue: [ imageName asFileReference binaryWriteStream ]
+		ifFalse: [ imageName asFileReference writeStream ]
+	
 ]
 
 { #category : #'accessing - files' }
