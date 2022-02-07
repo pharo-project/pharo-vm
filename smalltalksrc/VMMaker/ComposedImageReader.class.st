@@ -53,10 +53,8 @@ ComposedImageReader >> readSegmentMetadata: segmentIndex fromFile: imageFile [
 { #category : #segments }
 ComposedImageReader >> readSegmentsFromImageFile: imageFile header: aHeader [
 
-	"Compare with SpurImageReader >> readSegmentsFromImageFile:header:"
-
-	<var: #imageFile type: #sqImageFile>
 	<inline: false>
+	<var: #imageFile type: #sqImageFile>
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
 	<var: 'aHeader' type: #SpurImageHeaderStruct>
 	| bytesRead totalBytesRead segmentSize oldBase newBase segmentIndex existsNextSegment |
@@ -93,7 +91,7 @@ ComposedImageReader >> readSegmentsFromImageFile: imageFile header: aHeader [
 
 	"Check if exist next segment"
 	segmentIndex := segmentIndex + 1. 
-	existsNextSegment := imageFile hasChildrenMatching: (self segmentFileNameWithoutExtension: segmentIndex) , '*'.
+	existsNextSegment := imageFile hasChildrenMatching: (self segmentFileName: segmentIndex withExtension: '*').
 	
 	existsNextSegment ifTrue: [ | nextSegmentMetadata |
 			nextSegmentMetadata := self readSegmentMetadata: segmentIndex fromFile: imageFile.

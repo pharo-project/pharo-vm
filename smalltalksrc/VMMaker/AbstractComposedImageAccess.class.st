@@ -4,6 +4,14 @@ Class {
 	#category : #'VMMaker-ImageFormat'
 }
 
+{ #category : #'file operations' }
+AbstractComposedImageAccess >> createImageDirectory: imageFileName [
+
+	self 	cCode: [ self mkdir: imageFileName ] 
+			inSmalltalk: [ imageFileName asFileReference ensureCreateDirectory ]
+	
+]
+
 { #category : #'file primitives' }
 AbstractComposedImageAccess >> fprintf: aStream _: format [ 
 
@@ -40,14 +48,24 @@ AbstractComposedImageAccess >> fprintf: aStream format: aFormat arguments: argum
 { #category : #'file operations' }
 AbstractComposedImageAccess >> headerFile: imageFileName [
 
+	<doNotGenerate>
+	| headerFileName imageFile |
+	headerFileName := 'header.ston'.
+	imageFile := self imageFile: imageFileName.
+	^ imageFile / headerFileName
+]
+
+{ #category : #'file operations' }
+AbstractComposedImageAccess >> headerFileNameinImage: imageFileName into: buffer bufferSize: bufferSize [
+
 	| headerFileName |
 	headerFileName := 'header.ston'.
 
-	^ self
-		  cCode: [ self vmConcatPath: imageFileName File: headerFileName ]
-		  inSmalltalk: [ | imageFile |
-			  imageFile := self imageFile: imageFileName.
-			  imageFile / headerFileName ]
+	^ self 
+		cCode: [ 
+			self snprintf: buffer _: bufferSize _: '%s/%s' _: imageFileName _: headerFileName. 
+			buffer ] 
+		inSmalltalk: [ imageFileName , '/', headerFileName ]
 ]
 
 { #category : #'file operations' }
@@ -66,7 +84,7 @@ AbstractComposedImageAccess >> segmentDataFile: segmentIndex fromFile: imageFile
 
 	<doNotGenerate>
 	| segmentDataFileName |
-	segmentDataFileName := self segmentDataFileName: segmentIndex.
+	segmentDataFileName := self segmentFileName: segmentIndex withExtension: '.data'.
 	
 	^ imageFile / segmentDataFileName
 ]
@@ -74,35 +92,35 @@ AbstractComposedImageAccess >> segmentDataFile: segmentIndex fromFile: imageFile
 { #category : #'file operations' }
 AbstractComposedImageAccess >> segmentDataFile: segmentIndex inImage: imageFileName [
 
-	^ self
-		  cCode: [ | segmentFileName fullSegmentPath |
-			  segmentFileName := self segmentDataFileName: segmentIndex.
-			  fullSegmentPath := self
-				                     vmConcatPath: imageFileName
-				                     File: segmentFileName.
-			  self free: segmentFileName.
-			  fullSegmentPath ]
-		  inSmalltalk: [ | imageFile |
-			  imageFile := self imageFile: imageFileName.
-			  self segmentDataFile: segmentIndex fromFile: imageFile ]
-]
+	<inline: true>
+	<var: #buffer declareC: 'char buffer[255]'>
 
-{ #category : #'file operations' }
-AbstractComposedImageAccess >> segmentDataFileName: segmentIndex [
-
-	| fileName extension dataFileName |
-	fileName := self segmentFileNameWithoutExtension: segmentIndex.
-	extension := '.data'.
-	dataFileName := self stretch: fileName cat: extension.
-	self free: fileName.
-	^ dataFileName
+	| buffer |
+		
+	self simulationOnly: [ buffer := nil ].
+		
+	^ self segmentFileName: segmentIndex withExtension: '.data' inImage: imageFileName into: buffer bufferSize: 255.
 
 ]
 
 { #category : #'file operations' }
-AbstractComposedImageAccess >> segmentFileNameWithoutExtension: segmentIndex [
+AbstractComposedImageAccess >> segmentFileName: segmentIndex withExtension: extension [
 
-	^ self stretch: 'seg' cat: segmentIndex asString.
+
+	<doNotGenerate>
+	self flag: #TODO. "REMOVE"
+	
+	^ 'seg', segmentIndex asString , extension
+]
+
+{ #category : #'file operations' }
+AbstractComposedImageAccess >> segmentFileName: segmentIndex withExtension: extension inImage: imageFileName into: buffer bufferSize: bufferSize [
+
+	^ self 
+		cCode: [ 
+			self snprintf: buffer _: bufferSize _: '%s/seg%d%s' _: imageFileName _: segmentIndex _: extension. 
+			buffer ] 
+		inSmalltalk: [ imageFileName , '/seg', segmentIndex asString , extension ]
 ]
 
 { #category : #'file operations' }
@@ -110,7 +128,7 @@ AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex fromFile: image
 
 	<doNotGenerate>
 	| segmentDataFileName |
-	segmentDataFileName := (self segmentFileNameWithoutExtension: segmentIndex) , '.ston'.
+	segmentDataFileName := self segmentFileName: segmentIndex withExtension: '.ston'.
 
 	^ imageFile / segmentDataFileName
 ]
@@ -118,28 +136,14 @@ AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex fromFile: image
 { #category : #'file operations' }
 AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex inImage: imageFileName [
 
-	^ self
-		  cCode: [ | segmentFileName fullSegmentPath |
-			  segmentFileName := self segmentMetadataFileName: segmentIndex.
-			  fullSegmentPath := self
-				                     vmConcatPath: imageFileName
-				                     File: segmentFileName.
-			  self free: segmentFileName.
-			  fullSegmentPath ]
-		  inSmalltalk: [ | imageFile |
-			  imageFile := self imageFile: imageFileName.
-			  self segmentMetadataFile: segmentIndex fromFile: imageFile ]
-]
+	<inline: true>
+	<var: #buffer declareC: 'char buffer[255]'>
 
-{ #category : #'file operations' }
-AbstractComposedImageAccess >> segmentMetadataFileName: segmentIndex [
+	| buffer |
+		
+	self simulationOnly: [ buffer := nil ].
 
-	| fileName extension metadataFileName |
-	fileName := self segmentFileNameWithoutExtension: segmentIndex.
-	extension := '.ston'.
-	metadataFileName := self stretch: fileName cat: extension.
-	self free: fileName.
-	^ metadataFileName
+	^ self segmentFileName: segmentIndex withExtension: '.ston' inImage: imageFileName into: buffer bufferSize: 255. 
 
 ]
 
@@ -147,7 +151,7 @@ AbstractComposedImageAccess >> segmentMetadataFileName: segmentIndex [
 AbstractComposedImageAccess >> vmConcatPath: dirPath File: fileName [
 
 	| prefix fullPath |
-	self flag: #TODO. "implement sprint"
+	self flag: #TODO. "REMOVE"
 	prefix := self stretch: dirPath cat: '/'.
 	fullPath := self stretch: prefix cat: fileName.
 	self free: prefix.

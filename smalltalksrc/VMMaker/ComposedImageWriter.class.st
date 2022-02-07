@@ -7,10 +7,15 @@ Class {
 { #category : #writing }
 ComposedImageWriter >> writeHeaderFile: imageFileName fromHeader: header [
 
+	<inline: true>
 	<var: #file type: #sqImageFile>
-	| file |
+	<var: #buffer declareC: 'char buffer[255]'>
 
-	file := self sqImageFile: (self headerFile: imageFileName) Open: 'w'.
+	| buffer file |
+		
+	self simulationOnly: [ buffer := nil ].
+	
+	file := self sqImageFile: (self headerFileNameinImage: imageFileName into: buffer bufferSize: 255) Open: 'w'.
 	file ifNil: [ "could not open the file for writing" 
 		^ self primitiveFail ].
 
@@ -36,6 +41,8 @@ ComposedImageWriter >> writeImageFile: imageFileName fromHeader: header [
 	| bytesWritten |
 
 	self logDebug: 'Writing snapshot %s' _: imageFileName.
+
+	self createImageDirectory: imageFileName.
 
 	self writeHeaderFile: imageFileName fromHeader: header.
 
@@ -83,16 +90,20 @@ ComposedImageWriter >> writeSTON: struct toFile: f [
 { #category : #writing }
 ComposedImageWriter >> writeSegment: segment nextIndex: segmentIndex inImage: imageFileName [
 
-	| metadataFile dataFile nWritten |
+	<inline: false>
+	<var: 'segment' type: #'SpurSegmentInfo *'>
+	<var: #imageFileName declareC: 'char *imageFileName'>
 
-	metadataFile := self sqImageFile: (self segmentMetadataFile: segmentIndex inImage: imageFileName) Open: 'w'.
-	metadataFile ifNil: [ "could not open the file for writing" 
-		^ self primitiveFail ].
+	self writeSegmentMetadata: segment nextIndex: segmentIndex inImage: imageFileName.
 
-	self writeSegmentMetadata: segment toFile: metadataFile.
+	^ self writeSegmentData: segment nextIndex: segmentIndex inImage: imageFileName.
+]
 
-	self sqImageFileClose: metadataFile.
+{ #category : #writing }
+ComposedImageWriter >> writeSegmentData: segment nextIndex: segmentIndex inImage: imageFileName [
 
+	<var: #dataFile type: #sqImageFile>
+	| dataFile nWritten |
 
 	dataFile := self sqImageFile: (self segmentDataFile: segmentIndex inImage: imageFileName) Open: 'wb'.
 	dataFile ifNil: [ "could not open the file for writing" 
@@ -108,6 +119,23 @@ ComposedImageWriter >> writeSegment: segment nextIndex: segmentIndex inImage: im
 
 
 	^ nWritten
+]
+
+{ #category : #writing }
+ComposedImageWriter >> writeSegmentMetadata: segment nextIndex: segmentIndex inImage: imageFileName [
+
+	<var: #metadataFile type: #sqImageFile>
+	| metadataFile |
+
+	metadataFile := self sqImageFile: (self segmentMetadataFile: segmentIndex inImage: imageFileName) Open: 'w'.
+	metadataFile ifNil: [ "could not open the file for writing" 
+		^ self primitiveFail ].
+
+	self writeSegmentMetadata: segment toFile: metadataFile.
+
+	self sqImageFileClose: metadataFile.
+
+
 ]
 
 { #category : #writing }
