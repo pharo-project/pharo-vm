@@ -4,12 +4,20 @@ Class {
 	#category : #'VMMaker-ImageFormat'
 }
 
+{ #category : #translation }
+AbstractComposedImageAccess class >> declareCVarsIn: aCCodeGenerator [
+
+	aCCodeGenerator
+		addHeaderFile:'<sys/stat.h> /* for e.g. mkdir */'
+
+]
+
 { #category : #'file operations' }
 AbstractComposedImageAccess >> createImageDirectory: imageFileName [
 
-	self 	cCode: [ self mkdir: imageFileName ] 
-			inSmalltalk: [ imageFileName asFileReference ensureCreateDirectory ]
-	
+	self
+		cCode: [ self mkdir: imageFileName _: 0777 ]
+		inSmalltalk: [ imageFileName asFileReference ensureCreateDirectory ]
 ]
 
 { #category : #'file primitives' }
@@ -145,15 +153,4 @@ AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex inImage: imageF
 
 	^ self segmentFileName: segmentIndex withExtension: '.ston' inImage: imageFileName into: buffer bufferSize: 255. 
 
-]
-
-{ #category : #'string manipulation' }
-AbstractComposedImageAccess >> vmConcatPath: dirPath File: fileName [
-
-	| prefix fullPath |
-	self flag: #TODO. "REMOVE"
-	prefix := self stretch: dirPath cat: '/'.
-	fullPath := self stretch: prefix cat: fileName.
-	self free: prefix.
-	^ fullPath
 ]

@@ -80,7 +80,7 @@ ComposedImageWriter >> writeSTON: struct toFile: f [
 		fieldValue 
 			ifNil: [ 	fieldHasNilValue := true ]
 			ifNotNil: [  
-				fieldHasNilValue := false.			
+				fieldHasNilValue := false.
 				self fprintf: f _: '\t#%s : %ld' _: fieldName _: fieldValue ]]
 		separatedBy: [ fieldHasNilValue ifFalse: [self fprintf: f _: ',\n'] ].
 		
