@@ -27,7 +27,6 @@ VMCogitHelpersTest >> assertNotInSmallIntegerRange: anInteger [
 
 	machineSimulator classRegisterValue: anInteger.
 
-	self prepareCall.
 	self runUntilReturnFrom: checkNotSmallInteger.
 	
 	self assert: machineSimulator classRegisterValue equals: 0
