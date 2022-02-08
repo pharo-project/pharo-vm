@@ -1467,6 +1467,21 @@ StackInterpreter class >> initializeWithOptions: optionsDictionary [
 	self initializeStreamIndices
 ]
 
+{ #category : #'class initialization' }
+StackInterpreter class >> initializeWithOptions: optionsDictionaryOrArray objectMemoryClass: objectMemoryClassOrNil [
+	"The relevant ObjectMemory and Interpreter classes must be initialized in order.
+	 This happens notionally every time we start the simulator,
+	 but in fact happens when ever we instantiate a simulator."
+	InitializationOptions := optionsDictionaryOrArray isArray
+							ifTrue: [Dictionary newFromPairs: optionsDictionaryOrArray]
+							ifFalse: [optionsDictionaryOrArray].
+
+	(objectMemoryClassOrNil ifNil: [self objectMemoryClass])
+		initializeWithOptions: InitializationOptions.
+
+	self initializeWithOptions: InitializationOptions
+]
+
 { #category : #accessing }
 StackInterpreter class >> interpreterVersion [ 
 	^ 'Stack'
@@ -2196,9 +2211,7 @@ StackInterpreter >> asciiOfCharacter: characterObj [  "Returns an integer object
 
 	<inline: false>
 	(objectMemory isCharacterObject: characterObj) ifTrue:
-		[^CharacterTable
-			ifNil: [objectMemory integerObjectOfCharacterObject: characterObj]
-			ifNotNil: [objectMemory fetchPointer: CharacterValueIndex ofObject: characterObj]].
+		[^objectMemory integerObjectOfCharacterObject: characterObj].
 	self primitiveFailFor: PrimErrBadArgument.
 	^ConstZero  "in case some code needs an int"
 ]
@@ -2313,6 +2326,34 @@ StackInterpreter >> baseFrameReturn [
 	self internalStackTopPut: localReturnValue.
 	self assert: (self checkIsStillMarriedContext: contextToReturnTo currentFP: localFP).
 	^self fetchNextBytecode
+]
+
+{ #category : #initialization }
+StackInterpreter >> basicInitialize [
+	"The primary responsibility of this method is to allocate
+	 Smalltalk Arrays for variables that will be declared as statically-allocated
+	 global arrays in the translated code."
+
+	objectMemory ifNil:
+		[objectMemory := self class objectMemoryClass simulatorClass new].
+	objectMemory coInterpreter: self.
+
+	self assert: ConstMinusOne = (objectMemory integerObjectOf: -1).
+
+	methodCache := Array new: MethodCacheSize.
+	self initializeAtCache.
+	self flushMethodCache.
+	gcSemaphoreIndex := 0.
+	externalPrimitiveTable := CArrayAccessor on: (Array
+		new: MaxExternalPrimitiveTableSize
+		withAll: 0).
+	externalPrimitiveTableFirstFreeIndex := 0.
+	primitiveTable := self class primitiveTable copy.
+	desiredNumStackPages := desiredEdenBytes := 0.
+	"This is initialized on loading the image, but convenient for testing stack page values..."
+	numStackPages := self defaultNumStackPages. 
+
+	suppressHeartbeatFlag := false.
 ]
 
 { #category : #'frame access' }
@@ -3826,11 +3867,12 @@ StackInterpreter >> capturePendingFinalizationSignals [
 ]
 
 { #category : #'indexing primitive support' }
-StackInterpreter >> characterForAscii: ascii [  "Above ObjectMemory, arg must lie in range 0-255!"
+StackInterpreter >> characterForAscii: ascii [
+
+	"Above ObjectMemory, arg must lie in range 0-255!"
+
 	<inline: true>
-	^CharacterTable
-		ifNil: [objectMemory characterObjectOf: ascii]
-		ifNotNil: [objectMemory fetchPointer: ascii ofObject: objectMemory characterTable]
+	^ objectMemory characterObjectOf: ascii
 ]
 
 { #category : #'debug support' }
@@ -4559,9 +4601,7 @@ StackInterpreter >> commonAtPut: stringy [
 		ifTrue: [ | charToPut |
 			"inline of asciiOfCharacter: value. Non return of primitiveFailFor:"
 			(objectMemory isCharacterObject: value)
-				ifTrue: [ charToPut := CharacterTable
-						ifNil: [ objectMemory integerObjectOfCharacterObject: value ]
-						ifNotNil: [ objectMemory fetchPointer: CharacterValueIndex ofObject: value ].
+				ifTrue: [ charToPut := objectMemory integerObjectOfCharacterObject: value.
 					self stObject: rcvr at: index put: charToPut ]
 				ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ] ]
 		ifFalse: [ self stObject: rcvr at: index put: value ].
@@ -7705,6 +7745,12 @@ StackInterpreter >> initialize [
 	statProcessSwitch := statIOProcessEvents := statStackPageDivorce :=
 	statIdleUsecs := 0.
 	messageCount := 0.
+]
+
+{ #category : #initialization }
+StackInterpreter >> initializeAtCache [
+
+	atCache := Array new: AtCacheTotalSize.
 ]
 
 { #category : #initialization }
@@ -14380,6 +14426,20 @@ StackInterpreter >> spurPostBecomeAction: theBecomeEffectsFlags [
 ]
 
 { #category : #'indexing primitive support' }
+StackInterpreter >> stContext: context at: index format: format fixedFields: fixedFields [
+
+	| stSize |
+	<inline: true>
+	stSize := self stackPointerForMaybeMarriedContext: context.
+
+	((self oop: index isGreaterThanOrEqualTo: 1 andLessThanOrEqualTo: stSize)
+	 and: [self isStillMarriedContext: context]) ifTrue:[
+		^self noInlineTemporary: index - 1 in: (self frameOfMarriedContext: context) ].
+
+	^ self stObject: context at: index format: format fixedFields: fixedFields size: stSize.
+]
+
+{ #category : #'indexing primitive support' }
 StackInterpreter >> stObject: array at: index [
 	"Return what ST would return for <obj> at: index."
 
@@ -14391,17 +14451,22 @@ StackInterpreter >> stObject: array at: index [
 	fixedFields := objectMemory fixedFieldsOf: array format: fmt length: totalLength.
 	(fmt = objectMemory indexablePointersFormat
 	 and: [objectMemory isContextHeader: hdr])
-		ifTrue:
-			[stSize := self stackPointerForMaybeMarriedContext: array.
-			((self oop: index isGreaterThanOrEqualTo: 1)
-			 and: [(self oop: index isLessThanOrEqualTo: stSize)
-			 and: [self isStillMarriedContext: array]]) ifTrue:
-				[^self noInlineTemporary: index - 1 in: (self frameOfMarriedContext: array)]]
-		ifFalse: [stSize := totalLength - fixedFields].
-	((self oop: index isGreaterThanOrEqualTo: (objectMemory firstValidIndexOfIndexableObject: array withFormat: fmt))
-	 and: [self oop: index isLessThanOrEqualTo: stSize]) ifTrue:
-		[^self subscript: array with: (index + fixedFields) format: fmt].
-	self primitiveFailFor: (fmt <= 1 ifTrue: [PrimErrBadReceiver] ifFalse: [PrimErrBadIndex]).
+		ifTrue: [ ^ self stContext: array at: index format: fmt fixedFields: fixedFields ].
+	
+	stSize := totalLength - fixedFields.
+	^ self stObject: array at: index format: fmt fixedFields: fixedFields size: stSize.
+]
+
+{ #category : #'indexing primitive support' }
+StackInterpreter >> stObject: array at: index format: format fixedFields: fixedFields size: stSize [
+
+	<inline: true>
+	(self oop: index 
+			isGreaterThanOrEqualTo: (objectMemory firstValidIndexOfIndexableObject: array withFormat: format)
+	 		andLessThanOrEqualTo: stSize) ifTrue: [
+				^self subscript: array with: (index + fixedFields) format: format ].
+
+	self primitiveFailFor: (format <= 1 ifTrue: [PrimErrBadReceiver] ifFalse: [PrimErrBadIndex]).
 	^0
 ]
 
@@ -15042,6 +15107,12 @@ StackInterpreter >> temporaryLocation: offset in: theFP numArgs: numArgs [
 StackInterpreter >> thisClassIndex [
 	<doNotGenerate>
 	^thisClassIndex
+]
+
+{ #category : #simulation }
+StackInterpreter >> threadManager [
+	<doNotGenerate>
+	^nil
 ]
 
 { #category : #simulation }

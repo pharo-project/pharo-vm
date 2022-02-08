@@ -536,6 +536,23 @@ VMSpurMemoryManagerTest >> setUp [
 		yourself.
 ]
 
+{ #category : #tests }
+VMSpurMemoryManagerTest >> setUpContextClass [
+
+	| contextClass |
+	contextClass := self
+		newClassInOldSpaceWithSlots: Context allSlots size
+		instSpec: Context instSpec.
+		
+	memory setHashBitsOf: contextClass to: ClassMethodContextCompactIndex.
+		
+	memory
+		storePointer: ClassMethodContextCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: contextClass
+
+]
+
 { #category : #running }
 VMSpurMemoryManagerTest >> setUpScheduler [
 	

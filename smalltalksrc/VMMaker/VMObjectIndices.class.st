@@ -11,7 +11,6 @@ Class {
 	#superclass : #SharedPool,
 	#classVars : [
 		'ActiveProcessIndex',
-		'CharacterTable',
 		'CharacterValueIndex',
 		'ClassArray',
 		'ClassBitmap',

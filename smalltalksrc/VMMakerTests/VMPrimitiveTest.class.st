@@ -65,32 +65,44 @@ VMPrimitiveTest >> newArrayWith: aCollection [
 	
 ]
 
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> newContextWithTemps: temps [
+
+	| method topFrame |
+	method := methodBuilder newMethod; numberOfTemporaries: temps size; build.
+	2 timesRepeat: [ 
+		topFrame := stackBuilder addNewFrame 
+			method: method;
+			temps: temps;
+			beSuspended
+	].
+	topFrame beActive.
+	
+	^ stackBuilder buildStack marryToContext	
+	
+]
+
 { #category : #running }
 VMPrimitiveTest >> setUp [
-
+	
 	"taken from VMSimpleStackBasedCogitBytecodeTest >> #setup"
-
 	| newMethod ctx page |
 	super setUp.
-
+	self setUpContextClass.
+	
 	"Create the root context with a valid method"
 	"Let's create a method with enough size. It should have at least a literal (4 or 8 bytes depending the word size) and some bytecodes, so we can put the IP inside the method"
-	newMethod := methodBuilder newMethod buildMethod.
-
+	newMethod := methodBuilder newMethod build.
+	
 	"The context has 5 (in 32 bits) or 9 (in 64 bits) as initial IP, as method has at least one literal"
-	ctx := self
-		       newSmallContextReceiver: memory nilObject
-		       method: newMethod
-		       arguments: #(  )
-		       temporaries: #(  )
-		       ip: self wordSize + 1.
-
+	ctx := self newSmallContextReceiver: memory nilObject method: newMethod arguments: #() temporaries: #() ip: self wordSize + 1.
+	
 	page := interpreter makeBaseFrameFor: ctx.
 	interpreter setStackPointersFromPage: page.
 	interpreter setStackPageAndLimit: page.
-
+	
 	self setUpScheduler.
-	imageName := VMPrimitiveTest name
+	imageName := VMPrimitiveTest name 
 ]
 
 { #category : #'tests - primitiveIdentical' }
@@ -619,6 +631,55 @@ VMPrimitiveTest >> testPrimitiveAtFailsForNonIntegerArgument [
 	
 	self assert: interpreter failed.
 	self assert: interpreter primFailCode equals: PrimErrBadArgument. 
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveAtForDivorcedContext [
+
+	| context |
+	context := self newContextWithTemps: { memory falseObject }.
+	
+	"Divorcing requires the instruction pointer pushed in the top of the frame's stack"
+	self interpret: [	interpreter internalPush: interpreter instructionPointer ].		
+	interpreter externalDivorceFrame: interpreter framePointer andContext: context.
+
+	interpreter push: context.
+	interpreter push: (memory integerObjectOf: 1).	
+	interpreter primitiveAt. 
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: memory falseObject. 
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveAtForMarriedContext [
+
+	| context |
+	context := self newContextWithTemps: { memory falseObject }.
+	
+	interpreter push: context.
+	interpreter push: (memory integerObjectOf: 1).	
+	interpreter primitiveAt. 
+	
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: memory falseObject. 
+]
+
+{ #category : #'tests - primitiveAt' }
+VMPrimitiveTest >> testPrimitiveAtForWidowedContext [
+
+	| context |
+	context := self newContextWithTemps: { }.
+	interpreter printOop: context.
+	self interpret: [	interpreter returnTopFromMethod ].		
+	interpreter externalWriteBackHeadFramePointers.
+	self assert: (interpreter isWidowedContext: context).
+
+	interpreter push: context.
+	interpreter push: (memory integerObjectOf: 1).	
+	interpreter primitiveAt. 
+
+	self assert: interpreter failed
 ]
 
 { #category : #'tests - primitiveAtPut' }

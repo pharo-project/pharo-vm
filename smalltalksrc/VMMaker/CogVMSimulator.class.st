@@ -81,8 +81,7 @@ Class {
 		'bootstrapping',
 		'primitiveFailCount',
 		'primitiveFlags',
-		'initialAddress',
-		'rumpCStackBase'
+		'initialAddress'
 	],
 	#classVars : [
 		'ByteCountsPerMicrosecond',
@@ -103,24 +102,6 @@ CogVMSimulator class >> initializeWithOptions: optionsDictionary [
 	ByteCountsPerMicrosecond := InitializationOptions
 										at: #ByteCountsPerMicrosecond
 										ifAbsent: [100]
-]
-
-{ #category : #'class initialization' }
-CogVMSimulator class >> initializeWithOptions: optionsDictionaryOrArray objectMemoryClass: objectMemoryClassOrNil [
-	"The relevant ObjectMemory, Interpreter and Cogit classes must be initialized in order.
-	 This happens notionally every time we start the simulator,
-	 but in fact happens when ever we instantiate a simulator."
-	InitializationOptions := optionsDictionaryOrArray isArray
-							ifTrue: [Dictionary newFromPairs: optionsDictionaryOrArray]
-							ifFalse: [optionsDictionaryOrArray].
-
-	(objectMemoryClassOrNil ifNil: [self objectMemoryClass])
-		initializeWithOptions: InitializationOptions.
-
-	self initializeWithOptions: InitializationOptions.
-
-	(self cogitClass withAllSuperclasses copyUpTo: Cogit) reverseDo:
-		[:c| c initializeWithOptions: InitializationOptions]
 ]
 
 { #category : #'instance creation' }
@@ -1221,7 +1202,7 @@ CogVMSimulator >> initialize [
 	"Initialize the CogVMSimulator when running the interpreter inside Smalltalk.  The
 	 primary responsibility of this method is to allocate Smalltalk Arrays for variables
 	 that will be declared as statically-allocated global arrays in the translated code."
-	
+	super initialize.
 	self basicInitialize.
 	self initializePluginEntries.
 ]
@@ -1650,20 +1631,6 @@ CogVMSimulator >> isPrimitiveFunctionPointerAnIndex [
 	^primitiveFunctionPointer isInteger
 	  and: [primitiveFunctionPointer >= 0
 	  and: [primitiveFunctionPointer <= MaxQuickPrimitiveIndex]]
-]
-
-{ #category : #'frame access' }
-CogVMSimulator >> isWidowedContext: aOnceMarriedContext [
-	"See if the argument is connected with a live frame or not.
-	 If it is not, turn it into a bereaved single context."
-	(stackPages isFree: stackPage) ifFalse: "in baseReturn the active page has been freed."
-		[((stackPages somePageHasHeadFrameFP: framePointer)
-		  or: [(stackPages somePageHasHeadFrameFP: localFP)
-		  or: [stackPages allPagesFree]]) ifFalse:
-			[(thisContext sender sender method = (CoInterpreter >> #baseFrameReturn)
-			  or: [thisContext sender sender method = (CoInterpreter >> #ceBaseFrameReturn:)]) ifFalse:
-				[self halt: 'currentFP may not be written back to stack page']]].
-	^super isWidowedContext: aOnceMarriedContext
 ]
 
 { #category : #'plugin support' }
@@ -2664,13 +2631,6 @@ CogVMSimulator >> rewriteMethodCacheEntryForExternalPrimitiveToFunction: localPr
 		[methodCache
 			at: lastMethodCacheProbeWrite + MethodCachePrimFunction
 			put: (self cCoerce: localPrimAddress to: #'sqIntptr_t')]
-]
-
-{ #category : #'rump c stack' }
-CogVMSimulator >> rumpCStackAddress [
-
-	rumpCStackBase ifNil: [ rumpCStackBase := memoryManager allocate: self rumpCStackSize  ].
- 	^ rumpCStackBase + self rumpCStackSize
 ]
 
 { #category : #'rump c stack' }

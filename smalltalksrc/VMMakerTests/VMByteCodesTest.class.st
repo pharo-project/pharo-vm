@@ -67,14 +67,6 @@ VMByteCodesTest >> firstStoreAndPopTemporaryVariableBytecode [
 	^ 104
 ]
 
-{ #category : #'helper-interpret' }
-VMByteCodesTest >> interpret: aBlock [
-	interpreter internalizeIPandSP.
-	aBlock value.
-	interpreter externalizeIPandSP.
-
-]
-
 { #category : #'tests-pushThisContext' }
 VMByteCodesTest >> interpretWithFrame: aBlock [
 

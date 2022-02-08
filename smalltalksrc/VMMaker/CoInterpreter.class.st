@@ -92,7 +92,8 @@ Class {
 		'flagInterpretedMethods',
 		'maxLiteralCountForCompile',
 		'minBackwardJumpCountForCompile',
-		'initialMemoryAddress'
+		'initialMemoryAddress',
+		'rumpCStackBase'
 	],
 	#classVars : [
 		'CSCallbackEnter',
@@ -342,6 +343,15 @@ CoInterpreter class >> initializePrimitiveTable [
 		at: 253 + 1 put: #primitiveCollectCogCodeConstituents;
 		at: 215 + 1 put: #primitiveVoidVMStateForMethod;
 		at: 216 + 1 put: #primitiveMethodXray
+]
+
+{ #category : #'class initialization' }
+CoInterpreter class >> initializeWithOptions: optionsDictionaryOrArray objectMemoryClass: objectMemoryClassOrNil [
+
+	super initializeWithOptions: optionsDictionaryOrArray objectMemoryClass: objectMemoryClassOrNil.
+
+	(self cogitClass withAllSuperclasses copyUpTo: Cogit) reverseDo:
+		[:c| c initializeWithOptions: InitializationOptions]
 ]
 
 { #category : #documentation }
@@ -1000,6 +1010,41 @@ CoInterpreter >> baseFrameReturn [
 	self setMethod: (self iframeMethod: localFP).
 	self internalStackTopPut: localReturnValue.
 	^self fetchNextBytecode
+]
+
+{ #category : #initialization }
+CoInterpreter >> basicInitialize [
+	"Initialize the CogVMSimulator when running the interpreter inside Smalltalk.  The
+	 primary responsibility of this method is to allocate Smalltalk Arrays for variables
+	 that will be declared as statically-allocated global arrays in the translated code."
+
+	cogit ifNil:
+		[cogit := self class cogitClass new setInterpreter: self].
+	objectMemory coInterpreter: self cogit: cogit.
+
+	super basicInitialize.
+
+
+	cogMethodZone := cogit methodZone. "Because Slang can't remove intermediate implicit receivers (cogit methodZone foo doesn't reduce to foo())"
+
+	self flushMethodCache.
+	cogCompiledCodeCompactionCalledFor := false.
+
+	desiredNumStackPages := desiredEdenBytes := desiredCogCodeSize := 0.
+
+	maxLiteralCountForCompile := MaxLiteralCountForCompile.
+	minBackwardJumpCountForCompile := MinBackwardJumpCountForCompile.
+	flagInterpretedMethods := false.
+
+	suppressHeartbeatFlag := deferSmash := deferredSmash := false.
+	primTraceLog := CArrayAccessor on: (Array new: 256 withAll: 0).
+	primTraceLogIndex := 0.
+	traceLog := CArrayAccessor on: (Array new: TraceBufferSize withAll: 0).
+	traceLogIndex := 0.
+	traceSources := TraceSources.
+	statCodeCompactionCount := 0.
+	statCodeCompactionUsecs := 0.
+
 ]
 
 { #category : #hooks }
@@ -3819,6 +3864,12 @@ CoInterpreter >> initStackPagesAndInterpret [
 	^nil
 ]
 
+{ #category : #initialization }
+CoInterpreter >> initializeAtCache [
+
+	"CoInterpreter does not have atCache"
+]
+
 { #category : #'frame access' }
 CoInterpreter >> instVar: offset ofContext: aContext [
 	"Fetch an instance avriable from a maybe married context.
@@ -6244,6 +6295,27 @@ CoInterpreter >> roomToPushNArgs: n [
 			^self stackPointerIndex + n <= cntxSize]
 		ifFalse: "simpler code that simply insists args are <= max arg count"
 			[^n <= (LargeContextSlots - CtxtTempFrameStart)]
+]
+
+{ #category : #'rump c stack' }
+CoInterpreter >> rumpCStackAddress [
+	<doNotGenerate>
+	rumpCStackBase ifNil: [ rumpCStackBase := memoryManager allocate: self rumpCStackSize  ].
+ 	^ rumpCStackBase + self rumpCStackSize
+]
+
+{ #category : #'rump c stack' }
+CoInterpreter >> rumpCStackSize [
+	"Allocate a rump C stack for simulation.  This stack is used for C calls, i.e. calls
+	 made into the simulated C run-time, typically of routines in CoInterpreter.
+	 We also use it to hold in-memory copies of the cStackPointer and cFramePointer
+	 variables for simulation speed.  Alas we don't use an in-memory copy of stackLimit,
+	 because we need some activity to count in order to implement the ioMSecs
+	 routine and the stackLimit check is the ideal one."
+	<doNotGenerate>
+	^self threadManager
+		ifNil: [RumpCStackSize]
+		ifNotNil: [:threadManager| RumpCStackSize * (threadManager maxNumThreads + 1)]
 ]
 
 { #category : #'callback support' }

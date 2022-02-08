@@ -60,21 +60,6 @@ Class {
 	#category : #'VMMaker-InterpreterSimulation'
 }
 
-{ #category : #'class initialization' }
-StackInterpreterSimulator class >> initializeWithOptions: optionsDictionaryOrArray objectMemoryClass: objectMemoryClassOrNil [
-	"The relevant ObjectMemory and Interpreter classes must be initialized in order.
-	 This happens notionally every time we start the simulator,
-	 but in fact happens when ever we instantiate a simulator."
-	InitializationOptions := optionsDictionaryOrArray isArray
-							ifTrue: [Dictionary newFromPairs: optionsDictionaryOrArray]
-							ifFalse: [optionsDictionaryOrArray].
-
-	(objectMemoryClassOrNil ifNil: [self objectMemoryClass])
-		initializeWithOptions: InitializationOptions.
-
-	self initializeWithOptions: InitializationOptions
-]
-
 { #category : #'instance creation' }
 StackInterpreterSimulator class >> isNonArgumentImplicitReceiverVariableName: aName [
 
@@ -811,6 +796,7 @@ StackInterpreterSimulator >> initialize [
 	 inside Smalltalk. The primary responsibility of this method is to allocate
 	 Smalltalk Arrays for variables that will be declared as statically-allocated
 	 global arrays in the translated code."
+	super initialize.
 	self basicInitialize.	
 	self initializePluginEntries.
 ]
@@ -859,7 +845,7 @@ StackInterpreterSimulator >> insufficientMemorySpecifiedError [
 
 { #category : #'debugging traps' }
 StackInterpreterSimulator >> internalCannotReturn: resultOop [
-	self halt.
+
 	^super internalCannotReturn: resultOop
 ]
 

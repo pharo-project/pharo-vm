@@ -23,6 +23,14 @@ VMInterpreterTests >> installSelector: aSelectorOop method: aMethodOop inMethodD
 		withValue: aMethodOop
 ]
 
+{ #category : #'helper-interpret' }
+VMInterpreterTests >> interpret: aBlock [
+	interpreter internalizeIPandSP.
+	aBlock value.
+	interpreter externalizeIPandSP.
+	interpreter externalWriteBackHeadFramePointers.
+]
+
 { #category : #tests }
 VMInterpreterTests >> setSmallIntegerClassIntoClassTable [
 
