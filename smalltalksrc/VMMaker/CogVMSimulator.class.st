@@ -81,8 +81,7 @@ Class {
 		'bootstrapping',
 		'primitiveFailCount',
 		'primitiveFlags',
-		'initialAddress',
-		'rumpCStackBase'
+		'initialAddress'
 	],
 	#classVars : [
 		'ByteCountsPerMicrosecond',

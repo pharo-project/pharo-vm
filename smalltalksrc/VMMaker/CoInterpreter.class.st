@@ -92,7 +92,8 @@ Class {
 		'flagInterpretedMethods',
 		'maxLiteralCountForCompile',
 		'minBackwardJumpCountForCompile',
-		'initialMemoryAddress'
+		'initialMemoryAddress',
+		'rumpCStackBase'
 	],
 	#classVars : [
 		'CSCallbackEnter',
