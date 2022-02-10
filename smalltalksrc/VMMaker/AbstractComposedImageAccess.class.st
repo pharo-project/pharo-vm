@@ -1,6 +1,10 @@
 Class {
 	#name : #AbstractComposedImageAccess,
 	#superclass : #AbstractImageAccess,
+	#instVars : [
+		'fieldFormat',
+		'headFormat'
+	],
 	#category : #'VMMaker-ImageFormat'
 }
 
@@ -53,14 +57,28 @@ AbstractComposedImageAccess >> fprintf: aStream format: aFormat arguments: argum
 			 string)
 ]
 
-{ #category : #'file operations' }
-AbstractComposedImageAccess >> headerFile: imageFileName [
+{ #category : #'file primitives' }
+AbstractComposedImageAccess >> fscanf: file _: format _: varHolder [
 
 	<doNotGenerate>
-	| headerFileName imageFile |
-	headerFileName := 'header.ston'.
-	imageFile := self imageFile: imageFileName.
-	^ imageFile / headerFileName
+	^ (format = headFormat)
+		  ifTrue: [ 
+			  varHolder contents: (file nextLine substrings: ' ') first ];
+		  yourself
+]
+
+{ #category : #'file primitives' }
+AbstractComposedImageAccess >> fscanf: file _: format _: varHolder1 _: varHolder2 [
+
+	<doNotGenerate>
+	^ (format = fieldFormat)
+		  ifTrue: [ 
+			  | dataArray |
+			  dataArray := file nextLine substrings: '#:,'.
+			  (dataArray first = '}') ifTrue: [ ^false ].
+			  varHolder1 contents: dataArray second trimLineSpaces.
+			  varHolder2 contents: dataArray third trimLineSpaces asInteger ];
+		  yourself
 ]
 
 { #category : #'file operations' }
@@ -84,7 +102,16 @@ AbstractComposedImageAccess >> imageFile: imageFileName [
 	imageFile := imageFileName asFileReference.
 	imageFile ensureCreateDirectory.
 	
-	^ imageFile
+	^ imageFile 
+]
+
+{ #category : #initialization }
+AbstractComposedImageAccess >> initialize [
+
+	super initialize.
+	
+	headFormat := '%s {\n'.
+	fieldFormat := '\t#%s : %ld'.
 ]
 
 { #category : #'file operations' }

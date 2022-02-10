@@ -183,7 +183,47 @@ CCodeGeneratorGlobalStructure >> emitGlobalStructFlagOn: aStream [
 ]
 
 { #category : #'CAST translation' }
-CCodeGeneratorGlobalStructure >> generateCASTWithFieldsDo: aTSendNode [ 
+CCodeGeneratorGlobalStructure >> generateCASTSetFieldTo: aTSendNode [ 
+
+	| structType fieldName fieldVale setFieldStatements |
+	
+	self assert: aTSendNode arguments size = 2.
+
+	fieldName := aTSendNode arguments first.
+	fieldVale := aTSendNode arguments second.
+	
+	structType := self structTypeFor: aTSendNode receiver.
+	
+
+	setFieldStatements := structType asClass allSlots collect: [ :slot |
+		| comparison |
+		
+		comparison := TSendNode 
+			receiver: (TConstantNode value: slot name asString) 
+			selector: '=' 
+			arguments: { fieldName }.
+
+		TSendNode 
+			receiver: comparison
+			selector: 'ifTrue:' 
+			arguments: { 
+				TStmtListNode 
+					statements: { 
+						TSendNode 
+							receiver: aTSendNode receiver 
+							selector: (slot name, ':') 
+							arguments: { fieldVale } 
+					}
+			}			
+
+	].
+
+	^ CCompoundStatementNode statements: (setFieldStatements collect: [ :e | e asCASTIn: self]).
+
+]
+
+{ #category : #'CAST translation' }
+CCodeGeneratorGlobalStructure >> generateCASTWithFieldsDoSeparatedBy: aTSendNode [ 
 
 	| structType allRewrittenStatements blockSeparatorStatements fieldBlock allFieldArguments |
 	
@@ -242,8 +282,8 @@ CCodeGeneratorGlobalStructure >> initializeCASTTranslationDictionary [
 	super initializeCASTTranslationDictionary.
 
 	castTranslationDict at: #withStructNameDo: put: #generateCASTWithStructNameDo:.
-	castTranslationDict at: #withFieldsDo:separatedBy: put: #generateCASTWithFieldsDo:.
-	
+	castTranslationDict at: #withFieldsDo:separatedBy: put: #generateCASTWithFieldsDoSeparatedBy:.
+	castTranslationDict at: #setField:to: put: #generateCASTSetFieldTo:.
 ]
 
 { #category : #public }
@@ -297,12 +337,7 @@ CCodeGeneratorGlobalStructure >> structDefDefine: aString [
 { #category : #'CAST translation' }
 CCodeGeneratorGlobalStructure >> structTypeFor: structNode [
 
-	structNode isVariable ifTrue: [ 
-		^ self typeOfVariable: structNode name ].
-
-	(structNode isSend and: [ structNode selector = #cCoerceSimple:to: ]) ifTrue: [ 
-		^ structNode arguments second value ].
-	
-	self error.
-
+	| nodeType |
+	nodeType := self typeFor: structNode in: currentMethod.
+	^ nodeType trimRight: [ :c | { $* . $ } includes: c ]
 ]

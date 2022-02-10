@@ -239,10 +239,11 @@ AbstractImageAccess >> sqImageFile: imageName Open: fileMode [
 	<doNotGenerate>
 	| file |
 	file := imageName asFileReference.
-	^ (fileMode includesSubstring: 'b')
-		ifTrue: [ file binaryWriteStream ]
-		ifFalse: [ file writeStream ]
-	
+	(fileMode = 'r') ifTrue: [ ^ file readStream ].
+	(fileMode = 'rb') ifTrue: [ ^ file binaryReadStream ].
+	(fileMode = 'w') ifTrue: [ ^ file writeStream ].
+	(fileMode = 'wb') ifTrue: [ ^ file binaryWriteStream ].
+	self error: 'File mode not supported'
 ]
 
 { #category : #'accessing - files' }

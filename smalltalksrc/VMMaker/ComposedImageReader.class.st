@@ -4,43 +4,102 @@ Class {
 	#category : #'VMMaker-ImageFormat'
 }
 
-{ #category : #api }
-ComposedImageReader >> readHeaderFromImage: anImageFileName [
+{ #category : #reading }
+ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 
+	<inline: true>
+	<var: #fieldName declareC: 'char buffer[255]'>
+	<var: #fieldValue type: #sqLong>
+	| fieldName fieldValue |
+	self simulationOnly: [ 
+		fieldName := ValueHolder new.
+		fieldValue := ValueHolder new ].
+
+	[ self
+		fscanf: file
+		_: fieldFormat
+		_: (self addressOf: fieldName)
+		_: (self addressOf: fieldValue) 
+	] whileTrue: [  
+		aStruct setField: fieldName contents to: fieldValue contents.
+	]
+	
+]
+
+{ #category : #reading }
+ComposedImageReader >> readHeadSTONFrom: file into: aStruct [
+
+	<inline: true>
+	<var: #structName declareC: 'char buffer[255]'>
+	| structName |
+	self simulationOnly: [ structName := ValueHolder new ].
+
+	self fscanf: file _: headFormat _: (self addressOf: structName).
+
+	aStruct withStructNameDo: [ :name | 
+		self assert: name = structName contents ]
+]
+
+{ #category : #api }
+ComposedImageReader >> readHeaderFromImage: imageFileName [
+
+	<inline: true>
+	<var: #file type: #sqImageFile>
+	<var: #buffer declareC: 'char buffer[255]'>
 	<var: #header type: #SpurImageHeaderStruct>
-	| header |
-	header := (self headerFile: anImageFileName) readStreamDo: [ :f | 
-		          self readSTONFrom: f ].
+	| header buffer file |
+	
+	self simulationOnly: [ 
+		buffer := nil. 
+		header:= SpurImageHeaderStruct new 
+	].
+	
+	file := self sqImageFile: (self headerFileNameinImage: imageFileName into: buffer bufferSize: 255) Open: 'r'.
+	
+	self readSTONFrom: file into: (self addressOf: header).
 
 	self extractImageVersionFrom: (header imageFormat) into: (self addressOf: header).
+	
+	self sqImageFileClose: file.
 
 	^ header
 ]
 
 { #category : #api }
-ComposedImageReader >> readImageNamed: anImageName [
+ComposedImageReader >> readImageNamed: imageName [
+	
+	<var: #f type: #sqImageFile>
+	<var: #imageName declareC: 'char *imageName'>
+	<var: #aHeader type: #'SpurImageHeaderStruct'>
+	<api>
 
-	<var: #header type: #'SpurImageHeaderStruct'>
-	<var: #anImageName declareC: 'char *imageFileName'>
+	| aHeader f |
 
-	| header imageFile |
+	f := self imageFile: imageName.
+	aHeader := self readHeaderFromImage: imageName.
 
-	imageFile := self imageFile: anImageName.
-	header := self readHeaderFromImage: anImageName.
+	self loadHeaderToMemory: aHeader.
+	interpreter allocateMemoryForImage: f withHeader: aHeader.
 
-	self loadHeaderToMemory: header.
-	interpreter allocateMemoryForImage: imageFile withHeader: header.
-
-	^ header dataSize
+	self flag: #TODO. "Fix this"
+	^ self sqImageFileClose: f readStream .
 ]
 
 { #category : #reading }
-ComposedImageReader >> readSTONFrom: f [
+ComposedImageReader >> readSTONFrom: file [
 
-	<var: #f type: #sqImageFile>
-	<returnTypeC: #SpurImageHeaderStruct>
+	<doNotGenerate>
+	^ STON reader
+		  on: file;
+		  next
+]
 
-	^ STON reader on: f; next
+{ #category : #reading }
+ComposedImageReader >> readSTONFrom: file into: aStruct [
+
+	<inline: true>
+	self readHeadSTONFrom: file into: aStruct.
+	self readFieldsSTONFrom: file into: aStruct
 ]
 
 { #category : #segments }

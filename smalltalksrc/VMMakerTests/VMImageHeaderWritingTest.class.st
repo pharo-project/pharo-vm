@@ -161,15 +161,15 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectSpecialObjectsArrayOop 
 { #category : #tests }
 VMImageHeaderWritingTest >> testWritingSTONHeader [
 
-	| header writtenHeader |
+	| header readHeader |
 
 	imageWriterClass ~= ComposedImageWriter ifTrue: [ ^ self skip ].
 
 	header := interpreter newHeader.
 
-	writtenHeader := (self imageFileName asFileReference  / 'header.ston') contents.
+	readHeader := (self imageFileName asFileReference  / 'header.ston') contents.
 
-	self assert: writtenHeader equals: (STON toStringPretty: header).
+	self assert: readHeader equals: (STON toStringPretty: header).
 ]
 
 { #category : #tests }

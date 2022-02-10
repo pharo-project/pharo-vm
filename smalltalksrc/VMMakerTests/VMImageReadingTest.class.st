@@ -46,6 +46,24 @@ VMImageReadingTest >> setUp [
 ]
 
 { #category : #tests }
+VMImageReadingTest >> testReadingSTONHeader [
+
+	| headerStruct headerFile |
+
+	imageReaderClass ~= ComposedImageReader ifTrue: [ ^ self skip ].
+
+	self saveImage.	
+	headerStruct := SpurImageHeaderStruct new.
+	headerFile := (self imageFileName asFileReference  / 'header.ston') readStream.
+	
+	imageReader readSTONFrom: headerFile into: headerStruct .
+
+	headerFile position: 0.
+
+	self assert: (STON toStringPretty: headerStruct) equals: headerFile contents.
+]
+
+{ #category : #tests }
 VMImageReadingTest >> testSavedImageSavesObject [
 	
 	self saveImage.	

@@ -148,8 +148,6 @@ SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 	<var: #minimumMemory type: #usqInt>
 	<var: #allocationReserve type: #usqInt>
 	<var: #header type: #'SpurImageHeaderStruct'>
-
-	<api>
 	
 	| header |
 
@@ -163,9 +161,21 @@ SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 ]
 
 { #category : #api }
-SpurImageReader >> readImageNamed: anImageName [
+SpurImageReader >> readImageNamed: imageName [
 	
-	^ self readImageFromFile: anImageName asFileReference binaryReadStream StartingAt: 0  
+	<var: #f type: #sqImageFile>
+	<var: #imageName declareC: 'char *imageName'>
+	<api>
+	
+	| file |
+	file := self sqImageFile: imageName Open: 'rb'.
+	file ifNil: [ 
+		self logError: 'Image file cannot be read: %s' _: imageName.
+		^ self primitiveFail ].
+
+	self readImageFromFile: file StartingAt: 0.
+	
+	self sqImageFileClose: file
 ]
 
 { #category : #segments }

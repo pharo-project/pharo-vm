@@ -4368,7 +4368,7 @@ CCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledMetho
 				 The integer promotions are performed on each of the operands. The type of the result is that of the promoted left operand..."
 				[#>>]					->	[sendNode receiver typeFrom: self in: aTMethod].
 				[#<<]					->	[sendNode receiver typeFrom: self in: aTMethod].
-				[#addressOf:]			->	[(sendNode receiver typeFrom: self in: aTMethod)
+				[#addressOf:]			->	[(sendNode arguments first typeFrom: self in: aTMethod)
 												ifNil: [#sqInt]
 												ifNotNil: [:type| type, (type last isLetter ifTrue: [' *'] ifFalse: ['*'])]].
 				[#at:]					->	[self typeForDereference: sendNode in: aTMethod].
@@ -4587,6 +4587,8 @@ CCodeGenerator >> sizeOfIntegralCType: anIntegralCType [ "<String>"
 		"Standard C types"
 		['uint64_t']		->	[8].
 		['uint32_t']		->	[4].
+		['uint16_t']		->	[4].
+		['uint8_t']		->	[4].
 	}
 	otherwise:
 		[((anIntegralCType beginsWith: 'unsigned') "e.g. 'unsigned  : 8'"

@@ -53,7 +53,7 @@ ComposedImageWriter >> writeImageFile: imageFileName fromHeader: header [
 	interpreter success: bytesWritten = header dataSize 
 ]
 
-{ #category : #writing }
+{ #category : #segments }
 ComposedImageWriter >> writeImageSegments: imageFileName [
 
 	<var: 'aSegment' type:#'SpurSegmentInfo *'>
@@ -75,19 +75,19 @@ ComposedImageWriter >> writeSTON: struct toFile: f [
 	<inline: true>
 	| fieldHasNilValue |
 
-	struct withStructNameDo: [ :name | self fprintf: f _: '%s {\n' _: name ].
+	struct withStructNameDo: [ :name | self fprintf: f _: headFormat _: name ].
 	struct withFieldsDo: [ :fieldName :fieldValue |
 		fieldValue 
 			ifNil: [ 	fieldHasNilValue := true ]
 			ifNotNil: [  
 				fieldHasNilValue := false.
-				self fprintf: f _: '\t#%s : %ld' _: fieldName _: fieldValue ]]
+				self fprintf: f _: fieldFormat _: fieldName _: fieldValue ]]
 		separatedBy: [ fieldHasNilValue ifFalse: [self fprintf: f _: ',\n'] ].
 		
 	self fprintf: f _: '\n}'. 
 ]
 
-{ #category : #writing }
+{ #category : #segments }
 ComposedImageWriter >> writeSegment: segment nextIndex: segmentIndex inImage: imageFileName [
 
 	<inline: false>
@@ -99,7 +99,7 @@ ComposedImageWriter >> writeSegment: segment nextIndex: segmentIndex inImage: im
 	^ self writeSegmentData: segment nextIndex: segmentIndex inImage: imageFileName.
 ]
 
-{ #category : #writing }
+{ #category : #segments }
 ComposedImageWriter >> writeSegmentData: segment nextIndex: segmentIndex inImage: imageFileName [
 
 	<var: #dataFile type: #sqImageFile>
@@ -121,7 +121,7 @@ ComposedImageWriter >> writeSegmentData: segment nextIndex: segmentIndex inImage
 	^ nWritten
 ]
 
-{ #category : #writing }
+{ #category : #segments }
 ComposedImageWriter >> writeSegmentMetadata: segment nextIndex: segmentIndex inImage: imageFileName [
 
 	<var: #metadataFile type: #sqImageFile>
@@ -138,7 +138,7 @@ ComposedImageWriter >> writeSegmentMetadata: segment nextIndex: segmentIndex inI
 
 ]
 
-{ #category : #writing }
+{ #category : #segments }
 ComposedImageWriter >> writeSegmentMetadata: segment toFile: file [
 
 	<var: #metadata type: #ComposedSegmentMetadataStruct>

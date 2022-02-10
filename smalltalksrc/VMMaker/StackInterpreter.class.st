@@ -644,15 +644,15 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 StackInterpreter class >> imageReaderClass [
 
 	^Smalltalk at: (InitializationOptions
 					at: #ImageReader
-					ifAbsent: [ #SpurImageReader ])
+					ifAbsent: [ #ComposedImageReader ])
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 StackInterpreter class >> imageWriterClass [
 
 	^Smalltalk at: (InitializationOptions
