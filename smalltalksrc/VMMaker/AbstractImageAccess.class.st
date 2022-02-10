@@ -219,6 +219,20 @@ AbstractImageAccess >> segmentManager: anObject [
 ]
 
 { #category : #'accessing - files' }
+AbstractImageAccess >> sq: startingAddress Image: byteSize File: bytesToRead Read: aZnBufferedReadStream [ 
+
+	<doNotGenerate>
+	| region |
+
+	region := objectMemory memoryManager regionForAddress: startingAddress.
+
+	^ aZnBufferedReadStream
+		readInto: region memory
+		startingAt: startingAddress - region start + 1
+		count: bytesToRead
+]
+
+{ #category : #'accessing - files' }
 AbstractImageAccess >> sq: segStart Image: n File: segSize Write: file [
 
 	<doNotGenerate>

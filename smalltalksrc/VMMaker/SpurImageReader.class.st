@@ -235,17 +235,3 @@ SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 
 	^ totalBytesRead
 ]
-
-{ #category : #'file operations' }
-SpurImageReader >> sq: startingAddress Image: byteSize File: bytesToRead Read: aZnBufferedReadStream [ 
-
-	<doNotGenerate>
-	| region |
-
-	region := objectMemory memoryManager regionForAddress: startingAddress.
-
-	^ aZnBufferedReadStream
-		readInto: region memory
-		startingAt: startingAddress - region start + 1
-		count: bytesToRead
-]

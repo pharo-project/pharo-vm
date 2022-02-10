@@ -68,30 +68,17 @@ ComposedImageReader >> readHeaderFromImage: imageFileName [
 { #category : #api }
 ComposedImageReader >> readImageNamed: imageName [
 	
-	<var: #f type: #sqImageFile>
 	<var: #imageName declareC: 'char *imageName'>
 	<var: #aHeader type: #'SpurImageHeaderStruct'>
 	<api>
 
-	| aHeader f |
+	| aHeader |
 
-	f := self imageFile: imageName.
 	aHeader := self readHeaderFromImage: imageName.
 
 	self loadHeaderToMemory: aHeader.
-	interpreter allocateMemoryForImage: f withHeader: aHeader.
-
-	self flag: #TODO. "Fix this"
-	^ self sqImageFileClose: f readStream .
-]
-
-{ #category : #reading }
-ComposedImageReader >> readSTONFrom: file [
-
-	<doNotGenerate>
-	^ STON reader
-		  on: file;
-		  next
+	interpreter allocateMemoryForImage: imageName withHeader: aHeader
+	
 ]
 
 { #category : #reading }
@@ -103,30 +90,74 @@ ComposedImageReader >> readSTONFrom: file into: aStruct [
 ]
 
 { #category : #segments }
-ComposedImageReader >> readSegmentMetadata: segmentIndex fromFile: imageFile [
+ComposedImageReader >> readSegmentData: segmentIndex fromImage: imageFileName startingAt: startingAddress bytes: bytesToRead [ 
 
-	^ (self segmentMetadataFile: segmentIndex fromFile: imageFile) 
-		  readStreamDo: [ :f | self readSTONFrom: f ]
+	<inline: true>
+	<var: #file type: #sqImageFile>
+	<var: #buffer declareC: 'char buffer[255]'>
+	| buffer file bytes |
+	self simulationOnly: [ buffer := nil ].
+
+	file := self sqImageFile: (self
+				         segmentFileName: segmentIndex
+				         withExtension: '.data'
+				         inImage: imageFileName
+				         into: buffer
+				         bufferSize: 255)
+		        Open: 'rb'.
+
+	bytes := self sq: startingAddress Image: (self sizeof: #char) File: bytesToRead Read: file.
+
+	self sqImageFileClose: file.
+	
+	^ bytes
 ]
 
 { #category : #segments }
-ComposedImageReader >> readSegmentsFromImageFile: imageFile header: aHeader [
+ComposedImageReader >> readSegmentMetadata: segmentIndex fromImage: imageFileName [
+
+	<inline: true>
+	<var: #file type: #sqImageFile>
+	<var: #buffer declareC: 'char buffer[255]'>
+	<var: #segmentMetadata type: #ComposedSegmentMetadataStruct>
+	| segmentMetadata buffer file |
+	self simulationOnly: [ 
+		buffer := nil.
+		segmentMetadata := ComposedSegmentMetadataStruct new ].
+
+	file := self
+		        sqImageFile: (self
+				         segmentFileName: segmentIndex
+				         withExtension: '.ston'
+				         inImage: imageFileName
+				         into: buffer
+				         bufferSize: 255)
+		        Open: 'r'.
+
+	self readSTONFrom: file into: (self addressOf: segmentMetadata).
+
+	self sqImageFileClose: file.
+
+	^ segmentMetadata
+]
+
+{ #category : #segments }
+ComposedImageReader >> readSegmentsFromImageFile: imageFileName header: aHeader [
 
 	<inline: false>
 	<var: #imageFile type: #sqImageFile>
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
 	<var: 'aHeader' type: #SpurImageHeaderStruct>
 	| bytesRead totalBytesRead segmentSize oldBase newBase segmentIndex existsNextSegment |
-
 	self prepareSegmentsToRead.
 
 	"segment sizes include the two-header-word bridge at the end of each segment."
-	segmentIndex := 0. 
+	segmentIndex := 0.
 	totalBytesRead := 0.
 	oldBase := aHeader oldBaseAddr.
 	newBase := objectMemory getMemoryMap oldSpaceStart.
 	segmentSize := aHeader firstSegSize.
-	
+
 	[ 
 	segmentManager withNewSegmentDo: [ :segInfo | 
 		segInfo
@@ -134,51 +165,34 @@ ComposedImageReader >> readSegmentsFromImageFile: imageFile header: aHeader [
 			segSize: segmentSize;
 			swizzle: newBase - oldBase ].
 
-	bytesRead := self 
-		sq: (self pointerForOop: newBase)
-		readSegment: segmentIndex
-		File: segmentSize
-		Read: imageFile.
+	bytesRead := self
+		             readSegmentData: segmentIndex
+		             fromImage: imageFileName
+		             startingAt: (self pointerForOop: newBase)
+		             bytes: segmentSize.
 
 	bytesRead > 0 ifTrue: [ totalBytesRead := totalBytesRead + bytesRead ].
-	
+
 	"Check segment bytes read"
-	bytesRead ~= segmentSize ifTrue: [ interpreter unableToReadImageError ].
+	bytesRead ~= segmentSize ifTrue: [ 
+		interpreter unableToReadImageError ].
 
 	"The next segment will override the bridge of this segment"
 	newBase := newBase + segmentSize - objectMemory bridgeSize.
 
 	"Check if exist next segment"
-	segmentIndex := segmentIndex + 1. 
-	existsNextSegment := imageFile hasChildrenMatching: (self segmentFileName: segmentIndex withExtension: '*').
-	
-	existsNextSegment ifTrue: [ | nextSegmentMetadata |
-			nextSegmentMetadata := self readSegmentMetadata: segmentIndex fromFile: imageFile.
-			oldBase := nextSegmentMetadata segStart.
-			segmentSize := nextSegmentMetadata segSize.
-		].
-	
-	existsNextSegment
-	] whileTrue.
+	segmentIndex := segmentIndex + 1.
+	existsNextSegment := self existSegment: segmentIndex inImage: imageFileName.
+
+	existsNextSegment ifTrue: [ 
+		| nextSegmentMetadata |
+		nextSegmentMetadata := self readSegmentMetadata: segmentIndex fromImage: imageFileName.
+		oldBase := nextSegmentMetadata segStart.
+		segmentSize := nextSegmentMetadata segSize ].
+
+	existsNextSegment ] whileTrue.
 
 	self finalizeSegmentsRead: totalBytesRead newBase: newBase.
 
 	^ totalBytesRead
-]
-
-{ #category : #segments }
-ComposedImageReader >> sq: startingAddress readSegment: segmentIndex File: bytesToRead Read: imageFile [
-
-	<doNotGenerate>
-	| region |
-
-	region := objectMemory memoryManager regionForAddress: startingAddress.
-
-	^ (self segmentDataFile: segmentIndex fromFile: imageFile) binaryReadStreamDo: [ :file |
-		file 
-			readInto: region memory
-			startingAt: startingAddress - region start + 1
-			count: bytesToRead
-		 ]
-		
 ]
