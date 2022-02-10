@@ -49,9 +49,6 @@ sqInt uxMemoryExtraBytesLeft(sqInt includingSwap);
 int overallocateMemory	= 0;
 
 static sqInt   devZero	= -1;
-static char *heap	=  0;
-static sqInt   heapSize	=  0;
-static sqInt   heapLimit	=  0;
 
 #ifndef max
 # define max(a, b)  (((a) > (b)) ? (a) : (b))
@@ -123,16 +120,14 @@ void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
 /* answer the address of (minHeapSize <= N <= desiredHeapSize) bytes of memory. */
 usqInt
 sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseAddress) {
-
-	if (heap) {
-		logError("uxAllocateMemory: already called\n");
-		exit(1);
-	}
+    char *heap    =  0;
+    sqInt   heapSize    =  0;
+    sqInt   heapLimit    =  0;
 
 	pageSize = getpagesize();
 	pageMask = ~(pageSize - 1);
 
-	heapLimit = valign(max(desiredHeapSize, 1));
+	heapLimit = valign(max(desiredHeapSize, 1)) + pageSize; // Add 1 page more just in case (G & N)
 	usqInt desiredBaseAddressAligned = valign(desiredBaseAddress);
 
 	logDebug("Trying to load the image in %p\n",
@@ -182,17 +177,6 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 
 	return (usqInt) heap;
 }
-
-/* answer the number of bytes available for growing the heap. */
-
-sqInt uxMemoryExtraBytesLeft(sqInt includingSwap)
-{
-  return heapLimit - heapSize;
-}
-
-
-sqInt sqMemoryExtraBytesLeft(sqInt includingSwap)			{ return uxMemoryExtraBytesLeft(includingSwap); }
-
 
 /* Deallocate a region of memory previously allocated by
  * sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto.  Cannot fail.
