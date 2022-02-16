@@ -129,9 +129,10 @@ struct sockaddr_un
 #endif
 #endif /* !ACORN */
 
-/* Solaris sometimes fails to define this in netdb.h */
-#ifndef  MAXHOSTNAMELEN
-# define MAXHOSTNAMELEN	256
+/* Standardize this to a minimum of 256 characters */
+#if !defined(MAXHOSTNAMELEN) || MAXHOSTNAMELEN < 256
+# undef MAXHOSTNAMELEN
+# define MAXHOSTNAMELEN 256
 #endif
 
 #ifdef HAVE_SD_DAEMON
