@@ -378,7 +378,11 @@ TParseNode >> linearizeIn: aCodeGenerator [
 					(aCodeGenerator isDynamicCall: node) or: [ 
 						aCodeGenerator isControlFlowNode: node ] ]])
 							ifTrue: [ callsInStatement add: node ] ]
-		unless: [ :unlessNode | unlessNode isStatementList ].
+		unless: [ :unlessNode | 
+			"We should stop at statement lists except if their parent is an and: or or: that requires special treatment during linearisation"
+			  unlessNode isStatementList and: [ 
+				  unlessNode parent isSend and: [ 
+					  (#( and: or: ) includes: unlessNode parent selector) not ] ] ].
 	
 	replacementBlock := OrderedCollection new.
 	declarations := Dictionary new.
