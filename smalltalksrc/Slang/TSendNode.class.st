@@ -310,6 +310,12 @@ TSendNode >> copyWithoutReturn [
 		yourself
 ]
 
+{ #category : #displaying }
+TSendNode >> displayString [
+
+	^ selector printString
+]
+
 { #category : #testing }
 TSendNode >> endsWithReturn [
 	^self isReturningIf

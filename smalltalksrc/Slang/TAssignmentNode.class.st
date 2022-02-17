@@ -178,6 +178,12 @@ TAssignmentNode >> children [
 	^ { variable . expression }
 ]
 
+{ #category : #displaying }
+TAssignmentNode >> displayString [
+
+	^ ' := '
+]
+
 { #category : #accessing }
 TAssignmentNode >> expression [
 

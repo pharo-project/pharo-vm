@@ -315,6 +315,13 @@ TStatementListNode >> declarations: anObject [
 	declarations := anObject
 ]
 
+{ #category : #displaying }
+TStatementListNode >> displayString [
+
+	"Nothing..."
+	^ ''
+]
+
 { #category : #testing }
 TStatementListNode >> endsWithCloseBracket: aStream [
 	"Answer true if the given stream ends in a $} character."
