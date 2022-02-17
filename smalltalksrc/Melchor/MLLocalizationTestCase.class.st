@@ -38,6 +38,12 @@ MLLocalizationTestCase >> applyManyLocalizationsToInterpretWith: initializationS
 	^ self applyLocalizationTo: #interpretWithSeveralVariablesToLocalize
 ]
 
+{ #category : #helpers }
+MLLocalizationTestCase >> assert: aTStatementListNode isRewrittenAs: aString [ 
+	
+	self assert: (aTStatementListNode isSameAs: (self tastFor: aString))
+]
+
 { #category : #running }
 MLLocalizationTestCase >> externalizationOf: aVariableName [
 
@@ -52,6 +58,24 @@ MLLocalizationTestCase >> internalizationOf: aVariableName [
 	^ (TAssignmentNode
 			variableNamed: #local_, aVariableName
 			expression: (TVariableNode named: aVariableName))
+]
+
+{ #category : #'tests - linearization' }
+MLLocalizationTestCase >> linearise: aMethod [
+
+	| methodToLinearize |
+	ccg addClass: aMethod methodClass.
+	methodToLinearize := ccg methodNamed: aMethod selector.
+	
+	ccg prepareMethods.
+	ccg currentMethod: methodToLinearize.
+	SLAutomaticLocalization new
+		codeGenerator: ccg;
+		linearizeExternalCallsIn: methodToLinearize
+		withVariableBindings: ((ccg initAutoLocalizationOfVariablesIn: #interpret) asDictionary
+			collect: [:n| TVariableNode named: n]).
+
+	^ methodToLinearize
 ]
 
 { #category : #helpers }
@@ -69,6 +93,19 @@ MLLocalizationTestCase >> setUp [
 
 	super setUp.
 	MockLocalizationInterpreterMock initialize.
+]
+
+{ #category : #'tests - linearization' }
+MLLocalizationTestCase >> tastFor: someCode [
+
+	"Parse the expression as a method with a single expression.
+	Transform it to TAST and get the first statement of the TMethod.
+	
+	Expected: the first statement of the TMethod should correspond to the first statement of the RMethod"
+	^ ((RBParser parseExpression: '[', someCode, '] value') methodNode
+		compilationContext: CompilationContext new;
+		asTranslationMethodOfClass: TMethod)
+			parseTree first receiver
 ]
 
 { #category : #'tests - initialization' }
@@ -102,7 +139,7 @@ MLLocalizationTestCase >> testAutoLocalizeVariableDefinesNewLocalVariables [
 	self assert: (method locals includes: #local_autoLocalizedVariable)
 ]
 
-{ #category : #tests }
+{ #category : #'tests - localisation' }
 MLLocalizationTestCase >> testAutoLocalizeVariableDoesNotLineariseUnnecessaryStatements [
 
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
@@ -116,7 +153,7 @@ MLLocalizationTestCase >> testAutoLocalizeVariableDoesNotLineariseUnnecessarySta
 	self assert: printedString equals: 'nonInlinedMethodNotUsingAutolocalizedVariables(nonInlinedMethodNotUsingAutolocalizedVariables())'
 ]
 
-{ #category : #tests }
+{ #category : #'tests - localisation' }
 MLLocalizationTestCase >> testAutoLocalizeVariableExternalizesAtTheEnd [
 
 	| externalizationStatement interpretMethod |
@@ -127,7 +164,7 @@ MLLocalizationTestCase >> testAutoLocalizeVariableExternalizesAtTheEnd [
 			 (self externalizationOf: #autoLocalizedVariable))
 ]
 
-{ #category : #tests }
+{ #category : #'tests - localisation' }
 MLLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturnReferenchingAutoLocalizedVariable [
 
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
@@ -151,7 +188,7 @@ MLLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturnRefere
 }'
 ]
 
-{ #category : #tests }
+{ #category : #'tests - localisation' }
 MLLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturns [
 
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
@@ -171,7 +208,7 @@ MLLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturns [
 		isSameAs: (self externalizationOf: #autoLocalizedVariable)).
 ]
 
-{ #category : #tests }
+{ #category : #'tests - localisation' }
 MLLocalizationTestCase >> testAutoLocalizeVariableInternalizesAtTheBeginning [
 
 	| internalizationStatement interpretMethod |
@@ -183,7 +220,7 @@ MLLocalizationTestCase >> testAutoLocalizeVariableInternalizesAtTheBeginning [
 		assert: (internalizationStatement isSameAs: (self internalizationOf: #autoLocalizedVariable))
 ]
 
-{ #category : #tests }
+{ #category : #'tests - localisation' }
 MLLocalizationTestCase >> testAutoLocalizeVariableReplacesByLocalOnInline [
 	
 	"Prepare methods will replace the bytecode dispatch instruction into a dispatch switch"
@@ -197,7 +234,7 @@ MLLocalizationTestCase >> testAutoLocalizeVariableReplacesByLocalOnInline [
 	self assert: (variableNode isVariable and: [ variableNode name = #local_autoLocalizedVariable ]).
 ]
 
-{ #category : #tests }
+{ #category : #'tests - localisation' }
 MLLocalizationTestCase >> testExternalEscapingAsArgument [
 	
 	| interpretMethod cast printedString linearizedBlock |
@@ -225,7 +262,7 @@ MLLocalizationTestCase >> testExternalEscapingAsArgument [
 }'
 ]
 
-{ #category : #tests }
+{ #category : #'tests - localisation' }
 MLLocalizationTestCase >> testExternalEscapingAsArgumentOfExternalCall [
 	
 	| interpretMethod cast printedString linearizedBlock |
@@ -257,7 +294,7 @@ MLLocalizationTestCase >> testExternalEscapingAsArgumentOfExternalCall [
 }'.
 ]
 
-{ #category : #tests }
+{ #category : #'tests - localisation' }
 MLLocalizationTestCase >> testExternalEscapingSendNodeInInlinedMethod [
 	
 	| interpretMethod cast printedString linearizedBlock |
@@ -280,7 +317,7 @@ MLLocalizationTestCase >> testExternalEscapingSendNodeInInlinedMethod [
 }'
 ]
 
-{ #category : #tests }
+{ #category : #'tests - localisation' }
 MLLocalizationTestCase >> testExternalEscapingSendNodeShouldBeTranslatedWithExternalizationAndInternalization [
 	
 	| interpretMethod cast printedString linearizedBlock |
@@ -305,7 +342,7 @@ MLLocalizationTestCase >> testExternalEscapingSendNodeShouldBeTranslatedWithExte
 }'
 ]
 
-{ #category : #tests }
+{ #category : #'tests - localisation' }
 MLLocalizationTestCase >> testExternalEscapingStatementInConditionalBody [
 	
 	| interpretMethod cast printedString linearizedBlock |
@@ -341,7 +378,7 @@ MLLocalizationTestCase >> testExternalEscapingStatementInConditionalBody [
 }'
 ]
 
-{ #category : #tests }
+{ #category : #'tests - localisation' }
 MLLocalizationTestCase >> testExternalPerform [
 	
 	| interpretMethod cast printedString linearizedBlock |
@@ -363,7 +400,7 @@ MLLocalizationTestCase >> testExternalPerform [
 }'
 ]
 
-{ #category : #tests }
+{ #category : #'tests - localisation' }
 MLLocalizationTestCase >> testExternalSendNodeExternalizeAndInternalizeOnlyNeededVariables [
 	
 	| interpretMethod cast printedString linearizedBlock |
@@ -391,7 +428,7 @@ MLLocalizationTestCase >> testExternalSendNodeExternalizeAndInternalizeOnlyNeede
 }'
 ]
 
-{ #category : #tests }
+{ #category : #'tests - localisation' }
 MLLocalizationTestCase >> testExternalSendNodeShouldBeTranslatedWithExternalizationAndInternalization [
 	
 	| interpretMethod cast printedString linearizedBlock |
@@ -423,17 +460,9 @@ MLLocalizationTestCase >> testExternalSendNodeShouldBeTranslatedWithExternalizat
 { #category : #'tests - linearization' }
 MLLocalizationTestCase >> testLinearizeCallsInNestedLexicalScope [
 
-	| methodToLinearize ifBlock |
-	ccg addClass: MockLocalizationInterpreterMock.
-	methodToLinearize := ccg methodNamed: #bytecodeUsingExternalizedAutoLocalizedVariableInNestedLexicalScope.
-	
-	ccg prepareMethods.
-	ccg currentMethod: methodToLinearize.
-	SLAutomaticLocalization new
-		codeGenerator: ccg;
-		linearizeExternalCallsIn: methodToLinearize
-		withVariableBindings: ((ccg initAutoLocalizationOfVariablesIn: #interpret) asDictionary
-			collect: [:n| TVariableNode named: n]).
+	| methodToLinearize ifBlock expected |
+	methodToLinearize := self linearise:
+		MockLocalizationInterpreterMock >> #bytecodeUsingExternalizedAutoLocalizedVariableInNestedLexicalScope.
 
 	"Before it was 
 		true ifTrue: [
@@ -446,35 +475,22 @@ MLLocalizationTestCase >> testLinearizeCallsInNestedLexicalScope [
 			self foo: t0
 		] "
 
-	ifBlock := methodToLinearize statements first statements first arguments first statements first.
-	
-	self assert: (ifBlock statements first
-			isSameAs: (TAssignmentNode
-				variableNamed: 't0'
-				expression: (TSendNode
-					receiver: TVariableNode selfNode
-					selector: #nonInlinedMethodUsingAutolocalizedVariable))).
-	self assert: (ifBlock statements second
-			isSameAs: (TSendNode
-					receiver: TVariableNode selfNode
-					selector: #foo:
-					arguments: { TVariableNode named: 't0' }))
+	ifBlock := methodToLinearize statements first statements first
+		           arguments first statements first.
+
+	expected := self tastFor: '[| t0 |
+			t0 := self nonInlinedMethodUsingAutolocalizedVariable.
+			self foo: t0]'.
+
+	self assert: (ifBlock isSameAs: expected)
 ]
 
 { #category : #'tests - linearization' }
 MLLocalizationTestCase >> testLinearizeNestedCalls [
 
-	| methodToLinearize replacementBlock |
-	ccg addClass: MockLocalizationInterpreterMock.
-	methodToLinearize := ccg methodNamed: #bytecodeUsingExternalizedAutoLocalizedVariableAsExpression.
-	
-	ccg prepareMethods.
-	ccg currentMethod: methodToLinearize.
-	SLAutomaticLocalization new
-		codeGenerator: ccg;
-		linearizeExternalCallsIn: methodToLinearize
-		withVariableBindings: ((ccg initAutoLocalizationOfVariablesIn: #interpret) asDictionary
-			collect: [:n| TVariableNode named: n]).
+	| methodToLinearize replacementBlock expected |
+	methodToLinearize := self linearise:
+		MockLocalizationInterpreterMock >> #bytecodeUsingExternalizedAutoLocalizedVariableAsExpression.
 
 	"Before it was 
 		self foo: self nonInlinedMethodUsingAutolocalizedVariable.
@@ -483,18 +499,12 @@ MLLocalizationTestCase >> testLinearizeNestedCalls [
 		self foo: t0"
 
 	replacementBlock := methodToLinearize statements first.
-	self assert: (replacementBlock statements first
-			isSameAs: (TAssignmentNode
-				variableNamed: 't0'
-				expression: (TSendNode
-					receiver: TVariableNode selfNode
-					selector: #nonInlinedMethodUsingAutolocalizedVariable))).
-	self assert: (replacementBlock statements second
-			isSameAs: (TSendNode
-					receiver: TVariableNode selfNode
-					selector: #foo:
-					arguments: { TVariableNode named: 't0' })).
-	self assert: replacementBlock statements size equals: 2.
+	
+	expected := self tastFor: '[| t0 |
+			t0 := self nonInlinedMethodUsingAutolocalizedVariable.
+			self foo: t0]'.
+
+	self assert: (replacementBlock isSameAs: expected)
 ]
 
 { #category : #'tests - initialization' }
@@ -542,17 +552,9 @@ MLLocalizationTestCase >> testLinearizeNestedCallsWithAssignment [
 { #category : #'tests - linearization' }
 MLLocalizationTestCase >> testLinearizeNestedCallsWithReturn [
 
-	| methodToLinearize replacementBlock |
-	ccg addClass: MockLocalizationInterpreterMock.
-	methodToLinearize := ccg methodNamed: #bytecodeUsingExternalizedAutoLocalizedVariableAsExpressionInReturn.
-	
-	ccg prepareMethods.
-	ccg currentMethod: methodToLinearize.
-	SLAutomaticLocalization new
-		codeGenerator: ccg;
-		linearizeExternalCallsIn: methodToLinearize
-		withVariableBindings: ((ccg initAutoLocalizationOfVariablesIn: #interpret) asDictionary
-			collect: [:n| TVariableNode named: n]).
+	| methodToLinearize replacementBlock expected |
+	methodToLinearize := self linearise:
+		MockLocalizationInterpreterMock >>  #bytecodeUsingExternalizedAutoLocalizedVariableAsExpressionInReturn.
 
 	"Before it was 
 		^ self foo: self nonInlinedMethodUsingAutolocalizedVariable.
@@ -562,37 +564,21 @@ MLLocalizationTestCase >> testLinearizeNestedCallsWithReturn [
 		^ t1"
 	
 	replacementBlock := methodToLinearize statements first.
-	self assert: (replacementBlock statements first
-			isSameAs: (TAssignmentNode
-				variableNamed: 't0'
-				expression: (TSendNode
-					receiver: TVariableNode selfNode
-					selector: #nonInlinedMethodUsingAutolocalizedVariable))).
-	self assert: (replacementBlock statements second
-			isSameAs: (TAssignmentNode
-				variableNamed: 't1'
-				expression: (TSendNode
-					receiver: TVariableNode selfNode
-					selector: #foo:
-					arguments: { TVariableNode named: 't0' }))).
-	self assert: (replacementBlock statements third
-			isSameAs: (TReturnNode expression: (TVariableNode named: 't1')))
+	
+	expected := self tastFor: '[| t0 t1 |
+		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
+		t1 := self foo: t0.
+		^ t1]'.
+
+	self assert: (replacementBlock isSameAs: expected)
 ]
 
 { #category : #'tests - linearization' }
 MLLocalizationTestCase >> testLinearizeSingleCalls [
 
 	| methodToLinearize replacementBlock |
-	ccg addClass: MockLocalizationInterpreterMock.
-	methodToLinearize := ccg methodNamed: #bytecodeUsingInlinedCall.
-	
-	ccg prepareMethods.
-	ccg currentMethod: methodToLinearize.
-	SLAutomaticLocalization new
-		codeGenerator: ccg;
-		linearizeExternalCallsIn: methodToLinearize
-		withVariableBindings: ((ccg initAutoLocalizationOfVariablesIn: #interpret) asDictionary
-			collect: [:n| TVariableNode named: n]).
+	methodToLinearize := self linearise:
+		MockLocalizationInterpreterMock >> #bytecodeUsingInlinedCall.
 
 	"Before it was 
 		self inlinedMethodUsingExternalCall.
@@ -600,10 +586,8 @@ MLLocalizationTestCase >> testLinearizeSingleCalls [
 		self inlinedMethodUsingExternalCall"
 
 	replacementBlock := methodToLinearize statements first.
-	self assert: (replacementBlock first
-			isSameAs: (TSendNode
-					receiver: TVariableNode selfNode
-					selector: #inlinedMethodUsingExternalCall))
+	
+	self assert: replacementBlock isRewrittenAs: 'self inlinedMethodUsingExternalCall'
 ]
 
 { #category : #'tests - old localization' }
@@ -658,7 +642,7 @@ MLLocalizationTestCase >> testLocalizeSharedVariableShouldNotFailIfAllUsesAreInl
 	ccg localizeVariables: #( sharedVariableToLocalizeBeforeInlining ) inMethod: (ccg methodNamed: #interpret)
 ]
 
-{ #category : #tests }
+{ #category : #'tests - localisation' }
 MLLocalizationTestCase >> testNoExternalSendNodeOnSafeExternalCall [
 	
 	| interpretMethod cast printedString linearizedBlock |
