@@ -524,6 +524,7 @@ TSendNode >> receiver [
 TSendNode >> receiver: aNode [
 
 	receiver := aNode.
+	aNode parent: self
 ]
 
 { #category : #transformations }

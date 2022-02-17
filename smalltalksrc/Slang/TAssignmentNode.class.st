@@ -193,14 +193,8 @@ TAssignmentNode >> expression [
 { #category : #accessing }
 TAssignmentNode >> expression: anExpression [
 
-	| oldExpression |
-	oldExpression := expression.
 	expression := anExpression.
 	expression parent: self.
-
-	oldExpression ifNil: [ ^ self ].
-	oldExpression ~= variable
-		ifTrue: [ oldExpression parent: nil ]
 ]
 
 { #category : #testing }
@@ -346,14 +340,8 @@ TAssignmentNode >> variable [
 { #category : #accessing }
 TAssignmentNode >> variable: anObject [
 
-	| oldVariable |
-	oldVariable := variable.
 	variable := anObject.
 	variable parent: self.
-	
-	oldVariable ifNil: [ ^ self ].
-	oldVariable ~= variable
-		ifTrue: [ oldVariable parent: nil ]
 ]
 
 { #category : #accessing }

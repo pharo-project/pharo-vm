@@ -434,6 +434,8 @@ TCaseStmtNode >> setExpression: aNode selectors: selectorList arguments: anArray
 	].
 	firsts add: firstInRun.
 	lasts add: selectorList size - 1.
+	
 	stmt := TSendNode new setSelector: lastSel receiver: selfNode arguments: anArray.
-	cases add: (TStatementListNode new setArguments: #() statements: (Array with: stmt)).
+	case := cases add: (TStatementListNode new setArguments: #() statements: (Array with: stmt)).
+	case parent: self.
 ]
