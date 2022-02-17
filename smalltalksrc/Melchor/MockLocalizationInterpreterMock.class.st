@@ -217,6 +217,13 @@ MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariabl
 ]
 
 { #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiverWithNestedAnd [
+
+	(self nonInlinedMethodUsingAutolocalizedVariable and: [ 
+		 self foo and: [ self bar ] ]) ifTrue: [  ]
+]
+
+{ #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiverWithNestedConditional [
 
 	(self nonInlinedMethodUsingAutolocalizedVariable ifTrue: [ 

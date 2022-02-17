@@ -60,10 +60,12 @@ MLLocalizationTestCase >> internalizationOf: aVariableName [
 			expression: (TVariableNode named: aVariableName))
 ]
 
-{ #category : #'tests - linearization' }
+{ #category : #helpers }
 MLLocalizationTestCase >> linearise: aMethod [
 
 	| methodToLinearize |
+	ccg vmmakerConfiguration bytesPerWord: 8.
+	ccg vmmakerConfiguration bytesPerOop: 8.
 	ccg addClass: aMethod methodClass.
 	methodToLinearize := ccg methodNamed: aMethod selector.
 	
@@ -95,17 +97,17 @@ MLLocalizationTestCase >> setUp [
 	MockLocalizationInterpreterMock initialize.
 ]
 
-{ #category : #'tests - linearization' }
+{ #category : #helpers }
 MLLocalizationTestCase >> tastFor: someCode [
 
 	"Parse the expression as a method with a single expression.
 	Transform it to TAST and get the first statement of the TMethod.
 	
 	Expected: the first statement of the TMethod should correspond to the first statement of the RMethod"
-	^ ((RBParser parseExpression: '[', someCode, '] value') methodNode
+	^ ((RBParser parseExpression: someCode) methodNode
 		compilationContext: CompilationContext new;
 		asTranslationMethodOfClass: TMethod)
-			parseTree first receiver
+			parseTree
 ]
 
 { #category : #'tests - initialization' }
@@ -475,14 +477,13 @@ MLLocalizationTestCase >> testLinearizeCallsInNestedLexicalScope [
 			self foo: t0
 		] "
 
-	ifBlock := methodToLinearize statements first statements first
-		           arguments first statements first.
+	ifBlock := methodToLinearize statements first arguments first.
 
 	expected := self tastFor: '[| t0 |
-			t0 := self nonInlinedMethodUsingAutolocalizedVariable.
-			self foo: t0]'.
+		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
+		self foo: t0]'.
 
-	self assert: (ifBlock isSameAs: expected)
+	self assert: (ifBlock isSameAs: expected first)
 ]
 
 { #category : #'tests - linearization' }
@@ -498,11 +499,11 @@ MLLocalizationTestCase >> testLinearizeNestedCalls [
 		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
 		self foo: t0"
 
-	replacementBlock := methodToLinearize statements first.
+	replacementBlock := methodToLinearize parseTree.
 	
-	expected := self tastFor: '[| t0 |
+	expected := self tastFor: '| t0 |
 			t0 := self nonInlinedMethodUsingAutolocalizedVariable.
-			self foo: t0]'.
+			self foo: t0'.
 
 	self assert: (replacementBlock isSameAs: expected)
 ]
@@ -563,12 +564,12 @@ MLLocalizationTestCase >> testLinearizeNestedCallsWithReturn [
 		t1 := self foo: t0.
 		^ t1"
 	
-	replacementBlock := methodToLinearize statements first.
+	replacementBlock := methodToLinearize parseTree.
 	
-	expected := self tastFor: '[| t0 t1 |
+	expected := self tastFor: '| t0 t1 |
 		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
 		t1 := self foo: t0.
-		^ t1]'.
+		^ t1'.
 
 	self assert: (replacementBlock isSameAs: expected)
 ]
@@ -586,11 +587,11 @@ MLLocalizationTestCase >> testLinearizeReceiverOfConditional [
 		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
 		t0 ifTrue: []"
 
-	replacementBlock := methodToLinearize statements first.
+	replacementBlock := methodToLinearize parseTree.
 	
-	expected := self tastFor: '[| t0 t1 |
+	expected := self tastFor: '| t0 t1 |
 		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
-		t0 ifTrue: []]'.
+		t0 ifTrue: [ nil ]'.
 
 	self assert: (replacementBlock isSameAs: expected)
 ]
@@ -606,13 +607,38 @@ MLLocalizationTestCase >> testLinearizeReceiverOfConditionalAnd [
 		(self nonInlinedMethodUsingAutolocalizedVariable and: [ 
 			 self nonInlinedMethodUsingAutolocalizedVariable ]) ifTrue: [  ]"
 
-	replacementBlock := methodToLinearize statements first.
+	replacementBlock := methodToLinearize parseTree.
 
 	"We have an extra nested code because the linearisation algorithm does not flatten..."
 	self assert: replacementBlock isRewrittenAs: '
 		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
-		t0 ifTrue: [ [t1 := self nonInlinedMethodUsingAutolocalizedVariable] ] ifFalse: [ t1 := t0 ].
-		t1 ifTrue: []'.
+		t0 ifTrue: [ t1 := self nonInlinedMethodUsingAutolocalizedVariable ] ifFalse: [ t1 := t0 ].
+		t1 ifTrue: [nil]'.
+]
+
+{ #category : #'tests - linearization' }
+MLLocalizationTestCase >> testLinearizeReceiverOfConditionalNestedAnd [
+
+	| methodToLinearize replacementBlock |
+	methodToLinearize := self linearise:
+		MockLocalizationInterpreterMock >> #bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiverWithNestedAnd.
+
+	"Before it was 
+		(self nonInlinedMethodUsingAutolocalizedVariable and: [ 
+		 self foo and: [ self bar ] ]) ifTrue: [  ]"
+
+	replacementBlock := methodToLinearize parseTree.
+
+	"We have an extra nested code because the linearisation algorithm does not flatten..."
+	self assert: replacementBlock isRewrittenAs: '
+		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
+		t0 ifTrue: [ | t0 |
+				t0 := self foo.
+				t0
+					ifTrue: [ t1 := self bar ]
+					ifFalse: [ t1 := t0 ]]
+			ifFalse: [ t1 := t0 ].
+		t1 ifTrue: [nil]'.
 ]
 
 { #category : #'tests - linearization' }
@@ -626,13 +652,13 @@ MLLocalizationTestCase >> testLinearizeReceiverOfConditionalOr [
 		(self nonInlinedMethodUsingAutolocalizedVariable or: [ 
 			 self nonInlinedMethodUsingAutolocalizedVariable ]) ifTrue: [  ]"
 
-	replacementBlock := methodToLinearize statements first.
+	replacementBlock := methodToLinearize parseTree.
 
 	"We have an extra nested code because the linearisation algorithm does not flatten..."
 	self assert: replacementBlock isRewrittenAs: '
 		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
-		t0 ifTrue: [ t1 := t0 ] ifFalse: [ [t1 := self nonInlinedMethodUsingAutolocalizedVariable] ].
-		t1 ifTrue: []'.
+		t0 ifTrue: [ t1 := t0 ] ifFalse: [ t1 := self nonInlinedMethodUsingAutolocalizedVariable ].
+		t1 ifTrue: [ nil ]'.
 ]
 
 { #category : #'tests - linearization' }
@@ -648,16 +674,16 @@ MLLocalizationTestCase >> testLinearizeReceiverOfNestedConditional [
 			ifTrue: [  ]
 	After
 		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
-		t1 := t0 ifTrue: [ [self nonInlinedMethodUsingAutolocalizedVariable] ].
-		(t0 and: [t1]) ifTrue: []"
+		t0 ifTrue: [t1 := self nonInlinedMethodUsingAutolocalizedVariable] ifFalse: [t1 := t0].
+		t1 ifTrue: []"
 
-	replacementBlock := methodToLinearize statements first.
+	replacementBlock := methodToLinearize parseTree.
 
 	"We have an extra nested code because the linearisation algorithm does not flatten..."
 	self assert: replacementBlock isRewrittenAs: '
 		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
-		t1 := t0 ifTrue: [ [self nonInlinedMethodUsingAutolocalizedVariable] ].
-		t1 ifTrue: []'.
+		t0 ifTrue: [t1 := self nonInlinedMethodUsingAutolocalizedVariable] ifFalse: [t1 := t0].
+		t1 ifTrue: [nil]'.
 ]
 
 { #category : #'tests - linearization' }
@@ -672,7 +698,7 @@ MLLocalizationTestCase >> testLinearizeSingleCalls [
 	After
 		self inlinedMethodUsingExternalCall"
 
-	replacementBlock := methodToLinearize statements first.
+	replacementBlock := methodToLinearize parseTree.
 	
 	self assert: replacementBlock isRewrittenAs: 'self inlinedMethodUsingExternalCall'
 ]

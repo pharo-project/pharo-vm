@@ -592,7 +592,6 @@ TStatementListNode >> statements [
 TStatementListNode >> statements: anObject [
 
 	| oldStatements |
-	oldStatements := statements.
 	statements := anObject asOrderedCollection.
 	statements do: [ :e | e parent: self ]
 ]

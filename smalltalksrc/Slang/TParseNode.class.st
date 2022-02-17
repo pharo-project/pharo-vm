@@ -334,78 +334,6 @@ TParseNode >> isVariable [
 	^false
 ]
 
-{ #category : #linearization }
-TParseNode >> linearizeIn: aCodeGenerator [
-
-	"Remove a linearized version of myself where calls become statements
-	and nested calls are assigned to variables.
-	I stop on receiver/arguments that are blocks.
-	Remove unused variables locally.
-	
-	Precondition: I am a statement.
-	
-	For example, I transform statements of the form:
-	
-	> self foo: self nonInlinedMethodUsingAutolocalizedVariable
-	
-	into
-	
-	> t0 := self nonInlinedMethodUsingAutolocalizedVariable
-	> t1 := self foo: t0
-	
-	Such localization happens on a per-block basis:
-	
-	> someExpression ifTrue: [
-	>		self foo: self nonInlinedMethodUsingAutolocalizedVariable
-	> ]
-
-	into
-	
-	> someExpression ifTrue: [
-	> 	| t0 t1 |
-	> 	t0 := self nonInlinedMethodUsingAutolocalizedVariable.
-	> 	t1 := self foo: t0
-	> ]
-	"
-	| replacementDictionary rewrittenStatement callsInStatement replacementBlock replacementsSoFar declarations |
-	replacementDictionary := Dictionary new.
-	
-	callsInStatement := OrderedCollection new.
-	self
-		nodesDo: [ :node |
-			(node isAssignment or: [ 
-				(aCodeGenerator isFunctionCall: node) or: [
-					(aCodeGenerator isDynamicCall: node) or: [ 
-						aCodeGenerator isControlFlowNode: node ] ]])
-							ifTrue: [ callsInStatement add: node ] ]
-		unless: [ :unlessNode | 
-			"We should stop at statement lists except if their parent is an and: or or: that requires special treatment during linearisation"
-			  unlessNode isStatementList and: [ 
-				  unlessNode parent isSend and: [ 
-					  (#( and: or: ) includes: unlessNode parent selector) not ] ] ].
-	
-	replacementBlock := OrderedCollection new.
-	declarations := Dictionary new.
-	replacementsSoFar := Dictionary new.
-
-	"Apply linearization to all nodes except itself"
-	callsInStatement
-		select: [ :e | e ~= self ]
-		thenDo: [ :e | 
-			| variableNode valueNode |
-			variableNode := TVariableNode named: 't' , replacementBlock size asString.
-			valueNode := (e replaceNodesIn: replacementsSoFar)
-				rewriteStatementForLinearisationWithResultVariable: variableNode.
-			declarations at: variableNode name put: (aCodeGenerator typeFor: valueNode in: aCodeGenerator currentMethod) , ' ', variableNode name.
-			replacementBlock add: valueNode.
-			replacementsSoFar at: e put: variableNode ].
-
-	rewrittenStatement := self replaceNodesIn: replacementsSoFar.
-	replacementBlock add: rewrittenStatement.
-
-	^ TStatementListNode declarations: declarations statements: replacementBlock 
-]
-
 { #category : #accessing }
 TParseNode >> nameOrValue [
 
@@ -556,14 +484,6 @@ TParseNode >> replaceChild: aNode with: aReplacementNode [
 TParseNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [self]
-]
-
-{ #category : #'rewriting-linearisation' }
-TParseNode >> rewriteStatementForLinearisationWithResultVariable: aTVariableNode [ 
-	
-	^ TAssignmentNode
-		 variable: aTVariableNode
-		 expression: self
 ]
 
 { #category : #enumerating }

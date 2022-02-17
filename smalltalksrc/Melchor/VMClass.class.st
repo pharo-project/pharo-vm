@@ -41,6 +41,12 @@ VMClass class >> bytesPerOop [
 ]
 
 { #category : #accessing }
+VMClass class >> bytesPerOop: anInteger [
+
+	BytesPerOop := anInteger
+]
+
+{ #category : #accessing }
 VMClass class >> bytesPerWord [
 	
 	^ BytesPerWord 
