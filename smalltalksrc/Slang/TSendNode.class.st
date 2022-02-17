@@ -63,7 +63,8 @@ TSendNode >> arguments [
 
 { #category : #private }
 TSendNode >> arguments: aSequence [
-	arguments := aSequence
+	arguments := aSequence.
+	arguments do: [ :e | e parent: self ].
 ]
 
 { #category : #'inlining support' }

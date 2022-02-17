@@ -2800,7 +2800,8 @@ TMethod >> setSelector: sel definingClass: class args: argList locals: localList
 	labels := Set new.
 	
 	"hack; allows nodes to find their parent, etc"
-	tempParseTree := parseTree := TStatementListNode new.
+	self parseTree: TStatementListNode new.
+	tempParseTree := parseTree.
 	self parseTree: (aBlockNode asTranslatorNodeIn: self).
 	self locals: tempParseTree locals, (localList  collect: [:arg | arg name]).
 	
