@@ -95,6 +95,15 @@ TParseNode >> asReturnNode [
 ]
 
 { #category : #transformations }
+TParseNode >> assignLastExpressionTo: aTVariableNode [ 
+	
+	"An expression just assigns itself"
+	 ^ TAssignmentNode new
+			setVariable: aTVariableNode
+			expression: self
+]
+
+{ #category : #transformations }
 TParseNode >> bindVariableUsesIn: aDictionary [
 	"Bind uses of all variables in the given dictionary, but do not change variables that appear on the left-hand-side of an assignment statement."
 
@@ -366,8 +375,9 @@ TParseNode >> linearizeIn: aCodeGenerator [
 		nodesDo: [ :node |
 			(node isAssignment or: [ 
 				(aCodeGenerator isFunctionCall: node) or: [
-					aCodeGenerator isDynamicCall: node ]])
-						ifTrue: [ callsInStatement add: node ] ]
+					(aCodeGenerator isDynamicCall: node) or: [ 
+						aCodeGenerator isControlFlowNode: node ] ]])
+							ifTrue: [ callsInStatement add: node ] ]
 		unless: [ :unlessNode | unlessNode isStatementList ].
 	
 	replacementBlock := OrderedCollection new.
@@ -380,12 +390,12 @@ TParseNode >> linearizeIn: aCodeGenerator [
 		thenDo: [ :e | 
 			| variableNode valueNode |
 			variableNode := TVariableNode named: 't' , replacementBlock size asString.
-			valueNode := TAssignmentNode
-					 variable: variableNode
-					 expression: (e replaceNodesIn: replacementsSoFar).
+			valueNode := (e replaceNodesIn: replacementsSoFar)
+				rewriteStatementForLinearisationWithResultVariable: variableNode.
 			declarations at: variableNode name put: (aCodeGenerator typeFor: valueNode in: aCodeGenerator currentMethod) , ' ', variableNode name.
 			replacementBlock add: valueNode.
 			replacementsSoFar at: e put: variableNode ].
+
 	rewrittenStatement := self replaceNodesIn: replacementsSoFar.
 	replacementBlock add: rewrittenStatement.
 
@@ -542,6 +552,14 @@ TParseNode >> replaceChild: aNode with: aReplacementNode [
 TParseNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [self]
+]
+
+{ #category : #'rewriting-linearisation' }
+TParseNode >> rewriteStatementForLinearisationWithResultVariable: aTVariableNode [ 
+	
+	^ TAssignmentNode
+		 variable: aTVariableNode
+		 expression: self
 ]
 
 { #category : #enumerating }

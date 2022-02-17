@@ -574,6 +574,93 @@ MLLocalizationTestCase >> testLinearizeNestedCallsWithReturn [
 ]
 
 { #category : #'tests - linearization' }
+MLLocalizationTestCase >> testLinearizeReceiverOfConditional [
+
+	| methodToLinearize replacementBlock expected |
+	methodToLinearize := self linearise:
+		MockLocalizationInterpreterMock >> #bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiver.
+
+	"Before it was 
+		self nonInlinedMethodUsingAutolocalizedVariable ifTrue: [].
+	After
+		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
+		t0 ifTrue: []"
+
+	replacementBlock := methodToLinearize statements first.
+	
+	expected := self tastFor: '[| t0 t1 |
+		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
+		t0 ifTrue: []]'.
+
+	self assert: (replacementBlock isSameAs: expected)
+]
+
+{ #category : #'tests - linearization' }
+MLLocalizationTestCase >> testLinearizeReceiverOfConditionalAnd [
+
+	| methodToLinearize replacementBlock |
+	methodToLinearize := self linearise:
+		MockLocalizationInterpreterMock >> #bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiverWithAnd.
+
+	"Before it was 
+		(self nonInlinedMethodUsingAutolocalizedVariable and: [ 
+			 self nonInlinedMethodUsingAutolocalizedVariable ]) ifTrue: [  ]"
+
+	replacementBlock := methodToLinearize statements first.
+
+	"We have an extra nested code because the linearisation algorithm does not flatten..."
+	self assert: replacementBlock isRewrittenAs: '
+		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
+		t0 ifTrue: [ [t1 := self nonInlinedMethodUsingAutolocalizedVariable] ] ifFalse: [ t1 := t0 ].
+		t1 ifTrue: []'.
+]
+
+{ #category : #'tests - linearization' }
+MLLocalizationTestCase >> testLinearizeReceiverOfConditionalOr [
+
+	| methodToLinearize replacementBlock |
+	methodToLinearize := self linearise:
+		MockLocalizationInterpreterMock >> #bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiverWithOr.
+
+	"Before it was 
+		(self nonInlinedMethodUsingAutolocalizedVariable or: [ 
+			 self nonInlinedMethodUsingAutolocalizedVariable ]) ifTrue: [  ]"
+
+	replacementBlock := methodToLinearize statements first.
+
+	"We have an extra nested code because the linearisation algorithm does not flatten..."
+	self assert: replacementBlock isRewrittenAs: '
+		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
+		t0 ifTrue: [ t1 := t0 ] ifFalse: [ [t1 := self nonInlinedMethodUsingAutolocalizedVariable] ].
+		t1 ifTrue: []'.
+]
+
+{ #category : #'tests - linearization' }
+MLLocalizationTestCase >> testLinearizeReceiverOfNestedConditional [
+
+	| methodToLinearize replacementBlock |
+	methodToLinearize := self linearise:
+		MockLocalizationInterpreterMock >> #bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiverWithNestedConditional.
+
+	"Before it was 
+		(self nonInlinedMethodUsingAutolocalizedVariable ifTrue: [ 
+		 self nonInlinedMethodUsingAutolocalizedVariable ])
+			ifTrue: [  ]
+	After
+		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
+		t1 := t0 ifTrue: [ [self nonInlinedMethodUsingAutolocalizedVariable] ].
+		(t0 and: [t1]) ifTrue: []"
+
+	replacementBlock := methodToLinearize statements first.
+
+	"We have an extra nested code because the linearisation algorithm does not flatten..."
+	self assert: replacementBlock isRewrittenAs: '
+		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
+		t1 := t0 ifTrue: [ [self nonInlinedMethodUsingAutolocalizedVariable] ].
+		t1 ifTrue: []'.
+]
+
+{ #category : #'tests - linearization' }
 MLLocalizationTestCase >> testLinearizeSingleCalls [
 
 	| methodToLinearize replacementBlock |
@@ -655,4 +742,41 @@ MLLocalizationTestCase >> testNoExternalSendNodeOnSafeExternalCall [
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
 	self assert: printedString equals: 'nonInlinedMethodNotUsingAutolocalizedVariables((local_autoLocalizedVariable += 1))'
+]
+
+{ #category : #'tests - linearization' }
+MLLocalizationTestCase >> testShouldLineariseExpressionUsingAutolocalizedVariable [
+
+	| methodToLinearize localization localizationBindings |
+	ccg addClass: MockLocalizationInterpreterMock.
+	methodToLinearize := ccg methodNamed:
+		                     #bytecodeUsingExternalizedAutoLocalizedVariable.
+
+	ccg prepareMethods.
+	ccg currentMethod: methodToLinearize.
+	localization := SLAutomaticLocalization new codeGenerator: ccg.
+	localizationBindings := (ccg initAutoLocalizationOfVariablesIn:
+		                         #interpret) collect: [ :e | e key ].
+
+	self assert: (localization
+			 shouldLinearizeStatement: methodToLinearize statements second
+			 withVariableBindings: localizationBindings)
+]
+
+{ #category : #'tests - linearization' }
+MLLocalizationTestCase >> testShouldLineariseIfReceiverExpressionUsingAutolocalizedVariable [
+
+	| methodToLinearize localization localizationBindings |
+	ccg addClass: MockLocalizationInterpreterMock.
+	methodToLinearize := ccg methodNamed: #bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiver.
+
+	ccg prepareMethods.
+	ccg currentMethod: methodToLinearize.
+	localization := SLAutomaticLocalization new codeGenerator: ccg.
+	localizationBindings := (ccg initAutoLocalizationOfVariablesIn:
+		                         #interpret) collect: [ :e | e key ].
+
+	self assert: (localization
+			 shouldLinearizeStatement: methodToLinearize statements second
+			 withVariableBindings: localizationBindings)
 ]

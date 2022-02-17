@@ -233,13 +233,16 @@ TStatementListNode >> asReturnNode [
 { #category : #transformations }
 TStatementListNode >> assignLastExpressionTo: variableNode [
 	"Destructively transform the receiver so that its last expression is assigned to the argument."
-	| index |
+	| index lastExpression replacement |
 	index := statements findLast: [:expr| (expr isGoTo or: [expr isLabel]) not].
+	
+	"Recursively deal with complex nodes"
+	lastExpression := statements at: index.
+	replacement := lastExpression assignLastExpressionTo: variableNode.
 	statements
 		at: index
-		put: (TAssignmentNode new
-				setVariable: variableNode
-				expression: (statements at: index))
+		put: replacement.
+	replacement parent: self.
 ]
 
 { #category : #transformations }

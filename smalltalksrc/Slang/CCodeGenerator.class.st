@@ -3396,6 +3396,13 @@ CCodeGenerator >> isConstantNode: aNode valueInto: aBlock [
 	^ false
 ]
 
+{ #category : #testing }
+CCodeGenerator >> isControlFlowNode: aNode [
+	
+	^ aNode isSend and: [ 
+		#(ifTrue: ifTrue:ifFalse: ifFalse: ifFalse:ifTrue: and: or:) includes: aNode selector ]
+]
+
 { #category : #utilities }
 CCodeGenerator >> isDynamicCall: aNode [
 	"Dynamic calls are calls to functions/methods determined at runtime.

@@ -541,6 +541,35 @@ TSendNode >> replaceNodesIn: aDictionary [
 		self]
 ]
 
+{ #category : #'rewriting-linearisation' }
+TSendNode >> rewriteStatementForLinearisationWithResultVariable: aTVariableNode [ 
+	
+	self haltIf: [ #(ifTrue: ifTrue:ifFalse: ifFalse: ifFalse:ifTrue:) includes: self selector ].
+	
+	"Transform an and: to an ifTrue:ifFalse:
+		temp := var and: [ ... exp ]
+		=>
+		var ifTrue: [ ... temp := exp ] ifFalse: [ temp := var ]
+		
+		And or: has the same transformation but blocks are inverted
+	"
+	(#( and: or: ) includes: self selector) ifTrue: [ | newArguments |
+		newArguments := { 
+				self arguments first assignLastExpressionTo: aTVariableNode.
+				TStatementListNode statements: { 
+					TAssignmentNode variableNamed: aTVariableNode name expression: self receiver
+				}
+		}.
+		self selector = #or: ifTrue: [ newArguments := newArguments reversed ].
+		^ TSendNode
+			receiver: self receiver
+			selector: #ifTrue:ifFalse:
+			arguments: newArguments
+	].
+	
+	^ super rewriteStatementForLinearisationWithResultVariable: aTVariableNode
+]
+
 { #category : #accessing }
 TSendNode >> selector [
 

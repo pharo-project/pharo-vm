@@ -204,6 +204,34 @@ MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariabl
 ]
 
 { #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiver [
+
+	self nonInlinedMethodUsingAutolocalizedVariable ifTrue: [  ]
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiverWithAnd [
+
+	(self nonInlinedMethodUsingAutolocalizedVariable and: [ 
+		 self nonInlinedMethodUsingAutolocalizedVariable ]) ifTrue: [  ]
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiverWithNestedConditional [
+
+	(self nonInlinedMethodUsingAutolocalizedVariable ifTrue: [ 
+		 self nonInlinedMethodUsingAutolocalizedVariable ])
+			ifTrue: [  ]
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiverWithOr [
+
+	(self nonInlinedMethodUsingAutolocalizedVariable or: [ 
+		 self nonInlinedMethodUsingAutolocalizedVariable ]) ifTrue: [  ]
+]
+
+{ #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableInNestedLexicalScope [
 
 	true ifTrue: [
