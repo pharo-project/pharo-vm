@@ -114,7 +114,7 @@ TCaseStmtNode >> asCASTIn: aBuilder addToEndOfCases: aNodeToPrepend [
 { #category : #transformations }
 TCaseStmtNode >> bindVariableUsesIn: aDictionary [
 
-	expression := expression bindVariableUsesIn: aDictionary.
+	self expression: (expression bindVariableUsesIn: aDictionary).
 	self cases: (cases collect: [ :c | c bindVariableUsesIn: aDictionary ]).
 ]
 
@@ -135,7 +135,7 @@ TCaseStmtNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold
 { #category : #transformations }
 TCaseStmtNode >> bindVariablesIn: aDictionary [
 
-	expression := expression bindVariablesIn: aDictionary.
+	self expression: (expression bindVariablesIn: aDictionary).
 	self cases: (cases collect: [ :c | c bindVariablesIn: aDictionary ]).
 ]
 
@@ -143,7 +143,7 @@ TCaseStmtNode >> bindVariablesIn: aDictionary [
 TCaseStmtNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
-	expression := expression bindVariablesIn: aDictionary unless: cautionaryBlock.
+	self expression: (expression bindVariablesIn: aDictionary unless: cautionaryBlock).
 	self cases: (cases collect: [ :c | c bindVariablesIn: aDictionary unless: cautionaryBlock ]).
 ]
 
@@ -218,7 +218,14 @@ TCaseStmtNode >> customizeShortCasesForDispatchVar: varName in: codeGen method: 
 { #category : #accessing }
 TCaseStmtNode >> expression [
 
-	^expression
+	^ expression
+]
+
+{ #category : #accessing }
+TCaseStmtNode >> expression: anExpression [
+
+	expression := anExpression.
+	anExpression parent: self
 ]
 
 { #category : #private }
@@ -294,7 +301,7 @@ TCaseStmtNode >> nodesDo: aBlock unless: cautionaryBlock [
 { #category : #copying }
 TCaseStmtNode >> postCopy [
 
-	expression := expression copy.
+	self expression: expression copy.
 	firsts := firsts copy.
 	lasts := lasts copy.
 	self cases: (cases collect: [ :case | case copy ])
@@ -394,14 +401,14 @@ TCaseStmtNode >> removeAssertions [
 TCaseStmtNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
-		expression := expression replaceNodesIn: aDictionary.
+		self expression: (expression replaceNodesIn: aDictionary).
 		self cases: (cases collect: [ :c | c replaceNodesIn: aDictionary ]).
 		self]
 ]
 
 { #category : #private }
 TCaseStmtNode >> setExpression: newExpression cases: newCases [
-	expression := newExpression.
+	self expression: newExpression.
 	self cases: newCases
 ]
 
@@ -411,7 +418,7 @@ TCaseStmtNode >> setExpression: aNode selectors: selectorList arguments: anArray
 	"Note: Each case is a statement list with containing one statement, a send to self of a selector from the given selector list. Having statement list nodes makes inlining easier later."
 
 	| selfNode stmt lastSel firstInRun sel case |
-	expression := aNode.
+	self expression: aNode.
 	selfNode := TVariableNode new setName: 'self'.
 	firsts := OrderedCollection new: 400.
 	lasts := OrderedCollection new: 400.

@@ -110,7 +110,9 @@ MLStatementListBuider >> pop [
 	expressionNode := expressionStack removeLast.
 
 	"If it's a variable or constant, just return it, the caller will use it in the right place"
-	(expressionNode isLeaf or: [ expressionNode isStatementList ]) 
+	(expressionNode isTMethod
+		or: [ expressionNode isStatementList
+			or: [ expressionNode isLeaf ] ]) 
 		ifTrue: [ ^ expressionNode ].
 
 	"If it's a control flow structure, and we are using it's value, write its last expression to a variable:

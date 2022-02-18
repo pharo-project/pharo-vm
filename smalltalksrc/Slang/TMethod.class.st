@@ -40,6 +40,12 @@ TMethod class >> initialize [
 	CaseStatements addAll: #(dispatchOn:in: dispatchOn:in:with: dispatchOn:in:with:with:).
 ]
 
+{ #category : #visiting }
+TMethod >> accept: aVisitor [
+
+	^ aVisitor visitMethod: self
+]
+
 { #category : #adding }
 TMethod >> addCASTConditionalCompilationFor: cAST generator: aCodeGen [
 

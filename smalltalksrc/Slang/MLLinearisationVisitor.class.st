@@ -48,15 +48,58 @@ MLLinearisationVisitor >> codeGenerator: anObject [
 ]
 
 { #category : #visiting }
-MLLinearisationVisitor >> visitCaseStatementNode: aTCaseStmtNode [ 
+MLLinearisationVisitor >> visitAssignmentNode: aTAssignmentNode [ 
 	
-	self halt.
+	aTAssignmentNode expression accept: self.
+	
+	builder push: (aTAssignmentNode shallowCopy
+		expression: builder pop;
+		yourself)
+]
+
+{ #category : #visiting }
+MLLinearisationVisitor >> visitCaseStatementNode: aTCaseStmtNode [
+	
+	| expressionVar newCases |
+	aTCaseStmtNode expression accept: self.
+	expressionVar := builder pop.
+	newCases := aTCaseStmtNode cases collect: [ :case |
+		case accept: self.
+		builder pop.
+	].
+
+	builder push: (aTCaseStmtNode shallowCopy
+		expression: expressionVar;
+		cases: newCases;
+		yourself)
 ]
 
 { #category : #visiting }
 MLLinearisationVisitor >> visitConstantNode: aTConstantNode [ 
 	
 	builder push: aTConstantNode
+]
+
+{ #category : #visiting }
+MLLinearisationVisitor >> visitInlineNode: aTInlineNode [
+
+	aTInlineNode method accept: self.
+	builder push: builder pop asInlineNode
+]
+
+{ #category : #visiting }
+MLLinearisationVisitor >> visitLabeledCommentNode: aTLabeledCommentNode [ 
+
+	builder push: aTLabeledCommentNode
+]
+
+{ #category : #visiting }
+MLLinearisationVisitor >> visitMethod: aTMethod [ 
+
+	aTMethod parseTree accept: self.
+	builder push: (aTMethod shallowCopy
+		parseTree: builder pop;
+		yourself)
 ]
 
 { #category : #visiting }

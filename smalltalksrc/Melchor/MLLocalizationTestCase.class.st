@@ -86,8 +86,8 @@ MLLocalizationTestCase >> linearizedBlockOfCaseMethod: aTMethod [
 	| case inlinedMethod |
 	case := (aTMethod detect: [ :e | e isCaseStmt ]) cases first.
 	inlinedMethod := (case detect: [ :e | e isInline ]) method.
-	"Return the first non label, to avoid the labels introduced by inlining"
-	^ inlinedMethod statements detect: [ :e | e isLabel not and: [ e isStatementList not or: [ e first isLabel not ]] ]
+
+	^ inlinedMethod parseTree
 ]
 
 { #category : #running }
@@ -160,7 +160,7 @@ MLLocalizationTestCase >> testAutoLocalizeVariableExternalizesAtTheEnd [
 
 	| externalizationStatement interpretMethod |
 	interpretMethod := self applyLocalizationTo: #interpret.
-	externalizationStatement := interpretMethod statements last first first.
+	externalizationStatement := interpretMethod statements last first.
 
 	self assert: (externalizationStatement isSameAs:
 			 (self externalizationOf: #autoLocalizedVariable))
@@ -174,7 +174,7 @@ MLLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturnRefere
 	| interpretMethod printedString |
 	interpretMethod := self applyLocalizationTo: #interpretWithReturnExpressionUpdatingAutoLocalizedVariable.
 	printedString := String streamContents: [ :str | 
-		                 ((TStatementListNode statements: interpretMethod statements last) asCASTIn: ccg) 
+		                 ((TStatementListNode statements: (interpretMethod statements last: 3)) asCASTIn: ccg) 
 			                 prettyPrintOn: str ].
 	self assert: printedString equals: '{
 	{
@@ -198,16 +198,16 @@ MLLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturns [
 	| interpretMethod sendNode |
 	interpretMethod := self applyLocalizationTo: #interpretWithReturnExpression.
 
-	sendNode := interpretMethod last first.
-	self assert: sendNode arguments first first first last isReturn.
+	sendNode := interpretMethod last.
+	self assert: sendNode arguments first last last isReturn.
 	self
-		assert: (sendNode arguments first first first first
+		assert: (sendNode arguments first last first
 		isSameAs: (self externalizationOf: #autoLocalizedVariable)).
 
-	self assert: sendNode arguments second first first last isReturn.
+	self assert: sendNode arguments second last last isReturn.
 	self
-		assert: (sendNode arguments second first first first
-		isSameAs: (self externalizationOf: #autoLocalizedVariable)).
+		assert: (sendNode arguments second last first
+		isSameAs: (self externalizationOf: #autoLocalizedVariable))
 ]
 
 { #category : #'tests - localisation' }
@@ -250,16 +250,16 @@ MLLocalizationTestCase >> testExternalEscapingAsArgument [
 	
 	self assert: printedString equals:
 '{
-	{
-		sqInt t0;
+	sqInt t0;
+	int t1;
 
-		{
-			autoLocalizedVariable = local_autoLocalizedVariable;
-			t0 = foo2();
-			local_autoLocalizedVariable = autoLocalizedVariable;
-		}
-		if (1 == t0) {
-		}
+	{
+		autoLocalizedVariable = local_autoLocalizedVariable;
+		t0 = foo2();
+		local_autoLocalizedVariable = autoLocalizedVariable;
+	}
+	t1 = 1 == t0;
+	if (t1) {
 	}
 }'
 ]
@@ -352,29 +352,25 @@ MLLocalizationTestCase >> testExternalEscapingStatementInConditionalBody [
 
 	"Assert that the send node is preceded by variable externalization"
 	linearizedBlock := self linearizedBlockOfCaseMethod: interpretMethod.
-	cast := linearizedBlock parent asCASTIn: ccg.
+	cast := linearizedBlock asCASTIn: ccg.
 	
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
 	"The if statement should not be wrapped. Only the inner statements"
 	self assert: printedString equals:
 '{
-	{
-		if (1) {
-			{
-				sqInt t0;
+	if (1) {
+		sqInt t0;
 
-				{
-					autoLocalizedVariable = local_autoLocalizedVariable;
-					t0 = nonInlinedMethodUsingAutolocalizedVariable();
-					local_autoLocalizedVariable = autoLocalizedVariable;
-				}
-				{
-					autoLocalizedVariable = local_autoLocalizedVariable;
-					foo(t0);
-					local_autoLocalizedVariable = autoLocalizedVariable;
-				}
-			}
+		{
+			autoLocalizedVariable = local_autoLocalizedVariable;
+			t0 = nonInlinedMethodUsingAutolocalizedVariable();
+			local_autoLocalizedVariable = autoLocalizedVariable;
+		}
+		{
+			autoLocalizedVariable = local_autoLocalizedVariable;
+			foo(t0);
+			local_autoLocalizedVariable = autoLocalizedVariable;
 		}
 	}
 }'
@@ -530,7 +526,7 @@ MLLocalizationTestCase >> testLinearizeNestedCallsWithAssignment [
 		t1 := self foo: t0.
 		foo := t1"
 	
-	replacementBlock := methodToLinearize statements first.
+	replacementBlock := methodToLinearize parseTree.
 	self assert: (replacementBlock statements first
 			isSameAs: (TAssignmentNode
 				variableNamed: 't0'
