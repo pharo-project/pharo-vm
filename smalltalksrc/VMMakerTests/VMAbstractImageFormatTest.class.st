@@ -6,7 +6,7 @@ Class {
 		'imageReaderClass',
 		'imageWriterClass'
 	],
-	#category : #'VMMakerTests-MemoryTests'
+	#category : #'VMMakerTests-ImageFormat'
 }
 
 { #category : #tests }

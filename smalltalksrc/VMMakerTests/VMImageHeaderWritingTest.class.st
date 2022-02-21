@@ -1,7 +1,7 @@
 Class {
 	#name : #VMImageHeaderWritingTest,
 	#superclass : #VMAbstractImageFormatTest,
-	#category : #'VMMakerTests-MemoryTests'
+	#category : #'VMMakerTests-ImageFormat'
 }
 
 { #category : #running }
