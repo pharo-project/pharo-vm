@@ -129,7 +129,9 @@ struct sockaddr_un
 #endif
 #endif /* !ACORN */
 
-/* Standardize this to a minimum of 256 characters */
+/* Standardize this to a minimum of 256 characters.
+The Socket plugin uses this value as a limit for the FQDN (Fully Qualified Domain Name) length. This is very restrictive on Linux, as 64 characters are not enough to resolve some domain names. Making it 256 if it's not defined as greater fixes this issue on Linux (and any other platform where this could happen). */
+
 #if !defined(MAXHOSTNAMELEN) || MAXHOSTNAMELEN < 256
 # undef MAXHOSTNAMELEN
 # define MAXHOSTNAMELEN 256
