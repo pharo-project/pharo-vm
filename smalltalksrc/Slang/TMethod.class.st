@@ -451,6 +451,13 @@ TMethod >> asCASTInlinedIn: aBuilder [
 	^ compoundStatement
 ]
 
+{ #category : #linearisation }
+TMethod >> asExpressionIn: aMLStatementListBuider [ 
+	
+	"A TNode returns itself as an expression"
+	^ self
+]
+
 { #category : #transformations }
 TMethod >> asInlineNode [
 	^TInlineNode new method: self

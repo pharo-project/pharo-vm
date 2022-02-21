@@ -152,7 +152,9 @@ MLLocalizationTestCase >> testAutoLocalizeVariableDoesNotLineariseUnnecessarySta
 
 	printedString := String streamContents: [ :str | (block asCASTIn: ccg) prettyPrintOn: str ].
 
-	self assert: printedString equals: 'nonInlinedMethodNotUsingAutolocalizedVariables(nonInlinedMethodNotUsingAutolocalizedVariables())'
+	self assert: printedString equals: '{
+	nonInlinedMethodNotUsingAutolocalizedVariables(nonInlinedMethodNotUsingAutolocalizedVariables());
+}'
 ]
 
 { #category : #'tests - localisation' }
@@ -174,18 +176,14 @@ MLLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturnRefere
 	| interpretMethod printedString |
 	interpretMethod := self applyLocalizationTo: #interpretWithReturnExpressionUpdatingAutoLocalizedVariable.
 	printedString := String streamContents: [ :str | 
-		                 ((TStatementListNode statements: (interpretMethod statements last: 3)) asCASTIn: ccg) 
+		                 ((TStatementListNode statements: (interpretMethod statements last: 2)) asCASTIn: ccg) 
 			                 prettyPrintOn: str ].
 	self assert: printedString equals: '{
+	local_autoLocalizedVariable += 1;
 	{
-		sqInt t0;
-
-		t0 = (local_autoLocalizedVariable += 1);
-		{
-			autoLocalizedVariable = local_autoLocalizedVariable;
-			autoLocalizedVariable1 = local_autoLocalizedVariable1;
-			return t0;
-		}
+		autoLocalizedVariable = local_autoLocalizedVariable;
+		autoLocalizedVariable1 = local_autoLocalizedVariable1;
+		return local_autoLocalizedVariable;
 	}
 }'
 ]
@@ -244,7 +242,7 @@ MLLocalizationTestCase >> testExternalEscapingAsArgument [
 
 	"Assert that the send node is preceded by variable externalization"
 	linearizedBlock := self linearizedBlockOfCaseMethod: interpretMethod.
-	cast := linearizedBlock parent asCASTIn: ccg.
+	cast := linearizedBlock asCASTIn: ccg.
 	
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
@@ -333,12 +331,10 @@ MLLocalizationTestCase >> testExternalEscapingSendNodeShouldBeTranslatedWithExte
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
 	self assert: printedString equals: '{
-	sqInt t0;
-
-	t0 = (local_autoLocalizedVariable += 1);
+	local_autoLocalizedVariable += 1;
 	{
 		autoLocalizedVariable = local_autoLocalizedVariable;
-		foo(t0);
+		foo(local_autoLocalizedVariable);
 		local_autoLocalizedVariable = autoLocalizedVariable;
 	}
 }'
@@ -411,14 +407,12 @@ MLLocalizationTestCase >> testExternalSendNodeExternalizeAndInternalizeOnlyNeede
 
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	self assert: printedString equals: '{
-	sqInt t0;
-
-	t0 = (local_autoLocalizedVariable += 1);
+	local_autoLocalizedVariable += 1;
 	{
 		autoLocalizedVariable = local_autoLocalizedVariable;
 		autoLocalizedVariable1 = local_autoLocalizedVariable1;
 		autoLocalizedVariable2 = local_autoLocalizedVariable2;
-		foo(t0);
+		foo(local_autoLocalizedVariable);
 		local_autoLocalizedVariable = autoLocalizedVariable;
 		local_autoLocalizedVariable1 = autoLocalizedVariable1;
 		local_autoLocalizedVariable2 = autoLocalizedVariable2;
@@ -613,6 +607,28 @@ MLLocalizationTestCase >> testLinearizeReceiverOfConditionalAnd [
 ]
 
 { #category : #'tests - linearization' }
+MLLocalizationTestCase >> testLinearizeReceiverOfConditionalAndAssigned [
+
+	| methodToLinearize replacementBlock |
+	methodToLinearize := self linearise:
+		MockLocalizationInterpreterMock >> #bytecodeUsingExternalizedAutoLocalizedVariableAsAssignmentWithAnd.
+
+	"Before it was 
+		var := self nonInlinedMethodUsingAutolocalizedVariable and: [ 
+			 self nonInlinedMethodUsingAutolocalizedVariable ].
+		var ifTrue: [  ]"
+
+	replacementBlock := methodToLinearize parseTree.
+
+	"We have an extra nested code because the linearisation algorithm does not flatten..."
+	self assert: replacementBlock isRewrittenAs: '
+		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
+		t0 ifTrue: [ t1 := self nonInlinedMethodUsingAutolocalizedVariable ] ifFalse: [ t1 := t0 ].
+		var := t1.
+		var ifTrue: [nil]'.
+]
+
+{ #category : #'tests - linearization' }
 MLLocalizationTestCase >> testLinearizeReceiverOfConditionalNestedAnd [
 
 	| methodToLinearize replacementBlock |
@@ -763,7 +779,9 @@ MLLocalizationTestCase >> testNoExternalSendNodeOnSafeExternalCall [
 	
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
-	self assert: printedString equals: 'nonInlinedMethodNotUsingAutolocalizedVariables((local_autoLocalizedVariable += 1))'
+	self assert: printedString equals: '{
+	nonInlinedMethodNotUsingAutolocalizedVariables((local_autoLocalizedVariable += 1));
+}'
 ]
 
 { #category : #'tests - linearization' }

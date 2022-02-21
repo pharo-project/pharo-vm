@@ -87,11 +87,25 @@ TParseNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 	^ self asCASTExpressionIn: aBuilder
 ]
 
+{ #category : #linearisation }
+TParseNode >> asExpressionIn: aMLStatementListBuider [ 
+	
+	"A TNode returns itself as an expression"
+	^ self
+]
+
 { #category : #transformations }
 TParseNode >> asReturnNode [
 	^TReturnNode new 
 		setExpression: self;
 		yourself
+]
+
+{ #category : #linearisation }
+TParseNode >> asStatementIn: aMLStatementListBuider [ 
+
+	"A TNode returns itself as a statement"
+	^ self
 ]
 
 { #category : #transformations }

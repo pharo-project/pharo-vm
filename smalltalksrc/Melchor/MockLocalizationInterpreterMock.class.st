@@ -184,6 +184,15 @@ MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariabl
 ]
 
 { #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsAssignmentWithAnd [
+
+	| var |
+	var := self nonInlinedMethodUsingAutolocalizedVariable and: [ 
+		 self nonInlinedMethodUsingAutolocalizedVariable ].
+	var ifTrue: [  ]
+]
+
+{ #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsExpression [
 
 	self foo: self nonInlinedMethodUsingAutolocalizedVariable

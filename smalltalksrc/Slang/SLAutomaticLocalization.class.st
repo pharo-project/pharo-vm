@@ -130,8 +130,9 @@ SLAutomaticLocalization >> linearizeExternalCallsIn: aTMethod withVariableBindin
 	Linearize all calls inside this method"
 
 	| lineariser linearStatementList |
-	lineariser := MLLinearisationVisitor new
+	lineariser := SLLinearisationVisitor new
 		codeGenerator: codeGenerator;
+		localizedVariables: replacementDict keys;
 		yourself.
 
 	linearStatementList := aTMethod parseTree accept: lineariser.
