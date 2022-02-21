@@ -153,13 +153,6 @@ SLAutomaticLocalization >> localizableVariablesInStatement: statement withVariab
 ]
 
 { #category : #applying }
-SLAutomaticLocalization >> shouldLinearizeStatement: statement withVariableBindings: localizedVariables [
-
-	"Optimization: only externalize/localize variables used by the statement's called functions"
-	^ (self localizableVariablesInStatement: statement withVariableBindings: localizedVariables) notEmpty
-]
-
-{ #category : #applying }
 SLAutomaticLocalization >> wrapStatementWithExternalizationAndLocalizations: statement ofLocalizedVariables: localizedVariables [
 
 	| variablesToExternalize replacementStatements potentialCall |

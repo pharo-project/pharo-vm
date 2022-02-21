@@ -28,6 +28,10 @@ MLStatementListBuider >> addLinearisedStatement: expressionNode [
 	Return the value r that is holding the result"
 	(codeGenerator isControlFlowNode: expressionNode) ifTrue: [ | variable |
 		variable := TVariableNode named: self newVariableName.
+		declaration := (codeGenerator
+			typeFor: expressionNode receiver
+			in: codeGenerator currentMethod) , ' ' , variable name.
+		declarations at: variable name put: declaration.
 		self addStatement: (self
 			transformControlFlowNodeForValue: expressionNode
 			withVariable: variable).
