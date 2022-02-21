@@ -181,18 +181,32 @@ MLStatementListBuider >> pushAsStatement: anExpression [
 
 { #category : #'control-flow' }
 MLStatementListBuider >> transformControlFlowNodeForValue: aTSendNode withVariable: aVariable [
-	
-	| arguments |
-	arguments := {
-		self assignLastExpressionOf: aTSendNode arguments first toVariable: aVariable copy.
-		TStatementListNode statements: { TAssignmentNode variable: aVariable copy expression: aTSendNode receiver }
-	}.
-	
-	aTSendNode selector = #ifFalse: ifTrue: [
+
+	| arguments secondArgument |
+	secondArgument := (#( ifTrue: ifFalse: ) includes:
+		                   aTSendNode selector)
+		                  ifTrue: [ 
+			                  TStatementListNode statements:
+				                  { (TAssignmentNode
+					                   variable: aVariable copy
+					                   expression: aTSendNode receiver) } ]
+		                  ifFalse: [ 
+			                  self
+				                  assignLastExpressionOf:
+				                  aTSendNode arguments second
+				                  toVariable: aVariable copy ].
+
+	arguments := { 
+		             (self
+			              assignLastExpressionOf: aTSendNode arguments first
+			              toVariable: aVariable copy).
+		             secondArgument }.
+
+	aTSendNode selector = #ifFalse: ifTrue: [ 
 		arguments := arguments reversed ].
-	
+
 	^ TSendNode
-		receiver: aTSendNode receiver
-		selector: #ifTrue:ifFalse:
-		arguments: arguments
+		  receiver: aTSendNode receiver
+		  selector: #ifTrue:ifFalse:
+		  arguments: arguments
 ]
