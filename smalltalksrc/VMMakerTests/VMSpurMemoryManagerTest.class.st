@@ -17,7 +17,8 @@ Class {
 		'rumpCStackSize',
 		'wordSize',
 		'methodBuilder',
-		'edenSize'
+		'edenSize',
+		'environmentBuilder'
 	],
 	#pools : [
 		'VMBasicConstants',
@@ -69,12 +70,6 @@ VMSpurMemoryManagerTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod 
 ]
 
 { #category : #accessing }
-VMSpurMemoryManagerTest >> edenSize [
-	
-	^ 2 * 1024 + interpreter interpreterAllocationReserveBytes
-]
-
-{ #category : #accessing }
 VMSpurMemoryManagerTest >> initialCodeSize [
 	^ 0
 ]
@@ -86,7 +81,7 @@ VMSpurMemoryManagerTest >> initializationOptions [
 		  #BytesPerWord.
 		  self wordSize.
 		  #ObjectMemory.
-		  memory class name}
+		  self memoryClass name}
 ]
 
 { #category : #helpers }
@@ -229,6 +224,14 @@ VMSpurMemoryManagerTest >> memory [
 	^ memory
 ]
 
+{ #category : #running }
+VMSpurMemoryManagerTest >> memoryClass [
+
+	^ self wordSize = 4
+		ifTrue: [ Spur32BitMemoryManager ]
+		ifFalse: [ Spur64BitMemoryManager ]
+]
+
 { #category : #'helpers - classes' }
 VMSpurMemoryManagerTest >> newClassInOldSpaceWithSlots: numberOfSlots instSpec: format [
 	| newClass formatWithSlots |
@@ -245,28 +248,6 @@ VMSpurMemoryManagerTest >> newClassInOldSpaceWithSlots: numberOfSlots instSpec: 
 	memory storePointer: 2 ofObject: newClass withValue: (memory integerObjectOf: formatWithSlots ).
 		
 	^ newClass	
-]
-
-{ #category : #helpers }
-VMSpurMemoryManagerTest >> newInterpreter [
-
-	memory := self newMemory.
-	
-	self interpreterClass
-		initializeWithOptions: self initializationOptions
-		objectMemoryClass: memory class.
-
-	^ self interpreterClass basicNew
-		  objectMemory: memory;
-		  basicInitialize
-]
-
-{ #category : #running }
-VMSpurMemoryManagerTest >> newMemory [
-
-	^ self wordSize = 4
-		ifTrue: [ Spur32BitMemoryManager simulatorClass new ]
-		ifFalse: [ Spur64BitMemoryManager simulatorClass new ]
 ]
 
 { #category : #'helpers - methods' }
@@ -428,18 +409,6 @@ VMSpurMemoryManagerTest >> primitiveTraceLogSize [
 	^ 0
 ]
 
-{ #category : #helpers }
-VMSpurMemoryManagerTest >> roundToPageSize: anInteger [ 
-
-	"Unicorn simulator requires mapped memory to be multiple of 4096"
-	| pageSize remainder |
-	pageSize := 4096.
-	remainder := anInteger \\ pageSize.
-	remainder = 0 ifTrue: [ ^ anInteger ].
-
-	^ anInteger + (pageSize - remainder)
-]
-
 { #category : #running }
 VMSpurMemoryManagerTest >> setContextClassIntoClassTable [
 	| aClass |
@@ -468,63 +437,22 @@ VMSpurMemoryManagerTest >> setMethodClassIntoClassTable [
 
 { #category : #running }
 VMSpurMemoryManagerTest >> setUp [
-	| memoryManager |
 	super setUp.
 
-	interpreter := self newInterpreter.
+	environmentBuilder := VMSimulatedEnvironmentBuilder new.
+	environmentBuilder 
+		interpreterClass: self interpreterClass;
+		objectMemoryClass: self memoryClass;
+	 	initializationOptions: self initializationOptions;
+		wordSize: self wordSize;
+		initialCodeSize: self initialCodeSize; 
+		primitiveTraceLogSize: self primitiveTraceLogSize.
 
-	"100 k at least to put the class table in the old space.
-	Get total size be a multiple of 4K so Unicorn CPU emulator accepts it"
-	oldSpaceSize := 2048 * 1024.
-	edenSize := self edenSize.
+	environmentBuilder build.
 
-	"Check #scavengerDenominator in SpurMemoryManager"
- 	newSpaceSize := self roundToPageSize: (edenSize * 7 / 5).
-	stackSpaceSize := 9 * 4096.
-	methodCacheSize := 4096 * self wordSize.
-	rumpCStackSize := 0.
-	
-	initialAddress := 16r1000000.
-	
-	objectHeaderSize := 8 "bytes. Always.".
-	emptyObjectSize := objectHeaderSize + 8 "minimum required single empty slot, to use for forwarders".
-	
-	"Set it to bootstrapping to allow smaller memories"
-	memoryManager := MachineSimulatorMemoryManager new.
-	memoryManager initialAddress: initialAddress.
-	memoryManager wordSize: self wordSize.
-	
-	interpreter memoryManager: memoryManager.
-	memory createMemoryMap.
-
-	memory := interpreter objectMemory.
-	memory memoryManager: memoryManager.	
-	memory coInterpreter: interpreter.
-	interpreter objectMemory: memory.
+	interpreter := environmentBuilder interpreter.
+	memory := environmentBuilder objectMemory.
 		
-	memory
-		allocateMemoryOfSize: oldSpaceSize
-		newSpaceSize: newSpaceSize
-		stackSize: stackSpaceSize
-		codeSize: self initialCodeSize
-		methodCacheSize: methodCacheSize
-		primitiveTraceLogSize: (self roundToPageSize: self primitiveTraceLogSize)
-		rumpCStackSize: rumpCStackSize
-		initialAddress: initialAddress.
-			
-	memory initializePostBootstrap.
-	memory setHeapSizeAtPreviousGC.
-
-	self assert: memory objectMemory scavenger eden size > interpreter interpreterAllocationReserveBytes.
-	self assert: memory objectMemory scavengeThreshold + interpreter interpreterAllocationReserveBytes <= memory objectMemory scavenger eden limit.
-
-	memory segmentManager collapseSegmentsPostSwizzle.
-	memory segmentManager plantBridgeAtTheEndOfMemory.
-	memory segmentManager assertBridge.
-	
-	"Schedule a GC, so it does not try to schedule one"
-	memory needGCFlag: 1.
-	
 	methodBuilder := VMCompiledCodeBuilder new
 		interpreter: interpreter; 
 		memory: memory;

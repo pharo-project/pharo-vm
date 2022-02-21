@@ -487,12 +487,6 @@ VMSimpleStackBasedCogitAbstractTest >> newJitCompiler [
 
 ]
 
-{ #category : #running }
-VMSimpleStackBasedCogitAbstractTest >> newMemory [
-
-	^ self memoryClass simulatorClass new
-]
-
 { #category : #helpers }
 VMSimpleStackBasedCogitAbstractTest >> openMachineDebugger [
 	
