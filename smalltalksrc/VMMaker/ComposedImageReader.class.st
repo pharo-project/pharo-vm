@@ -21,7 +21,7 @@ ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 		_: (self addressOf: fieldName)
 		_: (self addressOf: fieldValue) 
 	] whileTrue: [  
-		aStruct setField: fieldName contents to: fieldValue contents.
+		aStruct setField: (self contentsOf: fieldName) to: (self contentsOf: fieldValue).
 	]
 	
 ]
@@ -38,7 +38,7 @@ ComposedImageReader >> readHeadSTONFrom: file into: aStruct [
 
 	self simulationOnly: [ 
 		aStruct withStructNameDo: [ :name | 
-			self assert: name = structName contents ] ]
+			self assert: name = (self contentsOf: structName) ] ]
 ]
 
 { #category : #api }

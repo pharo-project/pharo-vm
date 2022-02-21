@@ -16,6 +16,14 @@ AbstractComposedImageAccess class >> declareCVarsIn: aCCodeGenerator [
 
 ]
 
+{ #category : #'archive operations' }
+AbstractComposedImageAccess >> contentsOf: valueHolder [
+
+	<cmacro: '(value) value'>
+
+	^ valueHolder contents
+]
+
 { #category : #'file operations' }
 AbstractComposedImageAccess >> createImageDirectory: imageFileName [
 
