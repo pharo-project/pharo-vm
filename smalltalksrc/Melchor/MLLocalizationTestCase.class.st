@@ -302,18 +302,16 @@ MLLocalizationTestCase >> testExternalEscapingSendNodeInInlinedMethod [
 
 	"Assert that the send node is preceded by variable externalization"
 	linearizedBlock := self linearizedBlockOfCaseMethod: interpretMethod.
-	cast := linearizedBlock asCASTIn: ccg.
+	cast := linearizedBlock second asCASTIn: ccg.
 	
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
 	self assert: printedString equals: '{
-	{
-		autoLocalizedVariable = local_autoLocalizedVariable;
-		autoLocalizedVariable1 = local_autoLocalizedVariable1;
-		foo2();
-		local_autoLocalizedVariable = autoLocalizedVariable;
-		local_autoLocalizedVariable1 = autoLocalizedVariable1;
-	}
+	autoLocalizedVariable = local_autoLocalizedVariable;
+	autoLocalizedVariable1 = local_autoLocalizedVariable1;
+	foo2();
+	local_autoLocalizedVariable = autoLocalizedVariable;
+	local_autoLocalizedVariable1 = autoLocalizedVariable1;
 }'
 ]
 

@@ -163,13 +163,6 @@ MLStatementListBuider >> popNoValue [
 	"Add the expression when used"	
 	| expressionNode  |
 	expressionNode := expressionStack removeLast asStatementIn: self.
-	
-	"If it's a variable or constant, just return it, the caller will use it in the right place"
-	(expressionNode isLeaf
-		or: [ expressionNode isStatementList ]) ifTrue: [
-		^ expressionNode
-	].
-
 	self addStatement: expressionNode
 ]
 
