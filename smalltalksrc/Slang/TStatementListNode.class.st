@@ -64,6 +64,13 @@ TStatementListNode >> accept: aVisitor [
 	^ aVisitor visitStatementListNode: self
 ]
 
+{ #category : #declarations }
+TStatementListNode >> addDeclarations: aCollection [ 
+	
+	declarations addAll: aCollection.
+	locals addAll: aCollection keys.
+]
+
 { #category : #utilities }
 TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned assignments: assigned in: aCodeGen [
 

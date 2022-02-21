@@ -1003,7 +1003,7 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	assertionFlag ifFalse: [ self removeAssertions ].
 
 	self doInlining: inlineFlag.
-	
+
 	SLAutomaticLocalization new
 		codeGenerator: self;
 		applyMethodNamed: #interpret.

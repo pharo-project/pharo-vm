@@ -119,6 +119,12 @@ SLLinearisationVisitor >> visitConstantNode: aTConstantNode [
 ]
 
 { #category : #visiting }
+SLLinearisationVisitor >> visitGoToNode: aTGoToNode [ 
+	
+	builder push: aTGoToNode
+]
+
+{ #category : #visiting }
 SLLinearisationVisitor >> visitInlineNode: aTInlineNode [
 
 	aTInlineNode method accept: self.
@@ -193,7 +199,6 @@ SLLinearisationVisitor >> visitStatementListNode: aTStatementListNode [
 	
 	| statementList previousBuilder |
 	previousBuilder := builder.
-	
 	builder := MLStatementListBuider new
 		codeGenerator: codeGenerator;
 		parent: previousBuilder;
@@ -202,11 +207,32 @@ SLLinearisationVisitor >> visitStatementListNode: aTStatementListNode [
 		self visitStatement: each
 	].
 	statementList := builder buildStatementList.
+	statementList := aTStatementListNode shallowCopy
+		addDeclarations: statementList declarations;
+		statements: statementList statements;
+		yourself.
 	
 	previousBuilder ifNotNil: [ previousBuilder push: statementList ].
 	builder := previousBuilder.
-	
+
 	^ statementList
+]
+
+{ #category : #visiting }
+SLLinearisationVisitor >> visitSwitchStatementNode: aTSwitchStmtNode [ 
+	
+	| expressionVar newCases |
+	aTSwitchStmtNode expression accept: self.
+	expressionVar := self pop.
+	newCases := aTSwitchStmtNode cases collect: [ :case |
+		case second accept: self.
+		{case first. self pop}
+	].
+
+	builder push: (aTSwitchStmtNode shallowCopy
+		expression: expressionVar;
+		cases: newCases;
+		yourself)
 ]
 
 { #category : #visiting }
