@@ -28,7 +28,7 @@ AbstractComposedImageAccess >> createImageDirectory: imageFileName [
 AbstractComposedImageAccess >> existSegment: segmentIndex inImage: imageFileName [
 
 	<var: #buffer declareC: 'char buffer[255]'>
-	<var: #sb declareC: 'stat'>
+	<var: #sb declareC: 'struct stat sb'>
 	| buffer fileName sb |
 	self simulationOnly: [ 
 		buffer := nil.

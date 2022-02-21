@@ -8,7 +8,7 @@ Class {
 ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 
 	<inline: true>
-	<var: #fieldName declareC: 'char buffer[255]'>
+	<var: #fieldName declareC: 'char fieldName[255]'>
 	<var: #fieldValue type: #sqLong>
 	| fieldName fieldValue |
 	self simulationOnly: [ 
@@ -17,7 +17,7 @@ ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 
 	[ self
 		fscanf: file
-		_: fieldFormat
+		_: fieldFormat "Y la coma?"
 		_: (self addressOf: fieldName)
 		_: (self addressOf: fieldValue) 
 	] whileTrue: [  
@@ -30,14 +30,15 @@ ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 ComposedImageReader >> readHeadSTONFrom: file into: aStruct [
 
 	<inline: true>
-	<var: #structName declareC: 'char buffer[255]'>
+	<var: #structName declareC: 'char structName[255]'>
 	| structName |
 	self simulationOnly: [ structName := ValueHolder new ].
 
 	self fscanf: file _: headFormat _: (self addressOf: structName).
 
-	aStruct withStructNameDo: [ :name | 
-		self assert: name = structName contents ]
+	self simulationOnly: [ 
+		aStruct withStructNameDo: [ :name | 
+			self assert: name = structName contents ] ]
 ]
 
 { #category : #api }
@@ -77,8 +78,9 @@ ComposedImageReader >> readImageNamed: imageName [
 	aHeader := self readHeaderFromImage: imageName.
 
 	self loadHeaderToMemory: aHeader.
-	interpreter allocateMemoryForImage: imageName withHeader: aHeader
+	interpreter allocateMemoryForImage: imageName withHeader: aHeader.
 	
+	^ 0 "Must return sqInt"
 ]
 
 { #category : #reading }
@@ -148,6 +150,7 @@ ComposedImageReader >> readSegmentsFromImageFile: imageFileName header: aHeader 
 	<var: #imageFile type: #sqImageFile>
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
 	<var: 'aHeader' type: #SpurImageHeaderStruct>
+	<var: #nextSegmentMetadata type: #ComposedSegmentMetadataStruct>
 	| bytesRead totalBytesRead segmentSize oldBase newBase segmentIndex existsNextSegment |
 	self prepareSegmentsToRead.
 
