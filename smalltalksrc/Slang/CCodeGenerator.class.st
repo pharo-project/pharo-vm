@@ -2901,7 +2901,10 @@ CCodeGenerator >> generateCASTWhileForeverBreakIf: boolean loop: tast [
 	| block if cond |
 	cond := (tast receiver statements last asCASTExpressionIn: self).
 	if := CIfStatementNode if: (boolean ifTrue: [ cond ] ifFalse: [ CUnaryOperatorNode operator: #! expression: cond ]) then: (CBreakStatementNode new).
-	block := (TStatementListNode statements: tast receiver statements allButLast) asCASTIn: self.
+	block := TStatementListNode statements: tast receiver statements allButLast.
+	block addDeclarations: tast receiver declarations.
+	block addDeclarations:  tast arguments first declarations.
+	block := block asCASTIn: self.
 	block add: if.
 	block addAll: (tast arguments first asCASTIn: self).
 
