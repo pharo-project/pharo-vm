@@ -71,114 +71,11 @@
 
 #endif
 
-/*
- * various definitions of the bytecodeDispatchDebugHook macro for
- * debugging code at the bytecode dispatch switch.
- */
-#if STACKVM
-# define ValidInstructionPointerCheck() \
-	validInstructionPointerinMethodframePointer((usqInt)localIP, GIV(method), localFP)
-#else
-# define ValidInstructionPointerCheck() \
-	(GIV(method) == iframeMethod(localFP) \
-	 && validInstructionPointerinMethod((usqInt)localIP, GIV(method)))
-#endif
-
 #if PRODUCTION
-# define bytecodeDispatchDebugHook() 0
-
-#elif 1 /* check for valid instruction pointer */
 # define bytecodeDispatchDebugHook() do { \
 	if (!ValidInstructionPointerCheck()) \
 		warning("invalidInstructionPointerinMethod"); \
   } while (0)
-#elif 0 /* check for valid stack-related pointers */
-# define DEBUG_DISABLE_HEARTBEAT 1
-# define bytecodeDispatchDebugHook() do { \
-	if (++GIV(byteCount) % 100000 == 0) \
-		forceInterruptCheck(); \
-	assertValidExecutionPointersimbarline(localIP,localFP,localSP,1,__LINE__); \
-  } while (0)
-
-#elif 0 /* maintain byteCount & break-point & heart-beat every 100k bytecodes */
-# define DEBUG_DISABLE_HEARTBEAT 1
-# define bytecodeDispatchDebugHook() do { \
-	if (++GIV(byteCount) % 100000 == 0) \
-		forceInterruptCheck(); \
-	if (GIV(byteCount) == -1 /*256696UL*/) { \
-		sendTrace = 1; \
-		warning("break byteCount reached\n"); \
-	} \
-	if (!((localFP < ((GIV(stackPage->baseAddress)))) \
-	 && (localFP > (((GIV(stackPage->realStackLimit))) - (((sqInt) LargeContextSize >> 1)))))) { \
-		warning("invalidLocalFPInPage"); \
-		sendTrace = 1; \
-	} \
-	if (GIV(stackLimit) != (char *)-1 && GIV(stackLimit) != GIV(stackPage->realStackLimit)) { \
-		warning("invalidStackLimitInPage"); \
-		sendTrace = 1; \
-	} \
-  } while (0)
-
-#elif 0 /* maintain byteCount & check for valid instruction pointer */
-# define bytecodeDispatchDebugHook() do { \
-	if (++GIV(byteCount) == 175779UL) \
-		warning("break byteCount reached\n"); \
-	if (!ValidInstructionPointerCheck()) \
-		warning("invalidInstructionPointerinMethod"); \
-  } while (0)
-
-#elif 0 /* maintain byteCount & check for valid instruction pointer */
-#define bytecodeDispatchDebugHook() do { \
-	logTrace("%ld: %d %x(%d)\n", ++GIV(byteCount), localIP-GIV(method)-3, currentBytecode, currentBytecode); \
-	if (!ValidInstructionPointerCheck()) \
-		warning("invalidInstructionPointerinMethod"); \
-	if (sendTrace > 1) printContext(GIV(activeContext)); \
-  } while (0)
-#elif 0 /* maintain byteCount & check for valid instruction pointer */
-#define bytecodeDispatchDebugHook() do { \
-	logTrace("%ld: %d %x(%d)\n", ++GIV(byteCount), localIP-GIV(method)-3, currentBytecode, currentBytecode); \
-	if (!ValidInstructionPointerCheck()) \
-		warning("invalidInstructionPointerinMethod"); \
-	if (sendTrace > 1) printCallStack(); \
-  } while (0)
-#elif MULTIPLEBYTECODESETS && 0 /* maintain bytecode trace and check against trace file */
-# if defined(SQ_USE_GLOBAL_STRUCT) /* define only in interpreter */
-static FILE *bct = 0;
-void openBytecodeTraceFile(char *fn)
-{ if (!(bct = fopen(fn,"r"))) logErrorFromErrno("fopen"); }
-void closeBytecodeTraceFile() { if (bct) { fclose(bct); bct = 0; } }
-# endif
-# define bytecodeDispatchDebugHook() do { char line[64], expected[64]; \
-	/* print byteCount pc byteCode(hex) stackPtr */ \
-	snprintf(expected, sizeof(expected), "%ld: %d %d(%x) %d %s\n", \
-			++GIV(byteCount), localIP-GIV(method)-3, currentBytecode, currentBytecode, \
-			(localFP-localSP)/sizeof(sqInt)-5, bytecodeNameTable[currentBytecode]); \
-	logTrace(expected); \
-	if (bct) { \
-		fgets(line, sizeof(line) - 1, bct); \
-		if (strcmp(line,expected)) \
-		warning("bytecode trace mismatch"); \
-	} \
-	if (0) printFrameWithSP(localFP,localSP); \
-	if (!ValidInstructionPointerCheck()) \
-		warning("invalidInstructionPointerinMethod"); \
-  } while (0)
-#elif 0 /* print current frame & instruction pointer on every bytecode. */
-# define bytecodeDispatchDebugHook() do { \
-	printFrameWithSP(localFP,localSP); \
-	logTrace("%d %x\n", localIP - GIV(method) - 3, currentBytecode); \
-  } while (0)
-
-#elif 0 /* print current frame & pc on every bytecode if sendTrace/hit break. */
-# define bytecodeDispatchDebugHook() do { \
-	if (sendTrace) { \
-		printFrameWithSP(localFP,localSP); \
-		logTrace("%d %x\n", localIP - GIV(method) - 3, currentBytecode); \
-	} \
-  } while (0)
-#elif 0
-# define bytecodeDispatchDebugHook() printContextWithSP(activeContext,localSP)
 #else
 # define bytecodeDispatchDebugHook() 0
 #endif
