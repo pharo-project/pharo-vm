@@ -216,12 +216,19 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 					  ifFalse: [ 'DECL_MAYBE_SQ_GLOBAL_STRUCT' ])) ].
 
 	(aBuilder sortStrings: self locals asSet) do: [ :var | | declaration |
+		1haltIf: [ var = #imageWriter ].
 		declaration := aBuilder
 		  declarationAt: var
 		  ifAbsent: [ aBuilder defaultType, ' ' , var ].
 
-		methodIsVolatile ifTrue: [ declaration := 'volatile ' , declaration ].
-		cDeclarations add: (CRawCodeNode code: declaration)
+		self flag: #TODO.
+		"Avoid implicit variables.
+		Before this was not generating unused variables at generation time, by
+		  - tracking used variables during code generation
+		  - generating variables after code"
+		(declaration beginsWith: 'implicit') ifFalse: [
+			methodIsVolatile ifTrue: [ declaration := 'volatile ' , declaration ].
+			cDeclarations add: (CRawCodeNode code: declaration)]
 	].		
 
 	^ CCompoundStatementNode declarations: cDeclarations statements: collect
