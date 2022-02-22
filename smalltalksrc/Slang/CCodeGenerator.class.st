@@ -4587,8 +4587,8 @@ CCodeGenerator >> sizeOfIntegralCType: anIntegralCType [ "<String>"
 		"Standard C types"
 		['uint64_t']		->	[8].
 		['uint32_t']		->	[4].
-		['uint16_t']		->	[4].
-		['uint8_t']		->	[4].
+		['uint16_t']		->	[2].
+		['uint8_t']		->	[1].
 	}
 	otherwise:
 		[((anIntegralCType beginsWith: 'unsigned') "e.g. 'unsigned  : 8'"

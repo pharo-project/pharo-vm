@@ -17,9 +17,10 @@ ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 
 	[ self
 		fscanf: file
-		_: fieldFormat "Y la coma?"
+		_: fieldFormat
 		_: (self addressOf: fieldName)
 		_: (self addressOf: fieldValue) 
+		"check if line ends with ',\n' "
 	] whileTrue: [  
 		aStruct setField: (self contentsOf: fieldName) to: (self contentsOf: fieldValue).
 	]
