@@ -662,6 +662,14 @@ VMClass >> localNameFor: aString [
 	^ aString asFileReference basename
 ]
 
+{ #category : #logging }
+VMClass >> logDebug: aFormat _: aParameter [
+
+	<doNotGenerate>
+
+	(aFormat printf: { aParameter }) traceCr
+]
+
 { #category : #'debug support' }
 VMClass >> logError: aMessage [
 	
@@ -1039,6 +1047,13 @@ VMClass >> singleFloatAtPointer: pointer [
 VMClass >> singleFloatAtPointer: pointer put: value [
 	<doNotGenerate>
 	self halt.
+]
+
+{ #category : #'I/O primitive support' }
+VMClass >> sqImageFile: imageFile Seek: position [
+
+	<doNotGenerate>
+	imageFile position: position
 ]
 
 { #category : #'simulation support' }

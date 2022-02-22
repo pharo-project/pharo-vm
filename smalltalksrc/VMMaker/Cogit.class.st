@@ -6514,7 +6514,7 @@ Cogit >> expectedClosedPICPrototype: cPIC [
 		self rewriteCPICCaseAt: pc
 			tag: (classTag bitXor: 16r5A5A5A5A)
 			objRef: (object bitXor: 16rA5A5A5A5)
-			target: (entryPoint bitXor: 16r55AA50). "don't xor least 4 bits to leave instruction alignment undisturbed"
+			target: (entryPoint bitXor: 16r5AA50). "don't xor least 4 bits to leave instruction alignment undisturbed"
 
 		"verify information in case is as expected post update."
 		object := backEnd literalBeforeFollowingAddress: methodObjPC.
@@ -6524,14 +6524,14 @@ Cogit >> expectedClosedPICPrototype: cPIC [
 		(self asserta: classTag = (16rBABE1F15 + i bitXor: 16r5A5A5A5A)) ifFalse:
 			[errors := errors bitOr: 64].
 		entryPoint := backEnd jumpLongConditionalTargetBeforeFollowingAddress: pc.
-		(self asserta: entryPoint = ((self cPICPrototypeCaseOffset + 16rCA5E10 + (i * 16)) bitXor: 16r55AA50)) ifFalse:
+		(self asserta: entryPoint = ((self cPICPrototypeCaseOffset + 16rCA5E10 + (i * 16)) bitXor: 16r5AA50)) ifFalse:
 			[errors := errors bitOr: 128].
 
 		"finally restore case to the original state"
 		self rewriteCPICCaseAt: pc
 			tag: (classTag bitXor: 16r5A5A5A5A)
 			objRef: (object bitXor: 16rA5A5A5A5)
-			target: (entryPoint bitXor: 16r55AA50)].
+			target: (entryPoint bitXor: 16r5AA50)].
 
 	entryPoint := backEnd jumpLongTargetBeforeFollowingAddress: pc + cPICEndSize - literalsManager endSizeOffset.
 	(self asserta: entryPoint = (self cPICMissTrampolineFor: 0)) ifFalse:
