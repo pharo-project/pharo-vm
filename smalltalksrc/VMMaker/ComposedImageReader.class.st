@@ -151,18 +151,21 @@ ComposedImageReader >> readSegmentsFromImageFile: imageFileName header: aHeader 
 	<var: #imageFile type: #sqImageFile>
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
 	<var: 'aHeader' type: #SpurImageHeaderStruct>
-	<var: #nextSegmentMetadata type: #ComposedSegmentMetadataStruct>
-	| bytesRead totalBytesRead segmentSize oldBase newBase segmentIndex existsNextSegment |
+	<var: #segmentMetadata type: #ComposedSegmentMetadataStruct>
+	| bytesRead totalBytesRead segmentSize oldBase newBase segmentIndex segmentMetadata |
 	self prepareSegmentsToRead.
 
 	"segment sizes include the two-header-word bridge at the end of each segment."
 	segmentIndex := 0.
 	totalBytesRead := 0.
-	oldBase := aHeader oldBaseAddr.
 	newBase := objectMemory getMemoryMap oldSpaceStart.
-	segmentSize := aHeader firstSegSize.
 
 	[ 
+	
+	segmentMetadata := self readSegmentMetadata: segmentIndex fromImage: imageFileName.
+	oldBase := segmentMetadata segStart.
+	segmentSize := segmentMetadata segSize.
+	
 	segmentManager withNewSegmentDo: [ :segInfo | 
 		segInfo
 			segStart: oldBase;
@@ -184,17 +187,10 @@ ComposedImageReader >> readSegmentsFromImageFile: imageFileName header: aHeader 
 	"The next segment will override the bridge of this segment"
 	newBase := newBase + segmentSize - objectMemory bridgeSize.
 
-	"Check if exist next segment"
+	"Move to (maybe) next segment"
 	segmentIndex := segmentIndex + 1.
-	existsNextSegment := self existSegment: segmentIndex inImage: imageFileName.
-
-	existsNextSegment ifTrue: [ 
-		| nextSegmentMetadata |
-		nextSegmentMetadata := self readSegmentMetadata: segmentIndex fromImage: imageFileName.
-		oldBase := nextSegmentMetadata segStart.
-		segmentSize := nextSegmentMetadata segSize ].
-
-	existsNextSegment ] whileTrue.
+	self existSegment: segmentIndex inImage: imageFileName.
+	] whileTrue.
 
 	self finalizeSegmentsRead: totalBytesRead newBase: newBase.
 
