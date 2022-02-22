@@ -71,11 +71,4 @@
 
 #endif
 
-#if PRODUCTION
-# define bytecodeDispatchDebugHook() do { \
-	if (!ValidInstructionPointerCheck()) \
-		warning("invalidInstructionPointerinMethod"); \
-  } while (0)
-#else
-# define bytecodeDispatchDebugHook() 0
-#endif
+#define bytecodeDispatchDebugHook() 0
