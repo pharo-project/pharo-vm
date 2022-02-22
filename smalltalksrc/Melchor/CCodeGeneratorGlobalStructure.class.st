@@ -200,7 +200,7 @@ CCodeGeneratorGlobalStructure >> generateCASTSetFieldTo: aTSendNode [
 		
 		comparison := TSendNode 
 			receiver: (TConstantNode value: slot name asString) 
-			selector: '=' 
+			selector: 'strcmp:' 
 			arguments: { fieldName }.
 
 		TSendNode 

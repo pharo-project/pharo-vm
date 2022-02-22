@@ -16,14 +16,6 @@ AbstractComposedImageAccess class >> declareCVarsIn: aCCodeGenerator [
 
 ]
 
-{ #category : #'archive operations' }
-AbstractComposedImageAccess >> contentsOf: valueHolder [
-
-	<cmacro: '(value) value'>
-
-	^ valueHolder contents
-]
-
 { #category : #'file operations' }
 AbstractComposedImageAccess >> createImageDirectory: imageFileName [
 
@@ -55,39 +47,6 @@ AbstractComposedImageAccess >> existSegment: segmentIndex inImage: imageFileName
 ]
 
 { #category : #'file primitives' }
-AbstractComposedImageAccess >> fprintf: aStream _: format [ 
-
-	<doNotGenerate>
-	^ self fprintf: aStream format: format arguments: { }
-]
-
-{ #category : #'file primitives' }
-AbstractComposedImageAccess >> fprintf: aStream _: format _: aValue [ 
-
-	<doNotGenerate>
-	^ self fprintf: aStream format: format arguments: { aValue }
-]
-
-{ #category : #'file primitives' }
-AbstractComposedImageAccess >> fprintf: aStream _: format _: aValue _: otherValue [
-
-	<doNotGenerate>
-	^ self fprintf: aStream format: format arguments: { aValue. otherValue }
-]
-
-{ #category : #'file primitives' }
-AbstractComposedImageAccess >> fprintf: aStream format: aFormat arguments: arguments [
-
-	<doNotGenerate>
-	| printf |
-	printf := PrintfFormatString new setFormat: aFormat.
-	
-	aStream nextPutAll: (printf
-			 printf: arguments;
-			 string)
-]
-
-{ #category : #'file primitives' }
 AbstractComposedImageAccess >> fscanf: file _: format _: varHolder [
 
 	<doNotGenerate>
@@ -103,11 +62,14 @@ AbstractComposedImageAccess >> fscanf: file _: format _: varHolder1 _: varHolder
 	<doNotGenerate>
 	^ (format = fieldFormat)
 		  ifTrue: [ 
-			  | dataArray |
-			  dataArray := file nextLine substrings: '#:,'.
-			  (dataArray first = '}') ifTrue: [ ^false ].
-			  varHolder1 contents: dataArray second trimLineSpaces.
-			  varHolder2 contents: dataArray third trimLineSpaces asInteger ];
+			  | line dataArray |
+			  line := file nextLine.
+			  dataArray := line substrings: '#:, '.
+			  dataArray first = '}' ifTrue: [ ^ false ].
+			  varHolder1 contents: dataArray second.
+			  varHolder2 contents: dataArray third asInteger.
+			  file position: file position - 1. "Not consume '\n' "
+			  (line last = $,) ifTrue: [ file position: file position - 1 ] "Not consume ',' " ];
 		  yourself
 ]
 

@@ -581,6 +581,14 @@ VMClass >> calloc: num _: size [
 ]
 
 { #category : #'translation support' }
+VMClass >> contentsOf: valueHolder [
+
+	<cmacro: '(value) value'>
+
+	^ valueHolder contents
+]
+
+{ #category : #'translation support' }
 VMClass >> cppIf: conditionBlockOrValue ifTrue: trueExpressionOrBlock [
 	"When translated, produces #if (condition) #else #endif CPP directives.
 	 Example usage:
@@ -601,6 +609,12 @@ VMClass >> defined: aSymbol [
 		ifNotNil: [:binding| binding value ~~ #undefined]
 ]
 
+{ #category : #'file primitives' }
+VMClass >> endOfLine [
+
+	^ self cCode: [ 13 ] inSmalltalk: [ Character cr ]
+]
+
 { #category : #'memory access' }
 VMClass >> fetchSingleFloatAtPointer: pointer into: aFloat [
 	"This gets implemented by Macros in C, where its types will also be checked.
@@ -608,6 +622,13 @@ VMClass >> fetchSingleFloatAtPointer: pointer into: aFloat [
 	<doNotGenerate>
 
 	^self fetchSingleFloatAt: pointer into: aFloat
+]
+
+{ #category : #'file primitives' }
+VMClass >> fgetc: file [ 
+
+	<doNotGenerate>
+	^ file next
 ]
 
 { #category : #'memory access' }
@@ -620,6 +641,39 @@ VMClass >> floatAtPointer: pointer [
 VMClass >> floatAtPointer: pointer put: value [
 	<doNotGenerate>
 	self halt.
+]
+
+{ #category : #'file primitives' }
+VMClass >> fprintf: aStream _: format [ 
+
+	<doNotGenerate>
+	^ self fprintf: aStream format: format arguments: { }
+]
+
+{ #category : #'file primitives' }
+VMClass >> fprintf: aStream _: format _: aValue [ 
+
+	<doNotGenerate>
+	^ self fprintf: aStream format: format arguments: { aValue }
+]
+
+{ #category : #'file primitives' }
+VMClass >> fprintf: aStream _: format _: aValue _: otherValue [
+
+	<doNotGenerate>
+	^ self fprintf: aStream format: format arguments: { aValue. otherValue }
+]
+
+{ #category : #'file primitives' }
+VMClass >> fprintf: aStream format: aFormat arguments: arguments [
+
+	<doNotGenerate>
+	| printf |
+	printf := PrintfFormatString new setFormat: aFormat.
+	
+	aStream nextPutAll: (printf
+			 printf: arguments;
+			 string)
 ]
 
 { #category : #'C library simulation' }

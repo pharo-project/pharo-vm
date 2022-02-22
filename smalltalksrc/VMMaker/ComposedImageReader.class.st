@@ -5,6 +5,17 @@ Class {
 }
 
 { #category : #reading }
+ComposedImageReader >> endOfSTON: file [
+	
+	"This method consume 2 chars from file and return they are equivalent to '\n}'"
+		
+	| charLeft charRight |
+	charLeft := self fgetc: file.
+	charRight := self fgetc: file.
+	^ (charLeft = self endOfLine) and: [ charRight = $} ]
+]
+
+{ #category : #reading }
 ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 
 	<inline: true>
@@ -15,16 +26,19 @@ ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 		fieldName := ValueHolder new.
 		fieldValue := ValueHolder new ].
 
-	[ self
-		fscanf: file
-		_: fieldFormat
-		_: (self addressOf: fieldName)
-		_: (self addressOf: fieldValue) 
-		"check if line ends with ',\n' "
-	] whileTrue: [  
+	"This solution does NOT WORK with STON file without fields (empty STON)"
+
+	[ 
+		self
+			fscanf: file
+			_: fieldFormat
+			_: fieldName
+			_: (self addressOf: fieldValue).
+
 		aStruct setField: (self contentsOf: fieldName) to: (self contentsOf: fieldValue).
-	]
-	
+
+		self endOfSTON: file
+	] whileFalse
 ]
 
 { #category : #reading }
@@ -35,7 +49,7 @@ ComposedImageReader >> readHeadSTONFrom: file into: aStruct [
 	| structName |
 	self simulationOnly: [ structName := ValueHolder new ].
 
-	self fscanf: file _: headFormat _: (self addressOf: structName).
+	self fscanf: file _: headFormat _: structName.
 
 	self simulationOnly: [ 
 		aStruct withStructNameDo: [ :name | 
