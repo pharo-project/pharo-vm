@@ -6108,7 +6108,7 @@ SlangBasicTranslationTest >> testTranslateLiteralArrayAssignment [
 		receiver: (TVariableNode new setName: 'self')
 		arguments: { 
 			TConstantNode value: { 1 . 2 . 3 }.
-			'int *' }.
+			(TConstantNode value: 'int *') }.
 
 	translation := self translate: (TAssignmentNode new
 			setVariable: variable
