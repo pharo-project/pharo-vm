@@ -649,7 +649,7 @@ StackInterpreter class >> imageReaderClass [
 
 	^Smalltalk at: (InitializationOptions
 					at: #ImageReader
-					ifAbsent: [ #ComposedImageReader ])
+					ifAbsent: [ #SpurImageReader ])
 ]
 
 { #category : #accessing }
@@ -657,7 +657,7 @@ StackInterpreter class >> imageWriterClass [
 
 	^Smalltalk at: (InitializationOptions
 					at: #ImageWriter
-					ifAbsent: [ #ComposedImageWriter ])
+					ifAbsent: [ #SpurImageWriter ])
 ]
 
 { #category : #translation }
