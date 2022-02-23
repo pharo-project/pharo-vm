@@ -34,14 +34,35 @@ Class {
 }
 
 { #category : #'building suites' }
-VMSimpleStackBasedCogitAbstractTest class >> testParameters [
+VMSimpleStackBasedCogitAbstractTest class >> imageFormatParameters [ 
+
+	^ { 
+		{ #imageReaderClass -> ComposedImageReader. #imageWriterClass -> ComposedImageWriter }.
+	}
+]
+
+{ #category : #'building suites' }
+VMSimpleStackBasedCogitAbstractTest class >> wordSize32Parameters [
+
+	^ ParametrizedTestMatrix new
+		addCase: { #ISA -> #'IA32'. #wordSize -> 4};
+		addCase: { #ISA -> #'ARMv5'. #wordSize -> 4};
+		yourself
+]
+
+{ #category : #'building suites' }
+VMSimpleStackBasedCogitAbstractTest class >> wordSize64Parameters [
 
 	^ ParametrizedTestMatrix new
 		addCase: { #ISA -> #'aarch64'. #wordSize -> 8};
-		addCase: { #ISA -> #'IA32'. #wordSize -> 4};
 		addCase: { #ISA -> #'X64'. #wordSize -> 8};
-		addCase: { #ISA -> #'ARMv5'. #wordSize -> 4};
 		yourself
+]
+
+{ #category : #'building suites' }
+VMSimpleStackBasedCogitAbstractTest class >> wordSizeParameters [
+
+	^ self wordSize32Parameters + self wordSize64Parameters 
 ]
 
 { #category : #running }

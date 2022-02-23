@@ -210,3 +210,13 @@ ComposedImageReader >> readSegmentsFromImageFile: imageFileName header: aHeader 
 
 	^ totalBytesRead
 ]
+
+{ #category : #testing }
+ComposedImageReader >> validateContent: imageFile [
+
+	"Contains header metadata and AT LEAST one segment (data & metadata)"
+
+	<doNotGenerate>
+	{ 'header.ston'. 'seg0.ston'. 'seg0.data' } do: [ :fileName | 
+		self assert: (imageFile hasChildrenMatching: fileName) ]
+]

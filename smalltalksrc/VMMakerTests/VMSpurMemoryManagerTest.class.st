@@ -17,7 +17,9 @@ Class {
 		'rumpCStackSize',
 		'wordSize',
 		'methodBuilder',
-		'edenSize'
+		'edenSize',
+		'imageReaderClass',
+		'imageWriterClass'
 	],
 	#pools : [
 		'VMBasicConstants',
@@ -29,7 +31,22 @@ Class {
 }
 
 { #category : #'building suites' }
+VMSpurMemoryManagerTest class >> imageFormatParameters [ 
+
+	^ { 
+		{ #imageReaderClass -> ComposedImageReader. #imageWriterClass -> ComposedImageWriter }.
+		{ #imageReaderClass -> SpurImageReader. #imageWriterClass -> SpurImageWriter }.
+	}
+]
+
+{ #category : #'building suites' }
 VMSpurMemoryManagerTest class >> testParameters [ 
+
+	^ self wordSizeParameters * self imageFormatParameters 
+]
+
+{ #category : #'building suites' }
+VMSpurMemoryManagerTest class >> wordSizeParameters [ 
 
 	^ ParametrizedTestMatrix new
 			forSelector: #wordSize addOptions: { 8 . 4 };
@@ -75,6 +92,30 @@ VMSpurMemoryManagerTest >> edenSize [
 ]
 
 { #category : #accessing }
+VMSpurMemoryManagerTest >> imageReaderClass [
+
+	^ imageReaderClass
+]
+
+{ #category : #accessing }
+VMSpurMemoryManagerTest >> imageReaderClass: anObject [
+
+	imageReaderClass := anObject
+]
+
+{ #category : #accessing }
+VMSpurMemoryManagerTest >> imageWriterClass [
+
+	^ imageWriterClass
+]
+
+{ #category : #accessing }
+VMSpurMemoryManagerTest >> imageWriterClass: anObject [
+
+	imageWriterClass := anObject
+]
+
+{ #category : #accessing }
 VMSpurMemoryManagerTest >> initialCodeSize [
 	^ 0
 ]
@@ -86,7 +127,11 @@ VMSpurMemoryManagerTest >> initializationOptions [
 		  #BytesPerWord.
 		  self wordSize.
 		  #ObjectMemory.
-		  memory class name}
+		  memory class name.
+		  #ImageReader.
+		  imageReaderClass name.
+		  #ImageWriter.
+		  imageWriterClass name }
 ]
 
 { #category : #helpers }

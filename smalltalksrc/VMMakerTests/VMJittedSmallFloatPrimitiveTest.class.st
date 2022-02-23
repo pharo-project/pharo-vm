@@ -8,14 +8,11 @@ Class {
 }
 
 { #category : #'building suites' }
-VMJittedSmallFloatPrimitiveTest class >> testParameters [
+VMJittedSmallFloatPrimitiveTest class >> wordSizeParameters [
 
 	"SmallFloats only exist in 64bits systems"
 
-	^ ParametrizedTestMatrix new
-		addCase: { #ISA -> #'aarch64'. #wordSize -> 8};
-		addCase: { #ISA -> #'X64'. #wordSize -> 8};
-		yourself
+	^ self wordSize64Parameters
 ]
 
 { #category : #'tests - primitiveAdd' }

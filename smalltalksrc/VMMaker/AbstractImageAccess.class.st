@@ -266,3 +266,13 @@ AbstractImageAccess >> sqImageFileClose: file [
 	<doNotGenerate>
 	file close
 ]
+
+{ #category : #testing }
+AbstractImageAccess >> validateImage: imageName [
+
+	<doNotGenerate>
+	| file |
+	file := imageName asFileReference.
+	self assert: file exists.
+	self validateContent: file
+]

@@ -120,7 +120,7 @@ VMPrimitiveTest >> setUpForwardedObjects [
 { #category : #running }
 VMPrimitiveTest >> tearDown [
 
-	imageName ifNotNil: [ imageName asFileReference ensureDelete ].
+	imageName ifNotNil: [ imageName asFileReference ensureDeleteAll ].
 	super tearDown
 ]
 
@@ -4422,10 +4422,7 @@ VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
 	interpreter setImageHeaderFlagsFrom: 0.
 	interpreter primitiveSnapshot.
 
-	file := imageName asFileReference.
-
-	self assert: file exists.
-	self assert: file size > 0
+	interpreter imageReader validateImage: imageName 
 ]
 
 { #category : #'tests - snapshot' }

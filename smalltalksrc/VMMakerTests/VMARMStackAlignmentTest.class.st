@@ -11,7 +11,7 @@ Class {
 }
 
 { #category : #'building suites' }
-VMARMStackAlignmentTest class >> testParameters [
+VMARMStackAlignmentTest class >> wordSizeParameters [
 
 	^ ParametrizedTestMatrix new
 		addCase: { #ISA -> #'aarch64'. #wordSize -> 8};

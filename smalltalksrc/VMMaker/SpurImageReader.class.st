@@ -235,3 +235,10 @@ SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 
 	^ totalBytesRead
 ]
+
+{ #category : #testing }
+SpurImageReader >> validateContent: imageFile [
+
+	<doNotGenerate>
+	self assert: imageFile size > 0
+]

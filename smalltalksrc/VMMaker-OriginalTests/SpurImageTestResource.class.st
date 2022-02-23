@@ -50,7 +50,7 @@ SpurImageTestResource >> emptyVM [
 { #category : #accessing }
 SpurImageTestResource >> initializedVM [
 	vmWithLoadedImage ifNil:
-		[vmWithLoadedImage := StackInterpreterSimulator newWithOptions: #(ObjectMemory Spur32BitMemoryManager).
+		[vmWithLoadedImage := StackInterpreterSimulator newWithOptions: #(ObjectMemory Spur32BitMemoryManager ImageReader SpurImageReader ImageWriter SpurImageWriter).
 		 vmWithLoadedImage
 			openOn: self class imageNameForTests extraMemory: 0.
 		vmWithLoadedImage objectMemory
