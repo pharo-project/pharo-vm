@@ -216,7 +216,6 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 					  ifFalse: [ 'DECL_MAYBE_SQ_GLOBAL_STRUCT' ])) ].
 
 	(aBuilder sortStrings: self locals asSet) do: [ :var | | declaration |
-		1haltIf: [ var = #imageWriter ].
 		declaration := aBuilder
 		  declarationAt: var
 		  ifAbsent: [ aBuilder defaultType, ' ' , var ].
