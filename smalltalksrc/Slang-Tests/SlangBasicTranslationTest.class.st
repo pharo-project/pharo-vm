@@ -2171,7 +2171,7 @@ SlangBasicTranslationTest >> testSendByteSwap32IfBigEndian [
 	| translation send |
 	send := TSendNode new
 		        setSelector: #byteSwapped32IfBigEndian:
-		        receiver: nil
+		        receiver: (TConstantNode value: nil)
 		        arguments: {TVariableNode new setName: 'a'}.
 	translation := self translate: send.
 
@@ -2197,7 +2197,7 @@ SlangBasicTranslationTest >> testSendByteSwap64IfBigEndian [
 	| translation send |
 	send := TSendNode new
 		        setSelector: #byteSwapped64IfBigEndian:
-		        receiver: nil
+		        receiver: (TConstantNode value: nil)
 		        arguments: {TVariableNode new setName: 'a'}.
 	translation := self translate: send.
 
