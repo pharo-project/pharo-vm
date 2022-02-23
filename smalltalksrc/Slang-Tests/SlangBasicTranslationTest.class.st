@@ -2272,7 +2272,7 @@ SlangBasicTranslationTest >> testSendCCodeInSmalltalkWithNonConstant [
 		        receiver: (TVariableNode new setName: 'self')
 		        arguments: { 
 					(TVariableNode new setName: 'value').
-					'unused' }.
+					(TConstantNode value: nil) }.
 	translation := self translate: send.
 
 	self assert: translation equals: 'value'
@@ -2287,7 +2287,7 @@ SlangBasicTranslationTest >> testSendCCodeInSmalltalkWithString [
 		        receiver: (TVariableNode new setName: 'self')
 		        arguments: { 
 					TConstantNode value: 'some string'.
-					'unused' }.
+					(TConstantNode value: nil) }.
 	translation := self translate: send.
 
 	self assert: translation equals: 'some string'
