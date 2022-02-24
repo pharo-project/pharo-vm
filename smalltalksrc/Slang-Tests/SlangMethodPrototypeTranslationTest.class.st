@@ -12,7 +12,7 @@ Class {
 SlangMethodPrototypeTranslationTest class >> testParameters [ 
 
 	^ ParametrizedTestMatrix new
-		forSelector: #translationStrategy addOptions: { #slangTranslate . #astTranslate }
+		forSelector: #translationStrategy addOptions: { #astTranslate }
 ]
 
 { #category : #helpers }
