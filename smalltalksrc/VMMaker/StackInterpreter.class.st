@@ -13940,6 +13940,7 @@ StackInterpreter >> shuffleArgumentsAndStoreAbsentReceiver: theReceiver [
 
 { #category : #'primitive support' }
 StackInterpreter >> siglong: aJumpBuf jmp: returnValue [
+	<doNotGenerate>
 	^self long: aJumpBuf jmp: returnValue
 ]
 
