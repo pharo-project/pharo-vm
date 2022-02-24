@@ -4,7 +4,7 @@ Class {
 	#instVars : [
 		'imageReader'
 	],
-	#category : #'VMMakerTests-MemoryTests'
+	#category : #'VMMakerTests-ImageFormat'
 }
 
 { #category : #tests }

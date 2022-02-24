@@ -4,7 +4,7 @@ Class {
 	#instVars : [
 		'originalNilObjectIdentityHash'
 	],
-	#category : #'VMMakerTests-MemoryTests'
+	#category : #'VMMakerTests-ImageFormat'
 }
 
 { #category : #utilities }

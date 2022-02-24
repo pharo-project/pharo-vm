@@ -1,7 +1,7 @@
 Class {
 	#name : #VMSegmentsImageFormatTest,
 	#superclass : #VMAbstractImageFormatTest,
-	#category : #'VMMakerTests-MemoryTests'
+	#category : #'VMMakerTests-ImageFormat'
 }
 
 { #category : #tests }
