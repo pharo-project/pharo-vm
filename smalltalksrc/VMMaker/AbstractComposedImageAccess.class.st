@@ -20,7 +20,11 @@ AbstractComposedImageAccess class >> declareCVarsIn: aCCodeGenerator [
 AbstractComposedImageAccess >> createImageDirectory: imageFileName [
 
 	self
-		cCode: [ self mkdir: imageFileName _: 0777 ]
+		cCode: [ 
+			self
+				cppIf: ((self defined: #_WIN32) or: [(self defined: #_WIN64)])
+				ifTrue: [ self mkdir: imageFileName ]
+				ifFalse: [ self mkdir: imageFileName _: 0777 ] ]
 		inSmalltalk: [ imageFileName asFileReference ensureCreateDirectory ]
 ]
 
