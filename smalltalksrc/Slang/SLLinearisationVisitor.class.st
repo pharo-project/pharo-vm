@@ -160,11 +160,13 @@ SLLinearisationVisitor >> visitSendNode: aTSendNode [
 	"Transform and: to ifTrue: and or: to ifFalse:
 	The consumer of the node will decide if it is used as an expression or not"
 	newSelector := aTSendNode selector.
-	aTSendNode selector = #and: ifTrue: [ newSelector := #ifTrue: ].
-	aTSendNode selector = #or: ifTrue: [ newSelector := #ifFalse: ].
-
-	shouldLinearise := (self shouldLineariseSend: aTSendNode) or: [ 
-		                   codeGenerator isControlFlowNode: aTSendNode ].
+	shouldLinearise := self shouldLineariseSend: aTSendNode.
+	aTSendNode selector = #and: ifTrue: [ 
+		shouldLinearise := true.
+		newSelector := #ifTrue: ].
+	aTSendNode selector = #or: ifTrue: [ 
+		shouldLinearise := true.
+		newSelector := #ifFalse: ].
 
 	aTSendNode receiver accept: self.
 	receiverVar := shouldLinearise
