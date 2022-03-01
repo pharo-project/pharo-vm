@@ -1,7 +1,7 @@
 Extension { #name : #EncoderForV3PlusClosures }
 
 { #category : #'*VMMaker' }
-EncoderForV3PlusClosures class >> extensionsAt: pc in: aCompiledMethod into: trinaryBlock [
+EncoderForV3PlusClosures classSide >> extensionsAt: pc in: aCompiledMethod into: trinaryBlock [
 	"If the bytecode at pc is an extension then evaluate aTrinaryBlock
 	 with the values of extA and extB and number of extension *bytes*.
 	 If the bytecode at pc is not an extension then evaluate with 0, 0, 0.

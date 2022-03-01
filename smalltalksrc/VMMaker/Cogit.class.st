@@ -3692,6 +3692,12 @@ Cogit >> bytecodePCFor: mcpc startBcpc: startbcpc in: cogMethod [
 		arg: mcpc asVoidPointer
 ]
 
+{ #category : #accessing }
+Cogit >> bytecodeSetOffset: anInteger [
+	<doNotGenerate>
+	bytecodeSetOffset := anInteger
+]
+
 { #category : #initialization }
 Cogit >> bytecodeSetOffsetFor: aMethodObj [
 	<inline: true>
