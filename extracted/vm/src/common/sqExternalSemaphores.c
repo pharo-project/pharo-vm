@@ -35,6 +35,8 @@
 #include "pharovm/semaphores/platformSemaphore.h"
 #include "pharovm/interpreter.h"
 
+#include <signal.h>
+
 #if !COGMTVM
 sqOSThread ioVMThread; /* initialized in the various <plat>/vm/sqFooMain.c */
 #endif
@@ -128,6 +130,12 @@ signalSemaphoreWithIndex(sqInt index)
 {
 	int i = index - 1;
 	int v;
+    sigset_t blockedSignalSet;
+    sigemptyset(&blockedSignalSet);
+    sigaddset(&blockedSignalSet, SIGCHLD);
+    sigaddset(&blockedSignalSet, SIGINT);
+    sigaddset(&blockedSignalSet, SIGSTOP);
+    sigaddset(&blockedSignalSet, SIGTSTP);
 
 	/* An index of zero should be and is silently ignored. */
 	assert(index >= 0 && index <= numSignalRequests);
@@ -135,6 +143,7 @@ signalSemaphoreWithIndex(sqInt index)
 	if ((unsigned)i >= numSignalRequests)
 		return 0;
 
+    sigprocmask(SIG_BLOCK, &blockedSignalSet, NULL);
 	requestMutex->wait(requestMutex);
 
 	sqLowLevelMFence();
@@ -152,6 +161,7 @@ signalSemaphoreWithIndex(sqInt index)
 	forceInterruptCheck();
 
 	requestMutex->signal(requestMutex);
+    sigprocmask(SIG_UNBLOCK, &blockedSignalSet, NULL);
 
 	aioInterruptPoll();
 
@@ -177,11 +187,17 @@ doSignalExternalSemaphores(sqInt externalSemaphoreTableSize)
 	volatile int i, lowTide, highTide;
 	char switched, signalled = 0;
 
+    sigset_t blockedSignalSet;
+    sigemptyset(&blockedSignalSet);
+    sigaddset(&blockedSignalSet, SIGCHLD);
+
+    sigprocmask(SIG_BLOCK, &blockedSignalSet, NULL);
 	requestMutex->wait(requestMutex);
 
 	sqLowLevelMFence();
 	if (!checkSignalRequests){
 		requestMutex->signal(requestMutex);
+        sigprocmask(SIG_UNBLOCK, &blockedSignalSet, NULL);
 		return 0;
 	}
 
@@ -219,6 +235,7 @@ doSignalExternalSemaphores(sqInt externalSemaphoreTableSize)
 		}
 
 	requestMutex->signal(requestMutex);
+    sigprocmask(SIG_UNBLOCK, &blockedSignalSet, NULL);
 
 	return switched;
 }
