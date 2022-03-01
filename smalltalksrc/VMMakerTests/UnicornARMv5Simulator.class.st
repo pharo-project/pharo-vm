@@ -142,7 +142,7 @@ UnicornARMv5Simulator >> doStartAt: startAddress until: until timeout: timeout c
 			stopReason ifNotNil: [ ^ result ].
 			count = actualCount ifTrue: [ ^ result ].
 
-
+			self instructionPointerValue = until ifTrue: [ ^ result ].
 			timeout ~= 0 ifTrue: [  
 				currentTime := Time millisecondClockValue.
 				remainingTimeout := remainingTimeout - (currentTime - startTime).
@@ -151,9 +151,7 @@ UnicornARMv5Simulator >> doStartAt: startAddress until: until timeout: timeout c
 					ifTrue: [ 	
 						UnicornTimeout new
 								target: until;
-								signal ]].
-
-			self instructionPointerValue = until ifTrue: [ ^ result ]]
+								signal ]]]
 ]
 
 { #category : #'as yet unclassified' }
