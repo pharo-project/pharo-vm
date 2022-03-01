@@ -654,6 +654,9 @@ UnicornSimulator >> stackValues [
 { #category : #executing }
 UnicornSimulator >> startAt: begin until: until timeout: timeout count: count [ 
 
+	"No need to call the simulator if we are already there"
+	begin = until ifTrue: [ ^ self ].
+	
 	^ self doStartAt: begin until: until timeout: timeout count: count.
 	
 ]

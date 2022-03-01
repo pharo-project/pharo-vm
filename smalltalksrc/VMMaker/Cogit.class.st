@@ -3692,6 +3692,12 @@ Cogit >> bytecodePCFor: mcpc startBcpc: startbcpc in: cogMethod [
 		arg: mcpc asVoidPointer
 ]
 
+{ #category : #'jit - api' }
+Cogit >> bytecodeSetOffset: anOffset [
+
+	bytecodeSetOffset := anOffset
+]
+
 { #category : #initialization }
 Cogit >> bytecodeSetOffsetFor: aMethodObj [
 	<inline: true>
