@@ -190,6 +190,9 @@ doSignalExternalSemaphores(sqInt externalSemaphoreTableSize)
     sigset_t blockedSignalSet;
     sigemptyset(&blockedSignalSet);
     sigaddset(&blockedSignalSet, SIGCHLD);
+    sigaddset(&blockedSignalSet, SIGINT);
+    sigaddset(&blockedSignalSet, SIGSTOP);
+    sigaddset(&blockedSignalSet, SIGTSTP);
 
     sigprocmask(SIG_BLOCK, &blockedSignalSet, NULL);
 	requestMutex->wait(requestMutex);
