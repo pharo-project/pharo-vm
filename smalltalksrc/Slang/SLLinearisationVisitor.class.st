@@ -179,7 +179,7 @@ SLLinearisationVisitor >> visitSendNode: aTSendNode [
 
 	argVars := aTSendNode arguments collect: [ :arg | 
 		           arg accept: self.
-		           shouldLinearise
+		           (aTSendNode isConditionalSend or: [ shouldLinearise ])
 			           ifTrue: [ builder popAsStatement ]
 			           ifFalse: [ builder popAsExpression ] ].
 

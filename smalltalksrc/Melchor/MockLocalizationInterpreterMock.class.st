@@ -302,6 +302,18 @@ MockLocalizationInterpreterMock >> bytecodeUsingSharedLocalizedVariableBeforeInl
 ]
 
 { #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingTwiceNestedConditionalValueWithAnd [
+
+	| overflow |
+	^ overflow := self condition
+		              ifTrue: [ self condition ]
+		              ifFalse: [ 
+			              self condition
+				              ifTrue: [ self condition ]
+				              ifFalse: [ self condition and: [ self condition ] ] ]
+]
+
+{ #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeWithEscapingCall [
 
 	self foo: (autoLocalizedVariable := autoLocalizedVariable + 1)

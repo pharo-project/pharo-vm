@@ -473,6 +473,39 @@ MLLocalizationTestCase >> testLinearizeAndInsideValueIf [
 ]
 
 { #category : #'tests - linearization' }
+MLLocalizationTestCase >> testLinearizeAndInsideValueIfNestedTwice [
+
+	| methodToLinearize replacementBlock |
+	methodToLinearize := self linearise:
+		MockLocalizationInterpreterMock >> #bytecodeUsingTwiceNestedConditionalValueWithAnd.
+
+	"Before it was 
+		^ overflow := self condition
+		              ifTrue: [ self condition ]
+		              ifFalse: [ 
+			              self condition
+				              ifTrue: [ self condition ]
+				              ifFalse: [ self condition and: [ self condition ] ] ]"
+
+	replacementBlock := methodToLinearize parseTree.
+
+	"We have an extra nested code because the linearisation algorithm does not flatten..."
+	self assert: replacementBlock isRewrittenAs: '
+		self condition
+			ifTrue: [ t0 := self condition ]
+			ifFalse: [
+				self condition
+					ifTrue: [ t0 := self condition ]
+					ifFalse: [ 
+						t0 := self condition.
+						t0
+							ifTrue: [ t0 := self condition ]
+							ifFalse: [ t0 := t0 ] ] ].
+		overflow := t0.
+		^ overflow'.
+]
+
+{ #category : #'tests - linearization' }
 MLLocalizationTestCase >> testLinearizeCallsInNestedLexicalScope [
 
 	| methodToLinearize ifBlock expected |

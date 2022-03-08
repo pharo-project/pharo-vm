@@ -76,7 +76,7 @@ MLStatementListBuider >> assignLastExpressionOf: aNode toVariable: aTVariableNod
 			] ifFalse: [ | replacement parentBeforeReplacement |
 				self flag: #polymorphism.
 				parentBeforeReplacement := current parent.
-				replacement := (current isSend and: [ #(#ifTrue: #ifFalse:) includes: current selector])
+				replacement := (current isSend and: [ current isConditionalSend ])
 					ifTrue: [ self transformControlFlowNodeForValue: current withVariable: aTVariableNode copy ]
 					ifFalse: [ current assignLastExpressionTo: aTVariableNode copy ].
 				parentBeforeReplacement replaceChild: current with: replacement ] ].
