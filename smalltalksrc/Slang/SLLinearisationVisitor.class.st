@@ -161,6 +161,13 @@ SLLinearisationVisitor >> visitReturnNode: aTReturnNode [
 SLLinearisationVisitor >> visitSendNode: aTSendNode [
 
 	| receiverVar argVars newSelector newNode shouldLinearise |
+	
+	"Do not rewrite asserts..."
+	(aTSendNode selector == #assert:)
+		ifTrue: [
+			builder pushAsStatement: aTSendNode.
+			^ self ].
+	
 	"Transform and: to ifTrue: and or: to ifFalse:
 	The consumer of the node will decide if it is used as an expression or not"
 	newSelector := aTSendNode selector.

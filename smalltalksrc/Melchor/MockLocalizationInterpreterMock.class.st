@@ -177,6 +177,12 @@ MockLocalizationInterpreterMock >> bytecodeUsingAutoLocalizedVariable [
 ]
 
 { #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingComplexAssert [
+
+	self assert: (self foo or: [ self bar and: [ self fum ] ])
+]
+
+{ #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariable [
 
 	autoLocalizedVariable := 17.

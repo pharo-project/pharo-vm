@@ -533,6 +533,23 @@ MLLocalizationTestCase >> testLinearizeCallsInNestedLexicalScope [
 ]
 
 { #category : #'tests - linearization' }
+MLLocalizationTestCase >> testLinearizeComplexAssert [
+
+	| methodToLinearize replacementBlock |
+	methodToLinearize := self linearise:
+		MockLocalizationInterpreterMock >> #bytecodeUsingComplexAssert.
+
+	"Before it was 
+		self assert: (self foo or: [ self bar and: [ self fum ] ])"
+
+	replacementBlock := methodToLinearize parseTree.
+
+	"We have an extra nested code because the linearisation algorithm does not flatten..."
+	self assert: replacementBlock isRewrittenAs: '
+		self assert: (self foo or: [ self bar and: [ self fum ] ])'.
+]
+
+{ #category : #'tests - linearization' }
 MLLocalizationTestCase >> testLinearizeNestedCalls [
 
 	| methodToLinearize replacementBlock expected |
