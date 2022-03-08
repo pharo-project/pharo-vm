@@ -249,15 +249,13 @@ MLLocalizationTestCase >> testExternalEscapingAsArgument [
 	self assert: printedString equals:
 '{
 	sqInt t0;
-	int t1;
 
 	{
 		autoLocalizedVariable = local_autoLocalizedVariable;
 		t0 = foo2();
 		local_autoLocalizedVariable = autoLocalizedVariable;
 	}
-	t1 = 1 == t0;
-	if (t1) {
+	if (1 == t0) {
 	}
 }'
 ]
@@ -445,6 +443,33 @@ MLLocalizationTestCase >> testExternalSendNodeShouldBeTranslatedWithExternalizat
 		local_autoLocalizedVariable = autoLocalizedVariable;
 	}
 }'
+]
+
+{ #category : #'tests - linearization' }
+MLLocalizationTestCase >> testLinearizeAndInsideValueIf [
+
+	| methodToLinearize replacementBlock |
+	methodToLinearize := self linearise:
+		MockLocalizationInterpreterMock >> #bytecodeUsingNestedConditionalValueWithAnd.
+
+	"Before it was 
+		^ overflow := self condition
+			ifTrue: [ self condition ]
+			ifFalse: [ self condition and: [ self condition ] ]"
+
+	replacementBlock := methodToLinearize parseTree.
+
+	"We have an extra nested code because the linearisation algorithm does not flatten..."
+	self assert: replacementBlock isRewrittenAs: '
+		self condition
+			ifTrue: [ t0 := self condition ]
+			ifFalse: [
+				t0 := self condition.
+				t0
+					ifTrue: [ t0 := self condition ]
+					ifFalse: [ t0 := t0 ] ].
+		overflow := t0.
+		^ overflow'.
 ]
 
 { #category : #'tests - linearization' }

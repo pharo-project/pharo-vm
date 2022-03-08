@@ -524,6 +524,19 @@ TSendNode >> removeAssertions [
 ]
 
 { #category : #transformations }
+TSendNode >> replaceChild: aNode with: aReplacementNode [
+
+	receiver == aNode ifTrue: [
+		self receiver: aReplacementNode.
+		^ self
+	].
+	self arguments: (arguments collect: [ :e |
+		e == aNode
+			ifTrue: [ aReplacementNode ]
+			ifFalse: [ e ] ])
+]
+
+{ #category : #transformations }
 TSendNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [

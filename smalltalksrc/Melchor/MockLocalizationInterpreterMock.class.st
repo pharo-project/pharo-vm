@@ -274,6 +274,15 @@ MockLocalizationInterpreterMock >> bytecodeUsingMacro [
 ]
 
 { #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingNestedConditionalValueWithAnd [
+
+	| overflow |
+	^ overflow := self condition
+		ifTrue: [ self condition ]
+		ifFalse: [ self condition and: [ self condition ] ]
+]
+
+{ #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeUsingSafeExternalCall [
 
 	self nonInlinedMethodNotUsingAutolocalizedVariables: (autoLocalizedVariable := autoLocalizedVariable +1)

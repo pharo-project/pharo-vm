@@ -88,10 +88,14 @@ SLLinearisationVisitor >> shouldLineariseSend: aTSendNode [
 { #category : #visiting }
 SLLinearisationVisitor >> visitAssignmentNode: aTAssignmentNode [ 
 
+	| expression |
 	aTAssignmentNode expression accept: self.
+	expression := aTAssignmentNode expression isConditionalSend
+		ifTrue: [ builder popAsStatement ]
+		ifFalse: [ builder popAsExpression ].
 	
 	builder push: (aTAssignmentNode shallowCopy
-		expression: self pop;
+		expression: expression;
 		yourself)
 ]
 
