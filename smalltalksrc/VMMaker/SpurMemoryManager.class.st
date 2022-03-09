@@ -12173,6 +12173,34 @@ SpurMemoryManager >> trueObject: anOop [
 	trueObj := anOop
 ]
 
+{ #category : #accessing }
+SpurMemoryManager >> uint16At: address [
+
+	<doNotGenerate>
+	^ self shortAt: address
+]
+
+{ #category : #accessing }
+SpurMemoryManager >> uint32At: address [
+
+	<doNotGenerate>
+	^ self long32At: address
+]
+
+{ #category : #accessing }
+SpurMemoryManager >> uint64At: address [
+
+	<doNotGenerate>
+	^ self long64At: address
+]
+
+{ #category : #accessing }
+SpurMemoryManager >> uint8At: address [
+
+	<doNotGenerate>
+	^ self byteAt: address
+]
+
 { #category : #simulation }
 SpurMemoryManager >> unalignedLong32At: index [
 

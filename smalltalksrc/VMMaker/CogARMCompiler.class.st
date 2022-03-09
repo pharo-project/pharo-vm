@@ -655,6 +655,9 @@ CogARMCompiler >> computeMaximumSize [
 											ifTrue: [:r :i| 4]
 											ifFalse: [self literalLoadInstructionBytes + 4]].
 		[MoveM64rRd]			-> [^self literalLoadInstructionBytes + 4].
+		[MoveM32rR]			-> [^self is12BitValue: (operands at: 0)
+										ifTrue: [:u :i| 4]
+										ifFalse: [self literalLoadInstructionBytes + 4]].	
 		[MoveMwrR]			-> [^self is12BitValue: (operands at: 0)
 										ifTrue: [:u :i| 4]
 										ifFalse: [self literalLoadInstructionBytes + 4]].
@@ -1979,6 +1982,7 @@ CogARMCompiler >> dispatchConcretize [
 		[MoveRM16r]		-> [^self concretizeMoveRM16r].
 		[MoveM16rR]		-> [^self concretizeMoveM16rR].
 		[MoveM64rRd]		-> [^self concretizeMoveM64rRd].
+		[MoveM32rR]		-> [^self concretizeMoveMwrR].	
 		[MoveMwrR]		-> [^self concretizeMoveMwrR].
 		[MoveXbrRR]		-> [^self concretizeMoveXbrRR].
 		[MoveRXbrR]		-> [^self concretizeMoveRXbrR].
