@@ -16,36 +16,37 @@ MLStatementListBuider >> addLinearisedStatement: expressionNode [
 
 	"Add the expression when used"
 
-	| name assignment declaration |
+	| name assignment declaration type |
 	"If it's a variable or constant, just return it, the caller will use it in the right place"
-	(expressionNode isTMethod
-		or: [ expressionNode isStatementList
-			or: [ expressionNode isLeaf ] ]) 
+	(expressionNode isTMethod or: [ 
+		 expressionNode isStatementList or: [ expressionNode isLeaf ] ]) 
 		ifTrue: [ ^ expressionNode ].
 
 	"If it's a control flow structure, and we are using it's value, write its last expression to a variable:
 	v ifTrue: [ r := ... ] ifFalse: [ r := ...].
 	Return the value r that is holding the result"
-	(codeGenerator isControlFlowNode: expressionNode) ifTrue: [ | variable |
+	(codeGenerator isControlFlowNode: expressionNode) ifTrue: [ 
+		| variable |
 		variable := TVariableNode named: self newVariableName.
-		declaration := (codeGenerator
-			typeFor: expressionNode receiver
-			in: codeGenerator currentMethod) , ' ' , variable name.
+		type := codeGenerator
+			        typeFor: expressionNode
+			        in: codeGenerator currentMethod.
+		declaration := type , ' ' , variable name.
 		declarations at: variable name put: declaration.
 		self addStatement: (self
-			transformControlFlowNodeForValue: expressionNode
-			withVariable: variable).
+				 transformControlFlowNodeForValue: expressionNode
+				 withVariable: variable).
 		^ variable ].
 
 	expressionNode isAssignment ifTrue: [ 
 		self addStatement: expressionNode.
-		^ expressionNode variable.
-	].
+		^ expressionNode variable ].
 
 	name := self newVariableName.
-	declaration := (codeGenerator
-		                typeFor: expressionNode
-		                in: codeGenerator currentMethod) , ' ' , name.
+	type := codeGenerator
+		        typeFor: expressionNode
+		        in: codeGenerator currentMethod.
+	declaration := type , ' ' , name.
 	declarations at: name put: declaration.
 
 	assignment := TAssignmentNode
