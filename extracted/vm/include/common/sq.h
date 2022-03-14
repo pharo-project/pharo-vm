@@ -480,8 +480,6 @@ typedef struct sqComplexEvent
 
 /* Set an asynchronous input semaphore index for events. */
 sqInt ioSetInputSemaphore(sqInt semaIndex);
-/* Retrieve the next input event from the OS. */
-sqInt ioGetNextEvent(sqInputEvent *evt);
 
 /* Image file and VM path names. */
 extern char imageName[];
