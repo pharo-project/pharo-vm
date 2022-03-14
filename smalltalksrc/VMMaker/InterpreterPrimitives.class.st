@@ -2307,7 +2307,7 @@ InterpreterPrimitives >> primitiveInstVarAt [
 	index := objectMemory integerValueOf: index.
 	hdr := self baseHeader: rcvr.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := self lengthOf: rcvr baseHeader: hdr format: fmt.
+	totalLength := self lengthOf: rcvr format: fmt.
 	fixedFields := self fixedFieldsOf: rcvr format: fmt length: totalLength.
 	(index >= 1 and: [index <= fixedFields]) ifFalse:
 		[^self primitiveFailFor: PrimErrBadIndex].
@@ -2332,7 +2332,7 @@ InterpreterPrimitives >> primitiveInstVarAtPut [
 	index := objectMemory integerValueOf: index.
 	hdr := objectMemory baseHeader: rcvr.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: rcvr baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: rcvr format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: rcvr format: fmt length: totalLength.
 	(index >= 1 and: [index <= fixedFields]) ifFalse:
 		[^self primitiveFailFor: PrimErrBadIndex].
@@ -3430,7 +3430,6 @@ InterpreterPrimitives >> primitiveSize [
 	
 	totalLength := objectMemory
 		               lengthOf: rcvr
-		               baseHeader: hdr
 		               format: fmt.
 	fixedFields := objectMemory
 		               fixedFieldsOf: rcvr
@@ -4543,14 +4542,14 @@ InterpreterPrimitives >> primitiveV3StringReplace [
 
 	hdr := objectMemory baseHeader: array.
 	arrayFmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: array baseHeader: hdr format: arrayFmt.
+	totalLength := objectMemory lengthOf: array format: arrayFmt.
 	arrayInstSize := objectMemory fixedFieldsOf: array format: arrayFmt length: totalLength.
 	(start >= 1 and: [start - 1 <= stop and: [stop + arrayInstSize <= totalLength]]) ifFalse:
 		[^self primitiveFailFor: PrimErrBadIndex].
 
 	hdr := objectMemory baseHeader: repl.
 	replFmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: repl baseHeader: hdr format: replFmt.
+	totalLength := objectMemory lengthOf: repl format: replFmt.
 	replInstSize := objectMemory fixedFieldsOf: repl format: replFmt length: totalLength.
 	(replStart >= 1 and: [stop - start + replStart + replInstSize <= totalLength]) ifFalse:
 		[^self primitiveFailFor: PrimErrBadIndex].

@@ -7920,7 +7920,7 @@ StackInterpreter >> install: rcvr inAtCache: cache at: atIx string: stringy [
 		[^self primitiveFail].
 	stringy
 		ifTrue:
-			[totalLength := objectMemory lengthOf: rcvr baseHeader: hdr format: fmt.
+			[totalLength := objectMemory lengthOf: rcvr format: fmt.
 			 fixedFields := 0.
 			 fmt := fmt + objectMemory firstStringyFakeFormat]  "special flag for strings"
 		ifFalse:
@@ -7928,7 +7928,7 @@ StackInterpreter >> install: rcvr inAtCache: cache at: atIx string: stringy [
 				["Contexts must not be put in the atCache, since their size is not constant"
 				self primitiveFailFor: PrimErrBadReceiver.
 				^false].
-			 totalLength := objectMemory lengthOf: rcvr baseHeader: hdr format: fmt.
+			 totalLength := objectMemory lengthOf: rcvr format: fmt.
 			 fixedFields := objectMemory fixedFieldsOf: rcvr format: fmt length: totalLength].
 
 	cache at: atIx+AtCacheOop put: rcvr.
@@ -14392,7 +14392,7 @@ StackInterpreter >> stObject: array at: index [
 	<inline: true>
 	hdr := objectMemory baseHeader: array.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: array baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: array format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: array format: fmt length: totalLength.
 	(fmt = objectMemory indexablePointersFormat
 	 and: [objectMemory isContextHeader: hdr])
@@ -14420,7 +14420,7 @@ StackInterpreter >> stObject: array at: index put: value [
 		"we have another primitive (contextAt:Put: for contexts"
 		^self primitiveFailFor: PrimErrBadReceiver].
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: array baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: array format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: array format: fmt length: totalLength.
 	stSize := totalLength - fixedFields.
 	((self oop: index isGreaterThanOrEqualTo: (objectMemory firstValidIndexOfIndexableObject: array withFormat: fmt))
@@ -14439,7 +14439,7 @@ StackInterpreter >> stSizeOf: oop [
 	<inline: false>
 	hdr := objectMemory baseHeader: oop.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: oop baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: oop format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: oop format: fmt length: totalLength.
 	fmt = objectMemory indexablePointersFormat ifTrue:
 		[self assert: (objectMemory isContextHeader: hdr) not].
