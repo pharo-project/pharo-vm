@@ -950,7 +950,7 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	SelectorCannotReturn := 21.
 	ProcessSignalingLowSpace := 22.	"was TheInputSemaphore"
 	SpecialSelectors := 23.
-	CharacterTable := nil.	"Must be unused by the VM"
+	"24 was Old CharacterTable"
 	SelectorMustBeBoolean := 25.
 	ClassByteArray := 26.
 	"ClassProcess := 27. unused"
@@ -2965,11 +2965,6 @@ SpurMemoryManager >> changeClassOf: rcvr to: argClass [
 SpurMemoryManager >> characterObjectOf: characterCode [
 	<api>
 	^characterCode << self numTagBits + self characterTag
-]
-
-{ #category : #accessing }
-SpurMemoryManager >> characterTable [
-	self shouldNotImplement
 ]
 
 { #category : #'object access' }
