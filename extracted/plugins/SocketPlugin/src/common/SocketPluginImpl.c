@@ -599,12 +599,17 @@ static void dataHandler(int fd, void *data, int flags)
   if (flags & AIO_R)
     {
       int n= socketReadable(fd, pss->socketType);
-      if (n == 0)
-	{
-	  logTrace("dataHandler: selected socket fd=%d flags=0x%x would block (why?)\n", fd, flags);
-	}
-      if (n != 1)
-	{
+      if (n == 0){
+    	  //Maybe getting OOB data
+          char buf[1];
+          int n= recv(fd, (void *)buf, 1, MSG_OOB);
+          if (n == 1) logTrace("socket: received OOB data: %02x\n", buf[0]);
+
+    	  //If the socket is not readable, we need to continue waiting.
+    	  aioHandle(fd, dataHandler, AIO_RX);
+    	  return;
+      }
+      if (n != 1){
 	  pss->sockError= socketError(fd);
 	  pss->sockState= OtherEndClosed;
 	}
