@@ -302,11 +302,6 @@ CogVMSimulator >> browserPluginInitialiseIfNeeded [
 "do nothing - its a macro in C code to support Mac browser plugin strangeness"
 ]
 
-{ #category : #'interpreter shell' }
-CogVMSimulator >> browserPluginReturnIfNeeded [
-"do nothing - its a macro in C code to support Mac browser plugin strangeness"
-]
-
 { #category : #'memory access' }
 CogVMSimulator >> byteAt: byteAddress [
 	"This is really only for the C library simulations memcpy:_:_: et al in VMClass.
