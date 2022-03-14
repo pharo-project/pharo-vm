@@ -296,13 +296,13 @@ StackInterpreterSimulator >> cCoerceSimple: value to: cTypeString [
 
 { #category : #'plugin support' }
 StackInterpreterSimulator >> callExternalPrimitive: mapIndex [
+
 	| entry |
 	entry := self pluginEntryFor: mapIndex.
 	"Spur needs the primitiveFunctionPointer to be set correctly
 	 for accurate following of forwarders on primitive failure."
-	objectMemory hasSpurMemoryManagerAPI ifTrue:
-		[primitiveFunctionPointer := entry at: 2].
-	^(entry at: 1) perform: (entry at: 2)
+	primitiveFunctionPointer := entry at: 2.
+	^ (entry at: 1) perform: (entry at: 2)
 ]
 
 { #category : #'object memory support' }
@@ -817,14 +817,11 @@ StackInterpreterSimulator >> initialize [
 
 { #category : #'plugin support' }
 StackInterpreterSimulator >> initializePluginEntries [
+
 	mappedPluginEntries := OrderedCollection new.
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[primitiveAccessorDepthTable := Array new: primitiveTable size.
-			 pluginList := {}.
-			 self loadNewPlugin: '']
-		ifFalse:
-			[pluginList := {'' -> self }]
+	primitiveAccessorDepthTable := Array new: primitiveTable size.
+	pluginList := {  }.
+	self loadNewPlugin: ''
 ]
 
 { #category : #'frame access' }
@@ -2468,16 +2465,18 @@ StackInterpreterSimulator >> utilitiesMenu: aMenuMorph [
 
 { #category : #'debug support' }
 StackInterpreterSimulator >> veryDeepCopyWith: deepCopier [
+
 	"Override to short-circuit the copying of any VMPluginCodeGenerators referenced from mappedPluginEntries.
 	 These can in turn hold onto Monticello state, resulting in a huge ammount of unnecessary copying."
-	self objectMemory hasSpurMemoryManagerAPI ifTrue: 
-		[deepCopier references
-			at: mappedPluginEntries ifAbsentPut: [mappedPluginEntries].
-		mappedPluginEntries do:
-			[:tuple| | block |
-			block := tuple third.
-			deepCopier references at: block ifAbsentPut: [block]]].
-	^super veryDeepCopyWith: deepCopier
+
+	deepCopier references
+		at: mappedPluginEntries
+		ifAbsentPut: [ mappedPluginEntries ].
+	mappedPluginEntries do: [ :tuple | 
+		| block |
+		block := tuple third.
+		deepCopier references at: block ifAbsentPut: [ block ] ].
+	^ super veryDeepCopyWith: deepCopier
 ]
 
 { #category : #'file primitives' }
