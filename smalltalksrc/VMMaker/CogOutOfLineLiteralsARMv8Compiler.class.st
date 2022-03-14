@@ -43,6 +43,7 @@ CogOutOfLineLiteralsARMv8Compiler >> concretizeLiteral [
 CogOutOfLineLiteralsARMv8Compiler >> concretizeMoveC32R [
 	"Will get inlined into concretizeAt: switch."
 	<var: #quickConstant type: #sqInt>
+	<returnTypeC: #void>
 	<inline: true>
 	| quickConstant |
 	
