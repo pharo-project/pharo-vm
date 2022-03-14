@@ -152,7 +152,7 @@ StackInterpreterPrimitives >> doPrimitiveWorkerCallout [
 	<option: #FEATURE_THREADED_FFI>
 	
 	<export: true>
-	| externalFunction cif PARAM_EXTERNALFUNCTION PARAM_ARGUMENTS PARAM_SEMAPHORE_INDEX PARAM_RECEIVER argumentsArrayOop argumentSize parameters returnHolder receiver worker semaphoreIndex task |
+	| externalFunction cif PARAM_EXTERNALFUNCTION PARAM_ARGUMENTS PARAM_SEMAPHORE_INDEX PARAM_RECEIVER argumentsArrayOop argumentSize parameters returnHolder primitiveReceiver worker semaphoreIndex task |
 	<var: #parameters type: #'void **'>
 	<var: #returnHolder type: #'void *'>
 	<var: #task type: #'WorkerTask *'>
@@ -181,8 +181,8 @@ StackInterpreterPrimitives >> doPrimitiveWorkerCallout [
 		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
 
 	" 3. Obtain the receiver and extract the worker "
-	receiver := self stackValue: PARAM_RECEIVER.
-	worker := self getWorkerFromAddress: (self getHandler: receiver).
+	primitiveReceiver := self stackValue: PARAM_RECEIVER.
+	worker := self getWorkerFromAddress: (self getHandler: primitiveReceiver).
 
 	self failed
 		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
@@ -240,19 +240,18 @@ StackInterpreterPrimitives >> doPrimitiveWorkerExtractReturnValue [
 	<inline: false>
 	<option: #FEATURE_THREADED_FFI>
 	
-	| returnHolder task PARAM_RECEIVER PARAM_TASK_ADDRESS  worker taskAddress receiver |
+	| returnHolder task PARAM_RECEIVER PARAM_TASK_ADDRESS  worker taskAddress primitiveReceiver |
 	<var: #returnHolder type: #'void *'>
 	<var: #task type: #'WorkerTask *'>
 	<var: #worker type: #'Worker *'>
-	<var: #externalFunction type: #'void *'>
 
 	PARAM_RECEIVER 				:= 1.
 	PARAM_TASK_ADDRESS			:= 0.
 
 	"1. Extract Task address and worker"
 	taskAddress := self readAddress: (self stackValue: PARAM_TASK_ADDRESS).
-	receiver := self stackValue: PARAM_RECEIVER.
-	worker := self getWorkerFromAddress: (self getHandler: receiver).
+	primitiveReceiver := self stackValue: PARAM_RECEIVER.
+	worker := self getWorkerFromAddress: (self getHandler: primitiveReceiver).
 
 	self failed
 		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
@@ -734,7 +733,7 @@ StackInterpreterPrimitives >> noInlineLoadFloatOrIntFrom: floatOrInt [
 ]
 
 { #category : #'object access primitives' }
-StackInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
+StackInterpreterPrimitives >> pathTo: goal using: anArray followWeak: followWeak [
 	"Trace objects and frames from the root, marking visited objects, pushing the current path on stack, until goal is found.
 	 If found, unmark, leaving path in stack, and answer 0.  Otherwise answer an error:
 		PrimErrBadArgument if stack is not an Array
@@ -742,13 +741,13 @@ StackInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 		PrimErrNotFound if goal cannot be found"
 	<var: #index type: #sqInt> "beware, must be signed"
 	| current index next stackSize stackp freeStartAtStart |
-	(objectMemory isArray: stack) ifFalse:
+	(objectMemory isArray: anArray) ifFalse:
 		[^PrimErrBadArgument].
 	self assert: objectMemory allObjectsUnmarked.
 	freeStartAtStart := objectMemory freeStart. "check no allocations during search"
-	objectMemory beRootIfOld: stack. "so no store checks are necessary on stack"
-	stackSize := objectMemory lengthOf: stack.
-	objectMemory mark: stack.
+	objectMemory beRootIfOld: anArray. "so no store checks are necessary on stack"
+	stackSize := objectMemory lengthOf: anArray.
+	objectMemory mark: anArray.
 	"no need. the current context is not reachable from the active process (suspendedContext is nil)"
 	"objectMemory mark: self activeProcess."
 	current := objectMemory specialObjectsOop.
@@ -776,8 +775,8 @@ StackInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 		 next = goal ifTrue:
 			[self assert: freeStartAtStart = objectMemory freeStart.
 			 self unmarkAfterPathTo.
-			 objectMemory storePointer: stackp ofObject: stack withValue: current.
-			 self pruneStack: stack stackp: stackp.
+			 objectMemory storePointer: stackp ofObject: anArray withValue: current.
+			 self pruneStack: anArray stackp: stackp.
 			 ^0].
 		 ((objectMemory isNonIntegerObject: next)
 		  and: [(stackPages couldBeFramePointer: next)
@@ -790,11 +789,11 @@ StackInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 				[stackp + 2 > stackSize ifTrue:
 					[self assert: freeStartAtStart = objectMemory freeStart.
 					 self unmarkAfterPathTo.
-					 objectMemory nilFieldsOf: stack.
+					 objectMemory nilFieldsOf: anArray.
 					 ^PrimErrBadIndex]. "PrimErrNoMemory ?"
 				 objectMemory
-					storePointerUnchecked: stackp ofObject: stack withValue: current;
-					storePointerUnchecked: stackp + 1 ofObject: stack withValue: (objectMemory integerObjectOf: index).
+					storePointerUnchecked: stackp ofObject: anArray withValue: current;
+					storePointerUnchecked: stackp + 1 ofObject: anArray withValue: (objectMemory integerObjectOf: index).
 				 stackp := stackp + 2.
 				 (stackPages couldBeFramePointer: (self cCoerceSimple: next to: #'char *'))
 					ifTrue:
@@ -809,10 +808,10 @@ StackInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 		 current = objectMemory specialObjectsOop ifTrue:
 			[self assert: freeStartAtStart = objectMemory freeStart.
 			 self unmarkAfterPathTo.
-			 objectMemory nilFieldsOf: stack.
+			 objectMemory nilFieldsOf: anArray.
 			^PrimErrNotFound].
-		 index := objectMemory integerValueOf: (objectMemory fetchPointer: stackp - 1 ofObject: stack).
-		 current := objectMemory fetchPointer: stackp - 2 ofObject: stack.
+		 index := objectMemory integerValueOf: (objectMemory fetchPointer: stackp - 1 ofObject: anArray).
+		 current := objectMemory fetchPointer: stackp - 2 ofObject: anArray.
 		 stackp := stackp - 2] repeat
 ]
 
@@ -1085,23 +1084,6 @@ StackInterpreterPrimitives >> primitiveContextXray [
 		ifFalse:
 			[flags := 0].
 	self pop: 1 thenPush: (objectMemory integerObjectOf: flags)
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterPrimitives >> primitiveDeferDisplayUpdates [
-	"Set or clear the flag that controls whether modifications of 
-	 the Display object are propagated to the underlying 
-	 platform's screen."
-	| flag |
-	flag := self stackTop.
-	flag = objectMemory trueObject
-		ifTrue: [deferDisplayUpdates := true]
-		ifFalse:
-			[flag = objectMemory falseObject
-				ifTrue: [deferDisplayUpdates := false]
-				ifFalse: [^self primitiveFail]].
-	self cCode: [] inSmalltalk: [self fullDisplayUpdate].
-	self pop: 1
 ]
 
 { #category : #'plugin primitives' }
@@ -1444,10 +1426,9 @@ StackInterpreterPrimitives >> primitiveExternalCall [
 StackInterpreterPrimitives >> primitiveFFIAllocate [
 	"Primitive. Allocate an object on the external heap."
 	| byteSize addr oop |
-
+	<returnTypeC: #void>
 	<export: true>
 	<inline: false>
-	<var: #ptr type: #'sqIntptr_t *'>
 
 	byteSize := self stackIntegerValue: 0.
 	self failed ifTrue: [ ^ self ].
@@ -1464,10 +1445,9 @@ StackInterpreterPrimitives >> primitiveFFIAllocate [
 StackInterpreterPrimitives >> primitiveFFIFree [
 	"Primitive. Free the object pointed to on the external heap."
 	| addr oop |
-
+	<returnTypeC: #void>
 	<export: true>
 	<inline: false>
-	<var: #ptr type: #'sqIntptr_t *'>
 
 	oop  := self stackObjectValue: 0.
 	addr := self readAddress: oop.
@@ -2339,7 +2319,6 @@ StackInterpreterPrimitives >> primitiveLoadSymbolFromModule [
 
 	<export: true>
 	<var: #address type: #'void *'>
-	<var: #ptr type: #'void **'>
 	<var: #symbolString type: #'char *'>
 	
 	self methodArgumentCount = 2 ifFalse:
@@ -4168,7 +4147,7 @@ StackInterpreterPrimitives >> primitiveWorkerExtractReturnValue [
 ]
 
 { #category : #'object access primitives' }
-StackInterpreterPrimitives >> pruneStack: stack stackp: stackp [
+StackInterpreterPrimitives >> pruneStack: anArray stackp: stackp [
 	"Prune the stack to contain only the path, removing stacked indices
 	 and mapping frame pointers to contexts  The  issue here is that a
 	 GC can occur during ensureFrameIsMarried:SP:, but frame pointers
@@ -4183,21 +4162,21 @@ StackInterpreterPrimitives >> pruneStack: stack stackp: stackp [
 	finger := 1.
 	2 to: stackp - 1 by: 2 do:
 		[:i|
-		objOrFP := objectMemory fetchPointer: i ofObject: stack.
+		objOrFP := objectMemory fetchPointer: i ofObject: anArray.
 		(stackPages couldBeFramePointer: (self cCoerceSimple: objOrFP to: #'char *')) ifTrue:
 			[objOrFP := self withSmallIntegerTags: objOrFP].
 		objectMemory
 			storePointerUnchecked: finger
-			ofObject: stack
+			ofObject: anArray
 			withValue: objOrFP.
 		finger := finger + 1].
-	finger to: (objectMemory lengthOf: stack) - 1 do:
+	finger to: (objectMemory lengthOf: anArray) - 1 do:
 		[:i|
 		objectMemory
 			storePointerUnchecked: i
-			ofObject: stack
+			ofObject: anArray
 			withValue: objectMemory nilObject].
-	objectMemory pushRemappableOop: (theStack := stack).
+	objectMemory pushRemappableOop: (theStack := anArray).
 	1 to: finger - 1 do:
 		[:i| | thePage theFP theFPAbove |
 		objOrFP := objectMemory fetchPointer: i ofObject: theStack.

@@ -819,7 +819,7 @@ InterpreterProxy >> pop: nItems [
 
 { #category : #'stack access' }
 InterpreterProxy >> pop: nItems thenPush: oop [
-	<returnTypeC: #sqInt>
+	<returnTypeC: #void>
 	self pop: nItems.
 	self push: oop
 ]
@@ -863,7 +863,7 @@ InterpreterProxy >> positive32BitIntegerFor: integerValue [
 
 { #category : #converting }
 InterpreterProxy >> positive32BitValueOf: oop [
-	<returnTypeC: #usqInt>
+	<returnTypeC: #'unsigned int'>
 	oop isInteger ifFalse:[self error:'Not an integer object'].
 	oop < 0 
 		ifTrue:[self primitiveFail. ^0]
@@ -989,7 +989,7 @@ InterpreterProxy >> pushInteger: integerValue [
 
 { #category : #'instance creation' }
 InterpreterProxy >> pushRemappableOop: oop [
-	<returnTypeC: #sqInt>
+	<returnTypeC: #void>
 	remapBuffer addLast: oop
 ]
 

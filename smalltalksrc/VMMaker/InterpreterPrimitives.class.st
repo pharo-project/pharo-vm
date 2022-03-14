@@ -287,8 +287,10 @@ InterpreterPrimitives >> initPrimCall [
 
 { #category : #initialization }
 InterpreterPrimitives >> initialize [
+
 	"Here we can initialize the variables C initializes to zero.  #initialize methods do /not/ get translated."
-	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := inFFIFlags := ffiExceptionResponse := 0.
+
+	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := ffiExceptionResponse := 0.
 	newFinalization := false
 ]
 
