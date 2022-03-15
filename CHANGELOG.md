@@ -2,6 +2,11 @@
 
 I am a changelog... do not wait too much from me :D
 
+## v9.0.13
+
+- Correct handling OOB (Out of Band Data) in Window
+- Blocking signals while signaling semaphores to avoid deadlocks caused by signal handlers
+
 ## v9.0.12
 - Make MAXHOSTNAMELEN at least 256: improving resolution of names in linux
 - Improving VM Simulator Machine debugger
