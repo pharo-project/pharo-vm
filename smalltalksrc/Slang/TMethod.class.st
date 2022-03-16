@@ -2783,9 +2783,11 @@ TMethod >> setSelector: sel definingClass: class args: argList locals: localList
 	comment := aComment.
 	labels := Set new.
 	
-	"hack; allows nodes to find their parent, etc"
+	"hack; allows nodes to find their parent, compute the conflicting locals when inlinign super sends..."
 	self parseTree: TStatementListNode new.
 	tempParseTree := parseTree.
+	self locals: tempParseTree locals, (localList  collect: [:arg | arg name]).
+
 	self parseTree: (aBlockNode asTranslatorNodeIn: self).
 	self locals: tempParseTree locals, (localList  collect: [:arg | arg name]).
 	
