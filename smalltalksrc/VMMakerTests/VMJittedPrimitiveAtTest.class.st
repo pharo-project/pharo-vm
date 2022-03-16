@@ -11,7 +11,7 @@ Class {
 VMJittedPrimitiveAtTest >> assertFallsThrough [
 
 	self runFrom: initialAddress until: stop address.
-	self assert: machineSimulator instructionPointerValue equals: stop address
+	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]
 
 { #category : #running }
@@ -543,7 +543,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtFixedObjectWithNoInstanceVariablesShou
 		arguments: { memory integerObjectOf: 1 }.
 	self runFrom: initialAddress until: stop address.
 
-	self assert: machineSimulator instructionPointerValue equals: stop address
+	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]
 
 { #category : #'tests - immediate' }
@@ -552,7 +552,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtImmediateCharacterShouldFallThrough [
 	machineSimulator receiverRegisterValue: (memory characterObjectOf: $a codePoint).
 	self runFrom: initialAddress until: stop address.
 
-	self assert: machineSimulator instructionPointerValue equals: stop address
+	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]
 
 { #category : #'tests - immediate' }
@@ -564,7 +564,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtImmediateFloatShouldFallThrough [
 	machineSimulator receiverRegisterValue: (memory smallFloatObjectOf: 1.0).
 	self runFrom: initialAddress until: stop address.
 
-	self assert: machineSimulator instructionPointerValue equals: stop address
+	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]
 
 { #category : #'tests - immediate' }
@@ -573,5 +573,5 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtSmallIntegerShouldFallThrough [
 	machineSimulator receiverRegisterValue: (memory integerObjectOf: 17).
 	self runFrom: initialAddress until: stop address.
 
-	self assert: machineSimulator instructionPointerValue equals: stop address
+	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]
