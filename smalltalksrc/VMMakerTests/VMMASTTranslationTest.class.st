@@ -336,7 +336,7 @@ VMMASTTranslationTest >> testInlineSecondLevelMethodWithLoopDeclaresLoopIndexVar
 		codeGenerator addMethod: e ].
 	codeGenerator doInlining: true.
 
-	self assert: translation locals size equals: 1
+	self assert: translation locals asSet size equals: 1
 ]
 
 { #category : #tests }
@@ -351,7 +351,7 @@ VMMASTTranslationTest >> testInlineTwiceMethodWithLoopDeclaresTwiceLoopIndexVari
 	codeGenerator addMethod: inlinedMethod.
 	codeGenerator doInlining: true.
 
-	self assert: translation locals size equals: 2
+	self assert: translation locals asSet size equals: 2
 ]
 
 { #category : #tests }
@@ -367,7 +367,7 @@ VMMASTTranslationTest >> testInlineTwiceSecondLevelMethodWithLoopDeclaresLoopInd
 		codeGenerator addMethod: e ].
 	codeGenerator doInlining: true.
 
-	self assert: translation locals size equals: 2
+	self assert: translation locals asSet size equals: 2
 ]
 
 { #category : #tests }
@@ -387,7 +387,7 @@ VMMASTTranslationTest >> testInlinedLocalVariableWithSameNameIsProperlyRenamed [
 	codeGenerator addMethod: inlinedMethodTranslation.
 	codeGenerator doInlining: true.
 
-	self assert: (methodTranslation declarations at: #cond1) equals: 'pthread_cond_t cond1'
+	self assert: (methodTranslation declarations at: #cond2) equals: 'pthread_cond_t cond2'
 ]
 
 { #category : #tests }

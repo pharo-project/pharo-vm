@@ -5652,6 +5652,8 @@ SlangBasicTranslationTest >> testSendWhileTrueWithTemporaryDeclaration [
 	translation := self translate: send.
 
 	self assert: translation trimBoth equals: 'do{
+	int temp;
+
 	var -= 7;
 }while(var >= 21)'
 ]
