@@ -2,18 +2,12 @@ Class {
 	#name : #VMSpurMemoryManagerTest,
 	#superclass : #ParametrizedTestCase,
 	#instVars : [
-		'newSpaceSize',
 		'memory',
 		'interpreter',
 		'oldSpaceSize',
 		'nextIndex',
-		'objectHeaderSize',
 		'zeroSizedObjectClassIndex',
-		'emptyObjectSize',
-		'initialAddress',
-		'stackSpaceSize',
 		'stackBuilder',
-		'methodCacheSize',
 		'rumpCStackSize',
 		'wordSize',
 		'methodBuilder',
@@ -67,6 +61,13 @@ VMSpurMemoryManagerTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod 
 		             fillFromPharoMethod: aPharoCompiledMethod;
 		             buildMethod.
 	^ methodOop
+]
+
+{ #category : #accessing }
+VMSpurMemoryManagerTest >> emptyObjectSize [ 
+
+	"It is the header plus a word, padded to 8 bytes alignment"
+	^ self objectHeaderSize + "memory wordSize" 8
 ]
 
 { #category : #accessing }
@@ -404,6 +405,12 @@ VMSpurMemoryManagerTest >> nextOrdinaryClassIndex [
 		ifNotNil: [ nextIndex := nextIndex + 1 ]
 ]
 
+{ #category : #accessing }
+VMSpurMemoryManagerTest >> objectHeaderSize [
+
+	^ memory baseHeaderSize 
+]
+
 { #category : #helpers }
 VMSpurMemoryManagerTest >> primitiveTraceLogSize [
 	^ 0
@@ -463,6 +470,8 @@ VMSpurMemoryManagerTest >> setUp [
 		memory: memory;
 		methodBuilder: methodBuilder;
 		yourself.
+		
+	oldSpaceSize := environmentBuilder oldSpaceSize
 ]
 
 { #category : #running }
@@ -511,11 +520,7 @@ VMSpurMemoryManagerTest >> setUpUsingImage [
 	interpreter openOn: 'YourImageHere.image'.
 	interpreter initStackPages.
 	interpreter loadInitialContext.
-	
-	objectHeaderSize := 8 "bytes. Always.".
-	emptyObjectSize := objectHeaderSize + 8 "minimum required single empty slot, to use for forwarders".
-	
-	newSpaceSize := memory getMemoryMap newSpaceEnd - memory getMemoryMap newSpaceStart.
+		
 	oldSpaceSize := memory oldSpaceSize.
 	
 	methodBuilder := VMCompiledCodeBuilder new
@@ -534,7 +539,7 @@ VMSpurMemoryManagerTest >> setUpUsingImage [
 { #category : #accessing }
 VMSpurMemoryManagerTest >> sizeOfObjectWithSlots: slots [
 
-	^ objectHeaderSize + ((slots min: 1 "at least one for the forwarder pointer") * memory wordSize "bytes")
+	^ self objectHeaderSize + ((slots min: 1 "at least one for the forwarder pointer") * memory wordSize "bytes")
 ]
 
 { #category : #accessing }

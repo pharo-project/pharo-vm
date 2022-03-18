@@ -86,7 +86,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectBiggerThanSizeOfFreeSpac
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSize [
 
 	| anObjectOop slotsNumber |
-	slotsNumber := memory totalFreeOldSpace - (objectHeaderSize * 2) / memory wordSize.
+	slotsNumber := memory totalFreeOldSpace - (self objectHeaderSize * 2) / memory wordSize.
 	
 	anObjectOop := self newOldSpaceObjectWithSlots: slotsNumber. "Big object have 2 wordSize of header"
 
@@ -97,7 +97,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSize [
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSizeShouldBeZero [
 
 	| anObjectOop slotsNumber |
-	slotsNumber := memory totalFreeOldSpace - (objectHeaderSize * 2) / memory wordSize.
+	slotsNumber := memory totalFreeOldSpace - (self objectHeaderSize * 2) / memory wordSize.
 	
 	anObjectOop := self newObjectWithSlots: slotsNumber. "Big object have 2 wordSize of header"
 	

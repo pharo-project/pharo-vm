@@ -9,7 +9,12 @@ Class {
 		'objectMemoryClass',
 		'wordSize',
 		'initialCodeSize',
-		'primitiveTraceLogSize'
+		'primitiveTraceLogSize',
+		'oldSpaceSize',
+		'initialAddress',
+		'stackSpaceSize',
+		'methodCacheSize',
+		'newSpaceSize'
 	],
 	#category : #'VMMakerTests-Builders'
 }
@@ -30,13 +35,18 @@ VMSimulatedEnvironmentBuilder >> build [
 	self doBuild
 ]
 
+{ #category : #accessing }
+VMSimulatedEnvironmentBuilder >> codeInitialAddress [
+
+	^ initialAddress 
+]
+
 { #category : #building }
 VMSimulatedEnvironmentBuilder >> doBuild [
 
 	"100 k at least to put the class table in the old space.
 	Get total size be a multiple of 4K so Unicorn CPU emulator accepts it"
-	| oldSpaceSize newSpaceSize stackSpaceSize methodCacheSize rumpCStackSize initialAddress memoryManager edenSize |
-	oldSpaceSize := 2048 * 1024.
+	| rumpCStackSize memoryManager edenSize |
 
 	"Check #scavengerDenominator in SpurMemoryManager"
 	edenSize := 2 * 1024 + interpreter interpreterAllocationReserveBytes.
@@ -93,6 +103,14 @@ VMSimulatedEnvironmentBuilder >> initializationOptions: aCollection [
 	initializationOptions := aCollection
 ]
 
+{ #category : #initialization }
+VMSimulatedEnvironmentBuilder >> initialize [
+
+	super initialize.
+	oldSpaceSize := 2048 * 1024.
+
+]
+
 { #category : #accessing }
 VMSimulatedEnvironmentBuilder >> interpreter [
 	^ interpreter
@@ -104,6 +122,16 @@ VMSimulatedEnvironmentBuilder >> interpreterClass: aClass [
 ]
 
 { #category : #accessing }
+VMSimulatedEnvironmentBuilder >> methodCacheSize [
+	^ methodCacheSize
+]
+
+{ #category : #accessing }
+VMSimulatedEnvironmentBuilder >> newSpaceSize [
+	^ newSpaceSize
+]
+
+{ #category : #accessing }
 VMSimulatedEnvironmentBuilder >> objectMemory [
 	^ objectMemory
 ]
@@ -111,6 +139,11 @@ VMSimulatedEnvironmentBuilder >> objectMemory [
 { #category : #accessing }
 VMSimulatedEnvironmentBuilder >> objectMemoryClass: aClass [ 
 	objectMemoryClass := aClass
+]
+
+{ #category : #accessing }
+VMSimulatedEnvironmentBuilder >> oldSpaceSize [
+	^ oldSpaceSize
 ]
 
 { #category : #accessing }
@@ -128,6 +161,11 @@ VMSimulatedEnvironmentBuilder >> roundToPageSize: anInteger [
 	remainder = 0 ifTrue: [ ^ anInteger ].
 
 	^ anInteger + (pageSize - remainder)
+]
+
+{ #category : #accessing }
+VMSimulatedEnvironmentBuilder >> stackSpaceSize [
+	^ stackSpaceSize
 ]
 
 { #category : #accessing }

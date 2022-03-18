@@ -12,7 +12,7 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> setUp [
 	self setUpCogMethodEntry.
 
 	memory coInterpreter
-		moveMethodCacheToMemoryAt: initialAddress "+ The guard page? memory cogCodeBase" + self initialCodeSize + stackSpaceSize.
+		moveMethodCacheToMemoryAt: initialAddress "+ The guard page? memory cogCodeBase" + self initialCodeSize + environmentBuilder stackSpaceSize.
 	specialSelectorsArray := self newOldSpaceObjectWithSlots: 2.
 	memory coInterpreter
 		specialSelectorArray: specialSelectorsArray;

@@ -9,7 +9,7 @@ VMSpurNewSpaceStructureTest >> fillEden [
 
 	"Allocate enough objects to fill the eden."
 	1
-		to: memory scavenger eden size // emptyObjectSize
+		to: memory scavenger eden size // self emptyObjectSize
 		do: [ :index | self newZeroSizedObject ]
 ]
 
@@ -21,7 +21,7 @@ VMSpurNewSpaceStructureTest >> testInstantiateNewObjectMovesFreeStartAfterObject
 	self newZeroSizedObject.
 	
 	"New zero sized object has 64bit header + 1 * 64bit empty slot = 16bytes"
-	self assert: memory freeStart equals: freeStartBefore + emptyObjectSize
+	self assert: memory freeStart equals: freeStartBefore + self emptyObjectSize
 ]
 
 { #category : #'tests-2-instantiation' }
@@ -32,7 +32,7 @@ VMSpurNewSpaceStructureTest >> testInstantiateNewObjectWithSlotMovesFreeStartAft
 	self newObjectWithSlots: 0.
 	
 	"New zero sized object has 64bit header + 1 * 64bit empty slot = 16bytes"
-	self assert: memory freeStart equals: freeStartBefore + emptyObjectSize
+	self assert: memory freeStart equals: freeStartBefore + self emptyObjectSize
 ]
 
 { #category : #'tests-1-memory-initialization' }
@@ -46,7 +46,7 @@ VMSpurNewSpaceStructureTest >> testNewMemoryEdenIsRestOfNewSpace [
 	
 	self
 		assert: memory scavenger eden size
-		equals: newSpaceSize - memory scavenger pastSpace size - memory scavenger futureSpace size
+		equals: environmentBuilder newSpaceSize - memory scavenger pastSpace size - memory scavenger futureSpace size
 ]
 
 { #category : #'tests-1-memory-initialization' }
@@ -64,7 +64,7 @@ VMSpurNewSpaceStructureTest >> testNewMemoryFutureSpaceEndIsAtTheStartOfEden [
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryFutureSpaceIsRoughlyOneSeventhOfNewSpace [
 	
-	self assert: memory scavenger futureSpace size equals: (newSpaceSize // 7 truncateTo: memory allocationUnit)
+	self assert: memory scavenger futureSpace size equals: (environmentBuilder newSpaceSize // 7 truncateTo: memory allocationUnit)
 ]
 
 { #category : #'tests-1-memory-initialization' }
@@ -78,19 +78,19 @@ VMSpurNewSpaceStructureTest >> testNewMemoryFutureSurvivorSpaceIsAtFutureSpaceSt
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryLimitIsSumOfSpaces [
 	
-	self assert: memory getMemoryMap oldSpaceEnd equals: oldSpaceSize + newSpaceSize + stackSpaceSize + initialAddress + self primitiveTraceLogSize + methodCacheSize 
+	self assert: memory getMemoryMap oldSpaceEnd equals: oldSpaceSize + environmentBuilder newSpaceSize + environmentBuilder stackSpaceSize + environmentBuilder codeInitialAddress + self primitiveTraceLogSize + environmentBuilder methodCacheSize 
 ]
 
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryNewSpaceLimitIsNewSpaceStartPlusSize [
 	
-	self assert: memory getMemoryMap newSpaceEnd equals: newSpaceSize + stackSpaceSize + initialAddress	+ self primitiveTraceLogSize + methodCacheSize 
+	self assert: memory getMemoryMap newSpaceEnd equals: environmentBuilder newSpaceSize + environmentBuilder stackSpaceSize + environmentBuilder codeInitialAddress	+ self primitiveTraceLogSize + environmentBuilder methodCacheSize 
 ]
 
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryNewSpaceStartIsStackSize [
 
-	self assert: memory getMemoryMap newSpaceStart equals: stackSpaceSize + initialAddress + self primitiveTraceLogSize + methodCacheSize 
+	self assert: memory getMemoryMap newSpaceStart equals: environmentBuilder stackSpaceSize + environmentBuilder codeInitialAddress + self primitiveTraceLogSize + environmentBuilder methodCacheSize 
 ]
 
 { #category : #'tests-1-memory-initialization' }
@@ -117,7 +117,7 @@ VMSpurNewSpaceStructureTest >> testNewMemoryPastSpaceIsAtTheStartOfNewSpace [
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryPastSpaceIsRoughlyOneSeventhOfNewSpace [
 	
-	self assert: memory scavenger pastSpaceBytes equals: (newSpaceSize // 7 truncateTo: memory allocationUnit)
+	self assert: memory scavenger pastSpaceBytes equals: (environmentBuilder newSpaceSize // 7 truncateTo: memory allocationUnit)
 ]
 
 { #category : #'tests-2-instantiation' }
