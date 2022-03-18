@@ -710,7 +710,7 @@ VMSimpleStackBasedCogitAbstractTest >> sentSelector: anObject [
 VMSimpleStackBasedCogitAbstractTest >> setUp [
 	super setUp.
 
-	initialAddress := environmentBuilder codeInitialAddress.
+	initialAddress := environmentBuilder memoryInitialAddress.
 
 	cogit := self newJitCompiler.
 	memory coInterpreter cogit: cogit.

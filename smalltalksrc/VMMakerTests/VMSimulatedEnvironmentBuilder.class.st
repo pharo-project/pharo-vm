@@ -35,12 +35,6 @@ VMSimulatedEnvironmentBuilder >> build [
 	self doBuild
 ]
 
-{ #category : #accessing }
-VMSimulatedEnvironmentBuilder >> codeInitialAddress [
-
-	^ initialAddress 
-]
-
 { #category : #building }
 VMSimulatedEnvironmentBuilder >> doBuild [
 
@@ -119,6 +113,12 @@ VMSimulatedEnvironmentBuilder >> interpreter [
 { #category : #accessing }
 VMSimulatedEnvironmentBuilder >> interpreterClass: aClass [ 
 	interpreterClass := aClass
+]
+
+{ #category : #accessing }
+VMSimulatedEnvironmentBuilder >> memoryInitialAddress [
+
+	^ initialAddress 
 ]
 
 { #category : #accessing }
