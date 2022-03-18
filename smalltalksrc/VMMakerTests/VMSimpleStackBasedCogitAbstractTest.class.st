@@ -21,7 +21,8 @@ Class {
 		'machineSimulator',
 		'send1TrampolineAddress',
 		'send2TrampolineAddress',
-		'send3TrampolineAddress'
+		'send3TrampolineAddress',
+		'initialAddress'
 	],
 	#pools : [
 		'CogAbstractRegisters',
@@ -710,8 +711,6 @@ VMSimpleStackBasedCogitAbstractTest >> sentSelector: anObject [
 VMSimpleStackBasedCogitAbstractTest >> setUp [
 	super setUp.
 
-	initialAddress := environmentBuilder memoryInitialAddress.
-
 	cogit := self newJitCompiler.
 	memory coInterpreter cogit: cogit.
 	memory cogit: cogit.
@@ -727,6 +726,9 @@ VMSimpleStackBasedCogitAbstractTest >> setUp [
 
 	cogit setStackAlignment: 16 expectedSPOffset: 0 expectedFPOffset: 0.
 	cogit initializeBackend.
+
+	initialAddress := environmentBuilder memoryInitialAddress.
+
 	cogit methodZone manageFrom: initialAddress to: initialAddress + self initialCodeSize.
 	cogit methodZoneBase: initialAddress.
 	cogit minCallAddress: initialAddress.
@@ -737,7 +739,7 @@ VMSimpleStackBasedCogitAbstractTest >> setUp [
 	machineSimulator := cogit processor machineSimulator.
 	
 	cogit generateStackPointerCapture.
-	cogit methodZone manageFrom: cogit cogCodeBase to: initialAddress + self initialCodeSize.
+	cogit methodZone manageFrom: cogit cogCodeBase to: environmentBuilder memoryInitialAddress + self initialCodeSize.
 
 	memory coInterpreter numStackPages: 8.
 
