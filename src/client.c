@@ -65,7 +65,7 @@ EXPORT(int) vm_init(VMParameters* parameters)
 	ioInitExternalSemaphores();
 	setMaxStacksToPrint(parameters->maxStackFramesToPrint);
 	setMaxOldSpaceSize(parameters->maxOldSpaceSize);
-  setDesiredEdenBytes(parameters->edenSize);
+	setDesiredEdenBytes(parameters->edenSize);
 
 	if(parameters->maxCodeSize > 0) {
 #ifndef COGVM
@@ -170,6 +170,7 @@ vm_main(int argc, const char** argv, const char** env)
 	parameters.maxCodeSize = 0;
 	parameters.maxOldSpaceSize = 0;
 	parameters.edenSize = 0;
+	parameters.imageFileName = NULL;
 
 	// Did we succeed on parsing the parameters?
 	VMErrorCode error = vm_parameters_parse(argc, argv, &parameters);
