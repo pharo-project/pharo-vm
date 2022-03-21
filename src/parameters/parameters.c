@@ -1,5 +1,5 @@
 #include "pharovm/pharo.h"
-#include "pharovm/parameters.h"
+#include "pharovm/parameters/parameters.h"
 #include "pharovm/debug.h"
 #include "pharovm/pathUtilities.h"
 #include <assert.h>
@@ -275,18 +275,23 @@ splitVMAndImageParameters(int argc, const char** argv, VMParameters* parameters)
 	if(numberOfImageParameters < 0)
 		numberOfImageParameters = 0;
 
-	// We get the image file name
-	if(imageNameIndex == argc || strcmp("--", argv[imageNameIndex]) == 0) {
-		error = vm_find_startup_image(argv[0], parameters);
-		if(error)
-		{
-			return error;
+	if(parameters->imageFileName == NULL){
+		// We get the image file name
+		if(imageNameIndex == argc || strcmp("--", argv[imageNameIndex]) == 0) {
+			error = vm_find_startup_image(argv[0], parameters);
+			if(error)
+			{
+				return error;
+			}
 		}
-	}
-	else
-	{
-		parameters->imageFileName = strdup(argv[imageNameIndex]);
-		parameters->isDefaultImage = false;
+		else
+		{
+			parameters->imageFileName = strdup(argv[imageNameIndex]);
+			parameters->isDefaultImage = false;
+		}
+
+		// Is this an interactive environment?
+		parameters->isInteractiveSession = !isInConsole() && parameters->isDefaultImage;
 	}
 
 	// Copy image parameters.
@@ -619,12 +624,14 @@ vm_parameters_parse(int argc, const char** argv, VMParameters* parameters)
 {
 	char* fullPath;
 
+#ifdef __APPLE__
+	//If it is OSX I read parameters from the PList
+	fillParametersFromPList(parameters);
+#endif
+
 	// Split the argument vector in two separate vectors.
 	VMErrorCode error = splitVMAndImageParameters(argc, argv, parameters);
 	if(error) return error;
-
-	// Is this an interactive environment?
-	parameters->isInteractiveSession = !isInConsole() && parameters->isDefaultImage;
 
 	// I get the VM location from the argv[0]
 	char *fullPathBuffer = (char*)calloc(1, FILENAME_MAX);
