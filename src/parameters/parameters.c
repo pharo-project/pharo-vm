@@ -74,12 +74,13 @@ static VMErrorCode processMaxFramesToPrintOption(const char *argument, VMParamet
 static VMErrorCode processMaxOldSpaceSizeOption(const char *argument, VMParameters * params);
 static VMErrorCode processMaxCodeSpaceSizeOption(const char *argument, VMParameters * params);
 static VMErrorCode processEdenSizeOption(const char *argument, VMParameters * params);
+static VMErrorCode processWorkerOption(const char *argument, VMParameters * params);
 
 static const VMParameterSpec vm_parameters_spec[] =
 {
   {.name = "headless", .hasArgument = false, .function = NULL},
 #ifdef PHARO_VM_IN_WORKER_THREAD
-  {.name = "worker", .hasArgument = false, .function = NULL},
+  {.name = "worker", .hasArgument = false, .function = processWorkerOption},
 #endif
   {.name = "interactive", .hasArgument = false, .function = NULL}, // For pharo-ui scripts.
   {.name = "vm-display-null", .hasArgument = false, .function = NULL}, // For Smalltalk CI.
@@ -349,7 +350,6 @@ VMErrorCode
 vm_parameters_ensure_interactive_image_parameter(VMParameters* parameters)
 {
 	const char* interactiveParameter = "--interactive";
-	const char* headlessParameter = "--headless";
 	VMErrorCode error;
 
 	if (parameters->isInteractiveSession)
@@ -520,6 +520,13 @@ processEdenSizeOption(const char* originalArgument, VMParameters * params)
 }
 
 static VMErrorCode
+processWorkerOption(const char* argument, VMParameters * params)
+{
+	params->isWorker = true;
+	return VM_SUCCESS;
+}
+
+static VMErrorCode
 processHelpOption(const char* argument, VMParameters * params)
 {
 	(void)argument;
@@ -661,6 +668,28 @@ vm_parameters_parse(int argc, const char** argv, VMParameters* parameters)
 	}
 
 	logParameters(parameters);
+
+	return VM_SUCCESS;
+}
+
+EXPORT(VMErrorCode)
+vm_parameters_init(VMParameters *parameters){
+
+	parameters->vmParameters.count = 0;
+	parameters->vmParameters.parameters = NULL;
+	parameters->imageParameters.count = 0;
+	parameters->imageParameters.parameters = NULL;
+
+	parameters->maxStackFramesToPrint = 0;
+	parameters->maxCodeSize = 0;
+	parameters->maxOldSpaceSize = 0;
+	parameters->edenSize = 0;
+	parameters->imageFileName = NULL;
+	parameters->isDefaultImage = FALSE;
+	parameters->defaultImageFound = FALSE;
+	parameters->isInteractiveSession = FALSE;
+
+	parameters->isWorker = FALSE;
 
 	return VM_SUCCESS;
 }

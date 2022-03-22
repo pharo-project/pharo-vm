@@ -105,6 +105,9 @@ typedef struct VMParameters_
 	/// Is this an interactive session?
 	bool isInteractiveSession;
 
+	/// Does the VM run in a worker?
+	bool isWorker;
+
 	//The number of smalltalk frames to print in a process dump, (0 to print all).
 	int maxStackFramesToPrint;
 
@@ -143,6 +146,12 @@ EXPORT(VMErrorCode) vm_parameters_ensure_interactive_image_parameter(VMParameter
  * Destroy an allocated instance \ref VMParameters.
  */
 EXPORT(VMErrorCode) vm_parameters_destroy(VMParameters *parameters);
+
+/**
+ * Initialize the values of an instance of VMParameters
+ */
+
+EXPORT(VMErrorCode) vm_parameters_init(VMParameters *parameters);
 
 /**
  * Prints the command line parameter usage string to a file.
