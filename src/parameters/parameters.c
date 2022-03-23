@@ -687,11 +687,11 @@ vm_parameters_init(VMParameters *parameters){
 	parameters->maxOldSpaceSize = 0;
 	parameters->edenSize = 0;
 	parameters->imageFileName = NULL;
-	parameters->isDefaultImage = FALSE;
-	parameters->defaultImageFound = FALSE;
-	parameters->isInteractiveSession = FALSE;
+	parameters->isDefaultImage = false;
+	parameters->defaultImageFound = false;
+	parameters->isInteractiveSession = false;
 
-	parameters->isWorker = FALSE;
+	parameters->isWorker = false;
 
 	return VM_SUCCESS;
 }
