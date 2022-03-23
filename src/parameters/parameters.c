@@ -350,6 +350,7 @@ VMErrorCode
 vm_parameters_ensure_interactive_image_parameter(VMParameters* parameters)
 {
 	VMErrorCode error;
+	const char* interactiveParameter = "--interactive";
 
 	if (parameters->isInteractiveSession)
 	{
@@ -364,7 +365,6 @@ vm_parameters_ensure_interactive_image_parameter(VMParameters* parameters)
 
 #if ALWAYS_INTERACTIVE
 
-	const char* interactiveParameter = "--interactive";
 	const char* headlessParameter = "--headless";
 
 	/*
