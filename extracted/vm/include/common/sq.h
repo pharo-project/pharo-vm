@@ -161,6 +161,9 @@ sqInt sqGetFilenameFromString(char * aCharBuffer, char * aFilenameString, sqInt 
 #define sqFTruncate(filenum, fileoffset) true
 #endif
 
+#define insufficientMemoryAvailableError()  error("Failed to allocate memory for the heap")
+#define unableToReadImageError()    error("Read failed or premature end of image file")
+
 /* Platform-specific header file may redefine earlier definitions and macros. */
 
 #include "sqPlatformSpecific.h"
