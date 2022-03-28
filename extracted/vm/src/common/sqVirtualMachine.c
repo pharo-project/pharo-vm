@@ -136,7 +136,6 @@ sqInt becomewith(sqInt array1, sqInt array2);
 sqInt byteSwapped(sqInt w);
 sqInt failed(void);
 void fullGC(void);
-void incrementalGC(void);
 sqInt primitiveFail(void);
 sqInt primitiveFailFor(sqInt reasonCode);
 sqInt showDisplayBitsLeftTopRightBottom(sqInt aForm, sqInt l, sqInt t, sqInt r, sqInt b);
@@ -375,7 +374,6 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 	VM->byteSwapped = byteSwapped;
 	VM->failed = failed;
 	VM->fullGC = fullGC;
-	VM->incrementalGC = incrementalGC;
 	VM->primitiveFail = primitiveFail;
 	VM->showDisplayBitsLeftTopRightBottom = showDisplayBitsLeftTopRightBottom;
 	VM->signalSemaphoreWithIndex = signalSemaphoreWithIndex;
