@@ -12,7 +12,7 @@ VMFFISameThreadCalloutTest >> testPrimitiveSameThreadCalloutMaintainsActiveProce
 	tfExternalFunction := self createReturnFloatExternalFunctionFor: [ 7.0 ].
 	oldActiveProcess := interpreter activeProcess.
 
-	parametersArray := self newObjectWithSlots: 0.
+	parametersArray := self newArrayWithSlots: 0.
 
 	interpreter push: memory nilObject.
 	interpreter push: tfExternalFunction.
@@ -38,7 +38,7 @@ VMFFISameThreadCalloutTest >> testPrimitiveSameThreadCalloutShouldKeepTheNewMeth
 	
 	oldActiveProcess := interpreter activeProcess.
 
-	parametersArray := self newObjectWithSlots: 0.
+	parametersArray := self newArrayWithSlots: 0.
 
 	interpreter push: memory nilObject.
 	interpreter push: tfExternalFunction.

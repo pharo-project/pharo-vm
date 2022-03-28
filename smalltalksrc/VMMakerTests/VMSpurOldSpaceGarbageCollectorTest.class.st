@@ -236,7 +236,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testMultiPageMournQueue [
 	numberJustOverLimit := objectStackLimit + 1.
 
 	ephemeronKey := self newZeroSizedObject.
-	ephemeronContainer := self newObjectWithSlots: numberJustOverLimit.
+	ephemeronContainer := self newArrayWithSlots: numberJustOverLimit.
 	1 to: numberJustOverLimit do: [ :i | | ephemeronObjectOop |
 		ephemeronObjectOop := self newEphemeronObject.
 		memory
@@ -274,7 +274,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testPageLimitMournQueue [
 	numberJustBelowLimit := objectStackLimit - 1.
 	
 	ephemeronKey := self newZeroSizedObject.
-	ephemeronContainer := self newObjectWithSlots: numberJustBelowLimit.
+	ephemeronContainer := self newArrayWithSlots: numberJustBelowLimit.
 	objStackLimit := numberJustBelowLimit.
 	1 to: objStackLimit do: [ :i | | ephemeronObjectOop |
 		ephemeronObjectOop := self newEphemeronObject.

@@ -12764,3 +12764,9 @@ SpurMemoryManager >> writeProtectMemory [
 	memory class ~~ ReadOnlyArrayWrapper ifTrue:
 		[memory := ReadOnlyArrayWrapper around: memory]
 ]
+
+{ #category : #'header formats' }
+SpurMemoryManager >> zeroSlotsNonIndexablePointerFormat [
+	<api>
+	^0
+]

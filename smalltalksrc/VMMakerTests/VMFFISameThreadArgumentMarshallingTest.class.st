@@ -14,7 +14,7 @@ VMFFISameThreadArgumentMarshallingTest >> doTestFuntionWithArgumentType: argumen
 		withArgumentTypes: { argumentType } 
 		withReturnType: interpreter libFFI void.
 	
-	parametersArray := self newObjectWithSlots: 1.
+	parametersArray := self newArrayWithSlots: 1.
 	memory storePointer: 0 ofObject: parametersArray withValue: smalltalkValue.
 
 	interpreter push: memory nilObject.
@@ -38,7 +38,7 @@ VMFFISameThreadArgumentMarshallingTest >> doTestFuntionWithArgumentType: argumen
 		withArgumentTypes: { argumentType } 
 		withReturnType: interpreter libFFI void.
 	
-	parametersArray := self newObjectWithSlots: 1.
+	parametersArray := self newArrayWithSlots: 1.
 	memory storePointer: 0 ofObject: parametersArray withValue: smalltalkValue.
 
 	interpreter push: memory nilObject.
@@ -59,7 +59,7 @@ VMFFISameThreadArgumentMarshallingTest >> testCalloutWithoutArgumentsMarshallsCo
 
 	functionCalled := false.
 	tfExternalFunction := self createReturnFloatExternalFunctionFor: [ functionCalled := true. 7.0 ].
-	parametersArray := self newObjectWithSlots: 0.
+	parametersArray := self newArrayWithSlots: 0.
 
 	interpreter push: memory nilObject.
 	interpreter push: tfExternalFunction.
