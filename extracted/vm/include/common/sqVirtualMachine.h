@@ -131,7 +131,6 @@ typedef struct VirtualMachine {
 
 	/* InterpreterProxy methodsFor: 'special objects' */
 
-	sqInt (*characterTable)(void);
 	sqInt (*falseObject)(void);
 	sqInt (*nilObject)(void);
 	sqInt (*trueObject)(void);
