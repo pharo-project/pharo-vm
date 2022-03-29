@@ -1998,11 +1998,15 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 		             manager: self;
 		             yourself.
 	
-	permSpaceSize > 0 
+	permSpaceSize isZero 
 		ifTrue: [ 
-			memoryMap permSpaceStart: (self allocateMemoryOfSize: permSpaceSize initialAddress: 16r10000000).
-			memoryMap permSpaceEnd: memoryMap permSpaceStart + permSpaceSize.
-			permSpaceFreeStart := memoryMap permSpaceStart ] 
+			memoryMap permSpaceStart: 16r10000000.
+			memoryMap permSpaceEnd: 16r10000000]
+		ifFalse: [ 	
+				memoryMap permSpaceStart: (self allocateMemoryOfSize: permSpaceSize initialAddress: 16r10000000).
+				memoryMap permSpaceEnd: memoryMap permSpaceStart + permSpaceSize ].
+			
+	permSpaceFreeStart := memoryMap permSpaceStart 
 
 ]
 
@@ -8152,6 +8156,11 @@ SpurMemoryManager >> markAndShouldScan: objOop [
 	self assert: (self isForwarded: objOop) not.
 	(self isMarked: objOop) ifTrue:
 		[^false].
+	
+	"If it is a permanent object I will not visit it"
+	(self isPermanentObject: objOop)
+		ifTrue: [ ^false ].
+	
 	self setIsMarkedOf: objOop to: true.
 	format := self formatOf: objOop.
 	(self isPureBitsFormat: format) ifTrue: "avoid pushing non-pointer objects on the markStack."

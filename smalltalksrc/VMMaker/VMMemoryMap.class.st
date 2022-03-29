@@ -104,6 +104,21 @@ VMMemoryMap >> allocateOldObjectsSpace [
 	self setOldSpaceEnd: self oldSpaceStart + sizeToAllocate
 ]
 
+{ #category : #allocating }
+VMMemoryMap >> allocatePermObjectsSpace [
+
+	| permSpaceSize |
+	permSpaceSize := 10*1024*1024.
+
+	self permSpaceStart: (self 
+		allocateMemory: permSpaceSize 
+		BaseAddress: memoryMapConfiguration permSpaceInitialAddress).
+
+	self permSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
+
+	self permSpaceEnd: self permSpaceStart + permSpaceSize	
+]
+
 { #category : #accessing }
 VMMemoryMap >> allocationReserve [
 	^ allocationReserve
@@ -262,6 +277,7 @@ VMMemoryMap >> permSpaceStart [
 { #category : #accessing }
 VMMemoryMap >> permSpaceStart: anInteger [ 
 
+	self assert: anInteger > oldSpaceEnd.
 	permSpaceStart := anInteger 
 ]
 
@@ -269,6 +285,8 @@ VMMemoryMap >> permSpaceStart: anInteger [
 VMMemoryMap >> setOldSpaceEnd: anInteger [ 
 	
 	oldSpaceEnd := anInteger.
+	self assert: (permSpaceStart isNil or: [anInteger < permSpaceStart]).
+
 ]
 
 { #category : #accessing }

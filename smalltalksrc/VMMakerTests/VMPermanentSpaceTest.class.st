@@ -49,6 +49,42 @@ VMPermanentSpaceTest >> setUp [
 ]
 
 { #category : #'instance creation' }
+VMPermanentSpaceTest >> testMarkingNewSpaceDoesNotMarkPermSpace [
+
+	| permanentObject newObject |
+	
+	permanentObject := self newPermanentByteObjectOfSize: 14.
+	newObject := self newObjectWithSlots: 1.
+	self keepObjectInVMVariable1: newObject.
+	
+	self assert: (memory isYoungObject: newObject).
+
+	memory storePointer: 0 ofObject: newObject withValue: permanentObject.
+
+	memory doScavenge: 1 "TenureByAge".
+
+	self deny: (memory isMarked: permanentObject)
+]
+
+{ #category : #'instance creation' }
+VMPermanentSpaceTest >> testMarkingOldSpaceDoesNotMarkPermSpace [
+
+	| permanentObject oldObject |
+	
+	permanentObject := self newPermanentByteObjectOfSize: 14.
+	oldObject := self newOldSpaceObjectWithSlots: 1.
+	self keepObjectInVMVariable1: oldObject.
+	
+	self assert: (memory isOldObject: oldObject).
+
+	memory storePointer: 0 ofObject: oldObject withValue: permanentObject.
+
+	memory fullGC.
+
+	self deny: (memory isMarked: permanentObject)
+]
+
+{ #category : #'instance creation' }
 VMPermanentSpaceTest >> testNewPermanentByteArrayIsCorrectlyAllocated [
 
 	| permanentObject |

@@ -1075,6 +1075,8 @@ SpurGenerationScavenger >> remember: objOop [
 	self deny: (manager isYoungObject: objOop).
 	self deny: (manager isRemembered: objOop).
 	self deny: (self isInRememberedSet: objOop).
+	self deny: (manager isPermanentObject: objOop).
+	
 	manager setIsRememberedOf: objOop to: true.
 	rememberedSetSize >= rememberedSetLimit ifTrue:
 		[self growRememberedSet].

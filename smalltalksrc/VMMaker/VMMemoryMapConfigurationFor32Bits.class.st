@@ -21,3 +21,9 @@ VMMemoryMapConfigurationFor32Bits >> oldSpaceInitialAddress [
 
 	^ 16r40000000 "(1024 MB)"
 ]
+
+{ #category : #'initial addresses' }
+VMMemoryMapConfigurationFor32Bits >> permSpaceInitialAddress [
+
+	^ 16r80000000 "(2048 MB)"
+]
