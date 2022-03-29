@@ -575,7 +575,6 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		declareC: 'sqIntptr_t methodCache[MethodCacheSize + 1 /* '
 			, (MethodCacheSize + 1) printString , ' */]'.
 	aCCodeGenerator
-		removeVariable: #nsMethodCache;
 		removeVariable: 'localAbsentReceiver';
 		removeVariable: 'localAbsentReceiverOrZero'.
 	AtCacheTotalSize isInteger ifTrue: [ 
@@ -10966,6 +10965,7 @@ StackInterpreter >> pop: nItems thenPush: oop [
 	"In the StackInterpreter stacks grow down."
 	| sp |
 	<inline: true>
+	<returnTypeC: #void>
 	<var: #sp type: #'char *'>
 	stackPages longAt: (sp := stackPointer + ((nItems - 1) * objectMemory wordSize)) put: oop.
 	stackPointer := sp
@@ -12667,7 +12667,9 @@ StackInterpreter >> pushActiveContextBytecode [
 
 { #category : #'internal interpreter access' }
 StackInterpreter >> pushBool: trueOrFalse [
+
 	<inline: true>
+	<returnTypeC: #sqInt>
 	self push: (objectMemory booleanObjectOf: trueOrFalse)
 ]
 

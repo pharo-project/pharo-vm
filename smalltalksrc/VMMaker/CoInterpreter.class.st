@@ -941,6 +941,7 @@ CoInterpreter >> baseFrameReturn [
 	<var: #thePage type: #'StackPage *'>
 	<var: #newPage type: #'StackPage *'>
 	<var: #frameAbove type: #'char *'>
+	<returnTypeC: #void>
 	contextToReturnTo := self frameCallerContext: localFP.
 
 	"The stack page is effectively free now, so free it.  We must free it to be
@@ -3001,6 +3002,7 @@ CoInterpreter >> extendedStoreBytecodePop: popBoolean [
 	"Override to use itemporary:in:put:"
 	| descriptor variableType variableIndex value |
 	<inline: true>
+	<returnTypeC: #void>
 	descriptor := self fetchByte.
 	variableType := descriptor >> 6 bitAnd: 3.
 	variableIndex := descriptor bitAnd: 63.

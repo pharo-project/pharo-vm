@@ -10357,6 +10357,7 @@ SpurMemoryManager >> pushRemappableOop: oop [
 	 We support this excessence for compatibility with ObjectMemory.
 	 Spur doesn't GC during allocation."
 	<api>
+	<returnTypeC: #void>
 	self assert: (self addressCouldBeOop: oop).
 	remapBuffer at: (remapBufferCount := remapBufferCount + 1) put: oop.
 	remapBufferCount <= RemapBufferSize ifFalse:

@@ -1397,6 +1397,7 @@ CogARMv8Compiler >> concretizeAndCqRR [
 	"AND is very important since it's used to mask all sorts of flags in the jit. We take special care to try to find compact ways to make the masks"
 
 	<var: #val type: #sqInt>
+	<returnTypeC: #void>
 	<inline: true>
 	| val srcReg dstReg |
 
@@ -1882,6 +1883,7 @@ CogARMv8Compiler >> concretizeLoadEffectiveAddressMwrR [
 	"destReg = srcReg (which contains an address) + offset"
 
 	<inline: true>
+	<returnTypeC: #void>
 	| srcReg offset destReg |
 	offset := operands at: 0.
 	srcReg := operands at: 1.

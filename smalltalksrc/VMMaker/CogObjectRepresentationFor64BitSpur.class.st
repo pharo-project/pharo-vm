@@ -1371,7 +1371,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtSigned: signedVersion [
 { #category : #'primitive generators' }
 CogObjectRepresentationFor64BitSpur >> genPrimitiveIdentityHash [
 	"Arguably we should fail for immediates, but so far no one has complained, so..."
-	| jumpImm jumpNotSet jumpNotCharacter ret |
+	| jumpImm jumpNotSet jumpNotCharacter returnInstruction |
 	<var: #jumpImm type: #'AbstractInstruction *'>
 	<var: #jumpNotSet type: #'AbstractInstruction *'>
 	<var: #jumpNotCharacter type: #'AbstractInstruction *'>
@@ -1380,14 +1380,14 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveIdentityHash [
 	cogit CmpCq: ConstZero R: TempReg.
 	jumpNotSet := cogit JumpZero: 0.
 	cogit MoveR: TempReg R: ReceiverResultReg.
-	ret := cogit genPrimReturn.
+	returnInstruction := cogit genPrimReturn.
 	jumpImm jmpTarget: (cogit AndCq: objectMemory tagMask R: ReceiverResultReg R: TempReg).
 	cogit CmpCq: objectMemory characterTag R: TempReg.
 	jumpNotCharacter := cogit JumpNonZero: 0.
 	self genConvertCharacterToSmallIntegerInReg: ReceiverResultReg.
-	ret := cogit genPrimReturn.
+	returnInstruction := cogit genPrimReturn.
 	jumpNotCharacter jmpTarget: (cogit CmpCq: objectMemory smallFloatTag R: TempReg).
-	cogit JumpNonZero: ret.
+	cogit JumpNonZero: returnInstruction.
 	self genConvertSmallFloatToSmallFloatHashAsIntegerInReg: ReceiverResultReg scratch: TempReg.
 	cogit genPrimReturn.
 	jumpNotSet jmpTarget: cogit Label.
@@ -1403,17 +1403,17 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveIdentityHash [
 
 { #category : #'primitive generators' }
 CogObjectRepresentationFor64BitSpur >> genPrimitiveImmediateAsInteger [
-	| jumpNotCharacter ret |
+	| jumpNotCharacter returnInstruction |
 	<var: #jumpNotCharacter type: #'AbstractInstruction *'>
 	jumpNotCharacter := cogit
 		AndCq: objectMemory tagMask R: ReceiverResultReg R: TempReg;
 		CmpCq: objectMemory characterTag R: TempReg;
 		JumpNonZero: 0.
 	self genConvertCharacterToSmallIntegerInReg: ReceiverResultReg.
-	ret := cogit genPrimReturn.
+	returnInstruction := cogit genPrimReturn.
 	jumpNotCharacter jmpTarget:
 		(cogit CmpCq: objectMemory smallFloatTag R: TempReg).
-	cogit JumpNonZero: ret.
+	cogit JumpNonZero: returnInstruction.
 	self genConvertSmallFloatToSmallFloatHashAsIntegerInReg: ReceiverResultReg scratch: TempReg.
 	cogit genPrimReturn.
 	^UnfailingPrimitive

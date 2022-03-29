@@ -495,7 +495,7 @@ Cogit class >> cogToBytecodeMethodMapping [
 { #category : #translation }
 Cogit class >> declareCVarsIn: aCCodeGenerator [
 	#(	'coInterpreter' 'objectMemory' 'methodZone' 'objectRepresentation'
-		'cogBlockMethodSurrogateClass' 'cogMethodSurrogateClass' 'threadManager' 'processor' 'lastNInstructions' 'simulatedAddresses'
+		'cogBlockMethodSurrogateClass' 'cogMethodSurrogateClass' 'processor' 'lastNInstructions' 'simulatedAddresses'
 		'simulatedTrampolines' 'simulatedVariableGetters' 'simulatedVariableSetters'
 		'printRegisters' 'printInstructions' 'clickConfirm' 'singleStep') do:
 			[:simulationVariableNotNeededForRealVM|
