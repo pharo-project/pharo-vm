@@ -13,7 +13,7 @@ Class {
 		'methodBuilder',
 		'edenSize',
 		'imageReaderClass',
-		'imageWriterClass'
+		'imageWriterClass',
 		'environmentBuilder'
 	],
 	#pools : [
