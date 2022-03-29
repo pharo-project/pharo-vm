@@ -11,7 +11,10 @@ Class {
 		'initialOldSpaceSize',
 		'initialNewSpaceSize',
 		'initialHeadroom',
-		'memoryMapConfiguration'
+		'memoryMapConfiguration',
+		'permSpaceStart',
+		'permSpaceEnd',
+		'oldSpaceMask'
 	],
 	#category : #'VMMaker-Memory'
 }
@@ -63,6 +66,7 @@ VMMemoryMap >> allocateHeap [
 	<inline: false>
 	self allocateNewObjectsSpace.
 	self allocateOldObjectsSpace.
+	self allocatePermObjectsSpace.	
 ]
 
 { #category : #private }
@@ -97,7 +101,7 @@ VMMemoryMap >> allocateOldObjectsSpace [
 
 	self oldSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 
-	self oldSpaceEnd: self oldSpaceStart + sizeToAllocate
+	self setOldSpaceEnd: self oldSpaceStart + sizeToAllocate
 ]
 
 { #category : #accessing }
@@ -159,6 +163,33 @@ VMMemoryMap >> insufficientMemoryAvailableError [
 	self error.
 ]
 
+{ #category : #'testing objects' }
+VMMemoryMap >> isOldObject: anOop [ 
+	<api>
+	self flag:#todo.
+	"^ anOop allMask: oldSpaceMask "
+	^ oldSpaceStart <= anOop and: [ anOop < oldSpaceEnd ]
+
+]
+
+{ #category : #'testing objects' }
+VMMemoryMap >> isPermanentObject: anOop [ 
+	<api>
+	self flag:#todo.
+	"^ anOop allMask: oldSpaceMask "
+	^ permSpaceStart <= anOop and: [ anOop < permSpaceEnd ]
+
+]
+
+{ #category : #'testing objects' }
+VMMemoryMap >> isYoungObject: anOop [ 
+	<api>
+	self flag:#todo.
+	"^ anOop allMask: oldSpaceMask "
+	^ newSpaceStart <= anOop and: [ anOop < newSpaceEnd ]
+
+]
+
 { #category : #accessing }
 VMMemoryMap >> memoryManager [
 
@@ -201,12 +232,6 @@ VMMemoryMap >> oldSpaceEnd [
 ]
 
 { #category : #accessing }
-VMMemoryMap >> oldSpaceEnd: anInteger [ 
-	
-	oldSpaceEnd := anInteger
-]
-
-{ #category : #accessing }
 VMMemoryMap >> oldSpaceStart [
 
 	^ oldSpaceStart
@@ -219,18 +244,38 @@ VMMemoryMap >> oldSpaceStart: anObject [
 ]
 
 { #category : #accessing }
+VMMemoryMap >> permSpaceEnd [
+	^ permSpaceEnd
+]
+
+{ #category : #accessing }
+VMMemoryMap >> permSpaceEnd: anInteger [ 
+
+	permSpaceEnd := anInteger
+]
+
+{ #category : #accessing }
+VMMemoryMap >> permSpaceStart [
+	^ permSpaceStart
+]
+
+{ #category : #accessing }
+VMMemoryMap >> permSpaceStart: anInteger [ 
+
+	permSpaceStart := anInteger 
+]
+
+{ #category : #initialization }
+VMMemoryMap >> setOldSpaceEnd: anInteger [ 
+	
+	oldSpaceEnd := anInteger.
+]
+
+{ #category : #accessing }
 VMMemoryMap >> startOfObjectMemory [
 	
 	<api>
 	
 	"The first object space in the memory map is the newSpace."
 	^ self newSpaceStart 
-]
-
-{ #category : #accessing }
-VMMemoryMap >> wordSize: anInteger [ 
-
-	<doNotGenerate>
-
-	wordSize := anInteger
 ]

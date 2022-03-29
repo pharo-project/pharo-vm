@@ -10,7 +10,7 @@ TVMSpurMemoryManagerSimulator >> initializeFreeSpaceForFacadeFrom: base to: limi
 
 	self getMemoryMap newSpaceEnd: (self freeStart: base).
 	self getMemoryMap oldSpaceStart: self getMemoryMap newSpaceEnd.
-	self getMemoryMap oldSpaceEnd: limit.
+	self getMemoryMap setOldSpaceEnd: limit.
 	
 	self scavengeThreshold: limit * 3 // 4.
 	self segmentManager initSegmentForInImageCompilationFrom: base to: limit.
@@ -55,7 +55,7 @@ TVMSpurMemoryManagerSimulator >> setHeapBase: baseOfHeap memoryLimit: memLimit e
 
 	self getMemoryMap oldSpaceStart: self getMemoryMap newSpaceEnd.
 	self freeOldSpaceStart: memEnd.
-	self getMemoryMap oldSpaceEnd: memLimit.
+	self getMemoryMap setOldSpaceEnd: memLimit.
 
 	^baseOfHeap
 ]

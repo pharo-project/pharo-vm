@@ -14,7 +14,8 @@ Class {
 		'initialAddress',
 		'stackSpaceSize',
 		'methodCacheSize',
-		'newSpaceSize'
+		'newSpaceSize',
+		'permSpaceSize'
 	],
 	#category : #'VMMakerTests-Builders'
 }
@@ -55,10 +56,10 @@ VMSimulatedEnvironmentBuilder >> doBuild [
 	memoryManager := MachineSimulatorMemoryManager new.
 	memoryManager initialAddress: initialAddress.
 	memoryManager wordSize: wordSize.
-	
+		
 	interpreter memoryManager: memoryManager.
 	objectMemory createMemoryMap.
-
+	
 	objectMemory memoryManager: memoryManager.	
 	objectMemory coInterpreter: interpreter.
 		
@@ -70,7 +71,8 @@ VMSimulatedEnvironmentBuilder >> doBuild [
 		methodCacheSize: methodCacheSize
 		primitiveTraceLogSize: (self roundToPageSize: primitiveTraceLogSize)
 		rumpCStackSize: rumpCStackSize
-		initialAddress: initialAddress.
+		initialAddress: initialAddress
+		permSpaceSize: permSpaceSize.
 			
 	objectMemory initializePostBootstrap.
 	objectMemory setHeapSizeAtPreviousGC.
@@ -102,7 +104,7 @@ VMSimulatedEnvironmentBuilder >> initialize [
 
 	super initialize.
 	oldSpaceSize := 2048 * 1024.
-
+	permSpaceSize := 0.
 ]
 
 { #category : #accessing }
@@ -144,6 +146,11 @@ VMSimulatedEnvironmentBuilder >> objectMemoryClass: aClass [
 { #category : #accessing }
 VMSimulatedEnvironmentBuilder >> oldSpaceSize [
 	^ oldSpaceSize
+]
+
+{ #category : #accessing }
+VMSimulatedEnvironmentBuilder >> permSpaceSize: anInteger [ 
+	permSpaceSize := anInteger
 ]
 
 { #category : #accessing }

@@ -31,6 +31,18 @@ VMSpurMemoryManagerTest class >> testParameters [
 			yourself
 ]
 
+{ #category : #configuring }
+VMSpurMemoryManagerTest >> configureEnvironmentBuilder [
+
+	environmentBuilder
+		interpreterClass: self interpreterClass;
+		objectMemoryClass: self memoryClass;
+		initializationOptions: self initializationOptions;
+		wordSize: self wordSize;
+		initialCodeSize: self initialCodeSize;
+		primitiveTraceLogSize: self primitiveTraceLogSize
+]
+
 { #category : #helpers }
 VMSpurMemoryManagerTest >> createActiveProcess [
 
@@ -147,7 +159,7 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 	memory initializeFreeSpacePostLoad: freeListOop.
 	memory computeFreeSpacePostSwizzle.
 		
-	memory getMemoryMap oldSpaceEnd: memory getMemoryMap oldSpaceEnd + memory bridgeSize.
+	memory getMemoryMap setOldSpaceEnd: memory getMemoryMap oldSpaceEnd + memory bridgeSize.
 	
 	memory initializeOldSpaceFirstFree: (memory addressAfter: freeListOop).
 	
@@ -447,13 +459,7 @@ VMSpurMemoryManagerTest >> setUp [
 	super setUp.
 
 	environmentBuilder := VMSimulatedEnvironmentBuilder new.
-	environmentBuilder 
-		interpreterClass: self interpreterClass;
-		objectMemoryClass: self memoryClass;
-	 	initializationOptions: self initializationOptions;
-		wordSize: self wordSize;
-		initialCodeSize: self initialCodeSize; 
-		primitiveTraceLogSize: self primitiveTraceLogSize.
+	self configureEnvironmentBuilder.
 
 	environmentBuilder build.
 
