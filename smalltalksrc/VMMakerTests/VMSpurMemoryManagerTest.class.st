@@ -135,7 +135,7 @@ VMSpurMemoryManagerTest >> initializationOptions [
 		  #BytesPerWord.
 		  self wordSize.
 		  #ObjectMemory.
-		  memory class name.
+		  self memoryClass name.
 		  #ImageReader.
 		  imageReaderClass name.
 		  #ImageWriter.
