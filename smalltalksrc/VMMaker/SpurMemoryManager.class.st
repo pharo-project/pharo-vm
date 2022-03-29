@@ -616,7 +616,8 @@ Class {
 		'statShrinkMemory',
 		'statAllocatedBytes',
 		'statMaxAllocSegmentTime',
-		'unscannedEphemeronsQueueInitialSize'
+		'unscannedEphemeronsQueueInitialSize',
+		'permSpaceFreeStart'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -1950,7 +1951,7 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes initialAddress: initialAd
 ]
 
 { #category : #initialization }
-SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceBytes stackSize: stackBytes codeSize: codeBytes methodCacheSize: methodCacheSize primitiveTraceLogSize: primitiveLogSize rumpCStackSize: rumpCStackSize initialAddress: initialAddress [
+SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceBytes stackSize: stackBytes codeSize: codeBytes methodCacheSize: methodCacheSize primitiveTraceLogSize: primitiveLogSize rumpCStackSize: rumpCStackSize initialAddress: initialAddress permSpaceSize: permSpaceSize [
 
 	"Intialize the receiver for bootsraping an image.
 	 Set up a large oldSpace and an empty newSpace and set-up freeStart and scavengeThreshold
@@ -1980,12 +1981,11 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 	self assert: allocatedAddress = initialAddress.
 		
 	memoryMap newSpaceStart: initialAddress + newSpaceStartOffset.
-	memoryMap oldSpaceEnd: (freeOldSpaceStart := initialAddress + allocatedMemory).
-	"leave newSpace empty for the bootstrap"
-	freeStart := newSpaceBytes + memoryMap newSpaceStart.
-
 	memoryMap newSpaceEnd: newSpaceBytes + memoryMap newSpaceStart.
 	memoryMap oldSpaceStart: memoryMap newSpaceEnd.
+	memoryMap setOldSpaceEnd: (freeOldSpaceStart := initialAddress + allocatedMemory).
+	"leave newSpace empty for the bootstrap"
+	freeStart := newSpaceBytes + memoryMap newSpaceStart.
 	
 	scavengeThreshold := allocatedMemory. "i.e. /don't/ scavenge."
 	scavenger := SpurGenerationScavenger simulatorClass new.
@@ -1996,7 +1996,18 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 		survivorBytes: newSpaceBytes // self scavengerDenominator.
 	compactor := self class compactorClass simulatorClass new
 		             manager: self;
-		             yourself
+		             yourself.
+	
+	permSpaceSize isZero 
+		ifTrue: [ 
+			memoryMap permSpaceStart: 16r10000000.
+			memoryMap permSpaceEnd: 16r10000000]
+		ifFalse: [ 	
+				memoryMap permSpaceStart: (self allocateMemoryOfSize: permSpaceSize initialAddress: 16r10000000).
+				memoryMap permSpaceEnd: memoryMap permSpaceStart + permSpaceSize ].
+			
+	permSpaceFreeStart := memoryMap permSpaceStart 
+
 ]
 
 { #category : #allocation }
@@ -2463,6 +2474,45 @@ SpurMemoryManager >> allocateSlotsInOldSpace: numSlots format: formatField class
 ]
 
 { #category : #allocation }
+SpurMemoryManager >> allocateSlotsInPermSpace: numSlots bytes: totalBytes format: formatField classIndex: classIndex [
+
+	"Answer the oop of a chunk of space in permanent Space with numSlots slots.  The header
+	 will have been filled-in but not the contents.  If no memory is available answer nil."
+
+	<var: #totalBytes type: #usqInt>
+	<inline: false>
+
+	| chunk newOop |
+
+	permSpaceFreeStart + totalBytes > memoryMap permSpaceEnd
+		ifTrue: [ ^ nil ].
+	
+	chunk := permSpaceFreeStart.
+	permSpaceFreeStart := permSpaceFreeStart + totalBytes.
+
+	newOop := self
+		          initializeHeaderOfStartAddress: chunk
+		          numSlots: numSlots
+		          format: formatField
+		          classIndex: classIndex
+		          pinned: false.
+
+	^ newOop
+]
+
+{ #category : #allocation }
+SpurMemoryManager >> allocateSlotsInPermSpace: numSlots format: formatField classIndex: classIndex [
+
+	<inline: true>
+
+	^ self
+		  allocateSlotsInPermSpace: numSlots
+		  bytes: (self objectBytesForSlots: numSlots)
+		  format: formatField
+		  classIndex: classIndex
+]
+
+{ #category : #allocation }
 SpurMemoryManager >> allocateSmallNewSpaceSlots: numSlots format: formatField classIndex: classIndex [
 	"Allocate an object with numSlots in newSpace, where numSlots is known to be small.
 	 This is for the `ee' execution engine allocations, and must be satisfied.  If no memory
@@ -2625,7 +2675,7 @@ SpurMemoryManager >> assimilateNewSegment: segInfo [
 	 Here we set freeOldSpaceStart & oldSpaceEnd if required."
 	<var: #segInfo type: #'SpurSegmentInfo *'>
 	segInfo segLimit >= memoryMap oldSpaceEnd ifTrue:
-		[ memoryMap oldSpaceEnd: (freeOldSpaceStart := segInfo segLimit - self bridgeSize)]
+		[ memoryMap setOldSpaceEnd: (freeOldSpaceStart := segInfo segLimit - self bridgeSize)]
 ]
 
 { #category : #compaction }
@@ -3349,7 +3399,9 @@ SpurMemoryManager >> checkMemoryMap [
 	self assert: (self isYoungObject: memoryMap oldSpaceEnd) not.
 	self assert: (self isOldObject: memoryMap newSpaceEnd).
 	self assert: (self isOldObject: memoryMap oldSpaceStart).
-	self assert: (self isOldObject: memoryMap oldSpaceEnd)
+	
+	self flag: #todo.
+"	self assert: (self isOldObject: memoryMap oldSpaceEnd)"
 ]
 
 { #category : #'debug support' }
@@ -6366,6 +6418,7 @@ SpurMemoryManager >> initializeFromMemoryMap [
 	pastSpaceStart := scavenger pastSpace start.
 
 	freeOldSpaceStart := memoryMap oldSpaceEnd.
+	permSpaceFreeStart := memoryMap permSpaceStart.
 
 ]
 
@@ -6487,7 +6540,7 @@ SpurMemoryManager >> initializeOldSpaceFirstFree: startOfFreeOldSpace [
 		freeOldStart < limit ifTrue:
 			[freeChunk := self freeChunkWithBytes: limit - freeOldStart at: freeOldStart.
 			 self assert: (self addressAfter: freeChunk) = limit]].
-	memoryMap oldSpaceEnd: memoryMap oldSpaceEnd - self bridgeSize.
+	memoryMap setOldSpaceEnd: memoryMap oldSpaceEnd - self bridgeSize.
 	freeOldSpaceStart := memoryMap oldSpaceEnd.
 	self checkFreeSpace: GCModeFreeSpace
 ]
@@ -7285,10 +7338,13 @@ SpurMemoryManager >> isObjImmutable: anOop [
 
 { #category : #'object testing' }
 SpurMemoryManager >> isOldObject: objOop [
-	<api>
+
+	<doNotGenerate>
 	"Answer if obj is old. Require that obj is non-immediate."
-	self assert: (self isNonImmediate: objOop).
-	^self oop: objOop isGreaterThanOrEqualTo: memoryMap oldSpaceStart
+	self assert: (self isNonImmediate: objOop).	
+	
+	^ memoryMap isOldObject: objOop
+
 ]
 
 { #category : #'object testing' }
@@ -7317,6 +7373,17 @@ SpurMemoryManager >> isOopMutable: oop [
 	<api>
 	^(self isNonImmediate: oop)
 	  and: [(self isImmutable: oop) not]
+]
+
+{ #category : #'object testing' }
+SpurMemoryManager >> isPermanentObject: objOop [
+
+	<doNotGenerate>
+	"Answer if obj is old. Require that obj is non-immediate."
+	self assert: (self isNonImmediate: objOop).	
+	
+	^ memoryMap isPermanentObject: objOop
+
 ]
 
 { #category : #'header access' }
@@ -7644,10 +7711,10 @@ SpurMemoryManager >> isYoung: oop [
 
 { #category : #'object testing' }
 SpurMemoryManager >> isYoungObject: objOop [
-	<api>
+	<doNotGenerate>
 	"Answer if obj is young. Require that obj is non-immediate."
 	self assert: (self isNonImmediate: objOop).
-	^self oop: objOop isLessThan: memoryMap newSpaceEnd
+	^ memoryMap isYoungObject: objOop
 ]
 
 { #category : #'object access' }
@@ -8089,6 +8156,11 @@ SpurMemoryManager >> markAndShouldScan: objOop [
 	self assert: (self isForwarded: objOop) not.
 	(self isMarked: objOop) ifTrue:
 		[^false].
+	
+	"If it is a permanent object I will not visit it"
+	(self isPermanentObject: objOop)
+		ifTrue: [ ^false ].
+	
 	self setIsMarkedOf: objOop to: true.
 	format := self formatOf: objOop.
 	(self isPureBitsFormat: format) ifTrue: "avoid pushing non-pointer objects on the markStack."
@@ -9280,7 +9352,11 @@ SpurMemoryManager >> objectAfter: objOop [
 		 (self isInPastSpace: objOop) ifTrue:
 			[^self objectAfter: objOop limit: pastSpaceStart].
 		 ^self objectAfter: objOop limit: scavenger futureSurvivorStart].
-	^self objectAfter: objOop limit: memoryMap oldSpaceEnd
+	
+	^ (memoryMap isPermanentObject: objOop)
+		ifTrue: [ self objectAfter: objOop limit: memoryMap permSpaceEnd ]
+		ifFalse: [ self objectAfter: objOop limit: memoryMap oldSpaceEnd ]
+	
 ]
 
 { #category : #'object enumeration' }
@@ -9474,6 +9550,11 @@ SpurMemoryManager >> outerContextOf: aBlockClosureOop [
 SpurMemoryManager >> pastSpaceStart [
 	<cmacro: '() GIV(pastSpaceStart)'>
 	^pastSpaceStart
+]
+
+{ #category : #accessing }
+SpurMemoryManager >> permSpaceFreeStart [
+	^ permSpaceFreeStart
 ]
 
 { #category : #'primitive support' }
@@ -10881,7 +10962,7 @@ SpurMemoryManager >> setEndOfMemory: newEndOfMemory [
 	"Set by the segment manager after swizzling the image,
 	 and by the SpurBootstrap on writing out the transformed image."
 
-	memoryMap oldSpaceEnd: newEndOfMemory.
+	memoryMap setOldSpaceEnd: newEndOfMemory.
 
 	freeOldSpaceStart > newEndOfMemory ifTrue:
 		[freeOldSpaceStart := newEndOfMemory]
@@ -11003,7 +11084,7 @@ SpurMemoryManager >> setLastSegment: segInfo [
 	<var: #currentEnd type: #usqInt>
 	currentEnd := segInfo segLimit - self bridgeSize.
 	currentEnd <= memoryMap oldSpaceEnd ifTrue:
-		[memoryMap oldSpaceEnd: currentEnd.
+		[memoryMap setOldSpaceEnd: currentEnd.
 		 freeOldSpaceStart > currentEnd ifTrue:
 			[freeOldSpaceStart :=currentEnd]]
 ]

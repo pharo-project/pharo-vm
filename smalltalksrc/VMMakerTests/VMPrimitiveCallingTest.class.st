@@ -31,8 +31,8 @@ VMPrimitiveCallingTest >> setUp [
 
 	"Initializing the primTraceLog table"
 	interpreter movePrimTraceLogToMemoryAt:
-		cogit methodZoneBase + interpreter cogCodeSize + stackSpaceSize
-		+ methodCacheSize.
+		cogit methodZoneBase + interpreter cogCodeSize + environmentBuilder stackSpaceSize 
+		+ environmentBuilder methodCacheSize.
 
 	classLargeInteger := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstByteFormat.
 	
@@ -794,7 +794,7 @@ VMPrimitiveCallingTest >> testPrimitiveWithProfileSemaphoreAndNextTickTakesSampl
 		arguments: {memory nilObject}
 		returnAddress: cogit ceMethodAbortTrampoline.
 
-	self assert: machineSimulator instructionPointerValue equals: cogit ceMethodAbortTrampoline.
+	self assert: machineSimulator instructionPointerRegisterValue equals: cogit ceMethodAbortTrampoline.
 	self assert: interpreter nextProfileTick equals: 0
 ]
 

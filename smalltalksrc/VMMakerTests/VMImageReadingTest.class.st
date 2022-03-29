@@ -10,19 +10,19 @@ Class {
 { #category : #utilities }
 VMImageReadingTest >> loadImage [
 
-	| memoryManager |
-	
-	memoryManager := MachineSimulatorMemoryManager new.
-	memoryManager initialAddress: initialAddress.
-	memoryManager wordSize: self wordSize.
+	environmentBuilder := VMSimulatedEnvironmentBuilder new.
+	environmentBuilder 
+		interpreterClass: self interpreterClass;
+		objectMemoryClass: self memoryClass;
+	 	initializationOptions: self initializationOptions;
+		wordSize: self wordSize;
+		initialCodeSize: self initialCodeSize; 
+		primitiveTraceLogSize: self primitiveTraceLogSize.
 
-	interpreter := self newInterpreter.
-	interpreter memoryManager: memoryManager.
+	environmentBuilder build.
 
-	memory := interpreter objectMemory.
-	memory memoryManager: memoryManager.	
-	memory coInterpreter: interpreter.
-	interpreter objectMemory: memory.
+	interpreter := environmentBuilder interpreter.
+	memory := environmentBuilder objectMemory.
 	
 	interpreter openOn: self imageFileName extraMemory: 0.
 

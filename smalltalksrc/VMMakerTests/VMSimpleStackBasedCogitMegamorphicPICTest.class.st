@@ -12,7 +12,7 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> setUp [
 	self setUpCogMethodEntry.
 
 	memory coInterpreter
-		moveMethodCacheToMemoryAt: initialAddress "+ The guard page? memory cogCodeBase" + self initialCodeSize + stackSpaceSize.
+		moveMethodCacheToMemoryAt: environmentBuilder memoryInitialAddress "+ The guard page? memory cogCodeBase" + self initialCodeSize + environmentBuilder stackSpaceSize.
 	specialSelectorsArray := self newOldSpaceObjectWithSlots: 2.
 	memory coInterpreter
 		specialSelectorArray: specialSelectorsArray;
@@ -212,6 +212,6 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testRelinkCallSiteToMegamorphicPICC
 		until: createdPic asInteger + cogit entryOffset.
 
 	self
-		assert: machineSimulator instructionPointerValue
+		assert: machineSimulator instructionPointerRegisterValue
 		equals: createdPic asInteger + cogit entryOffset
 ]

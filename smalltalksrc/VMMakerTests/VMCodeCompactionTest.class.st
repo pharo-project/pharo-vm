@@ -94,7 +94,7 @@ VMCodeCompactionTest >> testCompactDuringInterpreterPrimitiveThatMovesCurrentMet
 	cogit setCFramePointer: interpreter rumpCStackAddress.
 	
 	self prepareStackForSendReceiver: memory nilObject arguments: {memory falseObject}.
-	machineSimulator instructionPointerValue: compactMethod address + cogit noCheckEntryOffset. 
+	machineSimulator instructionPointerRegisterValue: compactMethod address + cogit noCheckEntryOffset. 
 	
 	self runFrom: compactMethod address + cogit noCheckEntryOffset until: callerAddress.
 
@@ -133,7 +133,7 @@ VMCodeCompactionTest >> testCompactDuringInterpreterPrimitiveThatMovesCurrentMet
 	cogit setCFramePointer: interpreter rumpCStackAddress.
 	
 	self prepareStackForSendReceiver: memory nilObject arguments: {memory falseObject}.
-	machineSimulator instructionPointerValue: compactMethod address + cogit noCheckEntryOffset. 
+	machineSimulator instructionPointerRegisterValue: compactMethod address + cogit noCheckEntryOffset. 
 	
 	self runFrom: compactMethod address + cogit noCheckEntryOffset until: callerAddress.
 
@@ -195,7 +195,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocateInSendsLiterals [
 
 	"In StackToRegisterMappingCogit the argument came in the registerArg0"
 	self
-		assert: machineSimulator argument0RegisterValue
+		assert: machineSimulator arg0RegisterValue
 		equals: memory nilObject
 ]
 
@@ -311,7 +311,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocateMonomorphicCallsite [
 		until: (interpreter cogMethodOf: calleeMethodOop) asInteger + cogit entryOffset.
 
 	self
-		assert: machineSimulator instructionPointerValue
+		assert: machineSimulator instructionPointerRegisterValue
 		equals: (interpreter cogMethodOf: calleeMethodOop) asInteger + cogit entryOffset
 ]
 
@@ -384,7 +384,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICCallsite [
 		until: (interpreter cogMethodOf: calleeMethodOop) asInteger + cogit noCheckEntryOffset.
 
 	self
-		assert: machineSimulator instructionPointerValue
+		assert: machineSimulator instructionPointerRegisterValue
 		equals: (interpreter cogMethodOf: calleeMethodOop) asInteger + cogit noCheckEntryOffset.
 	
 	"Check case 2"
@@ -395,7 +395,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICCallsite [
 		until: (interpreter cogMethodOf: calleeMethodOop2) asInteger + cogit noCheckEntryOffset.
 
 	self
-		assert: machineSimulator instructionPointerValue
+		assert: machineSimulator instructionPointerRegisterValue
 		equals: (interpreter cogMethodOf: calleeMethodOop2) asInteger + cogit noCheckEntryOffset.
 	
 	"Check PIC MISS trampoline"
@@ -408,7 +408,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICCallsite [
 		until: cogit ceCPICMissTrampoline.
 
 	self
-		assert: machineSimulator instructionPointerValue
+		assert: machineSimulator instructionPointerRegisterValue
 		equals: cogit ceCPICMissTrampoline
 ]
 
@@ -498,7 +498,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICInterpreterAbo
 		until: cogit cePICAbortTrampoline.
 
 	self
-		assert: machineSimulator instructionPointerValue
+		assert: machineSimulator instructionPointerRegisterValue
 		equals: cogit cePICAbortTrampoline
 ]
 
@@ -572,7 +572,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICMNUAbortCallsi
 		until: cogit cePICAbortTrampoline.
 
 	self
-		assert: machineSimulator instructionPointerValue
+		assert: machineSimulator instructionPointerRegisterValue
 		equals: cogit cePICAbortTrampoline
 ]
 

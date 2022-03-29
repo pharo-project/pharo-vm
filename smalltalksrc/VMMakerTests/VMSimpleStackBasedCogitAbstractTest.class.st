@@ -21,7 +21,8 @@ Class {
 		'machineSimulator',
 		'send1TrampolineAddress',
 		'send2TrampolineAddress',
-		'send3TrampolineAddress'
+		'send3TrampolineAddress',
+		'initialAddress'
 	],
 	#pools : [
 		'CogAbstractRegisters',
@@ -508,12 +509,6 @@ VMSimpleStackBasedCogitAbstractTest >> newJitCompiler [
 
 ]
 
-{ #category : #running }
-VMSimpleStackBasedCogitAbstractTest >> newMemory [
-
-	^ self memoryClass simulatorClass new
-]
-
 { #category : #helpers }
 VMSimpleStackBasedCogitAbstractTest >> openMachineDebugger [
 	
@@ -583,7 +578,7 @@ VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver ar
 
 	"If the cogit is the StackToRegisterMapping the arguments should go in the registers also"
 	(cogit isKindOf: StackToRegisterMappingCogit) ifTrue: [
-		arguments size >= 1 ifTrue: [ self machineSimulator argument0RegisterValue: (arguments at: 1) ].
+		arguments size >= 1 ifTrue: [ self machineSimulator arg0RegisterValue: (arguments at: 1) ].
 		arguments size > 1 ifTrue: [ self halt ]].
 	
 	self prepareCall
@@ -752,6 +747,9 @@ VMSimpleStackBasedCogitAbstractTest >> setUp [
 
 	cogit setStackAlignment: 16 expectedSPOffset: 0 expectedFPOffset: 0.
 	cogit initializeBackend.
+
+	initialAddress := environmentBuilder memoryInitialAddress.
+
 	cogit methodZone manageFrom: initialAddress to: initialAddress + self initialCodeSize.
 	cogit methodZoneBase: initialAddress.
 	cogit minCallAddress: initialAddress.
@@ -762,7 +760,7 @@ VMSimpleStackBasedCogitAbstractTest >> setUp [
 	machineSimulator := cogit processor machineSimulator.
 	
 	cogit generateStackPointerCapture.
-	cogit methodZone manageFrom: cogit cogCodeBase to: initialAddress + self initialCodeSize.
+	cogit methodZone manageFrom: cogit cogCodeBase to: environmentBuilder memoryInitialAddress + self initialCodeSize.
 
 	memory coInterpreter numStackPages: 8.
 
