@@ -280,11 +280,6 @@ CurrentImageCoInterpreterFacade >> debugStackPointersFor: anOop [
 ]
 
 { #category : #accessing }
-CurrentImageCoInterpreterFacade >> eeInstantiateClass: classOop indexableSize: numSlots [
-	^self oopForObject: ((self objectForOop: classOop) new: numSlots)
-]
-
-{ #category : #accessing }
 CurrentImageCoInterpreterFacade >> encoderClassForHeader: headerInteger [
 	^coInterpreter encoderClassForHeader: headerInteger
 ]

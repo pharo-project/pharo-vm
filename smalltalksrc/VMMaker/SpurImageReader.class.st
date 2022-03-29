@@ -103,13 +103,13 @@ SpurImageReader >> imageFormatCompatibilityVersion [
 
 { #category : #reading }
 SpurImageReader >> imageFormatVersion [
+
 	"Return a magic constant that changes when the image format changes.
 	 Since the image reading code uses this to detect byte ordering, one
 	 must avoid version numbers that are invariant under byte reversal."
 
 	<doNotGenerate>
-	self assert: (objectMemory imageFormatVersion anyMask: 16) = objectMemory hasSpurMemoryManagerAPI.
-	^objectMemory imageFormatVersion
+	^ objectMemory imageFormatVersion
 ]
 
 { #category : #reading }
@@ -305,12 +305,11 @@ SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 
 { #category : #reading }
 SpurImageReader >> readableFormat: imageVersion [
+
 	"Anwer true if images of the given format are readable by this interpreter.
 	 Allows a virtual machine to accept selected older image formats."
 
-	^imageVersion = self imageFormatVersion "Float words in platform-order"
-	   or: [objectMemory hasSpurMemoryManagerAPI not "No compatibility version for Spur as yet"
-			and: [imageVersion = self imageFormatCompatibilityVersion]] "Float words in BigEndian order"
+	^ imageVersion = self imageFormatVersion "Float words in platform-order"
 ]
 
 { #category : #'file operations' }
