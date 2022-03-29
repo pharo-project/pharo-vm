@@ -2196,9 +2196,7 @@ StackInterpreter >> asciiOfCharacter: characterObj [  "Returns an integer object
 
 	<inline: false>
 	(objectMemory isCharacterObject: characterObj) ifTrue:
-		[^CharacterTable
-			ifNil: [objectMemory integerObjectOfCharacterObject: characterObj]
-			ifNotNil: [objectMemory fetchPointer: CharacterValueIndex ofObject: characterObj]].
+		[^objectMemory integerObjectOfCharacterObject: characterObj].
 	self primitiveFailFor: PrimErrBadArgument.
 	^ConstZero  "in case some code needs an int"
 ]
@@ -3828,9 +3826,7 @@ StackInterpreter >> capturePendingFinalizationSignals [
 { #category : #'indexing primitive support' }
 StackInterpreter >> characterForAscii: ascii [  "Above ObjectMemory, arg must lie in range 0-255!"
 	<inline: true>
-	^CharacterTable
-		ifNil: [objectMemory characterObjectOf: ascii]
-		ifNotNil: [objectMemory fetchPointer: ascii ofObject: objectMemory characterTable]
+	^ objectMemory characterObjectOf: ascii
 ]
 
 { #category : #'debug support' }
@@ -4559,9 +4555,7 @@ StackInterpreter >> commonAtPut: stringy [
 		ifTrue: [ | charToPut |
 			"inline of asciiOfCharacter: value. Non return of primitiveFailFor:"
 			(objectMemory isCharacterObject: value)
-				ifTrue: [ charToPut := CharacterTable
-						ifNil: [ objectMemory integerObjectOfCharacterObject: value ]
-						ifNotNil: [ objectMemory fetchPointer: CharacterValueIndex ofObject: value ].
+				ifTrue: [ charToPut := objectMemory integerObjectOfCharacterObject: value.
 					self stObject: rcvr at: index put: charToPut ]
 				ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ] ]
 		ifFalse: [ self stObject: rcvr at: index put: value ].

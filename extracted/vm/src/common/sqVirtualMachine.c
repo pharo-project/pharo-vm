@@ -103,7 +103,6 @@ usqIntptr_t  positiveMachineIntegerValueOf(sqInt);
 usqIntptr_t  stackPositiveMachineIntegerValue(sqInt);
 
 /* InterpreterProxy methodsFor: 'special objects' */
-sqInt characterTable(void);
 sqInt falseObject(void);
 sqInt nilObject(void);
 sqInt trueObject(void);
@@ -346,7 +345,6 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 	VM->positive32BitValueOf = positive32BitValueOf;
 
 	/* InterpreterProxy methodsFor: 'special objects' */
-	VM->characterTable = characterTable;
 	VM->falseObject = falseObject;
 	VM->nilObject = nilObject;
 	VM->trueObject = trueObject;

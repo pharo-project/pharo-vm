@@ -200,11 +200,6 @@ CurrentImageCoInterpreterFacade >> characterObjectOf: anInteger [
 ]
 
 { #category : #accessing }
-CurrentImageCoInterpreterFacade >> characterTable [
-	^self subclassResponsibility
-]
-
-{ #category : #accessing }
 CurrentImageCoInterpreterFacade >> classCharacter [
 	^self oopForObject: Character
 ]

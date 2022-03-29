@@ -138,11 +138,6 @@ InterpreterProxy >> characterObjectOf: characterCode [
 	^StackInterpreter objectMemoryClass characterObjectOf: characterCode
 ]
 
-{ #category : #'special objects' }
-InterpreterProxy >> characterTable [
-	^Character characterTable
-]
-
 { #category : #'object access' }
 InterpreterProxy >> characterValueOf: aCharacter [
 	<option: #(atLeastVMProxyMajor:minor: 1 13)>
