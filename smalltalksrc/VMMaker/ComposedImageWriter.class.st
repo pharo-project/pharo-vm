@@ -4,81 +4,160 @@ Class {
 	#category : #'VMMaker-ImageFormat'
 }
 
+{ #category : #writing }
+ComposedImageWriter >> writeHeaderFile: imageFileName fromHeader: header [
+
+	<inline: true>
+	<var: #file type: #sqImageFile>
+	<var: #buffer declareC: 'char buffer[255]'>
+
+	| buffer file |
+		
+	self simulationOnly: [ buffer := nil ].
+	
+	file := self sqImageFile: (self headerFileNameinImage: imageFileName into: buffer bufferSize: 255) Open: 'w'.
+	file ifNil: [ "could not open the file for writing" 
+		^ self primitiveFail ].
+
+	self writeHeaderSTON: header toFile: file.
+
+	self sqImageFileClose: file.
+
+]
+
+{ #category : #writing }
+ComposedImageWriter >> writeHeaderSTON: header toFile: f [ 
+
+	self writeSTON: header toFile: f
+]
+
 { #category : #api }
 ComposedImageWriter >> writeImageFile: imageFileName fromHeader: header [
 
+	"Write one image header file + many segments files (metadata & data per segment)"
+
+	<var: #imageFileName declareC: 'char *imageFileName'>
+	<var: #header type: #SpurImageHeaderStruct> "TODO: Rename this class"
 	| bytesWritten |
 
-	(self headerFile: imageFileName) writeStreamDo: [ :file | 
-		self writeSTON: header toFile: file ].
+	self logDebug: 'Writing snapshot %s' _: imageFileName.
+
+	self createImageDirectory: imageFileName.
+
+	self writeHeaderFile: imageFileName fromHeader: header.
+
+	self flag: #TODO. "success: header imageHeaderSize?"
 
 	bytesWritten := self writeImageSegments: imageFileName.
 
-	interpreter success: bytesWritten = header dataSize "Is it neccessary?"
-
+	interpreter success: bytesWritten = header dataSize 
 ]
 
-{ #category : #writing }
+{ #category : #segments }
 ComposedImageWriter >> writeImageSegments: imageFileName [
 
-	"Almost duplicated from SpurImageWriter >> writeImageSegmentsToFile:"
+	<var: 'aSegment' type:#'SpurSegmentInfo *'>
 
-	| total |
-	self assert:
-		(objectMemory getMemoryMap oldSpaceEnd = segmentManager lastSegment segLimit 
-		or: [ objectMemory getMemoryMap oldSpaceEnd + objectMemory bridgeSize = segmentManager lastSegment segLimit ]).
+	self beginWriteImageSegments.
 
-	self assert: segmentManager firstSegmentBytes > 0.
+	^ segmentManager withNonEmptySegmentsDo: [ :aSegment :segmentIndex | 
+		self
+          writeSegment: aSegment
+          nextIndex: segmentIndex
+			 inImage: imageFileName ].
 
-	total := 0.
 
-	segmentManager withNonEmptySegmentsDo: [ :aSegment :segmentIndex | 
-		total := total + (self
-			          writeSegment: aSegment
-			          nextIndex: segmentIndex
-						 inImage: imageFileName)].
-
-	^ total
 ]
 
 { #category : #writing }
-ComposedImageWriter >> writeSTON: ston toFile: f [
+ComposedImageWriter >> writeSTON: struct toFile: f [
 
-	STON writer
-		on: f;
-		nextPut: ston
+	<inline: true>
+	| fieldHasNilValue |
+
+	struct withStructNameDo: [ :name | self fprintf: f _: headFormat _: name ].
+	struct withFieldsDo: [ :fieldName :fieldValue |
+		fieldValue 
+			ifNil: [ 	fieldHasNilValue := true ]
+			ifNotNil: [  
+				fieldHasNilValue := false.
+				self fprintf: f _: fieldFormat _: fieldName _: fieldValue ]]
+		separatedBy: [ fieldHasNilValue ifFalse: [self fprintf: f _: ',\n'] ].
+		
+	self fprintf: f _: '\n}'. 
 ]
 
-{ #category : #writing }
+{ #category : #segments }
 ComposedImageWriter >> writeSegment: segment nextIndex: segmentIndex inImage: imageFileName [
 
+	<inline: false>
+	<var: 'segment' type: #'SpurSegmentInfo *'>
+	<var: #imageFileName declareC: 'char *imageFileName'>
+
+	self writeSegmentMetadata: segment nextIndex: segmentIndex inImage: imageFileName.
+
+	^ self writeSegmentData: segment nextIndex: segmentIndex inImage: imageFileName.
+]
+
+{ #category : #segments }
+ComposedImageWriter >> writeSegmentData: segment nextIndex: segmentIndex inImage: imageFileName [
+
+	<var: #dataFile type: #sqImageFile>
+	| dataFile nWritten |
+
+	dataFile := self sqImageFile: (self segmentDataFile: segmentIndex inImage: imageFileName) Open: 'wb'.
+	dataFile ifNil: [ "could not open the file for writing" 
+		^ self primitiveFail ].
+
+	nWritten := self
+						sq: segment segStart asVoidPointer
+						Image: 1
+						File: segment segSize
+						Write: dataFile.
+
+	self sqImageFileClose: dataFile.
+
+
+	^ nWritten
+]
+
+{ #category : #segments }
+ComposedImageWriter >> writeSegmentMetadata: segment nextIndex: segmentIndex inImage: imageFileName [
+
+	<var: #metadataFile type: #sqImageFile>
+	| metadataFile |
+
+	metadataFile := self sqImageFile: (self segmentMetadataFile: segmentIndex inImage: imageFileName) Open: 'w'.
+	metadataFile ifNil: [ "could not open the file for writing" 
+		^ self primitiveFail ].
+
+	self writeSegmentMetadata: segment toFile: metadataFile.
+
+	self sqImageFileClose: metadataFile.
+
+
+]
+
+{ #category : #segments }
+ComposedImageWriter >> writeSegmentMetadata: segment toFile: file [
+
+	<var: #metadata type: #ComposedSegmentMetadataStruct>
 	| metadata |
 
-	metadata := ComposedSegmentMetadataStruct new.
+	self simulationOnly: [ metadata := ComposedSegmentMetadataStruct new. ].
 	metadata segStart: segment segStart.
 	metadata segSize: segment segSize.
 
-	self 	cCode: [ "TODO" ] 
-			inSmalltalk: [ 
-				(self segmentMetadataFile: segmentIndex inImage: imageFileName) writeStreamDo: [ :file |
-					self writeSTON: metadata toFile: file 
-				]	
-			].
+	self writeSegmentSTON: metadata toFile: file 	
 
 
-	self 	cCode: [ "TODO" ] 
-			inSmalltalk: [ 
-				| region |
-				region := objectMemory memoryManager regionForAddress: segment segStart.
+]
 
-				(self segmentDataFile: segmentIndex inImage: imageFileName) binaryWriteStreamDo: [ :file |
-					file
-						next: segment segSize
-						putAll: region memory
-						startingAt: segment segStart - region start + 1
-				]
-					
-			].
+{ #category : #writing }
+ComposedImageWriter >> writeSegmentSTON: segmentMetadata toFile: f [ 
 
-	^ segment segSize
+	<var: #f type: #sqImageFile>
+	<var: #segmentMetadata type: #ComposedSegmentMetadataStruct>
+
+	self writeSTON: segmentMetadata toFile: f
 ]

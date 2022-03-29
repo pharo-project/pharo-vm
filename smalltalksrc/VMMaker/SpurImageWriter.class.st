@@ -86,20 +86,6 @@ SpurImageWriter >> sqImage: file File: imageName StartLocation: location [
 ]
 
 { #category : #'accessing - files' }
-SpurImageWriter >> sqImageFile: imageName Open: fileMode [
-
-	<doNotGenerate>
-	^imageName asFileReference binaryWriteStream
-]
-
-{ #category : #'accessing - files' }
-SpurImageWriter >> sqImageFileClose: file [
-
-	<doNotGenerate>
-	file close
-]
-
-{ #category : #'accessing - files' }
 SpurImageWriter >> sqImageFilePosition: file [
 
 	<doNotGenerate>
@@ -190,21 +176,14 @@ SpurImageWriter >> writeImageSegmentsToFile: aBinaryStream [
 	<var: 'aBinaryStream' type: #sqImageFile>
 	<var: 'aSegment' type:#'SpurSegmentInfo *'>
 
-	| total |
-	
-	self assert: (objectMemory getMemoryMap oldSpaceEnd  = segmentManager lastSegment segLimit
-				 or: [objectMemory getMemoryMap oldSpaceEnd  + objectMemory bridgeSize = segmentManager lastSegment segLimit]).
+	self beginWriteImageSegments.
 
-	self assert: segmentManager firstSegmentBytes > 0.
-	
-	total := 0.
+	^ segmentManager withNonEmptySegmentsDo: [ :aSegment :segmentIndex | 
+		self 
+			writeSegment: aSegment
+			nextSegment: (segmentManager nextNonEmptySegmentAfter: segmentIndex)
+			toFile: aBinaryStream ].
 
-	segmentManager withNonEmptySegmentsDo: [ :aSegment :segmentIndex | 
-		total := total + (self writeSegment: aSegment
-								nextSegment: (segmentManager nextNonEmptySegmentAfter: segmentIndex)
-								toFile: aBinaryStream) ].
-	
-	^total
 ]
 
 { #category : #writing }
@@ -240,20 +219,11 @@ SpurImageWriter >> writeSegment: segment nextSegment: nextSegment toFile: aBinar
 		long64At: pier2
 		put: (nextSegment ifNil: [0] ifNotNil: [nextSegment segSize]).
 	
-	nWritten := self cCode:
-						[self
-							sq: segment segStart asVoidPointer
-							Image: 1
-							File: segment segSize
-							Write: aBinaryStream]
-					inSmalltalk: [ | region |
-						region := (objectMemory memoryManager regionForAddress: segment segStart).
-
-						aBinaryStream
-							next: segment segSize
-							putAll: region memory
-							startingAt: segment segStart - region start + 1.
-						segment segSize].
+	nWritten := self
+						sq: segment segStart asVoidPointer
+						Image: 1
+						File: segment segSize
+						Write: aBinaryStream.
 
 	objectMemory
 		long64At: pier1 put: firstSavedBridgeWord;

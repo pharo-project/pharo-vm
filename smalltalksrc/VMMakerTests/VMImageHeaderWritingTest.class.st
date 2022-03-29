@@ -157,3 +157,35 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectSpecialObjectsArrayOop 
 
 	self assert: header initialSpecialObjectsOop equals: memory specialObjectsOop
 ]
+
+{ #category : #tests }
+VMImageHeaderWritingTest >> testWritingSTONHeader [
+
+	| header readHeader |
+
+	imageWriterClass ~= ComposedImageWriter ifTrue: [ ^ self skip ].
+
+	header := interpreter newHeader.
+
+	readHeader := (self imageFileName asFileReference  / 'header.ston') contents.
+
+	self assert: readHeader equals: (STON toStringPretty: header).
+]
+
+{ #category : #tests }
+VMImageHeaderWritingTest >> testWritingSTONSegment [
+
+	| header writtenHeader segmentMetadata |
+
+	imageWriterClass ~= ComposedImageWriter ifTrue: [ ^ self skip ].
+
+	header := interpreter newHeader.
+
+	writtenHeader := (self imageFileName asFileReference  / 'seg0.ston') contents.
+	
+	segmentMetadata := ComposedSegmentMetadataStruct new.
+	segmentMetadata segStart: header oldBaseAddr.
+	segmentMetadata segSize: header dataSize.
+
+	self assert: writtenHeader equals: (STON toStringPretty: segmentMetadata).
+]

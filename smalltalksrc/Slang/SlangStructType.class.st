@@ -210,3 +210,25 @@ SlangStructType class >> typeForSelf [
 SlangStructType class >> voidStructTypeCache [
 	StructTypeNameCache := nil
 ]
+
+{ #category : #macros }
+SlangStructType >> setField: fieldName to: fieldValue [
+
+	| slot |
+	slot := self class slotNamed: fieldName.
+	slot write: fieldValue to: self
+]
+
+{ #category : #macros }
+SlangStructType >> withFieldsDo: forEachBlock separatedBy: separatorBlock [ 
+
+	self class allSlots 
+		do: [ :aSlot | forEachBlock value: aSlot name value: (aSlot read: self) ] 
+		separatedBy: separatorBlock 
+]
+
+{ #category : #macros }
+SlangStructType >> withStructNameDo: aFullBlockClosure [ 
+	
+	^ aFullBlockClosure value: self class structTypeName
+]

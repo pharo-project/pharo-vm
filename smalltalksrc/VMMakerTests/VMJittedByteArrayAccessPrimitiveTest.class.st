@@ -9,12 +9,9 @@ Class {
 }
 
 { #category : #'building suites' }
-VMJittedByteArrayAccessPrimitiveTest class >> testParameters [
+VMJittedByteArrayAccessPrimitiveTest class >> wordSizeParameters [
 
-	^ ParametrizedTestMatrix new
-		addCase: { #ISA -> #'aarch64'. #wordSize -> 8};
-		addCase: { #ISA -> #'X64'. #wordSize -> 8};
-		yourself
+	^ self wordSize64Parameters 
 ]
 
 { #category : #'tests - store integers' }

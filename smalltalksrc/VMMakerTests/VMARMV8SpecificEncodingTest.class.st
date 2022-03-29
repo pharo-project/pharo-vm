@@ -5,7 +5,7 @@ Class {
 }
 
 { #category : #'building suites' }
-VMARMV8SpecificEncodingTest class >> testParameters [
+VMARMV8SpecificEncodingTest class >> wordSizeParameters [
 
 	^ ParametrizedTestMatrix new
 		addCase: { #ISA -> #'aarch64'. #wordSize -> 8};

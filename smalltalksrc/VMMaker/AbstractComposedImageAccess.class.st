@@ -1,66 +1,138 @@
 Class {
 	#name : #AbstractComposedImageAccess,
 	#superclass : #AbstractImageAccess,
+	#instVars : [
+		'fieldFormat',
+		'headFormat'
+	],
 	#category : #'VMMaker-ImageFormat'
 }
 
-{ #category : #'file operations' }
-AbstractComposedImageAccess >> headerFile: imageFileName [
+{ #category : #translation }
+AbstractComposedImageAccess class >> declareCVarsIn: aCCodeGenerator [
 
-	| imageFile |
-	imageFile := self imageFile: imageFileName.
+	aCCodeGenerator
+		addHeaderFile:'<sys/stat.h> /* for e.g. mkdir */'
 
-	^ imageFile / 'header.ston'
 ]
 
 { #category : #'file operations' }
-AbstractComposedImageAccess >> imageFile: imageFileName [
+AbstractComposedImageAccess >> createImageDirectory: imageFileName [
 
-	| imageFile |
-	imageFile := imageFileName asFileReference.
-	imageFile ensureCreateDirectory.
+	self
+		cCode: [ 
+			self
+				cppIf: ((self defined: #_WIN32) or: [(self defined: #_WIN64)])
+				ifTrue: [ self mkdir: imageFileName ]
+				ifFalse: [ self mkdir: imageFileName _: 0777 ] ]
+		inSmalltalk: [ imageFileName asFileReference ensureCreateDirectory ]
+]
+
+{ #category : #'file operations' }
+AbstractComposedImageAccess >> existSegment: segmentIndex inImage: imageFileName [
+
+	<var: #buffer declareC: 'char buffer[255]'>
+	<var: #sb declareC: 'struct stat sb'>
+	| buffer fileName sb |
+	self simulationOnly: [ 
+		buffer := nil.
+		sb := nil ].
+
+	fileName := self
+		            segmentFileName: segmentIndex
+		            withExtension: '.data'
+		            inImage: imageFileName
+		            into: buffer
+		            bufferSize: 255.
+
+	^ self
+		  cCode: [ self stat: fileName _: (self addressOf: sb) ]
+		  inSmalltalk: [ fileName asFileReference exists ]
+]
+
+{ #category : #'file primitives' }
+AbstractComposedImageAccess >> fscanf: file _: format _: varHolder [
+
+	<doNotGenerate>
+	^ (format = headFormat)
+		  ifTrue: [ 
+			  varHolder contents: (file nextLine substrings: ' ') first ];
+		  yourself
+]
+
+{ #category : #'file primitives' }
+AbstractComposedImageAccess >> fscanf: file _: format _: varHolder1 _: varHolder2 [
+
+	<doNotGenerate>
+	^ (format = fieldFormat)
+		  ifTrue: [ 
+			  | line dataArray |
+			  line := file nextLine.
+			  dataArray := line substrings: '#:, '.
+			  dataArray first = '}' ifTrue: [ ^ false ].
+			  varHolder1 contents: dataArray second.
+			  varHolder2 contents: dataArray third asInteger.
+			  file position: file position - 1. "Not consume '\n' "
+			  (line last = $,) ifTrue: [ file position: file position - 1 ] "Not consume ',' " ];
+		  yourself
+]
+
+{ #category : #'file operations' }
+AbstractComposedImageAccess >> headerFileNameinImage: imageFileName into: buffer bufferSize: bufferSize [
+
+	| headerFileName |
+	headerFileName := 'header.ston'.
+
+	^ self 
+		cCode: [ 
+			self snprintf: buffer _: bufferSize _: '%s/%s' _: imageFileName _: headerFileName. 
+			buffer ] 
+		inSmalltalk: [ imageFileName , '/', headerFileName ]
+]
+
+{ #category : #initialization }
+AbstractComposedImageAccess >> initialize [
+
+	super initialize.
 	
-	^ imageFile
-]
-
-{ #category : #'file operations' }
-AbstractComposedImageAccess >> segmentDataFile: segmentIndex fromFile: imageFile [
-
-	| segmentDataFileName |
-	segmentDataFileName := (self segmentFileNameWithoutExtension: segmentIndex) , '.data'.
-
-	^ imageFile / segmentDataFileName
+	headFormat := '%s {\n'.
+	fieldFormat := '\t#%s : %ld'.
 ]
 
 { #category : #'file operations' }
 AbstractComposedImageAccess >> segmentDataFile: segmentIndex inImage: imageFileName [
 
-	| imageFile |
-	imageFile := self imageFile: imageFileName.
+	<inline: true>
+	<var: #buffer declareC: 'char buffer[255]'>
 
-	^ self segmentDataFile: segmentIndex fromFile: imageFile 
+	| buffer |
+		
+	self simulationOnly: [ buffer := nil ].
+		
+	^ self segmentFileName: segmentIndex withExtension: '.data' inImage: imageFileName into: buffer bufferSize: 255.
+
 ]
 
 { #category : #'file operations' }
-AbstractComposedImageAccess >> segmentFileNameWithoutExtension: segmentIndex [
+AbstractComposedImageAccess >> segmentFileName: segmentIndex withExtension: extension inImage: imageFileName into: buffer bufferSize: bufferSize [
 
-	^ 'seg' , segmentIndex asString
-]
-
-{ #category : #'file operations' }
-AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex fromFile: imageFile [
-
-	| segmentDataFileName |
-	segmentDataFileName := (self segmentFileNameWithoutExtension: segmentIndex) , '.ston'.
-
-	^ imageFile / segmentDataFileName
+	^ self 
+		cCode: [ 
+			self snprintf: buffer _: bufferSize _: '%s/seg%d%s' _: imageFileName _: segmentIndex _: extension. 
+			buffer ] 
+		inSmalltalk: [ imageFileName , '/seg', segmentIndex asString , extension ]
 ]
 
 { #category : #'file operations' }
 AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex inImage: imageFileName [
 
-	| imageFile |
-	imageFile := self imageFile: imageFileName.
+	<inline: true>
+	<var: #buffer declareC: 'char buffer[255]'>
 
-	^ self segmentMetadataFile: segmentIndex fromFile: imageFile 
+	| buffer |
+		
+	self simulationOnly: [ buffer := nil ].
+
+	^ self segmentFileName: segmentIndex withExtension: '.ston' inImage: imageFileName into: buffer bufferSize: 255. 
+
 ]

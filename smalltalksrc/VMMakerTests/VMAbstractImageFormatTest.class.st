@@ -2,56 +2,15 @@ Class {
 	#name : #VMAbstractImageFormatTest,
 	#superclass : #VMSpurInitializedOldSpaceTest,
 	#instVars : [
-		'imageReader',
-		'imageReaderClass',
-		'imageWriterClass'
+		'imageReader'
 	],
 	#category : #'VMMakerTests-ImageFormat'
 }
 
 { #category : #tests }
-VMAbstractImageFormatTest class >> testParameters [ 
-
-	^ super testParameters * { 
-		{ #imageReaderClass -> SpurImageReader. #imageWriterClass -> SpurImageWriter }.
-		{ #imageReaderClass -> ComposedImageReader. #imageWriterClass -> ComposedImageWriter }.
-	}
-]
-
-{ #category : #tests }
 VMAbstractImageFormatTest >> imageFileName [
 
 	^ 'lala.image'
-]
-
-{ #category : #accessing }
-VMAbstractImageFormatTest >> imageReaderClass [
-
-	^ imageReaderClass
-]
-
-{ #category : #accessing }
-VMAbstractImageFormatTest >> imageReaderClass: anObject [
-
-	imageReaderClass := anObject
-]
-
-{ #category : #accessing }
-VMAbstractImageFormatTest >> imageWriterClass [
-
-	^ imageWriterClass
-]
-
-{ #category : #accessing }
-VMAbstractImageFormatTest >> imageWriterClass: anObject [
-
-	imageWriterClass := anObject
-]
-
-{ #category : #accessing }
-VMAbstractImageFormatTest >> initializationOptions [
-
-	^ super initializationOptions, { #ImageReader.  imageReaderClass name. #ImageWriter. imageWriterClass name }
 ]
 
 { #category : #tests }

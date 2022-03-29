@@ -90,6 +90,15 @@ StackInterpreterSimulator class >> new [
 ]
 
 { #category : #'instance creation' }
+StackInterpreterSimulator class >> newBasicWithOptions: optionsDictionaryOrArray [
+
+	^ self
+		  onObjectMemory: nil
+		  options: optionsDictionaryOrArray
+		  initializer: [ :interpreter | interpreter basicInitialize ]
+]
+
+{ #category : #'instance creation' }
 StackInterpreterSimulator class >> newWithOptions: optionsDictionaryOrArray [
 	^self onObjectMemory: nil options: optionsDictionaryOrArray
 ]
@@ -101,6 +110,15 @@ StackInterpreterSimulator class >> onObjectMemory: anObjectMemory [
 
 { #category : #'instance creation' }
 StackInterpreterSimulator class >> onObjectMemory: anObjectMemory options: optionsDictionaryOrArray [
+
+	^ self
+		  onObjectMemory: anObjectMemory
+		  options: optionsDictionaryOrArray
+		  initializer: [ :interpreter | interpreter initialize ]
+]
+
+{ #category : #'instance creation' }
+StackInterpreterSimulator class >> onObjectMemory: anObjectMemory options: optionsDictionaryOrArray initializer: initializer [
 	| simulatorClass |
 	^self == StackInterpreterSimulator
 		ifTrue:
@@ -113,7 +131,7 @@ StackInterpreterSimulator class >> onObjectMemory: anObjectMemory options: optio
 				onObjectMemory: (anObjectMemory ifNil:
 										[self objectMemoryClass simulatorClass new])
 				options: optionsDictionaryOrArray]
-		ifFalse: [super basicNew objectMemory: anObjectMemory; initialize]
+		ifFalse: [initializer value: (super basicNew objectMemory: anObjectMemory)]
 ]
 
 { #category : #'debug support' }

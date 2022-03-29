@@ -1472,7 +1472,7 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 		with: aSendNode args
 		do: [:formal :actual|
 			(meth declarationAt: formal ifAbsent: nil) ifNil:
-				[(self typeFor: actual in: aCodeGen) ifNotNil:
+				[(aCodeGen typeFor: actual in: self) ifNotNil:
 					[:type|
 					type ~= #sqInt ifTrue:
 						[meth declarationAt: formal put: (type last = $* ifTrue: [type, formal] ifFalse: [type, ' ', formal])]]]].
@@ -3017,9 +3017,9 @@ TMethod >> typeFor: aVariable in: aCodeGen [
 					ifTrue: [aCodeGen defaultType, ' ', varName]
 					ifFalse:
 						[(locals includes: varName) ifFalse: "don't provide type for locals"
-							[aCodeGen typeOfVariable: varName]]]) ifNotNil:
-		[:decl|
-		aCodeGen extractTypeFor: varName fromDeclaration: decl]
+							[aCodeGen typeOfVariable: varName  ]]]) 
+				ifNotNil: [:decl|
+						aCodeGen extractTypeFor: varName fromDeclaration: decl]
 ]
 
 { #category : #utilities }

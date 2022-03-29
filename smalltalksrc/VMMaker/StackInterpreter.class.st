@@ -500,7 +500,10 @@ StackInterpreter class >> ancilliaryClasses [
 		LibFFI.
 		CogStackPage.
 		SpurImageHeaderStruct.
-		AbstractImageAccess. "I am putting the abstract superclass... because I cannot make it work else"
+		ComposedSegmentMetadataStruct.
+		"I am putting the abstract superclasses... because I cannot make it work else"
+		AbstractImageAccess.
+		AbstractComposedImageAccess.
 		self imageReaderClass.
 		self imageWriterClass}
 ]
@@ -637,23 +640,24 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		"this variable is not used in the exported code, so it has to be removed.
 		If it is changed, it should be marked with type implicit"
 		removeVariable: 'imageReader'; 
-		var: 'imageWriter' type: #implicit. 
+		removeVariable: 'imageWriter'.
+
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 StackInterpreter class >> imageReaderClass [
 
 	^Smalltalk at: (InitializationOptions
 					at: #ImageReader
-					ifAbsent: [ #SpurImageReader ])
+					ifAbsent: [ #ComposedImageReader ])
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 StackInterpreter class >> imageWriterClass [
 
 	^Smalltalk at: (InitializationOptions
 					at: #ImageWriter
-					ifAbsent: [ #SpurImageWriter ])
+					ifAbsent: [ #ComposedImageWriter ])
 ]
 
 { #category : #translation }
@@ -13936,6 +13940,7 @@ StackInterpreter >> shuffleArgumentsAndStoreAbsentReceiver: theReceiver [
 
 { #category : #'primitive support' }
 StackInterpreter >> siglong: aJumpBuf jmp: returnValue [
+	<doNotGenerate>
 	^self long: aJumpBuf jmp: returnValue
 ]
 

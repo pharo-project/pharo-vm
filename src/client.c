@@ -1,3 +1,4 @@
+#include <sys/stat.h>
 #include "pharovm/pharo.h"
 #include "pharovm/pharoClient.h"
 #include "pharovm/fileDialog.h"
@@ -209,24 +210,15 @@ vm_main(int argc, const char** argv, const char** env)
 static int
 loadPharoImage(const char* fileName)
 {
-    size_t imageSize = 0;
-    sqImageFile imageFile = NULL;
+    struct stat sb;
 
-    /* Open the image file. */
-    imageFile = sqImageFileOpen(fileName, "rb");
-    if(!imageFile)
-	{
-    	logErrorFromErrno("Opening Image");
+    /* Check image exists */
+    if (stat(fileName, &sb) == -1) {
+        logErrorFromErrno("Image file not found");
         return false;
     }
 
-    /* Get the size of the image file*/
-    sqImageFileSeekEnd(imageFile, 0);
-    imageSize = sqImageFilePosition(imageFile);
-    sqImageFileSeek(imageFile, 0);
-
-    readImageFromFileStartingAt(imageFile, 0);
-    sqImageFileClose(imageFile);
+    readImageNamed(fileName);
 
     char* fullImageName = alloca(FILENAME_MAX);
 	fullImageName = getFullPath(fileName, fullImageName, FILENAME_MAX);
