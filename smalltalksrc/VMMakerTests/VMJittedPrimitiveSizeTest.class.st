@@ -120,7 +120,7 @@ VMJittedPrimitiveSizeTest >> testPrimitiveSizeArrayShouldReturnPointerSizedSlots
 	
 	| array |
 
-	array := self newObjectWithSlots: 7.
+	array := self newArrayWithSlots: 7.
 
 	self prepareStackForSendReceiver: array.	
 	machineSimulator baseRegisterValue: cogit varBaseAddress.

@@ -307,9 +307,9 @@ VMSimpleStackBasedCogitAbstractTest >> createInterpreterFramefulCallFrom: return
 VMSimpleStackBasedCogitAbstractTest >> createSpecialSelectorArray [
 
 	| specialObjectsOop  |
-	specialObjectsOop := self newObjectWithSlots: 24.
+	specialObjectsOop := self newArrayWithSlots: 24.
 	selectorIndex := Smalltalk specialSelectors indexOf: sentSelector.
-	obj := self newObjectWithSlots: selectorIndex + 1.
+	obj := self newArrayWithSlots: selectorIndex + 1.
 	memory
 		storePointer: selectorIndex - 1
 		ofObject: obj withValue: (selectorAtIndex := memory integerObjectOf: 77 "Some object to test").
@@ -727,7 +727,7 @@ VMSimpleStackBasedCogitAbstractTest >> setUp [
 	memory falseObject: (self newObjectWithSlots: 0).
 	
 	"We don't access its contents, but we need it to be after nil, true and false"
-	memory hiddenRootsObject: (self newObjectWithSlots: 0).
+	memory hiddenRootsObject: (self newArrayWithSlots: 0).
 
 	cogit setStackAlignment: 16 expectedSPOffset: 0 expectedFPOffset: 0.
 	cogit initializeBackend.

@@ -493,7 +493,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtArrayOutOfBoundsShouldFallThrough [
 	| offset array |
 	
 	offset := 11.
-	array := self newObjectWithSlots: 10.
+	array := self newArrayWithSlots: 10.
 	
 	self prepareStackForSendReceiver: array arguments: { memory integerObjectOf: offset }.
 
@@ -506,7 +506,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtArrayShouldAccessValue [
 	| offset array |
 
 	offset := 5.
-	array := self newObjectWithSlots: 10.
+	array := self newArrayWithSlots: 10.
 	memory storePointer: offset - 1 ofObject: array withValue: memory falseObject.
 	
 	self executePrimitiveWithReceiver: array withArgument: (memory integerObjectOf: offset).

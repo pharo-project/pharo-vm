@@ -15,7 +15,7 @@ VMSistaSuperSendsTest >> jitOptions [
 { #category : #'tests - sends/super' }
 VMSistaSuperSendsTest >> testSuperSendLiteralZeroWithZeroArgsMovesSelectorIndexClassRegisterIn64bits [
 
-	| selector literalIndex binding literalVariableIndex literalSelectorIndex startPC receiver expectedSelector |
+	| selector binding literalVariableIndex literalSelectorIndex startPC receiver expectedSelector |
 	sendTrampolineAddress := self compile: [ cogit RetN: 0 ].
 	cogit
 		directedBindingSuperSendTrampolineAt: 0
