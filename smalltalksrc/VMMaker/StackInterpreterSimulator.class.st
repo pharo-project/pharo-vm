@@ -964,18 +964,6 @@ StackInterpreterSimulator >> ioGetMaxExtSemTableSize [
 	^extSemTabSize
 ]
 
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> ioGetNextEvent: evtBuf [
-	| evt |
-	"SimulatorMorphicModel browse"
-	eventQueue ifNil:
-		[^self primitiveFail].
-	eventQueue isEmpty ifFalse:
-		[evt :=  eventQueue next.
-		 1 to: evtBuf size do:
-			[:i| (evt at: i) ifNotNil: [:val| evtBuf at: (i - 1) put: val asInteger]]]
-]
-
 { #category : #'I/O primitives support' }
 StackInterpreterSimulator >> ioHeartbeatMilliseconds [
 	^1
