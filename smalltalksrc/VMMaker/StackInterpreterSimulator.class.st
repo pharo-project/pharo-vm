@@ -244,16 +244,6 @@ StackInterpreterSimulator >> breakCount [
 	^breakCount
 ]
 
-{ #category : #'interpreter shell' }
-StackInterpreterSimulator >> browserPluginInitialiseIfNeeded [
-"do nothing - its a macro in C code to support Mac browser plugin strangeness"
-]
-
-{ #category : #'interpreter shell' }
-StackInterpreterSimulator >> browserPluginReturnIfNeeded [
-"do nothing - its a macro in C code to support Mac browser plugin strangeness"
-]
-
 { #category : #'memory access' }
 StackInterpreterSimulator >> byteAt: byteAddress [
 	"This is really only for the C library simulations memcpy:_:_: et al in VMClass.
@@ -871,6 +861,7 @@ StackInterpreterSimulator >> internalMustBeBoolean [
 
 { #category : #'interpreter shell' }
 StackInterpreterSimulator >> interpret [
+
 	"This is the main interpreter loop. It normally loops forever, fetching and executing bytecodes.
 	 When running in the context of a web browser plugin VM, however, it must return control to the
 	 web browser periodically. This should done only when the state of the currently running Squeak
@@ -880,23 +871,21 @@ StackInterpreterSimulator >> interpret [
 
 	Override for simulation to insert bytecode breakpoint support."
 
-	<inline: false>
 	"If stacklimit is zero then the stack pages have not been initialized."
-	stackLimit = 0 ifTrue:
-		[^self initStackPagesAndInterpret].
-	"record entry time when running as a browser plug-in"
-	self browserPluginInitialiseIfNeeded.
+
+	<inline: false>
+	stackLimit = 0 ifTrue: [ ^ self initStackPagesAndInterpret ].
 	self internalizeIPandSP.
 	self initExtensions.
 	self fetchNextBytecode.
-	[true] whileTrue:
-		[self assertValidExecutionPointers.
-		 atEachStepBlock value. "N.B. may be nil"
-		 self dispatchOn: currentBytecode in: BytecodeTable.
-		 self incrementByteCount].
-	localIP := localIP - 1.  "undo the pre-increment of IP before returning"
+	[ true ] whileTrue: [ 
+		self assertValidExecutionPointers.
+		atEachStepBlock value. "N.B. may be nil"
+		self dispatchOn: currentBytecode in: BytecodeTable.
+		self incrementByteCount ].
+	localIP := localIP - 1. "undo the pre-increment of IP before returning"
 	self externalizeIPandSP.
-	^nil
+	^ nil
 ]
 
 { #category : #'as yet unclassified' }

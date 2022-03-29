@@ -7477,7 +7477,6 @@ StackInterpreter >> ifBackwardsCheckForEvents: offset [
 	 and: [localSP < stackLimit]) ifTrue:
 		[self externalizeIPandSP.
 		 self checkForEventsMayContextSwitch: true.
-		 self browserPluginReturnIfNeeded.
 		 self internalizeIPandSP]
 ]
 
@@ -8060,20 +8059,19 @@ StackInterpreter >> internalCannotReturn: resultOop [
 
 { #category : #'message sending' }
 StackInterpreter >> internalExecuteNewMethod [
-	| succeeded |
+
 	<inline: true>
-	primitiveFunctionPointer ~= 0 ifTrue:
-		[self isPrimitiveFunctionPointerAnIndex ifTrue:
-			[self internalQuickPrimitiveResponse.
-			^ self "keep slang happy"].
-		 self externalizeIPandSP.
-		 succeeded := self slowPrimitiveResponse.
-		 self internalizeIPandSP.
-		 succeeded ifTrue:
-			[self browserPluginReturnIfNeeded.
-			^ self]].
+	| succeeded |
+	primitiveFunctionPointer ~= 0 ifTrue: [ 
+		self isPrimitiveFunctionPointerAnIndex ifTrue: [ 
+			self internalQuickPrimitiveResponse.
+			^ self "keep slang happy" ].
+		self externalizeIPandSP.
+		succeeded := self slowPrimitiveResponse.
+		self internalizeIPandSP.
+		succeeded ifTrue: [ ^ self ] ].
 	"if not primitive, or primitive failed, activate the method"
-	^self internalActivateNewMethod
+	^ self internalActivateNewMethod
 ]
 
 { #category : #'message sending' }
@@ -9615,19 +9613,20 @@ StackInterpreter >> mappedDirectCall [
 
 { #category : #'sista bytecodes' }
 StackInterpreter >> mappedEnsureEnoughWords [
+
 	"50	EnsureEnoughWords
 	 literal which is a Smi => ret value is receiver"
-	 | slots ok top |
-	 top := self internalStackTop.
-	 self assert: (objectMemory isIntegerObject: top).
-	 slots := objectMemory integerValueOf: top.
-	 self assert: slots >= 0.
-	 ok := objectMemory checkForAvailableSlots: slots.
-	 ok ifFalse:
-		[self externalizeIPandSP.
-		 self checkForEventsMayContextSwitch: true.
-		 self browserPluginReturnIfNeeded.
-		 self internalizeIPandSP]
+
+	| slots ok top |
+	top := self internalStackTop.
+	self assert: (objectMemory isIntegerObject: top).
+	slots := objectMemory integerValueOf: top.
+	self assert: slots >= 0.
+	ok := objectMemory checkForAvailableSlots: slots.
+	ok ifFalse: [ 
+		self externalizeIPandSP.
+		self checkForEventsMayContextSwitch: true.
+		self internalizeIPandSP ]
 ]
 
 { #category : #'sista bytecodes' }

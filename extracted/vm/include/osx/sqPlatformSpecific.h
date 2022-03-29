@@ -93,8 +93,6 @@ sqAllocateMemory(minimumMemory, heapSize, baseAddress)
 #undef ioMSecs
 #define ioUtcWithOffset ioUtcWithOffset
 
-/* macro to return from interpret() loop in browser plugin VM */
-#define ReturnFromInterpret() return 0
 
 /* undef the memory routines for our logic */
 #undef sqMemoryExtraBytesLeft
