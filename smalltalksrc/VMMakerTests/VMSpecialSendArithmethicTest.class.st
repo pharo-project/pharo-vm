@@ -16,7 +16,7 @@ VMSpecialSendArithmethicTest class >> testParameters [
 { #category : #running }
 VMSpecialSendArithmethicTest >> assertSpecialSendTo: receiverOop withArg: argOop [ 
 
-	self assert: machineSimulator instructionPointerValue equals: sendTrampolineAddress.
+	self assert: machineSimulator instructionPointerRegisterValue equals: sendTrampolineAddress.
 	self assert: machineSimulator receiverRegisterValue equals: receiverOop.
 	self assert: machineSimulator arg0RegisterValue equals: argOop.
 ]

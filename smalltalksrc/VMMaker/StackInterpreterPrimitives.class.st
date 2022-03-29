@@ -1214,7 +1214,7 @@ StackInterpreterPrimitives >> primitiveContextAt [
 	self externalWriteBackHeadFramePointers.
 	(self isStillMarriedContext: aContext) ifFalse:
 		[fmt := objectMemory formatOfHeader: hdr.
-		 totalLength := objectMemory lengthOf: aContext baseHeader: hdr format: fmt.
+		 totalLength := objectMemory lengthOf: aContext format: fmt.
 		 fixedFields := objectMemory fixedFieldsOf: aContext format: fmt length: totalLength.
 		 stSize := self fetchStackPointerOf: aContext.
 		 (index between: 1 and: stSize) ifFalse:
@@ -1252,7 +1252,7 @@ StackInterpreterPrimitives >> primitiveContextAtPut [
 	self externalWriteBackHeadFramePointers.
 	(self isStillMarriedContext: aContext) ifFalse:
 		[fmt := objectMemory formatOfHeader: hdr.
-		 totalLength := objectMemory lengthOf: aContext baseHeader: hdr format: fmt.
+		 totalLength := objectMemory lengthOf: aContext format: fmt.
 		 fixedFields := objectMemory fixedFieldsOf: aContext format: fmt length: totalLength.
 		 stSize := self fetchStackPointerOf: aContext.
 		 (index between: 1 and: stSize) ifFalse:
@@ -1278,7 +1278,7 @@ StackInterpreterPrimitives >> primitiveContextSize [
 	rcvr := self stackTop.
 	hdr := objectMemory baseHeader: rcvr.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: rcvr baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: rcvr format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: rcvr format: fmt length: totalLength.
 	(objectMemory isContextHeader: hdr)
 		ifTrue:
@@ -2133,7 +2133,7 @@ StackInterpreterPrimitives >> primitiveInstVarAt [
 	index := objectMemory integerValueOf: index.
 	hdr := objectMemory baseHeader: rcvr.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: rcvr baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: rcvr format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: rcvr format: fmt length: totalLength.
 	(index >= 1 and: [index <= fixedFields]) ifFalse:
 		[^self primitiveFailFor: PrimErrBadIndex].
@@ -2161,7 +2161,7 @@ StackInterpreterPrimitives >> primitiveInstVarAtPut [
 	index := objectMemory integerValueOf: index.
 	hdr := objectMemory baseHeader: rcvr.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: rcvr baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: rcvr format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: rcvr format: fmt length: totalLength.
 	(index >= 1 and: [index <= fixedFields]) ifFalse:
 		[^self primitiveFailFor: PrimErrBadIndex].
