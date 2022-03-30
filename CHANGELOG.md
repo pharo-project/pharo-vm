@@ -2,6 +2,10 @@
 
 I am a changelog... do not wait too much from me :D
 
+## v9.0.14
+
+- Adding support to read command line parameters from the PList (In OSX)
+
 ## v9.0.13
 
 - Correct handling OOB (Out of Band Data) in Window
