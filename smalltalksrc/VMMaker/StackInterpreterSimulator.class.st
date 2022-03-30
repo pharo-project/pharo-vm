@@ -264,16 +264,6 @@ StackInterpreterSimulator >> breakCount [
 	^breakCount
 ]
 
-{ #category : #'interpreter shell' }
-StackInterpreterSimulator >> browserPluginInitialiseIfNeeded [
-"do nothing - its a macro in C code to support Mac browser plugin strangeness"
-]
-
-{ #category : #'interpreter shell' }
-StackInterpreterSimulator >> browserPluginReturnIfNeeded [
-"do nothing - its a macro in C code to support Mac browser plugin strangeness"
-]
-
 { #category : #'memory access' }
 StackInterpreterSimulator >> byteAt: byteAddress [
 	"This is really only for the C library simulations memcpy:_:_: et al in VMClass.
@@ -316,13 +306,13 @@ StackInterpreterSimulator >> cCoerceSimple: value to: cTypeString [
 
 { #category : #'plugin support' }
 StackInterpreterSimulator >> callExternalPrimitive: mapIndex [
+
 	| entry |
 	entry := self pluginEntryFor: mapIndex.
 	"Spur needs the primitiveFunctionPointer to be set correctly
 	 for accurate following of forwarders on primitive failure."
-	objectMemory hasSpurMemoryManagerAPI ifTrue:
-		[primitiveFunctionPointer := entry at: 2].
-	^(entry at: 1) perform: (entry at: 2)
+	primitiveFunctionPointer := entry at: 2.
+	^ (entry at: 1) perform: (entry at: 2)
 ]
 
 { #category : #'object memory support' }
@@ -837,14 +827,11 @@ StackInterpreterSimulator >> initialize [
 
 { #category : #'plugin support' }
 StackInterpreterSimulator >> initializePluginEntries [
+
 	mappedPluginEntries := OrderedCollection new.
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[primitiveAccessorDepthTable := Array new: primitiveTable size.
-			 pluginList := {}.
-			 self loadNewPlugin: '']
-		ifFalse:
-			[pluginList := {'' -> self }]
+	primitiveAccessorDepthTable := Array new: primitiveTable size.
+	pluginList := {  }.
+	self loadNewPlugin: ''
 ]
 
 { #category : #'frame access' }
@@ -886,6 +873,7 @@ StackInterpreterSimulator >> internalMustBeBoolean [
 
 { #category : #'interpreter shell' }
 StackInterpreterSimulator >> interpret [
+
 	"This is the main interpreter loop. It normally loops forever, fetching and executing bytecodes.
 	 When running in the context of a web browser plugin VM, however, it must return control to the
 	 web browser periodically. This should done only when the state of the currently running Squeak
@@ -895,23 +883,21 @@ StackInterpreterSimulator >> interpret [
 
 	Override for simulation to insert bytecode breakpoint support."
 
-	<inline: false>
 	"If stacklimit is zero then the stack pages have not been initialized."
-	stackLimit = 0 ifTrue:
-		[^self initStackPagesAndInterpret].
-	"record entry time when running as a browser plug-in"
-	self browserPluginInitialiseIfNeeded.
+
+	<inline: false>
+	stackLimit = 0 ifTrue: [ ^ self initStackPagesAndInterpret ].
 	self internalizeIPandSP.
 	self initExtensions.
 	self fetchNextBytecode.
-	[true] whileTrue:
-		[self assertValidExecutionPointers.
-		 atEachStepBlock value. "N.B. may be nil"
-		 self dispatchOn: currentBytecode in: BytecodeTable.
-		 self incrementByteCount].
-	localIP := localIP - 1.  "undo the pre-increment of IP before returning"
+	[ true ] whileTrue: [ 
+		self assertValidExecutionPointers.
+		atEachStepBlock value. "N.B. may be nil"
+		self dispatchOn: currentBytecode in: BytecodeTable.
+		self incrementByteCount ].
+	localIP := localIP - 1. "undo the pre-increment of IP before returning"
 	self externalizeIPandSP.
-	^nil
+	^ nil
 ]
 
 { #category : #'as yet unclassified' }
@@ -977,18 +963,6 @@ StackInterpreterSimulator >> ioExitWithErrorCode: ec [
 { #category : #'process primitive support' }
 StackInterpreterSimulator >> ioGetMaxExtSemTableSize [
 	^extSemTabSize
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> ioGetNextEvent: evtBuf [
-	| evt |
-	"SimulatorMorphicModel browse"
-	eventQueue ifNil:
-		[^self primitiveFail].
-	eventQueue isEmpty ifFalse:
-		[evt :=  eventQueue next.
-		 1 to: evtBuf size do:
-			[:i| (evt at: i) ifNotNil: [:val| evtBuf at: (i - 1) put: val asInteger]]]
 ]
 
 { #category : #'I/O primitives support' }
@@ -2450,16 +2424,18 @@ StackInterpreterSimulator >> utilitiesMenu: aMenuMorph [
 
 { #category : #'debug support' }
 StackInterpreterSimulator >> veryDeepCopyWith: deepCopier [
+
 	"Override to short-circuit the copying of any VMPluginCodeGenerators referenced from mappedPluginEntries.
 	 These can in turn hold onto Monticello state, resulting in a huge ammount of unnecessary copying."
-	self objectMemory hasSpurMemoryManagerAPI ifTrue: 
-		[deepCopier references
-			at: mappedPluginEntries ifAbsentPut: [mappedPluginEntries].
-		mappedPluginEntries do:
-			[:tuple| | block |
-			block := tuple third.
-			deepCopier references at: block ifAbsentPut: [block]]].
-	^super veryDeepCopyWith: deepCopier
+
+	deepCopier references
+		at: mappedPluginEntries
+		ifAbsentPut: [ mappedPluginEntries ].
+	mappedPluginEntries do: [ :tuple | 
+		| block |
+		block := tuple third.
+		deepCopier references at: block ifAbsentPut: [ block ] ].
+	^ super veryDeepCopyWith: deepCopier
 ]
 
 { #category : #'file primitives' }

@@ -292,14 +292,17 @@ Spur64BitMemoryManager >> fetchClassTagOf: oop [
 
 { #category : #'object access' }
 Spur64BitMemoryManager >> fetchLong32: fieldIndex ofFloatObject: oop [
+
 	"index by word size, and return a pointer as long as the word size"
+
+	<returnTypeC: #usqInt>
 	| bits |
-	(self isImmediateFloat: oop) ifFalse:
-		[^self fetchLong32: fieldIndex ofObject: oop].
+	(self isImmediateFloat: oop) ifFalse: [ 
+		^ self fetchLong32: fieldIndex ofObject: oop ].
 	bits := self smallFloatBitsOf: oop.
 	^ fieldIndex = 0
-		ifTrue: [bits bitAnd: 16rFFFFFFFF]
-		ifFalse: [bits >> 32]
+		  ifTrue: [ bits bitAnd: 16rFFFFFFFF ]
+		  ifFalse: [ bits >> 32 ]
 ]
 
 { #category : #instantiation }

@@ -329,9 +329,9 @@ VMSimpleStackBasedCogitAbstractTest >> createInterpreterFramefulCallFrom: return
 VMSimpleStackBasedCogitAbstractTest >> createSpecialSelectorArray [
 
 	| specialObjectsOop  |
-	specialObjectsOop := self newObjectWithSlots: 24.
+	specialObjectsOop := self newArrayWithSlots: 24.
 	selectorIndex := Smalltalk specialSelectors indexOf: sentSelector.
-	obj := self newObjectWithSlots: selectorIndex + 1.
+	obj := self newArrayWithSlots: selectorIndex + 1.
 	memory
 		storePointer: selectorIndex - 1
 		ofObject: obj withValue: (selectorAtIndex := memory integerObjectOf: 77 "Some object to test").

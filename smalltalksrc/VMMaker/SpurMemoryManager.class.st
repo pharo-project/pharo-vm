@@ -738,11 +738,6 @@ SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
 		var: #memoryMap type: #'VMMemoryMap *'
 ]
 
-{ #category : #'api characterization' }
-SpurMemoryManager class >> hasSpurMemoryManagerAPI [
-	^true
-]
-
 { #category : #analysis }
 SpurMemoryManager class >> identify32BitSignedComparisonsInSegmentIO [
 	"self identify32BitSignedComparisonsInSegmentIO"
@@ -951,7 +946,7 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	SelectorCannotReturn := 21.
 	ProcessSignalingLowSpace := 22.	"was TheInputSemaphore"
 	SpecialSelectors := 23.
-	CharacterTable := nil.	"Must be unused by the VM"
+	"24 was Old CharacterTable"
 	SelectorMustBeBoolean := 25.
 	ClassByteArray := 26.
 	"ClassProcess := 27. unused"
@@ -2985,11 +2980,6 @@ SpurMemoryManager >> changeClassOf: rcvr to: argClass [
 SpurMemoryManager >> characterObjectOf: characterCode [
 	<api>
 	^characterCode << self numTagBits + self characterTag
-]
-
-{ #category : #accessing }
-SpurMemoryManager >> characterTable [
-	self shouldNotImplement
 ]
 
 { #category : #'object access' }
@@ -5682,12 +5672,6 @@ SpurMemoryManager >> fullGC [
 		ifFalse: [0]
 ]
 
-{ #category : #'gc - global' }
-SpurMemoryManager >> fullGCLock [
-	"Spur never has a need to lock GC because it does not move pinned objects."
-	^0
-]
-
 { #category : #snapshot }
 SpurMemoryManager >> garbageCollectForSnapshot [
 	self flushNewSpace. "There is no place to put newSpace in the snapshot file."
@@ -5880,11 +5864,6 @@ SpurMemoryManager >> hasSixtyFourBitImmediates [
 	"The V3 64-bit memory manager has 64-bit oops, but its SmallIntegers only have
 	 31 bits of precision.  The Spur 64-bit memory manager has 61-bit immediates."
 	^self subclassResponsibility
-]
-
-{ #category : #'api characterization' }
-SpurMemoryManager >> hasSpurMemoryManagerAPI [
-	^true
 ]
 
 { #category : #'object testing' }
@@ -6174,11 +6153,6 @@ SpurMemoryManager >> increaseFreeOldSpaceBy: bytes [
 
 ]
 
-{ #category : #'gc - global' }
-SpurMemoryManager >> incrementalGC [
-	self shouldNotImplement
-]
-
 { #category : #'debug support' }
 SpurMemoryManager >> indexOf: anElement in: anObject [
 	<api>
@@ -6311,9 +6285,9 @@ SpurMemoryManager >> initialize [
 	checkForLeaks := 0.
 	needGCFlag := signalLowSpace := marking := false.
 	becomeEffectsFlags := gcPhaseInProgress := 0.
-	statScavenges := statIncrGCs := statFullGCs := 0.
+	statScavenges := statFullGCs := 0.
 	statMaxAllocSegmentTime := 0.
-	statMarkUsecs := statSweepUsecs := statScavengeGCUsecs := statIncrGCUsecs := statFullGCUsecs := statCompactionUsecs := statGCEndUsecs := gcSweepEndUsecs := 0.
+	statMarkUsecs := statSweepUsecs := statScavengeGCUsecs  := statFullGCUsecs := statCompactionUsecs := statGCEndUsecs := gcSweepEndUsecs := 0.
 	statSGCDeltaUsecs := statIGCDeltaUsecs := statFGCDeltaUsecs := 0.
 	statGrowMemory := statShrinkMemory := statRootTableCount := statAllocatedBytes := 0.
 	statRootTableOverflows := statMarkCount := statCompactPassCount := statCoalesces := 0.
@@ -6326,7 +6300,7 @@ SpurMemoryManager >> initialize [
 	scavenger := SpurGenerationScavenger simulatorClass new manager: self; yourself.
 	segmentManager := SpurSegmentManager simulatorClass new manager: self; yourself.
 	compactor := self class compactorClass simulatorClass new manager: self; yourself.
-	
+
 	"We can also initialize here anything that is only for simulation."
 	heapMap := CogCheck32BitHeapMap new.
 
@@ -7872,16 +7846,6 @@ SpurMemoryManager >> lengthOf: objOop [
 ]
 
 { #category : #'object access' }
-SpurMemoryManager >> lengthOf: objOop baseHeader: header format: fmt [ 
-	<var: #header type: #usqLong>
-	"Compatibility; does not really suit the Spur format.
-	 Answer the number of indexable bytes or words in the given object.
-	 For a CompiledMethod, the size of the method header (in bytes) should
-	 be subtracted from the result of this method."
-	^self lengthOf: objOop format: fmt
-]
-
-{ #category : #'object access' }
 SpurMemoryManager >> lengthOf: objOop format: fmt [
 	"Answer the number of indexable units in the given object.
 	 For a CompiledMethod, the size of the method header (in bytes)
@@ -7992,7 +7956,7 @@ SpurMemoryManager >> lookupAddress: address [
 	address - self baseHeaderSize = hiddenRootsObj ifTrue:
 		[^'(hiddenRootsObj+baseHeaderSize)'].
 	fmt := self formatOf: address.
-	size := self lengthOf: address baseHeader: (self baseHeader: address) format: fmt.
+	size := self lengthOf: address format: fmt.
 	size = 0 ifTrue:
 		[^address caseOf: { [nilObj] -> ['nil']. [trueObj] -> ['true']. [falseObj] -> ['false'] } otherwise: []].
 	((fmt between: self firstByteFormat and: self firstCompiledMethodFormat - 1) "indexable byte fields"
@@ -10418,6 +10382,7 @@ SpurMemoryManager >> pushRemappableOop: oop [
 	 We support this excessence for compatibility with ObjectMemory.
 	 Spur doesn't GC during allocation."
 	<api>
+	<returnTypeC: #void>
 	self assert: (self addressCouldBeOop: oop).
 	remapBuffer at: (remapBufferCount := remapBufferCount + 1) put: oop.
 	remapBufferCount <= RemapBufferSize ifFalse:
@@ -11592,16 +11557,6 @@ SpurMemoryManager >> statIGCDeltaUsecs [
 ]
 
 { #category : #accessing }
-SpurMemoryManager >> statIncrGCUsecs [
-	^statIncrGCUsecs
-]
-
-{ #category : #accessing }
-SpurMemoryManager >> statIncrGCs [
-	^statIncrGCs
-]
-
-{ #category : #accessing }
 SpurMemoryManager >> statMarkCount [
 	^statMarkCount
 ]
@@ -11628,9 +11583,11 @@ SpurMemoryManager >> statMkFwdCount [
 
 { #category : #accessing }
 SpurMemoryManager >> statNumGCs [
+
 	"Part of InterpreterProxy's 1.14 API"
+
 	<export: true>
-	^statScavenges + statIncrGCs + statFullGCs
+	^ statScavenges + statFullGCs
 ]
 
 { #category : #accessing }
@@ -11895,11 +11852,6 @@ SpurMemoryManager >> sufficientSpaceAfterGC: numBytes [
 		[lowSpaceThreshold := 0. "avoid signalling low space twice"
 		 ^false].
 	^true
-]
-
-{ #category : #allocation }
-SpurMemoryManager >> sufficientSpaceToInstantiate: classObj indexableSize: indexableFields [
-	self shouldNotImplement
 ]
 
 { #category : #'simulation only' }
@@ -12737,4 +12689,10 @@ SpurMemoryManager >> wordSize [
 { #category : #'class table puns' }
 SpurMemoryManager >> wordSizeClassIndexPun [
 	^self subclassResponsibility
+]
+
+{ #category : #'header formats' }
+SpurMemoryManager >> zeroSlotsNonIndexablePointerFormat [
+	<api>
+	^0
 ]

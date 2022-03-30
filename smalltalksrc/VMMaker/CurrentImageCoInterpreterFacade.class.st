@@ -200,11 +200,6 @@ CurrentImageCoInterpreterFacade >> characterObjectOf: anInteger [
 ]
 
 { #category : #accessing }
-CurrentImageCoInterpreterFacade >> characterTable [
-	^self subclassResponsibility
-]
-
-{ #category : #accessing }
 CurrentImageCoInterpreterFacade >> classCharacter [
 	^self oopForObject: Character
 ]
@@ -282,11 +277,6 @@ CurrentImageCoInterpreterFacade >> debugStackPointersFor: anOop [
 		((StackDepthFinder on: (objectMap keyAtValue: anOop))
 			encoderClass: (coInterpreter encoderClassForHeader: (objectMap keyAtValue: anOop) header);
 			stackPointers)
-]
-
-{ #category : #accessing }
-CurrentImageCoInterpreterFacade >> eeInstantiateClass: classOop indexableSize: numSlots [
-	^self oopForObject: ((self objectForOop: classOop) new: numSlots)
 ]
 
 { #category : #accessing }

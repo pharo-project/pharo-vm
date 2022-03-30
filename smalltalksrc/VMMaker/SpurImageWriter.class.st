@@ -112,7 +112,7 @@ SpurImageWriter >> writeHeader: header toFile: f [
 
 ]
 
-{ #category : #api }
+{ #category : #writing }
 SpurImageWriter >> writeImageFile: imageFileName fromHeader: header [
 
 	"Write the image header and heap contents to imageFile for snapshot. c.f. writeImageFileIOSimulation.
@@ -144,12 +144,9 @@ SpurImageWriter >> writeImageFile: imageFileName fromHeader: header [
 
 	self writeHeader: header toFile: f.
 
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue: [ 
-			self putLong: objectMemory firstSegmentBytes toFile: f.
-			self putLong: objectMemory bytesLeftInOldSpace toFile: f.
-			self padHeader: 2 toFile: f ]
-		ifFalse: [ self padHeader: 4 toFile: f ].
+	self putLong: objectMemory firstSegmentBytes toFile: f.
+	self putLong: objectMemory bytesLeftInOldSpace toFile: f.
+	self padHeader: 2 toFile: f.
 
 
 	"position file after the header"

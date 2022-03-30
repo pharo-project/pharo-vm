@@ -299,16 +299,6 @@ CogVMSimulator >> breakCount [
 	^breakCount
 ]
 
-{ #category : #'interpreter shell' }
-CogVMSimulator >> browserPluginInitialiseIfNeeded [
-"do nothing - its a macro in C code to support Mac browser plugin strangeness"
-]
-
-{ #category : #'interpreter shell' }
-CogVMSimulator >> browserPluginReturnIfNeeded [
-"do nothing - its a macro in C code to support Mac browser plugin strangeness"
-]
-
 { #category : #'memory access' }
 CogVMSimulator >> byteAt: byteAddress [
 	"This is really only for the C library simulations memcpy:_:_: et al in VMClass.
@@ -348,13 +338,13 @@ CogVMSimulator >> cCoerceSimple: value to: cTypeString [
 
 { #category : #'plugin support' }
 CogVMSimulator >> callExternalPrimitive: mapIndex [
+
 	| entry |
 	entry := self pluginEntryFor: mapIndex.
 	"Spur needs the primitiveFunctionPointer to be set correctly
 	 for accurate following of forwarders on primitive failure."
-	objectMemory hasSpurMemoryManagerAPI ifTrue:
-		[primitiveFunctionPointer := entry at: 2].
-	^(entry at: 1) perform: (entry at: 2)
+	primitiveFunctionPointer := entry at: 2.
+	^ (entry at: 1) perform: (entry at: 2)
 ]
 
 { #category : #enilopmarts }
@@ -1226,14 +1216,11 @@ CogVMSimulator >> initialize [
 
 { #category : #'plugin support' }
 CogVMSimulator >> initializePluginEntries [
+
 	mappedPluginEntries := OrderedCollection new.
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[primitiveAccessorDepthTable := Array new: primitiveTable size.
-			 pluginList := {}.
-			 self loadNewPlugin: '']
-		ifFalse:
-			[pluginList := {'' -> self }]
+	primitiveAccessorDepthTable := Array new: primitiveTable size.
+	pluginList := {  }.
+	self loadNewPlugin: ''
 ]
 
 { #category : #'debugging traps' }
@@ -1403,18 +1390,6 @@ CogVMSimulator >> ioExitWithErrorCode: ec [
 { #category : #'process primitive support' }
 CogVMSimulator >> ioGetMaxExtSemTableSize [
 	^extSemTabSize
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> ioGetNextEvent: evtBuf [
-	| evt |
-	"SimulatorMorphicModel browse"
-	eventQueue ifNil:
-		[^self primitiveFail].
-	eventQueue isEmpty ifFalse:
-		[evt :=  eventQueue next.
-		 1 to: evt size do:
-			[:i| (evt at: i) ifNotNil: [:val| evtBuf at: (i - 1) put: val]]]
 ]
 
 { #category : #'I/O primitives support' }

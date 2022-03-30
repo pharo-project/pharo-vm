@@ -69,7 +69,7 @@ VMSpurMemoryManagerTest >> createActiveProcess [
 	processorOopAssociation := self newObjectWithSlots: 2.
 	processorOop := self newObjectWithSlots: 2.
 	priorities := 2.
-	processorListsArray := self newObjectWithSlots: priorities.
+	processorListsArray := self newArrayWithSlots: priorities.
 	1 to: priorities do: [ :index |
 		"Put an empty linked list in each"
 		memory storePointer: index - 1 ofObject: processorListsArray withValue: (self newObjectWithSlots: 2) ].
@@ -79,7 +79,7 @@ VMSpurMemoryManagerTest >> createActiveProcess [
 	memory storePointer: ProcessListsIndex ofObject: processorOop withValue: processorListsArray.
 	
 	"Create a new process with the 4 mandatory instance variables and set it as active process"
-	memory storePointer: ActiveProcessIndex ofObject: processorOop withValue:  (self newObjectWithSlots: 4).
+	memory storePointer: ActiveProcessIndex ofObject: processorOop withValue:  (self newArrayWithSlots: 4).
 ]
 
 { #category : #helpers }
@@ -150,7 +150,7 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForFullGC [
 	memory markStack: memory nilObject.
 	memory weaklingStack: memory nilObject.
 	
-	ourArrayClass := self newObjectWithSlots: 3.
+	ourArrayClass := self newArrayWithSlots: 3.
 	memory
 		storePointer: "InstanceSpecificationIndex" 2
 		ofObject: ourArrayClass
@@ -225,7 +225,7 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 VMSpurMemoryManagerTest >> initializeSpecialSelectors [
 
 	| specialSelectorsArrayOop |
-	specialSelectorsArrayOop := self newOldSpaceObjectWithSlots:
+	specialSelectorsArrayOop := self newOldSpaceArrayWithSlots:
 		                            Smalltalk specialSelectors size.
 
 	Smalltalk specialSelectors withIndexDo: [ :anElement :anIndex | 
@@ -290,6 +290,18 @@ VMSpurMemoryManagerTest >> memoryClass [
 		ifFalse: [ Spur64BitMemoryManager ]
 ]
 
+{ #category : #'helpers - objects' }
+VMSpurMemoryManagerTest >> newArrayWithSlots: slots [
+	
+	^ self newArrayWithSlots: slots classIndex: memory arrayClassIndexPun
+]
+
+{ #category : #'helpers - objects' }
+VMSpurMemoryManagerTest >> newArrayWithSlots: slots classIndex: anIndex [
+	
+	^ self newObjectWithSlots: slots format: memory arrayFormat classIndex: anIndex
+]
+
 { #category : #'helpers - classes' }
 VMSpurMemoryManagerTest >> newClassInOldSpaceWithSlots: numberOfSlots instSpec: format [
 	| newClass formatWithSlots |
@@ -329,19 +341,24 @@ VMSpurMemoryManagerTest >> newMethodWithSmallContext: isSmall WithArguments: arg
 	^ method
 ]
 
-{ #category : #helpers }
+{ #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newObjectWithSlots: slots [
 	
 	^ self newObjectWithSlots: slots classIndex: memory arrayClassIndexPun
 ]
 
-{ #category : #helpers }
+{ #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newObjectWithSlots: slots classIndex: anIndex [
-	
-	^ self newObjectWithSlots: slots format: memory arrayFormat classIndex: anIndex
+
+	| format |
+	format := slots = 0
+		          ifTrue: [ memory zeroSlotsNonIndexablePointerFormat ]
+		          ifFalse: [ memory nonIndexablePointerFormat ].
+
+	^ self newObjectWithSlots: slots format: format classIndex: anIndex
 ]
 
-{ #category : #helpers }
+{ #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newObjectWithSlots: slots format: aFormat classIndex: anIndex [
 	
 	| oop |
@@ -353,22 +370,33 @@ VMSpurMemoryManagerTest >> newObjectWithSlots: slots format: aFormat classIndex:
 	^ oop
 ]
 
-{ #category : #helpers }
+{ #category : #'helpers - objects' }
+VMSpurMemoryManagerTest >> newOldSpaceArrayWithSlots: slots [
+
+	^ self
+		  newOldSpaceObjectWithSlots: slots format: memory arrayFormat
+		  classIndex: memory arrayClassIndexPun
+]
+
+{ #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newOldSpaceObjectWithSlots: slots [
 	
 	^ self newOldSpaceObjectWithSlots: slots classIndex: memory arrayClassIndexPun
 ]
 
-{ #category : #helpers }
+{ #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newOldSpaceObjectWithSlots: slots classIndex: anIndex [
+	
+	| format |
+	format := slots = 0 ifTrue: [ memory zeroSlotsNonIndexablePointerFormat ] ifFalse: [ memory arrayFormat ].
 	
 	^ self
 		newOldSpaceObjectWithSlots: slots
-		format: memory arrayFormat
+		format: format
 		classIndex: anIndex
 ]
 
-{ #category : #helpers }
+{ #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newOldSpaceObjectWithSlots: slots format: aFormat classIndex: anIndex [
 	
 	| oop |
@@ -532,7 +560,7 @@ VMSpurMemoryManagerTest >> setUpScheduler [
 	| processorOopAssociation processorOop processorListArray processorListPriority1 processorListPriority2 activeProcessOop |
 	processorOopAssociation := self newObjectWithSlots: 2.
 	processorOop := self newObjectWithSlots: 2.
-	processorListArray := self newObjectWithSlots: 2.
+	processorListArray := self newArrayWithSlots: 2.
 	
 	processorListPriority1 := self newObjectWithSlots: 2.
 	processorListPriority2 := self newObjectWithSlots: 2.
