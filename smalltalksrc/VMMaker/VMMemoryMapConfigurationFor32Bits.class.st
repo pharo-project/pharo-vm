@@ -27,3 +27,9 @@ VMMemoryMapConfigurationFor32Bits >> permSpaceInitialAddress [
 
 	^ 16r80000000 "(2048 MB)"
 ]
+
+{ #category : #accessing }
+VMMemoryMapConfigurationFor32Bits >> wordSize [
+
+	^ 4
+]

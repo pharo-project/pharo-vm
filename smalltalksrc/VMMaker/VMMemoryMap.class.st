@@ -130,6 +130,22 @@ VMMemoryMap >> allocationReserve: anInteger [
 	allocationReserve := anInteger 
 ]
 
+{ #category : #asserting }
+VMMemoryMap >> checkMemoryMap [
+
+	self assert: (self isYoungObject: self newSpaceStart).
+	self assert: (self isYoungObject: self newSpaceEnd - memoryMapConfiguration wordSize).
+	self assert: (self isOldObject: self newSpaceStart) not.
+	self assert: (self isOldObject: self newSpaceEnd - memoryMapConfiguration wordSize) not.
+	self assert: (self isYoungObject: self newSpaceEnd) not.
+	self assert: (self isYoungObject: self oldSpaceStart) not.
+	self assert: (self isYoungObject: self oldSpaceEnd) not.
+	self assert: (self isOldObject: self oldSpaceStart).
+	self assert: (self isOldObject: self oldSpaceEnd - memoryMapConfiguration wordSize).
+	self assert: (self isOldObject: self oldSpaceEnd) not.
+
+]
+
 { #category : #accessing }
 VMMemoryMap >> initialHeadroom [
 	^ initialHeadroom

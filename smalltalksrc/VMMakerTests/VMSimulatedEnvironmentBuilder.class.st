@@ -48,7 +48,7 @@ VMSimulatedEnvironmentBuilder >> doBuild [
  	newSpaceSize := self roundToPageSize: (edenSize * 7 / 5).
 	stackSpaceSize := 9 * 4096.
 	methodCacheSize := 4096 * wordSize.
-	rumpCStackSize := 0.
+	rumpCStackSize := 4096.
 	
 	initialAddress := 16r1000000.
 		

@@ -3390,18 +3390,8 @@ SpurMemoryManager >> checkHeapIntegrity: excludeUnmarkedObjs classIndicesShouldB
 
 { #category : #'debug support' }
 SpurMemoryManager >> checkMemoryMap [
-	self assert: (self isYoungObject: memoryMap newSpaceStart).
-	self assert: (self isYoungObject: memoryMap newSpaceEnd - self wordSize).
-	self assert: (self isOldObject: memoryMap newSpaceStart) not.
-	self assert: (self isOldObject: memoryMap newSpaceEnd - self wordSize) not.
-	self assert: (self isYoungObject: memoryMap newSpaceEnd) not.
-	self assert: (self isYoungObject: memoryMap oldSpaceStart) not.
-	self assert: (self isYoungObject: memoryMap oldSpaceEnd) not.
-	self assert: (self isOldObject: memoryMap newSpaceEnd).
-	self assert: (self isOldObject: memoryMap oldSpaceStart).
-	
-	self flag: #todo.
-"	self assert: (self isOldObject: memoryMap oldSpaceEnd)"
+
+	self getMemoryMap checkMemoryMap
 ]
 
 { #category : #'debug support' }

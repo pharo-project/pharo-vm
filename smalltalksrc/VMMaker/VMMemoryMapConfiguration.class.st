@@ -47,3 +47,9 @@ VMMemoryMapConfiguration >> stackPagesInitialAddress [
 
 	^ self subclassResponsibility 
 ]
+
+{ #category : #accessing }
+VMMemoryMapConfiguration >> wordSize [
+
+	^ self subclassResponsibility
+]

@@ -74,15 +74,7 @@ Spur64BitCoMemoryManager >> checkMemoryMap [
 	 Being young would cause them to be scavenged.
 	 Being old would cause them to be remembered if stored into (but wait, they don't get stored into)."
 
-	self assert: (self isYoungObject: memoryMap newSpaceStart).
-	self assert: (self isYoungObject: memoryMap newSpaceEnd - self wordSize).
-	self assert: (self isOldObject: memoryMap newSpaceStart) not.
-	self assert: (self isOldObject: memoryMap newSpaceEnd - self wordSize) not.
-	self assert: (self isYoungObject: memoryMap newSpaceEnd) not.
-	self assert: (self isYoungObject: memoryMap oldSpaceStart) not.
-	self assert: (self isYoungObject: memoryMap oldSpaceEnd) not.
-	self assert: (self isOldObject: memoryMap oldSpaceStart).
-	self assert: (self isOldObject: memoryMap oldSpaceEnd).
+	super checkMemoryMap.
 
 	"we would like the following to be true, but we either choose one boundary check for
 	 cogMethods vs objects (isMachineCodeFrame: et al) or one boundary check for

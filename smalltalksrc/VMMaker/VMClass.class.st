@@ -876,6 +876,9 @@ VMClass >> majorVersion [
 VMClass >> malloc: size [
 	<doNotGenerate>
 	| address region |
+	
+	size = 0 ifTrue: [ ^ nil ].
+	
 	address := memoryManager allocate: size.
 	region := memoryManager regionAtAddress: address.
 	^ CNewArrayAccessor new

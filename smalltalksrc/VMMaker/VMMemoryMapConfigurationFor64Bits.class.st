@@ -33,3 +33,9 @@ VMMemoryMapConfigurationFor64Bits >> stackPagesInitialAddress [
 
 	^ 16r200000000 "8GB"
 ]
+
+{ #category : #accessing }
+VMMemoryMapConfigurationFor64Bits >> wordSize [
+
+	^ 8
+]
