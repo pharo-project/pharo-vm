@@ -1,4 +1,3 @@
-#include <sys/stat.h>
 #include "pharovm/pharo.h"
 #include "pharovm/pharoClient.h"
 #include "pharovm/fileDialog.h"
@@ -66,7 +65,7 @@ EXPORT(int) vm_init(VMParameters* parameters)
 	ioInitExternalSemaphores();
 	setMaxStacksToPrint(parameters->maxStackFramesToPrint);
 	setMaxOldSpaceSize(parameters->maxOldSpaceSize);
-  setDesiredEdenBytes(parameters->edenSize);
+	setDesiredEdenBytes(parameters->edenSize);
 
 	if(parameters->maxCodeSize > 0) {
 #ifndef COGVM
@@ -145,7 +144,7 @@ vm_main_with_parameters(VMParameters *parameters)
 	LOG_SIZEOF(double);
 
 #ifdef PHARO_VM_IN_WORKER_THREAD
-    vmRunOnWorkerThread = vm_parameter_vector_has_element(&parameters->vmParameters, "--worker");
+    vmRunOnWorkerThread = parameters->isWorker;
 
     return vmRunOnWorkerThread
         ? runOnWorkerThread(parameters)
@@ -159,18 +158,12 @@ EXPORT(int)
 vm_main(int argc, const char** argv, const char** env)
 {
 	VMParameters parameters;
-	parameters.vmParameters.count = 0;
-	parameters.vmParameters.parameters = NULL;
-	parameters.imageParameters.count = 0;
-	parameters.imageParameters.parameters = NULL;
 
+	vm_parameters_init(&parameters);
+
+	parameters.environmentVector = env;
 	parameters.processArgc = argc;
 	parameters.processArgv = argv;
-	parameters.environmentVector = env;
-	parameters.maxStackFramesToPrint = 0;
-	parameters.maxCodeSize = 0;
-	parameters.maxOldSpaceSize = 0;
-	parameters.edenSize = 0;
 
 	// Did we succeed on parsing the parameters?
 	VMErrorCode error = vm_parameters_parse(argc, argv, &parameters);
@@ -210,15 +203,24 @@ vm_main(int argc, const char** argv, const char** env)
 static int
 loadPharoImage(const char* fileName)
 {
-    struct stat sb;
+    size_t imageSize = 0;
+    sqImageFile imageFile = NULL;
 
-    /* Check image exists */
-    if (stat(fileName, &sb) == -1) {
-        logErrorFromErrno("Image file not found");
+    /* Open the image file. */
+    imageFile = sqImageFileOpen(fileName, "rb");
+    if(!imageFile)
+	{
+    	logErrorFromErrno("Opening Image");
         return false;
     }
 
-    readImageNamed(fileName);
+    /* Get the size of the image file*/
+    sqImageFileSeekEnd(imageFile, 0);
+    imageSize = sqImageFilePosition(imageFile);
+    sqImageFileSeek(imageFile, 0);
+
+    readImageFromFileStartingAt(imageFile, 0);
+    sqImageFileClose(imageFile);
 
     char* fullImageName = alloca(FILENAME_MAX);
 	fullImageName = getFullPath(fileName, fullImageName, FILENAME_MAX);
