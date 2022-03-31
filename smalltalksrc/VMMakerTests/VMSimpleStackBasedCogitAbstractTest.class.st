@@ -414,8 +414,8 @@ VMSimpleStackBasedCogitAbstractTest >> initializeInitialStackFrame [
 
 	"I will create the initial stack with a well-known caller address so we know if the code comes back
 	correctly. The address should be in a valid space of the memory if not unicorn complains. 
-	So we just put it in the start of the stack"
-	callerAddress := stackMemoryStartAddress.
+	So we just put it in C RumpStack"
+	callerAddress := interpreter rumpCStackAddress.
 	self createFramelessCallFrom: callerAddress receiver: memory nilObject arguments: #().
 	
 
