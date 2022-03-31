@@ -131,7 +131,7 @@ VMMemoryMap >> allocationReserve: anInteger [
 ]
 
 { #category : #asserting }
-VMMemoryMap >> checkMemoryMap [
+VMMemoryMap >> doCheckMemoryMap [
 
 	self assert: (self isYoungObject: self newSpaceStart).
 	self assert: (self isYoungObject: self newSpaceEnd - memoryMapConfiguration wordSize).

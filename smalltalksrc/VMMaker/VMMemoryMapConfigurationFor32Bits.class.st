@@ -30,6 +30,6 @@ VMMemoryMapConfigurationFor32Bits >> permSpaceInitialAddress [
 
 { #category : #accessing }
 VMMemoryMapConfigurationFor32Bits >> wordSize [
-
+	<doNotGenerate>
 	^ 4
 ]

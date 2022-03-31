@@ -36,6 +36,6 @@ VMMemoryMapConfigurationFor64Bits >> stackPagesInitialAddress [
 
 { #category : #accessing }
 VMMemoryMapConfigurationFor64Bits >> wordSize [
-
+	<doNotGenerate>
 	^ 8
 ]

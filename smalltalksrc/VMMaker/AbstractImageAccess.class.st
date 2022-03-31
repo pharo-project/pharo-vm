@@ -110,7 +110,6 @@ AbstractImageAccess >> imageFormatVersion [
 	 must avoid version numbers that are invariant under byte reversal."
 
 	<doNotGenerate>
-	self assert: (objectMemory imageFormatVersion anyMask: 16) = objectMemory hasSpurMemoryManagerAPI.
 	^objectMemory imageFormatVersion
 ]
 

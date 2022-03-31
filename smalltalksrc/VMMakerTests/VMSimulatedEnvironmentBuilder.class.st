@@ -41,14 +41,13 @@ VMSimulatedEnvironmentBuilder >> doBuild [
 
 	"100 k at least to put the class table in the old space.
 	Get total size be a multiple of 4K so Unicorn CPU emulator accepts it"
-	| rumpCStackSize memoryManager edenSize |
+	| memoryManager edenSize |
 
 	"Check #scavengerDenominator in SpurMemoryManager"
 	edenSize := 2 * 1024 + interpreter interpreterAllocationReserveBytes.
  	newSpaceSize := self roundToPageSize: (edenSize * 7 / 5).
 	stackSpaceSize := 9 * 4096.
 	methodCacheSize := 4096 * wordSize.
-	rumpCStackSize := 4096.
 	
 	initialAddress := 16r1000000.
 		
@@ -70,7 +69,7 @@ VMSimulatedEnvironmentBuilder >> doBuild [
 		codeSize: initialCodeSize
 		methodCacheSize: methodCacheSize
 		primitiveTraceLogSize: (self roundToPageSize: primitiveTraceLogSize)
-		rumpCStackSize: rumpCStackSize
+		rumpCStackSize: self rumpCStackSize
 		initialAddress: initialAddress
 		permSpaceSize: permSpaceSize.
 			
@@ -168,6 +167,14 @@ VMSimulatedEnvironmentBuilder >> roundToPageSize: anInteger [
 	remainder = 0 ifTrue: [ ^ anInteger ].
 
 	^ anInteger + (pageSize - remainder)
+]
+
+{ #category : #accessing }
+VMSimulatedEnvironmentBuilder >> rumpCStackSize [
+
+	^ 4096.
+
+
 ]
 
 { #category : #accessing }

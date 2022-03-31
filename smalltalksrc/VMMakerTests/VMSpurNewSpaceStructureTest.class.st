@@ -77,20 +77,37 @@ VMSpurNewSpaceStructureTest >> testNewMemoryFutureSurvivorSpaceIsAtFutureSpaceSt
 
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryLimitIsSumOfSpaces [
-	
-	self assert: memory getMemoryMap oldSpaceEnd equals: oldSpaceSize + environmentBuilder newSpaceSize + environmentBuilder stackSpaceSize + environmentBuilder memoryInitialAddress + self primitiveTraceLogSize + environmentBuilder methodCacheSize 
+
+	self
+		assert: memory getMemoryMap oldSpaceEnd
+		equals: oldSpaceSize + environmentBuilder newSpaceSize
+			+ environmentBuilder rumpCStackSize
+			+ environmentBuilder stackSpaceSize
+			+ environmentBuilder memoryInitialAddress
+			+ self primitiveTraceLogSize + environmentBuilder methodCacheSize
 ]
 
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryNewSpaceLimitIsNewSpaceStartPlusSize [
-	
-	self assert: memory getMemoryMap newSpaceEnd equals: environmentBuilder newSpaceSize + environmentBuilder stackSpaceSize + environmentBuilder memoryInitialAddress	+ self primitiveTraceLogSize + environmentBuilder methodCacheSize 
+
+	self
+		assert: memory getMemoryMap newSpaceEnd
+		equals:
+			environmentBuilder newSpaceSize + environmentBuilder stackSpaceSize
+			+ environmentBuilder rumpCStackSize
+			+ environmentBuilder memoryInitialAddress
+			+ self primitiveTraceLogSize + environmentBuilder methodCacheSize
 ]
 
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryNewSpaceStartIsStackSize [
 
-	self assert: memory getMemoryMap newSpaceStart equals: environmentBuilder stackSpaceSize + environmentBuilder memoryInitialAddress + self primitiveTraceLogSize + environmentBuilder methodCacheSize 
+	self
+		assert: memory getMemoryMap newSpaceStart
+		equals: environmentBuilder stackSpaceSize
+			+ environmentBuilder rumpCStackSize
+			+ environmentBuilder memoryInitialAddress
+			+ self primitiveTraceLogSize + environmentBuilder methodCacheSize
 ]
 
 { #category : #'tests-1-memory-initialization' }

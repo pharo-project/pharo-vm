@@ -573,7 +573,6 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		var: #methodCache
 		declareC: 'sqIntptr_t methodCache[MethodCacheSize + 1 /* ', (MethodCacheSize + 1) printString, ' */]'.
 	aCCodeGenerator
-		removeVariable: #nsMethodCache;
 		removeVariable: 'localAbsentReceiver';
 		removeVariable: 'localAbsentReceiverOrZero'.
 	AtCacheTotalSize isInteger ifTrue:
@@ -589,15 +588,13 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		 and: [symbolOrNot ~~ #primitiveFail]) ifTrue:
 			[(aCCodeGenerator methodNamed: symbolOrNot) ifNotNil:
 				[:tMethod| tMethod returnType: #void]]].
-	vmClass objectMemoryClass hasSpurMemoryManagerAPI
-		ifTrue:
-			[aCCodeGenerator
-				var: #primitiveAccessorDepthTable
-				type: 'signed char'
-				sizeString: 'MaxPrimitiveIndex + 2 /* ', (MaxPrimitiveIndex + 2) printString, ' */'
-				array: vmClass primitiveAccessorDepthTable]
-		ifFalse:
-			[aCCodeGenerator removeVariable: #primitiveAccessorDepthTable].
+
+	aCCodeGenerator
+		var: #primitiveAccessorDepthTable
+		type: 'signed char'
+		sizeString: 'MaxPrimitiveIndex + 2 /* ', (MaxPrimitiveIndex + 2) printString, ' */'
+		array: vmClass primitiveAccessorDepthTable.
+
 	aCCodeGenerator
 		var: #displayBits type: #'void *'.
 	self declareC: #(displayWidth displayHeight displayDepth) as: #int in: aCCodeGenerator.

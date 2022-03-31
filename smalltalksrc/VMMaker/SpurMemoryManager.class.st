@@ -3381,7 +3381,7 @@ SpurMemoryManager >> checkHeapIntegrity: excludeUnmarkedObjs classIndicesShouldB
 { #category : #'debug support' }
 SpurMemoryManager >> checkMemoryMap [
 
-	self getMemoryMap checkMemoryMap
+	self getMemoryMap doCheckMemoryMap
 ]
 
 { #category : #'debug support' }
