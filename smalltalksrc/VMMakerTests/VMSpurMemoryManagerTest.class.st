@@ -370,6 +370,25 @@ VMSpurMemoryManagerTest >> newObjectWithSlots: slots format: aFormat classIndex:
 	^ oop
 ]
 
+{ #category : #'instance creation' }
+VMSpurMemoryManagerTest >> newOldByteObjectOfSize: byteSize [
+	
+	| oop numSlots instSpec |
+
+	numSlots := memory numSlotsForBytes: byteSize.
+	instSpec := memory byteFormatForNumBytes: byteSize.
+	
+	oop := memory
+			allocateSlotsInOldSpace: numSlots
+			format: instSpec
+			classIndex: (memory ensureBehaviorHash: memory classByteArray).
+
+	0 to: byteSize - 1 do: [ :index | 
+		memory storeByte: index ofObject: oop withValue: 	0 ].
+
+	^ oop
+]
+
 { #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newOldSpaceArrayWithSlots: slots [
 

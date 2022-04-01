@@ -1149,8 +1149,10 @@ StackInterpreter class >> initializePrimitiveTable [
 		(88 primitiveSuspend)
 		(89 primitiveFlushCache)
 
-		"Input/Output Primitives (90-109)"
-		(90 primitiveFail)
+		"Perm Space primitives"
+		(90 primitiveMoveToPermSpace)
+
+		"Input/Output Primitives (91-109)"
 		(91 primitiveFail)
 		(92 primitiveFail)
 		(93 primitiveFail)

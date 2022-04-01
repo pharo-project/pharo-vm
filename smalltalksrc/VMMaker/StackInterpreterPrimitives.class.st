@@ -2888,6 +2888,21 @@ StackInterpreterPrimitives >> primitiveLongRunningPrimitiveSemaphore [
 	self pop: 1
 ]
 
+{ #category : #'perm - space' }
+StackInterpreterPrimitives >> primitiveMoveToPermSpace [
+
+	| rcvr permObject |
+	rcvr := self stackTop.
+	
+	(objectMemory isPointers: rcvr)
+		ifTrue: [ ^ self primitiveFailFor: PrimErrBadReceiver ].
+		
+	permObject := objectMemory moveToPermSpace: rcvr.			
+	permObject ifNil: [ ^ self primitiveFailFor: PrimErrBadReceiver ].	
+	
+	self pop: argumentCount + 1 thenPush: permObject.
+]
+
 { #category : #'object access primitives' }
 StackInterpreterPrimitives >> primitiveObjectPointsTo [
 	"This primitive is assumed to be fast (see e.g. MethodDictionary>>includesKey:) so make it so.

@@ -1,14 +1,11 @@
 Class {
-	#name : #VMPermanentSpaceTest,
+	#name : #VMPermanentSpaceMemoryTest,
 	#superclass : #VMSpurInitializedOldSpaceTest,
-	#instVars : [
-		'byteArrayClassIndex'
-	],
-	#category : #'VMMakerTests-MemoryTests'
+	#category : #'VMMakerTests-PermSpace'
 }
 
 { #category : #running }
-VMPermanentSpaceTest >> configureEnvironmentBuilder [ 
+VMPermanentSpaceMemoryTest >> configureEnvironmentBuilder [ 
 
 	super configureEnvironmentBuilder.
 	
@@ -16,7 +13,7 @@ VMPermanentSpaceTest >> configureEnvironmentBuilder [
 ]
 
 { #category : #'instance creation' }
-VMPermanentSpaceTest >> newPermanentByteObjectOfSize: byteSize [
+VMPermanentSpaceMemoryTest >> newPermanentByteObjectOfSize: byteSize [
 	
 	| oop numSlots instSpec |
 
@@ -26,7 +23,7 @@ VMPermanentSpaceTest >> newPermanentByteObjectOfSize: byteSize [
 	oop := memory
 			allocateSlotsInPermSpace: numSlots
 			format: instSpec
-			classIndex: byteArrayClassIndex.
+			classIndex: (memory ensureBehaviorHash: memory classByteArray).
 
 	0 to: byteSize - 1 do: [ :index | 
 		memory storeByte: index ofObject: oop withValue: 	0 ].
@@ -35,12 +32,11 @@ VMPermanentSpaceTest >> newPermanentByteObjectOfSize: byteSize [
 ]
 
 { #category : #running }
-VMPermanentSpaceTest >> setUp [
+VMPermanentSpaceMemoryTest >> setUp [
 
 	super setUp.
 
 	memory classByteArray: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0)).
-	byteArrayClassIndex := memory ensureBehaviorHash: memory classByteArray.
 
 	
 
@@ -48,8 +44,8 @@ VMPermanentSpaceTest >> setUp [
 	
 ]
 
-{ #category : #'instance creation' }
-VMPermanentSpaceTest >> testMarkingNewSpaceDoesNotMarkPermSpace [
+{ #category : #'tests - allocation' }
+VMPermanentSpaceMemoryTest >> testMarkingNewSpaceDoesNotMarkPermSpace [
 
 	| permanentObject newObject |
 	
@@ -66,8 +62,8 @@ VMPermanentSpaceTest >> testMarkingNewSpaceDoesNotMarkPermSpace [
 	self deny: (memory isMarked: permanentObject)
 ]
 
-{ #category : #'instance creation' }
-VMPermanentSpaceTest >> testMarkingOldSpaceDoesNotMarkPermSpace [
+{ #category : #'tests - allocation' }
+VMPermanentSpaceMemoryTest >> testMarkingOldSpaceDoesNotMarkPermSpace [
 
 	| permanentObject oldObject |
 	
@@ -84,8 +80,45 @@ VMPermanentSpaceTest >> testMarkingOldSpaceDoesNotMarkPermSpace [
 	self deny: (memory isMarked: permanentObject)
 ]
 
-{ #category : #'instance creation' }
-VMPermanentSpaceTest >> testNewPermanentByteArrayIsCorrectlyAllocated [
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testMovingOldObjectToPermSpaceIsCorrectlyForwarded [
+
+	| permanentObject oldObject rootObject|
+	
+	rootObject := self newOldSpaceObjectWithSlots: 1.
+	oldObject := self newOldByteObjectOfSize: 1.
+
+	memory storePointer: 0 ofObject: rootObject withValue: oldObject.
+	self keepObjectInVMVariable1: rootObject.
+
+	permanentObject := memory moveToPermSpace: oldObject.	
+	
+	self assert: (memory isForwarded: (memory fetchPointer: 0 ofObject: rootObject)).
+
+	memory fullGC.
+	
+	self deny: (memory isForwarded: (memory fetchPointer: 0 ofObject: rootObject)).
+	self assert: (memory fetchPointer: 0 ofObject: rootObject) equals: permanentObject.
+
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testMovingOldObjectToPermSpaceLeavesForwarder [
+
+	| permanentObject oldObject |
+	
+	oldObject := self newOldByteObjectOfSize: 1.
+	self keepObjectInVMVariable1: oldObject.
+	self assert: (memory isOldObject: oldObject).
+
+	permanentObject := memory moveToPermSpace: oldObject.	
+	
+	self assert: (memory isForwarded: oldObject).
+
+]
+
+{ #category : #'tests - allocation' }
+VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsCorrectlyAllocated [
 
 	| permanentObject |
 	
@@ -94,8 +127,8 @@ VMPermanentSpaceTest >> testNewPermanentByteArrayIsCorrectlyAllocated [
 	self assert: permanentObject equals: memory getMemoryMap permSpaceStart
 ]
 
-{ #category : #'instance creation' }
-VMPermanentSpaceTest >> testNewPermanentByteArrayIsNonYoungObject [
+{ #category : #'tests - allocation' }
+VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsNonYoungObject [
 
 	| permanentObject |
 	
@@ -104,8 +137,8 @@ VMPermanentSpaceTest >> testNewPermanentByteArrayIsNonYoungObject [
 	self deny: (memory isYoungObject: permanentObject)
 ]
 
-{ #category : #'instance creation' }
-VMPermanentSpaceTest >> testNewPermanentByteArrayIsNotAnOldObject [
+{ #category : #'tests - allocation' }
+VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsNotAnOldObject [
 
 	| permanentObject |
 	
@@ -114,8 +147,8 @@ VMPermanentSpaceTest >> testNewPermanentByteArrayIsNotAnOldObject [
 	self deny: (memory isOldObject: permanentObject)
 ]
 
-{ #category : #'instance creation' }
-VMPermanentSpaceTest >> testNewPermanentByteArrayIsPermanentObject [
+{ #category : #'tests - allocation' }
+VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsPermanentObject [
 
 	| permanentObject |
 	
@@ -124,8 +157,8 @@ VMPermanentSpaceTest >> testNewPermanentByteArrayIsPermanentObject [
 	self assert: (memory isPermanentObject: permanentObject)
 ]
 
-{ #category : #'instance creation' }
-VMPermanentSpaceTest >> testNextObjectIsReturningAGoodValue [
+{ #category : #'tests - allocation' }
+VMPermanentSpaceMemoryTest >> testNextObjectIsReturningAGoodValue [
 
 	| permanentObject nextObject |
 	

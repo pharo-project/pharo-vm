@@ -1665,7 +1665,8 @@ SpurMemoryManager >> allObjects [
 SpurMemoryManager >> allObjectsDo: aBlock [
 	<inline: true>
 	self allNewSpaceObjectsDo: aBlock.
-	self allOldSpaceObjectsDo: aBlock
+	self allOldSpaceObjectsDo: aBlock.
+	self allPermSpaceObjectsDo: aBlock.
 ]
 
 { #category : #'free space' }
@@ -1848,6 +1849,19 @@ SpurMemoryManager >> allPastSpaceObjectsDo: aBlock [
 		[:objOop|
 		 self assert: (self isEnumerableObjectNoAssert: objOop).
 		 aBlock value: objOop]
+]
+
+{ #category : #'perm - space' }
+SpurMemoryManager >> allPermSpaceObjectsDo: aBlockClosure [ 
+	
+	| currentObject |
+	
+	currentObject := memoryMap permSpaceStart.
+	
+	[ currentObject = permSpaceFreeStart ]
+		whileFalse: [ 
+			aBlockClosure value: currentObject.
+			currentObject := self objectAfter: currentObject limit: memoryMap permSpaceEnd ].
 ]
 
 { #category : #'weakness and ephemerality' }
@@ -2495,7 +2509,7 @@ SpurMemoryManager >> allocateSlotsInPermSpace: numSlots bytes: totalBytes format
 	^ newOop
 ]
 
-{ #category : #allocation }
+{ #category : #'perm - space' }
 SpurMemoryManager >> allocateSlotsInPermSpace: numSlots format: formatField classIndex: classIndex [
 
 	<inline: true>
@@ -8648,6 +8662,47 @@ SpurMemoryManager >> mournQueue: anOop [
 	mournQueue := anOop
 ]
 
+{ #category : #'perm - space' }
+SpurMemoryManager >> moveToPermSpace: objOop [ 
+	
+	<inline: false>
+	| numSlots fmt newObj hash |
+	"Clonning in permSpace"
+	numSlots := self numSlotsOf: objOop.
+	fmt := self formatOf: objOop.
+
+	(self isPointersFormat: fmt)
+		ifTrue: [ ^ nil ].
+
+	fmt >= self firstCompiledMethodFormat ifTrue: [ ^ nil ].
+	
+	newObj := self allocateSlotsInPermSpace: numSlots
+					bytes: (self objectBytesForSlots: numSlots)
+					format: fmt
+					classIndex: (self classIndexOf: objOop).
+
+	newObj ifNil: [^nil].
+	
+	0 to: numSlots - 1 do:
+		[:i|
+		self storePointerUnchecked: i
+			ofObject: newObj
+			withValue: (self fetchPointer: i ofObject: objOop)].
+
+	(hash := self rawHashBitsOf: objOop) ~= 0 ifTrue: [self setHashBitsOf: newObj to: hash].
+	(self isObjImmutable: objOop) ifTrue: [self setIsImmutableOf: newObj to: true].
+	
+	
+	becomeEffectsFlags := self becomeEffectFlagsFor: objOop.
+	self forward: objOop to: newObj.
+	self followSpecialObjectsOop.
+	coInterpreter postBecomeAction: becomeEffectsFlags.
+	self postBecomeScanClassTable: becomeEffectsFlags.
+	becomeEffectsFlags := 0.
+	
+	^newObj	
+]
+
 { #category : #'become implementation' }
 SpurMemoryManager >> naiveSwapHeaders: obj1 and: obj2 copyHashFlag: copyHashFlag [
 	"swap headers, but swapping headers swaps remembered bits and hashes;
@@ -11662,7 +11717,7 @@ SpurMemoryManager >> storeByte: byteIndex ofObject: oop withValue: valueByte [
 SpurMemoryManager >> storeCheckBoundary [
 	"A renaming for the Cogit, which couldn't make sense of GIV(newSpaceLimit)"
 	<api>
-	^memoryMap newSpaceEnd
+	^memoryMap oldSpaceStart
 ]
 
 { #category : #'simulation only' }

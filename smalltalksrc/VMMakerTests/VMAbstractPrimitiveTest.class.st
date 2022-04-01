@@ -56,6 +56,15 @@ VMAbstractPrimitiveTest >> newArrayWith: aCollection [
 	
 ]
 
+{ #category : #'as yet unclassified' }
+VMAbstractPrimitiveTest >> newMethodWithBytecodes: aCollection [
+
+	^ methodBuilder
+		  newMethod;
+		  bytecodes: aCollection;
+		  buildMethod
+]
+
 { #category : #'helpers - frames' }
 VMAbstractPrimitiveTest >> newSmallContextReceiver: anOop method: aMethodOop arguments: aCollectionOfArgumentsOop temporaries: aCollectionOfTemporariesOop ip: anIp [
 
@@ -135,8 +144,6 @@ VMAbstractPrimitiveTest >> setUp [
 	page := interpreter makeBaseFrameFor: ctx.
 	interpreter setStackPageAndLimit: page.
 	interpreter setStackPointersFromPage: page.
-	interpreter libFFI: LibFFI new.
-	interpreter libFFI interpreter: interpreter.
 
 	self createActiveProcess.	
 	
