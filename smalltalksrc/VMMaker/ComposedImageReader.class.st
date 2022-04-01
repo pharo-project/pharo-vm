@@ -72,6 +72,14 @@ ComposedImageReader >> readHeaderFromImage: imageFileName [
 	
 	file := self sqImageFile: (self headerFileNameinImage: imageFileName into: buffer bufferSize: 255) Open: 'r'.
 	
+	file 
+		ifNil: [ 
+			self logError: 'Could not open header file: %s' 
+				_: buffer.
+	
+			interpreter ioExitWithErrorCode: 1 ].
+	
+	
 	self readSTONFrom: file into: (self addressOf: header).
 
 	self extractImageVersionFrom: (header imageFormat) into: (self addressOf: header).

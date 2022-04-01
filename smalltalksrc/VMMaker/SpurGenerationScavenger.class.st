@@ -387,7 +387,7 @@ SpurGenerationScavenger >> copyToOldSpace: survivor bytes: bytesInObject format:
 		 manager baseHeaderSize to: bytesInObject - (survivor - startOfSurvivor) - manager wordSize by: manager wordSize do:
 			[:p| | field |
 			field := manager longAt: survivor + p.
-			(manager isReallyYoung: field) ifTrue:
+			(manager isYoung: field) ifTrue:
 				[self remember: newOop.
 				 ^newOop]]].
 	^newOop
@@ -752,7 +752,7 @@ SpurGenerationScavenger >> isMaybeOldScavengeSurvivor: oop [
 			 (manager isImmediate: oop) ifTrue:
 				[^true]]
 		ifFalse: [target := oop].
-	^(manager isOldObject: target)
+	^(manager getMemoryMap isOldObject: target)
 		ifTrue:
 			[tenureCriterion ~= MarkOnTenure
 			 or: [manager isMarked: target]]
@@ -777,7 +777,7 @@ SpurGenerationScavenger >> isScavengeSurvivor: oop [
 	(manager isForwarded: oop)
 		ifTrue: [target := manager followForwarded: oop]
 		ifFalse: [target := oop].
-	^(manager isReallyYoung: target) not
+	^(manager isYoung: target) not
 	  or: [manager isInFutureSpace: target]
 ]
 
@@ -968,7 +968,7 @@ SpurGenerationScavenger >> processWeakSurvivor: weakObj [
 		[:i| | referent |
 		 referent := manager fetchPointer: i ofObject: weakObj.
 		 ((manager isNonImmediate: referent)
-		  and: [manager isYoungObject: referent]) ifTrue:
+		  and: [manager getMemoryMap isYoungObject: referent]) ifTrue:
 			[hasYoungReferents := true]].
 	numStrongSlots
 		to: (manager numSlotsOf: weakObj) - 1
@@ -979,12 +979,12 @@ SpurGenerationScavenger >> processWeakSurvivor: weakObj [
 				[(manager isForwarded: referent) ifTrue:
 					[referent := manager followForwarded: referent.
 					 "weakObj is either young or already in remembered table; no need to check"
-					 self assert: ((manager isReallyYoungObject: weakObj)
+					 self assert: ((manager getMemoryMap isYoungObject: weakObj)
 								or: [manager isRemembered: weakObj]).
 					 manager storePointerUnchecked: i ofObject: weakObj withValue: referent].
 				(self isMaybeOldScavengeSurvivor: referent)
 					ifTrue:
-						[(manager isYoungObject: referent) ifTrue:
+						[(manager getMemoryMap isYoungObject: referent) ifTrue:
 							[hasYoungReferents := true]]
 					ifFalse:
 						[weakObjShouldMourn := true.
@@ -1026,7 +1026,7 @@ SpurGenerationScavenger >> processWeaklings [
 			 weakObj := manager followForwarded: weakCorpse.
 			 "weakObj may have been tenured..."
 			 ((self processWeakSurvivor: weakObj)
-			  and: [(manager isOldObject: weakObj)
+			  and: [(manager getMemoryMap isOldObject: weakObj)
 			  and: [(manager isRemembered: weakObj) not]]) ifTrue:
 				[self remember: weakObj].
 			 weakCorpse := self nextCorpseOrNil: weakCorpse].
@@ -1049,7 +1049,7 @@ SpurGenerationScavenger >> referenceCountRememberedReferents: population [
 		0 to: (manager numPointerSlotsOf: elephant) - 1 do:
 			[:j| | referent refCount |
 			referent := manager fetchPointer: j ofObject: elephant.
-			(manager isReallyYoung: referent) ifTrue:
+			(manager isYoung: referent) ifTrue:
 				[refCount := manager rtRefCountOf: referent.
 				 refCount < MaxRTRefCount ifTrue:
 					[refCount > 0 ifTrue:
@@ -1072,10 +1072,10 @@ SpurGenerationScavenger >> remember: objOop [
 	<api>
 	<inline: false>
 	self assert: (manager isNonImmediate: objOop).
-	self deny: (manager isYoungObject: objOop).
+	self deny: (manager getMemoryMap isYoungObject: objOop).
 	self deny: (manager isRemembered: objOop).
 	self deny: (self isInRememberedSet: objOop).
-	self deny: (manager isPermanentObject: objOop).
+	self deny: (manager getMemoryMap isPermanentObject: objOop).
 	
 	manager setIsRememberedOf: objOop to: true.
 	rememberedSetSize >= rememberedSetLimit ifTrue:
@@ -1231,7 +1231,7 @@ SpurGenerationScavenger >> scavengeReferentsOf: referrer [
 			["a forwarding pointer could be because of become: or scavenging."
 			 (manager isForwarded: referent) ifTrue:
 				[referent := manager followForwarded: referent].
-			 (manager isReallyYoungObject: referent)
+			 (manager getMemoryMap isYoungObject: referent)
 				ifTrue: "if target is already in future space forwarding pointer was due to a become:."
 					[(manager isInFutureSpace: referent)
 						ifTrue: [newLocation := referent. foundNewReferentOrIsWeakling := true]

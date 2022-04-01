@@ -79,7 +79,7 @@ VMSpurScavengerTest >> testAllocatingObjectsBelowThresholdShouldBeYoung [
 	
 	times timesRepeat: [ anObjectOop := self newZeroSizedObject ].
 	
-	self assert: (memory isYoungObject: anObjectOop)
+	self assert: (memory getMemoryMap isYoungObject: anObjectOop)
 ]
 
 { #category : #'tests-4-scavenge-stack' }
@@ -97,7 +97,7 @@ VMSpurScavengerTest >> testAllocatingObjectsOverThresholdShouldBeOld [
 		format: 0 "zero sized object"
 		classIndex: self zeroSizedObjectClassIndex.
 		
-	self assert: (memory isOldObject: anObject)
+	self assert: (memory getMemoryMap isOldObject: anObject)
 ]
 
 { #category : #'tests-4-scavenge-stack' }

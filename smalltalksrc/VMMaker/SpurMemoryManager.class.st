@@ -1754,7 +1754,7 @@ SpurMemoryManager >> allOldSpaceEntitiesForCoalescingFrom: firstObj do: aBlock [
 SpurMemoryManager >> allOldSpaceEntitiesForCompactingFrom: initialObject to: finalObject do: aBlock [
 	<inline: true>
 	| limit prevObj prevPrevObj objOop nextObj |
-	self assert: (self isOldObject: initialObject).
+	self assert: (memoryMap isOldObject: initialObject).
 	self assert: (self oop: finalObject isLessThanOrEqualTo: memoryMap oldSpaceEnd).
 	prevPrevObj := prevObj := nil.
 	objOop := initialObject.
@@ -1775,7 +1775,7 @@ SpurMemoryManager >> allOldSpaceEntitiesForCompactingFrom: initialObject to: fin
 SpurMemoryManager >> allOldSpaceEntitiesFrom: initialObject do: aBlock [
 	<inline: true>
 	| prevObj prevPrevObj objOop |
-	self assert: (self isOldObject: initialObject).
+	self assert: (memoryMap isOldObject: initialObject).
 	prevPrevObj := prevObj := nil.
 	objOop := initialObject.
 	[self assert: objOop \\ self allocationUnit = 0.
@@ -2730,7 +2730,7 @@ SpurMemoryManager >> beRootIfOld: oop [
 	 may be stored into it)."
 	<api>
 	<inline: false>
-	(self isOldObject: oop) ifTrue:"No, oop is an old object"
+	(memoryMap isOldObject: oop) ifTrue:"No, oop is an old object"
 		[self possibleRootStoreInto: oop]
 ]
 
@@ -3294,7 +3294,7 @@ SpurMemoryManager >> checkHeapIntegrity: excludeUnmarkedObjs classIndicesShouldB
 								[coInterpreter print: 'object leak in forwarder '; printHex: obj; print: ' to unmapped '; printHex: fieldOop; cr.
 								 self eek.
 								 ok := false].
-							 (self isReallyYoung: fieldOop) ifTrue:
+							 (self isYoung: fieldOop) ifTrue:
 								[containsYoung := true]]
 						ifFalse:
 							[classOop := self classOrNilAtIndex: (classIndex := self classIndexOf: obj).
@@ -3313,7 +3313,7 @@ SpurMemoryManager >> checkHeapIntegrity: excludeUnmarkedObjs classIndicesShouldB
 										 self eek.
 										 ok := false].
 									 "don't be misled by CogMethods; they appear to be young, but they're not"
-									 (self isReallyYoung: fieldOop) ifTrue:
+									 (self isYoung: fieldOop) ifTrue:
 										[containsYoung := true]]]].
 					 containsYoung ifTrue:
 						[(self isRemembered: obj) ifFalse:
@@ -3938,13 +3938,13 @@ SpurMemoryManager >> clone: objOop [
 					[(self isForwarded: oop) ifTrue:
 						[oop := self followForwarded: oop].
 					((self isNonImmediate: oop)
-					 and: [self isYoungObject: oop]) ifTrue:
+					 and: [memoryMap isYoungObject: oop]) ifTrue:
 						[hasYoung := true]].
 				self storePointerUnchecked: i
 					ofObject: newObj
 					withValue: oop].
 			(hasYoung
-			 and: [(self isYoungObject: newObj) not]) ifTrue:
+			 and: [(memoryMap isYoungObject: newObj) not]) ifTrue:
 				[scavenger remember: newObj]]
 		ifFalse:
 			[0 to: numSlots - 1 do:
@@ -3954,8 +3954,8 @@ SpurMemoryManager >> clone: objOop [
 					withValue: (self fetchPointer: i ofObject: objOop)].
 			 fmt >= self firstCompiledMethodFormat ifTrue:
 				[coInterpreter maybeFixClonedCompiledMethod: newObj.
-				 ((self isOldObject: newObj)
-				  and: [(self isYoungObject: objOop) or: [self isRemembered: objOop]]) ifTrue:
+				 ((memoryMap isOldObject: newObj)
+				  and: [(memoryMap isYoungObject: objOop) or: [self isRemembered: objOop]]) ifTrue:
 					[scavenger remember: newObj]]].
 	^newObj
 ]
@@ -3991,7 +3991,7 @@ SpurMemoryManager >> cloneInOldSpace: objOop forPinning: forPinning [
 				 and: [self isForwarded: oop]) ifTrue:
 					[oop := self followForwarded: oop].
 				((self isNonImmediate: oop)
-				 and: [self isYoungObject: oop]) ifTrue:
+				 and: [memoryMap isYoungObject: oop]) ifTrue:
 					[hasYoung := true].
 				self storePointerUnchecked: i
 					ofObject: newObj
@@ -4006,7 +4006,7 @@ SpurMemoryManager >> cloneInOldSpace: objOop forPinning: forPinning [
 					withValue: (self fetchPointer: i ofObject: objOop)].
 			 fmt >= self firstCompiledMethodFormat ifTrue:
 				[coInterpreter maybeFixClonedCompiledMethod: newObj.
-				 ((self isYoungObject: objOop) or: [self isRemembered: objOop]) ifTrue:
+				 ((memoryMap isYoungObject: objOop) or: [self isRemembered: objOop]) ifTrue:
 					[scavenger remember: newObj]]].
 	(hash := self rawHashBitsOf: objOop) ~= 0 ifTrue:
 		[self setHashBitsOf: newObj to: hash].
@@ -4366,7 +4366,7 @@ SpurMemoryManager >> doBecome: obj1 to: obj2 copyHash: copyHashFlag [
 	 discover this and expunge obj2 at the unused index (see markAndTraceClassOf:)."
 	self forward: obj1 to: obj2.
 	copyHashFlag ifTrue: [self setHashBitsOf: obj2 to: (self rawHashBitsOf: obj1)].
-	((self isOldObject: obj1)
+	((memoryMap isOldObject: obj1)
 	 and: [self isYoung: obj2]) ifTrue:
 		[becomeEffectsFlags := becomeEffectsFlags bitOr: OldBecameNewFlag].
 	self deny: (self isOopForwarded: obj2)
@@ -6139,11 +6139,11 @@ SpurMemoryManager >> inPlaceBecome: obj1 and: obj2 copyHashFlag: copyHashFlag [
 			[o1HasYoung := true].
 		(self isYoung: temp1) ifTrue:
 			[o2HasYoung := true]].
-	(o1HasYoung and: [self isOldObject: obj1]) ifTrue:
+	(o1HasYoung and: [memoryMap isOldObject: obj1]) ifTrue:
 		[fmt := self formatOf: obj1.
 		 (self isPureBitsFormat: fmt) ifFalse:
 			[self possibleRootStoreInto: obj1]].
-	(o2HasYoung and: [self isOldObject: obj2]) ifTrue:
+	(o2HasYoung and: [memoryMap isOldObject: obj2]) ifTrue:
 		[fmt := self formatOf: obj2.
 		 (self isPureBitsFormat: fmt) ifFalse:
 			[self possibleRootStoreInto: obj2]]
@@ -7315,17 +7315,6 @@ SpurMemoryManager >> isObjImmutable: anOop [
 ]
 
 { #category : #'object testing' }
-SpurMemoryManager >> isOldObject: objOop [
-
-	<doNotGenerate>
-	"Answer if obj is old. Require that obj is non-immediate."
-	self assert: (self isNonImmediate: objOop).	
-	
-	^ memoryMap isOldObject: objOop
-
-]
-
-{ #category : #'object testing' }
 SpurMemoryManager >> isOopCompiledMethod: oop [ 
     "Answer whether the oop is an object of compiled method format"
 	<api>
@@ -7351,17 +7340,6 @@ SpurMemoryManager >> isOopMutable: oop [
 	<api>
 	^(self isNonImmediate: oop)
 	  and: [(self isImmutable: oop) not]
-]
-
-{ #category : #'object testing' }
-SpurMemoryManager >> isPermanentObject: objOop [
-
-	<doNotGenerate>
-	"Answer if obj is old. Require that obj is non-immediate."
-	self assert: (self isNonImmediate: objOop).	
-	
-	^ memoryMap isPermanentObject: objOop
-
 ]
 
 { #category : #'header access' }
@@ -7407,22 +7385,6 @@ SpurMemoryManager >> isPureBitsNonImm: objOop [
 	"Answer if the argument contains only indexable words (no oops). See comment in formatOf:"
 
 	^self isPureBitsFormat: (self formatOf: objOop)
-]
-
-{ #category : #'object testing' }
-SpurMemoryManager >> isReallyYoung: oop [
-	<api>
-	"Answer if oop is young."
-	^(self isNonImmediate: oop)
-	 and: [self isReallyYoungObject: oop]
-]
-
-{ #category : #'object testing' }
-SpurMemoryManager >> isReallyYoungObject: obj [
-	<api>
-	"Answer if obj is young. This for compatibility with SqueakV3 where
-	 the GC makes all objects young during full GC.  Spur doesn't do so."
-	^self isYoungObject: obj
 ]
 
 { #category : #'header access' }
@@ -7684,15 +7646,7 @@ SpurMemoryManager >> isYoung: oop [
 	<api>
 	"Answer if oop is young."
 	^(self isNonImmediate: oop)
-	 and: [self oop: oop isLessThan: memoryMap newSpaceEnd]
-]
-
-{ #category : #'object testing' }
-SpurMemoryManager >> isYoungObject: objOop [
-	<doNotGenerate>
-	"Answer if obj is young. Require that obj is non-immediate."
-	self assert: (self isNonImmediate: objOop).
-	^ memoryMap isYoungObject: objOop
+	 and: [ memoryMap isYoungObject: oop ]
 ]
 
 { #category : #'object access' }
@@ -8126,7 +8080,7 @@ SpurMemoryManager >> markAndShouldScan: objOop [
 		[^false].
 	
 	"If it is a permanent object I will not visit it"
-	(self isPermanentObject: objOop)
+	(memoryMap isPermanentObject: objOop)
 		ifTrue: [ ^false ].
 	
 	self setIsMarkedOf: objOop to: true.
@@ -9362,9 +9316,9 @@ SpurMemoryManager >> objectAfter: objOop [
 			[^self objectAfter: objOop limit: pastSpaceStart].
 		 ^self objectAfter: objOop limit: scavenger futureSurvivorStart].
 	
-	^ (memoryMap isPermanentObject: objOop)
-		ifTrue: [ self objectAfter: objOop limit: memoryMap permSpaceEnd ]
-		ifFalse: [ self objectAfter: objOop limit: memoryMap oldSpaceEnd ]
+	(memoryMap isPermanentObject: objOop)
+		ifTrue: [ ^ self objectAfter: objOop limit: memoryMap permSpaceEnd ]
+		ifFalse: [ ^ self objectAfter: objOop limit: memoryMap oldSpaceEnd ]
 	
 ]
 
@@ -9544,8 +9498,8 @@ SpurMemoryManager >> outOfPlaceBecome: obj1 and: obj2 copyHashFlag: copyHashFlag
 	self
 		forward: obj1 to: clone2;
 		forward: obj2 to: clone1.
-	((self isYoungObject: obj1) ~= (self isYoungObject: clone2)
-	 or: [(self isYoungObject: obj2) ~= (self isYoungObject: clone1)]) ifTrue:
+	((memoryMap isYoungObject: obj1) ~= (memoryMap isYoungObject: clone2)
+	 or: [(memoryMap isYoungObject: obj2) ~= (memoryMap isYoungObject: clone1)]) ifTrue:
 		[becomeEffectsFlags := becomeEffectsFlags bitOr: OldBecameNewFlag]
 ]
 
@@ -9579,7 +9533,7 @@ SpurMemoryManager >> pinObject: objOop [
 	"We choose to clone to keep pinned objects together to reduce fragmentation,
 	 if the object is not too large, assuming that pinning is rare and that fragmentation is a bad thing.
 	 Too large is defined as over 1mb.  The size of a 640x480x4 bitmap is 1228800."
-	(self isOldObject: objOop) ifTrue:
+	(memoryMap isOldObject: objOop) ifTrue:
 		[(self numBytesOf: objOop) > (1024 * 1024) ifTrue:
 			[self setIsPinnedOf: objOop to: true.
 			 ^objOop].
@@ -10676,7 +10630,7 @@ SpurMemoryManager >> rememberedSetObj [
 
 { #category : #scavenger }
 SpurMemoryManager >> rememberedSetObj: anObj [
-	self assert: (self isOldObject: anObj).
+	self assert: (memoryMap isOldObject: anObj).
 	self storePointerUnchecked: RememberedSetRootIndex ofObject: hiddenRootsObj withValue: anObj
 ]
 
@@ -11381,7 +11335,7 @@ SpurMemoryManager >> slidingCompactionRemapObj: objOop [
 	gcPhaseInProgress > 0 ifTrue:
 		[self scavengeInProgress
 			ifTrue:
-				[((self isReallyYoung: resolvedObj) "don't scavenge immediate, old, or CogMethod objects."
+				[((self isYoung: resolvedObj) "don't scavenge immediate, old, or CogMethod objects."
 				  and: [(self isInFutureSpace: resolvedObj) not]) ifTrue: 
 					[^scavenger copyAndForward: resolvedObj]]
 			ifFalse:
@@ -11402,7 +11356,7 @@ SpurMemoryManager >> slidingCompactionShouldRemapObj: objOop [
 	^(self isForwarded: objOop)
 	   or: [gcPhaseInProgress > 0 "Hence either scavengeInProgress or slidingCompactionInProgress"
 		   and: [self scavengeInProgress
-					ifTrue: [(self isReallyYoungObject: objOop)
+					ifTrue: [(memoryMap isYoungObject: objOop)
 							and: [(self isInFutureSpace: objOop) not]]
 					ifFalse: [compactor isMobile: objOop]]]
 ]
@@ -11744,7 +11698,7 @@ SpurMemoryManager >> storePointer: fieldIndex ofForwarder: objOop withValue: val
 	self assert: (self isForwarded: objOop).
 	self assert: (self isOopForwarded: valuePointer) not.
 
-	(self isOldObject: objOop) ifTrue: "most stores into young objects"
+	(memoryMap isOldObject: objOop) ifTrue: "most stores into young objects"
 		[(self isYoung: valuePointer) ifTrue:
 			[self possibleRootStoreInto: objOop]].
 
@@ -11800,7 +11754,7 @@ SpurMemoryManager >> storePointer: fieldIndex ofObject: objOop withValue: valueP
 	"Note must check here for stores of young objects into old ones."
 	self assert: (self isForwarded: objOop) not.
 
-	(self isOldObject: objOop) ifTrue: "most stores into young objects"
+	(memoryMap isOldObject: objOop) ifTrue: "most stores into young objects"
 		[(self isYoung: valuePointer) ifTrue:
 			[self possibleRootStoreInto: objOop]].
 
@@ -12644,7 +12598,7 @@ SpurMemoryManager >> vanillaRemapObj: objOop [
 			[self deny: (self isInFutureSpace: objOop).
 			 resolvedObj := objOop].
 	(self scavengeInProgress
-	 and: [(self isReallyYoung: resolvedObj) "don't scavenge immediate, old, or CogMethod objects."
+	 and: [(self isYoung: resolvedObj) "don't scavenge immediate, old, or CogMethod objects."
 	 and: [(self isInFutureSpace: resolvedObj) not]]) ifTrue: 
 		[^scavenger copyAndForward: resolvedObj].
 	^resolvedObj
@@ -12659,7 +12613,7 @@ SpurMemoryManager >> vanillaShouldRemapObj: objOop [
 	 scavenge, followed by a scan-mark-free, and final compaction passes may result in
 	 scavenged fields being visited twice."
 	^(self isForwarded: objOop)
-	  or: [(self isReallyYoungObject: objOop)
+	  or: [(memoryMap isYoungObject: objOop)
 		 and: [(self isInFutureSpace: objOop) not]]
 ]
 

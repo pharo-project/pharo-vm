@@ -54,8 +54,6 @@ AbstractImageAccess >> extractImageVersionFrom: fileVersion into: header [
 	"This code is based on C code by Ian Piumarta."
 
 	| version firstVersion |
-	<var: #file type: #sqImageFile>
-	<var: #imageOffset type: #squeakFileOffsetType>
 	<var: #header type: #'SpurImageHeaderStruct *'>
 
 	"check the version number"
@@ -170,7 +168,6 @@ AbstractImageAccess >> loadImageFromFile: imageFile withHeader: header [
 
 	"read in the image in bulk, then swap the bytes if necessary"
 
-	<var: #f type: #sqImageFile>
 	<var: #header type: #SpurImageHeaderStruct>
 	| bytesRead |
 
@@ -206,8 +203,7 @@ AbstractImageAccess >> readableFormat: imageVersion [
 	 Allows a virtual machine to accept selected older image formats."
 
 	^imageVersion = self imageFormatVersion "Float words in platform-order"
-	   or: [objectMemory hasSpurMemoryManagerAPI not "No compatibility version for Spur as yet"
-			and: [imageVersion = self imageFormatCompatibilityVersion]] "Float words in BigEndian order"
+	   or: [imageVersion = self imageFormatCompatibilityVersion] "Float words in BigEndian order"
 ]
 
 { #category : #accessing }

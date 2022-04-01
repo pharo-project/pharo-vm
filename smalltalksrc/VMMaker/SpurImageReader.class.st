@@ -144,9 +144,6 @@ SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 	<var: #f type: #sqImageFile>
 	<var: #headerStart type: #'squeakFileOffsetType'>
 
-	<var: #heapSize type: #usqInt>
-	<var: #minimumMemory type: #usqInt>
-	<var: #allocationReserve type: #usqInt>
 	<var: #header type: #'SpurImageHeaderStruct'>
 	
 	| header |
@@ -163,7 +160,6 @@ SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 { #category : #api }
 SpurImageReader >> readImageNamed: imageName [
 	
-	<var: #f type: #sqImageFile>
 	<var: #imageName declareC: 'char *imageName'>
 	<api>
 	

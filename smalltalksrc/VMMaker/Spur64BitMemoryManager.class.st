@@ -981,7 +981,7 @@ Spur64BitMemoryManager >> setIsImmutableOf: objOop to: aBoolean [
 { #category : #'header access' }
 Spur64BitMemoryManager >> setIsMarkedOf: objOop to: aBoolean [
 	self assert: (self isFreeObject: objOop) not.
-	self assert: (self isPermanentObject: objOop) not.
+	self assert: (memoryMap isPermanentObject: objOop) not.
 		
 	self longAt: objOop
 		put: (aBoolean

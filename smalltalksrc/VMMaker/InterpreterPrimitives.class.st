@@ -4122,7 +4122,7 @@ InterpreterPrimitives >> primitiveSpurStringReplace [
 			 start := start + arrayInstSize.
 			 stop := stop + arrayInstSize.
 			 srcDelta := (replStart + replInstSize) - start.
-			 (objectMemory isOldObject: array)
+			 (objectMemory getMemoryMap isOldObject: array)
 				ifTrue:
 					[| mustRemember oop |
 					 mustRemember := false.

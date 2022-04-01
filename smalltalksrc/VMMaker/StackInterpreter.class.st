@@ -637,8 +637,9 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		"this variable is not used in the exported code, so it has to be removed.
 		If it is changed, it should be marked with type implicit"
 		removeVariable: 'imageReader'; 
-		removeVariable: 'imageWriter'.
-
+		var: #imageWriter type: #implicit.
+"		removeVariable: 'imageWriter'.
+"
 ]
 
 { #category : #accessing }
@@ -646,7 +647,7 @@ StackInterpreter class >> imageReaderClass [
 
 	^Smalltalk at: (InitializationOptions
 					at: #ImageReader
-					ifAbsent: [ #ComposedImageReader ])
+					ifAbsent: [ #SpurImageReader ])
 ]
 
 { #category : #accessing }
@@ -654,7 +655,7 @@ StackInterpreter class >> imageWriterClass [
 
 	^Smalltalk at: (InitializationOptions
 					at: #ImageWriter
-					ifAbsent: [ #ComposedImageWriter ])
+					ifAbsent: [ #SpurImageWriter ])
 ]
 
 { #category : #translation }
@@ -7052,8 +7053,8 @@ StackInterpreter >> getCodeCompactionMSecs [
 
 { #category : #'internal interpreter access' }
 StackInterpreter >> getCogCodeSize [
-	"This is nil in the StackVM"
-	^objectMemory nilObject
+	
+	^ objectMemory integerObjectOf: 0
 ]
 
 { #category : #'internal interpreter access' }
@@ -8707,12 +8708,12 @@ StackInterpreter >> jumpBinaryInlinePrimitive: primIndex [
 		 Not a forwarder, literal which is a Smi"
 		[18]	->	[self deny: (objectMemory isOopForwarded: test).
 					 self deny: (objectMemory isImmediate: test).
-					 (objectMemory isYoungObject: test) ifTrue: [localIP := localIP + offset]].
+					 (objectMemory getMemoryMap isYoungObject: test) ifTrue: [localIP := localIP + offset]].
 		"7019	jumpIfOld:
 		 Not a forwarder, literal which is a Smi"
 		[19]	->	[self deny: (objectMemory isOopForwarded: test).
 					 self deny: (objectMemory isImmediate: test).
-					 (objectMemory isYoungObject: test) ifFalse: [localIP := localIP + offset]].
+					 (objectMemory getMemoryMap isYoungObject: test) ifFalse: [localIP := localIP + offset]].
 	}.
 	localIP := localIP - 1. "we've already fetched, but we may have incorrectly fetched if jump"
 	self fetchNextBytecode.
@@ -9264,6 +9265,7 @@ StackInterpreter >> lookupMethodInClass: class [
 		currentClass := self superclassOf: currentClass].
 
 	"Could not find #doesNotUnderstand: -- unrecoverable error."
+
 	messageSelector = (objectMemory splObj: SelectorDoesNotUnderstand) ifTrue:
 		[self error: 'Recursive not understood error encountered'].
 
@@ -15581,7 +15583,7 @@ StackInterpreter >> unaryPossibleRootInlinePrimitive [
 	top := self internalStackTop.
 	self deny: (objectMemory isImmediate: top).
 	self deny: (objectMemory isOopForwarded: top).
-	(objectMemory isYoungObject: top)
+	(objectMemory getMemoryMap isYoungObject: top)
 		ifFalse: [objectMemory possibleRootStoreInto: top]
 ]
 
@@ -15826,7 +15828,7 @@ StackInterpreter >> validInstructionPointer: theInstrPointer inMethod: aMethod f
 	 Context(Part)>>reset have to be updated to skip the callPrimtiive bytecode otherwise."
 	"-1 for pre-increment in fetchNextBytecode"
 	^theInstrPointer >= (aMethod + (objectMemory lastPointerOf: aMethod) + objectMemory bytesPerOop - 1)
-	  and: [theInstrPointer < (aMethod + (objectMemory numBytesOfBytes: aMethod) + objectMemory baseHeaderSize - 1)]
+	  and: [theInstrPointer < (aMethod + (objectMemory numBytesOfBytes: aMethod) + objectMemory baseHeaderSize)]
 ]
 
 { #category : #'stack pages' }

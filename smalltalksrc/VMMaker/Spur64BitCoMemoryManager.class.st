@@ -81,10 +81,10 @@ Spur64BitCoMemoryManager >> checkMemoryMap [
 	 copyAndForward:.  We can't have both, and the former is likely the highest dynamic
 	 frequency."
 	false ifTrue:
-		[self assert: (self isYoungObject: cogit minCogMethodAddress) not.
-		 self assert: (self isYoungObject: cogit maxCogMethodAddress) not].
-	self assert: (self isOldObject: cogit minCogMethodAddress) not.
-	self assert: (self isOldObject: cogit maxCogMethodAddress) not
+		[self assert: (memoryMap isYoungObject: cogit minCogMethodAddress) not.
+		 self assert: (memoryMap isYoungObject: cogit maxCogMethodAddress) not].
+	self assert: (memoryMap isOldObject: cogit minCogMethodAddress) not.
+	self assert: (memoryMap isOldObject: cogit maxCogMethodAddress) not
 ]
 
 { #category : #accessing }

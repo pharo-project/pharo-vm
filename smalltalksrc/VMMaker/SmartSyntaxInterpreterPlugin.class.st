@@ -35,7 +35,7 @@ SmartSyntaxInterpreterPlugin class >> implicitReturnTypeFor: aSelector [
 
 { #category : #translation }
 SmartSyntaxInterpreterPlugin class >> prepareToBeAddedToCodeGenerator: aCodeGen [
-	aCodeGen removeVariable: 'simulator'
+	"aCodeGen removeVariable: 'simulator'"
 ]
 
 { #category : #translation }

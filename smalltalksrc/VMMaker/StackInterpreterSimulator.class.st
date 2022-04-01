@@ -1633,6 +1633,7 @@ StackInterpreterSimulator >> primitiveSuspend [
 
 { #category : #'system control primitives' }
 StackInterpreterSimulator >> primitiveVMParameter [
+	
 	(self stackTop = (objectMemory integerObjectOf: 9)
 	 or: [self stackTop = (objectMemory integerObjectOf: 52)]) ifTrue:
 		[self halt].

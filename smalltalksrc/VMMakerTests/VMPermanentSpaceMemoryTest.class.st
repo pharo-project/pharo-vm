@@ -53,7 +53,7 @@ VMPermanentSpaceMemoryTest >> testMarkingNewSpaceDoesNotMarkPermSpace [
 	newObject := self newObjectWithSlots: 1.
 	self keepObjectInVMVariable1: newObject.
 	
-	self assert: (memory isYoungObject: newObject).
+	self assert: (memory getMemoryMap isYoungObject: newObject).
 
 	memory storePointer: 0 ofObject: newObject withValue: permanentObject.
 
@@ -71,7 +71,7 @@ VMPermanentSpaceMemoryTest >> testMarkingOldSpaceDoesNotMarkPermSpace [
 	oldObject := self newOldSpaceObjectWithSlots: 1.
 	self keepObjectInVMVariable1: oldObject.
 	
-	self assert: (memory isOldObject: oldObject).
+	self assert: (memory getMemoryMap isOldObject: oldObject).
 
 	memory storePointer: 0 ofObject: oldObject withValue: permanentObject.
 
@@ -109,7 +109,7 @@ VMPermanentSpaceMemoryTest >> testMovingOldObjectToPermSpaceLeavesForwarder [
 	
 	oldObject := self newOldByteObjectOfSize: 1.
 	self keepObjectInVMVariable1: oldObject.
-	self assert: (memory isOldObject: oldObject).
+	self assert: (memory getMemoryMap isOldObject: oldObject).
 
 	permanentObject := memory moveToPermSpace: oldObject.	
 	
@@ -134,7 +134,7 @@ VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsNonYoungObject [
 	
 	permanentObject := self newPermanentByteObjectOfSize: 14.
 
-	self deny: (memory isYoungObject: permanentObject)
+	self deny: (memory getMemoryMap isYoungObject: permanentObject)
 ]
 
 { #category : #'tests - allocation' }
@@ -144,7 +144,7 @@ VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsNotAnOldObject [
 	
 	permanentObject := self newPermanentByteObjectOfSize: 14.
 
-	self deny: (memory isOldObject: permanentObject)
+	self deny: (memory getMemoryMap isOldObject: permanentObject)
 ]
 
 { #category : #'tests - allocation' }
@@ -154,7 +154,7 @@ VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsPermanentObject [
 	
 	permanentObject := self newPermanentByteObjectOfSize: 14.
 
-	self assert: (memory isPermanentObject: permanentObject)
+	self assert: (memory getMemoryMap isPermanentObject: permanentObject)
 ]
 
 { #category : #'tests - allocation' }

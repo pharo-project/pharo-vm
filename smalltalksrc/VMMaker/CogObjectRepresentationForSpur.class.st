@@ -3055,7 +3055,7 @@ CogObjectRepresentationForSpur >> markAndTraceLiteral: literal in: cogMethodOrNi
 { #category : #'garbage collection' }
 CogObjectRepresentationForSpur >> markAndTraceLiteralIfYoung: literal [
 	((self couldBeObject: literal)
-	 and: [objectMemory isYoungObject: literal]) ifTrue:
+	 and: [objectMemory getMemoryMap isYoungObject: literal]) ifTrue:
 		[self assert: (objectMemory addressCouldBeObj: literal).
 		 objectMemory markAndTrace: literal]
 ]
@@ -3067,7 +3067,7 @@ CogObjectRepresentationForSpur >> markAndTraceUpdatedLiteral: objOop in: cogMeth
 	<var: #cogMethodOrNil type: #'CogMethod *'>
 	(objectMemory isNonImmediate: objOop) ifTrue:
 		[(cogMethodOrNil notNil
-		  and: [objectMemory isYoungObject: objOop]) ifTrue:
+		  and: [objectMemory getMemoryMap isYoungObject: objOop]) ifTrue:
 			[methodZone ensureInYoungReferrers: cogMethodOrNil].
 		 objectMemory markAndTrace: objOop]
 ]

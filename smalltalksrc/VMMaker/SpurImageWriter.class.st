@@ -193,6 +193,7 @@ SpurImageWriter >> writeSegment: segment nextSegment: nextSegment toFile: aBinar
 	<var: 'aBinaryStream' type: #sqImageFile>
 	<var: 'firstSavedBridgeWord' type: #usqLong>
 	<var: 'secondSavedBridgeWord' type: #usqLong>
+	<inline: false>
 
 	| pier1 pier2 firstSavedBridgeWord secondSavedBridgeWord nWritten |
 

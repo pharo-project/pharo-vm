@@ -495,7 +495,7 @@ Cogit class >> cogToBytecodeMethodMapping [
 { #category : #translation }
 Cogit class >> declareCVarsIn: aCCodeGenerator [
 	#(	'coInterpreter' 'objectMemory' 'methodZone' 'objectRepresentation'
-		'cogBlockMethodSurrogateClass' 'cogMethodSurrogateClass' 'threadManager' 'processor' 'lastNInstructions' 'simulatedAddresses'
+		'cogBlockMethodSurrogateClass' 'cogMethodSurrogateClass' 'processor' 'lastNInstructions' 'simulatedAddresses'
 		'simulatedTrampolines' 'simulatedVariableGetters' 'simulatedVariableSetters'
 		'printRegisters' 'printInstructions' 'clickConfirm' 'singleStep') do:
 			[:simulationVariableNotNeededForRealVM|
@@ -3349,7 +3349,7 @@ Cogit >> annotate: abstractInstruction objRef: anOop [
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
 	<returnTypeC: #'AbstractInstruction *'>
 	(objectRepresentation shouldAnnotateObjectReference: anOop) ifTrue:
-		[(objectMemory isYoungObject: anOop) ifTrue:
+		[(objectMemory getMemoryMap isYoungObject: anOop) ifTrue:
 			[hasYoungReferent := true].
 		 abstractInstruction annotation: IsObjectReference].
 	^abstractInstruction
@@ -4405,7 +4405,7 @@ Cogit >> checkIfValidOopRefAndTarget: annotation pc: mcpc cogMethod: cogMethod [
 		 (self asserta: (objectRepresentation checkValidOopReference: literal)) ifFalse:
 			[^1].
 		((objectRepresentation couldBeObject: literal)
-		 and: [objectMemory isReallyYoungObject: literal]) ifTrue:
+		 and: [objectMemory getMemoryMap isYoungObject: literal]) ifTrue:
 			[(self asserta: (self cCoerceSimple: cogMethod to: #'CogMethod *') cmRefersToYoung) ifFalse:
 				[^2]]].
 
@@ -4425,7 +4425,7 @@ Cogit >> checkIfValidOopRefAndTarget: annotation pc: mcpc cogMethod: cogMethod [
 							[(self asserta: (objectRepresentation validInlineCacheTag: cacheTag)) ifFalse:
 								[^5]].
 					((objectRepresentation couldBeObject: cacheTag)
-					 and: [objectMemory isReallyYoungObject: cacheTag]) ifTrue:
+					 and: [objectMemory getMemoryMap isYoungObject: cacheTag]) ifTrue:
 						[(self asserta: (self cCoerceSimple: cogMethod to: #'CogMethod *') cmRefersToYoung) ifFalse:
 							[^6]]]
 				ifFalse:
@@ -4516,7 +4516,7 @@ Cogit >> checkIntegrityOfObjectReferencesInCode: gcModes [
 						 mapFor: cogMethod
 						 performUntil: #checkIfValidOopRef:pc:cogMethod:
 						 arg: cogMethod asInteger) ~= 0 ifTrue: [ ok := false ].
-					(((objectMemory isYoungObject: cogMethod methodObject) or: [ 
+					(((objectMemory getMemoryMap isYoungObject: cogMethod methodObject) or: [ 
 						  objectMemory isYoung: cogMethod selector ]) and: [ 
 						 cogMethod cmRefersToYoung not ]) ifTrue: [ 
 						coInterpreter
@@ -5618,7 +5618,7 @@ Cogit >> compileCogFullBlockMethod: numCopied [
 	<returnTypeC: #'CogMethod *'>
 	<option: #SistaV1BytecodeSet>
 	| numBytecodes successScan result |
-	hasYoungReferent := (objectMemory isYoungObject: methodObj).
+	hasYoungReferent := (objectMemory getMemoryMap isYoungObject: methodObj).
 	methodOrBlockNumArgs := coInterpreter argumentCountOf: methodObj.
 	inBlock := InFullBlock.
 	postCompileHook := nil.
@@ -5650,7 +5650,7 @@ Cogit >> compileCogFullBlockMethod: numCopied [
 Cogit >> compileCogMethod: selector [
 	<returnTypeC: #'CogMethod *'>
 	| numBytecodes successScan result extra |
-	hasYoungReferent := (objectMemory isYoungObject: methodObj)
+	hasYoungReferent := (objectMemory getMemoryMap isYoungObject: methodObj)
 						  or: [objectMemory isYoung: selector].
 	methodOrBlockNumArgs := coInterpreter argumentCountOf: methodObj.
 	inBlock := 0.
@@ -5993,7 +5993,7 @@ Cogit >> configureCPIC: cPIC Case0: case0CogMethod Case1Method: case1Method tag:
 			[operand := 0.
 			 targetEntry := (coInterpreter cogMethodOf: case1Method) asInteger + cmNoCheckEntryOffset]
 		ifFalse: "We do not scavenge PICs, hence we cannot cache the MNU method if it is in new space."
-			[operand := (case1Method isNil or: [objectMemory isYoungObject: case1Method])
+			[operand := (case1Method isNil or: [objectMemory getMemoryMap isYoungObject: case1Method])
 							ifTrue: [0]
 							ifFalse: [case1Method].
 			 targetEntry := case1Method ifNil: [cPIC asInteger + (self sizeof: CogMethod)] ifNotNil: [cPIC asInteger + self picInterpretAbortOffset]].
@@ -6032,7 +6032,7 @@ Cogit >> configureMNUCPIC: cPIC methodOperand: methodOperand numArgs: numArgs de
 	backEnd rewriteCallAt: cPIC asInteger + missOffset target: (self picAbortTrampolineFor: numArgs).
 	
 	"We do not scavenge PICs, hence we cannot cache the MNU method if it is in new space."
-	operand := (methodOperand isNil or: [objectMemory isYoungObject: methodOperand])
+	operand := (methodOperand isNil or: [objectMemory getMemoryMap isYoungObject: methodOperand])
 					ifTrue: [0]
 					ifFalse: [methodOperand].
 	"set the jump to the case0 method"
@@ -6876,7 +6876,7 @@ Cogit >> followForwardedMethods [
 		[cogMethod cmType = CMMethod ifTrue:
 			[(objectMemory isForwarded: cogMethod methodObject) ifTrue:
 				[cogMethod methodObject: (objectMemory followForwarded: cogMethod methodObject).
-				 (objectMemory isYoungObject: cogMethod methodObject) ifTrue:
+				 (objectMemory getMemoryMap isYoungObject: cogMethod methodObject) ifTrue:
 					[methodZone ensureInYoungReferrers: cogMethod]]].
 		 cogMethod cmType = CMClosedPIC ifTrue:
 			[(self followMethodReferencesInClosedPIC: cogMethod) ifTrue:
@@ -6899,11 +6899,11 @@ Cogit >> followMaybeObjRefInClosedPICAt: mcpc [
 	(objectRepresentation couldBeObject: object) ifFalse:
 		[^false].
 	(objectMemory isForwarded: object) ifFalse:
-		[^objectMemory isYoungObject: object].
+		[^objectMemory getMemoryMap isYoungObject: object].
 	subject := objectMemory followForwarded: object.
 	backEnd storeLiteral: subject beforeFollowingAddress: mcpc.
 	codeModified := true.
-	^objectMemory isYoungObject: subject
+	^objectMemory getMemoryMap isYoungObject: subject
 ]
 
 { #category : #'garbage collection' }
@@ -11349,7 +11349,7 @@ Cogit >> remapMaybeObjRefInClosedPICAt: mcpc [
 	object ~= subject ifTrue:
 		[backEnd storeLiteral: subject beforeFollowingAddress: mcpc.
 		 codeModified := true].
-	^objectMemory isYoungObject: subject
+	^objectMemory getMemoryMap isYoungObject: subject
 ]
 
 { #category : #'translation support' }

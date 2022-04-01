@@ -79,15 +79,15 @@ VMMemoryMap >> allocateMemory: desiredSize BaseAddress: baseAddress [
 { #category : #private }
 VMMemoryMap >> allocateNewObjectsSpace [
 	
-	| newSpaceSize |
+	| newSpaceSizeToAllocate |
 	
-	newSpaceSize := self initialNewSpaceSize + self allocationReserve.
+	newSpaceSizeToAllocate := self initialNewSpaceSize + self allocationReserve.
 	
-	self newSpaceStart: (self allocateMemory: newSpaceSize BaseAddress: memoryMapConfiguration newSpaceInitialAddress).
+	self newSpaceStart: (self allocateMemory: newSpaceSizeToAllocate BaseAddress: memoryMapConfiguration newSpaceInitialAddress).
 	
 	self newSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 	
-	self newSpaceEnd: self newSpaceStart + newSpaceSize.
+	self newSpaceEnd: self newSpaceStart + newSpaceSizeToAllocate.
 ]
 
 { #category : #private }

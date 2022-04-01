@@ -778,7 +778,7 @@ VMSpurOldSpaceTest >> testNewObjectShouldBeOld [
 	| oop |
 	oop := memory allocateSlotsInOldSpace: 0 format: 0 classIndex: self zeroSizedObjectClassIndex.
 	
-	self assert: (memory isOldObject: oop)
+	self assert: (memory getMemoryMap isOldObject: oop)
 ]
 
 { #category : #'tests-5-allocation-strategy' }
