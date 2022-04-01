@@ -497,7 +497,7 @@ sqInt ioDisableImageWrite(void);
 
 #include "pharovm/imageAccess.h"
 
-size_t readImageFromFileStartingAt(sqImageFile f, squeakFileOffsetType imageOffset);
+sqInt readImageNamed(char* fileName);
 
 /* Clipboard (cut/copy/paste). */
 sqInt clipboardSize(void);
