@@ -521,8 +521,7 @@ MLVMCCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledM
 MLVMCCodeGenerator >> shouldExcludeDepth [
 
 	"Don't include the depth in the vm's named primitives if the vm is non-Spur."
-
-	^ false
+	^ self vmClass notNil and: [ self vmClass objectMemoryClass hasSpurMemoryManagerAPI not ]
 ]
 
 { #category : #'C translation support' }
