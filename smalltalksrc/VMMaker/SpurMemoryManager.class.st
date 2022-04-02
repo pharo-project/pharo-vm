@@ -738,6 +738,11 @@ SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
 		var: #memoryMap type: #'VMMemoryMap *'
 ]
 
+{ #category : #'api characterization' }
+SpurMemoryManager class >> hasSpurMemoryManagerAPI [
+	^true
+]
+
 { #category : #analysis }
 SpurMemoryManager class >> identify32BitSignedComparisonsInSegmentIO [
 	"self identify32BitSignedComparisonsInSegmentIO"
@@ -5686,6 +5691,12 @@ SpurMemoryManager >> fullGC [
 		ifFalse: [0]
 ]
 
+{ #category : #'gc - global' }
+SpurMemoryManager >> fullGCLock [
+	"Spur never has a need to lock GC because it does not move pinned objects."
+	^0
+]
+
 { #category : #snapshot }
 SpurMemoryManager >> garbageCollectForSnapshot [
 	self flushNewSpace. "There is no place to put newSpace in the snapshot file."
@@ -5878,6 +5889,11 @@ SpurMemoryManager >> hasSixtyFourBitImmediates [
 	"The V3 64-bit memory manager has 64-bit oops, but its SmallIntegers only have
 	 31 bits of precision.  The Spur 64-bit memory manager has 61-bit immediates."
 	^self subclassResponsibility
+]
+
+{ #category : #'api characterization' }
+SpurMemoryManager >> hasSpurMemoryManagerAPI [
+	^true
 ]
 
 { #category : #'object testing' }
@@ -6167,6 +6183,11 @@ SpurMemoryManager >> increaseFreeOldSpaceBy: bytes [
 
 ]
 
+{ #category : #'gc - global' }
+SpurMemoryManager >> incrementalGC [
+	self shouldNotImplement
+]
+
 { #category : #'debug support' }
 SpurMemoryManager >> indexOf: anElement in: anObject [
 	<api>
@@ -6299,9 +6320,9 @@ SpurMemoryManager >> initialize [
 	checkForLeaks := 0.
 	needGCFlag := signalLowSpace := marking := false.
 	becomeEffectsFlags := gcPhaseInProgress := 0.
-	statScavenges := statFullGCs := 0.
+	statScavenges := statIncrGCs := statFullGCs := 0.
 	statMaxAllocSegmentTime := 0.
-	statMarkUsecs := statSweepUsecs := statScavengeGCUsecs  := statFullGCUsecs := statCompactionUsecs := statGCEndUsecs := gcSweepEndUsecs := 0.
+	statMarkUsecs := statSweepUsecs := statScavengeGCUsecs := statIncrGCUsecs := statFullGCUsecs := statCompactionUsecs := statGCEndUsecs := gcSweepEndUsecs := 0.
 	statSGCDeltaUsecs := statIGCDeltaUsecs := statFGCDeltaUsecs := 0.
 	statGrowMemory := statShrinkMemory := statRootTableCount := statAllocatedBytes := 0.
 	statRootTableOverflows := statMarkCount := statCompactPassCount := statCoalesces := 0.
@@ -11566,6 +11587,16 @@ SpurMemoryManager >> statIGCDeltaUsecs [
 ]
 
 { #category : #accessing }
+SpurMemoryManager >> statIncrGCUsecs [
+	^statIncrGCUsecs
+]
+
+{ #category : #accessing }
+SpurMemoryManager >> statIncrGCs [
+	^statIncrGCs
+]
+
+{ #category : #accessing }
 SpurMemoryManager >> statMarkCount [
 	^statMarkCount
 ]
@@ -11592,11 +11623,9 @@ SpurMemoryManager >> statMkFwdCount [
 
 { #category : #accessing }
 SpurMemoryManager >> statNumGCs [
-
 	"Part of InterpreterProxy's 1.14 API"
-
 	<export: true>
-	^ statScavenges + statFullGCs
+	^statScavenges + statIncrGCs + statFullGCs
 ]
 
 { #category : #accessing }
@@ -11861,6 +11890,11 @@ SpurMemoryManager >> sufficientSpaceAfterGC: numBytes [
 		[lowSpaceThreshold := 0. "avoid signalling low space twice"
 		 ^false].
 	^true
+]
+
+{ #category : #allocation }
+SpurMemoryManager >> sufficientSpaceToInstantiate: classObj indexableSize: indexableFields [
+	self shouldNotImplement
 ]
 
 { #category : #'simulation only' }

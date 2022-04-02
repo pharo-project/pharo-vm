@@ -2970,6 +2970,11 @@ CogObjectRepresentationForSpur >> getLiteralCountOf: methodReg plusOne: plusOne 
 	self subclassResponsibility
 ]
 
+{ #category : #testing }
+CogObjectRepresentationForSpur >> hasSpurMemoryManagerAPI [
+	^true
+]
+
 { #category : #'garbage collection' }
 CogObjectRepresentationForSpur >> hasValidHeaderPostGC: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>

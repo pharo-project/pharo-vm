@@ -1659,6 +1659,11 @@ CogObjectRepresentation >> getActiveContextAllocatesInMachineCode [
 	^false
 ]
 
+{ #category : #testing }
+CogObjectRepresentation >> hasSpurMemoryManagerAPI [
+	^false
+]
+
 { #category : #'in-line cacheing' }
 CogObjectRepresentation >> illegalClassTag [
 	"Answer a class tag that will fail for every object."
