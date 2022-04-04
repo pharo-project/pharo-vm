@@ -113,20 +113,23 @@ CCodeGeneratorGlobalStructure >> emitCVariablesOn: aStream [
 					ifTrue: [structure]
 					ifFalse: [nonstruct].
 		decl := variableDeclarations at: varString ifAbsent: ['sqInt ' , varString].
-		decl first == $# "support cgen var: #bytecodeSetSelector declareC: '#define bytecodeSetSelector 0' hack"
-			ifTrue:
-				[target nextPutAll: decl; cr]
-			ifFalse:
-				[self isGeneratingPluginCode
+			(decl beginsWith: 'implicit') ifFalse: [
+				decl first == $# "support cgen var: #bytecodeSetSelector declareC: '#define bytecodeSetSelector 0' hack"
 					ifTrue:
-						[varString = 'interpreterProxy'
-							ifTrue: "quite special..."
-								[self preDeclareInterpreterProxyOn: target]
-							ifFalse: [target nextPutAll: 'static ']]
+						[target nextPutAll: decl; cr]
 					ifFalse:
-						[(self vmClass mustBeGlobal: varString) ifFalse:
-							[target nextPutAll: (inStruct ifTrue: ['_iss '] ifFalse: ['static '])]].
-				target nextPutAll: decl; nextPut: $;; cr]].
+						[self isGeneratingPluginCode
+							ifTrue:
+								[varString = 'interpreterProxy'
+									ifTrue: "quite special..."
+										[self preDeclareInterpreterProxyOn: target]
+									ifFalse: [target nextPutAll: 'static ']]
+							ifFalse:
+								[(self vmClass mustBeGlobal: varString) ifFalse:
+									[target nextPutAll: (inStruct ifTrue: ['_iss '] ifFalse: ['static '])]].
+						target nextPutAll: decl; nextPut: $;; cr]
+			]
+		].
 	structure
 		nextPutAll: '#undef _iss'; cr;
 		nextPutAll: '#if SQ_USE_GLOBAL_STRUCT'; cr;
