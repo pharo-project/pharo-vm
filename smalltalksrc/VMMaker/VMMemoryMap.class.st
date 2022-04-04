@@ -19,7 +19,8 @@ Class {
 		'codeZoneStart',
 		'codeZoneEnd',
 		'stackPagesStart',
-		'stackPagesEnd'
+		'stackPagesEnd',
+		'initialPermSpaceSize'
 	],
 	#category : #'VMMaker-Memory'
 }
@@ -131,26 +132,31 @@ VMMemoryMap >> allocateOldObjectsSpace [
 { #category : #private }
 VMMemoryMap >> allocatePermObjectsSpace [
 
-	| permSpaceSize |
-	permSpaceSize := 10*1024*1024.
+	initialPermSpaceSize = 0 ifTrue: [ ^ self ].
 
 	self permSpaceStart: (self 
-		allocateMemory: permSpaceSize 
+		allocateMemory: initialPermSpaceSize 
 		BaseAddress: memoryMapConfiguration permSpaceInitialAddress).
 
 	self permSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 
-	self permSpaceEnd: self permSpaceStart + permSpaceSize	
+	self permSpaceEnd: self permSpaceStart + initialPermSpaceSize	
 ]
 
 { #category : #allocating }
 VMMemoryMap >> allocateStackPages: initialStackSize [ 
+	
+	<inline: false>
+	<returnTypeC: #void>
 	
 	self stackPagesStart: (self allocateMemory: initialStackSize BaseAddress: memoryMapConfiguration stackPagesInitialAddress).
 	
 	self stackPagesStart ifNil: [ self insufficientMemoryAvailableError ].
 	
 	self stackPagesEnd: self stackPagesStart + initialStackSize.
+	
+	self memset: self stackPagesStart _: 0 _: initialStackSize.
+
 ]
 
 { #category : #accessing }
@@ -247,10 +253,25 @@ VMMemoryMap >> initialOldSpaceSize: anInteger [
 	initialOldSpaceSize := anInteger
 ]
 
+{ #category : #accessing }
+VMMemoryMap >> initialPermSpaceSize [
+
+	^ initialPermSpaceSize
+]
+
+{ #category : #accessing }
+VMMemoryMap >> initialPermSpaceSize: anObject [
+
+	initialPermSpaceSize := anObject
+]
+
 { #category : #initialization }
 VMMemoryMap >> initializeMemoryMap [
 
 	initialCodeZoneSize := 0.
+	initialPermSpaceSize := 0.
+	permSpaceStart := 0.
+	permSpaceEnd := 0.
 
 	self cCode: [ ] inSmalltalk: [ 
 		memoryMapConfiguration := (VMMemoryMapConfiguration forWordsize:
@@ -301,6 +322,16 @@ VMMemoryMap >> memoryManager [
 VMMemoryMap >> memoryManager: anObject [
 
 	memoryManager := anObject
+]
+
+{ #category : #simulation }
+VMMemoryMap >> memset: startAddress _: value _: size [
+
+	<doNotGenerate>
+	
+	startAddress to: startAddress + size - 1 by: memoryMapConfiguration wordSize do: [ :address |
+		memoryManager longAt: address put: value ]
+
 ]
 
 { #category : #accessing }
@@ -371,7 +402,7 @@ VMMemoryMap >> permSpaceStart: anInteger [
 VMMemoryMap >> setOldSpaceEnd: anInteger [ 
 	
 	oldSpaceEnd := anInteger.
-	self assert: (permSpaceStart isNil or: [anInteger < permSpaceStart]).
+	self assert: (permSpaceStart isZero or: [anInteger < permSpaceStart]).
 
 ]
 

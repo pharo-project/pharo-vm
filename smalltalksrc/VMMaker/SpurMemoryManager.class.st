@@ -2013,9 +2013,6 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 		             yourself.
 	
 	permSpaceSize isZero 
-		ifTrue: [ 
-			memoryMap permSpaceStart: 16r10000000.
-			memoryMap permSpaceEnd: 16r10000000]
 		ifFalse: [ 	
 				memoryMap permSpaceStart: (self allocateMemoryOfSize: permSpaceSize initialAddress: 16r10000000).
 				memoryMap permSpaceEnd: memoryMap permSpaceStart + permSpaceSize ].
