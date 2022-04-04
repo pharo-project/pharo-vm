@@ -670,7 +670,7 @@ VMClass >> fprintf: aStream format: aFormat arguments: arguments [
 	<doNotGenerate>
 	| printf |
 	printf := PrintfFormatString new setFormat: aFormat.
-	
+
 	aStream nextPutAll: (printf
 			 printf: arguments;
 			 string)

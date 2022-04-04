@@ -1,15 +1,15 @@
 Class {
-	#name : #ComposedSegmentMetadataStruct,
+	#name : #ComposedMetadataStruct,
 	#superclass : #VMStructType,
 	#instVars : [
-		'segStart',
-		'segSize'
+		'startAddress',
+		'dataSize'
 	],
 	#category : #'VMMaker-ImageFormat'
 }
 
 { #category : #'simulation only' }
-ComposedSegmentMetadataStruct class >> byteSizeForSimulator: aCogit [
+ComposedMetadataStruct class >> byteSizeForSimulator: aCogit [
 
 	"Answer an approximation of the byte size of an AbstractInstruction struct.
 	 This is for estimating the alloca in allocateOpcodes:bytecodes:ifFail:"
@@ -17,7 +17,7 @@ ComposedSegmentMetadataStruct class >> byteSizeForSimulator: aCogit [
 ]
 
 { #category : #translation }
-ComposedSegmentMetadataStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
+ComposedMetadataStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a struct of this type."
 
 	<var: #segSize type: #size_t>
@@ -31,25 +31,25 @@ ComposedSegmentMetadataStruct class >> instVarNamesAndTypesForTranslationDo: aBi
 ]
 
 { #category : #accessing }
-ComposedSegmentMetadataStruct >> segSize [
+ComposedMetadataStruct >> dataSize [
 
-	^ segSize
+	^ dataSize
 ]
 
 { #category : #accessing }
-ComposedSegmentMetadataStruct >> segSize: anInt [
+ComposedMetadataStruct >> dataSize: anObject [
 
-	segSize := anInt
+	dataSize := anObject
 ]
 
 { #category : #accessing }
-ComposedSegmentMetadataStruct >> segStart [
+ComposedMetadataStruct >> startAddress [
 
-	^ segStart
+	^ startAddress
 ]
 
 { #category : #accessing }
-ComposedSegmentMetadataStruct >> segStart: anInt [
+ComposedMetadataStruct >> startAddress: anObject [
 
-	segStart := anInt
+	startAddress := anObject
 ]

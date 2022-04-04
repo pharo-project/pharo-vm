@@ -169,9 +169,13 @@ AbstractImageAccess >> loadImageFromFile: imageFile withHeader: header [
 	"read in the image in bulk, then swap the bytes if necessary"
 
 	<var: #header type: #SpurImageHeaderStruct>
-	| bytesRead |
+	| bytesRead oldSpaceBytesRead permSpaceBytesRead |
 
-	bytesRead := self readSegmentsFromImageFile: imageFile header: header.
+	oldSpaceBytesRead := self readSegmentsFromImageFile: imageFile header: header.
+
+	permSpaceBytesRead := self readPermSpaceFromImageFile: imageFile header: header. 
+	
+	bytesRead := oldSpaceBytesRead + permSpaceBytesRead.
 
 	self initializeInterpreterFromHeader: header withBytes: bytesRead
 

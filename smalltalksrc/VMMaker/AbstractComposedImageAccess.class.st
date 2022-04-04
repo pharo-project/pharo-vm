@@ -96,7 +96,19 @@ AbstractComposedImageAccess >> initialize [
 	super initialize.
 	
 	headFormat := '%s {\n'.
-	fieldFormat := '\t#%s : %ld'.
+	fieldFormat := '\t#%s : %lld'.
+]
+
+{ #category : #'perm - space' }
+AbstractComposedImageAccess >> permSpaceMetadataFileNameInImage: imageFileName into: aBuffer bufferSize: aSize [ 
+
+	^ imageFileName , '/permSpace.ston'
+]
+
+{ #category : #'perm - space' }
+AbstractComposedImageAccess >> permanentDataFileinImage: imageFileName [ 
+
+	^ imageFileName , '/permSpace.data'
 ]
 
 { #category : #'file operations' }

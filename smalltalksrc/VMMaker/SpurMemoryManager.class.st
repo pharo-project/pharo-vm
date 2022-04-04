@@ -1973,7 +1973,7 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 	 will be set to sane values."
 
 	<doNotGenerate>
-	| allocatedMemory newSpaceStartOffset allocatedAddress |
+	| allocatedMemory newSpaceStartOffset allocatedAddress vmMemoryConf |
 
 	self assert: (memoryBytes \\ self allocationUnit = 0 and: [ 
 			 newSpaceBytes \\ self allocationUnit = 0 and: [ 
@@ -2012,12 +2012,14 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 		             manager: self;
 		             yourself.
 	
+	vmMemoryConf := (VMMemoryMapConfiguration forWordsize: self wordSize) new.
+	
 	permSpaceSize isZero 
-		ifTrue: [ 
-			memoryMap permSpaceStart: 16r10000000.
-			memoryMap permSpaceEnd: 16r10000000]
+		ifTrue: [ 		
+			memoryMap permSpaceStart: vmMemoryConf permSpaceInitialAddress.
+			memoryMap permSpaceEnd: vmMemoryConf permSpaceInitialAddress]
 		ifFalse: [ 	
-				memoryMap permSpaceStart: (self allocateMemoryOfSize: permSpaceSize initialAddress: 16r10000000).
+				memoryMap permSpaceStart: (self allocateMemoryOfSize: permSpaceSize initialAddress: vmMemoryConf permSpaceInitialAddress).
 				memoryMap permSpaceEnd: memoryMap permSpaceStart + permSpaceSize ].
 			
 	permSpaceFreeStart := memoryMap permSpaceStart 

@@ -197,9 +197,10 @@ VMImageHeaderWritingTest >> testWritingSTONSegment [
 
 	writtenHeader := (self imageFileName asFileReference  / 'seg0.ston') contents.
 	
-	segmentMetadata := ComposedSegmentMetadataStruct new.
-	segmentMetadata segStart: header oldBaseAddr.
-	segmentMetadata segSize: header dataSize.
+	"Duplicated code :("
+	segmentMetadata := ComposedMetadataStruct new.
+	segmentMetadata startAddress: header oldBaseAddr.
+	segmentMetadata dataSize: header dataSize.
 
 	self assert: writtenHeader equals: (STON toStringPretty: segmentMetadata).
 ]
