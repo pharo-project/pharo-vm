@@ -136,8 +136,8 @@ Class {
 { #category : #translation }
 CoInterpreter class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
-	^(super ancilliaryClasses copyWithout: InterpreterStackPages),
-	   {	CoInterpreterStackPages.
+	^ super ancilliaryClasses,
+	   {
 		CogBlockMethod.
 		CogPrimitiveDescriptor. },
 	((Cogit ancilliaryClasses) select: [:class| class inheritsFrom: CogBlockMethod])
@@ -381,11 +381,6 @@ CoInterpreter class >> interpreterMachineCodeTransitions [
 { #category : #accessing }
 CoInterpreter class >> interpreterVersion [ 
 	^ 'Cog'
-]
-
-{ #category : #translation }
-CoInterpreter class >> isAcceptableAncilliaryClass: aClass [
-	^aClass ~~ InterpreterStackPages
 ]
 
 { #category : #translation }
@@ -672,19 +667,12 @@ CoInterpreter >> addNewMethodToCache: classObj [
 	super addNewMethodToCache: classObj
 ]
 
-{ #category : #allocating }
-CoInterpreter >> allocateJITMemory: desiredSize _: desiredPosition [ 
-
-	<doNotGenerate>
-	^ memoryManager allocate: desiredSize desiredPosition: desiredPosition
-]
-
 { #category : #'image save/restore' }
 CoInterpreter >> allocateMemoryForImage: f withHeader: header [
 
 	<var: #f type: #sqImageFile>
 	<var: #header type: #SpurImageHeaderStruct>
-	| cogCodeBase desiredPositionOfHeap |
+
 	cogCodeSize := desiredCogCodeSize ~= 0
 		               ifTrue: [ desiredCogCodeSize ]
 		               ifFalse: [ 
@@ -694,23 +682,17 @@ CoInterpreter >> allocateMemoryForImage: f withHeader: header [
 
 	cogCodeSize := cogCodeSize min: cogit maxCogCodeSize.
 
-	cogCodeBase := self
-		               allocateJITMemory: cogCodeSize
-		               desiredPosition: header oldBaseAddr - cogCodeSize.
+	objectMemory getMemoryMap initialCodeZoneSize: cogCodeSize.
 
-	"We want to avoid the swizzle in case the allocation of the code space is much below in the address space than the requested one"
-	desiredPositionOfHeap := cogCodeBase + cogCodeSize max:
-		                         header oldBaseAddr.
-
-	self allocateMemoryForImageHeader: header desiredStartingAddress: desiredPositionOfHeap.
+	self allocateMemoryForImageHeader: header.
 
 	imageReader loadImageFromFile: f withHeader: header.
 
 	self beforeCodeZoneInitialization.
 
 	cogit
-		initializeCodeZoneFrom: cogCodeBase
-		upTo: cogCodeBase + cogCodeSize
+		initializeCodeZoneFrom: objectMemory getMemoryMap codeZoneStart
+		upTo: objectMemory getMemoryMap codeZoneEnd
 ]
 
 { #category : #'cog jit support' }
@@ -6456,8 +6438,8 @@ CoInterpreter >> stackPageHeadroom [
 CoInterpreter >> stackPagesClass [
 	<doNotGenerate>
 	^VMBIGENDIAN
-		ifTrue: [CoInterpreterStackPagesMSB]
-		ifFalse: [CoInterpreterStackPagesLSB]
+		ifTrue: [VMStackPagesMSB]
+		ifFalse: [VMStackPagesLSB]
 ]
 
 { #category : #initialization }

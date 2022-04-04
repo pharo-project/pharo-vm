@@ -534,7 +534,14 @@ VMPrimitiveTest >> testPrimitiveAsCharacterCompilesWithNoArg [
 { #category : #'tests - primitiveAsCharacter' }
 VMPrimitiveTest >> testPrimitiveAsCharacterFailsForOutOfRangeArg [
 
-	interpreter push: (memory integerObjectOf: 16rFF000000).
+	| invalidNumber |
+	invalidNumber := memory integerObjectOf: 16rFF000000.
+	
+	wordSize = 4 
+		ifTrue: [ invalidNumber := invalidNumber bitAnd: 16rFFFFFFFF ]
+		ifFalse: [ invalidNumber := invalidNumber bitAnd: 16rFFFFFFFFFFFFFFFF ].
+
+	interpreter push: invalidNumber.
 	"This number is undecodable both for 64 and 32 bits architectures"
 	
 	interpreter primitiveAsCharacter. 

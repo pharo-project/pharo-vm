@@ -42,7 +42,7 @@ variables
 "
 Class {
 	#name : #CurrentImageCoInterpreterFacade,
-	#superclass : #CogClass,
+	#superclass : #VMClass,
 	#instVars : [
 		'memory',
 		'cogit',

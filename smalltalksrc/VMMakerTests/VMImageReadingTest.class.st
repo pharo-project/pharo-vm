@@ -33,10 +33,6 @@ VMImageReadingTest >> setUp [
 
 	super setUp.
 
-	"ByteArrayClass is asserted while loading image"
-	memory classByteArray: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0)).
-	memory ensureBehaviorHash: memory classByteArray.
-	
 	memory garbageCollectForSnapshot.
 
 	self assert: interpreter successful.

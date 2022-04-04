@@ -111,7 +111,7 @@ methodZoneBase <Integer>
 "
 Class {
 	#name : #Cogit,
-	#superclass : #CogClass,
+	#superclass : #VMClass,
 	#instVars : [
 		'coInterpreter',
 		'objectMemory',

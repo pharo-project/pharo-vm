@@ -45,7 +45,7 @@ totalHeapSizeIncludingBridges
 "
 Class {
 	#name : #SpurSegmentManager,
-	#superclass : #CogClass,
+	#superclass : #VMClass,
 	#instVars : [
 		'manager',
 		'numSegments',

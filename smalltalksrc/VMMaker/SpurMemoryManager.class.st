@@ -541,7 +541,7 @@ The second approach is faster; the common case is scanning the class table, the 
 "
 Class {
 	#name : #SpurMemoryManager,
-	#superclass : #CogClass,
+	#superclass : #VMClass,
 	#instVars : [
 		'coInterpreter',
 		'scavenger',

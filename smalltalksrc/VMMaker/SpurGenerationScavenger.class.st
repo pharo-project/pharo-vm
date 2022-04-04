@@ -96,7 +96,7 @@ So if the scavenger does not scan ephemerons in the remembered set or in future 
 "
 Class {
 	#name : #SpurGenerationScavenger,
-	#superclass : #CogClass,
+	#superclass : #VMClass,
 	#instVars : [
 		'coInterpreter',
 		'manager',

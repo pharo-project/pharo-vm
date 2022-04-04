@@ -14,7 +14,10 @@ Class {
 		'memoryMapConfiguration',
 		'permSpaceStart',
 		'permSpaceEnd',
-		'oldSpaceMask'
+		'oldSpaceMask',
+		'initialCodeZoneSize',
+		'codeZoneStart',
+		'codeZoneEnd'
 	],
 	#category : #'VMMaker-Memory'
 }
@@ -61,12 +64,31 @@ VMMemoryMap class >> shouldBeGenerated [
 	^ false
 ]
 
+{ #category : #private }
+VMMemoryMap >> allocateCodeZone [
+	
+	initialCodeZoneSize = 0 ifTrue: [ ^ self ].
+	self codeZoneStart: (self allocateJITMemory: initialCodeZoneSize _: memoryMapConfiguration codeZoneInitialAddress).
+	self codeZoneStart ifNil: [ self insufficientMemoryAvailableError ].
+	
+	self codeZoneEnd: codeZoneStart + initialCodeZoneSize.
+]
+
 { #category : #allocating }
 VMMemoryMap >> allocateHeap [
 	<inline: false>
+	
+	self allocateCodeZone.
 	self allocateNewObjectsSpace.
 	self allocateOldObjectsSpace.
-	self allocatePermObjectsSpace.	
+	self allocatePermObjectsSpace.
+]
+
+{ #category : #private }
+VMMemoryMap >> allocateJITMemory: desiredSize _: desiredPosition [ 
+
+	<doNotGenerate>
+	^ memoryManager allocate: desiredSize desiredPosition: desiredPosition
 ]
 
 { #category : #private }
@@ -104,7 +126,7 @@ VMMemoryMap >> allocateOldObjectsSpace [
 	self setOldSpaceEnd: self oldSpaceStart + sizeToAllocate
 ]
 
-{ #category : #allocating }
+{ #category : #private }
 VMMemoryMap >> allocatePermObjectsSpace [
 
 	| permSpaceSize |
@@ -130,6 +152,28 @@ VMMemoryMap >> allocationReserve: anInteger [
 	allocationReserve := anInteger 
 ]
 
+{ #category : #accessing }
+VMMemoryMap >> codeZoneEnd [
+
+	^ codeZoneEnd
+]
+
+{ #category : #accessing }
+VMMemoryMap >> codeZoneEnd: anInteger [ 
+	codeZoneEnd := anInteger
+]
+
+{ #category : #accessing }
+VMMemoryMap >> codeZoneStart [
+
+	^ codeZoneStart
+]
+
+{ #category : #accessing }
+VMMemoryMap >> codeZoneStart: anInteger [ 
+	codeZoneStart := anInteger
+]
+
 { #category : #asserting }
 VMMemoryMap >> doCheckMemoryMap [
 
@@ -144,6 +188,18 @@ VMMemoryMap >> doCheckMemoryMap [
 	self assert: (self isOldObject: self oldSpaceEnd - memoryMapConfiguration wordSize).
 	self assert: (self isOldObject: self oldSpaceEnd) not.
 
+]
+
+{ #category : #accessing }
+VMMemoryMap >> initialCodeZoneSize [
+
+	^ initialCodeZoneSize
+]
+
+{ #category : #accessing }
+VMMemoryMap >> initialCodeZoneSize: aValue [
+
+	initialCodeZoneSize := aValue
 ]
 
 { #category : #accessing }
@@ -182,7 +238,9 @@ VMMemoryMap >> initialOldSpaceSize: anInteger [
 { #category : #initialization }
 VMMemoryMap >> initializeMemoryMap [
 
-	self cCode: [  ] inSmalltalk: [ 
+	initialCodeZoneSize := 0.
+
+	self cCode: [ ] inSmalltalk: [ 
 		memoryMapConfiguration := (VMMemoryMapConfiguration forWordsize:
 			                          self class objectMemoryClass wordSize) new ]
 ]

@@ -184,8 +184,8 @@ VMClass class >> initializeMiscConstants [
 	TempVectReadBarrier := InitializationOptions at: #TempVectReadBarrier ifAbsentPut: [false].
 	MULTIPLEBYTECODESETS := InitializationOptions at: #MULTIPLEBYTECODESETS ifAbsentPut: [false].
 	"Simulation only; on by default..."
-	CloneOnGC := InitializationOptions at: #CloneOnGC ifAbsentPut: [true].
-	CloneOnScavenge := InitializationOptions at: #CloneOnScavenge ifAbsentPut: [true].
+	CloneOnGC := InitializationOptions at: #CloneOnGC ifAbsentPut: [false].
+	CloneOnScavenge := InitializationOptions at: #CloneOnScavenge ifAbsentPut: [false].
 
 	"These must be set only if specified, not defaulted, because they are set on the command line or in include files."
 	InitializationOptions
@@ -571,6 +571,36 @@ VMClass >> cCoerce: value to: cTypeString [
 	^value
 		ifNil: [value]
 		ifNotNil: [value coerceTo: cTypeString sim: self]
+]
+
+{ #category : #'translation support' }
+VMClass >> cCoerceSimple: value to: cTypeString [
+	<doNotGenerate>
+	"Type coercion for translation and simulation.
+	 For simulation answer a suitable surrogate for the struct types"
+	^cTypeString caseOf:
+	   {	[#'unsigned long']							->	[value].
+		[#'unsigned int']							->	[value].
+		[#'unsigned short']							->	[value].
+		[#sqInt]									->	[value].
+		[#'sqIntptr_t']								->	[value].
+		[#'usqIntptr_t']								->	[value].
+		[#usqInt]									->	[value].
+		[#sqLong]									->	[value].
+		[#usqLong]								->	[value].
+		[#'AbstractInstruction *']					->	[value].
+		[#'SpurSegmentInfo *']						->	[value].
+		[#'BytecodeFixup *']						->	[value].
+		[#'CogMethod *']							->	[value].
+		[#'char *']									->	[value].
+		[#'sqInt *']									->	[value].
+		[#'void *']									->	[value].
+		[#void]										->	[value].
+		[#'void (*)()']								->	[value].
+		[#'void (*)(void)']							->	[value].
+		[#'unsigned long (*)(void)']					->	[value].
+		[#'void (*)(unsigned long,unsigned long)']	->	[value].
+		[#'usqIntptr_t (*)(void)']					->	[value] }
 ]
 
 { #category : #'C library simulation' }
