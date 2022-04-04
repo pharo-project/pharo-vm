@@ -57,6 +57,7 @@ VMPermanentSpaceImageReadingTest >> testLoadingImageCreatesPermSpace [
 
 	self saveImage.	
 	self loadImage.
-		
-	self halt.
+				
+	self deny: memory getMemoryMap permSpaceStart equals: 0.
+	self deny: memory permSpaceFreeStart equals: 0.
 ]
