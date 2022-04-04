@@ -20,7 +20,8 @@ Class {
 		'codeZoneEnd',
 		'stackPagesStart',
 		'stackPagesEnd',
-		'initialPermSpaceSize'
+		'initialPermSpaceSize',
+		'minPermSpaceSize'
 	],
 	#category : #'VMMaker-Memory'
 }
@@ -132,15 +133,18 @@ VMMemoryMap >> allocateOldObjectsSpace [
 { #category : #private }
 VMMemoryMap >> allocatePermObjectsSpace [
 
-	initialPermSpaceSize = 0 ifTrue: [ ^ self ].
+	| minSize |
+	minSize := minPermSpaceSize max: initialPermSpaceSize.
+
+	minSize = 0 ifTrue: [ ^ self ].
 
 	self permSpaceStart: (self 
-		allocateMemory: initialPermSpaceSize 
+		allocateMemory: minSize 
 		BaseAddress: memoryMapConfiguration permSpaceInitialAddress).
 
 	self permSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 
-	self permSpaceEnd: self permSpaceStart + initialPermSpaceSize	
+	self permSpaceEnd: self permSpaceStart + minSize	
 ]
 
 { #category : #allocating }
@@ -270,6 +274,7 @@ VMMemoryMap >> initializeMemoryMap [
 
 	initialCodeZoneSize := 0.
 	initialPermSpaceSize := 0.
+	minPermSpaceSize := 0.
 	permSpaceStart := 0.
 	permSpaceEnd := 0.
 
@@ -332,6 +337,18 @@ VMMemoryMap >> memset: startAddress _: value _: size [
 	startAddress to: startAddress + size - 1 by: memoryMapConfiguration wordSize do: [ :address |
 		memoryManager longAt: address put: value ]
 
+]
+
+{ #category : #accessing }
+VMMemoryMap >> minPermSpaceSize [
+
+	^ minPermSpaceSize
+]
+
+{ #category : #accessing }
+VMMemoryMap >> minPermSpaceSize: anObject [
+
+	minPermSpaceSize := anObject
 ]
 
 { #category : #accessing }

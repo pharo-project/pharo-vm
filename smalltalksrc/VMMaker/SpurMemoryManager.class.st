@@ -4217,18 +4217,6 @@ SpurMemoryManager >> countNumClassPagesPreSwizzle: bytesToShift [
 	
 ]
 
-{ #category : #initialization }
-SpurMemoryManager >> createMemoryMap [ 
-
-	self 
-		cCode: [ memoryMap := self cCoerce: (self malloc: (self sizeof: VMMemoryMap))  to: #'VMMemoryMap *'] 
-		inSmalltalk: [ 
-			memoryMap := VMMemoryMap new.
-			memoryMap memoryManager: memoryManager ].
-		
-	memoryMap initializeMemoryMap.
-]
-
 { #category : #'allocation accounting' }
 SpurMemoryManager >> currentAllocatedBytes [
 	"Compute the current allocated bytes since last set.
@@ -4541,6 +4529,20 @@ SpurMemoryManager >> ensureHasOverflowHeader: arrayArg forwardIfCloned: forwardI
 			 forwardIfCloned ifTrue:
 				[self forward: arrayArg to: clonedArray].
 			 clonedArray]
+]
+
+{ #category : #initialization }
+SpurMemoryManager >> ensureMemoryMap [ 
+
+	memoryMap ifNotNil: [ ^ self ].
+
+	self 
+		cCode: [ memoryMap := self cCoerce: (self malloc: (self sizeof: VMMemoryMap))  to: #'VMMemoryMap *'] 
+		inSmalltalk: [ 
+			memoryMap := VMMemoryMap new.
+			memoryMap memoryManager: memoryManager ].
+		
+	memoryMap initializeMemoryMap.
 ]
 
 { #category : #'image segment in/out' }
@@ -8644,16 +8646,22 @@ SpurMemoryManager >> moveToPermSpace: objOop [
 	fmt := self formatOf: objOop.
 
 	(self isPointersFormat: fmt)
-		ifTrue: [ ^ nil ].
+		ifTrue: [ 
+			self primitiveFailFor: PrimErrBadReceiver.
+			^ nil ].
 
-	fmt >= self firstCompiledMethodFormat ifTrue: [ ^ nil ].
+	fmt >= self firstCompiledMethodFormat ifTrue: [ 
+		self primitiveFailFor: PrimErrBadReceiver.
+		^ nil ].
 	
 	newObj := self allocateSlotsInPermSpace: numSlots
 					bytes: (self objectBytesForSlots: numSlots)
 					format: fmt
 					classIndex: (self classIndexOf: objOop).
 
-	newObj ifNil: [^nil].
+	newObj ifNil: [
+		self primitiveFailFor: PrimErrNoMemory.
+		^ nil].
 	
 	0 to: numSlots - 1 do:
 		[:i|
@@ -11077,6 +11085,18 @@ SpurMemoryManager >> setMaxOldSpaceSize: limit [
 	<var: #limit type: #usqInt>
 	maxOldSpaceSize := limit.
 	^0
+]
+
+{ #category : #accessing }
+SpurMemoryManager >> setMinimalPermSpaceSize: min [
+
+	<api>
+	<var: #limit type: #usqInt>
+	
+	self ensureMemoryMap.
+	self getMemoryMap minPermSpaceSize: min.
+
+
 ]
 
 { #category : #'free space' }

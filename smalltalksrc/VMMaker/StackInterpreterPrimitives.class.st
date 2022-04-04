@@ -2579,11 +2579,8 @@ StackInterpreterPrimitives >> primitiveMoveToPermSpace [
 	| rcvr permObject |
 	rcvr := self stackTop.
 	
-	(objectMemory isPointers: rcvr)
-		ifTrue: [ ^ self primitiveFailFor: PrimErrBadReceiver ].
-		
-	permObject := objectMemory moveToPermSpace: rcvr.			
-	permObject ifNil: [ ^ self primitiveFailFor: PrimErrBadReceiver ].	
+	permObject := objectMemory moveToPermSpace: rcvr.	
+	self successful ifFalse: [ ^ self ].
 	
 	self pop: argumentCount + 1 thenPush: permObject.
 ]

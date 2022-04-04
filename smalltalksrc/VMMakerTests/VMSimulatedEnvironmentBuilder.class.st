@@ -58,7 +58,7 @@ VMSimulatedEnvironmentBuilder >> doBuild [
 		
 	interpreter memoryManager: memoryManager.
 	objectMemory memoryManager: memoryManager.
-	objectMemory createMemoryMap.
+	objectMemory ensureMemoryMap.
 	
 	objectMemory coInterpreter: interpreter.
 		
