@@ -2,7 +2,9 @@ Class {
 	#name : #VMImageReadingTest,
 	#superclass : #VMAbstractImageFormatTest,
 	#instVars : [
-		'originalNilObjectIdentityHash'
+		'originalNilObjectIdentityHash',
+		'permanentObject',
+		'originalPermanentObjectIdentityHash'
 	],
 	#category : #'VMMakerTests-ImageFormat'
 }
@@ -37,12 +39,15 @@ VMImageReadingTest >> setUp [
 	memory classByteArray: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0)).
 	memory ensureBehaviorHash: memory classByteArray.
 	
+	permanentObject := self newPermanentByteObjectOfSize: 14.
+
 	memory garbageCollectForSnapshot.
 
 	self assert: interpreter successful.
 
 	originalNilObjectIdentityHash := memory hashBitsOf: memory nilObject.
-	
+	originalPermanentObjectIdentityHash := memory hashBitsOf: permanentObject.
+
 ]
 
 { #category : #tests }
@@ -64,12 +69,22 @@ VMImageReadingTest >> testReadingSTONHeader [
 ]
 
 { #category : #tests }
-VMImageReadingTest >> testSavedImageSavesObject [
+VMImageReadingTest >> testSavedImageSavesObjectFromOldSpace [
 	
 	self saveImage.	
 	self loadImage.
 		
 	self assert: originalNilObjectIdentityHash equals: (memory hashBitsOf: memory nilObject).
+]
+
+{ #category : #tests }
+VMImageReadingTest >> testSavedImageSavesObjectFromPermanentSpace [
+	
+	self saveImage.	
+	self loadImage.
+		
+	self assert: originalPermanentObjectIdentityHash equals: (memory hashBitsOf: permanentObject).
+
 ]
 
 { #category : #tests }

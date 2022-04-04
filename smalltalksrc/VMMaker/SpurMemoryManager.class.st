@@ -6052,7 +6052,7 @@ SpurMemoryManager >> imageFormatVersion [
 SpurMemoryManager >> imageSizeToWrite [
 	"when asked, newSpace should be empty."
 	self assert: self newSpaceIsEmpty.
-	^segmentManager totalBytesInNonEmptySegments
+	^segmentManager totalBytesInNonEmptySegments + self totalBytesInPermanentSpace.
 ]
 
 { #category : #'header format' }
@@ -12060,6 +12060,12 @@ SpurMemoryManager >> totalByteSizeOf: oop [
 	^(self isImmediate: oop)
 		ifTrue: [0]
 		ifFalse: [self bytesInObject: oop]
+]
+
+{ #category : #accessing }
+SpurMemoryManager >> totalBytesInPermanentSpace [
+
+	^ permSpaceFreeStart - memoryMap permSpaceStart
 ]
 
 { #category : #'free space' }

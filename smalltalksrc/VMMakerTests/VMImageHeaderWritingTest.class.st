@@ -17,6 +17,20 @@ VMImageHeaderWritingTest >> setUp [
 ]
 
 { #category : #tests }
+VMImageHeaderWritingTest >> testWritingImageWithPermanentObjects [
+
+	| header permanentObject |
+
+	imageWriterClass ~= ComposedImageWriter ifTrue: [ ^ self skip ].
+	
+	permanentObject := self newPermanentByteObjectOfSize: 14.
+
+	header := interpreter newHeader.
+
+	self assert: header dataSize equals: memory segmentManager totalBytesInNonEmptySegments + (memory bytesInObject: permanentObject).
+]
+
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectBaseAddress [
 
 	| header |

@@ -38,7 +38,7 @@ ComposedImageWriter >> writeImageFile: imageFileName fromHeader: header [
 
 	<var: #imageFileName declareC: 'char *imageFileName'>
 	<var: #header type: #SpurImageHeaderStruct> "TODO: Rename this class"
-	| bytesWritten |
+	| oldSpaceBytesWritten permanentSpaceBytesWritten bytesWritten |
 
 	self logDebug: 'Writing snapshot %s' _: imageFileName.
 
@@ -48,7 +48,11 @@ ComposedImageWriter >> writeImageFile: imageFileName fromHeader: header [
 
 	self flag: #TODO. "success: header imageHeaderSize?"
 
-	bytesWritten := self writeImageSegments: imageFileName.
+	oldSpaceBytesWritten := self writeImageSegments: imageFileName.
+	
+	permanentSpaceBytesWritten := 0. "self writeImagePermanentSpace: imageFileName."
+
+	bytesWritten := oldSpaceBytesWritten + permanentSpaceBytesWritten.
 
 	interpreter success: bytesWritten = header dataSize 
 ]
