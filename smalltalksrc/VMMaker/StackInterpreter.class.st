@@ -7560,13 +7560,11 @@ StackInterpreter >> initStackPages [
 	stackPageBytes := self stackPageByteSize.
 	stackPagesBytes := self computeStackZoneSize.
 
-	theStackMemory := self
-		                  cCode: [ self alloca: stackPagesBytes ]
-		                  inSmalltalk: [ 
-		                  stackPages
-			                  initializeWithByteSize: stackPagesBytes
-			                  for: self ].
-	self cCode: [ self me: theStackMemory ms: 0 et: stackPagesBytes ].
+	theStackMemory :=  stackPages
+									initializeWithByteSize: stackPagesBytes
+									inMemoryMap: objectMemory getMemoryMap
+									for: self.
+			
 	stackPages
 		initializeStack: theStackMemory
 		numSlots: stackPagesBytes / objectMemory wordSize

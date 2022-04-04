@@ -248,18 +248,26 @@ VMStackPages >> initializeStack: theStackPages numSlots: stackSlots pageSize: sl
 ]
 
 { #category : #initialization }
-VMStackPages >> initializeWithByteSize: byteSize "<Integer>" for: anInterpreter [ "<CoInterpreter>" "^<Array of: <Integer>"
-	"Initialize the stackPages memory for simulation.  To keep access monitoring
-	 in one place we defer to the coInterpreter for accessing memory.  Answer the
-	 base address of th ememory."
-	<doNotGenerate>
-	coInterpreter := anInterpreter.
-	objectMemory := coInterpreter objectMemory.
-		
-	minStackAddress := objectMemory memoryManager allocate: byteSize.
-	maxStackAddress := minStackAddress + byteSize.
+VMStackPages >> initializeWithByteSize: byteSize inMemoryMap: aMemoryMap for: anInterpreter [ 
+
+	<inline: true>
+
+	| stackAddress |
 	
-	^ minStackAddress 
+	aMemoryMap allocateStackPages: byteSize.
+	stackAddress := aMemoryMap stackPagesStart.
+
+	self 
+		cCode: [] 
+		inSmalltalk: [ 
+			coInterpreter := anInterpreter.
+			objectMemory := coInterpreter objectMemory.
+			minStackAddress := stackAddress.
+			maxStackAddress := minStackAddress + byteSize.
+	].
+	
+	
+	^ stackAddress 
 ]
 
 { #category : #'page access' }

@@ -17,7 +17,9 @@ Class {
 		'oldSpaceMask',
 		'initialCodeZoneSize',
 		'codeZoneStart',
-		'codeZoneEnd'
+		'codeZoneEnd',
+		'stackPagesStart',
+		'stackPagesEnd'
 	],
 	#category : #'VMMaker-Memory'
 }
@@ -139,6 +141,16 @@ VMMemoryMap >> allocatePermObjectsSpace [
 	self permSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 
 	self permSpaceEnd: self permSpaceStart + permSpaceSize	
+]
+
+{ #category : #allocating }
+VMMemoryMap >> allocateStackPages: initialStackSize [ 
+	
+	self stackPagesStart: (self allocateMemory: initialStackSize BaseAddress: memoryMapConfiguration stackPagesInitialAddress).
+	
+	self stackPagesStart ifNil: [ self insufficientMemoryAvailableError ].
+	
+	self stackPagesEnd: self stackPagesStart + initialStackSize.
 ]
 
 { #category : #accessing }
@@ -361,6 +373,30 @@ VMMemoryMap >> setOldSpaceEnd: anInteger [
 	oldSpaceEnd := anInteger.
 	self assert: (permSpaceStart isNil or: [anInteger < permSpaceStart]).
 
+]
+
+{ #category : #accessing }
+VMMemoryMap >> stackPagesEnd [
+
+	^ stackPagesEnd
+]
+
+{ #category : #accessing }
+VMMemoryMap >> stackPagesEnd: anObject [
+
+	stackPagesEnd := anObject
+]
+
+{ #category : #accessing }
+VMMemoryMap >> stackPagesStart [
+
+	^ stackPagesStart
+]
+
+{ #category : #accessing }
+VMMemoryMap >> stackPagesStart: anObject [
+
+	stackPagesStart := anObject
 ]
 
 { #category : #accessing }
