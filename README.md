@@ -1,16 +1,11 @@
-# Headless OpenSmalltalk-VM for Pharo
+# Pharo VM
 
+This is main branch of the Pharo VM.
 
-This is the branch of the Headless VM used for Pharo.
-This branch has the modifications required to run Pharo in a true headless environment.
-The image running on the VM is responsible of handling the UI and the events. 
+For more details about the whole Pharo VM project refer to our [wiki](../../wiki). 
 
-The image includes a default implementation of the handling of UI through the use of SDL2.
-
-For more details about the whole Pharo VM project refer to our [wiki](https://github.com/pharo-project/opensmalltalk-vm/wiki). 
-
-This is a fork of [OpenSmalltalk-vm](https://github.com/OpenSmalltalk/opensmalltalk-vm).
-We are doing our best to keep compatibility and contribute back, as long as it fits the objective of Pharo community.
+This implementation started as a fork of [OpenSmalltalk-vm](https://github.com/OpenSmalltalk/opensmalltalk-vm).
+The current project could not have been possible with all their previous work.
 
 ## CI
 
@@ -20,7 +15,6 @@ This project is continuously built and test in the CI infrastructure located at:
 
 
 ## Building
-
 
 For building the VM it is required the following set of tools:
 
