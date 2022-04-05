@@ -1,6 +1,6 @@
 # Pharo VM
 
-This is main branch of the Pharo VM.
+This is the main branch of the Pharo VM.
 
 For more details about the whole Pharo VM project refer to our [wiki](../../wiki). 
 
