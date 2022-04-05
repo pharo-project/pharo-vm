@@ -1,10 +1,6 @@
 Class {
 	#name : #AbstractComposedImageAccess,
 	#superclass : #AbstractImageAccess,
-	#instVars : [
-		'fieldFormat',
-		'headFormat'
-	],
 	#category : #'VMMaker-ImageFormat'
 }
 
@@ -46,15 +42,22 @@ AbstractComposedImageAccess >> existSegment: segmentIndex inImage: imageFileName
 		            bufferSize: 255.
 
 	^ self
-		  cCode: [ self stat: fileName _: (self addressOf: sb) ]
+		  cCode: [ (self stat: fileName _: (self addressOf: sb)) = 0]
 		  inSmalltalk: [ fileName asFileReference exists ]
+]
+
+{ #category : #'as yet unclassified' }
+AbstractComposedImageAccess >> fieldFormat [
+	
+	<inline: true>
+	^ '\t#%s : %lld'.
 ]
 
 { #category : #'file primitives' }
 AbstractComposedImageAccess >> fscanf: file _: format _: varHolder [
 
 	<doNotGenerate>
-	^ (format = headFormat)
+	^ (format = self headFormat)
 		  ifTrue: [ 
 			  varHolder contents: (file nextLine substrings: ' ') first ];
 		  yourself
@@ -64,7 +67,8 @@ AbstractComposedImageAccess >> fscanf: file _: format _: varHolder [
 AbstractComposedImageAccess >> fscanf: file _: format _: varHolder1 _: varHolder2 [
 
 	<doNotGenerate>
-	^ (format = fieldFormat)
+
+	^ (format = self fieldFormat)
 		  ifTrue: [ 
 			  | line dataArray |
 			  line := file nextLine.
@@ -75,6 +79,13 @@ AbstractComposedImageAccess >> fscanf: file _: format _: varHolder1 _: varHolder
 			  file position: file position - 1. "Not consume '\n' "
 			  (line last = $,) ifTrue: [ file position: file position - 1 ] "Not consume ',' " ];
 		  yourself
+]
+
+{ #category : #'as yet unclassified' }
+AbstractComposedImageAccess >> headFormat [
+	
+	<inline: true>
+	^ '%s {\n'.
 ]
 
 { #category : #'file operations' }
@@ -88,15 +99,6 @@ AbstractComposedImageAccess >> headerFileNameinImage: imageFileName into: buffer
 			self snprintf: buffer _: bufferSize _: '%s/%s' _: imageFileName _: headerFileName. 
 			buffer ] 
 		inSmalltalk: [ imageFileName , '/', headerFileName ]
-]
-
-{ #category : #initialization }
-AbstractComposedImageAccess >> initialize [
-
-	super initialize.
-	
-	headFormat := '%s {\n'.
-	fieldFormat := '\t#%s : %ld'.
 ]
 
 { #category : #'file operations' }

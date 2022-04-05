@@ -49,6 +49,17 @@ VMAbstractImageFormatTest >> setUp [
 
 ]
 
+{ #category : #ston }
+VMAbstractImageFormatTest >> stonPretty: anObject [ 
+
+	^ String streamContents: [ :s |
+		(STONWriter on: s)
+			prettyPrint: true;
+			newLine: OSPlatform current lineEnding;
+			nextPut: anObject			
+		 ]
+]
+
 { #category : #running }
 VMAbstractImageFormatTest >> tearDown [
 

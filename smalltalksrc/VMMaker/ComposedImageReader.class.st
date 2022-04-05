@@ -12,7 +12,8 @@ ComposedImageReader >> endOfSTON: file [
 	| charLeft charRight |
 	charLeft := self fgetc: file.
 	charRight := self fgetc: file.
-	^ (charLeft = self endOfLine) and: [ charRight = $} ]
+
+	^ (self isEndOfLine: charLeft) and: [ charRight = $} ]
 ]
 
 { #category : #reading }
@@ -26,12 +27,17 @@ ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 		fieldName := ValueHolder new.
 		fieldValue := ValueHolder new ].
 
-	"This solution does NOT WORK with STON file without fields (empty STON)"
+	"Initialize the Struct with zeros"
+	
+	aStruct 
+		withFieldsDo: [ :fn :fv | aStruct setField: fn to: 0 ]
+		separatedBy: [ ].
 
+	"This solution does NOT WORK with STON file without fields (empty STON)"
 	[ 
 		self
 			fscanf: file
-			_: fieldFormat
+			_: self fieldFormat
 			_: fieldName
 			_: (self addressOf: fieldValue).
 
@@ -49,7 +55,7 @@ ComposedImageReader >> readHeadSTONFrom: file into: aStruct [
 	| structName |
 	self simulationOnly: [ structName := ValueHolder new ].
 
-	self fscanf: file _: headFormat _: structName.
+	self fscanf: file _: self headFormat _: structName.
 
 	self simulationOnly: [ 
 		aStruct withStructNameDo: [ :name | 

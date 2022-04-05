@@ -169,7 +169,7 @@ VMImageHeaderWritingTest >> testWritingSTONHeader [
 
 	readHeader := (self imageFileName asFileReference  / 'header.ston') contents.
 
-	self assert: readHeader equals: (STON toStringPretty: header).
+	self assert: readHeader equals: (self stonPretty: header).
 ]
 
 { #category : #tests }
@@ -187,5 +187,5 @@ VMImageHeaderWritingTest >> testWritingSTONSegment [
 	segmentMetadata segStart: header oldBaseAddr.
 	segmentMetadata segSize: header dataSize.
 
-	self assert: writtenHeader equals: (STON toStringPretty: segmentMetadata).
+	self assert: writtenHeader equals: (self stonPretty: segmentMetadata).
 ]

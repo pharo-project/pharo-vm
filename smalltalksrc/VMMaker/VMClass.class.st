@@ -639,12 +639,6 @@ VMClass >> defined: aSymbol [
 		ifNotNil: [:binding| binding value ~~ #undefined]
 ]
 
-{ #category : #'file primitives' }
-VMClass >> endOfLine [
-
-	^ self cCode: [ 13 ] inSmalltalk: [ Character cr ]
-]
-
 { #category : #'memory access' }
 VMClass >> fetchSingleFloatAtPointer: pointer into: aFloat [
 	"This gets implemented by Macros in C, where its types will also be checked.
@@ -701,9 +695,11 @@ VMClass >> fprintf: aStream format: aFormat arguments: arguments [
 	| printf |
 	printf := PrintfFormatString new setFormat: aFormat.
 	
-	aStream nextPutAll: (printf
+	(ZnNewLineWriterStream on: aStream)	
+		nextPutAll: (printf
 			 printf: arguments;
-			 string)
+			 string);
+		flush
 ]
 
 { #category : #'C library simulation' }
@@ -787,6 +783,16 @@ VMClass >> int8AtPointer: pointer put: value [
 { #category : #testing }
 VMClass >> isCurrentImageFacade [
 	^false
+]
+
+{ #category : #'file primitives' }
+VMClass >> isEndOfLine: aCharacter [
+
+	<inline: true>
+	
+	^ self 
+		cCode: [ aCharacter = 13 or: [ aCharacter = 10 ] ] 
+		inSmalltalk: [ Character cr = aCharacter or: [ Character lf = aCharacter ] ]
 ]
 
 { #category : #'plugin support' }

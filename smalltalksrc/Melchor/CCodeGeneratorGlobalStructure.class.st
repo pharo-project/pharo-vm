@@ -202,9 +202,12 @@ CCodeGeneratorGlobalStructure >> generateCASTSetFieldTo: aTSendNode [
 		| comparison |
 		
 		comparison := TSendNode 
-			receiver: (TConstantNode value: slot name asString) 
-			selector: 'strcmp:' 
-			arguments: { fieldName }.
+									receiver: (TSendNode 
+											receiver: (TConstantNode value: slot name asString) 
+											selector: 'strcmp:' 
+											arguments: { fieldName })
+									selector: '='
+									arguments: { TConstantNode value: 0 }.
 
 		TSendNode 
 			receiver: comparison
@@ -246,10 +249,12 @@ CCodeGeneratorGlobalStructure >> generateCASTWithFieldsDoSeparatedBy: aTSendNode
 		}
 	].
 
-	allRewrittenStatements := allFieldArguments collect: [ :fieldArgs |
-		(self bindBlock: fieldBlock withArgs: fieldArgs) , blockSeparatorStatements ].
+	allRewrittenStatements := OrderedCollection new.
 
-	^ CCompoundStatementNode statements: (allRewrittenStatements flattened collect: [ :e | e asCASTIn: self]).
+	allFieldArguments do: [ :fieldArgs | allRewrittenStatements addAll: (self bindBlock: fieldBlock withArgs: fieldArgs) ]
+		separatedBy: [ allRewrittenStatements addAll: blockSeparatorStatements ].
+
+	^ CCompoundStatementNode statements: (allRewrittenStatements collect: [ :e | e asCASTIn: self]).
 
 ]
 
