@@ -2496,7 +2496,9 @@ SpurMemoryManager >> allocateSlotsInPermSpace: numSlots bytes: totalBytes format
 	| chunk newOop |
 
 	permSpaceFreeStart + totalBytes > memoryMap permSpaceEnd
-		ifTrue: [ ^ nil ].
+		ifTrue: [ 
+			memoryMap extendPermObjectsSpace 
+				ifFalse: [ ^ nil ] ].
 	
 	chunk := permSpaceFreeStart.
 	permSpaceFreeStart := permSpaceFreeStart + totalBytes.

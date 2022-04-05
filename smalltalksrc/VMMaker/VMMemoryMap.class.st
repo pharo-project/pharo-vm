@@ -212,6 +212,25 @@ VMMemoryMap >> doCheckMemoryMap [
 
 ]
 
+{ #category : #allocating }
+VMMemoryMap >> extendPermObjectsSpace [
+
+	| requestedSize extendedAddress |
+	requestedSize := 10 * 1024 * 1024.
+
+
+	extendedAddress := self 
+		allocateMemory: requestedSize 
+		BaseAddress: self permSpaceEnd.
+	
+	extendedAddress ~= self permSpaceEnd 
+		ifTrue: [ self logError: 'Could not extend perm space.'. ^ false ].
+	
+	self permSpaceEnd: self permSpaceEnd + requestedSize.	
+		
+	^ true.
+]
+
 { #category : #accessing }
 VMMemoryMap >> initialCodeZoneSize [
 
