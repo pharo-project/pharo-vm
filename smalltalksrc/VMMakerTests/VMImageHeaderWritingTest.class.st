@@ -17,7 +17,7 @@ VMImageHeaderWritingTest >> setUp [
 ]
 
 { #category : #tests }
-VMImageHeaderWritingTest >> testWritingImageWithPermanentObjects [
+VMImageHeaderWritingTest >> testImageHeaderWithPermanentObjects [
 
 	| header permanentObject |
 
@@ -184,6 +184,27 @@ VMImageHeaderWritingTest >> testWritingSTONHeader [
 	readHeader := (self imageFileName asFileReference  / 'header.ston') contents.
 
 	self assert: readHeader equals: (STON toStringPretty: header).
+]
+
+{ #category : #tests }
+VMImageHeaderWritingTest >> testWritingSTONPermSpace [
+
+	| writtenMetadata expectedPermSpaceMetadata |
+
+	imageWriterClass ~= ComposedImageWriter ifTrue: [ ^ self skip ].
+
+	self newPermanentByteObjectOfSize: 14.
+
+	self saveImage. "Again"
+
+	writtenMetadata := (self imageFileName asFileReference  / 'permSpace.ston') contents.
+	
+	"Duplicated code :("
+	expectedPermSpaceMetadata := ComposedMetadataStruct new.
+	expectedPermSpaceMetadata startAddress: interpreter objectMemory getMemoryMap permSpaceStart.
+	expectedPermSpaceMetadata dataSize: interpreter objectMemory totalBytesInPermanentSpace.
+
+	self assert: writtenMetadata equals: (STON toStringPretty: expectedPermSpaceMetadata).
 ]
 
 { #category : #tests }

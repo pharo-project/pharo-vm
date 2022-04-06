@@ -5,6 +5,26 @@ Class {
 }
 
 { #category : #writing }
+ComposedImageWriter >> writeDataStatingAt: start withSize: size inFileName: fullFileName [
+
+	<var: #dataFile type: #sqImageFile>
+	| dataFile nWritten |
+	dataFile := self sqImageFile: fullFileName Open: 'wb'.
+	dataFile ifNil: [ "could not open the file for writing" 
+		^ self primitiveFail ].
+
+	nWritten := self
+		            sq: start
+		            Image: 1
+		            File: size
+		            Write: dataFile.
+
+	self sqImageFileClose: dataFile.
+
+	^ nWritten
+]
+
+{ #category : #writing }
 ComposedImageWriter >> writeHeaderFile: imageFileName fromHeader: header [
 
 	<inline: true>
@@ -57,7 +77,7 @@ ComposedImageWriter >> writeImageFile: imageFileName fromHeader: header [
 	interpreter success: bytesWritten = header dataSize 
 ]
 
-{ #category : #permanentSpace }
+{ #category : #'perm - space' }
 ComposedImageWriter >> writeImagePermanentSpace: imageFileName [
 
 	self writePermanentSpaceMetadata: imageFileName.
@@ -81,49 +101,46 @@ ComposedImageWriter >> writeImageSegments: imageFileName [
 
 ]
 
-{ #category : #permanentSpace }
-ComposedImageWriter >> writePermanentSpaceData: imageFileName [
-
-	<var: #dataFile type: #sqImageFile>
-	| dataFile nWritten |
-	dataFile := self
-		            sqImageFile:
-		            (self permanentDataFileinImage: imageFileName)
-		            Open: 'wb'.
-	dataFile ifNil: [ "could not open the file for writing" 
-		^ self primitiveFail ].
-
-	nWritten := self
-		            sq:
-		            objectMemory getMemoryMap permSpaceStart asVoidPointer
-		            Image: 1
-		            File: objectMemory totalBytesInPermanentSpace
-		            Write: dataFile.
-
-	self sqImageFileClose: dataFile.
-
-	^ nWritten
-]
-
-{ #category : #permanentSpace }
-ComposedImageWriter >> writePermanentSpaceMetadata: imageFileName [
+{ #category : #writing }
+ComposedImageWriter >> writeMetadata: metadata inFileName: fullFileName [
 
 	<var: #metadataFile type: #sqImageFile>
-	| metadataFile aBuffer metadata |
+	<var: #metadata type: #ComposedMetadataStruct>
 
-	metadataFile := self sqImageFile: (self permSpaceMetadataFileNameInImage: imageFileName into: aBuffer bufferSize: 255 ) Open: 'w'.
+	| metadataFile |
+
+	metadataFile := self sqImageFile: fullFileName Open: 'w'.
 	metadataFile ifNil: [ "could not open the file for writing" 
 		^ self primitiveFail ].
 
-	self simulationOnly: [ metadata := ComposedMetadataStruct new. ].
-	metadata startAddress: objectMemory getMemoryMap permSpaceStart.
-	metadata dataSize: objectMemory totalBytesInPermanentSpace.
-
-	self writeSegmentSTON: metadata toFile: metadataFile.
+	self writeSTON: metadata toFile: metadataFile.
 
 	self sqImageFileClose: metadataFile.
 
 
+]
+
+{ #category : #'perm - space' }
+ComposedImageWriter >> writePermanentSpaceData: imageFileName [
+
+	^ self
+		  writeDataStatingAt: objectMemory getMemoryMap permSpaceStart asVoidPointer
+		  withSize: objectMemory totalBytesInPermanentSpace
+		  inFileName: (self permSpaceDataFileInImage: imageFileName)
+]
+
+{ #category : #'perm - space' }
+ComposedImageWriter >> writePermanentSpaceMetadata: imageFileName [
+
+	<var: #metadata type: #ComposedMetadataStruct>
+	| metadata |
+	self simulationOnly: [ metadata := ComposedMetadataStruct new ].
+	metadata startAddress: objectMemory getMemoryMap permSpaceStart.
+	metadata dataSize: objectMemory totalBytesInPermanentSpace.
+
+	self
+		writeMetadata: metadata
+		inFileName: (self permSpaceMetadataFileNameInImage: imageFileName)
 ]
 
 { #category : #writing }
@@ -159,44 +176,14 @@ ComposedImageWriter >> writeSegment: segment nextIndex: segmentIndex inImage: im
 { #category : #segments }
 ComposedImageWriter >> writeSegmentData: segment nextIndex: segmentIndex inImage: imageFileName [
 
-	<var: #dataFile type: #sqImageFile>
-	| dataFile nWritten |
-
-	dataFile := self sqImageFile: (self segmentDataFile: segmentIndex inImage: imageFileName) Open: 'wb'.
-	dataFile ifNil: [ "could not open the file for writing" 
-		^ self primitiveFail ].
-
-	nWritten := self
-						sq: segment segStart asVoidPointer
-						Image: 1
-						File: segment segSize
-						Write: dataFile.
-
-	self sqImageFileClose: dataFile.
-
-
-	^ nWritten
+	^ self
+		  writeDataStatingAt: segment segStart asVoidPointer
+		  withSize: segment segSize
+		  inFileName: (self segmentDataFile: segmentIndex inImage: imageFileName)
 ]
 
 { #category : #segments }
 ComposedImageWriter >> writeSegmentMetadata: segment nextIndex: segmentIndex inImage: imageFileName [
-
-	<var: #metadataFile type: #sqImageFile>
-	| metadataFile |
-
-	metadataFile := self sqImageFile: (self segmentMetadataFile: segmentIndex inImage: imageFileName) Open: 'w'.
-	metadataFile ifNil: [ "could not open the file for writing" 
-		^ self primitiveFail ].
-
-	self writeSegmentMetadata: segment toFile: metadataFile.
-
-	self sqImageFileClose: metadataFile.
-
-
-]
-
-{ #category : #segments }
-ComposedImageWriter >> writeSegmentMetadata: segment toFile: file [
 
 	<var: #metadata type: #ComposedMetadataStruct>
 	| metadata |
@@ -205,9 +192,9 @@ ComposedImageWriter >> writeSegmentMetadata: segment toFile: file [
 	metadata startAddress: segment segStart.
 	metadata dataSize: segment segSize.
 
-	self writeSegmentSTON: metadata toFile: file 	
-
-
+	self
+		writeMetadata: metadata
+		inFileName: (self segmentMetadataFile: segmentIndex inImage: imageFileName)
 ]
 
 { #category : #writing }

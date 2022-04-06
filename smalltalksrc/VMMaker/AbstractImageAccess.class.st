@@ -173,7 +173,7 @@ AbstractImageAccess >> loadImageFromFile: imageFile withHeader: header [
 
 	oldSpaceBytesRead := self readSegmentsFromImageFile: imageFile header: header.
 
-	permSpaceBytesRead := self readPermSpaceFromImageFile: imageFile header: header. 
+	permSpaceBytesRead := self readPermanentSpaceFromImageFile: imageFile header: header. 
 	
 	bytesRead := oldSpaceBytesRead + permSpaceBytesRead.
 
@@ -232,16 +232,16 @@ AbstractImageAccess >> sq: startingAddress Image: byteSize File: bytesToRead Rea
 ]
 
 { #category : #'accessing - files' }
-AbstractImageAccess >> sq: segStart Image: n File: segSize Write: file [
+AbstractImageAccess >> sq: start Image: n File: segSize Write: file [
 
 	<doNotGenerate>
 	| region |
-	region := objectMemory memoryManager regionForAddress: segStart.
+	region := objectMemory memoryManager regionForAddress: start.
 
 	file
 		next: segSize
 		putAll: region memory
-		startingAt: segStart - region start + 1.
+		startingAt: start - region start + 1.
 	
 	^ segSize
 ]

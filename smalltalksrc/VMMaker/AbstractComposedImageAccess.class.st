@@ -100,18 +100,42 @@ AbstractComposedImageAccess >> initialize [
 ]
 
 { #category : #'perm - space' }
-AbstractComposedImageAccess >> permSpaceMetadataFileNameInImage: imageFileName into: aBuffer bufferSize: aSize [ 
+AbstractComposedImageAccess >> permSpaceDataFileInImage: imageFileName [ 
 
-	^ imageFileName , '/permSpace.ston'
+	<inline: true>
+	<var: #buffer declareC: 'char buffer[255]'>
+
+	| buffer |
+		
+	self simulationOnly: [ buffer := nil ].
+	
+	^ self permSpaceFileName: 'permSpace.data' inImage: imageFileName into: buffer bufferSize: 255
 ]
 
 { #category : #'perm - space' }
-AbstractComposedImageAccess >> permanentDataFileinImage: imageFileName [ 
+AbstractComposedImageAccess >> permSpaceFileName: fileName inImage: imageFileName into: buffer bufferSize: bufferSize [
 
-	^ imageFileName , '/permSpace.data'
+	^ self 
+		cCode: [ 
+			self snprintf: buffer _: bufferSize _: '%s/%s' _: imageFileName _: fileName. 
+			buffer ] 
+		inSmalltalk: [ imageFileName , '/', fileName ].
 ]
 
-{ #category : #'file operations' }
+{ #category : #'perm - space' }
+AbstractComposedImageAccess >> permSpaceMetadataFileNameInImage: imageFileName [
+
+	<inline: true>
+	<var: #buffer declareC: 'char buffer[255]'>
+
+	| buffer |
+		
+	self simulationOnly: [ buffer := nil ].
+	
+	^ self permSpaceFileName: 'permSpace.ston' inImage: imageFileName into: buffer bufferSize: 255
+]
+
+{ #category : #segments }
 AbstractComposedImageAccess >> segmentDataFile: segmentIndex inImage: imageFileName [
 
 	<inline: true>
@@ -125,7 +149,7 @@ AbstractComposedImageAccess >> segmentDataFile: segmentIndex inImage: imageFileN
 
 ]
 
-{ #category : #'file operations' }
+{ #category : #segments }
 AbstractComposedImageAccess >> segmentFileName: segmentIndex withExtension: extension inImage: imageFileName into: buffer bufferSize: bufferSize [
 
 	^ self 
@@ -135,7 +159,7 @@ AbstractComposedImageAccess >> segmentFileName: segmentIndex withExtension: exte
 		inSmalltalk: [ imageFileName , '/seg', segmentIndex asString , extension ]
 ]
 
-{ #category : #'file operations' }
+{ #category : #segments }
 AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex inImage: imageFileName [
 
 	<inline: true>
