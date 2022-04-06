@@ -2579,6 +2579,9 @@ StackInterpreterPrimitives >> primitiveMoveToPermSpace [
 	| rcvr permObject |
 	rcvr := self stackTop.
 	
+	(objectMemory getMemoryMap isPermanentObject: rcvr)
+		ifTrue: [ ^ self ].
+	
 	permObject := objectMemory moveToPermSpace: rcvr.	
 	self successful ifFalse: [ ^ self ].
 	
