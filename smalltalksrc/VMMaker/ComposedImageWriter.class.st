@@ -83,6 +83,10 @@ ComposedImageWriter >> writeImageFile: imageFileName fromHeader: header [
 { #category : #'perm - space' }
 ComposedImageWriter >> writeImagePermanentSpace: imageFileName [
 
+	objectMemory isPermSpaceDirty ifFalse: [ ^ objectMemory totalBytesInPermanentSpace ].
+
+	objectMemory setPermSpaceDirty: false.
+
 	self writePermanentSpaceMetadata: imageFileName.
 
 	^ self writePermanentSpaceData: imageFileName

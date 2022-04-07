@@ -20,12 +20,12 @@ ComposedMetadataStruct class >> byteSizeForSimulator: aCogit [
 ComposedMetadataStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a struct of this type."
 
-	<var: #segSize type: #size_t>
-	<var: #segStart type: #squeakFileOffsetType>
+	<var: #dataSize type: #size_t>
+	<var: #startAddress type: #squeakFileOffsetType>
 
 	aBinaryBlock
-		value: 'segSize' value:'size_t';
-		value: 'segStart' value:'squeakFileOffsetType'.
+		value: 'dataSize' value:'size_t';
+		value: 'startAddress' value:'squeakFileOffsetType'.
 	
 
 ]

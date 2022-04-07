@@ -134,7 +134,7 @@ VMMemoryMap >> allocateOldObjectsSpace [
 VMMemoryMap >> allocatePermObjectsSpace [
 
 	| minSize |
-	minSize := minPermSpaceSize max: initialPermSpaceSize.
+	minSize := self roundToPageSize: (minPermSpaceSize max: initialPermSpaceSize).
 
 	minSize = 0 ifTrue: [ ^ self ].
 
@@ -213,35 +213,37 @@ VMMemoryMap >> doCheckMemoryMap [
 ]
 
 { #category : #allocating }
-VMMemoryMap >> ensureAtLeastPermSpaceOf: anInteger [ 
+VMMemoryMap >> ensureAtLeastPermSpaceOf: requestedSize [ 
 
-	| requestedSize extendedAddress |
+	| diff |
 
-	anInteger = 0 ifTrue: [ ^ true ].
+	requestedSize = 0 ifTrue: [ ^ true ].
 	
-	anInteger <= (self permSpaceEnd - self permSpaceStart)
+	self permSpaceStart = 0 
+		ifTrue: [ 
+			self initialPermSpaceSize: requestedSize.
+			self allocatePermObjectsSpace.
+			^ true. ].
+
+	diff := requestedSize - self permSpaceSize.
+	diff <= 0
 		ifTrue: [ ^ true ]. 
 
-	requestedSize := self roundToPageSize: anInteger.
-
-	extendedAddress := self 
-		allocateMemory: requestedSize 
-		BaseAddress: self permSpaceEnd.
-	
-	extendedAddress ~= self permSpaceEnd 
-		ifTrue: [ self logError: 'Could not extend perm space.'. ^ false ].
-	
-	self permSpaceEnd: self permSpaceEnd + requestedSize.	
-		
-	^ true.
+	^ self extendPermObjectsSpaceBy: diff.
 ]
 
 { #category : #allocating }
 VMMemoryMap >> extendPermObjectsSpace [
 
-	| requestedSize extendedAddress |
-	requestedSize := 10 * 1024 * 1024.
+	^ self extendPermObjectsSpaceBy: 10 * 1024 * 1024
+]
 
+{ #category : #allocating }
+VMMemoryMap >> extendPermObjectsSpaceBy: aSize [
+
+	| requestedSize extendedAddress |
+
+	requestedSize := self roundToPageSize: aSize.
 
 	extendedAddress := self 
 		allocateMemory: requestedSize 
@@ -452,6 +454,12 @@ VMMemoryMap >> permSpaceEnd [
 VMMemoryMap >> permSpaceEnd: anInteger [ 
 
 	permSpaceEnd := anInteger
+]
+
+{ #category : #accessing }
+VMMemoryMap >> permSpaceSize [
+
+	^ self permSpaceEnd - self permSpaceStart
 ]
 
 { #category : #accessing }

@@ -45,7 +45,7 @@ ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 
 	<inline: true>
 	<var: #fieldName declareC: 'char fieldName[255]'>
-	<var: #fieldValue type: #sqLong>
+	<var: #fieldValue type: #'long long'>
 	| fieldName fieldValue |
 	self simulationOnly: [ 
 		fieldName := ValueHolder new.
@@ -90,6 +90,7 @@ ComposedImageReader >> readHeadSTONFrom: file into: aStruct [
 ComposedImageReader >> readHeaderFromImage: imageFileName [
 
 	<inline: true>
+	<var: #imageFileName type: 'char *'>
 	<var: #file type: #sqImageFile>
 	<var: #buffer declareC: 'char buffer[255]'>
 	<var: #header type: #SpurImageHeaderStruct>
@@ -177,20 +178,22 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 
 	| newBase permSpaceMetadata oldBase dataSize bytesRead |
 	
-	newBase := objectMemory getMemoryMap permSpaceStart.
 	permSpaceMetadata := self readPermanentSpaceMetadataFromImage: imageFileName.
 	oldBase := permSpaceMetadata startAddress.
 	dataSize := permSpaceMetadata dataSize.
 
-	newBase ~= oldBase ifTrue: [ interpreter unableToReadImageError ].
-
 	(objectMemory getMemoryMap ensureAtLeastPermSpaceOf: dataSize)
 		ifFalse: [ interpreter error: 'Could not allocate PermSpace' ].
+
+	newBase := objectMemory getMemoryMap permSpaceStart.
+	newBase ~= oldBase ifTrue: [ interpreter unableToReadImageError ].
 
 	bytesRead := self
 		             readPermanentSpaceDataFromImage: imageFileName
 		             startingAt: (self pointerForOop: newBase)
 		             bytes: dataSize.
+
+	objectMemory setPermSpaceFreeStart: (objectMemory getMemoryMap permSpaceStart + dataSize).
 
 	"Check bytes read"
 	bytesRead ~= dataSize ifTrue: [ interpreter unableToReadImageError ].

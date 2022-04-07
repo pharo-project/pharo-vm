@@ -617,7 +617,8 @@ Class {
 		'statAllocatedBytes',
 		'statMaxAllocSegmentTime',
 		'unscannedEphemeronsQueueInitialSize',
-		'permSpaceFreeStart'
+		'permSpaceFreeStart',
+		'permSpaceDirty'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -2505,6 +2506,7 @@ SpurMemoryManager >> allocateSlotsInPermSpace: numSlots bytes: totalBytes format
 			memoryMap extendPermObjectsSpace 
 				ifFalse: [ ^ nil ] ].
 	
+	permSpaceDirty := true.
 	chunk := permSpaceFreeStart.
 	permSpaceFreeStart := permSpaceFreeStart + totalBytes.
 
@@ -6525,6 +6527,8 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	shrinkThreshold := 32*1024*1024.		"free space before shrinking"
 	self setHeapSizeAtPreviousGC.
 	heapGrowthToSizeGCRatio := 0.333333. "By default GC after scavenge if heap has grown by a third since the last GC"
+	
+	permSpaceDirty := false.
 ]
 
 { #category : #'free space' }
@@ -7367,6 +7371,12 @@ SpurMemoryManager >> isOopMutable: oop [
 	<api>
 	^(self isNonImmediate: oop)
 	  and: [(self isImmutable: oop) not]
+]
+
+{ #category : #'perm - space' }
+SpurMemoryManager >> isPermSpaceDirty [
+
+	^ permSpaceDirty 
 ]
 
 { #category : #'header access' }
@@ -11141,6 +11151,18 @@ SpurMemoryManager >> setObjectFree: objOop [
 	(self rawNumSlotsOf: objOop) = 0 ifTrue:
 		[self rawNumSlotsOf: objOop put: 1].
 	self setFree: objOop
+]
+
+{ #category : #'perm - space' }
+SpurMemoryManager >> setPermSpaceDirty: aValue [
+
+	permSpaceDirty := aValue
+]
+
+{ #category : #accessing }
+SpurMemoryManager >> setPermSpaceFreeStart: aValue [
+
+	permSpaceFreeStart := aValue
 ]
 
 { #category : #'word size' }
