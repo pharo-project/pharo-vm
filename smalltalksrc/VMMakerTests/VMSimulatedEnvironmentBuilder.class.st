@@ -57,9 +57,9 @@ VMSimulatedEnvironmentBuilder >> doBuild [
 	memoryManager wordSize: wordSize.
 		
 	interpreter memoryManager: memoryManager.
-	objectMemory createMemoryMap.
+	objectMemory memoryManager: memoryManager.
+	objectMemory ensureMemoryMap.
 	
-	objectMemory memoryManager: memoryManager.	
 	objectMemory coInterpreter: interpreter.
 		
 	objectMemory

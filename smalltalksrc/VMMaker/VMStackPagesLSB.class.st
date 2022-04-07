@@ -1,11 +1,11 @@
 Class {
-	#name : #CoInterpreterStackPagesLSB,
-	#superclass : #CoInterpreterStackPages,
-	#category : #'VMMaker-JITSimulation'
+	#name : #VMStackPagesLSB,
+	#superclass : #VMStackPages,
+	#category : #'VMMaker-Interpreter'
 }
 
 { #category : #'memory access' }
-CoInterpreterStackPagesLSB >> byteAt: byteAddress [
+VMStackPagesLSB >> byteAt: byteAddress [
 	| lowBits long |
 	lowBits := byteAddress bitAnd: objectMemory wordSize - 1.
 	long := self longAt: byteAddress - lowBits.
@@ -15,7 +15,7 @@ CoInterpreterStackPagesLSB >> byteAt: byteAddress [
 ]
 
 { #category : #'memory access' }
-CoInterpreterStackPagesLSB >> byteAt: byteAddress put: byte [
+VMStackPagesLSB >> byteAt: byteAddress put: byte [
 	| lowBits long longAddress |
 	self assert: (byte between: 0 and: 16rFF).
 	lowBits := byteAddress bitAnd: objectMemory wordSize - 1.

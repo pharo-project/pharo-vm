@@ -14,7 +14,14 @@ Class {
 		'memoryMapConfiguration',
 		'permSpaceStart',
 		'permSpaceEnd',
-		'oldSpaceMask'
+		'oldSpaceMask',
+		'initialCodeZoneSize',
+		'codeZoneStart',
+		'codeZoneEnd',
+		'stackPagesStart',
+		'stackPagesEnd',
+		'initialPermSpaceSize',
+		'minPermSpaceSize'
 	],
 	#category : #'VMMaker-Memory'
 }
@@ -61,12 +68,31 @@ VMMemoryMap class >> shouldBeGenerated [
 	^ false
 ]
 
+{ #category : #private }
+VMMemoryMap >> allocateCodeZone [
+	
+	initialCodeZoneSize = 0 ifTrue: [ ^ self ].
+	self codeZoneStart: (self allocateJITMemory: initialCodeZoneSize _: memoryMapConfiguration codeZoneInitialAddress).
+	self codeZoneStart ifNil: [ self insufficientMemoryAvailableError ].
+	
+	self codeZoneEnd: codeZoneStart + initialCodeZoneSize.
+]
+
 { #category : #allocating }
 VMMemoryMap >> allocateHeap [
 	<inline: false>
+	
+	self allocateCodeZone.
 	self allocateNewObjectsSpace.
 	self allocateOldObjectsSpace.
-	self allocatePermObjectsSpace.	
+	self allocatePermObjectsSpace.
+]
+
+{ #category : #private }
+VMMemoryMap >> allocateJITMemory: desiredSize _: desiredPosition [ 
+
+	<doNotGenerate>
+	^ memoryManager allocate: desiredSize desiredPosition: desiredPosition
 ]
 
 { #category : #private }
@@ -104,19 +130,37 @@ VMMemoryMap >> allocateOldObjectsSpace [
 	self setOldSpaceEnd: self oldSpaceStart + sizeToAllocate
 ]
 
-{ #category : #allocating }
+{ #category : #private }
 VMMemoryMap >> allocatePermObjectsSpace [
 
-	| permSpaceSize |
-	permSpaceSize := 10*1024*1024.
+	| minSize |
+	minSize := minPermSpaceSize max: initialPermSpaceSize.
+
+	minSize = 0 ifTrue: [ ^ self ].
 
 	self permSpaceStart: (self 
-		allocateMemory: permSpaceSize 
+		allocateMemory: minSize 
 		BaseAddress: memoryMapConfiguration permSpaceInitialAddress).
 
 	self permSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 
-	self permSpaceEnd: self permSpaceStart + permSpaceSize	
+	self permSpaceEnd: self permSpaceStart + minSize	
+]
+
+{ #category : #allocating }
+VMMemoryMap >> allocateStackPages: initialStackSize [ 
+	
+	<inline: false>
+	<returnTypeC: #void>
+	
+	self stackPagesStart: (self allocateMemory: initialStackSize BaseAddress: memoryMapConfiguration stackPagesInitialAddress).
+	
+	self stackPagesStart ifNil: [ self insufficientMemoryAvailableError ].
+	
+	self stackPagesEnd: self stackPagesStart + initialStackSize.
+	
+	self memset: self stackPagesStart _: 0 _: initialStackSize.
+
 ]
 
 { #category : #accessing }
@@ -128,6 +172,28 @@ VMMemoryMap >> allocationReserve [
 VMMemoryMap >> allocationReserve: anInteger [ 
 
 	allocationReserve := anInteger 
+]
+
+{ #category : #accessing }
+VMMemoryMap >> codeZoneEnd [
+
+	^ codeZoneEnd
+]
+
+{ #category : #accessing }
+VMMemoryMap >> codeZoneEnd: anInteger [ 
+	codeZoneEnd := anInteger
+]
+
+{ #category : #accessing }
+VMMemoryMap >> codeZoneStart [
+
+	^ codeZoneStart
+]
+
+{ #category : #accessing }
+VMMemoryMap >> codeZoneStart: anInteger [ 
+	codeZoneStart := anInteger
 ]
 
 { #category : #asserting }
@@ -144,6 +210,37 @@ VMMemoryMap >> doCheckMemoryMap [
 	self assert: (self isOldObject: self oldSpaceEnd - memoryMapConfiguration wordSize).
 	self assert: (self isOldObject: self oldSpaceEnd) not.
 
+]
+
+{ #category : #allocating }
+VMMemoryMap >> extendPermObjectsSpace [
+
+	| requestedSize extendedAddress |
+	requestedSize := 10 * 1024 * 1024.
+
+
+	extendedAddress := self 
+		allocateMemory: requestedSize 
+		BaseAddress: self permSpaceEnd.
+	
+	extendedAddress ~= self permSpaceEnd 
+		ifTrue: [ self logError: 'Could not extend perm space.'. ^ false ].
+	
+	self permSpaceEnd: self permSpaceEnd + requestedSize.	
+		
+	^ true.
+]
+
+{ #category : #accessing }
+VMMemoryMap >> initialCodeZoneSize [
+
+	^ initialCodeZoneSize
+]
+
+{ #category : #accessing }
+VMMemoryMap >> initialCodeZoneSize: aValue [
+
+	initialCodeZoneSize := aValue
 ]
 
 { #category : #accessing }
@@ -179,10 +276,28 @@ VMMemoryMap >> initialOldSpaceSize: anInteger [
 	initialOldSpaceSize := anInteger
 ]
 
+{ #category : #accessing }
+VMMemoryMap >> initialPermSpaceSize [
+
+	^ initialPermSpaceSize
+]
+
+{ #category : #accessing }
+VMMemoryMap >> initialPermSpaceSize: anObject [
+
+	initialPermSpaceSize := anObject
+]
+
 { #category : #initialization }
 VMMemoryMap >> initializeMemoryMap [
 
-	self cCode: [  ] inSmalltalk: [ 
+	initialCodeZoneSize := 0.
+	initialPermSpaceSize := 0.
+	minPermSpaceSize := 0.
+	permSpaceStart := 0.
+	permSpaceEnd := 0.
+
+	self cCode: [ ] inSmalltalk: [ 
 		memoryMapConfiguration := (VMMemoryMapConfiguration forWordsize:
 			                          self class objectMemoryClass wordSize) new ]
 ]
@@ -231,6 +346,28 @@ VMMemoryMap >> memoryManager [
 VMMemoryMap >> memoryManager: anObject [
 
 	memoryManager := anObject
+]
+
+{ #category : #simulation }
+VMMemoryMap >> memset: startAddress _: value _: size [
+
+	<doNotGenerate>
+	
+	startAddress to: startAddress + size - 1 by: memoryMapConfiguration wordSize do: [ :address |
+		memoryManager longAt: address put: value ]
+
+]
+
+{ #category : #accessing }
+VMMemoryMap >> minPermSpaceSize [
+
+	^ minPermSpaceSize
+]
+
+{ #category : #accessing }
+VMMemoryMap >> minPermSpaceSize: anObject [
+
+	minPermSpaceSize := anObject
 ]
 
 { #category : #accessing }
@@ -301,8 +438,32 @@ VMMemoryMap >> permSpaceStart: anInteger [
 VMMemoryMap >> setOldSpaceEnd: anInteger [ 
 	
 	oldSpaceEnd := anInteger.
-	self assert: (permSpaceStart isNil or: [anInteger < permSpaceStart]).
+	self assert: (permSpaceStart isZero or: [anInteger < permSpaceStart]).
 
+]
+
+{ #category : #accessing }
+VMMemoryMap >> stackPagesEnd [
+
+	^ stackPagesEnd
+]
+
+{ #category : #accessing }
+VMMemoryMap >> stackPagesEnd: anObject [
+
+	stackPagesEnd := anObject
+]
+
+{ #category : #accessing }
+VMMemoryMap >> stackPagesStart [
+
+	^ stackPagesStart
+]
+
+{ #category : #accessing }
+VMMemoryMap >> stackPagesStart: anObject [
+
+	stackPagesStart := anObject
 ]
 
 { #category : #accessing }

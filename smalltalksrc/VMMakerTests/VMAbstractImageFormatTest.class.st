@@ -41,7 +41,23 @@ VMAbstractImageFormatTest >> setUp [
 	interpreter preemptionYields: false.
 	interpreter setImageHeaderFlagsFrom: 0.
 	
-	imageReader := imageReaderClass newWithMemory: memory andInterpreter: interpreter 
+	imageReader := imageReaderClass newWithMemory: memory andInterpreter: interpreter.
+	
+	"ByteArrayClass is asserted while loading image"
+	memory classByteArray: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0)).
+	memory ensureBehaviorHash: memory classByteArray.
+
+]
+
+{ #category : #ston }
+VMAbstractImageFormatTest >> stonPretty: anObject [ 
+
+	^ String streamContents: [ :s |
+		(STONWriter on: s)
+			prettyPrint: true;
+			newLine: OSPlatform current lineEnding;
+			nextPut: anObject			
+		 ]
 ]
 
 { #category : #running }

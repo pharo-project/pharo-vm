@@ -3,7 +3,7 @@ I am an abstract superclass for object representations whose job it is to genera
 "
 Class {
 	#name : #CogObjectRepresentation,
-	#superclass : #CogClass,
+	#superclass : #VMClass,
 	#instVars : [
 		'cogit',
 		'methodZone',

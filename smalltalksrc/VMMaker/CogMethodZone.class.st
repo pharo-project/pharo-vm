@@ -54,7 +54,7 @@ youngReferrers
 "
 Class {
 	#name : #CogMethodZone,
-	#superclass : #CogClass,
+	#superclass : #VMClass,
 	#instVars : [
 		'youngReferrers',
 		'unpairedMethodList',
@@ -165,6 +165,13 @@ CogMethodZone >> allocate: numBytes [
 CogMethodZone >> allocationLimit [
 	<inline: true>
 	^limitAddress - (methodCount * objectMemory wordSize)
+]
+
+{ #category : #'as yet unclassified' }
+CogMethodZone >> baseAddress [ 
+
+	<doNotGenerate>
+	^ baseAddress
 ]
 
 { #category : #'as yet unclassified' }

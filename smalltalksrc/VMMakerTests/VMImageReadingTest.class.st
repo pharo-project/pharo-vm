@@ -65,7 +65,7 @@ VMImageReadingTest >> testReadingSTONHeader [
 
 	headerFile position: 0.
 
-	self assert: (STON toStringPretty: headerStruct) equals: headerFile contents.
+	self assert: (self stonPretty: headerStruct) equals: headerFile contents.
 ]
 
 { #category : #tests }

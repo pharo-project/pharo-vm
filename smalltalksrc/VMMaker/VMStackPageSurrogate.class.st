@@ -1,5 +1,5 @@
 Class {
-	#name : #CogStackPageSurrogate,
+	#name : #VMStackPageSurrogate,
 	#superclass : #Object,
 	#instVars : [
 		'address',
@@ -8,22 +8,22 @@ Class {
 		'zoneBase',
 		'zoneLimit'
 	],
-	#category : #'VMMaker-JITSimulation'
+	#category : #'VMMaker-InterpreterSimulation'
 }
 
 { #category : #comparing }
-CogStackPageSurrogate >> = aThing [
+VMStackPageSurrogate >> = aThing [
 	^aThing class = self class
 	and: [aThing address = address]
 ]
 
 { #category : #accessing }
-CogStackPageSurrogate >> address [
+VMStackPageSurrogate >> address [
 	^address
 ]
 
 { #category : #'instance initialization' }
-CogStackPageSurrogate >> address: theAddress simulator: aCoInterpreterSimulator zoneBase: base zoneLimit: limit [
+VMStackPageSurrogate >> address: theAddress simulator: aCoInterpreterSimulator zoneBase: base zoneLimit: limit [
 	address := theAddress.
 	stackPages := aCoInterpreterSimulator stackPages.
 	memory := aCoInterpreterSimulator memoryManager.
@@ -32,43 +32,43 @@ CogStackPageSurrogate >> address: theAddress simulator: aCoInterpreterSimulator 
 ]
 
 { #category : #testing }
-CogStackPageSurrogate >> addressIsInPage: address [
+VMStackPageSurrogate >> addressIsInPage: address [
 	"For assert-checking"
 	^self lastAddress < address and: [address < self baseAddress]
 ]
 
 { #category : #accessing }
-CogStackPageSurrogate >> asInteger [
+VMStackPageSurrogate >> asInteger [
 	^address
 ]
 
 { #category : #accessing }
-CogStackPageSurrogate >> asIntegerPtr [
+VMStackPageSurrogate >> asIntegerPtr [
 	^address
 ]
 
 { #category : #accessing }
-CogStackPageSurrogate >> asUnsignedInteger [
+VMStackPageSurrogate >> asUnsignedInteger [
 	^address
 ]
 
 { #category : #accessing }
-CogStackPageSurrogate >> asUnsignedIntegerPtr [
+VMStackPageSurrogate >> asUnsignedIntegerPtr [
 	^address
 ]
 
 { #category : #comparing }
-CogStackPageSurrogate >> hash [
+VMStackPageSurrogate >> hash [
 	^address hash
 ]
 
 { #category : #testing }
-CogStackPageSurrogate >> isFree [
+VMStackPageSurrogate >> isFree [
 	^self baseFP = 0
 ]
 
 { #category : #printing }
-CogStackPageSurrogate >> printOn: aStream [
+VMStackPageSurrogate >> printOn: aStream [
 	super printOn: aStream.
 	aStream nextPut: $@; print: address; nextPut: $/.
 	address printOn: aStream base: 16

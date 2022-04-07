@@ -127,8 +127,16 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 	pageSize = getpagesize();
 	pageMask = ~(pageSize - 1);
 
-	heapLimit = valign(max(desiredHeapSize, 1)) + pageSize; // Add 1 page more just in case (G & N)
+	logDebug("Requested Size %d", desiredHeapSize);
+
+	heapLimit = valign(max(desiredHeapSize, 1));
+	if(heapLimit < desiredHeapSize){
+		heapLimit += pageSize;
+	}
+	
 	usqInt desiredBaseAddressAligned = valign(desiredBaseAddress);
+
+	logDebug("Aligned Requested Size %d", heapLimit);
 
 	logDebug("Trying to load the image in %p\n",
 			(void* )desiredBaseAddressAligned);

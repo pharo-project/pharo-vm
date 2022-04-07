@@ -75,6 +75,7 @@ static VMErrorCode processMaxOldSpaceSizeOption(const char *argument, VMParamete
 static VMErrorCode processMaxCodeSpaceSizeOption(const char *argument, VMParameters * params);
 static VMErrorCode processEdenSizeOption(const char *argument, VMParameters * params);
 static VMErrorCode processWorkerOption(const char *argument, VMParameters * params);
+static VMErrorCode processMinPermSpaceSizeOption(const char *argument, VMParameters * params);
 
 static const VMParameterSpec vm_parameters_spec[] =
 {
@@ -92,6 +93,7 @@ static const VMParameterSpec vm_parameters_spec[] =
   {.name = "maxOldSpaceSize", .hasArgument = true, .function = processMaxOldSpaceSizeOption},
   {.name = "codeSize", .hasArgument = true, .function = processMaxCodeSpaceSizeOption},
   {.name = "edenSize", .hasArgument = true, .function = processEdenSizeOption},
+  {.name = "minPermSpaceSize", .hasArgument = true, .function = processMinPermSpaceSizeOption},
 #ifdef __APPLE__
   // This parameter is passed by the XCode debugger.
   {.name = "NSDocumentRevisionsDebugMode", .hasArgument = false, .function = NULL},
@@ -405,26 +407,28 @@ vm_printUsageTo(FILE *out)
 "       " VM_NAME " [<option>...] -- [<argument>...]\n"
 "\n"
 "Common <option>s:\n"
-"  --help                       Print this help message, then exit\n"
+"  --help                               Print this help message, then exit\n"
 #if ALWAYS_INTERACTIVE
-"  --headless                   Run in headless (no window) mode (default: false)\n"
+"  --headless                           Run in headless (no window) mode (default: false)\n"
 #else
-"  --headless                   Run in headless (no window) mode (default: true)\n"
+"  --headless                           Run in headless (no window) mode (default: true)\n"
 #endif
 #ifdef PHARO_VM_IN_WORKER_THREAD
-"  --worker                     Run in worker thread (default: false)\n"
+"  --worker                             Run in worker thread (default: false)\n"
 #endif
-"  --logLevel=<level>           Sets the log level number (ERROR(1), WARN(2), INFO(3), DEBUG(4), TRACE(5))\n"
-"  --version                    Print version information, then exit\n"
-"  --maxFramesToLog=<cant>      Sets the max numbers of Smalltalk frames to log\n"
-"  --maxOldSpaceSize=<bytes>    Sets the max size of the old space. As the other\n"
-"                               spaces are fixed (or calculated from this) with\n"
-"                               this parameter is possible to set the total size.\n"
-"                               It is possible to use k(kB), M(MB) and G(GB).\n"
-"  --codeSize=<size>[mk]        Sets the max size of code zone.\n"
-"                               It is possible to use k(kB), M(MB) and G(GB).\n"
-"  --edenSize=<size>[mk]        Sets the size of eden\n"
-"                               It is possible to use k(kB), M(MB) and G(GB).\n"
+"  --logLevel=<level>                   Sets the log level number (ERROR(1), WARN(2), INFO(3), DEBUG(4), TRACE(5))\n"
+"  --version                            Print version information, then exit\n"
+"  --maxFramesToLog=<cant>              Sets the max numbers of Smalltalk frames to log\n"
+"  --maxOldSpaceSize=<bytes>            Sets the max size of the old space. As the other\n"
+"                                       spaces are fixed (or calculated from this) with\n"
+"                                       this parameter is possible to set the total size.\n"
+"                                       It is possible to use k(kB), M(MB) and G(GB).\n"
+"  --codeSize=<size>[mk]                Sets the max size of code zone.\n"
+"                                       It is possible to use k(kB), M(MB) and G(GB).\n"
+"  --edenSize=<size>[mk]                Sets the size of eden\n"
+"                                       It is possible to use k(kB), M(MB) and G(GB).\n"
+"  --minPermSpaceSize=<size>[mk]        Sets the size of eden\n"
+"                                       It is possible to use k(kB), M(MB) and G(GB).\n"
 "\n"
 "Notes:\n"
 "\n"
@@ -500,6 +504,23 @@ processMaxCodeSpaceSizeOption(const char* originalArgument, VMParameters * param
 	}
 
 	params->maxCodeSize = intValue;
+
+	return VM_SUCCESS;
+}
+
+static VMErrorCode
+processMinPermSpaceSizeOption(const char* originalArgument, VMParameters * params)
+{
+	long long intValue = parseByteSize(originalArgument);
+
+	if(intValue < 0)
+	{
+		logError("Invalid option for min perm space size: %s\n", originalArgument);
+		vm_printUsageTo(stderr);
+		return VM_ERROR_INVALID_PARAMETER_VALUE;
+	}
+
+	params->minPermSpaceSize = intValue;
 
 	return VM_SUCCESS;
 }
@@ -686,6 +707,7 @@ vm_parameters_init(VMParameters *parameters){
 	parameters->maxCodeSize = 0;
 	parameters->maxOldSpaceSize = 0;
 	parameters->edenSize = 0;
+	parameters->minPermSpaceSize = 0;
 	parameters->imageFileName = NULL;
 	parameters->isDefaultImage = false;
 	parameters->defaultImageFound = false;

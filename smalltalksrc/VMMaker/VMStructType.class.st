@@ -339,6 +339,13 @@ VMStructType class >> typedef [
 	^String streamContents: [:s| self printTypedefOn: s]
 ]
 
+{ #category : #'debug support' }
+VMStructType >> logError: aMessage [
+	
+	<doNotGenerate>
+	self logError: aMessage withArgs: #()
+]
+
 { #category : #printing }
 VMStructType >> printOn: aStream [
 	"A hook to allow subclasses to print their state if useful."

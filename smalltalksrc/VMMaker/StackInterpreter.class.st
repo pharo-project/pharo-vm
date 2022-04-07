@@ -495,10 +495,9 @@ StackInterpreter class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
 	^{	self objectMemoryClass.
 		VMCallbackContext.
-		CogStackPages.
-		InterpreterStackPages.
+		VMStackPages.
 		LibFFI.
-		CogStackPage.
+		VMStackPage.
 		SpurImageHeaderStruct.
 		ComposedMetadataStruct.
 		"I am putting the abstract superclasses... because I cannot make it work else"
@@ -649,7 +648,7 @@ StackInterpreter class >> imageReaderClass [
 
 	^Smalltalk at: (InitializationOptions
 					at: #ImageReader
-					ifAbsent: [ #SpurImageReader ])
+					ifAbsent: [ #ComposedImageReader ])
 ]
 
 { #category : #accessing }
@@ -657,7 +656,7 @@ StackInterpreter class >> imageWriterClass [
 
 	^Smalltalk at: (InitializationOptions
 					at: #ImageWriter
-					ifAbsent: [ #SpurImageWriter ])
+					ifAbsent: [ #ComposedImageWriter ])
 ]
 
 { #category : #translation }
@@ -2069,26 +2068,17 @@ StackInterpreter >> allOnesAsCharStar [
 ]
 
 { #category : #'image save/restore' }
-StackInterpreter >> allocateJITMemory: desiredSize desiredPosition: desiredPosition [
-	
-	<inline: true>
-	<returnTypeC: #'char *'>
-	
-	^self pointerForOop: (self allocateJITMemory: desiredSize _: desiredPosition)
-]
-
-{ #category : #'image save/restore' }
 StackInterpreter >> allocateMemoryForImage: f withHeader: header [
 
 	<var: #f type: #sqImageFile>
 	<var: #header type: #SpurImageHeaderStruct>
-	self allocateMemoryForImageHeader: header desiredStartingAddress: header oldBaseAddr.
+	self allocateMemoryForImageHeader: header.
 
 	imageReader loadImageFromFile: f withHeader: header
 ]
 
 { #category : #'image save/restore' }
-StackInterpreter >> allocateMemoryForImageHeader: header desiredStartingAddress: desiredPositionOfHeap [
+StackInterpreter >> allocateMemoryForImageHeader: header [
 
 	<var: #header type: #SpurImageHeaderStruct>
 
@@ -4790,7 +4780,7 @@ StackInterpreter >> computeStackZoneSize [
 	self cCode: [] inSmalltalk:
 		[stackPages ifNil:
 			[stackPages := self stackPagesClass new setInterpreter: self]].
-	^numStackPages * ((self sizeof: CogStackPage) + self stackPageByteSize)
+	^numStackPages * ((self sizeof: VMStackPage) + self stackPageByteSize)
 	 + stackPages extraStackBytes
 ]
 
@@ -7569,13 +7559,12 @@ StackInterpreter >> initStackPages [
 	| stackPageBytes stackPagesBytes theStackMemory |
 	stackPageBytes := self stackPageByteSize.
 	stackPagesBytes := self computeStackZoneSize.
-	theStackMemory := self
-		                  cCode: [ self alloca: stackPagesBytes ]
-		                  inSmalltalk: [ 
-		                  stackPages
-			                  initializeWithByteSize: stackPagesBytes
-			                  for: self ].
-	self cCode: [ self me: theStackMemory ms: 0 et: stackPagesBytes ].
+
+	theStackMemory :=  stackPages
+									initializeWithByteSize: stackPagesBytes
+									inMemoryMap: objectMemory getMemoryMap
+									for: self.
+			
 	stackPages
 		initializeStack: theStackMemory
 		numSlots: stackPagesBytes / objectMemory wordSize
@@ -14512,8 +14501,8 @@ StackInterpreter >> stackPages: anInterpreterStackPages [
 StackInterpreter >> stackPagesClass [
 	<doNotGenerate>
 	^VMBIGENDIAN
-		ifTrue: [InterpreterStackPagesMSB]
-		ifFalse: [InterpreterStackPagesLSB]
+		ifTrue: [VMStackPagesMSB]
+		ifFalse: [VMStackPagesLSB]
 ]
 
 { #category : #initialization }

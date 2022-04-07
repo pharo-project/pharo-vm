@@ -28,6 +28,12 @@ VMMemoryMapConfigurationFor32Bits >> permSpaceInitialAddress [
 	^ 16r80000000 "(2048 MB)"
 ]
 
+{ #category : #'initial addresses' }
+VMMemoryMapConfigurationFor32Bits >> stackPagesInitialAddress [
+
+	^ 16r0F000000 "(240 MB)"
+]
+
 { #category : #accessing }
 VMMemoryMapConfigurationFor32Bits >> wordSize [
 	<doNotGenerate>

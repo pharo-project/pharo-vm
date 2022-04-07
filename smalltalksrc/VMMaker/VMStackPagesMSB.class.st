@@ -1,11 +1,11 @@
 Class {
-	#name : #CoInterpreterStackPagesMSB,
-	#superclass : #CoInterpreterStackPages,
-	#category : #'VMMaker-JITSimulation'
+	#name : #VMStackPagesMSB,
+	#superclass : #VMStackPages,
+	#category : #'VMMaker-Interpreter'
 }
 
 { #category : #'memory access' }
-CoInterpreterStackPagesMSB >> byteAt: byteAddress [
+VMStackPagesMSB >> byteAt: byteAddress [
 	| lowBits bpwMinus1 |
 	bpwMinus1 := objectMemory wordSize - 1.
 	lowBits := byteAddress bitAnd: bpwMinus1.
