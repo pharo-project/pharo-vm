@@ -169,9 +169,13 @@ AbstractImageAccess >> loadImageFromFile: imageFile withHeader: header [
 	"read in the image in bulk, then swap the bytes if necessary"
 
 	<var: #header type: #SpurImageHeaderStruct>
-	| bytesRead |
+	| bytesRead oldSpaceBytesRead permSpaceBytesRead |
 
-	bytesRead := self readSegmentsFromImageFile: imageFile header: header.
+	oldSpaceBytesRead := self readSegmentsFromImageFile: imageFile header: header.
+
+	permSpaceBytesRead := self readPermanentSpaceFromImageFile: imageFile header: header. 
+	
+	bytesRead := oldSpaceBytesRead + permSpaceBytesRead.
 
 	self initializeInterpreterFromHeader: header withBytes: bytesRead
 
@@ -228,16 +232,16 @@ AbstractImageAccess >> sq: startingAddress Image: byteSize File: bytesToRead Rea
 ]
 
 { #category : #'accessing - files' }
-AbstractImageAccess >> sq: segStart Image: n File: segSize Write: file [
+AbstractImageAccess >> sq: start Image: n File: segSize Write: file [
 
 	<doNotGenerate>
 	| region |
-	region := objectMemory memoryManager regionForAddress: segStart.
+	region := objectMemory memoryManager regionForAddress: start.
 
 	file
 		next: segSize
 		putAll: region memory
-		startingAt: segStart - region start + 1.
+		startingAt: start - region start + 1.
 	
 	^ segSize
 ]

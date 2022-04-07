@@ -87,6 +87,7 @@ SpurSegmentManager >> addSegmentOfSize: ammount [
 	<var: #segAddress type: #'void *'>
 	<var: #allocatedSize type: #'usqInt'>
 	self cCode: [] inSmalltalk: [segments ifNil: [^nil]]. "bootstrap"
+
 	(manager "sent to the manager so that the simulator can increase memory to simulate a new segment"
 			sqAllocateMemorySegmentOfSize: ammount
 			Above: (self firstGapOfSizeAtLeast: ammount)

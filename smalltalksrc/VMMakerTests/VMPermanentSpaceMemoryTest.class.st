@@ -4,46 +4,6 @@ Class {
 	#category : #'VMMakerTests-PermSpace'
 }
 
-{ #category : #running }
-VMPermanentSpaceMemoryTest >> configureEnvironmentBuilder [ 
-
-	super configureEnvironmentBuilder.
-	
-	environmentBuilder permSpaceSize: 10*1024*1024.
-]
-
-{ #category : #'instance creation' }
-VMPermanentSpaceMemoryTest >> newPermanentByteObjectOfSize: byteSize [
-	
-	| oop numSlots instSpec |
-
-	numSlots := memory numSlotsForBytes: byteSize.
-	instSpec := memory byteFormatForNumBytes: byteSize.
-	
-	oop := memory
-			allocateSlotsInPermSpace: numSlots
-			format: instSpec
-			classIndex: (memory ensureBehaviorHash: memory classByteArray).
-
-	0 to: byteSize - 1 do: [ :index | 
-		memory storeByte: index ofObject: oop withValue: 	0 ].
-
-	^ oop
-]
-
-{ #category : #running }
-VMPermanentSpaceMemoryTest >> setUp [
-
-	super setUp.
-
-	memory classByteArray: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0)).
-
-	
-
-
-	
-]
-
 { #category : #'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testMarkingNewSpaceDoesNotMarkPermSpace [
 

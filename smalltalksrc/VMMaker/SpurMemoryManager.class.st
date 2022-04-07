@@ -1973,7 +1973,7 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 	 will be set to sane values."
 
 	<doNotGenerate>
-	| allocatedMemory newSpaceStartOffset allocatedAddress |
+	| allocatedMemory newSpaceStartOffset allocatedAddress vmMemoryConf |
 
 	self assert: (memoryBytes \\ self allocationUnit = 0 and: [ 
 			 newSpaceBytes \\ self allocationUnit = 0 and: [ 
@@ -2012,9 +2012,14 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 		             manager: self;
 		             yourself.
 	
+	vmMemoryConf := (VMMemoryMapConfiguration forWordsize: self wordSize) new.
+	
 	permSpaceSize isZero 
+		ifTrue: [ 		
+			memoryMap permSpaceStart: vmMemoryConf permSpaceInitialAddress.
+			memoryMap permSpaceEnd: vmMemoryConf permSpaceInitialAddress]
 		ifFalse: [ 	
-				memoryMap permSpaceStart: (self allocateMemoryOfSize: permSpaceSize initialAddress: 16r10000000).
+				memoryMap permSpaceStart: (self allocateMemoryOfSize: permSpaceSize initialAddress: vmMemoryConf permSpaceInitialAddress).
 				memoryMap permSpaceEnd: memoryMap permSpaceStart + permSpaceSize ].
 			
 	permSpaceFreeStart := memoryMap permSpaceStart 
@@ -6053,7 +6058,7 @@ SpurMemoryManager >> imageFormatVersion [
 SpurMemoryManager >> imageSizeToWrite [
 	"when asked, newSpace should be empty."
 	self assert: self newSpaceIsEmpty.
-	^segmentManager totalBytesInNonEmptySegments
+	^segmentManager totalBytesInNonEmptySegments + self totalBytesInPermanentSpace.
 ]
 
 { #category : #'header format' }
@@ -12079,6 +12084,12 @@ SpurMemoryManager >> totalByteSizeOf: oop [
 	^(self isImmediate: oop)
 		ifTrue: [0]
 		ifFalse: [self bytesInObject: oop]
+]
+
+{ #category : #accessing }
+SpurMemoryManager >> totalBytesInPermanentSpace [
+
+	^ permSpaceFreeStart - memoryMap permSpaceStart
 ]
 
 { #category : #'free space' }

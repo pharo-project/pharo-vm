@@ -17,6 +17,28 @@ ComposedImageReader >> endOfSTON: file [
 ]
 
 { #category : #reading }
+ComposedImageReader >> readDataFromFileName: fullFileName startingAt: startingAddress bytes: bytesToRead [
+
+	<inline: true>
+	<var: #file type: #sqImageFile>
+	| file bytes |
+
+	file := self
+		        sqImageFile: fullFileName
+		        Open: 'rb'.
+
+	bytes := self
+		         sq: startingAddress
+		         Image: (self sizeof: #char)
+		         File: bytesToRead
+		         Read: file.
+
+	self sqImageFileClose: file.
+
+	^ bytes
+]
+
+{ #category : #reading }
 ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 
 	<inline: true>
@@ -113,6 +135,73 @@ ComposedImageReader >> readImageNamed: imageName [
 ]
 
 { #category : #reading }
+ComposedImageReader >> readMetadataFromFileName: fullFileName [ 
+
+	<inline: true>
+	<var: #file type: #sqImageFile>
+	<var: #metadata type: #ComposedMetadataStruct>
+	
+	| metadata file |
+	
+	self simulationOnly: [ metadata := ComposedMetadataStruct new ].
+
+	file := self
+		        sqImageFile: fullFileName
+		        Open: 'r'.
+
+	self readSTONFrom: file into: (self addressOf: metadata).
+
+	self sqImageFileClose: file.
+
+	^ metadata
+]
+
+{ #category : #'perm - space' }
+ComposedImageReader >> readPermanentSpaceDataFromImage: imageFileName startingAt: startingAddress bytes: bytesToRead [
+
+	^ self
+		  readDataFromFileName: (self permSpaceDataFileInImage: imageFileName)
+		  startingAt: startingAddress
+		  bytes: bytesToRead
+]
+
+{ #category : #'perm - space' }
+ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aHeader [
+
+	<inline: false>
+	<var: #imageFile type: #sqImageFile>
+	<var: 'aHeader' type: #SpurImageHeaderStruct>
+	<var: #permSpaceMetadata type: #ComposedMetadataStruct>
+
+	| newBase permSpaceMetadata oldBase dataSize bytesRead |
+	
+	newBase := objectMemory getMemoryMap permSpaceStart.
+	permSpaceMetadata := self readPermanentSpaceMetadataFromImage: imageFileName.
+	oldBase := permSpaceMetadata startAddress.
+	dataSize := permSpaceMetadata dataSize.
+
+	newBase ~= oldBase ifTrue: [ interpreter unableToReadImageError ].
+
+	"check if permsSpace is allocated"
+
+	bytesRead := self
+		             readPermanentSpaceDataFromImage: imageFileName
+		             startingAt: (self pointerForOop: newBase)
+		             bytes: dataSize.
+
+	"Check bytes read"
+	bytesRead ~= dataSize ifTrue: [ interpreter unableToReadImageError ].
+
+	^ bytesRead
+]
+
+{ #category : #'perm - space' }
+ComposedImageReader >> readPermanentSpaceMetadataFromImage: imageFileName [ 
+
+	^ self readMetadataFromFileName: (self permSpaceMetadataFileNameInImage: imageFileName) 
+]
+
+{ #category : #reading }
 ComposedImageReader >> readSTONFrom: file into: aStruct [
 
 	<inline: true>
@@ -123,63 +212,25 @@ ComposedImageReader >> readSTONFrom: file into: aStruct [
 { #category : #segments }
 ComposedImageReader >> readSegmentData: segmentIndex fromImage: imageFileName startingAt: startingAddress bytes: bytesToRead [ 
 
-	<inline: true>
-	<var: #file type: #sqImageFile>
-	<var: #buffer declareC: 'char buffer[255]'>
-	| buffer file bytes |
-	self simulationOnly: [ buffer := nil ].
-
-	file := self sqImageFile: (self
-				         segmentFileName: segmentIndex
-				         withExtension: '.data'
-				         inImage: imageFileName
-				         into: buffer
-				         bufferSize: 255)
-		        Open: 'rb'.
-
-	bytes := self sq: startingAddress Image: (self sizeof: #char) File: bytesToRead Read: file.
-
-	self sqImageFileClose: file.
-	
-	^ bytes
+	^ self
+		  readDataFromFileName: (self segmentDataFile: segmentIndex inImage: imageFileName)
+		  startingAt: startingAddress
+		  bytes: bytesToRead
 ]
 
 { #category : #segments }
 ComposedImageReader >> readSegmentMetadata: segmentIndex fromImage: imageFileName [
 
-	<inline: true>
-	<var: #file type: #sqImageFile>
-	<var: #buffer declareC: 'char buffer[255]'>
-	<var: #segmentMetadata type: #ComposedSegmentMetadataStruct>
-	| segmentMetadata buffer file |
-	self simulationOnly: [ 
-		buffer := nil.
-		segmentMetadata := ComposedSegmentMetadataStruct new ].
-
-	file := self
-		        sqImageFile: (self
-				         segmentFileName: segmentIndex
-				         withExtension: '.ston'
-				         inImage: imageFileName
-				         into: buffer
-				         bufferSize: 255)
-		        Open: 'r'.
-
-	self readSTONFrom: file into: (self addressOf: segmentMetadata).
-
-	self sqImageFileClose: file.
-
-	^ segmentMetadata
+	^ self readMetadataFromFileName: (self segmentMetadataFile: segmentIndex inImage: imageFileName)
 ]
 
 { #category : #segments }
 ComposedImageReader >> readSegmentsFromImageFile: imageFileName header: aHeader [
 
 	<inline: false>
-	<var: #imageFile type: #sqImageFile>
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
 	<var: 'aHeader' type: #SpurImageHeaderStruct>
-	<var: #segmentMetadata type: #ComposedSegmentMetadataStruct>
+	<var: #segmentMetadata type: #ComposedMetadataStruct>
 	| bytesRead totalBytesRead segmentSize oldBase newBase segmentIndex segmentMetadata |
 	self prepareSegmentsToRead.
 
@@ -191,8 +242,8 @@ ComposedImageReader >> readSegmentsFromImageFile: imageFileName header: aHeader 
 	[ 
 	
 	segmentMetadata := self readSegmentMetadata: segmentIndex fromImage: imageFileName.
-	oldBase := segmentMetadata segStart.
-	segmentSize := segmentMetadata segSize.
+	oldBase := segmentMetadata startAddress.
+	segmentSize := segmentMetadata dataSize.
 	
 	segmentManager withNewSegmentDo: [ :segInfo | 
 		segInfo

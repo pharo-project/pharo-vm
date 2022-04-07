@@ -19,6 +19,14 @@ VMSpurInitializedOldSpaceTest >> assertFreeListEmpty: aFreeListOop [
 	self assert: aFreeListOop equals: 0
 ]
 
+{ #category : #running }
+VMSpurInitializedOldSpaceTest >> configureEnvironmentBuilder [ 
+
+	super configureEnvironmentBuilder.
+	
+	environmentBuilder permSpaceSize: 10*1024*1024.
+]
+
 { #category : #helpers }
 VMSpurInitializedOldSpaceTest >> createEphemeronClass [
 	ourEphemeronClass := self newObjectWithSlots: 3.
@@ -98,6 +106,25 @@ VMSpurInitializedOldSpaceTest >> newEphemeronObject [
 		classIndex: (memory ensureBehaviorHash: ourEphemeronClass)
 ]
 
+{ #category : #'instance creation' }
+VMSpurInitializedOldSpaceTest >> newPermanentByteObjectOfSize: byteSize [
+	
+	| oop numSlots instSpec |
+
+	numSlots := memory numSlotsForBytes: byteSize.
+	instSpec := memory byteFormatForNumBytes: byteSize.
+	
+	oop := memory
+			allocateSlotsInPermSpace: numSlots
+			format: instSpec
+			classIndex: (memory ensureBehaviorHash: memory classByteArray).
+
+	0 to: byteSize - 1 do: [ :index | 
+		memory storeByte: index ofObject: oop withValue: 	0 ].
+
+	^ oop
+]
+
 { #category : #helpers }
 VMSpurInitializedOldSpaceTest >> nextNodeOf: aNode [
 
@@ -129,6 +156,8 @@ VMSpurInitializedOldSpaceTest >> setUp [
 	self initializeOldSpaceForScavenger.
 	self initializeOldSpaceForFullGC.
 	memory lastHash: 1.
+	memory classByteArray: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0)).
+
 ]
 
 { #category : #helpers }

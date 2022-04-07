@@ -499,7 +499,7 @@ StackInterpreter class >> ancilliaryClasses [
 		LibFFI.
 		VMStackPage.
 		SpurImageHeaderStruct.
-		ComposedSegmentMetadataStruct.
+		ComposedMetadataStruct.
 		"I am putting the abstract superclasses... because I cannot make it work else"
 		AbstractImageAccess.
 		AbstractComposedImageAccess.

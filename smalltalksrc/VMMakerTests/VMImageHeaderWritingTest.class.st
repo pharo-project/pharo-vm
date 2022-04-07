@@ -17,6 +17,20 @@ VMImageHeaderWritingTest >> setUp [
 ]
 
 { #category : #tests }
+VMImageHeaderWritingTest >> testImageHeaderWithPermanentObjects [
+
+	| header permanentObject |
+
+	imageWriterClass ~= ComposedImageWriter ifTrue: [ ^ self skip ].
+	
+	permanentObject := self newPermanentByteObjectOfSize: 14.
+
+	header := interpreter newHeader.
+
+	self assert: header dataSize equals: memory segmentManager totalBytesInNonEmptySegments + (memory bytesInObject: permanentObject).
+]
+
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectBaseAddress [
 
 	| header |
@@ -173,6 +187,27 @@ VMImageHeaderWritingTest >> testWritingSTONHeader [
 ]
 
 { #category : #tests }
+VMImageHeaderWritingTest >> testWritingSTONPermSpace [
+
+	| writtenMetadata expectedPermSpaceMetadata |
+
+	imageWriterClass ~= ComposedImageWriter ifTrue: [ ^ self skip ].
+
+	self newPermanentByteObjectOfSize: 14.
+
+	self saveImage. "Again"
+
+	writtenMetadata := (self imageFileName asFileReference  / 'permSpace.ston') contents.
+	
+	"Duplicated code :("
+	expectedPermSpaceMetadata := ComposedMetadataStruct new.
+	expectedPermSpaceMetadata startAddress: interpreter objectMemory getMemoryMap permSpaceStart.
+	expectedPermSpaceMetadata dataSize: interpreter objectMemory totalBytesInPermanentSpace.
+
+	self assert: writtenMetadata equals: (STON toStringPretty: expectedPermSpaceMetadata).
+]
+
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingSTONSegment [
 
 	| header writtenHeader segmentMetadata |
@@ -183,9 +218,10 @@ VMImageHeaderWritingTest >> testWritingSTONSegment [
 
 	writtenHeader := (self imageFileName asFileReference  / 'seg0.ston') contents.
 	
-	segmentMetadata := ComposedSegmentMetadataStruct new.
-	segmentMetadata segStart: header oldBaseAddr.
-	segmentMetadata segSize: header dataSize.
+	"Duplicated code :("
+	segmentMetadata := ComposedMetadataStruct new.
+	segmentMetadata startAddress: header oldBaseAddr.
+	segmentMetadata dataSize: header dataSize.
 
 	self assert: writtenHeader equals: (self stonPretty: segmentMetadata).
 ]
