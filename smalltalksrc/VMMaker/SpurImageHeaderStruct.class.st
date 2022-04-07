@@ -205,6 +205,15 @@ SpurImageHeaderStruct >> initialSpecialObjectsOop: anObject [
 	initialSpecialObjectsOop := anObject
 ]
 
+{ #category : #initialization }
+SpurImageHeaderStruct >> initialize [ 
+	
+	<doNotGenerate>
+	
+	super initialize.
+	swapBytes := 0
+]
+
 { #category : #accessing }
 SpurImageHeaderStruct >> oldBaseAddr [
 

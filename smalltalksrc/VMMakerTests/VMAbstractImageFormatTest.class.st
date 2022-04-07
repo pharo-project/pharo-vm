@@ -7,6 +7,12 @@ Class {
 	#category : #'VMMakerTests-ImageFormat'
 }
 
+{ #category : #accessing }
+VMAbstractImageFormatTest >> defaultTimeLimit [
+
+	^ 30 seconds
+]
+
 { #category : #tests }
 VMAbstractImageFormatTest >> imageFileName [
 

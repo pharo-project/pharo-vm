@@ -174,6 +174,12 @@ SpurImageReader >> readImageNamed: imageName [
 	self sqImageFileClose: file
 ]
 
+{ #category : #'perm - space' }
+SpurImageReader >> readPermanentSpaceFromImageFile: aZnBufferedReadStream header: aSpurImageHeaderStruct [ 
+	
+	^ 0
+]
+
 { #category : #segments }
 SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 

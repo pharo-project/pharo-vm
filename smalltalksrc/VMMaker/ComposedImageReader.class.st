@@ -27,11 +27,13 @@ ComposedImageReader >> readDataFromFileName: fullFileName startingAt: startingAd
 		        sqImageFile: fullFileName
 		        Open: 'rb'.
 
-	bytes := self
-		         sq: startingAddress
-		         Image: (self sizeof: #char)
-		         File: bytesToRead
-		         Read: file.
+	bytesToRead > 0 ifTrue:[
+		bytes := self
+			         sq: startingAddress
+			         Image: (self sizeof: #char)
+			         File: bytesToRead
+			         Read: file]
+		ifFalse: [ bytes := 0 ].
 
 	self sqImageFileClose: file.
 
@@ -182,7 +184,8 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 
 	newBase ~= oldBase ifTrue: [ interpreter unableToReadImageError ].
 
-	"check if permsSpace is allocated"
+	(objectMemory getMemoryMap ensureAtLeastPermSpaceOf: dataSize)
+		ifFalse: [ interpreter error: 'Could not allocate PermSpace' ].
 
 	bytesRead := self
 		             readPermanentSpaceDataFromImage: imageFileName

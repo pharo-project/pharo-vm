@@ -19,14 +19,6 @@ VMSpurInitializedOldSpaceTest >> assertFreeListEmpty: aFreeListOop [
 	self assert: aFreeListOop equals: 0
 ]
 
-{ #category : #running }
-VMSpurInitializedOldSpaceTest >> configureEnvironmentBuilder [ 
-
-	super configureEnvironmentBuilder.
-	
-	environmentBuilder permSpaceSize: 10*1024*1024.
-]
-
 { #category : #helpers }
 VMSpurInitializedOldSpaceTest >> createEphemeronClass [
 	ourEphemeronClass := self newObjectWithSlots: 3.

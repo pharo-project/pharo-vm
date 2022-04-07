@@ -126,6 +126,9 @@ SpurImageWriter >> writeImageFile: imageFileName fromHeader: header [
 	headerStart := 0.
 	imageHeaderSize := header imageHeaderSize.
 
+	objectMemory totalBytesInPermanentSpace = 0 
+		ifFalse: [ ^ self primitiveFail].
+
 	self logDebug: 'Writing snapshot file %s' _: imageFileName.
 
 	f := self sqImageFile: imageFileName Open: 'wb'.

@@ -204,7 +204,7 @@ VMImageHeaderWritingTest >> testWritingSTONPermSpace [
 	expectedPermSpaceMetadata startAddress: interpreter objectMemory getMemoryMap permSpaceStart.
 	expectedPermSpaceMetadata dataSize: interpreter objectMemory totalBytesInPermanentSpace.
 
-	self assert: writtenMetadata equals: (STON toStringPretty: expectedPermSpaceMetadata).
+	self assert: writtenMetadata equals: (self stonPretty: expectedPermSpaceMetadata).
 ]
 
 { #category : #tests }

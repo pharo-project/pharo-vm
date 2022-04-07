@@ -213,6 +213,30 @@ VMMemoryMap >> doCheckMemoryMap [
 ]
 
 { #category : #allocating }
+VMMemoryMap >> ensureAtLeastPermSpaceOf: anInteger [ 
+
+	| requestedSize extendedAddress |
+
+	anInteger = 0 ifTrue: [ ^ true ].
+	
+	anInteger <= (self permSpaceEnd - self permSpaceStart)
+		ifTrue: [ ^ true ]. 
+
+	requestedSize := self roundToPageSize: anInteger.
+
+	extendedAddress := self 
+		allocateMemory: requestedSize 
+		BaseAddress: self permSpaceEnd.
+	
+	extendedAddress ~= self permSpaceEnd 
+		ifTrue: [ self logError: 'Could not extend perm space.'. ^ false ].
+	
+	self permSpaceEnd: self permSpaceEnd + requestedSize.	
+		
+	^ true.
+]
+
+{ #category : #allocating }
 VMMemoryMap >> extendPermObjectsSpace [
 
 	| requestedSize extendedAddress |
@@ -229,6 +253,14 @@ VMMemoryMap >> extendPermObjectsSpace [
 	self permSpaceEnd: self permSpaceEnd + requestedSize.	
 		
 	^ true.
+]
+
+{ #category : #simulation }
+VMMemoryMap >> getpagesize [
+
+	<doNotGenerate>
+	
+	^ 4096
 ]
 
 { #category : #accessing }
@@ -432,6 +464,23 @@ VMMemoryMap >> permSpaceStart: anInteger [
 
 	self assert: anInteger > oldSpaceEnd.
 	permSpaceStart := anInteger 
+]
+
+{ #category : #utils }
+VMMemoryMap >> roundToPageSize: anInteger [
+
+	<inline: false>
+
+	| pageSize pageMask rounded |
+	
+	pageSize := self getpagesize.
+	pageMask := (pageSize - 1) bitInvert64.
+
+	rounded := anInteger bitAnd: pageMask.
+
+	rounded < anInteger ifTrue: [ rounded := rounded + pageSize ].
+
+	^ rounded
 ]
 
 { #category : #initialization }

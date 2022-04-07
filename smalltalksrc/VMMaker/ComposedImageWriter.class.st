@@ -13,11 +13,14 @@ ComposedImageWriter >> writeDataStatingAt: start withSize: size inFileName: full
 	dataFile ifNil: [ "could not open the file for writing" 
 		^ self primitiveFail ].
 
-	nWritten := self
+	nWritten := 0.
+
+	size > 0 ifTrue:[	
+			nWritten := self
 		            sq: start
 		            Image: 1
 		            File: size
-		            Write: dataFile.
+		            Write: dataFile].
 
 	self sqImageFileClose: dataFile.
 

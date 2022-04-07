@@ -30,6 +30,16 @@ VMImageReadingTest >> loadImage [
 
 ]
 
+{ #category : #utilities }
+VMImageReadingTest >> saveImage [
+
+	memory garbageCollectForSnapshot.
+
+	self assert: interpreter successful.
+
+	super saveImage.
+]
+
 { #category : #initialization }
 VMImageReadingTest >> setUp [
 
@@ -39,14 +49,7 @@ VMImageReadingTest >> setUp [
 	memory classByteArray: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0)).
 	memory ensureBehaviorHash: memory classByteArray.
 	
-	permanentObject := self newPermanentByteObjectOfSize: 14.
-
-	memory garbageCollectForSnapshot.
-
-	self assert: interpreter successful.
-
 	originalNilObjectIdentityHash := memory hashBitsOf: memory nilObject.
-	originalPermanentObjectIdentityHash := memory hashBitsOf: permanentObject.
 
 ]
 
@@ -79,6 +82,12 @@ VMImageReadingTest >> testSavedImageSavesObjectFromOldSpace [
 
 { #category : #tests }
 VMImageReadingTest >> testSavedImageSavesObjectFromPermanentSpace [
+
+	"Only valid in the new format"
+	imageWriterClass = SpurImageWriter ifTrue: [ ^ self skip ].
+	
+	permanentObject := self newPermanentByteObjectOfSize: 14.
+	originalPermanentObjectIdentityHash := memory hashBitsOf: permanentObject.	
 	
 	self saveImage.	
 	self loadImage.
@@ -117,4 +126,16 @@ VMImageReadingTest >> testSavingImageWithThreeSegmentsIsCorrectlySqueezed [
 	newObj := memory splObj: 4. 
 	
 	self assert: originalObjHash equals: (memory hashBitsOf: newObj).
+]
+
+{ #category : #tests }
+VMImageReadingTest >> testSavingPermanentSpaceObjectsInSpurFormatFails [
+
+	imageWriterClass = SpurImageWriter ifFalse: [ ^ self skip ].
+	
+	permanentObject := self newPermanentByteObjectOfSize: 14.
+	originalPermanentObjectIdentityHash := memory hashBitsOf: permanentObject.	
+	
+	self should: [ self saveImage ] raise: PrimitiveFailed	
+
 ]
