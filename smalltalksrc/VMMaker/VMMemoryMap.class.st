@@ -138,9 +138,11 @@ VMMemoryMap >> allocateOldObjectsSpace [
 VMMemoryMap >> allocatePermObjectsSpace [
 
 	| minSize |
-	minSize := self roundToAllocationSize: (minPermSpaceSize max: initialPermSpaceSize).
+	minSize := minPermSpaceSize max: initialPermSpaceSize.
 
 	minSize = 0 ifTrue: [ ^ self ].
+
+	minSize := self roundToAllocationSize: minSize.
 
 	self permSpaceStart: (self 
 		allocateMemory: minSize 
