@@ -2690,7 +2690,7 @@ SpurMemoryManager >> averageObjectSizeInBytes [
 
 { #category : #'header access' }
 SpurMemoryManager >> baseHeader: obj [
-	^self long64At: obj
+	^self uint64At: obj
 ]
 
 { #category : #'header format' }
@@ -4762,7 +4762,7 @@ SpurMemoryManager >> falseObject: anOop [
 { #category : #'object access' }
 SpurMemoryManager >> fetchByte: byteIndex ofObject: objOop [
 	<api>
-	^self byteAt: objOop + self baseHeaderSize + byteIndex
+	^self uint8At: objOop + self baseHeaderSize + byteIndex
 ]
 
 { #category : #'object access' }
@@ -4859,7 +4859,7 @@ SpurMemoryManager >> fetchShort16: shortIndex ofObject: objOop [
 
 { #category : #'object access' }
 SpurMemoryManager >> fetchUnsignedShort16: shortIndex ofObject: objOop [
-	^self cCoerceSimple: (self shortAt: objOop + self baseHeaderSize + (shortIndex << 1)) to: #'unsigned short'
+	^self cCoerceSimple: (self uint16At: objOop + self baseHeaderSize + (shortIndex << 1)) to: #'unsigned short'
 ]
 
 { #category : #instantiation }
@@ -10447,7 +10447,7 @@ SpurMemoryManager >> rawNumSlotsOf: objOop [
 	<returnTypeC: #usqInt>
 	<inline: true>
 	self flag: #endian.
-	^self byteAt: objOop + 7
+	^self uint8At: objOop + 7
 ]
 
 { #category : #'object access' }
