@@ -156,7 +156,7 @@ sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto(sqInt size, void *minAddress
 			continue;
 		}
 		alloc = VirtualAlloc(address, bytes, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE);
-		logError("%p %p %lld", alloc, address, bytes);
+
 		/* For some reason (large page support?) we can ask for a page-aligned
 		 * address such as 0xNNNNf000 but VirtualAlloc will answer 0xNNNN0000.
 		 * So accept allocs above minAddress rather than allocs above address
