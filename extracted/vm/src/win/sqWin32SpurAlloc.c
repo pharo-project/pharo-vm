@@ -22,6 +22,9 @@
 #define EXCEPTION_WRONG_ACCESS EXCEPTION_EXECUTE_HANDLER
 #endif
 
+void *
+sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto(sqInt size, void *minAddress, sqInt *allocatedSizePointer);
+
 LONG CALLBACK sqExceptionFilter(LPEXCEPTION_POINTERS exp)
 {
   /* always wrong access - we handle memory differently now */
