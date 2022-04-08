@@ -4549,6 +4549,7 @@ SpurMemoryManager >> ensureMemoryMap [
 		cCode: [ memoryMap := self cCoerce: (self malloc: (self sizeof: VMMemoryMap))  to: #'VMMemoryMap *'] 
 		inSmalltalk: [ 
 			memoryMap := VMMemoryMap new.
+			memoryMap objectMemory: self.
 			memoryMap memoryManager: memoryManager ].
 		
 	memoryMap initializeMemoryMap.
@@ -11476,23 +11477,6 @@ SpurMemoryManager >> splObj: index [
 SpurMemoryManager >> splObj: index put: anObject [
 	"Set one of the objects in the SpecialObjectsArray"
 	self storePointer: index ofObject: specialObjectsOop withValue: anObject
-]
-
-{ #category : #'simulation only' }
-SpurMemoryManager >> sqAllocateMemorySegmentOfSize: segmentSize Above: minAddress AllocatedSizeInto: allocSizePtrOrBlock [
-	<doNotGenerate>
-	"Simulate heap growth by growing memory by segmentSize."
-
-	| start |
-	self assert: segmentSize \\ memoryManager wordSize = 0.
-
-	start := memoryManager allocate: segmentSize desiredPosition: minAddress.
-	
-	self assert: start >= minAddress.
-	
-	allocSizePtrOrBlock value: segmentSize.
-	
-	^ start.
 ]
 
 { #category : #'simulation only' }
