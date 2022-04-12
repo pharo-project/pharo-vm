@@ -20,9 +20,9 @@ SpurGenerationScavengerSimulator >> cameFrom: anObject [
 ]
 
 { #category : #'remembered set' }
-SpurGenerationScavengerSimulator >> computeRefCountToShrinkRT [
+SpurGenerationScavengerSimulator >> computeRefCountToShrinkRememberedSet [
 	self halt.
-	^super computeRefCountToShrinkRT
+	^super computeRefCountToShrinkRememberedSet
 ]
 
 { #category : #scavenger }

@@ -7426,7 +7426,7 @@ SpurMemoryManager >> isPureBitsNonImm: objOop [
 
 { #category : #'header access' }
 SpurMemoryManager >> isRemembered: objOop [
-	^((self longAt: objOop) >> self rememberedBitShift bitAnd: 1) ~= 0
+	^((self baseHeader: objOop) >> self rememberedBitShift bitAnd: 1) ~= 0
 ]
 
 { #category : #'object enumeration' }

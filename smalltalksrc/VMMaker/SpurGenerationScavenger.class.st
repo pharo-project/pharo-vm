@@ -237,7 +237,7 @@ SpurGenerationScavenger >> coInterpreter: aCoInterpreter [
 ]
 
 { #category : #'remembered set' }
-SpurGenerationScavenger >> computeRefCountToShrinkRT [
+SpurGenerationScavenger >> computeRefCountToShrinkRememberedSet [
 	"Some time in every scavenger's life there may come a time when someone writes code that stresses
 	 the remembered table.  One might conclude that if the remembered table is full, then the right thing
 	 to do is simply to tenure everything, emptying the remembered table.  Bt in some circumstances this
@@ -1122,7 +1122,7 @@ SpurGenerationScavenger >> scavenge: tenuringCriterion [
 	statSurvivorCount := 0.
 	tenureCriterion := tenuringCriterion.
 	self logStartScavenge.
-	self strategizeToLimitRememberedTable.
+	self strategizeToLimitRememberedSet.
 	self logTenuringPolicy.
 	self scavengeLoop.
 	self processWeaklings.
@@ -1422,8 +1422,8 @@ SpurGenerationScavenger >> setRefCountToShrinkRT: population [
 SpurGenerationScavenger >> setRememberedSetRedZone [
 	| fudge |
 	<inline: true>
-	"fudge is a minimum below which we don't care about growing the RT.
-	 It is chosen so that with a default 4Mb new space, the RT is not considered
+	"fudge is a minimum below which we don't care about growing the Remembered Set.
+	 It is chosen so that with a default 4Mb new space, the Remembered Set is not considered
 	 full until it has from 512 to 1024 entries."
 	fudge := eden limit - eden start / manager wordSize // 1024.
 	rememberedSetRedZone := rememberedSetLimit * 3 // 4 max: fudge
@@ -1476,12 +1476,12 @@ SpurGenerationScavenger >> statTenures: aValue [
 ]
 
 { #category : #'remembered set' }
-SpurGenerationScavenger >> strategizeToLimitRememberedTable [
+SpurGenerationScavenger >> strategizeToLimitRememberedSet [
 	<inline: true>
 	(tenureCriterion = TenureByAge
 	 and: [rememberedSetSize >= rememberedSetRedZone]) ifTrue:
 		[tenureCriterion := TenureToShrinkRT.
-		 self computeRefCountToShrinkRT]
+		 self computeRefCountToShrinkRememberedSet]
 ]
 
 { #category : #accessing }
