@@ -22,6 +22,9 @@
 #define EXCEPTION_WRONG_ACCESS EXCEPTION_EXECUTE_HANDLER
 #endif
 
+void *
+sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto(sqInt size, void *minAddress, sqInt *allocatedSizePointer);
+
 LONG CALLBACK sqExceptionFilter(LPEXCEPTION_POINTERS exp)
 {
   /* always wrong access - we handle memory differently now */
@@ -156,6 +159,7 @@ sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto(sqInt size, void *minAddress
 			continue;
 		}
 		alloc = VirtualAlloc(address, bytes, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE);
+
 		/* For some reason (large page support?) we can ask for a page-aligned
 		 * address such as 0xNNNNf000 but VirtualAlloc will answer 0xNNNN0000.
 		 * So accept allocs above minAddress rather than allocs above address
@@ -168,9 +172,8 @@ sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto(sqInt size, void *minAddress
 			return alloc;
 		}
 		if (!alloc) {
-			DWORD lastError = GetLastError();
-			logWarn("Unable to VirtualAlloc committed memory at desired address (%lld bytes requested at %p, above %p), Error: %lu\n",
-						bytes, address, minAddress, lastError);
+			logWarn("Unable to VirtualAlloc committed memory at desired address (%lld bytes requested at %p, above %p)", bytes, address, minAddress);
+			logErrorFromGetLastError("Unable to VirtualAlloc committed memory at desired address");
 			return 0;
 		}
 		/* VirtualAlloc answered a mapping well away from where Spur prefers.

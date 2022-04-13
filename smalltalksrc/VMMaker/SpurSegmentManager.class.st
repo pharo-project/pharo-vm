@@ -82,18 +82,19 @@ SpurSegmentManager class >> isNonArgumentImplicitReceiverVariableName: instVarNa
 SpurSegmentManager >> addSegmentOfSize: ammount [
 	<returnTypeC: #'SpurSegmentInfo *'>
 	<inline: false>
-	| allocatedSize |
+	| allocatedSize segAddress |
 	<var: #newSeg type: #'SpurSegmentInfo *'>
 	<var: #segAddress type: #'void *'>
 	<var: #allocatedSize type: #'usqInt'>
 	self cCode: [] inSmalltalk: [segments ifNil: [^nil]]. "bootstrap"
 
-	(manager "sent to the manager so that the simulator can increase memory to simulate a new segment"
-			sqAllocateMemorySegmentOfSize: ammount
-			Above: (self firstGapOfSizeAtLeast: ammount)
-			AllocatedSizeInto: (self cCode: [self addressOf: allocatedSize]
-									inSmalltalk: [[:sz| allocatedSize := sz]])) ifNotNil:
-		[:segAddress| | newSegIndex newSeg |
+	manager getMemoryMap 
+		allocateSegmentOfSize: ammount 
+		minAddress: (self firstGapOfSizeAtLeast: ammount)
+		resultsIn: [ :address :aSize | allocatedSize := aSize. segAddress := address ].
+
+	segAddress ifNotNil:
+		[| newSegIndex newSeg |
 		 newSegIndex := self insertSegmentFor: segAddress asUnsignedIntegerPtr.
 		 "Simulation insertion code duplicates entries if newSegIndex ~= numSegments - 1"
 		 self cCode: '' inSmalltalk: [segments at: newSegIndex put: SpurSegmentInfo new].

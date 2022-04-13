@@ -177,6 +177,9 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 	<var: #permSpaceMetadata type: #ComposedMetadataStruct>
 
 	| newBase permSpaceMetadata oldBase dataSize bytesRead |
+
+	(self fileExists: (self permSpaceMetadataFileNameInImage: imageFileName))
+		ifFalse: [ ^ 0 ]. 
 	
 	permSpaceMetadata := self readPermanentSpaceMetadataFromImage: imageFileName.
 	oldBase := permSpaceMetadata startAddress.

@@ -28,11 +28,7 @@ AbstractComposedImageAccess >> createImageDirectory: imageFileName [
 AbstractComposedImageAccess >> existSegment: segmentIndex inImage: imageFileName [
 
 	<var: #buffer declareC: 'char buffer[255]'>
-	<var: #sb declareC: 'struct stat sb'>
-	| buffer fileName sb |
-	self simulationOnly: [ 
-		buffer := nil.
-		sb := nil ].
+	| buffer fileName |
 
 	fileName := self
 		            segmentFileName: segmentIndex
@@ -41,9 +37,8 @@ AbstractComposedImageAccess >> existSegment: segmentIndex inImage: imageFileName
 		            into: buffer
 		            bufferSize: 255.
 
-	^ self
-		  cCode: [ (self stat: fileName _: (self addressOf: sb)) = 0]
-		  inSmalltalk: [ fileName asFileReference exists ]
+	^ self fileExists: fileName
+
 ]
 
 { #category : #'as yet unclassified' }
@@ -51,6 +46,20 @@ AbstractComposedImageAccess >> fieldFormat [
 	
 	<inline: true>
 	^ '\t#%s : %lld'.
+]
+
+{ #category : #'file operations' }
+AbstractComposedImageAccess >> fileExists: fileName [
+
+	| sb |
+
+	<inline: false>
+	<var: #fileName type: 'char *'>
+	<var: #sb type: 'struct stat'>
+
+	^ self
+		  cCode: [ (self stat: fileName _: (self addressOf: sb)) = 0]
+		  inSmalltalk: [ fileName asFileReference exists ]
 ]
 
 { #category : #'file primitives' }

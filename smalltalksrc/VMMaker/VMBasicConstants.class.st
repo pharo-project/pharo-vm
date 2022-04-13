@@ -65,7 +65,8 @@ Class {
 		'STACKVM',
 		'SistaVM',
 		'TempVectReadBarrier',
-		'VMBIGENDIAN'
+		'VMBIGENDIAN',
+		'WIN32'
 	],
 	#category : #'VMMaker-Interpreter'
 }

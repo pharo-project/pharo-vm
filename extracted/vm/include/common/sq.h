@@ -57,7 +57,6 @@
  * If the attempt fails, answer null.  If the attempt succeeds, answer the
  * start of the region and assign its size through asp.
  */
-extern void *sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto(sqInt sz, void *minAddr, sqInt *asp);
 extern void sqDeallocateMemorySegmentAtOfSize(void *addr, sqInt sz);
 #endif /* SPURVM */
 /* Platform-dependent memory size adjustment macro. */

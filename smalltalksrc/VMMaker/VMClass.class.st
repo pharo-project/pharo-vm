@@ -206,7 +206,8 @@ VMClass class >> initializeMiscConstants [
 			 SistaVM ifTrue: [self error: 'Sista VM works with spur VM only...']].
 
 	"And not these; they're compile-time"
-	IMMUTABILITY := InitializationOptions at: #IMMUTABILITY ifAbsent: [SPURVM] "Default as enabled for Spur VMs"
+	IMMUTABILITY := InitializationOptions at: #IMMUTABILITY ifAbsent: [SPURVM]. "Default as enabled for Spur VMs"
+	WIN32 := InitializationOptions at: #WIN32 ifAbsent: [false].
 ]
 
 { #category : #initialization }

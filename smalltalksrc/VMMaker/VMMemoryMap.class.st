@@ -21,7 +21,11 @@ Class {
 		'stackPagesStart',
 		'stackPagesEnd',
 		'initialPermSpaceSize',
-		'minPermSpaceSize'
+		'minPermSpaceSize',
+		'objectMemory'
+	],
+	#pools : [
+		'VMBasicConstants'
 	],
 	#category : #'VMMaker-Memory'
 }
@@ -29,7 +33,7 @@ Class {
 { #category : #translation }
 VMMemoryMap class >> filteredInstVarNames [
 
-	^ super filteredInstVarNames copyWithoutAll: #(memoryManager memoryMapConfiguration)
+	^ super filteredInstVarNames copyWithoutAll: #(memoryManager memoryMapConfiguration objectMemory)
 ]
 
 { #category : #translation }
@@ -107,7 +111,7 @@ VMMemoryMap >> allocateNewObjectsSpace [
 	
 	| newSpaceSizeToAllocate |
 	
-	newSpaceSizeToAllocate := self initialNewSpaceSize + self allocationReserve.
+	newSpaceSizeToAllocate := self roundToAllocationSize: self initialNewSpaceSize + self allocationReserve.
 	
 	self newSpaceStart: (self allocateMemory: newSpaceSizeToAllocate BaseAddress: memoryMapConfiguration newSpaceInitialAddress).
 	
@@ -121,7 +125,7 @@ VMMemoryMap >> allocateOldObjectsSpace [
 
 	| sizeToAllocate |
 
-	sizeToAllocate := self initialOldSpaceSize + self initialHeadroom.
+	sizeToAllocate := self roundToAllocationSize: self initialOldSpaceSize + self initialHeadroom.
 
 	self oldSpaceStart: (self allocateMemory: sizeToAllocate BaseAddress: memoryMapConfiguration oldSpaceInitialAddress).
 
@@ -134,9 +138,11 @@ VMMemoryMap >> allocateOldObjectsSpace [
 VMMemoryMap >> allocatePermObjectsSpace [
 
 	| minSize |
-	minSize := self roundToPageSize: (minPermSpaceSize max: initialPermSpaceSize).
+	minSize := minPermSpaceSize max: initialPermSpaceSize.
 
 	minSize = 0 ifTrue: [ ^ self ].
+
+	minSize := self roundToAllocationSize: minSize.
 
 	self permSpaceStart: (self 
 		allocateMemory: minSize 
@@ -144,7 +150,23 @@ VMMemoryMap >> allocatePermObjectsSpace [
 
 	self permSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 
-	self permSpaceEnd: self permSpaceStart + minSize	
+	self permSpaceEnd: self permSpaceStart + minSize.
+	objectMemory setPermSpaceFreeStart: self permSpaceStart
+]
+
+{ #category : #allocating }
+VMMemoryMap >> allocateSegmentOfSize: ammount minAddress: minAddress resultsIn: blockWithAddressAndSegSize [
+
+	| sizeToRequest segmentAddress |
+
+	<inline:true>
+	<var: #sizeToRequest type:'size_t'>
+	<var: #segmentAddress type:'void *'>
+	
+	sizeToRequest := self roundToAllocationSize: ammount.
+	segmentAddress := self allocateMemory: sizeToRequest BaseAddress: minAddress.
+	
+	blockWithAddressAndSegSize value: segmentAddress value: sizeToRequest.
 ]
 
 { #category : #allocating }
@@ -153,14 +175,25 @@ VMMemoryMap >> allocateStackPages: initialStackSize [
 	<inline: false>
 	<returnTypeC: #void>
 	
-	self stackPagesStart: (self allocateMemory: initialStackSize BaseAddress: memoryMapConfiguration stackPagesInitialAddress).
+	| sizeToRequest |
+	sizeToRequest := self roundToAllocationSize: initialStackSize.
+	
+	self stackPagesStart: (self allocateMemory: sizeToRequest BaseAddress: memoryMapConfiguration stackPagesInitialAddress).
 	
 	self stackPagesStart ifNil: [ self insufficientMemoryAvailableError ].
 	
-	self stackPagesEnd: self stackPagesStart + initialStackSize.
+	self stackPagesEnd: self stackPagesStart + sizeToRequest.
 	
-	self memset: self stackPagesStart _: 0 _: initialStackSize.
+	self memset: self stackPagesStart _: 0 _: sizeToRequest.
 
+]
+
+{ #category : #utils }
+VMMemoryMap >> allocationGranularity [
+	
+	"In windows we have an allocation granularity. Maybe we have to get it from the system.
+	https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/ns-sysinfoapi-system_info"
+	self cppIf: WIN32 ifTrue: [ ^ 64 * 1024 ] ifFalse: [ ^ 0 ]
 ]
 
 { #category : #accessing }
@@ -235,6 +268,9 @@ VMMemoryMap >> ensureAtLeastPermSpaceOf: requestedSize [
 { #category : #allocating }
 VMMemoryMap >> extendPermObjectsSpace [
 
+	self permSpaceStart = 0 
+		ifTrue: [ ^ self ensureAtLeastPermSpaceOf: 10 * 1024 * 1024 ].
+
 	^ self extendPermObjectsSpaceBy: 10 * 1024 * 1024
 ]
 
@@ -243,7 +279,7 @@ VMMemoryMap >> extendPermObjectsSpaceBy: aSize [
 
 	| requestedSize extendedAddress |
 
-	requestedSize := self roundToPageSize: aSize.
+	requestedSize := self roundToAllocationSize: aSize.
 
 	extendedAddress := self 
 		allocateMemory: requestedSize 
@@ -429,6 +465,13 @@ VMMemoryMap >> newSpaceStart: anObject [
 ]
 
 { #category : #accessing }
+VMMemoryMap >> objectMemory: aValue [	
+
+	<doNotGenerate>
+	objectMemory := aValue
+]
+
+{ #category : #accessing }
 VMMemoryMap >> oldSpaceEnd [
 	^ oldSpaceEnd
 ]
@@ -475,9 +518,11 @@ VMMemoryMap >> permSpaceStart: anInteger [
 ]
 
 { #category : #utils }
-VMMemoryMap >> roundToPageSize: anInteger [
+VMMemoryMap >> roundToAllocationSize: anInteger [
 
 	<inline: false>
+
+	"First we round up to Page Size, and then we calculate the min with the platform granularity"
 
 	| pageSize pageMask rounded |
 	
@@ -488,7 +533,7 @@ VMMemoryMap >> roundToPageSize: anInteger [
 
 	rounded < anInteger ifTrue: [ rounded := rounded + pageSize ].
 
-	^ rounded
+	^ rounded max: self allocationGranularity
 ]
 
 { #category : #initialization }
