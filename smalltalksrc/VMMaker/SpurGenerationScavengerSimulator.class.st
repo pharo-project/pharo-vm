@@ -46,6 +46,7 @@ SpurGenerationScavengerSimulator >> copyAndForwardMourner: survivor [
 { #category : #initialization }
 SpurGenerationScavengerSimulator >> manager: aSpurNBitMMXEndianSimulator [
 	manager := aSpurNBitMMXEndianSimulator.
+	rememberedSetNew manager: aSpurNBitMMXEndianSimulator.
 	aSpurNBitMMXEndianSimulator coInterpreter ifNotNil:
 		[:coint| coInterpreter := coint]
 ]
