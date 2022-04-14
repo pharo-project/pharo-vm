@@ -112,21 +112,21 @@ SpurRememberedSet >> manager: anObject [
 	manager := anObject
 ]
 
+{ #category : #accessing }
+SpurRememberedSet >> moveLastObjectTo: anIndex [
+
+	rememberedSetArray
+		at: anIndex put: (rememberedSetArray at: rememberedSetSize - 1)
+]
+
 { #category : #'debug support' }
-SpurRememberedSet >> moveEphemeron: ephemeron destinationIndex: destIndex [
+SpurRememberedSet >> moveNewEphemeron: ephemeron destinationIndex: destIndex [
 
 	rememberedSetArray
 		at: destIndex put: (rememberedSetArray at: numRememberedEphemerons);
 		at: numRememberedEphemerons put: ephemeron.
 
 	numRememberedEphemerons := numRememberedEphemerons + 1
-]
-
-{ #category : #accessing }
-SpurRememberedSet >> moveLastObjectTo: anIndex [
-
-	rememberedSetArray
-		at: anIndex put: (rememberedSetArray at: rememberedSetSize - 1)
 ]
 
 { #category : #accessing }

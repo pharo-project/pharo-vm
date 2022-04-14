@@ -525,7 +525,7 @@ VMSpurMemoryManagerTest >> setContextClassIntoClassTable [
 	| aClass |
 	aClass := self
 		newClassInOldSpaceWithSlots: 0
-		instSpec: Array instSpec.
+		instSpec: Context instSpec.
 	memory setHashBitsOf: aClass to: ClassMethodContextCompactIndex.
 	memory
 		storePointer: ClassMethodContextCompactIndex
