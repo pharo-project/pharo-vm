@@ -28,6 +28,25 @@ SpurRememberedSet >> eden: anObject [
 	eden := anObject
 ]
 
+{ #category : #'gc - global' }
+SpurRememberedSet >> forgetObject: objOop [
+
+	self assert: rememberedSetSize > 0.
+	self assert: (manager isRemembered: objOop).
+	manager setIsRememberedOf: objOop to: false.
+	objOop = (rememberedSetArray at: rememberedSetSize - 1) ifFalse:
+		[| index |
+		 index := 0.
+		 [index < rememberedSetSize] whileTrue:
+			[objOop = (rememberedSetArray at: index)
+				ifTrue:
+					[rememberedSetArray at: index put: (rememberedSetArray at: rememberedSetSize - 1).
+					 index := rememberedSetSize]
+				ifFalse: [index := index + 1]]].
+	rememberedSetSize := rememberedSetSize - 1.
+	self assert: rememberedSetSize >= 0
+]
+
 { #category : #'remembered set' }
 SpurRememberedSet >> growRememberedSet [
 	| obj numSlots newObj base |
@@ -151,6 +170,33 @@ SpurRememberedSet >> previousRememberedSetSize [
 ]
 
 { #category : #'remembered set' }
+SpurRememberedSet >> referenceCountRememberedReferents: population maxRefCount: maxRefCount [
+	"Both reference count young objects reachable from the RT,
+	 and count the populations of each ref count, in a single pass."
+	<var: 'population' declareC: 'long population[MaxRTRefCount + 1]'>
+	<inline: true>
+
+	0 to: rememberedSetSize - 1 do:
+		[:i| | elephant |
+		elephant := rememberedSetArray at: i.
+		(manager isForwarded: elephant) ifTrue:
+			[elephant := manager followForwarded: elephant.
+			 (manager isImmediate: elephant) ifTrue: "take care if elephant forwarded to an immediate"
+				[elephant := manager nilObject]].
+		0 to: (manager numPointerSlotsOf: elephant) - 1 do:
+			[:j| | referent refCount |
+			referent := manager fetchPointer: j ofObject: elephant.
+			(manager isYoung: referent) ifTrue:
+				[refCount := manager rtRefCountOf: referent.
+				 refCount < maxRefCount ifTrue:
+					[refCount > 0 ifTrue:
+						[population at: refCount put: (population at: refCount) - 1].
+					 refCount := refCount + 1.
+					 manager rtRefCountOf: referent put: refCount.
+					 population at: refCount put: (population at: refCount) + 1]]]].
+]
+
+{ #category : #'remembered set' }
 SpurRememberedSet >> relocateRememberedSet [
 
 	"For SpurPlanningCompactor"
@@ -193,6 +239,13 @@ SpurRememberedSet >> rememberedSetLimit [
 { #category : #accessing }
 SpurRememberedSet >> rememberedSetRedZone [
 	^ rememberedSetRedZone
+]
+
+{ #category : #accessing }
+SpurRememberedSet >> rememberedSetRedZone: anInteger [
+
+	<doNotGenerate>
+	rememberedSetRedZone := anInteger
 ]
 
 { #category : #accessing }

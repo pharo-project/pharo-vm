@@ -19,12 +19,6 @@ SpurGenerationScavengerSimulator >> cameFrom: anObject [
 	cameFrom := anObject
 ]
 
-{ #category : #'remembered set' }
-SpurGenerationScavengerSimulator >> computeRefCountToShrinkRememberedSet [
-	self halt.
-	^super computeRefCountToShrinkRememberedSet
-]
-
 { #category : #scavenger }
 SpurGenerationScavengerSimulator >> copyAndForward: survivor [
 	| relocatedOop |
@@ -46,7 +40,7 @@ SpurGenerationScavengerSimulator >> copyAndForwardMourner: survivor [
 { #category : #initialization }
 SpurGenerationScavengerSimulator >> manager: aSpurNBitMMXEndianSimulator [
 	manager := aSpurNBitMMXEndianSimulator.
-	rememberedSetNew manager: aSpurNBitMMXEndianSimulator.
+	rememberedSet manager: aSpurNBitMMXEndianSimulator.
 	aSpurNBitMMXEndianSimulator coInterpreter ifNotNil:
 		[:coint| coInterpreter := coint]
 ]
@@ -58,5 +52,6 @@ SpurGenerationScavengerSimulator >> recordMovements [
 
 { #category : #accessing }
 SpurGenerationScavengerSimulator >> rememberedSet [
-	^rememberedSet
+
+	^ rememberedSet
 ]
