@@ -1582,6 +1582,8 @@ InterpreterPrimitives >> primitiveDivLargeIntegers [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveDivide [
+	<numberOfArguments: 1>
+	
 	| integerReceiver integerArgument |
 	integerReceiver := self stackIntegerValue: 1.
 	integerArgument := self stackIntegerValue: 0.
@@ -2713,6 +2715,8 @@ InterpreterPrimitives >> primitiveModLargeIntegers [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveMultiply [
+	<numberOfArguments: 1>
+	
 	| integerRcvr integerArg result |
 	integerRcvr := self stackValue: 1.
 	integerArg := self stackValue: 0.
