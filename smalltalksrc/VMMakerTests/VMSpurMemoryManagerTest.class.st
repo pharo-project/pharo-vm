@@ -213,6 +213,7 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 	firstClassTablePage := memory fetchPointer: 0 ofObject: memory hiddenRootsObject.
 	
 	memory scavenger initializeRememberedSet.
+	memory oldSpaceRememberedSet initializeRememberedSet.
 	memory scavenger remember: memory hiddenRootsObject.
 	memory scavenger remember: firstClassTablePage. 
 	memory specialObjectsOop: (self newObjectWithSlots: 60).

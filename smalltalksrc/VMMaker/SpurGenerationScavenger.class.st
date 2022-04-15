@@ -610,7 +610,7 @@ SpurGenerationScavenger >> initialize [
 	tenureThreshold := 0.
 	statSurvivorCount := statTenures := 0.
 	scavengeLogRecord := SpurScavengeLogRecord new.
-	rememberedSet := SpurRememberedSet eden: eden
+	rememberedSet := SpurRememberedSet new.
 ]
 
 { #category : #'remembered set' }
@@ -739,6 +739,7 @@ SpurGenerationScavenger >> newSpaceStart: startAddress newSpaceBytes: totalBytes
 	pastSpace start: startAddress; limit: startAddress + survivorBytes.
 	futureSpace start: pastSpace limit; limit: pastSpace limit + survivorBytes.
 	eden start: futureSpace limit; limit: startAddress + totalBytes.
+	rememberedSet fudge: self rememberedSetFudge.
 
 	self assert: self futureSpace limit <= (startAddress + totalBytes).
 	self assert: self eden start \\ manager allocationUnit
@@ -960,6 +961,16 @@ SpurGenerationScavenger >> remember: anOop [
 
 	<doNotGenerate>
 	rememberedSet remember: anOop
+]
+
+{ #category : #'remembered set' }
+SpurGenerationScavenger >> rememberedSetFudge [
+	
+	<inline: true>
+	"fudge is a minimum below which we don't care about growing the Remembered Set.
+	 It is chosen so that with a default 4Mb new space, the Remembered Set is not considered
+	 full until it has from 512 to 1024 entries."
+	^ eden limit - eden start / manager wordSize // 1024.
 ]
 
 { #category : #accessing }

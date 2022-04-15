@@ -618,7 +618,8 @@ Class {
 		'statMaxAllocSegmentTime',
 		'unscannedEphemeronsQueueInitialSize',
 		'permSpaceFreeStart',
-		'permSpaceDirty'
+		'permSpaceDirty',
+		'oldSpaceRememberedSet'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -6344,6 +6345,7 @@ SpurMemoryManager >> initialize [
 	scavenger := SpurGenerationScavenger simulatorClass new manager: self; yourself.
 	segmentManager := SpurSegmentManager simulatorClass new manager: self; yourself.
 	compactor := self class compactorClass simulatorClass new manager: self; yourself.
+	oldSpaceRememberedSet := SpurRememberedSet new manager: self; yourself.
 
 	"We can also initialize here anything that is only for simulation."
 	heapMap := CogCheck32BitHeapMap new.
@@ -6520,6 +6522,7 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	self initializeOldSpaceFirstFree: freeOldSpaceStart. "initializes endOfMemory, freeStart, free space"
 	self initializeNewSpaceVariables.
 	scavenger initializeRememberedSet.
+	oldSpaceRememberedSet initializeRememberedSet.
 	segmentManager checkSegments.
 	compactor biasForGC.
 
@@ -8655,50 +8658,65 @@ SpurMemoryManager >> mournQueue: anOop [
 ]
 
 { #category : #'perm - space' }
-SpurMemoryManager >> moveToPermSpace: objOop [ 
-	
+SpurMemoryManager >> moveToPermSpace: objOop [
+
 	<inline: false>
-	| numSlots fmt newObj hash |
+	| numSlots fmt newObj hash shouldBeRemembered |
 	"Clonning in permSpace"
 	numSlots := self numSlotsOf: objOop.
 	fmt := self formatOf: objOop.
 
-	(self isPointersFormat: fmt)
-		ifTrue: [ 
-			self primitiveFailFor: PrimErrBadReceiver.
-			^ nil ].
+	"Only accept objects in old space?"
+
+	(self isPointersFormat: fmt) ifTrue: [ 
+		self primitiveFailFor: PrimErrBadReceiver.
+		^ nil ].
 
 	fmt >= self firstCompiledMethodFormat ifTrue: [ 
 		self primitiveFailFor: PrimErrBadReceiver.
 		^ nil ].
-	
-	newObj := self allocateSlotsInPermSpace: numSlots
-					bytes: (self objectBytesForSlots: numSlots)
-					format: fmt
-					classIndex: (self classIndexOf: objOop).
 
-	newObj ifNil: [
+	newObj := self
+		          allocateSlotsInPermSpace: numSlots
+		          bytes: (self objectBytesForSlots: numSlots)
+		          format: fmt
+		          classIndex: (self classIndexOf: objOop).
+
+	newObj ifNil: [ 
 		self primitiveFailFor: PrimErrNoMemory.
-		^ nil].
-	
-	0 to: numSlots - 1 do:
-		[:i|
-		self storePointerUnchecked: i
-			ofObject: newObj
-			withValue: (self fetchPointer: i ofObject: objOop)].
+		^ nil ].
 
-	(hash := self rawHashBitsOf: objOop) ~= 0 ifTrue: [self setHashBitsOf: newObj to: hash].
-	(self isObjImmutable: objOop) ifTrue: [self setIsImmutableOf: newObj to: true].
+	shouldBeRemembered := false.
+
+	0 to: numSlots - 1 do: [ :i | | referenced |
+		referenced := self fetchPointer: i ofObject: objOop.
+		(self isInOldSpace: referenced) ifTrue: [ shouldBeRemembered := true ].
+		self
+			storePointerUnchecked: i
+			ofObject: newObj
+			withValue: referenced ].
+
+	(self isRemembered: objOop) ifTrue: [ 
+		scavenger rememberedSet replace: objOop with: newObj ].
+
+	shouldBeRemembered ifTrue: [ 
+		oldSpaceRememberedSet remember: newObj ].
+
+	(hash := self rawHashBitsOf: objOop) ~= 0 ifTrue: [ 
+		self setHashBitsOf: newObj to: hash ].
 	
-	
+	(self isObjImmutable: objOop) ifTrue: [ 
+		self setIsImmutableOf: newObj to: true ].
+
+
 	becomeEffectsFlags := self becomeEffectFlagsFor: objOop.
 	self forward: objOop to: newObj.
 	self followSpecialObjectsOop.
 	coInterpreter postBecomeAction: becomeEffectsFlags.
 	self postBecomeScanClassTable: becomeEffectsFlags.
 	becomeEffectsFlags := 0.
-	
-	^newObj	
+
+	^ newObj
 ]
 
 { #category : #'become implementation' }
@@ -8868,6 +8886,12 @@ SpurMemoryManager >> newSpaceRefCountMask [
 	^1 << self greyBitShift
 	  bitOr: (1 << self pinnedBitShift
 	  bitOr: 1 << self rememberedBitShift)
+]
+
+{ #category : #accessing }
+SpurMemoryManager >> newSpaceRememberedSet [
+
+	^ scavenger rememberedSet
 ]
 
 { #category : #accessing }
@@ -9506,6 +9530,12 @@ SpurMemoryManager >> oldSpaceObjectAfter: objOop [
 ]
 
 { #category : #accessing }
+SpurMemoryManager >> oldSpaceRememberedSet [
+
+	^ oldSpaceRememberedSet
+]
+
+{ #category : #accessing }
 SpurMemoryManager >> oldSpaceSize [
 	^segmentManager totalBytesInSegments
 ]
@@ -9710,6 +9740,13 @@ SpurMemoryManager >> positiveMachineIntegerValueOf: integerValue [
 	"hack around the CoInterpreter/ObjectMemory split refactoring"
 	<doNotGenerate>
 	^coInterpreter positiveMachineIntegerValueOf: integerValue
+]
+
+{ #category : #'store check' }
+SpurMemoryManager >> possiblePermStoreInto: destObj [
+	<inline: true>
+	(self isRemembered: destObj) ifFalse:
+		[oldSpaceRememberedSet remember: destObj]
 ]
 
 { #category : #'store check' }
@@ -11809,17 +11846,24 @@ SpurMemoryManager >> storePointer: fieldIndex ofObjStack: objStackPage withValue
 
 { #category : #'object access' }
 SpurMemoryManager >> storePointer: fieldIndex ofObject: objOop withValue: valuePointer [
-	<api>
+
 	"Note must check here for stores of young objects into old ones."
+
+	<api>
 	self assert: (self isForwarded: objOop) not.
 
-	(memoryMap isOldObject: objOop) ifTrue: "most stores into young objects"
-		[(self isYoung: valuePointer) ifTrue:
-			[self possibleRootStoreInto: objOop]].
+	(self isYoung: objOop) not ifTrue: [ "most stores into young objects"
+		(self isYoung: valuePointer) ifTrue: [ 
+			self possibleRootStoreInto: objOop ] ].
 
-	^self
-		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
-		put: valuePointer
+	(self getMemoryMap isPermanentObject: objOop) ifTrue: [ 
+		(self getMemoryMap isOldObject: valuePointer) ifTrue: [ 
+			self possiblePermStoreInto: objOop ] ].
+
+	^ self
+		  longAt:
+		  objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		  put: valuePointer
 ]
 
 { #category : #'object access' }

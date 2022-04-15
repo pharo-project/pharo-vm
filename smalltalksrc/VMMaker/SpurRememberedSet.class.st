@@ -3,7 +3,7 @@ Class {
 	#superclass : #VMClass,
 	#instVars : [
 		'manager',
-		'eden',
+		'fudge',
 		'rememberedSetSize',
 		'rememberedSetLimit',
 		'rememberedSetArray',
@@ -14,21 +14,7 @@ Class {
 	#category : #VMMaker
 }
 
-{ #category : #'as yet unclassified' }
-SpurRememberedSet class >> eden: newSpace [
-
-	^ self new
-		  eden: newSpace;
-		  yourself
-]
-
-{ #category : #accessing }
-SpurRememberedSet >> eden: anObject [
-
-	eden := anObject
-]
-
-{ #category : #'gc - global' }
+{ #category : #'store check' }
 SpurRememberedSet >> forgetObject: objOop [
 
 	self assert: rememberedSetSize > 0.
@@ -45,6 +31,12 @@ SpurRememberedSet >> forgetObject: objOop [
 				ifFalse: [index := index + 1]]].
 	rememberedSetSize := rememberedSetSize - 1.
 	self assert: rememberedSetSize >= 0
+]
+
+{ #category : #accessing }
+SpurRememberedSet >> fudge: anObject [
+
+	fudge := anObject
 ]
 
 { #category : #'remembered set' }
@@ -87,7 +79,8 @@ SpurRememberedSet >> hasSameSize [
 SpurRememberedSet >> initialize [
 
 	rememberedSetSize := 0.
-	numRememberedEphemerons := 0
+	numRememberedEphemerons := 0.
+	fudge := 0
 ]
 
 { #category : #initialization }
@@ -213,7 +206,6 @@ SpurRememberedSet >> remember: objOop [
 	self deny: (manager getMemoryMap isYoungObject: objOop).
 	self deny: (manager isRemembered: objOop).
 	self deny: (self isInRememberedSet: objOop).
-	self deny: (manager getMemoryMap isPermanentObject: objOop).
 	
 	manager setIsRememberedOf: objOop to: true.
 	rememberedSetSize >= rememberedSetLimit ifTrue:
@@ -326,6 +318,16 @@ SpurRememberedSet >> removeObjectAt: anIndex [
 ]
 
 { #category : #accessing }
+SpurRememberedSet >> replace: oldOop with: newOop [
+
+	self rememberedSetWithIndexDo: [ :oop :index | 
+		oop = oldOop ifTrue: [ 
+			manager setIsRememberedOf: oldOop to: false.
+			manager setIsRememberedOf: newOop to: true.
+			^ self save: newOop at: index ] ]
+]
+
+{ #category : #accessing }
 SpurRememberedSet >> save: anOop at: index [
 
 	rememberedSetArray at: index put: anOop
@@ -333,12 +335,8 @@ SpurRememberedSet >> save: anOop at: index [
 
 { #category : #'remembered set' }
 SpurRememberedSet >> setRememberedSetRedZone [
-	| fudge |
+
 	<inline: true>
-	"fudge is a minimum below which we don't care about growing the Remembered Set.
-	 It is chosen so that with a default 4Mb new space, the Remembered Set is not considered
-	 full until it has from 512 to 1024 entries."
-	fudge := eden limit - eden start / manager wordSize // 1024.
 	rememberedSetRedZone := rememberedSetLimit * 3 // 4 max: fudge
 ]
 
