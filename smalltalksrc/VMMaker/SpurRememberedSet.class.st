@@ -4,6 +4,7 @@ Class {
 	#instVars : [
 		'manager',
 		'fudge',
+		'rootIndex',
 		'rememberedSetSize',
 		'rememberedSetLimit',
 		'rememberedSetArray',
@@ -44,7 +45,7 @@ SpurRememberedSet >> growRememberedSet [
 	| obj numSlots newObj base |
 	<inline: false> "Don't ruin locality in remember:"
 	<var: #base type: #'sqInt *'>
-	obj := manager rememberedSetObj.
+	obj := self objectOop.
 	numSlots := manager numSlotsOf: obj.
 	self assert: numSlots >= 1024.
 	newObj := manager allocatePinnedSlots: numSlots * 2.
@@ -53,7 +54,7 @@ SpurRememberedSet >> growRememberedSet [
 		 newObj ifNil:
 			[(manager growOldSpaceByAtLeast: numSlots + 1024) ifNil: [self error: 'could not grow remembered set'].
 			 newObj := manager allocatePinnedSlots: numSlots + 1024. "cannot fail"]].
-	manager rememberedSetObj: newObj.
+	manager rememberedSet: rootIndex oop: newObj.
 	base := manager firstIndexableField: newObj.
 	0 to: rememberedSetSize - 1 do:
 		[:i| base at: i put: (rememberedSetArray at: i)].
@@ -86,11 +87,11 @@ SpurRememberedSet >> initialize [
 { #category : #initialization }
 SpurRememberedSet >> initializeRememberedSet [
 	| obj |
-	obj := manager rememberedSetObj.
+	obj := self objectOop.
 	obj = manager nilObject
 		ifTrue:
 			[obj := manager allocatePinnedSlots: 1024.
-			 manager rememberedSetObj: obj]
+			 manager rememberedSet: rootIndex oop: obj]
 		ifFalse: "The Spur32to64BitBootstrap failed to set the type of rememberedSetObj to 64-bit indexability.
 				 This is unimportant except for simulation; rememberedSet is declared as sqInt *, but in to have
 				 firstIndexableField: below answer a suitable type the format must be wordIndexableFormat."
@@ -158,6 +159,12 @@ SpurRememberedSet >> objectAt: anIndex [
 ]
 
 { #category : #accessing }
+SpurRememberedSet >> objectOop [
+
+	^ manager objStackAt: rootIndex
+]
+
+{ #category : #accessing }
 SpurRememberedSet >> previousRememberedSetSize [
 	^ previousRememberedSetSize
 ]
@@ -193,7 +200,7 @@ SpurRememberedSet >> referenceCountRememberedReferents: population maxRefCount: 
 SpurRememberedSet >> relocateRememberedSet [
 
 	"For SpurPlanningCompactor"
-	rememberedSetArray := manager firstIndexableField: manager rememberedSetObj
+	rememberedSetArray := manager firstIndexableField: self objectOop
 ]
 
 { #category : #'store check' }
@@ -325,6 +332,18 @@ SpurRememberedSet >> replace: oldOop with: newOop [
 			manager setIsRememberedOf: oldOop to: false.
 			manager setIsRememberedOf: newOop to: true.
 			^ self save: newOop at: index ] ]
+]
+
+{ #category : #accessing }
+SpurRememberedSet >> rootIndex [
+
+	^ rootIndex
+]
+
+{ #category : #accessing }
+SpurRememberedSet >> rootIndex: anIndex [
+
+	rootIndex := anIndex
 ]
 
 { #category : #accessing }

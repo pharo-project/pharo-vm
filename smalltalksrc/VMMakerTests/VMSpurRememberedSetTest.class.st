@@ -106,11 +106,11 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceRememberedObjectShouldUpdateNewRem
 	rememberedObjectAddress := self newZeroSizedObject.
 	memory storePointer: 0 ofObject: oldObjectAddress withValue: rememberedObjectAddress.
 	
-	self assert: (memory scavenger rememberedSet objectAt: 0) equals: oldObjectAddress.
+	self assert: (memory newSpaceRememberedSet objectAt: 0) equals: oldObjectAddress.
 		
 	permObjectAddress := memory moveToPermSpace: oldObjectAddress.
 	
-	self assert: (memory scavenger rememberedSet objectAt: 0) equals: permObjectAddress.
+	self assert: (memory newSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
 
 ]
 
@@ -158,7 +158,7 @@ VMSpurRememberedSetTest >> testStoreOldObjectInPermObjectShouldRememberPermObjec
 
 	| permObjectAddress oldObjectAddress |
 
-	"Create a young object and reference it from perm object"
+	"Create a old object and reference it from perm object"
 	permObjectAddress := self newPermanentByteObjectOfSize: 1.
 	oldObjectAddress := self newOldSpaceObjectWithSlots: 0.
 	memory storePointer: 0 ofObject: permObjectAddress withValue: oldObjectAddress.
@@ -172,7 +172,7 @@ VMSpurRememberedSetTest >> testStoreOldObjectInYoungObjectShouldNotRememberOldOb
 
 	| oldObjectAddress youngObjectAddress |
 
-	"Create a young object and reference it from the old object"
+	"Create a old object and reference it from young object"
 	oldObjectAddress := self newOldSpaceObjectWithSlots: 1.
 	youngObjectAddress := self newObjectWithSlots: 1.
 	memory storePointer: 0 ofObject: youngObjectAddress withValue: oldObjectAddress.
@@ -185,7 +185,7 @@ VMSpurRememberedSetTest >> testStoreOldObjectInYoungObjectShouldNotRememberYoung
 
 	| oldObjectAddress youngObjectAddress |
 
-	"Create a young object and reference it from the old object"
+	"Create a old object and reference it from young object"
 	oldObjectAddress := self newOldSpaceObjectWithSlots: 1.
 	youngObjectAddress := self newObjectWithSlots: 1.
 	memory storePointer: 0 ofObject: youngObjectAddress withValue: oldObjectAddress.
@@ -198,7 +198,7 @@ VMSpurRememberedSetTest >> testStorePermObjectInPermObjectShouldNotRememberAnyon
 
 	| permObjectAddress referencedPermObjectAddress |
 
-	"Create a young object and reference it from perm object"
+	"Create a perm object and reference it from perm object"
 	permObjectAddress := self newPermanentByteObjectOfSize: 1.
 	referencedPermObjectAddress := self newPermanentByteObjectOfSize: 0.
 	memory storePointer: 0 ofObject: permObjectAddress withValue: referencedPermObjectAddress.

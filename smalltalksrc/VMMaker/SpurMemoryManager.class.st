@@ -619,7 +619,8 @@ Class {
 		'unscannedEphemeronsQueueInitialSize',
 		'permSpaceFreeStart',
 		'permSpaceDirty',
-		'oldSpaceRememberedSet'
+		'oldSpaceRememberedSet',
+		'newSpaceRememberedSet'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -629,6 +630,7 @@ Class {
 		'MarkStackRecord',
 		'MarkStackRootIndex',
 		'MournQueueRootIndex',
+		'NewRememberedSetRootIndex',
 		'ObjStackFixedSlots',
 		'ObjStackFreex',
 		'ObjStackLimit',
@@ -636,8 +638,8 @@ Class {
 		'ObjStackNextx',
 		'ObjStackPageSlots',
 		'ObjStackTopx',
+		'OldRememberedSetRootIndex',
 		'RemapBufferSize',
-		'RememberedSetRootIndex',
 		'TopOopBit',
 		'WeaklingStackRootIndex'
 	],
@@ -875,7 +877,8 @@ SpurMemoryManager class >> initialize [
 	MarkStackRootIndex := self basicNew classTableRootSlots.
 	WeaklingStackRootIndex := MarkStackRootIndex + 1.
 	MournQueueRootIndex := MarkStackRootIndex + 2.
-	RememberedSetRootIndex := MarkStackRootIndex + 3.
+	NewRememberedSetRootIndex := MarkStackRootIndex + 3.
+	OldRememberedSetRootIndex := MarkStackRootIndex + 4.
 
 	MarkObjectsForEnumerationPrimitives := false.
 
@@ -2006,6 +2009,7 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 	scavengeThreshold := allocatedMemory. "i.e. /don't/ scavenge."
 	scavenger := SpurGenerationScavenger simulatorClass new.
 	scavenger manager: self.
+	scavenger rememberedSet: newSpaceRememberedSet.
 	scavenger
 		newSpaceStart: memoryMap newSpaceStart
 		newSpaceBytes: newSpaceBytes
@@ -6342,10 +6346,12 @@ SpurMemoryManager >> initialize [
 	unscannedEphemeronsQueueInitialSize := 10000. "10k by default"
 
 	"we can initialize things that are virtual in C."
-	scavenger := SpurGenerationScavenger simulatorClass new manager: self; yourself.
+	newSpaceRememberedSet := SpurRememberedSet new manager: self; rootIndex: NewRememberedSetRootIndex; yourself.
+	oldSpaceRememberedSet := SpurRememberedSet new manager: self; rootIndex: OldRememberedSetRootIndex; yourself.
+
+	scavenger := SpurGenerationScavenger simulatorClass new manager: self; rememberedSet: newSpaceRememberedSet; yourself.
 	segmentManager := SpurSegmentManager simulatorClass new manager: self; yourself.
 	compactor := self class compactorClass simulatorClass new manager: self; yourself.
-	oldSpaceRememberedSet := SpurRememberedSet new manager: self; yourself.
 
 	"We can also initialize here anything that is only for simulation."
 	heapMap := CogCheck32BitHeapMap new.
@@ -7350,6 +7356,13 @@ SpurMemoryManager >> isObjImmutable: anOop [
 ]
 
 { #category : #'object testing' }
+SpurMemoryManager >> isOld: oop [
+
+	<api>
+	^ (self isNonImmediate: oop) and: [ memoryMap isOldObject: oop ]
+]
+
+{ #category : #'object testing' }
 SpurMemoryManager >> isOopCompiledMethod: oop [ 
     "Answer whether the oop is an object of compiled method format"
 	<api>
@@ -7381,6 +7394,13 @@ SpurMemoryManager >> isOopMutable: oop [
 SpurMemoryManager >> isPermSpaceDirty [
 
 	^ permSpaceDirty 
+]
+
+{ #category : #'object testing' }
+SpurMemoryManager >> isPermanent: oop [
+
+	<api>
+	^ (self isNonImmediate: oop) and: [ memoryMap isPermanentObject: oop ]
 ]
 
 { #category : #'header access' }
@@ -8120,11 +8140,10 @@ SpurMemoryManager >> markAndShouldScan: objOop [
 	(self isMarked: objOop) ifTrue:
 		[^false].
 	
-	"If it is a permanent object I will not visit it"
+	"If it is a permanent object I will not mark it"
 	(memoryMap isPermanentObject: objOop)
-		ifTrue: [ ^false ].
-	
-	self setIsMarkedOf: objOop to: true.
+		ifFalse: [ self setIsMarkedOf: objOop to: true ].
+
 	format := self formatOf: objOop.
 	(self isPureBitsFormat: format) ifTrue: "avoid pushing non-pointer objects on the markStack."
 		["Avoid tracing classes of non-objects on the heap, e.g. IRC caches, Sista counters."
@@ -8209,8 +8228,9 @@ SpurMemoryManager >> markAndTraceHiddenRoots [
 	self markAndTraceObjStack: markStack andContents: false.
 	self markAndTraceObjStack: weaklingStack andContents: false.
 	self markAndTraceObjStack: mournQueue andContents: true.
+	self markAndTraceRememberedSet: oldSpaceRememberedSet.
 
-	self setIsMarkedOf: self rememberedSetObj to: true.
+	self setIsMarkedOf: self newRememberedSetObj to: true.
 	self setIsMarkedOf: self freeListsObj to: true.
 
 	(self isWeakNonImm: classTableFirstPage) ifTrue:
@@ -8252,6 +8272,16 @@ SpurMemoryManager >> markAndTraceObjStack: stackOrNil andContents: markAndTraceC
 		 (self isImmediate: field) ifFalse:
 			[self markAndTrace: field].
 		 index := index - 1]
+]
+
+{ #category : #'obj stack' }
+SpurMemoryManager >> markAndTraceRememberedSet: aRememberedSet [
+
+	| rememberedSetOop |
+	rememberedSetOop := aRememberedSet objectOop.
+	self setIsMarkedOf: rememberedSetOop to: true.
+	aRememberedSet rememberedSetWithIndexDo: [ :objOop :i | 
+		self markAndTrace: objOop ]
 ]
 
 { #category : #'weakness and ephemerality' }
@@ -8863,6 +8893,11 @@ SpurMemoryManager >> newObjectWithSlots: slots format: aFormat classIndex: anInd
 			
 	oop ifNotNil: [ self fillObj: oop numSlots: slots with: self nilObject ].
 	^ oop
+]
+
+{ #category : #scavenger }
+SpurMemoryManager >> newRememberedSetObj [
+	^self fetchPointer: NewRememberedSetRootIndex ofObject: hiddenRootsObj
 ]
 
 { #category : #accessing }
@@ -9515,6 +9550,11 @@ SpurMemoryManager >> okayOop: signedOop [
 SpurMemoryManager >> oldRawNumSlotsOf: objOop [
 	<returnTypeC: #usqInt>
 	^self subclassResponsibility
+]
+
+{ #category : #scavenger }
+SpurMemoryManager >> oldRememberedSetObj [
+	^self fetchPointer: OldRememberedSetRootIndex ofObject: hiddenRootsObj
 ]
 
 { #category : #'object enumeration' }
@@ -10705,14 +10745,9 @@ SpurMemoryManager >> rememberedBitShift [
 ]
 
 { #category : #scavenger }
-SpurMemoryManager >> rememberedSetObj [
-	^self fetchPointer: RememberedSetRootIndex ofObject: hiddenRootsObj
-]
-
-{ #category : #scavenger }
-SpurMemoryManager >> rememberedSetObj: anObj [
-	self assert: (memoryMap isOldObject: anObj).
-	self storePointerUnchecked: RememberedSetRootIndex ofObject: hiddenRootsObj withValue: anObj
+SpurMemoryManager >> rememberedSet: rootIndex oop: anOop [
+	self assert: (memoryMap isOldObject: anOop).
+	self storePointerUnchecked: rootIndex ofObject: hiddenRootsObj withValue: anOop
 ]
 
 { #category : #'plugin support' }
@@ -11856,8 +11891,8 @@ SpurMemoryManager >> storePointer: fieldIndex ofObject: objOop withValue: valueP
 		(self isYoung: valuePointer) ifTrue: [ 
 			self possibleRootStoreInto: objOop ] ].
 
-	(self getMemoryMap isPermanentObject: objOop) ifTrue: [ 
-		(self getMemoryMap isOldObject: valuePointer) ifTrue: [ 
+	(self isPermanent: objOop) ifTrue: [ 
+		(self isOld: valuePointer) ifTrue: [ 
 			self possiblePermStoreInto: objOop ] ].
 
 	^ self

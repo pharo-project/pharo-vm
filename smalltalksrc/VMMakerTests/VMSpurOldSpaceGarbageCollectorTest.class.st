@@ -153,6 +153,30 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectNotReferencedShouldBeCollec
 ]
 
 { #category : #tests }
+VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromPermObjectShouldBeKept [
+	| permOop oldOop oldFreeSpaceSize oldObjectSize lastOop lastObjectSize |
+	memory fullGC.
+	oldFreeSpaceSize := memory totalFreeListBytes.
+
+	"Create test objects"
+	permOop := self newPermanentObjectWithSlots: 1.
+	oldOop := self newOldSpaceObjectWithSlots: 0.
+	oldObjectSize := memory bytesInObject: oldOop.
+	
+	"Create last object for compactor"
+	lastOop := self newOldSpaceObjectWithSlots: 0.	
+	lastObjectSize := memory bytesInObject: lastOop.
+
+	"Set root references"
+	self keepObjectInVMVariable1: lastOop.
+	memory storePointer: 0 ofObject: permOop withValue: oldOop.
+	
+	memory fullGC.
+
+	self assert: memory totalFreeListBytes equals: oldFreeSpaceSize - lastObjectSize - oldObjectSize.
+]
+
+{ #category : #tests }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableShouldBeKept [
 	| anObjectOop |
 	memory fullGC.

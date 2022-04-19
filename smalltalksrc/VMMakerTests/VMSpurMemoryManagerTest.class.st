@@ -212,7 +212,7 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 	
 	firstClassTablePage := memory fetchPointer: 0 ofObject: memory hiddenRootsObject.
 	
-	memory scavenger initializeRememberedSet.
+	memory newSpaceRememberedSet initializeRememberedSet.
 	memory oldSpaceRememberedSet initializeRememberedSet.
 	memory scavenger remember: memory hiddenRootsObject.
 	memory scavenger remember: firstClassTablePage. 
@@ -422,6 +422,38 @@ VMSpurMemoryManagerTest >> newOldSpaceObjectWithSlots: slots format: aFormat cla
 	| oop |
 	oop := memory
 			allocateSlotsInOldSpace: slots
+			format: aFormat
+			classIndex: anIndex.
+	oop ifNotNil: [ memory fillObj: oop numSlots: slots with: memory nilObject ].
+	^ oop
+]
+
+{ #category : #'helpers - objects' }
+VMSpurMemoryManagerTest >> newPermanentObjectWithSlots: slots [ 
+
+	^ self newPermanentSpaceObjectWithSlots: slots classIndex: memory arrayClassIndexPun
+]
+
+{ #category : #'helpers - objects' }
+VMSpurMemoryManagerTest >> newPermanentSpaceObjectWithSlots: slots classIndex: anIndex [
+
+	| format |
+	format := slots = 0
+		          ifTrue: [ memory zeroSlotsNonIndexablePointerFormat ]
+		          ifFalse: [ memory arrayFormat ].
+
+	^ self
+		  newPermanentSpaceObjectWithSlots: slots
+		  format: format
+		  classIndex: anIndex
+]
+
+{ #category : #'helpers - objects' }
+VMSpurMemoryManagerTest >> newPermanentSpaceObjectWithSlots: slots format: aFormat classIndex: anIndex [
+	
+	| oop |
+	oop := memory
+			allocateSlotsInPermSpace: slots
 			format: aFormat
 			classIndex: anIndex.
 	oop ifNotNil: [ memory fillObj: oop numSlots: slots with: memory nilObject ].

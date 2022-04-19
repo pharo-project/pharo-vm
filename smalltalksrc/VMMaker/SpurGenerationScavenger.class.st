@@ -610,7 +610,6 @@ SpurGenerationScavenger >> initialize [
 	tenureThreshold := 0.
 	statSurvivorCount := statTenures := 0.
 	scavengeLogRecord := SpurScavengeLogRecord new.
-	rememberedSet := SpurRememberedSet new.
 ]
 
 { #category : #'remembered set' }
@@ -961,6 +960,12 @@ SpurGenerationScavenger >> remember: anOop [
 
 	<doNotGenerate>
 	rememberedSet remember: anOop
+]
+
+{ #category : #accessing }
+SpurGenerationScavenger >> rememberedSet: anObject [
+
+	rememberedSet := anObject
 ]
 
 { #category : #'remembered set' }
