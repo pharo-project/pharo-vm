@@ -872,8 +872,9 @@ SpurMemoryManager class >> initialize [
 	ObjStackLimit := ObjStackPageSlots - ObjStackFixedSlots.
 
 	"The hiddenHootsObject contains the classTable pages and up to 8 additional objects.
-	 Currently we use four; the three objStacks, the mark stack, the weaklings and the
-	 mourn queue, and the rememberedSet."
+	 Currently we use five:
+	  - three objStacks: mark stack, weaklings and mourn queue
+	  - two remembered sets: for new and old spaces"
 	MarkStackRootIndex := self basicNew classTableRootSlots.
 	WeaklingStackRootIndex := MarkStackRootIndex + 1.
 	MournQueueRootIndex := MarkStackRootIndex + 2.
@@ -8926,7 +8927,7 @@ SpurMemoryManager >> newSpaceRefCountMask [
 { #category : #accessing }
 SpurMemoryManager >> newSpaceRememberedSet [
 
-	^ scavenger rememberedSet
+	^ newSpaceRememberedSet
 ]
 
 { #category : #accessing }

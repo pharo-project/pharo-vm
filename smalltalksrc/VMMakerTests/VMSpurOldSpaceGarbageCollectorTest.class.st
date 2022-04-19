@@ -115,7 +115,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSizeShouldP
 	self assert: memory needGCFlag
 ]
 
-{ #category : #tests }
+{ #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectNotReferencedShouldBeCollected [
 
 	| deltaFreeSpace |
@@ -138,7 +138,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromNewObjectShou
 	self assert: deltaFreeSpace equals: 0
 ]
 
-{ #category : #tests }
+{ #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromRememberedPermObjectShouldBeKept [
 
 	| oldObjectSize deltaFreeSpace |
@@ -165,7 +165,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromUnreferencedC
 	self assert: deltaFreeSpace equals: 0
 ]
 
-{ #category : #tests }
+{ #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableShouldBeKept [
 
 	| oldOop objectSize deltaFreeSpace |
