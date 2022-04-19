@@ -12,11 +12,11 @@ VMSpurOldSpaceGarbageCollectorTest >> assertHashOf: anOop equals: aHash [
 	self assert: (memory hashBitsOf: anOop) equals: aHash
 ]
 
-{ #category : #assertion }
-VMSpurOldSpaceGarbageCollectorTest >> assertObjectWereReclaimed: aBlock [ 
-	| initialSpace firstObjectToBeRemembered sizeOfObject |
+{ #category : #helpers }
+VMSpurOldSpaceGarbageCollectorTest >> deltaFreeSpaceAfterGC: aBlock [ 
+	| initialSpace lastObjectToBeRemembered sizeOfLastObject |
 	"The planning compactor frees object by sliding, and therefore does not reclaim memory if there is only dead objects in the oldspace."
-	
+	"The free objects are only reclaimed when there is a object after it."
 	"We allocate objects during the setup"
 	memory fullGC. 
 	
@@ -24,13 +24,13 @@ VMSpurOldSpaceGarbageCollectorTest >> assertObjectWereReclaimed: aBlock [
 	
 	aBlock value.
 	
-	firstObjectToBeRemembered := self newOldSpaceObjectWithSlots: 0.
-	self keepObjectInVMVariable1: firstObjectToBeRemembered.
-	sizeOfObject := memory bytesInObject: firstObjectToBeRemembered.
+	lastObjectToBeRemembered := self newOldSpaceObjectWithSlots: 0.
+	self keepObjectInVMVariable1: lastObjectToBeRemembered.
+	sizeOfLastObject := memory bytesInObject: lastObjectToBeRemembered.
 	
 	memory fullGC.
 	
-	self assert: initialSpace - sizeOfObject equals: memory totalFreeListBytes
+	^ initialSpace - sizeOfLastObject - memory totalFreeListBytes
 ]
 
 { #category : #ephemerons }
@@ -115,79 +115,68 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSizeShouldP
 	self assert: memory needGCFlag
 ]
 
-{ #category : #'tests-OldSpaceSize' }
-VMSpurOldSpaceGarbageCollectorTest >> testAllocateUnreferencedCycleShouldBeReclaimed [
-	self assertObjectWereReclaimed: [
-		| obj1 obj2 |
-	
-		obj1 := self newOldSpaceObjectWithSlots: 1.
-		obj2 := self newOldSpaceObjectWithSlots: 1.
-		memory storePointer: 0 ofObject: obj1 withValue: obj2.
-		memory storePointer: 0 ofObject: obj2 withValue: obj1.
-	]
-]
-
 { #category : #tests }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectNotReferencedShouldBeCollected [
 
-	| oldFreeSpaceSize obj2 keptObjectSize |
-	
-	"The free objects are only reclaimed when there is a object after it. 
-	For example if I have a free object and then only free space, the compactor assumes 
-	that the heap is compacted, but it does not compact the free list. So the last free chunk is never 
-	count on.
-	This is a ""feature"" of the compactor. Changing the compactor strategy may change this behavior."
-	
-	memory fullGC.
-	oldFreeSpaceSize := memory totalFreeListBytes.
-	
-	self newOldSpaceObjectWithSlots: 0.	
-	obj2 := self newOldSpaceObjectWithSlots: 0.
-	
-	self keepObjectInVMVariable1: obj2.
-	keptObjectSize := memory bytesInObject: obj2.
-	
-	memory fullGC.
-	
-	self assert: memory totalFreeListBytes equals: oldFreeSpaceSize - keptObjectSize.
+	| deltaFreeSpace |
+	deltaFreeSpace := self deltaFreeSpaceAfterGC: [ 
+		              self newOldSpaceObjectWithSlots: 0 ].
+
+	self assert: deltaFreeSpace equals: 0
+]
+
+{ #category : #'tests-OldSpaceSize' }
+VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromNewObjectShouldBeCollected [
+
+	| deltaFreeSpace |
+	deltaFreeSpace := self deltaFreeSpaceAfterGC: [ 
+		              | oldObj newObj |
+		              oldObj := self newOldSpaceObjectWithSlots: 0.
+		              newObj := self newObjectWithSlots: 1.
+		              memory storePointer: 0 ofObject: newObj withValue: oldObj ].
+
+	self assert: deltaFreeSpace equals: 0
 ]
 
 { #category : #tests }
-VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromPermObjectShouldBeKept [
-	| permOop oldOop oldFreeSpaceSize oldObjectSize lastOop lastObjectSize |
-	memory fullGC.
-	oldFreeSpaceSize := memory totalFreeListBytes.
+VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromRememberedPermObjectShouldBeKept [
 
-	"Create test objects"
-	permOop := self newPermanentObjectWithSlots: 1.
-	oldOop := self newOldSpaceObjectWithSlots: 0.
-	oldObjectSize := memory bytesInObject: oldOop.
-	
-	"Create last object for compactor"
-	lastOop := self newOldSpaceObjectWithSlots: 0.	
-	lastObjectSize := memory bytesInObject: lastOop.
+	| oldObjectSize deltaFreeSpace |
+	deltaFreeSpace := self deltaFreeSpaceAfterGC: [ | permOop oldOop |
+		                  permOop := self newPermanentObjectWithSlots: 1.
+		                  oldOop := self newOldSpaceObjectWithSlots: 0.
+		                  oldObjectSize := memory bytesInObject: oldOop.
+		                  memory storePointer: 0 ofObject: permOop withValue: oldOop ].
 
-	"Set root references"
-	self keepObjectInVMVariable1: lastOop.
-	memory storePointer: 0 ofObject: permOop withValue: oldOop.
-	
-	memory fullGC.
+	self assert: deltaFreeSpace equals: oldObjectSize
+]
 
-	self assert: memory totalFreeListBytes equals: oldFreeSpaceSize - lastObjectSize - oldObjectSize.
+{ #category : #'tests-OldSpaceSize' }
+VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromUnreferencedCycleObjectShouldBeCollected [
+
+	| deltaFreeSpace |
+	deltaFreeSpace := self deltaFreeSpaceAfterGC: [ 
+		              | obj1 obj2 |
+		              obj1 := self newOldSpaceObjectWithSlots: 1.
+		              obj2 := self newOldSpaceObjectWithSlots: 1.
+		              memory storePointer: 0 ofObject: obj1 withValue: obj2.
+		              memory storePointer: 0 ofObject: obj2 withValue: obj1 ].
+
+	self assert: deltaFreeSpace equals: 0
 ]
 
 { #category : #tests }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableShouldBeKept [
-	| anObjectOop |
-	memory fullGC.
-	
-	anObjectOop := self newOldSpaceObjectWithSlots: 0.
 
-	self keepObjectInVMVariable1: anObjectOop.
-	
-	memory fullGC.
-	
-	self deny: (memory isFreeObject: anObjectOop)
+	| oldOop objectSize deltaFreeSpace |
+	deltaFreeSpace := self deltaFreeSpaceAfterGC: [ 
+		                  oldOop := self newOldSpaceObjectWithSlots: 0.
+		                  objectSize := memory bytesInObject: oldOop.
+		                  self keepObjectInVMVariable2: oldOop ].
+
+
+	self deny: (memory isFreeObject: oldOop).
+	self assert: deltaFreeSpace equals: objectSize
 ]
 
 { #category : #tests }
