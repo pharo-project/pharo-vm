@@ -1070,7 +1070,7 @@ SpurGenerationScavenger >> scavengeLoop [
 		 firstTime := false].
 	 "if nothing more copied and forwarded (or remembered by mapInterpreterOops)
 	  to scavenge, and no ephemerons to process, scavenge is done."
-	 (rememberedSet hasSameSize
+	 (rememberedSet keepSameSize
 	  and: [previousFutureSurvivorStart = futureSurvivorStart
 	  and: [rememberedSet numRememberedEphemerons = 0
 	  and: [ephemeronList isNil]]]) ifTrue:
@@ -1080,7 +1080,7 @@ SpurGenerationScavenger >> scavengeLoop [
 	 previousFutureSurvivorStart := futureSurvivorStart.
 
 	 "no more roots created to scavenge..."
-	 rememberedSet hasSameSize ifTrue:
+	 rememberedSet keepSameSize ifTrue:
 		[(rememberedSet numRememberedEphemerons = 0
 		  and: [ephemeronList isNil]) ifTrue:
 			[^self]. "no ephemerons to process, scavenge is done."

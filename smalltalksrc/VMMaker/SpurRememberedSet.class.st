@@ -70,12 +70,6 @@ SpurRememberedSet >> growRememberedSet [
 	
 ]
 
-{ #category : #accessing }
-SpurRememberedSet >> hasSameSize [
-
-	^ previousRememberedSetSize = rememberedSetSize
-]
-
 { #category : #initialization }
 SpurRememberedSet >> initialize [
 
@@ -117,6 +111,12 @@ SpurRememberedSet >> isInRememberedSet: objOop [
 		(rememberedSetArray at: i) = objOop ifTrue:
 			[^true]].
 	^false
+]
+
+{ #category : #accessing }
+SpurRememberedSet >> keepSameSize [
+
+	^ previousRememberedSetSize = rememberedSetSize
 ]
 
 { #category : #accessing }
@@ -211,7 +211,6 @@ SpurRememberedSet >> remember: objOop [
 	<inline: false>
 	self assert: (manager isNonImmediate: objOop).
 	self deny: (manager getMemoryMap isYoungObject: objOop).
-	self deny: (manager isRemembered: objOop).
 	self deny: (self isInRememberedSet: objOop).
 	
 	manager setIsRememberedOf: objOop to: true.

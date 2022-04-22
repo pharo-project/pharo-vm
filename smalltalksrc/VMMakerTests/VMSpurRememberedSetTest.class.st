@@ -4,7 +4,7 @@ Class {
 	#category : #'VMMakerTests-MemoryTests'
 }
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : #tests }
 VMSpurRememberedSetTest >> testFreeRememberedOldObjectShouldForgetIt [
 
 	| oldObjectAddress rememberedObjectAddress |
@@ -22,7 +22,7 @@ VMSpurRememberedSetTest >> testFreeRememberedOldObjectShouldForgetIt [
 
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : #tests }
 VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldNotUseNewRememberedSet [
 
 	| oldObjectAddress permObjectAddress referencedOldObjectAddress |
@@ -40,7 +40,7 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldNotUseNew
 
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : #tests }
 VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldRememberPermObject [
 
 	| permObjectAddress oldObjectAddress referencedOldObjectAddress |
@@ -60,7 +60,7 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldRememberP
 
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : #tests }
 VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldUpdateOldRememberedSet [
 
 	| oldObjectAddress permObjectAddress referencedOldObjectAddress |
@@ -79,7 +79,7 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldUpdateOld
 
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : #tests }
 VMSpurRememberedSetTest >> testMoveToPermSpaceRememberedObjectShouldBeRememberedToo [
 
 	| oldObjectAddress rememberedObjectAddress permObjectAddress |
@@ -96,7 +96,7 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceRememberedObjectShouldBeRemembered
 
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : #tests }
 VMSpurRememberedSetTest >> testMoveToPermSpaceRememberedObjectShouldUpdateNewRememberedSet [
 
 	| oldObjectAddress rememberedObjectAddress permObjectAddress |
@@ -114,7 +114,7 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceRememberedObjectShouldUpdateNewRem
 
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : #tests }
 VMSpurRememberedSetTest >> testOldObjectIsNotRemembered [
 
 	| oldObjectAddress |
@@ -123,7 +123,7 @@ VMSpurRememberedSetTest >> testOldObjectIsNotRemembered [
 	self deny: (memory isRemembered: oldObjectAddress).
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : #tests }
 VMSpurRememberedSetTest >> testOverflowRememberedSetShouldMakeItGrow [
 
 	| oldObjectRootAddress originalLimit youngObjectAddress |
@@ -153,7 +153,21 @@ VMSpurRememberedSetTest >> testOverflowRememberedSetShouldMakeItGrow [
 	self assert: memory scavenger rememberedSetLimit equals: originalLimit * 2
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : #tests }
+VMSpurRememberedSetTest >> testStoreOldObjectInOldObjectShouldNotRememberAnyone [
+
+	| oldObjectAddress storedOldObjectAddress |
+
+	"Create a old object and reference it from old object"
+	storedOldObjectAddress := self newOldSpaceObjectWithSlots: 0.
+	oldObjectAddress := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObjectAddress withValue: storedOldObjectAddress.
+	
+	self deny: (memory isRemembered: oldObjectAddress).
+	self deny: (memory isRemembered: storedOldObjectAddress).
+]
+
+{ #category : #tests }
 VMSpurRememberedSetTest >> testStoreOldObjectInPermObjectShouldRememberPermObject [
 
 	| permObjectAddress oldObjectAddress |
@@ -167,33 +181,35 @@ VMSpurRememberedSetTest >> testStoreOldObjectInPermObjectShouldRememberPermObjec
 	self deny: (memory isRemembered: oldObjectAddress).
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
-VMSpurRememberedSetTest >> testStoreOldObjectInYoungObjectShouldNotRememberOldObject [
+{ #category : #tests }
+VMSpurRememberedSetTest >> testStoreOldObjectInYoungObjectShouldNotRememberAnyone [
 
 	| oldObjectAddress youngObjectAddress |
 
 	"Create a old object and reference it from young object"
-	oldObjectAddress := self newOldSpaceObjectWithSlots: 1.
+	oldObjectAddress := self newOldSpaceObjectWithSlots: 0.
 	youngObjectAddress := self newObjectWithSlots: 1.
 	memory storePointer: 0 ofObject: youngObjectAddress withValue: oldObjectAddress.
 	
 	self deny: (memory isRemembered: oldObjectAddress).
-]
-
-{ #category : #'tests-6-scavenge-rememberedset' }
-VMSpurRememberedSetTest >> testStoreOldObjectInYoungObjectShouldNotRememberYoungObject [
-
-	| oldObjectAddress youngObjectAddress |
-
-	"Create a old object and reference it from young object"
-	oldObjectAddress := self newOldSpaceObjectWithSlots: 1.
-	youngObjectAddress := self newObjectWithSlots: 1.
-	memory storePointer: 0 ofObject: youngObjectAddress withValue: oldObjectAddress.
-	
 	self deny: (memory isRemembered: youngObjectAddress).
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : #tests }
+VMSpurRememberedSetTest >> testStorePermObjectInOldObjectShouldNotRememberAnyone [
+
+	| permObjectAddress oldObjectAddress |
+
+	"Create a perm object and reference it from old object"
+	permObjectAddress := self newPermanentObjectWithSlots: 0.
+	oldObjectAddress := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObjectAddress withValue: permObjectAddress.
+	
+	self deny: (memory isRemembered: permObjectAddress).
+	self deny: (memory isRemembered: oldObjectAddress).
+]
+
+{ #category : #tests }
 VMSpurRememberedSetTest >> testStorePermObjectInPermObjectShouldNotRememberAnyone [
 
 	| permObjectAddress referencedPermObjectAddress |
@@ -207,35 +223,89 @@ VMSpurRememberedSetTest >> testStorePermObjectInPermObjectShouldNotRememberAnyon
 	self deny: (memory isRemembered: referencedPermObjectAddress).
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : #tests }
+VMSpurRememberedSetTest >> testStorePermObjectInYoungObjectShouldNotRememberAnyone [
+
+	| permObjectAddress youngObjectAddress |
+
+	"Create a perm object and reference it from young object"
+	permObjectAddress := self newPermanentObjectWithSlots: 0.
+	youngObjectAddress := self newObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: youngObjectAddress withValue: permObjectAddress.
+	
+	self deny: (memory isRemembered: permObjectAddress).
+	self deny: (memory isRemembered: youngObjectAddress).
+]
+
+{ #category : #tests }
+VMSpurRememberedSetTest >> testStoreYoungAndOldObjectInPermObjectShouldRememberPermObjectInBothRememberedSets [
+
+	| permObjectAddress oldObjectAddress youngObjectAddress |
+
+	"Create a old object and reference it from perm object"
+	permObjectAddress := self newPermanentObjectWithSlots: 2.
+	oldObjectAddress := self newOldSpaceObjectWithSlots: 0.
+	youngObjectAddress := self newZeroSizedObject.
+	memory storePointer: 0 ofObject: permObjectAddress withValue: youngObjectAddress.
+	memory storePointer: 1 ofObject: permObjectAddress withValue: oldObjectAddress.
+
+	"Check flags"	
+	self assert: (memory isRemembered: permObjectAddress).
+	self deny: (memory isRemembered: oldObjectAddress).
+	self deny: (memory isRemembered: youngObjectAddress).
+
+	"Check sets"	
+	self assert: memory newSpaceRememberedSet rememberedSetSize equals: 1.
+	self assert: (memory newSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
+	
+	self assert: memory oldSpaceRememberedSet rememberedSetSize equals: 1.
+	self assert: (memory oldSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
+
+]
+
+{ #category : #tests }
 VMSpurRememberedSetTest >> testStoreYoungObjectInOldObjectShouldRememberOldObject [
 
-	| oldObjectAddress rememberedObjectAddress |
-	
-	oldObjectAddress := self newOldSpaceObjectWithSlots: 1.
-	self deny: (memory isRemembered: oldObjectAddress).
+	| oldObjectAddress youngObjectAddress |
 	
 	"Create a young object and reference it from the old object"
-	rememberedObjectAddress := self newZeroSizedObject.
-	memory storePointer: 0 ofObject: oldObjectAddress withValue: rememberedObjectAddress.
+	youngObjectAddress := self newZeroSizedObject.
+	oldObjectAddress := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObjectAddress withValue: youngObjectAddress.
 	
 	self assert: (memory isRemembered: oldObjectAddress).
+	self deny: (memory isRemembered: youngObjectAddress).
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : #tests }
 VMSpurRememberedSetTest >> testStoreYoungObjectInPermObjectShouldRememberPermObject [
 
-	| permObjectAddress rememberedObjectAddress |
+	| permObjectAddress youngObjectAddress |
 
 	"Create a young object and reference it from perm object"
+	youngObjectAddress := self newZeroSizedObject.
 	permObjectAddress := self newPermanentByteObjectOfSize: 1.
-	rememberedObjectAddress := self newZeroSizedObject.
-	memory storePointer: 0 ofObject: permObjectAddress withValue: rememberedObjectAddress.
+	memory storePointer: 0 ofObject: permObjectAddress withValue: youngObjectAddress.
 	
 	self assert: (memory isRemembered: permObjectAddress).
+	self deny: (memory isRemembered: youngObjectAddress).
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : #tests }
+VMSpurRememberedSetTest >> testStoreYoungObjectInYoungObjectShouldNotRememberAnyone [
+
+	| youngObjectAddress storedYoungObjectAddress |
+	
+	"Create a young object and reference it from the young object"
+	storedYoungObjectAddress := self newZeroSizedObject.
+	youngObjectAddress := self newObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: youngObjectAddress withValue: storedYoungObjectAddress.
+	
+	self deny: (memory isRemembered: storedYoungObjectAddress).
+	self deny: (memory isRemembered: youngObjectAddress).
+]
+
+{ #category : #tests }
 VMSpurRememberedSetTest >> testYoungObjectIsNotRemembered [
 
 	| newObjectAddress |

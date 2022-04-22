@@ -179,7 +179,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableSho
 	self assert: deltaFreeSpace equals: objectSize
 ]
 
-{ #category : #tests }
+{ #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableShouldBeMoved [
 
 	| anObjectOop hash |

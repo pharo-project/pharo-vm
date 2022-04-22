@@ -9785,16 +9785,20 @@ SpurMemoryManager >> positiveMachineIntegerValueOf: integerValue [
 
 { #category : #'store check' }
 SpurMemoryManager >> possiblePermStoreInto: destObj [
+
 	<inline: true>
-	(self isRemembered: destObj) ifFalse:
-		[oldSpaceRememberedSet remember: destObj]
+	((self isRemembered: destObj) and: [ 
+		 oldSpaceRememberedSet isInRememberedSet: destObj ]) ifFalse: [ 
+		oldSpaceRememberedSet remember: destObj ]
 ]
 
 { #category : #'store check' }
 SpurMemoryManager >> possibleRootStoreInto: destObj [
+
 	<inline: true>
-	(self isRemembered: destObj) ifFalse:
-		[scavenger remember: destObj]
+	((self isRemembered: destObj) and: [ 
+		 newSpaceRememberedSet isInRememberedSet: destObj ]) ifFalse: [ 
+		newSpaceRememberedSet remember: destObj ]
 ]
 
 { #category : #'become implementation' }
