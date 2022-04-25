@@ -25,3 +25,15 @@ TVMSimulator >> openOn: fileName extraMemory: extraBytes [
 	^ self imageReader readImageNamed: fileName 
 
 ]
+
+{ #category : #'frame access' }
+TVMSimulator >> withoutSmallIntegerTags: anInteger [
+	| signBit |
+	self assert: (anInteger >= 0 and: [anInteger highBit <= (self objectMemory wordSize * 8)]).
+	signBit := 1 << (self objectMemory wordSize * 8 - 1).
+	^(anInteger bitAnd: signBit) ~= 0
+		ifTrue: ["negative"
+				(anInteger bitClear: signBit + 1) - signBit]
+		ifFalse: ["positive"
+				anInteger - 1]
+]
