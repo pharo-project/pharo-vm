@@ -117,6 +117,7 @@ AbstractImageAccess >> initializeInterpreterFromHeader: header withBytes: bytesR
 	| bytesToShift |
 
 	bytesRead ~= header dataSize ifTrue: [ 
+		self logError: 'Expecting %lld Got %lld' _: header dataSize _: bytesRead.		
 		interpreter unableToReadImageError ].
 
 	interpreter ensureImageFormatIsUpToDate: header swapBytes.

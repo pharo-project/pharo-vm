@@ -175,6 +175,10 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 	<var: #imageFile type: #sqImageFile>
 	<var: 'aHeader' type: #SpurImageHeaderStruct>
 	<var: #permSpaceMetadata type: #ComposedMetadataStruct>
+	<var: #bytesRead type: #'size_t'>
+	<var: #dataSize type: #'size_t'>
+	<var: #oldBase type: #'void*'>
+	<var: #newBase type: #'void*'>
 
 	| newBase permSpaceMetadata oldBase dataSize bytesRead |
 
@@ -189,7 +193,9 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 		ifFalse: [ interpreter error: 'Could not allocate PermSpace' ].
 
 	newBase := objectMemory getMemoryMap permSpaceStart.
-	newBase ~= oldBase ifTrue: [ interpreter unableToReadImageError ].
+	newBase ~= oldBase ifTrue: [ 
+		self logError: 'Expecting Base %p Got %p' _: oldBase _: newBase.		
+		interpreter unableToReadImageError ].
 
 	bytesRead := self
 		             readPermanentSpaceDataFromImage: imageFileName
@@ -199,7 +205,9 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 	objectMemory setPermSpaceFreeStart: (objectMemory getMemoryMap permSpaceStart + dataSize).
 
 	"Check bytes read"
-	bytesRead ~= dataSize ifTrue: [ interpreter unableToReadImageError ].
+	bytesRead ~= dataSize ifTrue: [ 
+		self logError: 'Expecting %lld Got %lld' _: dataSize _: bytesRead.		
+		interpreter unableToReadImageError ].
 
 	^ bytesRead
 ]
@@ -240,6 +248,10 @@ ComposedImageReader >> readSegmentsFromImageFile: imageFileName header: aHeader 
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
 	<var: 'aHeader' type: #SpurImageHeaderStruct>
 	<var: #segmentMetadata type: #ComposedMetadataStruct>
+	<var: #bytesRead type: #'size_t'>
+	<var: #totalBytesRead type: #'size_t'>
+	<var: #segmentSize type: #'size_t'>
+		
 	| bytesRead totalBytesRead segmentSize oldBase newBase segmentIndex segmentMetadata |
 	self prepareSegmentsToRead.
 
@@ -270,6 +282,7 @@ ComposedImageReader >> readSegmentsFromImageFile: imageFileName header: aHeader 
 
 	"Check segment bytes read"
 	bytesRead ~= segmentSize ifTrue: [ 
+		self logError: 'Expecting %lld Got %lld' _: segmentSize _: bytesRead.
 		interpreter unableToReadImageError ].
 
 	"The next segment will override the bridge of this segment"
