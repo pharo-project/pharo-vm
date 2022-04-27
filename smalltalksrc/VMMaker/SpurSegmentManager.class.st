@@ -668,7 +668,11 @@ SpurSegmentManager >> swizzleObj: objOop [
 
 { #category : #snapshot }
 SpurSegmentManager >> totalBytesInNonEmptySegments [
+
+	<var: #total type: #'size_t'>
+
 	| total |
+	
 	total := 0.
 	0 to: numSegments - 1 do:
 		[:i|

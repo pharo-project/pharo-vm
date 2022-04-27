@@ -10481,7 +10481,8 @@ StackInterpreter >> newHeader [
 	| header sizeToWrite |
 
 	<var: #header type: #'SpurImageHeaderStruct'>
-	<returnTypeC: #SpurImageHeaderStruct>	
+	<returnTypeC: #SpurImageHeaderStruct>
+	<var: #sizeToWrite type: #'size_t'>
 
 	self simulationOnly: [ header := SpurImageHeaderStruct new ].
 

@@ -6060,6 +6060,7 @@ SpurMemoryManager >> imageFormatVersion [
 { #category : #snapshot }
 SpurMemoryManager >> imageSizeToWrite [
 	"when asked, newSpace should be empty."
+	<returnTypeC: #'size_t'> 
 	self assert: self newSpaceIsEmpty.
 	^segmentManager totalBytesInNonEmptySegments + self totalBytesInPermanentSpace.
 ]
@@ -12097,6 +12098,7 @@ SpurMemoryManager >> totalByteSizeOf: oop [
 { #category : #accessing }
 SpurMemoryManager >> totalBytesInPermanentSpace [
 
+	<returnTypeC: #'size_t'> 
 	^ permSpaceFreeStart - memoryMap permSpaceStart
 ]
 
