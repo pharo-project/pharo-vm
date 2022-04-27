@@ -19,12 +19,6 @@ SpurGenerationScavengerSimulator >> cameFrom: anObject [
 	cameFrom := anObject
 ]
 
-{ #category : #'remembered set' }
-SpurGenerationScavengerSimulator >> computeRefCountToShrinkRT [
-	self halt.
-	^super computeRefCountToShrinkRT
-]
-
 { #category : #scavenger }
 SpurGenerationScavengerSimulator >> copyAndForward: survivor [
 	| relocatedOop |
@@ -57,14 +51,6 @@ SpurGenerationScavengerSimulator >> recordMovements [
 
 { #category : #accessing }
 SpurGenerationScavengerSimulator >> rememberedSet [
-	^rememberedSet
-]
 
-{ #category : #scavenger }
-SpurGenerationScavengerSimulator >> scavenge: tenuringCriterion [
-	manager bootstrapping ifFalse:
-		[coInterpreter transcript nextPutAll: 'scavenging('; print: manager statScavenges; nextPutAll: ')...'; flush.
-		 cameFrom ifNotNil:
-			[cameFrom := Dictionary new]].
-	^super scavenge: tenuringCriterion
+	^ rememberedSet
 ]

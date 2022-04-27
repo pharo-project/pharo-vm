@@ -326,75 +326,23 @@ VMSpurScavengerTest >> testObjectInStackShouldSurviveScanvenge [
 ]
 
 { #category : #'tests-6-scavenge-rememberedset' }
-VMSpurScavengerTest >> testOldObjectIsNotRemembered [
-
-	| oldObjectAddress |
-	
-	"Create an object, reference it, and move it to old space"
-	oldObjectAddress := self newObjectWithSlots: 1.
-	memory coInterpreter newMethod: oldObjectAddress.
-	memory flushNewSpace.
-	oldObjectAddress := memory remapObj: oldObjectAddress.
-
-	self deny: (memory isRemembered: oldObjectAddress).
-]
-
-{ #category : #'tests-6-scavenge-rememberedset' }
 VMSpurScavengerTest >> testOldObjectReferenceToYoungObjectShouldBeRemappedAfterScanvenge [
 
 	| oldObjectAddress rememberedObjectAddress rememberedObjectHash newRememberedObjectAddress maybeMappedReferenceToYoungObject |
 	
-	"Create an object, reference it, and move it to old space"
-	oldObjectAddress := self newObjectWithSlots: 1.
-	memory coInterpreter newMethod: oldObjectAddress.
-	memory flushNewSpace.
-	oldObjectAddress := memory remapObj: oldObjectAddress.
-
 	"Create a young object and reference it from the old object"
+	oldObjectAddress := self newOldSpaceObjectWithSlots: 1.
 	rememberedObjectAddress := self newZeroSizedObject.
 	rememberedObjectHash := memory hashBitsOf: rememberedObjectAddress.
 	memory storePointer: 0 ofObject: oldObjectAddress withValue: rememberedObjectAddress.
 	
-
-	"Nil should survive, but newObjectOop should survive too.
-	Nil is referenced by the roots because many of their slots are nilled.
-	newObjectOop is referenced by the stack"
 	memory doScavenge: 1 "TenureByAge".
 	
 	"Remap our object address to its new location"
 	maybeMappedReferenceToYoungObject := memory fetchPointer: 0 ofObject: oldObjectAddress.
 	newRememberedObjectAddress := memory remapObj: rememberedObjectAddress.
-	self assert: maybeMappedReferenceToYoungObject equals: newRememberedObjectAddress
-]
-
-{ #category : #'tests-6-scavenge-rememberedset' }
-VMSpurScavengerTest >> testOverflowRememberedSetShouldMakeItGrow [
-
-	| oldObjectRootAddress originalLimit youngObjectAddress |
-	originalLimit := memory scavenger rememberedSetLimit.
-
-	"Create as many objects for the remembered set + 1"
-	oldObjectRootAddress := self newOldSpaceObjectWithSlots: originalLimit + 1.
-	1 to: originalLimit + 1 do: [ :i | 
-		memory
-			storePointer: i - 1
-			ofObject: oldObjectRootAddress
-			withValue: (self newObjectWithSlots: 1).
-	].
-
-	"Flush them to the old space"
-	memory coInterpreter method: oldObjectRootAddress.
-	memory flushNewSpace.
 	
-	"Make old objects reference a young object"
-	youngObjectAddress := self newZeroSizedObject.
-	1 to: originalLimit + 1 do: [ :i | | oldObjectAddress |
-		oldObjectAddress := memory fetchPointer: i - 1 ofObject: oldObjectRootAddress.
-		memory storePointer: 0
-			ofObject: oldObjectAddress
-			withValue: youngObjectAddress ].
-
-	self assert: memory scavenger rememberedSetLimit equals: originalLimit * 2
+	self assert: maybeMappedReferenceToYoungObject equals: newRememberedObjectAddress
 ]
 
 { #category : #'tests-4-scavenge-stack' }
@@ -444,30 +392,28 @@ VMSpurScavengerTest >> testReferencedObjectShouldSurviveScavenge [
 ]
 
 { #category : #'tests-6-scavenge-rememberedset' }
-VMSpurScavengerTest >> testRememberedObjectShouldSurviveScanvenge [
+VMSpurScavengerTest >> testScanvengeTenureByAgeWithRSInRedZoneShouldShrink [
 
-	| oldObjectAddress rememberedObjectAddress rememberedObjectHash newRememberedObjectAddress |
+	| youngObjectAddress oneOldObjectAddress otherOldObjectAddress |
 	
-	"Create an object, reference it, and move it to old space"
-	oldObjectAddress := self newObjectWithSlots: 1.
-	memory coInterpreter newMethod: oldObjectAddress.
-	memory flushNewSpace.
-	oldObjectAddress := memory remapObj: oldObjectAddress.
-
-	"Create a young object and reference it from the old object"
-	rememberedObjectAddress := self newZeroSizedObject.
-	rememberedObjectHash := memory hashBitsOf: rememberedObjectAddress.
-	memory storePointer: 0 ofObject: oldObjectAddress withValue: rememberedObjectAddress.
+	memory scavenger rememberedSet rememberedSetRedZone: 2.
 	
+	"Create a young object and reference it from two old objects"
+	youngObjectAddress := self newZeroSizedObject.
 
-	"Nil should survive, but newObjectOop should survive too.
-	Nil is referenced by the roots because many of their slots are nilled.
-	newObjectOop is referenced by the stack"
+	oneOldObjectAddress := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oneOldObjectAddress withValue: youngObjectAddress.
+
+	otherOldObjectAddress := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: otherOldObjectAddress withValue: youngObjectAddress.
+
+	self assert: memory scavenger rememberedSet isInRedZone.
+	self assert: memory scavenger refCountToShrinkRT isNil. 
+	
 	memory doScavenge: 1 "TenureByAge".
 	
-	"Remap our object address to its new location"
-	newRememberedObjectAddress := memory remapObj: rememberedObjectAddress.
-	self assert: (memory hashBitsOf: newRememberedObjectAddress) equals: rememberedObjectHash
+	self assert: memory scavenger refCountToShrinkRT equals: 8. 
+
 ]
 
 { #category : #'tests-3-scavenge-basic' }
@@ -656,60 +602,6 @@ VMSpurScavengerTest >> testScavengedRootObjectsShouldBeCopiedBeforeOtherObjects 
 	self assert: (memory remapObj: secondRootObjectAddress) < (memory remapObj: nonRootObjectAddress)
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
-VMSpurScavengerTest >> testStoreOldObjectInYoungObjectShouldNotRememberOldObject [
-
-	| oldObjectAddress youngObjectAddress |
-	
-	"Create an object, reference it, and move it to old space"
-	oldObjectAddress := self newObjectWithSlots: 1.
-	memory coInterpreter newMethod: oldObjectAddress.
-	memory flushNewSpace.
-	oldObjectAddress := memory remapObj: oldObjectAddress.
-
-	"Create a young object and reference it from the old object"
-	youngObjectAddress := self newZeroSizedObject.
-	memory storePointer: 0 ofObject: youngObjectAddress withValue: oldObjectAddress.
-	
-	self deny: (memory isRemembered: oldObjectAddress).
-]
-
-{ #category : #'tests-6-scavenge-rememberedset' }
-VMSpurScavengerTest >> testStoreOldObjectInYoungObjectShouldNotRememberYoungObject [
-
-	| oldObjectAddress youngObjectAddress |
-	
-	"Create an object, reference it, and move it to old space"
-	oldObjectAddress := self newObjectWithSlots: 1.
-	memory coInterpreter newMethod: oldObjectAddress.
-	memory flushNewSpace.
-	oldObjectAddress := memory remapObj: oldObjectAddress.
-
-	"Create a young object and reference it from the old object"
-	youngObjectAddress := self newZeroSizedObject.
-	memory storePointer: 0 ofObject: youngObjectAddress withValue: oldObjectAddress.
-	
-	self deny: (memory isRemembered: youngObjectAddress).
-]
-
-{ #category : #'tests-6-scavenge-rememberedset' }
-VMSpurScavengerTest >> testStoreYoungObjectInOldObjectShouldRememberOldObject [
-
-	| oldObjectAddress rememberedObjectAddress |
-	
-	"Create an object, reference it, and move it to old space"
-	oldObjectAddress := self newObjectWithSlots: 1.
-	memory coInterpreter newMethod: oldObjectAddress.
-	memory flushNewSpace.
-	oldObjectAddress := memory remapObj: oldObjectAddress.
-
-	"Create a young object and reference it from the old object"
-	rememberedObjectAddress := self newZeroSizedObject.
-	memory storePointer: 0 ofObject: oldObjectAddress withValue: rememberedObjectAddress.
-	
-	self assert: (memory isRemembered: oldObjectAddress).
-]
-
 { #category : #'tests-3-scavenge-basic' }
 VMSpurScavengerTest >> testUnreferencedObjectCycleShouldNotSurviveScavenge [
 	| objectA objectB |
@@ -751,10 +643,37 @@ VMSpurScavengerTest >> testUnreferencedObjectGraphShouldNotSurviveScavenge [
 ]
 
 { #category : #'tests-6-scavenge-rememberedset' }
-VMSpurScavengerTest >> testYoungObjectIsNotRemembered [
+VMSpurScavengerTest >> testYoungObjectRememberedFromOldObjectShouldSurviveScanvenge [
 
-	| newObjectAddress |
-	newObjectAddress := self newObjectWithSlots: 1.
+	| oldObjectAddress rememberedObjectAddress rememberedObjectHash newRememberedObjectAddress |
+	
+	"Create a young object and reference it from the old object"
+	oldObjectAddress := self newOldSpaceObjectWithSlots: 1.
+	rememberedObjectAddress := self newZeroSizedObject.
+	rememberedObjectHash := memory hashBitsOf: rememberedObjectAddress.
+	memory storePointer: 0 ofObject: oldObjectAddress withValue: rememberedObjectAddress.
+	
+	memory doScavenge: 1 "TenureByAge".
+	
+	"Remap our object address to its new location"
+	newRememberedObjectAddress := memory remapObj: rememberedObjectAddress.
+	self assert: (memory hashBitsOf: newRememberedObjectAddress) equals: rememberedObjectHash
+]
 
-	self deny: (memory isRemembered: newObjectAddress).
+{ #category : #'tests-6-scavenge-rememberedset' }
+VMSpurScavengerTest >> testYoungObjectRememberedFromPermanentObjectShouldSurviveScanvenge [
+
+	| permObjectAddress rememberedObjectAddress rememberedObjectHash newRememberedObjectAddress |
+	
+	"Create a young object and reference it from the perm object"
+	permObjectAddress := self newPermanentObjectWithSlots: 1.
+	rememberedObjectAddress := self newZeroSizedObject.
+	rememberedObjectHash := memory hashBitsOf: rememberedObjectAddress.
+	memory storePointer: 0 ofObject: permObjectAddress withValue: rememberedObjectAddress.
+	
+	memory doScavenge: 1 "TenureByAge".
+	
+	"Remap our object address to its new location"
+	newRememberedObjectAddress := memory remapObj: rememberedObjectAddress.
+	self assert: (memory hashBitsOf: newRememberedObjectAddress) equals: rememberedObjectHash
 ]

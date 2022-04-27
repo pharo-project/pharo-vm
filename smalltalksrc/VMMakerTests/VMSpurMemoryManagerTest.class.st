@@ -212,7 +212,8 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 	
 	firstClassTablePage := memory fetchPointer: 0 ofObject: memory hiddenRootsObject.
 	
-	memory scavenger initializeRememberedSet.
+	memory newSpaceRememberedSet initializeRememberedSet.
+	memory oldSpaceRememberedSet initializeRememberedSet.
 	memory scavenger remember: memory hiddenRootsObject.
 	memory scavenger remember: firstClassTablePage. 
 	memory specialObjectsOop: (self newObjectWithSlots: 60).
@@ -427,6 +428,38 @@ VMSpurMemoryManagerTest >> newOldSpaceObjectWithSlots: slots format: aFormat cla
 	^ oop
 ]
 
+{ #category : #'helpers - objects' }
+VMSpurMemoryManagerTest >> newPermanentObjectWithSlots: slots [ 
+
+	^ self newPermanentSpaceObjectWithSlots: slots classIndex: memory arrayClassIndexPun
+]
+
+{ #category : #'helpers - objects' }
+VMSpurMemoryManagerTest >> newPermanentSpaceObjectWithSlots: slots classIndex: anIndex [
+
+	| format |
+	format := slots = 0
+		          ifTrue: [ memory zeroSlotsNonIndexablePointerFormat ]
+		          ifFalse: [ memory arrayFormat ].
+
+	^ self
+		  newPermanentSpaceObjectWithSlots: slots
+		  format: format
+		  classIndex: anIndex
+]
+
+{ #category : #'helpers - objects' }
+VMSpurMemoryManagerTest >> newPermanentSpaceObjectWithSlots: slots format: aFormat classIndex: anIndex [
+	
+	| oop |
+	oop := memory
+			allocateSlotsInPermSpace: slots
+			format: aFormat
+			classIndex: anIndex.
+	oop ifNotNil: [ memory fillObj: oop numSlots: slots with: memory nilObject ].
+	^ oop
+]
+
 { #category : #'helpers - frames' }
 VMSpurMemoryManagerTest >> newSmallContextReceiver: anOop method: aMethodOop arguments: aCollectionOfArgumentsOop temporaries: aCollectionOfTemporariesOop ip: anIp [
 
@@ -525,7 +558,7 @@ VMSpurMemoryManagerTest >> setContextClassIntoClassTable [
 	| aClass |
 	aClass := self
 		newClassInOldSpaceWithSlots: 0
-		instSpec: Array instSpec.
+		instSpec: Context instSpec.
 	memory setHashBitsOf: aClass to: ClassMethodContextCompactIndex.
 	memory
 		storePointer: ClassMethodContextCompactIndex

@@ -4414,7 +4414,7 @@ VMPrimitiveTest >> testPrimitiveSnapshotContextsShouldBeTenured [
 { #category : #'tests - snapshot' }
 VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
 
-	| method file |
+	| method |
 	interpreter pluginList: #(  ).
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.

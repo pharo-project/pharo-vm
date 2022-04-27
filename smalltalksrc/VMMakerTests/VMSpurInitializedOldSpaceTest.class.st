@@ -149,7 +149,6 @@ VMSpurInitializedOldSpaceTest >> setUp [
 	self initializeOldSpaceForFullGC.
 	memory lastHash: 1.
 	memory classByteArray: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0)).
-
 ]
 
 { #category : #helpers }

@@ -669,8 +669,8 @@ SpurPlanningCompactor >> remapObj: objOop [
 SpurPlanningCompactor >> repinRememberedSet [
 	<inline: true>
 	scavenger rememberedSetSize > 0 ifTrue:
-		[manager storePointerUnchecked: 0 ofObject: manager rememberedSetObj withValue: firstFieldOfRememberedSet].
-	manager setIsPinnedOf: manager rememberedSetObj to: true.
+		[manager storePointerUnchecked: 0 ofObject: manager newRememberedSetObj withValue: firstFieldOfRememberedSet].
+	manager setIsPinnedOf: manager newRememberedSetObj to: true.
 	scavenger relocateRememberedSet
 ]
 
@@ -806,8 +806,8 @@ SpurPlanningCompactor >> unmarkPinned: pinnedObj [
 { #category : #private }
 SpurPlanningCompactor >> unpinRememberedSet [
 	<inline: true>
-	firstFieldOfRememberedSet := manager fetchPointer: 0 ofObject: manager rememberedSetObj.
-	manager setIsPinnedOf: manager rememberedSetObj to: false
+	firstFieldOfRememberedSet := manager fetchPointer: 0 ofObject: manager newRememberedSetObj.
+	manager setIsPinnedOf: manager newRememberedSetObj to: false
 ]
 
 { #category : #compaction }
@@ -896,7 +896,7 @@ SpurPlanningCompactor >> updatePointersInManagerHeapEntities [
 	(scavenger rememberedSetSize > 0
 	 and: [self isMobile: firstFieldOfRememberedSet]) ifTrue:
 		[firstFieldOfRememberedSet := manager fetchPointer: 0 ofObject: firstFieldOfRememberedSet].
-	self relocateObjectsInHeapEntity: manager rememberedSetObj from: 1 to: scavenger rememberedSetSize - 1
+	self relocateObjectsInHeapEntity: manager newRememberedSetObj from: 1 to: scavenger rememberedSetSize - 1
 	"Note that we /must not/ set the rememberedSetObj here since it is a slot in the hiddenRootsObj
 	 and will be updated normally in updatePointersInInitialImmobileObjects.  So do not do
 	(self isMobile: manager rememberedSetObj) ifTrue:
