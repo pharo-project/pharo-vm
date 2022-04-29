@@ -10,6 +10,14 @@ VMMemoryMapConfigurationFor32Bits >> codeZoneInitialAddress [
 	^ 16r10000000 "(256 MB)"
 ]
 
+{ #category : #accessing }
+VMMemoryMapConfigurationFor32Bits >> confWordSize [
+	
+	<inline: true>
+	
+	^ 4
+]
+
 { #category : #'initial addresses' }
 VMMemoryMapConfigurationFor32Bits >> newSpaceInitialAddress [
 
@@ -32,10 +40,4 @@ VMMemoryMapConfigurationFor32Bits >> permSpaceInitialAddress [
 VMMemoryMapConfigurationFor32Bits >> stackPagesInitialAddress [
 
 	^ 16r0F000000 "(240 MB)"
-]
-
-{ #category : #accessing }
-VMMemoryMapConfigurationFor32Bits >> wordSize [
-	<doNotGenerate>
-	^ 4
 ]

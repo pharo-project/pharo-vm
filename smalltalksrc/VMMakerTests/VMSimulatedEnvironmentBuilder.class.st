@@ -61,7 +61,7 @@ VMSimulatedEnvironmentBuilder >> doBuild [
 	objectMemory ensureMemoryMap.
 	
 	objectMemory coInterpreter: interpreter.
-		
+	
 	objectMemory
 		allocateMemoryOfSize: oldSpaceSize
 		newSpaceSize: newSpaceSize

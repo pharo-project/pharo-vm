@@ -360,3 +360,14 @@ VMStructType >> printStateOn: aStream [
 	<doNotGenerate>
 	^self
 ]
+
+{ #category : #'translation support' }
+VMStructType >> simulationOnly: aBlock [
+
+	"Evaluate piece of code only during simulation.
+	This should get translated as a NOP"
+	<inline: #always>
+	self
+		cCode: [  ]
+		inSmalltalk: aBlock
+]

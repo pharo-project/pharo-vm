@@ -27,13 +27,13 @@ VMARMStackAlignmentTest >> addInstruction: anInstruction [
 { #category : #'as yet unclassified' }
 VMARMStackAlignmentTest >> disassembleInstructions [
 
-	^ self disassembleFrom: initialAddress opcodes: instructions size
+	^ self disassembleFrom: cogInitialAddress opcodes: instructions size
 ]
 
 { #category : #'as yet unclassified' }
 VMARMStackAlignmentTest >> runInstructions [
 
-	^ self runFrom: initialAddress until: initialAddress + (instructions size * 4)
+	^ self runFrom: cogInitialAddress until: cogInitialAddress + (instructions size * 4)
 ]
 
 { #category : #tests }
@@ -138,10 +138,10 @@ VMARMStackAlignmentTest >> testUnAlignedStackWriteShouldPass [
 { #category : #'as yet unclassified' }
 VMARMStackAlignmentTest >> writeInstructions [
 	
-	initialAddress := cogit methodZone allocate: instructions size * 4 .
+	cogInitialAddress := cogit methodZone allocate: instructions size * 4 .
 
 	instructions withIndexDo: [ :instruction :index | 
-		memory long32At: initialAddress + (index - 1 * 4)	 put: instruction ].
+		memory long32At: cogInitialAddress + (index - 1 * 4)	 put: instruction ].
 
 	
 ]

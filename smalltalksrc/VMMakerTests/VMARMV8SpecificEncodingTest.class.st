@@ -16,7 +16,7 @@ VMARMV8SpecificEncodingTest class >> wordSizeParameters [
 VMARMV8SpecificEncodingTest >> armInstructionAt: index [
 
 	| addr inst |
-	addr := initialAddress + ((index - 1) * 8).
+	addr := cogInitialAddress + ((index - 1) * 8).
 	inst := memory long32At: addr.
 	
 	^ inst aarch64Disassembled
@@ -27,7 +27,7 @@ VMARMV8SpecificEncodingTest >> doTestEncodeMoveMbrR: constant [
 
 	| expectedAddress expectedValue |
 	
-	expectedAddress := initialAddress + 1024.
+	expectedAddress := cogInitialAddress + 1024.
 	expectedValue := 16r10.
 
 	self compile: [
@@ -51,7 +51,7 @@ VMARMV8SpecificEncodingTest >> doTestEncodeMoveMwrR: constant [
 
 	| expectedAddress expectedValue |
 	
-	expectedAddress := initialAddress + 1024.
+	expectedAddress := cogInitialAddress + 1024.
 	expectedValue := 16r10001000.
 
 	self compile: [
@@ -75,7 +75,7 @@ VMARMV8SpecificEncodingTest >> doTestEncodeMoveRMwr: constant [
 
 	| expectedAddress expectedValue |
 	
-	expectedAddress := initialAddress + 400.
+	expectedAddress := cogInitialAddress + 400.
 	expectedValue := 16r100.
 
 	self compile: [

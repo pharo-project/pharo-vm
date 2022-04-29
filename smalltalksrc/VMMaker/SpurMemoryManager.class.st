@@ -1979,35 +1979,32 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 	 will be set to sane values."
 
 	<doNotGenerate>
-	| allocatedMemory newSpaceStartOffset allocatedAddress vmMemoryConf |
+	| vmMemoryConf |
 
 	self assert: (memoryBytes \\ self allocationUnit = 0 and: [ 
 			 newSpaceBytes \\ self allocationUnit = 0 and: [ 
 				 codeBytes \\ self allocationUnit = 0 and: [ 
 					 initialAddress \\ self allocationUnit = 0 ] ] ]).
-	newSpaceStartOffset := codeBytes + stackBytes
-	                 + methodCacheSize + primitiveLogSize
-	                 + rumpCStackSize.
-	allocatedMemory := newSpaceStartOffset + newSpaceBytes + memoryBytes.
 
 	memoryManager ifNil: [ 
 		memoryManager := SlangMemoryManager new.
 		memoryManager wordSize: self wordSize ].
 
-	allocatedAddress := self
-		allocateMemoryOfSize: allocatedMemory
-		initialAddress: initialAddress.
+	coInterpreter movePrimTraceLogToMemoryAt: (memoryManager allocate: primitiveLogSize).
+
+	memoryMap 		
+		allocationReserve: coInterpreter interpreterAllocationReserveBytes;
+		initialOldSpaceSize: memoryBytes;
+		initialNewSpaceSize: newSpaceBytes;
+		initialHeadroom: 0;
+		initialCodeZoneSize: codeBytes;
+		initialPermSpaceSize: permSpaceSize;
+		allocateHeap.
 		
-	self assert: allocatedAddress = initialAddress.
-		
-	memoryMap newSpaceStart: initialAddress + newSpaceStartOffset.
-	memoryMap newSpaceEnd: newSpaceBytes + memoryMap newSpaceStart.
-	memoryMap oldSpaceStart: memoryMap newSpaceEnd.
-	memoryMap setOldSpaceEnd: (freeOldSpaceStart := initialAddress + allocatedMemory).
-	"leave newSpace empty for the bootstrap"
 	freeStart := newSpaceBytes + memoryMap newSpaceStart.
 	
-	scavengeThreshold := allocatedMemory. "i.e. /don't/ scavenge."
+	scavengeThreshold := memoryMap newSpaceStart.
+	
 	scavenger := SpurGenerationScavenger simulatorClass new.
 	scavenger manager: self.
 	scavenger rememberedSet: newSpaceRememberedSet.
@@ -2015,20 +2012,13 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 		newSpaceStart: memoryMap newSpaceStart
 		newSpaceBytes: newSpaceBytes
 		survivorBytes: newSpaceBytes // self scavengerDenominator.
+
 	compactor := self class compactorClass simulatorClass new
 		             manager: self;
 		             yourself.
 	
 	vmMemoryConf := (VMMemoryMapConfiguration forWordsize: self wordSize) new.
-	
-	permSpaceSize isZero 
-		ifTrue: [ 		
-			memoryMap permSpaceStart: vmMemoryConf permSpaceInitialAddress.
-			memoryMap permSpaceEnd: vmMemoryConf permSpaceInitialAddress]
-		ifFalse: [ 	
-				memoryMap permSpaceStart: (self allocateMemoryOfSize: permSpaceSize initialAddress: vmMemoryConf permSpaceInitialAddress).
-				memoryMap permSpaceEnd: memoryMap permSpaceStart + permSpaceSize ].
-			
+				
 	permSpaceFreeStart := memoryMap permSpaceStart 
 
 ]
@@ -6572,7 +6562,7 @@ SpurMemoryManager >> initializeOldSpaceFirstFree: startOfFreeOldSpace [
 SpurMemoryManager >> initializePostBootstrap [
 	"The heap has just been bootstrapped into a modified newSpace occupying all of memory
 	 above newSpace (and the codeZone). Put things back to some kind of normalcy."
-	freeOldSpaceStart := freeStart.
+	freeOldSpaceStart := self getMemoryMap oldSpaceStart.
 	freeStart := scavenger eden start.
 	pastSpaceStart := scavenger pastSpace start.
 	scavengeThreshold := scavenger eden limit

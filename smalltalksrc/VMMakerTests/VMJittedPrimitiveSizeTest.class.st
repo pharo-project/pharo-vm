@@ -10,7 +10,7 @@ Class {
 { #category : #helpers }
 VMJittedPrimitiveSizeTest >> assertFallsThrough [
 
-	self runFrom: initialAddress until: stop address.
+	self runFrom: cogInitialAddress until: stop address.
 	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]
 

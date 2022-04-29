@@ -7993,6 +7993,7 @@ Cogit >> generateCogMethod: selector [
 	<returnTypeC: #'CogMethod *'>
 	| codeSize headerSize mapSize totalSize startAddress result method |
 	<var: #method type: #'CogMethod *'>
+
 	headerSize := self sizeof: CogMethod.
 	methodLabel address: methodZone freeStart.
 	self computeMaximumSizes.

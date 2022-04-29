@@ -207,7 +207,7 @@ SlangMemoryManager >> regionsDo: aFullBlockClosure [
 { #category : #allocating }
 SlangMemoryManager >> registerNewRegion: newMemoryRegion size: desiredSize address: allocatedAddress [
 
-	allocatedAddress to: allocatedAddress + desiredSize by: self pageSize do: [ 
+	allocatedAddress to: (allocatedAddress + desiredSize - 1) by: self pageSize do: [ 
 		:pageAddress | "Index regions by the high bits of the address" 
 		memoryMap at: pageAddress >> 12 put: newMemoryRegion ]
 ]

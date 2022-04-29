@@ -22,7 +22,7 @@ Class {
 		'send1TrampolineAddress',
 		'send2TrampolineAddress',
 		'send3TrampolineAddress',
-		'initialAddress'
+		'cogInitialAddress'
 	],
 	#pools : [
 		'CogAbstractRegisters',
@@ -345,7 +345,7 @@ VMSimpleStackBasedCogitAbstractTest >> createSpecialSelectorArray [
 { #category : #helpers }
 VMSimpleStackBasedCogitAbstractTest >> disassemble [
 	
-	^ self disassembleFrom: initialAddress
+	^ self disassembleFrom: cogInitialAddress
 ]
 
 { #category : #helpers }
@@ -361,7 +361,7 @@ VMSimpleStackBasedCogitAbstractTest >> disassembleFrom: anIndex opcodes: numberO
 		printImmediatesInHexa;
 		disassembleNext: numberOfInstructions
 		instructionsIn: (memory memory memoryObject
-			copyFrom: anIndex - initialAddress + 1
+			copyFrom: anIndex - cogInitialAddress + 1
 			to: memory memory memoryObject size)
 		startAddress: anIndex
 		pc: 0
@@ -512,7 +512,7 @@ VMSimpleStackBasedCogitAbstractTest >> newJitCompiler [
 { #category : #helpers }
 VMSimpleStackBasedCogitAbstractTest >> openMachineDebugger [
 	
-	self openMachineDebuggerAt: initialAddress
+	self openMachineDebuggerAt: cogInitialAddress
 ]
 
 { #category : #helpers }
@@ -692,7 +692,7 @@ VMSimpleStackBasedCogitAbstractTest >> runGeneratedCode [
 	"The different platforms generates code in a different way, so the number of opcodes can not be valid. Eg: ARM generates more instructions per opcode. It has to calculate the instructions to run differently"
 
 	machineSimulator
-		startAt: initialAddress
+		startAt: cogInitialAddress
 		until: self getLastAddress
 		timeout: 0
 		count: 0
@@ -701,7 +701,7 @@ VMSimpleStackBasedCogitAbstractTest >> runGeneratedCode [
 { #category : #helpers }
 VMSimpleStackBasedCogitAbstractTest >> runUntilReturn [
 
-	machineSimulator startAt: initialAddress
+	machineSimulator startAt: cogInitialAddress
 		until: callerAddress
 		timeout: 0
 		count: 3000.
@@ -748,34 +748,25 @@ VMSimpleStackBasedCogitAbstractTest >> setUp [
 	cogit setStackAlignment: 16 expectedSPOffset: 0 expectedFPOffset: 0.
 	cogit initializeBackend.
 
-	initialAddress := environmentBuilder memoryInitialAddress.
+	cogInitialAddress := memory getMemoryMap codeZoneStart.
 
-	cogit methodZone manageFrom: initialAddress to: initialAddress + self initialCodeSize.
-	cogit methodZoneBase: initialAddress.
-	cogit minCallAddress: initialAddress.
-	cogit cogCodeBase: initialAddress.
+	cogit methodZone manageFrom: cogInitialAddress to: memory getMemoryMap codeZoneEnd.
+	cogit methodZoneBase: cogInitialAddress.
+	cogit minCallAddress: cogInitialAddress.
+	cogit cogCodeBase: cogInitialAddress.
 	memory coInterpreter cogCodeSize: self initialCodeSize.
 	cogit initializeProcessor.
 	
 	machineSimulator := cogit processor machineSimulator.
 	
 	cogit generateStackPointerCapture.
-	cogit methodZone manageFrom: cogit cogCodeBase to: environmentBuilder memoryInitialAddress + self initialCodeSize.
+	cogit methodZone manageFrom: cogit cogCodeBase to: memory getMemoryMap codeZoneEnd.
 
 	memory coInterpreter numStackPages: 8.
 
 	self initializeOldSpaceForScavenger.
 	self initializeStackMemory.
 	self initializeInitialStackFrame.	
-]
-
-{ #category : #running }
-VMSimpleStackBasedCogitAbstractTest >> setUpCPUSimulator [
-
-	machineSimulator := UnicornSimulator perform: isa asSymbol.
-	machineSimulator memory: memory.
-	memory memory memoryObject pinInMemory.
-	machineSimulator mapMemory: memory memory memoryObject at: initialAddress.
 ]
 
 { #category : #running }
@@ -792,7 +783,7 @@ VMSimpleStackBasedCogitAbstractTest >> setUpCogMethodEntry [
 	
 	cogit computeEntryOffsets.
 	
-	cogit methodZone manageFrom: cogit methodZoneBase to: cogit methodZoneBase + self initialCodeSize.
+	cogit methodZone manageFrom: cogit methodZoneBase to: memory getMemoryMap codeZoneEnd.
 ]
 
 { #category : #running }
@@ -815,6 +806,10 @@ VMSimpleStackBasedCogitAbstractTest >> setUpTrampolines [
 	cogit ceCPICMissTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceCPICMissTrampoline).
 	cogit cePICAbortTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#cePICAbortTrampoline).
 	cogit ceMethodAbortTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceMethodAbortTrampoline).
+
+	"Set an address as store check trampoline.
+	The bytecode below will jump to it if it is a old -> young store"
+	cogit objectRepresentation ceStoreCheckTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceStoreCheckTrampoline).
 
 ]
 

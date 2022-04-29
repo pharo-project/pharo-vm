@@ -24,7 +24,7 @@ VMMachineSimulatorTest >> testInstructionExceptionHasCorrectInstructionAddress [
 		lastInstruction := cogit Call: 16rFFFFF0.  ].
 
 	[	self machineSimulator
-			startAt: initialAddress
+			startAt: cogInitialAddress
 			until: lastInstruction address
 			timeout: 0
 			count: 0.
@@ -53,7 +53,7 @@ VMMachineSimulatorTest >> testInstructionExceptionIsRaisedAsUnicornError [
 		lastInstruction := cogit Call: 16rFFFFF0.  ].
 
 	[	self machineSimulator
-			startAt: initialAddress
+			startAt: cogInitialAddress
 			until: lastInstruction address
 			timeout: 0
 			count: 0.
@@ -85,7 +85,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionComesWithCorrectAddress [
 		false ].
 	
 	self
-		runFrom: initialAddress
+		runFrom: cogInitialAddress
 		until: lastInstruction address
 		timeout: 0.
 
@@ -123,7 +123,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledCountIsRespected [
 	
 
 	self machineSimulator
-		startAt: initialAddress
+		startAt: cogInitialAddress
 		until: lastInstruction address
 		timeout: 0
 		count: 10. 
@@ -165,7 +165,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledTimeoutIsRespected [
 	
 
 	[ self
-		runFrom: initialAddress
+		runFrom: cogInitialAddress
 		until: lastInstruction address
 		timeout: 1000 ]
 			on: UnicornTimeout
@@ -202,7 +202,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledUntilAddressIsRespecte
 	
 
 	self machineSimulator
-		startAt: initialAddress
+		startAt: cogInitialAddress
 		until: jumpInstruction address
 		timeout: 100000 "microseconds = 100ms"
 		count: 0.
@@ -238,7 +238,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledUntilAddressIsRespecte
 	
 
 	self machineSimulator
-		startAt: initialAddress
+		startAt: cogInitialAddress
 		until: jumpInstruction address
 		timeout: 100000 "microseconds = 100ms"
 		count: 0.
@@ -264,7 +264,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInCallContinuesToCorrectPC [
 		true].
 
 	self
-		runFrom: initialAddress
+		runFrom: cogInitialAddress
 		until: lastInstruction address
 		timeout: 0.
 
@@ -291,7 +291,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInCallHasUpdatedPC [
 		false].
 	
 	self
-		runFrom: initialAddress
+		runFrom: cogInitialAddress
 		until: lastInstruction address
 		timeout: 0.
 
@@ -317,7 +317,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInJumpContinuesToCorrectPC [
 		true].
 	
 	self
-		runFrom: initialAddress
+		runFrom: cogInitialAddress
 		until: lastInstruction address
 		timeout: 0.
 
@@ -344,7 +344,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInJumpHasUpdatedPC [
 		false].
 	
 	self
-		runFrom: initialAddress
+		runFrom: cogInitialAddress
 		until: lastInstruction address
 		timeout: 0.
 
@@ -381,7 +381,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInstructionPointerInCorrectAd
 		false ].
 	
 	self
-		runFrom: initialAddress
+		runFrom: cogInitialAddress
 		until: lastInstruction address
 		timeout: 0.
 
@@ -404,7 +404,7 @@ VMMachineSimulatorTest >> testNormalExecutionCountIsRespected [
 		lastInstruction := cogit Call: 16rFFFFF0.  ].
 
 	self machineSimulator
-		startAt: initialAddress
+		startAt: cogInitialAddress
 		until: lastInstruction address
 		timeout: 0
 		count: 10.
@@ -430,7 +430,7 @@ VMMachineSimulatorTest >> testNormalExecutionCountIsRespectedAndHasCorrectInstru
 		lastInstruction := cogit Call: 16rFFFFF0.  ].
 
 	self machineSimulator
-		startAt: initialAddress
+		startAt: cogInitialAddress
 		until: lastInstruction address
 		timeout: 0
 		count: 10.
@@ -452,7 +452,7 @@ VMMachineSimulatorTest >> testNormalExecutionRespectTimeout [
 		lastInstruction := cogit RetN: 0 ].
 
 	[ self
-		runFrom: initialAddress
+		runFrom: cogInitialAddress
 		until: lastInstruction address
 		timeout: 100000 "microseconds = 100ms" ]
 			on: UnicornTimeout
@@ -474,12 +474,12 @@ VMMachineSimulatorTest >> testNormalExecutionRespectTimeoutUpdatesInstructionPoi
 		lastInstruction := cogit RetN: 0 ].
 
 	[ self
-		runFrom: initialAddress
+		runFrom: cogInitialAddress
 		until: lastInstruction address
 		timeout: 100000 "microseconds = 100ms" ]
 			on: UnicornTimeout
 			do: [ :e | 
-				self deny: self machineSimulator instructionPointerRegisterValue equals: initialAddress.
+				self deny: self machineSimulator instructionPointerRegisterValue equals: cogInitialAddress.
 				self assert: e messageText equals: ''. ^ self ].
 			
 	self fail.
@@ -501,7 +501,7 @@ VMMachineSimulatorTest >> testNormalExecutionUntilAddressIsRespected [
 		lastInstruction := cogit Call: 16rFFFFF0.  ].
 
 	self
-		runFrom: initialAddress
+		runFrom: cogInitialAddress
 		until: lastInstruction address
 		timeout: 0.
 

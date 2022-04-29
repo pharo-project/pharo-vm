@@ -19,9 +19,34 @@ VMMemoryMapConfiguration class >> isAbstract [
 ]
 
 { #category : #'initial addresses' }
+VMMemoryMapConfiguration >> calculateMaskToUse [
+
+	| newSpaceFirst newSpaceLast newSpaceMask oldSpaceFirst oldSpaceLast oldSpaceMask maskToUse |
+
+	newSpaceFirst := self newSpaceInitialAddress.
+	newSpaceLast := self oldSpaceInitialAddress - 1.
+	newSpaceMask := (newSpaceLast - newSpaceFirst) bitXor: (1 << (self confWordSize * 8)) - 1.
+
+	oldSpaceFirst := self oldSpaceInitialAddress.
+	oldSpaceLast := self permSpaceInitialAddress - 1.
+	oldSpaceMask := (oldSpaceLast - oldSpaceFirst) bitXor: (1 << (self confWordSize * 8)) - 1.
+
+	maskToUse := newSpaceMask bitAnd: oldSpaceMask.
+	maskToUse = 0 ifTrue: [ self error: 'Could not calculate mask to use to identify new/old/perm objects' ].
+	
+	^ maskToUse
+]
+
+{ #category : #'initial addresses' }
 VMMemoryMapConfiguration >> codeZoneInitialAddress [
 
 	^ self subclassResponsibility 
+]
+
+{ #category : #accessing }
+VMMemoryMapConfiguration >> confWordSize [
+
+	^ self subclassResponsibility
 ]
 
 { #category : #'initial addresses' }
@@ -46,10 +71,4 @@ VMMemoryMapConfiguration >> permSpaceInitialAddress [
 VMMemoryMapConfiguration >> stackPagesInitialAddress [
 
 	^ self subclassResponsibility 
-]
-
-{ #category : #accessing }
-VMMemoryMapConfiguration >> wordSize [
-
-	^ self subclassResponsibility
 ]

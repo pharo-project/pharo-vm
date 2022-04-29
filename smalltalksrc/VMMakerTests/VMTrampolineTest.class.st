@@ -73,7 +73,7 @@ VMTrampolineTest >> testCallEnilopmartSucceedsExecution [
 		       cogit PushCw: callerAddress.
 		       cogit RetN: 0 ].
 
-	initialAddress := self
+	cogInitialAddress := self
 		                  compileWithoutOutput: [ 
 			                  cogit
 				                  genEnilopmartFor: ReceiverResultReg
@@ -165,7 +165,7 @@ VMTrampolineTest >> testLoadStackPointersShouldLoadFramePointer [
 	self interpreter framePointer: 42.
 	self framePointerRegisterValue: 0.
 
-	self runFrom: initialAddress until: self getLastAddress.
+	self runFrom: cogInitialAddress until: self getLastAddress.
 
 	"The generated code should load in FP the value stored in `framePointer`"
 	self assert: self framePointerRegisterValue equals: 42
@@ -183,7 +183,7 @@ VMTrampolineTest >> testLoadStackPointersShouldLoadStackPointer [
 	self interpreter framePointer: 0.
 	machineSimulator smalltalkStackPointerRegisterValue: 0.
 	
-	self runFrom: initialAddress until: self getLastAddress.
+	self runFrom: cogInitialAddress until: self getLastAddress.
 
 	"The generated code should load in SP the value stored in `stackPointer`"
 	self assert: machineSimulator smalltalkStackPointerRegisterValue equals: 17
@@ -247,7 +247,7 @@ VMTrampolineTest >> testSmalltalkToCStackShouldLoadCFramePointer [
 	cogit setCFramePointer: 888.
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
 
-	self runFrom: initialAddress until: self getLastAddress.
+	self runFrom: cogInitialAddress until: self getLastAddress.
 
 	self assert: machineSimulator framePointerRegisterValue equals: 888
 ]
@@ -261,7 +261,7 @@ VMTrampolineTest >> testSmalltalkToCStackShouldLoadCStackPointer [
 	cogit setCFramePointer: 888.
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
 
-	self runFrom: initialAddress until: self getLastAddress.
+	self runFrom: cogInitialAddress until: self getLastAddress.
 
 	self assert: machineSimulator stackPointerRegisterValue equals: 777
 ]
@@ -276,7 +276,7 @@ VMTrampolineTest >> testSmalltalkToCStackShouldPushLinkRegister [
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
 	machineSimulator linkRegisterValue: 42.
 
-	self runFrom: initialAddress until: self getLastAddress.
+	self runFrom: cogInitialAddress until: self getLastAddress.
 
 	"The generated code should push the link register in the interpreter stack"
 	self assert: self interpreter stackTop equals: 42
@@ -293,7 +293,7 @@ VMTrampolineTest >> testSmalltalkToCStackSwitchShouldUpdateInterpreterFramePoint
 	self cogit setCFramePointer: 116.
 	self framePointerRegisterValue: 42.
 
-	self runFrom: initialAddress until: self getLastAddress.
+	self runFrom: cogInitialAddress until: self getLastAddress.
 
 	"The generated code should load in the interpreter stackPointer the value stored in the SP register"
 	self assert: self interpreter framePointer equals: 42
@@ -310,7 +310,7 @@ VMTrampolineTest >> testSmalltalkToCStackSwitchShouldUpdateInterpreterStackPoint
 	self cogit setCFramePointer: 116.
 	machineSimulator smalltalkStackPointerRegisterValue: 42.
 
-	self runFrom: initialAddress until: self getLastAddress.
+	self runFrom: cogInitialAddress until: self getLastAddress.
 
 	"The generated code should load in the interpreter stackPointer the value stored in the SP register"
 	self assert: self interpreter stackPointer equals: 42

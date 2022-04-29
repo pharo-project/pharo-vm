@@ -27,7 +27,7 @@ VMJittedBoxFloatPrimitivesTest >> testAsFloat [
 
 	cogit receiverTags: memory smallIntegerTag.
 	
-	initialAddress := self compile: [ cogit objectRepresentation genPrimitiveAsFloat ].
+	cogInitialAddress := self compile: [ cogit objectRepresentation genPrimitiveAsFloat ].
 
 	self executePrimitiveWithReceiver: (self memory integerObjectOf: 27).
 
@@ -48,13 +48,13 @@ VMJittedBoxFloatPrimitivesTest >> testAsFloatWhenThereIsNotSpaceFailsPrimitive [
 
 	memory freeStart: memory scavengeThreshold.
 	
-	initialAddress := self compile: [ 
+	cogInitialAddress := self compile: [ 
 			cogit objectRepresentation genPrimitiveAsFloat.
 			stop := cogit Stop ].
 
 	self prepareStackForSendReceiver: (self memory integerObjectOf: 27) arguments: #().
 
-	self runFrom: initialAddress until: stop address.
+	self runFrom: cogInitialAddress until: stop address.
 	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 
 ]

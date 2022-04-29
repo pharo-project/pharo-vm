@@ -50,14 +50,21 @@ VMCodeCompactionTest >> fillCodeZone [
 
 	| aMethod |
 
-	[aMethod := self jitMethod: (self findMethod: #methodToCompile1).
+	[
+	aMethod := self jitMethod: (self findMethod: #methodToCompile1).
 	aMethod notNil and: [ | headerSize methodSize |
 		headerSize := cogit sizeof: CogMethod.
 		methodSize := headerSize + aMethod blockSize.
 		(cogit methodZone methodAfter: aMethod) asInteger + methodSize
 			< cogit methodZone effectiveLimit ] ] whileTrue.
+	
 
+]
 
+{ #category : #running }
+VMCodeCompactionTest >> initialCodeSize [
+
+	^ 16 * 1024
 ]
 
 { #category : #tests }

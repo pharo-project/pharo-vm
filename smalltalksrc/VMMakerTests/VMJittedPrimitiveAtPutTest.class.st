@@ -14,7 +14,7 @@ VMJittedPrimitiveAtPutTest >> setUp [
 	
 	self setUpTrampolines.
 
-	initialAddress := self
+	cogInitialAddress := self
 		compile: [ 
 			cogit objectRepresentation genPrimitiveAtPut.
 			stop := cogit Stop ]

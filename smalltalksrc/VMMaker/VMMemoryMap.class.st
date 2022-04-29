@@ -22,7 +22,8 @@ Class {
 		'stackPagesEnd',
 		'initialPermSpaceSize',
 		'minPermSpaceSize',
-		'objectMemory'
+		'objectMemory',
+		'spaceMaskToUse'
 	],
 	#pools : [
 		'VMBasicConstants'
@@ -78,6 +79,11 @@ VMMemoryMap >> allocateCodeZone [
 	initialCodeZoneSize = 0 ifTrue: [ ^ self ].
 	self codeZoneStart: (self allocateJITMemory: initialCodeZoneSize _: memoryMapConfiguration codeZoneInitialAddress).
 	self codeZoneStart ifNil: [ self insufficientMemoryAvailableError ].
+
+	self codeZoneStart = memoryMapConfiguration codeZoneInitialAddress 
+		ifFalse: [ 
+			self logError: 'Could not allocate codeZone in the expected place (%p), got %p' _: self codeZoneStart _: memoryMapConfiguration codeZoneInitialAddress.
+			self error: 'Error allocating' ].
 	
 	self codeZoneEnd: codeZoneStart + initialCodeZoneSize.
 ]
@@ -117,6 +123,11 @@ VMMemoryMap >> allocateNewObjectsSpace [
 	
 	self newSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 	
+	self newSpaceStart = memoryMapConfiguration newSpaceInitialAddress 
+		ifFalse: [ 
+			self logError: 'Could not allocate newSpace in the expected place (%p), got %p' _: self newSpaceStart _: memoryMapConfiguration newSpaceInitialAddress.
+			self error: 'Error allocating' ].
+		
 	self newSpaceEnd: self newSpaceStart + newSpaceSizeToAllocate.
 ]
 
@@ -130,6 +141,13 @@ VMMemoryMap >> allocateOldObjectsSpace [
 	self oldSpaceStart: (self allocateMemory: sizeToAllocate BaseAddress: memoryMapConfiguration oldSpaceInitialAddress).
 
 	self oldSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
+
+	self oldSpaceStart = memoryMapConfiguration oldSpaceInitialAddress 
+		ifFalse: [ 
+			self logError: 'Could not allocate oldSpace in the expected place (%p), got %p' _: self oldSpaceStart _: memoryMapConfiguration oldSpaceInitialAddress.
+			self error: 'Error allocating' ].
+
+	self oldSpaceMask: (self oldSpaceStart bitAnd: self spaceMaskToUse).
 
 	self setOldSpaceEnd: self oldSpaceStart + sizeToAllocate
 ]
@@ -149,6 +167,11 @@ VMMemoryMap >> allocatePermObjectsSpace [
 		BaseAddress: memoryMapConfiguration permSpaceInitialAddress).
 
 	self permSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
+
+	self permSpaceStart = memoryMapConfiguration permSpaceInitialAddress 
+		ifFalse: [ 
+			self logError: 'Could not allocate permSpace in the expected place (%p), got %p' _: self permSpaceStart _: memoryMapConfiguration permSpaceInitialAddress.
+			self error: 'Error allocating' ].
 
 	self permSpaceEnd: self permSpaceStart + minSize.
 	objectMemory setPermSpaceFreeStart: self permSpaceStart
@@ -181,6 +204,11 @@ VMMemoryMap >> allocateStackPages: initialStackSize [
 	self stackPagesStart: (self allocateMemory: sizeToRequest BaseAddress: memoryMapConfiguration stackPagesInitialAddress).
 	
 	self stackPagesStart ifNil: [ self insufficientMemoryAvailableError ].
+	
+	self stackPagesStart = memoryMapConfiguration stackPagesInitialAddress 
+		ifFalse: [ 
+			self logError: 'Could not allocate stack in the expected place (%p), got %p' _: self stackPagesStart _: memoryMapConfiguration stackPagesInitialAddress.
+			self error: 'Error allocating' ].
 	
 	self stackPagesEnd: self stackPagesStart + sizeToRequest.
 	
@@ -233,15 +261,15 @@ VMMemoryMap >> codeZoneStart: anInteger [
 VMMemoryMap >> doCheckMemoryMap [
 
 	self assert: (self isYoungObject: self newSpaceStart).
-	self assert: (self isYoungObject: self newSpaceEnd - memoryMapConfiguration wordSize).
+	self assert: (self isYoungObject: self newSpaceEnd - memoryMapConfiguration confWordSize).
 	self assert: (self isOldObject: self newSpaceStart) not.
-	self assert: (self isOldObject: self newSpaceEnd - memoryMapConfiguration wordSize) not.
+	self assert: (self isOldObject: self newSpaceEnd - memoryMapConfiguration confWordSize) not.
 	self assert: (self isYoungObject: self newSpaceEnd) not.
 	self assert: (self isYoungObject: self oldSpaceStart) not.
 	self assert: (self isYoungObject: self oldSpaceEnd) not.
 	self assert: (self isOldObject: self oldSpaceStart).
-	self assert: (self isOldObject: self oldSpaceEnd - memoryMapConfiguration wordSize).
-	self assert: (self isOldObject: self oldSpaceEnd) not.
+	self assert: (self isOldObject: self oldSpaceEnd - memoryMapConfiguration confWordSize).
+	self assert: (self isOldObject: self oldSpaceEnd).
 
 ]
 
@@ -367,9 +395,11 @@ VMMemoryMap >> initializeMemoryMap [
 	permSpaceStart := 0.
 	permSpaceEnd := 0.
 
-	self cCode: [ ] inSmalltalk: [ 
+	self simulationOnly: [ 
 		memoryMapConfiguration := (VMMemoryMapConfiguration forWordsize:
-			                          self class objectMemoryClass wordSize) new ]
+			                          self class objectMemoryClass wordSize) new ].
+		
+	spaceMaskToUse := memoryMapConfiguration calculateMaskToUse.
 ]
 
 { #category : #private }
@@ -381,11 +411,10 @@ VMMemoryMap >> insufficientMemoryAvailableError [
 
 { #category : #'testing objects' }
 VMMemoryMap >> isOldObject: anOop [ 
-	<api>
-	self flag:#todo.
-	"^ anOop allMask: oldSpaceMask "
-	^ oldSpaceStart <= anOop and: [ anOop < oldSpaceEnd ]
 
+	<api>
+
+	^ anOop allMask: oldSpaceMask
 ]
 
 { #category : #'testing objects' }
@@ -423,7 +452,7 @@ VMMemoryMap >> memset: startAddress _: value _: size [
 
 	<doNotGenerate>
 	
-	startAddress to: startAddress + size - 1 by: memoryMapConfiguration wordSize do: [ :address |
+	startAddress to: startAddress + size - 1 by: memoryMapConfiguration confWordSize do: [ :address |
 		memoryManager longAt: address put: value ]
 
 ]
@@ -474,6 +503,18 @@ VMMemoryMap >> objectMemory: aValue [
 { #category : #accessing }
 VMMemoryMap >> oldSpaceEnd [
 	^ oldSpaceEnd
+]
+
+{ #category : #accessing }
+VMMemoryMap >> oldSpaceMask [
+
+	^ oldSpaceMask
+]
+
+{ #category : #accessing }
+VMMemoryMap >> oldSpaceMask: anObject [
+
+	oldSpaceMask := anObject
 ]
 
 { #category : #accessing }
@@ -542,6 +583,18 @@ VMMemoryMap >> setOldSpaceEnd: anInteger [
 	oldSpaceEnd := anInteger.
 	self assert: (permSpaceStart isZero or: [anInteger < permSpaceStart]).
 
+]
+
+{ #category : #accessing }
+VMMemoryMap >> spaceMaskToUse [
+
+	^ spaceMaskToUse
+]
+
+{ #category : #accessing }
+VMMemoryMap >> spaceMaskToUse: anObject [
+
+	spaceMaskToUse := anObject
 ]
 
 { #category : #accessing }
