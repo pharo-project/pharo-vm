@@ -48,11 +48,7 @@ VMSimpleStackBasedCogitBytecodeTest >> doPopIntoReceiverVariableBytecodeStoresVa
 	"The object is filled with nils.
 	Push false into the stack and execute the store and pop bytecode."	
 	self pushAddress: memory falseObject.
-	
-	"Set an address as store check trampoline.
-	The bytecode below will jump to it if it is a old -> young store"
-	cogit objectRepresentation ceStoreCheckTrampoline: memory nilObject.
-	
+		
 	"The first byte of the push receiver instance variable bytecode family is used to identify which variable (0-based again)"
 	cogit byte0: instanceVariableToWrite - 1.		
 	self compile: [ 

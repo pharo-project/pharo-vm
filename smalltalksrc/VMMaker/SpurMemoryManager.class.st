@@ -1971,7 +1971,7 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes initialAddress: initialAd
 ]
 
 { #category : #initialization }
-SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceBytes stackSize: stackBytes codeSize: codeBytes methodCacheSize: methodCacheSize primitiveTraceLogSize: primitiveLogSize rumpCStackSize: rumpCStackSize initialAddress: initialAddress permSpaceSize: permSpaceSize [
+SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceBytes stackSize: stackBytes codeSize: codeBytes methodCacheSize: methodCacheSize primitiveTraceLogSize: primitiveLogSize rumpCStackSize: rumpCStackSize permSpaceSize: permSpaceSize [
 
 	"Intialize the receiver for bootsraping an image.
 	 Set up a large oldSpace and an empty newSpace and set-up freeStart and scavengeThreshold
@@ -1983,14 +1983,14 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 
 	self assert: (memoryBytes \\ self allocationUnit = 0 and: [ 
 			 newSpaceBytes \\ self allocationUnit = 0 and: [ 
-				 codeBytes \\ self allocationUnit = 0 and: [ 
-					 initialAddress \\ self allocationUnit = 0 ] ] ]).
+				 codeBytes \\ self allocationUnit = 0 ] ]).
 
 	memoryManager ifNil: [ 
 		memoryManager := SlangMemoryManager new.
 		memoryManager wordSize: self wordSize ].
 
-	coInterpreter movePrimTraceLogToMemoryAt: (memoryManager allocate: primitiveLogSize).
+	primitiveLogSize ~= 0 
+		ifTrue: [ coInterpreter movePrimTraceLogToMemoryAt: (memoryManager allocate: primitiveLogSize)].
 
 	memoryMap 		
 		allocationReserve: coInterpreter interpreterAllocationReserveBytes;

@@ -70,7 +70,6 @@ VMSimulatedEnvironmentBuilder >> doBuild [
 		methodCacheSize: methodCacheSize
 		primitiveTraceLogSize: (self roundToPageSize: primitiveTraceLogSize)
 		rumpCStackSize: self rumpCStackSize
-		initialAddress: initialAddress
 		permSpaceSize: permSpaceSize.
 			
 	objectMemory initializePostBootstrap.

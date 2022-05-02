@@ -21,7 +21,7 @@ VMMachineSimulatorTest >> testInstructionExceptionHasCorrectInstructionAddress [
 		cogit JumpNonZero: label.
 
 		"This instruction should not be called"
-		lastInstruction := cogit Call: 16rFFFFF0.  ].
+		lastInstruction := cogit Call: cogit methodZoneBase + 16r1000.  ].
 
 	[	self machineSimulator
 			startAt: cogInitialAddress
@@ -50,7 +50,7 @@ VMMachineSimulatorTest >> testInstructionExceptionIsRaisedAsUnicornError [
 		cogit JumpNonZero: label.
 
 		"This instruction should not be called"
-		lastInstruction := cogit Call: 16rFFFFF0.  ].
+		lastInstruction := cogit Call: cogit methodZoneBase + 16rFFFFF0.  ].
 
 	[	self machineSimulator
 			startAt: cogInitialAddress
@@ -73,7 +73,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionComesWithCorrectAddress [
 		cogit MoveCq: 16rFFFF0000 R: TempReg.
 		invalidAccessInstruction := cogit MoveMb: 0 r: TempReg R: ClassReg.
 		"This instruction should not be called"
-		lastInstruction := cogit Call: 16rFFFFF0.  ].
+		lastInstruction := cogit Call: cogit methodZoneBase + 16rFFFFF0.  ].
 	
 	invalidAddressHandled := false.
 	
@@ -364,7 +364,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInstructionPointerInCorrectAd
 
 		invalidAccessInstruction := cogit MoveMb: 0 r: TempReg R: ClassReg.
 		"This instruction should not be called"
-		lastInstruction := cogit Call: 16rFFFFF0.  ].
+		lastInstruction := cogit Call: cogit methodZoneBase + 16rFFFFF0.  ].
 	
 	invalidAddressHandled := false.
 	
@@ -401,7 +401,7 @@ VMMachineSimulatorTest >> testNormalExecutionCountIsRespected [
 		cogit JumpNonZero: label.
 
 		"This instruction should not be called"
-		lastInstruction := cogit Call: 16rFFFFF0.  ].
+		lastInstruction := cogit Call: cogit methodZoneBase + 16rFFFFF0.  ].
 
 	self machineSimulator
 		startAt: cogInitialAddress
@@ -427,7 +427,7 @@ VMMachineSimulatorTest >> testNormalExecutionCountIsRespectedAndHasCorrectInstru
 		jumpInstruction := cogit JumpNonZero: label.
 
 		"This instruction should not be called"
-		lastInstruction := cogit Call: 16rFFFFF0.  ].
+		lastInstruction := cogit Call: cogit methodZoneBase + 16rFFFFF0.  ].
 
 	self machineSimulator
 		startAt: cogInitialAddress
@@ -498,7 +498,7 @@ VMMachineSimulatorTest >> testNormalExecutionUntilAddressIsRespected [
 		cogit JumpNonZero: label.
 
 		"This instruction should not be called"
-		lastInstruction := cogit Call: 16rFFFFF0.  ].
+		lastInstruction := cogit Call: cogit methodZoneBase + 16rFFFFF0.  ].
 
 	self
 		runFrom: cogInitialAddress

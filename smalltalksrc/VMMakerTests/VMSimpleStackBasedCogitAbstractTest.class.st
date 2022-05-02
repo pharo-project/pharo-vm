@@ -180,6 +180,8 @@ VMSimpleStackBasedCogitAbstractTest >> compileTrampoline: aBlock named: aTrampol
 
 	cogit methodZoneBase: cogit methodZone freeStart.
 
+	cogInitialAddress := cogit methodZoneBase.	
+
 	^ startAddress
 ]
 
