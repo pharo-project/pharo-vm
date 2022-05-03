@@ -23,7 +23,9 @@ Class {
 		'initialPermSpaceSize',
 		'minPermSpaceSize',
 		'objectMemory',
-		'spaceMaskToUse'
+		'spaceMaskToUse',
+		'permSpaceMask',
+		'newSpaceMask'
 	],
 	#pools : [
 		'VMBasicConstants'
@@ -434,10 +436,11 @@ VMMemoryMap >> isPermanentObject: anOop [
 
 { #category : #'testing objects' }
 VMMemoryMap >> isYoungObject: anOop [ 
-
 	<api>
+	self flag:#todo.
+	"^ anOop allMask: oldSpaceMask "
+	^ newSpaceStart <= anOop and: [ anOop <= newSpaceEnd ]
 
-	^ (anOop bitAnd: spaceMaskToUse) = newSpaceMask
 ]
 
 { #category : #accessing }
