@@ -382,7 +382,7 @@ SpurGenerationScavenger >> copyToOldSpace: survivor bytes: bytesInObject format:
 		 manager baseHeaderSize to: bytesInObject - (survivor - startOfSurvivor) - manager wordSize by: manager wordSize do:
 			[:p| | field |
 			field := manager longAt: survivor + p.
-			(manager isYoung: field) ifTrue:
+			(manager isReallyYoung: field) ifTrue:
 				[rememberedSet remember: newOop.
 				 ^newOop]]].
 	^newOop
@@ -669,7 +669,7 @@ SpurGenerationScavenger >> isScavengeSurvivor: oop [
 	(manager isForwarded: oop)
 		ifTrue: [target := manager followForwarded: oop]
 		ifFalse: [target := oop].
-	^(manager isYoung: target) not
+	^(manager isReallyYoung: target) not
 	  or: [manager isInFutureSpace: target]
 ]
 
@@ -880,7 +880,7 @@ SpurGenerationScavenger >> processWeakSurvivor: weakObj [
 				[(manager isForwarded: referent) ifTrue:
 					[referent := manager followForwarded: referent.
 					 "weakObj is either young or already in remembered table; no need to check"
-					 self assert: ((manager getMemoryMap isYoungObject: weakObj)
+					 self assert: ((manager isReallyYoungObject: weakObj)
 								or: [manager isRemembered: weakObj]).
 					 manager storePointerUnchecked: i ofObject: weakObj withValue: referent].
 				(self isMaybeOldScavengeSurvivor: referent)
@@ -1116,7 +1116,7 @@ SpurGenerationScavenger >> scavengeReferentsOf: referrer [
 			["a forwarding pointer could be because of become: or scavenging."
 			 (manager isForwarded: referent) ifTrue:
 				[referent := manager followForwarded: referent].
-			 (manager getMemoryMap isYoungObject: referent)
+			 (manager isReallyYoungObject: referent)
 				ifTrue: "if target is already in future space forwarding pointer was due to a become:."
 					[(manager isInFutureSpace: referent)
 						ifTrue: [newLocation := referent. foundNewReferentOrIsWeakling := true]

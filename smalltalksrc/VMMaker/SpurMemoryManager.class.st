@@ -3305,7 +3305,7 @@ SpurMemoryManager >> checkHeapIntegrity: excludeUnmarkedObjs classIndicesShouldB
 								[coInterpreter print: 'object leak in forwarder '; printHex: obj; print: ' to unmapped '; printHex: fieldOop; cr.
 								 self eek.
 								 ok := false].
-							 (self isYoung: fieldOop) ifTrue:
+							 (self isReallyYoung: fieldOop) ifTrue:
 								[containsYoung := true]]
 						ifFalse:
 							[classOop := self classOrNilAtIndex: (classIndex := self classIndexOf: obj).
@@ -3324,7 +3324,7 @@ SpurMemoryManager >> checkHeapIntegrity: excludeUnmarkedObjs classIndicesShouldB
 										 self eek.
 										 ok := false].
 									 "don't be misled by CogMethods; they appear to be young, but they're not"
-									 (self isYoung: fieldOop) ifTrue:
+									 (self isReallyYoung: fieldOop) ifTrue:
 										[containsYoung := true]]]].
 					 containsYoung ifTrue:
 						[(self isRemembered: obj) ifFalse:
@@ -7446,6 +7446,18 @@ SpurMemoryManager >> isPureBitsNonImm: objOop [
 	^self isPureBitsFormat: (self formatOf: objOop)
 ]
 
+{ #category : #'object testing' }
+SpurMemoryManager >> isReallyYoung: oop [ 
+
+	<api>
+
+	"Answer if oop is young."
+
+	^(self isNonImmediate: oop)
+	 and: [self isReallyYoungObject: oop]
+
+]
+
 { #category : #'header access' }
 SpurMemoryManager >> isRemembered: objOop [
 	^((self baseHeader: objOop) >> self rememberedBitShift bitAnd: 1) ~= 0
@@ -11477,7 +11489,7 @@ SpurMemoryManager >> slidingCompactionRemapObj: objOop [
 	gcPhaseInProgress > 0 ifTrue:
 		[self scavengeInProgress
 			ifTrue:
-				[((self isYoung: resolvedObj) "don't scavenge immediate, old, or CogMethod objects."
+				[((self isReallyYoung: resolvedObj) "don't scavenge immediate, old, or CogMethod objects."
 				  and: [(self isInFutureSpace: resolvedObj) not]) ifTrue: 
 					[^scavenger copyAndForward: resolvedObj]]
 			ifFalse:
@@ -12750,7 +12762,7 @@ SpurMemoryManager >> vanillaRemapObj: objOop [
 			[self deny: (self isInFutureSpace: objOop).
 			 resolvedObj := objOop].
 	(self scavengeInProgress
-	 and: [(self isYoung: resolvedObj) "don't scavenge immediate, old, or CogMethod objects."
+	 and: [(self isReallyYoung: resolvedObj) "don't scavenge immediate, old, or CogMethod objects."
 	 and: [(self isInFutureSpace: resolvedObj) not]]) ifTrue: 
 		[^scavenger copyAndForward: resolvedObj].
 	^resolvedObj
@@ -12765,7 +12777,7 @@ SpurMemoryManager >> vanillaShouldRemapObj: objOop [
 	 scavenge, followed by a scan-mark-free, and final compaction passes may result in
 	 scavenged fields being visited twice."
 	^(self isForwarded: objOop)
-	  or: [(memoryMap isYoungObject: objOop)
+	  or: [(memoryMap isReallyYoungObject: objOop)
 		 and: [(self isInFutureSpace: objOop) not]]
 ]
 

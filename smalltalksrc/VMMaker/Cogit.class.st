@@ -4405,7 +4405,7 @@ Cogit >> checkIfValidOopRefAndTarget: annotation pc: mcpc cogMethod: cogMethod [
 		 (self asserta: (objectRepresentation checkValidOopReference: literal)) ifFalse:
 			[^1].
 		((objectRepresentation couldBeObject: literal)
-		 and: [objectMemory getMemoryMap isYoungObject: literal]) ifTrue:
+		 and: [objectMemory isReallyYoungObject: literal]) ifTrue:
 			[(self asserta: (self cCoerceSimple: cogMethod to: #'CogMethod *') cmRefersToYoung) ifFalse:
 				[^2]]].
 
@@ -4425,7 +4425,7 @@ Cogit >> checkIfValidOopRefAndTarget: annotation pc: mcpc cogMethod: cogMethod [
 							[(self asserta: (objectRepresentation validInlineCacheTag: cacheTag)) ifFalse:
 								[^5]].
 					((objectRepresentation couldBeObject: cacheTag)
-					 and: [objectMemory getMemoryMap isYoungObject: cacheTag]) ifTrue:
+					 and: [objectMemory isReallyYoungObject: cacheTag]) ifTrue:
 						[(self asserta: (self cCoerceSimple: cogMethod to: #'CogMethod *') cmRefersToYoung) ifFalse:
 							[^6]]]
 				ifFalse:

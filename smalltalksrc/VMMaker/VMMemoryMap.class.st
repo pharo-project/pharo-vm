@@ -436,11 +436,10 @@ VMMemoryMap >> isPermanentObject: anOop [
 
 { #category : #'testing objects' }
 VMMemoryMap >> isYoungObject: anOop [ 
-	<api>
-	self flag:#todo.
-	"^ anOop allMask: oldSpaceMask "
-	^ newSpaceStart <= anOop and: [ anOop <= newSpaceEnd ]
 
+	<api>
+
+	^ (anOop bitAnd: spaceMaskToUse) = newSpaceMask
 ]
 
 { #category : #accessing }

@@ -186,7 +186,7 @@ SpurRememberedSet >> referenceCountRememberedReferents: population maxRefCount: 
 		0 to: (manager numPointerSlotsOf: elephant) - 1 do:
 			[:j| | referent refCount |
 			referent := manager fetchPointer: j ofObject: elephant.
-			(manager isYoung: referent) ifTrue:
+			(manager isReallyYoung: referent) ifTrue:
 				[refCount := manager rtRefCountOf: referent.
 				 refCount < maxRefCount ifTrue:
 					[refCount > 0 ifTrue:
