@@ -27,11 +27,9 @@ VMPermanentSpaceImageReadingTest >> loadImage [
 		  	#ImageReader. imageReaderClass name.
 		  	#ImageWriter. imageWriterClass name.
 			#ISA. isa };
-		wordSize: self wordSize;
-		initialCodeSize: 4*1024; 
-		primitiveTraceLogSize: self primitiveTraceLogSize.
+		wordSize: self wordSize.
 
-	environmentBuilder build.
+	environmentBuilder doBuildSimulator.
 
 	interpreter := environmentBuilder interpreter.
 	memory := environmentBuilder objectMemory.
@@ -53,11 +51,11 @@ VMPermanentSpaceImageReadingTest >> setUp [
 ]
 
 { #category : #tests }
-VMPermanentSpaceImageReadingTest >> testLoadingImageCreatesPermSpace [
+VMPermanentSpaceImageReadingTest >> testLoadingImageHasEmptyPermSpaceWhenImageDoesNotHave [
 
 	self saveImage.	
 	self loadImage.
 				
-	self deny: memory getMemoryMap permSpaceStart equals: 0.
-	self deny: memory permSpaceFreeStart equals: 0.
+	self assert: memory getMemoryMap permSpaceStart equals: 0.
+	self assert: memory permSpaceFreeStart equals: 0.
 ]

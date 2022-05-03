@@ -17,11 +17,9 @@ VMImageReadingTest >> loadImage [
 		interpreterClass: self interpreterClass;
 		objectMemoryClass: self memoryClass;
 	 	initializationOptions: self initializationOptions;
-		wordSize: self wordSize;
-		initialCodeSize: self initialCodeSize; 
-		primitiveTraceLogSize: self primitiveTraceLogSize.
+		wordSize: self wordSize.
 
-	environmentBuilder build.
+	environmentBuilder doBuildSimulator.
 
 	interpreter := environmentBuilder interpreter.
 	memory := environmentBuilder objectMemory.

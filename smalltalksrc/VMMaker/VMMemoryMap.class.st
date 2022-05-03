@@ -127,6 +127,8 @@ VMMemoryMap >> allocateNewObjectsSpace [
 		ifFalse: [ 
 			self logError: 'Could not allocate newSpace in the expected place (%p), got %p' _: self newSpaceStart _: memoryMapConfiguration newSpaceInitialAddress.
 			self error: 'Error allocating' ].
+	
+	self newSpaceMask: (self newSpaceStart bitAnd: self spaceMaskToUse).
 		
 	self newSpaceEnd: self newSpaceStart + newSpaceSizeToAllocate.
 ]
@@ -174,6 +176,9 @@ VMMemoryMap >> allocatePermObjectsSpace [
 			self error: 'Error allocating' ].
 
 	self permSpaceEnd: self permSpaceStart + minSize.
+
+	self permSpaceMask: (self permSpaceStart bitAnd: self spaceMaskToUse).
+
 	objectMemory setPermSpaceFreeStart: self permSpaceStart
 ]
 
@@ -264,7 +269,7 @@ VMMemoryMap >> doCheckMemoryMap [
 	self assert: (self isYoungObject: self newSpaceEnd - memoryMapConfiguration confWordSize).
 	self assert: (self isOldObject: self newSpaceStart) not.
 	self assert: (self isOldObject: self newSpaceEnd - memoryMapConfiguration confWordSize) not.
-	self assert: (self isYoungObject: self newSpaceEnd) not.
+	self assert: (self isYoungObject: self newSpaceEnd).
 	self assert: (self isYoungObject: self oldSpaceStart) not.
 	self assert: (self isYoungObject: self oldSpaceEnd) not.
 	self assert: (self isOldObject: self oldSpaceStart).
@@ -394,6 +399,7 @@ VMMemoryMap >> initializeMemoryMap [
 	minPermSpaceSize := 0.
 	permSpaceStart := 0.
 	permSpaceEnd := 0.
+	permSpaceMask := -1.
 
 	self simulationOnly: [ 
 		memoryMapConfiguration := (VMMemoryMapConfiguration forWordsize:
@@ -419,20 +425,19 @@ VMMemoryMap >> isOldObject: anOop [
 
 { #category : #'testing objects' }
 VMMemoryMap >> isPermanentObject: anOop [ 
+
 	<api>
-	self flag:#todo.
-	"^ anOop allMask: oldSpaceMask "
-	^ permSpaceStart <= anOop and: [ anOop < permSpaceEnd ]
+
+	^ anOop allMask: permSpaceMask
 
 ]
 
 { #category : #'testing objects' }
 VMMemoryMap >> isYoungObject: anOop [ 
-	<api>
-	self flag:#todo.
-	"^ anOop allMask: oldSpaceMask "
-	^ newSpaceStart <= anOop and: [ anOop < newSpaceEnd ]
 
+	<api>
+
+	^ (anOop bitAnd: spaceMaskToUse) = newSpaceMask
 ]
 
 { #category : #accessing }
@@ -479,6 +484,18 @@ VMMemoryMap >> newSpaceEnd [
 VMMemoryMap >> newSpaceEnd: anObject [
 
 	newSpaceEnd := anObject
+]
+
+{ #category : #accessing }
+VMMemoryMap >> newSpaceMask [
+
+	^ newSpaceMask
+]
+
+{ #category : #accessing }
+VMMemoryMap >> newSpaceMask: anObject [
+
+	newSpaceMask := anObject
 ]
 
 { #category : #accessing }
@@ -538,6 +555,18 @@ VMMemoryMap >> permSpaceEnd [
 VMMemoryMap >> permSpaceEnd: anInteger [ 
 
 	permSpaceEnd := anInteger
+]
+
+{ #category : #accessing }
+VMMemoryMap >> permSpaceMask [
+
+	^ permSpaceMask
+]
+
+{ #category : #accessing }
+VMMemoryMap >> permSpaceMask: anObject [
+
+	permSpaceMask := anObject
 ]
 
 { #category : #accessing }

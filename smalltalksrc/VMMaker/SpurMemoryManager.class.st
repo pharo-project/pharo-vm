@@ -1979,7 +1979,7 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 	 will be set to sane values."
 
 	<doNotGenerate>
-	| vmMemoryConf |
+	| vmMemoryConf newSpaceActualBytes |
 
 	self assert: (memoryBytes \\ self allocationUnit = 0 and: [ 
 			 newSpaceBytes \\ self allocationUnit = 0 and: [ 
@@ -2001,17 +2001,21 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 		initialPermSpaceSize: permSpaceSize;
 		allocateHeap.
 		
-	freeStart := newSpaceBytes + memoryMap newSpaceStart.
+	newSpaceActualBytes := memoryMap newSpaceEnd - memoryMap newSpaceStart.
+	
+	self assert: newSpaceActualBytes >= newSpaceBytes.
+		
+	freeStart := newSpaceActualBytes + memoryMap newSpaceStart.
 	
 	scavengeThreshold := memoryMap newSpaceStart.
-	
+
 	scavenger := SpurGenerationScavenger simulatorClass new.
 	scavenger manager: self.
 	scavenger rememberedSet: newSpaceRememberedSet.
 	scavenger
 		newSpaceStart: memoryMap newSpaceStart
-		newSpaceBytes: newSpaceBytes
-		survivorBytes: newSpaceBytes // self scavengerDenominator.
+		newSpaceBytes: newSpaceActualBytes
+		survivorBytes: newSpaceActualBytes // self scavengerDenominator.
 
 	compactor := self class compactorClass simulatorClass new
 		             manager: self;

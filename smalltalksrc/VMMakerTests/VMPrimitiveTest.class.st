@@ -524,14 +524,6 @@ VMPrimitiveTest >> testPrimitiveAsCharacter [
 ]
 
 { #category : #'tests - primitiveAsCharacter' }
-VMPrimitiveTest >> testPrimitiveAsCharacterCompilesWithNoArg [
-	
-	interpreter primitiveAsCharacter. 
-
-	self deny: interpreter failed.
-]
-
-{ #category : #'tests - primitiveAsCharacter' }
 VMPrimitiveTest >> testPrimitiveAsCharacterFailsForOutOfRangeArg [
 
 	| invalidNumber |

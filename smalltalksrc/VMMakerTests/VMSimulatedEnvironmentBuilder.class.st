@@ -23,16 +23,7 @@ Class {
 { #category : #building }
 VMSimulatedEnvironmentBuilder >> build [
 	
-	objectMemory := objectMemoryClass simulatorClass new.
-	
-	interpreterClass
-		initializeWithOptions: initializationOptions
-		objectMemoryClass: objectMemory class.
-
-	interpreter := interpreterClass basicNew
-		  objectMemory: objectMemory;
-		  basicInitialize.
-		
+	self doBuildSimulator.		
 	self doBuild
 ]
 
@@ -44,7 +35,7 @@ VMSimulatedEnvironmentBuilder >> doBuild [
 	| memoryManager edenSize |
 
 	"Check #scavengerDenominator in SpurMemoryManager"
-	edenSize := 2 * 1024 + interpreter interpreterAllocationReserveBytes.
+	edenSize := (2 * 1024) + interpreter interpreterAllocationReserveBytes.
  	newSpaceSize := self roundToPageSize: (edenSize * 7 / 5).
 	stackSpaceSize := 9 * 4096.
 	methodCacheSize := 4096 * wordSize.
@@ -71,11 +62,14 @@ VMSimulatedEnvironmentBuilder >> doBuild [
 		primitiveTraceLogSize: (self roundToPageSize: primitiveTraceLogSize)
 		rumpCStackSize: self rumpCStackSize
 		permSpaceSize: permSpaceSize.
+	
+	"Set the allocated newSpaceSize"
+	newSpaceSize := objectMemory getMemoryMap newSpaceEnd - objectMemory getMemoryMap newSpaceStart.
 			
 	objectMemory initializePostBootstrap.
 	objectMemory setHeapSizeAtPreviousGC.
 
-	self assert: objectMemory objectMemory scavenger eden size > interpreter interpreterAllocationReserveBytes.
+	self assert: objectMemory objectMemory scavenger eden size >= interpreter interpreterAllocationReserveBytes.
 	self assert: objectMemory objectMemory scavengeThreshold + interpreter interpreterAllocationReserveBytes <= objectMemory objectMemory scavenger eden limit.
 
 	objectMemory segmentManager collapseSegmentsPostSwizzle.
@@ -84,6 +78,21 @@ VMSimulatedEnvironmentBuilder >> doBuild [
 	
 	"Schedule a GC, so it does not try to schedule one"
 	objectMemory needGCFlag: 1.
+
+]
+
+{ #category : #building }
+VMSimulatedEnvironmentBuilder >> doBuildSimulator [
+	
+	objectMemory := objectMemoryClass simulatorClass new.
+	
+	interpreterClass
+		initializeWithOptions: initializationOptions
+		objectMemoryClass: objectMemory class.
+
+	interpreter := interpreterClass basicNew
+		  objectMemory: objectMemory;
+		  basicInitialize.
 
 ]
 

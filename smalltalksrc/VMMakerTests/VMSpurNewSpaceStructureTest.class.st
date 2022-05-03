@@ -45,8 +45,7 @@ VMSpurNewSpaceStructureTest >> testNewMemoryEdenEndIsAtTheStartOfOldSpace [
 VMSpurNewSpaceStructureTest >> testNewMemoryEdenIsRestOfNewSpace [
 	
 	self
-		assert: memory scavenger eden size
-		equals: environmentBuilder newSpaceSize - memory scavenger pastSpace size - memory scavenger futureSpace size
+		assert: memory scavenger eden size > (environmentBuilder newSpaceSize - memory scavenger pastSpace size - memory scavenger futureSpace size - interpreter interpreterAllocationReserveBytes) 
 ]
 
 { #category : #'tests-1-memory-initialization' }
