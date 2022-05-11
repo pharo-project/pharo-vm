@@ -169,15 +169,6 @@ Spur64BitCoMemoryManager >> isImmediateClass: classObj [
 	^(self instSpecOfClass: classObj) = self instSpecForImmediateClasses
 ]
 
-{ #category : #'object testing' }
-Spur64BitCoMemoryManager >> isReallyYoungObject: objOop [
-	<api>
-	"Answer if obj is young. Require that obj is non-immediate. Override to filter-out Cog methods"
-	self assert: (self isNonImmediate: objOop).
-	^(self oop: objOop isLessThan: memoryMap newSpaceEnd)
-	  and: [self oop: objOop isGreaterThanOrEqualTo: memoryMap newSpaceStart]
-]
-
 { #category : #compaction }
 Spur64BitCoMemoryManager >> methodHeaderFromSavedFirstField: field [
 	(self isIntegerObject: field) ifTrue:

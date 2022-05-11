@@ -7458,6 +7458,15 @@ SpurMemoryManager >> isReallyYoung: oop [
 
 ]
 
+{ #category : #'object testing' }
+SpurMemoryManager >> isReallyYoungObject: objOop [
+	<api>
+	"Answer if obj is young. Require that obj is non-immediate. Override to filter-out Cog methods"
+	self assert: (self isNonImmediate: objOop).
+	^(self oop: objOop isLessThan: memoryMap newSpaceEnd)
+	  and: [self oop: objOop isGreaterThanOrEqualTo: memoryMap newSpaceStart]
+]
+
 { #category : #'header access' }
 SpurMemoryManager >> isRemembered: objOop [
 	^((self baseHeader: objOop) >> self rememberedBitShift bitAnd: 1) ~= 0
