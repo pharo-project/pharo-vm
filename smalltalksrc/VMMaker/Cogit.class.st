@@ -2058,6 +2058,16 @@ Cogit >> DivRs: dpreg1 Rs: dpreg2 [
 ]
 
 { #category : #'abstract instructions' }
+Cogit >> DupS: aSize R: aGeneralRegister VR: aVectorRegister [
+
+	^ self
+		  gen: DupRVR
+		  operand: aSize
+		  operand: aGeneralRegister
+		  operand: aVectorRegister
+]
+
+{ #category : #'abstract instructions' }
 Cogit >> Fill32: value [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>

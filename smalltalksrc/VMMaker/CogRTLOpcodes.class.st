@@ -36,6 +36,7 @@ Class {
 		'ConvertRsRd',
 		'DivRdRd',
 		'DivRsRs',
+		'DupRVR',
 		'Fill32',
 		'FirstJump',
 		'FirstShortJump',
@@ -317,6 +318,9 @@ CogRTLOpcodes class >> initialize [
 
 						SignExtend8RR SignExtend16RR SignExtend32RR
 						ZeroExtend8RR ZeroExtend16RR ZeroExtend32RR
+
+						"SIMD ops"
+						DupRVR
 
 						LastRTLCode).
 

@@ -43,3 +43,13 @@ VMARMV8SIMDEncodingTest >> jitOptions [
 		  put: DummyProcessor;
 		  yourself
 ]
+
+{ #category : #'tests - MoveRMwr' }
+VMARMV8SIMDEncodingTest >> testEncodeDupRVRWith64BitLanes [
+
+	self compile: [ cogit DupS: 64 R: 3 VR: 0 ].
+	
+	self
+		assert: (self armInstructionAt: 1) assemblyCodeString
+		equals: 'dup	v0.2d, x3'
+]

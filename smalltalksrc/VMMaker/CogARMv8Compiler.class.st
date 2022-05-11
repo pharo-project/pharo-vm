@@ -1210,7 +1210,10 @@ CogARMv8Compiler >> computeMaximumSize [
 		[MoveRRd]				-> [^4].
 				
 		"This is a fixed size instruction using a literal. We need exactly 1 instructions to move a literal from a PC relative position, so this takes ALWAYS 1 instruction of 4 bytes"
-		[MovePatcheableC32R] -> [ ^ 4 ]
+		[MovePatcheableC32R] -> [ ^ 4 ].
+		
+		"SIMD Ops"
+		[DupRVR] -> [ ^ 4 ]
 		}.
 	^0 "to keep C compiler quiet"
 
@@ -1769,6 +1772,30 @@ CogARMv8Compiler >> concretizeDivRdRd [
 		fDivFirstRegister: registerB
 		secondRegister: registerA
 		destinationRegister: destinationRegister).
+	^ machineCodeSize := 4
+]
+
+{ #category : #concretizing }
+CogARMv8Compiler >> concretizeDupRVR [
+
+	"Will get inlined into concretizeAt: switch."
+
+	<inline: true>
+
+	| srcReg destReg instruction t q size |
+
+	size := operands at: 0.
+	srcReg := operands at: 1.
+	destReg := operands at: 2.
+
+	size = 64 
+		ifTrue: [ t := 2r1000. q := 1 ]
+		ifFalse: [ self notYetImplemented ].
+
+	instruction := self dupT: t q: q source: srcReg dest: destReg.
+
+	self machineCodeAt: 0 put: instruction.
+
 	^ machineCodeSize := 4
 ]
 
@@ -3310,8 +3337,32 @@ CogARMv8Compiler >> dispatchConcretize [
 		[MoveRRd]			-> [^self concretizeMoveRRd].
 		
 		"Patcheable literal instruction"
-		[ MovePatcheableC32R ] -> [ ^ self concretizeMovePatcheableC32R ]
+		[ MovePatcheableC32R ] -> [ ^ self concretizeMovePatcheableC32R ].
+	
+		"SIMD Ops"
+		[ DupRVR ] -> [ ^ self concretizeDupRVR ]
 		}
+]
+
+{ #category : #assembler }
+CogARMv8Compiler >> dupT: t q: q source: src dest: dest [ 
+
+	"
+		C7.2.40 DUP (general)
+
+	DUP <Vd>.<T>, <R><n>
+
+	Duplicate general-purpose register to vector. This instruction duplicates the contents of the source general-purpose
+	register into a scalar or each element in a vector, and writes the result to the SIMD&FP destination register.
+	Depending on the settings in the CPACR_EL1, CPTR_EL2, and CPTR_EL3 registers, and the current Security state
+	and Exception level, an attempt to execute the instruction might be trapped"
+	
+	^ q << 30
+		bitOr: (2r111 << 25
+		bitOr: ((t bitAnd: 2r11111) << 16 
+		bitOr: (2r11 << 10
+		bitOr: ((src bitAnd: 2r11111) << 5
+		bitOr: (dest bitAnd: 2r11111)))))
 ]
 
 { #category : #'immediate-encodings' }
