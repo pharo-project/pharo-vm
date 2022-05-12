@@ -727,7 +727,7 @@ VMSimpleStackBasedCogitAbstractTest >> setUp [
 	memory falseObject: (self newObjectWithSlots: 0).
 	
 	"We don't access its contents, but we need it to be after nil, true and false"
-	memory hiddenRootsObject: (self newObjectWithSlots: 0).
+	memory hiddenRootsObject: (self newArrayWithSlots: 0).
 
 	cogit setStackAlignment: 16 expectedSPOffset: 0 expectedFPOffset: 0.
 	cogit initializeBackend.

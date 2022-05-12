@@ -101,6 +101,7 @@ VMARMV8SpecificEncodingTest >> testEncodeCmpCqRNonEncodeable12BitConstant [
 		cogit CmpCq: constant R: ReceiverResultReg ].
 	
 	machineSimulator receiverRegisterValue: constant.
+
 	self runGeneratedCode.
 	
 	"Assert Cmp was equals"
