@@ -2921,6 +2921,16 @@ Cogit >> SqrtRs: dpreg [
 ]
 
 { #category : #'abstract instructions' }
+Cogit >> St1S: aSize VR: aVectorRegister MR: aMemoryRegister O: anOffset [ 
+	^ self
+		  gen: St1VRMRO
+		  operand: aSize 
+		  operand: aVectorRegister
+		  operand: aMemoryRegister 
+		  operand: anOffset 
+]
+
+{ #category : #'abstract instructions' }
 Cogit >> Stop [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>

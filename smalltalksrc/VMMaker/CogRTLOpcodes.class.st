@@ -138,6 +138,7 @@ Class {
 		'SignExtend8RR',
 		'SqrtRd',
 		'SqrtRs',
+		'St1VRMRO',
 		'Stop',
 		'SubCqR',
 		'SubCwR',
@@ -321,6 +322,7 @@ CogRTLOpcodes class >> initialize [
 
 						"SIMD ops"
 						DupRVR
+						St1VRMRO
 
 						LastRTLCode).
 

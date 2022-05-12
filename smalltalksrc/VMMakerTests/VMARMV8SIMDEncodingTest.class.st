@@ -12,7 +12,7 @@ VMARMV8SIMDEncodingTest class >> testParameters [
 		yourself
 ]
 
-{ #category : #'tests - MoveRMwr' }
+{ #category : #tests }
 VMARMV8SIMDEncodingTest >> armInstructionAt: index [
 
 	| addr inst |
@@ -44,7 +44,7 @@ VMARMV8SIMDEncodingTest >> jitOptions [
 		  yourself
 ]
 
-{ #category : #'tests - MoveRMwr' }
+{ #category : #tests }
 VMARMV8SIMDEncodingTest >> testEncodeDupRVRWith64BitLanes [
 
 	self compile: [ cogit DupS: 64 R: 3 VR: 0 ].
@@ -52,4 +52,14 @@ VMARMV8SIMDEncodingTest >> testEncodeDupRVRWith64BitLanes [
 	self
 		assert: (self armInstructionAt: 1) assemblyCodeString
 		equals: 'dup	v0.2d, x3'
+]
+
+{ #category : #tests }
+VMARMV8SIMDEncodingTest >> testEncodeSt1WithOne64BitLaneRegisterAndImmediateOffset [
+
+	self compile: [ cogit St1S: 64 VR: 0 MR: 1 O: 16 ].
+	
+	self
+		assert: (self armInstructionAt: 1) assemblyCodeString
+		equals: 'st1	{ v0.2d }, [x1], #16'
 ]

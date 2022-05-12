@@ -1213,7 +1213,8 @@ CogARMv8Compiler >> computeMaximumSize [
 		[MovePatcheableC32R] -> [ ^ 4 ].
 		
 		"SIMD Ops"
-		[DupRVR] -> [ ^ 4 ]
+		[DupRVR] -> [ ^ 4 ].
+		[St1VRMRO] -> [ ^ 4 ]
 		}.
 	^0 "to keep C compiler quiet"
 
@@ -2955,6 +2956,39 @@ CogARMv8Compiler >> concretizeSqrtRd [
 	^ machineCodeSize := 4
 ]
 
+{ #category : #concretizing }
+CogARMv8Compiler >> concretizeSt1VRMRO [
+
+	"Will get inlined into concretizeAt: switch."
+
+	<inline: true>
+	| opCode instruction q t size vectorR memoryR offset rm |
+	opCode := 2r0111. "TODO support multiple-register variants"
+	rm := 2r11111. "TODO support register offset variant"
+	size := operands at: 0.
+	vectorR := operands at: 1.
+	memoryR := operands at: 2.
+	offset := operands at: 3.
+
+	((size = 64) & (offset = 16))
+		ifTrue: [ 
+			q := 1.
+			t := 11 ]
+		ifFalse: [ self notYetImplemented ].
+
+	instruction := self
+		               st1Q: q
+		               Rm: rm
+		               OpCode: opCode
+		               S: t
+		               Rn: memoryR
+		               Rt: vectorR.
+
+	self machineCodeAt: 0 put: instruction.
+
+	^ machineCodeSize := 4
+]
+
 { #category : #'generate machine code - concretize' }
 CogARMv8Compiler >> concretizeStop [
 	<inline: true>
@@ -3340,7 +3374,8 @@ CogARMv8Compiler >> dispatchConcretize [
 		[ MovePatcheableC32R ] -> [ ^ self concretizeMovePatcheableC32R ].
 	
 		"SIMD Ops"
-		[ DupRVR ] -> [ ^ self concretizeDupRVR ]
+		[ DupRVR ] -> [ ^ self concretizeDupRVR ].
+		[ St1VRMRO ] -> [ ^ self concretizeSt1VRMRO ].
 		}
 ]
 
@@ -5641,6 +5676,25 @@ CogARMv8Compiler >> smulhSize: is64bits firstRegister: registerA secondRegister:
 		bitOr: (16r1f << 10
 		bitOr: (((registerA bitAnd: 16r1f) << 5)
 		bitOr: (destinationRegister bitAnd: 16r1f))))
+]
+
+{ #category : #concretizing }
+CogARMv8Compiler >> st1Q: q Rm: rm OpCode: opCode S: size Rn: rn Rt: rt [
+
+	"
+	C7.2.321 ST1 (multiple structures)
+
+	ST1 { <Vt>.<T> }, [<Xn|SP>], <Xm>
+
+	Store multiple single-element structures from one, two, three, or four registers. This instruction 	stores elements to memory from one, two, three, or four SIMD&FP registers, without interleaving. 	Every element of each register is stored."
+	
+	^ q << 30
+		bitOr: (2r11001 << 23
+		bitOr: ((rm bitAnd: 2r11111) << 16
+		bitOr: ((opCode bitAnd: 2r1111) << 12
+		bitOr: ((size bitAnd: 2r11) << 10
+		bitOr: ((rn bitAnd: 2r11111) << 5
+		bitOr: (rt bitAnd: 2r11111))))))
 ]
 
 { #category : #accessing }
