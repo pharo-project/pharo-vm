@@ -496,6 +496,7 @@ ProcessorSimulator >> mapMemoryInManager: aSlangMemoryManager [
 	aSlangMemoryManager regionsDo: [ :startAddress :region |
 		self mapMemory: region at: startAddress
 	].
+	aSlangMemoryManager machineSimulator: self.
 	self finishMappingMemory.
 ]
 

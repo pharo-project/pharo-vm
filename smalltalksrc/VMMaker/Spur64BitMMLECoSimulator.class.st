@@ -213,13 +213,6 @@ Spur64BitMMLECoSimulator >> intAt: byteAddress put: a64BitValue [
 	^self long32At: byteAddress put: (a64BitValue bitAnd: 16rFFFFFFFF)
 ]
 
-{ #category : #'image segment in/out' }
-Spur64BitMMLECoSimulator >> loadImageSegmentFrom: segmentWordArray outPointers: outPointerArray [
-	self leakCheckImageSegments ifTrue:
-		[self halt].
-	^super loadImageSegmentFrom: segmentWordArray outPointers: outPointerArray
-]
-
 { #category : #'memory access' }
 Spur64BitMMLECoSimulator >> long32At: byteAddress [
 	
@@ -270,28 +263,12 @@ Spur64BitMMLECoSimulator >> longAt: byteAddress put: a64BitValue [
 	^memoryManager unsignedLong64At: byteAddress put: a64BitValue
 ]
 
-{ #category : #'image segment in/out' }
-Spur64BitMMLECoSimulator >> mapOopsFrom: segStart to: segAddr outPointers: outPointerArray outHashes: savedOutHashes [
-	self leakCheckImageSegments ifTrue:
-		[self halt].
-	^super mapOopsFrom: segStart to: segAddr outPointers: outPointerArray outHashes: savedOutHashes
-]
-
 { #category : #'gc - global' }
 Spur64BitMMLECoSimulator >> markAndTrace: objOop [
 	"objOop = 16rB26020 ifTrue: [self halt].
 	objOop = 16rB25FD8 ifTrue: [self halt].
 	objOop = 16rB26010 ifTrue: [self halt]."
 	^super markAndTrace: objOop
-]
-
-{ #category : #snapshot }
-Spur64BitMMLECoSimulator >> memoryBaseForImageRead [
-	"Answer the address to read the image into.  Override so that when bootstrapping,
-	 the segmentManager's segments are undisturbed in adjustSegmentSwizzlesBy:"
-	^bootstrapping
-		ifTrue: [0] 
-		ifFalse: [super memoryBaseForImageRead]
 ]
 
 { #category : #initialization }
@@ -318,13 +295,6 @@ Spur64BitMMLECoSimulator >> parent [
 Spur64BitMMLECoSimulator >> parent: anObject [
 
 	parent := anObject
-]
-
-{ #category : #'image segment in/out' }
-Spur64BitMMLECoSimulator >> return: errCode restoringObjectsIn: firstArray savedFirstFields: savedFirstFields and: secondArray savedHashes: savedHashes [
-	self leakCheckImageSegments ifTrue:
-		[self halt: errCode printString].
-	^super return: errCode restoringObjectsIn: firstArray savedFirstFields: savedFirstFields and: secondArray savedHashes: savedHashes
 ]
 
 { #category : #'debug support' }
@@ -403,17 +373,6 @@ Spur64BitMMLECoSimulator >> shortAt: byteAddress put: a16BitValue [
 Spur64BitMMLECoSimulator >> storeFloatAt: floatBitsAddress from: aFloat [
 	self long32At: floatBitsAddress put: (aFloat at: 2).
 	self long32At: floatBitsAddress+4 put: (aFloat at: 1)
-]
-
-{ #category : #'image segment in/out' }
-Spur64BitMMLECoSimulator >> storeImageSegmentInto: segmentWordArray outPointers: outPointerArray roots: arrayOfRoots [
-	self leakCheckImageSegments ifTrue:
-		[parent ifNil:
-			[| result |
-			 self halt.
-			 result := coInterpreter cloneSimulation objectMemory storeImageSegmentInto: segmentWordArray outPointers: outPointerArray roots: arrayOfRoots.
-			 Smalltalk garbageCollect]].
-	^super storeImageSegmentInto: segmentWordArray outPointers: outPointerArray roots: arrayOfRoots
 ]
 
 { #category : #'ad-hoc tests' }

@@ -5,7 +5,6 @@ Class {
 		'BadRegisterSet',
 		'CogCompilerClass',
 		'InFullBlock',
-		'InVanillaBlock',
 		'NumSendTrampolines',
 		'SSBaseOffset',
 		'SSConstant',

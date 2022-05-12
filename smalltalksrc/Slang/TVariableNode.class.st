@@ -7,6 +7,24 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance creation' }
+TVariableNode class >> named: aName [
+
+	^ self new
+		setName: aName;
+		yourself
+]
+
+{ #category : #tranforming }
+TVariableNode >> asCASTIn: aBuilder [
+
+	aBuilder currentMethod ifNotNil: [ :m | m noteUsedVariableName: name ].
+	^ name = 'nil'
+		  ifTrue: [ CIdentifierNode name: aBuilder nilTranslation ]
+		  ifFalse: [ 
+		  CIdentifierNode name: (aBuilder returnPrefixFromVariable: name) ]
+]
+
 { #category : #transformations }
 TVariableNode >> bindVariableUsesIn: aDictionary [
 
@@ -22,16 +40,6 @@ TVariableNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold
 { #category : #transformations }
 TVariableNode >> bindVariablesIn: aDictionary [ 
 	^ (aDictionary at: name ifAbsent: [^ self]) copy
-]
-
-{ #category : #'C code generation' }
-TVariableNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-
-	aStream nextPutAll: (name = 'nil'
-						ifTrue: [aCodeGen cLiteralFor: nil]
-						ifFalse: [aCodeGen returnPrefixFromVariable: name]).
-	aCodeGen currentMethod ifNotNil:
-		[:m| m noteUsedVariableName: name]
 ]
 
 { #category : #testing }

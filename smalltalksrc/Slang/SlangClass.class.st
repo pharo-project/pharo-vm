@@ -146,8 +146,9 @@ SlangClass >> eassert: aBooleanExpressionOrBlock [
 
 { #category : #'translation support' }
 SlangClass >> error [
+	"Throw a generic Error exception."
 
-	<cmacro: ''>
+	^self error: 'Error!'.
 ]
 
 { #category : #accessing }

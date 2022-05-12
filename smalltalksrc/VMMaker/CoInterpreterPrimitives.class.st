@@ -83,7 +83,7 @@ CoInterpreterPrimitives >> mcprimHashMultiply: receiverArg [
 ]
 
 { #category : #'object access primitives' }
-CoInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
+CoInterpreterPrimitives >> pathTo: goal using: anArray followWeak: followWeak [
 	"Trace objects and frames from the root, marking visited objects, pushing the current path on stack, until goal is found.
 	 If found, unmark, leaving path in stack, and answer 0.  Otherwise answer an error:
 		PrimErrBadArgument if stack is not an Array
@@ -91,13 +91,13 @@ CoInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 		PrimErrNotFound if goal cannot be found"
 	| current index next stackSize stackp freeStartAtStart |
 	<var: #index type: #sqInt> "Force the sign because typeInference does not seem to work"
-	(objectMemory isArray: stack) ifFalse:
+	(objectMemory isArray: anArray) ifFalse:
 		[^PrimErrBadArgument].
 	self assert: objectMemory allObjectsUnmarked.
 	freeStartAtStart := objectMemory freeStart. "check no allocations during search"
-	objectMemory beRootIfOld: stack. "so no store checks are necessary on stack"
-	stackSize := objectMemory lengthOf: stack.
-	objectMemory mark: stack.
+	objectMemory beRootIfOld: anArray. "so no store checks are necessary on stack"
+	stackSize := objectMemory lengthOf: anArray.
+	objectMemory mark: anArray.
 	"no need. the current context is not reachable from the active process (suspendedContext is nil)"
 	"objectMemory mark: self activeProcess."
 	current := objectMemory specialObjectsOop.
@@ -127,8 +127,8 @@ CoInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 		 next = goal ifTrue:
 			[self assert: freeStartAtStart = objectMemory freeStart.
 			 self unmarkAfterPathTo.
-			 objectMemory storePointer: stackp ofObject: stack withValue: current.
-			 self pruneStack: stack stackp: stackp.
+			 objectMemory storePointer: stackp ofObject: anArray withValue: current.
+			 self pruneStack: anArray stackp: stackp.
 			 ^0].
 		 ((objectMemory isNonIntegerObject: next)
 		  and: [(stackPages couldBeFramePointer: next)
@@ -142,11 +142,11 @@ CoInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 				[stackp + 2 > stackSize ifTrue:
 					[self assert: freeStartAtStart = objectMemory freeStart.
 					 self unmarkAfterPathTo.
-					 objectMemory nilFieldsOf: stack.
+					 objectMemory nilFieldsOf: anArray.
 					 ^PrimErrBadIndex]. "PrimErrNoMemory ?"
 				 objectMemory
-					storePointerUnchecked: stackp ofObject: stack withValue: current;
-					storePointerUnchecked: stackp + 1 ofObject: stack withValue: (objectMemory integerObjectOf: index).
+					storePointerUnchecked: stackp ofObject: anArray withValue: current;
+					storePointerUnchecked: stackp + 1 ofObject: anArray withValue: (objectMemory integerObjectOf: index).
 				 stackp := stackp + 2.
 				 (stackPages couldBeFramePointer: (self cCoerceSimple: next to: #'char *'))
 					ifTrue:
@@ -161,10 +161,10 @@ CoInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 		 current = objectMemory specialObjectsOop ifTrue:
 			[self assert: freeStartAtStart = objectMemory freeStart.
 			 self unmarkAfterPathTo.
-			 objectMemory nilFieldsOf: stack.
+			 objectMemory nilFieldsOf: anArray.
 			^PrimErrNotFound].
-		 index := objectMemory integerValueOf: (objectMemory fetchPointer: stackp - 1 ofObject: stack).
-		 current := objectMemory fetchPointer: stackp - 2 ofObject: stack.
+		 index := objectMemory integerValueOf: (objectMemory fetchPointer: stackp - 1 ofObject: anArray).
+		 current := objectMemory fetchPointer: stackp - 2 ofObject: anArray.
 		 stackp := stackp - 2] repeat
 ]
 
@@ -216,13 +216,6 @@ CoInterpreterPrimitives >> primitiveAllMethodsCompiledToMachineCode [
 	(nEntries < maxNumEntries) ifTrue:
 		[objectMemory shorten: arrayObj toIndexableSize: nEntries].
 	self pop: 1 thenPush: arrayObj
-]
-
-{ #category : #'control primitives' }
-CoInterpreterPrimitives >> primitiveClosureCopyWithCopiedValues [
-	"This is optional old obsolete stuff tedious to implement in Cog because of
-	 the need to map from machine code pc to bytecode pc.  So for now just fail."
-	self primitiveFail
 ]
 
 { #category : #'process primitives' }
@@ -667,21 +660,6 @@ CoInterpreterPrimitives >> primitiveSnapshot [
 	 Override to jump to the interpreter because the machine code zone is now void."
 	<inline: false>
 	self snapshot: false.
-	(self iframeMethod: framePointer) = newMethod ifTrue:
-		["snapshot: has reached the end and built a frame.
-		 In the JIT we need to back-up the pc before reentering the interpreter."
-		instructionPointer := instructionPointer - 1].
-	self siglong: reenterInterpreter jmp: ReturnToInterpreter
-	"NOTREACHED"
-]
-
-{ #category : #'system control primitives' }
-CoInterpreterPrimitives >> primitiveSnapshotEmbedded [
-	"Save an embedded snapshot.
-
-	 Override to jump to the interpreter because the machine code zone is now void."
-	<inline: false>
-	self snapshot: true.
 	(self iframeMethod: framePointer) = newMethod ifTrue:
 		["snapshot: has reached the end and built a frame.
 		 In the JIT we need to back-up the pc before reentering the interpreter."

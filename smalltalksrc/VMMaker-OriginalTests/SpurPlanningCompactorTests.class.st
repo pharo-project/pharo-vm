@@ -3,7 +3,7 @@ Class {
 	#superclass : #LongTestCase,
 	#pools : [
 		'VMBasicConstants',
-		'VMSqueakClassIndices'
+		'VMClassIndices'
 	],
 	#category : #'VMMaker-OriginalTests'
 }

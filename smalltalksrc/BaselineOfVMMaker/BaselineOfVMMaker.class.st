@@ -13,7 +13,12 @@ BaselineOfVMMaker >> baseline: spec [
 			
 			"Slang, the basics"			
 			spec
-				package: 'Slang';
+				package: 'CAST' with: [
+					spec requires: #( 'SmaCC-GLR' )
+				];
+				package: 'Slang' with: [
+					spec requires: #( 'CAST' )
+				];
 				package: 'Slang-Tests' with: [
 					spec requires: #('Slang') ].
 			
@@ -22,6 +27,11 @@ BaselineOfVMMaker >> baseline: spec [
 				spec requires: #('Slang') ].
 			
 			"External Dependencies"
+			spec baseline: 'SmaCC-GLR' with: [ 
+				spec
+					loads: #( 'SmaCC-GLR-Runtime' );
+					className: 'BaselineOfSmaCC';
+					repository: 'github://SmaCCRefactoring/SmaCC' ].
 			spec baseline: 'Unicorn' with: [ 
 				spec repository: 'github://guillep/pharo-unicorn' ].
 			spec baseline: 'LLVMDisassembler' with: [ 
@@ -30,10 +40,7 @@ BaselineOfVMMaker >> baseline: spec [
 			"Tests"			
 			spec
 				package: 'VMMakerTests' with: [
-					spec requires: #('VMMakerCompatibilityForPharo6' 'Unicorn' 'LLVMDisassembler' 'Slang-Tests') ];
-				package: 'VMMaker-MT-Tests' with: [
-					spec requires: #('VMMakerTests') ].
-
+					spec requires: #('VMMakerCompatibilityForPharo6' 'Unicorn' 'LLVMDisassembler' 'Slang-Tests') ].
 			spec
 				package: 'VMMaker-OriginalTests' with: [
 					spec requires: #('VMMakerCompatibilityForPharo6') ].
@@ -52,17 +59,16 @@ BaselineOfVMMaker >> baseline: spec [
 				
 			"Main VMMaker packages"	
 			spec
-				package: 'VMMaker-Slang'
-				with: [ spec requires: #( 'Melchor' 'VMMaker' ) ];
 				package: 'VMMaker'
-				with: [ spec requires: #( 'Melchor' 'VMMakerLoadingDependencies' 'Printf') ].
+				with: [ spec requires: #( 
+					'VMMakerLoadingDependencies' 'Printf' 'Melchor') ].
 								
 			"VM plugins"
 			spec package: 'FileAttributesPlugin' with: [ spec requires: #( 'VMMakerCompatibilityForPharo6') ].
 			
 			spec group: 'plugins' with: #('FileAttributesPlugin').
-			spec group: 'core' with: #('VMMaker-Slang').
+			spec group: 'core' with: #('VMMaker').
 			spec group: 'tools' with: #('VMMaker-Tools').			
-			spec group: 'tests' with: #('VMMakerTests' 'VMMaker-OriginalTests' 'VMMaker-MT-Tests').			
+			spec group: 'tests' with: #('VMMakerTests' 'VMMaker-OriginalTests').			
 			spec group: 'default' with: #( 'core' 'plugins' 'tools' 'tests') ]
 ]

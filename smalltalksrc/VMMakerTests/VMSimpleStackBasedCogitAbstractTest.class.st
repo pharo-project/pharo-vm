@@ -28,7 +28,7 @@ Class {
 		'CogCompilationConstants',
 		'CogMethodConstants',
 		'VMBytecodeConstants',
-		'VMSqueakClassIndices'
+		'VMClassIndices'
 	],
 	#category : #'VMMakerTests-JitTests'
 }
@@ -139,7 +139,7 @@ VMSimpleStackBasedCogitAbstractTest >> compileSpecialSend [
 	cogit ordinarySendTrampolineAt: sentSelector numArgs put: sendTrampolineAddress.
 	
 	self createFramefulCallFrom: callerAddress.
-	cogit byte0: 176 + (selectorIndex - 1 / 2).
+	cogit byte0: 96 + (selectorIndex - 1 / 2).
 	sendAddress := self compile: [ cogit genSpecialSelectorSend ].
 ]
 
@@ -307,9 +307,9 @@ VMSimpleStackBasedCogitAbstractTest >> createInterpreterFramefulCallFrom: return
 VMSimpleStackBasedCogitAbstractTest >> createSpecialSelectorArray [
 
 	| specialObjectsOop  |
-	specialObjectsOop := self newObjectWithSlots: 24.
+	specialObjectsOop := self newArrayWithSlots: 24.
 	selectorIndex := Smalltalk specialSelectors indexOf: sentSelector.
-	obj := self newObjectWithSlots: selectorIndex + 1.
+	obj := self newArrayWithSlots: selectorIndex + 1.
 	memory
 		storePointer: selectorIndex - 1
 		ofObject: obj withValue: (selectorAtIndex := memory integerObjectOf: 77 "Some object to test").
@@ -387,13 +387,6 @@ VMSimpleStackBasedCogitAbstractTest >> initialCodeSize [
 	^ 4 * 1024
 ]
 
-{ #category : #helpers }
-VMSimpleStackBasedCogitAbstractTest >> initializationOptions [
-	
-	^ super initializationOptions, {
-		#bytecodeTableInitializer. #initializeBytecodeTableForSqueakV3PlusClosures}
-]
-
 { #category : #running }
 VMSimpleStackBasedCogitAbstractTest >> initializeInitialStackFrame [
 
@@ -441,9 +434,9 @@ VMSimpleStackBasedCogitAbstractTest >> jitCompilerClass [
 VMSimpleStackBasedCogitAbstractTest >> jitMethod: aPharoCompiledMethod selector: aSelectorOop [
 
 	| methodOop |
-	"We are using V3 bytecode, so we need to recompile the method"
-	methodOop := self createMethodOopFromPharoMethod:
-		             aPharoCompiledMethod.
+
+	methodOop := self createMethodOopFromPharoMethod:aPharoCompiledMethod.
+
 	^ cogit cog: methodOop selector: aSelectorOop
 ]
 
@@ -453,6 +446,7 @@ VMSimpleStackBasedCogitAbstractTest >> jitOptions [
 	^ Dictionary newFromPairs: { 
 		#ISA. isa.
 		#IMMUTABILITY. false.
+		#bytecodeTableInitializer. #initializeBytecodeTableForSistaV1.	
 		#ObjectMemory. self memoryClass name }
 ]
 

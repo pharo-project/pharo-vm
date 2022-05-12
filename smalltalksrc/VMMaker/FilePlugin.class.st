@@ -332,21 +332,11 @@ FilePlugin >> primitiveDirectoryDelimitor [
 	<export: true>
 	interpreterProxy minorVersion >= 13
 		ifTrue:
-			[interpreterProxy
+			[ interpreterProxy
 				pop: 1
 				thenPush: (interpreterProxy characterObjectOf: self dir_Delimitor)]
 		ifFalse:
-			[| ascii |
-			 ascii := self dir_Delimitor.
-			 (ascii >= 0 and: [ascii <= 255])
-				ifTrue:
-					[interpreterProxy
-						pop: 1
-						thenPush: (interpreterProxy
-										fetchPointer: ascii
-										ofObject: interpreterProxy characterTable)]
-				ifFalse:
-					[interpreterProxy primitiveFail]]
+			[ interpreterProxy primitiveFail]
 ]
 
 { #category : #'directory primitives' }
@@ -843,13 +833,7 @@ FilePlugin >> primitiveFileStdioHandles [
 					[(interpreterProxy firstIndexableField: result)
 						unitSize: interpreterProxy wordSize;
 						at: 0 put: (fileRecords at: index + 1)]]].
-	 "In the non-Spur threaded VM ensure the handles are old, so that sqFileReadIntoAt is unaffected
-	  by incremental GCs.  See platforms/Cross/plugins/FilePlugin/sqFilePluginBasicPrims.c.  The Spur
-	  VM uses pinning, so it doesn't need the GC."
-	self cppIf: COGMTVM
-		ifTrue: [self cppIf: SPURVM
-					ifTrue: []
-					ifFalse: [interpreterProxy fullGC]].
+
 	result := interpreterProxy popRemappableOop.
 	interpreterProxy methodReturnValue: result
 ]

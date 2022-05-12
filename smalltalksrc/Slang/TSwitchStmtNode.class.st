@@ -15,6 +15,155 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #transforming }
+TSwitchStmtNode >> asCASTExpressionIn: aBuilder [
+
+	| var ternary |
+	ternary := nil.
+	self assert: (expression isVariable or: [ switchVariable notNil ]).
+	var := [ :i | 
+	       switchVariable
+		       ifNil: [ expression asCASTIn: aBuilder ]
+		       ifNotNil: [ 
+			       i = 1
+				       ifTrue: [ 
+					       CAssignmentNode
+						       lvalue: (CIdentifierNode name: switchVariable)
+						       rvalue: (expression asCASTIn: aBuilder) ]
+				       ifFalse: [ CIdentifierNode name: switchVariable ] ] ].
+	cases size to: 1 by: -1 do: [ :i | 
+		[ :labels :case | 
+		labels size to: 1 by: -1 do: [ :j | 
+			ternary := ternary
+				           ifNil: [ 
+					           (CTernaryNode
+						            condition: (CBinaryOperatorNode
+								             operator: #==
+								             left: (var value: i)
+								             right: ((labels at: j) asCASTExpressionIn: aBuilder))
+						            then:
+							            ((TStmtListNode new
+								              setArguments: #(  )
+								              statements: case statements) 
+								             asCASTExpressionIn: aBuilder)
+						            else: (otherwiseOrNil
+								             ifNotNil: [ 
+									             otherwiseOrNil asCASTExpressionIn: aBuilder ]
+								             ifNil: [ 
+									             CExpressionListNode new expressions: { 
+												             (CCallNode
+													              identifier: (CIdentifierNode name: 'error')
+													              arguments:
+														              { (CStringLiteralNode value:
+																               'Case not found and no otherwise clause') }).
+												             (CConstantNode value: 0) } ]))
+						           printOnMultipleLines: true;
+						           yourself ]
+				           ifNotNil: [ 
+					           (CTernaryNode
+						            condition: (CBinaryOperatorNode
+								             operator: #==
+								             left: (var value: i)
+								             right: ((labels at: j) asCASTExpressionIn: aBuilder))
+						            then:
+							            ((TStmtListNode new
+								              setArguments: #(  )
+								              statements: case statements) 
+								             asCASTExpressionIn: aBuilder)
+						            else: ternary)
+						           printOnMultipleLines: true;
+						           yourself ] ] ] valueWithArguments: (cases at: i) ].
+	^ ternary
+]
+
+{ #category : #transforming }
+TSwitchStmtNode >> asCASTIn: aBuilder [
+
+	| statements |
+	statements := CCompoundStatementNode new.
+	cases do: [ :tuple | 
+		[ :labels :case | 
+		| nestedCase statement |
+		statement := case asCASTIn: aBuilder.
+		labels size to: 1 by: -1 do: [ :i | 
+			nestedCase := CLabeledStatementNode
+				              case: ((labels at: i) asCASTExpressionIn: aBuilder)
+				              statement: (i = labels size
+						               ifTrue: [ statement ]
+						               ifFalse: [ nestedCase ]) ].
+		statements add: nestedCase.
+		case endsWithReturn ifFalse: [ 
+			statements add: CBreakStatementNode new ] ] valueWithArguments:
+			tuple ].
+	statements add: (CLabeledStatementNode
+			 case: 'default'
+			 statement: (otherwiseOrNil 
+					  ifNotNil: [ otherwiseOrNil asCASTIn: aBuilder ]
+					  ifNil: [ 
+						  CCallNode
+							  identifier: (CIdentifierNode name: 'error')
+							  arguments:
+							  { (CStringLiteralNode value:
+								   'Case not found and no otherwise clause') } ])).
+	^ CSwitchStatementNode
+		  if: (expression asCASTExpressionIn: aBuilder)
+		  statement: statements
+]
+
+{ #category : #transforming }
+TSwitchStmtNode >> asCASTIn: aBuilder addToEndOfCases: aNodeToPrependOrNil [
+
+	| statements |
+	statements := CCompoundStatementNode new.
+	cases do: [ :tuple | 
+		[ :labels :case | 
+		| nestedCase statement |
+		statement := case
+			             asCASTIn: aBuilder
+			             prependToEnd: aNodeToPrependOrNil.
+		labels size to: 1 by: -1 do: [ :i | 
+			nestedCase := CLabeledStatementNode
+				              case: ((labels at: i) asCASTExpressionIn: aBuilder)
+				              statement: (i = labels size
+						               ifTrue: [ statement ]
+						               ifFalse: [ nestedCase ]) ].
+		statements add: nestedCase ] valueWithArguments: tuple.
+		(aNodeToPrependOrNil notNil and: [ aNodeToPrependOrNil isReturn ]) 
+			ifFalse: [ statements add: CBreakStatementNode new ] ].
+	statements add:
+		(CLabeledStatementNode case: 'default' statement: (otherwiseOrNil
+				  ifNotNil: [ 
+				  otherwiseOrNil
+					  asCASTIn: aBuilder
+					  prependToEnd: aNodeToPrependOrNil ]
+				  ifNil: [ 
+					  CCallNode
+						  identifier: (CIdentifierNode name: 'error')
+						  arguments:
+						  { (CStringLiteralNode value:
+							   'Case not found and no otherwise clause') } ])).
+	(otherwiseOrNil isNil and: [ aNodeToPrependOrNil isNotNil ]) ifTrue: [ 
+		| defaultExpr type |
+		defaultExpr := TConstantNode value: -1.
+		(aNodeToPrependOrNil isAssignment and: [ 
+			 (type := aBuilder
+				          typeFor: aNodeToPrependOrNil variable
+				          in: aBuilder currentMethod) notNil and: [ 
+				 aBuilder isPointerCType: type ] ]) ifTrue: [ 
+			defaultExpr := TSendNode new
+				               setSelector: #cCoerceSimple:to:
+				               receiver: (TVariableNode new setName: 'self')
+				               arguments: { 
+						               defaultExpr.
+						               (TConstantNode value: type) } ].
+		statements add:
+			((aNodeToPrependOrNil copy setExpression: defaultExpr) asCASTIn:
+				 aBuilder) ].
+	^ CSwitchStatementNode
+		  if: (expression asCASTExpressionIn: aBuilder)
+		  statement: statements
+]
+
 { #category : #transformations }
 TSwitchStmtNode >> bindVariableUsesIn: aDictionary [
 	expression := expression bindVariableUsesIn: aDictionary.
@@ -94,131 +243,6 @@ TSwitchStmtNode >> createCasesFromBraceNode: aTBraceNode [
 			[newCases addLast: { labels collect: [:ea| ea statements first]. case}]].
 
 	^newCases
-]
-
-{ #category : #'C code generation' }
-TSwitchStmtNode >> emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen [
-	"Emit the receiver as an if-the-else chain."
-	| varName n |
-	self assert: (expression isVariable or: [switchVariable notNil]).
-	aStream nextPut: $(.
-	switchVariable
-		ifNil: [varName := String streamContents: [:s| expression emitCCodeOn: s level: 0 generator: aCodeGen].
-			aStream nextPutAll: varName]
-		ifNotNil:
-			[varName := switchVariable.
-			 aStream nextPut: $(; nextPutAll: varName; nextPutAll: ' = '.
-			 expression emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen.
-			 aStream nextPut: $)].
-	n := 0.
-	cases do:
-		[:tuple|
-		 [:labels :case|
-		  labels do:
-			[:label|
-			 n > 0 ifTrue:
-				[aStream nextPutAll: varName].
-			 aStream nextPutAll: ' == '.
-			 label emitCCodeAsArgumentOn: aStream level: level + 1 generator: aCodeGen.
-			 aStream nextPut: $).
-			 aStream crtab: level + n + 1.
-			 aStream nextPutAll: '? ('.
-			 (TStmtListNode new setArguments: #() statements: case statements)
-			 	emitCCodeAsArgumentOn: aStream
-				level: level + 2
-				generator: aCodeGen.
-			 aStream nextPut: $); crtab: level + n + 1; nextPutAll: ': ('.
-			 n := n + 1]]
-			valueWithArguments: tuple].
-	otherwiseOrNil
-		ifNotNil: [otherwiseOrNil emitCCodeAsArgumentOn: aStream level: level + 1 generator: aCodeGen]
-		ifNil: [aStream nextPutAll: 'error("Case not found and no otherwise clause"), 0'].
-	aStream next: n - 1 put: $)
-]
-
-{ #category : #'C code generation' }
-TSwitchStmtNode >> emitCCodeOn: aStream addToEndOfCases: aNodeOrNil level: level generator: aCodeGen [
-
-	aStream crtab: level.
-	aStream nextPutAll: 'switch ('.
-	expression emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen.
-	aStream nextPutAll: ') {'.
-	cases do:
-		[:tuple|
-		 [:labels :case|
-		  labels do:
-			[:label|
-			 aStream
-				crtab: level;
-				nextPutAll: 'case '.
-			label emitCCodeAsArgumentOn: aStream level: level + 1 generator: aCodeGen.
-			aStream nextPut: $:].
-		  aStream crtab: level + 1.
-		  case emitCCodeOn: aStream prependToEnd: aNodeOrNil level: level + 1 generator: aCodeGen]
-			valueWithArguments: tuple.
-		  (aNodeOrNil notNil and: [aNodeOrNil isReturn]) ifFalse:
-			[aStream crtab: level + 1; nextPutAll: 'break;']].
-	aStream
-		crtab: level;
-		nextPutAll: 'default:';
-		crtab: level + 1.
-	otherwiseOrNil
-		ifNotNil: [otherwiseOrNil emitCCodeOn: aStream prependToEnd: aNodeOrNil level: level + 1 generator: aCodeGen]
-		ifNil: [aStream nextPutAll: 'error("Case not found and no otherwise clause");'.
-			   aNodeOrNil ifNotNil:
-				[| defaultExpr type |
-				 aStream crtab: level + 1.
-				 defaultExpr := TConstantNode new setValue: -1.
-				 (aNodeOrNil isAssignment
-				  and: [(type := aCodeGen typeFor: aNodeOrNil variable in: aCodeGen currentMethod) notNil
-				  and: [aCodeGen isPointerCType: type]]) ifTrue:
-					[defaultExpr := TSendNode new
-										setSelector: #cCoerceSimple:to:
-										receiver: (TVariableNode new setName: 'self')
-										arguments: {defaultExpr. TConstantNode new setValue: type}].
-				 (aNodeOrNil copy setExpression: defaultExpr)
-					emitCCodeOn: aStream level: level generator: aCodeGen.
-				 aStream nextPut: $;]].
-	aStream
-		crtab: level;
-		nextPut: $}
-]
-
-{ #category : #'C code generation' }
-TSwitchStmtNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-
-	aStream crtab: level.
-	aStream nextPutAll: 'switch ('.
-	expression emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen.
-	aStream nextPutAll: ') {'.
-	cases do:
-		[:tuple|
-		 [:labels :case|
-		  labels do:
-			[:label|
-			 aStream
-				crtab: level;
-				nextPutAll: 'case '.
-			label emitCCodeAsArgumentOn: aStream level: level + 1 generator: aCodeGen.
-			aStream nextPut: $:].
-		  aStream crtab: level + 1.
-		  case emitCCodeOn: aStream level: level + 1 generator: aCodeGen.
-		  case endsWithReturn ifFalse:
-			[aStream tab: level + 1; nextPutAll: 'break;']]
-			valueWithArguments: tuple].
-	aStream
-		crtab: level;
-		nextPutAll: 'default:';
-		crtab: level + 1.
-	otherwiseOrNil
-		ifNotNil:
-			[otherwiseOrNil emitCCodeOn: aStream level: level + 1 generator: aCodeGen.
-			(self stream: aStream endsWithAnyOf: '};') ifFalse:
-				[aStream nextPut: $;]]
-		ifNil: [aStream nextPutAll: 'error("Case not found and no otherwise clause");'].
-	aStream
-		crtab: level;
-		nextPut: $}
 ]
 
 { #category : #accessing }

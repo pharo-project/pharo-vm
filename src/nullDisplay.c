@@ -1,6 +1,6 @@
 #include "pharovm/pharo.h"
 
-#define UNIMPLEMENTED unimplementedPrimitive(__FUNCTION__);
+#define UNIMPLEMENTED {static int called = 0; if(!called){ unimplementedPrimitive(__FUNCTION__); called=1;}};
 
 void unimplementedPrimitive(const char* name){
 	logWarn("Unimplemented primitive: %s\n", name);
@@ -116,13 +116,6 @@ ioSetWindowWidthHeight(sqInt w, sqInt h)
 
 sqInt
 ioIsWindowObscured(void)
-{
-	UNIMPLEMENTED
-	return 0;
-}
-
-sqInt
-ioGetNextEvent(sqInputEvent *evt)
 {
 	UNIMPLEMENTED
 	return 0;

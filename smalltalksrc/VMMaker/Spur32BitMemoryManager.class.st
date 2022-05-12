@@ -669,12 +669,6 @@ Spur32BitMemoryManager >> minSmallInteger [
 	^-16r40000000
 ]
 
-{ #category : #simulation }
-Spur32BitMemoryManager >> newInputEventAccessorOfSize: numElements [
-	<doNotGenerate>
-	^CArrayAccessor on: (IntegerArray new: 8)
-]
-
 { #category : #'free space' }
 Spur32BitMemoryManager >> numFreeLists [
 	"Answer the number of free lists.  We use freeListsMask, a bitmap, to avoid
@@ -775,12 +769,6 @@ Spur32BitMemoryManager >> rtRefCountOf: obj put: refCount [
 	header := header bitAnd: (7 << self rememberedBitShift) bitInvert32.
 	header := header + (refCount << self rememberedBitShift).
 	self longAt: obj put: header
-]
-
-{ #category : #'image segment in/out' }
-Spur32BitMemoryManager >> savedOutHashFillValue [
-	<inline: true>
-	^self maxIdentityHash + 1
 ]
 
 { #category : #'header access' }

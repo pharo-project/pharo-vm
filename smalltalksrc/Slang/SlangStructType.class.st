@@ -210,10 +210,3 @@ SlangStructType class >> typeForSelf [
 SlangStructType class >> voidStructTypeCache [
 	StructTypeNameCache := nil
 ]
-
-{ #category : #'error handling' }
-SlangStructType >> error [
-	"Throw a generic Error exception."
-
-	^self error: 'Error!'.
-]

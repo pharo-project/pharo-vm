@@ -8,7 +8,7 @@ Class {
 	],
 	#pools : [
 		'CogAbstractRegisters',
-		'VMSqueakClassIndices'
+		'VMClassIndices'
 	],
 	#category : #'VMMakerTests-JitTests'
 }
@@ -62,34 +62,47 @@ VMTrampolineTest >> setUp [
 
 { #category : #tests }
 VMTrampolineTest >> testCallEnilopmartSucceedsExecution [
+
 	| inc baseMethod baseMethodIP ctx page |
 	"Add 1 to the receiver result reg as a small integer"
 	inc := self compile: [ 
-		cogit AddCq: 1 << memory numSmallIntegerTagBits R: ReceiverResultReg.
-		"Force a return to our call"
-		cogit PushCw: callerAddress.
-		cogit RetN: 0 ].
+		       cogit
+			       AddCq: 1 << memory numSmallIntegerTagBits
+			       R: ReceiverResultReg.
+		       "Force a return to our call"
+		       cogit PushCw: callerAddress.
+		       cogit RetN: 0 ].
 
-	initialAddress := self compileWithoutOutput: [ cogit
-		genEnilopmartFor: ReceiverResultReg
-		forCall: false
-		called: 'ceEnterCogCodePopReceiverReg' ] bytecodes: 10.
+	initialAddress := self
+		                  compileWithoutOutput: [ 
+			                  cogit
+				                  genEnilopmartFor: ReceiverResultReg
+				                  forCall: false
+				                  called: 'ceEnterCogCodePopReceiverReg' ]
+		                  bytecodes: 10.
 
 	"Initialize with some stack pointer and frame pointer"
 	baseMethod := methodBuilder newMethod
-		literals: { memory nilObject. memory nilObject }; 
-		buildMethod.
-	
+		              literals: { 
+				              memory nilObject.
+				              memory nilObject };
+		              buildMethod.
+
 	baseMethodIP := memory lastPointerOf: baseMethod.
-	
+
 	"The context has 5 (in 32 bits) or 9 (in 64 bits) as initial IP, as method has at least one literal"
-	ctx := self newSmallContextReceiver: memory nilObject method: baseMethod arguments: #() temporaries: #() ip: baseMethodIP + 1.
+	ctx := self
+		       newSmallContextReceiver: memory nilObject
+		       method: baseMethod
+		       arguments: #(  )
+		       temporaries: #(  )
+		       ip: baseMethodIP + 1.
 
 	"The base context has a trampoline as the savedIP so it can return to a context that is in the heap"
-	cogit ceBaseFrameReturnTrampoline: 16rAABBCCDD.	
+	cogit ceBaseFrameReturnTrampoline: 16rAABBCCDD.
 	cogit setCStackPointer: interpreter rumpCStackAddress.
 	cogit setCFramePointer: interpreter rumpCStackAddress.
-	
+
 	page := interpreter makeBaseFrameFor: ctx.
 	interpreter setStackPointersFromPage: page.
 	interpreter setStackPageAndLimit: page.
@@ -97,15 +110,17 @@ VMTrampolineTest >> testCallEnilopmartSucceedsExecution [
 
 	"Initialize Stack to the correct pointers in the selected page"
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
-	
-	"Calling convention of enilopmarts: target address and arguments are pushed to the stack"	
+
+	"Calling convention of enilopmarts: target address and arguments are pushed to the stack"
 	interpreter push: inc.
 	interpreter push: (memory integerObjectOf: 2).
 
 	self prepareCall.
 	self runUntilReturn.
 
-	self assert: machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 3)
+	self
+		assert: machineSimulator receiverRegisterValue
+		equals: (memory integerObjectOf: 3)
 ]
 
 { #category : #tests }

@@ -1397,6 +1397,7 @@ CogARMv8Compiler >> concretizeAndCqRR [
 	"AND is very important since it's used to mask all sorts of flags in the jit. We take special care to try to find compact ways to make the masks"
 
 	<var: #val type: #sqInt>
+	<returnTypeC: #void>
 	<inline: true>
 	| val srcReg dstReg |
 
@@ -1882,7 +1883,8 @@ CogARMv8Compiler >> concretizeLoadEffectiveAddressMwrR [
 	"destReg = srcReg (which contains an address) + offset"
 
 	<inline: true>
-	| srcReg offset destReg instrOffset |
+	<returnTypeC: #void>
+	| srcReg offset destReg |
 	offset := operands at: 0.
 	srcReg := operands at: 1.
 	destReg := operands at: 2.
@@ -4168,18 +4170,22 @@ CogARMv8Compiler >> inverseOpcodeFor: armOpcode [
 			 -1]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #testing }
 CogARMv8Compiler >> is12BitValue: constant ifTrue: aTrueBlock ifFalse: aFalseBlock [ 
 	
 	<inline: true>
+	<var: #signedConstant type: #sqInt>
 	
-	^ constant abs <= 2047 "(2 raisedTo: 11) - 1"
+	| signedConstant |
+	signedConstant := cogit cCoerceSimple: constant to: #sqInt.
+	
+	^ signedConstant abs <= 2047 "(2 raisedTo: 11) - 1"
 		ifTrue: [ | twoComplement |
 			"Two complement using 12 bits"
-			twoComplement := constant >= 0
-				ifTrue: [ constant ]
-				ifFalse: [ 16rfff - constant abs + 1 ].
-			aTrueBlock value: constant >= 0 value: twoComplement ]
+			twoComplement := signedConstant >= 0
+				ifTrue: [ signedConstant ]
+				ifFalse: [ 16rfff - signedConstant abs + 1 ].
+			aTrueBlock value: signedConstant >= 0 value: twoComplement ]
 		ifFalse: [aFalseBlock value]
 ]
 
@@ -5145,7 +5151,7 @@ CogARMv8Compiler >> prepareStackToCallCFunctionInSmalltalkStack: anObject [
 
 	"ARMv8 should be aligned to 16 bytes"
 
-	cogit AndCq: ((1 << 64) - 16) R: Extra2Reg. 
+	cogit AndCq: 16rFFFFFFFFFFFFFFF0 R: Extra2Reg. 
 	cogit MoveR: Extra2Reg R: SP.
 ]
 

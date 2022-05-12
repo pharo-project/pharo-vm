@@ -2,8 +2,8 @@ Class {
 	#name : #VMInterpreterTests,
 	#superclass : #VMSpurMemoryManagerTest,
 	#pools : [
-		'VMObjectIndices',
-		'VMSqueakClassIndices'
+		'VMClassIndices',
+		'VMObjectIndices'
 	],
 	#category : #'VMMakerTests-InterpreterTests'
 }
@@ -58,7 +58,7 @@ VMInterpreterTests >> setUp [
 	memory falseObject: (self newObjectWithSlots: 0).
 	
 	"We don't access its contents, but we need it to be after nil, true and false"
-	memory hiddenRootsObject: (self newObjectWithSlots: 0).
+	memory hiddenRootsObject: (self newArrayWithSlots: 0).
 		
 	self initializeOldSpaceForScavenger.
 

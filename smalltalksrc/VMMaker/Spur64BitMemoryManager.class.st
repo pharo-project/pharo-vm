@@ -292,14 +292,17 @@ Spur64BitMemoryManager >> fetchClassTagOf: oop [
 
 { #category : #'object access' }
 Spur64BitMemoryManager >> fetchLong32: fieldIndex ofFloatObject: oop [
+
 	"index by word size, and return a pointer as long as the word size"
+
+	<returnTypeC: #usqInt>
 	| bits |
-	(self isImmediateFloat: oop) ifFalse:
-		[^self fetchLong32: fieldIndex ofObject: oop].
+	(self isImmediateFloat: oop) ifFalse: [ 
+		^ self fetchLong32: fieldIndex ofObject: oop ].
 	bits := self smallFloatBitsOf: oop.
 	^ fieldIndex = 0
-		ifTrue: [bits bitAnd: 16rFFFFFFFF]
-		ifFalse: [bits >> 32]
+		  ifTrue: [ bits bitAnd: 16rFFFFFFFF ]
+		  ifFalse: [ bits >> 32 ]
 ]
 
 { #category : #instantiation }
@@ -761,25 +764,6 @@ Spur64BitMemoryManager >> negativeSmallFloatZero [
 	^self smallFloatSignBit + self smallFloatTag
 ]
 
-{ #category : #simulation }
-Spur64BitMemoryManager >> newInputEventAccessorOfSize: numElements [
-	<doNotGenerate>
-	self flag: #endianness.
-	^(CPluggableAccessor on: (WordArray new: 16))
-		atBlock: [:obj :idx| | v pidx2 |
-				pidx2 := (idx - 1) * 2.
-				v := (obj at: pidx2 + 1) + ((obj at: pidx2 + 2) << 32).
-				v >> 63 > 0 ifTrue:
-					[v := v - (1 << 64)].
-				v]
-		atPutBlock: [:obj :idx :val| |pidx2|
-					pidx2 := (idx - 1) * 2.
-					obj at: pidx2 + 1 put: (val bitAnd: 16rFFFFFFFF).
-					obj at: pidx2 + 2 put: (val >> 32 bitAnd: 16rFFFFFFFF).
-					val];
-		objectSize: 8
-]
-
 { #category : #'free space' }
 Spur64BitMemoryManager >> numFreeLists [
 	"Answer the number of free lists.  We use freeListsMask, a bitmap, to avoid
@@ -921,12 +905,6 @@ Spur64BitMemoryManager >> rtRefCountOf: obj put: refCount [
 	header := header bitAnd: (7 << self rememberedBitShift) bitInvert64.
 	header := header + (refCount << self rememberedBitShift).
 	self longAt: obj put: header
-]
-
-{ #category : #'image segment in/out' }
-Spur64BitMemoryManager >> savedOutHashFillValue [
-	<inline: true>
-	^self maxIdentityHash + 1 << 32 + (self maxIdentityHash + 1)
 ]
 
 { #category : #'header access' }

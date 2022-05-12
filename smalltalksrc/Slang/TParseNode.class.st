@@ -53,6 +53,27 @@ TParseNode >> anySatisfy: aBlock unless: cautionaryBlock [
 	^false
 ]
 
+{ #category : #transforming }
+TParseNode >> asCASTExpressionIn: aBuilder [
+
+	"By default use the normal translation.
+	Override for those translations that are not expressions by default"	
+	^ self asCASTIn: aBuilder
+]
+
+{ #category : #tranforming }
+TParseNode >> asCASTIn: aBuilder [
+
+	self subclassResponsibility
+]
+
+{ #category : #'C code generation' }
+TParseNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
+	aNodeOrNil ifNotNil:
+		[^ aNodeOrNil prependCASTIn: aBuilder expression: self].
+	^ self asCASTExpressionIn: aBuilder
+]
+
 { #category : #transformations }
 TParseNode >> asReturnNode [
 	^TReturnNode new 
@@ -124,49 +145,6 @@ TParseNode >> detect: aBlock [
 TParseNode >> detect: aBlock ifNone: defaultBlock [
 	self nodesDo: [:n| (aBlock value: n) ifTrue: [^n]].
 	^defaultBlock value
-]
-
-{ #category : #'C code generation' }
-TParseNode >> emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen [
-	^self emitCCodeOn: aStream level: level generator: aCodeGen
-]
-
-{ #category : #'C code generation' }
-TParseNode >> emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen [
-	^self emitCCodeOn: aStream level: level generator: aCodeGen
-]
-
-{ #category : #'C code generation' }
-TParseNode >> emitCCodeOn: aStream level: lev generator: gen [
-	self subclassResponsibility.
-]
-
-{ #category : #'C code generation' }
-TParseNode >> emitCCodeOn: aStream prependToEnd: aNodeOrNil level: lev generator: gen [
-	aNodeOrNil ifNotNil:
-		[aNodeOrNil prependCCodeOn: aStream level: lev generator: gen].
-	self emitCCodeAsExpressionOn: aStream
-		level: ((aNodeOrNil notNil and: [self isLeaf]) ifTrue: [0] ifFalse: [lev])
-		generator: gen
-]
-
-{ #category : #'C code generation' }
-TParseNode >> emitCCommentOn: aStream level: level generator: aCodeGen [
-	"Emit the transferred Smalltalk comments as C comments."
-
-	((aCodeGen previousCommenter: self) == self or: [comment isNil]) ifTrue:
-		[aCodeGen previousCommentMarksInlining: false.
-		 ^self].
-	(comment isString ifTrue: [{comment}] ifFalse: [comment]) withIndexDo:
-		[:commentString :index |
-		(index = 1 and: [commentString beginsWith: 'begin ']) ifTrue:
-			[(aCodeGen previousCommentMarksInlining: true) ifTrue: [^true]].
-		aStream crtab: level; nextPutAll: '/* '.
-		(commentString findTokens: Character cr)
-			do: [:line| aStream nextPutAll: line withBlanksTrimmed]
-			separatedBy: [aStream crtab: level; next: 3 put: Character space].
-		aStream nextPutAll: ' */'].
-	 aStream cr
 ]
 
 { #category : #testing }

@@ -56,68 +56,84 @@ MethodBuilderTest >> testBytecodeAtForMethodWithNoLiteral [
 
 { #category : #running }
 MethodBuilderTest >> testBytecodeAtForMethodWithOneLiteral [
+
 	| bytecodeAddress |
 	literals := { 1 }.
-	method := methodBuilder newMethod 
-		bytecodes: #[ 1 2 3 4 5 6 7 8 9 ];
-		literals: literals;
-		buildMethod.
+	method := methodBuilder newMethod
+		          bytecodes: #[ 1 2 3 4 5 6 7 8 9 ];
+		          literals: literals;
+		          buildMethod.
 
 	bytecodeAddress := methodBuilder bytecodeAt: 1 forMethod: method.
-	
+
 	self assert: (memory byteAt: bytecodeAddress) equals: 1
 ]
 
 { #category : #running }
 MethodBuilderTest >> testBytecodeAtForMethodWithTwoLiteral [
+
 	| bytecodeAddress |
 	literals := { 1. 2 }.
-	method := methodBuilder newMethod 
-		bytecodes: #[ 1 2 3 4 5 6 7 8 9 ];
-		literals: literals;
-		buildMethod.
+	method := methodBuilder newMethod
+		          bytecodes: #[ 1 2 3 4 5 6 7 8 9 ];
+		          literals: literals;
+		          buildMethod.
 
-		bytecodeAddress := methodBuilder bytecodeAt: 1 forMethod: method.
-	
+	bytecodeAddress := methodBuilder bytecodeAt: 1 forMethod: method.
+
 	self assert: (memory byteAt: bytecodeAddress) equals: 1
 ]
 
 { #category : #running }
 MethodBuilderTest >> testGeneratingCompiledMethod [
-	method := methodBuilder newMethod bytecodes: #[ 1 2 3 4 5 6 7 8 ]; buildMethod.
-	self assert: (memory isCompiledMethod: method).
+
+	method := methodBuilder newMethod
+		          bytecodes: #[ 1 2 3 4 5 6 7 8 ];
+		          buildMethod.
+	self assert: (memory isCompiledMethod: method)
 ]
 
 { #category : #running }
 MethodBuilderTest >> testInstanciateMethodShouldTakeOneSlotForEightBytecodes [
+
 	| numberOfByteCode |
 	numberOfByteCode := 8.
-	method := methodBuilder newMethod bytecodes: #[ 1 2 3 4 5 6 7 8 ]; buildMethod.
+	method := methodBuilder newMethod
+		          bytecodes: #[ 1 2 3 4 5 6 7 8 ];
+		          buildMethod.
 
 	"should equal the header (1) + the number of bytecodes divided by wordsize"
-	self assert: methodBuilder slotSize equals: 1 + (numberOfByteCode / wordSize) ceiling..
+	self
+		assert: methodBuilder slotSize
+		equals: 1 + (numberOfByteCode / wordSize) ceiling
 ]
 
 { #category : #running }
 MethodBuilderTest >> testInstanciateMethodShouldTakeTwoSlotForNineBytecodes [
+
 	| numberOfByteCode |
 	numberOfByteCode := 9.
-	method := methodBuilder newMethod bytecodes: #[ 1 2 3 4 5 6 7 8 9 ]; buildMethod.
+	method := methodBuilder newMethod
+		          bytecodes: #[ 1 2 3 4 5 6 7 8 9 ];
+		          buildMethod.
 
 	"should equal the header (1) + the number of bytecodes divided by wordsize"
-	self assert: methodBuilder slotSize equals: 1 + (numberOfByteCode / wordSize) ceiling.
+	self
+		assert: methodBuilder slotSize
+		equals: 1 + (numberOfByteCode / wordSize) ceiling
 ]
 
 { #category : #running }
 MethodBuilderTest >> testSecondBytecodeAtForMethodWithOneLiteral [
+
 	| bytecodeAddress |
 	literals := { 1 }.
-	method := methodBuilder newMethod 
-		bytecodes: #[ 1 2 3 4 5 6 7 8 9 ];
-		literals: literals;
-		buildMethod.
+	method := methodBuilder newMethod
+		          bytecodes: #[ 1 2 3 4 5 6 7 8 9 ];
+		          literals: literals;
+		          buildMethod.
 
 	bytecodeAddress := methodBuilder bytecodeAt: 2 forMethod: method.
-	
+
 	self assert: (memory byteAt: bytecodeAddress) equals: 2
 ]

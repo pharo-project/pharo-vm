@@ -51,6 +51,10 @@
 #cmakedefine HAVE_UUIDGEN
 #cmakedefine HAVE_UUID_GENERATE
 
+#cmakedefine PHARO_VM_IN_WORKER_THREAD
+
+#cmakedefine BUILD_IS_RELEASE
+
 #if defined(_MSC_VER)
 #define VM_BUILD_STRING VM_NAME " @VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@ built on " __DATE__ " " __TIME__ " Compiler: Visual C"
 #define COMPILER_VERSION "Visual C"
@@ -62,5 +66,12 @@
 #define VM_BUILD_SOURCE_STRING "@BUILT_FROM@"
 
 #define ALWAYS_INTERACTIVE @ALWAYS_INTERACTIVE@
+
+/*
+ * We require that VM_LABEL does nothing.
+ * We should actually cleanup all the places where this is set/used in the VM
+ */
+
+#define VM_LABEL(foo)		0
 
 #endif //PHAROVM_CONFIG_H
