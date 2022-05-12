@@ -45,9 +45,9 @@ VMARMV8SIMDEncodingTest >> jitOptions [
 ]
 
 { #category : #tests }
-VMARMV8SIMDEncodingTest >> testEncodeDupRVRWith64BitLanes [
+VMARMV8SIMDEncodingTest >> testEncodeDupWith64BitLanes [
 
-	self compile: [ cogit DupS: 64 R: 3 VR: 0 ].
+	self compile: [ cogit DupS: 64 R: 3 Vr: 0 ].
 	
 	self
 		assert: (self armInstructionAt: 1) assemblyCodeString
@@ -57,7 +57,7 @@ VMARMV8SIMDEncodingTest >> testEncodeDupRVRWith64BitLanes [
 { #category : #tests }
 VMARMV8SIMDEncodingTest >> testEncodeSt1WithOne64BitLaneRegisterAndImmediateOffset [
 
-	self compile: [ cogit St1S: 64 VR: 0 Mw: 1 O: 16 ].
+	self compile: [ cogit St1S: 64 Vr: 0 R: 1 Mw: 16 ].
 	
 	self
 		assert: (self armInstructionAt: 1) assemblyCodeString

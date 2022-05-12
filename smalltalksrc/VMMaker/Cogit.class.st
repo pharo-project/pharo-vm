@@ -2058,10 +2058,10 @@ Cogit >> DivRs: dpreg1 Rs: dpreg2 [
 ]
 
 { #category : #'abstract instructions' }
-Cogit >> DupS: aSize R: aGeneralRegister VR: aVectorRegister [
+Cogit >> DupS: aSize R: aGeneralRegister Vr: aVectorRegister [
 
 	^ self
-		  gen: DupRVR
+		  gen: DupRVr
 		  operand: aSize
 		  operand: aGeneralRegister
 		  operand: aVectorRegister
@@ -2921,9 +2921,9 @@ Cogit >> SqrtRs: dpreg [
 ]
 
 { #category : #'abstract instructions' }
-Cogit >> St1S: aSize VR: aVectorRegister Mw: aMemoryRegister O: anOffset [ 
+Cogit >> St1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [ 
 	^ self
-		  gen: St1VRMwO
+		  gen: St1VrRMw
 		  operand: aSize 
 		  operand: aVectorRegister
 		  operand: aMemoryRegister 

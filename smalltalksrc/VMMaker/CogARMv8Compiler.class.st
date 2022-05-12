@@ -1231,8 +1231,8 @@ CogARMv8Compiler >> computeMaximumSize [
 		[MovePatcheableC32R] -> [ ^ 4 ].
 		
 		"SIMD Ops"
-		[DupRVR] -> [ ^ 4 ].
-		[St1VRMwO] -> [ ^ 4 ]
+		[DupRVr] -> [ ^ 4 ].
+		[St1VrRMw] -> [ ^ 4 ]
 		}.
 	^0 "to keep C compiler quiet"
 
@@ -1795,7 +1795,7 @@ CogARMv8Compiler >> concretizeDivRdRd [
 ]
 
 { #category : #concretizing }
-CogARMv8Compiler >> concretizeDupRVR [
+CogARMv8Compiler >> concretizeDupRVr [
 
 	"Will get inlined into concretizeAt: switch."
 
@@ -3392,8 +3392,8 @@ CogARMv8Compiler >> dispatchConcretize [
 		[ MovePatcheableC32R ] -> [ ^ self concretizeMovePatcheableC32R ].
 	
 		"SIMD Ops"
-		[ DupRVR ] -> [ ^ self concretizeDupRVR ].
-		[ St1VRMwO ] -> [ ^ self concretizeSt1VRMRO ].
+		[ DupRVr ] -> [ ^ self concretizeDupRVr ].
+		[ St1VrRMw ] -> [ ^ self concretizeSt1VRMRO ].
 		}
 ]
 

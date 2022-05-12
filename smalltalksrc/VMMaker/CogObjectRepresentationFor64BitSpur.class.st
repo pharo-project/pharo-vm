@@ -1583,14 +1583,16 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNew [
 	"now fill"
 	cogit LoadEffectiveAddressMw: objectMemory baseHeaderSize r: ReceiverResultReg R: Arg1Reg.
 	cogit MoveCq: objectMemory nilObject R: fillReg.
-	"fillLoop := 
-		cogit MoveR: fillReg Mw: 0 r: Arg1Reg.
+	"fillLoop := cogit MoveR: fillReg Mw: 0 r: Arg1Reg.
 	cogit AddCq: 8 R: Arg1Reg.
 	cogit CmpR: Arg1Reg R: byteSizeReg."
-	fillLoop :=
-		cogit DupS: 64 R: fillReg VR: "Vr" 1 "V1"."TODO use vector reg as last argument"
-	cogit St1S: 64 VR:"Vr" 1 Mw:"rename" Arg1Reg O:"Mw" 16.
-	cogit CmpR: Arg1Reg R: byteSizeReg."TODO explain why this works!!! Overflow works because Eden is empty, bumpAllocator, and head room"
+	fillLoop := cogit DupS: 64 R: fillReg Vr: 1 "V1"."TODO add constants for vector registers"
+	"St1 copies data in 128-bit chunks. This may exceed the size of an object (that only needs to be a multiple of 64 bits).
+	This overflow is not an issue, however. The reason for that is that objects are allocated sequentially in the Eden space
+	using a bumpAllocator, which means that the overflowing bits won't overwrite another object. This is true even when reaching
+	the end of the Eden space, as after it we reserve additional headroom."
+	cogit St1S: 64 Vr: 1 R: Arg1Reg Mw: 16.
+	cogit CmpR: Arg1Reg R: byteSizeReg.
 	cogit JumpAbove: fillLoop.
 	cogit genPrimReturn.
 
