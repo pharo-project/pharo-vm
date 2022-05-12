@@ -187,7 +187,17 @@ CogARMv8Compiler class >> initialize [
 	D5 := 5.
 	D6 := 6.
 	D7 := 7.
-
+	
+	"ARM 128-bit SIMD registers"
+	V0 := 0.
+	V1 := 1.
+	V2 := 2.
+	V3 := 3.
+	V4 := 4.
+	V5 := 5.
+	V6 := 6.
+	V7 := 7.
+	
 	CArg0Reg := 0.
 	CArg1Reg := 1.
 	CArg2Reg := 2.

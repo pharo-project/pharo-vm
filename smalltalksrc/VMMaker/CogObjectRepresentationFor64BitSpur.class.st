@@ -1583,10 +1583,14 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNew [
 	"now fill"
 	cogit LoadEffectiveAddressMw: objectMemory baseHeaderSize r: ReceiverResultReg R: Arg1Reg.
 	cogit MoveCq: objectMemory nilObject R: fillReg.
-	fillLoop := 
-	cogit MoveR: fillReg Mw: 0 r: Arg1Reg.
+	"fillLoop := 
+		cogit MoveR: fillReg Mw: 0 r: Arg1Reg.
 	cogit AddCq: 8 R: Arg1Reg.
-	cogit CmpR: Arg1Reg R: byteSizeReg.
+	cogit CmpR: Arg1Reg R: byteSizeReg."
+	fillLoop :=
+		cogit DupS: 64 R: fillReg VR: "Vr" 1 "V1"."TODO use vector reg as last argument"
+	cogit St1S: 64 VR:"Vr" 1 Mw:"rename" Arg1Reg O:"Mw" 16.
+	cogit CmpR: Arg1Reg R: byteSizeReg."TODO explain why this works!!! Overflow works because Eden is empty, bumpAllocator, and head room"
 	cogit JumpAbove: fillLoop.
 	cogit genPrimReturn.
 
