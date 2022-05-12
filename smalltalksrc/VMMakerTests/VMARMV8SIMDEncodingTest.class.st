@@ -57,7 +57,7 @@ VMARMV8SIMDEncodingTest >> testEncodeDupRVRWith64BitLanes [
 { #category : #tests }
 VMARMV8SIMDEncodingTest >> testEncodeSt1WithOne64BitLaneRegisterAndImmediateOffset [
 
-	self compile: [ cogit St1S: 64 VR: 0 MR: 1 O: 16 ].
+	self compile: [ cogit St1S: 64 VR: 0 Mw: 1 O: 16 ].
 	
 	self
 		assert: (self armInstructionAt: 1) assemblyCodeString

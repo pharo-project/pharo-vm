@@ -2921,9 +2921,9 @@ Cogit >> SqrtRs: dpreg [
 ]
 
 { #category : #'abstract instructions' }
-Cogit >> St1S: aSize VR: aVectorRegister MR: aMemoryRegister O: anOffset [ 
+Cogit >> St1S: aSize VR: aVectorRegister Mw: aMemoryRegister O: anOffset [ 
 	^ self
-		  gen: St1VRMRO
+		  gen: St1VRMwO
 		  operand: aSize 
 		  operand: aVectorRegister
 		  operand: aMemoryRegister 

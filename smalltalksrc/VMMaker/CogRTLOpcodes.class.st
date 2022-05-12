@@ -138,7 +138,7 @@ Class {
 		'SignExtend8RR',
 		'SqrtRd',
 		'SqrtRs',
-		'St1VRMRO',
+		'St1VRMwO',
 		'Stop',
 		'SubCqR',
 		'SubCwR',

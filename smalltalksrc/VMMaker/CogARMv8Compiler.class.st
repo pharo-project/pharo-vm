@@ -84,6 +84,14 @@ Class {
 		'STMFD',
 		'SubOpcode',
 		'TstOpcode',
+		'V0',
+		'V1',
+		'V2',
+		'V3',
+		'V4',
+		'V5',
+		'V6',
+		'V7',
 		'VC',
 		'VS',
 		'XorOpcode'
@@ -1214,7 +1222,7 @@ CogARMv8Compiler >> computeMaximumSize [
 		
 		"SIMD Ops"
 		[DupRVR] -> [ ^ 4 ].
-		[St1VRMRO] -> [ ^ 4 ]
+		[St1VRMwO] -> [ ^ 4 ]
 		}.
 	^0 "to keep C compiler quiet"
 
@@ -3375,7 +3383,7 @@ CogARMv8Compiler >> dispatchConcretize [
 	
 		"SIMD Ops"
 		[ DupRVR ] -> [ ^ self concretizeDupRVR ].
-		[ St1VRMRO ] -> [ ^ self concretizeSt1VRMRO ].
+		[ St1VRMwO ] -> [ ^ self concretizeSt1VRMRO ].
 		}
 ]
 
