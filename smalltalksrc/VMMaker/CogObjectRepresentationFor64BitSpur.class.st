@@ -1741,9 +1741,12 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNewWithArg [
 	cogit MoveR: headerReg Mw: 0 r: ReceiverResultReg.
 	"now fill"
 	cogit LoadEffectiveAddressMw: objectMemory baseHeaderSize r: ReceiverResultReg R: Arg1Reg.
-	fillLoop := 
+	"fillLoop := 
 	cogit MoveR: fillReg Mw: 0 r: Arg1Reg.
 	cogit AddCq: 8 R: Arg1Reg.
+	cogit CmpR: Arg1Reg R: byteSizeReg."
+	fillLoop := cogit DupS: 64 R: fillReg Vr: 1 "V1"."TODO add constants for vector registers"
+	cogit St1S: 64 Vr: 1 R: Arg1Reg Mw: 16.
 	cogit CmpR: Arg1Reg R: byteSizeReg.
 	cogit JumpAbove: fillLoop.
 	cogit genPrimReturn.
