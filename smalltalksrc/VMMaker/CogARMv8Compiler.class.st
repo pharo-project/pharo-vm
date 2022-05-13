@@ -3756,6 +3756,19 @@ CogARMv8Compiler >> fcmpFType: ftype leftRegister: firstRegister rightRegister: 
 		bitOr: ((firstRegister bitAnd: 16r1f) << 5)))))
 ]
 
+{ #category : #concretize }
+CogARMv8Compiler >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
+	| fillLoop |
+	fillLoop := cogit DupS: 64 R: fillReg Vr: vectorRegister.
+	"St1 copies data in 128-bit chunks. This may exceed the size of an object (that only needs to be a multiple of 64 bits).
+	This overflow is not an issue, however. The reason for that is that objects are allocated sequentially in the Eden space
+	using a bumpAllocator, which means that the overflowing bits won't overwrite another object. This is true even when reaching
+	the end of the Eden space, as after it we reserve additional headroom."
+	cogit St1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
+	cogit CmpR: startMemoryAddr R: endMemoryAddr.
+	cogit JumpAbove: fillLoop.
+]
+
 { #category : #'ARM convenience instructions' }
 CogARMv8Compiler >> fldd: destReg rn: srcReg plus: u imm: immediate8bitValue [
 "FLDD or VLDR instruction to move a value from address in an ARM srcReg +/- offset<<2 to an fpu double destReg

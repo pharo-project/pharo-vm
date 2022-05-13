@@ -714,6 +714,14 @@ CogAbstractInstruction >> disassembleOn: aStream [
 		on: aStream
 ]
 
+{ #category : #accessing }
+CogAbstractInstruction >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
+	| fillLoop |
+	fillLoop := cogit MoveR: fillReg Mw: 0 r: startMemoryAddr.
+	cogit AddCq: 8 R: Arg1Reg.
+	cogit CmpR: Arg1Reg R: startMemoryAddr.
+]
+
 { #category : #abi }
 CogAbstractInstruction >> fullCallsAreRelative [
 	"Answer if CallFull and/or JumpFull are relative and hence need relocating on method
