@@ -122,7 +122,7 @@ CogAbstractRegisters class >> initialize [
 	DPFPReg14	:= #undefined.
 	DPFPReg15	:= #undefined.
 		
-	"Up to 8 floating-point registers. e.g. IA32+SSE2 can use 8, x64 can use 16."
+	"Up to 8 SIMD registers. e.g. IA32+SSE can use 8, Armv8 can use 32."
 	VReg0 := #undefined.
 	VReg1 := #undefined.
 	VReg2 := #undefined.
