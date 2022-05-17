@@ -1872,6 +1872,33 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveNewInitializesObjectCorrectly [
 			equals: memory nilObject ]
 ]
 
+{ #category : #'tests - primitiveNew' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveNewWithArgInitializesObjectCorrectly [
+
+	| endInstruction primitiveAddress class classHash newOop arraySize |
+	arraySize := 4.
+	class := self
+		newClassInOldSpaceWithSlots: 0
+		instSpec: Array instSpec.
+	memory ensureBehaviorHash: class.
+	
+	cogit methodOrBlockNumArgs: 1.
+	primitiveAddress := self compile: [ 
+		                    cogit objectRepresentation genPrimitiveNewWithArg.
+		                    "If the primitive fails it continues, so we need to have an instruction to detect the end"
+		                    endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: class arguments: { memory integerObjectOf: arraySize }.
+	self runFrom: primitiveAddress until: callerAddress.
+
+	newOop := self lastObjectInNewSpace.
+
+	0 to: (arraySize - 1) do: [ :slotIndex | 
+		self
+			assert: (memory fetchPointer: slotIndex ofObject: newOop)
+			equals: memory nilObject ]
+]
+
 { #category : #'tests - primitiveNotEqual' }
 VMJittedGeneralPrimitiveTest >> testPrimitiveNotEqualDoesNotCompileIfReceiverTagIsNotSmallInteger [
 	
