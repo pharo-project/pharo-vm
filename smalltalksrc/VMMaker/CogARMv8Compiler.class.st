@@ -312,6 +312,15 @@ CogARMv8Compiler class >> initializeAbstractRegisters [
 	DPFPReg5			:= D5.
 	DPFPReg6			:= D6.
 	DPFPReg7			:= D7.
+	
+	VReg0 := V0.
+	VReg1 := V1.
+	VReg2 := V2.
+	VReg3 := V3.
+	VReg4 := V4.
+	VReg5 := V5.
+	VReg6 := V6.
+	VReg7 := V7.
 
 	NumFloatRegisters := 8
 ]

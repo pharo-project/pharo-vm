@@ -1583,7 +1583,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNew [
 	"now fill"
 	cogit LoadEffectiveAddressMw: objectMemory baseHeaderSize r: ReceiverResultReg R: Arg1Reg.
 	cogit MoveCq: objectMemory nilObject R: fillReg.
-	cogit backend fillFrom: Arg1Reg until: byteSizeReg with: fillReg usingVr: 1 "V1"."TODO add constants for vector registers"
+	cogit backend fillFrom: Arg1Reg until: byteSizeReg with: fillReg usingVr: VReg1.
 	cogit genPrimReturn.
 
 	jumpUnhashed jmpTarget:
@@ -1731,7 +1731,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNewWithArg [
 	cogit MoveR: headerReg Mw: 0 r: ReceiverResultReg.
 	"now fill"
 	cogit LoadEffectiveAddressMw: objectMemory baseHeaderSize r: ReceiverResultReg R: Arg1Reg.
-	cogit backend fillFrom: Arg1Reg until: byteSizeReg with: fillReg usingVr: 1 "V1"."TODO add constants for vector registers"
+	cogit backend fillFrom: Arg1Reg until: byteSizeReg with: fillReg usingVr: VReg1.
 	cogit genPrimReturn.
 	
 	jumpNoSpace jmpTarget:
