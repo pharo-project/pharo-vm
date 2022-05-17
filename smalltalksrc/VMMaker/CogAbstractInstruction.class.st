@@ -718,8 +718,9 @@ CogAbstractInstruction >> disassembleOn: aStream [
 CogAbstractInstruction >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
 	| fillLoop |
 	fillLoop := cogit MoveR: fillReg Mw: 0 r: startMemoryAddr.
-	cogit AddCq: 8 R: Arg1Reg.
-	cogit CmpR: Arg1Reg R: startMemoryAddr.
+	cogit AddCq: 8 R: startMemoryAddr.
+	cogit CmpR: startMemoryAddr R: endMemoryAddr.
+	cogit JumpAbove: fillLoop.
 ]
 
 { #category : #abi }
