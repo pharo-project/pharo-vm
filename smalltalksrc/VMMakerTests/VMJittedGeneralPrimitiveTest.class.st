@@ -7,6 +7,14 @@ Class {
 	#category : #'VMMakerTests-JitTests'
 }
 
+{ #category : #accessing }
+VMJittedGeneralPrimitiveTest >> lastObjectInNewSpace [
+
+	| lastOop |
+	memory allNewSpaceObjectsDo: [ :oop | lastOop := oop ].
+	^ lastOop
+]
+
 { #category : #'tests - support' }
 VMJittedGeneralPrimitiveTest >> testCheckImmediateWhenImmediateFloat [
 
@@ -1836,6 +1844,32 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveMultiplyReturnsZeroWithZeroOperand 
 	
 	self runFrom: primitiveAddress until: callerAddress.
 	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 0).
+]
+
+{ #category : #'tests - primitiveNew' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveNewInitializesObjectCorrectly [
+
+	| endInstruction primitiveAddress class classHash newOop instanceVariableCount |
+	instanceVariableCount := 4.
+	class := self
+		         newClassInOldSpaceWithSlots: instanceVariableCount
+		         instSpec: memory nonIndexablePointerFormat.
+	memory ensureBehaviorHash: class.
+
+	primitiveAddress := self compile: [ 
+		                    cogit objectRepresentation genPrimitiveNew.
+		                    "If the primitive fails it continues, so we need to have an instruction to detect the end"
+		                    endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: class.
+	self runFrom: primitiveAddress until: callerAddress.
+
+	newOop := self lastObjectInNewSpace.
+
+	0 to: (instanceVariableCount - 1) do: [ :slotIndex | 
+		self
+			assert: (memory fetchPointer: slotIndex ofObject: newOop)
+			equals: memory nilObject ]
 ]
 
 { #category : #'tests - primitiveNotEqual' }
