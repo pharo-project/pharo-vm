@@ -14,7 +14,7 @@ VMFFISameThreadReturnMarshallingTest >> doTestCalloutWithReturnType: aLibFFIType
 		withArgumentTypes: #()
 		withReturnType: aLibFFIType.
 
-	parametersArray := self newObjectWithSlots: 0.
+	parametersArray := self newArrayWithSlots: 0.
 
 	interpreter push: memory trueObject.
 	interpreter push: tfExternalFunction.

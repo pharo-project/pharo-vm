@@ -122,13 +122,6 @@ ioIsWindowObscured(void)
 }
 
 sqInt
-ioGetNextEvent(sqInputEvent *evt)
-{
-	UNIMPLEMENTED
-	return 0;
-}
-
-sqInt
 ioGetButtonState(void)
 {
 	UNIMPLEMENTED

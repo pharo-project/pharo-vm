@@ -297,16 +297,6 @@ CogVMSimulator >> breakCount [
 	^breakCount
 ]
 
-{ #category : #'interpreter shell' }
-CogVMSimulator >> browserPluginInitialiseIfNeeded [
-"do nothing - its a macro in C code to support Mac browser plugin strangeness"
-]
-
-{ #category : #'interpreter shell' }
-CogVMSimulator >> browserPluginReturnIfNeeded [
-"do nothing - its a macro in C code to support Mac browser plugin strangeness"
-]
-
 { #category : #'memory access' }
 CogVMSimulator >> byteAt: byteAddress [
 	"This is really only for the C library simulations memcpy:_:_: et al in VMClass.
@@ -1410,18 +1400,6 @@ CogVMSimulator >> ioExitWithErrorCode: ec [
 { #category : #'process primitive support' }
 CogVMSimulator >> ioGetMaxExtSemTableSize [
 	^extSemTabSize
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> ioGetNextEvent: evtBuf [
-	| evt |
-	"SimulatorMorphicModel browse"
-	eventQueue ifNil:
-		[^self primitiveFail].
-	eventQueue isEmpty ifFalse:
-		[evt :=  eventQueue next.
-		 1 to: evt size do:
-			[:i| (evt at: i) ifNotNil: [:val| evtBuf at: (i - 1) put: val]]]
 ]
 
 { #category : #'I/O primitives support' }

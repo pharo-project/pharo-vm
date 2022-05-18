@@ -76,7 +76,7 @@ VMDebugger >> connectPresenters [
 { #category : #actions }
 VMDebugger >> disassembleAtPC [
 
-	self initialInstructionToDisassemble:  machineSimulator instructionPointerValue.
+	self initialInstructionToDisassemble:  machineSimulator instructionPointerRegisterValue.
 	self refreshInstructions.
 ]
 
@@ -91,7 +91,7 @@ VMDebugger >> initialDisassembly [
 			copyFrom: self initialInstructionToDisassemble - cogit objectMemory memory initialAddress + 1
 			to: self initialInstructionToDisassemble - cogit objectMemory memory initialAddress + 600)
 		startAddress: self initialInstructionToDisassemble
-		pc: machineSimulator instructionPointerValue 
+		pc: machineSimulator instructionPointerRegisterValue 
 ]
 
 { #category : #showing }
@@ -104,7 +104,7 @@ VMDebugger >> initialExtent [
 VMDebugger >> initialInstructionToDisassemble [
 
 	^ initialInstructionToDisassemble
-		ifNil: [ machineSimulator instructionPointerValue ]
+		ifNil: [ machineSimulator instructionPointerRegisterValue ]
 ]
 
 { #category : #showing }
@@ -127,7 +127,7 @@ VMDebugger >> initializePresenters [
 		addColumn: (SpStringTableColumn evaluated: [ :item | item address hex ]);
 		addColumn:
 			((SpImageTableColumn evaluated: [ :item | 
-				item address = machineSimulator instructionPointerValue
+				item address = machineSimulator instructionPointerRegisterValue
 					ifTrue: [ self iconNamed: #forward ] ])
 				width: 50;
 				yourself);
@@ -196,7 +196,7 @@ VMDebugger >> runToSelectedInstruction [
 	selectedInstruction := self selectedInstruction.
 
 	machineSimulator
-		startAt: machineSimulator instructionPointerValue
+		startAt: machineSimulator instructionPointerRegisterValue
 		until: selectedInstruction address
 		timeout: 100000 "microseconds = 100ms"
 		count: 0.
@@ -218,7 +218,7 @@ VMDebugger >> selectedInstruction [
 { #category : #actions }
 VMDebugger >> setInstructionPointerToSelectedInstruction [
 	
-	machineSimulator instructionPointerValue: instructions selection selectedItem address
+	machineSimulator instructionPointerRegisterValue: instructions selection selectedItem address
 ]
 
 { #category : #actions }

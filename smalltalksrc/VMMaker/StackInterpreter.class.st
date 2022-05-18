@@ -566,7 +566,6 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		var: #methodCache
 		declareC: 'sqIntptr_t methodCache[MethodCacheSize + 1 /* ', (MethodCacheSize + 1) printString, ' */]'.
 	aCCodeGenerator
-		removeVariable: #nsMethodCache;
 		removeVariable: 'localAbsentReceiver';
 		removeVariable: 'localAbsentReceiverOrZero'.
 	AtCacheTotalSize isInteger ifTrue:
@@ -2196,9 +2195,7 @@ StackInterpreter >> asciiOfCharacter: characterObj [  "Returns an integer object
 
 	<inline: false>
 	(objectMemory isCharacterObject: characterObj) ifTrue:
-		[^CharacterTable
-			ifNil: [objectMemory integerObjectOfCharacterObject: characterObj]
-			ifNotNil: [objectMemory fetchPointer: CharacterValueIndex ofObject: characterObj]].
+		[^objectMemory integerObjectOfCharacterObject: characterObj].
 	self primitiveFailFor: PrimErrBadArgument.
 	^ConstZero  "in case some code needs an int"
 ]
@@ -3828,9 +3825,7 @@ StackInterpreter >> capturePendingFinalizationSignals [
 { #category : #'indexing primitive support' }
 StackInterpreter >> characterForAscii: ascii [  "Above ObjectMemory, arg must lie in range 0-255!"
 	<inline: true>
-	^CharacterTable
-		ifNil: [objectMemory characterObjectOf: ascii]
-		ifNotNil: [objectMemory fetchPointer: ascii ofObject: objectMemory characterTable]
+	^ objectMemory characterObjectOf: ascii
 ]
 
 { #category : #'debug support' }
@@ -4559,9 +4554,7 @@ StackInterpreter >> commonAtPut: stringy [
 		ifTrue: [ | charToPut |
 			"inline of asciiOfCharacter: value. Non return of primitiveFailFor:"
 			(objectMemory isCharacterObject: value)
-				ifTrue: [ charToPut := CharacterTable
-						ifNil: [ objectMemory integerObjectOfCharacterObject: value ]
-						ifNotNil: [ objectMemory fetchPointer: CharacterValueIndex ofObject: value ].
+				ifTrue: [ charToPut := objectMemory integerObjectOfCharacterObject: value.
 					self stObject: rcvr at: index put: charToPut ]
 				ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ] ]
 		ifFalse: [ self stObject: rcvr at: index put: value ].
@@ -7477,7 +7470,6 @@ StackInterpreter >> ifBackwardsCheckForEvents: offset [
 	 and: [localSP < stackLimit]) ifTrue:
 		[self externalizeIPandSP.
 		 self checkForEventsMayContextSwitch: true.
-		 self browserPluginReturnIfNeeded.
 		 self internalizeIPandSP]
 ]
 
@@ -7920,7 +7912,7 @@ StackInterpreter >> install: rcvr inAtCache: cache at: atIx string: stringy [
 		[^self primitiveFail].
 	stringy
 		ifTrue:
-			[totalLength := objectMemory lengthOf: rcvr baseHeader: hdr format: fmt.
+			[totalLength := objectMemory lengthOf: rcvr format: fmt.
 			 fixedFields := 0.
 			 fmt := fmt + objectMemory firstStringyFakeFormat]  "special flag for strings"
 		ifFalse:
@@ -7928,7 +7920,7 @@ StackInterpreter >> install: rcvr inAtCache: cache at: atIx string: stringy [
 				["Contexts must not be put in the atCache, since their size is not constant"
 				self primitiveFailFor: PrimErrBadReceiver.
 				^false].
-			 totalLength := objectMemory lengthOf: rcvr baseHeader: hdr format: fmt.
+			 totalLength := objectMemory lengthOf: rcvr format: fmt.
 			 fixedFields := objectMemory fixedFieldsOf: rcvr format: fmt length: totalLength].
 
 	cache at: atIx+AtCacheOop put: rcvr.
@@ -8060,20 +8052,19 @@ StackInterpreter >> internalCannotReturn: resultOop [
 
 { #category : #'message sending' }
 StackInterpreter >> internalExecuteNewMethod [
-	| succeeded |
+
 	<inline: true>
-	primitiveFunctionPointer ~= 0 ifTrue:
-		[self isPrimitiveFunctionPointerAnIndex ifTrue:
-			[self internalQuickPrimitiveResponse.
-			^ self "keep slang happy"].
-		 self externalizeIPandSP.
-		 succeeded := self slowPrimitiveResponse.
-		 self internalizeIPandSP.
-		 succeeded ifTrue:
-			[self browserPluginReturnIfNeeded.
-			^ self]].
+	| succeeded |
+	primitiveFunctionPointer ~= 0 ifTrue: [ 
+		self isPrimitiveFunctionPointerAnIndex ifTrue: [ 
+			self internalQuickPrimitiveResponse.
+			^ self "keep slang happy" ].
+		self externalizeIPandSP.
+		succeeded := self slowPrimitiveResponse.
+		self internalizeIPandSP.
+		succeeded ifTrue: [ ^ self ] ].
 	"if not primitive, or primitive failed, activate the method"
-	^self internalActivateNewMethod
+	^ self internalActivateNewMethod
 ]
 
 { #category : #'message sending' }
@@ -9615,19 +9606,20 @@ StackInterpreter >> mappedDirectCall [
 
 { #category : #'sista bytecodes' }
 StackInterpreter >> mappedEnsureEnoughWords [
+
 	"50	EnsureEnoughWords
 	 literal which is a Smi => ret value is receiver"
-	 | slots ok top |
-	 top := self internalStackTop.
-	 self assert: (objectMemory isIntegerObject: top).
-	 slots := objectMemory integerValueOf: top.
-	 self assert: slots >= 0.
-	 ok := objectMemory checkForAvailableSlots: slots.
-	 ok ifFalse:
-		[self externalizeIPandSP.
-		 self checkForEventsMayContextSwitch: true.
-		 self browserPluginReturnIfNeeded.
-		 self internalizeIPandSP]
+
+	| slots ok top |
+	top := self internalStackTop.
+	self assert: (objectMemory isIntegerObject: top).
+	slots := objectMemory integerValueOf: top.
+	self assert: slots >= 0.
+	ok := objectMemory checkForAvailableSlots: slots.
+	ok ifFalse: [ 
+		self externalizeIPandSP.
+		self checkForEventsMayContextSwitch: true.
+		self internalizeIPandSP ]
 ]
 
 { #category : #'sista bytecodes' }
@@ -10853,6 +10845,7 @@ StackInterpreter >> pop: nItems thenPush: oop [
 	"In the StackInterpreter stacks grow down."
 	| sp |
 	<inline: true>
+	<returnTypeC: #void>
 	<var: #sp type: #'char *'>
 	stackPages longAt: (sp := stackPointer + ((nItems - 1) * objectMemory wordSize)) put: oop.
 	stackPointer := sp
@@ -12525,7 +12518,9 @@ StackInterpreter >> pushActiveContextBytecode [
 
 { #category : #'internal interpreter access' }
 StackInterpreter >> pushBool: trueOrFalse [
+
 	<inline: true>
+	<returnTypeC: #sqInt>
 	self push: (objectMemory booleanObjectOf: trueOrFalse)
 ]
 
@@ -14400,7 +14395,7 @@ StackInterpreter >> stObject: array at: index [
 	<inline: true>
 	hdr := objectMemory baseHeader: array.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: array baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: array format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: array format: fmt length: totalLength.
 	(fmt = objectMemory indexablePointersFormat
 	 and: [objectMemory isContextHeader: hdr])
@@ -14428,7 +14423,7 @@ StackInterpreter >> stObject: array at: index put: value [
 		"we have another primitive (contextAt:Put: for contexts"
 		^self primitiveFailFor: PrimErrBadReceiver].
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: array baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: array format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: array format: fmt length: totalLength.
 	stSize := totalLength - fixedFields.
 	((self oop: index isGreaterThanOrEqualTo: (objectMemory firstValidIndexOfIndexableObject: array withFormat: fmt))
@@ -14447,7 +14442,7 @@ StackInterpreter >> stSizeOf: oop [
 	<inline: false>
 	hdr := objectMemory baseHeader: oop.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: oop baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: oop format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: oop format: fmt length: totalLength.
 	fmt = objectMemory indexablePointersFormat ifTrue:
 		[self assert: (objectMemory isContextHeader: hdr) not].

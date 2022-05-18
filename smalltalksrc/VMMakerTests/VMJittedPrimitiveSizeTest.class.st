@@ -11,7 +11,7 @@ Class {
 VMJittedPrimitiveSizeTest >> assertFallsThrough [
 
 	self runFrom: initialAddress until: stop address.
-	self assert: machineSimulator instructionPointerValue equals: stop address
+	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]
 
 { #category : #running }
@@ -120,7 +120,7 @@ VMJittedPrimitiveSizeTest >> testPrimitiveSizeArrayShouldReturnPointerSizedSlots
 	
 	| array |
 
-	array := self newObjectWithSlots: 7.
+	array := self newArrayWithSlots: 7.
 
 	self prepareStackForSendReceiver: array.	
 	machineSimulator baseRegisterValue: cogit varBaseAddress.

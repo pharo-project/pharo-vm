@@ -212,6 +212,6 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testRelinkCallSiteToMegamorphicPICC
 		until: createdPic asInteger + cogit entryOffset.
 
 	self
-		assert: machineSimulator instructionPointerValue
+		assert: machineSimulator instructionPointerRegisterValue
 		equals: createdPic asInteger + cogit entryOffset
 ]

@@ -55,6 +55,6 @@ VMJittedBoxFloatPrimitivesTest >> testAsFloatWhenThereIsNotSpaceFailsPrimitive [
 	self prepareStackForSendReceiver: (self memory integerObjectOf: 27) arguments: #().
 
 	self runFrom: initialAddress until: stop address.
-	self assert: machineSimulator instructionPointerValue equals: stop address
+	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 
 ]
