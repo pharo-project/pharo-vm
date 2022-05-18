@@ -872,7 +872,7 @@ VMJITPrimitiveCallingTest >> testPrimitiveWithProfileSemaphoreAndNextTickTakesSa
 		arguments: {memory nilObject}
 		returnAddress: cogit ceMethodAbortTrampoline.
 
-	self assert: machineSimulator instructionPointerValue equals: cogit ceMethodAbortTrampoline.
+	self assert: machineSimulator instructionPointerRegisterValue equals: cogit ceMethodAbortTrampoline.
 	self assert: interpreter nextProfileTick equals: 0
 ]
 
