@@ -4247,7 +4247,7 @@ CoInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
 		 cogMethod ifNil:
-			[instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader)].
+			[instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader) + (self sizeOfLongStoreTempBytecode: methodHeader)].
 		 primFailCode ~= 0 ifTrue:
 			[self reapAndResetErrorCodeTo: stackPointer header: methodHeader]].
 
@@ -5445,18 +5445,6 @@ CoInterpreter >> preGCAction: gcModeArg [
 CoInterpreter >> primErrTable [
 	<api>
 	^objectMemory splObj: PrimErrTableIndex
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> primFailCode [
-	<doNotGenerate>
-	^primFailCode
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> primFailCode: anInteger [
-	<doNotGenerate>
-	primFailCode := anInteger
 ]
 
 { #category : #'trampoline support' }
