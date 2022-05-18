@@ -232,28 +232,31 @@ VMSimpleStackBasedCogitBytecodeTest >> testExtendedStoreStoresInstanceVariableIn
 { #category : #'tests - jumps' }
 VMSimpleStackBasedCogitBytecodeTest >> testJumpForwardJumpsOverAnInstruction [
 
+	| firstBytecode |
 	cogit methodObj: (methodBuilder newMethod
 			 bytecodes: #[ 144 122 121 ];
 			 buildMethod).
+
+	firstBytecode := memory wordSize.
 
 	self
 		compile: [ 
 			| fixup nextOpcodeIndex |
 			cogit byte0: 144.
-			cogit bytecodePC: 8. "The method has a header so, the first bytecode is in offset 8"
+			cogit bytecodePC: firstBytecode. "The method has a header so, the first bytecode is in offset 8"
 			cogit genShortUnconditionalJump.
 
 			cogit byte0: 122.
-			cogit bytecodePC: 9.
+			cogit bytecodePC: firstBytecode + 1.
 			cogit genReturnFalse.
 
 			cogit byte0: 121.
-			cogit bytecodePC: 10.
+			cogit bytecodePC: firstBytecode + 2.
 			"We need to store the value to know if the bytecode has generated instructions"
 			nextOpcodeIndex := cogit getOpcodeIndex.
 			cogit genReturnTrue.
 			"As the bytecode is the target of a jump it has a fixup. We need to process it"
-			fixup := cogit fixupAt: 10.
+			fixup := cogit fixupAt: firstBytecode + 2.
 			cogit
 				patchFixupTargetIfNeeded: fixup
 				nextOpcodeIndex: nextOpcodeIndex ]
