@@ -33,9 +33,9 @@ BaselineOfVMMaker >> baseline: spec [
 					className: 'BaselineOfSmaCC';
 					repository: 'github://SmaCCRefactoring/SmaCC' ].
 			spec baseline: 'Unicorn' with: [ 
-				spec repository: 'github://guillep/pharo-unicorn' ].
+				spec repository: 'github://pharo-project/pharo-unicorn:unicorn2' ].
 			spec baseline: 'LLVMDisassembler' with: [ 
-				spec repository: 'github://guillep/pharo-llvmDisassembler' ].
+				spec repository: 'github://pharo-project/pharo-llvmDisassembler' ].
 
 			"Tests"			
 			spec
