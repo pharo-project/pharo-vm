@@ -1,33 +1,33 @@
 Class {
-	#name : #VMPrimitiveCallingTest,
-	#superclass : #VMInterpreterTests,
-	#category : #'VMMakerTests-InterpreterTests'
+	#name : #VMJITPrimitiveCallingTest,
+	#superclass : #VMPrimitiveCallAbstractTest,
+	#instVars : [
+		'classLargeInteger'
+	],
+	#pools : [
+		'CogRTLOpcodes'
+	],
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : #tests }
-VMPrimitiveCallingTest >> testPrimitiveFailingDoesNotSetErrorCodeInOtherTemp [
+{ #category : #helpers }
+VMJITPrimitiveCallingTest >> initStack [
 
-	"The method has two temporaries. The first one is the error code, the second one is a user defined temp."
-	| method |
-	method := methodBuilder newMethod
-		bytecodes:
-			#[ "call primitive" 		16rF8 16rB8 16r00
-				"store into temp 0" 	16rF5 16r00 ];
-		numberOfTemporaries: 2;
-		isPrimitive: true;
-		buildMethod.
+	self createBaseFrame.
 	
-	stackBuilder addNewFrame; buildStack.
-	interpreter newMethod: method.
-	interpreter primFailCode: -1.
+	"Initialize Stack to the correct pointers in the selected page"
+	machineSimulator smalltalkStackPointerRegisterValue: interpreter stackPointer.
+	machineSimulator framePointerRegisterValue: interpreter framePointer.
+	machineSimulator baseRegisterValue: cogit varBaseAddress.
+	
+	cogit setCStackPointer: interpreter rumpCStackAddress.
+	cogit setCFramePointer: interpreter rumpCStackAddress.
 
-	interpreter activateNewMethod.
-
-	self assert: (interpreter temporary: 1 in: interpreter framePointer) equals: memory nilObject
 ]
 
-{ #category : #tests }
-VMPrimitiveCallingTest >> testPrimitiveFailingSetsErrorCodeInCorrectTemp [
+{ #category : #'tests - without tracing' }
+VMJITPrimitiveCallingTest >> setUp [
+	super setUp.
 
 	"Initializing the primTraceLog table"
 	interpreter movePrimTraceLogToMemoryAt:
@@ -52,7 +52,7 @@ VMPrimitiveCallingTest >> testPrimitiveFailingSetsErrorCodeInCorrectTemp [
 ]
 
 { #category : #'tests - with tracing' }
-VMPrimitiveCallingTest >> testCallingNamedPrimitiveTakingTracesWithInvalidNumbersExecutesFailbackCode [
+VMJITPrimitiveCallingTest >> testCallingNamedPrimitiveTakingTracesWithInvalidNumbersExecutesFailbackCode [
 
 	| callingMethod |
 
@@ -72,7 +72,7 @@ VMPrimitiveCallingTest >> testCallingNamedPrimitiveTakingTracesWithInvalidNumber
 ]
 
 { #category : #'tests - with tracing' }
-VMPrimitiveCallingTest >> testCallingNamedPrimitivesTakingTracesHasATraceForThePrimitive [
+VMJITPrimitiveCallingTest >> testCallingNamedPrimitivesTakingTracesHasATraceForThePrimitive [
 
 	| callingMethod |
 
@@ -92,7 +92,7 @@ VMPrimitiveCallingTest >> testCallingNamedPrimitivesTakingTracesHasATraceForTheP
 ]
 
 { #category : #'tests - with tracing' }
-VMPrimitiveCallingTest >> testCallingNamedPrimitivesTakingTracesReturnsValidResults [
+VMJITPrimitiveCallingTest >> testCallingNamedPrimitivesTakingTracesReturnsValidResults [
 
 	| callingMethod |
 
@@ -112,7 +112,7 @@ VMPrimitiveCallingTest >> testCallingNamedPrimitivesTakingTracesReturnsValidResu
 ]
 
 { #category : #'tests - run on smalltalk stack' }
-VMPrimitiveCallingTest >> testCallingPrimitiveInSmalltalkStackWithInvalidReceiverRunsFallbackCode [
+VMJITPrimitiveCallingTest >> testCallingPrimitiveInSmalltalkStackWithInvalidReceiverRunsFallbackCode [
 
 	| callingMethod |
 
@@ -132,7 +132,7 @@ VMPrimitiveCallingTest >> testCallingPrimitiveInSmalltalkStackWithInvalidReceive
 ]
 
 { #category : #'tests - run on smalltalk stack' }
-VMPrimitiveCallingTest >> testCallingPrimitiveInSmalltalkStackWithLargeIntegerWillExecuteThePrimitiveAndReturnASmallInteger [
+VMJITPrimitiveCallingTest >> testCallingPrimitiveInSmalltalkStackWithLargeIntegerWillExecuteThePrimitiveAndReturnASmallInteger [
 
 	| callingMethod |
 
@@ -152,7 +152,7 @@ VMPrimitiveCallingTest >> testCallingPrimitiveInSmalltalkStackWithLargeIntegerWi
 ]
 
 { #category : #'tests - run on smalltalk stack' }
-VMPrimitiveCallingTest >> testCallingPrimitiveInSmalltalkStackWithSmallIntegerReceiverReturnsSmallInteger [
+VMJITPrimitiveCallingTest >> testCallingPrimitiveInSmalltalkStackWithSmallIntegerReceiverReturnsSmallInteger [
 
 	| callingMethod |
 
@@ -172,7 +172,7 @@ VMPrimitiveCallingTest >> testCallingPrimitiveInSmalltalkStackWithSmallIntegerRe
 ]
 
 { #category : #'tests - with tracing' }
-VMPrimitiveCallingTest >> testCallingPrimitiveTakingTracesWithInvalidNumbersExecutesFailbackCode [
+VMJITPrimitiveCallingTest >> testCallingPrimitiveTakingTracesWithInvalidNumbersExecutesFailbackCode [
 
 	| callingMethod |
 
@@ -192,7 +192,7 @@ VMPrimitiveCallingTest >> testCallingPrimitiveTakingTracesWithInvalidNumbersExec
 ]
 
 { #category : #'tests - without tracing' }
-VMPrimitiveCallingTest >> testCallingPrimitiveWithoutTakingTracesReturnsValidResult [
+VMJITPrimitiveCallingTest >> testCallingPrimitiveWithoutTakingTracesReturnsValidResult [
 
 	| callingMethod |
 
@@ -212,7 +212,7 @@ VMPrimitiveCallingTest >> testCallingPrimitiveWithoutTakingTracesReturnsValidRes
 ]
 
 { #category : #'tests - without tracing' }
-VMPrimitiveCallingTest >> testCallingPrimitiveWithoutTakingTracesWithInvalidNumbersExecutesFailbackCode [
+VMJITPrimitiveCallingTest >> testCallingPrimitiveWithoutTakingTracesWithInvalidNumbersExecutesFailbackCode [
 
 	| callingMethod |
 
@@ -234,7 +234,7 @@ VMPrimitiveCallingTest >> testCallingPrimitiveWithoutTakingTracesWithInvalidNumb
 ]
 
 { #category : #'tests - with tracing' }
-VMPrimitiveCallingTest >> testCallingPrimitivesTakingTracesHasATraceForThePrimitive [
+VMJITPrimitiveCallingTest >> testCallingPrimitivesTakingTracesHasATraceForThePrimitive [
 
 	| callingMethod |
 
@@ -254,7 +254,7 @@ VMPrimitiveCallingTest >> testCallingPrimitivesTakingTracesHasATraceForThePrimit
 ]
 
 { #category : #'tests - with tracing' }
-VMPrimitiveCallingTest >> testCallingPrimitivesTakingTracesReturnsValidResults [
+VMJITPrimitiveCallingTest >> testCallingPrimitivesTakingTracesReturnsValidResults [
 
 	| callingMethod |
 
@@ -274,7 +274,7 @@ VMPrimitiveCallingTest >> testCallingPrimitivesTakingTracesReturnsValidResults [
 ]
 
 { #category : #'tests - newMethod' }
-VMPrimitiveCallingTest >> testNamedPrimitiveCallSetsNewMethod [
+VMJITPrimitiveCallingTest >> testNamedPrimitiveCallSetsNewMethod [
 
 	| callingMethod |
 
@@ -296,7 +296,7 @@ VMPrimitiveCallingTest >> testNamedPrimitiveCallSetsNewMethod [
 ]
 
 { #category : #'tests - primitiveFunctionPointer' }
-VMPrimitiveCallingTest >> testNamedPrimitiveCallSetsPrimitiveFunctionPointerWhenCallingCImplementation [
+VMJITPrimitiveCallingTest >> testNamedPrimitiveCallSetsPrimitiveFunctionPointerWhenCallingCImplementation [
 
 	| callingMethod |
 
@@ -318,7 +318,7 @@ VMPrimitiveCallingTest >> testNamedPrimitiveCallSetsPrimitiveFunctionPointerWhen
 ]
 
 { #category : #'tests - retry primitive' }
-VMPrimitiveCallingTest >> testNamedPrimitiveFailingWithAccessorDepthWithForwardersDoesRetry [
+VMJITPrimitiveCallingTest >> testNamedPrimitiveFailingWithAccessorDepthWithForwardersDoesRetry [
 
 	| callingMethod forwarder receiver |
 
@@ -352,7 +352,7 @@ VMPrimitiveCallingTest >> testNamedPrimitiveFailingWithAccessorDepthWithForwarde
 ]
 
 { #category : #'tests - retry primitive' }
-VMPrimitiveCallingTest >> testNamedPrimitiveFailingWithAccessorDepthWithoutForwardersDoNotRetry [
+VMJITPrimitiveCallingTest >> testNamedPrimitiveFailingWithAccessorDepthWithoutForwardersDoNotRetry [
 
 	| callingMethod |
 
@@ -375,7 +375,7 @@ VMPrimitiveCallingTest >> testNamedPrimitiveFailingWithAccessorDepthWithoutForwa
 ]
 
 { #category : #'tests - retry primitive' }
-VMPrimitiveCallingTest >> testNamedPrimitiveFailingWithAccessorDepthZeroWithForwardersDoesNotRetry [
+VMJITPrimitiveCallingTest >> testNamedPrimitiveFailingWithAccessorDepthZeroWithForwardersDoesNotRetry [
 
 	| callingMethod forwarder receiver |
 
@@ -409,7 +409,7 @@ VMPrimitiveCallingTest >> testNamedPrimitiveFailingWithAccessorDepthZeroWithForw
 ]
 
 { #category : #'tests - retry primitive' }
-VMPrimitiveCallingTest >> testNamedPrimitiveFailingWithAccessorDepthZeroWithoutForwardersDoNotRetry [
+VMJITPrimitiveCallingTest >> testNamedPrimitiveFailingWithAccessorDepthZeroWithoutForwardersDoNotRetry [
 
 	| callingMethod |
 
@@ -432,7 +432,7 @@ VMPrimitiveCallingTest >> testNamedPrimitiveFailingWithAccessorDepthZeroWithoutF
 ]
 
 { #category : #'tests - retry primitive' }
-VMPrimitiveCallingTest >> testNamedPrimitiveFailingWithNegativeAccessorDepthWithForwardersDoNotRetry [
+VMJITPrimitiveCallingTest >> testNamedPrimitiveFailingWithNegativeAccessorDepthWithForwardersDoNotRetry [
 
 	| callingMethod forwarder receiver |
 
@@ -466,7 +466,7 @@ VMPrimitiveCallingTest >> testNamedPrimitiveFailingWithNegativeAccessorDepthWith
 ]
 
 { #category : #'tests - retry primitive' }
-VMPrimitiveCallingTest >> testNamedPrimitiveFailingWithNegativeAccessorDepthWithoutForwardersDoNotRetry [
+VMJITPrimitiveCallingTest >> testNamedPrimitiveFailingWithNegativeAccessorDepthWithoutForwardersDoNotRetry [
 
 	| callingMethod |
 
@@ -489,7 +489,7 @@ VMPrimitiveCallingTest >> testNamedPrimitiveFailingWithNegativeAccessorDepthWith
 ]
 
 { #category : #'tests - with tracing' }
-VMPrimitiveCallingTest >> testNamedPrimitiveIsNotTracedIfNotCalled [
+VMJITPrimitiveCallingTest >> testNamedPrimitiveIsNotTracedIfNotCalled [
 
 	| callingMethod |
 
@@ -506,7 +506,7 @@ VMPrimitiveCallingTest >> testNamedPrimitiveIsNotTracedIfNotCalled [
 ]
 
 { #category : #'tests - newMethod' }
-VMPrimitiveCallingTest >> testPrimitiveCallSetsNewMethod [
+VMJITPrimitiveCallingTest >> testPrimitiveCallSetsNewMethod [
 
 	| callingMethod |
 
@@ -528,7 +528,7 @@ VMPrimitiveCallingTest >> testPrimitiveCallSetsNewMethod [
 ]
 
 { #category : #'tests - primitiveFunctionPointer' }
-VMPrimitiveCallingTest >> testPrimitiveCallSetsPrimitiveFunctionPointerWhenCallingCImplementation [
+VMJITPrimitiveCallingTest >> testPrimitiveCallSetsPrimitiveFunctionPointerWhenCallingCImplementation [
 
 	| callingMethod |
 
@@ -549,8 +549,86 @@ VMPrimitiveCallingTest >> testPrimitiveCallSetsPrimitiveFunctionPointerWhenCalli
 
 ]
 
+{ #category : #'tests - error code' }
+VMJITPrimitiveCallingTest >> testPrimitiveFailingDoesNotSetErrorCodeInOtherTemp [
+
+	"The method has two temporaries. The first one is the error code, the second one is a user defined temp."
+	| method callingMethod |
+	
+	method := methodBuilder newMethod
+		bytecodes:
+			#[ "call failing primitive" 		16rF8 16r00 16r7F "Primitives > 32678 (0x7FA6) are considered inlined primitives..."
+				"store into temp 0" 				16rF5 16r00
+				"pushReceiver"						16r4C
+				"send literal 0"					16r80
+				"return top" 						16r5C ];
+		numberOfTemporaries: 2;
+		literals: { 
+			memory falseObject.
+			"Class Association"
+			self newObjectWithSlots: 2
+		};
+		isPrimitive: true;
+		buildMethod.
+
+	"Initialize the reap primitive code trampoline"
+	cogit generateMissAbortTrampolines.
+	sendTrampolineAddress := self compile: [ cogit RetN: 0 ].
+	cogit ordinarySendTrampolineAt: 0 "num args" put: sendTrampolineAddress.	
+	callingMethod := cogit cog: method selector: memory falseObject.
+	self initStack.	
+
+	interpreter primFailCode: -1.
+	self 
+		callCogMethod: callingMethod 
+		receiver: memory nilObject 
+		arguments: #()
+		returnAddress: sendTrampolineAddress.
+
+	self assert: (interpreter temporary: 1 in: interpreter framePointer) equals: memory nilObject
+]
+
+{ #category : #'tests - error code' }
+VMJITPrimitiveCallingTest >> testPrimitiveFailingSetsErrorCodeInCorrectTemp [
+
+	"The method has two temporaries. The first one is the error code, the second one is a user defined temp."
+	| method callingMethod |
+	
+	method := methodBuilder newMethod
+		bytecodes:
+			#[ "call failing primitive" 		16rF8 16r00 16r7F "Primitives > 32678 (0x7FA6) are considered inlined primitives..."
+				"store into temp 0" 				16rF5 16r00
+				"pushReceiver"						16r4C
+				"send literal 0"					16r80
+				"return top" 						16r5C ];
+		numberOfTemporaries: 2;
+		literals: { 
+			memory falseObject.
+			"Class Association"
+			self newObjectWithSlots: 2
+		};
+		isPrimitive: true;
+		buildMethod.
+
+	"Initialize the reap primitive code trampoline"
+	cogit generateMissAbortTrampolines.
+	sendTrampolineAddress := self compile: [ cogit RetN: 0 ].
+	cogit ordinarySendTrampolineAt: 0 "num args" put: sendTrampolineAddress.	
+	callingMethod := cogit cog: method selector: memory falseObject.
+	self initStack.	
+
+	interpreter primFailCode: -1.
+	self 
+		callCogMethod: callingMethod 
+		receiver: memory nilObject 
+		arguments: #()
+		returnAddress: sendTrampolineAddress.
+
+	self assert: (interpreter temporary: 0 in: machineSimulator framePointerRegisterValue) equals: (memory integerObjectOf: -1)
+]
+
 { #category : #'tests - retry primitive' }
-VMPrimitiveCallingTest >> testPrimitiveFailingWithAccessorDepthWithForwardersDoesRetry [
+VMJITPrimitiveCallingTest >> testPrimitiveFailingWithAccessorDepthWithForwardersDoesRetry [
 
 	| callingMethod forwarder receiver |
 
@@ -586,7 +664,7 @@ VMPrimitiveCallingTest >> testPrimitiveFailingWithAccessorDepthWithForwardersDoe
 ]
 
 { #category : #'tests - retry primitive' }
-VMPrimitiveCallingTest >> testPrimitiveFailingWithAccessorDepthWithoutForwardersDoNotRetry [
+VMJITPrimitiveCallingTest >> testPrimitiveFailingWithAccessorDepthWithoutForwardersDoNotRetry [
 
 	| callingMethod |
 
@@ -611,7 +689,7 @@ VMPrimitiveCallingTest >> testPrimitiveFailingWithAccessorDepthWithoutForwarders
 ]
 
 { #category : #'tests - retry primitive' }
-VMPrimitiveCallingTest >> testPrimitiveFailingWithAccessorDepthZeroWithForwardersDoesNotRetry [
+VMJITPrimitiveCallingTest >> testPrimitiveFailingWithAccessorDepthZeroWithForwardersDoesNotRetry [
 
 	| callingMethod forwarder receiver |
 
@@ -647,7 +725,7 @@ VMPrimitiveCallingTest >> testPrimitiveFailingWithAccessorDepthZeroWithForwarder
 ]
 
 { #category : #'tests - retry primitive' }
-VMPrimitiveCallingTest >> testPrimitiveFailingWithAccessorDepthZeroWithoutForwardersDoNotRetry [
+VMJITPrimitiveCallingTest >> testPrimitiveFailingWithAccessorDepthZeroWithoutForwardersDoNotRetry [
 
 	| callingMethod |
 
@@ -672,7 +750,7 @@ VMPrimitiveCallingTest >> testPrimitiveFailingWithAccessorDepthZeroWithoutForwar
 ]
 
 { #category : #'tests - retry primitive' }
-VMPrimitiveCallingTest >> testPrimitiveFailingWithNegativeAccessorDepthWithForwardersDoNotRetry [
+VMJITPrimitiveCallingTest >> testPrimitiveFailingWithNegativeAccessorDepthWithForwardersDoNotRetry [
 
 	| callingMethod forwarder receiver |
 
@@ -708,7 +786,7 @@ VMPrimitiveCallingTest >> testPrimitiveFailingWithNegativeAccessorDepthWithForwa
 ]
 
 { #category : #'tests - retry primitive' }
-VMPrimitiveCallingTest >> testPrimitiveFailingWithNegativeAccessorDepthWithoutForwardersDoNotRetry [
+VMJITPrimitiveCallingTest >> testPrimitiveFailingWithNegativeAccessorDepthWithoutForwardersDoNotRetry [
 
 	| callingMethod |
 
@@ -733,7 +811,7 @@ VMPrimitiveCallingTest >> testPrimitiveFailingWithNegativeAccessorDepthWithoutFo
 ]
 
 { #category : #'tests - with tracing' }
-VMPrimitiveCallingTest >> testPrimitiveIsNotTracedIfNotCalled [
+VMJITPrimitiveCallingTest >> testPrimitiveIsNotTracedIfNotCalled [
 
 	| callingMethod |
 
@@ -750,7 +828,7 @@ VMPrimitiveCallingTest >> testPrimitiveIsNotTracedIfNotCalled [
 ]
 
 { #category : #'tests - fail fast' }
-VMPrimitiveCallingTest >> testPrimitiveWithPrimitiveFailExecutesFallbackCode [
+VMJITPrimitiveCallingTest >> testPrimitiveWithPrimitiveFailExecutesFallbackCode [
 
 	| callingMethod |
 
@@ -773,7 +851,7 @@ VMPrimitiveCallingTest >> testPrimitiveWithPrimitiveFailExecutesFallbackCode [
 ]
 
 { #category : #'tests - profile sampling' }
-VMPrimitiveCallingTest >> testPrimitiveWithProfileSemaphoreAndNextTickTakesSample [
+VMJITPrimitiveCallingTest >> testPrimitiveWithProfileSemaphoreAndNextTickTakesSample [
 
 	| callingMethod |
 
@@ -799,7 +877,7 @@ VMPrimitiveCallingTest >> testPrimitiveWithProfileSemaphoreAndNextTickTakesSampl
 ]
 
 { #category : #'tests - profile sampling' }
-VMPrimitiveCallingTest >> testPrimitiveWithProfileSemaphoreButNotNextTickDoesNotTakeSample [
+VMJITPrimitiveCallingTest >> testPrimitiveWithProfileSemaphoreButNotNextTickDoesNotTakeSample [
 
 	| callingMethod |
 
@@ -823,7 +901,7 @@ VMPrimitiveCallingTest >> testPrimitiveWithProfileSemaphoreButNotNextTickDoesNot
 ]
 
 { #category : #'tests - fail fast' }
-VMPrimitiveCallingTest >> testPrimitiveWithoutFunctionExecutesFallbackCode [
+VMJITPrimitiveCallingTest >> testPrimitiveWithoutFunctionExecutesFallbackCode [
 
 	| callingMethod |
 
@@ -842,21 +920,5 @@ VMPrimitiveCallingTest >> testPrimitiveWithoutFunctionExecutesFallbackCode [
 	
 	self assert: machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 42).
 	
-	"The method has two temporaries. The first one is the error code, the second one is a user defined temp."
-	| method |
-	method := methodBuilder newMethod
-		bytecodes:
-			#[ "call primitive" 		16rF8 16rB8 16r00
-				"store into temp 0" 	16rF5 16r00 ];
-		numberOfTemporaries: 2;
-		isPrimitive: true;
-		buildMethod.
-	
-	stackBuilder addNewFrame; buildStack.
-	interpreter newMethod: method.
-	interpreter primFailCode: -1.
 
-	interpreter activateNewMethod.
-
-	self assert: (interpreter temporary: 0 in: interpreter framePointer) equals: (memory integerObjectOf: -1)
 ]
