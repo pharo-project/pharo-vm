@@ -12242,7 +12242,10 @@ Cogit >> unlinkAllSends [
 			cogMethod := methodZone methodAfter: cogMethod]]
  	flushingCacheWith: [ 
 		"After updating inline caches we need to flush the icache."
-		self flushICacheFrom: methodZoneBase asUnsignedInteger to: methodZone limitZony asUnsignedInteger ]
+		(methodZoneBase asUnsignedInteger < methodZone limitZony asUnsignedInteger) ifTrue: [ 
+			1halt. "Why it is not working?"
+			 self flushICacheFrom: methodZoneBase asUnsignedInteger to: methodZone limitZony asUnsignedInteger]
+		 ]
 ]
 
 { #category : #'in-line cacheing' }

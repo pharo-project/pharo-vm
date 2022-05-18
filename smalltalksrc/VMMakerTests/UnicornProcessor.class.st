@@ -68,9 +68,10 @@ UnicornProcessor >> esp: anInteger [
 ]
 
 { #category : #caching }
-UnicornProcessor >> flushICacheFrom: anInteger to: anInteger2 [ 
+UnicornProcessor >> flushICacheFrom: startAddress to: endAddress [
 
 	"Do nothing for now..."
+	machineSimulator flushICacheFrom: startAddress to: endAddress
 ]
 
 { #category : #registers }

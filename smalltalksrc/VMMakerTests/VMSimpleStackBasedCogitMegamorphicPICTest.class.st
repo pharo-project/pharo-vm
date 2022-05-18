@@ -159,7 +159,7 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICType [
 { #category : #'tests - PIC' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testRelinkCallSiteToMegamorphicPICCallsNewPIC [
 
-	| selector literalIndex method createdPic returnAfterCallAddress patchedCogMethod |
+	| selector literalIndex method createdPic returnAfterCallAddress patchedCogMethod startAddress |
 	sendTrampolineAddress := self compile: [ cogit RetN: 0 ].
 	cogit ordinarySendTrampolineAt: 0 put: sendTrampolineAddress. "num args"
 	self createFramefulCallFrom: callerAddress.
@@ -196,7 +196,6 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testRelinkCallSiteToMegamorphicPICC
 		                          ifTrue: [ 
 		                          machineSimulator linkRegisterValue ]
 		                          ifFalse: [ machineSimulator peekAddress ].
-
 	"Let's rewrite the call site"
 	cogit backEnd
 		rewriteInlineCacheAt: returnAfterCallAddress
@@ -205,10 +204,14 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testRelinkCallSiteToMegamorphicPICC
 				 in: patchedCogMethod
 				 at: returnAfterCallAddress)
 		target: createdPic asInteger + cogit entryOffset.
+		
+	startAddress := patchedCogMethod address + cogit noCheckEntryOffset.	
+	
+	cogit flushICacheFrom: startAddress to: startAddress + 32.
 
 	"Let's rerun it to check if it gets to the patched address openPic"
 	self
-		runFrom: patchedCogMethod address + cogit noCheckEntryOffset
+		runFrom: startAddress
 		until: createdPic asInteger + cogit entryOffset.
 
 	self
