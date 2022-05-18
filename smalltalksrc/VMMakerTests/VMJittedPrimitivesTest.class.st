@@ -51,7 +51,7 @@ VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument
 
 	self prepareStackForSendReceiver: receiverOop arguments: { firstArgumentOop. secondArgumentOop }.
 	
-"	machineSimulator instructionPointerValue: initialAddress.
+"	machineSimulator instructionPointerRegisterValue: initialAddress.
 	self openMachineDebugger.
 	1halt.
 
