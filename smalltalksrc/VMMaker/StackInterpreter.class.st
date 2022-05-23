@@ -8023,7 +8023,7 @@ StackInterpreter >> internalActivateNewMethod [
 	(self methodHeaderHasPrimitive: methodHeader) ifTrue:
 		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		 localIP := localIP + (self sizeOfCallPrimitiveBytecode: methodHeader).
+		 localIP := localIP + (self sizeOfCallPrimitiveBytecode: methodHeader) + (self sizeOfLongStoreTempBytecode: methodHeader).
 		 primFailCode ~= 0 ifTrue:
 			[self reapAndResetErrorCodeTo: localFP header: methodHeader]].
 
