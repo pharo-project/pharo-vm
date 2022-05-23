@@ -6601,7 +6601,7 @@ Cogit >> fakeVarBaseAddress [
 { #category : #concretize }
 Cogit >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
 
-	<inline: true>
+	<doNotGenerate>
 	backEnd fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister
 ]
 
