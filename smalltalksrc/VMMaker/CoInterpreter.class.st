@@ -508,7 +508,7 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 
 	((self methodHeaderHasPrimitive: methodHeader)
 	 and: [primFailCode ~= 0]) ifTrue:
-		[self reapAndResetErrorCodeTo: stackPointer header: methodHeader].
+		[self reapAndResetErrorCodeTo: framePointer header: methodHeader].
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
 	stackPointer >= stackLimit ifTrue:
@@ -654,7 +654,7 @@ CoInterpreter >> activateNewMethod [
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
 		 instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader).
 		 primFailCode ~= 0 ifTrue:
-			[self reapAndResetErrorCodeTo: stackPointer header: methodHeader]].
+			[self reapAndResetErrorCodeTo: framePointer header: methodHeader]].
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
 	switched := true.
@@ -1654,7 +1654,7 @@ CoInterpreter >> ceReapAndResetErrorCodeFor: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	self assert: primFailCode ~= 0.
 	newMethod := cogMethod methodObject.
-	self reapAndResetErrorCodeTo: stackPointer + objectMemory wordSize
+	self reapAndResetErrorCodeTo: framePointer
 		header: cogMethod methodHeader
 ]
 
@@ -3948,7 +3948,7 @@ CoInterpreter >> internalActivateNewMethod [
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
 		 localIP := localIP + (self sizeOfCallPrimitiveBytecode: methodHeader).
 		 primFailCode ~= 0 ifTrue:
-			[self reapAndResetErrorCodeTo: localSP header: methodHeader]].
+			[self reapAndResetErrorCodeTo: framePointer header: methodHeader]].
 
 	self assert: (self frameNumArgs: localFP) = argumentCount.
 	self assert: (self frameIsBlockActivation: localFP) not.
@@ -4234,7 +4234,7 @@ CoInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 		 cogMethod ifNil:
 			[instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader) + (self sizeOfLongStoreTempBytecode: methodHeader)].
 		 primFailCode ~= 0 ifTrue:
-			[self reapAndResetErrorCodeTo: stackPointer header: methodHeader]].
+			[self reapAndResetErrorCodeTo: framePointer header: methodHeader]].
 
 	^methodHeader
 ]

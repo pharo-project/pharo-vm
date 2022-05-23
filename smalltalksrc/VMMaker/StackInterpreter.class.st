@@ -8025,7 +8025,7 @@ StackInterpreter >> internalActivateNewMethod [
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
 		 localIP := localIP + (self sizeOfCallPrimitiveBytecode: methodHeader).
 		 primFailCode ~= 0 ifTrue:
-			[self reapAndResetErrorCodeTo: localSP header: methodHeader]].
+			[self reapAndResetErrorCodeTo: localFP header: methodHeader]].
 
 	self assert: (self frameNumArgs: localFP) = argumentCount.
 	self assert: (self frameIsBlockActivation: localFP) not.
@@ -8849,7 +8849,7 @@ StackInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
 		 instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader) + (self sizeOfLongStoreTempBytecode: methodHeader).
 		 primFailCode ~= 0 ifTrue:
-			[self reapAndResetErrorCodeTo: stackPointer header: methodHeader]].
+			[self reapAndResetErrorCodeTo: framePointer header: methodHeader]].
 
 	^methodHeader
 ]
@@ -12887,10 +12887,10 @@ StackInterpreter >> quinaryInlinePrimitive: primIndex [
 ]
 
 { #category : #'primitive support' }
-StackInterpreter >> reapAndResetErrorCodeTo: theSP header: methodHeader [
+StackInterpreter >> reapAndResetErrorCodeTo: theFP header: methodHeader [
 	"Assuming the primFailCode is non-zero, check if the method consumes the error code
-	 and if so, assign it through theSP.  Then zero the primFailCode.  This is infrequent code,
-	 so keep it out of the common path."
+	 and if so, assign it through theFP into the correct temporary variable.
+	Then zero the primFailCode.  This is infrequent code, so keep it out of the common path."
 	<var: 'theSP' type: #'char *'>
 	<inline: #never>
 	| initialPC |
@@ -12899,7 +12899,7 @@ StackInterpreter >> reapAndResetErrorCodeTo: theSP header: methodHeader [
 	(objectMemory byteAt: initialPC) = (self longStoreBytecodeForHeader: methodHeader) ifTrue: [
 		| temporaryIndex |
 		temporaryIndex := (objectMemory byteAt: initialPC + 1).
-		self temporary: temporaryIndex in: framePointer put: self getErrorObjectFromPrimFailCode].
+		self temporary: temporaryIndex in: theFP put: self getErrorObjectFromPrimFailCode].
 	 primFailCode := 0
 ]
 
