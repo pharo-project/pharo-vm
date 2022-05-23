@@ -3777,6 +3777,8 @@ CogARMv8Compiler >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg
 	cogit St1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
 	cogit CmpR: startMemoryAddr R: endMemoryAddr.
 	cogit JumpAbove: fillLoop.
+	
+	^0 "Necessary to keep Slang happy"
 ]
 
 { #category : #'ARM convenience instructions' }

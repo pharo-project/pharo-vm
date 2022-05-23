@@ -722,6 +722,8 @@ CogAbstractInstruction >> fillFrom: startMemoryAddr until: endMemoryAddr with: f
 	cogit AddCq: 8 R: startMemoryAddr.
 	cogit CmpR: startMemoryAddr R: endMemoryAddr.
 	cogit JumpAbove: fillLoop.
+	
+	^0 "Necessary to keep Slang happy"
 ]
 
 { #category : #abi }
