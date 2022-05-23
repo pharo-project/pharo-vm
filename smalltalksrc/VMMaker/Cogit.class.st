@@ -6598,6 +6598,13 @@ Cogit >> fakeVarBaseAddress [
 	^self fakeAddressFor: nil index: 48
 ]
 
+{ #category : #concretize }
+Cogit >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
+
+	<inline: true>
+	backEnd fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister
+]
+
 { #category : #'generate machine code' }
 Cogit >> fillInCPICHeader: pic numArgs: numArgs numCases: numCases hasMNUCase: hasMNUCase selector: selector [
 	<returnTypeC: #'CogMethod *'>

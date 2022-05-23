@@ -1520,10 +1520,8 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNew [
 	- the result fits in eden (actually below scavengeThreshold)"
 
 	| headerReg fillReg instSpecReg byteSizeReg
-	  jumpUnhashed jumpVariableOrEphemeron jumpNoSpace jumpTooBig jumpHasSlots
-	  fillLoop skip |
+	  jumpUnhashed jumpVariableOrEphemeron jumpNoSpace jumpTooBig jumpHasSlots skip |
 	<var: 'skip' type: #'AbstractInstruction *'>
-	<var: 'fillLoop' type: #'AbstractInstruction *'>
 	<var: 'jumpTooBig' type: #'AbstractInstruction *'>
 	<var: 'jumpHasSlots' type: #'AbstractInstruction *'>
 	<var: 'jumpNoSpace' type: #'AbstractInstruction *'>
@@ -1583,7 +1581,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNew [
 	"now fill"
 	cogit LoadEffectiveAddressMw: objectMemory baseHeaderSize r: ReceiverResultReg R: Arg1Reg.
 	cogit MoveCq: objectMemory nilObject R: fillReg.
-	cogit backend fillFrom: Arg1Reg until: byteSizeReg with: fillReg usingVr: VReg1.
+	cogit fillFrom: Arg1Reg until: byteSizeReg with: fillReg usingVr: VReg1.
 	cogit genPrimReturn.
 
 	jumpUnhashed jmpTarget:
@@ -1731,7 +1729,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNewWithArg [
 	cogit MoveR: headerReg Mw: 0 r: ReceiverResultReg.
 	"now fill"
 	cogit LoadEffectiveAddressMw: objectMemory baseHeaderSize r: ReceiverResultReg R: Arg1Reg.
-	cogit backend fillFrom: Arg1Reg until: byteSizeReg with: fillReg usingVr: VReg1.
+	cogit fillFrom: Arg1Reg until: byteSizeReg with: fillReg usingVr: VReg1.
 	cogit genPrimReturn.
 	
 	jumpNoSpace jmpTarget:
