@@ -570,9 +570,9 @@ VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver ar
 	self argumentsOnRegisters ifTrue: [
 		arguments withIndexDo: [ :a :i |
 			i = 1 ifTrue: [ 
-				self machineSimulator argument0RegisterValue: a ].
+				self machineSimulator arg0RegisterValue: a ].
 			i = 2 ifTrue: [ 
-				self machineSimulator argument1RegisterValue: a ].
+				self machineSimulator arg1RegisterValue: a ].
 			i > 2 ifTrue: [ self error: 'Cogit calling convention only supports 2 arguments by registers' ].
 		] ].
 	

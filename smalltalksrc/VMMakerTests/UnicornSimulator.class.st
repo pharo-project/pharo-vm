@@ -146,9 +146,8 @@ UnicornSimulator >> registerHook: aBlock atAddress: anAddress [
 ]
 
 { #category : #executing }
-UnicornSimulator >> startAt: begin until: until timeout: timeout count: count [ 
+UnicornSimulator >> startAt: begin until: until timeout: timeout count: count [
 
-	begin = until ifTrue: [ ^ self ].
 	^ self doStartAt: begin until: until timeout: timeout count: count.
-	
+
 ]
