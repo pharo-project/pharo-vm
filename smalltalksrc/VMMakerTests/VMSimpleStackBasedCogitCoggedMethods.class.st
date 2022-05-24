@@ -25,7 +25,7 @@ VMSimpleStackBasedCogitCoggedMethods >> testUsingEntryOffsetChecksClassRegisterA
 	
 	self runFrom: cogMethod address + cogit entryOffset until: otherBlock.
 
-	self assert: machineSimulator instructionPointerValue equals: otherBlock 
+	self assert: machineSimulator instructionPointerRegisterValue equals: otherBlock 
 ]
 
 { #category : #tests }
@@ -40,7 +40,7 @@ VMSimpleStackBasedCogitCoggedMethods >> testUsingEntryOffsetChecksClassRegisterA
 	
 	self runFrom: cogMethod address + cogit entryOffset until: cogit ceMethodAbortTrampoline.
 
-	self assert: machineSimulator instructionPointerValue equals: cogit ceMethodAbortTrampoline 
+	self assert: machineSimulator instructionPointerRegisterValue equals: cogit ceMethodAbortTrampoline 
 ]
 
 { #category : #tests }
@@ -55,5 +55,5 @@ VMSimpleStackBasedCogitCoggedMethods >> testUsingNoCheckEntryDoesNotCheckClassTa
 	
 	self runFrom: cogMethod address + cogit noCheckEntryOffset until: otherBlock.
 
-	self assert: machineSimulator instructionPointerValue equals: otherBlock 
+	self assert: machineSimulator instructionPointerRegisterValue equals: otherBlock 
 ]

@@ -54,7 +54,7 @@ VMMachineCodeDebuggerInstruction >> debugger: aVMMachineCodeDebugger [
 { #category : #showing }
 VMMachineCodeDebuggerInstruction >> icon [
 
-	self address = machineSimulator instructionPointerValue 
+	self address = machineSimulator instructionPointerRegisterValue 
 		ifTrue: [ ^ self iconNamed: #forward ].
 	
 	debugger selectedInstruction 

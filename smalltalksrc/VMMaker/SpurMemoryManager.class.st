@@ -2972,11 +2972,6 @@ SpurMemoryManager >> characterObjectOf: characterCode [
 	^characterCode << self numTagBits + self characterTag
 ]
 
-{ #category : #accessing }
-SpurMemoryManager >> characterTable [
-	self shouldNotImplement
-]
-
 { #category : #'object access' }
 SpurMemoryManager >> characterTag [
 	<api>
@@ -7831,16 +7826,6 @@ SpurMemoryManager >> lengthOf: objOop [
 ]
 
 { #category : #'object access' }
-SpurMemoryManager >> lengthOf: objOop baseHeader: header format: fmt [ 
-	<var: #header type: #usqLong>
-	"Compatibility; does not really suit the Spur format.
-	 Answer the number of indexable bytes or words in the given object.
-	 For a CompiledMethod, the size of the method header (in bytes) should
-	 be subtracted from the result of this method."
-	^self lengthOf: objOop format: fmt
-]
-
-{ #category : #'object access' }
 SpurMemoryManager >> lengthOf: objOop format: fmt [
 	"Answer the number of indexable units in the given object.
 	 For a CompiledMethod, the size of the method header (in bytes)
@@ -7951,7 +7936,7 @@ SpurMemoryManager >> lookupAddress: address [
 	address - self baseHeaderSize = hiddenRootsObj ifTrue:
 		[^'(hiddenRootsObj+baseHeaderSize)'].
 	fmt := self formatOf: address.
-	size := self lengthOf: address baseHeader: (self baseHeader: address) format: fmt.
+	size := self lengthOf: address format: fmt.
 	size = 0 ifTrue:
 		[^address caseOf: { [nilObj] -> ['nil']. [trueObj] -> ['true']. [falseObj] -> ['false'] } otherwise: []].
 	((fmt between: self firstByteFormat and: self firstCompiledMethodFormat - 1) "indexable byte fields"
@@ -10409,6 +10394,7 @@ SpurMemoryManager >> pushRemappableOop: oop [
 	 We support this excessence for compatibility with ObjectMemory.
 	 Spur doesn't GC during allocation."
 	<api>
+	<returnTypeC: #void>
 	self assert: (self addressCouldBeOop: oop).
 	remapBuffer at: (remapBufferCount := remapBufferCount + 1) put: oop.
 	remapBufferCount <= RemapBufferSize ifFalse:
@@ -12807,4 +12793,10 @@ SpurMemoryManager >> writeProtectMemory [
 	1halt.
 	memory class ~~ ReadOnlyArrayWrapper ifTrue:
 		[memory := ReadOnlyArrayWrapper around: memory]
+]
+
+{ #category : #'header formats' }
+SpurMemoryManager >> zeroSlotsNonIndexablePointerFormat [
+	<api>
+	^0
 ]

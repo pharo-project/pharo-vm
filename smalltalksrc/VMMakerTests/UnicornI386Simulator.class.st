@@ -10,18 +10,6 @@ UnicornI386Simulator >> arg0Register [
 	^ UcX86Registers esi
 ]
 
-{ #category : #'as yet unclassified' }
-UnicornI386Simulator >> argument0RegisterValue [
-	
-	^ self esi
-]
-
-{ #category : #accessing }
-UnicornI386Simulator >> argument0RegisterValue: anInteger [ 
-
-	self writeRegister: UcX86Registers esi value: anInteger
-]
-
 { #category : #accessing }
 UnicornI386Simulator >> argument1RegisterValue: anInteger [ 
 
@@ -37,7 +25,7 @@ UnicornI386Simulator >> baseRegister [
 { #category : #'as yet unclassified' }
 UnicornI386Simulator >> cResultRegister [
 
-	^ self eax
+	^ UcX86Registers eax
 ]
 
 { #category : #'c calling convention' }
@@ -45,11 +33,6 @@ UnicornI386Simulator >> carg0 [
 
 	"Stack value 0 is return address"
 	^ self stackValueAt: 1
-]
-
-{ #category : #registers }
-UnicornI386Simulator >> carg0Register [
-	self shouldBeImplemented.
 ]
 
 { #category : #'c calling convention' }
@@ -92,9 +75,9 @@ UnicornI386Simulator >> disassembler [
 ]
 
 { #category : #'as yet unclassified' }
-UnicornI386Simulator >> doublePrecisionFloatingPointRegister0Value [
+UnicornI386Simulator >> doublePrecisionFloatingPointRegister0 [
 
-	^ self readFloat64Register: UcX86Registers xmm0
+	^ UcX86Registers xmm0
 ]
 
 { #category : #accessing }
@@ -218,11 +201,6 @@ UnicornI386Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstruction
 	^ registerName
 ]
 
-{ #category : #'as yet unclassified' }
-UnicornI386Simulator >> fp [
-	^ self readRegister: UcX86Registers ebp
-]
-
 { #category : #registers }
 UnicornI386Simulator >> framePointerRegister [
 	
@@ -233,6 +211,12 @@ UnicornI386Simulator >> framePointerRegister [
 UnicornI386Simulator >> getReturnAddress [
 	
 	^ self peekAddress
+]
+
+{ #category : #'as yet unclassified' }
+UnicornI386Simulator >> hasLinkRegister [ 
+
+	^ false
 ]
 
 { #category : #registers }
@@ -246,11 +230,6 @@ UnicornI386Simulator >> integerRegisterState [
 
 	^{	self eax. self ebx. self ecx. self edx. self esp. self ebp. self esi. self edi.
 		self eip. self eflags }
-]
-
-{ #category : #'as yet unclassified' }
-UnicornI386Simulator >> pc [
-	^ self readRegister: UcX86Registers eip
 ]
 
 { #category : #'as yet unclassified' }
@@ -328,11 +307,6 @@ UnicornI386Simulator >> smashRegisterAccessors [
 	^#(eax: ebx: ecx: edx: esi: edi:)
 ]
 
-{ #category : #'as yet unclassified' }
-UnicornI386Simulator >> sp [
-	^ self readRegister: UcX86Registers esp
-]
-
 { #category : #registers }
 UnicornI386Simulator >> stackPointerRegister [
 	
@@ -344,12 +318,6 @@ UnicornI386Simulator >> temporaryRegister [
 	
 	"Assume SysV"
 	^ UcX86Registers eax
-]
-
-{ #category : #accessing }
-UnicornI386Simulator >> temporaryRegisterValue [
-	
-	^ self eax
 ]
 
 { #category : #accessing }

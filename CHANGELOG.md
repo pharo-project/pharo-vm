@@ -2,6 +2,21 @@
 
 I am a changelog... do not wait too much from me :D
 
+## v9.0.14
+
+- Adding support to read command line parameters from the PList (In OSX)
+
+## v9.0.13
+
+- Correct handling OOB (Out of Band Data) in Window
+- Blocking signals while signaling semaphores to avoid deadlocks caused by signal handlers
+
+## v9.0.12
+- Make MAXHOSTNAMELEN at least 256: improving resolution of names in linux
+- Improving VM Simulator Machine debugger
+- Integrating Processor Simulator for RISCV
+- Using a new SDL2 version built for OSX Mojave compatibility 
+
 ## v9.0.11
 
 - Include FloatArrayPlugin in the build

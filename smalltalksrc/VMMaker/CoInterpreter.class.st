@@ -951,6 +951,7 @@ CoInterpreter >> baseFrameReturn [
 	<var: #thePage type: #'StackPage *'>
 	<var: #newPage type: #'StackPage *'>
 	<var: #frameAbove type: #'char *'>
+	<returnTypeC: #void>
 	contextToReturnTo := self frameCallerContext: localFP.
 
 	"The stack page is effectively free now, so free it.  We must free it to be
@@ -3040,6 +3041,7 @@ CoInterpreter >> extendedStoreBytecodePop: popBoolean [
 	"Override to use itemporary:in:put:"
 	| descriptor variableType variableIndex value |
 	<inline: true>
+	<returnTypeC: #void>
 	descriptor := self fetchByte.
 	variableType := descriptor >> 6 bitAnd: 3.
 	variableIndex := descriptor bitAnd: 63.
@@ -3729,39 +3731,42 @@ CoInterpreter >> ifAppropriateCompileToNativeCode: aMethodObj selector: selector
 
 { #category : #'jump bytecodes' }
 CoInterpreter >> ifBackwardsCheckForEvents: offsetToJumpBytecode [
+
 	"Backward jump means we're in a loop.
 		- check for possible interrupts.
 		- check for long-running loops and JIT if appropriate."
-	| switched backwardJumpCountByte |
-	<inline: true>
-	offsetToJumpBytecode >= 0 ifTrue:
-		[^self].
 
-	localSP < stackLimit ifTrue:
-		[self externalizeIPandSP.
-		 switched := self checkForEventsMayContextSwitch: true.
-		 self returnToExecutive: true postContextSwitch: switched.
-		 self browserPluginReturnIfNeeded.
-		 self internalizeIPandSP.
-		 switched ifTrue:
-			[^self]].
+	<inline: true>
+	| switched backwardJumpCountByte |
+	offsetToJumpBytecode >= 0 ifTrue: [ ^ self ].
+
+	localSP < stackLimit ifTrue: [ 
+		self externalizeIPandSP.
+		switched := self checkForEventsMayContextSwitch: true.
+		self returnToExecutive: true postContextSwitch: switched.
+		self internalizeIPandSP.
+		switched ifTrue: [ ^ self ] ].
 
 	"We use the least significant byte of the flags word (which is marked as an immediate) and
 	 subtract two each time to avoid disturbing the least significant tag bit.  Since the byte is
 	 initialized to 1 (on frame build), on first decrement it will become -1.  Trip when it reaches 1 again."
 	backwardJumpCountByte := self iframeBackwardBranchByte: localFP.
 	(backwardJumpCountByte := backwardJumpCountByte - 2) = 1
-		ifTrue:
-			[(self methodWithHeaderShouldBeCogged: (objectMemory methodHeaderOf: method)) ifTrue:
-				[self externalizeIPandSP.
-				 self attemptToSwitchToMachineCode: (self oopForPointer: localIP) - offsetToJumpBytecode - method - objectMemory baseHeaderSize - 1
-				 "If attemptToSwitchToMachineCode: returns the method could not be cogged, hence..."].
-			 "can't cog method; avoid asking to cog it again for the longest possible time."
-			 backwardJumpCountByte := 16r7F]
-		ifFalse:
-			[backwardJumpCountByte = -1 ifTrue: "initialize the count"
-				[self assert: minBackwardJumpCountForCompile <= 128.
-				 backwardJumpCountByte := minBackwardJumpCountForCompile - 1 << 1 + 1]].
+		ifTrue: [ 
+			(self methodWithHeaderShouldBeCogged:
+				 (objectMemory methodHeaderOf: method)) ifTrue: [ 
+				self externalizeIPandSP.
+				self attemptToSwitchToMachineCode:
+					(self oopForPointer: localIP) - offsetToJumpBytecode - method
+					- objectMemory baseHeaderSize - 1
+				"If attemptToSwitchToMachineCode: returns the method could not be cogged, hence..." ].
+			"can't cog method; avoid asking to cog it again for the longest possible time."
+			backwardJumpCountByte := 16r7F ]
+		ifFalse: [ 
+			backwardJumpCountByte = -1 ifTrue: [ "initialize the count"
+				self assert: minBackwardJumpCountForCompile <= 128.
+				backwardJumpCountByte := minBackwardJumpCountForCompile - 1 << 1
+				                         + 1 ] ].
 	self iframeBackwardBranchByte: localFP put: backwardJumpCountByte
 ]
 
@@ -4011,33 +4016,35 @@ CoInterpreter >> internalActivateNewMethod [
 
 { #category : #'message sending' }
 CoInterpreter >> internalExecuteNewMethod [
-	<inline: true>
+
 	"For interpreter performance and to ease the objectAsMethod implementation eagerly
 	 evaluate the primtiive, i.e. if the method is cogged and has a primitive /do not/ evaluate
 	 the machine code primitive, just evaluate primitiveFunctionPointer directly."
-	primitiveFunctionPointer ~= 0 ifTrue:
-		[| succeeded |
-		 self isPrimitiveFunctionPointerAnIndex ifTrue:
-			[^self internalQuickPrimitiveResponse].
-		 "slowPrimitiveResponse may of course context-switch.  If so we must reenter the
+
+	<inline: true>
+	primitiveFunctionPointer ~= 0 ifTrue: [ 
+		| succeeded |
+		self isPrimitiveFunctionPointerAnIndex ifTrue: [ 
+			^ self internalQuickPrimitiveResponse ].
+		"slowPrimitiveResponse may of course context-switch.  If so we must reenter the
 		  new process appropriately, returning only if we've found an interpreter frame."
-		 self externalizeIPandSP.
-		 succeeded := self slowPrimitiveResponse.
-		 instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
-			[instructionPointer := self iframeSavedIP: framePointer].
-		 self internalizeIPandSP.
-		 succeeded ifTrue:
-			[self return: self popStack toExecutive: true.
-			 self browserPluginReturnIfNeeded.
-			^nil]].
+		self externalizeIPandSP.
+		succeeded := self slowPrimitiveResponse.
+		instructionPointer = cogit ceReturnToInterpreterPC ifTrue: [ 
+			instructionPointer := self iframeSavedIP: framePointer ].
+		self internalizeIPandSP.
+		succeeded ifTrue: [ 
+			self return: self popStack toExecutive: true.
+			^ nil ] ].
 	"if not primitive, or primitive failed, activate the method"
 	(self methodHasCogMethod: newMethod)
-		ifTrue: [self iframeSavedIP: localFP put: localIP asInteger.
-				instructionPointer := cogit ceReturnToInterpreterPC.
-				self externalizeFPandSP.
-				self activateCoggedNewMethod: true.
-				self internalizeIPandSP]
-		ifFalse: [self internalActivateNewMethod]
+		ifTrue: [ 
+			self iframeSavedIP: localFP put: localIP asInteger.
+			instructionPointer := cogit ceReturnToInterpreterPC.
+			self externalizeFPandSP.
+			self activateCoggedNewMethod: true.
+			self internalizeIPandSP ]
+		ifFalse: [ self internalActivateNewMethod ]
 ]
 
 { #category : #'message sending' }
@@ -4276,7 +4283,7 @@ CoInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
 		 cogMethod ifNil:
-			[instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader)].
+			[instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader) + (self sizeOfLongStoreTempBytecode: methodHeader)].
 		 primFailCode ~= 0 ifTrue:
 			[self reapAndResetErrorCodeTo: stackPointer header: methodHeader]].
 
@@ -5474,18 +5481,6 @@ CoInterpreter >> preGCAction: gcModeArg [
 CoInterpreter >> primErrTable [
 	<api>
 	^objectMemory splObj: PrimErrTableIndex
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> primFailCode [
-	<doNotGenerate>
-	^primFailCode
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> primFailCode: anInteger [
-	<doNotGenerate>
-	primFailCode := anInteger
 ]
 
 { #category : #'trampoline support' }

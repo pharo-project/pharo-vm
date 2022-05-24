@@ -54,7 +54,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> assertPIC: pic hits: hitMethod [
 	 - The instruction pointer is at no check entry offset of the hitted method
 	 - The class register value case 0 tag regardless of the hit
 	 - the receiver register value contains the receiver"
-	self assert: machineSimulator instructionPointerValue equals: hitMethod address + cogit noCheckEntryOffset.
+	self assert: machineSimulator instructionPointerRegisterValue equals: hitMethod address + cogit noCheckEntryOffset.
 	self assert: machineSimulator classRegisterValue equals: (picTypeTags at: 0).
 	self assert: machineSimulator receiverRegisterValue equals: receiver
 ]
@@ -75,7 +75,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> assertPICMiss: pic [
 	 - The instruction pointer is at the trampoline
 	 - The class register value contains the pic
 	 - the receiver register value contains the receiver"	
-	self assert: machineSimulator instructionPointerValue equals: cogit ceCPICMissTrampoline.
+	self assert: machineSimulator instructionPointerRegisterValue equals: cogit ceCPICMissTrampoline.
 	self assert: machineSimulator classRegisterValue equals: pic address.
 	self assert: machineSimulator receiverRegisterValue equals: receiver
 ]

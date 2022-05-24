@@ -10,20 +10,10 @@ UnicornX64Simulator >> arg0Register [
 	^ UcX86Registers rdi
 ]
 
-{ #category : #'as yet unclassified' }
-UnicornX64Simulator >> argument0RegisterValue [
+{ #category : #registers }
+UnicornX64Simulator >> arg1Register [
 	
-	"System V value.
-	
-	This does not (yet) handle Win64 ABI which uses RCX"
-	
-	^ self rdi
-]
-
-{ #category : #accessing }
-UnicornX64Simulator >> argument0RegisterValue: anInteger [ 
-
-	self writeRegister: UcX86Registers rdi value: anInteger
+	^ UcX86Registers rsi
 ]
 
 { #category : #accessing }
@@ -41,13 +31,7 @@ UnicornX64Simulator >> baseRegister [
 { #category : #'as yet unclassified' }
 UnicornX64Simulator >> cResultRegister [
 	
-	^ self rax
-]
-
-{ #category : #'as yet unclassified' }
-UnicornX64Simulator >> cReturnRegisterValue: anInteger [ 
-	
-	self rax: anInteger
+	^ UcX86Registers rax
 ]
 
 { #category : #registers }
@@ -96,10 +80,22 @@ UnicornX64Simulator >> disassembler [
 	^ LLVMDisassembler amd64
 ]
 
-{ #category : #'as yet unclassified' }
-UnicornX64Simulator >> doublePrecisionFloatingPointRegister0Value [
+{ #category : #registers }
+UnicornX64Simulator >> doublePrecisionFloatingPointRegister0 [
 
-	^ self readFloat64Register: UcX86Registers xmm0
+	^ UcX86Registers xmm0
+]
+
+{ #category : #registers }
+UnicornX64Simulator >> doublePrecisionFloatingPointRegister1 [
+
+	^ UcX86Registers xmm1
+]
+
+{ #category : #registers }
+UnicornX64Simulator >> doublePrecisionFloatingPointRegister2 [
+
+	^ UcX86Registers xmm2
 ]
 
 { #category : #'as yet unclassified' }
@@ -112,12 +108,6 @@ UnicornX64Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstruction 
 	^ registerName
 ]
 
-{ #category : #'phisical-registers' }
-UnicornX64Simulator >> fp [
-
-	^ self rbp
-]
-
 { #category : #'virtual-registers' }
 UnicornX64Simulator >> framePointerRegister [
 	
@@ -128,6 +118,12 @@ UnicornX64Simulator >> framePointerRegister [
 UnicornX64Simulator >> getReturnAddress [
 	
 	^ self peekAddress 
+]
+
+{ #category : #testing }
+UnicornX64Simulator >> hasLinkRegister [
+
+	^ false
 ]
 
 { #category : #initialization }
@@ -151,11 +147,6 @@ UnicornX64Simulator >> instructionPointerRegister [
 UnicornX64Simulator >> integerRegisterState [
 	
 	^ #()
-]
-
-{ #category : #'as yet unclassified' }
-UnicornX64Simulator >> pc [
-	^ self rip
 ]
 
 { #category : #'as yet unclassified' }
@@ -453,6 +444,13 @@ UnicornX64Simulator >> simulateJumpCallOf: address memory: aMemory [
 ]
 
 { #category : #'as yet unclassified' }
+UnicornX64Simulator >> simulateLeafCallOf: address nextpc: nextpc memory: aMemory [
+
+	self pushWord: nextpc.
+	self rip: address
+]
+
+{ #category : #'as yet unclassified' }
 UnicornX64Simulator >> simulateReturnIn: aMemory [
 
 	self rbp: (self popWord).
@@ -483,12 +481,6 @@ UnicornX64Simulator >> smashRegisterAccessors [
 	^#(rax: rbx: rcx: rdx: rsi: rdi: r8: r9: r10: r11: r12: r13: r14: r15:)
 ]
 
-{ #category : #'phisical-registers' }
-UnicornX64Simulator >> sp [
-
-	^ self rsp
-]
-
 { #category : #'virtual-registers' }
 UnicornX64Simulator >> stackPointerRegister [
 
@@ -500,12 +492,6 @@ UnicornX64Simulator >> temporaryRegister [
 	
 	"Both in System V and Windows"
 	^ UcX86Registers rax
-]
-
-{ #category : #accessing }
-UnicornX64Simulator >> temporaryRegisterValue [
-
-	^ self rax
 ]
 
 { #category : #accessing }

@@ -287,8 +287,10 @@ InterpreterPrimitives >> initPrimCall [
 
 { #category : #initialization }
 InterpreterPrimitives >> initialize [
+
 	"Here we can initialize the variables C initializes to zero.  #initialize methods do /not/ get translated."
-	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := inFFIFlags := ffiExceptionResponse := 0.
+
+	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := ffiExceptionResponse := 0.
 	newFinalization := false
 ]
 
@@ -2357,7 +2359,7 @@ InterpreterPrimitives >> primitiveInstVarAt [
 	index := objectMemory integerValueOf: index.
 	hdr := self baseHeader: rcvr.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := self lengthOf: rcvr baseHeader: hdr format: fmt.
+	totalLength := self lengthOf: rcvr format: fmt.
 	fixedFields := self fixedFieldsOf: rcvr format: fmt length: totalLength.
 	(index >= 1 and: [index <= fixedFields]) ifFalse:
 		[^self primitiveFailFor: PrimErrBadIndex].
@@ -2382,7 +2384,7 @@ InterpreterPrimitives >> primitiveInstVarAtPut [
 	index := objectMemory integerValueOf: index.
 	hdr := objectMemory baseHeader: rcvr.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: rcvr baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: rcvr format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: rcvr format: fmt length: totalLength.
 	(index >= 1 and: [index <= fixedFields]) ifFalse:
 		[^self primitiveFailFor: PrimErrBadIndex].
@@ -3486,7 +3488,6 @@ InterpreterPrimitives >> primitiveSize [
 	
 	totalLength := objectMemory
 		               lengthOf: rcvr
-		               baseHeader: hdr
 		               format: fmt.
 	fixedFields := objectMemory
 		               fixedFieldsOf: rcvr
