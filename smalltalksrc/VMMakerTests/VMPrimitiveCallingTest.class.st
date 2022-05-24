@@ -5,6 +5,12 @@ Class {
 }
 
 { #category : #tests }
+VMPrimitiveCallingTest >> initializationOptions [ 
+
+	^ super initializationOptions , { #MULTIPLEBYTECODESETS. true. }
+]
+
+{ #category : #tests }
 VMPrimitiveCallingTest >> testPrimitiveFailingDoesNotSetErrorCodeInOtherTemp [
 
 	"The method has two temporaries. The first one is the error code, the second one is a user defined temp."
