@@ -560,9 +560,6 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	aCCodeGenerator
 		var: #methodCache
 		declareC: 'sqIntptr_t methodCache[MethodCacheSize + 1 /* ', (MethodCacheSize + 1) printString, ' */]'.
-	aCCodeGenerator
-		removeVariable: 'localAbsentReceiver';
-		removeVariable: 'localAbsentReceiverOrZero'.
 	AtCacheTotalSize isInteger ifTrue:
 		[aCCodeGenerator
 			var: #atCache
