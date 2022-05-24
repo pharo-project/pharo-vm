@@ -27,6 +27,29 @@ VMPrimitiveCallingTest >> testPrimitiveFailingDoesNotSetErrorCodeInOtherTemp [
 ]
 
 { #category : #tests }
+VMPrimitiveCallingTest >> testPrimitiveFailingDoesNotSkipSecondBytecodeIfNotLongStore [
+
+	"The method has two temporaries. The first one is the error code, the second one is a user defined temp."
+	| method |
+	method := methodBuilder newMethod
+		bytecodes:
+			#[ "call primitive" 		16rF8 16rB8 16r00
+				"not store into temp 0" 	16rF4 ];
+		numberOfTemporaries: 2;
+		isPrimitive: true;
+		buildMethod.
+	
+	stackBuilder addNewFrame; buildStack.
+	interpreter newMethod: method.
+	interpreter primFailCode: -1.
+
+	interpreter activateNewMethod.
+	
+	interpreter internalizeIPandSP.
+	self assert: interpreter fetchByte equals: 16rF4
+]
+
+{ #category : #tests }
 VMPrimitiveCallingTest >> testPrimitiveFailingSetsErrorCodeInCorrectTemp [
 
 	"The method has two temporaries. The first one is the error code, the second one is a user defined temp."
