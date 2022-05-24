@@ -5,7 +5,7 @@ RBBlockNode >> asTranslatorNodeIn: aTMethod [
 	
 	body := body asTranslatorNodeIn: aTMethod.
 	body statements ifEmpty: [ 
-		body statements add: (TVariableNode new setName: 'nil').
+		body statements add: (TConstantNode value: nil).
 	].
 	^ body
 ]

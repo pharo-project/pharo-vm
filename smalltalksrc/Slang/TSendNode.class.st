@@ -63,7 +63,8 @@ TSendNode >> arguments [
 
 { #category : #private }
 TSendNode >> arguments: aSequence [
-	arguments := aSequence
+	arguments := aSequence.
+	arguments do: [ :e | e parent: self ].
 ]
 
 { #category : #'inlining support' }
@@ -310,6 +311,12 @@ TSendNode >> copyWithoutReturn [
 		yourself
 ]
 
+{ #category : #displaying }
+TSendNode >> displayString [
+
+	^ selector printString
+]
+
 { #category : #testing }
 TSendNode >> endsWithReturn [
 	^self isReturningIf
@@ -406,16 +413,6 @@ TSendNode >> isValueExpansion [
 	"Answer if the receiver is of the form literalBlock value[: arg]"
 	^receiver isStatementList
 	 and: [selector keywords allSatisfy: [:k| #('value' 'value:') includes: k]]
-]
-
-{ #category : #linearization }
-TSendNode >> linearizeIn: aCodeGenerator [
-
-	"Do not linearize assert calls, otherwise this may change the semantics"
-	(aCodeGenerator isAssertSelector: selector)
-		ifTrue: [ ^ self ].
-	
-	^ super linearizeIn: aCodeGenerator
 ]
 
 { #category : #accessing }
@@ -517,12 +514,26 @@ TSendNode >> receiver [
 TSendNode >> receiver: aNode [
 
 	receiver := aNode.
+	aNode parent: self
 ]
 
 { #category : #transformations }
 TSendNode >> removeAssertions [
 	receiver removeAssertions.
 	arguments do: [:arg | arg removeAssertions].
+]
+
+{ #category : #transformations }
+TSendNode >> replaceChild: aNode with: aReplacementNode [
+
+	receiver == aNode ifTrue: [
+		self receiver: aReplacementNode.
+		^ self
+	].
+	self arguments: (arguments collect: [ :e |
+		e == aNode
+			ifTrue: [ aReplacementNode ]
+			ifFalse: [ e ] ])
 ]
 
 { #category : #transformations }

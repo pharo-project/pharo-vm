@@ -64,6 +64,13 @@ TStatementListNode >> accept: aVisitor [
 	^ aVisitor visitStatementListNode: self
 ]
 
+{ #category : #declarations }
+TStatementListNode >> addDeclarations: aCollection [ 
+	
+	declarations addAll: aCollection.
+	locals addAll: aCollection keys.
+]
+
 { #category : #utilities }
 TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned assignments: assigned in: aCodeGen [
 
@@ -213,8 +220,14 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 		  declarationAt: var
 		  ifAbsent: [ aBuilder defaultType, ' ' , var ].
 
-		methodIsVolatile ifTrue: [ declaration := 'volatile ' , declaration ].
-		cDeclarations add: (CRawCodeNode code: declaration)
+		self flag: #TODO.
+		"Avoid implicit variables.
+		Before this was not generating unused variables at generation time, by
+		  - tracking used variables during code generation
+		  - generating variables after code"
+		(declaration beginsWith: 'implicit') ifFalse: [
+			methodIsVolatile ifTrue: [ declaration := 'volatile ' , declaration ].
+			cDeclarations add: (CRawCodeNode code: declaration)]
 	].		
 
 	^ CCompoundStatementNode declarations: cDeclarations statements: collect
@@ -233,13 +246,16 @@ TStatementListNode >> asReturnNode [
 { #category : #transformations }
 TStatementListNode >> assignLastExpressionTo: variableNode [
 	"Destructively transform the receiver so that its last expression is assigned to the argument."
-	| index |
+	| index lastExpression replacement |
 	index := statements findLast: [:expr| (expr isGoTo or: [expr isLabel]) not].
+	
+	"Recursively deal with complex nodes"
+	lastExpression := statements at: index.
+	replacement := lastExpression assignLastExpressionTo: variableNode.
 	statements
 		at: index
-		put: (TAssignmentNode new
-				setVariable: variableNode
-				expression: (statements at: index))
+		put: replacement.
+	replacement parent: self.
 ]
 
 { #category : #transformations }
@@ -313,6 +329,13 @@ TStatementListNode >> declarations [
 TStatementListNode >> declarations: anObject [
 
 	declarations := anObject
+]
+
+{ #category : #displaying }
+TStatementListNode >> displayString [
+
+	"Nothing..."
+	^ ''
 ]
 
 { #category : #testing }
@@ -582,7 +605,6 @@ TStatementListNode >> statements [
 TStatementListNode >> statements: anObject [
 
 	| oldStatements |
-	oldStatements := statements.
 	statements := anObject asOrderedCollection.
 	statements do: [ :e | e parent: self ]
 ]

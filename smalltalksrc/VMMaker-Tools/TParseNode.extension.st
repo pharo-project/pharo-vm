@@ -13,7 +13,7 @@ TParseNode >> inspectionTree [
 					stream
 						nextPutAll: each class name;
 						nextPut: $(;
-						nextPutAll: ((each asString truncateTo: 50) copyReplaceAll: String cr with: String space);
+						nextPutAll: each displayString;
 						nextPut: $)
 			 ] ];
 		expandAll;

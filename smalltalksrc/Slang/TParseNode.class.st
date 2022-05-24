@@ -87,11 +87,34 @@ TParseNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 	^ self asCASTExpressionIn: aBuilder
 ]
 
+{ #category : #linearisation }
+TParseNode >> asExpressionIn: aMLStatementListBuider [ 
+	
+	"A TNode returns itself as an expression"
+	^ self
+]
+
 { #category : #transformations }
 TParseNode >> asReturnNode [
 	^TReturnNode new 
 		setExpression: self;
 		yourself
+]
+
+{ #category : #linearisation }
+TParseNode >> asStatementIn: aMLStatementListBuider [ 
+
+	"A TNode returns itself as a statement"
+	^ self
+]
+
+{ #category : #transformations }
+TParseNode >> assignLastExpressionTo: aTVariableNode [ 
+	
+	"An expression just assigns itself"
+	 ^ TAssignmentNode new
+			setVariable: aTVariableNode
+			expression: self
 ]
 
 { #category : #transformations }
@@ -323,73 +346,6 @@ TParseNode >> isTParseNode [
 TParseNode >> isVariable [
 
 	^false
-]
-
-{ #category : #linearization }
-TParseNode >> linearizeIn: aCodeGenerator [
-
-	"Remove a linearized version of myself where calls become statements
-	and nested calls are assigned to variables.
-	I stop on receiver/arguments that are blocks.
-	Remove unused variables locally.
-	
-	Precondition: I am a statement.
-	
-	For example, I transform statements of the form:
-	
-	> self foo: self nonInlinedMethodUsingAutolocalizedVariable
-	
-	into
-	
-	> t0 := self nonInlinedMethodUsingAutolocalizedVariable
-	> t1 := self foo: t0
-	
-	Such localization happens on a per-block basis:
-	
-	> someExpression ifTrue: [
-	>		self foo: self nonInlinedMethodUsingAutolocalizedVariable
-	> ]
-
-	into
-	
-	> someExpression ifTrue: [
-	> 	| t0 t1 |
-	> 	t0 := self nonInlinedMethodUsingAutolocalizedVariable.
-	> 	t1 := self foo: t0
-	> ]
-	"
-	| replacementDictionary rewrittenStatement callsInStatement replacementBlock replacementsSoFar declarations |
-	replacementDictionary := Dictionary new.
-	
-	callsInStatement := OrderedCollection new.
-	self
-		nodesDo: [ :node |
-			(node isAssignment or: [ 
-				(aCodeGenerator isFunctionCall: node) or: [
-					aCodeGenerator isDynamicCall: node ]])
-						ifTrue: [ callsInStatement add: node ] ]
-		unless: [ :unlessNode | unlessNode isStatementList ].
-	
-	replacementBlock := OrderedCollection new.
-	declarations := Dictionary new.
-	replacementsSoFar := Dictionary new.
-
-	"Apply linearization to all nodes except itself"
-	callsInStatement
-		select: [ :e | e ~= self ]
-		thenDo: [ :e | 
-			| variableNode valueNode |
-			variableNode := TVariableNode named: 't' , replacementBlock size asString.
-			valueNode := TAssignmentNode
-					 variable: variableNode
-					 expression: (e replaceNodesIn: replacementsSoFar).
-			declarations at: variableNode name put: (aCodeGenerator typeFor: valueNode in: aCodeGenerator currentMethod) , ' ', variableNode name.
-			replacementBlock add: valueNode.
-			replacementsSoFar at: e put: variableNode ].
-	rewrittenStatement := self replaceNodesIn: replacementsSoFar.
-	replacementBlock add: rewrittenStatement.
-
-	^ TStatementListNode declarations: declarations statements: replacementBlock 
 ]
 
 { #category : #accessing }

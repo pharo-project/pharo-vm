@@ -129,21 +129,14 @@ SLAutomaticLocalization >> linearizeExternalCallsIn: aTMethod withVariableBindin
 	"Should be applied after inlining.
 	Linearize all calls inside this method"
 
-	| replacementDictionary statementListsToLinearize |
-	replacementDictionary := Dictionary new.
+	| lineariser linearStatementList |
+	lineariser := SLLinearisationVisitor new
+		codeGenerator: codeGenerator;
+		localizedVariables: replacementDict keys;
+		yourself.
 
-	statementListsToLinearize := aTMethod parseTree select: [ :e | e isStatementList ].
-	statementListsToLinearize do: [ :statementList | 
-		statementList statements do: [ :statement | 
-			| replacement previousParent |
-			(self
-				 shouldLinearizeStatement: statement
-				 withVariableBindings: replacementDict keys) ifTrue: [ 
-					previousParent := statement parent.
-					replacement := statement linearizeIn: codeGenerator.
-
-					"Do not ask the child to replace itself, as it may have been already moved"
-					previousParent replaceChild: statement with: replacement ] ] ]
+	linearStatementList := aTMethod parseTree accept: lineariser.
+	aTMethod parseTree: linearStatementList
 ]
 
 { #category : #applying }
@@ -157,13 +150,6 @@ SLAutomaticLocalization >> localizableVariablesInStatement: statement withVariab
 		             localizableCandidateVariables: localizedVariables
 		             callgraphVariableCollector: callgraphVariableCollector.
 	^ (statement accept: collector) localizableVariables
-]
-
-{ #category : #applying }
-SLAutomaticLocalization >> shouldLinearizeStatement: statement withVariableBindings: localizedVariables [
-
-	"Optimization: only externalize/localize variables used by the statement's called functions"
-	^ (self localizableVariablesInStatement: statement withVariableBindings: localizedVariables) notEmpty
 ]
 
 { #category : #applying }

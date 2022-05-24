@@ -493,7 +493,7 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 				[self callRegisterArgCogMethod: cogMethod at: cogit noCheckEntryOffset receiver: rcvr]].
 		 self push: cogMethod asInteger + cogit noCheckEntryOffset.
 		 self push: rcvr.
-		 cogit ceCallCogCodePopReceiverReg.
+		 self callEnilopmart: #ceCallCogCodePopReceiverReg.
 		 self error: 'should not be reached'].
 	self push: framePointer.
 	framePointer := stackPointer.
@@ -515,7 +515,7 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 		[self assert: cogMethod stackCheckOffset > cogit noCheckEntryOffset.
 		 self push: cogMethod asInteger + cogMethod stackCheckOffset.
 		 self push: rcvr.
-		 cogit ceEnterCogCodePopReceiverReg.
+		 self callEnilopmart: #ceEnterCogCodePopReceiverReg.
 		 self error: 'should not be reached'].
 	instructionPointer := cogMethod asInteger + cogMethod stackCheckOffset.
 	switched := self handleStackOverflowOrEventAllowContextSwitch: (self canContextSwitchIfActivating: newMethod header: methodHeader).
@@ -927,7 +927,7 @@ CoInterpreter >> attemptToSwitchToMachineCode: bcpc [
 		 self assertValidMachineCodeFrame: pc.
 		 self push: pc.
 		 self push: objectMemory nilObject.
-		 cogit ceEnterCogCodePopReceiverReg]
+		 self callEnilopmart: #ceEnterCogCodePopReceiverReg]
 ]
 
 { #category : #'return bytecodes' }
@@ -1064,6 +1064,18 @@ CoInterpreter >> bytecodePrimAtPut [
 	self normalSend
 ]
 
+{ #category : #enilopmarts }
+CoInterpreter >> callEnilopmart: anElinopmart [
+
+	<inline: true>
+
+	"Since the called method lives outside of the interpreter, use a perform to convey it.
+	This is a limitation of Slang that does not distinguish between: 
+	 - methods outside the interpreter (but within the VM)
+	 - built in methods with special translations"
+	^ cogit perform: anElinopmart
+]
+
 { #category : #'cog jit support' }
 CoInterpreter >> callForCogCompiledCodeCompaction [
 	<api>
@@ -1092,20 +1104,20 @@ CoInterpreter >> callRegisterArgCogMethod: cogMethod at: entryOffset receiver: r
 		 self stackValue: 1 put: (self stackValue: 3). "first arg"
 		 self stackValue: 2 put: rcvr.
 		 self stackValue: 3 put: cogMethod asInteger + entryOffset.
-		 cogit ceCallCogCodePopReceiverArg1Arg0Regs
+		 self callEnilopmart: #ceCallCogCodePopReceiverArg1Arg0Regs
 		"NOTREACHED"].
 	cogMethod cmNumArgs = 1 ifTrue:
 		[self stackValue: 2 put: self stackTop. "retpc"
 		 self push: (self stackValue: 1). "arg"
 		 self stackValue: 1 put: rcvr.
 		 self stackValue: 2 put: cogMethod asInteger + entryOffset.
-		 cogit ceCallCogCodePopReceiverArg0Regs
+		 self callEnilopmart: #ceCallCogCodePopReceiverArg0Regs
 		"NOTREACHED"].
 	self assert: cogMethod cmNumArgs = 0.
 	self stackValue: 1 put: self stackTop. "retpc"
 	self stackValue: 0 put: cogMethod asInteger + entryOffset.
 	self push: rcvr.
-	cogit ceCallCogCodePopReceiverReg
+	self callEnilopmart: #ceCallCogCodePopReceiverReg
 	"NOTREACHED"
 ]
 
@@ -1220,7 +1232,7 @@ CoInterpreter >> ceActivateFailingPrimitiveMethod: aPrimitiveMethod [
 			[result := self stackTop.
 			 self stackTopPut: instructionPointer.
 			 self push: result.
-			 cogit ceEnterCogCodePopReceiverReg]].
+			 self callEnilopmart: #ceEnterCogCodePopReceiverReg]].
 	methodHeader := self rawHeaderOf: aPrimitiveMethod.
 	(self isCogMethodReference: methodHeader)
 		ifTrue: [self activateCoggedNewMethod: false]
@@ -1300,7 +1312,7 @@ CoInterpreter >> ceBaseFrameReturn: returnValue [
 	self assert: (stackPages stackPageFor: framePointer) = stackPage.
 	(self isMachineCodeFrame: framePointer) ifTrue:
 		[self push: returnValue.
-		 cogit ceEnterCogCodePopReceiverReg.
+		 self callEnilopmart: #ceEnterCogCodePopReceiverReg.
 		 "NOTREACHED"].
 	instructionPointer := self stackTop.
 	instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
@@ -2887,7 +2899,7 @@ CoInterpreter >> executeCogMethod: cogMethod fromLinkedSendWithReceiver: rcvr [
 	self
 		push: cogMethod asInteger + cogit entryOffset;
 		push: rcvr.
-	cogit ceCallCogCodePopReceiverReg
+	self callEnilopmart: #ceCallCogCodePopReceiverReg
 	"NOTREACHED"
 ]
 
@@ -2911,7 +2923,7 @@ CoInterpreter >> executeCogMethod: cogMethod fromUnlinkedSendWithReceiver: rcvr 
 	self
 		push: cogMethod asInteger + cogit noCheckEntryOffset;
 		push: rcvr.
-	cogit ceCallCogCodePopReceiverReg
+	self callEnilopmart: #ceCallCogCodePopReceiverReg
 	"NOTREACHED"
 ]
 
@@ -2935,16 +2947,16 @@ CoInterpreter >> executeCogPIC: cogPIC fromLinkedSendWithReceiver: rcvr andCache
 		[cogPIC cmNumArgs <= cogit numRegArgs ifTrue:
 			[self push: cacheTag.
 			 cogPIC cmNumArgs caseOf: {
-				[0]	->	[cogit ceCall0ArgsPIC].
-				[1]	->	[cogit ceCall1ArgsPIC].
-				[2]	->	[cogit ceCall2ArgsPIC]
+				[0]	->	[self callEnilopmart: #ceCall0ArgsPIC].
+				[1]	->	[self callEnilopmart: #ceCall1ArgsPIC].
+				[2]	->	[self callEnilopmart: #ceCall2ArgsPIC]
 			 	}
 				otherwise: [].
 			 self error: 'not reached']].
 	self
 		push: rcvr;
 		push: cacheTag.
-	cogit ceCallCogCodePopReceiverAndClassRegs
+	self callEnilopmart: #ceCallCogCodePopReceiverAndClassRegs
 	"NOTREACHED"
 ]
 
@@ -2966,7 +2978,7 @@ CoInterpreter >> executeFullCogBlock: cogMethod closure: closure mayContextSwitc
 				ifTrue: [cogit fullBlockEntryOffset]
 				ifFalse: [cogit fullBlockNoContextSwitchEntryOffset]).
 	self push: closure.
-	cogit ceCallCogCodePopReceiverReg
+	self callEnilopmart: #ceCallCogCodePopReceiverReg
 	"NOTREACHED"
 ]
 
@@ -6151,7 +6163,7 @@ CoInterpreter >> return: returnValue toExecutive: inInterpreter [
 		[self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: false line: #'__LINE__'.
 		 self push: instructionPointer.
 		 self push: returnValue.
-		 cogit ceEnterCogCodePopReceiverReg
+		 self callEnilopmart: #ceEnterCogCodePopReceiverReg
 		 "NOTREACHED"].
 	self push: returnValue.
 	self setMethod: (self iframeMethod: framePointer).
@@ -6200,7 +6212,7 @@ CoInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedCon
 			ifFalse: [retValue := self mframeReceiver: framePointer].
 		 self push: instructionPointer.
 		 self push: retValue.
-		 cogit ceEnterCogCodePopReceiverReg
+		 self callEnilopmart: #ceEnterCogCodePopReceiverReg
 		 "NOTREACHED"].
 	self setMethod: (self iframeMethod: framePointer).
 	fullyInInterpreter := inInterpreter.
@@ -6235,7 +6247,7 @@ CoInterpreter >> returnToMachineCodeFrame [
 	self externalizeFPandSP.
 	self cCode: '' inSmalltalk: [ 
 		self maybeCheckStackDepth: 1 sp: stackPointer pc: instructionPointer ].
-	cogit ceEnterCogCodePopReceiverReg
+	self callEnilopmart: #ceEnterCogCodePopReceiverReg
 	"NOTREACHED"
 ]
 

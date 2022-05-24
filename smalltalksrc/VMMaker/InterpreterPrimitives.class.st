@@ -293,14 +293,6 @@ InterpreterPrimitives >> initialize [
 	newFinalization := false
 ]
 
-{ #category : #'process primitives' }
-InterpreterPrimitives >> ioClearProfile [
-	
-	<doNotGenerate>
-	"No simulation version for this yet"
-	self notYetImplemented
-]
-
 { #category : #'simulation support' }
 InterpreterPrimitives >> ioGetCurrentWorkingDirectory: aCStringHolder maxLength: maxLength [
 	<doNotGenerate>

@@ -2171,7 +2171,7 @@ SlangBasicTranslationTest >> testSendByteSwap32IfBigEndian [
 	| translation send |
 	send := TSendNode new
 		        setSelector: #byteSwapped32IfBigEndian:
-		        receiver: nil
+		        receiver: (TConstantNode value: nil)
 		        arguments: {TVariableNode new setName: 'a'}.
 	translation := self translate: send.
 
@@ -2197,7 +2197,7 @@ SlangBasicTranslationTest >> testSendByteSwap64IfBigEndian [
 	| translation send |
 	send := TSendNode new
 		        setSelector: #byteSwapped64IfBigEndian:
-		        receiver: nil
+		        receiver: (TConstantNode value: nil)
 		        arguments: {TVariableNode new setName: 'a'}.
 	translation := self translate: send.
 
@@ -2272,7 +2272,7 @@ SlangBasicTranslationTest >> testSendCCodeInSmalltalkWithNonConstant [
 		        receiver: (TVariableNode new setName: 'self')
 		        arguments: { 
 					(TVariableNode new setName: 'value').
-					'unused' }.
+					(TConstantNode value: nil) }.
 	translation := self translate: send.
 
 	self assert: translation equals: 'value'
@@ -2287,7 +2287,7 @@ SlangBasicTranslationTest >> testSendCCodeInSmalltalkWithString [
 		        receiver: (TVariableNode new setName: 'self')
 		        arguments: { 
 					TConstantNode value: 'some string'.
-					'unused' }.
+					(TConstantNode value: nil) }.
 	translation := self translate: send.
 
 	self assert: translation equals: 'some string'
@@ -5652,6 +5652,8 @@ SlangBasicTranslationTest >> testSendWhileTrueWithTemporaryDeclaration [
 	translation := self translate: send.
 
 	self assert: translation trimBoth equals: 'do{
+	int temp;
+
 	var -= 7;
 }while(var >= 21)'
 ]
@@ -6108,7 +6110,7 @@ SlangBasicTranslationTest >> testTranslateLiteralArrayAssignment [
 		receiver: (TVariableNode new setName: 'self')
 		arguments: { 
 			TConstantNode value: { 1 . 2 . 3 }.
-			'int *' }.
+			(TConstantNode value: 'int *') }.
 
 	translation := self translate: (TAssignmentNode new
 			setVariable: variable

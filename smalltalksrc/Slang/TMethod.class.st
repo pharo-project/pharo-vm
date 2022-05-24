@@ -40,6 +40,12 @@ TMethod class >> initialize [
 	CaseStatements addAll: #(dispatchOn:in: dispatchOn:in:with: dispatchOn:in:with:with:).
 ]
 
+{ #category : #visiting }
+TMethod >> accept: aVisitor [
+
+	^ aVisitor visitMethod: self
+]
+
 { #category : #adding }
 TMethod >> addCASTConditionalCompilationFor: cAST generator: aCodeGen [
 
@@ -66,35 +72,6 @@ TMethod >> addCASTConditionalCompilationFor: cAST generator: aCodeGen [
 				ifNotNil: [ :define | cppIf else: define ] ].
 		^ cppIf ].
 	^ cAST
-]
-
-{ #category : #accessing }
-TMethod >> addCASTLocalsIn: aCASTBlock generator: aCodeGen [
-
-	| volatileVariables maybeExternFunctions |
-	volatileVariables := properties includesKey: #volatile.
-	self refersToGlobalStruct ifTrue: [ 
-		aCASTBlock declarations add:
-			(CIdentifierNode name: (volatileVariables
-					  ifTrue: [ 'DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT' ]
-					  ifFalse: [ 'DECL_MAYBE_SQ_GLOBAL_STRUCT' ])) ].
-	maybeExternFunctions := (declarations select: [ :decl | 
-		                         decl beginsWith: 'extern' ]) keys.
-
-	(self allLocalLocals isEmpty and: [ maybeExternFunctions isEmpty ]) 
-		ifFalse: [ 
-			(aCodeGen sortStrings: self allLocalLocals , maybeExternFunctions) 
-				do: [ :var | 
-					| decl |
-					decl := self
-						        declarationAt: var
-						        ifAbsent: [ aCodeGen defaultType , ' ' , var ].
-					(volatileVariables or: [ 
-						 (decl beginsWith: 'static') or: [ 
-							 (decl beginsWith: 'extern') or: [ 
-								 self usedVariablesCache includes: var ] ] ]) ifTrue: [ 
-						volatileVariables ifTrue: [ decl := 'volatile ' , decl ].
-						aCASTBlock declarations add: (CRawCodeNode code: decl) ] ] ]
 ]
 
 { #category : #accessing }
@@ -443,6 +420,13 @@ TMethod >> asCASTInlinedIn: aBuilder [
 			yourself) ].
 
 	^ compoundStatement
+]
+
+{ #category : #linearisation }
+TMethod >> asExpressionIn: aMLStatementListBuider [ 
+	
+	"A TNode returns itself as an expression"
+	^ self
 ]
 
 { #category : #transformations }
@@ -2799,8 +2783,11 @@ TMethod >> setSelector: sel definingClass: class args: argList locals: localList
 	comment := aComment.
 	labels := Set new.
 	
-	"hack; allows nodes to find their parent, etc"
-	tempParseTree := parseTree := TStatementListNode new.
+	"hack; allows nodes to find their parent, compute the conflicting locals when inlinign super sends..."
+	self parseTree: TStatementListNode new.
+	tempParseTree := parseTree.
+	self locals: tempParseTree locals, (localList  collect: [:arg | arg name]).
+
 	self parseTree: (aBlockNode asTranslatorNodeIn: self).
 	self locals: tempParseTree locals, (localList  collect: [:arg | arg name]).
 	

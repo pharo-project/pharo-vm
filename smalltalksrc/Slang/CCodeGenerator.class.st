@@ -1003,7 +1003,7 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	assertionFlag ifFalse: [ self removeAssertions ].
 
 	self doInlining: inlineFlag.
-	
+
 	SLAutomaticLocalization new
 		codeGenerator: self;
 		applyMethodNamed: #interpret.
@@ -1703,8 +1703,9 @@ CCodeGenerator >> generateCASTDivide: tast [
 CCodeGenerator >> generateCASTDoWhile: boolean loop: tast [
 
 	| block  cond|
-	block := (TStatementListNode statements:
-		          tast receiver statements allButLast) asCASTIn: self.
+	block := TStatementListNode statements: tast receiver statements allButLast.
+	block addDeclarations: tast receiver declarations.
+	block := block asCASTIn: self.
 	cond := (tast receiver statements last asCASTExpressionIn: self).
 	^ CDoStatementNode
 		  while: (boolean ifTrue: [ cond ] ifFalse: [ CUnaryOperatorNode operator: #! expression: cond ])
@@ -2901,7 +2902,10 @@ CCodeGenerator >> generateCASTWhileForeverBreakIf: boolean loop: tast [
 	| block if cond |
 	cond := (tast receiver statements last asCASTExpressionIn: self).
 	if := CIfStatementNode if: (boolean ifTrue: [ cond ] ifFalse: [ CUnaryOperatorNode operator: #! expression: cond ]) then: (CBreakStatementNode new).
-	block := (TStatementListNode statements: tast receiver statements allButLast) asCASTIn: self.
+	block := TStatementListNode statements: tast receiver statements allButLast.
+	block addDeclarations: tast receiver declarations.
+	block addDeclarations:  tast arguments first declarations.
+	block := block asCASTIn: self.
 	block add: if.
 	block addAll: (tast arguments first asCASTIn: self).
 
@@ -3394,6 +3398,13 @@ CCodeGenerator >> isConstantNode: aNode valueInto: aBlock [
 							  isConstantNode: m statements last expression
 							  valueInto: aBlock ] ] ].
 	^ false
+]
+
+{ #category : #testing }
+CCodeGenerator >> isControlFlowNode: aNode [
+	
+	^ aNode isSend and: [ 
+		#(ifTrue: ifTrue:ifFalse: ifFalse: ifFalse:ifTrue: and: or:) includes: aNode selector ]
 ]
 
 { #category : #utilities }

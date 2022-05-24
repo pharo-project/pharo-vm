@@ -114,8 +114,8 @@ TCaseStmtNode >> asCASTIn: aBuilder addToEndOfCases: aNodeToPrepend [
 { #category : #transformations }
 TCaseStmtNode >> bindVariableUsesIn: aDictionary [
 
-	expression := expression bindVariableUsesIn: aDictionary.
-	cases := cases collect: [ :c | c bindVariableUsesIn: aDictionary ].
+	self expression: (expression bindVariableUsesIn: aDictionary).
+	self cases: (cases collect: [ :c | c bindVariableUsesIn: aDictionary ]).
 ]
 
 { #category : #transformations }
@@ -135,22 +135,29 @@ TCaseStmtNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold
 { #category : #transformations }
 TCaseStmtNode >> bindVariablesIn: aDictionary [
 
-	expression := expression bindVariablesIn: aDictionary.
-	cases := cases collect: [ :c | c bindVariablesIn: aDictionary ].
+	self expression: (expression bindVariablesIn: aDictionary).
+	self cases: (cases collect: [ :c | c bindVariablesIn: aDictionary ]).
 ]
 
 { #category : #transformations }
 TCaseStmtNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
-	expression := expression bindVariablesIn: aDictionary unless: cautionaryBlock.
-	cases := cases collect: [ :c | c bindVariablesIn: aDictionary unless: cautionaryBlock ].
+	self expression: (expression bindVariablesIn: aDictionary unless: cautionaryBlock).
+	self cases: (cases collect: [ :c | c bindVariablesIn: aDictionary unless: cautionaryBlock ]).
 ]
 
-{ #category : #accessing }
+{ #category : #comparing }
 TCaseStmtNode >> cases [
 
-	^cases
+	^ cases
+]
+
+{ #category : #comparing }
+TCaseStmtNode >> cases: aListOfCases [
+
+	cases := aListOfCases.
+	cases do: [ :e | e parent: self ]
 ]
 
 { #category : #accessing }
@@ -205,13 +212,20 @@ TCaseStmtNode >> customizeShortCasesForDispatchVar: varName in: codeGen method: 
 			 newCases addLast: case]].
 	firsts := newFirsts asArray.
 	lasts := newLasts asArray.
-	cases := newCases asArray
+	self cases: newCases asArray
 ]
 
 { #category : #accessing }
 TCaseStmtNode >> expression [
 
-	^expression
+	^ expression
+]
+
+{ #category : #accessing }
+TCaseStmtNode >> expression: anExpression [
+
+	expression := anExpression.
+	anExpression parent: self
 ]
 
 { #category : #private }
@@ -287,10 +301,10 @@ TCaseStmtNode >> nodesDo: aBlock unless: cautionaryBlock [
 { #category : #copying }
 TCaseStmtNode >> postCopy [
 
-	expression := expression copy.
+	self expression: expression copy.
 	firsts := firsts copy.
 	lasts := lasts copy.
-	cases := (cases collect: [ :case | case copy ])
+	self cases: (cases collect: [ :case | case copy ])
 ]
 
 { #category : #printing }
@@ -387,15 +401,15 @@ TCaseStmtNode >> removeAssertions [
 TCaseStmtNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
-		expression := expression replaceNodesIn: aDictionary.
-		cases := cases collect: [ :c | c replaceNodesIn: aDictionary ].
+		self expression: (expression replaceNodesIn: aDictionary).
+		self cases: (cases collect: [ :c | c replaceNodesIn: aDictionary ]).
 		self]
 ]
 
 { #category : #private }
 TCaseStmtNode >> setExpression: newExpression cases: newCases [
-	expression := newExpression.
-	cases := newCases
+	self expression: newExpression.
+	self cases: newCases
 ]
 
 { #category : #accessing }
@@ -403,12 +417,12 @@ TCaseStmtNode >> setExpression: aNode selectors: selectorList arguments: anArray
 	"Initialize the node from the given set of selectors."
 	"Note: Each case is a statement list with containing one statement, a send to self of a selector from the given selector list. Having statement list nodes makes inlining easier later."
 
-	| selfNode stmt lastSel firstInRun sel |
-	expression := aNode.
+	| selfNode stmt lastSel firstInRun sel case |
+	self expression: aNode.
 	selfNode := TVariableNode new setName: 'self'.
 	firsts := OrderedCollection new: 400.
 	lasts := OrderedCollection new: 400.
-	cases := OrderedCollection new: 400.
+	self cases: (OrderedCollection new: 400).
 	lastSel := selectorList first.
 	firstInRun := 0.
 	1 to: selectorList size do: [ :i |
@@ -417,13 +431,18 @@ TCaseStmtNode >> setExpression: aNode selectors: selectorList arguments: anArray
 			firsts add: firstInRun.
 			lasts add: i - 2.
 			stmt := TSendNode new setSelector: lastSel receiver: selfNode arguments: anArray.
-			cases add: (TStatementListNode new setArguments: #() statements: (Array with: stmt)).
+			
+			case := cases add: (TStatementListNode new setArguments: #() statements: (Array with: stmt)).
+			case parent: self.
+			
 			lastSel := sel.
 			firstInRun := i - 1.
 		].
 	].
 	firsts add: firstInRun.
 	lasts add: selectorList size - 1.
+	
 	stmt := TSendNode new setSelector: lastSel receiver: selfNode arguments: anArray.
-	cases add: (TStatementListNode new setArguments: #() statements: (Array with: stmt)).
+	case := cases add: (TStatementListNode new setArguments: #() statements: (Array with: stmt)).
+	case parent: self.
 ]

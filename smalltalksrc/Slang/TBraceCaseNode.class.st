@@ -55,16 +55,11 @@ TBraceCaseNode >> caseLabels [
 
 { #category : #accessing }
 TBraceCaseNode >> caseLabels: anObject [
+
 	"Set the value of caseLabels"
 
-	| oldLabels |
-	oldLabels := caseLabels.
 	caseLabels := anObject.
-	caseLabels do: [ :e | e parent: self ].
-	
-	oldLabels ifNil: [ ^ self ].
-	(oldLabels difference: caseLabels)
-		do: [ :e | e parent: nil ]
+	caseLabels do: [ :e | e parent: self ]
 ]
 
 { #category : #accessing }
@@ -78,14 +73,8 @@ TBraceCaseNode >> cases [
 TBraceCaseNode >> cases: anObject [
 	"Set the value of cases"
 
-	oldCases := cases.
-	cases := anObject.
-	
-	cases do: [ :e | e parent: self ].
-	
-	oldCases ifNil: [ ^ self ].
-	(oldCases difference: cases)
-		do: [ :e | e parent: nil ].
+	cases := anObject.	
+	cases do: [ :e | e parent: self ]
 ]
 
 { #category : #enumerating }

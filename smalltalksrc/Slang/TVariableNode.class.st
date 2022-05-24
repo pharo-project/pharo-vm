@@ -65,6 +65,12 @@ TVariableNode >> children [
 	^ #()
 ]
 
+{ #category : #displaying }
+TVariableNode >> displayString [
+
+	^ name asString
+]
+
 { #category : #testing }
 TVariableNode >> hasSideEffect [
 	"Answer if the parse tree rooted at this node has a side-effect or not."

@@ -177,10 +177,25 @@ MockLocalizationInterpreterMock >> bytecodeUsingAutoLocalizedVariable [
 ]
 
 { #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingComplexAssert [
+
+	self assert: (self foo or: [ self bar and: [ self fum ] ])
+]
+
+{ #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariable [
 
 	autoLocalizedVariable := 17.
 	self nonInlinedMethodUsingAutolocalizedVariable
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsAssignmentWithAnd [
+
+	| var |
+	var := self nonInlinedMethodUsingAutolocalizedVariable and: [ 
+		 self nonInlinedMethodUsingAutolocalizedVariable ].
+	var ifTrue: [  ]
 ]
 
 { #category : #'interpreter shell' }
@@ -201,6 +216,41 @@ MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariabl
 MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsExpressionInReturn [
 
 	^ self foo: self nonInlinedMethodUsingAutolocalizedVariable
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiver [
+
+	self nonInlinedMethodUsingAutolocalizedVariable ifTrue: [  ]
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiverWithAnd [
+
+	(self nonInlinedMethodUsingAutolocalizedVariable and: [ 
+		 self nonInlinedMethodUsingAutolocalizedVariable ]) ifTrue: [  ]
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiverWithNestedAnd [
+
+	(self nonInlinedMethodUsingAutolocalizedVariable and: [ 
+		 self foo and: [ self bar ] ]) ifTrue: [  ]
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiverWithNestedConditional [
+
+	(self nonInlinedMethodUsingAutolocalizedVariable ifTrue: [ 
+		 self nonInlinedMethodUsingAutolocalizedVariable ])
+			ifTrue: [  ]
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizedAutoLocalizedVariableAsIfReceiverWithOr [
+
+	(self nonInlinedMethodUsingAutolocalizedVariable or: [ 
+		 self nonInlinedMethodUsingAutolocalizedVariable ]) ifTrue: [  ]
 ]
 
 { #category : #'interpreter shell' }
@@ -230,6 +280,15 @@ MockLocalizationInterpreterMock >> bytecodeUsingMacro [
 ]
 
 { #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingNestedConditionalValueWithAnd [
+
+	| overflow |
+	^ overflow := self condition
+		ifTrue: [ self condition ]
+		ifFalse: [ self condition and: [ self condition ] ]
+]
+
+{ #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeUsingSafeExternalCall [
 
 	self nonInlinedMethodNotUsingAutolocalizedVariables: (autoLocalizedVariable := autoLocalizedVariable +1)
@@ -246,6 +305,18 @@ MockLocalizationInterpreterMock >> bytecodeUsingSharedLocalizedVariableBeforeInl
 
 	sharedVariableToLocalizeBeforeInlining := 42.
 	self methodAlsoSharedLocalizedVariableBeforeInlining
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingTwiceNestedConditionalValueWithAnd [
+
+	| overflow |
+	^ overflow := self condition
+		              ifTrue: [ self condition ]
+		              ifFalse: [ 
+			              self condition
+				              ifTrue: [ self condition ]
+				              ifFalse: [ self condition and: [ self condition ] ] ]
 ]
 
 { #category : #'interpreter shell' }
