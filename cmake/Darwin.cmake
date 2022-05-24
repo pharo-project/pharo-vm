@@ -22,6 +22,8 @@ set(EXTRACTED_SOURCES
 
 # Support sources
     ${CMAKE_CURRENT_SOURCE_DIR}/src/fileDialogMac.m
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/parameters.m
+    
 
 #Virtual Memory functions
     ${CMAKE_CURRENT_SOURCE_DIR}/src/memoryUnix.c

@@ -224,9 +224,6 @@ CogVMSimulator >> basicInitialize [
 	 and: [VMClass initializationOptions at: #CheckStackDepth ifAbsent: [true]]) ifTrue:
 		[debugStackDepthDictionary := Dictionary new].
 
-	cogThreadManager ifNotNil:
-		[super initialize].
-
 	self assert: ConstMinusOne = (objectMemory integerObjectOf: -1).
 
 	cogMethodZone := cogit methodZone. "Because Slang can't remove intermediate implicit receivers (cogit methodZone foo doesn't reduce to foo())"
@@ -273,6 +270,9 @@ CogVMSimulator >> basicInitialize [
 	
 	"This will be overriden when calling initializePluginEntries"
 	mappedPluginEntries := OrderedCollection new.
+	
+	imageReader := SpurImageReader newWithMemory: objectMemory andInterpreter: self.
+	imageWriter := SpurImageWriter newWithMemory: objectMemory andInterpreter: self	
 ]
 
 { #category : #hooks }
@@ -295,16 +295,6 @@ CogVMSimulator >> bootstrapping: aBoolean [
 { #category : #accessing }
 CogVMSimulator >> breakCount [
 	^breakCount
-]
-
-{ #category : #'interpreter shell' }
-CogVMSimulator >> browserPluginInitialiseIfNeeded [
-"do nothing - its a macro in C code to support Mac browser plugin strangeness"
-]
-
-{ #category : #'interpreter shell' }
-CogVMSimulator >> browserPluginReturnIfNeeded [
-"do nothing - its a macro in C code to support Mac browser plugin strangeness"
 ]
 
 { #category : #'memory access' }
@@ -1041,15 +1031,6 @@ CogVMSimulator >> functionPointerForCompiledMethod: methodObj primitiveIndex: pr
 	^self mapFunctionToAddress: (super functionPointerForCompiledMethod: methodObj primitiveIndex: primIndex)
 ]
 
-{ #category : #'image save/restore' }
-CogVMSimulator >> getShortFromFile: aFile swap: swapFlag [
-	| aShort |
-	aShort := self nextShortFrom: aFile.
-	^swapFlag 
-		ifTrue: [(aShort bitShift: -8) + ((aShort bitAnd: 16rFF) bitShift: 8)]
-		ifFalse: [aShort]
-]
-
 { #category : #'memory access' }
 CogVMSimulator >> halfWordHighInLong32: long32 [
 	^self subclassResponsibility
@@ -1200,7 +1181,7 @@ CogVMSimulator >> incrementByteCount [
 CogVMSimulator >> initStackPagesForTests [
 	numStackPages := 8.
 	stackPages := self stackPagesClass new setInterpreter: self.
-	objectMemory allocateMemoryOfSize: 1024 * 1024.
+	objectMemory memoryManager allocate: 1024 * 1024.
 	cogCodeSize := 0.
 	heapBase := self methodCacheSize
 				+ self primTraceLogSize
@@ -1408,18 +1389,6 @@ CogVMSimulator >> ioExitWithErrorCode: ec [
 { #category : #'process primitive support' }
 CogVMSimulator >> ioGetMaxExtSemTableSize [
 	^extSemTabSize
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> ioGetNextEvent: evtBuf [
-	| evt |
-	"SimulatorMorphicModel browse"
-	eventQueue ifNil:
-		[^self primitiveFail].
-	eventQueue isEmpty ifFalse:
-		[evt :=  eventQueue next.
-		 1 to: evt size do:
-			[:i| (evt at: i) ifNotNil: [:val| evtBuf at: (i - 1) put: val]]]
 ]
 
 { #category : #'I/O primitives support' }
@@ -2006,11 +1975,14 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 
 	| f |
 	
-	"open image file and read the header"
-	memoryManager := MachineSimulatorMemoryManager new.
-	objectMemory memoryManager: memoryManager.
-	memoryManager wordSize: objectMemory wordSize.
+	"We set the memory manager if it is not already set"	
+	memoryManager ifNil: [	
+		memoryManager := MachineSimulatorMemoryManager new.
+		objectMemory memoryManager: memoryManager.
+		memoryManager wordSize: objectMemory wordSize.
+	].
 
+	"open image file and read the header"
 	(f := self openImageFileNamed: fileName) ifNil: [ ^ self ].
 
 	"Set the image name and the first argument; there are
@@ -2019,7 +1991,7 @@ CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 		at: 1 put: fileName;
 		at: 2 put: nil.
 
-	[ self readImageFromFile: f StartingAt: 0 ] 
+	[ imageReader readImageFromFile: f StartingAt: 0 ] 
 		ensure: [ f close ].
 
 ]

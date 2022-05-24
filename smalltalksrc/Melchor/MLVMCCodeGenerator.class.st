@@ -436,17 +436,15 @@ MLVMCCodeGenerator >> optionIsTrue: pragma in: aClass [
 
 { #category : #'C code generator' }
 MLVMCCodeGenerator >> removeVariable: aName [
+
 	"Remove the given (instance) variable from the code base."
-	self removeVariable: aName
-		ifAbsent:
-			[(self vmClass notNil
-			  and: [self vmClass isNonArgumentImplicitReceiverVariableName: aName]) ifFalse:
-				[logger
-					newLine;
-					show: 'warning, variable '
-						, aName
-						, ' doesn''t exist or has already been removed';
-						newLine]]
+
+	self removeVariable: aName ifAbsent: [ 
+		(self vmClass notNil and: [ 
+			 self vmClass isNonArgumentImplicitReceiverVariableName: aName ]) 
+			ifFalse: [ 
+				self error: 'warning, variable ' , aName
+					, ' doesn''t exist or has already been removed' ] ]
 ]
 
 { #category : #'C code generator' }

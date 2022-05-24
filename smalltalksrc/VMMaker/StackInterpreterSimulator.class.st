@@ -211,6 +211,9 @@ StackInterpreterSimulator >> basicInitialize [
 	
 	"This will be overriden when calling initializePluginEntries"
 	mappedPluginEntries := OrderedCollection new.
+	
+	imageReader := SpurImageReader newWithMemory: objectMemory andInterpreter: self.
+	imageWriter := SpurImageWriter newWithMemory: objectMemory andInterpreter: self
 ]
 
 { #category : #utilities }
@@ -239,16 +242,6 @@ StackInterpreterSimulator >> bootstrapping: aBoolean [
 { #category : #accessing }
 StackInterpreterSimulator >> breakCount [
 	^breakCount
-]
-
-{ #category : #'interpreter shell' }
-StackInterpreterSimulator >> browserPluginInitialiseIfNeeded [
-"do nothing - its a macro in C code to support Mac browser plugin strangeness"
-]
-
-{ #category : #'interpreter shell' }
-StackInterpreterSimulator >> browserPluginReturnIfNeeded [
-"do nothing - its a macro in C code to support Mac browser plugin strangeness"
 ]
 
 { #category : #'memory access' }
@@ -707,15 +700,6 @@ StackInterpreterSimulator >> getErrorObjectFromPrimFailCode [
 	^super getErrorObjectFromPrimFailCode
 ]
 
-{ #category : #'image save/restore' }
-StackInterpreterSimulator >> getShortFromFile: aFile swap: swapFlag [
-	| aShort |
-	aShort := self nextShortFrom: aFile.
-	^swapFlag 
-		ifTrue: [(aShort bitShift: -8) + ((aShort bitAnd: 16rFF) bitShift: 8)]
-		ifFalse: [aShort]
-]
-
 { #category : #'memory access' }
 StackInterpreterSimulator >> halfWordHighInLong32: long32 [
 	^self subclassResponsibility
@@ -866,6 +850,7 @@ StackInterpreterSimulator >> internalMustBeBoolean [
 
 { #category : #'interpreter shell' }
 StackInterpreterSimulator >> interpret [
+
 	"This is the main interpreter loop. It normally loops forever, fetching and executing bytecodes.
 	 When running in the context of a web browser plugin VM, however, it must return control to the
 	 web browser periodically. This should done only when the state of the currently running Squeak
@@ -875,23 +860,21 @@ StackInterpreterSimulator >> interpret [
 
 	Override for simulation to insert bytecode breakpoint support."
 
-	<inline: false>
 	"If stacklimit is zero then the stack pages have not been initialized."
-	stackLimit = 0 ifTrue:
-		[^self initStackPagesAndInterpret].
-	"record entry time when running as a browser plug-in"
-	self browserPluginInitialiseIfNeeded.
+
+	<inline: false>
+	stackLimit = 0 ifTrue: [ ^ self initStackPagesAndInterpret ].
 	self internalizeIPandSP.
 	self initExtensions.
 	self fetchNextBytecode.
-	[true] whileTrue:
-		[self assertValidExecutionPointers.
-		 atEachStepBlock value. "N.B. may be nil"
-		 self dispatchOn: currentBytecode in: BytecodeTable.
-		 self incrementByteCount].
+	[ true ] whileTrue: [
+		self assertValidExecutionPointers.
+		atEachStepBlock value. "N.B. may be nil"
+		self dispatchOn: currentBytecode in: BytecodeTable.
+		self incrementByteCount ].
 	instructionPointer := instructionPointer - 1.  "undo the pre-increment of IP before returning"
 	self externalizeIPandSP.
-	^nil
+	^ nil
 ]
 
 { #category : #'as yet unclassified' }
@@ -957,18 +940,6 @@ StackInterpreterSimulator >> ioExitWithErrorCode: ec [
 { #category : #'process primitive support' }
 StackInterpreterSimulator >> ioGetMaxExtSemTableSize [
 	^extSemTabSize
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> ioGetNextEvent: evtBuf [
-	| evt |
-	"SimulatorMorphicModel browse"
-	eventQueue ifNil:
-		[^self primitiveFail].
-	eventQueue isEmpty ifFalse:
-		[evt :=  eventQueue next.
-		 1 to: evtBuf size do:
-			[:i| (evt at: i) ifNotNil: [:val| evtBuf at: (i - 1) put: val asInteger]]]
 ]
 
 { #category : #'I/O primitives support' }
@@ -1279,11 +1250,14 @@ StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
 
 	| f |
 	
-	"open image file and read the header"
-	memoryManager := MachineSimulatorMemoryManager new.
-	objectMemory memoryManager: memoryManager.
-	memoryManager wordSize: objectMemory wordSize.
+	"We set the memory manager if it is not already set"	
+	memoryManager ifNil: [	
+		memoryManager := MachineSimulatorMemoryManager new.
+		objectMemory memoryManager: memoryManager.
+		memoryManager wordSize: objectMemory wordSize.
+	].
 
+	"open image file and read the header"
 	(f := self openImageFileNamed: fileName) ifNil: [ ^ self ].
 
 	"Set the image name and the first argument; there are
@@ -1292,7 +1266,7 @@ StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
 		at: 1 put: fileName;
 		at: 2 put: nil.
 
-	[ self readImageFromFile: f StartingAt: 0 ] 
+	[ imageReader readImageFromFile: f StartingAt: 0 ] 
 		ensure: [ f close ].
 
 ]

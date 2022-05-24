@@ -307,9 +307,9 @@ VMSimpleStackBasedCogitAbstractTest >> createInterpreterFramefulCallFrom: return
 VMSimpleStackBasedCogitAbstractTest >> createSpecialSelectorArray [
 
 	| specialObjectsOop  |
-	specialObjectsOop := self newObjectWithSlots: 24.
+	specialObjectsOop := self newArrayWithSlots: 24.
 	selectorIndex := Smalltalk specialSelectors indexOf: sentSelector.
-	obj := self newObjectWithSlots: selectorIndex + 1.
+	obj := self newArrayWithSlots: selectorIndex + 1.
 	memory
 		storePointer: selectorIndex - 1
 		ofObject: obj withValue: (selectorAtIndex := memory integerObjectOf: 77 "Some object to test").
@@ -562,7 +562,7 @@ VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver ar
 
 	"If the cogit is the StackToRegisterMapping the arguments should go in the registers also"
 	(cogit isKindOf: StackToRegisterMappingCogit) ifTrue: [
-		arguments size >= 1 ifTrue: [ self machineSimulator argument0RegisterValue: (arguments at: 1) ].
+		arguments size >= 1 ifTrue: [ self machineSimulator arg0RegisterValue: (arguments at: 1) ].
 		arguments size > 1 ifTrue: [ self halt ]].
 	
 	self prepareCall
@@ -727,7 +727,7 @@ VMSimpleStackBasedCogitAbstractTest >> setUp [
 	memory falseObject: (self newObjectWithSlots: 0).
 	
 	"We don't access its contents, but we need it to be after nil, true and false"
-	memory hiddenRootsObject: (self newObjectWithSlots: 0).
+	memory hiddenRootsObject: (self newArrayWithSlots: 0).
 
 	cogit setStackAlignment: 16 expectedSPOffset: 0 expectedFPOffset: 0.
 	cogit initializeBackend.
@@ -745,6 +745,8 @@ VMSimpleStackBasedCogitAbstractTest >> setUp [
 	cogit methodZone manageFrom: cogit cogCodeBase to: initialAddress + self initialCodeSize.
 
 	memory coInterpreter numStackPages: 8.
+
+	machineSimulator flushICacheFrom: cogit cogCodeBase to: initialAddress + self initialCodeSize. 
 
 	self initializeOldSpaceForScavenger.
 	self initializeStackMemory.

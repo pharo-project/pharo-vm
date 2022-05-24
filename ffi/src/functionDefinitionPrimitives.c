@@ -113,7 +113,7 @@ PrimitiveWithDepth(primitiveDefineVariadicFunction, 2){
 	void*returnType;
     ffi_abi abiToUse;
 
-	if(methodArgumentCount() == 3){
+	if(methodArgumentCount() == 4){
 		abiToUse = stackIntegerValue(0);
 		fixedArgumentsPosition = 1;
 		checkFailed();

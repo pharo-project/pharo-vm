@@ -408,7 +408,9 @@ Class {
 		'libFFI',
 		'codeGeneratorToComputeAccessorDepth',
 		'showSurfaceFn',
-		'messageCount'
+		'messageCount',
+		'imageReader',
+		'imageWriter'
 	],
 	#classVars : [
 		'AccessModifierPrivate',
@@ -490,7 +492,9 @@ StackInterpreter class >> ancilliaryClasses [
 		InterpreterStackPages.
 		LibFFI.
 		CogStackPage.
-		SpurImageHeaderStruct}
+		SpurImageHeaderStruct.
+		SpurImageReader.
+		SpurImageWriter}
 ]
 
 { #category : #constants }
@@ -557,7 +561,6 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		var: #methodCache
 		declareC: 'sqIntptr_t methodCache[MethodCacheSize + 1 /* ', (MethodCacheSize + 1) printString, ' */]'.
 	aCCodeGenerator
-		removeVariable: #nsMethodCache;
 		removeVariable: 'localAbsentReceiver';
 		removeVariable: 'localAbsentReceiverOrZero'.
 	AtCacheTotalSize isInteger ifTrue:
@@ -619,6 +622,12 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	
 	aCCodeGenerator removeVariable: #'libFFI'.
 	LibFFIConstants classVariables do: [ :e | aCCodeGenerator removeConstant: e name ].
+	
+	aCCodeGenerator 
+		"this variable is not used in the exported code, so it has to be removed.
+		If it is changed, it should be marked with type implicit"
+		removeVariable: 'imageReader'; 
+		var: 'imageWriter' type: #implicit. 
 ]
 
 { #category : #translation }
@@ -1688,7 +1697,6 @@ StackInterpreter class >> requiredMethodNames: options [
 		primitiveFail primitiveFailFor: primitiveFlushExternalPrimitives printAllStacks printCallStack printContext:
 			printExternalHeadFrame printFramesInPage: printFrame: printHeadFrame printMemory printOop:
 				printStackPages printStackPageList printStackPagesInUse printStackPageListInUse
-		readableFormat: readImageFromFile:StartingAt:
 		setFullScreenFlag: setInterruptKeycode: setInterruptPending: setInterruptCheckChain:
 			setSavedWindowSize: success:
 		validInstructionPointer:inMethod:framePointer:) asSet.
@@ -2027,7 +2035,7 @@ StackInterpreter >> allocateHeapMemoryForImage: f withHeader: header desiredStar
 			 allocateMemory: heapSize
 			 minimum: minimumMemory
 			 imageFile: f
-			 headerSize: header headerSize
+			 headerSize: header imageHeaderSize
 			 desiredPosition: desiredPositionOfHeap) asUnsignedInteger.
 			
 	objectMemory memory ifNil: [ self insufficientMemoryAvailableError ].
@@ -2102,7 +2110,7 @@ StackInterpreter >> allocateMemoryForImage: f withHeader: header [
 
 	self allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: header oldBaseAddr.
 	
-	self loadImageFromFile: f withHeader: header 
+	imageReader loadImageFromFile: f withHeader: header 
 ]
 
 { #category : #'compiled methods' }
@@ -2154,9 +2162,7 @@ StackInterpreter >> asciiOfCharacter: characterObj [  "Returns an integer object
 
 	<inline: false>
 	(objectMemory isCharacterObject: characterObj) ifTrue:
-		[^CharacterTable
-			ifNil: [objectMemory integerObjectOfCharacterObject: characterObj]
-			ifNotNil: [objectMemory fetchPointer: CharacterValueIndex ofObject: characterObj]].
+		[^objectMemory integerObjectOfCharacterObject: characterObj].
 	self primitiveFailFor: PrimErrBadArgument.
 	^ConstZero  "in case some code needs an int"
 ]
@@ -3815,9 +3821,7 @@ StackInterpreter >> capturePendingFinalizationSignals [
 { #category : #'indexing primitive support' }
 StackInterpreter >> characterForAscii: ascii [  "Above ObjectMemory, arg must lie in range 0-255!"
 	<inline: true>
-	^CharacterTable
-		ifNil: [objectMemory characterObjectOf: ascii]
-		ifNotNil: [objectMemory fetchPointer: ascii ofObject: objectMemory characterTable]
+	^ objectMemory characterObjectOf: ascii
 ]
 
 { #category : #'debug support' }
@@ -4080,34 +4084,6 @@ StackInterpreter >> checkForStackOverflow [
 	self externalWriteBackHeadFramePointers.
 	stackPointer < stackPage realStackLimit ifTrue:
 		[self handleStackOverflow]
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> checkImageVersionFrom: f [
-	"Read and verify the image file version number and return true if the the given image file needs to be byte-swapped. As a side effect, position the file stream just after the version number of the image header. This code prints a warning and does a hard-exit if it cannot find a valid version number."
-	"This code is based on C code by Ian Piumarta."
-
-	<inline: false>
-	| version firstVersion |
-	<var: #f type: #sqImageFile>
-	<var: #imageOffset type: #squeakFileOffsetType>
-
-	"check the version number"
-	version := firstVersion := self getWord32FromFile: f swap: false.
-	(self readableFormat: version) ifTrue: [^ false].
-
-	"try with bytes reversed"
-	(self readableFormat: version byteSwap32) ifTrue: [^ true].
-
-	"hard failure; abort"
-	self logError: 'Invalid image format: detected version %d, expected version %d' 
-		_: firstVersion 
-		_: self imageFormatVersion.
-	
-	self ioExitWithErrorCode: 1.
-	
-	"This is needed by Slang"
-	^false	
 ]
 
 { #category : #'object memory support' }
@@ -4574,9 +4550,7 @@ StackInterpreter >> commonAtPut: stringy [
 		ifTrue: [ | charToPut |
 			"inline of asciiOfCharacter: value. Non return of primitiveFailFor:"
 			(objectMemory isCharacterObject: value)
-				ifTrue: [ charToPut := CharacterTable
-						ifNil: [ objectMemory integerObjectOfCharacterObject: value ]
-						ifNotNil: [ objectMemory fetchPointer: CharacterValueIndex ofObject: value ].
+				ifTrue: [ charToPut := objectMemory integerObjectOfCharacterObject: value.
 					self stObject: rcvr at: index put: charToPut ]
 				ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ] ]
 		ifFalse: [ self stObject: rcvr at: index put: value ].
@@ -5274,22 +5248,6 @@ StackInterpreter >> doSignalSemaphoreWithIndex: index [
 StackInterpreter >> dummyReferToProxy [
 	<inline: false>
 	interpreterProxy := interpreterProxy
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> dumpImage: fileName [
-	"Dump the entire image out to the given file. Intended for debugging only.  Doesn't work for Spur."
-	| f dataSize result |
-	<notOption: #SpurObjectMemory>
-	<export: true>
-	<var: #f type: #sqImageFile>
-
-	f := self sqImageFile: (self pointerForOop: fileName) Open: 'wb'.
-	f = nil ifTrue: [^-1].
-	dataSize := objectMemory endOfMemory - objectMemory startOfMemory.
-	result := self sq: (self pointerForOop: self memory) Image: (self sizeof: #'unsigned char') File: dataSize Write: f.
-	self sqImageFileClose: f.
-	^result
 ]
 
 { #category : #'debug support' }
@@ -7184,6 +7142,18 @@ StackInterpreter >> getDesiredCogCodeSize [
 	^objectMemory nilObject
 ]
 
+{ #category : #accessing }
+StackInterpreter >> getDesiredEdenBytes [
+
+	^ desiredEdenBytes
+]
+
+{ #category : #accessing }
+StackInterpreter >> getDesiredNumStackPages [
+	
+	^ desiredNumStackPages
+]
+
 { #category : #'message sending' }
 StackInterpreter >> getErrorObjectFromPrimFailCode [
 	"Answer the errorCode object to supply to a failing primitive method that accepts one.
@@ -7217,6 +7187,12 @@ StackInterpreter >> getExternalSemaphoreWithIndex: index [
 	^ sema
 ]
 
+{ #category : #accessing }
+StackInterpreter >> getExtraVMMemory [
+
+	^ extraVMMemory
+]
+
 { #category : #'plugin primitive support' }
 StackInterpreter >> getFullScreenFlag [
 	^fullScreenFlag
@@ -7244,22 +7220,10 @@ StackInterpreter >> getInterruptPending [
 	^interruptPending
 ]
 
-{ #category : #'image save/restore' }
-StackInterpreter >> getLongFromFile: aFile swap: swapFlag [
-	"Answer the next 32 or 64 bit word read from aFile, byte-swapped according to the swapFlag."
-	<var: #aFile type: #sqImageFile>
-	<var: #w type: #usqInt>
-	| w |
-	w := 0.
-	self cCode: [self
-					sq: (self addressOf: w)
-					Image: (self sizeof: w)
-					File: 1
-					Read: aFile]
-		inSmalltalk: [w := objectMemory nextLongFrom: aFile].
-	^swapFlag
-		ifTrue: [objectMemory byteSwapped: w]
-		ifFalse: [w]
+{ #category : #accessing }
+StackInterpreter >> getMaxExtSemTabSizeSet [
+	
+	^ maxExtSemTabSizeSet
 ]
 
 { #category : #'internal interpreter access' }
@@ -7284,25 +7248,6 @@ StackInterpreter >> getNextWakeupUsecs [
 { #category : #'plugin primitive support' }
 StackInterpreter >> getSavedWindowSize [
 	^savedWindowSize
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> getShortFromFile: aFile swap: swapFlag [
-	"Answer the next 16 bit word read from aFile, byte-swapped according to the swapFlag."
-
-	<var: #aFile type: #sqImageFile>
-	| w |
-	<var: #w type: #'unsigned short'>
-	w := 0.
-	self cCode: [self
-					sq: (self addressOf: w)
-					Image: (self sizeof: #'unsigned short')
-					File: 1
-					Read: aFile]
-		inSmalltalk: [w := objectMemory nextShortFrom: aFile].
-	^swapFlag
-		ifTrue: [((w >> 8) bitAnd: 16rFF) bitOr: ((w bitAnd: 16rFF) << 8)]
-		ifFalse: [w]
 ]
 
 { #category : #'internal interpreter access' }
@@ -7330,25 +7275,6 @@ StackInterpreter >> getThisSessionID [
 	"return the global session ID value"
 	<inline: false>
 	^globalSessionID
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> getWord32FromFile: aFile swap: swapFlag [
-	"Answer the next 32 bit word read from aFile, byte-swapped according to the swapFlag."
-
-	<var: #aFile type: #sqImageFile>
-	| w |
-	<var: #w type: #int>
-	w := 0.
-	self cCode: [self
-					sq: (self addressOf: w)
-					Image: (self sizeof: #int)
-					File: 1
-					Read: aFile]
-		inSmalltalk: [w := objectMemory nextWord32From: aFile].
-	^swapFlag
-		ifTrue: [w byteSwap32]
-		ifFalse: [w]
 ]
 
 { #category : #'message sending' }
@@ -7573,7 +7499,6 @@ StackInterpreter >> ifBackwardsCheckForEvents: offset [
 	 and: [stackPointer < stackLimit]) ifTrue:
 		[self externalizeIPandSP.
 		 self checkForEventsMayContextSwitch: true.
-		 self browserPluginReturnIfNeeded.
 		 self internalizeIPandSP]
 ]
 
@@ -7643,19 +7568,8 @@ StackInterpreter >> iframeMethod: theFP [
 ]
 
 { #category : #'image save/restore' }
-StackInterpreter >> imageFormatCompatibilityVersion [
-	"This VM is backward-compatible with the immediately preceding version."
-
-	^objectMemory wordSize = 4 ifTrue: [6504] ifFalse: [68002]
-]
-
-{ #category : #'image save/restore' }
 StackInterpreter >> imageFormatVersion [
-	"Return a magic constant that changes when the image format changes.
-	 Since the image reading code uses this to detect byte ordering, one
-	 must avoid version numbers that are invariant under byte reversal."
 	<doNotGenerate>
-	self assert: (objectMemory imageFormatVersion anyMask: 16) = objectMemory hasSpurMemoryManagerAPI.
 	^objectMemory imageFormatVersion
 ]
 
@@ -7710,43 +7624,40 @@ StackInterpreter >> initStackPageGC [
 
 { #category : #initialization }
 StackInterpreter >> initStackPages [
-	"Initialize the stackPages.  This version is only for simulation
-	 because Slang refuses to inline it, which makes the alloca invalid."
-	| stackPageBytes stackPagesBytes theStackMemory |
-	stackPageBytes := self stackPageByteSize.
-	stackPagesBytes := self computeStackZoneSize.
-	theStackMemory := self
-							cCode: [self alloca: stackPagesBytes]
-							inSmalltalk: [stackPages initializeWithByteSize: stackPagesBytes for: self].
-	self cCode: [self me: theStackMemory ms: 0 et: stackPagesBytes].
-	stackPages
-		initializeStack: theStackMemory
-		numSlots: stackPagesBytes / objectMemory wordSize
-		pageSize: stackPageBytes / objectMemory wordSize
-]
 
-{ #category : #initialization }
-StackInterpreter >> initStackPagesAndInterpret [
-	"Initialize the stack pages and enter interpret. Use alloca'ed memory so that when
+	"Initialize the stack pages. Use alloca'ed memory so that when
 	 we have a JIT its stack pointer will be on the native stack since alloca allocates
 	 memory on the stack. Certain thread systems use the native stack pointer as the
 	 frame ID so putting the stack anywhere else can confuse the thread system."
 
-	"This should be in its own initStackPages method but Slang can't inline
-	 C code strings."
-	| stackPageBytes stackPagesBytes theStackMemory |
+	<inline: true>
 	<var: #theStackMemory type: #'void *'>
+	| stackPageBytes stackPagesBytes theStackMemory |
 	stackPageBytes := self stackPageByteSize.
 	stackPagesBytes := self computeStackZoneSize.
 	theStackMemory := self
-							cCode: [self alloca: stackPagesBytes]
-							inSmalltalk: [stackPages initializeWithByteSize: stackPagesBytes for: self].
-	self cCode: [self me: theStackMemory ms: 0 et: stackPagesBytes].
+		                  cCode: [ self alloca: stackPagesBytes ]
+		                  inSmalltalk: [ 
+		                  stackPages
+			                  initializeWithByteSize: stackPagesBytes
+			                  for: self ].
+	self cCode: [ self me: theStackMemory ms: 0 et: stackPagesBytes ].
 	stackPages
 		initializeStack: theStackMemory
 		numSlots: stackPagesBytes / objectMemory wordSize
 		pageSize: stackPageBytes / objectMemory wordSize.
 
+	self
+		stackPagesInitializedAt: theStackMemory
+		totalSize: stackPagesBytes
+		pageSize: stackPageBytes
+]
+
+{ #category : #initialization }
+StackInterpreter >> initStackPagesAndInterpret [
+
+	self initStackPages.
+	
 	"Once the stack pages are initialized we can continue to bootstrap the system."
 	self loadInitialContext.
 	"We're ready for the heartbeat (poll interrupt)"
@@ -7855,6 +7766,7 @@ StackInterpreter >> initializeGlobalSessionID [
 
 { #category : #initialization }
 StackInterpreter >> initializeInterpreter: bytesToShift [
+	
 	"Initialize Interpreter state before starting execution of a new image."
 	interpreterProxy := self sqGetInterpreterProxy.
 	self dummyReferToProxy.
@@ -7870,7 +7782,25 @@ StackInterpreter >> initializeInterpreter: bytesToShift [
 	profileSemaphore := profileProcess := profileMethod := objectMemory nilObject.
 	self initializeGlobalSessionID.
 	metaAccessorDepth := -2.
-	super initializeInterpreter: bytesToShift
+
+]
+
+{ #category : #initialization }
+StackInterpreter >> initializeObjectMemoryWithEdenBytes: requestedEdenBytes [
+
+	"The edenBytes can be overrided using the desiredEdenBytes instance variable"
+
+	objectMemory edenBytes: (desiredEdenBytes ~= 0
+			 ifTrue: [ desiredEdenBytes ]
+			 ifFalse: [ 
+				 requestedEdenBytes = 0
+					 ifTrue: [ objectMemory defaultEdenBytes ]
+					 ifFalse: [ requestedEdenBytes ] ]).
+
+	desiredEdenBytes := requestedEdenBytes.
+
+
+
 ]
 
 { #category : #'stack pages' }
@@ -8011,7 +7941,7 @@ StackInterpreter >> install: rcvr inAtCache: cache at: atIx string: stringy [
 		[^self primitiveFail].
 	stringy
 		ifTrue:
-			[totalLength := objectMemory lengthOf: rcvr baseHeader: hdr format: fmt.
+			[totalLength := objectMemory lengthOf: rcvr format: fmt.
 			 fixedFields := 0.
 			 fmt := fmt + objectMemory firstStringyFakeFormat]  "special flag for strings"
 		ifFalse:
@@ -8019,7 +7949,7 @@ StackInterpreter >> install: rcvr inAtCache: cache at: atIx string: stringy [
 				["Contexts must not be put in the atCache, since their size is not constant"
 				self primitiveFailFor: PrimErrBadReceiver.
 				^false].
-			 totalLength := objectMemory lengthOf: rcvr baseHeader: hdr format: fmt.
+			 totalLength := objectMemory lengthOf: rcvr format: fmt.
 			 fixedFields := objectMemory fixedFieldsOf: rcvr format: fmt length: totalLength].
 
 	cache at: atIx+AtCacheOop put: rcvr.
@@ -8155,20 +8085,19 @@ StackInterpreter >> internalCannotReturn: resultOop [
 
 { #category : #'message sending' }
 StackInterpreter >> internalExecuteNewMethod [
-	| succeeded |
+
 	<inline: true>
-	primitiveFunctionPointer ~= 0 ifTrue:
-		[self isPrimitiveFunctionPointerAnIndex ifTrue:
-			[self internalQuickPrimitiveResponse.
-			^ self "keep slang happy"].
-		 self externalizeIPandSP.
-		 succeeded := self slowPrimitiveResponse.
-		 self internalizeIPandSP.
-		 succeeded ifTrue:
-			[self browserPluginReturnIfNeeded.
-			^ self]].
+	| succeeded |
+	primitiveFunctionPointer ~= 0 ifTrue: [ 
+		self isPrimitiveFunctionPointerAnIndex ifTrue: [ 
+			self internalQuickPrimitiveResponse.
+			^ self "keep slang happy" ].
+		self externalizeIPandSP.
+		succeeded := self slowPrimitiveResponse.
+		self internalizeIPandSP.
+		succeeded ifTrue: [ ^ self ] ].
 	"if not primitive, or primitive failed, activate the method"
-	^self internalActivateNewMethod
+	^ self internalActivateNewMethod
 ]
 
 { #category : #'message sending' }
@@ -8919,7 +8848,7 @@ StackInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 	(self methodHeaderHasPrimitive: methodHeader) ifTrue:
 		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		 instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader).
+		 instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader) + (self sizeOfLongStoreTempBytecode: methodHeader).
 		 primFailCode ~= 0 ifTrue:
 			[self reapAndResetErrorCodeTo: stackPointer header: methodHeader]].
 
@@ -8995,27 +8924,6 @@ StackInterpreter >> loadBitBltFrom: bb [
 	fn := self ioLoadFunction: 'loadBitBltFrom' From: 'BitBltPlugin'.
 	fn = 0 ifTrue: [^self primitiveFail].
 	^self cCode: '((sqInt (*)(sqInt))fn)(bb)'
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> loadImageFromFile: f withHeader: header [ 
-
-	<var: #f type: #sqImageFile>
-	<var: #header type: #'SpurImageHeaderStruct'>	
-	
-	"read in the image in bulk, then swap the bytes if necessary"
-	| bytesRead bytesToShift |
-	bytesRead := objectMemory
-		             readHeapFromImageFile: f
-		             dataBytes: header dataSize.
-	bytesRead ~= header dataSize ifTrue: [ self unableToReadImageError ].
-
-	self ensureImageFormatIsUpToDate: header swapBytes.
-
-	"compute difference between old and new memory base addresses"
-	bytesToShift := objectMemory memoryBaseForImageRead - header oldBaseAddr.
-	self initializeInterpreter: bytesToShift. "adjusts all oops to new location"
-
 ]
 
 { #category : #initialization }
@@ -9715,7 +9623,6 @@ StackInterpreter >> mappedEnsureEnoughWords [
 	ok ifFalse: [ 
 		self externalizeIPandSP.
 		self checkForEventsMayContextSwitch: true.
-		self browserPluginReturnIfNeeded.
 		self internalizeIPandSP ]
 ]
 
@@ -10636,6 +10543,46 @@ StackInterpreter >> nativeStackSize [
 	^ 4 *1024 * 1024
 ]
 
+{ #category : #'image save/restore' }
+StackInterpreter >> newHeader [
+
+	| header sizeToWrite |
+
+	<var: #header type: #'SpurImageHeaderStruct'>
+	<returnTypeC: #SpurImageHeaderStruct>	
+
+	self simulationOnly: [ header := SpurImageHeaderStruct new ].
+
+	header imageFormat: self imageFormatVersion.
+
+	"header size in bytes; do not change!"
+	header imageHeaderSize: 	(objectMemory wordSize = 4 ifTrue: [ 64 ] ifFalse: [ 128 ]).
+	
+	sizeToWrite := objectMemory imageSizeToWrite.
+	header dataSize: sizeToWrite.
+
+	header oldBaseAddr: objectMemory oldSpaceStart.
+	header initialSpecialObjectsOop: objectMemory specialObjectsOop.
+	header hdrLastHash: objectMemory lastHash.
+	header screenSize: self ioScreenSize.
+	header headerFlags: self getImageHeaderFlags.
+	header extraVMMemory: (self getExtraVMMemory ifNil: [ 0 ]).
+	header hdrNumStackPages: self getDesiredNumStackPages.
+	header hdrCogCodeSize: self unknownShortOrCodeSizeInKs.
+	header hdrEdenBytes: self getDesiredEdenBytes.
+
+	header hdrMaxExtSemTabSize: (
+		self getMaxExtSemTabSizeSet
+				 ifTrue: [ self ioGetMaxExtSemTableSize ]
+				 ifFalse: [ 0 ]
+	).
+
+	header firstSegSize: objectMemory firstSegmentBytes.
+	header freeOldSpaceInImage: objectMemory bytesLeftInOldSpace.
+
+	^header
+]
+
 { #category : #accessing }
 StackInterpreter >> newMethod [
 	<doNotGenerate>
@@ -10919,6 +10866,7 @@ StackInterpreter >> pop: nItems thenPush: oop [
 	"In the StackInterpreter stacks grow down."
 	| sp |
 	<inline: true>
+	<returnTypeC: #void>
 	<var: #sp type: #'char *'>
 	stackPages longAt: (sp := stackPointer + ((nItems - 1) * objectMemory wordSize)) put: oop.
 	stackPointer := sp
@@ -11095,6 +11043,12 @@ StackInterpreter >> preemptionYields: aValue [
 StackInterpreter >> primFailCode [
 	<doNotGenerate>
 	^ primFailCode 
+]
+
+{ #category : #'cog jit support' }
+StackInterpreter >> primFailCode: anInteger [
+	<doNotGenerate>
+	primFailCode := anInteger
 ]
 
 { #category : #'primitive support' }
@@ -12590,7 +12544,9 @@ StackInterpreter >> pushActiveContextBytecode [
 
 { #category : #'internal interpreter access' }
 StackInterpreter >> pushBool: trueOrFalse [
+
 	<inline: true>
+	<returnTypeC: #sqInt>
 	self push: (objectMemory booleanObjectOf: trueOrFalse)
 ]
 
@@ -12901,48 +12857,6 @@ StackInterpreter >> pushedReceiverOrClosureOfFrame: theFP [
 	^stackPages longAt: theFP + (self frameStackedReceiverOffset: theFP)
 ]
 
-{ #category : #'image save/restore' }
-StackInterpreter >> putLong: aLong toFile: aFile [
-	"Append aLong to aFile in this platform's 'natural' byte order.  aLong is either 32 or 64 bits,
-	 depending on ObjectMemory.  (Bytes will be swapped, if necessary, when the image is read
-	 on a different platform.) Set successFlag to false if the write fails."
-
-	<var: #aLong type: #sqInt>
-	<var: #aFile type: #sqImageFile>
-	<inline: false>
-	| objectsWritten |
-	objectsWritten := self
-						cCode: [self sq: (self addressOf: aLong) Image: (self sizeof: #sqInt) File: 1 Write: aFile]
-						inSmalltalk:
-							[| value |
-							 value := aLong.
-							 objectMemory wordSize timesRepeat:
-								[aFile nextPut: (value bitAnd: 16rFF).
-								 value := value >> 8].
-							 1].
-	self success: objectsWritten = 1
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> putShort: aShort toFile: aFile [
-	"Append the 16-bit aShort to aFile in this platform's 'natural' byte order.
-	 (Bytes will be swapped, if necessary, when the image is read on a
-	 different platform.) Set successFlag to false if the write fails."
-
-	<var: #aShort type: #short>
-	<var: #aFile type: #sqImageFile>
-	<inline: false>
-	| objectsWritten |
-	objectsWritten := self
-						cCode: [self sq: (self addressOf: aShort) Image: (self sizeof: #short) File: 1 Write: aFile]
-						inSmalltalk:
-							[aFile
-								nextPut: (aShort bitAnd: 16rFF);
-								nextPut: (aShort >> 8 bitAnd: 16rFF).
-							 1].
-	self success: objectsWritten = 1
-]
-
 { #category : #'process primitive support' }
 StackInterpreter >> putToSleep: aProcess yieldingIf: yieldImplicitly [
 	"Save the given process on the scheduler process list for its priority,
@@ -12959,28 +12873,6 @@ StackInterpreter >> putToSleep: aProcess yieldingIf: yieldImplicitly [
 	yieldImplicitly
 		ifTrue: [self addLastLink: aProcess toList: processList]
 		ifFalse: [self addFirstLink: aProcess toList: processList]
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> putWord32: aWord32 toFile: aFile [
-	"Append aWord32 to aFile in this platform's 'natural' byte order.  aWord32 is 32 bits,
-	 depending on ObjectMemory.  (Bytes will be swapped, if necessary, when the image is read
-	 on a different platform.) Set successFlag to false if the write fails."
-
-	<var: #aWord32 type: #int>
-	<var: #aFile type: #sqImageFile>
-	<inline: false>
-	| objectsWritten |
-	objectsWritten := self
-						cCode: [self sq: (self addressOf: aWord32) Image: 4 File: 1 Write: aFile]
-						inSmalltalk:
-							[| value |
-							 value := aWord32.
-							 4 timesRepeat:
-								[aFile nextPut: (value bitAnd: 16rFF).
-								 value := value >> 8].
-							 1].
-	self success: objectsWritten = 1
 ]
 
 { #category : #'sista bytecodes' }
@@ -13020,129 +12912,6 @@ StackInterpreter >> quinaryInlinePrimitive: primIndex [
 	self unknownInlinePrimitive
 ]
 
-{ #category : #'image save/restore' }
-StackInterpreter >> readHeaderFrom: f startingAt: headerStart [
-
-	<var: #f type: #sqImageFile>
-	<var: #headerStart type: #'squeakFileOffsetType'>
-	<var: #header type: #'SpurImageHeaderStruct'>
-	<returnTypeC: #'SpurImageHeaderStruct'>
-
-	| header |
-	
-	self simulationOnly: [ header := SpurImageHeaderStruct new].
-
-	header swapBytes: (self checkImageVersionFrom: f).
-
-	header headerSize: (self getWord32FromFile: f swap: header swapBytes).
-	header dataSize: (self getLongFromFile: f swap: header swapBytes).
-	header oldBaseAddr: (self getLongFromFile: f swap: header swapBytes).
-	header initialSpecialObjectsOop: (self getLongFromFile: f swap: header swapBytes).
-	
-	header hdrLastHash: (self getLongFromFile: f swap: header swapBytes).	
-	
-	"savedWindowSize :=" self getLongFromFile: f swap: header swapBytes.
-	header headerFlags: (self getLongFromFile: f swap: header swapBytes).
-
-	header extraVMMemory: (self getWord32FromFile: f swap: header swapBytes).
-	header hdrNumStackPages: (self getShortFromFile: f swap: header swapBytes).
-	"This slot holds the size of the native method zone in 1k units. (pad to word boundary)."
-	header hdrCogCodeSize: ((self getShortFromFile: f swap: header swapBytes) * 1024).
-	header hdrEdenBytes: (self getWord32FromFile: f swap: header swapBytes).
-
-	header hdrMaxExtSemTabSize: (self getShortFromFile: f swap: header swapBytes).
-	"pad to word boundary.  This slot can be used for anything else that will fit in 16 bits.
-	 Preserve it to be polite to other VMs."
-	"the2ndUnknownShort :=" self getShortFromFile: f swap: header swapBytes.
-	header firstSegSize: (self getLongFromFile: f swap: header swapBytes).
-
-	header freeOldSpaceInImage:(self getLongFromFile: f swap: header swapBytes).
-
-	"position file after the header"
-	self sqImageFile: f Seek: headerStart + header headerSize.
-
-	^ header
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> readImageFromFile: f StartingAt: headerStart [
-
-	"Read an image from the given file stream, allocating an amount of memory to its object heap.
-	
-	 This routine will attempt to provide at least extraVMMemory's
-	 ammount of free space after the image is loaded, taking any free space in teh image into account.
-	 extraVMMemory is stored in the image header and is accessible as vmParameterAt: 23.  If
-	 extraVMMemory is 0, the value defaults to the default grow headroom.  Fail if the image has an
-	 unknown format or if sufficient memory cannot be allocated.
-
-	 Details: This method detects when the image was stored on a machine with the opposite byte
-	 ordering from this machine and swaps the bytes automatically. Furthermore, it allows the header
-	 information to start 512 bytes into the file, since some file transfer programs for the Macintosh
-	 apparently prepend a Mac-specific header of this size. Note that this same 512 bytes of prefix
-	 area could also be used to store an exec command on Unix systems, allowing one to launch
-	 Smalltalk by invoking the image name as a command."
-
-	<var: #f type: #sqImageFile>
-	<var: #headerStart type: #'squeakFileOffsetType'>
-
-	<var: #heapSize type: #usqInt>
-	<var: #minimumMemory type: #usqInt>
-	<var: #allocationReserve type: #usqInt>
-	<var: #header type: #'SpurImageHeaderStruct'>
-
-	| header |
-
-	metaclassNumSlots := 6. "guess Metaclass instSize"
-	classNameIndex := 6. "guess (Class instVarIndexFor: 'name' ifAbsent: []) - 1"
-
-	header := self readHeaderFrom: f startingAt: headerStart.
-
-	objectMemory specialObjectsOop: header initialSpecialObjectsOop.
-	objectMemory lastHash: header hdrLastHash.
-	self setImageHeaderFlagsFrom: header headerFlags.
-	extraVMMemory := header extraVMMemory.
-
-	"4 stack pages is small.  Should be able to run with as few as
-	 three. 4 should be comfortable but slow.  8 is a reasonable
-	 default.  Can be changed via vmParameterAt: 43 put: n.
-	 Can be set as a preference (Info.plist, VM.ini, command line etc).
-	 If desiredNumStackPages is already non-zero then it has been
-	 set as a preference.  Ignore (but preserve) the header's default."
-	numStackPages := desiredNumStackPages ~= 0
-		                 ifTrue: [ desiredNumStackPages ]
-		                 ifFalse: [ 
-			                 header hdrNumStackPages = 0
-				                 ifTrue: [ self defaultNumStackPages ]
-				                 ifFalse: [ header hdrNumStackPages ] ].
-	desiredNumStackPages := header hdrNumStackPages.
-
-	objectMemory edenBytes: (desiredEdenBytes ~= 0
-			 ifTrue: [ desiredEdenBytes ]
-			 ifFalse: [ 
-				 header hdrEdenBytes = 0
-					 ifTrue: [ objectMemory defaultEdenBytes ]
-					 ifFalse: [ header hdrEdenBytes ] ]).
-	desiredEdenBytes := header hdrEdenBytes.
-
-	header hdrMaxExtSemTabSize ~= 0 ifTrue: [ 
-		self setMaxExtSemSizeTo: header hdrMaxExtSemTabSize ].
-	objectMemory firstSegmentSize: header firstSegSize.
-
-	self allocateMemoryForImage: f withHeader: header.
-
-	^ header dataSize
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> readableFormat: imageVersion [
-	"Anwer true if images of the given format are readable by this interpreter.
-	 Allows a virtual machine to accept selected older image formats."
-
-	^imageVersion = self imageFormatVersion "Float words in platform-order"
-	   or: [objectMemory hasSpurMemoryManagerAPI not "No compatibility version for Spur as yet"
-			and: [imageVersion = self imageFormatCompatibilityVersion]] "Float words in BigEndian order"
-]
-
 { #category : #'primitive support' }
 StackInterpreter >> reapAndResetErrorCodeTo: theSP header: methodHeader [
 	"Assuming the primFailCode is non-zero, check if the method consumes the error code
@@ -13153,8 +12922,10 @@ StackInterpreter >> reapAndResetErrorCodeTo: theSP header: methodHeader [
 	| initialPC |
 	self assert: primFailCode ~= 0.
 	initialPC := (self initialIPForHeader: methodHeader method: newMethod) + (self sizeOfCallPrimitiveBytecode: methodHeader).
-	(objectMemory byteAt: initialPC) = (self longStoreBytecodeForHeader: methodHeader) ifTrue:
-		[stackPages longAtPointer: theSP put: self getErrorObjectFromPrimFailCode].
+	(objectMemory byteAt: initialPC) = (self longStoreBytecodeForHeader: methodHeader) ifTrue: [
+		| temporaryIndex |
+		temporaryIndex := (objectMemory byteAt: initialPC + 1).
+		self temporary: temporaryIndex in: framePointer put: self getErrorObjectFromPrimFailCode].
 	 primFailCode := 0
 ]
 
@@ -13732,6 +13503,12 @@ StackInterpreter >> setDesiredEdenBytes: bytes [
 	^0
 ]
 
+{ #category : #accessing }
+StackInterpreter >> setExtraVMMemory: anInteger [ 
+
+	extraVMMemory := anInteger
+]
+
 { #category : #'frame access' }
 StackInterpreter >> setFrameContext: theFP to: aContext [
 	<inline: true>
@@ -13867,6 +13644,27 @@ StackInterpreter >> setNextWakeupUsecs: value [
 	<api>
 	<var: #value type: #usqLong>
 	nextWakeupUsecs := value
+]
+
+{ #category : #'stack pages' }
+StackInterpreter >> setNumStackPages: requestedNumPages [
+
+	"4 stack pages is small.  Should be able to run with as few as
+	 three. 4 should be comfortable but slow.  8 is a reasonable
+	 default.  Can be changed via vmParameterAt: 43 put: n.
+	 Can be set as a preference (Info.plist, VM.ini, command line etc).
+	 If desiredNumStackPages is already non-zero then it has been
+	 set as a preference.  Ignore (but preserve) the header's default."
+
+	numStackPages := desiredNumStackPages ~= 0
+		                 ifTrue: [ desiredNumStackPages ]
+		                 ifFalse: [ 
+			                 requestedNumPages = 0
+				                 ifTrue: [ self defaultNumStackPages ]
+				                 ifFalse: [ requestedNumPages ] ].
+
+	desiredNumStackPages := requestedNumPages.
+
 ]
 
 { #category : #'plugin primitive support' }
@@ -14626,7 +14424,7 @@ StackInterpreter >> stObject: array at: index [
 	<inline: true>
 	hdr := objectMemory baseHeader: array.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: array baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: array format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: array format: fmt length: totalLength.
 	(fmt = objectMemory indexablePointersFormat
 	 and: [objectMemory isContextHeader: hdr])
@@ -14654,7 +14452,7 @@ StackInterpreter >> stObject: array at: index put: value [
 		"we have another primitive (contextAt:Put: for contexts"
 		^self primitiveFailFor: PrimErrBadReceiver].
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: array baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: array format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: array format: fmt length: totalLength.
 	stSize := totalLength - fixedFields.
 	((self oop: index isGreaterThanOrEqualTo: (objectMemory firstValidIndexOfIndexableObject: array withFormat: fmt))
@@ -14673,7 +14471,7 @@ StackInterpreter >> stSizeOf: oop [
 	<inline: false>
 	hdr := objectMemory baseHeader: oop.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: oop baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: oop format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: oop format: fmt length: totalLength.
 	fmt = objectMemory indexablePointersFormat ifTrue:
 		[self assert: (objectMemory isContextHeader: hdr) not].
@@ -14795,6 +14593,12 @@ StackInterpreter >> stackPagesClass [
 	^VMBIGENDIAN
 		ifTrue: [InterpreterStackPagesMSB]
 		ifFalse: [InterpreterStackPagesLSB]
+]
+
+{ #category : #initialization }
+StackInterpreter >> stackPagesInitializedAt: theStackMemory totalSize: stackPagesBytes pageSize: stackPageBytes [
+
+	"Nothing to do, a nice hook for CoInterpreter"
 ]
 
 { #category : #accessing }
@@ -16134,146 +15938,17 @@ StackInterpreter >> writeBackHeadFramePointers [
 
 { #category : #'image save/restore' }
 StackInterpreter >> writeImageFileIO [
-	"Write the image header and heap contents to imageFile for snapshot. c.f. writeImageFileIOSimulation.
-	 The game below is to maintain 64-bit alignment for all putLong:toFile: occurrences."
-	<inline: #never>
-	| imageName headerStart headerSize f imageBytes bytesWritten sCWIfn okToWrite |
-	<var: #f type: #sqImageFile>
-	<var: #headerStart type: #squeakFileOffsetType>
-	<var: #sCWIfn type: #'void *'>
-	<var: #imageName declareC: 'extern char imageName[]'>
+	"Write the image header and heap contents to imageFile for snapshot. 
+	The game below is to maintain 64-bit alignment for all putLong:toFile: occurrences."
 
-	self cCode: [] inSmalltalk: [imageName := 'sooth compiler'. ^self writeImageFileIOSimulation].
+	| imageName |
 	
-	"local constants"
-	headerStart := 0.  
-	headerSize := objectMemory wordSize = 4 ifTrue: [64] ifFalse: [128].  "header size in bytes; do not change!"
-
-	self logDebug: 'Writing snapshot file %s' _: imageName.
-
-	f := self sqImageFile: imageName Open: 'wb'.
-	f = nil ifTrue: "could not open the image file for writing"
-		[^self primitiveFail].
-
-	imageBytes := objectMemory imageSizeToWrite.
-	headerStart := self sqImage: f File: imageName StartLocation: headerSize + imageBytes.
-	self cCode: '/* Note: on Unix systems one could put an exec command here, padded to 512 bytes */'.
-	"position file to start of header"
-	self sqImageFile: f Seek: headerStart.
-
-	self putWord32: self imageFormatVersion toFile: f.
-	self putWord32: headerSize toFile: f.
-	self putLong: imageBytes toFile: f.
-	self putLong: objectMemory baseAddressOfImage toFile: f.
-	self putLong: objectMemory specialObjectsOop toFile: f.
-	self putLong: objectMemory newObjectHash toFile: f.
-	self putLong: self getSnapshotScreenSize toFile: f.
-	self putLong: self getImageHeaderFlags toFile: f.
-	self putWord32: extraVMMemory toFile: f.
-	self putShort: desiredNumStackPages toFile: f.
-	self putShort: self unknownShortOrCodeSizeInKs toFile: f.
-	self putWord32: desiredEdenBytes toFile: f.
-	self putShort: (maxExtSemTabSizeSet ifTrue: [self ioGetMaxExtSemTableSize] ifFalse: [0]) toFile: f.
-	self putShort: the2ndUnknownShort toFile: f.
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[self putLong: objectMemory firstSegmentBytes toFile: f.
-			 self putLong: objectMemory bytesLeftInOldSpace toFile: f.
-			 2 timesRepeat: [self putLong: 0 toFile: f]	"Pad the rest of the header."]
-		ifFalse:
-			[4 timesRepeat: [self putLong: 0 toFile: f]].  "Pad the rest of the header."
-
-	 objectMemory wordSize = 8 ifTrue:
-		[3 timesRepeat: [self putLong: 0 toFile: f]]. "Pad the rest of the header."
-
-	self assert: headerStart + headerSize = (self sqImageFilePosition: f).
-	"position file after the header"
-	self sqImageFile: f Seek: headerStart + headerSize.
-
-	self successful ifFalse: "file write or seek failure"
-		[self sqImageFileClose: f.
-		 ^nil].
-
-	"write the image data"
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[bytesWritten := objectMemory writeImageSegmentsToFile: f]
-		ifFalse:
-			[bytesWritten := self sq: (self pointerForOop: objectMemory baseAddressOfImage)
-								Image: (self sizeof: #char)
-								File: imageBytes
-								Write: f].
-	self success: bytesWritten = imageBytes.
-	self sqImageFileClose: f.
+	<var:#imageName declareC:'extern char imageName[]'>
 	
-	self logDebug: 'Snapshot file %s done' _: imageName.
-]
+	"The image name is defined as a extern char[] variable"
+	self simulationOnly: [ imageName := self imageName ].
+	imageWriter writeImageFile: imageName fromHeader: self newHeader
 
-{ #category : #'image save/restore' }
-StackInterpreter >> writeImageFileIOSimulation [
-	"Write the image header and heap contents to imageFile for snapshot.
-	 c.f. writeImageFileIO.  The game below is to maintain 64-bit alignment
-	 for all putLong:toFile: occurrences."
-	<doNotGenerate>
-	| headerSize |
-	headerSize := objectMemory wordSize = 4 ifTrue: [64] ifFalse: [128].
-
-	self imageName asFileReference binaryWriteStreamDo: [ :file |
-			 self putWord32: self imageFormatVersion toFile: file.
-			 self putWord32: headerSize toFile: file.
-			{
-		objectMemory imageSizeToWrite.
-		objectMemory baseAddressOfImage.
-		objectMemory specialObjectsOop.
-		objectMemory lastHash.
-		self ioScreenSize.
-		self getImageHeaderFlags
-	 }
-		do: [:long | self putLong: long toFile: file].		
-
-	 self putWord32: (extraVMMemory ifNil: [0]) toFile: file.
-	 {	desiredNumStackPages. self unknownShortOrCodeSizeInKs } do:
-		[:short| self putShort: short toFile: file].
-
-	 self putWord32: desiredEdenBytes toFile: file.
-
-	 {	maxExtSemTabSizeSet ifTrue: [self ioGetMaxExtSemTableSize] ifFalse: [0]. 0 } do:
-		[:short| self putShort: short toFile: file].
-
-	 objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[| bytesWritten |
-			 self putLong: objectMemory firstSegmentBytes toFile: file.
-			 self putLong: objectMemory bytesLeftInOldSpace toFile: file.
-			 2 timesRepeat: [self putLong: 0 toFile: file] "Pad the rest of the header.".
-			 objectMemory wordSize = 8 ifTrue:
-				[3 timesRepeat: [self putLong: 0 toFile: file]].
-
-			 self assert: file position = headerSize.
-			"Position the file after the header."
-			file position: headerSize.
-			bytesWritten := objectMemory writeImageSegmentsToFile: file.
-			self assert: bytesWritten = objectMemory imageSizeToWrite]
-		ifFalse:
-			["Pad the rest of the header."
-			 4 timesRepeat: [self putLong: 0 toFile: file].
-			 objectMemory wordSize = 8 ifTrue:
-				[3 timesRepeat: [self putLong: 0 toFile: file]].
-
-			 self assert: file position = headerSize.
-			 "Position the file after the header."
-			 file position: headerSize.
-
-			 "Write the object memory."
-			 objectMemory baseAddressOfImage // 4 + 1
-				to: objectMemory baseAddressOfImage + objectMemory imageSizeToWrite // 4
-				do: [:index |
-					self
-						putLong: (objectMemory memory at: index)
-						toFile: file]].
-	
-	 self success: true
-	]
 ]
 
 { #category : #'stack pages' }

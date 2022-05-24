@@ -950,7 +950,7 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	SelectorCannotReturn := 21.
 	ProcessSignalingLowSpace := 22.	"was TheInputSemaphore"
 	SpecialSelectors := 23.
-	CharacterTable := nil.	"Must be unused by the VM"
+	"24 was Old CharacterTable"
 	SelectorMustBeBoolean := 25.
 	ClassByteArray := 26.
 	"ClassProcess := 27. unused"
@@ -1943,17 +1943,10 @@ SpurMemoryManager >> allocateLargestFreeChunk [
 ]
 
 { #category : #testing }
-SpurMemoryManager >> allocateMemoryOfSize: memoryBytes [
-	<doNotGenerate>
-
-	^ memoryManager allocate: memoryBytes
-]
-
-{ #category : #testing }
 SpurMemoryManager >> allocateMemoryOfSize: memoryBytes initialAddress: initialAddress [
 	<doNotGenerate>
 
-	^ memoryManager allocate: memoryBytes
+	^ memoryManager allocate: memoryBytes desiredPosition: initialAddress
 ]
 
 { #category : #'spur bootstrap' }
@@ -2690,11 +2683,6 @@ SpurMemoryManager >> averageObjectSizeInBytes [
 	^8 * self bytesPerOop
 ]
 
-{ #category : #snapshot }
-SpurMemoryManager >> baseAddressOfImage [
-	^oldSpaceStart
-]
-
 { #category : #'header access' }
 SpurMemoryManager >> baseHeader: obj [
 	^self long64At: obj
@@ -2977,11 +2965,6 @@ SpurMemoryManager >> changeClassOf: rcvr to: argClass [
 SpurMemoryManager >> characterObjectOf: characterCode [
 	<api>
 	^characterCode << self numTagBits + self characterTag
-]
-
-{ #category : #accessing }
-SpurMemoryManager >> characterTable [
-	self shouldNotImplement
 ]
 
 { #category : #'object access' }
@@ -5040,14 +5023,6 @@ SpurMemoryManager >> firstSegmentBytes [
 	^segmentManager firstSegmentBytes
 ]
 
-{ #category : #snapshot }
-SpurMemoryManager >> firstSegmentSize: firstSegmentSize [
-	<doNotGenerate>
-	"even an empty segment needs a bridge ;-)"
-	self assert: firstSegmentSize >= (2 * self baseHeaderSize).
-	segmentManager firstSegmentSize: firstSegmentSize
-]
-
 { #category : #'header formats' }
 SpurMemoryManager >> firstShortFormat [
 	<api>
@@ -6455,7 +6430,6 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 		[self
 			initSegmentBridgeWithBytes: self bridgeSize
 			at: endOfMemory - self bridgeSize].
-	segmentManager adjustSegmentSwizzlesBy: bytesToShift.
 	"image may be at a different address; adjust oops for new location"
 	self adjustAllOopsBy: bytesToShift.
 	specialObjectsOop := segmentManager swizzleObj: specialObjectsOop.
@@ -6481,7 +6455,10 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	self assert: (self isEmptyObjStack: weaklingStack).
 
 	self initializeFreeSpacePostLoad: freeListObj.
+	
 	segmentManager collapseSegmentsPostSwizzle.
+	segmentManager assertBridge.
+	
 	self updateFreeLists.
 	self computeFreeSpacePostSwizzle.
 	compactor postSwizzleAction.
@@ -6528,7 +6505,9 @@ SpurMemoryManager >> initializePostBootstrap [
 	freeOldSpaceStart := freeStart.
 	freeStart := scavenger eden start.
 	pastSpaceStart := scavenger pastSpace start.
-	scavengeThreshold := scavenger eden limit - (scavenger edenBytes // 64)
+	scavengeThreshold := scavenger eden limit
+							- coInterpreter interpreterAllocationReserveBytes.
+
 ]
 
 { #category : #'gc - global' }
@@ -7842,16 +7821,6 @@ SpurMemoryManager >> lengthOf: objOop [
 ]
 
 { #category : #'object access' }
-SpurMemoryManager >> lengthOf: objOop baseHeader: header format: fmt [ 
-	<var: #header type: #usqLong>
-	"Compatibility; does not really suit the Spur format.
-	 Answer the number of indexable bytes or words in the given object.
-	 For a CompiledMethod, the size of the method header (in bytes) should
-	 be subtracted from the result of this method."
-	^self lengthOf: objOop format: fmt
-]
-
-{ #category : #'object access' }
 SpurMemoryManager >> lengthOf: objOop format: fmt [
 	"Answer the number of indexable units in the given object.
 	 For a CompiledMethod, the size of the method header (in bytes)
@@ -7962,7 +7931,7 @@ SpurMemoryManager >> lookupAddress: address [
 	address - self baseHeaderSize = hiddenRootsObj ifTrue:
 		[^'(hiddenRootsObj+baseHeaderSize)'].
 	fmt := self formatOf: address.
-	size := self lengthOf: address baseHeader: (self baseHeader: address) format: fmt.
+	size := self lengthOf: address format: fmt.
 	size = 0 ifTrue:
 		[^address caseOf: { [nilObj] -> ['nil']. [trueObj] -> ['true']. [falseObj] -> ['false'] } otherwise: []].
 	((fmt between: self firstByteFormat and: self firstCompiledMethodFormat - 1) "indexable byte fields"
@@ -8552,12 +8521,6 @@ SpurMemoryManager >> memoryActiveProcess: anOop [
 
 	self storePointer: ActiveProcessIndex ofObject: self memorySchedulerPointer withValue: anOop
 	
-]
-
-{ #category : #snapshot }
-SpurMemoryManager >> memoryBaseForImageRead [
-	"Answer the address to read the image into."
-	^oldSpaceStart
 ]
 
 { #category : #simulation }
@@ -10415,6 +10378,7 @@ SpurMemoryManager >> pushRemappableOop: oop [
 	 We support this excessence for compatibility with ObjectMemory.
 	 Spur doesn't GC during allocation."
 	<api>
+	<returnTypeC: #void>
 	self assert: (self addressCouldBeOop: oop).
 	remapBuffer at: (remapBufferCount := remapBufferCount + 1) put: oop.
 	remapBufferCount <= RemapBufferSize ifFalse:
@@ -10490,14 +10454,6 @@ SpurMemoryManager >> readFloat64AtPointer: aCArrayAccessor [
 	| floatPtr |
 	floatPtr := self cCoerce: (aCArrayAccessor) to: #'double *'.
 	^ floatPtr at: 0
-]
-
-{ #category : #snapshot }
-SpurMemoryManager >> readHeapFromImageFile: f dataBytes: numBytes [
-	"Read numBytes of image data from f into memory at memoryBaseForImageRead.
-	 Answer the number of bytes written."
-	<doNotGenerate>
-	^segmentManager readHeapFromImageFile: f dataBytes: numBytes
 ]
 
 { #category : #'ffi - helpers' }
@@ -10854,7 +10810,7 @@ SpurMemoryManager >> scavengingGCTenuringIf: tenuringCriterion [
 	"Run the scavenger."
 	<inline: false>
 	self assert: remapBufferCount = 0.
-	(self asserta: scavenger eden limit - freeStart > coInterpreter interpreterAllocationReserveBytes) ifFalse:
+	(self asserta: scavenger eden limit - freeStart >= coInterpreter interpreterAllocationReserveBytes) ifFalse:
 		[coInterpreter tab;
 			printNum: scavenger eden limit - freeStart; space;
 			printNum: coInterpreter interpreterAllocationReserveBytes; space;
@@ -11472,31 +11428,18 @@ SpurMemoryManager >> splObj: index put: anObject [
 { #category : #'simulation only' }
 SpurMemoryManager >> sqAllocateMemorySegmentOfSize: segmentSize Above: minAddress AllocatedSizeInto: allocSizePtrOrBlock [
 	<doNotGenerate>
-	"Simulate heap growth by growing memory by segmentSize + a delta.
-	 To test bridges alternate the delta between 0 bytes and 1M bytes
-	 depending on the number of segments.
-	 The delta will be the distance between segments to be bridged."
-	| delta newMemory start |
-	1halt.
-	self assert: segmentSize \\ memory bytesPerElement = 0.
-	delta := segmentManager numSegments odd ifTrue: [1024 * 1024] ifFalse: [0].
-	"A previous shrink may have freed up memory.  Don't bother to grow if there's already room.
-	 At minAddress there is a hole of segmentSize or it is the segLimit of the last segment.
-	 However there is no hole of segmentSize + delta guaranteed..."
-	0 to: segmentManager numSegments - 1 do:
-			[:i| | segment bridge |
-			segment := segmentManager segments at: i.
-			bridge := segmentManager bridgeAt: i.
-			(segment segLimit >= minAddress 
-				and: [(self bytesInObject: bridge) - self bridgeSize >= (segmentSize + delta)]) ifTrue: [ 
-					allocSizePtrOrBlock value: segmentSize.
-					^ segment segLimit + delta] ].
-	start := memory size * memory bytesPerElement + delta.
-	newMemory := memory class new: memory size + (segmentSize + delta / memory bytesPerElement).
-	newMemory replaceFrom: 1 to: memory size with: memory startingAt: 1.
-	memory := newMemory.
+	"Simulate heap growth by growing memory by segmentSize."
+
+	| start |
+	self assert: segmentSize \\ memoryManager wordSize = 0.
+
+	start := memoryManager allocate: segmentSize desiredPosition: minAddress.
+	
+	self assert: start >= minAddress.
+	
 	allocSizePtrOrBlock value: segmentSize.
-	^start
+	
+	^ start.
 ]
 
 { #category : #'simulation only' }
@@ -12800,16 +12743,16 @@ SpurMemoryManager >> writeEnableMemory [
 		[memory := memory array]
 ]
 
-{ #category : #snapshot }
-SpurMemoryManager >> writeImageSegmentsToFile: aBinaryStream [
-	<doNotGenerate>
-	^segmentManager writeImageSegmentsToFile: aBinaryStream
-]
-
 { #category : #simulation }
 SpurMemoryManager >> writeProtectMemory [
 	<doNotGenerate>
 	1halt.
 	memory class ~~ ReadOnlyArrayWrapper ifTrue:
 		[memory := ReadOnlyArrayWrapper around: memory]
+]
+
+{ #category : #'header formats' }
+SpurMemoryManager >> zeroSlotsNonIndexablePointerFormat [
+	<api>
+	^0
 ]

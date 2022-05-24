@@ -200,11 +200,6 @@ CurrentImageCoInterpreterFacade >> characterObjectOf: anInteger [
 ]
 
 { #category : #accessing }
-CurrentImageCoInterpreterFacade >> characterTable [
-	^self subclassResponsibility
-]
-
-{ #category : #accessing }
 CurrentImageCoInterpreterFacade >> classCharacter [
 	^self oopForObject: Character
 ]
@@ -430,7 +425,7 @@ CurrentImageCoInterpreterFacade >> indexablePointersFormat [
 { #category : #'initialize-release' }
 CurrentImageCoInterpreterFacade >> initialize [
 	objectMemory := self class objectMemoryClass simulatorClass new.
-	objectMemory allocateMemoryOfSize: 1024*1024.
+	objectMemory memoryManager allocate: 1024*1024.
 	memory := objectMemory memory.
 	objectMemory
 		initializeFreeSpaceForFacadeFrom: self startOfMemory

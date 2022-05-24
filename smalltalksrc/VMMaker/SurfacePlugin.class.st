@@ -339,7 +339,7 @@ SurfacePlugin >> primitiveCreateManualSurface [
 	result := self cCode: 'createManualSurface(width, height, rowPitch, depth, isMSB)'.
 	result < 0 ifTrue: [^interpreterProxy primitiveFail].
 	result := interpreterProxy signed32BitIntegerFor: result.
-	^interpreterProxy pop: 6 thenPush: result
+	interpreterProxy pop: 6 thenPush: result
 	
 ]
 
@@ -383,7 +383,7 @@ SurfacePlugin >> primitiveFindSurface [
 
 	result := self ioFindSurface: externalID _: 0 _: surfaceHandlePtr.
 	
-	^ interpreterProxy pop: 3 thenPush: (result ifTrue: [interpreterProxy trueObject] ifFalse: [interpreterProxy falseObject])
+	interpreterProxy pop: 3 thenPush: (result ifTrue: [interpreterProxy trueObject] ifFalse: [interpreterProxy falseObject])
 ]
 
 { #category : #primitives }
@@ -427,7 +427,7 @@ SurfacePlugin >> primitiveRegisterSurface [
 	
 	result := self ioRegisterSurface: surfaceHandlePtr _: sqSurfaceDispatchPtr _: surfaceIDPtr.
 	
-	^ interpreterProxy pop: 4 thenPush: (result ifTrue: [interpreterProxy trueObject] ifFalse: [interpreterProxy falseObject])
+	interpreterProxy pop: 4 thenPush: (result ifTrue: [interpreterProxy trueObject] ifFalse: [interpreterProxy falseObject])
 ]
 
 { #category : #primitives }
@@ -471,7 +471,7 @@ SurfacePlugin >> primitiveUnregisterSurface [
 	
 	result := self ioUnregisterSurface: surfaceID.
 	
-	^ interpreterProxy pop: 2 thenPush: (result ifTrue: [interpreterProxy trueObject] ifFalse: [interpreterProxy falseObject])
+	interpreterProxy pop: 2 thenPush: (result ifTrue: [interpreterProxy trueObject] ifFalse: [interpreterProxy falseObject])
 	
 ]
 

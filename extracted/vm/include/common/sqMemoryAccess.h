@@ -187,7 +187,7 @@ typedef unsigned long long usqIntptr_t;
   static inline unsigned int uint32AtPointerput(char *ptr, unsigned int val)	{ return (*((unsigned int *)ptr)= val); }
 
   static inline sqLong int64AtPointer(char *ptr)			    { return (*((sqLong *)ptr)); }
-  static inline sqLong int64AtPointerput(char *ptr, int val)	{ return (*((sqLong *)ptr)= val); }
+  static inline sqLong int64AtPointerput(char *ptr, sqLong val)	{ return (*((sqLong *)ptr)= val); }
   static inline usqLong uint64AtPointer(char *ptr)			    { return (*((usqLong *)ptr)); }
   static inline usqLong uint64AtPointerput(char *ptr, usqLong val)	{ return (*((usqLong *)ptr)= val); }
 
