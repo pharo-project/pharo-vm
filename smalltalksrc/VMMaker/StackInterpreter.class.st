@@ -8513,8 +8513,10 @@ StackInterpreter >> internalActivateNewMethod [
 		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
 		 localIP := localIP + (self sizeOfCallPrimitiveBytecode: methodHeader).
-		 primFailCode ~= 0 ifTrue:
-			[self reapAndResetErrorCodeTo: localSP header: methodHeader]].
+		 primFailCode ~= 0 ifTrue: [ | shouldSkipStoreBytecode |
+			shouldSkipStoreBytecode := self reapAndResetErrorCodeTo: localFP header: methodHeader.
+			shouldSkipStoreBytecode ifTrue: [ 
+				localIP := localIP + (self sizeOfLongStoreTempBytecode: methodHeader)  ] ] ].
 
 	self assert: (self frameNumArgs: localFP) = argumentCount.
 	self assert: (self frameIsBlockActivation: localFP) not.
@@ -9356,8 +9358,10 @@ StackInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
 		 instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader).
-		 primFailCode ~= 0 ifTrue:
-			[self reapAndResetErrorCodeTo: stackPointer header: methodHeader]].
+		 primFailCode ~= 0 ifTrue: [ | shouldSkipStoreBytecode |
+			shouldSkipStoreBytecode := self reapAndResetErrorCodeTo: framePointer header: methodHeader.
+			shouldSkipStoreBytecode ifTrue: [ 
+				instructionPointer := instructionPointer + (self sizeOfLongStoreTempBytecode: methodHeader)  ] ] ].
 
 	^methodHeader
 ]
@@ -11574,6 +11578,12 @@ StackInterpreter >> primFailCode [
 	^ primFailCode 
 ]
 
+{ #category : #'cog jit support' }
+StackInterpreter >> primFailCode: anInteger [
+	<doNotGenerate>
+	primFailCode := anInteger
+]
+
 { #category : #'primitive support' }
 StackInterpreter >> primitiveAccessorDepthForExternalPrimitiveMethod: methodObj [
 	^objectMemory integerValueOf:
@@ -13669,18 +13679,29 @@ StackInterpreter >> readableFormat: imageVersion [
 ]
 
 { #category : #'primitive support' }
-StackInterpreter >> reapAndResetErrorCodeTo: theSP header: methodHeader [
+StackInterpreter >> reapAndResetErrorCodeTo: theFP header: methodHeader [
+
 	"Assuming the primFailCode is non-zero, check if the method consumes the error code
-	 and if so, assign it through theSP.  Then zero the primFailCode.  This is infrequent code,
-	 so keep it out of the common path."
+	 and if so, assign it through theFP into the correct temporary variable.
+	Then zero the primFailCode.  This is infrequent code, so keep it out of the common path."
+
 	<var: 'theSP' type: #'char *'>
 	<inline: #never>
 	| initialPC |
 	self assert: primFailCode ~= 0.
-	initialPC := (self initialIPForHeader: methodHeader method: newMethod) + (self sizeOfCallPrimitiveBytecode: methodHeader).
-	(objectMemory byteAt: initialPC) = (self longStoreBytecodeForHeader: methodHeader) ifTrue:
-		[stackPages longAtPointer: theSP put: self getErrorObjectFromPrimFailCode].
-	 primFailCode := 0
+	initialPC := (self initialIPForHeader: methodHeader method: newMethod)
+	             + (self sizeOfCallPrimitiveBytecode: methodHeader).
+	(objectMemory byteAt: initialPC)
+	= (self longStoreBytecodeForHeader: methodHeader) ifTrue: [ 
+		| temporaryIndex |
+		temporaryIndex := objectMemory byteAt: initialPC + 1.
+		self
+			temporary: temporaryIndex
+			in: theFP
+			put: self getErrorObjectFromPrimFailCode.
+		^ true].
+	primFailCode := 0.
+	^ false
 ]
 
 { #category : #'internal interpreter access' }
