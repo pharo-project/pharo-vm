@@ -229,6 +229,30 @@ VMSpurMemoryManagerTest >> memory [
 	^ memory
 ]
 
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> new16BitIndexableOfSize: aSize [
+
+	^ self newBitIndexableOfSize: aSize bytesPerSlot: 2 format: memory firstShortFormat
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> new32BitIndexableOfSize: aSize [
+
+	^ self newBitIndexableOfSize: aSize bytesPerSlot: 4 format: memory firstLongFormat
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> new64BitIndexableOfSize: aSize [
+
+	^ self newBitIndexableOfSize: aSize bytesPerSlot: 8 format: memory sixtyFourBitIndexableFormat
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> new8BitIndexableOfSize: aSize [
+
+	^ self newBitIndexableOfSize: aSize bytesPerSlot: 1 format: memory firstByteFormat
+]
+
 { #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newArrayWithSlots: slots [
 	
@@ -239,6 +263,19 @@ VMSpurMemoryManagerTest >> newArrayWithSlots: slots [
 VMSpurMemoryManagerTest >> newArrayWithSlots: slots classIndex: anIndex [
 	
 	^ self newObjectWithSlots: slots format: memory arrayFormat classIndex: anIndex
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> newBitIndexableOfSize: aSize bytesPerSlot: bytesPerSlot format: format [
+
+	| padding numberOfWordSizeSlots desiredByteSize |
+	desiredByteSize := aSize * bytesPerSlot roundUpTo: self wordSize.
+	numberOfWordSizeSlots := desiredByteSize / self wordSize.
+	padding := desiredByteSize / bytesPerSlot - aSize.
+	^ memory
+		  allocateNewSpaceSlots: numberOfWordSizeSlots
+		  format: format + padding
+		  classIndex: self nextOrdinaryClassIndex
 ]
 
 { #category : #'helpers - classes' }

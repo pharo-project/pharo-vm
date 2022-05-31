@@ -906,7 +906,8 @@ SpurMemoryManager class >> initializeCompactClassIndices [
 	ClassByteArrayCompactIndex := 50.
 	ClassArrayCompactIndex := 51.
 	ClassByteStringCompactIndex := 52.
-	ClassBitmapCompactIndex := 53
+	ClassBitmapCompactIndex := 53.
+	ClassFloat64RegisterIndex := 54.
 ]
 
 { #category : #'class initialization' }
@@ -4799,6 +4800,13 @@ SpurMemoryManager >> fetchClassTagOf: oop [
 SpurMemoryManager >> fetchClassTagOfNonImm: obj [
 	"In Spur an object's classIndex is the tag in all method caches."
 	^self classIndexOf: obj
+]
+
+{ #category : #'object access' }
+SpurMemoryManager >> fetchFloat64: index ofObject: objOop [ 
+
+	<returnTypeC: #double>
+	^self float64At: objOop + self baseHeaderSize + (index << 3)
 ]
 
 { #category : #'simulation only' }
@@ -11702,6 +11710,12 @@ SpurMemoryManager >> storeCheckBoundary [
 	"A renaming for the Cogit, which couldn't make sense of GIV(newSpaceLimit)"
 	<api>
 	^newSpaceLimit
+]
+
+{ #category : #'object access' }
+SpurMemoryManager >> storeFloat64: index ofObject: objOop withValue: value [ 
+	<var: #value type: #double>
+	^self float64At: objOop + self baseHeaderSize + (index << 3) put: value
 ]
 
 { #category : #'simulation only' }

@@ -1987,6 +1987,32 @@ StackInterpreter >> addToExternalPrimitiveTable: functionAddress [
 	^0
 ]
 
+{ #category : #'simd bytecodes' }
+StackInterpreter >> addVectorBytecode [
+	
+	<var: #tmp type: #double>
+	
+	| arg rcv res tmp |
+	arg := self internalStackValue: 0.
+	rcv := self internalStackValue: 1.
+	
+	res := objectMemory 
+		eeInstantiateClassIndex: ClassFloat64RegisterIndex 
+		format: objectMemory sixtyFourBitIndexableFormat 
+		numSlots: 2.
+	
+	tmp := (objectMemory fetchFloat64: 0 ofObject: arg) + (objectMemory fetchFloat64: 0 ofObject: rcv).
+	objectMemory storeFloat64: 0 ofObject: res withValue: tmp. 
+
+
+	tmp := (objectMemory fetchFloat64: 1 ofObject: arg) + (objectMemory fetchFloat64: 1 ofObject: rcv).
+	objectMemory storeFloat64: 1 ofObject: res withValue: tmp. 
+		
+	self internalPop: 2 thenPush: res.
+	
+	self fetchNextBytecode.
+]
+
 { #category : #'debug support' }
 StackInterpreter >> addressCouldBeClassObj: maybeClassObj [
 	"Answer if maybeClassObj looks like a class object"

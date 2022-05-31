@@ -67,6 +67,22 @@ VMByteCodesTest >> firstStoreAndPopTemporaryVariableBytecode [
 	^ 104
 ]
 
+{ #category : #'tests-simd' }
+VMByteCodesTest >> installFloat64RegisterClass [
+
+	| registerClass |
+	registerClass := self
+		              newClassInOldSpaceWithSlots: 0
+		              instSpec: memory sixtyFourBitIndexableFormat.
+		
+	memory setHashBitsOf: registerClass to: ClassFloat64RegisterIndex.
+	memory
+		storePointer: ClassFloat64RegisterIndex
+		ofObject: memory classTableFirstPage
+		withValue: registerClass
+
+]
+
 { #category : #'helper-interpret' }
 VMByteCodesTest >> interpret: aBlock [
 	interpreter internalizeIPandSP.
@@ -116,6 +132,13 @@ VMByteCodesTest >> pushThisContextTopFrame [
 	context := VMContext
 		newOnContext: contextOop
 		withInterpreter: interpreter
+]
+
+{ #category : #'tests-simd' }
+VMByteCodesTest >> setUp [ 
+
+	super setUp.
+	self installFloat64RegisterClass
 ]
 
 { #category : #'tests-push-simple' }
@@ -547,4 +570,33 @@ VMByteCodesTest >> testStoreAndPopTemporary6 [
 { #category : #'tests-push-simple' }
 VMByteCodesTest >> testStoreAndPopTemporary7 [
 	self storeAndPopTemporaryIntoTempTest: 7
+]
+
+{ #category : #'tests-simd' }
+VMByteCodesTest >> testVectorSum [
+	| index v0 v1 result |
+	
+	index := 0.
+
+	v0 := self new64BitIndexableOfSize: 2.	
+	v1 := self new64BitIndexableOfSize: 2.
+	
+	memory storeFloat64: 0 ofObject: v0 withValue: 1.0. 
+	memory storeFloat64: 1 ofObject: v0 withValue: 2.0. 
+
+	memory storeFloat64: 0 ofObject: v1 withValue: 3.0. 
+	memory storeFloat64: 1 ofObject: v1 withValue: 4.0. 
+		
+	stackBuilder addNewFrame
+		stack: { v0. v1 } .
+	stackBuilder buildStack.
+	
+	self interpret: [ interpreter addVectorBytecode ].
+	
+	result := interpreter stackTop.
+	
+	self deny: result equals: memory nilObject.
+	self assert: (memory fetchFloat64: 0 ofObject: result) equals: 4.0.
+	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 6.0.
+	
 ]
