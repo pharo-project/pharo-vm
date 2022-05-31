@@ -508,7 +508,7 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 
 	((self methodHeaderHasPrimitive: methodHeader)
 	 and: [primFailCode ~= 0]) ifTrue:
-		[self reapAndResetErrorCodeTo: stackPointer header: methodHeader].
+		[self reapAndResetErrorCodeTo: framePointer header: methodHeader].
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
 	stackPointer >= stackLimit ifTrue:
@@ -653,8 +653,10 @@ CoInterpreter >> activateNewMethod [
 		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
 		 instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader).
-		 primFailCode ~= 0 ifTrue:
-			[self reapAndResetErrorCodeTo: stackPointer header: methodHeader]].
+		 primFailCode ~= 0 ifTrue: [ | shouldSkipStoreBytecode |
+			shouldSkipStoreBytecode := self reapAndResetErrorCodeTo: framePointer header: methodHeader.
+			shouldSkipStoreBytecode ifTrue: [ 
+				instructionPointer := instructionPointer + (self sizeOfLongStoreTempBytecode: methodHeader)  ] ] ].
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
 	switched := true.
@@ -1654,7 +1656,7 @@ CoInterpreter >> ceReapAndResetErrorCodeFor: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	self assert: primFailCode ~= 0.
 	newMethod := cogMethod methodObject.
-	self reapAndResetErrorCodeTo: stackPointer + objectMemory wordSize
+	self reapAndResetErrorCodeTo: framePointer
 		header: cogMethod methodHeader
 ]
 
@@ -3947,8 +3949,10 @@ CoInterpreter >> internalActivateNewMethod [
 		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
 		 localIP := localIP + (self sizeOfCallPrimitiveBytecode: methodHeader).
-		 primFailCode ~= 0 ifTrue:
-			[self reapAndResetErrorCodeTo: localSP header: methodHeader]].
+		 primFailCode ~= 0 ifTrue: [ | shouldSkipStoreBytecode |
+			shouldSkipStoreBytecode := self reapAndResetErrorCodeTo: localFP header: methodHeader.
+			shouldSkipStoreBytecode ifTrue: [ 
+				localIP := localIP + (self sizeOfLongStoreTempBytecode: methodHeader)  ] ] ].
 
 	self assert: (self frameNumArgs: localFP) = argumentCount.
 	self assert: (self frameIsBlockActivation: localFP) not.
@@ -4232,9 +4236,11 @@ CoInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
 		 cogMethod ifNil:
-			[instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader) + (self sizeOfLongStoreTempBytecode: methodHeader)].
-		 primFailCode ~= 0 ifTrue:
-			[self reapAndResetErrorCodeTo: stackPointer header: methodHeader]].
+			[instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader)].
+		 primFailCode ~= 0 ifTrue: [ | shouldSkipStoreBytecode |
+			shouldSkipStoreBytecode := self reapAndResetErrorCodeTo: framePointer header: methodHeader.
+			(cogMethod isNil and: [shouldSkipStoreBytecode]) ifTrue: [ 
+				instructionPointer := instructionPointer + (self sizeOfLongStoreTempBytecode: methodHeader)  ] ] ]..
 
 	^methodHeader
 ]

@@ -1187,6 +1187,12 @@ StackInterpreterSimulator >> localFP [
 ]
 
 { #category : #'spur bootstrap' }
+StackInterpreterSimulator >> localFP: anFP [
+	
+	^ localFP := anFP
+]
+
+{ #category : #'spur bootstrap' }
 StackInterpreterSimulator >> localIP [
 	^localIP
 ]
