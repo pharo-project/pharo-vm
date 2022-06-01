@@ -473,21 +473,24 @@ CogObjectRepresentation >> genNonImplementedPrimitive [
 
 { #category : #'primitive generators' }
 CogObjectRepresentation >> genPrimitiveAdd [
-	| jumpNotSI jumpOvfl |
-	<var: #jumpNotSI type: #'AbstractInstruction *'>
-	<var: #jumpOvfl type: #'AbstractInstruction *'>
-	cogit mclassIsSmallInteger ifFalse:
-		[^UnimplementedPrimitive].
-	cogit genLoadArgAtDepth: 0 into: Arg0Reg.
-	cogit MoveR: Arg0Reg R: ClassReg.
-	jumpNotSI := self genJumpNotSmallInteger: Arg0Reg scratchReg: TempReg.
-	self genRemoveSmallIntegerTagsInScratchReg: ClassReg.
-	cogit AddR: ReceiverResultReg R: ClassReg.
-	jumpOvfl := cogit JumpOverflow: 0.
-	cogit MoveR: ClassReg R: ReceiverResultReg.
-	cogit genPrimReturn.
-	jumpOvfl jmpTarget: (jumpNotSI jmpTarget: cogit Label).
-	^CompletePrimitive
+
+	| currentBlock jump0 jump1 jump2 |
+	cogit TstCq: 1 R: Arg0Reg.
+	jump0 := cogit JumpZero: 0.
+	cogit TstCq: 1 R: ReceiverResultReg.
+	jump1 := cogit JumpZero: 0.
+	cogit MoveR: Arg0Reg R: Extra1Reg.
+	cogit SubCq: 1 R: Extra1Reg.
+	cogit MoveR: Extra1Reg R: Extra2Reg.
+	cogit AddR: ReceiverResultReg R: Extra2Reg.
+	jump2 := cogit JumpOverflow: 0.
+	cogit MoveR: Extra2Reg R: ReceiverResultReg.
+	cogit RetN: 2 * objectMemory wordSize.
+	currentBlock := cogit Label.
+	jump0 jmpTarget: currentBlock.
+	jump1 jmpTarget: currentBlock.
+	jump2 jmpTarget: currentBlock.
+	^ CompletePrimitive
 ]
 
 { #category : #'primitive generators' }
