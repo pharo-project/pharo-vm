@@ -317,12 +317,6 @@ Spur64BitMemoryManager >> fillObj: objOop numSlots: numSlots with: fillValue [
 		do: [:p| self longAt: p put: fillValue]
 ]
 
-{ #category : #'memory access' }
-Spur64BitMemoryManager >> float64At: anInteger put: aNumber [ 
-
-	memoryManager float64At: anInteger put: aNumber
-]
-
 { #category : #'interpreter access' }
 Spur64BitMemoryManager >> floatObjectOf: aFloat [
 	<inline: false>

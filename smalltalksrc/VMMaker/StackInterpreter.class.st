@@ -2004,7 +2004,6 @@ StackInterpreter >> addVectorBytecode [
 	tmp := (objectMemory fetchFloat64: 0 ofObject: arg) + (objectMemory fetchFloat64: 0 ofObject: rcv).
 	objectMemory storeFloat64: 0 ofObject: res withValue: tmp. 
 
-
 	tmp := (objectMemory fetchFloat64: 1 ofObject: arg) + (objectMemory fetchFloat64: 1 ofObject: rcv).
 	objectMemory storeFloat64: 1 ofObject: res withValue: tmp. 
 		

@@ -122,12 +122,6 @@ Spur64BitMMLESimulator >> firstIndexableField: objOop [
 				ifFalse: ["byte objects (including CompiledMethod" #'char *'])
 ]
 
-{ #category : #'object access' }
-Spur64BitMMLESimulator >> float64At: anInteger [ 
-	
-	^ memoryManager float64At: anInteger
-]
-
 { #category : #'spur bootstrap' }
 Spur64BitMMLESimulator >> freeLists [
 	^freeLists

@@ -5108,6 +5108,18 @@ SpurMemoryManager >> fixedFieldsOfClassFormatMask [
 	^1 << self fixedFieldsFieldWidth - 1
 ]
 
+{ #category : #'object access' }
+SpurMemoryManager >> float64At: anInteger [ 
+	
+	^ memoryManager float64At: anInteger
+]
+
+{ #category : #'memory access' }
+SpurMemoryManager >> float64At: anInteger put: aNumber [ 
+
+	memoryManager float64At: anInteger put: aNumber
+]
+
 { #category : #'interpreter access' }
 SpurMemoryManager >> floatObjectOf: aFloat [
 	self subclassResponsibility
