@@ -445,6 +445,11 @@ StackInterpreterSimulator >> disableBooleanCheat: aBoolean [
 	disableBooleanCheat := aBoolean
 ]
 
+{ #category : #'interpreter shell' }
+StackInterpreterSimulator >> dispatchCurrentBytecode [
+	self dispatchOn: currentBytecode in: BytecodeTable.
+]
+
 { #category : #'plugin primitive support' }
 StackInterpreterSimulator >> dispatchMappedPluginEntry: n [ 
 	^(mappedPluginEntries at: n) first
@@ -870,7 +875,7 @@ StackInterpreterSimulator >> interpret [
 	[ true ] whileTrue: [
 		self assertValidExecutionPointers.
 		atEachStepBlock value. "N.B. may be nil"
-		self dispatchOn: currentBytecode in: BytecodeTable.
+		self dispatchCurrentBytecode.
 		self incrementByteCount ].
 	instructionPointer := instructionPointer - 1.  "undo the pre-increment of IP before returning"
 	self externalizeIPandSP.
@@ -887,7 +892,7 @@ StackInterpreterSimulator >> interpretWhile: aFullBlockClosure [
 	self internalizeIPandSP.
 	self fetchNextBytecode.
 	[aFullBlockClosure value] whileTrue:
-		[self dispatchOn: currentBytecode in: BytecodeTable.
+		[self dispatchCurrentBytecode.
 		 self incrementByteCount].
 	instructionPointer := instructionPointer - 1.
 	"undo the pre-increment of IP before returning"

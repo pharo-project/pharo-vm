@@ -91,6 +91,16 @@ VMByteCodesTest >> interpret: aBlock [
 
 ]
 
+{ #category : #'tests-simd' }
+VMByteCodesTest >> interpretNextBytecode [
+
+	| count |
+	count := 0.
+	interpreter interpretWhile: [ 
+		count := count + 1.
+		count = 1 ]
+]
+
 { #category : #'tests-pushThisContext' }
 VMByteCodesTest >> interpretWithFrame: aBlock [
 
@@ -243,6 +253,33 @@ VMByteCodesTest >> testBytecodePopIntoReceiverWithReadOnlySendsAttemptToAssignMe
 		            newFramePointer: interpreter framePointer
 		            withInterpreter: interpreter.
 	self assert: topFrame method equals: attemptToAssignMethod
+]
+
+{ #category : #'tests-simd' }
+VMByteCodesTest >> testCallMappedInlinedPrimitiveBytecode [
+
+	| v0 v1 result method |
+	v0 := self new64BitIndexableOfSize: 2.
+	v1 := self new64BitIndexableOfSize: 2.
+	memory storeFloat64: 0 ofObject: v0 withValue: 1.0.
+	memory storeFloat64: 1 ofObject: v0 withValue: 2.0.
+	memory storeFloat64: 0 ofObject: v1 withValue: 3.0.
+	memory storeFloat64: 1 ofObject: v1 withValue: 4.0.
+	
+	method := methodBuilder newMethod
+		          bytecodes: #[ "callMappedInlinedPrimitiveBytecode" 236 "addVectorBytecode" 0 ];
+		          buildMethod.
+	stackBuilder addNewFrame
+		method: method;
+		stack: { v0. v1 }.
+	stackBuilder buildStack.
+	
+	self interpretNextBytecode.
+	
+	result := interpreter stackTop.
+	self deny: result equals: memory nilObject.
+	self assert: (memory fetchFloat64: 0 ofObject: result) equals: 4.0.
+	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 6.0
 ]
 
 { #category : #'tests-push-simple' }

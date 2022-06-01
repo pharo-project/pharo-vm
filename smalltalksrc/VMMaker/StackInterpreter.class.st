@@ -3665,14 +3665,13 @@ StackInterpreter >> callExternalPrimitive: functionID [
 StackInterpreter >> callMappedInlinedPrimitive [
 	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
 	| primIndex |
+	primIndex := self fetchByte.
+	self fetchNextBytecode.
 	SistaVM
 		ifTrue:
-			[primIndex := self fetchByte.
-			self fetchNextBytecode.
-			self sistaMappedInlinePrimitive: primIndex]
-		ifFalse: 
-			[instructionPointer := instructionPointer - 2.
-			self respondToUnknownBytecode].
+			[self sistaMappedInlinePrimitive: primIndex]
+		ifFalse:
+			[self mappedInlinePrimitive: primIndex].
 ]
 
 { #category : #'miscellaneous bytecodes' }
@@ -5103,6 +5102,12 @@ StackInterpreter >> directedSuperclassSend [
 	self ensureReceiverUnforwarded.
 	self assert: lkupClassTag ~= objectMemory nilObject.
 	self commonSendOrdinary
+]
+
+{ #category : #'interpreter shell' }
+StackInterpreter >> dispatchCurrentBytecode [
+	self dispatchOn: currentBytecode in: BytecodeTable
+
 ]
 
 { #category : #'message sending' }
@@ -8209,7 +8214,7 @@ StackInterpreter >> interpret [
 	self initExtensions.
 	self fetchNextBytecode.
 	[true] whileTrue: [self dispatchOn: currentBytecode in: BytecodeTable].
-	instructionPointer := instructionPointer - 1.  "undo the pre-increment of IP before returning"
+	localIP := localIP - 1.  "undo the pre-increment of IP before returning"
 	self externalizeIPandSP.
 	^nil
 
@@ -9759,6 +9764,23 @@ StackInterpreter >> mappedImmcheckStoreCheckPointerAtPut [
 		storePointerImmutabilityCheck: argIntAdjusted
 		ofObject: rec
 		withValue: result
+]
+
+{ #category : #'extension bytecodes' }
+StackInterpreter >> mappedInlinePrimitive: primIndex [
+	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
+	"Number of arguments:
+	 0-49 nullary
+	 50-99 unary
+	 100-149 binary
+	 150-199 trinary
+	 200-249 variable
+	 250-255 mapped jumps"
+	primIndex caseOf: {
+		[0]   -> [self addVectorBytecode].
+	} otherwise: [self unknownInlinePrimitive]
+	
+
 ]
 
 { #category : #'object memory support' }
