@@ -1996,10 +1996,12 @@ StackInterpreter >> addVectorBytecode [
 	arg := self internalStackValue: 0.
 	rcv := self internalStackValue: 1.
 	
-	res := objectMemory 
+"	res := objectMemory 
 		eeInstantiateClassIndex: ClassFloat64RegisterIndex 
 		format: objectMemory sixtyFourBitIndexableFormat 
 		numSlots: 2.
+"
+	res := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
 	
 	tmp := (objectMemory fetchFloat64: 0 ofObject: arg) + (objectMemory fetchFloat64: 0 ofObject: rcv).
 	objectMemory storeFloat64: 0 ofObject: res withValue: tmp. 
@@ -2008,8 +2010,6 @@ StackInterpreter >> addVectorBytecode [
 	objectMemory storeFloat64: 1 ofObject: res withValue: tmp. 
 		
 	self internalPop: 2 thenPush: res.
-	
-	self fetchNextBytecode.
 ]
 
 { #category : #'debug support' }

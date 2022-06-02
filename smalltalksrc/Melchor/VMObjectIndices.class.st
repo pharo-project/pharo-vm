@@ -22,6 +22,7 @@ Class {
 		'ClassCharacter',
 		'ClassExternalAddress',
 		'ClassFloat',
+		'ClassFloat64Register',
 		'ClassFullBlockClosure',
 		'ClassLargeNegativeInteger',
 		'ClassLargePositiveInteger',

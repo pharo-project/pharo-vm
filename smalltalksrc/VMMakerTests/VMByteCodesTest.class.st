@@ -76,10 +76,13 @@ VMByteCodesTest >> installFloat64RegisterClass [
 		              instSpec: memory sixtyFourBitIndexableFormat.
 		
 	memory setHashBitsOf: registerClass to: ClassFloat64RegisterIndex.
+	
 	memory
 		storePointer: ClassFloat64RegisterIndex
 		ofObject: memory classTableFirstPage
-		withValue: registerClass
+		withValue: registerClass.
+		
+	memory splObj: ClassFloat64Register put: registerClass
 
 ]
 
