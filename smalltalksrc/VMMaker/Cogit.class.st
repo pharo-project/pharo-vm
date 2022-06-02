@@ -2058,6 +2058,16 @@ Cogit >> DivRs: dpreg1 Rs: dpreg2 [
 ]
 
 { #category : #'abstract instructions' }
+Cogit >> DupS: aSize R: aGeneralRegister Vr: aVectorRegister [
+
+	^ self
+		  gen: DupRVr
+		  operand: aSize
+		  operand: aGeneralRegister
+		  operand: aVectorRegister
+]
+
+{ #category : #'abstract instructions' }
 Cogit >> Fill32: value [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2908,6 +2918,16 @@ Cogit >> SqrtRs: dpreg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: SqrtRs operand: dpreg
+]
+
+{ #category : #'abstract instructions' }
+Cogit >> St1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [ 
+	^ self
+		  gen: St1VrRMw
+		  operand: aSize 
+		  operand: aVectorRegister
+		  operand: aMemoryRegister 
+		  operand: anOffset 
 ]
 
 { #category : #'abstract instructions' }
@@ -6576,6 +6596,13 @@ Cogit >> fakeVarBaseAddress [
 	"We expect simulatedAddresses to have around 40 entries.  48 is hopefully a good maximum."
 	<doNotGenerate>
 	^self fakeAddressFor: nil index: 48
+]
+
+{ #category : #concretize }
+Cogit >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
+
+	<doNotGenerate>
+	backEnd fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister
 ]
 
 { #category : #'generate machine code' }
