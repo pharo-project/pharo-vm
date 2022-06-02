@@ -437,6 +437,26 @@ MockLocalizationInterpreterMock >> methodAlsoSharedLocalizedVariableBeforeInlini
 ]
 
 { #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> methodCallingBytecodeUsingLocalizedVariable [
+
+	self bytecodeUsingLocalizedVariable
+]
+
+{ #category : #'interpreter shell' }
+MockLocalizationInterpreterMock >> methodCallingBytecodeUsingLocalizedVariable2 [
+
+	self bytecodeUsingLocalizedVariable
+]
+
+{ #category : #inline }
+MockLocalizationInterpreterMock >> methodWithDiamond [
+
+	"I call two different methods that eventually call the same method accessing variable x"
+	self methodCallingBytecodeUsingLocalizedVariable.
+	self methodCallingBytecodeUsingLocalizedVariable2
+]
+
+{ #category : #'interpreter shell' }
 MockLocalizationInterpreterMock >> nonBytecodeUsingSharedLocalizedVariable [
 
 	sharedVariableToLocalize := 17

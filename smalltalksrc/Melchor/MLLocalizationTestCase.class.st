@@ -234,6 +234,31 @@ MLLocalizationTestCase >> testAutoLocalizeVariableReplacesByLocalOnInline [
 	self assert: (variableNode isVariable and: [ variableNode name = #local_autoLocalizedVariable ]).
 ]
 
+{ #category : #'tests - free variables' }
+MLLocalizationTestCase >> testCollectFreeVariablesOfMethodWithManyCallers [
+
+	| collector |
+	collector := SLCallGraphFreeVariableCollector codeGenerator: ccg.
+	ccg addClass: MockLocalizationInterpreterMock.
+	ccg prepareMethods.
+	
+	"
+	variableToLocalize should be considered free in the entire transitive call graph.
+	
+			 				  /-- methodCallingBytecodeUsingLocalizedVariable  --\
+							 /																	  \
+	methodWithDiamond <													  				   >--> bytecodeUsingLocalizedVariable (using variable variableToLocalize)
+						    \			 														  /
+							  \-- methodCallingBytecodeUsingLocalizedVariable2 --/
+	"
+	collector startFromSelector: #methodWithDiamond.
+
+	self assert: ((collector freeVariablesUsedByMethodNamed: #bytecodeUsingLocalizedVariable) includes: #variableToLocalize).	
+	self assert: ((collector freeVariablesUsedByMethodNamed: #methodCallingBytecodeUsingLocalizedVariable) includes: #variableToLocalize).
+	self assert: ((collector freeVariablesUsedByMethodNamed: #methodCallingBytecodeUsingLocalizedVariable2) includes: #variableToLocalize).
+	self assert: ((collector freeVariablesUsedByMethodNamed: #methodWithDiamond) includes: #variableToLocalize).
+]
+
 { #category : #'tests - localisation' }
 MLLocalizationTestCase >> testExternalEscapingAsArgument [
 	

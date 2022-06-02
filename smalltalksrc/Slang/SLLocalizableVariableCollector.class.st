@@ -137,8 +137,8 @@ SLLocalizableVariableCollector >> visitReturnNode: aTReturnNode [
 ]
 
 { #category : #visiting }
-SLLocalizableVariableCollector >> visitSendNode: aTSendNode [ 
-	
+SLLocalizableVariableCollector >> visitSendNode: aTSendNode [
+
 	(codeGenerator isDynamicCall: aTSendNode)
 		ifTrue: [
 			"If we are visiting dynamic call, we should externalize everything since we do not know at compile time what function will be called"

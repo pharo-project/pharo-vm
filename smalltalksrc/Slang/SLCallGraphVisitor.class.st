@@ -63,15 +63,17 @@ SLCallGraphVisitor >> internalVisitMethod: aTMethod [
 
 	"Recursive private method. Called only once per selector/method in the callgraph visit"
 
-	| shouldVisitMethod |
+	| shouldVisitMethod calledSelectors |
 	(alreadyVisited includes: aTMethod) ifTrue: [ ^ self ].
 	alreadyVisited add: aTMethod.
 
 	shouldVisitMethod := self preVisitMethod: aTMethod.
 	shouldVisitMethod ifFalse: [ ^ self ].
 
-	(aTMethod externalCallsIn: codeGenerator) do: [ :aTSendNode |
-		self internalVisitSelector: aTSendNode selector ].
+	calledSelectors := (aTMethod externalCallsIn: codeGenerator)
+		collect: [ :e | e selector ] as: Set.
+	calledSelectors do: [ :aSelector |
+			self internalVisitSelector: aSelector ].
 	
 	self postVisitMethod: aTMethod.
 ]
