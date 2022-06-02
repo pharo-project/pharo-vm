@@ -5111,12 +5111,14 @@ SpurMemoryManager >> fixedFieldsOfClassFormatMask [
 { #category : #'object access' }
 SpurMemoryManager >> float64At: anInteger [ 
 	
+	<doNotGenerate>
 	^ memoryManager float64At: anInteger
 ]
 
 { #category : #'memory access' }
 SpurMemoryManager >> float64At: anInteger put: aNumber [ 
 
+	<doNotGenerate>
 	memoryManager float64At: anInteger put: aNumber
 ]
 
