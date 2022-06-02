@@ -2,6 +2,12 @@
 
 I am a changelog... do not wait too much from me :D
 
+## v9.0.15
+
+- Fixing FFI Variadic functions in OSX ARM64
+- Fixing store of Int64 in FFI OSX ARM64 when using LongLong
+- Fixing Error code in Primitive when more than one temporary is used.
+
 ## v9.0.14
 
 - Adding support to read command line parameters from the PList (In OSX)
