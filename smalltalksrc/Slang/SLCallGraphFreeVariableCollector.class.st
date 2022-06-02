@@ -34,8 +34,9 @@ SLCallGraphFreeVariableCollector >> internalVisitMethod: aTMethod [
 	"If we already visited this method, 
 		add its previously computed variables to the accumulated parent variables"
 	(alreadyVisited includes: aTMethod) ifTrue: [ 
-		accumulatedFreeVariables last value addAll:
-			(self freeVariablesUsedByMethodNamed: aTMethod selector).
+		accumulatedFreeVariables ifNotEmpty: [ 
+			accumulatedFreeVariables last value addAll:
+				(self freeVariablesUsedByMethodNamed: aTMethod selector) ].
 		^ self ].
 
 	^ super internalVisitMethod: aTMethod
