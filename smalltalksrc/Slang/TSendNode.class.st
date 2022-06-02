@@ -11,6 +11,12 @@ Class {
 }
 
 { #category : #'instance creation' }
+TSendNode class >> receiver: aReceiverNode selector: aString [
+	
+	^ self receiver: aReceiverNode selector: aString arguments: #()
+]
+
+{ #category : #'instance creation' }
 TSendNode class >> receiver: aReceiverNode selector: aString arguments: aCollection [ 
 	
 	^ self new
@@ -20,20 +26,45 @@ TSendNode class >> receiver: aReceiverNode selector: aString arguments: aCollect
 		yourself
 ]
 
+{ #category : #comparing }
+TSendNode >> = aNode [
+
+	super = aNode ifFalse: [ ^ false ].
+	aNode isSend ifFalse: [ ^ false ].
+	selector = aNode selector ifFalse: [ ^ false ].
+	receiver = aNode receiver ifFalse: [ ^ false ].
+	arguments size = aNode arguments size ifFalse: [ ^ false ].
+	arguments doWithIndex: [ :arg :i | 
+		(arg = (aNode arguments at: i)) ifFalse: [ ^ false ] ].
+	^ true
+]
+
+{ #category : #visiting }
+TSendNode >> accept: aVisitor [
+	
+	^ aVisitor visitSendNode: self
+]
+
 { #category : #accessing }
 TSendNode >> args [
 
-	^arguments
+	self
+		deprecated: 'use #arguments instead'
+		transformWith: '`@rec args' -> '`@rec arguments'.
+
+	^ self arguments
 ]
 
 { #category : #accessing }
 TSendNode >> arguments [
-	^ arguments
+
+	^arguments
 ]
 
 { #category : #private }
 TSendNode >> arguments: aSequence [
-	arguments := aSequence
+	arguments := aSequence.
+	arguments do: [ :e | e parent: self ].
 ]
 
 { #category : #'inlining support' }
@@ -154,8 +185,8 @@ TSendNode >> asTransformedConstantPerform [
 { #category : #transformations }
 TSendNode >> bindVariableUsesIn: aDictionary [
 
-	receiver := receiver bindVariableUsesIn: aDictionary.
-	arguments := arguments collect: [ :a | a bindVariableUsesIn: aDictionary ].
+	self receiver: (receiver bindVariableUsesIn: aDictionary).
+	self arguments: (arguments collect: [ :a | a bindVariableUsesIn: aDictionary ]).
 ]
 
 { #category : #transformations }
@@ -221,8 +252,22 @@ TSendNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in:
 { #category : #transformations }
 TSendNode >> bindVariablesIn: aDictionary [
 
-	receiver := receiver bindVariablesIn: aDictionary.
-	arguments := arguments collect: [ :a | a bindVariablesIn: aDictionary ].
+	self receiver: (receiver bindVariablesIn: aDictionary).
+	self arguments: (arguments collect: [ :a | a bindVariablesIn: aDictionary ]).
+]
+
+{ #category : #transformations }
+TSendNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	(cautionaryBlock value: self) ifTrue: [^self].
+	self receiver: (receiver bindVariablesIn: aDictionary unless: cautionaryBlock).
+	self arguments: (arguments collect: [ :a | a bindVariablesIn: aDictionary unless: cautionaryBlock]).
+]
+
+{ #category : #accessing }
+TSendNode >> children [
+	
+	^ { receiver }, arguments
 ]
 
 { #category : #accessing }
@@ -264,6 +309,12 @@ TSendNode >> copyWithoutReturn [
 									ifTrue: [arg copyWithoutReturn]
 									ifFalse: [arg]]);
 		yourself
+]
+
+{ #category : #displaying }
+TSendNode >> displayString [
+
+	^ selector printString
 ]
 
 { #category : #testing }
@@ -330,15 +381,14 @@ TSendNode >> isReturningIf [
 
 { #category : #comparing }
 TSendNode >> isSameAs: aTParseNode [
-	(aTParseNode isSend
-	 and: [selector == aTParseNode selector
-	 and: [receiver isSameAs: aTParseNode receiver]]) ifFalse:
-		[^false].
-	arguments with: aTParseNode args do:
-		[:a :b|
-		(a isSameAs: b) ifFalse:
-			[^false]].
-	^true
+
+	(aTParseNode isSend and: [ 
+		 selector == aTParseNode selector and: [ 
+			 receiver isSameAs: aTParseNode receiver ] ]) ifFalse: [ ^ false ].
+	arguments
+		with: aTParseNode arguments
+		do: [ :a :b | (a isSameAs: b) ifFalse: [ ^ false ] ].
+	^ true
 ]
 
 { #category : #'C code generation' }
@@ -361,7 +411,7 @@ TSendNode >> isStructReference: varNode in: aCodeGen [
 { #category : #testing }
 TSendNode >> isValueExpansion [
 	"Answer if the receiver is of the form literalBlock value[: arg]"
-	^receiver isStmtList
+	^receiver isStatementList
 	 and: [selector keywords allSatisfy: [:k| #('value' 'value:') includes: k]]
 ]
 
@@ -424,8 +474,8 @@ TSendNode >> numArgs [
 { #category : #copying }
 TSendNode >> postCopy [
 
-	receiver := receiver copy.
-	arguments := (arguments collect: [ :arg | arg copy ])
+	self receiver: receiver copy.
+	self arguments: (arguments collect: [ :arg | arg copy ])
 ]
 
 { #category : #printing }
@@ -464,6 +514,7 @@ TSendNode >> receiver [
 TSendNode >> receiver: aNode [
 
 	receiver := aNode.
+	aNode parent: self
 ]
 
 { #category : #transformations }
@@ -473,11 +524,24 @@ TSendNode >> removeAssertions [
 ]
 
 { #category : #transformations }
+TSendNode >> replaceChild: aNode with: aReplacementNode [
+
+	receiver == aNode ifTrue: [
+		self receiver: aReplacementNode.
+		^ self
+	].
+	self arguments: (arguments collect: [ :e |
+		e == aNode
+			ifTrue: [ aReplacementNode ]
+			ifFalse: [ e ] ])
+]
+
+{ #category : #transformations }
 TSendNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
-		receiver := receiver replaceNodesIn: aDictionary.
-		arguments := arguments collect: [ :a | a replaceNodesIn: aDictionary ].
+		self receiver: (receiver replaceNodesIn: aDictionary).
+		self arguments: (arguments collect: [ :a | a replaceNodesIn: aDictionary ]).
 		self]
 ]
 
@@ -495,18 +559,15 @@ TSendNode >> selector: aSymbol [
 { #category : #accessing }
 TSendNode >> setSelector: aSymbol receiver: rcvrNode arguments: argList [
 
-	selector := aSymbol.
-	receiver := rcvrNode.
-	arguments := argList asArray.
-	isBuiltinOperator := false.
+	^ self setSelector: aSymbol receiver: rcvrNode arguments: argList isBuiltInOp: false
 ]
 
 { #category : #accessing }
 TSendNode >> setSelector: aSymbol receiver: rcvrNode arguments: argList isBuiltInOp: builtinFlag [
 
 	selector := aSymbol.
-	receiver := rcvrNode.
-	arguments := argList asArray.
+	self receiver: rcvrNode.
+	self arguments: argList asArray.
 	isBuiltinOperator := builtinFlag.
 ]
 

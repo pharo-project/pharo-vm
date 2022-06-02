@@ -381,19 +381,21 @@ CCodeGenerator >> addStructMethodFor: aClass selector: selector [
 
 { #category : #utilities }
 CCodeGenerator >> addVariablesInVerbatimCIn: aCCodeSendNode to: aCollection [
+
 	"If aCCodeSendNode has a string argument, parse it and extract anything
 	 that looks like a variable, and add the resulting vars to aCollection."
+
 	| separators tokens |
-	(aCCodeSendNode isSend
-	 and: [(aCCodeSendNode selector beginsWith: #cCode:)
-	 and: [aCCodeSendNode args first isConstant
-	 and: [aCCodeSendNode args first value isString]]]) ifFalse:
-		[^self].
-	separators := (Character space to: 255 asCharacter) reject:
-					[:char|
-					char isLetter or: [char isDigit or: [char = $_]]].
-	tokens := aCCodeSendNode args first value findTokens: separators.
-	aCollection addAll: (tokens select: [:token| token first isLetter]) asSet
+	(aCCodeSendNode isSend and: [ 
+		 (aCCodeSendNode selector beginsWith: #cCode:) and: [ 
+			 aCCodeSendNode arguments first isConstant and: [ 
+				 aCCodeSendNode arguments first value isString ] ] ]) ifFalse: [ 
+		^ self ].
+	separators := (Character space to: 255 asCharacter) reject: [ :char | 
+		              char isLetter or: [ char isDigit or: [ char = $_ ] ] ].
+	tokens := aCCodeSendNode arguments first value findTokens: separators.
+	aCollection addAll:
+		(tokens select: [ :token | token first isLetter ]) asSet
 ]
 
 { #category : #utilities }
@@ -743,11 +745,6 @@ CCodeGenerator >> checkClassForNameConflicts: aClass [
 ]
 
 { #category : #utilities }
-CCodeGenerator >> checkDeleteVariable: aName [
-	"Hook for debugging variable deletion."
-]
-
-{ #category : #utilities }
 CCodeGenerator >> checkForGlobalUsage: vars in: aTMethod [ 
 	vars do:
 		[:var |
@@ -755,7 +752,7 @@ CCodeGenerator >> checkForGlobalUsage: vars in: aTMethod [
 			[(globalVariableUsage at: var ifAbsentPut: [Set new])
 				add: aTMethod selector]].
 	aTMethod clearReferencesToGlobalStruct.
-	(aTMethod locals select: [:l| self reservedWords includes: l]) do:
+	(aTMethod allLocals select: [:l| self reservedWords includes: l]) do:
 		[:l| | em |
 		em := aTMethod definingClass name, '>>', aTMethod smalltalkSelector, ' has variable that is a C reserved word: ', l.
 		self error: em.
@@ -835,22 +832,12 @@ CCodeGenerator >> compileTimeOptions: aCollection [
 
 { #category : #utilities }
 CCodeGenerator >> compileToTMethodSelector: selector in: aClass [
-	"Compile a method to a TMethod"
-	^(aClass >> selector) asTranslationMethodOfClass: self translationMethodClass forCodeGenerator: self.
 
-	"was:
-	| implementingClass |
-	implementingClass := aClass.
-	^(Compiler new
-		parse: ([aClass sourceCodeAt: selector]
-					on: KeyNotFound
-					do: [:ex| ""Quick hack for simulating Pharo images...""
-						(PharoVM and: [aClass == String class and: [selector == #findSubstringViaPrimitive:in:startingAt:matchTable:]]) ifFalse:
-							[ex pass].
-						(implementingClass := ByteString) sourceCodeAt: #findSubstring:in:startingAt:matchTable:])
-		in: implementingClass
-		notifying: nil)
-			asTranslationMethodOfClass: self translationMethodClass"
+	"Compile a method to a TMethod"
+
+	^ aClass >> selector
+		asTranslationMethodOfClass: self translationMethodClass
+		forCodeGenerator: self
 ]
 
 { #category : #public }
@@ -888,13 +875,39 @@ CCodeGenerator >> conventionalTypeForType: aCTypeString [
 
 { #category : #accessing }
 CCodeGenerator >> currentMethod [
-	^currentMethod
+	
+	"The method is the bottom of the scope stack"
+	^ scopeStack first
 ]
 
 { #category : #accessing }
 CCodeGenerator >> currentMethod: aTMethod [
-	previousCommenter := nil.
-	currentMethod := aTMethod
+	
+	scopeStack := OrderedCollection with: aTMethod.
+	previousCommenter := nil
+]
+
+{ #category : #accessing }
+CCodeGenerator >> currentScope [
+	
+	^ scopeStack last
+]
+
+{ #category : #'C code generator' }
+CCodeGenerator >> declarationAt: aVariableName ifAbsent: absentBlock [
+
+	scopeStack reverseDo: [:scope|
+		scope declarationAt: aVariableName ifPresent: [ :declaration | ^ declaration ] ].
+	variableDeclarations
+		at: aVariableName
+		ifPresent: [ :declaration | ^ declaration ].
+	^(constants at: aVariableName ifAbsent: [ ^ absentBlock value ]) ifNotNil:
+		[:const|
+		const value isInteger
+			ifTrue: [self defaultType]
+			ifFalse:
+				[const value isFloat ifTrue:
+					[#double]]]
 ]
 
 { #category : #public }
@@ -958,7 +971,7 @@ CCodeGenerator >> doBasicInlining: inlineFlagOrSymbol [
 			during: [:bar |
 				(self sortMethods: methods) doWithIndex: [:m :i |
 					bar value: i.
-					currentMethod := m.
+					self currentMethod: m.
 					(m tryToInlineMethodsIn: self)
 						ifTrue: [progress := true]]]].
 
@@ -988,7 +1001,12 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 		logger cr.
 	].
 	assertionFlag ifFalse: [ self removeAssertions ].
+
 	self doInlining: inlineFlag.
+
+	SLAutomaticLocalization new
+		codeGenerator: self;
+		applyMethodNamed: #interpret.
 
 	"code generation"
 	"If we're outputting the VM put the main interpreter loop first for two reasons.
@@ -1339,7 +1357,7 @@ CCodeGenerator >> fileHeaderVersionStampForSourceClass: sourceClass [
 CCodeGenerator >> generateCASTAbs: tast [
 
 	| type strippedType absFun |
-	type := self typeFor: tast receiver in: currentMethod.
+	type := self typeFor: tast receiver in: self currentMethod.
 	strippedType := (type beginsWith: 'unsigned ')
 		ifTrue: [type allButFirst: 'unsigned ' size]
 		ifFalse: [(type beginsWith: 'u')
@@ -1652,8 +1670,8 @@ CCodeGenerator >> generateCASTBytesPerWord: tast [
 CCodeGenerator >> generateCASTCCoercion: tast [
 
 	| expr cType literal |
-	expr := tast args first.
-	cType := tast args last value.
+	expr := tast arguments first.
+	cType := tast arguments last value.
 	(cType = #float and: [ 
 		 expr isConstant and: [ 
 			 expr value isFloat and: [ 
@@ -1685,8 +1703,9 @@ CCodeGenerator >> generateCASTDivide: tast [
 CCodeGenerator >> generateCASTDoWhile: boolean loop: tast [
 
 	| block  cond|
-	block := (TStmtListNode new setStatements:
-		          tast receiver statements allButLast) asCASTIn: self.
+	block := TStatementListNode statements: tast receiver statements allButLast.
+	block addDeclarations: tast receiver declarations.
+	block := block asCASTIn: self.
 	cond := (tast receiver statements last asCASTExpressionIn: self).
 	^ CDoStatementNode
 		  while: (boolean ifTrue: [ cond ] ifFalse: [ CUnaryOperatorNode operator: #! expression: cond ])
@@ -2060,34 +2079,30 @@ CCodeGenerator >> generateCASTIfTrueIfFalseAsArgument: tast [
 ]
 
 { #category : #'CAST translation' }
-CCodeGenerator >> generateCASTInlineCCode: aTSendNode [ 
+CCodeGenerator >> generateCASTInlineCCode: aTSendNode [
 
-	aTSendNode args first isConstant ifTrue: [
-		"If it is a pre-processor declaration"
-		(aTSendNode args first value at: 1 ifAbsent: nil) = $# ifTrue: [
-			"This was assuming the argument is a preprocessor directive.
-			So it was printing it in a new line"
+	aTSendNode arguments first isConstant ifTrue: [ "If it is a pre-processor declaration"
+		(aTSendNode arguments first value at: 1 ifAbsent: nil) = $# ifTrue: [ "This was assuming the argument is a preprocessor directive.
+			So it was printing it in a new line" 
 			self error: 'unsupported' ].
-			
-			self noteVariableUsageInString: aTSendNode args first value.
-			^ CRawCodeNode code: aTSendNode args first value ].
 
-	^ aTSendNode args first asCASTIn: self.
+		^ CRawCodeNode code: aTSendNode arguments first value ].
+
+	^ aTSendNode arguments first asCASTIn: self
 ]
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTInlineCCodeAsArgument: aTSendNode [
 
-	(aTSendNode args first isConstant and: [ 
-		 aTSendNode args first value isString ]) ifTrue: [ "If it is a pre-processor declaration"
-		(aTSendNode args first value at: 1 ifAbsent: nil) = $# ifTrue: [ "This was assuming the argument is a preprocessor directive.
+	(aTSendNode arguments first isConstant and: [ 
+		 aTSendNode arguments first value isString ]) ifTrue: [ "If it is a pre-processor declaration"
+		(aTSendNode arguments first value at: 1 ifAbsent: nil) = $# ifTrue: [ "This was assuming the argument is a preprocessor directive.
 			So it was printing it in a new line" 
 			self error: 'unsupported' ].
 
-		self noteVariableUsageInString: aTSendNode args first value.
-		^ CRawCodeNode code: aTSendNode args first value ].
+		^ CRawCodeNode code: aTSendNode arguments first value ].
 
-	^ aTSendNode args first asCASTExpressionIn: self
+	^ aTSendNode arguments first asCASTExpressionIn: self
 ]
 
 { #category : #'CAST translation' }
@@ -2132,11 +2147,11 @@ CCodeGenerator >> generateCASTInlineCppIfElseAsArgument: tast [
 ]
 
 { #category : #'built-ins' }
-CCodeGenerator >> generateCASTIntegerObjectOf: msgNode [ 
-	
+CCodeGenerator >> generateCASTIntegerObjectOf: msgNode [
+
 	| expr mustCastToUnsigned type typeIsUnsigned expressionToShift |
-	expr := msgNode args first.
-	
+	expr := msgNode arguments first.
+
 	expressionToShift := expr asCASTExpressionIn: self.
 
 	"Note that the default type of an integer constant in C is int.  Hence we /must/
@@ -2144,24 +2159,26 @@ CCodeGenerator >> generateCASTIntegerObjectOf: msgNode [
 		(int)(16r1FFFFF << 3) = (int)16rFFFFFFF8 = -8
 	 whereas
 		(long)(16r1FFFFF << 3) = (long) 16rFFFFFFF8 = 4294967288."
-	type := self typeFor: expr in: currentMethod.
+	type := self typeFor: expr in: self currentMethod.
 	typeIsUnsigned := type first = $u.
-	mustCastToUnsigned := typeIsUnsigned not
-		or: [(self sizeOfIntegralCType: type) < (self sizeOfIntegralCType: #usqInt)].
-	mustCastToUnsigned ifTrue: [
+	mustCastToUnsigned := typeIsUnsigned not or: [ 
+		                      (self sizeOfIntegralCType: type)
+		                      < (self sizeOfIntegralCType: #usqInt) ].
+	mustCastToUnsigned ifTrue: [ 
 		expressionToShift := CCastExpressionNode
-			type: (CTypeNameNode symbol: #usqInt)
-			expression: expressionToShift ].
+			                     type: (CTypeNameNode symbol: #usqInt)
+			                     expression: expressionToShift ].
 
 	^ (CBinaryOperatorNode
-			operator: #|
-			left: (CBinaryOperatorNode
-			operator: #<<
-			left: expressionToShift
-			right: (CConstantNode  value: self vmClass objectMemoryClass numSmallIntegerTagBits))
-		right: (CConstantNode  value: 1))
-		needsParentheses: true;
-		yourself
+		   operator: #|
+		   left: (CBinaryOperatorNode
+				    operator: #<<
+				    left: expressionToShift
+				    right: (CConstantNode value:
+							     self vmClass objectMemoryClass numSmallIntegerTagBits))
+		   right: (CConstantNode value: 1))
+		  needsParentheses: true;
+		  yourself
 ]
 
 { #category : #'CAST translation' }
@@ -2174,26 +2191,29 @@ CCodeGenerator >> generateCASTIntegerValueOf: aTSendNode [
 ]
 
 { #category : #'CAST translation' }
-CCodeGenerator >> generateCASTIsIntegerObject: msgNode [ 
+CCodeGenerator >> generateCASTIsIntegerObject: msgNode [
 
-	self vmClass objectMemoryClass numSmallIntegerTagBits = 1
-		ifTrue: [
-			^ (CBinaryOperatorNode
-				operator: '&'
-				left: 	(msgNode args first asCASTExpressionIn: self)
-				right: (CConstantNode value: 1))
-					needsParentheses: true;
-					yourself ].
-	
+	self vmClass objectMemoryClass numSmallIntegerTagBits = 1 ifTrue: [ 
+		^ (CBinaryOperatorNode
+			   operator: '&'
+			   left: (msgNode arguments first asCASTExpressionIn: self)
+			   right: (CConstantNode value: 1))
+			  needsParentheses: true;
+			  yourself ].
+
 	^ (CBinaryOperatorNode
-		operator: '=='
-		left: (CBinaryOperatorNode
-			operator: '&'
-			left: 	((msgNode args first asCASTExpressionIn: self) needsParentheses: true; yourself)
-			right: (CConstantNode value: 1 << self vmClass objectMemoryClass numSmallIntegerTagBits - 1))
-		right: (CConstantNode value: 1))
-			needsParentheses: true;
-			yourself
+		   operator: '=='
+		   left: (CBinaryOperatorNode
+				    operator: '&'
+				    left: ((msgNode arguments first asCASTExpressionIn: self)
+						     needsParentheses: true;
+						     yourself)
+				    right: (CConstantNode value:
+						     1 << self vmClass objectMemoryClass numSmallIntegerTagBits
+						     - 1))
+		   right: (CConstantNode value: 1))
+		  needsParentheses: true;
+		  yourself
 ]
 
 { #category : #'CAST translation' }
@@ -2245,15 +2265,15 @@ CCodeGenerator >> generateCASTMin: tast [
 CCodeGenerator >> generateCASTMinus: tast [
 
 	"Constant fold if possible"
-	tast constantNumbericValueOrNil ifNotNil: [:value|
-	 (value between: -1 << 31 and: 1 << 31 - 1)
-		ifFalse: [ ^ CConstantNode value: (self cLiteralFor: value) ] ].
-	
+
+	tast constantNumbericValueOrNil ifNotNil: [ :value | 
+		(value between: -1 << 31 and: 1 << 31 - 1) ifFalse: [ 
+			^ CConstantNode value: (self cLiteralFor: value) ] ].
+
 	"Simplify if possible"
-	tast args first constantNumbericValueOrNil ifNotNil: [:value|
-		value = 0 ifTrue: [
-			^ tast receiver asCASTExpressionIn: self ]].
-	
+	tast arguments first constantNumbericValueOrNil ifNotNil: [ :value | 
+		value = 0 ifTrue: [ ^ tast receiver asCASTExpressionIn: self ] ].
+
 	"Otherwise, translate normally"
 	^ self generateCASTBinary: tast operator: #-
 ]
@@ -2322,17 +2342,17 @@ CCodeGenerator >> generateCASTPerform: tast [
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTPlus: tast [
-	
+
 	"Constant fold if possible"
-	tast constantNumbericValueOrNil ifNotNil: [:value|
-	 (value between: -1 << 31 and: 1 << 31 - 1)
-		ifFalse: [ ^ CConstantNode value: (self cLiteralFor: value) ] ].
-	
+
+	tast constantNumbericValueOrNil ifNotNil: [ :value | 
+		(value between: -1 << 31 and: 1 << 31 - 1) ifFalse: [ 
+			^ CConstantNode value: (self cLiteralFor: value) ] ].
+
 	"Simplify if possible"
-	tast args first constantNumbericValueOrNil ifNotNil: [:value|
-		value = 0 ifTrue: [
-			^ tast receiver asCASTExpressionIn: self ]].
-	
+	tast arguments first constantNumbericValueOrNil ifNotNil: [ :value | 
+		value = 0 ifTrue: [ ^ tast receiver asCASTExpressionIn: self ] ].
+
 	"Otherwise, translate normally"
 	^ self generateCASTBinary: tast operator: #+
 ]
@@ -2437,7 +2457,7 @@ CCodeGenerator >> generateCASTShiftLeft: tast [
 
 	| finalNode leftNode receiverNode rcvr arg castToLong type mustCastBackToSign mustCastToUnsigned canSuffixTheConstant typeIsUnsigned |
 	rcvr := tast receiver.
-	arg := tast args first.
+	arg := tast arguments first.
 	castToLong := false.
 	(rcvr constantNumbericValueIfAtAllPossibleOrNilIn: self) ifNotNil: [ 
 		:rcvrVal | 
@@ -2460,7 +2480,7 @@ CCodeGenerator >> generateCASTShiftLeft: tast [
 			  right: (arg asCASTIn: self) ].
 	receiverNode := tast receiver asCASTExpressionIn: self.
 	leftNode := receiverNode.
-	type := self typeFor: rcvr in: currentMethod.
+	type := self typeFor: rcvr in: self currentMethod.
 	castToLong := castToLong and: [ 
 		              (self sizeOfIntegralCType: type)
 		              < (self sizeOfIntegralCType: #usqLong) ].
@@ -2482,9 +2502,9 @@ CCodeGenerator >> generateCASTShiftLeft: tast [
 			            type: (CTypeNameNode symbol: unsigned)
 			            expression: receiverNode ].
 	finalNode := CBinaryOperatorNode
-		  operator: #<<
-		  left: leftNode
-		  right: (arg asCASTIn: self).
+		             operator: #<<
+		             left: leftNode
+		             right: (arg asCASTExpressionIn: self).
 	mustCastBackToSign := typeIsUnsigned not.
 	mustCastBackToSign ifTrue: [ 
 		| promotedType |
@@ -2496,8 +2516,8 @@ CCodeGenerator >> generateCASTShiftLeft: tast [
 					                ifTrue: [ #sqInt ]
 					                ifFalse: [ type ] ].
 		finalNode := CCastExpressionNode
-			            type: (CTypeNameNode symbol: promotedType)
-			            expression: finalNode ].
+			             type: (CTypeNameNode symbol: promotedType)
+			             expression: finalNode ].
 
 	^ finalNode
 ]
@@ -2523,7 +2543,7 @@ CCodeGenerator >> generateCASTShiftRight: tast [
 	^ CBinaryOperatorNode
 		  operator: #>>
 		  left: rcvr
-		  right: (tast arguments first asCASTIn: self)
+		  right: (tast arguments first asCASTExpressionIn: self)
 ]
 
 { #category : #'CAST translation' }
@@ -2638,19 +2658,18 @@ CCodeGenerator >> generateCASTSmalltalkMetaError: tast [
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTTimes: tast [
-	
+
 	"Constant fold if possible"
-	tast constantNumbericValueOrNil ifNotNil: [:value|
-	 (value between: -1 << 31 and: 1 << 31 - 1)
-		ifFalse: [ ^ CConstantNode value: (self cLiteralFor: value) ] ].
-	
+
+	tast constantNumbericValueOrNil ifNotNil: [ :value | 
+		(value between: -1 << 31 and: 1 << 31 - 1) ifFalse: [ 
+			^ CConstantNode value: (self cLiteralFor: value) ] ].
+
 	"Simplify if possible"
-	tast args first constantNumbericValueOrNil ifNotNil: [:value|
-		value = 0 ifTrue: [
-			^ tast args first asCASTExpressionIn: self ].
-		value = 1 ifTrue: [
-			^ tast receiver asCASTExpressionIn: self ]].
-	
+	tast arguments first constantNumbericValueOrNil ifNotNil: [ :value | 
+		value = 0 ifTrue: [ ^ tast args first asCASTExpressionIn: self ].
+		value = 1 ifTrue: [ ^ tast receiver asCASTExpressionIn: self ] ].
+
 	"Otherwise, translate normally"
 	^ self generateCASTBinary: tast operator: #*
 ]
@@ -2674,18 +2693,18 @@ CCodeGenerator >> generateCASTToByDo: tast [
 
 	| blockExpr iterationVar until step mayHaveSideEffects inits limitVar limitExpr |
 	blockExpr := tast arguments third.
-	blockExpr args size = 1 ifFalse: [ 
+	blockExpr arguments size = 1 ifFalse: [ 
 		self error: 'wrong number of block arguments' ].
 	inits := OrderedCollection new.
-	iterationVar := blockExpr args first.
-	limitExpr := tast args first.
+	iterationVar := blockExpr arguments first.
+	limitExpr := tast arguments first.
 	inits add: (CAssignmentNode
 			 lvalue: (CIdentifierNode name: iterationVar)
 			 rvalue: (tast receiver asCASTExpressionIn: self)).
 	self noteUsedVariableName: iterationVar.
 	mayHaveSideEffects := tast arguments size = 4.
 	mayHaveSideEffects ifTrue: [ 
-		limitVar := tast args last.
+		limitVar := tast arguments last.
 		inits add: (CAssignmentNode
 				 lvalue: (CIdentifierNode name: limitVar name)
 				 rvalue: (limitExpr asCASTExpressionIn: self)).
@@ -2737,15 +2756,17 @@ CCodeGenerator >> generateCASTToByDoUntil: limitExpr iterativeVariable: itVar ne
 CCodeGenerator >> generateCASTToDo: tast [
 
 	| iterationVar init until step |
-	(tast args last args size = 1) ifFalse: [
-		self error: 'wrong number of block arguments'.
-	].
-	iterationVar := tast arguments last args first.
+	tast arguments last arguments size = 1 ifFalse: [ 
+		self error: 'wrong number of block arguments' ].
+	iterationVar := tast arguments last arguments first.
 	init := CAssignmentNode
 		        lvalue: (CIdentifierNode name: iterationVar)
 		        rvalue: (tast receiver asCASTExpressionIn: self).
 	self noteUsedVariableName: iterationVar.
-	until := self generateCASTToByDoUntil: tast arguments first iterativeVariable: iterationVar negative: false.
+	until := self
+		         generateCASTToByDoUntil: tast arguments first
+		         iterativeVariable: iterationVar
+		         negative: false.
 	step := CIncrementNode object: (CIdentifierNode name: iterationVar).
 	^ CForStatementNode
 		  init: { init }
@@ -2764,8 +2785,9 @@ CCodeGenerator >> generateCASTTouch: tast [
 CCodeGenerator >> generateCASTTruncateTo: tast [
 
 	| arg |
-	(self isConstantNode: tast args first valueInto: [ :a | arg := a ]) 
-		ifFalse: [ 
+	(self
+		 isConstantNode: tast arguments first
+		 valueInto: [ :a | arg := a ]) ifFalse: [ 
 		self error: 'can''t find method for inlining truncateTo:' ].
 	self assert: (arg isInteger and: [ arg isPowerOfTwo ]).
 	^ (CBinaryOperatorNode
@@ -2793,31 +2815,33 @@ CCodeGenerator >> generateCASTValue: tast [
 	 to body with formals substituted for by actuals."
 
 	| substitution substitutionDict newLabels castStatements |
-	self assert: tast receiver isStmtList.
-	self assert: tast receiver args size = tast args size.
+	self assert: tast receiver isStatementList.
+	self assert: tast receiver arguments size = tast arguments size.
 	castStatements := CCompoundStatementNode statements:
 		                  OrderedCollection new.
 	castStatements needsBrackets: false.
 	substitution := tast receiver copy.
-	substitution renameLabelsForInliningInto: currentMethod.
-	substitutionDict := Dictionary new: tast args size * 2.
-	tast receiver args with: tast args do: [ :argName :exprNode | 
-		exprNode isLeaf
-			ifTrue: [ substitutionDict at: argName put: exprNode ]
-			ifFalse: [ 
-				castStatements add: (CAssignmentNode
-						 lvalue: (CIdentifierNode name: argName)
-						 rvalue: (exprNode asCASTExpressionIn: self)).
-				self noteUsedVariableName: argName ] ].
+	substitution renameLabelsForInliningInto: self currentMethod.
+	substitutionDict := Dictionary new: tast arguments size * 2.
+	tast receiver arguments
+		with: tast arguments
+		do: [ :argName :exprNode | 
+			exprNode isLeaf
+				ifTrue: [ substitutionDict at: argName put: exprNode ]
+				ifFalse: [ 
+					castStatements add: (CAssignmentNode
+							 lvalue: (CIdentifierNode name: argName)
+							 rvalue: (exprNode asCASTExpressionIn: self)).
+					self noteUsedVariableName: argName ] ].
 	substitution bindVariablesIn: substitutionDict.
 	castStatements add: (substitution asCASTIn: self).
-	newLabels := Set withAll: currentMethod labels.
+	newLabels := Set withAll: self currentMethod labels.
 	substitution nodesDo: [ :node | 
 		node isLabel ifTrue: [ 
 			node label ifNotNil: [ :label | newLabels add: label ] ] ].
 	"now add the new labels so that a subsequent inline of
 	 the same block will be renamed with different labels."
-	currentMethod labels: newLabels.
+	self currentMethod labels: newLabels.
 	^ castStatements
 ]
 
@@ -2826,23 +2850,24 @@ CCodeGenerator >> generateCASTValueAsArgument: tast [
 
 	"Reduce [:formal ... :formalN| body ] value: actual ... value: actualN
 	 to body with formals substituted for by actuals."
+
 	| substitution substitutionDict newLabels |
-	self assert: tast receiver isStmtList.
-	self assert: tast receiver args size = tast args size.
+	self assert: tast receiver isStatementList.
+	self assert: tast receiver arguments size = tast arguments size.
 	substitution := tast receiver copy.
-	substitution renameLabelsForInliningInto: currentMethod.
-	substitutionDict := Dictionary new: tast args size * 2.
-	tast receiver args
-		with: tast args
+	substitution renameLabelsForInliningInto: self currentMethod.
+	substitutionDict := Dictionary new: tast arguments size * 2.
+	tast receiver arguments
+		with: tast arguments
 		do: [ :argName :exprNode | 
 		substitutionDict at: argName put: exprNode ].
-	newLabels := Set withAll: currentMethod labels.
+	newLabels := Set withAll: self currentMethod labels.
 	substitution nodesDo: [ :node | 
 		node isLabel ifTrue: [ 
 			node label ifNotNil: [ :label | newLabels add: label ] ] ].
 	"now add the new labels so that a subsequent inline of
 	 the same block will be renamed with different labels."
-	currentMethod labels: newLabels.
+	self currentMethod labels: newLabels.
 	^ substitution
 		  bindVariablesIn: substitutionDict;
 		  asCASTExpressionIn: self
@@ -2864,11 +2889,11 @@ CCodeGenerator >> generateCASTWhile: boolean loop: tast [
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTWhileFalse: tast [
 
-	tast receiver statements size <= 1
-		ifTrue: [^self generateCASTWhile: false loop: tast].
-	tast args first isNilStmtListNode
-		ifTrue: [^self generateCASTDoWhileFalse: tast].
-	^self generateCASTWhileForeverBreakIf: true loop: tast
+	tast receiver statements size <= 1 ifTrue: [ 
+		^ self generateCASTWhile: false loop: tast ].
+	tast arguments first isNilStmtListNode ifTrue: [ 
+		^ self generateCASTDoWhileFalse: tast ].
+	^ self generateCASTWhileForeverBreakIf: true loop: tast
 ]
 
 { #category : #'CAST translation' }
@@ -2877,7 +2902,10 @@ CCodeGenerator >> generateCASTWhileForeverBreakIf: boolean loop: tast [
 	| block if cond |
 	cond := (tast receiver statements last asCASTExpressionIn: self).
 	if := CIfStatementNode if: (boolean ifTrue: [ cond ] ifFalse: [ CUnaryOperatorNode operator: #! expression: cond ]) then: (CBreakStatementNode new).
-	block := (TStmtListNode new setStatements: tast receiver statements allButLast) asCASTIn: self.
+	block := TStatementListNode statements: tast receiver statements allButLast.
+	block addDeclarations: tast receiver declarations.
+	block addDeclarations:  tast arguments first declarations.
+	block := block asCASTIn: self.
 	block add: if.
 	block addAll: (tast arguments first asCASTIn: self).
 
@@ -2889,11 +2917,11 @@ CCodeGenerator >> generateCASTWhileForeverBreakIf: boolean loop: tast [
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTWhileTrue: tast [
 
-	tast receiver statements size <= 1
-		ifTrue: [^self generateCASTWhile: true loop: tast].
-	tast args first isNilStmtListNode
-		ifTrue: [^self generateCASTDoWhileTrue: tast].
-	^self generateCASTWhileForeverBreakIf: false loop: tast
+	tast receiver statements size <= 1 ifTrue: [ 
+		^ self generateCASTWhile: true loop: tast ].
+	tast arguments first isNilStmtListNode ifTrue: [ 
+		^ self generateCASTDoWhileTrue: tast ].
+	^ self generateCASTWhileForeverBreakIf: false loop: tast
 ]
 
 { #category : #accessing }
@@ -2983,6 +3011,27 @@ CCodeGenerator >> inferTypes [
 	(SlangTyper on: self)
 		stopOnErrors: stopOnErrors;
 		inferTypes
+]
+
+{ #category : #'automatic-localization' }
+CCodeGenerator >> initAutoLocalizationOfVariablesIn: selector [
+	"Create local variable versions of variables to localize. Add them in locals of the method described by selector."
+	| variablesToLocalize m variablesToLocalizeAssociations |
+	(m := self methodNamed: selector) ifNil: [ ^ nil ].
+	variablesToLocalize := Set new.
+	"Look for variables to localize, hinted by localizedVariable: pragma."
+	m properties pragmasDo: [ :pragma | 
+		pragma selector = #localizedVariable: ifTrue: [ 
+			variablesToLocalize add: pragma arguments first ] ].
+	"If there is no localizedVariable: pragma, nothing to do."
+	variablesToLocalize ifEmpty: [ ^ nil ].
+	
+	variablesToLocalizeAssociations := OrderedCollection new.
+	variablesToLocalize do: [ :e | 
+		| localName |
+		localName := m declareNonConflictingLocalNamedLike: #local_ , e.
+		variablesToLocalizeAssociations add: e -> localName ].
+	^ variablesToLocalizeAssociations 
 ]
 
 { #category : #'initialize-release' }
@@ -3232,28 +3281,22 @@ CCodeGenerator >> initializerForInstVar: varName inStartClass: aClass [
 ]
 
 { #category : #inlining }
-CCodeGenerator >> inlineDispatchesInMethodNamed: selector localizingVars: varsList [
-	"Inline dispatches (case statements) in the method with the given name."
+CCodeGenerator >> inlineDispatchesInMethodNamed: selector [
+
+	"Inline dispatches (case statements) in the method with the given name.
+	Then localize variables"
 
 	| m |
-	m := self methodNamed: selector.
-	m = nil ifFalse: [
-		m inlineCaseStatementBranchesIn: self localizingVars: varsList.
-		m parseTree nodesDo: [ :n |
-			n isCaseStmt ifTrue: [
-				n customizeShortCasesForDispatchVar: 'currentBytecode' in: self method: m.
-			].
-		].
-	].
-	varsList do: [ :v | | varString |
-		varString := v asString.
-		self checkDeleteVariable: varString.
-		variables remove: varString ifAbsent: [].
-		(variableDeclarations includesKey: varString) ifTrue: [
-			m declarationAt: v asString put: (variableDeclarations at: varString).
-			variableDeclarations removeKey: varString.
-		].
-	]
+	(m := self methodNamed: selector) ifNil: [ ^ self ].
+
+	m inlineCaseStatementBranchesIn: self.
+
+	m parseTree nodesDo: [ :n | 
+		n isCaseStmt ifTrue: [ 
+			n
+				customizeShortCasesForDispatchVar: 'currentBytecode'
+				in: self
+				method: m ] ]
 ]
 
 { #category : #utilities }
@@ -3357,9 +3400,32 @@ CCodeGenerator >> isConstantNode: aNode valueInto: aBlock [
 	^ false
 ]
 
+{ #category : #testing }
+CCodeGenerator >> isControlFlowNode: aNode [
+	
+	^ aNode isSend and: [ 
+		#(ifTrue: ifTrue:ifFalse: ifFalse: ifFalse:ifTrue: and: or:) includes: aNode selector ]
+]
+
+{ #category : #utilities }
+CCodeGenerator >> isDynamicCall: aNode [
+	"Dynamic calls are calls to functions/methods determined at runtime.
+	It's important to know when we are doing a dynamic call because many optimizations do not apply in such cases"
+	^ aNode isSend and: [ aNode selector beginsWith: 'perform:' ]
+]
+
 { #category : #inlining }
 CCodeGenerator >> isFloatingPointCType: aCType [ "<String>"
 	^#('float' 'double' 'long double') includes: aCType asString
+]
+
+{ #category : #utilities }
+CCodeGenerator >> isFunctionCall: aNode [
+	
+	^ aNode isSend and: [ 
+		  (self isBuiltinSelector: aNode selector) not and: [ 
+			  (self isStructSend: aNode) not and: [ 
+				  (self anyMethodNamed: aNode selector) notNil ] ] ]
 ]
 
 { #category : #'type inference' }
@@ -3516,7 +3582,7 @@ CCodeGenerator >> localizeGlobalVariables [
 				(procedure isRealMethod
 				 and: [self shouldGenerateMethod: procedure]) ifTrue:
 					[(localized at: name ifAbsentPut: [SortedCollection new]) add: key.
-					elected add: (procedure locals add: key).
+					elected add: (procedure addLocal: key).
 					newDeclaration := variableDeclarations at: key ifAbsent: ['sqInt ', key].
 					(self initializerForInstVar: key inStartClass: procedure definingClass) ifNotNil:
 						[:initializerNode|
@@ -3532,8 +3598,24 @@ CCodeGenerator >> localizeGlobalVariables [
 			(localized at: name) do:
 				[:var|
 				logger newLine; show: var, ' localised to ', name; cr]]].
-	elected do: [:ea| (variables includes: ea) ifTrue: [self checkDeleteVariable: ea]].
+
 	variables removeAllFoundIn: elected
+]
+
+{ #category : #inlining }
+CCodeGenerator >> localizeVariables: varsList inMethod: m [
+
+	self validateLocalizationOfGlobals: varsList exceptMethod: m selector.
+	m localizeVariables: varsList.
+	varsList do: [ :v | 
+		| varString |
+		varString := v asString.
+		variables remove: varString ifAbsent: [  ].
+		(variableDeclarations includesKey: varString) ifTrue: [ 
+			m
+				declarationAt: v asString
+				put: (variableDeclarations at: varString).
+			variableDeclarations removeKey: varString ] ]
 ]
 
 { #category : #utilities }
@@ -3724,6 +3806,7 @@ CCodeGenerator >> needToGenerateHeader: headerName file: interpHdrPath contents:
 
 { #category : #utilities }
 CCodeGenerator >> nilOrBooleanConditionFor: nodeOrNil [
+
 	"If nodeOrNil is one of the conditional sends for which we do translation-time dead code elimination
 	 (i.e. cppIf:ifTrue: et al or ifTrue: et al) and the conditional does evaluate to a translation-time
 	 boolean constant, answer that constant, otherwise answer nil.  Used to prune dead code,
@@ -3737,90 +3820,94 @@ CCodeGenerator >> nilOrBooleanConditionFor: nodeOrNil [
 		^ self nilOrBooleanConstantReceiverOf: nodeOrNil receiver ].
 	(#( and: or: ) includes: nodeOrNil selector) ifTrue: [ 
 		^ self nilOrBooleanConstantReceiverOf: nodeOrNil ].
-	(#( #cppIf:ifTrue: #cppIf:ifTrue:ifFalse: ) includes: nodeOrNil selector) 
-		ifTrue: [ 
+	(#( #cppIf:ifTrue: #cppIf:ifTrue:ifFalse: ) includes:
+		 nodeOrNil selector) ifTrue: [ 
 		| maybeName value |
-		value := nodeOrNil args first value.
+		value := nodeOrNil arguments first value.
 		self validateCppIf: nodeOrNil withValue: value.
-		maybeName := nodeOrNil args first isConstant ifTrue: [ 
-			             nodeOrNil args first nameOrValue ].
+		maybeName := nodeOrNil arguments first isConstant ifTrue: [ 
+			             nodeOrNil arguments first nameOrValue ].
 		^ (optionsDictionary notNil and: [ 
-			   nodeOrNil args first isConstant and: [ 
+			   nodeOrNil arguments first isConstant and: [ 
 				   (#( true false ) includes:
 					    (optionsDictionary at: maybeName ifAbsent: [ nil ])) and: [ 
-					   (self defineAtCompileTime: maybeName) not ] ] ]) 
-			  ifTrue: [ optionsDictionary at: nodeOrNil args first name ] ].
+					   (self defineAtCompileTime: maybeName) not ] ] ]) ifTrue: [ 
+			  optionsDictionary at: nodeOrNil arguments first name ] ].
 	^ nil
 ]
 
 { #category : #utilities }
 CCodeGenerator >> nilOrBooleanConstantReceiverOf: aNode [
+
 	"Answer nil or the boolean constant that is the receiver of the given message send.
 	 Used to suppress conditional code when the condition is a translation-time constant."
 
 	| val receiver argument arms |
-	generateDeadCode ifTrue:[^nil].
-	((self isConstantNode: aNode valueInto: [:v| val := v])
-	 and: [#(true false) includes: val]) ifTrue:
-		[^val].
-	aNode isSend ifTrue:
-		[aNode selector == #not ifTrue:
-			[(self nilOrBooleanConstantReceiverOf: aNode receiver) ifNotNil:
-				[:bool| ^bool not]].
-		 ((#(isNil notNil) includes: aNode selector)
-		  and: [self isNilConstantReceiverOf: aNode]) ifTrue:
-			[^aNode selector == #isNil].
-		 ((#(or: and:) includes: aNode selector)
-		 and: [aNode args last isStmtList
-		 and: [aNode args last statements size = 1]]) ifTrue:
-			[(self nilOrBooleanConstantReceiverOf: aNode receiver) ifNotNil:
-				[:rcvr|
-				((rcvr == false and: [aNode selector == #and:])
-				 or: [rcvr == true and: [aNode selector == #or:]]) ifTrue:
-					[^rcvr].
-				(self nilOrBooleanConstantReceiverOf: aNode args last statements first) ifNotNil:
-					[:arg|
-					^rcvr perform: aNode selector with: [arg]]].
-			 "We can also eliminate expr and: [false], expr or: [true], but only if expr is side-effect free.
+	generateDeadCode ifTrue: [ ^ nil ].
+	((self isConstantNode: aNode valueInto: [ :v | val := v ]) and: [ 
+		 #( true false ) includes: val ]) ifTrue: [ ^ val ].
+	aNode isSend ifTrue: [ 
+		aNode selector == #not ifTrue: [ 
+			(self nilOrBooleanConstantReceiverOf: aNode receiver) ifNotNil: [ 
+				:bool | ^ bool not ] ].
+		((#( isNil notNil ) includes: aNode selector) and: [ 
+			 self isNilConstantReceiverOf: aNode ]) ifTrue: [ 
+			^ aNode selector == #isNil ].
+		((#( or: and: ) includes: aNode selector) and: [ 
+			 aNode arguments last isStatementList and: [ 
+				 aNode arguments last statements size = 1 ] ]) ifTrue: [ 
+			(self nilOrBooleanConstantReceiverOf: aNode receiver) ifNotNil: [ 
+				:rcvr | 
+				((rcvr == false and: [ aNode selector == #and: ]) or: [ 
+					 rcvr == true and: [ aNode selector == #or: ] ]) ifTrue: [ 
+					^ rcvr ].
+				(self nilOrBooleanConstantReceiverOf:
+					 aNode arguments last statements first) ifNotNil: [ :arg | 
+					^ rcvr perform: aNode selector with: [ arg ] ] ].
+			"We can also eliminate expr and: [false], expr or: [true], but only if expr is side-effect free.
 			  This is a weak test; we don't traverse calls.  Caveat emptor!"
-			 ((aNode receiver noneSatisfy: [:node| node isAssignment]) "No side-effects in the elided expression"
-			  and: [aNode args last statements size = 1]) ifTrue:
-				[(self nilOrBooleanConstantReceiverOf: aNode args last statements first) ifNotNil:
-					[:arg|
-					((arg == false and: [aNode selector == #and:])
-					 or: [arg == true and: [aNode selector == #or:]]) ifTrue:
-						[^arg]]]].
+			((aNode receiver noneSatisfy: [ :node | node isAssignment ]) and: [ 
+				 aNode arguments last statements size = 1 ]) ifTrue: [ "No side-effects in the elided expression"
+				(self nilOrBooleanConstantReceiverOf:
+					 aNode arguments last statements first) ifNotNil: [ :arg | 
+					((arg == false and: [ aNode selector == #and: ]) or: [ 
+						 arg == true and: [ aNode selector == #or: ] ]) ifTrue: [ ^ arg ] ] ] ].
 		"Look for Const ifTrue: [self foo] ifFalse: [false] => false"
-		 ((#(ifTrue:ifFalse: ifFalse:ifTrue:) includes: aNode selector)
-		  and: [(self isConstantNode: aNode receiver valueInto: [:v| val := v])
-		  and: [(#(true false) includes: val)
-		  and: [arms := aNode args collect:
-							[:altBlock| | bval |
-							 (altBlock statements size = 1
-							 and: [(self isConstantNode: altBlock statements last valueInto: [:v| bval := v])
-							 and: [#(true false) includes: bval]]) ifTrue:
-								[bval]].
-				arms asArray ~= #(nil nil)]]]) ifTrue:
-			[| arm |
-			 arm := aNode selector == #ifTrue:ifFalse: == val
-						ifTrue: [arms first]
-						ifFalse: [arms last].
-			 (#(true false) includes: arm) ifTrue:
-				[^arm]].
-		 ((#(= ~= < > <= >=) includes: aNode selector)
-		  and: [(self isConstantNode: aNode receiver valueInto: [:v| receiver := v])
-		  and: [receiver isInteger
-		  and: [(self isConstantNode: aNode args first valueInto: [:v| argument := v])
-		  and: [argument isInteger]]]]) ifTrue:
-			[^receiver perform: aNode selector with: argument].
-		 "Inlining for e.g. CharacterTable ifNil: [...] ifNotNil: [...]], which compiles to CharacterTable == nil ifTrue: [...] ifFalse: [...]"
-		(aNode selector == #==
-		 and: [aNode args first isVariable
-		 and: [aNode args first name = 'nil'
-		 and: [aNode receiver isConstant
-		 and: [aNode receiver value == nil]]]]) ifTrue:
-			[^true]].
-	^nil
+		((#( #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: aNode selector) 
+			 and: [ 
+				 (self isConstantNode: aNode receiver valueInto: [ :v | val := v ]) 
+					 and: [ 
+						 (#( true false ) includes: val) and: [ 
+							 arms := aNode arguments collect: [ :altBlock | 
+								         | bval |
+								         (altBlock statements size = 1 and: [ 
+									          (self
+										           isConstantNode: altBlock statements last
+										           valueInto: [ :v | bval := v ]) and: [ 
+										          #( true false ) includes: bval ] ]) ifTrue: [ 
+									         bval ] ].
+							 arms asArray ~= #( nil nil ) ] ] ]) ifTrue: [ 
+			| arm |
+			arm := aNode selector == #ifTrue:ifFalse: == val
+				       ifTrue: [ arms first ]
+				       ifFalse: [ arms last ].
+			(#( true false ) includes: arm) ifTrue: [ ^ arm ] ].
+		((#( = ~= < > <= >= ) includes: aNode selector) and: [ 
+			 (self
+				  isConstantNode: aNode receiver
+				  valueInto: [ :v | receiver := v ]) and: [ 
+				 receiver isInteger and: [ 
+					 (self
+						  isConstantNode: aNode arguments first
+						  valueInto: [ :v | argument := v ]) and: [ argument isInteger ] ] ] ]) 
+			ifTrue: [ ^ receiver perform: aNode selector with: argument ].
+		"Inlining for e.g. CharacterTable ifNil: [...] ifNotNil: [...]], which compiles to CharacterTable == nil ifTrue: [...] ifFalse: [...]"
+		(aNode selector == #== and: [ 
+			 aNode arguments first isVariable and: [ 
+				 aNode arguments first name = 'nil' and: [ 
+					 aNode receiver isConstant and: [ aNode receiver value == nil ] ] ] ]) 
+			ifTrue: [ ^ true ] ].
+	^ nil
 ]
 
 { #category : #'translation support' }
@@ -3860,25 +3947,29 @@ CCodeGenerator >> node: exprNode typeCompatibleWith: argName inliningInto: targe
 
 { #category : #utilities }
 CCodeGenerator >> nodeIsDeadCode: aNode withParent: parentNode [
+
 	"Answer if aNode would not be generated due to dead code elimination."
-	^(self nilOrBooleanConditionFor: parentNode)
-		ifNil: [false]
-		ifNotNil:
-			[:cond| | filter |
-			filter := parentNode selector caseOf:
-							{   "First element is accessor for filtered (eliminated) node if expression is true.
+
+	^ (self nilOrBooleanConditionFor: parentNode)
+		  ifNil: [ false ]
+		  ifNotNil: [ :cond | 
+			  | filter |
+			  filter := parentNode selector caseOf: { 
+					            ([ #ifFalse: ] -> [ #( first nil ) ]).
+					            ([ #ifFalse:ifTrue: ] -> [ #( first last ) ]).
+					            ([ #ifTrue: ] -> [ #( nil first ) ]).
+					            ([ #ifTrue:ifFalse: ] -> [ #( last first ) ]).
+					            ([ #and: ] -> [ #( nil first ) ]).
+					            ([ #or: ] -> [ #( last nil ) ]).
+					            ([ #cppIf:ifTrue: ] -> [ #( nil #second ) ]).
+					            ([ #cppIf:ifTrue:ifFalse: ] -> [ #( third #second ) ]) }. "First element is accessor for filtered (eliminated) node if expression is true.
 								Second element is accessor for filtered (eliminated) node if expression is false."
-								[#ifFalse:]				-> [#(first nil)].
-								[#ifFalse:ifTrue:] 		-> [#(first last)].
-								[#ifTrue:]				-> [#(nil first)].
-								[#ifTrue:ifFalse:]			-> [#(last first)].
-								[#and:]					-> [#(nil first)].
-								[#or:]					-> [#(last nil)].
-								[#cppIf:ifTrue:]			-> [#(nil #second)].
-								[#cppIf:ifTrue:ifFalse:]	-> [#(third #second)] }.
-			(cond ifTrue: [filter first] ifFalse: [filter last])
-				ifNil: [false]
-				ifNotNil: [:accessor| aNode == (parentNode args perform: accessor)]]
+			  (cond
+				   ifTrue: [ filter first ]
+				   ifFalse: [ filter last ])
+				  ifNil: [ false ]
+				  ifNotNil: [ :accessor | 
+				  aNode == (parentNode arguments perform: accessor) ] ]
 ]
 
 { #category : #inlining }
@@ -3909,18 +4000,8 @@ CCodeGenerator >> nonStructClassesForTranslationClasses: classes [
 
 { #category : #utilities }
 CCodeGenerator >> noteUsedVariableName: variableName [
-	currentMethod ifNotNil:
-		[:m| m noteUsedVariableName: variableName]
-]
 
-{ #category : #utilities }
-CCodeGenerator >> noteVariableUsageInString: aString [
-	currentMethod ifNotNil:
-		[:m|
-		 (Scanner new typedScanTokens: aString) do:
-			[:token|
-			 (token isString and: [token first isLetter or: [token first == $_]]) ifTrue:
-				[m noteUsedVariableName: token]]]
+	self currentScope noteUsedVariableName: variableName
 ]
 
 { #category : #utilities }
@@ -3990,7 +4071,7 @@ CCodeGenerator >> prepareMethods [
 	globals addAll: variables.
 	methods do:
 		[:m |
-		m locals, m args do:
+		m allLocals, m args do:
 			[:var |
 			(globals includes: var) ifTrue:
 				[self error: 'Local variable ''', var, ''' may mask global when inlining ', m selector].
@@ -4070,7 +4151,7 @@ CCodeGenerator >> printUnboundVariableReferenceWarnings [
 	methods do: [ :m | | knownVars |
 		knownVars := globalVars copy.
 		m args do: [ :var | knownVars add: var ].
-		m locals do: [ :var | knownVars add: var ].
+		m allLocals do: [ :var | knownVars add: var ].
 		m freeVariableReferences do: [ :varName |
 			(knownVars includes: varName) ifFalse: [
 				(undefinedRefs includesKey: varName)
@@ -4156,12 +4237,6 @@ CCodeGenerator >> promoteIntegerArithmeticTypes: firstType and: secondType [
 ]
 
 { #category : #inlining }
-CCodeGenerator >> pruneMethods: selectorList [
-	"Explicitly prune some methods"
-	selectorList do: [:sel| self removeMethodForSelector: sel]
-]
-
-{ #category : #inlining }
 CCodeGenerator >> pruneUnreachableMethods [
 	"Remove any methods that are not reachable. Retain methods needed by the translated classes - see implementors of requiredMethodNames"
  	
@@ -4190,7 +4265,9 @@ CCodeGenerator >> pruneUnreachableMethods [
 				[visited add: m.
 				 (m isRealMethod
 				  and: [self shouldGenerateMethod: m]) ifTrue:
-					[neededSelectors addAll: m allCalls]]]].
+					[
+					self haltIf: [ m allCalls includes: #respondToUnknownBytecode ].
+					neededSelectors addAll: m allCalls]]]].
 	 neededSelectors size > previousSize]
 		whileTrue:
 			[previousSize := neededSelectors size].
@@ -4204,8 +4281,15 @@ CCodeGenerator >> pruneUnreachableMethods [
 ]
 
 { #category : #'C code generator' }
-CCodeGenerator >> pushScope: variableToType "<Dictionary>" while: aBlock [
-	scopeStack addLast: variableToType.
+CCodeGenerator >> pushScope: aScope [
+
+	scopeStack addLast: aScope
+]
+
+{ #category : #'C code generator' }
+CCodeGenerator >> pushScope: aScope while: aBlock [
+	
+	self pushScope: aScope.
 	^aBlock ensure: [scopeStack removeLast]
 ]
 
@@ -4239,15 +4323,10 @@ CCodeGenerator >> removeAssertions [
 
 	| newMethods |
 	newMethods := Dictionary new.
-	'Removing assertions...'
-		displayProgressAt: Sensor cursorPoint
-		from: 0 to: methods size
-		during: [ :bar |
-			methods doWithIndex: [ :m :i |
-				bar value: i.
-				m isAssertion ifFalse: [
-					newMethods at: m selector put: m.
-					m removeAssertions]]].
+	methods doWithIndex: [ :m :i |
+		m isAssertion ifFalse: [
+			newMethods at: m selector put: m.
+			m removeAssertions]].
 	methods := newMethods.
 ]
 
@@ -4267,25 +4346,6 @@ CCodeGenerator >> removeMethodForSelector: aSelector [
 	methods removeKey:  aSelector ifAbsent: []
 ]
 
-{ #category : #inlining }
-CCodeGenerator >> removeMethodsReferingToGlobals: varList except: methodName [
-	"Remove any methods (presumably inlined) that still contain references to the given
-	 global variables. Answer a Dictionary of the removed methods for later reporting."
-
-	| varListAsStrings removed |
-	varListAsStrings := varList collect: [ :sym | sym asString ].
-	removed := Dictionary new: methods size / 2.
-	methods copy keysAndValuesDo:
-		[ :sel :meth| | mVars |
-		sel ~= methodName ifTrue:
-			[mVars := meth freeVariableReferences asSet.
-			 (varListAsStrings anySatisfy: [ :v | mVars includes: v]) ifTrue:
-				[removed at: sel put: meth.
-				self removeMethodForSelector: sel]]].
-
-	^removed
-]
-
 { #category : #utilities }
 CCodeGenerator >> removeVariable: aName [
 	"Remove the given (instance) variable from the code base."
@@ -4298,14 +4358,8 @@ CCodeGenerator >> removeVariable: aName [
 { #category : #utilities }
 CCodeGenerator >> removeVariable: aName ifAbsent: ifAbsentBlock [
 	"Remove the given (instance) variable from the code base."
-	self checkDeleteVariable: aName.
 	variableDeclarations removeKey: aName ifAbsent: [].
 	^variables remove: aName ifAbsent: ifAbsentBlock
-]
-
-{ #category : #inlining }
-CCodeGenerator >> reportShouldNotBeRemoved: removed varList: varList [
-	"Report whether any of the removed methods are still used."
 ]
 
 { #category : #'C translation support' }
@@ -4342,6 +4396,7 @@ CCodeGenerator >> returnPrefixFromVariable: aName [
 
 { #category : #'type inference' }
 CCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledMethod typeIfNil: typeIfNil [
+
 	"Answer the return type for a send.  Unbound sends default to typeIfNil.
 	 Methods with types as yet unknown have a type determined either by the
 	 kernelReturnTypes or the table below, or, if they are in neither set, then nil.
@@ -4350,83 +4405,108 @@ CCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledMetho
 	 If there is a method for sel but its return type is as yet unknown it mustn't
 	 be defaulted, since on a subsequent pass its type may be computable."
 
-	^sendNode selector
-				caseOf: {
-				[#integerValueOf:]		->	[#sqInt].
-				[#isIntegerObject:]		->	[#int].
-				[#negated]				->	[self promoteArithmeticTypes: (sendNode receiver typeFrom: self in: aTMethod) and: #int].
-				[#+]					->	[self typeForArithmetic: sendNode in: aTMethod].
-				[#-]						->	[self typeForArithmetic: sendNode in: aTMethod].
-				[#*]					->	[self typeForArithmetic: sendNode in: aTMethod].
-				[#/]						->	[self typeForArithmetic: sendNode in: aTMethod].
-				[#//]					->	[self typeForArithmetic: sendNode in: aTMethod].
-				[#\\]					->	[self typeForArithmetic: sendNode in: aTMethod].
-				[#rem:]					->	[self typeForArithmetic: sendNode in: aTMethod].
-				[#quo:]					->	[self typeForArithmetic: sendNode in: aTMethod].
-				"C99 Sec Bitwise shift operators ... 3 Sematics ...
+	^ sendNode selector
+		  caseOf: { 
+				  ([ #integerValueOf: ] -> [ #sqInt ]).
+				  ([ #isIntegerObject: ] -> [ #int ]).
+				  ([ #negated ] -> [ 
+				   self
+					   promoteArithmeticTypes:
+					   (sendNode receiver typeFrom: self in: aTMethod)
+					   and: #int ]).
+				  ([ #+ ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
+				  ([ #- ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
+				  ([ #* ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
+				  ([ #/ ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
+				  ([ #// ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
+				  ([ #\\ ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
+				  ([ #rem: ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
+				  ([ #quo: ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
+				  "C99 Sec Bitwise shift operators ... 3 Sematics ...
 				 The integer promotions are performed on each of the operands. The type of the result is that of the promoted left operand..."
-				[#>>]					->	[sendNode receiver typeFrom: self in: aTMethod].
-				[#<<]					->	[sendNode receiver typeFrom: self in: aTMethod].
-				[#addressOf:]			->	[(sendNode receiver typeFrom: self in: aTMethod)
-												ifNil: [#sqInt]
-												ifNotNil: [:type| type, (type last isLetter ifTrue: [' *'] ifFalse: ['*'])]].
-				[#at:]					->	[self typeForDereference: sendNode in: aTMethod].
-				[#bitAnd:]				->	[self typeForArithmetic: sendNode in: aTMethod].
-				[#bitOr:]				->	[self typeForArithmetic: sendNode in: aTMethod].
-				[#bitXor:]				->	[self typeForArithmetic: sendNode in: aTMethod].
-				[#bitClear:]				->	[self typeForArithmetic: sendNode in: aTMethod].
-				[#bitInvert32]			->	[#'unsigned int'].
-				[#bitInvert64]			->	[self promoteArithmeticTypes: (sendNode receiver typeFrom: self in: aTMethod) and: #int].
-				[#byteSwap32]			->	[#'unsigned int'].
-				[#byteSwap64]			->	[#'unsigned long long'].
-				[#byteSwapped32IfBigEndian:]	->	[#'unsigned int'].
-				[#byteSwapped64IfBigEndian:]	->	[#'unsigned long long'].
-				[#=]					->	[#int].
-				[#~=]					->	[#int].
-				[#==]					->	[#int].
-				[#~~]					->	[#int].
-				[#<]					->	[#int].
-				[#<=]					->	[#int].
-				[#>]					->	[#int].
-				[#>=]					->	[#int].
-				[#between:and:]		->	[#int].
-				[#anyMask:]				->	[#int].
-				[#allMask:]				->	[#int].
-				[#noMask:]				->	[#int].
-				[#isNil]					->	[#int].
-				[#notNil]				->	[#int].
-				[#&]					->	[#int].
-				[#|]						->	[#int].
-				[#not]					->	[#int].
-				[#asFloat]				->	[#double].
-				[#atan]					->	[#double].
-				[#exp]					->	[#double].
-				[#log]					->	[#double].
-				[#sin]					->	[#double].
-				[#sqrt]					->	[#double].
-				[#asLong]				->	[#long].
-				[#asInteger]			->	[#sqInt].
-				[#asIntegerPtr]			->	[#'sqIntptr_t'].
-				[#asUnsignedInteger]	->	[#usqInt].
-				[#asUnsignedIntegerPtr]->	[#'usqIntptr_t'].
-				[#asUnsignedLong]		->	[#'unsigned long'].
-				[#asUnsignedLongLong]		->	[#'unsigned long long'].
-				[#asVoidPointer]		->	[#'void *'].
-				[#signedIntToLong]		->	[#usqInt]. "c.f. generateSignedIntToLong:on:indent:"
-				[#signedIntToShort]	->	[#usqInt]. "c.f. generateSignedIntToShort:on:indent:"
-				[#cCoerce:to:]			->	[self conventionalTypeForType: sendNode args last value].
-				[#cCoerceSimple:to:]	->	[self conventionalTypeForType: sendNode args last value].
-				[#sizeof:]				->	[#'usqIntptr_t']. "Technically it's a size_t but it matches on target architectures so far..."
-				[#ifTrue:ifFalse:]		->	[self typeForConditional: sendNode in: aTMethod].
-				[#ifFalse:ifTrue:]		->	[self typeForConditional: sendNode in: aTMethod].
-				[#ifTrue:]				->	[self typeForConditional: sendNode in: aTMethod].
-				[#ifFalse:]				->	[self typeForConditional: sendNode in: aTMethod].
-				[#and:]					->	[#sqInt].
-				[#or:]					->	[#sqInt].
-				[#caseOf:]				->	[self typeFor: sendNode args first in: aTMethod] }
-				otherwise: "If there /is/ a method for sel but its return type is as yet unknown it /mustn't/ be defaulted,
-							since on a subsequent pass its type may be computable.  Only default unbound selectors."
-					[aCalledMethod ifNotNil: [nil] ifNil: [typeIfNil]]
+				  ([ #>> ] -> [ sendNode receiver typeFrom: self in: aTMethod ]).
+				  ([ #<< ] -> [ sendNode receiver typeFrom: self in: aTMethod ]).
+				  ([ #addressOf: ] -> [ 
+				   (sendNode receiver typeFrom: self in: aTMethod)
+					   ifNil: [ #sqInt ]
+					   ifNotNil: [ :type | 
+						   type , (type last isLetter
+							    ifTrue: [ ' *' ]
+							    ifFalse: [ '*' ]) ] ]).
+				  ([ #at: ] -> [ self typeForDereference: sendNode in: aTMethod ]).
+				  ([ #bitAnd: ]
+				   -> [ self typeForArithmetic: sendNode in: aTMethod ]).
+				  ([ #bitOr: ]
+				   -> [ self typeForArithmetic: sendNode in: aTMethod ]).
+				  ([ #bitXor: ]
+				   -> [ self typeForArithmetic: sendNode in: aTMethod ]).
+				  ([ #bitClear: ]
+				   -> [ self typeForArithmetic: sendNode in: aTMethod ]).
+				  ([ #bitInvert32 ] -> [ #'unsigned int' ]).
+				  ([ #bitInvert64 ] -> [ 
+				   self
+					   promoteArithmeticTypes:
+					   (sendNode receiver typeFrom: self in: aTMethod)
+					   and: #int ]).
+				  ([ #byteSwap32 ] -> [ #'unsigned int' ]).
+				  ([ #byteSwap64 ] -> [ #'unsigned long long' ]).
+				  ([ #byteSwapped32IfBigEndian: ] -> [ #'unsigned int' ]).
+				  ([ #byteSwapped64IfBigEndian: ] -> [ #'unsigned long long' ]).
+				  ([ #= ] -> [ #int ]).
+				  ([ #~= ] -> [ #int ]).
+				  ([ #== ] -> [ #int ]).
+				  ([ #~~ ] -> [ #int ]).
+				  ([ #< ] -> [ #int ]).
+				  ([ #<= ] -> [ #int ]).
+				  ([ #> ] -> [ #int ]).
+				  ([ #>= ] -> [ #int ]).
+				  ([ #between:and: ] -> [ #int ]).
+				  ([ #anyMask: ] -> [ #int ]).
+				  ([ #allMask: ] -> [ #int ]).
+				  ([ #noMask: ] -> [ #int ]).
+				  ([ #isNil ] -> [ #int ]).
+				  ([ #notNil ] -> [ #int ]).
+				  ([ #& ] -> [ #int ]).
+				  ([ #| ] -> [ #int ]).
+				  ([ #not ] -> [ #int ]).
+				  ([ #asFloat ] -> [ #double ]).
+				  ([ #atan ] -> [ #double ]).
+				  ([ #exp ] -> [ #double ]).
+				  ([ #log ] -> [ #double ]).
+				  ([ #sin ] -> [ #double ]).
+				  ([ #sqrt ] -> [ #double ]).
+				  ([ #asLong ] -> [ #long ]).
+				  ([ #asInteger ] -> [ #sqInt ]).
+				  ([ #asIntegerPtr ] -> [ #sqIntptr_t ]).
+				  ([ #asUnsignedInteger ] -> [ #usqInt ]).
+				  ([ #asUnsignedIntegerPtr ] -> [ #usqIntptr_t ]).
+				  ([ #asUnsignedLong ] -> [ #'unsigned long' ]).
+				  ([ #asUnsignedLongLong ] -> [ #'unsigned long long' ]).
+				  ([ #asVoidPointer ] -> [ #'void *' ]).
+				  ([ #signedIntToLong ] -> [ #usqInt ]). "c.f. generateSignedIntToLong:on:indent:"
+				  ([ #signedIntToShort ] -> [ #usqInt ]). "c.f. generateSignedIntToShort:on:indent:"
+				  ([ #cCoerce:to: ]
+				   -> [ 
+				   self conventionalTypeForType: sendNode arguments last value ]).
+				  ([ #cCoerceSimple:to: ]
+				   -> [ 
+				   self conventionalTypeForType: sendNode arguments last value ]).
+				  ([ #sizeof: ] -> [ #usqIntptr_t ]). "Technically it's a size_t but it matches on target architectures so far..."
+				  ([ #ifTrue:ifFalse: ]
+				   -> [ self typeForConditional: sendNode in: aTMethod ]).
+				  ([ #ifFalse:ifTrue: ]
+				   -> [ self typeForConditional: sendNode in: aTMethod ]).
+				  ([ #ifTrue: ]
+				   -> [ self typeForConditional: sendNode in: aTMethod ]).
+				  ([ #ifFalse: ]
+				   -> [ self typeForConditional: sendNode in: aTMethod ]).
+				  ([ #and: ] -> [ #sqInt ]).
+				  ([ #or: ] -> [ #sqInt ]).
+				  ([ #caseOf: ]
+				   -> [ self typeFor: sendNode arguments first in: aTMethod ]) }
+		  otherwise: [ "If there /is/ a method for sel but its return type is as yet unknown it /mustn't/ be defaulted,
+							since on a subsequent pass its type may be computable.  Only default unbound selectors." 
+			  aCalledMethod ifNotNil: [ nil ] ifNil: [ typeIfNil ] ]
 ]
 
 { #category : #'type inference' }
@@ -4807,44 +4887,61 @@ CCodeGenerator >> typeFor: aNode in: aTMethod [
 
 { #category : #'type inference' }
 CCodeGenerator >> typeForArithmetic: sendNode in: aTMethod [
+
 	"Answer the return type for an arithmetic sendThis is so that the inliner can still
 	 inline simple expressions.  Deal with pointer arithmetic, floating point arithmetic
 	 and promotion."
+
 	| rcvrType argType arg |
 	rcvrType := sendNode receiver typeOrNilFrom: self in: aTMethod.
-	argType := (arg := sendNode args first) typeOrNilFrom: self in: aTMethod.
+	argType := (arg := sendNode arguments first)
+		           typeOrNilFrom: self
+		           in: aTMethod.
 	"deal with pointer arithmetic"
-	((rcvrType notNil and: [rcvrType last == $*]) or: [argType notNil and: [argType last == $*]]) ifTrue:
-		[(rcvrType isNil or: [argType isNil]) ifTrue:
-			[^nil].
-		 (rcvrType last == $* and: [argType last == $*]) ifTrue:
-			[sendNode selector == #- ifTrue:
-				[^#int].
-			 self error: 'invalid pointer arithmetic'].
-		 ^rcvrType last == $*
-			ifTrue: [rcvrType]
-			ifFalse: [argType]].
-	^(self promoteArithmeticTypes: rcvrType and: argType) ifNotNil:
-		[:promotedType|
-		 "We have to be very careful with subtraction.  The difference between two unsigned types is signed.
+	((rcvrType notNil and: [ rcvrType last == $* ]) or: [ 
+		 argType notNil and: [ argType last == $* ] ]) ifTrue: [ 
+		(rcvrType isNil or: [ argType isNil ]) ifTrue: [ ^ nil ].
+		(rcvrType last == $* and: [ argType last == $* ]) ifTrue: [ 
+			sendNode selector == #- ifTrue: [ ^ #int ].
+			self error: 'invalid pointer arithmetic' ].
+		^ rcvrType last == $*
+			  ifTrue: [ rcvrType ]
+			  ifFalse: [ argType ] ].
+	^ (self promoteArithmeticTypes: rcvrType and: argType) ifNotNil: [ 
+		  :promotedType | "We have to be very careful with subtraction.  The difference between two unsigned types is signed.
 		  But we don't want unsigned - constant to be signed.  We almost always want this to stay unsigned."
-		 (sendNode selector == #- and: [promotedType first == $u and: [(arg isConstant and: [arg value isInteger]) not]])
-			ifTrue: [promotedType allButFirst: ((promotedType beginsWith: 'unsigned') ifTrue: [9] ifFalse: [1])]
-			ifFalse: [promotedType]]
+		  (sendNode selector == #- and: [ 
+			   promotedType first == $u and: [ 
+				   (arg isConstant and: [ arg value isInteger ]) not ] ])
+			  ifTrue: [ 
+				  promotedType allButFirst:
+					  ((promotedType beginsWith: 'unsigned')
+						   ifTrue: [ 9 ]
+						   ifFalse: [ 1 ]) ]
+			  ifFalse: [ promotedType ] ]
 ]
 
 { #category : #'type inference' }
 CCodeGenerator >> typeForConditional: sendNode in: aTMethod [
+
 	"Answer the return type for a conditional, ifTrue:ifFalse: et al"
+
 	| firstType secondType |
-	firstType := self typeFor: sendNode args first statements last in: aTMethod.
-	sendNode selector numArgs = 1 ifTrue:
-		[^firstType].
-	secondType := self typeFor: sendNode args second statements last in: aTMethod.
-	((firstType notNil and: [(self isIntegralCType: firstType) or: [self isFloatingPointCType: firstType]])
-	 and: [secondType notNil and: [(self isIntegralCType: secondType) or: [self isFloatingPointCType: secondType]]]) ifTrue:
-		[^self promoteArithmeticTypes: firstType and: secondType].
-	^firstType ifNil: [secondType]
+	firstType := self
+		             typeFor: sendNode arguments first statements last
+		             in: aTMethod.
+	sendNode selector numArgs = 1 ifTrue: [ ^ firstType ].
+	secondType := self
+		              typeFor: sendNode arguments second statements last
+		              in: aTMethod.
+	((firstType notNil and: [ 
+		  (self isIntegralCType: firstType) or: [ 
+			  self isFloatingPointCType: firstType ] ]) and: [ 
+		 secondType notNil and: [ 
+			 (self isIntegralCType: secondType) or: [ 
+				 self isFloatingPointCType: secondType ] ] ]) ifTrue: [ 
+		^ self promoteArithmeticTypes: firstType and: secondType ].
+	^ firstType ifNil: [ secondType ]
 ]
 
 { #category : #'type inference' }
@@ -4866,11 +4963,11 @@ CCodeGenerator >> typeForDereference: sendNode in: aTMethod [
 CCodeGenerator >> typeOfVariable: varName [ "<String>"
 	self assert: varName isString.
 	scopeStack reverseDo:
-		[:dict|
-		(dict includesKey: varName) ifTrue:
+		[:scope|
+		(scope declarations includesKey: varName) ifTrue:
 			[^self
 				extractTypeFor: varName
-				fromDeclaration: (dict at: varName)]].
+				fromDeclaration: (scope declarations at: varName)]].
 	(variableDeclarations
 		at: varName
 		ifAbsent:
@@ -4961,6 +5058,31 @@ CCodeGenerator >> useSymbolicConstants: aBool [
 { #category : #utilities }
 CCodeGenerator >> validateCppIf: nodeOrNil withValue: value [
 	
+]
+
+{ #category : #inlining }
+CCodeGenerator >> validateLocalizationOfGlobals: varList exceptMethod: methodName [
+
+	| localizationCandidates variablesInConflict |
+	localizationCandidates := varList collect: [ :sym | sym asString ].
+	variablesInConflict := Set new.
+
+	methods copy keysAndValuesDo: [ :sel :meth| | methodFreeVariables |
+		sel ~= methodName ifTrue: [
+			methodFreeVariables := meth freeVariableReferences asSet.
+			 localizationCandidates do: [ :candidate | 
+				(methodFreeVariables includes: candidate)
+					ifTrue: [ variablesInConflict add: candidate ] ] ] ].
+
+	variablesInConflict ifNotEmpty: [ | errorMessage |
+		errorMessage := String streamContents: [ :stream |
+			stream nextPutAll: 'Cannot localize Shared Variables in the interpreter loop: '.
+			variablesInConflict
+				do: [ :e | stream nextPutAll: e ]
+				separatedBy: [ stream nextPutAll: ', ' ]
+		].
+		self error: errorMessage
+	]
 ]
 
 { #category : #'C code generator' }

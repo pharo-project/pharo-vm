@@ -5,10 +5,17 @@ Class {
 	#name : #TParseNode,
 	#superclass : #Object,
 	#instVars : [
+		'parent',
 		'comment'
 	],
 	#category : #'Slang-AST'
 }
+
+{ #category : #visiting }
+TParseNode >> accept: aVisitor [
+
+	self subclassResponsibility
+]
 
 { #category : #utilities }
 TParseNode >> allCalls [
@@ -37,6 +44,12 @@ TParseNode >> allSatisfy: aBlock unless: cautionaryBlock [
 		nodesDo: [:n| (aBlock value: n) ifFalse: [^false]]
 		unless: cautionaryBlock.
 	^true
+]
+
+{ #category : #enumerating }
+TParseNode >> allStatementsDo: aFullBlockClosure [ 
+	
+	self children do: [ :child | child allStatementsDo: aFullBlockClosure ]
 ]
 
 { #category : #enumerating }
@@ -74,11 +87,34 @@ TParseNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 	^ self asCASTExpressionIn: aBuilder
 ]
 
+{ #category : #linearisation }
+TParseNode >> asExpressionIn: aMLStatementListBuider [ 
+	
+	"A TNode returns itself as an expression"
+	^ self
+]
+
 { #category : #transformations }
 TParseNode >> asReturnNode [
 	^TReturnNode new 
 		setExpression: self;
 		yourself
+]
+
+{ #category : #linearisation }
+TParseNode >> asStatementIn: aMLStatementListBuider [ 
+
+	"A TNode returns itself as a statement"
+	^ self
+]
+
+{ #category : #transformations }
+TParseNode >> assignLastExpressionTo: aTVariableNode [ 
+	
+	"An expression just assigns itself"
+	 ^ TAssignmentNode new
+			setVariable: aTVariableNode
+			expression: self
 ]
 
 { #category : #transformations }
@@ -103,12 +139,17 @@ TParseNode >> bindVariablesIn: aDictionary [
 	^self
 ]
 
+{ #category : #transformations }
+TParseNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	^self
+]
+
 { #category : #enumerating }
 TParseNode >> collect: aBlock [
 	| nodes |
-	self halt. "This is a misnomer; should be deleted"
 	nodes := OrderedCollection new.
-	self nodesDo: [:n| (aBlock value: n) ifTrue: [nodes add: n]].
+	self nodesDo: [:n| nodes add: (aBlock value: n) ].
 	^nodes
 ]
 
@@ -151,6 +192,12 @@ TParseNode >> detect: aBlock ifNone: defaultBlock [
 TParseNode >> endsWithReturn [
 
 	^false
+]
+
+{ #category : #flattenin }
+TParseNode >> flattened [
+	
+	^ { self }
 ]
 
 { #category : #testing }
@@ -210,6 +257,12 @@ TParseNode >> isDefine [
 ]
 
 { #category : #testing }
+TParseNode >> isExternalSend [
+	
+	^ false
+]
+
+{ #category : #testing }
 TParseNode >> isGoTo [
 
 	^false
@@ -259,7 +312,7 @@ TParseNode >> isReturningIf [
 TParseNode >> isSameAs: aTParseNode [
 	"Answer if the ParseTree rooted at this node is the same as aTParseNode.
 	 By default answer false and have subclasses override as appropriate."
-	^false
+	^ self subclassResponsibility
 ]
 
 { #category : #testing }
@@ -269,7 +322,7 @@ TParseNode >> isSend [
 ]
 
 { #category : #testing }
-TParseNode >> isStmtList [
+TParseNode >> isStatementList [
 
 	^false
 ]
@@ -398,6 +451,18 @@ TParseNode >> occurrencesOf: aNode [
 	^count
 ]
 
+{ #category : #accessing }
+TParseNode >> parent [
+
+	^ parent
+]
+
+{ #category : #accessing }
+TParseNode >> parent: anObject [
+
+	parent := anObject
+]
+
 { #category : #printing }
 TParseNode >> printOn: aStream [ 
 	"Append a description of the receiver onto the given stream."
@@ -415,6 +480,18 @@ TParseNode >> printOn: aStream level: anInteger [
 { #category : #transformations }
 TParseNode >> removeAssertions [
 	"default: do nothing"
+]
+
+{ #category : #transformations }
+TParseNode >> replaceBy: aNode [
+
+	self parent replaceChild: self with: aNode
+]
+
+{ #category : #transformations }
+TParseNode >> replaceChild: aNode with: aReplacementNode [
+
+	self subclassResponsibility
 ]
 
 { #category : #transformations }

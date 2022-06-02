@@ -339,6 +339,9 @@ CogARMCompiler >> aeabiDivModFunctionAddr [
 	"Answer the address of the __aeabi_idivmod() call provided by the ARM low level libs to do an integer divide that returns the quo in R0 and rem in R1.
 	 A word on the somewhat strange usage of idivmod herein; we need a declaration for the _aeabi_idivmod helper function, despite the fact that in a simple C program test, you don't.
 	 To get that declaration we need a variable to hang it off; thus the non-existent var idivmod, and in simulation we need to simulate it, which is what aeabiDiv:Mod: does."
+	
+	| idivmod | "This variable should be in here to be able to be translated"
+	
 	<returnTypeC: #usqInt>
 	<var: #idivmod declareC: 'extern void __aeabi_idivmod(int dividend, int divisor)'>
 

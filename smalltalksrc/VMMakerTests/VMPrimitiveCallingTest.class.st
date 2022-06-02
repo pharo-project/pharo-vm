@@ -16,7 +16,7 @@ VMPrimitiveCallingTest >> testPrimitiveFailingDoesNotSetErrorCodeInOtherTemp [
 		numberOfTemporaries: 2;
 		isPrimitive: true;
 		buildMethod.
-	
+
 	stackBuilder addNewFrame; buildStack.
 	interpreter newMethod: method.
 	interpreter primFailCode: -1.

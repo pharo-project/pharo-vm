@@ -1,6 +1,6 @@
 Class {
 	#name : #SimulatorHarnessForTests,
-	#superclass : #SimulatorHarness,
+	#superclass : #Object,
 	#instVars : [
 		'simulator'
 	],

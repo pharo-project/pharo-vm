@@ -17,6 +17,7 @@ MLAccessorDepthCalculator class >> forCodeGenerator: aCodeGenerator [
 
 { #category : #'spur primitive compilation' }
 MLAccessorDepthCalculator >> accessorChainsForMethod: method interpreterClass: interpreterClass [
+
 	"Answer a set of access paths from arguments through objects, in the method, assuming
 	 it is a primitive. This is in support of Spur's lazy become.  A primitive may fail because it
 	 may encounter a forwarder.  The primitive failure code needs to know to what depth it
@@ -31,53 +32,61 @@ MLAccessorDepthCalculator >> accessorChainsForMethod: method interpreterClass: i
 	has depth 2, since field is accessed, and field is an element of obj."
 
 	| accessors assignments roots chains extendedChains extended lastPass |
-	self accessorsAndAssignmentsForMethod: method
+	self
+		accessorsAndAssignmentsForMethod: method
 		actuals: (self actualsForMethod: method)
 		depth: 0
 		interpreterClass: interpreterClass
-		into: [:theRoots :theAccessors :theAssignments|
+		into: [ :theRoots :theAccessors :theAssignments | 
 			roots := theRoots.
 			accessors := theAccessors.
-			assignments := theAssignments].
+			assignments := theAssignments ].
 	"Compute the transitive closure of assignments of accessor sends or variables to variables from the roots.
 	 Start from the stack accesses (the roots).
 	 On the last pass look only for accessors of the targets of the tip assignments."
 	chains := OrderedCollection new.
-	roots do: [:root| chains addAll: (assignments
-									select: [:assignment| assignment expression = root]
-									thenCollect: [:assignment| OrderedCollection with: assignment])].
+	roots do: [ :root | 
+		chains addAll: (assignments
+				 select: [ :assignment | assignment expression = root ]
+				 thenCollect: [ :assignment | OrderedCollection with: assignment ]) ].
 	lastPass := false.
-	[extended := false.
-	 extendedChains := OrderedCollection new: chains size * 2.
-	 chains do:
-		[:chain| | tip refs accessorRefs variableRefs |
+	[ 
+	extended := false.
+	extendedChains := OrderedCollection new: chains size * 2.
+	chains do: [ :chain | 
+		| tip refs accessorRefs variableRefs |
 		tip := chain last variable.
-		refs := accessors select: [:send| send args anySatisfy: [:arg| tip isSameAs: arg]].
-		lastPass ifFalse:
-			[accessorRefs := refs collect: [:send|
-											assignments
-												detect: [:assignment|
-														assignment expression = send
-														and: [(chain includes: assignment) not]]
-												ifNone: []]
-									thenSelect: [:assignmentOrNil| assignmentOrNil notNil].
-			 variableRefs := assignments select:
-								[:assignment|
-								 (tip isSameAs: assignment expression)
-								 and: [(tip isSameAs: assignment variable) not
-								 and: [(chain includes: assignment) not]]].
-			 refs := (Set withAll: accessorRefs) addAll: variableRefs; yourself].
+		refs := accessors select: [ :send | 
+			        send arguments anySatisfy: [ :arg | tip isSameAs: arg ] ].
+		lastPass ifFalse: [ 
+			accessorRefs := refs
+				                collect: [ :send | 
+					                assignments
+						                detect: [ :assignment | 
+							                assignment expression = send and: [ 
+								                (chain includes: assignment) not ] ]
+						                ifNone: [  ] ]
+				                thenSelect: [ :assignmentOrNil | 
+				                assignmentOrNil notNil ].
+			variableRefs := assignments select: [ :assignment | 
+				                (tip isSameAs: assignment expression) and: [ 
+					                (tip isSameAs: assignment variable) not and: [ 
+						                (chain includes: assignment) not ] ] ].
+			refs := (Set withAll: accessorRefs)
+				        addAll: variableRefs;
+				        yourself ].
 		refs isEmpty
-			ifTrue:
-				[extendedChains add: chain]
-			ifFalse:
-				[lastPass ifFalse: [extended := true].
-				 self assert: (refs noneSatisfy: [:assignment| chain includes: assignment]).
-				 extendedChains addAll: (refs collect: [:assignment| chain, {assignment}])]].
-	 extended or: [lastPass not]] whileTrue:
-		[chains := extendedChains.
-		 extended ifFalse: [lastPass := true]].
-	^chains
+			ifTrue: [ extendedChains add: chain ]
+			ifFalse: [ 
+				lastPass ifFalse: [ extended := true ].
+				self assert:
+					(refs noneSatisfy: [ :assignment | chain includes: assignment ]).
+				extendedChains addAll:
+					(refs collect: [ :assignment | chain , { assignment } ]) ] ].
+	extended or: [ lastPass not ] ] whileTrue: [ 
+		chains := extendedChains.
+		extended ifFalse: [ lastPass := true ] ].
+	^ chains
 ]
 
 { #category : #'spur primitive compilation' }
@@ -135,55 +144,60 @@ MLAccessorDepthCalculator >> accessorDepthForSelector: selector [
 
 { #category : #'spur primitive compilation' }
 MLAccessorDepthCalculator >> accessorsAndAssignmentsForMethod: method actuals: actualParameters depth: depth interpreterClass: interpreterClass into: aTrinaryBlock [
+
 	"Evaluate aTrinaryBlock with the root accessor sends, accessor sends and assignments in the method."
+
 	| accessors assignments roots |
 	accessors := Set new.
 	assignments := Set new.
 	roots := Set new.
-	actualParameters with: method args do:
-		[:actual :argName|
-		 (actual isVariable or: [actual isSend]) ifTrue:
-			[(actual isSend and: [self isStackAccessor: actual selector given: interpreterClass]) ifTrue:
-				[roots add: actual].
+	actualParameters with: method args do: [ :actual :argName | 
+		(actual isVariable or: [ actual isSend ]) ifTrue: [ 
+			(actual isSend and: [ 
+				 self isStackAccessor: actual selector given: interpreterClass ]) 
+				ifTrue: [ roots add: actual ].
 			assignments add: (TAssignmentNode new
-									setVariable: (TVariableNode new setName: argName)
-									expression: actual)]].
-	method parseTree nodesDo:
-		[:node|
-		node isSend ifTrue:
-			[(self isStackAccessor: node selector given: interpreterClass) ifTrue:
-				[roots add: node].
-			 (self isObjectAccessor: node selector given: interpreterClass) ifTrue:
-				[accessors add: node].
-			 (self accessorDepthDeterminationFollowsSelfSends
-			  and: [node receiver isVariable
-			  and: [node receiver name = 'self'
-			  and: [roots isEmpty
-				or: [node args anySatisfy:
-					[:arg|
-					 (roots includes: arg)
-					 or: [(accessors includes: arg)
-					 or: [assignments anySatisfy: [:assignment| assignment variable isSameAs: arg]]]]]]]]) ifTrue:
-				[self accessorsAndAssignmentsForSubMethodNamed: node selector
-					actuals: node args
-					depth: depth + 1
-					interpreterClass: interpreterClass
-					into: [:subRoots :subAccessors :subAssignments|
-						(subRoots isEmpty and: [subAccessors isEmpty and: [subAssignments isEmpty]]) ifFalse:
-							[roots addAll: subRoots.
-							 accessors add: node.
-							 accessors addAll: subAccessors.
-							 assignments addAll: subAssignments]]]].
-		(node isAssignment
-		 and: [(node expression isSend and: [codeGenerator vmmakerConfiguration baseObjectMemoryManagerClass isTerminalObjectAccessor: node expression selector]) not
-		 and: [(roots includes: node expression)
-			or: [(accessors includes: node expression)
-			or: [node expression isVariable and: [node expression name ~= 'nil']]]]]) ifTrue:
-			[assignments add: node]].
-	^aTrinaryBlock
-		value: roots
-		value: accessors
-		value: assignments
+					 setVariable: (TVariableNode new setName: argName)
+					 expression: actual) ] ].
+	method parseTree nodesDo: [ :node | 
+		node isSend ifTrue: [ 
+			(self isStackAccessor: node selector given: interpreterClass) 
+				ifTrue: [ roots add: node ].
+			(self isObjectAccessor: node selector given: interpreterClass) 
+				ifTrue: [ accessors add: node ].
+			(self accessorDepthDeterminationFollowsSelfSends and: [ 
+				 node receiver isVariable and: [ 
+					 node receiver name = 'self' and: [ 
+						 roots isEmpty or: [ 
+							 node arguments anySatisfy: [ :arg | 
+								 (roots includes: arg) or: [ 
+									 (accessors includes: arg) or: [ 
+										 assignments anySatisfy: [ :assignment | 
+											 assignment variable isSameAs: arg ] ] ] ] ] ] ] ]) 
+				ifTrue: [ 
+					self
+						accessorsAndAssignmentsForSubMethodNamed: node selector
+						actuals: node arguments
+						depth: depth + 1
+						interpreterClass: interpreterClass
+						into: [ :subRoots :subAccessors :subAssignments | 
+							(subRoots isEmpty and: [ 
+								 subAccessors isEmpty and: [ subAssignments isEmpty ] ]) 
+								ifFalse: [ 
+									roots addAll: subRoots.
+									accessors add: node.
+									accessors addAll: subAccessors.
+									assignments addAll: subAssignments ] ] ] ].
+		(node isAssignment and: [ 
+			 (node expression isSend and: [ 
+				  codeGenerator vmmakerConfiguration baseObjectMemoryManagerClass 
+					  isTerminalObjectAccessor: node expression selector ]) not and: [ 
+				 (roots includes: node expression) or: [ 
+					 (accessors includes: node expression) or: [ 
+						 node expression isVariable and: [ 
+							 node expression name ~= 'nil' ] ] ] ] ]) ifTrue: [ 
+			assignments add: node ] ].
+	^ aTrinaryBlock value: roots value: accessors value: assignments
 ]
 
 { #category : #'spur primitive compilation' }

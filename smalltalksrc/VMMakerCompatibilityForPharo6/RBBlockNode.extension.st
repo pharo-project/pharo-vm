@@ -2,23 +2,12 @@ Extension { #name : #RBBlockNode }
 
 { #category : #'*VMMakerCompatibilityForPharo6-C translation' }
 RBBlockNode >> asTranslatorNodeIn: aTMethod [
-	"Answer a TParseNode subclass equivalent of me"
-	| statementList |
-	statementList := OrderedCollection new.
-	body statements do:
-		[:s | | newS |
-		 newS := s asTranslatorNodeIn: aTMethod.
-		 "inline the statement list returned when a CascadeNode is translated and/or when ifNotNil: is transformed"
-		 newS isStmtList
-			ifTrue:  [statementList addAll: newS statements]
-			ifFalse: [statementList add: newS]].
-	statementList ifEmpty: [ 
-		statementList add: (TVariableNode new setName: 'nil').
+	
+	body := body asTranslatorNodeIn: aTMethod.
+	body statements ifEmpty: [ 
+		body statements add: (TConstantNode value: nil).
 	].
-	^TStmtListNode new
-		setArguments: (arguments asArray collect: [:arg | arg name])
-		statements: statementList;
-		comment: self commentOrNil
+	^ body
 ]
 
 { #category : #'*VMMakerCompatibilityForPharo6-testing' }

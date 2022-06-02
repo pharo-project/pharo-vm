@@ -17,10 +17,24 @@ TAssignmentNode class >> variable: aVariable expression: anExpression [
 		yourself
 ]
 
+{ #category : #'instance creation' }
+TAssignmentNode class >> variableNamed: aVariableName expression: anExpression [
+
+	^ self new
+		  setVariable: (TVariableNode named: aVariableName) expression: anExpression;
+		  yourself
+]
+
+{ #category : #visiting }
+TAssignmentNode >> accept: aVisitor [ 
+	
+	^ aVisitor visitAssignmentNode: self
+]
+
 { #category : #'C code generation' }
 TAssignmentNode >> asCASTExpressionIn: aCodeGen [
 
-	(expression isStmtList and: [ expression statements size > 1 ]) 
+	(expression isStatementList and: [ expression statements size > 1 ]) 
 		ifTrue: [ ^ self asCASTStatementListExpansionAsExpression: aCodeGen ].
 	^ (self asCASTIn: aCodeGen)
 		  needsParentheses: true;
@@ -31,17 +45,17 @@ TAssignmentNode >> asCASTExpressionIn: aCodeGen [
 TAssignmentNode >> asCASTIn: aBuilder [
 
 	| type |
-	expression isSwitch ifTrue:
-		[ ^ expression asCASTIn: aBuilder addToEndOfCases: self ].
+	expression isSwitch ifTrue: [ 
+		^ expression asCASTIn: aBuilder addToEndOfCases: self ].
 	expression isLiteralArrayDeclaration ifTrue: [ 
-		|literalArrayNode |
-		type := expression args last value.
+		| literalArrayNode |
+		type := expression arguments last value.
 		self assert: type last = $*.
 
 		"Transform the literal array declaration to a C block containing:
 		  - a static literal array declaration
 	 	  - an assigment from this literal array to the assigned variable "
-		literalArrayNode := expression args first value collect: [ :e | 
+		literalArrayNode := expression arguments first value collect: [ :e | 
 			                    CConstantNode value: e ].
 		^ CCompoundStatementNode
 			  declarations: { (CDeclarationNode
@@ -57,7 +71,7 @@ TAssignmentNode >> asCASTIn: aBuilder [
 					   lvalue: (CIdentifierNode name: variable name)
 					   rvalue: (CIdentifierNode name: 'aLiteralArray')) } ].
 
-	(expression isStmtList and: [ expression statements size > 1 ]) 
+	(expression isStatementList and: [ expression statements size > 1 ]) 
 		ifTrue: [ 
 			^ expression copy
 				  assignLastExpressionTo: variable;
@@ -119,14 +133,14 @@ TAssignmentNode >> asCASTValueExpansionIn: aCodeGen [
 	^ (TSendNode new
 		   setSelector: expression selector
 		   receiver: copy
-		   arguments: expression args) asCASTIn: aCodeGen
+		   arguments: expression arguments) asCASTIn: aCodeGen
 ]
 
 { #category : #transformations }
 TAssignmentNode >> bindVariableUsesIn: aDictionary [
 	"Do NOT bind the variable on the left-hand-side of an assignment statement."
 	"was bindVariablesIn:"
-	expression := expression bindVariableUsesIn: aDictionary.
+	self expression: (expression bindVariableUsesIn: aDictionary).
 
 ]
 
@@ -146,14 +160,41 @@ TAssignmentNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFo
 { #category : #transformations }
 TAssignmentNode >> bindVariablesIn: aDictionary [
 
-	variable := variable bindVariablesIn: aDictionary.
-	expression := expression bindVariablesIn: aDictionary.
+	self variable: (variable bindVariablesIn: aDictionary).
+	self expression: (expression bindVariablesIn: aDictionary).
+]
+
+{ #category : #transformations }
+TAssignmentNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	(cautionaryBlock value: self) ifTrue: [^self].
+	self variable: (variable bindVariablesIn: aDictionary unless: cautionaryBlock).
+	self expression: (expression bindVariablesIn: aDictionary unless: cautionaryBlock).
+]
+
+{ #category : #accessing }
+TAssignmentNode >> children [
+	
+	^ { variable . expression }
+]
+
+{ #category : #displaying }
+TAssignmentNode >> displayString [
+
+	^ ' := '
 ]
 
 { #category : #accessing }
 TAssignmentNode >> expression [
 
 	^expression
+]
+
+{ #category : #accessing }
+TAssignmentNode >> expression: anExpression [
+
+	expression := anExpression.
+	expression parent: self.
 ]
 
 { #category : #testing }
@@ -221,8 +262,8 @@ TAssignmentNode >> nodesDo: aBlock unless: cautionaryBlock [
 { #category : #copying }
 TAssignmentNode >> postCopy [
 
-	variable := variable copy.
-	expression := expression copy
+	self variable: variable copy.
+	self expression: expression copy
 ]
 
 { #category : #'C code generation' }
@@ -251,25 +292,28 @@ TAssignmentNode >> removeAssertions [
 ]
 
 { #category : #transformations }
+TAssignmentNode >> replaceChild: aNode with: aReplacementNode [
+
+	variable == aNode ifTrue: [ 
+		self variable: aReplacementNode ].
+	expression == aNode ifTrue: [ 
+		self expression: aReplacementNode ]
+]
+
+{ #category : #transformations }
 TAssignmentNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
-		variable := variable replaceNodesIn: aDictionary.
-		expression := expression replaceNodesIn: aDictionary.
+		self variable: (variable replaceNodesIn: aDictionary).
+		self expression: (expression replaceNodesIn: aDictionary).
 		self]
-]
-
-{ #category : #accessing }
-TAssignmentNode >> setExpression: expressionNode [
-
-	expression := expressionNode
 ]
 
 { #category : #accessing }
 TAssignmentNode >> setVariable: varNode expression: expressionNode [
 	self assert: (expressionNode isGoTo or: [expressionNode isLabel]) not.
-	variable := varNode.
-	expression := expressionNode.
+	self variable: varNode.
+	self expression: expressionNode.
 ]
 
 { #category : #testing }
@@ -291,6 +335,13 @@ TAssignmentNode >> typeOrNilFrom: aCodeGenerator in: aTMethod [
 TAssignmentNode >> variable [
 
 	^variable
+]
+
+{ #category : #accessing }
+TAssignmentNode >> variable: anObject [
+
+	variable := anObject.
+	variable parent: self.
 ]
 
 { #category : #accessing }

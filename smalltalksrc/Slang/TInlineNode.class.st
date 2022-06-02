@@ -7,6 +7,12 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #visiting }
+TInlineNode >> accept: aVisitor [
+	
+	^ aVisitor visitInlineNode: self
+]
+
 { #category : #tranforming }
 TInlineNode >> asCASTIn: aBuilder [
 
@@ -31,9 +37,38 @@ TInlineNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold i
 					yourself]
 ]
 
+{ #category : #transformations }
+TInlineNode >> bindVariablesIn: aDictionary [
+
+	method := method bindVariablesIn: aDictionary.
+
+]
+
+{ #category : #transformations }
+TInlineNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	(cautionaryBlock value: self) ifTrue: [^self].
+	method := method bindVariablesIn: aDictionary unless: cautionaryBlock.
+
+]
+
+{ #category : #accessing }
+TInlineNode >> children [
+
+	^ { method }
+]
+
 { #category : #testing }
 TInlineNode >> isInline [
 	^true
+]
+
+{ #category : #comparing }
+TInlineNode >> isSameAs: anotherNode [
+	
+	^ anotherNode isInline
+		and: [ method selector = anotherNode method selector
+			and: [ method parseTree isSameAs: anotherNode method parseTree ] ]
 ]
 
 { #category : #accessing }
@@ -104,4 +139,10 @@ TInlineNode >> shouldExpand [
 { #category : #'type inference' }
 TInlineNode >> typeOrNilFrom: aCodeGenerator in: aTMethod [
 	^method returnType
+]
+
+{ #category : #comparing }
+TInlineNode >> whoNotSameAs: aTParseNode [
+	
+	^ method parseTree whoNotSameAs: aTParseNode method parseTree
 ]

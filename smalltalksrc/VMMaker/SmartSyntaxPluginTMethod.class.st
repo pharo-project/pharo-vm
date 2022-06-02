@@ -38,8 +38,8 @@ SmartSyntaxPluginTMethod >> emitCLocalsOn: aStream generator: aCodeGen [
 	"Emit a C function header for this method onto the given stream."
 
 	aStream newLine.
-	locals isEmpty ifFalse:
-		[(aCodeGen sortStrings: locals) do:
+	self locals isEmpty ifFalse:
+		[(aCodeGen sortStrings: self locals) do:
 			[ :var |
 		aStream 
 			tab; 
@@ -148,7 +148,7 @@ SmartSyntaxPluginTMethod >> fixUpReturns [
 	"Replace each return statement in this method with (a) the given postlog, (b) code to pop the receiver and the given number of arguments, and (c) code to push the integer result and return."
 
 	parseTree nodesDo: [:node |
-		node isStmtList ifTrue: [
+		node isStatementList ifTrue: [
 			node setStatements: (Array streamContents:
 				[:sStream |
 				 node statements do: 
@@ -172,7 +172,8 @@ SmartSyntaxPluginTMethod >> handlePrimitiveDirective: aStmt on: sStream [
 
 	isPrimitive := true.
 	fullArgs := args.
-	locals addAll: args.
+	cachedLocals := nil.
+	self locals addAll: args.
 	args := OrderedCollection new.
 	fullArgs with: parmSpecs do:
 		[:argName :spec |
@@ -274,6 +275,17 @@ SmartSyntaxPluginTMethod >> nullReturnExpr [
 		setExpression: (TVariableNode new setName: 'null')
 ]
 
+{ #category : #private }
+SmartSyntaxPluginTMethod >> oopVariable: aString [
+
+	(self locals includes: aString) ifFalse:
+		[
+		cachedLocals := nil.
+		self locals add: aString.
+		self declarationAt: aString put: 'sqInt ', aString].
+	^TVariableNode new setName: aString
+]
+
 { #category : #accessing }
 SmartSyntaxPluginTMethod >> parmSpecs [
 
@@ -335,12 +347,12 @@ SmartSyntaxPluginTMethod >> primitiveDirectiveWasHandled: stmt on: sStream [
 SmartSyntaxPluginTMethod >> printTempsAndVar: varName on: aStream [ 
 	"add the required temps and the varname to the stream"
 	aStream nextPut: $|; space.
-	(#('rcvr' 'stackPointer' 'interpreterProxy') reject: [:each | locals includes: each]) do:
+	(#('rcvr' 'stackPointer' 'interpreterProxy') reject: [:each | self locals includes: each]) do:
 		[:each | aStream nextPutAll: each;  space].
-	(locals reject: [:each | each first = $_]) do:
+	(self locals reject: [:each | each first = $_]) do:
 		[:each | aStream nextPutAll: each;  space].
 "don't add varName twice. Probably a deeper reason for this, but WTH. TPR"
-	(locals includes: varName) ifFalse:
+	(self locals includes: varName) ifFalse:
 		[aStream nextPutAll: varName; space].
 	aStream nextPut: $|; newLine
 ]
@@ -370,9 +382,8 @@ SmartSyntaxPluginTMethod >> recordDeclarationsIn: aCCodeGen [
 		properties pragmas do: [ :pragma | 
 			pragma key == #var:declareC: ifTrue: [ 
 				self
-					checkedDeclarationAt: pragma arguments first asString
-					put: pragma arguments last
-					in: aCCodeGen ].
+					declarationAt: pragma arguments first asString
+					put: pragma arguments last ].
 			pragma key == #var:type: ifTrue: [ 
 				| varName varType |
 				varName := pragma arguments first asString.
@@ -380,9 +391,8 @@ SmartSyntaxPluginTMethod >> recordDeclarationsIn: aCCodeGen [
 					           pragma arguments last.
 				varType last == $* ifFalse: [ varType := varType , ' ' ].
 				self
-					checkedDeclarationAt: varName
-					put: varType , varName
-					in: aCCodeGen ].
+					declarationAt: varName
+					put: varType , varName ].
 			pragma key == #var:as: ifTrue: [ 
 				| theClass |
 				theClass := Smalltalk
@@ -391,14 +401,11 @@ SmartSyntaxPluginTMethod >> recordDeclarationsIn: aCCodeGen [
 				theClass isBehavior ifFalse: [ 
 					^ self error: 'declarator must be a Behavior' ].
 				self
-					checkedDeclarationAt: pragma arguments first value asString
+					declarationAt: pragma arguments first value asString
 					put:
-					(theClass ccgDeclareCForVar: pragma arguments first asString)
-					in: aCCodeGen ].
+					(theClass ccgDeclareCForVar: pragma arguments first asString) ].
 			pragma key == #returnTypeC: ifTrue: [ 
-				self returnType: pragma arguments last ].
-			pragma key = #doNotGenerate: ifTrue: [ 
-				locals removeKey: pragma arguments last ] ].
+				self returnType: pragma arguments last ]].
 		^ self ].
 	newStatements := OrderedCollection new: parseTree statements size.
 	parseTree statements do: [ :stmt | 
@@ -470,12 +477,12 @@ SmartSyntaxPluginTMethod >> setSelector: sel definingClass: class args: argList 
 	definingClass := class.
 	returnType := #sqInt. 	 "assume return type is sqInt for now"
 	args := argList asOrderedCollection collect: [:arg | arg key].
-	locals := (localList collect: [:arg | arg key]) asSet.
+	self locals: (localList collect: [:arg | arg key]) asSet.
 	declarations := Dictionary new.
 	primitive := aNumber.
 	properties := methodProperties.
 	comment := aComment.
-	parseTree := aBlockNode asTranslatorNodeIn: self.
+	self parseTree: (aBlockNode asTranslatorNodeIn: self).
 	labels := Set new.
 	complete := false.  "set to true when all possible inlining has been done"
 	export := self extractExportDirective.
@@ -502,9 +509,9 @@ SmartSyntaxPluginTMethod >> statementGuardedWithSuccess: aTParseNodeOrSequenceTh
 					setSelector: #failed
 					receiver: (TVariableNode new setName: 'interpreterProxy')
 					arguments: #())
-		arguments: {(aTParseNodeOrSequenceThereof isTParseNode and: [aTParseNodeOrSequenceThereof isStmtList])
+		arguments: {(aTParseNodeOrSequenceThereof isTParseNode and: [aTParseNodeOrSequenceThereof isStatementList])
 						ifTrue: [aTParseNodeOrSequenceThereof]
-						ifFalse: [TStmtListNode new
+						ifFalse: [TStatementListNode new
 									setArguments: #()
 									statements: (aTParseNodeOrSequenceThereof isCollection
 													ifTrue: [aTParseNodeOrSequenceThereof]

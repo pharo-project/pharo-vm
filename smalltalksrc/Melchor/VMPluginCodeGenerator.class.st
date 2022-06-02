@@ -241,9 +241,9 @@ VMPluginCodeGenerator >> generateCASTRemapOopIn: aTSendNode [
 ]
 
 { #category : #'CAST translation' }
-VMPluginCodeGenerator >> generateCASTSpurRemapOopIn: aTSendNode [ 
+VMPluginCodeGenerator >> generateCASTSpurRemapOopIn: aTSendNode [
 
-	^ aTSendNode args second asCASTIn: self
+	^ aTSendNode arguments second asCASTIn: self
 ]
 
 { #category : #'C translation' }
@@ -578,7 +578,7 @@ VMPluginCodeGenerator >> structTargetKindForDeclaration: decl [ "<String>"
 VMPluginCodeGenerator >> typeFor: aNode in: aTMethod [
 	"Override to provide the type for InterpreterProxy's implicit stack variable."
 	aNode isVariable ifTrue:
-		[^(aTMethod typeFor: aNode in: self) ifNil:
+		[^(aTMethod typeFor: aNode name in: self) ifNil:
 			[aNode name = 'stack'
 				ifTrue: [#'sqInt *']
 				ifFalse: [#sqInt]]].
