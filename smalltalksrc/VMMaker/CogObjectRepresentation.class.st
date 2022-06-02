@@ -473,16 +473,15 @@ CogObjectRepresentation >> genNonImplementedPrimitive [
 
 { #category : #'primitive generators' }
 CogObjectRepresentation >> genPrimitiveAdd [
-	
-	| jump0 jump1 jump2 |
+	| currentBlock jump0 jump2 |
+	<var: #currentBlock type: #'AbstractInstruction *'>
 	<var: #jump0 type: #'AbstractInstruction *'>
-	<var: #jump1 type: #'AbstractInstruction *'>
 	<var: #jump2 type: #'AbstractInstruction *'>
-
+	cogit mclassIsSmallInteger ifFalse:
+		[^UnimplementedPrimitive].
+	cogit genLoadArgAtDepth: 0 into: Arg0Reg.	
 	cogit TstCq: 1 R: Arg0Reg.
 	jump0 := cogit JumpZero: 0.
-	cogit TstCq: 1 R: ReceiverResultReg.
-	jump1 := cogit JumpZero: 0.
 	cogit MoveR: Arg0Reg R: Extra1Reg.
 	cogit SubCq: 1 R: Extra1Reg.
 	cogit MoveR: Extra1Reg R: Extra2Reg.
@@ -490,7 +489,9 @@ CogObjectRepresentation >> genPrimitiveAdd [
 	jump2 := cogit JumpOverflow: 0.
 	cogit MoveR: Extra2Reg R: ReceiverResultReg.
 	cogit RetN: 2 * objectMemory wordSize.
-	jump0 jmpTarget: (jump1 jmpTarget: (jump2 jmpTarget: cogit Label)).
+	currentBlock := cogit Label.
+	jump0 jmpTarget: currentBlock.
+	jump2 jmpTarget: currentBlock.
 	^ CompletePrimitive
 ]
 
