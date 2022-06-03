@@ -882,7 +882,7 @@ CogX64Compiler >> computeMaximumSize [
 	
 		"SIMD instructions"
 		[DupRVr]		-> [^9].
-		[St1VrRMw] -> [ ^6 ].
+		[St1VrRMw]  -> [^9].
 
 		}.
 	^0 "to keep C compiler quiet"
@@ -2963,15 +2963,26 @@ CogX64Compiler >> concretizeSt1VrRMw [
 	
 	size = 64 ifFalse: [ ^ self notYetImplemented  ].
 	
+	"This instruction stores in the current value of the destReg and updates it with the offset. It performs a post-increment.
+	To do so, in X64 we need two instructions (Intel Notation, destination on the left).
+	
+	   1) MOVDQU xmm2/m128, xmm1 : Move unaligned packed integer values from xmm1 to xmm2/m128.
+	   2) ADD r/m64, imm8 : Add sign-extended imm8 to r/m64. With the post increment"
+	
 	machineCode
 		at: 0 put: 16rF3;
 		at: 1 put: (self rexw: true r: srcReg x: 0 b: destReg);
 		at: 2 put: 16r0F;
 		at: 3 put: 16r7F;
-		at: 4 put: (self mod: ModRegRegDisp8 RM: destReg RO: srcReg);
-		at: 5 put: (offset bitAnd: 16rFF).
+		at: 4 put: (self mod: ModRegInd RM: destReg RO: srcReg).
+
+	machineCode
+		at: 5 put: (self rexw: true r: destReg x: 0 b: destReg);
+		at: 6 put: 16r83;
+		at: 7 put: (self mod: ModReg RM: destReg RO: 0);
+		at: 8 put: (offset bitAnd: 16rFF).
 		
-	^ machineCodeSize := 6
+	^ machineCodeSize := 9
 ]
 
 { #category : #'generate machine code' }
@@ -3354,7 +3365,6 @@ CogX64Compiler >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg u
 	using a bumpAllocator, which means that the overflowing bits won't overwrite another object. This is true even when reaching
 	the end of the Eden space, as after it we reserve additional headroom."
 	fillLoop := cogit St1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
-	cogit AddCq: 16 R: startMemoryAddr.
 	cogit CmpR: startMemoryAddr R: endMemoryAddr.
 	cogit JumpAbove: fillLoop.
 	

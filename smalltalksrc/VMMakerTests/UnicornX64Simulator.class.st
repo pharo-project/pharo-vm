@@ -499,3 +499,9 @@ UnicornX64Simulator >> xmm0 [
 	
 	^ simulator readRegisterId: UcX86Registers xmm0 size: 16
 ]
+
+{ #category : #accessing }
+UnicornX64Simulator >> xmm1 [
+	
+	^ simulator readRegisterId: UcX86Registers xmm1 size: 16
+]

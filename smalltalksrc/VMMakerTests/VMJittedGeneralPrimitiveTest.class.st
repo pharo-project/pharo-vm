@@ -1889,6 +1889,7 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveNewWithArgInitializesObjectCorrectl
 		                    endInstruction := cogit Stop ].
 
 	self prepareStackForSendReceiver: class arguments: { memory integerObjectOf: arraySize }.
+
 	self runFrom: primitiveAddress until: callerAddress.
 
 	newOop := self lastObjectInNewSpace.
