@@ -14884,6 +14884,19 @@ StackInterpreter >> storeMaybeContextReceiverVariable: fieldIndex withValue: anO
 
 ]
 
+{ #category : #'simd bytecodes' }
+StackInterpreter >> storeRegisterIntoArrayBytecode [
+	| register index array |
+	register := self internalStackValue: 0.
+	index := objectMemory integerValueOf: (self internalStackValue: 1).
+	array := self internalStackValue: 2.	
+	
+	objectMemory storeFloat64: index ofObject: array withValue: (objectMemory fetchFloat64: 0 ofObject: register). 
+	objectMemory storeFloat64: (index+1) ofObject: array withValue: (objectMemory fetchFloat64: 1 ofObject: register). 
+		
+	self internalPop: 2.
+]
+
 { #category : #'stack bytecodes' }
 StackInterpreter >> storeRemoteTemp: index inVectorAt: tempVectorIndex [
 

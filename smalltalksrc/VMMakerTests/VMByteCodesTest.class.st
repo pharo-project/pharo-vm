@@ -665,3 +665,32 @@ VMByteCodesTest >> testStoreAndPopTemporary6 [
 VMByteCodesTest >> testStoreAndPopTemporary7 [
 	self storeAndPopTemporaryIntoTempTest: 7
 ]
+
+{ #category : #'tests-simd' }
+VMByteCodesTest >> testStoreRegisterIntoArrayBytecode [
+	| register index array result |
+	
+	array := self new64BitIndexableOfSize: 4.
+	memory storeFloat64: 0 ofObject: array withValue: 1.0. 
+	memory storeFloat64: 1 ofObject: array withValue: 2.0.
+	memory storeFloat64: 2 ofObject: array withValue: 3.0.
+	memory storeFloat64: 3 ofObject: array withValue: 4.0. 
+	
+	register := self new64BitIndexableOfSize: 2.
+	memory storeFloat64: 0 ofObject: register withValue: 5.0. 
+	memory storeFloat64: 1 ofObject: register withValue: 6.0.
+	
+	index := memory integerObjectOf: 2.
+	
+	stackBuilder addNewFrame
+		stack: { register. index. array }.
+	stackBuilder buildStack.
+	
+	self interpret: [ interpreter storeRegisterIntoArrayBytecode ].
+	
+	result := interpreter stackTop.
+	
+	self assert: (memory fetchFloat64: 0 ofObject: result) equals: 5.0.
+	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 6.0.
+	
+]
