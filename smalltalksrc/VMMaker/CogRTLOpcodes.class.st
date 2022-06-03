@@ -192,6 +192,13 @@ CogRTLOpcodes class >> initialize [
 		X32r	- memory 32-bit halfword whose address is r * (4 bytes size) away from an address in a register (64-bit ISAs only)
 		Xwr		- memory word whose address is r * word size away from an address in a register
 		Xowr	- memory word whose address is o + (r * word size) away from an address in a register (scaled indexed)
+		
+		SIMD
+		====
+		
+		R64	   - 64bit Register.
+		Vr    - Vector Register
+		
 
 	An alternative would be to decouple opcodes from operands, e.g.
 		Move := 1. Add := 2. Sub := 3...

@@ -213,7 +213,18 @@ CogX64Compiler class >> initializeAbstractRegisters [
 	DPFPReg14				:= XMM14L.
 	DPFPReg15				:= XMM15L.
 
-	NumFloatRegisters := 16
+	NumFloatRegisters := 16.
+	
+	VReg0 := XMM0L.
+	VReg1 := XMM1L.
+	VReg2 := XMM2L.
+	VReg3 := XMM3L.
+	VReg4 := XMM4L.
+	VReg5 := XMM5L.
+	VReg6 := XMM6L.
+	VReg7 := XMM7L.
+
+
 ]
 
 { #category : #'class initialization' }
@@ -611,6 +622,7 @@ CogX64Compiler >> computeMaximumSize [
 											ifFalse: [0])].
 		[MoveRRd]		-> [^5].
 		[MoveRdR]		-> [^5].
+
 		[MoveAwR]		-> [^(self isAddressRelativeToVarBase: (operands at: 0))
 								ifTrue: [7]
 								ifFalse: [(operands at: 1) = RAX ifTrue: [10] ifFalse: [14]]].
@@ -866,7 +878,12 @@ CogX64Compiler >> computeMaximumSize [
 									ifFalse: [0])].
 								
 		"This is a fixed size instruction using a patcheable literal. This takes ALWAYS 7 bytes"
-		[MovePatcheableC32R] -> [ ^ 7 ]
+		[MovePatcheableC32R] -> [ ^ 7 ].
+	
+		"SIMD instructions"
+		[DupRVr]		-> [^9].
+		[St1VrRMw] -> [ ^6 ].
+
 		}.
 	^0 "to keep C compiler quiet"
 ]
@@ -1248,6 +1265,45 @@ CogX64Compiler >> concretizeConvertRsRd [
 		at: skip + 2 put: 16r5A;
 		at: skip + 3 put: (self mod: ModReg RM: srcReg RO: destReg).
 	 ^machineCodeSize := skip + 4
+]
+
+{ #category : #'generate machine code - concretize' }
+CogX64Compiler >> concretizeDupRVr [
+
+	<inline: true>
+
+	| srcReg destReg |
+
+	"
+	In X64, we need to do two instructions:
+	   - 1) Loading the QuadWord with
+			 MOVD/MOVQ — Move Doubleword/Move Quadword
+	  	 	   - Eg: movq	%rbx, %xmm0
+	  		   - Move quadword from r/m64 to xmm 
+	   - 2) Packing it to the upper part (using the same register) with 
+			 PUNPCKLQDQ — Unpack Low Data
+				- Eg: PUNPCKLQDQ %xmm2, %xmm1
+				- Interleave low-order quadword from xmm1 and xmm2/m128 into xmm1 register."
+
+	(operands at: 0) ~= 64 ifTrue: [ self notYetImplemented ]. 
+		
+	srcReg := operands at: 1.
+	destReg := operands at: 2.
+
+	machineCode
+		at: 0 put: 16r66;
+		at: 1 put: (self rexw: true r: destReg x: 0 b: srcReg);
+		at: 2 put: 16r0F;
+		at: 3 put: 16r6E;
+		at: 4 put: (self mod: ModReg RM: srcReg RO: destReg).
+
+	machineCode
+		at: 5 put: 16r66;
+		at: 6 put: 16r0F;
+		at: 7 put: 16r6C;
+		at: 8 put: (self mod: ModReg RM: destReg RO: destReg).
+
+	^machineCodeSize := 9
 ]
 
 { #category : #'generate machine code' }
@@ -2893,6 +2949,31 @@ CogX64Compiler >> concretizeSqrtRs [
 	^machineCodeSize := skip + 4
 ]
 
+{ #category : #'generate machine code - support' }
+CogX64Compiler >> concretizeSt1VrRMw [
+	
+	<inline: true>
+
+	| srcReg destReg size offset |
+
+	size := operands at: 0.
+	srcReg := operands at: 1.
+	destReg := operands at: 2.
+	offset := operands at: 3.
+	
+	size = 64 ifFalse: [ ^ self notYetImplemented  ].
+	
+	machineCode
+		at: 0 put: 16rF3;
+		at: 1 put: (self rexw: true r: srcReg x: 0 b: destReg);
+		at: 2 put: 16r0F;
+		at: 3 put: 16r7F;
+		at: 4 put: (self mod: ModRegRegDisp8 RM: destReg RO: srcReg);
+		at: 5 put: (offset bitAnd: 16rFF).
+		
+	^ machineCodeSize := 6
+]
+
 { #category : #'generate machine code' }
 CogX64Compiler >> concretizeStop [
 	<inline: true>
@@ -3203,6 +3284,7 @@ CogX64Compiler >> dispatchConcretize [
 		[MoveRRd]			-> [^self concretizeMoveRRd].
 		[MoveRdRd]		-> [^self concretizeMoveRdRd].
 		[MoveRsRs]		-> [^self concretizeMoveRsRs].
+						
 		[PopR]				-> [^self concretizePopR].
 		[PushR]				-> [^self concretizePushR].
 		[PushCq]			-> [^self concretizePushCq].
@@ -3225,7 +3307,11 @@ CogX64Compiler >> dispatchConcretize [
 		[ZeroExtend32RR]	-> [^self concretizeZeroExtend32RR].
 		
 		"This is a fixed size instruction using a patcheable literal."
-		[MovePatcheableC32R] -> [ ^ self concretizeMovePatcheableC32R ]
+		[MovePatcheableC32R] -> [ ^ self concretizeMovePatcheableC32R ].
+	
+		"SIMD"
+		[DupRVr]			-> [^self concretizeDupRVr].
+		[St1VrRMw]		-> [^self concretizeSt1VrRMw ].
 		}
 ]
 
@@ -3256,6 +3342,23 @@ CogX64Compiler >> dispatchConcretizeProcessorSpecific [
 		[MOVSB]				-> [^self concretizeMOVSB].
 		[MOVSQ]				-> [^self concretizeMOVSQ].
 	}
+]
+
+{ #category : #concretize }
+CogX64Compiler >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
+	<inline: true>
+	| fillLoop |
+	cogit DupS: 64 R: fillReg Vr: vectorRegister.
+	"St1 copies data in 128-bit chunks. This may exceed the size of an object (that only needs to be a multiple of 64 bits).
+	This overflow is not an issue, however. The reason for that is that objects are allocated sequentially in the Eden space
+	using a bumpAllocator, which means that the overflowing bits won't overwrite another object. This is true even when reaching
+	the end of the Eden space, as after it we reserve additional headroom."
+	fillLoop := cogit St1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
+	cogit AddCq: 16 R: startMemoryAddr.
+	cogit CmpR: startMemoryAddr R: endMemoryAddr.
+	cogit JumpAbove: fillLoop.
+	
+	^0 "Necessary to keep Slang happy"
 ]
 
 { #category : #abi }

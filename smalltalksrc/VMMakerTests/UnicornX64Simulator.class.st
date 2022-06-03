@@ -493,3 +493,9 @@ UnicornX64Simulator >> wordSize [
 	
 	^ 8
 ]
+
+{ #category : #'accessing - registers' }
+UnicornX64Simulator >> xmm0 [
+	
+	^ simulator readRegisterId: UcX86Registers xmm0 size: 16
+]

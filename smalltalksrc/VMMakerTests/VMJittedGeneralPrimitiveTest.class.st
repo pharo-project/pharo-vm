@@ -1849,7 +1849,7 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveMultiplyReturnsZeroWithZeroOperand 
 { #category : #'tests - primitiveNew' }
 VMJittedGeneralPrimitiveTest >> testPrimitiveNewInitializesObjectCorrectly [
 
-	| endInstruction primitiveAddress class classHash newOop instanceVariableCount |
+	| endInstruction primitiveAddress class newOop instanceVariableCount |
 	instanceVariableCount := 4.
 	class := self
 		         newClassInOldSpaceWithSlots: instanceVariableCount

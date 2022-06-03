@@ -249,7 +249,7 @@ VMMachineCodeDebugger >> machineSimulator: anObject [
 VMMachineCodeDebugger >> openWithSpec [
 
 	self refreshAll.
-	super open
+	super openWithSpec
 ]
 
 { #category : #showing }
