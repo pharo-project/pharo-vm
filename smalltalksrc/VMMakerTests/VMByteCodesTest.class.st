@@ -318,6 +318,31 @@ VMByteCodesTest >> testPopStackTopBytecode [
 	
 ]
 
+{ #category : #'tests-simd' }
+VMByteCodesTest >> testPushArrayToRegisterBytecode [
+	| array index result |
+
+	array := self new64BitIndexableOfSize: 4.
+	memory storeFloat64: 0 ofObject: array withValue: 1.0. 
+	memory storeFloat64: 1 ofObject: array withValue: 2.0.
+	memory storeFloat64: 2 ofObject: array withValue: 3.0.
+	memory storeFloat64: 3 ofObject: array withValue: 4.0. 
+	
+	index := memory integerObjectOf: 2.
+	
+	stackBuilder addNewFrame
+		stack: { index. array } .
+	stackBuilder buildStack.
+	
+	self interpret: [ interpreter pushArrayToRegisterBytecode ].
+	
+	result := interpreter stackTop.
+	
+	self assert: (memory fetchFloat64: 0 ofObject: result) equals: 3.0.
+	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 4.0.
+	
+]
+
 { #category : #'tests-push-simple' }
 VMByteCodesTest >> testPushConstantFalseBytecode [
 	stackBuilder addNewFrame ; buildStack.

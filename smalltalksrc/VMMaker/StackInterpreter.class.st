@@ -9778,6 +9778,7 @@ StackInterpreter >> mappedInlinePrimitive: primIndex [
 	 250-255 mapped jumps"
 	primIndex caseOf: {
 		[0]   -> [self addVectorBytecode].
+		[1]   -> [self pushArrayToRegisterBytecode].
 	} otherwise: [self unknownInlinePrimitive]
 	
 
@@ -12587,6 +12588,20 @@ StackInterpreter >> pushActiveContextBytecode [
 	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
 	self fetchNextBytecode.
 	self push: ourContext
+]
+
+{ #category : #'simd bytecodes' }
+StackInterpreter >> pushArrayToRegisterBytecode [
+	| array index register |
+	array := self internalStackValue: 0.
+	index := objectMemory integerValueOf: (self internalStackValue: 1).
+	
+	register := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
+	
+	objectMemory storeFloat64: 0 ofObject: register withValue: (objectMemory fetchFloat64: index ofObject: array). 
+	objectMemory storeFloat64: 1 ofObject: register withValue: (objectMemory fetchFloat64: (index+1) ofObject: array). 
+		
+	self internalPop: 2 thenPush: register.
 ]
 
 { #category : #'internal interpreter access' }
