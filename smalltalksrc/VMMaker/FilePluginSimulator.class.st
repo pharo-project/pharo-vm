@@ -24,17 +24,6 @@ FilePluginSimulator >> close [  "close any files that ST may have opened"
 ]
 
 { #category : #simulation }
-FilePluginSimulator >> dir_Create: dirNameIndex _: dirNameSize [
-	^[
-		(interpreterProxy interpreter
-								asString: dirNameIndex
-								size: dirNameSize) asFileReference ensureCreateDirectory.
-	   true]
-		on: Error
-		do: [:ex| false]
-]
-
-{ #category : #simulation }
 FilePluginSimulator >> dir_EntryLookup: pathString _: pathStringLength _: entryNameString _: entryNameStringLength _: name _: nameLength _: creationDate _: modificationDate _: isDirectory _: sizeIfFile _: posixPermissions _: isSymlink [
 	"sqInt dir_EntryLookup(char *pathString, sqInt pathStringLength, char *nameString, sqInt nameStringLength,
 		/* outputs: */		char *name, sqInt *nameLength, sqInt *creationDate, sqInt *modificationDate,
@@ -81,45 +70,6 @@ FilePluginSimulator >> dir_Lookup: pathString _: pathStringLength _: index _: na
 	posixPermissions at: 0 put: (result at: 6 ifAbsent: [(result at: 4) ifTrue: [8r755] ifFalse: [8r644]]).
 	isSymlink at: 0 put: (result at: 7 ifAbsent: [false]).
 	^DirEntryFound
-]
-
-{ #category : #'file primitives' }
-FilePluginSimulator >> fileOpenName: nameIndex size: nameSize write: writeFlag [
-	"Open the named file, possibly checking security. Answer the file oop."
-	| path f index |
-	openFiles size >= maxOpenFiles ifTrue:
-		[^interpreterProxy primitiveFailFor: PrimErrLimitExceeded].
-	path := (interpreterProxy asByteArray: nameIndex size: nameSize) utf8Decoded.
-	(writeFlag
-	 or: [StandardFileStream isAFileNamed: path]) ifFalse:
-		[^interpreterProxy primitiveFail].
-	f := StandardFileStream new open: path forWrite: writeFlag.
-	f ifNil: [^interpreterProxy primitiveFail].
-	f binary.
-	self assert: f isReadOnly = writeFlag not.
-	index := (3 to: openFiles size + 1) detect: [:n| (openFiles includesKey: n) not].
-	openFiles at: index put: f.
-	^interpreterProxy integerObjectOf: index
-]
-
-{ #category : #'file primitives' }
-FilePluginSimulator >> fileOpenNewName: nameIndex size: nameSize [
-	"Open the new named file. Answer the file oop."
-	| path f index |
-	openFiles size >= maxOpenFiles ifTrue:
-		[^interpreterProxy primitiveFailFor: PrimErrLimitExceeded].
-	path := (interpreterProxy interpreter asByteArray: nameIndex size: nameSize) utf8Decoded.
-	"the #defaultAction for FileExistsException creates a dialog,
-	so it is caught and resignaled as a generic Error"
-	[f := StandardFileStream newFileNamed: path]
-		on: FileExistsException
-		do: [:error | ^ interpreterProxy primitiveFailFor: PrimErrInappropriate].
-	f ifNil: [^interpreterProxy primitiveFail].
-	self deny: f isReadOnly.
-	f binary.
-	index := (3 to: openFiles size + 1) detect: [:n| (openFiles includesKey: n) not].
-	openFiles at: index put: f.
-	^interpreterProxy integerObjectOf: index
 ]
 
 { #category : #simulation }
@@ -314,18 +264,6 @@ FilePluginSimulator >> sqFileClose: file [
 ]
 
 { #category : #simulation }
-FilePluginSimulator >> sqFileDeleteName: nameIndex Size: nameSize [
-	| path |
-	path := (interpreterProxy asString: nameIndex size: nameSize) asByteArray utf8Decoded.
-	(StandardFileStream isAFileNamed: path) ifFalse:
-		[^interpreterProxy primitiveFail].
-	self halt: 'Deleting ', (path contractTo: 64).
-	[FileDirectory deleteFilePath: path]
-		on: Error
-		do: [:ex| interpreterProxy primitiveFail]
-]
-
-{ #category : #simulation }
 FilePluginSimulator >> sqFileFlush: file [
 	^file flush
 ]
@@ -345,19 +283,6 @@ FilePluginSimulator >> sqFileInit [
 	states := IdentityDictionary new.
 	maxOpenFiles := VMClass initializationOptions at: #MaxFileDescriptors ifAbsent: [1024].
 	^true
-]
-
-{ #category : #simulation }
-FilePluginSimulator >> sqFileRenameOld: oldNameIndex Size: oldNameSize New: newNameIndex Size: newNameSize [
-	| oldPath newPath |
-	oldPath := FileDirectory default fullNameFor: (interpreterProxy interpreter asString: oldNameIndex size: oldNameSize).
-	newPath := FileDirectory default fullNameFor: (interpreterProxy interpreter asString: newNameIndex size: newNameSize).
-	((StandardFileStream isAFileNamed: oldPath)
-	 and: [(StandardFileStream isAFileNamed: newPath) not]) ifFalse:
-		[^interpreterProxy primitiveFail].
-	[FileDirectory default primRename: oldPath to: newPath]
-		on: Error
-		do: [:ex| interpreterProxy primitiveFail]
 ]
 
 { #category : #simulation }

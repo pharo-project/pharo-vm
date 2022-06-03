@@ -107,13 +107,6 @@ SLCallGraphVisitor >> preVisitMethod: aTMethod [
 ]
 
 { #category : #api }
-SLCallGraphVisitor >> startFromMethod: aTMethod [
-
-	"Non-recursive public method. Called only once per callgraph visit"
-	self internalVisitMethod: aTMethod
-]
-
-{ #category : #api }
 SLCallGraphVisitor >> startFromSelector: aSelector [
 	
 	"Non-recursive public method. Called only once per callgraph visit"

@@ -5,12 +5,6 @@ Class {
 }
 
 { #category : #accessing }
-CCodeGeneratorInlineAlwaysStrategy >> inlineFlagOrSymbol [
-
-	^ true
-]
-
-{ #category : #accessing }
 CCodeGeneratorInlineAlwaysStrategy >> nodeCountOfMethod: aTMethod [
 
 	| nodeCount |

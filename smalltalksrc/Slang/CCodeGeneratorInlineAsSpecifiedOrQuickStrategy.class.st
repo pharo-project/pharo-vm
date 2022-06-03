@@ -4,12 +4,6 @@ Class {
 	#category : #'Slang-CodeGeneration'
 }
 
-{ #category : #accessing }
-CCodeGeneratorInlineAsSpecifiedOrQuickStrategy >> inlineFlagOrSymbol [
-	
-	^ #asSpecifiedOrQuick
-]
-
 { #category : #testing }
 CCodeGeneratorInlineAsSpecifiedOrQuickStrategy >> isQuickCompiledMethod: aCompiledMethod [
 

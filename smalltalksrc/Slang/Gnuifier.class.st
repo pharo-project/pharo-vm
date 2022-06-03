@@ -49,12 +49,6 @@ Gnuifier >> copyFrom: inFileStream to: outFileStream [
 ]
 
 { #category : #'as yet unclassified' }
-Gnuifier >> deGnuify [
-	"Gnuifier is canged to great a gnu2-interp.c so no degnuification is necessary."
-	self shouldNotImplement
-]
-
-{ #category : #'as yet unclassified' }
 Gnuifier >> doCleanupOldFile [
 	
 	self doCleanupOldFile: true

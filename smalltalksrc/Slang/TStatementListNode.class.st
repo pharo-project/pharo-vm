@@ -339,19 +339,6 @@ TStatementListNode >> displayString [
 ]
 
 { #category : #testing }
-TStatementListNode >> endsWithCloseBracket: aStream [
-	"Answer true if the given stream ends in a $} character."
-
-	| ch pos |
-	ch := (pos := aStream position) > 0 ifTrue:
-			[aStream class = WriteStream "i.e. nested in StreamContents"
-				ifTrue: [aStream originalContents at: pos]
-				ifFalse: [aStream position: pos - 1; next]].
-	^ ch = $}
-
-]
-
-{ #category : #testing }
 TStatementListNode >> endsWithReturn [
 	"Answer true if the last statement of this lock is a return."
 
@@ -457,14 +444,6 @@ TStatementListNode >> nodesDo: aBlock unless: cautionaryBlock [
 	(cautionaryBlock value: self) ifTrue: [^self].
 	statements do: [ :s | s nodesDo: aBlock unless: cautionaryBlock ].	
 	aBlock value: self
-]
-
-{ #category : #enumerating }
-TStatementListNode >> nodesDo: aBlock value: parent [
-	"Apply aBlock to all nodes in the receiver with each node's parent.
-	 N.B. This is assumed to be bottom-up, leaves first."
-	statements do: [:s| s nodesDo: aBlock parent: self.].	
-	aBlock value: self value: parent
 ]
 
 { #category : #accessing }

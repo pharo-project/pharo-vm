@@ -68,12 +68,3 @@ InternetConfigPlugin >> shutdownModule [
 	<export: true>
 	^self cCode: 'sqInternetConfigurationShutdown()' inSmalltalk:[true]
 ]
-
-{ #category : #simulation }
-InternetConfigPlugin >> sqInternetConfigurationGetStringKeyedBy: keyCArray keySize: keySize into: aString [
-	<doNotGenerate>
-	| result |
-	result := InternetConfiguration primitiveGetStringKeyedBy: (self asString: keyCArray size: keySize).
-	self strncpy: aString _: result _: (aString size min: result size).
-	^result size
-]

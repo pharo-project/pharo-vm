@@ -27,11 +27,6 @@ VMObjectProxy >> for: aCompiledMethodOop coInterpreter: aCoInterpreter objectMem
 	objectMemory := anObjectMemory
 ]
 
-{ #category : #testing }
-VMObjectProxy >> isCurrentImageFacade [
-	^false
-]
-
 { #category : #'symbolic printing' }
 VMObjectProxy >> key [
 	"For InstructionPrinter>>pushLiteralVariable:"

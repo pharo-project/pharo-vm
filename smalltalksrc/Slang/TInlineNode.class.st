@@ -140,9 +140,3 @@ TInlineNode >> shouldExpand [
 TInlineNode >> typeOrNilFrom: aCodeGenerator in: aTMethod [
 	^method returnType
 ]
-
-{ #category : #comparing }
-TInlineNode >> whoNotSameAs: aTParseNode [
-	
-	^ method parseTree whoNotSameAs: aTParseNode method parseTree
-]

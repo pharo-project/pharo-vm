@@ -246,30 +246,6 @@ VMPluginCodeGenerator >> generateCASTSpurRemapOopIn: aTSendNode [
 	^ aTSendNode arguments second asCASTIn: self
 ]
 
-{ #category : #'C translation' }
-VMPluginCodeGenerator >> generateInterpreterProxyFunctionDereference: aNode on: aStream indent: anInteger [
-	| pluginsToClone |
-	pluginsToClone := self pluginFunctionsToClone copyWithoutAll: self selectorsThatAreGeneratedAsMacros.
-	pluginsToClone isEmpty ifTrue:
-		[^self].
-	aStream newLine.
-	self withConditionalDefineOf: 'SQUEAK_BUILTIN_PLUGIN'
-		comment: nil
-		on: aStream
-		do: [pluginsToClone do:
-				[:s| | cs |
-				cs := self cFunctionNameFor: s.
-				self withOptionalVerbiageFor: s
-					on: aStream
-					do: [aStream tab: anInteger; nextPutAll: cs; nextPutAll: ' = interpreterProxy->'; nextPutAll: cs; nextPut: $;; newLine]
-					ifOptionalDo:
-						[self
-							withConditionalDefineOf: cs
-							comment: nil
-							on: aStream
-							do: [aStream tab: anInteger; nextPutAll: cs; nextPutAll: ' = 0;'; newLine]]]]
-]
-
 { #category : #'type inference' }
 VMPluginCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 	"Eliminate signed/unsigned conflicts in aSetOfTypes.  Override to

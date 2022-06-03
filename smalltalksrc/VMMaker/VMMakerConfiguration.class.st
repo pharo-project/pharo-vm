@@ -85,26 +85,6 @@ VMMakerConfiguration class >> defaultInterpreterClass [
 ]
 
 { #category : #configurations }
-VMMakerConfiguration class >> generateAllNewspeakConfigurationsUnderVersionControl [
-	self
-		executeDisplayingProgress:
-			(OrderedDictionary
-				with: 'Generate newspeak spur stack 32bits' -> [ self generateNewspeakSpurStackVM ]
-				with: 'Generate newspeak spur stack 64bits' -> [ self generateNewspeakSpurStack64VM ]
-				with: 'Generate newspeak spur cog 32bits' -> [ self generateNewspeakSpurCogVM ]
-				with: 'Generate newspeak spur cog 64bits' -> [ self generateNewspeakSpurCog64VM ])
-]
-
-{ #category : #configurations }
-VMMakerConfiguration class >> generateAllSistaConfigurationsUnderVersionControl [
-	self
-		executeDisplayingProgress:
-			(OrderedDictionary 
-				with: 'Generate squeak spur cog sista 32bits' -> [ self generateSqueakSpurCogSistaVM ]
-				with: 'Generate squeak spur cog sista 64bits' -> [ self generateSqueakSpurCogSista64VM ])
-]
-
-{ #category : #configurations }
 VMMakerConfiguration class >> generateConfiguration [
 	"VMMaker generateConfiguration"
 	| configCategoryName selectors |

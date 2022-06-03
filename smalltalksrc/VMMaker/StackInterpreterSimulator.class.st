@@ -372,15 +372,6 @@ StackInterpreterSimulator >> cloneSimulation [
 			 transcript := savedTranscript]
 ]
 
-{ #category : #'debug support' }
-StackInterpreterSimulator >> cloneSimulationWindow [
-	| label |
-	label := 'Clone of ', (displayView containingWindow label allButFirst: 'Simulation of ' size).
-	^self cloneSimulation openAsMorph
-		setLabel: label;
-		yourself
-]
-
 { #category : #initialization }
 StackInterpreterSimulator >> close [  "close any files that ST may have opened, etc"
 	pluginList do: [:assoc| | plugin | plugin := assoc value. plugin ~~ self ifTrue: [plugin close]]
@@ -777,11 +768,9 @@ StackInterpreterSimulator >> imageNameSize [
 { #category : #'interpreter shell' }
 StackInterpreterSimulator >> incrementByteCount [
 	(byteCount := byteCount + 1) = breakCount ifTrue:
-		[self doOrDefer: [self changed: #byteCountText].
-		 self halt: 'breakCount reached'].
+		[ self halt: 'breakCount reached' ].
 	byteCount \\ 1000 = 0 ifTrue:
-		[self doOrDefer: [self changed: #byteCountText].
-		 self forceInterruptCheck]
+		[ self forceInterruptCheck ]
 ]
 
 { #category : #initialization }
