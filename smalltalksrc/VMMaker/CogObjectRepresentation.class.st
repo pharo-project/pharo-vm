@@ -491,7 +491,9 @@ CogObjectRepresentation >> genPrimitiveAdd [
 	cogit AddR: ClassReg R: TempReg.
 	jump2 := cogit JumpOverflow: 0.
 	cogit MoveR: TempReg R: ReceiverResultReg.
-	cogit RetN: 2 * objectMemory wordSize.
+	
+	cogit genPrimReturn.
+	
 	currentBlock := cogit Label.
 	jump0 jmpTarget: currentBlock.
 	jump1 jmpTarget: currentBlock.
