@@ -9779,6 +9779,7 @@ StackInterpreter >> mappedInlinePrimitive: primIndex [
 	primIndex caseOf: {
 		[0]   -> [self addVectorBytecode].
 		[1]   -> [self pushArrayToRegisterBytecode].
+		[2]   -> [self storeRegisterIntoArrayBytecode].
 	} otherwise: [self unknownInlinePrimitive]
 	
 
