@@ -12,6 +12,7 @@ Class {
 		'AddRsRs',
 		'AddcCqR',
 		'AddcRR',
+		'AlignedSt1VrRMw',
 		'AlignmentNops',
 		'AndCqR',
 		'AndCqRR',
@@ -330,6 +331,7 @@ CogRTLOpcodes class >> initialize [
 						"SIMD ops"
 						DupRVr
 						St1VrRMw
+						AlignedSt1VrRMw
 
 						LastRTLCode).
 

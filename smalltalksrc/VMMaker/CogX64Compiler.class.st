@@ -883,6 +883,7 @@ CogX64Compiler >> computeMaximumSize [
 		"SIMD instructions"
 		[DupRVr]		-> [^9].
 		[St1VrRMw]  -> [^9].
+		[AlignedSt1VrRMw ] -> [ ^9 ].
 
 		}.
 	^0 "to keep C compiler quiet"
@@ -919,6 +920,45 @@ CogX64Compiler >> computeSizeOfPushCw [
 	^(self inCurrentCompilation: (operands at: 0))
 		ifTrue: [9]
 		ifFalse: [self pushCwByteSize]
+]
+
+{ #category : #'generate machine code - support' }
+CogX64Compiler >> concretizeAlignedSt1VrRMw [
+	
+	<inline: true>
+
+	| srcReg destReg size offset |
+
+	size := operands at: 0.
+	srcReg := operands at: 1.
+	destReg := operands at: 2.
+	offset := operands at: 3.
+	
+	size = 64 ifFalse: [ ^ self notYetImplemented  ].
+	
+	"This instruction stores in the current value of the destReg and updates it with the offset. It performs a post-increment.
+	It Requires that the address is aligned 16bytes (128bits).
+	To do so, in X64 we need two instructions (Intel Notation, destination on the left).
+	
+	   1) MOVDQA xmm2/m128, xmm1 : Move unaligned packed integer values from xmm1 to xmm2/m128.
+	   2) ADD r/m64, imm8 : Add sign-extended imm8 to r/m64. With the post increment"
+
+	"VEX.128.66.0F.WIG 7F /r"
+	
+	machineCode
+		at: 0 put: 16r66;
+		at: 1 put: (self rexw: true r: srcReg x: 0 b: destReg); 
+		at: 2 put: 16r0F;
+		at: 3 put: 16r7F;
+		at: 4 put: (self mod: ModRegInd RM: destReg RO: srcReg).
+
+	machineCode
+		at: 5 put: (self rexw: true r: destReg x: 0 b: destReg);
+		at: 6 put: 16r83;
+		at: 7 put: (self mod: ModReg RM: destReg RO: 0);
+		at: 8 put: (offset bitAnd: 16rFF).
+		
+	^ machineCodeSize := 9
 ]
 
 { #category : #'generate machine code' }
@@ -3323,6 +3363,8 @@ CogX64Compiler >> dispatchConcretize [
 		"SIMD"
 		[DupRVr]			-> [^self concretizeDupRVr].
 		[St1VrRMw]		-> [^self concretizeSt1VrRMw ].
+		[AlignedSt1VrRMw]		-> [^self concretizeAlignedSt1VrRMw ].
+					
 		}
 ]
 
@@ -3359,12 +3401,18 @@ CogX64Compiler >> dispatchConcretizeProcessorSpecific [
 CogX64Compiler >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
 	<inline: true>
 	| fillLoop |
+	
+	cogit MoveR: fillReg Mw: 0 r: startMemoryAddr.
+	cogit AddCq: 8 R: startMemoryAddr.
+	
+	cogit AndCq: 16rFFFFFFFFFFFFFFF0 R: startMemoryAddr.	
+	
 	cogit DupS: 64 R: fillReg Vr: vectorRegister.
 	"St1 copies data in 128-bit chunks. This may exceed the size of an object (that only needs to be a multiple of 64 bits).
 	This overflow is not an issue, however. The reason for that is that objects are allocated sequentially in the Eden space
 	using a bumpAllocator, which means that the overflowing bits won't overwrite another object. This is true even when reaching
 	the end of the Eden space, as after it we reserve additional headroom."
-	fillLoop := cogit St1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
+	fillLoop := cogit AlignedSt1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
 	cogit CmpR: startMemoryAddr R: endMemoryAddr.
 	cogit JumpAbove: fillLoop.
 	
