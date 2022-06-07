@@ -942,8 +942,6 @@ CogX64Compiler >> concretizeAlignedSt1VrRMw [
 	
 	   1) MOVDQA xmm2/m128, xmm1 : Move unaligned packed integer values from xmm1 to xmm2/m128.
 	   2) ADD r/m64, imm8 : Add sign-extended imm8 to r/m64. With the post increment"
-
-	"VEX.128.66.0F.WIG 7F /r"
 	
 	machineCode
 		at: 0 put: 16r66;
