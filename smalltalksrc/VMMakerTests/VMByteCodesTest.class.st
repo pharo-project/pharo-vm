@@ -214,6 +214,52 @@ VMByteCodesTest >> testAddVectorBytecode [
 	
 ]
 
+{ #category : #'tests-simd' }
+VMByteCodesTest >> testArraySumUsingVectorBytecode [
+	| cm x y result simulatedMethod z |
+
+	x := self new64BitIndexableOfSize: 2.
+	y := self new64BitIndexableOfSize: 2.
+	z := self new64BitIndexableOfSize: 2.
+	memory storeFloat64: 0 ofObject: x withValue: 1.0.
+	memory storeFloat64: 1 ofObject: x withValue: 2.0.
+	memory storeFloat64: 0 ofObject: y withValue: 10.0.
+	memory storeFloat64: 1 ofObject: y withValue: 20.0.
+	
+	cm := IRBuilder buildMethod: [ :builder |
+		builder
+				numArgs: 3; 		
+				addTemps: { #firstVector. #secondVector. #thirdVector };
+				pushLiteral: 0;
+				pushTemp: #firstVector;
+				pushArrayToRegister;
+				pushLiteral: 0;
+				pushTemp: #secondVector;
+				pushArrayToRegister;
+				addVector;
+				pushLiteral: 0;
+				pushTemp: #thirdVector;
+				storeRegisterIntoArray;
+				returnTop
+		 ].
+	
+	simulatedMethod := methodBuilder fillFromPharoMethod: cm;
+		          buildMethod.
+	
+	stackBuilder addNewFrame
+		method: simulatedMethod;
+		temps: { x. y. z.}.
+	stackBuilder buildStack.
+	
+	interpreter interpretUntilReturn.
+	
+	result := interpreter stackTop.
+
+	self assert: (memory fetchFloat64: 0 ofObject: result) equals: 11.0.
+	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 22.0.
+	
+]
+
 { #category : #'tests-complex' }
 VMByteCodesTest >> testBytecodePopIntoReceiverWithReadOnlySendsAttemptToAssignMethod [
 
@@ -683,14 +729,16 @@ VMByteCodesTest >> testStoreRegisterIntoArrayBytecode [
 	index := memory integerObjectOf: 2.
 	
 	stackBuilder addNewFrame
-		stack: { array. index. register }.
+		stack: { register. index. array }.
 	stackBuilder buildStack.
 	
 	self interpret: [ interpreter storeRegisterIntoArrayBytecode ].
 	
 	result := interpreter stackTop.
 	
-	self assert: (memory fetchFloat64: 0 ofObject: result) equals: 5.0.
-	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 6.0.
+	self assert: (memory fetchFloat64: 2 ofObject: result) equals: 5.0.
+	self assert: (memory fetchFloat64: 3 ofObject: result) equals: 6.0.
 	
+	self assert: (memory fetchFloat64: 2 ofObject: array) equals: 5.0.
+	self assert: (memory fetchFloat64: 3 ofObject: array) equals: 6.0.
 ]
