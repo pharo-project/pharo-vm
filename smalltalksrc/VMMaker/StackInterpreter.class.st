@@ -12593,16 +12593,16 @@ StackInterpreter >> pushActiveContextBytecode [
 
 { #category : #'simd bytecodes' }
 StackInterpreter >> pushArrayToRegisterBytecode [
-	| array index register |
+	| array index reg |
 	array := self internalStackValue: 0.
 	index := objectMemory integerValueOf: (self internalStackValue: 1).
 	
-	register := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
+	reg := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
 	
-	objectMemory storeFloat64: 0 ofObject: register withValue: (objectMemory fetchFloat64: index ofObject: array). 
-	objectMemory storeFloat64: 1 ofObject: register withValue: (objectMemory fetchFloat64: (index+1) ofObject: array). 
+	objectMemory storeFloat64: 0 ofObject: reg withValue: (objectMemory fetchFloat64: index ofObject: array). 
+	objectMemory storeFloat64: 1 ofObject: reg withValue: (objectMemory fetchFloat64: (index+1) ofObject: array). 
 		
-	self internalPop: 2 thenPush: register.
+	self internalPop: 2 thenPush: reg.
 ]
 
 { #category : #'internal interpreter access' }
@@ -14887,13 +14887,13 @@ StackInterpreter >> storeMaybeContextReceiverVariable: fieldIndex withValue: anO
 
 { #category : #'simd bytecodes' }
 StackInterpreter >> storeRegisterIntoArrayBytecode [
-	| register index array |
-	register := self internalStackValue: 0.
+	| reg index array |
+	reg := self internalStackValue: 0.
 	index := objectMemory integerValueOf: (self internalStackValue: 1).
 	array := self internalStackValue: 2.	
 	
-	objectMemory storeFloat64: index ofObject: array withValue: (objectMemory fetchFloat64: 0 ofObject: register). 
-	objectMemory storeFloat64: (index+1) ofObject: array withValue: (objectMemory fetchFloat64: 1 ofObject: register). 
+	objectMemory storeFloat64: index ofObject: array withValue: (objectMemory fetchFloat64: 0 ofObject: reg). 
+	objectMemory storeFloat64: (index+1) ofObject: array withValue: (objectMemory fetchFloat64: 1 ofObject: reg). 
 		
 	self internalPop: 2.
 ]
