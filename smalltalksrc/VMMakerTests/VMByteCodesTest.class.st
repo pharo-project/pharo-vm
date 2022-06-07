@@ -683,7 +683,7 @@ VMByteCodesTest >> testStoreRegisterIntoArrayBytecode [
 	index := memory integerObjectOf: 2.
 	
 	stackBuilder addNewFrame
-		stack: { register. index. array }.
+		stack: { array. index. register }.
 	stackBuilder buildStack.
 	
 	self interpret: [ interpreter storeRegisterIntoArrayBytecode ].

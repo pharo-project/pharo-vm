@@ -884,7 +884,7 @@ StackInterpreterSimulator >> interpret [
 
 { #category : #'as yet unclassified' }
 StackInterpreterSimulator >> interpretUntilReturn [
-	self shouldBeImplemented.
+	self interpretWhile: [ currentBytecode ~= 92 ]."TODO extract condition"
 ]
 
 { #category : #'as yet unclassified' }
