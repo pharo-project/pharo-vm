@@ -2429,6 +2429,7 @@ SpurMemoryManager >> allocateSlotsForPinningInOldSpace: numSlots bytes: totalByt
 	"Answer the oop of a chunk of space in oldSpace with numSlots slots.  Try and
 	 allocate in a segment that already includes pinned objects.  The header of the
 	 result will have been filled-in but not the contents."
+	<druidExitPoint>
 	<var: #totalBytes type: #usqInt>
 	<inline: false>
 	| chunk newOop |
@@ -2449,6 +2450,7 @@ SpurMemoryManager >> allocateSlotsForPinningInOldSpace: numSlots bytes: totalByt
 SpurMemoryManager >> allocateSlotsInOldSpace: numSlots bytes: totalBytes format: formatField classIndex: classIndex [
 	"Answer the oop of a chunk of space in oldSpace with numSlots slots.  The header
 	 will have been filled-in but not the contents.  If no memory is available answer nil."
+	<druidExitPoint>
 	<var: #totalBytes type: #usqInt>
 	<inline: false>
 	| chunk newOop |
@@ -4496,19 +4498,14 @@ SpurMemoryManager >> endianness [
 
 { #category : #'class table' }
 SpurMemoryManager >> ensureBehaviorHash: aBehavior [
-	| hash err |
+
 	<inline: true>
+
+	| hash |
 	self assert: (coInterpreter addressCouldBeClassObj: aBehavior).
-	^(hash := self rawHashBitsOf: aBehavior) ~= 0
-		ifTrue:
-			[hash]
-		ifFalse:
-			[(coInterpreter objCouldBeClassObj: aBehavior)
-				ifFalse: [PrimErrBadReceiver negated]
-				ifTrue:
-					[(err := self enterIntoClassTable: aBehavior) ~= 0
-						ifTrue: [err negated]
-						ifFalse: [self rawHashBitsOf: aBehavior]]]
+	^ (hash := self rawHashBitsOf: aBehavior) ~= 0
+		  ifTrue: [ hash ]
+		  ifFalse: [ self enterPossibleBehaviorIntoClassTable: aBehavior ]
 ]
 
 { #category : #'image segment in/out' }
@@ -4657,6 +4654,21 @@ SpurMemoryManager >> enterIntoClassTable: aBehavior [
 	 majorIndex := (majorIndex + 1 bitAnd: self classIndexMask) max: 1.
 	 majorIndex = initialMajorIndex ifTrue: "wrapped; table full"
 		[^PrimErrLimitExceeded]] repeat
+]
+
+{ #category : #'class table' }
+SpurMemoryManager >> enterPossibleBehaviorIntoClassTable: aPossibleBehavior [
+
+	<druidExitPoint>
+	<inline: true>
+
+	| err |
+	^ (coInterpreter objCouldBeClassObj: aPossibleBehavior)
+		  ifFalse: [ PrimErrBadReceiver negated ]
+		  ifTrue: [ 
+			  (err := self enterIntoClassTable: aPossibleBehavior) ~= 0
+				  ifTrue: [ err negated ]
+				  ifFalse: [ self rawHashBitsOf: aPossibleBehavior ] ]
 ]
 
 { #category : #'header formats' }
@@ -4828,7 +4840,7 @@ SpurMemoryManager >> fetchLong32: fieldIndex ofObject: oop [
 { #category : #'object access' }
 SpurMemoryManager >> fetchLong64: longIndex ofObject: objOop [
 	<returnTypeC: #sqLong>
-	^self long64At: objOop + self baseHeaderSize + (longIndex << 3)
+	^self uint64At: objOop + self baseHeaderSize + (longIndex << 3)
 ]
 
 { #category : #'heap management' }
@@ -6391,11 +6403,11 @@ SpurMemoryManager >> initializeHeaderOfStartAddress: startAddress numSlots: numS
 	numSlots >= self numSlotsMask
 		ifTrue: "for header parsing we put a saturated slot count in the prepended overflow size word"
 			[self flag: #endianness.
-			 self long64At: startAddress put: self numSlotsMask << self numSlotsFullShift + numSlots.
-			 self long64At: startAddress + self baseHeaderSize put: ((self headerForSlots: self numSlotsMask format: formatField classIndex: classIndex) bitOr: pinFlag << self pinnedBitShift).				
+			 self uint64At: startAddress put: self numSlotsMask << self numSlotsFullShift + numSlots.
+			 self uint64At: startAddress + self baseHeaderSize put: ((self headerForSlots: self numSlotsMask format: formatField classIndex: classIndex) bitOr: pinFlag << self pinnedBitShift).				
 			 ^ startAddress + self baseHeaderSize.
 			] ifFalse:[ 
-				self long64At: startAddress put: ((self headerForSlots: numSlots format: formatField classIndex: classIndex) bitOr: pinFlag << self pinnedBitShift).
+				self uint64At: startAddress put: ((self headerForSlots: numSlots format: formatField classIndex: classIndex) bitOr: pinFlag << self pinnedBitShift).
 				^ startAddress].
 ]
 
@@ -10425,7 +10437,7 @@ SpurMemoryManager >> rawClassTagForClass: classObj [
 SpurMemoryManager >> rawHashBitsOf: objOop [
 	<api>
 	self flag: #endianness.
-	^(self long32At: objOop + 4) bitAnd: self identityHashHalfWordMask
+	^(self uint32At: objOop + 4) bitAnd: self identityHashHalfWordMask
 ]
 
 { #category : #'object access' }
@@ -10862,6 +10874,7 @@ SpurMemoryManager >> scavengingGCTenuringIf: tenuringCriterion [
 
 { #category : #'gc - scavenging' }
 SpurMemoryManager >> scheduleScavenge [
+	<druidExitPoint>
 	needGCFlag := true.
 	coInterpreter forceInterruptCheck
 ]
@@ -12174,10 +12187,24 @@ SpurMemoryManager >> uint32At: address [
 ]
 
 { #category : #accessing }
+SpurMemoryManager >> uint32At: address put: aValue [
+
+	<doNotGenerate>
+	^ self long32At: address put: aValue
+]
+
+{ #category : #accessing }
 SpurMemoryManager >> uint64At: address [
 
 	<doNotGenerate>
 	^ self long64At: address
+]
+
+{ #category : #accessing }
+SpurMemoryManager >> uint64At: address put: aValue [
+
+	<doNotGenerate>
+	^ self long64At: address put: aValue
 ]
 
 { #category : #accessing }

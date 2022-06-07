@@ -320,7 +320,7 @@ Spur64BitMemoryManager >> fillObj: objOop numSlots: numSlots with: fillValue [
 	(objOop + self baseHeaderSize) asUnsignedInteger
 		to: (objOop + self baseHeaderSize + (numSlots * self bytesPerOop) - 1) asUnsignedInteger
 		by: self allocationUnit
-		do: [:p| self longAt: p put: fillValue]
+		do: [:p| self uint64At: p put: fillValue]
 ]
 
 { #category : #'interpreter access' }

@@ -289,8 +289,8 @@ Spur32BitMemoryManager >> fillObj: objOop numSlots: numSlots with: fillValue [
 		to: (objOop + self baseHeaderSize + (numSlots * self bytesPerOop) - 1) asUnsignedInteger
 		by: self allocationUnit
 		do: [:p|
-			self longAt: p put: fillValue;
-				longAt: p + 4 put: fillValue]
+			self uint32At: p put: fillValue;
+				uint32At: p + 4 put: fillValue]
 ]
 
 { #category : #'interpreter access' }

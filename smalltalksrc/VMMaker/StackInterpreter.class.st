@@ -6418,6 +6418,8 @@ StackInterpreter >> fireFinalization: weakling [
 StackInterpreter >> firstByteIndexOfMethod: methodObj [
 	"Answer the one-relative index of the first bytecode in methodObj.
 	 Used for safer bounds-checking on methods."
+	<druidExitPoint>
+	
 	^(objectMemory literalCountOf: methodObj) + LiteralStart * objectMemory bytesPerOop + 1
 ]
 
@@ -10987,6 +10989,7 @@ StackInterpreter >> positive32BitIntegerFor: integerValue [
 StackInterpreter >> positive64BitIntegerFor: integerValue [
 	<api>
 	<var: 'integerValue' type: #usqLong>
+	<druidExitPoint>
 	<var: 'highWord' type: #'unsigned int'>
 	"Answer a Large Positive Integer object for the given integer value.  N.B. will *not* cause a GC."
 	| newLargeInteger highWord sz |
@@ -14439,6 +14442,8 @@ StackInterpreter >> stContext: context at: index format: format fixedFields: fix
 
 	| stSize |
 	<inline: true>
+	<druidExitPoint>
+
 	stSize := self stackPointerForMaybeMarriedContext: context.
 
 	((self oop: index isGreaterThanOrEqualTo: 1 andLessThanOrEqualTo: stSize)
