@@ -1887,6 +1887,48 @@ SlangBasicTranslationTest >> testReturnIfTrue [
 ]
 
 { #category : #'tests-return' }
+SlangBasicTranslationTest >> testReturnIfTrueWithNotLocalReturn [
+
+	| translation ast |
+	ast := TReturnNode
+		expression: (TSendNode
+			receiver: (TVariableNode named: 'aBoolean')
+			selector: #ifTrue:ifFalse:
+			arguments: { 
+				TStmtListNode statements: { TConstantNode value: 1 }.
+				TStmtListNode statements: { TReturnNode expression: (TConstantNode value: 2) }.
+			 } ).
+	1halt.
+	translation := self translate: ast.
+		
+	self assert: translation equals: 'return ((aBoolean)
+	 ? 1
+	 : 2)'
+]
+
+{ #category : #'tests-return' }
+SlangBasicTranslationTest >> testReturnIfTrueWithNotLocalReturnStatements [
+
+	| translation ast |
+	ast := TReturnNode
+		expression: (TSendNode
+			receiver: (TVariableNode named: 'aBoolean')
+			selector: #ifTrue:ifFalse:
+			arguments: { 
+				TStmtListNode statements: { TConstantNode value: 1 }.
+				TStmtListNode statements: { 
+					TSendNode receiver: (TConstantNode value: 3) selector: #foo arguments: {} .
+					TReturnNode expression: (TConstantNode value: 2) }.
+			 } ).
+	
+	translation := self translate: ast.
+		
+	self assert: translation equals: 'return ((aBoolean)
+	 ? 1
+	 : 2)'
+]
+
+{ #category : #'tests-return' }
 SlangBasicTranslationTest >> testReturnLeafInVoidMethod [
 
 	| translation |

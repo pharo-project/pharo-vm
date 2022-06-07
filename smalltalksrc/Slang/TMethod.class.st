@@ -1388,6 +1388,7 @@ TMethod >> inlineCodeOrNilForStatement: aNode returningNodes: returningNodes in:
 	"If the given statement node can be inlined, answer the statements that replace it. Otherwise, answer nil."
 
 	| stmts |
+1halt.
 	(aNode isReturn
 	 and: [self inlineableSend: aNode expression in: aCodeGen]) ifTrue:
 		[stmts := self inlineSend: aNode expression
@@ -3202,6 +3203,7 @@ TMethod >> tryToInlineMethodsIn: aCodeGen [
 			[^false].
 		 ^complete := true].
 
+1halt.
 	self ensureConditionalAssignmentsAreTransformedIn: aCodeGen.
 	didSomething := self tryToInlineMethodStatementsIn: aCodeGen statementListsInto: [:stmtLists| statementLists := stmtLists].
 	didSomething := (self tryToInlineMethodExpressionsIn: aCodeGen) or: [didSomething].

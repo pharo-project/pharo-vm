@@ -8,10 +8,24 @@ Class {
 VMMASTTranslationTest >> + arg [
 ]
 
+{ #category : #asserting }
+VMMASTTranslationTest >> assert: aTNode isSameAs: expectedNode [
+
+	self assert: (aTNode isSameAs: expectedNode)
+]
+
 { #category : #'generation-targets' }
 VMMASTTranslationTest >> emptyBlockHasSingleNilStatement [
 
 	[  ] value
+]
+
+{ #category : #'generation-targets' }
+VMMASTTranslationTest >> falseBlock: aBlock [
+	<inline: true>
+	^ self something
+		  ifTrue: [ 3 ]
+		  ifFalse: aBlock
 ]
 
 { #category : #'generation-targets' }
@@ -48,6 +62,19 @@ VMMASTTranslationTest >> inlinedMethodWithLocalWithSameName [
 	| cond |
 	cond := 50
 
+]
+
+{ #category : #'generation-targets' }
+VMMASTTranslationTest >> methodAssignWithNonLocalReturnAndInlinedBlock [
+
+	| a |
+	a := self falseBlock: [ ^ 2 ]
+]
+
+{ #category : #'generation-targets' }
+VMMASTTranslationTest >> methodReturnWithNonLocalReturnAndInlinedBlock [
+
+	^ self falseBlock: [ ^ 2 ]
 ]
 
 { #category : #'generation-targets' }
@@ -125,6 +152,12 @@ VMMASTTranslationTest >> methodWithLoop [
 
 { #category : #'generation-targets' }
 VMMASTTranslationTest >> methodWithNoArguments [
+]
+
+{ #category : #'generation-targets' }
+VMMASTTranslationTest >> methodWithNonLocalReturnAndInlinedBlock [
+
+	self falseBlock: [ ^ 2 ]
 ]
 
 { #category : #tests }
@@ -308,7 +341,34 @@ VMMASTTranslationTest >> testIfNotNilIfNilInversesBlocks [
 		equals: 1
 ]
 
-{ #category : #tests }
+{ #category : #'tests - inlining' }
+VMMASTTranslationTest >> testInlineMethodWithAssignNonLocalReturn [
+
+	| translation codeGenerator inlinedMethod |
+
+	translation := self class >> #methodAssignWithNonLocalReturnAndInlinedBlock asTranslationMethodOfClass: TMethod.
+	inlinedMethod := self class >> #falseBlock: asTranslationMethodOfClass: TMethod.
+
+	codeGenerator := CCodeGeneratorGlobalStructure new.
+	codeGenerator vmMaker: VMMaker new.
+	codeGenerator vmMaker vmmakerConfiguration: VMMakerConfiguration.
+	codeGenerator addMethod: translation.
+	codeGenerator addMethod: inlinedMethod.
+	codeGenerator inferTypes.
+	codeGenerator doInlining: true.
+
+	self
+		assert: translation parseTree statements second selector
+		equals: #ifTrue:ifFalse:.
+	self
+		assert: translation statements second arguments first statements first
+		equals: (TAssignmentNode variable: (TVariableNode named: 'a') expression: (TConstantNode value: 3)).
+	self
+		assert: translation statements second arguments second statements first
+		equals: (TReturnNode expression: (TConstantNode value: 2))
+]
+
+{ #category : #'tests - inlining' }
 VMMASTTranslationTest >> testInlineMethodWithLoopDeclaresLoopIndexVariable [
 
 	| translation codeGenerator inlinedMethod |
@@ -321,6 +381,52 @@ VMMASTTranslationTest >> testInlineMethodWithLoopDeclaresLoopIndexVariable [
 	codeGenerator doInlining: true.
 
 	self assert: (translation locals includesAll: inlinedMethod locals)
+]
+
+{ #category : #'tests - inlining' }
+VMMASTTranslationTest >> testInlineMethodWithNonLocalReturn [
+
+	| translation codeGenerator inlinedMethod |
+	translation := self class >> #methodWithNonLocalReturnAndInlinedBlock asTranslationMethodOfClass: TMethod.
+	inlinedMethod := self class >> #falseBlock: asTranslationMethodOfClass: TMethod.
+
+	codeGenerator := CCodeGeneratorGlobalStructure new.
+	codeGenerator addMethod: translation.
+	codeGenerator addMethod: inlinedMethod.
+	codeGenerator doInlining: true.
+
+	self
+		assert: translation parseTree statements second selector
+		equals: #ifTrue:ifFalse:.
+	self
+		assert: translation statements second arguments first statements first
+		isSameAs: (TConstantNode value: 3).
+	self
+		assert: translation statements second arguments second statements first
+		isSameAs: (TReturnNode expression: (TConstantNode value: 2))
+]
+
+{ #category : #'tests - inlining' }
+VMMASTTranslationTest >> testInlineMethodWithReturnNonLocalReturn [
+
+	| translation codeGenerator inlinedMethod |
+	translation := self class >> #methodReturnWithNonLocalReturnAndInlinedBlock asTranslationMethodOfClass: TMethod.
+	inlinedMethod := self class >> #falseBlock: asTranslationMethodOfClass: TMethod.
+
+	codeGenerator := CCodeGeneratorGlobalStructure new.
+	codeGenerator addMethod: translation.
+	codeGenerator addMethod: inlinedMethod.
+	codeGenerator doInlining: true.
+
+	self
+		assert: translation parseTree statements second selector
+		equals: #ifTrue:ifFalse:.
+	self
+		assert: translation statements second arguments first statements first
+		equals: (TReturnNode expression: (TConstantNode value: 3)).
+	self
+		assert: translation statements second arguments second statements first
+		equals: (TReturnNode expression: (TConstantNode value: 2))
 ]
 
 { #category : #tests }
