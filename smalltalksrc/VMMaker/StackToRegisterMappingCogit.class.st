@@ -142,7 +142,8 @@ Class {
 	],
 	#classVars : [
 		'NeedsMergeFixupFlag',
-		'NeedsNonMergeFixupFlag'
+		'NeedsNonMergeFixupFlag',
+		'SSVectorRegister'
 	],
 	#pools : [
 		'CogCompilationConstants',
@@ -423,6 +424,8 @@ StackToRegisterMappingCogit class >> initializeSimStackConstants [
 	SSConstantFloat32 := 15.
 	SSConstantFloat64 := 16.
 	SSConstantNativePointer := 17.
+	
+	SSVectorRegister := 18.
 ]
 
 { #category : #'class initialization' }

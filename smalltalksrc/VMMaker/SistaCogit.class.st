@@ -225,6 +225,12 @@ SistaCogit >> fillInOPICHeader: pic numArgs: numArgs selector: selector [
 	^super fillInOPICHeader: pic numArgs: numArgs selector: selector
 ]
 
+{ #category : #'mapped inline primitive generators' }
+SistaCogit >> genAddVector [ 
+	^EncounteredUnknownBytecode
+	
+]
+
 { #category : #'inline primitive generators' }
 SistaCogit >> genAtPutInlinePrimitive: prim [
 	"The store check requires rr to be ReceiverResultReg"
@@ -1639,6 +1645,9 @@ SistaCogit >> genMappedInlinePrimitive: primIndex [
 	method to call on top of stack =>  (variable number of parameters)"
 	primIndex caseOf: 
 	{ 
+		[ 0 ] -> [^self genAddVector].
+		[ 1 ] -> [^self genPushArrayToRegister].
+		[ 2 ] -> [^self genStoreRegisterIntoArray].
 		[50] ->	 [^self genEnsureEnoughSlots].
 		[150] -> [^self genPointerAtPutMaybeContext: false storeCheck: false immutabilityCheck: true].
 		[151] -> [^self genPointerAtPutMaybeContext: false storeCheck: true immutabilityCheck: true].
@@ -1650,8 +1659,8 @@ SistaCogit >> genMappedInlinePrimitive: primIndex [
 							self annotateBytecode: self Label.
 							 ^0]].
 		[155] -> [^EncounteredUnknownBytecode "not implemented, missing short instruction in Cog RTL"].
-		[156] -> [^EncounteredUnknownBytecode "not implemented, need to deal with LargePositiveInteger in 32 bits"].
-		[157] -> [^EncounteredUnknownBytecode "not implemented, need to deal with LargePositiveInteger in 64 bits"].
+		[156] -> [^EncounteredUnknownBytecode "not implemented, need to deal with LargePositiveInteger in  End of statement expected ->32 bits"].
+		[157] -> [^EncounteredUnknownBytecode "not implemented, need to deal with LargePositiveInteger in  End of statement expected ->64 bits"].
 		[250] -> [^self genDirectCall].
 	} otherwise: [^EncounteredUnknownBytecode].
 	
@@ -1929,6 +1938,11 @@ SistaCogit >> genPointerAtPutStoreCheck: needsStoreCheck [
 	^0
 ]
 
+{ #category : #'mapped inline primitive generators' }
+SistaCogit >> genPushArrayToRegister [
+	^EncounteredUnknownBytecode
+]
+
 { #category : #'inline primitive generators' }
 SistaCogit >> genQuaternaryInlinePrimitive: prim [
 	^ EncounteredUnknownBytecode
@@ -2061,6 +2075,12 @@ SistaCogit >> genSpecialSelectorComparison [
 SistaCogit >> genSpecialSelectorComparisonWithoutCounters [
 	"This method is there because if I put directly the super send in genSpecialSelectorComparison Slang does not correctly translte the code to C, it does not correctly type one of the branchDescriptor to BytecodeDescriptor"
 	^ super genSpecialSelectorComparison
+]
+
+{ #category : #'mapped inline primitive generators' }
+SistaCogit >> genStoreRegisterIntoArray [
+	^EncounteredUnknownBytecode
+	
 ]
 
 { #category : #'inline primitive generators' }
