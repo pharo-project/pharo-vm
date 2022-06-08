@@ -738,6 +738,7 @@ InterpreterPrimitives >> positiveMachineIntegerValueOf: oop [
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveAdd [
 	<numberOfArguments: 1>
+	<specialiseReciverFor: #smallInteger>
 	
 	| maybeSmallInteger maybeSmallInteger2 result |
 

@@ -477,27 +477,20 @@ CogObjectRepresentation >> genPrimitiveAdd [
 	<var: #currentBlock type: #'AbstractInstruction *'>
 	<var: #jump0 type: #'AbstractInstruction *'>
 	<var: #jump1 type: #'AbstractInstruction *'>
-	<var: #jump2 type: #'AbstractInstruction *'>
-	| currentBlock jump0 jump1 jump2 |
-	cogit MoveR: Arg0Reg R: TempReg.
-	cogit TstCq: 1 R: TempReg.
+	| currentBlock jump0 jump1 |
+	cogit mclassIsSmallInteger ifFalse: [ ^ UnimplementedPrimitive ].
+	cogit TstCq: 1 R: Arg0Reg.
 	jump0 := cogit JumpZero: 0.
-	cogit MoveR: ReceiverResultReg R: TempReg.
-	cogit TstCq: 1 R: TempReg.
-	jump1 := cogit JumpZero: 0.
 	cogit MoveR: Arg0Reg R: TempReg.
 	cogit SubCq: 1 R: TempReg.
 	cogit MoveR: ReceiverResultReg R: ClassReg.
 	cogit AddR: ClassReg R: TempReg.
-	jump2 := cogit JumpOverflow: 0.
+	jump1 := cogit JumpOverflow: 0.
 	cogit MoveR: TempReg R: ReceiverResultReg.
-	
 	cogit genPrimReturn.
-	
 	currentBlock := cogit Label.
 	jump0 jmpTarget: currentBlock.
 	jump1 jmpTarget: currentBlock.
-	jump2 jmpTarget: currentBlock.
 	^ CompletePrimitive
 ]
 
