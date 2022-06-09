@@ -69,40 +69,47 @@ VMPrimitiveTest >> newArrayWith: aCollection [
 VMPrimitiveTest >> newContextWithTemps: temps [
 
 	| method topFrame |
-	method := methodBuilder newMethod; numberOfTemporaries: temps size; build.
+	method := methodBuilder
+		          newMethod;
+		          numberOfTemporaries: temps size;
+		          buildMethod.
 	2 timesRepeat: [ 
-		topFrame := stackBuilder addNewFrame 
-			method: method;
-			temps: temps;
-			beSuspended
-	].
+		topFrame := stackBuilder addNewFrame
+			            method: method;
+			            temps: temps;
+			            beSuspended ].
 	topFrame beActive.
-	
-	^ stackBuilder buildStack marryToContext	
-	
+
+	^ stackBuilder buildStack marryToContext
 ]
 
 { #category : #running }
 VMPrimitiveTest >> setUp [
-	
+
 	"taken from VMSimpleStackBasedCogitBytecodeTest >> #setup"
+
 	| newMethod ctx page |
 	super setUp.
 	self setUpContextClass.
-	
+
 	"Create the root context with a valid method"
 	"Let's create a method with enough size. It should have at least a literal (4 or 8 bytes depending the word size) and some bytecodes, so we can put the IP inside the method"
-	newMethod := methodBuilder newMethod build.
-	
+	newMethod := methodBuilder newMethod buildMethod.
+
 	"The context has 5 (in 32 bits) or 9 (in 64 bits) as initial IP, as method has at least one literal"
-	ctx := self newSmallContextReceiver: memory nilObject method: newMethod arguments: #() temporaries: #() ip: self wordSize + 1.
-	
+	ctx := self
+		       newSmallContextReceiver: memory nilObject
+		       method: newMethod
+		       arguments: #(  )
+		       temporaries: #(  )
+		       ip: self wordSize + 1.
+
 	page := interpreter makeBaseFrameFor: ctx.
 	interpreter setStackPointersFromPage: page.
 	interpreter setStackPageAndLimit: page.
-	
+
 	self setUpScheduler.
-	imageName := VMPrimitiveTest name 
+	imageName := VMPrimitiveTest name
 ]
 
 { #category : #'tests - primitiveIdentical' }
@@ -4816,7 +4823,7 @@ VMPrimitiveTest >> testSumSmallIntegersWithOverflow [
 	b := memory integerObjectOf: 10.
 	ifOverflowValue := memory integerObjectOf: 99.
 	
-	result := interpreter sumSmallInteger: a withSmallInteger: b ifOverflow: [ ifOverflowValue ].
+	result := interpreter sumSmallInteger: a withSmallInteger: b ifOverflow: [ ^ ifOverflowValue ].
 	
 	self assert: result equals: ifOverflowValue
 ]
@@ -4830,7 +4837,7 @@ VMPrimitiveTest >> testSumSmallIntegersWithoutOverflow [
 	ifOverflowValue := memory integerObjectOf: 99.
 	expectedResult := memory integerObjectOf: 52.
 	
-	result := interpreter sumSmallInteger: a withSmallInteger: b ifOverflow: [ ifOverflowValue ].
+	result := interpreter sumSmallInteger: a withSmallInteger: b ifOverflow: [ ^ ifOverflowValue ].
 	
 	self assert: result equals: expectedResult
 ]
