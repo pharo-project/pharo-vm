@@ -926,8 +926,8 @@ CogX64Compiler >> computeSizeOfPushCw [
 CogX64Compiler >> concretizeAlignedSt1VrRMw [
 	
 	<inline: true>
-
 	| srcReg destReg size offset |
+1halt.
 
 	size := operands at: 0.
 	srcReg := operands at: 1.
@@ -940,7 +940,7 @@ CogX64Compiler >> concretizeAlignedSt1VrRMw [
 	It Requires that the address is aligned 16bytes (128bits).
 	To do so, in X64 we need two instructions (Intel Notation, destination on the left).
 	
-	   1) MOVDQA xmm2/m128, xmm1 : Move unaligned packed integer values from xmm1 to xmm2/m128.
+	   1) MOVDQA xmm2/m128, xmm1 : Move aligned packed integer values from xmm1 to xmm2/m128.
 	   2) ADD r/m64, imm8 : Add sign-extended imm8 to r/m64. With the post increment"
 	
 	machineCode
