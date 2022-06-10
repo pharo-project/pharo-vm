@@ -2334,6 +2334,16 @@ Cogit >> Label [
 ]
 
 { #category : #'abstract instructions' }
+Cogit >> Ld1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [ 
+	^ self
+		  gen: Ld1VrRMw
+		  operand: aSize 
+		  operand: aVectorRegister
+		  operand: aMemoryRegister 
+		  operand: anOffset 
+]
+
+{ #category : #'abstract instructions' }
 Cogit >> LoadEffectiveAddressMw: offset r: baseReg R: destReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>

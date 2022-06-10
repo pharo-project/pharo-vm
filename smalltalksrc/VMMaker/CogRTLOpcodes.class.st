@@ -73,6 +73,7 @@ Class {
 		'Label',
 		'LastJump',
 		'LastRTLCode',
+		'Ld1VrRMw',
 		'Literal',
 		'LoadEffectiveAddressMwrR',
 		'LogicalShiftLeftCqR',
@@ -323,6 +324,7 @@ CogRTLOpcodes class >> initialize [
 						"SIMD ops"
 						DupRVr
 						St1VrRMw
+						Ld1VrRMw
 
 						LastRTLCode).
 

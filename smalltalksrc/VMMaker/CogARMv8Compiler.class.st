@@ -1241,7 +1241,8 @@ CogARMv8Compiler >> computeMaximumSize [
 		
 		"SIMD Ops"
 		[DupRVr] -> [ ^ 4 ].
-		[St1VrRMw] -> [ ^ 4 ]
+		[St1VrRMw] -> [ ^ 4 ].
+		[Ld1VrRMw] -> [ ^ 4 ].
 		}.
 	^0 "to keep C compiler quiet"
 
@@ -1921,6 +1922,47 @@ CogARMv8Compiler >> concretizeJumpR [
 	| reg |
 	reg := operands at: 0.
 	self machineCodeAt: 0 put: (self br: reg).
+	^ machineCodeSize := 4
+]
+
+{ #category : #concretizing }
+CogARMv8Compiler >> concretizeLd1SVrRMw [
+
+	"Will get inlined into concretizeAt: switch."
+
+	<inline: true>
+	| opCode instruction q t size vectorR baseRegister offset |
+	size := operands at: 0.
+	vectorR := operands at: 1.
+	baseRegister := operands at: 2.
+	offset := operands at: 3.
+	opCode := 2r0111. "TODO support multiple-register variants"
+
+	size = 64 & (offset = 0 | (offset = 16))
+		ifTrue: [ 
+			q := 1.
+			t := 11 ]
+		ifFalse: [ self notYetImplemented ].
+
+	instruction := offset = 0
+		               ifTrue: [ 
+			               self
+				               ld1Q: q
+				               OpCode: opCode
+				               S: t
+				               Rn: baseRegister
+				               Rt: vectorR ]
+		               ifFalse: [ 
+			               self
+				               ld1Q: q
+				               Rm: 2r11111
+				               OpCode: opCode
+				               S: t
+				               Rn: baseRegister
+				               Rt: vectorR ].
+
+	self machineCodeAt: 0 put: instruction.
+
 	^ machineCodeSize := 4
 ]
 
@@ -3403,6 +3445,7 @@ CogARMv8Compiler >> dispatchConcretize [
 		"SIMD Ops"
 		[ DupRVr ] -> [ ^ self concretizeDupRVr ].
 		[ St1VrRMw ] -> [ ^ self concretizeSt1VRMRO ].
+		[ Ld1VrRMw ] -> [ ^ self concretizeLd1SVrRMw ].
 		}
 ]
 
@@ -4433,6 +4476,47 @@ CogARMv8Compiler >> jumpTargetPCAt: pc [
 	^self
 		cCode: [operand * 4 + pc + 8]
 		inSmalltalk: [operand * 4 + pc + 8 bitAnd: cogit addressSpaceMask]
+]
+
+{ #category : #'generate machine code - concretize' }
+CogARMv8Compiler >> ld1Q: q OpCode: opCode S: size Rn: rn Rt: rt [
+
+	"
+	C7.2.177 LD1 (multiple structures)
+	
+	LD1 { <Vt>.<T> }, [<Xn|SP>]
+
+	Load multiple single-element structures to one, two, three, or four registers. This instruction loads multiple
+	single-element structures from memory and writes the result to one, two, three, or four SIMD&FP registers. 
+	Every element of each register is stored."
+	
+	^ q << 30
+		bitOr: (2r110001 << 22
+		bitOr: ((opCode bitAnd: 2r1111) << 12
+		bitOr: ((size bitAnd: 2r11) << 10
+		bitOr: ((rn bitAnd: 2r11111) << 5
+		bitOr: (rt bitAnd: 2r11111)))))
+]
+
+{ #category : #'generate machine code - concretize' }
+CogARMv8Compiler >> ld1Q: q Rm: rm OpCode: opCode S: size Rn: rn Rt: rt [
+
+	"
+	C7.2.177 LD1 (multiple structures)
+	
+	LD1 { <Vt>.<T> }, [<Xn|SP>], <Xm>
+
+	Load multiple single-element structures to one, two, three, or four registers. This instruction loads multiple
+	single-element structures from memory and writes the result to one, two, three, or four SIMD&FP registers. 
+	Every element of each register is stored."
+	
+	^ q << 30
+		bitOr: (2r110011 << 22
+		bitOr: ((rm bitAnd: 2r11111) << 16
+		bitOr: ((opCode bitAnd: 2r1111) << 12
+		bitOr: ((size bitAnd: 2r11) << 10
+		bitOr: ((rn bitAnd: 2r11111) << 5
+		bitOr: (rt bitAnd: 2r11111))))))
 ]
 
 { #category : #'ARM convenience instructions' }

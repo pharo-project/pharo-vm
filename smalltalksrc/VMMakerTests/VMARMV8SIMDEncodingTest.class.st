@@ -55,6 +55,26 @@ VMARMV8SIMDEncodingTest >> testEncodeDupWith64BitLanes [
 ]
 
 { #category : #tests }
+VMARMV8SIMDEncodingTest >> testEncodeLd1WithOne64BitLaneRegisterAndImmediateOffset [
+
+	self compile: [ cogit Ld1S: 64 Vr: 0 R: 1 Mw: 16 ].
+	
+	self
+		assert: (self armInstructionAt: 1) assemblyCodeString
+		equals: 'ld1	{ v0.2d }, [x1], #16'
+]
+
+{ #category : #tests }
+VMARMV8SIMDEncodingTest >> testEncodeLd1WithOne64BitLaneRegisterAndNoOffset [
+
+	self compile: [ cogit Ld1S: 64 Vr: 0 R: 1 Mw: 0 ].
+	
+	self
+		assert: (self armInstructionAt: 1) assemblyCodeString
+		equals: 'ld1	{ v0.2d }, [x1]'
+]
+
+{ #category : #tests }
 VMARMV8SIMDEncodingTest >> testEncodeSt1WithOne64BitLaneRegisterAndImmediateOffset [
 
 	self compile: [ cogit St1S: 64 Vr: 0 R: 1 Mw: 16 ].
