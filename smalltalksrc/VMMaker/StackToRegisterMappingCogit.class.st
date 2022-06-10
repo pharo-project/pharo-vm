@@ -777,6 +777,16 @@ StackToRegisterMappingCogit >> allocateRegNotConflictingWith: regMask [
 	^ reg
 ]
 
+{ #category : #'simulation stack' }
+StackToRegisterMappingCogit >> allocateVectorRegNotConflictingWith: regMask [
+	| reg |
+	"if there's a free register, use it"
+	reg := backEnd availableVectorRegisterOrNoneFor: (self liveRegisters bitOr: regMask).
+	reg = NoReg ifTrue: "No free register, choose one that does not conflict with regMask"
+		[reg := self freeAnyRegNotConflictingWith: regMask].
+	^ reg
+]
+
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> annotateInstructionForBytecode [
 	"Annotate the current instruction as having a bytecode pc.  If the current instruction
@@ -1351,6 +1361,12 @@ StackToRegisterMappingCogit >> freeAnyRegNotConflictingWith: regMask [
 	^reg
 ]
 
+{ #category : #'mapped inline primitive generators' }
+StackToRegisterMappingCogit >> genAddVector [ 
+	^EncounteredUnknownBytecode
+	
+]
+
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genBlockReturn [
 	"Return from block, assuming result already loaded into ReceiverResultReg."
@@ -1832,6 +1848,44 @@ StackToRegisterMappingCogit >> genLoadTemp: objectIndex in: destReg [
 	self MoveMw: (self frameOffsetOfTemporary: objectIndex) r: FPReg R: destReg.
 ]
 
+{ #category : #'mapped inline primitive generators' }
+StackToRegisterMappingCogit >> genMappedInlinePrimitive: primIndex [
+	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
+	"Number of arguments:
+	 0-49 nullary
+	 50-99 unary
+	 100-149  binary
+	 150-199 trinary
+	 200-255 variable"
+	"Specification:
+	50	EnsureEnoughWords
+	literal which is a Smi => ret value is receiver
+	150	immCheckPointerAt:put:
+	pointer object (Fixed sized or not) and not a context, Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)
+	151	immCheckStoreCheckPointerAt:put:
+	pointer object (Fixed sized or not) and not a context, Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)
+	152	immCheckMaybeContextPointerAt:put:
+	pointer object (Fixed sized or not), Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)
+	153	immCheckMaybeContextStoreCheckPointerAt:put:
+	pointer object (Fixed sized or not), Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)
+	154	immCheckByteAt:put:
+	byte object, Smi, 8 bits unsigned Smi => arg2 (1-based, optimised if arg1 is a constant)
+	155	immCheckShortAt:put:
+	short object, Smi, 16 bits unsigned Smi => arg2 (1-based, optimised if arg1 is a constant)
+	156	immCheckWordAt:put:
+	word object, Smi, 32 bits unsigned Smi => arg2 (1-based, optimised if arg1 is a constant)
+	157	immCheckDoubleWordAt:put:
+	double word object, Smi, 64 bits unsigned Smi or LargePositiveInteger => arg2 (1-based, optimised if arg1 is a constant)
+	250	directCall
+	method to call on top of stack =>  (variable number of parameters)"
+	primIndex caseOf: 
+	{ 
+		[ 0 ] -> [^self genAddVector].
+		[ 1 ] -> [^self genPushArrayToRegister].
+		[ 2 ] -> [^self genStoreRegisterIntoArray].
+	} otherwise: [^EncounteredUnknownBytecode].
+]
+
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genMarshalledSend: selectorIndex numArgs: numArgs sendTable: sendTable [
 	<inline: false>
@@ -1995,6 +2049,22 @@ StackToRegisterMappingCogit >> genPushActiveContextBytecode [
 		large: (coInterpreter methodNeedsLargeContext: methodObj)
 		inBlock: inBlock.
 	^self ssPushRegister: ReceiverResultReg
+]
+
+{ #category : #'mapped inline primitive generators' }
+StackToRegisterMappingCogit >> genPushArrayToRegister [
+
+	| arrayReg indexReg vectorReg |
+	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
+	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
+	
+	self ssTop popToReg: arrayReg.
+	self ssTop popToReg: indexReg.
+	
+	vectorReg := self allocateVectorRegNotConflictingWith: 0.
+
+	self 
+		
 ]
 
 { #category : #'bytecode generator support' }
@@ -2705,6 +2775,12 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean TemporaryVariable: tempIn
 		r: FPReg.
 	(self simStackAt: tempIndex + 1) bcptr: bytecodePC. "for debugging"
 	^0
+]
+
+{ #category : #'mapped inline primitive generators' }
+StackToRegisterMappingCogit >> genStoreRegisterIntoArray [
+	^EncounteredUnknownBytecode
+	
 ]
 
 { #category : #'bytecode generator stores' }
