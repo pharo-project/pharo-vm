@@ -117,13 +117,6 @@ MLStatementListBuider >> initialize [
 	declarations := Dictionary new
 ]
 
-{ #category : #testing }
-MLStatementListBuider >> isBlockClosure [
-	"If the lexical parent is nil we are in top context => method
-	else => closure"
-	^ parent notNil
-]
-
 { #category : #building }
 MLStatementListBuider >> newVariableName [
 

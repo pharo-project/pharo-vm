@@ -126,12 +126,6 @@ VMClass class >> declareInterpreterVersionIn: aCCodeGenerator defaultName: defau
 ]
 
 { #category : #'accessing class hierarchy' }
-VMClass class >> defaultObjectMemoryClass [
-	"Default for all-in-one VMs where the interpreter inherits from the object memory."
-	^nil
-]
-
-{ #category : #'accessing class hierarchy' }
 VMClass class >> hasCogit [
 	^false
 ]
@@ -433,38 +427,6 @@ VMClass >> alloca: numElements type: elementType [
 	^CArrayAccessor on: ((1 to: numElements) collect: [:ign| elementType new])
 ]
 
-{ #category : #'translation support' }
-VMClass >> asAddress: address put: aBlock [
-	<doNotGenerate>
-	"Simulate a C pointer.  Translates into address in C. Provides something
-	 that evaluates aBlock with the new value in response to at:put:"
-	^CPluggableAccessor new
-		setObject: nil;
-		atBlock: [:obj :idx| self error: 'cannot dereference pseudo-pointers']
-		atPutBlock: [:obj :idx :val| aBlock value: val]
-]
-
-{ #category : #'C library extensions' }
-VMClass >> asByteArray: aStringOrStringIndex [
-	"aStringOrStringIndex is either a string or an address in the heap.
-	 Create a ByteArray of the requested length form the bytes in the
-	 heap starting at stringIndex."
-	<doNotGenerate>
-	| sz |
-	aStringOrStringIndex isString ifTrue:
-		[^aStringOrStringIndex asByteArray].
-	sz := self strlen: aStringOrStringIndex.
-	^self strncpy: (ByteArray new: sz) _: aStringOrStringIndex _: sz
-]
-
-{ #category : #'C library extensions' }
-VMClass >> asByteArray: baIndex size: baSize [
-	"baIndex is an address in the heap.  Create a ByteArray of the requested length
-	form the bytes in the heap starting at baIndex."
-	<doNotGenerate>
-	^self strncpy: (ByteArray new: baSize) _: baIndex _: baSize
-]
-
 { #category : #'C library extensions' }
 VMClass >> asString: aStringOrStringIndex [
 	"aStringOrStringIndex is either a string or an address in the heap.
@@ -476,14 +438,6 @@ VMClass >> asString: aStringOrStringIndex [
 		[^aStringOrStringIndex].
 	sz := self strlen: aStringOrStringIndex.
 	^self strncpy: (ByteString new: sz) _: aStringOrStringIndex _: sz
-]
-
-{ #category : #'C library extensions' }
-VMClass >> asString: stringIndex size: stringSize [
-	"stringIndex is an address in the heap.  Create a String of the requested length
-	form the bytes in the heap starting at stringIndex."
-	<doNotGenerate>
-	^self strncpy: (ByteString new: stringSize) _: stringIndex _: stringSize
 ]
 
 { #category : #'debug support' }
@@ -543,15 +497,6 @@ VMClass >> defined: aSymbol [
 	^(self class bindingOf: aSymbol)
 		ifNil: [false]
 		ifNotNil: [:binding| binding value ~~ #undefined]
-]
-
-{ #category : #'memory access' }
-VMClass >> fetchSingleFloatAtPointer: pointer into: aFloat [
-	"This gets implemented by Macros in C, where its types will also be checked.
-	 pointer is a raw address, and aFloat is a 32-bit single precision float."
-	<doNotGenerate>
-
-	^self fetchSingleFloatAt: pointer into: aFloat
 ]
 
 { #category : #'memory access' }
@@ -642,11 +587,6 @@ VMClass >> int8AtPointer: pointer put: value [
 	<doNotGenerate>
 
 	^self at: pointer put: value
-]
-
-{ #category : #testing }
-VMClass >> isCurrentImageFacade [
-	^false
 ]
 
 { #category : #'plugin support' }
@@ -872,12 +812,6 @@ VMClass >> notYetImplemented [
 		inSmalltalk: [ super notYetImplemented ]
 ]
 
-{ #category : #'translation support' }
-VMClass >> numElementsIn: anArray [
-	<cmacro: '(anArray) (sizeof(anArray)/sizeof(anArray[0]))'>
-	^anArray size
-]
-
 { #category : #accessing }
 VMClass >> objectRepresentationClass [
 	<doNotGenerate>
@@ -980,34 +914,6 @@ VMClass >> pointerForOop: oop [
 	<doNotGenerate>
 
 	^oop
-]
-
-{ #category : #'simulation support' }
-VMClass >> promptHex: string [
-	<doNotGenerate>
-	| s |
-	s := UIManager default request: string, ' (hex)'.
-	s := s withBlanksTrimmed.
-	^(s notEmpty and: ['-+0123456789abcdefABCDEF' includes: s first]) ifTrue:
-		[(s includes: $r)
-			ifTrue:
-				[Number readFrom: s readStream]
-			ifFalse:
-				[(#('0x' '-0x') detect: [:prefix| s beginsWith: prefix] ifNone: []) ifNotNil:
-					[:prefix|
-					s := s allButFirst: prefix size.
-					prefix first = $- ifTrue: [s := '-', s]].
-				Integer readFrom: s readStream base: 16]]
-]
-
-{ #category : #'simulation support' }
-VMClass >> promptNum: string [
-	<doNotGenerate>
-	| s |
-	s := UIManager default request: string, ' (dec)'.
-	s := s withBlanksTrimmed.
-	^s notEmpty ifTrue:
-		[Number readFrom: s readStream]
 ]
 
 { #category : #'C library simulation' }
@@ -1185,12 +1091,6 @@ VMClass >> strncpy: dest _: src _: n [
 	getBlock := [:idx| 0].
 	count + 1 to: n do: setBlock.
 	^dest
-]
-
-{ #category : #'hack compatibility' }
-VMClass >> uiProcess [
-	<doNotGenerate>
-	^ UIManager default uiProcess
 ]
 
 { #category : #'memory access' }

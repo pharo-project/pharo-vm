@@ -125,28 +125,6 @@ VMMaker class >> configurationNameFromSelector: aSelector [
 	^(aSelector piecesCutWhere: [:a :b| a isLowercase and: [b isUppercase]]) allButFirst fold: [:a :b| a, ' ', b]
 ]
 
-{ #category : #initialisation }
-VMMaker class >> default [
-	"return a VMMaker initialised to build a default no-internal-plugins, no-external-plugins vm codebase"
-	^self forPlatform: 'Cross'
-]
-
-{ #category : #utilities }
-VMMaker class >> executeDisplayingProgress: anActionsMap [
-	| barValue |
-	barValue := 0.
-	''
-		displayProgressFrom: 0
-		to: anActionsMap size
-		during: [ :bar | 
-			anActionsMap
-				keysAndValuesDo: [ :label :action | 
-					bar value: barValue.
-					barValue := barValue + 1.
-					ProgressNotification signal: '' extra: label.
-					action value ] ]
-]
-
 { #category : #'instance creation' }
 VMMaker class >> forPlatform: platformName [
 	"return a VMMaker initialised to build a default no-internal-plugins, no-external-plugins vm codebase"
@@ -197,18 +175,6 @@ VMMaker class >> generate: interpreterClass and: cogitClass with: optionsPairsAr
 		platformDir: platDirName
 		including: inclusions
 		configuration: vmmakerConfiguration) generateEntire
-]
-
-{ #category : #'version testing' }
-VMMaker class >> headerNotice [
-"return a string to be put at the front of generated code files"
-	^String streamContents:[:strm|
-		strm nextPutAll: 'Automatically generated from Squeak on '.
-		strm nextPutAll: Time dateAndTimeNow printString.
-		strm cr.
-		strm nextPutAll: 'by VMMaker '.
-		strm nextPutAll: self  versionString.
-		strm cr]
 ]
 
 { #category : #initialisation }
@@ -263,13 +229,6 @@ VMMaker class >> makerFor: interpreterClass and: cogitClassOrNil with: optionsPa
 { #category : #'file utilities' }
 VMMaker class >> rootDirectory [
 	^ self sourceTree asFileReference
-]
-
-{ #category : #'version testing' }
-VMMaker class >> versionString [
-	"VMMaker versionString"
-
-	^'4.7.0 (Cog)'
 ]
 
 { #category : #accessing }
@@ -937,15 +896,6 @@ VMMaker >> interpreterClassName [
 ]
 
 { #category : #'generate sources' }
-VMMaker >> interpreterClassName: aString [
-	| tmp |
-	tmp := Smalltalk at: aString asSymbol ifAbsent: [nil].
-	tmp isBehavior
-		ifTrue: [self interpreterClass: tmp]
-		ifFalse: [self invalidClassName]
-]
-
-{ #category : #'generate sources' }
 VMMaker >> interpreterExportsFilePath [
 	"return the full path for the interpreter exports file"
 	^self coreVMHeadersDirectory fullNameFor: 'sqNamedPrims.h'
@@ -972,49 +922,10 @@ VMMaker >> interpreterHeaderPath [
 	^ self coreVMHeadersDirectory / self interpreterHeaderName
 ]
 
-{ #category : #'private - errors' }
-VMMaker >> invalidClassName [
-	"This should raise a nice exception to a UI"
-	(VMMakerException new messageText: self class name, ' invalid interpreter class name: ', interpreterClassName) signal
-]
-
 { #category : #initialize }
 VMMaker >> isFor64BitVM [
 "is my flag to make a 64bit pointer model VM?"
 	^is64BitVM
-]
-
-{ #category : #'UI access' }
-VMMaker >> listOfName: aSymbol [
-	"work out which list is the one associated with this symbol"
-	#availableModules = aSymbol ifTrue:[^allPlugins].
-	#internalModules = aSymbol ifTrue:[^internalPlugins].
-	#externalModules =aSymbol ifTrue:[^externalPlugins].
-	^nil
-]
-
-{ #category : #'objects from disk' }
-VMMaker >> loadConfiguration: aConfigArray [
-	"load the configuration but ignore the platformName - the platform name must have been handled during the creation of this vmmaker in order for it to work correctly"
-
-	inline := aConfigArray at: 3.
-	forBrowser := aConfigArray at: 4.
-	"This part must be ignored --> self setPlatName: (aConfigArray at: 5)."
-	"Don't go through the setters sourceDirectoryName: & platformRootDirectoryName:.
-	 They do validation which only works on certain platforms and create bogus directories, etc.
-	 They're broken for non-interactive use."
-	sourceDirName := aConfigArray at: 6.
-	platformRootDirName := aConfigArray at: 7.
-	self initializeAllPlugins.
-	self internal: (aConfigArray at: 1) asSortedCollection
-		external:(aConfigArray at: 2) asSortedCollection.
-	aConfigArray size >= 9 ifTrue: "new enough to have 64bitness flag"
-		[(aConfigArray at: 8) = 8 ifTrue: [self for64BitVM].
-		 (aConfigArray at: 8) = 4 ifTrue: [self for32BitVM]].
-	aConfigArray size >= 11 ifTrue: "new enough to include the interpreter name"
-		[self interpreterClassName: (aConfigArray at: 11)].
-	self changed: #sourceDirectory;
-		 changed: #reinitialize
 ]
 
 { #category : #'UI access' }
@@ -1047,52 +958,10 @@ VMMaker >> logger: aStream [
 	logger := aStream.
 ]
 
-{ #category : #'UI access' }
-VMMaker >> makeAllModulesAvailable [
-	self internal: #() external: #().
-	self reinitializePluginsLists
-]
-
-{ #category : #'UI access' }
-VMMaker >> makeAllModulesExternal [
-	self initializeAllPlugins.
-	self internal: #() external: self availablePlugins.
-	self changed: #reinitialize 
-]
-
-{ #category : #'UI access' }
-VMMaker >> makeAllModulesInternal [
-	self initializeAllPlugins.
-	self internal: self availablePlugins external: #().
-	self changed: #reinitialize 
-]
-
 { #category : #'target directories' }
 VMMaker >> makefileDirectory [
 "where to put generated makefile related files"
 	^self sourceDirectory
-]
-
-{ #category : #'UI access' }
-VMMaker >> movePlugin: pluginName from: srcListName to: dstListName [
-	"the VMMakerTool UI has been used to drag a plugin from one list to 
-	another "
-	"we need to do some tests - 
-	are the lists actually ours? 
-	is the plugin ours? 
-	is the destination list one where we must check the plugin for 
-	acceptability? return true if all is ok, false otherwise"
-	| dstList srcList |
-	dstList := self listOfName: dstListName.
-	srcList := self listOfName: srcListName.
-	dstList == allPlugins
-		ifTrue: [dstList
-				add: (srcList remove: pluginName)]
-		ifFalse: ["the dest must be internal or external, so check the plugin for 
-			acceptability "
-			(self canSupportPlugin: pluginName)
-				ifTrue: [dstList
-						add: (srcList remove: pluginName)]]
 ]
 
 { #category : #'generate sources' }
@@ -1161,17 +1030,6 @@ VMMaker >> options: aDictionary [
 
 ]
 
-{ #category : #'target directories' }
-VMMaker >> platformDirectories [
-	| root |
-	^((root := self platformRootDirectory) directoryNames
-		reject: [:dirName|
-				dirName first = $. ".svn .git et al"
-				or: [dirName ='CVS']])
-		collect: [:dirName|
-				root directoryNamed: dirName]
-]
-
 { #category : #'source directories' }
 VMMaker >> platformDirectory [
 	"return the directory where we should find the platform specific sources"
@@ -1185,14 +1043,6 @@ VMMaker >> platformDirectory [
 { #category : #'UI access' }
 VMMaker >> platformName [
 	^platformName
-]
-
-{ #category : #'target directories' }
-VMMaker >> platformPluginsDirectories [
-
-	^self platformDirectories
-		select: [:dir| dir directoryExists: self class pluginsDirName]
-		thenCollect: [:dir| dir directoryNamed: self class pluginsDirName]
 ]
 
 { #category : #'source directories' }
@@ -1246,34 +1096,6 @@ VMMaker >> plugins: aCollection do: aBlock [
 				self couldNotFindPluginClass: sym]]
 ]
 
-{ #category : #'private - copying files' }
-VMMaker >> primitiveCopyFileNamed: srcName to: dstName [ 
-	"This really ought to be a facility in file system. The major annoyance 
-	here is that file types and permissions are not handled by current 
-	Squeak code"
-	| buffer src dst |
-	<primitive: 'primitiveFileCopyNamedTo' module:'FileCopyPlugin'> "primitiveExternalCall" 
-	"If the plugin doesn't do it, go the slow way and lose the filetype info"
-	"This method may signal FileDoesNotExistException if either the source or 
-	dest files cannnot be opened; possibly permissions or bad name problems"
-	[[src := FileStream readOnlyFileNamed: srcName]
-		on: FileDoesNotExistException
-		do: [^ self couldNotOpenFile: srcName].
-	src binary.
-	[dst := FileStream forceNewFileNamed: dstName]
-		on: FileDoesNotExistException
-		do: [^ self couldNotOpenFile: dstName].
-	dst binary.
-	buffer := ByteArray new: 50000.
-	[src atEnd]
-		whileFalse: [dst
-				nextPutAll: (src nextInto: buffer)]]
-		ensure: [src
-				ifNotNil: [src close].
-			dst
-				ifNotNil: [dst close]]
-]
-
 { #category : #'generate sources' }
 VMMaker >> privateGenerateInternalPlugin: pluginName [ 
 	"generate the named internal plugin"
@@ -1312,11 +1134,6 @@ VMMaker >> providedPlugins [
 	^ ((self vmmakerConfiguration interpreterPluginClass allSubclasses
 		select: [:cl | cl shouldBeTranslatedFor: platformName])
 		collect: [:cl | cl name]) asSortedCollection
-]
-
-{ #category : #'UI access' }
-VMMaker >> recomputeProvidedPlugins [
-	allPlugins := self providedPlugins reject: [:p| (internalPlugins includes: p) or: [externalPlugins includes: p]]
 ]
 
 { #category : #'UI access' }

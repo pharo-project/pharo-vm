@@ -470,7 +470,6 @@ CogVMSimulator >> ceSendMustBeBoolean: anObject [
 CogVMSimulator >> ceStackOverflow: contextSwitchIfNotNil [
 	"Override to bump up the byteCount from which the microsecond clock is derived."
 	byteCount := byteCount + 1000.
-	self doOrDefer: [self changed: #byteCountText; changed: #composeAll].
 	^super ceStackOverflow: contextSwitchIfNotNil
 ]
 
@@ -568,15 +567,6 @@ CogVMSimulator >> cloneSimulation [
 			 displayForm = savedDisplayForm.
 			 quitBlock := savedQuitBlock.
 			 transcript := savedTranscript]
-]
-
-{ #category : #'debug support' }
-CogVMSimulator >> cloneSimulationWindow [
-	| label |
-	label := 'Clone of ', (displayView containingWindow label allButFirst: 'Simulation of ' size).
-	^self cloneSimulation openAsMorph
-		setLabel: label;
-		yourself
 ]
 
 { #category : #initialization }
@@ -1170,11 +1160,9 @@ CogVMSimulator >> inMemoryVMOwnerLockAddress [
 { #category : #'interpreter shell' }
 CogVMSimulator >> incrementByteCount [
 	(byteCount := byteCount + 1) = breakCount ifTrue:
-		[self doOrDefer: [self changed: #byteCountText; changed: #composeAll].
-		 self halt: 'breakCount reached'].
+		[ self halt: 'breakCount reached' ].
 	byteCount \\ 1000 = 0 ifTrue:
-		[self doOrDefer: [self changed: #byteCountText; changed: #composeAll].
-		 self forceInterruptCheck]
+		[ self forceInterruptCheck ]
 ]
 
 { #category : #'test support' }
@@ -1902,72 +1890,6 @@ CogVMSimulator >> numStackPages [
 	^numStackPages
 ]
 
-{ #category : #UI }
-CogVMSimulator >> openAsMorph [
-	"Open a morphic view on this simulation."
-	| localImageName borderWidth window |
-	localImageName := imageName
-							ifNotNil: [self localNameFor: imageName]
-							ifNil: [' synthetic image'].
-	window := (SystemWindow labelled: 'Simulation of ', localImageName) model: self.
-	window paneColor: self windowColorToUse.
-
-	window addMorph: (displayView := SimulatorImageMorph new image: displayForm)
-			frame: (0@0 corner: 1@0.8).
-	displayView activeHand addEventListener: self.
-	eventTransformer := SimulatorEventTransformer new.
-
-	transcript := TranscriptStream on: (String new: 10000).
-	window addMorph: (PluggableTextMorph
-							on: transcript text: nil accept: nil
-							readSelection: nil menu: #codePaneMenu:shifted:)
-			frame: (0@0.8 corner: 0.7@1).
-	window addMorph: (PluggableTextMorph on: self
-						text: #byteCountText accept: nil
-						readSelection: nil menu: #utilitiesMenu:) hideScrollBarsIndefinitely
-			frame: (0.7@0.8 corner: 1@1).
-
-	borderWidth := [SystemWindow borderWidth] "Squeak 4.1"
-						on: MessageNotUnderstood
-						do: [:ex| 0]. "3.8"
-	borderWidth := borderWidth + window borderWidth.
-	window openInWorldExtent: (self desiredDisplayExtent
-								+ (2 * borderWidth @ borderWidth)
-								+ (0@window labelHeight)
-								* (1@(1/0.8))) rounded.
-	^window
-]
-
-{ #category : #UI }
-CogVMSimulator >> openAsMorphNoTranscript [
-	"Open a morphic view on this simulation."
-	| localImageName borderWidth window |
-	localImageName := imageName
-							ifNotNil: [self localNameFor: imageName]
-							ifNil: [' synthetic image'].
-	window := (SystemWindow labelled: 'Simulation of ', localImageName) model: self.
-	window paneColor: self windowColorToUse.
-
-	window addMorph: (displayView := SimulatorImageMorph new image: displayForm)
-			frame: (0@0 corner: 1@0.95).
-	displayView activeHand addEventListener: self.
-	eventTransformer := SimulatorEventTransformer new.
-
-	window addMorph: (PluggableTextMorph on: self
-						text: #byteCountText accept: nil
-						readSelection: nil menu: #utilitiesMenu:) hideScrollBarsIndefinitely
-		frame: (0@0.95 corner: 1@1).
-
-	borderWidth := [SystemWindow borderWidth] "Squeak 4.1"
-						on: MessageNotUnderstood
-						do: [:ex| 0]. "3.8"
-	borderWidth := borderWidth + window borderWidth.
-	window openInWorldExtent: (self desiredDisplayExtent
-								+ (2 * borderWidth@borderWidth)
-								+ (0@window labelHeight)
-								* (1@(1/0.95))) rounded
-]
-
 { #category : #initialization }
 CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
 
@@ -2653,20 +2575,22 @@ CogVMSimulator >> sqShrinkMemory: oldLimit By: delta [
 
 { #category : #'I/O primitives support' }
 CogVMSimulator >> stackLimitFromMachineCode [
+
 	"Intercept accesses to the stackLimit from machine code to increment byteCount so that
 	 ioMSecs/ioMicroseconds does something reasonable when we're purely in machine code.
 	 Force an interrupt check every 2 ms in simulated time (2ms = the default heartbeat), or if
 	 the profile tick has expired.."
 
-	(byteCount := byteCount + 1) - lastPollCount >= (2000 * ByteCountsPerMicrosecond) ifTrue:
-		[lastPollCount := byteCount.
-		 self doOrDefer: [self changed: #byteCountText; changed: #composeAll]].
-	(lastPollCount = byteCount
-	 or: [nextProfileTick > 0 and: [nextProfileTick <= self ioUTCMicroseconds]]) ifTrue:
-		[suppressHeartbeatFlag "gets set by selector breakpoints"
-			ifTrue: [self forceInterruptCheck]
-			ifFalse: [self forceInterruptCheckFromHeartbeat]].
-	^stackLimit
+	(byteCount := byteCount + 1) - lastPollCount
+	>= (2000 * ByteCountsPerMicrosecond) ifTrue: [ 
+		lastPollCount := byteCount ].
+	(lastPollCount = byteCount or: [ 
+		 nextProfileTick > 0 and: [ 
+			 nextProfileTick <= self ioUTCMicroseconds ] ]) ifTrue: [ 
+		suppressHeartbeatFlag
+			ifTrue: [ self forceInterruptCheck ]
+			ifFalse: [ self forceInterruptCheckFromHeartbeat ] "gets set by selector breakpoints" ].
+	^ stackLimit
 ]
 
 { #category : #'stack pages' }

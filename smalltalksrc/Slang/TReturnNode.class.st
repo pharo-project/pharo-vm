@@ -186,11 +186,6 @@ TReturnNode >> prependCASTIn: aBuilder expression: nodeExp [
 		  (nodeExp asCASTExpressionIn: aBuilder)
 ]
 
-{ #category : #'C code generation' }
-TReturnNode >> prependCCodeOn: aStream level: level generator: aCCodeGenerator [ 
-	aStream nextPutAll: 'return '
-]
-
 { #category : #printing }
 TReturnNode >> printOn: aStream level: level [
 

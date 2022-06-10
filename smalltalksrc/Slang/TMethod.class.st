@@ -129,20 +129,6 @@ TMethod >> allCalls [
 ]
 
 { #category : #accessing }
-TMethod >> allLocalLocals [
-	"The merge of locals and declarations (don't ask)"
-
-	| allLocals |
-	allLocals := Set new.
-	allLocals addAll: self locals.
-	self nodesDo: [ :node |
-		node isStatementList ifTrue: [ 
-			allLocals addAll: node arguments.
-			allLocals addAll: node locals ] ].
-	^ allLocals
-]
-
-{ #category : #accessing }
 TMethod >> allLocals [
 	"The merge of locals and declarations (don't ask)"
 
@@ -1193,12 +1179,6 @@ TMethod >> fixUpReturns: argCount postlog: postlog [
 
 ]
 
-{ #category : #flattenning }
-TMethod >> flatten [
-	
-	self parseTree: (TStatementListNode statements: parseTree flattened)
-]
-
 { #category : #utilities }
 TMethod >> freeVariableReferences [
 	"Answer a collection of variables referenced this method, excluding locals, arguments, and pseudovariables."
@@ -1242,20 +1222,6 @@ TMethod >> harmonizeSignedAndUnsignedTypesIn: aSetOfTypes [
 		ifFalse: [aSetOfTypes]
 ]
 
-{ #category : #utilities }
-TMethod >> hasMoreSendsThan: nSends [
-	"Answer the number of nodes in this method's parseTree (a rough measure of its size)."
-
-	| cnt |
-	cnt := 0.
-	parseTree nodesDo:
-		[:node|
-		(node isSend
-		 and: [(cnt := cnt + 1) >= nSends]) ifTrue:
-			[^true]].
-	^false
-]
-
 { #category : #testing }
 TMethod >> hasProperties [
 	^properties notNil and: [properties notEmpty]
@@ -1276,34 +1242,6 @@ TMethod >> hasUnrenamableCCode [
 
 	^parseTree anySatisfy:
 		[:node| node isNonNullCCode]
-]
-
-{ #category : #'inlining support' }
-TMethod >> incompleteSendsIn: aCodeGen [
-	"Debugging support; answer the incomplete and inlineable sends in the receiver."
-	| incompleteSends inlineableSends |
-	aCodeGen maybeBreakForTestOfInliningOf: selector.
-
-	incompleteSends := IdentitySet new.
-	inlineableSends := IdentitySet new.
-
-	parseTree
-		nodesDo:
-			[:node|
-			 node isSend ifTrue:
-				[(self methodIsEffectivelyComplete: node selector in: aCodeGen)
-					ifTrue:
-						[(self inlineableFunctionCall: node in: aCodeGen) ifTrue:
-							[inlineableSends add: node]]
-					ifFalse:
-						[incompleteSends add: node]]]
-		unless:
-			[:node|
-			node isSend
-			and: [node selector == #cCode:inSmalltalk:
-				or: [aCodeGen isAssertSelector: node selector]]].
-
-	^{incompleteSends. inlineableSends}
 ]
 
 { #category : #initialization }
@@ -2148,16 +2086,6 @@ TMethod >> newCascadeTempFor: aTParseNode [
 { #category : #accessing }
 TMethod >> newDeclarations: aDictionary [
 	declarations := aDictionary
-]
-
-{ #category : #utilities }
-TMethod >> nodeCount [
-	"Answer the number of nodes in this method's parseTree (a rough measure of its size)."
-
-	| cnt |
-	cnt := 0.
-	parseTree nodesDo: [ :n | cnt := cnt + 1 ].
-	^cnt
 ]
 
 { #category : #iterating }

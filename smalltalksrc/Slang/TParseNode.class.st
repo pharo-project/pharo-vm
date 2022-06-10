@@ -39,14 +39,6 @@ TParseNode >> allSatisfy: aBlock [
 ]
 
 { #category : #enumerating }
-TParseNode >> allSatisfy: aBlock unless: cautionaryBlock [
-	self
-		nodesDo: [:n| (aBlock value: n) ifFalse: [^false]]
-		unless: cautionaryBlock.
-	^true
-]
-
-{ #category : #enumerating }
 TParseNode >> allStatementsDo: aFullBlockClosure [ 
 	
 	self children do: [ :child | child allStatementsDo: aFullBlockClosure ]
@@ -55,14 +47,6 @@ TParseNode >> allStatementsDo: aFullBlockClosure [
 { #category : #enumerating }
 TParseNode >> anySatisfy: aBlock [
 	self nodesDo: [:n| (aBlock value: n) ifTrue: [^true]].
-	^false
-]
-
-{ #category : #enumerating }
-TParseNode >> anySatisfy: aBlock unless: cautionaryBlock [
-	self
-		nodesDo: [:n| (aBlock value: n) ifTrue: [^true]]
-		unless: cautionaryBlock.
 	^false
 ]
 
@@ -257,12 +241,6 @@ TParseNode >> isDefine [
 ]
 
 { #category : #testing }
-TParseNode >> isExternalSend [
-	
-	^ false
-]
-
-{ #category : #testing }
 TParseNode >> isGoTo [
 
 	^false
@@ -361,16 +339,6 @@ TParseNode >> needsTrailingSemicolon [
 	^true
 ]
 
-{ #category : #utilities }
-TParseNode >> nodeCount [
-	"Answer the number of nodes in this parseTree (a rough measure of its size)."
-
-	| cnt |
-	cnt := 0.
-	self nodesDo: [ :n | cnt := cnt + 1 ].
-	^cnt
-]
-
 { #category : #enumerating }
 TParseNode >> nodesDo: aBlock [
 	"Apply aBlock to all nodes in the receiver.
@@ -399,17 +367,6 @@ TParseNode >> nodesDo: aBlock unless: cautionaryBlock [
 	 answers true or are children of those for which cautionaryBlock answers true."
 	(cautionaryBlock value: self) ifFalse:
 		[aBlock value: self]
-]
-
-{ #category : #enumerating }
-TParseNode >> nodesSelect: selectBlock thenCollect: collectBlock [
-	| result |
-	result := OrderedCollection new.
-	self nodesDo:
-		[:node|
-		(selectBlock value: node) ifTrue:
-			[result addLast: (collectBlock value: node)]].
-	^result
 ]
 
 { #category : #enumerating }
@@ -506,37 +463,6 @@ TParseNode >> select: aBlock [
 	nodes := OrderedCollection new.
 	self nodesDo: [:n| (aBlock value: n) ifTrue: [nodes add: n]].
 	^nodes
-]
-
-{ #category : #testing }
-TParseNode >> stream: aStream endsWithAnyOf: characters [
-	"Answer if the given stream ends in any of the characters, ignoring whitespace."
-	| pos ch popped |
-	pos := aStream position.
-	aStream class = WriteStream ifTrue: "i.e. nested in StreamContents"
-		[[pos > 0] whileTrue:
-			[ch := aStream originalContents at: pos.
-			 ch isSeparator ifFalse:
-				[^characters includes: ch].
-			 pos := pos - 1].
-		 ^false].
-
-	popped := OrderedCollection new.
-	[pos > 0] whileTrue:
-		[ch := popped addFirst: (aStream position: pos - 1; peek).
-		 ch isSeparator ifFalse:
-			[popped notEmpty ifTrue: "it almost always is"
-				["*don't* use nextPutAll: to work around a bug in UTF8TextConverter
-				  >>nextPut:toStream: which avoids line-end conversion; sigh."
-				 popped do:
-					[:c| aStream nextPut: c]].
-			 ^characters includes: ch].
-		 pos := pos - 1].
-	"*don't* use nextPutAll: to work around a bug in UTF8TextConverter>>
-	 nextPut:toStream: which avoids line-end conversion; sigh."
-	popped do:
-		[:c| aStream nextPut: c].
-	^false
 ]
 
 { #category : #testing }

@@ -498,11 +498,6 @@ CurrentImageCoInterpreterFacade >> isCogMethodReference: methodHeader [
 	^coInterpreter isCogMethodReference: methodHeader
 ]
 
-{ #category : #testing }
-CurrentImageCoInterpreterFacade >> isCurrentImageFacade [
-	^true
-]
-
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> isImmediate: anOop [
 	^objectMemory isImmediate: anOop
