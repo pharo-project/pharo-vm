@@ -250,6 +250,13 @@ InterpreterPrimitives >> doWaitSemaphore: sema reEnterInterpreter: hasToReenter 
 	self doWaitSemaphore: sema
 ]
 
+{ #category : #'object access primitives' }
+InterpreterPrimitives >> druidExitPoint [
+
+	"Mark an exit point. From this point on, the current execution branch should not be compiled"
+	<druidExitPoint>
+]
+
 { #category : #'primitive support' }
 InterpreterPrimitives >> failed [
 	<api>
@@ -2769,10 +2776,12 @@ InterpreterPrimitives >> primitiveNew [
 
 	"Allocate a new fixed-size instance.  Fail if the allocation would leave
 			  less than lowSpaceThreshold bytes free. This *will not* cause a GC :-)"
+
 	<numberOfArguments: 0>
 	(objectMemory instantiateClass: self stackTop)
 		ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
 		ifNil: [ 
+			self druidExitPoint.
 			self primitiveFailFor: ((objectMemory isFixedSizePointerFormat:
 					  (objectMemory instSpecOfClass: self stackTop))
 					 ifTrue: [ PrimErrNoMemory ]
