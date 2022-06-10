@@ -211,7 +211,7 @@ SistaCogitClone >> genBinaryAtConstInlinePrimitive: primIndex [
 		ifTrue: [self ssAllocateRequiredReg: ReceiverResultReg.
 				self voidReceiverResultRegContainsSelf.
 				ReceiverResultReg].
-	(self ssValue: 1) popToReg: rr.
+	(self ssValue: 1) moveToReg: rr.
 	self ssPop: 2.
 	zeroBasedIndex := (objectMemory integerValueOf: val) - 1.
 	primIndex caseOf: {
@@ -241,9 +241,9 @@ SistaCogitClone >> genBinaryAtInlinePrimitive: primIndex [
 	double word object, Smi => 64 bits unsigned Smi or LargePositiveInteger (1-based, optimised if arg1 is a constant)"
 	| ra rr adjust |
 	self allocateRegForStackTopTwoEntriesInto: [:rTop :rNext | ra := rTop. rr := rNext ].
-	self ssTop popToReg: ra.
+	self ssTop moveToReg: ra.
 	self ssPop: 1.
-	self ssTop popToReg: rr.
+	self ssTop moveToReg: rr.
 	self ssPop: 1.
 	primIndex caseOf: {
 		[64] ->	[objectRepresentation genConvertSmallIntegerToIntegerInReg: ra.
@@ -293,22 +293,22 @@ SistaCogitClone >> genBinaryCompInlinePrimitive: primIndex [
 	"Gen comparison"
 	self ssTop type = SSConstant 
 		ifTrue: [resultReg := self allocateRegForStackEntryAt: 1.
-				(self ssValue: 1) popToReg: resultReg.
+				(self ssValue: 1) moveToReg: resultReg.
 				self genCmpConstant: self ssTop constant R: resultReg.
 				self ssPop: 2.
 				self genBinaryInlineComparison: opTrue opFalse: opFalse destReg: resultReg.
 				^self ssPushRegister: resultReg].
 	(self ssValue: 1) type = SSConstant 
 		ifTrue: [resultReg := self allocateRegForStackEntryAt: 0.
-				self ssTop popToReg: resultReg.
+				self ssTop moveToReg: resultReg.
 				self genCmpConstant: (self ssValue: 1) constant R: resultReg.
 				self ssPop: 2.
 				self genBinaryInlineComparison: invertedOpTrue opFalse: invertedOpFalse destReg: resultReg.
 				^self ssPushRegister: resultReg].
 	otherReg := self allocateRegForStackEntryAt: 0.	
-	self ssTop popToReg: otherReg.
+	self ssTop moveToReg: otherReg.
 	resultReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: otherReg).	
-	(self ssValue: 1) popToReg: resultReg.
+	(self ssValue: 1) moveToReg: resultReg.
 	self CmpR: otherReg R: resultReg.
 	self ssPop: 2.
 	self genBinaryInlineComparison: opTrue opFalse: opFalse destReg: resultReg.
@@ -325,7 +325,7 @@ SistaCogitClone >> genBinaryConstOpVarInlinePrimitive: prim [
 	<option: #SistaVM>
 	| ra val untaggedVal adjust |
 	ra := self allocateRegForStackEntryAt: 0.
-	self ssTop popToReg: ra.
+	self ssTop moveToReg: ra.
 	self ssPop: 1.
 	val := self ssTop constant.
 	self ssPop: 1.
@@ -396,7 +396,7 @@ SistaCogitClone >> genBinaryConstOpVarInlinePrimitive: prim [
 SistaCogitClone >> genBinaryConstOpVarSmiInlinePrimitive: primIndex [
 	| ra val untaggedVal |
 	ra := self allocateRegForStackEntryAt: 0.
-	self ssTop popToReg: ra.
+	self ssTop moveToReg: ra.
 	self ssPop: 1.
 	val := self ssTop constant.
 	self ssPop: 1.
@@ -591,12 +591,12 @@ SistaCogitClone >> genBinarySmiBitShiftLeftInlinePrimitive [
 	Smi greater or equal to 0, Smi greater or equal to 0 => Smi (no overflow, optimised if arg1 is a constant)"
 	| rr ra |
 	rr := self allocateRegForStackEntryAt: 1.
-	(self ssValue: 1) popToReg: rr.
+	(self ssValue: 1) moveToReg: rr.
 	objectRepresentation genRemoveSmallIntegerTagsInScratchReg: rr.
 	self ssTop type = SSConstant 
 		ifTrue: [self LogicalShiftLeftCq: (objectMemory integerValueOf: self ssTop constant) R: rr]
 		ifFalse: [ra := self allocateRegForStackEntryAt: 0 notConflictingWith: (self registerMaskFor: rr).
-				self ssTop popToReg: ra.
+				self ssTop moveToReg: ra.
 				objectRepresentation genConvertSmallIntegerToIntegerInReg: ra.
 				self LogicalShiftLeftR: ra R: rr.].
 	objectRepresentation genAddSmallIntegerTagsTo: rr.
@@ -611,11 +611,11 @@ SistaCogitClone >> genBinarySmiBitShiftRightInlinePrimitive [
 	Smi greater or equal to 0, Smi greater or equal to 0 => Smi (no overflow, optimised if arg1 is a constant)"
 	| rr ra |
 	rr := self allocateRegForStackEntryAt: 1.
-	(self ssValue: 1) popToReg: rr.
+	(self ssValue: 1) moveToReg: rr.
 	self ssTop type = SSConstant 
 		ifTrue: [self ArithmeticShiftRightCq: (objectMemory integerValueOf: self ssTop constant) R: rr]
 		ifFalse: [ra := self allocateRegForStackEntryAt: 0 notConflictingWith: (self registerMaskFor: rr).
-				self ssTop popToReg: ra.
+				self ssTop moveToReg: ra.
 				objectRepresentation genConvertSmallIntegerToIntegerInReg: ra.
 				 self ArithmeticShiftRightR: ra R: rr].
 	objectRepresentation genClearAndSetSmallIntegerTagsIn: rr.
@@ -633,7 +633,7 @@ SistaCogitClone >> genBinaryVarOpConstInlinePrimitive: prim [
 	val := self ssTop constant.
 	self ssPop: 1.
 	rr := self allocateRegForStackEntryAt: 0.
-	self ssTop popToReg: rr.
+	self ssTop moveToReg: rr.
 	self ssPop: 1.
 	untaggedVal := val - objectMemory smallIntegerTag.
 	prim caseOf: {
@@ -691,7 +691,7 @@ SistaCogitClone >> genBinaryVarOpConstSmiInlinePrimitive: primIndex [
 	val := self ssTop constant.
 	self ssPop: 1.
 	rr := self allocateRegForStackEntryAt: 0.
-	self ssTop popToReg: rr.
+	self ssTop moveToReg: rr.
 	self ssPop: 1.
 	untaggedVal := val - objectMemory smallIntegerTag.
 	primIndex caseOf: {
@@ -734,9 +734,9 @@ SistaCogitClone >> genBinaryVarOpVarInlinePrimitive: prim [
 	<option: #SistaVM>
 	| ra rr adjust |
 	self allocateRegForStackTopTwoEntriesInto: [:rTop :rNext | ra := rTop. rr := rNext ].
-	self ssTop popToReg: ra.
+	self ssTop moveToReg: ra.
 	self ssPop: 1.
-	self ssTop popToReg: rr.
+	self ssTop moveToReg: rr.
 	self ssPop: 1.
 	prim caseOf: {
 		"0 through 6, +, -, *, /, //, \\, quo:, SmallInteger op SmallInteger => SmallInteger, no overflow"
@@ -802,9 +802,9 @@ SistaCogitClone >> genBinaryVarOpVarInlinePrimitive: prim [
 SistaCogitClone >> genBinaryVarOpVarSmiInlinePrimitive: primIndex [
 	| ra rr |
 	self allocateRegForStackTopTwoEntriesInto: [:rTop :rNext | ra := rTop. rr := rNext ].
-	self ssTop popToReg: ra.
+	self ssTop moveToReg: ra.
 	self ssPop: 1.
-	self ssTop popToReg: rr.
+	self ssTop moveToReg: rr.
 	self ssPop: 1.
 	primIndex caseOf: {
 		"2000	+
@@ -845,11 +845,11 @@ SistaCogitClone >> genByteAtPut [
 		allocateRegForStackTopThreeEntriesInto: [:rTop :rNext :rThird | ra2 := rTop. ra1 := rNext. rr := rThird ] 
 		thirdIsReceiver: false.
 	self assert: (rr ~= ra1 and: [rr ~= ra2 and: [ra1 ~= ra2]]).
-	self ssTop popToReg: ra2.
+	self ssTop moveToReg: ra2.
 	self ssPop: 1.
-	self ssTop popToReg: ra1.
+	self ssTop moveToReg: ra1.
 	self ssPop: 1.
-	self ssTop popToReg: rr.
+	self ssTop moveToReg: rr.
 	self ssPop: 1.
 	adjust := objectMemory baseHeaderSize - 1. "shift by baseHeaderSize and then move from 1 relative to zero relative"
 	objectRepresentation genConvertSmallIntegerToIntegerInReg: ra1.
@@ -872,15 +872,15 @@ SistaCogitClone >> genByteAtPutImmutabilityCheck [
 	ra2 := ClassReg.
 	self voidReceiverResultRegContainsSelf.
 	self ssFlushTo: simStackPtr - 1. "we use top value immediately after, so it does not require flush"
-	self ssTop popToReg: ra2.
+	self ssTop moveToReg: ra2.
 	adjust := objectMemory baseHeaderSize - 1. "shift by baseHeaderSize and then move from 1 relative to zero relative"
 	indexIsCst
 		ifFalse:
-			[(self ssValue: 1) popToReg: ra1.
+			[(self ssValue: 1) moveToReg: ra1.
 			objectRepresentation genConvertSmallIntegerToIntegerInReg: ra1.
 			self AddCq: adjust R: ra1]
 		ifTrue: [self MoveCq: (objectMemory integerValueOf: (self ssValue: 1) constant) + adjust R: ra1].
-	(self ssValue: 2) popToReg: rr.
+	(self ssValue: 2) moveToReg: rr.
 	self ssPop: 3.
 	self ssPushRegister: ra2.
 
@@ -947,18 +947,18 @@ SistaCogitClone >> genByteEqualsInlinePrimitive: prim [
 			  str1Reg := self allocateRegForStackEntryAt: 1 notConflictingWith: self emptyRegisterMask.
 			  str2Reg := self allocateRegForStackEntryAt: 2 notConflictingWith: (self registerMaskFor: str1Reg).
 			  lenReg := self allocateRegForStackEntryAt: 0 notConflictingWith: (self registerMaskFor: str1Reg and: str2Reg).
-			  (self ssValue: 1) popToReg: str1Reg.
-			  (self ssValue: 2) popToReg: str2Reg.
+			  (self ssValue: 1) moveToReg: str1Reg.
+			  (self ssValue: 2) moveToReg: str2Reg.
 			  extraReg := self allocateRegNotConflictingWith: (self registerMaskFor: str1Reg and: str2Reg and: lenReg)]
 		ifFalse: 
 			[ mask := self emptyRegisterMask.
 			  (self ssValue: 1) type = SSConstant ifFalse: 
 				[ str1Reg := self allocateRegForStackEntryAt: 1 notConflictingWith: mask.
-				  (self ssValue: 1) popToReg: str1Reg.
+				  (self ssValue: 1) moveToReg: str1Reg.
 				  mask := mask bitOr: (self registerMaskFor: str1Reg) ].
 			  (self ssValue: 2) type = SSConstant ifFalse: 
 				[ str2Reg := self allocateRegForStackEntryAt: 2 notConflictingWith: mask.
-				  (self ssValue: 2) popToReg: str2Reg.
+				  (self ssValue: 2) moveToReg: str2Reg.
 				  mask := mask bitOr: (self registerMaskFor: str2Reg) ].
 			  extraReg := self allocateRegNotConflictingWith: mask].
 	
@@ -972,7 +972,7 @@ SistaCogitClone >> genByteEqualsInlinePrimitive: prim [
 			  needLoop ifTrue: [self MoveCq: lenCst R: lenReg ].
 			  needjmpZeroSize := false] 
 		ifFalse: "uncommon case, str = str2. lenReg in word computed at runtime."
-			[ self ssTop popToReg: lenReg.
+			[ self ssTop moveToReg: lenReg.
 			  objectRepresentation genConvertSmallIntegerToIntegerInReg: lenReg.
 			  self CmpCq: 0 R: lenReg.
 			  jmpZeroSize := self JumpZero: 0.
@@ -1132,9 +1132,9 @@ SistaCogitClone >> genDivInlinePrimitive: primIndex [
 	<var: #jumpExact type: #'AbstractInstruction *'>
 	<var: #jumpSameSign type: #'AbstractInstruction *'>
 	self allocateRegForStackTopTwoEntriesInto: [:rTop :rNext | ra := rTop. rr := rNext ].
-	self ssTop popToReg: ra.
+	self ssTop moveToReg: ra.
 	self ssPop: 1.
-	self ssTop popToReg: rr.
+	self ssTop moveToReg: rr.
 	self ssPop: 1.
 	self assert: backEnd canDivQuoRem.
 	"arg non zero, no overflow check. / remains (unused in optimised code)"
@@ -1227,7 +1227,7 @@ SistaCogitClone >> genJumpBinaryInlinePrimitive: primIndex [
 	self assert: self ssTop type = SSConstant.
 	target := self eventualTargetOf: ((objectMemory integerValueOf: self ssTop constant) + 3 + bytecodePC).
 	testReg := self allocateRegForStackEntryAt: 1.
-	(self ssValue: 1) popToReg: testReg.
+	(self ssValue: 1) moveToReg: testReg.
 	self ssPop: 2.
 	primIndex caseOf: {
 		"7016	jumpIfWritable:
@@ -1265,7 +1265,7 @@ SistaCogitClone >> genJumpTrinaryInlinePrimitive: primIndex [
 	self assert: self ssTop type = SSConstant.
 	self assert: (self ssValue: 1) type = SSConstant.
 	testReg := self allocateRegForStackEntryAt: 2.
-	(self ssValue: 2) popToReg: testReg.
+	(self ssValue: 2) moveToReg: testReg.
 	behavior := (self ssValue: 1) constant.
 	target := self eventualTargetOf: ((objectMemory integerValueOf: self ssTop constant) + 3 + bytecodePC).
 	self ssPop: 3.
@@ -1369,7 +1369,7 @@ SistaCogitClone >> genMoveAndAdjustSSEntry: ssEntry into: reg [
 		ifTrue: [self MoveCq: (objectMemory integerValueOf: ssEntry constant) + adjust R: reg.
 			      ssEntry spilled ifTrue: [self AddCq: objectMemory wordSize R: SPReg]]
 		ifFalse: 
-			[ssEntry popToReg: reg.
+			[ssEntry moveToReg: reg.
 			 objectRepresentation genConvertSmallIntegerToIntegerInReg: reg.
 			 adjust ~= 0 ifTrue: [ self AddCq: adjust R: reg. ]].	
 ]
@@ -1455,11 +1455,11 @@ SistaCogitClone >> genPointerAtPutConstantMaybeContext: maybeContext storeCheck:
 	"If rcvr is valReg, we flush it. Could generate a move instead but not that common"
 	self ssAllocateRequiredReg: valReg upThrough: simStackPtr - 2.
 	self ssAllocateRequiredReg: rcvrReg upThrough: simStackPtr - 3.
-	self ssTop popToReg: valReg.
+	self ssTop moveToReg: valReg.
 	self ssPop: 1.
 	self ssTop spilled ifTrue: [self AddCq: objectRepresentation wordSize R: SPReg].
 	self ssPop: 1.
-	self ssTop popToReg: rcvrReg.
+	self ssTop moveToReg: rcvrReg.
 	self ssPop: 1.
 	self ssPushRegister: valReg.
 			
@@ -1497,14 +1497,14 @@ SistaCogitClone >> genPointerAtPutImmCheckAndStoreCheck [
 	ra2 := ClassReg.
 	scratchReg := Arg0Reg.
 	adjust := (objectMemory baseHeaderSize >> objectMemory shiftForWord) - 1. "shift by baseHeaderSize and then move from 1 relative to zero relative"
-	(self ssValue: 2) popToReg: rr.
+	(self ssValue: 2) moveToReg: rr.
 	indexIsCst
 		ifFalse:
-			[(self ssValue: 1) popToReg: ra1.
+			[(self ssValue: 1) moveToReg: ra1.
 			objectRepresentation genConvertSmallIntegerToIntegerInReg: ra1.
 			adjust ~= 0 ifTrue: [self AddCq: adjust R: ra1]]
 		ifTrue: [self MoveCq: (objectMemory integerValueOf: (self ssValue: 1) constant) + adjust R: ra1].
-	self ssTop popToReg: ra2.
+	self ssTop moveToReg: ra2.
 	self ssPop: 3.
 	self ssPushRegister: ra2.
 	self voidReceiverResultRegContainsSelf.
@@ -1552,15 +1552,15 @@ SistaCogitClone >> genPointerAtPutImmCheckButNoStoreCheck [
 	rr := ReceiverResultReg.
 	ra1 := TempReg.
 	ra2 := ClassReg.
-	(self ssValue: 2) popToReg: rr.
+	(self ssValue: 2) moveToReg: rr.
 	adjust := (objectMemory baseHeaderSize >> objectMemory shiftForWord) - 1. "shift by baseHeaderSize and then move from 1 relative to zero relative"
 	indexIsCst
 		ifFalse:
-			[(self ssValue: 1) popToReg: ra1.
+			[(self ssValue: 1) moveToReg: ra1.
 			objectRepresentation genConvertSmallIntegerToIntegerInReg: ra1.
 			adjust ~= 0 ifTrue: [self AddCq: adjust R: ra1]]
 		ifTrue: [self MoveCq: (objectMemory integerValueOf: (self ssValue: 1) constant) + adjust R: ra1].
-	self ssTop popToReg: ra2.
+	self ssTop moveToReg: ra2.
 	self ssPop: 3.
 	self ssPushRegister: ra2.
 	self voidReceiverResultRegContainsSelf.
@@ -1614,11 +1614,11 @@ SistaCogitClone >> genPointerAtPutStoreCheck: needsStoreCheck [
 		allocateRegForStackTopThreeEntriesInto: [:rTop :rNext :rThird | ra2 := rTop. ra1 := rNext. rr := rThird ] 
 		thirdIsReceiver: needsStoreCheck.
 	self assert: (rr ~= ra1 and: [rr ~= ra2 and: [ra1 ~= ra2]]).
-	self ssTop popToReg: ra2.
+	self ssTop moveToReg: ra2.
 	self ssPop: 1.
-	self ssTop popToReg: ra1.
+	self ssTop moveToReg: ra1.
 	self ssPop: 1.
-	self ssTop popToReg: rr.
+	self ssTop moveToReg: rr.
 	self ssPop: 1.
 	objectRepresentation genConvertSmallIntegerToIntegerInReg: ra1.
 	adjust := (objectMemory baseHeaderSize >> objectMemory shiftForWord) - 1. "shift by baseHeaderSize and then move from 1 relative to zero relative"
@@ -1725,7 +1725,7 @@ SistaCogitClone >> genUnaryClassPrimitive [
 	<var: #jumpIsImm type: #'AbstractInstruction *'>
 	topReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
 	destReg := self allocateRegNotConflictingWith: (self registerMaskFor: topReg).
-	self ssTop popToReg: topReg.
+	self ssTop moveToReg: topReg.
 	
 	"1. Read the class index"
 	self MoveR: topReg R: TempReg.
@@ -1752,7 +1752,7 @@ SistaCogitClone >> genUnaryConvertInlinePrimitive: primIndex [
 		"1030	characterAsInteger
 		 Character => 22 bits strictly positive Smi (Unicode)"
 		[30] -> [resultReg := self allocateRegForStackEntryAt: 0. 
-				self ssTop popToReg: resultReg.
+				self ssTop moveToReg: resultReg.
 				objectRepresentation genConvertCharacterToSmallIntegerInReg: resultReg].
 		"1031	smallFloatAsInteger
 		 SmallFloat => Smi"
@@ -1760,7 +1760,7 @@ SistaCogitClone >> genUnaryConvertInlinePrimitive: primIndex [
 		"1032	smiAsFloat
 		 Smi => SmallFloat"
 		[32] -> [resultReg := self allocateRegForStackEntryAt: 0. 
-				self ssTop popToReg: resultReg.
+				self ssTop moveToReg: resultReg.
 				self assert: self processorHasDoublePrecisionFloatingPointSupport.
 				self MoveR: resultReg R: TempReg.
 				self genConvertSmallIntegerToIntegerInReg: TempReg.
@@ -1785,16 +1785,16 @@ SistaCogitClone >> genUnaryHashInlinePrimitive: primIndex [
 		 non-immediate and non-behavior => 22 bits strictly positive Smi"
 		[20] ->	[rcvrReg := self allocateRegForStackEntryAt: 0.
 				 resultReg := self allocateRegNotConflictingWith: (self registerMaskFor: rcvrReg).
-				 self ssTop popToReg: rcvrReg.
+				 self ssTop moveToReg: rcvrReg.
 				 objectRepresentation genGetIdentityHash: rcvrReg resultReg: resultReg].
 		"1021	smiIdentityHash
 		 Smi => Smi"
 		[21] -> [resultReg := self allocateRegForStackEntryAt: 0. 
-				self ssTop popToReg: resultReg].		
+				self ssTop moveToReg: resultReg].		
 		"1022	charIdentityHash
 		 Character => 22 bits strictly positive Smi"
 		[22] -> [resultReg := self allocateRegForStackEntryAt: 0. 
-				self ssTop popToReg: resultReg.
+				self ssTop moveToReg: resultReg.
 				objectRepresentation genConvertCharacterToSmallIntegerInReg: resultReg].
 		"1023	smallfloatIdentityHash
 		 SmallFloat => Smi"
@@ -1888,7 +1888,7 @@ SistaCogitClone >> genUnaryPossibleRootInlinePrimitive [
 	<var: #jmpDestYoung type: #'AbstractInstruction *'>
 	<var: #jmpAlreadyRemembered type: #'AbstractInstruction *'>
 	topReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
-	self ssTop popToReg: topReg.
+	self ssTop moveToReg: topReg.
 	self MoveCw: objectMemory storeCheckBoundary R: TempReg.
 	 self CmpR: TempReg R: topReg.
 	 jmpDestYoung := self JumpBelow: 0.
@@ -1908,7 +1908,7 @@ SistaCogitClone >> genUnarySizeInlinePrimitive: primIndex [
 	self assert: (primIndex between: 1 and: 6).
 	rcvrReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
 	resultReg := self allocateRegNotConflictingWith: (self registerMaskFor: rcvrReg).
-	self ssTop popToReg: rcvrReg.
+	self ssTop moveToReg: rcvrReg.
 	self ssPop: 1.
 	self ssPushRegister: resultReg.
 	primIndex caseOf: {
@@ -1941,7 +1941,7 @@ SistaCogitClone >> genUnaryUnforwardInlinePrimitive [
 	 Anything => Not a forwarder"
 	| topReg |
 	topReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
-	self ssTop popToReg: topReg.
+	self ssTop moveToReg: topReg.
 	objectRepresentation genEnsureOopInRegNotForwarded: topReg scratchReg: TempReg.
 	self ssPop: 1.
 	^self ssPushRegister: topReg
@@ -1953,7 +1953,7 @@ SistaCogitClone >> genUnaryUnforwardNonImmediateInlinePrimitive [
 	 non immediate => Not a forwarder"
 	| topReg |
 	topReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
-	self ssTop popToReg: topReg.
+	self ssTop moveToReg: topReg.
 	objectRepresentation genEnsureObjInRegNotForwarded: topReg scratchReg: TempReg.
 	self ssPop: 1.
 	^self ssPushRegister: topReg

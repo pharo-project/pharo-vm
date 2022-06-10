@@ -217,6 +217,20 @@ CogSimStackEntry >> maybeConstant [
 	^constant
 ]
 
+{ #category : #'compile abstract instructions' }
+CogSimStackEntry >> moveToReg: reg [
+	spilled
+		ifTrue:
+			[cogit PopR: reg]
+		ifFalse:
+			[type caseOf: {
+				[SSBaseOffset]	-> [cogit MoveMw: offset r: register R: reg].
+				[SSConstant]	-> [cogit genMoveConstant: constant R: reg].
+				[SSRegister]	-> [reg ~= register
+										ifTrue: [cogit MoveR: register R: reg]
+										ifFalse: [cogit Label]] }]
+]
+
 { #category : #accessing }
 CogSimStackEntry >> offset [
 	"Answer the value of offset"
@@ -229,20 +243,6 @@ CogSimStackEntry >> offset: anObject [
 	"Set the value of offset"
 
 	^offset := anObject
-]
-
-{ #category : #'compile abstract instructions' }
-CogSimStackEntry >> popToReg: reg [
-	spilled
-		ifTrue:
-			[cogit PopR: reg]
-		ifFalse:
-			[type caseOf: {
-				[SSBaseOffset]	-> [cogit MoveMw: offset r: register R: reg].
-				[SSConstant]	-> [cogit genMoveConstant: constant R: reg].
-				[SSRegister]	-> [reg ~= register
-										ifTrue: [cogit MoveR: register R: reg]
-										ifFalse: [cogit Label]] }]
 ]
 
 { #category : #printing }
@@ -291,8 +291,8 @@ CogSimStackEntry >> register: anObject [
 { #category : #accessing }
 CogSimStackEntry >> registerMask [
 	"Answer a bit mask for the receiver's register, if any."
-	^(type = SSBaseOffset
-		or: [type = SSRegister])
+	^((type = SSBaseOffset
+		or: [type = SSRegister]) or: [type = SSVectorRegister])"TODO vector constant is not initialized"
 			ifTrue: [cogit registerMaskFor: register]
 			ifFalse: [0]
 ]

@@ -954,14 +954,14 @@ CogObjectRepresentationForSpur >> genGetIdentityHash: rcvrReg resultReg: resultR
 	cogit voidReceiverResultRegContainsSelf. 
 	resultReg = ReceiverResultReg 
 		ifTrue: 
-			[cogit ssTop popToReg: rcvrReg.
+			[cogit ssTop moveToReg: rcvrReg.
 			 self genGetHashFieldNonImmOf: rcvrReg asSmallIntegerInto: resultReg.
 			 cogit CmpCq: ConstZero R: resultReg.
 			 jumpSet := cogit JumpNonZero: 0.
 			 cogit MoveR: rcvrReg R: resultReg.
 			 cogit CallRT: ceInlineNewHashTrampoline]
 		ifFalse: 
-			[cogit ssTop popToReg: ReceiverResultReg.
+			[cogit ssTop moveToReg: ReceiverResultReg.
 		 	 self genGetHashFieldNonImmOf: ReceiverResultReg asSmallIntegerInto: resultReg.
 			 cogit CmpCq: ConstZero R: resultReg.
 			 jumpSet := cogit JumpNonZero: 0.

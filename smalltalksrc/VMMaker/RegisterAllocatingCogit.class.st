@@ -704,7 +704,7 @@ RegisterAllocatingCogit >> genJumpIf: boolean to: targetBytecodePC [
 			or: [(desc register = ReceiverResultReg and: [self receiverIsInReceiverResultReg])]])
 				ifTrue: [TempReg]
 				ifFalse: [desc register].
-	desc popToReg: reg.
+	desc moveToReg: reg.
 	"Cunning trick by LPD.  If true and false are contiguous subtract the smaller.
 	 Correct result is either 0 or the distance between them.  If result is not 0 or
 	 their distance send mustBeBoolean."
@@ -866,12 +866,12 @@ RegisterAllocatingCogit >> genSpecialSelectorArithmetic [
 	argIsInt
 		ifTrue:
 			[rcvrReg := self allocateRegForStackEntryAt: 1.
-			 (self ssValue: 1) popToReg: rcvrReg.
+			 (self ssValue: 1) moveToReg: rcvrReg.
 			 regMask := self registerMaskFor: rcvrReg]
 		ifFalse:
 			[self allocateRegForStackTopTwoEntriesInto: [:rTop :rNext| argReg := rTop. rcvrReg := rNext].
-			 self ssTop popToReg: argReg.
-			 (self ssValue: 1) popToReg: rcvrReg.
+			 self ssTop moveToReg: argReg.
+			 (self ssValue: 1) moveToReg: rcvrReg.
 			 regMask := self registerMaskFor: rcvrReg and: argReg].
 
 	"rcvrReg can be reused for the result iff the receiver is a constant or is an SSRegister that is not used elsewhere."
@@ -980,7 +980,7 @@ RegisterAllocatingCogit >> genSpecialSelectorClass [
 	topReg := self allocateRegForStackEntryAt: 0.
 	destReg := self allocateRegNotConflictingWith: (self registerMaskFor: topReg).
 	scratchReg := self allocateRegNotConflictingWith: (self registerMaskFor: topReg and: destReg).
-	self ssTop popToReg: topReg.
+	self ssTop moveToReg: topReg.
 	self asserta: (objectRepresentation
 					genGetClassObjectOf: topReg
 					into: destReg
@@ -1026,12 +1026,12 @@ RegisterAllocatingCogit >> genSpecialSelectorComparison [
 	argIsIntConst
 		ifTrue:
 			[rcvrReg := self allocateRegForStackEntryAt: 1.
-			 (self ssValue: 1) popToReg: rcvrReg.
+			 (self ssValue: 1) moveToReg: rcvrReg.
 			 argReg := NoReg]
 		ifFalse:
 			[self allocateRegForStackTopTwoEntriesInto: [:rTop :rNext| argReg := rTop. rcvrReg := rNext].
-			 self ssTop popToReg: argReg.
-			 (self ssValue: 1) popToReg: rcvrReg].
+			 self ssTop moveToReg: argReg.
+			 (self ssValue: 1) moveToReg: rcvrReg].
 	self ssPop: 2.
 	self moveVolatileSimStackEntriesToRegistersPreserving:
 		(self allocatedRegisters bitOr: (argReg = NoReg

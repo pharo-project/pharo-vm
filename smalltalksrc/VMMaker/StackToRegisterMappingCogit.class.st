@@ -633,11 +633,11 @@ StackToRegisterMappingCogit >> allocateEqualsEqualsRegistersArgNeedsReg: argNeed
 			[rcvrNeedsReg
 				ifTrue:
 					[self allocateRegForStackTopTwoEntriesInto: [:rTop :rNext| argReg := rTop. rcvrReg := rNext].
-					 self ssTop popToReg: argReg.
-					 (self ssValue: 1) popToReg: rcvrReg]
+					 self ssTop moveToReg: argReg.
+					 (self ssValue: 1) moveToReg: rcvrReg]
 				ifFalse:
 					[argReg := self allocateRegForStackEntryAt: 0.
-					 self ssTop popToReg: argReg.
+					 self ssTop moveToReg: argReg.
 					 "If the receiver is a spilled constant we need to pop it from the stack."
 					 (self ssValue: 1) spilled ifTrue:
 						[self AddCq: objectMemory wordSize R: SPReg]]]
@@ -645,7 +645,7 @@ StackToRegisterMappingCogit >> allocateEqualsEqualsRegistersArgNeedsReg: argNeed
 			[self assert: rcvrNeedsReg.
 			 self deny: self ssTop spilled.
 			 rcvrReg := self allocateRegForStackEntryAt: 1.
-			 (self ssValue: 1) popToReg: rcvrReg].
+			 (self ssValue: 1) moveToReg: rcvrReg].
 		
 	self deny: (argNeedsReg and: [argReg = NoReg]).
 	self deny: (rcvrNeedsReg and: [rcvrReg = NoReg]).
@@ -781,9 +781,9 @@ StackToRegisterMappingCogit >> allocateRegNotConflictingWith: regMask [
 StackToRegisterMappingCogit >> allocateVectorRegNotConflictingWith: regMask [
 	| reg |
 	"if there's a free register, use it"
-	reg := backEnd availableVectorRegisterOrNoneFor: (self liveRegisters bitOr: regMask).
-	reg = NoReg ifTrue: "No free register, choose one that does not conflict with regMask"
-		[reg := self freeAnyRegNotConflictingWith: regMask].
+	reg := backEnd availableVectorRegisterOrNoneFor: (self liveVectorRegisters bitOr: regMask).
+	"reg = NoReg ifTrue: ""No free register, choose one that does not conflict with regMask""
+		[reg := self freeAnyRegNotConflictingWith: regMask]."
 	^ reg
 ]
 
@@ -1773,7 +1773,7 @@ StackToRegisterMappingCogit >> genJumpIf: boolean to: targetBytecodePC [
 												ifFalse: [self Label]]).
 		 extA := 0.
 		 ^0].
-	desc popToReg: TempReg.
+	desc moveToReg: TempReg.
 	"Cunning trick by LPD.  If true and false are contiguous subtract the smaller.
 	 Correct result is either 0 or the distance between them.  If result is not 0 or
 	 their distance send mustBeBoolean."
@@ -2055,16 +2055,29 @@ StackToRegisterMappingCogit >> genPushActiveContextBytecode [
 StackToRegisterMappingCogit >> genPushArrayToRegister [
 
 	| arrayReg indexReg vectorReg |
+
 	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
 	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
 	
-	self ssTop popToReg: arrayReg.
-	self ssTop popToReg: indexReg.
+	self ssTop moveToReg: arrayReg.
+	self ssPop: 1.
+	
+	self ssTop moveToReg: indexReg.
+	self ssPop: 1.
+	
+	self AddCq: objectMemory baseHeaderSize R: arrayReg.
+
+	"The index is a SmallInteger, so it is shifted left 3 and plus 1. So, as we need to untag it and then shift it 3 (for getting number of bytes from number of elements), we just substract 1. 
+	Only valid in 64bits Lanes and 64bits machine."
+
+	self assert: (objectMemory wordSize = 8).
+	
+	self SubCq: 1 R: indexReg.
+	self AddR: indexReg R: arrayReg.
 	
 	vectorReg := self allocateVectorRegNotConflictingWith: 0.
-
-	self 
-		
+	
+	self Ld1S: 64 Vr: vectorReg R: arrayReg Mw: 0
 ]
 
 { #category : #'bytecode generator support' }
@@ -2281,14 +2294,14 @@ StackToRegisterMappingCogit >> genReturnReceiver [
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genReturnTopFromBlock [
 	self assert: inBlock > 0.
-	self ssTop popToReg: ReceiverResultReg.
+	self ssTop moveToReg: ReceiverResultReg.
 	self ssPop: 1.
 	^self genBlockReturn
 ]
 
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genReturnTopFromMethod [
-	self ssTop popToReg: ReceiverResultReg.
+	self ssTop moveToReg: ReceiverResultReg.
 	self ssPop: 1.
 	^self genUpArrowReturn
 ]
@@ -2444,7 +2457,7 @@ StackToRegisterMappingCogit >> genSpecialSelectorArithmetic [
 	argIsConst
 		ifTrue:
 			[self ssFlushTo: simStackPtr - 2.
-			 (self ssValue: 1) popToReg: ReceiverResultReg.
+			 (self ssValue: 1) moveToReg: ReceiverResultReg.
 			 self ssPop: 2]
 		ifFalse:
 			[self marshallSendArguments: 1].
@@ -2517,7 +2530,7 @@ StackToRegisterMappingCogit >> genSpecialSelectorClass [
 		ifTrue: [self ssAllocateRequiredReg: (topReg := SendNumArgsReg) and: ClassReg]
 		ifFalse: [self ssAllocateRequiredReg: ClassReg].
 	self ssPush: 1.
-	self ssTop popToReg: topReg.
+	self ssTop moveToReg: topReg.
 	objectRepresentation
 		genGetClassObjectOf: topReg
 		into: ClassReg
@@ -2558,7 +2571,7 @@ StackToRegisterMappingCogit >> genSpecialSelectorComparison [
 
 	argIsIntConst
 		ifTrue:
-			[(self ssValue: 1) popToReg: ReceiverResultReg.
+			[(self ssValue: 1) moveToReg: ReceiverResultReg.
 			 self ssPop: 2]
 		ifFalse:
 			[self marshallSendArguments: 1].
@@ -3263,6 +3276,17 @@ StackToRegisterMappingCogit >> liveRegisters [
 	^regsSet
 ]
 
+{ #category : #'simulation stack' }
+StackToRegisterMappingCogit >> liveVectorRegisters [
+	| regsSet |
+	regsSet := 0."TODO handle switching stack frames?"
+	"(simSpillBase max: 0) to: simStackPtr do:
+		[:i|
+		1halt.
+		regsSet := regsSet bitOr: (self simStackAt: i) registerMask]."
+	^regsSet
+]
+
 { #category : #'compile abstract instructions' }
 StackToRegisterMappingCogit >> mapDeadDescriptorIfNeeded: descriptor [ 
 	"insert nops for dead code that is mapped so that bc 
@@ -3317,10 +3341,10 @@ StackToRegisterMappingCogit >> marshallAbsentReceiverSendArguments: numArgs [
 					ifFalse:
 						[self ssAllocateRequiredReg: Arg0Reg upThrough: simStackPtr - 1]].
 			 (self numRegArgs > 1 and: [numArgs > 1]) ifTrue:
-				[(self simStackAt: simStackPtr) popToReg: Arg1Reg].
+				[(self simStackAt: simStackPtr) moveToReg: Arg1Reg].
 			 numArgs > 0 ifTrue:
 				[(self simStackAt: simStackPtr - numArgs + 1)
-					popToReg: Arg0Reg]].
+					moveToReg: Arg0Reg]].
 	self ssPop: numArgs
 ]
 
@@ -3362,12 +3386,12 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 					ifFalse:
 						[self ssAllocateRequiredReg: Arg0Reg upThrough: simStackPtr - 1]].
 			 (self numRegArgs > 1 and: [numArgs > 1]) ifTrue:
-				[(self simStackAt: simStackPtr) popToReg: Arg1Reg].
+				[(self simStackAt: simStackPtr) moveToReg: Arg1Reg].
 			 numArgs > 0 ifTrue:
 				[(self simStackAt: simStackPtr - numArgs + 1)
-					popToReg: Arg0Reg].
+					moveToReg: Arg0Reg].
 			 (self simStackAt: simStackPtr - numArgs)
-				popToReg: ReceiverResultReg].
+				moveToReg: ReceiverResultReg].
 	self ssPop: numArgs + 1
 ]
 
@@ -4180,7 +4204,7 @@ StackToRegisterMappingCogit >> ssStorePop: popBoolean toReg: reg [
 	N.B.: popToReg: and storeToReg: does not generate anything if 
 	it moves a register to the same register."	
 	popBoolean
-		ifTrue: [self ssTop popToReg: reg.
+		ifTrue: [self ssTop moveToReg: reg.
 				self ssPop: 1]
 		ifFalse: [self ssTop storeToReg: reg].
 ]
