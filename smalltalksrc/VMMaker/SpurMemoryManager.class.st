@@ -4856,7 +4856,7 @@ SpurMemoryManager >> fetchPointer: fieldIndex ofMaybeForwardedObject: objOop [
 { #category : #'object access' }
 SpurMemoryManager >> fetchPointer: fieldIndex ofObject: objOop [
 	<api>
-	^self longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+	^self wordAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 ]
 
 { #category : #'object access' }
@@ -12786,6 +12786,13 @@ SpurMemoryManager >> withSimulatorFetchPointerMovedAsideDo: aBlock [
 		[theMethod methodClass
 			basicAddSelector: #fetchPointer:ofObject:
 			withMethod: theMethod]
+]
+
+{ #category : #accessing }
+SpurMemoryManager >> wordAt: address [
+
+	<doNotGenerate>
+	^ self subclassResponsibility
 ]
 
 { #category : #'header formats' }

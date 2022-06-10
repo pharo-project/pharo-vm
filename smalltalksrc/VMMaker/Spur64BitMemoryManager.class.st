@@ -1213,6 +1213,12 @@ Spur64BitMemoryManager >> tagMask [
 	^7
 ]
 
+{ #category : #accessing }
+Spur64BitMemoryManager >> wordAt: address [
+
+	^ self uint64At: address
+]
+
 { #category : #'header formats' }
 Spur64BitMemoryManager >> wordIndexableFormat [
 	^self sixtyFourBitIndexableFormat
