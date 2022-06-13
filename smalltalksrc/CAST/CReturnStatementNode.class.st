@@ -38,6 +38,12 @@ CReturnStatementNode >> expression: aCGLRExpressionNode [
 ]
 
 { #category : #testing }
+CReturnStatementNode >> isExpression [
+	
+	^ false
+]
+
+{ #category : #testing }
 CReturnStatementNode >> isReturn [
 	
 	^ true

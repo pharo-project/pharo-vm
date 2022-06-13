@@ -37,7 +37,7 @@ TAssignmentNode >> asCASTExpressionIn: aCodeGen [
 	(expression isStatementList and: [ expression statements size > 1 ]) 
 		ifTrue: [ ^ self asCASTStatementListExpansionAsExpression: aCodeGen ].
 	^ (self asCASTIn: aCodeGen)
-		  needsParentheses: true;
+"		  needsParentheses: true;"
 		  yourself
 ]
 
@@ -73,14 +73,20 @@ TAssignmentNode >> asCASTIn: aBuilder [
 
 	(expression isStatementList and: [ expression statements size > 1 ]) 
 		ifTrue: [ 
-			^ expression copy
-				  assignLastExpressionTo: variable;
-				  asCASTIn: aBuilder ].
+			^ (expression asLastExpressionAssignmentTo: variable) asCASTIn:
+				  aBuilder ].
 	self isVariableUpdatingAssignment ifTrue: [ 
 		^ CAssignmentNode
 			  lvalue: (variable asCASTIn: aBuilder)
 			  operator: expression selector , '='
 			  rvalue: (expression arguments first asCASTExpressionIn: aBuilder) ].
+
+	expression isConditionalSend ifTrue: [ | conditionalAsStatement |
+		conditionalAsStatement := expression copy.
+		conditionalAsStatement arguments: (conditionalAsStatement arguments 
+			collect: [ :arg | arg asLastExpressionAssignmentTo: variable copy ]).
+		^ conditionalAsStatement asCASTIn: aBuilder ].
+
 	(expression isSend and: [ expression isValueExpansion ]) ifTrue: [ 
 		^ self asCASTValueExpansionIn: aBuilder ].
 
@@ -91,11 +97,11 @@ TAssignmentNode >> asCASTIn: aBuilder [
 
 { #category : #'C code generation' }
 TAssignmentNode >> asCASTStatementListExpansionAsExpression: aCodeGen [
-	(variable isSameAs: expression statements last) ifTrue:
-		[^ expression asCASTExpressionIn: aCodeGen].
-	^ expression copy
-		assignLastExpressionTo: variable;
-		asCASTExpressionIn: aCodeGen
+
+	(variable isSameAs: expression statements last) ifTrue: [ 
+		^ expression asCASTExpressionIn: aCodeGen ].
+	^ (expression asLastExpressionAssignmentTo: variable) 
+		  asCASTExpressionIn: aCodeGen
 ]
 
 { #category : #'C code generation' }

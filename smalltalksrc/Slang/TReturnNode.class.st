@@ -81,6 +81,13 @@ TReturnNode >> asCASTIn: aBuilder [
 	^ CReturnStatementNode expression: cast.
 ]
 
+{ #category : #transforming }
+TReturnNode >> asLastExpressionAssignmentTo: aTVariableNode [ 
+
+	"Do not assign return statements"
+	^ self
+]
+
 { #category : #transformations }
 TReturnNode >> asReturnNode [
 	^self

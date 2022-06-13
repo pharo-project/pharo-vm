@@ -78,6 +78,14 @@ TParseNode >> asExpressionIn: aMLStatementListBuider [
 	^ self
 ]
 
+{ #category : #trasforming }
+TParseNode >> asLastExpressionAssignmentTo: aTVariableNode [
+
+	^ TAssignmentNode
+		variable: aTVariableNode
+		expression: self
+]
+
 { #category : #transformations }
 TParseNode >> asReturnNode [
 	^TReturnNode new 
