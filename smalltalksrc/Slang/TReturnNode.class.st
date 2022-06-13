@@ -36,6 +36,27 @@ TReturnNode >> asCASTIn: aBuilder [
 	| cast |
 	(expression isSwitch or: [expression isCaseStmt]) ifTrue: [
 		^ expression asCASTIn: aBuilder addToEndOfCases: self ].
+	
+	"Transforms the statment
+	^ a ifTrue: [ ^ 1 ] ifFalse: [ bla. 2 ]
+	=>
+	a ifTrue: [ ^ 1 ] ifFalse: [ bla . ^ 2 ]
+	"
+	expression isConditionalSend ifTrue: [ | conditionalAsStatement |
+		conditionalAsStatement := expression copy.
+		conditionalAsStatement arguments: (conditionalAsStatement arguments 
+			collect: [ :arg | arg asReturnNode ]).
+		^ conditionalAsStatement asCASTIn: aBuilder ].
+
+	"Transforms
+	^ [ a . last] value
+	=>
+	{ a . ^ last }.
+	"
+	(expression isSend and: [expression isValueExpansion]) ifTrue: [
+		"Returning a block with many arguments is not yet implemented"
+		expression arguments ifNotEmpty: [ self notYetImplemented ].
+		^ expression receiver asReturnNode asCASTIn: aBuilder ].
 
 	'void' = aBuilder currentMethod returnType ifTrue: [
 		"If the function is void, don't say 'return x' instead say ' x; return' "

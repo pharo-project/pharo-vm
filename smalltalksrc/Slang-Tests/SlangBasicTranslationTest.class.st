@@ -1824,6 +1824,60 @@ SlangBasicTranslationTest >> testReturnBlockValueValueValue [
 }'
 ]
 
+{ #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testReturnBlockValueWithManyStatementsWithoutArguments [
+
+	"Case:
+	
+	return [ self bar. self foo + 1 ] value"
+
+	| translation |
+
+	translation := self translate:
+	(TReturnNode expression: 
+		(TSendNode
+			receiver: 
+				(TStmtListNode statements: {
+					TSendNode
+						receiver: TVariableNode selfNode
+						selector: #bar.
+					TSendNode
+						receiver: (TSendNode receiver: TVariableNode selfNode selector: #foo)
+						selector: #+
+						arguments: { TConstantNode value: 1 } })
+			selector: #value)).
+
+	self assert: translation trimBoth equals: '{
+	bar();
+	return (foo()) + 1;
+}'
+]
+
+{ #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testReturnBlockValueWithoutArguments [
+
+	"Case:
+	
+	return [ self foo + 1 ] value"
+
+	| translation |
+
+	translation := self translate:
+	(TReturnNode expression: 
+		(TSendNode
+			receiver: 
+				(TStmtListNode statements: {
+					TSendNode
+						receiver: (TSendNode receiver: TVariableNode selfNode selector: #foo)
+						selector: #+
+						arguments: { TConstantNode value: 1 } })
+			selector: #value)).
+
+	self assert: translation trimBoth equals: '{
+	return (foo()) + 1;
+}'
+]
+
 { #category : #'tests-case' }
 SlangBasicTranslationTest >> testReturnCaseStatementDoesNotReplaceGotoByReturn [
 
@@ -1898,12 +1952,15 @@ SlangBasicTranslationTest >> testReturnIfTrueWithNotLocalReturn [
 				TStmtListNode statements: { TConstantNode value: 1 }.
 				TStmtListNode statements: { TReturnNode expression: (TConstantNode value: 2) }.
 			 } ).
-	1halt.
+
 	translation := self translate: ast.
 		
-	self assert: translation equals: 'return ((aBoolean)
-	 ? 1
-	 : 2)'
+	self assert: translation equals: 
+'if (aBoolean) {
+	return 1;
+} else {
+	return 2;
+}'
 ]
 
 { #category : #'tests-return' }
@@ -1923,9 +1980,13 @@ SlangBasicTranslationTest >> testReturnIfTrueWithNotLocalReturnStatements [
 	
 	translation := self translate: ast.
 		
-	self assert: translation equals: 'return ((aBoolean)
-	 ? 1
-	 : 2)'
+	self assert: translation equals: 
+'if (aBoolean) {
+	return 1;
+} else {
+	foo(3);
+	return 2;
+}'
 ]
 
 { #category : #'tests-return' }

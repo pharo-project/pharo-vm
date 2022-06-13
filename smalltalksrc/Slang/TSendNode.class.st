@@ -349,7 +349,7 @@ TSendNode >> isBuiltinOperator: builtinFlag [
 TSendNode >> isConditionalSend [
 	"Answer if the receiver is a send of any of the conditionals, ifTrue: ifTrue:ifFalse: et al"
 	^#(	ifTrue:ifFalse: ifFalse:ifTrue: ifTrue: ifFalse:
-		ifNil:ifNotNil: ifNotNil:ifNil: ifNil: ifNotNil) includes: selector
+		ifNil:ifNotNil: ifNotNil:ifNil: ifNil: ifNotNil:) includes: selector
 ]
 
 { #category : #testing }
@@ -474,8 +474,13 @@ TSendNode >> numArgs [
 { #category : #copying }
 TSendNode >> postCopy [
 
+<<<<<<< HEAD
 	self receiver: receiver copy.
 	self arguments: (arguments collect: [ :arg | arg copy ])
+=======
+	receiver := receiver copy.
+	arguments := arguments collect: [ :arg | arg copy ]
+>>>>>>> 40e63d9645 (Added better return conditional translation)
 ]
 
 { #category : #printing }

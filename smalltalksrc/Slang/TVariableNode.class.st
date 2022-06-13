@@ -27,6 +27,12 @@ TVariableNode >> accept: aVisitor [
 	^ aVisitor visitVariableNode: self
 ]
 
+{ #category : #'instance creation' }
+TVariableNode class >> superNode [
+
+	^ self named: 'super'
+]
+
 { #category : #tranforming }
 TVariableNode >> asCASTIn: aBuilder [
 
