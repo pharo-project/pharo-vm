@@ -14480,6 +14480,7 @@ StackInterpreter >> stObject: array at: index format: format fixedFields: fixedF
 	 		andLessThanOrEqualTo: stSize) ifTrue: [
 				^self subscript: array with: (index + fixedFields) format: format ].
 
+	self druidExitPoint.
 	self primitiveFailFor: (format <= 1 ifTrue: [PrimErrBadReceiver] ifFalse: [PrimErrBadIndex]).
 	^0
 ]

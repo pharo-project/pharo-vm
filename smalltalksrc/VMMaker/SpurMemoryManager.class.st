@@ -3686,7 +3686,7 @@ SpurMemoryManager >> classIndexOf: objOop [
 		32-bit access will be quicker on 64-bits by virtue of fetching half the bits.  But experiments
 		show that doing this does not produce any increase; at least any signal is lost in the noise."
 	<api>
-	^(self longAt: objOop) bitAnd: self classIndexMask
+	^(self wordAt: objOop) bitAnd: self classIndexMask
 ]
 
 { #category : #'header access' }
@@ -7007,7 +7007,7 @@ SpurMemoryManager >> isForwarded: objOop [
 	<api>
 	<inline: true>
 	"self assert: (self isFreeObject: objOop) not."
-	^(self longAt: objOop) noMask: self classIndexMask - self isForwardedObjectClassIndexPun
+	^(self wordAt: objOop) noMask: self classIndexMask - self isForwardedObjectClassIndexPun
 ]
 
 { #category : #'class table' }

@@ -873,8 +873,8 @@ Spur64BitMemoryManager >> rawOverflowSlotsOf: objOop [
 	<inline: true>
 	self flag: #endianness.
 	^self
-		cCode: [((self longAt: objOop - self baseHeaderSize) << 8) asUnsignedInteger >> 8]
-		inSmalltalk: [(self longAt: objOop - self baseHeaderSize) bitAnd: 16rFFFFFFFFFFFFFF]
+		cCode: [((self wordAt: objOop - self baseHeaderSize) << 8) asUnsignedInteger >> 8]
+		inSmalltalk: [(self wordAt: objOop - self baseHeaderSize) bitAnd: 16rFFFFFFFFFFFFFF]
 ]
 
 { #category : #'object access' }
