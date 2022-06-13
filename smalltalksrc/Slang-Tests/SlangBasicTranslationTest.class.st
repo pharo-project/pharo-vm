@@ -1847,7 +1847,7 @@ SlangBasicTranslationTest >> testNonContiguousCaseStatementWithSameBodyAreCollap
 
 { #category : #'tests-blocks' }
 SlangBasicTranslationTest >> testReturnBlockValueValueValue [
-
+	
 	"Case:
 	
 	return [ :a :b :c | a + b ] value: d value: e value: f
@@ -1857,6 +1857,10 @@ SlangBasicTranslationTest >> testReturnBlockValueValueValue [
 	return d + e"
 
 	| translation |
+
+	"Should the arguments get discarded?"
+	self skip.
+
 
 	translation := self translate: (TReturnNode expression: 
 		(TSendNode new
