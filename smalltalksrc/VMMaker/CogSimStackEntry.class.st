@@ -266,7 +266,10 @@ CogSimStackEntry >> printStateOn: aStream [
 								nextPutAll: 'spill @ ';
 								nextPutAll: (cogit backEnd nameForRegister: register).
 							offset negative ifFalse: [aStream nextPut: $+].
-							aStream print: offset] }.
+							aStream print: offset].
+		[SSVectorRegister] -> [ aStream
+											nextPutAll: 'Vector Register ';
+											print: register ] }.
 	(spilled and: [type ~= SSSpill]) ifTrue:
 		[aStream nextPutAll: ' (spilled)'].
 	bcptr ifNotNil:
@@ -277,7 +280,7 @@ CogSimStackEntry >> printStateOn: aStream [
 { #category : #accessing }
 CogSimStackEntry >> register [
 	"Answer the value of register"
-	self assert: (type = SSBaseOffset or: [type = SSRegister]).
+	self assert: (type = SSBaseOffset or: [type = SSRegister or: [type = SSVectorRegister]]).
 	^register
 ]
 
@@ -291,10 +294,9 @@ CogSimStackEntry >> register: anObject [
 { #category : #accessing }
 CogSimStackEntry >> registerMask [
 	"Answer a bit mask for the receiver's register, if any."
-	^((type = SSBaseOffset
-		or: [type = SSRegister]) or: [type = SSVectorRegister])"TODO vector constant is not initialized"
-			ifTrue: [cogit registerMaskFor: register]
-			ifFalse: [0]
+	^ (type = SSBaseOffset or: [ type = SSRegister ])
+		  ifTrue: [ cogit registerMaskFor: register ]
+		  ifFalse: [ 0 ]
 ]
 
 { #category : #accessing }

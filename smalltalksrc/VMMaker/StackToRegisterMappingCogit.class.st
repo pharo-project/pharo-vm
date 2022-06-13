@@ -142,8 +142,7 @@ Class {
 	],
 	#classVars : [
 		'NeedsMergeFixupFlag',
-		'NeedsNonMergeFixupFlag',
-		'SSVectorRegister'
+		'NeedsNonMergeFixupFlag'
 	],
 	#pools : [
 		'CogCompilationConstants',
@@ -402,28 +401,10 @@ StackToRegisterMappingCogit class >> initializeSimStackConstants [
 	 object on the virtual stack (Smalltalk context stack) as compilation proceeds.  See
 	 stackToRegisterMapping in this class for documentation."
 
-	SSIllegal := 0.
 	SSBaseOffset := 1.
 	SSConstant := 2.
 	SSRegister := 3.
 	SSSpill := 4.
-	
-	" Native simulation stack"
-	SSNativeRegister := 5.
-	SSRegisterPair := 6.
-	SSRegisterDoubleFloat := 7.
-	SSRegisterSingleFloat := 8.
-
-	SSSpillNative := 9.
-	SSSpillInt64 := 10.
-	SSSpillFloat32 := 11.
-	SSSpillFloat64 := 12.
-
-	SSConstantInt32 := 13.
-	SSConstantInt64 := 14.
-	SSConstantFloat32 := 15.
-	SSConstantFloat64 := 16.
-	SSConstantNativePointer := 17.
 	
 	SSVectorRegister := 18.
 ]
@@ -2076,6 +2057,7 @@ StackToRegisterMappingCogit >> genPushArrayToRegister [
 	self AddR: indexReg R: arrayReg.
 	
 	vectorReg := self allocateVectorRegNotConflictingWith: 0.
+	self ssPushVectorRegister: vectorReg.
 	
 	self Ld1S: 64 Vr: vectorReg R: arrayReg Mw: 0
 ]
@@ -4017,13 +3999,6 @@ StackToRegisterMappingCogit >> ssAllocateRequiredRegMask: requiredRegsMask upThr
 ]
 
 { #category : #'simulation stack' }
-StackToRegisterMappingCogit >> ssFlushAll [
-	<inline: true>
-	self ssFlushTo: simStackPtr.
-	self voidReceiverResultRegContainsSelf.
-]
-
-{ #category : #'simulation stack' }
 StackToRegisterMappingCogit >> ssFlushTo: index [
 	<inline: true>
 	self assert: self tempsValidAndVolatileEntriesSpilled.
@@ -4160,6 +4135,19 @@ StackToRegisterMappingCogit >> ssPushRegister: reg [
 		spilled: false;
 		register: reg;
 		bcptr: bytecodePC.
+	self updateSimSpillBase.
+	^0
+]
+
+{ #category : #'simulation stack' }
+StackToRegisterMappingCogit >> ssPushVectorRegister: reg [
+	self ssPush: 1.
+	self ssTop
+		type: SSVectorRegister;
+		spilled: false;
+		register: reg;
+		bcptr: bytecodePC.
+	self ssTop.
 	self updateSimSpillBase.
 	^0
 ]
