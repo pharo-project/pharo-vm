@@ -72,6 +72,7 @@ VMPrimitiveTest >> setUp [
 
 	| newMethod ctx page |
 	super setUp.
+	self setUpContextClass.
 
 	"Create the root context with a valid method"
 	"Let's create a method with enough size. It should have at least a literal (4 or 8 bytes depending the word size) and some bytecodes, so we can put the IP inside the method"
@@ -227,6 +228,20 @@ VMPrimitiveTest >> testPrimitiveAddWithOverflowPreservesStack [
 	self assert: (interpreter stackValue: 1) equals: maxSmallInt.
 	
 	
+]
+
+{ #category : #running }
+VMPrimitiveTest >> testMulSmallIntegersWithOverflow [
+
+
+	| a b ifOverflowValue result |
+	a := memory integerObjectOf: memory minSmallInteger.
+	b := memory integerObjectOf: 2.
+	ifOverflowValue := memory integerObjectOf: 99.
+	
+	result := interpreter multiplySmallInteger: a withSmallInteger: b ifOverflow: [ ifOverflowValue ].
+	
+	self assert: result equals: ifOverflowValue
 ]
 
 { #category : #'tests - become' }
@@ -1330,6 +1345,20 @@ VMPrimitiveTest >> testPrimitiveDivOnNonIntegerResultRoundsAndDoesntFail [
 	interpreter primitiveDiv. 
 	
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 10). 
+]
+
+{ #category : #'tests - primitiveDiv' }
+VMPrimitiveTest >> testPrimitiveDivOverflow [
+
+	interpreter push: 42 "marker".
+	interpreter push: (memory integerObjectOf: memory minSmallInteger).
+	interpreter push: (memory integerObjectOf: -1).
+
+	interpreter primitiveDiv.
+
+	"Check it failed and it did not pop anything from the stack"
+	self assert: interpreter failed.
+	self assert: (interpreter pop: 2; popStack) equals: 42.
 ]
 
 { #category : #'tests - primitiveDiv' }
@@ -4881,6 +4910,20 @@ VMPrimitiveTest >> testPrimitiveStringAtShouldNotModifyStringIfFailedWhenNonChar
 	self assert: interpreter primFailCode equals: PrimErrBadArgument.
 
 	self assert: string contentEquals: (self newString: 'po')
+]
+
+{ #category : #running }
+VMPrimitiveTest >> testSubSmallIntegersWithOverflow [
+
+
+	| a b ifOverflowValue result |
+	a := memory integerObjectOf: memory minSmallInteger.
+	b := memory integerObjectOf: 1.
+	ifOverflowValue := memory integerObjectOf: 99.
+	
+	result := interpreter subSmallInteger: a withSmallInteger: b ifOverflow: [ ifOverflowValue ].
+	
+	self assert: result equals: ifOverflowValue
 ]
 
 { #category : #'tests - primitiveSubtract' }

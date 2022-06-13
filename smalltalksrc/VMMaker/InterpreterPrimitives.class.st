@@ -540,6 +540,31 @@ InterpreterPrimitives >> maybeInlinePositive32BitValueOf: oop [
 			^self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int']
 ]
 
+{ #category : #arithmetic }
+InterpreterPrimitives >> multiplySmallInteger: anInteger withSmallInteger: anotherInteger ifOverflow: aBlock [
+
+	"Multiply two signed integers and detect signed overflow"
+
+	| a b result |
+	a := objectMemory integerValueOf: anInteger.
+	b := objectMemory integerValueOf: anotherInteger.
+
+	(a > 0
+		 ifTrue: [ 
+			 b > 0
+				 ifTrue: [ a > (objectMemory maxSmallInteger / b) ]
+				 ifFalse: [ b < (objectMemory minSmallInteger / a) ] ]
+		 ifFalse: [ 
+			 b > 0
+				 ifTrue: [ a < (objectMemory minSmallInteger / b) ]
+				 ifFalse: [ 
+				 a ~= 0 and: [ b < (objectMemory maxSmallInteger / a) ] ] ])
+		ifTrue: [ ^ aBlock value ].
+
+	result := a * b.
+	^ objectMemory integerObjectOf: result
+]
+
 { #category : #'simulation support' }
 InterpreterPrimitives >> newMethod: oop [
 	<doNotGenerate>
@@ -4890,6 +4915,21 @@ InterpreterPrimitives >> sizeFieldOfAlien: alienObj [
 InterpreterPrimitives >> stackIntegerValue: aValue [
 
 	self subclassResponsibility
+]
+
+{ #category : #arithmetic }
+InterpreterPrimitives >> subSmallInteger: anInteger withSmallInteger: anotherInteger ifOverflow: aBlock [
+
+	"Subtract two signed integers and detect signed overflow"
+
+	| a b result |
+	a := objectMemory integerValueOf: anInteger.
+	b := objectMemory integerValueOf: anotherInteger.
+	
+	result := a - b.
+	^ (objectMemory isIntegerValue: result)
+		ifTrue: [ objectMemory integerObjectOf: result ]
+		ifFalse: aBlock
 ]
 
 { #category : #'primitive support' }
