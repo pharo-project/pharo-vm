@@ -3159,8 +3159,6 @@ TMethod >> tryToInlineMethodStatementsIn: aCodeGen statementListsInto: aBlock [
 	stmtLists do: [ :stmtList | 
 		newStatements := OrderedCollection new: stmtList statements size.
 		stmtList statements do: [ :stmt | 
-			1 haltIf: [ 
-				stmt isSend and: [ stmt selector = #initStackPagesAndInterpret ] ].
 			(self
 				 inlineCodeOrNilForStatement: stmt
 				 returningNodes: returningNodes
@@ -3169,19 +3167,7 @@ TMethod >> tryToInlineMethodStatementsIn: aCodeGen statementListsInto: aBlock [
 				ifNotNil: [ :inlinedStmts | 
 					didSomething := true.
 					newStatements addAllLast: inlinedStmts ] ].
-		stmtList statements: newStatements asArray ].
-
-	"This is a hack; forgive me. The inlining above tends to keep return statements in statement lists.
-	 In the case of returning ifs we don't want the returns in case the returning if is generated as an expression."
-	returningNodes do: [ :returningNode | 
-		(returningNode isConditionalSend and: [ 
-			 returningNode arguments anySatisfy: [ :alternativeNode | 
-				 alternativeNode endsWithReturn ] ]) ifTrue: [ 
-			returningNode arguments withIndexDo: [ :alternativeNode :index | 
-				alternativeNode endsWithReturn ifTrue: [ 
-					returningNode arguments
-						at: index
-						put: alternativeNode copyWithoutReturn ] ] ] ].
+		stmtList setStatements: newStatements asArray ].
 
 	aBlock value: stmtLists.
 

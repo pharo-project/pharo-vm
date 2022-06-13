@@ -131,15 +131,12 @@ TAssignmentNode >> asCASTValueExpansionIn: aCodeGen [
 	"
 	stmtList statements last = variable ifTrue: [ 
 		^ expression asCASTIn: aCodeGen ].
-	copy := stmtList copy.
-	copy statements
-		at: stmtList statements size
-		put:
-		(TAssignmentNode new setVariable: variable expression: lastStmt).
+	
+	"Else rewrite the block to move the assignment inside"
 	^ (TSendNode new
 		   setSelector: expression selector
-		   receiver: copy
-		   arguments: expression arguments) asCASTIn: aCodeGen
+		   receiver: (stmtList asLastExpressionAssignmentTo: variable copy)
+		   arguments: expression args) asCASTIn: aCodeGen
 ]
 
 { #category : #transformations }

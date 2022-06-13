@@ -138,11 +138,13 @@ SlangBasicTranslationTest >> testAssignBlockWithNonLocalReturn [
 	| translation send |
 	send := TAssignmentNode
 		variable: (TVariableNode new setName: 'y')
-		expression: (TStmtListNode statements: { 
-          (TSendNode
-	 			receiver: TVariableNode selfNode
-				selector: #foo).
-          (TReturnNode expression: (TConstantNode value: 7)) }).
+		expression: (TSendNode
+			receiver: (TStmtListNode statements: { 
+	          (TSendNode
+		 			receiver: TVariableNode selfNode
+					selector: #foo).
+	          (TReturnNode expression: (TConstantNode value: 7)) })
+		selector: #value).
 	translation := self translate: send.
 
 	self assert: translation equals:
