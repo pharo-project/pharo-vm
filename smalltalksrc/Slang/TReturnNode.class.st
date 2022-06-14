@@ -54,8 +54,10 @@ TReturnNode >> asCASTIn: aBuilder [
 	{ a . ^ last }.
 	"
 	(expression isSend and: [expression isValueExpansion]) ifTrue: [
-		"Returning a block with many arguments is not yet implemented"
-		expression arguments ifNotEmpty: [ self notYetImplemented ].
+		"If the any argument is used inside the block, we cannot just ignore arguments!"
+		expression receiver nodesDo: [ :n | 
+			(n isVariable and: [ expression receiver args includes: n name ])
+				ifTrue:[ self notYetImplemented ] ].
 		^ expression receiver asReturnNode asCASTIn: aBuilder ].
 
 	'void' = aBuilder currentMethod returnType ifTrue: [

@@ -32,13 +32,23 @@ TAssignmentNode >> accept: aVisitor [
 ]
 
 { #category : #'C code generation' }
-TAssignmentNode >> asCASTExpressionIn: aCodeGen [
+TAssignmentNode >> asCASTExpressionIn: aBuilder [
 
-	(expression isStatementList and: [ expression statements size > 1 ]) 
-		ifTrue: [ ^ self asCASTStatementListExpansionAsExpression: aCodeGen ].
-	^ (self asCASTIn: aCodeGen)
-"		  needsParentheses: true;"
-		  yourself
+	(expression isStmtList and: [ expression statements size > 1 ]) 
+		ifTrue: [
+			^ self asCASTStatementListExpansionAsExpression: aBuilder ].
+	self isVariableUpdatingAssignment ifTrue: [ 
+		^ CAssignmentNode
+			  lvalue: (variable asCASTIn: aBuilder)
+			  operator: expression selector , '='
+			  rvalue: (expression arguments first asCASTExpressionIn: aBuilder) ].
+
+	(expression isSend and: [ expression isValueExpansion ]) ifTrue: [ 
+		^ self asCASTValueExpansionIn: aBuilder ].
+
+	^ CAssignmentNode
+		  lvalue: (variable asCASTIn: aBuilder)
+		  rvalue: (expression asCASTExpressionIn: aBuilder)
 ]
 
 { #category : #tranforming }
@@ -83,16 +93,12 @@ TAssignmentNode >> asCASTIn: aBuilder [
 
 	expression isConditionalSend ifTrue: [ | conditionalAsStatement |
 		conditionalAsStatement := expression copy.
-		conditionalAsStatement arguments: (conditionalAsStatement arguments 
-			collect: [ :arg | arg asLastExpressionAssignmentTo: variable copy ]).
+		conditionalAsStatement arguments:
+			(conditionalAsStatement arguments collect: [ :arg | 
+				 arg asLastExpressionAssignmentTo: variable copy ]).
 		^ conditionalAsStatement asCASTIn: aBuilder ].
-
-	(expression isSend and: [ expression isValueExpansion ]) ifTrue: [ 
-		^ self asCASTValueExpansionIn: aBuilder ].
-
-	^ CAssignmentNode
-		  lvalue: (variable asCASTIn: aBuilder)
-		  rvalue: (expression asCASTExpressionIn: aBuilder)
+	
+	^ self asCASTExpressionIn: aBuilder
 ]
 
 { #category : #'C code generation' }

@@ -2235,7 +2235,7 @@ CCodeGenerator >> generateCASTIsNil: tast [
 
 	^ CBinaryOperatorNode
 		  operator: #==
-		  left: (tast receiver asCASTIn: self)
+		  left: (tast receiver asCASTExpressionIn: self)
 		  right: (CIdentifierNode name: self nilTranslation)
 ]
 

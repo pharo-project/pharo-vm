@@ -6521,10 +6521,7 @@ SlangBasicTranslationTest >> testTranslateBlockAssignmentWithManyStatement [
 			                setVariable: variable
 			                expression: expression).
 
-	self assert: translation trimBoth equals: '{
-	a = b;
-	var = c = 1;
-}'
+	self assert: translation trimBoth equals: '(a = b, var = c = 1)'
 ]
 
 { #category : #'tests-define' }
