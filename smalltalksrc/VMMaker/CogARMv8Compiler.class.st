@@ -3032,26 +3032,34 @@ CogARMv8Compiler >> concretizeSt1VRMRO [
 
 	<inline: true>
 	| opCode instruction q t size vectorR memoryR offset rm |
-	opCode := 2r0111. "TODO support multiple-register variants"
-	rm := 2r11111. "TODO support register offset variant"
 	size := operands at: 0.
 	vectorR := operands at: 1.
 	memoryR := operands at: 2.
 	offset := operands at: 3.
+	opCode := 2r0111. "TODO support multiple-register variants"
 
-	((size = 64) & (offset = 16))
+	size = 64 & (offset = 0 | (offset = 16))
 		ifTrue: [ 
 			q := 1.
 			t := 11 ]
 		ifFalse: [ self notYetImplemented ].
 
-	instruction := self
-		               st1Q: q
-		               Rm: rm
-		               OpCode: opCode
-		               S: t
-		               Rn: memoryR
-		               Rt: vectorR.
+	instruction := offset = 0
+		               ifTrue: [ 
+			               self
+				               st1Q: q
+				               OpCode: opCode
+				               S: t
+				               Rn: memoryR
+				               Rt: vectorR ]
+		               ifFalse: [ 
+			               self
+				               st1Q: q
+				               Rm: 2r11111
+				               OpCode: opCode
+				               S: t
+				               Rn: memoryR
+				               Rt: vectorR ].
 
 	self machineCodeAt: 0 put: instruction.
 
@@ -5803,6 +5811,24 @@ CogARMv8Compiler >> smulhSize: is64bits firstRegister: registerA secondRegister:
 		bitOr: (16r1f << 10
 		bitOr: (((registerA bitAnd: 16r1f) << 5)
 		bitOr: (destinationRegister bitAnd: 16r1f))))
+]
+
+{ #category : #concretizing }
+CogARMv8Compiler >> st1Q: q OpCode: opCode S: size Rn: rn Rt: rt [
+
+	"
+	C7.2.321 ST1 (multiple structures)
+
+	ST1 { <Vt>.<T> }, [<Xn|SP>]
+
+	Store multiple single-element structures from one, two, three, or four registers. This instruction 	stores elements to memory from one, two, three, or four SIMD&FP registers, without interleaving. 	Every element of each register is stored."
+	
+	^ q << 30
+		bitOr: (2r11000 << 23
+		bitOr: ((opCode bitAnd: 2r1111) << 12
+		bitOr: ((size bitAnd: 2r11) << 10
+		bitOr: ((rn bitAnd: 2r11111) << 5
+		bitOr: (rt bitAnd: 2r11111)))))
 ]
 
 { #category : #concretizing }

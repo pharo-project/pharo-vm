@@ -759,6 +759,34 @@ StackToRegisterMappingCogit >> allocateRegNotConflictingWith: regMask [
 ]
 
 { #category : #'simulation stack' }
+StackToRegisterMappingCogit >> allocateVectorRegForStackEntryAt: index notConflictingWith: regMask [
+	"If the stack entry is already in a register not conflicting with regMask, answers it,
+	else allocate a new register not conflicting with reg mask"
+	<var: #stackEntry type: #'CogSimStackEntry *'>
+	| stackEntry mask |
+	stackEntry := self ssValue: index.
+	mask := stackEntry registerMaskOrNone.
+	(mask ~= 0 and: [mask noMask: regMask]) ifTrue: 
+		[self flag: #TODO.
+		"When one does pushDup on a SSRegister
+		 followed by an operation reusing the register 
+		 but mutating the value of the register, then the value that was 
+		 dup is now refering to the register with a mutated value which
+		 is incorrect. This problem is serious as it can happen also with 
+		 multiple unsafe instructions (no dup involved)
+		 This is not a problem if the operation reusing the register is not 
+		 mutating the value of if all the dup values are used in the same 
+		 operation.
+		 => I think we should introduce allocateRegMutatingStackEntryAt:
+		notConflictingWith:upThrough:, used by operations mutating the reg
+		value and flushing partially the stack if somewhere between simSpill
+		and the ssEntries used by the operation someone uses also the same
+		register."
+		 ^stackEntry registerOrNone].
+	^self allocateVectorRegNotConflictingWith: regMask
+]
+
+{ #category : #'simulation stack' }
 StackToRegisterMappingCogit >> allocateVectorRegNotConflictingWith: regMask [
 	| reg |
 	"if there's a free register, use it"
@@ -2774,8 +2802,31 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean TemporaryVariable: tempIn
 
 { #category : #'mapped inline primitive generators' }
 StackToRegisterMappingCogit >> genStoreRegisterIntoArray [
-	^EncounteredUnknownBytecode
+	| arrayReg indexReg vectorReg |
+	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
+	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
 	
+	self ssTop moveToReg: arrayReg.
+	self ssPop: 1.
+	
+	self ssTop moveToReg: indexReg.
+	self ssPop: 1.
+	
+	self AddCq: objectMemory baseHeaderSize R: arrayReg.
+
+	"The index is a SmallInteger, so it is shifted left 3 and plus 1. So, as we need to untag it and then shift it 3 (for getting number of bytes from number of elements), we just substract 1. 
+	Only valid in 64bits Lanes and 64bits machine."
+
+	self assert: (objectMemory wordSize = 8).
+	
+	self SubCq: 1 R: indexReg.
+	self AddR: indexReg R: arrayReg.
+	
+	vectorReg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
+	self ssTop moveToVectorReg: vectorReg.
+	self ssPop: 1.
+	
+	self St1S: 64 Vr: vectorReg R: arrayReg Mw: 0
 ]
 
 { #category : #'bytecode generator stores' }

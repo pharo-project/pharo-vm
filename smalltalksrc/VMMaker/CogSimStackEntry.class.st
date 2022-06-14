@@ -231,6 +231,18 @@ CogSimStackEntry >> moveToReg: reg [
 										ifFalse: [cogit Label]] }]
 ]
 
+{ #category : #'compile abstract instructions' }
+CogSimStackEntry >> moveToVectorReg: reg [
+	spilled
+		ifTrue:
+			[self notYetImplemented]
+		ifFalse:
+			[type caseOf: {
+				[SSVectorRegister]	-> [reg ~= register
+										ifTrue: [self notYetImplemented]
+										ifFalse: [cogit Label]] }]
+]
+
 { #category : #accessing }
 CogSimStackEntry >> offset [
 	"Answer the value of offset"
@@ -301,12 +313,12 @@ CogSimStackEntry >> registerMask [
 
 { #category : #accessing }
 CogSimStackEntry >> registerMaskOrNone [
-	^type = SSRegister ifTrue: [cogit registerMaskFor: register] ifFalse: [0]
+	^((type = SSRegister) | (type = SSVectorRegister)) ifTrue: [cogit registerMaskFor: register] ifFalse: [0]
 ]
 
 { #category : #accessing }
 CogSimStackEntry >> registerOrNone [
-	^type = SSRegister ifTrue: [register] ifFalse: [NoReg]
+	^((type = SSRegister) | (type = SSVectorRegister)) ifTrue: [register] ifFalse: [NoReg]
 ]
 
 { #category : #accessing }

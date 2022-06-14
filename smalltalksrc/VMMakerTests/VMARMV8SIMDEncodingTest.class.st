@@ -83,3 +83,13 @@ VMARMV8SIMDEncodingTest >> testEncodeSt1WithOne64BitLaneRegisterAndImmediateOffs
 		assert: (self armInstructionAt: 1) assemblyCodeString
 		equals: 'st1	{ v0.2d }, [x1], #16'
 ]
+
+{ #category : #tests }
+VMARMV8SIMDEncodingTest >> testEncodeSt1WithOne64BitLaneRegisterAndNoOffset [
+
+	self compile: [ cogit St1S: 64 Vr: 0 R: 1 Mw: 0 ].
+	
+	self
+		assert: (self armInstructionAt: 1) assemblyCodeString
+		equals: 'st1	{ v0.2d }, [x1]'
+]
