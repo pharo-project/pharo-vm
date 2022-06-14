@@ -15,8 +15,8 @@ CTernaryNode class >> condition: aCondition then: thenExpression else: elseExpre
 
 	^ self new
 		  condition: aCondition;
-		  then: thenExpression withParentheses;
-		  else: elseExpression withParentheses;
+		  then: thenExpression;
+		  else: elseExpression;
 		  printOnMultipleLines: false;
 		  yourself
 ]
@@ -37,7 +37,7 @@ CTernaryNode >> condition: aCGLRExpressionNode [
 	
 	self condition notNil
 		ifTrue: [ self condition parent: nil ].
-	condition := aCGLRExpressionNode withoutParentheses.
+	condition := aCGLRExpressionNode withParentheses.
 	self condition notNil
 		ifTrue: [ self condition parent: self ]
 ]
@@ -53,7 +53,7 @@ CTernaryNode >> else: aCGLRExpressionNode [
 	
 	self else notNil
 		ifTrue: [ self else parent: nil ].
-	else := aCGLRExpressionNode withoutParentheses.
+	else := aCGLRExpressionNode withParentheses.
 	self else notNil
 		ifTrue: [ self else parent: self ]
 ]
@@ -86,7 +86,7 @@ CTernaryNode >> then: aCGLRExpressionNode [
 	
 	self then notNil
 		ifTrue: [ self then parent: nil ].
-	then := aCGLRExpressionNode withoutParentheses.
+	then := aCGLRExpressionNode withParentheses.
 	self then notNil
 		ifTrue: [ self then parent: self ]
 ]

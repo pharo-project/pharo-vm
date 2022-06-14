@@ -474,13 +474,8 @@ TSendNode >> numArgs [
 { #category : #copying }
 TSendNode >> postCopy [
 
-<<<<<<< HEAD
 	self receiver: receiver copy.
 	self arguments: (arguments collect: [ :arg | arg copy ])
-=======
-	receiver := receiver copy.
-	arguments := arguments collect: [ :arg | arg copy ]
->>>>>>> 40e63d9645 (Added better return conditional translation)
 ]
 
 { #category : #printing }
