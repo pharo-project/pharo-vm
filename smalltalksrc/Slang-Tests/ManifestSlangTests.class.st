@@ -4,5 +4,5 @@ Please describe the package using the class comment of the included manifest cla
 Class {
 	#name : #ManifestSlangTests,
 	#superclass : #PackageManifest,
-	#category : #'Slang-Tests-Manifest'
+	#category : #'Slang-Tests'
 }

@@ -1610,24 +1610,20 @@ CCodeGenerator >> generateCASTBitShift: tast cast: type [
 				   operator: #<
 				   left: (arg asCASTExpressionIn: self)
 				   right: (CConstantNode value: 0))
-		  then: ((CBinaryOperatorNode
-				    operator: #>>
-				    left: (CCastExpressionNode
-						     type: (CTypeNameNode symbol: type)
-						     expression: (receiver asCASTExpressionIn: self))
-				    right: (CUnaryOperatorNode
-						     operator: #-
-						     expression: (arg asCASTExpressionIn: self)))
-				   needsParentheses: true;
-				   yourself)
-		  else: ((CBinaryOperatorNode
-				    operator: #<<
-				    left: (CCastExpressionNode
-						     type: (CTypeNameNode symbol: type)
-						     expression: (receiver asCASTExpressionIn: self))
-				    right: (arg asCASTExpressionIn: self))
-				   needsParentheses: true;
-				   yourself)
+		  then: (CBinaryOperatorNode
+				   operator: #>>
+				   left: (CCastExpressionNode
+						    type: (CTypeNameNode symbol: type)
+						    expression: (receiver asCASTExpressionIn: self))
+				   right: (CUnaryOperatorNode
+						    operator: #-
+						    expression: (arg asCASTExpressionIn: self)))
+		  else: (CBinaryOperatorNode
+				   operator: #<<
+				   left: (CCastExpressionNode
+						    type: (CTypeNameNode symbol: type)
+						    expression: (receiver asCASTExpressionIn: self))
+				   right: (arg asCASTExpressionIn: self))
 ]
 
 { #category : #'CAST translation' }
@@ -2067,9 +2063,8 @@ CCodeGenerator >> generateCASTIfTrueAsArgument: tast [
 	(self nilOrBooleanConstantReceiverOf: tast receiver)
 		ifNil: [ 
 			^ (CTernaryNode
-				   condition: ((tast receiver asCASTExpressionIn: self)
-						    needsParentheses: false;
-						    yourself)
+				   condition:
+					   (tast receiver asCASTExpressionIn: self) withoutParentheses
 				   then: (tast arguments first asCASTExpressionIn: self)
 				   else: (CConstantNode value: 0))
 				  printOnMultipleLines: true;

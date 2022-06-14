@@ -4,5 +4,5 @@ Please describe the package using the class comment of the included manifest cla
 Class {
 	#name : #ManifestMelchor,
 	#superclass : #PackageManifest,
-	#category : #'Melchor-Manifest'
+	#category : #Melchor
 }

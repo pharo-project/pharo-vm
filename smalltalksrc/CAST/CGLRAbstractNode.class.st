@@ -159,6 +159,12 @@ CGLRAbstractNode >> needsTrailingSemicolon [
 ]
 
 { #category : #accessing }
+CGLRAbstractNode >> withParentheses [
+
+	self error: 'Statements can have no parentheses'
+]
+
+{ #category : #accessing }
 CGLRAbstractNode >> withoutParentheses [
 
 	"I already have no parentheses"

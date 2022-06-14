@@ -15,8 +15,8 @@ CTernaryNode class >> condition: aCondition then: thenExpression else: elseExpre
 
 	^ self new
 		  condition: aCondition;
-		  then: thenExpression;
-		  else: elseExpression;
+		  then: thenExpression withParentheses;
+		  else: elseExpression withParentheses;
 		  printOnMultipleLines: false;
 		  yourself
 ]
