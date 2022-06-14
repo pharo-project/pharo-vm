@@ -1993,8 +1993,8 @@ StackInterpreter >> addVectorBytecode [
 	<var: #tmp type: #double>
 	
 	| arg rcv res tmp |
-	arg := self internalStackValue: 0.
-	rcv := self internalStackValue: 1.
+	arg := self stackValue: 0.
+	rcv := self stackValue: 1.
 	
 "	res := objectMemory 
 		eeInstantiateClassIndex: ClassFloat64RegisterIndex 
@@ -2009,7 +2009,7 @@ StackInterpreter >> addVectorBytecode [
 	tmp := (objectMemory fetchFloat64: 1 ofObject: arg) + (objectMemory fetchFloat64: 1 ofObject: rcv).
 	objectMemory storeFloat64: 1 ofObject: res withValue: tmp. 
 		
-	self internalPop: 2 thenPush: res.
+	self pop: 2 thenPush: res.
 ]
 
 { #category : #'debug support' }
@@ -12594,15 +12594,15 @@ StackInterpreter >> pushActiveContextBytecode [
 { #category : #'simd bytecodes' }
 StackInterpreter >> pushArrayToRegisterBytecode [
 	| array index reg |
-	array := self internalStackValue: 0.
-	index := objectMemory integerValueOf: (self internalStackValue: 1).
+	array := self stackValue: 0.
+	index := objectMemory integerValueOf: (self stackValue: 1).
 	
 	reg := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
 	
 	objectMemory storeFloat64: 0 ofObject: reg withValue: (objectMemory fetchFloat64: index ofObject: array). 
 	objectMemory storeFloat64: 1 ofObject: reg withValue: (objectMemory fetchFloat64: (index+1) ofObject: array). 
 		
-	self internalPop: 2 thenPush: reg.
+	self pop: 2 thenPush: reg.
 ]
 
 { #category : #'internal interpreter access' }
@@ -14888,14 +14888,14 @@ StackInterpreter >> storeMaybeContextReceiverVariable: fieldIndex withValue: anO
 { #category : #'simd bytecodes' }
 StackInterpreter >> storeRegisterIntoArrayBytecode [
 	| reg index array |
-	array := self internalStackValue: 0.
-	index := objectMemory integerValueOf: (self internalStackValue: 1).
-	reg := self internalStackValue: 2.
+	array := self stackValue: 0.
+	index := objectMemory integerValueOf: (self stackValue: 1).
+	reg := self stackValue: 2.
 	
 	objectMemory storeFloat64: index ofObject: array withValue: (objectMemory fetchFloat64: 0 ofObject: reg). 
 	objectMemory storeFloat64: (index+1) ofObject: array withValue: (objectMemory fetchFloat64: 1 ofObject: reg). 
 		
-	self internalPop: 3 thenPush: array.
+	self pop: 3 thenPush: array.
 ]
 
 { #category : #'stack bytecodes' }
