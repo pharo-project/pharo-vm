@@ -94,14 +94,16 @@ TAssignmentNode >> asCASTIn: aBuilder [
 			(conditionalAsStatement arguments collect: [ :arg | 
 				 arg asLastExpressionAssignmentTo: variable copy ]).
 		^ conditionalAsStatement asCASTIn: aBuilder ].
-	
+
 	(expression isSend and: [ expression isValueExpansion ]) ifTrue: [ 
 		^ self asCASTValueExpansionIn: aBuilder ].
 
-	
+	(expression isStmtList and: [ expression statements size > 1 ]) ifTrue: [ 
+		^ (expression asLastExpressionAssignmentTo: variable) asCASTIn: aBuilder ].
+
 	^ (self asCASTExpressionIn: aBuilder)
-		needsParentheses: false;
-		yourself
+		  needsParentheses: false;
+		  yourself
 ]
 
 { #category : #'C code generation' }
