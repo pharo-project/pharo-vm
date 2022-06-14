@@ -2068,6 +2068,16 @@ Cogit >> DupS: aSize R: aGeneralRegister Vr: aVectorRegister [
 ]
 
 { #category : #'abstract instructions' }
+Cogit >> FaddS: aSize Rv: vectorRegister1 Rv: vectorRegister2 Rv: vectorRegisterSum [ 
+	^ self
+		  gen: FaddSRvRvRv
+		  operand: aSize 
+		  operand: vectorRegister1
+		  operand: vectorRegister2 
+		  operand: vectorRegisterSum
+]
+
+{ #category : #'abstract instructions' }
 Cogit >> Fill32: value [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>

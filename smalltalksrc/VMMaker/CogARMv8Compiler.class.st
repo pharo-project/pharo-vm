@@ -393,6 +393,27 @@ CogARMv8Compiler >> addSize: is64Bits sourceRegister: sourceRegister shift: shif
 		bitOr: (destinationRegister bitAnd: 2r11111)))))
 ]
 
+{ #category : #adding }
+CogARMv8Compiler >> addT: t q: q term1: vectorReg1 term2: vectorReg2 dest: vectorRegSum [ 
+
+	"
+	C7.2.49 FADD (vector)
+	
+	FADD <Vd>.<T>, <Vn>.<T>, <Vm>.<T>
+
+	This instruction adds corresponding vector elements in the two source SIMD&FP registers, writes the result into a vector, and writes the vector to the destination SIMD&FP register.
+	All the values in this instruction are floating-point values."
+	
+	^ q << 30
+		bitOr: (2r01110 << 24
+		bitOr: ((t bitAnd: 1) << 22
+		bitOr: (1 << 21
+		bitOr: ((vectorReg2 bitAnd: 2r11111) << 16
+		bitOr: (2r110101 << 10
+		bitOr: ((vectorReg1 bitAnd: 2r11111) << 5
+		bitOr: (vectorRegSum bitAnd: 2r11111)))))))
+]
+
 { #category : #assembler }
 CogARMv8Compiler >> addsExtendedSize: is64Bits leftRegisterMaybeSP: leftRegister shiftedRightRegister: rightRegister option: option shiftOffset: immediate3bitValue destinationRegister: destinationRegister [
 	
@@ -1243,6 +1264,7 @@ CogARMv8Compiler >> computeMaximumSize [
 		[DupRVr] -> [ ^ 4 ].
 		[St1VrRMw] -> [ ^ 4 ].
 		[Ld1VrRMw] -> [ ^ 4 ].
+		[FaddSRvRvRv] -> [ ^ 4 ].
 		}.
 	^0 "to keep C compiler quiet"
 
@@ -1834,6 +1856,31 @@ CogARMv8Compiler >> concretizeFPConditionalJump: conditionCode [
 
 	<inline: true>
 	^ self concretizeConditionalJump: conditionCode
+]
+
+{ #category : #concretizing }
+CogARMv8Compiler >> concretizeFaddSRvRvRv [
+
+	"Will get inlined into concretizeAt: switch."
+
+	<inline: true>
+
+	| size vectorReg1 vectorReg2 vectorRegSum t q instruction |
+
+	size := operands at: 0.
+	vectorReg1 := operands at: 1.
+	vectorReg2 := operands at: 2.
+	vectorRegSum := operands at: 3.
+
+	size = 64 
+		ifTrue: [ t := 1. q := 1 ]
+		ifFalse: [ self notYetImplemented ].
+
+	instruction := self addT: t q: q term1: vectorReg1 term2: vectorReg2 dest: vectorRegSum.
+
+	self machineCodeAt: 0 put: instruction.
+
+	^ machineCodeSize := 4
 ]
 
 { #category : #'generate machine code' }
@@ -3454,6 +3501,7 @@ CogARMv8Compiler >> dispatchConcretize [
 		[ DupRVr ] -> [ ^ self concretizeDupRVr ].
 		[ St1VrRMw ] -> [ ^ self concretizeSt1VRMRO ].
 		[ Ld1VrRMw ] -> [ ^ self concretizeLd1SVrRMw ].
+		[ FaddSRvRvRv ] -> [ ^ self concretizeFaddSRvRvRv ].
 		}
 ]
 
@@ -5813,7 +5861,7 @@ CogARMv8Compiler >> smulhSize: is64bits firstRegister: registerA secondRegister:
 		bitOr: (destinationRegister bitAnd: 16r1f))))
 ]
 
-{ #category : #concretizing }
+{ #category : #assembler }
 CogARMv8Compiler >> st1Q: q OpCode: opCode S: size Rn: rn Rt: rt [
 
 	"
@@ -5831,7 +5879,7 @@ CogARMv8Compiler >> st1Q: q OpCode: opCode S: size Rn: rn Rt: rt [
 		bitOr: (rt bitAnd: 2r11111)))))
 ]
 
-{ #category : #concretizing }
+{ #category : #assembler }
 CogARMv8Compiler >> st1Q: q Rm: rm OpCode: opCode S: size Rn: rn Rt: rt [
 
 	"
