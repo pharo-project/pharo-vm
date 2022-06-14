@@ -193,7 +193,7 @@ SlangBasicTranslationTest >> testAssignementAsExpression [
 								           expression: (TConstantNode value: false)).
 	translation := self translate: send.
 
-	self assert: translation equals: 'y = a = 0'
+	self assert: translation equals: 'y = (a = 0)'
 ]
 
 { #category : #'tests-assignment' }
@@ -2367,7 +2367,7 @@ SlangBasicTranslationTest >> testSendAtPut [
 				        (TVariableNode new setName: 'a') }.
 	translation := self translate: send.
 
-	self assert: translation equals: 'tab[7] = a'
+	self assert: translation equals: '(tab[7] = a)'
 ]
 
 { #category : #'tests-builtins' }
@@ -2505,7 +2505,7 @@ SlangBasicTranslationTest >> testSendBitShiftWithExpressionShiftValue [
 				         arguments: { (TConstantNode value: 2) }) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '(((var + 2) < 0) ? (((usqInt) a ) >> (-(var + 2))) : (((usqInt) a ) << (var + 2)))'
+	self assert: translation equals: '(((var + 2) < 0) ? ((usqInt) a ) >> (-(var + 2)) : ((usqInt) a ) << (var + 2))'
 ]
 
 { #category : #'tests-builtins' }
@@ -3028,7 +3028,7 @@ SlangBasicTranslationTest >> testSendCppIfIfTrueWithSingleExpressionDoesNotAddsS
 
 	self assert: translation trimBoth equals: 'return 
 #  if FEATURE
-		a = 0
+		(a = 0)
 #  endif /* FEATURE */'
 ]
 
@@ -3211,7 +3211,7 @@ SlangBasicTranslationTest >> testSendIfFalseAsArgument [
 	self assert: translation trimBoth equals:
 'if (!x) {
 	a = 0;
-	y = c = 1;
+	y = (c = 1);
 }'
 ]
 
@@ -3238,7 +3238,7 @@ SlangBasicTranslationTest >> testSendIfFalseAsArgumentWithNonLeafReceiver [
 
 	self assert: translation trimBoth equals: 'if (!(x && y)) {
 	a = 0;
-	y = c = 1;
+	y = (c = 1);
 }'
 ]
 
@@ -3268,7 +3268,7 @@ SlangBasicTranslationTest >> testSendIfFalseAsArgumentWithReceiverSendNot [
 
 	self assert: translation trimBoth equals: 'if (x && y) {
 	a = 0;
-	y = c = 1;
+	y = (c = 1);
 }'
 ]
 
@@ -3329,10 +3329,10 @@ SlangBasicTranslationTest >> testSendIfFalseIfTrueAsArgument [
 
 	self assert: translation trimBoth equals: 'if (x) {
 	a = 1;
-	y = c = 0;
+	y = (c = 0);
 } else {
 	a = 0;
-	y = c = 1;
+	y = (c = 1);
 }'
 ]
 
@@ -3368,7 +3368,7 @@ SlangBasicTranslationTest >> testSendIfFalseIfTrueAsArgumentCollapseBothArmsOfCo
 	self assert: translation trimBoth equals: 'foo(x, 7);
 {
 	a = 0;
-	y = c = 1;
+	y = (c = 1);
 }'
 ]
 
@@ -3400,7 +3400,7 @@ SlangBasicTranslationTest >> testSendIfFalseIfTrueAsArgumentCollapseBothArmsOfCo
 
 	self assert: translation trimBoth equals: '{
 	a = 0;
-	y = c = 1;
+	y = (c = 1);
 }'
 ]
 
@@ -4030,7 +4030,7 @@ SlangBasicTranslationTest >> testSendIfTrueAsArgument [
 
 	self assert: translation trimBoth equals: 'if (x) {
 	a = 0;
-	y = c = 1;
+	y = (c = 1);
 }'
 ]
 
@@ -4057,7 +4057,7 @@ SlangBasicTranslationTest >> testSendIfTrueAsArgumentWithNonLeafReceiver [
 
 	self assert: translation trimBoth equals: 'if (x && y) {
 	a = 0;
-	y = c = 1;
+	y = (c = 1);
 }'
 ]
 
@@ -4134,10 +4134,10 @@ SlangBasicTranslationTest >> testSendIfTrueIfFalseAsArgument [
 
 	self assert: translation trimBoth equals: 'if (x) {
 	a = 0;
-	y = c = 1;
+	y = (c = 1);
 } else {
 	a = 1;
-	y = c = 0;
+	y = (c = 0);
 }'
 ]
 
@@ -4173,7 +4173,7 @@ SlangBasicTranslationTest >> testSendIfTrueIfFalseAsArgumentCollapseBothArmsOfCo
 	self assert: translation trimBoth equals: 'foo(x, 7);
 {
 	a = 0;
-	y = c = 1;
+	y = (c = 1);
 }'
 ]
 
@@ -4205,7 +4205,7 @@ SlangBasicTranslationTest >> testSendIfTrueIfFalseAsArgumentCollapseBothArmsOfCo
 
 	self assert: translation trimBoth equals: '{
 	a = 0;
-	y = c = 1;
+	y = (c = 1);
 }'
 ]
 
@@ -6320,7 +6320,7 @@ SlangBasicTranslationTest >> testSwitchStatementAsArgumentWithSwitchVariable [
 			                arguments:
 			                { (TStatementListNode new statements: {  }) }).
 
-	self assert: translation trimBoth equals: 'if ((((jinx = x) == 0)
+	self assert: translation trimBoth equals: 'if (((((jinx = x)) == 0)
 	 ? foo = 10
 	 : ((jinx == 1)
 		 ? foo = 11
@@ -6356,12 +6356,12 @@ SlangBasicTranslationTest >> testSwitchStatementInAssignmentAddAssignmentToEndOf
 	self assert: translation trimBoth equals: 'switch (x) {
 	case 0:
 	{
-		toto = foo = 10;
+		toto = (foo = 10);
 	}
 	break;
 	default:
 	{
-		toto = foo = 0;
+		toto = (foo = 0);
 	}
 }'
 ]
@@ -6391,7 +6391,7 @@ SlangBasicTranslationTest >> testSwitchStatementInAssignmentAddAssignmentToEndOf
 	self assert: translation trimBoth equals: 'switch (x) {
 	case 0:
 	{
-		toto = foo = 10;
+		toto = (foo = 10);
 	}
 	break;
 	default:
@@ -6425,7 +6425,7 @@ SlangBasicTranslationTest >> testSwitchStatementInAssignmentAddAssignmentToEndOf
 	self assert: translation trimBoth equals: 'switch (x) {
 	case 0:
 	{
-		toto = foo = 10;
+		toto = (foo = 10);
 	}
 	break;
 	default:
@@ -6521,7 +6521,7 @@ SlangBasicTranslationTest >> testTranslateBlockAssignmentWithManyStatement [
 			                setVariable: variable
 			                expression: expression).
 
-	self assert: translation trimBoth equals: '(a = b, var = c = 1)'
+	self assert: translation trimBoth equals: '(a = b, var = (c = 1))'
 ]
 
 { #category : #'tests-define' }

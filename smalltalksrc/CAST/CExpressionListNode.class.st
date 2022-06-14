@@ -23,7 +23,7 @@ CExpressionListNode >> acceptVisitor: anAbstractVisitor [
 { #category : #adding }
 CExpressionListNode >> add: anExpression [
 	
-	expressions add: anExpression
+	expressions add: anExpression withoutParentheses
 ]
 
 { #category : #adding }

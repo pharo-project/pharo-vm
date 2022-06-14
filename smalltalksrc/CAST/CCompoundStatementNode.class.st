@@ -45,13 +45,13 @@ CCompoundStatementNode >> acceptVisitor: anAbstractVisitor [
 { #category : #adding }
 CCompoundStatementNode >> add: aStatement [
 
-	statements add: aStatement
+	statements add: aStatement withoutParentheses
 ]
 
 { #category : #adding }
 CCompoundStatementNode >> addAll: aCompoundStatement [
 
-	statements addAll: aCompoundStatement statements
+	statements addAll: (aCompoundStatement statements collect: [ :e | e withoutParentheses ])
 ]
 
 { #category : #generated }
@@ -140,6 +140,6 @@ CCompoundStatementNode >> statements [
 { #category : #generated }
 CCompoundStatementNode >> statements: anOrderedCollection [
 	self setParents: self statements to: nil.
-	statements := anOrderedCollection.
+	statements := anOrderedCollection do: [ :e | e withoutParentheses ].
 	self setParents: self statements to: self
 ]

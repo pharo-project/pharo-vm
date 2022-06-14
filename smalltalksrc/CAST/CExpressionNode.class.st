@@ -53,3 +53,9 @@ CExpressionNode >> needsParentheses: aBoolean [
 
 	needsParentheses := aBoolean
 ]
+
+{ #category : #accessing }
+CExpressionNode >> withoutParentheses [
+
+	self needsParentheses: false
+]

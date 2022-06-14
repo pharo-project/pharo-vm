@@ -157,3 +157,9 @@ CGLRAbstractNode >> needsTrailingSemicolon [
 	
 	^ true
 ]
+
+{ #category : #accessing }
+CGLRAbstractNode >> withoutParentheses [
+
+	"I already have no parentheses"
+]

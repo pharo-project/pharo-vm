@@ -65,9 +65,7 @@ CSlangPrettyPrinterTest >> testVisitAssignment [
 			lvalue: (CIdentifierNode name: 'toto')
 			rvalue: (CConstantNode value: 2)).
 	
-	self assert: print equals: 'toto = 2'
-
-
+	self assert: print equals: '(toto = 2)'
 ]
 
 { #category : #'tests-visitor' }
@@ -155,10 +153,10 @@ CSlangPrettyPrinterTest >> testVisitCompoundStatement [
 	print := self prettyPrint: (CCompoundStatementNode
 			  declarations: { (CAssignmentNode
 						lvalue: (CIdentifierNode name: 'toto')
-						rvalue: (CConstantNode value: '99')) }
+						rvalue: (CConstantNode value: '99')) withoutParentheses }
 			  statements: { (CAssignmentNode
 					   lvalue: (CIdentifierNode name: 'toto')
-					   rvalue: (CIdentifierNode name: 'tutu')) }).
+					   rvalue: (CIdentifierNode name: 'tutu')) withoutParentheses }).
 	
 	self assert: print trimBoth equals: '{
 	toto = 99;
@@ -301,16 +299,16 @@ CSlangPrettyPrinterTest >> testVisitForStatement [
 	step := CIncrementNode object: (CIdentifierNode name: 'i').
 	step2 := CIncrementNode object: (CIdentifierNode name: 'j').
 	for := CForStatementNode
-		       init: { init. init2 }
-		       until: until
-		       step: { step. step2 }
+		       init: { init withoutParentheses. init2 withoutParentheses }
+		       until: until withoutParentheses
+		       step: { step withoutParentheses. step2 withoutParentheses }
 		       statement: (CCompoundStatementNode statements: { 
 					        (CAssignmentNode
 						         lvalue: (CIdentifierNode name: 'a')
 						         rvalue: (CBinaryOperatorNode
 								          operator: #%
 								          left: (CIdentifierNode name: 'i')
-								          right: (CConstantNode value: 2))).
+								          right: (CConstantNode value: 2))) withoutParentheses.
 					        (CIncrementNode object: (CIdentifierNode name: 'j')) }).
 	print := self prettyPrint: for.
 
@@ -373,17 +371,17 @@ CSlangPrettyPrinterTest >> testVisitIfStatement [
 			          then: (CCompoundStatementNode
 					           declarations: { (CAssignmentNode
 							            lvalue: (CIdentifierNode name: 'toto')
-							            rvalue: (CConstantNode value: 99)) }
+							            rvalue: (CConstantNode value: 99)) withoutParentheses }
 					           statements: { (CAssignmentNode
 							            lvalue: (CIdentifierNode name: 'toto')
-							            rvalue: (CIdentifierNode name: 'tutu')) })
+							            rvalue: (CIdentifierNode name: 'tutu')) withoutParentheses })
 						else: (CCompoundStatementNode
 					           declarations: { (CAssignmentNode
 							            lvalue: (CIdentifierNode name: 'toto')
-							            rvalue: (CConstantNode value: 1)) }
+							            rvalue: (CConstantNode value: 1)) withoutParentheses }
 					           statements: { (CAssignmentNode
 							            lvalue: (CIdentifierNode name: 'tutu')
-							            rvalue: (CIdentifierNode name: 'toto')) })).
+							            rvalue: (CIdentifierNode name: 'toto')) withoutParentheses })).
 
 	self assert: print trimBoth equals: 'if (a && b) {
 	toto = 99;
@@ -514,17 +512,17 @@ CSlangPrettyPrinterTest >> testVisitPreprocessorIf [
 			          then: (CCompoundStatementNode
 					           declarations: { (CAssignmentNode
 							            lvalue: (CIdentifierNode name: 'toto')
-							            rvalue: (CConstantNode value: 99)) }
+							            rvalue: (CConstantNode value: 99)) withoutParentheses }
 					           statements: { (CAssignmentNode
 							            lvalue: (CIdentifierNode name: 'toto')
-							            rvalue: (CIdentifierNode name: 'tutu')) })
+							            rvalue: (CIdentifierNode name: 'tutu'))withoutParentheses })
 						else: (CCompoundStatementNode
 					           declarations: { (CAssignmentNode
 							            lvalue: (CIdentifierNode name: 'toto')
-							            rvalue: (CConstantNode value: 1)) }
+							            rvalue: (CConstantNode value: 1)) withoutParentheses }
 					           statements: { (CAssignmentNode
 							            lvalue: (CIdentifierNode name: 'tutu')
-							            rvalue: (CIdentifierNode name: 'toto')) })).
+							            rvalue: (CIdentifierNode name: 'toto')) withoutParentheses })).
 
 	self assert: print trimBoth equals: '#if a && b
 {
@@ -550,11 +548,11 @@ CSlangPrettyPrinterTest >> testVisitPreprocessorIfOfSimpleStatementsAddsSeparato
 			          then: (CCompoundStatementNode statements: {
 							(CAssignmentNode
 								lvalue: (CIdentifierNode name: 'toto')
-								rvalue: (CConstantNode value: 99)) })
+								rvalue: (CConstantNode value: 99)) withoutParentheses })
 						else: (CCompoundStatementNode statements: {
 							(CAssignmentNode
 				            lvalue: (CIdentifierNode name: 'toto')
-				            rvalue: (CConstantNode value: 100)) })).
+				            rvalue: (CConstantNode value: 100)) withoutParentheses })).
 
 	self assert: print trimBoth equals: '#if condition
 {

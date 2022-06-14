@@ -37,7 +37,7 @@ CTernaryNode >> condition: aCGLRExpressionNode [
 	
 	self condition notNil
 		ifTrue: [ self condition parent: nil ].
-	condition := aCGLRExpressionNode.
+	condition := aCGLRExpressionNode withoutParentheses.
 	self condition notNil
 		ifTrue: [ self condition parent: self ]
 ]
@@ -53,7 +53,7 @@ CTernaryNode >> else: aCGLRExpressionNode [
 	
 	self else notNil
 		ifTrue: [ self else parent: nil ].
-	else := aCGLRExpressionNode.
+	else := aCGLRExpressionNode withoutParentheses.
 	self else notNil
 		ifTrue: [ self else parent: self ]
 ]
@@ -86,7 +86,7 @@ CTernaryNode >> then: aCGLRExpressionNode [
 	
 	self then notNil
 		ifTrue: [ self then parent: nil ].
-	then := aCGLRExpressionNode.
+	then := aCGLRExpressionNode withoutParentheses.
 	self then notNil
 		ifTrue: [ self then parent: self ]
 ]

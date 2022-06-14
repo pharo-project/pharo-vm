@@ -49,6 +49,13 @@ CAssignmentNode >> hash [
 	^ rvalue hash bitXor: (operator hash bitXor: lvalue hash)
 ]
 
+{ #category : #initialization }
+CAssignmentNode >> initialize [
+
+	super initialize.
+	self needsParentheses: true
+]
+
 { #category : #generated }
 CAssignmentNode >> lvalue [
 	^ lvalue

@@ -43,9 +43,6 @@ TAssignmentNode >> asCASTExpressionIn: aBuilder [
 			  operator: expression selector , '='
 			  rvalue: (expression arguments first asCASTExpressionIn: aBuilder) ].
 
-	(expression isSend and: [ expression isValueExpansion ]) ifTrue: [ 
-		^ self asCASTValueExpansionIn: aBuilder ].
-
 	^ CAssignmentNode
 		  lvalue: (variable asCASTIn: aBuilder)
 		  rvalue: (expression asCASTExpressionIn: aBuilder)
@@ -98,7 +95,13 @@ TAssignmentNode >> asCASTIn: aBuilder [
 				 arg asLastExpressionAssignmentTo: variable copy ]).
 		^ conditionalAsStatement asCASTIn: aBuilder ].
 	
-	^ self asCASTExpressionIn: aBuilder
+	(expression isSend and: [ expression isValueExpansion ]) ifTrue: [ 
+		^ self asCASTValueExpansionIn: aBuilder ].
+
+	
+	^ (self asCASTExpressionIn: aBuilder)
+		needsParentheses: false;
+		yourself
 ]
 
 { #category : #'C code generation' }

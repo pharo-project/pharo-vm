@@ -32,7 +32,7 @@ CReturnStatementNode >> expression: aCGLRExpressionNode [
 	
 	self expression notNil
 		ifTrue: [ self expression parent: nil ].
-	expr := aCGLRExpressionNode.
+	expr := aCGLRExpressionNode withoutParentheses.
 	self expression notNil
 		ifTrue: [ self expression parent: self ]
 ]

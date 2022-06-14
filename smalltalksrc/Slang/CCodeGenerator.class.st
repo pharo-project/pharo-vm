@@ -2127,7 +2127,9 @@ CCodeGenerator >> generateCASTInlineCppIfElse: tast [
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTInlineCppIfElse: tast asArgument: asArgument [
+
 	"Generate the CAST node for the C preprocessor if directive."
+
 	| generateCAST cppIf |
 	generateCAST := asArgument
 		                ifTrue: [ [ :node | node asCASTExpressionIn: self ] ]
@@ -2138,14 +2140,13 @@ CCodeGenerator >> generateCASTInlineCppIfElse: tast asArgument: asArgument [
 		tast arguments size >= 3 ifTrue: [ 
 			^ generateCAST value: tast arguments third ].
 		^ CEmptyStatementNode new ].
-	self haltIf: [ self currentMethod selector = #setInterpreter:].
 	cppIf := CPreprocessorIfNode
 		         if: (tast arguments first asCASTExpressionIn: self)
 		         then: (self
 				          with: tast arguments first
 				          ifAppropriateSetTo: true
 				          do: [ generateCAST value: tast arguments second ])
-					asArgument: asArgument.
+		         asArgument: asArgument.
 	tast arguments size >= 3 ifTrue: [ 
 		cppIf else: (self
 				 with: tast arguments first
@@ -2714,24 +2715,26 @@ CCodeGenerator >> generateCASTToByDo: tast [
 	limitExpr := tast arguments first.
 	inits add: (CAssignmentNode
 			 lvalue: (CIdentifierNode name: iterationVar)
-			 rvalue: (tast receiver asCASTExpressionIn: self)).
+			 rvalue: (tast receiver asCASTExpressionIn: self))
+			withoutParentheses.
 	self noteUsedVariableName: iterationVar.
 	mayHaveSideEffects := tast arguments size = 4.
 	mayHaveSideEffects ifTrue: [ 
 		limitVar := tast arguments last.
 		inits add: (CAssignmentNode
 				 lvalue: (CIdentifierNode name: limitVar name)
-				 rvalue: (limitExpr asCASTExpressionIn: self)).
+				 rvalue: (limitExpr asCASTExpressionIn: self)) withoutParentheses.
 		limitExpr := limitVar ].
 	until := self
 		         generateCASTToByDoUntil: limitExpr
 		         iterativeVariable: iterationVar
 		         negative:
 		         (self stepExpressionIsNegative: tast arguments second).
-	step := CAssignmentNode
-		        lvalue: (CIdentifierNode name: iterationVar)
-		        operator: '+='
-		        rvalue: (tast arguments second asCASTExpressionIn: self).
+	step := (CAssignmentNode
+		         lvalue: (CIdentifierNode name: iterationVar)
+		         operator: '+='
+		         rvalue: (tast arguments second asCASTExpressionIn: self))
+		        withoutParentheses.
 	^ CForStatementNode
 		  init: inits
 		  until: until
@@ -2783,9 +2786,9 @@ CCodeGenerator >> generateCASTToDo: tast [
 		         negative: false.
 	step := CIncrementNode object: (CIdentifierNode name: iterationVar).
 	^ CForStatementNode
-		  init: { init }
-		  until: until
-		  step: { step }
+		  init: { init withoutParentheses }
+		  until: until withoutParentheses
+		  step: { step withoutParentheses }
 		  statement: (tast arguments last asCASTIn: self)
 ]
 
