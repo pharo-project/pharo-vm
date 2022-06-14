@@ -174,6 +174,7 @@ typedef unsigned long long usqIntptr_t;
 
   static inline sqLong long64At(sqInt oop)				{ return long64AtPointer(pointerForOop(oop)); }
   static inline sqLong long64Atput(sqInt oop, sqLong val)		{ return long64AtPointerput(pointerForOop(oop), val); }
+  static inline sqLong uint64Atput(sqInt oop, sqLong val)		{ return long64AtPointerput(pointerForOop(oop), val); }
   static inline sqInt oopAt(sqInt oop)				{ return oopAtPointer(pointerForOop(oop)); }
   static inline sqInt oopAtput(sqInt oop, sqInt val)		{ return oopAtPointerput(pointerForOop(oop), val); }
 
@@ -249,8 +250,7 @@ typedef unsigned long long usqIntptr_t;
 # define unsignedLongAtput(oop,val)			unsignedLongAtPointerput(atPointerArg(oop), val)
 # define long64At(oop)				long64AtPointer(atPointerArg(oop))
 # define long64Atput(oop,val)		long64AtPointerput(atPointerArg(oop), val)
-# define long32At(oop)				long32AtPointer(atPointerArg(oop))
-# define long32Atput(oop,val)		long32AtPointerput(atPointerArg(oop), val)
+# define uint64Atput(oop,val)		long64AtPointerput(atPointerArg(oop), val)
 # define intAt(oop)					intAtPointer(atPointerArg(oop))
 # define intAtput(oop,val)			intAtPointerput(atPointerArg(oop), val)
 # define oopAt(oop)					oopAtPointer(atPointerArg(oop))
