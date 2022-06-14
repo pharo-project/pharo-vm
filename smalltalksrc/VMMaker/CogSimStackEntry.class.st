@@ -233,6 +233,7 @@ CogSimStackEntry >> moveToReg: reg [
 
 { #category : #'compile abstract instructions' }
 CogSimStackEntry >> moveToVectorReg: reg [
+	self assert: type = SSVectorRegister.
 	spilled
 		ifTrue:
 			[self notYetImplemented]
@@ -306,7 +307,7 @@ CogSimStackEntry >> register: anObject [
 { #category : #accessing }
 CogSimStackEntry >> registerMask [
 	"Answer a bit mask for the receiver's register, if any."
-	^ (type = SSBaseOffset or: [ type = SSRegister ])
+	^ ((type = SSBaseOffset) | (type = SSRegister) | (type = SSVectorRegister))
 		  ifTrue: [ cogit registerMaskFor: register ]
 		  ifFalse: [ 0 ]
 ]

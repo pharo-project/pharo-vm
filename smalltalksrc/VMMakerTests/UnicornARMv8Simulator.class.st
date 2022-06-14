@@ -309,6 +309,18 @@ UnicornARMv8Simulator >> vectorRegister0Value [
 	^ simulator readRegisterId: UcARM64Registers v0 size:  16
 ]
 
+{ #category : #accesing }
+UnicornARMv8Simulator >> vectorRegister1Value [
+
+	^ simulator readRegisterId: UcARM64Registers v1 size:  16
+]
+
+{ #category : #accesing }
+UnicornARMv8Simulator >> vectorRegister2Value [
+
+	^ simulator readRegisterId: UcARM64Registers v2 size:  16
+]
+
 { #category : #accessing }
 UnicornARMv8Simulator >> w25: anInteger [ 
 

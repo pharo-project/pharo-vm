@@ -93,3 +93,13 @@ VMARMV8SIMDEncodingTest >> testEncodeSt1WithOne64BitLaneRegisterAndNoOffset [
 		assert: (self armInstructionAt: 1) assemblyCodeString
 		equals: 'st1	{ v0.2d }, [x1]'
 ]
+
+{ #category : #tests }
+VMARMV8SIMDEncodingTest >> testEncodeVectorAdd [
+
+	self compile: [ cogit FaddS: 64 Rv: 0 Rv: 1 Rv: 2 ].
+	
+	self
+		assert: (self armInstructionAt: 1) assemblyCodeString
+		equals: 'fadd	v2.2d, v0.2d, v1.2d'
+]

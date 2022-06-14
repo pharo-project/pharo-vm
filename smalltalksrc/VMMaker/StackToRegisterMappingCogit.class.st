@@ -1372,8 +1372,22 @@ StackToRegisterMappingCogit >> freeAnyRegNotConflictingWith: regMask [
 
 { #category : #'mapped inline primitive generators' }
 StackToRegisterMappingCogit >> genAddVector [ 
-	^EncounteredUnknownBytecode
+	| array1Reg array2Reg indexReg sumReg |
 	
+	array1Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
+	array2Reg := self allocateVectorRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: array1Reg).
+	sumReg := self allocateVectorRegNotConflictingWith: 0.
+	
+	self ssTop moveToVectorReg: array1Reg.
+	self ssPop: 1.
+	
+	self ssTop moveToVectorReg: array2Reg.
+	self ssPop: 1.
+	
+	self ssPushVectorRegister: sumReg.
+	self ssTop moveToVectorReg: sumReg.
+	
+	self FaddS: 64 Rv: array1Reg Rv: array2Reg Rv: sumReg.
 ]
 
 { #category : #'bytecode generators' }
@@ -3311,13 +3325,15 @@ StackToRegisterMappingCogit >> liveRegisters [
 
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> liveVectorRegisters [
+
 	| regsSet |
-	regsSet := 0."TODO handle switching stack frames?"
-	"(simSpillBase max: 0) to: simStackPtr do:
-		[:i|
-		1halt.
-		regsSet := regsSet bitOr: (self simStackAt: i) registerMask]."
-	^regsSet
+	regsSet := 0.
+	(simSpillBase max: 0) to: simStackPtr do: [ :i | 
+		| ssEntry |
+		ssEntry := self simStackAt: i.
+		(ssEntry type = SSVectorRegister) ifTrue: [ 
+			regsSet := regsSet bitOr: ssEntry registerMask ] ].
+	^ regsSet
 ]
 
 { #category : #'compile abstract instructions' }
