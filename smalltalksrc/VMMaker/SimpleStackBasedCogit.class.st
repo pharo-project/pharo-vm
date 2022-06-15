@@ -73,6 +73,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 	"SimpleStackBasedCogit initializeBytecodeTableForSistaV1"
 
 	BytecodeSetHasDirectedSuperSend := true.
+	BytecodeSetHasExtensions := true.	
 	FirstSpecialSelector := 96.
 	NumSpecialSelectors := 32.
 	self flag:

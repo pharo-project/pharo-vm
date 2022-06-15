@@ -5321,7 +5321,7 @@ StackInterpreter >> encodeFrameFieldHasContext: hasContext "<Boolean>" isBlock: 
 StackInterpreter >> encoderClassForHeader: headerInteger [
 	<doNotGenerate>
 	^Smalltalk classNamed: ((headerInteger < 0 or: [objectMemory headerIndicatesAlternateBytecodeSet: headerInteger])
-								ifTrue: [AltBytecodeEncoderClassName]
+								ifTrue: [BytecodeEncoderClassName]
 								ifFalse: [BytecodeEncoderClassName])
 ]
 
@@ -8214,7 +8214,7 @@ StackInterpreter >> interpret [
 	self initExtensions.
 	self fetchNextBytecode.
 	[true] whileTrue: [self dispatchOn: currentBytecode in: BytecodeTable].
-	localIP := localIP - 1.  "undo the pre-increment of IP before returning"
+	instructionPointer := instructionPointer - 1.  "undo the pre-increment of IP before returning"
 	self externalizeIPandSP.
 	^nil
 

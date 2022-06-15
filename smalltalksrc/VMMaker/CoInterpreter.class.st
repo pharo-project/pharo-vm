@@ -3992,9 +3992,9 @@ CoInterpreter >> internalActivateNewMethod [
 			shouldSkipStoreBytecode ifTrue: [ 
 				instructionPointer := instructionPointer + (self sizeOfLongStoreTempBytecode: methodHeader)  ] ] ].
 
-	self assert: (self frameNumArgs: localFP) = argumentCount.
-	self assert: (self frameIsBlockActivation: localFP) not.
-	self assert: (self frameHasContext: localFP) not.
+	self assert: (self frameNumArgs: framePointer) = argumentCount.
+	self assert: (self frameIsBlockActivation: framePointer) not.
+	self assert: (self frameHasContext: framePointer) not.
 
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
