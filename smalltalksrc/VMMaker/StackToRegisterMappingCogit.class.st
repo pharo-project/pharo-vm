@@ -1373,7 +1373,7 @@ StackToRegisterMappingCogit >> freeAnyRegNotConflictingWith: regMask [
 
 { #category : #'mapped inline primitive generators' }
 StackToRegisterMappingCogit >> genAddVector [ 
-	| array1Reg array2Reg indexReg sumReg |
+	| array1Reg array2Reg sumReg |
 	
 	array1Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
 	array2Reg := self allocateVectorRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: array1Reg).
@@ -1389,6 +1389,9 @@ StackToRegisterMappingCogit >> genAddVector [
 	self ssTop moveToVectorReg: sumReg.
 	
 	self FaddS: 64 Rv: array1Reg Rv: array2Reg Rv: sumReg.
+	
+	"Returns 0 if worked"
+	^0
 ]
 
 { #category : #'bytecode generators' }
@@ -1397,6 +1400,12 @@ StackToRegisterMappingCogit >> genBlockReturn [
 	super genBlockReturn.
 	deadCode := true. "can't fall through"
 	^0
+]
+
+{ #category : #'bytecode generators' }
+StackToRegisterMappingCogit >> genCallMappedInlinedPrimitive [
+	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
+	^ self genMappedInlinePrimitive: byte1
 ]
 
 { #category : #initialization }
@@ -2102,7 +2111,10 @@ StackToRegisterMappingCogit >> genPushArrayToRegister [
 	vectorReg := self allocateVectorRegNotConflictingWith: 0.
 	self ssPushVectorRegister: vectorReg.
 	
-	self Ld1S: 64 Vr: vectorReg R: arrayReg Mw: 0
+	self Ld1S: 64 Vr: vectorReg R: arrayReg Mw: 0.
+	
+	"Returns 0 if worked"
+	^0
 ]
 
 { #category : #'bytecode generator support' }
@@ -2841,7 +2853,12 @@ StackToRegisterMappingCogit >> genStoreRegisterIntoArray [
 	self ssTop moveToVectorReg: vectorReg.
 	self ssPop: 1.
 	
-	self St1S: 64 Vr: vectorReg R: arrayReg Mw: 0
+	self St1S: 64 Vr: vectorReg R: arrayReg Mw: 0.
+	
+	self ssPushRegister: arrayReg.
+	
+	"Returns 0 if worked"
+	^0
 ]
 
 { #category : #'bytecode generator stores' }

@@ -20,11 +20,16 @@ VMPrimitiveCallAbstractTest >> callCogMethod: callingMethod receiver: receiver a
 	arguments size = 1 
 		ifTrue: [ machineSimulator arg0RegisterValue: (arguments at: 1) ].
 
-	arguments size > 1 ifTrue: [ self halt ].
+	arguments size = 2 
+		ifTrue: [
+			machineSimulator arg0RegisterValue: (arguments at: 1).
+			machineSimulator arg1RegisterValue: (arguments at: 2). ].
 	
 	self prepareCall.
 	machineSimulator instructionPointerRegisterValue: callingMethod address + cogit noCheckEntryOffset. 
 
+	self openMachineDebugger.
+	1halt.
 	self runFrom: callingMethod address + cogit noCheckEntryOffset until: returnAddress.
 
 ]

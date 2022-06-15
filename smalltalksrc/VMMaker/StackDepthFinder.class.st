@@ -19,6 +19,12 @@ StackDepthFinder class >> on: aVMCompiledMethodProxy [
 		yourself
 ]
 
+{ #category : #'extended instruction decoding' }
+StackDepthFinder >> addVector [
+
+	self drop.
+]
+
 { #category : #'instruction decoding' }
 StackDepthFinder >> blockReturnConstant: value [
 	"Return Constant From Block bytecode."
@@ -222,6 +228,12 @@ StackDepthFinder >> pushActiveContext [
 	self push
 ]
 
+{ #category : #'extended instruction decoding' }
+StackDepthFinder >> pushArrayToRegister [
+
+	self drop.
+]
+
 { #category : #'instruction decoding' }
 StackDepthFinder >> pushClosureCopyNumCopiedValues: numCopied numArgs: numArgs blockSize: blockSize [
 	"Push Closure bytecode."
@@ -401,14 +413,13 @@ StackDepthFinder >> storeIntoTemporaryVariable: offset [
 
 ]
 
-{ #category : #'instruction decoding' }
-StackDepthFinder >> trap [
-	
+{ #category : #'extended instruction decoding' }
+StackDepthFinder >> storeRegisterIntoArray [
+
+	self drop: 2.
 ]
 
 { #category : #'instruction decoding' }
-StackDepthFinder >> trapIfNotInstanceOf: behaviorOrArrayOfBehavior [
-	"If the top of stack is not an instance of either the argument, or, if the argument is an Array,
-	  any of the elements of the argument, send the class trap message to the current context."
-	self drop
+StackDepthFinder >> trap [
+	
 ]
