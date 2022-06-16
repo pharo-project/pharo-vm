@@ -1372,6 +1372,29 @@ StackToRegisterMappingCogit >> freeAnyRegNotConflictingWith: regMask [
 ]
 
 { #category : #'mapped inline primitive generators - vectorial' }
+StackToRegisterMappingCogit >> genAddFloat32Vector [ 
+	| array1Reg array2Reg sumReg |
+	
+	array1Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
+	array2Reg := self allocateVectorRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: array1Reg).
+	sumReg := self allocateVectorRegNotConflictingWith: 0.
+	
+	self ssTop moveToVectorReg: array1Reg.
+	self ssPop: 1.
+	
+	self ssTop moveToVectorReg: array2Reg.
+	self ssPop: 1.
+	
+	self ssPushVectorRegister: sumReg.
+	self ssTop moveToVectorReg: sumReg.
+	
+	self FaddS: 64 Rv: array1Reg Rv: array2Reg Rv: sumReg.
+	
+	"Returns 0 if worked"
+	^0
+]
+
+{ #category : #'mapped inline primitive generators - vectorial' }
 StackToRegisterMappingCogit >> genAddFloat64Vector [ 
 	| array1Reg array2Reg sumReg |
 	
