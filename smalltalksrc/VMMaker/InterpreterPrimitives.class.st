@@ -745,6 +745,7 @@ InterpreterPrimitives >> positiveMachineIntegerValueOf: oop [
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveAdd [
 	<numberOfArguments: 1>
+	<customisedReceiverFor: #smallInteger>
 	
 	| maybeSmallInteger maybeSmallInteger2 result |
 
@@ -5038,10 +5039,9 @@ InterpreterPrimitives >> sumSmallInteger: anInteger withSmallInteger: anotherInt
 	| a b result |
 	a := objectMemory integerValueOf: anInteger.
 	b := objectMemory integerValueOf: anotherInteger.
-	
+
 	result := a + b.
 
-	^(objectMemory isIntegerValue: result) 
-		ifTrue: [ objectMemory integerObjectOf: result ]
-		ifFalse: aBlock
+	(objectMemory isIntegerValue: result) ifFalse: aBlock.
+	^ objectMemory integerObjectOf: result
 ]

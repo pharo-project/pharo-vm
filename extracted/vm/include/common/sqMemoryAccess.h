@@ -156,14 +156,18 @@ typedef unsigned long long usqIntptr_t;
   static inline sqInt oopForPointer(void *ptr)			{ return (sqInt)(ptr - sqMemoryBase); }
 # endif
   static inline sqInt byteAt(sqInt oop)				{ return byteAtPointer(pointerForOop(oop)); }
+  static inline sqInt uint8At(sqInt oop)				{ return byteAt(oop); }
   static inline sqInt byteAtput(sqInt oop, int val)		{ return byteAtPointerput(pointerForOop(oop), val); }
   static inline sqInt shortAt(sqInt oop)			{ return shortAtPointer(pointerForOop(oop)); }
+  static inline sqInt uint16At(sqInt oop)				{ return shortAt(oop); }
   static inline sqInt shortAtput(sqInt oop, int val)		{ return shortAtPointerput(pointerForOop(oop), val); }
   static inline sqInt intAt(sqInt oop)				{ return intAtPointer(pointerForOop(oop)); }
   static inline sqInt intAtput(sqInt oop, int val)		{ return intAtPointerput(pointerForOop(oop), val); }
   static inline sqInt longAt(sqInt oop)				{ return longAtPointer(pointerForOop(oop)); }
+  static inline sqInt uint32At(sqInt oop)				{ return longAt(oop); }
   static inline sqInt longAtput(sqInt oop, sqInt val)		{ return longAtPointerput(pointerForOop(oop), val); }
   static inline sqLong long64At(sqInt oop)				{ return long64AtPointer(pointerForOop(oop)); }
+  static inline sqInt uint64At(sqInt oop)				{ return long64At(oop); }
   static inline sqLong long64Atput(sqInt oop, sqLong val)		{ return long64AtPointerput(pointerForOop(oop), val); }
   static inline sqInt oopAt(sqInt oop)				{ return oopAtPointer(pointerForOop(oop)); }
   static inline sqInt oopAtput(sqInt oop, sqInt val)		{ return oopAtPointerput(pointerForOop(oop), val); }
@@ -223,12 +227,16 @@ typedef unsigned long long usqIntptr_t;
 #  define atPointerArg(oop)			sqMemoryBase + (usqInt)(oop)
 # endif
 # define byteAt(oop)				byteAtPointer(atPointerArg(oop))
+# define uint8At(oop)				byteAt(oop)
 # define byteAtput(oop,val)			byteAtPointerput(atPointerArg(oop), val)
 # define shortAt(oop)				shortAtPointer(atPointerArg(oop))
+# define uint16At(oop)				shortAt(oop)
 # define shortAtput(oop,val)		shortAtPointerput(atPointerArg(oop), val)
 # define longAt(oop)				longAtPointer(atPointerArg(oop))
+# define uint32At(oop)				longAt(oop)
 # define longAtput(oop,val)			longAtPointerput(atPointerArg(oop), val)
 # define long64At(oop)				long64AtPointer(atPointerArg(oop))
+# define uint64At(oop)				long64At(oop)
 # define long64Atput(oop,val)		long64AtPointerput(atPointerArg(oop), val)
 # define intAt(oop)					intAtPointer(atPointerArg(oop))
 # define intAtput(oop,val)			intAtPointerput(atPointerArg(oop), val)
