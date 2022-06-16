@@ -34,7 +34,7 @@ VMJitSimdBytecode >> testAddVectorCopiesArraySumIntoVectorRegister [
 								 cogit genPushTemporaryVariable: 2.
 								 cogit genPushTemporaryVariable: 1.		
 								 cogit genPushArrayToRegister.
-								 cogit genAddVector.
+								 cogit genAddFloat64Vector.
 		                    "If the primitive fails it continues, so we need to have an instruction to detect the end"
 		                    endInstruction := cogit Stop ].
 	
@@ -69,7 +69,7 @@ VMJitSimdBytecode >> testAddVectorPushesArraySumIntoSimulatedStack [
 								 cogit genPushTemporaryVariable: 2.
 								 cogit genPushTemporaryVariable: 1.		
 								 cogit genPushArrayToRegister.
-								 cogit genAddVector.
+								 cogit genAddFloat64Vector.
 		                    "If the primitive fails it continues, so we need to have an instruction to detect the end"
 		                    endInstruction := cogit Stop ].
 

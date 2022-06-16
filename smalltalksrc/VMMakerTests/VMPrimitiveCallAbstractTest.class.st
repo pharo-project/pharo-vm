@@ -28,8 +28,6 @@ VMPrimitiveCallAbstractTest >> callCogMethod: callingMethod receiver: receiver a
 	self prepareCall.
 	machineSimulator instructionPointerRegisterValue: callingMethod address + cogit noCheckEntryOffset. 
 
-	self openMachineDebugger.
-	1halt.
 	self runFrom: callingMethod address + cogit noCheckEntryOffset until: returnAddress.
 
 ]

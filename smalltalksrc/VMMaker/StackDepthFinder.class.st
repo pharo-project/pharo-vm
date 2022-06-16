@@ -20,7 +20,7 @@ StackDepthFinder class >> on: aVMCompiledMethodProxy [
 ]
 
 { #category : #'extended instruction decoding' }
-StackDepthFinder >> addVector [
+StackDepthFinder >> addFloat64Vector [
 
 	self drop.
 ]

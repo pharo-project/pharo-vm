@@ -236,7 +236,7 @@ VMByteCodesTest >> testArraySumUsingVectorBytecode [
 				pushLiteral: 0;
 				pushTemp: #secondVector;
 				pushArrayToRegister;
-				addVector;
+				addFloat64Vector;
 				pushLiteral: 0;
 				pushTemp: #thirdVector;
 				storeRegisterIntoArray;

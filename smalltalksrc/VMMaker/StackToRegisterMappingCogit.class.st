@@ -1371,8 +1371,8 @@ StackToRegisterMappingCogit >> freeAnyRegNotConflictingWith: regMask [
 	^reg
 ]
 
-{ #category : #'mapped inline primitive generators' }
-StackToRegisterMappingCogit >> genAddVector [ 
+{ #category : #'mapped inline primitive generators - vectorial' }
+StackToRegisterMappingCogit >> genAddFloat64Vector [ 
 	| array1Reg array2Reg sumReg |
 	
 	array1Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
@@ -1913,7 +1913,7 @@ StackToRegisterMappingCogit >> genMappedInlinePrimitive: primIndex [
 	method to call on top of stack =>  (variable number of parameters)"
 	primIndex caseOf: 
 	{ 
-		[ 0 ] -> [^self genAddVector].
+		[ 0 ] -> [^self genAddFloat64Vector].
 		[ 1 ] -> [^self genPushArrayToRegister].
 		[ 2 ] -> [^self genStoreRegisterIntoArray].
 	} otherwise: [^EncounteredUnknownBytecode].
@@ -2084,7 +2084,7 @@ StackToRegisterMappingCogit >> genPushActiveContextBytecode [
 	^self ssPushRegister: ReceiverResultReg
 ]
 
-{ #category : #'mapped inline primitive generators' }
+{ #category : #'mapped inline primitive generators - vectorial' }
 StackToRegisterMappingCogit >> genPushArrayToRegister [
 
 	| arrayReg indexReg vectorReg |
@@ -2827,7 +2827,7 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean TemporaryVariable: tempIn
 	^0
 ]
 
-{ #category : #'mapped inline primitive generators' }
+{ #category : #'mapped inline primitive generators - vectorial' }
 StackToRegisterMappingCogit >> genStoreRegisterIntoArray [
 	| arrayReg indexReg vectorReg |
 	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
