@@ -6564,6 +6564,9 @@ StackInterpreter >> followForwardingPointersInProfileState [
 StackInterpreter >> followForwardingPointersInScheduler [
 	| schedAssoc sched procLists |
 	schedAssoc := objectMemory splObj: SchedulerAssociation.
+	
+	schedAssoc = objectMemory nilObject ifTrue: [ ^self ].
+	
 	"the GC follows pointers in the special objects array for us."
 	self assert: (objectMemory isForwarded: schedAssoc) not.
 
@@ -12818,7 +12821,7 @@ StackInterpreter >> quinaryInlinePrimitive: primIndex [
 		srcIndex := (objectMemory integerValueOf: (self internalStackValue: 0)) - 1.
 		self internalPop: 4.
 		destLimit < destIndex ifTrue: [^self].
-		(objectMemory isYoung: dest) ifFalse: [objectMemory possibleRootStoreInto: dest].
+		(objectMemory isYoung: dest) ifFalse: [objectMemory possibleOldObjectStoreInto: dest].
 		0 to: destLimit - destIndex do: 
 			[:i| oop := objectMemory fetchPointer: srcIndex + i ofObject: src.
 			    objectMemory storePointerUnchecked: destIndex + i ofObject: dest withValue: oop].
@@ -15394,7 +15397,7 @@ StackInterpreter >> unaryPossibleRootInlinePrimitive [
 	self deny: (objectMemory isImmediate: top).
 	self deny: (objectMemory isOopForwarded: top).
 	(objectMemory getMemoryMap isYoungObject: top)
-		ifFalse: [objectMemory possibleRootStoreInto: top]
+		ifFalse: [objectMemory possibleOldObjectStoreInto: top]
 ]
 
 { #category : #'sista inline primitives - unary' }

@@ -162,7 +162,8 @@ VMMemoryMap >> allocatePermObjectsSpace [
 	| minSize |
 	minSize := minPermSpaceSize max: initialPermSpaceSize.
 
-	minSize = 0 ifTrue: [ ^ self ].
+	minSize = 0 ifTrue: [ 
+		^ self ].
 
 	minSize := self roundToAllocationSize: minSize.
 
@@ -180,8 +181,9 @@ VMMemoryMap >> allocatePermObjectsSpace [
 	self permSpaceEnd: self permSpaceStart + minSize.
 
 	self permSpaceMask: (self permSpaceStart bitAnd: self spaceMaskToUse).
+	objectMemory setPermSpaceFreeStart: self permSpaceStart. 
 
-	objectMemory setPermSpaceFreeStart: self permSpaceStart
+
 ]
 
 { #category : #allocating }
@@ -326,6 +328,12 @@ VMMemoryMap >> extendPermObjectsSpaceBy: aSize [
 	self permSpaceEnd: self permSpaceEnd + requestedSize.	
 		
 	^ true.
+]
+
+{ #category : #'as yet unclassified' }
+VMMemoryMap >> fixedPermSpaceStart [
+
+	^ memoryMapConfiguration permSpaceInitialAddress
 ]
 
 { #category : #simulation }

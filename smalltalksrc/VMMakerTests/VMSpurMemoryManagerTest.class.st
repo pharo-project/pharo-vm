@@ -14,7 +14,9 @@ Class {
 		'edenSize',
 		'imageReaderClass',
 		'imageWriterClass',
-		'environmentBuilder'
+		'environmentBuilder',
+		'ourEphemeronClass',
+		'ourWeakClass'
 	],
 	#pools : [
 		'VMBasicConstants',
@@ -83,6 +85,16 @@ VMSpurMemoryManagerTest >> createActiveProcess [
 ]
 
 { #category : #helpers }
+VMSpurMemoryManagerTest >> createEphemeronClass [
+	ourEphemeronClass := self newObjectWithSlots: 3.
+	memory 
+		storePointer: "InstanceSpecificationIndex" 2
+		ofObject: ourEphemeronClass
+		withValue: (memory integerObjectOf: Ephemeron format).
+	memory ensureBehaviorHash: ourEphemeronClass.
+]
+
+{ #category : #helpers }
 VMSpurMemoryManagerTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod [
 
 	| methodOop |
@@ -90,6 +102,17 @@ VMSpurMemoryManagerTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod 
 		             fillFromPharoMethod: aPharoCompiledMethod;
 		             buildMethod.
 	^ methodOop
+]
+
+{ #category : #tests }
+VMSpurMemoryManagerTest >> createWeakArrayClass [
+	ourWeakClass := self newObjectWithSlots: 3.
+	memory
+		storePointer: "InstanceSpecificationIndex" 2
+		ofObject: ourWeakClass
+		withValue: (memory integerObjectOf: WeakArray format).
+	memory ensureBehaviorHash: ourWeakClass.
+	
 ]
 
 { #category : #accessing }
@@ -212,10 +235,11 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 	
 	firstClassTablePage := memory fetchPointer: 0 ofObject: memory hiddenRootsObject.
 	
-	memory newSpaceRememberedSet initializeRememberedSet.
-	memory oldSpaceRememberedSet initializeRememberedSet.
-	memory scavenger remember: memory hiddenRootsObject.
-	memory scavenger remember: firstClassTablePage. 
+	memory fromOldSpaceRememberedSet initializeRememberedSet.
+	memory fromPermSpaceRememberedSet initializeRememberedSet.
+	
+	memory getFromOldSpaceRememberedSet doRemember: memory hiddenRootsObject.
+	memory getFromOldSpaceRememberedSet doRemember: firstClassTablePage. 
 	memory specialObjectsOop: (self newObjectWithSlots: 60).
 	
 	memory scavengingGCTenuringIf: 1.
@@ -319,6 +343,17 @@ VMSpurMemoryManagerTest >> newClassInOldSpaceWithSlots: numberOfSlots instSpec: 
 	memory storePointer: 2 ofObject: newClass withValue: (memory integerObjectOf: formatWithSlots ).
 		
 	^ newClass	
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> newEphemeronObject [
+
+"In pharo Ephemerons have 3 slots"
+	
+	^ self
+		newObjectWithSlots: 3
+		format: memory ephemeronFormat
+		classIndex: (memory ensureBehaviorHash: ourEphemeronClass)
 ]
 
 { #category : #'helpers - methods' }
@@ -523,6 +558,15 @@ VMSpurMemoryManagerTest >> newString: aString [
 				withValue: char asInteger ].
 
 	^ vmString
+]
+
+{ #category : #tests }
+VMSpurMemoryManagerTest >> newWeakObjectOfSize: aSize [
+	
+	^ self
+		newObjectWithSlots: aSize
+		format: memory weakArrayFormat
+		classIndex: (memory ensureBehaviorHash: ourWeakClass)
 ]
 
 { #category : #helpers }

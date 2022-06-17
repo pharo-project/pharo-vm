@@ -4024,6 +4024,7 @@ Cogit >> ceCaptureCStackPointers [
 { #category : #testing }
 Cogit >> ceCheckFeatures [
 	<cmacro: '() ceCheckFeaturesFunction()'>
+
 	^self simulateLeafCallOf: ceCheckFeaturesFunction
 ]
 

@@ -17,8 +17,46 @@ VMPermanentSpacePrimitiveTest >> configureEnvironmentBuilder [
 	environmentBuilder permSpaceSize: 10*1024*1024.
 ]
 
+{ #category : #initialization }
+VMPermanentSpacePrimitiveTest >> setUp [ 
+	
+	super setUp.
+	self createEphemeronClass.
+	self createWeakArrayClass.
+]
+
 { #category : #tests }
-VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceFailsOnNewPointerObject [
+VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceFailsOnEphemeron [
+
+	| oldObject |
+
+	oldObject := self newEphemeronObject.
+
+	interpreter push: oldObject.
+
+	interpreter argumentCount: 0.
+	interpreter primitiveMoveToPermSpace.
+	
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver
+]
+
+{ #category : #tests }
+VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceFailsOnWeakObject [
+
+	| oldObject |
+
+	oldObject := self newWeakObjectOfSize: 2.
+
+	interpreter push: oldObject.
+
+	interpreter argumentCount: 0.
+	interpreter primitiveMoveToPermSpace.
+	
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver
+]
+
+{ #category : #tests }
+VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceWorksOnNewPointerObject [
 
 	| newObject |
 
@@ -29,11 +67,11 @@ VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceFailsOnNewPointerObject [
 	interpreter argumentCount: 0.
 	interpreter primitiveMoveToPermSpace.
 	
-	self assert: interpreter primFailCode equals: PrimErrBadReceiver
+	self assert: interpreter primFailCode equals: 0
 ]
 
 { #category : #tests }
-VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceFailsOnOldPointerObject [
+VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceWorksOnOldPointerObject [
 
 	| oldObject |
 
@@ -44,7 +82,7 @@ VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceFailsOnOldPointerObject [
 	interpreter argumentCount: 0.
 	interpreter primitiveMoveToPermSpace.
 	
-	self assert: interpreter primFailCode equals: PrimErrBadReceiver
+	self assert: interpreter primFailCode equals: 0
 ]
 
 { #category : #tests }

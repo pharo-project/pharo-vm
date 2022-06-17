@@ -4138,7 +4138,7 @@ InterpreterPrimitives >> primitiveSpurStringReplace [
 							[mustRemember := true].
 						objectMemory storePointerUnchecked: i ofObject: array withValue: oop].
 					 mustRemember ifTrue:
-						[objectMemory possibleRootStoreInto: array]]
+						[objectMemory possibleOldObjectStoreInto: array]]
 				ifFalse:
 					[start - 1 to: stop - 1 do:
 						[:i | objectMemory storePointerUnchecked: i ofObject: array withValue: (objectMemory fetchPointer: srcDelta + i ofObject: repl)]]]

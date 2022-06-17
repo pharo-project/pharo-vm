@@ -41,6 +41,33 @@ VMPermanentSpaceMemoryTest >> testMarkingOldSpaceDoesNotMarkPermSpace [
 ]
 
 { #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testMoveOldObjectInRememberedSetIsMovedFromSet [
+
+	| oldObject youngObject permanentObject |
+
+	oldObject := self newOldSpaceArrayWithSlots: 1.
+	youngObject := self newObjectWithSlots: 0.
+	
+	memory storePointer: 0 ofObject: oldObject withValue: youngObject.
+	
+	self assert: (memory isRemembered: oldObject). 
+	self assert: (memory getFromOldSpaceRememberedSet isInRememberedSet: oldObject). 
+	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: oldObject). 
+	
+	permanentObject := memory moveToPermSpace: oldObject.	
+	
+	self assert: (memory isRemembered: permanentObject). 
+	
+	"Old object is now a forwarder shoul not be in any remembered set"
+	self deny: (memory getFromOldSpaceRememberedSet isInRememberedSet: oldObject). 
+	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: oldObject). 
+
+	self deny: (memory getFromOldSpaceRememberedSet isInRememberedSet: permanentObject). 
+	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject). 
+
+]
+
+{ #category : #'test - moving' }
 VMPermanentSpaceMemoryTest >> testMovingOldObjectToPermSpaceIsCorrectlyForwarded [
 
 	| permanentObject oldObject rootObject|

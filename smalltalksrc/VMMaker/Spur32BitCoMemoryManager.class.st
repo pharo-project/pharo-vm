@@ -232,12 +232,6 @@ Spur32BitCoMemoryManager >> receiverTagBitsForMethod: aMethodObj [
 				self characterTag]
 ]
 
-{ #category : #'cog jit support' }
-Spur32BitCoMemoryManager >> remember: objOop [
-	<doNotGenerate>
-	^scavenger remember: objOop
-]
-
 { #category : #'trampoline support' }
 Spur32BitCoMemoryManager >> scavengeThresholdAddress [
 	<api>

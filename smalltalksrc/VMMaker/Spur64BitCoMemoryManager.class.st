@@ -241,12 +241,6 @@ Spur64BitCoMemoryManager >> receiverTagBitsForMethod: aMethodObj [
 	^self smallFloatTag
 ]
 
-{ #category : #'cog jit support' }
-Spur64BitCoMemoryManager >> remember: objOop [
-	<doNotGenerate>
-	^scavenger remember: objOop
-]
-
 { #category : #'trampoline support' }
 Spur64BitCoMemoryManager >> scavengeThresholdAddress [
 	<api>

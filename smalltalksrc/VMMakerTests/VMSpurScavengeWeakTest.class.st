@@ -1,31 +1,8 @@
 Class {
 	#name : #VMSpurScavengeWeakTest,
 	#superclass : #VMSpurInitializedOldSpaceTest,
-	#instVars : [
-		'ourWeakClass'
-	],
 	#category : #'VMMakerTests-MemoryTests'
 }
-
-{ #category : #tests }
-VMSpurScavengeWeakTest >> createWeakArrayClass [
-	ourWeakClass := self newObjectWithSlots: 3.
-	memory
-		storePointer: "InstanceSpecificationIndex" 2
-		ofObject: ourWeakClass
-		withValue: (memory integerObjectOf: WeakArray format).
-	memory ensureBehaviorHash: ourWeakClass.
-	
-]
-
-{ #category : #tests }
-VMSpurScavengeWeakTest >> newWeakObjectOfSize: aSize [
-	
-	^ self
-		newObjectWithSlots: aSize
-		format: memory weakArrayFormat
-		classIndex: (memory ensureBehaviorHash: ourWeakClass)
-]
 
 { #category : #'test-format' }
 VMSpurScavengeWeakTest >> testNewWeakObjectShouldBeInstanceOfWeakClass [

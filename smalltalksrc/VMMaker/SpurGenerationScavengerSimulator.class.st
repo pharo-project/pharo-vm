@@ -48,9 +48,3 @@ SpurGenerationScavengerSimulator >> manager: aSpurNBitMMXEndianSimulator [
 SpurGenerationScavengerSimulator >> recordMovements [
 	cameFrom := Dictionary new
 ]
-
-{ #category : #accessing }
-SpurGenerationScavengerSimulator >> rememberedSet [
-
-	^ rememberedSet
-]

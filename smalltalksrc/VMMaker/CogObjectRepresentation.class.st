@@ -128,6 +128,35 @@ CogObjectRepresentation >> freeCounters: theCounters [
 ]
 
 { #category : #'compile abstract instructions' }
+CogObjectRepresentation >> genCheckObjectPosition: destReg scratchReg: scratchReg valueReg: valueReg results: resultBlock [ 
+
+	| isDestYoung isOldAndOld isPermAndPerm recvIsPerm exit| 
+
+	<inline: true>
+	<var: #recvIsPerm type: #'AbstractInstruction *'>
+	<var: #exit type: #'AbstractInstruction *'>
+	
+	cogit CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: destReg.
+	recvIsPerm := cogit JumpAboveOrEqual: 0.
+
+	cogit CmpCq: objectMemory getMemoryMap oldSpaceStart R: destReg.
+	isDestYoung := cogit JumpBelow: 0.
+
+	cogit CmpCq: objectMemory getMemoryMap oldSpaceStart R: valueReg.
+	isOldAndOld := cogit JumpAboveOrEqual: 0.
+	exit := cogit Jump: 0.
+
+	recvIsPerm jmpTarget: (cogit Label).
+	cogit CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: valueReg.
+	isPermAndPerm := cogit JumpAbove: 0.
+
+	exit jmpTarget: (cogit Label).
+		
+	resultBlock value: isDestYoung value: isOldAndOld value: isPermAndPerm.
+	^ 0 
+]
+
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentation >> genClearAndSetSmallIntegerTagsIn: scratchReg [
 	"Set the SmallInteger tag bits when the tag bits may be filled with garbage."
 	self subclassResponsibility

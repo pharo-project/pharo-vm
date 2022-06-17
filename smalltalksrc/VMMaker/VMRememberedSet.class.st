@@ -1,6 +1,6 @@
 Class {
-	#name : #SpurRememberedSet,
-	#superclass : #VMClass,
+	#name : #VMRememberedSet,
+	#superclass : #VMStructType,
 	#instVars : [
 		'manager',
 		'fudge',
@@ -16,7 +16,26 @@ Class {
 }
 
 { #category : #'store check' }
-SpurRememberedSet >> forgetObject: objOop [
+VMRememberedSet >> doRemember: objOop [
+	"Add the argument to the remembered set and set its isRemembered bit to true.
+	 Answer the argument for the benefit of the Cogit."
+	<api>
+	<inline: false>
+	self assert: (manager isNonImmediate: objOop).
+	self deny: (manager getMemoryMap isYoungObject: objOop).
+	self deny: (self isInRememberedSet: objOop).
+	
+	manager setIsRememberedOf: objOop to: true.
+	rememberedSetSize >= rememberedSetLimit ifTrue:
+		[self growRememberedSet].
+	rememberedSetArray at: rememberedSetSize put: objOop.
+	(rememberedSetSize := rememberedSetSize + 1) >= rememberedSetRedZone ifTrue:
+		[manager scheduleScavenge].
+	^objOop
+]
+
+{ #category : #'store check' }
+VMRememberedSet >> forgetObject: objOop [
 
 	self assert: rememberedSetSize > 0.
 	self assert: (manager isRemembered: objOop).
@@ -35,13 +54,13 @@ SpurRememberedSet >> forgetObject: objOop [
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> fudge: anObject [
+VMRememberedSet >> fudge: anObject [
 
 	fudge := anObject
 ]
 
 { #category : #'remembered set' }
-SpurRememberedSet >> growRememberedSet [
+VMRememberedSet >> growRememberedSet [
 	| obj numSlots newObj base |
 	<inline: false> "Don't ruin locality in remember:"
 	<var: #base type: #'sqInt *'>
@@ -71,7 +90,7 @@ SpurRememberedSet >> growRememberedSet [
 ]
 
 { #category : #initialization }
-SpurRememberedSet >> initialize [
+VMRememberedSet >> initialize [
 
 	rememberedSetSize := 0.
 	numRememberedEphemerons := 0.
@@ -79,7 +98,7 @@ SpurRememberedSet >> initialize [
 ]
 
 { #category : #initialization }
-SpurRememberedSet >> initializeRememberedSet [
+VMRememberedSet >> initializeRememberedSet [
 	| obj |
 	obj := self objectOop.
 	obj = manager nilObject
@@ -99,13 +118,13 @@ SpurRememberedSet >> initializeRememberedSet [
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> isInRedZone [
+VMRememberedSet >> isInRedZone [
 
 	^ rememberedSetSize >= rememberedSetRedZone
 ]
 
 { #category : #'store check' }
-SpurRememberedSet >> isInRememberedSet: objOop [
+VMRememberedSet >> isInRememberedSet: objOop [
 	0 to: rememberedSetSize - 1 do:
 		[:i|
 		(rememberedSetArray at: i) = objOop ifTrue:
@@ -114,26 +133,26 @@ SpurRememberedSet >> isInRememberedSet: objOop [
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> keepSameSize [
+VMRememberedSet >> keepSameSize [
 
 	^ previousRememberedSetSize = rememberedSetSize
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> manager: anObject [
+VMRememberedSet >> manager: anObject [
 
 	manager := anObject
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> moveLastObjectTo: anIndex [
+VMRememberedSet >> moveLastObjectTo: anIndex [
 
 	rememberedSetArray
 		at: anIndex put: (rememberedSetArray at: rememberedSetSize - 1)
 ]
 
 { #category : #'debug support' }
-SpurRememberedSet >> moveNewEphemeron: ephemeron destinationIndex: destIndex [
+VMRememberedSet >> moveNewEphemeron: ephemeron destinationIndex: destIndex [
 
 	rememberedSetArray
 		at: destIndex put: (rememberedSetArray at: numRememberedEphemerons);
@@ -143,34 +162,34 @@ SpurRememberedSet >> moveNewEphemeron: ephemeron destinationIndex: destIndex [
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> numRememberedEphemerons [
+VMRememberedSet >> numRememberedEphemerons [
 	^ numRememberedEphemerons
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> numRememberedEphemerons: anInteger [ 
+VMRememberedSet >> numRememberedEphemerons: anInteger [ 
 	numRememberedEphemerons := anInteger
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> objectAt: anIndex [
+VMRememberedSet >> objectAt: anIndex [
 	
 	^ rememberedSetArray at: anIndex 
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> objectOop [
+VMRememberedSet >> objectOop [
 
 	^ manager objStackAt: rootIndex
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> previousRememberedSetSize [
+VMRememberedSet >> previousRememberedSetSize [
 	^ previousRememberedSetSize
 ]
 
 { #category : #'remembered set' }
-SpurRememberedSet >> referenceCountRememberedReferents: population maxRefCount: maxRefCount [
+VMRememberedSet >> referenceCountRememberedReferents: population maxRefCount: maxRefCount [
 	"Both reference count young objects reachable from the RT,
 	 and count the populations of each ref count, in a single pass."
 	<var: 'population' declareC: 'long population[MaxRTRefCount + 1]'>
@@ -197,82 +216,63 @@ SpurRememberedSet >> referenceCountRememberedReferents: population maxRefCount: 
 ]
 
 { #category : #'remembered set' }
-SpurRememberedSet >> relocateRememberedSet [
+VMRememberedSet >> relocateRememberedSet [
 
 	"For SpurPlanningCompactor"
 	rememberedSetArray := manager firstIndexableField: self objectOop
 ]
 
-{ #category : #'store check' }
-SpurRememberedSet >> remember: objOop [
-	"Add the argument to the remembered set and set its isRemembered bit to true.
-	 Answer the argument for the benefit of the Cogit."
-	<api>
-	<inline: false>
-	self assert: (manager isNonImmediate: objOop).
-	self deny: (manager getMemoryMap isYoungObject: objOop).
-	self deny: (self isInRememberedSet: objOop).
-	
-	manager setIsRememberedOf: objOop to: true.
-	rememberedSetSize >= rememberedSetLimit ifTrue:
-		[self growRememberedSet].
-	rememberedSetArray at: rememberedSetSize put: objOop.
-	(rememberedSetSize := rememberedSetSize + 1) >= rememberedSetRedZone ifTrue:
-		[manager scheduleScavenge].
-	^objOop
-]
-
 { #category : #accessing }
-SpurRememberedSet >> rememberPreviousSize [
+VMRememberedSet >> rememberPreviousSize [
 
 	previousRememberedSetSize := rememberedSetSize
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> rememberedSetLimit [
+VMRememberedSet >> rememberedSetLimit [
 	<cmacro: '() GIV(rememberedSetLimit)'>
 	^rememberedSetLimit
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> rememberedSetRedZone [
+VMRememberedSet >> rememberedSetRedZone [
 	^ rememberedSetRedZone
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> rememberedSetRedZone: anInteger [
+VMRememberedSet >> rememberedSetRedZone: anInteger [
 
 	<doNotGenerate>
 	rememberedSetRedZone := anInteger
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> rememberedSetSize [
+VMRememberedSet >> rememberedSetSize [
 	<cmacro: '() GIV(rememberedSetSize)'>
 	^rememberedSetSize
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> rememberedSetSize: aSize [
+VMRememberedSet >> rememberedSetSize: aSize [
 
 	rememberedSetSize := aSize
 ]
 
 { #category : #'debug support' }
-SpurRememberedSet >> rememberedSetWithIndexDo: aBlock [
+VMRememberedSet >> rememberedSetWithIndexDo: aBlock [
 
 	self rememberedSetWithIndexDo: aBlock startingAt: 0
 ]
 
 { #category : #'debug support' }
-SpurRememberedSet >> rememberedSetWithIndexDo: aBlock startingAt: startIndex [
+VMRememberedSet >> rememberedSetWithIndexDo: aBlock startingAt: startIndex [
 
 	startIndex to: rememberedSetSize - 1 do: [ :i | 
 	aBlock value: (rememberedSetArray at: i) value: i ]
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> removeByIndexUsingPreviousSize: anIndex [
+VMRememberedSet >> removeByIndexUsingPreviousSize: anIndex [
 
 	previousRememberedSetSize := previousRememberedSetSize - 1.
 	rememberedSetSize := rememberedSetSize - 1.
@@ -284,7 +284,7 @@ SpurRememberedSet >> removeByIndexUsingPreviousSize: anIndex [
 ]
 
 { #category : #'debug support' }
-SpurRememberedSet >> removeLastEphemeronAndKeepIn: index [
+VMRememberedSet >> removeLastEphemeronAndKeepIn: index [
 
 	numRememberedEphemerons := numRememberedEphemerons - 1.
 	rememberedSetArray
@@ -293,7 +293,7 @@ SpurRememberedSet >> removeLastEphemeronAndKeepIn: index [
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> removeLastEphemeronAndMoveTo: index [
+VMRememberedSet >> removeLastEphemeronAndMoveTo: index [
 
 	self removeLastEphemeronAndKeepIn: index.
 
@@ -301,7 +301,7 @@ SpurRememberedSet >> removeLastEphemeronAndMoveTo: index [
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> removeLastEphemeronTo: index andSave: anOop [
+VMRememberedSet >> removeLastEphemeronTo: index andSave: anOop [
 
 	self removeLastEphemeronAndKeepIn: index.
 
@@ -309,13 +309,13 @@ SpurRememberedSet >> removeLastEphemeronTo: index andSave: anOop [
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> removeLastObject [
+VMRememberedSet >> removeLastObject [
 
 	rememberedSetSize := rememberedSetSize - 1
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> removeObjectAt: anIndex [
+VMRememberedSet >> removeObjectAt: anIndex [
 
 	rememberedSetSize := rememberedSetSize - 1.
 	
@@ -324,7 +324,7 @@ SpurRememberedSet >> removeObjectAt: anIndex [
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> replace: oldOop with: newOop [
+VMRememberedSet >> replace: oldOop with: newOop [
 
 	self rememberedSetWithIndexDo: [ :oop :index | 
 		oop = oldOop ifTrue: [ 
@@ -334,32 +334,32 @@ SpurRememberedSet >> replace: oldOop with: newOop [
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> rootIndex [
+VMRememberedSet >> rootIndex [
 
 	^ rootIndex
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> rootIndex: anIndex [
+VMRememberedSet >> rootIndex: anIndex [
 
 	rootIndex := anIndex
 ]
 
 { #category : #accessing }
-SpurRememberedSet >> save: anOop at: index [
+VMRememberedSet >> save: anOop at: index [
 
 	rememberedSetArray at: index put: anOop
 ]
 
 { #category : #'remembered set' }
-SpurRememberedSet >> setRememberedSetRedZone [
+VMRememberedSet >> setRememberedSetRedZone [
 
 	<inline: true>
 	rememberedSetRedZone := rememberedSetLimit * 3 // 4 max: fudge
 ]
 
 { #category : #scavenger }
-SpurRememberedSet >> startingLoop [
+VMRememberedSet >> startingLoop [
 
 	numRememberedEphemerons := 0.
 	previousRememberedSetSize := 0

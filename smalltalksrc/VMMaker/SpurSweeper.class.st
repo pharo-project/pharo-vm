@@ -31,7 +31,7 @@ SpurSweeper >> bulkFreeChunkFrom: objOop [
 	(manager isRemembered: currentObj)
 		ifTrue: 
 			[self assert: (manager isFreeObject: currentObj) not.
-			 scavenger forgetObject: currentObj].
+			 scavenger getFromOldSpaceRememberedSet forgetObject: currentObj].
 	next := manager objectStartingAt: start + bytes.
 	self assert: ((manager oop: next isLessThan: manager getMemoryMap oldSpaceEnd)
 		or: [next = manager getMemoryMap oldSpaceEnd and: [(self canUseAsFreeSpace: next) not]]).

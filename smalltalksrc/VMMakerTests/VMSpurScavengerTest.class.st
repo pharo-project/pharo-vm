@@ -345,6 +345,54 @@ VMSpurScavengerTest >> testOldObjectReferenceToYoungObjectShouldBeRemappedAfterS
 	self assert: maybeMappedReferenceToYoungObject equals: newRememberedObjectAddress
 ]
 
+{ #category : #'tests-6-scavenge-rememberedset' }
+VMSpurScavengerTest >> testPermObjectInRemeberedSetShouldBeKeptWhenTheReferencedObjectIsInTheOldSpace [
+
+	| permObjectAddress youngObject otherOldObjectAddress |
+	
+	"Create a young object and reference it from the perm object"
+	permObjectAddress := self newPermanentObjectWithSlots: 1.
+	otherOldObjectAddress := self newOldSpaceObjectWithSlots: 0.
+
+	youngObject := self newZeroSizedObject.
+
+	memory storePointer: 0 ofObject: permObjectAddress withValue: youngObject.
+
+	memory storePointer: 0 ofObject: permObjectAddress withValue: otherOldObjectAddress.
+
+	"Should be in the remembered set as this is clean up during the scavenge"
+	self assert: (memory isRemembered: permObjectAddress).
+	
+	memory doScavenge: 1 "TenureByAge".
+	
+	self assert: (memory isRemembered: permObjectAddress).
+
+]
+
+{ #category : #'tests-6-scavenge-rememberedset' }
+VMSpurScavengerTest >> testPermObjectInRemeberedSetShouldBeRemovedFromPermSpaceWhenMutatedToPointAPermObject [
+
+	| permObjectAddress youngObject otherPermObjectAddress |
+	
+	"Create a young object and reference it from the perm object"
+	permObjectAddress := self newPermanentObjectWithSlots: 1.
+	otherPermObjectAddress := self newPermanentObjectWithSlots: 0.
+
+	youngObject := self newZeroSizedObject.
+
+	memory storePointer: 0 ofObject: permObjectAddress withValue: youngObject.
+
+	memory storePointer: 0 ofObject: permObjectAddress withValue: otherPermObjectAddress.
+
+	"Should be in the remembered set as this is clean up during the scavenge"
+	self assert: (memory isRemembered: permObjectAddress).
+	
+	memory doScavenge: 1 "TenureByAge".
+	
+	self deny: (memory isRemembered: permObjectAddress).
+
+]
+
 { #category : #'tests-4-scavenge-stack' }
 VMSpurScavengerTest >> testReceiverInStackShouldSurviveScanvenge [
 
@@ -396,7 +444,7 @@ VMSpurScavengerTest >> testScanvengeTenureByAgeWithRSInRedZoneShouldShrink [
 
 	| youngObjectAddress oneOldObjectAddress otherOldObjectAddress |
 	
-	memory scavenger rememberedSet rememberedSetRedZone: 2.
+	memory getFromOldSpaceRememberedSet rememberedSetRedZone: 2.
 	
 	"Create a young object and reference it from two old objects"
 	youngObjectAddress := self newZeroSizedObject.
@@ -407,7 +455,7 @@ VMSpurScavengerTest >> testScanvengeTenureByAgeWithRSInRedZoneShouldShrink [
 	otherOldObjectAddress := self newOldSpaceObjectWithSlots: 1.
 	memory storePointer: 0 ofObject: otherOldObjectAddress withValue: youngObjectAddress.
 
-	self assert: memory scavenger rememberedSet isInRedZone.
+	self assert: memory fromOldSpaceRememberedSet isInRedZone.
 	self assert: memory scavenger refCountToShrinkRT isNil. 
 	
 	memory doScavenge: 1 "TenureByAge".

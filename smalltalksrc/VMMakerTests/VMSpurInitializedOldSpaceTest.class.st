@@ -1,9 +1,6 @@
 Class {
 	#name : #VMSpurInitializedOldSpaceTest,
 	#superclass : #VMSpurMemoryManagerTest,
-	#instVars : [
-		'ourEphemeronClass'
-	],
 	#category : #'VMMakerTests-MemoryTests'
 }
 
@@ -17,16 +14,6 @@ VMSpurInitializedOldSpaceTest class >> isAbstract [
 VMSpurInitializedOldSpaceTest >> assertFreeListEmpty: aFreeListOop [
 
 	self assert: aFreeListOop equals: 0
-]
-
-{ #category : #helpers }
-VMSpurInitializedOldSpaceTest >> createEphemeronClass [
-	ourEphemeronClass := self newObjectWithSlots: 3.
-	memory 
-		storePointer: "InstanceSpecificationIndex" 2
-		ofObject: ourEphemeronClass
-		withValue: (memory integerObjectOf: Ephemeron format).
-	memory ensureBehaviorHash: ourEphemeronClass.
 ]
 
 { #category : #helpers }
@@ -85,17 +72,6 @@ VMSpurInitializedOldSpaceTest >> largerNodeOf: aNode [
 	^ memory
 		fetchPointer: memory freeChunkLargerIndex
 		ofFreeChunk: aNode
-]
-
-{ #category : #helpers }
-VMSpurInitializedOldSpaceTest >> newEphemeronObject [
-
-"In pharo Ephemerons have 3 slots"
-	
-	^ self
-		newObjectWithSlots: 3
-		format: memory ephemeronFormat
-		classIndex: (memory ensureBehaviorHash: ourEphemeronClass)
 ]
 
 { #category : #'instance creation' }

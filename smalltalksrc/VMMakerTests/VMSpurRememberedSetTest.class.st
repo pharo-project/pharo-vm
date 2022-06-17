@@ -4,7 +4,7 @@ Class {
 	#category : #'VMMakerTests-MemoryTests'
 }
 
-{ #category : #tests }
+{ #category : #'tests - from old to new' }
 VMSpurRememberedSetTest >> testFreeRememberedOldObjectShouldForgetIt [
 
 	| oldObjectAddress rememberedObjectAddress |
@@ -22,7 +22,7 @@ VMSpurRememberedSetTest >> testFreeRememberedOldObjectShouldForgetIt [
 
 ]
 
-{ #category : #tests }
+{ #category : #'tests - from old to perm' }
 VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldNotUseNewRememberedSet [
 
 	| oldObjectAddress permObjectAddress referencedOldObjectAddress |
@@ -32,21 +32,21 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldNotUseNew
 	referencedOldObjectAddress := self newOldSpaceObjectWithSlots: 0.
 	memory storePointer: 0 ofObject: oldObjectAddress withValue: referencedOldObjectAddress.
 	
-	self assert: memory newSpaceRememberedSet rememberedSetSize equals: 0.
+	self assert: memory fromOldSpaceRememberedSet rememberedSetSize equals: 0.
 		
 	permObjectAddress := memory moveToPermSpace: oldObjectAddress.
 	
-	self assert: memory newSpaceRememberedSet rememberedSetSize equals: 0.
+	self assert: memory fromOldSpaceRememberedSet rememberedSetSize equals: 0.
 
 ]
 
-{ #category : #tests }
+{ #category : #'tests - from perm to old' }
 VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldRememberPermObject [
 
 	| permObjectAddress oldObjectAddress referencedOldObjectAddress |
 
 	"Create a young object and reference it from perm object"
-	oldObjectAddress := self newOldByteObjectOfSize: 1.
+	oldObjectAddress := self newOldSpaceObjectWithSlots: 1.
 	referencedOldObjectAddress := self newOldSpaceObjectWithSlots: 0.
 	memory storePointer: 0 ofObject: oldObjectAddress withValue: referencedOldObjectAddress.
 	
@@ -60,32 +60,32 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldRememberP
 
 ]
 
-{ #category : #tests }
+{ #category : #'tests - from perm to old' }
 VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldUpdateOldRememberedSet [
 
 	| oldObjectAddress permObjectAddress referencedOldObjectAddress |
 	
 	"Create a young object and reference it from perm object"
-	oldObjectAddress := self newOldByteObjectOfSize: 1.
+	oldObjectAddress := self newOldSpaceObjectWithSlots: 1.
 	referencedOldObjectAddress := self newOldSpaceObjectWithSlots: 0.
 	memory storePointer: 0 ofObject: oldObjectAddress withValue: referencedOldObjectAddress.
 	
-	self assert: memory oldSpaceRememberedSet rememberedSetSize equals: 0.
+	self assert: memory fromPermSpaceRememberedSet rememberedSetSize equals: 0.
 		
 	permObjectAddress := memory moveToPermSpace: oldObjectAddress.
 	
-	self assert: memory oldSpaceRememberedSet rememberedSetSize equals: 1.
-	self assert: (memory oldSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
+	self assert: memory fromPermSpaceRememberedSet rememberedSetSize equals: 1.
+	self assert: (memory fromPermSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
 
 ]
 
-{ #category : #tests }
+{ #category : #'tests - from perm to new' }
 VMSpurRememberedSetTest >> testMoveToPermSpaceRememberedObjectShouldBeRememberedToo [
 
 	| oldObjectAddress rememberedObjectAddress permObjectAddress |
 	
 	"Create a young object and reference it from the old object"
-	oldObjectAddress := self newOldByteObjectOfSize: 1.	
+	oldObjectAddress := self newOldSpaceObjectWithSlots: 1.	
 	rememberedObjectAddress := self newZeroSizedObject.
 	memory storePointer: 0 ofObject: oldObjectAddress withValue: rememberedObjectAddress.
 		
@@ -96,21 +96,21 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceRememberedObjectShouldBeRemembered
 
 ]
 
-{ #category : #tests }
+{ #category : #'tests - from perm to new' }
 VMSpurRememberedSetTest >> testMoveToPermSpaceRememberedObjectShouldUpdateNewRememberedSet [
 
 	| oldObjectAddress rememberedObjectAddress permObjectAddress |
 	
 	"Create a young object and reference it from the old object"
-	oldObjectAddress := self newOldByteObjectOfSize: 1.	
+	oldObjectAddress := self newOldSpaceObjectWithSlots: 1.	
 	rememberedObjectAddress := self newZeroSizedObject.
 	memory storePointer: 0 ofObject: oldObjectAddress withValue: rememberedObjectAddress.
 	
-	self assert: (memory newSpaceRememberedSet objectAt: 0) equals: oldObjectAddress.
+	self assert: (memory fromOldSpaceRememberedSet objectAt: 0) equals: oldObjectAddress.
 		
 	permObjectAddress := memory moveToPermSpace: oldObjectAddress.
 	
-	self assert: (memory newSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
+	self assert: (memory fromOldSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
 
 ]
 
@@ -167,13 +167,15 @@ VMSpurRememberedSetTest >> testStoreOldObjectInOldObjectShouldNotRememberAnyone 
 	self deny: (memory isRemembered: storedOldObjectAddress).
 ]
 
-{ #category : #tests }
+{ #category : #'tests - from perm to old' }
 VMSpurRememberedSetTest >> testStoreOldObjectInPermObjectShouldRememberPermObject [
 
 	| permObjectAddress oldObjectAddress |
 
 	"Create a old object and reference it from perm object"
-	permObjectAddress := self newPermanentByteObjectOfSize: 1.
+	permObjectAddress := self newOldSpaceObjectWithSlots: 1.
+	permObjectAddress := memory moveToPermSpace: permObjectAddress.
+	
 	oldObjectAddress := self newOldSpaceObjectWithSlots: 0.
 	memory storePointer: 0 ofObject: permObjectAddress withValue: oldObjectAddress.
 	
@@ -195,7 +197,7 @@ VMSpurRememberedSetTest >> testStoreOldObjectInYoungObjectShouldNotRememberAnyon
 	self deny: (memory isRemembered: youngObjectAddress).
 ]
 
-{ #category : #tests }
+{ #category : #'tests - from old to perm' }
 VMSpurRememberedSetTest >> testStorePermObjectInOldObjectShouldNotRememberAnyone [
 
 	| permObjectAddress oldObjectAddress |
@@ -209,21 +211,21 @@ VMSpurRememberedSetTest >> testStorePermObjectInOldObjectShouldNotRememberAnyone
 	self deny: (memory isRemembered: oldObjectAddress).
 ]
 
-{ #category : #tests }
+{ #category : #'tests - from perm to perm' }
 VMSpurRememberedSetTest >> testStorePermObjectInPermObjectShouldNotRememberAnyone [
 
 	| permObjectAddress referencedPermObjectAddress |
 
 	"Create a perm object and reference it from perm object"
-	permObjectAddress := self newPermanentByteObjectOfSize: 1.
-	referencedPermObjectAddress := self newPermanentByteObjectOfSize: 0.
+	permObjectAddress := self newPermanentObjectWithSlots: 1.
+	referencedPermObjectAddress := self newPermanentObjectWithSlots: 0.
 	memory storePointer: 0 ofObject: permObjectAddress withValue: referencedPermObjectAddress.
 	
 	self deny: (memory isRemembered: permObjectAddress).
 	self deny: (memory isRemembered: referencedPermObjectAddress).
 ]
 
-{ #category : #tests }
+{ #category : #'tests - from new to perm' }
 VMSpurRememberedSetTest >> testStorePermObjectInYoungObjectShouldNotRememberAnyone [
 
 	| permObjectAddress youngObjectAddress |
@@ -238,7 +240,7 @@ VMSpurRememberedSetTest >> testStorePermObjectInYoungObjectShouldNotRememberAnyo
 ]
 
 { #category : #tests }
-VMSpurRememberedSetTest >> testStoreYoungAndOldObjectInPermObjectShouldRememberPermObjectInBothRememberedSets [
+VMSpurRememberedSetTest >> testStoreYoungAndOldObjectInPermObjectShouldRememberPermObject [
 
 	| permObjectAddress oldObjectAddress youngObjectAddress |
 
@@ -255,11 +257,10 @@ VMSpurRememberedSetTest >> testStoreYoungAndOldObjectInPermObjectShouldRememberP
 	self deny: (memory isRemembered: youngObjectAddress).
 
 	"Check sets"	
-	self assert: memory newSpaceRememberedSet rememberedSetSize equals: 1.
-	self assert: (memory newSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
+	self assert: memory fromOldSpaceRememberedSet rememberedSetSize equals: 0.
 	
-	self assert: memory oldSpaceRememberedSet rememberedSetSize equals: 1.
-	self assert: (memory oldSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
+	self assert: memory fromPermSpaceRememberedSet rememberedSetSize equals: 1.
+	self assert: (memory fromPermSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
 
 ]
 
