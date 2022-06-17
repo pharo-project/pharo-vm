@@ -588,11 +588,6 @@ Spur64BitMemoryManager >> isImmediateFloat: oop [
 	^oop anyMask: self smallFloatTag
 ]
 
-{ #category : #'object testing' }
-Spur64BitMemoryManager >> isIntegerObject: oop [
-	^oop anyMask: self smallIntegerTag
-]
-
 { #category : #'interpreter access' }
 Spur64BitMemoryManager >> isIntegerValue: intValue [
 	"Answer if the given value can be represented as a Smalltalk integer value.

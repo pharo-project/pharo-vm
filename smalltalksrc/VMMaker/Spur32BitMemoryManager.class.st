@@ -545,11 +545,6 @@ Spur32BitMemoryManager >> isImmediateFloat: oop [
 	^false
 ]
 
-{ #category : #'object testing' }
-Spur32BitMemoryManager >> isIntegerObject: oop [
-	^(oop bitAnd: self smallIntegerTag) ~= 0
-]
-
 { #category : #'interpreter access' }
 Spur32BitMemoryManager >> isIntegerValue: intValue [
 	"Answer if the given value can be represented as a Smalltalk integer value.

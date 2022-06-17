@@ -7163,7 +7163,8 @@ SpurMemoryManager >> isInstanceOfClassLargePositiveInteger: oop [
 
 { #category : #'object testing' }
 SpurMemoryManager >> isIntegerObject: oop [
-	^self subclassResponsibility
+
+	^ oop anyMask: self smallIntegerTag
 ]
 
 { #category : #'interpreter access' }
