@@ -110,7 +110,7 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceRememberedObjectShouldUpdateNewRem
 		
 	permObjectAddress := memory moveToPermSpace: oldObjectAddress.
 	
-	self assert: (memory fromOldSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
+	self assert: (memory fromPermSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
 
 ]
 
@@ -127,7 +127,7 @@ VMSpurRememberedSetTest >> testOldObjectIsNotRemembered [
 VMSpurRememberedSetTest >> testOverflowRememberedSetShouldMakeItGrow [
 
 	| oldObjectRootAddress originalLimit youngObjectAddress |
-	originalLimit := memory scavenger rememberedSetLimit.
+	originalLimit := memory getFromOldSpaceRememberedSet rememberedSetLimit.
 
 	"Create as many objects for the remembered set + 1"
 	oldObjectRootAddress := self newOldSpaceObjectWithSlots: originalLimit + 1.

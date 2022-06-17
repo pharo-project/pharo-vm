@@ -482,7 +482,8 @@ StackInterpreter class >> additionalHeadersDo: aBinaryBlock [
 		value: 'vmCallback.h'
 		value: self vmCallbackHeader.
 	
-	VMMemoryMap generateHeader: aBinaryBlock
+	VMMemoryMap generateHeader: aBinaryBlock.
+	VMRememberedSet generateHeader: aBinaryBlock.	
 ]
 
 { #category : #translation }
@@ -526,7 +527,8 @@ StackInterpreter class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile:'"vmCallback.h"';
 		addHeaderFile:'"sqMemoryFence.h"';
 		addHeaderFile:'"dispdbg.h"';
-		addHeaderFile:'"vmMemoryMap.h"';
+		addHeaderFile:'"vmMemoryMap.h"';	
+		addHeaderFile:'"vmRememberedSet.h"';	
 
 "This cannot be properly expressed in slang.
 If ffi is put as a separate header, slang will sort the header and put it outside the #ifdef"

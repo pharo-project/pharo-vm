@@ -982,18 +982,6 @@ SpurGenerationScavenger >> rememberedSetFudge [
 	^ eden limit - eden start / manager wordSize // 1024.
 ]
 
-{ #category : #accessing }
-SpurGenerationScavenger >> rememberedSetLimit [
-
-	^ manager getFromOldSpaceRememberedSet rememberedSetLimit
-]
-
-{ #category : #accessing }
-SpurGenerationScavenger >> rememberedSetSize [
-
-	^ manager getFromOldSpaceRememberedSet rememberedSetSize
-]
-
 { #category : #scavenger }
 SpurGenerationScavenger >> scavenge: tenuringCriterion [
 	"The main routine, scavenge, scavenges young objects reachable from the roots (the stack zone
@@ -1103,7 +1091,7 @@ SpurGenerationScavenger >> scavengeReferentsOf: referrer additionalShouldKeepRef
 	 weak arrays, if the referrer is weak only scavenge strong slots and answer
 	 true so that it won't be removed from the remembered set until later."
 
-	<inline:true>
+	<inline:#always>
 
 	| fmt foundNewReferentOrIsWeakling numSlots |
 

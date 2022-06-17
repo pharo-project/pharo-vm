@@ -658,7 +658,8 @@ Class {
 SpurMemoryManager class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
 	^{	SpurGenerationScavenger. SpurScavengeLogRecord. SpurSegmentManager. SpurSegmentInfo. VMMemoryMap. 
-		VMMemoryMapConfiguration. VMMemoryMapConfiguration forWordsize: self objectMemoryClass wordSize }, 
+		VMMemoryMapConfiguration. VMMemoryMapConfiguration forWordsize: self objectMemoryClass wordSize.
+		VMRememberedSet }, 
 		self compactorClass classesForTranslation,
 		SpurNewSpaceSpace withAllSubclasses
 		
@@ -739,7 +740,9 @@ SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
 		declareC: 'sqInt *extraRoots[ExtraRootsSize + 1 /* ', (ExtraRootsSize + 1) printString, ' */]'.
 		
 	aCCodeGenerator 
-		var: #memoryMap type: #'VMMemoryMap *'
+		var: #memoryMap type: #'VMMemoryMap *';
+		var: #fromOldSpaceRememberedSet type: #'VMRememberedSet *';
+		var: #fromPermSpaceRememberedSet type: #'VMRememberedSet *'		
 ]
 
 { #category : #'api characterization' }
@@ -3330,12 +3333,12 @@ SpurMemoryManager >> checkHeapIntegrity: excludeUnmarkedObjs classIndicesShouldB
 							[coInterpreter print: 'unremembered object '; printHex: obj; print: ' contains young oop(s)'; cr.
 							 self eek.
 							 ok := false]]]]].
-	numRememberedObjectsInHeap ~= scavenger rememberedSetSize ifTrue:
+	numRememberedObjectsInHeap ~= fromOldSpaceRememberedSet rememberedSetSize ifTrue:
 		[coInterpreter
 			print: 'root count mismatch. #heap roots ';
 			printNum: numRememberedObjectsInHeap;
 			print: '; #roots ';
-			printNum: scavenger rememberedSetSize;
+			printNum: fromOldSpaceRememberedSet rememberedSetSize;
 			cr.
 		self eek.
 		"But the system copes with overflow..."
@@ -5135,7 +5138,7 @@ SpurMemoryManager >> flushNewSpace [
 	scavenger setRawTenuringThreshold: memoryMap newSpaceEnd.
 	self scavengingGCTenuringIf: TenureByAge.
 	scavenger setRawTenuringThreshold: savedTenuringThreshold.
-	self assert: scavenger rememberedSetSize = 0.
+	self assert: fromOldSpaceRememberedSet rememberedSetSize = 0.
 	self assert: pastSpaceStart = scavenger pastSpace start.
 	self assert: freeStart = scavenger eden start
 ]
@@ -5713,12 +5716,18 @@ SpurMemoryManager >> gcStartUsecs [
 
 { #category : #accessing }
 SpurMemoryManager >> getFromOldSpaceRememberedSet [
+
+	<api>
+	<returnTypeC: #'VMRememberedSet *'> 
 	
 	^ fromOldSpaceRememberedSet 
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> getFromPermSpaceRememberedSet [
+	
+	<api>
+	<returnTypeC: #'VMRememberedSet *'> 	
 	
 	^ fromPermSpaceRememberedSet 
 ]
@@ -6526,6 +6535,20 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	compactor postSwizzleAction.
 	self initializeOldSpaceFirstFree: freeOldSpaceStart. "initializes endOfMemory, freeStart, free space"
 	self initializeNewSpaceVariables.
+
+	self 
+		cCode: [ 
+			fromOldSpaceRememberedSet := self 
+				cCoerce: (self malloc: (self sizeof: VMRememberedSet))
+				to: #'VMRememberedSet *'.
+			
+			fromOldSpaceRememberedSet rootIndex: OldRememberedSetRootIndex.
+				
+			fromPermSpaceRememberedSet := self 
+				cCoerce: (self malloc: (self sizeof: VMRememberedSet))
+				to: #'VMRememberedSet *'.
+				
+			fromOldSpaceRememberedSet rootIndex: PermRememberedSetRootIndex].
 
 	fromOldSpaceRememberedSet initializeRememberedSet.
 	fromPermSpaceRememberedSet initializeRememberedSet.
@@ -8745,7 +8768,8 @@ SpurMemoryManager >> moveToPermSpace: objOop [
 
 	(self isRemembered: objOop) ifTrue: [ 
 		fromOldSpaceRememberedSet forgetObject: objOop.
-		fromPermSpaceRememberedSet doRemember: newObj ].
+		fromPermSpaceRememberedSet doRemember: newObj ]
+	ifFalse: [ shouldBeRememberedInOldSpace ifTrue: [ fromPermSpaceRememberedSet doRemember: newObj ]].
 
 	(hash := self rawHashBitsOf: objOop) ~= 0 ifTrue: [ 
 		self setHashBitsOf: newObj to: hash ].
@@ -10836,14 +10860,14 @@ SpurMemoryManager >> reverseBytesInMemory [
 
 { #category : #scavenger }
 SpurMemoryManager >> rootTableCapacity [
-	<cmacro: '() GIV(rememberedSetLimit)'>
-	^scavenger rememberedSetLimit
+
+	^ fromOldSpaceRememberedSet rememberedSetLimit
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> rootTableCount [
-	<cmacro: '() GIV(rememberedSetSize)'>
-	^scavenger rememberedSetSize
+
+	^fromOldSpaceRememberedSet rememberedSetSize
 ]
 
 { #category : #allocation }
@@ -10981,7 +11005,7 @@ SpurMemoryManager >> scavengingGCTenuringIf: tenuringCriterion [
 	statGCEndUsecs := coInterpreter ioUTCMicrosecondsNow.
 	statSGCDeltaUsecs := statGCEndUsecs - gcStartUsecs.
 	statScavengeGCUsecs := statScavengeGCUsecs + statSGCDeltaUsecs.
-	statRootTableCount := scavenger rememberedSetSize.
+	statRootTableCount := fromOldSpaceRememberedSet rememberedSetSize.
 
 	scavenger logScavenge.
 
@@ -12785,7 +12809,7 @@ SpurMemoryManager >> vanillaShouldRemapObj: objOop [
 	 scavenge, followed by a scan-mark-free, and final compaction passes may result in
 	 scavenged fields being visited twice."
 	^(self isForwarded: objOop)
-	  or: [(memoryMap isReallyYoungObject: objOop)
+	  or: [(self isReallyYoungObject: objOop)
 		 and: [(self isInFutureSpace: objOop) not]]
 ]
 

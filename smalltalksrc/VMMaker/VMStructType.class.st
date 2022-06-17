@@ -360,13 +360,3 @@ VMStructType >> printStateOn: aStream [
 	<doNotGenerate>
 	^self
 ]
-
-{ #category : #'translation support' }
-VMStructType >> simulationOnly: aBlock [
-
-	<doNotGenerate>
-
-	self
-		cCode: [  ]
-		inSmalltalk: aBlock
-]

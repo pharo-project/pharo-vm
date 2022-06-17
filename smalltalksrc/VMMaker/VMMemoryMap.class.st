@@ -333,7 +333,16 @@ VMMemoryMap >> extendPermObjectsSpaceBy: aSize [
 { #category : #'as yet unclassified' }
 VMMemoryMap >> fixedPermSpaceStart [
 
+	<api>
 	^ memoryMapConfiguration permSpaceInitialAddress
+]
+
+{ #category : #accessing }
+VMMemoryMap >> getOldSpaceStart [
+
+	<api>
+	
+	^ self oldSpaceStart 
 ]
 
 { #category : #simulation }

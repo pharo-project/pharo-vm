@@ -60,7 +60,8 @@ Class {
 		'mobileStart',
 		'objectAfterLastMobileObject',
 		'savedFirstFieldsSpace',
-		'savedFirstFieldsSpaceNotInOldSpace'
+		'savedFirstFieldsSpaceNotInOldSpace',
+		'firstFieldOfPermRememberedSet'
 	],
 	#pools : [
 		'VMBytecodeConstants'
@@ -668,10 +669,15 @@ SpurPlanningCompactor >> remapObj: objOop [
 { #category : #private }
 SpurPlanningCompactor >> repinRememberedSet [
 	<inline: true>
-	scavenger rememberedSetSize > 0 ifTrue:
+	manager getFromOldSpaceRememberedSet rememberedSetSize > 0 ifTrue:
 		[manager storePointerUnchecked: 0 ofObject: manager oldRememberedSetObj withValue: firstFieldOfRememberedSet].
 	manager setIsPinnedOf: manager oldRememberedSetObj to: true.
-	manager getFromOldSpaceRememberedSet relocateRememberedSet
+	manager getFromOldSpaceRememberedSet relocateRememberedSet.
+	
+	manager getFromPermSpaceRememberedSet rememberedSetSize > 0 ifTrue:
+		[manager storePointerUnchecked: 0 ofObject: manager permRememberedSetObj withValue: firstFieldOfPermRememberedSet].
+	manager setIsPinnedOf: manager permRememberedSetObj to: true.
+	manager getFromPermSpaceRememberedSet relocateRememberedSet
 ]
 
 { #category : #'space management' }
@@ -807,7 +813,10 @@ SpurPlanningCompactor >> unmarkPinned: pinnedObj [
 SpurPlanningCompactor >> unpinRememberedSet [
 	<inline: true>
 	firstFieldOfRememberedSet := manager fetchPointer: 0 ofObject: manager oldRememberedSetObj.
-	manager setIsPinnedOf: manager oldRememberedSetObj to: false
+	manager setIsPinnedOf: manager oldRememberedSetObj to: false.
+	
+	firstFieldOfPermRememberedSet := manager fetchPointer: 0 ofObject: manager permRememberedSetObj.
+	manager setIsPinnedOf: manager permRememberedSetObj to: false
 ]
 
 { #category : #compaction }
@@ -892,11 +901,19 @@ SpurPlanningCompactor >> updatePointersInInitialImmobileObjects [
 SpurPlanningCompactor >> updatePointersInManagerHeapEntities [
 	"The special non-pointer objects containing pointers, which are the objStacks and the rememberedSet,
 	 must be updated manually since they will not be recognized as containing pointers in the normal sweep."
+
 	manager relocateObjStacksForPlanningCompactor.
-	(scavenger rememberedSetSize > 0
+	
+	(manager getFromOldSpaceRememberedSet rememberedSetSize > 0
 	 and: [self isMobile: firstFieldOfRememberedSet]) ifTrue:
 		[firstFieldOfRememberedSet := manager fetchPointer: 0 ofObject: firstFieldOfRememberedSet].
-	self relocateObjectsInHeapEntity: manager oldRememberedSetObj from: 1 to: scavenger rememberedSetSize - 1
+	self relocateObjectsInHeapEntity: manager oldRememberedSetObj from: 1 to: manager getFromOldSpaceRememberedSet rememberedSetSize - 1.
+
+	(manager getFromPermSpaceRememberedSet rememberedSetSize > 0
+	 and: [self isMobile: firstFieldOfPermRememberedSet]) ifTrue:
+		[firstFieldOfPermRememberedSet := manager fetchPointer: 0 ofObject: firstFieldOfPermRememberedSet].
+	self relocateObjectsInHeapEntity: manager permRememberedSetObj from: 1 to: manager getFromPermSpaceRememberedSet rememberedSetSize - 1
+
 	"Note that we /must not/ set the rememberedSetObj here since it is a slot in the hiddenRootsObj
 	 and will be updated normally in updatePointersInInitialImmobileObjects.  So do not do
 	(self isMobile: manager rememberedSetObj) ifTrue:

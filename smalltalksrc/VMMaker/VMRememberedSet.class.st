@@ -15,6 +15,50 @@ Class {
 	#category : #VMMaker
 }
 
+{ #category : #translation }
+VMRememberedSet class >> filteredInstVarNames [
+
+	^ super filteredInstVarNames copyWithoutAll: #(manager)
+]
+
+{ #category : #translation }
+VMRememberedSet class >> generateHeader: aBinaryBlock [
+
+	aBinaryBlock
+		value: 'vmRememberedSet.h'
+		value: (String streamContents: [ :s | 
+				 self printTypedefOn: s.
+				 s cr ])
+]
+
+{ #category : #translation }
+VMRememberedSet class >> implicitVariables [
+
+	^ #(manager)
+]
+
+{ #category : #translation }
+VMRememberedSet class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
+
+	self filteredInstVarNames do: [ :aName |
+		aBinaryBlock value: aName value: (aName caseOf: {
+						['rememberedSetArray']		-> [#'sqInt *'].
+				} otherwise: [ #sqInt ]) ].
+
+]
+
+{ #category : #translation }
+VMRememberedSet class >> needsTypeTag [
+
+	^true
+]
+
+{ #category : #translation }
+VMRememberedSet class >> shouldBeGenerated [
+
+	^ false
+]
+
 { #category : #'store check' }
 VMRememberedSet >> doRemember: objOop [
 	"Add the argument to the remembered set and set its isRemembered bit to true.
@@ -140,7 +184,7 @@ VMRememberedSet >> keepSameSize [
 
 { #category : #accessing }
 VMRememberedSet >> manager: anObject [
-
+	<doNotGenerate>
 	manager := anObject
 ]
 
@@ -173,8 +217,9 @@ VMRememberedSet >> numRememberedEphemerons: anInteger [
 
 { #category : #accessing }
 VMRememberedSet >> objectAt: anIndex [
-	
-	^ rememberedSetArray at: anIndex 
+
+	<inline: true>	
+ 	^ self rememberedSetArray at: anIndex 
 ]
 
 { #category : #accessing }
@@ -229,8 +274,20 @@ VMRememberedSet >> rememberPreviousSize [
 ]
 
 { #category : #accessing }
+VMRememberedSet >> rememberedSetArray [
+
+	^ rememberedSetArray
+]
+
+{ #category : #accessing }
+VMRememberedSet >> rememberedSetArray: anObject [
+
+	rememberedSetArray := anObject
+]
+
+{ #category : #accessing }
 VMRememberedSet >> rememberedSetLimit [
-	<cmacro: '() GIV(rememberedSetLimit)'>
+
 	^rememberedSetLimit
 ]
 
@@ -248,7 +305,7 @@ VMRememberedSet >> rememberedSetRedZone: anInteger [
 
 { #category : #accessing }
 VMRememberedSet >> rememberedSetSize [
-	<cmacro: '() GIV(rememberedSetSize)'>
+
 	^rememberedSetSize
 ]
 

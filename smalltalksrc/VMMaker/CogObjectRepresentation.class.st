@@ -139,10 +139,10 @@ CogObjectRepresentation >> genCheckObjectPosition: destReg scratchReg: scratchRe
 	cogit CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: destReg.
 	recvIsPerm := cogit JumpAboveOrEqual: 0.
 
-	cogit CmpCq: objectMemory getMemoryMap oldSpaceStart R: destReg.
+	cogit CmpCq: objectMemory getMemoryMap getOldSpaceStart R: destReg.
 	isDestYoung := cogit JumpBelow: 0.
 
-	cogit CmpCq: objectMemory getMemoryMap oldSpaceStart R: valueReg.
+	cogit CmpCq: objectMemory getMemoryMap getOldSpaceStart R: valueReg.
 	isOldAndOld := cogit JumpAboveOrEqual: 0.
 	exit := cogit Jump: 0.
 
