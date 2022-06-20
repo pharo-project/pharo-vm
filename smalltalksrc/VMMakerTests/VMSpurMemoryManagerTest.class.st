@@ -235,6 +235,16 @@ VMSpurMemoryManagerTest >> new16BitIndexableOfSize: aSize [
 	^ self newBitIndexableOfSize: aSize bytesPerSlot: 2 format: memory firstShortFormat
 ]
 
+{ #category : #'helpers - methods' }
+VMSpurMemoryManagerTest >> new32BitIndexableFromArray: array [
+
+	| indexable |
+	indexable := self new32BitIndexableOfSize: array size.
+	0 to: (array size - 1) do: [ :i | 
+		memory storeFloat32: i ofObject: indexable withValue: (array at: i + 1) ].
+	^ indexable
+]
+
 { #category : #helpers }
 VMSpurMemoryManagerTest >> new32BitIndexableOfSize: aSize [
 

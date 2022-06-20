@@ -105,26 +105,9 @@ VMJitMethodTest >> testJitCompiledFloat32VectorAddition [
 
 	| callingMethod cm x y z |
 	
-	x := self new32BitIndexableOfSize: 8.
-	y := self new32BitIndexableOfSize: 8.
+	x := self new32BitIndexableFromArray: #(1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0).
+	y := self new32BitIndexableFromArray: #(10.0 20.0 30.0 40.0 50.0 60.0 70.0 80.0).
 	z := self new32BitIndexableOfSize: 8.
-		
-	memory storeFloat32: 0 ofObject: x withValue: 1.0. 
-	memory storeFloat32: 1 ofObject: x withValue: 2.0.
-	memory storeFloat32: 2 ofObject: x withValue: 3.0.
-	memory storeFloat32: 3 ofObject: x withValue: 4.0.
-	memory storeFloat32: 4 ofObject: x withValue: 5.0. 
-	memory storeFloat32: 5 ofObject: x withValue: 6.0.
-	memory storeFloat32: 6 ofObject: x withValue: 7.0.
-	memory storeFloat32: 7 ofObject: x withValue: 8.0.
-	memory storeFloat32: 0 ofObject: y withValue: 10.0.
-	memory storeFloat32: 1 ofObject: y withValue: 20.0.
-	memory storeFloat32: 2 ofObject: y withValue: 30.0.
-	memory storeFloat32: 3 ofObject: y withValue: 40.0.
-	memory storeFloat32: 4 ofObject: y withValue: 50.0.
-	memory storeFloat32: 5 ofObject: y withValue: 60.0.
-	memory storeFloat32: 6 ofObject: y withValue: 70.0.
-	memory storeFloat32: 7 ofObject: y withValue: 80.0.
 		
 	cm := IRBuilder buildMethod: [ :builder |"TODO handle arrays with an odd number of elements"
 		builder
