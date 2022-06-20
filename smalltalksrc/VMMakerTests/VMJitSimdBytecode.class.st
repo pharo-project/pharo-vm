@@ -30,10 +30,10 @@ VMJitSimdBytecode >> testAddVectorCopiesArraySumIntoVectorRegister [
 	primitiveAddress := self compile: [ 
 								 cogit genPushTemporaryVariable: 0.		
 								 cogit genPushTemporaryVariable: 1.		
-								 cogit genPushArrayToRegister.
+								 cogit genPushFloat64ArrayToRegister.
 								 cogit genPushTemporaryVariable: 2.
 								 cogit genPushTemporaryVariable: 1.		
-								 cogit genPushArrayToRegister.
+								 cogit genPushFloat64ArrayToRegister.
 								 cogit genAddFloat64Vector.
 		                    "If the primitive fails it continues, so we need to have an instruction to detect the end"
 		                    endInstruction := cogit Stop ].
@@ -65,10 +65,10 @@ VMJitSimdBytecode >> testAddVectorPushesArraySumIntoSimulatedStack [
 	primitiveAddress := self compile: [ 
 								 cogit genPushTemporaryVariable: 0.		
 								 cogit genPushTemporaryVariable: 1.		
-								 cogit genPushArrayToRegister.
+								 cogit genPushFloat64ArrayToRegister.
 								 cogit genPushTemporaryVariable: 2.
 								 cogit genPushTemporaryVariable: 1.		
-								 cogit genPushArrayToRegister.
+								 cogit genPushFloat64ArrayToRegister.
 								 cogit genAddFloat64Vector.
 		                    "If the primitive fails it continues, so we need to have an instruction to detect the end"
 		                    endInstruction := cogit Stop ].
@@ -100,7 +100,7 @@ VMJitSimdBytecode >> testPushArrayToRegisterCopiesArrayChunkIntoVectorRegister [
 	primitiveAddress := self compile: [ 
 								 cogit genPushTemporaryVariable: 0.		
 								 cogit genPushTemporaryVariable: 1.		
-								 cogit genPushArrayToRegister.
+								 cogit genPushFloat64ArrayToRegister.
 		                    "If the primitive fails it continues, so we need to have an instruction to detect the end"
 		                    endInstruction := cogit Stop ].
 
@@ -131,7 +131,7 @@ VMJitSimdBytecode >> testPushArrayToRegisterPushesArrayChunkIntoSimulatedStack [
 	primitiveAddress := self compile: [ 
 								 cogit genPushTemporaryVariable: 0.		
 								 cogit genPushTemporaryVariable: 1.		
-								 cogit genPushArrayToRegister.
+								 cogit genPushFloat64ArrayToRegister.
 		                    "If the primitive fails it continues, so we need to have an instruction to detect the end"
 		                    endInstruction := cogit Stop ].
 
@@ -161,10 +161,10 @@ VMJitSimdBytecode >> testStoreRegisterIntoArrayReplacesArrayElementsWithRegister
 	primitiveAddress := self compile: [ 
 								 cogit genPushTemporaryVariable: 0.		
 								 cogit genPushTemporaryVariable: 1.		
-								 cogit genPushArrayToRegister.
+								 cogit genPushFloat64ArrayToRegister.
 								 cogit genPushTemporaryVariable: 2.
 								 cogit genPushTemporaryVariable: 1.
-								 cogit genStoreRegisterIntoArray.
+								 cogit genStoreFloat64RegisterIntoArray.
 		                    "If the primitive fails it continues, so we need to have an instruction to detect the end"
 		                    endInstruction := cogit Stop ].
 

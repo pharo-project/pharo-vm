@@ -305,9 +305,8 @@ UnicornARMv8Simulator >> temporaryRegister [
 
 { #category : #accessing }
 UnicornARMv8Simulator >> v0 [
-   | registerValue firstValue secondValue |
-	
-	^ self readRawRegister: UcARM64Registers v1 size: 16
+
+	^ self readRawRegister: UcARM64Registers v0 size: 16
 ]
 
 { #category : #accessing }

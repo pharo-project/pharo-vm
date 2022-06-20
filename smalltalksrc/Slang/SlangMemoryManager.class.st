@@ -68,6 +68,36 @@ SlangMemoryManager >> copyFrom: start to: end [
 ]
 
 { #category : #'memory-access' }
+SlangMemoryManager >> float32At: address [ 
+
+	| region |
+	"Check the access is aligned to the size we want to read"
+	address \\ 4 ~= 0 ifTrue: [self unalignedAccessError].
+	
+	"Get the memory region where the address is stored"
+	region := self regionForAddress: address.
+	
+	^ region
+		floatAt: address - region start
+
+]
+
+{ #category : #'memory-access' }
+SlangMemoryManager >> float32At: address put: value [ 
+	
+	| region |
+	"Check the access is aligned to the size we want to read"
+	address \\ 4 ~= 0 ifTrue: [self unalignedAccessError].
+	
+	"Get the memory region where the address is stored"
+	region := self regionForAddress: address.
+	
+	^ region
+		floatAt: address - region start
+		put: value
+]
+
+{ #category : #'memory-access' }
 SlangMemoryManager >> float64At: address [ 
 
 	| region |
@@ -95,7 +125,6 @@ SlangMemoryManager >> float64At: address put: value [
 	^ region
 		doubleAt: address - region start
 		put: value
-
 ]
 
 { #category : #allocating }

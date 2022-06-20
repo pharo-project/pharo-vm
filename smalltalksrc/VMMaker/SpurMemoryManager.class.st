@@ -4805,6 +4805,13 @@ SpurMemoryManager >> fetchClassTagOfNonImm: obj [
 ]
 
 { #category : #'object access' }
+SpurMemoryManager >> fetchFloat32: index ofObject: objOop [ 
+
+	<returnTypeC: #float>
+	^self float32At: objOop + self baseHeaderSize + (index << 2)
+]
+
+{ #category : #'object access' }
 SpurMemoryManager >> fetchFloat64: index ofObject: objOop [ 
 
 	<returnTypeC: #double>
@@ -5108,6 +5115,20 @@ SpurMemoryManager >> fixedFieldsOfClassFormat: classFormat [
 SpurMemoryManager >> fixedFieldsOfClassFormatMask [
 	<api>
 	^1 << self fixedFieldsFieldWidth - 1
+]
+
+{ #category : #'object access' }
+SpurMemoryManager >> float32At: anInteger [ 
+	
+	<doNotGenerate>
+	^ memoryManager float32At: anInteger
+]
+
+{ #category : #'memory access' }
+SpurMemoryManager >> float32At: anInteger put: aNumber [ 
+
+	<doNotGenerate>
+	memoryManager float32At: anInteger put: aNumber
 ]
 
 { #category : #'object access' }
@@ -11726,6 +11747,12 @@ SpurMemoryManager >> storeCheckBoundary [
 	"A renaming for the Cogit, which couldn't make sense of GIV(newSpaceLimit)"
 	<api>
 	^newSpaceLimit
+]
+
+{ #category : #'object access' }
+SpurMemoryManager >> storeFloat32: index ofObject: objOop withValue: value [ 
+	<var: #value type: #float>
+	^self float32At: objOop + self baseHeaderSize + (index << 2) put: value
 ]
 
 { #category : #'object access' }

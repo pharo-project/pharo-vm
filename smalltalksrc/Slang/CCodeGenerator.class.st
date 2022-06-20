@@ -3464,7 +3464,7 @@ CCodeGenerator >> isKernelSelector: sel [
 		 intAt: intAt:put: intAtPointer: intAtPointer:put:
 		 longAt: longAt:put: longAtPointer: longAtPointer:put:
 		 long32At: long32At:put: long64At: long64At:put:
-		 float64At: float64At:put:
+		 float32At: float32At:put: float64At: float64At:put:
 		 fetchFloatAt:into: storeFloatAt:from: fetchFloatAtPointer:into: storeFloatAtPointer:from:
 		 fetchSingleFloatAt:into: storeSingleFloatAt:from: fetchSingleFloatAtPointer:into: storeSingleFloatAtPointer:from:
 		 pointerForOop: oopForPointer:

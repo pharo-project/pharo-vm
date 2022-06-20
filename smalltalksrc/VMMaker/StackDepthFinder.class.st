@@ -234,12 +234,6 @@ StackDepthFinder >> pushActiveContext [
 	self push
 ]
 
-{ #category : #'extended instruction decoding' }
-StackDepthFinder >> pushArrayToRegister [
-
-	self drop.
-]
-
 { #category : #'instruction decoding' }
 StackDepthFinder >> pushClosureCopyNumCopiedValues: numCopied numArgs: numArgs blockSize: blockSize [
 	"Push Closure bytecode."
@@ -267,6 +261,18 @@ StackDepthFinder >> pushConstant: value [
 StackDepthFinder >> pushExplicitOuter: level [
 	"Push receiver for explcit outer, on Top Of Stack bytecode."
 	self push
+]
+
+{ #category : #'extended instruction decoding' }
+StackDepthFinder >> pushFloat32ArrayToRegister [
+
+	self drop.
+]
+
+{ #category : #'extended instruction decoding' }
+StackDepthFinder >> pushFloat64ArrayToRegister [
+
+	self drop.
 ]
 
 { #category : #'instruction decoding' }
@@ -396,6 +402,18 @@ StackDepthFinder >> stackp [
 	^stackp
 ]
 
+{ #category : #'extended instruction decoding' }
+StackDepthFinder >> storeFloat32RegisterIntoArray [
+
+	self drop: 2.
+]
+
+{ #category : #'extended instruction decoding' }
+StackDepthFinder >> storeFloat64RegisterIntoArray [
+
+	self drop: 2.
+]
+
 { #category : #'instruction decoding' }
 StackDepthFinder >> storeIntoLiteralVariable: anAssociation [ 
 	"Store Top Of Stack Into Literal Variable Of Method bytecode."
@@ -417,12 +435,6 @@ StackDepthFinder >> storeIntoRemoteTemp: remoteTempIndex inVectorAt: tempVectorI
 StackDepthFinder >> storeIntoTemporaryVariable: offset [ 
 	"Store Top Of Stack Into Temporary Variable Of Method bytecode."
 
-]
-
-{ #category : #'extended instruction decoding' }
-StackDepthFinder >> storeRegisterIntoArray [
-
-	self drop: 2.
 ]
 
 { #category : #'instruction decoding' }

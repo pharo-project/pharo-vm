@@ -1388,7 +1388,7 @@ StackToRegisterMappingCogit >> genAddFloat32Vector [
 	self ssPushVectorRegister: sumReg.
 	self ssTop moveToVectorReg: sumReg.
 	
-	self FaddS: 64 Rv: array1Reg Rv: array2Reg Rv: sumReg.
+	self FaddS: 32 Rv: array1Reg Rv: array2Reg Rv: sumReg.
 	
 	"Returns 0 if worked"
 	^0
@@ -1937,8 +1937,11 @@ StackToRegisterMappingCogit >> genMappedInlinePrimitive: primIndex [
 	primIndex caseOf: 
 	{ 
 		[ 0 ] -> [^self genAddFloat64Vector].
-		[ 1 ] -> [^self genPushArrayToRegister].
-		[ 2 ] -> [^self genStoreRegisterIntoArray].
+		[ 1 ] -> [^self genPushFloat64ArrayToRegister].
+		[ 2 ] -> [^self genStoreFloat64RegisterIntoArray].
+		[ 3 ] -> [^self genAddFloat32Vector].
+		[ 4 ] -> [^self genPushFloat32ArrayToRegister].
+	   [ 5 ] -> [^self genStoreFloat32RegisterIntoArray].
 	} otherwise: [^EncounteredUnknownBytecode].
 ]
 
@@ -2107,8 +2110,51 @@ StackToRegisterMappingCogit >> genPushActiveContextBytecode [
 	^self ssPushRegister: ReceiverResultReg
 ]
 
+{ #category : #'bytecode generator support' }
+StackToRegisterMappingCogit >> genPushEnclosingObjectAt: level [
+	"Uncached push enclosing object"
+	self voidReceiverResultRegContainsSelf.
+	self ssAllocateCallReg: SendNumArgsReg and: ReceiverResultReg.
+	self MoveCq: level R: SendNumArgsReg.
+	self CallRT: ceEnclosingObjectTrampoline.
+	^self ssPushRegister: ReceiverResultReg
+]
+
 { #category : #'mapped inline primitive generators - vectorial' }
-StackToRegisterMappingCogit >> genPushArrayToRegister [
+StackToRegisterMappingCogit >> genPushFloat32ArrayToRegister [
+
+	| arrayReg indexReg vectorReg |
+
+	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
+	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
+	
+	self ssTop moveToReg: arrayReg.
+	self ssPop: 1.
+	
+	self ssTop moveToReg: indexReg.
+	self ssPop: 1.
+	
+	self AddCq: objectMemory baseHeaderSize R: arrayReg.
+
+	"The index is a SmallInteger, so it is shifted left 3 and plus 1. So, as we need to untag it and then shift it 2 (for getting number of bytes from number of elements), we just shift 1. 
+	Only valid in 32bits Lanes and 64bits machine."
+
+	self assert: (objectMemory wordSize = 8).
+	
+	self LogicalShiftRightCq: 1 R: indexReg.
+	self AddR: indexReg R: arrayReg.
+	
+	vectorReg := self allocateVectorRegNotConflictingWith: 0.
+	self ssPushVectorRegister: vectorReg.
+	
+	self Ld1S: 32 Vr: vectorReg R: arrayReg Mw: 0.
+	
+	"Returns 0 if worked"
+	^0
+]
+
+{ #category : #'mapped inline primitive generators - vectorial' }
+StackToRegisterMappingCogit >> genPushFloat64ArrayToRegister [
 
 	| arrayReg indexReg vectorReg |
 
@@ -2138,16 +2184,6 @@ StackToRegisterMappingCogit >> genPushArrayToRegister [
 	
 	"Returns 0 if worked"
 	^0
-]
-
-{ #category : #'bytecode generator support' }
-StackToRegisterMappingCogit >> genPushEnclosingObjectAt: level [
-	"Uncached push enclosing object"
-	self voidReceiverResultRegContainsSelf.
-	self ssAllocateCallReg: SendNumArgsReg and: ReceiverResultReg.
-	self MoveCq: level R: SendNumArgsReg.
-	self CallRT: ceEnclosingObjectTrampoline.
-	^self ssPushRegister: ReceiverResultReg
 ]
 
 { #category : #'bytecode generator support' }
@@ -2690,6 +2726,75 @@ StackToRegisterMappingCogit >> genStaticallyResolvedSpecialSelectorComparison [
 			ifFalse: [objectMemory falseObject])
 ]
 
+{ #category : #'mapped inline primitive generators - vectorial' }
+StackToRegisterMappingCogit >> genStoreFloat32RegisterIntoArray [
+	| arrayReg indexReg vectorReg |
+	
+	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
+	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
+	
+	self ssTop moveToReg: arrayReg.
+	self ssPop: 1.
+	
+	self ssTop moveToReg: indexReg.
+	self ssPop: 1.
+	
+	self AddCq: objectMemory baseHeaderSize R: arrayReg.
+
+	"The index is a SmallInteger, so it is shifted left 3 and plus 1. So, as we need to untag it and then shift it left 2 (for getting number of bytes from number of elements), we just shift it 1 right. 
+	Only valid in 32bits Lanes and 64bits machine."
+
+	self assert: (objectMemory wordSize = 8).
+	
+	self LogicalShiftRightCq: 1 R: indexReg.
+	self AddR: indexReg R: arrayReg.
+	
+	vectorReg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
+	self ssTop moveToVectorReg: vectorReg.
+	self ssPop: 1.
+	
+	self St1S: 32 Vr: vectorReg R: arrayReg Mw: 0.
+	
+	self ssPushRegister: arrayReg.
+	
+	"Returns 0 if worked"
+	^0
+]
+
+{ #category : #'mapped inline primitive generators - vectorial' }
+StackToRegisterMappingCogit >> genStoreFloat64RegisterIntoArray [
+	| arrayReg indexReg vectorReg |
+	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
+	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
+	
+	self ssTop moveToReg: arrayReg.
+	self ssPop: 1.
+	
+	self ssTop moveToReg: indexReg.
+	self ssPop: 1.
+	
+	self AddCq: objectMemory baseHeaderSize R: arrayReg.
+
+	"The index is a SmallInteger, so it is shifted left 3 and plus 1. So, as we need to untag it and then shift it 3 (for getting number of bytes from number of elements), we just substract 1. 
+	Only valid in 64bits Lanes and 64bits machine."
+
+	self assert: (objectMemory wordSize = 8).
+	
+	self SubCq: 1 R: indexReg.
+	self AddR: indexReg R: arrayReg.
+	
+	vectorReg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
+	self ssTop moveToVectorReg: vectorReg.
+	self ssPop: 1.
+	
+	self St1S: 64 Vr: vectorReg R: arrayReg Mw: 0.
+	
+	self ssPushRegister: arrayReg.
+	
+	"Returns 0 if worked"
+	^0
+]
+
 { #category : #'bytecode generator stores' }
 StackToRegisterMappingCogit >> genStorePop: popBoolean LiteralVariable: litVarIndex [
 	<inline: true>
@@ -2847,40 +2952,6 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean TemporaryVariable: tempIn
 		Mw: (self frameOffsetOfTemporary: tempIndex)
 		r: FPReg.
 	(self simStackAt: tempIndex + 1) bcptr: bytecodePC. "for debugging"
-	^0
-]
-
-{ #category : #'mapped inline primitive generators - vectorial' }
-StackToRegisterMappingCogit >> genStoreRegisterIntoArray [
-	| arrayReg indexReg vectorReg |
-	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
-	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
-	
-	self ssTop moveToReg: arrayReg.
-	self ssPop: 1.
-	
-	self ssTop moveToReg: indexReg.
-	self ssPop: 1.
-	
-	self AddCq: objectMemory baseHeaderSize R: arrayReg.
-
-	"The index is a SmallInteger, so it is shifted left 3 and plus 1. So, as we need to untag it and then shift it 3 (for getting number of bytes from number of elements), we just substract 1. 
-	Only valid in 64bits Lanes and 64bits machine."
-
-	self assert: (objectMemory wordSize = 8).
-	
-	self SubCq: 1 R: indexReg.
-	self AddR: indexReg R: arrayReg.
-	
-	vectorReg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
-	self ssTop moveToVectorReg: vectorReg.
-	self ssPop: 1.
-	
-	self St1S: 64 Vr: vectorReg R: arrayReg Mw: 0.
-	
-	self ssPushRegister: arrayReg.
-	
-	"Returns 0 if worked"
 	^0
 ]
 

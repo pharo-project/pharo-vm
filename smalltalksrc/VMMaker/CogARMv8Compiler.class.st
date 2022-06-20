@@ -1874,7 +1874,9 @@ CogARMv8Compiler >> concretizeFaddSRvRvRv [
 
 	size = 64 
 		ifTrue: [ t := 1. q := 1 ]
-		ifFalse: [ self notYetImplemented ].
+		ifFalse: [ size = 32 ifTrue: [ t := 0. q := 1]
+			ifFalse: [self notYetImplemented]
+		].
 
 	instruction := self addT: t q: q term1: vectorReg1 term2: vectorReg2 dest: vectorRegSum.
 
@@ -1985,10 +1987,15 @@ CogARMv8Compiler >> concretizeLd1SVrRMw [
 	offset := operands at: 3.
 	opCode := 2r0111. "TODO support multiple-register variants"
 
-	size = 64 & (offset = 0 | (offset = 16))
+	(offset = 0 | (offset = 16))
 		ifTrue: [ 
-			q := 1.
-			t := 11 ]
+			size = 64
+				ifTrue: [ q := 1. t := 11 ]
+				ifFalse: [ size = 32
+					ifTrue: [ q := 1. t := 10 ]
+					ifFalse: [ self notYetImplemented ]
+				]
+			 ]
 		ifFalse: [ self notYetImplemented ].
 
 	instruction := offset = 0
@@ -3085,10 +3092,15 @@ CogARMv8Compiler >> concretizeSt1VRMRO [
 	offset := operands at: 3.
 	opCode := 2r0111. "TODO support multiple-register variants"
 
-	size = 64 & (offset = 0 | (offset = 16))
+	(offset = 0 | (offset = 16))
 		ifTrue: [ 
-			q := 1.
-			t := 11 ]
+			size = 64
+				ifTrue: [ q := 1. t := 11 ]
+				ifFalse: [ size = 32
+					ifTrue: [ q := 1. t := 10 ]
+					ifFalse: [ self notYetImplemented ]
+				]
+			 ]
 		ifFalse: [ self notYetImplemented ].
 
 	instruction := offset = 0
