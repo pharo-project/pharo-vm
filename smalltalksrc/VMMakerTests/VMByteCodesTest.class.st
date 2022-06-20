@@ -742,3 +742,31 @@ VMByteCodesTest >> testStoreRegisterIntoArrayBytecode [
 	self assert: (memory fetchFloat64: 2 ofObject: array) equals: 5.0.
 	self assert: (memory fetchFloat64: 3 ofObject: array) equals: 6.0.
 ]
+
+{ #category : #'tests-simd' }
+VMByteCodesTest >> testSubVectorBytecode [
+	| index vector0 vector1 result |
+	
+	index := 0.
+
+	vector0 := self new64BitIndexableOfSize: 2.
+	memory storeFloat64: 0 ofObject: vector0 withValue: 5.0. 
+	memory storeFloat64: 1 ofObject: vector0 withValue: 3.0. 
+
+	vector1 := self new64BitIndexableOfSize: 2.
+	memory storeFloat64: 0 ofObject: vector1 withValue: 2.0. 
+	memory storeFloat64: 1 ofObject: vector1 withValue: 1.0. 
+		
+	stackBuilder addNewFrame
+		stack: { vector0. vector1 } .
+	stackBuilder buildStack.
+	
+	self interpret: [ interpreter subVectorBytecode ].
+	
+	result := interpreter stackTop.
+	
+	self deny: result equals: memory nilObject.
+	self assert: (memory fetchFloat64: 0 ofObject: result) equals: 3.0.
+	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 2.0.
+	
+]

@@ -41,6 +41,7 @@ Class {
 		'Fill32',
 		'FirstJump',
 		'FirstShortJump',
+		'FsubSRvRvRv',
 		'Jump',
 		'JumpAbove',
 		'JumpAboveOrEqual',
@@ -327,6 +328,7 @@ CogRTLOpcodes class >> initialize [
 						St1VrRMw
 						Ld1VrRMw
 						FaddSRvRvRv
+						FsubSRvRvRv
 
 						LastRTLCode).
 

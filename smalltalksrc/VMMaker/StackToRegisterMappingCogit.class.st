@@ -1942,6 +1942,7 @@ StackToRegisterMappingCogit >> genMappedInlinePrimitive: primIndex [
 		[ 3 ] -> [^self genAddFloat32Vector].
 		[ 4 ] -> [^self genPushFloat32ArrayToRegister].
 	   [ 5 ] -> [^self genStoreFloat32RegisterIntoArray].
+	   [ 6 ] -> [^self genSubFloat64Vector].
 	} otherwise: [^EncounteredUnknownBytecode].
 ]
 
@@ -2952,6 +2953,29 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean TemporaryVariable: tempIn
 		Mw: (self frameOffsetOfTemporary: tempIndex)
 		r: FPReg.
 	(self simStackAt: tempIndex + 1) bcptr: bytecodePC. "for debugging"
+	^0
+]
+
+{ #category : #'mapped inline primitive generators - vectorial' }
+StackToRegisterMappingCogit >> genSubFloat64Vector [
+	| array1Reg array2Reg subReg |
+	
+	array1Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
+	array2Reg := self allocateVectorRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: array1Reg).
+	subReg := self allocateVectorRegNotConflictingWith: 0.
+	
+	self ssTop moveToVectorReg: array1Reg.
+	self ssPop: 1.
+	
+	self ssTop moveToVectorReg: array2Reg.
+	self ssPop: 1.
+	
+	self ssPushVectorRegister: subReg.
+	self ssTop moveToVectorReg: subReg.
+	
+	self FsubS: 64 Rv: array2Reg Rv: array1Reg Rv: subReg.
+	
+	"Returns 0 if worked"
 	^0
 ]
 

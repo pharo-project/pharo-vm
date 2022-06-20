@@ -1265,6 +1265,7 @@ CogARMv8Compiler >> computeMaximumSize [
 		[St1VrRMw] -> [ ^ 4 ].
 		[Ld1VrRMw] -> [ ^ 4 ].
 		[FaddSRvRvRv] -> [ ^ 4 ].
+		[FsubSRvRvRv] -> [ ^ 4 ].
 		}.
 	^0 "to keep C compiler quiet"
 
@@ -1890,6 +1891,33 @@ CogARMv8Compiler >> concretizeFill32 [
 	"fill with operand 0 according to the processor's endianness"
 
 	self machineCodeAt: 0 put: (operands at: 0).
+	^ machineCodeSize := 4
+]
+
+{ #category : #concretizing }
+CogARMv8Compiler >> concretizeFsubSRvRvRv [
+
+	"Will get inlined into concretizeAt: switch."
+
+	<inline: true>
+
+	| size minuendVectorRegister subtrahendVectorRegister vectorRegSum t q instruction |
+
+	size := operands at: 0.
+	minuendVectorRegister := operands at: 1.
+	subtrahendVectorRegister := operands at: 2.
+	vectorRegSum := operands at: 3.
+
+	size = 64 
+		ifTrue: [ t := 1. q := 1 ]
+		ifFalse: [ size = 32 ifTrue: [ t := 0. q := 1]
+			ifFalse: [self notYetImplemented]
+		].
+
+	instruction := self subT: t q: q term1: minuendVectorRegister term2: subtrahendVectorRegister dest: vectorRegSum.
+
+	self machineCodeAt: 0 put: instruction.
+
 	^ machineCodeSize := 4
 ]
 
@@ -3514,6 +3542,7 @@ CogARMv8Compiler >> dispatchConcretize [
 		[ St1VrRMw ] -> [ ^ self concretizeSt1VRMRO ].
 		[ Ld1VrRMw ] -> [ ^ self concretizeLd1SVrRMw ].
 		[ FaddSRvRvRv ] -> [ ^ self concretizeFaddSRvRvRv ].
+		[ FsubSRvRvRv ] -> [ ^ self concretizeFsubSRvRvRv ].
 		}
 ]
 
@@ -6171,6 +6200,28 @@ CogARMv8Compiler >> sturSize: is64Bits baseRegister: baseReg signedOffset: immed
 		bitOr: ((twoComplement bitAnd: 2r111111111) << 12
 		bitOr:((baseReg bitAnd: 2r11111) << 5
 		bitOr: (destinationRegister bitAnd: 2r11111)))))
+]
+
+{ #category : #'generate machine code - concretize' }
+CogARMv8Compiler >> subT: t q: q term1: vectorReg1 term2: vectorReg2 dest: vectorRegSum [ 
+
+	"
+	C7.2.49 FSUB (vector)
+	
+	FSUB <Vd>.<T>, <Vn>.<T>, <Vm>.<T>
+
+	This instruction subtracts the elements in the vector in the second source
+SIMD&FP register, from the corresponding elements in the vector in the first source SIMD&FP register, places each result into elements of a vector, and writes the vector to the destination SIMD&FP register."
+	
+	^ q << 30
+		bitOr: (2r01110 << 24
+		bitOr: (1 << 23
+		bitOr: ((t bitAnd: 1) << 22
+		bitOr: (1 << 21
+		bitOr: ((vectorReg2 bitAnd: 2r11111) << 16
+		bitOr: (2r110101 << 10
+		bitOr: ((vectorReg1 bitAnd: 2r11111) << 5
+		bitOr: (vectorRegSum bitAnd: 2r11111))))))))
 ]
 
 { #category : #assembler }
