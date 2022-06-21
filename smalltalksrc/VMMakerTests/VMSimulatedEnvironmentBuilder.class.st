@@ -15,7 +15,8 @@ Class {
 		'stackSpaceSize',
 		'methodCacheSize',
 		'newSpaceSize',
-		'permSpaceSize'
+		'permSpaceSize',
+		'allocateMemory'
 	],
 	#category : #'VMMakerTests-Builders'
 }
@@ -52,6 +53,9 @@ VMSimulatedEnvironmentBuilder >> doBuild [
 	objectMemory ensureMemoryMap.
 	
 	objectMemory coInterpreter: interpreter.
+
+	(allocateMemory isNotNil and: [ allocateMemory not ])
+		ifTrue: [ ^ self ].
 	
 	objectMemory
 		allocateMemoryOfSize: oldSpaceSize

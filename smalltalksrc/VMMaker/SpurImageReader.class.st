@@ -164,6 +164,9 @@ SpurImageReader >> readImageNamed: imageName [
 	<api>
 	
 	| file |
+	
+	objectMemory ensureAuxiliarStructures.
+	
 	file := self sqImageFile: imageName Open: 'rb'.
 	file ifNil: [ 
 		self logError: 'Image file cannot be read: %s' _: imageName.

@@ -27,7 +27,7 @@ VMSpurImageToComposedImageMigrationProcess >> createSimulator [
 		initialCodeSize: 4*1024; 
 		primitiveTraceLogSize: 0.
 
-	environmentBuilder build.
+	environmentBuilder doBuildSimulator.
 
 	interpreter := environmentBuilder interpreter.
 	memory := environmentBuilder objectMemory.

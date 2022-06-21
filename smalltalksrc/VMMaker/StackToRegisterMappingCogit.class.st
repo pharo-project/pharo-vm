@@ -269,6 +269,7 @@ StackToRegisterMappingCogit class >> initializeBytecodeTableForSistaV1 [
 	numPushNilsFunction := #sistaV1:Num:Push:Nils:.
 	pushNilSizeFunction := #sistaV1PushNilSize:numInitialNils:.
 	BytecodeSetHasDirectedSuperSend := true.
+	BytecodeSetHasExtensions := true.
 	FirstSpecialSelector := 96.
 	NumSpecialSelectors := 32.
 	self flag:

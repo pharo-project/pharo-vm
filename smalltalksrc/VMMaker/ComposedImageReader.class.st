@@ -129,6 +129,8 @@ ComposedImageReader >> readImageNamed: imageName [
 
 	| aHeader |
 
+	objectMemory ensureAuxiliarStructures.
+
 	aHeader := self readHeaderFromImage: imageName.
 
 	self loadHeaderToMemory: aHeader.

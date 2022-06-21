@@ -2643,7 +2643,7 @@ CogVMSimulator >> saneFunctionPointerForFailureOfPrimIndex: primIndex [
 	 primitiveFunctionPointer is an invalid address proxy for a primitive."
 	| basePrimitive |
 	
-	((self isOnRumpCStack: instructionPointer)
+	(((self isOnRumpCStack: instructionPointer) or: [self isMachineCodeIP: instructionPointer])
 	and: [primitiveFunctionPointer isInteger
 	and: [self isPrimitiveFunctionPointerAnIndex not
 	and: [primIndex ~= PrimNumberExternalCall

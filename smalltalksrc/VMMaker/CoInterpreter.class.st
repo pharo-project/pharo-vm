@@ -1305,7 +1305,7 @@ CoInterpreter >> ceCheckAndMaybeRetryPrimitive: primIndex [
 	<api>
 	<option: #SpurObjectMemory>
 	| retried |
-	
+
 	cogit recordPrimTrace ifTrue:
 		[self fastLogPrim: TracePrimitiveFailure].
 	retried := self retryPrimitiveOnFailure.

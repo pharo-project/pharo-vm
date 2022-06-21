@@ -4586,6 +4586,7 @@ CCodeGenerator >> sizeOfIntegralCType: anIntegralCType [ "<String>"
 		['pid_t']		->	[self bytesPerWord].
 		
 		"Standard C types"
+		['int64_t']		->	[8].
 		['uint64_t']		->	[8].
 		['uint32_t']		->	[4].
 		['uint16_t']		->	[2].

@@ -1367,9 +1367,10 @@ SpurMemoryManager >> addressCouldBeObj: address [
 	<inline: false>
 	^(address bitAnd: self baseHeaderSize - 1) = 0
 	  and: [(self isInOldSpace: address)
+		or: [(self isInPermSpace: address)
 		or: [(self isInEden: address)
 		or: [(self isInPastSpace: address)
-		or: [self scavengeInProgress and: [self isInFutureSpace: address]]]]]
+		or: [self scavengeInProgress and: [self isInFutureSpace: address]]]]]]
 ]
 
 { #category : #'debug support' }
@@ -1875,7 +1876,7 @@ SpurMemoryManager >> allPermSpaceObjectsDo: aBlockClosure [
 	[ currentObject = permSpaceFreeStart ]
 		whileFalse: [ 
 			aBlockClosure value: currentObject.
-			currentObject := self objectAfter: currentObject limit: memoryMap permSpaceEnd ].
+			currentObject := self objectAfter: currentObject limit: permSpaceFreeStart ].
 ]
 
 { #category : #'weakness and ephemerality' }
@@ -3296,7 +3297,7 @@ SpurMemoryManager >> checkHeapIntegrity: excludeUnmarkedObjs classIndicesShouldB
 					[containsYoung := false.
 					 (self isRemembered: obj) ifTrue:
 						[numRememberedObjectsInHeap := numRememberedObjectsInHeap + 1.
-						 (scavenger isInRememberedSet: obj) ifFalse:
+						 (fromOldSpaceRememberedSet isInRememberedSet: obj) ifFalse:
 							[coInterpreter print: 'remembered object '; printHex: obj; print: ' is not in remembered table'; cr.
 							 self eek.
 							 ok := false]].
@@ -3344,7 +3345,7 @@ SpurMemoryManager >> checkHeapIntegrity: excludeUnmarkedObjs classIndicesShouldB
 		"But the system copes with overflow..."
 		self flag: 'no support for remembered set overflow yet'.
 		"ok := rootTableOverflowed and: [needGCFlag]"].
-	scavenger rememberedSetWithIndexDo:
+	fromOldSpaceRememberedSet rememberedSetWithIndexDo:
 		[:obj :i|
 		(obj bitAnd: self wordSize - 1) ~= 0
 			ifTrue:
@@ -3466,7 +3467,8 @@ SpurMemoryManager >> checkOkayYoungReferrer: obj [
 	(self isRemembered: obj) ifFalse:
 		[ self print: 'remembered bit is not set in '; printHex: obj; cr. ^false ].
 
-	(scavenger isInRememberedSet: obj) ifTrue: [^true].
+	(self getFromOldSpaceRememberedSet isInRememberedSet: obj) ifTrue: [^true].
+	(self getFromPermSpaceRememberedSet isInRememberedSet: obj) ifTrue: [^true].
 
 	self printHex: obj; print: ' has remembered bit set but is not in remembered set'; cr.
 
@@ -4501,6 +4503,27 @@ SpurMemoryManager >> endSlidingCompaction [
 SpurMemoryManager >> endianness [
 	<doNotGenerate>
 	self subclassResponsibility
+]
+
+{ #category : #initialization }
+SpurMemoryManager >> ensureAuxiliarStructures [
+
+	self 
+		cCode: [ 
+			fromOldSpaceRememberedSet isNil ifTrue: [	
+				fromOldSpaceRememberedSet := self 
+					cCoerce: (self malloc: (self sizeof: VMRememberedSet))
+					to: #'VMRememberedSet *'.
+				
+				fromOldSpaceRememberedSet rootIndex: OldRememberedSetRootIndex].
+			
+			fromPermSpaceRememberedSet isNil ifTrue: [ 	
+				fromPermSpaceRememberedSet := self 
+					cCoerce: (self malloc: (self sizeof: VMRememberedSet))
+					to: #'VMRememberedSet *'.
+					
+				fromPermSpaceRememberedSet rootIndex: PermRememberedSetRootIndex]].
+
 ]
 
 { #category : #'class table' }
@@ -5788,6 +5811,7 @@ SpurMemoryManager >> globalGarbageCollect [
 	self runLeakCheckerFor: GCModeFull
 		excludeUnmarkedObjs: true
 		classIndicesShouldBeValid: true.
+		
 	compactionStartUsecs := coInterpreter ioUTCMicrosecondsNow.
 	segmentManager prepareForGlobalSweep. "for notePinned:"
 	compactor compact.
@@ -6536,20 +6560,6 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	self initializeOldSpaceFirstFree: freeOldSpaceStart. "initializes endOfMemory, freeStart, free space"
 	self initializeNewSpaceVariables.
 
-	self 
-		cCode: [ 
-			fromOldSpaceRememberedSet := self 
-				cCoerce: (self malloc: (self sizeof: VMRememberedSet))
-				to: #'VMRememberedSet *'.
-			
-			fromOldSpaceRememberedSet rootIndex: OldRememberedSetRootIndex.
-				
-			fromPermSpaceRememberedSet := self 
-				cCoerce: (self malloc: (self sizeof: VMRememberedSet))
-				to: #'VMRememberedSet *'.
-				
-			fromOldSpaceRememberedSet rootIndex: PermRememberedSetRootIndex].
-
 	fromOldSpaceRememberedSet initializeRememberedSet.
 	fromPermSpaceRememberedSet initializeRememberedSet.
 
@@ -7201,6 +7211,17 @@ SpurMemoryManager >> isInPastSpace: address [
 		oop: address
 		isGreaterThanOrEqualTo: scavenger pastSpace start
 		andLessThan: pastSpaceStart
+]
+
+{ #category : #'object testing' }
+SpurMemoryManager >> isInPermSpace: address [ 
+
+	<api>
+
+	^self
+		oop: address
+		isGreaterThanOrEqualTo: memoryMap permSpaceStart
+		andLessThan: memoryMap permSpaceEnd
 ]
 
 { #category : #immediates }
@@ -8323,6 +8344,7 @@ SpurMemoryManager >> markAndTraceObjStack: stackOrNil andContents: markAndTraceC
 SpurMemoryManager >> markAndTraceRememberedSet: aRememberedSet [
 
 	| rememberedSetOop |
+
 	rememberedSetOop := aRememberedSet objectOop.
 	self setIsMarkedOf: rememberedSetOop to: true.
 	aRememberedSet rememberedSetWithIndexDo: [ :objOop :i | 
@@ -8402,7 +8424,7 @@ SpurMemoryManager >> markLoopFrom: objOop [
 			 [index > 0] whileTrue:
 				[index := index - 1.
 				 field := self fetchPointer: index ofObject: objToScan.
-				 (self isNonImmediate: field) ifTrue:
+				 ((self isNonImmediate: field) and: [(self isPermanent: field) not]) ifTrue:
 					[(self isForwarded: field) ifTrue: "fixFollowedField: is /not/ inlined"
 						[field := self fixFollowedField: index ofObject: objToScan withInitialValue: field].
 					 (self markAndShouldScan: field) ifTrue:
@@ -8422,7 +8444,7 @@ SpurMemoryManager >> markLoopFrom: objOop [
 			 [index > 0] whileTrue:
 				[index := index - 1.
 				 field := self fetchPointer: index ofObject: objToScan.
-				 (self isNonImmediate: field) ifTrue:
+				 ((self isNonImmediate: field) and: [(self isPermanent: field) not]) ifTrue:
 					[(self isForwarded: field) ifTrue: "fixFollowedField: is /not/ inlined"
 						[field := self fixFollowedField: index ofObject: objToScan withInitialValue: field].
 					 (self markAndShouldScan: field) ifTrue:
@@ -10771,10 +10793,10 @@ SpurMemoryManager >> rememberObjInCorrectRememberedSet: objOop [
 	<api>
 
 	(self isOld: objOop) ifTrue: [ 
-		fromOldSpaceRememberedSet doRemember: objOop ].
+		^ fromOldSpaceRememberedSet doRemember: objOop ].
 
 	(self isPermanent: objOop) ifTrue: [ 
-		fromPermSpaceRememberedSet doRemember: objOop ].
+		^ fromPermSpaceRememberedSet doRemember: objOop ].
 
 ]
 

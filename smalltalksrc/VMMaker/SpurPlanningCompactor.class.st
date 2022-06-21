@@ -814,7 +814,7 @@ SpurPlanningCompactor >> unpinRememberedSet [
 	<inline: true>
 	firstFieldOfRememberedSet := manager fetchPointer: 0 ofObject: manager oldRememberedSetObj.
 	manager setIsPinnedOf: manager oldRememberedSetObj to: false.
-	
+
 	firstFieldOfPermRememberedSet := manager fetchPointer: 0 ofObject: manager permRememberedSetObj.
 	manager setIsPinnedOf: manager permRememberedSetObj to: false
 ]
@@ -909,10 +909,13 @@ SpurPlanningCompactor >> updatePointersInManagerHeapEntities [
 		[firstFieldOfRememberedSet := manager fetchPointer: 0 ofObject: firstFieldOfRememberedSet].
 	self relocateObjectsInHeapEntity: manager oldRememberedSetObj from: 1 to: manager getFromOldSpaceRememberedSet rememberedSetSize - 1.
 
-	(manager getFromPermSpaceRememberedSet rememberedSetSize > 0
-	 and: [self isMobile: firstFieldOfPermRememberedSet]) ifTrue:
-		[firstFieldOfPermRememberedSet := manager fetchPointer: 0 ofObject: firstFieldOfPermRememberedSet].
-	self relocateObjectsInHeapEntity: manager permRememberedSetObj from: 1 to: manager getFromPermSpaceRememberedSet rememberedSetSize - 1
+	(manager getFromPermSpaceRememberedSet rememberedSetSize > 0) ifTrue:
+		[self updatePointersIn: firstFieldOfPermRememberedSet ].
+	
+	manager getFromPermSpaceRememberedSet 
+		rememberedSetWithIndexDo: [ :oop :index | 
+			self updatePointersIn: oop ] startingAt: 1.
+	
 
 	"Note that we /must not/ set the rememberedSetObj here since it is a slot in the hiddenRootsObj
 	 and will be updated normally in updatePointersInInitialImmobileObjects.  So do not do

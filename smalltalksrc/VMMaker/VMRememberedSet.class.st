@@ -43,7 +43,7 @@ VMRememberedSet class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	self filteredInstVarNames do: [ :aName |
 		aBinaryBlock value: aName value: (aName caseOf: {
 						['rememberedSetArray']		-> [#'sqInt *'].
-				} otherwise: [ #sqInt ]) ].
+				} otherwise: [ #sqLong ]) ].
 
 ]
 
@@ -98,6 +98,12 @@ VMRememberedSet >> forgetObject: objOop [
 ]
 
 { #category : #accessing }
+VMRememberedSet >> fudge [
+
+	^ fudge
+]
+
+{ #category : #accessing }
 VMRememberedSet >> fudge: anObject [
 
 	fudge := anObject
@@ -106,8 +112,11 @@ VMRememberedSet >> fudge: anObject [
 { #category : #'remembered set' }
 VMRememberedSet >> growRememberedSet [
 	| obj numSlots newObj base |
+
 	<inline: false> "Don't ruin locality in remember:"
 	<var: #base type: #'sqInt *'>
+
+
 	obj := self objectOop.
 	numSlots := manager numSlotsOf: obj.
 	self assert: numSlots >= 1024.
@@ -128,7 +137,7 @@ VMRememberedSet >> growRememberedSet [
 			setIsMarkedOf: obj to: false].
 	manager freeObject: obj.
 	rememberedSetArray := base.
-	rememberedSetLimit := manager numSlotsOf: newObj.
+	self rememberedSetLimit: (manager numSlotsOf: newObj).
 	self setRememberedSetRedZone
 	
 ]
@@ -157,7 +166,7 @@ VMRememberedSet >> initializeRememberedSet [
 	self assert: (manager isPinned: obj).
 	rememberedSetArray := manager firstIndexableField: obj.
 	rememberedSetSize := 0.
-	rememberedSetLimit := manager numSlotsOf: obj.
+	self rememberedSetLimit: (manager numSlotsOf: obj).
 	self setRememberedSetRedZone
 ]
 
@@ -292,6 +301,12 @@ VMRememberedSet >> rememberedSetLimit [
 ]
 
 { #category : #accessing }
+VMRememberedSet >> rememberedSetLimit: anObject [
+
+	rememberedSetLimit := anObject
+]
+
+{ #category : #accessing }
 VMRememberedSet >> rememberedSetRedZone [
 	^ rememberedSetRedZone
 ]
@@ -299,7 +314,6 @@ VMRememberedSet >> rememberedSetRedZone [
 { #category : #accessing }
 VMRememberedSet >> rememberedSetRedZone: anInteger [
 
-	<doNotGenerate>
 	rememberedSetRedZone := anInteger
 ]
 
@@ -412,7 +426,7 @@ VMRememberedSet >> save: anOop at: index [
 VMRememberedSet >> setRememberedSetRedZone [
 
 	<inline: true>
-	rememberedSetRedZone := rememberedSetLimit * 3 // 4 max: fudge
+	self rememberedSetRedZone: (self rememberedSetLimit * 3 // 4 max: self fudge)
 ]
 
 { #category : #scavenger }

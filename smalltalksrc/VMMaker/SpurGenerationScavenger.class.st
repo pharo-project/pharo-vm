@@ -463,7 +463,10 @@ SpurGenerationScavenger >> fireEphemeronsInRememberedSet [
 				ofObject: ephemeron
 				withValue: (self copyAndForward: key)].
 		 "Fired ephemerons should have had their format changed."
-		 self deny: ((self isScavengeSurvivor: key) and: [manager isEphemeron: ephemeron]).
+
+		self simulationOnly: [  
+		 self deny: ((self isScavengeSurvivor: key) and: [manager isEphemeron: ephemeron])].
+
 		 (self scavengeReferentsOfFromOldSpace: ephemeron)
 			ifTrue: "keep in set"
 				[i := i + 1]
@@ -513,7 +516,11 @@ SpurGenerationScavenger >> fireEphemeronsOnEphemeronList [
 	oldList := ephemeronList.
 	ephemeronList := nil.
 	[ephemeronCorpse notNil] whileTrue:
-		[self assert: ((manager isYoung: ephemeronCorpse) and: [manager isForwarded: ephemeronCorpse]).
+		[
+		self simulationOnly: [ 
+			self assert: ((manager isYoung: ephemeronCorpse) 
+						and: [manager isForwarded: ephemeronCorpse])].
+		
 		 ephemeron := manager followForwarded: ephemeronCorpse.
 		 key := manager keyOfMaybeFiredEphemeron: ephemeron.
 		 (self isScavengeSurvivor: key) ifFalse:
@@ -708,6 +715,8 @@ SpurGenerationScavenger >> mapOopsFromPermSpace [
 
 	| destIndex sourceIndex referrer |
 
+	<inline: #never>
+
 	sourceIndex := destIndex := 0.
 
 	"I iterate all the remembered set from the perm space to scavenge the references to new objects.
@@ -721,7 +730,7 @@ SpurGenerationScavenger >> mapOopsFromPermSpace [
 			self deny: (manager isEphemeron: referrer).
 			self deny: (manager isWeakNonImm: referrer).
 			
-			(self scavengeReferentsOf: referrer additionalShouldKeepReferrerTestingBlock: [:aReferrer :referent |	(manager isPermanent: referent) not])
+			(self scavengeReferentsOfFromPermSpace: referrer)
 				ifTrue:
 						[manager getFromPermSpaceRememberedSet save: referrer at: destIndex.
 						 destIndex := destIndex + 1]
@@ -752,8 +761,10 @@ SpurGenerationScavenger >> newSpaceStart: startAddress newSpaceBytes: totalBytes
 	pastSpace start: startAddress; limit: startAddress + survivorBytes.
 	futureSpace start: pastSpace limit; limit: pastSpace limit + survivorBytes.
 	eden start: futureSpace limit; limit: startAddress + totalBytes.
+	
 	manager getFromOldSpaceRememberedSet fudge: self rememberedSetFudge.
-
+	manager getFromPermSpaceRememberedSet fudge: self rememberedSetFudge.
+	
 	self assert: self futureSpace limit <= (startAddress + totalBytes).
 	self assert: self eden start \\ manager allocationUnit
 				+ (self eden limit \\ manager allocationUnit) = 0.
@@ -1095,17 +1106,22 @@ SpurGenerationScavenger >> scavengeReferentsOf: referrer additionalShouldKeepRef
 
 	| fmt foundNewReferentOrIsWeakling numSlots |
 
-	"forwarding objects should be followed by callers,
-	 unless the forwarder is a root in the remembered table."
-	self assert: ((manager isForwarded: referrer) not
-				or: [manager isRemembered: referrer]).
-	"unscanned ephemerons should be scanned later."
-	self assert: ((manager isEphemeron: referrer) not
-				or: [(self isScavengeSurvivor: (manager keyOfEphemeron: referrer))
-				or: [self is: referrer onWeaklingList: ephemeronList]]).
+	self simulationOnly: [ 
+		"forwarding objects should be followed by callers,
+		 unless the forwarder is a root in the remembered table."
+		self assert: ((manager isForwarded: referrer) not
+					or: [manager isRemembered: referrer]).
+		"unscanned ephemerons should be scanned later."
+		self assert: ((manager isEphemeron: referrer) not
+					or: [(self isScavengeSurvivor: (manager keyOfEphemeron: referrer))
+					or: [self is: referrer onWeaklingList: ephemeronList]]) ].
+
 	fmt := manager formatOf: referrer.
-	foundNewReferentOrIsWeakling := manager isWeakFormat: fmt.
+
 	numSlots := manager numStrongSlotsOf: referrer format: fmt ephemeronInactiveIf: #isScavengeSurvivor:.
+
+	foundNewReferentOrIsWeakling := manager isWeakFormat: fmt.
+
 	0 to: numSlots - 1 do:
 		[:i| | referent newLocation |
 		referent := manager fetchPointer: i ofMaybeForwardedObject: referrer.
@@ -1132,7 +1148,17 @@ SpurGenerationScavenger >> scavengeReferentsOf: referrer additionalShouldKeepRef
 { #category : #scavenger }
 SpurGenerationScavenger >> scavengeReferentsOfFromOldSpace: referrer [
 
+	<inline: #never>
+
 	^ self scavengeReferentsOf: referrer additionalShouldKeepReferrerTestingBlock: [ :aReferrer :aReferent | false ].
+]
+
+{ #category : #scavenger }
+SpurGenerationScavenger >> scavengeReferentsOfFromPermSpace: referrer [
+
+	<inline: #never>
+
+	^ self scavengeReferentsOf: referrer additionalShouldKeepReferrerTestingBlock: [:aReferrer :referent |	(manager isPermanent: referent) not].
 ]
 
 { #category : #scavenger }
@@ -1143,7 +1169,10 @@ SpurGenerationScavenger >> scavengeRememberedSetStartingAt: n [
 	 scavenging ephemerons until after a complete scavenge has been performed,
 	 so that triggered ephemerons can be fired.  Move them to the front of the set
 	 and count them in numRememberedEphemerons for later scanning."
+	
 	<inline: false>
+	<returnTypeC: #void>
+	
 	| destIndex sourceIndex referrer |
 	sourceIndex := destIndex := n.
 	[sourceIndex < manager getFromOldSpaceRememberedSet rememberedSetSize] whileTrue:
@@ -1167,7 +1196,7 @@ SpurGenerationScavenger >> scavengeRememberedSetStartingAt: n [
 						[manager setIsRememberedOf: referrer to: false]].
 		 sourceIndex := sourceIndex + 1].
 	manager getFromOldSpaceRememberedSet rememberedSetSize: destIndex.
-	self assert: self noUnfiredEphemeronsAtEndOfRememberedSet
+	self assert: self noUnfiredEphemeronsAtEndOfRememberedSet.
 ]
 
 { #category : #'weakness and ephemerality' }

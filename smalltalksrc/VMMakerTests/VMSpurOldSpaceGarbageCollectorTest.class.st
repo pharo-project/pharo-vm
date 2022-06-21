@@ -198,6 +198,53 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableSho
 	self assertHashOf: self keptObjectInVMVariable1 equals: hash
 ]
 
+{ #category : #'tests-OldSpaceSize' }
+VMSpurOldSpaceGarbageCollectorTest >> testArrayOfPermanentObjectsPointingToOldObjectsIsCorrectlyMantained [
+
+	| deltaFreeSpace arrayOfPerms objectsSize aPermObject anOldObject originalRememberedSetSize afteRememberedSetSize numberOfObjects |
+
+	originalRememberedSetSize := memory bytesInObject: memory fromPermSpaceRememberedSet objectOop. 
+	numberOfObjects := 4096.
+
+	deltaFreeSpace := self deltaFreeSpaceAfterGC: [ 
+								arrayOfPerms := self newOldSpaceArrayWithSlots: numberOfObjects.
+								objectsSize := memory bytesInObject: arrayOfPerms.
+								0 to: numberOfObjects - 1 do: [ :i |
+									anOldObject := self newOldSpaceObjectWithSlots: 0.
+									aPermObject := self newPermanentObjectWithSlots: 1.									
+									objectsSize := objectsSize + (memory bytesInObject: anOldObject).
+									memory storePointer: 0 ofObject: aPermObject withValue: anOldObject.
+									memory storePointer: i ofObject: arrayOfPerms withValue: aPermObject ].
+		                  self keepObjectInVMVariable2: arrayOfPerms ].
+
+	afteRememberedSetSize := memory bytesInObject: memory fromPermSpaceRememberedSet objectOop.
+
+	self assert: deltaFreeSpace equals: objectsSize + (afteRememberedSetSize - originalRememberedSetSize)
+]
+
+{ #category : #'tests-OldSpaceSize' }
+VMSpurOldSpaceGarbageCollectorTest >> testArrayOfPermanentObjectsPointingToOldObjectsIsCorrectlyMantainedWhenObjectsMoved [
+
+	| numberOfObjects originalHashes permArray anOldObject |
+	numberOfObjects := 4096.
+	originalHashes := Array new: numberOfObjects.
+
+	self deltaFreeSpaceAfterGC: [ 
+		permArray := self newPermanentObjectWithSlots: numberOfObjects.
+
+		"Objects to be collected"
+		self newOldSpaceObjectWithSlots: 0.
+		self newOldSpaceObjectWithSlots: 0.
+
+		1 to: numberOfObjects do: [ :i |
+			anOldObject := self newOldSpaceObjectWithSlots: 0.
+			originalHashes at: i put: (memory hashBitsOf: anOldObject). 
+			memory storePointer: (i - 1) ofObject: permArray withValue: anOldObject ]].
+
+	1 to: numberOfObjects do: [ :i |
+		self assert: (originalHashes at: i) equals: (memory hashBitsOf: (memory fetchPointer: i - 1 ofObject: permArray))]
+]
+
 { #category : #ephemerons }
 VMSpurOldSpaceGarbageCollectorTest >> testEphemeronOverflowUnscannedEphemeronQueue [
 

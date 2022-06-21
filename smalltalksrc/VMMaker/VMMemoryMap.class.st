@@ -59,7 +59,7 @@ VMMemoryMap class >> implicitVariables [
 VMMemoryMap class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 
 	self filteredInstVarNames do: [ :aName |
-		aBinaryBlock value: aName value: #'usqInt'  ].
+		aBinaryBlock value: aName value: #'uint64_t'  ].
 
 ]
 
@@ -79,6 +79,7 @@ VMMemoryMap class >> shouldBeGenerated [
 VMMemoryMap >> allocateCodeZone [
 	
 	initialCodeZoneSize = 0 ifTrue: [ ^ self ].
+	
 	self codeZoneStart: (self allocateJITMemory: initialCodeZoneSize _: memoryMapConfiguration codeZoneInitialAddress).
 	self codeZoneStart ifNil: [ self insufficientMemoryAvailableError ].
 
@@ -129,9 +130,7 @@ VMMemoryMap >> allocateNewObjectsSpace [
 		ifFalse: [ 
 			self logError: 'Could not allocate newSpace in the expected place (%p), got %p' _: self newSpaceStart _: memoryMapConfiguration newSpaceInitialAddress.
 			self error: 'Error allocating' ].
-	
-	self newSpaceMask: (self newSpaceStart bitAnd: self spaceMaskToUse).
-		
+			
 	self newSpaceEnd: self newSpaceStart + newSpaceSizeToAllocate.
 ]
 
@@ -150,8 +149,6 @@ VMMemoryMap >> allocateOldObjectsSpace [
 		ifFalse: [ 
 			self logError: 'Could not allocate oldSpace in the expected place (%p), got %p' _: self oldSpaceStart _: memoryMapConfiguration oldSpaceInitialAddress.
 			self error: 'Error allocating' ].
-
-	self oldSpaceMask: (self oldSpaceStart bitAnd: self spaceMaskToUse).
 
 	self setOldSpaceEnd: self oldSpaceStart + sizeToAllocate
 ]
@@ -179,8 +176,6 @@ VMMemoryMap >> allocatePermObjectsSpace [
 			self error: 'Error allocating' ].
 
 	self permSpaceEnd: self permSpaceStart + minSize.
-
-	self permSpaceMask: (self permSpaceStart bitAnd: self spaceMaskToUse).
 	objectMemory setPermSpaceFreeStart: self permSpaceStart. 
 
 
@@ -244,6 +239,42 @@ VMMemoryMap >> allocationReserve: anInteger [
 	allocationReserve := anInteger 
 ]
 
+{ #category : #'initial addresses' }
+VMMemoryMap >> calculateMaskToUse [
+
+	<inline: false>
+	<var: #newSpaceFirst type: #uint64_t> 
+	<var: #newSpaceLast type: #uint64_t> 
+	<var: #oldSpaceFirst type: #uint64_t> 
+	<var: #oldSpaceLast type: #uint64_t> 
+	<var: #newSpaceMaskAttempt type: #uint64_t> 
+	<var: #oldSpaceMaskAttempt type: #uint64_t> 
+	<var: #allOnes type: #uint64_t> 
+	
+	| newSpaceFirst newSpaceLast oldSpaceFirst oldSpaceLast newSpaceMaskAttempt oldSpaceMaskAttempt allOnes |
+	
+	memoryMapConfiguration confWordSize = 8 
+		ifTrue: [ allOnes := 16rFFFFFFFFFFFFFFFF ]
+		ifFalse: [ allOnes := 16rFFFFFFFF ].
+
+	newSpaceFirst := memoryMapConfiguration newSpaceInitialAddress.
+	newSpaceLast := memoryMapConfiguration oldSpaceInitialAddress - 1.
+	newSpaceMaskAttempt := (newSpaceLast - newSpaceFirst) bitXor: allOnes.
+
+	oldSpaceFirst := memoryMapConfiguration oldSpaceInitialAddress.
+	oldSpaceLast := memoryMapConfiguration permSpaceInitialAddress - 1.
+	oldSpaceMaskAttempt := (oldSpaceLast - oldSpaceFirst) bitXor: allOnes.
+
+	self spaceMaskToUse: (newSpaceMaskAttempt bitAnd: oldSpaceMaskAttempt).
+	self spaceMaskToUse = 0 
+		ifTrue: [ objectMemory error: 'Could not calculate mask to use to identify new/old/perm objects' ].
+	
+
+	self newSpaceMask: (memoryMapConfiguration newSpaceInitialAddress bitAnd: self spaceMaskToUse).
+	self oldSpaceMask: (memoryMapConfiguration oldSpaceInitialAddress bitAnd: self spaceMaskToUse).	
+	self permSpaceMask: (memoryMapConfiguration permSpaceInitialAddress bitAnd: self spaceMaskToUse).		
+]
+
 { #category : #accessing }
 VMMemoryMap >> codeZoneEnd [
 
@@ -293,6 +324,15 @@ VMMemoryMap >> ensureAtLeastPermSpaceOf: requestedSize [
 		ifTrue: [ 
 			self initialPermSpaceSize: requestedSize.
 			self allocatePermObjectsSpace.
+			
+			"If the space is created empty, we need to ensure that there is a small object as the first. So we can iterate all objects in the space.
+			We need an small object to know that the first word is a header."
+			
+			objectMemory
+					allocateSlotsInPermSpace: 0
+					format: 0 
+					classIndex: objectMemory arrayClassIndexPun.
+								
 			^ true. ].
 
 	diff := requestedSize - self permSpaceSize.
@@ -424,7 +464,7 @@ VMMemoryMap >> initializeMemoryMap [
 		memoryMapConfiguration := (VMMemoryMapConfiguration forWordsize:
 			                          self class objectMemoryClass wordSize) new ].
 		
-	spaceMaskToUse := memoryMapConfiguration calculateMaskToUse.
+	self calculateMaskToUse.
 ]
 
 { #category : #private }
@@ -439,7 +479,8 @@ VMMemoryMap >> isOldObject: anOop [
 
 	<api>
 
-	^ anOop allMask: oldSpaceMask
+	^ (anOop bitAnd: spaceMaskToUse) = oldSpaceMask
+
 ]
 
 { #category : #'testing objects' }
@@ -447,7 +488,7 @@ VMMemoryMap >> isPermanentObject: anOop [
 
 	<api>
 
-	^ anOop allMask: permSpaceMask
+	^ (anOop bitAnd: spaceMaskToUse) = permSpaceMask
 
 ]
 

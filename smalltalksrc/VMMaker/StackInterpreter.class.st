@@ -5224,7 +5224,9 @@ StackInterpreter >> encodeFrameFieldHasContext: hasContext "<Boolean>" isBlock: 
 { #category : #simulation }
 StackInterpreter >> encoderClassForHeader: headerInteger [
 	<doNotGenerate>
-	^Smalltalk classNamed: ((headerInteger < 0 or: [objectMemory headerIndicatesAlternateBytecodeSet: headerInteger])
+		
+	^Smalltalk classNamed: ((MULTIPLEBYTECODESETS 
+					and: [headerInteger < 0 or: [objectMemory headerIndicatesAlternateBytecodeSet: headerInteger]])
 								ifTrue: [AltBytecodeEncoderClassName]
 								ifFalse: [BytecodeEncoderClassName])
 ]
