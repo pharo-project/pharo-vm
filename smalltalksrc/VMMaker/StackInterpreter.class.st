@@ -1326,8 +1326,11 @@ StackInterpreter class >> initializePrimitiveTable [
 		(572 primitiveListBuiltinModule)
 		(573 primitiveListExternalModule)
 
+		"SIMD primitives"
+		(574 primitiveFloat64ArrayAdd)
+
 		"Unassigned Primitives"
-		(574 597 primitiveFail)
+		(575 597 primitiveFail)
 
 		"Pinned object creation primitives"
 		(598 primitiveNewPinned)
@@ -1896,6 +1899,47 @@ StackInterpreter >> addFirstLink: proc toList: aList [
 	objectMemory storePointer: MyListIndex ofObject: proc withValue: aList
 ]
 
+{ #category : #'simd bytecodes' }
+StackInterpreter >> addFloat32VectorBytecode [
+	
+	<var: #tmp type: #float>
+	
+	| arg rcv res tmp |
+	arg := self stackValue: 0.
+	rcv := self stackValue: 1.
+	
+	"TODO should be using a Float32 register with 2 slots"
+	res := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 1.	
+	
+	tmp := (objectMemory fetchFloat32: 0 ofObject: arg) + (objectMemory fetchFloat32: 0 ofObject: rcv).
+	objectMemory storeFloat32: 0 ofObject: res withValue: tmp. 
+
+	tmp := (objectMemory fetchFloat32: 1 ofObject: arg) + (objectMemory fetchFloat32: 1 ofObject: rcv).
+	objectMemory storeFloat32: 1 ofObject: res withValue: tmp. 
+		
+	self pop: 2 thenPush: res.
+]
+
+{ #category : #'simd bytecodes' }
+StackInterpreter >> addFloat64VectorBytecode [
+	
+	<var: #tmp type: #double>
+	
+	| arg rcv res tmp |
+	arg := self stackValue: 0.
+	rcv := self stackValue: 1.
+	
+	res := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
+	
+	tmp := (objectMemory fetchFloat64: 0 ofObject: arg) + (objectMemory fetchFloat64: 0 ofObject: rcv).
+	objectMemory storeFloat64: 0 ofObject: res withValue: tmp. 
+
+	tmp := (objectMemory fetchFloat64: 1 ofObject: arg) + (objectMemory fetchFloat64: 1 ofObject: rcv).
+	objectMemory storeFloat64: 1 ofObject: res withValue: tmp. 
+		
+	self pop: 2 thenPush: res.
+]
+
 { #category : #'primitive support' }
 StackInterpreter >> addIdleUsecs: idleUsecs [
 	"The various poll/select calls in the VM should attempt to tally the ammount
@@ -1985,26 +2029,6 @@ StackInterpreter >> addToExternalPrimitiveTable: functionAddress [
 			^externalPrimitiveTableFirstFreeIndex := i+1]].
 	"if no space left, return zero so it'll looked up again"
 	^0
-]
-
-{ #category : #'simd bytecodes' }
-StackInterpreter >> addVectorBytecode [
-	
-	<var: #tmp type: #double>
-	
-	| arg rcv res tmp |
-	arg := self stackValue: 0.
-	rcv := self stackValue: 1.
-	
-	res := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
-	
-	tmp := (objectMemory fetchFloat64: 0 ofObject: arg) + (objectMemory fetchFloat64: 0 ofObject: rcv).
-	objectMemory storeFloat64: 0 ofObject: res withValue: tmp. 
-
-	tmp := (objectMemory fetchFloat64: 1 ofObject: arg) + (objectMemory fetchFloat64: 1 ofObject: rcv).
-	objectMemory storeFloat64: 1 ofObject: res withValue: tmp. 
-		
-	self pop: 2 thenPush: res.
 ]
 
 { #category : #'debug support' }
@@ -9775,10 +9799,6 @@ StackInterpreter >> mappedInlinePrimitive: primIndex [
 		[0]   -> [self addVectorBytecode].
 		[1]   -> [self pushArrayToRegisterBytecode].
 		[2]   -> [self storeRegisterIntoArrayBytecode].
-		"[3]   -> [self addFloat32VectorBytecode].
-		[4]   -> [self pushFloat32ArrayToRegisterBytecode].
-		[5]   -> [self storeFloat32RegisterIntoArrayBytecode]."
-		[6]   -> [self subVectorBytecode].
 	} otherwise: [self unknownInlinePrimitive]
 	
 
@@ -11128,6 +11148,26 @@ StackInterpreter >> primitiveEventProcessingControl [
 							^self]].
 		 ^self pop: 2 thenPushBool: enabled].
 	self primitiveFailFor: PrimErrBadNumArgs
+]
+
+{ #category : #'simd primitives' }
+StackInterpreter >> primitiveFloat64ArrayAdd [
+
+	<var: #rcvr type: #'double *'>
+	<var: #arg type: #'double *'>
+	| arg1 arg2 res arraySize |
+	arg1 := self stackValue: 2.
+	arg2 := self stackValue: 1.
+	res := self stackTop.
+	arraySize := objectMemory numSlotsOf: res.
+	
+	0 to: (arraySize - 1) do: [ :i | | tmp|
+		tmp := (objectMemory fetchFloat64: i ofObject: arg1) + (objectMemory fetchFloat64: i ofObject: arg2).
+		objectMemory storeFloat64: i ofObject: res withValue: tmp ].
+
+	self successful
+		ifTrue: [ self pop: 3 thenPush: res ]
+		ifFalse: [ self primitiveFailFor: PrimErrBadArgument ]
 ]
 
 { #category : #'arithmetic float primitives' }
@@ -12590,20 +12630,6 @@ StackInterpreter >> pushActiveContextBytecode [
 	self push: ourContext
 ]
 
-{ #category : #'simd bytecodes' }
-StackInterpreter >> pushArrayToRegisterBytecode [
-	| array index reg |
-	array := self stackValue: 0.
-	index := objectMemory integerValueOf: (self stackValue: 1).
-	
-	reg := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
-	
-	objectMemory storeFloat64: 0 ofObject: reg withValue: (objectMemory fetchFloat64: index ofObject: array). 
-	objectMemory storeFloat64: 1 ofObject: reg withValue: (objectMemory fetchFloat64: (index+1) ofObject: array). 
-		
-	self pop: 2 thenPush: reg.
-]
-
 { #category : #'internal interpreter access' }
 StackInterpreter >> pushBool: trueOrFalse [
 
@@ -12666,6 +12692,35 @@ StackInterpreter >> pushConstantZeroBytecode [
 	self fetchNextBytecode.
 	self push: ConstZero.
 
+]
+
+{ #category : #'simd bytecodes' }
+StackInterpreter >> pushFloat32ArrayToRegisterBytecode [
+	| array index reg |
+	array := self stackValue: 0.
+	index := objectMemory integerValueOf: (self stackValue: 1).
+	
+	"TODO should be using Float32 register with 2 slots"
+	reg := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 1.	
+	
+	objectMemory storeFloat32: 0 ofObject: reg withValue: (objectMemory fetchFloat32: index ofObject: array). 
+	objectMemory storeFloat32: 1 ofObject: reg withValue: (objectMemory fetchFloat32: (index+1) ofObject: array). 
+		
+	self pop: 2 thenPush: reg.
+]
+
+{ #category : #'simd bytecodes' }
+StackInterpreter >> pushFloat64ArrayToRegisterBytecode [
+	| array index reg |
+	array := self stackValue: 0.
+	index := objectMemory integerValueOf: (self stackValue: 1).
+	
+	reg := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
+	
+	objectMemory storeFloat64: 0 ofObject: reg withValue: (objectMemory fetchFloat64: index ofObject: array). 
+	objectMemory storeFloat64: 1 ofObject: reg withValue: (objectMemory fetchFloat64: (index+1) ofObject: array). 
+		
+	self pop: 2 thenPush: reg.
 ]
 
 { #category : #'primitive support' }
@@ -14835,6 +14890,32 @@ StackInterpreter >> storeAndPopTemporaryVariableBytecode [
 			self pop: 1 ]
 ]
 
+{ #category : #'simd bytecodes' }
+StackInterpreter >> storeFloat32RegisterIntoArrayBytecode [
+	| reg index array |
+	array := self stackValue: 0.
+	index := objectMemory integerValueOf: (self stackValue: 1).
+	reg := self stackValue: 2.
+	
+	objectMemory storeFloat32: index ofObject: array withValue: (objectMemory fetchFloat32: 0 ofObject: reg). 
+	objectMemory storeFloat32: (index+1) ofObject: array withValue: (objectMemory fetchFloat32: 1 ofObject: reg). 
+		
+	self pop: 3 thenPush: array.
+]
+
+{ #category : #'simd bytecodes' }
+StackInterpreter >> storeFloat64RegisterIntoArrayBytecode [
+	| reg index array |
+	array := self stackValue: 0.
+	index := objectMemory integerValueOf: (self stackValue: 1).
+	reg := self stackValue: 2.
+	
+	objectMemory storeFloat64: index ofObject: array withValue: (objectMemory fetchFloat64: 0 ofObject: reg). 
+	objectMemory storeFloat64: (index+1) ofObject: array withValue: (objectMemory fetchFloat64: 1 ofObject: reg). 
+		
+	self pop: 3 thenPush: array.
+]
+
 { #category : #utilities }
 StackInterpreter >> storeInteger: fieldIndex ofObject: objectPointer withValue: integerValue [ 
 	"Note: May be called by translated primitive code."
@@ -14882,19 +14963,6 @@ StackInterpreter >> storeMaybeContextReceiverVariable: fieldIndex withValue: anO
 	 method is only used by the long-form bytecodes, evading the cost."
 	self storeMaybeContext: self receiver receiverVariable: fieldIndex withValue: anObject
 
-]
-
-{ #category : #'simd bytecodes' }
-StackInterpreter >> storeRegisterIntoArrayBytecode [
-	| reg index array |
-	array := self stackValue: 0.
-	index := objectMemory integerValueOf: (self stackValue: 1).
-	reg := self stackValue: 2.
-	
-	objectMemory storeFloat64: index ofObject: array withValue: (objectMemory fetchFloat64: 0 ofObject: reg). 
-	objectMemory storeFloat64: (index+1) ofObject: array withValue: (objectMemory fetchFloat64: 1 ofObject: reg). 
-		
-	self pop: 3 thenPush: array.
 ]
 
 { #category : #'stack bytecodes' }
@@ -14979,26 +15047,6 @@ StackInterpreter >> stringOf: oop [
 			strm nextPutAll: (i=nLongs
 							ifTrue: [chars copyFrom: 1 to: size-1\\objectMemory wordSize+1]
 							ifFalse: [chars])]]
-]
-
-{ #category : #'simd bytecodes' }
-StackInterpreter >> subVectorBytecode [
-	
-	<var: #tmp type: #double>
-	
-	| arg rcv res tmp |
-	arg := self stackValue: 0.
-	rcv := self stackValue: 1.
-	
-	res := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
-	
-	tmp := (objectMemory fetchFloat64: 0 ofObject: rcv) - (objectMemory fetchFloat64: 0 ofObject: arg).
-	objectMemory storeFloat64: 0 ofObject: res withValue: tmp. 
-
-	tmp := (objectMemory fetchFloat64: 1 ofObject: rcv) - (objectMemory fetchFloat64: 1 ofObject: arg).
-	objectMemory storeFloat64: 1 ofObject: res withValue: tmp. 
-		
-	self pop: 2 thenPush: res.
 ]
 
 { #category : #'indexing primitive support' }

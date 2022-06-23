@@ -1577,6 +1577,27 @@ VMPrimitiveTest >> testPrimitiveEqualWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed. 
 ]
 
+{ #category : #'tests - primitiveAdd - Float64Array' }
+VMPrimitiveTest >> testPrimitiveFloat64ArrayAdd [
+
+	| x y z result |
+	x := self new64BitIndexableFromArray: #(1.0 2.0).
+	y := self new64BitIndexableFromArray: #(10.0 20.0).
+	z := self new64BitIndexableOfSize: 2.
+	
+	interpreter push: x.
+	interpreter push: y.
+	interpreter push: z.
+	interpreter primitiveFloat64ArrayAdd.
+	
+	self deny: interpreter failed.
+	
+	result := interpreter stackTop.
+	
+	self assert: (memory fetchFloat64: 0 ofObject: result) equals: 11.0.
+	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 22.0.
+]
+
 { #category : #'tests - primitiveImmutability' }
 VMPrimitiveTest >> testPrimitiveGetImmutabilityOfImmediateReturnsTrue [
 

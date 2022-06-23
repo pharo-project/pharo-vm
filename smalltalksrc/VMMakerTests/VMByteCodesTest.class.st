@@ -204,7 +204,7 @@ VMByteCodesTest >> testAddVectorBytecode [
 		stack: { v0. v1 } .
 	stackBuilder buildStack.
 	
-	self interpret: [ interpreter addVectorBytecode ].
+	self interpret: [ interpreter addFloat64VectorBytecode ].
 	
 	result := interpreter stackTop.
 	
@@ -218,13 +218,9 @@ VMByteCodesTest >> testAddVectorBytecode [
 VMByteCodesTest >> testArraySumUsingVectorBytecode [
 	| cm x y result simulatedMethod z |
 
-	x := self new64BitIndexableOfSize: 2.
-	y := self new64BitIndexableOfSize: 2.
+	x := self new64BitIndexableFromArray: #(1.0 2.0).
+	y := self new64BitIndexableFromArray: #(10.0 20.0).
 	z := self new64BitIndexableOfSize: 2.
-	memory storeFloat64: 0 ofObject: x withValue: 1.0.
-	memory storeFloat64: 1 ofObject: x withValue: 2.0.
-	memory storeFloat64: 0 ofObject: y withValue: 10.0.
-	memory storeFloat64: 1 ofObject: y withValue: 20.0.
 	
 	cm := IRBuilder buildMethod: [ :builder |
 		builder
@@ -380,7 +376,7 @@ VMByteCodesTest >> testPushArrayToRegisterBytecode [
 		stack: { index. array } .
 	stackBuilder buildStack.
 	
-	self interpret: [ interpreter pushArrayToRegisterBytecode ].
+	self interpret: [ interpreter pushFloat64ArrayToRegisterBytecode ].
 	
 	result := interpreter stackTop.
 	
@@ -732,7 +728,7 @@ VMByteCodesTest >> testStoreRegisterIntoArrayBytecode [
 		stack: { register. index. array }.
 	stackBuilder buildStack.
 	
-	self interpret: [ interpreter storeRegisterIntoArrayBytecode ].
+	self interpret: [ interpreter storeFloat64RegisterIntoArrayBytecode ].
 	
 	result := interpreter stackTop.
 	
@@ -761,7 +757,7 @@ VMByteCodesTest >> testSubVectorBytecode [
 		stack: { vector0. vector1 } .
 	stackBuilder buildStack.
 	
-	self interpret: [ interpreter subVectorBytecode ].
+	self interpret: [ interpreter subFloat64VectorBytecode ].
 	
 	result := interpreter stackTop.
 	
