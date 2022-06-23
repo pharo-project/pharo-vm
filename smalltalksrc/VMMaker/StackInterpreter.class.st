@@ -1908,14 +1908,20 @@ StackInterpreter >> addFloat32VectorBytecode [
 	arg := self stackValue: 0.
 	rcv := self stackValue: 1.
 	
-	"TODO should be using a Float32 register with 2 slots"
-	res := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 1.	
+	"TODO should be using a Float32 register with 4 slots"
+	res := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
 	
 	tmp := (objectMemory fetchFloat32: 0 ofObject: arg) + (objectMemory fetchFloat32: 0 ofObject: rcv).
 	objectMemory storeFloat32: 0 ofObject: res withValue: tmp. 
 
 	tmp := (objectMemory fetchFloat32: 1 ofObject: arg) + (objectMemory fetchFloat32: 1 ofObject: rcv).
-	objectMemory storeFloat32: 1 ofObject: res withValue: tmp. 
+	objectMemory storeFloat32: 1 ofObject: res withValue: tmp.
+	
+	tmp := (objectMemory fetchFloat32: 2 ofObject: arg) + (objectMemory fetchFloat32: 2 ofObject: rcv).
+	objectMemory storeFloat32: 2 ofObject: res withValue: tmp.
+	
+	tmp := (objectMemory fetchFloat32: 3 ofObject: arg) + (objectMemory fetchFloat32: 3 ofObject: rcv).
+	objectMemory storeFloat32: 3 ofObject: res withValue: tmp. 
 		
 	self pop: 2 thenPush: res.
 ]
@@ -12704,11 +12710,13 @@ StackInterpreter >> pushFloat32ArrayToRegisterBytecode [
 	array := self stackValue: 0.
 	index := objectMemory integerValueOf: (self stackValue: 1).
 	
-	"TODO should be using Float32 register with 2 slots"
-	reg := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 1.	
+	"TODO should be using Float32 register with 4 slots"
+	reg := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
 	
 	objectMemory storeFloat32: 0 ofObject: reg withValue: (objectMemory fetchFloat32: index ofObject: array). 
-	objectMemory storeFloat32: 1 ofObject: reg withValue: (objectMemory fetchFloat32: (index+1) ofObject: array). 
+	objectMemory storeFloat32: 1 ofObject: reg withValue: (objectMemory fetchFloat32: (index+1) ofObject: array).
+	objectMemory storeFloat32: 2 ofObject: reg withValue: (objectMemory fetchFloat32: (index+2) ofObject: array).
+	objectMemory storeFloat32: 3 ofObject: reg withValue: (objectMemory fetchFloat32: (index+3) ofObject: array). 
 		
 	self pop: 2 thenPush: reg.
 ]
@@ -14903,6 +14911,8 @@ StackInterpreter >> storeFloat32RegisterIntoArrayBytecode [
 	
 	objectMemory storeFloat32: index ofObject: array withValue: (objectMemory fetchFloat32: 0 ofObject: reg). 
 	objectMemory storeFloat32: (index+1) ofObject: array withValue: (objectMemory fetchFloat32: 1 ofObject: reg). 
+	objectMemory storeFloat32: (index+2) ofObject: array withValue: (objectMemory fetchFloat32: 2 ofObject: reg).
+	objectMemory storeFloat32: (index+3) ofObject: array withValue: (objectMemory fetchFloat32: 3 ofObject: reg).
 		
 	self pop: 3 thenPush: array.
 ]
