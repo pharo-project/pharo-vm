@@ -1900,6 +1900,27 @@ StackInterpreter >> addFirstLink: proc toList: aList [
 ]
 
 { #category : #'simd bytecodes' }
+StackInterpreter >> addFloat32VectorBytecode [
+	
+	<var: #tmp type: #float>
+	
+	| arg rcv res tmp |
+	arg := self stackValue: 0.
+	rcv := self stackValue: 1.
+	
+	"TODO should be using a Float32 register with 2 slots"
+	res := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 1.	
+	
+	tmp := (objectMemory fetchFloat32: 0 ofObject: arg) + (objectMemory fetchFloat32: 0 ofObject: rcv).
+	objectMemory storeFloat32: 0 ofObject: res withValue: tmp. 
+
+	tmp := (objectMemory fetchFloat32: 1 ofObject: arg) + (objectMemory fetchFloat32: 1 ofObject: rcv).
+	objectMemory storeFloat32: 1 ofObject: res withValue: tmp. 
+		
+	self pop: 2 thenPush: res.
+]
+
+{ #category : #'simd bytecodes' }
 StackInterpreter >> addFloat64VectorBytecode [
 	
 	<var: #tmp type: #double>
@@ -12678,6 +12699,21 @@ StackInterpreter >> pushConstantZeroBytecode [
 ]
 
 { #category : #'simd bytecodes' }
+StackInterpreter >> pushFloat32ArrayToRegisterBytecode [
+	| array index reg |
+	array := self stackValue: 0.
+	index := objectMemory integerValueOf: (self stackValue: 1).
+	
+	"TODO should be using Float32 register with 2 slots"
+	reg := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 1.	
+	
+	objectMemory storeFloat32: 0 ofObject: reg withValue: (objectMemory fetchFloat32: index ofObject: array). 
+	objectMemory storeFloat32: 1 ofObject: reg withValue: (objectMemory fetchFloat32: (index+1) ofObject: array). 
+		
+	self pop: 2 thenPush: reg.
+]
+
+{ #category : #'simd bytecodes' }
 StackInterpreter >> pushFloat64ArrayToRegisterBytecode [
 	| array index reg |
 	array := self stackValue: 0.
@@ -14856,6 +14892,19 @@ StackInterpreter >> storeAndPopTemporaryVariableBytecode [
 				put: self stackTop.
 			self fetchNextBytecode.
 			self pop: 1 ]
+]
+
+{ #category : #'simd bytecodes' }
+StackInterpreter >> storeFloat32RegisterIntoArrayBytecode [
+	| reg index array |
+	array := self stackValue: 0.
+	index := objectMemory integerValueOf: (self stackValue: 1).
+	reg := self stackValue: 2.
+	
+	objectMemory storeFloat32: index ofObject: array withValue: (objectMemory fetchFloat32: 0 ofObject: reg). 
+	objectMemory storeFloat32: (index+1) ofObject: array withValue: (objectMemory fetchFloat32: 1 ofObject: reg). 
+		
+	self pop: 3 thenPush: array.
 ]
 
 { #category : #'simd bytecodes' }
