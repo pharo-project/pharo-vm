@@ -2955,6 +2955,29 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean TemporaryVariable: tempIn
 	^0
 ]
 
+{ #category : #'mapped inline primitive generators - vectorial' }
+StackToRegisterMappingCogit >> genSubFloat64Vector [
+	| array1Reg array2Reg subReg |
+	
+	array1Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
+	array2Reg := self allocateVectorRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: array1Reg).
+	subReg := self allocateVectorRegNotConflictingWith: 0.
+	
+	self ssTop moveToVectorReg: array1Reg.
+	self ssPop: 1.
+	
+	self ssTop moveToVectorReg: array2Reg.
+	self ssPop: 1.
+	
+	self ssPushVectorRegister: subReg.
+	self ssTop moveToVectorReg: subReg.
+	
+	self FsubS: 64 Rv: array2Reg Rv: array1Reg Rv: subReg.
+	
+	"Returns 0 if worked"
+	^0
+]
+
 { #category : #'bytecode generator stores' }
 StackToRegisterMappingCogit >> genTraceStores [
 	<inline: true>

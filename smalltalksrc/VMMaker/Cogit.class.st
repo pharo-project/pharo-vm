@@ -2085,6 +2085,16 @@ Cogit >> Fill32: value [
 ]
 
 { #category : #'abstract instructions' }
+Cogit >> FsubS: aSize Rv: minuendVectorRegister Rv: subtrahendVectorRegister Rv: vectorRegisterSum [ 
+	^ self
+		  gen: FsubSRvRvRv
+		  operand: aSize 
+		  operand: minuendVectorRegister
+		  operand: subtrahendVectorRegister 
+		  operand: vectorRegisterSum
+]
+
+{ #category : #'abstract instructions' }
 Cogit >> Jump: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>

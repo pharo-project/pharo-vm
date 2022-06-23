@@ -204,7 +204,7 @@ VMByteCodesTest >> testAddVectorBytecode [
 		stack: { v0. v1 } .
 	stackBuilder buildStack.
 	
-	self interpret: [ interpreter addVectorBytecode ].
+	self interpret: [ interpreter addFloat64VectorBytecode ].
 	
 	result := interpreter stackTop.
 	
@@ -218,13 +218,9 @@ VMByteCodesTest >> testAddVectorBytecode [
 VMByteCodesTest >> testArraySumUsingVectorBytecode [
 	| cm x y result simulatedMethod z |
 
-	x := self new64BitIndexableOfSize: 2.
-	y := self new64BitIndexableOfSize: 2.
+	x := self new64BitIndexableFromArray: #(1.0 2.0).
+	y := self new64BitIndexableFromArray: #(10.0 20.0).
 	z := self new64BitIndexableOfSize: 2.
-	memory storeFloat64: 0 ofObject: x withValue: 1.0.
-	memory storeFloat64: 1 ofObject: x withValue: 2.0.
-	memory storeFloat64: 0 ofObject: y withValue: 10.0.
-	memory storeFloat64: 1 ofObject: y withValue: 20.0.
 	
 	cm := IRBuilder buildMethod: [ :builder |
 		builder
@@ -380,7 +376,7 @@ VMByteCodesTest >> testPushArrayToRegisterBytecode [
 		stack: { index. array } .
 	stackBuilder buildStack.
 	
-	self interpret: [ interpreter pushArrayToRegisterBytecode ].
+	self interpret: [ interpreter pushFloat64ArrayToRegisterBytecode ].
 	
 	result := interpreter stackTop.
 	
@@ -732,7 +728,7 @@ VMByteCodesTest >> testStoreRegisterIntoArrayBytecode [
 		stack: { register. index. array }.
 	stackBuilder buildStack.
 	
-	self interpret: [ interpreter storeRegisterIntoArrayBytecode ].
+	self interpret: [ interpreter storeFloat64RegisterIntoArrayBytecode ].
 	
 	result := interpreter stackTop.
 	
@@ -741,4 +737,32 @@ VMByteCodesTest >> testStoreRegisterIntoArrayBytecode [
 	
 	self assert: (memory fetchFloat64: 2 ofObject: array) equals: 5.0.
 	self assert: (memory fetchFloat64: 3 ofObject: array) equals: 6.0.
+]
+
+{ #category : #'tests-simd' }
+VMByteCodesTest >> testSubVectorBytecode [
+	| index vector0 vector1 result |
+	
+	index := 0.
+
+	vector0 := self new64BitIndexableOfSize: 2.
+	memory storeFloat64: 0 ofObject: vector0 withValue: 5.0. 
+	memory storeFloat64: 1 ofObject: vector0 withValue: 3.0. 
+
+	vector1 := self new64BitIndexableOfSize: 2.
+	memory storeFloat64: 0 ofObject: vector1 withValue: 2.0. 
+	memory storeFloat64: 1 ofObject: vector1 withValue: 1.0. 
+		
+	stackBuilder addNewFrame
+		stack: { vector0. vector1 } .
+	stackBuilder buildStack.
+	
+	self interpret: [ interpreter subFloat64VectorBytecode ].
+	
+	result := interpreter stackTop.
+	
+	self deny: result equals: memory nilObject.
+	self assert: (memory fetchFloat64: 0 ofObject: result) equals: 3.0.
+	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 2.0.
+	
 ]

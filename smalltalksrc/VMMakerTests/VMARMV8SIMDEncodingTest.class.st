@@ -75,6 +75,16 @@ VMARMV8SIMDEncodingTest >> testEncodeFaddWith64BitLanes [
 ]
 
 { #category : #tests }
+VMARMV8SIMDEncodingTest >> testEncodeFsubWith64BitLanes [
+
+	self compile: [ cogit FsubS: 64 Rv: 0 Rv: 1 Rv: 2 ].
+	
+	self
+		assert: (self armInstructionAt: 1) assemblyCodeString
+		equals: 'fsub	v2.2d, v0.2d, v1.2d'
+]
+
+{ #category : #tests }
 VMARMV8SIMDEncodingTest >> testEncodeLd1WithOne32BitLaneRegisterAndImmediateOffset [
 
 	self compile: [ cogit Ld1S: 32 Vr: 0 R: 1 Mw: 16 ].
