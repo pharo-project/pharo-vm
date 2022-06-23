@@ -9796,9 +9796,13 @@ StackInterpreter >> mappedInlinePrimitive: primIndex [
 	 200-249 variable
 	 250-255 mapped jumps"
 	primIndex caseOf: {
-		[0]   -> [self addVectorBytecode].
-		[1]   -> [self pushArrayToRegisterBytecode].
-		[2]   -> [self storeRegisterIntoArrayBytecode].
+		[0]   -> [self addFloat64VectorBytecode].
+		[1]   -> [self pushFloat64ArrayToRegisterBytecode].
+		[2]   -> [self storeFloat64RegisterIntoArrayBytecode].
+		[3]   -> [self addFloat32VectorBytecode].
+		[4]   -> [self pushFloat32ArrayToRegisterBytecode].
+		[5]   -> [self storeFloat32RegisterIntoArrayBytecode].
+		[6]   -> [self subFloat64VectorBytecode]
 	} otherwise: [self unknownInlinePrimitive]
 	
 
@@ -15047,6 +15051,26 @@ StackInterpreter >> stringOf: oop [
 			strm nextPutAll: (i=nLongs
 							ifTrue: [chars copyFrom: 1 to: size-1\\objectMemory wordSize+1]
 							ifFalse: [chars])]]
+]
+
+{ #category : #'simd bytecodes' }
+StackInterpreter >> subFloat64VectorBytecode [
+	
+	<var: #tmp type: #double>
+	
+	| arg rcv res tmp |
+	arg := self stackValue: 0.
+	rcv := self stackValue: 1.
+	
+	res := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
+	
+	tmp := (objectMemory fetchFloat64: 0 ofObject: rcv) - (objectMemory fetchFloat64: 0 ofObject: arg).
+	objectMemory storeFloat64: 0 ofObject: res withValue: tmp. 
+
+	tmp := (objectMemory fetchFloat64: 1 ofObject: rcv) - (objectMemory fetchFloat64: 1 ofObject: arg).
+	objectMemory storeFloat64: 1 ofObject: res withValue: tmp. 
+		
+	self pop: 2 thenPush: res.
 ]
 
 { #category : #'indexing primitive support' }
