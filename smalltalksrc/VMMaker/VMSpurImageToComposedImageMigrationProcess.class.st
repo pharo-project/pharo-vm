@@ -8,7 +8,22 @@ Class {
 	#category : #'VMMaker-PermSpace'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : #migrate }
+VMSpurImageToComposedImageMigrationProcess >> copyChangesFileFromImage: originalImageString to: newImageString [ 
+
+	| originalImageFileReference originalChangesFileReference newImageFileReference newChangesFileReference |
+
+	originalImageFileReference := originalImageString asFileReference.
+	originalChangesFileReference := originalImageFileReference withExtension: 'changes'.
+	
+	originalChangesFileReference ifExists: [ 
+		newImageFileReference := newImageString asFileReference.
+		newChangesFileReference :=  newImageFileReference withExtension: 'changes'.
+		newChangesFileReference ensureDelete.
+		originalChangesFileReference copyTo: newChangesFileReference ].
+]
+
+{ #category : #migrate }
 VMSpurImageToComposedImageMigrationProcess >> createSimulator [
 
 	| environmentBuilder memoryClass |
@@ -33,7 +48,7 @@ VMSpurImageToComposedImageMigrationProcess >> createSimulator [
 	memory := environmentBuilder objectMemory.
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #migrate }
 VMSpurImageToComposedImageMigrationProcess >> loadImage: originalImage [
 
 	interpreter openOn: originalImage extraMemory: 0.
@@ -41,21 +56,19 @@ VMSpurImageToComposedImageMigrationProcess >> loadImage: originalImage [
 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #migrate }
 VMSpurImageToComposedImageMigrationProcess >> migrate: originalImage to: newImage [
 
 	self createSimulator.
 	self loadImage: originalImage.
 	self saveImage: newImage.
 
-
+	self copyChangesFileFromImage: originalImage to: newImage 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #migrate }
 VMSpurImageToComposedImageMigrationProcess >> saveImage: newImage [
 
 	interpreter imageName: newImage.
-	interpreter writeImageFileIO.
-
-
+	interpreter writeImageFileIO
 ]

@@ -725,3 +725,22 @@ VMSpurScavengerTest >> testYoungObjectRememberedFromPermanentObjectShouldSurvive
 	newRememberedObjectAddress := memory remapObj: rememberedObjectAddress.
 	self assert: (memory hashBitsOf: newRememberedObjectAddress) equals: rememberedObjectHash
 ]
+
+{ #category : #'tests-3-scavenge-basic' }
+VMSpurScavengerTest >> testYoungObjectsFromPermanentSpaceAreRemapped [
+
+	| newObjectOop newObjectHash permObject newObjectAddress |
+	newObjectOop := self newZeroSizedObject.
+	newObjectHash := (memory hashBitsOf: newObjectOop).
+
+
+	permObject := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permObject withValue: newObjectOop.
+
+	memory doScavenge: 1 "TenureByAge".
+	
+	newObjectAddress := memory remapObj: newObjectOop.
+	self assert: (memory hashBitsOf: newObjectAddress) equals: newObjectHash.
+	
+	self assert: (memory fetchPointer: 0 ofObject: permObject) equals: newObjectAddress
+]

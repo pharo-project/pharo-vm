@@ -4,6 +4,14 @@ Class {
 	#category : #'VMMakerTests-PermSpace'
 }
 
+{ #category : #running }
+VMPermanentSpaceMemoryTest >> setUp [
+
+	super setUp.
+	self createEphemeronClass.
+	self createWeakArrayClass
+]
+
 { #category : #'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testMarkingNewSpaceDoesNotMarkPermSpace [
 
@@ -68,6 +76,38 @@ VMPermanentSpaceMemoryTest >> testMoveOldObjectInRememberedSetIsMovedFromSet [
 ]
 
 { #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testMovingAnObjectReferencingAYoungOnePutsInRememberedSet [
+
+	| permanentObject youngObject rootObject|
+	
+	rootObject := self newObjectWithSlots:  1.
+	youngObject := self newZeroSizedObject.
+
+	memory storePointer: 0 ofObject: rootObject withValue: youngObject.
+
+	permanentObject := memory moveToPermSpace: rootObject.	
+		
+	self assert: (memory isRemembered: permanentObject).
+	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject).
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testMovingAnObjectReferencingAnOldOnePutsInRememberedSet [
+
+	| permanentObject oldObject rootObject|
+	
+	rootObject := self newOldSpaceObjectWithSlots: 1.
+	oldObject := self newOldByteObjectOfSize: 1.
+
+	memory storePointer: 0 ofObject: rootObject withValue: oldObject.
+
+	permanentObject := memory moveToPermSpace: rootObject.	
+	
+	self assert: (memory isRemembered: permanentObject).
+	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject).
+]
+
+{ #category : #'test - moving' }
 VMPermanentSpaceMemoryTest >> testMovingOldObjectToPermSpaceIsCorrectlyForwarded [
 
 	| permanentObject oldObject rootObject|
@@ -111,7 +151,7 @@ VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsCorrectlyAllocated [
 	
 	permanentObject := self newPermanentByteObjectOfSize: 14.
 
-	self assert: permanentObject equals: memory getMemoryMap permSpaceStart
+	self assert: permanentObject equals: memory getMemoryMap permSpaceStart + 16 "There is a zero-slot objects always in the perm space"
 ]
 
 { #category : #'tests - allocation' }
@@ -154,4 +194,195 @@ VMPermanentSpaceMemoryTest >> testNextObjectIsReturningAGoodValue [
 
 	self assert: nextObject equals: memory permSpaceFreeStart
 	
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPermanentObjectMarksItsOldClass [
+
+	| permanentObject oldObject oldClass oldClassHash found |
+	
+	"When a old class is referenced indirectly from the perm space it is not marked. 
+	We need to guarantee that the instances on the perm space or they are from permanent classes
+	or old classes are never collected."
+	self skip.
+	
+	oldClass := self newClassInOldSpaceWithSlots: 0 instSpec: memory zeroSlotsNonIndexablePointerFormat.
+	oldClassHash := memory ensureBehaviorHash: oldClass.
+	oldObject := self newOldSpaceObjectWithSlots: 0 format: memory zeroSlotsNonIndexablePointerFormat classIndex: oldClassHash.
+	
+	permanentObject := memory moveToPermSpace: oldObject.
+	
+	memory fullGC.
+	
+	found := false.
+	
+	memory allOldSpaceObjectsDo: [ :anOop | ((memory rawHashBitsOf: anOop) = oldClassHash) 
+		ifTrue: [ found := true ]  ].
+	
+	self assert: found
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToFalseIsNotRemembered [
+
+	
+	| oldObject permanentObject |
+	oldObject := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObject withValue: memory falseObject.
+	permanentObject := memory moveToPermSpace: oldObject.
+	
+	self deny: (memory isRemembered: permanentObject).
+	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToNilIsNotRemembered [
+
+	
+	| oldObject permanentObject |
+	oldObject := self newOldSpaceObjectWithSlots: 1.
+	permanentObject := memory moveToPermSpace: oldObject.
+	
+	self deny: (memory isRemembered: permanentObject).
+	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToTrueIsNotRemembered [
+
+	
+	| oldObject permanentObject |
+	oldObject := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObject withValue: memory trueObject.
+	permanentObject := memory moveToPermSpace: oldObject.
+	
+	self deny: (memory isRemembered: permanentObject).
+	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPermanentObjectUpdatedToTrueIsRemovedFromRememberedSet [
+
+	
+	| oldObject permanentObject youngObject |
+	oldObject := self newOldSpaceObjectWithSlots: 1.
+	youngObject := self newZeroSizedObject.
+	memory storePointer: 0 ofObject: oldObject withValue: youngObject.
+	permanentObject := memory moveToPermSpace: oldObject.
+	
+	self assert: (memory isRemembered: permanentObject).
+	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+	
+	memory storePointer: 0 ofObject: permanentObject withValue: memory nilObject.
+
+	memory doScavenge: 1.
+
+	self assert: (memory isRemembered: permanentObject).
+	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromOldEphemeronIsNotFired [
+
+	| permanentObject oldObject ephemeronObject |
+	
+	oldObject := self newOldByteObjectOfSize: 1.	
+		
+	ephemeronObject := self
+									newOldSpaceObjectWithSlots: 3
+									format: memory ephemeronFormat
+									classIndex: (memory ensureBehaviorHash: ourEphemeronClass).
+	
+	self keepObjectInVMVariable1: ephemeronObject.
+	self assert: (memory getMemoryMap isOldObject: ephemeronObject).
+
+	permanentObject := memory moveToPermSpace: oldObject.
+	
+	memory storePointer: 0 ofObject: ephemeronObject withValue: permanentObject.
+	
+	memory fullGC.
+	
+	self assert: (memory fetchPointer: 0 ofObject: self keptObjectInVMVariable1) equals: permanentObject.
+	self assert: (memory formatOf: self keptObjectInVMVariable1) equals: memory ephemeronFormat.
+
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromOldWeakObjectIsNotNilled [
+
+	| permanentObject oldObject weakObject |
+	
+	oldObject := self newOldByteObjectOfSize: 1.	
+	
+	weakObject := self newOldSpaceObjectWithSlots: 1 format: memory weakArrayFormat classIndex: (memory ensureBehaviorHash: ourWeakClass).
+	
+	"As weak objects are iterated at the end of the process, the class of the weakArray is pushed in the stack but not visited.
+	To ensure it is visited, be need to reference it. It seems like an issue."
+	self keepObjectInVMVariable2: ourWeakClass.
+	self keepObjectInVMVariable1: weakObject.
+
+	self assert: (memory getMemoryMap isOldObject: weakObject).
+	self assert: (memory isWeakNonImm: weakObject).
+
+	permanentObject := memory moveToPermSpace: oldObject.
+	
+	memory storePointer: 0 ofObject: weakObject withValue: permanentObject.
+	
+	self assert: (memory fetchPointer: 0 ofObject: weakObject) equals: permanentObject.
+
+	memory fullGC.
+	
+	self assert: (memory fetchPointer: 0 ofObject: self keptObjectInVMVariable1) equals: permanentObject.
+
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromYoungEphemeronIsNotFired [
+
+	| permanentObject oldObject ephemeronObject |
+	
+	oldObject := self newOldByteObjectOfSize: 1.	
+		
+	ephemeronObject := self newEphemeronObject.
+	
+	self keepObjectInVMVariable1: ephemeronObject.
+	self assert: (memory getMemoryMap isYoungObject: ephemeronObject).
+
+	permanentObject := memory moveToPermSpace: oldObject.
+	
+	memory storePointer: 0 ofObject: ephemeronObject withValue: permanentObject.
+	
+	memory fullGC.
+	
+	self assert: (memory fetchPointer: 0 ofObject: self keptObjectInVMVariable1) equals: permanentObject.
+	self assert: (memory formatOf: self keptObjectInVMVariable1) equals: memory ephemeronFormat.
+
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromYoungWeakObjectIsNotNilled [
+
+	| permanentObject oldObject weakObject |
+	
+	oldObject := self newOldByteObjectOfSize: 1.	
+	weakObject := self newWeakObjectOfSize: 1.
+	
+	self keepObjectInVMVariable1: weakObject.
+
+	self assert: (memory getMemoryMap isYoungObject: weakObject).
+	self assert: (memory isWeakNonImm: weakObject).
+
+	permanentObject := memory moveToPermSpace: oldObject.
+	
+	memory storePointer: 0 ofObject: weakObject withValue: permanentObject.
+	
+	self assert: (memory fetchPointer: 0 ofObject: weakObject) equals: permanentObject.
+
+	memory doScavenge: 1.
+
+	weakObject := memory remapObj: weakObject.
+
+	self assert: (memory fetchPointer: 0 ofObject: weakObject) equals: permanentObject.
+
 ]

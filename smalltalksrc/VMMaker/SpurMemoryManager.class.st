@@ -1223,7 +1223,7 @@ SpurMemoryManager >> activeAndDeferredScan: anEphemeron [
 	<inline: #never>
 	self assert: (self isEphemeron: anEphemeron).
 	((self isImmediate: (key := self keyOfEphemeron: anEphemeron))
-	 or: [self isMarked: key]) ifTrue:
+	 or: [self isMarkedOrPermanent: key ]) ifTrue:
 		[^false].
 	^self pushOnUnscannedEphemeronsStack: anEphemeron
 ]
@@ -1886,7 +1886,7 @@ SpurMemoryManager >> allStrongSlotsOfWeaklingAreMarked: aWeakling [
 		[:i| | referent |
 		referent := self fetchPointer: i ofObject: aWeakling.
 		(self isNonImmediate: referent) ifTrue:
-			[(self isMarked: referent) ifFalse:
+			[(self isMarkedOrPermanent: referent) ifFalse:
 				[^false]]].
 	^true
 ]
@@ -1896,7 +1896,7 @@ SpurMemoryManager >> allUnscannedEphemeronsAreActive [
 	unscannedEphemerons start to: unscannedEphemerons top - self bytesPerOop by: self bytesPerOop do:
 		[:p| | key |
 		key := self keyOfMaybeFiredEphemeron: (self longAt: p).
-		((self isImmediate: key) or: [self isMarked: key]) ifTrue:
+		((self isImmediate: key) or: [self isMarkedOrPermanent: key]) ifTrue:
 			[^false]].
 	^true
 ]
@@ -6216,7 +6216,7 @@ SpurMemoryManager >> inactiveOrFailedToDeferScan: anEphemeron [
 	| key |
 	self assert: (self isEphemeron: anEphemeron).
 	((self isImmediate: (key := self keyOfEphemeron: anEphemeron))
-	 or: [self isMarked: key]) ifTrue:
+	 or: [self isMarkedOrPermanent: key]) ifTrue:
 		[^true].
 	^(self pushOnUnscannedEphemeronsStack: anEphemeron) not
 ]
@@ -7054,6 +7054,15 @@ SpurMemoryManager >> isEphemeronFormat: format [
 	^format = self ephemeronFormat
 ]
 
+{ #category : #'object testing' }
+SpurMemoryManager >> isFixedKnownObject: valueObj [ 
+
+	"nil, false and true are in the beginning of the memory and they are always in that positions.
+	We can test if the valueObj is one of these three"
+
+	^ (valueObj >= self nilObject) and: [valueObj <= self trueObject]
+]
+
 { #category : #'header format' }
 SpurMemoryManager >> isFixedSizePointerFormat: format [
 	<api>
@@ -7325,6 +7334,14 @@ SpurMemoryManager >> isMarked: objOop [
 ]
 
 { #category : #'object testing' }
+SpurMemoryManager >> isMarkedOrPermanent: anOop [ 
+
+	<api>
+	
+	^ (self isMarked: anOop) or: [self isPermanent: anOop]
+]
+
+{ #category : #'object testing' }
 SpurMemoryManager >> isMaybeFiredEphemeron: objOop [
 	^self isMaybeFiredEphemeronFormat: (self formatOf: objOop)
 ]
@@ -7570,13 +7587,6 @@ SpurMemoryManager >> isUnambiguouslyForwarder: objOop [
 	 take advantage of the power-of0two optimization in isForwarded:."
 	<api>
 	^(self classIndexOf: objOop) = self isForwardedObjectClassIndexPun
-]
-
-{ #category : #'header access' }
-SpurMemoryManager >> isUnmarked: objOop [
-	"For debugging using printOopsSuchThat:"
-	<api>
-	^(self isMarked: objOop) not
 ]
 
 { #category : #'class table' }
@@ -8256,7 +8266,7 @@ SpurMemoryManager >> markAndTraceClassOf: objOop [
 	(classIndex ~= realClassIndex
 	 and: [classIndex > self lastClassIndexPun]) ifTrue:
 		[self setClassIndexOf: objOop to: realClassIndex].
-	(self isMarked: classObj) ifFalse:
+	(self isMarkedOrPermanent: classObj) ifFalse:
 		[self setIsMarkedOf: classObj to: true.
 		 self markAndTraceClassOf: classObj.
 		 self push: classObj onObjStack: markStack]
@@ -8364,7 +8374,7 @@ SpurMemoryManager >> markAndTraceWeaklingsFrom: startIndex [
 		 0 to: (self numStrongSlotsOfWeakling: weakling) - 1 do:
 			[:i| | field |
 			field := self followOopField: i ofObject: weakling.
-			((self isImmediate: field) or: [self isMarked: field]) ifFalse:
+			((self isImmediate: field) or: [self isMarkedOrPermanent: field]) ifFalse:
 				[self markAndTrace: field]]]
 ]
 
@@ -8381,7 +8391,7 @@ SpurMemoryManager >> markInactiveEphemerons [
 	[ptr < unscannedEphemerons top] whileTrue:
 		[| ephemeron key |
 		 key := self followedKeyOfEphemeron: (ephemeron := self longAt: ptr).
-		 ((self isImmediate: key) or: [self isMarked: key])
+		 ((self isImmediate: key) or: [self isMarkedOrPermanent: key])
 			ifTrue:
 				[foundInactive := true.
 				 "Now remove the inactive ephemeron from the set, and scan-mark it.
@@ -8782,7 +8792,10 @@ SpurMemoryManager >> moveToPermSpace: objOop [
 
 	0 to: numSlots - 1 do: [ :i | | referenced |
 		referenced := self fetchPointer: i ofObject: objOop.
-		(self isInOldSpace: referenced) ifTrue: [ shouldBeRememberedInOldSpace := true ].
+		
+		(((memoryMap isOldObject: referenced) or: [memoryMap isYoungObject: referenced]) and: [ (self isFixedKnownObject: referenced) not ])
+			ifTrue: [ shouldBeRememberedInOldSpace := true ].
+		
 		self
 			storePointerUnchecked: i
 			ofObject: newObj
@@ -9040,7 +9053,7 @@ SpurMemoryManager >> nilUnmarkedWeaklingSlotsIn: aWeakling [
 		(self isNonImmediate: referent) ifTrue:
 			[(self isUnambiguouslyForwarder: referent) ifTrue:
 				[referent := self fixFollowedField: i ofObject: aWeakling withInitialValue: referent].
-			 ((self isImmediate: referent) or: [self isMarked: referent]) ifFalse:
+			 ((self isImmediate: referent) or: [self isMarkedOrPermanent: referent]) ifFalse:
 				[self storePointerUnchecked: i ofObject: aWeakling withValue: nilObj.
 				 anyUnmarked := true]]].
 	^anyUnmarked
@@ -9327,7 +9340,7 @@ SpurMemoryManager >> numStrongSlotsOfInephemeral: objOop [
 	<inline: true>
 	| fmt numSlots  contextSize numLiterals header |
 	fmt := self formatOf: objOop.
-	self assert: (fmt ~= self ephemeronFormat or: [self isMarked: (self keyOfEphemeron: objOop)]).
+	self assert: (fmt ~= self ephemeronFormat or: [self isMarkedOrPermanent: (self keyOfEphemeron: objOop)]).
 	fmt <= self lastPointerFormat ifTrue:
 		[numSlots := self numSlotsOf: objOop.
 		 fmt <= self arrayFormat ifTrue:
@@ -9840,11 +9853,17 @@ SpurMemoryManager >> possibleOldObjectStoreInto: destObj [
 ]
 
 { #category : #'store check' }
-SpurMemoryManager >> possiblePermObjectStoreInto: destObj [
+SpurMemoryManager >> possiblePermObjectStoreInto: destObj value: valueObj [
 
 	<inline: true>
-	(self isRemembered: destObj) ifFalse: [ 
-		fromPermSpaceRememberedSet doRemember: destObj ]
+	
+	(self isFixedKnownObject: valueObj)
+		ifTrue: [ ^ self ].
+	
+	(self isPermanent: destObj) ifTrue: [ 
+		(self isPermanent: valueObj) ifFalse: [ 
+			(self isRemembered: destObj) ifFalse: [ 
+				fromPermSpaceRememberedSet doRemember: destObj ] ] ]
 ]
 
 { #category : #'become implementation' }
@@ -10495,6 +10514,7 @@ SpurMemoryManager >> push: oop [
 { #category : #'obj stacks' }
 SpurMemoryManager >> push: objOop onObjStack: objStack [
 	<inline: true>
+
 	self assert: (self addressCouldBeOop: objOop).
 	(self isImmediate: objOop)
 		ifTrue:
@@ -10797,6 +10817,8 @@ SpurMemoryManager >> rememberObjInCorrectRememberedSet: objOop [
 
 	(self isPermanent: objOop) ifTrue: [ 
 		^ fromPermSpaceRememberedSet doRemember: objOop ].
+	
+	^ objOop
 
 ]
 
@@ -11897,9 +11919,7 @@ SpurMemoryManager >> storePointer: fieldIndex ofForwarder: objOop withValue: val
 		[(self isYoung: valuePointer) ifTrue:
 			[self possibleOldObjectStoreInto: objOop]].
 	
-	(self isPermanent: objOop) ifTrue: [ 
-		(self isPermanent: valuePointer) ifFalse: [ 
-			self possiblePermObjectStoreInto: objOop ] ].	
+	self possiblePermObjectStoreInto: objOop value: valuePointer.
 
 	^self
 		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
@@ -11959,10 +11979,8 @@ SpurMemoryManager >> storePointer: fieldIndex ofObject: objOop withValue: valueP
 		(self isYoung: valuePointer) ifTrue: [ 
 			self possibleOldObjectStoreInto: objOop ] ].
 
-	(self isPermanent: objOop) ifTrue: [ 
-		(self isPermanent: valuePointer) ifFalse: [ 
-			self possiblePermObjectStoreInto: objOop ] ].
-
+	self possiblePermObjectStoreInto: objOop value: valuePointer.
+	
 	^ self
 		  longAt:
 		  objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
@@ -12883,6 +12901,7 @@ SpurMemoryManager >> whereIsMaybeHeapThing: anOop [
 		[(segmentManager segmentContainingObj: anOop) ifNotNil:
 			[^' is in old space'].
 		 ^' is between old space segments'].
+	(self isInPermSpace: anOop) ifTrue: [ ^ ' is in permanent space' ].
 	^nil
 ]
 

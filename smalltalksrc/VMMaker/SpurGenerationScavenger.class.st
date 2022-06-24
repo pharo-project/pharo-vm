@@ -283,7 +283,9 @@ SpurGenerationScavenger >> copyAndForward: survivor [
 	 It leaves a forwarding pointer behind.  If the object is weak
 	 then corpse is threaded onto the weakList for later treatment."
 	<inline: false>
+
 	| bytesInObj format tenure newLocation |
+
 	self assert: ((manager isInEden: survivor) "cog methods should be excluded."
 				or: [manager isInPastSpace: survivor]).
 	bytesInObj := manager bytesInObject: survivor.
@@ -636,6 +638,10 @@ SpurGenerationScavenger >> isMaybeOldScavengeSurvivor: oop [
 			 (manager isImmediate: oop) ifTrue:
 				[^true]]
 		ifFalse: [target := oop].
+	
+	(manager getMemoryMap isPermanentObject: target)
+		ifTrue: [ ^ true ].
+
 	^(manager getMemoryMap isOldObject: target)
 		ifTrue:
 			[tenureCriterion ~= MarkOnTenure
@@ -1158,7 +1164,7 @@ SpurGenerationScavenger >> scavengeReferentsOfFromPermSpace: referrer [
 
 	<inline: #never>
 
-	^ self scavengeReferentsOf: referrer additionalShouldKeepReferrerTestingBlock: [:aReferrer :referent |	(manager isPermanent: referent) not].
+	^ self scavengeReferentsOf: referrer additionalShouldKeepReferrerTestingBlock: [:aReferrer :referent |	(manager isPermanent: referent) not or:[ manager isFixedKnownObject: referent ]].
 ]
 
 { #category : #scavenger }

@@ -4583,7 +4583,7 @@ Cogit >> closedPICRefersToUnmarkedObject: cPIC [
 	<var: #cPIC type: #'CogMethod *'>
 	| pc object |
 	((objectMemory isImmediate: cPIC selector)
-	or: [objectMemory isMarked: cPIC selector]) ifFalse:
+	or: [objectMemory isMarkedOrPermanent: cPIC selector]) ifFalse:
 		[^true].
 
 	"First jump is unconditional; subsequent ones are conditional."
@@ -4591,7 +4591,7 @@ Cogit >> closedPICRefersToUnmarkedObject: cPIC [
 	 Inline cache tags for the 1st case are at the send site."
 	pc := self addressOfEndOfCase: 1 inCPIC: cPIC.
 	(objectRepresentation couldBeObject: (object := backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongByteSize)) ifTrue:
-		[(objectMemory isMarked: object) ifFalse:
+		[(objectMemory isMarkedOrPermanent: object) ifFalse:
 			[^true]].
 
 	"Check the first target"
@@ -4604,11 +4604,11 @@ Cogit >> closedPICRefersToUnmarkedObject: cPIC [
 		(self inlineCacheTagsAreIndexes not
 		 and: [objectRepresentation inlineCacheTagsMayBeObjects
 		 and: [objectRepresentation couldBeObject: (object := backEnd literal32BeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize)]]) ifTrue:
-			[(objectMemory isMarked: object) ifFalse:
+			[(objectMemory isMarkedOrPermanent: object) ifFalse:
 				[^true]].
 		"Check the potential method oop for subsequent cases."
 		(objectRepresentation couldBeObject: (object := backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize - backEnd cmpC32RTempByteSize)) ifTrue:
-			[(objectMemory isMarked: object) ifFalse:
+			[(objectMemory isMarkedOrPermanent: object) ifFalse:
 				[^true]].
 		"Check subsequent targets"
 		(self markAndTraceOrFreePICTarget: (backEnd jumpLongConditionalTargetBeforeFollowingAddress: pc) in: cPIC) ifTrue:
@@ -6943,12 +6943,12 @@ Cogit >> freeUnmarkedMachineCode [
 	self enableCodeZoneWriteDuring: [   
 		[cogMethod < methodZone limitZony] whileTrue:
 			[(cogMethod cmType = CMMethod
-			  and: [(objectMemory isMarked: cogMethod methodObject) not]) ifTrue:
+			  and: [(objectMemory isMarkedOrPermanent: cogMethod methodObject) not]) ifTrue:
 				[freedMethod := true.
 				 methodZone freeMethod: cogMethod].
 			 (cogMethod cmType = CMOpenPIC
 			  and: [(objectMemory isImmediate: cogMethod selector) not
-			  and: [(objectMemory isMarked: cogMethod selector) not]]) ifTrue:
+			  and: [(objectMemory isMarkedOrPermanent: cogMethod selector) not]]) ifTrue:
 				[freedMethod := true.
 				 methodZone freeMethod: cogMethod].
 			 (cogMethod cmType = CMClosedPIC
@@ -9627,10 +9627,10 @@ Cogit >> markAndTraceLiteralsIn: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	<inline: true>
 	self assert: ((cogMethod cmType = CMMethod
-				 and: [objectMemory isMarked: cogMethod methodObject])
+				 and: [objectMemory isMarkedOrPermanent: cogMethod methodObject])
 				 or: [cogMethod cmType = CMOpenPIC
 				 and: [(objectMemory isImmediate: cogMethod selector)
-					or: [objectMemory isMarked: cogMethod selector]]]).
+					or: [objectMemory isMarkedOrPermanent: cogMethod selector]]]).
 	objectRepresentation
 		markAndTraceLiteral: cogMethod selector
 		in: cogMethod
@@ -9690,11 +9690,11 @@ Cogit >> markAndTraceMachineCodeOfMarkedMethods [
 		cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
 		[cogMethod < methodZone limitZony] whileTrue:
 			[(cogMethod cmType = CMMethod
-			  and: [objectMemory isMarked: cogMethod methodObject]) ifTrue:
+			  and: [objectMemory isMarkedOrPermanent: cogMethod methodObject]) ifTrue:
 				[self markAndTraceLiteralsIn: cogMethod].
 			 (cogMethod cmType = CMOpenPIC
 			  and: [(objectMemory isImmediate: cogMethod selector)
-					or: [objectMemory isMarked: cogMethod selector]]) ifTrue:
+					or: [objectMemory isMarkedOrPermanent: cogMethod selector]]) ifTrue:
 				[self markAndTraceLiteralsIn: cogMethod].
 			 cogMethod := methodZone methodAfter: cogMethod].
 		objectMemory leakCheckFullGC ifTrue:
@@ -9737,7 +9737,7 @@ Cogit >> markAndTraceOrFreeCogMethod: cogMethod firstVisit: firstVisit [
 		[^true].
 	self assert: (self cogMethodDoesntLookKosher: cogMethod) = 0.
 	cogMethod cmType = CMMethod ifTrue:
-		[(objectMemory isMarked: cogMethod methodObject) ifFalse:
+		[(objectMemory isMarkedOrPermanent: cogMethod methodObject) ifFalse:
 			[methodZone freeMethod: cogMethod.
 			 ^true].
 		 firstVisit ifTrue:
@@ -9749,7 +9749,7 @@ Cogit >> markAndTraceOrFreeCogMethod: cogMethod firstVisit: firstVisit [
 		 methodZone freeMethod: cogMethod.
 		 ^true].
 	cogMethod cmType = CMOpenPIC ifTrue:
-		[(objectMemory isMarked: cogMethod selector) ifTrue:
+		[(objectMemory isMarkedOrPermanent: cogMethod selector) ifTrue:
 			[^false].
 		 methodZone freeMethod: cogMethod.
 		 ^true].
@@ -9876,7 +9876,7 @@ Cogit >> markLiteralsAndUnlinkUnmarkedSendsIn: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	<inline: true>
 	self assert: cogMethod cmType = CMMethod.
-	self assert: (objectMemory isMarked: cogMethod methodObject).
+	self assert: (objectMemory isMarkedOrPermanent: cogMethod methodObject).
 	objectRepresentation
 		markAndTraceLiteral: cogMethod selector
 		in: cogMethod
