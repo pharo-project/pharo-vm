@@ -70,9 +70,7 @@ VMCompiledCodeBuilder >> bytecodes: anObject [
 
 { #category : #filling }
 VMCompiledCodeBuilder >> classIndexToUse [
-	
-	"This is not used anymore by the VM but we have to put something."
-	^ 16
+	^ memory classTagForClass: (memory splObj: 16)
 ]
 
 { #category : #filling }
