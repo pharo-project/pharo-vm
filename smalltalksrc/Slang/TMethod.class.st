@@ -675,7 +675,7 @@ TMethod >> emitProxyFunctionPrototype: aStream generator: aCodeGen [
 		ifTrue: [aStream nextPutAll: #void]
 		ifFalse:
 			[args
-				do: [:arg| aStream nextPutAll: (self declarationAt: arg)]
+				do: [:arg| aStream nextPutAll: (self declarationAt: arg ifAbsent: [ aCodeGen defaultType, ' ', arg ])]
 				separatedBy: [ aStream nextPutAll: ', ' ]].
 	aStream nextPut: $)
 ]
