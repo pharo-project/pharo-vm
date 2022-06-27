@@ -498,17 +498,6 @@ VMMaker >> couldNotOpenFile: fileName [
 	(VMMakerException new messageText: self class name, ' could not open file: ', fileName) signal
 ]
 
-{ #category : #initialize }
-VMMaker >> createCodeGenerator [
-"set up a CCodeGenerator for this VMMaker"
-	^MLVMCCodeGenerator new
-		vmMaker: self;
-		logger: logger;
-		options: optionsDictionary;
-		stopOnErrors: stopOnErrors;
-		yourself
-]
-
 { #category : #'source directories' }
 VMMaker >> crossPlatformDirectory [
 	"return the directory where we should find the cross-platform literal 

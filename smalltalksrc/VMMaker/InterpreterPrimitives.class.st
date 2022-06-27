@@ -62,7 +62,7 @@ secHasEnvironmentAccess
 "
 Class {
 	#name : #InterpreterPrimitives,
-	#superclass : #VMClass,
+	#superclass : #AbstractInterpreter,
 	#instVars : [
 		'objectMemory',
 		'messageSelector',
@@ -289,7 +289,6 @@ InterpreterPrimitives >> initPrimCall [
 InterpreterPrimitives >> initialize [
 
 	"Here we can initialize the variables C initializes to zero.  #initialize methods do /not/ get translated."
-
 	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := ffiExceptionResponse := 0.
 	newFinalization := false
 ]
@@ -1185,7 +1184,7 @@ InterpreterPrimitives >> primitiveClass [
 { #category : #'process primitives' }
 InterpreterPrimitives >> primitiveClearVMProfile [
 	"Primitive. Void the VM profile histograms."
-	self cCode: 'ioClearProfile()'.
+	self ioClearProfile.
 	self pop: argumentCount
 ]
 

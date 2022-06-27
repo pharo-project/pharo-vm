@@ -511,6 +511,30 @@ CogAbstractInstruction >> availableRegisterOrNoneFor: liveRegsMask [
 	^NoReg
 ]
 
+{ #category : #'register allocation' }
+CogAbstractInstruction >> availableVectorRegisterOrNoneFor: liveRegsMask [
+	"Answer an unused abstract vector register in the liveRegMask.
+	 Subclasses with more registers can override to answer them."
+	<returnTypeC: #sqInt>
+	(cogit register: VReg0 isInMask: liveRegsMask) ifFalse:
+		[^VReg0].
+	(cogit register: VReg1 isInMask: liveRegsMask) ifFalse:
+		[^VReg1].
+	(cogit register: VReg2 isInMask: liveRegsMask) ifFalse:
+		[^VReg2].
+	(cogit register: VReg3 isInMask: liveRegsMask) ifFalse:
+		[^VReg3].
+	(cogit register: VReg4 isInMask: liveRegsMask) ifFalse:
+		[^VReg4].
+	(cogit register: VReg5 isInMask: liveRegsMask) ifFalse:
+		[^VReg5].
+	(cogit register: VReg6 isInMask: liveRegsMask) ifFalse:
+		[^VReg6].
+	(cogit register: VReg7 isInMask: liveRegsMask) ifFalse:
+		[^VReg7].
+	^NoReg
+]
+
 { #category : #accessing }
 CogAbstractInstruction >> bcpc [
 	^bcpc

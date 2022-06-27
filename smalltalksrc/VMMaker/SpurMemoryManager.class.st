@@ -906,7 +906,8 @@ SpurMemoryManager class >> initializeCompactClassIndices [
 	ClassByteArrayCompactIndex := 50.
 	ClassArrayCompactIndex := 51.
 	ClassByteStringCompactIndex := 52.
-	ClassBitmapCompactIndex := 53
+	ClassBitmapCompactIndex := 53.
+	ClassFloat64RegisterIndex := 54.
 ]
 
 { #category : #'class initialization' }
@@ -950,7 +951,9 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	SelectorCannotReturn := 21.
 	ProcessSignalingLowSpace := 22.	"was TheInputSemaphore"
 	SpecialSelectors := 23.
-	"24 was Old CharacterTable"
+
+	ClassFloat64Register := 24.
+
 	SelectorMustBeBoolean := 25.
 	ClassByteArray := 26.
 	"ClassProcess := 27. unused"
@@ -4801,6 +4804,20 @@ SpurMemoryManager >> fetchClassTagOfNonImm: obj [
 	^self classIndexOf: obj
 ]
 
+{ #category : #'object access' }
+SpurMemoryManager >> fetchFloat32: index ofObject: objOop [ 
+
+	<returnTypeC: #float>
+	^self float32At: objOop + self baseHeaderSize + (index << 2)
+]
+
+{ #category : #'object access' }
+SpurMemoryManager >> fetchFloat64: index ofObject: objOop [ 
+
+	<returnTypeC: #double>
+	^self float64At: objOop + self baseHeaderSize + (index << 3)
+]
+
 { #category : #'simulation only' }
 SpurMemoryManager >> fetchInteger: fieldIndex ofObject: objectPointer [
 	"hack around the CoInterpreter/ObjectMemory split refactoring"
@@ -5098,6 +5115,34 @@ SpurMemoryManager >> fixedFieldsOfClassFormat: classFormat [
 SpurMemoryManager >> fixedFieldsOfClassFormatMask [
 	<api>
 	^1 << self fixedFieldsFieldWidth - 1
+]
+
+{ #category : #'object access' }
+SpurMemoryManager >> float32At: anInteger [ 
+	
+	<doNotGenerate>
+	^ memoryManager float32At: anInteger
+]
+
+{ #category : #'memory access' }
+SpurMemoryManager >> float32At: anInteger put: aNumber [ 
+
+	<doNotGenerate>
+	memoryManager float32At: anInteger put: aNumber
+]
+
+{ #category : #'object access' }
+SpurMemoryManager >> float64At: anInteger [ 
+	
+	<doNotGenerate>
+	^ memoryManager float64At: anInteger
+]
+
+{ #category : #'memory access' }
+SpurMemoryManager >> float64At: anInteger put: aNumber [ 
+
+	<doNotGenerate>
+	memoryManager float64At: anInteger put: aNumber
 ]
 
 { #category : #'interpreter access' }
@@ -11702,6 +11747,18 @@ SpurMemoryManager >> storeCheckBoundary [
 	"A renaming for the Cogit, which couldn't make sense of GIV(newSpaceLimit)"
 	<api>
 	^newSpaceLimit
+]
+
+{ #category : #'object access' }
+SpurMemoryManager >> storeFloat32: index ofObject: objOop withValue: value [ 
+	<var: #value type: #float>
+	^self float32At: objOop + self baseHeaderSize + (index << 2) put: value
+]
+
+{ #category : #'object access' }
+SpurMemoryManager >> storeFloat64: index ofObject: objOop withValue: value [ 
+	<var: #value type: #double>
+	^self float64At: objOop + self baseHeaderSize + (index << 3) put: value
 ]
 
 { #category : #'simulation only' }

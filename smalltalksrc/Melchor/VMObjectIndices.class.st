@@ -22,6 +22,7 @@ Class {
 		'ClassCharacter',
 		'ClassExternalAddress',
 		'ClassFloat',
+		'ClassFloat64Register',
 		'ClassFullBlockClosure',
 		'ClassLargeNegativeInteger',
 		'ClassLargePositiveInteger',
@@ -102,5 +103,5 @@ Class {
 		'XIndex',
 		'YIndex'
 	],
-	#category : #'VMMaker-Interpreter'
+	#category : #Melchor
 }

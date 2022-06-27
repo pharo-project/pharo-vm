@@ -86,6 +86,12 @@ CGLRAbstractNode >> isEmptyStatement [
 ]
 
 { #category : #testing }
+CGLRAbstractNode >> isExpression [
+
+	^ false
+]
+
+{ #category : #testing }
 CGLRAbstractNode >> isFunctionCall [
 	
 	^ false

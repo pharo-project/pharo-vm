@@ -38,9 +38,11 @@ Class {
 		'DivRdRd',
 		'DivRsRs',
 		'DupRVr',
+		'FaddSRvRvRv',
 		'Fill32',
 		'FirstJump',
 		'FirstShortJump',
+		'FsubSRvRvRv',
 		'Jump',
 		'JumpAbove',
 		'JumpAboveOrEqual',
@@ -74,6 +76,7 @@ Class {
 		'Label',
 		'LastJump',
 		'LastRTLCode',
+		'Ld1VrRMw',
 		'Literal',
 		'LoadEffectiveAddressMwrR',
 		'LogicalShiftLeftCqR',
@@ -332,6 +335,9 @@ CogRTLOpcodes class >> initialize [
 						DupRVr
 						St1VrRMw
 						AlignedSt1VrRMw
+						Ld1VrRMw
+						FaddSRvRvRv
+						FsubSRvRvRv
 
 						LastRTLCode).
 

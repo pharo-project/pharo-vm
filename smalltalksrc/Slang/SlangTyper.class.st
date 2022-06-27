@@ -18,42 +18,44 @@ SlangTyper class >> on: aCCodeGenerator [
 
 { #category : #'type inference' }
 SlangTyper >> addTypesFor: node inMethod: method to: typeSet [
+
 	"Add the value types for the node to typeSet.
 	 Answer if any type was derived from an as-yet-untyped method or variable, which allows us to abort
 	 inferReturnTypeFromReturnsIn: if the return type depends on a yet-to-be-typed method or variable."
+
 	| expr |
 	expr := node.
-	[expr isAssignment or: [expr isStmtList]] whileTrue:
-		[expr isAssignment ifTrue:
-			[expr := expr variable].
-		 expr isStmtList ifTrue:
-			[expr := expr statements last]].
-	expr isSend ifTrue: [
-		(#(ifTrue: ifFalse: ifTrue:ifFalse: ifFalse:ifTrue:) includes: expr selector) ifTrue: [
-			^expr args
-				inject: false
-				into: [:asYetUntyped :block|
-					asYetUntyped | (self addTypesFor: block inMethod: method to: typeSet) ] ].
+	[ expr isAssignment or: [ expr isStatementList ] ] whileTrue: [ 
+		expr isAssignment ifTrue: [ expr := expr variable ].
+		expr isStatementList ifTrue: [ expr := expr statements last ] ].
+	expr isSend ifTrue: [ 
+		(#( ifTrue: ifFalse: #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes:
+			 expr selector) ifTrue: [ 
+			^ expr arguments inject: false into: [ :asYetUntyped :block | 
+				  asYetUntyped
+				  | (self addTypesFor: block inMethod: method to: typeSet) ] ].
 		(codeGenerator returnTypeForSend: expr in: method ifNil: nil)
-			ifNil: [^(codeGenerator methodNamed: expr selector) notNil and: [expr selector ~~ method selector]]
-			ifNotNil:
-				[:type |
+			ifNil: [ 
+				^ (codeGenerator methodNamed: expr selector) notNil and: [ 
+					  expr selector ~~ method selector ] ]
+			ifNotNil: [ :type | 
 				typeSet add: type.
-				^false]].
-	expr isVariable ifTrue:
-		[(codeGenerator typeOfVariable: expr name)
-			ifNotNil: [:type| typeSet add: type]
-			ifNil: [(typeSet add: (expr name = 'self'
-										ifTrue: [#void]
-										ifFalse: [ expr typeFrom: codeGenerator in: method ])) == #sqInt ifTrue:
-					[^true]]].
-	expr isConstant ifTrue:
-		[(expr value isInteger and: [expr value >= 0]) "cannot determine if signed or unsigned yet..."
-			ifTrue: [typeSet add: expr value]
-			ifFalse:
-				[(expr typeOrNilFrom: codeGenerator in: method) ifNotNil:
-					[:type | typeSet add: type]]].
-	^false
+				^ false ] ].
+	expr isVariable ifTrue: [ 
+		(codeGenerator typeOfVariable: expr name)
+			ifNotNil: [ :type | typeSet add: type ]
+			ifNil: [ 
+				(typeSet add: (expr name = 'self'
+						  ifTrue: [ #void ]
+						  ifFalse: [ expr typeFrom: codeGenerator in: method ]))
+				== #sqInt ifTrue: [ ^ true ] ] ].
+	expr isConstant ifTrue: [ 
+		(expr value isInteger and: [ expr value >= 0 ])
+			ifTrue: [ typeSet add: expr value ]
+			ifFalse: [ 
+				(expr typeOrNilFrom: codeGenerator in: method) ifNotNil: [ :type | 
+					typeSet add: type ] ] "cannot determine if signed or unsigned yet..." ].
+	^ false
 ]
 
 { #category : #accessing }
@@ -84,11 +86,13 @@ SlangTyper >> inferReturnTypeFromReturnsOf: aMethod [
 
 	codeGenerator maybeBreakForTestToInline: aMethod selector in: aMethod.
 	aMethod returnType ifNotNil: [ ^ self ].
-	codeGenerator pushScope: aMethod declarations while: [ 
-		| hasReturn returnTypes |
-		hasReturn := false.
-		returnTypes := Set new.
-		"Debug:
+	codeGenerator
+		pushScope: aMethod
+		while:
+			[| hasReturn returnTypes |
+			 hasReturn := false.
+			 returnTypes := Set new.
+			 "Debug:
 			 (| rettypes |
 			  rettypes := Dictionary new.
 			  parseTree nodesDo:
@@ -215,7 +219,7 @@ SlangTyper >> inferTypesForImplicitlyTypedVariablesIn: aMethod [
 
 	alreadyExplicitlyTypedOrNotToBeTyped := aMethod declarations keys
 		                                        asSet.
-	asYetUntyped := aMethod locals copyWithoutAll:
+	asYetUntyped := aMethod allLocals copyWithoutAll:
 		                alreadyExplicitlyTypedOrNotToBeTyped.
 	mustBeSigned := Set new.
 	newDeclarations := Dictionary new.
@@ -224,26 +228,29 @@ SlangTyper >> inferTypesForImplicitlyTypedVariablesIn: aMethod [
 		| type var |
 		"If there is something of the form i >= 0, then i should be signed, not unsigned."
 		(node isSend and: [ 
-			 (aMethod locals includes: (var := node receiver variableNameOrNil)) 
+			 (aMethod allLocals includes: (var := node receiver variableNameOrNil)) 
 				 and: [ 
 					 (#( <= < >= > ) includes: node selector) and: [ 
-						 node args first isConstant and: [ node args first value = 0 ] ] ] ]) 
-			ifTrue: [ mustBeSigned add: var ].
+						 node arguments first isConstant and: [ 
+							 node arguments first value = 0 ] ] ] ]) ifTrue: [ 
+			mustBeSigned add: var ].
 
 		"if an assignment to an untyped local of a known type, set the local's type to that type.
 		 Only observe known sends (methods in the current set) and typed local variables."
 		(node isAssignment and: [ 
-			 (aMethod locals includes: (var := node variable name)) and: [ 
+			 (aMethod allLocals includes: (var := node variable name)) and: [ 
 				 (alreadyExplicitlyTypedOrNotToBeTyped includes: var) not ] ]) 
 			ifTrue: [ "don't be fooled by previously inferred types"
-				type := self tryExtractTypeFromAssignmentNode: node inMethod: aMethod.
+				type := self
+					        tryExtractTypeFromAssignmentNode: node
+					        inMethod: aMethod.
 				type
 					ifNil: [ "Further, if the type derives from an as-yet-untyped method, we must defer."
 						alreadyExplicitlyTypedOrNotToBeTyped add: var.
 						(node expression isSend and: [ 
 							 (codeGenerator methodNamed: node expression selector) notNil ]) 
 							ifTrue: [ newDeclarations removeKey: var ifAbsent: nil ] ]
-					ifNotNil: [ "Merge simple types (but *don't* merge untyped vars); complex types must be defined by the programmer."
+					ifNotNil: [ "Merge simple types (but *don't* merge untyped vars); complex types must be defined by the programmer.""If untyped, then cannot type the variable yet. A subsequent assignment may assign a subtype of what this type ends up being"
 						(codeGenerator isSimpleType: type) ifTrue: [ 
 							(asYetUntyped includes: var)
 								ifTrue: [ 
@@ -254,7 +261,7 @@ SlangTyper >> inferTypesForImplicitlyTypedVariablesIn: aMethod [
 										mergeTypeOf: var
 										in: newDeclarations
 										with: type
-										method: aMethod ] ] ] "If untyped, then cannot type the variable yet. A subsequent assignment may assign a subtype of what this type ends up being" ] ].
+										method: aMethod ] ] ] ] ].
 
 
 	mustBeSigned do: [ :var | 

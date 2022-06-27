@@ -39,8 +39,14 @@ VMMakerConfiguration class >> baseStructClass [
 
 { #category : #accessing }
 VMMakerConfiguration class >> bytesPerOop [
-	
+
 	^ self baseClass bytesPerOop
+]
+
+{ #category : #accessing }
+VMMakerConfiguration class >> bytesPerOop: anInteger [
+
+	^ self baseClass bytesPerOop: anInteger
 ]
 
 { #category : #accessing }

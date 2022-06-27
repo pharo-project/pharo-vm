@@ -114,15 +114,15 @@ MLVMCCodeGenerator >> doInlining: inlineFlagOrSymbol [
 	"Inline the bodies of all methods that are suitable for inlining."
 	"Modified slightly for the core VM translator, since the first level of inlining for the interpret loop must be performed in order that the instruction implementations can easily discover their addresses. Remember to inline the bytecode routines as well"
 
-	| removed |
+	| interpretMethod |
 	inlineFlagOrSymbol isSymbol ifTrue:
-		[self inlineDispatchesInMethodNamed: #interpret localizingVars: #().	
+		[self inlineDispatchesInMethodNamed: #interpret.
 		 self doBasicInlining: inlineFlagOrSymbol.
 		 self pruneUnreachableMethods.
 		 ^self].
 
 	inlineFlagOrSymbol ifFalse:
-		[self inlineDispatchesInMethodNamed: #interpret localizingVars: #().	
+		[self inlineDispatchesInMethodNamed: #interpret.
 		self pruneUnreachableMethods.
 		^self].
 
@@ -134,17 +134,14 @@ MLVMCCodeGenerator >> doInlining: inlineFlagOrSymbol [
 		displayProgress: 'Inlining bytecodes'
 		from: 1 to: 2
 		during: [:bar |
-			self inlineDispatchesInMethodNamed: #interpret
-				localizingVars: self vmClass namesOfVariablesToLocalize.
-			bar value: 1.
-			removed := self removeMethodsReferingToGlobals: self vmClass namesOfVariablesToLocalize
-							except: #interpret.
-			bar value: 2].
+			self inlineDispatchesInMethodNamed: #interpret.
+			bar value: 1 ].
 
-	"only prune when generating the interpreter itself"
 	self pruneUnreachableMethods.
-
-	self reportShouldNotBeRemoved: removed  varList: self vmClass namesOfVariablesToLocalize
+	interpretMethod := self methodNamed: #interpret.
+	self
+		localizeVariables: self vmClass namesOfVariablesToLocalize
+		inMethod: interpretMethod
 ]
 
 { #category : #'C code generator' }
@@ -450,54 +447,6 @@ MLVMCCodeGenerator >> removeVariable: aName [
 					, ' doesn''t exist or has already been removed' ] ]
 ]
 
-{ #category : #'C translation support' }
-MLVMCCodeGenerator >> reportShouldNotBeRemoved: removed varList: varList [
-	"Report whether any of the removed methods are still used."
-	| varListAsStrings shouldNotBeRemoved |
-	varListAsStrings := varList collect: [ :sym | sym asString ].
-	shouldNotBeRemoved := Set new.
-	removed do:
-		[:m|
-		m isAPIMethod ifTrue:
-			[shouldNotBeRemoved add: m selector]].
-	methods do:
-		[:m|
-		(m selector = #interpret
-		 or: [removed includes: m selector]) ifFalse:
-			[m allCalls do:
-				[:sel|
-				(removed includesKey: sel) ifTrue:
-					[shouldNotBeRemoved add: sel]]]].
-	self vmClass additionalSelectorTables do:
-		[:selectorTable|
-		 selectorTable do:
-			[:selOrInteger|
-			selOrInteger isInteger ifFalse:
-				[(removed includesKey: selOrInteger) ifTrue:
-					[shouldNotBeRemoved add: selOrInteger]]]].
-	shouldNotBeRemoved do:
-		[:sel| | str |
-		str := String streamContents:
-				[:strm| | them |
-				strm
-					nextPutAll: 'Removed ';
-					nextPutAll: sel;
-					nextPutAll: ' because it refers to the local variable'.
-				them := (removed at: sel) freeVariableReferences asSet intersection: varListAsStrings.
-				them size > 1 ifTrue:
-					[strm nextPut: $s.
-					 them := self sortStrings: them].
-				them do: [:var| strm space; nextPutAll: var].
-
-				strm
-					nextPutAll: ' of interpret.';
-					newLine;
-					nextPutAll: 'But it is either used outside of interpret or exported!!';
-					newLine].
-		logger newLine; show: str.
-		self inform: str]
-]
-
 { #category : #'C code generator' }
 MLVMCCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledMethod typeIfNil: typeIfNil [
 	"Answer the return type for a send.  Unbound sends default to typeIfNil.
@@ -572,8 +521,9 @@ MLVMCCodeGenerator >> unusedConstants [
 
 { #category : #'C code generator' }
 MLVMCCodeGenerator >> validateCppIf: nodeOrNil withValue: value [
+
 	(self vmClass notNil and: [ 
-		 nodeOrNil args first isConstant and: [ 
+		 nodeOrNil arguments first isConstant and: [ 
 			 value isSymbol and: [ 
 				 (self vmClass defineAtCompileTime: value) not and: [ 
 					 (self vmClass bindingOf: value) notNil ] ] ] ]) ifTrue: [ 

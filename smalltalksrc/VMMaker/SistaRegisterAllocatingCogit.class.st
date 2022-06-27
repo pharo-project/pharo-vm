@@ -156,7 +156,7 @@ SistaRegisterAllocatingCogit >> genCounterTripOnlyJumpIf: boolean to: targetByte
 
 	extA := 0.
 	
-	self ssTop popToReg: TempReg.
+	self ssTop moveToReg: TempReg.
 	self ssPop: 1.
 
 	counterIndex := counterIndex + 1. "counters are increased / decreased in the inlined branch"
@@ -338,7 +338,7 @@ SistaRegisterAllocatingCogit >> genJumpIf: boolean to: targetBytecodePC [
 			or: [(desc register = ReceiverResultReg and: [self receiverIsInReceiverResultReg])]])
 				ifTrue: [TempReg]
 				ifFalse: [desc register].
-	desc popToReg: reg.
+	desc moveToReg: reg.
 	self ssPop: 1.
 
 	"We need SendNumArgsReg because of the mustBeBooleanTrampoline"
@@ -440,13 +440,13 @@ SistaRegisterAllocatingCogit >> genSpecialSelectorComparison [
 	argIsIntConst
 		ifTrue:
 			[rcvrReg := self allocateRegForStackEntryAt: 1.
-			 (self ssValue: 1) popToReg: rcvrReg.
+			 (self ssValue: 1) moveToReg: rcvrReg.
 			 counterReg := self allocateRegNotConflictingWith: (self registerMaskFor: rcvrReg).
 			 argReg := NoReg]
 		ifFalse:
 			[self allocateRegForStackTopTwoEntriesInto: [:rTop :rNext| argReg := rTop. rcvrReg := rNext].
-			 self ssTop popToReg: argReg.
-			 (self ssValue: 1) popToReg: rcvrReg.
+			 self ssTop moveToReg: argReg.
+			 (self ssValue: 1) moveToReg: rcvrReg.
 			 counterReg := self allocateRegNotConflictingWith: (self registerMaskFor: rcvrReg and: argReg)].
 	self ssPop: 2.
 	jumpNotSmallInts := (rcvrIsInt and: [argIsIntConst]) ifFalse:
