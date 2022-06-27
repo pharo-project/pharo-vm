@@ -618,7 +618,6 @@ Class {
 		'statMaxAllocSegmentTime',
 		'unscannedEphemeronsQueueInitialSize',
 		'permSpaceFreeStart',
-		'permSpaceDirty',
 		'fromOldSpaceRememberedSet',
 		'fromPermSpaceRememberedSet'
 	],
@@ -2509,7 +2508,6 @@ SpurMemoryManager >> allocateSlotsInPermSpace: numSlots bytes: totalBytes format
 			memoryMap extendPermObjectsSpace 
 				ifFalse: [ ^ nil ] ].
 	
-	permSpaceDirty := true.
 	chunk := permSpaceFreeStart.
 	permSpaceFreeStart := permSpaceFreeStart + totalBytes.
 
@@ -6362,7 +6360,7 @@ SpurMemoryManager >> initialize [
 	remapBufferCount := extraRootCount := 0. "see below"
 	freeListsMask := totalFreeOldSpace := lowSpaceThreshold := 0.
 	checkForLeaks := 0.
-	permSpaceDirty := needGCFlag := signalLowSpace := marking := false.
+	needGCFlag := signalLowSpace := marking := false.
 	becomeEffectsFlags := gcPhaseInProgress := 0.
 	statScavenges := statIncrGCs := statFullGCs := 0.
 	statMaxAllocSegmentTime := 0.
@@ -6390,8 +6388,7 @@ SpurMemoryManager >> initialize [
 	maxOldSpaceSize := self class initializationOptions
 							ifNotNil: [:initOpts| initOpts at: #maxOldSpaceSize ifAbsent: [0]]
 							ifNil: [0].
-							
-	permSpaceDirty := false
+
 ]
 
 { #category : #bootstrap }
@@ -6571,8 +6568,6 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	shrinkThreshold := 32*1024*1024.		"free space before shrinking"
 	self setHeapSizeAtPreviousGC.
 	heapGrowthToSizeGCRatio := 0.333333. "By default GC after scavenge if heap has grown by a third since the last GC"
-	
-	permSpaceDirty := false.
 ]
 
 { #category : #'free space' }
@@ -7450,12 +7445,6 @@ SpurMemoryManager >> isOopMutable: oop [
 	<api>
 	^(self isNonImmediate: oop)
 	  and: [(self isImmutable: oop) not]
-]
-
-{ #category : #'perm - space' }
-SpurMemoryManager >> isPermSpaceDirty [
-
-	^ permSpaceDirty 
 ]
 
 { #category : #'object testing' }
@@ -11310,12 +11299,6 @@ SpurMemoryManager >> setObjectFree: objOop [
 	(self rawNumSlotsOf: objOop) = 0 ifTrue:
 		[self rawNumSlotsOf: objOop put: 1].
 	self setFree: objOop
-]
-
-{ #category : #'perm - space' }
-SpurMemoryManager >> setPermSpaceDirty: aValue [
-
-	permSpaceDirty := aValue
 ]
 
 { #category : #accessing }
