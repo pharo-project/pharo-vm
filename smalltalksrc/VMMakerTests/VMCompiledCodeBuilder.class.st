@@ -12,6 +12,9 @@ Class {
 		'isPrimitive',
 		'originalLiterals'
 	],
+	#pools : [
+		'VMObjectIndices'
+	],
 	#category : #'VMMakerTests-Builders'
 }
 
@@ -70,6 +73,18 @@ VMCompiledCodeBuilder >> bytecodes: anObject [
 
 { #category : #filling }
 VMCompiledCodeBuilder >> classIndexToUse [
+	| newClass |
+	memory nilObject = (memory splObj: 16) ifTrue: [
+		"initialization of a fake compiled method class"
+		newClass := memory
+			allocateSlotsInOldSpace: 3 + 1
+			format: memory nonIndexablePointerFormat
+			classIndex: memory arrayClassIndexPun.
+		memory storePointer: SuperclassIndex ofObject: newClass withValue: newClass.
+		memory storePointer: MethodDictionaryIndex ofObject: newClass withValue: newClass.
+		memory storePointer: InstanceSpecificationIndex ofObject: newClass withValue: (memory integerObjectOf: 42).
+		memory splObj: 16 put: newClass.
+		].
 	^ memory classTagForClass: (memory splObj: 16)
 ]
 
