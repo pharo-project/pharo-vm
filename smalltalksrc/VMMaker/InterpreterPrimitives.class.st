@@ -250,13 +250,6 @@ InterpreterPrimitives >> doWaitSemaphore: sema reEnterInterpreter: hasToReenter 
 	self doWaitSemaphore: sema
 ]
 
-{ #category : #'object access primitives' }
-InterpreterPrimitives >> druidExitPoint [
-
-	"Mark an exit point. From this point on, the current execution branch should not be compiled"
-	<druidExitPoint>
-]
-
 { #category : #'primitive support' }
 InterpreterPrimitives >> failed [
 	<api>
@@ -715,6 +708,9 @@ InterpreterPrimitives >> positiveMachineIntegerValueOf: oop [
 		 value < 0 ifTrue: [^self primitiveFail].
 		^value].
 
+	"If not a small integer, exit druid compilation"
+	self druidExitPoint.
+
 	(objectMemory isNonIntegerImmediate: oop) ifTrue:
 		[self primitiveFail.
 		 ^0].
@@ -1005,6 +1001,7 @@ InterpreterPrimitives >> primitiveBehaviorHash [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveBitAnd [
+	<numberOfArguments: 1>
 	<inline: false>
 	<var: 'integerArgumentValue' type: #usqInt>
 	<var: 'integerReceiverValue' type: #usqInt>
@@ -1034,6 +1031,7 @@ InterpreterPrimitives >> primitiveBitAndLargeIntegers [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveBitOr [
+	<numberOfArguments: 1>
 	<inline: false>
 	<var: 'integerArgumentValue' type: #usqInt>
 	<var: 'integerReceiverValue' type: #usqInt>
@@ -1066,6 +1064,7 @@ InterpreterPrimitives >> primitiveBitShift [
 	"Perform a bitShift.  In 32-bits deal only with non-negative 32-bit integers.
 	  In 64-bits deal with signed 64-bit quantities (max (2^63)-1)."
 	| integerReceiver integerArgument shifted |
+	<numberOfArguments: 1>
 	<var: #integerReceiver type: #sqInt>
 	integerArgument := self stackTop.
 	(objectMemory isIntegerObject: integerArgument) ifFalse:
@@ -1136,6 +1135,7 @@ InterpreterPrimitives >> primitiveBitShiftLargeIntegers [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveBitXor [
+	<numberOfArguments: 1>
 	<inline: false>
 	<var: 'integerArgumentValue' type: #usqInt>
 	<var: 'integerReceiverValue' type: #usqInt>
@@ -1552,6 +1552,8 @@ InterpreterPrimitives >> primitiveDisablePowerManager [
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveDiv [
 	| quotient |
+	<numberOfArguments: 1>
+	
 	quotient := self doPrimitiveDiv: (self stackValue: 1) by: (self stackTop).
 	self pop2AndPushIntegerIfOK: quotient
 ]
@@ -1756,6 +1758,8 @@ InterpreterPrimitives >> primitiveFail [
 	<api>
 	<returnTypeC: #sqInt>
 	<inline: true>
+	<druidExitPoint>
+	
 	self successful ifTrue:
 		[primFailCode := 1]
 ]
@@ -1765,6 +1769,7 @@ InterpreterPrimitives >> primitiveFailFor: reasonCode [
 	"Set specific primitive failure.
 	 N.B. primitiveFailFor: PrimNoErr is expected to clear the primFailCode."
 	<api>
+	<druidExitPoint>
 	^primFailCode := reasonCode
 ]
 
@@ -2630,6 +2635,7 @@ InterpreterPrimitives >> primitiveLowSpaceSemaphore [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveMakePoint [
+	<numberOfArguments: 1>
 	<inline: false>
 	| rcvr arg pt |
 	rcvr := self stackValue: 1.
@@ -2689,6 +2695,8 @@ InterpreterPrimitives >> primitiveMillisecondClockMask [
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveMod [
 	| mod |
+	<numberOfArguments: 1>
+	
 	mod := self doPrimitiveMod: (self stackValue: 1) by: (self stackTop).
 	self pop2AndPushIntegerIfOK: mod
 ]
@@ -2835,29 +2843,28 @@ InterpreterPrimitives >> primitiveNewPinned [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveNewWithArg [
+
 	"Allocate a new indexable instance. Fail if the allocation would leave less than lowSpaceThreshold bytes free. May cause a GC."
-	| size spaceOkay instSpec |
+	<numberOfArguments: 1>
+
+	| size instSpec |
 	size := self positiveMachineIntegerValueOf: self stackTop.
-	self successful ifFalse:"positiveMachineIntegerValueOf: succeeds only for non-negative integers."
-		[^self primitiveFailFor: PrimErrBadArgument].
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[(objectMemory instantiateClass: (self stackValue: 1) indexableSize: size)
-				ifNotNil: [:obj| self pop: argumentCount + 1 thenPush: obj]
-				ifNil: [instSpec := objectMemory instSpecOfClass: (self stackValue: 1).
-					  self primitiveFailFor: (((objectMemory isIndexableFormat: instSpec)
-											and: [(objectMemory isCompiledMethodFormat: instSpec) not])
-												ifTrue: [PrimErrNoMemory]
-												ifFalse: [PrimErrBadReceiver])]]
-		ifFalse:
-			[spaceOkay := objectMemory sufficientSpaceToInstantiate: (self stackValue: 1) indexableSize: size.
-			 spaceOkay
-				ifTrue:
-					[self
-						pop: argumentCount + 1
-						thenPush: (objectMemory instantiateClass: (self stackValue: 1) indexableSize: size)]
-				ifFalse:
-					[self primitiveFailFor: PrimErrNoMemory]]
+	self successful ifFalse: [
+		"positiveMachineIntegerValueOf: succeeds only for non-negative integers." 
+		^ self primitiveFailFor: PrimErrBadArgument ].
+
+	(objectMemory
+		instantiateClass: (self stackValue: 1)
+		indexableSize: size)
+			ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
+			ifNil: [ 
+				self druidExitPoint.
+				instSpec := objectMemory instSpecOfClass: (self stackValue: 1).
+				self primitiveFailFor:
+					(((objectMemory isIndexableFormat: instSpec) and: [ 
+						  (objectMemory isCompiledMethodFormat: instSpec) not ])
+						 ifTrue: [ PrimErrNoMemory ]
+						 ifFalse: [ PrimErrBadReceiver ]) ]
 ]
 
 { #category : #'object access primitives' }
@@ -2904,14 +2911,18 @@ InterpreterPrimitives >> primitiveNextObject [
 ]
 
 { #category : #'arithmetic integer primitives' }
-InterpreterPrimitives >> primitiveNotEqual [
+InterpreterPrimitives >> primitiveNotEqual [	
 	| integerReceiver integerArgument result |
+	
+	<numberOfArguments: 1>
+	
 	integerArgument := self stackTop.
 	integerReceiver := self stackValue: 1.
 	(objectMemory areIntegers: integerReceiver and: integerArgument)
 		ifTrue: [self pop: 2 thenPushBool: integerReceiver ~= integerArgument]
-		ifFalse:
-			[result := objectMemory hasSixtyFourBitImmediates
+		ifFalse: [
+			self druidExitPoint.
+			result := objectMemory hasSixtyFourBitImmediates
 						ifTrue:
 							[(self signedMachineIntegerValueOf: integerReceiver)
 								~= (self signedMachineIntegerValueOf: integerArgument)]
@@ -3165,6 +3176,8 @@ InterpreterPrimitives >> primitiveQuit [
 InterpreterPrimitives >> primitiveQuo [
 	"Rounds negative results towards zero."
 	| integerRcvr integerArg integerResult |
+	<numberOfArguments: 1>
+	
 	integerRcvr := self stackIntegerValue: 1.
 	integerArg := self stackIntegerValue: 0.
 	self success: integerArg ~= 0.

@@ -221,7 +221,7 @@ UnicornARMv8Simulator >> receiverRegister [
 { #category : #accessing }
 UnicornARMv8Simulator >> registerList [
 
-	^ #(lr pc sp fp x28 x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x16 x19 x20 x22 x23 x24 x25 zero negative carry overflow)
+	^ #(lr pc sp fp x28 x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x16 x19 x20 x21 x22 x23 x24 x25 x26 zero negative carry overflow)
 ]
 
 { #category : #'as yet unclassified' }
@@ -453,9 +453,33 @@ UnicornARMv8Simulator >> x20 [
 ]
 
 { #category : #accessing }
+UnicornARMv8Simulator >> x20: anInteger [ 
+	
+	self writeRegister: UcARM64Registers x20 value: anInteger
+]
+
+{ #category : #accessing }
+UnicornARMv8Simulator >> x21 [
+
+	^ self readRegister: UcARM64Registers x21
+]
+
+{ #category : #accessing }
+UnicornARMv8Simulator >> x21: anInteger [ 
+	
+	self writeRegister: UcARM64Registers x21 value: anInteger
+]
+
+{ #category : #accessing }
 UnicornARMv8Simulator >> x22 [
 	
 	^ self readRegister: UcARM64Registers x22
+]
+
+{ #category : #accessing }
+UnicornARMv8Simulator >> x22: anInteger [ 
+	
+	self writeRegister: UcARM64Registers x22 value: anInteger
 ]
 
 { #category : #accessing }
@@ -492,6 +516,12 @@ UnicornARMv8Simulator >> x25 [
 UnicornARMv8Simulator >> x25: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x25 value: anInteger
+]
+
+{ #category : #accessing }
+UnicornARMv8Simulator >> x26 [
+
+	^ self readRegister: UcARM64Registers x26
 ]
 
 { #category : #'as yet unclassified' }

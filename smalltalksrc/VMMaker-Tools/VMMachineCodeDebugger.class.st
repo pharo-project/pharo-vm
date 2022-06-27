@@ -129,10 +129,10 @@ VMMachineCodeDebugger >> doInitialDisassemble [
 	^ machineSimulator disassembler
 		printImmediatesInHexa;
 		useAlternatePrinterVariant;
-		disassembleNext: 150
+		disassembleNext: 200
 		instructionsIn: (cogit objectMemory memoryManager
 			copyFrom: self initialInstructionToDisassemble
-			to: self initialInstructionToDisassemble + 600)
+			to: self initialInstructionToDisassemble + 800)
 		startAddress: self initialInstructionToDisassemble
 		pc: machineSimulator instructionPointerRegisterValue 
 ]
@@ -316,4 +316,10 @@ VMMachineCodeDebugger >> step [
 VMMachineCodeDebugger >> title [ 
 
 	^ 'VM Debugger'
+]
+
+{ #category : #accessing }
+VMMachineCodeDebugger >> x26 [
+	
+	^ machineSimulator x26
 ]

@@ -381,6 +381,24 @@ UnicornProcessor >> x1: anInteger [
 	machineSimulator x1: anInteger
 ]
 
+{ #category : #visiting }
+UnicornProcessor >> x20: anInteger [ 
+	
+	machineSimulator x20: anInteger
+]
+
+{ #category : #accessing }
+UnicornProcessor >> x21: anInteger [
+
+	machineSimulator x21: anInteger
+]
+
+{ #category : #accessing }
+UnicornProcessor >> x22: anInteger [
+	
+	machineSimulator x22: anInteger
+]
+
 { #category : #accessing }
 UnicornProcessor >> x23: anInteger [ 
 	

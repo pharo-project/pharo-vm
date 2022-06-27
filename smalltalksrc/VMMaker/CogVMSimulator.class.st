@@ -2255,15 +2255,6 @@ CogVMSimulator >> primitiveGetAttribute [
 		self pop: 2 "rcvr, attr" thenPush: s]
 ]
 
-{ #category : #'debugging traps' }
-CogVMSimulator >> primitiveNewWithArg [
-	"(objectMemory hasSpurMemoryManagerAPI
-	 and: [self classNameOf: (self stackValue: 1) Is: 'Bitmap']) ifTrue:
-		[self printExternalHeadFrame.
-		 self halt]."
-	^super primitiveNewWithArg
-]
-
 { #category : #'control primitives' }
 CogVMSimulator >> primitiveObject: actualReceiver perform: selector withArguments: argumentArray lookedUpIn: lookupClass [
 	"Override to allow simulator to filter start-up items to avoid as-yet unsimulatable plugins."

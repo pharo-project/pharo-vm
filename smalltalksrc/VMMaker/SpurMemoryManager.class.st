@@ -2393,6 +2393,7 @@ SpurMemoryManager >> allocateSlots: numSlots format: formatField classIndex: cla
 	hasToScheduleScavenge := freeStart + numBytes > scavengeThreshold.
 
 	(hasToScheduleScavenge or: [ isPinned ]) ifTrue: [ 
+		self druidExitPoint.
 		hasToScheduleScavenge ifTrue: [ 
 			needGCFlag ifFalse: [ self scheduleScavenge ] ].
 
@@ -4834,7 +4835,7 @@ SpurMemoryManager >> fetchLong32: fieldIndex ofFloatObject: oop [
 { #category : #'object access' }
 SpurMemoryManager >> fetchLong32: fieldIndex ofObject: oop [
 	"index by 32-bit units, and return a 32-bit value. Intended to replace fetchWord:ofObject:"
-	^self long32At: oop + self baseHeaderSize + (fieldIndex << 2)
+	^self uint32At: oop + self baseHeaderSize + (fieldIndex << 2)
 ]
 
 { #category : #'object access' }

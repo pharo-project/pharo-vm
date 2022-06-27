@@ -601,6 +601,13 @@ VMClass >> defined: aSymbol [
 		ifNotNil: [:binding| binding value ~~ #undefined]
 ]
 
+{ #category : #'object access primitives' }
+VMClass >> druidExitPoint [
+
+	"Mark an exit point. From this point on, the current execution branch should not be compiled"
+	<druidExitPoint>
+]
+
 { #category : #'memory access' }
 VMClass >> fetchSingleFloatAtPointer: pointer into: aFloat [
 	"This gets implemented by Macros in C, where its types will also be checked.
