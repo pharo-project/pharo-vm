@@ -150,7 +150,7 @@ VMSpurRememberedSetTest >> testOverflowRememberedSetShouldMakeItGrow [
 			ofObject: oldObjectAddress
 			withValue: youngObjectAddress ].
 
-	self assert: memory scavenger rememberedSetLimit equals: originalLimit * 2
+	self assert: memory getFromOldSpaceRememberedSet rememberedSetLimit equals: originalLimit * 2
 ]
 
 { #category : #tests }

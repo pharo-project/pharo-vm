@@ -27,7 +27,10 @@ VMImageHeaderWritingTest >> testImageHeaderWithPermanentObjects [
 
 	header := interpreter newHeader.
 
-	self assert: header dataSize equals: memory segmentManager totalBytesInNonEmptySegments + (memory bytesInObject: permanentObject).
+	self 
+			assert: header dataSize 
+			equals: memory segmentManager totalBytesInNonEmptySegments 
+				+ (memory bytesInObject: permanentObject) + 16 "PermSpace has an empty object as first object.".
 ]
 
 { #category : #tests }
