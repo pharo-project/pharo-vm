@@ -1377,19 +1377,20 @@ StackToRegisterMappingCogit >> genAddFloat32Vector [
 
 	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
 	
-	array1Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
-	array2Reg := self allocateVectorRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: array1Reg).
-	sumReg := self allocateVectorRegNotConflictingWith: 0.
-	
-	self ssTop moveToVectorReg: array1Reg.
-	self ssPop: 1.
+	array2Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
+	array1Reg := self allocateVectorRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: array2Reg).
+	"The sum register is the same that the array1Reg"
+	sumReg := array1Reg.
 	
 	self ssTop moveToVectorReg: array2Reg.
 	self ssPop: 1.
 	
+	self ssTop moveToVectorReg: array1Reg.
+	self ssPop: 1.
+	
 	self ssPushVectorRegister: sumReg.
 	self ssTop moveToVectorReg: sumReg.
-	
+
 	self FaddS: 32 Rv: array1Reg Rv: array2Reg Rv: sumReg.
 	
 	"Returns 0 if worked"

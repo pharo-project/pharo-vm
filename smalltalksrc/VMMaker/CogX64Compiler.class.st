@@ -1391,26 +1391,51 @@ CogX64Compiler >> concretizeFaddSRvRvRv [
 	
 	RM 		ModRM:reg (r, w) 	ModRM:r/m (r)
 	"
-
+		
 	instructionOffset := 0 .
 
 	srcReg1 ~= destReg ifTrue: [ 
+		
+		"If the srcReg1 and the destReg are not the same, we need to move the values with a
+		66 0F 28 /r MOVAPD xmm1, xmm2/m128"
+		
+		size = 64 ifTrue: [  
+			machineCode
+				at: instructionOffset + 0 put: (self rexR: destReg x: 0 b: srcReg1);
+				at: instructionOffset + 1 put: 16r66 ;
+				at: instructionOffset + 2 put: 16r0F ;
+				at: instructionOffset + 3 put: 16r28;
+				at: instructionOffset + 4 put: (self mod: ModReg RM: srcReg1 RO: destReg).		
+			instructionOffset := 5
+		]ifFalse: [ 
+			machineCode
+				at: instructionOffset + 0 put: (self rexR: destReg x: 0 b: srcReg1);
+				at: instructionOffset + 1 put: 16r0F ;
+				at: instructionOffset + 2 put: 16r28;
+				at: instructionOffset + 3 put: (self mod: ModReg RM: srcReg1 RO: destReg).		
+			instructionOffset := 4		
+		]
+	
+	].
+	
+	size = 64 ifTrue: [ 
 		machineCode
-			at: instructionOffset + 0 put: (self rexR: destReg x: 0 b: srcReg1);
+			at: instructionOffset + 0 put: (self rexR: destReg x: 0 b: srcReg2);
 			at: instructionOffset + 1 put: 16r66 ;
 			at: instructionOffset + 2 put: 16r0F ;
-			at: instructionOffset + 3 put: 16r28;
-			at: instructionOffset + 4 put: (self mod: ModReg RM: srcReg1 RO: destReg).		
-		instructionOffset := 5].
-	
-	machineCode
-		at: instructionOffset + 0 put: (self rexR: destReg x: 0 b: srcReg2);
-		at: instructionOffset + 1 put: 16r66 ;
-		at: instructionOffset + 2 put: 16r0F ;
-		at: instructionOffset + 3 put: 16r58;
-		at: instructionOffset + 4 put: (self mod: ModReg RM: srcReg2 RO: destReg).
+			at: instructionOffset + 3 put: 16r58;
+			at: instructionOffset + 4 put: (self mod: ModReg RM: srcReg2 RO: destReg).
+		^ machineCodeSize := instructionOffset + 5			
+	] ifFalse: [
+		machineCode
+			at: instructionOffset + 0 put: (self rexR: destReg x: 0 b: srcReg2);
+			at: instructionOffset + 1 put: 16r0F ;
+			at: instructionOffset + 2 put: 16r58;
+			at: instructionOffset + 3 put: (self mod: ModReg RM: srcReg2 RO: destReg).
+		^ machineCodeSize := instructionOffset + 4				
+	].
 
-	^ machineCodeSize := instructionOffset + 5
+
 ]
 
 { #category : #'generate machine code' }
@@ -1589,14 +1614,15 @@ CogX64Compiler >> concretizeLd1VrRMw [
 	destReg := operands at: 2.
 	offset := operands at: 3.
 	
-	size = 64 ifFalse: [ ^ self notYetImplemented  ].
-	
 	"This instruction loads the current value of the destReg from the address in srcReg. And, it updates srcReg with the offset. It performs a post-increment with the offset. If the offset is zero, there is none.
 
 	To do so, in X64 we need two instructions (Intel Notation, destination on the left).
 	
 	   1) MOVDQU xmm1, xmm2/m128 : Move unaligned packed integer values from xmm2/m128 to xmm1.
-	   2) ADD r/m64, imm8 : Add sign-extended imm8 to r/m64. With the post increment"
+	   2) ADD r/m64, imm8 : Add sign-extended imm8 to r/m64. With the post increment
+	
+	For 64 and 32 bits it is the same, as we are loading 16 bytes to the register.
+	"
 	
 	machineCode
 		at: 0 put: 16rF3;
@@ -3142,13 +3168,14 @@ CogX64Compiler >> concretizeSt1VrRMw [
 	destReg := operands at: 2.
 	offset := operands at: 3.
 	
-	size = 64 ifFalse: [ ^ self notYetImplemented  ].
-	
 	"This instruction stores in the current value of the destReg and updates it with the offset. It performs a post-increment using offset. If the offset is 0, there is none and the second instruction is not generated.
 	To do so, in X64 we need two instructions (Intel Notation, destination on the left).
 	
 	   1) MOVDQU xmm2/m128, xmm1 : Move unaligned packed integer values from xmm1 to xmm2/m128.
-	   2) ADD r/m64, imm8 : Add sign-extended imm8 to r/m64. With the post increment (Only if offset != 0)"
+	   2) ADD r/m64, imm8 : Add sign-extended imm8 to r/m64. With the post increment (Only if offset != 0)
+	
+	For 32 or 64 floats it works because we are moving 16 bytes.
+	"
 	
 	machineCode
 		at: 0 put: 16rF3;
