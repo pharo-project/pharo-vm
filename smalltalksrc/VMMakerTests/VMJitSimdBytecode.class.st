@@ -4,6 +4,15 @@ Class {
 	#category : #'VMMakerTests-JitTests'
 }
 
+{ #category : #tests }
+VMJitSimdBytecode class >> testParameters [ 
+
+	^ ParametrizedTestMatrix new
+		addCase: { #ISA -> #'aarch64'. #wordSize -> 8};
+		addCase: { #ISA -> #'X64'. #wordSize -> 8};
+		yourself
+]
+
 { #category : #running }
 VMJitSimdBytecode >> jitOptions [
 
@@ -40,7 +49,7 @@ VMJitSimdBytecode >> testAddVectorCopiesArraySumIntoVectorRegister [
 	
 	self runFrom: primitiveAddress until: endInstruction address.
 	
-	register := machineSimulator vectorRegister2Value.
+	register := machineSimulator vectorRegister0Value.
 	
 	self assert: (register doubleAt: 1) equals: 4.0.
 	self assert: (register doubleAt: 9) equals: 6.0.
@@ -76,9 +85,9 @@ VMJitSimdBytecode >> testAddVectorPushesArraySumIntoSimulatedStack [
 	self runFrom: primitiveAddress until: endInstruction address.
 	
 	entry := cogit ssTop.
-	
+	"The register with the result is the same as the first one"
 	self assert: (entry type) equals: SSVectorRegister.
-	self assert: (entry register) equals: 2.
+	self assert: (entry register) equals: 0.
 
 ]
 
@@ -202,7 +211,7 @@ VMJitSimdBytecode >> testSubVectorStoreResultIntoVectorRegister [
 	
 	self runFrom: primitiveAddress until: endInstruction address.
 	
-	register := machineSimulator vectorRegister2Value.
+	register := machineSimulator vectorRegister0Value.
 	
 	self assert: (register doubleAt: 1) equals: 3.0.
 	self assert: (register doubleAt: 9) equals: 2.0.

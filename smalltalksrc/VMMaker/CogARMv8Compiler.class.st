@@ -2003,7 +2003,7 @@ CogARMv8Compiler >> concretizeJumpR [
 ]
 
 { #category : #concretizing }
-CogARMv8Compiler >> concretizeLd1SVrRMw [
+CogARMv8Compiler >> concretizeLd1VrRMw [
 
 	"Will get inlined into concretizeAt: switch."
 
@@ -3108,12 +3108,12 @@ CogARMv8Compiler >> concretizeSqrtRd [
 ]
 
 { #category : #concretizing }
-CogARMv8Compiler >> concretizeSt1VRMRO [
+CogARMv8Compiler >> concretizeSt1VrRMw [
 
 	"Will get inlined into concretizeAt: switch."
 
 	<inline: true>
-	| opCode instruction q t size vectorR memoryR offset rm |
+	| opCode instruction q t size vectorR memoryR offset |
 	size := operands at: 0.
 	vectorR := operands at: 1.
 	memoryR := operands at: 2.
@@ -3539,8 +3539,8 @@ CogARMv8Compiler >> dispatchConcretize [
 	
 		"SIMD Ops"
 		[ DupRVr ] -> [ ^ self concretizeDupRVr ].
-		[ St1VrRMw ] -> [ ^ self concretizeSt1VRMRO ].
-		[ Ld1VrRMw ] -> [ ^ self concretizeLd1SVrRMw ].
+		[ St1VrRMw ] -> [ ^ self concretizeSt1VrRMw ].
+		[ Ld1VrRMw ] -> [ ^ self concretizeLd1VrRMw ].
 		[ FaddSRvRvRv ] -> [ ^ self concretizeFaddSRvRvRv ].
 		[ FsubSRvRvRv ] -> [ ^ self concretizeFsubSRvRvRv ].
 		}
