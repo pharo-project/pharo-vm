@@ -67,25 +67,6 @@ VMByteCodesTest >> firstStoreAndPopTemporaryVariableBytecode [
 	^ 104
 ]
 
-{ #category : #'tests-simd' }
-VMByteCodesTest >> installFloat64RegisterClass [
-
-	| registerClass |
-	registerClass := self
-		              newClassInOldSpaceWithSlots: 0
-		              instSpec: memory sixtyFourBitIndexableFormat.
-		
-	memory setHashBitsOf: registerClass to: ClassFloat64RegisterIndex.
-	
-	memory
-		storePointer: ClassFloat64RegisterIndex
-		ofObject: memory classTableFirstPage
-		withValue: registerClass.
-		
-	memory splObj: ClassFloat64Register put: registerClass
-
-]
-
 { #category : #'helper-interpret' }
 VMByteCodesTest >> interpret: aBlock [
 	interpreter internalizeIPandSP.
@@ -187,18 +168,16 @@ VMByteCodesTest >> testAccessingSenderOfContextShouldReturnContextOfSender [
 
 { #category : #'tests-simd' }
 VMByteCodesTest >> testAddVectorBytecode [
-	| index v0 v1 result |
+	| index v0 v1 result firstTerm size |
 	
 	index := 0.
 
-	v0 := self new64BitIndexableOfSize: 2.	
-	v1 := self new64BitIndexableOfSize: 2.
-	
-	memory storeFloat64: 0 ofObject: v0 withValue: 1.0. 
-	memory storeFloat64: 1 ofObject: v0 withValue: 2.0. 
+	firstTerm := 1.0 to: 2.0.
+	size := firstTerm size.
 
-	memory storeFloat64: 0 ofObject: v1 withValue: 3.0. 
-	memory storeFloat64: 1 ofObject: v1 withValue: 4.0. 
+	v0 := self new64BitIndexableFromArray: firstTerm.
+	v1 := self new64BitIndexableFromArray: (firstTerm collect: [:i | i + size]).
+	result := self new64BitIndexableOfSize: size. 
 		
 	stackBuilder addNewFrame
 		stack: { v0. v1 } .

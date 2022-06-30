@@ -882,23 +882,6 @@ StackInterpreterSimulator >> interpret [
 	^ nil
 ]
 
-{ #category : #'as yet unclassified' }
-StackInterpreterSimulator >> interpretUntilReturn [
-	self interpretWhile: [ currentBytecode ~= 92 ]."TODO extract condition"
-]
-
-{ #category : #'as yet unclassified' }
-StackInterpreterSimulator >> interpretWhile: aFullBlockClosure [ 
-	self internalizeIPandSP.
-	self fetchNextBytecode.
-	[aFullBlockClosure value] whileTrue:
-		[self dispatchCurrentBytecode.
-		 self incrementByteCount].
-	instructionPointer := instructionPointer - 1.
-	"undo the pre-increment of IP before returning"
-	self externalizeIPandSP
-]
-
 { #category : #'stack pages' }
 StackInterpreterSimulator >> interpreterAllocationReserveBytes [
 	^bootstrapping

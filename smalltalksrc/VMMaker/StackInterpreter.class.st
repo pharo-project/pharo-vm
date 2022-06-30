@@ -8246,6 +8246,26 @@ StackInterpreter >> interpret [
 
 ]
 
+{ #category : #'as yet unclassified' }
+StackInterpreter >> interpretUntilReturn [
+	<doNotGenerate>
+	self interpretWhile: [ currentBytecode ~= 92 ]."TODO extract condition"
+]
+
+{ #category : #'as yet unclassified' }
+StackInterpreter >> interpretWhile: aFullBlockClosure [ 
+	<doNotGenerate>
+	
+	self internalizeIPandSP.
+	self fetchNextBytecode.
+	[aFullBlockClosure value] whileTrue:
+		[self dispatchCurrentBytecode.
+		 self incrementByteCount].
+	instructionPointer := instructionPointer - 1.
+	"undo the pre-increment of IP before returning"
+	self externalizeIPandSP
+]
+
 { #category : #'stack pages' }
 StackInterpreter >> interpreterAllocationReserveBytes [
 	"At a rough approximation we may need to allocate up to a couple

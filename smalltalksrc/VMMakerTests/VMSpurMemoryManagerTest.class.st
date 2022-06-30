@@ -184,6 +184,25 @@ VMSpurMemoryManagerTest >> initializeSpecialSelectors [
 	memory splObj: SpecialSelectors put: specialSelectorsArrayOop
 ]
 
+{ #category : #'tests-simd' }
+VMSpurMemoryManagerTest >> installFloat64RegisterClass [
+
+	| registerClass |
+	registerClass := self
+		              newClassInOldSpaceWithSlots: 0
+		              instSpec: memory sixtyFourBitIndexableFormat.
+		
+	memory setHashBitsOf: registerClass to: ClassFloat64RegisterIndex.
+	
+	memory
+		storePointer: ClassFloat64RegisterIndex
+		ofObject: memory classTableFirstPage
+		withValue: registerClass.
+		
+	memory splObj: ClassFloat64Register put: registerClass
+
+]
+
 { #category : #accessor }
 VMSpurMemoryManagerTest >> interpreter [
 	^ interpreter
@@ -597,7 +616,6 @@ VMSpurMemoryManagerTest >> setUp [
 		initialAddress: initialAddress.
 			
 	memory initializePostBootstrap.
-	memory setHeapSizeAtPreviousGC.
 
 	self assert: memory objectMemory scavenger eden size > interpreter interpreterAllocationReserveBytes.
 	self assert: memory objectMemory scavengeThreshold + interpreter interpreterAllocationReserveBytes <= memory objectMemory scavenger eden limit.
@@ -605,6 +623,7 @@ VMSpurMemoryManagerTest >> setUp [
 	memory segmentManager collapseSegmentsPostSwizzle.
 	memory segmentManager plantBridgeAtTheEndOfMemory.
 	memory segmentManager assertBridge.
+	memory setHeapSizeAtPreviousGC.
 	
 	"Schedule a GC, so it does not try to schedule one"
 	memory needGCFlag: 1.

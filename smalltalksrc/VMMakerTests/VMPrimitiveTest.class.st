@@ -1580,10 +1580,13 @@ VMPrimitiveTest >> testPrimitiveEqualWithTypeErrorOnSecondOperand [
 { #category : #'tests - primitiveAdd - Float64Array' }
 VMPrimitiveTest >> testPrimitiveFloat64ArrayAdd [
 
-	| x y z result |
-	x := self new64BitIndexableFromArray: #(1.0 2.0).
-	y := self new64BitIndexableFromArray: #(10.0 20.0).
-	z := self new64BitIndexableOfSize: 2.
+	| x y z result firstTerm size |
+	firstTerm := 1.0 to: 2.0.
+	size := firstTerm size.
+
+	x := self new64BitIndexableFromArray: firstTerm.
+	y := self new64BitIndexableFromArray: (firstTerm collect: [:i | i * 10]).
+	z := self new64BitIndexableOfSize: size.
 	
 	interpreter push: x.
 	interpreter push: y.
