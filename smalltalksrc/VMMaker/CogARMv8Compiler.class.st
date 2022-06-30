@@ -1616,10 +1616,10 @@ CogARMv8Compiler >> concretizeCmpCwR [
 		put:
 			(self
 				cmpSize: 1
-				shiftedRegister: (operands at: 1)
+				shiftedRegister: ConcreteIPReg
 				shiftType: 0
 				shiftValue: 0
-				secondRegister: ConcreteIPReg).
+				secondRegister: (operands at: 1)).
 	^ machineCodeSize := 8
 ]
 
