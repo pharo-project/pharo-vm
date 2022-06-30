@@ -30,13 +30,9 @@ Spur64BitMMLECoSimulator >> byteAt: byteAddress [
 { #category : #'memory access' }
 Spur64BitMMLECoSimulator >> byteAt: byteAddress put: byte [
 	| lowBits long32 longAddress mask value |
-	lowBits := byteAddress bitAnd: 3.
-	longAddress := byteAddress - lowBits.
-	long32 := self long32At: longAddress.
-	mask := (16rFF bitShift: 8 * lowBits) bitInvert.
-	value := byte bitShift: 8 * lowBits.
-	self long32At: longAddress put: ((long32 bitAnd: mask) bitOr: value).
-	^byte
+	
+	memoryManager unsignedByteAt: byteAddress put: byte.
+	^ byte
 ]
 
 { #category : #'memory access' }
@@ -226,7 +222,7 @@ Spur64BitMMLECoSimulator >> long32At: byteAddress put: a32BitValue [
 		[self halt]."
 	"(byteAddress between: 16r33FBB8 and: 16r33FBCF) ifTrue:
 		[self halt]."
-	^ memoryManager unsignedLong32At: byteAddress put: a32BitValue
+	^ memoryManager long32At: byteAddress put: a32BitValue
 ]
 
 { #category : #'memory access' }
@@ -244,9 +240,7 @@ Spur64BitMMLECoSimulator >> long64At: byteAddress [
 { #category : #'memory access' }
 Spur64BitMMLECoSimulator >> long64At: byteAddress put: a64BitValue [
 	byteAddress \\ 8 ~= 0 ifTrue: [self unalignedAccessError].
-	self
-		long32At: byteAddress put: (a64BitValue bitAnd: 16rffffffff);
-		long32At: byteAddress + 4 put: a64BitValue >> 32.
+	memoryManager unsignedLong64At: byteAddress put: a64BitValue.
 	^a64BitValue
 ]
 
@@ -254,7 +248,7 @@ Spur64BitMMLECoSimulator >> long64At: byteAddress put: a64BitValue [
 Spur64BitMMLECoSimulator >> longAt: byteAddress [
 	"Answer the 64-bit word at byteAddress which must be 0 mod 4."
 
-	^ memoryManager unsignedLong64At: byteAddress
+	^ memoryManager long64At: byteAddress
 ]
 
 { #category : #'memory access' }

@@ -5978,7 +5978,7 @@ CogARMv8Compiler >> stop [
 CogARMv8Compiler >> stopsFrom: startAddr to: endAddr [
 	self assert: endAddr - startAddr + 1 \\ 4 = 0.
 	startAddr to: endAddr by: 4 do: 
-		[:addr | objectMemory long32At: addr put: self stop].
+		[:addr | objectMemory unsignedLong32At: addr put: self stop].
 ]
 
 { #category : #'inline cacheing' }

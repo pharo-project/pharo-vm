@@ -82,7 +82,7 @@ Spur64BitMemoryManager >> bytesInObject: objOop [
 	| header headerNumSlots numSlots |
 	<var: 'header' type: #usqLong>
 	self flag: #endianness.
-	header := self longAt: objOop.
+	header := self long64At: objOop.
 	headerNumSlots := header >> self numSlotsFullShift.
 	numSlots := headerNumSlots = self numSlotsMask
 					ifTrue: [self rawOverflowSlotsOf: objOop]
@@ -997,10 +997,10 @@ Spur64BitMemoryManager >> setIsPinnedOf: objOop to: aBoolean [
 
 { #category : #'header access' }
 Spur64BitMemoryManager >> setIsRememberedOf: objOop to: aBoolean [
-	self longAt: objOop
+	self unsignedLong64At: objOop
 		put: (aBoolean
-				ifTrue: [(self longAt: objOop) bitOr: 1 << self rememberedBitShift]
-				ifFalse: [(self longAt: objOop) bitAnd: (1 << self rememberedBitShift) bitInvert64])
+				ifTrue: [(self unsignedLong64At: objOop) bitOr: 1 << self rememberedBitShift]
+				ifFalse: [(self unsignedLong64At: objOop) bitAnd: (1 << self rememberedBitShift) bitInvert64])
 ]
 
 { #category : #'word size' }

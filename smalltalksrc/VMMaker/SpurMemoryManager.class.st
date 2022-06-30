@@ -2059,8 +2059,8 @@ SpurMemoryManager >> allocateNewSpaceSlots: numSlots format: formatField classIn
 	numSlots >= self numSlotsMask
 		ifTrue: "for header parsing we put a saturated slot count in the prepended overflow size word"
 			[self flag: #endianness.
-			 self longAt: freeStart put: numSlots.
-			 self longAt: freeStart + 4 put: self numSlotsMask << self numSlotsHalfShift.
+			 self long32At: freeStart put: numSlots.
+			 self long32At: freeStart + 4 put: self numSlotsMask << self numSlotsHalfShift.
 			 self long64At: newObj put: (self headerForSlots: self numSlotsMask format: formatField classIndex: classIndex)]
 		ifFalse:
 			[self long64At: newObj put: (self headerForSlots: numSlots format: formatField classIndex: classIndex)].
@@ -7035,7 +7035,7 @@ SpurMemoryManager >> isForwarded: objOop [
 	<api>
 	<inline: true>
 	"self assert: (self isFreeObject: objOop) not."
-	^(self longAt: objOop) noMask: self classIndexMask - self isForwardedObjectClassIndexPun
+	^(self long64At: objOop) noMask: self classIndexMask - self isForwardedObjectClassIndexPun
 ]
 
 { #category : #'class table' }
