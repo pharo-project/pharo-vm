@@ -365,7 +365,7 @@ StackToRegisterMappingCogit class >> initializeBytecodeTableForSistaV1 [
 		(2 235 235 genExtSendSuperBytecode isMapped)
 
 		"sista bytecodes"
-		(2 236 236 genCallMappedInlinedPrimitive isMapped hasUnsafeJump)
+		(2 236 236 genCallMappedInlinedPrimitive isMapped)
 
 		"jumps"
 		(2 237 237 genExtUnconditionalJump	branch isMapped "because of interrupt check" v4:Long:Branch:Distance:)
@@ -1906,13 +1906,16 @@ StackToRegisterMappingCogit >> genLoadTemp: objectIndex in: destReg [
 
 { #category : #'mapped inline primitive generators' }
 StackToRegisterMappingCogit >> genMappedInlinePrimitive: primIndex [
+
 	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
+
 	"Number of arguments:
 	 0-49 nullary
 	 50-99 unary
 	 100-149  binary
 	 150-199 trinary
 	 200-255 variable"
+
 	"Specification:
 	50	EnsureEnoughWords
 	literal which is a Smi => ret value is receiver
@@ -1934,16 +1937,22 @@ StackToRegisterMappingCogit >> genMappedInlinePrimitive: primIndex [
 	double word object, Smi, 64 bits unsigned Smi or LargePositiveInteger => arg2 (1-based, optimised if arg1 is a constant)
 	250	directCall
 	method to call on top of stack =>  (variable number of parameters)"
-	primIndex caseOf: 
-	{ 
-		[ 0 ] -> [^self genAddFloat64Vector].
-		[ 1 ] -> [^self genPushFloat64ArrayToRegister].
-		[ 2 ] -> [^self genStoreFloat64RegisterIntoArray].
-		[ 3 ] -> [^self genAddFloat32Vector].
-		[ 4 ] -> [^self genPushFloat32ArrayToRegister].
-	   [ 5 ] -> [^self genStoreFloat32RegisterIntoArray].
-	   [ 6 ] -> [^self genSubFloat64Vector].
-	} otherwise: [^EncounteredUnknownBytecode].
+
+	| result |
+	result := primIndex
+		          caseOf: { 
+				          ([ 0 ] -> [ self genAddFloat64Vector ]).
+				          ([ 1 ] -> [ self genPushFloat64ArrayToRegister ]).
+				          ([ 2 ] -> [ self genStoreFloat64RegisterIntoArray ]).
+				          ([ 3 ] -> [ self genAddFloat32Vector ]).
+				          ([ 4 ] -> [ self genPushFloat32ArrayToRegister ]).
+				          ([ 5 ] -> [ self genStoreFloat32RegisterIntoArray ]).
+				          ([ 6 ] -> [ self genSubFloat64Vector ]) }
+		          otherwise: [ EncounteredUnknownBytecode ].
+	"These primitives may end up calling a message send if preconditions are not met. Thus, the
+	bytecode needs to be annotated with `isMapped`, and each primitive must be annotated"
+	self annotateBytecode: self Label.
+	^ result
 ]
 
 { #category : #'bytecode generator support' }
