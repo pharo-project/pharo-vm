@@ -291,7 +291,6 @@ VMFrameBuilder >> pushFlags [
 
 { #category : #building }
 VMFrameBuilder >> pushFrame [
-	interpreter push: context.
 	interpreter push: receiver.
 	
 	temps do: [ :oop |  interpreter push: oop ].
@@ -302,6 +301,7 @@ VMFrameBuilder >> pushYourself [
 	self setVariablesFromCompiledMethod.
 
 	interpreter push: method.
+	interpreter push: context.
 	self pushFlags.
 	self pushFrame.
 	self pushCurrentFramesStack.

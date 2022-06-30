@@ -904,10 +904,11 @@ StackInterpreter class >> initializeFrameIndices [
 	fxCallerSavedIP := 1.
 	fxSavedFP := 0.
 	fxMethod := -1.
-	fxFrameFlags := -2.	"Can find numArgs, needed for fast temp access. args are above fxCallerSavedIP.
+	fxThisContext := -2.
+	fxFrameFlags := -3.	"Can find numArgs, needed for fast temp access. args are above fxCallerSavedIP.
 						 Can find ``is block'' bit
 						 Can find ``has context'' bit"
-	fxThisContext := -3.
+
 	fxReceiver := -4.
 
 	FrameSlots := fxCallerSavedIP - fxReceiver + 1.
@@ -1837,8 +1838,8 @@ StackInterpreter >> activateNewFullClosure: blockClosure method: theMethod numAr
 	self push: framePointer.
 	framePointer := stackPointer.
 	self push: theMethod.
-	self push: (self encodeFrameFieldHasContext: false isBlock: true numArgs: numArgs).
 	self push: objectMemory nilObject. "FxThisContext field"
+	self push: (self encodeFrameFieldHasContext: false isBlock: true numArgs: numArgs).
 	"Because inst var access is not checked, we must follow the receiver in Spur to ensure it is valid."
 	self push: (objectMemory followField: FullClosureReceiverIndex ofObject: blockClosure).
 
@@ -8088,11 +8089,11 @@ StackInterpreter >> internalActivateNewMethod [
 	framePointer := stackPointer.
 	self push: newMethod.
 	self setMethod: newMethod methodHeader: methodHeader.
+	self push: objectMemory nilObject. "FxThisContext field"
 	self push: (self
 			 encodeFrameFieldHasContext: false
 			 isBlock: false
 			 numArgs: (self argumentCountOfMethodHeader: methodHeader)).
-	self push: objectMemory nilObject. "FxThisContext field"
 	self push: rcvr.
 
 	"Initialize temps..."
@@ -8888,8 +8889,8 @@ StackInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 	framePointer := stackPointer.
 	self push: newMethod.
 	self setMethod: newMethod methodHeader: methodHeader.
-	self push: (self encodeFrameFieldHasContext: false isBlock: false numArgs: numArgs).
 	self push: objectMemory nilObject. "FxThisContext field"
+	self push: (self encodeFrameFieldHasContext: false isBlock: false numArgs: numArgs).
 	self push: rcvr.
 
 	"clear remaining temps to nil"
@@ -9427,12 +9428,12 @@ StackInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 		put: theMethod.
 	stackPages
 		longAt: (pointer := pointer - objectMemory wordSize)
+		put: aContext.
+	stackPages
+		longAt: (pointer := pointer - objectMemory wordSize)
 		put: (self encodeFrameFieldHasContext: true isBlock: maybeClosure ~= objectMemory nilObject numArgs: numArgs).
 	self assert: (self frameHasContext: page baseFP).
 	self assert: (self frameNumArgs: page baseFP) == numArgs.
-	stackPages
-		longAt: (pointer := pointer - objectMemory wordSize)
-		put: aContext.
 	stackPages
 		longAt: (pointer := pointer - objectMemory wordSize)
 		put: rcvr.
