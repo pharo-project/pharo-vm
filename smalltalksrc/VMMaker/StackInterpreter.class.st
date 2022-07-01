@@ -11204,9 +11204,18 @@ StackInterpreter >> primitiveFloat64ArrayAdd [
 	arg2 := self stackValue: 1.
 	res := self stackTop.
 	arraySize := objectMemory numSlotsOf: res.
-	
-	0 to: (arraySize - 1) do: [ :i | | tmp|
-		tmp := (objectMemory fetchFloat64: i ofObject: arg1) + (objectMemory fetchFloat64: i ofObject: arg2).
+
+	(objectMemory formatOf: arg1) = objectMemory sixtyFourBitIndexableFormat ifFalse: [ 
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory formatOf: arg2) = objectMemory sixtyFourBitIndexableFormat ifFalse: [ 
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory formatOf: res) = objectMemory sixtyFourBitIndexableFormat ifFalse: [ 
+		^ self primitiveFailFor: PrimErrBadArgument ].
+
+	0 to: arraySize - 1 do: [ :i | 
+		| tmp |
+		tmp := (objectMemory fetchFloat64: i ofObject: arg1)
+		       + (objectMemory fetchFloat64: i ofObject: arg2).
 		objectMemory storeFloat64: i ofObject: res withValue: tmp ].
 
 	self successful
