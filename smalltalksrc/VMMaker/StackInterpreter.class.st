@@ -6477,6 +6477,18 @@ StackInterpreter >> floatArg: index [
 	^objectMemory floatValueOf: oop
 ]
 
+{ #category : #'memory access' }
+StackInterpreter >> floatAtPointer: anOop [
+
+	^ objectMemory float64At: anOop
+]
+
+{ #category : #'memory access' }
+StackInterpreter >> floatAtPointer: anOop put: value [
+
+	objectMemory float64At: anOop put: value
+]
+
 { #category : #'debug printing' }
 StackInterpreter >> flush [
 	<api>

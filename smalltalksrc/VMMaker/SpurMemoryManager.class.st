@@ -4988,6 +4988,17 @@ SpurMemoryManager >> firstFixedFieldOfMaybeImmediate: oop [
 		ifFalse: [self firstFixedField: oop]
 ]
 
+{ #category : #'object access' }
+SpurMemoryManager >> firstFloat64OfDataObject: objOop [
+	<returnTypeC: #'void *'>
+	<api>
+	<inline: true>
+	| fmt |
+	fmt := self formatOf: objOop.
+	fmt ~= 9 ifTrue: [ ^ 0 ].
+	^ self firstFixedField: objOop
+]
+
 { #category : #'object format' }
 SpurMemoryManager >> firstIndexableField: objOop [
 	"NOTE: overridden in various simulator subclasses to add coercion to CArray, so please duplicate any changes.

@@ -2061,7 +2061,7 @@ StackInterpreterPrimitives >> primitiveLoadFloat64FromBytes [
 	 or: [argumentCount > 1]) ifTrue:
 		[^self primitiveFailFor: PrimErrBadArgument].
 	index := objectMemory integerValueOf: index.
-	bytes := objectMemory firstBytePointerOfDataObject: rcvr.
+	bytes := objectMemory firstFloat64OfDataObject: rcvr.
 	bytes == 0 ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
 
 	byteSize := objectMemory numBytesOf: rcvr.
@@ -3307,7 +3307,7 @@ StackInterpreterPrimitives >> primitiveStoreFloat64IntoBytes [
 		[^self primitiveFailFor: PrimErrBadArgument].
 	index := objectMemory integerValueOf: index.
 	value := objectMemory floatValueOf: valueObject.
-	bytes := objectMemory firstBytePointerOfDataObject: rcvr.
+	bytes := objectMemory firstFloat64OfDataObject: rcvr.
 	bytes == 0 ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
 
 	byteSize := objectMemory numBytesOf: rcvr.

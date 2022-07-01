@@ -556,14 +556,16 @@ VMClass >> fetchSingleFloatAtPointer: pointer into: aFloat [
 
 { #category : #'memory access' }
 VMClass >> floatAtPointer: pointer [
+
 	<doNotGenerate>
-	self halt.
+	self notYetImplemented 
 ]
 
 { #category : #'memory access' }
 VMClass >> floatAtPointer: pointer put: value [
+
 	<doNotGenerate>
-	self halt.
+	self notYetImplemented
 ]
 
 { #category : #'C library simulation' }

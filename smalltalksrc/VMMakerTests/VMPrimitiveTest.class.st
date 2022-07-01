@@ -2325,6 +2325,23 @@ VMPrimitiveTest >> testPrimitiveLessThanWithNoErrorPopsOperands [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 ]
 
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytes [
+
+	| class array |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: (memory sixtyFourBitIndexableFormat).
+	array := memory instantiateClass: class indexableSize: 1.
+	memory storeFloat64: 0 ofObject: array withValue: 42.0.
+	
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: 0).
+	interpreter primitiveLoadFloat64FromBytes.
+	
+	self deny: interpreter failed.
+	self assert: (memory fetchFloat64: 0 ofObject: array) equals: 42.0.
+	self assert: interpreter stackTop equals: (memory floatObjectOf: 42.0). 
+]
+
 { #category : #'tests - primitiveMod' }
 VMPrimitiveTest >> testPrimitiveMod [
 
@@ -4477,6 +4494,23 @@ VMPrimitiveTest >> testPrimitiveSnapshotNewKeptObjectShouldBeTenured [
 	self
 		assert: (memory hashBitsOf: self keptObjectInVMVariable1)
 		equals: objectHash
+]
+
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytes [
+
+	| class array |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: (memory sixtyFourBitIndexableFormat).
+	array := memory instantiateClass: class indexableSize: 1.
+	
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: 0).
+	interpreter push: (memory floatObjectOf: 42.0).
+	interpreter primitiveStoreFloat64IntoBytes.
+	
+	self deny: interpreter failed.
+	self assert: (memory fetchFloat64: 0 ofObject: array) equals: 42.0.
+
 ]
 
 { #category : #'tests - primitiveAtPut' }
