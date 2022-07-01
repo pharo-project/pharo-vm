@@ -3404,6 +3404,7 @@ CoInterpreter >> frameIsBlockActivation: theFP [ "<Integer>"
 CoInterpreter >> frameMethodField: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
+
 	^stackPages longAt: theFP + FoxMethod
 ]
 

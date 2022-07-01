@@ -4920,6 +4920,7 @@ StackInterpreter >> context: aContext hasValidInversePCMappingOf: theIP in: theF
 	<var: #theFP type: #'char *'>
 	pc := objectMemory fetchPointer: InstructionPointerIndex ofObject: aContext.
 	encodedip := self contextInstructionPointer: theIP frame: theFP.
+
 	^(objectMemory hasSpurMemoryManagerAPI or: [MULTIPLEBYTECODESETS])
 		ifTrue:
 			[pc = encodedip

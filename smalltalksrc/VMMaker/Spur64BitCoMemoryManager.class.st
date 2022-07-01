@@ -330,7 +330,7 @@ Spur64BitCoMemoryManager >> unalignedLongAt: byteAddress [
 	rem := byteAddress \\ 8.
 	^rem = 0
 		ifTrue: [self longAt: byteAddress]
-		ifFalse: [((self longAt: byteAddress - rem) + ((self longAt: byteAddress - rem + 8) bitShift: 64) bitShift: rem * -8) bitAnd: 16rFFFFFFFFFFFFFFFF]
+		ifFalse: [((self unsignedLong64At: byteAddress - rem) + ((self unsignedLong64At: byteAddress - rem + 8) bitShift: 64) bitShift: rem * -8) bitAnd: 16rFFFFFFFFFFFFFFFF]
 ]
 
 { #category : #'simulation only' }
@@ -339,14 +339,14 @@ Spur64BitCoMemoryManager >> unalignedLongAt: byteAddress put: aLong [
 	| rem mask |
 	rem := byteAddress \\ 8.
 	^rem = 0
-		ifTrue: [self longAt: byteAddress put: aLong]
+		ifTrue: [self unsignedLong64At: byteAddress put: aLong]
 		ifFalse:
 			[mask := 16rFFFFFFFFFFFFFFFF bitAnd: (-1 bitShift: rem * 8).
-			 self longAt: byteAddress - rem
-				put: ((self longAt: byteAddress - rem) bitAnd: mask bitInvert)
+			 self unsignedLong64At: byteAddress - rem
+				put: ((self unsignedLong64At: byteAddress - rem) bitAnd: mask bitInvert)
 					+ ((aLong bitShift: rem * 8) bitAnd: mask).
-			 self longAt: byteAddress - rem + 8
-				put: ((self longAt: byteAddress - rem + 8) bitAnd: mask)
+			 self unsignedLong64At: byteAddress - rem + 8
+				put: ((self unsignedLong64At: byteAddress - rem + 8) bitAnd: mask)
 					+ ((aLong bitShift: 8 - rem * -8) bitAnd: mask bitInvert).
 			 aLong]
 ]

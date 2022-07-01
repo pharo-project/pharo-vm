@@ -248,7 +248,7 @@ Spur32BitMMLECoSimulator >> long64At: byteAddress put: a64BitValue [
 { #category : #'memory access' }
 Spur32BitMMLECoSimulator >> longAt: byteAddress [
 
-	^memoryManager unsignedLong32At: byteAddress
+	^memoryManager long32At: byteAddress
 ]
 
 { #category : #'memory access' }

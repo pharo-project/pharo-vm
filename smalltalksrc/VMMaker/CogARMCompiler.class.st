@@ -2450,7 +2450,7 @@ CogARMCompiler >> instructionAddressBefore: followingAddress [
 CogARMCompiler >> instructionBeforeAddress: followingAddress [
 	"Answer the instruction immediately preceding followingAddress."
 	<inline: true>
-	^objectMemory longAt: (self instructionAddressBefore: followingAddress)
+	^objectMemory unsignedLong32At: (self instructionAddressBefore: followingAddress)
 ]
 
 { #category : #testing }

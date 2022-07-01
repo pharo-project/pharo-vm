@@ -4856,7 +4856,7 @@ SpurMemoryManager >> fetchPointer: fieldIndex ofMaybeForwardedObject: objOop [
 { #category : #'object access' }
 SpurMemoryManager >> fetchPointer: fieldIndex ofObject: objOop [
 	<api>
-	^self longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+	^self unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 ]
 
 { #category : #'object access' }
@@ -8534,10 +8534,10 @@ SpurMemoryManager >> memmove: destAddress _: sourceAddress _: bytes [
 	destAddress > sourceAddress
 				ifTrue:
 					[bytes - 4 to: 0 by: -4 do:
-						[:i| self long32At: dst + i put: (self long32At: src + i)]]
+						[:i| self unsignedLong32At: dst + i put: (self unsignedLong32At: src + i)]]
 				ifFalse:
 					[0 to: bytes - 4 by: 4 do:
-						[:i| self long32At: dst + i put: (self long32At: src + i)]]
+						[:i| self unsignedLong32At: dst + i put: (self unsignedLong32At: src + i)]]
 ]
 
 { #category : #accessing }

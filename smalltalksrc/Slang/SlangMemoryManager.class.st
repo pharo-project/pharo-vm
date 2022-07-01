@@ -271,12 +271,14 @@ SlangMemoryManager >> unsignedByteAt: anAddress put: aValue [
 { #category : #'memory-access' }
 SlangMemoryManager >> unsignedLong32At: address [
 
+	<doNotGenerate>
 	^ self readUnsignedIntegerAt: address size: 4
 ]
 
 { #category : #'memory-access' }
 SlangMemoryManager >> unsignedLong32At: address put: a32BitValue [ 
 
+	<doNotGenerate>
 	^ self writeUnsignedInteger: a32BitValue at: address size: 4
 ]
 

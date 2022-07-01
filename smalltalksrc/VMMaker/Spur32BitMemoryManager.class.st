@@ -968,6 +968,13 @@ Spur32BitMemoryManager >> tagMask [
 	^3
 ]
 
+{ #category : #'memory access' }
+Spur32BitMemoryManager >> unsignedLongAt: anAddress [
+
+	<doNotGenerate>
+	^ self unsignedLong32At: anAddress
+]
+
 { #category : #'header formats' }
 Spur32BitMemoryManager >> wordIndexableFormat [
 	^self firstLongFormat

@@ -1196,6 +1196,13 @@ Spur64BitMemoryManager >> tagMask [
 	^7
 ]
 
+{ #category : #'memory access' }
+Spur64BitMemoryManager >> unsignedLongAt: anAddress [
+
+	<doNotGenerate>
+	^ self unsignedLong64At: anAddress
+]
+
 { #category : #'header formats' }
 Spur64BitMemoryManager >> wordIndexableFormat [
 	^self sixtyFourBitIndexableFormat

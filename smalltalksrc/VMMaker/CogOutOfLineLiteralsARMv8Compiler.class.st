@@ -374,8 +374,8 @@ CogOutOfLineLiteralsARMv8Compiler >> rewriteInlineCacheAt: callSiteReturnAddress
 	self assert: (self isInImmediateJumpRange: callDistance). "we don't support long call updates here"
 	call := self bl: callDistance.
 	objectMemory
-		long32At: (self instructionAddressBefore: callSiteReturnAddress ) put: call;
-		longAt: (self pcRelativeAddressAt: callSiteReturnAddress - 8) put: cacheTag signedIntToLong64.
+		unsignedLong32At: (self instructionAddressBefore: callSiteReturnAddress ) put: call;
+		unsignedLong64At: (self pcRelativeAddressAt: callSiteReturnAddress - 8) put: cacheTag signedIntToLong64.
 	self assert: (self inlineCacheTagAt: callSiteReturnAddress) = cacheTag  signedIntToLong64.
 	"self cCode: ''
 		inSmalltalk: [cogit disassembleFrom: callSiteReturnAddress - 8 to: (self pcRelativeAddressAt: callSiteReturnAddress - 8)]."
