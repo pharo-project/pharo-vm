@@ -257,6 +257,16 @@ SlangMemoryManager >> registerNewRegion: newMemoryRegion size: desiredSize addre
 ]
 
 { #category : #'memory-access' }
+SlangMemoryManager >> uint32AtPointer: anInteger [
+	^ self unsignedLong32At: anInteger 
+]
+
+{ #category : #'memory-access' }
+SlangMemoryManager >> uint32AtPointer: anInteger put: anInteger2 [ 
+	^ self unsignedLong32At: anInteger put: anInteger2 
+]
+
+{ #category : #'memory-access' }
 SlangMemoryManager >> unsignedByteAt: anInteger [
 	
 	^ self readUnsignedIntegerAt: anInteger size: 1
@@ -271,15 +281,13 @@ SlangMemoryManager >> unsignedByteAt: anAddress put: aValue [
 { #category : #'memory-access' }
 SlangMemoryManager >> unsignedLong32At: address [
 
-	<doNotGenerate>
 	^ self readUnsignedIntegerAt: address size: 4
 ]
 
 { #category : #'memory-access' }
-SlangMemoryManager >> unsignedLong32At: address put: a32BitValue [ 
+SlangMemoryManager >> unsignedLong32At: address put: aValue [
 
-	<doNotGenerate>
-	^ self writeUnsignedInteger: a32BitValue at: address size: 4
+	^ self writeUnsignedInteger: aValue at: address size: 4
 ]
 
 { #category : #'memory-access' }

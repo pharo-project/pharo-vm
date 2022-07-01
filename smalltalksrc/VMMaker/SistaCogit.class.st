@@ -171,7 +171,7 @@ SistaCogit >> disassembleMethod: surrogateOrAddress on: aStream [
 			 addr := i * CounterBytes + counters.
 			 addr printOn: aStream base: 16.
 			 aStream nextPut: $:; space.
-			 (objectMemory long32At: addr) printOn: aStream base: 16.
+			 (objectMemory uint32AtPointer: addr) printOn: aStream base: 16.
 			 aStream cr].
 		 aStream flush]
 ]

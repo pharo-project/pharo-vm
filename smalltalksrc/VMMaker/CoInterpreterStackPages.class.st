@@ -222,6 +222,21 @@ CoInterpreterStackPages >> surrogateAtAddress: anAddress [
 	^pageMap at: anAddress
 ]
 
+{ #category : #'memory access' }
+CoInterpreterStackPages >> unsignedLongAt: byteAddress [
+	<doNotGenerate>
+	"Note: Adjusted for Smalltalk's 1-based array indexing."
+	self assert: (byteAddress >= minStackAddress and: [byteAddress < maxStackAddress]).
+	^objectMemory unsignedLongAt: byteAddress
+]
+
+{ #category : #'memory access' }
+CoInterpreterStackPages >> unsignedLongAt: byteAddress put: a32Or64BitValue [
+	<doNotGenerate>
+	self assert: (byteAddress >= minStackAddress and: [byteAddress < maxStackAddress]).
+	^objectMemory unsignedLongAt: byteAddress put: a32Or64BitValue
+]
+
 { #category : #'debug printing' }
 CoInterpreterStackPages >> whereIsMaybeStackThing: anOop [
 	"If anOop is an address within the stack zone answer a string stating that, otherwise answer nil."

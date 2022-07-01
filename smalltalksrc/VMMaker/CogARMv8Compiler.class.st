@@ -4354,7 +4354,7 @@ CogARMv8Compiler >> instructionBeforeAddress: followingAddress [
 	"Answer the instruction immediately preceding followingAddress."
 	<inline: true>
 	<returnTypeC: #'uint32_t'>
-	^objectMemory unsignedLong32At: (self instructionAddressBefore: followingAddress)
+	^objectMemory uint32AtPointer: (self instructionAddressBefore: followingAddress)
 ]
 
 { #category : #testing }
@@ -5489,7 +5489,7 @@ CogARMv8Compiler >> relocateCallBeforeReturnPC: retpc by: delta [
 		 self assert: ((self instructionIsB: instr) or: [self instructionIsBL: instr]).
 		 distanceDiv4 := instr bitAnd: 16rFFFFFF.
 		 distanceDiv4 := distanceDiv4 + (delta // 4).
-		 objectMemory unsignedLong32At: (self instructionAddressBefore: retpc ) put: ((instr bitAnd: 16rFF000000) bitOr: (distanceDiv4 bitAnd: 16rFFFFFF))]
+		 objectMemory uint32AtPointer: (self instructionAddressBefore: retpc ) put: ((instr bitAnd: 16rFF000000) bitOr: (distanceDiv4 bitAnd: 16rFFFFFF))]
 ]
 
 { #category : #assembler }
@@ -5662,7 +5662,7 @@ CogARMv8Compiler >> rewriteTransferAt: callSiteReturnAddress target: callTargetA
 	self assert: ((self instructionIsB: instr) or: [self instructionIsBL: instr]).
 
 	objectMemory
-		unsignedLong32At: (self instructionAddressBefore: callSiteReturnAddress)
+		uint32AtPointer: (self instructionAddressBefore: callSiteReturnAddress)
 		put: (self b: callDistance withLink: (self instructionIsBL: instr)).
 
 	self assert: (self callTargetFromReturnAddress: callSiteReturnAddress) = callTargetAddress.
@@ -5978,7 +5978,7 @@ CogARMv8Compiler >> stop [
 CogARMv8Compiler >> stopsFrom: startAddr to: endAddr [
 	self assert: endAddr - startAddr + 1 \\ 4 = 0.
 	startAddr to: endAddr by: 4 do: 
-		[:addr | objectMemory unsignedLong32At: addr put: self stop].
+		[:addr | objectMemory uint32AtPointer: addr put: self stop].
 ]
 
 { #category : #'inline cacheing' }

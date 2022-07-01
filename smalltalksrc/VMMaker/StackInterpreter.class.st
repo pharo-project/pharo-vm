@@ -4957,9 +4957,9 @@ StackInterpreter >> convertFloatsToPlatformOrder [
 	objectMemory allObjectsDo:
 		[:obj| | temp |
 		(objectMemory compactClassIndexOf: obj) = ClassFloatCompactIndex ifTrue:
-			[temp := objectMemory long32At: obj + objectMemory baseHeaderSize.
-			 objectMemory long32At: obj + objectMemory baseHeaderSize put: (objectMemory long32At: obj + objectMemory baseHeaderSize + 4).
-			 objectMemory long32At: obj + objectMemory baseHeaderSize + 4 put: temp]]
+			[temp := objectMemory uint32AtPointer: obj + objectMemory baseHeaderSize.
+			 objectMemory uint32AtPointer: obj + objectMemory baseHeaderSize put: (objectMemory uint32AtPointer: obj + objectMemory baseHeaderSize + 4).
+			 objectMemory uint32AtPointer: obj + objectMemory baseHeaderSize + 4 put: temp]]
 ]
 
 { #category : #'internal interpreter access' }
@@ -14696,14 +14696,14 @@ StackInterpreter >> stSizeOf: oop [
 StackInterpreter >> stackFloatValue: offset [
 	"In the StackInterpreter stacks grow down."
 	<returnTypeC: #double>
-	^objectMemory floatValueOf: (stackPages longAt: stackPointer + (offset*objectMemory wordSize))
+	^objectMemory floatValueOf: (stackPages unsignedLongAt: stackPointer + (offset*objectMemory wordSize))
 ]
 
 { #category : #'stack access' }
 StackInterpreter >> stackIntegerValue: offset [
 	"In the StackInterpreter stacks grow down."
 	| integerPointer |
-	integerPointer := stackPages longAt: stackPointer + (offset*objectMemory wordSize).
+	integerPointer := stackPages unsignedLongAt: stackPointer + (offset*objectMemory wordSize).
 	^self checkedIntegerValueOf: integerPointer
 ]
 
@@ -14744,7 +14744,7 @@ StackInterpreter >> stackObjectValue: offset [
 	"Ensures that the given object is a real object, not a SmallInteger."
 	"In the StackInterpreter stacks grow down."
 	| oop |
-	oop := stackPages longAt: stackPointer + (offset * objectMemory wordSize).
+	oop := stackPages unsignedLongAt: stackPointer + (offset * objectMemory wordSize).
 	(objectMemory isImmediate: oop) ifTrue:
 		[self primitiveFail. ^ nil].
 	^oop
@@ -14875,7 +14875,7 @@ StackInterpreter >> stackPositiveMachineIntegerValue: offset [
 	<returnTypeC: #'usqIntptr_t'>
 	"In the StackInterpreter stacks grow down."
 	| integerPointer |
-	integerPointer := stackPages longAt: stackPointer + (offset*objectMemory wordSize).
+	integerPointer := stackPages unsignedLongAt: stackPointer + (offset*objectMemory wordSize).
 	^self positiveMachineIntegerValueOf: integerPointer
 ]
 
@@ -14885,14 +14885,14 @@ StackInterpreter >> stackSignedMachineIntegerValue: offset [
 	<returnTypeC: #'sqIntptr_t'>
 	"In the StackInterpreter stacks grow down."
 	| integerPointer |
-	integerPointer := stackPages longAt: stackPointer + (offset*objectMemory wordSize).
+	integerPointer := stackPages unsignedLongAt: stackPointer + (offset*objectMemory wordSize).
 	^self signedMachineIntegerValueOf: integerPointer
 ]
 
 { #category : #'stack access' }
 StackInterpreter >> stackTop [
 	<api>
-	^stackPages longAt: stackPointer
+	^stackPages unsignedLongAt: stackPointer
 ]
 
 { #category : #'stack access' }
@@ -14911,7 +14911,7 @@ StackInterpreter >> stackTopPutIntegerObjectOf: aValue [
 StackInterpreter >> stackValue: offset [
 	<api>
 	"In the StackInterpreter stacks grow down."
-	^stackPages longAt: stackPointer + (offset*objectMemory wordSize)
+	^stackPages unsignedLongAt: stackPointer + (offset*objectMemory wordSize)
 ]
 
 { #category : #'stack access' }
@@ -15325,8 +15325,8 @@ StackInterpreter >> temporary: offset in: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	^offset < (frameNumArgs := self frameNumArgs: theFP)
-		ifTrue: [stackPages longAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize)]
-		ifFalse: [stackPages longAt: theFP + FoxReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize)]
+		ifTrue: [stackPages unsignedLongAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize)]
+		ifFalse: [stackPages unsignedLongAt: theFP + FoxReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize)]
 ]
 
 { #category : #'internal interpreter access' }

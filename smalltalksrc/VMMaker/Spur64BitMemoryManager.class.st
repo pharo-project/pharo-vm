@@ -812,7 +812,7 @@ Spur64BitMemoryManager >> objectAfter: objOop limit: limit [
 	(self oop: followingWordAddress isGreaterThanOrEqualTo: limit) ifTrue:
 		[^limit].
 	self flag: #endianness.
-	followingWord := self longAt: followingWordAddress.
+	followingWord := self unsignedLongAt: followingWordAddress.
 	^followingWord >> self numSlotsFullShift = self numSlotsMask
 		ifTrue: [followingWordAddress + self baseHeaderSize]
 		ifFalse: [followingWordAddress]
@@ -981,10 +981,10 @@ Spur64BitMemoryManager >> setIsImmutableOf: objOop to: aBoolean [
 { #category : #'header access' }
 Spur64BitMemoryManager >> setIsMarkedOf: objOop to: aBoolean [
 	self assert: (self isFreeObject: objOop) not.
-	self longAt: objOop
+	self unsignedLongAt: objOop
 		put: (aBoolean
-				ifTrue: [(self longAt: objOop) bitOr: 1 << self markedBitFullShift]
-				ifFalse: [(self longAt: objOop) bitAnd: (1 << self markedBitFullShift) bitInvert64])
+				ifTrue: [(self unsignedLongAt: objOop) bitOr: 1 << self markedBitFullShift]
+				ifFalse: [(self unsignedLongAt: objOop) bitAnd: (1 << self markedBitFullShift) bitInvert64])
 ]
 
 { #category : #'header access' }
@@ -1201,6 +1201,13 @@ Spur64BitMemoryManager >> unsignedLongAt: anAddress [
 
 	<doNotGenerate>
 	^ self unsignedLong64At: anAddress
+]
+
+{ #category : #'memory access' }
+Spur64BitMemoryManager >> unsignedLongAt: anAddress put: aValue [ 
+
+	<doNotGenerate>
+	^ self unsignedLong64At: anAddress put: aValue
 ]
 
 { #category : #'header formats' }

@@ -112,7 +112,7 @@ StackBuilderTest >> offsetInstructionPointer [
 
 { #category : #offset }
 StackBuilderTest >> offsetMethod [
-	^ self offsetFlags + 1
+	^ self offsetContext + 1
 ]
 
 { #category : #offset }

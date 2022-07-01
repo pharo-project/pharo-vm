@@ -50,15 +50,15 @@ CoInterpreterPrimitives >> frameIsMarked: theFPInt [
 { #category : #'object access primitives' }
 CoInterpreterPrimitives >> markFrame: theFPInt [
 	| methodField |
-	methodField := stackPages longAt: theFPInt + FoxMethod.
+	methodField := stackPages unsignedLongAt: theFPInt + FoxMethod.
 	methodField asUnsignedInteger < objectMemory startOfMemory
 		ifTrue:
 			[stackPages
-				longAt: theFPInt + FoxMethod
+				unsignedLongAt: theFPInt + FoxMethod
 				put: (methodField bitOr: 4)]
 		ifFalse:
 			[stackPages
-				longAt: theFPInt + FoxIFrameFlags
+				unsignedLongAt: theFPInt + FoxIFrameFlags
 				put: ((stackPages longAt: theFPInt + FoxIFrameFlags) bitOr: 2)]
 ]
 
@@ -761,15 +761,15 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 						by: objectMemory wordSize negated
 						do: [:source|
 							newSP := newSP - objectMemory wordSize.
-							stackPages longAt: newSP put: (stackPages longAt: source)].
-					 stackPages longAt: newFP + FoxSavedFP put: contextsFP.
+							stackPages unsignedLongAt: newSP put: (stackPages unsignedLongAt: source)].
+					 stackPages unsignedLongAt: newFP + FoxSavedFP put: contextsFP.
 					"Ensure contract between machine-code callee and interpreter caller frames is preserved.
 					 Return pc needs to be ceReturnToInterpreterPC."
 					 ((self isMachineCodeFrame: newFP)
 					  and: [contextsIP >= objectMemory startOfMemory]) ifTrue:
 						[self iframeSavedIP: contextsFP put: contextsIP.
 						 contextsIP := cogit ceReturnToInterpreterPC].
-					 stackPages longAt: newFP + FoxCallerSavedIP put: contextsIP.
+					 stackPages unsignedLongAt: newFP + FoxCallerSavedIP put: contextsIP.
 					 self assert: (objectMemory isContext: thisCtx).
 					 objectMemory storePointerUnchecked: SenderIndex
 						ofObject: thisCtx
@@ -854,7 +854,7 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 									 frameAbove := self findFrameAbove: contextsFP inPage: thePage.
 									 frameAbove ~= 0 ifTrue:
 										[contextsSP := (self frameCallerSP: frameAbove) - objectMemory wordSize.
-										 stackPages longAt: contextsSP put: (self frameCallerSavedIP: frameAbove).
+										 stackPages unsignedLongAt: contextsSP put: (self frameCallerSavedIP: frameAbove).
 										 self setHeadFP: contextsFP andSP: contextsSP inPage: thePage].
 									 currentCtx := aContextOrNil]
 								ifFalse:
@@ -984,14 +984,14 @@ CoInterpreterPrimitives >> unmarkAllFrames [
 		thePage := stackPages stackPageAt: i.
 		(stackPages isFree: thePage) ifFalse:
 			[theFP := thePage  headFP.
-			 [methodField := stackPages longAt: theFP + FoxMethod.
+			 [methodField := stackPages unsignedLongAt: theFP + FoxMethod.
 			 methodField asUnsignedInteger < objectMemory startOfMemory
 				ifTrue:
 					[(methodField bitAnd: 4) ~= 0 ifTrue:
-						[self longAt: theFP + FoxMethod put: methodField - 4]]
+						[self unsignedLongAt: theFP + FoxMethod put: methodField - 4]]
 				ifFalse:
-					[flags := stackPages longAt: theFP + FoxIFrameFlags.
+					[flags := stackPages unsignedLongAt: theFP + FoxIFrameFlags.
 					  (flags bitAnd: 2) ~= 0 ifTrue:
-						[stackPages longAt: theFP + FoxIFrameFlags put: flags - 2]].
+						[stackPages unsignedLongAt: theFP + FoxIFrameFlags put: flags - 2]].
 			  (theFP := self frameCallerFP: theFP) ~= 0] whileTrue]]
 ]

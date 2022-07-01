@@ -152,6 +152,8 @@ VMJitMethodTest >> testJitCompiledFloat32VectorAddition [
 
 	callingMethod := self jitMethod: (self findMethod: #addVector:with:intoVector:).
 
+	wordSize = 4 ifTrue: [ ^ self assert: callingMethod isNil ].
+
 	self initStack.
 
 	self 
@@ -227,6 +229,8 @@ VMJitMethodTest >> testJitCompiledFloat64VectorAddition [
 
 	callingMethod := self jitMethod:
 		                 (self findMethod: #addVector:with:intoVector:).
+
+	self wordSize = 4 ifTrue: [ ^ self assert: callingMethod isNil ].
 
 	self initStack.
 
@@ -308,6 +312,9 @@ VMJitMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 		                 (self findMethod: #addVector:with:intoVector:).
 
 	self initStack.
+	"As we are entering the interpreter first, the SP and FP has to be in the CStack."
+	machineSimulator sp: cogit getCStackPointer.
+	machineSimulator fp: cogit getCFramePointer.
 
 	frame := stackBuilder
 		         args: { x };
@@ -318,6 +325,7 @@ VMJitMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 			y.
 			z };
 			method: callingMethod.
+	
 	stackBuilder buildStack.
 
 	cogit generateReturnToInterpreterPCTrampoline.

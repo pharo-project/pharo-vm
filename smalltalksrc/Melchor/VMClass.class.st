@@ -1228,7 +1228,7 @@ VMClass >> uint32AtPointer: pointer put: value [
 	 pointer is a raw address, and the result is an 32 bit integer."
 	<doNotGenerate>
 
-	^memoryManager unsignedLong32At: pointer put: value
+	^memoryManager uint32AtPointer: pointer put: value
 ]
 
 { #category : #'memory access' }
@@ -1277,20 +1277,6 @@ VMClass >> unalignedAccessError [
 VMClass >> unreachable [
 	<inline: true>
 	self error: 'UNREACHABLE'
-]
-
-{ #category : #'memory access' }
-VMClass >> unsignedLong32At: anInteger [
-
-	<inline: #always>
-	^ self uint32AtPointer: anInteger
-]
-
-{ #category : #'memory access' }
-VMClass >> unsignedLong32At: anInteger put: aValue [
-
-	<inline: #always>
-	^ self uint32AtPointer: anInteger put: aValue
 ]
 
 { #category : #'memory access' }

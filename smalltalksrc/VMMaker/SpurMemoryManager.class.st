@@ -1786,7 +1786,7 @@ SpurMemoryManager >> allOldSpaceEntitiesFrom: initialObject do: aBlock [
 	objOop := initialObject.
 	[self assert: objOop \\ self allocationUnit = 0.
 	 self oop: objOop isLessThan: endOfMemory] whileTrue:
-		[self assert: (self long64At: objOop) ~= 0.
+		[self assert: (self unsignedLong64At: objOop) ~= 0.
 		 aBlock value: objOop.
 		 prevPrevObj := prevObj.
 		 prevObj := objOop.
@@ -4951,7 +4951,9 @@ SpurMemoryManager >> firstBytePointerOfDataObject: objOop [
 	<inline: true>
 	| fmt |
 	fmt := self formatOf: objOop.
-	fmt < self firstLongFormat ifTrue: [ ^ 0 ].
+	"If the object is not byte addressable we return 0. 
+	The format of the objects that are not byte-addressable are less than the 64-bit indexable format."
+	fmt < self sixtyFourBitIndexableFormat ifTrue: [ ^ 0 ].
 	^ self firstFixedField: objOop
 ]
 
@@ -4986,17 +4988,6 @@ SpurMemoryManager >> firstFixedFieldOfMaybeImmediate: oop [
 	^(self isImmediate: oop)
 		ifTrue: [oop asVoidPointer]
 		ifFalse: [self firstFixedField: oop]
-]
-
-{ #category : #'object access' }
-SpurMemoryManager >> firstFloat64OfDataObject: objOop [
-	<returnTypeC: #'void *'>
-	<api>
-	<inline: true>
-	| fmt |
-	fmt := self formatOf: objOop.
-	fmt ~= 9 ifTrue: [ ^ 0 ].
-	^ self firstFixedField: objOop
 ]
 
 { #category : #'object format' }
@@ -6983,7 +6974,7 @@ SpurMemoryManager >> isEnumerableObject: objOop [
 	| classIndex |
 	<inline: true>
 	classIndex := self classIndexOf: objOop.
-	self assert: ((self long64At: objOop) ~= 0
+	self assert: ((self unsignedLong64At: objOop) ~= 0
 				  and: [classIndex < (numClassTablePages * self classTablePageSize)]).
 	^classIndex >= self isForwardedObjectClassIndexPun
 ]
@@ -8545,10 +8536,10 @@ SpurMemoryManager >> memmove: destAddress _: sourceAddress _: bytes [
 	destAddress > sourceAddress
 				ifTrue:
 					[bytes - 4 to: 0 by: -4 do:
-						[:i| self unsignedLong32At: dst + i put: (self unsignedLong32At: src + i)]]
+						[:i| self uint32AtPointer: dst + i put: (self uint32AtPointer: src + i)]]
 				ifFalse:
 					[0 to: bytes - 4 by: 4 do:
-						[:i| self unsignedLong32At: dst + i put: (self unsignedLong32At: src + i)]]
+						[:i| self uint32AtPointer: dst + i put: (self uint32AtPointer: src + i)]]
 ]
 
 { #category : #accessing }
@@ -10465,7 +10456,7 @@ SpurMemoryManager >> rawClassTagForClass: classObj [
 SpurMemoryManager >> rawHashBitsOf: objOop [
 	<api>
 	self flag: #endianness.
-	^(self long32At: objOop + 4) bitAnd: self identityHashHalfWordMask
+	^(self uint32AtPointer: objOop + 4) bitAnd: self identityHashHalfWordMask
 ]
 
 { #category : #'object access' }
@@ -10725,7 +10716,7 @@ SpurMemoryManager >> reverseBytesIn32BitWordsFrom: startAddr to: stopAddr [
 	| addr |
 	addr := startAddr.
 	[self oop: addr isLessThan: stopAddr] whileTrue:
-		[self long32At: addr put: ((self long32At: addr) byteSwap32).
+		[self uint32AtPointer: addr put: ((self uint32AtPointer: addr) byteSwap32).
 		 addr := addr + 4]
 ]
 
@@ -11009,8 +11000,8 @@ SpurMemoryManager >> setFreeOldSpaceStart: newFreeOldSpaceStart [
 SpurMemoryManager >> setHashBitsOf: objOop to: hash [
 	self flag: #endianness.
 	self assert: (hash between: 0 and: self identityHashHalfWordMask).
-	self long32At: objOop + 4
-		put: ((self long32At: objOop + 4) bitClear: self identityHashHalfWordMask) + hash
+	self uint32AtPointer: objOop + 4
+		put: ((self uint32AtPointer: objOop + 4) bitClear: self identityHashHalfWordMask) + hash
 ]
 
 { #category : #snapshot }
@@ -11781,7 +11772,7 @@ SpurMemoryManager >> storeInteger: fieldIndex ofObject: objectPointer withValue:
 
 { #category : #'object access' }
 SpurMemoryManager >> storeLong32: fieldIndex ofObject: obj withValue: valueWord [
-	^self long32At: obj + self baseHeaderSize + (fieldIndex << 2) put: valueWord
+	^self uint32AtPointer: obj + self baseHeaderSize + (fieldIndex << 2) put: valueWord
 ]
 
 { #category : #'object access' }
@@ -11801,7 +11792,7 @@ SpurMemoryManager >> storePointer: fieldIndex ofForwarder: objOop withValue: val
 			[self possibleRootStoreInto: objOop]].
 
 	^self
-		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: valuePointer
 ]
 
@@ -11810,7 +11801,7 @@ SpurMemoryManager >> storePointer: fieldIndex ofFreeChunk: objOop withUncheckedV
 
 	self assert: (self isFreeObject: objOop).
 	^self
-		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: valuePointer
 ]
 
@@ -11820,7 +11811,7 @@ SpurMemoryManager >> storePointer: fieldIndex ofFreeChunk: objOop withValue: val
 	self assert: (self isFreeObject: objOop).
 	self assert: (valuePointer = 0 or: [self isFreeObject: valuePointer]).		
 	^self
-		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: valuePointer
 ]
 
@@ -11842,7 +11833,7 @@ SpurMemoryManager >> storePointer: fieldIndex ofObjStack: objStackPage withValue
 															and: [(self formatOf: thang) = self wordIndexableFormat]]])]. }
 				otherwise: []].
 	^self
-		longAt: objStackPage + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		unsignedLongAt: objStackPage + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: thang
 ]
 
@@ -11857,7 +11848,7 @@ SpurMemoryManager >> storePointer: fieldIndex ofObject: objOop withValue: valueP
 			[self possibleRootStoreInto: objOop]].
 
 	^self
-		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: valuePointer
 ]
 
@@ -11878,14 +11869,14 @@ SpurMemoryManager >> storePointerImmutabilityCheck: fieldIndex ofObject: objOop 
 SpurMemoryManager >> storePointerNoAssert: fieldIndex ofFreeChunk: objOop withValue: valuePointer [
 
 	^self
-		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: valuePointer
 ]
 
 { #category : #'object access' }
 SpurMemoryManager >> storePointerUnchecked: fieldIndex ofMaybeForwardedObject: objOop withValue: valuePointer [
 	^self
-		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: valuePointer
 ]
 
@@ -11894,7 +11885,7 @@ SpurMemoryManager >> storePointerUnchecked: fieldIndex ofObject: objOop withValu
 	<api>
 	self assert: (self isOopForwarded: objOop) not.
 	^self
-		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: valuePointer
 ]
 
@@ -12218,9 +12209,9 @@ SpurMemoryManager >> unalignedLong32At: index [
 
 	| odd hi lo |
 	(odd := index bitAnd: 3) = 0 ifTrue:
-		[^self long32At: index].
-	lo := self long32At: index - odd.
-	hi := self long32At: index + 4 - odd.
+		[^self uint32AtPointer: index].
+	lo := self uint32AtPointer: index - odd.
+	hi := self uint32AtPointer: index + 4 - odd.
 	^lo >> (odd * 8) + ((hi bitAnd: 1 << (odd * 8) - 1) << (4 - odd * 8))
 ]
 
@@ -12233,14 +12224,14 @@ SpurMemoryManager >> unalignedLong32At: index put: aValue [
 		[self unalignedLong64At: index put: (aValue bitAnd: 16rFFFFFFFF).
 		 ^aValue].
 	(odd := index bitAnd: 3) = 0 ifTrue:
-		[^self long32At: index put: aValue].
+		[^self uint32AtPointer: index put: aValue].
 	mask := 1 << (odd * 8) - 1.
-	lo := self long32At: index - odd.
-	self long32At: index - odd
+	lo := self uint32AtPointer: index - odd.
+	self uint32AtPointer: index - odd
 		put: (lo bitAnd: mask)
 			+ ((aValue bitAnd: 1 << (4 - odd * 8) - 1) << (odd * 8)).
-	hi := self long32At: index + 4 - odd.
-	self long32At: index + 4 - odd
+	hi := self uint32AtPointer: index + 4 - odd.
+	self uint32AtPointer: index + 4 - odd
 		put: (hi bitClear: mask) + (aValue >> (4 - odd * 8) bitAnd: mask).
 	^aValue
 ]
