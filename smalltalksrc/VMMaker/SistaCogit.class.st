@@ -157,6 +157,7 @@ SistaCogit >> defaultCogCodeSize [
 	<api>
 	^2 * backEnd getDefaultCogCodeSize
 ]
+
 { #category : #accessing }
 SistaCogit >> estimateOfAbstractOpcodesPerBytecodes [
 	"Due to the counter logic, the estimation is higher"

@@ -7401,6 +7401,14 @@ SpurMemoryManager >> isShortsNonImm: objOop [
 	^(self formatOf: objOop) between: self firstShortFormat and: self firstByteFormat - 1
 ]
 
+{ #category : #testing }
+SpurMemoryManager >> isSixtyFourBitIndexableOop: anOop [
+
+	^ (self isNonImmediate: anOop) and: [ 
+		  (self isForwarded: anOop) not and: [ 
+			  (self formatOf: anOop) = self sixtyFourBitIndexableFormat ] ]
+]
+
 { #category : #'object testing' }
 SpurMemoryManager >> isUnambiguouslyForwarder: objOop [
 	"This version is private to SpurMemoryManager (for asserts, etc).  It does not
