@@ -1780,6 +1780,16 @@ Cogit >> AddcR: reg1 R: reg2 [
 ]
 
 { #category : #'abstract instructions' }
+Cogit >> AlignedSt1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [ 
+	^ self
+		  gen: AlignedSt1VrRMw
+		  operand: aSize 
+		  operand: aVectorRegister
+		  operand: aMemoryRegister 
+		  operand: anOffset 
+]
+
+{ #category : #'abstract instructions' }
 Cogit >> AlignmentNops: alignment [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>

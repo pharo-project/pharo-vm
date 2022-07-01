@@ -213,7 +213,18 @@ CogX64Compiler class >> initializeAbstractRegisters [
 	DPFPReg14				:= XMM14L.
 	DPFPReg15				:= XMM15L.
 
-	NumFloatRegisters := 16
+	NumFloatRegisters := 16.
+	
+	VReg0 := XMM0L.
+	VReg1 := XMM1L.
+	VReg2 := XMM2L.
+	VReg3 := XMM3L.
+	VReg4 := XMM4L.
+	VReg5 := XMM5L.
+	VReg6 := XMM6L.
+	VReg7 := XMM7L.
+
+
 ]
 
 { #category : #'class initialization' }
@@ -611,6 +622,7 @@ CogX64Compiler >> computeMaximumSize [
 											ifFalse: [0])].
 		[MoveRRd]		-> [^5].
 		[MoveRdR]		-> [^5].
+
 		[MoveAwR]		-> [^(self isAddressRelativeToVarBase: (operands at: 0))
 								ifTrue: [7]
 								ifFalse: [(operands at: 1) = RAX ifTrue: [10] ifFalse: [14]]].
@@ -866,7 +878,17 @@ CogX64Compiler >> computeMaximumSize [
 									ifFalse: [0])].
 								
 		"This is a fixed size instruction using a patcheable literal. This takes ALWAYS 7 bytes"
-		[MovePatcheableC32R] -> [ ^ 7 ]
+		[MovePatcheableC32R] -> [ ^ 7 ].
+	
+		"SIMD instructions"
+		[DupRVr]		-> [^9].
+		[St1VrRMw]  -> [^9].
+		[Ld1VrRMw]  -> [^9].
+		[AlignedSt1VrRMw ] -> [ ^9 ].
+	
+		[FaddSRvRvRv] -> [ ^10 ].
+		[FsubSRvRvRv] -> [ ^10 ].
+
 		}.
 	^0 "to keep C compiler quiet"
 ]
@@ -902,6 +924,42 @@ CogX64Compiler >> computeSizeOfPushCw [
 	^(self inCurrentCompilation: (operands at: 0))
 		ifTrue: [9]
 		ifFalse: [self pushCwByteSize]
+]
+
+{ #category : #'generate machine code - support' }
+CogX64Compiler >> concretizeAlignedSt1VrRMw [
+	
+	<inline: true>
+	| srcReg destReg size offset |
+
+	size := operands at: 0.
+	srcReg := operands at: 1.
+	destReg := operands at: 2.
+	offset := operands at: 3.
+	
+	size = 64 ifFalse: [ ^ self notYetImplemented  ].
+	
+	"This instruction stores in the current value of the destReg and updates it with the offset. It performs a post-increment.
+	It Requires that the address is aligned 16bytes (128bits).
+	To do so, in X64 we need two instructions (Intel Notation, destination on the left).
+	
+	   1) MOVDQA xmm2/m128, xmm1 : Move aligned packed integer values from xmm1 to xmm2/m128.
+	   2) ADD r/m64, imm8 : Add sign-extended imm8 to r/m64. With the post increment"
+	
+	machineCode
+		at: 0 put: 16r66;
+		at: 1 put: (self rexw: true r: srcReg x: 0 b: destReg); 
+		at: 2 put: 16r0F;
+		at: 3 put: 16r7F;
+		at: 4 put: (self mod: ModRegInd RM: destReg RO: srcReg).
+
+	machineCode
+		at: 5 put: (self rexw: true r: destReg x: 0 b: destReg);
+		at: 6 put: 16r83;
+		at: 7 put: (self mod: ModReg RM: destReg RO: 0);
+		at: 8 put: (offset bitAnd: 16rFF).
+		
+	^ machineCodeSize := 9
 ]
 
 { #category : #'generate machine code' }
@@ -963,6 +1021,17 @@ CogX64Compiler >> concretizeCLD [
 	<inline: true>
 	machineCode at: 0 put: 16rFC.
 	^machineCodeSize := 1
+]
+
+{ #category : #'generate machine code' }
+CogX64Compiler >> concretizeCPUID [
+
+	<inline: true>
+
+	machineCode
+		at: 0 put: 16r0F;
+		at: 1 put: 16rA2.
+	^machineCodeSize := 2
 ]
 
 { #category : #'generate machine code' }
@@ -1250,6 +1319,45 @@ CogX64Compiler >> concretizeConvertRsRd [
 	 ^machineCodeSize := skip + 4
 ]
 
+{ #category : #'generate machine code - concretize' }
+CogX64Compiler >> concretizeDupRVr [
+
+	<inline: true>
+
+	| srcReg destReg |
+
+	"
+	In X64, we need to do two instructions:
+	   - 1) Loading the QuadWord with
+			 MOVD/MOVQ — Move Doubleword/Move Quadword
+	  	 	   - Eg: movq	%rbx, %xmm0
+	  		   - Move quadword from r/m64 to xmm 
+	   - 2) Packing it to the upper part (using the same register) with 
+			 PUNPCKLQDQ — Unpack Low Data
+				- Eg: PUNPCKLQDQ %xmm2, %xmm1
+				- Interleave low-order quadword from xmm1 and xmm2/m128 into xmm1 register."
+
+	(operands at: 0) ~= 64 ifTrue: [ self notYetImplemented ]. 
+		
+	srcReg := operands at: 1.
+	destReg := operands at: 2.
+
+	machineCode
+		at: 0 put: 16r66;
+		at: 1 put: (self rexw: true r: destReg x: 0 b: srcReg);
+		at: 2 put: 16r0F;
+		at: 3 put: 16r6E;
+		at: 4 put: (self mod: ModReg RM: srcReg RO: destReg).
+
+	machineCode
+		at: 5 put: 16r66;
+		at: 6 put: 16r0F;
+		at: 7 put: 16r6C;
+		at: 8 put: (self mod: ModReg RM: destReg RO: destReg).
+
+	^machineCodeSize := 9
+]
+
 { #category : #'generate machine code' }
 CogX64Compiler >> concretizeFENCE: regOpcode [
 	<inline: true>
@@ -1258,6 +1366,76 @@ CogX64Compiler >> concretizeFENCE: regOpcode [
 		at: 1 put: 16rAE;
 		at: 2 put: (self mod: ModReg RM: 0 RO: regOpcode).
 	^machineCodeSize := 3
+]
+
+{ #category : #concretizing }
+CogX64Compiler >> concretizeFaddSRvRvRv [
+	
+	<inline: true>
+	
+	| size srcReg1 srcReg2 destReg instructionOffset |
+	size := operands at: 0.
+	srcReg1 := operands at: 1.
+	srcReg2 := operands at: 2.
+	destReg := operands at: 3.
+
+	"ADDPD—Add Packed Double-Precision Floating-Point Values
+	
+	Add two double-precision floating-point values from the first source operand 
+	to the second source operand, and stores the packed double-precision floating-point 
+	results in the destination operand.
+	
+	Add packed double-precision floating-point values from xmm2/mem to xmm1 and store result in xmm1.
+
+	66 0F 58 /r ADDPD xmm1, xmm2/m128 (Intel Notation)	
+	
+	RM 		ModRM:reg (r, w) 	ModRM:r/m (r)
+	"
+		
+	instructionOffset := 0 .
+
+	srcReg1 ~= destReg ifTrue: [ 
+		
+		"If the srcReg1 and the destReg are not the same, we need to move the values with a
+		66 0F 28 /r MOVAPD xmm1, xmm2/m128"
+		
+		size = 64 ifTrue: [  
+			machineCode
+				at: instructionOffset + 0 put: (self rexR: destReg x: 0 b: srcReg1);
+				at: instructionOffset + 1 put: 16r66 ;
+				at: instructionOffset + 2 put: 16r0F ;
+				at: instructionOffset + 3 put: 16r28;
+				at: instructionOffset + 4 put: (self mod: ModReg RM: srcReg1 RO: destReg).		
+			instructionOffset := 5
+		]ifFalse: [ 
+			machineCode
+				at: instructionOffset + 0 put: (self rexR: destReg x: 0 b: srcReg1);
+				at: instructionOffset + 1 put: 16r0F ;
+				at: instructionOffset + 2 put: 16r28;
+				at: instructionOffset + 3 put: (self mod: ModReg RM: srcReg1 RO: destReg).		
+			instructionOffset := 4		
+		]
+	
+	].
+	
+	size = 64 ifTrue: [ 
+		machineCode
+			at: instructionOffset + 0 put: (self rexR: destReg x: 0 b: srcReg2);
+			at: instructionOffset + 1 put: 16r66 ;
+			at: instructionOffset + 2 put: 16r0F ;
+			at: instructionOffset + 3 put: 16r58;
+			at: instructionOffset + 4 put: (self mod: ModReg RM: srcReg2 RO: destReg).
+		^ machineCodeSize := instructionOffset + 5			
+	] ifFalse: [
+		machineCode
+			at: instructionOffset + 0 put: (self rexR: destReg x: 0 b: srcReg2);
+			at: instructionOffset + 1 put: 16r0F ;
+			at: instructionOffset + 2 put: 16r58;
+			at: instructionOffset + 3 put: (self mod: ModReg RM: srcReg2 RO: destReg).
+		^ machineCodeSize := instructionOffset + 4				
+	].
+
+
 ]
 
 { #category : #'generate machine code' }
@@ -1271,6 +1449,51 @@ CogX64Compiler >> concretizeFill32 [
 	machineCode at: 2 put: (word >> 16 bitAnd: 16rFF).
 	machineCode at: 3 put: (word >> 24 bitAnd: 16rFF).
 	^machineCodeSize := 4
+]
+
+{ #category : #concretizing }
+CogX64Compiler >> concretizeFsubSRvRvRv [
+
+	<inline: true>
+	
+	| size srcReg1 srcReg2 destReg instructionOffset |
+	size := operands at: 0.
+	srcReg1 := operands at: 1.
+	srcReg2 := operands at: 2.
+	destReg := operands at: 3.
+
+	"SUBPD—Subtract Packed Double-Precision Floating-Point Values
+	
+	Performs a SIMD subtract of the two packed double-precision floating-point values of the second Source operand
+	from the first Source operand, and stores the packed double-precision floating-point results in the 
+	destination operand.
+	
+	Subtract packed double-precision floating-point values in xmm2/mem from xmm1 and store result in xmm1.
+
+	66 0F 5C /r SUBPD xmm1, xmm2/m128 (Intel Notation)	
+	
+	RM 		ModRM:reg (r, w) 	ModRM:r/m (r)
+	"
+
+	instructionOffset := 0 .
+
+	srcReg1 ~= destReg ifTrue: [ 
+		machineCode
+			at: instructionOffset + 0 put: (self rexR: destReg x: 0 b: srcReg1);
+			at: instructionOffset + 1 put: 16r66 ;
+			at: instructionOffset + 2 put: 16r0F ;
+			at: instructionOffset + 3 put: 16r28;
+			at: instructionOffset + 4 put: (self mod: ModReg RM: srcReg1 RO: destReg).		
+		instructionOffset := 5].
+	
+	machineCode
+		at: instructionOffset + 0 put: (self rexR: destReg x: 0 b: srcReg2);
+		at: instructionOffset + 1 put: 16r66 ;
+		at: instructionOffset + 2 put: 16r0F ;
+		at: instructionOffset + 3 put: 16r5C;
+		at: instructionOffset + 4 put: (self mod: ModReg RM: srcReg2 RO: destReg).
+
+	^ machineCodeSize := instructionOffset + 5
 ]
 
 { #category : #'generate machine code' }
@@ -1377,6 +1600,46 @@ CogX64Compiler >> concretizeJumpR [
 		at: 1 put: 16rFF;
 		at: 2 put: (self mod: ModReg RM: reg RO: 4).
 	^machineCodeSize := 3
+]
+
+{ #category : #'generate machine code - support' }
+CogX64Compiler >> concretizeLd1VrRMw [
+	
+	<inline: true>
+
+	| srcReg destReg size offset |
+
+	size := operands at: 0.
+	srcReg := operands at: 1.
+	destReg := operands at: 2.
+	offset := operands at: 3.
+	
+	"This instruction loads the current value of the destReg from the address in srcReg. And, it updates srcReg with the offset. It performs a post-increment with the offset. If the offset is zero, there is none.
+
+	To do so, in X64 we need two instructions (Intel Notation, destination on the left).
+	
+	   1) MOVDQU xmm1, xmm2/m128 : Move unaligned packed integer values from xmm2/m128 to xmm1.
+	   2) ADD r/m64, imm8 : Add sign-extended imm8 to r/m64. With the post increment
+	
+	For 64 and 32 bits it is the same, as we are loading 16 bytes to the register.
+	"
+	
+	machineCode
+		at: 0 put: 16rF3;
+		at: 1 put: (self rexw: true r: srcReg x: 0 b: destReg);
+		at: 2 put: 16r0F;
+		at: 3 put: 16r6F;
+		at: 4 put: (self mod: ModRegInd RM: destReg RO: srcReg).
+
+	offset = 0 ifTrue: [ ^ machineCodeSize := 5 ].
+
+	machineCode
+		at: 5 put: (self rexw: true r: destReg x: 0 b: destReg);
+		at: 6 put: 16r83;
+		at: 7 put: (self mod: ModReg RM: destReg RO: 0);
+		at: 8 put: (offset bitAnd: 16rFF).
+		
+	^ machineCodeSize := 9
 ]
 
 { #category : #'generate machine code' }
@@ -2893,6 +3156,45 @@ CogX64Compiler >> concretizeSqrtRs [
 	^machineCodeSize := skip + 4
 ]
 
+{ #category : #'generate machine code - support' }
+CogX64Compiler >> concretizeSt1VrRMw [
+	
+	<inline: true>
+
+	| srcReg destReg size offset |
+
+	size := operands at: 0.
+	srcReg := operands at: 1.
+	destReg := operands at: 2.
+	offset := operands at: 3.
+	
+	"This instruction stores in the current value of the destReg and updates it with the offset. It performs a post-increment using offset. If the offset is 0, there is none and the second instruction is not generated.
+	To do so, in X64 we need two instructions (Intel Notation, destination on the left).
+	
+	   1) MOVDQU xmm2/m128, xmm1 : Move unaligned packed integer values from xmm1 to xmm2/m128.
+	   2) ADD r/m64, imm8 : Add sign-extended imm8 to r/m64. With the post increment (Only if offset != 0)
+	
+	For 32 or 64 floats it works because we are moving 16 bytes.
+	"
+	
+	machineCode
+		at: 0 put: 16rF3;
+		at: 1 put: (self rexw: true r: srcReg x: 0 b: destReg);
+		at: 2 put: 16r0F;
+		at: 3 put: 16r7F;
+		at: 4 put: (self mod: ModRegInd RM: destReg RO: srcReg).
+
+	offset = 0 ifTrue: [ ^ machineCodeSize := 5 ].
+
+	machineCode
+		at: 5 put: (self rexw: true r: destReg x: 0 b: destReg);
+		at: 6 put: 16r83;
+		at: 7 put: (self mod: ModReg RM: destReg RO: 0);
+		at: 8 put: (offset bitAnd: 16rFF).
+		
+	^ machineCodeSize := 9
+]
+
 { #category : #'generate machine code' }
 CogX64Compiler >> concretizeStop [
 	<inline: true>
@@ -3203,6 +3505,7 @@ CogX64Compiler >> dispatchConcretize [
 		[MoveRRd]			-> [^self concretizeMoveRRd].
 		[MoveRdRd]		-> [^self concretizeMoveRdRd].
 		[MoveRsRs]		-> [^self concretizeMoveRsRs].
+						
 		[PopR]				-> [^self concretizePopR].
 		[PushR]				-> [^self concretizePushR].
 		[PushCq]			-> [^self concretizePushCq].
@@ -3225,7 +3528,15 @@ CogX64Compiler >> dispatchConcretize [
 		[ZeroExtend32RR]	-> [^self concretizeZeroExtend32RR].
 		
 		"This is a fixed size instruction using a patcheable literal."
-		[MovePatcheableC32R] -> [ ^ self concretizeMovePatcheableC32R ]
+		[MovePatcheableC32R] -> [ ^ self concretizeMovePatcheableC32R ].
+	
+		"SIMD"
+		[DupRVr]			-> [^self concretizeDupRVr].
+		[St1VrRMw]		-> [^self concretizeSt1VrRMw ].
+		[Ld1VrRMw]		-> [^self concretizeLd1VrRMw ].
+		[AlignedSt1VrRMw]		-> [^self concretizeAlignedSt1VrRMw ].
+		[FaddSRvRvRv]	-> [^self concretizeFaddSRvRvRv ].
+		[FsubSRvRvRv]  -> [^self concretizeFsubSRvRvRv ]
 		}
 ]
 
@@ -3255,12 +3566,41 @@ CogX64Compiler >> dispatchConcretizeProcessorSpecific [
 		[CLD]					-> [^self concretizeCLD].
 		[MOVSB]				-> [^self concretizeMOVSB].
 		[MOVSQ]				-> [^self concretizeMOVSQ].
+		[CPUID]				-> [^self concretizeCPUID].
 	}
+]
+
+{ #category : #concretize }
+CogX64Compiler >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
+	<inline: true>
+	| fillLoop |
+	
+	cogit MoveR: fillReg Mw: 0 r: startMemoryAddr.
+	cogit AddCq: 8 R: startMemoryAddr.
+	
+	cogit AndCq: 16rFFFFFFFFFFFFFFF0 R: startMemoryAddr.	
+	
+	cogit DupS: 64 R: fillReg Vr: vectorRegister.
+	"St1 copies data in 128-bit chunks. This may exceed the size of an object (that only needs to be a multiple of 64 bits).
+	This overflow is not an issue, however. The reason for that is that objects are allocated sequentially in the Eden space
+	using a bumpAllocator, which means that the overflowing bits won't overwrite another object. This is true even when reaching
+	the end of the Eden space, as after it we reserve additional headroom."
+	fillLoop := cogit AlignedSt1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
+	cogit CmpR: startMemoryAddr R: endMemoryAddr.
+	cogit JumpAbove: fillLoop.
+	
+	^0 "Necessary to keep Slang happy"
 ]
 
 { #category : #abi }
 CogX64Compiler >> fullCallsAreRelative [
 	^false
+]
+
+{ #category : #'abstract instructions' }
+CogX64Compiler >> genCPUID [
+
+	^ cogit gen: CPUID
 ]
 
 { #category : #'abstract instructions' }

@@ -489,7 +489,31 @@ UnicornX64Simulator >> temporaryRegister [
 ]
 
 { #category : #accessing }
+UnicornX64Simulator >> vectorRegister0Value [
+
+	^ simulator readRegisterId: UcX86Registers xmm0 size:  16
+]
+
+{ #category : #accessing }
 UnicornX64Simulator >> wordSize [
 	
 	^ 8
+]
+
+{ #category : #'accessing - registers' }
+UnicornX64Simulator >> xmm0 [
+	
+	^ simulator readRegisterId: UcX86Registers xmm0 size: 16
+]
+
+{ #category : #accessing }
+UnicornX64Simulator >> xmm1 [
+	
+	^ simulator readRegisterId: UcX86Registers xmm1 size: 16
+]
+
+{ #category : #registers }
+UnicornX64Simulator >> xmm2 [
+	
+	^ simulator readRegisterId: UcX86Registers xmm2 size: 16
 ]

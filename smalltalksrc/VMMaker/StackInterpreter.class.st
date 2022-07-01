@@ -1902,49 +1902,53 @@ StackInterpreter >> addFirstLink: proc toList: aList [
 
 { #category : #'simd bytecodes' }
 StackInterpreter >> addFloat32VectorBytecode [
-	
+
 	<var: #tmp type: #float>
-	
 	| arg rcv res tmp |
 	arg := self stackValue: 0.
 	rcv := self stackValue: 1.
-	
-	"TODO should be using a Float32 register with 4 slots"
-	res := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
-	
-	tmp := (objectMemory fetchFloat32: 0 ofObject: arg) + (objectMemory fetchFloat32: 0 ofObject: rcv).
-	objectMemory storeFloat32: 0 ofObject: res withValue: tmp. 
 
-	tmp := (objectMemory fetchFloat32: 1 ofObject: arg) + (objectMemory fetchFloat32: 1 ofObject: rcv).
+	"TODO should be using a Float32 register with 4 slots"
+	res := self eeInstantiateFloat64Register.
+
+	tmp := (objectMemory fetchFloat32: 0 ofObject: arg)
+	       + (objectMemory fetchFloat32: 0 ofObject: rcv).
+	objectMemory storeFloat32: 0 ofObject: res withValue: tmp.
+
+	tmp := (objectMemory fetchFloat32: 1 ofObject: arg)
+	       + (objectMemory fetchFloat32: 1 ofObject: rcv).
 	objectMemory storeFloat32: 1 ofObject: res withValue: tmp.
-	
-	tmp := (objectMemory fetchFloat32: 2 ofObject: arg) + (objectMemory fetchFloat32: 2 ofObject: rcv).
+
+	tmp := (objectMemory fetchFloat32: 2 ofObject: arg)
+	       + (objectMemory fetchFloat32: 2 ofObject: rcv).
 	objectMemory storeFloat32: 2 ofObject: res withValue: tmp.
-	
-	tmp := (objectMemory fetchFloat32: 3 ofObject: arg) + (objectMemory fetchFloat32: 3 ofObject: rcv).
-	objectMemory storeFloat32: 3 ofObject: res withValue: tmp. 
-		
-	self pop: 2 thenPush: res.
+
+	tmp := (objectMemory fetchFloat32: 3 ofObject: arg)
+	       + (objectMemory fetchFloat32: 3 ofObject: rcv).
+	objectMemory storeFloat32: 3 ofObject: res withValue: tmp.
+
+	self pop: 2 thenPush: res
 ]
 
 { #category : #'simd bytecodes' }
 StackInterpreter >> addFloat64VectorBytecode [
-	
+
 	<var: #tmp type: #double>
-	
 	| arg rcv res tmp |
 	arg := self stackValue: 0.
 	rcv := self stackValue: 1.
-	
-	res := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
-	
-	tmp := (objectMemory fetchFloat64: 0 ofObject: arg) + (objectMemory fetchFloat64: 0 ofObject: rcv).
-	objectMemory storeFloat64: 0 ofObject: res withValue: tmp. 
 
-	tmp := (objectMemory fetchFloat64: 1 ofObject: arg) + (objectMemory fetchFloat64: 1 ofObject: rcv).
-	objectMemory storeFloat64: 1 ofObject: res withValue: tmp. 
-		
-	self pop: 2 thenPush: res.
+	res := self eeInstantiateFloat64Register.
+
+	tmp := (objectMemory fetchFloat64: 0 ofObject: arg)
+	       + (objectMemory fetchFloat64: 0 ofObject: rcv).
+	objectMemory storeFloat64: 0 ofObject: res withValue: tmp.
+
+	tmp := (objectMemory fetchFloat64: 1 ofObject: arg)
+	       + (objectMemory fetchFloat64: 1 ofObject: rcv).
+	objectMemory storeFloat64: 1 ofObject: res withValue: tmp.
+
+	self pop: 2 thenPush: res
 ]
 
 { #category : #'primitive support' }
@@ -5316,6 +5320,15 @@ StackInterpreter >> duplicateTopBytecode [
 
 	self fetchNextBytecode.
 	self push: self stackTop
+]
+
+{ #category : #instantiation }
+StackInterpreter >> eeInstantiateFloat64Register [
+
+	^ objectMemory
+		  eeInstantiateSmallClass:
+		  (objectMemory splObj: ClassFloat64Register)
+		  numSlots: 16 / BytesPerWord "Depends on the architecture the number of slots, as we always want 2 64bit slots (or 16 bytes in total)"
 ]
 
 { #category : #'debug printing' }
@@ -12749,33 +12762,53 @@ StackInterpreter >> pushConstantZeroBytecode [
 
 { #category : #'simd bytecodes' }
 StackInterpreter >> pushFloat32ArrayToRegisterBytecode [
+
 	| array index reg |
 	array := self stackValue: 0.
 	index := objectMemory integerValueOf: (self stackValue: 1).
-	
+
 	"TODO should be using Float32 register with 4 slots"
-	reg := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
-	
-	objectMemory storeFloat32: 0 ofObject: reg withValue: (objectMemory fetchFloat32: index ofObject: array). 
-	objectMemory storeFloat32: 1 ofObject: reg withValue: (objectMemory fetchFloat32: (index+1) ofObject: array).
-	objectMemory storeFloat32: 2 ofObject: reg withValue: (objectMemory fetchFloat32: (index+2) ofObject: array).
-	objectMemory storeFloat32: 3 ofObject: reg withValue: (objectMemory fetchFloat32: (index+3) ofObject: array). 
-		
-	self pop: 2 thenPush: reg.
+	reg := self eeInstantiateFloat64Register.
+
+	objectMemory
+		storeFloat32: 0
+		ofObject: reg
+		withValue: (objectMemory fetchFloat32: index ofObject: array).
+	objectMemory
+		storeFloat32: 1
+		ofObject: reg
+		withValue: (objectMemory fetchFloat32: index + 1 ofObject: array).
+	objectMemory
+		storeFloat32: 2
+		ofObject: reg
+		withValue: (objectMemory fetchFloat32: index + 2 ofObject: array).
+	objectMemory
+		storeFloat32: 3
+		ofObject: reg
+		withValue: (objectMemory fetchFloat32: index + 3 ofObject: array).
+
+	self pop: 2 thenPush: reg
 ]
 
 { #category : #'simd bytecodes' }
 StackInterpreter >> pushFloat64ArrayToRegisterBytecode [
+
 	| array index reg |
 	array := self stackValue: 0.
 	index := objectMemory integerValueOf: (self stackValue: 1).
-	
-	reg := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
-	
-	objectMemory storeFloat64: 0 ofObject: reg withValue: (objectMemory fetchFloat64: index ofObject: array). 
-	objectMemory storeFloat64: 1 ofObject: reg withValue: (objectMemory fetchFloat64: (index+1) ofObject: array). 
-		
-	self pop: 2 thenPush: reg.
+
+	reg := self eeInstantiateFloat64Register.
+
+	objectMemory
+		storeFloat64: 0
+		ofObject: reg
+		withValue: (objectMemory fetchFloat64: index ofObject: array).
+	objectMemory
+		storeFloat64: 1
+		ofObject: reg
+		withValue: (objectMemory fetchFloat64: index + 1 ofObject: array).
+
+	self pop: 2 thenPush: reg
 ]
 
 { #category : #'primitive support' }
@@ -15108,22 +15141,23 @@ StackInterpreter >> stringOf: oop [
 
 { #category : #'simd bytecodes' }
 StackInterpreter >> subFloat64VectorBytecode [
-	
+
 	<var: #tmp type: #double>
-	
 	| arg rcv res tmp |
 	arg := self stackValue: 0.
 	rcv := self stackValue: 1.
-	
-	res := objectMemory eeInstantiateSmallClass: (objectMemory splObj: ClassFloat64Register) numSlots: 2.	
-	
-	tmp := (objectMemory fetchFloat64: 0 ofObject: rcv) - (objectMemory fetchFloat64: 0 ofObject: arg).
-	objectMemory storeFloat64: 0 ofObject: res withValue: tmp. 
 
-	tmp := (objectMemory fetchFloat64: 1 ofObject: rcv) - (objectMemory fetchFloat64: 1 ofObject: arg).
-	objectMemory storeFloat64: 1 ofObject: res withValue: tmp. 
-		
-	self pop: 2 thenPush: res.
+	res := self eeInstantiateFloat64Register.
+
+	tmp := (objectMemory fetchFloat64: 0 ofObject: rcv)
+	       - (objectMemory fetchFloat64: 0 ofObject: arg).
+	objectMemory storeFloat64: 0 ofObject: res withValue: tmp.
+
+	tmp := (objectMemory fetchFloat64: 1 ofObject: rcv)
+	       - (objectMemory fetchFloat64: 1 ofObject: arg).
+	objectMemory storeFloat64: 1 ofObject: res withValue: tmp.
+
+	self pop: 2 thenPush: res
 ]
 
 { #category : #'indexing primitive support' }

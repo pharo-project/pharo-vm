@@ -2003,7 +2003,7 @@ CogARMv8Compiler >> concretizeJumpR [
 ]
 
 { #category : #concretizing }
-CogARMv8Compiler >> concretizeLd1SVrRMw [
+CogARMv8Compiler >> concretizeLd1VrRMw [
 
 	"Will get inlined into concretizeAt: switch."
 
@@ -3108,12 +3108,12 @@ CogARMv8Compiler >> concretizeSqrtRd [
 ]
 
 { #category : #concretizing }
-CogARMv8Compiler >> concretizeSt1VRMRO [
+CogARMv8Compiler >> concretizeSt1VrRMw [
 
 	"Will get inlined into concretizeAt: switch."
 
 	<inline: true>
-	| opCode instruction q t size vectorR memoryR offset rm |
+	| opCode instruction q t size vectorR memoryR offset |
 	size := operands at: 0.
 	vectorR := operands at: 1.
 	memoryR := operands at: 2.
@@ -3539,8 +3539,8 @@ CogARMv8Compiler >> dispatchConcretize [
 	
 		"SIMD Ops"
 		[ DupRVr ] -> [ ^ self concretizeDupRVr ].
-		[ St1VrRMw ] -> [ ^ self concretizeSt1VRMRO ].
-		[ Ld1VrRMw ] -> [ ^ self concretizeLd1SVrRMw ].
+		[ St1VrRMw ] -> [ ^ self concretizeSt1VrRMw ].
+		[ Ld1VrRMw ] -> [ ^ self concretizeLd1VrRMw ].
 		[ FaddSRvRvRv ] -> [ ^ self concretizeFaddSRvRvRv ].
 		[ FsubSRvRvRv ] -> [ ^ self concretizeFsubSRvRvRv ].
 		}
@@ -3909,12 +3909,12 @@ CogARMv8Compiler >> fcmpFType: ftype leftRegister: firstRegister rightRegister: 
 CogARMv8Compiler >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
 	<inline: true>
 	| fillLoop |
-	fillLoop := cogit DupS: 64 R: fillReg Vr: vectorRegister.
+	cogit DupS: 64 R: fillReg Vr: vectorRegister.
 	"St1 copies data in 128-bit chunks. This may exceed the size of an object (that only needs to be a multiple of 64 bits).
 	This overflow is not an issue, however. The reason for that is that objects are allocated sequentially in the Eden space
 	using a bumpAllocator, which means that the overflowing bits won't overwrite another object. This is true even when reaching
 	the end of the Eden space, as after it we reserve additional headroom."
-	cogit St1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
+	fillLoop := cogit St1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
 	cogit CmpR: startMemoryAddr R: endMemoryAddr.
 	cogit JumpAbove: fillLoop.
 	

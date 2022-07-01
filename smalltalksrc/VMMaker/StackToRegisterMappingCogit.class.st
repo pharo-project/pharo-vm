@@ -1374,20 +1374,23 @@ StackToRegisterMappingCogit >> freeAnyRegNotConflictingWith: regMask [
 { #category : #'mapped inline primitive generators - vectorial' }
 StackToRegisterMappingCogit >> genAddFloat32Vector [ 
 	| array1Reg array2Reg sumReg |
+
+	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
 	
-	array1Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
-	array2Reg := self allocateVectorRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: array1Reg).
-	sumReg := self allocateVectorRegNotConflictingWith: 0.
-	
-	self ssTop moveToVectorReg: array1Reg.
-	self ssPop: 1.
+	array2Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
+	array1Reg := self allocateVectorRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: array2Reg).
+	"The sum register is the same that the array1Reg"
+	sumReg := array1Reg.
 	
 	self ssTop moveToVectorReg: array2Reg.
 	self ssPop: 1.
 	
+	self ssTop moveToVectorReg: array1Reg.
+	self ssPop: 1.
+	
 	self ssPushVectorRegister: sumReg.
 	self ssTop moveToVectorReg: sumReg.
-	
+
 	self FaddS: 32 Rv: array1Reg Rv: array2Reg Rv: sumReg.
 	
 	"Returns 0 if worked"
@@ -1398,14 +1401,17 @@ StackToRegisterMappingCogit >> genAddFloat32Vector [
 StackToRegisterMappingCogit >> genAddFloat64Vector [ 
 	| array1Reg array2Reg sumReg |
 	
-	array1Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
-	array2Reg := self allocateVectorRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: array1Reg).
-	sumReg := self allocateVectorRegNotConflictingWith: 0.
+	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].	
 	
-	self ssTop moveToVectorReg: array1Reg.
-	self ssPop: 1.
+	array2Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
+	array1Reg := self allocateVectorRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: array2Reg).
+	"The result register is the same that the array1Reg"
+	sumReg := array1Reg.
 	
 	self ssTop moveToVectorReg: array2Reg.
+	self ssPop: 1.
+	
+	self ssTop moveToVectorReg: array1Reg.
 	self ssPop: 1.
 	
 	self ssPushVectorRegister: sumReg.
@@ -2134,6 +2140,8 @@ StackToRegisterMappingCogit >> genPushEnclosingObjectAt: level [
 StackToRegisterMappingCogit >> genPushFloat32ArrayToRegister [
 
 	| arrayReg indexReg vectorReg |
+	
+	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
 
 	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
 	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
@@ -2167,6 +2175,8 @@ StackToRegisterMappingCogit >> genPushFloat32ArrayToRegister [
 StackToRegisterMappingCogit >> genPushFloat64ArrayToRegister [
 
 	| arrayReg indexReg vectorReg |
+	
+	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
 
 	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
 	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
@@ -2740,6 +2750,8 @@ StackToRegisterMappingCogit >> genStaticallyResolvedSpecialSelectorComparison [
 StackToRegisterMappingCogit >> genStoreFloat32RegisterIntoArray [
 	| arrayReg indexReg vectorReg |
 	
+	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
+	
 	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
 	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
 	
@@ -2774,6 +2786,9 @@ StackToRegisterMappingCogit >> genStoreFloat32RegisterIntoArray [
 { #category : #'mapped inline primitive generators - vectorial' }
 StackToRegisterMappingCogit >> genStoreFloat64RegisterIntoArray [
 	| arrayReg indexReg vectorReg |
+	
+	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
+	
 	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
 	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
 	
@@ -2969,9 +2984,13 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean TemporaryVariable: tempIn
 StackToRegisterMappingCogit >> genSubFloat64Vector [
 	| array1Reg array2Reg subReg |
 	
+	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
+	
 	array1Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
 	array2Reg := self allocateVectorRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: array1Reg).
-	subReg := self allocateVectorRegNotConflictingWith: 0.
+	
+	"The result register is the same that the array2Reg"
+	subReg := array2Reg.
 	
 	self ssTop moveToVectorReg: array1Reg.
 	self ssPop: 1.
