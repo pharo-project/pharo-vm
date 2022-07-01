@@ -3154,7 +3154,6 @@ CCodeGenerator >> initializeCASTTranslationDictionary [
 	#cCoerceSimple:to:			#generateCASTCCoercion:
 	#addressOf:				#generateCASTAddressOf:
 	#addressOf:put:			#generateCASTAddressOf:
-	#asAddress:put:			#generateCASTAsAddress:
 	#signedIntFromLong64		#generateCASTSignedIntFromLong64:
 	#signedIntFromLong		#generateCASTSignedIntFromLong:
 	#signedIntFromShort		#generateCASTSignedIntFromShort:
@@ -3439,11 +3438,6 @@ CCodeGenerator >> isGeneratingPluginCode [
 	^false
 ]
 
-{ #category : #public }
-CCodeGenerator >> isGlobalStructureBuild [
-	^false
-]
-
 { #category : #inlining }
 CCodeGenerator >> isIntegralCType: aCType [ "<String>"
 	^(#('sqLong' 'usqLong' 'sqInt' 'usqInt' 'sqIntptr_t' 'usqIntptr_t'
@@ -3466,7 +3460,7 @@ CCodeGenerator >> isKernelSelector: sel [
 		 long32At: long32At:put: long64At: long64At:put:
 		 float32At: float32At:put: float64At: float64At:put:
 		 fetchFloatAt:into: storeFloatAt:from: fetchFloatAtPointer:into: storeFloatAtPointer:from:
-		 fetchSingleFloatAt:into: storeSingleFloatAt:from: fetchSingleFloatAtPointer:into: storeSingleFloatAtPointer:from:
+		 fetchSingleFloatAt:into: storeSingleFloatAt:from: storeSingleFloatAtPointer:from:
 		 pointerForOop: oopForPointer:
 		 cCoerce:to: cCoerceSimple:to:)
 			includes: sel)

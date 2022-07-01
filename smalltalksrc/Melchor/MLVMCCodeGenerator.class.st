@@ -56,7 +56,7 @@ MLVMCCodeGenerator >> computeKernelReturnTypes [
 		 fetchFloatAt:into: #void storeFloatAt:from: #void
 			fetchFloatAtPointer:into: #void storeFloatAtPointer:from: #void
 		 fetchSingleFloatAt:into: #void storeSingleFloatAt:from: #void
-			fetchSingleFloatAtPointer:into: #void storeSingleFloatAtPointer:from: #void
+			 storeSingleFloatAtPointer:from: #void
 
 		 pointerForOop: #'char *' oopForPointer: #sqInt
 		 baseHeaderSize #sqInt wordSize #sqInt bytesPerOop #sqInt).

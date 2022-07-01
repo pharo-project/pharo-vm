@@ -7,12 +7,6 @@ Class {
 	#category : #'VMMaker-JIT'
 }
 
-{ #category : #'accessing class hierarchy' }
-CogObjectRepresentationFor64BitSpur class >> defaultObjectMemoryClass [
-	"For in-image compilation.  Spur64BitCoMemoryManager is as yet undefined."
-	^Smalltalk classNamed: #Spur64BitCoMemoryManager
-]
-
 { #category : #accessing }
 CogObjectRepresentationFor64BitSpur class >> wordSize [
 	^8

@@ -10,12 +10,6 @@ Class {
 	#category : #'VMMaker-JIT'
 }
 
-{ #category : #'accessing class hierarchy' }
-CogObjectRepresentationFor32BitSpur class >> defaultObjectMemoryClass [
-	"For in-image compilation."
-	^Spur32BitCoMemoryManager
-]
-
 { #category : #'sista support' }
 CogObjectRepresentationFor32BitSpur >> allImmediate: immediateMask branchIf: reg instanceOfBehaviors: arrayObj target: targetFixUp [
 	< inline: true>	
