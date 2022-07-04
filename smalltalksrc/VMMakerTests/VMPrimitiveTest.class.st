@@ -4640,6 +4640,48 @@ VMPrimitiveTest >> testPrimitiveSnapshotNewKeptObjectShouldBeTenured [
 ]
 
 { #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveStoreFloat64FromBytesNegativeIndex [
+
+	| class array |
+	self installFloatClass.
+
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory sixtyFourBitIndexableFormat.
+	array := memory instantiateClass: class indexableSize: 1.
+
+	interpreter push: 42.
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: -1).
+	interpreter push: (memory integerObjectOf: 17).
+	interpreter primitiveStoreFloat64IntoBytes.
+
+	self assert: interpreter failed.
+	"Stack keep as start"
+	interpreter pop: 3.
+	self assert: interpreter stackTop equals: 42
+]
+
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveStoreFloat64FromBytesOverflowIndex [
+
+	| class array |
+	self installFloatClass.
+
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory sixtyFourBitIndexableFormat.
+	array := memory instantiateClass: class indexableSize: 1.
+
+	interpreter push: 42.
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: 8).
+	interpreter push: (memory integerObjectOf: 17).
+	interpreter primitiveStoreFloat64IntoBytes.
+
+	self assert: interpreter failed.
+	"Stack keep as start"
+	interpreter pop: 3.
+	self assert: interpreter stackTop equals: 42
+]
+
+{ #category : #'tests - primitiveFloat64' }
 VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytesFor64BitArrays [
 
 	| class array |
