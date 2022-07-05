@@ -4932,18 +4932,20 @@ Cogit >> cogFullBlockMethod: aMethodObj numCopied: numCopied [
 	<var: #startTime type: #usqLong>
 	<var: #cogMethod type: #'CogMethod *'>
 
-	| cogMethod 	startTime |
+	| cogMethod 	startTime ultimateLiteral |
 
 	(self exclude: aMethodObj) ifTrue:
 		[^nil].
 	
 	startTime := coInterpreter ioUTCMicrosecondsNow.	
-
+	objectRepresentation ensureNoForwardedLiteralsIn: aMethodObj.
+	ultimateLiteral := coInterpreter ultimateLiteralOf: aMethodObj.
+	
+	self deny: (objectMemory isForwarded: ultimateLiteral).
 	self deny: (coInterpreter methodHasCogMethod: aMethodObj).
-	self assert: (objectMemory isOopCompiledMethod: (coInterpreter ultimateLiteralOf: aMethodObj)).
+	self assert: (objectMemory isOopCompiledMethod: ultimateLiteral).
 	aMethodObj = breakMethod ifTrue: [self halt: 'Compilation of breakMethod'].
 
-	objectRepresentation ensureNoForwardedLiteralsIn: aMethodObj.
 	methodObj := aMethodObj.
 	methodHeader := objectMemory methodHeaderOf: aMethodObj.
 	receiverTags := objectMemory receiverTagBitsForMethod: methodObj.

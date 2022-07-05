@@ -197,6 +197,115 @@ VMPermanentSpaceMemoryTest >> testNextObjectIsReturningAGoodValue [
 ]
 
 { #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceIsRemovedFromRememberedSet [
+
+	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
+	
+	oldObject1 := self newOldSpaceObjectWithSlots: 1.
+	oldObject2 := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObject1  withValue: oldObject2.
+	
+	permanentObject1 := memory moveToPermSpace: oldObject1.	
+	permanentObject2 := memory moveToPermSpace: oldObject2.
+
+	memory doScavenge: 1.
+
+	self deny: (memory isRemembered: permanentObject1).
+	self deny: (memory getFromOldSpaceRememberedSet isInRememberedSet: permanentObject1).
+	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject1).		
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceKeepsFirstInRememberedSet [
+
+	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
+	
+	oldObject1 := self newOldSpaceObjectWithSlots: 1.
+	oldObject2 := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObject1  withValue: oldObject2.
+	
+	permanentObject1 := memory moveToPermSpace: oldObject1.	
+	permanentObject2 := memory moveToPermSpace: oldObject2.
+
+	self assert: (memory isRemembered: permanentObject1).
+	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject1 ).	
+
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceKeepsPointerToForwarderInOldSpace [
+
+	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
+	
+	oldObject1 := self newOldSpaceObjectWithSlots: 1.
+	oldObject2 := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObject1  withValue: oldObject2.
+	
+	permanentObject1 := memory moveToPermSpace: oldObject1.	
+	permanentObject2 := memory moveToPermSpace: oldObject2.
+
+	self assert: (memory fetchPointer: 0 ofObject: permanentObject1) equals: oldObject2
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceUpdatesForwarderInGC [
+
+	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
+	
+	oldObject1 := self newOldSpaceObjectWithSlots: 1.
+	oldObject2 := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObject1  withValue: oldObject2.
+	
+	permanentObject1 := memory moveToPermSpace: oldObject1.	
+	permanentObject2 := memory moveToPermSpace: oldObject2.
+
+	memory fullGC.
+
+	self assert: (memory fetchPointer: 0 ofObject: permanentObject1) equals: permanentObject2
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceUpdatesForwarderInScanvenge [
+
+	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
+	
+	oldObject1 := self newOldSpaceObjectWithSlots: 1.
+	oldObject2 := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObject1  withValue: oldObject2.
+	
+	permanentObject1 := memory moveToPermSpace: oldObject1.	
+	permanentObject2 := memory moveToPermSpace: oldObject2.
+
+	memory doScavenge: 1.
+
+	self assert: (memory fetchPointer: 0 ofObject: permanentObject1) equals: permanentObject2
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPermObjectPointingToOldSpaceIsUpdatedWhenCompactingForSaving [
+
+	| oldObject1 permanentObject1 oldObject2 oldObject2Hash |
+	
+	oldObject1 := self newOldSpaceObjectWithSlots: 1.
+	self newOldSpaceObjectWithSlots: 3.
+	self newOldSpaceObjectWithSlots: 3.
+	oldObject2 := self newOldSpaceObjectWithSlots: 1.
+	self newOldSpaceObjectWithSlots: 3.
+	self newOldSpaceObjectWithSlots: 3.
+	self newOldSpaceObjectWithSlots: 3.
+	self newOldSpaceObjectWithSlots: 3.
+		
+	memory storePointer: 0 ofObject: oldObject1  withValue: oldObject2.
+	
+	oldObject2Hash := memory hashBitsOf: oldObject2.
+	permanentObject1 := memory moveToPermSpace: oldObject1.	
+
+	memory garbageCollectForSnapshot.
+
+	self assert: (memory hashBitsOf: (memory fetchPointer: 0 ofObject: permanentObject1)) equals: oldObject2Hash 
+]
+
+{ #category : #'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectMarksItsOldClass [
 
 	| permanentObject oldObject oldClass oldClassHash found |

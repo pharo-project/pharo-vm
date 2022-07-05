@@ -301,14 +301,14 @@ VMMemoryMap >> codeZoneStart: anInteger [
 VMMemoryMap >> doCheckMemoryMap [
 
 	self assert: (self isYoungObject: self newSpaceStart).
-	self assert: (self isYoungObject: self newSpaceEnd - memoryMapConfiguration confWordSize).
+	self assert: (self isYoungObject: self newSpaceEnd - BytesPerWord).
 	self assert: (self isOldObject: self newSpaceStart) not.
-	self assert: (self isOldObject: self newSpaceEnd - memoryMapConfiguration confWordSize) not.
+	self assert: (self isOldObject: self newSpaceEnd - BytesPerWord) not.
 	self assert: (self isYoungObject: self newSpaceEnd).
 	self assert: (self isYoungObject: self oldSpaceStart) not.
 	self assert: (self isYoungObject: self oldSpaceEnd) not.
 	self assert: (self isOldObject: self oldSpaceStart).
-	self assert: (self isOldObject: self oldSpaceEnd - memoryMapConfiguration confWordSize).
+	self assert: (self isOldObject: self oldSpaceEnd - BytesPerWord).
 	self assert: (self isOldObject: self oldSpaceEnd).
 
 ]
@@ -517,7 +517,7 @@ VMMemoryMap >> memset: startAddress _: value _: size [
 
 	<doNotGenerate>
 	
-	startAddress to: startAddress + size - 1 by: memoryMapConfiguration confWordSize do: [ :address |
+	startAddress to: startAddress + size - 1 by: BytesPerWord do: [ :address |
 		memoryManager longAt: address put: value ]
 
 ]

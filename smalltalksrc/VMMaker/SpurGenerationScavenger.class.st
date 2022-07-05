@@ -744,7 +744,7 @@ SpurGenerationScavenger >> mapOopsFromPermSpace [
 						[manager setIsRememberedOf: referrer to: false].
 		 sourceIndex := sourceIndex + 1].
 	
-	manager getFromPermSpaceRememberedSet rememberedSetSize: destIndex.
+	manager getFromPermSpaceRememberedSet setRememberedSetSize: destIndex.
 ]
 
 { #category : #accessing }
@@ -1201,7 +1201,7 @@ SpurGenerationScavenger >> scavengeRememberedSetStartingAt: n [
 					ifFalse:
 						[manager setIsRememberedOf: referrer to: false]].
 		 sourceIndex := sourceIndex + 1].
-	manager getFromOldSpaceRememberedSet rememberedSetSize: destIndex.
+	manager getFromOldSpaceRememberedSet setRememberedSetSize: destIndex.
 	self assert: self noUnfiredEphemeronsAtEndOfRememberedSet.
 ]
 

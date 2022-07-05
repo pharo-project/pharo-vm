@@ -3023,10 +3023,11 @@ SpurMemoryManager >> characterValueOf: oop [
 ]
 
 { #category : #'debug support' }
-SpurMemoryManager >> cheapAddressCouldBeInHeap: address [ 
-	^(address bitAnd: self wordSize - 1) = 0
-	  and: [(self oop: address isGreaterThanOrEqualTo: memoryMap newSpaceStart)
-	  and: [self oop: address isLessThan: memoryMap oldSpaceEnd]]
+SpurMemoryManager >> cheapAddressCouldBeInHeap: address [
+
+	^ (address bitAnd: self wordSize - 1) = 0 and: [ 
+		  (self isInNewSpace: address) or: [ 
+			  (self isInOldSpace: address) or: [ self isInPermSpace: address ] ] ]
 ]
 
 { #category : #'plugin support' }
@@ -4720,13 +4721,13 @@ SpurMemoryManager >> expungeDuplicateAndUnmarkedClasses: expungeUnmarked [
 					[classIndex < classTableIndex ifTrue:
 						[classTableIndex := classIndex]]
 				ifFalse:
-					[((expungeUnmarked and: [(self isMarked: classOrNil) not])
+					[((expungeUnmarked and: [(self isMarkedOrPermanent: classOrNil) not])
 					   or: [(self rawHashBitsOf: classOrNil) ~= classIndex]) ifTrue:
 						[self storePointerUnchecked: j
 							ofObject: classTablePage
 							withValue: nilObj.
 						 "but if it is marked, it should still be in the table at its correct index."
-						 self assert: ((expungeUnmarked and: [(self isMarked: classOrNil) not])
+						 self assert: ((expungeUnmarked and: [(self isMarkedOrPermanent: classOrNil) not])
 									or: [(self classAtIndex: (self rawHashBitsOf: classOrNil)) = classOrNil]).
 						 "If the removed class is before the classTableIndex, set the
 						  classTableIndex to point to the empty slot so as to reuse it asap."
@@ -6557,8 +6558,8 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	self initializeOldSpaceFirstFree: freeOldSpaceStart. "initializes endOfMemory, freeStart, free space"
 	self initializeNewSpaceVariables.
 
-	fromOldSpaceRememberedSet initializeRememberedSet.
-	fromPermSpaceRememberedSet initializeRememberedSet.
+	fromOldSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
+	fromPermSpaceRememberedSet initializeRememberedSetShouldStartEmpty: false.
 
 	segmentManager checkSegments.
 	compactor biasForGC.
@@ -10007,6 +10008,26 @@ SpurMemoryManager >> printAdjacentFreeChunks [
 SpurMemoryManager >> printBogons [
 	<api>
 	compactor printTheBogons: bogon
+]
+
+{ #category : #printing }
+SpurMemoryManager >> printClassTableEntries [
+
+	<api>
+	coInterpreter
+		print: 'Class Table Entries';
+		cr.
+	coInterpreter
+		print: '-----------------';
+		cr;
+		cr.
+
+	0 to: numClassTablePages - 1 do: [ :i | 
+		| page |
+		coInterpreter printNum: i.
+
+		page := self fetchPointer: i ofObject: hiddenRootsObj.
+		coInterpreter longPrintOop: page ]
 ]
 
 { #category : #'debug printing' }

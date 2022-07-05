@@ -5199,6 +5199,10 @@ CoInterpreter >> mustMapMachineCodePC: theIP context: aOnceMarriedContext [
 	<var: #cogMethod type: #'CogMethod *'>
 	theIP = HasBeenReturnedFromMCPC ifTrue:
 		[^objectMemory nilObject].
+	
+	"We need to ensure that the context does not have forwarders"
+	objectMemory followForwardedObjectFields: aOnceMarriedContext toDepth: 0.
+	
 	maybeClosure := objectMemory fetchPointer: ClosureIndex ofObject: aOnceMarriedContext.
 	methodObj := objectMemory fetchPointer: MethodIndex ofObject: aOnceMarriedContext.
 	self assert: (theIP signedBitShift: -16) = -1.

@@ -11349,6 +11349,16 @@ StackInterpreter >> printActivationNameForSelector: aSelector startClass: startC
 ]
 
 { #category : #'debug printing' }
+StackInterpreter >> printAllPermanentObjects [
+	<api>
+	
+	self print: 'Permanent Objects'; cr.
+	self print: '-----------------'; cr; cr.
+	
+	objectMemory allPermSpaceObjectsDo: [ :anOop | self longPrintOop: anOop; cr ].
+]
+
+{ #category : #'debug printing' }
 StackInterpreter >> printAllStacks [
 	"Print all the stacks of all running processes, including those that are currently suspended."
 	<api>
@@ -15227,6 +15237,13 @@ StackInterpreter >> ultimateLiteralOf: aMethodOop [
 	<api>
 	self assert: (objectMemory isOopCompiledMethod: aMethodOop).
 	^self literal: (objectMemory literalCountOf: aMethodOop) - 1 ofMethod: aMethodOop
+]
+
+{ #category : #'debug printing' }
+StackInterpreter >> ultimateLiteralOf: aMethodOop put: aValue [
+	<api>
+	self assert: (objectMemory isOopCompiledMethod: aMethodOop).
+	^self literal: (objectMemory literalCountOf: aMethodOop) - 1 ofMethod: aMethodOop put: aValue
 ]
 
 { #category : #'internal interpreter access' }

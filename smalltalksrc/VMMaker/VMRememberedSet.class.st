@@ -59,6 +59,22 @@ VMRememberedSet class >> shouldBeGenerated [
 	^ false
 ]
 
+{ #category : #initialization }
+VMRememberedSet >> countNotNilObjects [
+
+	<inline: false>
+
+	| count |
+	count := 0.
+
+	0 to: self rememberedSetLimit do: [ :i | 
+		"The remembered set might be initialized with 0"
+		((self objectAt: i) = manager nilObject or: [ (self objectAt: i) = 0 ]) ifTrue: [ ^ count ].
+		count := i ].
+
+	^ count
+]
+
 { #category : #'store check' }
 VMRememberedSet >> doRemember: objOop [
 	"Add the argument to the remembered set and set its isRemembered bit to true.
@@ -73,7 +89,8 @@ VMRememberedSet >> doRemember: objOop [
 	rememberedSetSize >= rememberedSetLimit ifTrue:
 		[self growRememberedSet].
 	rememberedSetArray at: rememberedSetSize put: objOop.
-	(rememberedSetSize := rememberedSetSize + 1) >= rememberedSetRedZone ifTrue:
+	self setRememberedSetSize: rememberedSetSize + 1.
+	rememberedSetSize >= rememberedSetRedZone ifTrue:
 		[manager scheduleScavenge].
 	^objOop
 ]
@@ -93,7 +110,9 @@ VMRememberedSet >> forgetObject: objOop [
 					[rememberedSetArray at: index put: (rememberedSetArray at: rememberedSetSize - 1).
 					 index := rememberedSetSize]
 				ifFalse: [index := index + 1]]].
-	rememberedSetSize := rememberedSetSize - 1.
+				
+	self setRememberedSetSize: rememberedSetSize - 1.
+
 	self assert: rememberedSetSize >= 0
 ]
 
@@ -151,7 +170,7 @@ VMRememberedSet >> initialize [
 ]
 
 { #category : #initialization }
-VMRememberedSet >> initializeRememberedSet [
+VMRememberedSet >> initializeRememberedSetShouldStartEmpty: shouldStartEmpty [
 	| obj |
 	obj := self objectOop.
 	obj = manager nilObject
@@ -165,8 +184,13 @@ VMRememberedSet >> initializeRememberedSet [
 	self assert: (manager formatOf: obj) = manager wordIndexableFormat.
 	self assert: (manager isPinned: obj).
 	rememberedSetArray := manager firstIndexableField: obj.
-	rememberedSetSize := 0.
+
 	self rememberedSetLimit: (manager numSlotsOf: obj).
+
+	shouldStartEmpty 
+		ifTrue: [rememberedSetSize := 0]
+		ifFalse: [rememberedSetSize := self countNotNilObjects].
+		
 	self setRememberedSetRedZone
 ]
 
@@ -323,12 +347,6 @@ VMRememberedSet >> rememberedSetSize [
 	^rememberedSetSize
 ]
 
-{ #category : #accessing }
-VMRememberedSet >> rememberedSetSize: aSize [
-
-	rememberedSetSize := aSize
-]
-
 { #category : #'debug support' }
 VMRememberedSet >> rememberedSetWithIndexDo: aBlock [
 
@@ -345,13 +363,17 @@ VMRememberedSet >> rememberedSetWithIndexDo: aBlock startingAt: startIndex [
 { #category : #accessing }
 VMRememberedSet >> removeByIndexUsingPreviousSize: anIndex [
 
+	| newRememberedSetSize |
+
 	previousRememberedSetSize := previousRememberedSetSize - 1.
-	rememberedSetSize := rememberedSetSize - 1.
+	newRememberedSetSize := rememberedSetSize - 1.
 	
 	rememberedSetArray
 		at: anIndex put: (rememberedSetArray at: previousRememberedSetSize);
 		at: previousRememberedSetSize
-		put: (rememberedSetArray at: rememberedSetSize)
+		put: (rememberedSetArray at: newRememberedSetSize).
+		
+	self setRememberedSetSize: newRememberedSetSize.
 ]
 
 { #category : #'debug support' }
@@ -382,16 +404,19 @@ VMRememberedSet >> removeLastEphemeronTo: index andSave: anOop [
 { #category : #accessing }
 VMRememberedSet >> removeLastObject [
 
-	rememberedSetSize := rememberedSetSize - 1
+	self setRememberedSetSize: rememberedSetSize - 1
 ]
 
 { #category : #accessing }
 VMRememberedSet >> removeObjectAt: anIndex [
 
-	rememberedSetSize := rememberedSetSize - 1.
+	| newRememberedSetSize |
+	newRememberedSetSize := rememberedSetSize - 1.
 	
 	rememberedSetArray
-		at: anIndex put: (rememberedSetArray at: rememberedSetSize)
+		at: anIndex put: (rememberedSetArray at: newRememberedSetSize).
+		
+	self setRememberedSetSize: newRememberedSetSize.
 ]
 
 { #category : #accessing }
@@ -427,6 +452,14 @@ VMRememberedSet >> setRememberedSetRedZone [
 
 	<inline: true>
 	self rememberedSetRedZone: (self rememberedSetLimit * 3 // 4 max: self fudge)
+]
+
+{ #category : #initialization }
+VMRememberedSet >> setRememberedSetSize: aNewValue [
+
+	"We want to guarantee that the first free position is a with 0"
+	rememberedSetSize := aNewValue.
+	aNewValue < rememberedSetLimit ifTrue: [ rememberedSetArray at: aNewValue put: 0 ]
 ]
 
 { #category : #scavenger }

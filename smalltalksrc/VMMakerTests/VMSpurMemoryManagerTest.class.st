@@ -191,7 +191,6 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForFullGC [
 VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 
 	| freeListOop firstClassTablePage |
-
 	"Initialize old space with free list, class table, hidden roots and remembered set to be able to scavenge"
 	memory initializeFreeList.
 
@@ -222,28 +221,33 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 	memory coInterpreter profileSemaphore: memory nilObject.
 	memory mournQueue: memory nilObject.
 	memory specialObjectsOop: memory nilObject.
-		
+
 	freeListOop := memory initializeFreeListInOldSpace: true.
 	memory initializeFreeSpacePostLoad: freeListOop.
 	memory computeFreeSpacePostSwizzle.
-		
-	memory getMemoryMap setOldSpaceEnd: memory getMemoryMap oldSpaceEnd + memory bridgeSize.
-	
-	memory initializeOldSpaceFirstFree: (memory addressAfter: freeListOop).
-	
+
+	memory getMemoryMap setOldSpaceEnd:
+		memory getMemoryMap oldSpaceEnd + memory bridgeSize.
+
+	memory initializeOldSpaceFirstFree:
+		(memory addressAfter: freeListOop).
+
 	memory allocateClassTable.
-	
-	firstClassTablePage := memory fetchPointer: 0 ofObject: memory hiddenRootsObject.
-	
-	memory fromOldSpaceRememberedSet initializeRememberedSet.
-	memory fromPermSpaceRememberedSet initializeRememberedSet.
-	
-	memory getFromOldSpaceRememberedSet doRemember: memory hiddenRootsObject.
-	memory getFromOldSpaceRememberedSet doRemember: firstClassTablePage. 
+
+	firstClassTablePage := memory
+		                       fetchPointer: 0
+		                       ofObject: memory hiddenRootsObject.
+
+	memory fromOldSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
+	memory fromPermSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
+
+	memory getFromOldSpaceRememberedSet doRemember:
+		memory hiddenRootsObject.
+	memory getFromOldSpaceRememberedSet doRemember: firstClassTablePage.
 	memory specialObjectsOop: (self newObjectWithSlots: 60).
-	
+
 	memory scavengingGCTenuringIf: 1.
-	self deny: memory needGCFlag.
+	self deny: memory needGCFlag
 ]
 
 { #category : #running }
