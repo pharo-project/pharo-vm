@@ -459,7 +459,8 @@ VMRememberedSet >> setRememberedSetSize: aNewValue [
 
 	"We want to guarantee that the first free position is a with 0"
 	rememberedSetSize := aNewValue.
-	aNewValue < rememberedSetLimit ifTrue: [ rememberedSetArray at: aNewValue put: 0 ]
+	aNewValue < rememberedSetLimit ifTrue: [ rememberedSetArray at: aNewValue put: 0 ].
+
 ]
 
 { #category : #scavenger }

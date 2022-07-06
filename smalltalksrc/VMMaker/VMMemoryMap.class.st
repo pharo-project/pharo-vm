@@ -670,7 +670,7 @@ VMMemoryMap >> roundToAllocationSize: anInteger [
 VMMemoryMap >> setOldSpaceEnd: anInteger [ 
 	
 	oldSpaceEnd := anInteger.
-	self assert: (permSpaceStart isZero or: [anInteger < permSpaceStart]).
+	self assert: (permSpaceStart = 0 or: [anInteger < permSpaceStart]).
 
 ]
 

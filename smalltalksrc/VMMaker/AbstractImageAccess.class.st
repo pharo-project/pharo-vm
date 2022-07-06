@@ -40,10 +40,10 @@ AbstractImageAccess class >> newWithMemory: memory andInterpreter: anInterpreter
 { #category : #'accessing - files' }
 AbstractImageAccess >> beginWriteImageSegments [
 
-	self assert:
+"	self assert:
 		(objectMemory getMemoryMap oldSpaceEnd = segmentManager lastSegment segLimit 
 		or: [ objectMemory getMemoryMap oldSpaceEnd + objectMemory bridgeSize = segmentManager lastSegment segLimit ]).
-
+"
 	self assert: segmentManager firstSegmentBytes > 0.
 
 ]

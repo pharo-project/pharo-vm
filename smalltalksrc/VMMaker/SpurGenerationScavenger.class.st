@@ -1163,8 +1163,18 @@ SpurGenerationScavenger >> scavengeReferentsOfFromOldSpace: referrer [
 SpurGenerationScavenger >> scavengeReferentsOfFromPermSpace: referrer [
 
 	<inline: #never>
-
-	^ self scavengeReferentsOf: referrer additionalShouldKeepReferrerTestingBlock: [:aReferrer :referent |	(manager isPermanent: referent) not or:[ manager isFixedKnownObject: referent ]].
+	
+	| returnValue |
+	
+	returnValue := self
+		  scavengeReferentsOf: referrer
+		  additionalShouldKeepReferrerTestingBlock: [ :aReferrer :referent | 
+			  (manager isPermanent: referent) not 
+					or: [ manager isFixedKnownObject: referent ] ].
+	
+	self assert: (manager isPermSpaceRememberedSetSane).
+	
+	^ returnValue.
 ]
 
 { #category : #scavenger }
