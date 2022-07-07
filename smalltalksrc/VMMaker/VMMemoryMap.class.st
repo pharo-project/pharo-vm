@@ -85,7 +85,7 @@ VMMemoryMap >> allocateCodeZone [
 
 	self codeZoneStart = memoryMapConfiguration codeZoneInitialAddress 
 		ifFalse: [ 
-			self logError: 'Could not allocate codeZone in the expected place (%p), got %p' _: self codeZoneStart _: memoryMapConfiguration codeZoneInitialAddress.
+			self logError: 'Could not allocate codeZone in the expected place (%p), got %p' _: memoryMapConfiguration codeZoneInitialAddress _: self codeZoneStart.
 			self error: 'Error allocating' ].
 	
 	self codeZoneEnd: codeZoneStart + initialCodeZoneSize.

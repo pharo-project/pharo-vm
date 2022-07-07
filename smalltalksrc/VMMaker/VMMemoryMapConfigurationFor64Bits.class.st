@@ -9,7 +9,7 @@ VMMemoryMapConfigurationFor64Bits >> codeZoneInitialAddress [
 
 	"self cppIf: WIN32 ifTrue: [ ^ 16r440000000 ""17GB"" ]."
 
-	^ 16r240000000 "9GB"
+	^ 16r280000000 "9GB"
 ]
 
 { #category : #accessing }
@@ -25,7 +25,7 @@ VMMemoryMapConfigurationFor64Bits >> newSpaceInitialAddress [
 
 "	self cppIf: WIN32 ifTrue: [ ^ 16r480000000 ""18GB"" ]."
 	
-	^ 16r280000000 "10GB"
+	^ 16r320000000 "10GB"
 ]
 
 { #category : #'initial addresses' }
