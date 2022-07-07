@@ -69,7 +69,7 @@ VMRememberedSet >> countNotNilObjects [
 
 	0 to: self rememberedSetLimit do: [ :i | 
 		"The remembered set might be initialized with 0"
-		((self objectAt: i) = manager nilObject or: [ (self objectAt: i) = 0 ]) ifTrue: [ ^ count ].
+		((self objectAt: i) = manager nilObject or: [ (self objectAt: i) = 0 ]) ifTrue: [ ^ i ].
 		count := i ].
 
 	^ count

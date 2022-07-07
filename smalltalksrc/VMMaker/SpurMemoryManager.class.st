@@ -7464,10 +7464,9 @@ SpurMemoryManager >> isPermSpaceRememberedSetSane [
 		0 to: numPointerSlots - 1 do: [ :index |
 			referenced := self fetchPointer: index ofObject: objOop.
 	
-			((self isFixedKnownObject: referenced) not 
-				and: [ (self isNonImmediate: referenced)
-				and: [(self getMemoryMap isYoungObject: referenced)
-			  		or: [ self getMemoryMap isOldObject: referenced ]]])
+			(((self isFixedKnownObject: referenced) not 
+				and: [ (self isNonImmediate: referenced) and: [ referenced >= self getMemoryMap newSpaceStart ]])
+				and: [(self getMemoryMap isYoungObject: referenced) or: [ self getMemoryMap isOldObject: referenced ]])
 				ifTrue: [ mustBeRemembered := true]].
 			
 			mustBeRemembered ifTrue: [ 
