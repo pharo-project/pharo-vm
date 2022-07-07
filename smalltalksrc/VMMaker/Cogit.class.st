@@ -6838,26 +6838,29 @@ Cogit >> followForwardedLiteralsIn: cogMethod [
 
 { #category : #'garbage collection' }
 Cogit >> followForwardedMethods [
+
 	<api>
 	<option: #SpurObjectMemory>
 	<var: #cogMethod type: #'CogMethod *'>
-	| cogMethod freedPIC |
 	<var: #cogMethod type: #'CogMethod *'>
+	| cogMethod freedPIC |
 	freedPIC := false.
 	cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
-	[cogMethod < methodZone limitZony] whileTrue:
-		[cogMethod cmType = CMMethod ifTrue:
-			[(objectMemory isForwarded: cogMethod methodObject) ifTrue:
-				[cogMethod methodObject: (objectMemory followForwarded: cogMethod methodObject).
-				 (objectMemory getMemoryMap isYoungObject: cogMethod methodObject) ifTrue:
-					[methodZone ensureInYoungReferrers: cogMethod]]].
-		 cogMethod cmType = CMClosedPIC ifTrue:
-			[(self followMethodReferencesInClosedPIC: cogMethod) ifTrue:
-				[freedPIC := true.
-				 methodZone freeMethod: cogMethod]].
-		 cogMethod := methodZone methodAfter: cogMethod].
-	freedPIC ifTrue:
-		[self unlinkSendsToFree]
+
+	self enableCodeZoneWriteDuring: [ 
+		[ cogMethod < methodZone limitZony ] whileTrue: [ 
+			cogMethod cmType = CMMethod ifTrue: [ 
+				(objectMemory isForwarded: cogMethod methodObject) ifTrue: [ 
+					cogMethod methodObject:
+						(objectMemory followForwarded: cogMethod methodObject).
+					(objectMemory getMemoryMap isYoungObject: cogMethod methodObject) 
+						ifTrue: [ methodZone ensureInYoungReferrers: cogMethod ] ] ].
+			cogMethod cmType = CMClosedPIC ifTrue: [ 
+				(self followMethodReferencesInClosedPIC: cogMethod) ifTrue: [ 
+					freedPIC := true.
+					methodZone freeMethod: cogMethod ] ].
+			cogMethod := methodZone methodAfter: cogMethod ].
+		freedPIC ifTrue: [ self unlinkSendsToFree ] ]
 ]
 
 { #category : #'garbage collection' }
@@ -7921,11 +7924,10 @@ Cogit >> generateClosedPICPrototype [
 	cPICEndSize := closedPICSize - (MaxCPICCases - 1 * cPICCaseSize + firstCPICCaseOffset).
 	closedPICSize := methodZone roundUpLength: closedPICSize.
 	self assert: picInterpretAbort address = (methodLabel address + self picInterpretAbortOffset).
-	self assert: (self expectedClosedPICPrototype: cPIC) = 0.
 	
-	"tpr this is a little tiresome but after any assert checking we need to 0 out the case0 objRef rather than leaving 16r5EAF00D lying around"
-
 	self enableCodeZoneWriteDuring: [
+		self assert: (self expectedClosedPICPrototype: cPIC) = 0.
+	"tpr this is a little tiresome but after any assert checking we need to 0 out the case0 objRef rather than leaving 16r5EAF00D lying around"
 		backEnd storeLiteral: 0 beforeFollowingAddress: endCPICCase0 address - backEnd jumpLongByteSize].
 	
 	"update the methodZoneBase so we keep the prototype around for later use"

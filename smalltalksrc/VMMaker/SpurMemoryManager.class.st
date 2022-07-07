@@ -7203,6 +7203,12 @@ SpurMemoryManager >> isInNewSpace: objOop [
 ]
 
 { #category : #'object testing' }
+SpurMemoryManager >> isInObjectMemory: anOop [
+
+	^ anOop >= memoryMap startOfObjectMemory 
+]
+
+{ #category : #'object testing' }
 SpurMemoryManager >> isInOldSpace: address [
 	<api>
 	^self
@@ -7471,14 +7477,22 @@ SpurMemoryManager >> isPermSpaceRememberedSetSane [
 			
 			mustBeRemembered ifTrue: [ 
 				(self getFromPermSpaceRememberedSet isInRememberedSet: objOop)
-					ifFalse: [ self error: 'Object should be in remembered set'. ].
+					ifFalse: [ 
+						self logError: 'Offending Object: %p' _: objOop.
+						self error: 'Object should be in remembered set'. ].
 				(self isRemembered: objOop) 
-					ifFalse: [ self error: 'Object should be marked as remembered' ]]
+					ifFalse: [ 
+						self logError: 'Offending Object: %p' _: objOop.						
+						self error: 'Object should be marked as remembered' ]]
 			ifFalse: [
 				(self getFromPermSpaceRememberedSet isInRememberedSet: objOop)
-					ifTrue: [ self error: 'Object should not be in remembered set'. ].
+					ifTrue: [ 
+						self logError: 'Offending Object: %p' _: objOop.
+						self error: 'Object should not be in remembered set'. ].
 				(self isRemembered: objOop) 
-					ifTrue: [ self error: 'Object should not be marked as remembered' ]				
+					ifTrue: [ 
+						self logError: 'Offending Object: %p' _: objOop.
+						self error: 'Object should not be marked as remembered' ]				
 			].
 		].
 	
@@ -8823,9 +8837,9 @@ SpurMemoryManager >> moveToPermSpace: objOop [
 
 		"We check only if the object has not be already detected and only for the pointer slots."
 		((shouldBeRememberedInOldSpace not and: [ i <= numPointerSlots ])
-		 and: [ (self isNonImmediate: referenced) and: [ (((memoryMap isOldObject: referenced) 
-				or: [memoryMap isYoungObject: referenced]) 
-				and: [ (self isFixedKnownObject: referenced) not ]) ]])
+		 and: [ (((self isFixedKnownObject: referenced) not 
+				and: [ (self isNonImmediate: referenced) and: [ referenced >= self getMemoryMap newSpaceStart ]])
+				and: [(self getMemoryMap isYoungObject: referenced) or: [ self getMemoryMap isOldObject: referenced ]])])
 			ifTrue: [ shouldBeRememberedInOldSpace := true ].
 		
 		self
@@ -9893,6 +9907,9 @@ SpurMemoryManager >> possiblePermObjectStoreInto: destObj value: valueObj [
 	
 	(self isFixedKnownObject: valueObj)
 		ifTrue: [ ^ self ].
+	
+	(self isInObjectMemory: valueObj)
+		ifFalse: [ ^ self ].
 	
 	(self isPermanent: destObj) ifTrue: [ 
 		(self isPermanent: valueObj) ifFalse: [ 

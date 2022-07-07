@@ -497,7 +497,7 @@ VMMemoryMap >> isYoungObject: anOop [
 
 	<api>
 
-	^ (anOop bitAnd: spaceMaskToUse) = newSpaceMask
+	^ (anOop bitAnd: spaceMaskToUse) = newSpaceMask and: [ anOop >= newSpaceStart ]
 ]
 
 { #category : #accessing }

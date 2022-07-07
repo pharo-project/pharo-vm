@@ -2579,13 +2579,15 @@ CogObjectRepresentationForSpur >> genStoreCheckContextReceiverTrampoline [
 CogObjectRepresentationForSpur >> genStoreCheckReceiverReg: destReg valueReg: valueReg scratchReg: scratchReg inFrame: inFrame [
 	"Generate the code for a store check of valueReg into destReg."
 
-	| jmpImmediate jmpDestYoung jmpOldAndOld jmpPermAndPerm jmpAlreadyRemembered|
+	| jmpImmediate jmpDestYoung jmpOldAndOld jmpPermAndPerm jmpAlreadyRemembered jmpIsMachineCode|
 
 	<var: #jmpImmediate type: #'AbstractInstruction *'>
 	<var: #jmpDestYoung type: #'AbstractInstruction *'>
 	<var: #jmpOldAndOld type: #'AbstractInstruction *'>
 	<var: #jmpPermAndPerm type: #'AbstractInstruction *'>
 	<var: #jmpAlreadyRemembered type: #'AbstractInstruction *'>
+	<var: #jmpIsMachineCode type: #'AbstractInstruction *'>
+
 
 	"Is value stored an immediate?  If so we're done"
 	jmpImmediate := self genJumpImmediate: valueReg.
@@ -2594,9 +2596,10 @@ CogObjectRepresentationForSpur >> genStoreCheckReceiverReg: destReg valueReg: va
 		genCheckObjectPosition: destReg 
 		scratchReg: scratchReg 
 		valueReg: valueReg
-		results: [ :isDestYoung :isOldAndOld :isPermAndPerm | 
+		results: [ :isDestYoung :isOldAndOld :isPermAndPerm :valueIsMachineCode | 
 			jmpDestYoung := isDestYoung.
 			jmpOldAndOld := isOldAndOld.
+			jmpIsMachineCode := valueIsMachineCode.
 			jmpPermAndPerm := isPermAndPerm].
 
 
@@ -2610,9 +2613,10 @@ CogObjectRepresentationForSpur >> genStoreCheckReceiverReg: destReg valueReg: va
 		protectLinkRegIfNot: inFrame.
 	jmpImmediate jmpTarget:
 	(jmpDestYoung jmpTarget:
+	(jmpIsMachineCode jmpTarget:
 	(jmpOldAndOld jmpTarget: 
 	(jmpPermAndPerm jmpTarget:
-		cogit Label))).
+		cogit Label)))).
 
 	CheckRememberedInTrampoline ifFalse:
 		[jmpAlreadyRemembered jmpTarget: jmpOldAndOld getJmpTarget].
@@ -2811,13 +2815,14 @@ CogObjectRepresentationForSpur >> genStoreValue: value instance: destReg numSlot
 CogObjectRepresentationForSpur >> genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needRestoreRcvr: needRestoreRcvr [ 
 	"Store check code is duplicated to use a single trampoline"
 	<option: #IMMUTABILITY>
-	| immutableJump jmpImmediate jmpDestYoung jmpOldAndOld jmpPermAndPerm jmpAlreadyRemembered |
+	| immutableJump jmpImmediate jmpDestYoung jmpOldAndOld jmpPermAndPerm jmpAlreadyRemembered jmpIsMachineCode|
 	<var: #immutableJump type: #'AbstractInstruction *'>
 	<var: #jmpImmediate type: #'AbstractInstruction *'>
 	<var: #jmpDestYoung type: #'AbstractInstruction *'>
 	<var: #jmpOldAndOld type: #'AbstractInstruction *'>
 	<var: #jmpPermAndPerm type: #'AbstractInstruction *'>
 	<var: #jmpAlreadyRemembered type: #'AbstractInstruction *'>
+	<var: #jmpIsMachineCode type: #'AbstractInstruction *'>
 
 	immutableJump := self genJumpImmutable: destReg scratchReg: scratchReg.
 	
@@ -2835,9 +2840,10 @@ CogObjectRepresentationForSpur >> genStoreWithImmutabilityAndStoreCheckSourceReg
 		genCheckObjectPosition: destReg 
 		scratchReg: scratchReg 
 		valueReg: sourceReg
-		results: [ :isDestYoung :isOldAndOld :isPermAndPerm | 
+		results: [ :isDestYoung :isOldAndOld :isPermAndPerm :valueIsMachineCode| 
 			jmpDestYoung := isDestYoung.
 			jmpOldAndOld := isOldAndOld.
+			jmpIsMachineCode := valueIsMachineCode.			
 			jmpPermAndPerm := isPermAndPerm].
 
 	"Need to remember this only if the remembered bit is not already set."
@@ -2854,8 +2860,9 @@ CogObjectRepresentationForSpur >> genStoreWithImmutabilityAndStoreCheckSourceReg
 	jmpImmediate jmpTarget:
 	(jmpDestYoung jmpTarget:
 	(jmpOldAndOld jmpTarget:
+	(jmpIsMachineCode jmpTarget:
 	(jmpPermAndPerm jmpTarget:
-		cogit Label))).
+		cogit Label)))).
 	CheckRememberedInTrampoline ifFalse:
 		[jmpAlreadyRemembered jmpTarget: jmpOldAndOld getJmpTarget].
 	^ 0

@@ -130,11 +130,14 @@ CogObjectRepresentation >> freeCounters: theCounters [
 { #category : #'compile abstract instructions' }
 CogObjectRepresentation >> genCheckObjectPosition: destReg scratchReg: scratchReg valueReg: valueReg results: resultBlock [ 
 
-	| isDestYoung isOldAndOld isPermAndPerm recvIsPerm exit| 
+	| isDestYoung isOldAndOld isPermAndPerm recvIsPerm exit valueIsMachineCode| 
 
 	<inline: true>
 	<var: #recvIsPerm type: #'AbstractInstruction *'>
 	<var: #exit type: #'AbstractInstruction *'>
+
+	cogit CmpCq: objectMemory getMemoryMap newSpaceStart  R: valueReg.
+	valueIsMachineCode := cogit JumpBelow: 0.
 	
 	cogit CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: destReg.
 	recvIsPerm := cogit JumpAboveOrEqual: 0.
@@ -152,7 +155,7 @@ CogObjectRepresentation >> genCheckObjectPosition: destReg scratchReg: scratchRe
 
 	exit jmpTarget: (cogit Label).
 		
-	resultBlock value: isDestYoung value: isOldAndOld value: isPermAndPerm.
+	resultBlock value: isDestYoung value: isOldAndOld value: isPermAndPerm value: valueIsMachineCode.
 	^ 0 
 ]
 

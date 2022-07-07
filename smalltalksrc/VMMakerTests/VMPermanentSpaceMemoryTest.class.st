@@ -12,6 +12,48 @@ VMPermanentSpaceMemoryTest >> setUp [
 	self createWeakArrayClass
 ]
 
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWhenModified [
+
+	| oldObject1 permanentObject1 |
+
+	oldObject1 := self newOldSpaceObjectWithSlots: 2.
+
+	permanentObject1 := memory moveToPermSpace: oldObject1.
+
+	memory
+		storePointer: 0
+		ofObject: permanentObject1
+		withValue: (VMMemoryMapConfiguration forWordsize: wordSize) new codeZoneInitialAddress. "I create an address as it was a machine code method"
+
+	self deny: (memory isRemembered: permanentObject1).
+	self deny: (memory getFromOldSpaceRememberedSet isInRememberedSet:
+			 permanentObject1).
+	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet:
+			 permanentObject1)
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWhenMoving [
+
+	| oldObject1 permanentObject1 |
+
+	oldObject1 := self newOldSpaceObjectWithSlots: 2.
+
+	memory
+		storePointer: 0
+		ofObject: oldObject1
+		withValue: (VMMemoryMapConfiguration forWordsize: wordSize) new codeZoneInitialAddress. "I create an address as it was a machine code method"
+
+	permanentObject1 := memory moveToPermSpace: oldObject1.
+
+	self deny: (memory isRemembered: permanentObject1).
+	self deny: (memory getFromOldSpaceRememberedSet isInRememberedSet:
+			 permanentObject1).
+	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet:
+			 permanentObject1)
+]
+
 { #category : #'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testMarkingNewSpaceDoesNotMarkPermSpace [
 
