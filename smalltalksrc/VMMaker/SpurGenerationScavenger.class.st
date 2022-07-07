@@ -745,6 +745,8 @@ SpurGenerationScavenger >> mapOopsFromPermSpace [
 		 sourceIndex := sourceIndex + 1].
 	
 	manager getFromPermSpaceRememberedSet setRememberedSetSize: destIndex.
+	
+	self assert: (manager isPermSpaceRememberedSetSane).
 ]
 
 { #category : #accessing }
@@ -1170,9 +1172,7 @@ SpurGenerationScavenger >> scavengeReferentsOfFromPermSpace: referrer [
 		  scavengeReferentsOf: referrer
 		  additionalShouldKeepReferrerTestingBlock: [ :aReferrer :referent | 
 			  (manager isPermanent: referent) not 
-					or: [ manager isFixedKnownObject: referent ] ].
-	
-	self assert: (manager isPermSpaceRememberedSetSane).
+					and: [ (manager isFixedKnownObject: referent) not ] ].
 	
 	^ returnValue.
 ]

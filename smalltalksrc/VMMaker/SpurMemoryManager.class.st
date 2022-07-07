@@ -7465,14 +7465,22 @@ SpurMemoryManager >> isPermSpaceRememberedSetSane [
 			referenced := self fetchPointer: index ofObject: objOop.
 	
 			((self isFixedKnownObject: referenced) not 
+				and: [ (self isNonImmediate: referenced)
 				and: [(self getMemoryMap isYoungObject: referenced)
-			  		or: [ self getMemoryMap isOldObject: referenced ]])
+			  		or: [ self getMemoryMap isOldObject: referenced ]]])
 				ifTrue: [ mustBeRemembered := true]].
 			
 			mustBeRemembered ifTrue: [ 
-				((self isRemembered: objOop) 
-					and: [self getFromPermSpaceRememberedSet isInRememberedSet: objOop])
-					ifFalse: [ self error: 'Object should be in remembered set'. ]]
+				(self getFromPermSpaceRememberedSet isInRememberedSet: objOop)
+					ifFalse: [ self error: 'Object should be in remembered set'. ].
+				(self isRemembered: objOop) 
+					ifFalse: [ self error: 'Object should be marked as remembered' ]]
+			ifFalse: [
+				(self getFromPermSpaceRememberedSet isInRememberedSet: objOop)
+					ifTrue: [ self error: 'Object should not be in remembered set'. ].
+				(self isRemembered: objOop) 
+					ifTrue: [ self error: 'Object should not be marked as remembered' ]				
+			].
 		].
 	
 	^ true.
@@ -8816,9 +8824,9 @@ SpurMemoryManager >> moveToPermSpace: objOop [
 
 		"We check only if the object has not be already detected and only for the pointer slots."
 		((shouldBeRememberedInOldSpace not and: [ i <= numPointerSlots ])
-		 and: [ (((memoryMap isOldObject: referenced) 
+		 and: [ (self isNonImmediate: referenced) and: [ (((memoryMap isOldObject: referenced) 
 				or: [memoryMap isYoungObject: referenced]) 
-				and: [ (self isFixedKnownObject: referenced) not ]) ])
+				and: [ (self isFixedKnownObject: referenced) not ]) ]])
 			ifTrue: [ shouldBeRememberedInOldSpace := true ].
 		
 		self
