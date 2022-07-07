@@ -211,7 +211,7 @@ VMMemoryMap >> allocateStackPages: initialStackSize [
 	
 	self stackPagesStart = memoryMapConfiguration stackPagesInitialAddress 
 		ifFalse: [ 
-			self logError: 'Could not allocate stack in the expected place (%p), got %p' _: self stackPagesStart _: memoryMapConfiguration stackPagesInitialAddress.
+			self logError: 'Could not allocate stack in the expected place (%p), got %p' _: memoryMapConfiguration stackPagesInitialAddress  _: self stackPagesStart.
 			self error: 'Error allocating' ].
 	
 	self stackPagesEnd: self stackPagesStart + sizeToRequest.
