@@ -382,12 +382,12 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectUpdatedToTrueIsRemovedFromRemem
 	self assert: (memory isRemembered: permanentObject).
 	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
 	
-	memory storePointer: 0 ofObject: permanentObject withValue: memory nilObject.
+	memory storePointer: 0 ofObject: permanentObject withValue: memory trueObject.
 
 	memory doScavenge: 1.
 
-	self assert: (memory isRemembered: permanentObject).
-	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+	self deny: (memory isRemembered: permanentObject).
+	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
 
 ]
 
