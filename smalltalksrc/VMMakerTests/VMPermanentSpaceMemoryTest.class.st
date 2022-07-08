@@ -239,6 +239,24 @@ VMPermanentSpaceMemoryTest >> testNextObjectIsReturningAGoodValue [
 ]
 
 { #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testObjectWithForwarderIsCorrectlyResolved [
+
+	
+	| oldObject1 oldObject2 permanentObject1 permanentObject2 |
+	oldObject1 := self newOldSpaceObjectWithSlots: 1.
+	oldObject2 := self newOldSpaceObjectWithSlots: 1.
+	
+	memory storePointer: 0 ofObject: oldObject2 withValue: oldObject1.
+
+	permanentObject1 := memory moveToPermSpace: oldObject1.
+	permanentObject2 := memory moveToPermSpace: oldObject2.
+		
+	self assert: (memory fetchPointer: 0 ofObject: permanentObject2) equals: permanentObject1.
+	self deny: (memory isForwarded: (memory fetchPointer: 0 ofObject: permanentObject2)).
+
+]
+
+{ #category : #'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceIsRemovedFromRememberedSet [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
