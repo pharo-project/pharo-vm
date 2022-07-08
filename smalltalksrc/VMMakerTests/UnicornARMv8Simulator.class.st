@@ -524,6 +524,12 @@ UnicornARMv8Simulator >> x26 [
 	^ self readRegister: UcARM64Registers x26
 ]
 
+{ #category : #accessing }
+UnicornARMv8Simulator >> x26: anInteger [ 
+	
+	self writeRegister: UcARM64Registers x26 value: anInteger
+]
+
 { #category : #'as yet unclassified' }
 UnicornARMv8Simulator >> x28 [
 
