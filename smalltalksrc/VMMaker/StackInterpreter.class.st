@@ -1908,8 +1908,7 @@ StackInterpreter >> addFloat32VectorBytecode [
 	arg := self stackValue: 0.
 	rcv := self stackValue: 1.
 
-	"TODO should be using a Float32 register with 4 slots"
-	res := self eeInstantiateFloat64Register.
+	res := self eeInstantiateFloat32Register.
 
 	tmp := (objectMemory fetchFloat32: 0 ofObject: arg)
 	       + (objectMemory fetchFloat32: 0 ofObject: rcv).
@@ -5323,12 +5322,21 @@ StackInterpreter >> duplicateTopBytecode [
 ]
 
 { #category : #instantiation }
+StackInterpreter >> eeInstantiateFloat32Register [
+
+	^ objectMemory
+		  eeInstantiateSmallClass:
+		  (objectMemory splObj: ClassFloat32Register)
+		  numSlots: 32 / BytesPerWord "The number of slots depends on the architecture, as we always want 4 32bit slots (or 16 bytes in total)"
+]
+
+{ #category : #instantiation }
 StackInterpreter >> eeInstantiateFloat64Register [
 
 	^ objectMemory
 		  eeInstantiateSmallClass:
 		  (objectMemory splObj: ClassFloat64Register)
-		  numSlots: 16 / BytesPerWord "Depends on the architecture the number of slots, as we always want 2 64bit slots (or 16 bytes in total)"
+		  numSlots: 16 / BytesPerWord "The number of slots depends on the architecture, as we always want 2 64bit slots (or 16 bytes in total)"
 ]
 
 { #category : #'debug printing' }
@@ -12767,8 +12775,7 @@ StackInterpreter >> pushFloat32ArrayToRegisterBytecode [
 	array := self stackValue: 0.
 	index := objectMemory integerValueOf: (self stackValue: 1).
 
-	"TODO should be using Float32 register with 4 slots"
-	reg := self eeInstantiateFloat64Register.
+	reg := self eeInstantiateFloat32Register.
 
 	objectMemory
 		storeFloat32: 0

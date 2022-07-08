@@ -825,7 +825,8 @@ SpurMemoryManager class >> initializeCompactClassIndices [
 	ClassArrayCompactIndex := 51.
 	ClassByteStringCompactIndex := 52.
 	ClassBitmapCompactIndex := 53.
-	ClassFloat64RegisterIndex := 54.
+	ClassFloat32RegisterIndex := 54.
+	ClassFloat64RegisterIndex := 55.
 ]
 
 { #category : #'class initialization' }
@@ -869,15 +870,14 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	SelectorCannotReturn := 21.
 	ProcessSignalingLowSpace := 22.	"was TheInputSemaphore"
 	SpecialSelectors := 23.
-
-	ClassFloat64Register := 24.
-
 	SelectorMustBeBoolean := 25.
 	ClassByteArray := 26.
 	"ClassProcess := 27. unused"
 	CompactClasses := 28.
 	TheTimerSemaphore := 29.
-	TheInterruptSemaphore := 30. 
+	TheInterruptSemaphore := 30.
+	ClassFloat32Register := 31.
+	ClassFloat64Register := 32.
 	SelectorCannotInterpret := 34.
 	"Was MethodContextProto := 35."
 	"Was ClassBlockClosure := 36."
