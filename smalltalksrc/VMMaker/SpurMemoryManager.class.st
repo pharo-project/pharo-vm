@@ -8834,6 +8834,8 @@ SpurMemoryManager >> moveToPermSpace: objOop [
 
 	0 to: numSlots - 1 do: [ :i | | referenced |
 		referenced := self fetchPointer: i ofObject: objOop.
+		((self isNonImmediate: referenced) and: [self isForwarded: referenced])
+			ifTrue: [ referenced := self followForwarded: referenced ].
 
 		"We check only if the object has not be already detected and only for the pointer slots."
 		((shouldBeRememberedInOldSpace not and: [ i <= numPointerSlots ])
