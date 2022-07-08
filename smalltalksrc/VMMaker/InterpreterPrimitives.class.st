@@ -977,7 +977,7 @@ InterpreterPrimitives >> primitiveAsFloat [
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveAt [
 	<accessorDepth: 0>
-	<numberOfArguments: 2>
+	<numberOfArguments: 1>
 
 	self commonAt: false
 ]
