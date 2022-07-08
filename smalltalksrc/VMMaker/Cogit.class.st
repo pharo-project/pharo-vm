@@ -2565,9 +2565,14 @@ Cogit >> MoveR: sourceReg M32: offset r: baseReg [
 { #category : #'abstract instructions' }
 Cogit >> MoveR: sourceReg M64: offset r: baseReg [ 
 	<inline: true>
+	<var: 'result' type: #'AbstractInstruction *'>
 	<returnTypeC: #'AbstractInstruction *'>
-	self assert: BytesPerWord = 8.
-	^self MoveR: sourceReg Mw: offset r: baseReg 
+	| result |
+	result := self MoveR: sourceReg Mw: offset r: baseReg.
+	BytesPerWord = 4 ifTrue: [
+		result := self MoveR: sourceReg Mw: offset + 4 r: baseReg.
+	].
+	^ result
 ]
 
 { #category : #'abstract instructions' }
