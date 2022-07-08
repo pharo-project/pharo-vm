@@ -12182,6 +12182,13 @@ SpurMemoryManager >> uint16At: address [
 ]
 
 { #category : #accessing }
+SpurMemoryManager >> uint16At: address put: aValue [
+
+	<doNotGenerate>
+	^ self shortAt: address put: aValue
+]
+
+{ #category : #accessing }
 SpurMemoryManager >> uint32At: address [
 
 	<doNotGenerate>
