@@ -136,7 +136,7 @@ CogObjectRepresentation >> genCheckObjectPosition: destReg scratchReg: scratchRe
 	<var: #recvIsPerm type: #'AbstractInstruction *'>
 	<var: #exit type: #'AbstractInstruction *'>
 
-	cogit CmpCq: objectMemory getMemoryMap newSpaceStart  R: valueReg.
+	cogit CmpCq: objectMemory getMemoryMap getNewSpaceStart  R: valueReg.
 	valueIsMachineCode := cogit JumpBelow: 0.
 	
 	cogit CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: destReg.

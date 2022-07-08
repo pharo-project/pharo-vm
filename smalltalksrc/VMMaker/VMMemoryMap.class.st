@@ -378,6 +378,14 @@ VMMemoryMap >> fixedPermSpaceStart [
 ]
 
 { #category : #accessing }
+VMMemoryMap >> getNewSpaceStart [
+
+	<api>
+	
+	^ self newSpaceStart 
+]
+
+{ #category : #accessing }
 VMMemoryMap >> getOldSpaceStart [
 
 	<api>
