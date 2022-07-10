@@ -1210,6 +1210,7 @@ CogARMv8Compiler >> computeMaximumSize [
 										ifFalse: [self literalLoadInstructionBytes + 4]].
 		"Conversion"
 		[ConvertRdRs]			-> [^4].
+		[ConvertRdR]				-> [^4].	
 		[ConvertRsRd]			-> [^4].
 		[ConvertRRd]			-> [^4].
 		[MoveRdR]				-> [^4].
@@ -1717,6 +1718,24 @@ CogARMv8Compiler >> concretizeConvertRRd [
 	srcReg := operands at: 0.
 	destReg := operands at: 1.
 	machineCode at: 0 put: (self scalarConvertSize: 1 fromScalarRegister: srcReg toDoublePrecisionFloatRegister: destReg).
+	^ machineCodeSize := 4
+]
+
+{ #category : #'generate machine code - concretize' }
+CogARMv8Compiler >> concretizeConvertRdR [
+
+	"Convert a double precision float to a single precision float in a register"
+
+	<inline: true>
+	| srcReg destReg |
+	srcReg := operands at: 0.
+	destReg := operands at: 1.
+
+	machineCode at: 0 put: (self
+			 fConvertSourceRegisterFP: srcReg
+			 ofPrecision: 2r01 "Double precision"
+			 toRegisterScalarRoundingTowardsZero: destReg
+			 signed: 1).
 	^ machineCodeSize := 4
 ]
 
@@ -3309,6 +3328,7 @@ CogARMv8Compiler >> dispatchConcretize [
 		[PushCw]			-> [^self concretizePushCw].
 		[PrefetchAw]		-> [^self concretizePrefetchAw].
 		"Conversion"
+		[ConvertRdR]		-> [^self concretizeConvertRdR].	
 		[ConvertRdRs]		-> [^self concretizeConvertRdRs].
 		[ConvertRsRd]		-> [^self concretizeConvertRsRd].
 		[ConvertRRd]		-> [^self concretizeConvertRRd].
@@ -3487,6 +3507,25 @@ CogARMv8Compiler >> fConvertSourceRegister: sourceRegister toRegister: destRegis
 		bitOr: (2r1 << 14
 		bitOr: ((sourceRegister bitAnd: 16r1f) << 5
 		bitOr: ((destRegister bitAnd: 16r1f)))))))
+
+]
+
+{ #category : #assembler }
+CogARMv8Compiler >> fConvertSourceRegisterFP: sourceRegister ofPrecision: precision toRegisterScalarRoundingTowardsZero: destRegister signed: signed [ 
+	
+	"C7.2.92 FCVTZS (scalar, integer)
+	
+	Floating-point Convert to Signed integer, rounding toward Zero (scalar). This instruction converts the floating-point value in the SIMD&FP source register to a 32-bit or 64-bit signed integer using the Round towards Zero rounding mode, and writes the result to the general-purpose destination register.
+	
+	FCVTZS <Xd>, <Dn>
+	"
+	
+	^ (signed bitAnd: 1) << 31
+		bitOr: (2r0011110 << 24
+		bitOr: ((precision bitAnd: 2r11) << 22
+		bitOr: (2r111000000000 << 10
+		bitOr: ((sourceRegister bitAnd: 16r1f) << 5
+		bitOr: ((destRegister bitAnd: 16r1f))))))
 
 ]
 
