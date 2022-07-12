@@ -969,6 +969,7 @@ InterpreterPrimitives >> primitiveAsCharacter [
 InterpreterPrimitives >> primitiveAsFloat [
 	"N.B. This will answer inexact results for integers with > 53 bits of magnitude."
 	| rcvr |
+	<numberOfArguments: 0>
 	rcvr := self stackTop.
 	self assert: (objectMemory isIntegerObject: rcvr).
 	self pop: 1 thenPushFloat: (objectMemory integerValueOf: rcvr) asFloat
@@ -1812,6 +1813,7 @@ InterpreterPrimitives >> primitiveFindNextUnwindContext [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatAdd [
+	<numberOfArguments: 1>
 	^ self primitiveFloatAdd: (self stackValue: 1) toArg: self stackTop
 ]
 
@@ -1881,12 +1883,14 @@ InterpreterPrimitives >> primitiveFloatAtPut [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatDivide [
+	<numberOfArguments: 1>
 	self primitiveFloatDivide: (self stackValue: 1) byArg: self stackTop
 ]
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatEqual [
 	| aBool |
+	<numberOfArguments: 1>
 	aBool := self primitiveFloatEqual: (self stackValue: 1) toArg: self stackTop.
 	self successful ifTrue:
 		[self pop: 2 thenPushBool: aBool]
@@ -1895,6 +1899,7 @@ InterpreterPrimitives >> primitiveFloatEqual [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatGreaterOrEqual [
 	| aBool |
+	<numberOfArguments: 1>
 	aBool := self primitiveFloatGreaterOrEqual: (self stackValue: 1) toArg: self stackTop.
 	self successful ifTrue: [self pop: 2 thenPushBool: aBool]
 ]
@@ -1902,6 +1907,7 @@ InterpreterPrimitives >> primitiveFloatGreaterOrEqual [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatGreaterThan [
 	| aBool |
+	<numberOfArguments: 1>
 	aBool := self primitiveFloatGreater: (self stackValue: 1) thanArg: self stackTop.
 	self successful ifTrue:
 		[self pop: 2 thenPushBool: aBool]
@@ -1910,6 +1916,7 @@ InterpreterPrimitives >> primitiveFloatGreaterThan [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatLessOrEqual [
 	| aBool |
+	<numberOfArguments: 1>
 	aBool := self primitiveFloatLessOrEqual: (self stackValue: 1) toArg: self stackTop.
 	self successful ifTrue: [self pop: 2 thenPushBool: aBool]
 ]
@@ -1917,6 +1924,7 @@ InterpreterPrimitives >> primitiveFloatLessOrEqual [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatLessThan [
 	| aBool |
+	<numberOfArguments: 1>
 	aBool := self primitiveFloatLess: (self stackValue: 1) thanArg: self stackTop.
 	self successful ifTrue:
 		[self pop: 2 thenPushBool: aBool]
@@ -1924,12 +1932,14 @@ InterpreterPrimitives >> primitiveFloatLessThan [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatMultiply [
+	<numberOfArguments: 1>
 	self primitiveFloatMultiply: (self stackValue: 1) byArg: self stackTop
 ]
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatNotEqual [
 	| aBool |
+	<numberOfArguments: 1>
 	aBool := self primitiveFloatEqual: (self stackValue: 1) toArg: self stackTop.
 	self successful ifTrue:
 		[self pop: 2 thenPushBool: aBool not]
@@ -1937,6 +1947,7 @@ InterpreterPrimitives >> primitiveFloatNotEqual [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatSubtract [
+	<numberOfArguments: 1>
 	^ self primitiveFloatSubtract: (self stackValue: 1) fromArg: self stackTop
 ]
 

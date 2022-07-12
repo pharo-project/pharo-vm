@@ -10919,14 +10919,9 @@ StackInterpreter >> pop: nItems thenPushBool: trueOrFalse [
 { #category : #'internal interpreter access' }
 StackInterpreter >> pop: nItems thenPushFloat: f [
 	"In the StackInterpreter stacks grow down."
-	| sp |
 	<inline: true>
 	<var: #f type: #double>
-	<var: #sp type: #'char *'>
-	stackPages
-		longAt: (sp := stackPointer + ((nItems - 1) * objectMemory wordSize))
-		put: (objectMemory floatObjectOf: f).
-	stackPointer := sp
+	self pop: nItems thenPush: (objectMemory floatObjectOf: f)
 ]
 
 { #category : #'internal interpreter access' }

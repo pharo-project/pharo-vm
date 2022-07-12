@@ -636,7 +636,7 @@ Spur64BitMemoryManager >> isSmallFloatValue: aFloat [
 	<var: #aFloat type: #double>
 	| exponent rawFloat |
 	self
-		cCode: [self memcpy: (self addressOf: rawFloat) _: (self addressOf: aFloat) _: (self sizeof: rawFloat)]
+		cCode: [rawFloat := aFloat rawFloatBits "memcpy: (self addressOf: rawFloat) _: (self addressOf: aFloat) _: (self sizeof: rawFloat)"]
 		inSmalltalk: [rawFloat := (aFloat at: 1) << 32 + (aFloat at: 2)].
 	exponent := rawFloat >> self smallFloatMantissaBits bitAnd: 16r7FF.
 	^exponent > self smallFloatExponentOffset
@@ -693,31 +693,31 @@ Spur64BitMemoryManager >> lengthOf: objOop format: fmt [
 
 { #category : #'interpreter access' }
 Spur64BitMemoryManager >> loadFloatOrIntFrom: floatOrIntOop [
+
 	"If floatOrInt is an integer, then convert it to a C double float and return it.
 	 If it is a Float, then load its value and return it.
 	 Otherwise fail -- ie return with primErrorCode non-zero."
 
 	<inline: true>
 	<returnTypeC: #double>
-	| result tagBits shift |
-	<var: #result type: #double>
-
+	| tagBits shift |
 	(tagBits := floatOrIntOop bitAnd: self tagMask) ~= 0
-		ifTrue:
-			[tagBits = self smallFloatTag ifTrue:
-				[^self smallFloatValueOf: floatOrIntOop].
-			 (tagBits = self smallIntegerTag
-			  and: [shift := 64 - self numTagBits - self smallFloatMantissaBits.
-				(self cCode: [floatOrIntOop << shift]
-						inSmalltalk: [floatOrIntOop << shift bitAnd: 1 << 64 - 1]) >>> shift = floatOrIntOop]) ifTrue:
-				[^(self integerValueOf: floatOrIntOop) asFloat]]
-		ifFalse:
-			[(self classIndexOf: floatOrIntOop) = ClassFloatCompactIndex ifTrue:
-				[self cCode: '' inSmalltalk: [result := Float new: 2].
-				 self fetchFloatAt: floatOrIntOop + self baseHeaderSize into: result.
-				 ^result]].
+		ifTrue: [ 
+			tagBits = self smallFloatTag ifTrue: [ 
+				^ self smallFloatValueOf: floatOrIntOop ].
+			(tagBits = self smallIntegerTag and: [ 
+				 shift := 64 - self numTagBits - self smallFloatMantissaBits.
+				 (self
+					  cCode: [ floatOrIntOop << shift ]
+					  inSmalltalk: [ floatOrIntOop << shift bitAnd: 1 << 64 - 1 ])
+				 >>> shift = floatOrIntOop ]) ifTrue: [ 
+				^ (self integerValueOf: floatOrIntOop) asFloat ] ]
+		ifFalse: [ 
+			(self classIndexOf: floatOrIntOop) = ClassFloatCompactIndex 
+				ifTrue: [ 
+				^ self float64At: floatOrIntOop + self baseHeaderSize ] ].
 	coInterpreter primitiveFail.
-	^0.0
+	^ 0.0
 ]
 
 { #category : #accessing }
@@ -1146,7 +1146,7 @@ Spur64BitMemoryManager >> smallFloatObjectOf: aFloat [
 	<var: #rot type: #usqLong>
 	self assert: (self isSmallFloatValue: aFloat).
 	self
-		cCode: [self memcpy: (self addressOf: rawFloat) _: (self addressOf: aFloat) _: (self sizeof: rawFloat)]
+		cCode: [ aFloat rawFloatBits" self memcpy: (self addressOf: rawFloat) _: (self addressOf: aFloat) _: (self sizeof: rawFloat)"]
 		inSmalltalk: [rawFloat := (aFloat at: 1) << 32 + (aFloat at: 2)].
 	rot := self rotateLeft: rawFloat.
 	rot > 1 ifTrue: "a.k.a. ~= +/-0.0"
@@ -1184,8 +1184,8 @@ Spur64BitMemoryManager >> smallFloatValueOf: oop [
 	<var: #bits type: #usqLong>
 	bits := self smallFloatBitsOf: oop.
 	self cCode:
-			[self memcpy: (self addressOf: value) _: (self addressOf: bits) _: (self sizeof: value).
-			^value]
+			["self memcpy: (self addressOf: value) _: (self addressOf: bits) _: (self sizeof: value).
+			"^ bits float64FromRawBits]
 		inSmalltalk:
 			[^(Float new: 2)
 				at: 1 put: bits >> 32;

@@ -2506,12 +2506,11 @@ SpurMemoryManager >> allocateSmallNewSpaceSlots: numSlots format: formatField cl
 	numBytes := self smallObjectBytesForSlots: numSlots.
 	self assert: numBytes \\ self allocationUnit = 0.
 	self assert: newObj \\ self allocationUnit = 0.
-	freeStart + numBytes > scavengeThreshold ifTrue:
-		[needGCFlag ifFalse: [self scheduleScavenge].
-		 freeStart + numBytes > scavenger eden limit ifTrue:
-			[self error: 'no room in eden for allocateSmallNewSpaceSlots:format:classIndex:'.
-			 ^0]].
-	self long64At: newObj put: (self headerForSlots: numSlots format: formatField classIndex: classIndex).
+	freeStart + numBytes > scavengeThreshold ifTrue: [
+		self druidExitPoint.
+		needGCFlag ifFalse: [self scheduleScavenge].
+		self validateRoomInEdenOrDie: numBytes ].
+	self uint64At: newObj put: (self headerForSlots: numSlots format: formatField classIndex: classIndex).
 	freeStart := freeStart + numBytes.
 	^newObj
 ]
@@ -2840,7 +2839,7 @@ SpurMemoryManager >> boxedFloatObjectOf: aFloat [
 						eeInstantiateSmallClassIndex: ClassFloatCompactIndex
 						format: self firstLongFormat
 						numSlots: (self sizeof: #double) / self bytesPerOop.
-	self storeFloatAt: newFloatObj + self baseHeaderSize from: aFloat.
+	self float64At: newFloatObj + self baseHeaderSize put: aFloat.
 	^newFloatObj
 ]
 
@@ -5116,6 +5115,22 @@ SpurMemoryManager >> fixedFieldsOfClassFormat: classFormat [
 SpurMemoryManager >> fixedFieldsOfClassFormatMask [
 	<api>
 	^1 << self fixedFieldsFieldWidth - 1
+]
+
+{ #category : #'interpreter access' }
+SpurMemoryManager >> float64At: address [
+
+	<doNotGenerate>
+	| float |
+	float := Float new: 2.
+	self fetchFloatAt: address into: float.
+	^ float
+]
+
+{ #category : #'interpreter access' }
+SpurMemoryManager >> float64At: address put: aFloat [
+	<doNotGenerate>
+	self storeFloatAt: address from: aFloat
 ]
 
 { #category : #'interpreter access' }
@@ -12696,6 +12711,14 @@ SpurMemoryManager >> validObjStacks [
 	^(markStack = nilObj or: [self isValidObjStack: markStack])
 	  and: [(weaklingStack = nilObj or: [self isValidObjStack: weaklingStack])
 	  and: [mournQueue = nilObj or: [self isValidObjStack: mournQueue]]]
+]
+
+{ #category : #allocation }
+SpurMemoryManager >> validateRoomInEdenOrDie: bytes [
+	<druidExitPoint>
+	freeStart + bytes > scavenger eden limit ifTrue: [ 
+		self error:
+			'no room in eden for allocateSmallNewSpaceSlots:format:classIndex:' ]
 ]
 
 { #category : #'gc - scavenge/compact' }
