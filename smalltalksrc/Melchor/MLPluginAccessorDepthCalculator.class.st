@@ -32,7 +32,7 @@ MLPluginAccessorDepthCalculator >> accessorsAndAssignmentsForSubMethodNamed: sel
 		[^nil].
 	map := Dictionary new.
 	method args do: [:var| map at: var put: depth asString, var].
-	method locals do: [:var| map at: var put: depth asString, var].
+	method allLocals do: [:var| map at: var put: depth asString, var].
 	^self accessorsAndAssignmentsForMethod: (method copy renameVariablesUsing: map)
 		actuals: actualParameters
 		depth: depth + 1

@@ -1797,6 +1797,30 @@ CogARMv8Compiler >> concretizeDivRdRd [
 	^ machineCodeSize := 4
 ]
 
+{ #category : #concretizing }
+CogARMv8Compiler >> concretizeDupRVr [
+
+	"Will get inlined into concretizeAt: switch."
+
+	<inline: true>
+
+	| srcReg destReg instruction t q size |
+
+	size := operands at: 0.
+	srcReg := operands at: 1.
+	destReg := operands at: 2.
+
+	size = 64 
+		ifTrue: [ t := 2r1000. q := 1 ]
+		ifFalse: [ self notYetImplemented ].
+
+	instruction := self dupT: t q: q source: srcReg dest: destReg.
+
+	self machineCodeAt: 0 put: instruction.
+
+	^ machineCodeSize := 4
+]
+
 { #category : #'generate machine code - concretize' }
 CogARMv8Compiler >> concretizeFPConditionalJump: conditionCode [
 	"Will get inlined into concretizeAt: switch."
@@ -2953,6 +2977,39 @@ CogARMv8Compiler >> concretizeSqrtRd [
 	^ machineCodeSize := 4
 ]
 
+{ #category : #concretizing }
+CogARMv8Compiler >> concretizeSt1VRMRO [
+
+	"Will get inlined into concretizeAt: switch."
+
+	<inline: true>
+	| opCode instruction q t size vectorR memoryR offset rm |
+	opCode := 2r0111. "TODO support multiple-register variants"
+	rm := 2r11111. "TODO support register offset variant"
+	size := operands at: 0.
+	vectorR := operands at: 1.
+	memoryR := operands at: 2.
+	offset := operands at: 3.
+
+	((size = 64) & (offset = 16))
+		ifTrue: [ 
+			q := 1.
+			t := 11 ]
+		ifFalse: [ self notYetImplemented ].
+
+	instruction := self
+		               st1Q: q
+		               Rm: rm
+		               OpCode: opCode
+		               S: t
+		               Rn: memoryR
+		               Rt: vectorR.
+
+	self machineCodeAt: 0 put: instruction.
+
+	^ machineCodeSize := 4
+]
+
 { #category : #'generate machine code - concretize' }
 CogARMv8Compiler >> concretizeStop [
 	<inline: true>
@@ -3340,6 +3397,27 @@ CogARMv8Compiler >> dispatchConcretize [
 		}
 ]
 
+{ #category : #assembler }
+CogARMv8Compiler >> dupT: t q: q source: src dest: dest [ 
+
+	"
+		C7.2.40 DUP (general)
+
+	DUP <Vd>.<T>, <R><n>
+
+	Duplicate general-purpose register to vector. This instruction duplicates the contents of the source general-purpose
+	register into a scalar or each element in a vector, and writes the result to the SIMD&FP destination register.
+	Depending on the settings in the CPACR_EL1, CPTR_EL2, and CPTR_EL3 registers, and the current Security state
+	and Exception level, an attempt to execute the instruction might be trapped"
+	
+	^ q << 30
+		bitOr: (2r111 << 25
+		bitOr: ((t bitAnd: 2r11111) << 16 
+		bitOr: (2r11 << 10
+		bitOr: ((src bitAnd: 2r11111) << 5
+		bitOr: (dest bitAnd: 2r11111)))))
+]
+
 { #category : #'immediate-encodings' }
 CogARMv8Compiler >> encodeLogicalImmediate: immediate registerSize: registerSize ifPossible: aBlockWithEncoding ifNotPossible: aNotPossibleBlock [
 
@@ -3695,6 +3773,22 @@ CogARMv8Compiler >> fcmpFType: ftype leftRegister: firstRegister rightRegister: 
 		bitOr: ((secondRegister bitAnd: 16r1f) << 16
 		bitOr: (1 << 13
 		bitOr: ((firstRegister bitAnd: 16r1f) << 5)))))
+]
+
+{ #category : #concretize }
+CogARMv8Compiler >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
+	<inline: true>
+	| fillLoop |
+	fillLoop := cogit DupS: 64 R: fillReg Vr: vectorRegister.
+	"St1 copies data in 128-bit chunks. This may exceed the size of an object (that only needs to be a multiple of 64 bits).
+	This overflow is not an issue, however. The reason for that is that objects are allocated sequentially in the Eden space
+	using a bumpAllocator, which means that the overflowing bits won't overwrite another object. This is true even when reaching
+	the end of the Eden space, as after it we reserve additional headroom."
+	cogit St1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
+	cogit CmpR: startMemoryAddr R: endMemoryAddr.
+	cogit JumpAbove: fillLoop.
+	
+	^0 "Necessary to keep Slang happy"
 ]
 
 { #category : #'ARM convenience instructions' }
@@ -5643,6 +5737,25 @@ CogARMv8Compiler >> smulhSize: is64bits firstRegister: registerA secondRegister:
 		bitOr: (16r1f << 10
 		bitOr: (((registerA bitAnd: 16r1f) << 5)
 		bitOr: (destinationRegister bitAnd: 16r1f))))
+]
+
+{ #category : #concretizing }
+CogARMv8Compiler >> st1Q: q Rm: rm OpCode: opCode S: size Rn: rn Rt: rt [
+
+	"
+	C7.2.321 ST1 (multiple structures)
+
+	ST1 { <Vt>.<T> }, [<Xn|SP>], <Xm>
+
+	Store multiple single-element structures from one, two, three, or four registers. This instruction 	stores elements to memory from one, two, three, or four SIMD&FP registers, without interleaving. 	Every element of each register is stored."
+	
+	^ q << 30
+		bitOr: (2r11001 << 23
+		bitOr: ((rm bitAnd: 2r11111) << 16
+		bitOr: ((opCode bitAnd: 2r1111) << 12
+		bitOr: ((size bitAnd: 2r11) << 10
+		bitOr: ((rn bitAnd: 2r11111) << 5
+		bitOr: (rt bitAnd: 2r11111))))))
 ]
 
 { #category : #accessing }

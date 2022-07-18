@@ -173,11 +173,6 @@ CCodeGeneratorGlobalStructure >> initialize [
 	structDefDefine := '1'
 ]
 
-{ #category : #public }
-CCodeGeneratorGlobalStructure >> isGlobalStructureBuild [
-	^true
-]
-
 { #category : #utilities }
 CCodeGeneratorGlobalStructure >> localizeGlobalVariables [
 "TPR - remove all the global vars destined for the structure that are only used once - not worth the space,

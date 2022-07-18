@@ -363,6 +363,12 @@ VMSimpleStackBasedCogitAbstractTest >> framePointerRegisterValue: aValue [
 	machineSimulator framePointerRegisterValue: aValue
 ]
 
+{ #category : #configuration }
+VMSimpleStackBasedCogitAbstractTest >> generateCaptureCStackPointers [
+	
+	^ true
+]
+
 { #category : #'helpers - cog methods' }
 VMSimpleStackBasedCogitAbstractTest >> generateCogMethod: aBlockClosure selector: anSelectorOop [ 
 
@@ -753,7 +759,7 @@ VMSimpleStackBasedCogitAbstractTest >> setUp [
 	
 	machineSimulator := cogit processor machineSimulator.
 	
-	cogit generateStackPointerCapture.
+	self generateCaptureCStackPointers ifTrue: [cogit generateStackPointerCapture].
 	cogit methodZone manageFrom: cogit cogCodeBase to: initialAddress + self initialCodeSize.
 
 	memory coInterpreter numStackPages: 8.
