@@ -150,16 +150,10 @@ ComposedImageWriter >> writePermanentSpaceMetadata: imageFileName [
 ComposedImageWriter >> writeSTON: struct toFile: f [
 
 	<inline: true>
-	| fieldHasNilValue |
-
 	struct withStructNameDo: [ :name | self fprintf: f _: self headFormat _: name ].
 	struct withFieldsDo: [ :fieldName :fieldValue |
-		fieldValue 
-			ifNil: [ 	fieldHasNilValue := true ]
-			ifNotNil: [  
-				fieldHasNilValue := false.
-				self fprintf: f _: self fieldFormat _: fieldName _: fieldValue ]]
-		separatedBy: [ fieldHasNilValue ifFalse: [self fprintf: f _: ',\n'] ].
+			self fprintf: f _: self fieldFormat _: fieldName _: fieldValue]
+		separatedBy: [ self fprintf: f _: ',\n'].
 		
 	self fprintf: f _: '\n}'. 
 ]
