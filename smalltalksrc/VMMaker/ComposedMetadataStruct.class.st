@@ -42,6 +42,13 @@ ComposedMetadataStruct >> dataSize: anObject [
 	dataSize := anObject
 ]
 
+{ #category : #initialization }
+ComposedMetadataStruct >> initialize [
+
+	startAddress := 0.
+	dataSize := 0
+]
+
 { #category : #accessing }
 ComposedMetadataStruct >> startAddress [
 

@@ -211,6 +211,20 @@ VMImageHeaderWritingTest >> testWritingSTONPermSpace [
 ]
 
 { #category : #tests }
+VMImageHeaderWritingTest >> testWritingSTONPermSpaceOnEmptySpace [
+
+	| writtenMetadata |
+
+	imageWriterClass ~= ComposedImageWriter ifTrue: [ ^ self skip ].
+
+	self saveImage.
+
+	writtenMetadata := (self imageFileName asFileReference  / 'permSpace.ston') contents.
+	
+	self assert: writtenMetadata equals: (self stonPretty: ComposedMetadataStruct new).
+]
+
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingSTONSegment [
 
 	| header writtenHeader segmentMetadata |
