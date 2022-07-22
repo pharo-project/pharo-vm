@@ -265,7 +265,8 @@ Class {
 		'statCompileFullBlockCount',
 		'statCompileFullBlockUsecs',
 		'statCompileMethodCount',
-		'statCompileMethodUsecs'
+		'statCompileMethodUsecs',
+		'jitCodeZoneWriteEnabled'
 	],
 	#classVars : [
 		'AltFirstSpecialSelector',

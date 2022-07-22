@@ -7,7 +7,8 @@ Class {
 		'receiver',
 		'methodDictionary',
 		'arrayOfMethods',
-		'receiverClass'
+		'receiverClass',
+		'linearSearchLimit'
 	],
 	#pools : [
 		'VMBasicConstants',
@@ -15,6 +16,38 @@ Class {
 	],
 	#category : #'VMMakerTests-InterpreterTests'
 }
+
+{ #category : #tests }
+VMLookUpTest class >> testParameters [
+
+	^ super testParameters * (ParametrizedTestMatrix new
+		   addCase: { (#linearSearchLimit -> 3) };
+		   addCase: { (#linearSearchLimit -> 300) };
+		   yourself)
+]
+
+{ #category : #assertions }
+VMLookUpTest >> assertNonForwardedSelectorsIn: aMethodDictionary [
+
+	| length |
+	length := memory numSlotsOf: aMethodDictionary.
+	SelectorStart to: length - 1 do: [ :i | 
+		| selector |
+		selector := memory fetchPointer: i ofObject: aMethodDictionary.
+		self deny: (memory isForwarded: selector) ]
+]
+
+{ #category : #accessing }
+VMLookUpTest >> linearSearchLimit [
+
+	^ linearSearchLimit
+]
+
+{ #category : #accessing }
+VMLookUpTest >> linearSearchLimit: anObject [
+
+	linearSearchLimit := anObject
+]
 
 { #category : #tests }
 VMLookUpTest >> setArrayClassIntoClassTable [
@@ -94,14 +127,19 @@ VMLookUpTest >> setUp [
 		withValue: processorListArray.
 	memory lastHash: 1.
 
-	interpreter setBreakSelector: nil
+	interpreter setBreakSelector: nil.
+	interpreter methodDictLinearSearchLimit: linearSearchLimit.
+
 ]
 
 { #category : #tests }
 VMLookUpTest >> setUpClassAndMethod [
 
+
 	methodOop := methodBuilder newMethod buildMethod.
-	selectorOop := memory integerObjectOf: 42.
+	selectorOop := self
+		newClassInOldSpaceWithSlots: 0
+		instSpec: memory nonIndexablePointerFormat.
 	receiver := memory integerObjectOf: 56.
 	receiverClass := self setSmallIntegerClassIntoClassTable
 ]
@@ -114,6 +152,22 @@ VMLookUpTest >> testInstallSmallIntegerClassIntoClassTable [
 	self
 		assert: (memory fetchClassOf: (memory integerObjectOf: 17))
 		equals: receiverClass
+]
+
+{ #category : #tests }
+VMLookUpTest >> testLookUpFindsForwardedMethod [
+
+	| aMethodDictionary |
+	self setUpClassAndMethod.	
+	self setUpMethodDictionaryIn: receiverClass.
+	aMethodDictionary := memory fetchPointer: MethodDictionaryIndex ofObject: receiverClass.
+	self installSelector: selectorOop method: methodOop  inMethodDictionary: aMethodDictionary.
+
+	methodOop := memory moveToPermSpace: methodOop.
+
+	interpreter messageSelector: selectorOop.
+	interpreter lookupMethodInClass: receiverClass.
+	self assert: interpreter newMethod equals: methodOop.
 ]
 
 { #category : #tests }
@@ -154,6 +208,23 @@ VMLookUpTest >> testLookUpFindsMethodInSuperclass [
 	interpreter messageSelector: selectorOop.
 	interpreter lookupMethodInClass: receiverClass.
 	self assert: interpreter newMethod equals: methodOop
+]
+
+{ #category : #tests }
+VMLookUpTest >> testLookUpFindsMethodWithForwardedSelector [
+
+	| aMethodDictionary |
+	self setUpClassAndMethod.	
+	self setUpMethodDictionaryIn: receiverClass.
+	aMethodDictionary := memory fetchPointer: MethodDictionaryIndex ofObject: receiverClass.
+	self installSelector: selectorOop method: methodOop  inMethodDictionary: aMethodDictionary.
+
+	selectorOop := memory moveToPermSpace: selectorOop.
+
+	interpreter messageSelector: selectorOop.
+	interpreter lookupMethodInClass: receiverClass.
+	self assert: interpreter newMethod equals: methodOop.
+	self assertNonForwardedSelectorsIn: aMethodDictionary
 ]
 
 { #category : #tests }

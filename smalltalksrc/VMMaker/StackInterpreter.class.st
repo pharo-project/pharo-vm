@@ -9190,12 +9190,7 @@ StackInterpreter >> lookupMethodInDictionary: dictionary [
 	mask <= methodDictLinearSearchLimit ifTrue:
 		[index := 0.
 		 [index <= mask] whileTrue:
-			[nextSelector := objectMemory fetchPointer: index + SelectorStart ofObject: dictionary.
-			 (objectMemory isOopForwarded: nextSelector) ifTrue:
-				[nextSelector := objectMemory
-									fixFollowedField: index + SelectorStart
-									ofObject: dictionary
-									withInitialValue: nextSelector].
+			[nextSelector := objectMemory followField: index + SelectorStart ofObject: dictionary.
 			 nextSelector = messageSelector ifTrue:
 				[methodArray := objectMemory followObjField: MethodArrayIndex ofObject: dictionary.
 				 newMethod := objectMemory followField: index ofObject: methodArray.
@@ -9209,13 +9204,8 @@ StackInterpreter >> lookupMethodInDictionary: dictionary [
 	 will be detected the second time the loop gets to the end of the table."
 	wrapAround := false.
 	[true] whileTrue:
-		[nextSelector := objectMemory fetchPointer: index ofObject: dictionary.
+		[nextSelector := objectMemory followField: index ofObject: dictionary.
 		 nextSelector = objectMemory nilObject ifTrue: [^false].
-		 (objectMemory isOopForwarded: nextSelector) ifTrue:
-			[nextSelector := objectMemory
-								fixFollowedField: index + SelectorStart
-								ofObject: dictionary
-								withInitialValue: nextSelector].
 		 nextSelector = messageSelector ifTrue:
 			[methodArray := objectMemory followObjField: MethodArrayIndex ofObject: dictionary.
 			 newMethod := objectMemory followField: index - SelectorStart ofObject: methodArray.
