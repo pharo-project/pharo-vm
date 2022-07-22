@@ -5429,7 +5429,7 @@ StackInterpreter >> extPushFullClosureBytecode [
 	| compiledBlockLiteralIndex compiledBlock byte numArgs numCopied receiverIsOnStack ignoreContext |
 	compiledBlockLiteralIndex := self fetchByte + (extA << 8).
 	extA := 0.
-	compiledBlock := self literal: compiledBlockLiteralIndex.
+	compiledBlock := self literalMaybeForwarder: compiledBlockLiteralIndex.
 	self assert: (objectMemory isOopCompiledMethod: compiledBlock).
 	numArgs := self argumentCountOf: compiledBlock.
 	byte := self fetchByte.
@@ -8866,6 +8866,16 @@ StackInterpreter >> literalCountOfAlternateHeader: headerPointer [
 StackInterpreter >> literalCountOfOriginalHeader: headerPointer [
 	<inline: true>
 	^(headerPointer >> 10) bitAnd: 16rFF
+]
+
+{ #category : #'compiled methods' }
+StackInterpreter >> literalMaybeForwarder: offset [
+
+	| literal |
+	literal := self literal: offset.
+	(objectMemory isForwarded: literal) ifTrue: [ 
+		literal := self unfollow: literal atIndex: offset ].
+	^ literal
 ]
 
 { #category : #'bitblt support' }
@@ -12616,9 +12626,7 @@ StackInterpreter >> pushLiteralVariable: literalIndex [
 			  The fetch of the literal needs an explicit check (otherwise we would have to scan all literals in
 			  all methods in the stack zone, and the entire method on return, and global variables are relatively
 			  rare; in my work image 8.7% of literals are globals)."
-			 litVar := self literal: literalIndex.
-			 (objectMemory isForwarded: litVar) ifTrue:
-				[litVar := self unfollow: litVar atIndex: literalIndex].
+			 litVar := self literalMaybeForwarder: literalIndex.
 			 self internalPush:
 				(objectMemory fetchPointer: ValueIndex ofObject: litVar)]
 		ifFalse:
@@ -14678,15 +14686,14 @@ StackInterpreter >> storeInteger: fieldIndex ofObject: objectPointer withValue: 
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> storeLiteralVariable: literalIndex withValue: anObject [
-	| litVar |
-	litVar := self literal: literalIndex.
 	"push/store/popLiteralVariable all fetch a literal, and either read or write the literal's value field.
 	 The fetch of the literal needs an explicit check (otherwise we would have to scan all literals in
 	 all methods in the stack zone, and the entire method on return, and global variables are relatively
 	 rare; in my work image 8.7% of literals are globals)."
 
-	(objectMemory isForwarded: litVar) ifTrue:
-		[litVar := self unfollow: litVar atIndex: literalIndex].
+
+	| litVar |
+	litVar := self literalMaybeForwarder: literalIndex.
 	objectMemory storePointerImmutabilityCheck: ValueIndex ofObject: litVar withValue: anObject
 ]
 

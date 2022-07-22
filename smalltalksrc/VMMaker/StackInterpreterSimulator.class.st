@@ -1177,7 +1177,9 @@ StackInterpreterSimulator >> isPrimitiveFunctionPointerAnIndex [
 StackInterpreterSimulator >> literal: offset [
 	"trap pushes of forwarded literals to help debug following forwarded primitive args.
 	 it is not an error to push a forwarded literal, but we'd like to step through any resulting
-	 primtive failure code"
+	 primtive failure code.
+	 Use #literalMaybeForwarder: for resolve forwarders if nedeed
+	"
 	| lit |
 	lit := super literal: offset.
 	(objectMemory isOopForwarded: lit) ifTrue:
