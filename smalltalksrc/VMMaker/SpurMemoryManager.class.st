@@ -5354,6 +5354,14 @@ SpurMemoryManager >> followSpecialObjectsOop [
 	self followForwardedObjectFields: specialObjectsOop toDepth: 0.
 ]
 
+{ #category : #'become implementation' }
+SpurMemoryManager >> followSpecialSelectors [
+
+	self
+		followForwardedObjectFields: (self splObj: SpecialSelectors)
+		toDepth: 0
+]
+
 { #category : #'object access' }
 SpurMemoryManager >> followedKeyOfEphemeron: objOop [
 	"Answer the object the ephemeron guards.  This is its first element."
@@ -8874,6 +8882,7 @@ SpurMemoryManager >> moveToPermSpace: objOop [
 	becomeEffectsFlags := self becomeEffectFlagsFor: objOop.
 	self forward: objOop to: newObj.
 	self followSpecialObjectsOop.
+	self followSpecialSelectors.
 	coInterpreter postBecomeAction: becomeEffectsFlags.
 	self postBecomeScanClassTable: becomeEffectsFlags.
 	coInterpreter followForwardedMethodsInMethodZone.

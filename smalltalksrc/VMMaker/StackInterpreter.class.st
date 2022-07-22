@@ -7211,9 +7211,7 @@ StackInterpreter >> handleForwardedSelectorFaultFor: selectorOop [
 	<inline: false>
 	self assert: (objectMemory isOopForwarded: selectorOop).
 	self followForwardedFieldsInCurrentMethod.
-	objectMemory
-		followForwardedObjectFields: (objectMemory splObj: SpecialSelectors)
-		toDepth: 0.
+	objectMemory followSpecialSelectors.
 	^objectMemory followForwarded: selectorOop
 ]
 
