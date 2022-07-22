@@ -59,6 +59,8 @@ VMSpurImageToComposedImageMigrationProcess >> loadImage: originalImage [
 { #category : #migrate }
 VMSpurImageToComposedImageMigrationProcess >> migrate: originalImage to: newImage [
 
+	newImage asFileReference ensureDeleteAll.
+
 	self createSimulator.
 	self loadImage: originalImage.
 	self saveImage: newImage.
