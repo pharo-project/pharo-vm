@@ -572,6 +572,8 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 	aCCodeGenerator
 		declareVar: #fixups type: #'BytecodeFixup *'.
 	aCCodeGenerator
+		var: #jitCodeZoneWriteEnabled
+			declareC: 'int jitCodeZoneWriteEnabled = 0';
 		var: #ordinarySendTrampolines
 			declareC: 'sqInt ordinarySendTrampolines[NumSendTrampolines]';
 		var: #superSendTrampolines
@@ -5131,67 +5133,64 @@ Cogit >> cogOpenPICSelector: selector numArgs: numArgs [
 	self assert: entry address - startAddress = cmEntryOffset.
 	self assert: (methodZone roundUpLength: (self sizeof: CogMethod) + codeSize) + (methodZone roundUpLength: mapSize) <= openPICSize.
 
-	self enableCodeZoneWriteDuring: [ 
-		end := self outputInstructionsAt: startAddress + (self sizeof: CogMethod).
-		pic := self
-			fillInOPICHeader: (self cCoerceSimple: startAddress to: #'CogMethod *')
-			numArgs: numArgs
-			selector: selector ]
-		flushingCacheWith: [ 	
-			self flushICacheFrom: pic asUnsignedInteger to: pic asUnsignedInteger + openPICSize ].
+	end := self outputInstructionsAt: startAddress + (self sizeof: CogMethod).
+	pic := self
+		fillInOPICHeader: (self cCoerceSimple: startAddress to: #'CogMethod *')
+		numArgs: numArgs
+		selector: selector .
 			
 	^ pic
 ]
 
 { #category : #'in-line cacheing' }
 Cogit >> cogPICSelector: selector numArgs: numArgs Case0Method: case0CogMethod Case1Method: case1MethodOrNil tag: case1Tag isMNUCase: isMNUCase [
+
 	"Attempt to create a two-case PIC for case0CogMethod and  case1Method,case1Tag.
 	 The tag for case0CogMethod is at the send site and so doesn't need to be generated.
 	 case1Method may be any of
 		- a Cog method; link to its unchecked entry-point
 		- a CompiledMethod; link to ceInterpretMethodFromPIC:
 		- a CompiledMethod; link to ceMNUFromPICMNUMethod:receiver:"
+
 	<var: #case0CogMethod type: #'CogMethod *'>
 	<returnTypeC: #'CogMethod *'>
 	| startAddress pic |
-	(objectMemory isYoung: selector) ifTrue:
-		[^self cCoerceSimple: YoungSelectorInPIC to: #'CogMethod *'].
+	(objectMemory isYoung: selector) ifTrue: [ 
+		^ self cCoerceSimple: YoungSelectorInPIC to: #'CogMethod *' ].
 	coInterpreter
 		compilationBreak: selector
 		point: (objectMemory numBytesOf: selector)
 		isMNUCase: isMNUCase.
-	
+
 	"get memory in the code zone for the CPIC; if that fails we return an error code for the sender to use to work out how to blow up"
 	startAddress := methodZone allocate: closedPICSize.
-	startAddress = 0 ifTrue:
-		[^self cCoerceSimple: InsufficientCodeSpace to: #'CogMethod *'].
+	startAddress = 0 ifTrue: [ 
+		^ self cCoerceSimple: InsufficientCodeSpace to: #'CogMethod *' ].
 
-	self 
-		enableCodeZoneWriteDuring: [   
-			"memcpy the prototype across to our allocated space; because anything else would be silly"
-			objectMemory
-				memcpy: (self cCoerceSimple: startAddress to: #'CogMethod *')
-				_: (self cCoerceSimple: cPICPrototype to: #'CogMethod *')
-				_: closedPICSize.
-			
-			self configureCPIC: (self cCoerceSimple: startAddress to: #'CogMethod *')
-				Case0: case0CogMethod
-				Case1Method: case1MethodOrNil
-				tag: case1Tag
-				isMNUCase: isMNUCase
-				numArgs: numArgs
-				delta: startAddress - cPICPrototype .
+	"memcpy the prototype across to our allocated space; because anything else would be silly"
+	objectMemory
+		memcpy: (self cCoerceSimple: startAddress to: #'CogMethod *')
+		_: (self cCoerceSimple: cPICPrototype to: #'CogMethod *')
+		_: closedPICSize.
 
-			pic := self
-				fillInCPICHeader: (self cCoerceSimple: startAddress to: #'CogMethod *')
-				numArgs: numArgs
-				numCases: 2
-				hasMNUCase: isMNUCase
-				selector: selector ]
-		flushingCacheWith: [ 	self flushICacheFrom: pic asUnsignedInteger to: pic asUnsignedInteger + closedPICSize ].
-	
+	self
+		configureCPIC: (self cCoerceSimple: startAddress to: #'CogMethod *')
+		Case0: case0CogMethod
+		Case1Method: case1MethodOrNil
+		tag: case1Tag
+		isMNUCase: isMNUCase
+		numArgs: numArgs
+		delta: startAddress - cPICPrototype.
+
+	pic := self
+		       fillInCPICHeader:
+		       (self cCoerceSimple: startAddress to: #'CogMethod *')
+		       numArgs: numArgs
+		       numCases: 2
+		       hasMNUCase: isMNUCase
+		       selector: selector.
+
 	^ pic
-		
 ]
 
 { #category : #'simulation only' }
@@ -6095,7 +6094,9 @@ Cogit >> disableCodeZoneWrite [
 	
 	self 
 		cppIf: #'READ_ONLY_CODE_ZONE'
-		ifTrue:[	self pthread_jit_write_protect_np: true ]
+		ifTrue:[	
+			self pthread_jit_write_protect_np: true.
+			jitCodeZoneWriteEnabled := false ]
 ]
 
 { #category : #disassembly }
@@ -6299,7 +6300,10 @@ Cogit >> enableCodeZoneWrite [
 	
 	self 
 		cppIf: #'READ_ONLY_CODE_ZONE'
-		ifTrue:[	self pthread_jit_write_protect_np: false ]
+		ifTrue:[	
+			jitCodeZoneWriteEnabled ifTrue: [ self error: 'Code zone writing is not reentrant' ].
+			jitCodeZoneWriteEnabled := true.
+			self pthread_jit_write_protect_np: false ]
 ]
 
 { #category : #'code generation' }
@@ -12502,28 +12506,27 @@ Cogit >> unlinkSendsTo: targetMethodObject andFreeIf: freeIfTrue [
 
 { #category : #'garbage collection' }
 Cogit >> unlinkSendsToFree [
-	<api>
+
 	"Unlink all sends in cog methods to free methods and/or pics."
-	| cogMethod |
+
+	<api>
 	<var: #cogMethod type: #'CogMethod *'>
-	methodZoneBase ifNil: [^self].
-	
-	self enableCodeZoneWriteDuring: [  
-		codeModified := false.
-		cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
-		[cogMethod < methodZone limitZony] whileTrue:
-			[cogMethod cmType = CMMethod
-				ifTrue:
-					[self mapFor: cogMethod
-						 performUntil: #unlinkIfLinkedSendToFree:pc:ignored:
-						 arg: 0]
-				ifFalse:
-					[cogMethod cmType = CMClosedPIC ifTrue:
-						[self assert: (self noTargetsFreeInClosedPIC: cogMethod)]].
-			cogMethod := methodZone methodAfter: cogMethod]]
-	 flushingCacheWith: [  	
-		codeModified ifTrue: "After possibly updating inline caches we need to flush the icache."
-			[self flushICacheFrom: methodZoneBase asUnsignedInteger to: methodZone limitZony asUnsignedInteger]]
+	| cogMethod |
+	methodZoneBase ifNil: [ ^ self ].
+
+	codeModified := false.
+	cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
+	[ cogMethod < methodZone limitZony ] whileTrue: [ 
+		cogMethod cmType = CMMethod
+			ifTrue: [ 
+				self
+					mapFor: cogMethod
+					performUntil: #unlinkIfLinkedSendToFree:pc:ignored:
+					arg: 0 ]
+			ifFalse: [ 
+				cogMethod cmType = CMClosedPIC ifTrue: [ 
+					self assert: (self noTargetsFreeInClosedPIC: cogMethod) ] ].
+		cogMethod := methodZone methodAfter: cogMethod ]
 ]
 
 { #category : #accessing }
