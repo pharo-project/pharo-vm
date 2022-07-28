@@ -1916,7 +1916,8 @@ CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPIC [
 				selector: cogMethodOrPIC selector]
 		ifFalse:
 			[(objectMemory isOopForwarded: cogMethodOrPIC selector) ifTrue:
-				[self handleForwardedSelectorFaultFor: cogMethodOrPIC selector.
+				[
+				 cogit setSelectorOf: cogMethodOrPIC to: (self handleForwardedSelectorFaultFor: cogMethodOrPIC selector).
 				 ^self ceSendFromInLineCacheMiss: cogMethodOrPIC].
 			 (objectMemory isForwardedClassTag: classTag) ifTrue:
 				[self handleForwardedSendFaultForReceiver: rcvr stackDelta: 1 "skip return pc".

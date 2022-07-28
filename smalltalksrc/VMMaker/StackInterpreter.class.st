@@ -8040,6 +8040,8 @@ StackInterpreter >> internalFindNewMethodOrdinary [
 			(self lookupInMethodCacheSel: messageSelector classTag: lkupClassTag) ifTrue:
 				[^nil]].
 		 lkupClass := objectMemory classForClassTag: lkupClassTag.
+		 (objectMemory isOopForwarded: lkupClass) ifTrue:
+				[lkupClass := objectMemory followForwarded: lkupClass].
 		 self lookupMethodInClass: lkupClass.
 		 self internalizeIPandSP.
 		 self addNewMethodToCache: lkupClass].

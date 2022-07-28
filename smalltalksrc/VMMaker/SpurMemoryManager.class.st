@@ -8884,8 +8884,8 @@ SpurMemoryManager >> moveToPermSpace: objOop [
 	becomeEffectsFlags := self becomeEffectFlagsFor: objOop.
 	self forward: objOop to: newObj.
 	self followSpecialObjectsOop.
-	self followSpecialSelectors.
 	coInterpreter postBecomeAction: becomeEffectsFlags.
+	self followSpecialSelectors.
 	self postBecomeScanClassTable: becomeEffectsFlags.
 	coInterpreter followForwardedMethodsInMethodZone.
 	becomeEffectsFlags := 0.
