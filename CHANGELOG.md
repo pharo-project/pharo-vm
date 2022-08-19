@@ -2,6 +2,17 @@
 
 I am a changelog... do not wait too much from me :D
 
+## v9.0.16
+- Fixes in users of declarationAt:
+- Updating Readme
+- Improving the generation of plugins
+- Upgrade library dependencies
+- Update library downloads to
+	- libgit2 => 1.4.4
+	- libssh2 => 1.9.0
+	- openssl => 1.1.1k
+- Update build instructions to build libgit v1.4.4
+
 ## v9.0.15
 
 - Fixing FFI Variadic functions in OSX ARM64
