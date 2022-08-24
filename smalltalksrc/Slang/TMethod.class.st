@@ -803,6 +803,85 @@ TMethod >> emitCFunctionPrototype: aStream generator: aCodeGen isPrototype: isPr
 	^compileTimeOptionPragmas notEmpty
 ]
 
+{ #category : #'C code generation' }
+TMethod >> emitCLocalsOn: aStream generator: aCodeGen [
+	"Emit a C function header for this method onto the given stream."
+
+	| volatileVariables maybeExternFunctions |
+	volatileVariables := properties includesKey: #volatile.
+	self refersToGlobalStruct ifTrue:
+		[aStream
+			next: 3 put: Character space; "there's already an opening ${ on this line; see sender"
+			nextPutAll: (volatileVariables
+						ifTrue: ['DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT']
+						ifFalse: ['DECL_MAYBE_SQ_GLOBAL_STRUCT'])].
+	aStream cr.
+	maybeExternFunctions := (declarations select: [:decl| decl beginsWith: 'extern']) keys.
+	(locals isEmpty and: [maybeExternFunctions isEmpty]) ifFalse:
+		[(aCodeGen sortStrings: locals, maybeExternFunctions) do:
+			[ :var | | decl |
+			decl := self declarationAt: var
+							ifAbsent: [aCodeGen defaultType, ' ', var].
+			(volatileVariables
+			 or: [(decl beginsWith: 'static')
+			 or: [(decl beginsWith: 'extern')
+			 or: [usedVariablesCache includes: var]]]) ifTrue:
+				[aStream next: 4 put: Character space.
+				 volatileVariables ifTrue:
+					[aStream nextPutAll: #volatile; space].
+				 aStream
+					nextPutAll: decl;
+					nextPut: $;;
+					cr]].
+		 aStream cr]
+]
+
+{ #category : #'C code generation' }
+TMethod >> emitInlineOn: aStream level: level generator: aCodeGen [
+	"Emit C code for this method onto the given stream. All calls to inlined methods should already have been expanded."
+	self removeUnusedTempsAndNilIfRequiredIn: aCodeGen.
+	sharedLabel ifNotNil:
+		[aStream crtab: level-1; nextPutAll: sharedLabel; nextPut: $:.
+		aStream crtab: level.
+		aStream nextPutAll: '/* '; nextPutAll: selector; nextPutAll: ' */'.
+		aStream crtab: level].
+	aStream nextPut: ${.
+	locals isEmpty ifFalse:
+		[(aCodeGen sortStrings: locals) do:
+			[:var|
+			 aStream
+				crtab: level+1;
+				nextPutAll: (self declarationAt: var ifAbsent: [ aCodeGen defaultType, ' ', var]);
+				nextPut: $;].
+			 aStream cr].
+	aStream crtab: level+1.
+	aCodeGen outputAsmLabel: selector on: aStream.
+	aStream crtab: level+1.
+	aCodeGen
+		pushScope: declarations
+		while: [parseTree emitCCodeOn: aStream level: level+1 generator: aCodeGen].
+	aStream tab: level; nextPut: $}
+]
+
+{ #category : #'C code generation' }
+TMethod >> emitProxyFunctionPrototype: aStream generator: aCodeGen [
+	"Emit an indirect C function header for this method onto the given stream."
+
+	aStream
+		nextPutAll: returnType;
+		space;
+		nextPutAll: '(*';
+		nextPutAll: (aCodeGen cFunctionNameFor: selector);
+		nextPutAll: ')('.
+	args isEmpty
+		ifTrue: [aStream nextPutAll: #void]
+		ifFalse:
+			[args
+				do: [:arg| aStream nextPutAll: (self declarationAt: arg ifAbsent: [ aCodeGen defaultType, ' ', arg ])]
+				separatedBy: [ aStream nextPutAll: ', ' ]].
+	aStream nextPut: $)
+]
+
 { #category : #testing }
 TMethod >> endsWithReturn [
 	"Answer true if the last statement of this method is a return."
