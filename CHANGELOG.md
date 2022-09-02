@@ -2,6 +2,10 @@
 
 I am a changelog... do not wait too much from me :D
 
+## v9.0.18
+- Update library downloads in Windows to
+	- libgit2 => 1.4.4
+
 ## v9.0.17
 - Supporting old images in OSX ARM64 with Libgit older than v1.4.4
 
