@@ -2,6 +2,26 @@
 
 I am a changelog... do not wait too much from me :D
 
+## v9.0.17
+- Supporting old images in OSX ARM64 with Libgit older than v1.4.4
+
+## v9.0.16
+- Fixes in users of declarationAt:
+- Updating Readme
+- Improving the generation of plugins
+- Upgrade library dependencies
+- Update library downloads to
+	- libgit2 => 1.4.4
+	- libssh2 => 1.9.0
+	- openssl => 1.1.1k
+- Update build instructions to build libgit v1.4.4
+
+## v9.0.15
+
+- Fixing FFI Variadic functions in OSX ARM64
+- Fixing store of Int64 in FFI OSX ARM64 when using LongLong
+- Fixing Error code in Primitive when more than one temporary is used.
+
 ## v9.0.14
 
 - Adding support to read command line parameters from the PList (In OSX)

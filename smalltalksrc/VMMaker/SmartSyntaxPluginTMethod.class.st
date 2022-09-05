@@ -43,7 +43,7 @@ SmartSyntaxPluginTMethod >> emitCLocalsOn: aStream generator: aCodeGen [
 			[ :var |
 		aStream 
 			tab; 
-			nextPutAll: (self declarationAt: var);
+			nextPutAll: (self declarationAt: var ifAbsent: [ aCodeGen defaultType, ' ', var ]);
 			nextPut: $;; 
 			newLine].
 		 aStream newLine]
