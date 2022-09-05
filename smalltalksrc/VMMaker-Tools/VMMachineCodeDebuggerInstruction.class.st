@@ -41,8 +41,15 @@ VMMachineCodeDebuggerInstruction >> bytes: aByteArray [
 
 { #category : #printing }
 VMMachineCodeDebuggerInstruction >> bytesString [
-	
-	^ bytes printString
+
+	^ String streamContents: [ :aStream |
+		aStream nextPutAll: '#['.
+		bytes
+			do: [ :each | each hex printOn: aStream ]
+			separatedBy: [ aStream nextPut: $ ].
+		aStream nextPut: $]].
+
+
 ]
 
 { #category : #accessing }

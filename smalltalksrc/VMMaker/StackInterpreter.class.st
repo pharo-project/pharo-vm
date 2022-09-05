@@ -904,10 +904,11 @@ StackInterpreter class >> initializeFrameIndices [
 	fxCallerSavedIP := 1.
 	fxSavedFP := 0.
 	fxMethod := -1.
-	fxFrameFlags := -2.	"Can find numArgs, needed for fast temp access. args are above fxCallerSavedIP.
+	fxThisContext := -2.
+	fxFrameFlags := -3.	"Can find numArgs, needed for fast temp access. args are above fxCallerSavedIP.
 						 Can find ``is block'' bit
 						 Can find ``has context'' bit"
-	fxThisContext := -3.
+
 	fxReceiver := -4.
 
 	FrameSlots := fxCallerSavedIP - fxReceiver + 1.
@@ -1326,8 +1327,11 @@ StackInterpreter class >> initializePrimitiveTable [
 		(572 primitiveListBuiltinModule)
 		(573 primitiveListExternalModule)
 
+		"SIMD primitives"
+		(574 primitiveFloat64ArrayAdd)
+
 		"Unassigned Primitives"
-		(574 597 primitiveFail)
+		(575 597 primitiveFail)
 
 		"Pinned object creation primitives"
 		(598 primitiveNewPinned)
@@ -1834,8 +1838,8 @@ StackInterpreter >> activateNewFullClosure: blockClosure method: theMethod numAr
 	self push: framePointer.
 	framePointer := stackPointer.
 	self push: theMethod.
-	self push: (self encodeFrameFieldHasContext: false isBlock: true numArgs: numArgs).
 	self push: objectMemory nilObject. "FxThisContext field"
+	self push: (self encodeFrameFieldHasContext: false isBlock: true numArgs: numArgs).
 	"Because inst var access is not checked, we must follow the receiver in Spur to ensure it is valid."
 	self push: (objectMemory followField: FullClosureReceiverIndex ofObject: blockClosure).
 
@@ -1894,6 +1898,56 @@ StackInterpreter >> addFirstLink: proc toList: aList [
 		ifTrue: [objectMemory storePointer: LastLinkIndex ofObject: aList withValue: proc]
 		ifFalse: [objectMemory storePointer: NextLinkIndex ofObject: proc withValue: firstLink].
 	objectMemory storePointer: MyListIndex ofObject: proc withValue: aList
+]
+
+{ #category : #'simd bytecodes' }
+StackInterpreter >> addFloat32VectorBytecode [
+
+	<var: #tmp type: #float>
+	| arg rcv res tmp |
+	arg := self stackValue: 0.
+	rcv := self stackValue: 1.
+
+	res := self eeInstantiateFloat32Register.
+
+	tmp := (objectMemory fetchFloat32: 0 ofObject: arg)
+	       + (objectMemory fetchFloat32: 0 ofObject: rcv).
+	objectMemory storeFloat32: 0 ofObject: res withValue: tmp.
+
+	tmp := (objectMemory fetchFloat32: 1 ofObject: arg)
+	       + (objectMemory fetchFloat32: 1 ofObject: rcv).
+	objectMemory storeFloat32: 1 ofObject: res withValue: tmp.
+
+	tmp := (objectMemory fetchFloat32: 2 ofObject: arg)
+	       + (objectMemory fetchFloat32: 2 ofObject: rcv).
+	objectMemory storeFloat32: 2 ofObject: res withValue: tmp.
+
+	tmp := (objectMemory fetchFloat32: 3 ofObject: arg)
+	       + (objectMemory fetchFloat32: 3 ofObject: rcv).
+	objectMemory storeFloat32: 3 ofObject: res withValue: tmp.
+
+	self pop: 2 thenPush: res
+]
+
+{ #category : #'simd bytecodes' }
+StackInterpreter >> addFloat64VectorBytecode [
+
+	<var: #tmp type: #double>
+	| arg rcv res tmp |
+	arg := self stackValue: 0.
+	rcv := self stackValue: 1.
+
+	res := self eeInstantiateFloat64Register.
+
+	tmp := (objectMemory fetchFloat64: 0 ofObject: arg)
+	       + (objectMemory fetchFloat64: 0 ofObject: rcv).
+	objectMemory storeFloat64: 0 ofObject: res withValue: tmp.
+
+	tmp := (objectMemory fetchFloat64: 1 ofObject: arg)
+	       + (objectMemory fetchFloat64: 1 ofObject: rcv).
+	objectMemory storeFloat64: 1 ofObject: res withValue: tmp.
+
+	self pop: 2 thenPush: res
 ]
 
 { #category : #'primitive support' }
@@ -3640,14 +3694,13 @@ StackInterpreter >> callExternalPrimitive: functionID [
 StackInterpreter >> callMappedInlinedPrimitive [
 	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
 	| primIndex |
+	primIndex := self fetchByte.
+	self fetchNextBytecode.
 	SistaVM
 		ifTrue:
-			[primIndex := self fetchByte.
-			self fetchNextBytecode.
-			self sistaMappedInlinePrimitive: primIndex]
-		ifFalse: 
-			[instructionPointer := instructionPointer - 2.
-			self respondToUnknownBytecode].
+			[self sistaMappedInlinePrimitive: primIndex]
+		ifFalse:
+			[self mappedInlinePrimitive: primIndex].
 ]
 
 { #category : #'miscellaneous bytecodes' }
@@ -4870,6 +4923,7 @@ StackInterpreter >> context: aContext hasValidInversePCMappingOf: theIP in: theF
 	<var: #theFP type: #'char *'>
 	pc := objectMemory fetchPointer: InstructionPointerIndex ofObject: aContext.
 	encodedip := self contextInstructionPointer: theIP frame: theFP.
+
 	^(objectMemory hasSpurMemoryManagerAPI or: [MULTIPLEBYTECODESETS])
 		ifTrue:
 			[pc = encodedip
@@ -4902,9 +4956,9 @@ StackInterpreter >> convertFloatsToPlatformOrder [
 	objectMemory allObjectsDo:
 		[:obj| | temp |
 		(objectMemory compactClassIndexOf: obj) = ClassFloatCompactIndex ifTrue:
-			[temp := objectMemory long32At: obj + objectMemory baseHeaderSize.
-			 objectMemory long32At: obj + objectMemory baseHeaderSize put: (objectMemory long32At: obj + objectMemory baseHeaderSize + 4).
-			 objectMemory long32At: obj + objectMemory baseHeaderSize + 4 put: temp]]
+			[temp := objectMemory uint32AtPointer: obj + objectMemory baseHeaderSize.
+			 objectMemory uint32AtPointer: obj + objectMemory baseHeaderSize put: (objectMemory uint32AtPointer: obj + objectMemory baseHeaderSize + 4).
+			 objectMemory uint32AtPointer: obj + objectMemory baseHeaderSize + 4 put: temp]]
 ]
 
 { #category : #'internal interpreter access' }
@@ -5078,6 +5132,12 @@ StackInterpreter >> directedSuperclassSend [
 	self ensureReceiverUnforwarded.
 	self assert: lkupClassTag ~= objectMemory nilObject.
 	self commonSendOrdinary
+]
+
+{ #category : #'interpreter shell' }
+StackInterpreter >> dispatchCurrentBytecode [
+	self dispatchOn: currentBytecode in: BytecodeTable
+
 ]
 
 { #category : #'message sending' }
@@ -5261,6 +5321,24 @@ StackInterpreter >> duplicateTopBytecode [
 	self push: self stackTop
 ]
 
+{ #category : #instantiation }
+StackInterpreter >> eeInstantiateFloat32Register [
+
+	^ objectMemory
+		  eeInstantiateSmallClass:
+		  (objectMemory splObj: ClassFloat32Register)
+		  numSlots: 32 / BytesPerWord "The number of slots depends on the architecture, as we always want 4 32bit slots (or 16 bytes in total)"
+]
+
+{ #category : #instantiation }
+StackInterpreter >> eeInstantiateFloat64Register [
+
+	^ objectMemory
+		  eeInstantiateSmallClass:
+		  (objectMemory splObj: ClassFloat64Register)
+		  numSlots: 16 / BytesPerWord "The number of slots depends on the architecture, as we always want 2 64bit slots (or 16 bytes in total)"
+]
+
 { #category : #'debug printing' }
 StackInterpreter >> elementsPerPrintOopLine [
 	^5
@@ -5291,7 +5369,7 @@ StackInterpreter >> encodeFrameFieldHasContext: hasContext "<Boolean>" isBlock: 
 StackInterpreter >> encoderClassForHeader: headerInteger [
 	<doNotGenerate>
 	^Smalltalk classNamed: ((headerInteger < 0 or: [objectMemory headerIndicatesAlternateBytecodeSet: headerInteger])
-								ifTrue: [AltBytecodeEncoderClassName]
+								ifTrue: [BytecodeEncoderClassName]
 								ifFalse: [BytecodeEncoderClassName])
 ]
 
@@ -6418,6 +6496,18 @@ StackInterpreter >> floatArg: index [
 	oop := self methodArg: index.
 	oop = 0 ifTrue:[^0.0]. "methodArg: failed"
 	^objectMemory floatValueOf: oop
+]
+
+{ #category : #'memory access' }
+StackInterpreter >> floatAtPointer: anOop [
+
+	^ objectMemory float64At: anOop
+]
+
+{ #category : #'memory access' }
+StackInterpreter >> floatAtPointer: anOop put: value [
+
+	objectMemory float64At: anOop put: value
 ]
 
 { #category : #'debug printing' }
@@ -8033,11 +8123,11 @@ StackInterpreter >> internalActivateNewMethod [
 	framePointer := stackPointer.
 	self push: newMethod.
 	self setMethod: newMethod methodHeader: methodHeader.
+	self push: objectMemory nilObject. "FxThisContext field"
 	self push: (self
 			 encodeFrameFieldHasContext: false
 			 isBlock: false
 			 numArgs: (self argumentCountOfMethodHeader: methodHeader)).
-	self push: objectMemory nilObject. "FxThisContext field"
 	self push: rcvr.
 
 	"Initialize temps..."
@@ -8188,6 +8278,26 @@ StackInterpreter >> interpret [
 	self externalizeIPandSP.
 	^nil
 
+]
+
+{ #category : #'as yet unclassified' }
+StackInterpreter >> interpretUntilReturn [
+	<doNotGenerate>
+	self interpretWhile: [ currentBytecode ~= 92 ]."TODO extract condition"
+]
+
+{ #category : #'as yet unclassified' }
+StackInterpreter >> interpretWhile: aFullBlockClosure [ 
+	<doNotGenerate>
+	
+	self internalizeIPandSP.
+	self fetchNextBytecode.
+	[aFullBlockClosure value] whileTrue:
+		[self dispatchCurrentBytecode.
+		 self incrementByteCount].
+	instructionPointer := instructionPointer - 1.
+	"undo the pre-increment of IP before returning"
+	self externalizeIPandSP
 ]
 
 { #category : #'stack pages' }
@@ -8833,8 +8943,8 @@ StackInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 	framePointer := stackPointer.
 	self push: newMethod.
 	self setMethod: newMethod methodHeader: methodHeader.
-	self push: (self encodeFrameFieldHasContext: false isBlock: false numArgs: numArgs).
 	self push: objectMemory nilObject. "FxThisContext field"
+	self push: (self encodeFrameFieldHasContext: false isBlock: false numArgs: numArgs).
 	self push: rcvr.
 
 	"clear remaining temps to nil"
@@ -9372,12 +9482,12 @@ StackInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 		put: theMethod.
 	stackPages
 		longAt: (pointer := pointer - objectMemory wordSize)
+		put: aContext.
+	stackPages
+		longAt: (pointer := pointer - objectMemory wordSize)
 		put: (self encodeFrameFieldHasContext: true isBlock: maybeClosure ~= objectMemory nilObject numArgs: numArgs).
 	self assert: (self frameHasContext: page baseFP).
 	self assert: (self frameNumArgs: page baseFP) == numArgs.
-	stackPages
-		longAt: (pointer := pointer - objectMemory wordSize)
-		put: aContext.
 	stackPages
 		longAt: (pointer := pointer - objectMemory wordSize)
 		put: rcvr.
@@ -9734,6 +9844,29 @@ StackInterpreter >> mappedImmcheckStoreCheckPointerAtPut [
 		storePointerImmutabilityCheck: argIntAdjusted
 		ofObject: rec
 		withValue: result
+]
+
+{ #category : #'extension bytecodes' }
+StackInterpreter >> mappedInlinePrimitive: primIndex [
+	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
+	"Number of arguments:
+	 0-49 nullary
+	 50-99 unary
+	 100-149 binary
+	 150-199 trinary
+	 200-249 variable
+	 250-255 mapped jumps"
+	primIndex caseOf: {
+		[0]   -> [self addFloat64VectorBytecode].
+		[1]   -> [self pushFloat64ArrayToRegisterBytecode].
+		[2]   -> [self storeFloat64RegisterIntoArrayBytecode].
+		[3]   -> [self addFloat32VectorBytecode].
+		[4]   -> [self pushFloat32ArrayToRegisterBytecode].
+		[5]   -> [self storeFloat32RegisterIntoArrayBytecode].
+		[6]   -> [self subFloat64VectorBytecode]
+	} otherwise: [self unknownInlinePrimitive]
+	
+
 ]
 
 { #category : #'object memory support' }
@@ -11080,6 +11213,35 @@ StackInterpreter >> primitiveEventProcessingControl [
 							^self]].
 		 ^self pop: 2 thenPushBool: enabled].
 	self primitiveFailFor: PrimErrBadNumArgs
+]
+
+{ #category : #'simd primitives' }
+StackInterpreter >> primitiveFloat64ArrayAdd [
+
+	<var: #rcvr type: #'double *'>
+	<var: #arg type: #'double *'>
+	| arg1 arg2 res arraySize |
+	arg1 := self stackValue: 2.
+	arg2 := self stackValue: 1.
+	res := self stackTop.
+	arraySize := objectMemory numSlotsOf: res.
+
+	(objectMemory isSixtyFourBitIndexableOop: arg1)
+		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory isSixtyFourBitIndexableOop: arg2)
+		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory isSixtyFourBitIndexableOop: res)
+		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+
+	0 to: arraySize - 1 do: [ :i | 
+		| tmp |
+		tmp := (objectMemory fetchFloat64: i ofObject: arg1)
+		       + (objectMemory fetchFloat64: i ofObject: arg2).
+		objectMemory storeFloat64: i ofObject: res withValue: tmp ].
+
+	self successful
+		ifTrue: [ self pop: 4 thenPush: res ]
+		ifFalse: [ self primitiveFailFor: PrimErrBadArgument ]
 ]
 
 { #category : #'arithmetic float primitives' }
@@ -12604,6 +12766,56 @@ StackInterpreter >> pushConstantZeroBytecode [
 	self fetchNextBytecode.
 	self push: ConstZero.
 
+]
+
+{ #category : #'simd bytecodes' }
+StackInterpreter >> pushFloat32ArrayToRegisterBytecode [
+
+	| array index reg |
+	array := self stackValue: 0.
+	index := objectMemory integerValueOf: (self stackValue: 1).
+
+	reg := self eeInstantiateFloat32Register.
+
+	objectMemory
+		storeFloat32: 0
+		ofObject: reg
+		withValue: (objectMemory fetchFloat32: index ofObject: array).
+	objectMemory
+		storeFloat32: 1
+		ofObject: reg
+		withValue: (objectMemory fetchFloat32: index + 1 ofObject: array).
+	objectMemory
+		storeFloat32: 2
+		ofObject: reg
+		withValue: (objectMemory fetchFloat32: index + 2 ofObject: array).
+	objectMemory
+		storeFloat32: 3
+		ofObject: reg
+		withValue: (objectMemory fetchFloat32: index + 3 ofObject: array).
+
+	self pop: 2 thenPush: reg
+]
+
+{ #category : #'simd bytecodes' }
+StackInterpreter >> pushFloat64ArrayToRegisterBytecode [
+
+	| array index reg |
+	array := self stackValue: 0.
+	index := objectMemory integerValueOf: (self stackValue: 1).
+
+	reg := self eeInstantiateFloat64Register.
+
+	objectMemory
+		storeFloat64: 0
+		ofObject: reg
+		withValue: (objectMemory fetchFloat64: index ofObject: array).
+	objectMemory
+		storeFloat64: 1
+		ofObject: reg
+		withValue: (objectMemory fetchFloat64: index + 1 ofObject: array).
+
+	self pop: 2 thenPush: reg
 ]
 
 { #category : #'primitive support' }
@@ -14491,14 +14703,14 @@ StackInterpreter >> stSizeOf: oop [
 StackInterpreter >> stackFloatValue: offset [
 	"In the StackInterpreter stacks grow down."
 	<returnTypeC: #double>
-	^objectMemory floatValueOf: (stackPages longAt: stackPointer + (offset*objectMemory wordSize))
+	^objectMemory floatValueOf: (stackPages unsignedLongAt: stackPointer + (offset*objectMemory wordSize))
 ]
 
 { #category : #'stack access' }
 StackInterpreter >> stackIntegerValue: offset [
 	"In the StackInterpreter stacks grow down."
 	| integerPointer |
-	integerPointer := stackPages longAt: stackPointer + (offset*objectMemory wordSize).
+	integerPointer := stackPages unsignedLongAt: stackPointer + (offset*objectMemory wordSize).
 	^self checkedIntegerValueOf: integerPointer
 ]
 
@@ -14539,7 +14751,7 @@ StackInterpreter >> stackObjectValue: offset [
 	"Ensures that the given object is a real object, not a SmallInteger."
 	"In the StackInterpreter stacks grow down."
 	| oop |
-	oop := stackPages longAt: stackPointer + (offset * objectMemory wordSize).
+	oop := stackPages unsignedLongAt: stackPointer + (offset * objectMemory wordSize).
 	(objectMemory isImmediate: oop) ifTrue:
 		[self primitiveFail. ^ nil].
 	^oop
@@ -14670,7 +14882,7 @@ StackInterpreter >> stackPositiveMachineIntegerValue: offset [
 	<returnTypeC: #'usqIntptr_t'>
 	"In the StackInterpreter stacks grow down."
 	| integerPointer |
-	integerPointer := stackPages longAt: stackPointer + (offset*objectMemory wordSize).
+	integerPointer := stackPages unsignedLongAt: stackPointer + (offset*objectMemory wordSize).
 	^self positiveMachineIntegerValueOf: integerPointer
 ]
 
@@ -14680,14 +14892,14 @@ StackInterpreter >> stackSignedMachineIntegerValue: offset [
 	<returnTypeC: #'sqIntptr_t'>
 	"In the StackInterpreter stacks grow down."
 	| integerPointer |
-	integerPointer := stackPages longAt: stackPointer + (offset*objectMemory wordSize).
+	integerPointer := stackPages unsignedLongAt: stackPointer + (offset*objectMemory wordSize).
 	^self signedMachineIntegerValueOf: integerPointer
 ]
 
 { #category : #'stack access' }
 StackInterpreter >> stackTop [
 	<api>
-	^stackPages longAt: stackPointer
+	^stackPages unsignedLongAt: stackPointer
 ]
 
 { #category : #'stack access' }
@@ -14706,7 +14918,7 @@ StackInterpreter >> stackTopPutIntegerObjectOf: aValue [
 StackInterpreter >> stackValue: offset [
 	<api>
 	"In the StackInterpreter stacks grow down."
-	^stackPages longAt: stackPointer + (offset*objectMemory wordSize)
+	^stackPages unsignedLongAt: stackPointer + (offset*objectMemory wordSize)
 ]
 
 { #category : #'stack access' }
@@ -14771,6 +14983,34 @@ StackInterpreter >> storeAndPopTemporaryVariableBytecode [
 				put: self stackTop.
 			self fetchNextBytecode.
 			self pop: 1 ]
+]
+
+{ #category : #'simd bytecodes' }
+StackInterpreter >> storeFloat32RegisterIntoArrayBytecode [
+	| reg index array |
+	array := self stackValue: 0.
+	index := objectMemory integerValueOf: (self stackValue: 1).
+	reg := self stackValue: 2.
+	
+	objectMemory storeFloat32: index ofObject: array withValue: (objectMemory fetchFloat32: 0 ofObject: reg). 
+	objectMemory storeFloat32: (index+1) ofObject: array withValue: (objectMemory fetchFloat32: 1 ofObject: reg). 
+	objectMemory storeFloat32: (index+2) ofObject: array withValue: (objectMemory fetchFloat32: 2 ofObject: reg).
+	objectMemory storeFloat32: (index+3) ofObject: array withValue: (objectMemory fetchFloat32: 3 ofObject: reg).
+		
+	self pop: 3 thenPush: array.
+]
+
+{ #category : #'simd bytecodes' }
+StackInterpreter >> storeFloat64RegisterIntoArrayBytecode [
+	| reg index array |
+	array := self stackValue: 0.
+	index := objectMemory integerValueOf: (self stackValue: 1).
+	reg := self stackValue: 2.
+	
+	objectMemory storeFloat64: index ofObject: array withValue: (objectMemory fetchFloat64: 0 ofObject: reg). 
+	objectMemory storeFloat64: (index+1) ofObject: array withValue: (objectMemory fetchFloat64: 1 ofObject: reg). 
+		
+	self pop: 3 thenPush: array.
 ]
 
 { #category : #utilities }
@@ -14904,6 +15144,27 @@ StackInterpreter >> stringOf: oop [
 			strm nextPutAll: (i=nLongs
 							ifTrue: [chars copyFrom: 1 to: size-1\\objectMemory wordSize+1]
 							ifFalse: [chars])]]
+]
+
+{ #category : #'simd bytecodes' }
+StackInterpreter >> subFloat64VectorBytecode [
+
+	<var: #tmp type: #double>
+	| arg rcv res tmp |
+	arg := self stackValue: 0.
+	rcv := self stackValue: 1.
+
+	res := self eeInstantiateFloat64Register.
+
+	tmp := (objectMemory fetchFloat64: 0 ofObject: rcv)
+	       - (objectMemory fetchFloat64: 0 ofObject: arg).
+	objectMemory storeFloat64: 0 ofObject: res withValue: tmp.
+
+	tmp := (objectMemory fetchFloat64: 1 ofObject: rcv)
+	       - (objectMemory fetchFloat64: 1 ofObject: arg).
+	objectMemory storeFloat64: 1 ofObject: res withValue: tmp.
+
+	self pop: 2 thenPush: res
 ]
 
 { #category : #'indexing primitive support' }
@@ -15071,8 +15332,8 @@ StackInterpreter >> temporary: offset in: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	^offset < (frameNumArgs := self frameNumArgs: theFP)
-		ifTrue: [stackPages longAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize)]
-		ifFalse: [stackPages longAt: theFP + FoxReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize)]
+		ifTrue: [stackPages unsignedLongAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize)]
+		ifFalse: [stackPages unsignedLongAt: theFP + FoxReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize)]
 ]
 
 { #category : #'internal interpreter access' }

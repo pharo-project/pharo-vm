@@ -73,6 +73,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 	"SimpleStackBasedCogit initializeBytecodeTableForSistaV1"
 
 	BytecodeSetHasDirectedSuperSend := true.
+	BytecodeSetHasExtensions := true.	
 	FirstSpecialSelector := 96.
 	NumSpecialSelectors := 32.
 	self flag:
@@ -85,7 +86,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 	self generatorTableFrom: #(
 		"1 byte bytecodes"
 		"pushes"
-		(1    0   15 genPushReceiverVariableBytecode isInstVarRef)
+		(1   0   15 genPushReceiverVariableBytecode isInstVarRef)
 		(1  16   31 genPushLiteralVariable16CasesBytecode	needsFrameNever: 1)
 		(1  32   63 genPushLiteralConstantBytecode			needsFrameNever: 1)
 		(1  64   75 genPushTemporaryVariableBytecode)
@@ -111,7 +112,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 		(1  95   95 genExtNopBytecode			needsFrameNever: 0)
 
 		"sends"
-		(1   96 117 genSpecialSelectorSend isMapped) "#+ #- #< #> #<= #>= #= #~= #* #/ #\\ #@ #bitShift: #// #bitAnd: #bitOr: #at: #at:put: #size #next #nextPut: #atEnd"
+		(1  96 117 genSpecialSelectorSend isMapped) "#+ #- #< #> #<= #>= #= #~= #* #/ #\\ #@ #bitShift: #// #bitAnd: #bitOr: #at: #at:put: #size #next #nextPut: #atEnd"
 		(1 118 118 genSpecialSelectorEqualsEquals needsFrameNever: notMapped -1) "not mapped because it is directly inlined (for now)"
 		(1 119 119 genSpecialSelectorClass needsFrameNever: notMapped 0) "not mapped because it is directly inlined (for now)"
 		(1 120 120 genSpecialSelectorNotEqualsEquals needsFrameNever: notMapped -1) "not mapped because it is directly inlined (for now)"
@@ -173,7 +174,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 		(2 244 244 genExtStoreLiteralVariableBytecode isMappedIfImmutability)
 		(2 245 245 genLongStoreTemporaryVariableBytecode)
 
-		(2 246 247	unknownBytecode)
+		(2 246 247 unknownBytecode)
 
 		"3 byte bytecodes"
 		(3 248 248 genCallPrimitiveBytecode)

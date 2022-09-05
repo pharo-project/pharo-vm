@@ -82,7 +82,7 @@ Spur64BitMemoryManager >> bytesInObject: objOop [
 	| header headerNumSlots numSlots |
 	<var: 'header' type: #usqLong>
 	self flag: #endianness.
-	header := self longAt: objOop.
+	header := self long64At: objOop.
 	headerNumSlots := header >> self numSlotsFullShift.
 	numSlots := headerNumSlots = self numSlotsMask
 					ifTrue: [self rawOverflowSlotsOf: objOop]
@@ -812,7 +812,7 @@ Spur64BitMemoryManager >> objectAfter: objOop limit: limit [
 	(self oop: followingWordAddress isGreaterThanOrEqualTo: limit) ifTrue:
 		[^limit].
 	self flag: #endianness.
-	followingWord := self longAt: followingWordAddress.
+	followingWord := self unsignedLongAt: followingWordAddress.
 	^followingWord >> self numSlotsFullShift = self numSlotsMask
 		ifTrue: [followingWordAddress + self baseHeaderSize]
 		ifFalse: [followingWordAddress]
@@ -981,10 +981,10 @@ Spur64BitMemoryManager >> setIsImmutableOf: objOop to: aBoolean [
 { #category : #'header access' }
 Spur64BitMemoryManager >> setIsMarkedOf: objOop to: aBoolean [
 	self assert: (self isFreeObject: objOop) not.
-	self longAt: objOop
+	self unsignedLongAt: objOop
 		put: (aBoolean
-				ifTrue: [(self longAt: objOop) bitOr: 1 << self markedBitFullShift]
-				ifFalse: [(self longAt: objOop) bitAnd: (1 << self markedBitFullShift) bitInvert64])
+				ifTrue: [(self unsignedLongAt: objOop) bitOr: 1 << self markedBitFullShift]
+				ifFalse: [(self unsignedLongAt: objOop) bitAnd: (1 << self markedBitFullShift) bitInvert64])
 ]
 
 { #category : #'header access' }
@@ -997,10 +997,10 @@ Spur64BitMemoryManager >> setIsPinnedOf: objOop to: aBoolean [
 
 { #category : #'header access' }
 Spur64BitMemoryManager >> setIsRememberedOf: objOop to: aBoolean [
-	self longAt: objOop
+	self unsignedLong64At: objOop
 		put: (aBoolean
-				ifTrue: [(self longAt: objOop) bitOr: 1 << self rememberedBitShift]
-				ifFalse: [(self longAt: objOop) bitAnd: (1 << self rememberedBitShift) bitInvert64])
+				ifTrue: [(self unsignedLong64At: objOop) bitOr: 1 << self rememberedBitShift]
+				ifFalse: [(self unsignedLong64At: objOop) bitAnd: (1 << self rememberedBitShift) bitInvert64])
 ]
 
 { #category : #'word size' }
@@ -1194,6 +1194,20 @@ Spur64BitMemoryManager >> tagMask [
 	<api>
 	<cmacro>
 	^7
+]
+
+{ #category : #'memory access' }
+Spur64BitMemoryManager >> unsignedLongAt: anAddress [
+
+	<doNotGenerate>
+	^ self unsignedLong64At: anAddress
+]
+
+{ #category : #'memory access' }
+Spur64BitMemoryManager >> unsignedLongAt: anAddress put: aValue [ 
+
+	<doNotGenerate>
+	^ self unsignedLong64At: anAddress put: aValue
 ]
 
 { #category : #'header formats' }

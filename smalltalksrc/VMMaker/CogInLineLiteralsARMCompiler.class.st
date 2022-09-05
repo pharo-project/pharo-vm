@@ -168,7 +168,7 @@ CogInLineLiteralsARMCompiler >> rewriteInlineCacheAt: callSiteReturnAddress tag:
 	callDistance := (callTargetAddress - (callSiteReturnAddress + 8 "pc offset"- 4 "return offset")) signedIntToLong.
 	self assert: (self isInImmediateJumpRange: callDistance). "we don't support long call updates here"
 	call := self bl: callDistance.
-	objectMemory longAt: (self instructionAddressBefore: callSiteReturnAddress ) put: call.
+	objectMemory uint32AtPointer: (self instructionAddressBefore: callSiteReturnAddress ) put: call.
 	self insert32BitOperand: cacheTag into4InstructionsPreceding: (self instructionAddressBefore: callSiteReturnAddress ).
 	self assert: (self callTargetFromReturnAddress: callSiteReturnAddress) = callTargetAddress.
 	self assert: (self extract32BitOperandFrom4InstructionsPreceding: (self instructionAddressBefore: callSiteReturnAddress )) = cacheTag.

@@ -393,6 +393,27 @@ CogARMv8Compiler >> addSize: is64Bits sourceRegister: sourceRegister shift: shif
 		bitOr: (destinationRegister bitAnd: 2r11111)))))
 ]
 
+{ #category : #adding }
+CogARMv8Compiler >> addT: t q: q term1: vectorReg1 term2: vectorReg2 dest: vectorRegSum [ 
+
+	"
+	C7.2.49 FADD (vector)
+	
+	FADD <Vd>.<T>, <Vn>.<T>, <Vm>.<T>
+
+	This instruction adds corresponding vector elements in the two source SIMD&FP registers, writes the result into a vector, and writes the vector to the destination SIMD&FP register.
+	All the values in this instruction are floating-point values."
+	
+	^ q << 30
+		bitOr: (2r01110 << 24
+		bitOr: ((t bitAnd: 1) << 22
+		bitOr: (1 << 21
+		bitOr: ((vectorReg2 bitAnd: 2r11111) << 16
+		bitOr: (2r110101 << 10
+		bitOr: ((vectorReg1 bitAnd: 2r11111) << 5
+		bitOr: (vectorRegSum bitAnd: 2r11111)))))))
+]
+
 { #category : #assembler }
 CogARMv8Compiler >> addsExtendedSize: is64Bits leftRegisterMaybeSP: leftRegister shiftedRightRegister: rightRegister option: option shiftOffset: immediate3bitValue destinationRegister: destinationRegister [
 	
@@ -1241,7 +1262,10 @@ CogARMv8Compiler >> computeMaximumSize [
 		
 		"SIMD Ops"
 		[DupRVr] -> [ ^ 4 ].
-		[St1VrRMw] -> [ ^ 4 ]
+		[St1VrRMw] -> [ ^ 4 ].
+		[Ld1VrRMw] -> [ ^ 4 ].
+		[FaddSRvRvRv] -> [ ^ 4 ].
+		[FsubSRvRvRv] -> [ ^ 4 ].
 		}.
 	^0 "to keep C compiler quiet"
 
@@ -1835,11 +1859,65 @@ CogARMv8Compiler >> concretizeFPConditionalJump: conditionCode [
 	^ self concretizeConditionalJump: conditionCode
 ]
 
+{ #category : #concretizing }
+CogARMv8Compiler >> concretizeFaddSRvRvRv [
+
+	"Will get inlined into concretizeAt: switch."
+
+	<inline: true>
+
+	| size vectorReg1 vectorReg2 vectorRegSum t q instruction |
+
+	size := operands at: 0.
+	vectorReg1 := operands at: 1.
+	vectorReg2 := operands at: 2.
+	vectorRegSum := operands at: 3.
+
+	size = 64 
+		ifTrue: [ t := 1. q := 1 ]
+		ifFalse: [ size = 32 ifTrue: [ t := 0. q := 1]
+			ifFalse: [self notYetImplemented]
+		].
+
+	instruction := self addT: t q: q term1: vectorReg1 term2: vectorReg2 dest: vectorRegSum.
+
+	self machineCodeAt: 0 put: instruction.
+
+	^ machineCodeSize := 4
+]
+
 { #category : #'generate machine code' }
 CogARMv8Compiler >> concretizeFill32 [
 	"fill with operand 0 according to the processor's endianness"
 
 	self machineCodeAt: 0 put: (operands at: 0).
+	^ machineCodeSize := 4
+]
+
+{ #category : #concretizing }
+CogARMv8Compiler >> concretizeFsubSRvRvRv [
+
+	"Will get inlined into concretizeAt: switch."
+
+	<inline: true>
+
+	| size minuendVectorRegister subtrahendVectorRegister vectorRegSum t q instruction |
+
+	size := operands at: 0.
+	minuendVectorRegister := operands at: 1.
+	subtrahendVectorRegister := operands at: 2.
+	vectorRegSum := operands at: 3.
+
+	size = 64 
+		ifTrue: [ t := 1. q := 1 ]
+		ifFalse: [ size = 32 ifTrue: [ t := 0. q := 1]
+			ifFalse: [self notYetImplemented]
+		].
+
+	instruction := self subT: t q: q term1: minuendVectorRegister term2: subtrahendVectorRegister dest: vectorRegSum.
+
+	self machineCodeAt: 0 put: instruction.
+
 	^ machineCodeSize := 4
 ]
 
@@ -1921,6 +1999,52 @@ CogARMv8Compiler >> concretizeJumpR [
 	| reg |
 	reg := operands at: 0.
 	self machineCodeAt: 0 put: (self br: reg).
+	^ machineCodeSize := 4
+]
+
+{ #category : #concretizing }
+CogARMv8Compiler >> concretizeLd1VrRMw [
+
+	"Will get inlined into concretizeAt: switch."
+
+	<inline: true>
+	| opCode instruction q t size vectorR baseRegister offset |
+	size := operands at: 0.
+	vectorR := operands at: 1.
+	baseRegister := operands at: 2.
+	offset := operands at: 3.
+	opCode := 2r0111. "TODO support multiple-register variants"
+
+	(offset = 0 | (offset = 16))
+		ifTrue: [ 
+			size = 64
+				ifTrue: [ q := 1. t := 11 ]
+				ifFalse: [ size = 32
+					ifTrue: [ q := 1. t := 10 ]
+					ifFalse: [ self notYetImplemented ]
+				]
+			 ]
+		ifFalse: [ self notYetImplemented ].
+
+	instruction := offset = 0
+		               ifTrue: [ 
+			               self
+				               ld1Q: q
+				               OpCode: opCode
+				               S: t
+				               Rn: baseRegister
+				               Rt: vectorR ]
+		               ifFalse: [ 
+			               self
+				               ld1Q: q
+				               Rm: 2r11111
+				               OpCode: opCode
+				               S: t
+				               Rn: baseRegister
+				               Rt: vectorR ].
+
+	self machineCodeAt: 0 put: instruction.
+
 	^ machineCodeSize := 4
 ]
 
@@ -2984,32 +3108,45 @@ CogARMv8Compiler >> concretizeSqrtRd [
 ]
 
 { #category : #concretizing }
-CogARMv8Compiler >> concretizeSt1VRMRO [
+CogARMv8Compiler >> concretizeSt1VrRMw [
 
 	"Will get inlined into concretizeAt: switch."
 
 	<inline: true>
-	| opCode instruction q t size vectorR memoryR offset rm |
-	opCode := 2r0111. "TODO support multiple-register variants"
-	rm := 2r11111. "TODO support register offset variant"
+	| opCode instruction q t size vectorR memoryR offset |
 	size := operands at: 0.
 	vectorR := operands at: 1.
 	memoryR := operands at: 2.
 	offset := operands at: 3.
+	opCode := 2r0111. "TODO support multiple-register variants"
 
-	((size = 64) & (offset = 16))
+	(offset = 0 | (offset = 16))
 		ifTrue: [ 
-			q := 1.
-			t := 11 ]
+			size = 64
+				ifTrue: [ q := 1. t := 11 ]
+				ifFalse: [ size = 32
+					ifTrue: [ q := 1. t := 10 ]
+					ifFalse: [ self notYetImplemented ]
+				]
+			 ]
 		ifFalse: [ self notYetImplemented ].
 
-	instruction := self
-		               st1Q: q
-		               Rm: rm
-		               OpCode: opCode
-		               S: t
-		               Rn: memoryR
-		               Rt: vectorR.
+	instruction := offset = 0
+		               ifTrue: [ 
+			               self
+				               st1Q: q
+				               OpCode: opCode
+				               S: t
+				               Rn: memoryR
+				               Rt: vectorR ]
+		               ifFalse: [ 
+			               self
+				               st1Q: q
+				               Rm: 2r11111
+				               OpCode: opCode
+				               S: t
+				               Rn: memoryR
+				               Rt: vectorR ].
 
 	self machineCodeAt: 0 put: instruction.
 
@@ -3402,7 +3539,10 @@ CogARMv8Compiler >> dispatchConcretize [
 	
 		"SIMD Ops"
 		[ DupRVr ] -> [ ^ self concretizeDupRVr ].
-		[ St1VrRMw ] -> [ ^ self concretizeSt1VRMRO ].
+		[ St1VrRMw ] -> [ ^ self concretizeSt1VrRMw ].
+		[ Ld1VrRMw ] -> [ ^ self concretizeLd1VrRMw ].
+		[ FaddSRvRvRv ] -> [ ^ self concretizeFaddSRvRvRv ].
+		[ FsubSRvRvRv ] -> [ ^ self concretizeFsubSRvRvRv ].
 		}
 ]
 
@@ -3769,12 +3909,12 @@ CogARMv8Compiler >> fcmpFType: ftype leftRegister: firstRegister rightRegister: 
 CogARMv8Compiler >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
 	<inline: true>
 	| fillLoop |
-	fillLoop := cogit DupS: 64 R: fillReg Vr: vectorRegister.
+	cogit DupS: 64 R: fillReg Vr: vectorRegister.
 	"St1 copies data in 128-bit chunks. This may exceed the size of an object (that only needs to be a multiple of 64 bits).
 	This overflow is not an issue, however. The reason for that is that objects are allocated sequentially in the Eden space
 	using a bumpAllocator, which means that the overflowing bits won't overwrite another object. This is true even when reaching
 	the end of the Eden space, as after it we reserve additional headroom."
-	cogit St1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
+	fillLoop := cogit St1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
 	cogit CmpR: startMemoryAddr R: endMemoryAddr.
 	cogit JumpAbove: fillLoop.
 	
@@ -4214,7 +4354,7 @@ CogARMv8Compiler >> instructionBeforeAddress: followingAddress [
 	"Answer the instruction immediately preceding followingAddress."
 	<inline: true>
 	<returnTypeC: #'uint32_t'>
-	^objectMemory long32At: (self instructionAddressBefore: followingAddress)
+	^objectMemory uint32AtPointer: (self instructionAddressBefore: followingAddress)
 ]
 
 { #category : #testing }
@@ -4433,6 +4573,47 @@ CogARMv8Compiler >> jumpTargetPCAt: pc [
 	^self
 		cCode: [operand * 4 + pc + 8]
 		inSmalltalk: [operand * 4 + pc + 8 bitAnd: cogit addressSpaceMask]
+]
+
+{ #category : #'generate machine code - concretize' }
+CogARMv8Compiler >> ld1Q: q OpCode: opCode S: size Rn: rn Rt: rt [
+
+	"
+	C7.2.177 LD1 (multiple structures)
+	
+	LD1 { <Vt>.<T> }, [<Xn|SP>]
+
+	Load multiple single-element structures to one, two, three, or four registers. This instruction loads multiple
+	single-element structures from memory and writes the result to one, two, three, or four SIMD&FP registers. 
+	Every element of each register is stored."
+	
+	^ q << 30
+		bitOr: (2r110001 << 22
+		bitOr: ((opCode bitAnd: 2r1111) << 12
+		bitOr: ((size bitAnd: 2r11) << 10
+		bitOr: ((rn bitAnd: 2r11111) << 5
+		bitOr: (rt bitAnd: 2r11111)))))
+]
+
+{ #category : #'generate machine code - concretize' }
+CogARMv8Compiler >> ld1Q: q Rm: rm OpCode: opCode S: size Rn: rn Rt: rt [
+
+	"
+	C7.2.177 LD1 (multiple structures)
+	
+	LD1 { <Vt>.<T> }, [<Xn|SP>], <Xm>
+
+	Load multiple single-element structures to one, two, three, or four registers. This instruction loads multiple
+	single-element structures from memory and writes the result to one, two, three, or four SIMD&FP registers. 
+	Every element of each register is stored."
+	
+	^ q << 30
+		bitOr: (2r110011 << 22
+		bitOr: ((rm bitAnd: 2r11111) << 16
+		bitOr: ((opCode bitAnd: 2r1111) << 12
+		bitOr: ((size bitAnd: 2r11) << 10
+		bitOr: ((rn bitAnd: 2r11111) << 5
+		bitOr: (rt bitAnd: 2r11111))))))
 ]
 
 { #category : #'ARM convenience instructions' }
@@ -5308,7 +5489,7 @@ CogARMv8Compiler >> relocateCallBeforeReturnPC: retpc by: delta [
 		 self assert: ((self instructionIsB: instr) or: [self instructionIsBL: instr]).
 		 distanceDiv4 := instr bitAnd: 16rFFFFFF.
 		 distanceDiv4 := distanceDiv4 + (delta // 4).
-		 objectMemory long32At: (self instructionAddressBefore: retpc ) put: ((instr bitAnd: 16rFF000000) bitOr: (distanceDiv4 bitAnd: 16rFFFFFF))]
+		 objectMemory uint32AtPointer: (self instructionAddressBefore: retpc ) put: ((instr bitAnd: 16rFF000000) bitOr: (distanceDiv4 bitAnd: 16rFFFFFF))]
 ]
 
 { #category : #assembler }
@@ -5481,7 +5662,7 @@ CogARMv8Compiler >> rewriteTransferAt: callSiteReturnAddress target: callTargetA
 	self assert: ((self instructionIsB: instr) or: [self instructionIsBL: instr]).
 
 	objectMemory
-		long32At: (self instructionAddressBefore: callSiteReturnAddress)
+		uint32AtPointer: (self instructionAddressBefore: callSiteReturnAddress)
 		put: (self b: callDistance withLink: (self instructionIsBL: instr)).
 
 	self assert: (self callTargetFromReturnAddress: callSiteReturnAddress) = callTargetAddress.
@@ -5721,7 +5902,25 @@ CogARMv8Compiler >> smulhSize: is64bits firstRegister: registerA secondRegister:
 		bitOr: (destinationRegister bitAnd: 16r1f))))
 ]
 
-{ #category : #concretizing }
+{ #category : #assembler }
+CogARMv8Compiler >> st1Q: q OpCode: opCode S: size Rn: rn Rt: rt [
+
+	"
+	C7.2.321 ST1 (multiple structures)
+
+	ST1 { <Vt>.<T> }, [<Xn|SP>]
+
+	Store multiple single-element structures from one, two, three, or four registers. This instruction 	stores elements to memory from one, two, three, or four SIMD&FP registers, without interleaving. 	Every element of each register is stored."
+	
+	^ q << 30
+		bitOr: (2r11000 << 23
+		bitOr: ((opCode bitAnd: 2r1111) << 12
+		bitOr: ((size bitAnd: 2r11) << 10
+		bitOr: ((rn bitAnd: 2r11111) << 5
+		bitOr: (rt bitAnd: 2r11111)))))
+]
+
+{ #category : #assembler }
 CogARMv8Compiler >> st1Q: q Rm: rm OpCode: opCode S: size Rn: rn Rt: rt [
 
 	"
@@ -5779,7 +5978,7 @@ CogARMv8Compiler >> stop [
 CogARMv8Compiler >> stopsFrom: startAddr to: endAddr [
 	self assert: endAddr - startAddr + 1 \\ 4 = 0.
 	startAddr to: endAddr by: 4 do: 
-		[:addr | objectMemory long32At: addr put: self stop].
+		[:addr | objectMemory uint32AtPointer: addr put: self stop].
 ]
 
 { #category : #'inline cacheing' }
@@ -6001,6 +6200,28 @@ CogARMv8Compiler >> sturSize: is64Bits baseRegister: baseReg signedOffset: immed
 		bitOr: ((twoComplement bitAnd: 2r111111111) << 12
 		bitOr:((baseReg bitAnd: 2r11111) << 5
 		bitOr: (destinationRegister bitAnd: 2r11111)))))
+]
+
+{ #category : #'generate machine code - concretize' }
+CogARMv8Compiler >> subT: t q: q term1: vectorReg1 term2: vectorReg2 dest: vectorRegSum [ 
+
+	"
+	C7.2.49 FSUB (vector)
+	
+	FSUB <Vd>.<T>, <Vn>.<T>, <Vm>.<T>
+
+	This instruction subtracts the elements in the vector in the second source
+SIMD&FP register, from the corresponding elements in the vector in the first source SIMD&FP register, places each result into elements of a vector, and writes the vector to the destination SIMD&FP register."
+	
+	^ q << 30
+		bitOr: (2r01110 << 24
+		bitOr: (1 << 23
+		bitOr: ((t bitAnd: 1) << 22
+		bitOr: (1 << 21
+		bitOr: ((vectorReg2 bitAnd: 2r11111) << 16
+		bitOr: (2r110101 << 10
+		bitOr: ((vectorReg1 bitAnd: 2r11111) << 5
+		bitOr: (vectorRegSum bitAnd: 2r11111))))))))
 ]
 
 { #category : #assembler }

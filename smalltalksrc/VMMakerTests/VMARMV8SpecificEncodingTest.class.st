@@ -17,7 +17,7 @@ VMARMV8SpecificEncodingTest >> armInstructionAt: index [
 
 	| addr inst |
 	addr := initialAddress + ((index - 1) * 8).
-	inst := memory long32At: addr.
+	inst := memory uint32AtPointer: addr.
 	
 	^ inst aarch64Disassembled
 ]

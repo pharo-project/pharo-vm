@@ -1700,6 +1700,16 @@ Cogit >> AddcR: reg1 R: reg2 [
 ]
 
 { #category : #'abstract instructions' }
+Cogit >> AlignedSt1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [ 
+	^ self
+		  gen: AlignedSt1VrRMw
+		  operand: aSize 
+		  operand: aVectorRegister
+		  operand: aMemoryRegister 
+		  operand: anOffset 
+]
+
+{ #category : #'abstract instructions' }
 Cogit >> AlignmentNops: alignment [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -1988,10 +1998,30 @@ Cogit >> DupS: aSize R: aGeneralRegister Vr: aVectorRegister [
 ]
 
 { #category : #'abstract instructions' }
+Cogit >> FaddS: aSize Rv: vectorRegister1 Rv: vectorRegister2 Rv: vectorRegisterSum [ 
+	^ self
+		  gen: FaddSRvRvRv
+		  operand: aSize 
+		  operand: vectorRegister1
+		  operand: vectorRegister2 
+		  operand: vectorRegisterSum
+]
+
+{ #category : #'abstract instructions' }
 Cogit >> Fill32: value [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: Fill32 operand: value
+]
+
+{ #category : #'abstract instructions' }
+Cogit >> FsubS: aSize Rv: minuendVectorRegister Rv: subtrahendVectorRegister Rv: vectorRegisterSum [ 
+	^ self
+		  gen: FsubSRvRvRv
+		  operand: aSize 
+		  operand: minuendVectorRegister
+		  operand: subtrahendVectorRegister 
+		  operand: vectorRegisterSum
 ]
 
 { #category : #'abstract instructions' }
@@ -2251,6 +2281,16 @@ Cogit >> Label [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: Label operand: (labelCounter := labelCounter + 1) operand: bytecodePC
+]
+
+{ #category : #'abstract instructions' }
+Cogit >> Ld1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [ 
+	^ self
+		  gen: Ld1VrRMw
+		  operand: aSize 
+		  operand: aVectorRegister
+		  operand: aMemoryRegister 
+		  operand: anOffset 
 ]
 
 { #category : #'abstract instructions' }
@@ -4078,6 +4118,12 @@ Cogit >> ceReturnToInterpreterPC [
 	<cmacro: '() ((usqInt)ceReturnToInterpreterTrampoline)'>
 	<returnTypeC: #usqInt> "for Slang"
 	^ceReturnToInterpreterTrampoline
+]
+
+{ #category : #accessing }
+Cogit >> ceReturnToInterpreterTrampoline: anInteger [ 
+	<doNotGenerate>
+	ceReturnToInterpreterTrampoline := anInteger
 ]
 
 { #category : #'in-line cacheing' }
@@ -8031,46 +8077,72 @@ Cogit >> generateOpenPICPrototype [
 ]
 
 { #category : #initialization }
+Cogit >> generateReturnToInterpreterPCTrampoline [
+
+	ceReturnToInterpreterTrampoline := self
+		                                   genReturnTrampolineFor:
+		                                   #ceReturnToInterpreter:
+		                                   called:
+		                                   'ceReturnToInterpreterTrampoline'
+		                                   arg: ReceiverResultReg
+]
+
+{ #category : #initialization }
 Cogit >> generateRunTimeTrampolines [
+
 	"Generate the run-time entries at the base of the native code zone and update the base."
-	
-	ceSendMustBeBooleanAddFalseTrampoline := self genMustBeBooleanTrampolineFor: objectMemory falseObject
-														called: 'ceSendMustBeBooleanAddFalseTrampoline'.
-	ceSendMustBeBooleanAddTrueTrampoline := self genMustBeBooleanTrampolineFor: objectMemory trueObject
-														called: 'ceSendMustBeBooleanAddTrueTrampoline'.
+
+	ceSendMustBeBooleanAddFalseTrampoline := self
+		                                         genMustBeBooleanTrampolineFor:
+		                                         objectMemory falseObject
+		                                         called:
+		                                         'ceSendMustBeBooleanAddFalseTrampoline'.
+	ceSendMustBeBooleanAddTrueTrampoline := self
+		                                        genMustBeBooleanTrampolineFor:
+		                                        objectMemory trueObject
+		                                        called:
+		                                        'ceSendMustBeBooleanAddTrueTrampoline'.
 	ceNonLocalReturnTrampoline := self genNonLocalReturnTrampoline.
 	ceCheckForInterruptTrampoline := self genCheckForInterruptsTrampoline.
 	"Neither of the context inst var access trampolines save registers.  Their operation could cause
 	 arbitrary update of stack frames, so the assumption is that callers flush the stack before calling
 	 the context inst var access trampolines, and that everything except the result is dead afterwards."
-	ceFetchContextInstVarTrampoline := self genTrampolineFor: #ceContext:instVar:
-											called: 'ceFetchContextInstVarTrampoline'
-											arg: ReceiverResultReg
-											arg: SendNumArgsReg
-											result: SendNumArgsReg.
-	ceStoreContextInstVarTrampoline := self genTrampolineFor: #ceContext:instVar:value:
-											called: 'ceStoreContextInstVarTrampoline'
-											arg: ReceiverResultReg
-											arg: SendNumArgsReg
-											arg: ClassReg
-											result: ReceiverResultReg. "to keep ReceiverResultReg live.".
-	ceCannotResumeTrampoline := self genTrampolineFor: #ceCannotResume
-											called: 'ceCannotResumeTrampoline'.
+	ceFetchContextInstVarTrampoline := self
+		                                   genTrampolineFor:
+		                                   #ceContext:instVar:
+		                                   called:
+		                                   'ceFetchContextInstVarTrampoline'
+		                                   arg: ReceiverResultReg
+		                                   arg: SendNumArgsReg
+		                                   result: SendNumArgsReg.
+	ceStoreContextInstVarTrampoline := self
+		                                   genTrampolineFor:
+		                                   #ceContext:instVar:value:
+		                                   called:
+		                                   'ceStoreContextInstVarTrampoline'
+		                                   arg: ReceiverResultReg
+		                                   arg: SendNumArgsReg
+		                                   arg: ClassReg
+		                                   result: ReceiverResultReg. "to keep ReceiverResultReg live."
+	ceCannotResumeTrampoline := self
+		                            genTrampolineFor: #ceCannotResume
+		                            called: 'ceCannotResumeTrampoline'.
 	"These two are unusual; they are reached by return instructions."
-	ceBaseFrameReturnTrampoline := self genReturnTrampolineFor: #ceBaseFrameReturn:
-											called: 'ceBaseFrameReturnTrampoline'
-											arg: ReceiverResultReg.
-	ceReturnToInterpreterTrampoline := self
-											genReturnTrampolineFor: #ceReturnToInterpreter:
-											called: 'ceReturnToInterpreterTrampoline'
-											arg: ReceiverResultReg.
-	ceMallocTrampoline := self genTrampolineFor: #ceMalloc:
-											called: 'ceMallocTrampoline'
-											arg: ReceiverResultReg
-											result: TempReg.
-	ceFreeTrampoline := self genTrampolineFor: #ceFree:
-											called: 'ceFreeTrampoline'
-											arg: ReceiverResultReg.
+	ceBaseFrameReturnTrampoline := self
+		                               genReturnTrampolineFor:
+		                               #ceBaseFrameReturn:
+		                               called: 'ceBaseFrameReturnTrampoline'
+		                               arg: ReceiverResultReg.
+	self generateReturnToInterpreterPCTrampoline.
+	ceMallocTrampoline := self
+		                      genTrampolineFor: #ceMalloc:
+		                      called: 'ceMallocTrampoline'
+		                      arg: ReceiverResultReg
+		                      result: TempReg.
+	ceFreeTrampoline := self
+		                    genTrampolineFor: #ceFree:
+		                    called: 'ceFreeTrampoline'
+		                    arg: ReceiverResultReg
 ]
 
 { #category : #initialization }
