@@ -86,6 +86,14 @@ Class {
 		'STMFD',
 		'SubOpcode',
 		'TstOpcode',
+		'V0',
+		'V1',
+		'V2',
+		'V3',
+		'V4',
+		'V5',
+		'V6',
+		'V7',
 		'VC',
 		'VS',
 		'XorOpcode'
@@ -183,7 +191,17 @@ CogARMv8Compiler class >> initialize [
 	D5 := 5.
 	D6 := 6.
 	D7 := 7.
-
+	
+	"ARM 128-bit SIMD registers"
+	V0 := 0.
+	V1 := 1.
+	V2 := 2.
+	V3 := 3.
+	V4 := 4.
+	V5 := 5.
+	V6 := 6.
+	V7 := 7.
+	
 	CArg0Reg := 0.
 	CArg1Reg := 1.
 	CArg2Reg := 2.
@@ -300,6 +318,15 @@ CogARMv8Compiler class >> initializeAbstractRegisters [
 	DPFPReg5			:= D5.
 	DPFPReg6			:= D6.
 	DPFPReg7			:= D7.
+
+	VReg0 := V0.
+	VReg1 := V1.
+	VReg2 := V2.
+	VReg3 := V3.
+	VReg4 := V4.
+	VReg5 := V5.
+	VReg6 := V6.
+	VReg7 := V7.
 
 	NumFloatRegisters := 8
 ]
@@ -1217,7 +1244,11 @@ CogARMv8Compiler >> computeMaximumSize [
 		[MoveRRd]				-> [^4].
 				
 		"This is a fixed size instruction using a literal. We need exactly 1 instructions to move a literal from a PC relative position, so this takes ALWAYS 1 instruction of 4 bytes"
-		[MovePatcheableC32R] -> [ ^ 4 ]
+		[MovePatcheableC32R] -> [ ^ 4 ].
+		
+		"SIMD Ops"
+		[DupRVr] -> [ ^ 4 ].
+		[St1VrRMw] -> [ ^ 4 ]
 		}.
 	^0 "to keep C compiler quiet"
 
@@ -3393,7 +3424,11 @@ CogARMv8Compiler >> dispatchConcretize [
 		[MoveRRd]			-> [^self concretizeMoveRRd].
 		
 		"Patcheable literal instruction"
-		[ MovePatcheableC32R ] -> [ ^ self concretizeMovePatcheableC32R ]
+		[ MovePatcheableC32R ] -> [ ^ self concretizeMovePatcheableC32R ].
+		
+		"SIMD Ops"
+		[ DupRVr ] -> [ ^ self concretizeDupRVr ].
+		[ St1VrRMw ] -> [ ^ self concretizeSt1VRMRO ].
 		}
 ]
 
