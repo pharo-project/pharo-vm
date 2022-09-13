@@ -476,13 +476,13 @@ SmartSyntaxPluginTMethod >> setSelector: sel definingClass: class args: argList 
 	selector := sel.
 	definingClass := class.
 	returnType := #sqInt. 	 "assume return type is sqInt for now"
-	args := argList asOrderedCollection collect: [:arg | arg key].
-	self locals: (localList collect: [:arg | arg key]) asSet.
+	args := argList asOrderedCollection collect: [:arg | arg name].
 	declarations := Dictionary new.
 	primitive := aNumber.
 	properties := methodProperties.
 	comment := aComment.
 	self parseTree: (aBlockNode asTranslatorNodeIn: self).
+	self locals: (localList collect: [:arg | arg key]) asSet.
 	labels := Set new.
 	complete := false.  "set to true when all possible inlining has been done"
 	export := self extractExportDirective.
