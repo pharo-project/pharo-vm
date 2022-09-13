@@ -157,7 +157,7 @@ SlangMemoryManager >> long32At: address [
 { #category : #'memory-access' }
 SlangMemoryManager >> long32At: address put: a32BitValue [
 	
-	^ self writeSignedInteger: a32BitValue at: address size: 4
+	^ self writeUnsignedInteger: a32BitValue at: address size: 4
 ]
 
 { #category : #'memory-access' }
