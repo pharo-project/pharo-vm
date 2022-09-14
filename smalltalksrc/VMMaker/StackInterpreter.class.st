@@ -5058,6 +5058,12 @@ StackInterpreter >> currentBytecode [
 	^ currentBytecode
 ]
 
+{ #category : #accessing }
+StackInterpreter >> currentBytecode: anInteger [ 
+	<doNotGenerate>
+	currentBytecode := anInteger
+]
+
 { #category : #'stack pages' }
 StackInterpreter >> defaultNativeStackFrameSize [
 	"default native stack frame size"

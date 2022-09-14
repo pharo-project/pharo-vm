@@ -3990,6 +3990,12 @@ StackToRegisterMappingCogit >> ssPushDesc: simStackEntry [
 ]
 
 { #category : #'simulation stack' }
+StackToRegisterMappingCogit >> ssPushR: reg [
+1halt.
+	^ self ssPushRegister: reg
+]
+
+{ #category : #'simulation stack' }
 StackToRegisterMappingCogit >> ssPushRegister: reg [
 	self ssPush: 1.
 	self ssTop
