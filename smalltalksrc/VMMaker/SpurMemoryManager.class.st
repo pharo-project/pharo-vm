@@ -1704,7 +1704,7 @@ SpurMemoryManager >> allOldSpaceEntitiesFrom: initialObject do: aBlock [
 	objOop := initialObject.
 	[self assert: objOop \\ self allocationUnit = 0.
 	 self oop: objOop isLessThan: endOfMemory] whileTrue:
-		[self assert: (self unsignedLong64At: objOop) ~= 0.
+		[self assert: (self uint64AtPointer: objOop) ~= 0.
 		 aBlock value: objOop.
 		 prevPrevObj := prevObj.
 		 prevObj := objOop.
@@ -6892,7 +6892,7 @@ SpurMemoryManager >> isEnumerableObject: objOop [
 	| classIndex |
 	<inline: true>
 	classIndex := self classIndexOf: objOop.
-	self assert: ((self unsignedLong64At: objOop) ~= 0
+	self assert: ((self uint64AtPointer: objOop) ~= 0
 				  and: [classIndex < (numClassTablePages * self classTablePageSize)]).
 	^classIndex >= self isForwardedObjectClassIndexPun
 ]

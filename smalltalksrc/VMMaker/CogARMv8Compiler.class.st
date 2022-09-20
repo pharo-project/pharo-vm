@@ -738,7 +738,7 @@ CogARMv8Compiler >> b: immediate26bitValue withLink: aBoolean [
 	self seeAlso: #bl:.
 
 	multiplier := immediate26bitValue / 4.
-	self assert: multiplier isInteger.
+
 	twoComplement := multiplier > 0
 		ifTrue: [ multiplier ]
 		ifFalse: [ 2r11111111111111111111111111 - multiplier abs + 1 ].
@@ -827,7 +827,7 @@ CogARMv8Compiler >> branchCondition: condition offset: immediate19bitValue [
 	self assert: (16r3ffff allMask: immediate19bitValue abs >> 2).
 	
 	multiplier := immediate19bitValue >> 2.
-	self assert: multiplier isInteger.
+
 	twoComplement := multiplier < 0
 		ifTrue: [ 2r1111111111111111111 - multiplier abs + 1 ]
 		ifFalse: [ multiplier ].
@@ -4777,7 +4777,7 @@ CogARMv8Compiler >> ldrSize: is64Bits programCounterRelativeOffset: immediate19b
 	
 	| twoComplement multiplier |
 	multiplier := immediate19bitValue / 4.
-	self assert: multiplier isInteger.
+
 	twoComplement := multiplier > 0
 		ifTrue: [ multiplier ]
 		ifFalse: [ 2r1111111111111111111 - multiplier abs + 1 ].
