@@ -14,6 +14,7 @@ include(macros.cmake)
 message(STATUS "CMAKE_GENERATOR=${CMAKE_GENERATOR}")
 
 # Build options
+option(VERBOSE_BUILD									"Verbose Build"																 OFF)
 option(FEATURE_FFI										"Enable FFI"																 ON)
 option(FEATURE_THREADED_FFI								"Enable Threaded (running in another thread) FFI"							ON)
 option(FEATURE_MESSAGE_COUNT							"Enable the option to count messages, only valid for StackVM"				 OFF)
@@ -36,6 +37,10 @@ set(APPNAME						"Pharo"         CACHE STRING                 "VM Application na
 set(FLAVOUR						"CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
 set(PHARO_LIBRARY_PATH			"@executable_path/Plugins" CACHE STRING      "The RPATH to use in the build")
 set(ICEBERG_DEFAULT_REMOTE		"scpUrl"        CACHE STRING                 "If Iceberg uses HTTPS (httpsUrl) or tries first with SSH (scpUrl)")
+
+if(VERBOSE_BUILD)
+    set(CMAKE_VERBOSE_MAKEFILE TRUE)
+endif(VERBOSE_BUILD)
 
 # Extract VCS information
 include(cmake/versionExtraction.cmake)
@@ -261,7 +266,7 @@ elseif(UNIX)
     set(CMAKE_CURRENT_SOURCE_DIR_TO_OUT ${CMAKE_CURRENT_SOURCE_DIR})
     set(CMAKE_CURRENT_BINARY_DIR_TO_OUT ${CMAKE_CURRENT_BINARY_DIR})
 
-    set(COMMON_FLAGS "-O2 -Wall -Werror=implicit-function-declaration")
+    set(COMMON_FLAGS "-Wall -Werror=implicit-function-declaration")
 
     add_compile_definitions(LSB_FIRST=1)
 
@@ -288,12 +293,44 @@ message(STATUS "Full Platform name: ${FULL_PLATFORM_NAME}")
 
 set(OPTIMIZATION_FLAGS "")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS}")
 
-add_compile_definitions(IMMUTABILITY=1)
-add_compile_definitions(COGMTVM=0)
-add_compile_definitions(PharoVM=1)
+add_compile_options(
+    $<$<CONFIG:RELEASE>:-O2>
+    $<$<CONFIG:DEBUG>:-O0>
+    -Wno-sometimes-uninitialized
+    -Wno-self-assign
+    -Wno-unused-variable
+    -Wno-unused-but-set-variable
+    -Wno-int-conversion
+    -Wno-unused-value
+    -Wno-absolute-value
+    -Wno-unused-function
+    -Wno-non-literal-null-conversion
+    -Wno-pointer-integer-compare
+    -Wno-unknown-pragmas
+    -Wno-pointer-sign
+    -Wno-constant-conversion
+    -Wno-tautological-pointer-compare
+    -Wno-deprecated-declarations
+    -Wno-pointer-to-int-cast
+    -Wno-compare-distinct-pointer-types
+    -Wno-conditional-type-mismatch
+    -Wno-incompatible-function-pointer-types
+    -Wno-return-type
+    -Wno-unused-local-typedef
+    -Wno-incompatible-pointer-types
+    -Wno-shift-negative-value
+)
+
+add_compile_definitions(
+    IMMUTABILITY=1
+    COGMTVM=0
+    PharoVM=1
+    $<$<CONFIG:RELEASE>:DDEBUGVM=0>
+    $<$<CONFIG:DEBUG>:DDEBUGVM=1>
+)
 
 #
 # This definition is used to improve the logging of the messages, to cut-down the path
