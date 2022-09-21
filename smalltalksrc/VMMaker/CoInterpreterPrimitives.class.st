@@ -467,8 +467,9 @@ CoInterpreterPrimitives >> primitiveMethodXray [
 				 flags := cogMethod stackCheckOffset = 0 ifTrue: [7] ifFalse: [3].
 				 cogMethod cmRefersToYoung ifTrue:
 					[flags := flags + 8].
-				 alreadyCogged ifFalse:
-					[cogit freeMethod: cogMethod]]]
+				 alreadyCogged ifFalse: [
+					cogit enableCodeZoneWriteDuring: [ 
+						cogit freeMethod: cogMethod ] ]]]
 		ifFalse: [flags := 0].
 	self pop: 1 thenPush: (objectMemory integerObjectOf: flags)
 ]
