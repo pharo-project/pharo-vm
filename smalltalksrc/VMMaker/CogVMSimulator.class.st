@@ -2033,7 +2033,7 @@ CogVMSimulator >> primitiveFailCounting [
 { #category : #'as yet unclassified' }
 CogVMSimulator >> primitiveForceMachineCodeCompaction [
 	
-	"This primitive does not exists in the production VM. It is used in the tests to force the Code Compaction and to test it."
+	"This primitive does not exist in the production VM. It is used in the tests to force the Code Compaction and to test it."
 	
 	self commenceCogCompiledCodeCompaction.
 	self pop: 2 thenPushBool: true.
