@@ -89,14 +89,14 @@ VMCompiledCodeBuilder >> classIndexToUse [
 ]
 
 { #category : #filling }
-VMCompiledCodeBuilder >> fillFromPharoMethod: aCompiledMethod [ 
+VMCompiledCodeBuilder >> fillFromPharoMethod: aCompiledMethod [
 
 	self newMethod.
 	self numberOfTemporaries: aCompiledMethod numTemps.
 	self numberOfArguments: aCompiledMethod numArgs.
-	self bytecodes: aCompiledMethod bytecode.
+	self bytecodes: aCompiledMethod bytecodes.
 	self isPrimitive: aCompiledMethod isPrimitive.
-	self fillLiteralsFromPharo: aCompiledMethod allLiterals 
+	self fillLiteralsFromPharo: aCompiledMethod allLiterals
 ]
 
 { #category : #filling }

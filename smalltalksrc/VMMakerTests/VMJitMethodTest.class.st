@@ -308,7 +308,7 @@ VMJitMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 
 	self class addSelector: #addVector:with:intoVector: withMethod: cm.
 	
-	callingMethod := self createMethodOopFromPharoMethod:
+	callingMethod := self createMethodOopFromHostMethod:
 		                 (self findMethod: #addVector:with:intoVector:).
 
 	self initStack.
