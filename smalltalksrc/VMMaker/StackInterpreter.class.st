@@ -14483,7 +14483,7 @@ StackInterpreter >> slowPrimitiveResponse [
 	<inline: true>
 	<var: #savedFramePointer type: #'char *'>
 	<var: #savedStackPointer type: #'char *'>
-	self assert: (objectMemory isOopForwarded: (self stackValue: argumentCount)) not.
+	"self assert: (objectMemory isOopForwarded: (self stackValue: argumentCount)) not."
 	self assert: objectMemory remapBufferCount = 0.
 	FailImbalancedPrimitives ifTrue:
 		[nArgs := argumentCount.
