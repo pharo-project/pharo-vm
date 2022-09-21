@@ -1128,6 +1128,8 @@ Cogit class >> initializePrimitiveTable [
 		"(210 primitiveContextAt)"
 		"(211 primitiveContextAtPut)"
 		"(212 primitiveContextSize)"
+		
+		(216 genNonImplementedPrimitive -1 #maycallback) "primitive method xray"
 
 		"(218 primitiveDoNamedPrimitiveWithArgs)"
 		"(219 primitiveFail)"	"reserved for Cog primitives"
@@ -11297,6 +11299,16 @@ Cogit >> rewriteCPICCaseAt: followingAddress tag: newTag objRef: newObjRef targe
 
 	"write the jump address for the new target address"
 	backEnd rewriteJumpLongAt: followingAddress target: newTarget
+]
+
+{ #category : #'jit - api' }
+Cogit >> safeFreeMethod: cogMethod [
+	
+	<api>
+	"Free the method as paremeter taking care of enabling/disabling the code zone.
+	To be used by the interpreter and by usages that are not already enabling code zone writing"
+	self enableCodeZoneWriteDuring: [
+		self freeMethod: cogMethod ]
 ]
 
 { #category : #'compile abstract instructions' }
