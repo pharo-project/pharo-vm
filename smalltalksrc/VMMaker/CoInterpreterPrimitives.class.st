@@ -184,22 +184,6 @@ CoInterpreterPrimitives >> pcDataFor: cogMethod [
 	^data
 ]
 
-{ #category : #'method introspection support' }
-CoInterpreterPrimitives >> picDataFor: cogMethod [
-	<var: #cogMethod type: #'CogMethod *'>
-	| cm nSlots nEntries data |
-	cm := cogMethod methodObject.
-	nSlots := (objectMemory byteSizeOf: cm) - (self startPCOfMethod: cm) + objectMemory minSlotsForShortening.
-	data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: nSlots.
-	data ifNil: [^-1].
-	nEntries := cogit picDataFor: cogMethod into: data.
-	nEntries = 0 ifTrue:
-		[^0].
-	nEntries < nSlots ifTrue:
-		[objectMemory shorten: data toIndexableSize: nEntries].
-	^data
-]
-
 { #category : #'method introspection primitives' }
 CoInterpreterPrimitives >> primitiveAllMethodsCompiledToMachineCode [
 	<export: true>
@@ -430,6 +414,23 @@ CoInterpreterPrimitives >> primitiveMethodPCData [
 	self pop: 1 thenPush: data
 ]
 
+{ #category : #'method introspection primitives' }
+CoInterpreterPrimitives >> primitiveMethodProfilingData [
+	<export: true>
+	| methodReceiver data |
+	argumentCount ~= 0 ifTrue:
+		[^self primitiveFailFor: PrimErrBadNumArgs].
+	methodReceiver := self stackTop.
+	data := 0.
+	(self methodHasCogMethod: methodReceiver) ifTrue:
+		[data := self profilingDataFor: (self cogMethodOf: methodReceiver).
+		 data = -1 ifTrue:
+			[^self primitiveFailFor: PrimErrNoMemory]].
+	data = 0 ifTrue:
+		[data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: 0].
+	self pop: 1 thenPush: data
+]
+
 { #category : #'indexing primitives' }
 CoInterpreterPrimitives >> primitiveMethodXray [
 
@@ -645,24 +646,6 @@ CoInterpreterPrimitives >> primitiveSignal [
 	inInterpreter := instructionPointer >= objectMemory startOfMemory.
 	(self synchronousSignal: self stackTop) ifTrue:
 		[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]
-]
-
-{ #category : #'method introspection primitives' }
-CoInterpreterPrimitives >> primitiveSistaMethodPICAndCounterData [
-	<export: true>
-	<option: #SistaCogit>
-	| methodReceiver data |
-	argumentCount ~= 0 ifTrue:
-		[^self primitiveFailFor: PrimErrBadNumArgs].
-	methodReceiver := self stackTop.
-	data := 0.
-	(self methodHasCogMethod: methodReceiver) ifTrue:
-		[data := self picDataFor: (self cogMethodOf: methodReceiver).
-		 data = -1 ifTrue:
-			[^self primitiveFailFor: PrimErrNoMemory]].
-	data = 0 ifTrue:
-		[data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: 0].
-	self pop: 1 thenPush: data
 ]
 
 { #category : #'system control primitives' }
@@ -984,6 +967,22 @@ CoInterpreterPrimitives >> primitiveYield [
 	self addLastLink: activeProc toList: processList.
 	self transferTo: self wakeHighestPriority from: CSYield.
 	self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter
+]
+
+{ #category : #'method introspection support' }
+CoInterpreterPrimitives >> profilingDataFor: cogMethod [
+	<var: #cogMethod type: #'CogMethod *'>
+	| cm nSlots nEntries data |
+	cm := cogMethod methodObject.
+	nSlots := (objectMemory byteSizeOf: cm) - (self startPCOfMethod: cm) + objectMemory minSlotsForShortening.
+	data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: nSlots.
+	data ifNil: [^-1].
+	nEntries := cogit profilingDataFor: cogMethod into: data.
+	nEntries = 0 ifTrue:
+		[^0].
+"	nEntries < nSlots ifTrue:
+		[objectMemory shorten: data toIndexableSize: nEntries]."
+	^data
 ]
 
 { #category : #'object access primitives' }

@@ -853,16 +853,6 @@ CurrentImageCoInterpreterFacade >> oopForObject: o [
 	self subclassResponsibility
 ]
 
-{ #category : #testing }
-CurrentImageCoInterpreterFacade >> picDataFor: cogMethod [
-	| cm nBytes nEntries oversizeData |
-	cm := cogMethod methodObject.
-	nBytes := (self byteSizeOf: cm) - (self startPCOfMethod: cm).
-	oversizeData := Array new: nBytes.
-	nEntries := cogit picDataFor: cogMethod into: (self oopForObject: oversizeData).
-	^oversizeData copyFrom: 1 to: nEntries
-]
-
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> primErrTable [
 	^objectMap at: Smalltalk primitiveErrorTable
@@ -977,6 +967,16 @@ CurrentImageCoInterpreterFacade >> printNum: anInteger [
 { #category : #printing }
 CurrentImageCoInterpreterFacade >> printStringOf: anOop [
 	Transcript nextPutAll: (self objectForOop: anOop)
+]
+
+{ #category : #testing }
+CurrentImageCoInterpreterFacade >> profilingDataFor: cogMethod [
+	| cm nBytes nEntries oversizeData |
+	cm := cogMethod methodObject.
+	nBytes := (self byteSizeOf: cm) - (self startPCOfMethod: cm).
+	oversizeData := Array new: nBytes.
+	nEntries := cogit profilingDataFor: cogMethod into: (self oopForObject: oversizeData).
+	^oversizeData copyFrom: 1 to: nEntries
 ]
 
 { #category : #printing }

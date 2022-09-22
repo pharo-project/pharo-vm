@@ -341,7 +341,8 @@ CoInterpreter class >> initializePrimitiveTable [
 	PrimitiveTable
 		at: 253 + 1 put: #primitiveCollectCogCodeConstituents;
 		at: 215 + 1 put: #primitiveVoidVMStateForMethod;
-		at: 216 + 1 put: #primitiveMethodXray
+		at: 216 + 1 put: #primitiveMethodXray;
+		at: 217 + 1 put: #primitiveMethodProfilingData
 ]
 
 { #category : #documentation }

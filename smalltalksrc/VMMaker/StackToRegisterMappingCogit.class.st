@@ -138,7 +138,8 @@ Class {
 		'deadCode',
 		'useTwoPaths',
 		'currentCallCleanUpSize',
-		'compilationPass'
+		'compilationPass',
+		'counterIndex'
 	],
 	#classVars : [
 		'NeedsMergeFixupFlag',
@@ -3804,6 +3805,35 @@ StackToRegisterMappingCogit >> picMissTrampolines [
 
 ]
 
+{ #category : #'method introspection' }
+StackToRegisterMappingCogit >> populate: tuple withPICInfoFor: cPIC firstCacheTag: firstCacheTag [
+	"Populate tuple (which must be large enough) with the ClosedPIC's target method class pairs.
+	 The first entry in tuple contains the bytecode pc for the send, so skip the tuple's first field."
+	<var: #cPIC type: #'CogMethod *'>
+	| picCaseMachineCodePC cacheTag classOop entryPoint targetMethod value |
+	<var: #targetMethod type: #'CogMethod *'>
+
+	1 to: cPIC cPICNumCases do: [:i|
+		picCaseMachineCodePC := self addressOfEndOfCase: i inCPIC: cPIC.
+		cacheTag := i = 1
+						ifTrue: [firstCacheTag]
+						ifFalse: [backEnd literalBeforeFollowingAddress: picCaseMachineCodePC - backEnd jumpLongConditionalByteSize].
+		
+		classOop := objectRepresentation classForInlineCacheTag: cacheTag.
+		objectMemory storePointer: i * 2 - 1 ofObject: tuple withValue: classOop.
+		entryPoint := i = 1
+						ifTrue: [backEnd jumpLongTargetBeforeFollowingAddress: picCaseMachineCodePC]
+						ifFalse: [backEnd jumpLongConditionalTargetBeforeFollowingAddress: picCaseMachineCodePC].
+		"Find target from jump.  A jump to the MNU entry-point should collect #doesNotUnderstand:"
+		(cPIC containsAddress: entryPoint)
+			ifTrue: [ value := objectMemory splObj: SelectorDoesNotUnderstand ]
+			ifFalse: [
+				targetMethod := self cCoerceSimple: entryPoint - cmNoCheckEntryOffset to: #'CogMethod *'.
+				self assert: targetMethod cmType = CMMethod.
+				value := targetMethod methodObject ].
+		objectMemory storePointer: i * 2 ofObject: tuple withValue: value ]
+]
+
 { #category : #testing }
 StackToRegisterMappingCogit >> prevInstIsPCAnnotated [
 	| prevIndex prevInst |
@@ -3819,6 +3849,17 @@ StackToRegisterMappingCogit >> prevInstIsPCAnnotated [
 		whileTrue:
 			[prevIndex := prevIndex - 1].
 	^false
+]
+
+{ #category : #tests }
+StackToRegisterMappingCogit >> printPICDataForMethods [
+	<doNotGenerate>
+	methodZone methodsDo:
+		[:cogMethod|
+		cogMethod cmType = CMMethod ifTrue:
+			[(coInterpreter profilingDataFor: cogMethod) ifNotNil:
+				[:thePicData|
+				coInterpreter printOop: thePicData]]]
 ]
 
 { #category : #'debug printing' }
@@ -3893,6 +3934,143 @@ StackToRegisterMappingCogit >> printSimStack: aSimStack toDepth: limit spillBase
 		aStream cr; flush].
 	simSpillBase > limit ifTrue:
 		[aStream nextPutAll: '(sb: '; print: simSpillBase; nextPut: $); cr; flush]
+]
+
+{ #category : #'method introspection' }
+StackToRegisterMappingCogit >> profilingDataFor: descriptor Annotation: isBackwardBranchAndAnnotation Mcpc: mcpc Bcpc: bcpc Method: cogMethodArg [
+	<var: #descriptor type: #'BytecodeDescriptor *'>
+	<var: #mcpc type: #'char *'>
+	<var: #cogMethodArg type: #'void *'>
+	| annotation entryPoint tuple counter |
+	"N.B. Counters are always 32-bits, having two 16-bit halves for the reached and taken counts."
+	<var: #counter type: #'unsigned int'>
+
+	descriptor ifNil:
+		[^0].
+	descriptor isBranch ifTrue:
+		["it's a branch; conditional?"
+		 (descriptor isBranchTrue or: [descriptor isBranchFalse]) ifTrue: [ | counters | 
+			counters := self
+							cCoerce: ((self
+											cCoerceSimple: cogMethodArg
+											to: #'CogMethod *') counters)
+							to: #'usqInt *'.
+			"If no counters are available, do not record counters"
+			counters = 0 ifTrue: [ ^ 0 ].
+			
+			counter := counters at: counterIndex.
+			tuple := self profilingDataForCounter: counter at: bcpc + 1.
+			tuple = 0 ifTrue: [^PrimErrNoMemory].
+			objectMemory
+				storePointer: introspectionDataIndex
+				ofObject: introspectionData
+				withValue: tuple.
+			introspectionDataIndex := introspectionDataIndex + 1.
+			counterIndex := counterIndex + 1].
+		 ^0].
+	annotation := isBackwardBranchAndAnnotation >> 1.
+	((self isPureSendAnnotation: annotation)
+	 and: [entryPoint := backEnd callTargetFromReturnAddress: mcpc asUnsignedInteger.
+		 entryPoint > methodZoneBase]) ifFalse: "send is not linked, or is not a send"
+		[^0].
+	self targetMethodAndSendTableFor: entryPoint "It's a linked send; find which kind."
+		annotation: annotation
+		into: [:targetCogCode :sendTable| | methodClassIfSuper association |
+			methodClassIfSuper := nil.
+			sendTable = superSendTrampolines ifTrue:
+				[methodClassIfSuper := coInterpreter methodClassOf: (self cCoerceSimple: cogMethodArg to: #'CogMethod *') methodObject].
+			sendTable = directedSuperSendTrampolines ifTrue: [
+				association := backEnd literalBeforeInlineCacheTagAt: mcpc asUnsignedInteger.
+				methodClassIfSuper := objectRepresentation valueOfAssociation: association ].
+			tuple := self profilingDataForSendTo: targetCogCode
+						methodClassIfSuper: methodClassIfSuper
+						at: mcpc
+						bcpc: bcpc + 1].
+	tuple = 0 ifTrue: [^PrimErrNoMemory].
+	objectMemory storePointer: introspectionDataIndex ofObject: introspectionData withValue: tuple.
+	introspectionDataIndex := introspectionDataIndex + 1.
+	^0
+]
+
+{ #category : #'method introspection' }
+StackToRegisterMappingCogit >> profilingDataFor: cogMethod into: arrayObj [
+
+	"Collect the branch and send data for cogMethod, storing it into arrayObj."
+
+	<api>
+	<var: #cogMethod type: #'CogMethod *'>
+	| errCode |
+	"If the method is frameless, it has no message sends. No need to continue."
+	cogMethod stackCheckOffset = 0 ifTrue: [ ^ 0 ].
+
+	introspectionDataIndex := counterIndex := 0.
+	introspectionData := arrayObj.
+	errCode := self
+		           mapFor: (self cCoerceSimple: cogMethod to: #'CogBlockMethod *')
+		           bcpc: (coInterpreter startPCOfMethod: cogMethod methodObject)
+		           performUntil: #profilingDataFor:Annotation:Mcpc:Bcpc:Method:
+		           arg: cogMethod asVoidPointer.
+	errCode ~= 0 ifTrue: [ 
+		self assert: errCode = PrimErrNoMemory.
+		^ -1 ].
+	^ introspectionDataIndex
+]
+
+{ #category : #'method introspection' }
+StackToRegisterMappingCogit >> profilingDataForCounter: counter at: bcpc [
+	"Undefined by now, do nothing"
+
+	^ 0
+]
+
+{ #category : #'method introspection' }
+StackToRegisterMappingCogit >> profilingDataForSendTo: cogCodeSendTarget methodClassIfSuper: methodClassOrNil at: sendMcpc bcpc: sendBcpc [
+	"Answer a tuple with the send data for a linked send to cogMethod.
+	 If the target is a CogMethod (monomorphic send) answer
+		{ bytecode pc, inline cache class, target method }
+	 If the target is an open PIC (megamorphic send) answer
+		{ bytecode pc, nil, send selector }
+	If the target is a closed PIC (polymorphic send) answer
+		{ bytecode pc, first class, target method, second class, second target method, ... }"
+	<var: #cogCodeSendTarget type: #'CogMethod *'>
+	<var: #sendMcpc type: #'char *'>
+	| tuple class |
+	tuple := objectMemory
+					eeInstantiateClassIndex: ClassArrayCompactIndex
+					format: objectMemory arrayFormat
+					numSlots: (cogCodeSendTarget cmType = CMPolymorphicIC
+								ifTrue: [2 * cogCodeSendTarget cPICNumCases + 1]
+								ifFalse: [3]).
+	tuple = 0 ifTrue:
+		[^0].
+
+	objectMemory storePointerUnchecked: 0 ofObject: tuple withValue: (objectMemory integerObjectOf: sendBcpc).
+	
+	"Monomorphic - linked against a single method"
+	cogCodeSendTarget cmType = CMMethod ifTrue: [
+		"If it is not a super send, we don't have a class, let's extract it from the call site"
+		class := methodClassOrNil ifNil: [
+			objectRepresentation classForInlineCacheTag: (backEnd inlineCacheTagAt: sendMcpc asUnsignedInteger)].
+		 objectMemory
+			storePointer: 1 ofObject: tuple withValue: class;
+			storePointer: 2 ofObject: tuple withValue: cogCodeSendTarget methodObject.
+		^tuple ].
+
+	cogCodeSendTarget cmType = CMPolymorphicIC ifTrue: [
+		self
+			populate: tuple
+			withPICInfoFor: cogCodeSendTarget
+			firstCacheTag: (backEnd inlineCacheTagAt: sendMcpc asUnsignedInteger).
+		^tuple ].
+
+	cogCodeSendTarget cmType = CMMegamorphicIC ifTrue: [
+		objectMemory
+			storePointerUnchecked: 1 ofObject: tuple withValue: objectMemory nilObject;
+			storePointer: 2 ofObject: tuple withValue: cogCodeSendTarget selector.
+		^tuple ].
+
+	self error: 'invalid method type'.
+	^0 "to get Slang to type this method as answering sqInt"
 ]
 
 { #category : #'span functions' }
