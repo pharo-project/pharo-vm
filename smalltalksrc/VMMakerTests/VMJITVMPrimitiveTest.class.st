@@ -12,7 +12,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayPreviouslyCompiledFramelessMethod
 	"This test is only valid as far as the method is the same.
 	It should be a method with so many literals that the compiler does not even try to compile it."
 	target := (SlangBasicTranslationTestClass>>#first:second:).
-	self assert: target hash equals: 37161100.
+	self assert: target bytecodes hash equals: 245997176.
 	
 	self setUpTrampolines.
 	self setUpCogMethodEntry.
@@ -34,7 +34,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayShouldCompile [
 	"This test is only valid as far as the method is the same.
 	It should be a method with so many literals that the compiler does not even try to compile it."
 	target := (SlangBasicTranslationTestClass>>#methodDefiningSingleExternVariable).
-	self assert: target hash equals: 3410312.
+	self assert: target hash equals: 222697369.
 	
 	self setUpTrampolines.
 	self setUpCogMethodEntry.
@@ -56,7 +56,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayShouldNotCompile [
 	"This test is only valid as far as the method is the same.
 	It should be a method with so many literals that the compiler does not even try to compile it."
 	target := (CogARMv8Compiler class>>#initialize).
-	self assert: target hash equals: 3414108.
+	self assert: target hash equals: 129771193.
 	
 	methodToXray := self createMethodOopFromHostMethod: target.
 	self createBaseFrame.
@@ -75,7 +75,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayWasCompiled [
 	"This test is only valid as far as the method is the same.
 	It should be a method with so many literals that the compiler does not even try to compile it."
 	target := (SlangBasicTranslationTestClass>>#methodDefiningSingleExternVariable).
-	self assert: target hash equals: 3410312.
+	self assert: target hash equals: 222697369.
 	
 	self setUpTrampolines.
 	self setUpCogMethodEntry.
@@ -97,7 +97,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayWasNotCompiled [
 	"This test is only valid as far as the method is the same.
 	It should be a method with so many literals that the compiler does not even try to compile it."
 	target := (SlangBasicTranslationTestClass>>#methodDefiningSingleExternVariable).
-	self assert: target hash equals: 3410312.
+	self assert: target hash equals: 222697369.
 	
 	self setUpTrampolines.
 	self setUpCogMethodEntry.
