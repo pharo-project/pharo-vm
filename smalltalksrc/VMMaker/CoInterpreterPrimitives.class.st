@@ -980,8 +980,8 @@ CoInterpreterPrimitives >> profilingDataFor: cogMethod [
 	nEntries := cogit profilingDataFor: cogMethod into: data.
 	nEntries = 0 ifTrue:
 		[^0].
-"	nEntries < nSlots ifTrue:
-		[objectMemory shorten: data toIndexableSize: nEntries]."
+	nEntries < nSlots ifTrue:
+		[objectMemory shorten: data toIndexableSize: nEntries].
 	^data
 ]
 

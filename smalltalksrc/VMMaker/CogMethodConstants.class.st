@@ -7,6 +7,7 @@ Class {
 		'CMMaxUsageCount',
 		'CMMegamorphicIC',
 		'CMMethod',
+		'CMOpenPIC',
 		'CMPolymorphicIC',
 		'CheckAllocationFillerAfterPrimCall',
 		'CompletePrimitive',
