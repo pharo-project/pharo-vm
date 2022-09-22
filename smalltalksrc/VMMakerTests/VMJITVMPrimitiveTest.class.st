@@ -5,6 +5,16 @@ Class {
 }
 
 { #category : #'tests - primitiveMethodXray' }
+VMJITVMPrimitiveTest >> setUp [
+
+	super setUp.
+
+	self setUpTrampolines.
+	self setUpCogMethodEntry.
+	self createBaseFrame
+]
+
+{ #category : #'tests - primitiveMethodXray' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodXRayPreviouslyCompiledFramelessMethod [
 
 	| methodToXray target |
@@ -14,10 +24,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayPreviouslyCompiledFramelessMethod
 	target := (SlangBasicTranslationTestClass>>#first:second:).
 	self assert: target bytecodes hash equals: 245997176.
 	
-	self setUpTrampolines.
-	self setUpCogMethodEntry.
 	methodToXray := self jitMethod: target.
-	self createBaseFrame.
 	interpreter push: methodToXray methodObject.
 
 	interpreter primitiveMethodXray.
@@ -36,10 +43,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayShouldCompile [
 	target := (SlangBasicTranslationTestClass>>#methodDefiningSingleExternVariable).
 	self assert: target hash equals: 222697369.
 	
-	self setUpTrampolines.
-	self setUpCogMethodEntry.
 	methodToXray := self createMethodOopFromHostMethod: target.
-	self createBaseFrame.
 	interpreter push: methodToXray.
 	
 	interpreter primitiveMethodXray.
@@ -59,7 +63,6 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayShouldNotCompile [
 	self assert: target hash equals: 129771193.
 	
 	methodToXray := self createMethodOopFromHostMethod: target.
-	self createBaseFrame.
 	interpreter push: methodToXray.
 	
 	interpreter primitiveMethodXray.
@@ -77,10 +80,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayWasCompiled [
 	target := (SlangBasicTranslationTestClass>>#methodDefiningSingleExternVariable).
 	self assert: target hash equals: 222697369.
 	
-	self setUpTrampolines.
-	self setUpCogMethodEntry.
 	methodToXray := self jitMethod: target.
-	self createBaseFrame.
 	interpreter push: methodToXray methodObject.
 	
 	interpreter primitiveMethodXray.
@@ -99,10 +99,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayWasNotCompiled [
 	target := (SlangBasicTranslationTestClass>>#methodDefiningSingleExternVariable).
 	self assert: target hash equals: 222697369.
 	
-	self setUpTrampolines.
-	self setUpCogMethodEntry.
 	methodToXray := self createMethodOopFromHostMethod: target.
-	self createBaseFrame.
 	interpreter push: methodToXray.
 
 	interpreter primitiveMethodXray.
