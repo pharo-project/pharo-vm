@@ -3,11 +3,11 @@ Class {
 	#superclass : #SharedPool,
 	#classVars : [
 		'CMBlock',
-		'CMClosedPIC',
 		'CMFree',
 		'CMMaxUsageCount',
+		'CMMegamorphicIC',
 		'CMMethod',
-		'CMOpenPIC',
+		'CMPolymorphicIC',
 		'CheckAllocationFillerAfterPrimCall',
 		'CompletePrimitive',
 		'EncounteredUnknownBytecode',

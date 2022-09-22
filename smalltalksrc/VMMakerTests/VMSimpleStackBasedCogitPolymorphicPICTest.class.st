@@ -216,7 +216,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> testIsClosedPic [
 	| pic |	
 	pic := self makePolymorphicPIC.
 
-	self assert: pic cmType equals: CMClosedPIC. 
+	self assert: pic cmType equals: CMPolymorphicIC. 
 ]
 
 { #category : #'tests - hit/miss' }

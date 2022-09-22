@@ -400,7 +400,7 @@ CogVMSimulator >> ceCounterTripped: condition [
 CogVMSimulator >> ceMNUFromPICMNUMethod: aMethodObj receiver: rcvr [
 	| cPIC |
 	cPIC := self cCoerceSimple: self stackTop - cogit mnuOffset to: #'CogMethod *'.
-	self assert: (cPIC cmType = CMClosedPIC or: [cPIC cmType = CMOpenPIC]).
+	self assert: (cPIC cmType = CMPolymorphicIC or: [cPIC cmType = CMMegamorphicIC]).
 	self mnuBreakpoint: cPIC selector receiver: nil.
 	^super ceMNUFromPICMNUMethod: aMethodObj receiver: rcvr
 ]

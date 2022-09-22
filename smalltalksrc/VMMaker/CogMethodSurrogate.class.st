@@ -156,7 +156,7 @@ CogMethodSurrogate >> cpicHasMNUCase [
 	<inline: true>
 
 	^SistaV1BytecodeSet
-		ifTrue: [self cpicHasMNUCaseOrCMIsFullBlock and: [self cmType = CMClosedPIC]]
+		ifTrue: [self cpicHasMNUCaseOrCMIsFullBlock and: [self cmType = CMPolymorphicIC]]
 		ifFalse: [self cpicHasMNUCaseOrCMIsFullBlock]
 ]
 

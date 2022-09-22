@@ -1488,14 +1488,14 @@ CoInterpreter >> ceInterpretMethodFromPIC: aMethodObj receiver: rcvr [
 	<var: #pic type: #'CogMethod *'>
 	"pop off inner return and locate open or closed PIC"
 	pic := self cCoerceSimple: self popStack - cogit interpretOffset to: #'CogMethod *'.
-	self assert: (pic cmType = CMOpenPIC or: [pic cmType = CMClosedPIC]).
+	self assert: (pic cmType = CMMegamorphicIC or: [pic cmType = CMPolymorphicIC]).
 	"If found from an open PIC then it must be an uncogged method and, since it's been found
 	 in the method cache, should be cogged if possible.  If found from a closed PIC then at the
 	 time the closed PIC was created the method was uncoggable, either because there was
 	 no space, it had too many literals or it contained an illegal bytecode).  So don't try and cog
 	 it, but subsequently it may have been cogged via another path.  If the method is, or ends up
 	 cogged, jump to machine code, otherwise interpret."
-	pic cmType = CMOpenPIC ifTrue:
+	pic cmType = CMMegamorphicIC ifTrue:
 		[self assert: (self methodHasCogMethod: aMethodObj) not.
 		 (self methodShouldBeCogged: aMethodObj) ifTrue:
 			[cogit cog: aMethodObj selector: pic selector]].
@@ -1523,7 +1523,7 @@ CoInterpreter >> ceMNUFromPICMNUMethod: aMethodObj receiver: rcvr [
 				or: [(objectMemory addressCouldBeObj: aMethodObj)
 					and: [objectMemory isOopCompiledMethod: aMethodObj]]).
 	cPIC := self cCoerceSimple: self popStack - cogit mnuOffset to: #'CogMethod *'.
-	self assert: (cPIC cmType = CMClosedPIC or: [cPIC cmType = CMOpenPIC]).
+	self assert: (cPIC cmType = CMPolymorphicIC or: [cPIC cmType = CMMegamorphicIC]).
 	argumentCount := cPIC cmNumArgs.
 	messageSelector := cPIC selector.
 	aMethodObj ~= 0 ifTrue:
@@ -1970,7 +1970,7 @@ CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPIC [
 	classTag := objectMemory fetchClassTagOf: rcvr.
 	argumentCount := numArgs.
 	false ifTrue: "would like to assert this but must also allow for an interpretable method in the cache."
-		[self deny: (cogMethodOrPIC cmType = CMOpenPIC
+		[self deny: (cogMethodOrPIC cmType = CMMegamorphicIC
 					and: [self newMethodInLookupCacheAt: cogMethodOrPIC selector and: classTag])].
 	(self lookupInMethodCacheSel: cogMethodOrPIC selector classTag: classTag)
 		ifTrue:"check for coggability because method is in the cache"
@@ -5591,10 +5591,10 @@ CoInterpreter >> printCogMethod: cogMethod [
 	cogMethod cmType = CMBlock ifTrue:
 		[self print: ': block home: ';
 			printHex: (self cCoerceSimple: cogMethod to: #'CogBlockMethod *') cmHomeMethod asUnsignedInteger].
-	cogMethod cmType = CMClosedPIC ifTrue:
+	cogMethod cmType = CMPolymorphicIC ifTrue:
 		[self print: ': Closed PIC N: ';
 			printHex: cogMethod cPICNumCases].
-	cogMethod cmType = CMOpenPIC ifTrue:
+	cogMethod cmType = CMMegamorphicIC ifTrue:
 		[self print: ': Open PIC '].
 	self print: ' selector: '; printHex: cogMethod selector.
 	cogMethod selector = objectMemory nilObject
