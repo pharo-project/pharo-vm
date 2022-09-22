@@ -41,7 +41,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayShouldCompile [
 	"This test is only valid as far as the method is the same.
 	It should be a method with so many literals that the compiler does not even try to compile it."
 	target := (SlangBasicTranslationTestClass>>#methodDefiningSingleExternVariable).
-	self assert: target hash equals: 222697369.
+	self assert: target bytecodes hash equals: 222697369.
 	
 	methodToXray := self createMethodOopFromHostMethod: target.
 	interpreter push: methodToXray.
@@ -60,7 +60,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayShouldNotCompile [
 	"This test is only valid as far as the method is the same.
 	It should be a method with so many literals that the compiler does not even try to compile it."
 	target := (CogARMv8Compiler class>>#initialize).
-	self assert: target hash equals: 129771193.
+	self assert: target bytecodes hash equals: 129771193.
 	
 	methodToXray := self createMethodOopFromHostMethod: target.
 	interpreter push: methodToXray.
@@ -78,7 +78,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayWasCompiled [
 	"This test is only valid as far as the method is the same.
 	It should be a method with so many literals that the compiler does not even try to compile it."
 	target := (SlangBasicTranslationTestClass>>#methodDefiningSingleExternVariable).
-	self assert: target hash equals: 222697369.
+	self assert: target bytecodes hash equals: 222697369.
 	
 	methodToXray := self jitMethod: target.
 	interpreter push: methodToXray methodObject.
@@ -97,7 +97,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayWasNotCompiled [
 	"This test is only valid as far as the method is the same.
 	It should be a method with so many literals that the compiler does not even try to compile it."
 	target := (SlangBasicTranslationTestClass>>#methodDefiningSingleExternVariable).
-	self assert: target hash equals: 222697369.
+	self assert: target bytecodes hash equals: 222697369.
 	
 	methodToXray := self createMethodOopFromHostMethod: target.
 	interpreter push: methodToXray.
