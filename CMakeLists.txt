@@ -297,7 +297,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${COMMON_FLAGS}")
 
 add_compile_options(
     $<$<CONFIG:DEBUG>:-O0>
-    $<$<CONFIG:$<NOT:DEBUG>>:-O2>
+    $<$<NOT:$<CONFIG:DEBUG>>:-O2>
     -Wno-sometimes-uninitialized
     -Wno-self-assign
     -Wno-unused-variable
@@ -328,7 +328,7 @@ add_compile_definitions(
     COGMTVM=0
     PharoVM=1
     $<$<CONFIG:DEBUG>:DEBUGVM=1>
-    $<$<CONFIG:$<NOT:DEBUG>>:DEBUGVM=0>
+    $<$<NOT:$<CONFIG:DEBUG>>:DEBUGVM=0>
 )
 
 #
