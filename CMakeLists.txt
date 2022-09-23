@@ -9,6 +9,7 @@ cmake_minimum_required(VERSION 3.7.2)
 # Use new and simpler escape sequences
 cmake_policy(SET CMP0053 NEW)
 
+include(cmake/BuildType.cmake)
 include(macros.cmake)
 
 message(STATUS "CMAKE_GENERATOR=${CMAKE_GENERATOR}")
@@ -245,7 +246,7 @@ elseif(WIN)
 
 
 #    if(NOT MSVC)
-        set(COMMON_FLAGS "-fwrapv -fdeclspec -msse2 -ggdb2 -m64 -mno-rtd -mms-bitfields -O2 -momit-leaf-frame-pointer -funroll-loops -D_MT -fno-builtin-printf -fno-builtin-putchar -fno-builtin-fprintf -Wall -Wno-unused-variable -fno-optimize-sibling-calls")
+        set(COMMON_FLAGS "-fwrapv -fdeclspec -msse2 -ggdb2 -m64 -mno-rtd -mms-bitfields -momit-leaf-frame-pointer -funroll-loops -D_MT -fno-builtin-printf -fno-builtin-putchar -fno-builtin-fprintf -Wall -Wno-unused-variable -fno-optimize-sibling-calls")
 #    endif()
 
     set(OS_TYPE "Win32")
@@ -291,14 +292,12 @@ endif()
 get_platform_name(FULL_PLATFORM_NAME)
 message(STATUS "Full Platform name: ${FULL_PLATFORM_NAME}")
 
-set(OPTIMIZATION_FLAGS "")
-
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g ${COMMON_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${COMMON_FLAGS}")
 
 add_compile_options(
-    $<$<CONFIG:RELEASE>:-O2>
     $<$<CONFIG:DEBUG>:-O0>
+    $<$<CONFIG:$<NOT:DEBUG>>:-O2>
     -Wno-sometimes-uninitialized
     -Wno-self-assign
     -Wno-unused-variable
@@ -328,8 +327,8 @@ add_compile_definitions(
     IMMUTABILITY=1
     COGMTVM=0
     PharoVM=1
-    $<$<CONFIG:RELEASE>:DDEBUGVM=0>
-    $<$<CONFIG:DEBUG>:DDEBUGVM=1>
+    $<$<CONFIG:DEBUG>:DEBUGVM=1>
+    $<$<CONFIG:$<NOT:DEBUG>>:DEBUGVM=0>
 )
 
 #
