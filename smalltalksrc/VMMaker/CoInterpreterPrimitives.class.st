@@ -184,22 +184,6 @@ CoInterpreterPrimitives >> pcDataFor: cogMethod [
 	^data
 ]
 
-{ #category : #'method introspection support' }
-CoInterpreterPrimitives >> picDataFor: cogMethod [
-	<var: #cogMethod type: #'CogMethod *'>
-	| cm nSlots nEntries data |
-	cm := cogMethod methodObject.
-	nSlots := (objectMemory byteSizeOf: cm) - (self startPCOfMethod: cm) + objectMemory minSlotsForShortening.
-	data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: nSlots.
-	data ifNil: [^-1].
-	nEntries := cogit picDataFor: cogMethod into: data.
-	nEntries = 0 ifTrue:
-		[^0].
-	nEntries < nSlots ifTrue:
-		[objectMemory shorten: data toIndexableSize: nEntries].
-	^data
-]
-
 { #category : #'method introspection primitives' }
 CoInterpreterPrimitives >> primitiveAllMethodsCompiledToMachineCode [
 	<export: true>
@@ -430,8 +414,26 @@ CoInterpreterPrimitives >> primitiveMethodPCData [
 	self pop: 1 thenPush: data
 ]
 
+{ #category : #'method introspection primitives' }
+CoInterpreterPrimitives >> primitiveMethodProfilingData [
+	<export: true>
+	| methodReceiver data |
+	argumentCount ~= 0 ifTrue:
+		[^self primitiveFailFor: PrimErrBadNumArgs].
+	methodReceiver := self stackTop.
+	data := 0.
+	(self methodHasCogMethod: methodReceiver) ifTrue:
+		[data := self profilingDataFor: (self cogMethodOf: methodReceiver).
+		 data = -1 ifTrue:
+			[^self primitiveFailFor: PrimErrNoMemory]].
+	data = 0 ifTrue:
+		[data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: 0].
+	self pop: 1 thenPush: data
+]
+
 { #category : #'indexing primitives' }
 CoInterpreterPrimitives >> primitiveMethodXray [
+
 	"Lift the veil from a method and answer an integer describing the interior state
 	 of its machine code.
 	 Used for e.g. VM tests so they can verify they're testing what they think they're testing.
@@ -443,33 +445,45 @@ CoInterpreterPrimitives >> primitiveMethodXray [
 	 Bit 4 = method too big to be jitted (more than 64k of code, or needs more than 1.5Mb of stack space to compile)
 	 Bit 5 = method contains unknown/unjittable bytecode
 	 Bit 6 = method should not be jitted because it contains a primitive not to be called from machine code (unused)"
-	| alreadyCogged flags cogMethod |
+
 	<var: #cogMethod type: #'CogMethod *'>
-	(self methodWithHeaderShouldBeCogged: (objectMemory methodHeaderOf: self stackTop))
-		ifTrue:
-			[alreadyCogged := self maybeMethodHasCogMethod: self stackTop.
-			 flags := 1.
-			 alreadyCogged ifFalse:
-				[cogMethod := cogit cog: self stackTop selector: objectMemory nilObject.
-				 (cogMethod = nil
-				  and: [cogCompiledCodeCompactionCalledFor]) ifTrue:
-					[self commenceCogCompiledCodeCompaction.
-					 cogMethod := cogit cog: self stackTop selector: objectMemory nilObject].
-			 cogMethod asInteger
-				caseOf: {
-					[MethodTooBig] -> [flags := 1 + 16].
-					[EncounteredUnknownBytecode] -> [flags := 1 + 32].
-					[ShouldNotJIT] -> [flags := 1 + 64] }
-				otherwise: [self deny: (cogMethod asInteger between: MaxNegativeErrorCode and: NotFullyInitialized)]].
-			 (flags = 1
-			  and: [self maybeMethodHasCogMethod: self stackTop]) ifTrue:
-				[cogMethod := self cogMethodOf: self stackTop.
-				 flags := cogMethod stackCheckOffset = 0 ifTrue: [7] ifFalse: [3].
-				 cogMethod cmRefersToYoung ifTrue:
-					[flags := flags + 8].
-				 alreadyCogged ifFalse:
-					[cogit freeMethod: cogMethod]]]
-		ifFalse: [flags := 0].
+	| alreadyCogged flags cogMethod |
+	(self methodWithHeaderShouldBeCogged:
+		 (objectMemory methodHeaderOf: self stackTop))
+		ifTrue: [ 
+			alreadyCogged := self maybeMethodHasCogMethod: self stackTop.
+			flags := 1.
+
+			alreadyCogged
+				ifTrue: [ flags := flags + 2 ]
+				ifFalse: [ 
+					cogMethod := cogit
+						             cog: self stackTop
+						             selector: objectMemory nilObject.
+					(cogMethod = nil and: [ cogCompiledCodeCompactionCalledFor ]) 
+						ifTrue: [ 
+							self externalWriteBackHeadFramePointers.
+							self commenceCogCompiledCodeCompaction.
+							cogMethod := cogit
+								             cog: self stackTop
+								             selector: objectMemory nilObject ].
+					cogMethod asInteger
+						caseOf: { 
+								([ MethodTooBig ] -> [ flags := flags + 16 ]).
+								([ EncounteredUnknownBytecode ] -> [ flags := flags + 32 ]).
+								([ ShouldNotJIT ] -> [ flags := flags + 64 ]) }
+						otherwise: [ 
+							self deny: (cogMethod asInteger
+									 between: MaxNegativeErrorCode
+									 and: NotFullyInitialized) ] ].
+
+			(self maybeMethodHasCogMethod: self stackTop) 
+				ifTrue: [ 
+					cogMethod := self cogMethodOf: self stackTop.
+					cogMethod stackCheckOffset = 0 ifTrue: [ flags := flags + 4 ].
+					cogMethod cmRefersToYoung ifTrue: [ flags := flags + 8 ].
+					alreadyCogged ifFalse: [ cogit safeFreeMethod: cogMethod ] ] ]
+		ifFalse: [ flags := 0 ].
 	self pop: 1 thenPush: (objectMemory integerObjectOf: flags)
 ]
 
@@ -632,24 +646,6 @@ CoInterpreterPrimitives >> primitiveSignal [
 	inInterpreter := instructionPointer >= objectMemory startOfMemory.
 	(self synchronousSignal: self stackTop) ifTrue:
 		[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]
-]
-
-{ #category : #'method introspection primitives' }
-CoInterpreterPrimitives >> primitiveSistaMethodPICAndCounterData [
-	<export: true>
-	<option: #SistaCogit>
-	| methodReceiver data |
-	argumentCount ~= 0 ifTrue:
-		[^self primitiveFailFor: PrimErrBadNumArgs].
-	methodReceiver := self stackTop.
-	data := 0.
-	(self methodHasCogMethod: methodReceiver) ifTrue:
-		[data := self picDataFor: (self cogMethodOf: methodReceiver).
-		 data = -1 ifTrue:
-			[^self primitiveFailFor: PrimErrNoMemory]].
-	data = 0 ifTrue:
-		[data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: 0].
-	self pop: 1 thenPush: data
 ]
 
 { #category : #'system control primitives' }
@@ -971,6 +967,22 @@ CoInterpreterPrimitives >> primitiveYield [
 	self addLastLink: activeProc toList: processList.
 	self transferTo: self wakeHighestPriority from: CSYield.
 	self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter
+]
+
+{ #category : #'method introspection support' }
+CoInterpreterPrimitives >> profilingDataFor: cogMethod [
+	<var: #cogMethod type: #'CogMethod *'>
+	| cm nSlots nEntries data |
+	cm := cogMethod methodObject.
+	nSlots := (objectMemory byteSizeOf: cm) - (self startPCOfMethod: cm) + objectMemory minSlotsForShortening.
+	data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: nSlots.
+	data ifNil: [^-1].
+	nEntries := cogit profilingDataFor: cogMethod into: data.
+	nEntries = 0 ifTrue:
+		[^0].
+	nEntries < nSlots ifTrue:
+		[objectMemory shorten: data toIndexableSize: nEntries].
+	^data
 ]
 
 { #category : #'object access primitives' }

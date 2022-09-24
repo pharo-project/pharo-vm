@@ -2696,6 +2696,13 @@ CogARMCompiler >> leafCallStackPointerDelta [
 	^0
 ]
 
+{ #category : #'inline cacheing' }
+CogARMCompiler >> literalBeforeInlineCacheTagAt: callSiteReturnAddress [
+
+	self notYetImplemented: 'Should implement access to the class in directed super sends for ARMv7'.
+	^ 0
+]
+
 { #category : #accessing }
 CogARMCompiler >> literalLoadInstructionBytes [
 	"Answer the size of a literal load instruction (which may or may not include the size of the literal).

@@ -47,11 +47,10 @@ Class {
 	#superclass : #StackToRegisterMappingCogit,
 	#instVars : [
 		'numCounters',
-		'counters',
-		'counterIndex',
 		'initialCounterValue',
 		'ceTrapTrampoline',
-		'branchReachedOnlyForCounterTrip'
+		'branchReachedOnlyForCounterTrip',
+		'counters'
 	],
 	#classVars : [
 		'CounterBytes',
@@ -2518,102 +2517,7 @@ SistaCogit >> numMethods [
 ]
 
 { #category : #'method introspection' }
-SistaCogit >> picDataFor: descriptor Annotation: isBackwardBranchAndAnnotation Mcpc: mcpc Bcpc: bcpc Method: cogMethodArg [
-	<var: #descriptor type: #'BytecodeDescriptor *'>
-	<var: #mcpc type: #'char *'>
-	<var: #cogMethodArg type: #'void *'>
-	| annotation entryPoint tuple counter |
-	"N.B. Counters are always 32-bits, having two 16-bit halves for the reached and taken counts."
-	<var: #counter type: #'unsigned int'>
-
-	descriptor ifNil:
-		[^0].
-	descriptor isBranch ifTrue:
-		["it's a branch; conditional?"
-		 (descriptor isBranchTrue or: [descriptor isBranchFalse]) ifTrue:
-			[counter := (self
-							cCoerce: ((self
-											cCoerceSimple: cogMethodArg
-											to: #'CogMethod *') counters)
-							to: #'usqInt *')
-								at: counterIndex.
-			 tuple := self picDataForCounter: counter at: bcpc + 1.
-			 tuple = 0 ifTrue: [^PrimErrNoMemory].
-			 objectMemory storePointer: introspectionDataIndex ofObject: introspectionData withValue: tuple.
-			 introspectionDataIndex := introspectionDataIndex + 1.
-			 counterIndex := counterIndex + 1].
-		 ^0].
-	annotation := isBackwardBranchAndAnnotation >> 1.
-	((self isPureSendAnnotation: annotation)
-	 and: [entryPoint := backEnd callTargetFromReturnAddress: mcpc asUnsignedInteger.
-		 entryPoint > methodZoneBase]) ifFalse: "send is not linked, or is not a send"
-		[^0].
-	self targetMethodAndSendTableFor: entryPoint "It's a linked send; find which kind."
-		annotation: annotation
-		into: [:targetMethod :sendTable| | methodClassIfSuper association |
-			methodClassIfSuper := nil.
-			sendTable = superSendTrampolines ifTrue:
-				[methodClassIfSuper := coInterpreter methodClassOf: (self cCoerceSimple: cogMethodArg to: #'CogMethod *') methodObject].
-			sendTable = directedSuperSendTrampolines ifTrue:
-				[association := backEnd literalBeforeInlineCacheTagAt: mcpc asUnsignedInteger.
-				 methodClassIfSuper := objectRepresentation valueOfAssociation: association].
-			tuple := self picDataForSendTo: targetMethod
-						methodClassIfSuper: methodClassIfSuper
-						at: mcpc
-						bcpc: bcpc + 1].
-	tuple = 0 ifTrue: [^PrimErrNoMemory].
-	objectMemory storePointer: introspectionDataIndex ofObject: introspectionData withValue: tuple.
-	introspectionDataIndex := introspectionDataIndex + 1.
-	^0
-]
-
-{ #category : #'method introspection' }
-SistaCogit >> picDataFor: cogMethod into: arrayObj [
-	"Collect the branch and send data for cogMethod, storing it into arrayObj."
-	<api>
-	<var: #cogMethod type: #'CogMethod *'>
-	| errCode |
-	cogMethod stackCheckOffset = 0 ifTrue:
-		[^0].
-	introspectionDataIndex := counterIndex := 0.
-	introspectionData := arrayObj.
-	errCode := self
-					mapFor: (self cCoerceSimple: cogMethod to: #'CogBlockMethod *')
-					bcpc: (coInterpreter startPCOfMethod: cogMethod methodObject)
-					performUntil: #picDataFor:Annotation:Mcpc:Bcpc:Method:
-					arg: cogMethod asVoidPointer.
-	errCode ~= 0 ifTrue:
-		[self assert: errCode = PrimErrNoMemory.
-		 ^-1].
-	cogMethod picUsage ~= 0 ifTrue:
-		[errCode := self blockDispatchTargetsFor: cogMethod
-						perform: #picDataForBlockEntry:Method:
-						arg: cogMethod asInteger.
-		 errCode ~= 0 ifTrue:
-			[self assert: errCode = PrimErrNoMemory.
-			 ^-1]].
-	^introspectionDataIndex
-]
-
-{ #category : #'method introspection' }
-SistaCogit >> picDataForBlockEntry: blockEntryMcpc Method: cogMethod [
-	"Collect the branch and send data for the block method starting at blockEntryMcpc, storing it into picData."
-	<returnTypeC: #usqInt>
-	| cogBlockMethod |
-	<var: #cogBlockMethod type: #'CogBlockMethod *'>
-	cogBlockMethod := self cCoerceSimple: blockEntryMcpc - (self sizeof: CogBlockMethod)
-							  to: #'CogBlockMethod *'.
-	cogBlockMethod stackCheckOffset = 0 ifTrue:
-		[^0].
-	^self
-		mapFor: cogBlockMethod
-		bcpc: cogBlockMethod startpc
-		performUntil: #picDataFor:Annotation:Mcpc:Bcpc:Method:
-		arg: cogMethod asVoidPointer
-]
-
-{ #category : #'method introspection' }
-SistaCogit >> picDataForCounter: counter at: bcpc [
+SistaCogit >> profilingDataForCounter: counter at: bcpc [
 	| executedCount tuple untakenCount |
 	"N.B. Counters are always 32-bits, having two 16-bit halves for the reached and taken counts."
 	<var: #counter type: #'unsigned int'>
@@ -2631,87 +2535,6 @@ SistaCogit >> picDataForCounter: counter at: bcpc [
 		storePointerUnchecked: 1 ofObject: tuple withValue: (objectMemory integerObjectOf: executedCount);
 		storePointerUnchecked: 2 ofObject: tuple withValue: (objectMemory integerObjectOf: untakenCount).
 	^tuple
-]
-
-{ #category : #'method introspection' }
-SistaCogit >> picDataForSendTo: cogMethod methodClassIfSuper: methodClassOrNil at: sendMcpc bcpc: sendBcpc [
-	"Answer a tuple with the send data for a linked send to cogMethod.
-	 If the target is a CogMethod (monomorphic send) answer
-		{ bytecode pc, inline cache class, target method }
-	 If the target is an open PIC (megamorphic send) answer
-		{ bytecode pc, nil, send selector }
-	If the target is a closed PIC (polymorphic send) answer
-		{ bytecode pc, first class, target method, second class, second target method, ... }"
-	<var: #cogMethod type: #'CogMethod *'>
-	<var: #sendMcpc type: #'char *'>
-	| tuple class |
-	tuple := objectMemory
-					eeInstantiateClassIndex: ClassArrayCompactIndex
-					format: objectMemory arrayFormat
-					numSlots: (cogMethod cmType = CMClosedPIC
-								ifTrue: [2 * cogMethod cPICNumCases + 1]
-								ifFalse: [3]).
-	tuple = 0 ifTrue:
-		[^0].
-	objectMemory storePointerUnchecked: 0 ofObject: tuple withValue: (objectMemory integerObjectOf: sendBcpc).
-	cogMethod cmType = CMMethod ifTrue:
-		[class := methodClassOrNil ifNil:
-					[objectRepresentation classForInlineCacheTag: (backEnd inlineCacheTagAt: sendMcpc asUnsignedInteger)].
-		 objectMemory
-			storePointer: 1 ofObject: tuple withValue: class;
-			storePointer: 2 ofObject: tuple withValue: cogMethod methodObject.
-		^tuple].
-	cogMethod cmType = CMClosedPIC ifTrue:
-		[self populate: tuple withPICInfoFor: cogMethod firstCacheTag: (backEnd inlineCacheTagAt: sendMcpc asUnsignedInteger).
-		^tuple].
-	cogMethod cmType = CMOpenPIC ifTrue:
-		[objectMemory
-			storePointerUnchecked: 1 ofObject: tuple withValue: objectMemory nilObject;
-			storePointer: 2 ofObject: tuple withValue: cogMethod selector.
-		^tuple].
-	self error: 'invalid method type'.
-	^0 "to get Slang to type this method as answering sqInt"
-]
-
-{ #category : #'method introspection' }
-SistaCogit >> populate: tuple withPICInfoFor: cPIC firstCacheTag: firstCacheTag [
-	"Populate tuple (which must be large enough) with the ClosedPIC's target method class pairs.
-	 The first entry in tuple contains the bytecode pc for the send, so skip the tuple's first field."
-	<var: #cPIC type: #'CogMethod *'>
-	| pc cacheTag classOop entryPoint targetMethod value |
-	<var: #targetMethod type: #'CogMethod *'>
-
-	1 to: cPIC cPICNumCases do:
-		[:i|
-		pc := self addressOfEndOfCase: i inCPIC: cPIC.
-		cacheTag := i = 1
-						ifTrue: [firstCacheTag]
-						ifFalse: [backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize].
-		classOop := objectRepresentation classForInlineCacheTag: cacheTag.
-		objectMemory storePointer: i * 2 - 1 ofObject: tuple withValue: classOop.
-		entryPoint := i = 1
-						ifTrue: [backEnd jumpLongTargetBeforeFollowingAddress: pc]
-						ifFalse: [backEnd jumpLongConditionalTargetBeforeFollowingAddress: pc].
-		"Find target from jump.  A jump to the MNU entry-point should collect #doesNotUnderstand:"
-		(cPIC containsAddress: entryPoint)
-			ifTrue:
-				[value := objectMemory splObj: SelectorDoesNotUnderstand]
-			ifFalse:
-				[targetMethod := self cCoerceSimple: entryPoint - cmNoCheckEntryOffset to: #'CogMethod *'.
-				 self assert: targetMethod cmType = CMMethod.
-				 value := targetMethod methodObject].
-		objectMemory storePointer: i * 2 ofObject: tuple withValue: value]
-]
-
-{ #category : #tests }
-SistaCogit >> printPICDataForMethods [
-	<doNotGenerate>
-	methodZone methodsDo:
-		[:cogMethod|
-		cogMethod cmType = CMMethod ifTrue:
-			[(coInterpreter picDataFor: cogMethod) ifNotNil:
-				[:thePicData|
-				coInterpreter printOop: thePicData]]]
 ]
 
 { #category : #'sista callbacks' }

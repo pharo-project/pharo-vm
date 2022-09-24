@@ -179,6 +179,42 @@ VMSimpleStackBasedCogitAbstractTest >> compileWithoutOutput: aBlockClosure bytec
 	^ aBlockClosure value
 ]
 
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> createBaseFrame [
+
+	"Create the root context with a valid method"
+
+	"Let's create a method with enough size. It should have at least a literal (4 or 8 bytes depending the word size) and some bytecodes, so we can put the IP inside the method"
+
+	| ctx page baseMethod baseMethodIP baseFrame |
+	baseMethod := methodBuilder newMethod
+		              literals: { 
+				              memory nilObject.
+				              memory nilObject };
+		              buildMethod.
+
+	baseMethodIP := memory lastPointerOf: baseMethod.
+
+	"The context has 5 (in 32 bits) or 9 (in 64 bits) as initial IP, as method has at least one literal"
+	ctx := self
+		       newSmallContextReceiver: memory nilObject
+		       method: baseMethod
+		       arguments: #(  )
+		       temporaries: #(  )
+		       ip: baseMethodIP + 1.
+
+	"The base context has a trampoline as the savedIP so it can return to a context that is in the heap"
+	cogit ceBaseFrameReturnTrampoline: 16rAABBCCDD.
+
+	page := interpreter makeBaseFrameFor: ctx.
+	interpreter setStackPointersFromPage: page.
+	interpreter setStackPageAndLimit: page.
+	interpreter instructionPointer: interpreter popStack.
+
+	"keeping track of the base frame."
+	baseFrame := interpreter framePointer
+]
+
 { #category : #'helpers - frames' }
 VMSimpleStackBasedCogitAbstractTest >> createFramefulCallFrom: anAddress [
 
@@ -437,11 +473,17 @@ VMSimpleStackBasedCogitAbstractTest >> jitCompilerClass [
 ]
 
 { #category : #helpers }
-VMSimpleStackBasedCogitAbstractTest >> jitMethod: aPharoCompiledMethod selector: aSelectorOop [
+VMSimpleStackBasedCogitAbstractTest >> jitMethod: aHostCompiledMethod [ 
+
+	^ self jitMethod: aHostCompiledMethod selector: memory nilObject
+]
+
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> jitMethod: aHostCompiledMethod selector: aSelectorOop [
 
 	| methodOop |
 
-	methodOop := self createMethodOopFromPharoMethod:aPharoCompiledMethod.
+	methodOop := self createMethodOopFromHostMethod:aHostCompiledMethod.
 
 	^ cogit cog: methodOop selector: aSelectorOop
 ]
@@ -491,12 +533,6 @@ VMSimpleStackBasedCogitAbstractTest >> newJitCompiler [
 	interpreter cogMethodZone: compiler methodZone.
 	^ compiler
 
-]
-
-{ #category : #running }
-VMSimpleStackBasedCogitAbstractTest >> newMemory [
-
-	^ self memoryClass simulatorClass new
 ]
 
 { #category : #helpers }

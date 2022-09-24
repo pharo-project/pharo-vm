@@ -152,7 +152,7 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICType [
 	| selector createdPic |
 	selector := memory trueObject.
 	createdPic := cogit cogOpenPICSelector: selector numArgs: 1.
-	self assert: createdPic cmType equals: CMOpenPIC.
+	self assert: createdPic cmType equals: CMMegamorphicIC.
 
 ]
 
