@@ -192,9 +192,6 @@ SpurImageWriter >> writeImageSegmentsToFile: aBinaryStream [
 	<inline: false>
 
 	| total |
-	
-	self assert: (objectMemory endOfMemory = segmentManager lastSegment segLimit
-				 or: [objectMemory endOfMemory + objectMemory bridgeSize = segmentManager lastSegment segLimit]).
 
 	self assert: segmentManager firstSegmentBytes > 0.
 	

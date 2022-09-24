@@ -15,8 +15,6 @@
 # TODOs:
 #  - Make the VMFlavours autodescribed? Slang could output a list of generated files that we could use
 
-set(CMAKE_VERBOSE_MAKEFILE TRUE)
-
 #Setting vmmaker directory and image 
 set( VMMAKER_DIR    "${CMAKE_CURRENT_BINARY_DIR_TO_OUT}/build/vmmaker")
 set( VMMAKER_IMAGE  "${VMMAKER_DIR}/image/VMMaker.image")

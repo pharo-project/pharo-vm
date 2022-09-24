@@ -256,6 +256,16 @@ CogARMCompiler class >> initializeAbstractRegisters [
 	DPFPReg6			:= D6.
 	DPFPReg7			:= D7.
 
+	"These registers are undefined"
+	VReg0 := -1.
+	VReg1 := -1.
+	VReg2 := -1.
+	VReg3 := -1.
+	VReg4 := -1.
+	VReg5 := -1.
+	VReg6 := -1.
+	VReg7 := -1.
+
 	NumFloatRegisters := 8
 ]
 
