@@ -306,7 +306,7 @@ Class {
 		'MapEnd',
 		'MaxCPICCases',
 		'MaxCompiledPrimitiveIndex',
-		'MaxStackAllocSize',
+		'MaxNumberOfAbstractOpcodes',
 		'MaxX2NDisplacement',
 		'NSCClassTagIndex',
 		'NSCEnclosingObjectIndex',
@@ -1002,12 +1002,9 @@ Cogit class >> initializeMiscConstants [
 	"One variable defines whether in a block and whether in a vanilla or full block."
 	InVanillaBlock := 1.
 	InFullBlock := 2.
-
-	"Max size to alloca when compiling.
-	 Mac OS X 10.6.8 segfaults approaching 8Mb.
-	 Linux 2.6.9 segfaults above 11Mb.
-	 WIndows XP segfaults approaching 2Mb."
-	MaxStackAllocSize := 1024 * 1024 * 3 / 2 
+	
+	"The MaxNumberOfAbstractOpcodes should fits in a 16 bit integer (e.g. CogBytecodeFixup's instructionIndex)."
+	MaxNumberOfAbstractOpcodes := 32768.
 ]
 
 { #category : #'class initialization' }
@@ -3099,28 +3096,10 @@ Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes [
 	"Allocate the various arrays needed to compile abstract instructions.
 	 Notionally we only need as many fixups as there are bytecodes.  But we
 	 reuse fixups to record pc-dependent instructions in generateInstructionsAt:
-	 and so need at least as many as there are abstract opcodes.
-
-	 This *must* be inlined since the arrays are alloca'ed (stack allocated)
-	 so that they are freed when compilation is done.
-
-	 N.B. We do one single alloca to save embarrassing C optimizers that
-	 generate incorrect code as both gcc and the intel compiler do on x86."
+	 and so need at least as many as there are abstract opcodes."
 	<inline: true>
-	numAbstractOpcodes := numberOfAbstractOpcodes.
-	self
-		cCode:
-			[| opcodeSize fixupSize|
-			 opcodeSize := (self sizeof: CogAbstractInstruction) * numAbstractOpcodes.
-			 fixupSize := (self sizeof: CogBytecodeFixup) * numAbstractOpcodes.
-			 abstractOpcodes := self alloca: opcodeSize + fixupSize.
-			 self b: abstractOpcodes zero: opcodeSize + fixupSize.
-			 fixups := (abstractOpcodes asUnsignedInteger + opcodeSize) asVoidPointer]
-		inSmalltalk:
-			[abstractOpcodes := CArrayAccessor on:
-									 ((1 to: numAbstractOpcodes) collect: [:ign| CogCompilerClass for: self]).
-			 fixups := CArrayAccessor on:
-						((1 to: numAbstractOpcodes) collect: [:ign| self bytecodeFixupClass for: self])].
+	
+	self ensureAndClearAbstractOpcodes.	
 	self zeroOpcodeIndexForNewOpcodes.
 	labelCounter := 0
 ]
@@ -3130,34 +3109,14 @@ Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes i
 	"Allocate the various arrays needed to compile abstract instructions, failing if the size
 	 needed is considered too high.  Notionally we only need as many fixups as there are
 	 bytecodes.  But we reuse fixups to record pc-dependent instructions in
-	 generateInstructionsAt: and so need at least as many as there are abstract opcodes.
-
-	 This *must* be inlined since the arrays are alloca'ed (stack allocated)
-	 so that they are freed when compilation is done.
-
-	 N.B. We do one single alloca to save embarrassing C optimizers that
-	 generate incorrect code as both gcc and the intel compiler do on x86."
+	 generateInstructionsAt: and so need at least as many as there are abstract opcodes."
 	<inline: true>
-	| opcodeBytes fixupBytes allocBytes |
-	numAbstractOpcodes := numberOfAbstractOpcodes.
-	opcodeBytes := (self sizeof: CogAbstractInstruction) * numAbstractOpcodes.
-	fixupBytes := (self sizeof: CogBytecodeFixup) * numAbstractOpcodes.
-	allocBytes := opcodeBytes + fixupBytes.
-	"Document the fact that the MaxStackAllocSize ensures that the number of abstract
-	 opcodes fits in a 16 bit integer (e.g. CogBytecodeFixup's instructionIndex)."
-	self assert: (self sizeof: CogAbstractInstruction) + (self sizeof: CogBytecodeFixup) * 49152 > MaxStackAllocSize.
-	allocBytes > MaxStackAllocSize ifTrue:
+
+	numberOfAbstractOpcodes > MaxNumberOfAbstractOpcodes ifTrue:
 		[^failBlock value].
-	self
-		cCode:
-			[abstractOpcodes := self alloca: allocBytes.
-			 self b: abstractOpcodes zero: allocBytes.
-			 fixups := (abstractOpcodes asUnsignedInteger + opcodeBytes) asVoidPointer]
-		inSmalltalk:
-			[abstractOpcodes := CArrayAccessor on:
-									 ((1 to: numAbstractOpcodes) collect: [:ign| CogCompilerClass for: self]).
-			 fixups := CArrayAccessor on:
-						((1 to: numAbstractOpcodes) collect: [:ign| self bytecodeFixupClass for: self])].
+
+	self ensureAndClearAbstractOpcodes.
+
 	self zeroOpcodeIndexForNewOpcodes.
 	labelCounter := 0
 ]
@@ -6336,6 +6295,29 @@ Cogit >> endPCOf: aMethod [
 		nExts := descriptor isExtension ifTrue: [nExts + 1] ifFalse: [0].
 		pc := pc + descriptor numBytes].
 	^end
+]
+
+{ #category : #initialization }
+Cogit >> ensureAndClearAbstractOpcodes [
+
+	| opcodeBytes fixupBytes allocBytes |
+	numAbstractOpcodes := MaxNumberOfAbstractOpcodes.
+	opcodeBytes := (self sizeof: CogAbstractInstruction) * numAbstractOpcodes.
+	fixupBytes := (self sizeof: CogBytecodeFixup) * numAbstractOpcodes.
+	allocBytes := opcodeBytes + fixupBytes.
+	
+	self
+		cCode:
+			[abstractOpcodes 
+				ifNil: [
+					abstractOpcodes := self malloc: allocBytes.
+					fixups := (abstractOpcodes asUnsignedInteger + opcodeBytes) asVoidPointer].
+				
+			 self b: abstractOpcodes zero: allocBytes]
+		inSmalltalk:
+			[abstractOpcodes := CArrayAccessor on: ((1 to: numAbstractOpcodes) collect: [:ign| CogCompilerClass for: self]).
+			 fixups := CArrayAccessor on: ((1 to: numAbstractOpcodes) collect: [:ign| self bytecodeFixupClass for: self])].
+
 ]
 
 { #category : #'compile abstract instructions' }
