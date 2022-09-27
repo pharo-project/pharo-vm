@@ -2,6 +2,10 @@
 
 I am a changelog... do not wait too much from me :D
 
+## v9.0.19
+- Correctly handling the encoding of the command line arguments of the VM (Windows)
+- Allocating the opcodes and fixup structs only once and reusing them (Reducing risk of C Stack Overflow)
+
 ## v9.0.18
 - Update library downloads in Windows to
 	- libgit2 => 1.4.4
