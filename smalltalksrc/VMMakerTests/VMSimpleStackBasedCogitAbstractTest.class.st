@@ -547,14 +547,14 @@ VMSimpleStackBasedCogitAbstractTest >> popAddress [
 { #category : #helpers }
 VMSimpleStackBasedCogitAbstractTest >> prepareCall [
 
-	machineSimulator hasLinkRegister 
+	"Caller side"
+	machineSimulator hasLinkRegister
 		ifTrue: [ 
 			"The caller IP in ARM is in the linkRegister"
 			machineSimulator linkRegisterValue: callerAddress ]
 		ifFalse: [ 
 			"I need to push the caller IP, as this is a message send"
-			self pushAddress:  callerAddress ]
-
+			self pushAddress: callerAddress ].
 ]
 
 { #category : #helpers }
@@ -568,6 +568,8 @@ VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver ar
 
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
 
+	self pushAddress: aReceiver.
+	arguments do: [ :anArgument | self pushAddress: anArgument ].
 	self machineSimulator receiverRegisterValue: aReceiver.
 
 	"If the cogit is the StackToRegisterMapping the arguments should go registers, else by stack"
@@ -578,12 +580,19 @@ VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver ar
 				i = 2 ifTrue: [ self machineSimulator arg1RegisterValue: a ].
 				i > 2 ifTrue: [ 
 					self error:
-						'Cogit calling convention only supports 2 arguments by registers' ] ] ]
-		ifFalse: [ 
-			self pushAddress: aReceiver.
-			arguments do: [ :anArgument | self pushAddress: anArgument ] ].
+						'Cogit calling convention only supports 2 arguments by registers' ] ] ].
 
-	self prepareCall
+	"Caller side"
+	self prepareCall.
+	
+	"Callee side"
+	"Now push the link register, it will be popped by the return"
+	self pushAddress: machineSimulator linkRegisterValue.
+	self pushAddress: machineSimulator fp.
+	machineSimulator fp: machineSimulator smalltalkStackPointerRegisterValue.
+	self pushAddress: 0 "Method".
+	self pushAddress: 0 "context".
+	self pushAddress: aReceiver
 ]
 
 { #category : #helpers }
