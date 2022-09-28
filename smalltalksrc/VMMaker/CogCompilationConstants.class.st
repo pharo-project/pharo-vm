@@ -24,6 +24,7 @@ Class {
 		'SSSpillFloat64',
 		'SSSpillInt64',
 		'SSSpillNative',
+		'SSVectorRegister',
 		'UnimplementedOperation'
 	],
 	#category : #'VMMaker-JIT'

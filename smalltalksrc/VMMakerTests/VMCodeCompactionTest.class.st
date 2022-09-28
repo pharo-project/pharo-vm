@@ -16,7 +16,7 @@ VMCodeCompactionTest >> createBaseFrameWithMachineCodeMethod: aMachineCodeMethod
 		
 	"The context has 5 (in 32 bits) or 9 (in 64 bits) as initial IP, as method has at least one literal"
 	aCompiledMethod := aMachineCodeMethod methodObject.
-	
+
 	ctx := self newSmallContextReceiver: memory nilObject method: aCompiledMethod arguments: #() temporaries: #() ip: cogit entryOffset negated.
 
 	"The base context has a trampoline as the savedIP so it can return to a context that is in the heap"

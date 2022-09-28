@@ -68,7 +68,7 @@ Class {
 		'VMBIGENDIAN',
 		'WIN32'
 	],
-	#category : #'VMMaker-Interpreter'
+	#category : #Melchor
 }
 
 { #category : #'C translation' }

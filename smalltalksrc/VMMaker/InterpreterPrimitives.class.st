@@ -62,7 +62,7 @@ secHasEnvironmentAccess
 "
 Class {
 	#name : #InterpreterPrimitives,
-	#superclass : #VMClass,
+	#superclass : #AbstractInterpreter,
 	#instVars : [
 		'objectMemory',
 		'messageSelector',
@@ -217,15 +217,6 @@ InterpreterPrimitives >> canBeImmutable: oop [
 	^ true
 ]
 
-{ #category : #'simulation support' }
-InterpreterPrimitives >> doOrDefer: aBlock [
-	<doNotGenerate>
-	"Either evaluate aBlock immediately if in the uiProcess or defer aBlock as a UI message"
-	Processor activeProcess == self uiProcess
-		ifTrue: [aBlock value]
-		ifFalse: [WorldState addDeferredUIMessage: aBlock]
-]
-
 { #category : #'process primitive support' }
 InterpreterPrimitives >> doWaitSemaphore: aSemaphoreOop [
 	| excessSignals activeProc |
@@ -289,7 +280,6 @@ InterpreterPrimitives >> initPrimCall [
 InterpreterPrimitives >> initialize [
 
 	"Here we can initialize the variables C initializes to zero.  #initialize methods do /not/ get translated."
-
 	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := ffiExceptionResponse := 0.
 	newFinalization := false
 ]
@@ -1185,7 +1175,7 @@ InterpreterPrimitives >> primitiveClass [
 { #category : #'process primitives' }
 InterpreterPrimitives >> primitiveClearVMProfile [
 	"Primitive. Void the VM profile histograms."
-	self cCode: 'ioClearProfile()'.
+	self ioClearProfile.
 	self pop: argumentCount
 ]
 

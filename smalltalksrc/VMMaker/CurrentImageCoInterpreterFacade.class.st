@@ -498,11 +498,6 @@ CurrentImageCoInterpreterFacade >> isCogMethodReference: methodHeader [
 	^coInterpreter isCogMethodReference: methodHeader
 ]
 
-{ #category : #testing }
-CurrentImageCoInterpreterFacade >> isCurrentImageFacade [
-	^true
-]
-
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> isImmediate: anOop [
 	^objectMemory isImmediate: anOop
@@ -853,16 +848,6 @@ CurrentImageCoInterpreterFacade >> oopForObject: o [
 	self subclassResponsibility
 ]
 
-{ #category : #testing }
-CurrentImageCoInterpreterFacade >> picDataFor: cogMethod [
-	| cm nBytes nEntries oversizeData |
-	cm := cogMethod methodObject.
-	nBytes := (self byteSizeOf: cm) - (self startPCOfMethod: cm).
-	oversizeData := Array new: nBytes.
-	nEntries := cogit picDataFor: cogMethod into: (self oopForObject: oversizeData).
-	^oversizeData copyFrom: 1 to: nEntries
-]
-
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> primErrTable [
 	^objectMap at: Smalltalk primitiveErrorTable
@@ -938,10 +923,10 @@ CurrentImageCoInterpreterFacade >> printCogMethod: cogMethod [
 	cogMethod cmType = CMBlock ifTrue:
 		[self print: ': block home: ';
 			printHex: (self cCoerceSimple: cogMethod to: #'CogBlockMethod *') cmHomeMethod asUnsignedInteger].
-	cogMethod cmType = CMClosedPIC ifTrue:
+	cogMethod cmType = CMPolymorphicIC ifTrue:
 		[self print: ': Closed PIC N: ';
 			printHex: cogMethod cPICNumCases].
-	cogMethod cmType = CMOpenPIC ifTrue:
+	cogMethod cmType = CMMegamorphicIC ifTrue:
 		[self print: ': Open PIC '].
 	self print: ' selector: '; printHex: cogMethod selector.
 	cogMethod selector = objectMemory nilObject
@@ -977,6 +962,16 @@ CurrentImageCoInterpreterFacade >> printNum: anInteger [
 { #category : #printing }
 CurrentImageCoInterpreterFacade >> printStringOf: anOop [
 	Transcript nextPutAll: (self objectForOop: anOop)
+]
+
+{ #category : #testing }
+CurrentImageCoInterpreterFacade >> profilingDataFor: cogMethod [
+	| cm nBytes nEntries oversizeData |
+	cm := cogMethod methodObject.
+	nBytes := (self byteSizeOf: cm) - (self startPCOfMethod: cm).
+	oversizeData := Array new: nBytes.
+	nEntries := cogit profilingDataFor: cogMethod into: (self oopForObject: oversizeData).
+	^oversizeData copyFrom: 1 to: nEntries
 ]
 
 { #category : #printing }

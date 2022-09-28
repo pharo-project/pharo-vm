@@ -183,11 +183,6 @@ Object >> touch: something [
 ]
 
 { #category : #'*VMMaker-translation support' }
-Object >> var: varSymbol declareC: declString [
-	"For translation only; noop when running in Smalltalk."
-]
-
-{ #category : #'*VMMaker-translation support' }
 Object >> var: varSymbol type: typeString [
 	"For translation only; noop when running in Smalltalk."
 ]

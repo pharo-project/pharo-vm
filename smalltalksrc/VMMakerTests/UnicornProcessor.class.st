@@ -55,6 +55,12 @@ UnicornProcessor >> ecx: anInteger [
 	machineSimulator ecx: anInteger
 ]
 
+{ #category : #'as yet unclassified' }
+UnicornProcessor >> edi: anInteger [ 
+	
+	machineSimulator edi: anInteger
+]
+
 { #category : #registers }
 UnicornProcessor >> edx: anInteger [ 
 	
@@ -68,9 +74,10 @@ UnicornProcessor >> esp: anInteger [
 ]
 
 { #category : #caching }
-UnicornProcessor >> flushICacheFrom: anInteger to: anInteger2 [ 
+UnicornProcessor >> flushICacheFrom: startAddress to: endAddress [
 
 	"Do nothing for now..."
+	machineSimulator flushICacheFrom: startAddress to: endAddress
 ]
 
 { #category : #registers }

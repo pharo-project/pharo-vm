@@ -15,6 +15,18 @@ TConstantNode class >> value: aValue [
 		  yourself
 ]
 
+{ #category : #comparing }
+TConstantNode >> = aNode [
+
+	^ aNode isConstant and: [ value = aNode value ]
+]
+
+{ #category : #visiting }
+TConstantNode >> accept: aVisitor [
+	
+	^ aVisitor visitConstantNode: self
+]
+
 { #category : #tranforming }
 TConstantNode >> asCASTIn: aBuilder [
 
@@ -27,6 +39,12 @@ TConstantNode >> asPrintfFormatStringNode [
 		setValue: value;
 		comment: comment;
 		yourself
+]
+
+{ #category : #accessing }
+TConstantNode >> children [
+	
+	^ #()
 ]
 
 { #category : #accessing }

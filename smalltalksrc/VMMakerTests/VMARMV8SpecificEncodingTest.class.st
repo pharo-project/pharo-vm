@@ -17,7 +17,7 @@ VMARMV8SpecificEncodingTest >> armInstructionAt: index [
 
 	| addr inst |
 	addr := cogInitialAddress + ((index - 1) * 8).
-	inst := memory long32At: addr.
+	inst := memory uint32AtPointer: addr.
 	
 	^ inst aarch64Disassembled
 ]
@@ -101,6 +101,7 @@ VMARMV8SpecificEncodingTest >> testEncodeCmpCqRNonEncodeable12BitConstant [
 		cogit CmpCq: constant R: ReceiverResultReg ].
 	
 	machineSimulator receiverRegisterValue: constant.
+
 	self runGeneratedCode.
 	
 	"Assert Cmp was equals"

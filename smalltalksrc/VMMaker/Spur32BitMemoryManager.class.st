@@ -715,7 +715,7 @@ Spur32BitMemoryManager >> objectAfter: objOop limit: limit [
 	(self oop: followingWordAddress isGreaterThanOrEqualTo: limit) ifTrue:
 		[^limit].
 	self flag: #endianness.
-	followingWord := self longAt: followingWordAddress + 4.
+	followingWord := self unsignedLongAt: followingWordAddress + 4.
 	^followingWord >> self numSlotsHalfShift = self numSlotsMask
 		ifTrue: [followingWordAddress + self baseHeaderSize]
 		ifFalse: [followingWordAddress]
@@ -853,10 +853,10 @@ Spur32BitMemoryManager >> setIsMarkedOf: objOop to: aBoolean [
 	self assert: (memoryMap isPermanentObject: objOop) not.
 	
 	self flag: #endianness.
-	self longAt: objOop + 4
+	self unsignedLongAt: objOop + 4
 		put: (aBoolean
-				ifTrue: [(self longAt: objOop + 4) bitOr: 1 << self markedBitHalfShift]
-				ifFalse: [(self longAt: objOop + 4) bitAnd: (1 << self markedBitHalfShift) bitInvert32])
+				ifTrue: [(self unsignedLongAt: objOop + 4) bitOr: 1 << self markedBitHalfShift]
+				ifFalse: [(self unsignedLongAt: objOop + 4) bitAnd: (1 << self markedBitHalfShift) bitInvert32])
 ]
 
 { #category : #'header access' }
@@ -968,6 +968,20 @@ Spur32BitMemoryManager >> tagMask [
 	<api>
 	<cmacro>
 	^3
+]
+
+{ #category : #'memory access' }
+Spur32BitMemoryManager >> unsignedLongAt: anAddress [
+
+	<doNotGenerate>
+	^ self uint32AtPointer: anAddress
+]
+
+{ #category : #'memory access' }
+Spur32BitMemoryManager >> unsignedLongAt: anAddress put: aValue [
+
+	<doNotGenerate>
+	^ self uint32AtPointer: anAddress put: aValue
 ]
 
 { #category : #'header formats' }

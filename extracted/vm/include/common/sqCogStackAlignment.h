@@ -83,7 +83,7 @@
 	 */
 #  if __GNUC__
 #   define getfp() ({ usqIntptr_t fp;								\
-					  asm volatile ("mov x0, fp" : "=r"(fp) : );	\
+					  asm volatile ("mov x0, x29" : "=r"(fp) : );	\
 					  fp; })
 #   define getsp() ({ usqIntptr_t sp;								\
 					  asm volatile ("mov x0, sp" : "=r"(sp) : );	\

@@ -141,7 +141,6 @@ VMARMStackAlignmentTest >> writeInstructions [
 	cogInitialAddress := cogit methodZone allocate: instructions size * 4 .
 
 	instructions withIndexDo: [ :instruction :index | 
-		memory long32At: cogInitialAddress + (index - 1 * 4)	 put: instruction ].
-
+		memory uint32AtPointer: cogInitialAddress + (index - 1 * 4)	 put: instruction ].
 	
 ]

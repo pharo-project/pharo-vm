@@ -16,8 +16,8 @@ Class {
 	#category : #'VMMaker-Tools'
 }
 
-{ #category : #specs }
-VMMachineCodeDebugger class >> defaultSpec [
+{ #category : #layout }
+VMMachineCodeDebugger class >> defaultLayout [
 
 	^  SpBoxLayout newVertical 
 		add:(SpBoxLayout newHorizontal
@@ -249,7 +249,7 @@ VMMachineCodeDebugger >> machineSimulator: anObject [
 VMMachineCodeDebugger >> openWithSpec [
 
 	self refreshAll.
-	super openWithSpec.
+	super open
 ]
 
 { #category : #showing }

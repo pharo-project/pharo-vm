@@ -256,6 +256,16 @@ CogARMCompiler class >> initializeAbstractRegisters [
 	DPFPReg6			:= D6.
 	DPFPReg7			:= D7.
 
+	"These registers are undefined"
+	VReg0 := -1.
+	VReg1 := -1.
+	VReg2 := -1.
+	VReg3 := -1.
+	VReg4 := -1.
+	VReg5 := -1.
+	VReg6 := -1.
+	VReg7 := -1.
+
 	NumFloatRegisters := 8
 ]
 
@@ -339,6 +349,9 @@ CogARMCompiler >> aeabiDivModFunctionAddr [
 	"Answer the address of the __aeabi_idivmod() call provided by the ARM low level libs to do an integer divide that returns the quo in R0 and rem in R1.
 	 A word on the somewhat strange usage of idivmod herein; we need a declaration for the _aeabi_idivmod helper function, despite the fact that in a simple C program test, you don't.
 	 To get that declaration we need a variable to hang it off; thus the non-existent var idivmod, and in simulation we need to simulate it, which is what aeabiDiv:Mod: does."
+	
+	| idivmod | "This variable should be in here to be able to be translated"
+	
 	<returnTypeC: #usqInt>
 	<var: #idivmod declareC: 'extern void __aeabi_idivmod(int dividend, int divisor)'>
 
@@ -2447,7 +2460,7 @@ CogARMCompiler >> instructionAddressBefore: followingAddress [
 CogARMCompiler >> instructionBeforeAddress: followingAddress [
 	"Answer the instruction immediately preceding followingAddress."
 	<inline: true>
-	^objectMemory longAt: (self instructionAddressBefore: followingAddress)
+	^objectMemory uint32AtPointer: (self instructionAddressBefore: followingAddress)
 ]
 
 { #category : #testing }
@@ -2681,6 +2694,13 @@ CogARMCompiler >> leafCallStackPointerDelta [
 	 to capture the c stack pointer to use in trampolines back into the C run-time."
 	"This might actually be false, since directly after a call, lr, fp and variable registers need be pushed onto the stack. It depends on the implementation of call."
 	^0
+]
+
+{ #category : #'inline cacheing' }
+CogARMCompiler >> literalBeforeInlineCacheTagAt: callSiteReturnAddress [
+
+	self notYetImplemented: 'Should implement access to the class in directed super sends for ARMv7'.
+	^ 0
 ]
 
 { #category : #accessing }
@@ -2978,7 +2998,7 @@ CogARMCompiler >> outputMachineCodeAt: targetAddress [
 	<inline: true>
 	0 to: machineCodeSize - 1 by: 4 do:
 		[:j|
-		objectMemory longAt: targetAddress + j put: (machineCode at: j // 4)]
+		objectMemory uint32AtPointer: targetAddress + j put: (machineCode at: j // 4)]
 ]
 
 { #category : #'generate machine code' }
@@ -3040,7 +3060,7 @@ CogARMCompiler >> relocateCallBeforeReturnPC: retpc by: delta [
 		 self assert: ((self instructionIsB: instr) or: [self instructionIsBL: instr]).
 		 distanceDiv4 := instr bitAnd: 16rFFFFFF.
 		 distanceDiv4 := distanceDiv4 + (delta // 4).
-		 objectMemory longAt: (self instructionAddressBefore: retpc ) put: ((instr bitAnd: 16rFF000000) bitOr: (distanceDiv4 bitAnd: 16rFFFFFF))]
+		 objectMemory uint32AtPointer: (self instructionAddressBefore: retpc ) put: ((instr bitAnd: 16rFF000000) bitOr: (distanceDiv4 bitAnd: 16rFFFFFF))]
 ]
 
 { #category : #'calling C function in Smalltalk stack' }
@@ -3147,7 +3167,7 @@ CogARMCompiler >> rewriteTransferAt: callSiteReturnAddress target: callTargetAdd
 	instr := self instructionBeforeAddress: callSiteReturnAddress.
 	self assert: ((self instructionIsB: instr) or: [self instructionIsBL: instr]).
 	
-	objectMemory longAt:  (self instructionAddressBefore: callSiteReturnAddress) put: ((instr bitAnd: 16rFF000000) bitOr: (callDistance // 4 bitAnd: 16rFFFFFF)).
+	objectMemory uint32AtPointer:  (self instructionAddressBefore: callSiteReturnAddress) put: ((instr bitAnd: 16rFF000000) bitOr: (callDistance // 4 bitAnd: 16rFFFFFF)).
 
 	self assert: (self callTargetFromReturnAddress: callSiteReturnAddress) = callTargetAddress.
 
@@ -3277,7 +3297,7 @@ CogARMCompiler >> stop [
 CogARMCompiler >> stopsFrom: startAddr to: endAddr [
 	self assert: endAddr - startAddr + 1 \\ 4 = 0.
 	startAddr to: endAddr by: 4 do: 
-		[:addr | objectMemory longAt: addr put: self stop].
+		[:addr | objectMemory uint32AtPointer: addr put: self stop].
 ]
 
 { #category : #'inline cacheing' }
