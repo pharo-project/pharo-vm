@@ -338,8 +338,6 @@ VMSpurMemoryManagerTest >> memoryClass [
 		ifFalse: [ Spur64BitMemoryManager ]
 ]
 
-<<<<<<< HEAD
-=======
 { #category : #helpers }
 VMSpurMemoryManagerTest >> new16BitIndexableOfSize: aSize [
 
@@ -384,7 +382,6 @@ VMSpurMemoryManagerTest >> new8BitIndexableOfSize: aSize [
 	^ self newBitIndexableOfSize: aSize bytesPerSlot: 1 format: memory firstByteFormat
 ]
 
->>>>>>> pharoX
 { #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newArrayWithSlots: slots [
 	
@@ -431,30 +428,12 @@ VMSpurMemoryManagerTest >> newClassInOldSpaceWithSlots: numberOfSlots instSpec: 
 { #category : #helpers }
 VMSpurMemoryManagerTest >> newEphemeronObject [
 
-<<<<<<< HEAD
 "In pharo Ephemerons have 3 slots"
 	
 	^ self
 		newObjectWithSlots: 3
 		format: memory ephemeronFormat
 		classIndex: (memory ensureBehaviorHash: ourEphemeronClass)
-=======
-	memory := self newMemory.
-
-	self interpreterClass
-		initializeWithOptions: self initializationOptions
-		objectMemoryClass: memory class.
-
-	^ self interpreterClass basicNew
-		  objectMemory: memory;
-		  basicInitialize
-]
-
-{ #category : #running }
-VMSpurMemoryManagerTest >> newMemory [
-
-	^ self memoryClass simulatorClass new
->>>>>>> pharoX
 ]
 
 { #category : #'helpers - methods' }
@@ -736,32 +715,6 @@ VMSpurMemoryManagerTest >> setUp [
 	interpreter := environmentBuilder interpreter.
 	memory := environmentBuilder objectMemory.
 		
-<<<<<<< HEAD
-=======
-	memory
-		allocateMemoryOfSize: oldSpaceSize
-		newSpaceSize: newSpaceSize
-		stackSize: stackSpaceSize
-		codeSize: self initialCodeSize
-		methodCacheSize: methodCacheSize
-		primitiveTraceLogSize: (self roundToPageSize: self primitiveTraceLogSize)
-		rumpCStackSize: rumpCStackSize
-		initialAddress: initialAddress.
-			
-	memory initializePostBootstrap.
-
-	self assert: memory objectMemory scavenger eden size > interpreter interpreterAllocationReserveBytes.
-	self assert: memory objectMemory scavengeThreshold + interpreter interpreterAllocationReserveBytes <= memory objectMemory scavenger eden limit.
-
-	memory segmentManager collapseSegmentsPostSwizzle.
-	memory segmentManager plantBridgeAtTheEndOfMemory.
-	memory segmentManager assertBridge.
-	memory setHeapSizeAtPreviousGC.
-	
-	"Schedule a GC, so it does not try to schedule one"
-	memory needGCFlag: 1.
-	
->>>>>>> pharoX
 	methodBuilder := VMCompiledCodeBuilder new
 		interpreter: interpreter; 
 		memory: memory;

@@ -2753,8 +2753,6 @@ CogVMSimulator >> windowIsClosing [
 			on: BlockCannotReturn
 			do: [:ex|]]	"Cause return from #test, et al"
 ]
-<<<<<<< HEAD
-=======
 
 { #category : #'debug printing' }
 CogVMSimulator >> withMemoryProtectionDo: aBlock [
@@ -2776,4 +2774,3 @@ CogVMSimulator >> withoutSmallIntegerTags: anInteger [
 		ifFalse: ["positive"
 				anInteger - 1]
 ]
->>>>>>> pharoX
