@@ -172,6 +172,135 @@ SlangBasicTranslationTest >> testAssignementAsExpressionWithExpressionBlockWithL
 		equals: 'y = (foo(1, 2), foo(3, 4), foo(5, 6), a)'
 ]
 
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testBasicInlineAsSpecified [
+	
+	"Method with inline pragma are compiled anyway."
+	
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodCallingMethodWithInlinePragma.
+	tMethod recordDeclarationsIn: generator.
+	generator doBasicInlining: #asSpecified.
+	
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodCallingMethodWithInlinePragma */
+static sqInt
+methodCallingMethodWithInlinePragma(void)
+{
+	methodWithoutInlinePragma();
+	/* begin methodWithInlinePragma */
+	bodyOfMethodWithInlinePragma();
+	return 0;
+}'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testBasicInlineAsSpecifiedOrQuick [
+	
+	"Method with inline pragma are compiled anyway."
+	
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodCallingMethodWithInlinePragma.
+	tMethod recordDeclarationsIn: generator.
+	generator doBasicInlining: #asSpecifiedOrQuick.
+	
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodCallingMethodWithInlinePragma */
+static sqInt
+methodCallingMethodWithInlinePragma(void)
+{
+	methodWithoutInlinePragma();
+	/* begin methodWithInlinePragma */
+	bodyOfMethodWithInlinePragma();
+	return 0;
+}'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testBasicInlineFalse [
+	
+	"Method with inline pragma are compiled anyway."
+	
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodCallingMethodWithInlinePragma.
+	tMethod recordDeclarationsIn: generator.
+	generator doBasicInlining: false.
+	
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodCallingMethodWithInlinePragma */
+static sqInt
+methodCallingMethodWithInlinePragma(void)
+{
+	methodWithoutInlinePragma();
+	methodWithInlinePragma();
+	return 0;
+}'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testBasicInlineNone [
+	
+	"Method with inline pragma are compiled anyway."
+	
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodCallingMethodWithInlinePragma.
+	tMethod recordDeclarationsIn: generator.
+	"generator doBasicInlining: false."
+	
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodCallingMethodWithInlinePragma */
+static sqInt
+methodCallingMethodWithInlinePragma(void)
+{
+	methodWithoutInlinePragma();
+	methodWithInlinePragma();
+	return 0;
+}'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testBasicInlineTrue [
+	
+	"Method with inline pragma are compiled anyway."
+	
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodCallingMethodWithInlinePragma.
+	tMethod recordDeclarationsIn: generator.
+	generator doBasicInlining: true.
+	
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodCallingMethodWithInlinePragma */
+static sqInt
+methodCallingMethodWithInlinePragma(void)
+{
+	/* begin methodWithoutInlinePragma */
+	bodyOfMethodWithoutInlinePragma();
+	
+	bodyOfMethodWithInlinePragma();
+	return 0;
+}'
+]
+
 { #category : #'tests-return' }
 SlangBasicTranslationTest >> testBitShiftIfTrue [
 
