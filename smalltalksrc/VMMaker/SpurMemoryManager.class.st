@@ -6080,13 +6080,16 @@ SpurMemoryManager >> inFreeTreeReplace: treeNode with: newNode [
 
 { #category : #'debug support' }
 SpurMemoryManager >> inLineRunLeakCheckerFor: gcModes excludeUnmarkedObjs: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid [
+
 	<inline: true>
-	(gcModes anyMask: checkForLeaks) ifTrue: [
-		 self clearLeakMapAndMapAccessibleObjects.
-		 self asserta: (self checkHeapIntegrity: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid).
-		 self asserta: coInterpreter checkInterpreterIntegrity = 0.
-		 self asserta: coInterpreter checkStackIntegrity.
-		 self asserta: (coInterpreter checkCodeIntegrity: gcModes)]
+	(gcModes anyMask: checkForLeaks) ifTrue: [ 
+		self clearLeakMapAndMapAccessibleObjects.
+		self asserta: (self
+				 checkHeapIntegrity: excludeUnmarkedObjs
+				 classIndicesShouldBeValid: classIndicesShouldBeValid).
+		self asserta: coInterpreter checkInterpreterIntegrity = 0.
+		self asserta: coInterpreter checkStackIntegrity.
+		self asserta: (coInterpreter checkCodeIntegrity: gcModes) ]
 ]
 
 { #category : #'debug printing' }
@@ -12724,10 +12727,10 @@ SpurMemoryManager >> withSimulatorFetchPointerMovedAsideDo: aBlock [
 	| theMethod |
 	theMethod := self class lookupSelector: #fetchPointer:ofObject:.
 	self deny: (theMethod isNil or: [theMethod methodClass == SpurMemoryManager]).
-	theMethod methodClass basicRemoveSelector: #fetchPointer:ofObject:.
+	theMethod methodClass removeSelectorSilently: #fetchPointer:ofObject:.
 	^aBlock ensure:
 		[theMethod methodClass
-			basicAddSelector: #fetchPointer:ofObject:
+			addSelectorSilently: #fetchPointer:ofObject:
 			withMethod: theMethod]
 ]
 
