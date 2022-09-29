@@ -75,8 +75,10 @@ CCodeGeneratorInlineStrategy >> hasUnrenamableCCode: aTMethod [
 
 { #category : #testing }
 CCodeGeneratorInlineStrategy >> isSelectiveInlineStrategy [
+	"If true, it can answers yes or no. If false it always answers true.
+	Note: I'm not sur of the point of such optimisation path."
 	
-	^ false
+	^ true
 ]
 
 { #category : #asserting }
