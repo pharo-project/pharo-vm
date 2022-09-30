@@ -10953,13 +10953,6 @@ SpurMemoryManager >> setFormatOf: objOop to: format [
 	self subclassResponsibility
 ]
 
-{ #category : #'free space' }
-SpurMemoryManager >> setFree: objOop [
-	<inline: true>
-	"turn the object into a free chunk, zeroing classIndex, format, isGrey,isPinned,isRemembered,isImmutable & ?."
-	self long32At: objOop put: 0
-]
-
 { #category : #snapshot }
 SpurMemoryManager >> setFreeOldSpaceStart: newFreeOldSpaceStart [
 	"Set by the segment manager on parsing the image."
@@ -11116,17 +11109,6 @@ SpurMemoryManager >> setNextFreeChunkOf: freeChunk withValue: nextFreeChunk isLi
 			withValue: freeChunk]
 	
 	
-]
-
-{ #category : #'free space' }
-SpurMemoryManager >> setObjectFree: objOop [
-	"Mark an object free, but do not add it to the free lists.  The wrinkle here
-	 is that we don't tolerate a zero-slot count in a free object so that the
-	 (self long64At: objOop) ~= 0 assert in isEnumerableObject: isn't triggered."
-		 
-	(self rawNumSlotsOf: objOop) = 0 ifTrue:
-		[self rawNumSlotsOf: objOop put: 1].
-	self setFree: objOop
 ]
 
 { #category : #'word size' }

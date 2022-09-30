@@ -267,14 +267,6 @@ Spur64BitMMLESimulator >> longAt: byteAddress put: a64BitValue [
 	^self long64At: byteAddress put: a64BitValue
 ]
 
-{ #category : #'gc - global' }
-Spur64BitMMLESimulator >> markAndTrace: objOop [
-	"objOop = 16rB26020 ifTrue: [self halt].
-	objOop = 16rB25FD8 ifTrue: [self halt].
-	objOop = 16rB26010 ifTrue: [self halt]."
-	^super markAndTrace: objOop
-]
-
 { #category : #compaction }
 Spur64BitMMLESimulator >> moveARunOfObjectsStartingAt: startAddress upTo: limit [
 	| result |.
@@ -337,21 +329,6 @@ Spur64BitMMLESimulator >> scavengingGCTenuringIf: tenuringCriterion [
 			[coInterpreter cloneSimulation objectMemory scavengingGCTenuringIf: tenuringCriterion.
 			 Smalltalk garbageCollect]].
 	^super scavengingGCTenuringIf: tenuringCriterion
-]
-
-{ #category : #'header access' }
-Spur64BitMMLESimulator >> setIsMarkedOf: objOop to: aBoolean [
-	"objOop = 16rB26020 ifTrue: [self halt]."
-	"(#(16r1971D0 16r196EE0 16r197048 16r197148) includes: objOop) ifTrue:
-		[self halt]."
-	super setIsMarkedOf: objOop to: aBoolean.
-	"(aBoolean
-	 and: [(self isContextNonImm: objOop)
-	 and: [(coInterpreter
-			checkIsStillMarriedContext: objOop
-			currentFP: coInterpreter framePointer)
-	 and: [(coInterpreter stackPages stackPageFor: (coInterpreter frameOfMarriedContext: objOop)) trace = 0]]]) ifTrue:
-		[self halt]"
 ]
 
 { #category : #'memory access' }
