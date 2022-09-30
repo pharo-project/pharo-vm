@@ -281,6 +281,20 @@ VMSpurOldSpaceGarbageCollectorTest >> testNewRootEphemeronHoldsOldNonRootEphemer
 
 	| ephemeron1 ephemeron2 |
 
+	ephemeron1 := self newEphemeronObjectWithSlots: 17.
+	self keepObjectInVMVariable1: ephemeron1.
+	ephemeron2 := self newOldEphemeronObjectWithSlots: 7.
+	memory storePointer: 1 "Not the key" ofObject: ephemeron1 withValue: ephemeron2.
+	
+	memory setCheckForLeaks: 63 "all".
+	memory fullGC
+]
+
+{ #category : #tests }
+VMSpurOldSpaceGarbageCollectorTest >> testNewRootEphemeronIsHeldsByOldNonRootEphemeronAsNonKeyThenFullGC [
+
+	| ephemeron1 ephemeron2 |
+
 	ephemeron1 := self newEphemeronObjectWithSlots: 6.
 	self keepObjectInVMVariable1: ephemeron1.
 	memory fullGC.
