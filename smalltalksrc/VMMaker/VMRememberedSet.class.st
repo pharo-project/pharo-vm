@@ -145,8 +145,10 @@ VMRememberedSet >> growRememberedSet [
 		 newObj ifNil:
 			[(manager growOldSpaceByAtLeast: numSlots + 1024) ifNil: [self error: 'could not grow remembered set'].
 			 newObj := manager allocatePinnedSlots: numSlots + 1024. "cannot fail"]].
+
 	manager rememberedSet: rootIndex oop: newObj.
-	base := manager firstIndexableField: newObj.
+	base := self rememberedSetArrayPointerFromObject: newObj.
+
 	0 to: rememberedSetSize - 1 do:
 		[:i| base at: i put: (rememberedSetArray at: i)].
 	"if growing in the middle of a GC, need to preserve marked status."
@@ -181,9 +183,10 @@ VMRememberedSet >> initializeRememberedSetShouldStartEmpty: shouldStartEmpty [
 				 This is unimportant except for simulation; rememberedSet is declared as sqInt *, but in to have
 				 firstIndexableField: below answer a suitable type the format must be wordIndexableFormat."
 			[manager setFormatOf: obj to: manager wordIndexableFormat].
+
 	self assert: (manager formatOf: obj) = manager wordIndexableFormat.
 	self assert: (manager isPinned: obj).
-	rememberedSetArray := manager firstIndexableField: obj.
+	rememberedSetArray := self rememberedSetArrayPointerFromObject: obj.
 
 	self rememberedSetLimit: (manager numSlotsOf: obj).
 
@@ -297,7 +300,7 @@ VMRememberedSet >> referenceCountRememberedReferents: population maxRefCount: ma
 VMRememberedSet >> relocateRememberedSet [
 
 	"For SpurPlanningCompactor"
-	rememberedSetArray := manager firstIndexableField: self objectOop
+	rememberedSetArray := self rememberedSetArrayPointerFromObject: self objectOop
 ]
 
 { #category : #accessing }
@@ -316,6 +319,16 @@ VMRememberedSet >> rememberedSetArray [
 VMRememberedSet >> rememberedSetArray: anObject [
 
 	rememberedSetArray := anObject
+]
+
+{ #category : #initialization }
+VMRememberedSet >> rememberedSetArrayPointerFromObject: anOop [ 
+	
+	^ manager cCoerce: (manager firstIndexableField: anOop) to: 'usqInt *'
+	
+	
+	
+	
 ]
 
 { #category : #accessing }

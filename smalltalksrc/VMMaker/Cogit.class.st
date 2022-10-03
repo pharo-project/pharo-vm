@@ -8478,6 +8478,13 @@ Cogit >> handleReadSimulationTrap: aProcessorSimulationTrap [
 	| variableValue accessor |
 
 	variableValue := (simulatedVariableGetters at: aProcessorSimulationTrap address) value asInteger.
+
+	variableValue < 0 
+		ifTrue: [ 
+			variableValue := objectMemory wordSize = 8
+		  		ifTrue: [ variableValue twoComplementOfBitSize: 64 ]
+		  		ifFalse: [ variableValue twoComplementOfBitSize: 32 ]  ].
+
 	accessor := aProcessorSimulationTrap registerAccessor.
 	processor
 		perform: accessor

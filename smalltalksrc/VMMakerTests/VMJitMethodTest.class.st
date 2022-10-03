@@ -263,7 +263,7 @@ VMJitMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 	
 	firstTerm := 1.0 to: 2.0.
 	size := firstTerm size.
-
+	
 	x := self new64BitIndexableFromArray: firstTerm.
 	y := self new64BitIndexableFromArray:
 		     (firstTerm collect: [ :i | i * 10 ]).
@@ -319,14 +319,20 @@ VMJitMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 	frame := stackBuilder
 		         args: { x };
 		         addNewFrame.
-	stackBuilder frames first context: 17513312."TODO set proper context"
 	frame stack: { 
 			x.
 			y.
 			z };
 			method: callingMethod.
 	
-	stackBuilder buildStack.
+	"We need to set the first context to the base of the current page"
+	stackBuilder createStackPage.
+	stackBuilder preparePage.
+
+	stackBuilder frames first context: (interpreter stackPages unsignedLongAt: (stackBuilder page baseAddress - self wordSize)).
+
+	stackBuilder pushFrames.
+	stackBuilder setInterpreterVariables.
 
 	cogit generateReturnToInterpreterPCTrampoline.
 	interpreter newMethod: callingMethod.

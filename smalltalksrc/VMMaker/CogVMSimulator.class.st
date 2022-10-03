@@ -981,7 +981,7 @@ CogVMSimulator >> frameCallerContext: theFP [
 	self assert: (self isBaseFrame: theFP).
 	thePage := stackPages stackPageFor: theFP.
 	self assert: theFP + (self frameStackedReceiverOffset: theFP) + (2 * objectMemory wordSize) = thePage baseAddress.
-	self assert: (stackPages longAt: thePage baseAddress - objectMemory wordSize) = (self frameContext: theFP).
+	self assert: (stackPages unsignedLongAt: thePage baseAddress - objectMemory wordSize) = (self frameContext: theFP).
 	^super frameCallerContext: theFP
 ]
 

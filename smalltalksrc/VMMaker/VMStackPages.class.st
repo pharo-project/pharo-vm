@@ -279,21 +279,6 @@ VMStackPages >> isFree: thePage [
 	^thePage baseFP = 0
 ]
 
-{ #category : #'memory access' }
-VMStackPages >> longAt: byteAddress [
-	<doNotGenerate>
-	"Note: Adjusted for Smalltalk's 1-based array indexing."
-	self assert: (byteAddress >= minStackAddress and: [byteAddress < maxStackAddress]).
-	^objectMemory longAt: byteAddress
-]
-
-{ #category : #'memory access' }
-VMStackPages >> longAt: byteAddress put: a32Or64BitValue [
-	<doNotGenerate>
-	self assert: (byteAddress >= minStackAddress and: [byteAddress < maxStackAddress]).
-	^objectMemory longAt: byteAddress put: a32Or64BitValue
-]
-
 { #category : #'page access' }
 VMStackPages >> markStackPageLeastMostRecentlyUsed: page [ "<InterpreterStackPage>"
 	"This method is used to move a page to the end of the used pages.
@@ -567,6 +552,23 @@ VMStackPages >> statMaxPageCountWhenMapping: num [
 VMStackPages >> surrogateAtAddress: anAddress [
 	<doNotGenerate>
 	^pageMap at: anAddress
+]
+
+{ #category : #'memory access' }
+VMStackPages >> unsignedLongAt: anInteger [ 
+
+	<doNotGenerate>
+	"Note: Adjusted for Smalltalk's 1-based array indexing."
+	self assert: (anInteger >= minStackAddress and: [anInteger < maxStackAddress]).
+	^objectMemory unsignedLongAt: anInteger
+]
+
+{ #category : #'memory access' }
+VMStackPages >> unsignedLongAt: byteAddress put: a32Or64BitValue [
+
+	<doNotGenerate>
+	self assert: (byteAddress >= minStackAddress and: [byteAddress < maxStackAddress]).
+	^objectMemory unsignedLongAt: byteAddress put: a32Or64BitValue
 ]
 
 { #category : #'debug printing' }

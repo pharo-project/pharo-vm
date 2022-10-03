@@ -29,11 +29,6 @@ VMJITPrimitiveCallingTest >> initStack [
 VMJITPrimitiveCallingTest >> setUp [
 	super setUp.
 
-	"Initializing the primTraceLog table"
-	interpreter movePrimTraceLogToMemoryAt:
-		cogit methodZoneBase + interpreter cogCodeSize + stackSpaceSize
-		+ methodCacheSize.
-
 	classLargeInteger := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstByteFormat.
 	
 	memory setHashBitsOf: classLargeInteger to: ClassLargePositiveIntegerCompactIndex.

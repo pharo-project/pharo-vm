@@ -63,6 +63,20 @@ SlangMemoryManager >> copyFrom: start to: end [
 		to: end - region start + 1
 ]
 
+{ #category : #allocating }
+SlangMemoryManager >> findHoleBiggerThan: desiredSize from: desiredPosition [
+
+	| foundPosition |
+	self assert: desiredSize >= self pageSize.
+
+	foundPosition := desiredPosition.
+	
+	[ self wholeAt: foundPosition fits: desiredSize  ] 
+		whileFalse: [ foundPosition := foundPosition + desiredSize ].
+		
+	^ foundPosition
+]
+
 { #category : #'memory-access' }
 SlangMemoryManager >> float32At: address [ 
 
@@ -121,20 +135,6 @@ SlangMemoryManager >> float64At: address put: value [
 	^ region
 		doubleAt: address - region start
 		put: value
-]
-
-{ #category : #allocating }
-SlangMemoryManager >> findHoleBiggerThan: desiredSize from: desiredPosition [
-
-	| foundPosition |
-	self assert: desiredSize >= self pageSize.
-
-	foundPosition := desiredPosition.
-	
-	[ self wholeAt: foundPosition fits: desiredSize  ] 
-		whileFalse: [ foundPosition := foundPosition + desiredSize ].
-		
-	^ foundPosition
 ]
 
 { #category : #allocating }

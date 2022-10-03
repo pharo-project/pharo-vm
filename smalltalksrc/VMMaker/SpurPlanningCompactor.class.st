@@ -239,7 +239,7 @@ SpurPlanningCompactor >> copyAndUnmarkMobileObjects [
 						 previousPin >= o
 							ifTrue: [previousPin := nil. startOfPreviousPin := 0]
 							ifFalse: [startOfPreviousPin := manager startOfObject: previousPin]].
-					 self copyAndUnmarkObject: o to: toFinger bytes: bytes firstField: (manager longAt: top).
+					 self copyAndUnmarkObject: o to: toFinger bytes: bytes firstField: (manager unsignedLongAt: top).
 					 toFinger := toFinger + bytes.
 					 (top := top + manager bytesPerOop) >= savedFirstFieldsSpace limit ifTrue:
 						[self assert: savedFirstFieldsSpace top = (top - manager bytesPerOop).

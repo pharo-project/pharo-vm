@@ -774,7 +774,7 @@ CoInterpreter >> assertValidExecutionPointe: lip r: lifp s: lisp imbar: inInterp
 				l: ln].
 	(self isBaseFrame: lifp) ifTrue:
 		[self assert: (self frameHasContext: lifp) l: ln.
-		 self assert: (self frameContext: lifp) = (stackPages longAt: stackPage baseAddress - objectMemory wordSize) l: ln]
+		 self assert: (self frameContext: lifp) = (stackPages unsignedLongAt: stackPage baseAddress - objectMemory wordSize) l: ln]
 ]
 
 { #category : #'debug support' }
@@ -844,7 +844,7 @@ CoInterpreter >> assertValidStackedInstructionPointersIn: aStackPage line: ln [
 			[theIP := instructionPointer.
 			theFP := framePointer]
 		ifFalse:
-			[theIP := (stackPages longAt: aStackPage headSP) asUnsignedInteger.
+			[theIP := (stackPages unsignedLongAt: aStackPage headSP) asUnsignedInteger.
 			 theFP := aStackPage headFP.
 			 stackPage = aStackPage ifTrue:
 				[self assert: framePointer = theFP l: ln]].
@@ -866,7 +866,7 @@ CoInterpreter >> assertValidStackedInstructionPointersIn: aStackPage line: ln [
 						  and: [theIP < (methodObj + (objectMemory numBytesOfBytes: methodObj) + objectMemory baseHeaderSize - 1)])
 				l: ln.
 			 prevFrameWasCogged := false].
-	 theIP := (stackPages longAt: theFP + FoxCallerSavedIP) asUnsignedInteger.
+	 theIP := (stackPages unsignedLongAt: theFP + FoxCallerSavedIP) asUnsignedInteger.
 	 (callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
 		[theFP := callerFP].
 	self assert: theIP = cogit ceBaseFrameReturnPC l: ln.
@@ -2254,7 +2254,7 @@ CoInterpreter >> checkStackIntegrity [
 				[theSP := theSP + objectMemory wordSize].
 			 [frameRcvrOffset := self frameReceiverLocation: theFP.
 			  [theSP <= frameRcvrOffset] whileTrue:
-				[oop := stackPages longAt: theSP.
+				[oop := stackPages unsignedLongAt: theSP.
 				 ((objectMemory isNonImmediate: oop) 
 				   and: [(objectMemory heapMapAtWord: (self pointerForOop: oop)) = 0]) ifTrue:
 					[self printFrameThing: 'object leak in frame temp' andFrame: theFP at: theSP.
@@ -2293,7 +2293,7 @@ CoInterpreter >> checkStackIntegrity [
 				 theFP := callerFP].
 			 theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
 			 [theSP <= thePage baseAddress] whileTrue:
-				[oop := stackPages longAt: theSP.
+				[oop := stackPages unsignedLongAt: theSP.
 				 ((objectMemory isNonImmediate: oop) 
 				   and: [(objectMemory heapMapAtWord: (self pointerForOop: oop)) = 0]) ifTrue:
 					[self printFrameThing: 'object leak in frame arg' andFrame: theFP at: theSP.
@@ -2552,14 +2552,14 @@ CoInterpreter >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
 	self assert: bcpc = (cogit bytecodePCFor: pc startBcpc: startBcpc in: cogMethod).
 	"now convert to a machine code frame"
 	stackPages
-		longAt: framePointer + FoxMethod
+		unsignedLongAt: framePointer + FoxMethod
 		put: methodField
 			+ ((self iframeHasContext: framePointer)
 				ifTrue: [MFMethodFlagHasContextFlag]
 				ifFalse: [0]).
 	framePointer + FoxIFReceiver to: stackPointer by: objectMemory wordSize negated do:
 		[:p|
-		stackPages longAt: p + FoxMFReceiver - FoxIFReceiver put: (stackPages longAt: p)].
+		stackPages unsignedLongAt: p + FoxMFReceiver - FoxIFReceiver put: (stackPages unsignedLongAt: p)].
 	stackPointer := stackPointer + FoxMFReceiver - FoxIFReceiver.
 	^pc
 ]
@@ -3236,17 +3236,17 @@ CoInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 			  self assert: (theIPPtr = 0 or: [thePage addressIsInPage: theIPPtr asVoidPointer]).
 			  (self isMachineCodeFrame: theFP)
 				ifTrue:
-					[oop := stackPages longAt: theFP + FoxMFReceiver.
+					[oop := stackPages unsignedLongAt: theFP + FoxMFReceiver.
 					 (objectMemory isOopForwarded: oop) ifTrue:
 						[stackPages
-							longAt: theFP + FoxMFReceiver
+							unsignedLongAt: theFP + FoxMFReceiver
 							put: (objectMemory followForwarded: oop)].
 					 self assert: (objectMemory isForwarded: (self mframeHomeMethod: theFP) methodObject) not]
 				ifFalse:
-					[oop := stackPages longAt: theFP + FoxIFReceiver.
+					[oop := stackPages unsignedLongAt: theFP + FoxIFReceiver.
 					 (objectMemory isOopForwarded: oop) ifTrue:
 						[stackPages
-							longAt: theFP + FoxIFReceiver
+							unsignedLongAt: theFP + FoxIFReceiver
 							put: (objectMemory followForwarded: oop)].
 					 oop := self iframeMethod: theFP.
 					 (objectMemory isForwarded: oop) ifTrue:
@@ -3254,26 +3254,26 @@ CoInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 						 newOop := objectMemory followForwarded: oop.
 						 offset := newOop - oop.
 						 (theIPPtr ~= 0
-						  and: [(stackPages longAt: theIPPtr) > oop]) ifTrue:
+						  and: [(stackPages unsignedLongAt: theIPPtr) > oop]) ifTrue:
 							[stackPages
-								longAt: theIPPtr
-								put: (stackPages longAt: theIPPtr) + offset].
+								unsignedLongAt: theIPPtr
+								put: (stackPages unsignedLongAt: theIPPtr) + offset].
 						stackPages
-							longAt: theFP + FoxIFSavedIP
-							put: (stackPages longAt: theFP + FoxIFSavedIP) + offset.
+							unsignedLongAt: theFP + FoxIFSavedIP
+							put: (stackPages unsignedLongAt: theFP + FoxIFSavedIP) + offset.
 						stackPages
-							longAt: theFP + FoxMethod
+							unsignedLongAt: theFP + FoxMethod
 							put: (oop := newOop)]].
 			  ((self frameHasContext: theFP)
 			   and: [(objectMemory isForwarded: (self frameContext: theFP))]) ifTrue:
 				[stackPages
-					longAt: theFP + FoxThisContext
+					unsignedLongAt: theFP + FoxThisContext
 					put: (objectMemory followForwarded: (self frameContext: theFP))].
 			  offset := self frameStackedReceiverOffset: theFP.
-			  oop := stackPages longAt: theFP + offset.
+			  oop := stackPages unsignedLongAt: theFP + offset.
 			  (objectMemory isOopForwarded: oop) ifTrue:
 				[stackPages
-					longAt: theFP + offset
+					unsignedLongAt: theFP + offset
 					put: (objectMemory followForwarded: oop)].
 			  (callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
 				[theIPPtr := (theFP + FoxCallerSavedIP) asUnsignedInteger.
@@ -3281,9 +3281,9 @@ CoInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 			 "And finally follow the saved context and the caller context."
 			 theSP := thePage baseAddress - objectMemory wordSize.
 			 [theSP <= thePage baseAddress] whileTrue:
-				[oop := stackPages longAt: theSP.
+				[oop := stackPages unsignedLongAt: theSP.
 				 (objectMemory isForwarded: oop) ifTrue:
-					[stackPages longAt: theSP put: (objectMemory followForwarded: oop)].
+					[stackPages unsignedLongAt: theSP put: (objectMemory followForwarded: oop)].
 				 theSP := theSP + objectMemory wordSize]]]
 ]
 
@@ -3325,7 +3325,7 @@ CoInterpreter >> frameCallerContext: theFP [
 	<var: #thePage type: #'StackPage *'>
 	self assert: (self isBaseFrame: theFP).
 	thePage := stackPages stackPageFor: theFP.
-	callerContextOrNil := stackPages longAt: thePage baseAddress.
+	callerContextOrNil := stackPages unsignedLongAt: thePage baseAddress.
 	self assert: (objectMemory addressCouldBeObj: callerContextOrNil).
 	self assert: (callerContextOrNil = objectMemory nilObject or: [objectMemory isContext: callerContextOrNil]).
 	^callerContextOrNil
@@ -3371,7 +3371,7 @@ CoInterpreter >> frameMethodField: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
 
-	^stackPages longAt: theFP + FoxMethod
+	^stackPages unsignedLongAt: theFP + FoxMethod
 ]
 
 { #category : #'frame access' }
@@ -3783,20 +3783,20 @@ CoInterpreter >> iframeNumArgs: theFP [
 CoInterpreter >> iframeReceiver: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages longAt: theFP + FoxIFReceiver
+	^stackPages unsignedLongAt: theFP + FoxIFReceiver
 ]
 
 { #category : #'frame access' }
 CoInterpreter >> iframeSavedIP: theFP [
 	<var: #theFP type: #'char *'>
-	^stackPages longAt: theFP + FoxIFSavedIP
+	^stackPages unsignedLongAt: theFP + FoxIFSavedIP
 ]
 
 { #category : #'frame access' }
 CoInterpreter >> iframeSavedIP: theFP put: savedIP [
 	<var: #theFP type: #'char *'>
 	self assert: (self isMachineCodeFrame: theFP) not.
-	stackPages longAt: theFP + FoxIFSavedIP put: savedIP
+	stackPages unsignedLongAt: theFP + FoxIFSavedIP put: savedIP
 ]
 
 { #category : #initialization }
@@ -4151,7 +4151,7 @@ CoInterpreter >> isCogMethodReference: methodHeader [
 { #category : #'frame access' }
 CoInterpreter >> isMachineCodeFrame: theFP [ 
 	<var: #theFP type: #'char *'>
-	^(stackPages longAt: theFP + FoxMethod) asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory
+	^(stackPages unsignedLongAt: theFP + FoxMethod) asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory
 ]
 
 { #category : #'debug support' }
@@ -4167,8 +4167,8 @@ CoInterpreter >> itemporary: offset in: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	^offset < (frameNumArgs := self iframeNumArgs: theFP)
-		ifTrue: [stackPages longAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize)]
-		ifFalse: [stackPages longAt: theFP + FoxIFReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize)]
+		ifTrue: [stackPages unsignedLongAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize)]
+		ifFalse: [stackPages unsignedLongAt: theFP + FoxIFReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize)]
 ]
 
 { #category : #'internal interpreter access' }
@@ -4179,8 +4179,8 @@ CoInterpreter >> itemporary: offset in: theFP put: valueOop [
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	^offset < (frameNumArgs := self iframeNumArgs: theFP)
-		ifTrue: [stackPages longAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
-		ifFalse: [stackPages longAt: theFP + FoxIFReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
+		ifTrue: [stackPages unsignedLongAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
+		ifFalse: [stackPages unsignedLongAt: theFP + FoxIFReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
 ]
 
 { #category : #'message sending' }
@@ -4339,11 +4339,11 @@ CoInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 	page := stackPages newStackPage.
 	"first word on stack is caller context of base frame"
 	stackPages
-		longAt: (pointer := page baseAddress)
+		unsignedLongAt: (pointer := page baseAddress)
 		put: (objectMemory followObjField: SenderIndex ofObject: aContext).
 	"second word is the context itself; needed for cannotReturn processing; see ceBaseReturn:."
 	stackPages
-		longAt: (pointer := pointer - objectMemory wordSize)
+		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 		put: aContext.
 	rcvr := objectMemory followField: ReceiverIndex ofObject: aContext.
 	"If the frame is a closure activation then the closure should be on the stack in
@@ -4367,21 +4367,21 @@ CoInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 			  and: [theIP = (1 + (self startPCOfMethodHeader: header))]) ifTrue:
 				[theIP := theIP + (self sizeOfCallPrimitiveBytecode: header)].
 			 stackPages
-				longAt: (pointer := pointer - objectMemory wordSize)
+				unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 				put: rcvr].
 	"Put the arguments on the stack"
 	1 to: numArgs do:
 		[:i|
 		stackPages
-			longAt: (pointer := pointer - objectMemory wordSize)
+			unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 			put: (objectMemory fetchPointer: ReceiverIndex + i ofObject: aContext)].
 	"saved caller ip is base return trampoline"
 	stackPages
-		longAt: (pointer := pointer - objectMemory wordSize)
+		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 		put: cogit ceBaseFrameReturnPC.
 	"base frame's saved fp is null"
 	stackPages
-		longAt: (pointer := pointer - objectMemory wordSize)
+		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 		put: 0.
 	"N.B.  Don't set the baseFP, which marks the page as in use, until after
 	 ensureMethodIsCogged: and/or instructionPointer:forContext:frame:. These
@@ -4409,7 +4409,7 @@ CoInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 						ifTrue: [cogit ceCannotResumePC]
 						ifFalse: [theMethod asInteger - theIP].
 					stackPages
-						longAt: (pointer := pointer - objectMemory wordSize)
+						unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 						put: theMethod + MFMethodFlagHasContextFlag + MFMethodFlagIsBlockFlag]
 				ifFalse:
 					[self assert: (theIP signedBitShift: -16) >= -1.
@@ -4419,30 +4419,30 @@ CoInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 								ifTrue: [cogit ceCannotResumePC]
 								ifFalse: [theMethod asInteger - theIP].
 					 stackPages
-						longAt: (pointer := pointer - objectMemory wordSize)
+						unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 						put: theMethod + MFMethodFlagHasContextFlag].
 			 stackPages
-				longAt: (pointer := pointer - objectMemory wordSize)
+				unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 				put: aContext]
 		ifFalse:
 			[stackPages
-				longAt: (pointer := pointer - objectMemory wordSize)
+				unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 				put: theMethod.
 			stackPages
-				longAt: (pointer := pointer - objectMemory wordSize)
+				unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 				put: aContext.
 			stackPages
-				longAt: (pointer := pointer - objectMemory wordSize)
+				unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 				put: (self encodeFrameFieldHasContext: true isBlock: maybeClosure ~= objectMemory nilObject numArgs: numArgs).
 			stackPages
-				longAt: (pointer := pointer - objectMemory wordSize)
+				unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 				put: 0. "FoxIFSavedIP"
 			theIP := self iframeInstructionPointerForIndex: theIP method: theMethod].
 	page baseFP: page headFP.
 	self assert: (self frameHasContext: page baseFP).
 	self assert: (self frameNumArgs: page baseFP) == numArgs.
 	stackPages
-		longAt: (pointer := pointer - objectMemory wordSize)
+		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 		put: rcvr.
 	stackPtrIndex := self quickFetchInteger: StackPointerIndex ofObject: aContext.
 	self assert: ReceiverIndex + stackPtrIndex < (objectMemory lengthOf: aContext).
@@ -4455,7 +4455,7 @@ CoInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 		 Thanks to Ryan Macnak for identifying this bug"
 		objectMemory storePointerUnchecked: ReceiverIndex + i ofObject: aContext withValue: objectMemory nilObject].
 	"top of stack is the instruction pointer"
-	stackPages longAt: (pointer := pointer - objectMemory wordSize) put: theIP.
+	stackPages unsignedLongAt: (pointer := pointer - objectMemory wordSize) put: theIP.
 	page headSP: pointer.
 	self assert: (self context: aContext hasValidInversePCMappingOf: theIP in: page baseFP).
 
@@ -4537,14 +4537,14 @@ CoInterpreter >> mapStackPages [
 			 self assert: (theIPPtr = 0 or: [thePage addressIsInPage: theIPPtr]).
 			 frameRcvrOffset := self frameReceiverLocation: theFP.
 	 		  [theSP <= frameRcvrOffset] whileTrue:
-				[oop := stackPages longAt: theSP.
+				[oop := stackPages unsignedLongAt: theSP.
 				 (objectMemory shouldRemapOop: oop) ifTrue:
-					[stackPages longAt: theSP put: (objectMemory remapObj: oop)].
+					[stackPages unsignedLongAt: theSP put: (objectMemory remapObj: oop)].
 				 theSP := theSP + objectMemory wordSize].
 			 (self frameHasContext: theFP) ifTrue:
 				[(objectMemory shouldRemapObj: (self frameContext: theFP)) ifTrue:
 					[stackPages
-						longAt: theFP + FoxThisContext
+						unsignedLongAt: theFP + FoxThisContext
 						put: (objectMemory remapObj: (self frameContext: theFP))].
 				 "With SqueakV3 objectMemory or SpurPlanningCompactor can't assert since object body is yet to move."
 				 (objectMemory hasSpurMemoryManagerAPI
@@ -4554,28 +4554,28 @@ CoInterpreter >> mapStackPages [
 			(self isMachineCodeFrame: theFP) ifFalse:
 				[(objectMemory shouldRemapObj: (self iframeMethod: theFP)) ifTrue:
 					[theIPPtr ~= 0 ifTrue:
-						[theIP := stackPages longAt: theIPPtr.
+						[theIP := stackPages unsignedLongAt: theIPPtr.
 						 theIP = cogit ceReturnToInterpreterPC
 							ifTrue:
 								[self assert: (self iframeSavedIP: theFP) > (self iframeMethod: theFP).
 								 theIPPtr := theFP + FoxIFSavedIP.
-								 theIP := stackPages longAt: theIPPtr]
+								 theIP := stackPages unsignedLongAt: theIPPtr]
 							ifFalse:
 								[self assert: theIP > (self iframeMethod: theFP)].
 						 theIP := theIP - (self iframeMethod: theFP)].
 					 stackPages
-						longAt: theFP + FoxMethod
+						unsignedLongAt: theFP + FoxMethod
 						put: (objectMemory remapObj: (self iframeMethod: theFP)).
 					 theIPPtr ~= 0 ifTrue:
-						[stackPages longAt: theIPPtr put: theIP + (self iframeMethod: theFP)]]].
+						[stackPages unsignedLongAt: theIPPtr put: theIP + (self iframeMethod: theFP)]]].
 			 (callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
 				[theSP := (theIPPtr := theFP + FoxCallerSavedIP) + objectMemory wordSize.
 				 theFP := callerFP].
 			 theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
 			 [theSP <= thePage baseAddress] whileTrue:
-				[oop := stackPages longAt: theSP.
+				[oop := stackPages unsignedLongAt: theSP.
 				 (objectMemory shouldRemapOop: oop) ifTrue:
-					[stackPages longAt: theSP put: (objectMemory remapObj: oop)].
+					[stackPages unsignedLongAt: theSP put: (objectMemory remapObj: oop)].
 				 theSP := theSP + objectMemory wordSize]]].
 	stackPages recordLivePagesOnMapping: numLivePages
 ]
@@ -4703,10 +4703,10 @@ CoInterpreter >> markAndTraceStackPage: thePage [
 		[theSP := theSP + objectMemory wordSize].
 	[frameRcvrOffset := self frameReceiverLocation: theFP.
 	 [theSP <= frameRcvrOffset] whileTrue:
-		[oop := stackPages longAt: theSP.
+		[oop := stackPages unsignedLongAt: theSP.
 		 (objectMemory isOopForwarded: oop) ifTrue:
 			[oop := objectMemory followForwarded: oop.
-			 stackPages longAt: theSP put: oop].
+			 stackPages unsignedLongAt: theSP put: oop].
 		 (objectMemory isImmediate: oop) ifFalse:
 			[objectMemory markAndTrace: oop].
 		 theSP := theSP + objectMemory wordSize].
@@ -4721,10 +4721,10 @@ CoInterpreter >> markAndTraceStackPage: thePage [
 		 theFP := callerFP].
 	theSP := theFP + FoxCallerSavedIP + objectMemory wordSize. "caller ip is ceBaseReturnPC"
 	[theSP <= thePage baseAddress] whileTrue:
-		[oop := stackPages longAt: theSP.
+		[oop := stackPages unsignedLongAt: theSP.
 		 (objectMemory isOopForwarded: oop) ifTrue:
 			[oop := objectMemory followForwarded: oop.
-			 stackPages longAt: theSP put: oop].
+			 stackPages unsignedLongAt: theSP put: oop].
 		 (objectMemory isImmediate: oop) ifFalse:
 			[objectMemory markAndTrace: oop].
 		 theSP := theSP + objectMemory wordSize]
@@ -6869,8 +6869,8 @@ CoInterpreter >> validStackPageBaseFrame: aPage [
 	<var: #aPage type: #'StackPage *'>
 	<inline: false>
 	| savedThisContext senderContextOrNil |
-	senderContextOrNil := stackPages longAt: aPage baseAddress.
-	savedThisContext := stackPages longAt: aPage baseAddress - objectMemory wordSize.
+	senderContextOrNil := stackPages unsignedLongAt: aPage baseAddress.
+	savedThisContext := stackPages unsignedLongAt: aPage baseAddress - objectMemory wordSize.
 	(self asserta: aPage baseFP + (self frameStackedReceiverOffset: aPage baseFP) + (2 * objectMemory wordSize) = aPage baseAddress) ifFalse:
 		[^false].
 	(self asserta: (objectMemory addressCouldBeObj: senderContextOrNil)) ifFalse:

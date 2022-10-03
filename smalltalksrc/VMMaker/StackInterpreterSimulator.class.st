@@ -1502,7 +1502,7 @@ StackInterpreterSimulator >> printFrameFlagsForFP: theFP [
 	<var: #theFP type: #'char *'>
 	<var: #address type: #'char *'>
 	address := theFP + FoxFrameFlags.
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHex: address;
 		printChar: $/;
 		printNum: (stackPages memIndexFor: address);
@@ -1522,7 +1522,7 @@ StackInterpreterSimulator >> printFrameOop: name at: address [
 	<inline: false>
 	<var: #name type: #'char *'>
 	<var: #address type: #'char *'>
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHex: address;
 		printChar: $/;
 		printNum: (stackPages memIndexFor: address);
@@ -1543,7 +1543,7 @@ StackInterpreterSimulator >> printFrameThing: name andFrame: theFP at: address [
 	<inline: false>
 	<var: #name type: #'char *'>
 	<var: #address type: #'char *'>
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHex: address;
 		printChar: $/;
 		printNum: (stackPages memIndexFor: address);
@@ -1563,7 +1563,7 @@ StackInterpreterSimulator >> printFrameThing: name at: address [
 	<inline: false>
 	<var: #name type: #'char *'>
 	<var: #address type: #'char *'>
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHex: address;
 		printChar: $/;
 		printNum: (stackPages memIndexFor: address);

@@ -4797,7 +4797,7 @@ SpurMemoryManager >> fetchPointer: fieldIndex ofFreeChunk: objOop [
 
 { #category : #'heap management' }
 SpurMemoryManager >> fetchPointer: fieldIndex ofMaybeForwardedObject: objOop [
-	^self longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+	^self unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 ]
 
 { #category : #'object access' }

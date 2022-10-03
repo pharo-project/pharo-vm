@@ -1279,6 +1279,20 @@ VMClass >> unreachable [
 ]
 
 { #category : #'memory access' }
+VMClass >> unsignedLong32At: anInteger [
+	
+	<inline: #always>
+	^ self uint32AtPointer: anInteger
+]
+
+{ #category : #'memory access' }
+VMClass >> unsignedLong32At: anInteger put: aValue [
+	
+	<inline: #always>
+	^ self uint32AtPointer: anInteger put: aValue
+]
+
+{ #category : #'memory access' }
 VMClass >> unsignedLong64At: anInteger [
 	
 	<inline: #always>
