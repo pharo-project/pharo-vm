@@ -172,7 +172,7 @@ SlangBasicTranslationTest >> testAssignementAsExpressionWithExpressionBlockWithL
 		equals: 'y = (foo(1, 2), foo(3, 4), foo(5, 6), a)'
 ]
 
-{ #category : #'tests-method' }
+{ #category : #'tests-inlinemethod' }
 SlangBasicTranslationTest >> testBasicInlineAsSpecified [
 	
 	"Method with inline pragma are compiled anyway."
@@ -194,11 +194,21 @@ methodCallingMethodWithInlinePragma(void)
 	methodWithoutInlinePragma();
 	/* begin methodWithInlinePragma */
 	bodyOfMethodWithInlinePragma();
+	
+	{
+		blockBody1();
+		blockBody2();
+	}
+	
+	{
+		blockBody3();
+		blockBody4();
+	}
 	return 0;
 }'
 ]
 
-{ #category : #'tests-method' }
+{ #category : #'tests-inlinemethod' }
 SlangBasicTranslationTest >> testBasicInlineAsSpecifiedOrQuick [
 	
 	"Method with inline pragma are compiled anyway."
@@ -220,11 +230,21 @@ methodCallingMethodWithInlinePragma(void)
 	methodWithoutInlinePragma();
 	/* begin methodWithInlinePragma */
 	bodyOfMethodWithInlinePragma();
+	
+	{
+		blockBody1();
+		blockBody2();
+	}
+	
+	{
+		blockBody3();
+		blockBody4();
+	}
 	return 0;
 }'
 ]
 
-{ #category : #'tests-method' }
+{ #category : #'tests-inlinemethod' }
 SlangBasicTranslationTest >> testBasicInlineFalse [
 	
 	"Method with inline pragma are compiled anyway."
@@ -245,11 +265,21 @@ methodCallingMethodWithInlinePragma(void)
 {
 	methodWithoutInlinePragma();
 	methodWithInlinePragma();
+	/* begin methodWithoutInlinePragmaAndBlock: */
+	{
+		blockBody1();
+		blockBody2();
+	}
+	
+	{
+		blockBody3();
+		blockBody4();
+	}
 	return 0;
 }'
 ]
 
-{ #category : #'tests-method' }
+{ #category : #'tests-inlinemethod' }
 SlangBasicTranslationTest >> testBasicInlineNone [
 	
 	"Method with inline pragma are compiled anyway."
@@ -257,6 +287,8 @@ SlangBasicTranslationTest >> testBasicInlineNone [
 	| translation tMethod |
 	tMethod := self getTMethodFrom: #methodCallingMethodWithInlinePragma.
 	tMethod recordDeclarationsIn: generator.
+	
+	"FIXME: without calling doBasicInlining: the block, the content is inlined as is. This basically make no sense and slang should have aborted somewere."
 	"generator doBasicInlining: false."
 	
 	translation := self translate: tMethod.
@@ -270,11 +302,13 @@ methodCallingMethodWithInlinePragma(void)
 {
 	methodWithoutInlinePragma();
 	methodWithInlinePragma();
+	methodWithoutInlinePragmaAndBlock((blockBody1(), blockBody2()));
+	methodWithInlinePragmaAndBlock((blockBody3(), blockBody4()));
 	return 0;
 }'
 ]
 
-{ #category : #'tests-method' }
+{ #category : #'tests-inlinemethod' }
 SlangBasicTranslationTest >> testBasicInlineTrue [
 	
 	"Method with inline pragma are compiled anyway."
@@ -297,6 +331,16 @@ methodCallingMethodWithInlinePragma(void)
 	bodyOfMethodWithoutInlinePragma();
 	
 	bodyOfMethodWithInlinePragma();
+	
+	{
+		blockBody1();
+		blockBody2();
+	}
+	
+	{
+		blockBody3();
+		blockBody4();
+	}
 	return 0;
 }'
 ]

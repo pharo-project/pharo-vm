@@ -43,7 +43,9 @@ SlangBasicTranslationTestClass >> initializationOptions [
 SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragma [
 
 	self methodWithoutInlinePragma.
-	self methodWithInlinePragma
+	self methodWithInlinePragma.
+	self methodWithoutInlinePragmaAndBlock: [ self blockBody1. self blockBody2 ].
+	self methodWithInlinePragmaAndBlock: [ self blockBody3. self blockBody4 ].
 ]
 
 { #category : #inline }
@@ -120,6 +122,13 @@ SlangBasicTranslationTestClass >> methodWithInlinePragma [
 ]
 
 { #category : #inline }
+SlangBasicTranslationTestClass >> methodWithInlinePragmaAndBlock: aBlock [
+
+	<inline: true>
+	aBlock value
+]
+
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodWithLocalVariables [
 
 	<var: #foo declareC: 'float foo'>
@@ -187,6 +196,12 @@ SlangBasicTranslationTestClass >> methodWithVolatilePragma [
 SlangBasicTranslationTestClass >> methodWithoutInlinePragma [
 
 	self bodyOfMethodWithoutInlinePragma.
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodWithoutInlinePragmaAndBlock: aBlock [
+
+	aBlock value
 ]
 
 { #category : #inline }
