@@ -28,7 +28,7 @@ CCodeGeneratorInlineStrategy class >> asSpecifiedOrQuick [
 { #category : #'instance creation' }
 CCodeGeneratorInlineStrategy class >> from: anObject [
 	
-	"The argument is either a boolean or a sumbol.
+	"The argument is either a boolean or a symbol.
 	If a boolean, it indicates if we need to inline or not.
 	If == #asSpecified only inline methods marked with <inline: true>.
 	If == #asSpecifiedOrQuick only inline methods marked with <inline: true> or methods that are quick (^constant, ^inst var)."
