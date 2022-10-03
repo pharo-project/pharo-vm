@@ -3266,7 +3266,6 @@ Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes i
 	 needed is considered too high.  Notionally we only need as many fixups as there are
 	 bytecodes.  But we reuse fixups to record pc-dependent instructions in
 	 generateInstructionsAt: and so need at least as many as there are abstract opcodes."
-	<inline: true>
 
 	numberOfAbstractOpcodes > MaxNumberOfAbstractOpcodes ifTrue:
 		[^failBlock value].
@@ -6134,15 +6133,11 @@ Cogit >> enableCodeZoneWrite [
 { #category : #'code generation' }
 Cogit >> enableCodeZoneWriteDuring: codeGenerationBlock [ 
 
-	<inline: true>
-
 	self enableCodeZoneWriteDuring: codeGenerationBlock flushingCacheWith: [  ]
 ]
 
 { #category : #'code generation' }
 Cogit >> enableCodeZoneWriteDuring: codeGenerationBlock flushingCacheWith: flushBlock [
-
-	<inline: true>
 
 	self enableCodeZoneWrite.
 	codeGenerationBlock value.
@@ -6234,7 +6229,7 @@ Cogit >> enterCogCodePopReceiver [
 Cogit >> entryCacheTagAndCouldBeObjectAt: mcpc annotation: annotation into: trinaryBlock [
 	"Evaluate trinaryBlock with the entryPoint, inline cache tag and whether the cache
 	 tag could be an object, for the send at mcpc with annotation annotation."
-	<inline: true>
+
 	| cacheTag entryPoint tagCouldBeObj |
 	cacheTag := backEnd inlineCacheTagAt: mcpc asInteger.
 	entryPoint := backEnd callTargetFromReturnAddress: mcpc asInteger.
@@ -8946,7 +8941,7 @@ Cogit >> lookup: selector for: receiver methodAndErrorSelectorInto: binaryBlock 
 	 and evaluate binaryBlock with the MNU method, cogged if appropriate..  If not found
 	 due to cannot interpret, evaluate binaryBlock with a nil method and the error selector."
 	| methodOrSelectorIndex |
-	<inline: true>
+
 	methodOrSelectorIndex := coInterpreter
 									lookupOrdinary: selector
 									receiver: receiver.
@@ -10165,7 +10160,7 @@ Cogit >> nextBytecodePCFor: descriptor exts: nExts [
 { #category : #'bytecode generator support' }
 Cogit >> nextDescriptorExtensionsAndNextPCInto: aQuaternaryBlock [
 	"Peek ahead and deliver the next descriptor, extension bytes and next pc."
-	<inline: true>
+
 	| savedB0 savedB1 savedB2 savedB3 savedEA savedEB savedNEB descriptor bcpc |
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	descriptor := self generatorAt: byte0.
@@ -10259,7 +10254,7 @@ Cogit >> offset: aClass of: fieldSymbol [
 Cogit >> offsetAndSendTableFor: entryPoint annotation: annotation into: binaryBlock [
 	"Find the relevant sendTable for a linked-send to entryPoint.  Do this based on the
 	 annotation.  c.f. annotationForSendTable:"
-	<inline: true>
+
 	| offset sendTable |
 	<var: #sendTable type: #'sqInt *'>
 	annotation = IsSendCall ifTrue:
@@ -11802,7 +11797,7 @@ Cogit >> subsequentPrototypeMethodOop [
 Cogit >> targetMethodAndSendTableFor: entryPoint annotation: annotation into: binaryBlock [
 	"Evaluate binaryBlock with the targetMethod and relevant send table for a linked-send
 	 to entryPoint.  Do so based on the alignment of entryPoint."
-	<inline: true>
+
 	<var: #targetMethod type: #'CogMethod *'>
 
 	self offsetAndSendTableFor: entryPoint

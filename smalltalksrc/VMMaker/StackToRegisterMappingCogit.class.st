@@ -607,7 +607,7 @@ StackToRegisterMappingCogit >> adjustArgumentsForPerform: numArgs [
 
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> allocateEqualsEqualsRegistersArgNeedsReg: argNeedsReg rcvrNeedsReg: rcvrNeedsReg into: binaryBlock [
-	<inline: true>
+
 	| argReg rcvrReg |
 	self assert: (argNeedsReg or: [rcvrNeedsReg]).
 	argReg := rcvrReg := NoReg.
@@ -726,7 +726,7 @@ StackToRegisterMappingCogit >> allocateRegForStackTopThreeEntriesInto: trinaryBl
 StackToRegisterMappingCogit >> allocateRegForStackTopTwoEntriesInto: binaryBlock [
 	"Answers registers for the 2 top values on stack. If the values are already in registers, answers
 	these registers, else allocate registers not conflicting with each others."
-	<inline: true>
+
 	| topRegistersMask rTop rNext |
 	
 	topRegistersMask := 0.
@@ -1293,7 +1293,7 @@ StackToRegisterMappingCogit >> extractMaybeBranchDescriptorInto: fourArgBlock [
 	 If the instruction found is a branch, also answers the pc after the branch and the pc targeted by the branch.
 	 For convenience, avoiding duplication in the senders, it follows those two pcs to their eventual targets."
 	| primDescriptor nextPC nExts branchDescriptor targetBytecodePC postBranchPC |
-	<inline: true>
+
 	<var: #primDescriptor type: #'BytecodeDescriptor *'>
 	<var: #branchDescriptor type: #'BytecodeDescriptor *'>
 	
@@ -4434,7 +4434,7 @@ StackToRegisterMappingCogit >> ssFlushTo: index [
 StackToRegisterMappingCogit >> ssFlushUpThrough: unaryBlock [
 	"Any occurrences on the stack of the value being stored (which is the top of stack)
 	 must be flushed, and hence any values colder than them stack."
-	<inline: true>
+
 	self assert: simSpillBase >= 0.
 	simStackPtr - 1 to: simSpillBase by: -1 do:
 		[ :index |
