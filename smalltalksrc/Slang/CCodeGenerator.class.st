@@ -2834,6 +2834,8 @@ CCodeGenerator >> generateCASTValue: tast [
 							 rvalue: (exprNode asCASTExpressionIn: self)).
 					self noteUsedVariableName: argName ] ].
 	substitution bindVariablesIn: substitutionDict.
+	substitution setArguments: #(). "no more parameters"
+	
 	castStatements add: (substitution asCASTIn: self).
 	newLabels := Set withAll: self currentMethod labels.
 	substitution nodesDo: [ :node | 
