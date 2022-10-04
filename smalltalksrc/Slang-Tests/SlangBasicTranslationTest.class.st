@@ -94,6 +94,40 @@ SlangBasicTranslationTest >> shouldGenerateDeadCode [
 	^ true
 ]
 
+{ #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testAssignBlockValueValueValue [
+
+	"Case:
+	
+	x := [ :a :b :c | a + b ] value: d value: e value: f
+	
+	expected result:
+	
+	x := d + e"
+
+	| translation |
+
+	translation := self translate: (TAssignmentNode variableNamed: 'x' expression: 
+		(TSendNode new
+			setSelector: #value:value:value:
+			receiver: (TStatementListNode new
+				setArguments: { 'a' . 'b' . 'c' }
+				statements: {
+					TSendNode new
+						setSelector: #+
+						receiver: (TVariableNode named: 'a')
+						arguments: { TVariableNode named: 'b' }.
+				})
+			arguments: {
+				TVariableNode named: 'd'.
+				TVariableNode named: 'e'.
+				TVariableNode named: 'f'. })).
+
+	self assert: translation trimBoth equals: '{
+	x = d + e;
+}'
+]
+
 { #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testAssignementAsExpression [
 
@@ -170,6 +204,32 @@ SlangBasicTranslationTest >> testAssignementAsExpressionWithExpressionBlockWithL
 	self
 		assert: translation
 		equals: 'y = (foo(1, 2), foo(3, 4), foo(5, 6), a)'
+]
+
+{ #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testBindVariableIn [
+
+	| node substitutionDict translation |
+
+	node := TStatementListNode new
+				statements: {
+					TSendNode new
+						setSelector: #+
+						receiver: (TVariableNode named: 'a')
+						arguments: { TVariableNode named: 'b' }.
+				}.
+
+	substitutionDict := {
+		'a' -> (TVariableNode named: 'x').
+		'b' -> (TVariableNode named: 'y').
+		'c' -> (TVariableNode named: 'z') } asDictionary.
+
+	node bindVariablesIn:  substitutionDict.
+	translation := self translate: node.
+	
+	self assert: translation trimBoth equals: '{
+	x + y;
+}'
 ]
 
 { #category : #'tests-return' }
