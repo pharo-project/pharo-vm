@@ -1562,7 +1562,11 @@ SlangBasicTranslationTest >> testReturnBlockValueValueValue [
 
 	"Case:
 	
-	return [ :a :b :c | a + b ] value: d value: e value: f "
+	return [ :a :b :c | a + b ] value: d value: e value: f
+	
+	expected result:
+	
+	return d + e"
 
 	| translation |
 
@@ -1570,10 +1574,7 @@ SlangBasicTranslationTest >> testReturnBlockValueValueValue [
 		(TSendNode new
 			setSelector: #value:value:value:
 			receiver: (TStatementListNode new
-				setArguments: { 
-					TVariableNode named: 'a'.
-					TVariableNode named: 'b'.
-					TVariableNode named: 'c' }
+				setArguments: { 'a'. 'b'. 'c' }
 				statements: {
 					TSendNode new
 						setSelector: #+
@@ -1586,7 +1587,7 @@ SlangBasicTranslationTest >> testReturnBlockValueValueValue [
 				TVariableNode named: 'f'. })).
 
 	self assert: translation trimBoth equals: '{
-	return a + b;
+	return d + e;
 }'
 ]
 
