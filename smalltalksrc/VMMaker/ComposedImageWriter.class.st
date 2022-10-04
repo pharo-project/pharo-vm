@@ -152,7 +152,7 @@ ComposedImageWriter >> writeSTON: struct toFile: f [
 	<inline: true>
 	struct withStructNameDo: [ :name | self fprintf: f _: self headFormat _: name ].
 	struct withFieldsDo: [ :fieldName :fieldValue |
-			self fprintf: f _: self fieldFormat _: fieldName _: fieldValue]
+			self fprintf: f _: self fieldFormat _: fieldName _: (self cCoerce: fieldValue to: #sqInt)]
 		separatedBy: [ self fprintf: f _: ',\n'].
 		
 	self fprintf: f _: '\n}'. 

@@ -724,5 +724,5 @@ VMMemoryMap >> startOfObjectMemory [
 	<api>
 	
 	"The first object space in the memory map is the newSpace."
-	^ self newSpaceStart 
+	^ self newSpaceStart
 ]

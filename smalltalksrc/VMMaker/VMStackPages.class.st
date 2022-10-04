@@ -251,6 +251,7 @@ VMStackPages >> initializeStack: theStackPages numSlots: stackSlots pageSize: sl
 VMStackPages >> initializeWithByteSize: byteSize inMemoryMap: aMemoryMap for: anInterpreter [ 
 
 	<inline: true>
+	<var: #aMemoryMap type:#'VMMemoryMap *'> 
 
 	| stackAddress |
 	

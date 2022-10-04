@@ -150,14 +150,14 @@ VMRememberedSet >> growRememberedSet [
 	base := self rememberedSetArrayPointerFromObject: newObj.
 
 	0 to: rememberedSetSize - 1 do:
-		[:i| base at: i put: (rememberedSetArray at: i)].
+		[:i| base at: i put: (self rememberedSetArray at: i)].
 	"if growing in the middle of a GC, need to preserve marked status."
 	(manager isMarked: obj) ifTrue:
 		[manager
 			setIsMarkedOf: newObj to: true;
 			setIsMarkedOf: obj to: false].
 	manager freeObject: obj.
-	rememberedSetArray := base.
+	self rememberedSetArray: base.
 	self rememberedSetLimit: (manager numSlotsOf: newObj).
 	self setRememberedSetRedZone
 	
@@ -186,7 +186,7 @@ VMRememberedSet >> initializeRememberedSetShouldStartEmpty: shouldStartEmpty [
 
 	self assert: (manager formatOf: obj) = manager wordIndexableFormat.
 	self assert: (manager isPinned: obj).
-	rememberedSetArray := self rememberedSetArrayPointerFromObject: obj.
+	self rememberedSetArray: (self rememberedSetArrayPointerFromObject: obj).
 
 	self rememberedSetLimit: (manager numSlotsOf: obj).
 
@@ -300,7 +300,7 @@ VMRememberedSet >> referenceCountRememberedReferents: population maxRefCount: ma
 VMRememberedSet >> relocateRememberedSet [
 
 	"For SpurPlanningCompactor"
-	rememberedSetArray := self rememberedSetArrayPointerFromObject: self objectOop
+	self rememberedSetArray: (self rememberedSetArrayPointerFromObject: self objectOop)
 ]
 
 { #category : #accessing }

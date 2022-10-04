@@ -43,9 +43,10 @@ AbstractComposedImageAccess >> existSegment: segmentIndex inImage: imageFileName
 
 { #category : #'as yet unclassified' }
 AbstractComposedImageAccess >> fieldFormat [
-	
-	<inline: true>
-	^ '\t#%s : %lld'.
+
+	<cmacro: '() "\t#%s : %" PRIdSQINT'>
+
+	^ '\t#%s : %' , PRIdSQINT.
 ]
 
 { #category : #'file operations' }
@@ -105,7 +106,12 @@ AbstractComposedImageAccess >> headerFileNameinImage: imageFileName into: buffer
 
 	^ self 
 		cCode: [ 
-			self snprintf: buffer _: bufferSize _: '%s/%s' _: imageFileName _: headerFileName. 
+			self 
+				snprintf: buffer 
+					_: bufferSize 
+					_: '%s/%s' 
+					_: (self cCoerce: imageFileName to: #'char *')  
+					_: (self cCoerce: headerFileName to: #'char *'). 
 			buffer ] 
 		inSmalltalk: [ imageFileName , '/', headerFileName ]
 ]
@@ -113,7 +119,7 @@ AbstractComposedImageAccess >> headerFileNameinImage: imageFileName into: buffer
 { #category : #'perm - space' }
 AbstractComposedImageAccess >> permSpaceDataFileInImage: imageFileName [ 
 
-	<inline: true>
+	<inline: #always>
 	<var: #buffer declareC: 'char buffer[255]'>
 
 	| buffer |
@@ -128,7 +134,11 @@ AbstractComposedImageAccess >> permSpaceFileName: fileName inImage: imageFileNam
 
 	^ self 
 		cCode: [ 
-			self snprintf: buffer _: bufferSize _: '%s/%s' _: imageFileName _: fileName. 
+			self 
+				snprintf: buffer 
+				_: bufferSize 
+				_: '%s/%s' 
+				_: (self cCoerce: imageFileName to: #'char *') _: (self cCoerce: fileName to: #'char *'). 
 			buffer ] 
 		inSmalltalk: [ imageFileName , '/', fileName ].
 ]
@@ -136,7 +146,7 @@ AbstractComposedImageAccess >> permSpaceFileName: fileName inImage: imageFileNam
 { #category : #'perm - space' }
 AbstractComposedImageAccess >> permSpaceMetadataFileNameInImage: imageFileName [
 
-	<inline: true>
+	<inline: #always>
 	<var: #buffer declareC: 'char buffer[255]'>
 
 	| buffer |
@@ -165,7 +175,11 @@ AbstractComposedImageAccess >> segmentFileName: segmentIndex withExtension: exte
 
 	^ self 
 		cCode: [ 
-			self snprintf: buffer _: bufferSize _: '%s/seg%d%s' _: imageFileName _: segmentIndex _: extension. 
+			self snprintf: buffer _: bufferSize 
+				_: '%s/seg%d%s' 
+				_: (self cCoerce: imageFileName to: #'char *') 
+				_: (self cCoerce: segmentIndex to: #'int')
+				_: extension. 
 			buffer ] 
 		inSmalltalk: [ imageFileName , '/seg', segmentIndex asString , extension ]
 ]

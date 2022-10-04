@@ -63,7 +63,7 @@ ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 			fscanf: file
 			_: self fieldFormat
 			_: fieldName
-			_: (self addressOf: fieldValue).
+			_: (self cCoerce: (self addressOf: fieldValue) to: #'sqInt*').
 
 		aStruct setField: (self contentsOf: fieldName) to: (self contentsOf: fieldValue).
 
