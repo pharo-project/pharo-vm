@@ -17,13 +17,14 @@ Class {
 CCodeGeneratorGlobalStructure >> bindBlock: aTBlockNode withArgs: arguments [
 
 	| blockStatements argumentNames replacements |
-
 	blockStatements := aTBlockNode statements.
-	argumentNames := aTBlockNode args.
+	argumentNames := aTBlockNode arguments.
 
 	self assert: argumentNames size = arguments size.
 
-	replacements := argumentNames with: arguments collect: [ :name :value | name -> value ] .
+	replacements := argumentNames
+		                with: arguments
+		                collect: [ :name :value | name -> value ].
 
 	^ blockStatements collect: [ :anStatement | 
 		  anStatement copy bindVariableUsesIn: replacements asDictionary ]
@@ -213,7 +214,7 @@ CCodeGeneratorGlobalStructure >> generateCASTSetFieldTo: aTSendNode [
 			receiver: comparison
 			selector: 'ifTrue:' 
 			arguments: { 
-				TStmtListNode 
+				TStatementListNode 
 					statements: { 
 						TSendNode 
 							receiver: aTSendNode receiver 
@@ -229,52 +230,58 @@ CCodeGeneratorGlobalStructure >> generateCASTSetFieldTo: aTSendNode [
 ]
 
 { #category : #'CAST translation' }
-CCodeGeneratorGlobalStructure >> generateCASTWithFieldsDoSeparatedBy: aTSendNode [ 
+CCodeGeneratorGlobalStructure >> generateCASTWithFieldsDoSeparatedBy: aTSendNode [
 
 	| structType allRewrittenStatements blockSeparatorStatements fieldBlock allFieldArguments |
-	
 	self assert: aTSendNode arguments size = 2.
-	self assert: aTSendNode arguments first args size = 2.
-	self assert: aTSendNode arguments second args size = 0.
+	self assert: aTSendNode arguments first arguments size = 2.
+	self assert: aTSendNode arguments second arguments size = 0.
 
 	fieldBlock := aTSendNode arguments first.
 	blockSeparatorStatements := aTSendNode arguments second statements.
-	
+
 	structType := self structTypeFor: aTSendNode receiver.
-	
-	allFieldArguments := structType asClass allSlots collect: [ :slot |
-		{
-			TConstantNode value: slot name asString. 
-			TSendNode receiver: aTSendNode receiver selector: slot name arguments: { }.
-		}
-	].
+
+	allFieldArguments := structType asClass allSlots collect: [ :slot | 
+		                     { 
+			                     (TConstantNode value: slot name asString).
+			                     (TSendNode
+				                      receiver: aTSendNode receiver
+				                      selector: slot name
+				                      arguments: {  }) } ].
 
 	allRewrittenStatements := OrderedCollection new.
 
-	allFieldArguments do: [ :fieldArgs | allRewrittenStatements addAll: (self bindBlock: fieldBlock withArgs: fieldArgs) ]
-		separatedBy: [ allRewrittenStatements addAll: blockSeparatorStatements ].
+	allFieldArguments
+		do: [ :fieldArgs | 
+			allRewrittenStatements addAll:
+				(self bindBlock: fieldBlock withArgs: fieldArgs) ]
+		separatedBy: [ 
+		allRewrittenStatements addAll: blockSeparatorStatements ].
 
-	^ CCompoundStatementNode statements: (allRewrittenStatements collect: [ :e | e asCASTIn: self]).
-
+	^ CCompoundStatementNode statements:
+		  (allRewrittenStatements collect: [ :e | e asCASTIn: self ])
 ]
 
 { #category : #'CAST translation' }
-CCodeGeneratorGlobalStructure >> generateCASTWithStructNameDo: aTSendNode [ 
+CCodeGeneratorGlobalStructure >> generateCASTWithStructNameDo: aTSendNode [
 
 	| argumentName structType rewrittenStatements aBlock |
-	
 	self assert: aTSendNode arguments size = 1.
-	self assert: aTSendNode arguments first args size = 1.
-	
+	self assert: aTSendNode arguments first arguments size = 1.
+
 	structType := self structTypeFor: aTSendNode receiver.
-	
+
 	aBlock := aTSendNode arguments first.
-	argumentName := aTSendNode arguments first args first.
-	
-	rewrittenStatements := self bindBlock: aBlock withArgs: { TConstantNode value: structType asString }.
-	
-	^ CCompoundStatementNode statements: (rewrittenStatements collect: [ :e | e asCASTIn: self]).
-	
+	argumentName := aTSendNode arguments first arguments first.
+
+	rewrittenStatements := self
+		                       bindBlock: aBlock
+		                       withArgs:
+		                       { (TConstantNode value: structType asString) }.
+
+	^ CCompoundStatementNode statements:
+		  (rewrittenStatements collect: [ :e | e asCASTIn: self ])
 ]
 
 { #category : #'C code generator' }
@@ -346,6 +353,6 @@ CCodeGeneratorGlobalStructure >> structDefDefine: aString [
 CCodeGeneratorGlobalStructure >> structTypeFor: structNode [
 
 	| nodeType |
-	nodeType := self typeFor: structNode in: currentMethod.
+	nodeType := self typeFor: structNode in: self currentMethod.
 	^ nodeType trimRight: [ :c | { $* . $ } includes: c ]
 ]

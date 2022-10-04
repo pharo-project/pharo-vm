@@ -94,7 +94,9 @@ ComposedImageReader >> readHeaderFromImage: imageFileName [
 	<var: #file type: #sqImageFile>
 	<var: #buffer declareC: 'char buffer[255]'>
 	<var: #header type: #SpurImageHeaderStruct>
-	| header buffer file |
+	<var: #headerPtr type: #'SpurImageHeaderStruct *'>
+
+	| header buffer file headerPtr |
 	
 	self simulationOnly: [ 
 		buffer := nil. 
@@ -110,10 +112,10 @@ ComposedImageReader >> readHeaderFromImage: imageFileName [
 	
 			interpreter ioExitWithErrorCode: 1 ].
 	
-	
-	self readSTONFrom: file into: (self addressOf: header).
+	headerPtr := self addressOf: header.
+	self readSTONFrom: file into: headerPtr.
 
-	self extractImageVersionFrom: (header imageFormat) into: (self addressOf: header).
+	self extractImageVersionFrom: (header imageFormat) into: headerPtr.
 	
 	self sqImageFileClose: file.
 
@@ -145,8 +147,9 @@ ComposedImageReader >> readMetadataFromFileName: fullFileName [
 	<inline: true>
 	<var: #file type: #sqImageFile>
 	<var: #metadata type: #ComposedMetadataStruct>
+	<var: #metadataPointer type: #'ComposedMetadataStruct *'>
 	
-	| metadata file |
+	| metadata file metadataPointer |
 	
 	self simulationOnly: [ metadata := ComposedMetadataStruct new ].
 
@@ -154,7 +157,9 @@ ComposedImageReader >> readMetadataFromFileName: fullFileName [
 		        sqImageFile: fullFileName
 		        Open: 'r'.
 
-	self readSTONFrom: file into: (self addressOf: metadata).
+	"Needed because addressOf: miss the parameter type"
+	metadataPointer := self addressOf: metadata.
+	self readSTONFrom: file into: metadataPointer.
 
 	self sqImageFileClose: file.
 
@@ -175,7 +180,7 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 
 	<inline: false>
 	<var: #imageFile type: #sqImageFile>
-	<var: 'aHeader' type: #SpurImageHeaderStruct>
+	<var: #aHeader type: #SpurImageHeaderStruct>
 	<var: #permSpaceMetadata type: #ComposedMetadataStruct>
 	<var: #bytesRead type: #'size_t'>
 	<var: #dataSize type: #'size_t'>

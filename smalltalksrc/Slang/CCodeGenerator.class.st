@@ -21,7 +21,6 @@ Class {
 		'apiMethods',
 		'apiVariables',
 		'kernelReturnTypes',
-		'currentMethod',
 		'headerFiles',
 		'globalVariableUsage',
 		'useSymbolicConstants',
@@ -3495,8 +3494,8 @@ CCodeGenerator >> isNode: aNode constantValueWithinRangeOfType: aType [
 { #category : #'C code generator' }
 CCodeGenerator >> isNonArgumentImplicitReceiverVariableName: aString [
 
-	^ (currentMethod definingClass isNotNil and: [ 
-		   currentMethod definingClass implicitVariables includes: aString ]) 
+	^ (self currentMethod definingClass isNotNil and: [ 
+		   self currentMethod definingClass implicitVariables includes: aString ]) 
 		  or: [ (self typeOfVariable: aString) == #implicit ]
 ]
 
