@@ -10711,6 +10711,56 @@ Cogit >> printTrampolineTable [
 			cr]
 ]
 
+{ #category : #disassembly }
+Cogit >> printWhereIs: address [
+
+	<api>
+	<var: #address type: #'void *'>
+	<var: #cogMethod type: #'CogMethod *'>
+	| cogMethod |
+	cogMethod := methodZone methodFor: address.
+	cogMethod = 0
+		ifTrue: [ | trampAddr |
+			trampAddr := self codeEntryFor: address.
+			trampAddr ifNil: [ 
+					coInterpreter
+						printHex: address;
+						print: ' not in the code zone';
+						cr ]
+				ifNotNil: [ 
+					coInterpreter
+						printHex: address;
+						print: ' in trampoline ';
+						print: (self codeEntryNameFor: address);
+						print: ' (starting at address ';
+						printHexnp: trampAddr;
+						print: ')';
+						cr ] ]
+		ifFalse: [ 
+			coInterpreter
+				printHex: address;
+				print: ' in cog method '.
+			"Handle selector"
+			cogMethod selector = objectMemory nilObject
+				ifTrue: [ 
+					| s |
+					(cogMethod cmType = CMMethod and: [ 
+						 (s := coInterpreter maybeSelectorOfMethod:
+							       cogMethod methodObject) notNil ])
+						ifTrue: [ 
+							coInterpreter
+								print: '(nil: ';
+								printStringOf: s;
+								print: ')' ]
+						ifFalse: [ coInterpreter print: '(nil)' ] ]
+				ifFalse: [ coInterpreter printStringOf: cogMethod selector ].
+			coInterpreter
+				print: ' (starting at address ';
+				printHexnp: cogMethod asInteger;
+				print: ')';
+				cr ]
+]
+
 { #category : #accessing }
 Cogit >> processor [
 	<doNotGenerate>
@@ -11717,6 +11767,20 @@ Cogit >> singleStep [
 Cogit >> singleStep: aBoolean [
 	<doNotGenerate>
 	singleStep := aBoolean
+]
+
+{ #category : #debugging }
+Cogit >> sizeOfTrampoline: address [
+
+	<api>
+	<returnTypeC: #int>
+	<var: #address type: #'char *'>
+	0 to: trampolineTableIndex - 3 by: 2 do: [ :i | 
+		address = (trampolineAddresses at: i + 1) ifTrue: [ 
+			[ i + 3 > NumTrampolines * 2 ] ifTrue: [ 
+				^ self methodZoneBase - (trampolineAddresses at: i + 1) asInteger ].
+			^ (trampolineAddresses at: i + 3) asInteger - (trampolineAddresses at: i + 1) asInteger ] ].
+	^ 0
 ]
 
 { #category : #'translation support' }
