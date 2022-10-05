@@ -3093,29 +3093,31 @@ Cogit >> allocateBlockStarts: numBlocks [
 
 { #category : #initialization }
 Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes [
+
 	"Allocate the various arrays needed to compile abstract instructions.
 	 Notionally we only need as many fixups as there are bytecodes.  But we
 	 reuse fixups to record pc-dependent instructions in generateInstructionsAt:
 	 and so need at least as many as there are abstract opcodes."
+
 	<inline: true>
-	
-	self ensureAndClearAbstractOpcodes.	
+	self ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes.
 	self zeroOpcodeIndexForNewOpcodes.
 	labelCounter := 0
 ]
 
 { #category : #initialization }
 Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes ifFail: failBlock [
+
 	"Allocate the various arrays needed to compile abstract instructions, failing if the size
 	 needed is considered too high.  Notionally we only need as many fixups as there are
 	 bytecodes.  But we reuse fixups to record pc-dependent instructions in
 	 generateInstructionsAt: and so need at least as many as there are abstract opcodes."
+
 	<inline: true>
+	numberOfAbstractOpcodes > MaxNumberOfAbstractOpcodes ifTrue: [ 
+		^ failBlock value ].
 
-	numberOfAbstractOpcodes > MaxNumberOfAbstractOpcodes ifTrue:
-		[^failBlock value].
-
-	self ensureAndClearAbstractOpcodes.
+	self ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes.
 
 	self zeroOpcodeIndexForNewOpcodes.
 	labelCounter := 0
@@ -6298,14 +6300,18 @@ Cogit >> endPCOf: aMethod [
 ]
 
 { #category : #initialization }
-Cogit >> ensureAndClearAbstractOpcodes [
+Cogit >> ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes [
 
-	| opcodeBytes fixupBytes allocBytes |
-	numAbstractOpcodes := MaxNumberOfAbstractOpcodes.
-	opcodeBytes := (self sizeof: CogAbstractInstruction) * numAbstractOpcodes.
-	fixupBytes := (self sizeof: CogBytecodeFixup) * numAbstractOpcodes.
+	| opcodeBytes fixupBytes allocBytes clearFixupsBytes clearOpcodesBytes|
+	numAbstractOpcodes := numberOfAbstractOpcodes.
+	
+	opcodeBytes := (self sizeof: CogAbstractInstruction) * MaxNumberOfAbstractOpcodes.
+	fixupBytes := (self sizeof: CogBytecodeFixup) * MaxNumberOfAbstractOpcodes.
 	allocBytes := opcodeBytes + fixupBytes.
 	
+	clearOpcodesBytes := (self sizeof: CogAbstractInstruction) * numberOfAbstractOpcodes.
+	clearFixupsBytes := (self sizeof: CogBytecodeFixup) * numberOfAbstractOpcodes.
+		
 	self
 		cCode:
 			[abstractOpcodes 
@@ -6313,7 +6319,8 @@ Cogit >> ensureAndClearAbstractOpcodes [
 					abstractOpcodes := self malloc: allocBytes.
 					fixups := (abstractOpcodes asUnsignedInteger + opcodeBytes) asVoidPointer].
 				
-			 self b: abstractOpcodes zero: allocBytes]
+			 self b: abstractOpcodes zero: clearOpcodesBytes.
+			 self b: fixups zero: clearFixupsBytes]
 		inSmalltalk:
 			[abstractOpcodes := CArrayAccessor on: ((1 to: numAbstractOpcodes) collect: [:ign| CogCompilerClass for: self]).
 			 fixups := CArrayAccessor on: ((1 to: numAbstractOpcodes) collect: [:ign| self bytecodeFixupClass for: self])].
