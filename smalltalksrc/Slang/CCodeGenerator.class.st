@@ -768,9 +768,12 @@ CCodeGenerator >> collectInlineList: strategy [
 	 translator cannot currently map variable names in inlined C code.
 	 Methods to be inlined must be small or called from only one place."
 	
-	| selectorsOfMethodsNotToInline callsOf inlineStrategy |
+	| selectorsOfMethodsNotToInline callsOf inlineStrategy selectorsWithBlocks |
 	inlineStrategy := strategy asCCodeInlineStrategy.
 	inlineStrategy codeGenerator: self.
+	
+	"Set of selectors that takes blocks as argument. The associated methods must be inlined and not compiled separately."
+	selectorsWithBlocks := Set new.
 		
 	selectorsOfMethodsNotToInline := Set new: methods size.
 	selectorsOfMethodsNotToInline addAll: macros keys.
@@ -797,6 +800,13 @@ CCodeGenerator >> collectInlineList: strategy [
 		thenDo: [:m|
 			m parseTree nodesDo: [:node|
 				node isSend ifTrue: [
+					
+					"Special case of methods that takes block as arguments.
+					The only way to call them is to inline them since blocks are not values in C."
+					(node arguments anySatisfy: [ :arg | arg class == TStatementListNode ])
+						ifTrue: [ selectorsWithBlocks add: node selector. ].
+					
+					"Increase call count"
 					callsOf
 						at: node selector
 						ifPresent: [:senderCount| callsOf at: node selector put: senderCount + 1 ] ] ].
@@ -812,6 +822,10 @@ CCodeGenerator >> collectInlineList: strategy [
 					ifFalse: [
 						inlineStrategy isSelectiveInlineStrategy
 							ifTrue: [selectorsOfMethodsNotToInline add: m selector] ] ] ].
+
+	"Inline all methods that takes block and mark them inline:#always to ensure they are not compiled sepately"
+	inlineList addAll: selectorsWithBlocks.
+	methods select: [ :m | selectorsWithBlocks includes: m selector ] thenDo: [ :m | m inline: #always ].
 
 	inlineStrategy isSelectiveInlineStrategy
 		ifTrue:

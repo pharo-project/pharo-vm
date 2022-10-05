@@ -1430,7 +1430,7 @@ SpurMemoryManager >> allFreeObjectsDo: aBlock [
 { #category : #'object enumeration' }
 SpurMemoryManager >> allHeapEntitiesDo: aBlock [
 	"N.B. e.g. allObjects relies on the old/new order here."
-	<inline: true>
+
 	self allOldSpaceEntitiesDo: aBlock.
 	self allNewSpaceEntitiesDo: aBlock
 ]
@@ -1495,7 +1495,7 @@ SpurMemoryManager >> allInstancesOf: aClass [
 { #category : #'object enumeration' }
 SpurMemoryManager >> allNewSpaceEntitiesDo: aBlock [
 	"Enumerate all new space objects, including free objects."
-	<inline: true>
+
 	| prevObj prevPrevObj objOop limit |
 	prevPrevObj := prevObj := nil.
 	"After a scavenge eden is empty, futureSpace is empty, and all newSpace objects are
@@ -1521,7 +1521,7 @@ SpurMemoryManager >> allNewSpaceEntitiesDo: aBlock [
 { #category : #'object enumeration' }
 SpurMemoryManager >> allNewSpaceObjectsDo: aBlock [
 	"Enumerate all new space objects, excluding free objects."
-	<inline: true>
+
 	self allNewSpaceEntitiesDo:
 		[:objOop|
 		 self assert: (self isEnumerableObjectNoAssert: objOop).
@@ -1588,7 +1588,7 @@ SpurMemoryManager >> allObjects [
 
 { #category : #'object enumeration' }
 SpurMemoryManager >> allObjectsDo: aBlock [
-	<inline: true>
+
 	self allNewSpaceObjectsDo: aBlock.
 	self allOldSpaceObjectsDo: aBlock
 ]
@@ -1644,7 +1644,7 @@ SpurMemoryManager >> allOldMarkedWeakObjectsOnWeaklingStack [
 
 { #category : #'object enumeration' }
 SpurMemoryManager >> allOldSpaceEntitiesDo: aBlock [
-	<inline: true>
+
 	self allOldSpaceEntitiesFrom: self firstObject do: aBlock
 ]
 
@@ -1676,7 +1676,7 @@ SpurMemoryManager >> allOldSpaceEntitiesForCoalescingFrom: firstObj do: aBlock [
 
 { #category : #'object enumeration' }
 SpurMemoryManager >> allOldSpaceEntitiesForCompactingFrom: initialObject to: finalObject do: aBlock [
-	<inline: true>
+
 	| limit prevObj prevPrevObj objOop nextObj |
 	self assert: (self isOldObject: initialObject).
 	self assert: (self oop: finalObject isLessThanOrEqualTo: endOfMemory).
@@ -1697,14 +1697,14 @@ SpurMemoryManager >> allOldSpaceEntitiesForCompactingFrom: initialObject to: fin
 
 { #category : #'object enumeration' }
 SpurMemoryManager >> allOldSpaceEntitiesFrom: initialObject do: aBlock [
-	<inline: true>
+
 	| prevObj prevPrevObj objOop |
 	self assert: (self isOldObject: initialObject).
 	prevPrevObj := prevObj := nil.
 	objOop := initialObject.
 	[self assert: objOop \\ self allocationUnit = 0.
 	 self oop: objOop isLessThan: endOfMemory] whileTrue:
-		[self assert: (self unsignedLong64At: objOop) ~= 0.
+		[self assert: (self uint64AtPointer: objOop) ~= 0.
 		 aBlock value: objOop.
 		 prevPrevObj := prevObj.
 		 prevObj := objOop.
@@ -1715,7 +1715,7 @@ SpurMemoryManager >> allOldSpaceEntitiesFrom: initialObject do: aBlock [
 
 { #category : #'object enumeration' }
 SpurMemoryManager >> allOldSpaceEntitiesFrom: initialObject to: finalObject do: aBlock [
-	<inline: true>
+
 	| prevObj prevPrevObj objOop |
 	self assert: ((self isNonImmediate: initialObject) and: [segmentManager isInSegments: initialObject]).
 	self assert: ((self isNonImmediate: finalObject) and: [segmentManager isInSegments: finalObject]).
@@ -1742,7 +1742,7 @@ SpurMemoryManager >> allOldSpaceObjectsDo: aBlock [
 SpurMemoryManager >> allOldSpaceObjectsFrom: initialObject do: aBlock [
 	"Enumerate all objects (i.e. exclude bridges, forwarders and free chunks)
 	 in oldSpace starting at initialObject."
-	<inline: true>
+
 	self allOldSpaceEntitiesFrom: initialObject
 		do: [:objOop|
 			 (self isEnumerableObject: objOop) ifTrue:
@@ -1752,7 +1752,7 @@ SpurMemoryManager >> allOldSpaceObjectsFrom: initialObject do: aBlock [
 { #category : #'object enumeration' }
 SpurMemoryManager >> allPastSpaceEntitiesDo: aBlock [
 	"Enumerate all past space objects, including free objects."
-	<inline: true>
+
 	| prevObj prevPrevObj objOop |
 	prevPrevObj := prevObj := nil.
 	objOop := self objectStartingAt: scavenger pastSpace start.
@@ -1768,7 +1768,7 @@ SpurMemoryManager >> allPastSpaceEntitiesDo: aBlock [
 { #category : #'object enumeration' }
 SpurMemoryManager >> allPastSpaceObjectsDo: aBlock [
 	"Enumerate all past space objects, excluding free objects."
-	<inline: true>
+
 	self allPastSpaceEntitiesDo:
 		[:objOop|
 		 self assert: (self isEnumerableObjectNoAssert: objOop).
@@ -2115,7 +2115,7 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes suchThat: acceptan
 	 The caller *must* fill in the header correctly."
 	<var: #chunkBytes type: #usqInt>
 	| initialIndex node next prev index child childBytes acceptedChunk acceptedNode |
-	<inline: true> "must inline for acceptanceBlock"
+
 	"for debugging:" "totalFreeOldSpace := self totalFreeListBytes"
 	totalFreeOldSpace := totalFreeOldSpace - chunkBytes. "be optimistic (& don't wait for the write)"
 	initialIndex := chunkBytes / self allocationUnit.
@@ -2444,7 +2444,7 @@ SpurMemoryManager >> allocationUnit [
 { #category : #'primitive support' }
 SpurMemoryManager >> ambiguousClass: aClass allInstancesInto: start limit: limit resultsInto: binaryBlock [
 	"Dea with ambiguity and normalize indices."
-	<inline: true>
+
 	| expectedIndex count ptr |
 	count := 0.
 	ptr := start.
@@ -3673,7 +3673,7 @@ SpurMemoryManager >> classString [
 { #category : #'class table' }
 SpurMemoryManager >> classTableEntriesDo: binaryBlock [
 	"Evaluate binaryBlock with all non-nil entries in the classTable and their index."
-	<inline: true>
+
 	0 to: numClassTablePages - 1 do:
 		[:i| | page |
 		 page := self fetchPointer: i ofObject: hiddenRootsObj.
@@ -5556,7 +5556,7 @@ SpurMemoryManager >> freeTreeNodesDo: aBlock [
 	 N.B For the convenience of rebuildFreeTreeFromSortedFreeChunks
 	 aBlock *MUST* answer the freeTreeNode it was invoked with, or
 	 its replacement if it was replaced by aBlock."
-	<inline: true>
+
 	| treeNode cameFrom |
 	treeNode := freeLists at: 0.
 	treeNode = 0 ifTrue:
@@ -5969,7 +5969,7 @@ SpurMemoryManager >> identityHashHalfWordMask [
 { #category : #'become implementation' }
 SpurMemoryManager >> ifOopInvalidForBecome: oop errorCodeInto: aBlock [
 	"Evaluates aBlock with an appropriate error if oop is invalid for become."
-	<inline: true>
+
 	(self isImmediate: oop) ifTrue:
 		[^aBlock value: PrimErrInappropriate].
 	(self isPinned: oop) ifTrue:
@@ -6892,7 +6892,7 @@ SpurMemoryManager >> isEnumerableObject: objOop [
 	| classIndex |
 	<inline: true>
 	classIndex := self classIndexOf: objOop.
-	self assert: ((self unsignedLong64At: objOop) ~= 0
+	self assert: ((self uint64AtPointer: objOop) ~= 0
 				  and: [classIndex < (numClassTablePages * self classTablePageSize)]).
 	^classIndex >= self isForwardedObjectClassIndexPun
 ]
@@ -9194,7 +9194,7 @@ SpurMemoryManager >> numberOfForwarders [
 { #category : #'obj stacks' }
 SpurMemoryManager >> objStack: objStack do: aBlock [
 	"Evaluate aBinaryBlock with all indices and pages of elements in objStack"
-	<inline: true>
+
 	| objStackPage |
 	objStack = nilObj ifTrue:
 		[^self].
@@ -9215,7 +9215,7 @@ SpurMemoryManager >> objStack: objStack from: start do: aBlock [
 	 This evaluates in top-of-stack-to-bottom order.  N.B. this is also stable
 	 if aBlock causes new elements to be added to the objStack, but
 	 unstable if aBlock causes elements to be removed."
-	<inline: true>
+
 	| size objStackPage numToEnumerate |
 	self eassert: [self isValidObjStack: weaklingStack].
 	size := self fetchPointer: ObjStackTopx ofObject: objStack.
@@ -12221,7 +12221,7 @@ SpurMemoryManager >> unalignedShortAt: index put: aValue [
 
 { #category : #'primitive support' }
 SpurMemoryManager >> uniqueIndex: classIndex allInstancesInto: start limit: limit resultsInto: binaryBlock [
-	<inline: true>
+
 	| count ptr |
 	count := 0.
 	ptr := start.

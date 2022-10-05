@@ -256,6 +256,16 @@ CogARMCompiler class >> initializeAbstractRegisters [
 	DPFPReg6			:= D6.
 	DPFPReg7			:= D7.
 
+	"These registers are undefined"
+	VReg0 := -1.
+	VReg1 := -1.
+	VReg2 := -1.
+	VReg3 := -1.
+	VReg4 := -1.
+	VReg5 := -1.
+	VReg6 := -1.
+	VReg7 := -1.
+
 	NumFloatRegisters := 8
 ]
 
@@ -2528,7 +2538,7 @@ CogARMCompiler >> inverseOpcodeFor: armOpcode [
 CogARMCompiler >> is12BitValue: constant ifTrue: trueAlternativeBlock	ifFalse: falseAlternativeBlock [
 	"For LDR and STR, there is an instruction allowing for one instruction encoding if the offset is encodable in signed 12 bit form. pass the trueBlock the value and a 1-bit flag to tell it the sign.
 	The falseBlock can do whatever it needs to, typically building the constant as a full 32bit value and then ld/st with that as a register offset"
-	<inline: true>
+
 	constant abs <= 4095 "(2 raisedTo: 12)-1"
 		ifTrue:
 			[constant >= 0 
@@ -2540,7 +2550,7 @@ CogARMCompiler >> is12BitValue: constant ifTrue: trueAlternativeBlock	ifFalse: f
 { #category : #testing }
 CogARMCompiler >> is8BitValue: constant ifTrue: trueAlternativeBlock	ifFalse: falseAlternativeBlock [
 	"For extended LDR and STR for half & double, there is an instruction allowing for one instruction encoding if the offset is encodable in 8 bit."
-	<inline: true>
+
 	constant abs <= 255 "(2 raisedTo: 8)-1"
 		ifTrue:
 			[constant >= 0 
@@ -2684,6 +2694,13 @@ CogARMCompiler >> leafCallStackPointerDelta [
 	 to capture the c stack pointer to use in trampolines back into the C run-time."
 	"This might actually be false, since directly after a call, lr, fp and variable registers need be pushed onto the stack. It depends on the implementation of call."
 	^0
+]
+
+{ #category : #'inline cacheing' }
+CogARMCompiler >> literalBeforeInlineCacheTagAt: callSiteReturnAddress [
+
+	self notYetImplemented: 'Should implement access to the class in directed super sends for ARMv7'.
+	^ 0
 ]
 
 { #category : #accessing }
@@ -3159,7 +3176,7 @@ CogARMCompiler >> rewriteTransferAt: callSiteReturnAddress target: callTargetAdd
 
 { #category : #testing }
 CogARMCompiler >> rotateable8bitBitwiseImmediate: constant ifTrue: trueAlternativeBlock ifFalse: falseAlternativeBlock [
-	<inline: true>
+
 	"Invoke trueAlternativeBlock with shift, value and inverted if constant can be represented
 	 by a possibly rotated 8-bit constant, otherwise invoke falseAlternativeBlock. For data
 	 processing operands, there is the immediate shifter_operand variant,  where an 8 bit value
@@ -3185,7 +3202,7 @@ CogARMCompiler >> rotateable8bitBitwiseImmediate: constant ifTrue: trueAlternati
 
 { #category : #testing }
 CogARMCompiler >> rotateable8bitImmediate: constant ifTrue: trueAlternativeBlock ifFalse: falseAlternativeBlock [
-	<inline: true>
+
 	"For data processing operands, there is the immediate shifter_operand variant, 
 	 where an 8 bit value is ring shifted _right_ by i.
 	 This is only suitable for quick constants(Cq), which won't change."
@@ -3201,7 +3218,7 @@ CogARMCompiler >> rotateable8bitImmediate: constant ifTrue: trueAlternativeBlock
 
 { #category : #testing }
 CogARMCompiler >> rotateable8bitSignedImmediate: constant ifTrue: trueAlternativeBlock ifFalse: falseAlternativeBlock [
-	<inline: true>
+
 	"Invoke trueAlternativeBlock with shift, value and negated if constant can be represented
 	 by a possibly rotated 8-bit constant, otherwise invoke falseAlternativeBlock. For data
 	 processing operands, there is the immediate shifter_operand variant,  where an 8 bit value
@@ -3227,7 +3244,7 @@ CogARMCompiler >> rotateable8bitSignedImmediate: constant ifTrue: trueAlternativ
 CogARMCompiler >> saveAndRestoreLinkRegAround: aBlock [
 	"If the processor's ABI includes a link register, generate instructions
 	 to save and restore it around aBlock, which is assumed to generate code."
-	<inline: true>
+
 	| inst |
 	inst := cogit PushR: LinkReg.
 	aBlock value.

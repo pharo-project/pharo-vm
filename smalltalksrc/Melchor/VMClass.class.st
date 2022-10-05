@@ -806,10 +806,17 @@ VMClass >> minorVersion [
 VMClass >> notYetImplemented [
 
 	<inline: true>
+	self notYetImplemented: 'Not Yet Implemented!'
+]
+
+{ #category : #'translation support' }
+VMClass >> notYetImplemented: aMessage [
+
+	<inline: true>
 
 	self
 		cCode: [ 
-			self logError: 'not yet implemented'.
+			self logError: aMessage.
 			self abort ]
 		inSmalltalk: [ super notYetImplemented ]
 ]

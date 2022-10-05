@@ -116,7 +116,7 @@ CogMethodZone >> addAllToYoungReferrers [
 		cogMethod := coInterpreter cCoerceSimple: baseAddress to: #'CogMethod *'.
 		[cogMethod < self limitZony] whileTrue:
 			[(cogMethod cmType = CMMethod
-			  or: [cogMethod cmType = CMOpenPIC]) ifTrue:
+			  or: [cogMethod cmType = CMMegamorphicIC]) ifTrue:
 				[self ensureInYoungReferrers: cogMethod].
 			 cogMethod := self methodAfter: cogMethod]]
 ]
@@ -124,9 +124,9 @@ CogMethodZone >> addAllToYoungReferrers [
 { #category : #accessing }
 CogMethodZone >> addToOpenPICList: anOpenPIC [
 	<var: #anOpenPIC type: #'CogMethod *'>
-	self assert: anOpenPIC cmType = CMOpenPIC.
+	self assert: anOpenPIC cmType = CMMegamorphicIC.
 	self assert: (openPICList == nil
-				or: [openPICList cmType = CMOpenPIC]).
+				or: [openPICList cmType = CMMegamorphicIC]).
 	anOpenPIC nextOpenPIC: openPICList asUnsignedInteger.
 	openPICList := anOpenPIC
 ]
@@ -199,7 +199,7 @@ CogMethodZone >> clearSavedPICUsageCount: cogMethod [
 	 of the unused PICs; they will then have a zero count and be reclaimed in the next code compaction."
 	<var: #cogMethod type: #'CogMethod *'>
 	<option: #SistaVM>
-	cogMethod cmType = CMClosedPIC ifTrue:
+	cogMethod cmType = CMPolymorphicIC ifTrue:
 		[cogMethod picUsage: 0]
 ]
 
@@ -241,7 +241,7 @@ CogMethodZone >> compactCompiledCode [
 			[source cmUsageCount: source cmUsageCount // 2].
 		 SistaVM ifTrue:
 			[self clearSavedPICUsageCount: source].
-		 source cmType = CMOpenPIC ifTrue:
+		 source cmType = CMMegamorphicIC ifTrue:
 			[self addToOpenPICList: source].
 		 methodCount := methodCount + 1.
 		 source := self methodAfter: source].
@@ -267,7 +267,7 @@ CogMethodZone >> compactCompiledCode [
 				ifFalse:
 					[SistaVM ifTrue:
 						[self clearSavedPICUsageCount: dest].
-					 dest cmType = CMOpenPIC ifTrue:
+					 dest cmType = CMMegamorphicIC ifTrue:
 						[self addToOpenPICList: dest]].
 			 dest cmUsageCount > 0 ifTrue:
 				[dest cmUsageCount: dest cmUsageCount // 2].
@@ -331,7 +331,7 @@ CogMethodZone >> freeMethod: cogMethod [
 					inSmalltalk: [self assert: ((cogit noAssertMethodClassAssociationOf: cogMethod methodObject) = objectMemory nilObject
 											or: [coInterpreter isKindOf: CurrentImageCoInterpreterFacade])] ].
 		 cogit maybeFreeCountersOf: cogMethod].
-	cogMethod cmType = CMOpenPIC ifTrue:
+	cogMethod cmType = CMMegamorphicIC ifTrue:
 		[self removeFromOpenPICList: cogMethod].
 	cogMethod cmRefersToYoung: false.
 	cogMethod cmType: CMFree.
@@ -599,8 +599,8 @@ CogMethodZone >> printCogMethods [
 			caseOf: {
 			[CMFree]		->	[nf := nf + 1].
 			[CMMethod]	->	[nm := nm + 1].
-			[CMClosedPIC]	->	[nc := nc + 1].
-			[CMOpenPIC]	->	[no:= no+ 1] }
+			[CMPolymorphicIC]	->	[nc := nc + 1].
+			[CMMegamorphicIC]	->	[no:= no+ 1] }
 			otherwise: [nu := nu + 1].
 		 cogMethod := self methodAfter: cogMethod].
 	coInterpreter print: 'CMMethod '; printNum: nm;  print: ' CMClosedPIC '; printNum: nc;  print: ' CMOpenPIC '; printNum: no;  print: ' CMFree '; printNum: nf.
@@ -780,7 +780,7 @@ CogMethodZone >> relocateMethodsPreCompaction [
 	cogMethod := cogit cCoerceSimple: baseAddress to: #'CogMethod *'.
 	[cogMethod asUnsignedInteger < mzFreeStart] whileTrue:
 		[cogMethod cmType ~= CMFree ifTrue:
-			[cogMethod cmType = CMClosedPIC
+			[cogMethod cmType = CMPolymorphicIC
 				ifTrue: [cogit relocateCallsInClosedPIC: cogMethod]
 				ifFalse: [cogit relocateCallsAndSelfReferencesInMethod: cogMethod]].
 		 cogMethod := self methodAfter: cogMethod].
@@ -793,11 +793,11 @@ CogMethodZone >> removeFromOpenPICList: anOpenPIC [
 	<var: #anOpenPIC type: #'CogMethod *'>
 	| prevPIC |
 	<var: #prevPIC type: #'CogMethod *'>
-	self assert: anOpenPIC cmType = CMOpenPIC.
+	self assert: anOpenPIC cmType = CMMegamorphicIC.
 	openPICList ifNil: [^nil]. "As it is when compacting or unlinking all sends"
-	self assert: (openPICList cmType = CMOpenPIC
+	self assert: (openPICList cmType = CMMegamorphicIC
 				and: [openPICList nextOpenPIC isNil
-					or: [(self cCoerceSimple: openPICList nextOpenPIC to: #'CogMethod *') cmType = CMOpenPIC]]).
+					or: [(self cCoerceSimple: openPICList nextOpenPIC to: #'CogMethod *') cmType = CMMegamorphicIC]]).
 	anOpenPIC = openPICList ifTrue:
 		["N.B. Use self rather than coInterpreter to avoid attempting to cast nil.
 		  Conversion to CogMethod done in the nextOpenPIC accessor."
@@ -805,7 +805,7 @@ CogMethodZone >> removeFromOpenPICList: anOpenPIC [
 		 ^nil].
 	prevPIC := openPICList.
 	[self assert: (prevPIC ~~ nil
-				and: [prevPIC cmType = CMOpenPIC]).
+				and: [prevPIC cmType = CMMegamorphicIC]).
 	 prevPIC nextOpenPIC = anOpenPIC asUnsignedInteger ifTrue:
 		[prevPIC nextOpenPIC: anOpenPIC nextOpenPIC.
 		 ^nil].
@@ -823,7 +823,7 @@ CogMethodZone >> restorePICUsageCount: cogMethod [
 	 of the unused PICs; they will then have a zero count and be reclaimed in the next code compaction."
 	<var: #cogMethod type: #'CogMethod *'>
 	<option: #SistaVM>
-	(cogMethod cmType = CMClosedPIC
+	(cogMethod cmType = CMPolymorphicIC
 	 and: [cogMethod picUsage ~= 0]) ifTrue:
 		[cogMethod
 			cmUsageCount: cogMethod picUsage;
@@ -853,7 +853,7 @@ CogMethodZone >> savePICUsageCount: cogMethod [
 	 of the unused PICs; they will then have a zero count and be reclaimed in the next code compaction."
 	<var: #cogMethod type: #'CogMethod *'>
 	<option: #SistaVM>
-	cogMethod cmType = CMClosedPIC ifTrue:
+	cogMethod cmType = CMPolymorphicIC ifTrue:
 		[cogMethod
 			picUsage: cogMethod cmUsageCount;
 			cmUsageCount: 0]

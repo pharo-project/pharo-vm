@@ -75,9 +75,9 @@ VMBlockTest >> testCreatingABlockCapturesReceiver [
 
 	| methodReturning initialMethod |
 
-	initialMethod := self createMethodOopFromPharoMethod:
+	initialMethod := self createMethodOopFromHostMethod:
 		                     self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
+	methodReturning := self createMethodOopFromHostMethod:
 		             self class >> #methodReturningABlockInsideABlockWithLocal.
 
 	self installFullBlockClosureClass.
@@ -100,9 +100,9 @@ VMBlockTest >> testCreatingABlockClosureKnowsCompiledBlock [
 
 	| methodReturning initialMethod placeTakenByLiterals closure blockInitialPC compiledBlock |
 
-	initialMethod := self createMethodOopFromPharoMethod:
+	initialMethod := self createMethodOopFromHostMethod:
 		                 self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
+	methodReturning := self createMethodOopFromHostMethod:
 		                   self class >> #methodReturningABlock.
 
 	self installFullBlockClosureClass.
@@ -137,9 +137,9 @@ VMBlockTest >> testCreatingABlockClosureShouldCopyUsedMethodVariable [
 
 	| methodReturning initialMethod |
 
-	initialMethod := self createMethodOopFromPharoMethod:
+	initialMethod := self createMethodOopFromHostMethod:
 		                     self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
+	methodReturning := self createMethodOopFromHostMethod:
 		             self class >> #methodReturningABlockInsideABlockWithLocal.
 
 	self installFullBlockClosureClass.
@@ -164,9 +164,9 @@ VMBlockTest >> testCreatingABlockClosureShouldHaveOuterContextObject [
 
 	| methodReturning initialMethod |
 
-	initialMethod := self createMethodOopFromPharoMethod:
+	initialMethod := self createMethodOopFromHostMethod:
 		                     self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
+	methodReturning := self createMethodOopFromHostMethod:
 		             self class >> #methodReturningABlock.
 
 	self installFullBlockClosureClass.
@@ -193,9 +193,9 @@ VMBlockTest >> testCreatingABlockInsideABlockClosureShouldCopyUsedBlockVariable 
 
 	| methodReturning initialMethod |
 
-	initialMethod := self createMethodOopFromPharoMethod:
+	initialMethod := self createMethodOopFromHostMethod:
 		                     self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
+	methodReturning := self createMethodOopFromHostMethod:
 		             self class >> #methodReturningABlockInsideABlockWithLocal.
 
 	self installFullBlockClosureClass.
@@ -220,9 +220,9 @@ VMBlockTest >> testCreatingABlockWithoutArgumentsClosureShouldHaveNoArgument [
 
 	| methodReturning initialMethod |
 	
-	initialMethod := self createMethodOopFromPharoMethod:
+	initialMethod := self createMethodOopFromHostMethod:
 		                     self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
+	methodReturning := self createMethodOopFromHostMethod:
 		             self class >> #methodReturningABlock.
 
 	self installFullBlockClosureClass.
@@ -247,9 +247,9 @@ VMBlockTest >> testEvaluatingABlock [
 
 	| methodReturning initialMethod |
 	
-	initialMethod := self createMethodOopFromPharoMethod:
+	initialMethod := self createMethodOopFromHostMethod:
 		                 self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
+	methodReturning := self createMethodOopFromHostMethod:
 		                   self class >> #evaluatingABlock.
 
 	self installFullBlockClosureClass.
@@ -279,9 +279,9 @@ VMBlockTest >> testPushClosureBytecodePushesClosure [
 
 	| methodReturning initialMethod |
 
-	initialMethod := self createMethodOopFromPharoMethod:
+	initialMethod := self createMethodOopFromHostMethod:
 		                     self class >> #anEmptyMethod.
-	methodReturning := self createMethodOopFromPharoMethod:
+	methodReturning := self createMethodOopFromHostMethod:
 		             self class >> #methodReturningABlock.
 
 	self installFullBlockClosureClass.

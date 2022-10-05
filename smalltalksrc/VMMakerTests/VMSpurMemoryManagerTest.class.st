@@ -59,7 +59,7 @@ VMSpurMemoryManagerTest >> createActiveProcess [
 ]
 
 { #category : #helpers }
-VMSpurMemoryManagerTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod [
+VMSpurMemoryManagerTest >> createMethodOopFromHostMethod: aPharoCompiledMethod [
 
 	| methodOop |
 	methodOop := methodBuilder
@@ -248,6 +248,14 @@ VMSpurMemoryManagerTest >> memory [
 	^ memory
 ]
 
+{ #category : #running }
+VMSpurMemoryManagerTest >> memoryClass [
+
+	^ self wordSize = 4
+		ifTrue: [ Spur32BitMemoryManager ]
+		ifFalse: [ Spur64BitMemoryManager ]
+]
+
 { #category : #helpers }
 VMSpurMemoryManagerTest >> new16BitIndexableOfSize: aSize [
 
@@ -352,9 +360,7 @@ VMSpurMemoryManagerTest >> newInterpreter [
 { #category : #running }
 VMSpurMemoryManagerTest >> newMemory [
 
-	^ self wordSize = 4
-		ifTrue: [ Spur32BitMemoryManager simulatorClass new ]
-		ifFalse: [ Spur64BitMemoryManager simulatorClass new ]
+	^ self memoryClass simulatorClass new
 ]
 
 { #category : #'helpers - methods' }

@@ -1026,7 +1026,7 @@ SimpleStackBasedCogit >> entryOffset: anInteger [
 
 { #category : #'trampoline support' }
 SimpleStackBasedCogit >> evaluateTrampolineCallBlock: block protectLinkRegIfNot: inFrame [
-	<inline: true>
+
 	inFrame 
 		ifFalse: 
 			[ backEnd saveAndRestoreLinkRegAround: [ block value ] ]
@@ -2814,8 +2814,6 @@ SimpleStackBasedCogit >> genUpArrowReturn [
 { #category : #'primitive generators - call' }
 SimpleStackBasedCogit >> generateCheckProfileTickFromJump: arrivingJmp returningTo: returningLabel beforeCallDo: aBlockClosure [
 
-	<inline: true>
-
 	arrivingJmp jmpTarget: self Label.
 
 	aBlockClosure value.
@@ -2987,7 +2985,7 @@ SimpleStackBasedCogit >> parseV4Exts: nExts priorTo: bcpc in: aMethodObj into: a
 	"224		11100000	aaaaaaaa	Extend A (Ext A = Ext A prev * 256 + Ext A)
 	 225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
 	| extAValue extBValue pc byte extByte |
-	<inline: true>
+
 	extAValue := extBValue := 0.
 	pc := bcpc - nExts - nExts.
 	[pc < bcpc] whileTrue:
