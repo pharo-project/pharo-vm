@@ -221,7 +221,8 @@ UnicornARMv8Simulator >> receiverRegister [
 { #category : #accessing }
 UnicornARMv8Simulator >> registerList [
 
-	^ #(lr pc sp fp x28 x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x16 x19 x20 x21 x22 x23 x24 x25 x26 zero negative carry overflow)
+	^ #(lr pc sp fp x28 x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x16 x19 x20 x21 x22 x23 x24 x25 x26 zero negative carry overflow v0 v1 v2)
+
 ]
 
 { #category : #'as yet unclassified' }
@@ -307,6 +308,42 @@ UnicornARMv8Simulator >> stackPointerRegister [
 UnicornARMv8Simulator >> temporaryRegister [
 
 	^ UcARM64Registers x1
+]
+
+{ #category : #accessing }
+UnicornARMv8Simulator >> v0 [
+
+	^ self readRawRegister: UcARM64Registers v0 size: 16
+]
+
+{ #category : #accessing }
+UnicornARMv8Simulator >> v1 [
+
+	^ self readRawRegister: UcARM64Registers v1 size: 16
+]
+
+{ #category : #accessing }
+UnicornARMv8Simulator >> v2 [
+
+	^ self readRawRegister: UcARM64Registers v2 size: 16
+]
+
+{ #category : #accesing }
+UnicornARMv8Simulator >> vectorRegister0Value [
+
+	^ simulator readRegisterId: UcARM64Registers v0 size:  16
+]
+
+{ #category : #accesing }
+UnicornARMv8Simulator >> vectorRegister1Value [
+
+	^ simulator readRegisterId: UcARM64Registers v1 size:  16
+]
+
+{ #category : #accesing }
+UnicornARMv8Simulator >> vectorRegister2Value [
+
+	^ simulator readRegisterId: UcARM64Registers v2 size:  16
 ]
 
 { #category : #accessing }

@@ -14,7 +14,7 @@ FloatArrayPlugin class >> declareCVarsIn: cg [
 
 { #category : #'arithmetic primitives' }
 FloatArrayPlugin >> primitiveAddFloatArray [
-	"Primitive. Add the receiver and the argument, both FloatArrays and store the result into the receiver."
+	"Primitive. Add the receiver and the argument, both Float32Arrays and store the result into the receiver."
 	| rcvr arg rcvrPtr argPtr length |
 	<export: true>
 	<var: #rcvrPtr type: #'float *'>
@@ -34,7 +34,7 @@ FloatArrayPlugin >> primitiveAddFloatArray [
 
 { #category : #'arithmetic primitives' }
 FloatArrayPlugin >> primitiveAddScalar [
-	"Primitive. Add the argument, a scalar value to the receiver, a FloatArray"
+	"Primitive. Add the argument, a scalar value to the receiver, a Float32Array"
 	| rcvr rcvrPtr value length |
 	<export: true>
 	<var: #value type: #double>

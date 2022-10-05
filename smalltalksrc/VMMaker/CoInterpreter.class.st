@@ -342,7 +342,8 @@ CoInterpreter class >> initializePrimitiveTable [
 	PrimitiveTable
 		at: 253 + 1 put: #primitiveCollectCogCodeConstituents;
 		at: 215 + 1 put: #primitiveVoidVMStateForMethod;
-		at: 216 + 1 put: #primitiveMethodXray
+		at: 216 + 1 put: #primitiveMethodXray;
+		at: 217 + 1 put: #primitiveMethodProfilingData
 ]
 
 { #category : #'class initialization' }
@@ -1533,14 +1534,14 @@ CoInterpreter >> ceInterpretMethodFromPIC: aMethodObj receiver: rcvr [
 	<var: #pic type: #'CogMethod *'>
 	"pop off inner return and locate open or closed PIC"
 	pic := self cCoerceSimple: self popStack - cogit interpretOffset to: #'CogMethod *'.
-	self assert: (pic cmType = CMOpenPIC or: [pic cmType = CMClosedPIC]).
+	self assert: (pic cmType = CMMegamorphicIC or: [pic cmType = CMPolymorphicIC]).
 	"If found from an open PIC then it must be an uncogged method and, since it's been found
 	 in the method cache, should be cogged if possible.  If found from a closed PIC then at the
 	 time the closed PIC was created the method was uncoggable, either because there was
 	 no space, it had too many literals or it contained an illegal bytecode).  So don't try and cog
 	 it, but subsequently it may have been cogged via another path.  If the method is, or ends up
 	 cogged, jump to machine code, otherwise interpret."
-	pic cmType = CMOpenPIC ifTrue:
+	pic cmType = CMMegamorphicIC ifTrue:
 		[self assert: (self methodHasCogMethod: aMethodObj) not.
 		 (self methodShouldBeCogged: aMethodObj) ifTrue:
 			[cogit cog: aMethodObj selector: pic selector]].
@@ -1568,7 +1569,7 @@ CoInterpreter >> ceMNUFromPICMNUMethod: aMethodObj receiver: rcvr [
 				or: [(objectMemory addressCouldBeObj: aMethodObj)
 					and: [objectMemory isOopCompiledMethod: aMethodObj]]).
 	cPIC := self cCoerceSimple: self popStack - cogit mnuOffset to: #'CogMethod *'.
-	self assert: (cPIC cmType = CMClosedPIC or: [cPIC cmType = CMOpenPIC]).
+	self assert: (cPIC cmType = CMPolymorphicIC or: [cPIC cmType = CMMegamorphicIC]).
 	argumentCount := cPIC cmNumArgs.
 	messageSelector := cPIC selector.
 	aMethodObj ~= 0 ifTrue:
@@ -2015,7 +2016,7 @@ CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPIC [
 	classTag := objectMemory fetchClassTagOf: rcvr.
 	argumentCount := numArgs.
 	false ifTrue: "would like to assert this but must also allow for an interpretable method in the cache."
-		[self deny: (cogMethodOrPIC cmType = CMOpenPIC
+		[self deny: (cogMethodOrPIC cmType = CMMegamorphicIC
 					and: [self newMethodInLookupCacheAt: cogMethodOrPIC selector and: classTag])].
 	(self lookupInMethodCacheSel: cogMethodOrPIC selector classTag: classTag)
 		ifTrue:"check for coggability because method is in the cache"
@@ -2090,22 +2091,22 @@ CoInterpreter >> ceSendMustBeBooleanTo: aNonBooleanObject interpretingAtDelta: j
 	"Make space for the two extra fields in an interpreter frame"
 	stackPointer to: framePointer + FoxMFReceiver by: objectMemory wordSize do:
 		[:p| | oop |
-		 oop := objectMemory longAt: p.
+		 oop := objectMemory unsignedLongAt: p.
 		 objectMemory
-			longAt: p - objectMemory wordSize - objectMemory wordSize
-			put: (objectMemory longAt: p)].
+			unsignedLongAt: p - objectMemory wordSize - objectMemory wordSize
+			put: (objectMemory unsignedLongAt: p)].
 	stackPointer := stackPointer - objectMemory wordSize - objectMemory wordSize.
 	self push: aNonBooleanObject.
 	"Fill in the fields"
 	objectMemory
-		longAt: framePointer + FoxIFrameFlags
+		unsignedLongAt: framePointer + FoxIFrameFlags
 			put: (self
 					encodeFrameFieldHasContext: (self mframeHasContext: framePointer)
 					isBlock: (self mframeIsBlockActivation: framePointer)
 					numArgs: cogMethod cmNumArgs);
-		longAt: framePointer + FoxIFSavedIP
+		unsignedLongAt: framePointer + FoxIFSavedIP
 			put: 0;
-		longAt: framePointer + FoxMethod
+		unsignedLongAt: framePointer + FoxMethod
 			put: methodObj.
 
 	"and now reenter the interpreter..."
@@ -2605,14 +2606,14 @@ CoInterpreter >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
 	(self isBaseFrame: framePointer)
 		ifTrue:
 			[stackPages
-				longAt: framePointer + FoxCallerSavedIP
+				unsignedLongAt: framePointer + FoxCallerSavedIP
 				put: cogit ceBaseFrameReturnPC]
 		ifFalse:
 			[(self isMachineCodeFrame: (self frameCallerFP: framePointer)) ifFalse:
 				[self iframeSavedIP: (self frameCallerFP: framePointer)
 					put: (self frameCallerSavedIP: framePointer) asInteger.
 				 stackPages
-					longAt: framePointer + FoxCallerSavedIP
+					unsignedLongAt: framePointer + FoxCallerSavedIP
 					put: cogit ceReturnToInterpreterPC]].
 	"Compute the cog method field"
 	(self iframeIsBlockActivation: framePointer)
@@ -3449,6 +3450,7 @@ CoInterpreter >> frameIsBlockActivation: theFP [ "<Integer>"
 CoInterpreter >> frameMethodField: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
+
 	^stackPages longAt: theFP + FoxMethod
 ]
 
@@ -4043,9 +4045,9 @@ CoInterpreter >> internalActivateNewMethod [
 			shouldSkipStoreBytecode ifTrue: [ 
 				instructionPointer := instructionPointer + (self sizeOfLongStoreTempBytecode: methodHeader)  ] ] ].
 
-	self assert: (self frameNumArgs: localFP) = argumentCount.
-	self assert: (self frameIsBlockActivation: localFP) not.
-	self assert: (self frameHasContext: localFP) not.
+	self assert: (self frameNumArgs: framePointer) = argumentCount.
+	self assert: (self frameIsBlockActivation: framePointer) not.
+	self assert: (self frameHasContext: framePointer) not.
 
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
@@ -5273,8 +5275,8 @@ CoInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 	theContext := self ensureFrameIsMarried: theFP
 					SP: theFP + ((self isMachineCodeFrame: theFP) ifTrue: [FoxMFReceiver] ifFalse: [FoxIFReceiver]).
 	stackPages
-		longAt: (newSP := newPage baseAddress) put: (self frameContext: callerFP);
-		longAt: (newSP := newSP - objectMemory wordSize) put:  theContext.
+		unsignedLongAt: (newSP := newPage baseAddress) put: (self frameContext: callerFP);
+		unsignedLongAt: (newSP := newSP - objectMemory wordSize) put:  theContext.
 	stackedReceiverOffset := self frameStackedReceiverOffset: theFP.
 	"First move the data, leaving room for the caller and base frame contexts.  We will fix up frame pointers later."
 	theFP + stackedReceiverOffset
@@ -5330,7 +5332,7 @@ CoInterpreter >> mtemporary: offset in: theFP put: valueOop [
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	^stackPages
-		longAt: (offset < (frameNumArgs := self mframeNumArgs: theFP)
+		unsignedLongAt: (offset < (frameNumArgs := self mframeNumArgs: theFP)
 					ifTrue: [theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize)]
 					ifFalse: [theFP + FoxMFReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize)])
 		put: valueOop
@@ -5641,10 +5643,10 @@ CoInterpreter >> printCogMethod: cogMethod [
 	cogMethod cmType = CMBlock ifTrue:
 		[self print: ': block home: ';
 			printHex: (self cCoerceSimple: cogMethod to: #'CogBlockMethod *') cmHomeMethod asUnsignedInteger].
-	cogMethod cmType = CMClosedPIC ifTrue:
+	cogMethod cmType = CMPolymorphicIC ifTrue:
 		[self print: ': Closed PIC N: ';
 			printHex: cogMethod cPICNumCases].
-	cogMethod cmType = CMOpenPIC ifTrue:
+	cogMethod cmType = CMMegamorphicIC ifTrue:
 		[self print: ': Open PIC '].
 	self print: ' selector: '; printHex: cogMethod selector.
 	cogMethod selector = objectMemory nilObject
@@ -6784,8 +6786,8 @@ CoInterpreter >> temporary: offset in: theFP [
 	^(self isMachineCodeFrame: theFP)
 		ifTrue:
 			[offset < (frameNumArgs := self mframeNumArgs: theFP)
-				ifTrue: [stackPages longAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize)]
-				ifFalse: [stackPages longAt: theFP + FoxMFReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize)]]
+				ifTrue: [stackPages unsignedLongAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize)]
+				ifFalse: [stackPages unsignedLongAt: theFP + FoxMFReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize)]]
 		ifFalse:
 			[self itemporary: offset in: theFP]
 ]
@@ -6887,15 +6889,15 @@ CoInterpreter >> updateStackZoneReferencesToCompiledCodePreCompaction [
 				 theMethod := self cCoerceSimple: theMethodField - theFlags to: #'CogMethod *'.
 				 theMethod cmType = CMBlock ifTrue:
 					[theMethod := (self cCoerceSimple: theMethodField - theFlags to: #'CogBlockMethod *') cmHomeMethod].
-				 theIP := (stackPages longAt: theIPPtr) asUnsignedInteger.
+				 theIP := (stackPages unsignedLongAt: theIPPtr) asUnsignedInteger.
 				 (theIP ~= cogit ceCannotResumePC
 				  and: [(theIP >= theMethod asUnsignedInteger
 							   and: [theIP < (theMethod asUnsignedInteger + theMethod blockSize)])]) ifTrue:
 					[stackPages
-						longAt: theIPPtr
+						unsignedLongAt: theIPPtr
 						put: theIP + theMethod objectHeader].
 				 stackPages
-					longAt: theFP + FoxMethod
+					unsignedLongAt: theFP + FoxMethod
 					put: theMethodField + theMethod objectHeader].
 			 (callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
 				[theIPPtr := theFP + FoxCallerSavedIP.

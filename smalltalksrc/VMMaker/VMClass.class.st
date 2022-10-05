@@ -570,14 +570,16 @@ VMClass >> druidExitPoint [
 
 { #category : #'memory access' }
 VMClass >> floatAtPointer: pointer [
+
 	<doNotGenerate>
-	self halt.
+	self notYetImplemented 
 ]
 
 { #category : #'memory access' }
 VMClass >> floatAtPointer: pointer put: value [
+
 	<doNotGenerate>
-	self halt.
+	self notYetImplemented
 ]
 
 { #category : #'C library simulation' }
@@ -628,7 +630,7 @@ VMClass >> int64AtPointer: pointer [
 	 pointer is a raw address, and the result is the width of a machine word."
 	<doNotGenerate>
 
-	^self halt
+	^ memoryManager long64At: pointer
 ]
 
 { #category : #'memory access' }
@@ -637,7 +639,7 @@ VMClass >> int64AtPointer: pointer put: longValue [
 	 pointer is a raw address, and longValue is the width of a machine word."
 	<doNotGenerate>
 
-	^self halt.
+	^ memoryManager long64At: pointer put: longValue
 ]
 
 { #category : #'memory access' }
@@ -873,10 +875,17 @@ VMClass >> minorVersion [
 VMClass >> notYetImplemented [
 
 	<inline: true>
+	self notYetImplemented: 'Not Yet Implemented!'
+]
+
+{ #category : #'translation support' }
+VMClass >> notYetImplemented: aMessage [
+
+	<inline: true>
 
 	self
 		cCode: [ 
-			self logError: 'not yet implemented'.
+			self logError: aMessage.
 			self abort ]
 		inSmalltalk: [ super notYetImplemented ]
 ]
@@ -1186,7 +1195,7 @@ VMClass >> uint32AtPointer: pointer [
 	 pointer is a raw address, and the result is an 32 bit integer."
 	<doNotGenerate>
 
-	^self longAt: pointer
+	^memoryManager readIntegerAt: pointer size: 4 signed: false
 ]
 
 { #category : #'memory access' }
@@ -1195,25 +1204,26 @@ VMClass >> uint32AtPointer: pointer put: value [
 	 pointer is a raw address, and the result is an 32 bit integer."
 	<doNotGenerate>
 
-	^self long32At: pointer put: value
+	^memoryManager uint32AtPointer: pointer put: value
 ]
 
 { #category : #'memory access' }
 VMClass >> uint64AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is the width of a machine word."
-	<doNotGenerate>
 
-	^self halt
+	<doNotGenerate>
+	^ memoryManager unsignedLong64At: pointer
 ]
 
 { #category : #'memory access' }
-VMClass >> uint64AtPointer: pointer put: longValue [
+VMClass >> uint64AtPointer: pointer put: value [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and longValue is the width of a machine word."
 	<doNotGenerate>
 
-	^self halt.
+	^ memoryManager unsignedLong64At: pointer put: value.
+
 ]
 
 { #category : #'memory access' }
@@ -1243,6 +1253,20 @@ VMClass >> unalignedAccessError [
 VMClass >> unreachable [
 	<inline: true>
 	self error: 'UNREACHABLE'
+]
+
+{ #category : #'memory access' }
+VMClass >> unsignedLong64At: anInteger [
+	
+	<inline: #always>
+	^ self uint64AtPointer: anInteger
+]
+
+{ #category : #'memory access' }
+VMClass >> unsignedLong64At: anInteger put: aValue [
+	
+	<inline: #always>
+	^ self uint64AtPointer: anInteger put: aValue
 ]
 
 { #category : #'hack compatibility' }

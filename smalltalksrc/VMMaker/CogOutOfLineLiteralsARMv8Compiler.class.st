@@ -209,7 +209,7 @@ CogOutOfLineLiteralsARMv8Compiler >> getDefaultCogCodeSize [
 { #category : #'inline cacheing' }
 CogOutOfLineLiteralsARMv8Compiler >> inlineCacheTagAt: callSiteReturnAddress [
 	<inline: true>
-	^objectMemory longAt: (self pcRelativeAddressAt: (callSiteReturnAddress - 8) asUnsignedInteger)
+	^objectMemory unsignedLongAt: (self pcRelativeAddressAt: (callSiteReturnAddress - 8) asUnsignedInteger)
 ]
 
 { #category : #testing }
@@ -232,7 +232,7 @@ CogOutOfLineLiteralsARMv8Compiler >> isSharable [
 { #category : #'inline cacheing' }
 CogOutOfLineLiteralsARMv8Compiler >> literalBeforeFollowingAddress: followingAddress [
 	"Return the literal referenced by the instruction immediately preceding followingAddress."
-	^objectMemory long64At: (self pcRelativeAddressAt:
+	^objectMemory unsignedLong64At: (self pcRelativeAddressAt:
 		((self instructionIsLDR: (self instructionBeforeAddress: followingAddress))
 			ifTrue: [self instructionAddressBefore: followingAddress]
 			ifFalse: [ self instructionAddressBefore: followingAddress - 4]))
@@ -319,7 +319,7 @@ CogOutOfLineLiteralsARMv8Compiler >> pcRelativeAddressAt: instrAddress [
 	
 	| inst offset |
 
-	inst := objectMemory long32At: instrAddress.
+	inst := objectMemory uint32AtPointer: instrAddress.
 	offset := inst >> 5 bitAnd: 16r7ffff.
 	^instrAddress + (((offset allMask: (1 << 18))
 							ifTrue: [offset negated]
@@ -374,8 +374,8 @@ CogOutOfLineLiteralsARMv8Compiler >> rewriteInlineCacheAt: callSiteReturnAddress
 	self assert: (self isInImmediateJumpRange: callDistance). "we don't support long call updates here"
 	call := self bl: callDistance.
 	objectMemory
-		long32At: (self instructionAddressBefore: callSiteReturnAddress ) put: call;
-		longAt: (self pcRelativeAddressAt: callSiteReturnAddress - 8) put: cacheTag signedIntToLong64.
+		uint32AtPointer: (self instructionAddressBefore: callSiteReturnAddress ) put: call;
+		unsignedLong64At: (self pcRelativeAddressAt: callSiteReturnAddress - 8) put: cacheTag signedIntToLong64.
 	self assert: (self inlineCacheTagAt: callSiteReturnAddress) = cacheTag  signedIntToLong64.
 	"self cCode: ''
 		inSmalltalk: [cogit disassembleFrom: callSiteReturnAddress - 8 to: (self pcRelativeAddressAt: callSiteReturnAddress - 8)]."
@@ -443,7 +443,7 @@ CogOutOfLineLiteralsARMv8Compiler >> sizePCDependentInstructionAt: eventualAbsol
 CogOutOfLineLiteralsARMv8Compiler >> storeLiteral: literal beforeFollowingAddress: followingAddress [
 	"Rewrite the literal in the instruction immediately preceding followingAddress."
 	objectMemory
-		longAt: (self pcRelativeAddressAt:
+		unsignedLongAt: (self pcRelativeAddressAt:
 					((self instructionIsLDR: (self instructionBeforeAddress: followingAddress))
 						ifTrue: [self instructionAddressBefore: followingAddress]
 						ifFalse: [self instructionAddressBefore: followingAddress - 4]))

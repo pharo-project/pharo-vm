@@ -31,7 +31,6 @@ VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument
 VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument: firstArgumentOop and: secondArgumentOop [ 
 
 	^ self executePrimitiveWithReceiver: receiverOop withArguments:  { firstArgumentOop. secondArgumentOop }.
-	
 ]
 
 { #category : #helpers }

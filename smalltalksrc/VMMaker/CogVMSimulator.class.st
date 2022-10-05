@@ -381,7 +381,7 @@ CogVMSimulator >> ceCounterTripped: condition [
 CogVMSimulator >> ceMNUFromPICMNUMethod: aMethodObj receiver: rcvr [
 	| cPIC |
 	cPIC := self cCoerceSimple: self stackTop - cogit mnuOffset to: #'CogMethod *'.
-	self assert: (cPIC cmType = CMClosedPIC or: [cPIC cmType = CMOpenPIC]).
+	self assert: (cPIC cmType = CMPolymorphicIC or: [cPIC cmType = CMMegamorphicIC]).
 	self mnuBreakpoint: cPIC selector receiver: nil.
 	^super ceMNUFromPICMNUMethod: aMethodObj receiver: rcvr
 ]
@@ -2000,7 +2000,7 @@ CogVMSimulator >> primitiveFailCounting [
 { #category : #'as yet unclassified' }
 CogVMSimulator >> primitiveForceMachineCodeCompaction [
 	
-	"This primitive does not exists in the production VM. It is used in the tests to force the Code Compaction and to test it."
+	"This primitive does not exist in the production VM. It is used in the tests to force the Code Compaction and to test it."
 	
 	self commenceCogCompiledCodeCompaction.
 	self pop: 2 thenPushBool: true.
@@ -2761,10 +2761,12 @@ CogVMSimulator >> withMemoryProtectionDo: aBlock [
 
 { #category : #'frame access' }
 CogVMSimulator >> withoutSmallIntegerTags: anInteger [
-	self assert: (anInteger >= 0 and: [anInteger highBit <= 32]).
-	^(anInteger bitAnd: 16r80000000) ~= 0
+	| signBit |
+	self assert: (anInteger >= 0 and: [anInteger highBit <= (objectMemory wordSize * 8)]).
+	signBit := 1 << (objectMemory wordSize * 8 - 1).
+	^(anInteger bitAnd: signBit) ~= 0
 		ifTrue: ["negative"
-				(anInteger bitAnd: 16r7FFFFFFE) - 16r80000000]
+				(anInteger bitClear: signBit + 1) - signBit]
 		ifFalse: ["positive"
 				anInteger - 1]
 ]

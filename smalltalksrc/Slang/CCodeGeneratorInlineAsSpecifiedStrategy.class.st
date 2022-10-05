@@ -15,12 +15,6 @@ CCodeGeneratorInlineAsSpecifiedStrategy >> initialize [
 ]
 
 { #category : #asserting }
-CCodeGeneratorInlineAsSpecifiedStrategy >> isSelectiveInlineStrategy [
-
-	^ true
-]
-
-{ #category : #asserting }
 CCodeGeneratorInlineAsSpecifiedStrategy >> shouldInlineMethod: aMethod [
 
 	^ (super shouldInlineMethod: aMethod) and: [ self wantsInline: aMethod ]

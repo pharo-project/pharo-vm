@@ -29,6 +29,9 @@ Class {
 		'argument2',
 		'argument1'
 	],
+	#pools : [
+		'VMStackFrameOffsets'
+	],
 	#category : #'VMMakerTests-InterpreterTests'
 }
 
@@ -94,12 +97,12 @@ StackBuilderTest >> offsetCallerFP [
 
 { #category : #offset }
 StackBuilderTest >> offsetContext [ 
-	^ self offsetReceiver + 1
+	^ self offsetFlags + 1
 ]
 
 { #category : #offset }
 StackBuilderTest >> offsetFlags [
-	^ self offsetContext + 1
+	^ self offsetReceiver + 1
 ]
 
 { #category : #offset }
@@ -109,7 +112,7 @@ StackBuilderTest >> offsetInstructionPointer [
 
 { #category : #offset }
 StackBuilderTest >> offsetMethod [
-	^ self offsetFlags + 1
+	^ self offsetContext + 1
 ]
 
 { #category : #offset }

@@ -59,7 +59,7 @@ VMSpurMemoryManagerTest >> createActiveProcess [
 ]
 
 { #category : #helpers }
-VMSpurMemoryManagerTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod [
+VMSpurMemoryManagerTest >> createMethodOopFromHostMethod: aPharoCompiledMethod [
 
 	| methodOop |
 	methodOop := methodBuilder
@@ -184,6 +184,25 @@ VMSpurMemoryManagerTest >> initializeSpecialSelectors [
 	memory splObj: SpecialSelectors put: specialSelectorsArrayOop
 ]
 
+{ #category : #'tests-simd' }
+VMSpurMemoryManagerTest >> installFloat64RegisterClass [
+
+	| registerClass |
+	registerClass := self
+		              newClassInOldSpaceWithSlots: 0
+		              instSpec: memory sixtyFourBitIndexableFormat.
+		
+	memory setHashBitsOf: registerClass to: ClassFloat64RegisterIndex.
+	
+	memory
+		storePointer: ClassFloat64RegisterIndex
+		ofObject: memory classTableFirstPage
+		withValue: registerClass.
+		
+	memory splObj: ClassFloat64Register put: registerClass
+
+]
+
 { #category : #accessor }
 VMSpurMemoryManagerTest >> interpreter [
 	^ interpreter
@@ -229,6 +248,58 @@ VMSpurMemoryManagerTest >> memory [
 	^ memory
 ]
 
+{ #category : #running }
+VMSpurMemoryManagerTest >> memoryClass [
+
+	^ self wordSize = 4
+		ifTrue: [ Spur32BitMemoryManager ]
+		ifFalse: [ Spur64BitMemoryManager ]
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> new16BitIndexableOfSize: aSize [
+
+	^ self newBitIndexableOfSize: aSize bytesPerSlot: 2 format: memory firstShortFormat
+]
+
+{ #category : #'helpers - methods' }
+VMSpurMemoryManagerTest >> new32BitIndexableFromArray: array [
+
+	| indexable |
+	indexable := self new32BitIndexableOfSize: array size.
+	0 to: (array size - 1) do: [ :i | 
+		memory storeFloat32: i ofObject: indexable withValue: (array at: i + 1) ].
+	^ indexable
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> new32BitIndexableOfSize: aSize [
+
+	^ self newBitIndexableOfSize: aSize bytesPerSlot: 4 format: memory firstLongFormat
+]
+
+{ #category : #'helpers - methods' }
+VMSpurMemoryManagerTest >> new64BitIndexableFromArray: array [
+
+	| indexable |
+	indexable := self new64BitIndexableOfSize: array size.
+	0 to: (array size - 1) do: [ :i | 
+		memory storeFloat64: i ofObject: indexable withValue: (array at: i + 1) ].
+	^ indexable
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> new64BitIndexableOfSize: aSize [
+
+	^ self newBitIndexableOfSize: aSize bytesPerSlot: 8 format: memory sixtyFourBitIndexableFormat
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> new8BitIndexableOfSize: aSize [
+
+	^ self newBitIndexableOfSize: aSize bytesPerSlot: 1 format: memory firstByteFormat
+]
+
 { #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newArrayWithSlots: slots [
 	
@@ -239,6 +310,19 @@ VMSpurMemoryManagerTest >> newArrayWithSlots: slots [
 VMSpurMemoryManagerTest >> newArrayWithSlots: slots classIndex: anIndex [
 	
 	^ self newObjectWithSlots: slots format: memory arrayFormat classIndex: anIndex
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> newBitIndexableOfSize: aSize bytesPerSlot: bytesPerSlot format: format [
+
+	| padding numberOfWordSizeSlots desiredByteSize |
+	desiredByteSize := aSize * bytesPerSlot roundUpTo: self wordSize.
+	numberOfWordSizeSlots := desiredByteSize / self wordSize.
+	padding := desiredByteSize / bytesPerSlot - aSize.
+	^ memory
+		  allocateNewSpaceSlots: numberOfWordSizeSlots
+		  format: format + padding
+		  classIndex: self nextOrdinaryClassIndex
 ]
 
 { #category : #'helpers - classes' }
@@ -276,9 +360,7 @@ VMSpurMemoryManagerTest >> newInterpreter [
 { #category : #running }
 VMSpurMemoryManagerTest >> newMemory [
 
-	^ self wordSize = 4
-		ifTrue: [ Spur32BitMemoryManager simulatorClass new ]
-		ifFalse: [ Spur64BitMemoryManager simulatorClass new ]
+	^ self memoryClass simulatorClass new
 ]
 
 { #category : #'helpers - methods' }
@@ -540,7 +622,6 @@ VMSpurMemoryManagerTest >> setUp [
 		initialAddress: initialAddress.
 			
 	memory initializePostBootstrap.
-	memory setHeapSizeAtPreviousGC.
 
 	self assert: memory objectMemory scavenger eden size > interpreter interpreterAllocationReserveBytes.
 	self assert: memory objectMemory scavengeThreshold + interpreter interpreterAllocationReserveBytes <= memory objectMemory scavenger eden limit.
@@ -548,6 +629,7 @@ VMSpurMemoryManagerTest >> setUp [
 	memory segmentManager collapseSegmentsPostSwizzle.
 	memory segmentManager plantBridgeAtTheEndOfMemory.
 	memory segmentManager assertBridge.
+	memory setHeapSizeAtPreviousGC.
 	
 	"Schedule a GC, so it does not try to schedule one"
 	memory needGCFlag: 1.

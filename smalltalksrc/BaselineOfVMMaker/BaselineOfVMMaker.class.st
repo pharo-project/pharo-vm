@@ -36,11 +36,13 @@ BaselineOfVMMaker >> baseline: spec [
 				spec repository: 'github://pharo-project/pharo-unicorn:unicorn2' ].
 			spec baseline: 'LLVMDisassembler' with: [ 
 				spec repository: 'github://pharo-project/pharo-llvmDisassembler' ].
+			spec baseline: 'OpalSimdBytecode' with: [ 
+				spec repository: 'github://nrainhart/pharo-opal-simd-bytecode:main' ].
 
 			"Tests"			
 			spec
 				package: 'VMMakerTests' with: [
-					spec requires: #('VMMakerCompatibilityForPharo6' 'Unicorn' 'LLVMDisassembler' 'Slang-Tests') ].
+					spec requires: #('VMMakerCompatibilityForPharo6' 'Unicorn' 'LLVMDisassembler' 'Slang-Tests' 'OpalSimdBytecode') ].
 			spec
 				package: 'VMMaker-OriginalTests' with: [
 					spec requires: #('VMMakerCompatibilityForPharo6') ].

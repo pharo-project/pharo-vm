@@ -621,12 +621,21 @@ ProcessorSimulator >> readFloat64Register: aRegisterID [
 ]
 
 { #category : #registers }
-ProcessorSimulator >> readRegister: aRegisterID [
+ProcessorSimulator >> readRawRegister: aRegisterID size: aSize [
 
 	| registerValue |
-	registerValue := ByteArray new: self wordSize.
+	registerValue := ByteArray new: aSize.
 	simulator register: aRegisterID value readInto: registerValue.
-	^ registerValue integerAt: 1 size: self wordSize signed: false
+	^ registerValue
+]
+
+{ #category : #registers }
+ProcessorSimulator >> readRegister: aRegisterID [
+
+	| registerValue size |
+	size := self wordSize.
+	registerValue := self readRawRegister: aRegisterID size: size.
+	^ registerValue integerAt: 1 size: size signed: false
 ]
 
 { #category : #registers }

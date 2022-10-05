@@ -473,6 +473,19 @@ TParseNode >> structTargetKindIn: aCodeGen [
 	^nil
 ]
 
+{ #category : #accessing }
+TParseNode >> tMethod [
+
+	"Climb up the parent links up to the TMethod node"
+
+	| n |
+	n := self.
+	[ true ] whileTrue: [
+		n ifNil: [ ^ nil ].
+		n class == TMethod ifTrue: [ ^ n ].
+		n := n parent ]
+]
+
 { #category : #'type inference' }
 TParseNode >> typeFrom: aCodeGenerator in: aTMethod [
 	"This is the default type in case of doubt"

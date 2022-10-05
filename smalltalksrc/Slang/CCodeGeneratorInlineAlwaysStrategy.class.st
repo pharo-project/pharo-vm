@@ -4,6 +4,12 @@ Class {
 	#category : #'Slang-CodeGeneration'
 }
 
+{ #category : #testing }
+CCodeGeneratorInlineAlwaysStrategy >> isSelectiveInlineStrategy [
+
+	^ false
+]
+
 { #category : #accessing }
 CCodeGeneratorInlineAlwaysStrategy >> nodeCountOfMethod: aTMethod [
 

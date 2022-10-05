@@ -215,6 +215,23 @@ InterpreterStackPages >> pageIndexFor: pointer "<Integer>" stackMemory: stackmem
 	^memIndex - 1 // pageSizeInSlots
 ]
 
+{ #category : #'memory access' }
+InterpreterStackPages >> unsignedLongAt: byteAddress [
+	<doNotGenerate>
+	"Note: Adjusted for Smalltalk's 1-based array indexing."
+	self assert: (byteAddress bitAnd: objectMemory wordSize - 1) == 0.
+	^stackMemory at: byteAddress // objectMemory wordSize + indexOffset
+]
+
+{ #category : #'memory access' }
+InterpreterStackPages >> unsignedLongAt: byteAddress put: a32BitValue [
+	<doNotGenerate>
+	"Note: Adjusted for Smalltalk's 1-based array indexing."
+	self assert: a32BitValue isInteger.
+	self assert: (byteAddress bitAnd: objectMemory wordSize - 1) == 0.
+	^stackMemory at: byteAddress // objectMemory wordSize + indexOffset put: a32BitValue
+]
+
 { #category : #'debug printing' }
 InterpreterStackPages >> whereIsMaybeStackThing: anOop [
 	"If anOop is an address within the stack zone answer a string stating that, otherwise answer nil."

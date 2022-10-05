@@ -83,7 +83,7 @@
 #elif IS_32_BIT_ARCH
 
 
-# if TARGET_OS_IS_IPHONE
+# if defined(TARGET_OS_IS_IPHONE)
 static inline void
 AtomicSet(uint64_t *target, uint64_t new_value)
 {
@@ -240,7 +240,7 @@ AtomicGet(unsigned long long *target)
 
 #undef ATOMICADD16
 
-#if TARGET_OS_IS_IPHONE
+#if defined(TARGET_OS_IS_IPHONE)
 # define sqAtomicAddConst(var,n) (assert(sizeof(var) == 4), OSAtomicAdd32(n,&(var))
 
 #elif defined(__GNUC__) || defined(__clang__)
@@ -303,7 +303,7 @@ AtomicGet(unsigned long long *target)
  * was made.
  */
 
-#if TARGET_OS_IS_IPHONE
+#if defined(TARGET_OS_IS_IPHONE)
 # define sqCompareAndSwap(var,old,new) \
 	(sizeof(var) == 8 \
 		? OSAtomicCompareAndSwap64(old, new, &var) \
