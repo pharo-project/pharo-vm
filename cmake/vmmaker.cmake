@@ -124,10 +124,10 @@ if(GENERATE_SOURCES)
             DEPENDS build_vmmaker_get_vm-build
             )
 
-    #Custom command that generates the vm source code from VMMaker into "out/build/XXXX/generated" folder
+    #Custom command that generates the vm source code from VMMaker into the generated folder
     add_custom_command(
         OUTPUT ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES}
-        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\'\"
+        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${GENERATED_SOURCE_DIR}\'\"
         DEPENDS build_vmmaker_get_image
         COMMENT "Generating VM files for flavour: ${FLAVOUR}")
     
