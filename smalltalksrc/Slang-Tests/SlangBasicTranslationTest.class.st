@@ -94,6 +94,40 @@ SlangBasicTranslationTest >> shouldGenerateDeadCode [
 	^ true
 ]
 
+{ #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testAssignBlockValueValueValue [
+
+	"Case:
+	
+	x := [ :a :b :c | a + b ] value: d value: e value: f
+	
+	expected result:
+	
+	x := d + e"
+
+	| translation |
+
+	translation := self translate: (TAssignmentNode variableNamed: 'x' expression: 
+		(TSendNode new
+			setSelector: #value:value:value:
+			receiver: (TStatementListNode new
+				setArguments: { 'a' . 'b' . 'c' }
+				statements: {
+					TSendNode new
+						setSelector: #+
+						receiver: (TVariableNode named: 'a')
+						arguments: { TVariableNode named: 'b' }.
+				})
+			arguments: {
+				TVariableNode named: 'd'.
+				TVariableNode named: 'e'.
+				TVariableNode named: 'f'. })).
+
+	self assert: translation trimBoth equals: '{
+	x = d + e;
+}'
+]
+
 { #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testAssignementAsExpression [
 
@@ -342,6 +376,32 @@ methodCallingMethodWithInlinePragma(void)
 		blockBody4();
 	}
 	return 0;
+}'
+]
+
+{ #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testBindVariableIn [
+
+	| node substitutionDict translation |
+
+	node := TStatementListNode new
+				statements: {
+					TSendNode new
+						setSelector: #+
+						receiver: (TVariableNode named: 'a')
+						arguments: { TVariableNode named: 'b' }.
+				}.
+
+	substitutionDict := {
+		'a' -> (TVariableNode named: 'x').
+		'b' -> (TVariableNode named: 'y').
+		'c' -> (TVariableNode named: 'z') } asDictionary.
+
+	node bindVariablesIn:  substitutionDict.
+	translation := self translate: node.
+	
+	self assert: translation trimBoth equals: '{
+	x + y;
 }'
 ]
 
@@ -1735,7 +1795,11 @@ SlangBasicTranslationTest >> testReturnBlockValueValueValue [
 
 	"Case:
 	
-	return [ :a :b :c | a + b ] value: d value: e value: f "
+	return [ :a :b :c | a + b ] value: d value: e value: f
+	
+	expected result:
+	
+	return d + e"
 
 	| translation |
 
@@ -1743,10 +1807,7 @@ SlangBasicTranslationTest >> testReturnBlockValueValueValue [
 		(TSendNode new
 			setSelector: #value:value:value:
 			receiver: (TStatementListNode new
-				setArguments: { 
-					TVariableNode named: 'a'.
-					TVariableNode named: 'b'.
-					TVariableNode named: 'c' }
+				setArguments: { 'a'. 'b'. 'c' }
 				statements: {
 					TSendNode new
 						setSelector: #+
@@ -1759,7 +1820,7 @@ SlangBasicTranslationTest >> testReturnBlockValueValueValue [
 				TVariableNode named: 'f'. })).
 
 	self assert: translation trimBoth equals: '{
-	return a + b;
+	return d + e;
 }'
 ]
 
