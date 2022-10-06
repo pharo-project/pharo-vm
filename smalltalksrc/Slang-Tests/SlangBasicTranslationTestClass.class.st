@@ -40,6 +40,15 @@ SlangBasicTranslationTestClass >> initializationOptions [
 ]
 
 { #category : #inline }
+SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragma [
+
+	self methodWithoutInlinePragma.
+	self methodWithInlinePragma.
+	self methodWithoutInlinePragmaAndBlock: [ self blockBody1. self blockBody2 ].
+	self methodWithInlinePragmaAndBlock: [ self blockBody3. self blockBody4 ].
+]
+
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodDefiningSingleExternVariable [
 
 	<var: 'foo' type: #'extern int' >
@@ -106,6 +115,20 @@ SlangBasicTranslationTestClass >> methodWithAnOptionPragma [
 ]
 
 { #category : #inline }
+SlangBasicTranslationTestClass >> methodWithInlinePragma [
+
+	<inline: true>
+	self bodyOfMethodWithInlinePragma
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodWithInlinePragmaAndBlock: aBlock [
+
+	<inline: true>
+	aBlock value
+]
+
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodWithLocalVariables [
 
 	<var: #foo declareC: 'float foo'>
@@ -167,6 +190,18 @@ SlangBasicTranslationTestClass >> methodWithVolatilePragma [
 
 	<volatile>
 	
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodWithoutInlinePragma [
+
+	self bodyOfMethodWithoutInlinePragma.
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodWithoutInlinePragmaAndBlock: aBlock [
+
+	aBlock value
 ]
 
 { #category : #inline }

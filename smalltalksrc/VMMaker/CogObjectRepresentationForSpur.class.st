@@ -1296,13 +1296,13 @@ CogObjectRepresentationForSpur >> genPrimitiveIntegerAtPut [
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoad: accessedElementByteSize fromBytesWith: aBlock [
-	<inline: true>
+
 	^ self genPrimitiveLoad: accessedElementByteSize fromBytesWith: aBlock needsToTrap: false
 ]
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoad: accessedElementByteSize fromBytesWith: aBlock needsToTrap: needsToTrap [
-	<inline: true>
+
 	| nSlotsOrBytesReg jumpBadIndex formatReg jumpIsPointers jumpOutOfBounds jumpSmaller jumpImmediate |
 	nSlotsOrBytesReg := ClassReg.
 	
@@ -1538,13 +1538,13 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadFloat64FromExternalAddress [
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadFromExternalAddressWith: aBlock [
-	<inline: true>
+
 	^ self genPrimitiveLoadFromExternalAddressWith: aBlock needsToTrap: false
 ]
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadFromExternalAddressWith: aBlock needsToTrap: needsToTrap [
-	<inline: true>
+
 	| jumpBadIndex jumpImmediate jumpNonExternalAddress |
 
 	cogit genLoadArgAtDepth: 0 into: Arg0Reg.
@@ -1746,13 +1746,13 @@ CogObjectRepresentationForSpur >> genPrimitiveSize [
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStore: accessedElementByteSize intoBytesWith: aBlock [
-	<inline: true>
+
 	^ self genPrimitiveStore: accessedElementByteSize intoBytesWith: aBlock needsToTrap: false
 ]
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStore: accessedElementByteSize intoBytesWith: aBlock needsToTrap: needsToTrap [
-	<inline: true>
+
 	| nSlotsOrBytesReg jumpBadIndex formatReg jumpIsPointers jumpOutOfBounds jumpSmaller jumpImmediate destPointerRegister |
 	nSlotsOrBytesReg := ClassReg.
 	destPointerRegister := ClassReg.
@@ -2073,13 +2073,13 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreInt8IntoExternalAddress [
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreIntoExternalAddressWith: aBlock [
-	<inline: true>
+
 	^ self genPrimitiveStoreIntoExternalAddressWith: aBlock needsToTrap: false
 ]
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreIntoExternalAddressWith: aBlock needsToTrap: needsToTrap [
-	<inline: true>
+
 	| jumpBadIndex jumpNonExternalAddress jumpImmediate destPointerRegister |
 	destPointerRegister := ClassReg.
 

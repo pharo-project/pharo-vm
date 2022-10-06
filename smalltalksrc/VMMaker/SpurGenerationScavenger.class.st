@@ -193,7 +193,7 @@ SpurGenerationScavenger >> addToWeakList: weakCorpse [
 { #category : #'weakness and ephemerality' }
 SpurGenerationScavenger >> allFutureSpaceEntitiesDo: aBlock [
 	"Enumerate all future space objects, including free objects."
-	<inline: true>
+
 	| prevObj prevPrevObj objOop limit |
 	prevPrevObj := prevObj := nil.
 	objOop := manager objectStartingAt: futureSpace start.

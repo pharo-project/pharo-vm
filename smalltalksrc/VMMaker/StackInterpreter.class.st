@@ -15893,7 +15893,7 @@ StackInterpreter >> unknownBytecode [
 
 { #category : #'sista bytecodes' }
 StackInterpreter >> unknownInlinePrimitive [
-	<inline: true> "Should be inlined everywhere to access localIP"
+	<inline: #always> "Should be inlined everywhere to access localIP"
 	instructionPointer := instructionPointer - 3.
 	self respondToUnknownBytecode
 ]

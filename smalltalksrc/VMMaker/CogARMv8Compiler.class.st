@@ -4469,7 +4469,6 @@ CogARMv8Compiler >> is9BitValue: originalConstant ifTrue: aTrueBlock ifFalse: aF
 	
 	| constant |
 	
-	<inline: true>
 	<var: #constant type: 'sqInt'>
 	
 	"This is needed to force the type conversion in an inlined function.
@@ -5719,7 +5718,7 @@ CogARMv8Compiler >> rorSize: is64bits sourceRegister: sourceRegister rotationBit
 
 { #category : #testing }
 CogARMv8Compiler >> rotateable8bitBitwiseImmediate: constant ifTrue: trueAlternativeBlock ifFalse: falseAlternativeBlock [
-	<inline: true>
+
 	"Invoke trueAlternativeBlock with shift, value and inverted if constant can be represented
 	 by a possibly rotated 8-bit constant, otherwise invoke falseAlternativeBlock. For data
 	 processing operands, there is the immediate shifter_operand variant,  where an 8 bit value
@@ -5745,7 +5744,7 @@ CogARMv8Compiler >> rotateable8bitBitwiseImmediate: constant ifTrue: trueAlterna
 
 { #category : #testing }
 CogARMv8Compiler >> rotateable8bitImmediate: constant ifTrue: trueAlternativeBlock ifFalse: falseAlternativeBlock [
-	<inline: true>
+
 	"For data processing operands, there is the immediate shifter_operand variant, 
 	 where an 8 bit value is ring shifted _right_ by i.
 	 This is only suitable for quick constants(Cq), which won't change."
@@ -5761,7 +5760,7 @@ CogARMv8Compiler >> rotateable8bitImmediate: constant ifTrue: trueAlternativeBlo
 
 { #category : #testing }
 CogARMv8Compiler >> rotateable8bitSignedImmediate: constant ifTrue: trueAlternativeBlock ifFalse: falseAlternativeBlock [
-	<inline: true>
+
 	"Invoke trueAlternativeBlock with shift, value and negated if constant can be represented
 	 by a possibly rotated 8-bit constant, otherwise invoke falseAlternativeBlock. For data
 	 processing operands, there is the immediate shifter_operand variant,  where an 8 bit value
@@ -5787,7 +5786,7 @@ CogARMv8Compiler >> rotateable8bitSignedImmediate: constant ifTrue: trueAlternat
 CogARMv8Compiler >> saveAndRestoreLinkRegAround: aBlock [
 	"If the processor's ABI includes a link register, generate instructions
 	 to save and restore it around aBlock, which is assumed to generate code."
-	<inline: true>
+
 	| inst |
 	inst := cogit PushR: LinkReg.
 	aBlock value.
@@ -5860,7 +5859,7 @@ CogARMv8Compiler >> shiftSetsConditionCodesFor: aConditionalJumpOpcode [
 
 { #category : #testing }
 CogARMv8Compiler >> shiftable16bitImmediate: constant ifTrue: trueAlternativeBlock ifFalse: falseAlternativeBlock [
-	<inline: true>
+
 	"For data processing operands, there is the immediate shifter_operand variant, 
 	 where an 16 bit value is left shifted by i.
 	 This is only suitable for quick constants(Cq), which won't change."

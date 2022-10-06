@@ -3255,29 +3255,31 @@ Cogit >> allMethodsHaveCorrectHeader [
 
 { #category : #initialization }
 Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes [
+
 	"Allocate the various arrays needed to compile abstract instructions.
 	 Notionally we only need as many fixups as there are bytecodes.  But we
 	 reuse fixups to record pc-dependent instructions in generateInstructionsAt:
 	 and so need at least as many as there are abstract opcodes."
+
 	<inline: true>
-	
-	self ensureAndClearAbstractOpcodes.	
+	self ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes.
 	self zeroOpcodeIndexForNewOpcodes.
 	labelCounter := 0
 ]
 
 { #category : #initialization }
 Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes ifFail: failBlock [
+
 	"Allocate the various arrays needed to compile abstract instructions, failing if the size
 	 needed is considered too high.  Notionally we only need as many fixups as there are
 	 bytecodes.  But we reuse fixups to record pc-dependent instructions in
 	 generateInstructionsAt: and so need at least as many as there are abstract opcodes."
+
 	<inline: true>
+	numberOfAbstractOpcodes > MaxNumberOfAbstractOpcodes ifTrue: [ 
+		^ failBlock value ].
 
-	numberOfAbstractOpcodes > MaxNumberOfAbstractOpcodes ifTrue:
-		[^failBlock value].
-
-	self ensureAndClearAbstractOpcodes.
+	self ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes.
 
 	self zeroOpcodeIndexForNewOpcodes.
 	labelCounter := 0
@@ -6145,15 +6147,11 @@ Cogit >> enableCodeZoneWrite [
 { #category : #'code generation' }
 Cogit >> enableCodeZoneWriteDuring: codeGenerationBlock [ 
 
-	<inline: true>
-
 	self enableCodeZoneWriteDuring: codeGenerationBlock flushingCacheWith: [  ]
 ]
 
 { #category : #'code generation' }
 Cogit >> enableCodeZoneWriteDuring: codeGenerationBlock flushingCacheWith: flushBlock [
-
-	<inline: true>
 
 	self enableCodeZoneWrite.
 	codeGenerationBlock value.
@@ -6192,14 +6190,18 @@ Cogit >> endPCOf: aMethod [
 ]
 
 { #category : #initialization }
-Cogit >> ensureAndClearAbstractOpcodes [
+Cogit >> ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes [
 
-	| opcodeBytes fixupBytes allocBytes |
-	numAbstractOpcodes := MaxNumberOfAbstractOpcodes.
-	opcodeBytes := (self sizeof: CogAbstractInstruction) * numAbstractOpcodes.
-	fixupBytes := (self sizeof: CogBytecodeFixup) * numAbstractOpcodes.
+	| opcodeBytes fixupBytes allocBytes clearFixupsBytes clearOpcodesBytes|
+	numAbstractOpcodes := numberOfAbstractOpcodes.
+	
+	opcodeBytes := (self sizeof: CogAbstractInstruction) * MaxNumberOfAbstractOpcodes.
+	fixupBytes := (self sizeof: CogBytecodeFixup) * MaxNumberOfAbstractOpcodes.
 	allocBytes := opcodeBytes + fixupBytes.
 	
+	clearOpcodesBytes := (self sizeof: CogAbstractInstruction) * numberOfAbstractOpcodes.
+	clearFixupsBytes := (self sizeof: CogBytecodeFixup) * numberOfAbstractOpcodes.
+		
 	self
 		cCode:
 			[abstractOpcodes 
@@ -6207,7 +6209,8 @@ Cogit >> ensureAndClearAbstractOpcodes [
 					abstractOpcodes := self malloc: allocBytes.
 					fixups := (abstractOpcodes asUnsignedInteger + opcodeBytes) asVoidPointer].
 				
-			 self b: abstractOpcodes zero: allocBytes]
+			 self b: abstractOpcodes zero: clearOpcodesBytes.
+			 self b: fixups zero: clearFixupsBytes]
 		inSmalltalk:
 			[abstractOpcodes := CArrayAccessor on: ((1 to: numAbstractOpcodes) collect: [:ign| CogCompilerClass for: self]).
 			 fixups := CArrayAccessor on: ((1 to: numAbstractOpcodes) collect: [:ign| self bytecodeFixupClass for: self])].
@@ -6245,7 +6248,7 @@ Cogit >> enterCogCodePopReceiver [
 Cogit >> entryCacheTagAndCouldBeObjectAt: mcpc annotation: annotation into: trinaryBlock [
 	"Evaluate trinaryBlock with the entryPoint, inline cache tag and whether the cache
 	 tag could be an object, for the send at mcpc with annotation annotation."
-	<inline: true>
+
 	| cacheTag entryPoint tagCouldBeObj |
 	cacheTag := backEnd inlineCacheTagAt: mcpc asInteger.
 	entryPoint := backEnd callTargetFromReturnAddress: mcpc asInteger.
@@ -8995,7 +8998,7 @@ Cogit >> lookup: selector for: receiver methodAndErrorSelectorInto: binaryBlock 
 	 and evaluate binaryBlock with the MNU method, cogged if appropriate..  If not found
 	 due to cannot interpret, evaluate binaryBlock with a nil method and the error selector."
 	| methodOrSelectorIndex |
-	<inline: true>
+
 	methodOrSelectorIndex := coInterpreter
 									lookupOrdinary: selector
 									receiver: receiver.
@@ -10214,7 +10217,7 @@ Cogit >> nextBytecodePCFor: descriptor exts: nExts [
 { #category : #'bytecode generator support' }
 Cogit >> nextDescriptorExtensionsAndNextPCInto: aQuaternaryBlock [
 	"Peek ahead and deliver the next descriptor, extension bytes and next pc."
-	<inline: true>
+
 	| savedB0 savedB1 savedB2 savedB3 savedEA savedEB savedNEB descriptor bcpc |
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	descriptor := self generatorAt: byte0.
@@ -10308,7 +10311,7 @@ Cogit >> offset: aClass of: fieldSymbol [
 Cogit >> offsetAndSendTableFor: entryPoint annotation: annotation into: binaryBlock [
 	"Find the relevant sendTable for a linked-send to entryPoint.  Do this based on the
 	 annotation.  c.f. annotationForSendTable:"
-	<inline: true>
+
 	| offset sendTable |
 	<var: #sendTable type: #'sqInt *'>
 	annotation = IsSendCall ifTrue:
@@ -11851,7 +11854,7 @@ Cogit >> subsequentPrototypeMethodOop [
 Cogit >> targetMethodAndSendTableFor: entryPoint annotation: annotation into: binaryBlock [
 	"Evaluate binaryBlock with the targetMethod and relevant send table for a linked-send
 	 to entryPoint.  Do so based on the alignment of entryPoint."
-	<inline: true>
+
 	<var: #targetMethod type: #'CogMethod *'>
 
 	self offsetAndSendTableFor: entryPoint
