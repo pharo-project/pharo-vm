@@ -270,7 +270,7 @@ CogObjectRepresentationFor32BitSpur >> genGetSizeOf: sourceReg into: destReg for
 	| jumpNotIndexable
 	  jumpBytesDone jumpShortsDone jumpArrayDone jump32BitLongsDone jump64BitLongsDone
 	  jumpIsBytes jumpHasFixedFields jumpIsShorts jumpIs64BitLongs jumpIsContext  |
-	<inline: true>
+
 	"c.f. StackInterpreter>>stSizeOf: SpurMemoryManager>>lengthOf:format: fixedFieldsOf:format:length:"
 
 	"formatReg := self formatOf: sourceReg"

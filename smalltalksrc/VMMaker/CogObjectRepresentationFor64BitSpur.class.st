@@ -62,7 +62,7 @@ CogObjectRepresentationFor64BitSpur >> allocateCounters: nCounters [
 
 { #category : #'in-line cacheing' }
 CogObjectRepresentationFor64BitSpur >> bitAndByteOffsetOfIsFullBlockBitInto: aBlock [
-	<inline: true>
+
 	"This supplies the bitmask for the isFullBlock bit, and the offset of the byte containing
 	 that bit in a CogMethod header to aBlock.  We don't have named variables holding this
 	 offset.  The following assert tests whether the values are correct by creating a surrogate
@@ -598,7 +598,7 @@ CogObjectRepresentationFor64BitSpur >> genGetSizeOf: sourceReg into: destReg for
 	| jumpNotIndexable
 	  jumpBytesDone jumpShortsDone jumpArrayDone jump32BitLongsDone jump64BitLongsDone
 	  jumpIsBytes jumpHasFixedFields jumpIsShorts jumpIs32BitLongs jumpIsContext  |
-	<inline: true>
+
 	"c.f. StackInterpreter>>stSizeOf: SpurMemoryManager>>lengthOf:format: fixedFieldsOf:format:length:"
 
 	"formatReg := self formatOf: sourceReg"
