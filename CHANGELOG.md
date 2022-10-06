@@ -2,6 +2,11 @@
 
 I am a changelog... do not wait too much from me :D
 
+## v9.0.20
+- Fixing a performance regression on the allocation of opcodes and fix-ups. 
+	Cleaning only the ones that are going to be used.
+	Like this, this version has the same speed than before when allocating in the stack.
+
 ## v9.0.19
 - Correctly handling the encoding of the command line arguments of the VM (Windows)
 - Allocating the opcodes and fixup structs only once and reusing them (Reducing risk of C Stack Overflow)
