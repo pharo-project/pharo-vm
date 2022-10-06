@@ -609,8 +609,6 @@ Class {
 		'statGCEndUsecs',
 		'statGrowMemory',
 		'statIGCDeltaUsecs',
-		'statIncrGCUsecs',
-		'statIncrGCs',
 		'statMarkCount',
 		'statRootTableCount',
 		'statRootTableOverflows',
@@ -6242,9 +6240,9 @@ SpurMemoryManager >> initialize [
 	checkForLeaks := 0.
 	needGCFlag := signalLowSpace := marking := false.
 	becomeEffectsFlags := gcPhaseInProgress := 0.
-	statScavenges := statIncrGCs := statFullGCs := 0.
+	statScavenges := statFullGCs := 0.
 	statMaxAllocSegmentTime := 0.
-	statMarkUsecs := statSweepUsecs := statScavengeGCUsecs := statIncrGCUsecs := statFullGCUsecs := statCompactionUsecs := statGCEndUsecs := gcSweepEndUsecs := 0.
+	statMarkUsecs := statSweepUsecs := statScavengeGCUsecs := statFullGCUsecs := statCompactionUsecs := statGCEndUsecs := gcSweepEndUsecs := 0.
 	statSGCDeltaUsecs := statIGCDeltaUsecs := statFGCDeltaUsecs := 0.
 	statGrowMemory := statShrinkMemory := statRootTableCount := statAllocatedBytes := 0.
 	statRootTableOverflows := statMarkCount := statCompactPassCount := statCoalesces := 0.
@@ -11545,16 +11543,6 @@ SpurMemoryManager >> statIGCDeltaUsecs [
 ]
 
 { #category : #accessing }
-SpurMemoryManager >> statIncrGCUsecs [
-	^statIncrGCUsecs
-]
-
-{ #category : #accessing }
-SpurMemoryManager >> statIncrGCs [
-	^statIncrGCs
-]
-
-{ #category : #accessing }
 SpurMemoryManager >> statMarkCount [
 	^statMarkCount
 ]
@@ -11581,9 +11569,8 @@ SpurMemoryManager >> statMkFwdCount [
 
 { #category : #accessing }
 SpurMemoryManager >> statNumGCs [
-	"Part of InterpreterProxy's 1.14 API"
 	<export: true>
-	^statScavenges + statIncrGCs + statFullGCs
+	^statScavenges + statFullGCs
 ]
 
 { #category : #accessing }
