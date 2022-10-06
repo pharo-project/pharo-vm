@@ -2084,18 +2084,6 @@ CogVMSimulator >> primitiveObjectAt [
 	^super primitiveObjectAt
 ]
 
-{ #category : #'object access primitives' }
-CogVMSimulator >> primitiveObjectAtPut [
-	| newValue |
-	newValue := self stackValue: 0.
-	((self stackValue: 1) = ConstOne
-	 and: [(objectMemory isIntegerObject: newValue) not
-		   or: [MULTIPLEBYTECODESETS not
-			and: [(objectMemory integerValueOf: newValue) < 0]]]) ifTrue:
-		[self halt].
-	^super primitiveObjectAtPut
-]
-
 { #category : #'debugging traps' }
 CogVMSimulator >> primitiveObjectPointsTo [
 	"self halt."
@@ -2196,8 +2184,6 @@ CogVMSimulator >> printCurrentBytecodeOn: aStream [
 	| code |
 	code := currentBytecode radix: 16.
 	aStream newLine; print: instructionPointer - method - 3; tab.
-	bytecodeSetSelector > 0 ifTrue:
-		[aStream nextPutAll: 'ALT '].
 	aStream
 		nextPut: (code size < 2
 					ifTrue: [$0]

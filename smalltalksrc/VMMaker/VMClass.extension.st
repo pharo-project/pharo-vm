@@ -35,7 +35,6 @@ VMClass class >> initializeMiscConstants [
 
 	SistaVM := InitializationOptions at: #SistaVM ifAbsentPut: [false].
 	TempVectReadBarrier := InitializationOptions at: #TempVectReadBarrier ifAbsentPut: [false].
-	MULTIPLEBYTECODESETS := InitializationOptions at: #MULTIPLEBYTECODESETS ifAbsentPut: [false].
 	"Simulation only; on by default..."
 	CloneOnGC := InitializationOptions at: #CloneOnGC ifAbsentPut: [true].
 	CloneOnScavenge := InitializationOptions at: #CloneOnScavenge ifAbsentPut: [true].

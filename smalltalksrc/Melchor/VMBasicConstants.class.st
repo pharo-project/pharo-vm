@@ -33,7 +33,6 @@ Class {
 		'HashMultiplyConstant',
 		'HashMultiplyMask',
 		'IMMUTABILITY',
-		'MULTIPLEBYTECODESETS',
 		'NewspeakVM',
 		'PharoVM',
 		'PrimErrBadArgument',

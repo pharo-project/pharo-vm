@@ -848,21 +848,19 @@ Cogit class >> initializeAnnotationConstants [
 
 { #category : #'class initialization' }
 Cogit class >> initializeBytecodeTable [
+
 	"SimpleStackBasedCogit initializeBytecodeTableWith: Dictionary new"
+
 	"StackToRegisterMappingCogit initializeBytecodeTableWith: Dictionary new"
 
 	| initializer |
 	BytecodeSetHasDirectedSuperSend := BytecodeSetHasExtensions := false.
 	initializer := InitializationOptions
-					at: #bytecodeTableInitializer
-					ifAbsent:
-						[MULTIPLEBYTECODESETS
-									ifTrue: [self error]
-									ifFalse: [#initializeBytecodeTableForSistaV1]].
+		               at: #bytecodeTableInitializer
+		               ifAbsent: [ #initializeBytecodeTableForSistaV1 ].
 	"Now make sure all classes in the hierarchy have initialized to the same bytecode table."
-	(self withAllSuperclasses copyUpTo: Cogit) reverseDo: "i.e. exclude Cogit"
-		[:cogitClass|
-		 cogitClass perform: initializer]
+	(self withAllSuperclasses copyUpTo: Cogit) reverseDo: [ :cogitClass | "i.e. exclude Cogit" 
+		cogitClass perform: initializer ]
 ]
 
 { #category : #'class initialization' }
@@ -3110,7 +3108,7 @@ Cogit >> addToMap: annotation instruction: instruction byte: byte at: address fo
 				 instruction printStateOn: s.
 				 s space.
 				 bytecode := objectMemory fetchByte: instruction bcpc ofObject: methodObj.
-				 bytecode := bytecode + (self bytecodeSetOffsetForHeader: methodHeader).
+				 bytecode := bytecode.
 				 (self generatorAt: bytecode) printStateOn: s.
 				 s cr; flush]]]
 ]
@@ -3532,32 +3530,6 @@ Cogit >> blockDispatchTargetsFor: cogMethod perform: binaryFunction arg: arg [
 	^0
 ]
 
-{ #category : #disassembly }
-Cogit >> blockStartPcsIn: aMethod [
-	"Answer the start bytecopde pcs in a method in compilation order, i.e. depth-first.
-	 Blocks must occur in pc/depth-first order for binary tree block dispatch to work."
-	| startpcs pc latestContinuation end descriptor byte bsOffset nExts |
-	<doNotGenerate>
-	startpcs := OrderedCollection new.
-	startpcs add: (pc := latestContinuation := coInterpreter startPCOfMethod: aMethod).
-	end := objectMemory numBytesOf: aMethod.
-	bsOffset := self bytecodeSetOffsetFor: aMethod.
-	nExts := 0.
-	[pc <= end] whileTrue:
-		[byte := objectMemory fetchByte: pc ofObject: aMethod.
-		 descriptor := self generatorAt: byte + bsOffset.
-		 (descriptor isReturn
-		  and: [pc >= latestContinuation]) ifTrue:
-			[end := pc].
-		 descriptor isBranch ifTrue:
-			[| targetPC |
-			 targetPC := self latestContinuationPCFor: descriptor at: pc exts: nExts in: aMethod.
-			 latestContinuation := latestContinuation max: targetPC].
-		 pc := pc + descriptor numBytes.
-		 nExts := descriptor isExtension ifTrue: [nExts + 1] ifFalse: [0]].
-	^startpcs
-]
-
 { #category : #'simulation only' }
 Cogit >> breakAt: address [
 	((breakPC isBreakpointFor: address)
@@ -3628,30 +3600,6 @@ Cogit >> bytecodePCFor: mcpc startBcpc: startbcpc in: cogMethod [
 		bcpc: startbcpc
 		performUntil: #find:IsBackwardBranch:Mcpc:Bcpc:MatchingMcpc:
 		arg: mcpc asVoidPointer
-]
-
-{ #category : #initialization }
-Cogit >> bytecodeSetOffsetFor: aMethodObj [
-	<inline: true>
-	^self
-		cppIf: MULTIPLEBYTECODESETS
-		ifTrue:
-			[(coInterpreter methodUsesAlternateBytecodeSet: aMethodObj)
-				ifTrue: [256]
-				ifFalse: [0]]
-		ifFalse: [0]
-]
-
-{ #category : #initialization }
-Cogit >> bytecodeSetOffsetForHeader: aMethodHeader [
-	<inline: true>
-	^self
-		cppIf: MULTIPLEBYTECODESETS
-		ifTrue:
-			[(objectMemory headerIndicatesAlternateBytecodeSet: aMethodHeader)
-				ifTrue: [256]
-				ifFalse: [0]]
-		ifFalse: [0]
 ]
 
 { #category : #'simulation only' }
@@ -6152,17 +6100,16 @@ Cogit >> enableCodeZoneWriteDuring: codeGenerationBlock flushingCacheWith: flush
 { #category : #'compiled methods' }
 Cogit >> endPCOf: aMethod [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
-	| pc end latestContinuation descriptor prim distance targetPC byte bsOffset nExts |
+	| pc end latestContinuation descriptor prim distance targetPC byte nExts |
 	pc := latestContinuation := coInterpreter startPCOfMethod: aMethod.
 	(prim := coInterpreter primitiveIndexOf: aMethod) > 0 ifTrue:
 		[(coInterpreter isQuickPrimitiveIndex: prim) ifTrue:
 			[^pc - 1]].
-	bsOffset := self bytecodeSetOffsetFor: aMethod.
 	nExts := 0.
 	end := objectMemory numBytesOf: aMethod.
 	[pc <= end] whileTrue:
 		[byte := objectMemory fetchByte: pc ofObject: aMethod.
-		descriptor := self generatorAt: byte + bsOffset.
+		descriptor := self generatorAt: byte.
 		(descriptor isReturn
 		 and: [pc >= latestContinuation]) ifTrue:
 			[end := pc].
@@ -9081,7 +9028,7 @@ Cogit >> mapFor: cogMethod bcpc: startbcpc performUntil: functionSymbol arg: arg
 	<var: #arg type: #'void *'>
 	<inline: true>
 	| isInBlock mcpc bcpc endbcpc map mapByte homeMethod aMethodObj result
-	  latestContinuation byte descriptor bsOffset nExts annotation |
+	  latestContinuation byte descriptor nExts annotation |
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	<var: #homeMethod type: #'CogMethod *'>
 
@@ -9112,7 +9059,6 @@ Cogit >> mapFor: cogMethod bcpc: startbcpc performUntil: functionSymbol arg: arg
 	 latestContinuation := startbcpc.
 	 aMethodObj := homeMethod methodObject.
 	 endbcpc := (objectMemory numBytesOf: aMethodObj) - 1.
-	 bsOffset := self bytecodeSetOffsetForHeader: homeMethod methodHeader.
 	"If the method has a primitive, skip it and the error code store, if any;
 	 Logically. these come before the stack check and so must be ignored."
 	 bcpc := bcpc + (self deltaToSkipPrimAndErrorStoreIn: aMethodObj
@@ -9135,7 +9081,7 @@ Cogit >> mapFor: cogMethod bcpc: startbcpc performUntil: functionSymbol arg: arg
 					  and: [(mapByte := objectMemory byteAt: map - 1) >> AnnotationShift = IsAnnotationExtension]) ifTrue:
 						[annotation := annotation + (mapByte bitAnd: DisplacementMask).
 						 map := map - 1].
-					 [byte := (objectMemory fetchByte: bcpc ofObject: aMethodObj) + bsOffset.
+					 [byte := objectMemory fetchByte: bcpc ofObject: aMethodObj.
 					  descriptor := self generatorAt: byte.
 					  isInBlock
 						ifTrue: [bcpc >= endbcpc ifTrue: [^0]]

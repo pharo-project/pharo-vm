@@ -782,8 +782,6 @@ CoInterpreter >> assertValidExecutionPointe: lip r: lifp s: lisp imbar: inInterp
 		ifTrue:
 			[self assert: (self isMachineCodeFrame: lifp) not l: ln.
 			 self assert: method = methodField l: ln.
-			 self cppIf: MULTIPLEBYTECODESETS
-				ifTrue: [self assert: (self methodUsesAlternateBytecodeSet: method) = (bytecodeSetSelector = 256) l: ln].
 			 (self asserta: (objectMemory cheapAddressCouldBeInHeap: methodField) l: ln) ifTrue:
 				[theIP := lip = cogit ceReturnToInterpreterPC
 							ifTrue: [self iframeSavedIP: lifp]

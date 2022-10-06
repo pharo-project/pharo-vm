@@ -315,7 +315,6 @@ Class {
 	#superclass : #InterpreterPrimitives,
 	#instVars : [
 		'currentBytecode',
-		'bytecodeSetSelector',
 		'stackLimit',
 		'stackPage',
 		'stackPages',
@@ -547,12 +546,6 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		as: #'StackPage *'
 		in: aCCodeGenerator.
 	aCCodeGenerator removeVariable: 'stackPages'.  "this is an implicit receiver in the translated code."
-	"This defines bytecodeSetSelector as 0 if MULTIPLEBYTECODESETS
-	 is not defined, for the benefit of the interpreter on slow machines."
-	aCCodeGenerator addConstantForBinding: (self bindingOf: #MULTIPLEBYTECODESETS).
-	MULTIPLEBYTECODESETS == false ifTrue:
-		[aCCodeGenerator
-			removeVariable: 'bytecodeSetSelector'].
 	BytecodeSetHasExtensions == false ifTrue:
 		[aCCodeGenerator
 			removeVariable: 'extA';
@@ -641,17 +634,16 @@ StackInterpreter class >> initializeAssociationIndex [
 
 { #category : #initialization }
 StackInterpreter class >> initializeBytecodeTable [
+
 	"StackInterpreter initializeBytecodeTable"
 
 	VMBytecodeConstants falsifyBytecodeSetFlags: InitializationOptions.
 	BytecodeSetHasDirectedSuperSend := false.
 
-	(InitializationOptions at: #bytecodeTableInitializer ifAbsent: nil) ifNotNil:
-		[:initalizer| ^self perform: initalizer].
+	(InitializationOptions at: #bytecodeTableInitializer ifAbsent: nil) 
+		ifNotNil: [ :initalizer | ^ self perform: initalizer ].
 
-	^MULTIPLEBYTECODESETS
-		ifTrue: [self error]
-		ifFalse: [self initializeBytecodeTableForSistaV1]
+	^ self initializeBytecodeTableForSistaV1
 ]
 
 { #category : #initialization }
@@ -1497,20 +1489,20 @@ StackInterpreter class >> isStackAccessor: selector [
 
 { #category : #translation }
 StackInterpreter class >> mustBeGlobal: var [
+
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
 
-	^(super mustBeGlobal: var)
-	   or: [(self objectMemoryClass mustBeGlobal: var)
-	   or: [(#('interpreterProxy' 'interpreterVersion' 'inIOProcessEvents' 'sendWheelEvents'
-			'deferDisplayUpdates' 'extraVMMemory'
-			'showSurfaceFn' 'displayBits' 'displayWidth' 'displayHeight' 'displayDepth'
-			'desiredNumStackPages' 'desiredEdenBytes'
-			'breakLookupClassTag' 'breakSelector' 'breakSelectorLength' 'sendTrace' 'checkAllocFiller' 'checkedPluginName'
-			'reenterInterpreter' 'suppressHeartbeatFlag' 'ffiExceptionResponse'
-			'debugCallbackInvokes' 'debugCallbackPath' 'debugCallbackReturns') includes: var)
-	   or: [ "This allows slow machines to define bytecodeSetSelector as 0
-			to avoid the interpretation overhead."
-			MULTIPLEBYTECODESETS not and: [var = 'bytecodeSetSelector']]]]
+	^ (super mustBeGlobal: var) or: [ 
+		  (self objectMemoryClass mustBeGlobal: var) or: [ 
+			  #( 'interpreterProxy' 'interpreterVersion' 'inIOProcessEvents'
+			     'sendWheelEvents' 'deferDisplayUpdates' 'extraVMMemory'
+			     'showSurfaceFn' 'displayBits' 'displayWidth' 'displayHeight'
+			     'displayDepth' 'desiredNumStackPages' 'desiredEdenBytes'
+			     'breakLookupClassTag' 'breakSelector' 'breakSelectorLength'
+			     'sendTrace' 'checkAllocFiller' 'checkedPluginName'
+			     'reenterInterpreter' 'suppressHeartbeatFlag'
+			     'ffiExceptionResponse' 'debugCallbackInvokes'
+			     'debugCallbackPath' 'debugCallbackReturns' ) includes: var ] ]
 ]
 
 { #category : #translation }
@@ -1765,15 +1757,13 @@ StackInterpreter class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord ge
 	super writeVMHeaderTo: aStream bytesPerWord: bytesPerWord generator: aCCodeGenerator.
 	SistaVM ifTrue:
 		[aCCodeGenerator putDefineOf: #SistaVM as: 1 on: aStream].
-	MULTIPLEBYTECODESETS ifTrue:
-		[aCCodeGenerator putDefineOf: #MULTIPLEBYTECODESETS as: 1 on: aStream].
 	IMMUTABILITY ifTrue:
 		[aCCodeGenerator
 			putConditionalDefineOf: #IMMUTABILITY
 			as: 1
 			comment: 'Allow this to be overridden on the compiler command line'
 			on: aStream].
-	SistaVM | MULTIPLEBYTECODESETS | IMMUTABILITY ifTrue:
+	SistaVM | IMMUTABILITY ifTrue:
 		[aStream cr].
 	aCCodeGenerator putDefineOf: #STACKVM as: 1 on: aStream.
 	(InitializationOptions at: #SpurObjectMemory ifAbsent: false) ifTrue:
@@ -2255,9 +2245,7 @@ StackInterpreter >> assertValidExecutionPointe: lip r: lfp s: lsp imbar: inInter
 	self assert: ((self frameIsBlockActivation: lfp)
 				or: [(self pushedReceiverOrClosureOfFrame: lfp) = (self frameReceiver: lfp)])
 		l: ln.
-	self assert: method = (self frameMethod: lfp) l: ln.
-	self cppIf: MULTIPLEBYTECODESETS
-		ifTrue: [self assert: (self methodUsesAlternateBytecodeSet: method) = (bytecodeSetSelector = 256)  l: ln].
+	self assert: method = (self frameMethod: lfp) l: ln
 ]
 
 { #category : #'debug support' }
@@ -2647,67 +2635,64 @@ StackInterpreter >> booleanCheat: cond [
 
 { #category : #utilities }
 StackInterpreter >> booleanCheatFalse [
+
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
+
 	<sharedCodeInCase: #bytecodePrimGreaterThan>
 	| bytecode offset |
-
-	bytecode := self fetchByte.  "assume next bytecode is jumpIfFalse (99%)"
+	bytecode := self fetchByte. "assume next bytecode is jumpIfFalse (99%)"
 	self pop: 2.
-	(bytecode < 160 and: [bytecode > 151]) ifTrue:  "short jumpIfFalse"
-		[^self jump: bytecode - 151].
+	(bytecode < 160 and: [ bytecode > 151 ]) ifTrue: [ "short jumpIfFalse" 
+		^ self jump: bytecode - 151 ].
 
-	bytecode = 172 ifTrue:  "long jumpIfFalse"
-		[offset := self fetchByte.
-		^self jump: offset].
+	bytecode = 172 ifTrue: [ "long jumpIfFalse"
+		offset := self fetchByte.
+		^ self jump: offset ].
 
 	"not followed by a jumpIfFalse; (un)do instruction fetch and push boolean result"
-	self cppIf: MULTIPLEBYTECODESETS
-		ifTrue: [currentBytecode := bytecode + bytecodeSetSelector]
-		ifFalse: [currentBytecode := bytecode].
+	currentBytecode := bytecode.
 	self push: objectMemory falseObject
 ]
 
 { #category : #utilities }
 StackInterpreter >> booleanCheatFalseSistaV1 [
+
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
+
 	<sharedCodeInCase: #bytecodePrimGreaterThanSistaV1>
 	| bytecode offset |
-
-	bytecode := self fetchByte.  "assume next bytecode is jumpIfFalse (99%)"
+	bytecode := self fetchByte. "assume next bytecode is jumpIfFalse (99%)"
 	self pop: 2.
-	(bytecode < 199 and: [bytecode > 191]) ifTrue:  "short jumpIfFalse"
-		[^self jump: bytecode - 191].
+	(bytecode < 199 and: [ bytecode > 191 ]) ifTrue: [ "short jumpIfFalse" 
+		^ self jump: bytecode - 191 ].
 
-	bytecode = 239 ifTrue:  "long jumpIfFalse"
-		[offset := self fetchByte.
-		^self jump: offset].
+	bytecode = 239 ifTrue: [ "long jumpIfFalse"
+		offset := self fetchByte.
+		^ self jump: offset ].
 
 	"not followed by a jumpIfFalse; (un)do instruction fetch and push boolean result"
-	self cppIf: MULTIPLEBYTECODESETS
-		ifTrue: [currentBytecode := bytecode + bytecodeSetSelector]
-		ifFalse: [currentBytecode := bytecode].
+	currentBytecode := bytecode.
 	self push: objectMemory falseObject
 ]
 
 { #category : #utilities }
 StackInterpreter >> booleanCheatFalseV4 [
+
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
+
 	<sharedCodeInCase: #bytecodePrimGreaterThanV4>
 	| bytecode offset |
-
-	bytecode := self fetchByte.  "assume next bytecode is jumpIfFalse (99%)"
+	bytecode := self fetchByte. "assume next bytecode is jumpIfFalse (99%)"
 	self pop: 2.
-	(bytecode < 216 and: [bytecode > 207]) ifTrue:  "short jumpIfFalse"
-		[^self jump: bytecode - 207].
+	(bytecode < 216 and: [ bytecode > 207 ]) ifTrue: [ "short jumpIfFalse" 
+		^ self jump: bytecode - 207 ].
 
-	bytecode = 244 ifTrue:  "long jumpIfFalse"
-		[offset := self fetchByte.
-		^self jump: offset].
+	bytecode = 244 ifTrue: [ "long jumpIfFalse"
+		offset := self fetchByte.
+		^ self jump: offset ].
 
 	"not followed by a jumpIfFalse; (un)do instruction fetch and push boolean result"
-	self cppIf: MULTIPLEBYTECODESETS
-		ifTrue: [currentBytecode := bytecode + bytecodeSetSelector]
-		ifFalse: [currentBytecode := bytecode].
+	currentBytecode := bytecode.
 	self push: objectMemory falseObject
 ]
 
@@ -2723,76 +2708,73 @@ StackInterpreter >> booleanCheatSistaV1: cond [
 
 { #category : #utilities }
 StackInterpreter >> booleanCheatTrue [
+
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
+
 	<sharedCodeInCase: #bytecodePrimLessThan>
 	| bytecode offset |
-
-	bytecode := self fetchByte.  "assume next bytecode is jumpIfFalse (99%)"
+	bytecode := self fetchByte. "assume next bytecode is jumpIfFalse (99%)"
 	self pop: 2.
-	(bytecode < 173 and: [bytecode > 151]) ifTrue:
-		[bytecode < 160 ifTrue: "short jumpIfFalse 152 - 159"
-			[^self fetchNextBytecode].
-		bytecode = 172 ifTrue: "long jumpIfFalse"
-			[self fetchByte.
-			^self fetchNextBytecode].
-		bytecode > 167 ifTrue: "long jumpIfTrue 168 - 171"
-			[offset := bytecode - 168 << 8 + self fetchByte.
-			^self jump: offset]].
+	(bytecode < 173 and: [ bytecode > 151 ]) ifTrue: [ 
+		bytecode < 160 ifTrue: [ "short jumpIfFalse 152 - 159" 
+			^ self fetchNextBytecode ].
+		bytecode = 172 ifTrue: [ "long jumpIfFalse"
+			self fetchByte.
+			^ self fetchNextBytecode ].
+		bytecode > 167 ifTrue: [ "long jumpIfTrue 168 - 171"
+			offset := bytecode - 168 << 8 + self fetchByte.
+			^ self jump: offset ] ].
 
 	"not followed by a jumpIfFalse; (un)do instruction fetch and push boolean result"
-	self cppIf: MULTIPLEBYTECODESETS
-		ifTrue: [currentBytecode := bytecode + bytecodeSetSelector]
-		ifFalse: [currentBytecode := bytecode].
+	currentBytecode := bytecode.
 	self push: objectMemory trueObject
 ]
 
 { #category : #utilities }
 StackInterpreter >> booleanCheatTrueSistaV1 [
+
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
+
 	<sharedCodeInCase: #bytecodePrimLessThanSistaV1>
 	| bytecode offset |
-
-	bytecode := self fetchByte.  "assume next bytecode is jumpIfFalse (99%)"
+	bytecode := self fetchByte. "assume next bytecode is jumpIfFalse (99%)"
 	self pop: 2.
-	bytecode >= 192 ifTrue:
-		[bytecode <= 199 ifTrue: "short jumpIfFalse 192 - 199"
-			[^self fetchNextBytecode].
-		bytecode = 239 ifTrue: "long jumpIfFalse"
-			[self fetchByte.
-			^self fetchNextBytecode].
-		bytecode = 238 ifTrue: "long jumpIfTrue 238"
-			[offset := self fetchByte.
-			^self jump: offset]].
+	bytecode >= 192 ifTrue: [ 
+		bytecode <= 199 ifTrue: [ "short jumpIfFalse 192 - 199" 
+			^ self fetchNextBytecode ].
+		bytecode = 239 ifTrue: [ "long jumpIfFalse"
+			self fetchByte.
+			^ self fetchNextBytecode ].
+		bytecode = 238 ifTrue: [ "long jumpIfTrue 238"
+			offset := self fetchByte.
+			^ self jump: offset ] ].
 
 	"not followed by a jumpIfFalse; (un)do instruction fetch and push boolean result"
-	self cppIf: MULTIPLEBYTECODESETS
-		ifTrue: [currentBytecode := bytecode + bytecodeSetSelector]
-		ifFalse: [currentBytecode := bytecode].
+	currentBytecode := bytecode.
 	self push: objectMemory trueObject
 ]
 
 { #category : #utilities }
 StackInterpreter >> booleanCheatTrueV4 [
+
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
+
 	<sharedCodeInCase: #bytecodePrimLessThanV4>
 	| bytecode offset |
-
-	bytecode := self fetchByte.  "assume next bytecode is jumpIfFalse (99%)"
+	bytecode := self fetchByte. "assume next bytecode is jumpIfFalse (99%)"
 	self pop: 2.
-	bytecode >= 208 ifTrue:
-		[bytecode <= 215 ifTrue: "short jumpIfFalse 208 - 215"
-			[^self fetchNextBytecode].
-		bytecode = 244 ifTrue: "long jumpIfFalse"
-			[self fetchByte.
-			^self fetchNextBytecode].
-		bytecode = 243 ifTrue: "long jumpIfTrue 243"
-			[offset := self fetchByte.
-			^self jump: offset]].
+	bytecode >= 208 ifTrue: [ 
+		bytecode <= 215 ifTrue: [ "short jumpIfFalse 208 - 215" 
+			^ self fetchNextBytecode ].
+		bytecode = 244 ifTrue: [ "long jumpIfFalse"
+			self fetchByte.
+			^ self fetchNextBytecode ].
+		bytecode = 243 ifTrue: [ "long jumpIfTrue 243"
+			offset := self fetchByte.
+			^ self jump: offset ] ].
 
 	"not followed by a jumpIfFalse; (un)do instruction fetch and push boolean result"
-	self cppIf: MULTIPLEBYTECODESETS
-		ifTrue: [currentBytecode := bytecode + bytecodeSetSelector]
-		ifFalse: [currentBytecode := bytecode].
+	currentBytecode := bytecode.
 	self push: objectMemory trueObject
 ]
 
@@ -4917,22 +4899,30 @@ StackInterpreter >> context: thisCntx hasSender: aContext [
 
 { #category : #'debug support' }
 StackInterpreter >> context: aContext hasValidInversePCMappingOf: theIP in: theFP [
+
 	"For asserts.  Check that theIP maps back correctly to the context's pc.
 	 The CallPrimitive bytecode presents a complication."
-	| pc encodedip |
+
 	<var: #theFP type: #'char *'>
-	pc := objectMemory fetchPointer: InstructionPointerIndex ofObject: aContext.
+	| pc encodedip |
+	pc := objectMemory
+		      fetchPointer: InstructionPointerIndex
+		      ofObject: aContext.
 	encodedip := self contextInstructionPointer: theIP frame: theFP.
 
-	^(objectMemory hasSpurMemoryManagerAPI or: [MULTIPLEBYTECODESETS])
-		ifTrue:
-			[pc = encodedip
-			or: [| methodHeader |
-				methodHeader := objectMemory methodHeaderOf: (objectMemory fetchPointer: MethodIndex ofObject: aContext).
-				(self methodHeaderHasPrimitive: methodHeader)
-				and: [(objectMemory integerValueOf: encodedip) - (objectMemory integerValueOf: pc)
-					= (self sizeOfCallPrimitiveBytecode: methodHeader)]]]
-		ifFalse: [pc = encodedip]
+	^ objectMemory hasSpurMemoryManagerAPI
+		  ifTrue: [ 
+			  pc = encodedip or: [ 
+				  | methodHeader |
+				  methodHeader := objectMemory methodHeaderOf:
+					                  (objectMemory
+						                   fetchPointer: MethodIndex
+						                   ofObject: aContext).
+				  (self methodHeaderHasPrimitive: methodHeader) and: [ 
+					  (objectMemory integerValueOf: encodedip)
+					  - (objectMemory integerValueOf: pc)
+					  = (self sizeOfCallPrimitiveBytecode: methodHeader) ] ] ]
+		  ifFalse: [ pc = encodedip ]
 ]
 
 { #category : #'frame access' }
@@ -6084,11 +6074,10 @@ StackInterpreter >> fetchInteger: fieldIndex ofObject: objectPointer [
 
 { #category : #'interpreter shell' }
 StackInterpreter >> fetchNextBytecode [
+
 	"This method fetches the next instruction (bytecode). Each bytecode method is responsible for fetching the next bytecode, preferably as early as possible to allow the memory system time to process the request before the next dispatch."
 
-	MULTIPLEBYTECODESETS
-		ifTrue: [currentBytecode := self fetchByte + bytecodeSetSelector]
-		ifFalse: [currentBytecode := self fetchByte]
+	currentBytecode := self fetchByte
 ]
 
 { #category : #'frame access' }
@@ -7191,13 +7180,16 @@ StackInterpreter >> getCogMethodCount [
 
 { #category : #'internal interpreter access' }
 StackInterpreter >> getCogVMFeatureFlags [
+
 	"Answer an array of flags indicating various optional features of the Cog VM.
-	 Bit 0: supports two bytecode sets (MULTIPLEBYTECODESETS)
+	 Bit 0: unused
 	 Bit 1: supports immutablity (IMMUTABILITY)
 	 Bit 2: suffers from a UNIX setitimer signal-based heartbeat"
-	^objectMemory integerObjectOf: (MULTIPLEBYTECODESETS ifTrue: [1] ifFalse: [0])
-									+ (IMMUTABILITY ifTrue: [2] ifFalse: [0])
-									+ (self cppIf: #'ITIMER_HEARTBEAT' ifTrue: [4] ifFalse: [0])
+
+	^ objectMemory integerObjectOf: (IMMUTABILITY
+			   ifTrue: [ 2 ]
+			   ifFalse: [ 0 ])
+		  + (self cppIf: #ITIMER_HEARTBEAT ifTrue: [ 4 ] ifFalse: [ 0 ])
 ]
 
 { #category : #'internal interpreter access' }
@@ -7792,7 +7784,6 @@ StackInterpreter >> initialize [
 	stackLimit := 0. "This is also the initialization flag for the stack system."
 	stackPage := overflowedPage := 0.
 	extraFramesToMoveOnOverflow := 0.
-	bytecodeSetSelector := 0.
 	highestRunnableProcessPriority := 0.
 	nextPollUsecs := 0.
 	nextWakeupUsecs := 0.
@@ -8777,10 +8768,9 @@ StackInterpreter >> isWriteMediatedContextInstVarIndex: index [
 
 { #category : #'jump bytecodes' }
 StackInterpreter >> jump: offset [
+
 	instructionPointer := instructionPointer + offset + 1.
-	self cppIf: MULTIPLEBYTECODESETS
-		ifTrue: [currentBytecode := (objectMemory byteAtPointer: instructionPointer) + bytecodeSetSelector]
-		ifFalse: [currentBytecode := objectMemory byteAtPointer: instructionPointer]
+	currentBytecode := objectMemory byteAtPointer: instructionPointer
 ]
 
 { #category : #'sista bytecodes' }
@@ -9189,16 +9179,14 @@ StackInterpreter >> longStoreAndPopTemporaryVariableBytecode [
 
 { #category : #'compiled methods' }
 StackInterpreter >> longStoreBytecodeForHeader: methodHeader [
-	"Answer the relevant long store temp bytecode, which indicates it has a primitive error code."
-	"234		11101010	i i i i i i i i	Store Temporary Variable #iiiiiiii"
-	"129 		10000001 jjkkkkkk 	Store (Receiver Variable, Temporary Location, Illegal, Literal Variable) [jj] #kkkkkk"
+
+	"Answer the relevant long store temp bytecode, which indicates it has a primitive error code.
+	234		11101010	i i i i i i i i	Store Temporary Variable #iiiiiiii
+	129 		10000001 jjkkkkkk 	Store (Receiver Variable, Temporary Location, Illegal, Literal Variable) [jj] #kkkkkk"
+
 	<api>
 	<inline: true>
-	^self cppIf: MULTIPLEBYTECODESETS
-		ifTrue: [(objectMemory headerIndicatesAlternateBytecodeSet: methodHeader)
-					ifTrue: [AltLongStoreBytecode]
-					ifFalse: [LongStoreBytecode]]
-		ifFalse: [LongStoreBytecode]
+	^ LongStoreBytecode
 ]
 
 { #category : #'stack bytecodes' }
@@ -10432,19 +10420,14 @@ StackInterpreter >> methodDictLinearSearchLimit: anInteger [
 
 { #category : #'compiled methods' }
 StackInterpreter >> methodHeaderHasPrimitive: methodHeader [
+
 	"Note: We now have 10 bits of primitive index, but they are in two places
 	 for temporary backward compatibility.  The time to unpack is negligible,
 	 since the derived primitive function pointer is stored in the method cache."
-	^objectMemory hasSpurMemoryManagerAPI
-		ifTrue: [self alternateHeaderHasPrimitiveFlag: methodHeader]
-		ifFalse:
-			[MULTIPLEBYTECODESETS
-				ifTrue:
-					[(objectMemory headerIndicatesAlternateBytecodeSet: methodHeader)
-						ifTrue: [self alternateHeaderHasPrimitiveFlag: methodHeader]
-						ifFalse: [methodHeader anyMask: V3PrimitiveBitsMask]]
-				ifFalse:
-					[methodHeader anyMask: V3PrimitiveBitsMask]]
+
+	^ objectMemory hasSpurMemoryManagerAPI
+		  ifTrue: [ self alternateHeaderHasPrimitiveFlag: methodHeader ]
+		  ifFalse: [ methodHeader anyMask: V3PrimitiveBitsMask ]
 ]
 
 { #category : #'frame access' }
@@ -11361,40 +11344,29 @@ StackInterpreter >> primitiveIndexOf: methodPointer [
 
 { #category : #'compiled methods' }
 StackInterpreter >> primitiveIndexOfMethod: theMethod header: methodHeader [
+
 	"Note: With the Squeak V3 format we now have 10 bits of primitive index, but they are
 	 in two places for temporary backward compatibility.  The time to unpack is negligible,
 	 since the derived primitive function pointer is stored in the method cache.  With the
 	 Spur format we assume a 3-byte CallPrimitive with a little-endian 16-bit primitive index."
+
 	<api>
 	<inline: true>
 	| firstBytecode |
-	^objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[(self alternateHeaderHasPrimitiveFlag: methodHeader)
-				ifTrue:
-					[firstBytecode := self firstBytecodeOfAlternateHeader: methodHeader method: theMethod.
-					 (objectMemory byteAt: firstBytecode + 1) + ((objectMemory byteAt: firstBytecode + 2) << 8)]
-				ifFalse:
-					[0]]
-		ifFalse:
-			[MULTIPLEBYTECODESETS
-				ifTrue:
-					[(objectMemory headerIndicatesAlternateBytecodeSet: methodHeader)
-						ifTrue:
-							[(self alternateHeaderHasPrimitiveFlag: methodHeader)
-								ifTrue:
-									[firstBytecode := self firstBytecodeOfAlternateHeader: methodHeader method: theMethod.
-									 (objectMemory byteAt: firstBytecode + 1) + ((objectMemory byteAt: firstBytecode + 2) << 8)]
-								ifFalse:
-									[0]]
-						ifFalse:
-							[| primBits |
-							 primBits := objectMemory integerValueOf: methodHeader.
-							 (primBits bitAnd: 16r1FF) + (primBits >> 19 bitAnd: 16r200)]]
-				ifFalse:
-					[| primBits |
-					 primBits := objectMemory integerValueOf: methodHeader.
-					 (primBits bitAnd: 16r1FF) + (primBits >> 19 bitAnd: 16r200)]]
+	^ objectMemory hasSpurMemoryManagerAPI
+		  ifTrue: [ 
+			  (self alternateHeaderHasPrimitiveFlag: methodHeader)
+				  ifTrue: [ 
+					  firstBytecode := self
+						                   firstBytecodeOfAlternateHeader: methodHeader
+						                   method: theMethod.
+					  (objectMemory byteAt: firstBytecode + 1)
+					  + ((objectMemory byteAt: firstBytecode + 2) << 8) ]
+				  ifFalse: [ 0 ] ]
+		  ifFalse: [ 
+			  | primBits |
+			  primBits := objectMemory integerValueOf: methodHeader.
+			  (primBits bitAnd: 16r1FF) + (primBits >> 19 bitAnd: 16r200) ]
 ]
 
 { #category : #'control primitives' }
@@ -11791,8 +11763,6 @@ StackInterpreter >> printDecodeMethodHeaderOop: methodHeaderOop [
 		[self print: ' largeFrame'].
 	(SistaVM and: [self isOptimizedMethodHeader: methodHeaderOop]) ifTrue:
 		[self print: ' optimized'].
-	(MULTIPLEBYTECODESETS and: [(objectMemory integerValueOf: methodHeaderOop) < 0]) ifTrue:
-		[self print: ' altSet'].
 
 	self print: ' nLits '; printNum: (objectMemory literalCountOfMethodHeader: methodHeaderOop);
 		print: ' nArgs '; printNum: (self argumentCountOfMethodHeader: methodHeaderOop);
@@ -13823,33 +13793,22 @@ StackInterpreter >> setMaxStacksToPrint: anInteger [
 
 { #category : #'internal interpreter access' }
 StackInterpreter >> setMethod: aMethodObj [
-	"Set the method and determine the bytecode set based on the method header's sign.
-	 If MULTIPLEBYTECODESETS then a negative header selects the alternate bytecode set.
-	 Conditionalizing the code on MULTIPLEBYTECODESETS allows the header sign bit to be
-	 used for other experiments."
+
+	"Set the method and determine the bytecode set based on the method header's sign."
+
 	<inline: true>
 	method := aMethodObj.
-	self assert: (objectMemory isOopCompiledMethod: method).
-	self cppIf: MULTIPLEBYTECODESETS
-		ifTrue: [bytecodeSetSelector := (self methodUsesAlternateBytecodeSet: method)
-											ifTrue: [256]
-											ifFalse: [0]]
+	self assert: (objectMemory isOopCompiledMethod: method)
 ]
 
 { #category : #'internal interpreter access' }
 StackInterpreter >> setMethod: aMethodObj methodHeader: methodHeader [
-	"Set the method and determine the bytecode set based on the method header's sign.
-	 If MULTIPLEBYTECODESETS then a negative header selects the alternate bytecode set.
-	 Conditionalizing the code on MULTIPLEBYTECODESETS allows the header sign bit to be
-	 used for other experiments."
+
+	"Set the method and determine the bytecode set based on the method header's sign."
+
 	<inline: true>
-	method := aMethodObj.
-	self assert: (objectMemory isOopCompiledMethod: method).
-	self assert: (objectMemory methodHeaderOf: method) = methodHeader.
-	self cppIf: MULTIPLEBYTECODESETS
-		ifTrue: [bytecodeSetSelector := (objectMemory headerIndicatesAlternateBytecodeSet: methodHeader)
-											ifTrue: [256]
-											ifFalse: [0]]
+	self setMethod: aMethodObj.
+	self assert: (objectMemory methodHeaderOf: method) = methodHeader
 ]
 
 { #category : #'compiled methods' }
@@ -14436,20 +14395,15 @@ StackInterpreter >> sistaMappedInlinePrimitive: primIndex [
 
 { #category : #'compiled methods' }
 StackInterpreter >> sizeOfCallPrimitiveBytecode: methodHeader [
-	"Answer the size of the CallPrimitive bytecode that may be used to store a method's primitive."
-	"NewsqueakV4:	249	11111001	iiiiiiii	jjjjjjjj	Call Primitive #iiiiiiii + (jjjjjjjj * 256)"
-	"SistaV1:		248	11111000 	iiiiiiii	mssjjjjj	Call Primitive #iiiiiiii + (  jjjjj * 256)"
-	"V3+Closures:	139	11101111	iiiiiiii	jjjjjjjj	Call Primitive #iiiiiiii + (jjjjjjjj * 256)"
+
+	"Answer the size of the CallPrimitive bytecode that may be used to store a method's primitive.
+	SistaV1:		248	11111000 	iiiiiiii	mssjjjjj	Call Primitive #iiiiiiii + (  jjjjj * 256)"
+
 	<api>
 	<inline: true>
-	^objectMemory hasSpurMemoryManagerAPI
-		ifTrue: [3]
-		ifFalse:
-			[MULTIPLEBYTECODESETS
-				ifTrue: [(objectMemory headerIndicatesAlternateBytecodeSet: methodHeader)
-							ifTrue: [3]
-							ifFalse: [0]]
-				ifFalse: [0]]
+	^ objectMemory hasSpurMemoryManagerAPI
+		  ifTrue: [ 3 ]
+		  ifFalse: [ 0 ]
 ]
 
 { #category : #'compiled methods' }

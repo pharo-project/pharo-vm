@@ -453,8 +453,6 @@ StackInterpreterSimulator >> dispatchOn: anInteger in: selectorArray [
 	The given integer must be between 0 and selectorArray size-1, inclusive.
 	For speed, no range test is done, since it is done by the at: operation.
 	Note that, unlike many other arrays used in the Interpreter, this method expect NO CArrayAccessor wrapping - it would duplicate the +1. Maybe this would be better updated to make it all uniform"
-	selectorArray == BytecodeTable ifTrue:
-		[self assert: (anInteger between: bytecodeSetSelector and: bytecodeSetSelector + 255)].
 	self perform: (selectorArray at: (anInteger + 1)).
 ]
 
@@ -1488,8 +1486,6 @@ StackInterpreterSimulator >> printCurrentBytecodeOn: aStream [
 	| code |
 	code := currentBytecode radix: 16.
 	aStream newLine; print: instructionPointer - method - 3; tab.
-	bytecodeSetSelector > 0 ifTrue:
-		[aStream nextPutAll: 'ALT '].
 	aStream
 		nextPut: (code size < 2
 					ifTrue: [$0]
