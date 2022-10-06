@@ -33,7 +33,6 @@ Class {
 		'HashMultiplyConstant',
 		'HashMultiplyMask',
 		'IMMUTABILITY',
-		'NewspeakVM',
 		'PharoVM',
 		'PrimErrBadArgument',
 		'PrimErrBadIndex',
