@@ -452,8 +452,7 @@ Class {
 		'StackPageReachedButUntraced',
 		'StackPageTraceInvalid',
 		'StackPageTraced',
-		'StackPageUnreached',
-		'V3PrimitiveBitsMask'
+		'StackPageUnreached'
 	],
 	#pools : [
 		'VMBasicConstants',
@@ -938,7 +937,6 @@ StackInterpreter class >> initializeMethodIndices [
 	LargeContextBit := 16r20000 << tagBits.  "This bit set in method headers if large context is needed."
 	MethodHeaderTempCountShift := 18 + tagBits.
 	MethodHeaderArgCountShift := 24 + tagBits.
-	V3PrimitiveBitsMask := 16r100001FF << tagBits.
 	AlternateHeaderHasPrimFlag := 16r10000 << tagBits.
 	AlternateHeaderIsOptimizedFlag := 16r8000 << tagBits.
 	AlternateHeaderNumLiteralsMask := 16r7FFF. "N.B.  *not* shifted"
