@@ -10231,28 +10231,32 @@ StackInterpreter >> maybeFlagMethodAsInterpreted: aMethod [
 
 { #category : #'primitive support' }
 StackInterpreter >> maybeInlinePositive32BitIntegerFor: integerValue [
+
 	"N.B. will *not* cause a GC.
 	 integerValue is interpreted as POSITIVE, e.g. as the result of Bitmap>at:."
+
 	<notOption: #Spur64BitMemoryManager>
 	<var: 'integerValue' type: #'unsigned int'>
 	| newLargeInteger |
 	self deny: objectMemory hasSixtyFourBitImmediates.
-       "force coercion because slang inliner sometimes incorrectly pass a signed int without converting to unsigned"
-       (self cCode: [self cCoerceSimple: integerValue to: #'unsigned int']
-			inSmalltalk: [integerValue bitAnd: 1 << 32 - 1]) <= objectMemory maxSmallInteger ifTrue:
-		[^objectMemory integerObjectOf: integerValue].
+	"force coercion because slang inliner sometimes incorrectly pass a signed int without converting to unsigned"
+	(self
+		 cCode: [ self cCoerceSimple: integerValue to: #'unsigned int' ]
+		 inSmalltalk: [ integerValue bitAnd: 1 << 32 - 1 ])
+	<= objectMemory maxSmallInteger ifTrue: [ 
+		^ objectMemory integerObjectOf: integerValue ].
 	newLargeInteger := objectMemory
-							eeInstantiateSmallClassIndex: ClassLargePositiveIntegerCompactIndex
-							format: (objectMemory byteFormatForNumBytes: 4)
-							numSlots: 1.
-	SPURVM
-		ifTrue:
-			["Memory is 8 byte aligned in Spur, make sure that oversized bytes are set to zero" "eem 4/28/2016 questionable; they should never be read"
-			objectMemory storeLong32: 0 ofObject: newLargeInteger withValue: (objectMemory byteSwapped32IfBigEndian: integerValue).
-			objectMemory storeLong32: 1 ofObject: newLargeInteger withValue: 0]
-		ifFalse: 
-			[objectMemory storeLong32: 0 ofObject: newLargeInteger withValue: (objectMemory byteSwapped32IfBigEndian: integerValue)].
-	^newLargeInteger
+		                   eeInstantiateSmallClassIndex:
+		                   ClassLargePositiveIntegerCompactIndex
+		                   format: (objectMemory byteFormatForNumBytes: 4)
+		                   numSlots: 1.
+	"Memory is 8 byte aligned in Spur, make sure that oversized bytes are set to zero" "eem 4/28/2016 questionable; they should never be read"
+	objectMemory
+		storeLong32: 0
+		ofObject: newLargeInteger
+		withValue: (objectMemory byteSwapped32IfBigEndian: integerValue).
+	objectMemory storeLong32: 1 ofObject: newLargeInteger withValue: 0.
+	^ newLargeInteger
 ]
 
 { #category : #'debug support' }
@@ -10728,28 +10732,35 @@ StackInterpreter >> noFixupSuperclassOf: classPointer [
 
 { #category : #'primitive support' }
 StackInterpreter >> noInlineSigned32BitIntegerGutsFor: integerValue [
+
 	"Answer a full 32 bit integer object for the given integer value which
 	 is known not to be a SmallInteger value.  This serves to share the
 	 code for creating a four byte LargeInteger in one place."
+
 	<notOption: #Spur64BitMemoryManager>
-	| newLargeInteger magnitude largeClass |
 	<inline: #never>
 	<var: #magnitude type: #'unsigned int'>
+	| newLargeInteger magnitude largeClass |
 	self deny: objectMemory hasSixtyFourBitImmediates.
 	self deny: (objectMemory isIntegerValue: integerValue).
-	 integerValue < 0
-		ifTrue: [largeClass := ClassLargeNegativeIntegerCompactIndex.
-				magnitude := 0 asUnsignedInteger - integerValue]
-		ifFalse: [largeClass := ClassLargePositiveIntegerCompactIndex.
-				magnitude := integerValue].
+	integerValue < 0
+		ifTrue: [ 
+			largeClass := ClassLargeNegativeIntegerCompactIndex.
+			magnitude := 0 asUnsignedInteger - integerValue ]
+		ifFalse: [ 
+			largeClass := ClassLargePositiveIntegerCompactIndex.
+			magnitude := integerValue ].
 	newLargeInteger := objectMemory
-							eeInstantiateSmallClassIndex: largeClass
-							format: (objectMemory byteFormatForNumBytes: 4)
-							numSlots: 1.
-	objectMemory storeLong32: 0 ofObject: newLargeInteger withValue: (objectMemory byteSwapped32IfBigEndian: magnitude).
-	SPURVM ifTrue: "Memory is 8 byte aligned in Spur, make sure that oversized bytes are set to zero" "eem 4/28/2016 questionable; they should never be read"
-		[objectMemory storeLong32: 1 ofObject: newLargeInteger withValue: 0].
-	^newLargeInteger
+		                   eeInstantiateSmallClassIndex: largeClass
+		                   format: (objectMemory byteFormatForNumBytes: 4)
+		                   numSlots: 1.
+	objectMemory
+		storeLong32: 0
+		ofObject: newLargeInteger
+		withValue: (objectMemory byteSwapped32IfBigEndian: magnitude).
+	"Memory is 8 byte aligned in Spur, make sure that oversized bytes are set to zero" "eem 4/28/2016 questionable; they should never be read"
+	objectMemory storeLong32: 1 ofObject: newLargeInteger withValue: 0.
+	^ newLargeInteger
 ]
 
 { #category : #'internal interpreter access' }
@@ -12615,33 +12626,40 @@ StackInterpreter >> printUnbalancedStack: primIdx [
 
 { #category : #'process primitive support' }
 StackInterpreter >> processesInProcessListDo: aBlock [
+
 	"Return the highest priority process that is ready to run.
 	 To save time looking at many empty lists before finding a
 	 runnable process the VM maintains a variable holding the
 	 highest priority runnable process.  If this variable is 0 then the
 	 VM does not know the highest priority and must search all lists.
 	 Note: It is a fatal VM error if there is no runnable process."
+
 	| schedLists p processList proc ctxt |
 	self externalWriteBackHeadFramePointers.
-	schedLists := objectMemory fetchPointer: ProcessListsIndex ofObject: self schedulerPointer.
+	schedLists := objectMemory
+		              fetchPointer: ProcessListsIndex
+		              ofObject: self schedulerPointer.
 	p := highestRunnableProcessPriority = 0
-			ifTrue: [objectMemory numSlotsOf: schedLists]
-			ifFalse: [highestRunnableProcessPriority].
-	[(p := p - 1) >= 0] whileTrue:
-		[processList := objectMemory fetchPointer: p ofObject: schedLists.
-	 	 proc := objectMemory fetchPointer: FirstLinkIndex ofObject: processList. 
-		 [proc = objectMemory nilObject] 
-			whileFalse: ["Only answer processes with a runnable suspendedContext.
+		     ifTrue: [ objectMemory numSlotsOf: schedLists ]
+		     ifFalse: [ highestRunnableProcessPriority ].
+	[ (p := p - 1) >= 0 ] whileTrue: [ 
+		processList := objectMemory fetchPointer: p ofObject: schedLists.
+		proc := objectMemory
+			        fetchPointer: FirstLinkIndex
+			        ofObject: processList.
+		[ proc = objectMemory nilObject ] whileFalse: [ "Only answer processes with a runnable suspendedContext.
 			  Discard those that aren't; the VM would crash otherwise."
-			 ctxt := objectMemory fetchPointer: SuspendedContextIndex ofObject: proc.
-			  self cppIf: SPURVM ifTrue: 
-				["This is uncommon, so we can deal with forwarders here instead of assuming there isn't."
-				 (objectMemory isOopForwarded: ctxt) ifTrue:
-					[ctxt := self fixFollowedField: SuspendedContextIndex 
-									ofObject: proc withInitialValue: ctxt].
-				  (self isLiveContext: ctxt) ifTrue:
-					[ aBlock value: proc ] ].
-			 proc := objectMemory fetchPointer: NextLinkIndex ofObject: proc ]].
+			ctxt := objectMemory
+				        fetchPointer: SuspendedContextIndex
+				        ofObject: proc.
+			"This is uncommon, so we can deal with forwarders here instead of assuming there isn't."
+			(objectMemory isOopForwarded: ctxt) ifTrue: [ 
+				ctxt := self
+					        fixFollowedField: SuspendedContextIndex
+					        ofObject: proc
+					        withInitialValue: ctxt ].
+			(self isLiveContext: ctxt) ifTrue: [ aBlock value: proc ].
+			proc := objectMemory fetchPointer: NextLinkIndex ofObject: proc ] ]
 ]
 
 { #category : #'as yet unclassified' }
@@ -14253,48 +14271,48 @@ StackInterpreter >> signed32BitIntegerFor: integerValue [
 
 { #category : #'primitive support' }
 StackInterpreter >> signed64BitIntegerFor: integerValue [
-	<var: 'integerValue' type: #sqLong>
+
 	"Answer a Large Integer object for the given integer value.  N.B. will *not* cause a GC."
-	| newLargeInteger magnitude largeClass highWord sz |
+
+	<var: 'integerValue' type: #sqLong>
 	<inline: false>
 	<var: 'magnitude' type: #usqLong>
 	<var: 'highWord' type: #usqInt>
-
+	| newLargeInteger magnitude largeClass highWord sz |
 	integerValue < 0
-		ifTrue:[	integerValue >= objectMemory minSmallInteger ifTrue: [^objectMemory integerObjectOf: integerValue asInteger].
-				largeClass := ClassLargeNegativeIntegerCompactIndex.
-				magnitude := 0 - (self cCoerceSimple: integerValue to: #usqLong)]
-		ifFalse:[	integerValue <= objectMemory maxSmallInteger ifTrue: [^objectMemory integerObjectOf: integerValue asInteger].
-				largeClass := ClassLargePositiveIntegerCompactIndex.
-				magnitude := integerValue].
+		ifTrue: [ 
+			integerValue >= objectMemory minSmallInteger ifTrue: [ 
+				^ objectMemory integerObjectOf: integerValue asInteger ].
+			largeClass := ClassLargeNegativeIntegerCompactIndex.
+			magnitude := 0 - (self cCoerceSimple: integerValue to: #usqLong) ]
+		ifFalse: [ 
+			integerValue <= objectMemory maxSmallInteger ifTrue: [ 
+				^ objectMemory integerObjectOf: integerValue asInteger ].
+			largeClass := ClassLargePositiveIntegerCompactIndex.
+			magnitude := integerValue ].
 
 	objectMemory wordSize = 8
-		ifTrue: [sz := 8]
-		ifFalse: [
-		 (highWord := magnitude >> 32) = 0 
-			ifTrue: [sz := 4] 
-			ifFalse:
-				[sz := 5.
-				 (highWord := highWord >> 8) = 0 ifFalse:
-					[sz := sz + 1.
-					 (highWord := highWord >> 8) = 0 ifFalse:
-						[sz := sz + 1.
-						 (highWord := highWord >> 8) = 0 ifFalse:
-							[sz := sz + 1]]]]].
+		ifTrue: [ sz := 8 ]
+		ifFalse: [ 
+			(highWord := magnitude >> 32) = 0
+				ifTrue: [ sz := 4 ]
+				ifFalse: [ 
+					sz := 5.
+					(highWord := highWord >> 8) = 0 ifFalse: [ 
+						sz := sz + 1.
+						(highWord := highWord >> 8) = 0 ifFalse: [ 
+							sz := sz + 1.
+							(highWord := highWord >> 8) = 0 ifFalse: [ sz := sz + 1 ] ] ] ] ].
 
 	newLargeInteger := objectMemory
-							eeInstantiateSmallClassIndex: largeClass
-							format: (objectMemory byteFormatForNumBytes: sz)
-							numSlots: sz + 3 // objectMemory bytesPerOop.
-	SPURVM
-		ifTrue:
-			["Memory is eight byte aligned in SPUR, so we are sure to have room for 64bits word whatever allocated sz"
-			objectMemory storeLong64: 0 ofObject: newLargeInteger withValue: (objectMemory byteSwapped64IfBigEndian: magnitude)]
-		ifFalse:
-			[sz > 4
-				ifTrue: [objectMemory storeLong64: 0 ofObject: newLargeInteger withValue: (objectMemory byteSwapped64IfBigEndian: magnitude)]
-				ifFalse: [objectMemory storeLong32: 0 ofObject: newLargeInteger withValue: (objectMemory byteSwapped32IfBigEndian: magnitude)]].
-	^newLargeInteger
+		                   eeInstantiateSmallClassIndex: largeClass
+		                   format: (objectMemory byteFormatForNumBytes: sz)
+		                   numSlots: sz + 3 // objectMemory bytesPerOop.
+	objectMemory
+		storeLong64: 0
+		ofObject: newLargeInteger
+		withValue: (objectMemory byteSwapped64IfBigEndian: magnitude).
+	^ newLargeInteger
 ]
 
 { #category : #'runtime support' }
@@ -16080,38 +16098,45 @@ StackInterpreter >> voidVMStateForSnapshotFlushingExternalPrimitivesIf: flushExt
 
 { #category : #'process primitive support' }
 StackInterpreter >> wakeHighestPriority [
+
 	"Return the highest priority process that is ready to run.
 	 To save time looking at many empty lists before finding a
 	 runnable process the VM maintains a variable holding the
 	 highest priority runnable process.  If this variable is 0 then the
 	 VM does not know the highest priority and must search all lists.
 	 Note: It is a fatal VM error if there is no runnable process."
+
 	| schedLists p processList proc ctxt |
 	self externalWriteBackHeadFramePointers.
-	schedLists := objectMemory fetchPointer: ProcessListsIndex ofObject: self schedulerPointer.
+	schedLists := objectMemory
+		              fetchPointer: ProcessListsIndex
+		              ofObject: self schedulerPointer.
 	p := highestRunnableProcessPriority = 0
-			ifTrue: [objectMemory numSlotsOf: schedLists]
-			ifFalse: [highestRunnableProcessPriority].
-	[(p := p - 1) >= 0] whileTrue:
-		[processList := objectMemory fetchPointer: p ofObject: schedLists.
-	 	 [self isEmptyList: processList] whileFalse:
-			["Only answer processes with a runnable suspendedContext.
+		     ifTrue: [ objectMemory numSlotsOf: schedLists ]
+		     ifFalse: [ highestRunnableProcessPriority ].
+	[ (p := p - 1) >= 0 ] whileTrue: [ 
+		processList := objectMemory fetchPointer: p ofObject: schedLists.
+		[ self isEmptyList: processList ] whileFalse: [ "Only answer processes with a runnable suspendedContext.
 			  Discard those that aren't; the VM would crash otherwise."
-			 proc := self removeFirstLinkOfList: processList.
-			 ctxt := objectMemory fetchPointer: SuspendedContextIndex ofObject: proc.
-			 (self isLiveContext: ctxt) ifTrue:
-				[highestRunnableProcessPriority := p + 1.
-				^proc].
-			  self cppIf: SPURVM ifTrue: 
-				["This is uncommon, so we can deal with forwarders here instead of assuming there isn't."
-				 (objectMemory isOopForwarded: ctxt) ifTrue:
-					[ctxt := self fixFollowedField: SuspendedContextIndex ofObject: proc withInitialValue: ctxt].
-				  (self isLiveContext: ctxt) ifTrue:
-					[highestRunnableProcessPriority := p + 1.
-					^proc].].
-			 self warning: 'evicted zombie process from run queue']].
+			proc := self removeFirstLinkOfList: processList.
+			ctxt := objectMemory
+				        fetchPointer: SuspendedContextIndex
+				        ofObject: proc.
+			(self isLiveContext: ctxt) ifTrue: [ 
+				highestRunnableProcessPriority := p + 1.
+				^ proc ].
+			"This is uncommon, so we can deal with forwarders here instead of assuming there isn't."
+			(objectMemory isOopForwarded: ctxt) ifTrue: [ 
+				ctxt := self
+					        fixFollowedField: SuspendedContextIndex
+					        ofObject: proc
+					        withInitialValue: ctxt ].
+			(self isLiveContext: ctxt) ifTrue: [ 
+				highestRunnableProcessPriority := p + 1.
+				^ proc ].
+			self warning: 'evicted zombie process from run queue' ] ].
 	self error: 'scheduler could not find a runnable process'.
-	^nil
+	^ nil
 ]
 
 { #category : #'debug printing' }

@@ -60,7 +60,6 @@ Class {
 		'PrimErrUnsupported',
 		'PrimErrWritePastObject',
 		'PrimNoErr',
-		'SPURVM',
 		'STACKVM',
 		'SistaVM',
 		'TempVectReadBarrier',

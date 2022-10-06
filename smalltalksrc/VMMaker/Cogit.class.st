@@ -4681,6 +4681,7 @@ Cogit >> cogCodeBase: anInteger [
 
 { #category : #'profiling primitives' }
 Cogit >> cogCodeConstituents: withDetails [
+
 	"Answer the contents of the code zone as an array of pair-wise element, address in ascending address order.
 	 Answer a string for a runtime routine or abstract label (beginning, end, etc), a CompiledMethod for a CMMethod,
 	 or a selector (presumably a Symbol) for a PIC.
@@ -4693,75 +4694,98 @@ Cogit >> cogCodeConstituents: withDetails [
 		  to collect the first case class tags, which are (temporarily) assigned to each closed PIC's methodObject field.
 		  But we do need to reset the methodObject fields to zero.  This is done in createPICData:, unless memory
 		  runs out, in which case it is done by cleanUpFailingCogCodeConstituents:."
+
 	<api>
-	| count cogMethod constituents label value |
 	<var: #cogMethod type: #'CogMethod *'>
+	| count cogMethod constituents label value |
 	count := trampolineTableIndex / 2 + 3. "+ 3 for start, freeStart and end"
 	cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
-	[cogMethod < methodZone limitZony] whileTrue:
-		[cogMethod cmType ~= CMFree ifTrue:
-			[count := count + 1].
-		cogMethod := methodZone methodAfter: cogMethod].
-	constituents := coInterpreter instantiateClass: coInterpreter classArray indexableSize: count * 2.
-	constituents ifNil:
-		[^constituents].
+	[ cogMethod < methodZone limitZony ] whileTrue: [ 
+		cogMethod cmType ~= CMFree ifTrue: [ count := count + 1 ].
+		cogMethod := methodZone methodAfter: cogMethod ].
+	constituents := coInterpreter
+		                instantiateClass: coInterpreter classArray
+		                indexableSize: count * 2.
+	constituents ifNil: [ ^ constituents ].
 	coInterpreter pushRemappableOop: constituents.
-	((label := objectMemory stringForCString: 'CogCode') isNil
-	 or: [(value := self positiveMachineIntegerFor: codeBase) isNil]) ifTrue:
-		[coInterpreter popRemappableOop.
-		 ^nil].
+	((label := objectMemory stringForCString: 'CogCode') isNil or: [ 
+		 (value := self positiveMachineIntegerFor: codeBase) isNil ]) 
+		ifTrue: [ 
+			coInterpreter popRemappableOop.
+			^ nil ].
 	coInterpreter
-		storePointerUnchecked: 0 ofObject: (self maybeTopRemapped: constituents) withValue: label;
-		storePointerUnchecked: 1 ofObject: (self maybeTopRemapped: constituents) withValue: value.
-	0 to: trampolineTableIndex - 1 by: 2 do:
-		[:i|
-		((label := objectMemory stringForCString: (trampolineAddresses at: i)) isNil
-		 or: [(value := self positiveMachineIntegerFor: (trampolineAddresses at: i + 1) asUnsignedInteger) isNil]) ifTrue:
-			[coInterpreter popRemappableOop.
-			 ^nil].
+		storePointerUnchecked: 0 ofObject: constituents withValue: label;
+		storePointerUnchecked: 1 ofObject: constituents withValue: value.
+	0 to: trampolineTableIndex - 1 by: 2 do: [ :i | 
+		((label := objectMemory stringForCString:
+			           (trampolineAddresses at: i)) isNil or: [ 
+			 (value := self positiveMachineIntegerFor:
+				           (trampolineAddresses at: i + 1) asUnsignedInteger)
+				 isNil ]) ifTrue: [ 
+			coInterpreter popRemappableOop.
+			^ nil ].
 		coInterpreter
-			storePointerUnchecked: 2 + i ofObject: (self maybeTopRemapped: constituents) withValue: label;
-			storePointerUnchecked: 3 + i ofObject: (self maybeTopRemapped: constituents) withValue: value].
+			storePointerUnchecked: 2 + i
+			ofObject: constituents
+			withValue: label;
+			storePointerUnchecked: 3 + i
+			ofObject: constituents
+			withValue: value ].
 	count := trampolineTableIndex + 2.
 	cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
-	[cogMethod < methodZone limitZony] whileTrue:
-		[cogMethod cmType ~= CMFree ifTrue:
-			[| profileData |
-			 profileData := self profileDataFor: cogMethod withDetails: withDetails.
-			 profileData ifNil: [^self cleanUpFailingCogCodeConstituents: cogMethod].
-			 coInterpreter
+	[ cogMethod < methodZone limitZony ] whileTrue: [ 
+		cogMethod cmType ~= CMFree ifTrue: [ 
+			| profileData |
+			profileData := self
+				               profileDataFor: cogMethod
+				               withDetails: withDetails.
+			profileData ifNil: [ 
+				^ self cleanUpFailingCogCodeConstituents: cogMethod ].
+			coInterpreter
 				storePointerUnchecked: count
-				ofObject: (self maybeTopRemapped: constituents)
+				ofObject: constituents
 				withValue: profileData.
 			value := withDetails
-						ifTrue: [self collectCogMethodConstituent: cogMethod]
-						ifFalse: [self positiveMachineIntegerFor: cogMethod asUnsignedInteger].
-			value ifNil: [^self cleanUpFailingCogCodeConstituents: cogMethod].
+				         ifTrue: [ self collectCogMethodConstituent: cogMethod ]
+				         ifFalse: [ 
+				         self positiveMachineIntegerFor:
+					         cogMethod asUnsignedInteger ].
+			value ifNil: [ ^ self cleanUpFailingCogCodeConstituents: cogMethod ].
 			coInterpreter
-						storePointerUnchecked: count + 1
-						ofObject: (self maybeTopRemapped: constituents)
-						withValue: value.
-			 count := count + 2].
-		cogMethod := methodZone methodAfter: cogMethod].
-	((label := objectMemory stringForCString: 'CCFree') isNil
-	 or: [(value := self positiveMachineIntegerFor: methodZone zoneFree) isNil]) ifTrue:
-		[coInterpreter popRemappableOop.
-		 ^nil].
+				storePointerUnchecked: count + 1
+				ofObject: constituents
+				withValue: value.
+			count := count + 2 ].
+		cogMethod := methodZone methodAfter: cogMethod ].
+	((label := objectMemory stringForCString: 'CCFree') isNil or: [ 
+		 (value := self positiveMachineIntegerFor: methodZone zoneFree)
+			 isNil ]) ifTrue: [ 
+		coInterpreter popRemappableOop.
+		^ nil ].
 	coInterpreter
-		storePointerUnchecked: count ofObject: (self maybeTopRemapped: constituents) withValue: label;
-		storePointerUnchecked: count + 1 ofObject: (self maybeTopRemapped: constituents) withValue: value.
-	((label := objectMemory stringForCString: 'CCEnd') isNil
-	 or: [(value := self positiveMachineIntegerFor: methodZone zoneEnd) isNil]) ifTrue:
-		[coInterpreter popRemappableOop.
-		 ^nil].
+		storePointerUnchecked: count
+		ofObject: constituents
+		withValue: label;
+		storePointerUnchecked: count + 1
+		ofObject: constituents
+		withValue: value.
+	((label := objectMemory stringForCString: 'CCEnd') isNil or: [ 
+		 (value := self positiveMachineIntegerFor: methodZone zoneEnd) isNil ]) 
+		ifTrue: [ 
+			coInterpreter popRemappableOop.
+			^ nil ].
 	coInterpreter
-		storePointerUnchecked: count + 2 ofObject: (self maybeTopRemapped: constituents) withValue: label;
-		storePointerUnchecked: count + 3 ofObject: (self maybeTopRemapped: constituents) withValue: value.
+		storePointerUnchecked: count + 2
+		ofObject: constituents
+		withValue: label;
+		storePointerUnchecked: count + 3
+		ofObject: constituents
+		withValue: value.
 	constituents := coInterpreter popRemappableOop.
 	coInterpreter beRootIfOld: constituents.
 	"would like to assert this, but it requires the leak checked be run :-(
 		self assert: self allMachineCodeObjectReferencesValid."
-	^constituents
+	^ constituents
 ]
 
 { #category : #'in-line cacheing' }
@@ -5093,18 +5117,19 @@ Cogit >> cogit [
 
 { #category : #'jit - api' }
 Cogit >> cogitPostGCAction: gcMode [
+
 	<api>
-	(gcMode = GCModeFull
-	 and: [objectRepresentation allYoungObjectsAgeInFullGC]) ifTrue:
-		[methodZone voidYoungReferrersPostTenureAll].
-	self cppIf: SPURVM ifTrue:
-		[gcMode = GCModeBecome ifTrue:
-			[methodZone followForwardedLiteralsInOpenPICList]].
+	(gcMode = GCModeFull and: [ 
+		 objectRepresentation allYoungObjectsAgeInFullGC ]) ifTrue: [ 
+		methodZone voidYoungReferrersPostTenureAll ].
+	gcMode = GCModeBecome ifTrue: [ 
+		methodZone followForwardedLiteralsInOpenPICList ].
 	"Post-GC update every full method's objectHeader to whatever it needs to be"
 	self assert: self allMethodsHaveCorrectHeader.
 	"The youngReferrers should be correct after a GC since that is the point at which it is
 	 pruned.  But at other times false positives or free methods on the list are acceptable."
-	self assert: ((gcMode noMask: GCModeFull+GCModeNewSpace) or: [methodZone kosherYoungReferrers])
+	self assert: ((gcMode noMask: GCModeFull + GCModeNewSpace) or: [ 
+			 methodZone kosherYoungReferrers ])
 ]
 
 { #category : #'multi-threading' }
@@ -9905,12 +9930,6 @@ Cogit >> maybeNoteStartpcFor: thing [ "<CogBlockStart|CogCodeRange>"
 			at: #numArgs put: ([thing cogMethod ifNil: [-1] ifNotNil: [:cm| cm cmNumArgs]] "CogCodeRange"
 									on: MessageNotUnderstood
 									do: [:ex| thing numArgs])] "CogBlockStart"
-]
-
-{ #category : #'profiling primitives' }
-Cogit >> maybeTopRemapped: anOop [
-	<inline: true>
-	^SPURVM ifTrue: [anOop] ifFalse: [objectMemory topRemappableOop]
 ]
 
 { #category : #'compile abstract instructions' }
