@@ -4381,13 +4381,11 @@ Cogit >> checkIntegrityOfObjectReferencesInCode: gcModes [
 						 performUntil: #checkIfValidOopRef:pc:cogMethod:
 						 arg: cogMethod asInteger) ~= 0
 							ifTrue: [ok := false].
-					 (objectRepresentation hasSpurMemoryManagerAPI
-					  or: [gcModes anyMask: GCModeNewSpace]) ifTrue:
-						[(((objectMemory isYoungObject: cogMethod methodObject)
+					 (((objectMemory isYoungObject: cogMethod methodObject)
 						    or: [objectMemory isYoung: cogMethod selector])
 						   and: [cogMethod cmRefersToYoung not]) ifTrue:
 							[coInterpreter print: 'CM '; printHex: cogMethod asInteger; print: ' refers to young but not marked as such'; cr.
-							 ok := false]]]
+							 ok := false]]
 				ifFalse:
 					[cogMethod cmType = CMPolymorphicIC
 						ifTrue:

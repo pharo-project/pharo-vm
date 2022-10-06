@@ -737,11 +737,6 @@ SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
 		declareC: 'sqInt *extraRoots[ExtraRootsSize + 1 /* ', (ExtraRootsSize + 1) printString, ' */]'
 ]
 
-{ #category : #'api characterization' }
-SpurMemoryManager class >> hasSpurMemoryManagerAPI [
-	^true
-]
-
 { #category : #translation }
 SpurMemoryManager class >> implicitReturnTypeFor: aSelector [
 	"Answer the return type for methods that don't have an explicit return."
@@ -5826,11 +5821,6 @@ SpurMemoryManager >> hasSixtyFourBitImmediates [
 	"The V3 64-bit memory manager has 64-bit oops, but its SmallIntegers only have
 	 31 bits of precision.  The Spur 64-bit memory manager has 61-bit immediates."
 	^self subclassResponsibility
-]
-
-{ #category : #'api characterization' }
-SpurMemoryManager >> hasSpurMemoryManagerAPI [
-	^true
 ]
 
 { #category : #'object testing' }
