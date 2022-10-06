@@ -6110,11 +6110,6 @@ SpurMemoryManager >> increaseFreeOldSpaceBy: bytes [
 
 ]
 
-{ #category : #'gc - global' }
-SpurMemoryManager >> incrementalGC [
-	self shouldNotImplement
-]
-
 { #category : #'debug support' }
 SpurMemoryManager >> indexOf: anElement in: anObject [
 	<api>
