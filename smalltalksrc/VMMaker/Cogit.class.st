@@ -11485,31 +11485,30 @@ Cogit >> simulateCallOf: address nextpc: nextpc memory: aMemory [
 ]
 
 { #category : #'simulation only' }
-Cogit >> simulateCogCodeAt: address [ "<Integer>"
-	<doNotGenerate>
+Cogit >> simulateCogCodeAt: address [
 
+	"<Integer>"
+
+	<doNotGenerate>
 	processor pc: address.
-	[[[singleStep
-		ifTrue:
-			[[
-			  self recordProcessing.
-			  self maybeBreakAt: processor pc] value. "So that the Debugger's Over steps over all this"
-			  processor
-					singleStepIn: coInterpreter memory
-					minimumAddress: guardPageSize
-					readOnlyBelow: methodZone zoneEnd]
-		ifFalse:
-			[processor
-					runInMemory: nil
-					minimumAddress: guardPageSize
-					readOnlyBelow: methodZone zoneEnd].
-	   "((printRegisters or: [printInstructions]) and: [clickConfirm]) ifTrue:
-	 	[(self confirm: 'continue?') ifFalse:
-			[clickConfirm := false. self halt]]."
-	   true] whileTrue]
-		on: ProcessorSimulationTrap
-		do: [:ex| self handleSimulationTrap: ex].
-	 true] whileTrue
+	[ 
+	[ 
+	singleStep
+		ifTrue: [ 
+			[ 
+			self recordProcessing.
+			self maybeBreakAt: processor pc ] value. "So that the Debugger's Over steps over all this"
+			processor
+				singleStepIn: coInterpreter memory
+				minimumAddress: guardPageSize
+				readOnlyBelow: methodZone zoneEnd ]
+		ifFalse: [ 
+			processor
+				runInMemory: nil
+				minimumAddress: guardPageSize
+				readOnlyBelow: methodZone zoneEnd ].
+	true ] whileTrue.
+	true ] whileTrue
 ]
 
 { #category : #'simulation only' }

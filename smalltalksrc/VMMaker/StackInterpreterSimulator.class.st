@@ -694,7 +694,7 @@ StackInterpreterSimulator >> imageNameGet: p Length: sz [
 { #category : #'file primitives' }
 StackInterpreterSimulator >> imageNamePut: p Length: sz [
 
-	| newName window |
+	| newName |
 	newName := ByteString new: sz.
 	1 to: sz do: [ :i | 
 		newName
@@ -1673,34 +1673,6 @@ StackInterpreterSimulator >> savedWindowSize [
 { #category : #accessing }
 StackInterpreterSimulator >> setBreakCount: anInteger [
 	breakCount := anInteger
-]
-
-{ #category : #UI }
-StackInterpreterSimulator >> setClickStepBreakBlock [
-	"Set the break block to present a confirmer, breaking if true, and restoring the previous break block.
-	 If an open debugger on the receiver can be found, proceed it."
-	<doNotGenerate>
-	| previousAtEachStepBlock |
-	(atEachStepBlock isNil or: [atEachStepBlock method ~~ thisContext method]) ifTrue:
-		[previousAtEachStepBlock := atEachStepBlock.
-		 atEachStepBlock :=
-							[previousAtEachStepBlock value.
-							 self changed: #byteCountText.
-							 (UIManager confirm: 'step?') ifFalse:
-								[atEachStepBlock := previousAtEachStepBlock.
-								 self halt]]].
-	(World submorphs
-		detect:
-			[:m|
-			 m model class == Debugger
-			 and: [(m model interruptedProcess suspendedContext findContextSuchThat:
-					[:ctxt|
-					 ctxt receiver == self
-					 and: [ctxt selector == #run]]) notNil]]
-		ifNone: []) ifNotNil:
-			[:debuggerWindow|
-			 WorldState addDeferredUIMessage:
-				[debuggerWindow model proceed]]
 ]
 
 { #category : #accessing }
