@@ -637,7 +637,6 @@ Class {
 		'ObjStackTopx',
 		'RemapBufferSize',
 		'RememberedSetRootIndex',
-		'TopOopBit',
 		'WeaklingStackRootIndex'
 	],
 	#pools : [
@@ -824,13 +823,8 @@ SpurMemoryManager class >> initializeCompactClassIndices [
 { #category : #'class initialization' }
 SpurMemoryManager class >> initializeObjectHeaderConstants [
 
-	BytesPerWord ifNil: [BytesPerWord := 4].  "May get called on fileIn, so supply default"
-	BaseHeaderSize := 8. "This is still needed for VM generation."
-
-	"These are used in image segments"
-	self ~~ SpurMemoryManager ifTrue:
-		[TopHashBit := 1 << (self basicNew identityHashFieldWidth - 1).
-		 TopOopBit := 1 << (self basicNew bytesPerOop * 8 - 1)]
+	BytesPerWord ifNil: [ BytesPerWord := 4 ]. "May get called on fileIn, so supply default"
+	BaseHeaderSize := 8 "This is still needed for VM generation."
 ]
 
 { #category : #'class initialization' }
@@ -5902,14 +5896,6 @@ SpurMemoryManager >> headerForSlots: numSlots hash: hash format: formatField cla
 	+ ((self cCoerceSimple: hash to: #usqLong) << self identityHashFullWordShift)
 	+ (formatField << self formatShift)
 	+ classIndex
-]
-
-{ #category : #'method access' }
-SpurMemoryManager >> headerIndicatesAlternateBytecodeSet: methodHeader [
-	"A negative header selects the alternate bytecode set."
-	<api>
-	<inline: true>
-	self subclassResponsibility
 ]
 
 { #category : #'debug support' }

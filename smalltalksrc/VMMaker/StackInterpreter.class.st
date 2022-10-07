@@ -5309,10 +5309,9 @@ StackInterpreter >> encodeFrameFieldHasContext: hasContext "<Boolean>" isBlock: 
 
 { #category : #simulation }
 StackInterpreter >> encoderClassForHeader: headerInteger [
+
 	<doNotGenerate>
-	^Smalltalk classNamed: ((headerInteger < 0 or: [objectMemory headerIndicatesAlternateBytecodeSet: headerInteger])
-								ifTrue: [BytecodeEncoderClassName]
-								ifFalse: [BytecodeEncoderClassName])
+	^ Smalltalk classNamed: BytecodeEncoderClassName
 ]
 
 { #category : #'frame access' }
@@ -10412,14 +10411,6 @@ StackInterpreter >> methodReturnValue: oop [
 	 primResult machinery."
 	self pop: argumentCount+1 thenPush: oop.
 	^0
-]
-
-{ #category : #'internal interpreter access' }
-StackInterpreter >> methodUsesAlternateBytecodeSet: aMethodObj [
-	<api>
-	<inline: true>
-	"A negative header selects the alternate bytecode set."
-	^objectMemory headerIndicatesAlternateBytecodeSet: (objectMemory methodHeaderOf: aMethodObj)
 ]
 
 { #category : #'primitive support' }
