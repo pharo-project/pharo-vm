@@ -125,18 +125,19 @@ The accepted flavours for the moment are as follows:
 ### Building Internal
 
 Here a bird view of the building process for the development branch PharoX when you run `make install`.
+The name of the targets are also given.
 File paths are relative to the building directory of cmake (called `build` above).
 Note: this building directory also contains a directory named `build` (they should not be confused).
 
-1. Download a stable Pharo VM to `./build/vmmaker/vm/pharo`
+1. `vmmaker_vm` Download a stable Pharo VM to `./build/vmmaker/vm/pharo`
 2. Download a recent Pharo image to `./build/vmmaker/image/Pharo*.image`
-   Note: this is a development image since new features might be required by PharoX.
-3. Import the PharoVM source code (the `.st` files) from the git repository into the downloaded Pharo image and save it as `./build/vmmaker/image/VMMaker.image`.
+   Note: this is a specific development image since new features might be required by PharoX.
+3. `vmmaker` Import the PharoVM source code (the `.st` files) from the git repository into the downloaded Pharo image and save it as `./build/vmmaker/image/VMMaker.image`.
    Note: this step also downloads the required Pharo dependencies needed by the new image.
-4. Generate the C code of the VM in the `./generated/` directory.
-5. Compile and link the C code from `./generated/` and produce binaries in `./build/vm/`. This is the step that takes most of the time.
+4. `generate-source` Generate the C code of the VM in the `./generated/` directory.
+5. `all` Compile and link the C code from `./generated/` and produce binaries in `./build/vm/`. This is the step that takes most of the time.
    Note: PharoVM is not a single binary but is made of multiple dynamic libraries.
-6. Move files to the `./build/dist/` directory.
+6. `install` Move files to the `./build/dist/` directory.
    The produced VM is executable with `./build/dist/pharo`.
 
 ### In case of Problems
@@ -183,15 +184,24 @@ Alternatively, if you're building the VM using the instructions above, the build
 
 The build process is described above, so in order to generate a new PharoVM with your changes, there is different approaches.
 
-* Commit your changes (with Iceberg) into the local git repository you cloned then run `make install` from the building directory.
-  This will rebuild a new VMMaker image by loading your new code into the basic Pharo image.
-  Note: this rebuild starts at the step 3.
+* Commit your changes (with Iceberg) into the local git repository you cloned then run from the building directory
 
-* Save your image as XXX (or overwrite the `VMMaker.image` file), then run:
+  `make -B install`
 
-  `cmake ????` TODO
+  This will force a rebuild of a new VMMaker image by loading your new code and all its Pharo dependencies into the basic Pharo image.
+  Downloaded are things are cached and not downloaded again.
+  Note: this rebuild starts at the step 3 `vmmaker`.
 
-  Note: this rebuild starts at the step 4.
+* Save your image (or overwrite the `VMMaker.image` file), then run in the building directory:
+
+  `cmake . -DGENERATE_VMMAKER=OFF -DVMMAKER_IMAGE=$IMAGEPATH && make install`
+
+  where $IMAGEPATH is the path of your image or, if you just overwrote the image:
+
+  `cmake . -DGENERATE_VMMAKER=OFF && make install`
+
+  Note: this disable the generation of the vmmaker image.
+  The rebuild starts at the step 4 `generate-source`.
 
 * Generate the C files yourself somewhere (in a Pharo playground for instance):
 
@@ -199,11 +209,12 @@ The build process is described above, so in order to generate a new PharoVM with
 
   then run the following shell command in the `outputDirectory` given above:
 
-  `cmake -S "$PHAROVM" -B "$PWD" -DGENERATE_SOURCES=OFF -DGENERATED_SOURCE_DIR="$PWD" && make install`
+  `cmake -S "$PHAROVM" -B "$PWD" -DGENERATE_SOURCES=OFF && make install`
 
   where `$PHAROVM` is the root of the pharo-vm project (your local git repository for instance).
 
-  Note: this rebuild starts at the step 5.
+  Note: this rebuild starts at the step 5 `all`.
+  Here a fresh building directory can be used.
 
 ### Source Directory Structure
 
