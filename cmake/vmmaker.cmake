@@ -61,7 +61,7 @@ if(GENERATE_SOURCES)
         message("Overriding VM used for code generation")  
         set(VMMAKER_VM ${GENERATE_PHARO_VM})
         # add empty target because is required later when installing vmmaker
-        add_custom_target(build_vmmaker_get_vm-build)
+	add_custom_target(vmmaker_vm)
     else()
         #Pick platform specific VM to download
         if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -95,7 +95,7 @@ if(GENERATE_SOURCES)
 
         #Download VM
         ExternalProject_Add(
-            build_vmmaker_get_vm
+            vmmaker_vm
 
             URL ${VM_URL}
             URL_HASH ${VM_URL_HASH}
@@ -107,15 +107,13 @@ if(GENERATE_SOURCES)
             PREFIX "${VMMAKER_DIR}"
             SOURCE_DIR "${VMMAKER_DIR}/vm"
             BUILD_IN_SOURCE True
-
-            STEP_TARGETS   build
             )
     endif()
 
     if(GENERATE_VMMAKER)
         #Bootstrap VMMaker.image from downloaded plain Pharo image
         ExternalProject_Add(
-            build_vmmaker_get_image
+            vmmaker
 
             URL https://files.pharo.org/image/110/Pharo11-SNAPSHOT.build.169.sha.0137cce.arch.64bit.zip
             URL_HASH SHA256=b5428a51fae33dfef5c4be966b7be58cafdee922cfe3621ad01d17a74ddb1a37
@@ -130,21 +128,21 @@ if(GENERATE_SOURCES)
             BUILD_IN_SOURCE True
             WORKING_DIRECTORY "${VMMAKER_DIR}"
 
-            DEPENDS build_vmmaker_get_vm-build
+            DEPENDS vmmaker_vm
             )
+
     else()
         #Use the given vmimage
-        add_custom_target(build_vmmaker_get_image)
+	add_custom_target(vmmaker DEPENDS ${VMMAKER_IMAGE})
     endif()
 
     #Custom command that generates the vm source code from VMMaker into the generated folder
     add_custom_command(
         OUTPUT ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES}
         COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${GENERATED_SOURCE_DIR}\'\"
-        DEPENDS build_vmmaker_get_image
+        DEPENDS vmmaker ${VMMAKER_IMAGE} ${VMMAKER_VM}
         COMMENT "Generating VM files for flavour: ${FLAVOUR}")
 
-    add_custom_target(vmmaker DEPENDS build_vmmaker_get_image)
     add_custom_target(generate-sources DEPENDS ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES})
 
 endif()
