@@ -99,10 +99,10 @@ if(GENERATE_SOURCES)
 
             URL ${VM_URL}
             URL_HASH ${VM_URL_HASH}
-            BUILD_COMMAND       echo 
-            UPDATE_COMMAND      echo 
-            CONFIGURE_COMMAND   echo 
-            INSTALL_COMMAND     echo 
+	    BUILD_COMMAND       ""
+	    UPDATE_COMMAND      ""
+	    CONFIGURE_COMMAND   ""
+	    INSTALL_COMMAND     ""
 
             PREFIX "${VMMAKER_DIR}"
             SOURCE_DIR "${VMMAKER_DIR}/vm"
@@ -120,10 +120,10 @@ if(GENERATE_SOURCES)
             URL https://files.pharo.org/image/110/Pharo11-SNAPSHOT.build.169.sha.0137cce.arch.64bit.zip
             URL_HASH SHA256=b5428a51fae33dfef5c4be966b7be58cafdee922cfe3621ad01d17a74ddb1a37
             BUILD_COMMAND ${VMMAKER_VM} --headless ${VMMAKER_DIR}/image/Pharo11-SNAPSHOT-64bit-0137cce.image --no-default-preferences save VMMaker
-            COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences --save --quit "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}" "${ICEBERG_DEFAULT_REMOTE}"
-            UPDATE_COMMAND      echo 
-            CONFIGURE_COMMAND   echo
-            INSTALL_COMMAND     echo
+	    COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences --save --quit "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}" "${ICEBERG_DEFAULT_REMOTE}"
+            UPDATE_COMMAND      ""
+            CONFIGURE_COMMAND   ""
+            INSTALL_COMMAND     ""
 
             PREFIX "${VMMAKER_DIR}"
             SOURCE_DIR "${VMMAKER_DIR}/image"
