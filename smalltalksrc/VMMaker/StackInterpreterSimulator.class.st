@@ -32,15 +32,12 @@ Class {
 		'printReturns',
 		'traceOn',
 		'myBitBlt',
-		'displayForm',
-		'fakeForm',
 		'filesOpen',
 		'imageName',
 		'pluginList',
 		'mappedPluginEntries',
 		'quitBlock',
 		'transcript',
-		'displayView',
 		'eventTransformer',
 		'printFrameAtEachStep',
 		'printBytecodeAtEachStep',
@@ -201,7 +198,6 @@ StackInterpreterSimulator >> basicInitialize [
 	traceOn := true.
 	printSends := printReturns := printFrameAtEachStep := printBytecodeAtEachStep := false.
 	myBitBlt := BitBltSimulator new setInterpreter: self.
-	displayForm := fakeForm := 'Display has not yet been installed' asDisplayText form.
 	eventQueue := SharedQueue new.
 	suppressHeartbeatFlag := false.
 	systemAttributes := Dictionary new.
@@ -351,25 +347,27 @@ StackInterpreterSimulator >> clipboardSize [
 
 { #category : #'debug support' }
 StackInterpreterSimulator >> cloneSimulation [
-	| savedAtEachStepBlock savedDisplayView savedDisplayForm savedQuitBlock savedTranscript |
-	savedAtEachStepBlock := atEachStepBlock. atEachStepBlock := nil.
-	savedDisplayView := displayView. displayView := nil.
-	savedDisplayForm := displayForm. displayForm = nil.
-	savedQuitBlock := quitBlock. quitBlock := nil.
-	savedTranscript := transcript. transcript := nil.
 
-	^[| theClone |
-	 Smalltalk garbageCollect.
-	 theClone := self veryDeepCopy.
-	 theClone parent: self; transcript: Transcript.
-	 theClone objectMemory parent: objectMemory.
-	 theClone]
-		ensure:
-			[atEachStepBlock := savedAtEachStepBlock.
-			 displayView := savedDisplayView.
-			 displayForm = savedDisplayForm.
-			 quitBlock := savedQuitBlock.
-			 transcript := savedTranscript]
+	| savedAtEachStepBlock savedQuitBlock savedTranscript |
+	savedAtEachStepBlock := atEachStepBlock.
+	atEachStepBlock := nil.
+	savedQuitBlock := quitBlock.
+	quitBlock := nil.
+	savedTranscript := transcript.
+	transcript := nil.
+
+	^ [ 
+	  | theClone |
+	  Smalltalk garbageCollect.
+	  theClone := self veryDeepCopy.
+	  theClone
+		  parent: self;
+		  transcript: Transcript.
+	  theClone objectMemory parent: objectMemory.
+	  theClone ] ensure: [ 
+		  atEachStepBlock := savedAtEachStepBlock.
+		  quitBlock := savedQuitBlock.
+		  transcript := savedTranscript ]
 ]
 
 { #category : #initialization }
@@ -454,42 +452,6 @@ StackInterpreterSimulator >> dispatchOn: anInteger in: selectorArray [
 	For speed, no range test is done, since it is done by the at: operation.
 	Note that, unlike many other arrays used in the Interpreter, this method expect NO CArrayAccessor wrapping - it would duplicate the +1. Maybe this would be better updated to make it all uniform"
 	self perform: (selectorArray at: (anInteger + 1)).
-]
-
-{ #category : #accessing }
-StackInterpreterSimulator >> displayForm [
-	"The VM SImulator draws directly on an imageMorph named displayView
-	  displayView is housed on a Form named displayForm
-	  displayForm is initialized in my initialize method. 
-	  it 'needs' to be initialized there to support Eliot's legacy openAsMorph functionality
-	"
-	^displayForm
-]
-
-{ #category : #'I/O primitives support' }
-StackInterpreterSimulator >> displayLocation [
-
-	^ Display extent - displayForm extent - (10@10)
-]
-
-{ #category : #accessing }
-StackInterpreterSimulator >> displayView [
-	"The VM SImulator draws directly on an imageMorph named displayView
-	  displayView is housed on a Form named displayForm
-	  Since this is housed directly on the Morph, I have this tight compling from here->model->morph. 
-	"
-	self flag: 'tty'.	
-	^displayView
-]
-
-{ #category : #accessing }
-StackInterpreterSimulator >> displayView: anImageMorph [
-	"The VM SImulator draws directly on an imageMorph named displayView
-	  displayView is housed on a Form named displayForm
-	  Since this is housed directly on the Morph, I have this tight compling from here->model->morph. 
-	"
-	self flag: 'tty'.
-	displayView := anImageMorph
 ]
 
 { #category : #'debugging traps' }
@@ -704,22 +666,6 @@ StackInterpreterSimulator >> halfWordLowInLong32: long32 [
 	^self subclassResponsibility
 ]
 
-{ #category : #'I/O primitives support' }
-StackInterpreterSimulator >> handleListenEvent: aMorphicEvent [
-	"openAsMorph[NoTranscript] registered me for listen events via HandMorph>>addEventListener.
-	Transform the listen event and add it to my event queue.  ALso check if the displayForm shoudl resize."
-	(displayForm ~~ fakeForm and: [displayForm extent ~= displayView extent]) ifTrue:
-		[| newForm |
-		newForm := Form
-						extent: displayView extent
-						depth: displayForm depth.
-		 displayForm displayOn: newForm.
-		 displayForm := newForm].
-	((aMorphicEvent isMouse or: [aMorphicEvent isKeyboard])
-	 and: [displayView bounds containsPoint: aMorphicEvent position]) ifTrue:
-		[eventTransformer degenerateEvent: aMorphicEvent for: self]
-]
-
 { #category : #'debug support' }
 StackInterpreterSimulator >> headerStart: oop [
 
@@ -747,20 +693,14 @@ StackInterpreterSimulator >> imageNameGet: p Length: sz [
 
 { #category : #'file primitives' }
 StackInterpreterSimulator >> imageNamePut: p Length: sz [
+
 	| newName window |
 	newName := ByteString new: sz.
-	1 to: sz  do:
-		[:i |
+	1 to: sz do: [ :i | 
 		newName
 			at: i
-			put: (Character value: (objectMemory byteAt: p + i - 1))].
-	imageName := newName.
-	(displayView notNil
-	 and: [(window := displayView containingWindow) notNil]) ifTrue:
-		[window setLabel: (window label
-							copyReplaceFrom: (window label lastIndexOf: Character space) + 1
-							to: window label size
-							with: (self localNameFor: imageName))]
+			put: (Character value: (objectMemory byteAt: p + i - 1)) ].
+	imageName := newName
 ]
 
 { #category : #'file primitives' }
@@ -876,15 +816,6 @@ StackInterpreterSimulator >> interpreterAllocationReserveBytes [
 { #category : #'interpreter shell' }
 StackInterpreterSimulator >> invalidCompactClassError: name [
 	self error: 'Class ', name, ' does not have the required compact class index'
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> ioBeDisplay: bitsOrHandleCArray width: width height: height depth: depth [
-	"The real platform may want to note the location of the display and respond to the fact of
-	 its installation.  Here merely create a scratch form the same size as Smalltalk displayObj"
-	super ioBeDisplay: bitsOrHandleCArray asInteger width: width height: height depth: depth.
-	displayForm := Form extent: width @ height depth: depth.
-	displayView ifNotNil: [displayView image: displayForm]
 ]
 
 { #category : #security }
@@ -1020,15 +951,6 @@ StackInterpreterSimulator >> ioMicroMSecs [
 ]
 
 { #category : #'I/O primitives' }
-StackInterpreterSimulator >> ioMousePoint [
-	| relPt |
-	^displayForm
-		ifNil: [99 << 16 + 66]
-		ifNotNil: [relPt := Sensor cursorPoint - self displayLocation.
-				relPt x << 16 + relPt y]
-]
-
-{ #category : #'I/O primitives' }
 StackInterpreterSimulator >> ioProcessEvents [
 ]
 
@@ -1036,12 +958,6 @@ StackInterpreterSimulator >> ioProcessEvents [
 StackInterpreterSimulator >> ioRelinquishProcessorForMicroseconds: microseconds [
 	"In the simulator give an indication that we're idling and check for input."
 
-	1halt.
-	Display reverse: ((displayView
-						ifNil: [0@0]
-						ifNotNil: [displayView bounds origin]) extent: 16@16).
-	Sensor peekEvent ifNotNil:
-		[self forceInterruptCheck].
 	Processor activeProcess == UIManager default uiProcess ifTrue:
 		[World doOneCycle].
 	microseconds >= 1000
@@ -1060,17 +976,6 @@ StackInterpreterSimulator >> ioScreenDepth [
 { #category : #'I/O primitives support' }
 StackInterpreterSimulator >> ioScreenScaleFactor [
 	^ 1.0
-]
-
-{ #category : #'I/O primitives support' }
-StackInterpreterSimulator >> ioScreenSize [
-	"Answer the screen extent packed into 32 bits.  In the simulator,
-	 displayForm gets initialized with a fake form; don't be deceived."
-	| extent |
-	extent := (displayForm notNil and: [displayForm ~~ fakeForm])
-				ifTrue: [displayForm extent]
-				ifFalse: [self desiredDisplayExtent].
-	^extent x << 16 + extent y
 ]
 
 { #category : #'process primitive support' }
@@ -1695,14 +1600,10 @@ StackInterpreterSimulator >> rewriteMethodCacheEntryForExternalPrimitiveToFuncti
 
 { #category : #testing }
 StackInterpreterSimulator >> run [
+
 	"Just run"
-	quitBlock := [displayView ifNotNil:
-				   [displayView containingWindow ifNotNil:
-					[:topWindow|
-					((World submorphs includes: topWindow)
-					 and: [UIManager default confirm: 'close?']) ifTrue:
-						[topWindow delete]]].
-				  ^self close].
+
+	quitBlock := [ ^ self close ].
 	self initStackPages.
 	self loadInitialContext.
 	self initialEnterSmalltalkExecutive.
@@ -1800,11 +1701,6 @@ StackInterpreterSimulator >> setClickStepBreakBlock [
 			[:debuggerWindow|
 			 WorldState addDeferredUIMessage:
 				[debuggerWindow model proceed]]
-]
-
-{ #category : #'spur bootstrap' }
-StackInterpreterSimulator >> setDisplayForm: aForm [
-	displayForm := aForm
 ]
 
 { #category : #accessing }
@@ -2066,30 +1962,6 @@ StackInterpreterSimulator >> time: ignored [
 	"Simulate the glibc time() function"
 
 	^ DateAndTime now asUnixTime 
-]
-
-{ #category : #UI }
-StackInterpreterSimulator >> toggleTranscript [
-	| transcriptPane |
-	transcript ifNil: [transcript := Transcript. ^self].
-	displayView ifNil: [^self changed: #flash].
-	transcriptPane := (displayView outermostMorphThat: [:m| m isSystemWindow])
-							submorphThat: [:m| m model isStream]
-							ifNone: [^self changed: #flash].
-	transcript := transcript = Transcript
-					ifTrue: [transcriptPane model]
-					ifFalse: [Transcript]
-]
-
-{ #category : #UI }
-StackInterpreterSimulator >> toggleTranscriptForSimulatorMorph: aTranscriptStreamOrTranscript [
-	"tty think this through when not so tired"
-	self flag: 'tty'.
-	transcript ifNil: [transcript := Transcript. ^self].
-	displayView ifNil: [^self changed: #flash].
-	transcript := transcript = Transcript
-					ifTrue: [aTranscriptStreamOrTranscript]
-					ifFalse: [Transcript]
 ]
 
 { #category : #accessing }

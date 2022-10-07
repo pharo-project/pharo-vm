@@ -5052,31 +5052,6 @@ StackInterpreter >> defaultNumStackPages [
 	^50
 ]
 
-{ #category : #'debug support' }
-StackInterpreter >> detailedSymbolicMethod: aMethod [
-	<doNotGenerate>
-	 self transcript
-		newLine;
-		nextPutAll:
-			((String streamContents:
-				[:ts| | prim proxy |
-				(prim := self primitiveIndexOf: aMethod) > 0 ifTrue:
-					[ts nextPutAll: '<primitive: '; print: prim; nextPut: $>.
-					(self isQuickPrimitiveIndex: prim) ifTrue:
-						[ts nextPutAll: ' quick method'; cr; flush.
-						 ^self].
-					ts cr].
-				proxy := VMCompiledMethodProxy new
-								for: aMethod
-								coInterpreter: self
-								objectMemory: objectMemory.
-				(DetailedInstructionPrinter on: proxy)
-					stackHeightComputer: (StackDepthFinder on: proxy);
-					indent: 0;
-					printInstructionsOn: ts]) copyReplaceAll: 'a VMObjectProxy for ' with: '');
-		flush
-]
-
 { #category : #'send bytecodes' }
 StackInterpreter >> directedSuperclassSend [
 	"Send a message to self, starting lookup with the superclass of the class on top of stack."
@@ -7306,18 +7281,6 @@ StackInterpreter >> getSavedWindowSize [
 	^savedWindowSize
 ]
 
-{ #category : #'internal interpreter access' }
-StackInterpreter >> getSnapshotScreenSize [
-	"Answer the screen size to write to the snapshot.
-	 If the actual screen size is zero then write the savedWindowSize instead."
-	| screenSize |
-	screenSize := self ioScreenSize.
-	((screenSize bitAnd: 16rFFFF) = 0
-	 or: [screenSize >> 16 = 0]) ifTrue:
-		[screenSize := savedWindowSize].
-	^screenSize
-]
-
 { #category : #'primitive support' }
 StackInterpreter >> getStackPointer [
 	"For Alien FFI"
@@ -8279,20 +8242,6 @@ StackInterpreter >> interpreterAllocationReserveBytes [
 	maxUsedBytesPerPage := self stackPageFrameBytes + self stackLimitOffset.
 	maxFramesPerPage := maxUsedBytesPerPage / objectMemory wordSize // FrameSlots.
 	^maxFramesPerPage * LargeContextSlots * objectMemory bytesPerOop * numStackPages
-]
-
-{ #category : #'I/O primitive support' }
-StackInterpreter >> ioBeDisplay: bitsOrHandle width: width height: height depth: depth [
-	"Record the position and dimensions of the display bitmap, and inform
-	 the display subsystem of the installation of a new display bitmap."
-	<var: #bitsOrHandle type: #'void *'>
-	| changed |
-	changed := displayBits ~= bitsOrHandle.
-	displayBits := bitsOrHandle.
-	displayWidth := width.
-	displayHeight := height.
-	displayDepth := depth.
-	self ioNoteDisplayChanged: bitsOrHandle width: width height: height depth: depth
 ]
 
 { #category : #'plugin support' }
@@ -10653,7 +10602,7 @@ StackInterpreter >> newHeader [
 	header oldBaseAddr: objectMemory oldSpaceStart.
 	header initialSpecialObjectsOop: objectMemory specialObjectsOop.
 	header hdrLastHash: objectMemory lastHash.
-	header screenSize: self ioScreenSize.
+	header screenSize: 0.
 	header headerFlags: self getImageHeaderFlags.
 	header extraVMMemory: (self getExtraVMMemory ifNil: [ 0 ]).
 	header hdrNumStackPages: self getDesiredNumStackPages.

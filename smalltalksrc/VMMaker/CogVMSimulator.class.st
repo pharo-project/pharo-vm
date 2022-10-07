@@ -1341,15 +1341,6 @@ CogVMSimulator >> invalidCompactClassError: name [
 	self error: 'Class ', name, ' does not have the required compact class index'
 ]
 
-{ #category : #'I/O primitives' }
-CogVMSimulator >> ioBeDisplay: bitsOrHandleCArray width: width height: height depth: depth [
-	"The real platform may want to note the location of the display and respond to the fact of
-	 its installation.  Here merely create a scratch form the same size as Smalltalk displayObj"
-	super ioBeDisplay: bitsOrHandleCArray asInteger width: width height: height depth: depth.
-	displayForm := Form extent: width @ height depth: depth.
-	displayView ifNotNil: [displayView image: displayForm]
-]
-
 { #category : #security }
 CogVMSimulator >> ioCanRenameImage [
 	^true
@@ -1487,15 +1478,6 @@ CogVMSimulator >> ioMicroMSecs [
 ]
 
 { #category : #'I/O primitives' }
-CogVMSimulator >> ioMousePoint [
-	| relPt |
-	^displayForm
-		ifNil: [99 << 16 + 66]
-		ifNotNil: [relPt := Sensor cursorPoint - self displayLocation.
-				relPt x << 16 + relPt y]
-]
-
-{ #category : #'I/O primitives' }
 CogVMSimulator >> ioProcessEvents [
 ]
 
@@ -1507,11 +1489,6 @@ CogVMSimulator >> ioRelinquishProcessorForMicroseconds: microseconds [
 	 If we're simulating threading we're in difficulties.  We need a UI process
 	 (to run activities such as fill-in-the-blanks) but we also need an independent
 	 thread of control to run this VM thread.  So we need to fork a new UI process."
-	Display reverse: ((displayView
-						ifNil: [0@0]
-						ifNotNil: [displayView bounds origin]) extent: 16@16).
-	Sensor peekEvent ifNotNil:
-		[self forceInterruptCheck].
 	Processor activeProcess == UIManager default uiProcess ifTrue:
 		[World doOneCycle].
 	microseconds >= 1000

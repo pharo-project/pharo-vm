@@ -32,8 +32,8 @@ InterpreterPlugin class >> allCodeOlderThan: modificationTime [
 			[:pair| | c m stamp |
 			c := Smalltalk classNamed: pair first.
 			m := c compiledMethodAt: pair last ifAbsent: [c class >> pair last].
-			stamp := (m timeStamp subStrings: {Character space}) last: 2.
-			stamp := TimeStamp date: (Date fromString: stamp first) time: (Time fromString: stamp last).
+			stamp := (m timeStamp substrings: {Character space}) last: 2.
+			stamp := DateAndTime date: (Date fromString: stamp first) time: (Time fromString: stamp last).
 			stamp asSeconds < modificationTime]]
 ]
 
