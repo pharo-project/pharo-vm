@@ -315,12 +315,6 @@ Spur64BitMMLECoSimulator >> scavengingGCTenuringIf: tenuringCriterion [
 	^super scavengingGCTenuringIf: tenuringCriterion
 ]
 
-{ #category : #'free space' }
-Spur64BitMMLECoSimulator >> setFree: o [
-	"o = 16rB34D40 ifTrue: [self halt]."
-	super setFree: o
-]
-
 { #category : #'header access' }
 Spur64BitMMLECoSimulator >> setIsMarkedOf: objOop to: aBoolean [
 	"objOop = 16rB26020 ifTrue: [self halt]."
