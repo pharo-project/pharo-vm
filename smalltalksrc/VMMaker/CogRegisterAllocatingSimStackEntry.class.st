@@ -92,15 +92,8 @@ CogRegisterAllocatingSimStackEntry >> liveRegister [
 	^ liveRegister
 ]
 
-{ #category : #accessing }
-CogRegisterAllocatingSimStackEntry >> offset [
-	"Answer the value of offset"
-	self assert: (type = SSBaseOffset or: [type = SSSpill]).
-	^offset
-]
-
 { #category : #'compile abstract instructions' }
-CogRegisterAllocatingSimStackEntry >> popToReg: reg [
+CogRegisterAllocatingSimStackEntry >> moveToReg: reg [
 	liveRegister ~= NoReg
 		ifTrue: 
 			[self deny: (type = SSRegister and: [register ~= liveRegister and: [cogit needsFrame]]).
@@ -125,6 +118,13 @@ CogRegisterAllocatingSimStackEntry >> popToReg: reg [
 	(reg ~= TempReg and: [liveRegister = NoReg and: [type ~= SSRegister]]) ifTrue:
 		[liveRegister := reg.
 		 cogit copyLiveRegisterToCopiesOf: self]
+]
+
+{ #category : #accessing }
+CogRegisterAllocatingSimStackEntry >> offset [
+	"Answer the value of offset"
+	self assert: (type = SSBaseOffset or: [type = SSSpill]).
+	^offset
 ]
 
 { #category : #'compile abstract instructions' }

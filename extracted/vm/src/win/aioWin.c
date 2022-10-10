@@ -114,6 +114,20 @@ long aioFileDescriptor_numberOfHandles(){
 	return count;
 }
 
+EXPORT(void) aioFileDescriptor_printHandlers(){
+	AioFileDescriptor* element = fileDescriptorList;
+	long count = 0;
+
+	printf("List of registered aioHandlers\n");
+	printf("==============================\n\n");
+
+	while(element){
+		printf("FD: %d Mask: %d Flags: %d ClientData %p handlerFn %p\n", element->fd, element->mask, element->flags, element->clientData, element->handlerFn);
+		element = element->next;
+	}
+
+}
+
 void aioFileDescriptor_fillHandles(HANDLE* handles){
 	AioFileDescriptor* element = fileDescriptorList;
 	long index = 0;
@@ -144,15 +158,10 @@ void aioFileDescriptor_signal_withHandle(HANDLE event){
 			/**
 			 * The event should be reset once it has been processed.
 			 */
-			if((element->flags & AIO_EXT) == 0){
-				WSAResetEvent(element->readEvent);
+			WSAResetEvent(element->readEvent);
 
-				if(element->mask == 0) {
-					return;
-				}
-				//We set the event to 0 so it is not recalled after
-				WSAEventSelect(element->fd, element->readEvent, 0);
-			}
+			//We set the event to 0 so it is not recalled after
+			WSAEventSelect(element->fd, element->readEvent, 0);
 
 			element->handlerFn(element->fd, element->clientData, AIO_R);
 			return;
@@ -163,15 +172,10 @@ void aioFileDescriptor_signal_withHandle(HANDLE event){
 			/**
 			 * The event should be reset once it has been processed.
 			 */
-			if((element->flags & AIO_EXT) == 0){
-				WSAResetEvent(element->writeEvent);
+			WSAResetEvent(element->writeEvent);
 
-				if(element->mask == 0) {
-					return;
-				}
-				//We set the event to 0 so it is not recalled after
-				WSAEventSelect(element->fd, element->writeEvent, 0);
-			}
+			//We set the event to 0 so it is not recalled after
+			WSAEventSelect(element->fd, element->writeEvent, 0);
 
 			element->handlerFn(element->fd, element->clientData, AIO_W);
 			return;

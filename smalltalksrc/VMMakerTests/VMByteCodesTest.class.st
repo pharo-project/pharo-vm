@@ -75,6 +75,16 @@ VMByteCodesTest >> interpret: aBlock [
 
 ]
 
+{ #category : #'tests-simd' }
+VMByteCodesTest >> interpretNextBytecode [
+
+	| count |
+	count := 0.
+	interpreter interpretWhile: [ 
+		count := count + 1.
+		count = 1 ]
+]
+
 { #category : #'tests-pushThisContext' }
 VMByteCodesTest >> interpretWithFrame: aBlock [
 
@@ -118,6 +128,13 @@ VMByteCodesTest >> pushThisContextTopFrame [
 		withInterpreter: interpreter
 ]
 
+{ #category : #'tests-simd' }
+VMByteCodesTest >> setUp [ 
+
+	super setUp.
+	self installFloat64RegisterClass
+]
+
 { #category : #'tests-push-simple' }
 VMByteCodesTest >> storeAndPopTemporaryIntoTempTest: index [
 	
@@ -147,6 +164,75 @@ VMByteCodesTest >> testAccessingSenderOfContextShouldReturnContextOfSender [
 	interpreter pushActiveContextBytecode.
 	newMaybeSenderContext := interpreter instVar: SenderIndex ofContext: interpreter stackTop.
 	self assert: oldMaybeSenderContext equals: newMaybeSenderContext
+]
+
+{ #category : #'tests-simd' }
+VMByteCodesTest >> testAddVectorBytecode [
+	| index v0 v1 result firstTerm size |
+	
+	index := 0.
+
+	firstTerm := 1.0 to: 2.0.
+	size := firstTerm size.
+
+	v0 := self new64BitIndexableFromArray: firstTerm.
+	v1 := self new64BitIndexableFromArray: (firstTerm collect: [:i | i + size]).
+	result := self new64BitIndexableOfSize: size. 
+		
+	stackBuilder addNewFrame
+		stack: { v0. v1 } .
+	stackBuilder buildStack.
+	
+	self interpret: [ interpreter addFloat64VectorBytecode ].
+	
+	result := interpreter stackTop.
+	
+	self deny: result equals: memory nilObject.
+	self assert: (memory fetchFloat64: 0 ofObject: result) equals: 4.0.
+	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 6.0.
+	
+]
+
+{ #category : #'tests-simd' }
+VMByteCodesTest >> testArraySumUsingVectorBytecode [
+	| cm x y result simulatedMethod z |
+
+	x := self new64BitIndexableFromArray: #(1.0 2.0).
+	y := self new64BitIndexableFromArray: #(10.0 20.0).
+	z := self new64BitIndexableOfSize: 2.
+	
+	cm := IRBuilder buildMethod: [ :builder |
+		builder
+				numArgs: 3; 		
+				addTemps: { #firstVector. #secondVector. #thirdVector };
+				pushLiteral: 0;
+				pushTemp: #firstVector;
+				pushFloat64ArrayToRegister;
+				pushLiteral: 0;
+				pushTemp: #secondVector;
+				pushFloat64ArrayToRegister;
+				addFloat64Vector;
+				pushLiteral: 0;
+				pushTemp: #thirdVector;
+				storeFloat64RegisterIntoArray;
+				returnTop
+		 ].
+	
+	simulatedMethod := methodBuilder fillFromPharoMethod: cm;
+		          buildMethod.
+	
+	stackBuilder addNewFrame
+		method: simulatedMethod;
+		temps: { x. y. z.}.
+	stackBuilder buildStack.
+	
+	interpreter interpretUntilReturn.
+	
+	result := interpreter stackTop.
+
+	self assert: (memory fetchFloat64: 0 ofObject: result) equals: 11.0.
+	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 22.0.
+	
 ]
 
 { #category : #'tests-complex' }
@@ -193,6 +279,33 @@ VMByteCodesTest >> testBytecodePopIntoReceiverWithReadOnlySendsAttemptToAssignMe
 	self assert: topFrame method equals: attemptToAssignMethod
 ]
 
+{ #category : #'tests-simd' }
+VMByteCodesTest >> testCallMappedInlinedPrimitiveBytecode [
+
+	| v0 v1 result method |
+	v0 := self new64BitIndexableOfSize: 2.
+	v1 := self new64BitIndexableOfSize: 2.
+	memory storeFloat64: 0 ofObject: v0 withValue: 1.0.
+	memory storeFloat64: 1 ofObject: v0 withValue: 2.0.
+	memory storeFloat64: 0 ofObject: v1 withValue: 3.0.
+	memory storeFloat64: 1 ofObject: v1 withValue: 4.0.
+	
+	method := methodBuilder newMethod
+		          bytecodes: #[ "callMappedInlinedPrimitiveBytecode" 236 "addVectorBytecode" 0 ];
+		          buildMethod.
+	stackBuilder addNewFrame
+		method: method;
+		stack: { v0. v1 }.
+	stackBuilder buildStack.
+	
+	self interpretNextBytecode.
+	
+	result := interpreter stackTop.
+	self deny: result equals: memory nilObject.
+	self assert: (memory fetchFloat64: 0 ofObject: result) equals: 4.0.
+	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 6.0
+]
+
 { #category : #'tests-push-simple' }
 VMByteCodesTest >> testDuplicateStackTop [
 
@@ -223,6 +336,31 @@ VMByteCodesTest >> testPopStackTopBytecode [
 	"then we pop it"
 	self
 		assertPopped: [ self interpret: [ interpreter popStackBytecode ] ]
+	
+]
+
+{ #category : #'tests-simd' }
+VMByteCodesTest >> testPushArrayToRegisterBytecode [
+	| array index result |
+
+	array := self new64BitIndexableOfSize: 4.
+	memory storeFloat64: 0 ofObject: array withValue: 1.0. 
+	memory storeFloat64: 1 ofObject: array withValue: 2.0.
+	memory storeFloat64: 2 ofObject: array withValue: 3.0.
+	memory storeFloat64: 3 ofObject: array withValue: 4.0. 
+	
+	index := memory integerObjectOf: 2.
+	
+	stackBuilder addNewFrame
+		stack: { index. array } .
+	stackBuilder buildStack.
+	
+	self interpret: [ interpreter pushFloat64ArrayToRegisterBytecode ].
+	
+	result := interpreter stackTop.
+	
+	self assert: (memory fetchFloat64: 0 ofObject: result) equals: 3.0.
+	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 4.0.
 	
 ]
 
@@ -547,4 +685,63 @@ VMByteCodesTest >> testStoreAndPopTemporary6 [
 { #category : #'tests-push-simple' }
 VMByteCodesTest >> testStoreAndPopTemporary7 [
 	self storeAndPopTemporaryIntoTempTest: 7
+]
+
+{ #category : #'tests-simd' }
+VMByteCodesTest >> testStoreRegisterIntoArrayBytecode [
+	| register index array result |
+	
+	array := self new64BitIndexableOfSize: 4.
+	memory storeFloat64: 0 ofObject: array withValue: 1.0. 
+	memory storeFloat64: 1 ofObject: array withValue: 2.0.
+	memory storeFloat64: 2 ofObject: array withValue: 3.0.
+	memory storeFloat64: 3 ofObject: array withValue: 4.0. 
+	
+	register := self new64BitIndexableOfSize: 2.
+	memory storeFloat64: 0 ofObject: register withValue: 5.0. 
+	memory storeFloat64: 1 ofObject: register withValue: 6.0.
+	
+	index := memory integerObjectOf: 2.
+	
+	stackBuilder addNewFrame
+		stack: { register. index. array }.
+	stackBuilder buildStack.
+	
+	self interpret: [ interpreter storeFloat64RegisterIntoArrayBytecode ].
+	
+	result := interpreter stackTop.
+	
+	self assert: (memory fetchFloat64: 2 ofObject: result) equals: 5.0.
+	self assert: (memory fetchFloat64: 3 ofObject: result) equals: 6.0.
+	
+	self assert: (memory fetchFloat64: 2 ofObject: array) equals: 5.0.
+	self assert: (memory fetchFloat64: 3 ofObject: array) equals: 6.0.
+]
+
+{ #category : #'tests-simd' }
+VMByteCodesTest >> testSubVectorBytecode [
+	| index vector0 vector1 result |
+	
+	index := 0.
+
+	vector0 := self new64BitIndexableOfSize: 2.
+	memory storeFloat64: 0 ofObject: vector0 withValue: 5.0. 
+	memory storeFloat64: 1 ofObject: vector0 withValue: 3.0. 
+
+	vector1 := self new64BitIndexableOfSize: 2.
+	memory storeFloat64: 0 ofObject: vector1 withValue: 2.0. 
+	memory storeFloat64: 1 ofObject: vector1 withValue: 1.0. 
+		
+	stackBuilder addNewFrame
+		stack: { vector0. vector1 } .
+	stackBuilder buildStack.
+	
+	self interpret: [ interpreter subFloat64VectorBytecode ].
+	
+	result := interpreter stackTop.
+	
+	self deny: result equals: memory nilObject.
+	self assert: (memory fetchFloat64: 0 ofObject: result) equals: 3.0.
+	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 2.0.
+	
 ]

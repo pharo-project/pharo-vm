@@ -50,7 +50,7 @@ CogOutOfLineLiteralsARMCompiler >> getDefaultCogCodeSize [
 { #category : #'inline cacheing' }
 CogOutOfLineLiteralsARMCompiler >> inlineCacheTagAt: callSiteReturnAddress [
 	<inline: true>
-	^objectMemory longAt: (self pcRelativeAddressAt: (callSiteReturnAddress - 8) asUnsignedInteger)
+	^objectMemory uint32AtPointer: (self pcRelativeAddressAt: (callSiteReturnAddress - 8) asUnsignedInteger)
 ]
 
 { #category : #testing }
@@ -73,7 +73,7 @@ CogOutOfLineLiteralsARMCompiler >> isSharable [
 { #category : #'inline cacheing' }
 CogOutOfLineLiteralsARMCompiler >> literalBeforeFollowingAddress: followingAddress [
 	"Return the literal referenced by the instruction immediately preceding followingAddress."
-	^objectMemory longAt: (self pcRelativeAddressAt:
+	^objectMemory uint32AtPointer: (self pcRelativeAddressAt:
 		((self instructionIsLDR: (self instructionBeforeAddress: followingAddress))
 			ifTrue: [self instructionAddressBefore: followingAddress]
 			ifFalse: [self instructionAddressBefore: followingAddress - 4]))
@@ -148,7 +148,7 @@ CogOutOfLineLiteralsARMCompiler >> outOfLineLiteralOpcodeLimit [
 CogOutOfLineLiteralsARMCompiler >> pcRelativeAddressAt: instrAddress [
 	"Extract the address of the ldr rX, [pc, #NNN] instruction at address"
 	| inst offset |
-	inst := objectMemory longAt: instrAddress.
+	inst := objectMemory uint32AtPointer: instrAddress.
 	self assert: (inst bitAnd: 16rFF5F0000) = (self ldr: 0 rn: PC plus: 0 imm: 0).
 	offset := inst bitAnd: 16rFFF.
 	^instrAddress + 8 + ((inst anyMask: 1 << 23)
@@ -184,7 +184,7 @@ CogOutOfLineLiteralsARMCompiler >> rewriteFullTransferAt: callSiteReturnAddress 
 	<var: #callSiteReturnAddress type: #usqInt>
 	<var: #callTargetAddress type: #usqInt>
 	self assert: (self instructionBeforeAddress: callSiteReturnAddress) = expectedInstruction.
-	objectMemory longAt: (self pcRelativeAddressAt: callSiteReturnAddress - 8) put: callTargetAddress.
+	objectMemory uint32AtPointer: (self pcRelativeAddressAt: callSiteReturnAddress - 8) put: callTargetAddress.
 	"self cCode: ''
 		inSmalltalk: [cogit disassembleFrom: callSiteReturnAddress - 8 to: (self pcRelativeAddressAt: callSiteReturnAddress - 8)]."
 	^0
@@ -204,8 +204,8 @@ CogOutOfLineLiteralsARMCompiler >> rewriteInlineCacheAt: callSiteReturnAddress t
 	self assert: (self isInImmediateJumpRange: callDistance). "we don't support long call updates here"
 	call := self bl: callDistance.
 	objectMemory
-		longAt: (self instructionAddressBefore: callSiteReturnAddress ) put: call;
-		longAt: (self pcRelativeAddressAt: callSiteReturnAddress - 8) put: cacheTag.
+		unsignedLongAt: (self instructionAddressBefore: callSiteReturnAddress ) put: call;
+		unsignedLongAt: (self pcRelativeAddressAt: callSiteReturnAddress - 8) put: cacheTag.
 	self assert: (self inlineCacheTagAt: callSiteReturnAddress) = cacheTag.
 	"self cCode: ''
 		inSmalltalk: [cogit disassembleFrom: callSiteReturnAddress - 8 to: (self pcRelativeAddressAt: callSiteReturnAddress - 8)]."
@@ -273,7 +273,7 @@ CogOutOfLineLiteralsARMCompiler >> sizePCDependentInstructionAt: eventualAbsolut
 CogOutOfLineLiteralsARMCompiler >> storeLiteral: literal beforeFollowingAddress: followingAddress [
 	"Rewrite the literal in the instruction immediately preceding followingAddress."
 	objectMemory
-		longAt: (self pcRelativeAddressAt:
+		unsignedLongAt: (self pcRelativeAddressAt:
 					((self instructionIsLDR: (self instructionBeforeAddress: followingAddress))
 						ifTrue: [self instructionAddressBefore: followingAddress]
 						ifFalse: [self instructionAddressBefore: followingAddress - 4]))

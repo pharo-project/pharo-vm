@@ -131,7 +131,6 @@ typedef struct VirtualMachine {
 
 	/* InterpreterProxy methodsFor: 'special objects' */
 
-	sqInt (*characterTable)(void);
 	sqInt (*falseObject)(void);
 	sqInt (*nilObject)(void);
 	sqInt (*trueObject)(void);
@@ -163,7 +162,6 @@ typedef struct VirtualMachine {
 	sqInt (*byteSwapped)(sqInt w);
 	sqInt (*failed)(void);
 	void (*fullGC)(void);
-	void (*incrementalGC)(void);
 	sqInt (*primitiveFail)(void);
 	sqInt (*showDisplayBitsLeftTopRightBottom)(sqInt aForm, sqInt l, sqInt t, sqInt r, sqInt b);
 	sqInt (*signalSemaphoreWithIndex)(sqInt semaIndex);

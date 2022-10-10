@@ -24,7 +24,7 @@ BaselineOfVMMaker >> baseline: spec [
 			
 			"Melchor is a VM-oriented Slang"
 			spec package: 'Melchor' with: [
-				spec requires: #('Slang') ].
+				spec requires: #('Slang' 'Slang-Tests') ].
 			
 			"External Dependencies"
 			spec baseline: 'SmaCC-GLR' with: [ 
@@ -33,14 +33,16 @@ BaselineOfVMMaker >> baseline: spec [
 					className: 'BaselineOfSmaCC';
 					repository: 'github://SmaCCRefactoring/SmaCC' ].
 			spec baseline: 'Unicorn' with: [ 
-				spec repository: 'github://guillep/pharo-unicorn' ].
+				spec repository: 'github://pharo-project/pharo-unicorn:unicorn2' ].
 			spec baseline: 'LLVMDisassembler' with: [ 
-				spec repository: 'github://guillep/pharo-llvmDisassembler' ].
+				spec repository: 'github://pharo-project/pharo-llvmDisassembler' ].
+			spec baseline: 'OpalSimdBytecode' with: [ 
+				spec repository: 'github://nrainhart/pharo-opal-simd-bytecode:main' ].
 
 			"Tests"			
 			spec
 				package: 'VMMakerTests' with: [
-					spec requires: #('VMMakerCompatibilityForPharo6' 'Unicorn' 'LLVMDisassembler' 'Slang-Tests') ].
+					spec requires: #('VMMakerCompatibilityForPharo6' 'Unicorn' 'LLVMDisassembler' 'Slang-Tests' 'OpalSimdBytecode') ].
 			spec
 				package: 'VMMaker-OriginalTests' with: [
 					spec requires: #('VMMakerCompatibilityForPharo6') ].

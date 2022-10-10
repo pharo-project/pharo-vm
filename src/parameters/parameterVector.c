@@ -1,4 +1,4 @@
-#include "pharovm/parameterVector.h"
+#include "pharovm/parameters/parameterVector.h"
 #include <stdlib.h>
 
 VMErrorCode

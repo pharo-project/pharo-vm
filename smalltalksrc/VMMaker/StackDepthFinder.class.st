@@ -19,6 +19,18 @@ StackDepthFinder class >> on: aVMCompiledMethodProxy [
 		yourself
 ]
 
+{ #category : #'extended instruction decoding' }
+StackDepthFinder >> addFloat32Vector [
+
+	self drop.
+]
+
+{ #category : #'extended instruction decoding' }
+StackDepthFinder >> addFloat64Vector [
+
+	self drop.
+]
+
 { #category : #'instruction decoding' }
 StackDepthFinder >> blockReturnConstant: value [
 	"Return Constant From Block bytecode."
@@ -251,6 +263,18 @@ StackDepthFinder >> pushExplicitOuter: level [
 	self push
 ]
 
+{ #category : #'extended instruction decoding' }
+StackDepthFinder >> pushFloat32ArrayToRegister [
+
+	self drop.
+]
+
+{ #category : #'extended instruction decoding' }
+StackDepthFinder >> pushFloat64ArrayToRegister [
+
+	self drop.
+]
+
 { #category : #'instruction decoding' }
 StackDepthFinder >> pushFullClosure: literal numCopied: numCopied [
 	"Push Closure bytecode."
@@ -378,6 +402,18 @@ StackDepthFinder >> stackp [
 	^stackp
 ]
 
+{ #category : #'extended instruction decoding' }
+StackDepthFinder >> storeFloat32RegisterIntoArray [
+
+	self drop: 2.
+]
+
+{ #category : #'extended instruction decoding' }
+StackDepthFinder >> storeFloat64RegisterIntoArray [
+
+	self drop: 2.
+]
+
 { #category : #'instruction decoding' }
 StackDepthFinder >> storeIntoLiteralVariable: anAssociation [ 
 	"Store Top Of Stack Into Literal Variable Of Method bytecode."
@@ -404,11 +440,4 @@ StackDepthFinder >> storeIntoTemporaryVariable: offset [
 { #category : #'instruction decoding' }
 StackDepthFinder >> trap [
 	
-]
-
-{ #category : #'instruction decoding' }
-StackDepthFinder >> trapIfNotInstanceOf: behaviorOrArrayOfBehavior [
-	"If the top of stack is not an instance of either the argument, or, if the argument is an Array,
-	  any of the elements of the argument, send the class trap message to the current context."
-	self drop
 ]

@@ -63,7 +63,7 @@ set(VM_FRONTEND_SOURCES
     ${Win32Resource})
 
 set(VM_CONSOLE_FRONTEND_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/unixMain.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/win32Main.c
     ${Win32ConsoleResource})
 
 set(VM_FRONTEND_APPLICATION_TYPE WIN32)

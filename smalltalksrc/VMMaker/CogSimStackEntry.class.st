@@ -217,6 +217,33 @@ CogSimStackEntry >> maybeConstant [
 	^constant
 ]
 
+{ #category : #'compile abstract instructions' }
+CogSimStackEntry >> moveToReg: reg [
+	spilled
+		ifTrue:
+			[cogit PopR: reg]
+		ifFalse:
+			[type caseOf: {
+				[SSBaseOffset]	-> [cogit MoveMw: offset r: register R: reg].
+				[SSConstant]	-> [cogit genMoveConstant: constant R: reg].
+				[SSRegister]	-> [reg ~= register
+										ifTrue: [cogit MoveR: register R: reg]
+										ifFalse: [cogit Label]] }]
+]
+
+{ #category : #'compile abstract instructions' }
+CogSimStackEntry >> moveToVectorReg: reg [
+	self assert: type = SSVectorRegister.
+	spilled
+		ifTrue:
+			[self notYetImplemented]
+		ifFalse:
+			[type caseOf: {
+				[SSVectorRegister]	-> [reg ~= register
+										ifTrue: [self notYetImplemented]
+										ifFalse: [cogit Label]] }]
+]
+
 { #category : #accessing }
 CogSimStackEntry >> offset [
 	"Answer the value of offset"
@@ -229,20 +256,6 @@ CogSimStackEntry >> offset: anObject [
 	"Set the value of offset"
 
 	^offset := anObject
-]
-
-{ #category : #'compile abstract instructions' }
-CogSimStackEntry >> popToReg: reg [
-	spilled
-		ifTrue:
-			[cogit PopR: reg]
-		ifFalse:
-			[type caseOf: {
-				[SSBaseOffset]	-> [cogit MoveMw: offset r: register R: reg].
-				[SSConstant]	-> [cogit genMoveConstant: constant R: reg].
-				[SSRegister]	-> [reg ~= register
-										ifTrue: [cogit MoveR: register R: reg]
-										ifFalse: [cogit Label]] }]
 ]
 
 { #category : #printing }
@@ -266,7 +279,10 @@ CogSimStackEntry >> printStateOn: aStream [
 								nextPutAll: 'spill @ ';
 								nextPutAll: (cogit backEnd nameForRegister: register).
 							offset negative ifFalse: [aStream nextPut: $+].
-							aStream print: offset] }.
+							aStream print: offset].
+		[SSVectorRegister] -> [ aStream
+											nextPutAll: 'Vector Register ';
+											print: register ] }.
 	(spilled and: [type ~= SSSpill]) ifTrue:
 		[aStream nextPutAll: ' (spilled)'].
 	bcptr ifNotNil:
@@ -277,7 +293,7 @@ CogSimStackEntry >> printStateOn: aStream [
 { #category : #accessing }
 CogSimStackEntry >> register [
 	"Answer the value of register"
-	self assert: (type = SSBaseOffset or: [type = SSRegister]).
+	self assert: (type = SSBaseOffset or: [type = SSRegister or: [type = SSVectorRegister]]).
 	^register
 ]
 
@@ -291,20 +307,19 @@ CogSimStackEntry >> register: anObject [
 { #category : #accessing }
 CogSimStackEntry >> registerMask [
 	"Answer a bit mask for the receiver's register, if any."
-	^(type = SSBaseOffset
-		or: [type = SSRegister])
-			ifTrue: [cogit registerMaskFor: register]
-			ifFalse: [0]
+	^ ((type = SSBaseOffset) | (type = SSRegister) | (type = SSVectorRegister))
+		  ifTrue: [ cogit registerMaskFor: register ]
+		  ifFalse: [ 0 ]
 ]
 
 { #category : #accessing }
 CogSimStackEntry >> registerMaskOrNone [
-	^type = SSRegister ifTrue: [cogit registerMaskFor: register] ifFalse: [0]
+	^((type = SSRegister) | (type = SSVectorRegister)) ifTrue: [cogit registerMaskFor: register] ifFalse: [0]
 ]
 
 { #category : #accessing }
 CogSimStackEntry >> registerOrNone [
-	^type = SSRegister ifTrue: [register] ifFalse: [NoReg]
+	^((type = SSRegister) | (type = SSVectorRegister)) ifTrue: [register] ifFalse: [NoReg]
 ]
 
 { #category : #accessing }

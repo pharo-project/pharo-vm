@@ -12,6 +12,7 @@ endfunction()
 function(download_git2)
   message(STATUS "Downloading Git2 binary")
   if(WIN)
+    add_third_party_dependency("libgit2-1.4.4")
     add_third_party_dependency("libgit2-win-1.0.0")
     add_third_party_dependency("libgit2-0.25.1-fixLibGit")
     add_third_party_dependency("zlib-1.2.11-fixLibGit")
@@ -19,12 +20,19 @@ function(download_git2)
     add_third_party_dependency("libssh2-1.9.0")
   elseif(OSX)
     If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64")
-      add_third_party_dependency("openssl-1.1.1k")
+      add_third_party_dependency("libgit2-1.4.4")
       add_third_party_dependency("libgit2-1.0.1")
       add_third_party_dependency("libssh2-1.9.0")
+      add_third_party_dependency("openssl-1.1.1k")
     else()
-      add_third_party_dependency("libgit2-0.25.1")
+      #Libgit >= 1.4 depend on ssh2 1.9 and ssl 1.1.1
+      add_third_party_dependency("libgit2-1.4.4")
+      add_third_party_dependency("libssh2-1.9.0")
+      add_third_party_dependency("openssl-1.1.1k")
+      
+      #Libgit <= 1.0 depend on ssh2 1.7 and ssl 1.0
       add_third_party_dependency("libgit2-mac-1.0.0")
+      add_third_party_dependency("libgit2-0.25.1")
       add_third_party_dependency("libssh2-1.7.0")
       add_third_party_dependency("openssl-1.0.2q")
     endif()
@@ -32,11 +40,18 @@ function(download_git2)
     If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv7l" OR (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64"))
       add_third_party_dependency("openssl-1.1.1k")
       add_third_party_dependency("libssh2-1.9.0")
+      add_third_party_dependency("libgit2-1.4.4")
       add_third_party_dependency("libgit2-1.0.1")
       add_third_party_dependency("zlib-1.2.11")
     else()
-      add_third_party_dependency("libgit2-0.25.1")
+      #Libgit >= 1.4 depend on ssh2 1.9 and ssl 1.1.1
+      add_third_party_dependency("libgit2-1.4.4")
+      add_third_party_dependency("libssh2-1.9.0")
+      add_third_party_dependency("openssl-1.1.1k")
+      
+      #Libgit <= 1.0 depend on ssh2 1.7 and ssl 1.0
       add_third_party_dependency_with_baseurl("libgit2-linux-1.0.0" "https://github.com/guillep/libgit_build/releases/download/v1.0.2/")
+      add_third_party_dependency("libgit2-0.25.1")
       add_third_party_dependency("libssh2-1.7.0")
       add_third_party_dependency("openssl-1.0.2q")
     endif()
@@ -44,7 +59,7 @@ function(download_git2)
 endfunction()
 
 function(build_git2)
-	message(STATUS "Building LibGit2 with LibSSH 1.9.0")
+	message(STATUS "Building LibGit2 1.4.4 with LibSSH 1.9.0")
 	
 	include(cmake/DownloadProject.cmake)
 	download_project(PROJ LibSSH2
@@ -55,7 +70,7 @@ function(build_git2)
 
 	download_project(PROJ LibGit2
 		GIT_REPOSITORY      https://github.com/libgit2/libgit2.git
-		GIT_TAG             "v1.0.1"
+		GIT_TAG             "v1.4.4"
 		${UPDATE_DISCONNECTED_IF_AVAILABLE}
 	)
 
@@ -74,10 +89,10 @@ function(build_git2)
 		set_target_properties(git2 PROPERTIES INSTALL_NAME_DIR "@executable_path/Plugins")
 
 		add_custom_target(libgit2_copy
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LibGit2_BINARY_DIR}/libgit2.1.0.1.dylib ${LIBRARY_OUTPUT_PATH}
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.0.1.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.0.dylib
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.0.1.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.dylib
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.0.1.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.0.0.dylib
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LibGit2_BINARY_DIR}/libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}
+			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.dylib
+			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.dylib
+			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.4.dylib
 			COMMENT "Copying Libgit binaries from '${LibGit2_BINARY_DIR}' to '${LIBRARY_OUTPUT_PATH}'" VERBATIM)
 	else()
 		message(FATAL "Aggggh not implemented yet")

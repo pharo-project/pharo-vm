@@ -12,7 +12,6 @@ SpurImageReader >> extractImageVersionFrom: file into: header [
 	<inline: false>
 	| version firstVersion |
 	<var: #file type: #sqImageFile>
-	<var: #imageOffset type: #squeakFileOffsetType>
 	<var: #header type: #'SpurImageHeaderStruct *'>
 
 	"check the version number"
@@ -206,10 +205,6 @@ SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 
 	<var: #f type: #sqImageFile>
 	<var: #headerStart type: #'squeakFileOffsetType'>
-
-	<var: #heapSize type: #usqInt>
-	<var: #minimumMemory type: #usqInt>
-	<var: #allocationReserve type: #usqInt>
 	<var: #header type: #'SpurImageHeaderStruct'>
 
 	<api>

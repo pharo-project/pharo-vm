@@ -103,7 +103,6 @@ usqIntptr_t  positiveMachineIntegerValueOf(sqInt);
 usqIntptr_t  stackPositiveMachineIntegerValue(sqInt);
 
 /* InterpreterProxy methodsFor: 'special objects' */
-sqInt characterTable(void);
 sqInt falseObject(void);
 sqInt nilObject(void);
 sqInt trueObject(void);
@@ -136,7 +135,6 @@ sqInt becomewith(sqInt array1, sqInt array2);
 sqInt byteSwapped(sqInt w);
 sqInt failed(void);
 void fullGC(void);
-void incrementalGC(void);
 sqInt primitiveFail(void);
 sqInt primitiveFailFor(sqInt reasonCode);
 sqInt showDisplayBitsLeftTopRightBottom(sqInt aForm, sqInt l, sqInt t, sqInt r, sqInt b);
@@ -346,7 +344,6 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 	VM->positive32BitValueOf = positive32BitValueOf;
 
 	/* InterpreterProxy methodsFor: 'special objects' */
-	VM->characterTable = characterTable;
 	VM->falseObject = falseObject;
 	VM->nilObject = nilObject;
 	VM->trueObject = trueObject;
@@ -375,7 +372,6 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 	VM->byteSwapped = byteSwapped;
 	VM->failed = failed;
 	VM->fullGC = fullGC;
-	VM->incrementalGC = incrementalGC;
 	VM->primitiveFail = primitiveFail;
 	VM->showDisplayBitsLeftTopRightBottom = showDisplayBitsLeftTopRightBottom;
 	VM->signalSemaphoreWithIndex = signalSemaphoreWithIndex;

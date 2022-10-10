@@ -139,6 +139,7 @@ def runBuild(platformName, configuration, headless = true){
     }
 	
 		stash excludes: '_CPack_Packages', includes: "${buildDirectory}/build/packages/*", name: "packages-${platform}-${configuration}"
+        stash includes: "repository/scripts/*", name: "scripts"
 		archiveArtifacts artifacts: "${buildDirectory}/build/packages/*", excludes: '_CPack_Packages'
 	}
 }
@@ -189,8 +190,8 @@ def runUnitTests(platform){
       dir("build/vmmaker"){
         shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libllvm-full.zip"
         shell "unzip libllvm-full.zip -d ./vm/Contents/MacOS/Plugins"
-        shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libunicorn.zip"
-        shell "unzip libunicorn.zip  -d ./vm/Contents/MacOS/Plugins"
+        shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libunicorn.2.zip"
+        shell "unzip libunicorn.2.zip  -d ./vm/Contents/MacOS/Plugins"
 
         timeout(20){
           shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
@@ -219,7 +220,8 @@ def runTests(platform, configuration, packages, withWorker, additionalParameters
   def hasWorker = withWorker ? "--worker" : ""
 
 	stage(stageName){
-		unstash name: "packages-${platform}-${configuration}"
+		unstash name: "scripts"
+        unstash name: "packages-${platform}-${configuration}"
 		shell "mkdir runTests"
 		dir("runTests"){
 			try{
@@ -228,15 +230,21 @@ def runTests(platform, configuration, packages, withWorker, additionalParameters
           
 				if(isWindows()){
 					runInCygwin "cd runTests && unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
-					runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'"
+					// Disable testAfterSequence that creates incorrect bytecode sequences
+                    runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} ../repository/scripts/patchPharoPreTests.st"
+                    runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'"
 					} else {
 						shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
 
 						if(platform == 'Darwin-x86_64' || platform == 'Darwin-arm64'){
+        					// Disable testAfterSequence that creates incorrect bytecode sequences
+                            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} ../repository/scripts/patchPharoPreTests.st"
 							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'"
 						}
 
 						if(platform == 'Linux-x86_64' || platform == 'Linux-aarch64' || platform == 'Linux-armv7l'){
+        					// Disable testAfterSequence that creates incorrect bytecode sequences
+                            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} ../repository/scripts/patchPharoPreTests.st"
 							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'" 
 						}
 				}

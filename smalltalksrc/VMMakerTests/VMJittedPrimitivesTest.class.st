@@ -51,49 +51,7 @@ VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument
 
 	self prepareStackForSendReceiver: receiverOop arguments: { firstArgumentOop. secondArgumentOop }.
 	
-"	machineSimulator instructionPointerValue: initialAddress.
-	self openMachineDebugger.
-	1halt.
-
-"	self runUntilReturn.
-
-]
-
-{ #category : #helpers }
-VMJittedPrimitivesTest >> new16BitIndexableOfSize: aSize [
-
-	^ self newBitIndexableOfSize: aSize bytesPerSlot: 2 format: memory firstShortFormat
-]
-
-{ #category : #helpers }
-VMJittedPrimitivesTest >> new32BitIndexableOfSize: aSize [
-
-	^ self newBitIndexableOfSize: aSize bytesPerSlot: 4 format: memory firstLongFormat
-]
-
-{ #category : #helpers }
-VMJittedPrimitivesTest >> new64BitIndexableOfSize: aSize [
-
-	^ self newBitIndexableOfSize: aSize bytesPerSlot: 8 format: memory sixtyFourBitIndexableFormat
-]
-
-{ #category : #helpers }
-VMJittedPrimitivesTest >> new8BitIndexableOfSize: aSize [
-
-	^ self newBitIndexableOfSize: aSize bytesPerSlot: 1 format: memory firstByteFormat
-]
-
-{ #category : #helpers }
-VMJittedPrimitivesTest >> newBitIndexableOfSize: aSize bytesPerSlot: bytesPerSlot format: format [
-
-	| padding numberOfWordSizeSlots desiredByteSize |
-	desiredByteSize := aSize * bytesPerSlot roundUpTo: self wordSize.
-	numberOfWordSizeSlots := desiredByteSize / self wordSize.
-	padding := desiredByteSize / bytesPerSlot - aSize.
-	^ memory
-		  allocateNewSpaceSlots: numberOfWordSizeSlots
-		  format: format + padding
-		  classIndex: self nextOrdinaryClassIndex
+	self runUntilReturn
 ]
 
 { #category : #helpers }

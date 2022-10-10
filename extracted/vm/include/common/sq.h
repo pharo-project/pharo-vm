@@ -161,13 +161,8 @@ sqInt sqGetFilenameFromString(char * aCharBuffer, char * aFilenameString, sqInt 
 #define sqFTruncate(filenum, fileoffset) true
 #endif
 
-/* Macros to support Mac browser plugin without ugly code in Interpreter. */
-
-#define insufficientMemorySpecifiedError()	error("Insufficient memory for this image")
-#define insufficientMemoryAvailableError()	error("Failed to allocate memory for the heap")
-#define unableToReadImageError()		error("Read failed or premature end of image file")
-#define browserPluginReturnIfNeeded()
-#define browserPluginInitialiseIfNeeded()
+#define insufficientMemoryAvailableError()  error("Failed to allocate memory for the heap")
+#define unableToReadImageError()    error("Read failed or premature end of image file")
 
 /* Platform-specific header file may redefine earlier definitions and macros. */
 
@@ -480,8 +475,6 @@ typedef struct sqComplexEvent
 
 /* Set an asynchronous input semaphore index for events. */
 sqInt ioSetInputSemaphore(sqInt semaIndex);
-/* Retrieve the next input event from the OS. */
-sqInt ioGetNextEvent(sqInputEvent *evt);
 
 /* Image file and VM path names. */
 extern char imageName[];

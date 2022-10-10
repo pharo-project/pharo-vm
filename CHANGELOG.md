@@ -2,6 +2,54 @@
 
 I am a changelog... do not wait too much from me :D
 
+## v9.0.20
+- Fixing a performance regression on the allocation of opcodes and fix-ups. 
+	Cleaning only the ones that are going to be used.
+	Like this, this version has the same speed than before when allocating in the stack.
+
+## v9.0.19
+- Correctly handling the encoding of the command line arguments of the VM (Windows)
+- Allocating the opcodes and fixup structs only once and reusing them (Reducing risk of C Stack Overflow)
+
+## v9.0.18
+- Update library downloads in Windows to
+	- libgit2 => 1.4.4
+
+## v9.0.17
+- Supporting old images in OSX ARM64 with Libgit older than v1.4.4
+
+## v9.0.16
+- Fixes in users of declarationAt:
+- Updating Readme
+- Improving the generation of plugins
+- Upgrade library dependencies
+- Update library downloads to
+	- libgit2 => 1.4.4
+	- libssh2 => 1.9.0
+	- openssl => 1.1.1k
+- Update build instructions to build libgit v1.4.4
+
+## v9.0.15
+
+- Fixing FFI Variadic functions in OSX ARM64
+- Fixing store of Int64 in FFI OSX ARM64 when using LongLong
+- Fixing Error code in Primitive when more than one temporary is used.
+
+## v9.0.14
+
+- Adding support to read command line parameters from the PList (In OSX)
+
+## v9.0.13
+
+- Correct handling OOB (Out of Band Data) in Window
+- Blocking signals while signaling semaphores to avoid deadlocks caused by signal handlers
+
+## v9.0.12
+- Make MAXHOSTNAMELEN at least 256: improving resolution of names in linux
+- Improving VM Simulator Machine debugger
+- Integrating Processor Simulator for RISCV
+- Using a new SDL2 version built for OSX Mojave compatibility 
+
 ## v9.0.11
 
 - Include FloatArrayPlugin in the build

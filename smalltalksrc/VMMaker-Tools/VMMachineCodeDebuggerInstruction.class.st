@@ -41,8 +41,15 @@ VMMachineCodeDebuggerInstruction >> bytes: aByteArray [
 
 { #category : #printing }
 VMMachineCodeDebuggerInstruction >> bytesString [
-	
-	^ bytes printString
+
+	^ String streamContents: [ :aStream |
+		aStream nextPutAll: '#['.
+		bytes
+			do: [ :each | each hex printOn: aStream ]
+			separatedBy: [ aStream nextPut: $ ].
+		aStream nextPut: $]].
+
+
 ]
 
 { #category : #accessing }
@@ -54,7 +61,7 @@ VMMachineCodeDebuggerInstruction >> debugger: aVMMachineCodeDebugger [
 { #category : #showing }
 VMMachineCodeDebuggerInstruction >> icon [
 
-	self address = machineSimulator instructionPointerValue 
+	self address = machineSimulator instructionPointerRegisterValue 
 		ifTrue: [ ^ self iconNamed: #forward ].
 	
 	debugger selectedInstruction 

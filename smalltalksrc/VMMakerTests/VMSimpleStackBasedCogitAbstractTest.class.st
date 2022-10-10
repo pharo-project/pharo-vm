@@ -179,6 +179,42 @@ VMSimpleStackBasedCogitAbstractTest >> compileWithoutOutput: aBlockClosure bytec
 	^ aBlockClosure value
 ]
 
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> createBaseFrame [
+
+	"Create the root context with a valid method"
+
+	"Let's create a method with enough size. It should have at least a literal (4 or 8 bytes depending the word size) and some bytecodes, so we can put the IP inside the method"
+
+	| ctx page baseMethod baseMethodIP baseFrame |
+	baseMethod := methodBuilder newMethod
+		              literals: { 
+				              memory nilObject.
+				              memory nilObject };
+		              buildMethod.
+
+	baseMethodIP := memory lastPointerOf: baseMethod.
+
+	"The context has 5 (in 32 bits) or 9 (in 64 bits) as initial IP, as method has at least one literal"
+	ctx := self
+		       newSmallContextReceiver: memory nilObject
+		       method: baseMethod
+		       arguments: #(  )
+		       temporaries: #(  )
+		       ip: baseMethodIP + 1.
+
+	"The base context has a trampoline as the savedIP so it can return to a context that is in the heap"
+	cogit ceBaseFrameReturnTrampoline: 16rAABBCCDD.
+
+	page := interpreter makeBaseFrameFor: ctx.
+	interpreter setStackPointersFromPage: page.
+	interpreter setStackPageAndLimit: page.
+	interpreter instructionPointer: interpreter popStack.
+
+	"keeping track of the base frame."
+	baseFrame := interpreter framePointer
+]
+
 { #category : #'helpers - frames' }
 VMSimpleStackBasedCogitAbstractTest >> createFramefulCallFrom: anAddress [
 
@@ -307,9 +343,9 @@ VMSimpleStackBasedCogitAbstractTest >> createInterpreterFramefulCallFrom: return
 VMSimpleStackBasedCogitAbstractTest >> createSpecialSelectorArray [
 
 	| specialObjectsOop  |
-	specialObjectsOop := self newObjectWithSlots: 24.
+	specialObjectsOop := self newArrayWithSlots: 24.
 	selectorIndex := Smalltalk specialSelectors indexOf: sentSelector.
-	obj := self newObjectWithSlots: selectorIndex + 1.
+	obj := self newArrayWithSlots: selectorIndex + 1.
 	memory
 		storePointer: selectorIndex - 1
 		ofObject: obj withValue: (selectorAtIndex := memory integerObjectOf: 77 "Some object to test").
@@ -355,6 +391,12 @@ VMSimpleStackBasedCogitAbstractTest >> framePointerRegisterValue [
 VMSimpleStackBasedCogitAbstractTest >> framePointerRegisterValue: aValue [
 	
 	machineSimulator framePointerRegisterValue: aValue
+]
+
+{ #category : #configuration }
+VMSimpleStackBasedCogitAbstractTest >> generateCaptureCStackPointers [
+	
+	^ true
 ]
 
 { #category : #'helpers - cog methods' }
@@ -431,11 +473,17 @@ VMSimpleStackBasedCogitAbstractTest >> jitCompilerClass [
 ]
 
 { #category : #helpers }
-VMSimpleStackBasedCogitAbstractTest >> jitMethod: aPharoCompiledMethod selector: aSelectorOop [
+VMSimpleStackBasedCogitAbstractTest >> jitMethod: aHostCompiledMethod [ 
+
+	^ self jitMethod: aHostCompiledMethod selector: memory nilObject
+]
+
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> jitMethod: aHostCompiledMethod selector: aSelectorOop [
 
 	| methodOop |
 
-	methodOop := self createMethodOopFromPharoMethod:aPharoCompiledMethod.
+	methodOop := self createMethodOopFromHostMethod:aHostCompiledMethod.
 
 	^ cogit cog: methodOop selector: aSelectorOop
 ]
@@ -485,12 +533,6 @@ VMSimpleStackBasedCogitAbstractTest >> newJitCompiler [
 	interpreter cogMethodZone: compiler methodZone.
 	^ compiler
 
-]
-
-{ #category : #running }
-VMSimpleStackBasedCogitAbstractTest >> newMemory [
-
-	^ self memoryClass simulatorClass new
 ]
 
 { #category : #helpers }
@@ -562,7 +604,7 @@ VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver ar
 
 	"If the cogit is the StackToRegisterMapping the arguments should go in the registers also"
 	(cogit isKindOf: StackToRegisterMappingCogit) ifTrue: [
-		arguments size >= 1 ifTrue: [ self machineSimulator argument0RegisterValue: (arguments at: 1) ].
+		arguments size >= 1 ifTrue: [ self machineSimulator arg0RegisterValue: (arguments at: 1) ].
 		arguments size > 1 ifTrue: [ self halt ]].
 	
 	self prepareCall
@@ -727,7 +769,7 @@ VMSimpleStackBasedCogitAbstractTest >> setUp [
 	memory falseObject: (self newObjectWithSlots: 0).
 	
 	"We don't access its contents, but we need it to be after nil, true and false"
-	memory hiddenRootsObject: (self newObjectWithSlots: 0).
+	memory hiddenRootsObject: (self newArrayWithSlots: 0).
 
 	cogit setStackAlignment: 16 expectedSPOffset: 0 expectedFPOffset: 0.
 	cogit initializeBackend.
@@ -741,10 +783,12 @@ VMSimpleStackBasedCogitAbstractTest >> setUp [
 	
 	machineSimulator := cogit processor machineSimulator.
 	
-	cogit generateStackPointerCapture.
+	self generateCaptureCStackPointers ifTrue: [cogit generateStackPointerCapture].
 	cogit methodZone manageFrom: cogit cogCodeBase to: initialAddress + self initialCodeSize.
 
 	memory coInterpreter numStackPages: 8.
+
+	machineSimulator flushICacheFrom: cogit cogCodeBase to: initialAddress + self initialCodeSize. 
 
 	self initializeOldSpaceForScavenger.
 	self initializeStackMemory.

@@ -18,7 +18,7 @@ Class {
 	#classInstVars : [
 		'timeStamp'
 	],
-	#category : #'VMMaker-Support'
+	#category : #Melchor
 }
 
 { #category : #translation }
@@ -38,6 +38,12 @@ VMClass class >> basicRemoveSelector: aSelector [
 VMClass class >> bytesPerOop [
 	
 	^ BytesPerOop
+]
+
+{ #category : #accessing }
+VMClass class >> bytesPerOop: anInteger [
+
+	BytesPerOop := anInteger
 ]
 
 { #category : #accessing }
@@ -120,12 +126,6 @@ VMClass class >> declareInterpreterVersionIn: aCCodeGenerator defaultName: defau
 ]
 
 { #category : #'accessing class hierarchy' }
-VMClass class >> defaultObjectMemoryClass [
-	"Default for all-in-one VMs where the interpreter inherits from the object memory."
-	^nil
-]
-
-{ #category : #'accessing class hierarchy' }
 VMClass class >> hasCogit [
 	^false
 ]
@@ -145,68 +145,6 @@ VMClass class >> initializationOptions [
 VMClass class >> initialize [
 	InitializationOptions ifNil: [InitializationOptions := Dictionary new].
 	ExpensiveAsserts := false
-]
-
-{ #category : #initialization }
-VMClass class >> initializeForPlugins: optionsDictionaryOrArray [
-	"Do a default initialization, suitable for generating plugin sources."
-	StackInterpreterSimulator
-		initializeWithOptions: optionsDictionaryOrArray
-
-]
-
-{ #category : #initialization }
-VMClass class >> initializeMiscConstants [
-	"Falsify the `what type of VM is this?' flags that are defined in the various interp.h files.
-	 Subclass implementations need to include a super initializeMiscConstants"
-
-	| omc |
-	VMBIGENDIAN class. "Mention this for the benefit of CCodeGenerator>>emitCConstantsOn:"
-	SPURVM := STACKVM := COGVM := false.
-
-	InitializationOptions ifNil: [InitializationOptions := Dictionary new].
-	omc := InitializationOptions at: #ObjectMemory ifAbsent: [self error: 'Please specify an object memory'].
-
-	InitializationOptions
-		at: #SpurObjectMemory		"the new contender"
-			ifAbsentPut: (omc
-					ifNil: [false]
-					ifNotNil: [(Smalltalk at: omc) includesBehavior: SpurMemoryManager]).
-
-	"Use ifAbsentPut: so that they will get copied back to the
-	 VMMaker's options and dead code will likely be eliminated."
-	PharoVM := InitializationOptions at: #PharoVM ifAbsentPut: [false].
-	FEATURE_FFI := InitializationOptions at: #FEATURE_FFI ifAbsentPut: [false].
-	FEATURE_THREADED_FFI := InitializationOptions at: #FEATURE_THREADED_FFI ifAbsentPut: [false].
-	FEATURE_MESSAGE_COUNT := InitializationOptions at: #FEATURE_MESSAGE_COUNT ifAbsentPut: [false].	
-
-	SistaVM := InitializationOptions at: #SistaVM ifAbsentPut: [false].
-	TempVectReadBarrier := InitializationOptions at: #TempVectReadBarrier ifAbsentPut: [false].
-	MULTIPLEBYTECODESETS := InitializationOptions at: #MULTIPLEBYTECODESETS ifAbsentPut: [false].
-	"Simulation only; on by default..."
-	CloneOnGC := InitializationOptions at: #CloneOnGC ifAbsentPut: [true].
-	CloneOnScavenge := InitializationOptions at: #CloneOnScavenge ifAbsentPut: [true].
-
-	"These must be set only if specified, not defaulted, because they are set on the command line or in include files."
-	InitializationOptions
-		at: #VMBIGENDIAN	ifPresent: [:value| VMBIGENDIAN := value];
-		at: #ObjectMemory	ifPresent: [:value| SPURVM := value beginsWith: 'Spur'];
-		at: #STACKVM		ifPresent: [:value| STACKVM := value];
-		at: #COGVM		ifPresent: [:value| COGVM := InitializationOptions at: #COGVM].
-				
-	"consistency checks"
-	SPURVM
-		ifTrue:
-			[(TempVectReadBarrier not
-			  and: [{SpurMemoryManager compactorClass}, (SpurMemoryManager compactorClass ancilliaryClasses) anySatisfy:
-						[:c| c == SpurSelectiveCompactor]]) ifTrue:
-				[self error: 'Selective compactor requires read barrier']]
-		ifFalse:
-			[TempVectReadBarrier ifTrue: [self error: 'read barrier works with spur VM only...'].
-			 SistaVM ifTrue: [self error: 'Sista VM works with spur VM only...']].
-
-	"And not these; they're compile-time"
-	IMMUTABILITY := InitializationOptions at: #IMMUTABILITY ifAbsent: [SPURVM] "Default as enabled for Spur VMs"
 ]
 
 { #category : #initialization }
@@ -489,38 +427,6 @@ VMClass >> alloca: numElements type: elementType [
 	^CArrayAccessor on: ((1 to: numElements) collect: [:ign| elementType new])
 ]
 
-{ #category : #'translation support' }
-VMClass >> asAddress: address put: aBlock [
-	<doNotGenerate>
-	"Simulate a C pointer.  Translates into address in C. Provides something
-	 that evaluates aBlock with the new value in response to at:put:"
-	^CPluggableAccessor new
-		setObject: nil;
-		atBlock: [:obj :idx| self error: 'cannot dereference pseudo-pointers']
-		atPutBlock: [:obj :idx :val| aBlock value: val]
-]
-
-{ #category : #'C library extensions' }
-VMClass >> asByteArray: aStringOrStringIndex [
-	"aStringOrStringIndex is either a string or an address in the heap.
-	 Create a ByteArray of the requested length form the bytes in the
-	 heap starting at stringIndex."
-	<doNotGenerate>
-	| sz |
-	aStringOrStringIndex isString ifTrue:
-		[^aStringOrStringIndex asByteArray].
-	sz := self strlen: aStringOrStringIndex.
-	^self strncpy: (ByteArray new: sz) _: aStringOrStringIndex _: sz
-]
-
-{ #category : #'C library extensions' }
-VMClass >> asByteArray: baIndex size: baSize [
-	"baIndex is an address in the heap.  Create a ByteArray of the requested length
-	form the bytes in the heap starting at baIndex."
-	<doNotGenerate>
-	^self strncpy: (ByteArray new: baSize) _: baIndex _: baSize
-]
-
 { #category : #'C library extensions' }
 VMClass >> asString: aStringOrStringIndex [
 	"aStringOrStringIndex is either a string or an address in the heap.
@@ -532,14 +438,6 @@ VMClass >> asString: aStringOrStringIndex [
 		[^aStringOrStringIndex].
 	sz := self strlen: aStringOrStringIndex.
 	^self strncpy: (ByteString new: sz) _: aStringOrStringIndex _: sz
-]
-
-{ #category : #'C library extensions' }
-VMClass >> asString: stringIndex size: stringSize [
-	"stringIndex is an address in the heap.  Create a String of the requested length
-	form the bytes in the heap starting at stringIndex."
-	<doNotGenerate>
-	^self strncpy: (ByteString new: stringSize) _: stringIndex _: stringSize
 ]
 
 { #category : #'debug support' }
@@ -602,24 +500,17 @@ VMClass >> defined: aSymbol [
 ]
 
 { #category : #'memory access' }
-VMClass >> fetchSingleFloatAtPointer: pointer into: aFloat [
-	"This gets implemented by Macros in C, where its types will also be checked.
-	 pointer is a raw address, and aFloat is a 32-bit single precision float."
-	<doNotGenerate>
-
-	^self fetchSingleFloatAt: pointer into: aFloat
-]
-
-{ #category : #'memory access' }
 VMClass >> floatAtPointer: pointer [
+
 	<doNotGenerate>
-	self halt.
+	self notYetImplemented 
 ]
 
 { #category : #'memory access' }
 VMClass >> floatAtPointer: pointer put: value [
+
 	<doNotGenerate>
-	self halt.
+	self notYetImplemented
 ]
 
 { #category : #'C library simulation' }
@@ -670,7 +561,7 @@ VMClass >> int64AtPointer: pointer [
 	 pointer is a raw address, and the result is the width of a machine word."
 	<doNotGenerate>
 
-	^self halt
+	^ memoryManager long64At: pointer
 ]
 
 { #category : #'memory access' }
@@ -679,7 +570,7 @@ VMClass >> int64AtPointer: pointer put: longValue [
 	 pointer is a raw address, and longValue is the width of a machine word."
 	<doNotGenerate>
 
-	^self halt.
+	^ memoryManager long64At: pointer put: longValue
 ]
 
 { #category : #'memory access' }
@@ -698,11 +589,6 @@ VMClass >> int8AtPointer: pointer put: value [
 	<doNotGenerate>
 
 	^self at: pointer put: value
-]
-
-{ #category : #testing }
-VMClass >> isCurrentImageFacade [
-	^false
 ]
 
 { #category : #'plugin support' }
@@ -920,18 +806,19 @@ VMClass >> minorVersion [
 VMClass >> notYetImplemented [
 
 	<inline: true>
-
-	self
-		cCode: [ 
-			self logError: 'not yet implemented'.
-			self abort ]
-		inSmalltalk: [ super notYetImplemented ]
+	self notYetImplemented: 'Not Yet Implemented!'
 ]
 
 { #category : #'translation support' }
-VMClass >> numElementsIn: anArray [
-	<cmacro: '(anArray) (sizeof(anArray)/sizeof(anArray[0]))'>
-	^anArray size
+VMClass >> notYetImplemented: aMessage [
+
+	<inline: true>
+
+	self
+		cCode: [ 
+			self logError: aMessage.
+			self abort ]
+		inSmalltalk: [ super notYetImplemented ]
 ]
 
 { #category : #accessing }
@@ -1036,34 +923,6 @@ VMClass >> pointerForOop: oop [
 	<doNotGenerate>
 
 	^oop
-]
-
-{ #category : #'simulation support' }
-VMClass >> promptHex: string [
-	<doNotGenerate>
-	| s |
-	s := UIManager default request: string, ' (hex)'.
-	s := s withBlanksTrimmed.
-	^(s notEmpty and: ['-+0123456789abcdefABCDEF' includes: s first]) ifTrue:
-		[(s includes: $r)
-			ifTrue:
-				[Number readFrom: s readStream]
-			ifFalse:
-				[(#('0x' '-0x') detect: [:prefix| s beginsWith: prefix] ifNone: []) ifNotNil:
-					[:prefix|
-					s := s allButFirst: prefix size.
-					prefix first = $- ifTrue: [s := '-', s]].
-				Integer readFrom: s readStream base: 16]]
-]
-
-{ #category : #'simulation support' }
-VMClass >> promptNum: string [
-	<doNotGenerate>
-	| s |
-	s := UIManager default request: string, ' (dec)'.
-	s := s withBlanksTrimmed.
-	^s notEmpty ifTrue:
-		[Number readFrom: s readStream]
 ]
 
 { #category : #'C library simulation' }
@@ -1243,12 +1102,6 @@ VMClass >> strncpy: dest _: src _: n [
 	^dest
 ]
 
-{ #category : #'hack compatibility' }
-VMClass >> uiProcess [
-	<doNotGenerate>
-	^ UIManager default uiProcess
-]
-
 { #category : #'memory access' }
 VMClass >> uint16AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
@@ -1273,7 +1126,7 @@ VMClass >> uint32AtPointer: pointer [
 	 pointer is a raw address, and the result is an 32 bit integer."
 	<doNotGenerate>
 
-	^self longAt: pointer
+	^memoryManager readIntegerAt: pointer size: 4 signed: false
 ]
 
 { #category : #'memory access' }
@@ -1282,25 +1135,26 @@ VMClass >> uint32AtPointer: pointer put: value [
 	 pointer is a raw address, and the result is an 32 bit integer."
 	<doNotGenerate>
 
-	^self long32At: pointer put: value
+	^memoryManager uint32AtPointer: pointer put: value
 ]
 
 { #category : #'memory access' }
 VMClass >> uint64AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is the width of a machine word."
-	<doNotGenerate>
 
-	^self halt
+	<doNotGenerate>
+	^ memoryManager unsignedLong64At: pointer
 ]
 
 { #category : #'memory access' }
-VMClass >> uint64AtPointer: pointer put: longValue [
+VMClass >> uint64AtPointer: pointer put: value [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and longValue is the width of a machine word."
 	<doNotGenerate>
 
-	^self halt.
+	^ memoryManager unsignedLong64At: pointer put: value.
+
 ]
 
 { #category : #'memory access' }
@@ -1330,6 +1184,20 @@ VMClass >> unalignedAccessError [
 VMClass >> unreachable [
 	<inline: true>
 	self error: 'UNREACHABLE'
+]
+
+{ #category : #'memory access' }
+VMClass >> unsignedLong64At: anInteger [
+	
+	<inline: #always>
+	^ self uint64AtPointer: anInteger
+]
+
+{ #category : #'memory access' }
+VMClass >> unsignedLong64At: anInteger put: aValue [
+	
+	<inline: #always>
+	^ self uint64AtPointer: anInteger put: aValue
 ]
 
 { #category : #'hack compatibility' }

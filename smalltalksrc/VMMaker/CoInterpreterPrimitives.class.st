@@ -50,15 +50,15 @@ CoInterpreterPrimitives >> frameIsMarked: theFPInt [
 { #category : #'object access primitives' }
 CoInterpreterPrimitives >> markFrame: theFPInt [
 	| methodField |
-	methodField := stackPages longAt: theFPInt + FoxMethod.
+	methodField := stackPages unsignedLongAt: theFPInt + FoxMethod.
 	methodField asUnsignedInteger < objectMemory startOfMemory
 		ifTrue:
 			[stackPages
-				longAt: theFPInt + FoxMethod
+				unsignedLongAt: theFPInt + FoxMethod
 				put: (methodField bitOr: 4)]
 		ifFalse:
 			[stackPages
-				longAt: theFPInt + FoxIFrameFlags
+				unsignedLongAt: theFPInt + FoxIFrameFlags
 				put: ((stackPages longAt: theFPInt + FoxIFrameFlags) bitOr: 2)]
 ]
 
@@ -83,7 +83,7 @@ CoInterpreterPrimitives >> mcprimHashMultiply: receiverArg [
 ]
 
 { #category : #'object access primitives' }
-CoInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
+CoInterpreterPrimitives >> pathTo: goal using: anArray followWeak: followWeak [
 	"Trace objects and frames from the root, marking visited objects, pushing the current path on stack, until goal is found.
 	 If found, unmark, leaving path in stack, and answer 0.  Otherwise answer an error:
 		PrimErrBadArgument if stack is not an Array
@@ -91,13 +91,13 @@ CoInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 		PrimErrNotFound if goal cannot be found"
 	| current index next stackSize stackp freeStartAtStart |
 	<var: #index type: #sqInt> "Force the sign because typeInference does not seem to work"
-	(objectMemory isArray: stack) ifFalse:
+	(objectMemory isArray: anArray) ifFalse:
 		[^PrimErrBadArgument].
 	self assert: objectMemory allObjectsUnmarked.
 	freeStartAtStart := objectMemory freeStart. "check no allocations during search"
-	objectMemory beRootIfOld: stack. "so no store checks are necessary on stack"
-	stackSize := objectMemory lengthOf: stack.
-	objectMemory mark: stack.
+	objectMemory beRootIfOld: anArray. "so no store checks are necessary on stack"
+	stackSize := objectMemory lengthOf: anArray.
+	objectMemory mark: anArray.
 	"no need. the current context is not reachable from the active process (suspendedContext is nil)"
 	"objectMemory mark: self activeProcess."
 	current := objectMemory specialObjectsOop.
@@ -127,8 +127,8 @@ CoInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 		 next = goal ifTrue:
 			[self assert: freeStartAtStart = objectMemory freeStart.
 			 self unmarkAfterPathTo.
-			 objectMemory storePointer: stackp ofObject: stack withValue: current.
-			 self pruneStack: stack stackp: stackp.
+			 objectMemory storePointer: stackp ofObject: anArray withValue: current.
+			 self pruneStack: anArray stackp: stackp.
 			 ^0].
 		 ((objectMemory isNonIntegerObject: next)
 		  and: [(stackPages couldBeFramePointer: next)
@@ -142,11 +142,11 @@ CoInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 				[stackp + 2 > stackSize ifTrue:
 					[self assert: freeStartAtStart = objectMemory freeStart.
 					 self unmarkAfterPathTo.
-					 objectMemory nilFieldsOf: stack.
+					 objectMemory nilFieldsOf: anArray.
 					 ^PrimErrBadIndex]. "PrimErrNoMemory ?"
 				 objectMemory
-					storePointerUnchecked: stackp ofObject: stack withValue: current;
-					storePointerUnchecked: stackp + 1 ofObject: stack withValue: (objectMemory integerObjectOf: index).
+					storePointerUnchecked: stackp ofObject: anArray withValue: current;
+					storePointerUnchecked: stackp + 1 ofObject: anArray withValue: (objectMemory integerObjectOf: index).
 				 stackp := stackp + 2.
 				 (stackPages couldBeFramePointer: (self cCoerceSimple: next to: #'char *'))
 					ifTrue:
@@ -161,10 +161,10 @@ CoInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 		 current = objectMemory specialObjectsOop ifTrue:
 			[self assert: freeStartAtStart = objectMemory freeStart.
 			 self unmarkAfterPathTo.
-			 objectMemory nilFieldsOf: stack.
+			 objectMemory nilFieldsOf: anArray.
 			^PrimErrNotFound].
-		 index := objectMemory integerValueOf: (objectMemory fetchPointer: stackp - 1 ofObject: stack).
-		 current := objectMemory fetchPointer: stackp - 2 ofObject: stack.
+		 index := objectMemory integerValueOf: (objectMemory fetchPointer: stackp - 1 ofObject: anArray).
+		 current := objectMemory fetchPointer: stackp - 2 ofObject: anArray.
 		 stackp := stackp - 2] repeat
 ]
 
@@ -177,22 +177,6 @@ CoInterpreterPrimitives >> pcDataFor: cogMethod [
 	data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: nSlots.
 	data ifNil: [^-1].
 	nEntries := cogit mapPCDataFor: cogMethod into: data.
-	nEntries = 0 ifTrue:
-		[^0].
-	nEntries < nSlots ifTrue:
-		[objectMemory shorten: data toIndexableSize: nEntries].
-	^data
-]
-
-{ #category : #'method introspection support' }
-CoInterpreterPrimitives >> picDataFor: cogMethod [
-	<var: #cogMethod type: #'CogMethod *'>
-	| cm nSlots nEntries data |
-	cm := cogMethod methodObject.
-	nSlots := (objectMemory byteSizeOf: cm) - (self startPCOfMethod: cm) + objectMemory minSlotsForShortening.
-	data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: nSlots.
-	data ifNil: [^-1].
-	nEntries := cogit picDataFor: cogMethod into: data.
 	nEntries = 0 ifTrue:
 		[^0].
 	nEntries < nSlots ifTrue:
@@ -430,8 +414,26 @@ CoInterpreterPrimitives >> primitiveMethodPCData [
 	self pop: 1 thenPush: data
 ]
 
+{ #category : #'method introspection primitives' }
+CoInterpreterPrimitives >> primitiveMethodProfilingData [
+	<export: true>
+	| methodReceiver data |
+	argumentCount ~= 0 ifTrue:
+		[^self primitiveFailFor: PrimErrBadNumArgs].
+	methodReceiver := self stackTop.
+	data := 0.
+	(self methodHasCogMethod: methodReceiver) ifTrue:
+		[data := self profilingDataFor: (self cogMethodOf: methodReceiver).
+		 data = -1 ifTrue:
+			[^self primitiveFailFor: PrimErrNoMemory]].
+	data = 0 ifTrue:
+		[data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: 0].
+	self pop: 1 thenPush: data
+]
+
 { #category : #'indexing primitives' }
 CoInterpreterPrimitives >> primitiveMethodXray [
+
 	"Lift the veil from a method and answer an integer describing the interior state
 	 of its machine code.
 	 Used for e.g. VM tests so they can verify they're testing what they think they're testing.
@@ -443,33 +445,45 @@ CoInterpreterPrimitives >> primitiveMethodXray [
 	 Bit 4 = method too big to be jitted (more than 64k of code, or needs more than 1.5Mb of stack space to compile)
 	 Bit 5 = method contains unknown/unjittable bytecode
 	 Bit 6 = method should not be jitted because it contains a primitive not to be called from machine code (unused)"
-	| alreadyCogged flags cogMethod |
+
 	<var: #cogMethod type: #'CogMethod *'>
-	(self methodWithHeaderShouldBeCogged: (objectMemory methodHeaderOf: self stackTop))
-		ifTrue:
-			[alreadyCogged := self maybeMethodHasCogMethod: self stackTop.
-			 flags := 1.
-			 alreadyCogged ifFalse:
-				[cogMethod := cogit cog: self stackTop selector: objectMemory nilObject.
-				 (cogMethod = nil
-				  and: [cogCompiledCodeCompactionCalledFor]) ifTrue:
-					[self commenceCogCompiledCodeCompaction.
-					 cogMethod := cogit cog: self stackTop selector: objectMemory nilObject].
-			 cogMethod asInteger
-				caseOf: {
-					[MethodTooBig] -> [flags := 1 + 16].
-					[EncounteredUnknownBytecode] -> [flags := 1 + 32].
-					[ShouldNotJIT] -> [flags := 1 + 64] }
-				otherwise: [self deny: (cogMethod asInteger between: MaxNegativeErrorCode and: NotFullyInitialized)]].
-			 (flags = 1
-			  and: [self maybeMethodHasCogMethod: self stackTop]) ifTrue:
-				[cogMethod := self cogMethodOf: self stackTop.
-				 flags := cogMethod stackCheckOffset = 0 ifTrue: [7] ifFalse: [3].
-				 cogMethod cmRefersToYoung ifTrue:
-					[flags := flags + 8].
-				 alreadyCogged ifFalse:
-					[cogit freeMethod: cogMethod]]]
-		ifFalse: [flags := 0].
+	| alreadyCogged flags cogMethod |
+	(self methodWithHeaderShouldBeCogged:
+		 (objectMemory methodHeaderOf: self stackTop))
+		ifTrue: [ 
+			alreadyCogged := self maybeMethodHasCogMethod: self stackTop.
+			flags := 1.
+
+			alreadyCogged
+				ifTrue: [ flags := flags + 2 ]
+				ifFalse: [ 
+					cogMethod := cogit
+						             cog: self stackTop
+						             selector: objectMemory nilObject.
+					(cogMethod = nil and: [ cogCompiledCodeCompactionCalledFor ]) 
+						ifTrue: [ 
+							self externalWriteBackHeadFramePointers.
+							self commenceCogCompiledCodeCompaction.
+							cogMethod := cogit
+								             cog: self stackTop
+								             selector: objectMemory nilObject ].
+					cogMethod asInteger
+						caseOf: { 
+								([ MethodTooBig ] -> [ flags := flags + 16 ]).
+								([ EncounteredUnknownBytecode ] -> [ flags := flags + 32 ]).
+								([ ShouldNotJIT ] -> [ flags := flags + 64 ]) }
+						otherwise: [ 
+							self deny: (cogMethod asInteger
+									 between: MaxNegativeErrorCode
+									 and: NotFullyInitialized) ] ].
+
+			(self maybeMethodHasCogMethod: self stackTop) 
+				ifTrue: [ 
+					cogMethod := self cogMethodOf: self stackTop.
+					cogMethod stackCheckOffset = 0 ifTrue: [ flags := flags + 4 ].
+					cogMethod cmRefersToYoung ifTrue: [ flags := flags + 8 ].
+					alreadyCogged ifFalse: [ cogit safeFreeMethod: cogMethod ] ] ]
+		ifFalse: [ flags := 0 ].
 	self pop: 1 thenPush: (objectMemory integerObjectOf: flags)
 ]
 
@@ -634,24 +648,6 @@ CoInterpreterPrimitives >> primitiveSignal [
 		[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]
 ]
 
-{ #category : #'method introspection primitives' }
-CoInterpreterPrimitives >> primitiveSistaMethodPICAndCounterData [
-	<export: true>
-	<option: #SistaCogit>
-	| methodReceiver data |
-	argumentCount ~= 0 ifTrue:
-		[^self primitiveFailFor: PrimErrBadNumArgs].
-	methodReceiver := self stackTop.
-	data := 0.
-	(self methodHasCogMethod: methodReceiver) ifTrue:
-		[data := self picDataFor: (self cogMethodOf: methodReceiver).
-		 data = -1 ifTrue:
-			[^self primitiveFailFor: PrimErrNoMemory]].
-	data = 0 ifTrue:
-		[data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: 0].
-	self pop: 1 thenPush: data
-]
-
 { #category : #'system control primitives' }
 CoInterpreterPrimitives >> primitiveSnapshot [
 	"Save a normal snapshot under the same name as it was loaded
@@ -761,15 +757,15 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 						by: objectMemory wordSize negated
 						do: [:source|
 							newSP := newSP - objectMemory wordSize.
-							stackPages longAt: newSP put: (stackPages longAt: source)].
-					 stackPages longAt: newFP + FoxSavedFP put: contextsFP.
+							stackPages unsignedLongAt: newSP put: (stackPages unsignedLongAt: source)].
+					 stackPages unsignedLongAt: newFP + FoxSavedFP put: contextsFP.
 					"Ensure contract between machine-code callee and interpreter caller frames is preserved.
 					 Return pc needs to be ceReturnToInterpreterPC."
 					 ((self isMachineCodeFrame: newFP)
 					  and: [contextsIP >= objectMemory startOfMemory]) ifTrue:
 						[self iframeSavedIP: contextsFP put: contextsIP.
 						 contextsIP := cogit ceReturnToInterpreterPC].
-					 stackPages longAt: newFP + FoxCallerSavedIP put: contextsIP.
+					 stackPages unsignedLongAt: newFP + FoxCallerSavedIP put: contextsIP.
 					 self assert: (objectMemory isContext: thisCtx).
 					 objectMemory storePointerUnchecked: SenderIndex
 						ofObject: thisCtx
@@ -854,7 +850,7 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 									 frameAbove := self findFrameAbove: contextsFP inPage: thePage.
 									 frameAbove ~= 0 ifTrue:
 										[contextsSP := (self frameCallerSP: frameAbove) - objectMemory wordSize.
-										 stackPages longAt: contextsSP put: (self frameCallerSavedIP: frameAbove).
+										 stackPages unsignedLongAt: contextsSP put: (self frameCallerSavedIP: frameAbove).
 										 self setHeadFP: contextsFP andSP: contextsSP inPage: thePage].
 									 currentCtx := aContextOrNil]
 								ifFalse:
@@ -973,6 +969,22 @@ CoInterpreterPrimitives >> primitiveYield [
 	self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter
 ]
 
+{ #category : #'method introspection support' }
+CoInterpreterPrimitives >> profilingDataFor: cogMethod [
+	<var: #cogMethod type: #'CogMethod *'>
+	| cm nSlots nEntries data |
+	cm := cogMethod methodObject.
+	nSlots := (objectMemory byteSizeOf: cm) - (self startPCOfMethod: cm) + objectMemory minSlotsForShortening.
+	data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: nSlots.
+	data ifNil: [^-1].
+	nEntries := cogit profilingDataFor: cogMethod into: data.
+	nEntries = 0 ifTrue:
+		[^0].
+	nEntries < nSlots ifTrue:
+		[objectMemory shorten: data toIndexableSize: nEntries].
+	^data
+]
+
 { #category : #'object access primitives' }
 CoInterpreterPrimitives >> unmarkAllFrames [
 	| thePage theFP methodField flags |
@@ -984,14 +996,14 @@ CoInterpreterPrimitives >> unmarkAllFrames [
 		thePage := stackPages stackPageAt: i.
 		(stackPages isFree: thePage) ifFalse:
 			[theFP := thePage  headFP.
-			 [methodField := stackPages longAt: theFP + FoxMethod.
+			 [methodField := stackPages unsignedLongAt: theFP + FoxMethod.
 			 methodField asUnsignedInteger < objectMemory startOfMemory
 				ifTrue:
 					[(methodField bitAnd: 4) ~= 0 ifTrue:
-						[self longAt: theFP + FoxMethod put: methodField - 4]]
+						[self unsignedLongAt: theFP + FoxMethod put: methodField - 4]]
 				ifFalse:
-					[flags := stackPages longAt: theFP + FoxIFrameFlags.
+					[flags := stackPages unsignedLongAt: theFP + FoxIFrameFlags.
 					  (flags bitAnd: 2) ~= 0 ifTrue:
-						[stackPages longAt: theFP + FoxIFrameFlags put: flags - 2]].
+						[stackPages unsignedLongAt: theFP + FoxIFrameFlags put: flags - 2]].
 			  (theFP := self frameCallerFP: theFP) ~= 0] whileTrue]]
 ]

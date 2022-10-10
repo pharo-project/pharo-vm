@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#include "parameterVector.h"
+#include "pharovm/parameters/parameterVector.h"
 #include <stdio.h>
 
 /**
@@ -105,6 +105,9 @@ typedef struct VMParameters_
 	/// Is this an interactive session?
 	bool isInteractiveSession;
 
+	/// Does the VM run in a worker?
+	bool isWorker;
+
 	//The number of smalltalk frames to print in a process dump, (0 to print all).
 	int maxStackFramesToPrint;
 
@@ -114,8 +117,8 @@ typedef struct VMParameters_
 	//The max size of the code space (This is the space used to compile JIT methods and trampolines).
 	long long maxCodeSize;
   
-  //The eden size (This is the space used to allocate new objects).
-  long long edenSize;
+	//The eden size (This is the space used to allocate new objects).
+	long long edenSize;
 
 	// FIXME: Why passing this is needed when we have the separated vectors?
 	int processArgc;
@@ -145,9 +148,22 @@ EXPORT(VMErrorCode) vm_parameters_ensure_interactive_image_parameter(VMParameter
 EXPORT(VMErrorCode) vm_parameters_destroy(VMParameters *parameters);
 
 /**
+ * Initialize the values of an instance of VMParameters
+ */
+
+EXPORT(VMErrorCode) vm_parameters_init(VMParameters *parameters);
+
+/**
  * Prints the command line parameter usage string to a file.
  */
 EXPORT(void) vm_printUsageTo(FILE *output);
+
+#ifdef __APPLE__
+
+EXPORT(void) fillParametersFromPList(VMParameters* parameters);
+
+#endif
+
 
 #ifdef __cplusplus
 }

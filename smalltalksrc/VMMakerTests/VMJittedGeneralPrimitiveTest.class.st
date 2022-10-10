@@ -7,6 +7,14 @@ Class {
 	#category : #'VMMakerTests-JitTests'
 }
 
+{ #category : #accessing }
+VMJittedGeneralPrimitiveTest >> lastObjectInNewSpace [
+
+	| lastOop |
+	memory allNewSpaceObjectsDo: [ :oop | lastOop := oop ].
+	^ lastOop
+]
+
 { #category : #'tests - support' }
 VMJittedGeneralPrimitiveTest >> testCheckImmediateWhenImmediateFloat [
 
@@ -345,7 +353,7 @@ VMJittedGeneralPrimitiveTest >> testGetClassObjectOfClassIndex [
 	machineSimulator receiverRegisterValue: ClassFloatCompactIndex.
 	self runGeneratedCode.
 	
-	self assert: machineSimulator argument0RegisterValue equals: classFloat
+	self assert: machineSimulator arg0RegisterValue equals: classFloat
 ]
 
 { #category : #'tests - support' }
@@ -359,7 +367,7 @@ VMJittedGeneralPrimitiveTest >> testGetNumberOfSlotsOf16BitIndexable [
 	machineSimulator receiverRegisterValue: (self new16BitIndexableOfSize: 8).
 	self runGeneratedCode.
 
-	self assert: machineSimulator argument0RegisterValue equals: 8 * 2 "bytes" / self wordSize
+	self assert: machineSimulator arg0RegisterValue equals: 8 * 2 "bytes" / self wordSize
 ]
 
 { #category : #'tests - support' }
@@ -373,7 +381,7 @@ VMJittedGeneralPrimitiveTest >> testGetNumberOfSlotsOf16BitIndexableWithPadding 
 	machineSimulator receiverRegisterValue: (self new16BitIndexableOfSize: 7).
 	self runGeneratedCode.
 
-	self assert: machineSimulator argument0RegisterValue equals: 8 * 2 "bytes" / self wordSize
+	self assert: machineSimulator arg0RegisterValue equals: 8 * 2 "bytes" / self wordSize
 ]
 
 { #category : #'tests - support' }
@@ -387,7 +395,7 @@ VMJittedGeneralPrimitiveTest >> testGetNumberOfSlotsOf32BitIndexable [
 	machineSimulator receiverRegisterValue: (self new32BitIndexableOfSize: 8).
 	self runGeneratedCode.
 
-	self assert: machineSimulator argument0RegisterValue equals: 8 * 4 "bytes" / self wordSize
+	self assert: machineSimulator arg0RegisterValue equals: 8 * 4 "bytes" / self wordSize
 ]
 
 { #category : #'tests - support' }
@@ -401,7 +409,7 @@ VMJittedGeneralPrimitiveTest >> testGetNumberOfSlotsOf32BitIndexableWithPadding 
 	machineSimulator receiverRegisterValue: (self new32BitIndexableOfSize: 7).
 	self runGeneratedCode.
 
-	self assert: machineSimulator argument0RegisterValue equals: (7 * 4 roundUpTo: self wordSize) "bytes" / self wordSize
+	self assert: machineSimulator arg0RegisterValue equals: (7 * 4 roundUpTo: self wordSize) "bytes" / self wordSize
 ]
 
 { #category : #'tests - support' }
@@ -419,7 +427,7 @@ VMJittedGeneralPrimitiveTest >> testGetNumberOfSlotsOf64BitIndexable [
 	machineSimulator receiverRegisterValue: (self new64BitIndexableOfSize: desiredSlots).
 	self runGeneratedCode.
 
-	self assert: machineSimulator argument0RegisterValue equals: (desiredSlots * 8 / self wordSize)
+	self assert: machineSimulator arg0RegisterValue equals: (desiredSlots * 8 / self wordSize)
 ]
 
 { #category : #'tests - support' }
@@ -433,7 +441,7 @@ VMJittedGeneralPrimitiveTest >> testGetNumberOfSlotsOf8BitIndexable [
 	machineSimulator receiverRegisterValue: (self new8BitIndexableOfSize: 8).
 	self runGeneratedCode.
 
-	self assert: machineSimulator argument0RegisterValue equals: 8 "bytes" / self wordSize
+	self assert: machineSimulator arg0RegisterValue equals: 8 "bytes" / self wordSize
 ]
 
 { #category : #'tests - support' }
@@ -447,7 +455,7 @@ VMJittedGeneralPrimitiveTest >> testGetNumberOfSlotsOf8BitIndexableWithPadding [
 	machineSimulator receiverRegisterValue: (self new8BitIndexableOfSize: 7).
 	self runGeneratedCode.
 
-	self assert: machineSimulator argument0RegisterValue equals: 8 "bytes" / self wordSize
+	self assert: machineSimulator arg0RegisterValue equals: 8 "bytes" / self wordSize
 ]
 
 { #category : #'tests - support' }
@@ -1838,6 +1846,93 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveMultiplyReturnsZeroWithZeroOperand 
 	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 0).
 ]
 
+{ #category : #'tests - primitiveNew' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveNewInitializesObjectCorrectly [
+
+	| endInstruction primitiveAddress class newOop instanceVariableCount |
+	instanceVariableCount := 4.
+	class := self
+		         newClassInOldSpaceWithSlots: instanceVariableCount
+		         instSpec: memory nonIndexablePointerFormat.
+	memory ensureBehaviorHash: class.
+
+	primitiveAddress := self compile: [ 
+		                    cogit objectRepresentation genPrimitiveNew.
+		                    "If the primitive fails it continues, so we need to have an instruction to detect the end"
+		                    endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: class.
+	self runFrom: primitiveAddress until: callerAddress.
+
+	newOop := self lastObjectInNewSpace.
+
+	0 to: (instanceVariableCount - 1) do: [ :slotIndex | 
+		self
+			assert: (memory fetchPointer: slotIndex ofObject: newOop)
+			equals: memory nilObject ]
+]
+
+{ #category : #'tests - primitiveNew' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveNewWithArgInitializesObjectCorrectly [
+
+	| endInstruction primitiveAddress class newOop arraySize |
+	arraySize := 4.
+	class := self
+		newClassInOldSpaceWithSlots: 0
+		instSpec: Array instSpec.
+	memory ensureBehaviorHash: class.
+	
+	cogit methodOrBlockNumArgs: 1.
+	primitiveAddress := self compile: [ 
+		                    cogit objectRepresentation genPrimitiveNewWithArg.
+		                    "If the primitive fails it continues, so we need to have an instruction to detect the end"
+		                    endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: class arguments: { memory integerObjectOf: arraySize }.
+
+	self runFrom: primitiveAddress until: callerAddress.
+
+	newOop := self lastObjectInNewSpace.
+	
+	self assert: (newOop bitAnd: 16r0F) equals: 0. 
+
+	0 to: (arraySize - 1) do: [ :slotIndex | 
+		self
+			assert: (memory fetchPointer: slotIndex ofObject: newOop)
+			equals: memory nilObject ]
+]
+
+{ #category : #'tests - primitiveNew' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveNewWithArgInitializesObjectCorrectlyWhenNotAligned [
+
+	| endInstruction primitiveAddress class newOop arraySize |
+	arraySize := 4.
+	class := self
+		newClassInOldSpaceWithSlots: 0
+		instSpec: Array instSpec.
+	memory ensureBehaviorHash: class.
+
+	self newObjectWithSlots: 2.
+	
+	cogit methodOrBlockNumArgs: 1.
+	primitiveAddress := self compile: [ 
+		                    cogit objectRepresentation genPrimitiveNewWithArg.
+		                    "If the primitive fails it continues, so we need to have an instruction to detect the end"
+		                    endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: class arguments: { memory integerObjectOf: arraySize }.
+
+	self runFrom: primitiveAddress until: callerAddress.
+
+	newOop := self lastObjectInNewSpace.
+
+
+	0 to: (arraySize - 1) do: [ :slotIndex | 
+		self
+			assert: (memory fetchPointer: slotIndex ofObject: newOop)
+			equals: memory nilObject ]
+]
+
 { #category : #'tests - primitiveNotEqual' }
 VMJittedGeneralPrimitiveTest >> testPrimitiveNotEqualDoesNotCompileIfReceiverTagIsNotSmallInteger [
 	
@@ -2204,7 +2299,7 @@ VMJittedGeneralPrimitiveTest >> testSmallIntegerLessThanNonSmallIntegerArgumentD
 	
 	"Receiver and argument should stay untouched"
 	self assert: machineSimulator receiverRegisterValue equals: (self memory integerObjectOf: 42).
-	self assert: machineSimulator argument0RegisterValue equals: self memory falseObject.
+	self assert: machineSimulator arg0RegisterValue equals: self memory falseObject.
 ]
 
 { #category : #'tests - support' }

@@ -332,21 +332,11 @@ FilePlugin >> primitiveDirectoryDelimitor [
 	<export: true>
 	interpreterProxy minorVersion >= 13
 		ifTrue:
-			[interpreterProxy
+			[ interpreterProxy
 				pop: 1
 				thenPush: (interpreterProxy characterObjectOf: self dir_Delimitor)]
 		ifFalse:
-			[| ascii |
-			 ascii := self dir_Delimitor.
-			 (ascii >= 0 and: [ascii <= 255])
-				ifTrue:
-					[interpreterProxy
-						pop: 1
-						thenPush: (interpreterProxy
-										fetchPointer: ascii
-										ofObject: interpreterProxy characterTable)]
-				ifFalse:
-					[interpreterProxy primitiveFail]]
+			[ interpreterProxy primitiveFail]
 ]
 
 { #category : #'directory primitives' }

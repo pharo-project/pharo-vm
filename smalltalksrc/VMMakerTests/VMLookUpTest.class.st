@@ -69,7 +69,7 @@ VMLookUpTest >> setUp [
 	"The ScheduleAssocation should be initialized to a valid Processor object"
 	processorOopAssociation := self newObjectWithSlots: 2.
 	processorOop := self newObjectWithSlots: 2.
-	processorListArray := self newObjectWithSlots: 2.
+	processorListArray := self newArrayWithSlots: 2.
 
 	processorListPriority1 := self newObjectWithSlots: 2.
 	processorListPriority2 := self newObjectWithSlots: 2.
