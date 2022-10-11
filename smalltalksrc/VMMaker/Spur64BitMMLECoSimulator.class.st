@@ -222,7 +222,7 @@ Spur64BitMMLECoSimulator >> long32At: byteAddress put: a32BitValue [
 		[self halt]."
 	"(byteAddress between: 16r33FBB8 and: 16r33FBCF) ifTrue:
 		[self halt]."
-	^ memoryManager long32At: byteAddress put: a32BitValue
+	^ memoryManager unsignedLong32At: byteAddress put: a32BitValue
 ]
 
 { #category : #'memory access' }
@@ -313,12 +313,6 @@ Spur64BitMMLECoSimulator >> scavengingGCTenuringIf: tenuringCriterion [
 			[coInterpreter cloneSimulation objectMemory scavengingGCTenuringIf: tenuringCriterion.
 			 Smalltalk garbageCollect]].
 	^super scavengingGCTenuringIf: tenuringCriterion
-]
-
-{ #category : #'free space' }
-Spur64BitMMLECoSimulator >> setFree: o [
-	"o = 16rB34D40 ifTrue: [self halt]."
-	super setFree: o
 ]
 
 { #category : #'header access' }
