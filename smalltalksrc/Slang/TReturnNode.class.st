@@ -34,18 +34,20 @@ TReturnNode >> accept: aVisitor [
 TReturnNode >> asCASTIn: aBuilder [
 
 	| cast |
-	(expression isSwitch or: [expression isCaseStmt]) ifTrue: [
+	(expression isSwitch or: [ expression isCaseStmt ]) ifTrue: [ 
 		^ expression asCASTIn: aBuilder addToEndOfCases: self ].
-	
+
 	"Transforms the statment
 	^ a ifTrue: [ ^ 1 ] ifFalse: [ bla. 2 ]
 	=>
 	a ifTrue: [ ^ 1 ] ifFalse: [ bla . ^ 2 ]
 	"
-	expression isConditionalSend ifTrue: [ | conditionalAsStatement |
+	expression isConditionalSend ifTrue: [ 
+		| conditionalAsStatement |
 		conditionalAsStatement := expression copy.
-		conditionalAsStatement arguments: (conditionalAsStatement arguments 
-			collect: [ :arg | arg asReturnNode ]).
+		conditionalAsStatement arguments:
+			(conditionalAsStatement arguments collect: [ :arg | 
+				 arg asReturnNode ]).
 		^ conditionalAsStatement asCASTIn: aBuilder ].
 
 	"Transforms
@@ -53,34 +55,33 @@ TReturnNode >> asCASTIn: aBuilder [
 	=>
 	{ a . ^ last }.
 	"
-	(expression isSend and: [expression isValueExpansion]) ifTrue: [
-		"If the any argument is used inside the block, we cannot just ignore arguments!"
+	(expression isSend and: [ expression isValueExpansion ]) ifTrue: [ "If the any argument is used inside the block, we cannot just ignore arguments!"
 		expression receiver nodesDo: [ :n | 
-			(n isVariable and: [ expression receiver args includes: n name ])
-				ifTrue:[ self notYetImplemented ] ].
+			(n isVariable and: [ 
+				 expression receiver arguments includes: n name ]) ifTrue: [ 
+				self notYetImplemented ] ].
 		^ expression receiver asReturnNode asCASTIn: aBuilder ].
 
-	'void' = aBuilder currentMethod returnType ifTrue: [
-		"If the function is void, don't say 'return x' instead say ' x; return' "
+	'void' = aBuilder currentMethod returnType ifTrue: [ "If the function is void, don't say 'return x' instead say ' x; return' "
 		| statements |
 		statements := OrderedCollection new.
-		expression isLeaf ifFalse: [
+		expression isLeaf ifFalse: [ 
 			statements add: (expression asCASTIn: aBuilder) ].
 		statements add: CReturnStatementNode new.
 		^ (CCompoundStatementNode statements: statements)
-			needsBrackets: false "Slang compatibility";
-			yourself ].
-	
+			  needsBrackets: false;
+			  yourself "Slang compatibility" ].
+
 	cast := expression asCASTExpressionIn: aBuilder.
-	
+
 	"If the expression is a sequence, inject the return at the last element.
 	It may be more clean to do that at the TAST level instead of the CAST level. I dunno."
-	cast isCompoundStatement ifTrue: [
+	cast isCompoundStatement ifTrue: [ 
 		cast last: (CReturnStatementNode expression: cast last).
 		^ cast ].
-		
+
 	"Or else build a return"
-	^ CReturnStatementNode expression: cast.
+	^ CReturnStatementNode expression: cast
 ]
 
 { #category : #transforming }

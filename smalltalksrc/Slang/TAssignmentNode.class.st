@@ -34,7 +34,7 @@ TAssignmentNode >> accept: aVisitor [
 { #category : #'C code generation' }
 TAssignmentNode >> asCASTExpressionIn: aBuilder [
 
-	(expression isStmtList and: [ expression statements size > 1 ]) 
+	(expression isStatementList and: [ expression statements size > 1 ]) 
 		ifTrue: [
 			^ self asCASTStatementListExpansionAsExpression: aBuilder ].
 	self isVariableUpdatingAssignment ifTrue: [ 
@@ -56,13 +56,13 @@ TAssignmentNode >> asCASTIn: aBuilder [
 		^ expression asCASTIn: aBuilder addToEndOfCases: self ].
 	expression isLiteralArrayDeclaration ifTrue: [ 
 		| literalArrayNode |
-		type := expression arguments last value.
+		type := expression args last value.
 		self assert: type last = $*.
 
 		"Transform the literal array declaration to a C block containing:
 		  - a static literal array declaration
 	 	  - an assigment from this literal array to the assigned variable "
-		literalArrayNode := expression arguments first value collect: [ :e | 
+		literalArrayNode := expression args first value collect: [ :e | 
 			                    CConstantNode value: e ].
 		^ CCompoundStatementNode
 			  declarations: { (CDeclarationNode
@@ -77,33 +77,15 @@ TAssignmentNode >> asCASTIn: aBuilder [
 			  statements: { (CAssignmentNode
 					   lvalue: (CIdentifierNode name: variable name)
 					   rvalue: (CIdentifierNode name: 'aLiteralArray')) } ].
-
-	(expression isStatementList and: [ expression statements size > 1 ]) 
-		ifTrue: [ 
-			^ (expression asLastExpressionAssignmentTo: variable) asCASTIn:
-				  aBuilder ].
-	self isVariableUpdatingAssignment ifTrue: [ 
-		^ CAssignmentNode
-			  lvalue: (variable asCASTIn: aBuilder)
-			  operator: expression selector , '='
-			  rvalue: (expression arguments first asCASTExpressionIn: aBuilder) ].
-
-	expression isConditionalSend ifTrue: [ | conditionalAsStatement |
+	expression isConditionalSend ifTrue: [ 
+		| conditionalAsStatement |
 		conditionalAsStatement := expression copy.
 		conditionalAsStatement arguments:
 			(conditionalAsStatement arguments collect: [ :arg | 
 				 arg asLastExpressionAssignmentTo: variable copy ]).
 		^ conditionalAsStatement asCASTIn: aBuilder ].
 
-	(expression isSend and: [ expression isValueExpansion ]) ifTrue: [ 
-		^ self asCASTValueExpansionIn: aBuilder ].
-
-	(expression isStmtList and: [ expression statements size > 1 ]) ifTrue: [ 
-		^ (expression asLastExpressionAssignmentTo: variable) asCASTIn: aBuilder ].
-
-	^ (self asCASTExpressionIn: aBuilder)
-		  needsParentheses: false;
-		  yourself
+	^ self asCASTExpressionIn: aBuilder
 ]
 
 { #category : #'C code generation' }

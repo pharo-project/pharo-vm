@@ -233,6 +233,22 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 	^ CCompoundStatementNode declarations: cDeclarations statements: collect
 ]
 
+{ #category : #converting }
+TStatementListNode >> asLastExpressionAssignmentTo: variableNode [
+
+	"Destructively transform the receiver so that its last expression is assigned to the argument."
+
+	| index newStatementList newAssignmentNode |
+	index := statements findLast: [ :expr | 
+		         (expr isGoTo or: [ expr isLabel ]) not ].
+
+	newAssignmentNode := (statements at: index) 
+		                    asLastExpressionAssignmentTo: variableNode.
+	newStatementList := self copy.
+	newStatementList statements at: index put: newAssignmentNode.
+	^ newStatementList
+]
+
 { #category : #transformations }
 TStatementListNode >> asReturnNode [
 	self endsWithReturn ifTrue:
