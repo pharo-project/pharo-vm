@@ -2588,6 +2588,23 @@ StackInterpreterPrimitives >> primitiveMoveToPermSpace [
 	self pop: argumentCount + 1 thenPush: permObject.
 ]
 
+{ #category : #'perm - space' }
+StackInterpreterPrimitives >> primitiveMoveToPermSpaceInBulk [
+
+	| rcvr |
+	rcvr := self stackTop.
+	
+	(objectMemory isArrayNonImm: rcvr)
+		ifFalse: [ 
+			self primitiveFailFor: PrimErrBadReceiver. 
+			^ nil].
+	
+	objectMemory moveToPermSpaceInBulk: rcvr.	
+	self successful ifFalse: [ ^ self ].
+	
+	self pop: argumentCount + 1 thenPush: rcvr.
+]
+
 { #category : #'object access primitives' }
 StackInterpreterPrimitives >> primitiveObjectPointsTo [
 	"This primitive is assumed to be fast (see e.g. MethodDictionary>>includesKey:) so make it so.

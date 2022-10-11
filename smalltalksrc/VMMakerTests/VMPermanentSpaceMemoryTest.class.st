@@ -186,6 +186,30 @@ VMPermanentSpaceMemoryTest >> testMovingOldObjectToPermSpaceLeavesForwarder [
 
 ]
 
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testMovingTwoObjectsPutBothInPermSpaceAndUpdatesArray [
+
+	| permanentObject youngObject rootObject anArray|
+	
+	rootObject := self newObjectWithSlots:  1.
+	youngObject := self newZeroSizedObject.
+	anArray := self newArrayWithSlots: 2.
+
+	memory storePointer: 0 ofObject: rootObject withValue: youngObject.
+	memory storePointer: 0 ofObject: anArray withValue: rootObject.
+	memory storePointer: 1 ofObject: anArray withValue: youngObject.
+
+	memory moveToPermSpaceInBulk: anArray.	
+		
+	rootObject := memory fetchPointer: 0 ofObject: anArray.
+	youngObject := memory fetchPointer: 1 ofObject: anArray.
+	
+	self deny: (memory isOopForwarded: rootObject).
+	self deny: (memory isOopForwarded: youngObject).
+	self assert: (memory getMemoryMap isPermanentObject: rootObject).
+	self assert: (memory getMemoryMap isPermanentObject: youngObject).	
+]
+
 { #category : #'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsCorrectlyAllocated [
 
@@ -405,6 +429,19 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToFalseIsNotRemembered 
 ]
 
 { #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToMachineCodeIsNotRemembered [
+
+	
+	| oldObject permanentObject |
+	oldObject := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObject withValue: "memory getMemoryMap codeZoneStart + 8" 16.
+	permanentObject := memory moveToPermSpace: oldObject.
+	
+	self deny: (memory isRemembered: permanentObject).
+	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+]
+
+{ #category : #'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToNilIsNotRemembered [
 
 	
@@ -427,6 +464,28 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToTrueIsNotRemembered [
 	
 	self deny: (memory isRemembered: permanentObject).
 	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToYoungObjectIsRemovedWhenPointingToMachineCodeMethod [
+
+	
+	| oldObject permanentObject youngObject |
+	oldObject := self newOldSpaceObjectWithSlots: 1.
+	youngObject := self newZeroSizedObject.
+	memory storePointer: 0 ofObject: oldObject withValue: youngObject.
+	permanentObject := memory moveToPermSpace: oldObject.
+	
+	self assert: (memory isRemembered: permanentObject).
+	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+	
+	memory storePointer: 0 ofObject: permanentObject withValue: 16.
+
+	memory doScavenge: 1.
+
+	self deny: (memory isRemembered: permanentObject).
+	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+
 ]
 
 { #category : #'test - moving' }

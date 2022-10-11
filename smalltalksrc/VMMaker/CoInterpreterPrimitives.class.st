@@ -31,7 +31,7 @@ CoInterpreterPrimitives >> doWaitSemaphore: sema reEnterInterpreter: hasToReente
 			  know from whence we came.  We could have come from the interpreter,
 			  either directly or via a machine code primitive.  We could have come from
 			  machine code.  The instructionPointer tells us where from:"
-			inInterpreter := self isInstructionPointerInInterpreter.
+			inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
 			activeProc := self activeProcess.
 			self addLastLink: activeProc toList: sema.
 			self transferTo: self wakeHighestPriority from: CSWait.
@@ -285,7 +285,7 @@ CoInterpreterPrimitives >> primitiveEnterCriticalSection [
 	 know from whence we came.  We could have come from the interpreter,
 	 either directly or via a machine code primitive.  We could have come from
 	 machine code.  The instructionPointer tells us where from:"
-	inInterpreter := self isInstructionPointerInInterpreter.
+	inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
 	self addLastLink: activeProc toList: criticalSection.
 	self transferTo: self wakeHighestPriority from: CSEnterCriticalSection.
 	self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter
@@ -309,7 +309,7 @@ CoInterpreterPrimitives >> primitiveExitCriticalSection [
 			  know from whence we came.  We could have come from the interpreter,
 			  either directly or via a machine code primitive.  We could have come from
 			  machine code.  The instructionPointer tells us where from:"
-			 inInterpreter := self isInstructionPointerInInterpreter.
+			 inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
 			 owningProcess := self removeFirstLinkOfList: criticalSection.
 			 "store check unnecessary because aSemaphore referred to owningProcess
 			  via its FirstLinkIndex slot before owningProcess was removed."
@@ -608,7 +608,7 @@ CoInterpreterPrimitives >> primitiveResume [
 	 we have to know from whence we came.  We could have come from the
 	 interpreter, either directly or via a machine code primitive.  We could have
 	 come from machine code.  The instructionPointer tells us where from:"
-	inInterpreter := self isInstructionPointerInInterpreter.
+	inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
 	(self resume: proc preemptedYieldingIf: preemptionYields from: CSResume) ifTrue:
 		[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]
 
@@ -643,7 +643,7 @@ CoInterpreterPrimitives >> primitiveSignal [
 	 we have to know from whence we came.  We could have come from the
 	 interpreter, either directly or via a machine code primitive.  We could have
 	 come from machine code.  The instructionPointer tells us where from:"
-	inInterpreter := self isInstructionPointerInInterpreter.
+	inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
 	(self synchronousSignal: self stackTop) ifTrue:
 		[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]
 ]
@@ -679,7 +679,7 @@ CoInterpreterPrimitives >> primitiveSuspend [
 		 either directly or via a machine code primitive.  We could have come from
 		 machine code.  The instructionPointer tells us where from:"
 		self pop: 1 thenPush: objectMemory nilObject.
-		inInterpreter := self isInstructionPointerInInterpreter.
+		inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
 		self transferTo: self wakeHighestPriority from: CSSuspend.
 		^self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter].
 	myList := objectMemory fetchPointer: MyListIndex ofObject: process.
@@ -963,7 +963,7 @@ CoInterpreterPrimitives >> primitiveYield [
 	 know from whence we came.  We could have come from the interpreter,
 	 either directly or via a machine code primitive.  We could have come from
 	 machine code.  The instructionPointer tells us where from:"
-	inInterpreter := self isInstructionPointerInInterpreter.
+	inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
 	self addLastLink: activeProc toList: processList.
 	self transferTo: self wakeHighestPriority from: CSYield.
 	self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter

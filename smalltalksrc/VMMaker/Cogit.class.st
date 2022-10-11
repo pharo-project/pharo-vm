@@ -8544,6 +8544,8 @@ Cogit >> indexForSelector: selector in: cogMethod at: mcpc [
 	<var: #cogMethod type: #'CogMethod *'>
 	<inline: false>
 	| methodOop |
+	
+	self assert: (objectMemory isOopForwarded: selector) not.
 	self assert:
 		(mcpc asUnsignedInteger > cogMethod asUnsignedInteger and: [ 
 			 mcpc < (cogMethod asUnsignedInteger + cogMethod blockSize) ]).
@@ -8568,7 +8570,9 @@ Cogit >> indexForSelector: selector in: cogMethod at: mcpc [
 				                 i * objectMemory bytesPerOop
 				                 + objectMemory baseHeaderSize + methodOop.
 			(objectMemory isOopForwarded: methodLiteral) ifTrue: [ 
-				methodLiteral := objectMemory followForwarded: methodLiteral ].
+				methodLiteral := objectMemory followForwarded: methodLiteral.
+				objectMemory longAt: (i * objectMemory bytesPerOop
+				                 + objectMemory baseHeaderSize + methodOop) put: methodLiteral].
 
 			methodLiteral = selector ifTrue: [ 
 				self assert:

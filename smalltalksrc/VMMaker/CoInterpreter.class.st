@@ -538,7 +538,7 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 	 the last block method we failed to compile and avoid recompiling it."
 	(self methodWithHeaderShouldBeCogged: methodHeader)
 		ifTrue:
-			[(self isInstructionPointerInInterpreter not "If from machine code (via value primitive) attempt jitting"
+			[((self isInstructionPointerInInterpreter: instructionPointer) not "If from machine code (via value primitive) attempt jitting"
 			  or: [theMethod = lastCoggableInterpretedBlockMethod]) "If from interpreter and repeat block, attempt jitting"
 				ifTrue:
 					[theMethod ~= lastUncoggableInterpretedBlockMethod ifTrue:
@@ -564,7 +564,7 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 	 then make sure we restore the saved instruction pointer and avoid pushing
 	 ceReturnToInterpreterPC which is only valid between an interpreter caller
 	 frame and a machine code callee frame."
-	(inInterpreter := self isInstructionPointerInInterpreter) ifFalse:
+	(inInterpreter := self isInstructionPointerInInterpreter: instructionPointer) ifFalse:
 		[instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
 			[instructionPointer := self iframeSavedIP: framePointer]].
 
@@ -624,7 +624,7 @@ CoInterpreter >> activateNewMethod [
 	 then make sure we restore the saved instruction pointer and avoid pushing
 	 ceReturnToInterpreterPC which is only valid between an interpreter caller
 	 frame and a machine code callee frame."
-	(inInterpreter := self isInstructionPointerInInterpreter) ifFalse:
+	(inInterpreter := self isInstructionPointerInInterpreter: instructionPointer) ifFalse:
 		[instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
 			[instructionPointer := self iframeSavedIP: framePointer]].
 	self push: instructionPointer.
@@ -969,8 +969,8 @@ CoInterpreter >> baseFrameReturn [
 	framePointer := theFP.
 	instructionPointer := self pointerForOop: self stackTop.
 
-	self isInstructionPointerInInterpreter not	
-		ifTrue: [ 
+	(self isInstructionPointerInInterpreter: instructionPointer)
+		ifFalse: [ 
 			instructionPointer asUnsignedInteger
 			~= cogit ceReturnToInterpreterPC ifTrue: [ "localIP in the cog method zone indicates a return to machine code." 
 				^ self returnToMachineCodeFrame ].
@@ -1113,7 +1113,7 @@ CoInterpreter >> callbackEnter: callbackID [
 	jmpDepth := jmpDepth + 1.
 
 	wasInMachineCode := self isMachineCodeFrame: framePointer.
-	calledFromMachineCode := self isInstructionPointerInInterpreter not.
+	calledFromMachineCode := (self isInstructionPointerInInterpreter: instructionPointer) not.
 
 	"Suspend the currently active process"
 	suspendedCallbacks at: jmpDepth put: self activeProcess.
@@ -1167,7 +1167,7 @@ CoInterpreter >> callbackEnter: callbackID [
 	self assert: wasInMachineCode = (self isMachineCodeFrame: framePointer).
 	calledFromMachineCode
 		ifTrue:
-			[self isInstructionPointerInInterpreter ifTrue:
+			[(self isInstructionPointerInInterpreter: instructionPointer) ifTrue:
 				[self iframeSavedIP: framePointer put: instructionPointer.
 				 instructionPointer := cogit ceReturnToInterpreterPC]]
 		ifFalse:
@@ -1175,7 +1175,7 @@ CoInterpreter >> callbackEnter: callbackID [
 			  above it will remain an interpreted frame because the context's pc would
 			  remain a bytecode pc.  So the instructionPointer must also be a bytecode pc."
 			 self assert: (self isMachineCodeFrame: framePointer) not.
-			 self assert: self isInstructionPointerInInterpreter].
+			 self assert: (self isInstructionPointerInInterpreter: instructionPointer)].
 	self assert: primFailCode = 0.
 	jmpDepth := jmpDepth-1.
 	^true
@@ -2411,7 +2411,7 @@ CoInterpreter >> commonCallerReturn [
 	stackPointer := framePointer
 	                + (self frameStackedReceiverOffset: framePointer).
 	framePointer := callersFPOrNull.
-	self isInstructionPointerInInterpreter
+	(self isInstructionPointerInInterpreter: instructionPointer)
 		ifFalse: [ 
 			instructionPointer asUnsignedInteger
 			~= cogit ceReturnToInterpreterPC ifTrue: [ "localIP in the cog method zone indicates a return to machine code." 
@@ -2803,7 +2803,7 @@ CoInterpreter >> ensurePushedInstructionPointer [
 	 from the interpreter, either directly or via a machine code primitive.  We
 	 could have come from machine code.  The instructionPointer tells us where
 	 from.  Make sure the instruction pointer is pushed and/or saved."
-	self isInstructionPointerInInterpreter
+	(self isInstructionPointerInInterpreter: instructionPointer)
 		ifTrue:
 			"invoked directly from the interpreter"
 			[self iframeSavedIP: framePointer put: instructionPointer.
@@ -2958,7 +2958,7 @@ CoInterpreter >> executeNewMethod [
 	 the method cache (i.e. primitivePerform et al).
 	 Eagerly compile it if appropriate so that doits are fast."
 	| methodHeader inInterpreter |
-	inInterpreter := self isInstructionPointerInInterpreter.
+	inInterpreter := (self isInstructionPointerInInterpreter: instructionPointer).
 	primitiveFunctionPointer ~= 0 ifTrue:
 		[self isPrimitiveFunctionPointerAnIndex ifTrue:
 			[self externalQuickPrimitiveResponse.
@@ -2982,7 +2982,7 @@ CoInterpreter >> executeNewMethod [
 	"if not primitive, or primitive failed, activate the method"
 	(self isCogMethodReference: methodHeader)
 		ifTrue:
-			[self isInstructionPointerInInterpreter ifTrue:
+			[(self isInstructionPointerInInterpreter: instructionPointer) ifTrue:
 				[self iframeSavedIP: framePointer put: instructionPointer asInteger.
 				 instructionPointer := cogit ceReturnToInterpreterPC].
 			self activateCoggedNewMethod: inInterpreter]
@@ -4150,11 +4150,11 @@ CoInterpreter >> isCogMethodReference: methodHeader [
 ]
 
 { #category : #testing }
-CoInterpreter >> isInstructionPointerInInterpreter [
+CoInterpreter >> isInstructionPointerInInterpreter: anIP [
 
 	<inline: true>
 
-	^ instructionPointer asUnsignedInteger >= objectMemory getMemoryMap startOfObjectMemory
+	^ anIP asUnsignedInteger >= objectMemory getMemoryMap startOfObjectMemory
 ]
 
 { #category : #'frame access' }
@@ -4210,7 +4210,7 @@ CoInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 	self assert: (objectMemory isOopForwarded: rcvr) not.
 
 	(cogMethod notNil
-	and: [self isInstructionPointerInInterpreter]) ifTrue:
+	and: [self isInstructionPointerInInterpreter: instructionPointer]) ifTrue:
 		[self iframeSavedIP: framePointer put: instructionPointer.
 		 instructionPointer := cogit ceReturnToInterpreterPC].
 	self push: instructionPointer.
@@ -6173,8 +6173,8 @@ CoInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedCon
 		 switchedContext
 			ifTrue:
 				[cogMethod := self mframeCogMethod: framePointer.
-				self assert: (instructionPointer > cogit minCogMethodAddress 
-							and: [instructionPointer < cogit maxCogMethodAddress]).
+				self assert: (instructionPointer asUnsignedInteger > cogit minCogMethodAddress 
+							and: [instructionPointer asUnsignedInteger < cogit maxCogMethodAddress]).
 				 (instructionPointer ~= (cogMethod asInteger + cogMethod stackCheckOffset)
 				  and: [cogit isSendReturnPC: instructionPointer])
 					ifTrue:
@@ -6206,7 +6206,7 @@ CoInterpreter >> returnToMachineCodeFrame [
 
 	<inline: true>
 	cogit assertCStackWellAligned.
-	self assert: self isInstructionPointerInInterpreter not.
+	self assert: (self isInstructionPointerInInterpreter: instructionPointer) not.
 	self assert: (self isMachineCodeFrame: framePointer).
 	self
 		assertValidExecutionPointe: instructionPointer asUnsignedInteger

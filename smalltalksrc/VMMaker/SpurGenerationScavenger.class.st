@@ -741,7 +741,7 @@ SpurGenerationScavenger >> mapOopsFromPermSpace [
 						[manager getFromPermSpaceRememberedSet save: referrer at: destIndex.
 						 destIndex := destIndex + 1]
 				ifFalse:
-						[manager setIsRememberedOf: referrer to: false].
+						[ manager setIsRememberedOf: referrer to: false].
 		 sourceIndex := sourceIndex + 1].
 	
 	manager getFromPermSpaceRememberedSet setRememberedSetSize: destIndex.
@@ -1133,7 +1133,7 @@ SpurGenerationScavenger >> scavengeReferentsOf: referrer additionalShouldKeepRef
 	0 to: numSlots - 1 do:
 		[:i| | referent newLocation |
 		referent := manager fetchPointer: i ofMaybeForwardedObject: referrer.
-		(manager isNonImmediate: referent) ifTrue:
+		((manager isNonImmediate: referent) and: [manager isInObjectMemory: referent ]) ifTrue:
 			["a forwarding pointer could be because of become: or scavenging."
 			 (manager isForwarded: referent) ifTrue:
 				[referent := manager followForwarded: referent].
@@ -1143,8 +1143,9 @@ SpurGenerationScavenger >> scavengeReferentsOf: referrer additionalShouldKeepRef
 						ifTrue: [newLocation := referent. foundNewReferentOrIsWeakling := true]
 						ifFalse:
 							[newLocation := self copyAndForward: referent.
-							 (manager isYoung: newLocation) ifTrue:
-								[foundNewReferentOrIsWeakling := true]].
+							 (manager isYoung: newLocation) 
+								ifTrue: [foundNewReferentOrIsWeakling := true]
+								ifFalse: [(shouldKeepReferrerTestingBlock value: referrer value: newLocation) ifTrue: [ foundNewReferentOrIsWeakling := true ]]].
 					 manager storePointerUnchecked: i ofMaybeForwardedObject: referrer withValue: newLocation]
 				ifFalse:
 					[
