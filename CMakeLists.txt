@@ -181,9 +181,9 @@ endif()
 # If we are generating sources, set the binary dir as the generation source dir, as vmmaker will generate the C files here. (we do not alter the source directory)
 # Otherwise set it to by default to the current binary dir, parametrizable
 if(${GENERATE_SOURCES})
-    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR_TO_OUT})
 else()
-    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE STRING "Source directory where to find the generated source. Default value is CMAKE_CURRENT_BINARY_DIR")
+    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR_TO_OUT} CACHE STRING "Source directory where to find the generated source. Default value is CMAKE_CURRENT_BINARY_DIR")
 endif()
 
 if (${FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS})
