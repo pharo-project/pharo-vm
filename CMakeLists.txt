@@ -178,26 +178,6 @@ if(MSVC AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     endif()
 endif()
 
-# If we are generating sources, set the binary dir as the generation source dir, as vmmaker will generate the C files here. (we do not alter the source directory)
-# Otherwise set it to by default to the current binary dir, parametrizable
-if(${GENERATE_SOURCES})
-    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR})
-else()
-    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE STRING "Source directory where to find the generated source. Default value is CMAKE_CURRENT_BINARY_DIR")
-endif()
-
-if (${FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS})
-    add_compile_definitions(USE_INLINE_MEMORY_ACCESSORS=1)
-endif()
-
-set(PLUGIN_GENERATED_FILES 
-  	${GENERATED_SOURCE_DIR}/generated/plugins/src/FilePlugin/FilePlugin.c)
-
-
-if(FLAVOUR MATCHES "CoInterpreter")
-  add_compile_definitions(ASYNC_FFI_QUEUE=1)
-endif()
-
 # Configuration
 include(CheckIncludeFiles)
 include(CheckFunctionExists)
@@ -289,6 +269,27 @@ elseif(UNIX)
         set(VM_TARGET_OS "${CMAKE_SYSTEM_NAME}")
     endif()
 endif()
+
+# If we are generating sources, set the binary dir as the generation source dir, as vmmaker will generate the C files here. (we do not alter the source directory)
+# Otherwise set it to by default to the current binary dir, parametrizable
+if(${GENERATE_SOURCES})
+    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR_TO_OUT})
+else()
+    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR_TO_OUT} CACHE STRING "Source directory where to find the generated source. Default value is CMAKE_CURRENT_BINARY_DIR")
+endif()
+
+if (${FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS})
+    add_compile_definitions(USE_INLINE_MEMORY_ACCESSORS=1)
+endif()
+
+set(PLUGIN_GENERATED_FILES 
+  	${GENERATED_SOURCE_DIR}/generated/plugins/src/FilePlugin/FilePlugin.c)
+
+
+if(FLAVOUR MATCHES "CoInterpreter")
+  add_compile_definitions(ASYNC_FFI_QUEUE=1)
+endif()
+
 
 get_platform_name(FULL_PLATFORM_NAME)
 message(STATUS "Full Platform name: ${FULL_PLATFORM_NAME}")
