@@ -35,8 +35,8 @@ TAssignmentNode >> accept: aVisitor [
 TAssignmentNode >> asCASTExpressionIn: aBuilder [
 
 	(expression isStatementList and: [ expression statements size > 1 ]) 
-		ifTrue: [
-			^ self asCASTStatementListExpansionAsExpression: aBuilder ].
+		ifTrue: [ ^ self asCASTStatementListExpansionAsExpression: aBuilder ].
+
 	self isVariableUpdatingAssignment ifTrue: [ 
 		^ CAssignmentNode
 			  lvalue: (variable asCASTIn: aBuilder)
@@ -56,13 +56,13 @@ TAssignmentNode >> asCASTIn: aBuilder [
 		^ expression asCASTIn: aBuilder addToEndOfCases: self ].
 	expression isLiteralArrayDeclaration ifTrue: [ 
 		| literalArrayNode |
-		type := expression args last value.
+		type := expression arguments last value.
 		self assert: type last = $*.
 
 		"Transform the literal array declaration to a C block containing:
 		  - a static literal array declaration
 	 	  - an assigment from this literal array to the assigned variable "
-		literalArrayNode := expression args first value collect: [ :e | 
+		literalArrayNode := expression arguments first value collect: [ :e | 
 			                    CConstantNode value: e ].
 		^ CCompoundStatementNode
 			  declarations: { (CDeclarationNode
@@ -85,7 +85,23 @@ TAssignmentNode >> asCASTIn: aBuilder [
 				 arg asLastExpressionAssignmentTo: variable copy ]).
 		^ conditionalAsStatement asCASTIn: aBuilder ].
 
-	^ self asCASTExpressionIn: aBuilder
+	(expression isStatementList and: [ expression statements size > 1 ]) 
+		ifTrue: [ 
+			^ expression copy
+				  assignLastExpressionTo: variable;
+				  asCASTIn: aBuilder ].
+	
+	(expression isSend and: [ expression isValueExpansion ]) ifTrue: [ 
+		^ self asCASTValueExpansionIn: aBuilder ].
+
+	(expression isStatementList and: [ expression statements size > 1 ]) 
+		ifTrue: [ 
+			^ (expression asLastExpressionAssignmentTo: variable) asCASTIn:
+				  aBuilder ].
+
+	^ (self asCASTExpressionIn: aBuilder)
+		  needsParentheses: false;
+		  yourself
 ]
 
 { #category : #'C code generation' }
