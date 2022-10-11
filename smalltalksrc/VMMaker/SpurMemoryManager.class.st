@@ -6013,13 +6013,16 @@ SpurMemoryManager >> inFreeTreeReplace: treeNode with: newNode [
 
 { #category : #'debug support' }
 SpurMemoryManager >> inLineRunLeakCheckerFor: gcModes excludeUnmarkedObjs: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid [
+
 	<inline: true>
-	(gcModes anyMask: checkForLeaks) ifTrue: [
-		 self clearLeakMapAndMapAccessibleObjects.
-		 self asserta: (self checkHeapIntegrity: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid).
-		 self asserta: coInterpreter checkInterpreterIntegrity = 0.
-		 self asserta: coInterpreter checkStackIntegrity.
-		 self asserta: (coInterpreter checkCodeIntegrity: gcModes)]
+	(gcModes anyMask: checkForLeaks) ifTrue: [ 
+		self clearLeakMapAndMapAccessibleObjects.
+		self asserta: (self
+				 checkHeapIntegrity: excludeUnmarkedObjs
+				 classIndicesShouldBeValid: classIndicesShouldBeValid).
+		self asserta: coInterpreter checkInterpreterIntegrity = 0.
+		self asserta: coInterpreter checkStackIntegrity.
+		self asserta: (coInterpreter checkCodeIntegrity: gcModes) ]
 ]
 
 { #category : #'debug printing' }
@@ -6445,16 +6448,26 @@ SpurMemoryManager >> initializePostBootstrap [
 
 { #category : #'gc - global' }
 SpurMemoryManager >> initializeUnscannedEphemerons [
-	"Initialize unscannedEphemerons to use the largest free chunk
-	 or unused eden space, which ever is the larger."
+
+	"Initialize the unscannedEphemerons queue.
 	
+	Allocate by default size for 10K ephemerons in the heap.
+	Initialize the queue so that 
+	  - start points at the beginning of the allocated chunk,
+	  - limit points to the last potential entry
+	  - top is by default the start"
+
 	| allocation |
-	"Allocate initially space for 10K ephemerons"
-	allocation := (self calloc: (self sizeof: #'void *') _: unscannedEphemeronsQueueInitialSize).
-	allocation ifNil: [ self error: 'Cannot allocate space for unscanned ephemerons' ].
+	allocation := self
+		              calloc: (self sizeof: #'void *')
+		              _: unscannedEphemeronsQueueInitialSize.
+	allocation ifNil: [ 
+		self error: 'Cannot allocate space for unscanned ephemerons' ].
+
 	unscannedEphemerons
-				start: allocation asInteger;
-				limit: allocation asInteger + ((self sizeof: #'void *') * unscannedEphemeronsQueueInitialSize).
+		start: allocation asInteger;
+		limit: allocation asInteger
+			+ ((self sizeof: #'void *') * unscannedEphemeronsQueueInitialSize).
 	unscannedEphemerons top: unscannedEphemerons start
 ]
 
@@ -7992,7 +8005,7 @@ SpurMemoryManager >> markAllUnscannedEphemerons [
 	 The wrinkle is that doing so may add more ephemerons to the set.
 	 So we remove the first element, by overwriting it with the last element,
 	 and decrementing the top, and then markAndTrace its contents."
-	self assert: (self noUnscannedEphemerons) not.
+	"self assert: (self noUnscannedEphemerons) not."
 	self assert: self allUnscannedEphemeronsAreActive.
 	[unscannedEphemerons top > unscannedEphemerons start] whileTrue:
 		[| ephemeron key lastptr |
@@ -8044,13 +8057,17 @@ SpurMemoryManager >> markAndShouldScan: objOop [
 
 { #category : #'gc - global' }
 SpurMemoryManager >> markAndTrace: objOop [
-	"Mark the argument, and all objects reachable from it, and any remaining objects
-	 on the mark stack. Follow forwarding pointers in the scan."
+	"Mark the argument, and all objects reachable from it.
+	Marking works as a breadth-first search using a stack.
+	When an object is visited, its refered objects are put in the stack.
+	
+	Then, objects in the stack are taken one by one and visited as above.
+	Finish when the stack is empty.
+	
+	As a side effect, if the mark stack was not previously empty, it will be emptied.
+   Important: Follow forwarding pointers in the scan."
 	<api>
 	<inline: #never>
-	"if markAndTrace: is to follow and eliminate forwarding pointers
-	 in its scan it cannot be handed an r-value which is forwarded.
-	 The assert for this is in markAndShouldScan:"
 	(self markAndShouldScan: objOop) ifFalse:
 		[^self].
 
@@ -8175,90 +8192,107 @@ SpurMemoryManager >> markAndTraceWeaklingsFrom: startIndex [
 
 { #category : #'weakness and ephemerality' }
 SpurMemoryManager >> markInactiveEphemerons [
+
 	"Go through the unscanned ephemerons, marking the inactive ones, and
 	 removing them from the unscanned ephemerons. Answer if any inactive
 	 ones were found. We cannot fire the ephemerons until all are found to
 	 be active since scan-marking an inactive ephemeron later in the set may
 	 render a previously-observed active ephemeron as inactive."
+
 	| foundInactive ptr |
 	foundInactive := false.
 	ptr := unscannedEphemerons start.
-	[ptr < unscannedEphemerons top] whileTrue:
-		[| ephemeron key |
-		 key := self followedKeyOfEphemeron: (ephemeron := self longAt: ptr).
-		 ((self isImmediate: key) or: [self isMarked: key])
-			ifTrue:
-				[foundInactive := true.
-				 "Now remove the inactive ephemeron from the set, and scan-mark it.
+	[ ptr < unscannedEphemerons top ] whileTrue: [ 
+		| ephemeron key |
+		key := self followedKeyOfEphemeron: (ephemeron := self longAt: ptr).
+		((self isImmediate: key) or: [ self isMarked: key ])
+			ifTrue: [ 
+				foundInactive := true.
+				"Now remove the inactive ephemeron from the set, and scan-mark it.
 				  Scan-marking it may add more ephemerons to the set."
-				 unscannedEphemerons top: unscannedEphemerons top - self bytesPerOop.
-				 unscannedEphemerons top > ptr ifTrue:
-					[self longAt: ptr put: (self longAt: unscannedEphemerons top)].
-				 self markAndTrace: ephemeron]
-			ifFalse:
-				[ptr := ptr + self bytesPerOop]].
-	^foundInactive
+				unscannedEphemerons top:
+					unscannedEphemerons top - self bytesPerOop.
+				unscannedEphemerons top > ptr ifTrue: [ 
+					self longAt: ptr put: (self longAt: unscannedEphemerons top) ].
+				self setIsMarkedOf: ephemeron to: false.
+				self markAndTrace: ephemeron ]
+			ifFalse: [ ptr := ptr + self bytesPerOop ] ].
+	^ foundInactive
 ]
 
 { #category : #'gc - global' }
 SpurMemoryManager >> markLoopFrom: objOop [
+
 	"Scan objOop and all objects on the mark stack, until the mark stack is empty.
 	 N.B. When the incremental GC is written this will probably be refactored as
 	 markLoopFrom: objOop while: aBlock"
+
 	<inline: true>
 	| objToScan field index numStrongSlots scanLargeObject |
-
 	"Now scan the object, and any remaining objects on the mark stack."
 	objToScan := objOop.
 	"To avoid overflowing the mark stack when we encounter large objects, we
 	 push the obj, then its numStrongSlots, and then index the object from the stack."
-	[(self isImmediate: objToScan)
-		ifTrue: [scanLargeObject := true]
-		ifFalse:
-			[numStrongSlots := self numStrongSlotsOfInephemeral: objToScan.
-			 scanLargeObject := numStrongSlots > self traceImmediatelySlotLimit].
-	 scanLargeObject
-		ifTrue: "scanning a large object. scan until hitting an unmarked object, then switch to it, if any."
-			[(self isImmediate: objToScan)
-				ifTrue:
-					[index := self integerValueOf: objToScan.
-					 objToScan := self topOfObjStack: markStack]
-				ifFalse:
-					[index := numStrongSlots.
-					 self markAndTraceClassOf: objToScan].
-			 [index > 0] whileTrue:
-				[index := index - 1.
-				 field := self fetchPointer: index ofObject: objToScan.
-				 (self isNonImmediate: field) ifTrue:
-					[(self isForwarded: field) ifTrue: "fixFollowedField: is /not/ inlined"
-						[field := self fixFollowedField: index ofObject: objToScan withInitialValue: field].
-					 (self markAndShouldScan: field) ifTrue:
-						[index > 0 ifTrue:
-							[(self topOfObjStack: markStack) ~= objToScan ifTrue: 
-								[self push: objToScan onObjStack: markStack].
-							 self push: (self integerObjectOf: index) onObjStack: markStack].
-						 objToScan := field.
-						 index := -1]]].
-			 index >= 0 ifTrue: "if loop terminated without finding an unmarked referent, switch to top of stack."
-				[objToScan := self popObjStack: markStack.
-				 objToScan = objOop ifTrue:
-					[objToScan := self popObjStack: markStack]]]
-		ifFalse: "scanning a small object. scan, marking, pushing unmarked referents, then switch to the top of the stack."
-			[index := numStrongSlots.
-			 self markAndTraceClassOf: objToScan.
-			 [index > 0] whileTrue:
-				[index := index - 1.
-				 field := self fetchPointer: index ofObject: objToScan.
-				 (self isNonImmediate: field) ifTrue:
-					[(self isForwarded: field) ifTrue: "fixFollowedField: is /not/ inlined"
-						[field := self fixFollowedField: index ofObject: objToScan withInitialValue: field].
-					 (self markAndShouldScan: field) ifTrue:
-						[self push: field onObjStack: markStack.
-						 ((self rawNumSlotsOf: field) > self traceImmediatelySlotLimit
-						  and: [(numStrongSlots := self numStrongSlotsOfInephemeral: field) > self traceImmediatelySlotLimit]) ifTrue:
-							[self push: (self integerObjectOf: numStrongSlots) onObjStack: markStack]]]].
-			 objToScan := self popObjStack: markStack].
-	 objToScan notNil] whileTrue
+	[ 
+	(self isImmediate: objToScan)
+		ifTrue: [ scanLargeObject := true ]
+		ifFalse: [
+			numStrongSlots := ((self isEphemeron: objToScan) and: [ self isMarked: (self keyOfEphemeron: objToScan) ])
+				ifTrue: [ self numSlotsOf: objToScan ]
+				ifFalse: [ self numStrongSlotsOfInephemeral: objToScan ].
+			scanLargeObject := numStrongSlots > self traceImmediatelySlotLimit ].
+	scanLargeObject
+		ifTrue: [ "scanning a large object. scan until hitting an unmarked object, then switch to it, if any."
+			(self isImmediate: objToScan)
+				ifTrue: [ 
+					index := self integerValueOf: objToScan.
+					objToScan := self topOfObjStack: markStack ]
+				ifFalse: [ 
+					index := numStrongSlots.
+					self markAndTraceClassOf: objToScan ].
+			[ index > 0 ] whileTrue: [ 
+				index := index - 1.
+				field := self fetchPointer: index ofObject: objToScan.
+				(self isNonImmediate: field) ifTrue: [ 
+					(self isForwarded: field) ifTrue: [ "fixFollowedField: is /not/ inlined"
+						field := self
+							         fixFollowedField: index
+							         ofObject: objToScan
+							         withInitialValue: field ].
+					(self markAndShouldScan: field) ifTrue: [ 
+						index > 0 ifTrue: [ 
+							(self topOfObjStack: markStack) ~= objToScan ifTrue: [ 
+								self push: objToScan onObjStack: markStack ].
+							self push: (self integerObjectOf: index) onObjStack: markStack ].
+						objToScan := field.
+						index := -1 ] ] ].
+			index >= 0 ifTrue: [ "if loop terminated without finding an unmarked referent, switch to top of stack."
+				objToScan := self popObjStack: markStack.
+				objToScan = objOop ifTrue: [ 
+					objToScan := self popObjStack: markStack ] ] ]
+		ifFalse: [ "scanning a small object. scan, marking, pushing unmarked referents, then switch to the top of the stack."
+			index := numStrongSlots.
+			self markAndTraceClassOf: objToScan.
+			[ index > 0 ] whileTrue: [ 
+				index := index - 1.
+				field := self fetchPointer: index ofObject: objToScan.
+				(self isNonImmediate: field) ifTrue: [ 
+					(self isForwarded: field) ifTrue: [ "fixFollowedField: is /not/ inlined"
+						field := self
+							         fixFollowedField: index
+							         ofObject: objToScan
+							         withInitialValue: field ].
+					(self markAndShouldScan: field) ifTrue: [ 
+						self push: field onObjStack: markStack.
+						((self rawNumSlotsOf: field) > self traceImmediatelySlotLimit 
+							 and: [ 
+								 (numStrongSlots := self numStrongSlotsOfInephemeral: field)
+								 > self traceImmediatelySlotLimit ]) ifTrue: [ 
+							self
+								push: (self integerObjectOf: numStrongSlots)
+								onObjStack: markStack ] ] ] ].
+			objToScan := self popObjStack: markStack ].
+	objToScan notNil ] whileTrue
 ]
 
 { #category : #'gc - global' }
@@ -8888,7 +8922,10 @@ SpurMemoryManager >> noInlineObjectAfter: objOop limit: limit [
 
 { #category : #'weakness and ephemerality' }
 SpurMemoryManager >> noUnscannedEphemerons [
-	^unscannedEphemerons top = unscannedEphemerons start
+
+	"The unscannedEphemerons stack top points to the next free position.
+	The stack is empty if top == start"
+	^ unscannedEphemerons top = unscannedEphemerons start
 ]
 
 { #category : #'header formats' }
@@ -9100,7 +9137,7 @@ SpurMemoryManager >> numStrongSlotsOf: objOop format: fmt ephemeronInactiveIf: c
 { #category : #'object access' }
 SpurMemoryManager >> numStrongSlotsOfInephemeral: objOop [
 	"Answer the number of strong pointer fields in the given object,
-	 which is .expected not to be an active ephemeron.
+	 which is expected not to be an active ephemeron.
 	 Works with CompiledMethods, as well as ordinary objects."
 	<inline: true>
 	| fmt numSlots  contextSize numLiterals header |
@@ -10877,13 +10914,6 @@ SpurMemoryManager >> setFormatOf: objOop to: format [
 	self subclassResponsibility
 ]
 
-{ #category : #'free space' }
-SpurMemoryManager >> setFree: objOop [
-	<inline: true>
-	"turn the object into a free chunk, zeroing classIndex, format, isGrey,isPinned,isRemembered,isImmutable & ?."
-	self long32At: objOop put: 0
-]
-
 { #category : #snapshot }
 SpurMemoryManager >> setFreeOldSpaceStart: newFreeOldSpaceStart [
 	"Set by the segment manager on parsing the image."
@@ -11040,17 +11070,6 @@ SpurMemoryManager >> setNextFreeChunkOf: freeChunk withValue: nextFreeChunk isLi
 			withValue: freeChunk]
 	
 	
-]
-
-{ #category : #'free space' }
-SpurMemoryManager >> setObjectFree: objOop [
-	"Mark an object free, but do not add it to the free lists.  The wrinkle here
-	 is that we don't tolerate a zero-slot count in a free object so that the
-	 (self long64At: objOop) ~= 0 assert in isEnumerableObject: isn't triggered."
-		 
-	(self rawNumSlotsOf: objOop) = 0 ifTrue:
-		[self rawNumSlotsOf: objOop put: 1].
-	self setFree: objOop
 ]
 
 { #category : #'word size' }
@@ -12652,10 +12671,10 @@ SpurMemoryManager >> withSimulatorFetchPointerMovedAsideDo: aBlock [
 	| theMethod |
 	theMethod := self class lookupSelector: #fetchPointer:ofObject:.
 	self deny: (theMethod isNil or: [theMethod methodClass == SpurMemoryManager]).
-	theMethod methodClass basicRemoveSelector: #fetchPointer:ofObject:.
+	theMethod methodClass removeSelectorSilently: #fetchPointer:ofObject:.
 	^aBlock ensure:
 		[theMethod methodClass
-			basicAddSelector: #fetchPointer:ofObject:
+			addSelectorSilently: #fetchPointer:ofObject:
 			withMethod: theMethod]
 ]
 

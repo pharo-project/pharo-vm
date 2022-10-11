@@ -46,7 +46,7 @@ VMPinnedObjectTest >> setUp [
 
 { #category : #testCompactor }
 VMPinnedObjectTest >> testAllocatingObjectAfterAPinObjectShouldSlideAtStartOfOldSpace [
-	| aliveObject destination shouldBeFreed |
+	| aliveObject destination shouldBeFreed aliveHash |
 	"D = Dead
 	P = Pinned
 	A = Alive
@@ -55,16 +55,21 @@ VMPinnedObjectTest >> testAllocatingObjectAfterAPinObjectShouldSlideAtStartOfOld
 	before : D D P D A -
 	after : A F P -"
 	memory fullGC.
+	"should allocate two objects to fill two free chunks"
+	self keepObjectInVMVariable2: self newDeadObject. 
+	self keepObjectInVMVariable3: self newDeadObject. 
+
 
 	destination := self newDeadObject. 
 	shouldBeFreed := self newDeadObject.
 	self newKeptPinnedObject.
 	self newDeadObject.
 	aliveObject := self newAliveObject.
+	aliveHash := memory hashBitsOf: aliveObject.
 	
 	memory fullGC.
 	
-	self assert: (memory isForwarded: aliveObject).
+	self assert: (memory hashBitsOf: destination) equals: aliveHash.
 	self assert: self lastAliveObject equals: destination.
 	self assert: (memory isFreeObject: shouldBeFreed)
 ]
@@ -81,6 +86,10 @@ VMPinnedObjectTest >> testAllocatingObjectAfterAPinObjectShouldSlideBeforeLastPi
 	after : A P -
 	"
 	memory fullGC.
+	"should allocate two objects to fill two free chunks"
+	self keepObjectInVMVariable2: self newDeadObject. 
+	self keepObjectInVMVariable3: self newDeadObject. 
+
 	
 	destination := self newDeadObject.
 	self newKeptPinnedObject.	
@@ -104,6 +113,10 @@ VMPinnedObjectTest >> testAllocatingObjectAfterManyPinnedObjectShouldSlideAtStar
 	before : D D P P D A -
 	after : A F P P -"
 	memory fullGC.
+	"should allocate two objects to fill two free chunks"
+	self keepObjectInVMVariable2: self newDeadObject. 
+	self keepObjectInVMVariable3: self newDeadObject. 
+
 	
 	destination := self newDeadObject. 
 	shouldBeFreed := self newDeadObject.
@@ -130,6 +143,10 @@ VMPinnedObjectTest >> testAllocatingObjectAfterManyPinnedObjectShouldSlideBefore
 	before : D P P D A -
 	after : A P P -"
 	memory fullGC.
+	"should allocate two objects to fill two free chunks"
+	self keepObjectInVMVariable2: self newDeadObject. 
+	self keepObjectInVMVariable3: self newDeadObject. 
+
 	
 	destination := self newDeadObject.
 	self newKeptPinnedObject.
@@ -154,6 +171,10 @@ VMPinnedObjectTest >> testAllocatingObjectAfterTwoPinObjectShouldSlideAtStartOfO
 	before : D P D P D A -
 	after : A P F P -"
 	memory fullGC.
+	"should allocate two objects to fill two free chunks"
+	self keepObjectInVMVariable2: self newDeadObject. 
+	self keepObjectInVMVariable3: self newDeadObject. 
+
 
 	destination := self newDeadObject .
 	self newKeptPinnedObject.

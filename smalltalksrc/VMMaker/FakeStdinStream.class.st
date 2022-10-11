@@ -3,7 +3,7 @@ Fake Standard input using a dialog to prompt for a line of input at a time.
 "
 Class {
 	#name : #FakeStdinStream,
-	#superclass : #ReadStream,
+	#superclass : #WriteStream,
 	#instVars : [
 		'atEnd',
 		'simulator'
