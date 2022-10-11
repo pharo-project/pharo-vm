@@ -35,8 +35,8 @@ TAssignmentNode >> accept: aVisitor [
 TAssignmentNode >> asCASTExpressionIn: aBuilder [
 
 	(expression isStatementList and: [ expression statements size > 1 ]) 
-		ifTrue: [ ^ self asCASTStatementListExpansionAsExpression: aBuilder ].
-
+		ifTrue: [
+			^ self asCASTStatementListExpansionAsExpression: aBuilder ].
 	self isVariableUpdatingAssignment ifTrue: [ 
 		^ CAssignmentNode
 			  lvalue: (variable asCASTIn: aBuilder)
@@ -56,13 +56,13 @@ TAssignmentNode >> asCASTIn: aBuilder [
 		^ expression asCASTIn: aBuilder addToEndOfCases: self ].
 	expression isLiteralArrayDeclaration ifTrue: [ 
 		| literalArrayNode |
-		type := expression arguments last value.
+		type := expression args last value.
 		self assert: type last = $*.
 
 		"Transform the literal array declaration to a C block containing:
 		  - a static literal array declaration
 	 	  - an assigment from this literal array to the assigned variable "
-		literalArrayNode := expression arguments first value collect: [ :e | 
+		literalArrayNode := expression args first value collect: [ :e | 
 			                    CConstantNode value: e ].
 		^ CCompoundStatementNode
 			  declarations: { (CDeclarationNode
@@ -87,10 +87,13 @@ TAssignmentNode >> asCASTIn: aBuilder [
 
 	(expression isStatementList and: [ expression statements size > 1 ]) 
 		ifTrue: [ 
-			^ expression copy
-				  assignLastExpressionTo: variable;
-				  asCASTIn: aBuilder ].
-	
+			^ (expression copy assignLastExpressionTo: variable) asCASTIn:
+				  aBuilder ].
+	self isVariableUpdatingAssignment ifTrue: [ 
+		^ CAssignmentNode
+			  lvalue: (variable asCASTIn: aBuilder)
+			  operator: expression selector , '='
+			  rvalue: (expression arguments first asCASTExpressionIn: aBuilder) ].
 	(expression isSend and: [ expression isValueExpansion ]) ifTrue: [ 
 		^ self asCASTValueExpansionIn: aBuilder ].
 
@@ -140,12 +143,12 @@ TAssignmentNode >> asCASTValueExpansionIn: aCodeGen [
 	"
 	stmtList statements last = variable ifTrue: [ 
 		^ expression asCASTIn: aCodeGen ].
-	
+
 	"Else rewrite the block to move the assignment inside"
 	^ (TSendNode new
 		   setSelector: expression selector
 		   receiver: (stmtList asLastExpressionAssignmentTo: variable copy)
-		   arguments: expression args) asCASTIn: aCodeGen
+		   arguments: expression arguments) asCASTIn: aCodeGen
 ]
 
 { #category : #transformations }
