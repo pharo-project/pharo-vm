@@ -382,11 +382,6 @@ InterpreterProxy >> includesBehavior: aClass ThatOf: aSuperclass [
 	^aClass includesBehavior: aSuperclass
 ]
 
-{ #category : #other }
-InterpreterProxy >> incrementalGC [
-	Smalltalk garbageCollectMost.
-]
-
 { #category : #initialize }
 InterpreterProxy >> initialize [
 	primFailCode := 0.

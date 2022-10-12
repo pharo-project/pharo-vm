@@ -33,9 +33,7 @@ VMBytecodeMethod >> disassemble [
 
 { #category : #accessing }
 VMBytecodeMethod >> encoderClass [
-	^ (virtualMachine methodUsesAlternateBytecodeSet: methodOop)
-		ifTrue: [ EncoderForSistaV1 ]
-		ifFalse: [ EncoderForV3PlusClosures ]
+	^ EncoderForSistaV1
 ]
 
 { #category : #accessing }
