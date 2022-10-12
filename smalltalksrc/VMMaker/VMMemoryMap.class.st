@@ -34,6 +34,13 @@ Class {
 }
 
 { #category : #translation }
+VMMemoryMap class >> declareCVarsIn: aCCodeGenerator [
+
+	aCCodeGenerator
+		var: #memoryMapConfiguration type: #implicit. 
+]
+
+{ #category : #translation }
 VMMemoryMap class >> filteredInstVarNames [
 
 	^ super filteredInstVarNames copyWithoutAll: #(memoryManager memoryMapConfiguration objectMemory)
@@ -47,12 +54,6 @@ VMMemoryMap class >> generateHeader: aBinaryBlock [
 		value: (String streamContents: [ :s | 
 				 self printTypedefOn: s.
 				 s cr ])
-]
-
-{ #category : #translation }
-VMMemoryMap class >> implicitVariables [
-
-	^ #(memoryMapConfiguration)
 ]
 
 { #category : #translation }

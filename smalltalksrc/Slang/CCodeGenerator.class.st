@@ -3510,9 +3510,7 @@ CCodeGenerator >> isNode: aNode constantValueWithinRangeOfType: aType [
 { #category : #'C code generator' }
 CCodeGenerator >> isNonArgumentImplicitReceiverVariableName: aString [
 
-	^ (self currentMethod definingClass isNotNil and: [ 
-		   self currentMethod definingClass implicitVariables includes: aString ]) 
-		  or: [ (self typeOfVariable: aString) == #implicit ]
+	^ (self typeOfVariable: aString) == #implicit
 ]
 
 { #category : #'type inference' }

@@ -32,12 +32,6 @@ VMRememberedSet class >> generateHeader: aBinaryBlock [
 ]
 
 { #category : #translation }
-VMRememberedSet class >> implicitVariables [
-
-	^ #(manager)
-]
-
-{ #category : #translation }
 VMRememberedSet class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 
 	self filteredInstVarNames do: [ :aName |
