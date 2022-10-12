@@ -48,3 +48,12 @@ SpurGenerationScavengerSimulator >> manager: aSpurNBitMMXEndianSimulator [
 SpurGenerationScavengerSimulator >> recordMovements [
 	cameFrom := Dictionary new
 ]
+
+{ #category : #scavenger }
+SpurGenerationScavengerSimulator >> scavenge: tenuringCriterion [
+	manager bootstrapping ifFalse:
+		[coInterpreter transcript nextPutAll: 'scavenging('; print: manager statScavenges; nextPutAll: ')...'; cr; flush.
+		 cameFrom ifNotNil:
+			[cameFrom := Dictionary new]].
+	^super scavenge: tenuringCriterion
+]

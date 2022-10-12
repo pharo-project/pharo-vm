@@ -9857,7 +9857,9 @@ StackInterpreter >> markAndTraceInterpreterOops: fullGCFlag [
 	self markAndTraceStackPages: fullGCFlag.
 	self markAndTraceTraceLog.
 	self markAndTracePrimTraceLog.
-	objectMemory markAndTrace: objectMemory specialObjectsOop. "also covers nilObj, trueObj, falseObj, and compact classes"
+	"also covers nilObj, trueObj, falseObj, and compact classes"
+	objectMemory markAndTrace: objectMemory specialObjectsOop. 
+
 	(objectMemory isImmediate: newMethod) ifFalse:
 		[objectMemory markAndTrace: newMethod].
 	self traceProfileState.

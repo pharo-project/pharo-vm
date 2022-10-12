@@ -294,10 +294,28 @@ Spur32BitMMLECoSimulator >> scavengingGCTenuringIf: tenuringCriterion [
 	^super scavengingGCTenuringIf: tenuringCriterion
 ]
 
-{ #category : #'free space' }
-Spur32BitMMLECoSimulator >> setFree: o [
-	"o = 16rB34D40 ifTrue: [self halt]."
-	super setFree: o
+{ #category : #'header access' }
+Spur32BitMMLECoSimulator >> setIsMarkedOf: objOop to: aBoolean [
+	"objOop = 16rB26020 ifTrue: [self halt]."
+	super setIsMarkedOf: objOop to: aBoolean.
+	"(aBoolean
+	 and: [(self isContextNonImm: objOop)
+	 and: [(coInterpreter
+			checkIsStillMarriedContext: objOop
+			currentFP: coInterpreter framePointer)
+	 and: [(coInterpreter stackPages stackPageFor: (coInterpreter frameOfMarriedContext: objOop)) trace = 0]]]) ifTrue:
+		[self halt]"
+]
+
+{ #category : #'debug support' }
+Spur32BitMMLECoSimulator >> setUpForUseByFacade: aCurrentImageCoInterpreterFacade [
+	"Make sure that eden etc are initialized, so that methods can be printed.
+	 This is really to make addressCouldBeObj: et al work."
+	<doNotGenerate>
+	self edenBytes: 0.
+	self setHeapBase: self freeStart
+		memoryLimit: self endOfMemory
+		endOfMemory: self endOfMemory
 ]
 
 { #category : #'memory access' }

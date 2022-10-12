@@ -186,7 +186,7 @@ Spur64BitMMLECoSimulator >> long32At: byteAddress put: a32BitValue [
 		[self halt]."
 	"(byteAddress between: 16r33FBB8 and: 16r33FBCF) ifTrue:
 		[self halt]."
-	^ memoryManager long32At: byteAddress put: a32BitValue
+	^ memoryManager unsignedLong32At: byteAddress put: a32BitValue
 ]
 
 { #category : #'memory access' }
@@ -279,10 +279,17 @@ Spur64BitMMLECoSimulator >> scavengingGCTenuringIf: tenuringCriterion [
 	^super scavengingGCTenuringIf: tenuringCriterion
 ]
 
-{ #category : #'free space' }
-Spur64BitMMLECoSimulator >> setFree: o [
-	"o = 16rB34D40 ifTrue: [self halt]."
-	super setFree: o
+{ #category : #'header access' }
+Spur64BitMMLECoSimulator >> setIsMarkedOf: objOop to: aBoolean [
+	"objOop = 16rB26020 ifTrue: [self halt]."
+	super setIsMarkedOf: objOop to: aBoolean.
+	"(aBoolean
+	 and: [(self isContextNonImm: objOop)
+	 and: [(coInterpreter
+			checkIsStillMarriedContext: objOop
+			currentFP: coInterpreter framePointer)
+	 and: [(coInterpreter stackPages stackPageFor: (coInterpreter frameOfMarriedContext: objOop)) trace = 0]]]) ifTrue:
+		[self halt]"
 ]
 
 { #category : #'memory access' }

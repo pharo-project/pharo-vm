@@ -236,14 +236,6 @@ Spur64BitMMLESimulator >> longAt: byteAddress put: a64BitValue [
 	^self long64At: byteAddress put: a64BitValue
 ]
 
-{ #category : #'gc - global' }
-Spur64BitMMLESimulator >> markAndTrace: objOop [
-	"objOop = 16rB26020 ifTrue: [self halt].
-	objOop = 16rB25FD8 ifTrue: [self halt].
-	objOop = 16rB26010 ifTrue: [self halt]."
-	^super markAndTrace: objOop
-]
-
 { #category : #compaction }
 Spur64BitMMLESimulator >> moveARunOfObjectsStartingAt: startAddress upTo: limit [
 	| result |.

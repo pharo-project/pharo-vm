@@ -264,6 +264,12 @@ UnicornProcessor >> rcx: anInteger [
 	machineSimulator rcx: anInteger
 ]
 
+{ #category : #'as yet unclassified' }
+UnicornProcessor >> rdi: anInteger [ 
+
+	machineSimulator rdi: anInteger 
+]
+
 { #category : #registers }
 UnicornProcessor >> rdx: anInteger [ 
 	

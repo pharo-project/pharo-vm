@@ -17,6 +17,33 @@ VMSpurInitializedOldSpaceTest >> assertFreeListEmpty: aFreeListOop [
 ]
 
 { #category : #helpers }
+VMSpurInitializedOldSpaceTest >> createEphemeronClass [
+	ourEphemeronClass := self newObjectWithSlots: 3.
+	memory 
+		storePointer: "InstanceSpecificationIndex" 2
+		ofObject: ourEphemeronClass
+		withValue: (memory integerObjectOf: Ephemeron format).
+	memory ensureBehaviorHash: ourEphemeronClass.
+]
+
+{ #category : #helpers }
+VMSpurInitializedOldSpaceTest >> createEphemeronClassForSlots: fixedSlots [
+
+	| theNewClass formatWithSlots hash |
+	theNewClass := self newOldSpaceObjectWithSlots: 3.
+	theNewClass := memory pinObject: theNewClass.
+	self assert: theNewClass ~= 0.
+	formatWithSlots := memory ephemeronFormat << 16 + fixedSlots.
+	memory
+		storePointer: 2
+		ofObject: theNewClass
+		withValue: (memory integerObjectOf: formatWithSlots). "InstanceSpecificationIndex"
+	hash := memory ensureBehaviorHash: theNewClass.
+	self assert: (hash between: 1 and: 4194303). "1 << 22 - 1"
+	^ theNewClass
+]
+
+{ #category : #helpers }
 VMSpurInitializedOldSpaceTest >> createFreeChunkOfSize: aSize [
 
 	| address |
@@ -91,6 +118,35 @@ VMSpurInitializedOldSpaceTest >> newPermanentByteObjectOfSize: byteSize [
 		memory storeByte: index ofObject: oop withValue: 	0 ].
 
 	^ oop
+]
+
+{ #category : #helpers }
+VMSpurInitializedOldSpaceTest >> newEphemeronObjectWithSlots: slots [
+
+	| class |
+	class := self createEphemeronClassForSlots: slots.
+	^ self
+		newObjectWithSlots: slots
+		format: memory ephemeronFormat
+		classIndex: (memory ensureBehaviorHash: class)
+]
+
+{ #category : #helpers }
+VMSpurInitializedOldSpaceTest >> newOldEphemeronObject [
+
+	"In pharo Ephemerons have 3 slots"
+	^ self newOldEphemeronObjectWithSlots: 3
+]
+
+{ #category : #helpers }
+VMSpurInitializedOldSpaceTest >> newOldEphemeronObjectWithSlots: slots [
+
+	| class |
+	class := self createEphemeronClassForSlots: slots.
+	^ self
+		newOldSpaceObjectWithSlots: slots
+		format: memory ephemeronFormat
+		classIndex: (memory ensureBehaviorHash: class)
 ]
 
 { #category : #helpers }

@@ -321,6 +321,52 @@ VMSpurOldSpaceGarbageCollectorTest >> testMultiPageMournQueue [
 		equals: numberJustOverLimit
 ]
 
+{ #category : #tests }
+VMSpurOldSpaceGarbageCollectorTest >> testNewRootEphemeronHoldsAnotherEphemeronAsKeyThenFullGC [
+
+	| ephemeron1 ephemeron2 |
+
+	ephemeron1 := self newEphemeronObjectWithSlots: 5.
+	self keepObjectInVMVariable1: ephemeron1.
+	ephemeron2 := self newEphemeronObjectWithSlots: 3.
+	self keepObjectInVMVariable2: ephemeron2.
+	memory storePointer: 0 ofObject: ephemeron1 withValue: ephemeron2.
+	
+	memory setCheckForLeaks: 63 "all".
+	memory fullGC
+]
+
+{ #category : #tests }
+VMSpurOldSpaceGarbageCollectorTest >> testNewRootEphemeronHoldsOldNonRootEphemeronAsNonKeyThenFullGC [
+
+	| ephemeron1 ephemeron2 |
+
+	ephemeron1 := self newEphemeronObjectWithSlots: 17.
+	self keepObjectInVMVariable1: ephemeron1.
+	ephemeron2 := self newOldEphemeronObjectWithSlots: 7.
+	memory storePointer: 1 "Not the key" ofObject: ephemeron1 withValue: ephemeron2.
+	
+	memory setCheckForLeaks: 63 "all".
+	memory fullGC
+]
+
+{ #category : #tests }
+VMSpurOldSpaceGarbageCollectorTest >> testNewRootEphemeronIsHeldsByOldNonRootEphemeronAsNonKeyThenFullGC [
+
+	| ephemeron1 ephemeron2 |
+
+	ephemeron1 := self newEphemeronObjectWithSlots: 6.
+	self keepObjectInVMVariable1: ephemeron1.
+	memory fullGC.
+	ephemeron1 := self keptObjectInVMVariable1.
+	
+	ephemeron2 := self newOldEphemeronObjectWithSlots: 15.
+	memory storePointer: 10 "Not the key" ofObject: ephemeron2 withValue: ephemeron1.
+	
+	memory setCheckForLeaks: 63 "all".
+	memory fullGC
+]
+
 { #category : #ephemerons }
 VMSpurOldSpaceGarbageCollectorTest >> testPageLimitMournQueue [
 

@@ -128,8 +128,12 @@ SpurPlanningCompactor >> compact [
 	 Let the segmentManager mark which segments contain pinned objects via notePinned:."
 	| finalPass firstPass |
 	<inline: #never> "for profiling"
-	self initializeScanCheckingForFullyCompactedHeap ifTrue:
-		[^self unmarkObjectsInFullyCompactedHeap].
+	
+	"Check if compaction is required, and if not, cleanup the heap.
+	A compaction is not required if the heap is considered compacted already."
+	self initializeScanCheckingForFullyCompactedHeap ifTrue: [
+		^self unmarkObjectsInFullyCompactedHeap ].
+	
 	self initializeCompaction.
 	firstPass := true.
 	[finalPass := self planCompactSavingForwarders.
@@ -166,8 +170,8 @@ SpurPlanningCompactor >> copyAndUnmark: firstPass [
 	<inline: #never>
 	| finalPass |
 	self logPhase: 'copying and unmarking...'.
-	firstPass ifTrue:
-		[self unmarkInitialImmobileObjects].
+	firstPass ifTrue: [
+		self unmarkInitialImmobileObjects ].
 	finalPass := self copyAndUnmarkMobileObjects.
 	(self thereAreObjectsToMove
 	 and: [finalPass not
@@ -371,6 +375,18 @@ SpurPlanningCompactor >> initializeCompaction [
 
 { #category : #compaction }
 SpurPlanningCompactor >> initializeScanCheckingForFullyCompactedHeap [
+
+	"Return if the heap is fully compacted.
+	That is, if there are no marked objects after some free chunk.
+	
+	The downside of this definition, is that a heap that has a sequence of objects:
+	  - marked object
+	  - unmarked object
+	  - free space
+	  - end of the heap
+	
+	Is considered compacted, and thus the unmarked object will not be coallesced with the free space in this pass"
+
 	"Scan for firstFreeObject and firstMobileObject from the start of memory.
 	 Answer if the heap is already fully compacted."
 	firstMobileObject := lastMobileObject := objectAfterLastMobileObject := nil.
@@ -666,13 +682,24 @@ SpurPlanningCompactor >> thereAreObjectsToMove [
 
 { #category : #compaction }
 SpurPlanningCompactor >> unmarkInitialImmobileObjects [
-	"Sweep the initial immobile heap, unmarking all objects up to the first mobile object."
-	manager allOldSpaceObjectsFrom: manager firstObject do:
-		[:o|
+	
+	self unmarkInitialImmobileObjectsFreeUnmarked: false
+]
+
+{ #category : #compaction }
+SpurPlanningCompactor >> unmarkInitialImmobileObjectsFreeUnmarked: freeUnmarked [
+	"Sweep the initial immobile heap, unmarking all objects up to the first mobile object.
+	
+	Precondition: all used objects are marked.
+	
+	If freeUnmarked, free unmarked objects as they are found"
+	manager allOldSpaceObjectsFrom: manager firstObject do: [:o|
 		self check: o.
-		(self oop: o isGreaterThanOrEqualTo: firstMobileObject) ifTrue:
-			[^self].
-		manager setIsMarkedOf: o to: false]
+		(self oop: o isGreaterThanOrEqualTo: firstMobileObject)
+			ifTrue: [ ^self ].
+		(freeUnmarked and: [ (manager isMarked: o) not ])
+			ifTrue: [ manager freeObject: o ]
+			ifFalse: [ manager setIsMarkedOf: o to: false ]]
 ]
 
 { #category : #compaction }
@@ -702,7 +729,7 @@ SpurPlanningCompactor >> unmarkObjectsFromFirstFreeObject [
 
 { #category : #compaction }
 SpurPlanningCompactor >> unmarkObjectsInFullyCompactedHeap [
-	self unmarkInitialImmobileObjects.
+	self unmarkInitialImmobileObjectsFreeUnmarked: true.
 	manager unmarkSurvivingObjectsForCompact
 ]
 

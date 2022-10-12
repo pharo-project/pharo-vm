@@ -141,37 +141,44 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledCountIsRespected [
 VMMachineSimulatorTest >> testMemoryAccessExceptionHandledTimeoutIsRespected [
 
 	| label lastInstruction invalidAddressHandled |
-
-	self compile: [ 
-		cogit MoveCq: 0 R: TempReg.
+	self compile: [ | exitJump |
+		cogit MoveCq: 16rFFFFFFFF R: TempReg.
 		cogit MoveCq: 16rFFFF0000 R: ClassReg.
-		cogit MoveMb: 0 r: ClassReg R: ReceiverResultReg. 
+		cogit MoveMb: 0 r: ClassReg R: ReceiverResultReg.
 
 		label := cogit Label.
-		cogit AddCq: 1 R: TempReg.
+		cogit SubCq: 1 R: TempReg.
+		"If the counter reaches 0, exit"
+		exitJump := cogit JumpZero: 0.
+
 		cogit Jump: label.
-		"This instruction is never reach"
+
+		"This instruction should never be reached"
+		exitJump jmpTarget: cogit Label.
 		lastInstruction := cogit RetN: 0 ].
 
 
-	self machineSimulator invalidAccessHandler: [:invalidAccess | 
+	self machineSimulator invalidAccessHandler: [ :invalidAccess | 
 		invalidAddressHandled := true.
-		self 
-			assert: invalidAccess address 
-			equals: 16rFFFF0000.
-			
+		self assert: invalidAccess address equals: 16rFFFF0000.
+
 		self machineSimulator receiverRegisterValue: 1.
 		true ].
-	
 
-	[ self
+	"If the code exits because of a timeout exception, then good.
+	If it exists because the counter reaches 0, not good"
+	[ 
+	self
 		runFrom: cogInitialAddress
 		until: lastInstruction address
-		timeout: 1000 ]
-			on: UnicornTimeout
-			do: [ :e | self assert: e messageText equals: ''. ^ self ].
-			
-	self fail.
+		timeout: 1000.
+	"If the code exists because the counter reaches 0, not good"
+	self fail ]
+		on: UnicornTimeout
+		do: [ :e | 
+			"If the code exits because of a timeout exception, then good."
+			self assert: e messageText equals: ''.
+			^ self ]
 ]
 
 { #category : #'tests - memory access exception' }
