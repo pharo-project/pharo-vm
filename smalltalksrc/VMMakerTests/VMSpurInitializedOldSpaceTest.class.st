@@ -101,25 +101,6 @@ VMSpurInitializedOldSpaceTest >> largerNodeOf: aNode [
 		ofFreeChunk: aNode
 ]
 
-{ #category : #'instance creation' }
-VMSpurInitializedOldSpaceTest >> newPermanentByteObjectOfSize: byteSize [
-	
-	| oop numSlots instSpec |
-
-	numSlots := memory numSlotsForBytes: byteSize.
-	instSpec := memory byteFormatForNumBytes: byteSize.
-	
-	oop := memory
-			allocateSlotsInPermSpace: numSlots
-			format: instSpec
-			classIndex: (memory ensureBehaviorHash: memory classByteArray).
-
-	0 to: byteSize - 1 do: [ :index | 
-		memory storeByte: index ofObject: oop withValue: 	0 ].
-
-	^ oop
-]
-
 { #category : #helpers }
 VMSpurInitializedOldSpaceTest >> newEphemeronObjectWithSlots: slots [
 
@@ -147,6 +128,25 @@ VMSpurInitializedOldSpaceTest >> newOldEphemeronObjectWithSlots: slots [
 		newOldSpaceObjectWithSlots: slots
 		format: memory ephemeronFormat
 		classIndex: (memory ensureBehaviorHash: class)
+]
+
+{ #category : #'instance creation' }
+VMSpurInitializedOldSpaceTest >> newPermanentByteObjectOfSize: byteSize [
+	
+	| oop numSlots instSpec |
+
+	numSlots := memory numSlotsForBytes: byteSize.
+	instSpec := memory byteFormatForNumBytes: byteSize.
+	
+	oop := memory
+			allocateSlotsInPermSpace: numSlots
+			format: instSpec
+			classIndex: (memory ensureBehaviorHash: memory classByteArray).
+
+	0 to: byteSize - 1 do: [ :index | 
+		memory storeByte: index ofObject: oop withValue: 	0 ].
+
+	^ oop
 ]
 
 { #category : #helpers }

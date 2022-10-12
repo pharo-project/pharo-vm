@@ -692,14 +692,17 @@ SpurPlanningCompactor >> unmarkInitialImmobileObjectsFreeUnmarked: freeUnmarked 
 	
 	Precondition: all used objects are marked.
 	
-	If freeUnmarked, free unmarked objects as they are found"
+	If freeUnmarked, free unmarked objects as they are found.
+	If the object is a fixed known object (nil, false, true) we should not free it"
 	manager allOldSpaceObjectsFrom: manager firstObject do: [:o|
 		self check: o.
 		(self oop: o isGreaterThanOrEqualTo: firstMobileObject)
 			ifTrue: [ ^self ].
-		(freeUnmarked and: [ (manager isMarked: o) not ])
-			ifTrue: [ manager freeObject: o ]
-			ifFalse: [ manager setIsMarkedOf: o to: false ]]
+		(freeUnmarked 
+			and: [ (manager isMarked: o) not 
+			and: [ (manager isFixedKnownObject: o) not]])
+				ifTrue: [manager freeObject: o ]
+				ifFalse: [ manager setIsMarkedOf: o to: false ]]
 ]
 
 { #category : #compaction }
