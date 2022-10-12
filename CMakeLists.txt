@@ -39,6 +39,7 @@ set(APPNAME			"Pharo"         CACHE STRING                 "VM Application name"
 set(FLAVOUR			"CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
 set(PHARO_LIBRARY_PATH		"@executable_path/Plugins" CACHE STRING      "The RPATH to use in the build")
 set(ICEBERG_DEFAULT_REMOTE	"scpUrl"        CACHE STRING                 "If Iceberg uses HTTPS (httpsUrl) or tries first with SSH (scpUrl)")
+set(IMAGE_FORMAT	"SpurFormat"	CACHE STRING				 "Image Format to use in the builtVM (SpurFormat / ComposedFormat)")
 
 if(VERBOSE_BUILD)
     set(CMAKE_VERBOSE_MAKEFILE TRUE)
