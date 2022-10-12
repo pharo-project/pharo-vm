@@ -2325,81 +2325,81 @@ InterpreterPrimitives >> primitiveInstVarAtPut [
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveIntegerAt [
 
+	"Answer the signed integer element of a pure bits receiver.
+	 If the receiver is indexable pointers simply function like at:.
+	 Favour bits access over pointer access (normal at: being available)."
+
 	| index rcvr fmt numSlots value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
-	(objectMemory isIntegerObject: index)
-		ifTrue: [ 
-			(objectMemory isImmediate: rcvr)
-				ifTrue: [ self primitiveFailFor: PrimErrBadReceiver ]
-				ifFalse: [ 
-					fmt := objectMemory formatOf: rcvr.
-					index := (objectMemory integerValueOf: index) - 1.
-					fmt >= objectMemory firstByteFormat
-						ifTrue: [ 
-							fmt >= objectMemory firstCompiledMethodFormat
-								ifTrue: [ self primitiveFailFor: PrimErrUnsupported ]
-								ifFalse: [ 
-									numSlots := objectMemory numBytesOfBytes: rcvr.
-									(self asUnsigned: index) < numSlots
-										ifTrue: [ 
-											value := objectMemory fetchByte: index ofObject: rcvr.
-											value > 127 ifTrue: [ value := value - 256 ].
-											self methodReturnInteger: value ]
-										ifFalse: [ self primitiveFailFor: PrimErrBadIndex ] ] ]
-						ifFalse: [ 
-							fmt >= objectMemory firstShortFormat ifTrue: [ 
-								numSlots := objectMemory num16BitUnitsOf: rcvr.
-								(self asUnsigned: index) < numSlots
-									ifTrue: [ 
-										value := objectMemory fetchShort16: index ofObject: rcvr.
-										value > 32767 ifTrue: [ value := value - 65536 ].
-										self methodReturnInteger: value ]
-									ifFalse: [ self primitiveFailFor: PrimErrBadIndex ] ].
-							fmt = objectMemory sixtyFourBitIndexableFormat ifTrue: [ 
-								numSlots := objectMemory num64BitUnitsOf: rcvr.
-								(self asUnsigned: index) < numSlots
-									ifTrue: [ 
-										self
-											cCode: [ 
-												self methodReturnValue: (self signed64BitIntegerFor:
-														 (objectMemory fetchLong64: index ofObject: rcvr)) ]
-											inSmalltalk: [ 
-												value := objectMemory fetchLong64: index ofObject: rcvr.
-												value > ((2 raisedTo: 63) - 1) ifTrue: [ 
-													value := value - (2 raisedTo: 64) ].
-												self methodReturnValue:
-													(self signed64BitIntegerFor: value) ] ]
-									ifFalse: [ self primitiveFailFor: PrimErrBadIndex ] ].
-							fmt >= objectMemory firstLongFormat ifTrue: [ 
-								numSlots := objectMemory num32BitUnitsOf: rcvr.
-								(self asUnsigned: index) < numSlots
-									ifTrue: [ 
-										objectMemory bytesPerOop = 8
-											ifTrue: [ 
-												value := objectMemory fetchLong32: index ofObject: rcvr.
-												value > 2147483647 ifTrue: [ value := value - 4294967296 ].
-												self methodReturnInteger: value ]
-											ifFalse: [ 
-												self methodReturnValue: (self signed32BitIntegerFor:
-														 (objectMemory fetchLong32: index ofObject: rcvr)) ] ]
-									ifFalse: [ self primitiveFailFor: PrimErrBadIndex ] ].
-							(fmt <= objectMemory lastPointerFormat and: [ 
-								 objectMemory isIndexableFormat: fmt ]) ifTrue: [ 
-								| numFixed |
-								numSlots := objectMemory numSlotsOf: rcvr.
-								fmt = objectMemory arrayFormat ifTrue: [ 
-									(self asUnsigned: index) < numSlots ifTrue: [ 
-										self methodReturnValue:
-											(objectMemory fetchPointer: index ofObject: rcvr) ] ].
-								numFixed := self numFixedSlotsOf: rcvr.
-								(index + 1 between: numFixed and: numSlots)
-									ifTrue: [ 
-										self methodReturnValue:
-											(objectMemory fetchPointer: index + numFixed ofObject: rcvr) ]
-									ifFalse: [ self primitiveFailFor: PrimErrBadIndex ] ].
-							self primitiveFailFor: PrimErrBadReceiver ] ] ]
-		ifFalse: [ self primitiveFailFor: PrimErrBadArgument ]
+	(objectMemory isIntegerObject: index) ifFalse:
+		[^self primitiveFailFor: PrimErrBadArgument].
+	(objectMemory isImmediate: rcvr) ifTrue:
+		[^self primitiveFailFor: PrimErrBadReceiver].
+	fmt := objectMemory formatOf: rcvr.
+	index := (objectMemory integerValueOf: index) - 1.
+
+	fmt >= objectMemory firstByteFormat ifTrue:
+		[fmt >= objectMemory firstCompiledMethodFormat ifTrue:
+			[^self primitiveFailFor: PrimErrUnsupported].
+		 numSlots := objectMemory numBytesOfBytes: rcvr.
+		 (self asUnsigned: index) < numSlots ifTrue:
+			[value := objectMemory fetchByte: index ofObject: rcvr.
+			 value > 127 ifTrue: [value := value - 256].
+			 self methodReturnInteger: value.
+			 ^0].
+		 ^self primitiveFailFor: PrimErrBadIndex].
+
+	fmt >= objectMemory firstShortFormat ifTrue:
+		[numSlots := objectMemory num16BitUnitsOf: rcvr.
+		 (self asUnsigned: index) < numSlots ifTrue:
+			[value := objectMemory fetchShort16: index ofObject: rcvr.
+			 value > 32767 ifTrue: [value := value - 65536].
+			 self methodReturnInteger: value.
+			 ^0].
+		 ^self primitiveFailFor: PrimErrBadIndex].
+
+	fmt = objectMemory sixtyFourBitIndexableFormat ifTrue:
+		[numSlots := objectMemory num64BitUnitsOf: rcvr.
+		 (self asUnsigned: index) < numSlots ifTrue:
+			[self
+				cCode:
+					[self methodReturnValue: (self signed64BitIntegerFor: (objectMemory fetchLong64: index ofObject: rcvr))]
+				inSmalltalk:
+					[value := objectMemory fetchLong64: index ofObject: rcvr.
+					 value > ((2 raisedTo: 63) - 1) ifTrue:
+						[value := value - (2 raisedTo: 64)].
+					 self methodReturnValue: (self signed64BitIntegerFor: value)].
+			 ^0].
+		 ^self primitiveFailFor: PrimErrBadIndex].
+
+	fmt >= objectMemory firstLongFormat ifTrue:
+		[numSlots := objectMemory num32BitUnitsOf: rcvr.
+		 (self asUnsigned: index) < numSlots ifTrue:
+			[objectMemory bytesPerOop = 8
+				ifTrue:
+					[value := objectMemory fetchLong32: index ofObject: rcvr.
+					 value > 2147483647 ifTrue: [value := value - 4294967296].
+					 self methodReturnInteger: value]
+				ifFalse: [self methodReturnValue: (self signed32BitIntegerFor: (objectMemory fetchLong32: index ofObject: rcvr))].
+			 ^0].
+		 ^self primitiveFailFor: PrimErrBadIndex].
+
+	(fmt <= objectMemory lastPointerFormat
+	 and: [objectMemory isIndexableFormat: fmt]) ifTrue:
+		[| numFixed |
+		 numSlots := objectMemory numSlotsOf: rcvr.
+		 fmt = objectMemory arrayFormat ifTrue:
+			[(self asUnsigned: index) < numSlots ifTrue:
+				[self methodReturnValue: (objectMemory fetchPointer: index ofObject: rcvr).
+				 ^0]].
+		 numFixed := self numFixedSlotsOf: rcvr.
+		 (index + 1 between: numFixed and: numSlots) ifTrue:
+			[self methodReturnValue: (objectMemory fetchPointer: index + numFixed ofObject: rcvr).
+			 ^0].
+		 ^self primitiveFailFor: PrimErrBadIndex].
+
+	^self primitiveFailFor: PrimErrBadReceiver
 ]
 
 { #category : #'indexing primitives' }
