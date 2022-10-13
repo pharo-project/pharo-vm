@@ -1727,8 +1727,12 @@ SpurMemoryManager >> allOldSpaceObjectsDo: aBlock [
 { #category : #'object enumeration' }
 SpurMemoryManager >> allOldSpaceObjectsFrom: initialObject do: aBlock [
 	"Enumerate all objects (i.e. exclude bridges, forwarders and free chunks)
-	 in oldSpace starting at initialObject."
+	 in oldSpace starting at initialObject.
 
+	Warning: this is a low level iteration using objOop as a current entity pointer,
+	aBlock must ensure that the given objOop pointer remains a valid entity pointer."
+
+	<inline: true>
 	self allOldSpaceEntitiesFrom: initialObject
 		do: [:objOop|
 			 (self isEnumerableObject: objOop) ifTrue:
@@ -5485,7 +5489,9 @@ SpurMemoryManager >> freeListsObject [
 
 { #category : #'free space' }
 SpurMemoryManager >> freeObject: objOop [
-	"Free an object in oldSpace.  Coalesce if possible to reduce fragmentation."
+	"Free an object in oldSpace.  Coalesce if possible to reduce fragmentation.
+	Warning: because of coalescion, the original objOop can become an invalid entity pointer.
+	See freeObjectWithoutCoalesce: for a safer version"
 	<api>
 	<inline: false>
 	| bytes start next |
@@ -5498,6 +5504,22 @@ SpurMemoryManager >> freeObject: objOop [
 	(self isFreeObject: next) ifTrue:
 		[self detachFreeObject: next.
 		 bytes := bytes + (self bytesInObject: next)].
+	totalFreeOldSpace := totalFreeOldSpace + bytes.
+	^self freeChunkWithBytes: bytes at: start
+]
+
+{ #category : #'free space' }
+SpurMemoryManager >> freeObjectWithoutCoalesce: objOop [
+	"Free an object in oldSpace.
+	DO NOT Coalesce, so original objOop remains valid. This could be useful if you (or some iterator) reuse it."
+	<api>
+	<inline: false>
+	| bytes start |
+	self assert: (self isInOldSpace: objOop).
+	(self isRemembered: objOop) ifTrue:
+		[scavenger forgetObject: objOop].
+	bytes := self bytesInObject: objOop.
+	start := self startOfObject: objOop.
 	totalFreeOldSpace := totalFreeOldSpace + bytes.
 	^self freeChunkWithBytes: bytes at: start
 ]
