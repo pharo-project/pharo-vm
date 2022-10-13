@@ -48,6 +48,20 @@ VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument
 ]
 
 { #category : #helpers }
+VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArguments: aCollection method: aMethod [
+
+	"Simulate a primitive execution having an object as receiver and a single argument
+	  - the receiver goes to the receiver register
+	  - the argument should be pushed to the stack
+	If we are in a system without a link register, we need to push the caller IP to the stack to simulate a call"
+	self
+		prepareStackForSendReceiver: (self twoComplementFor: receiverOop)
+		arguments: (aCollection collect: [ :arg | self twoComplementFor: arg ])
+		method: aMethod.
+	self runUntilReturn
+]
+
+{ #category : #helpers }
 VMJittedPrimitivesTest >> new16BitIndexableOfSize: aSize [
 
 	^ self newBitIndexableOfSize: aSize bytesPerSlot: 2 format: memory firstShortFormat

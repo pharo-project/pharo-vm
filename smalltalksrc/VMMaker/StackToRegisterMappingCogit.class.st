@@ -4357,6 +4357,15 @@ StackToRegisterMappingCogit >> ssAllocateRequiredRegMask: requiredRegsMask upThr
 ]
 
 { #category : #'simulation stack' }
+StackToRegisterMappingCogit >> ssDescriptorAt: index [
+	"Return the descriptor at an index relative from the top.
+	0 is top, |size| - 1 is the bottom"
+	<returnTypeC: #SimStackEntry>
+	<inline: true>
+	^simStack at: simStackPtr - index
+]
+
+{ #category : #'simulation stack' }
 StackToRegisterMappingCogit >> ssFlushTo: index [
 	<inline: true>
 	self assert: self tempsValidAndVolatileEntriesSpilled.
@@ -4571,7 +4580,7 @@ StackToRegisterMappingCogit >> ssTop [
 StackToRegisterMappingCogit >> ssTopDescriptor [
 	<returnTypeC: #SimStackEntry>
 	<inline: true>
-	^simStack at: simStackPtr
+	^ self ssDescriptorAt: 0
 ]
 
 { #category : #testing }

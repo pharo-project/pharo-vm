@@ -5084,22 +5084,6 @@ SpurMemoryManager >> float64At: anInteger put: aNumber [
 ]
 
 { #category : #'interpreter access' }
-SpurMemoryManager >> float64At: address [
-
-	<doNotGenerate>
-	| float |
-	float := Float new: 2.
-	self fetchFloatAt: address into: float.
-	^ float
-]
-
-{ #category : #'interpreter access' }
-SpurMemoryManager >> float64At: address put: aFloat [
-	<doNotGenerate>
-	self storeFloatAt: address from: aFloat
-]
-
-{ #category : #'interpreter access' }
 SpurMemoryManager >> floatObjectOf: aFloat [
 	self subclassResponsibility
 ]

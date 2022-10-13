@@ -1211,12 +1211,6 @@ Spur64BitMemoryManager >> tagMask [
 	^7
 ]
 
-{ #category : #accessing }
-Spur64BitMemoryManager >> wordAt: address [
-
-	^ self uint64At: address
-]
-
 { #category : #'memory access' }
 Spur64BitMemoryManager >> unsignedLongAt: anAddress [
 
@@ -1229,6 +1223,12 @@ Spur64BitMemoryManager >> unsignedLongAt: anAddress put: aValue [
 
 	<doNotGenerate>
 	^ self unsignedLong64At: anAddress put: aValue
+]
+
+{ #category : #accessing }
+Spur64BitMemoryManager >> wordAt: address [
+
+	^ self uint64At: address
 ]
 
 { #category : #'header formats' }

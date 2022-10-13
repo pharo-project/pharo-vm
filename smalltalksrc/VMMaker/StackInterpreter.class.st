@@ -9051,8 +9051,8 @@ StackInterpreter >> libFFI: aLibFFI [
 
 { #category : #'compiled methods' }
 StackInterpreter >> literal: offset [
-	self assert: method = (self iframeMethod: framePointer).
-	^self literal: offset ofMethod: method
+
+	^ self literal: offset ofMethod: (self iframeMethod: framePointer)
 ]
 
 { #category : #'compiled methods' }

@@ -974,12 +974,6 @@ Spur32BitMemoryManager >> tagMask [
 	^3
 ]
 
-{ #category : #accessing }
-Spur32BitMemoryManager >> wordAt: address [
-
-	^ self uint32At: address
-]
-
 { #category : #'memory access' }
 Spur32BitMemoryManager >> unsignedLongAt: anAddress [
 
@@ -992,6 +986,12 @@ Spur32BitMemoryManager >> unsignedLongAt: anAddress put: aValue [
 
 	<doNotGenerate>
 	^ self uint32AtPointer: anAddress put: aValue
+]
+
+{ #category : #accessing }
+Spur32BitMemoryManager >> wordAt: address [
+
+	^ self uint32At: address
 ]
 
 { #category : #'header formats' }

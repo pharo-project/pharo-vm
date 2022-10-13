@@ -596,11 +596,17 @@ VMSimpleStackBasedCogitAbstractTest >> prepareCall [
 { #category : #helpers }
 VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver [
 
-	self prepareStackForSendReceiver: aReceiver arguments: #()
+	self prepareStackForSendReceiver: aReceiver arguments: #() method: 0 "a method"
 ]
 
 { #category : #helpers }
 VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver arguments: arguments [
+	
+	self prepareStackForSendReceiver: aReceiver arguments: arguments method: 0 "No method by default"
+]
+
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver arguments: arguments method: aMethod [
 
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
 
@@ -619,16 +625,7 @@ VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver ar
 						'Cogit calling convention only supports 2 arguments by registers' ] ] ].
 
 	"Caller side"
-	self prepareCall.
-	
-	"Callee side"
-	"Now push the link register, it will be popped by the return"
-	self pushAddress: machineSimulator linkRegisterValue.
-	self pushAddress: machineSimulator fp.
-	machineSimulator fp: machineSimulator smalltalkStackPointerRegisterValue.
-	self pushAddress: 0 "Method".
-	self pushAddress: 0 "context".
-	self pushAddress: aReceiver
+	self prepareCall
 ]
 
 { #category : #helpers }
