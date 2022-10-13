@@ -5632,7 +5632,7 @@ SpurMemoryManager >> freeObjectWithoutCoalesce: objOop [
 	| bytes start |
 	self assert: (self isInOldSpace: objOop).
 	(self isRemembered: objOop) ifTrue:
-		[scavenger forgetObject: objOop].
+		[self getFromOldSpaceRememberedSet forgetObject: objOop].
 	bytes := self bytesInObject: objOop.
 	start := self startOfObject: objOop.
 	totalFreeOldSpace := totalFreeOldSpace + bytes.
