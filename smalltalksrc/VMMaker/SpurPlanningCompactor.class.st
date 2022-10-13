@@ -700,8 +700,8 @@ SpurPlanningCompactor >> unmarkInitialImmobileObjectsFreeUnmarked: freeUnmarked 
 			ifTrue: [ ^self ].
 		(freeUnmarked 
 			and: [ (manager isMarked: o) not 
-			and: [ (manager isFixedKnownObject: o) not]])
-				ifTrue: [manager freeObject: o ]
+			and: [ (manager isFixedKnownObject: o) not ]])
+				ifTrue: [ manager freeObjectWithoutCoalesce: o ]
 				ifFalse: [ manager setIsMarkedOf: o to: false ]]
 ]
 
