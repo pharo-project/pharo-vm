@@ -1,13 +1,6 @@
 Extension { #name : #String }
 
 { #category : #'*VMMakerCompatibilityForPharo6-converting' }
-String >> asDisplayText [
-	"Answer a DisplayText whose text string is the receiver."
-
-	^DisplayText text: self asText
-]
-
-{ #category : #'*VMMakerCompatibilityForPharo6-converting' }
 String >> withBlanksTrimmed [
 	"Return a copy of the receiver from which leading and trailing blanks have been trimmed."
 

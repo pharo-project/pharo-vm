@@ -396,12 +396,6 @@ CurrentImageCoInterpreterFacade >> getCheckAllocFiller [
 	^coInterpreter getCheckAllocFiller ifNil: [false]
 ]
 
-{ #category : #testing }
-CurrentImageCoInterpreterFacade >> headerIndicatesAlternateBytecodeSet: methodHeader [
-	"A negative header selects the alternate bytecode set."
-	^(self objectForOop: methodHeader) < 0
-]
-
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> identityHashHalfWordMask [
 	^objectMemory identityHashHalfWordMask
@@ -725,12 +719,6 @@ CurrentImageCoInterpreterFacade >> methodHeaderOf: methodOop [
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> methodNeedsLargeContext: aMethodOop [ 
 	^(self objectForOop: aMethodOop) frameSize > CompiledMethod smallFrameSize
-]
-
-{ #category : #testing }
-CurrentImageCoInterpreterFacade >> methodUsesAlternateBytecodeSet: methodObjOop [
-	"A negative header selects the alternate bytecode set."
-	^(self objectForOop: methodObjOop) signFlag
 ]
 
 { #category : #accessing }

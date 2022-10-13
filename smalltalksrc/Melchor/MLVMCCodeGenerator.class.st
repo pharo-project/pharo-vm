@@ -225,23 +225,19 @@ MLVMCCodeGenerator >> emitCVariableDeclarationFor: aDeclaration andVarString: va
 { #category : #'C code generator' }
 MLVMCCodeGenerator >> emitExportNamed: exportsNamePrefix forMethod: method pluginName: pluginName on: aStream [
 
-	| excludeDepth primName |
+	| primName |
 	"Don't include the depth in the vm's named primitives if the vm is non-Spur."
-	excludeDepth := exportsNamePrefix = 'vm' and: [ 
-		                pluginName isEmpty and: [ self shouldExcludeDepth ] ].
-
 	primName := self cFunctionNameFor: method selector.
 	aStream
 		tab;
 		nextPutAll: '{(void*)_m, "';
 		nextPutAll: primName.
-	excludeDepth ifFalse: [ 
-		(self accessorDepthCalculator accessorDepthForSelector:
-			 primName asSymbol) ifNotNil: [ :depth | "store the accessor depth in a hidden byte immediately after the primName"
-			self assert: depth < 128.
-			aStream
-				nextPutAll: '\000\';
-				nextPutAll: ((depth bitAnd: 255) printStringBase: 8 nDigits: 3) ] ].
+	(self accessorDepthCalculator accessorDepthForSelector:
+		 primName asSymbol) ifNotNil: [ :depth | "store the accessor depth in a hidden byte immediately after the primName"
+		self assert: depth < 128.
+		aStream
+			nextPutAll: '\000\';
+			nextPutAll: ((depth bitAnd: 255) printStringBase: 8 nDigits: 3) ].
 	aStream
 		nextPutAll: '", (void*)';
 		nextPutAll: primName;
@@ -464,13 +460,6 @@ MLVMCCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledM
 				in: aTMethod
 				boundTo: aCalledMethod
 				typeIfNil: typeIfNil ]
-]
-
-{ #category : #'C code generator' }
-MLVMCCodeGenerator >> shouldExcludeDepth [
-
-	"Don't include the depth in the vm's named primitives if the vm is non-Spur."
-	^ self vmClass notNil and: [ self vmClass objectMemoryClass hasSpurMemoryManagerAPI not ]
 ]
 
 { #category : #'C translation support' }

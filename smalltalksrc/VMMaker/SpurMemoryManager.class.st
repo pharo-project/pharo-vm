@@ -605,8 +605,6 @@ Class {
 		'statGCEndUsecs',
 		'statGrowMemory',
 		'statIGCDeltaUsecs',
-		'statIncrGCUsecs',
-		'statIncrGCs',
 		'statMarkCount',
 		'statRootTableCount',
 		'statRootTableOverflows',
@@ -639,7 +637,6 @@ Class {
 		'OldRememberedSetRootIndex',
 		'PermRememberedSetRootIndex',
 		'RemapBufferSize',
-		'TopOopBit',
 		'WeaklingStackRootIndex'
 	],
 	#pools : [
@@ -744,11 +741,6 @@ SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
 		var: #fromPermSpaceRememberedSet type: #'VMRememberedSet *'		
 ]
 
-{ #category : #'api characterization' }
-SpurMemoryManager class >> hasSpurMemoryManagerAPI [
-	^true
-]
-
 { #category : #translation }
 SpurMemoryManager class >> implicitReturnTypeFor: aSelector [
 	"Answer the return type for methods that don't have an explicit return."
@@ -761,8 +753,7 @@ SpurMemoryManager class >> initBytesPerWord: wordSize [
 	BytesPerWord := BytesPerOop := wordSize.
 	"N.B.  This is *not* output when generating the interpreter file.
 	 It is left to the various sqConfig.h files to define correctly."
-	VMBIGENDIAN := Smalltalk endianness == #big.
-	SPURVM := true
+	VMBIGENDIAN := Smalltalk endianness == #big
 ]
 
 { #category : #'class initialization' }
@@ -841,13 +832,8 @@ SpurMemoryManager class >> initializeCompactClassIndices [
 { #category : #'class initialization' }
 SpurMemoryManager class >> initializeObjectHeaderConstants [
 
-	BytesPerWord ifNil: [BytesPerWord := 4].  "May get called on fileIn, so supply default"
-	BaseHeaderSize := 8. "This is still needed for VM generation."
-
-	"These are used in image segments"
-	self ~~ SpurMemoryManager ifTrue:
-		[TopHashBit := 1 << (self basicNew identityHashFieldWidth - 1).
-		 TopOopBit := 1 << (self basicNew bytesPerOop * 8 - 1)]
+	BytesPerWord ifNil: [ BytesPerWord := 4 ]. "May get called on fileIn, so supply default"
+	BaseHeaderSize := 8 "This is still needed for VM generation."
 ]
 
 { #category : #'class initialization' }
@@ -5984,11 +5970,6 @@ SpurMemoryManager >> hasSixtyFourBitImmediates [
 	^self subclassResponsibility
 ]
 
-{ #category : #'api characterization' }
-SpurMemoryManager >> hasSpurMemoryManagerAPI [
-	^true
-]
-
 { #category : #'object testing' }
 SpurMemoryManager >> hasYoungReferents: objOop [
 	0 to: (self numPointerSlotsOf: objOop) - 1 do:
@@ -6070,14 +6051,6 @@ SpurMemoryManager >> headerForSlots: numSlots hash: hash format: formatField cla
 	+ ((self cCoerceSimple: hash to: #usqLong) << self identityHashFullWordShift)
 	+ (formatField << self formatShift)
 	+ classIndex
-]
-
-{ #category : #'method access' }
-SpurMemoryManager >> headerIndicatesAlternateBytecodeSet: methodHeader [
-	"A negative header selects the alternate bytecode set."
-	<api>
-	<inline: true>
-	self subclassResponsibility
 ]
 
 { #category : #'debug support' }
@@ -6280,11 +6253,6 @@ SpurMemoryManager >> increaseFreeOldSpaceBy: bytes [
 
 ]
 
-{ #category : #'gc - global' }
-SpurMemoryManager >> incrementalGC [
-	self shouldNotImplement
-]
-
 { #category : #'debug support' }
 SpurMemoryManager >> indexOf: anElement in: anObject [
 	<api>
@@ -6417,9 +6385,9 @@ SpurMemoryManager >> initialize [
 	checkForLeaks := 0.
 	needGCFlag := signalLowSpace := marking := false.
 	becomeEffectsFlags := gcPhaseInProgress := 0.
-	statScavenges := statIncrGCs := statFullGCs := 0.
+	statScavenges := statFullGCs := 0.
 	statMaxAllocSegmentTime := 0.
-	statMarkUsecs := statSweepUsecs := statScavengeGCUsecs := statIncrGCUsecs := statFullGCUsecs := statCompactionUsecs := statGCEndUsecs := gcSweepEndUsecs := 0.
+	statMarkUsecs := statSweepUsecs := statScavengeGCUsecs := statFullGCUsecs := statCompactionUsecs := statGCEndUsecs := gcSweepEndUsecs := 0.
 	statSGCDeltaUsecs := statIGCDeltaUsecs := statFGCDeltaUsecs := 0.
 	statGrowMemory := statShrinkMemory := statRootTableCount := statAllocatedBytes := 0.
 	statRootTableOverflows := statMarkCount := statCompactPassCount := statCoalesces := 0.
@@ -11941,16 +11909,6 @@ SpurMemoryManager >> statIGCDeltaUsecs [
 ]
 
 { #category : #accessing }
-SpurMemoryManager >> statIncrGCUsecs [
-	^statIncrGCUsecs
-]
-
-{ #category : #accessing }
-SpurMemoryManager >> statIncrGCs [
-	^statIncrGCs
-]
-
-{ #category : #accessing }
 SpurMemoryManager >> statMarkCount [
 	^statMarkCount
 ]
@@ -11977,9 +11935,8 @@ SpurMemoryManager >> statMkFwdCount [
 
 { #category : #accessing }
 SpurMemoryManager >> statNumGCs [
-	"Part of InterpreterProxy's 1.14 API"
 	<export: true>
-	^statScavenges + statIncrGCs + statFullGCs
+	^statScavenges + statFullGCs
 ]
 
 { #category : #accessing }
