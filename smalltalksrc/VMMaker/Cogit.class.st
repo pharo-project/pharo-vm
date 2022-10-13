@@ -6043,9 +6043,9 @@ Cogit >> disableCodeZoneWrite [
 	
 	self 
 		cppIf: #'READ_ONLY_CODE_ZONE'
-		ifTrue:[	
-			self pthread_jit_write_protect_np: true.
-			jitCodeZoneWriteEnabled := false ]
+		ifTrue:[	self pthread_jit_write_protect_np: true ].
+	
+	jitCodeZoneWriteEnabled := false
 ]
 
 { #category : #disassembly }
@@ -6135,13 +6135,15 @@ Cogit >> emptyRegisterMask [
 Cogit >> enableCodeZoneWrite [
 
 	<inline: true>
+
+	jitCodeZoneWriteEnabled ifTrue: [ self error: 'Code zone writing is not reentrant' ].
 	
 	self 
 		cppIf: #'READ_ONLY_CODE_ZONE'
-		ifTrue:[	
-			jitCodeZoneWriteEnabled ifTrue: [ self error: 'Code zone writing is not reentrant' ].
-			jitCodeZoneWriteEnabled := true.
-			self pthread_jit_write_protect_np: false ]
+		ifTrue:[	self pthread_jit_write_protect_np: false ].
+			
+	jitCodeZoneWriteEnabled := true.
+
 ]
 
 { #category : #'code generation' }
@@ -6732,6 +6734,9 @@ Cogit >> followForwardedMethods [
 					methodZone freeMethod: cogMethod ] ].
 			cogMethod := methodZone methodAfter: cogMethod ].
 		freedPIC ifTrue: [ self unlinkSendsToFree ] ]
+	flushingCacheWith: [  	
+		codeModified ifTrue: "After possibly updating inline caches we need to flush the icache."
+			[self flushICacheFrom: methodZoneBase asUnsignedInteger to: methodZone limitZony asUnsignedInteger]]
 ]
 
 { #category : #'garbage collection' }
@@ -6834,6 +6839,9 @@ Cogit >> freeUnmarkedMachineCode [
 			 cogMethod := methodZone methodAfter: cogMethod].
 		freedMethod ifTrue:
 			[self unlinkSendsToFree]]
+	flushingCacheWith: [  	
+		codeModified ifTrue: "After possibly updating inline caches we need to flush the icache."
+			[self flushICacheFrom: methodZoneBase asUnsignedInteger to: methodZone limitZony asUnsignedInteger]]
 ]
 
 { #category : #'compile abstract instructions' }
@@ -12220,22 +12228,18 @@ Cogit >> unlinkSendsToFree [
 
 	methodZoneBase ifNil: [^self].
 	
-	self enableCodeZoneWriteDuring: [  
-		codeModified := false.
-		cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
-		[cogMethod < methodZone limitZony] whileTrue:
-			[cogMethod cmType = CMMethod
-				ifTrue:
-					[self mapFor: cogMethod
-						 performUntil: #unlinkIfLinkedSendToFree:pc:ignored:
-						 arg: 0]
-				ifFalse:
-					[cogMethod cmType = CMPolymorphicIC ifTrue:
-						[self assert: (self noTargetsFreeInClosedPIC: cogMethod)]].
-			cogMethod := methodZone methodAfter: cogMethod]]
-	 flushingCacheWith: [  	
-		codeModified ifTrue: "After possibly updating inline caches we need to flush the icache."
-			[self flushICacheFrom: methodZoneBase asUnsignedInteger to: methodZone limitZony asUnsignedInteger]]
+	codeModified := false.
+	cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
+	[cogMethod < methodZone limitZony] whileTrue:
+		[cogMethod cmType = CMMethod
+			ifTrue:
+				[self mapFor: cogMethod
+					 performUntil: #unlinkIfLinkedSendToFree:pc:ignored:
+					 arg: 0]
+			ifFalse:
+				[cogMethod cmType = CMPolymorphicIC ifTrue:
+					[self assert: (self noTargetsFreeInClosedPIC: cogMethod)]].
+		cogMethod := methodZone methodAfter: cogMethod]
 ]
 
 { #category : #accessing }
