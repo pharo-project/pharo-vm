@@ -4554,14 +4554,14 @@ CoInterpreter >> mapStackPages [
 				(theIPPtr = 0 or: [ thePage addressIsInPage: theIPPtr ]).
 			frameRcvrOffset := self frameReceiverLocation: theFP.
 			[ theSP <= frameRcvrOffset ] whileTrue: [ 
-				oop := stackPages longAt: theSP.
+				oop := stackPages unsignedLongAt: theSP.
 				(objectMemory shouldRemapOop: oop) ifTrue: [ 
-					stackPages longAt: theSP put: (objectMemory remapObj: oop) ].
+					stackPages unsignedLongAt: theSP put: (objectMemory remapObj: oop) ].
 				theSP := theSP + objectMemory wordSize ].
 			(self frameHasContext: theFP) ifTrue: [ 
 				(objectMemory shouldRemapObj: (self frameContext: theFP)) ifTrue: [ 
 					stackPages
-						longAt: theFP + FoxThisContext
+						unsignedLongAt: theFP + FoxThisContext
 						put: (objectMemory remapObj: (self frameContext: theFP)) ].
 				"With SpurPlanningCompactor can't assert since object body is yet to move."
 				objectMemory slidingCompactionInProgress not ifTrue: [ 
@@ -4573,21 +4573,21 @@ CoInterpreter >> mapStackPages [
 			(self isMachineCodeFrame: theFP) ifFalse: [ 
 				(objectMemory shouldRemapObj: (self iframeMethod: theFP)) ifTrue: [ 
 					theIPPtr ~= 0 ifTrue: [ 
-						theIP := stackPages longAt: theIPPtr.
+						theIP := stackPages unsignedLongAt: theIPPtr.
 						theIP = cogit ceReturnToInterpreterPC
 							ifTrue: [ 
 								self assert:
 									(self iframeSavedIP: theFP) > (self iframeMethod: theFP).
 								theIPPtr := theFP + FoxIFSavedIP.
-								theIP := stackPages longAt: theIPPtr ]
+								theIP := stackPages unsignedLongAt: theIPPtr ]
 							ifFalse: [ self assert: theIP > (self iframeMethod: theFP) ].
 						theIP := theIP - (self iframeMethod: theFP) ].
 					stackPages
-						longAt: theFP + FoxMethod
+						unsignedLongAt: theFP + FoxMethod
 						put: (objectMemory remapObj: (self iframeMethod: theFP)).
 					theIPPtr ~= 0 ifTrue: [ 
 						stackPages
-							longAt: theIPPtr
+							unsignedLongAt: theIPPtr
 							put: theIP + (self iframeMethod: theFP) ] ] ].
 			(callerFP := self frameCallerFP: theFP) ~= 0 ] whileTrue: [ 
 				theSP := (theIPPtr := theFP + FoxCallerSavedIP)
@@ -4595,9 +4595,9 @@ CoInterpreter >> mapStackPages [
 				theFP := callerFP ].
 			theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
 			[ theSP <= thePage baseAddress ] whileTrue: [ 
-				oop := stackPages longAt: theSP.
+				oop := stackPages unsignedLongAt: theSP.
 				(objectMemory shouldRemapOop: oop) ifTrue: [ 
-					stackPages longAt: theSP put: (objectMemory remapObj: oop) ].
+					stackPages unsignedLongAt: theSP put: (objectMemory remapObj: oop) ].
 				theSP := theSP + objectMemory wordSize ] ] ].
 	stackPages recordLivePagesOnMapping: numLivePages
 ]

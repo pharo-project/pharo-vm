@@ -9,6 +9,12 @@ Class {
 	#category : #'VMMakerTests-ImageFormat'
 }
 
+{ #category : #accessing }
+VMImageReadingTest >> initializationOptions [
+
+	^ super initializationOptions , { #CloneOnGC. false. #CloneOnScavenge. false }
+]
+
 { #category : #utilities }
 VMImageReadingTest >> loadImage [
 
