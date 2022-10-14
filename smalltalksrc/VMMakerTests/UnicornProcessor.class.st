@@ -55,6 +55,12 @@ UnicornProcessor >> ecx: anInteger [
 	machineSimulator ecx: anInteger
 ]
 
+{ #category : #'as yet unclassified' }
+UnicornProcessor >> edi: anInteger [ 
+	
+	machineSimulator edi: anInteger
+]
+
 { #category : #registers }
 UnicornProcessor >> edx: anInteger [ 
 	
@@ -187,6 +193,12 @@ UnicornProcessor >> r12: anInteger [
 ]
 
 { #category : #registers }
+UnicornProcessor >> r13: anInteger [ 
+	
+	^ machineSimulator r13: anInteger 
+]
+
+{ #category : #registers }
 UnicornProcessor >> r1: anInteger [ 
 	
 	^ machineSimulator r1: anInteger 
@@ -274,6 +286,12 @@ UnicornProcessor >> rdx: anInteger [
 UnicornProcessor >> retpcIn: aSpurSimulatedMemory [ 
 
 	^ machineSimulator retpcIn: aSpurSimulatedMemory 
+]
+
+{ #category : #'as yet unclassified' }
+UnicornProcessor >> rsi: anInteger [ 
+	
+	machineSimulator rsi: anInteger
 ]
 
 { #category : #registers }
@@ -423,8 +441,8 @@ UnicornProcessor >> x25: anInteger [
 	machineSimulator x25: anInteger
 ]
 
-{ #category : #accessing }
-UnicornProcessor >> x26: anInteger [
+{ #category : #registers }
+UnicornProcessor >> x26: anInteger [ 
 
 	machineSimulator x26: anInteger
 ]

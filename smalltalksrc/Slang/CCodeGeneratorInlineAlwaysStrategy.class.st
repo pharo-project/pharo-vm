@@ -4,10 +4,10 @@ Class {
 	#category : #'Slang-CodeGeneration'
 }
 
-{ #category : #accessing }
-CCodeGeneratorInlineAlwaysStrategy >> inlineFlagOrSymbol [
+{ #category : #testing }
+CCodeGeneratorInlineAlwaysStrategy >> isSelectiveInlineStrategy [
 
-	^ true
+	^ false
 ]
 
 { #category : #accessing }

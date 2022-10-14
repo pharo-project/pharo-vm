@@ -7,12 +7,6 @@ Class {
 	#category : #'VMMaker-JIT'
 }
 
-{ #category : #'accessing class hierarchy' }
-CogObjectRepresentationFor64BitSpur class >> defaultObjectMemoryClass [
-	"For in-image compilation.  Spur64BitCoMemoryManager is as yet undefined."
-	^Smalltalk classNamed: #Spur64BitCoMemoryManager
-]
-
 { #category : #accessing }
 CogObjectRepresentationFor64BitSpur class >> wordSize [
 	^8
@@ -68,7 +62,7 @@ CogObjectRepresentationFor64BitSpur >> allocateCounters: nCounters [
 
 { #category : #'in-line cacheing' }
 CogObjectRepresentationFor64BitSpur >> bitAndByteOffsetOfIsFullBlockBitInto: aBlock [
-	<inline: true>
+
 	"This supplies the bitmask for the isFullBlock bit, and the offset of the byte containing
 	 that bit in a CogMethod header to aBlock.  We don't have named variables holding this
 	 offset.  The following assert tests whether the values are correct by creating a surrogate
@@ -604,7 +598,7 @@ CogObjectRepresentationFor64BitSpur >> genGetSizeOf: sourceReg into: destReg for
 	| jumpNotIndexable
 	  jumpBytesDone jumpShortsDone jumpArrayDone jump32BitLongsDone jump64BitLongsDone
 	  jumpIsBytes jumpHasFixedFields jumpIsShorts jumpIs32BitLongs jumpIsContext  |
-	<inline: true>
+
 	"c.f. StackInterpreter>>stSizeOf: SpurMemoryManager>>lengthOf:format: fixedFieldsOf:format:length:"
 
 	"formatReg := self formatOf: sourceReg"
@@ -1520,10 +1514,8 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNew [
 	- the result fits in eden (actually below scavengeThreshold)"
 
 	| headerReg fillReg instSpecReg byteSizeReg
-	  jumpUnhashed jumpVariableOrEphemeron jumpNoSpace jumpTooBig jumpHasSlots
-	  fillLoop skip |
+	  jumpUnhashed jumpVariableOrEphemeron jumpNoSpace jumpTooBig jumpHasSlots skip |
 	<var: 'skip' type: #'AbstractInstruction *'>
-	<var: 'fillLoop' type: #'AbstractInstruction *'>
 	<var: 'jumpTooBig' type: #'AbstractInstruction *'>
 	<var: 'jumpHasSlots' type: #'AbstractInstruction *'>
 	<var: 'jumpNoSpace' type: #'AbstractInstruction *'>
@@ -1583,11 +1575,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNew [
 	"now fill"
 	cogit LoadEffectiveAddressMw: objectMemory baseHeaderSize r: ReceiverResultReg R: Arg1Reg.
 	cogit MoveCq: objectMemory nilObject R: fillReg.
-	fillLoop := 
-	cogit MoveR: fillReg Mw: 0 r: Arg1Reg.
-	cogit AddCq: 8 R: Arg1Reg.
-	cogit CmpR: Arg1Reg R: byteSizeReg.
-	cogit JumpAbove: fillLoop.
+	cogit fillFrom: Arg1Reg until: byteSizeReg with: fillReg usingVr: VReg1.
 	cogit genPrimReturn.
 
 	jumpUnhashed jmpTarget:
@@ -1735,11 +1723,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNewWithArg [
 	cogit MoveR: headerReg Mw: 0 r: ReceiverResultReg.
 	"now fill"
 	cogit LoadEffectiveAddressMw: objectMemory baseHeaderSize r: ReceiverResultReg R: Arg1Reg.
-	fillLoop := 
-	cogit MoveR: fillReg Mw: 0 r: Arg1Reg.
-	cogit AddCq: 8 R: Arg1Reg.
-	cogit CmpR: Arg1Reg R: byteSizeReg.
-	cogit JumpAbove: fillLoop.
+	cogit fillFrom: Arg1Reg until: byteSizeReg with: fillReg usingVr: VReg1.
 	cogit genPrimReturn.
 	
 	jumpNoSpace jmpTarget:

@@ -742,88 +742,6 @@ SpurMemoryManager class >> hasSpurMemoryManagerAPI [
 	^true
 ]
 
-{ #category : #analysis }
-SpurMemoryManager class >> identify32BitSignedComparisonsInSegmentIO [
-	"self identify32BitSignedComparisonsInSegmentIO"
-	self identifySignedComparisonsFor: #(ObjectMemory Spur32BitMemoryManager)
-		in:	(self organization listAtCategoryNamed: #'image segment in/out')
-		noise: #(	'classIndex* >= numOutPointers'
-					'count > ptr - start / self bytesPerOop'
-					'endSeg - segAddr < self baseHeaderSize + self bytesPerOop'
-					'errorCode* > 0'
-					'GCModeImageSegment > 0'
-					'hash - TopHashBit <= outIndex'
-					'limit - ptr <= 8'
-					'num* >= self numSlotsMask'
-					'num* <= 1'
-					'outIndex >= (self numSlotsOf: outPointerArray)'
-					'outIndex := self mapOopsFrom: * < 0'
-					'segAddr - segStart / 8 + self lastClassIndexPun >= TopHashBit'
-					'there > 0'
-					'* > self identityHashHalfWordMask'
-					'*segmentLimit >= self numSlotsMask*'
-					'* > self isForwardedObjectClassIndexPun'
-					'* > self lastClassIndexPun')
-]
-
-{ #category : #analysis }
-SpurMemoryManager class >> identify64BitSignedComparisonsInSegmentIO [
-	"self identify64BitSignedComparisonsInSegmentIO"
-	self identifySignedComparisonsFor: #(ObjectMemory Spur64BitMemoryManager)
-		in:	(self organization listAtCategoryNamed: #'image segment in/out')
-		noise: #(	'classIndex* >= numOutPointers'
-					'count > ptr - start / self bytesPerOop'
-					'endSeg - segAddr < self baseHeaderSize + self bytesPerOop'
-					'errorCode* > 0'
-					'GCModeImageSegment > 0'
-					'hash - TopHashBit <= outIndex'
-					'limit - ptr <= 8'
-					'num* >= self numSlotsMask'
-					'num* <= 1'
-					'num* > 0'
-					'num* < 1'
-					'outIndex >= (self numSlotsOf: outPointerArray)'
-					'outIndex := self mapOopsFrom: * < 0'
-					'segAddr - segStart / 8 + self lastClassIndexPun >= TopHashBit'
-					'there > 0'
-					'* > self identityHashHalfWordMask'
-					'*segmentLimit >= self numSlotsMask*'
-					'* > self isForwardedObjectClassIndexPun'
-					'* > self lastClassIndexPun')
-]
-
-{ #category : #analysis }
-SpurMemoryManager class >> identifySignedComparisonsFor: options in: selectors noise: noise [
-	"self identify32BitSignedComparisonsInSegmentIO"
-	"self identify64BitSignedComparisonsInSegmentIO"
-	| vmm cg halt |
-	halt := false.
-	vmm := (VMMaker forPlatform: 'Cross')
-				interpreterClass: StackInterpreter;
-				options: options.
-	cg := vmm buildCodeGeneratorForInterpreter.
-	cg vmClass preGenerationHook: cg.
-	cg inferTypes.
-	cg retainMethods: self selectors.
-	cg prepareMethods.
-	cg doInlining: true.
-	selectors sort do:
-		[:sel|
-		(cg methodNamed: sel) ifNotNil:
-			[:m|
-			m parseTree nodesDo:
-				[:node|
-				(node isSend
-				 and: [(#(< > <= >=) includes: node selector)
-				 and: [({node receiver. node args first } anySatisfy:
-						[:o| (cg typeFor: o in: m)
-								ifNil: [true]
-								ifNotNil: [:t| (cg isIntegralCType: t) and: [t first ~= $u]]])
-				 and: [noise noneSatisfy: [:n| n match: node printString]]]]) ifTrue:
-					[halt ifTrue: [self halt: node printString].
-					 Transcript newLine; nextPutAll: sel; space; print: node; flush]]]]
-]
-
 { #category : #translation }
 SpurMemoryManager class >> implicitReturnTypeFor: aSelector [
 	"Answer the return type for methods that don't have an explicit return."
@@ -906,7 +824,9 @@ SpurMemoryManager class >> initializeCompactClassIndices [
 	ClassByteArrayCompactIndex := 50.
 	ClassArrayCompactIndex := 51.
 	ClassByteStringCompactIndex := 52.
-	ClassBitmapCompactIndex := 53
+	ClassBitmapCompactIndex := 53.
+	ClassFloat32RegisterIndex := 54.
+	ClassFloat64RegisterIndex := 55.
 ]
 
 { #category : #'class initialization' }
@@ -955,7 +875,9 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	"ClassProcess := 27. unused"
 	CompactClasses := 28.
 	TheTimerSemaphore := 29.
-	TheInterruptSemaphore := 30. 
+	TheInterruptSemaphore := 30.
+	ClassFloat32Register := 31.
+	ClassFloat64Register := 32.
 	SelectorCannotInterpret := 34.
 	"Was MethodContextProto := 35."
 	"Was ClassBlockClosure := 36."
@@ -1508,7 +1430,7 @@ SpurMemoryManager >> allFreeObjectsDo: aBlock [
 { #category : #'object enumeration' }
 SpurMemoryManager >> allHeapEntitiesDo: aBlock [
 	"N.B. e.g. allObjects relies on the old/new order here."
-	<inline: true>
+
 	self allOldSpaceEntitiesDo: aBlock.
 	self allNewSpaceEntitiesDo: aBlock
 ]
@@ -1573,7 +1495,7 @@ SpurMemoryManager >> allInstancesOf: aClass [
 { #category : #'object enumeration' }
 SpurMemoryManager >> allNewSpaceEntitiesDo: aBlock [
 	"Enumerate all new space objects, including free objects."
-	<inline: true>
+
 	| prevObj prevPrevObj objOop limit |
 	prevPrevObj := prevObj := nil.
 	"After a scavenge eden is empty, futureSpace is empty, and all newSpace objects are
@@ -1599,7 +1521,7 @@ SpurMemoryManager >> allNewSpaceEntitiesDo: aBlock [
 { #category : #'object enumeration' }
 SpurMemoryManager >> allNewSpaceObjectsDo: aBlock [
 	"Enumerate all new space objects, excluding free objects."
-	<inline: true>
+
 	self allNewSpaceEntitiesDo:
 		[:objOop|
 		 self assert: (self isEnumerableObjectNoAssert: objOop).
@@ -1666,7 +1588,7 @@ SpurMemoryManager >> allObjects [
 
 { #category : #'object enumeration' }
 SpurMemoryManager >> allObjectsDo: aBlock [
-	<inline: true>
+
 	self allNewSpaceObjectsDo: aBlock.
 	self allOldSpaceObjectsDo: aBlock
 ]
@@ -1722,7 +1644,7 @@ SpurMemoryManager >> allOldMarkedWeakObjectsOnWeaklingStack [
 
 { #category : #'object enumeration' }
 SpurMemoryManager >> allOldSpaceEntitiesDo: aBlock [
-	<inline: true>
+
 	self allOldSpaceEntitiesFrom: self firstObject do: aBlock
 ]
 
@@ -1754,7 +1676,7 @@ SpurMemoryManager >> allOldSpaceEntitiesForCoalescingFrom: firstObj do: aBlock [
 
 { #category : #'object enumeration' }
 SpurMemoryManager >> allOldSpaceEntitiesForCompactingFrom: initialObject to: finalObject do: aBlock [
-	<inline: true>
+
 	| limit prevObj prevPrevObj objOop nextObj |
 	self assert: (self isOldObject: initialObject).
 	self assert: (self oop: finalObject isLessThanOrEqualTo: endOfMemory).
@@ -1775,14 +1697,14 @@ SpurMemoryManager >> allOldSpaceEntitiesForCompactingFrom: initialObject to: fin
 
 { #category : #'object enumeration' }
 SpurMemoryManager >> allOldSpaceEntitiesFrom: initialObject do: aBlock [
-	<inline: true>
+
 	| prevObj prevPrevObj objOop |
 	self assert: (self isOldObject: initialObject).
 	prevPrevObj := prevObj := nil.
 	objOop := initialObject.
 	[self assert: objOop \\ self allocationUnit = 0.
 	 self oop: objOop isLessThan: endOfMemory] whileTrue:
-		[self assert: (self long64At: objOop) ~= 0.
+		[self assert: (self uint64AtPointer: objOop) ~= 0.
 		 aBlock value: objOop.
 		 prevPrevObj := prevObj.
 		 prevObj := objOop.
@@ -1793,7 +1715,7 @@ SpurMemoryManager >> allOldSpaceEntitiesFrom: initialObject do: aBlock [
 
 { #category : #'object enumeration' }
 SpurMemoryManager >> allOldSpaceEntitiesFrom: initialObject to: finalObject do: aBlock [
-	<inline: true>
+
 	| prevObj prevPrevObj objOop |
 	self assert: ((self isNonImmediate: initialObject) and: [segmentManager isInSegments: initialObject]).
 	self assert: ((self isNonImmediate: finalObject) and: [segmentManager isInSegments: finalObject]).
@@ -1820,7 +1742,7 @@ SpurMemoryManager >> allOldSpaceObjectsDo: aBlock [
 SpurMemoryManager >> allOldSpaceObjectsFrom: initialObject do: aBlock [
 	"Enumerate all objects (i.e. exclude bridges, forwarders and free chunks)
 	 in oldSpace starting at initialObject."
-	<inline: true>
+
 	self allOldSpaceEntitiesFrom: initialObject
 		do: [:objOop|
 			 (self isEnumerableObject: objOop) ifTrue:
@@ -1830,7 +1752,7 @@ SpurMemoryManager >> allOldSpaceObjectsFrom: initialObject do: aBlock [
 { #category : #'object enumeration' }
 SpurMemoryManager >> allPastSpaceEntitiesDo: aBlock [
 	"Enumerate all past space objects, including free objects."
-	<inline: true>
+
 	| prevObj prevPrevObj objOop |
 	prevPrevObj := prevObj := nil.
 	objOop := self objectStartingAt: scavenger pastSpace start.
@@ -1846,7 +1768,7 @@ SpurMemoryManager >> allPastSpaceEntitiesDo: aBlock [
 { #category : #'object enumeration' }
 SpurMemoryManager >> allPastSpaceObjectsDo: aBlock [
 	"Enumerate all past space objects, excluding free objects."
-	<inline: true>
+
 	self allPastSpaceEntitiesDo:
 		[:objOop|
 		 self assert: (self isEnumerableObjectNoAssert: objOop).
@@ -2055,8 +1977,8 @@ SpurMemoryManager >> allocateNewSpaceSlots: numSlots format: formatField classIn
 	numSlots >= self numSlotsMask
 		ifTrue: "for header parsing we put a saturated slot count in the prepended overflow size word"
 			[self flag: #endianness.
-			 self longAt: freeStart put: numSlots.
-			 self longAt: freeStart + 4 put: self numSlotsMask << self numSlotsHalfShift.
+			 self long32At: freeStart put: numSlots.
+			 self long32At: freeStart + 4 put: self numSlotsMask << self numSlotsHalfShift.
 			 self long64At: newObj put: (self headerForSlots: self numSlotsMask format: formatField classIndex: classIndex)]
 		ifFalse:
 			[self long64At: newObj put: (self headerForSlots: numSlots format: formatField classIndex: classIndex)].
@@ -2193,7 +2115,7 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes suchThat: acceptan
 	 The caller *must* fill in the header correctly."
 	<var: #chunkBytes type: #usqInt>
 	| initialIndex node next prev index child childBytes acceptedChunk acceptedNode |
-	<inline: true> "must inline for acceptanceBlock"
+
 	"for debugging:" "totalFreeOldSpace := self totalFreeListBytes"
 	totalFreeOldSpace := totalFreeOldSpace - chunkBytes. "be optimistic (& don't wait for the write)"
 	initialIndex := chunkBytes / self allocationUnit.
@@ -2506,12 +2428,11 @@ SpurMemoryManager >> allocateSmallNewSpaceSlots: numSlots format: formatField cl
 	numBytes := self smallObjectBytesForSlots: numSlots.
 	self assert: numBytes \\ self allocationUnit = 0.
 	self assert: newObj \\ self allocationUnit = 0.
-	freeStart + numBytes > scavengeThreshold ifTrue:
-		[needGCFlag ifFalse: [self scheduleScavenge].
-		 freeStart + numBytes > scavenger eden limit ifTrue:
-			[self error: 'no room in eden for allocateSmallNewSpaceSlots:format:classIndex:'.
-			 ^0]].
-	self long64At: newObj put: (self headerForSlots: numSlots format: formatField classIndex: classIndex).
+	freeStart + numBytes > scavengeThreshold ifTrue: [
+		self druidExitPoint.
+		needGCFlag ifFalse: [self scheduleScavenge].
+		self validateRoomInEdenOrDie: numBytes ].
+	self uint64At: newObj put: (self headerForSlots: numSlots format: formatField classIndex: classIndex).
 	freeStart := freeStart + numBytes.
 	^newObj
 ]
@@ -2525,7 +2446,7 @@ SpurMemoryManager >> allocationUnit [
 { #category : #'primitive support' }
 SpurMemoryManager >> ambiguousClass: aClass allInstancesInto: start limit: limit resultsInto: binaryBlock [
 	"Dea with ambiguity and normalize indices."
-	<inline: true>
+
 	| expectedIndex count ptr |
 	count := 0.
 	ptr := start.
@@ -2840,7 +2761,7 @@ SpurMemoryManager >> boxedFloatObjectOf: aFloat [
 						eeInstantiateSmallClassIndex: ClassFloatCompactIndex
 						format: self firstLongFormat
 						numSlots: (self sizeof: #double) / self bytesPerOop.
-	self storeFloatAt: newFloatObj + self baseHeaderSize from: aFloat.
+	self float64At: newFloatObj + self baseHeaderSize put: aFloat.
 	^newFloatObj
 ]
 
@@ -3760,7 +3681,7 @@ SpurMemoryManager >> classString [
 { #category : #'class table' }
 SpurMemoryManager >> classTableEntriesDo: binaryBlock [
 	"Evaluate binaryBlock with all non-nil entries in the classTable and their index."
-	<inline: true>
+
 	0 to: numClassTablePages - 1 do:
 		[:i| | page |
 		 page := self fetchPointer: i ofObject: hiddenRootsObj.
@@ -4819,6 +4740,20 @@ SpurMemoryManager >> fetchClassTagOfNonImm: obj [
 	^self classIndexOf: obj
 ]
 
+{ #category : #'object access' }
+SpurMemoryManager >> fetchFloat32: index ofObject: objOop [ 
+
+	<returnTypeC: #float>
+	^self float32At: objOop + self baseHeaderSize + (index << 2)
+]
+
+{ #category : #'object access' }
+SpurMemoryManager >> fetchFloat64: index ofObject: objOop [ 
+
+	<returnTypeC: #double>
+	^self float64At: objOop + self baseHeaderSize + (index << 3)
+]
+
 { #category : #'simulation only' }
 SpurMemoryManager >> fetchInteger: fieldIndex ofObject: objectPointer [
 	"hack around the CoInterpreter/ObjectMemory split refactoring"
@@ -4952,7 +4887,9 @@ SpurMemoryManager >> firstBytePointerOfDataObject: objOop [
 	<inline: true>
 	| fmt |
 	fmt := self formatOf: objOop.
-	fmt < self firstLongFormat ifTrue: [ ^ 0 ].
+	"If the object is not byte addressable we return 0. 
+	The format of the objects that are not byte-addressable are less than the 64-bit indexable format."
+	fmt < self sixtyFourBitIndexableFormat ifTrue: [ ^ 0 ].
 	^ self firstFixedField: objOop
 ]
 
@@ -5116,6 +5053,34 @@ SpurMemoryManager >> fixedFieldsOfClassFormat: classFormat [
 SpurMemoryManager >> fixedFieldsOfClassFormatMask [
 	<api>
 	^1 << self fixedFieldsFieldWidth - 1
+]
+
+{ #category : #'object access' }
+SpurMemoryManager >> float32At: anInteger [ 
+	
+	<doNotGenerate>
+	^ memoryManager float32At: anInteger
+]
+
+{ #category : #'memory access' }
+SpurMemoryManager >> float32At: anInteger put: aNumber [ 
+
+	<doNotGenerate>
+	memoryManager float32At: anInteger put: aNumber
+]
+
+{ #category : #'object access' }
+SpurMemoryManager >> float64At: anInteger [ 
+	
+	<doNotGenerate>
+	^ memoryManager float64At: anInteger
+]
+
+{ #category : #'memory access' }
+SpurMemoryManager >> float64At: anInteger put: aNumber [ 
+
+	<doNotGenerate>
+	memoryManager float64At: anInteger put: aNumber
 ]
 
 { #category : #'interpreter access' }
@@ -5609,7 +5574,7 @@ SpurMemoryManager >> freeTreeNodesDo: aBlock [
 	 N.B For the convenience of rebuildFreeTreeFromSortedFreeChunks
 	 aBlock *MUST* answer the freeTreeNode it was invoked with, or
 	 its replacement if it was replaced by aBlock."
-	<inline: true>
+
 	| treeNode cameFrom |
 	treeNode := freeLists at: 0.
 	treeNode = 0 ifTrue:
@@ -6022,7 +5987,7 @@ SpurMemoryManager >> identityHashHalfWordMask [
 { #category : #'become implementation' }
 SpurMemoryManager >> ifOopInvalidForBecome: oop errorCodeInto: aBlock [
 	"Evaluates aBlock with an appropriate error if oop is invalid for become."
-	<inline: true>
+
 	(self isImmediate: oop) ifTrue:
 		[^aBlock value: PrimErrInappropriate].
 	(self isPinned: oop) ifTrue:
@@ -6945,7 +6910,7 @@ SpurMemoryManager >> isEnumerableObject: objOop [
 	| classIndex |
 	<inline: true>
 	classIndex := self classIndexOf: objOop.
-	self assert: ((self long64At: objOop) ~= 0
+	self assert: ((self uint64AtPointer: objOop) ~= 0
 				  and: [classIndex < (numClassTablePages * self classTablePageSize)]).
 	^classIndex >= self isForwardedObjectClassIndexPun
 ]
@@ -7453,6 +7418,14 @@ SpurMemoryManager >> isShortsNonImm: objOop [
 	"Answer if the argument contains only indexable 16-bit half words (no oops). See comment in formatOf:"
 
 	^(self formatOf: objOop) between: self firstShortFormat and: self firstByteFormat - 1
+]
+
+{ #category : #testing }
+SpurMemoryManager >> isSixtyFourBitIndexableOop: anOop [
+
+	^ (self isNonImmediate: anOop) and: [ 
+		  (self isForwarded: anOop) not and: [ 
+			  (self formatOf: anOop) = self sixtyFourBitIndexableFormat ] ]
 ]
 
 { #category : #'object testing' }
@@ -8513,10 +8486,10 @@ SpurMemoryManager >> memmove: destAddress _: sourceAddress _: bytes [
 	destAddress > sourceAddress
 				ifTrue:
 					[bytes - 4 to: 0 by: -4 do:
-						[:i| self long32At: dst + i put: (self long32At: src + i)]]
+						[:i| self uint32AtPointer: dst + i put: (self uint32AtPointer: src + i)]]
 				ifFalse:
 					[0 to: bytes - 4 by: 4 do:
-						[:i| self long32At: dst + i put: (self long32At: src + i)]]
+						[:i| self uint32AtPointer: dst + i put: (self uint32AtPointer: src + i)]]
 ]
 
 { #category : #accessing }
@@ -9251,7 +9224,7 @@ SpurMemoryManager >> numberOfForwarders [
 { #category : #'obj stacks' }
 SpurMemoryManager >> objStack: objStack do: aBlock [
 	"Evaluate aBinaryBlock with all indices and pages of elements in objStack"
-	<inline: true>
+
 	| objStackPage |
 	objStack = nilObj ifTrue:
 		[^self].
@@ -9272,7 +9245,7 @@ SpurMemoryManager >> objStack: objStack from: start do: aBlock [
 	 This evaluates in top-of-stack-to-bottom order.  N.B. this is also stable
 	 if aBlock causes new elements to be added to the objStack, but
 	 unstable if aBlock causes elements to be removed."
-	<inline: true>
+
 	| size objStackPage numToEnumerate |
 	self eassert: [self isValidObjStack: weaklingStack].
 	size := self fetchPointer: ObjStackTopx ofObject: objStack.
@@ -10439,7 +10412,7 @@ SpurMemoryManager >> rawClassTagForClass: classObj [
 SpurMemoryManager >> rawHashBitsOf: objOop [
 	<api>
 	self flag: #endianness.
-	^(self uint32At: objOop + 4) bitAnd: self identityHashHalfWordMask
+	^(self uint32AtPointer: objOop + 4) bitAnd: self identityHashHalfWordMask
 ]
 
 { #category : #'object access' }
@@ -10699,7 +10672,7 @@ SpurMemoryManager >> reverseBytesIn32BitWordsFrom: startAddr to: stopAddr [
 	| addr |
 	addr := startAddr.
 	[self oop: addr isLessThan: stopAddr] whileTrue:
-		[self long32At: addr put: ((self long32At: addr) byteSwap32).
+		[self uint32AtPointer: addr put: ((self uint32AtPointer: addr) byteSwap32).
 		 addr := addr + 4]
 ]
 
@@ -10984,8 +10957,8 @@ SpurMemoryManager >> setFreeOldSpaceStart: newFreeOldSpaceStart [
 SpurMemoryManager >> setHashBitsOf: objOop to: hash [
 	self flag: #endianness.
 	self assert: (hash between: 0 and: self identityHashHalfWordMask).
-	self long32At: objOop + 4
-		put: ((self long32At: objOop + 4) bitClear: self identityHashHalfWordMask) + hash
+	self uint32AtPointer: objOop + 4
+		put: ((self uint32AtPointer: objOop + 4) bitClear: self identityHashHalfWordMask) + hash
 ]
 
 { #category : #snapshot }
@@ -11735,6 +11708,18 @@ SpurMemoryManager >> storeCheckBoundary [
 	^newSpaceLimit
 ]
 
+{ #category : #'object access' }
+SpurMemoryManager >> storeFloat32: index ofObject: objOop withValue: value [ 
+	<var: #value type: #float>
+	^self float32At: objOop + self baseHeaderSize + (index << 2) put: value
+]
+
+{ #category : #'object access' }
+SpurMemoryManager >> storeFloat64: index ofObject: objOop withValue: value [ 
+	<var: #value type: #double>
+	^self float64At: objOop + self baseHeaderSize + (index << 3) put: value
+]
+
 { #category : #'simulation only' }
 SpurMemoryManager >> storeInteger: fieldIndex ofObject: objectPointer withValue: integerValue [
 	"hack around the CoInterpreter/ObjectMemory split refactoring"
@@ -11744,7 +11729,7 @@ SpurMemoryManager >> storeInteger: fieldIndex ofObject: objectPointer withValue:
 
 { #category : #'object access' }
 SpurMemoryManager >> storeLong32: fieldIndex ofObject: obj withValue: valueWord [
-	^self long32At: obj + self baseHeaderSize + (fieldIndex << 2) put: valueWord
+	^self uint32AtPointer: obj + self baseHeaderSize + (fieldIndex << 2) put: valueWord
 ]
 
 { #category : #'object access' }
@@ -11764,7 +11749,7 @@ SpurMemoryManager >> storePointer: fieldIndex ofForwarder: objOop withValue: val
 			[self possibleRootStoreInto: objOop]].
 
 	^self
-		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: valuePointer
 ]
 
@@ -11773,7 +11758,7 @@ SpurMemoryManager >> storePointer: fieldIndex ofFreeChunk: objOop withUncheckedV
 
 	self assert: (self isFreeObject: objOop).
 	^self
-		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: valuePointer
 ]
 
@@ -11783,7 +11768,7 @@ SpurMemoryManager >> storePointer: fieldIndex ofFreeChunk: objOop withValue: val
 	self assert: (self isFreeObject: objOop).
 	self assert: (valuePointer = 0 or: [self isFreeObject: valuePointer]).		
 	^self
-		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: valuePointer
 ]
 
@@ -11805,7 +11790,7 @@ SpurMemoryManager >> storePointer: fieldIndex ofObjStack: objStackPage withValue
 															and: [(self formatOf: thang) = self wordIndexableFormat]]])]. }
 				otherwise: []].
 	^self
-		longAt: objStackPage + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		unsignedLongAt: objStackPage + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: thang
 ]
 
@@ -11820,7 +11805,7 @@ SpurMemoryManager >> storePointer: fieldIndex ofObject: objOop withValue: valueP
 			[self possibleRootStoreInto: objOop]].
 
 	^self
-		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: valuePointer
 ]
 
@@ -11841,14 +11826,14 @@ SpurMemoryManager >> storePointerImmutabilityCheck: fieldIndex ofObject: objOop 
 SpurMemoryManager >> storePointerNoAssert: fieldIndex ofFreeChunk: objOop withValue: valuePointer [
 
 	^self
-		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: valuePointer
 ]
 
 { #category : #'object access' }
 SpurMemoryManager >> storePointerUnchecked: fieldIndex ofMaybeForwardedObject: objOop withValue: valuePointer [
 	^self
-		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: valuePointer
 ]
 
@@ -11857,7 +11842,7 @@ SpurMemoryManager >> storePointerUnchecked: fieldIndex ofObject: objOop withValu
 	<api>
 	self assert: (self isOopForwarded: objOop) not.
 	^self
-		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: valuePointer
 ]
 
@@ -12182,6 +12167,13 @@ SpurMemoryManager >> uint16At: address [
 ]
 
 { #category : #accessing }
+SpurMemoryManager >> uint16At: address put: aValue [
+
+	<doNotGenerate>
+	^ self shortAt: address put: aValue
+]
+
+{ #category : #accessing }
 SpurMemoryManager >> uint32At: address [
 
 	<doNotGenerate>
@@ -12223,9 +12215,9 @@ SpurMemoryManager >> unalignedLong32At: index [
 
 	| odd hi lo |
 	(odd := index bitAnd: 3) = 0 ifTrue:
-		[^self long32At: index].
-	lo := self long32At: index - odd.
-	hi := self long32At: index + 4 - odd.
+		[^self uint32AtPointer: index].
+	lo := self uint32AtPointer: index - odd.
+	hi := self uint32AtPointer: index + 4 - odd.
 	^lo >> (odd * 8) + ((hi bitAnd: 1 << (odd * 8) - 1) << (4 - odd * 8))
 ]
 
@@ -12238,14 +12230,14 @@ SpurMemoryManager >> unalignedLong32At: index put: aValue [
 		[self unalignedLong64At: index put: (aValue bitAnd: 16rFFFFFFFF).
 		 ^aValue].
 	(odd := index bitAnd: 3) = 0 ifTrue:
-		[^self long32At: index put: aValue].
+		[^self uint32AtPointer: index put: aValue].
 	mask := 1 << (odd * 8) - 1.
-	lo := self long32At: index - odd.
-	self long32At: index - odd
+	lo := self uint32AtPointer: index - odd.
+	self uint32AtPointer: index - odd
 		put: (lo bitAnd: mask)
 			+ ((aValue bitAnd: 1 << (4 - odd * 8) - 1) << (odd * 8)).
-	hi := self long32At: index + 4 - odd.
-	self long32At: index + 4 - odd
+	hi := self uint32AtPointer: index + 4 - odd.
+	self uint32AtPointer: index + 4 - odd
 		put: (hi bitClear: mask) + (aValue >> (4 - odd * 8) bitAnd: mask).
 	^aValue
 ]
@@ -12309,7 +12301,7 @@ SpurMemoryManager >> unalignedShortAt: index put: aValue [
 
 { #category : #'primitive support' }
 SpurMemoryManager >> uniqueIndex: classIndex allInstancesInto: start limit: limit resultsInto: binaryBlock [
-	<inline: true>
+
 	| count ptr |
 	count := 0.
 	ptr := start.
@@ -12689,6 +12681,14 @@ SpurMemoryManager >> validObjStacks [
 	^(markStack = nilObj or: [self isValidObjStack: markStack])
 	  and: [(weaklingStack = nilObj or: [self isValidObjStack: weaklingStack])
 	  and: [mournQueue = nilObj or: [self isValidObjStack: mournQueue]]]
+]
+
+{ #category : #allocation }
+SpurMemoryManager >> validateRoomInEdenOrDie: bytes [
+	<druidExitPoint>
+	freeStart + bytes > scavenger eden limit ifTrue: [ 
+		self error:
+			'no room in eden for allocateSmallNewSpaceSlots:format:classIndex:' ]
 ]
 
 { #category : #'gc - scavenge/compact' }

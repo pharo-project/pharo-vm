@@ -35,9 +35,13 @@ VMMachineCodeDebuggerStackItem >> machineSimulator: anUnicornARMv8Simulator [
 { #category : #evaluating }
 VMMachineCodeDebuggerStackItem >> specialRegister [
 
-	machineSimulator smalltalkStackPointerRegisterValue = address ifTrue: [ ^ 'SP' ].
-	machineSimulator fp = address ifTrue: [ ^ 'FP' ].
-	^ ''
+	| isSP isFP |
+	isSP := machineSimulator smalltalkStackPointerRegisterValue = address.
+	isFP := machineSimulator fp = address.
+	^ String streamContents: [ :str | 
+		isSP ifTrue: [ str nextPutAll: 'SP ' ].
+		isFP ifTrue: [ str nextPutAll: 'FP ' ]. ]
+
 ]
 
 { #category : #evaluating }

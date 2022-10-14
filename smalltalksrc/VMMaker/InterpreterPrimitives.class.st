@@ -62,7 +62,7 @@ secHasEnvironmentAccess
 "
 Class {
 	#name : #InterpreterPrimitives,
-	#superclass : #VMClass,
+	#superclass : #AbstractInterpreter,
 	#instVars : [
 		'objectMemory',
 		'messageSelector',
@@ -217,15 +217,6 @@ InterpreterPrimitives >> canBeImmutable: oop [
 	^ true
 ]
 
-{ #category : #'simulation support' }
-InterpreterPrimitives >> doOrDefer: aBlock [
-	<doNotGenerate>
-	"Either evaluate aBlock immediately if in the uiProcess or defer aBlock as a UI message"
-	Processor activeProcess == self uiProcess
-		ifTrue: [aBlock value]
-		ifFalse: [WorldState addDeferredUIMessage: aBlock]
-]
-
 { #category : #'process primitive support' }
 InterpreterPrimitives >> doWaitSemaphore: aSemaphoreOop [
 	| excessSignals activeProc |
@@ -289,7 +280,6 @@ InterpreterPrimitives >> initPrimCall [
 InterpreterPrimitives >> initialize [
 
 	"Here we can initialize the variables C initializes to zero.  #initialize methods do /not/ get translated."
-
 	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := ffiExceptionResponse := 0.
 	newFinalization := false
 ]
@@ -1245,7 +1235,7 @@ InterpreterPrimitives >> primitiveClass [
 { #category : #'process primitives' }
 InterpreterPrimitives >> primitiveClearVMProfile [
 	"Primitive. Void the VM profile histograms."
-	self cCode: 'ioClearProfile()'.
+	self ioClearProfile.
 	self pop: argumentCount
 ]
 
@@ -1815,6 +1805,7 @@ InterpreterPrimitives >> primitiveFindNextUnwindContext [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatAdd [
+	<numberOfArguments: 1>
 	^ self primitiveFloatAdd: (self stackValue: 1) toArg: self stackTop
 ]
 
@@ -1886,12 +1877,14 @@ InterpreterPrimitives >> primitiveFloatAtPut [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatDivide [
+	<numberOfArguments: 1>
 	self primitiveFloatDivide: (self stackValue: 1) byArg: self stackTop
 ]
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatEqual [
 	| aBool |
+	<numberOfArguments: 1>
 	aBool := self primitiveFloatEqual: (self stackValue: 1) toArg: self stackTop.
 	self successful ifTrue:
 		[self pop: 2 thenPushBool: aBool]
@@ -1900,6 +1893,7 @@ InterpreterPrimitives >> primitiveFloatEqual [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatGreaterOrEqual [
 	| aBool |
+	<numberOfArguments: 1>
 	aBool := self primitiveFloatGreaterOrEqual: (self stackValue: 1) toArg: self stackTop.
 	self successful ifTrue: [self pop: 2 thenPushBool: aBool]
 ]
@@ -1907,6 +1901,7 @@ InterpreterPrimitives >> primitiveFloatGreaterOrEqual [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatGreaterThan [
 	| aBool |
+	<numberOfArguments: 1>
 	aBool := self primitiveFloatGreater: (self stackValue: 1) thanArg: self stackTop.
 	self successful ifTrue:
 		[self pop: 2 thenPushBool: aBool]
@@ -1915,6 +1910,7 @@ InterpreterPrimitives >> primitiveFloatGreaterThan [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatLessOrEqual [
 	| aBool |
+	<numberOfArguments: 1>
 	aBool := self primitiveFloatLessOrEqual: (self stackValue: 1) toArg: self stackTop.
 	self successful ifTrue: [self pop: 2 thenPushBool: aBool]
 ]
@@ -1922,6 +1918,7 @@ InterpreterPrimitives >> primitiveFloatLessOrEqual [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatLessThan [
 	| aBool |
+	<numberOfArguments: 1>
 	aBool := self primitiveFloatLess: (self stackValue: 1) thanArg: self stackTop.
 	self successful ifTrue:
 		[self pop: 2 thenPushBool: aBool]
@@ -1929,12 +1926,14 @@ InterpreterPrimitives >> primitiveFloatLessThan [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatMultiply [
+	<numberOfArguments: 1>
 	self primitiveFloatMultiply: (self stackValue: 1) byArg: self stackTop
 ]
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatNotEqual [
 	| aBool |
+	<numberOfArguments: 1>
 	aBool := self primitiveFloatEqual: (self stackValue: 1) toArg: self stackTop.
 	self successful ifTrue:
 		[self pop: 2 thenPushBool: aBool not]
@@ -1942,6 +1941,7 @@ InterpreterPrimitives >> primitiveFloatNotEqual [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatSubtract [
+	<numberOfArguments: 1>
 	^ self primitiveFloatSubtract: (self stackValue: 1) fromArg: self stackTop
 ]
 
@@ -4840,7 +4840,7 @@ InterpreterPrimitives >> quot: integerRcvr ient: integerArg [
 { #category : #'string primitives' }
 InterpreterPrimitives >> rawCompare: string1 length: strLength1 with: string2 length: strLength2 accessBlock: accessBlock [
 	| c1 c2 min |
-	<inline: true> "needs to be forced else slang does not inline it by default"
+
 	min := strLength1 min: strLength2.
 	0 to: min-1 do: 
 		[:i | c1 := accessBlock value: string1 value: i.

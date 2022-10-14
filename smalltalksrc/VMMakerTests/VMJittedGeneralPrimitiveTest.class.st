@@ -7,6 +7,14 @@ Class {
 	#category : #'VMMakerTests-JitTests'
 }
 
+{ #category : #accessing }
+VMJittedGeneralPrimitiveTest >> lastObjectInNewSpace [
+
+	| lastOop |
+	memory allNewSpaceObjectsDo: [ :oop | lastOop := oop ].
+	^ lastOop
+]
+
 { #category : #'tests - support' }
 VMJittedGeneralPrimitiveTest >> testCheckImmediateWhenImmediateFloat [
 
@@ -1889,6 +1897,93 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveMultiplyReturnsZeroWithZeroOperand 
 	
 	self runFrom: primitiveAddress until: callerAddress.
 	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 0).
+]
+
+{ #category : #'tests - primitiveNew' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveNewInitializesObjectCorrectly [
+
+	| endInstruction primitiveAddress class newOop instanceVariableCount |
+	instanceVariableCount := 4.
+	class := self
+		         newClassInOldSpaceWithSlots: instanceVariableCount
+		         instSpec: memory nonIndexablePointerFormat.
+	memory ensureBehaviorHash: class.
+
+	primitiveAddress := self compile: [ 
+		                    cogit objectRepresentation genPrimitiveNew.
+		                    "If the primitive fails it continues, so we need to have an instruction to detect the end"
+		                    endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: class.
+	self runFrom: primitiveAddress until: callerAddress.
+
+	newOop := self lastObjectInNewSpace.
+
+	0 to: (instanceVariableCount - 1) do: [ :slotIndex | 
+		self
+			assert: (memory fetchPointer: slotIndex ofObject: newOop)
+			equals: memory nilObject ]
+]
+
+{ #category : #'tests - primitiveNew' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveNewWithArgInitializesObjectCorrectly [
+
+	| endInstruction primitiveAddress class newOop arraySize |
+	arraySize := 4.
+	class := self
+		newClassInOldSpaceWithSlots: 0
+		instSpec: Array instSpec.
+	memory ensureBehaviorHash: class.
+	
+	cogit methodOrBlockNumArgs: 1.
+	primitiveAddress := self compile: [ 
+		                    cogit objectRepresentation genPrimitiveNewWithArg.
+		                    "If the primitive fails it continues, so we need to have an instruction to detect the end"
+		                    endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: class arguments: { memory integerObjectOf: arraySize }.
+
+	self runFrom: primitiveAddress until: callerAddress.
+
+	newOop := self lastObjectInNewSpace.
+	
+	self assert: (newOop bitAnd: 16r0F) equals: 0. 
+
+	0 to: (arraySize - 1) do: [ :slotIndex | 
+		self
+			assert: (memory fetchPointer: slotIndex ofObject: newOop)
+			equals: memory nilObject ]
+]
+
+{ #category : #'tests - primitiveNew' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveNewWithArgInitializesObjectCorrectlyWhenNotAligned [
+
+	| endInstruction primitiveAddress class newOop arraySize |
+	arraySize := 4.
+	class := self
+		newClassInOldSpaceWithSlots: 0
+		instSpec: Array instSpec.
+	memory ensureBehaviorHash: class.
+
+	self newObjectWithSlots: 2.
+	
+	cogit methodOrBlockNumArgs: 1.
+	primitiveAddress := self compile: [ 
+		                    cogit objectRepresentation genPrimitiveNewWithArg.
+		                    "If the primitive fails it continues, so we need to have an instruction to detect the end"
+		                    endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: class arguments: { memory integerObjectOf: arraySize }.
+
+	self runFrom: primitiveAddress until: callerAddress.
+
+	newOop := self lastObjectInNewSpace.
+
+
+	0 to: (arraySize - 1) do: [ :slotIndex | 
+		self
+			assert: (memory fetchPointer: slotIndex ofObject: newOop)
+			equals: memory nilObject ]
 ]
 
 { #category : #'tests - primitiveNotEqual' }

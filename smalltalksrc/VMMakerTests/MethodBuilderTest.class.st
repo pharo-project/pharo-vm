@@ -85,6 +85,12 @@ MethodBuilderTest >> testBytecodeAtForMethodWithTwoLiteral [
 ]
 
 { #category : #running }
+MethodBuilderTest >> testClassOfCompiledMethodIsCompiledMethod [
+	
+	self assert: (memory fetchClassOf: methodBuilder newMethod buildMethod) equals: (memory splObj: 16).
+]
+
+{ #category : #running }
 MethodBuilderTest >> testGeneratingCompiledMethod [
 
 	method := methodBuilder newMethod

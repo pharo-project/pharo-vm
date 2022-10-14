@@ -10,12 +10,6 @@ Class {
 	#category : #'VMMaker-JIT'
 }
 
-{ #category : #'accessing class hierarchy' }
-CogObjectRepresentationFor32BitSpur class >> defaultObjectMemoryClass [
-	"For in-image compilation."
-	^Spur32BitCoMemoryManager
-]
-
 { #category : #'sista support' }
 CogObjectRepresentationFor32BitSpur >> allImmediate: immediateMask branchIf: reg instanceOfBehaviors: arrayObj target: targetFixUp [
 	< inline: true>	
@@ -276,7 +270,7 @@ CogObjectRepresentationFor32BitSpur >> genGetSizeOf: sourceReg into: destReg for
 	| jumpNotIndexable
 	  jumpBytesDone jumpShortsDone jumpArrayDone jump32BitLongsDone jump64BitLongsDone
 	  jumpIsBytes jumpHasFixedFields jumpIsShorts jumpIs64BitLongs jumpIsContext  |
-	<inline: true>
+
 	"c.f. StackInterpreter>>stSizeOf: SpurMemoryManager>>lengthOf:format: fixedFieldsOf:format:length:"
 
 	"formatReg := self formatOf: sourceReg"

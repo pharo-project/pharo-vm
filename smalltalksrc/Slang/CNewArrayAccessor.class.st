@@ -7,15 +7,6 @@ Class {
 	#category : #'Slang-Types'
 }
 
-{ #category : #'instance creation' }
-CNewArrayAccessor class >> on: anInteger manager: aVMMemoryManager [ 
-	
-	^ self new
-		address: anInteger;
-		manager: aVMMemoryManager;
-		yourself
-]
-
 { #category : #accessing }
 CNewArrayAccessor >> address [
 
