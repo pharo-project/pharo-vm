@@ -14477,6 +14477,8 @@ StackInterpreter >> stObject: array at: index [
 
 	| hdr fmt totalLength fixedFields stSize |
 	<inline: true>
+	<druidDeferredInline>
+
 	hdr := objectMemory baseHeader: array.
 	fmt := objectMemory formatOfHeader: hdr.
 	totalLength := objectMemory lengthOf: array format: fmt.
@@ -14493,6 +14495,8 @@ StackInterpreter >> stObject: array at: index [
 StackInterpreter >> stObject: array at: index format: format fixedFields: fixedFields size: stSize [
 
 	<inline: true>
+	<druidDeferredInline>
+
 	(self oop: index 
 			isGreaterThanOrEqualTo: (objectMemory firstValidIndexOfIndexableObject: array withFormat: format)
 	 		andLessThanOrEqualTo: stSize) ifTrue: [
@@ -14944,6 +14948,8 @@ StackInterpreter >> subscript: array with: index format: fmt [
 	"Note: This method assumes that the index is within bounds!"
 
 	<inline: true>
+	<druidDeferredInline>
+	
 	fmt <= objectMemory lastPointerFormat ifTrue:
 		[^objectMemory fetchPointer: index - 1 ofObject: array].
 	fmt >= objectMemory firstByteFormat ifTrue:
