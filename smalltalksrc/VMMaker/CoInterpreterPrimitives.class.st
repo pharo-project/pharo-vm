@@ -341,6 +341,17 @@ CoInterpreterPrimitives >> primitiveExitCriticalSection [
 						[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]]
 ]
 
+{ #category : #'trampoline support' }
+CoInterpreterPrimitives >> primitiveFailureCodeAddress [
+
+	<api>
+	<returnTypeC: #usqInt>
+	^ self
+		  cCode: [ (self addressOf: primFailCode) asUnsignedInteger ]
+		  inSmalltalk: [ 
+		  cogit simulatedReadWriteVariableAddress: #primFailCode in: self ]
+]
+
 { #category : #'system control primitives' }
 CoInterpreterPrimitives >> primitiveFlushCacheByMethod [
 	"The receiver is a compiledMethod.  Clear all entries in the method lookup cache that
