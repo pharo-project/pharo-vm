@@ -51,6 +51,8 @@
 #cmakedefine HAVE_UUIDGEN
 #cmakedefine HAVE_UUID_GENERATE
 
+#cmakedefine HAVE_SCTP
+
 #cmakedefine PHARO_VM_IN_WORKER_THREAD
 
 #cmakedefine BUILD_IS_RELEASE

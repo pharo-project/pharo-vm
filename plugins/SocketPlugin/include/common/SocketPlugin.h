@@ -84,3 +84,9 @@ void  sqSocketLocalAddressResultSize(SocketPtr s, char *addr, int addrSize);
 sqInt sqSocketRemoteAddressSize(SocketPtr s);
 void  sqSocketRemoteAddressResultSize(SocketPtr s, char *addr, int addrSize);
 
+#ifdef HAVE_SCTP
+sqInt sqSocketSCTPSndRcvInfoSize(void);
+sqInt sqSocketSCTPReceiveCountAddressPortStreamAssocIdPpidSsn(SocketPtr s, char *buf, sqInt bufSize, sqInt *address, sqInt *port, sqInt *stream, sqInt *assoc, sqInt *ppid, sqInt *ssn);
+sqInt sqSocketSCTPSendSendDataBufCountStreamAssocIdPpid(SocketPtr s, char *buf, sqInt bufSize, sqInt stream, sqInt assocId, sqInt ppid);
+sqInt sqSocketSCTPEnableDataIOEventenable(SocketPtr s, sqInt flags);
+#endif

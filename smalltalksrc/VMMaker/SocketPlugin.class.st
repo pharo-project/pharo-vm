@@ -4,13 +4,6 @@ Implement the socket and resolver primitives.  Since it requires platform suppor
 Class {
 	#name : #SocketPlugin,
 	#superclass : #SmartSyntaxInterpreterPlugin,
-	#instVars : [
-		'sDSAfn',
-		'sHSAfn',
-		'sCCTPfn',
-		'sCCLOPfn',
-		'sCCSOTfn'
-	],
 	#category : #'VMMaker-Plugins'
 }
 
@@ -41,14 +34,118 @@ SocketPlugin class >> requiresPlatformFiles [
 	^true
 ]
 
+{ #category : #'primitives - sctp' }
+SocketPlugin >> doPrimitiveSocketSCTP: socket receiveUDPDataBuf: array start: startIndex count: count [ 
+	| s byteSize arrayBase bufStart bytesReceived results address port  stream ssn assoc ppid |
+	<var: #s type: 'SocketPtr'>
+	<var: #arrayBase type: 'char *'>
+	<var: #bufStart type: 'char *'>
+	<inline: #always>
+
+	s := self socketValueOf: socket.
+
+	"buffer can be any indexable words or bytes object"
+	interpreterProxy success: (interpreterProxy isWordsOrBytes: array).
+	(interpreterProxy isWords: array)
+		ifTrue: [byteSize := 4]
+		ifFalse: [byteSize := 1].
+	interpreterProxy success: (startIndex >= 1
+			and: [count >= 0 and: [startIndex + count - 1 <= (interpreterProxy slotSizeOf: array)]]).
+	interpreterProxy failed
+		ifFalse: ["Note: adjust bufStart for zero-origin indexing"
+			arrayBase := self cCoerce: (interpreterProxy firstIndexableField: array) to: 'char *'.
+			bufStart := arrayBase + (startIndex - 1 * byteSize).
+			"allocate storage for results, remapping newly allocated
+			 oops in case GC happens during allocation"
+			address		  := 0.
+			port			  := 0.
+			ssn 			  := 0.
+			stream               := 0.
+			ppid 			  := 0.
+			assoc                 := 0.
+			
+			bytesReceived := self
+						sqSocketSCTP: s
+						Receive: bufStart
+						Count: count * byteSize
+						Address: (self addressOf: address)
+						Port: (self addressOf: port)
+						Stream: (self addressOf: stream)
+						AssocId: (self addressOf: assoc)
+						Ppid: (self addressOf: ppid)
+						Ssn: (self addressOf: ssn).
+
+			interpreterProxy pushRemappableOop: ssn asSmallIntegerObj.
+			interpreterProxy pushRemappableOop: ppid asSmallIntegerObj.
+			interpreterProxy pushRemappableOop: assoc asSmallIntegerObj.
+			interpreterProxy pushRemappableOop: stream asSmallIntegerObj.				
+			interpreterProxy pushRemappableOop: port asSmallIntegerObj.
+			interpreterProxy pushRemappableOop: (self intToNetAddress: address).
+			interpreterProxy pushRemappableOop: (bytesReceived // byteSize) asSmallIntegerObj.
+			interpreterProxy pushRemappableOop:
+				(interpreterProxy instantiateClass: (interpreterProxy classArray) indexableSize: 7).
+			results         := interpreterProxy popRemappableOop.
+			interpreterProxy storePointer: 0 ofObject: results withValue: interpreterProxy popRemappableOop.
+			interpreterProxy storePointer: 1 ofObject: results withValue: interpreterProxy popRemappableOop.
+			interpreterProxy storePointer: 2 ofObject: results withValue: interpreterProxy popRemappableOop.
+			interpreterProxy storePointer: 3 ofObject: results withValue: interpreterProxy popRemappableOop.
+			interpreterProxy storePointer: 4 ofObject: results withValue: interpreterProxy popRemappableOop.
+			interpreterProxy storePointer: 5 ofObject: results withValue: interpreterProxy popRemappableOop.
+			interpreterProxy storePointer: 6 ofObject: results withValue: interpreterProxy popRemappableOop. 
+			].
+	^ results
+]
+
+{ #category : #'primitives - sctp' }
+SocketPlugin >> doPrimitiveSocketSCTP: socket sendData: array start: startIndex count: count stream: aStream assocId: assocId ppid: aPpid [
+	| s byteSize arrayBase bufStart bytesSent |
+	"It is a pain to wrap the sctp_sndrcvinfo structure. So right now we only export
+	the parameters we need and leave the others unused."
+	<var: #s type: 'SocketPtr'>
+	<var: #arrayBase type: 'char *'>
+	<var: #bufStart type: 'char *'>
+	<inline: #always>	
+
+	s := self socketValueOf: socket.
+
+	"buffer can be any indexable words or bytes object except CompiledMethod "
+	interpreterProxy success: (interpreterProxy isWordsOrBytes: array).
+	(interpreterProxy isWords: array)
+		ifTrue: [byteSize := 4]
+		ifFalse: [byteSize := 1].
+	interpreterProxy success: (startIndex >= 1
+			and: [count >= 0 and: [startIndex + count - 1 <= (interpreterProxy slotSizeOf: array)]]).
+	interpreterProxy failed
+		ifFalse: ["Note: adjust bufStart for zero-origin indexing"
+			arrayBase := self cCoerce: (interpreterProxy firstIndexableField: array) to: 'char *'.
+			bufStart := arrayBase + (startIndex - 1 * byteSize).
+			bytesSent := self
+				sqSocketSCTPSend: s
+				SendDataBuf: bufStart
+				Count: count * byteSize
+				Stream: aStream
+				AssocId: assocId
+				Ppid: aPpid].
+	^ (bytesSent // byteSize) asSmallIntegerObj
+
+
+
+]
+
+{ #category : #'primitives - sctp' }
+SocketPlugin >> doPrimitiveSocketSCTPEnableDataIOEvent: socket enable: aFlag [
+	| s done |
+	<var: #s type: 'SocketPtr'>
+	<inline: #always>	
+
+	s := self socketValueOf: socket.
+	done := self sqSocketSCTPEnableDataIOEvent: s enable: aFlag.
+	^done asBooleanObj
+]
+
 { #category : #'initialize-release' }
 SocketPlugin >> initialiseModule [
 	<export: true>
-	sDSAfn := interpreterProxy ioLoadFunction: 'secDisableSocketAccess' From: 'SecurityPlugin'.
-	sHSAfn := interpreterProxy ioLoadFunction: 'secHasSocketAccess' From: 'SecurityPlugin'.
-	sCCTPfn := interpreterProxy ioLoadFunction: 'secCanConnectToPort' From: 'SecurityPlugin'.
-	sCCLOPfn := interpreterProxy ioLoadFunction: 'secCanListenOnPort' From: 'SecurityPlugin'.
-	sCCSOTfn := interpreterProxy ioLoadFunction: 'secCanCreateSocketOfType' From: 'SecurityPlugin'.
 	^self socketInit
 ]
 
@@ -70,18 +167,6 @@ SocketPlugin >> intToNetAddress: addr [
 	^ netAddressOop
 ]
 
-{ #category : #'initialize-release' }
-SocketPlugin >> moduleUnloaded: aModuleName [
-	"The module with the given name was just unloaded.
-	Make sure we have no dangling references."
-	<export: true>
-	<var: #aModuleName type: 'char *'>
-	(aModuleName strcmp: 'SecurityPlugin') = 0 ifTrue:[
-		"The security plugin just shut down. How odd."
-		sDSAfn := sHSAfn := sCCTPfn := sCCLOPfn := sCCSOTfn := 0.
-	].
-]
-
 { #category : #primitives }
 SocketPlugin >> netAddressToInt: ptrToByteArray [
 	"Convert the given internet network address (represented as a four-byte ByteArray) into a 32-bit integer. Fail if the given ptrToByteArray does not appear to point to a four-byte ByteArray."
@@ -94,24 +179,6 @@ SocketPlugin >> netAddressToInt: ptrToByteArray [
 		((ptrToByteArray at: 2) <<8) +
 		((ptrToByteArray at: 1) <<16) +
 		((ptrToByteArray at: 0) <<24)
-]
-
-{ #category : #'security primitives' }
-SocketPlugin >> primitiveDisableSocketAccess [
-	<export: true>
-	"If the security plugin can be loaded, use it to turn off socket access
-	 If not, assume it's ok"
-	sDSAfn ~= 0 ifTrue:
-		[self cCode: '((sqInt (*) (void)) sDSAfn)()']
-]
-
-{ #category : #'security primitives' }
-SocketPlugin >> primitiveHasSocketAccess [
-	self primitive: 'primitiveHasSocketAccess'.
-	"If the security plugin can be loaded, use it to check . 
-	 If not, assume it's ok"
-	^(sHSAfn = 0
-	  or: [self cCode: ' ((sqInt (*) (void)) sHSAfn)()' inSmalltalk: [true]]) asBooleanObj
 ]
 
 { #category : #primitives }
@@ -412,16 +479,11 @@ SocketPlugin >> primitiveSocket: socket connectTo: socketAddress [
 
 { #category : #primitives }
 SocketPlugin >> primitiveSocket: socket connectTo: address port: port [ 
-	| addr s okToConnect  |
+	| addr s  |
 	<var: #s type: 'SocketPtr'>
 	self primitive: 'primitiveSocketConnectToPort' parameters: #(#Oop #ByteArray #SmallInteger ).
 	addr := self netAddressToInt: (self cCoerce: address to: 'unsigned char *').
-	"If the security plugin can be loaded, use it to check for permission.
-	If not, assume it's ok"
-	sCCTPfn ~= 0 ifTrue:
-		[okToConnect := self cCode: ' ((sqInt (*) (sqInt, sqInt)) sCCTPfn)(addr, port)'.
-		 okToConnect ifFalse:
-			[^ interpreterProxy primitiveFail]].
+
 	s := self socketValueOf: socket.
 	interpreterProxy failed ifFalse:
 		[self sqSocket: s ConnectTo: addr Port: port]
@@ -460,16 +522,11 @@ SocketPlugin >> primitiveSocket: socket listenOnPort: port [
 	"one part of the wierdass dual prim primitiveSocketListenOnPort which 
 	was warped by some demented evil person determined to twist the very 
 	nature of reality"
-	| s  okToListen |
+	| s  |
 	<var: #s type: 'SocketPtr '>
 	self primitive: 'primitiveSocketListenOnPort' parameters: #(#Oop #SmallInteger ).
 	s := self socketValueOf: socket.
-	"If the security plugin can be loaded, use it to check for permission.
-	If  not, assume it's ok"
-	sCCLOPfn ~= 0 ifTrue:
-		[okToListen := self cCode: ' ((sqInt (*) (sqInt, sqInt)) sCCLOPfn)((sqInt)s, port)'.
-		 okToListen ifFalse:
-			[^ interpreterProxy primitiveFail]].
+
 	interpreterProxy failed ifFalse:
 		[self sqSocket: s ListenOnPort: port]
 ]
@@ -479,16 +536,11 @@ SocketPlugin >> primitiveSocket: socket listenOnPort: port backlogSize: backlog 
 	"second part of the wierdass dual prim primitiveSocketListenOnPort 
 	which was warped by some demented evil person determined to twist the 
 	very nature of reality"
-	| s okToListen |
+	| s |
 	<var: #s type: 'SocketPtr'>
 	self primitive: 'primitiveSocketListenOnPortBacklog' parameters: #(#Oop #SmallInteger #SmallInteger ).
 	s := self socketValueOf: socket.
-	"If the security plugin can be loaded, use it to check for permission.
-	If not, assume it's ok"
-	sCCLOPfn ~= 0 ifTrue:
-		[okToListen := self cCode: ' ((sqInt (*) (sqInt, sqInt)) sCCLOPfn)((sqInt)s, port)'.
-		 okToListen ifFalse:
-			[^interpreterProxy primitiveFail]].
+
 	self sqSocket: s ListenOnPort: port BacklogSize: backlog
 ]
 
@@ -496,16 +548,11 @@ SocketPlugin >> primitiveSocket: socket listenOnPort: port backlogSize: backlog 
 SocketPlugin >> primitiveSocket: socket listenOnPort: port backlogSize: backlog interface: ifAddr [
 	"Bind a socket to the given port and interface address with no more than backlog pending connections.  The socket can be UDP, in which case the backlog should be specified as zero."
 
-	| s okToListen addr |
+	| s addr |
 	<var: #s type: 'SocketPtr'>
 	self primitive: 'primitiveSocketListenOnPortBacklogInterface' parameters: #(#Oop #SmallInteger #SmallInteger #ByteArray).
 	s := self socketValueOf: socket.
-	"If the security plugin can be loaded, use it to check for permission.
-	If  not, assume it's ok"
-	sCCLOPfn ~= 0 ifTrue:
-		[okToListen := self cCode: ' ((sqInt (*) (sqInt, sqInt)) sCCLOPfn)((sqInt)s, port)'.
-		 okToListen ifFalse:
-			[^ interpreterProxy primitiveFail]].
+
 	addr := self netAddressToInt: (self cCoerce: ifAddr to: 'unsigned char *').
 	self sqSocket: s ListenOnPort: port BacklogSize: backlog Interface: addr
 ]
@@ -823,15 +870,10 @@ SocketPlugin >> primitiveSocketConnectionStatus: socket [
 
 { #category : #primitives }
 SocketPlugin >> primitiveSocketCreateNetwork: netType type: socketType receiveBufferSize: recvBufSize sendBufSize: sendBufSize semaIndex: semaIndex [ 
-	| socketOop s okToCreate |
+	| socketOop s |
 	<var: #s type: 'SocketPtr '>
 	self primitive: 'primitiveSocketCreate' parameters: #(#SmallInteger #SmallInteger #SmallInteger #SmallInteger #SmallInteger ).
-	"If the security plugin can be loaded, use it to check for permission.
-	If  not, assume it's ok"
-	sCCSOTfn ~= 0 ifTrue:
-		[okToCreate := self cCode: ' ((sqInt (*) (sqInt, sqInt)) sCCSOTfn)(netType, socketType)'.
-		 okToCreate ifFalse:
-			[^ interpreterProxy primitiveFail]].
+
 	socketOop := interpreterProxy instantiateClass: interpreterProxy classByteArray indexableSize: self socketRecordSize.
 	s := self socketValueOf: socketOop.
 	interpreterProxy failed ifFalse:
@@ -847,15 +889,10 @@ SocketPlugin >> primitiveSocketCreateNetwork: netType type: socketType receiveBu
 
 { #category : #primitives }
 SocketPlugin >> primitiveSocketCreateNetwork: netType type: socketType receiveBufferSize: recvBufSize sendBufSize: sendBufSize semaIndex: semaIndex readSemaIndex: aReadSema writeSemaIndex: aWriteSema [ 
-	| socketOop s okToCreate |
+	| socketOop s |
 	<var: #s type: 'SocketPtr '>
 	self primitive: 'primitiveSocketCreate3Semaphores' parameters: #(#SmallInteger #SmallInteger #SmallInteger #SmallInteger #SmallInteger #SmallInteger #SmallInteger ).
-	"If the security plugin can be loaded, use it to check for permission.
-	If not, assume it's ok"
-	sCCSOTfn ~= 0 ifTrue:
-		[okToCreate := self cCode: ' ((sqInt (*) (sqInt, sqInt)) sCCSOTfn)(netType, socketType)'.
-		 okToCreate ifFalse:
-			[^ interpreterProxy primitiveFail]].
+
 	socketOop := interpreterProxy instantiateClass: interpreterProxy classByteArray indexableSize: self socketRecordSize.
 	s := self socketValueOf: socketOop.
 	interpreterProxy failed ifFalse:
@@ -873,15 +910,10 @@ SocketPlugin >> primitiveSocketCreateNetwork: netType type: socketType receiveBu
 
 { #category : #primitives }
 SocketPlugin >> primitiveSocketCreateRaw: netType type: protoType receiveBufferSize: recvBufSize sendBufSize: sendBufSize semaIndex: semaIndex readSemaIndex: aReadSema writeSemaIndex: aWriteSema [ 
-	| socketOop s okToCreate |
+	| socketOop s |
 	<var: #s type: 'SocketPtr '>
 	self primitive: 'primitiveSocketCreateRAW' parameters: #(#SmallInteger #SmallInteger #SmallInteger #SmallInteger #SmallInteger #SmallInteger #SmallInteger ).
-	"If the security plugin can be loaded, use it to check for permission.
-	If not, assume it's ok"
-	sCCSOTfn ~= 0 ifTrue:
-		[okToCreate := self cCode: ' ((sqInt (*) (sqInt, sqInt)) sCCSOTfn)(netType, protoType)'.
-		 okToCreate ifFalse:
-			[^ interpreterProxy primitiveFail]].
+
 	socketOop := interpreterProxy instantiateClass: interpreterProxy classByteArray indexableSize: self socketRecordSize.
 	s := self socketValueOf: socketOop.
 	interpreterProxy failed ifFalse:
@@ -1018,6 +1050,41 @@ SocketPlugin >> primitiveSocketRemotePort: socket [
 	^port asSmallIntegerObj
 ]
 
+{ #category : #'primitives - sctp' }
+SocketPlugin >> primitiveSocketSCTP: socket receiveUDPDataBuf: array start: startIndex count: count [ 
+
+	self primitive: 'primitiveSocketSCTPReceive'
+		parameters: #(Oop Oop SmallInteger SmallInteger ).
+
+	^ self cppIf: #HAVE_SCTP 
+		ifTrue: [ self doPrimitiveSocketSCTP: socket receiveUDPDataBuf: array start: startIndex count: count  ] 
+		ifFalse: [ interpreterProxy primitiveFailFor: PrimErrUnsupported   ]
+]
+
+{ #category : #'primitives - sctp' }
+SocketPlugin >> primitiveSocketSCTP: socket sendData: array start: startIndex count: count stream: aStream assocId: assocId ppid: aPpid [
+
+	self primitive: 'primitiveSocketSCTPSend'
+		parameters: #(Oop Oop SmallInteger SmallInteger SmallInteger SmallInteger SmallInteger).
+
+	^ self cppIf: #HAVE_SCTP 
+		ifTrue: [ self doPrimitiveSocketSCTP: socket sendData: array start: startIndex count: count stream: aStream assocId: assocId ppid: aPpid  ] 
+		ifFalse: [ interpreterProxy primitiveFailFor: PrimErrUnsupported   ]
+
+
+]
+
+{ #category : #'primitives - sctp' }
+SocketPlugin >> primitiveSocketSCTPEnableDataIOEvent: socket enable: aFlag [
+
+	self primitive: 'primitiveSocketSCTPEnableDataIOEvent'
+		parameters: #(Oop SmallInteger).
+
+	^ self cppIf: #HAVE_SCTP 
+		ifTrue: [ self doPrimitiveSocketSCTPEnableDataIOEvent: socket enable: aFlag ] 
+		ifFalse: [ interpreterProxy primitiveFailFor: PrimErrUnsupported   ]
+]
+
 { #category : #primitives }
 SocketPlugin >> primitiveSocketSendDone: socket [
 
@@ -1041,6 +1108,18 @@ SocketPlugin >> socketRecordSize [
 	"Return the size of a Smalltalk socket record in bytes."
 	<inline: true>
 	^ self sizeof: #SQSocket
+]
+
+{ #category : #'primitives - sctp' }
+SocketPlugin >> socketSCTPSndRcvInfoSize [
+	
+	"We can not include netinet/sctp.h directly so we need to go via a primitive"
+	
+	<inline: #always>
+	
+	^ self 
+		cCode: [ self sqSocketSCTPSndRcvInfoSize ] 
+		inSmalltalk: [32]
 ]
 
 { #category : #primitives }

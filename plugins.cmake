@@ -89,10 +89,24 @@ endif()
 # Socket Plugin
 #
 if (${FEATURE_NETWORK})
-    add_vm_plugin(SocketPlugin)
-  if(WIN)
-    target_link_libraries(SocketPlugin PRIVATE "-lWs2_32")
-  endif()
+	
+	file(GLOB SocketPlugin_SOURCES
+		${CMAKE_CURRENT_SOURCE_DIR}/plugins/SocketPlugin/src/common/*.c
+		${PHARO_CURRENT_GENERATED}/plugins/src/SocketPlugin/SocketPlugin.c
+	)
+	
+	addLibraryWithRPATH(SocketPlugin ${SocketPlugin_SOURCES})
+	target_include_directories(SocketPlugin PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/plugins/SocketPlugin/include/common/)
+	
+	if(WIN)
+		target_link_libraries(SocketPlugin PRIVATE "-lWs2_32")
+	endif()
+	
+	if(HAVE_SCTP)
+		find_library(LIB_SCTP_LIBRARY sctp)
+		message(STATUS "Using sctp library:" ${LIB_SCTP_LIBRARY})
+		target_link_libraries(SocketPlugin PRIVATE ${LIB_SCTP_LIBRARY})
+	endif()
 endif()
 
 #
@@ -262,5 +276,7 @@ add_vm_plugin(DSAPrims)
 
 if(NOT WIN)
     add_vm_plugin(UnixOSProcessPlugin)
+	target_include_directories(UnixOSProcessPlugin PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/plugins/SocketPlugin/include/common/)
+		
     target_link_libraries(UnixOSProcessPlugin PRIVATE FilePlugin)
 endif()

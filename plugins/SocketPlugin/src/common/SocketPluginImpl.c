@@ -152,6 +152,9 @@ The Socket plugin uses this value as a limit for the FQDN (Fully Qualified Domai
 # define false 0
 #endif
 
+#if HAVE_SCTP
+# include <netinet/sctp.h>
+#endif
 
 /*** Socket types ***/
 
@@ -160,11 +163,12 @@ The Socket plugin uses this value as a limit for the FQDN (Fully Qualified Domai
 #define RAWSocketType			2 /* SOCK_RAW on AF_INET or AF_INET6 */
 #define SeqPacketSocketType		3 /* SOCK_SEQPACKET on AF_INET or AF_INET6 */
 #define ReliableDGramSocketType	4 /* SOCK_RDM on AF_INET or AF_INET6 */
+#define SCTPSocketType			5
 
 #define ReuseExistingSocket		65536
 
 #define ProvidedTCPSocketType		(TCPSocketType + ReuseExistingSocket)
-#define ProvidedUDPSocketType		(UDPSocketType + ReuseExistingSocket)
+#define ProvidedTCPSocketType		(UDPSocketType + ReuseExistingSocket)
 #define ProvidedRAWSocketType		(RAWSocketType + ReuseExistingSocket)
 #define ProvidedSeqPacketSocketType	(SeqPacketSocketType + ReuseExistingSocket)
 #define ProvidedReliableDGramSocketType	(ReliableDGramSocketType + ReuseExistingSocket)
@@ -339,6 +343,11 @@ sqInt socketShutdown(void)
 
 /***      miscellaneous sundries           ***/
 
+static int isStreamSocket(SocketPtr s)
+{
+	return	s->socketType == TCPSocketType || s->socketType == SCTPSocketType;
+}
+
 /* set linger on a connected stream */
 
 static void setLinger(int fd, int flag)
@@ -420,7 +429,7 @@ static int socketReadable(int s, int type)
   int error;
   sqInt n;
 
-  if(type == UDPSocketType) {
+  if(!isStreamSocket(type)) {
 	  n = recvfrom(s, (void*)buf, 100, MSG_PEEK, NULL, NULL);
   }else{
 	  n = recv(s, (void *)buf, 100, MSG_PEEK);
@@ -705,6 +714,13 @@ void sqSocketCreateNetTypeSocketTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaI
       /* --- UDP --- */
       newSocket= socket(domain, SOCK_DGRAM, 0);
     }
+#if HAVE_SCTP	
+  else if(SCTPSocketType == socketType)
+  {
+      /* -- SCTP --- */
+  	newSocket= socket(domain, SOCK_STREAM, IPPROTO_SCTP);
+  }
+#endif
   else if (ProvidedTCPSocketType == socketType)
     {
       /* --- Existing socket --- */
@@ -741,7 +757,7 @@ void sqSocketCreateNetTypeSocketTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaI
   pss->socketType = socketType;
 
   /* UDP sockets are born "connected" */
-  if (UDPSocketType == socketType)
+  if (!isStreamSocket(socketType))
     {
       pss->sockState= Connected;
       aioEnable(pss->s, pss, 0);
@@ -849,8 +865,8 @@ void sqSocketListenOnPortBacklogSizeInterface(SocketPtr s, sqInt port, sqInt bac
   if (!socketValid(s))
     return;
 
-  /* only TCP sockets have a backlog */
-  if ((backlogSize > 1) && (s->socketType != TCPSocketType))
+  /* only TCP/SCTP sockets have a backlog */
+  if ((backlogSize > 1) && (!isStreamSocket(s->socketType)))
     {
       success(false);
       return;
@@ -863,7 +879,7 @@ void sqSocketListenOnPortBacklogSizeInterface(SocketPtr s, sqInt port, sqInt bac
   saddr.sin_port= htons((short)port);
   saddr.sin_addr.s_addr= htonl(addr);
   bind(SOCKET(s), (struct sockaddr*) &saddr, sizeof(saddr));
-  if (TCPSocketType == s->socketType)
+  if (isStreamSocket(s->socketType))
     {
       /* --- TCP --- */
       listen(SOCKET(s), backlogSize);
@@ -896,7 +912,7 @@ void sqSocketConnectToPort(SocketPtr s, sqInt addr, sqInt port)
   saddr.sin_family= AF_INET;
   saddr.sin_port= htons((short)port);
   saddr.sin_addr.s_addr= htonl(addr);
-  if (TCPSocketType != s->socketType)
+  if (!isStreamSocket(s->socketType))
     {
       /* --- UDP/RAW --- */
       if (SOCKET(s) >= 0)
@@ -1129,7 +1145,7 @@ sqInt sqSocketRemoteAddress(SocketPtr s)
 
   if (!socketValid(s))
     return -1;
-  if (TCPSocketType == s->socketType)
+  if (isStreamSocket(s->socketType))
     {
       /* --- TCP --- */
       if (getpeername(SOCKET(s), (struct sockaddr *)&saddr, &saddrSize)
@@ -1167,7 +1183,7 @@ sqInt sqSocketRemotePort(SocketPtr s)
 
   if (!socketValid(s))
     return -1;
-  if (TCPSocketType == s->socketType)
+  if (isStreamSocket(s->socketType))
     {
       /* --- TCP --- */
       if (getpeername(SOCKET(s), (struct sockaddr *)&saddr, &saddrSize)
@@ -1245,7 +1261,7 @@ sqInt sqSocketReceiveDataBufCount(SocketPtr s, char *buf, sqInt bufSize)
 
   SOCKETPEERSIZE(s)= 0;
 
-  if (TCPSocketType != s->socketType)
+  if (!isStreamSocket(s->socketType))
     {
       /* --- UDP/RAW --- */
       socklen_t addrSize= sizeof(SOCKETPEER(s));
@@ -1299,7 +1315,7 @@ sqInt sqSocketSendDataBufCount(SocketPtr s, char *buf, sqInt bufSize)
   if (!socketValid(s))
     return -1;
 
-  if (TCPSocketType != s->socketType)
+  if (!isStreamSocket(s->socketType))
     {
       /* --- UDP/RAW --- */
       logTrace( "UDP sendData(%d, %ld)\n", SOCKET(s), bufSize);
@@ -1351,7 +1367,7 @@ sqInt sqSocketSendDataBufCount(SocketPtr s, char *buf, sqInt bufSize)
 sqInt sqSocketReceiveUDPDataBufCountaddressportmoreFlag(SocketPtr s, char *buf, sqInt bufSize,  sqInt *address,  sqInt *port, sqInt *moreFlag)
 {
   int lastError;
-  if (socketValid(s) && (TCPSocketType != s->socketType)) /* --- UDP/RAW --- */
+  if (socketValid(s) && (!isStreamSocket(s->socketType))) /* --- UDP/RAW --- */
     {
       struct sockaddr_in saddr;
       socklen_t addrSize= sizeof(saddr);
@@ -1383,7 +1399,7 @@ sqInt sqSocketReceiveUDPDataBufCountaddressportmoreFlag(SocketPtr s, char *buf, 
  */ 
 sqInt sqSockettoHostportSendDataBufCount(SocketPtr s, sqInt address, sqInt port, char *buf, sqInt bufSize)
 {
-  if (socketValid(s) && (TCPSocketType != s->socketType))
+  if (socketValid(s) && (!isStreamSocket(s->socketType)))
     {
       struct sockaddr_in saddr;
 
@@ -2247,14 +2263,14 @@ void sqSocketListenBacklog(SocketPtr s, sqInt backlogSize)
   if (!socketValid(s))
     goto fail;
 
-  if ((backlogSize > 1) && (s->socketType != TCPSocketType))
+  if ((backlogSize > 1) && (!isStreamSocket(s->socketType)))
     goto fail;
 
   PSP(s)->multiListen= (backlogSize > 1);
 
   logTrace( "listenBacklog(%d, %ld)\n", SOCKET(s), backlogSize);
 
-  if (TCPSocketType == s->socketType)
+  if (isStreamSocket(s->socketType))
     {
       listen(SOCKET(s), backlogSize);	/* acceptHandler catches errors */
       SOCKETSTATE(s)= WaitingForConnection;
@@ -2283,7 +2299,7 @@ void sqSocketConnectToAddressSize(SocketPtr s, char *addr, sqInt addrSize)
 
   logTrace( "connectToAddressSize(%d)\n", SOCKET(s));
 
-  if (TCPSocketType != s->socketType)	/* --- UDP/RAW --- */
+  if (!isStreamSocket(s->socketType))	/* --- UDP/RAW --- */
     {
       if (SOCKET(s) >= 0)
 	{
@@ -2380,7 +2396,7 @@ sqInt sqSocketRemoteAddressSize(SocketPtr s)
   if (!socketValid(s))
     return -1;
 
-  if (TCPSocketType == s->socketType)		/* --- TCP --- */
+  if (isStreamSocket(s->socketType))		/* --- TCP --- */
     {
       if (0 == getpeername(SOCKET(s), &saddr.sa, &saddrSize))
 	{
@@ -2423,7 +2439,7 @@ void sqSocketRemoteAddressResultSize(SocketPtr s, char *addr, int addrSize)
 sqInt sqSocketSendUDPToSizeDataBufCount(SocketPtr s, char *addr, sqInt addrSize, char *buf, sqInt bufSize)
 {
   logTrace( "sendTo(%d)\n", SOCKET(s));
-  if (socketValid(s) && addressValid(addr, addrSize) && (TCPSocketType != s->socketType)) /* --- UDP/RAW --- */
+  if (socketValid(s) && addressValid(addr, addrSize) && (!isStreamSocket(s->socketType))) /* --- UDP/RAW --- */
     {
       int nsent= sendto(SOCKET(s), buf, bufSize, 0, socketAddress(addr), addrSize - AddressHeaderSize);
       if (nsent >= 0)
@@ -2446,7 +2462,7 @@ sqInt sqSocketSendUDPToSizeDataBufCount(SocketPtr s, char *addr, sqInt addrSize,
 sqInt sqSocketReceiveUDPDataBufCount(SocketPtr s, char *buf, sqInt bufSize)
 {
   logTrace("recvFrom(%d)\n", SOCKET(s));
-  if (socketValid(s) && (TCPSocketType != s->socketType)){
+  if (socketValid(s) && (!isStreamSocket(s->socketType))){
 
 	  /* --- UDP/RAW --- */
 
@@ -2471,3 +2487,110 @@ sqInt sqSocketReceiveUDPDataBufCount(SocketPtr s, char *buf, sqInt bufSize)
   success(false);
   return 0;
 }
+
+#if HAVE_SCTP
+
+sqInt sqSocketSCTPEnableDataIOEventenable(SocketPtr s, sqInt flags)
+{
+  int rc;
+  struct sctp_event_subscribe events;
+  socklen_t len = sizeof(events);
+
+  if (!socketValid(s))
+    goto fail;
+  if (SCTPSocketType != s->socketType)
+    goto fail;
+
+  memset(&events, 0, sizeof(events));
+  rc = getsockopt(SOCKET(s), SOL_SCTP, SCTP_EVENTS, &events, &len);
+  if (rc != 0 || len < sizeof(events))
+    goto fail;
+
+  events.sctp_data_io_event = flags;
+  rc = setsockopt(SOCKET(s), SOL_SCTP, SCTP_EVENTS, &events, sizeof(events));
+  if (rc != 0)
+    goto fail;
+  interpreterProxy->success(true);
+  return 0;
+
+fail:
+  interpreterProxy->success(false);
+  return 0;
+}
+
+sqInt sqSocketSCTPSendSendDataBufCountStreamAssocIdPpid(SocketPtr s, char *buf, sqInt bufSize, sqInt stream, sqInt assocId, sqInt ppid)
+{
+  struct sctp_sndrcvinfo sinfo;
+  int nsent;
+
+  if (!socketValid(s))
+    goto fail;
+
+  if (SCTPSocketType != s->socketType)
+    goto fail;
+
+  memset(&sinfo, 0, sizeof(sinfo));
+  sinfo.sinfo_stream = stream;
+  sinfo.sinfo_assoc_id = assocId;
+  sinfo.sinfo_ppid = htonl(ppid);
+  nsent = sctp_send(SOCKET(s), buf, bufSize, &sinfo, 0);
+  if (nsent == -1)
+    {
+      if (errno == EWOULDBLOCK)
+        return 0;
+      SOCKETSTATE(s) = OtherEndClosed;
+      SOCKETERROR(s) = errno;
+      return 0;
+    }
+
+  return nsent;
+
+fail:
+  return 0;
+}
+
+sqInt sqSocketSCTPReceiveCountAddressPortStreamAssocIdPpidSsn(SocketPtr s, char *buf, sqInt bufSize, sqInt *address, sqInt *port, sqInt *stream, sqInt *assoc, sqInt *ppid, sqInt *ssn)
+{
+  struct sockaddr_in saddr;
+  socklen_t addrSize;
+  struct sctp_sndrcvinfo sinfo;
+  int nread;
+
+  if (!socketValid(s))
+    goto fail;
+
+  if (SCTPSocketType != s->socketType)
+    goto fail;
+
+  memset(&sinfo, 0, sizeof(sinfo));
+  memset(&saddr, 0, sizeof(saddr));
+  addrSize = sizeof(saddr);
+  nread = sctp_recvmsg(SOCKET(s), buf, bufSize, (struct sockaddr *)&saddr,
+                       &addrSize, &sinfo, NULL);
+  if (nread == -1) {
+      if (errno == EWOULDBLOCK)
+        goto fail;
+      SOCKETERROR(s) = errno;
+      SOCKETSTATE(s) = OtherEndClosed;
+      notify(PSP(s), CONN_NOTIFY);
+      goto fail;
+  }
+
+  *address = ntohl(saddr.sin_addr.s_addr);
+  *port = ntohs(saddr.sin_port);
+  *stream = sinfo.sinfo_stream;
+  *ssn = sinfo.sinfo_ssn;
+  *assoc = sinfo.sinfo_assoc_id;
+  *ppid = ntohl(sinfo.sinfo_ppid);
+  return nread;
+fail:
+  interpreterProxy->success(false);
+  return 0;
+}
+
+sqInt sqSocketSCTPSndRcvInfoSize(void)
+{
+  return sizeof(struct sctp_sndrcvinfo);
+}
+
+#endif

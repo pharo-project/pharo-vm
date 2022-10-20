@@ -384,7 +384,7 @@ check_include_files(uuid/uuid.h HAVE_UUID_UUID_H)
 check_include_files(uuid.h HAVE_UUID_H)
 check_library_exists(uuid uuidgen "" HAVE_UUIDGEN)
 check_library_exists(uuid uuid_generate "" HAVE_UUID_GENERATE)
-
+check_library_exists(sctp sctp_send "" HAVE_SCTP)
 
 #Include targets to build the dev environment and the sources
 include(cmake/vmmaker.cmake)
