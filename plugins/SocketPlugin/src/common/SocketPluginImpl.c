@@ -343,9 +343,9 @@ sqInt socketShutdown(void)
 
 /***      miscellaneous sundries           ***/
 
-static int isStreamSocket(SocketPtr s)
+static int isStreamSocket(int socketType)
 {
-	return	s->socketType == TCPSocketType || s->socketType == SCTPSocketType;
+	return	socketType == TCPSocketType || socketType == SCTPSocketType;
 }
 
 /* set linger on a connected stream */
