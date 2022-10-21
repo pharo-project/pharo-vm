@@ -152,7 +152,7 @@ The Socket plugin uses this value as a limit for the FQDN (Fully Qualified Domai
 # define false 0
 #endif
 
-#if HAVE_SCTP
+#if defined(HAVE_SCTP)
 # include <netinet/sctp.h>
 #endif
 
@@ -714,7 +714,7 @@ void sqSocketCreateNetTypeSocketTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaI
       /* --- UDP --- */
       newSocket= socket(domain, SOCK_DGRAM, 0);
     }
-#if HAVE_SCTP	
+#if defined(HAVE_SCTP)	
   else if(SCTPSocketType == socketType)
   {
       /* -- SCTP --- */
@@ -2488,7 +2488,7 @@ sqInt sqSocketReceiveUDPDataBufCount(SocketPtr s, char *buf, sqInt bufSize)
   return 0;
 }
 
-#if HAVE_SCTP
+#if defined(HAVE_SCTP)
 
 sqInt sqSocketSCTPEnableDataIOEventenable(SocketPtr s, sqInt flags)
 {
@@ -2510,11 +2510,11 @@ sqInt sqSocketSCTPEnableDataIOEventenable(SocketPtr s, sqInt flags)
   rc = setsockopt(SOCKET(s), SOL_SCTP, SCTP_EVENTS, &events, sizeof(events));
   if (rc != 0)
     goto fail;
-  interpreterProxy->success(true);
+  success(true);
   return 0;
 
 fail:
-  interpreterProxy->success(false);
+  success(false);
   return 0;
 }
 
@@ -2584,7 +2584,7 @@ sqInt sqSocketSCTPReceiveCountAddressPortStreamAssocIdPpidSsn(SocketPtr s, char 
   *ppid = ntohl(sinfo.sinfo_ppid);
   return nread;
 fail:
-  interpreterProxy->success(false);
+  success(false);
   return 0;
 }
 

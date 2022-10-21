@@ -10,15 +10,6 @@ Class {
 { #category : #translation }
 SocketPlugin class >> declareCVarsIn: aCCodeGenerator [
 
-	"Hmmm, we could use 
-		self declareC:  (self instVarNames select: [:ivn| ivn first = $s and: [ivn second isUppercase]])
-			as: #'void *'
-			in: aCCodeGenerator."
-	aCCodeGenerator var: 'sDSAfn'	type: 'void *'.
-	aCCodeGenerator var: 'sHSAfn'	type: 'void *'.
-	aCCodeGenerator var: 'sCCTPfn'	type: 'void *'.
-	aCCodeGenerator var: 'sCCLOPfn'	type: 'void *'.
-	aCCodeGenerator var: 'sCCSOTfn'	type: 'void *'.
 	aCCodeGenerator addHeaderFile: '"SocketPlugin.h"'
 ]
 
@@ -1056,7 +1047,7 @@ SocketPlugin >> primitiveSocketSCTP: socket receiveUDPDataBuf: array start: star
 	self primitive: 'primitiveSocketSCTPReceive'
 		parameters: #(Oop Oop SmallInteger SmallInteger ).
 
-	^ self cppIf: #HAVE_SCTP 
+	^ self cppIf: (self defined: #HAVE_SCTP) 
 		ifTrue: [ self doPrimitiveSocketSCTP: socket receiveUDPDataBuf: array start: startIndex count: count  ] 
 		ifFalse: [ interpreterProxy primitiveFailFor: PrimErrUnsupported   ]
 ]
@@ -1067,7 +1058,7 @@ SocketPlugin >> primitiveSocketSCTP: socket sendData: array start: startIndex co
 	self primitive: 'primitiveSocketSCTPSend'
 		parameters: #(Oop Oop SmallInteger SmallInteger SmallInteger SmallInteger SmallInteger).
 
-	^ self cppIf: #HAVE_SCTP 
+	^ self cppIf: (self defined: #HAVE_SCTP)
 		ifTrue: [ self doPrimitiveSocketSCTP: socket sendData: array start: startIndex count: count stream: aStream assocId: assocId ppid: aPpid  ] 
 		ifFalse: [ interpreterProxy primitiveFailFor: PrimErrUnsupported   ]
 
@@ -1080,7 +1071,7 @@ SocketPlugin >> primitiveSocketSCTPEnableDataIOEvent: socket enable: aFlag [
 	self primitive: 'primitiveSocketSCTPEnableDataIOEvent'
 		parameters: #(Oop SmallInteger).
 
-	^ self cppIf: #HAVE_SCTP 
+	^ self cppIf: (self defined: #HAVE_SCTP) 
 		ifTrue: [ self doPrimitiveSocketSCTPEnableDataIOEvent: socket enable: aFlag ] 
 		ifFalse: [ interpreterProxy primitiveFailFor: PrimErrUnsupported   ]
 ]
