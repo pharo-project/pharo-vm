@@ -15,7 +15,7 @@ function(download_SDL2)
     if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64")
       add_third_party_dependency("SDL2-2.0.14")
     else()
-      add_third_party_dependency("SDL2-2.0.18")    
+      add_third_party_dependency("SDL2-2.24.1")    
     endif()
   else() #LINUX
     If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv7l" OR (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64"))
