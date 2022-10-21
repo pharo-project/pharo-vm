@@ -92,10 +92,11 @@ if (${FEATURE_NETWORK})
 	
 	file(GLOB SocketPlugin_SOURCES
 		${CMAKE_CURRENT_SOURCE_DIR}/plugins/SocketPlugin/src/common/*.c
-		${PHARO_CURRENT_GENERATED}/plugins/src/SocketPlugin/SocketPlugin.c
 	)
 	
-	addLibraryWithRPATH(SocketPlugin ${SocketPlugin_SOURCES})
+	addLibraryWithRPATH(SocketPlugin 
+		${SocketPlugin_SOURCES}
+		${PHARO_CURRENT_GENERATED}/plugins/src/SocketPlugin/SocketPlugin.c)
 	target_include_directories(SocketPlugin PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/plugins/SocketPlugin/include/common/)
 	
 	if(WIN)
