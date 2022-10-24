@@ -562,8 +562,8 @@ UnicornARMv8Simulator >> x26 [
 ]
 
 { #category : #accessing }
-UnicornARMv8Simulator >> x26: anInteger [ 
-	
+UnicornARMv8Simulator >> x26: anInteger [
+
 	self writeRegister: UcARM64Registers x26 value: anInteger
 ]
 

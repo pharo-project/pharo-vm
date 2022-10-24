@@ -975,6 +975,7 @@ InterpreterPrimitives >> primitiveAt [
 
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveAtPut [
+	<numberOfArguments: 2>
 	<accessorDepth: 0>
 	self commonAtPut: false
 ]
@@ -1747,6 +1748,7 @@ InterpreterPrimitives >> primitiveFail [
 	 Use no explicit return so that Slang doesn't fail an inlining type-check when
 	 a primitive with return type void uses ^self primitiveFail to exit."
 	<api>
+	<numberOfArguments: 0>
 	<returnTypeC: #sqInt>
 	<inline: true>
 	<druidExitPoint>
@@ -1813,6 +1815,7 @@ InterpreterPrimitives >> primitiveFloatAt [
 	 a Float.  Map index 1 onto the most significant word and index 2
 	 onto the least significant word."
 	| rcvr index result indexToUse |
+	<numberOfArguments: 1>
 	<var: #result type: #usqInt>
 	
 	rcvr := self stackValue: 1.
@@ -1845,6 +1848,7 @@ InterpreterPrimitives >> primitiveFloatAtPut [
 	 a Float.  Map index 1 onto the most significant word and index 2
 	 onto the least significant word."
 	| rcvr index oopToStore valueToStore |
+	<numberOfArguments: 2>
 	<var: #valueToStore type: #usqInt>
 	oopToStore := self stackTop.
 	valueToStore := self positive32BitValueOf: oopToStore.
@@ -3483,6 +3487,7 @@ InterpreterPrimitives >> primitiveSine [
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveSize [
 
+	<numberOfArguments: 0>
 	<accessorDepth: 0>
 	| rcvr hdr fmt fixedFields totalLength |
 	rcvr := self stackTop.
