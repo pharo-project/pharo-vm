@@ -127,7 +127,7 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 	pageSize = getpagesize();
 	pageMask = ~(pageSize - 1);
 
-	logDebug("Requested Size %d", desiredHeapSize);
+	logDebug("Requested Size %"PRIdSQINT, desiredHeapSize);
 
 	heapLimit = valign(max(desiredHeapSize, 1));
 	if(heapLimit < desiredHeapSize){
