@@ -89,12 +89,7 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 
 	alloc = sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto
 				(roundUpToPage(desiredHeapSize), address, &allocBytes);
-	if (!alloc) {
-		exit(errno);
-		sqMessageBox(MB_OK | MB_ICONSTOP, TEXT("VM Error:"),
-					 TEXT("sqAllocateMemory: initial alloc failed!\n"));
-		exit(1);
-	}
+
 	return alloc;
 }
 

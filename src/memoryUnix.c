@@ -136,7 +136,7 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 	
 	usqInt desiredBaseAddressAligned = valign(desiredBaseAddress);
 
-	logDebug("Aligned Requested Size %d", heapLimit);
+	logDebug("Aligned Requested Size %"PRIdSQINT, heapLimit);
 
 	logDebug("Trying to load the image in %p\n",
 			(void* )desiredBaseAddressAligned);
@@ -152,19 +152,19 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
  * To avoid it, we force to use the required base address
  */
 #ifndef __APPLE__
-		if(heap != MAP_FAILED && (usqInt)heap != desiredBaseAddressAligned){
+		if(heap != 0 && (usqInt)heap != desiredBaseAddressAligned){
 
 			desiredBaseAddressAligned = valign(desiredBaseAddressAligned + pageSize);
 
 			if((usqInt)heap < desiredBaseAddress){
 				logError("I cannot find a good memory address starting from: %p", (void*)desiredBaseAddress);
-				exit(-1);
+				return 0;
 			}
 
 			//If I overflow.
 			if(desiredBaseAddress > desiredBaseAddressAligned){
 				logError("I cannot find a good memory address starting from: %p", (void*)desiredBaseAddress);
-				exit(-1);
+				return 0;
 			}
 
 			munmap(heap, heapLimit);
@@ -173,15 +173,11 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 #endif
 	}
 
-	if (!heap) {
-		logError("Failed to allocate at least %lld bytes)\n",
-				(long long )minHeapSize);
-		exit(-1);
-	}
-
 	heapSize = heapLimit;
 
-	logDebug("Loading the image in %p\n", (void* )heap);
+	if(heap){
+		logDebug("Loading the image in %p\n", (void* )heap);
+	}
 
 	return (usqInt) heap;
 }
