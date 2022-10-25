@@ -89,7 +89,6 @@ VMPrimitiveTest >> setUp [
 	interpreter setStackPointersFromPage: page.
 	interpreter setStackPageAndLimit: page.
 
-	self setUpScheduler.
 	imageName := VMPrimitiveTest name
 ]
 
@@ -4561,6 +4560,7 @@ VMPrimitiveTest >> testPrimitiveSnapshotContextsShouldBeTenured [
 
 	| method frame contextOop contextIdentityHash suspendedContext |
 	interpreter pluginList: #(  ).
+	self setUpScheduler.
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
 	method := methodBuilder newMethod buildMethod.
@@ -4593,6 +4593,7 @@ VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
 
 	| method file |
 	interpreter pluginList: #(  ).
+	self setUpScheduler.
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
 	method := methodBuilder newMethod buildMethod.
@@ -4617,7 +4618,7 @@ VMPrimitiveTest >> testPrimitiveSnapshotNewKeptObjectShouldBeTenured [
 
 	| method object objectHash |
 	interpreter pluginList: #(  ).
-
+	self setUpScheduler.
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
 
