@@ -19,6 +19,7 @@ function(download_Freetype)
     else()
       add_third_party_dependency("freetype-2.12.1")
       add_third_party_dependency("fontconfig-2.13.1")
+      add_third_party_dependency("harfbuzz-5.3.1")
     endif()
   else() # linuxes, only for ARM
     If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv7l" OR (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64"))
