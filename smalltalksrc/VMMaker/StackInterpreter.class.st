@@ -7754,12 +7754,12 @@ StackInterpreter >> initializeExtraClassInstVarIndices [
 	classArrayObj := objectMemory splObj: ClassArray.
 	classArrayClass := objectMemory fetchClassOfNonImm: classArrayObj.
 	metaclassNumSlots := objectMemory numSlotsOf: classArrayClass.	"determine actual Metaclass instSize"
-	thisClassIndex := 5. "default"
+	thisClassIndex := 6. "default"
 	InstanceSpecificationIndex + 1 to: (objectMemory lengthOf: classArrayClass) do:
 		[:i|
 		(objectMemory fetchPointer: i - 1 ofObject: classArrayClass) = classArrayObj ifTrue:
 			[thisClassIndex := i - 1]].
-	classNameIndex := 6. "default"
+	classNameIndex := 7. "default"
 	InstanceSpecificationIndex + 1 to: (objectMemory lengthOf: classArrayObj) do:
 		[:i| | oop |
 		oop := objectMemory fetchPointer: i - 1 ofObject: classArrayObj.
