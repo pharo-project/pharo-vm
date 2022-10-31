@@ -8151,6 +8151,9 @@ SpurMemoryManager >> markAndTraceHiddenRoots [
 	self markAndTraceObjStack: weaklingStack andContents: false.
 	self markAndTraceObjStack: mournQueue andContents: true.
 
+	self setIsMarkedOf: self nilObject to: true.
+	self setIsMarkedOf: self trueObject to: true.
+	self setIsMarkedOf: self falseObject to: true.
 	self setIsMarkedOf: self rememberedSetObj to: true.
 	self setIsMarkedOf: self freeListsObj to: true.
 
