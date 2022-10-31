@@ -1414,6 +1414,15 @@ SpurMemoryManager >> allFreeObjectsDo: aBlock [
 ]
 
 { #category : #'object enumeration' }
+SpurMemoryManager >> allHeapEntities [
+
+	| result |
+	result := OrderedCollection new.
+	self allHeapEntitiesDo: [ :entity | result add: entity ].
+	^ result
+]
+
+{ #category : #'object enumeration' }
 SpurMemoryManager >> allHeapEntitiesDo: aBlock [
 	"N.B. e.g. allObjects relies on the old/new order here."
 
@@ -5378,6 +5387,27 @@ SpurMemoryManager >> formatShift [
 	^24
 ]
 
+{ #category : #'debug support' }
+SpurMemoryManager >> formatStringOf: objOop [
+	
+	| format |
+	format := self formatOf: objOop.
+	
+	format = 0 ifTrue: [ ^ 'empty' ].
+	format = 1 ifTrue: [ ^ 'fixed' ].
+	format = 2 ifTrue: [ ^ 'index' ].
+	format = 3 ifTrue: [ ^ 'mixed' ].
+	format = 4 ifTrue: [ ^ 'weak' ].
+	format = 5 ifTrue: [ ^ 'ephem' ].
+	format = 7 ifTrue: [ ^ 'fwd' ].
+	format = 9 ifTrue: [ ^ 'idx64' ].
+	(format between: 10 and: 11) ifTrue: [ ^ 'idx32' ].
+	(format between: 12 and: 15) ifTrue: [ ^ 'idx16' ].
+	(format between: 16 and: 23) ifTrue: [ ^ 'idx8' ].
+	(format between: 24 and: 31) ifTrue: [ ^ 'meth' ].
+	^ '?'
+]
+
 { #category : #'become implementation' }
 SpurMemoryManager >> forward: obj1 to: obj2 [
 	self set: obj1 classIndexTo: self isForwardedObjectClassIndexPun formatTo: self forwardedFormat.
@@ -7650,6 +7680,23 @@ SpurMemoryManager >> keyOfMaybeFiredEphemeron: objOop [
 SpurMemoryManager >> knownClassAtIndex: classIndex [
 	self assert: (classIndex between: 1 and: self classTablePageSize).
 	^self fetchPointer: classIndex ofObject: classTableFirstPage
+]
+
+{ #category : #'debug support' }
+SpurMemoryManager >> labelOfOop: oop [
+
+self nilObject = oop ifTrue: [ ^ 'nilObject' ].
+self trueObject = oop ifTrue: [ ^ 'trueObject' ].
+self falseObject = oop ifTrue: [ ^ 'falseObject' ].
+self specialObjectsOop = oop ifTrue: [ ^ 'specialObjects' ].
+self hiddenRootsObject = oop ifTrue: [ ^ 'hiddenRoots' ].
+self classTableFirstPage = oop ifTrue: [ ^ 'classTableFirstPage' ].
+self mournQueue = oop ifTrue: [ ^ 'mournQueue' ].
+self markStack = oop ifTrue: [ ^ 'markStack' ].
+self weaklingStack = oop ifTrue: [ ^ 'weaklingStack' ].
+self freeListsObj = oop ifTrue: [ ^ 'freeListsObj' ].
+self rememberedSetObj = oop ifTrue: [ ^ 'rememberedSetObj' ].
+^ ''
 ]
 
 { #category : #'compaction - analysis' }
