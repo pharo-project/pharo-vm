@@ -2519,6 +2519,7 @@ SpurMemoryManager >> assertFreeChunkPrevHeadZero [
 SpurMemoryManager >> assertInnerValidFreeObject: objOop [
 	<inline: #never> "we don't want to inline so we can nest that in an assertion with the return true so the production VM does not generate any code here, while in simulation, the code breaks on the assertion we want to."
 	| chunk index |
+	self assert: (self isFreeOop: objOop).
 	self assert: (self oop: (self addressAfter: objOop) isLessThanOrEqualTo: endOfMemory).
 	chunk := self fetchPointer: self freeChunkNextIndex ofFreeChunk: objOop.
 	self assert: (chunk = 0 or: [self isFreeOop: chunk]).
