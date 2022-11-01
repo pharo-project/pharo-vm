@@ -4016,7 +4016,8 @@ SpurMemoryManager >> containsOnlyValidBecomeObjects: array1 and: array2 twoWay: 
 		Shouldn't become immutable objects => PrimErrNoModification.
 		Can't copy hash into immediates => PrimErrInappropriate.
 		Two-way become may require memory to create copies => PrimErrNoMemory.
-	 As a side-effect unforward any forwarders in the two arrays if answering 0."
+
+	 Arrays are not modified (and no forwarders unforward)."
 	<inline: true>
 	| fieldOffset effectsFlags oop1 oop2 size |
 	fieldOffset := self lastPointerOf: array1.
@@ -4025,14 +4026,14 @@ SpurMemoryManager >> containsOnlyValidBecomeObjects: array1 and: array2 twoWay: 
 	[fieldOffset >= self baseHeaderSize] whileTrue:
 		[oop1 := self longAt: array1 + fieldOffset.
 		 (self isOopForwarded: oop1) ifTrue:
-			[oop1 := self followForwarded: oop1.
-			 self longAt: array1 + fieldOffset put: oop1].
+			[oop1 := self followForwarded: oop1
+			"Do not update the array here, or chose to handle the rememberset correctly."].
 		 self ifOopInvalidForBecome: oop1 errorCodeInto: [:errCode| ^errCode].
 		 effectsFlags := effectsFlags bitOr: (self becomeEffectFlagsFor: oop1).
 		 oop2 := self longAt: array2 + fieldOffset.
 		 (self isOopForwarded: oop2) ifTrue:
-			[oop2 := self followForwarded: oop2.
-			 self longAt: array2 + fieldOffset put: oop2].
+			[oop2 := self followForwarded: oop2
+			"Do not update the array here, or chose to handle the rememberset correctly."].
 		 isTwoWay
 			ifTrue:
 				[self ifOopInvalidForBecome: oop2 errorCodeInto: [:errCode| ^errCode].
@@ -6503,11 +6504,10 @@ SpurMemoryManager >> innerBecomeObjectsIn: array1 and: array2 copyHash: copyHash
 	"Inner loop of two-way become."
 	0 to: (self numSlotsOf: array1) - 1 do:
 		[:i| | obj1 obj2 |
-		"At first blush it would appear unnecessary to use followField: here since
-		 the validation in become:with:twoWay:copyHash: follows forwarders.  But
-		 there's nothing to ensure all elements of each array are unique and don't
-		 appear in the other array.  So the enumeration could encounter an object
-		 already becommed earlier in the same enumeration."
+		"Allways use followField: here since there's nothing to ensure all elements
+		 of each array are unique and don't appear in the other array.
+		 So the enumeration could encounter an object already becommed earlier
+		 in the same enumeration."
 		obj1 := self followField: i ofObject: array1.
 		obj2 := self followField: i ofObject: array2.
 		obj1 ~= obj2 ifTrue:
@@ -6521,11 +6521,10 @@ SpurMemoryManager >> innerBecomeObjectsIn: array1 to: array2 copyHash: copyHashF
 	"Inner loop of one-way become."
 	0 to: (self numSlotsOf: array1) - 1 do:
 		[:i| | obj1 obj2 |
-		"At first blush it would appear unnecessary to use followField: here since
-		 the validation in become:with:twoWay:copyHash: follows forwarders.  But
-		 there's nothing to ensure all elements of each array is unique and doesn't
-		 appear in the other array.  So the enumeration could encounter an object
-		 already becommed earlier in the same enumeration."
+		"Allways use followField: here since there's nothing to ensure all elements
+		 of each array are unique and don't appear in the other array.
+		 So the enumeration could encounter an object already becommed earlier
+		 in the same enumeration."
 		obj1 := self followField: i ofObject: array1.
 		obj2 := self followField: i ofObject: array2.
 		obj1 ~= obj2 ifTrue:
