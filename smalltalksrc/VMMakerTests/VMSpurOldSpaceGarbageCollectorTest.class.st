@@ -82,6 +82,41 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectBiggerThanSizeOfFreeSpac
 	self assert: memory needGCFlag
 ]
 
+{ #category : #testCompactor }
+VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectRightBeforeOverflowingFreeChunk [
+	| chuckSize chunk next object free |
+
+	"before GC:
+		dead object
+		free chunk with overflow header
+	after GC:
+		free chunk
+		free chunk with overflow header
+	
+	Note: this scenario expects the free chunks to not be coallesced.
+	Improve this test if the memory manager become more efficient."
+
+	memory fullGC.
+
+	"Allocate a contiguous chunk of memory to be splited into entities"
+	chuckSize := 512*8.
+	chunk := next := memory allocateOldSpaceChunkOfBytes: chuckSize.
+	"first entity is an object to be free"
+	object := next := memory initializeHeaderOfStartAddress: next numSlots: 5 format: memory arrayFormat classIndex: memory arrayClassIndexPun pinned: false.	
+	next := memory objectAfter: next.
+	"second entity is a free chunk with an overflow header"
+	free := next := memory freeChunkWithBytes: chunk + chuckSize - next at: next.
+	next := memory objectAfter: next.
+	
+	self assert: (memory isFreeObject: object) not.
+	self assert: (memory isFreeObject: free).
+		
+	memory fullGC.
+
+	self assert: (memory isFreeObject: object).
+	self assert: (memory isFreeObject: free).
+]
+
 { #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSize [
 
@@ -215,6 +250,17 @@ VMSpurOldSpaceGarbageCollectorTest >> testDoubleForwardToYoungs [
 		self assert: (memory isRemembered: arrFrom2).
 		self assert: (memory fetchPointer: 0 ofObject: arrTo2) equals: obj1.
 		self assert: (memory isRemembered: arrTo2).
+]
+
+{ #category : #'tests-OldSpaceSize' }
+VMSpurOldSpaceGarbageCollectorTest >> testDoNotCollectRoots [
+
+	memory fullGC.
+	
+	self deny: (memory isFreeObject: (memory nilObject)).
+	self deny: (memory isFreeObject: (memory trueObject)).
+	self deny: (memory isFreeObject: (memory falseObject)).
+	self deny: (memory isFreeObject: (memory freeListsObj)).
 ]
 
 { #category : #ephemerons }
