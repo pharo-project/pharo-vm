@@ -163,7 +163,7 @@ InterpreterPrimitives >> cStringOrNullFor: oop [
 { #category : #'object access primitives' }
 InterpreterPrimitives >> canBeImmutable: oop [
 	<option: #IMMUTABILITY>
-	| scheduler processLists |
+	| scheduler processLists schedAssoc |
 	
 	self assert: (objectMemory isNonImmediate: oop).
 	
@@ -183,7 +183,10 @@ InterpreterPrimitives >> canBeImmutable: oop [
 	
 	"Simple version of process management: we forbid Process and LinkedList instances to be immutable 
 	 as well as the Processor and the array of activeProcess"
-	scheduler := objectMemory fetchPointer: ValueIndex ofObject: (objectMemory splObj: SchedulerAssociation).
+	schedAssoc := objectMemory splObj: SchedulerAssociation.
+	schedAssoc = objectMemory nilObject ifTrue: [ ^ true ].
+
+	scheduler := objectMemory fetchPointer: ValueIndex ofObject: schedAssoc.
 	processLists := objectMemory fetchPointer: ProcessListsIndex ofObject: scheduler.
 	oop = scheduler ifTrue: [ ^ false ].
 	oop = processLists ifTrue: [ ^ false ].

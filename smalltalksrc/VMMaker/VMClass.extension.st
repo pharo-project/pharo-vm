@@ -18,6 +18,7 @@ VMClass class >> initializeMiscConstants [
 	VMBIGENDIAN class. "Mention this for the benefit of CCodeGenerator>>emitCConstantsOn:"
 	STACKVM := COGVM := false.
 
+
 	InitializationOptions ifNil: [ 
 		InitializationOptions := Dictionary new ].
 	omc := InitializationOptions

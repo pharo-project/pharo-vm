@@ -92,7 +92,6 @@ VMLookUpTest >> setUp [
 		storePointer: ProcessListsIndex
 		ofObject: processorOop
 		withValue: processorListArray.
-	memory lastHash: 1.
 
 	interpreter setBreakSelector: nil
 ]
