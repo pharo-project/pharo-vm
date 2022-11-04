@@ -5783,12 +5783,13 @@ SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount [
 	start := coInterpreter ioUTCMicrosecondsNow.
 	^(segmentManager addSegmentOfSize: ammount) ifNotNil:
 		[:segInfo|
+		| freeChunk |
 		 self assimilateNewSegment: segInfo.
 		 "and add the new free chunk to the free list; done here
 		  instead of in assimilateNewSegment: for the assert"
-		 self addFreeChunkWithBytes: segInfo segSize - self bridgeSize at: segInfo segStart.
-		 self assert: (self addressAfter: (self objectStartingAt: segInfo segStart))
-					= (segInfo segLimit - self bridgeSize).
+		 freeChunk := self addFreeChunkWithBytes: segInfo segSize - self bridgeSize at: segInfo segStart.
+		 self assert: freeChunk = (self objectStartingAt: segInfo segStart).
+		 self assert: (self addressAfter: freeChunk) = (segInfo segLimit - self bridgeSize).
 		 self checkFreeSpace: GCModeFreeSpace.
 		 segmentManager checkSegments.
 		 interval := coInterpreter ioUTCMicrosecondsNow - start.
