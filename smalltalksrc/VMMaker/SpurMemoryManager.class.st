@@ -5800,10 +5800,11 @@ SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount [
 { #category : #'growing/shrinking memory' }
 SpurMemoryManager >> growToAccomodateContainerWithNumSlots: numSlots [
 	"Grow memory to accomodate a container (an Array) with numSlots.
-	 Grow by at least the growHeadroom.  Supports allInstancesOf: and allObjects."
+	 Grow by at least the growHeadroom.  Supports allInstancesOf: and allObjects.
+	 Answer the size of the new segment in bytes, or nil if the attempt failed."
 	| delta |
 	delta := self baseHeaderSize * 2 + (numSlots * self bytesPerOop).
-	self growOldSpaceByAtLeast: (growHeadroom max: delta)
+	^ self growOldSpaceByAtLeast: (growHeadroom max: delta)
 ]
 
 { #category : #'header access' }
