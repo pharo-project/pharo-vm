@@ -11277,14 +11277,15 @@ SpurMemoryManager >> sizeOfFree: objOop [
 
 { #category : #'free space' }
 SpurMemoryManager >> sizeOfLargestFreeChunk [
-	"Answer the size of largest free chunk in oldSpace."
+	"Answer the size of largest free chunk in oldSpace. Looking in freetree and freelists"
 	| freeChunk |
 	freeChunk := self findLargestFreeChunk.
 	freeChunk ifNil:
 		[63 to: 1 by: -1 do:
 			[:i|
-			(freeLists at: i) ifNotNil:
-				[:chunk| ^self bytesInObject: chunk]].
+			freeChunk := freeLists at: i.
+			freeChunk ~= 0 ifTrue:
+				[^self bytesInObject: freeChunk]].
 		 ^0].
 	^self bytesInObject: freeChunk
 ]
