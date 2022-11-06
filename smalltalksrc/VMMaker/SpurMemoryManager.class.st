@@ -4784,7 +4784,8 @@ SpurMemoryManager >> fillObj: objOop numSlots: numSlots with: fillValue [
 
 { #category : #'free space' }
 SpurMemoryManager >> findLargestFreeChunk [
-	"Answer, but do not remove, the largest free chunk in the free lists."
+	"Answer, but do not remove, the largest free chunk in the free tree.
+	For some reasons, free lists are not considered (why?)"
 	| treeNode childNode |
 	treeNode := freeLists at: 0.
 	treeNode = 0 ifTrue:
