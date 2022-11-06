@@ -5754,8 +5754,8 @@ SpurMemoryManager >> growHeadroom: aValue [
 
 { #category : #'growing/shrinking memory' }
 SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount [
-	"Attempt to grow memory by at least minAmmount.
-	 Answer the size of the new segment, or nil if the attempt failed."
+	"Attempt to grow memory by at least minAmmount bytes.
+	 Answer the size of the new segment in bytes, or nil if the attempt failed."
 	| ammount headroom total start interval |
 	<var: #segInfo type: #'SpurSegmentInfo *'>
 	"statGrowMemory counts attempts, not successes."
