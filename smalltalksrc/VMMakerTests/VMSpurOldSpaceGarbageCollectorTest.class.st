@@ -224,6 +224,52 @@ VMSpurOldSpaceGarbageCollectorTest >> testEphemeronOverflowUnscannedEphemeronQue
 ]
 
 { #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testMournQueue [
+
+	| roots keyObj ephemeronObj |
+
+	roots := self newArrayWithSlots: 1.
+	self keepObjectInVMVariable1: roots.	
+
+	keyObj := self newObjectWithSlots: 1.
+	ephemeronObj := self newOldEphemeronObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: ephemeronObj withValue: keyObj.
+	memory storePointer: 0 ofObject: roots withValue: ephemeronObj.
+
+	memory fullGC.
+	
+	self assert: memory dequeueMourner equals: ephemeronObj.
+	self assert: memory dequeueMourner equals: nil.
+]
+
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testMournQueue2 [
+
+	| roots keyObj ephemeronObj keyObj2 ephemeronObj2 |
+
+	"This test covers a diferent path in the CG code than testMournQueue."
+
+	roots := self newArrayWithSlots: 3.
+	self keepObjectInVMVariable1: roots.	
+
+	keyObj := self newObjectWithSlots: 1.
+	ephemeronObj := self newOldEphemeronObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: ephemeronObj withValue: keyObj.
+	memory storePointer: 0 ofObject: roots withValue: ephemeronObj.
+
+	keyObj2 := self newObjectWithSlots: 1.
+	ephemeronObj2 := self newOldEphemeronObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: ephemeronObj2 withValue: keyObj2.
+	memory storePointer: 1 ofObject: roots withValue: keyObj2.
+	memory storePointer: 2 ofObject: roots withValue: ephemeronObj2.
+
+	memory fullGC.
+	
+	self assert: memory dequeueMourner equals: ephemeronObj.
+	self assert: memory dequeueMourner equals: nil.
+]
+
+{ #category : #ephemerons }
 VMSpurOldSpaceGarbageCollectorTest >> testMultiPageMournQueue [
 
 	"This test Fires more ephemerons than those that fit in a single page of the mourn queue.
