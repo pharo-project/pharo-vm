@@ -743,6 +743,19 @@ SpurPlanningCompactor >> unpinRememberedSet [
 ]
 
 { #category : #compaction }
+SpurPlanningCompactor >> updatePointer: i in: obj [
+	"Sweep the pointer i-th field in obj, updating its possible reference to a mobile object to its eventual location."
+	<inline: true>
+	| oop fwd |
+	oop := manager fetchPointer: i ofObject: obj.
+	((manager isNonImmediate: oop) and: [self isMobile: oop]) ifTrue:
+		[self assert: ((manager isMarked: oop) or: [obj = manager hiddenRootsObject]).
+		 fwd := manager fetchPointer: 0 ofObject: oop.
+		 self assert: (self isPostMobile: fwd).
+		 manager storePointerUnchecked: i ofObject: obj withValue: fwd]
+]
+
+{ #category : #compaction }
 SpurPlanningCompactor >> updatePointers [
 	"Sweep the heap, updating all objects to their eventual locations.
 	 Remember to update the savedFirstFields of pointer objects, as these have been forwarded."
@@ -769,13 +782,7 @@ SpurPlanningCompactor >> updatePointersIn: obj [
 	| numPointerSlots |
 	numPointerSlots := manager numPointerSlotsOf: obj.
 	0 to: numPointerSlots - 1 do:
-		[:i| | oop fwd |
-		 oop := manager fetchPointer: i ofObject: obj.
-		 ((manager isNonImmediate: oop) and: [self isMobile: oop]) ifTrue:
-			[self assert: ((manager isMarked: oop) or: [obj = manager hiddenRootsObject]).
-			 fwd := manager fetchPointer: 0 ofObject: oop.
-			 self assert: (self isPostMobile: fwd).
-			 manager storePointerUnchecked: i ofObject: obj withValue: fwd]]
+		[:i| self updatePointer: i in: obj ]
 ]
 
 { #category : #compaction }
@@ -799,13 +806,7 @@ SpurPlanningCompactor >> updatePointersIn: obj savedFirstFieldPointer: firstFiel
 			 self assert: (self isPostMobile: fwd).
 			 manager longAt: firstFieldPtr put: fwd]].
 	1 to: numPointerSlots - 1 do:
-		[:i|
-		 oop := manager fetchPointer: i ofObject: obj.
-		 ((manager isNonImmediate: oop) and: [self isMobile: oop]) ifTrue:
-			[self assert: ((manager isMarked: oop) or: [obj = manager hiddenRootsObject]).
-			 fwd := manager fetchPointer: 0 ofObject: oop.
-			 self assert: (self isPostMobile: fwd).
-			 manager storePointerUnchecked: i ofObject: obj withValue: fwd]]
+		[:i| self updatePointer: i in: obj ]
 ]
 
 { #category : #compaction }
