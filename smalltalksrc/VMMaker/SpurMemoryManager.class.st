@@ -6357,6 +6357,11 @@ SpurMemoryManager >> initializeMarkStack [
 	self ensureRoomOnObjStackAt: MarkStackRootIndex
 ]
 
+{ #category : #'gc - global' }
+SpurMemoryManager >> initializeMournQueue [
+	self ensureRoomOnObjStackAt: MournQueueRootIndex
+]
+
 { #category : #'gc - scavenging' }
 SpurMemoryManager >> initializeNewSpaceVariables [
 	<inline: #never>
@@ -8330,6 +8335,7 @@ SpurMemoryManager >> markObjects: objectsShouldBeUnmarkedAndUnmarkedClassesShoul
 	self initializeUnscannedEphemerons.
 	self initializeMarkStack.
 	self initializeWeaklingStack.
+	self initializeMournQueue.
 	marking := true.
 	self markAccessibleObjectsAndFireEphemerons.
 	self expungeDuplicateAndUnmarkedClasses: objectsShouldBeUnmarkedAndUnmarkedClassesShouldBeExpunged.
@@ -10395,7 +10401,6 @@ SpurMemoryManager >> queueMourner: anEphemeronOrWeakArray [
 				   or: [(self formatOf: anEphemeronOrWeakArray) = self weakArrayFormat]]).
 	self deny: ((self formatOf: anEphemeronOrWeakArray) = self ephemeronFormat
 				and: [self is: anEphemeronOrWeakArray onObjStack: mournQueue]).
-	self ensureRoomOnObjStackAt: MournQueueRootIndex.
 	self push: anEphemeronOrWeakArray onObjStack: mournQueue
 ]
 
