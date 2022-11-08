@@ -749,7 +749,10 @@ SpurPlanningCompactor >> updatePointer: i in: obj [
 	| oop fwd |
 	oop := manager fetchPointer: i ofObject: obj.
 	((manager isNonImmediate: oop) and: [self isMobile: oop]) ifTrue:
-		[self assert: ((manager isMarked: oop) or: [obj = manager hiddenRootsObject]).
+		[self assert: (manager isMarked: oop).
+		 "If for some reason a hidden root is unmarked at this point, the status of this object is far from clear.
+		  Possibly, the object was created during the GC, so its status related to a possible forward pointer is unknown.
+		  So better just forbids this."
 		 fwd := manager fetchPointer: 0 ofObject: oop.
 		 self assert: (self isPostMobile: fwd).
 		 manager storePointerUnchecked: i ofObject: obj withValue: fwd]
