@@ -82,6 +82,41 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectBiggerThanSizeOfFreeSpac
 	self assert: memory needGCFlag
 ]
 
+{ #category : #testCompactor }
+VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectRightBeforeOverflowingFreeChunk [
+	| chuckSize chunk next object free |
+
+	"before GC:
+		dead object
+		free chunk with overflow header
+	after GC:
+		free chunk
+		free chunk with overflow header
+	
+	Note: this scenario expects the free chunks to not be coallesced.
+	Improve this test if the memory manager become more efficient."
+
+	memory fullGC.
+
+	"Allocate a contiguous chunk of memory to be splited into entities"
+	chuckSize := 512*8.
+	chunk := next := memory allocateOldSpaceChunkOfBytes: chuckSize.
+	"first entity is an object to be free"
+	object := next := memory initializeHeaderOfStartAddress: next numSlots: 5 format: memory arrayFormat classIndex: memory arrayClassIndexPun pinned: false.	
+	next := memory objectAfter: next.
+	"second entity is a free chunk with an overflow header"
+	free := next := memory freeChunkWithBytes: chunk + chuckSize - next at: next.
+	next := memory objectAfter: next.
+	
+	self assert: (memory isFreeObject: object) not.
+	self assert: (memory isFreeObject: free).
+		
+	memory fullGC.
+
+	self assert: (memory isFreeObject: object).
+	self assert: (memory isFreeObject: free).
+]
+
 { #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSize [
 
@@ -243,6 +278,16 @@ VMSpurOldSpaceGarbageCollectorTest >> testArrayOfPermanentObjectsPointingToOldOb
 
 	1 to: numberOfObjects do: [ :i |
 		self assert: (originalHashes at: i) equals: (memory hashBitsOf: (memory fetchPointer: i - 1 ofObject: permArray))]
+]
+
+VMSpurOldSpaceGarbageCollectorTest >> testDoNotCollectRoots [
+
+	memory fullGC.
+	
+	self deny: (memory isFreeObject: (memory nilObject)).
+	self deny: (memory isFreeObject: (memory trueObject)).
+	self deny: (memory isFreeObject: (memory falseObject)).
+	self deny: (memory isFreeObject: (memory freeListsObj)).
 ]
 
 { #category : #ephemerons }

@@ -727,6 +727,7 @@ VMSpurMemoryManagerTest >> setUp [
 		yourself.
 		
 	oldSpaceSize := environmentBuilder oldSpaceSize
+	memory lastHash: 1.
 ]
 
 { #category : #running }
@@ -747,7 +748,6 @@ VMSpurMemoryManagerTest >> setUpScheduler [
 	memory splObj: SchedulerAssociation put: processorOopAssociation.
 	memory storePointer: ValueIndex ofObject: processorOopAssociation withValue: processorOop.
 	memory storePointer: ProcessListsIndex ofObject: processorOop withValue: processorListArray.
-	memory lastHash: 1.
 	
 	activeProcessOop := self newObjectWithSlots: 4 "Creates the active process".
 	memory 

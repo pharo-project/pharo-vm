@@ -6631,6 +6631,8 @@ StackInterpreter >> followForwardingPointersInScheduler [
 	"Make sure the active process has been followed."
 	objectMemory followForwardedObjectFields: schedAssoc toDepth: 1.
 
+	schedAssoc = objectMemory nilObject ifTrue: [ ^self ].
+
 	sched := objectMemory fetchPointer: ValueIndex ofObject: schedAssoc.
 
 	procLists := objectMemory followObjField: ProcessListsIndex ofObject: sched.
