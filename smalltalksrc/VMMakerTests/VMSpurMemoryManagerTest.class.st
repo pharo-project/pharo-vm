@@ -726,7 +726,7 @@ VMSpurMemoryManagerTest >> setUp [
 		methodBuilder: methodBuilder;
 		yourself.
 		
-	oldSpaceSize := environmentBuilder oldSpaceSize
+	oldSpaceSize := environmentBuilder oldSpaceSize.
 	memory lastHash: 1.
 ]
 
