@@ -103,12 +103,12 @@ def recordCygwinVersions(buildDirectory){
 	archiveArtifacts artifacts: "${buildDirectory}/cygwinVersions.txt"
 }
 
-def runBuild(platformName, configuration, headless = true){
+def runBuild(platformName, configuration, headless = true, someAdditionalParameters = ""){
 	cleanWs()
 	
 	def platform = headless ? platformName : "${platformName}-stockReplacement"
 	def buildDirectory = headless ? "build" :"build-stockReplacement"
-	def additionalParameters = ""
+	def additionalParameters = someAdditionalParameters
 	
 	additionalParameters += headless ? "" : "-DALWAYS_INTERACTIVE=1 "
 	additionalParameters += isRelease() ? "-DBUILD_IS_RELEASE=ON " : "-DBUILD_IS_RELEASE=OFF "
@@ -456,6 +456,9 @@ try{
 					runBuild(platform, "StackVM")
 				}
 				timeout(30){
+					runBuild("${platform}-ComposedFormat", "CoInterpreter", true, "-DIMAGE_FORMAT=ComposedFormat")
+				}
+				timeout(30){
 					// Only build the Stock replacement version in the main branch
 					if(isMainBranch()){
 						runBuild(platform, "CoInterpreter", false)
@@ -463,7 +466,7 @@ try{
 				}
 			}
 		}
-		
+				
 		tests[platform] = {
 			node(platform){
 				timeout(45){
