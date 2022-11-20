@@ -222,8 +222,6 @@ Class {
 		'superSendTrampolines',
 		'directedSuperSendTrampolines',
 		'directedSuperBindingSendTrampolines',
-		'dynamicSuperSendTrampolines',
-		'outerSendTrampolines',
 		'selfSendTrampolines',
 		'firstSend',
 		'lastSend',
@@ -265,7 +263,8 @@ Class {
 		'statCompileFullBlockCount',
 		'statCompileFullBlockUsecs',
 		'statCompileMethodCount',
-		'statCompileMethodUsecs'
+		'statCompileMethodUsecs',
+		'ceSendMustBeBooleanTrampoline'
 	],
 	#classVars : [
 		'AltFirstSpecialSelector',
@@ -3625,6 +3624,11 @@ Cogit >> byte1: anInteger [
 { #category : #'simulation only' }
 Cogit >> bytecodeFixupClass [
 	self subclassResponsibility
+]
+
+{ #category : #accessing }
+Cogit >> bytecodePC [
+	^ bytecodePC
 ]
 
 { #category : #'method map' }
@@ -10298,6 +10302,11 @@ Cogit >> offsetAndSendTableFor: entryPoint annotation: annotation into: binaryBl
 	binaryBlock
 		value: offset
 		value: sendTable
+]
+
+{ #category : #accessing }
+Cogit >> opcodeIndex [
+	^ opcodeIndex
 ]
 
 { #category : #'debug printing' }
