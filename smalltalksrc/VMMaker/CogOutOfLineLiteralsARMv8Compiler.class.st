@@ -90,11 +90,8 @@ CogOutOfLineLiteralsARMv8Compiler >> concretizeMoveMbrR [
 		ifTrue: [ :immediate9bitTwoComplementValue |
 			self
 				machineCodeAt: 0
-				put: (self movSize: 1 destinationRegister: destReg imm: 0 shift: 0).
-			self
-				machineCodeAt: 4
 				put: (self ldurbSize: 1 baseRegister: srcReg signedOffset: immediate9bitTwoComplementValue destinationRegister: destReg).
-			^ machineCodeSize := 8 ]
+			^ machineCodeSize := 4 ]
 		ifFalse: [
 			self loadRelativeLiteralIn: ConcreteIPReg.
 			self
