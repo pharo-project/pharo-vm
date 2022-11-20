@@ -710,7 +710,8 @@ Cogit class >> generatorTableFrom: anArray [
 										ifFalse: [tuple includes: #isMapped]);
 						isMappedInBlock: (tuple includes: #isMappedInBlock);
 						spanFunction: ((tuple includes: #branch)
-							ifTrue: [ tuple detect: [:thing| thing isSymbol and: [thing numArgs = 4]]]);
+							ifTrue: [ tuple detect: [:thing| thing isSymbol and: [
+									thing numArgs = 2 or: [thing numArgs = 4]]]]);
 						isBranchTrue: (tuple includes: #isBranchTrue);
 						isBranchFalse: (tuple includes: #isBranchFalse);
 						isExtension: (tuple includes: #extension);

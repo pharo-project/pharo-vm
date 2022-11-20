@@ -1083,6 +1083,12 @@ StackToRegisterMappingCogit >> debugStackPointerFor: bcpc [
 	^(debugStackPointers at: bcpc) + (needsFrame ifTrue: [0] ifFalse: [1])
 ]
 
+{ #category : #accessing }
+StackToRegisterMappingCogit >> debugStackPointers: aCArrayAccessor [ 
+	
+	debugStackPointers := aCArrayAccessor
+]
+
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> doubleExtendedDoAnythingBytecode [
 	"Replaces the Blue Book double-extended send [132], in which the first byte was wasted on 8 bits of argument count. 

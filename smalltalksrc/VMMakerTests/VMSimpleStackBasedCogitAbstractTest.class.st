@@ -596,7 +596,7 @@ VMSimpleStackBasedCogitAbstractTest >> prepareCall [
 { #category : #helpers }
 VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver [
 
-	self prepareStackForSendReceiver: aReceiver arguments: #() method: 0 "a method"
+	self prepareStackForSendReceiver: aReceiver arguments: #()
 ]
 
 { #category : #helpers }
