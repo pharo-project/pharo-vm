@@ -972,6 +972,15 @@ SimpleStackBasedCogit >> directedBindingSuperSendTrampolines [
 	^ directedSuperBindingSendTrampolines
 ]
 
+{ #category : #'span functions' }
+SimpleStackBasedCogit >> distanceForShortForwardBranch: pc inMethod: aMethodObj [
+	"N.B.  This serves for both BlueBook/V3 and V4 short jumps."
+	<var: #descriptor type: #'BytecodeDescriptor *'>
+	<inline: true>
+	
+	^((objectMemory fetchByte: pc ofObject: aMethodObj) bitAnd: 7) + 1
+]
+
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> doubleExtendedDoAnythingBytecode [
 	"Replaces the Blue Book double-extended send [132], in which the first byte was wasted on 8 bits of argument count. 
@@ -1741,6 +1750,24 @@ SimpleStackBasedCogit >> genMoveTrueR: reg [
 ]
 
 { #category : #initialization }
+SimpleStackBasedCogit >> genMustBeBooleanTrampolineCalled: trampolineName [
+	<var: #trampolineName type: #'char *'>
+	<inline: false>
+	self zeroOpcodeIndex.
+	^self genTrampolineFor: #ceSendMustBeBoolean:
+		called: trampolineName
+		numArgs: 1
+		arg: TempReg
+		arg: nil
+		arg: nil
+		arg: nil
+		regsToSave: self emptyRegisterMask
+		pushLinkReg: true
+		resultReg: NoReg
+		appendOpcodes: true
+]
+
+{ #category : #initialization }
 SimpleStackBasedCogit >> genMustBeBooleanTrampolineFor: boolean called: trampolineName [
 	<var: #trampolineName type: #'char *'>
 	<inline: false>
@@ -2442,35 +2469,35 @@ SimpleStackBasedCogit >> genSendSuper: selectorIndex numArgs: numArgs [
 
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genShortJumpIfFalse [
+
 	| distance target |
-	distance := self v3: (self generatorAt: byte0)
-					ShortForward: bytecodePC
-					Branch: 0
-					Distance: methodObj.
+	distance := self
+		            distanceForShortForwardBranch: bytecodePC
+		            inMethod: methodObj.
 	target := distance + 1 + bytecodePC.
-	^self genJumpIf: objectMemory falseObject to: target
+	^ self genJumpIf: objectMemory falseObject to: target
 ]
 
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genShortJumpIfTrue [
+
 	| distance target |
-	distance := self v3: (self generatorAt: byte0)
-					ShortForward: bytecodePC
-					Branch: 0
-					Distance: methodObj.
+	distance := self
+		            distanceForShortForwardBranch: bytecodePC
+		            inMethod: methodObj.
 	target := distance + 1 + bytecodePC.
-	^self genJumpIf: objectMemory trueObject to: target
+	^ self genJumpIf: objectMemory trueObject to: target
 ]
 
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genShortUnconditionalJump [
+
 	| distance target |
-	distance := self v3: (self generatorAt: byte0)
-					ShortForward: bytecodePC
-					Branch: 0
-					Distance: methodObj.
+	distance := self
+		            distanceForShortForwardBranch: bytecodePC
+		            inMethod: methodObj.
 	target := distance + 1 + bytecodePC.
-	^self genJumpTo: target
+	^ self genJumpTo: target
 ]
 
 { #category : #'bytecode generators' }
@@ -3276,11 +3303,9 @@ SimpleStackBasedCogit >> v3: descriptor LongForward: pc Branch: nExts Distance: 
 ]
 
 { #category : #'span functions' }
-SimpleStackBasedCogit >> v3: descriptor ShortForward: pc Branch: nExts Distance: aMethodObj [
-	"N.B.  This serves for both BlueBook/V3 and V4 short jumps."
-	<var: #descriptor type: #'BytecodeDescriptor *'>
-	self assert: nExts = 0.
-	^((objectMemory fetchByte: pc ofObject: aMethodObj) bitAnd: 7) + 1
+SimpleStackBasedCogit >> v3: unusedButKeptForPolymorphism ShortForward: pc Branch: unusedButKeptForPolymorphism2 Distance: aMethodObj [
+	
+	^ self distanceForShortForwardBranch: pc inMethod: aMethodObj
 ]
 
 { #category : #'span functions' }
@@ -3299,7 +3324,6 @@ SimpleStackBasedCogit >> v4: descriptor Block: pc Code: nExts Size: aMethodObj [
 { #category : #'span functions' }
 SimpleStackBasedCogit >> v4: descriptor Long: pc Branch: nExts Distance: aMethodObj [
 	"242		11110010	i i i i i i i i	Jump i i i i i i i i (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)"
-	<var: #descriptor type: #'BytecodeDescriptor *'>
 	| extBValue |
 	self assert: nExts >= 0.
 	self parseV4Exts: nExts priorTo: pc in: aMethodObj into: [:ea :eb| extBValue := eb].
