@@ -5046,6 +5046,21 @@ InterpreterPrimitives >> successful [
 ]
 
 { #category : #arithmetic }
+InterpreterPrimitives >> sumSmallInteger: anInteger withSmallInteger: anotherInteger ifNotOverflow: aBlock [
+
+	"Sum two signed integers and detect signed overflow"
+
+	| a b result |
+	a := objectMemory integerValueOf: anInteger.
+	b := objectMemory integerValueOf: anotherInteger.
+
+	result := a + b.
+
+	(objectMemory isIntegerValue: result) ifTrue: [ ^ aBlock value].
+	^ objectMemory integerObjectOf: result
+]
+
+{ #category : #arithmetic }
 InterpreterPrimitives >> sumSmallInteger: anInteger withSmallInteger: anotherInteger ifOverflow: aBlock [
 
 	"Sum two signed integers and detect signed overflow"
@@ -5056,6 +5071,6 @@ InterpreterPrimitives >> sumSmallInteger: anInteger withSmallInteger: anotherInt
 
 	result := a + b.
 
-	(objectMemory isIntegerValue: result) ifFalse: aBlock.
+	(objectMemory isIntegerValue: result) ifFalse: [ ^ aBlock value ].
 	^ objectMemory integerObjectOf: result
 ]

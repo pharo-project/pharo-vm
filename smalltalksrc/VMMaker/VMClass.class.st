@@ -568,6 +568,14 @@ VMClass >> druidExitPoint [
 	<druidExitPoint>
 ]
 
+{ #category : #'object access primitives' }
+VMClass >> druidIgnore: aBlock [
+
+	"Execute the block during interpretation, ignore it during compilation.
+	Should be used only to avoid extra fast-cases during compilation"
+	^ aBlock value
+]
+
 { #category : #'memory access' }
 VMClass >> floatAtPointer: pointer [
 
