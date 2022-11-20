@@ -1276,12 +1276,6 @@ CogVMSimulator >> internalFindNewMethodOrdinary [
 	^super internalFindNewMethodOrdinary
 ]
 
-{ #category : #'debugging traps' }
-CogVMSimulator >> internalMustBeBoolean [
-	self halt.
-	^super internalMustBeBoolean
-]
-
 { #category : #'interpreter shell' }
 CogVMSimulator >> interpret [
 	"This is the main interpreter loop. It normally loops forever, fetching and executing bytecodes.

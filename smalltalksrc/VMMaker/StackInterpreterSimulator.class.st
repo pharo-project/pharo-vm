@@ -822,12 +822,6 @@ StackInterpreterSimulator >> internalCannotReturn: resultOop [
 	^super internalCannotReturn: resultOop
 ]
 
-{ #category : #'debugging traps' }
-StackInterpreterSimulator >> internalMustBeBoolean [
-	self halt.
-	^super internalMustBeBoolean
-]
-
 { #category : #'interpreter shell' }
 StackInterpreterSimulator >> interpret [
 
