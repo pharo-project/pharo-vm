@@ -2803,23 +2803,25 @@ StackInterpreter >> booleanValueOf: obj [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimAdd [
-	| rcvr arg result |
+
+	| rcvr arg |
 	rcvr := self stackValue: 1.
 	arg := self stackValue: 0.
 	(objectMemory areIntegers: rcvr and: arg)
-		ifTrue: [result := (objectMemory integerValueOf: rcvr) + (objectMemory integerValueOf: arg).
-				(objectMemory isIntegerValue: result) ifTrue:
-					[self pop: 2 thenPush: (objectMemory integerObjectOf: result).
-					^ self fetchNextBytecode "success"]]
-		ifFalse: [self initPrimCall.
+		ifTrue: [ 
+			self sumSmallInteger: rcvr withSmallInteger: arg ifNotOverflow: [ :result |
+				self pop: 2 thenPush: result.
+				^ self fetchNextBytecode "success" ] ]
+		ifFalse: [
+			"Do not JIT compile float case..."
+			self druidIgnore: [
+				self initPrimCall.
 				self externalizeIPandSP.
 				self primitiveFloatAdd: rcvr toArg: arg.
 				self internalizeIPandSP.
-				self successful ifTrue: [^ self fetchNextBytecode "success"]].
+				self successful ifTrue: [ ^ self fetchNextBytecode "success" ] ] value ].
 
-	messageSelector := self specialSelector: 0.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 0 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -2857,16 +2859,15 @@ StackInterpreter >> bytecodePrimAt [
 			 ^self pop: 2 thenPush: result].
 		 self initPrimCall].
 
-	messageSelector := self specialSelector: 16.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 16 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimAtEnd [
+
 	messageSelector := self specialSelector: 21.
 	argumentCount := self specialSelectorNumArgs: 21.
-	self normalSend.
+	self normalSend
 ]
 
 { #category : #'common selector sends' }
@@ -2908,9 +2909,7 @@ StackInterpreter >> bytecodePrimAtPut [
 			 ^self pop: 3 thenPush: value].
 		 self initPrimCall].
 
-	messageSelector := self specialSelector: 17.
-	argumentCount := 2.
-	self normalSend
+	self normalSendSpecialSelector: 17 argumentCount: 2
 ]
 
 { #category : #'common selector sends' }
@@ -2930,9 +2929,7 @@ StackInterpreter >> bytecodePrimBitAnd [
 	self successful ifTrue:
 		[^self fetchNextBytecode "success"].
 
-	messageSelector := self specialSelector: 14.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 14 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -2952,9 +2949,7 @@ StackInterpreter >> bytecodePrimBitOr [
 	self successful ifTrue:
 		[^self fetchNextBytecode "success"].
 
-	messageSelector := self specialSelector: 15.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 15 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -2966,9 +2961,7 @@ StackInterpreter >> bytecodePrimBitShift [
 	self internalizeIPandSP.
 	self successful ifTrue: [^ self fetchNextBytecode "success"].
 
-	messageSelector := self specialSelector: 12.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 12 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -2990,9 +2983,7 @@ StackInterpreter >> bytecodePrimDiv [
 	self successful ifTrue: [self pop: 2 thenPush: (objectMemory integerObjectOf: quotient).
 		^ self fetchNextBytecode "success"].
 
-	messageSelector := self specialSelector: 13.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 13 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3015,9 +3006,7 @@ StackInterpreter >> bytecodePrimDivide [
 			self internalizeIPandSP.
 			self successful ifTrue: [^ self fetchNextBytecode"success"]].
 
-	messageSelector := self specialSelector: 9.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 9 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3040,9 +3029,7 @@ StackInterpreter >> bytecodePrimEqual [
 	aBool := self primitiveFloatEqual: rcvr toArg: arg.
 	self successful ifTrue: [^self booleanCheat: aBool].
 
-	messageSelector := self specialSelector: 6.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 6 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3056,9 +3043,7 @@ StackInterpreter >> bytecodePrimEqualSistaV1 [
 	aBool := self primitiveFloatEqual: rcvr toArg: arg.
 	self successful ifTrue: [^self booleanCheatSistaV1: aBool].
 
-	messageSelector := self specialSelector: 6.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 6 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3076,9 +3061,7 @@ StackInterpreter >> bytecodePrimGreaterOrEqual [
 	aBool := self primitiveFloatGreaterOrEqual: rcvr toArg: arg.
 	self successful ifTrue: [^self booleanCheat: aBool].
 
-	messageSelector := self specialSelector: 5.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 5 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3096,9 +3079,7 @@ StackInterpreter >> bytecodePrimGreaterOrEqualSistaV1 [
 	aBool := self primitiveFloatGreaterOrEqual: rcvr toArg: arg.
 	self successful ifTrue: [^self booleanCheatSistaV1: aBool].
 
-	messageSelector := self specialSelector: 5.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 5 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3116,9 +3097,7 @@ StackInterpreter >> bytecodePrimGreaterThan [
 	aBool := self primitiveFloatGreater: rcvr thanArg: arg.
 	self successful ifTrue: [^self booleanCheat: aBool].
 
-	messageSelector := self specialSelector: 3.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 3 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3136,9 +3115,7 @@ StackInterpreter >> bytecodePrimGreaterThanSistaV1 [
 	aBool := self primitiveFloatGreater: rcvr thanArg: arg.
 	self successful ifTrue: [^self booleanCheatSistaV1: aBool].
 
-	messageSelector := self specialSelector: 3.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 3 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3180,9 +3157,7 @@ StackInterpreter >> bytecodePrimLessOrEqual [
 	aBool := self primitiveFloatLessOrEqual: rcvr toArg: arg.
 	self successful ifTrue: [^self booleanCheat: aBool].
 
-	messageSelector := self specialSelector: 4.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 4 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3200,9 +3175,7 @@ StackInterpreter >> bytecodePrimLessOrEqualSistaV1 [
 	aBool := self primitiveFloatLessOrEqual: rcvr toArg: arg.
 	self successful ifTrue: [^self booleanCheatSistaV1: aBool].
 
-	messageSelector := self specialSelector: 4.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 4 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3220,9 +3193,7 @@ StackInterpreter >> bytecodePrimLessThan [
 	aBool := self primitiveFloatLess: rcvr thanArg: arg.
 	self successful ifTrue: [^ self booleanCheat: aBool].
 
-	messageSelector := self specialSelector: 2.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 2 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3240,9 +3211,7 @@ StackInterpreter >> bytecodePrimLessThanSistaV1 [
 	aBool := self primitiveFloatLess: rcvr thanArg: arg.
 	self successful ifTrue: [^ self booleanCheatSistaV1: aBool].
 
-	messageSelector := self specialSelector: 2.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 2 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3262,9 +3231,7 @@ StackInterpreter >> bytecodePrimMakePoint [
 		 self pop: 2 thenPush: pt.
 		 ^self fetchNextBytecode "success"].
 
-	messageSelector := self specialSelector: 11.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 11 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3276,9 +3243,7 @@ StackInterpreter >> bytecodePrimMod [
 		[self pop: 2 thenPush: (objectMemory integerObjectOf: mod).
 		^ self fetchNextBytecode "success"].
 
-	messageSelector := self specialSelector: 10.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 10 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3308,41 +3273,35 @@ StackInterpreter >> bytecodePrimMultiply [
 				self internalizeIPandSP.
 				self successful ifTrue: [^ self fetchNextBytecode "success"]].
 
-	messageSelector := self specialSelector: 8.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 8 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimNew [
 
-	messageSelector := self specialSelector: 28.
-	argumentCount := 0.
-	self normalSend.
-
+	self normalSendSpecialSelector: 28 argumentCount: 0
 ]
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimNewWithArg [
 
-	messageSelector := self specialSelector: 29.
-	argumentCount := 1.
-	self normalSend.
-
+	self normalSendSpecialSelector: 29 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimNext [
+
 	messageSelector := self specialSelector: 19.
 	argumentCount := self specialSelectorNumArgs: 19.
-	self normalSend.
+	self normalSend
 ]
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimNextPut [
+
 	messageSelector := self specialSelector: 20.
 	argumentCount := self specialSelectorNumArgs: 20.
-	self normalSend.
+	self normalSend
 ]
 
 { #category : #'common selector sends' }
@@ -3356,9 +3315,7 @@ StackInterpreter >> bytecodePrimNotEqual [
 	aBool := self primitiveFloatEqual: rcvr toArg: arg.
 	self successful ifTrue: [^self booleanCheat: aBool not].
 
-	messageSelector := self specialSelector: 7.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 7 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3372,9 +3329,7 @@ StackInterpreter >> bytecodePrimNotEqualSistaV1 [
 	aBool := self primitiveFloatEqual: rcvr toArg: arg.
 	self successful ifTrue: [^self booleanCheatSistaV1: aBool not].
 
-	messageSelector := self specialSelector: 7.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 7 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3413,9 +3368,7 @@ StackInterpreter >> bytecodePrimPointX [
 		^ self fetchNextBytecode "success" ].
 	primFailCode := 0.
 
-	messageSelector := self specialSelector: 30.
-	argumentCount := 0.
-	self normalSend
+	self normalSendSpecialSelector: 30 argumentCount: 0
 ]
 
 { #category : #'common selector sends' }
@@ -3430,9 +3383,7 @@ StackInterpreter >> bytecodePrimPointY [
 		^ self fetchNextBytecode "success" ].
 	primFailCode := 0.
 
-	messageSelector := self specialSelector: 31.
-	argumentCount := 0.
-	self normalSend
+	self normalSendSpecialSelector: 31 argumentCount: 0
 ]
 
 { #category : #'common selector sends' }
@@ -3456,9 +3407,7 @@ StackInterpreter >> bytecodePrimSize [
 		self stackTopPut: (objectMemory integerObjectOf: sz).
 		^ self fetchNextBytecode ].
 
-	messageSelector := self specialSelector: 18.
-	argumentCount := 0.
-	self normalSend
+	self normalSendSpecialSelector: 18 argumentCount: 0
 ]
 
 { #category : #'common selector sends' }
@@ -3485,9 +3434,7 @@ StackInterpreter >> bytecodePrimSubtract [
 				self internalizeIPandSP.
 				self successful ifTrue: [^self fetchNextBytecode "success"]].
 
-	messageSelector := self specialSelector: 1.
-	argumentCount := 1.
-	self normalSend
+	self normalSendSpecialSelector: 1 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3504,8 +3451,8 @@ StackInterpreter >> bytecodePrimValue [
 		self internalizeIPandSP.
 		self successful ifTrue: [ ^ self fetchNextBytecode ].
 		primFailCode := 0 ].
-	messageSelector := self specialSelector: 25.
-	self normalSend
+	
+	self normalSendSpecialSelector: 25 argumentCount: 0
 ]
 
 { #category : #'common selector sends' }
@@ -3522,8 +3469,8 @@ StackInterpreter >> bytecodePrimValueWithArg [
 		self successful ifTrue:
 			[^self fetchNextBytecode].
 		primFailCode := 0].
-	messageSelector := self specialSelector: 26.
-	self normalSend
+
+	self normalSendSpecialSelector: 26 argumentCount: 1
 ]
 
 { #category : #'plugin primitive support' }
@@ -5513,15 +5460,19 @@ StackInterpreter >> extReturnTopFromBlock [
 
 { #category : #'send bytecodes' }
 StackInterpreter >> extSendBytecode [
+
 	"238		11101110	i i i i i j j j	Send Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments"
-	| byte |
+
+	| byte messageSelectorIndex |
 	byte := self fetchByte.
-	messageSelector := self literal: (byte >> 3) + (extA << 5).
+	messageSelectorIndex := byte >> 3 + (extA << 5).
 	extA := 0.
 	argumentCount := (byte bitAnd: 7) + (extB << 3).
 	extB := 0.
 	numExtB := 0.
-	self normalSend
+	self
+		normalLiteralSelectorAt: messageSelectorIndex
+		argumentCount: argumentCount
 ]
 
 { #category : #'send bytecodes' }
@@ -8645,9 +8596,7 @@ StackInterpreter >> isWriteMediatedContextInstVarIndex: index [
 { #category : #'jump bytecodes' }
 StackInterpreter >> jump: offset [
 	instructionPointer := instructionPointer + offset + 1.
-	self cppIf: MULTIPLEBYTECODESETS
-		ifTrue: [currentBytecode := (objectMemory byteAtPointer: instructionPointer) + bytecodeSetSelector]
-		ifFalse: [currentBytecode := objectMemory byteAtPointer: instructionPointer]
+	currentBytecode := objectMemory uint8At: instructionPointer
 ]
 
 { #category : #'sista bytecodes' }
@@ -8785,12 +8734,14 @@ StackInterpreter >> jumplfTrueBy: offset [
 	| boolean |
 	boolean := self stackTop.
 	boolean = objectMemory trueObject
-		ifTrue: [ self jump: offset ]
+		ifTrue: [ 
+			self pop: 1.
+			self jump: offset ]
 		ifFalse: [ 
 			boolean = objectMemory falseObject ifFalse: [ 
 				^ self internalMustBeBoolean ].
-			self fetchNextBytecode ].
-	self pop: 1
+			self pop: 1.
+			self fetchNextBytecode ]
 ]
 
 { #category : #'message sending' }
@@ -10668,6 +10619,14 @@ StackInterpreter >> noMarkedContextsOnPage: thePage [
 ]
 
 { #category : #'send bytecodes' }
+StackInterpreter >> normalLiteralSelectorAt: selectorIndex argumentCount: theArgumentCount [
+
+	messageSelector := self literal: selectorIndex.
+	argumentCount := theArgumentCount.
+	self normalSend
+]
+
+{ #category : #'send bytecodes' }
 StackInterpreter >> normalSend [
 	"Send a message, starting lookup with the receiver's class."
 	"Assume: messageSelector and argumentCount have been set, and that 
@@ -10679,6 +10638,14 @@ StackInterpreter >> normalSend [
 	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
 	self assert: lkupClassTag ~= objectMemory nilObject.
 	self commonSendOrdinary
+]
+
+{ #category : #'common selector sends' }
+StackInterpreter >> normalSendSpecialSelector: specialSelectorIndex argumentCount: theArgumentCount [
+
+	messageSelector := self specialSelector: specialSelectorIndex.
+	argumentCount := theArgumentCount.
+	self normalSend
 ]
 
 { #category : #'sista bytecodes' }
@@ -13490,38 +13457,31 @@ StackInterpreter >> sendBreakpoint: selector receiver: rcvr [
 
 { #category : #'send bytecodes' }
 StackInterpreter >> sendLiteralSelector0ArgsBytecode [
+
 	"Can use any of the first 16 literals for the selector."
-	| rcvr |
-	messageSelector := self literal: (currentBytecode bitAnd: 16rF).
-	argumentCount := 0.
-	rcvr := self stackValue: 0.
-	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
-	self assert: lkupClassTag ~= objectMemory nilObject.
-	self commonSendOrdinary
+
+	self
+		normalLiteralSelectorAt: (currentBytecode bitAnd: 16rF)
+		argumentCount: 0
 ]
 
 { #category : #'send bytecodes' }
 StackInterpreter >> sendLiteralSelector1ArgBytecode [
+
 	"Can use any of the first 16 literals for the selector."
-	| rcvr |
-	messageSelector := self literal: (currentBytecode bitAnd: 16rF).
-	argumentCount := 1.
-	rcvr := self stackValue: 1.
-	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
-	self assert: lkupClassTag ~= objectMemory nilObject.
-	self commonSendOrdinary
+	self
+		normalLiteralSelectorAt: (currentBytecode bitAnd: 16rF)
+		argumentCount: 1
 ]
 
 { #category : #'send bytecodes' }
 StackInterpreter >> sendLiteralSelector2ArgsBytecode [
+
 	"Can use any of the first 16 literals for the selector."
-	| rcvr |
-	messageSelector := self literal: (currentBytecode bitAnd: 16rF).
-	argumentCount := 2.
-	rcvr := self stackValue: 2.
-	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
-	self assert: lkupClassTag ~= objectMemory nilObject.
-	self commonSendOrdinary
+
+	self
+		normalLiteralSelectorAt: (currentBytecode bitAnd: 16rF)
+		argumentCount: 2
 ]
 
 { #category : #'debug support' }
