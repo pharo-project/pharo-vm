@@ -4226,6 +4226,12 @@ Cogit >> ceSendMustBeBooleanAddTrueTrampoline: anInteger [
 
 ]
 
+{ #category : #initialization }
+Cogit >> ceSendMustBeBooleanTrampoline: aTrampolineAddress [
+
+	ceSendMustBeBooleanTrampoline := aTrampolineAddress
+]
+
 { #category : #accessing }
 Cogit >> ceSmallActiveContextInFullBlockTrampoline [
 
@@ -8075,7 +8081,9 @@ Cogit >> generateReturnToInterpreterPCTrampoline [
 Cogit >> generateRunTimeTrampolines [
 
 	"Generate the run-time entries at the base of the native code zone and update the base."
-
+	ceSendMustBeBooleanTrampoline := self
+		                                         genMustBeBooleanTrampolineCalled:
+		                                         'ceSendMustBeBooleanTrampoline'.
 	ceSendMustBeBooleanAddFalseTrampoline := self
 		                                         genMustBeBooleanTrampolineFor:
 		                                         objectMemory falseObject
