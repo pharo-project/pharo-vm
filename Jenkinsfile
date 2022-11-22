@@ -201,6 +201,10 @@ def runUnitTests(platform){
           shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
           shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'Slang-Tests'"
          } 
+
+        shell "zip ./VMMaker-Image.zip ./image/VMMaker.*"
+        archiveArtifacts artifacts: './VMMaker-Image.zip'
+
         // Stop if tests fail
         // Archive xml reports either case
         try {
