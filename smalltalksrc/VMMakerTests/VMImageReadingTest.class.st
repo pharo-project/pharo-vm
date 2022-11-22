@@ -9,6 +9,12 @@ Class {
 	#category : #'VMMakerTests-ImageFormat'
 }
 
+{ #category : #query }
+VMImageReadingTest >> dataFrom: fileName [
+
+	^ self imageFileName asFileReference / fileName
+]
+
 { #category : #accessing }
 VMImageReadingTest >> initializationOptions [
 
@@ -34,6 +40,14 @@ VMImageReadingTest >> loadImage [
 
 ]
 
+{ #category : #query }
+VMImageReadingTest >> metadataFrom: fileName [
+
+	| writtenHeader |
+	writtenHeader := (self imageFileName asFileReference / fileName) contents.
+	^ STON fromString: writtenHeader
+]
+
 { #category : #utilities }
 VMImageReadingTest >> saveImage [
 
@@ -42,6 +56,9 @@ VMImageReadingTest >> saveImage [
 	self assert: interpreter successful.
 
 	super saveImage.
+	
+	memory postSnapshot.
+
 ]
 
 { #category : #initialization }
@@ -55,6 +72,41 @@ VMImageReadingTest >> setUp [
 	
 	originalNilObjectIdentityHash := memory hashBitsOf: memory nilObject.
 
+]
+
+{ #category : #tests }
+VMImageReadingTest >> testMovingObjectsToPermSpaceReduceOldSpace [
+
+	| obj |
+	obj := self newOldSpaceArrayWithSlots: 77.
+	memory splObj: 4 put: obj. "Store object in SpecialObjects Array to keep it"
+
+	self saveImage.
+
+	"Remap"
+	memory allOldSpaceObjectsDo: [ :oop | (memory numSlotsOf: oop) = 77 ifTrue: [ obj := oop ] ].
+
+
+	self assert: (self metadataFrom: 'seg0.ston') dataSize equals: 132944.
+	self assert: (self metadataFrom: 'permSpace.ston') dataSize equals: 0.
+
+	self assert: (self dataFrom: 'seg0.data') size equals: 132944.
+	self assert: (self dataFrom: 'permSpace.data') size equals: 0.
+
+	"------------------------------------------------------------------------------"
+
+	self assert: (memory numSlotsOf: obj) equals: 77.
+
+	memory moveToPermSpace: obj.
+
+	self saveImage.
+
+
+	self assert: (self metadataFrom: 'seg0.ston') dataSize equals: 132320.
+	self assert: (self metadataFrom: 'permSpace.ston') dataSize equals: 640.
+
+	self assert: (self dataFrom: 'seg0.data') size equals: 132320.
+	self assert: (self dataFrom: 'permSpace.data') size equals: 640
 ]
 
 { #category : #tests }
