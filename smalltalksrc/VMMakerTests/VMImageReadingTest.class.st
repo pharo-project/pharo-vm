@@ -77,21 +77,25 @@ VMImageReadingTest >> setUp [
 { #category : #tests }
 VMImageReadingTest >> testMovingObjectsToPermSpaceReduceOldSpace [
 
-	| obj |
-	obj := self newOldSpaceArrayWithSlots: 77.
+	| obj magicNumber initSegmentSize initPermSpaceSize finalSegmentSize finalPermSpaceSize |
+	imageReaderClass ~= ComposedImageReader ifTrue: [ ^ self skip ].
+
+	magicNumber := 77.
+	obj := self newOldSpaceArrayWithSlots: magicNumber.
 	memory splObj: 4 put: obj. "Store object in SpecialObjects Array to keep it"
 
 	self saveImage.
+	memory allOldSpaceObjectsDo: [ :oop | "Remap" 
+		(memory numSlotsOf: oop) = magicNumber ifTrue: [ obj := oop ] ].
 
-	"Remap"
-	memory allOldSpaceObjectsDo: [ :oop | (memory numSlotsOf: oop) = 77 ifTrue: [ obj := oop ] ].
+	initSegmentSize := (self dataFrom: 'seg0.data') size.
+	initPermSpaceSize := (self dataFrom: 'permSpace.data') size.
 
+	self assert: initSegmentSize > 0.
+	self assert: initPermSpaceSize equals: 0.
 
-	self assert: (self metadataFrom: 'seg0.ston') dataSize equals: 132944.
-	self assert: (self metadataFrom: 'permSpace.ston') dataSize equals: 0.
-
-	self assert: (self dataFrom: 'seg0.data') size equals: 132944.
-	self assert: (self dataFrom: 'permSpace.data') size equals: 0.
+	self assert: (self metadataFrom: 'seg0.ston') dataSize equals: initSegmentSize.
+	self assert: (self metadataFrom: 'permSpace.ston') dataSize equals: initPermSpaceSize.
 
 	"------------------------------------------------------------------------------"
 
@@ -101,12 +105,14 @@ VMImageReadingTest >> testMovingObjectsToPermSpaceReduceOldSpace [
 
 	self saveImage.
 
+	finalSegmentSize := (self dataFrom: 'seg0.data') size.
+	finalPermSpaceSize := (self dataFrom: 'permSpace.data') size.
 
-	self assert: (self metadataFrom: 'seg0.ston') dataSize equals: 132320.
-	self assert: (self metadataFrom: 'permSpace.ston') dataSize equals: 640.
+	self assert: finalPermSpaceSize < initSegmentSize.
+	self assert: finalPermSpaceSize > 0.
 
-	self assert: (self dataFrom: 'seg0.data') size equals: 132320.
-	self assert: (self dataFrom: 'permSpace.data') size equals: 640
+	self assert: (self metadataFrom: 'seg0.ston') dataSize equals: finalSegmentSize.
+	self assert: (self metadataFrom: 'permSpace.ston') dataSize equals: finalPermSpaceSize
 ]
 
 { #category : #tests }
