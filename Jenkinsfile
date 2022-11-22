@@ -131,13 +131,13 @@ def runBuild(platformName, configuration, headless = true, someAdditionalParamet
       recordCygwinVersions(buildDirectory)
       runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository -DICEBERG_DEFAULT_REMOTE=httpsUrl"
       runInCygwin "cd ${buildDirectory} && VERBOSE=1 make install package"
-      runInCygwin "mkdir -p artifacts-${platformName} && cp -a ${buildDirectory}/build/packages/ artifacts-${platformName}"
+      runInCygwin "mkdir -p artifacts-${platformName} && cp -a ${buildDirectory}/build/packages/* artifacts-${platformName}/"
     }else{
       cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
       dir("${buildDirectory}"){
         shell "VERBOSE=1 make install package"
       }
-      shell "mkdir -p artifacts-${platformName} && cp -a ${buildDirectory}/build/packages/ artifacts-${platformName}"
+      shell "mkdir -p artifacts-${platformName} && cp -a ${buildDirectory}/build/packages/* artifacts-${platformName}/"
     }
 	
 		stash excludes: '_CPack_Packages', includes: "${buildDirectory}/build/packages/*", name: "packages-${platform}-${configuration}"
