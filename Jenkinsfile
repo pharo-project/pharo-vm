@@ -110,11 +110,11 @@ def runBuild(platformName, configuration, headless = true, someAdditionalParamet
 	def buildDirectory = headless ? "build" :"build-stockReplacement"
 	def additionalParameters = someAdditionalParameters
 	
-	additionalParameters += headless ? "" : "-DALWAYS_INTERACTIVE=1 "
-	additionalParameters += isRelease() ? "-DBUILD_IS_RELEASE=ON " : "-DBUILD_IS_RELEASE=OFF "
+	additionalParameters += headless ? "" : " -DALWAYS_INTERACTIVE=1 "
+	additionalParameters += isRelease() ? " -DBUILD_IS_RELEASE=ON " : " -DBUILD_IS_RELEASE=OFF "
 
 	if(configuration == 'StackVM'){
-		additionalParameters += "-DFEATURE_MESSAGE_COUNT=TRUE "
+		additionalParameters += " -DFEATURE_MESSAGE_COUNT=TRUE "
 		platform = "${platformName}-StackVM"
 		buildDirectory = "build-StackVM"
 	}
@@ -460,7 +460,7 @@ try{
 					runBuild(platform, "StackVM")
 				}
 				timeout(30){
-					runBuild("${platform}-ComposedFormat", "CoInterpreter", true, "-DIMAGE_FORMAT=ComposedFormat")
+					runBuild("${platform}-ComposedFormat", "CoInterpreter", true, " -DIMAGE_FORMAT=ComposedFormat ")
 				}
 				timeout(30){
 					// Only build the Stock replacement version in the main branch
