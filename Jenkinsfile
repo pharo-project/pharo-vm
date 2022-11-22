@@ -203,7 +203,7 @@ def runUnitTests(platform){
          } 
 
         shell "zip ./VMMaker-Image.zip ./image/VMMaker.*"
-        archiveArtifacts artifacts: './VMMaker-Image.zip'
+        archiveArtifacts artifacts: 'VMMaker-Image.zip'
 
         // Stop if tests fail
         // Archive xml reports either case
