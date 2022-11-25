@@ -8051,6 +8051,7 @@ SpurMemoryManager >> markAndShouldScan: objOop [
 	 Already marked objects have already been processed.
 	 Pure bits objects don't need scanning, although their class does.
 	 Weak objects should be pushed on the weakling stack.
+	TODO: something about ephemerons.
 	 Anything else need scanning."
 	| format |
 	<inline: true>
@@ -8216,10 +8217,16 @@ SpurMemoryManager >> markAndTraceWeaklingsFrom: startIndex [
 SpurMemoryManager >> markInactiveEphemerons [
 
 	"Go through the unscanned ephemerons, marking the inactive ones, and
-	 removing them from the unscanned ephemerons. Answer if any inactive
-	 ones were found. We cannot fire the ephemerons until all are found to
+	 removing them from the unscanned ephemerons.
+	 Answer true if any inactive ones were found.
+	 Answer false if all unscanned ephemerons are active one (that could be fired).
+	
+	 We cannot fire the ephemerons until all are found to
 	 be active since scan-marking an inactive ephemeron later in the set may
-	 render a previously-observed active ephemeron as inactive."
+	 render a previously-observed ephemeron (that remains in unscannedEphemerons) as inactive.
+	
+	 Note: the current vocabulary *active* and *inactive* is insane, and badly defined because it mixes *possibly* and *certainly*.
+	"
 
 	| foundInactive ptr |
 	foundInactive := false.
@@ -8366,25 +8373,43 @@ SpurMemoryManager >> markWeaklingsAndMarkAndFireEphemerons [
 	 Weaklings have accumulated on the weaklingStack, but more may be
 	 uncovered during ephemeron processing.  So trace the strong slots
 	 of the weaklings, and as ephemerons are processed ensure any newly
-	 reached weaklings are also traced."
+	 reached weaklings are also traced.
+
+	 Moreover, marking ephemerons from unscannedEphemerons (because we fire
+	 them, or because we realize that they are inactive (ie have a marked key))
+	 leads to the discover (and markind) of new objects that are possibly
+	 weak objects, ephemerons or keys of unscanned ephemerons, forcing us to
+	 continue the work (thus the `repeat` block)"
 	| numTracedWeaklings |
 	<inline: false>
 	numTracedWeaklings := 0.
-	[coInterpreter markAndTraceUntracedReachableStackPages.
+	[
+	 "FIXME: Why the two following methods are *inside* the loop?"
+	 coInterpreter markAndTraceUntracedReachableStackPages.
 	 coInterpreter markAndTraceMachineCodeOfMarkedMethods.
+
 	 "Make sure all reached weaklings have their strong slots traced before firing ephemerons..."
 	 [numTracedWeaklings := self markAndTraceWeaklingsFrom: numTracedWeaklings.
 	  (self sizeOfObjStack: weaklingStack) > numTracedWeaklings] whileTrue.
+
 	 self noUnscannedEphemerons ifTrue:
+	   "There is no unscanned ephemerons, every live object is now marked"
 		[coInterpreter
 			markAndTraceUntracedReachableStackPages;
 	 		markAndTraceMachineCodeOfMarkedMethods;
 			freeUntracedStackPages;
 			freeUnmarkedMachineCode.
 		 ^self].
+
+	 "There is unscanned ephemerons, but their key could have been marked later, so process the list.
+	  ifFalse: all unscanned ephemerons of the list are active (still have a unmarked key), so fire them!
+	  ifTrue: some ephemerons are in fact inactive, and where just scanned. So do another turn."
+	
 	 self markInactiveEphemerons ifFalse:
-		[self fireAllUnscannedEphemerons].
-	 self markAllUnscannedEphemerons]
+		[ self fireAllUnscannedEphemerons.
+		  self markAllUnscannedEphemerons
+		  "Scanning fired ephemerons may discover new object, so do another turn." ].
+	 ]
 		repeat
 ]
 
