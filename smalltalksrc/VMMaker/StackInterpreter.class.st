@@ -336,12 +336,10 @@ Class {
 		'reenterInterpreter',
 		'nextWakeupUsecs',
 		'nextPollUsecs',
-		'inIOProcessEvents',
 		'interruptPending',
 		'savedWindowSize',
 		'imageHeaderFlags',
 		'fullScreenFlag',
-		'pendingFinalizationSignals',
 		'extraVMMemory',
 		'interpreterProxy',
 		'primitiveTable',
@@ -394,8 +392,6 @@ Class {
 		'statStackPageDivorce',
 		'statCheckForEvents',
 		'statProcessSwitch',
-		'statIOProcessEvents',
-		'statPendingFinalizationSignals',
 		'statIdleUsecs',
 		'debugCallbackPath',
 		'debugCallbackReturns',
@@ -591,7 +587,7 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	self declareCAsUSqLong: #(nextPollUsecs nextWakeupUsecs longRunningPrimitiveGCUsecs
 								longRunningPrimitiveStartUsecs longRunningPrimitiveStopUsecs
 								"these are high-frequency enough that they're overflowing quite quickly on modern hardware"
-								statProcessSwitch statIOProcessEvents statForceInterruptCheck
+								statProcessSwitch statForceInterruptCheck
 								statCheckForEvents statStackOverflow statStackPageDivorce
 								statIdleUsecs)
 		in: aCCodeGenerator.
@@ -1668,35 +1664,37 @@ StackInterpreter class >> reorganizeAsISeeFit [
 
 { #category : #translation }
 StackInterpreter class >> requiredMethodNames: options [
+
 	"Answer the list of method names that should be retained for export or other support reasons"
+
 	| requiredList |
 	"A number of methods required by VM support code, specific platforms, etc"
-	requiredList := #(
-		assertValidExecutionPointe:r:s:
-		characterForAscii:
-		findClassOfMethod:forReceiver: findSelectorOfMethod:
-			forceInterruptCheck forceInterruptCheckFromHeartbeat fullDisplayUpdate
-		getCurrentBytecode getFullScreenFlag getInterruptPending
-			getSavedWindowSize getThisSessionID
-		interpret
-		loadInitialContext
-		primitiveFail primitiveFailFor: primitiveFlushExternalPrimitives printAllStacks printCallStack printContext:
-			printExternalHeadFrame printFramesInPage: printFrame: printHeadFrame printMemory printOop:
-				printStackPages printStackPageList printStackPagesInUse printStackPageListInUse
-		setFullScreenFlag: setInterruptKeycode: setInterruptPending: setInterruptCheckChain:
-			setSavedWindowSize: success:
-		validInstructionPointer:inMethod:framePointer:) asSet.
+	requiredList := #( #assertValidExecutionPointe:r:s:
+	                   characterForAscii: #findClassOfMethod:forReceiver:
+	                   findSelectorOfMethod: forceInterruptCheck
+	                   forceInterruptCheckFromHeartbeat
+	                   getCurrentBytecode getThisSessionID
+	                   interpret loadInitialContext primitiveFail
+	                   primitiveFailFor: primitiveFlushExternalPrimitives
+	                   printAllStacks printCallStack printContext:
+	                   printExternalHeadFrame printFramesInPage:
+	                   printFrame: printHeadFrame printMemory printOop:
+	                   printStackPages printStackPageList
+	                   printStackPagesInUse printStackPageListInUse
+	                   success: #validInstructionPointer:inMethod:framePointer: )
+		                asSet.
 
 	"Nice to actually have all the primitives available"
-	requiredList addAll: (self primitiveTable select: [:each| each isSymbol]).
+	requiredList addAll:
+		(self primitiveTable select: [ :each | each isSymbol ]).
 
 	"InterpreterProxy is the internal analogue of sqVirtualMachine.c, so make sure to keep all those"
-	InterpreterProxy organization categories do:
-		[:cat |
-		((cat ~= 'initialize') and: [cat ~= 'private']) ifTrue:
-			[requiredList addAll: (InterpreterProxy organization listAtCategoryNamed: cat)]].
+	InterpreterProxy organization categories do: [ :cat | 
+		(cat ~= 'initialize' and: [ cat ~= 'private' ]) ifTrue: [ 
+			requiredList addAll:
+				(InterpreterProxy organization listAtCategoryNamed: cat) ] ].
 
-	^requiredList
+	^ requiredList
 ]
 
 { #category : #translation }
@@ -7197,15 +7195,9 @@ StackInterpreter >> getGCMode [
 { #category : #'image save/restore' }
 StackInterpreter >> getImageHeaderFlags [
 	"Answer the flags that are contained in the 7th long of the image header."
-	^fullScreenFlag "0 or 1"
-	+ (VMBIGENDIAN ifTrue: [0] ifFalse: [2]) "this is the imageFloatsLittleEndian flag"
+	^(VMBIGENDIAN ifTrue: [0] ifFalse: [2]) "this is the imageFloatsLittleEndian flag"
 	+ (preemptionYields ifTrue: [0] ifFalse: [16r10])
 	+ (imageHeaderFlags bitClear: 16rD3) "these are any flags we do not recognize"
-]
-
-{ #category : #'plugin primitive support' }
-StackInterpreter >> getInterruptPending [
-	^interruptPending
 ]
 
 { #category : #accessing }
@@ -7231,11 +7223,6 @@ StackInterpreter >> getNextWakeupUsecs [
 	<api>
 	<returnTypeC: #usqLong>
 	^nextWakeupUsecs
-]
-
-{ #category : #'plugin primitive support' }
-StackInterpreter >> getSavedWindowSize [
-	^savedWindowSize
 ]
 
 { #category : #'primitive support' }
@@ -7685,9 +7672,7 @@ StackInterpreter >> initialize [
 	nextPollUsecs := 0.
 	nextWakeupUsecs := 0.
 	tempOop := tempOop2 := theUnknownShort := 0.
-	interruptPending := false.
 	maxStacksToPrint := 0.
-	fullScreenFlag := 0.
 	displayBits := displayWidth := displayHeight := displayDepth := 0.
 	globalSessionID := 0.
 	jmpDepth := 0.
@@ -13579,11 +13564,6 @@ StackInterpreter >> setFrameHasContext: theFP [
 	stackPages byteAt: theFP + FoxFrameFlags + 2 put: 1
 ]
 
-{ #category : #'plugin primitive support' }
-StackInterpreter >> setFullScreenFlag: value [
-	fullScreenFlag := value
-]
-
 { #category : #'object memory support' }
 StackInterpreter >> setGCMode: mode [
 	"This is a no-op in the StackVM"
@@ -13608,7 +13588,6 @@ StackInterpreter >> setHeadFP: theFP andSP: theSP inPage: thePage [
 StackInterpreter >> setImageHeaderFlagsFrom: headerFlags [
 	"Set the flags that are contained in the 7th long of the image header."
 	imageHeaderFlags := headerFlags. "so as to preserve unrecognised flags."
-	fullScreenFlag := headerFlags bitAnd: 1.
 	imageFloatsBigEndian := (headerFlags noMask: 2) ifTrue: [1] ifFalse: [0].
 	"processHasThreadId := headerFlags anyMask: 4. specific to CoInterpreterMT"
 	"flagInterpretedMethods := headerFlags anyMask: 8. specific to CoInterpreter"
@@ -13621,24 +13600,6 @@ StackInterpreter >> setImageName: aString [
 	<doNotGenerate>
 	"Simulation support for when running it with an image"
 	self shouldNotImplement 
-]
-
-{ #category : #'primitive support' }
-StackInterpreter >> setInterruptCheckChain: aFunction [
-	<var: #aFunction declareC: 'void (*aFunction)()'>
-	<var: #prevFunction declareC: 'void (*prevFunction)()'>
-	<returnTypeC: 'void (*setInterruptCheckChain(void (*aFunction)(void)))()'>
-	<export: true>
-	| prevFunction |
-	prevFunction := interruptCheckChain.
-	interruptCheckChain := aFunction.
-	^prevFunction
-]
-
-{ #category : #'plugin primitive support' }
-StackInterpreter >> setInterruptPending: value [
-	self forceInterruptCheck.
-	interruptPending := value
 ]
 
 { #category : #'process primitive support' }
@@ -13707,11 +13668,6 @@ StackInterpreter >> setNumStackPages: requestedNumPages [
 
 	desiredNumStackPages := requestedNumPages.
 
-]
-
-{ #category : #'plugin primitive support' }
-StackInterpreter >> setSavedWindowSize: value [
-	savedWindowSize := value
 ]
 
 { #category : #'process primitive support' }

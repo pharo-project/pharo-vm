@@ -902,7 +902,7 @@ StackInterpreterPrimitives >> primitiveAllVMParameters: paramsArraySize [
 			storePointerUnchecked: 53 ofObject: result withValue: (objectMemory integerObjectOf: objectMemory freeSize);
 			storePointerUnchecked: 54 ofObject: result withValue: (objectMemory floatObjectOf: objectMemory getHeapGrowthToSizeGCRatio).
 	objectMemory storePointerUnchecked: 55	ofObject: result withValue: (self positive64BitIntegerFor: statProcessSwitch).
-	objectMemory storePointerUnchecked: 56	ofObject: result withValue: (self positive64BitIntegerFor: statIOProcessEvents).
+	objectMemory storePointerUnchecked: 56	ofObject: result withValue: (self positive64BitIntegerFor: 0).
 	objectMemory storePointerUnchecked: 57	ofObject: result withValue: (self positive64BitIntegerFor: statForceInterruptCheck).
 	objectMemory storePointerUnchecked: 58	ofObject: result withValue: (self positive64BitIntegerFor: statCheckForEvents).
 	objectMemory storePointerUnchecked: 59	ofObject: result withValue: (self positive64BitIntegerFor: statStackOverflow).
@@ -1737,7 +1737,7 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: arg [
 			[54] ->	[^objectMemory integerObjectOf: objectMemory freeSize].
 			[55] ->	[^objectMemory floatObjectOf: objectMemory getHeapGrowthToSizeGCRatio].
 			[56] ->	[^self positive64BitIntegerFor: statProcessSwitch].
-			[57] ->	[^self positive64BitIntegerFor: statIOProcessEvents].
+			[57] ->	[^0].
 			[58] ->	[^self positive64BitIntegerFor: statForceInterruptCheck].
 			[59] ->	[^self positive64BitIntegerFor: statCheckForEvents].
 			[60] ->	[^self positive64BitIntegerFor: statStackOverflow].
