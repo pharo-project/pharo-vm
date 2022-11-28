@@ -82,33 +82,6 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingDy
 ]
 
 { #category : #'tests-ephemerons-globals' }
-VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingDyingObjectShouldFireFinalization [
-	| ephemeronObjectOop nonEphemeronObjectOop  oldFinalization |
-	self createEphemeronClass.
-	ephemeronObjectOop := self newEphemeronObject.
-	"Force object to not be collected by putting them in special variables"
-	self keepObjectInVMVariable1: ephemeronObjectOop.
-	"Move ephemeron to old space"
-	memory flushNewSpace.
-	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
-
-	nonEphemeronObjectOop := self newZeroSizedObject.
-	oldFinalization := memory coInterpreter pendingFinalizationSignals.
-	memory
-		storePointer: 0
-		ofObject: ephemeronObjectOop
-		withValue: nonEphemeronObjectOop.
-
-	"Force object to not be collected by putting them in special variables"
-	self keepObjectInVMVariable1: ephemeronObjectOop.
-
-	memory doScavenge: 1.	"TenureByAge"
-	self
-		assert: memory coInterpreter pendingFinalizationSignals
-		equals: oldFinalization + 1
-]
-
-{ #category : #'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingDyingObjectShouldScavengeEphemeronKey [
 	| ephemeronObjectOop nonEphemeronObjectOop  nonEphemeronObjectHash |
 	self createEphemeronClass.
@@ -205,28 +178,6 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectReferencingDyingObject
 	self
 		assert: memory dequeueMourner
 		equals: ephemeronObjectOop
-]
-
-{ #category : #'tests-ephemerons-globals' }
-VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectReferencingDyingObjectShouldFireFinalization [
-	| ephemeronObjectOop nonEphemeronObjectOop  oldFinalization |
-	self createEphemeronClass.
-	ephemeronObjectOop := self newEphemeronObject.
-	nonEphemeronObjectOop := self newZeroSizedObject.
-	oldFinalization := memory coInterpreter pendingFinalizationSignals.
-	memory
-		storePointer: 0
-		ofObject: ephemeronObjectOop
-		withValue: nonEphemeronObjectOop.
-
-	"Force object to not be collected by putting them in special variables"
-	self keepObjectInVMVariable1: ephemeronObjectOop.
-
-	memory doScavenge: 1.	"TenureByAge"
-	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
-	self
-		assert: memory coInterpreter pendingFinalizationSignals
-		equals: oldFinalization + 1
 ]
 
 { #category : #'tests-ephemerons-globals' }

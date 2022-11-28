@@ -3588,7 +3588,6 @@ CoInterpreter >> getCogVMFlags [
 	 Bit 5: if set, implies wheel events will be delivered as such and not mapped to arrow key events"
 	^objectMemory integerObjectOf: (flagInterpretedMethods ifTrue: [2] ifFalse: [0])
 									+ (preemptionYields ifTrue: [0] ifFalse: [4])
-									+ (sendWheelEvents ifTrue: [32] ifFalse: [0])
 									+ (imageHeaderFlags >> 2 bitClear: 2 + 4 + 16 + 32)
 ]
 
@@ -3622,7 +3621,6 @@ CoInterpreter >> getImageHeaderFlags [
 	+ (VMBIGENDIAN ifTrue: [0] ifFalse: [2]) "this is the imageFloatsLittleEndian flag"
 	+ (flagInterpretedMethods ifTrue: [8] ifFalse: [0])
 	+ (preemptionYields ifTrue: [0] ifFalse: [16r10])
-	+ (sendWheelEvents ifTrue: [16r80] ifFalse: [0])
 	+ (imageHeaderFlags bitClear: 16rDB) "these are any flags we do not recognize"
 ]
 
@@ -6351,7 +6349,6 @@ CoInterpreter >> setCogVMFlags: flags [
 	flagInterpretedMethods := flags anyMask: 2.
 	preemptionYields := flags noMask: 4.
 	"noThreadingOfGUIThread := flags anyMask: 8.. specific to CoInterpreterMT"
-	sendWheelEvents := flags anyMask: 32
 ]
 
 { #category : #'internal interpreter access' }
@@ -6384,7 +6381,6 @@ CoInterpreter >> setImageHeaderFlagsFrom: headerFlags [
 	flagInterpretedMethods := headerFlags anyMask: 8.
 	preemptionYields := headerFlags noMask: 16.
 	"noThreadingOfGUIThread := headerFlags anyMask: 32. specific to CoInterpreterMT"
-	sendWheelEvents := headerFlags anyMask: 128
 ]
 
 { #category : #'internal interpreter access' }

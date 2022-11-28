@@ -884,7 +884,7 @@ StackInterpreterPrimitives >> primitiveAllVMParameters: paramsArraySize [
 	objectMemory storePointerUnchecked: 35	ofObject: result withValue: (objectMemory integerObjectOf: (self microsecondsToMilliseconds: objectMemory statGCEndUsecs)).
 	objectMemory storePointerUnchecked: 36	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statSpecialMarkCount).
 	objectMemory storePointerUnchecked: 37	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statIGCDeltaUsecs + 500 // 1000).
-	objectMemory storePointerUnchecked: 38	ofObject: result withValue: (objectMemory integerObjectOf: statPendingFinalizationSignals).
+	objectMemory storePointerUnchecked: 38	ofObject: result withValue: (objectMemory integerObjectOf: 0).
 	objectMemory storePointerUnchecked: 39	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory wordSize).
 	objectMemory storePointerUnchecked: 40	ofObject: result withValue: (objectMemory integerObjectOf: self imageFormatVersion).
 	objectMemory storePointerUnchecked: 41	ofObject: result withValue: (objectMemory integerObjectOf: numStackPages).
@@ -1721,7 +1721,7 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: arg [
 			[36] ->	[^objectMemory integerObjectOf: (self microsecondsToMilliseconds: objectMemory statGCEndUsecs)].
 			[37] ->	[^objectMemory integerObjectOf: objectMemory statSpecialMarkCount].
 			[38] ->	[^objectMemory integerObjectOf: objectMemory statIGCDeltaUsecs + 500 // 1000].
-			[39] ->	[^objectMemory integerObjectOf: statPendingFinalizationSignals].
+			[39] ->	[^0 "free"].
 			[40] ->	[^objectMemory integerObjectOf: objectMemory wordSize].
 			[41] ->	[^objectMemory integerObjectOf: self imageFormatVersion].
 			[42] ->	[^objectMemory integerObjectOf: numStackPages].

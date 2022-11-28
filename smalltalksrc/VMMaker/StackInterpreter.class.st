@@ -341,7 +341,6 @@ Class {
 		'savedWindowSize',
 		'imageHeaderFlags',
 		'fullScreenFlag',
-		'sendWheelEvents',
 		'pendingFinalizationSignals',
 		'extraVMMemory',
 		'interpreterProxy',
@@ -3839,12 +3838,6 @@ StackInterpreter >> cannotAssign: resultObj to: targetObj withIndex: index [
 	^ self normalSend
 ]
 
-{ #category : #'debug support' }
-StackInterpreter >> capturePendingFinalizationSignals [
-	statPendingFinalizationSignals := pendingFinalizationSignals.
-
-]
-
 { #category : #'indexing primitive support' }
 StackInterpreter >> characterForAscii: ascii [  "Above ObjectMemory, arg must lie in range 0-255!"
 	<inline: true>
@@ -4018,35 +4011,12 @@ StackInterpreter >> checkForEventsMayContextSwitch: mayContextSwitch [
 	"inIOProcessEvents prevents reentrancy into ioProcessEvents and allows disabling
 	 ioProcessEvents e.g. for native GUIs.  We would like to manage that here but can't
 	 since the platform code may choose to call ioProcessEvents itself in various places."
-	false
-		ifTrue:
-			[((now := self ioUTCMicroseconds) >= nextPollUsecs
-			 and: [inIOProcessEvents = 0]) ifTrue:
-				[statIOProcessEvents := statIOProcessEvents + 1.
-				 inIOProcessEvents := inIOProcessEvents + 1.
-				 self ioProcessEvents. "sets interruptPending if interrupt key pressed; may callback"
-				 inIOProcessEvents > 0 ifTrue:
-					[inIOProcessEvents := inIOProcessEvents - 1].
-				 nextPollUsecs := now + 20000
-				 "msecs to wait before next call to ioProcessEvents.  Note that strictly
-				  speaking we might need to update 'now' at this point since
-				  ioProcessEvents could take a very long time on some platforms"]]
-		ifFalse:
-			[(now := self ioUTCMicroseconds) >= nextPollUsecs ifTrue:
-				[statIOProcessEvents := statIOProcessEvents + 1.
-				 self ioProcessEvents. "sets interruptPending if interrupt key pressed; may callback"
-				 nextPollUsecs := now + 20000
-				 "msecs to wait before next call to ioProcessEvents.  Note that strictly
-				  speaking we might need to update 'now' at this point since
-				  ioProcessEvents could take a very long time on some platforms"]].
-
-	interruptPending ifTrue:
-		[interruptPending := false.
-		 "reset interrupt flag"
-		 sema := objectMemory splObj: TheInterruptSemaphore.
-		 (sema ~= objectMemory nilObject
-		  and: [self synchronousSignal: sema]) ifTrue:
-			[switched := true]].
+	(now := self ioUTCMicroseconds) >= nextPollUsecs ifTrue: [
+		self ioProcessEvents. "sets interruptPending if interrupt key pressed; may callback"
+		nextPollUsecs := now + 20000
+		"msecs to wait before next call to ioProcessEvents.  Note that strictly
+		speaking we might need to update 'now' at this point since
+		ioProcessEvents could take a very long time on some platforms"].
 
 	nextWakeupUsecs ~= 0 ifTrue:
 		[now >= nextWakeupUsecs ifTrue:
@@ -4056,14 +4026,6 @@ StackInterpreter >> checkForEventsMayContextSwitch: mayContextSwitch [
 			 (sema ~= objectMemory nilObject
 			  and: [self synchronousSignal: sema]) ifTrue:
 				[switched := true]]].
-
-	"signal any pending finalizations"
-	pendingFinalizationSignals > 0 ifTrue:
-		[pendingFinalizationSignals := 0.
-		 sema := objectMemory splObj: TheFinalizationSemaphore.
-		 (sema ~= objectMemory nilObject
-		  and: [self synchronousSignal: sema]) ifTrue:
-			[switched := true]].
 
 	"signal all semaphores in semaphoresToSignal"
 	self signalExternalSemaphores ifTrue:
@@ -6400,15 +6362,14 @@ StackInterpreter >> fireEphemeron: ephemeron [
 	<option: #SpurObjectMemory>
 	objectMemory
 		queueMourner: ephemeron;
-		setFormatOf: ephemeron to: objectMemory nonIndexablePointerFormat.
-	self signalFinalization: ephemeron
+		setFormatOf: ephemeron to: objectMemory nonIndexablePointerFormat
 ]
 
 { #category : #finalization }
 StackInterpreter >> fireFinalization: weakling [
+
 	<option: #SpurObjectMemory>
-	objectMemory queueMourner: weakling.
-	self signalFinalization: weakling
+	objectMemory queueMourner: weakling
 ]
 
 { #category : #'compiled methods' }
@@ -7155,7 +7116,6 @@ StackInterpreter >> getCogVMFlags [
 	 Bit 4: if set, implies the new finalization scheme where WeakArrays are queued
 	 Bit 5: if set, implies wheel events will be delivered as such and not mapped to arrow key events"
 	^objectMemory integerObjectOf: (preemptionYields ifTrue: [0] ifFalse: [4])
-									+ (sendWheelEvents ifTrue: [32] ifFalse: [0])
 									+ (imageHeaderFlags >> 2 bitClear: 4 + 16 + 32)
 ]
 
@@ -7240,7 +7200,6 @@ StackInterpreter >> getImageHeaderFlags [
 	^fullScreenFlag "0 or 1"
 	+ (VMBIGENDIAN ifTrue: [0] ifFalse: [2]) "this is the imageFloatsLittleEndian flag"
 	+ (preemptionYields ifTrue: [0] ifFalse: [16r10])
-	+ (sendWheelEvents ifTrue: [16r80] ifFalse: [0])
 	+ (imageHeaderFlags bitClear: 16rD3) "these are any flags we do not recognize"
 ]
 
@@ -7728,18 +7687,15 @@ StackInterpreter >> initialize [
 	tempOop := tempOop2 := theUnknownShort := 0.
 	interruptPending := false.
 	maxStacksToPrint := 0.
-	inIOProcessEvents := 0.
 	fullScreenFlag := 0.
-	sendWheelEvents := false.
 	displayBits := displayWidth := displayHeight := displayDepth := 0.
-	pendingFinalizationSignals := statPendingFinalizationSignals := 0.
 	globalSessionID := 0.
 	jmpDepth := 0.
 	longRunningPrimitiveStartUsecs := longRunningPrimitiveStopUsecs := 0.
 	maxExtSemTabSizeSet := false.
 	debugCallbackInvokes := debugCallbackPath := debugCallbackReturns := 0.
 	statForceInterruptCheck := statStackOverflow := statCheckForEvents :=
-	statProcessSwitch := statIOProcessEvents := statStackPageDivorce :=
+	statProcessSwitch := statStackPageDivorce :=
 	statIdleUsecs := 0.
 	messageCount := 0.
 ]
@@ -10868,12 +10824,6 @@ StackInterpreter >> page: aCogStackPage [
 	self shouldBeImplemented.
 ]
 
-{ #category : #accessing }
-StackInterpreter >> pendingFinalizationSignals [
-	<doNotGenerate>
-	^ pendingFinalizationSignals
-]
-
 { #category : #'debug printing' }
 StackInterpreter >> penultimateLiteralOf: aMethodOop [
 	<api>
@@ -11123,29 +11073,6 @@ StackInterpreter >> primitiveAccessorDepthForExternalPrimitiveMethod: methodObj 
 		(objectMemory
 			fetchPointer: 2
 			ofObject: (self literal: 0 ofMethod: methodObj))
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreter >> primitiveEventProcessingControl [
-	"With 0 args answers whether ioProcessEvents is enabled and being called.
-	 With 1 arg expects a boolean which will enable ioProcessEvents if true and
-	 disable it if false, answering its previous state."
-	<export: true>
-	| enabled |
-	enabled := inIOProcessEvents >= 0.
-	argumentCount = 0 ifTrue:
-		[^self pop: 1 thenPushBool: enabled].
-	argumentCount = 1 ifTrue:
-		[self stackTop = objectMemory trueObject
-			ifTrue: [inIOProcessEvents < 0 ifTrue:
-					[inIOProcessEvents := 0]]
-			ifFalse:
-				[self stackTop = objectMemory falseObject
-					ifTrue: [inIOProcessEvents := -1]
-					ifFalse: [self primitiveFailFor: PrimErrBadArgument.
-							^self]].
-		 ^self pop: 2 thenPushBool: enabled].
-	self primitiveFailFor: PrimErrBadNumArgs
 ]
 
 { #category : #'simd primitives' }
@@ -13614,7 +13541,6 @@ StackInterpreter >> setCogVMFlags: flags [
 	"processHasThreadId := flags anyMask: 1. specific to CoInterpreterMT"
 	"flagInterpretedMethods := flags anyMask: 2. specific to CoInterpreter"
 	preemptionYields := flags noMask: 4.
-	sendWheelEvents := flags anyMask: 32
 ]
 
 { #category : #'internal interpreter access' }
@@ -13688,7 +13614,6 @@ StackInterpreter >> setImageHeaderFlagsFrom: headerFlags [
 	"flagInterpretedMethods := headerFlags anyMask: 8. specific to CoInterpreter"
 	preemptionYields := headerFlags noMask: 16.
 	"noThreadingOfGUIThread := headerFlags anyMask: 32. specific to CoInterpreterMT"
-	sendWheelEvents := headerFlags anyMask: 128
 ]
 
 { #category : #'simulation support' }
@@ -14153,17 +14078,6 @@ StackInterpreter >> signalExternalSemaphores [
 	| xArray |
 	xArray := objectMemory splObj: ExternalObjectsArray.
 	^self doSignalExternalSemaphores: (objectMemory numSlotsOf: xArray)
-]
-
-{ #category : #'process primitive support' }
-StackInterpreter >> signalFinalization: weakReferenceOop [
-	"Record the fact that there is at least one object to finalize
-	 and cause the VM to check for interrupts at the earliest
-	 opportunity. The finalization semaphore will actually be
-	 signalled once in checkForEventsMayContextSwitch:"
-
-	self forceInterruptCheck.
-	pendingFinalizationSignals := pendingFinalizationSignals + 1
 ]
 
 { #category : #'primitive support' }
