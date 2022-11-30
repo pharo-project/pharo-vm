@@ -404,7 +404,8 @@ Class {
 		'showSurfaceFn',
 		'messageCount',
 		'imageReader',
-		'imageWriter'
+		'imageWriter',
+		'pendingFinalizationSignals'
 	],
 	#classVars : [
 		'AccessModifierPrivate',
@@ -4009,12 +4010,21 @@ StackInterpreter >> checkForEventsMayContextSwitch: mayContextSwitch [
 	"inIOProcessEvents prevents reentrancy into ioProcessEvents and allows disabling
 	 ioProcessEvents e.g. for native GUIs.  We would like to manage that here but can't
 	 since the platform code may choose to call ioProcessEvents itself in various places."
+	
 	(now := self ioUTCMicroseconds) >= nextPollUsecs ifTrue: [
 		self ioProcessEvents. "sets interruptPending if interrupt key pressed; may callback"
-		nextPollUsecs := now + 20000
-		"msecs to wait before next call to ioProcessEvents.  Note that strictly
-		speaking we might need to update 'now' at this point since
-		ioProcessEvents could take a very long time on some platforms"].
+		"msecs to wait before next call to ioProcessEvents."
+		 nextPollUsecs := now + 20000
+		 "Note that strictly speaking we might need to update 'now' at this point since
+		 ioProcessEvents could take a very long time on some platforms" ].
+
+	interruptPending ifTrue:
+		[interruptPending := false.
+		 "reset interrupt flag"
+		 sema := objectMemory splObj: TheInterruptSemaphore.
+		 (sema ~= objectMemory nilObject
+		  and: [self synchronousSignal: sema]) ifTrue:
+			[switched := true]].
 
 	nextWakeupUsecs ~= 0 ifTrue:
 		[now >= nextWakeupUsecs ifTrue:
@@ -4024,6 +4034,14 @@ StackInterpreter >> checkForEventsMayContextSwitch: mayContextSwitch [
 			 (sema ~= objectMemory nilObject
 			  and: [self synchronousSignal: sema]) ifTrue:
 				[switched := true]]].
+
+	"signal any pending finalizations"
+	pendingFinalizationSignals > 0 ifTrue:
+		[pendingFinalizationSignals := 0.
+		 sema := objectMemory splObj: TheFinalizationSemaphore.
+		 (sema ~= objectMemory nilObject
+		  and: [self synchronousSignal: sema]) ifTrue:
+			[switched := true]].
 
 	"signal all semaphores in semaphoresToSignal"
 	self signalExternalSemaphores ifTrue:
@@ -6360,14 +6378,8 @@ StackInterpreter >> fireEphemeron: ephemeron [
 	<option: #SpurObjectMemory>
 	objectMemory
 		queueMourner: ephemeron;
-		setFormatOf: ephemeron to: objectMemory nonIndexablePointerFormat
-]
-
-{ #category : #finalization }
-StackInterpreter >> fireFinalization: weakling [
-
-	<option: #SpurObjectMemory>
-	objectMemory queueMourner: weakling
+		setFormatOf: ephemeron to: objectMemory nonIndexablePointerFormat.
+	self signalFinalization: ephemeron
 ]
 
 { #category : #'compiled methods' }
@@ -7667,6 +7679,7 @@ StackInterpreter >> initialize [
 	tempOop := tempOop2 := theUnknownShort := 0.
 	maxStacksToPrint := 0.
 	displayBits := displayWidth := displayHeight := displayDepth := 0.
+	pendingFinalizationSignals := 0.
 	globalSessionID := 0.
 	jmpDepth := 0.
 	longRunningPrimitiveStartUsecs := longRunningPrimitiveStopUsecs := 0.
@@ -14027,6 +14040,17 @@ StackInterpreter >> signalExternalSemaphores [
 	| xArray |
 	xArray := objectMemory splObj: ExternalObjectsArray.
 	^self doSignalExternalSemaphores: (objectMemory numSlotsOf: xArray)
+]
+
+{ #category : #finalization }
+StackInterpreter >> signalFinalization: weakReferenceOop [
+	"Record the fact that there is at least one object to finalize
+	 and cause the VM to check for interrupts at the earliest
+	 opportunity. The finalization semaphore will actually be
+	 signalled once in checkForEventsMayContextSwitch:"
+
+	self forceInterruptCheck.
+	pendingFinalizationSignals := pendingFinalizationSignals + 1
 ]
 
 { #category : #'primitive support' }
