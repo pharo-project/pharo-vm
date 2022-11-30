@@ -4,6 +4,13 @@ Class {
 	#category : #'VMMakerTests-MemoryTests'
 }
 
+{ #category : #initialization }
+VMSpurScavengeEphemeronTest >> setUp [
+
+	super setUp.
+	memory initializeMournQueue
+]
+
 { #category : #'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testDequeueMournerWithOnlyOneEphemeronShouldEmptyMournQueue [
 	| ephemeronObjectOop nonEphemeronObjectOop |
