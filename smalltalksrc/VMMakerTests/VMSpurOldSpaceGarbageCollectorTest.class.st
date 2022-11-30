@@ -269,6 +269,27 @@ VMSpurOldSpaceGarbageCollectorTest >> testEphemeronOverflowUnscannedEphemeronQue
 		equals: numberJustOverLimit
 ]
 
+{ #category : #tests }
+VMSpurOldSpaceGarbageCollectorTest >> testGrowOldSpace [
+
+	| freespace freespace2 slotsNumber anObjectOop |
+	
+	memory fullGC.
+	
+	freespace := memory totalFreeOldSpace.
+	slotsNumber := freespace / memory wordSize.	
+	memory growOldSpaceByAtLeast: slotsNumber.
+	freespace2 := memory totalFreeOldSpace.
+	self assert: freespace*2 <= freespace2.
+	
+	anObjectOop := self newObjectWithSlots: slotsNumber.
+	self deny: anObjectOop equals: nil.
+	self assert: freespace2 - (memory bytesInObject: anObjectOop) equals: memory totalFreeOldSpace.
+	
+	memory fullGC.
+	self assert: freespace equals: memory totalFreeOldSpace.
+]
+
 { #category : #ephemerons }
 VMSpurOldSpaceGarbageCollectorTest >> testMournQueue [
 

@@ -5785,8 +5785,8 @@ SpurMemoryManager >> growHeadroom: aValue [
 
 { #category : #'growing/shrinking memory' }
 SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount [
-	"Attempt to grow memory by at least minAmmount.
-	 Answer the size of the new segment, or nil if the attempt failed."
+	"Attempt to grow memory by at least minAmmount bytes.
+	 Answer the size of the new segment in bytes, or nil if the attempt failed."
 	| ammount headroom total start interval |
 	<var: #segInfo type: #'SpurSegmentInfo *'>
 	"statGrowMemory counts attempts, not successes."
@@ -5814,12 +5814,13 @@ SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount [
 	start := coInterpreter ioUTCMicrosecondsNow.
 	^(segmentManager addSegmentOfSize: ammount) ifNotNil:
 		[:segInfo|
+		| freeChunk |
 		 self assimilateNewSegment: segInfo.
 		 "and add the new free chunk to the free list; done here
 		  instead of in assimilateNewSegment: for the assert"
-		 self addFreeChunkWithBytes: segInfo segSize - self bridgeSize at: segInfo segStart.
-		 self assert: (self addressAfter: (self objectStartingAt: segInfo segStart))
-					= (segInfo segLimit - self bridgeSize).
+		 freeChunk := self addFreeChunkWithBytes: segInfo segSize - self bridgeSize at: segInfo segStart.
+		 self assert: freeChunk = (self objectStartingAt: segInfo segStart).
+		 self assert: (self addressAfter: freeChunk) = (segInfo segLimit - self bridgeSize).
 		 self checkFreeSpace: GCModeFreeSpace.
 		 segmentManager checkSegments.
 		 interval := coInterpreter ioUTCMicrosecondsNow - start.
@@ -5830,10 +5831,11 @@ SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount [
 { #category : #'growing/shrinking memory' }
 SpurMemoryManager >> growToAccomodateContainerWithNumSlots: numSlots [
 	"Grow memory to accomodate a container (an Array) with numSlots.
-	 Grow by at least the growHeadroom.  Supports allInstancesOf: and allObjects."
+	 Grow by at least the growHeadroom.  Supports allInstancesOf: and allObjects.
+	 Answer the size of the new segment in bytes, or nil if the attempt failed."
 	| delta |
 	delta := self baseHeaderSize * 2 + (numSlots * self bytesPerOop).
-	self growOldSpaceByAtLeast: (growHeadroom max: delta)
+	^ self growOldSpaceByAtLeast: (growHeadroom max: delta)
 ]
 
 { #category : #'header access' }
