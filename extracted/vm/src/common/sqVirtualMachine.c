@@ -484,7 +484,6 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 	VM->stackSignedMachineIntegerValue = stackSignedMachineIntegerValue;
 	VM->positiveMachineIntegerValueOf = positiveMachineIntegerValueOf;
 	VM->stackPositiveMachineIntegerValue = stackPositiveMachineIntegerValue;
-	VM->getInterruptPending = getInterruptPending;
 	VM->cStringOrNullFor = cStringOrNullFor;
 	VM->signalNoResume = signalNoResume;
 #endif
