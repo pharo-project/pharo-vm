@@ -9626,7 +9626,11 @@ SpurMemoryManager >> popObjStack: objStack [
 						[MarkStackRecord addLast: {#EMPTY. nil}]]].
 		^nil].
 	topx := topx - 1.
+	
+	"Get the top and mark it as BADFOOD to indicate it's not available"
 	top := self fetchPointer: topx + ObjStackFixedSlots ofObject: objStack.
+	self storePointer: topx + ObjStackFixedSlots ofObject: objStack withValue: 16rBADF00D.
+	
 	self cCode: [] "for debugging markAndTrace: set (MarkStackRecord := OrderedCollection new)"
 		inSmalltalk:
 			[(self fetchPointer: ObjStackMyx ofObject: objStack) = MarkStackRootIndex ifTrue:
