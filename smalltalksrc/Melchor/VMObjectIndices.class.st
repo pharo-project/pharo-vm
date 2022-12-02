@@ -103,5 +103,5 @@ Class {
 		'XIndex',
 		'YIndex'
 	],
-	#category : #'VMMaker-Interpreter'
+	#category : #Melchor
 }
