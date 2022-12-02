@@ -222,6 +222,8 @@ Class {
 		'superSendTrampolines',
 		'directedSuperSendTrampolines',
 		'directedSuperBindingSendTrampolines',
+		'dynamicSuperSendTrampolines',
+		'outerSendTrampolines',
 		'selfSendTrampolines',
 		'firstSend',
 		'lastSend',
@@ -263,8 +265,7 @@ Class {
 		'statCompileFullBlockCount',
 		'statCompileFullBlockUsecs',
 		'statCompileMethodCount',
-		'statCompileMethodUsecs',
-		'ceSendMustBeBooleanTrampoline'
+		'statCompileMethodUsecs'
 	],
 	#classVars : [
 		'AltFirstSpecialSelector',
@@ -848,21 +849,19 @@ Cogit class >> initializeAnnotationConstants [
 
 { #category : #'class initialization' }
 Cogit class >> initializeBytecodeTable [
+
 	"SimpleStackBasedCogit initializeBytecodeTableWith: Dictionary new"
+
 	"StackToRegisterMappingCogit initializeBytecodeTableWith: Dictionary new"
 
 	| initializer |
 	BytecodeSetHasDirectedSuperSend := BytecodeSetHasExtensions := false.
 	initializer := InitializationOptions
-					at: #bytecodeTableInitializer
-					ifAbsent:
-						[MULTIPLEBYTECODESETS
-									ifTrue: [self error]
-									ifFalse: [#initializeBytecodeTableForSistaV1]].
+		               at: #bytecodeTableInitializer
+		               ifAbsent: [ #initializeBytecodeTableForSistaV1 ].
 	"Now make sure all classes in the hierarchy have initialized to the same bytecode table."
-	(self withAllSuperclasses copyUpTo: Cogit) reverseDo: "i.e. exclude Cogit"
-		[:cogitClass|
-		 cogitClass perform: initializer]
+	(self withAllSuperclasses copyUpTo: Cogit) reverseDo: [ :cogitClass | "i.e. exclude Cogit" 
+		cogitClass perform: initializer ]
 ]
 
 { #category : #'class initialization' }
@@ -3123,7 +3122,7 @@ Cogit >> addToMap: annotation instruction: instruction byte: byte at: address fo
 				 instruction printStateOn: s.
 				 s space.
 				 bytecode := objectMemory fetchByte: instruction bcpc ofObject: methodObj.
-				 bytecode := bytecode + (self bytecodeSetOffsetForHeader: methodHeader).
+				 bytecode := bytecode.
 				 (self generatorAt: bytecode) printStateOn: s.
 				 s cr; flush]]]
 ]
@@ -3262,28 +3261,31 @@ Cogit >> allMethodsHaveCorrectHeader [
 
 { #category : #initialization }
 Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes [
+
 	"Allocate the various arrays needed to compile abstract instructions.
 	 Notionally we only need as many fixups as there are bytecodes.  But we
 	 reuse fixups to record pc-dependent instructions in generateInstructionsAt:
 	 and so need at least as many as there are abstract opcodes."
+
 	<inline: true>
-	
-	self ensureAndClearAbstractOpcodes.	
+	self ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes.
 	self zeroOpcodeIndexForNewOpcodes.
 	labelCounter := 0
 ]
 
 { #category : #initialization }
 Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes ifFail: failBlock [
+
 	"Allocate the various arrays needed to compile abstract instructions, failing if the size
 	 needed is considered too high.  Notionally we only need as many fixups as there are
 	 bytecodes.  But we reuse fixups to record pc-dependent instructions in
 	 generateInstructionsAt: and so need at least as many as there are abstract opcodes."
 
-	numberOfAbstractOpcodes > MaxNumberOfAbstractOpcodes ifTrue:
-		[^failBlock value].
+	<inline: true>
+	numberOfAbstractOpcodes > MaxNumberOfAbstractOpcodes ifTrue: [ 
+		^ failBlock value ].
 
-	self ensureAndClearAbstractOpcodes.
+	self ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes.
 
 	self zeroOpcodeIndexForNewOpcodes.
 	labelCounter := 0
@@ -3542,32 +3544,6 @@ Cogit >> blockDispatchTargetsFor: cogMethod perform: binaryFunction arg: arg [
 	^0
 ]
 
-{ #category : #disassembly }
-Cogit >> blockStartPcsIn: aMethod [
-	"Answer the start bytecopde pcs in a method in compilation order, i.e. depth-first.
-	 Blocks must occur in pc/depth-first order for binary tree block dispatch to work."
-	| startpcs pc latestContinuation end descriptor byte bsOffset nExts |
-	<doNotGenerate>
-	startpcs := OrderedCollection new.
-	startpcs add: (pc := latestContinuation := coInterpreter startPCOfMethod: aMethod).
-	end := objectMemory numBytesOf: aMethod.
-	bsOffset := self bytecodeSetOffsetFor: aMethod.
-	nExts := 0.
-	[pc <= end] whileTrue:
-		[byte := objectMemory fetchByte: pc ofObject: aMethod.
-		 descriptor := self generatorAt: byte + bsOffset.
-		 (descriptor isReturn
-		  and: [pc >= latestContinuation]) ifTrue:
-			[end := pc].
-		 descriptor isBranch ifTrue:
-			[| targetPC |
-			 targetPC := self latestContinuationPCFor: descriptor at: pc exts: nExts in: aMethod.
-			 latestContinuation := latestContinuation max: targetPC].
-		 pc := pc + descriptor numBytes.
-		 nExts := descriptor isExtension ifTrue: [nExts + 1] ifFalse: [0]].
-	^startpcs
-]
-
 { #category : #'simulation only' }
 Cogit >> breakAt: address [
 	((breakPC isBreakpointFor: address)
@@ -3643,30 +3619,6 @@ Cogit >> bytecodePCFor: mcpc startBcpc: startbcpc in: cogMethod [
 		bcpc: startbcpc
 		performUntil: #find:IsBackwardBranch:Mcpc:Bcpc:MatchingMcpc:
 		arg: mcpc asVoidPointer
-]
-
-{ #category : #initialization }
-Cogit >> bytecodeSetOffsetFor: aMethodObj [
-	<inline: true>
-	^self
-		cppIf: MULTIPLEBYTECODESETS
-		ifTrue:
-			[(coInterpreter methodUsesAlternateBytecodeSet: aMethodObj)
-				ifTrue: [256]
-				ifFalse: [0]]
-		ifFalse: [0]
-]
-
-{ #category : #initialization }
-Cogit >> bytecodeSetOffsetForHeader: aMethodHeader [
-	<inline: true>
-	^self
-		cppIf: MULTIPLEBYTECODESETS
-		ifTrue:
-			[(objectMemory headerIndicatesAlternateBytecodeSet: aMethodHeader)
-				ifTrue: [256]
-				ifFalse: [0]]
-		ifFalse: [0]
 ]
 
 { #category : #'simulation only' }
@@ -4454,13 +4406,11 @@ Cogit >> checkIntegrityOfObjectReferencesInCode: gcModes [
 						 performUntil: #checkIfValidOopRef:pc:cogMethod:
 						 arg: cogMethod asInteger) ~= 0
 							ifTrue: [ok := false].
-					 (objectRepresentation hasSpurMemoryManagerAPI
-					  or: [gcModes anyMask: GCModeNewSpace]) ifTrue:
-						[(((objectMemory isYoungObject: cogMethod methodObject)
+					 (((objectMemory isYoungObject: cogMethod methodObject)
 						    or: [objectMemory isYoung: cogMethod selector])
 						   and: [cogMethod cmRefersToYoung not]) ifTrue:
 							[coInterpreter print: 'CM '; printHex: cogMethod asInteger; print: ' refers to young but not marked as such'; cr.
-							 ok := false]]]
+							 ok := false]]
 				ifFalse:
 					[cogMethod cmType = CMPolymorphicIC
 						ifTrue:
@@ -4754,6 +4704,7 @@ Cogit >> cogCodeBase: anInteger [
 
 { #category : #'profiling primitives' }
 Cogit >> cogCodeConstituents: withDetails [
+
 	"Answer the contents of the code zone as an array of pair-wise element, address in ascending address order.
 	 Answer a string for a runtime routine or abstract label (beginning, end, etc), a CompiledMethod for a CMMethod,
 	 or a selector (presumably a Symbol) for a PIC.
@@ -4766,75 +4717,98 @@ Cogit >> cogCodeConstituents: withDetails [
 		  to collect the first case class tags, which are (temporarily) assigned to each closed PIC's methodObject field.
 		  But we do need to reset the methodObject fields to zero.  This is done in createPICData:, unless memory
 		  runs out, in which case it is done by cleanUpFailingCogCodeConstituents:."
+
 	<api>
-	| count cogMethod constituents label value |
 	<var: #cogMethod type: #'CogMethod *'>
+	| count cogMethod constituents label value |
 	count := trampolineTableIndex / 2 + 3. "+ 3 for start, freeStart and end"
 	cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
-	[cogMethod < methodZone limitZony] whileTrue:
-		[cogMethod cmType ~= CMFree ifTrue:
-			[count := count + 1].
-		cogMethod := methodZone methodAfter: cogMethod].
-	constituents := coInterpreter instantiateClass: coInterpreter classArray indexableSize: count * 2.
-	constituents ifNil:
-		[^constituents].
+	[ cogMethod < methodZone limitZony ] whileTrue: [ 
+		cogMethod cmType ~= CMFree ifTrue: [ count := count + 1 ].
+		cogMethod := methodZone methodAfter: cogMethod ].
+	constituents := coInterpreter
+		                instantiateClass: coInterpreter classArray
+		                indexableSize: count * 2.
+	constituents ifNil: [ ^ constituents ].
 	coInterpreter pushRemappableOop: constituents.
-	((label := objectMemory stringForCString: 'CogCode') isNil
-	 or: [(value := self positiveMachineIntegerFor: codeBase) isNil]) ifTrue:
-		[coInterpreter popRemappableOop.
-		 ^nil].
+	((label := objectMemory stringForCString: 'CogCode') isNil or: [ 
+		 (value := self positiveMachineIntegerFor: codeBase) isNil ]) 
+		ifTrue: [ 
+			coInterpreter popRemappableOop.
+			^ nil ].
 	coInterpreter
-		storePointerUnchecked: 0 ofObject: (self maybeTopRemapped: constituents) withValue: label;
-		storePointerUnchecked: 1 ofObject: (self maybeTopRemapped: constituents) withValue: value.
-	0 to: trampolineTableIndex - 1 by: 2 do:
-		[:i|
-		((label := objectMemory stringForCString: (trampolineAddresses at: i)) isNil
-		 or: [(value := self positiveMachineIntegerFor: (trampolineAddresses at: i + 1) asUnsignedInteger) isNil]) ifTrue:
-			[coInterpreter popRemappableOop.
-			 ^nil].
+		storePointerUnchecked: 0 ofObject: constituents withValue: label;
+		storePointerUnchecked: 1 ofObject: constituents withValue: value.
+	0 to: trampolineTableIndex - 1 by: 2 do: [ :i | 
+		((label := objectMemory stringForCString:
+			           (trampolineAddresses at: i)) isNil or: [ 
+			 (value := self positiveMachineIntegerFor:
+				           (trampolineAddresses at: i + 1) asUnsignedInteger)
+				 isNil ]) ifTrue: [ 
+			coInterpreter popRemappableOop.
+			^ nil ].
 		coInterpreter
-			storePointerUnchecked: 2 + i ofObject: (self maybeTopRemapped: constituents) withValue: label;
-			storePointerUnchecked: 3 + i ofObject: (self maybeTopRemapped: constituents) withValue: value].
+			storePointerUnchecked: 2 + i
+			ofObject: constituents
+			withValue: label;
+			storePointerUnchecked: 3 + i
+			ofObject: constituents
+			withValue: value ].
 	count := trampolineTableIndex + 2.
 	cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
-	[cogMethod < methodZone limitZony] whileTrue:
-		[cogMethod cmType ~= CMFree ifTrue:
-			[| profileData |
-			 profileData := self profileDataFor: cogMethod withDetails: withDetails.
-			 profileData ifNil: [^self cleanUpFailingCogCodeConstituents: cogMethod].
-			 coInterpreter
+	[ cogMethod < methodZone limitZony ] whileTrue: [ 
+		cogMethod cmType ~= CMFree ifTrue: [ 
+			| profileData |
+			profileData := self
+				               profileDataFor: cogMethod
+				               withDetails: withDetails.
+			profileData ifNil: [ 
+				^ self cleanUpFailingCogCodeConstituents: cogMethod ].
+			coInterpreter
 				storePointerUnchecked: count
-				ofObject: (self maybeTopRemapped: constituents)
+				ofObject: constituents
 				withValue: profileData.
 			value := withDetails
-						ifTrue: [self collectCogMethodConstituent: cogMethod]
-						ifFalse: [self positiveMachineIntegerFor: cogMethod asUnsignedInteger].
-			value ifNil: [^self cleanUpFailingCogCodeConstituents: cogMethod].
+				         ifTrue: [ self collectCogMethodConstituent: cogMethod ]
+				         ifFalse: [ 
+				         self positiveMachineIntegerFor:
+					         cogMethod asUnsignedInteger ].
+			value ifNil: [ ^ self cleanUpFailingCogCodeConstituents: cogMethod ].
 			coInterpreter
-						storePointerUnchecked: count + 1
-						ofObject: (self maybeTopRemapped: constituents)
-						withValue: value.
-			 count := count + 2].
-		cogMethod := methodZone methodAfter: cogMethod].
-	((label := objectMemory stringForCString: 'CCFree') isNil
-	 or: [(value := self positiveMachineIntegerFor: methodZone zoneFree) isNil]) ifTrue:
-		[coInterpreter popRemappableOop.
-		 ^nil].
+				storePointerUnchecked: count + 1
+				ofObject: constituents
+				withValue: value.
+			count := count + 2 ].
+		cogMethod := methodZone methodAfter: cogMethod ].
+	((label := objectMemory stringForCString: 'CCFree') isNil or: [ 
+		 (value := self positiveMachineIntegerFor: methodZone zoneFree)
+			 isNil ]) ifTrue: [ 
+		coInterpreter popRemappableOop.
+		^ nil ].
 	coInterpreter
-		storePointerUnchecked: count ofObject: (self maybeTopRemapped: constituents) withValue: label;
-		storePointerUnchecked: count + 1 ofObject: (self maybeTopRemapped: constituents) withValue: value.
-	((label := objectMemory stringForCString: 'CCEnd') isNil
-	 or: [(value := self positiveMachineIntegerFor: methodZone zoneEnd) isNil]) ifTrue:
-		[coInterpreter popRemappableOop.
-		 ^nil].
+		storePointerUnchecked: count
+		ofObject: constituents
+		withValue: label;
+		storePointerUnchecked: count + 1
+		ofObject: constituents
+		withValue: value.
+	((label := objectMemory stringForCString: 'CCEnd') isNil or: [ 
+		 (value := self positiveMachineIntegerFor: methodZone zoneEnd) isNil ]) 
+		ifTrue: [ 
+			coInterpreter popRemappableOop.
+			^ nil ].
 	coInterpreter
-		storePointerUnchecked: count + 2 ofObject: (self maybeTopRemapped: constituents) withValue: label;
-		storePointerUnchecked: count + 3 ofObject: (self maybeTopRemapped: constituents) withValue: value.
+		storePointerUnchecked: count + 2
+		ofObject: constituents
+		withValue: label;
+		storePointerUnchecked: count + 3
+		ofObject: constituents
+		withValue: value.
 	constituents := coInterpreter popRemappableOop.
 	coInterpreter beRootIfOld: constituents.
 	"would like to assert this, but it requires the leak checked be run :-(
 		self assert: self allMachineCodeObjectReferencesValid."
-	^constituents
+	^ constituents
 ]
 
 { #category : #'in-line cacheing' }
@@ -5166,18 +5140,19 @@ Cogit >> cogit [
 
 { #category : #'jit - api' }
 Cogit >> cogitPostGCAction: gcMode [
+
 	<api>
-	(gcMode = GCModeFull
-	 and: [objectRepresentation allYoungObjectsAgeInFullGC]) ifTrue:
-		[methodZone voidYoungReferrersPostTenureAll].
-	self cppIf: SPURVM ifTrue:
-		[gcMode = GCModeBecome ifTrue:
-			[methodZone followForwardedLiteralsInOpenPICList]].
+	(gcMode = GCModeFull and: [ 
+		 objectRepresentation allYoungObjectsAgeInFullGC ]) ifTrue: [ 
+		methodZone voidYoungReferrersPostTenureAll ].
+	gcMode = GCModeBecome ifTrue: [ 
+		methodZone followForwardedLiteralsInOpenPICList ].
 	"Post-GC update every full method's objectHeader to whatever it needs to be"
 	self assert: self allMethodsHaveCorrectHeader.
 	"The youngReferrers should be correct after a GC since that is the point at which it is
 	 pruned.  But at other times false positives or free methods on the list are acceptable."
-	self assert: ((gcMode noMask: GCModeFull+GCModeNewSpace) or: [methodZone kosherYoungReferrers])
+	self assert: ((gcMode noMask: GCModeFull + GCModeNewSpace) or: [ 
+			 methodZone kosherYoungReferrers ])
 ]
 
 { #category : #'multi-threading' }
@@ -6173,17 +6148,16 @@ Cogit >> enableCodeZoneWriteDuring: codeGenerationBlock flushingCacheWith: flush
 { #category : #'compiled methods' }
 Cogit >> endPCOf: aMethod [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
-	| pc end latestContinuation descriptor prim distance targetPC byte bsOffset nExts |
+	| pc end latestContinuation descriptor prim distance targetPC byte nExts |
 	pc := latestContinuation := coInterpreter startPCOfMethod: aMethod.
 	(prim := coInterpreter primitiveIndexOf: aMethod) > 0 ifTrue:
 		[(coInterpreter isQuickPrimitiveIndex: prim) ifTrue:
 			[^pc - 1]].
-	bsOffset := self bytecodeSetOffsetFor: aMethod.
 	nExts := 0.
 	end := objectMemory numBytesOf: aMethod.
 	[pc <= end] whileTrue:
 		[byte := objectMemory fetchByte: pc ofObject: aMethod.
-		descriptor := self generatorAt: byte + bsOffset.
+		descriptor := self generatorAt: byte.
 		(descriptor isReturn
 		 and: [pc >= latestContinuation]) ifTrue:
 			[end := pc].
@@ -6200,14 +6174,18 @@ Cogit >> endPCOf: aMethod [
 ]
 
 { #category : #initialization }
-Cogit >> ensureAndClearAbstractOpcodes [
+Cogit >> ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes [
 
-	| opcodeBytes fixupBytes allocBytes |
-	numAbstractOpcodes := MaxNumberOfAbstractOpcodes.
-	opcodeBytes := (self sizeof: CogAbstractInstruction) * numAbstractOpcodes.
-	fixupBytes := (self sizeof: CogBytecodeFixup) * numAbstractOpcodes.
+	| opcodeBytes fixupBytes allocBytes clearFixupsBytes clearOpcodesBytes|
+	numAbstractOpcodes := numberOfAbstractOpcodes.
+	
+	opcodeBytes := (self sizeof: CogAbstractInstruction) * MaxNumberOfAbstractOpcodes.
+	fixupBytes := (self sizeof: CogBytecodeFixup) * MaxNumberOfAbstractOpcodes.
 	allocBytes := opcodeBytes + fixupBytes.
 	
+	clearOpcodesBytes := (self sizeof: CogAbstractInstruction) * numberOfAbstractOpcodes.
+	clearFixupsBytes := (self sizeof: CogBytecodeFixup) * numberOfAbstractOpcodes.
+		
 	self
 		cCode:
 			[abstractOpcodes 
@@ -6215,7 +6193,8 @@ Cogit >> ensureAndClearAbstractOpcodes [
 					abstractOpcodes := self malloc: allocBytes.
 					fixups := (abstractOpcodes asUnsignedInteger + opcodeBytes) asVoidPointer].
 				
-			 self b: abstractOpcodes zero: allocBytes]
+			 self b: abstractOpcodes zero: clearOpcodesBytes.
+			 self b: fixups zero: clearFixupsBytes]
 		inSmalltalk:
 			[abstractOpcodes := CArrayAccessor on: ((1 to: numAbstractOpcodes) collect: [:ign| CogCompilerClass for: self]).
 			 fixups := CArrayAccessor on: ((1 to: numAbstractOpcodes) collect: [:ign| self bytecodeFixupClass for: self])].
@@ -9099,7 +9078,7 @@ Cogit >> mapFor: cogMethod bcpc: startbcpc performUntil: functionSymbol arg: arg
 	<var: #arg type: #'void *'>
 	<inline: true>
 	| isInBlock mcpc bcpc endbcpc map mapByte homeMethod aMethodObj result
-	  latestContinuation byte descriptor bsOffset nExts annotation |
+	  latestContinuation byte descriptor nExts annotation |
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	<var: #homeMethod type: #'CogMethod *'>
 
@@ -9130,7 +9109,6 @@ Cogit >> mapFor: cogMethod bcpc: startbcpc performUntil: functionSymbol arg: arg
 	 latestContinuation := startbcpc.
 	 aMethodObj := homeMethod methodObject.
 	 endbcpc := (objectMemory numBytesOf: aMethodObj) - 1.
-	 bsOffset := self bytecodeSetOffsetForHeader: homeMethod methodHeader.
 	"If the method has a primitive, skip it and the error code store, if any;
 	 Logically. these come before the stack check and so must be ignored."
 	 bcpc := bcpc + (self deltaToSkipPrimAndErrorStoreIn: aMethodObj
@@ -9153,7 +9131,7 @@ Cogit >> mapFor: cogMethod bcpc: startbcpc performUntil: functionSymbol arg: arg
 					  and: [(mapByte := objectMemory byteAt: map - 1) >> AnnotationShift = IsAnnotationExtension]) ifTrue:
 						[annotation := annotation + (mapByte bitAnd: DisplacementMask).
 						 map := map - 1].
-					 [byte := (objectMemory fetchByte: bcpc ofObject: aMethodObj) + bsOffset.
+					 [byte := objectMemory fetchByte: bcpc ofObject: aMethodObj.
 					  descriptor := self generatorAt: byte.
 					  isInBlock
 						ifTrue: [bcpc >= endbcpc ifTrue: [^0]]
@@ -9977,12 +9955,6 @@ Cogit >> maybeNoteStartpcFor: thing [ "<CogBlockStart|CogCodeRange>"
 			at: #numArgs put: ([thing cogMethod ifNil: [-1] ifNotNil: [:cm| cm cmNumArgs]] "CogCodeRange"
 									on: MessageNotUnderstood
 									do: [:ex| thing numArgs])] "CogBlockStart"
-]
-
-{ #category : #'profiling primitives' }
-Cogit >> maybeTopRemapped: anOop [
-	<inline: true>
-	^SPURVM ifTrue: [anOop] ifFalse: [objectMemory topRemappableOop]
 ]
 
 { #category : #'compile abstract instructions' }
@@ -11557,31 +11529,30 @@ Cogit >> simulateCallOf: address nextpc: nextpc memory: aMemory [
 ]
 
 { #category : #'simulation only' }
-Cogit >> simulateCogCodeAt: address [ "<Integer>"
-	<doNotGenerate>
+Cogit >> simulateCogCodeAt: address [
 
+	"<Integer>"
+
+	<doNotGenerate>
 	processor pc: address.
-	[[[singleStep
-		ifTrue:
-			[[
-			  self recordProcessing.
-			  self maybeBreakAt: processor pc] value. "So that the Debugger's Over steps over all this"
-			  processor
-					singleStepIn: coInterpreter memory
-					minimumAddress: guardPageSize
-					readOnlyBelow: methodZone zoneEnd]
-		ifFalse:
-			[processor
-					runInMemory: nil
-					minimumAddress: guardPageSize
-					readOnlyBelow: methodZone zoneEnd].
-	   "((printRegisters or: [printInstructions]) and: [clickConfirm]) ifTrue:
-	 	[(self confirm: 'continue?') ifFalse:
-			[clickConfirm := false. self halt]]."
-	   true] whileTrue]
-		on: ProcessorSimulationTrap
-		do: [:ex| self handleSimulationTrap: ex].
-	 true] whileTrue
+	[ 
+	[ 
+	singleStep
+		ifTrue: [ 
+			[ 
+			self recordProcessing.
+			self maybeBreakAt: processor pc ] value. "So that the Debugger's Over steps over all this"
+			processor
+				singleStepIn: coInterpreter memory
+				minimumAddress: guardPageSize
+				readOnlyBelow: methodZone zoneEnd ]
+		ifFalse: [ 
+			processor
+				runInMemory: nil
+				minimumAddress: guardPageSize
+				readOnlyBelow: methodZone zoneEnd ].
+	true ] whileTrue.
+	true ] whileTrue
 ]
 
 { #category : #'simulation only' }

@@ -236,7 +236,6 @@ CogVMSimulator >> basicInitialize [
 	traceOn := true.
 	printSends := printFrameAtEachStep := printBytecodeAtEachStep := false.
 	myBitBlt := BitBltSimulator new setInterpreter: self.
-	displayForm := fakeForm := 'Display has not yet been installed' asDisplayText form.
 	eventQueue := SharedQueue new.
 	suppressHeartbeatFlag := deferSmash := deferredSmash := false.
 	systemAttributes := Dictionary new.
@@ -317,13 +316,13 @@ CogVMSimulator >> cCoerceSimple: value to: cTypeString [
 
 { #category : #'plugin support' }
 CogVMSimulator >> callExternalPrimitive: mapIndex [
+
 	| entry |
 	entry := self pluginEntryFor: mapIndex.
 	"Spur needs the primitiveFunctionPointer to be set correctly
 	 for accurate following of forwarders on primitive failure."
-	objectMemory hasSpurMemoryManagerAPI ifTrue:
-		[primitiveFunctionPointer := entry at: 2].
-	^(entry at: 1) perform: (entry at: 2)
+	primitiveFunctionPointer := entry at: 2.
+	^ (entry at: 1) perform: (entry at: 2)
 ]
 
 { #category : #enilopmarts }
@@ -531,23 +530,27 @@ CogVMSimulator >> clipboardSize [
 
 { #category : #'debug support' }
 CogVMSimulator >> cloneSimulation [
-	| savedDisplayView savedDisplayForm savedQuitBlock savedTranscript |
-	savedDisplayView := displayView. displayView := nil.
-	savedDisplayForm := displayForm. displayForm = nil.
-	savedQuitBlock := quitBlock. quitBlock := nil.
-	savedTranscript := transcript. transcript := nil.
 
-	^[| theClone |
-	 Smalltalk garbageCollect.
-	 theClone := self veryDeepCopy.
-	 theClone parent: self; transcript: Transcript.
-	 theClone objectMemory parent: objectMemory.
-	 theClone]
-		ensure:
-			[displayView := savedDisplayView.
-			 displayForm = savedDisplayForm.
-			 quitBlock := savedQuitBlock.
-			 transcript := savedTranscript]
+	| savedAtEachStepBlock savedQuitBlock savedTranscript |
+	savedAtEachStepBlock := atEachStepBlock.
+	atEachStepBlock := nil.
+	savedQuitBlock := quitBlock.
+	quitBlock := nil.
+	savedTranscript := transcript.
+	transcript := nil.
+
+	^ [ 
+	  | theClone |
+	  Smalltalk garbageCollect.
+	  theClone := self veryDeepCopy.
+	  theClone
+		  parent: self;
+		  transcript: Transcript.
+	  theClone objectMemory parent: objectMemory.
+	  theClone ] ensure: [ 
+		  atEachStepBlock := savedAtEachStepBlock.
+		  quitBlock := savedQuitBlock.
+		  transcript := savedTranscript ]
 ]
 
 { #category : #initialization }
@@ -666,22 +669,6 @@ CogVMSimulator >> dispatchOn: anInteger in: selectorArray [
 		[cogit breakBlock ifNotNil:
 			[:bb| (bb value: cogit) ifTrue: [self halt: 'breakpoint reached']]].
 	self perform: (selectorArray at: (anInteger + 1)).
-]
-
-{ #category : #'I/O primitives support' }
-CogVMSimulator >> displayLocation [
-
-	^ Display extent - displayForm extent - (10@10)
-]
-
-{ #category : #accessing }
-CogVMSimulator >> displayView [
-	"The VM SImulator draws directly on an imageMorph named displayView
-	  displayView is housed on a Form named displayForm
-	  Since this is housed directly on the Morph, I have this tight compling from here->model->morph. 
-	"
-	self flag: 'tty'.	
-	^displayView
 ]
 
 { #category : #'process primitive support' }
@@ -1012,22 +999,6 @@ CogVMSimulator >> halfWordLowInLong32: long32 [
 	^self subclassResponsibility
 ]
 
-{ #category : #'I/O primitives support' }
-CogVMSimulator >> handleListenEvent: aMorphicEvent [
-	"openAsMorph[NoTranscript] registered me for listen events via HandMorph>>addEventListener.
-	Transform the listen event and add it to my event queue.  ALso check if the displayForm shoudl resize."
-	(displayForm ~~ fakeForm and: [displayForm extent ~= displayView extent]) ifTrue:
-		[| newForm |
-		newForm := Form
-						extent: displayView extent
-						depth: displayForm depth.
-		 displayForm displayOn: newForm.
-		 displayForm := newForm].
-	((aMorphicEvent isMouse or: [aMorphicEvent isKeyboard])
-	 and: [displayView bounds containsPoint: aMorphicEvent position]) ifTrue:
-		[eventTransformer degenerateEvent: aMorphicEvent for: self]
-]
-
 { #category : #'message sending' }
 CogVMSimulator >> handleMNU: selectorIndex InMachineCodeTo: rcvr classForMessage: classForMessage [
 	selectorIndex = SelectorCannotInterpret ifTrue:
@@ -1097,20 +1068,14 @@ CogVMSimulator >> imageNameGet: p Length: sz [
 
 { #category : #'file primitives' }
 CogVMSimulator >> imageNamePut: p Length: sz [
-	| newName window |
+
+	| newName |
 	newName := ByteString new: sz.
-	1 to: sz  do:
-		[:i |
+	1 to: sz do: [ :i | 
 		newName
 			at: i
-			put: (Character value: (objectMemory byteAt: p + i - 1))].
-	imageName := newName.
-	(displayView notNil
-	 and: [(window := displayView containingWindow) notNil]) ifTrue:
-		[window setLabel: (window label
-							copyReplaceFrom: (window label lastIndexOf: Character space) + 1
-							to: window label size
-							with: (self localNameFor: imageName))]
+			put: (Character value: (objectMemory byteAt: p + i - 1)) ].
+	imageName := newName
 ]
 
 { #category : #'file primitives' }
@@ -1176,14 +1141,11 @@ CogVMSimulator >> initialize [
 
 { #category : #'plugin support' }
 CogVMSimulator >> initializePluginEntries [
+
 	mappedPluginEntries := OrderedCollection new.
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[primitiveAccessorDepthTable := Array new: primitiveTable size.
-			 pluginList := {}.
-			 self loadNewPlugin: '']
-		ifFalse:
-			[pluginList := {'' -> self }]
+	primitiveAccessorDepthTable := Array new: primitiveTable size.
+	pluginList := {  }.
+	self loadNewPlugin: ''
 ]
 
 { #category : #'debugging traps' }
@@ -1317,15 +1279,6 @@ CogVMSimulator >> interpreterAllocationReserveBytes [
 { #category : #'interpreter shell' }
 CogVMSimulator >> invalidCompactClassError: name [
 	self error: 'Class ', name, ' does not have the required compact class index'
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> ioBeDisplay: bitsOrHandleCArray width: width height: height depth: depth [
-	"The real platform may want to note the location of the display and respond to the fact of
-	 its installation.  Here merely create a scratch form the same size as Smalltalk displayObj"
-	super ioBeDisplay: bitsOrHandleCArray asInteger width: width height: height depth: depth.
-	displayForm := Form extent: width @ height depth: depth.
-	displayView ifNotNil: [displayView image: displayForm]
 ]
 
 { #category : #security }
@@ -1465,15 +1418,6 @@ CogVMSimulator >> ioMicroMSecs [
 ]
 
 { #category : #'I/O primitives' }
-CogVMSimulator >> ioMousePoint [
-	| relPt |
-	^displayForm
-		ifNil: [99 << 16 + 66]
-		ifNotNil: [relPt := Sensor cursorPoint - self displayLocation.
-				relPt x << 16 + relPt y]
-]
-
-{ #category : #'I/O primitives' }
 CogVMSimulator >> ioProcessEvents [
 ]
 
@@ -1485,11 +1429,6 @@ CogVMSimulator >> ioRelinquishProcessorForMicroseconds: microseconds [
 	 If we're simulating threading we're in difficulties.  We need a UI process
 	 (to run activities such as fill-in-the-blanks) but we also need an independent
 	 thread of control to run this VM thread.  So we need to fork a new UI process."
-	Display reverse: ((displayView
-						ifNil: [0@0]
-						ifNotNil: [displayView bounds origin]) extent: 16@16).
-	Sensor peekEvent ifNotNil:
-		[self forceInterruptCheck].
 	Processor activeProcess == UIManager default uiProcess ifTrue:
 		[World doOneCycle].
 	microseconds >= 1000
@@ -1507,17 +1446,6 @@ CogVMSimulator >> ioScreenDepth [
 { #category : #'I/O primitives support' }
 CogVMSimulator >> ioScreenScaleFactor [
 	^ 1.0
-]
-
-{ #category : #'I/O primitives support' }
-CogVMSimulator >> ioScreenSize [
-	"Answer the screen extent packed into 32 bits.  In the simulator,
-	 displayForm gets initialized with a fake form; don't be deceived."
-	| extent |
-	extent := (displayForm notNil and: [displayForm ~~ fakeForm])
-				ifTrue: [displayForm extent]
-				ifFalse: [self desiredDisplayExtent].
-	^extent x << 16 + extent y
 ]
 
 { #category : #'process primitive support' }
@@ -2036,18 +1964,6 @@ CogVMSimulator >> primitiveObjectAt [
 	^super primitiveObjectAt
 ]
 
-{ #category : #'object access primitives' }
-CogVMSimulator >> primitiveObjectAtPut [
-	| newValue |
-	newValue := self stackValue: 0.
-	((self stackValue: 1) = ConstOne
-	 and: [(objectMemory isIntegerObject: newValue) not
-		   or: [MULTIPLEBYTECODESETS not
-			and: [(objectMemory integerValueOf: newValue) < 0]]]) ifTrue:
-		[self halt].
-	^super primitiveObjectAtPut
-]
-
 { #category : #'debugging traps' }
 CogVMSimulator >> primitiveObjectPointsTo [
 	"self halt."
@@ -2148,8 +2064,6 @@ CogVMSimulator >> printCurrentBytecodeOn: aStream [
 	| code |
 	code := currentBytecode radix: 16.
 	aStream newLine; print: instructionPointer - method - 3; tab.
-	bytecodeSetSelector > 0 ifTrue:
-		[aStream nextPutAll: 'ALT '].
 	aStream
 		nextPut: (code size < 2
 					ifTrue: [$0]
@@ -2376,17 +2290,16 @@ CogVMSimulator >> rumpCStackSize [
 
 { #category : #testing }
 CogVMSimulator >> run [
+
 	"Just run"
-	quitBlock := [displayView ifNotNil:
-				   [displayView containingWindow ifNotNil:
-					[:topWindow|
-					((World submorphs includes: topWindow)
-					 and: [UIManager default confirm: 'close?']) ifTrue:
-						[topWindow delete]]].
-				  ^self close].
+
+	quitBlock := [ ^ self close ].
 	self initStackPages.
 	self loadInitialContext.
-	self initialEnterSmalltalkExecutive
+	self initialEnterSmalltalkExecutive.
+	instructionPointer := instructionPointer - 1.
+	"undo the pre-increment of IP before returning"
+	self externalizeIPandSP
 ]
 
 { #category : #'primitive support' }
@@ -2395,11 +2308,10 @@ CogVMSimulator >> saneFunctionPointerForFailureOfPrimIndex: primIndex [
 	 primitiveFunctionPointer is an invalid address proxy for a primitive."
 	| basePrimitive |
 	
-	((self isOnRumpCStack: instructionPointer)
-	and: [primitiveFunctionPointer isInteger
+	(primitiveFunctionPointer isInteger
 	and: [self isPrimitiveFunctionPointerAnIndex not
 	and: [primIndex ~= PrimNumberExternalCall
-	and: [(self isMetaPrimitiveIndex: primIndex) not]]]]) ifTrue:
+	and: [(self isMetaPrimitiveIndex: primIndex) not]]]) ifTrue:
 		[basePrimitive := self functionPointerFor: primIndex inClass: objectMemory nilObject.
 		 ^(cogit lookupAddress: primitiveFunctionPointer) endsWith: basePrimitive].
 
@@ -2409,20 +2321,6 @@ CogVMSimulator >> saneFunctionPointerForFailureOfPrimIndex: primIndex [
 { #category : #'I/O primitives' }
 CogVMSimulator >> savedWindowSize [
 	^savedWindowSize ifNil: [0]
-]
-
-{ #category : #UI }
-CogVMSimulator >> setBreakBlockFromString: aString [
-	| bString block |
-	bString := aString withBlanksTrimmed.
-	bString first ~= $[ ifTrue:
-		[bString := '[:ct|', bString, ']'].
-	block := [Compiler evaluate: bString for: self logged: false]
-				on: Error
-				do: [:ex|
-					UIManager default warn: ex messageText.
-					^self].
-	cogit breakBlock: block
 ]
 
 { #category : #accessing }
@@ -2649,19 +2547,6 @@ CogVMSimulator >> testPCMapping [
 					 cogit testMcToBcPcMappingForMethod: (self cogMethodOf: o)]
 				ifFalse:
 					[transcript nextPutAll: 'failed to compile method '; print: o; cr; flush]]]
-]
-
-{ #category : #UI }
-CogVMSimulator >> toggleTranscript [
-	| transcriptPane |
-	transcript ifNil: [transcript := Transcript. ^self].
-	displayView ifNil: [^self changed: #flash].
-	transcriptPane := (displayView outermostMorphThat: [:m| m isSystemWindow])
-							submorphThat: [:m| m model isStream]
-							ifNone: [^self changed: #flash].
-	transcript := transcript = Transcript
-					ifTrue: [transcriptPane model]
-					ifFalse: [Transcript]
 ]
 
 { #category : #'simulation only' }

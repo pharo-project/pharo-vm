@@ -1941,16 +1941,6 @@ SimpleStackBasedCogit >> genPrimitiveFullClosureValue [
 
 	"We defer unforwarding the receiver to the prologue; scanning blocks
 	 for inst var refs and only unforwarding if the block refers to inst vars."
-	(false and: [ objectRepresentation hasSpurMemoryManagerAPI ]) 
-		ifTrue: [ 
-			objectRepresentation
-				genLoadSlot: FullClosureReceiverIndex
-				sourceReg: ReceiverResultReg
-				destReg: SendNumArgsReg;
-				genEnsureOopInRegNotForwarded: SendNumArgsReg
-				scratchReg: TempReg
-				updatingSlot: FullClosureReceiverIndex
-				in: ReceiverResultReg ].
 	objectRepresentation
 		genLoadSlot: FullClosureCompiledBlockIndex
 		sourceReg: ReceiverResultReg

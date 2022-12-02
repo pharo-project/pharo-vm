@@ -176,6 +176,4 @@ VMAbstractPrimitiveTest >> setUp [
 		storePointer: ClassLargeNegativeIntegerCompactIndex
 		ofObject: memory classTableFirstPage
 		withValue: classLargeNegativeInteger.
-
-	memory lastHash: 1
 ]

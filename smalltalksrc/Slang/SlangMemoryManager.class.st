@@ -30,7 +30,7 @@ SlangMemoryManager >> allocate: desiredSize desiredPosition: desiredPos [
 	allocatedAddress := desiredPosition max: nextAvailableAddress.
 	self assert: allocatedAddress \\ 4096 = 0.
 
-	nextAvailableAddress := desiredPosition + allocatedSize.
+	nextAvailableAddress := allocatedAddress + allocatedSize.
 
 	"Warrantee that memory regions do not move, for simulation purposes with the FFI"
 	newMemory := ByteArray new: allocatedSize.
