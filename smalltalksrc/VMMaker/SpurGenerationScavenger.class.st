@@ -989,10 +989,12 @@ SpurGenerationScavenger >> processWeakSurvivor: weakObj [
 					(manager isYoungObject: referent) ifTrue: [ 
 						hasYoungReferents := true ] ]
 				ifFalse: [ 
+					weakObjShouldMourn := true.
 					manager
 						storePointerUnchecked: i
 						ofObject: weakObj
 						withValue: manager nilObject ] ] ].
+	weakObjShouldMourn ifTrue: [ coInterpreter signalFinalization: weakObj ].
 	^ hasYoungReferents
 ]
 
