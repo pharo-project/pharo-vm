@@ -221,6 +221,38 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableSho
 ]
 
 { #category : #'tests-OldSpaceSize' }
+VMSpurOldSpaceGarbageCollectorTest >> testDoubleForwardToYoungs [
+
+		| obj1 obj2 obj3 arrFrom arrTo arrFrom2 arrTo2 |
+
+		obj1 := self newObjectWithSlots: 1.
+		obj2 := self newOldSpaceObjectWithSlots: 1.
+		obj3 := self newOldSpaceObjectWithSlots: 1.
+
+		arrFrom := self newArrayWithSlots: 1.
+		arrTo := self newArrayWithSlots: 1.
+
+		memory storePointer: 0 ofObject: arrFrom withValue: obj2.
+		memory storePointer: 0 ofObject: arrTo withValue: obj1.
+		memory become: arrFrom with: arrTo twoWay: false copyHash: false.
+		"obj2 forwards to obj1, but since obj1 is newspace, obj2 is remembered"
+
+		arrFrom2 := self newOldSpaceArrayWithSlots: 1.
+		arrTo2 := self newOldSpaceArrayWithSlots: 1.
+		memory storePointer: 0 ofObject: arrFrom2 withValue: obj3.
+		memory storePointer: 0 ofObject: arrTo2 withValue: obj2.
+		"Here, arrFrom2 & arrTo2 (oldspace) contains only oldspace."
+
+		memory become: arrFrom2 with: arrTo2 twoWay: false copyHash: false.
+
+		"We want arrFrom2 & arrTo2 points to obj1 and be remembered"
+		self assert: (memory fetchPointer: 0 ofObject: arrFrom2) equals: obj1.
+		self assert: (memory isRemembered: arrFrom2).
+		self assert: (memory fetchPointer: 0 ofObject: arrTo2) equals: obj1.
+		self assert: (memory isRemembered: arrTo2).
+]
+
+{ #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testDoNotCollectRoots [
 
 	memory fullGC.
