@@ -223,7 +223,11 @@ ioHighResClock(void)
 						: "=a" (value)
 						: 
 						: "rdx");
-#elif (defined(__arm__) && (defined(__ARM_ARCH_6__) || defined(__ARM_ARCH_7A__))) || defined(__aarch64__) || defined(_M_ARM64)
+#elif defined(__GNUC__) && defined(__aarch64__)
+
+	__asm__ __volatile__("mrs %0, cntvct_el0" : "=r"(value));
+
+#elif (defined(__arm__) && (defined(__ARM_ARCH_6__) || defined(__ARM_ARCH_7A__)))
 	/* tpr - do nothing for now; needs input from eliot to decide further */
 	/* Tim, not sure I have input beyond:
 		Is there a 64-bit clock on ARM?  If so, access it here :-)
