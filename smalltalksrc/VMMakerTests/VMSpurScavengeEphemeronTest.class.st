@@ -8,13 +8,7 @@ Class {
 VMSpurScavengeEphemeronTest >> setUp [
 
 	super setUp.
-	memory initializeMournQueue
-]
-
-{ #category : #'tests-ephemerons-globals' }
-VMSpurScavengeEphemeronTest >> setUp [
-
-	super setUp.
+	memory initializeMournQueue.
 	self createEphemeronClass
 ]
 
