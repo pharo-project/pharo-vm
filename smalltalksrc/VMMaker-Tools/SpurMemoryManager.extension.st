@@ -1,6 +1,15 @@
 Extension { #name : #SpurMemoryManager }
 
 { #category : #'*VMMaker-Tools' }
+SpurMemoryManager >> asVMOop: oop [
+
+	^ VMOop new
+		memory: self;
+		oop: oop;
+		yourself.
+]
+
+{ #category : #'*VMMaker-Tools' }
 SpurMemoryManager >> inspectorEntities: composite [
 
 	<inspectorPresentationOrder: 2 title: 'Entities'>
