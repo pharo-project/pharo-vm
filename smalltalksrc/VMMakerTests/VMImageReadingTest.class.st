@@ -9,6 +9,12 @@ Class {
 	#category : #'VMMakerTests-ImageFormat'
 }
 
+{ #category : #query }
+VMImageReadingTest >> dataFrom: fileName [
+
+	^ self imageFileName asFileReference / fileName
+]
+
 { #category : #accessing }
 VMImageReadingTest >> initializationOptions [
 
@@ -34,6 +40,14 @@ VMImageReadingTest >> loadImage [
 
 ]
 
+{ #category : #query }
+VMImageReadingTest >> metadataFrom: fileName [
+
+	| writtenHeader |
+	writtenHeader := (self imageFileName asFileReference / fileName) contents.
+	^ STON fromString: writtenHeader
+]
+
 { #category : #utilities }
 VMImageReadingTest >> saveImage [
 
@@ -42,6 +56,9 @@ VMImageReadingTest >> saveImage [
 	self assert: interpreter successful.
 
 	super saveImage.
+	
+	memory postSnapshot.
+
 ]
 
 { #category : #initialization }
@@ -55,6 +72,47 @@ VMImageReadingTest >> setUp [
 	
 	originalNilObjectIdentityHash := memory hashBitsOf: memory nilObject.
 
+]
+
+{ #category : #tests }
+VMImageReadingTest >> testMovingObjectsToPermSpaceReduceOldSpace [
+
+	| obj magicNumber initSegmentSize initPermSpaceSize finalSegmentSize finalPermSpaceSize |
+	imageReaderClass ~= ComposedImageReader ifTrue: [ ^ self skip ].
+
+	magicNumber := 77.
+	obj := self newOldSpaceArrayWithSlots: magicNumber.
+	memory splObj: 4 put: obj. "Store object in SpecialObjects Array to keep it"
+
+	self saveImage.
+	memory allOldSpaceObjectsDo: [ :oop | "Remap" 
+		(memory numSlotsOf: oop) = magicNumber ifTrue: [ obj := oop ] ].
+
+	initSegmentSize := (self dataFrom: 'seg0.data') size.
+	initPermSpaceSize := (self dataFrom: 'permSpace.data') size.
+
+	self assert: initSegmentSize > 0.
+	self assert: initPermSpaceSize equals: 0.
+
+	self assert: (self metadataFrom: 'seg0.ston') dataSize equals: initSegmentSize.
+	self assert: (self metadataFrom: 'permSpace.ston') dataSize equals: initPermSpaceSize.
+
+	"------------------------------------------------------------------------------"
+
+	self assert: (memory numSlotsOf: obj) equals: 77.
+
+	memory moveToPermSpace: obj.
+
+	self saveImage.
+
+	finalSegmentSize := (self dataFrom: 'seg0.data') size.
+	finalPermSpaceSize := (self dataFrom: 'permSpace.data') size.
+
+	self assert: finalPermSpaceSize < initSegmentSize.
+	self assert: finalPermSpaceSize > 0.
+
+	self assert: (self metadataFrom: 'seg0.ston') dataSize equals: finalSegmentSize.
+	self assert: (self metadataFrom: 'permSpace.ston') dataSize equals: finalPermSpaceSize
 ]
 
 { #category : #tests }
