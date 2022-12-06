@@ -4998,8 +4998,9 @@ InterpreterPrimitives >> sumSmallInteger: anInteger withSmallInteger: anotherInt
 
 	result := a + b.
 
-	(objectMemory isIntegerValue: result) ifTrue: [ ^ aBlock value].
-	^ objectMemory integerObjectOf: result
+	(objectMemory isIntegerValue: result) ifFalse: [ ^ self error: 'Overflow' ].
+	
+	^ aBlock value: (objectMemory integerObjectOf: result)
 ]
 
 { #category : #arithmetic }
