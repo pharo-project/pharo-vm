@@ -9635,7 +9635,8 @@ SpurMemoryManager >> popObjStack: objStack [
 		^nil].
 	topx := topx - 1.
 	
-	"Get the top and mark it as BADFOOD to indicate it's not available"
+	"Get the top and mark it as BADFOOD to indicate it's not available.
+	Mark it for debugging purposes. No accesses to BADFOOD are expected."
 	top := self fetchPointer: topx + ObjStackFixedSlots ofObject: objStack.
 	self storePointer: topx + ObjStackFixedSlots ofObject: objStack withValue: 16rBADF00D.
 	
