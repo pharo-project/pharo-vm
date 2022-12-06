@@ -4792,7 +4792,7 @@ SpurMemoryManager >> fetchPointer: fieldIndex ofMaybeForwardedObject: objOop [
 { #category : #'object access' }
 SpurMemoryManager >> fetchPointer: fieldIndex ofObject: objOop [
 	<api>
-	^self wordAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+	^self unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 ]
 
 { #category : #'object access' }

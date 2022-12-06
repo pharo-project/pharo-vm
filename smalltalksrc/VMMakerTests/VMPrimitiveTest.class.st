@@ -647,7 +647,7 @@ VMPrimitiveTest >> testPrimitiveAtForDivorcedContext [
 	context := self newContextWithTemps: { memory falseObject }.
 	
 	"Divorcing requires the instruction pointer pushed in the top of the frame's stack"
-	self interpret: [	interpreter internalPush: interpreter instructionPointer ].		
+	self interpret: [	interpreter push: interpreter instructionPointer ].		
 	interpreter externalDivorceFrame: interpreter framePointer andContext: context.
 
 	interpreter push: context.
