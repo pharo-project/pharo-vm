@@ -1417,14 +1417,6 @@ StackInterpreter class >> initializeSmallIntegers [
 ]
 
 { #category : #initialization }
-StackInterpreter class >> initializeStreamIndices [
-	StreamArrayIndex := 0.
-	StreamIndexIndex := 1.
-	StreamReadLimitIndex := 2.
-	StreamWriteLimitIndex := 3.
-]
-
-{ #category : #initialization }
 StackInterpreter class >> initializeWithOptions: optionsDictionary [
 	"StackInterpreter initializeWithOptions: Dictionary new"
 
@@ -1445,7 +1437,6 @@ StackInterpreter class >> initializeWithOptions: optionsDictionary [
 	self initializePrimitiveTable.
 	self initializeSchedulerIndices.
 	self initializeSmallIntegers.
-	self initializeStreamIndices
 ]
 
 { #category : #accessing }
