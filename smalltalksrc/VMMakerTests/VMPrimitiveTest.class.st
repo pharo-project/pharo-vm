@@ -647,7 +647,7 @@ VMPrimitiveTest >> testPrimitiveAtForDivorcedContext [
 	context := self newContextWithTemps: { memory falseObject }.
 	
 	"Divorcing requires the instruction pointer pushed in the top of the frame's stack"
-	self interpret: [	interpreter internalPush: interpreter instructionPointer ].		
+	self interpret: [	interpreter push: interpreter instructionPointer ].		
 	interpreter externalDivorceFrame: interpreter framePointer andContext: context.
 
 	interpreter push: context.
@@ -4704,6 +4704,7 @@ VMPrimitiveTest >> testPrimitiveSnapshotContextsShouldBeTenured [
 
 	| method frame contextOop contextIdentityHash suspendedContext |
 	interpreter pluginList: #(  ).
+	self setUpScheduler.
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
 	method := methodBuilder newMethod buildMethod.
@@ -4736,6 +4737,7 @@ VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
 
 	| method file |
 	interpreter pluginList: #(  ).
+	self setUpScheduler.
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
 	method := methodBuilder newMethod buildMethod.
@@ -4760,7 +4762,7 @@ VMPrimitiveTest >> testPrimitiveSnapshotNewKeptObjectShouldBeTenured [
 
 	| method object objectHash |
 	interpreter pluginList: #(  ).
-
+	self setUpScheduler.
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
 

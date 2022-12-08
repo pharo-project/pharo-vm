@@ -33,20 +33,9 @@ TReturnNode >> accept: aVisitor [
 { #category : #tranforming }
 TReturnNode >> asCASTIn: aBuilder [
 
+	| cast |
 	(expression isSwitch or: [expression isCaseStmt]) ifTrue: [
 		^ expression asCASTIn: aBuilder addToEndOfCases: self ].
-
-	(expression isSend and: [expression isValueExpansion]) ifTrue: [
-		| statementList lastStatement copy |
-		statementList := expression receiver.
-		lastStatement := statementList statements last.
-		lastStatement isReturn ifTrue: [
-			^ expression asCASTIn: aBuilder ].
-		copy := statementList copy.
-		copy statements
-			at: statementList statements size
-			put: (TReturnNode new setExpression: lastStatement).
-		^ copy asCASTIn: aBuilder ].
 
 	'void' = aBuilder currentMethod returnType ifTrue: [
 		"If the function is void, don't say 'return x' instead say ' x; return' "
@@ -58,7 +47,17 @@ TReturnNode >> asCASTIn: aBuilder [
 		^ (CCompoundStatementNode statements: statements)
 			needsBrackets: false "Slang compatibility";
 			yourself ].
-	^ CReturnStatementNode expression: (expression asCASTExpressionIn: aBuilder)
+	
+	cast := expression asCASTExpressionIn: aBuilder.
+	
+	"If the expression is a sequence, inject the return at the last element.
+	It may be more clean to do that at the TAST level instead of the CAST level. I dunno."
+	cast isCompoundStatement ifTrue: [
+		cast last: (CReturnStatementNode expression: cast last).
+		^ cast ].
+		
+	"Or else build a return"
+	^ CReturnStatementNode expression: cast.
 ]
 
 { #category : #transformations }

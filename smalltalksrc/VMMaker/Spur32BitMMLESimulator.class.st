@@ -81,7 +81,7 @@ Spur32BitMMLESimulator >> fetchFloatAt: floatBitsAddress into: aFloat [
 	aFloat at: 1 put: (self uint32AtPointer: floatBitsAddress+4)
 ]
 
-{ #category : #'object access' }
+{ #category : #'as yet unclassified' }
 Spur32BitMMLESimulator >> fetchPointer: fieldIndex ofObject: objOop [
 	self assert: (self isForwarded: objOop) not.
 	self assert: (fieldIndex >= 0 and: [fieldIndex < (self numSlotsOfAny: objOop)
@@ -323,13 +323,15 @@ Spur32BitMMLESimulator >> parent: anObject [
 
 { #category : #'debug support' }
 Spur32BitMMLESimulator >> runLeakCheckerFor: gcModes excludeUnmarkedObjs: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid [
-	(coInterpreter displayView isNil
-	 and: [gcModes anyMask: checkForLeaks]) ifTrue:
-		[coInterpreter transcript nextPutAll: 'leak-checking...'; flush].
-	^super
-		runLeakCheckerFor: gcModes
-		excludeUnmarkedObjs: excludeUnmarkedObjs
-		classIndicesShouldBeValid: classIndicesShouldBeValid
+
+	(gcModes anyMask: checkForLeaks) ifTrue: [ 
+		coInterpreter transcript
+			nextPutAll: 'leak-checking...';
+			flush ].
+	^ super
+		  runLeakCheckerFor: gcModes
+		  excludeUnmarkedObjs: excludeUnmarkedObjs
+		  classIndicesShouldBeValid: classIndicesShouldBeValid
 ]
 
 { #category : #'gc - global' }

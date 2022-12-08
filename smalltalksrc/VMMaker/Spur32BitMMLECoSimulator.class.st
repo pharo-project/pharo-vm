@@ -303,13 +303,15 @@ Spur32BitMMLECoSimulator >> parent: anObject [
 
 { #category : #'debug support' }
 Spur32BitMMLECoSimulator >> runLeakCheckerFor: gcModes excludeUnmarkedObjs: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid [
-	(coInterpreter displayView isNil
-	 and: [gcModes anyMask: checkForLeaks]) ifTrue:
-		[coInterpreter transcript nextPutAll: 'leak-checking...'; flush].
-	^super
-		runLeakCheckerFor: gcModes
-		excludeUnmarkedObjs: excludeUnmarkedObjs
-		classIndicesShouldBeValid: classIndicesShouldBeValid
+
+	(gcModes anyMask: checkForLeaks) ifTrue: [ 
+		coInterpreter transcript
+			nextPutAll: 'leak-checking...';
+			flush ].
+	^ super
+		  runLeakCheckerFor: gcModes
+		  excludeUnmarkedObjs: excludeUnmarkedObjs
+		  classIndicesShouldBeValid: classIndicesShouldBeValid
 ]
 
 { #category : #'gc - global' }
@@ -323,12 +325,6 @@ Spur32BitMMLECoSimulator >> scavengingGCTenuringIf: tenuringCriterion [
 			[coInterpreter cloneSimulation objectMemory scavengingGCTenuringIf: tenuringCriterion.
 			 Smalltalk garbageCollect]].
 	^super scavengingGCTenuringIf: tenuringCriterion
-]
-
-{ #category : #'free space' }
-Spur32BitMMLECoSimulator >> setFree: o [
-	"o = 16rB34D40 ifTrue: [self halt]."
-	super setFree: o
 ]
 
 { #category : #'header access' }

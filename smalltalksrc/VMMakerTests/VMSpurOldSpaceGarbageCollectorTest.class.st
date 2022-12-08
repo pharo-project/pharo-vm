@@ -82,6 +82,41 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectBiggerThanSizeOfFreeSpac
 	self assert: memory needGCFlag
 ]
 
+{ #category : #testCompactor }
+VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectRightBeforeOverflowingFreeChunk [
+	| chuckSize chunk next object free |
+
+	"before GC:
+		dead object
+		free chunk with overflow header
+	after GC:
+		free chunk
+		free chunk with overflow header
+	
+	Note: this scenario expects the free chunks to not be coallesced.
+	Improve this test if the memory manager become more efficient."
+
+	memory fullGC.
+
+	"Allocate a contiguous chunk of memory to be splited into entities"
+	chuckSize := 512*8.
+	chunk := next := memory allocateOldSpaceChunkOfBytes: chuckSize.
+	"first entity is an object to be free"
+	object := next := memory initializeHeaderOfStartAddress: next numSlots: 5 format: memory arrayFormat classIndex: memory arrayClassIndexPun pinned: false.	
+	next := memory objectAfter: next.
+	"second entity is a free chunk with an overflow header"
+	free := next := memory freeChunkWithBytes: chunk + chuckSize - next at: next.
+	next := memory objectAfter: next.
+	
+	self assert: (memory isFreeObject: object) not.
+	self assert: (memory isFreeObject: free).
+		
+	memory fullGC.
+
+	self assert: (memory isFreeObject: object).
+	self assert: (memory isFreeObject: free).
+]
+
 { #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSize [
 
@@ -185,6 +220,17 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableSho
 	self assertHashOf: self keptObjectInVMVariable1 equals: hash
 ]
 
+{ #category : #'tests-OldSpaceSize' }
+VMSpurOldSpaceGarbageCollectorTest >> testDoNotCollectRoots [
+
+	memory fullGC.
+	
+	self deny: (memory isFreeObject: (memory nilObject)).
+	self deny: (memory isFreeObject: (memory trueObject)).
+	self deny: (memory isFreeObject: (memory falseObject)).
+	self deny: (memory isFreeObject: (memory freeListsObj)).
+]
+
 { #category : #ephemerons }
 VMSpurOldSpaceGarbageCollectorTest >> testEphemeronOverflowUnscannedEphemeronQueue [
 
@@ -223,6 +269,73 @@ VMSpurOldSpaceGarbageCollectorTest >> testEphemeronOverflowUnscannedEphemeronQue
 		equals: numberJustOverLimit
 ]
 
+{ #category : #tests }
+VMSpurOldSpaceGarbageCollectorTest >> testGrowOldSpace [
+
+	| freespace freespace2 slotsNumber anObjectOop |
+	
+	memory fullGC.
+	
+	freespace := memory totalFreeOldSpace.
+	slotsNumber := freespace / memory wordSize.	
+	memory growOldSpaceByAtLeast: slotsNumber.
+	freespace2 := memory totalFreeOldSpace.
+	self assert: freespace*2 <= freespace2.
+	
+	anObjectOop := self newObjectWithSlots: slotsNumber.
+	self deny: anObjectOop equals: nil.
+	self assert: freespace2 - (memory bytesInObject: anObjectOop) equals: memory totalFreeOldSpace.
+	
+	memory fullGC.
+	self assert: freespace equals: memory totalFreeOldSpace.
+]
+
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testMournQueue [
+
+	| roots keyObj ephemeronObj |
+
+	roots := self newArrayWithSlots: 1.
+	self keepObjectInVMVariable1: roots.	
+
+	keyObj := self newObjectWithSlots: 1.
+	ephemeronObj := self newOldEphemeronObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: ephemeronObj withValue: keyObj.
+	memory storePointer: 0 ofObject: roots withValue: ephemeronObj.
+
+	memory fullGC.
+	
+	self assert: memory dequeueMourner equals: ephemeronObj.
+	self assert: memory dequeueMourner equals: nil.
+]
+
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testMournQueue2 [
+
+	| roots keyObj ephemeronObj keyObj2 ephemeronObj2 |
+
+	"This test covers a diferent path in the CG code than testMournQueue."
+
+	roots := self newArrayWithSlots: 3.
+	self keepObjectInVMVariable1: roots.	
+
+	keyObj := self newObjectWithSlots: 1.
+	ephemeronObj := self newOldEphemeronObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: ephemeronObj withValue: keyObj.
+	memory storePointer: 0 ofObject: roots withValue: ephemeronObj.
+
+	keyObj2 := self newObjectWithSlots: 1.
+	ephemeronObj2 := self newOldEphemeronObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: ephemeronObj2 withValue: keyObj2.
+	memory storePointer: 1 ofObject: roots withValue: keyObj2.
+	memory storePointer: 2 ofObject: roots withValue: ephemeronObj2.
+
+	memory fullGC.
+	
+	self assert: memory dequeueMourner equals: ephemeronObj.
+	self assert: memory dequeueMourner equals: nil.
+]
+
 { #category : #ephemerons }
 VMSpurOldSpaceGarbageCollectorTest >> testMultiPageMournQueue [
 
@@ -259,6 +372,52 @@ VMSpurOldSpaceGarbageCollectorTest >> testMultiPageMournQueue [
 	self
 		assert: mourned
 		equals: numberJustOverLimit
+]
+
+{ #category : #tests }
+VMSpurOldSpaceGarbageCollectorTest >> testNewRootEphemeronHoldsAnotherEphemeronAsKeyThenFullGC [
+
+	| ephemeron1 ephemeron2 |
+
+	ephemeron1 := self newEphemeronObjectWithSlots: 5.
+	self keepObjectInVMVariable1: ephemeron1.
+	ephemeron2 := self newEphemeronObjectWithSlots: 3.
+	self keepObjectInVMVariable2: ephemeron2.
+	memory storePointer: 0 ofObject: ephemeron1 withValue: ephemeron2.
+	
+	memory setCheckForLeaks: 63 "all".
+	memory fullGC
+]
+
+{ #category : #tests }
+VMSpurOldSpaceGarbageCollectorTest >> testNewRootEphemeronHoldsOldNonRootEphemeronAsNonKeyThenFullGC [
+
+	| ephemeron1 ephemeron2 |
+
+	ephemeron1 := self newEphemeronObjectWithSlots: 17.
+	self keepObjectInVMVariable1: ephemeron1.
+	ephemeron2 := self newOldEphemeronObjectWithSlots: 7.
+	memory storePointer: 1 "Not the key" ofObject: ephemeron1 withValue: ephemeron2.
+	
+	memory setCheckForLeaks: 63 "all".
+	memory fullGC
+]
+
+{ #category : #tests }
+VMSpurOldSpaceGarbageCollectorTest >> testNewRootEphemeronIsHeldsByOldNonRootEphemeronAsNonKeyThenFullGC [
+
+	| ephemeron1 ephemeron2 |
+
+	ephemeron1 := self newEphemeronObjectWithSlots: 6.
+	self keepObjectInVMVariable1: ephemeron1.
+	memory fullGC.
+	ephemeron1 := self keptObjectInVMVariable1.
+	
+	ephemeron2 := self newOldEphemeronObjectWithSlots: 15.
+	memory storePointer: 10 "Not the key" ofObject: ephemeron2 withValue: ephemeron1.
+	
+	memory setCheckForLeaks: 63 "all".
+	memory fullGC
 ]
 
 { #category : #ephemerons }
