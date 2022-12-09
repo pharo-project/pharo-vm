@@ -2,6 +2,11 @@
 
 I am a changelog... do not wait too much from me :D
 
+## v9.0.21
+
+- Implementing High resolution clock for ARM64 (Used during profiling)
+- Updating third party libraries for all the graphic layer
+
 ## v9.0.20
 - Fixing a performance regression on the allocation of opcodes and fix-ups. 
 	Cleaning only the ones that are going to be used.
