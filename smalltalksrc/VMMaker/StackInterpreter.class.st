@@ -412,8 +412,6 @@ Class {
 		'imageWriter'
 	],
 	#classVars : [
-		'AltBytecodeEncoderClassName',
-		'AltLongStoreBytecode',
 		'AlternateHeaderHasPrimFlag',
 		'AlternateHeaderIsOptimizedFlag',
 		'AlternateHeaderNumLiteralsMask',
