@@ -412,9 +412,6 @@ Class {
 		'imageWriter'
 	],
 	#classVars : [
-		'AccessModifierPrivate',
-		'AccessModifierProtected',
-		'AccessModifierPublic',
 		'AltBytecodeEncoderClassName',
 		'AltLongStoreBytecode',
 		'AlternateHeaderHasPrimFlag',
@@ -943,9 +940,6 @@ StackInterpreter class >> initializeMethodIndices [
 	"The position of the unused flag bit in the method header, not including tag bit(s).
 	 Bits 28 & 29 are free for use as flag bits."
 	MethodHeaderFlagBitPosition := 28 + tagBits.
-	AccessModifierPublic := 2r00.
-	AccessModifierPrivate := 2r01.
-	AccessModifierProtected := 2r10.
 ]
 
 { #category : #initialization }
