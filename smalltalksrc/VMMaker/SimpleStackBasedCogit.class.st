@@ -293,6 +293,12 @@ SimpleStackBasedCogit >> ceShortCutTraceStore: aProcessorSimulationTrap [
 				into: (processor registerAt: ReceiverResultReg)]
 ]
 
+{ #category : #accessing }
+SimpleStackBasedCogit >> ceStoreContextInstVarTrampoline: anInteger [ 
+	<doNotGenerate>
+	ceStoreContextInstVarTrampoline := anInteger
+]
+
 { #category : #'compile abstract instructions' }
 SimpleStackBasedCogit >> compileFrameBuild [
 	"Build a frame for a CogMethod activation.  See CoInterpreter class>>initializeFrameIndices.
@@ -1032,6 +1038,12 @@ SimpleStackBasedCogit >> evaluateTrampolineCallBlock: block protectLinkRegIfNot:
 			[ backEnd saveAndRestoreLinkRegAround: [ block value ] ]
 		ifTrue:
 			[ block value ].
+]
+
+{ #category : #accessing }
+SimpleStackBasedCogit >> extA: anInteger [ 
+	<doNotGenerate>
+	extA := anInteger
 ]
 
 { #category : #'bytecode generators' }

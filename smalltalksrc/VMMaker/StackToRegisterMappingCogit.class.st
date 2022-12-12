@@ -1678,11 +1678,13 @@ StackToRegisterMappingCogit >> genForwardersInlinedIdenticalOrNotIf: orNot [
 
 { #category : #'bytecode generator stores' }
 StackToRegisterMappingCogit >> genGenericStorePop: popBoolean MaybeContextSlotIndex: slotIndex needsStoreCheck: needsStoreCheck needsRestoreRcvr: needsRestoreReceiver needsImmutabilityCheck: needsImmCheck [
+
 	"Generates a store into an object that *may* be a context.
 	Multiple settings:
 	- needsStoreCheck (young into old object check)
 	- needRestoreRcvr (ensures the recevier is live across the store)
 	- needsImmCheck (do the call-back if the receiver is immutable)"
+
 	<inline: true>
 	<var: #mutableJump type: #'AbstractInstruction *'>
 	<var: #immutabilityFailure type: #'AbstractInstruction *'>
@@ -1691,32 +1693,42 @@ StackToRegisterMappingCogit >> genGenericStorePop: popBoolean MaybeContextSlotIn
 	 involve wholesale reorganization of stack pages, and the only way to preserve the
 	 execution state of an activation in that case is if it has a frame."
 	self assert: needsFrame.
-	self 
-		cppIf: IMMUTABILITY
-		ifTrue:
-			[needsImmCheck
-				ifTrue: 
-					[mutableJump := objectRepresentation genJumpMutable: ReceiverResultReg scratchReg: TempReg.
-					 objectRepresentation genStoreTrampolineCall: slotIndex.
-					 needsRestoreReceiver ifTrue: [ self putSelfInReceiverResultReg ].
-					 immutabilityFailure := self Jump: 0.
-					 mutableJump jmpTarget: self Label.]].
+	self cppIf: IMMUTABILITY ifTrue: [ 
+		needsImmCheck ifTrue: [ 
+			mutableJump := objectRepresentation
+				               genJumpMutable: ReceiverResultReg
+				               scratchReg: TempReg.
+				
+			"Make sure the assigned value, top of the stack, is in the class register before the call to the trampoline."
+			self ssAllocateRequiredReg: ClassReg upThrough: simStackPtr - 1. "If already classReg don't spill it"
+			"we replace the top value for the flush"
+			self ssStoreAndReplacePop: false toReg: ClassReg.
+			self ssFlushTo: simStackPtr.			
+			objectRepresentation genStoreTrampolineCall: slotIndex.
+
+			needsRestoreReceiver ifTrue: [ self putSelfInReceiverResultReg ].
+			immutabilityFailure := self Jump: 0.
+			mutableJump jmpTarget: self Label ] ].
+
 	self ssPop: 1.
 	self ssAllocateCallReg: ClassReg and: SendNumArgsReg. "for ceStoreContextInstVarTrampoline"
 	self ssPush: 1.
+
 	objectRepresentation
 		genLoadSlot: SenderIndex
 		sourceReg: ReceiverResultReg
 		destReg: TempReg.
+
 	self ssStoreAndReplacePop: popBoolean toReg: ClassReg.
 	self ssFlushTo: simStackPtr.
 	self MoveCq: slotIndex R: SendNumArgsReg.
 	self CallRT: ceStoreContextInstVarTrampoline.
-	self 
+
+	self
 		cppIf: IMMUTABILITY
-		ifTrue:
-			[needsImmCheck ifTrue:[immutabilityFailure jmpTarget: self Label]].
-	^0
+		ifTrue: [ 
+		needsImmCheck ifTrue: [ immutabilityFailure jmpTarget: self Label ] ].
+	^ 0
 ]
 
 { #category : #'bytecode generator stores' }
@@ -4579,15 +4591,22 @@ StackToRegisterMappingCogit >> ssSelfDescriptor [
 
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> ssStoreAndReplacePop: popBoolean toReg: reg [
-	"In addition to ssStorePop:toReg:, if this is a store and not
-	a popInto I change the simulated stack to use the register 
-	for the top value"
+
+	"Move the top of the stack to a register.
+	If the top of the stack must be popped, pop it.
+	If the top of the stack must NOT be popped, and was in memory (spilled), make it into the register"
+	
 	| topSpilled |
 	topSpilled := self ssTop spilled.
-	self ssStorePop: (popBoolean or: [topSpilled]) toReg: reg.
-	popBoolean ifFalse: 
-		[ topSpilled ifFalse: [self ssPop: 1].
-		self ssPushRegister: reg ].
+	self ssStorePop: (popBoolean or: [ topSpilled ]) toReg: reg.
+
+	"If popBoolean is true, we already popped, do not pop again"
+	popBoolean ifTrue: [ ^ self ].
+	
+	"If the top was spilled, we popped it before and moved it to `reg`.
+	Now replace its entry by `reg`, making it *unspilled*"
+	topSpilled ifFalse: [ self ssPop: 1 ].
+	self ssPushRegister: reg
 ]
 
 { #category : #'simulation stack' }
@@ -4820,6 +4839,12 @@ StackToRegisterMappingCogit >> updateSimSpillBase [
 		[:i|
 		self assert: (self simStackAt: i) spilled == true].
 	self assert: (simSpillBase > simStackPtr or: [(self simStackAt: simSpillBase) spilled == false])
+]
+
+{ #category : #accessing }
+StackToRegisterMappingCogit >> useTwoPaths: aBoolean [ 
+	<doNotGenerate>
+	useTwoPaths := aBoolean
 ]
 
 { #category : #'span functions' }
