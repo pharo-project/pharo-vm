@@ -433,7 +433,6 @@ Class {
 		'DumpStackOnLowSpace',
 		'EnclosingMixinIndex',
 		'EnclosingObjectIndex',
-		'EnforceAccessControl',
 		'FailImbalancedPrimitives',
 		'LongStoreBytecode',
 		'MaxExternalPrimitiveTableSize',
@@ -970,7 +969,6 @@ StackInterpreter class >> initializeMiscConstants [
 
 	MaxJumpBuf := 32. "max. callback depth"
 	FailImbalancedPrimitives := InitializationOptions at: #FailImbalancedPrimitives ifAbsentPut: [true].
-	EnforceAccessControl := InitializationOptions at: #EnforceAccessControl ifAbsent: [true].
 
 	ReturnToInterpreter := 1. "setjmp/longjmp code."
 
