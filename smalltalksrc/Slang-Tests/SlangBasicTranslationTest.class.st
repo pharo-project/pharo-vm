@@ -2039,15 +2039,14 @@ SlangBasicTranslationTest >> testSendAllMask [
 { #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendAnd [
 
-	| translation send |
+	| send |
 
 	send := TSendNode new
 					setSelector: #&
 					receiver: (TConstantNode value: false)
 					arguments: { TConstantNode value: true }.
-	translation := self translate: send.
+	self should: [ self translate: send ] raise: TranslationError.
 
-	self assert: translation equals: '0 && 1'
 ]
 
 { #category : #'tests-builtins' }
@@ -4649,15 +4648,13 @@ SlangBasicTranslationTest >> testSendNotNil [
 { #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendOr [
 
-	| translation send |
+	| send |
 
 	send := TSendNode new
 					setSelector: #|
 					receiver: (TConstantNode value: 0)
 					arguments: { TConstantNode value: 1 }.
-	translation := self translate: send.
-
-	self assert: translation equals: '0 || 1'
+	self should: [ self translate: send ] raise: TranslationError.
 ]
 
 { #category : #'tests-builtins' }

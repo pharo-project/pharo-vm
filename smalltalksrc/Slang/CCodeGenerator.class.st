@@ -1367,6 +1367,12 @@ CCodeGenerator >> fileHeaderVersionStampForSourceClass: sourceClass [
 			s cr]]
 ]
 
+{ #category : #accessing }
+CCodeGenerator >> forbiddenSelector: aTSendNode [ 
+	
+	TranslationError signal: 'We should not use ' , aTSendNode selector.
+]
+
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTAbs: tast [
 
@@ -3086,8 +3092,8 @@ CCodeGenerator >> initializeCASTTranslationDictionary [
 	
 	castTranslationDict := Dictionary new: 200.
 	pairs := #(
-	#&				#generateCASTAnd:
-	#|				#generateCASTOr:
+	#&				#forbiddenSelector:
+	#|				#forbiddenSelector:
 	#abs			#generateCASTAbs:
 	#and:			#generateCASTSequentialAnd:
 	#or:			#generateCASTSequentialOr:
