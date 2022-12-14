@@ -43,7 +43,7 @@ function(build_SDL2)
     set_target_properties(SDL2 PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
     
     add_custom_target(SDL2_copy
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libSDL2-2.0.dylib ${LIBRARY_OUTPUT_PATH}/libSDL2-2.0.0.dylib
+			COMMAND ${CMAKE_COMMAND} -E create_symlink libSDL2-2.0.dylib ${LIBRARY_OUTPUT_PATH}/libSDL2-2.0.0.dylib
     )
     add_dependencies(SDL2_copy SDL2)
     add_dependencies(${VM_LIBRARY_NAME} SDL2_copy)
