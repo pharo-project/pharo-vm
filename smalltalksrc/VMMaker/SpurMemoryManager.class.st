@@ -3324,7 +3324,7 @@ SpurMemoryManager >> checkOkayOop: oop [
 
 	"format check"
 	fmt := self formatOf: oop.
-	(fmt = 6) | (fmt = 8) ifTrue:
+	(fmt = 6 or: [ fmt = 8 ]) ifTrue:
 		[self print: 'oop '; printHex: oop; print: ' has an unknown format type'. ^false].
 	(fmt = self forwardedFormat) ~= (classIndex = self isForwardedObjectClassIndexPun) ifTrue:
 		[self print: 'oop '; printHex: oop; print: ' has mis-matched format/classIndex fields; only one of them is the isForwarded value'. ^false].
@@ -9493,7 +9493,7 @@ SpurMemoryManager >> okayOop: signedOop [
 
 	"format check"
 	fmt := self formatOf: oop.
-	(fmt = 6) | (fmt = 8) ifTrue:
+	(fmt = 6 or: [ fmt = 8 ]) ifTrue:
 		[self error: 'oop has an unknown format type'. ^false].
 	(fmt = self forwardedFormat) ~= (classIndex = self isForwardedObjectClassIndexPun) ifTrue:
 		[self error: 'oop has mis-matched format/classIndex fields; only one of them is the isForwarded value'. ^false].
