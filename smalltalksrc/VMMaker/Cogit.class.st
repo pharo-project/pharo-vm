@@ -268,8 +268,6 @@ Class {
 		'statCompileMethodUsecs'
 	],
 	#classVars : [
-		'AltFirstSpecialSelector',
-		'AltNumSpecialSelectors',
 		'AnnotationConstantNames',
 		'AnnotationShift',
 		'AnnotationsWithBytecodePCs',

@@ -408,11 +408,6 @@ Class {
 		'pendingFinalizationSignals'
 	],
 	#classVars : [
-		'AccessModifierPrivate',
-		'AccessModifierProtected',
-		'AccessModifierPublic',
-		'AltBytecodeEncoderClassName',
-		'AltLongStoreBytecode',
 		'AlternateHeaderHasPrimFlag',
 		'AlternateHeaderIsOptimizedFlag',
 		'AlternateHeaderNumLiteralsMask',
@@ -432,7 +427,6 @@ Class {
 		'DumpStackOnLowSpace',
 		'EnclosingMixinIndex',
 		'EnclosingObjectIndex',
-		'EnforceAccessControl',
 		'FailImbalancedPrimitives',
 		'LongStoreBytecode',
 		'MaxExternalPrimitiveTableSize',
@@ -832,11 +826,6 @@ StackInterpreter class >> initializeContextIndices [
 	SmallContextSlots := CtxtTempFrameStart + 16.  "16 indexable fields"
 	"Large contexts have 56 indexable fields.  Max with single header word of ObjectMemory [but not SpurMemoryManager ;-)]."
 	LargeContextSlots := CtxtTempFrameStart + 56.
-	
-	"Including the header size in these sizes is problematic for multiple memory managers,
-	 so we don't use them.  Set to #bogus for error checking."
-	SmallContextSize := #bogus.
-	LargeContextSize := #bogus.
 
 	"Class BlockClosure"
 	FullClosureOuterContextIndex := 0.
@@ -939,9 +928,6 @@ StackInterpreter class >> initializeMethodIndices [
 	"The position of the unused flag bit in the method header, not including tag bit(s).
 	 Bits 28 & 29 are free for use as flag bits."
 	MethodHeaderFlagBitPosition := 28 + tagBits.
-	AccessModifierPublic := 2r00.
-	AccessModifierPrivate := 2r01.
-	AccessModifierProtected := 2r10.
 ]
 
 { #category : #initialization }
@@ -972,7 +958,6 @@ StackInterpreter class >> initializeMiscConstants [
 
 	MaxJumpBuf := 32. "max. callback depth"
 	FailImbalancedPrimitives := InitializationOptions at: #FailImbalancedPrimitives ifAbsentPut: [true].
-	EnforceAccessControl := InitializationOptions at: #EnforceAccessControl ifAbsent: [true].
 
 	ReturnToInterpreter := 1. "setjmp/longjmp code."
 
@@ -1413,14 +1398,6 @@ StackInterpreter class >> initializeSmallIntegers [
 ]
 
 { #category : #initialization }
-StackInterpreter class >> initializeStreamIndices [
-	StreamArrayIndex := 0.
-	StreamIndexIndex := 1.
-	StreamReadLimitIndex := 2.
-	StreamWriteLimitIndex := 3.
-]
-
-{ #category : #initialization }
 StackInterpreter class >> initializeWithOptions: optionsDictionary [
 	"StackInterpreter initializeWithOptions: Dictionary new"
 
@@ -1441,7 +1418,6 @@ StackInterpreter class >> initializeWithOptions: optionsDictionary [
 	self initializePrimitiveTable.
 	self initializeSchedulerIndices.
 	self initializeSmallIntegers.
-	self initializeStreamIndices
 ]
 
 { #category : #accessing }
@@ -11251,8 +11227,7 @@ StackInterpreter >> primitiveObject: actualReceiver perform: selector withArgume
 	(objectMemory isArray: argumentArray) ifFalse:
 		[^self primitiveFailFor: PrimErrBadArgument].
 
-	"Check if number of arguments is reasonable; MaxNumArgs isn't available
-	 so just use LargeContextSize"
+	"Check if number of arguments is reasonable"
 	arraySize := objectMemory numSlotsOf: argumentArray.
 	arraySize > (LargeContextSlots - CtxtTempFrameStart) ifTrue:
 		[^self primitiveFailFor: PrimErrBadNumArgs].
