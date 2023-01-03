@@ -835,13 +835,21 @@ StackInterpreterPrimitives >> popSameThreadCalloutSuspendedProcess [
 
 { #category : #'system control primitives' }
 StackInterpreterPrimitives >> primitiveAllVMParameters: paramsArraySize [
+
 	"See primitiveVMParameter method comment"
 
 	| result |
-	result := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: paramsArraySize.
+	result := objectMemory
+		          eeInstantiateClassIndex: objectMemory arrayClassIndexPun
+		          format: objectMemory arrayFormat
+		          numSlots: paramsArraySize.
 
-	1 to: paramsArraySize do: [ :index |
-		objectMemory storePointerUnchecked: index-1 ofObject: result withValue: (self primitiveGetVMParameter: index) ].
+	1 to: paramsArraySize do: [ :index | 
+		objectMemory
+			storePointerUnchecked: index - 1
+			ofObject: result
+			withValue: ((self primitiveGetVMParameter: index) ifNil: [ 
+					 objectMemory nilObject ]) ].
 
 	objectMemory beRootIfOld: result.
 	self methodReturnValue: result
@@ -1593,10 +1601,11 @@ StackInterpreterPrimitives >> primitiveGetCurrentWorkingDirectory [
 ]
 
 { #category : #'system control primitives' }
-StackInterpreterPrimitives >> primitiveGetVMParameter: arg [ 
+StackInterpreterPrimitives >> primitiveGetVMParameter: index [ 
 	"See primitiveVMParameter method comment.
-	 N.B. written as a returning case to avoid branch limits in the V3 bytecode set."
-	arg caseOf: {
+		Return an OOP if success.
+		Return nil if no argument is available for the index"
+	index caseOf: {
 			[1]  ->	[^self positiveMachineIntegerFor: objectMemory oldSpaceSize].
 			[2]  ->	[^objectMemory integerObjectOf: objectMemory newSpaceSize].
 			[3]  ->	[^self positiveMachineIntegerFor: objectMemory totalMemorySize].
@@ -1664,8 +1673,8 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: arg [
 			[67] ->	[^objectMemory integerObjectOf: objectMemory maxOldSpaceSize].
 			[68] ->	[^objectMemory floatObjectOf: stackPages statAverageLivePagesWhenMapping].
 			[69] ->	[^objectMemory integerObjectOf: stackPages statMaxPageCountWhenMapping].
-			[70] ->	[^self integerObjectOf: (self cCode: 'VM_PROXY_MAJOR' inSmalltalk: [self class vmProxyMajorVersion])].
-			[71] ->	[^self integerObjectOf: (self cCode: 'VM_PROXY_MINOR' inSmalltalk: [self class vmProxyMinorVersion])].
+			[70] ->	[^objectMemory integerObjectOf: (self cCode: 'VM_PROXY_MAJOR' inSmalltalk: [self class vmProxyMajorVersion])].
+			[71] ->	[^objectMemory integerObjectOf: (self cCode: 'VM_PROXY_MINOR' inSmalltalk: [self class vmProxyMinorVersion])].
 			[72] ->	[^objectMemory integerObjectOf: objectMemory statMarkUsecs + 500 // 1000].
 			[73] ->	[^objectMemory integerObjectOf: objectMemory statSweepUsecs + 500 // 1000].
 			[74] ->	[^objectMemory integerObjectOf: objectMemory statMaxAllocSegmentTime + 500 // 1000].
