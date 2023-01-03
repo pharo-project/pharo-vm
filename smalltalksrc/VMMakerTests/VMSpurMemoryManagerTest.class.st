@@ -58,6 +58,24 @@ VMSpurMemoryManagerTest >> createActiveProcess [
 	memory storePointer: ActiveProcessIndex ofObject: processorOop withValue:  (self newArrayWithSlots: 4).
 ]
 
+{ #category : #initialization }
+VMSpurMemoryManagerTest >> createArrayClass [
+
+	| ourArrayClass |
+
+	ourArrayClass := self newObjectWithSlots: 3.
+	memory
+		storePointer: "InstanceSpecificationIndex" 2
+		ofObject: ourArrayClass
+		withValue: (memory integerObjectOf: Array format).
+	memory setHashBitsOf: ourArrayClass to: memory arrayClassIndexPun.
+	memory
+		storePointer: 16 "not necessarily ok, this is not enforced by the VM"
+		ofObject: memory classTableFirstPage
+		withValue: ourArrayClass
+
+]
+
 { #category : #helpers }
 VMSpurMemoryManagerTest >> createMethodOopFromHostMethod: aPharoCompiledMethod [
 
