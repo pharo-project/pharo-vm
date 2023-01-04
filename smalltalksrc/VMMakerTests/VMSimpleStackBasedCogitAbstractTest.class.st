@@ -610,22 +610,23 @@ VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver ar
 
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
 
-	self pushAddress: aReceiver.
-	arguments do: [ :anArgument | self pushAddress: anArgument ].
-	self machineSimulator receiverRegisterValue: aReceiver.
-
 	"If the cogit is the StackToRegisterMapping the arguments should go registers, else by stack"
 	self argumentsOnRegisters
 		ifTrue: [ 
+			self machineSimulator receiverRegisterValue: aReceiver.
 			arguments withIndexDo: [ :a :i | 
 				i = 1 ifTrue: [ self machineSimulator arg0RegisterValue: a ].
 				i = 2 ifTrue: [ self machineSimulator arg1RegisterValue: a ].
 				i > 2 ifTrue: [ 
 					self error:
-						'Cogit calling convention only supports 2 arguments by registers' ] ] ].
+						'Cogit calling convention only supports 2 arguments by registers' ] ] ]
+		ifFalse: [ 
+			self pushAddress: aReceiver.
+			arguments do: [ :anArgument | self pushAddress: anArgument ] ].
 
-	"Caller side"
+	"Caller side"	
 	self prepareCall
+	
 ]
 
 { #category : #helpers }
