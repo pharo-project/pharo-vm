@@ -22,6 +22,8 @@ This project is continuously built and test in the CI infrastructure located at:
 
 ## Building
 
+Common steps to build the VM:
+
 ### Building dependencies
 
 For building the VM it is required the following set of tools:
@@ -34,36 +36,6 @@ For building the VM it is required the following set of tools:
 - libtool
 
 Additional libraries are required in the default build but are downloaded and compiled when not found. 
-
-
-FIXME: which version of Fedora? Is this still true?
-In Linux Fedora, it is needed to install libcurl and to create a symbolic link to alias such library with the name used by libGit.
-For doing so, it is required to do:
-
-```
-sudo ln -s /usr/lib64/libcurl.so.4 /usr/lib64/libcurl-gnutls.so.4
-```
-
-In Ubuntu 20.04 and in Mint 20, the VM is built with the following packages:
-
-- build-essential
-- gcc 
-- g++
-- binutils
-- cmake
-- git
-- wget 
-- unzip
-- uuid-dev
-- libssl-dev
-
-
-FIXME: I needed only the following on Debian 11:
-```
-$ apt install build-essential cmake git python3-minimal pkg-config
-  libgit2-dev libssh-dev libsdl2-dev libfreetype-dev libffi-dev
-```
-
 
 ### Building in OSX / Linux:
 
