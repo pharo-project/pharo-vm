@@ -40,15 +40,21 @@ function(build_SDL2)
 	)
     add_subdirectory(${SDL2_SOURCE_DIR} ${SDL2_BINARY_DIR} EXCLUDE_FROM_ALL)
 
-    set_target_properties(SDL2 PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
-    add_dependencies(${VM_LIBRARY_NAME} SDL2)
+    set_target_properties(SDL2 PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
+    
+    add_custom_target(SDL2_copy
+			COMMAND ${CMAKE_COMMAND} -E create_symlink libSDL2-2.0.dylib ${LIBRARY_OUTPUT_PATH}/libSDL2-2.0.0.dylib
+    )
+    add_dependencies(SDL2_copy SDL2)
+    add_dependencies(${VM_LIBRARY_NAME} SDL2_copy)
     set(SDL2_FOUND "From build_SDL2" PARENT_SCOPE)
 endfunction()
 
 if (BUILD_BUNDLE)
-  #Only get SDL2 if required
-  if(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES)
-    #Download SDL2 binaries directly
+  if(DEPENDENCIES_FORCE_BUILD)
+    build_SDL2()
+  elseif(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES)
+  #Download SDL2 binaries directly
     download_SDL2()
   else()
     #Look for SDL2 in the system, then build or download if possible
