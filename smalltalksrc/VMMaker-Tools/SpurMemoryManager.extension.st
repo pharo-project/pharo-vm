@@ -2,6 +2,7 @@ Extension { #name : #SpurMemoryManager }
 
 { #category : #'*VMMaker-Tools' }
 SpurMemoryManager >> asVMOop: oop [
+	<doNotGenerate>
 
 	^ VMOop new
 		memory: self;
