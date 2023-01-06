@@ -31,7 +31,7 @@ BaselineOfVMMaker >> baseline: spec [
 				spec
 					loads: #( 'SmaCC-GLR-Runtime' );
 					className: 'BaselineOfSmaCC';
-					repository: 'github://SmaCCRefactoring/SmaCC' ].
+					repository: 'github://guillep/SmaCC' ].
 			spec baseline: 'Unicorn' with: [ 
 				spec repository: 'github://pharo-project/pharo-unicorn:unicorn2' ].
 			spec baseline: 'LLVMDisassembler' with: [ 

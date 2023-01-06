@@ -269,8 +269,6 @@ Class {
 		'jitCodeZoneWriteEnabled'
 	],
 	#classVars : [
-		'AltFirstSpecialSelector',
-		'AltNumSpecialSelectors',
 		'AnnotationConstantNames',
 		'AnnotationShift',
 		'AnnotationsWithBytecodePCs',
