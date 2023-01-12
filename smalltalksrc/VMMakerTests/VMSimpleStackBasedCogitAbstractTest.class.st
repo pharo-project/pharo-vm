@@ -418,6 +418,12 @@ VMSimpleStackBasedCogitAbstractTest >> instructionPointer [
 	^ self readRegister: machineSimulator instructionPointerRegister
 ]
 
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> interpreterClass [
+
+	^ CogVMSimulatorLSB
+]
+
 { #category : #running }
 VMSimpleStackBasedCogitAbstractTest >> jitCompilerClass [
 
@@ -469,15 +475,15 @@ VMSimpleStackBasedCogitAbstractTest >> newInterpreter [
 	| theMemory |
 	theMemory := self newMemory.
 
-	CogVMSimulatorLSB
+	self interpreterClass
 		initializeWithOptions: {
 			#BytesPerWord. 8.
 			#ObjectMemory. theMemory class name.
 			#bytecodeTableInitializer. #initializeBytecodeTableForSistaV1}
 		objectMemoryClass: theMemory class.
-		
-		
-	^ CogVMSimulatorLSB basicNew
+
+
+	^ self interpreterClass basicNew
 		objectMemory: theMemory;
 		basicInitialize
 ]
