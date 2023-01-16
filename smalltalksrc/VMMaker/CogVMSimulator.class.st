@@ -1980,15 +1980,6 @@ CogVMSimulator >> primitiveGetAttribute [
 		self pop: 2 "rcvr, attr" thenPush: s]
 ]
 
-{ #category : #'debugging traps' }
-CogVMSimulator >> primitiveNewWithArg [
-	"(objectMemory hasSpurMemoryManagerAPI
-	 and: [self classNameOf: (self stackValue: 1) Is: 'Bitmap']) ifTrue:
-		[self printExternalHeadFrame.
-		 self halt]."
-	^super primitiveNewWithArg
-]
-
 { #category : #'control primitives' }
 CogVMSimulator >> primitiveObject: actualReceiver perform: selector withArguments: argumentArray lookedUpIn: lookupClass [
 	"Override to allow simulator to filter start-up items to avoid as-yet unsimulatable plugins."
@@ -1996,17 +1987,6 @@ CogVMSimulator >> primitiveObject: actualReceiver perform: selector withArgument
 	(self filterPerformOf: selector to: actualReceiver) ifTrue:
 		[^self pop: argumentCount + 1 thenPush: actualReceiver].
 	^super primitiveObject: actualReceiver perform: selector withArguments: argumentArray lookedUpIn: lookupClass
-]
-
-{ #category : #'object access primitives' }
-CogVMSimulator >> primitiveObjectAt [
-	"self transcript
-		nextPutAll: (self nameOfClass: (self methodClassOf: (self stackValue: 1)));
-		nextPutAll: '>>#';
-		nextPutAll: (self stringOf: (self maybeSelectorOfMethod: (self stackValue: 1)));
-		nextPutAll: ' objectAt: '; print: (objectMemory integerValueOf: self stackTop); cr; flush.
-	self halt."
-	^super primitiveObjectAt
 ]
 
 { #category : #'debugging traps' }
@@ -2041,14 +2021,6 @@ CogVMSimulator >> primitiveSignalAtMilliseconds [
 			nextPutAll: ' now '; nextPutAll: self ioUTCMicroseconds hex;
 			nextPutAll: ' wakeup '; nextPutAll: nextWakeupUsecs hex;
 			nextPutAll: ' wakeup - now '; print: nextWakeupUsecs - self ioUTCMicroseconds; flush]"
-]
-
-{ #category : #'debugging traps' }
-CogVMSimulator >> primitiveStoreStackp [
-	"self printContext: (self stackValue: 1).
-	self halt."
-	"(self stackValue: 1) = 16r1934F80 ifTrue: [self halt]."
-	super primitiveStoreStackp
 ]
 
 { #category : #'plugin support' }
