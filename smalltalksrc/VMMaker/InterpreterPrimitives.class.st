@@ -1162,6 +1162,7 @@ InterpreterPrimitives >> primitiveChangeClass [
 	 class, or when the arguments class is fixed and the receiver's size differs from the size
 	 that an instance of the argument's class should have."
 	| arg rcvr argClass err |
+	<numberOfArguments: 1>
 	arg := self stackObjectValue: 0.
 	rcvr := self stackObjectValue: 1.
 	self successful ifFalse:[^nil].
@@ -2324,6 +2325,7 @@ InterpreterPrimitives >> primitiveIncrementalGC [
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveInstVarAt [
 	| index rcvr hdr fmt totalLength fixedFields value |
+	<numberOfArguments: 1>
 	index := self stackTop.
 	rcvr := self stackValue: 1.
 	((objectMemory isNonIntegerObject: index)
@@ -2344,6 +2346,7 @@ InterpreterPrimitives >> primitiveInstVarAt [
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveInstVarAtPut [
 	| newValue index rcvr hdr fmt totalLength fixedFields |
+	<numberOfArguments: 2>
 	newValue := self stackTop.
 	index := self stackValue: 1.
 	rcvr := self stackValue: 2.
@@ -2891,7 +2894,7 @@ InterpreterPrimitives >> primitiveNew [
 
 	"Allocate a new fixed-size instance.  Fail if the allocation would leave
 			  less than lowSpaceThreshold bytes free. This *will not* cause a GC :-)"
-
+	<numberOfArguments: 0>
 	(objectMemory instantiateClass: self stackTop)
 		ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
 		ifNil: [ 
@@ -2955,7 +2958,7 @@ InterpreterPrimitives >> primitiveNewPinned [
 InterpreterPrimitives >> primitiveNewWithArg [
 
 	"Allocate a new indexable instance. Fail if the allocation would leave less than lowSpaceThreshold bytes free. May cause a GC."
-
+	<numberOfArguments: 1>
 	| size instSpec |
 	size := self positiveMachineIntegerValueOf: self stackTop.
 	self successful ifFalse: [ "positiveMachineIntegerValueOf: succeeds only for non-negative integers." 
@@ -3591,6 +3594,7 @@ InterpreterPrimitives >> primitiveSine [
 InterpreterPrimitives >> primitiveSize [
 
 	<accessorDepth: 0>
+	<numberOfArguments: 0>
 	| rcvr hdr fmt fixedFields totalLength |
 	rcvr := self stackTop.
 	((objectMemory isImmediate: rcvr) or: [ 
@@ -3793,6 +3797,7 @@ InterpreterPrimitives >> primitiveSlotAtPut [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatAdd [
+	<numberOfArguments: 1>
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg|
 	<var: #rcvr type: #double>
@@ -3818,6 +3823,7 @@ InterpreterPrimitives >> primitiveSmallFloatArctan [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatDivide [
+	<numberOfArguments: 1>
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -3834,6 +3840,7 @@ InterpreterPrimitives >> primitiveSmallFloatDivide [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatEqual [
+	<numberOfArguments: 1>
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -3879,6 +3886,7 @@ InterpreterPrimitives >> primitiveSmallFloatFractionalPart [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatGreaterOrEqual [
+	<numberOfArguments: 1>
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -3893,6 +3901,7 @@ InterpreterPrimitives >> primitiveSmallFloatGreaterOrEqual [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatGreaterThan [
+	<numberOfArguments: 1>
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -3915,6 +3924,7 @@ InterpreterPrimitives >> primitiveSmallFloatHash [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatLessOrEqual [
+	<numberOfArguments: 1>
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -3929,6 +3939,7 @@ InterpreterPrimitives >> primitiveSmallFloatLessOrEqual [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatLessThan [
+	<numberOfArguments: 1>
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -3945,7 +3956,7 @@ InterpreterPrimitives >> primitiveSmallFloatLogN [
 	"Natural log."
 	<option: #Spur64BitMemoryManager>
 	| rcvr |
-	<numberOfArguments: 10>
+	<numberOfArguments: 0>
 	<var: #rcvr type: #double>
 	rcvr := objectMemory smallFloatValueOf: self stackTop.
 	self stackTopPut: (objectMemory floatObjectOf: (self cCode: [rcvr log] inSmalltalk: [rcvr ln]))
@@ -3953,6 +3964,7 @@ InterpreterPrimitives >> primitiveSmallFloatLogN [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatMultiply [
+	<numberOfArguments: 1>
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -3967,6 +3979,7 @@ InterpreterPrimitives >> primitiveSmallFloatMultiply [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatNotEqual [
+	<numberOfArguments: 1>
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -4003,6 +4016,7 @@ InterpreterPrimitives >> primitiveSmallFloatSquareRoot [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatSubtract [
+	<numberOfArguments: 1>
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -4402,6 +4416,7 @@ InterpreterPrimitives >> primitiveTestShortenIndexableSize [
 InterpreterPrimitives >> primitiveTimesTwoPower [
 	"Multiply the receiver by the power of the argument."
 	| rcvr result arg |
+	<numberOfArguments: 1>
 	<var: #rcvr type: #double>
 	<var: #result type: #double>
 	arg := self stackTop.
