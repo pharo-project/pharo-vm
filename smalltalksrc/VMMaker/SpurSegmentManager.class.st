@@ -718,6 +718,9 @@ SpurSegmentManager >> withNewSegmentDo: aClosure [
 SpurSegmentManager >> withNonEmptySegmentsDo: aBlockClosure [
 
 	| total |
+	
+	<var: #total type: #'size_t'>
+	
 	total := 0.
 
 	0 to: self numSegments - 1 do:

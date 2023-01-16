@@ -43,7 +43,7 @@ AbstractComposedImageAccess >> existSegment: segmentIndex inImage: imageFileName
 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #formats }
 AbstractComposedImageAccess >> fieldFormat [
 
 	<cmacro: '() "\t#%s : %" PRIdSQINT'>
@@ -93,7 +93,7 @@ AbstractComposedImageAccess >> fscanf: file _: format _: varHolder1 _: varHolder
 		  yourself
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #formats }
 AbstractComposedImageAccess >> headFormat [
 	
 	<inline: true>
@@ -116,6 +116,14 @@ AbstractComposedImageAccess >> headerFileNameinImage: imageFileName into: buffer
 					_: (self cCoerce: headerFileName to: #'char *'). 
 			buffer ] 
 		inSmalltalk: [ imageFileName , '/', headerFileName ]
+]
+
+{ #category : #formats }
+AbstractComposedImageAccess >> msgFormat: aMessage [
+
+	<cmacro: '(aMessage) aMessage "%" PRIdSQINT'>
+
+	^ aMessage , '%' , PRIdSQINT.
 ]
 
 { #category : #'perm - space' }
