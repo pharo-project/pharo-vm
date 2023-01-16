@@ -3600,6 +3600,12 @@ Cogit >> bytecodePCFor: mcpc startBcpc: startbcpc in: cogMethod [
 		arg: mcpc asVoidPointer
 ]
 
+{ #category : #accessing }
+Cogit >> bytecodeSetOffset: anInteger [
+	<doNotGenerate>
+	bytecodeSetOffset := anInteger
+]
+
 { #category : #'simulation only' }
 Cogit >> cCoerce: value to: cTypeString [
 	"Type coercion. For translation a cast will be emmitted. When running in Smalltalk
@@ -6116,6 +6122,12 @@ Cogit >> enableCodeZoneWriteDuring: codeGenerationBlock flushingCacheWith: flush
 	self disableCodeZoneWrite.
 
 	flushBlock value	
+]
+
+{ #category : #'compile abstract instructions' }
+Cogit >> endPC: aPC [
+	<doNotGenerate>
+	endPC := aPC
 ]
 
 { #category : #'compiled methods' }

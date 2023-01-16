@@ -2923,7 +2923,7 @@ StackInterpreter >> bytecodePrimBitOr [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimBitShift [
-
+	<pops: 2 thenPush: 1>
 	self initPrimCall.
 	self externalizeIPandSP.
 	self primitiveBitShift.
@@ -4991,6 +4991,12 @@ StackInterpreter >> currentBytecode [
 	^ currentBytecode
 ]
 
+{ #category : #accessing }
+StackInterpreter >> currentBytecode: anInteger [
+	<doNotGenerate>
+	currentBytecode := anInteger
+]
+
 { #category : #'stack pages' }
 StackInterpreter >> defaultNativeStackFrameSize [
 	"default native stack frame size"
@@ -5438,6 +5444,7 @@ StackInterpreter >> extJumpIfTrue [
 
 { #category : #'miscellaneous bytecodes' }
 StackInterpreter >> extNopBytecode [
+	<pops: 0 thenPush: 0>
 	"SistaV1		94		01011111		Nop"
 	self fetchNextBytecode.
 	numExtB := extA := extB := 0
@@ -8880,6 +8887,12 @@ StackInterpreter >> loadInitialContext [
 	activeProc := self activeProcess.
 	activeContext := objectMemory fetchPointer: SuspendedContextIndex ofObject: activeProc.
 	self marryContextInNewStackPageAndInitializeInterpreterRegisters: activeContext
+]
+
+{ #category : #'spur bootstrap' }
+StackInterpreter >> localFP [
+	<doNotGenerate>
+	^localFP
 ]
 
 { #category : #'debug printing' }
@@ -12694,6 +12707,7 @@ StackInterpreter >> pushLiteralConstant: literalIndex [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushLiteralConstantBytecode [
+	<pops: 0 thenPush: 1>
 	<expandCases>
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
@@ -12706,6 +12720,7 @@ StackInterpreter >> pushLiteralConstantBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushLiteralVariable16CasesBytecode [
+	<pops: 0 thenPush: 1>
 	<expandCases>
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
@@ -12815,6 +12830,7 @@ StackInterpreter >> pushReceiverVariable: fieldIndex [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushReceiverVariableBytecode [
+	<pops: 0 thenPush: 1>
 	<expandCases>
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
@@ -12853,6 +12869,7 @@ StackInterpreter >> pushTemporaryVariable: temporaryIndex [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushTemporaryVariableBytecode [
+	<pops: 0 thenPush: 1>
 	<expandCases>
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
@@ -13220,18 +13237,21 @@ StackInterpreter >> retryPrimitiveOnFailure [
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnFalse [
+	<pops: 0 thenPush: 0>
 	localReturnValue := objectMemory falseObject.
 	self commonReturn
 ]
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnNil [
+	<pops: 0 thenPush: 0>
 	localReturnValue := objectMemory nilObject.
 	self commonReturn
 ]
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnNilFromBlock [
+	<pops: 0 thenPush: 0>
 	"Return nil to the caller of the current block activation."
 	localReturnValue := objectMemory nilObject.
 	self commonCallerReturn
@@ -13239,6 +13259,7 @@ StackInterpreter >> returnNilFromBlock [
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnReceiver [
+	<pops: 0 thenPush: 0>
 	localReturnValue := self receiver.
 	self commonReturn
 ]
@@ -13261,6 +13282,7 @@ StackInterpreter >> returnTopFromMethod [
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnTrue [
+	<pops: 0 thenPush: 0>
 	localReturnValue := objectMemory trueObject.
 	self commonReturn
 ]
@@ -15642,6 +15664,7 @@ StackInterpreter >> unfollowTempVector: tempVector atIndex: tempVectorIndex in: 
 
 { #category : #'miscellaneous bytecodes' }
 StackInterpreter >> unknownBytecode [
+	<pops: 0 thenPush: 1>
 	"If an error selector is available then send it to the activeContext, otherwise abort."
 	self respondToUnknownBytecode
 ]

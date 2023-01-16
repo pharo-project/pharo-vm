@@ -221,6 +221,22 @@ VMSpurMemoryManagerTest >> installFloat64RegisterClass [
 
 ]
 
+{ #category : #'tests - primitiveGreaterOrEqual' }
+VMSpurMemoryManagerTest >> installFloatClass [
+
+	| classFloat |
+	classFloat := self
+		              newClassInOldSpaceWithSlots: 0
+		              instSpec: memory firstLongFormat.
+	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
+	memory
+		storePointer: ClassFloatCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classFloat
+
+	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
+]
+
 { #category : #accessor }
 VMSpurMemoryManagerTest >> interpreter [
 	^ interpreter

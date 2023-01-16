@@ -3704,6 +3704,20 @@ CoInterpreter >> heapBase: anInteger [
 	heapBase := anInteger
 ]
 
+{ #category : #'internal interpreter access' }
+CoInterpreter >> iArgumentForFramePointer: theFP atOffset: actualOffset [
+
+	^ stackPages longAt:
+		  theFP + FoxCallerSavedIP + (actualOffset * objectMemory wordSize)
+]
+
+{ #category : #'internal interpreter access' }
+CoInterpreter >> iLocalForFramePointer: theFP atOffset: actualOffset [
+
+	^ stackPages longAt: theFP + FoxIFReceiver - objectMemory wordSize
+		  + (actualOffset * objectMemory wordSize)
+]
+
 { #category : #'message sending' }
 CoInterpreter >> ifAppropriateCompileToNativeCode: aMethodObj selector: selector [
 	| methodHeader cogMethod |
@@ -4207,14 +4221,21 @@ CoInterpreter >> isMachineCodeIP: anInstrPointer [
 
 { #category : #'internal interpreter access' }
 CoInterpreter >> itemporary: offset in: theFP [
+
 	"Temporary access for an interpreter frame only."
+
 	"See StackInterpreter class>>initializeFrameIndices"
-	| frameNumArgs |
+
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^offset < (frameNumArgs := self iframeNumArgs: theFP)
-		ifTrue: [stackPages longAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize)]
-		ifFalse: [stackPages longAt: theFP + FoxIFReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize)]
+	| frameNumArgs actualOffset |
+	frameNumArgs := self iframeNumArgs: theFP.
+	actualOffset := frameNumArgs - offset.
+	^ offset < frameNumArgs
+		  ifTrue: [ 
+		  self iArgumentForFramePointer: theFP atOffset: actualOffset ]
+		  ifFalse: [ 
+		  self iLocalForFramePointer: theFP atOffset: actualOffset ]
 ]
 
 { #category : #'internal interpreter access' }

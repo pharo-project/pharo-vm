@@ -231,7 +231,7 @@ Spur64BitMemoryManager >> dbgFloatValueOf: oop [
 		ifFalse:
 			[(self classIndexOf: oop) = ClassFloatCompactIndex ifTrue:
 				[self cCode: '' inSmalltalk: [result := Float new: 2].
-				 self fetchFloatAt: oop + self baseHeaderSize into: result.
+				 self fetchFloat: oop into: result.
 				 ^result]].
 	^0.0
 ]
@@ -343,7 +343,7 @@ Spur64BitMemoryManager >> floatValueOf: oop [
 		ifFalse:
 			[(self classIndexOf: oop) = ClassFloatCompactIndex ifTrue:
 				[self cCode: '' inSmalltalk: [result := Float new: 2].
-				 self fetchFloatAt: oop + self baseHeaderSize into: result.
+				 self fetchFloat: oop into: result.
 				 ^result]].
 	coInterpreter primitiveFail.
 	^0.0
@@ -702,7 +702,7 @@ Spur64BitMemoryManager >> loadFloatOrIntFrom: floatOrIntOop [
 		ifFalse:
 			[(self classIndexOf: floatOrIntOop) = ClassFloatCompactIndex ifTrue:
 				[self cCode: '' inSmalltalk: [result := Float new: 2].
-				 self fetchFloatAt: floatOrIntOop + self baseHeaderSize into: result.
+				 self fetchFloat: floatOrIntOop into: result.
 				 ^result]].
 	coInterpreter primitiveFail.
 	^0.0

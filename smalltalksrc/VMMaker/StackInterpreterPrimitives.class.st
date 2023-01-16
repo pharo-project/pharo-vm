@@ -1749,7 +1749,7 @@ StackInterpreterPrimitives >> primitiveInstVarAtPut [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadBoolean8FromBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value byteSize |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -1772,7 +1772,7 @@ StackInterpreterPrimitives >> primitiveLoadBoolean8FromBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadBoolean8FromExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -1791,7 +1791,7 @@ StackInterpreterPrimitives >> primitiveLoadBoolean8FromExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadChar16FromBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value byteSize |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -1814,7 +1814,7 @@ StackInterpreterPrimitives >> primitiveLoadChar16FromBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadChar16FromExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -1833,7 +1833,7 @@ StackInterpreterPrimitives >> primitiveLoadChar16FromExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadChar32FromBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value byteSize |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -1856,7 +1856,7 @@ StackInterpreterPrimitives >> primitiveLoadChar32FromBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadChar32FromExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -1875,7 +1875,7 @@ StackInterpreterPrimitives >> primitiveLoadChar32FromExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadChar8FromBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value byteSize |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -1898,7 +1898,7 @@ StackInterpreterPrimitives >> primitiveLoadChar8FromBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadChar8FromExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -1918,7 +1918,7 @@ StackInterpreterPrimitives >> primitiveLoadChar8FromExternalAddress [
 StackInterpreterPrimitives >> primitiveLoadFloat32FromBytes [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #float >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value byteSize |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -1942,7 +1942,7 @@ StackInterpreterPrimitives >> primitiveLoadFloat32FromBytes [
 StackInterpreterPrimitives >> primitiveLoadFloat32FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #float >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -1962,7 +1962,7 @@ StackInterpreterPrimitives >> primitiveLoadFloat32FromExternalAddress [
 StackInterpreterPrimitives >> primitiveLoadFloat64FromBytes [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #double >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value byteSize |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -1986,7 +1986,7 @@ StackInterpreterPrimitives >> primitiveLoadFloat64FromBytes [
 StackInterpreterPrimitives >> primitiveLoadFloat64FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #double >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2005,7 +2005,7 @@ StackInterpreterPrimitives >> primitiveLoadFloat64FromExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadInt16FromBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value byteSize |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2028,7 +2028,7 @@ StackInterpreterPrimitives >> primitiveLoadInt16FromBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadInt16FromExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2047,7 +2047,7 @@ StackInterpreterPrimitives >> primitiveLoadInt16FromExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadInt32FromBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value byteSize |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2070,7 +2070,7 @@ StackInterpreterPrimitives >> primitiveLoadInt32FromBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadInt32FromExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2090,7 +2090,7 @@ StackInterpreterPrimitives >> primitiveLoadInt32FromExternalAddress [
 StackInterpreterPrimitives >> primitiveLoadInt64FromBytes [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #sqLong >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value byteSize |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2114,7 +2114,7 @@ StackInterpreterPrimitives >> primitiveLoadInt64FromBytes [
 StackInterpreterPrimitives >> primitiveLoadInt64FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #sqLong >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2133,7 +2133,7 @@ StackInterpreterPrimitives >> primitiveLoadInt64FromExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadInt8FromBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value byteSize |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2156,7 +2156,7 @@ StackInterpreterPrimitives >> primitiveLoadInt8FromBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadInt8FromExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2176,7 +2176,7 @@ StackInterpreterPrimitives >> primitiveLoadInt8FromExternalAddress [
 StackInterpreterPrimitives >> primitiveLoadPointerFromBytes [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value byteSize object |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2202,7 +2202,7 @@ StackInterpreterPrimitives >> primitiveLoadPointerFromBytes [
 StackInterpreterPrimitives >> primitiveLoadPointerFromExternalAddress [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value object |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2266,7 +2266,7 @@ StackInterpreterPrimitives >> primitiveLoadSymbolFromModule [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadUInt16FromBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value byteSize |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2289,7 +2289,7 @@ StackInterpreterPrimitives >> primitiveLoadUInt16FromBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadUInt16FromExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2308,7 +2308,7 @@ StackInterpreterPrimitives >> primitiveLoadUInt16FromExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadUInt32FromBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value byteSize |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2331,7 +2331,7 @@ StackInterpreterPrimitives >> primitiveLoadUInt32FromBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadUInt32FromExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2351,7 +2351,7 @@ StackInterpreterPrimitives >> primitiveLoadUInt32FromExternalAddress [
 StackInterpreterPrimitives >> primitiveLoadUInt64FromBytes [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #usqLong >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value byteSize |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2375,7 +2375,7 @@ StackInterpreterPrimitives >> primitiveLoadUInt64FromBytes [
 StackInterpreterPrimitives >> primitiveLoadUInt64FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #usqLong >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2394,7 +2394,7 @@ StackInterpreterPrimitives >> primitiveLoadUInt64FromExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadUInt8FromBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value byteSize |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2417,7 +2417,7 @@ StackInterpreterPrimitives >> primitiveLoadUInt8FromBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadUInt8FromExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2948,7 +2948,7 @@ StackInterpreterPrimitives >> primitiveSlotAtPut [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreBoolean8IntoBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject byteSize |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -2980,7 +2980,7 @@ StackInterpreterPrimitives >> primitiveStoreBoolean8IntoBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreBoolean8IntoExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3008,7 +3008,7 @@ StackInterpreterPrimitives >> primitiveStoreBoolean8IntoExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreChar16IntoBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject byteSize |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3034,7 +3034,7 @@ StackInterpreterPrimitives >> primitiveStoreChar16IntoBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreChar16IntoExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3056,7 +3056,7 @@ StackInterpreterPrimitives >> primitiveStoreChar16IntoExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreChar32IntoBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject byteSize |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3082,7 +3082,7 @@ StackInterpreterPrimitives >> primitiveStoreChar32IntoBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreChar32IntoExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3104,7 +3104,7 @@ StackInterpreterPrimitives >> primitiveStoreChar32IntoExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreChar8IntoBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject byteSize |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3130,7 +3130,7 @@ StackInterpreterPrimitives >> primitiveStoreChar8IntoBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreChar8IntoExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3153,7 +3153,7 @@ StackInterpreterPrimitives >> primitiveStoreChar8IntoExternalAddress [
 StackInterpreterPrimitives >> primitiveStoreFloat32IntoBytes [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #double >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject byteSize |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3180,7 +3180,7 @@ StackInterpreterPrimitives >> primitiveStoreFloat32IntoBytes [
 StackInterpreterPrimitives >> primitiveStoreFloat32IntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #double >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3203,7 +3203,7 @@ StackInterpreterPrimitives >> primitiveStoreFloat32IntoExternalAddress [
 StackInterpreterPrimitives >> primitiveStoreFloat64IntoBytes [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #double >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject byteSize |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3230,7 +3230,7 @@ StackInterpreterPrimitives >> primitiveStoreFloat64IntoBytes [
 StackInterpreterPrimitives >> primitiveStoreFloat64IntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #double >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3252,7 +3252,7 @@ StackInterpreterPrimitives >> primitiveStoreFloat64IntoExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreInt16IntoBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject byteSize |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3278,7 +3278,7 @@ StackInterpreterPrimitives >> primitiveStoreInt16IntoBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreInt16IntoExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3300,7 +3300,7 @@ StackInterpreterPrimitives >> primitiveStoreInt16IntoExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreInt32IntoBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject byteSize |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3328,7 +3328,7 @@ StackInterpreterPrimitives >> primitiveStoreInt32IntoBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreInt32IntoExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3352,7 +3352,7 @@ StackInterpreterPrimitives >> primitiveStoreInt32IntoExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreInt64IntoBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject byteSize |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3380,7 +3380,7 @@ StackInterpreterPrimitives >> primitiveStoreInt64IntoBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreInt64IntoExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3404,7 +3404,7 @@ StackInterpreterPrimitives >> primitiveStoreInt64IntoExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreInt8IntoBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject byteSize |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3430,7 +3430,7 @@ StackInterpreterPrimitives >> primitiveStoreInt8IntoBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreInt8IntoExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3453,7 +3453,7 @@ StackInterpreterPrimitives >> primitiveStoreInt8IntoExternalAddress [
 StackInterpreterPrimitives >> primitiveStorePointerIntoBytes [
 	<var: #bytes type: #'char*' >
 	<var: #valueBytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes valueBytes valueObject byteSize |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3481,7 +3481,7 @@ StackInterpreterPrimitives >> primitiveStorePointerIntoBytes [
 StackInterpreterPrimitives >> primitiveStorePointerIntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	<var: #valueBytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes valueBytes valueObject |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3506,6 +3506,7 @@ StackInterpreterPrimitives >> primitiveStoreStackp [
 	"Atomic store into context stackPointer. 
 	Also ensures that any newly accessible cells are initialized to nil "
 	| ctxt newStackp theFP thePage onCurrentPage stackp |
+	<numberOfArguments: 1>
 	<var: #theFP type: #'char *'>
 	<var: #thePage type: #'StackPage *'>
 	ctxt := self stackValue: 1.
@@ -3539,7 +3540,7 @@ StackInterpreterPrimitives >> primitiveStoreStackp [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreUInt16IntoBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject byteSize |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3567,7 +3568,7 @@ StackInterpreterPrimitives >> primitiveStoreUInt16IntoBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreUInt16IntoExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3591,7 +3592,7 @@ StackInterpreterPrimitives >> primitiveStoreUInt16IntoExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreUInt32IntoBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject byteSize |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3619,7 +3620,7 @@ StackInterpreterPrimitives >> primitiveStoreUInt32IntoBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreUInt32IntoExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3643,7 +3644,7 @@ StackInterpreterPrimitives >> primitiveStoreUInt32IntoExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreUInt64IntoBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject byteSize |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3671,7 +3672,7 @@ StackInterpreterPrimitives >> primitiveStoreUInt64IntoBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreUInt64IntoExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3695,7 +3696,7 @@ StackInterpreterPrimitives >> primitiveStoreUInt64IntoExternalAddress [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreUInt8IntoBytes [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject byteSize |
 	valueObject := self stackTop.
 	index := self stackValue: 1.
@@ -3723,7 +3724,7 @@ StackInterpreterPrimitives >> primitiveStoreUInt8IntoBytes [
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreUInt8IntoExternalAddress [
 	<var: #bytes type: #'char*' >
-	
+	<numberOfArguments: 1>
 	| index rcvr bytes value valueObject |
 	valueObject := self stackTop.
 	index := self stackValue: 1.

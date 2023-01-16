@@ -280,6 +280,12 @@ UnicornARMv5Simulator >> r10: anInteger [
 	^ self writeRegister: UcARMRegisters r10 value: anInteger
 ]
 
+{ #category : #accessing }
+UnicornARMv5Simulator >> r11 [
+	
+	^ self readRegister: UcARMRegisters r11
+]
+
 { #category : #registers }
 UnicornARMv5Simulator >> r11: anInteger [ 
 	
@@ -401,7 +407,7 @@ UnicornARMv5Simulator >> receiverRegister [
 { #category : #accessing }
 UnicornARMv5Simulator >> registerList [
 
-	^ #(lr pc sp fp r0 r1 r2 r3 r4 r5 r6 r7 r8 r9)
+	^ #(lr pc sp fp r0 r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11)
 ]
 
 { #category : #'as yet unclassified' }

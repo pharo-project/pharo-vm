@@ -406,11 +406,6 @@ StackInterpreterSimulator >> cr [
 	traceOn ifTrue: [ transcript cr; flush ].
 ]
 
-{ #category : #accessing }
-StackInterpreterSimulator >> currentBytecode: anInteger [ 
-	currentBytecode := anInteger
-]
-
 { #category : #UI }
 StackInterpreterSimulator >> desiredDisplayExtent [
 	^(savedWindowSize

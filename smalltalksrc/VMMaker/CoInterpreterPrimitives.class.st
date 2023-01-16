@@ -497,6 +497,7 @@ CoInterpreterPrimitives >> primitiveMinimumUnusedHeadroom [
 CoInterpreterPrimitives >> primitiveObjectAt [
 "Defined for CompiledMethods only"
 	| thisReceiver rawHeader realHeader index |
+	<numberOfArguments: 1>
 	index  := self stackIntegerValue: 0.
 	self successful ifFalse:
 		[^self primitiveFailFor: PrimErrBadArgument].
@@ -518,6 +519,7 @@ CoInterpreterPrimitives >> primitiveObjectAt [
 CoInterpreterPrimitives >> primitiveObjectAtPut [
 	"Store a literal into a CompiledMethod at the given index. Defined for CompiledMethods only."
 	| thisReceiver rawHeader realHeader index newValue |
+	<numberOfArguments: 2>
 	newValue := self stackValue: 0.
 	index := self stackValue: 1.
 	(objectMemory isNonIntegerObject: index) ifTrue:
