@@ -142,6 +142,10 @@ UnicornSimulator >> registerHook: aBlock atAddress: anAddress [
 { #category : #executing }
 UnicornSimulator >> startAt: begin until: until timeout: timeout count: count [
 
-	^ self doStartAt: begin until: until timeout: timeout count: count.
+	self instructionPointerRegisterValue: begin.
 
+	"If we are asked to finish right away,
+	then don't call the simulation and same some cycles"
+	begin = until ifTrue: [ ^ self ].
+	^ self doStartAt: begin until: until timeout: timeout count: count.
 ]
