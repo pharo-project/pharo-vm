@@ -13,6 +13,8 @@ VMSpurImageToComposedImageMigrationProcess >> copyChangesFileFromImage: original
 
 	| originalImageFileReference originalChangesFileReference newImageFileReference newChangesFileReference |
 
+	originalImageString = newImageString ifTrue: [ ^ self ].
+
 	originalImageFileReference := originalImageString asFileReference.
 	originalChangesFileReference := originalImageFileReference withExtension: 'changes'.
 	
@@ -59,7 +61,7 @@ VMSpurImageToComposedImageMigrationProcess >> loadImage: originalImage [
 { #category : #migrate }
 VMSpurImageToComposedImageMigrationProcess >> migrate: originalImage to: newImage [
 
-	newImage asFileReference ensureDeleteAll.
+	originalImage ~= newImage ifTrue: [ newImage asFileReference ensureDeleteAll ].
 
 	self createSimulator.
 	self loadImage: originalImage.
