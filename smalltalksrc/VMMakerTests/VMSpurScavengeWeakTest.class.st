@@ -27,33 +27,6 @@ VMSpurScavengeWeakTest >> testNewWeakObjectShouldHaveClassIndexOfItsClass [
 ]
 
 { #category : #tests }
-VMSpurScavengeWeakTest >> testScavengeOldWeakObjectReferencingNewSurvivorShouldNotFireFinalization [
-
-	| weakObjectOop nonWeakObjectOop nonWeakObjectHash |
-	self createWeakArrayClass.
-	weakObjectOop := self newWeakObjectOfSize: 1.
-
-	"Force object to not be collected by putting them in special variables"
-	memory coInterpreter newMethod: weakObjectOop.
-	
-	memory flushNewSpace.
-	weakObjectOop := memory remapObj: weakObjectOop.
-	ourWeakClass := (memory remapObj: ourWeakClass).
-	nonWeakObjectOop := self newZeroSizedObject.
-	nonWeakObjectHash := memory hashBitsOf: nonWeakObjectOop.
-	memory storePointer: 0 ofObject: weakObjectOop withValue: nonWeakObjectOop.
-	
-	"Force object to not be collected by putting them in special variables"
-	memory coInterpreter profileSemaphore: nonWeakObjectOop.
-
-	memory doScavenge: 1 "TenureByAge".	
-	
-	self
-		assert: memory coInterpreter pendingFinalizationSignals
-		equals: 0
-]
-
-{ #category : #tests }
 VMSpurScavengeWeakTest >> testScavengeOldWeakObjectReferencingNonSurvivorShouldBeNilled [
 
 	| weakObjectOop nonWeakObjectOop nonWeakObjectHash nilHash |
@@ -78,31 +51,6 @@ VMSpurScavengeWeakTest >> testScavengeOldWeakObjectReferencingNonSurvivorShouldB
 ]
 
 { #category : #tests }
-VMSpurScavengeWeakTest >> testScavengeOldWeakObjectReferencingNonSurvivorShouldFireFinalization [
-
-	| weakObjectOop nonWeakObjectOop nonWeakObjectHash |
-	self createWeakArrayClass.
-	weakObjectOop := self newWeakObjectOfSize: 1.
-
-	"Force object to not be collected by putting them in special variables"
-	memory coInterpreter newMethod: weakObjectOop.
-	
-	memory flushNewSpace.
-	weakObjectOop := memory remapObj: weakObjectOop.
-	ourWeakClass := (memory remapObj: ourWeakClass).
-
-	nonWeakObjectOop := self newZeroSizedObject.
-	nonWeakObjectHash := memory hashBitsOf: nonWeakObjectOop.
-	memory storePointer: 0 ofObject: weakObjectOop withValue: nonWeakObjectOop.
-	
-	memory doScavenge: 1 "TenureByAge".	
-	
-	self
-		assert: memory coInterpreter pendingFinalizationSignals
-		equals: 1
-]
-
-{ #category : #tests }
 VMSpurScavengeWeakTest >> testScavengeWeakObjectReferencingNonSurvivorShouldBeNilled [
 
 	| weakObjectOop nonWeakObjectOop nilHash |
@@ -120,24 +68,6 @@ VMSpurScavengeWeakTest >> testScavengeWeakObjectReferencingNonSurvivorShouldBeNi
 	self
 		assert: (memory hashBitsOf: (memory fetchPointer: 0 ofObject: weakObjectOop))
 		equals: nilHash
-]
-
-{ #category : #tests }
-VMSpurScavengeWeakTest >> testScavengeWeakObjectReferencingNonSurvivorShouldFireFinalisation [
-
-	| weakObjectOop nonWeakObjectOop |
-	self createWeakArrayClass.
-	weakObjectOop := self newWeakObjectOfSize: 1.
-	nonWeakObjectOop := self newZeroSizedObject.
-	memory storePointer: 0 ofObject: weakObjectOop withValue: nonWeakObjectOop.
-	
-	"Force object to not be collected by putting them in special variables"
-	memory coInterpreter newMethod: weakObjectOop.
-	memory doScavenge: 1 "TenureByAge".
-		
-	self
-		assert: memory coInterpreter pendingFinalizationSignals
-		equals: 1
 ]
 
 { #category : #tests }
@@ -160,26 +90,4 @@ VMSpurScavengeWeakTest >> testScavengeWeakObjectReferencingSurvivorShouldLeaveWe
 	self
 		assert: (memory hashBitsOf: (memory fetchPointer: 0 ofObject: weakObjectOop))
 		equals: nonWeakObjectHash
-]
-
-{ #category : #tests }
-VMSpurScavengeWeakTest >> testScavengeWeakObjectReferencingSurvivorShouldNotFireFinalization [
-
-	| weakObjectOop nonWeakObjectOop nonWeakObjectHash |
-	self createWeakArrayClass.
-	weakObjectOop := self newWeakObjectOfSize: 1.
-	nonWeakObjectOop := self newZeroSizedObject.
-	nonWeakObjectHash := memory hashBitsOf: nonWeakObjectOop.
-	memory storePointer: 0 ofObject: weakObjectOop withValue: nonWeakObjectOop.
-	
-	"Force object to not be collected by putting them in special variables"
-	memory coInterpreter newMethod: weakObjectOop.
-	memory coInterpreter profileSemaphore: nonWeakObjectOop.
-
-	memory doScavenge: 1 "TenureByAge".
-	weakObjectOop := memory remapObj: weakObjectOop.	
-	
-	self
-		assert: memory coInterpreter pendingFinalizationSignals
-		equals: 0
 ]

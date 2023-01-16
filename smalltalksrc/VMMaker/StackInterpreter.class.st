@@ -336,13 +336,10 @@ Class {
 		'reenterInterpreter',
 		'nextWakeupUsecs',
 		'nextPollUsecs',
-		'inIOProcessEvents',
 		'interruptPending',
 		'savedWindowSize',
 		'imageHeaderFlags',
 		'fullScreenFlag',
-		'sendWheelEvents',
-		'pendingFinalizationSignals',
 		'extraVMMemory',
 		'interpreterProxy',
 		'primitiveTable',
@@ -395,8 +392,6 @@ Class {
 		'statStackPageDivorce',
 		'statCheckForEvents',
 		'statProcessSwitch',
-		'statIOProcessEvents',
-		'statPendingFinalizationSignals',
 		'statIdleUsecs',
 		'debugCallbackPath',
 		'debugCallbackReturns',
@@ -409,7 +404,8 @@ Class {
 		'showSurfaceFn',
 		'messageCount',
 		'imageReader',
-		'imageWriter'
+		'imageWriter',
+		'pendingFinalizationSignals'
 	],
 	#classVars : [
 		'AlternateHeaderHasPrimFlag',
@@ -594,7 +590,7 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	self declareCAsUSqLong: #(nextPollUsecs nextWakeupUsecs longRunningPrimitiveGCUsecs
 								longRunningPrimitiveStartUsecs longRunningPrimitiveStopUsecs
 								"these are high-frequency enough that they're overflowing quite quickly on modern hardware"
-								statProcessSwitch statIOProcessEvents statForceInterruptCheck
+								statProcessSwitch statForceInterruptCheck
 								statCheckForEvents statStackOverflow statStackPageDivorce
 								statIdleUsecs)
 		in: aCCodeGenerator.
@@ -1673,35 +1669,37 @@ StackInterpreter class >> reorganizeAsISeeFit [
 
 { #category : #translation }
 StackInterpreter class >> requiredMethodNames: options [
+
 	"Answer the list of method names that should be retained for export or other support reasons"
+
 	| requiredList |
 	"A number of methods required by VM support code, specific platforms, etc"
-	requiredList := #(
-		assertValidExecutionPointe:r:s:
-		characterForAscii:
-		findClassOfMethod:forReceiver: findSelectorOfMethod:
-			forceInterruptCheck forceInterruptCheckFromHeartbeat fullDisplayUpdate
-		getCurrentBytecode getFullScreenFlag getInterruptPending
-			getSavedWindowSize getThisSessionID
-		interpret
-		loadInitialContext
-		primitiveFail primitiveFailFor: primitiveFlushExternalPrimitives printAllStacks printCallStack printContext:
-			printExternalHeadFrame printFramesInPage: printFrame: printHeadFrame printMemory printOop:
-				printStackPages printStackPageList printStackPagesInUse printStackPageListInUse
-		setFullScreenFlag: setInterruptKeycode: setInterruptPending: setInterruptCheckChain:
-			setSavedWindowSize: success:
-		validInstructionPointer:inMethod:framePointer:) asSet.
+	requiredList := #( #assertValidExecutionPointe:r:s:
+	                   characterForAscii: #findClassOfMethod:forReceiver:
+	                   findSelectorOfMethod: forceInterruptCheck
+	                   forceInterruptCheckFromHeartbeat
+	                   getCurrentBytecode getThisSessionID
+	                   interpret loadInitialContext primitiveFail
+	                   primitiveFailFor: primitiveFlushExternalPrimitives
+	                   printAllStacks printCallStack printContext:
+	                   printExternalHeadFrame printFramesInPage:
+	                   printFrame: printHeadFrame printMemory printOop:
+	                   printStackPages printStackPageList
+	                   printStackPagesInUse printStackPageListInUse
+	                   success: #validInstructionPointer:inMethod:framePointer: )
+		                asSet.
 
 	"Nice to actually have all the primitives available"
-	requiredList addAll: (self primitiveTable select: [:each| each isSymbol]).
+	requiredList addAll:
+		(self primitiveTable select: [ :each | each isSymbol ]).
 
 	"InterpreterProxy is the internal analogue of sqVirtualMachine.c, so make sure to keep all those"
-	InterpreterProxy organization categories do:
-		[:cat |
-		((cat ~= 'initialize') and: [cat ~= 'private']) ifTrue:
-			[requiredList addAll: (InterpreterProxy organization listAtCategoryNamed: cat)]].
+	InterpreterProxy organization categories do: [ :cat | 
+		(cat ~= 'initialize' and: [ cat ~= 'private' ]) ifTrue: [ 
+			requiredList addAll:
+				(InterpreterProxy organization listAtCategoryNamed: cat) ] ].
 
-	^requiredList
+	^ requiredList
 ]
 
 { #category : #translation }
@@ -3764,12 +3762,6 @@ StackInterpreter >> cannotAssign: resultObj to: targetObj withIndex: index [
 	^ self normalSend
 ]
 
-{ #category : #'debug support' }
-StackInterpreter >> capturePendingFinalizationSignals [
-	statPendingFinalizationSignals := pendingFinalizationSignals.
-
-]
-
 { #category : #'indexing primitive support' }
 StackInterpreter >> characterForAscii: ascii [  "Above ObjectMemory, arg must lie in range 0-255!"
 	<inline: true>
@@ -3943,27 +3935,13 @@ StackInterpreter >> checkForEventsMayContextSwitch: mayContextSwitch [
 	"inIOProcessEvents prevents reentrancy into ioProcessEvents and allows disabling
 	 ioProcessEvents e.g. for native GUIs.  We would like to manage that here but can't
 	 since the platform code may choose to call ioProcessEvents itself in various places."
-	false
-		ifTrue:
-			[((now := self ioUTCMicroseconds) >= nextPollUsecs
-			 and: [inIOProcessEvents = 0]) ifTrue:
-				[statIOProcessEvents := statIOProcessEvents + 1.
-				 inIOProcessEvents := inIOProcessEvents + 1.
-				 self ioProcessEvents. "sets interruptPending if interrupt key pressed; may callback"
-				 inIOProcessEvents > 0 ifTrue:
-					[inIOProcessEvents := inIOProcessEvents - 1].
-				 nextPollUsecs := now + 20000
-				 "msecs to wait before next call to ioProcessEvents.  Note that strictly
-				  speaking we might need to update 'now' at this point since
-				  ioProcessEvents could take a very long time on some platforms"]]
-		ifFalse:
-			[(now := self ioUTCMicroseconds) >= nextPollUsecs ifTrue:
-				[statIOProcessEvents := statIOProcessEvents + 1.
-				 self ioProcessEvents. "sets interruptPending if interrupt key pressed; may callback"
-				 nextPollUsecs := now + 20000
-				 "msecs to wait before next call to ioProcessEvents.  Note that strictly
-				  speaking we might need to update 'now' at this point since
-				  ioProcessEvents could take a very long time on some platforms"]].
+	
+	(now := self ioUTCMicroseconds) >= nextPollUsecs ifTrue: [
+		self ioProcessEvents. "sets interruptPending if interrupt key pressed; may callback"
+		"msecs to wait before next call to ioProcessEvents."
+		 nextPollUsecs := now + 20000
+		 "Note that strictly speaking we might need to update 'now' at this point since
+		 ioProcessEvents could take a very long time on some platforms" ].
 
 	interruptPending ifTrue:
 		[interruptPending := false.
@@ -6329,14 +6307,6 @@ StackInterpreter >> fireEphemeron: ephemeron [
 	self signalFinalization: ephemeron
 ]
 
-{ #category : #finalization }
-StackInterpreter >> fireFinalization: weakling [
-	<option: #SpurObjectMemory>
-	newFinalization ifTrue:
-		[objectMemory queueMourner: weakling].
-	self signalFinalization: weakling
-]
-
 { #category : #'compiled methods' }
 StackInterpreter >> firstByteIndexOfMethod: methodObj [
 	"Answer the one-relative index of the first bytecode in methodObj.
@@ -6754,10 +6724,9 @@ StackInterpreter >> forceInterruptCheck [
 	"Force an interrupt check ASAP.
 	 Must set the stack page's limit before stackLimit to avoid
 	 a race condition if this is called from an interrupt handler."
-	| thePage iccFunc |
+	| thePage |
 	<inline: false>
 	<var: #thePage type: #'StackPage *'>
-	<var: #iccFunc declareC: 'void (*iccFunc)()'>
 	"Do _not_ set stackLimit until the stack system has been initialized.
 	 stackLimit is the initialization flag for the stack system."
 	stackLimit = 0 ifTrue:
@@ -6767,12 +6736,6 @@ StackInterpreter >> forceInterruptCheck [
 		[thePage stackLimit: self allOnesAsCharStar].
 	stackLimit := self allOnesAsCharStar.
 	self sqLowLevelMFence.
-	"There is a race condition if we test the function and then dereference
-	 it a second time to call it.  This is called from interrupt code but at the
-	 same time other code could be clearing the interruptCheckChain via
-	 setInterruptCheckChain:."
-	(iccFunc := interruptCheckChain) notNil ifTrue:
-		[self perform: iccFunc].
 	statForceInterruptCheck := statForceInterruptCheck + 1
 ]
 
@@ -7084,8 +7047,6 @@ StackInterpreter >> getCogVMFlags [
 	 Bit 4: if set, implies the new finalization scheme where WeakArrays are queued
 	 Bit 5: if set, implies wheel events will be delivered as such and not mapped to arrow key events"
 	^objectMemory integerObjectOf: (preemptionYields ifTrue: [0] ifFalse: [4])
-									+ (newFinalization ifTrue: [16] ifFalse: [0])
-									+ (sendWheelEvents ifTrue: [32] ifFalse: [0])
 									+ (imageHeaderFlags >> 2 bitClear: 4 + 16 + 32)
 ]
 
@@ -7167,17 +7128,9 @@ StackInterpreter >> getGCMode [
 { #category : #'image save/restore' }
 StackInterpreter >> getImageHeaderFlags [
 	"Answer the flags that are contained in the 7th long of the image header."
-	^fullScreenFlag "0 or 1"
-	+ (VMBIGENDIAN ifTrue: [0] ifFalse: [2]) "this is the imageFloatsLittleEndian flag"
+	^(VMBIGENDIAN ifTrue: [0] ifFalse: [2]) "this is the imageFloatsLittleEndian flag"
 	+ (preemptionYields ifTrue: [0] ifFalse: [16r10])
-	+ (newFinalization ifTrue: [16r40] ifFalse: [0])
-	+ (sendWheelEvents ifTrue: [16r80] ifFalse: [0])
 	+ (imageHeaderFlags bitClear: 16rD3) "these are any flags we do not recognize"
-]
-
-{ #category : #'plugin primitive support' }
-StackInterpreter >> getInterruptPending [
-	^interruptPending
 ]
 
 { #category : #accessing }
@@ -7203,11 +7156,6 @@ StackInterpreter >> getNextWakeupUsecs [
 	<api>
 	<returnTypeC: #usqLong>
 	^nextWakeupUsecs
-]
-
-{ #category : #'plugin primitive support' }
-StackInterpreter >> getSavedWindowSize [
-	^savedWindowSize
 ]
 
 { #category : #'primitive support' }
@@ -7660,20 +7608,16 @@ StackInterpreter >> initialize [
 	nextPollUsecs := 0.
 	nextWakeupUsecs := 0.
 	tempOop := tempOop2 := theUnknownShort := 0.
-	interruptPending := false.
 	maxStacksToPrint := 0.
-	inIOProcessEvents := 0.
-	fullScreenFlag := 0.
-	sendWheelEvents := false.
 	displayBits := displayWidth := displayHeight := displayDepth := 0.
-	pendingFinalizationSignals := statPendingFinalizationSignals := 0.
+	pendingFinalizationSignals := 0.
 	globalSessionID := 0.
 	jmpDepth := 0.
 	longRunningPrimitiveStartUsecs := longRunningPrimitiveStopUsecs := 0.
 	maxExtSemTabSizeSet := false.
 	debugCallbackInvokes := debugCallbackPath := debugCallbackReturns := 0.
 	statForceInterruptCheck := statStackOverflow := statCheckForEvents :=
-	statProcessSwitch := statIOProcessEvents := statStackPageDivorce :=
+	statProcessSwitch := statStackPageDivorce :=
 	statIdleUsecs := 0.
 	messageCount := 0.
 ]
@@ -10798,12 +10742,6 @@ StackInterpreter >> page: aCogStackPage [
 	self shouldBeImplemented.
 ]
 
-{ #category : #accessing }
-StackInterpreter >> pendingFinalizationSignals [
-	<doNotGenerate>
-	^ pendingFinalizationSignals
-]
-
 { #category : #'debug printing' }
 StackInterpreter >> penultimateLiteralOf: aMethodOop [
 	<api>
@@ -11053,29 +10991,6 @@ StackInterpreter >> primitiveAccessorDepthForExternalPrimitiveMethod: methodObj 
 		(objectMemory
 			fetchPointer: 2
 			ofObject: (self literal: 0 ofMethod: methodObj))
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreter >> primitiveEventProcessingControl [
-	"With 0 args answers whether ioProcessEvents is enabled and being called.
-	 With 1 arg expects a boolean which will enable ioProcessEvents if true and
-	 disable it if false, answering its previous state."
-	<export: true>
-	| enabled |
-	enabled := inIOProcessEvents >= 0.
-	argumentCount = 0 ifTrue:
-		[^self pop: 1 thenPushBool: enabled].
-	argumentCount = 1 ifTrue:
-		[self stackTop = objectMemory trueObject
-			ifTrue: [inIOProcessEvents < 0 ifTrue:
-					[inIOProcessEvents := 0]]
-			ifFalse:
-				[self stackTop = objectMemory falseObject
-					ifTrue: [inIOProcessEvents := -1]
-					ifFalse: [self primitiveFailFor: PrimErrBadArgument.
-							^self]].
-		 ^self pop: 2 thenPushBool: enabled].
-	self primitiveFailFor: PrimErrBadNumArgs
 ]
 
 { #category : #'simd primitives' }
@@ -13548,16 +13463,12 @@ StackInterpreter >> setCheckAllocFiller: aBool [
 StackInterpreter >> setCogVMFlags: flags [
 	"Set an array of flags indicating various properties of the Cog VM.
 	 Bit 2: if set, implies preempting a process does not put it to the back of its run queue
-	 Bit 4: if set, implies the new finalization scheme where WeakArrays are queued
 	 Bit 5: if set, implies wheel events will be delivered as such and not mapped to arrow key events"
 	flags asUnsignedInteger > 63 ifTrue:
 		[^self primitiveFailFor: PrimErrUnsupported].
 	"processHasThreadId := flags anyMask: 1. specific to CoInterpreterMT"
 	"flagInterpretedMethods := flags anyMask: 2. specific to CoInterpreter"
 	preemptionYields := flags noMask: 4.
-	"noThreadingOfGUIThread := flags anyMask: 8.. specific to CoInterpreterMT"
-	newFinalization := flags anyMask: 16.
-	sendWheelEvents := flags anyMask: 32
 ]
 
 { #category : #'internal interpreter access' }
@@ -13596,11 +13507,6 @@ StackInterpreter >> setFrameHasContext: theFP [
 	stackPages byteAt: theFP + FoxFrameFlags + 2 put: 1
 ]
 
-{ #category : #'plugin primitive support' }
-StackInterpreter >> setFullScreenFlag: value [
-	fullScreenFlag := value
-]
-
 { #category : #'object memory support' }
 StackInterpreter >> setGCMode: mode [
 	"This is a no-op in the StackVM"
@@ -13625,14 +13531,11 @@ StackInterpreter >> setHeadFP: theFP andSP: theSP inPage: thePage [
 StackInterpreter >> setImageHeaderFlagsFrom: headerFlags [
 	"Set the flags that are contained in the 7th long of the image header."
 	imageHeaderFlags := headerFlags. "so as to preserve unrecognised flags."
-	fullScreenFlag := headerFlags bitAnd: 1.
 	imageFloatsBigEndian := (headerFlags noMask: 2) ifTrue: [1] ifFalse: [0].
 	"processHasThreadId := headerFlags anyMask: 4. specific to CoInterpreterMT"
 	"flagInterpretedMethods := headerFlags anyMask: 8. specific to CoInterpreter"
 	preemptionYields := headerFlags noMask: 16.
 	"noThreadingOfGUIThread := headerFlags anyMask: 32. specific to CoInterpreterMT"
-	newFinalization := headerFlags anyMask: 64.
-	sendWheelEvents := headerFlags anyMask: 128
 ]
 
 { #category : #'simulation support' }
@@ -13640,24 +13543,6 @@ StackInterpreter >> setImageName: aString [
 	<doNotGenerate>
 	"Simulation support for when running it with an image"
 	self shouldNotImplement 
-]
-
-{ #category : #'primitive support' }
-StackInterpreter >> setInterruptCheckChain: aFunction [
-	<var: #aFunction declareC: 'void (*aFunction)()'>
-	<var: #prevFunction declareC: 'void (*prevFunction)()'>
-	<returnTypeC: 'void (*setInterruptCheckChain(void (*aFunction)(void)))()'>
-	<export: true>
-	| prevFunction |
-	prevFunction := interruptCheckChain.
-	interruptCheckChain := aFunction.
-	^prevFunction
-]
-
-{ #category : #'plugin primitive support' }
-StackInterpreter >> setInterruptPending: value [
-	self forceInterruptCheck.
-	interruptPending := value
 ]
 
 { #category : #'process primitive support' }
@@ -13726,11 +13611,6 @@ StackInterpreter >> setNumStackPages: requestedNumPages [
 
 	desiredNumStackPages := requestedNumPages.
 
-]
-
-{ #category : #'plugin primitive support' }
-StackInterpreter >> setSavedWindowSize: value [
-	savedWindowSize := value
 ]
 
 { #category : #'process primitive support' }
@@ -14100,7 +13980,7 @@ StackInterpreter >> signalExternalSemaphores [
 	^self doSignalExternalSemaphores: (objectMemory numSlotsOf: xArray)
 ]
 
-{ #category : #'process primitive support' }
+{ #category : #finalization }
 StackInterpreter >> signalFinalization: weakReferenceOop [
 	"Record the fact that there is at least one object to finalize
 	 and cause the VM to check for interrupts at the earliest

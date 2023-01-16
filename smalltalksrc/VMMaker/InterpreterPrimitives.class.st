@@ -76,7 +76,6 @@ Class {
 		'profileSemaphore',
 		'nextProfileTick',
 		'preemptionYields',
-		'newFinalization',
 		'ffiExceptionResponse'
 	],
 	#classVars : [
@@ -283,8 +282,7 @@ InterpreterPrimitives >> initPrimCall [
 InterpreterPrimitives >> initialize [
 
 	"Here we can initialize the variables C initializes to zero.  #initialize methods do /not/ get translated."
-	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := ffiExceptionResponse := 0.
-	newFinalization := false
+	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := ffiExceptionResponse := 0
 ]
 
 { #category : #'simulation support' }
