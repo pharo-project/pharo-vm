@@ -23,11 +23,6 @@ VMJITPrimitiveCallingTest >> initStack [
 VMJITPrimitiveCallingTest >> setUp [
 	super setUp.
 
-	"Initializing the primTraceLog table"
-	interpreter movePrimTraceLogToMemoryAt:
-		cogit methodZoneBase + interpreter cogCodeSize + stackSpaceSize
-		+ methodCacheSize.
-
 	self createLargeIntegerClasses.
 		
 	interpreter pluginList: OrderedCollection new.
