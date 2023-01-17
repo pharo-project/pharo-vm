@@ -10742,6 +10742,13 @@ StackInterpreter >> page: aCogStackPage [
 	self shouldBeImplemented.
 ]
 
+{ #category : #accessing }
+StackInterpreter >> pendingFinalizationSignals [
+
+	<doNotGenerate>
+	^ pendingFinalizationSignals
+]
+
 { #category : #'debug printing' }
 StackInterpreter >> penultimateLiteralOf: aMethodOop [
 	<api>

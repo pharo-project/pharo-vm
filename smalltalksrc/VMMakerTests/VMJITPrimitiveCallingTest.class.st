@@ -1,9 +1,6 @@
 Class {
 	#name : #VMJITPrimitiveCallingTest,
 	#superclass : #VMPrimitiveCallAbstractTest,
-	#instVars : [
-		'classLargeInteger'
-	],
 	#pools : [
 		'CogRTLOpcodes'
 	],
@@ -26,13 +23,12 @@ VMJITPrimitiveCallingTest >> initStack [
 VMJITPrimitiveCallingTest >> setUp [
 	super setUp.
 
-	classLargeInteger := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstByteFormat.
-	
-	memory setHashBitsOf: classLargeInteger to: ClassLargePositiveIntegerCompactIndex.
-	memory
-		storePointer: ClassLargePositiveIntegerCompactIndex
-		ofObject: memory classTableFirstPage
-		withValue: classLargeInteger.
+	"Initializing the primTraceLog table"
+	interpreter movePrimTraceLogToMemoryAt:
+		cogit methodZoneBase + interpreter cogCodeSize + stackSpaceSize
+		+ methodCacheSize.
+
+	self createLargeIntegerClasses.
 		
 	interpreter pluginList: OrderedCollection new.
 	

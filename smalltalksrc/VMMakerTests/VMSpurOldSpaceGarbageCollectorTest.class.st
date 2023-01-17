@@ -281,6 +281,17 @@ VMSpurOldSpaceGarbageCollectorTest >> testArrayOfPermanentObjectsPointingToOldOb
 ]
 
 { #category : #'tests' }
+VMSpurOldSpaceGarbageCollectorTest >> testDoNotCollectRoots [
+
+	memory fullGC.
+	
+	self deny: (memory isFreeObject: (memory nilObject)).
+	self deny: (memory isFreeObject: (memory trueObject)).
+	self deny: (memory isFreeObject: (memory falseObject)).
+	self deny: (memory isFreeObject: (memory freeListsObj)).
+]
+
+{ #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testDoubleForwardToYoungs [
 
 		| obj1 obj2 obj3 arrFrom arrTo arrFrom2 arrTo2 |
@@ -312,15 +323,67 @@ VMSpurOldSpaceGarbageCollectorTest >> testDoubleForwardToYoungs [
 		self assert: (memory isRemembered: arrTo2).
 ]
 
-{ #category : #'tests-OldSpaceSize' }
-VMSpurOldSpaceGarbageCollectorTest >> testDoNotCollectRoots [
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testEphemeronDiscoverKey [
 
+	| roots ephemeron1 ephemeron2 ephemeron3 key1 key2 key3 |
+
+	"roots: E1 E2 K2
+	 E1 key: K1
+	 E2 Key: K2 value: K1.
+	 E3 key: K3.
+	
+	We assume the the scaning order E1 E2 E3 K2.
+	* E1 is marked but not scanned since K1 is not marked, E1 instead is put on unscannedEphemerons for future processing.
+	* Same for E2 because K2 is not marked.
+	* Same for E3 because K3 is not marked.
+	* K2 is then marked.
+	Then
+	* E1 remains on unscannedEphemerons because K1 is still unmarked.
+	* E2 is removed from unscannedEphemerons because K2 is marked. This triggers a scan on E2, that marks K1.
+	* E3 remains on unscannedEphemerons because K3 is still unmarked.
+	Then
+	* E1 is removed from unscannedEphemerons because K1 is marked. This triggers a scan on E1, that does nothing here.
+	* E3 remains on unscannedEphemerons because K3 is still unmarked.
+	Then
+	* E3 remains on unscannedEphemerons because K3 is still unmarked.
+	Then
+	* E3 is fired, removed from unscannedEphemerons, and scanned (that does nothing here).
+	Then
+	* unscannedEphemerons is empty, we leave
+	"
+
+	"Note: roots are stored in reverse order because slots are scanned from the last one to the first one"
+	roots := self newOldSpaceArrayWithSlots: 4. "K2 E3 E2 E1"
+	self keepObjectInVMVariable1: roots.
+
+	ephemeron1 := self newOldEphemeronObjectWithSlots: 1. "K1"
+	memory storePointer: 3 ofObject: roots withValue: ephemeron1.
+
+	key1 := self newOldSpaceObjectWithSlots: 0.
+	memory storePointer: 0 ofObject: ephemeron1 withValue: key1.
+
+	ephemeron2 := self newOldEphemeronObjectWithSlots: 2. "K2 K1"
+	memory storePointer: 2 ofObject: roots withValue: ephemeron2.
+
+	key2 := self newOldSpaceObjectWithSlots: 0.
+	memory storePointer: 0 ofObject: roots withValue: key2.
+	memory storePointer: 0 ofObject: ephemeron2 withValue: key2.
+	memory storePointer: 1 ofObject: ephemeron2 withValue: key1.
+
+	ephemeron3 := self newOldEphemeronObjectWithSlots: 1. "K3"
+	memory storePointer: 1 ofObject: roots withValue: ephemeron3.
+
+	key3 := self newOldSpaceObjectWithSlots: 0.
+	memory storePointer: 0 ofObject: ephemeron3 withValue: key3.
+	
+	memory setCheckForLeaks: 63 "all".
 	memory fullGC.
 	
-	self deny: (memory isFreeObject: (memory nilObject)).
-	self deny: (memory isFreeObject: (memory trueObject)).
-	self deny: (memory isFreeObject: (memory falseObject)).
-	self deny: (memory isFreeObject: (memory freeListsObj)).
+	self assert: memory coInterpreter pendingFinalizationSignals equals: 1.
+	self assert: memory dequeueMourner equals: ephemeron3.
+	self assert: memory dequeueMourner equals: nil.
+
 ]
 
 { #category : #ephemerons }
@@ -426,69 +489,6 @@ VMSpurOldSpaceGarbageCollectorTest >> testMournQueue2 [
 	
 	self assert: memory dequeueMourner equals: ephemeronObj.
 	self assert: memory dequeueMourner equals: nil.
-]
-
-{ #category : #ephemerons }
-VMSpurOldSpaceGarbageCollectorTest >> testEphemeronDiscoverKey [
-
-	| roots ephemeron1 ephemeron2 ephemeron3 key1 key2 key3 |
-
-	"roots: E1 E2 K2
-	 E1 key: K1
-	 E2 Key: K2 value: K1.
-	 E3 key: K3.
-	
-	We assume the the scaning order E1 E2 E3 K2.
-	* E1 is marked but not scanned since K1 is not marked, E1 instead is put on unscannedEphemerons for future processing.
-	* Same for E2 because K2 is not marked.
-	* Same for E3 because K3 is not marked.
-	* K2 is then marked.
-	Then
-	* E1 remains on unscannedEphemerons because K1 is still unmarked.
-	* E2 is removed from unscannedEphemerons because K2 is marked. This triggers a scan on E2, that marks K1.
-	* E3 remains on unscannedEphemerons because K3 is still unmarked.
-	Then
-	* E1 is removed from unscannedEphemerons because K1 is marked. This triggers a scan on E1, that does nothing here.
-	* E3 remains on unscannedEphemerons because K3 is still unmarked.
-	Then
-	* E3 remains on unscannedEphemerons because K3 is still unmarked.
-	Then
-	* E3 is fired, removed from unscannedEphemerons, and scanned (that does nothing here).
-	Then
-	* unscannedEphemerons is empty, we leave
-	"
-
-	"Note: roots are stored in reverse order because slots are scanned from the last one to the first one"
-	roots := self newOldSpaceArrayWithSlots: 4. "K2 E3 E2 E1"
-	self keepObjectInVMVariable1: roots.
-
-	ephemeron1 := self newOldEphemeronObjectWithSlots: 1. "K1"
-	memory storePointer: 3 ofObject: roots withValue: ephemeron1.
-
-	key1 := self newOldSpaceObjectWithSlots: 0.
-	memory storePointer: 0 ofObject: ephemeron1 withValue: key1.
-
-	ephemeron2 := self newOldEphemeronObjectWithSlots: 2. "K2 K1"
-	memory storePointer: 2 ofObject: roots withValue: ephemeron2.
-
-	key2 := self newOldSpaceObjectWithSlots: 0.
-	memory storePointer: 0 ofObject: roots withValue: key2.
-	memory storePointer: 0 ofObject: ephemeron2 withValue: key2.
-	memory storePointer: 1 ofObject: ephemeron2 withValue: key1.
-
-	ephemeron3 := self newOldEphemeronObjectWithSlots: 1. "K3"
-	memory storePointer: 1 ofObject: roots withValue: ephemeron3.
-
-	key3 := self newOldSpaceObjectWithSlots: 0.
-	memory storePointer: 0 ofObject: ephemeron3 withValue: key3.
-	
-	memory setCheckForLeaks: 63 "all".
-	memory fullGC.
-	
-	self assert: memory coInterpreter pendingFinalizationSignals equals: 1.
-	self assert: memory dequeueMourner equals: ephemeron3.
-	self assert: memory dequeueMourner equals: nil.
-
 ]
 
 { #category : #ephemerons }
