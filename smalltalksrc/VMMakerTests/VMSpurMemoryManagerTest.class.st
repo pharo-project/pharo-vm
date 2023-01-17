@@ -76,6 +76,27 @@ VMSpurMemoryManagerTest >> createArrayClass [
 
 ]
 
+{ #category : #utils }
+VMSpurMemoryManagerTest >> createLargeIntegerClasses [
+
+	| classLargeInteger classLargeNegativeInteger |
+	classLargeInteger := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstByteFormat.
+	
+	memory setHashBitsOf: classLargeInteger to: ClassLargePositiveIntegerCompactIndex.
+	memory
+		storePointer: ClassLargePositiveIntegerCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classLargeInteger.
+
+	classLargeNegativeInteger := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstByteFormat.
+	
+	memory setHashBitsOf: classLargeNegativeInteger to: ClassLargeNegativeIntegerCompactIndex.
+	memory
+		storePointer: ClassLargeNegativeIntegerCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classLargeNegativeInteger.
+]
+
 { #category : #helpers }
 VMSpurMemoryManagerTest >> createMethodOopFromHostMethod: aPharoCompiledMethod [
 
@@ -219,6 +240,22 @@ VMSpurMemoryManagerTest >> installFloat64RegisterClass [
 		
 	memory splObj: ClassFloat64Register put: registerClass
 
+]
+
+{ #category : #'tests - primitiveGreaterOrEqual' }
+VMSpurMemoryManagerTest >> installFloatClass [
+
+	| classFloat |
+	classFloat := self
+		              newClassInOldSpaceWithSlots: 0
+		              instSpec: memory firstLongFormat.
+	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
+	memory
+		storePointer: ClassFloatCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classFloat
+
+	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
 ]
 
 { #category : #accessor }
