@@ -16,7 +16,6 @@ Class {
 		'swapBytes',
 		'hdrLastHash',
 		'imageFormat',
-		'screenSize',
 		'imageHeaderSize'
 	],
 	#category : #'VMMaker-ImageFormat'
@@ -224,18 +223,6 @@ SpurImageHeaderStruct >> oldBaseAddr [
 SpurImageHeaderStruct >> oldBaseAddr: anObject [
 
 	oldBaseAddr := anObject
-]
-
-{ #category : #accessing }
-SpurImageHeaderStruct >> screenSize [
-
-	^ screenSize
-]
-
-{ #category : #accessing }
-SpurImageHeaderStruct >> screenSize: anObject [
-
-	screenSize := anObject
 ]
 
 { #category : #accessing }

@@ -101,7 +101,7 @@ SpurImageWriter >> writeHeader: header toFile: f [
 	self putLong: header oldBaseAddr toFile: f.
 	self putLong: header initialSpecialObjectsOop toFile: f.
 	self putLong: header hdrLastHash toFile: f.
-	self putLong: header screenSize toFile: f.
+	self putLong: 0 toFile: f. "Was ScreenSize"
 	self putLong: header headerFlags toFile: f.
 	self putWord32: header extraVMMemory toFile: f.
 	self putShort: header hdrNumStackPages toFile: f.

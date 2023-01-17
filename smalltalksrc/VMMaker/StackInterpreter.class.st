@@ -10476,7 +10476,6 @@ StackInterpreter >> newHeader [
 	header oldBaseAddr: objectMemory getMemoryMap oldSpaceStart.
 	header initialSpecialObjectsOop: objectMemory specialObjectsOop.
 	header hdrLastHash: objectMemory lastHash.
-	header screenSize: 0.
 	header headerFlags: self getImageHeaderFlags.
 	header extraVMMemory: (self getExtraVMMemory ifNil: [ 0 ]).
 	header hdrNumStackPages: self getDesiredNumStackPages.

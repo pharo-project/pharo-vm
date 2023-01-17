@@ -102,6 +102,16 @@ VMSpurMemoryManagerTest >> createArrayClass [
 
 ]
 
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> createEphemeronClass [
+	ourEphemeronClass := self newObjectWithSlots: 3.
+	memory 
+		storePointer: "InstanceSpecificationIndex" 2
+		ofObject: ourEphemeronClass
+		withValue: (memory integerObjectOf: Ephemeron format).
+	memory ensureBehaviorHash: ourEphemeronClass.
+]
+
 { #category : #utils }
 VMSpurMemoryManagerTest >> createLargeIntegerClasses [
 
@@ -121,16 +131,6 @@ VMSpurMemoryManagerTest >> createLargeIntegerClasses [
 		storePointer: ClassLargeNegativeIntegerCompactIndex
 		ofObject: memory classTableFirstPage
 		withValue: classLargeNegativeInteger.
-]
-
-{ #category : #helpers }
-VMSpurMemoryManagerTest >> createEphemeronClass [
-	ourEphemeronClass := self newObjectWithSlots: 3.
-	memory 
-		storePointer: "InstanceSpecificationIndex" 2
-		ofObject: ourEphemeronClass
-		withValue: (memory integerObjectOf: Ephemeron format).
-	memory ensureBehaviorHash: ourEphemeronClass.
 ]
 
 { #category : #helpers }

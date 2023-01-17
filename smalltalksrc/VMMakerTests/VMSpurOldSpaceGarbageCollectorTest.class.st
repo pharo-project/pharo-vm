@@ -280,7 +280,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testArrayOfPermanentObjectsPointingToOldOb
 		self assert: (originalHashes at: i) equals: (memory hashBitsOf: (memory fetchPointer: i - 1 ofObject: permArray))]
 ]
 
-{ #category : #'tests' }
+{ #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testDoNotCollectRoots [
 
 	memory fullGC.
