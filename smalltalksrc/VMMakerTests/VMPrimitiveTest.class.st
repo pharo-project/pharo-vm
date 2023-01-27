@@ -1271,6 +1271,37 @@ VMPrimitiveTest >> testPrimitiveClassReturnsAClass [
 	
 ]
 
+{ #category : #'tests - primitiveAdd' }
+VMPrimitiveTest >> testPrimitiveCompareStringDifferentStrings [
+
+	self testPrimitiveCompareWith: 'hhhh' with: 'aaaaaaaa'
+
+]
+
+{ #category : #'tests - primitiveAdd' }
+VMPrimitiveTest >> testPrimitiveCompareStringStringAnditsCapitalizedVersion [
+
+	self testPrimitiveCompareWith: 'hhhh' with: 'HHHH'
+
+]
+
+{ #category : #'tests - primitiveAdd' }
+VMPrimitiveTest >> testPrimitiveCompareStringWithSameString [
+	self testPrimitiveCompareWith: 'hhhh' with: 'hhhh'
+]
+
+{ #category : #'tests - primitiveAdd' }
+VMPrimitiveTest >> testPrimitiveCompareWith: string1 with: string2 [
+
+	interpreter argumentCount: 1.
+	interpreter push: (memory stringForCString: string1)."receiver"
+	interpreter push: (memory stringForCString: string2)."argument"
+
+	interpreter primitiveCompareWith. 
+
+	self assert: (memory integerValueOf: interpreter stackTop) = 0 equals: (string1 sameAs: string2)
+]
+
 { #category : #'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDiv [
 
