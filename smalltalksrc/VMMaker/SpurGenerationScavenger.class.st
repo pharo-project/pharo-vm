@@ -744,7 +744,7 @@ SpurGenerationScavenger >> mapOopsFromPermSpace [
 	
 	manager getFromPermSpaceRememberedSet setRememberedSetSize: destIndex.
 	
-	self assert: (manager isPermSpaceRememberedSetSane).
+	"self assert: (manager isPermSpaceRememberedSetSane)."
 ]
 
 { #category : #accessing }

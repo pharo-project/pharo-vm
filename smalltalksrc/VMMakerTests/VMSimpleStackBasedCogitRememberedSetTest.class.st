@@ -81,7 +81,7 @@ VMSimpleStackBasedCogitRememberedSetTest >> testStoringOldObjectInPermObjectDoes
 
 	| permObject otherPermObject |
 	
-	memory getMemoryMap extendPermObjectsSpace.
+	memory getMemoryMap extendPermObjectsSpaceMinimum: 0.
 	
 	permObject := self newPermanentObjectWithSlots: 1.
 	otherPermObject := self newPermanentObjectWithSlots: 0.

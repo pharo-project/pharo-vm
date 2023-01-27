@@ -344,15 +344,6 @@ VMMemoryMap >> ensureAtLeastPermSpaceOf: requestedSize [
 ]
 
 { #category : #allocating }
-VMMemoryMap >> extendPermObjectsSpace [
-
-	self permSpaceStart = 0 
-		ifTrue: [ ^ self ensureAtLeastPermSpaceOf: 10 * 1024 * 1024 ].
-
-	^ self extendPermObjectsSpaceBy: 10 * 1024 * 1024
-]
-
-{ #category : #allocating }
 VMMemoryMap >> extendPermObjectsSpaceBy: aSize [
 
 	| requestedSize extendedAddress |
@@ -369,6 +360,22 @@ VMMemoryMap >> extendPermObjectsSpaceBy: aSize [
 	self permSpaceEnd: self permSpaceEnd + requestedSize.	
 		
 	^ true.
+]
+
+{ #category : #allocating }
+VMMemoryMap >> extendPermObjectsSpaceMinimum: minimalSize [
+
+	| size |
+	
+	size := 0.
+	
+	[ size < minimalSize ]
+		whileTrue: [ size := size + (10 * 1024 * 1024) ].
+
+	self permSpaceStart = 0 
+		ifTrue: [ ^ self ensureAtLeastPermSpaceOf: size ].
+
+	^ self extendPermObjectsSpaceBy: size
 ]
 
 { #category : #'as yet unclassified' }

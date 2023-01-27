@@ -8495,6 +8495,30 @@ Cogit >> handleWriteSimulationTrap: aProcessorSimulationTrap [
 	processor pc: aProcessorSimulationTrap nextpc
 ]
 
+{ #category : #testing }
+Cogit >> hasMachineCodeMethodForwardedLiterals: aCogMethod [ 
+	
+	<doNotGenerate>
+	
+	| result literal |
+	result := false.
+	
+	self mapFor: aCogMethod do: [ :annotation :mcpc |
+		
+		annotation = IsObjectReference 
+			ifTrue: [ 
+				literal := literalsManager 
+					fetchLiteralAtAnnotatedAddress: mcpc asUnsignedInteger 
+					using: backEnd.
+				self assert: (objectMemory isInObjectMemory: literal).
+				result := objectMemory isForwarded: literal ]. 
+		
+		"We stop if we have found literals"
+		result not].
+	
+	^ result
+]
+
 { #category : #compaction }
 Cogit >> incrementUsageOfTargetIfLinkedSend: annotation mcpc: mcpc ignored: superfluity [
 	<var: #mcpc type: #'char *'>
@@ -11798,6 +11822,14 @@ Cogit >> startMcpcAndCogMethodForMcpc: mcpc in: cogMethod do: aBinaryBlock [
 					ifTrue: [cogMethod]
 					ifFalse: [self cCoerceSimple: startMcpc - (self sizeof: CogBlockMethod)
 								to: #'CogBlockMethod *'])
+]
+
+{ #category : #literals }
+Cogit >> storeLiteral: objOop atAnnotatedAddress: address [ 
+	
+	<inline: true>
+	literalsManager storeLiteral: objOop atAnnotatedAddress: address using: backEnd 
+	
 ]
 
 { #category : #'method map' }

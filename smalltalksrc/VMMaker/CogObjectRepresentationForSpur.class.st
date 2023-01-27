@@ -3065,7 +3065,8 @@ CogObjectRepresentationForSpur >> markAndTraceLiteral: literal in: cogMethodOrNi
 		[objectMemory markAndTrace: literal.
 		 ^false].
 	objOop := objectMemory followForwarded: literal.
-	cogit backEnd storeLiteral: objOop beforeFollowingAddress: address.
+	
+	cogit storeLiteral: objOop atAnnotatedAddress: address.
 	self markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil.
 	^true
 ]
