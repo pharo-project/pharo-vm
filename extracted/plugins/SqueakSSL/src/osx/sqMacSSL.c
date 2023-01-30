@@ -14,6 +14,7 @@
 #include <stdarg.h>
 
 #import <Security/Security.h>
+#import <Security/SecureTransport.h>
 
 typedef struct sqSSL {
     int state;

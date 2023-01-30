@@ -159,6 +159,14 @@ SlangMemoryManager >> initialize [
 ]
 
 { #category : #'memory-access' }
+SlangMemoryManager >> isValidAddress: address [
+
+	"Memory regions are allocated in multiples of 4KB (12 bits).
+	The Memory map indexes memory regions by the high part"
+	^ memoryMap includesKey: address >> 12
+]
+
+{ #category : #'memory-access' }
 SlangMemoryManager >> long32At: address [
 	
 	^ self readSignedIntegerAt: address size: 4

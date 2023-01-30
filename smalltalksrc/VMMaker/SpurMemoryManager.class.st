@@ -5774,7 +5774,8 @@ SpurMemoryManager >> freeTreeOverlapCheck [
 SpurMemoryManager >> freeUnscannedEphemerons [
 	"Free all the memory allocated to keep the unscanned ephemerons"
 	
-	self free: unscannedEphemerons start
+	self free: unscannedEphemerons start.
+	unscannedEphemerons start: nil
 ]
 
 { #category : #accessing }
@@ -9265,8 +9266,13 @@ SpurMemoryManager >> nilUnmarkedWeaklingSlots [
 	<inline: #never>
 	self eassert: [ self allOldMarkedWeakObjectsOnWeaklingStack ].
 	weaklingStack = nilObj ifTrue: [ ^ self ].
-	self objStack: weaklingStack from: 0 do: [ :weakling |
-		self nilUnmarkedWeaklingSlotsIn: weakling ].
+	self objStack: weaklingStack from: 0 do: [ :weakling | | anyUnmarked |
+		anyUnmarked := self nilUnmarkedWeaklingSlotsIn: weakling.
+		anyUnmarked ifTrue:
+			["fireFinalization: could grow the mournQueue and if so,
+			  additional pages must be marked to avoid being GC'ed."
+			 self assert: marking.
+			 coInterpreter signalFinalization: weakling]].
 	self emptyObjStack: weaklingStack
 ]
 
