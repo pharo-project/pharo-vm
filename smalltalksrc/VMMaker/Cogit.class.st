@@ -3223,7 +3223,7 @@ Cogit >> allMachineCodeObjectReferencesValid [
 	cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
 	[cogMethod < methodZone limitZony] whileTrue:
 		[cogMethod cmType ~= CMFree ifTrue:
-			[(self asserta: (objectRepresentation checkValidOopReference: cogMethod selector)) ifFalse:
+			[(self asserta: (objectMemory checkValidOopReference: cogMethod selector)) ifFalse:
 				[ok := false].
 			 (self asserta: (self cogMethodDoesntLookKosher: cogMethod) = 0) ifFalse:
 				[ok := false]].
@@ -3234,8 +3234,7 @@ Cogit >> allMachineCodeObjectReferencesValid [
 								 arg: cogMethod asInteger) = 0)) ifFalse:
 				[ok := false]].
 		(cogMethod cmType = CMMethod
-		 and: [SistaVM
-		 and: [objectRepresentation canPinObjects]]) ifTrue:
+		 and: [SistaVM]) ifTrue:
 			[(SistaVM and: [cogMethod counters ~= 0]) ifTrue:
 				[(self asserta: (objectRepresentation checkValidDerivedObjectReference: cogMethod counters)) ifFalse:
 					[ok := false]]].
@@ -3949,20 +3948,6 @@ Cogit >> ceCheckForInterruptTrampoline: anInteger [
 	ceCheckForInterruptTrampoline := anInteger
 ]
 
-{ #category : #'as yet unclassified' }
-Cogit >> ceDereferenceSelectorIndex [
-	
-	<doNotGenerate>
-	^ objectRepresentation selectorIndexDereferenceRoutine
-]
-
-{ #category : #'as yet unclassified' }
-Cogit >> ceDereferenceSelectorIndex: anInteger [ 
-	
-	<doNotGenerate>
-	objectRepresentation selectorIndexDereferenceRoutine: anInteger
-]
-
 { #category : #'simulation only' }
 Cogit >> ceEnterCogCodePopReceiverReg [
 	<api: 'extern void (*ceEnterCogCodePopReceiverReg)()'>
@@ -3981,33 +3966,6 @@ Cogit >> ceFree: pointer [
 	<api>
 	<var: #pointer type: #'void*'>
 	self free: pointer
-]
-
-{ #category : #accessing }
-Cogit >> ceLargeActiveContextInFullBlockTrampoline [
-
-	<doNotGenerate>
-	^ objectRepresentation ceLargeActiveContextInFullBlockTrampoline
-]
-
-{ #category : #accessing }
-Cogit >> ceLargeActiveContextInFullBlockTrampoline: anAddress [
-
-	<doNotGenerate>
-	objectRepresentation ceLargeActiveContextInFullBlockTrampoline: anAddress
-]
-
-{ #category : #accessing }
-Cogit >> ceLargeActiveContextInMethodTrampoline [
-	<doNotGenerate>
-	^ objectRepresentation ceLargeActiveContextInMethodTrampoline
-]
-
-{ #category : #accessing }
-Cogit >> ceLargeActiveContextInMethodTrampoline: anAddress [
-
-	<doNotGenerate>
-	objectRepresentation ceLargeActiveContextInMethodTrampoline: anAddress
 ]
 
 { #category : #'trampoline support' }
@@ -4156,12 +4114,6 @@ Cogit >> ceSICMiss: receiver [
 ]
 
 { #category : #accessing }
-Cogit >> ceScheduleScavengeTrampoline: anInteger [ 
-
-	objectRepresentation 	ceScheduleScavengeTrampoline: anInteger
-]
-
-{ #category : #accessing }
 Cogit >> ceSendMustBeBooleanAddFalseTrampoline: anInteger [
 
 	<doNotGenerate>
@@ -4182,33 +4134,6 @@ Cogit >> ceSendMustBeBooleanAddTrueTrampoline: anInteger [
 Cogit >> ceSendMustBeBooleanTrampoline: aTrampolineAddress [
 
 	ceSendMustBeBooleanTrampoline := aTrampolineAddress
-]
-
-{ #category : #accessing }
-Cogit >> ceSmallActiveContextInFullBlockTrampoline [
-
-	<doNotGenerate>
-	^ objectRepresentation ceSmallActiveContextInFullBlockTrampoline
-]
-
-{ #category : #accessing }
-Cogit >> ceSmallActiveContextInFullBlockTrampoline: anAddress [
-
-	<doNotGenerate>
-	objectRepresentation ceSmallActiveContextInFullBlockTrampoline: anAddress
-]
-
-{ #category : #accessing }
-Cogit >> ceSmallActiveContextInMethodTrampoline [
-	<doNotGenerate>
-	^ objectRepresentation ceSmallActiveContextInMethodTrampoline
-]
-
-{ #category : #accessing }
-Cogit >> ceSmallActiveContextInMethodTrampoline: anAddress [
-
-	<doNotGenerate>
-	objectRepresentation ceSmallActiveContextInMethodTrampoline: anAddress
 ]
 
 { #category : #accessing }
@@ -4284,7 +4209,7 @@ Cogit >> checkIfValidOopRef: annotation pc: mcpc cogMethod: cogMethod [
 	annotation = IsObjectReference ifTrue:
 		[| literal |
 		 literal := literalsManager fetchLiteralAtAnnotatedAddress: mcpc asUnsignedInteger using: backEnd.
-		 (objectRepresentation checkValidOopReference: literal) ifFalse:
+		 (objectMemory checkValidOopReference: literal) ifFalse:
 			[coInterpreter print: 'object ref leak in CM '; printHex: cogMethod asInteger; print: ' @ '; printHex: mcpc asInteger; cr.
 			^1]].
 
@@ -4322,7 +4247,7 @@ Cogit >> checkIfValidOopRefAndTarget: annotation pc: mcpc cogMethod: cogMethod [
 	| literal entryPoint |
 	annotation = IsObjectReference ifTrue:
 		[literal := literalsManager fetchLiteralAtAnnotatedAddress: mcpc asUnsignedInteger using: backEnd.
-		 (self asserta: (objectRepresentation checkValidOopReference: literal)) ifFalse:
+		 (self asserta: (objectMemory checkValidOopReference: literal)) ifFalse:
 			[^1].
 		((objectRepresentation couldBeObject: literal)
 		 and: [objectMemory isReallyYoungObject: literal]) ifTrue:
@@ -4390,7 +4315,7 @@ Cogit >> checkIntegrityOfObjectReferencesInCode: gcModes [
 						ifTrue: [coInterpreter print: ' is not in youngReferrers'; cr]
 						ifFalse: [coInterpreter print: ' is in youngReferrers '; printNum: count; print: ' times!'; cr].
 					 ok := false]].
-			 (objectRepresentation checkValidOopReference: cogMethod selector) ifFalse:
+			 (objectMemory checkValidOopReference: cogMethod selector) ifFalse:
 				[coInterpreter print: 'object leak in CM '; printHex: cogMethod asInteger; print: ' selector'; cr.
 				 ok := false].
 			 cogMethod cmType = CMMethod
@@ -4979,8 +4904,7 @@ Cogit >> cogMethodDoesntLookKosher: cogMethod [
 		  and: [cogMethod stackCheckOffset < cmNoCheckEntryOffset]) ifTrue:
 			[^13].
 		 (SistaVM
-		  and: [objectRepresentation canPinObjects
-		  and: [cogMethod counters ~= 0]]) ifTrue:
+		  and: [cogMethod counters ~= 0]) ifTrue:
 			[(objectRepresentation couldBeDerivedObject: cogMethod counters) ifFalse:
 				[^14]].
 		 ^0].

@@ -3420,6 +3420,13 @@ SpurMemoryManager >> checkOopIntegrity: obj named: name index: i [
 	^false
 ]
 
+{ #category : #'debug support' }
+SpurMemoryManager >> checkValidOopReference: anOop [
+
+	^ (self isImmediate: anOop) or: [
+		  (self heapMapAtWord: (self pointerForOop: anOop)) ~= 0 ]
+]
+
 { #category : #'simulation only' }
 SpurMemoryManager >> checkedIntegerValueOf: intOop [
 	<doNotGenerate>

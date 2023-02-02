@@ -15,7 +15,7 @@ VMSelectorIndexDereferenceRoutineTest >> test32BitsDoesNotGenerateRoutine [
 	
 	cogit objectRepresentation maybeGenerateSelectorIndexDereferenceRoutine.
 	
-	self assert: cogit ceDereferenceSelectorIndex isNil
+	self assert: cogit objectRepresentation selectorIndexDereferenceRoutine isNil
 ]
 
 { #category : #tests }
@@ -26,7 +26,7 @@ VMSelectorIndexDereferenceRoutineTest >> test64BitsGeneratesRoutine [
 	
 	cogit objectRepresentation maybeGenerateSelectorIndexDereferenceRoutine.
 	
-	self assert: cogit ceDereferenceSelectorIndex notNil
+	self assert: cogit objectRepresentation selectorIndexDereferenceRoutine notNil
 ]
 
 { #category : #tests }
@@ -53,7 +53,7 @@ VMSelectorIndexDereferenceRoutineTest >> testNegativeSelectorIndexIsLookedUpInSp
 	machineSimulator classRegisterValue: twoComplementIndex.
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
 
-	self runFrom: cogit ceDereferenceSelectorIndex until: callerAddress.
+	self runFrom: cogit objectRepresentation selectorIndexDereferenceRoutine until: callerAddress.
 
 	self assert: machineSimulator classRegisterValue equals: memory falseObject
 ]
@@ -95,7 +95,7 @@ VMSelectorIndexDereferenceRoutineTest >> testPositiveSelectorIndexIsLookedUpInMe
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
 
 	self prepareCall.
-	self runFrom: cogit ceDereferenceSelectorIndex until: callerAddress.
+	self runFrom: cogit objectRepresentation selectorIndexDereferenceRoutine until: callerAddress.
 
 	self
 		assert: machineSimulator classRegisterValue

@@ -976,7 +976,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThirdTempVariablePushesVariable [
 VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForFullBlockWithFullFrameCallsLargeFullBlockTrampoline [
 
 	| numberOfArguments methodObject method |
-	cogit ceLargeActiveContextInFullBlockTrampoline:
+	cogit objectRepresentation ceLargeActiveContextInFullBlockTrampoline:
 		(self compile: [ cogit RetN: 0 ]).
 
 	self
@@ -1001,11 +1001,11 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForFullBlockWithFullFr
 
 	self
 		runFrom: method
-		until: cogit ceLargeActiveContextInFullBlockTrampoline.
+		until: cogit objectRepresentation ceLargeActiveContextInFullBlockTrampoline.
 
 	self
 		assert: machineSimulator instructionPointerRegisterValue
-		equals: cogit ceLargeActiveContextInFullBlockTrampoline.
+		equals: cogit objectRepresentation ceLargeActiveContextInFullBlockTrampoline.
 	self
 		assert: machineSimulator sendNumberOfArgumentsRegisterValue
 		equals: numberOfArguments
@@ -1015,7 +1015,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForFullBlockWithFullFr
 VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForFullBlockWithSmallFrameCallsLargeFullBlockTrampoline [
 
 	| numberOfArguments methodObject method |
-	cogit ceSmallActiveContextInFullBlockTrampoline:
+	cogit objectRepresentation ceSmallActiveContextInFullBlockTrampoline:
 		(self compile: [ cogit RetN: 0 ]).
 
 	self
@@ -1039,11 +1039,11 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForFullBlockWithSmallF
 
 	self
 		runFrom: method
-		until: cogit ceSmallActiveContextInFullBlockTrampoline.
+		until: cogit objectRepresentation ceSmallActiveContextInFullBlockTrampoline.
 
 	self
 		assert: machineSimulator instructionPointerRegisterValue
-		equals: cogit ceSmallActiveContextInFullBlockTrampoline.
+		equals: cogit objectRepresentation ceSmallActiveContextInFullBlockTrampoline.
 	self
 		assert: machineSimulator sendNumberOfArgumentsRegisterValue
 		equals: numberOfArguments
@@ -1053,7 +1053,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForFullBlockWithSmallF
 VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForMethodWithLargeFrameCallsLargeMethodTrampoline [
 
 	| numberOfArguments methodObject method |
-	cogit ceLargeActiveContextInMethodTrampoline:
+	cogit objectRepresentation ceLargeActiveContextInMethodTrampoline:
 		(self compile: [ cogit RetN: 0 ]).
 
 	self
@@ -1076,11 +1076,11 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForMethodWithLargeFram
 
 	self
 		runFrom: method
-		until: cogit ceLargeActiveContextInMethodTrampoline.
+		until: cogit objectRepresentation ceLargeActiveContextInMethodTrampoline.
 
 	self
 		assert: machineSimulator instructionPointerRegisterValue
-		equals: cogit ceLargeActiveContextInMethodTrampoline.
+		equals: cogit objectRepresentation ceLargeActiveContextInMethodTrampoline.
 	self
 		assert: machineSimulator sendNumberOfArgumentsRegisterValue
 		equals: numberOfArguments
@@ -1090,7 +1090,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForMethodWithLargeFram
 VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForMethodWithSmallFrameCallsSmallMethodTrampoline [
 
 	| numberOfArguments methodObject method |
-	cogit ceSmallActiveContextInMethodTrampoline:
+	cogit objectRepresentation ceSmallActiveContextInMethodTrampoline:
 		(self compile: [ cogit RetN: 0 ]).
 
 	self
@@ -1113,11 +1113,11 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForMethodWithSmallFram
 
 	self
 		runFrom: method
-		until: cogit ceSmallActiveContextInMethodTrampoline.
+		until: cogit objectRepresentation ceSmallActiveContextInMethodTrampoline.
 
 	self
 		assert: machineSimulator instructionPointerRegisterValue
-		equals: cogit ceSmallActiveContextInMethodTrampoline.
+		equals: cogit objectRepresentation ceSmallActiveContextInMethodTrampoline.
 	self
 		assert: machineSimulator sendNumberOfArgumentsRegisterValue
 		equals: numberOfArguments

@@ -217,7 +217,7 @@ VMTrampolineTest >> testSendTrampolineShouldNotOverrideLinkRegisterWhenCallDeref
 	self wordSize = 8 ifFalse: [ ^ self skip ].
 	
 	dereferenceRoutine := self compile: [ cogit RetN: 0 ].
-	cogit ceDereferenceSelectorIndex: dereferenceRoutine.
+	cogit objectRepresentation selectorIndexDereferenceRoutine: dereferenceRoutine.
 	
 	trampoline := self compileWithoutOutput: [ cogit
 			genSendTrampolineFor: #ceSend:super:to:numArgs:
