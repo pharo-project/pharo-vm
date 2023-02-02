@@ -835,99 +835,21 @@ StackInterpreterPrimitives >> popSameThreadCalloutSuspendedProcess [
 
 { #category : #'system control primitives' }
 StackInterpreterPrimitives >> primitiveAllVMParameters: paramsArraySize [
+
 	"See primitiveVMParameter method comment"
 
 	| result |
-	result := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: paramsArraySize.
-	objectMemory storePointerUnchecked: 0	ofObject: result withValue: (self positiveMachineIntegerFor: objectMemory oldSpaceSize).
-	objectMemory storePointerUnchecked: 1	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory newSpaceSize).
-	objectMemory storePointerUnchecked: 2	ofObject: result withValue: (self positiveMachineIntegerFor: objectMemory totalMemorySize).
-	"objectMemory storePointerUnchecked: 3	ofObject: result withValue: objectMemory nilObject was allocationCount".
-	"objectMemory storePointerUnchecked: 4	ofObject: result withValue: objectMemory nilObject allocationsBetweenGCs".
-	objectMemory storePointerUnchecked: 5	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory tenuringThreshold).
-	objectMemory storePointerUnchecked: 6	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statFullGCs).
-	objectMemory storePointerUnchecked: 7	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statFullGCUsecs + 500 // 1000).
-	objectMemory
-		storePointerUnchecked: 8
-		ofObject: result
-		withValue: (objectMemory integerObjectOf: objectMemory statScavenges).
-	objectMemory
-		storePointerUnchecked: 9
-		ofObject: result
-		withValue: (objectMemory integerObjectOf: objectMemory statScavengeGCUsecs + 500 // 1000).
-	objectMemory storePointerUnchecked: 10	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statTenures).
-	"JITTER VM info unused; 11 - 14/12 - 15 available for reuse"
-	11 to: 18 do:
-		[:i | objectMemory storePointerUnchecked: i ofObject: result withValue: ConstZero].
-	objectMemory storePointerUnchecked: 15 ofObject: result withValue: (objectMemory positive64BitIntegerFor: statIdleUsecs).
-	(SistaVM and: [self isCog]) ifTrue:
-		[objectMemory storePointerUnchecked: 16 ofObject: result withValue: (objectMemory floatObjectOf: self getCogCodeZoneThreshold)].
-	objectMemory
-			storePointerUnchecked: 17	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statCompactionUsecs + 500 // 1000);
-			storePointerUnchecked: 18	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory scavengeThresholdAsExtent).
-	objectMemory storePointerUnchecked: 19	ofObject: result withValue: (objectMemory positive64BitIntegerFor: self ioUTCStartMicroseconds).
-	objectMemory storePointerUnchecked: 20	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory rootTableCount).
-	objectMemory storePointerUnchecked: 21	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statRootTableOverflows).
-	objectMemory storePointerUnchecked: 22	ofObject: result withValue: (objectMemory integerObjectOf: extraVMMemory).
-	objectMemory storePointerUnchecked: 23	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory shrinkThreshold).
-	objectMemory storePointerUnchecked: 24	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory growHeadroom).
-	objectMemory storePointerUnchecked: 25	ofObject: result withValue: (objectMemory integerObjectOf: self ioHeartbeatMilliseconds).
-	objectMemory storePointerUnchecked: 26	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statMarkCount).
-	objectMemory storePointerUnchecked: 27	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statSweepCount).
-	objectMemory storePointerUnchecked: 28	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statMkFwdCount).
-	objectMemory storePointerUnchecked: 29	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statCompMoveCount).
-	objectMemory storePointerUnchecked: 30	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statGrowMemory).
-	objectMemory storePointerUnchecked: 31	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statShrinkMemory).
-	objectMemory storePointerUnchecked: 32	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statRootTableCount).
-	objectMemory storePointerUnchecked: 33	ofObject: result withValue: (objectMemory positive64BitIntegerFor: objectMemory currentAllocatedBytes).
-	objectMemory storePointerUnchecked: 34	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statSurvivorCount).
-	objectMemory storePointerUnchecked: 35	ofObject: result withValue: (objectMemory integerObjectOf: (self microsecondsToMilliseconds: objectMemory statGCEndUsecs)).
-	objectMemory storePointerUnchecked: 36	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statSpecialMarkCount).
-	objectMemory storePointerUnchecked: 37	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statIGCDeltaUsecs + 500 // 1000).
-	objectMemory storePointerUnchecked: 38	ofObject: result withValue: (objectMemory integerObjectOf: statPendingFinalizationSignals).
-	objectMemory storePointerUnchecked: 39	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory wordSize).
-	objectMemory storePointerUnchecked: 40	ofObject: result withValue: (objectMemory integerObjectOf: self imageFormatVersion).
-	objectMemory storePointerUnchecked: 41	ofObject: result withValue: (objectMemory integerObjectOf: numStackPages).
-	objectMemory storePointerUnchecked: 42	ofObject: result withValue: (objectMemory integerObjectOf: desiredNumStackPages).
-	objectMemory storePointerUnchecked: 43	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory edenBytes).
-	objectMemory storePointerUnchecked: 44	ofObject: result withValue: (objectMemory integerObjectOf: desiredEdenBytes).
-	objectMemory storePointerUnchecked: 45	ofObject: result withValue: self getCogCodeSize.
-	objectMemory storePointerUnchecked: 46	ofObject: result withValue: self getDesiredCogCodeSize.
-	objectMemory storePointerUnchecked: 47	ofObject: result withValue: self getCogVMFlags.
-	objectMemory storePointerUnchecked: 48	ofObject: result withValue: (objectMemory integerObjectOf: self ioGetMaxExtSemTableSize).
-	"50 & 51 (49 & 50) reserved for parameters that persist in the image"
-	objectMemory storePointerUnchecked: 51	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory rootTableCapacity).
-	objectMemory
-			storePointerUnchecked: 52 ofObject: result withValue: (objectMemory integerObjectOf: objectMemory numSegments);
-			storePointerUnchecked: 53 ofObject: result withValue: (objectMemory integerObjectOf: objectMemory freeSize);
-			storePointerUnchecked: 54 ofObject: result withValue: (objectMemory floatObjectOf: objectMemory getHeapGrowthToSizeGCRatio).
-	objectMemory storePointerUnchecked: 55	ofObject: result withValue: (self positive64BitIntegerFor: statProcessSwitch).
-	objectMemory storePointerUnchecked: 56	ofObject: result withValue: (self positive64BitIntegerFor: statIOProcessEvents).
-	objectMemory storePointerUnchecked: 57	ofObject: result withValue: (self positive64BitIntegerFor: statForceInterruptCheck).
-	objectMemory storePointerUnchecked: 58	ofObject: result withValue: (self positive64BitIntegerFor: statCheckForEvents).
-	objectMemory storePointerUnchecked: 59	ofObject: result withValue: (self positive64BitIntegerFor: statStackOverflow).
-	objectMemory storePointerUnchecked: 60	ofObject: result withValue: (self positive64BitIntegerFor: statStackPageDivorce).
-	objectMemory storePointerUnchecked: 61	ofObject: result withValue: self getCodeCompactionCount.
-	objectMemory storePointerUnchecked: 62	ofObject: result withValue: self getCodeCompactionMSecs.
-	objectMemory storePointerUnchecked: 63	ofObject: result withValue: self getCogMethodCount.
-	objectMemory storePointerUnchecked: 64	ofObject: result withValue: self getCogVMFeatureFlags.
-	objectMemory storePointerUnchecked: 65	ofObject: result withValue: (objectMemory integerObjectOf: self stackPageByteSize).
-	objectMemory
-			storePointerUnchecked: 66 ofObject: result withValue: (objectMemory integerObjectOf: objectMemory maxOldSpaceSize).
-	objectMemory storePointerUnchecked: 67 ofObject: result withValue: (objectMemory floatObjectOf: stackPages statAverageLivePagesWhenMapping).
-	objectMemory storePointerUnchecked: 68 ofObject: result withValue: (objectMemory integerObjectOf: stackPages statMaxPageCountWhenMapping).
-	objectMemory
-		storePointerUnchecked: 69
-		ofObject: result
-		withValue: (objectMemory integerObjectOf: (self cCode: 'VM_PROXY_MAJOR' inSmalltalk: [self class vmProxyMajorVersion])).
-	objectMemory
-		storePointerUnchecked: 70
-		ofObject: result
-		withValue: (objectMemory integerObjectOf: (self cCode: 'VM_PROXY_MINOR' inSmalltalk: [self class vmProxyMinorVersion])).	
-	objectMemory storePointerUnchecked: 71	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statMarkUsecs + 500 // 1000).
-	objectMemory storePointerUnchecked: 72	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statSweepUsecs + 500 // 1000).
-	objectMemory
-			storePointerUnchecked: 73	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statMaxAllocSegmentTime + 500 // 1000).
+	result := objectMemory
+		          eeInstantiateClassIndex: objectMemory arrayClassIndexPun
+		          format: objectMemory arrayFormat
+		          numSlots: paramsArraySize.
+
+	1 to: paramsArraySize do: [ :index | 
+		objectMemory
+			storePointerUnchecked: index - 1
+			ofObject: result
+			withValue: ((self primitiveGetVMParameter: index) ifNil: [ 
+					 objectMemory nilObject ]) ].
 
 	objectMemory beRootIfOld: result.
 	self methodReturnValue: result
@@ -1679,10 +1601,11 @@ StackInterpreterPrimitives >> primitiveGetCurrentWorkingDirectory [
 ]
 
 { #category : #'system control primitives' }
-StackInterpreterPrimitives >> primitiveGetVMParameter: arg [ 
+StackInterpreterPrimitives >> primitiveGetVMParameter: index [ 
 	"See primitiveVMParameter method comment.
-	 N.B. written as a returning case to avoid branch limits in the V3 bytecode set."
-	arg caseOf: {
+		Return an OOP if success.
+		Return nil if no argument is available for the index"
+	index caseOf: {
 			[1]  ->	[^self positiveMachineIntegerFor: objectMemory oldSpaceSize].
 			[2]  ->	[^objectMemory integerObjectOf: objectMemory newSpaceSize].
 			[3]  ->	[^self positiveMachineIntegerFor: objectMemory totalMemorySize].
@@ -1721,7 +1644,7 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: arg [
 			[36] ->	[^objectMemory integerObjectOf: (self microsecondsToMilliseconds: objectMemory statGCEndUsecs)].
 			[37] ->	[^objectMemory integerObjectOf: objectMemory statSpecialMarkCount].
 			[38] ->	[^objectMemory integerObjectOf: objectMemory statIGCDeltaUsecs + 500 // 1000].
-			[39] ->	[^objectMemory integerObjectOf: statPendingFinalizationSignals].
+			[39] ->	[^ConstZero]. "free"
 			[40] ->	[^objectMemory integerObjectOf: objectMemory wordSize].
 			[41] ->	[^objectMemory integerObjectOf: self imageFormatVersion].
 			[42] ->	[^objectMemory integerObjectOf: numStackPages].
@@ -1737,7 +1660,7 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: arg [
 			[54] ->	[^objectMemory integerObjectOf: objectMemory freeSize].
 			[55] ->	[^objectMemory floatObjectOf: objectMemory getHeapGrowthToSizeGCRatio].
 			[56] ->	[^self positive64BitIntegerFor: statProcessSwitch].
-			[57] ->	[^self positive64BitIntegerFor: statIOProcessEvents].
+			[57] ->	[^ConstZero "free"].
 			[58] ->	[^self positive64BitIntegerFor: statForceInterruptCheck].
 			[59] ->	[^self positive64BitIntegerFor: statCheckForEvents].
 			[60] ->	[^self positive64BitIntegerFor: statStackOverflow].
@@ -1750,8 +1673,8 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: arg [
 			[67] ->	[^objectMemory integerObjectOf: objectMemory maxOldSpaceSize].
 			[68] ->	[^objectMemory floatObjectOf: stackPages statAverageLivePagesWhenMapping].
 			[69] ->	[^objectMemory integerObjectOf: stackPages statMaxPageCountWhenMapping].
-			[70] ->	[^self integerObjectOf: (self cCode: 'VM_PROXY_MAJOR' inSmalltalk: [self class vmProxyMajorVersion])].
-			[71] ->	[^self integerObjectOf: (self cCode: 'VM_PROXY_MINOR' inSmalltalk: [self class vmProxyMinorVersion])].
+			[70] ->	[^objectMemory integerObjectOf: (self cCode: 'VM_PROXY_MAJOR' inSmalltalk: [self class vmProxyMajorVersion])].
+			[71] ->	[^objectMemory integerObjectOf: (self cCode: 'VM_PROXY_MINOR' inSmalltalk: [self class vmProxyMinorVersion])].
 			[72] ->	[^objectMemory integerObjectOf: objectMemory statMarkUsecs + 500 // 1000].
 			[73] ->	[^objectMemory integerObjectOf: objectMemory statSweepUsecs + 500 // 1000].
 			[74] ->	[^objectMemory integerObjectOf: objectMemory statMaxAllocSegmentTime + 500 // 1000].
@@ -3989,83 +3912,10 @@ StackInterpreterPrimitives >> primitiveVMParameter [
 		0 args:	return an Array of VM parameter values;
 		1 arg:	return the indicated VM parameter;
 		2 args:	set the VM indicated parameter.
-	VM parameters are numbered as follows:
-		1	end (v3)/size(Spur) of old-space (0-based, read-only)
-		2	end (v3)/size(Spur) of young/new-space (read-only)
-		3	end (v3)/size(Spur) of heap (read-only)
-		4	nil (was allocationCount (read-only))
-		5	nil (was allocations between GCs (read-write)
-		6	survivor count tenuring threshold (read-write)
-		7	full GCs since startup (read-only)
-		8	total milliseconds in full GCs since startup (read-only)
-		9	incremental GCs (SqueakV3) or scavenges (Spur) since startup (read-only)
-		10	total milliseconds in incremental GCs (SqueakV3) or scavenges (Spur) since startup (read-only)
-		11	tenures of surving objects since startup or reset (read-write)
-		12-20 were specific to ikp's JITTER VM, now 12-15 are open for use
-		16	total microseconds at idle since start-up (if non-zero)
-		17	fraction of the code zone to use (Sista only; used to control code zone use to preserve sendAndBranchData on counter tripped callback)
-		18	total milliseconds in compaction phase of full GC since start-up (Spur only)
-		19	scavenge threshold, the effective size of eden.  When eden fills to the threshold a scavenge is scheduled. Newer Spur VMs only.
-		20	utc microseconds at VM start-up (actually at time initialization, which precedes image load).
-		21	root/remembered table size (occupancy) (read-only)
-		22	root table overflows since startup (read-only)
-		23	bytes of extra memory to reserve for VM buffers, plugins, etc (stored in image file header).
-		24	memory threshold above which shrinking object memory (rw)
-		25	memory headroom when growing object memory (rw)
-		26	interruptChecksEveryNms - force an ioProcessEvents every N milliseconds (rw)
-		27	number of times mark loop iterated for current IGC/FGC (read-only) includes ALL marking
-		28	number of times sweep loop iterated for current IGC/FGC (read-only)
-		29	number of times make forward loop iterated for current IGC/FGC (read-only)
-		30	number of times compact move loop iterated for current IGC/FGC (read-only)
-		31	number of grow memory requests (read-only)
-		32	number of shrink memory requests (read-only)
-		33	number of root table entries used for current IGC/FGC (read-only)
-		34	Spur: bytes allocated in total since start-up or reset (read-write) (Used to be number of allocations done before current IGC/FGC (read-only))
-		35	number of survivor objects after current IGC/FGC (read-only)
-		36	millisecond clock when current IGC/FGC completed (read-only)
-		37	number of marked objects for Roots of the world, not including Root Table entries for current IGC/FGC (read-only)
-		38	milliseconds taken by current IGC (read-only)
-		39	Number of finalization signals for Weak Objects pending when current IGC/FGC completed (read-only)
-		40	BytesPerOop for this image
-		41	imageFormatVersion for the VM
-		42	number of stack pages in use
-		43	desired number of stack pages (stored in image file header, max 65535)
-		44	size of eden, in bytes
-		45	desired size of eden, in bytes (stored in image file header)
-		46	machine code zone size, in bytes (Cog only; otherwise nil)
-		47	desired machine code zone size (stored in image file header; Cog only; otherwise nil)
-		48	various header flags.  See getCogVMFlags.
-		49	max size the image promises to grow the external semaphore table to (0 sets to default, which is 256 as of writing)
-		50-51 nil; reserved for VM parameters that persist in the image (such as eden above)
-		52	root/remembered table capacity
-		53	number of segments (Spur only; otherwise nil)
-		54	total size of free old space (Spur only, otherwise nil)
-		55	ratio of growth and image size at or above which a GC will be performed post scavenge
-		56	number of process switches since startup (read-only)
-		57	number of ioProcessEvents calls since startup (read-only)
-		58	number of ForceInterruptCheck calls since startup (read-only)
-		59	number of check event calls since startup (read-only)
-		60	number of stack page overflows since startup (read-only)
-		61	number of stack page divorces since startup (read-only)
-		62	compiled code compactions since startup (read-only; Cog only; otherwise nil)
-		63	total milliseconds in compiled code compactions since startup (read-only; Cog only; otherwise nil)
-		64	the number of methods that currently have jitted machine-code
-		65	whether the VM supports a certain feature, MULTIPLE_BYTECODE_SETS is bit 0, IMMUTABILITY is bit 1
-		66	the byte size of a stack page
-		67	the max allowed size of old space (Spur only; nil otherwise; 0 implies no limit except that of the underlying platform)
-		68	the average number of live stack pages when scanned by GC (at scavenge/gc/become et al) (read-write)
-		69	the maximum number of live stack pages when scanned by GC (at scavenge/gc/become et al) (read-write)
-		70	the vmProxyMajorVersion (the interpreterProxy VM_MAJOR_VERSION)
-		71	the vmProxyMinorVersion (the interpreterProxy VM_MINOR_VERSION)
-		72 total milliseconds in full GCs Mark phase since startup (read-only)
-		73 total milliseconds in full GCs Sweep phase since startup (read-only, can be 0 depending on compactors)
-		74 maximum pause time due to segment allocation
-		75 number of JIT compiled methods since startup (read-only)
-		76 total milliseconds spent on JIT compiled methods since startup (read-only)
-		77 number of JIT compiled block since startup (read-only)
-		78 total milliseconds spent on JIT compiled block since startup (read-only)
-		
-	Note: Thanks to Ian Piumarta for this primitive."
+
+	The description of each parameter is available in the Image (`VirtualMachine>>#parameterLabels`)
+	Do not forget to update it when new parameters are added.
+	Otherwise the *real* list is in the code: `StackInterpreterPrimitives>>#primitiveGetVMParameter:`"
 
 	| paramsArraySize index |
 	paramsArraySize := 78.

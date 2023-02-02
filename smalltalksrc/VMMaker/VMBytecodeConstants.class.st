@@ -11,10 +11,8 @@ Class {
 		'BytecodeSetHasDirectedSuperSend',
 		'CtxtTempFrameStart',
 		'LargeContextBit',
-		'LargeContextSize',
 		'LargeContextSlots',
 		'SistaV1BytecodeSet',
-		'SmallContextSize',
 		'SmallContextSlots'
 	],
 	#pools : [

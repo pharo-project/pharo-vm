@@ -38,22 +38,6 @@ VMPrimitiveTest >> fillNewSpace [
 			 classIndex: memory arrayClassIndexPun) isNotNil
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual' }
-VMPrimitiveTest >> installFloatClass [
-
-	| classFloat |
-	classFloat := self
-		              newClassInOldSpaceWithSlots: 0
-		              instSpec: memory firstLongFormat.
-	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
-	memory
-		storePointer: ClassFloatCompactIndex
-		ofObject: memory classTableFirstPage
-		withValue: classFloat
-
-	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
-]
-
 { #category : #'instance creation' }
 VMPrimitiveTest >> newArrayWith: aCollection [ 
 	| array |
@@ -5163,4 +5147,30 @@ VMPrimitiveTest >> testSumSmallIntegersWithoutOverflow [
 	result := interpreter sumSmallInteger: a withSmallInteger: b ifOverflow: [ ^ ifOverflowValue ].
 	
 	self assert: result equals: expectedResult
+]
+
+{ #category : #'tests - primitiveVMParameter' }
+VMPrimitiveTest >> testPrimitiveVMParameterReturnsArrayOfOops [
+
+	| slots |
+	self createArrayClass.
+	self createLargeIntegerClasses.
+	self installFloatClass.
+	
+	interpreter setExtraVMMemory: 0.
+	memory shrinkThreshold: 0.
+	memory growHeadroom: 0.
+	memory setCurrentAllocatedBytesTo: 0.
+	memory setHeapGrowthToSizeGCRatio: 0.0.
+	interpreter setImageHeaderFlagsFrom: 0.
+	interpreter preemptionYields: true.
+	interpreter primitiveVMParameter.
+	
+	"Check this is an array that has 78 OOP entries"
+	self assert: (memory isArray: interpreter stackTop).
+	slots := memory numSlotsOf: interpreter stackTop.
+	self assert: slots equals: 78.
+	
+	0 to: slots - 1 do: [ :i |
+		memory okayOop: (memory fetchPointer: i ofObject: interpreter stackTop) ]
 ]
