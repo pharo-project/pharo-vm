@@ -90,9 +90,8 @@ function(build_git2)
 
 		add_custom_target(libgit2_copy
 			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LibGit2_BINARY_DIR}/libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.dylib
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.dylib
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.4.dylib
+			COMMAND ${CMAKE_COMMAND} -E create_symlink libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.dylib
+			COMMAND ${CMAKE_COMMAND} -E create_symlink libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.dylib
 			COMMENT "Copying Libgit binaries from '${LibGit2_BINARY_DIR}' to '${LIBRARY_OUTPUT_PATH}'" VERBATIM)
 	else()
 		message(FATAL "Aggggh not implemented yet")

@@ -258,6 +258,9 @@ VMJitMethodTest >> testMixedInlinedLiteralsSmoteTest [
 VMJitMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 	| callingMethod cm x y z firstTerm size frame |
 	
+	cogit setCStackPointer: interpreter rumpCStackAddress.
+	cogit setCFramePointer: interpreter rumpCStackAddress.	
+	
 	firstTerm := 1.0 to: 2.0.
 	size := firstTerm size.
 
@@ -309,6 +312,7 @@ VMJitMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 		                 (self findMethod: #addVector:with:intoVector:).
 
 	self initStack.
+
 	"As we are entering the interpreter first, the SP and FP has to be in the CStack."
 	machineSimulator sp: cogit getCStackPointer.
 	machineSimulator fp: cogit getCFramePointer.
