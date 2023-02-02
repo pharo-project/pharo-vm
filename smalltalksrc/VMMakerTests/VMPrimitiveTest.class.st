@@ -1262,16 +1262,7 @@ VMPrimitiveTest >> testPrimitiveCompareWithHigherSymbol [
 	aByteSymbol := #a forMemory: memory inMethod: nil.
 	bByteSymbol := #b forMemory: memory inMethod: nil.
 
-	asciiOrder := self
-		              newObjectWithSlots: 256 / memory wordSize
-		              format: ByteArray instSpec
-		              classIndex: memory arrayClassIndexPun. "I don't care of the class"
-
-	0 to: 255 do: [ :index | 
-		memory
-			storeByte: index
-			ofObject: asciiOrder
-			withValue: (String newAsciiOrder at: index + 1) ].
+	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
 
 	interpreter push: bByteSymbol.
 	interpreter push: aByteSymbol.
@@ -1291,16 +1282,7 @@ VMPrimitiveTest >> testPrimitiveCompareWithIsNotCaseSensitive [
 	lowerByteSymbol := #a forMemory: memory inMethod: nil.
 	upperByteSymbol := #A forMemory: memory inMethod: nil. 
 
-	nonCaseSensitiveOrder := self
-		              newObjectWithSlots: 256 / memory wordSize 
-		              format: ByteArray instSpec
-		              classIndex: memory arrayClassIndexPun. "I don't care of the class"
-
-	0 to: 255 do: [ :index | 
-		memory
-			storeByte: index
-			ofObject: nonCaseSensitiveOrder
-			withValue: (String newCaseInsensitiveOrder at: index + 1) ].
+	nonCaseSensitiveOrder := self newByteArrayWithContent: String newCaseInsensitiveOrder.
 
 	interpreter push: lowerByteSymbol.
 	interpreter push: upperByteSymbol.
@@ -1316,24 +1298,15 @@ VMPrimitiveTest >> testPrimitiveCompareWithIsNotCaseSensitive [
 { #category : #'tests - primitivePin' }
 VMPrimitiveTest >> testPrimitiveCompareWithLimitCaseRegretion [
 
-	| asciiOrder lowerByteSymbol upperByteSymbol |
+	| nonCaseSensitiveOrder lowerByteSymbol upperByteSymbol |
 	lowerByteSymbol := #z forMemory: memory inMethod: nil.
 	upperByteSymbol := #Z forMemory: memory inMethod: nil. 
 
-	asciiOrder := self
-		              newObjectWithSlots: 256 / memory wordSize
-		              format: ByteArray instSpec
-		              classIndex: memory arrayClassIndexPun. "I don't care of the class"
-
-	0 to: 255 do: [ :index | 
-		memory
-			storeByte: index
-			ofObject: asciiOrder
-			withValue: (String newCaseInsensitiveOrder at: index + 1) ].
+	nonCaseSensitiveOrder := self newByteArrayWithContent: String newCaseInsensitiveOrder.
 
 	interpreter push: lowerByteSymbol.
 	interpreter push: upperByteSymbol.
-	interpreter push: asciiOrder.
+	interpreter push: nonCaseSensitiveOrder.
 
 	interpreter argumentCount: 2.
 	interpreter primitiveCompareWith.
@@ -1349,16 +1322,7 @@ VMPrimitiveTest >> testPrimitiveCompareWithLowerSymbol [
 	aByteSymbol := #a forMemory: memory inMethod: nil.
 	bByteSymbol := #b forMemory: memory inMethod: nil.
 
-	asciiOrder := self
-		              newObjectWithSlots: 256 / memory wordSize 
-		              format: ByteArray instSpec
-		              classIndex: memory arrayClassIndexPun. "I don't care of the class"
-
-	0 to: 255 do: [ :index | 
-		memory
-			storeByte: index
-			ofObject: asciiOrder
-			withValue: (String newAsciiOrder at: index + 1) ].
+	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
 
 	interpreter push: aByteSymbol.
 	interpreter push: bByteSymbol.
@@ -1377,11 +1341,8 @@ VMPrimitiveTest >> testPrimitiveCompareWithTheSameSymbol [
 	| byteSymbol asciiOrder |
 	byteSymbol := #a forMemory: memory inMethod: nil.
 	
-	asciiOrder := self newObjectWithSlots: 256 / memory wordSize format: ByteArray instSpec classIndex: memory arrayClassIndexPun. "I don't care of the class"
-
-	0 to: 255 do: [ :index |
-		memory storeByte: index ofObject: asciiOrder withValue: (String newAsciiOrder at: index + 1)].
-		
+	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
+	
 	interpreter push: byteSymbol.
 	interpreter push: byteSymbol.
 	interpreter push: asciiOrder.
