@@ -26,6 +26,50 @@ VMPermanentSpacePrimitiveTest >> setUp [
 ]
 
 { #category : #tests }
+VMPermanentSpacePrimitiveTest >> testIsInmmediateInPermSpace [
+
+	interpreter push: (memory integerObjectOf: 42).
+	interpreter argumentCount: 0.
+	interpreter primitiveIsInPermSpace.
+	
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
+{ #category : #tests }
+VMPermanentSpacePrimitiveTest >> testIsNewObjectInPermSpace [
+
+	interpreter push: (self newZeroSizedObject).
+	interpreter argumentCount: 0.
+	interpreter primitiveIsInPermSpace.
+	
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
+{ #category : #tests }
+VMPermanentSpacePrimitiveTest >> testIsOldObjectInPermSpace [
+
+	interpreter push: (self newOldSpaceObjectWithSlots: 0).
+	interpreter argumentCount: 0.
+	interpreter primitiveIsInPermSpace.
+	
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
+{ #category : #tests }
+VMPermanentSpacePrimitiveTest >> testIsPermObjectInPermSpace [
+
+	| oldObj permObject |
+	oldObj := self newOldSpaceObjectWithSlots: 0.
+	permObject := memory moveToPermSpace: oldObj.
+
+	interpreter push: permObject.
+	interpreter argumentCount: 0.
+	interpreter primitiveIsInPermSpace.
+	
+	self assert: interpreter stackTop equals: memory trueObject
+]
+
+{ #category : #tests }
 VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceFailsOnEphemeron [
 
 	| oldObject |

@@ -1116,9 +1116,9 @@ StackInterpreter class >> initializePrimitiveTable [
 		"Perm Space primitives"
 		(90 primitiveMoveToPermSpace)
 		(91 primitiveMoveToPermSpaceInBulk)
+		(92 primitiveIsInPermSpace)
 
-		"Input/Output Primitives (92-109)"
-		(92 primitiveFail)
+		"Input/Output Primitives (93-109)"
 		(93 primitiveFail)
 		(94 primitiveFail)
 		(95 primitiveFail)

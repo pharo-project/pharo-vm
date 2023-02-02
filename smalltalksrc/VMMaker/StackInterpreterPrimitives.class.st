@@ -1746,6 +1746,15 @@ StackInterpreterPrimitives >> primitiveInstVarAtPut [
 	self pop: argumentCount + 1 thenPush: newValue
 ]
 
+{ #category : #'perm - space' }
+StackInterpreterPrimitives >> primitiveIsInPermSpace [
+
+	| rcvr |
+
+	rcvr := self stackTop.		
+	self pop: argumentCount + 1 thenPushBool: (objectMemory isPermanent: rcvr).
+]
+
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadBoolean8FromBytes [
 	<var: #bytes type: #'char*' >
