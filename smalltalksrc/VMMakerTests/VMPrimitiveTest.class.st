@@ -1255,6 +1255,144 @@ VMPrimitiveTest >> testPrimitiveClassReturnsAClass [
 	
 ]
 
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitiveCompareWithHigherSymbol [
+
+	| asciiOrder aByteSymbol bByteSymbol |
+	aByteSymbol := #a forMemory: memory inMethod: nil.
+	bByteSymbol := #b forMemory: memory inMethod: nil.
+
+	asciiOrder := self
+		              newObjectWithSlots: 256 / memory wordSize
+		              format: ByteArray instSpec
+		              classIndex: memory arrayClassIndexPun. "I don't care of the class"
+
+	0 to: 255 do: [ :index | 
+		memory
+			storeByte: index
+			ofObject: asciiOrder
+			withValue: (String newAsciiOrder at: index + 1) ].
+
+	interpreter push: bByteSymbol.
+	interpreter push: aByteSymbol.
+	interpreter push: asciiOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 1)
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitiveCompareWithIsNotCaseSensitive [
+
+	| nonCaseSensitiveOrder lowerByteSymbol upperByteSymbol |
+	lowerByteSymbol := #a forMemory: memory inMethod: nil.
+	upperByteSymbol := #A forMemory: memory inMethod: nil. 
+
+	nonCaseSensitiveOrder := self
+		              newObjectWithSlots: 256 / memory wordSize 
+		              format: ByteArray instSpec
+		              classIndex: memory arrayClassIndexPun. "I don't care of the class"
+
+	0 to: 255 do: [ :index | 
+		memory
+			storeByte: index
+			ofObject: nonCaseSensitiveOrder
+			withValue: (String newCaseInsensitiveOrder at: index + 1) ].
+
+	interpreter push: lowerByteSymbol.
+	interpreter push: upperByteSymbol.
+	interpreter push: nonCaseSensitiveOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitiveCompareWithLimitCaseRegretion [
+
+	| asciiOrder lowerByteSymbol upperByteSymbol |
+	lowerByteSymbol := #z forMemory: memory inMethod: nil.
+	upperByteSymbol := #Z forMemory: memory inMethod: nil. 
+
+	asciiOrder := self
+		              newObjectWithSlots: 256 / memory wordSize
+		              format: ByteArray instSpec
+		              classIndex: memory arrayClassIndexPun. "I don't care of the class"
+
+	0 to: 255 do: [ :index | 
+		memory
+			storeByte: index
+			ofObject: asciiOrder
+			withValue: (String newCaseInsensitiveOrder at: index + 1) ].
+
+	interpreter push: lowerByteSymbol.
+	interpreter push: upperByteSymbol.
+	interpreter push: asciiOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitiveCompareWithLowerSymbol [
+
+	| asciiOrder aByteSymbol bByteSymbol |
+	aByteSymbol := #a forMemory: memory inMethod: nil.
+	bByteSymbol := #b forMemory: memory inMethod: nil.
+
+	asciiOrder := self
+		              newObjectWithSlots: 256 / memory wordSize 
+		              format: ByteArray instSpec
+		              classIndex: memory arrayClassIndexPun. "I don't care of the class"
+
+	0 to: 255 do: [ :index | 
+		memory
+			storeByte: index
+			ofObject: asciiOrder
+			withValue: (String newAsciiOrder at: index + 1) ].
+
+	interpreter push: aByteSymbol.
+	interpreter push: bByteSymbol.
+	interpreter push: asciiOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: -1)
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitiveCompareWithTheSameSymbol [
+
+	| byteSymbol asciiOrder |
+	byteSymbol := #a forMemory: memory inMethod: nil.
+	
+	asciiOrder := self newObjectWithSlots: 256 / memory wordSize format: ByteArray instSpec classIndex: memory arrayClassIndexPun. "I don't care of the class"
+
+	0 to: 255 do: [ :index |
+		memory storeByte: index ofObject: asciiOrder withValue: (String newAsciiOrder at: index + 1)].
+		
+	interpreter push: byteSymbol.
+	interpreter push: byteSymbol.
+	interpreter push: asciiOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
+]
+
 { #category : #'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDiv [
 
