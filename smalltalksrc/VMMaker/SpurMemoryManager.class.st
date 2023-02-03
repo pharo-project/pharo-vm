@@ -1437,7 +1437,10 @@ SpurMemoryManager >> allHeapEntitiesDo: aBlock [
 	"N.B. e.g. allObjects relies on the old/new order here."
 
 	self allOldSpaceEntitiesDo: aBlock.
-	self allNewSpaceEntitiesDo: aBlock
+	self allNewSpaceEntitiesDo: aBlock.
+	
+	"In PermSpace we only have objects, so directly iterate them"
+	self allPermSpaceObjectsDo: aBlock
 ]
 
 { #category : #'primitive support' }

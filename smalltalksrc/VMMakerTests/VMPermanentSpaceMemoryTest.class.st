@@ -12,6 +12,19 @@ VMPermanentSpaceMemoryTest >> setUp [
 	self createWeakArrayClass
 ]
 
+{ #category : #'tests - allocation' }
+VMPermanentSpaceMemoryTest >> testAllInstancesReturnsObjectsInPermSpace [
+
+	| permanentObject allInstances |
+	
+	permanentObject := self newPermanentByteObjectOfSize: 14.
+
+	allInstances := memory allInstancesOf: memory classByteArray.
+
+	self assert: (memory slotSizeOf: allInstances) equals: 1.
+	self assert: (memory fetchPointer: 0 ofObject: allInstances) equals: permanentObject.
+]
+
 { #category : #'test - moving' }
 VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWhenModified [
 
