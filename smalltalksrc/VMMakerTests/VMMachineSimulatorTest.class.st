@@ -97,13 +97,12 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionComesWithCorrectAddress [
 VMMachineSimulatorTest >> testMemoryAccessExceptionHandledCountIsRespected [
 
 	| label lastInstruction invalidAddressHandled addInstruction jumpInstruction expectedAddress |
-
 	self timeLimit: 30 minutes.
 
-	self compile: [ 
+	self compile: [
 		cogit MoveCq: 0 R: TempReg.
 		cogit MoveCq: 16rFFFF0000 R: ClassReg.
-		cogit MoveMb: 0 r: ClassReg R: ReceiverResultReg. 
+		cogit MoveMb: 0 r: ClassReg R: ReceiverResultReg.
 
 		label := cogit Label.
 		addInstruction := cogit AddCq: 1 R: TempReg.
@@ -111,29 +110,24 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledCountIsRespected [
 		"This instruction is never reach"
 		lastInstruction := cogit RetN: 0 ].
 
-	self machineSimulator invalidAccessHandler: [:invalidAccess | 
+	self machineSimulator invalidAccessHandler: [ :invalidAccess |
 		invalidAddressHandled := true.
-		self 
-			assert: invalidAccess address 
-			equals: 16rFFFF0000.
-			
+		self assert: invalidAccess address equals: 16rFFFF0000.
+
 		self machineSimulator receiverRegisterValue: 1.
 		"Continue executing after exception"
 		true ].
-	
+
 
 	self machineSimulator
 		startAt: initialAddress
 		until: lastInstruction address
 		timeout: 0
-		count: 10. 
-	
-	"ARM v8 generates two instructions for MoveMbrR, so it will execute and instruction less"
-	expectedAddress := isa = #aarch64 ifTrue: [addInstruction address] ifFalse: [jumpInstruction address].
-	
-	
-	self 
-		assert: self machineSimulator instructionPointerRegisterValue 
+		count: 10.
+
+	expectedAddress := jumpInstruction address.
+	self
+		assert: self machineSimulator instructionPointerRegisterValue
 		equals: expectedAddress
 ]
 
@@ -366,28 +360,25 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInstructionPointerInCorrectAd
 	| lastInstruction invalidAccessInstruction invalidAddressHandled exptectedAddress |
 	self timeLimit: 30 minutes.
 
-	self compile: [ 
+	self compile: [
 		cogit MoveCq: 16rFFFF0000 R: TempReg.
 		cogit MoveCq: 0 R: ClassReg.
 
 		invalidAccessInstruction := cogit MoveMb: 0 r: TempReg R: ClassReg.
 		"This instruction should not be called"
-		lastInstruction := cogit Call: 16rFFFFF0.  ].
-	
+		lastInstruction := cogit Call: 16rFFFFF0 ].
+
 	invalidAddressHandled := false.
-	
-	"In ArmV8 the MoveMbrR are two instructions"
-	isa = #aarch64 
-		ifTrue: [ exptectedAddress := invalidAccessInstruction address + 4 ]
-		ifFalse: [ exptectedAddress := invalidAccessInstruction address ].
-	
-	self machineSimulator invalidAccessHandler: [:invalidAccess | 
+
+	exptectedAddress := invalidAccessInstruction address.
+
+	self machineSimulator invalidAccessHandler: [ :invalidAccess |
 		invalidAddressHandled := true.
-		self 
-			assert: self machineSimulator lastExecutedInstructionAddress 
+		self
+			assert: self machineSimulator lastExecutedInstructionAddress
 			equals: exptectedAddress.
 		false ].
-	
+
 	self
 		runFrom: initialAddress
 		until: lastInstruction address
