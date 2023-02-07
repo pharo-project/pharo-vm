@@ -34,6 +34,7 @@ option(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES	"Prefer downloading dependenc
 option(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS		"Use inline memory accessors instead of macros"					 ON)
 option(PHARO_VM_IN_WORKER_THREAD			"Have support for pharo running in a different thread that the main one"	 ON)
 option(BUILD_IS_RELEASE					"Is this a release version?"							OFF)
+option(DEPENDENCIES_FORCE_BUILD         "Force build libraries" OFF)
 
 set(APPNAME			"Pharo"         CACHE STRING                 "VM Application name")
 set(FLAVOUR			"CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
