@@ -1,6 +1,6 @@
 # Change log
 
-I am a changelog... do not wait too much from me :D
+I am a changelog... do not expect too much from me :D
 
 ## v10.0.0
 
