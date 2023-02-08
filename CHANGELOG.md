@@ -1,6 +1,6 @@
 # Change log
 
-I am a changelog... do not wait too much from me :D
+I am a changelog... do not expect too much from me :D
 
 ## v10.0.0
 
@@ -26,7 +26,7 @@ I am a changelog... do not wait too much from me :D
 	- Renaming Concepts to be inline with Common terminology
 	- Remove Newspeak, Multiple Bytecode and Old Memory Managers
 	- Removing Unused Plugins
-	- Deleting Dead 
+
 - Tests
 	- GNUification Tests
 	- Tests for Math primitives including overflow and conversion testing.
