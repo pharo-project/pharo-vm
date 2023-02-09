@@ -2154,6 +2154,81 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveQuoReturnsZeroWithZeroReceiver [
 	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 0).
 ]
 
+{ #category : #'tests - primitiveStringCompare' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveStringCompareWithHigherSymbol [
+	
+
+	| aByteSymbol bByteSymbol endInstruction primitiveAddress |
+	aByteSymbol := #a forMemory: memory inMethod: nil.
+	bByteSymbol := #b forMemory: memory inMethod: nil.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveStringCompareWith.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: bByteSymbol arguments: { aByteSymbol }.
+	self runFrom: primitiveAddress until: callerAddress.
+
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 1).
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveStringCompareWithIsCaseSensitive [
+	
+
+	| endInstruction primitiveAddress lowerByteSymbol upperByteSymbol |
+	lowerByteSymbol := #z forMemory: memory inMethod: nil.
+	upperByteSymbol := #Z forMemory: memory inMethod: nil.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveStringCompareWith.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: lowerByteSymbol arguments: { upperByteSymbol }.
+	self runFrom: primitiveAddress until: callerAddress.
+
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 32).
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveStringCompareWithLowerSymbol [
+	
+
+	| aByteSymbol bByteSymbol endInstruction primitiveAddress |
+	aByteSymbol := #a forMemory: memory inMethod: nil.
+	bByteSymbol := #b forMemory: memory inMethod: nil.
+
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveStringCompareWith.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: aByteSymbol arguments: { bByteSymbol }.
+	self runFrom: primitiveAddress until: callerAddress.
+
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: -1).
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveStringCompareWithSameSymbol [
+	
+
+	| aByteSymbol endInstruction primitiveAddress |
+	aByteSymbol := #a forMemory: memory inMethod: nil.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveStringCompareWith.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: aByteSymbol arguments: { aByteSymbol }.
+	self runFrom: primitiveAddress until: callerAddress.
+
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 0).
+]
+
 { #category : #'tests - primitiveSubtract' }
 VMJittedGeneralPrimitiveTest >> testPrimitiveSubtractDoesNotCompileIfReceiverTagIsNotSmallInteger [
 	

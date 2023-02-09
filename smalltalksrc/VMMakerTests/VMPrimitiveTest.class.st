@@ -1255,7 +1255,7 @@ VMPrimitiveTest >> testPrimitiveClassReturnsAClass [
 	
 ]
 
-{ #category : #'tests - primitivePin' }
+{ #category : #'tests - primitiveStringCompare' }
 VMPrimitiveTest >> testPrimitiveCompareWithHigherSymbol [
 
 	| asciiOrder aByteSymbol bByteSymbol |
@@ -1275,7 +1275,7 @@ VMPrimitiveTest >> testPrimitiveCompareWithHigherSymbol [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 1)
 ]
 
-{ #category : #'tests - primitivePin' }
+{ #category : #'tests - primitiveStringCompare' }
 VMPrimitiveTest >> testPrimitiveCompareWithIsNotCaseSensitive [
 
 	| nonCaseSensitiveOrder lowerByteSymbol upperByteSymbol |
@@ -1295,7 +1295,7 @@ VMPrimitiveTest >> testPrimitiveCompareWithIsNotCaseSensitive [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
 ]
 
-{ #category : #'tests - primitivePin' }
+{ #category : #'tests - primitiveStringCompare' }
 VMPrimitiveTest >> testPrimitiveCompareWithLimitCaseRegretion [
 
 	| nonCaseSensitiveOrder lowerByteSymbol upperByteSymbol |
@@ -1315,7 +1315,7 @@ VMPrimitiveTest >> testPrimitiveCompareWithLimitCaseRegretion [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
 ]
 
-{ #category : #'tests - primitivePin' }
+{ #category : #'tests - primitiveStringCompare' }
 VMPrimitiveTest >> testPrimitiveCompareWithLowerSymbol [
 
 	| asciiOrder aByteSymbol bByteSymbol |
@@ -1335,7 +1335,7 @@ VMPrimitiveTest >> testPrimitiveCompareWithLowerSymbol [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: -1)
 ]
 
-{ #category : #'tests - primitivePin' }
+{ #category : #'tests - primitiveStringCompare' }
 VMPrimitiveTest >> testPrimitiveCompareWithTheSameSymbol [
 
 	| byteSymbol asciiOrder |
