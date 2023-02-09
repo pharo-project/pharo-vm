@@ -1157,7 +1157,7 @@ StackInterpreter class >> initializePrimitiveTable [
 
 		"Were File Primitives (150-169) - NO LONGER INDEXED"
 		(150 157 primitiveFail)
-		(158 primitiveCompareWith)
+		(158 primitiveStringCompareWith)
 		(159 primitiveHashMultiply)
 		(160 primitiveAdoptInstance)
 		(161 primitiveSetOrHasIdentityHash)

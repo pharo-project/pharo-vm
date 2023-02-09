@@ -1255,105 +1255,6 @@ VMPrimitiveTest >> testPrimitiveClassReturnsAClass [
 	
 ]
 
-{ #category : #'tests - primitiveStringCompare' }
-VMPrimitiveTest >> testPrimitiveCompareWithHigherSymbol [
-
-	| asciiOrder aByteSymbol bByteSymbol |
-	aByteSymbol := #a forMemory: memory inMethod: nil.
-	bByteSymbol := #b forMemory: memory inMethod: nil.
-
-	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
-
-	interpreter push: bByteSymbol.
-	interpreter push: aByteSymbol.
-	interpreter push: asciiOrder.
-
-	interpreter argumentCount: 2.
-	interpreter primitiveCompareWith.
-
-	self deny: interpreter failed.
-	self assert: interpreter stackTop equals: (memory integerObjectOf: 1)
-]
-
-{ #category : #'tests - primitiveStringCompare' }
-VMPrimitiveTest >> testPrimitiveCompareWithIsNotCaseSensitive [
-
-	| nonCaseSensitiveOrder lowerByteSymbol upperByteSymbol |
-	lowerByteSymbol := #a forMemory: memory inMethod: nil.
-	upperByteSymbol := #A forMemory: memory inMethod: nil. 
-
-	nonCaseSensitiveOrder := self newByteArrayWithContent: String newCaseInsensitiveOrder.
-
-	interpreter push: lowerByteSymbol.
-	interpreter push: upperByteSymbol.
-	interpreter push: nonCaseSensitiveOrder.
-
-	interpreter argumentCount: 2.
-	interpreter primitiveCompareWith.
-
-	self deny: interpreter failed.
-	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
-]
-
-{ #category : #'tests - primitiveStringCompare' }
-VMPrimitiveTest >> testPrimitiveCompareWithLimitCaseRegretion [
-
-	| nonCaseSensitiveOrder lowerByteSymbol upperByteSymbol |
-	lowerByteSymbol := #z forMemory: memory inMethod: nil.
-	upperByteSymbol := #Z forMemory: memory inMethod: nil. 
-
-	nonCaseSensitiveOrder := self newByteArrayWithContent: String newCaseInsensitiveOrder.
-
-	interpreter push: lowerByteSymbol.
-	interpreter push: upperByteSymbol.
-	interpreter push: nonCaseSensitiveOrder.
-
-	interpreter argumentCount: 2.
-	interpreter primitiveCompareWith.
-
-	self deny: interpreter failed.
-	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
-]
-
-{ #category : #'tests - primitiveStringCompare' }
-VMPrimitiveTest >> testPrimitiveCompareWithLowerSymbol [
-
-	| asciiOrder aByteSymbol bByteSymbol |
-	aByteSymbol := #a forMemory: memory inMethod: nil.
-	bByteSymbol := #b forMemory: memory inMethod: nil.
-
-	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
-
-	interpreter push: aByteSymbol.
-	interpreter push: bByteSymbol.
-	interpreter push: asciiOrder.
-
-	interpreter argumentCount: 2.
-	interpreter primitiveCompareWith.
-
-	self deny: interpreter failed.
-	self assert: interpreter stackTop equals: (memory integerObjectOf: -1)
-]
-
-{ #category : #'tests - primitiveStringCompare' }
-VMPrimitiveTest >> testPrimitiveCompareWithTheSameSymbol [
-
-	| byteSymbol asciiOrder |
-	byteSymbol := #a forMemory: memory inMethod: nil.
-	
-	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
-	
-	interpreter push: byteSymbol.
-	interpreter push: byteSymbol.
-	interpreter push: asciiOrder.
-
-	interpreter argumentCount: 2.
-	interpreter primitiveCompareWith.
-
-	self deny: interpreter failed.
-	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
-]
-
 { #category : #'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDiv [
 
@@ -4965,6 +4866,105 @@ VMPrimitiveTest >> testPrimitiveStringAtShouldNotModifyStringIfFailedWhenNonChar
 	self assert: interpreter primFailCode equals: PrimErrBadArgument.
 
 	self assert: string contentEquals: (self newString: 'po')
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMPrimitiveTest >> testPrimitiveStringCompareWithHigherSymbol [
+
+	| asciiOrder aByteSymbol bByteSymbol |
+	aByteSymbol := #a forMemory: memory inMethod: nil.
+	bByteSymbol := #b forMemory: memory inMethod: nil.
+
+	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
+
+	interpreter push: bByteSymbol.
+	interpreter push: aByteSymbol.
+	interpreter push: asciiOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveStringCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 1)
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMPrimitiveTest >> testPrimitiveStringCompareWithIsNotCaseSensitive [
+
+	| nonCaseSensitiveOrder lowerByteSymbol upperByteSymbol |
+	lowerByteSymbol := #a forMemory: memory inMethod: nil.
+	upperByteSymbol := #A forMemory: memory inMethod: nil. 
+
+	nonCaseSensitiveOrder := self newByteArrayWithContent: String newCaseInsensitiveOrder.
+
+	interpreter push: lowerByteSymbol.
+	interpreter push: upperByteSymbol.
+	interpreter push: nonCaseSensitiveOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveStringCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMPrimitiveTest >> testPrimitiveStringCompareWithLimitCaseRegretion [
+
+	| nonCaseSensitiveOrder lowerByteSymbol upperByteSymbol |
+	lowerByteSymbol := #z forMemory: memory inMethod: nil.
+	upperByteSymbol := #Z forMemory: memory inMethod: nil. 
+
+	nonCaseSensitiveOrder := self newByteArrayWithContent: String newCaseInsensitiveOrder.
+
+	interpreter push: lowerByteSymbol.
+	interpreter push: upperByteSymbol.
+	interpreter push: nonCaseSensitiveOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveStringCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMPrimitiveTest >> testPrimitiveStringCompareWithLowerSymbol [
+
+	| asciiOrder aByteSymbol bByteSymbol |
+	aByteSymbol := #a forMemory: memory inMethod: nil.
+	bByteSymbol := #b forMemory: memory inMethod: nil.
+
+	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
+
+	interpreter push: aByteSymbol.
+	interpreter push: bByteSymbol.
+	interpreter push: asciiOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveStringCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: -1)
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMPrimitiveTest >> testPrimitiveStringCompareWithTheSameSymbol [
+
+	| byteSymbol asciiOrder |
+	byteSymbol := #a forMemory: memory inMethod: nil.
+	
+	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
+	
+	interpreter push: byteSymbol.
+	interpreter push: byteSymbol.
+	interpreter push: asciiOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveStringCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
 ]
 
 { #category : #'tests - primitiveSubtract' }

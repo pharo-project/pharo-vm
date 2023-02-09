@@ -2213,7 +2213,6 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreUInt8IntoExternalAddress [
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStringCompareWith [
-	"primitiveCompareWith:"
 	
 	| instr jump jumpAbove jumpIncorrectFormat1 jumpIncorrectFormat2 jumpIncorrectFormat3 jumpIncorrectFormat4 jumpMidFailure jumpSuccess minSizeReg string1CharOrByteSizeReg string2CharOrByteSizeReg string1Reg string2Reg |
 	
