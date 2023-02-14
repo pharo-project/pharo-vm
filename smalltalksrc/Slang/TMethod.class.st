@@ -3015,14 +3015,27 @@ TMethod >> transformConditionalAssignment: node in: aCodeGen [
 	 to allow inlining of m1, m2, et al.  Otherwise answer nil."
 
 	| expr |
-	^ (node isAssignment and: [ 
-		   (expr := node expression) isSend and: [ 
-			   #( #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: expr selector ] ]) 
-		  ifTrue: [ 
-			  expr copy
-				  arguments: (expr arguments collect: [ :stmtList | 
-							   stmtList copy assignLastExpressionTo: node variable ]);
-				  yourself ]
+	(node isAssignment and: [ 
+		 (expr := node expression) isSend and: [ 
+			 #( #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: expr selector ] ]) 
+		ifTrue: [ 
+			^ expr copy
+				arguments: (expr arguments collect: [ :stmtList | 
+							 stmtList copy assignLastExpressionTo: node variable ]);
+				yourself ].
+	(node isAssignment and: [ 
+		 (expr := node expression) isSend and: [ #ifNil: = expr selector ] ]) 
+		ifTrue: [ | newStatement |
+			newStatement := TStatementListNode statements: { 
+				expr receiver assignLastExpressionTo: node variable.
+				expr copy
+					arguments: {
+						expr arguments first copy assignLastExpressionTo: node variable.
+					};
+					yourself
+			}.
+			^ newStatement ].
+	^ nil
 ]
 
 { #category : #inlining }
