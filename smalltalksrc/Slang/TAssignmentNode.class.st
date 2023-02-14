@@ -56,13 +56,13 @@ TAssignmentNode >> asCASTIn: aBuilder [
 		^ expression asCASTIn: aBuilder addToEndOfCases: self ].
 	expression isLiteralArrayDeclaration ifTrue: [ 
 		| literalArrayNode |
-		type := expression args last value.
+		type := expression arguments last value.
 		self assert: type last = $*.
 
 		"Transform the literal array declaration to a C block containing:
 		  - a static literal array declaration
 	 	  - an assigment from this literal array to the assigned variable "
-		literalArrayNode := expression args first value collect: [ :e | 
+		literalArrayNode := expression arguments first value collect: [ :e | 
 			                    CConstantNode value: e ].
 		^ CCompoundStatementNode
 			  declarations: { (CDeclarationNode

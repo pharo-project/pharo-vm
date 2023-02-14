@@ -597,7 +597,7 @@ CSlangPrettyPrinterTest >> testVisitTernary [
 			          then: (CConstantNode value: 0)
 						else: (CConstantNode value: 1)).
 
-	self assert: print trimBoth equals: '((a && b) ? 0 : 1)'
+	self assert: print trimBoth equals: '(((a && b)) ? 0 : 1)'
 ]
 
 { #category : #'tests-visitor' }

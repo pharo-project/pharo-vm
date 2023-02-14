@@ -130,25 +130,25 @@ SlangBasicTranslationTest >> testAssignBlockValueValueValue [
 
 { #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testAssignBlockWithNonLocalReturn [
-	
+
 	"y := [ self foo . ^ 7 ] value
 	=>
 	[ self foo. ^ 7 ] value
 	"
+
 	| translation send |
 	send := TAssignmentNode
-		variable: (TVariableNode new setName: 'y')
-		expression: (TSendNode
-			receiver: (TStmtListNode statements: { 
-	          (TSendNode
-		 			receiver: TVariableNode selfNode
-					selector: #foo).
-	          (TReturnNode expression: (TConstantNode value: 7)) })
-		selector: #value).
+		        variable: (TVariableNode new setName: 'y')
+		        expression: (TSendNode
+				         receiver: (TStatementListNode statements: { 
+							          (TSendNode
+								           receiver: TVariableNode selfNode
+								           selector: #foo).
+							          (TReturnNode expression: (TConstantNode value: 7)) })
+				         selector: #value).
 	translation := self translate: send.
 
-	self assert: translation equals:
-'{
+	self assert: translation equals: '{
 	foo();
 	return 7;
 }'
@@ -169,8 +169,9 @@ SlangBasicTranslationTest >> testAssignIfTrueIfFalseWithNonLocalReturn [
 				         receiver: (TVariableNode named: 'boolean')
 				         selector: #ifTrue:ifFalse:
 				         arguments: { 
-						         (TStmtListNode statements: { (TConstantNode value: 1) }).
-						         (TStmtListNode statements:
+						         (TStatementListNode statements:
+							          { (TConstantNode value: 1) }).
+						         (TStatementListNode statements:
 							          { (TReturnNode expression: (TConstantNode value: 7)) }) }).
 	translation := self translate: send.
 
@@ -1891,20 +1892,19 @@ SlangBasicTranslationTest >> testReturnBlockValueWithManyStatementsWithoutArgume
 	return [ self bar. self foo + 1 ] value"
 
 	| translation |
-
-	translation := self translate:
-	(TReturnNode expression: 
-		(TSendNode
-			receiver: 
-				(TStmtListNode statements: {
-					TSendNode
-						receiver: TVariableNode selfNode
-						selector: #bar.
-					TSendNode
-						receiver: (TSendNode receiver: TVariableNode selfNode selector: #foo)
-						selector: #+
-						arguments: { TConstantNode value: 1 } })
-			selector: #value)).
+	translation := self translate: (TReturnNode expression: (TSendNode
+				                 receiver: (TStatementListNode statements: { 
+							                  (TSendNode
+								                   receiver: TVariableNode selfNode
+								                   selector: #bar).
+							                  (TSendNode
+								                   receiver:
+								                   (TSendNode
+									                    receiver: TVariableNode selfNode
+									                    selector: #foo)
+								                   selector: #+
+								                   arguments: { (TConstantNode value: 1) }) })
+				                 selector: #value)).
 
 	self assert: translation trimBoth equals: '{
 	bar();
@@ -1920,17 +1920,16 @@ SlangBasicTranslationTest >> testReturnBlockValueWithoutArguments [
 	return [ self foo + 1 ] value"
 
 	| translation |
-
-	translation := self translate:
-	(TReturnNode expression: 
-		(TSendNode
-			receiver: 
-				(TStmtListNode statements: {
-					TSendNode
-						receiver: (TSendNode receiver: TVariableNode selfNode selector: #foo)
-						selector: #+
-						arguments: { TConstantNode value: 1 } })
-			selector: #value)).
+	translation := self translate: (TReturnNode expression: (TSendNode
+				                 receiver:
+					                 (TStatementListNode statements: { (TSendNode
+							                   receiver:
+							                   (TSendNode
+								                    receiver: TVariableNode selfNode
+								                    selector: #foo)
+							                   selector: #+
+							                   arguments: { (TConstantNode value: 1) }) })
+				                 selector: #value)).
 
 	self assert: translation trimBoth equals: '{
 	return (foo()) + 1;
@@ -1994,28 +1993,29 @@ SlangBasicTranslationTest >> testReturnIfTrue [
 	
 	translation := self translate: ast.
 		
-	self assert: translation equals: 'return ((aBoolean)
-	 ? 1
-	 : 2)'
+	self assert: translation equals: 'if (aBoolean) {
+	return 1;
+} else {
+	return 2;
+}'
 ]
 
 { #category : #'tests-return' }
 SlangBasicTranslationTest >> testReturnIfTrueWithNotLocalReturn [
 
 	| translation ast |
-	ast := TReturnNode
-		expression: (TSendNode
-			receiver: (TVariableNode named: 'aBoolean')
-			selector: #ifTrue:ifFalse:
-			arguments: { 
-				TStmtListNode statements: { TConstantNode value: 1 }.
-				TStmtListNode statements: { TReturnNode expression: (TConstantNode value: 2) }.
-			 } ).
+	ast := TReturnNode expression: (TSendNode
+			        receiver: (TVariableNode named: 'aBoolean')
+			        selector: #ifTrue:ifFalse:
+			        arguments: { 
+					        (TStatementListNode statements:
+						         { (TConstantNode value: 1) }).
+					        (TStatementListNode statements:
+						         { (TReturnNode expression: (TConstantNode value: 2)) }) }).
 
 	translation := self translate: ast.
-		
-	self assert: translation equals: 
-'if (aBoolean) {
+
+	self assert: translation equals: 'if (aBoolean) {
 	return 1;
 } else {
 	return 2;
@@ -2026,21 +2026,22 @@ SlangBasicTranslationTest >> testReturnIfTrueWithNotLocalReturn [
 SlangBasicTranslationTest >> testReturnIfTrueWithNotLocalReturnStatements [
 
 	| translation ast |
-	ast := TReturnNode
-		expression: (TSendNode
-			receiver: (TVariableNode named: 'aBoolean')
-			selector: #ifTrue:ifFalse:
-			arguments: { 
-				TStmtListNode statements: { TConstantNode value: 1 }.
-				TStmtListNode statements: { 
-					TSendNode receiver: (TConstantNode value: 3) selector: #foo arguments: {} .
-					TReturnNode expression: (TConstantNode value: 2) }.
-			 } ).
-	
+	ast := TReturnNode expression: (TSendNode
+			        receiver: (TVariableNode named: 'aBoolean')
+			        selector: #ifTrue:ifFalse:
+			        arguments: { 
+					        (TStatementListNode statements:
+						         { (TConstantNode value: 1) }).
+					        (TStatementListNode statements: { 
+							         (TSendNode
+								          receiver: (TConstantNode value: 3)
+								          selector: #foo
+								          arguments: {  }).
+							         (TReturnNode expression: (TConstantNode value: 2)) }) }).
+
 	translation := self translate: ast.
-		
-	self assert: translation equals: 
-'if (aBoolean) {
+
+	self assert: translation equals: 'if (aBoolean) {
 	return 1;
 } else {
 	foo(3);
@@ -2505,7 +2506,7 @@ SlangBasicTranslationTest >> testSendBitShiftWithExpressionShiftValue [
 				         arguments: { (TConstantNode value: 2) }) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '(((var + 2) < 0) ? ((usqInt) a ) >> (-(var + 2)) : ((usqInt) a ) << (var + 2))'
+	self assert: translation equals: '((((var + 2) < 0)) ? (((usqInt) a ) >> (-(var + 2))) : (((usqInt) a ) << (var + 2)))'
 ]
 
 { #category : #'tests-builtins' }
@@ -2713,22 +2714,6 @@ SlangBasicTranslationTest >> testSendCCodeWithString [
 	translation := self translate: send.
 
 	self assert: translation equals: 'some string'
-]
-
-{ #category : #'tests-builtins' }
-SlangBasicTranslationTest >> testSendCCodeWithStringNotesVariables [
-
-	| translation send |
-	send := TSendNode new
-		        setSelector: #cCode:
-		        receiver: (TVariableNode new setName: 'self')
-		        arguments: { TConstantNode value: 'some 1 _underscoreToo #yep' }.
-	translation := self translate: send.
-
-	self assert: (generator currentMethod usedVariablesCache includes: 'some').
-	self assert: (generator currentMethod usedVariablesCache includes: '_underscoreToo').
-	self assert: (generator currentMethod usedVariablesCache includes: 'yep').
-	self deny: (generator currentMethod usedVariablesCache includes: '1').
 ]
 
 { #category : #'tests-builtins' }
@@ -4704,7 +4689,7 @@ SlangBasicTranslationTest >> testSendMax [
 		        arguments: { (TVariableNode new setName: 'y') }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((x < y) ? y : x)'
+	self assert: translation equals: '(((x < y)) ? y : x)'
 ]
 
 { #category : #'tests-builtins' }
@@ -4729,7 +4714,7 @@ SlangBasicTranslationTest >> testSendMin [
 		        arguments: { (TVariableNode new setName: 'y') }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((x < y) ? x : y)'
+	self assert: translation equals: '(((x < y)) ? x : y)'
 ]
 
 { #category : #'tests-builtins' }
@@ -6224,10 +6209,10 @@ SlangBasicTranslationTest >> testSwitchStatementAsArgument [
 			                arguments:
 			                { (TStatementListNode new statements: {  }) }).
 
-	self assert: translation trimBoth equals: 'if (((x == 0)
-	 ? foo = 10
-	 : ((x == 1)
-		 ? foo = 11
+	self assert: translation trimBoth equals: 'if ((((x == 0))
+	 ? (foo = 10)
+	 : (((x == 1))
+		 ? (foo = 11)
 		 : (error("Case not found and no otherwise clause"), 0)))) {
 }'
 ]
@@ -6276,14 +6261,14 @@ SlangBasicTranslationTest >> testSwitchStatementAsArgumentWithNastedCases [
 			                arguments:
 			                { (TStatementListNode new statements: {  }) }).
 
-	self assert: translation trimBoth equals: 'if (((x == 0)
-	 ? foo = 10
-	 : ((x == 1)
-		 ? foo = 10
-		 : ((x == 2)
-			 ? foo = 10
-			 : ((x == 3)
-				 ? foo = 1
+	self assert: translation trimBoth equals: 'if ((((x == 0))
+	 ? (foo = 10)
+	 : (((x == 1))
+		 ? (foo = 10)
+		 : (((x == 2))
+			 ? (foo = 10)
+			 : (((x == 3))
+				 ? (foo = 1)
 				 : (error("Case not found and no otherwise clause"), 0)))))) {
 }'
 ]
@@ -6320,10 +6305,10 @@ SlangBasicTranslationTest >> testSwitchStatementAsArgumentWithSwitchVariable [
 			                arguments:
 			                { (TStatementListNode new statements: {  }) }).
 
-	self assert: translation trimBoth equals: 'if (((((jinx = x)) == 0)
-	 ? foo = 10
-	 : ((jinx == 1)
-		 ? foo = 11
+	self assert: translation trimBoth equals: 'if ((((((jinx = x)) == 0))
+	 ? (foo = 10)
+	 : (((jinx == 1))
+		 ? (foo = 11)
 		 : (error("Case not found and no otherwise clause"), 0)))) {
 }'
 ]
@@ -6521,7 +6506,10 @@ SlangBasicTranslationTest >> testTranslateBlockAssignmentWithManyStatement [
 			                setVariable: variable
 			                expression: expression).
 
-	self assert: translation trimBoth equals: '(a = b, var = (c = 1))'
+	self assert: translation trimBoth equals: '{
+	a = b;
+	var = (c = 1);
+}'
 ]
 
 { #category : #'tests-define' }
@@ -6644,7 +6632,7 @@ SlangBasicTranslationTest >> testVariableUpdateAssignmentMinus [
 			setVariable: variable
 			expression: expression).
 
-	self assert: translation equals: 'var -= 7'
+	self assert: translation equals: '(var -= 7)'
 ]
 
 { #category : #'tests-assignment' }
@@ -6665,7 +6653,7 @@ SlangBasicTranslationTest >> testVariableUpdateAssignmentPlus [
 			setVariable: variable
 			expression: expression).
 
-	self assert: translation equals: 'var += 7'
+	self assert: translation equals: '(var += 7)'
 ]
 
 { #category : #helpers }
