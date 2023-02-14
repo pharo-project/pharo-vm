@@ -4034,7 +4034,8 @@ SpurMemoryManager >> containsOnlyValidBecomeObjects: array1 and: array2 twoWay: 
 		Shouldn't become immutable objects => PrimErrNoModification.
 		Can't copy hash into immediates => PrimErrInappropriate.
 		Two-way become may require memory to create copies => PrimErrNoMemory.
-	 As a side-effect unforward any forwarders in the two arrays if answering 0."
+
+	 Arrays are not modified (and no forwarders unforward)."
 	<inline: true>
 	| fieldOffset effectsFlags oop1 oop2 size |
 	fieldOffset := self lastPointerOf: array1.
@@ -4043,14 +4044,14 @@ SpurMemoryManager >> containsOnlyValidBecomeObjects: array1 and: array2 twoWay: 
 	[fieldOffset >= self baseHeaderSize] whileTrue:
 		[oop1 := self longAt: array1 + fieldOffset.
 		 (self isOopForwarded: oop1) ifTrue:
-			[oop1 := self followForwarded: oop1.
-			 self longAt: array1 + fieldOffset put: oop1].
+			[oop1 := self followForwarded: oop1
+			"Do not update the array here, or chose to handle the rememberset correctly."].
 		 self ifOopInvalidForBecome: oop1 errorCodeInto: [:errCode| ^errCode].
 		 effectsFlags := effectsFlags bitOr: (self becomeEffectFlagsFor: oop1).
 		 oop2 := self longAt: array2 + fieldOffset.
 		 (self isOopForwarded: oop2) ifTrue:
-			[oop2 := self followForwarded: oop2.
-			 self longAt: array2 + fieldOffset put: oop2].
+			[oop2 := self followForwarded: oop2
+			"Do not update the array here, or chose to handle the rememberset correctly."].
 		 isTwoWay
 			ifTrue:
 				[self ifOopInvalidForBecome: oop2 errorCodeInto: [:errCode| ^errCode].
@@ -4812,7 +4813,8 @@ SpurMemoryManager >> fillObj: objOop numSlots: numSlots with: fillValue [
 
 { #category : #'free space' }
 SpurMemoryManager >> findLargestFreeChunk [
-	"Answer, but do not remove, the largest free chunk in the free lists."
+	"Answer, but do not remove, the largest free chunk in the free tree.
+	For some reasons, free lists are not considered (why?)"
 	| treeNode childNode |
 	treeNode := freeLists at: 0.
 	treeNode = 0 ifTrue:
@@ -5674,7 +5676,8 @@ SpurMemoryManager >> freeTreeOverlapCheck [
 SpurMemoryManager >> freeUnscannedEphemerons [
 	"Free all the memory allocated to keep the unscanned ephemerons"
 	
-	self free: unscannedEphemerons start
+	self free: unscannedEphemerons start.
+	unscannedEphemerons start: nil
 ]
 
 { #category : #'gc - global' }
@@ -6559,11 +6562,10 @@ SpurMemoryManager >> innerBecomeObjectsIn: array1 and: array2 copyHash: copyHash
 	"Inner loop of two-way become."
 	0 to: (self numSlotsOf: array1) - 1 do:
 		[:i| | obj1 obj2 |
-		"At first blush it would appear unnecessary to use followField: here since
-		 the validation in become:with:twoWay:copyHash: follows forwarders.  But
-		 there's nothing to ensure all elements of each array are unique and don't
-		 appear in the other array.  So the enumeration could encounter an object
-		 already becommed earlier in the same enumeration."
+		"Allways use followField: here since there's nothing to ensure all elements
+		 of each array are unique and don't appear in the other array.
+		 So the enumeration could encounter an object already becommed earlier
+		 in the same enumeration."
 		obj1 := self followField: i ofObject: array1.
 		obj2 := self followField: i ofObject: array2.
 		obj1 ~= obj2 ifTrue:
@@ -6577,11 +6579,10 @@ SpurMemoryManager >> innerBecomeObjectsIn: array1 to: array2 copyHash: copyHashF
 	"Inner loop of one-way become."
 	0 to: (self numSlotsOf: array1) - 1 do:
 		[:i| | obj1 obj2 |
-		"At first blush it would appear unnecessary to use followField: here since
-		 the validation in become:with:twoWay:copyHash: follows forwarders.  But
-		 there's nothing to ensure all elements of each array is unique and doesn't
-		 appear in the other array.  So the enumeration could encounter an object
-		 already becommed earlier in the same enumeration."
+		"Allways use followField: here since there's nothing to ensure all elements
+		 of each array are unique and don't appear in the other array.
+		 So the enumeration could encounter an object already becommed earlier
+		 in the same enumeration."
 		obj1 := self followField: i ofObject: array1.
 		obj2 := self followField: i ofObject: array2.
 		obj1 ~= obj2 ifTrue:
@@ -8125,6 +8126,7 @@ SpurMemoryManager >> markAndShouldScan: objOop [
 	 Already marked objects have already been processed.
 	 Pure bits objects don't need scanning, although their class does.
 	 Weak objects should be pushed on the weakling stack.
+	TODO: something about ephemerons.
 	 Anything else need scanning."
 	| format |
 	<inline: true>
@@ -8293,10 +8295,16 @@ SpurMemoryManager >> markAndTraceWeaklingsFrom: startIndex [
 SpurMemoryManager >> markInactiveEphemerons [
 
 	"Go through the unscanned ephemerons, marking the inactive ones, and
-	 removing them from the unscanned ephemerons. Answer if any inactive
-	 ones were found. We cannot fire the ephemerons until all are found to
+	 removing them from the unscanned ephemerons.
+	 Answer true if any inactive ones were found.
+	 Answer false if all unscanned ephemerons are active one (that could be fired).
+	
+	 We cannot fire the ephemerons until all are found to
 	 be active since scan-marking an inactive ephemeron later in the set may
-	 render a previously-observed active ephemeron as inactive."
+	 render a previously-observed ephemeron (that remains in unscannedEphemerons) as inactive.
+	
+	 Note: the current vocabulary *active* and *inactive* is insane, and badly defined because it mixes *possibly* and *certainly*.
+	"
 
 	| foundInactive ptr |
 	foundInactive := false.
@@ -8400,7 +8408,6 @@ SpurMemoryManager >> markObjects: objectsShouldBeUnmarkedAndUnmarkedClassesShoul
 	"Mark all accessible objects.  objectsShouldBeUnmarkedAndUnmarkedClassesShouldBeExpunged
 	 is true if all objects are unmarked and/or if unmarked classes shoud be removed from the class table."
 	"If the incremental collector is running mark bits may be set; stop it and clear them if necessary."
-	self cCode: '' inSmalltalk: [coInterpreter transcript nextPutAll: 'marking...'; flush].
 	self runLeakCheckerFor: GCModeFull.
 
 	self shutDownIncrementalGC: objectsShouldBeUnmarkedAndUnmarkedClassesShouldBeExpunged.
@@ -8444,25 +8451,43 @@ SpurMemoryManager >> markWeaklingsAndMarkAndFireEphemerons [
 	 Weaklings have accumulated on the weaklingStack, but more may be
 	 uncovered during ephemeron processing.  So trace the strong slots
 	 of the weaklings, and as ephemerons are processed ensure any newly
-	 reached weaklings are also traced."
+	 reached weaklings are also traced.
+
+	 Moreover, marking ephemerons from unscannedEphemerons (because we fire
+	 them, or because we realize that they are inactive (ie have a marked key))
+	 leads to the discover (and markind) of new objects that are possibly
+	 weak objects, ephemerons or keys of unscanned ephemerons, forcing us to
+	 continue the work (thus the `repeat` block)"
 	| numTracedWeaklings |
 	<inline: false>
 	numTracedWeaklings := 0.
-	[coInterpreter markAndTraceUntracedReachableStackPages.
+	[
+	 "FIXME: Why the two following methods are *inside* the loop?"
+	 coInterpreter markAndTraceUntracedReachableStackPages.
 	 coInterpreter markAndTraceMachineCodeOfMarkedMethods.
+
 	 "Make sure all reached weaklings have their strong slots traced before firing ephemerons..."
 	 [numTracedWeaklings := self markAndTraceWeaklingsFrom: numTracedWeaklings.
 	  (self sizeOfObjStack: weaklingStack) > numTracedWeaklings] whileTrue.
+
 	 self noUnscannedEphemerons ifTrue:
+	   "There is no unscanned ephemerons, every live object is now marked"
 		[coInterpreter
 			markAndTraceUntracedReachableStackPages;
 	 		markAndTraceMachineCodeOfMarkedMethods;
 			freeUntracedStackPages;
 			freeUnmarkedMachineCode.
 		 ^self].
+
+	 "There is unscanned ephemerons, but their key could have been marked later, so process the list.
+	  ifFalse: all unscanned ephemerons of the list are active (still have a unmarked key), so fire them!
+	  ifTrue: some ephemerons are in fact inactive, and where just scanned. So do another turn."
+	
 	 self markInactiveEphemerons ifFalse:
-		[self fireAllUnscannedEphemerons].
-	 self markAllUnscannedEphemerons]
+		[ self fireAllUnscannedEphemerons.
+		  self markAllUnscannedEphemerons
+		  "Scanning fired ephemerons may discover new object, so do another turn." ].
+	 ]
 		repeat
 ]
 
@@ -8929,22 +8954,23 @@ SpurMemoryManager >> nilObject: anOop [
 
 { #category : #'weakness and ephemerality' }
 SpurMemoryManager >> nilUnmarkedWeaklingSlots [
+
 	"Nil the unmarked slots in the weaklings on the
 	 weakling stack, finalizing those that lost references.
 	 Finally, empty the weaklingStack."
-	<inline: #never> "for profiling"
-	self cCode: '' inSmalltalk: [coInterpreter transcript nextPutAll: 'nilling...'; flush].
-	self eassert: [self allOldMarkedWeakObjectsOnWeaklingStack].
-	weaklingStack = nilObj ifTrue:
-		[^self].
-	self objStack: weaklingStack from: 0 do:
-		[:weakling| | anyUnmarked |
+
+	"for profiling"
+
+	<inline: #never>
+	self eassert: [ self allOldMarkedWeakObjectsOnWeaklingStack ].
+	weaklingStack = nilObj ifTrue: [ ^ self ].
+	self objStack: weaklingStack from: 0 do: [ :weakling | | anyUnmarked |
 		anyUnmarked := self nilUnmarkedWeaklingSlotsIn: weakling.
 		anyUnmarked ifTrue:
 			["fireFinalization: could grow the mournQueue and if so,
 			  additional pages must be marked to avoid being GC'ed."
 			 self assert: marking.
-			 coInterpreter fireFinalization: weakling]].
+			 coInterpreter signalFinalization: weakling]].
 	self emptyObjStack: weaklingStack
 ]
 
@@ -9668,7 +9694,12 @@ SpurMemoryManager >> popObjStack: objStack [
 						[MarkStackRecord addLast: {#EMPTY. nil}]]].
 		^nil].
 	topx := topx - 1.
+	
+	"Get the top and mark it as BADFOOD to indicate it's not available.
+	Mark it for debugging purposes. No accesses to BADFOOD are expected."
 	top := self fetchPointer: topx + ObjStackFixedSlots ofObject: objStack.
+	self storePointer: topx + ObjStackFixedSlots ofObject: objStack withValue: 16rBADF00D.
+	
 	self cCode: [] "for debugging markAndTrace: set (MarkStackRecord := OrderedCollection new)"
 		inSmalltalk:
 			[(self fetchPointer: ObjStackMyx ofObject: objStack) = MarkStackRootIndex ifTrue:
@@ -11366,14 +11397,15 @@ SpurMemoryManager >> sizeOfFree: objOop [
 
 { #category : #'free space' }
 SpurMemoryManager >> sizeOfLargestFreeChunk [
-	"Answer the size of largest free chunk in oldSpace."
+	"Answer the size of largest free chunk in oldSpace. Looking in freetree and freelists"
 	| freeChunk |
 	freeChunk := self findLargestFreeChunk.
 	freeChunk ifNil:
 		[63 to: 1 by: -1 do:
 			[:i|
-			(freeLists at: i) ifNotNil:
-				[:chunk| ^self bytesInObject: chunk]].
+			freeChunk := freeLists at: i.
+			freeChunk ~= 0 ifTrue:
+				[^self bytesInObject: freeChunk]].
 		 ^0].
 	^self bytesInObject: freeChunk
 ]
