@@ -916,6 +916,33 @@ TMethod >> ensureConditionalAssignmentsAreTransformedIn: aCodeGen [
 		
 ]
 
+{ #category : #inlining }
+TMethod >> ensureConditionalReturnsAreTransformedIn: aCodeGen [
+	"Make passes transforming
+		return expr ifTrue: [a] ifFalse: [b]
+	 into
+		expr ifTrue: [return a] ifFalse: [return b]
+	 until no such instances exist in the tree.  This is needed for correct inlining
+	 given the limitations of inlineCodeOrNilForStatement:returningNodes:in:"
+	| transformedReturns |
+	[transformedReturns := Dictionary new.
+	 parseTree
+		nodesDo:
+			[:node|
+			(self transformConditionalReturn: node in: aCodeGen) ifNotNil:
+				[:replacement|
+				 transformedReturns at: node put: replacement]]
+		unless: "Don't inline the arguments to asserts to keep the asserts readable"
+			[:node|
+			node isSend
+			and: [node selector == #cCode:inSmalltalk:
+				or: [aCodeGen isAssertSelector: node selector]]].
+	 transformedReturns notEmpty
+	 and: [self replaceNodesIn: transformedReturns.
+		  true]] whileTrue
+		
+]
+
 { #category : #transformations }
 TMethod >> ensureToByDoLoopLimitIsSafeAndEfficient: node in: aCodeGen [
 
@@ -2999,6 +3026,33 @@ TMethod >> transformConditionalAssignment: node in: aCodeGen [
 ]
 
 { #category : #inlining }
+TMethod >> transformConditionalReturn: node in: aCodeGen [
+
+	"If possible answer the transformation of code of the form
+		return e1
+				ifTrue: [e2 ifTrue: [self m1] ifFalse: [self m2]]
+				ifFalse: [self m3]
+	 into
+		e1
+			ifTrue: [e2 ifTrue: [return self m1] ifFalse: [return self m2]]
+			ifFalse: [return self m3]
+	 to allow inlining of m1, m2, et al.  Otherwise answer nil."
+
+	| expr |
+	^ (node isReturn and: [ 
+		   (expr := node expression) isSend and: [ 
+			   (#( #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: expr selector) 
+				   and: [ 
+				   expr arguments allSatisfy: [ :arg | arg isStatementList ] ] ] ]) 
+		  ifTrue: [ 
+			  expr copy
+				  arguments:
+					  (expr arguments collect: [ :stmtList | 
+							   stmtList copy asReturnNode ]);
+				  yourself ]
+]
+
+{ #category : #inlining }
 TMethod >> transformReturnSubExpression: node toAssignmentOf: exitVar andGoto: exitLabel unless: eliminateReturnSelfs into: aBinaryBlock [
 	| expr replacement |
 	expr := node isReturn ifTrue: [node expression] ifFalse: [node].
@@ -3173,6 +3227,7 @@ TMethod >> tryToInlineMethodsIn: aCodeGen [
 			[^false].
 		 ^complete := true].
 	self ensureConditionalAssignmentsAreTransformedIn: aCodeGen.
+	self ensureConditionalReturnsAreTransformedIn: aCodeGen.
 	didSomething := self tryToInlineMethodStatementsIn: aCodeGen statementListsInto: [:stmtLists| statementLists := stmtLists].
 	didSomething := (self tryToInlineMethodExpressionsIn: aCodeGen) or: [didSomething].
 
