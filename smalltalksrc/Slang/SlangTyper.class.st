@@ -322,6 +322,7 @@ SlangTyper >> stopOnErrors [
 
 { #category : #accessing }
 SlangTyper >> stopOnErrors: anObject [
+
 	stopOnErrors := anObject
 ]
 

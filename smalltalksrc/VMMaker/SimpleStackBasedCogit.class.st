@@ -26,7 +26,9 @@ Class {
 { #category : #translation }
 SimpleStackBasedCogit class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
-	^super ancilliaryClasses, (self objectRepresentationClass withAllSuperclasses copyUpThrough: CogObjectRepresentation) reverse
+
+	^ super ancilliaryClasses
+	  , self objectRepresentationAncilliaryClasses
 ]
 
 { #category : #documentation }
@@ -185,6 +187,13 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 		(3 253 253 genStoreAndPopRemoteTempLongBytecode)
 
 		(3 254 255	unknownBytecode))
+]
+
+{ #category : #translation }
+SimpleStackBasedCogit class >> objectRepresentationAncilliaryClasses [
+
+	^ (self objectRepresentationClass withAllSuperclasses copyUpThrough:
+		   CogObjectRepresentation) reverse
 ]
 
 { #category : #'class initialization' }
