@@ -3039,17 +3039,26 @@ TMethod >> transformConditionalReturn: node in: aCodeGen [
 	 to allow inlining of m1, m2, et al.  Otherwise answer nil."
 
 	| expr |
-	^ (node isReturn and: [ 
-		   (expr := node expression) isSend and: [ 
-			   (#( #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: expr selector) 
-				   and: [ 
-				   expr arguments allSatisfy: [ :arg | arg isStatementList ] ] ] ]) 
-		  ifTrue: [ 
-			  expr copy
-				  arguments:
-					  (expr arguments collect: [ :stmtList | 
-							   stmtList copy asReturnNode ]);
-				  yourself ]
+	(node isReturn and: [ 
+		 (expr := node expression) isSend and: [ 
+			 (#( #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: expr selector) 
+				 and: [ expr arguments allSatisfy: [ :arg | arg isStatementList ] ] ] ]) 
+		ifTrue: [ 
+			expr copy
+				arguments:
+					(expr arguments collect: [ :stmtList | 
+							 stmtList copy asReturnNode ]);
+				yourself ].
+	(node isReturn and: [ (expr := node expression) isSwitch ]) ifTrue: [ 
+		expr copy
+			cases: (expr cases collect: [ :array | 
+						 { 
+							 array first.
+							 array second asReturnNode } ]);
+			otherwiseOrNil:
+				(expr otherwiseOrNil ifNotNil: [ expr otherwiseOrNil asReturnNode ]);
+			yourself ].
+	^ nil
 ]
 
 { #category : #inlining }
