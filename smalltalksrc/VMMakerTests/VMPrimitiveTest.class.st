@@ -125,6 +125,20 @@ VMPrimitiveTest >> tearDown [
 	super tearDown
 ]
 
+{ #category : #running }
+VMPrimitiveTest >> testMulSmallIntegersWithOverflow [
+
+
+	| a b ifOverflowValue result |
+	a := memory integerObjectOf: memory minSmallInteger.
+	b := memory integerObjectOf: 2.
+	ifOverflowValue := memory integerObjectOf: 99.
+	
+	result := interpreter multiplySmallInteger: a withSmallInteger: b ifOverflow: [ ifOverflowValue ].
+	
+	self assert: result equals: ifOverflowValue
+]
+
 { #category : #'tests - primitiveAdd' }
 VMPrimitiveTest >> testPrimitiveAddFailsWithTypeErrorOnFirstOperand [
 
@@ -228,20 +242,6 @@ VMPrimitiveTest >> testPrimitiveAddWithOverflowPreservesStack [
 	self assert: (interpreter stackValue: 1) equals: maxSmallInt.
 	
 	
-]
-
-{ #category : #running }
-VMPrimitiveTest >> testMulSmallIntegersWithOverflow [
-
-
-	| a b ifOverflowValue result |
-	a := memory integerObjectOf: memory minSmallInteger.
-	b := memory integerObjectOf: 2.
-	ifOverflowValue := memory integerObjectOf: 99.
-	
-	result := interpreter multiplySmallInteger: a withSmallInteger: b ifOverflow: [ ifOverflowValue ].
-	
-	self assert: result equals: ifOverflowValue
 ]
 
 { #category : #'tests - become' }
@@ -4912,20 +4912,6 @@ VMPrimitiveTest >> testPrimitiveStringAtShouldNotModifyStringIfFailedWhenNonChar
 	self assert: string contentEquals: (self newString: 'po')
 ]
 
-{ #category : #running }
-VMPrimitiveTest >> testSubSmallIntegersWithOverflow [
-
-
-	| a b ifOverflowValue result |
-	a := memory integerObjectOf: memory minSmallInteger.
-	b := memory integerObjectOf: 1.
-	ifOverflowValue := memory integerObjectOf: 99.
-	
-	result := interpreter subSmallInteger: a withSmallInteger: b ifOverflow: [ ifOverflowValue ].
-	
-	self assert: result equals: ifOverflowValue
-]
-
 { #category : #'tests - primitiveSubtract' }
 VMPrimitiveTest >> testPrimitiveSubtracFailsWithTypeErrorOnFirstOperand [
 	
@@ -5026,4 +5012,18 @@ VMPrimitiveTest >> testPrimitiveSubtractWithOverflowPreservesStack [
 	self assert: (interpreter stackValue: 1) equals: minSmallInt.
 	
 	
+]
+
+{ #category : #running }
+VMPrimitiveTest >> testSubSmallIntegersWithOverflow [
+
+
+	| a b ifOverflowValue result |
+	a := memory integerObjectOf: memory minSmallInteger.
+	b := memory integerObjectOf: 1.
+	ifOverflowValue := memory integerObjectOf: 99.
+	
+	result := interpreter subSmallInteger: a withSmallInteger: b ifOverflow: [ ifOverflowValue ].
+	
+	self assert: result equals: ifOverflowValue
 ]

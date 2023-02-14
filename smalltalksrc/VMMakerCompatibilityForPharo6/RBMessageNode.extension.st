@@ -2,7 +2,9 @@ Extension { #name : #RBMessageNode }
 
 { #category : #'*VMMakerCompatibilityForPharo6-C translation' }
 RBMessageNode >> asTranslatorNodeIn: aTMethod [
+
 	"Answer a TParseNode subclass equivalent of me"
+
 	"selector is sometimes a Symbol, sometimes a SelectorNode!
 	 On top of this, numArgs is needed due to the (truly grody) use of
 	 arguments as a place to store the extra expressions needed to generate
@@ -10,13 +12,14 @@ RBMessageNode >> asTranslatorNodeIn: aTMethod [
 
 	 Expand super nodes in place. Elide sends of halt so that halts can be
 	 sprinkled through the simulator but will be eliminated from the generated C."
+
 	| usedSelector rcvrOrNil args |
 	usedSelector := selector value.
-	rcvrOrNil := receiver ifNotNil: [receiver asTranslatorNodeIn: aTMethod].
-	(rcvrOrNil notNil
-	and: [rcvrOrNil isVariable
-	and: [rcvrOrNil name = 'super']]) ifTrue: [
-		^aTMethod superExpansionNodeFor: usedSelector args: arguments].
+	rcvrOrNil := receiver ifNotNil: [ 
+		             receiver asTranslatorNodeIn: aTMethod ].
+	(rcvrOrNil notNil and: [ 
+		 rcvrOrNil isVariable and: [ rcvrOrNil name = 'super' ] ]) ifTrue: [ 
+		^ aTMethod superExpansionNodeFor: usedSelector args: arguments ].
 	usedSelector == #halt ifTrue: [ ^ rcvrOrNil ].
 	(usedSelector == #cCode:inSmalltalk: or: [ usedSelector == #cCode: ]) 
 		ifTrue: [ 
@@ -31,7 +34,6 @@ RBMessageNode >> asTranslatorNodeIn: aTMethod [
 					 arguments first value isEmpty ] ]) ifTrue: [ 
 				^ arguments first asTranslatorNodeIn: aTMethod ] ]. "extracting here rather than in translation allows inlining in the block."
 	args := arguments collect: [ :arg | arg asTranslatorNodeIn: aTMethod ].
-
 	usedSelector == #to:do: ifTrue: [ 
 		| block |
 		usedSelector := #to:by:do:.
@@ -128,19 +130,27 @@ RBMessageNode >> asTranslatorNodeIn: aTMethod [
 			             arguments: { (TVariableNode new setName: 'nil') } ].
 
 	(usedSelector == #ifTrue:ifFalse: and: [ 
-		 arguments first statements isEmpty ]) ifTrue: [ 
+		 | block |
+		 block := arguments first.
+		 block isBlock and: [ block statements isEmpty ] ]) ifTrue: [ 
 		usedSelector := #ifFalse:.
 		args := { args last } ].
 	(usedSelector == #ifTrue:ifFalse: and: [ 
-		 arguments last statements isEmpty ]) ifTrue: [ 
+		 | block |
+		 block := arguments last.
+		 block isBlock and: [ block statements isEmpty ] ]) ifTrue: [ 
 		usedSelector := #ifTrue:.
 		args := { args first } ].
 	(usedSelector == #ifFalse:ifTrue: and: [ 
-		 arguments first statements isEmpty ]) ifTrue: [ 
+		 | block |
+		 block := arguments first.
+		 block isBlock and: [ block statements isEmpty ] ]) ifTrue: [ 
 		usedSelector := #ifTrue:.
 		args := { args last } ].
 	(usedSelector == #ifFalse:ifTrue: and: [ 
-		 arguments last statements isEmpty ]) ifTrue: [ 
+		 | block |
+		 block := arguments last.
+		 block isBlock and: [ block statements isEmpty ] ]) ifTrue: [ 
 		usedSelector := #ifTrue:.
 		args := { args first } ].
 

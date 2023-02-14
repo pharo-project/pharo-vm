@@ -1804,29 +1804,6 @@ TMethod >> isComplete [
 ]
 
 { #category : #inlining }
-TMethod >> isConditionalToBeTransformedForAssignment: aSend in: aCodeGen [
-
-	"Answer if a send is of the form
-		e1
-			ifTrue: [e2 ifTrue: [self m1] ifFalse: [self m2]]
-			ifFalse: [self m3]
-	 such that at least one of the sends mN may be inlined.."
-
-	^ (#( #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: aSend selector) 
-		  and: [ 
-			  aSend arguments anySatisfy: [ :arg | 
-				  | stmt |
-				  self assert: arg isStatementList.
-				  arg statements size > 1 or: [ 
-					  (stmt := arg statements first) isSwitch or: [ 
-						  stmt isSend and: [ 
-							  (aCodeGen mayInline: stmt selector) or: [ 
-								  self
-									  isConditionalToBeTransformedForAssignment: stmt
-									  in: aCodeGen ] ] ] ] ] ]
-]
-
-{ #category : #inlining }
 TMethod >> isFunctionalIn: aCodeGen [
 	"Answer if the receiver is a functional method. That is, if it
 	 consists of a single return statement of an expression that
@@ -3013,15 +2990,12 @@ TMethod >> transformConditionalAssignment: node in: aCodeGen [
 	| expr |
 	^ (node isAssignment and: [ 
 		   (expr := node expression) isSend and: [ 
-			   (#( #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: expr selector) 
-				   and: [ 
-				   self
-					   isConditionalToBeTransformedForAssignment: expr
-					   in: aCodeGen ] ] ]) ifTrue: [ 
-		  expr copy
-			  arguments: (expr arguments collect: [ :stmtList | 
-						   stmtList copy assignLastExpressionTo: node variable ]);
-			  yourself ]
+			   #( #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: expr selector ] ]) 
+		  ifTrue: [ 
+			  expr copy
+				  arguments: (expr arguments collect: [ :stmtList | 
+							   stmtList copy assignLastExpressionTo: node variable ]);
+				  yourself ]
 ]
 
 { #category : #inlining }
@@ -3159,7 +3133,9 @@ TMethod >> tryToInlineMethodStatementsIn: aCodeGen statementListsInto: aBlock [
 	parseTree nodesDo: [ :node | 
 		node isReturn ifTrue: [ 
 			returningNodes add: node expression.
-			node expression isConditionalSend ifTrue: [ 
+			(node expression isConditionalSend and: [ 
+				 node expression arguments allSatisfy: [ :arg | 
+					 arg isStatementList ] ]) ifTrue: [ 
 				returningNodes addAll:
 					(node expression arguments collect: [ :stmtList | 
 						 stmtList statements last ]) ] ] ].
@@ -3196,7 +3172,6 @@ TMethod >> tryToInlineMethodsIn: aCodeGen [
 		[complete ifTrue:
 			[^false].
 		 ^complete := true].
-
 	self ensureConditionalAssignmentsAreTransformedIn: aCodeGen.
 	didSomething := self tryToInlineMethodStatementsIn: aCodeGen statementListsInto: [:stmtLists| statementLists := stmtLists].
 	didSomething := (self tryToInlineMethodExpressionsIn: aCodeGen) or: [didSomething].

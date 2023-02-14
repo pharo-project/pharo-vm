@@ -345,9 +345,30 @@ VMMASTTranslationTest >> testIfNotNilIfNilInversesBlocks [
 VMMASTTranslationTest >> testInlineMethodWithAssignNonLocalReturn [
 
 	| translation codeGenerator inlinedMethod |
+	translation := self class
+	               >> #methodAssignWithNonLocalReturnAndInlinedBlock 
+		               asTranslationMethodOfClass: TMethod.
+	inlinedMethod := self class >> #falseBlock: 
+		                 asTranslationMethodOfClass: TMethod.
 
-	translation := self class >> #methodAssignWithNonLocalReturnAndInlinedBlock asTranslationMethodOfClass: TMethod.
-	inlinedMethod := self class >> #falseBlock: asTranslationMethodOfClass: TMethod.
+	">>methodAssignWithNonLocalReturnAndInlinedBlock
+	| a |
+	a := self falseBlock: [ ^ 2 ]
+	
+	>>falseBlock: aBlock
+	<inline: true>
+	^ self something
+		  ifTrue: [ 3 ]
+		  ifFalse: aBlock
+	
+	=>
+	
+	methodAssignWithNonLocalReturnAndInlinedBlock
+	| a |
+	^ self something
+		  ifTrue: [ a := 3 ]
+		  ifFalse: [ ^ a := 2 ]
+	"
 
 	codeGenerator := CCodeGeneratorGlobalStructure new.
 	codeGenerator vmMaker: VMMaker new.
@@ -361,11 +382,17 @@ VMMASTTranslationTest >> testInlineMethodWithAssignNonLocalReturn [
 		assert: translation parseTree statements second selector
 		equals: #ifTrue:ifFalse:.
 	self
-		assert: translation statements second arguments first statements first
-		equals: (TAssignmentNode variable: (TVariableNode named: 'a') expression: (TConstantNode value: 3)).
+		assert:
+		translation statements second arguments first statements first
+		isSameAs: (TAssignmentNode
+				 variable: (TVariableNode named: 'a')
+				 expression: (TConstantNode value: 3)).
 	self
-		assert: translation statements second arguments second statements first
-		equals: (TReturnNode expression: (TConstantNode value: 2))
+		assert:
+		translation statements second arguments second statements first
+		isSameAs: (TReturnNode expression: (TAssignmentNode
+					  variable: (TVariableNode named: 'a')
+					  expression: (TConstantNode value: 2)))
 ]
 
 { #category : #'tests - inlining' }
@@ -423,10 +450,10 @@ VMMASTTranslationTest >> testInlineMethodWithReturnNonLocalReturn [
 		equals: #ifTrue:ifFalse:.
 	self
 		assert: translation statements second arguments first statements first
-		equals: (TReturnNode expression: (TConstantNode value: 3)).
+		isSameAs: (TReturnNode expression: (TConstantNode value: 3)).
 	self
 		assert: translation statements second arguments second statements first
-		equals: (TReturnNode expression: (TConstantNode value: 2))
+		isSameAs: (TReturnNode expression: (TConstantNode value: 2))
 ]
 
 { #category : #tests }
