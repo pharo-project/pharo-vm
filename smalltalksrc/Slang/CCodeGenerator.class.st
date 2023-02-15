@@ -3025,7 +3025,7 @@ CCodeGenerator >> includeAPIFrom: aCCodeGenerator [
 CCodeGenerator >> inferTypes [
 	
 	(SlangTyper on: self)
-		stopOnErrors: stopOnErrors;
+		stopOnErrors: self stopOnErrors;
 		inferTypes
 ]
 
