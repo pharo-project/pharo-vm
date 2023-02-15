@@ -10,6 +10,7 @@ Class {
 { #category : #generated }
 TReturnNode class >> expression: anExpression [
 
+	self haltIf: [ anExpression isStatementList ].
 	^ self new
 		expression: anExpression;
 		yourself
@@ -92,8 +93,11 @@ TReturnNode >> asLastExpressionAssignmentTo: aTVariableNode [
 ]
 
 { #category : #transformations }
-TReturnNode >> asReturnNode [
-	^self
+TReturnNode >> asReturnNodeWithComment: aComment [
+
+	^ self copy
+		  comment: aComment;
+		  yourself
 ]
 
 { #category : #transformations }

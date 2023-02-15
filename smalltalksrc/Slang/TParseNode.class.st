@@ -88,9 +88,16 @@ TParseNode >> asLastExpressionAssignmentTo: aTVariableNode [
 
 { #category : #transformations }
 TParseNode >> asReturnNode [
-	^TReturnNode new 
-		setExpression: self;
-		yourself
+
+	^ self asReturnNodeWithComment: nil
+]
+
+{ #category : #transformations }
+TParseNode >> asReturnNodeWithComment: aComment [
+
+	^ (TReturnNode expression: self)
+		  comment: aComment;
+		  yourself
 ]
 
 { #category : #linearisation }

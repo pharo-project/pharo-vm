@@ -1263,34 +1263,33 @@ TMethod >> first [
 
 { #category : #'primitive compilation' }
 TMethod >> fixUpReturns: argCount postlog: postlog [
+
 	"Replace each return statement in this method with (a) the given postlog, (b) code to pop the receiver and the given number of arguments, and (c) code to push the integer result and return."
 
 	| newStmts |
-	parseTree nodesDo: [:node |
-		node isStatementList ifTrue: [
+	parseTree nodesDo: [ :node | 
+		node isStatementList ifTrue: [ 
 			newStmts := OrderedCollection new: 100.
-			node statements do: [:stmt |
+			node statements do: [ :stmt | 
 				stmt isReturn
-					ifTrue: [
-						(stmt expression isSend and:
-						 ['primitiveFail' = stmt expression selector])
-							ifTrue: [  "failure return"
+					ifTrue: [ 
+						(stmt expression isSend and: [ 
+							 'primitiveFail' = stmt expression selector ])
+							ifTrue: [ "failure return"
 								newStmts addLast: stmt expression.
-								newStmts addLast: (TReturnNode new
-									setExpression: (TVariableNode new setName: 'null'))]
-							ifFalse: [  "normal return"
+								newStmts addLast:
+									(TReturnNode expression: (TVariableNode new setName: 'null')) ]
+							ifFalse: [ "normal return"
 								newStmts addAll: postlog.
 								newStmts addAll: (self popArgsExpr: argCount + 1).
 								newStmts addLast: (TSendNode new
-									setSelector: #pushInteger:
-									receiver: (TVariableNode new setName: self vmNameString)
-									arguments: (Array with: stmt expression)).
-								newStmts addLast: (TReturnNode new
-									setExpression: (TVariableNode new setName: 'null'))]]
-					ifFalse: [
-						newStmts addLast: stmt]].
-			node setStatements: newStmts asArray]].
-
+										 setSelector: #pushInteger:
+										 receiver: (TVariableNode new setName: self vmNameString)
+										 arguments: (Array with: stmt expression)).
+								newStmts addLast:
+									(TReturnNode expression: (TVariableNode new setName: 'null')) ] ]
+					ifFalse: [ newStmts addLast: stmt ] ].
+			node setStatements: newStmts asArray ] ]
 ]
 
 { #category : #utilities }
@@ -1713,7 +1712,7 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 						put: inlineStmts last copyWithoutReturn ] ]
 			ifFalse: [ 
 				inlineStmts add:
-					(TReturnNode new setExpression:
+					(TReturnNode expression:
 						 (TVariableNode new setName: 'nil')) ] ].
 	exitLabel ifNotNil: [ 
 		inlineStmts add: (TLabeledCommentNode new
@@ -3105,28 +3104,27 @@ TMethod >> transformReturnSubExpression: node toAssignmentOf: exitVar andGoto: e
 
 { #category : #'type inference' }
 TMethod >> transformReturns [
+
 	"Once the return type has been found or inferred, returns may bneed to be modified.
 	 If the return type is #void, any occurrences of ^expr must be replaced with expr. ^self.
 	 If the type is #sqInt any any occurrences of ^self are replaced with ^0."
-	(returnType == #void or: [returnType == #sqInt]) ifFalse:
-		[^self].
-	parseTree nodesWithParentsDo:
-		[:node :parent|
-		node isReturn ifTrue:
-			[(node expression isVariable and: [node expression name = 'self'])
-				ifTrue:
-					[returnType = #sqInt ifTrue:
-						[node setExpression: (TConstantNode value: 0)]]
-				ifFalse:
-					[returnType = #void ifTrue:
-						[parent
+
+	(returnType == #void or: [ returnType == #sqInt ]) ifFalse: [ ^ self ].
+	parseTree nodesWithParentsDo: [ :node :parent | 
+		node isReturn ifTrue: [ 
+			(node expression isVariable and: [ node expression name = 'self' ])
+				ifTrue: [ 
+					returnType = #sqInt ifTrue: [ 
+						node setExpression: (TConstantNode value: 0) ] ]
+				ifFalse: [ 
+					returnType = #void ifTrue: [ 
+						parent
 							replaceChild: node
-							with: (TStatementListNode new
-									setArguments: #()
-									statements: {node expression.
-												  TReturnNode new 
-													setExpression: (TVariableNode new setName: 'self')
-													yourself})]]]]
+							with:
+								(TStatementListNode new setArguments: #(  ) statements: { 
+										 node expression.
+										 (TReturnNode expression:
+											  (TVariableNode new setName: 'self')) }) ] ] ] ]
 ]
 
 { #category : #transformations }

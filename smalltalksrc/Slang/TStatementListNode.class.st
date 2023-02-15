@@ -250,13 +250,13 @@ TStatementListNode >> asLastExpressionAssignmentTo: variableNode [
 ]
 
 { #category : #transformations }
-TStatementListNode >> asReturnNode [
-	self endsWithReturn ifTrue:
-		[^self].
-	^self class new
-		setArguments: arguments
-			statements: statements allButLast, {statements last asReturnNode};
-		yourself
+TStatementListNode >> asReturnNodeWithComment: aComment [
+
+	self endsWithReturn ifTrue: [ ^ self ].
+	^ self class new
+		  setArguments: arguments statements: statements allButLast
+			  , { (statements last asReturnNodeWithComment: aComment) };
+		  yourself
 ]
 
 { #category : #transformations }
