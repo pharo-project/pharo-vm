@@ -3041,7 +3041,7 @@ TMethod >> transformConditionalAssignment: node in: aCodeGen [
 		^ expr copy
 			  selector: (expr selector = #ifTrue:
 					   ifTrue: [ #ifTrue:ifFalse: ]
-					   ifFalse: [ #ifFalse:ifTrue: ])
+					   ifFalse: [ #ifFalse:ifTrue: ]);
 			  arguments: { 
 					  (expr arguments first copy assignLastExpressionTo:
 							   node variable).
