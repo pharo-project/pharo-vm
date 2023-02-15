@@ -3019,21 +3019,34 @@ TMethod >> transformConditionalAssignment: node in: aCodeGen [
 			 #( #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: expr selector ] ]) 
 		ifTrue: [ 
 			^ expr copy
-				arguments: (expr arguments collect: [ :stmtList | 
-							 stmtList copy assignLastExpressionTo: node variable ]);
-				yourself ].
+				  arguments: (expr arguments collect: [ :stmtList | 
+							   stmtList copy assignLastExpressionTo: node variable ]);
+				  yourself ].
 	(node isAssignment and: [ 
 		 (expr := node expression) isSend and: [ #ifNil: = expr selector ] ]) 
-		ifTrue: [ | newStatement |
+		ifTrue: [ 
+			| newStatement |
 			newStatement := TStatementListNode statements: { 
-				expr receiver assignLastExpressionTo: node variable.
-				expr copy
-					arguments: {
-						expr arguments first copy assignLastExpressionTo: node variable.
-					};
-					yourself
-			}.
+					                (expr receiver assignLastExpressionTo:
+						                 node variable).
+					                (expr copy
+						                 arguments:
+							                 { (expr arguments first copy 
+								                  assignLastExpressionTo: node variable) };
+						                 yourself) }.
 			^ newStatement ].
+	(node isAssignment and: [ 
+		 (expr := node expression) isSend and: [ 
+			 #( #ifFalse: #ifTrue: ) includes: expr selector ] ]) ifTrue: [ 
+		^ expr copy
+			  selector: (expr selector = #ifTrue:
+					   ifTrue: [ #ifTrue:ifFalse: ]
+					   ifFalse: [ #ifFalse:ifTrue: ])
+			  arguments: { 
+					  (expr arguments first copy assignLastExpressionTo:
+							   node variable).
+					  ((TConstantNode value: 0) assignLastExpressionTo: node variable) };
+			  yourself ].
 	^ nil
 ]
 
