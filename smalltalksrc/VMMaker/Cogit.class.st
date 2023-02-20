@@ -265,12 +265,9 @@ Class {
 		'statCompileFullBlockCount',
 		'statCompileFullBlockUsecs',
 		'statCompileMethodCount',
-		'statCompileMethodUsecs',
-		'ceSendMustBeBooleanTrampoline'
+		'statCompileMethodUsecs'
 	],
 	#classVars : [
-		'AltFirstSpecialSelector',
-		'AltNumSpecialSelectors',
 		'AnnotationConstantNames',
 		'AnnotationShift',
 		'AnnotationsWithBytecodePCs',
