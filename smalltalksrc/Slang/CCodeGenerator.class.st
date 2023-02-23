@@ -4755,6 +4755,7 @@ CCodeGenerator >> stepExpressionIsNegative: aNode [
 
 { #category : #accessing }
 CCodeGenerator >> stopOnErrors [
+	"Answer <true> if we should stop on errors during generation"
 
 	^ stopOnErrors
 		ifNil: [ stopOnErrors := true ]
