@@ -1644,7 +1644,7 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: index [
 			[36] ->	[^objectMemory integerObjectOf: (self microsecondsToMilliseconds: objectMemory statGCEndUsecs)].
 			[37] ->	[^objectMemory integerObjectOf: objectMemory statSpecialMarkCount].
 			[38] ->	[^objectMemory integerObjectOf: objectMemory statIGCDeltaUsecs + 500 // 1000].
-			[39] ->	[^objectMemory integerObjectOf: statPendingFinalizationSignals].
+			[39] ->	[^ConstZero]. "free"
 			[40] ->	[^objectMemory integerObjectOf: objectMemory wordSize].
 			[41] ->	[^objectMemory integerObjectOf: self imageFormatVersion].
 			[42] ->	[^objectMemory integerObjectOf: numStackPages].
@@ -1660,7 +1660,7 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: index [
 			[54] ->	[^objectMemory integerObjectOf: objectMemory freeSize].
 			[55] ->	[^objectMemory floatObjectOf: objectMemory getHeapGrowthToSizeGCRatio].
 			[56] ->	[^self positive64BitIntegerFor: statProcessSwitch].
-			[57] ->	[^self positive64BitIntegerFor: statIOProcessEvents].
+			[57] ->	[^ConstZero "free"].
 			[58] ->	[^self positive64BitIntegerFor: statForceInterruptCheck].
 			[59] ->	[^self positive64BitIntegerFor: statCheckForEvents].
 			[60] ->	[^self positive64BitIntegerFor: statStackOverflow].

@@ -38,22 +38,6 @@ VMPrimitiveTest >> fillNewSpace [
 			 classIndex: memory arrayClassIndexPun) isNotNil
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual' }
-VMPrimitiveTest >> installFloatClass [
-
-	| classFloat |
-	classFloat := self
-		              newClassInOldSpaceWithSlots: 0
-		              instSpec: memory firstLongFormat.
-	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
-	memory
-		storePointer: ClassFloatCompactIndex
-		ofObject: memory classTableFirstPage
-		withValue: classFloat
-
-	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
-]
-
 { #category : #'instance creation' }
 VMPrimitiveTest >> newArrayWith: aCollection [ 
 	| array |
@@ -1269,6 +1253,105 @@ VMPrimitiveTest >> testPrimitiveClassReturnsAClass [
 	self assert: interpreter stackTop equals: (memory fetchClassOf: (memory trueObject)). 
 	
 	
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitiveCompareWithHigherSymbol [
+
+	| asciiOrder aByteSymbol bByteSymbol |
+	aByteSymbol := #a forMemory: memory inMethod: nil.
+	bByteSymbol := #b forMemory: memory inMethod: nil.
+
+	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
+
+	interpreter push: bByteSymbol.
+	interpreter push: aByteSymbol.
+	interpreter push: asciiOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 1)
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitiveCompareWithIsNotCaseSensitive [
+
+	| nonCaseSensitiveOrder lowerByteSymbol upperByteSymbol |
+	lowerByteSymbol := #a forMemory: memory inMethod: nil.
+	upperByteSymbol := #A forMemory: memory inMethod: nil. 
+
+	nonCaseSensitiveOrder := self newByteArrayWithContent: String newCaseInsensitiveOrder.
+
+	interpreter push: lowerByteSymbol.
+	interpreter push: upperByteSymbol.
+	interpreter push: nonCaseSensitiveOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitiveCompareWithLimitCaseRegretion [
+
+	| nonCaseSensitiveOrder lowerByteSymbol upperByteSymbol |
+	lowerByteSymbol := #z forMemory: memory inMethod: nil.
+	upperByteSymbol := #Z forMemory: memory inMethod: nil. 
+
+	nonCaseSensitiveOrder := self newByteArrayWithContent: String newCaseInsensitiveOrder.
+
+	interpreter push: lowerByteSymbol.
+	interpreter push: upperByteSymbol.
+	interpreter push: nonCaseSensitiveOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitiveCompareWithLowerSymbol [
+
+	| asciiOrder aByteSymbol bByteSymbol |
+	aByteSymbol := #a forMemory: memory inMethod: nil.
+	bByteSymbol := #b forMemory: memory inMethod: nil.
+
+	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
+
+	interpreter push: aByteSymbol.
+	interpreter push: bByteSymbol.
+	interpreter push: asciiOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: -1)
+]
+
+{ #category : #'tests - primitivePin' }
+VMPrimitiveTest >> testPrimitiveCompareWithTheSameSymbol [
+
+	| byteSymbol asciiOrder |
+	byteSymbol := #a forMemory: memory inMethod: nil.
+	
+	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
+	
+	interpreter push: byteSymbol.
+	interpreter push: byteSymbol.
+	interpreter push: asciiOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
 ]
 
 { #category : #'tests - primitiveDiv' }
@@ -4991,6 +5074,9 @@ VMPrimitiveTest >> testPrimitiveVMParameterReturnsArrayOfOops [
 
 	| slots |
 	self createArrayClass.
+	self createLargeIntegerClasses.
+	self installFloatClass.
+	
 	interpreter setExtraVMMemory: 0.
 	memory shrinkThreshold: 0.
 	memory growHeadroom: 0.

@@ -5658,7 +5658,8 @@ SpurMemoryManager >> freeTreeOverlapCheck [
 SpurMemoryManager >> freeUnscannedEphemerons [
 	"Free all the memory allocated to keep the unscanned ephemerons"
 	
-	self free: unscannedEphemerons start
+	self free: unscannedEphemerons start.
+	unscannedEphemerons start: nil
 ]
 
 { #category : #'gc - global' }
@@ -8924,22 +8925,23 @@ SpurMemoryManager >> nilObject: anOop [
 
 { #category : #'weakness and ephemerality' }
 SpurMemoryManager >> nilUnmarkedWeaklingSlots [
+
 	"Nil the unmarked slots in the weaklings on the
 	 weakling stack, finalizing those that lost references.
 	 Finally, empty the weaklingStack."
-	<inline: #never> "for profiling"
-	self cCode: '' inSmalltalk: [coInterpreter transcript nextPutAll: 'nilling...'; flush].
-	self eassert: [self allOldMarkedWeakObjectsOnWeaklingStack].
-	weaklingStack = nilObj ifTrue:
-		[^self].
-	self objStack: weaklingStack from: 0 do:
-		[:weakling| | anyUnmarked |
+
+	"for profiling"
+
+	<inline: #never>
+	self eassert: [ self allOldMarkedWeakObjectsOnWeaklingStack ].
+	weaklingStack = nilObj ifTrue: [ ^ self ].
+	self objStack: weaklingStack from: 0 do: [ :weakling | | anyUnmarked |
 		anyUnmarked := self nilUnmarkedWeaklingSlotsIn: weakling.
 		anyUnmarked ifTrue:
 			["fireFinalization: could grow the mournQueue and if so,
 			  additional pages must be marked to avoid being GC'ed."
 			 self assert: marking.
-			 coInterpreter fireFinalization: weakling]].
+			 coInterpreter signalFinalization: weakling]].
 	self emptyObjStack: weaklingStack
 ]
 
@@ -9663,7 +9665,12 @@ SpurMemoryManager >> popObjStack: objStack [
 						[MarkStackRecord addLast: {#EMPTY. nil}]]].
 		^nil].
 	topx := topx - 1.
+	
+	"Get the top and mark it as BADFOOD to indicate it's not available.
+	Mark it for debugging purposes. No accesses to BADFOOD are expected."
 	top := self fetchPointer: topx + ObjStackFixedSlots ofObject: objStack.
+	self storePointer: topx + ObjStackFixedSlots ofObject: objStack withValue: 16rBADF00D.
+	
 	self cCode: [] "for debugging markAndTrace: set (MarkStackRecord := OrderedCollection new)"
 		inSmalltalk:
 			[(self fetchPointer: ObjStackMyx ofObject: objStack) = MarkStackRootIndex ifTrue:

@@ -1,6 +1,69 @@
 # Change log
 
-I am a changelog... do not wait too much from me :D
+I am a changelog... do not expect too much from me :D
+
+## v10.0.0
+
+- Slang (Smalltalk to C Translator)
+	- Introducing a C AST to ease the generation of C Code
+	- Having a Pretty Printer for C AST
+	- Translation Tests
+	- Fixing Translation Issues
+	- Clear separation between Slang and VM code
+	- Improving Cast generation
+
+- Clean Up:	
+	- Remove Old Bytecode Set
+	- Remove Old Block Implementation
+	- Simplification of the Primitives
+	- Removing Unused / Old Code / Dead Code
+	- Cleanup / Removal of Old Unused primitives
+	- Removing Old FFI Implementation
+	- Removing MT Experiment from the code base (Kept in own branch)
+	- Fixing Compilation Warnings
+	- Improving Type annotations to fix bugs in the translation / compilation
+	- Removing Conditional Code on Old Configurations / Features
+	- Renaming Concepts to be inline with Common terminology
+	- Remove Newspeak, Multiple Bytecode and Old Memory Managers
+	- Removing Unused Plugins
+
+- Tests
+	- GNUification Tests
+	- Tests for Math primitives including overflow and conversion testing.
+	- Tests for comparison primitives (Equals / Not Equals / Less than / Less or Equals / Greater Than / Greater or Equals)
+	- Testing Primitives for objects Pinned in Memory
+	- Testing Math Primitives for Immediate Classes (SmallFloats / SmallIntegers)	
+	- Improving Simulation Infrastructure
+	- Using Sista Bytecode in all Tests
+	- Updating Unicorn version
+	- Improving Machine Code emulation
+	- Testing Image Read / Image Write
+	- Using the same memory map in Tests and Execution
+	- Testing Ephemerons
+	- Become Primitives
+
+- Ephemeron
+	- Fix for large ammounts
+	- Make it available
+	- Testing Signal Finalizations
+	
+- Fixing Become Errors.
+
+- Fixing XRay Primitive
+
+- Single-Instruction Multiple-Data (SIMD) initial Support:
+	- Initialization of new objects using SIMD (ARM64)
+	- Adding Bytecode Extensions to support SIMD instructions
+	- Adding Vector Registers
+	- Vector Register bytecodes
+
+- Auto Localization of Interpreter loop variables and edge detection simplifying development and minimizing code
+
+- ImageReader / ImageWriter reification needed for Permanent Space.
+
+- Improving Memory Map of the VM (Using constant positions)
+
+- Dependencies Improvements
 
 ## v9.0.21
 

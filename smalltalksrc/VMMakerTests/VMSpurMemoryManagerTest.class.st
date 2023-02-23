@@ -76,6 +76,27 @@ VMSpurMemoryManagerTest >> createArrayClass [
 
 ]
 
+{ #category : #utils }
+VMSpurMemoryManagerTest >> createLargeIntegerClasses [
+
+	| classLargeInteger classLargeNegativeInteger |
+	classLargeInteger := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstByteFormat.
+	
+	memory setHashBitsOf: classLargeInteger to: ClassLargePositiveIntegerCompactIndex.
+	memory
+		storePointer: ClassLargePositiveIntegerCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classLargeInteger.
+
+	classLargeNegativeInteger := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstByteFormat.
+	
+	memory setHashBitsOf: classLargeNegativeInteger to: ClassLargeNegativeIntegerCompactIndex.
+	memory
+		storePointer: ClassLargeNegativeIntegerCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classLargeNegativeInteger.
+]
+
 { #category : #helpers }
 VMSpurMemoryManagerTest >> createMethodOopFromHostMethod: aPharoCompiledMethod [
 
@@ -221,6 +242,22 @@ VMSpurMemoryManagerTest >> installFloat64RegisterClass [
 
 ]
 
+{ #category : #'tests - primitiveGreaterOrEqual' }
+VMSpurMemoryManagerTest >> installFloatClass [
+
+	| classFloat |
+	classFloat := self
+		              newClassInOldSpaceWithSlots: 0
+		              instSpec: memory firstLongFormat.
+	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
+	memory
+		storePointer: ClassFloatCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classFloat
+
+	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
+]
+
 { #category : #accessor }
 VMSpurMemoryManagerTest >> interpreter [
 	^ interpreter
@@ -341,6 +378,24 @@ VMSpurMemoryManagerTest >> newBitIndexableOfSize: aSize bytesPerSlot: bytesPerSl
 		  allocateNewSpaceSlots: numberOfWordSizeSlots
 		  format: format + padding
 		  classIndex: self nextOrdinaryClassIndex
+]
+
+{ #category : #asd }
+VMSpurMemoryManagerTest >> newByteArrayWithContent: aCollection [
+
+	| oop |
+	oop := self
+		       newObjectWithSlots: aCollection size / memory wordSize
+		       format: ByteArray instSpec
+		       classIndex: memory arrayClassIndexPun. "I don't care of the class"
+
+	0 to: aCollection size - 1 do: [ :index | 
+		memory
+			storeByte: index
+			ofObject: oop
+			withValue: (aCollection at: index + 1) ].
+		
+	^ oop
 ]
 
 { #category : #'helpers - classes' }
