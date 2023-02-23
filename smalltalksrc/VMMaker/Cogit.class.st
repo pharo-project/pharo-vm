@@ -6256,7 +6256,7 @@ Cogit >> entryPointTagIsSelector: entryPoint [
 { #category : #accessing }
 Cogit >> estimateOfAbstractOpcodesPerBytecodes [
 	<inline: true>
-	^ 10
+	^ 15
 ]
 
 { #category : #'simulation only' }
@@ -11854,6 +11854,13 @@ Cogit >> subsequentPrototypeMethodOop [
 	^(self addressIsInCurrentCompilation: 16rBADA550)
 		ifTrue: [16rDEADEAD]
 		ifFalse: [16rBADA550]
+]
+
+{ #category : #accessing }
+Cogit >> superSendTrampolineAt: anInteger put: aTrampolineAddress [ 
+	<doNotGenerate>
+	
+	superSendTrampolines at: anInteger put: aTrampolineAddress
 ]
 
 { #category : #'in-line cacheing' }
