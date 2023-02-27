@@ -3021,11 +3021,11 @@ CCodeGenerator >> includeAPIFrom: aCCodeGenerator [
 	apiVariables := aCCodeGenerator selectAPIVariables
 ]
 
-{ #category : #'type inference' }
+{ #category : #accessing }
 CCodeGenerator >> inferTypes [
 	
 	(SlangTyper on: self)
-		stopOnErrors: stopOnErrors;
+		stopOnErrors: self stopOnErrors;
 		inferTypes
 ]
 
@@ -3065,7 +3065,7 @@ CCodeGenerator >> initialize [
 	useSymbolicConstants := true.
 	generateDeadCode := true.
 	scopeStack := OrderedCollection new.
-	logger := (ProvideAnswerNotification new tag: #logger; signal) ifNil: [Transcript].
+	logger := Transcript.
 	pools := IdentitySet new.
 	selectorTranslations := IdentityDictionary new.
 	suppressAsmLabels := false.
@@ -4751,6 +4751,13 @@ CCodeGenerator >> stepExpressionIsNegative: aNode [
 	(aNode isSend and: [aNode selector == #negated]) ifTrue:
 		[self isConstantNode: aNode receiver valueInto: [:stepValue| ^stepValue > 0]].
 	^false
+]
+
+{ #category : #accessing }
+CCodeGenerator >> stopOnErrors [
+
+	^ stopOnErrors
+		ifNil: [ stopOnErrors := true ]
 ]
 
 { #category : #utilities }

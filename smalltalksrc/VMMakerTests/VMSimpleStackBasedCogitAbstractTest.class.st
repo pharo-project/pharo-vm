@@ -610,10 +610,12 @@ VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver ar
 
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
 
+	"The receiver always goes in registers"
+	self machineSimulator receiverRegisterValue: aReceiver.
+
 	"If the cogit is the StackToRegisterMapping the arguments should go registers, else by stack"
 	self argumentsOnRegisters
 		ifTrue: [ 
-			self machineSimulator receiverRegisterValue: aReceiver.
 			arguments withIndexDo: [ :a :i | 
 				i = 1 ifTrue: [ self machineSimulator arg0RegisterValue: a ].
 				i = 2 ifTrue: [ self machineSimulator arg1RegisterValue: a ].

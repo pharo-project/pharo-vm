@@ -1221,7 +1221,7 @@ Cogit class >> initializePrimitiveTable [
 	)
 ]
 
-{ #category : #'class initialization' }
+{ #category : #initialization }
 Cogit class >> initializeWithOptions: optionsDictionary [
 	super initializeWithOptions: optionsDictionary.
 	self initializeMiscConstants. "must precede other initialization."

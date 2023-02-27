@@ -486,6 +486,12 @@ StackInterpreter class >> ancilliaryClasses [
 ]
 
 { #category : #constants }
+StackInterpreter class >> basicPrimitiveTable [
+	
+	^ PrimitiveTable
+]
+
+{ #category : #constants }
 StackInterpreter class >> bytecodeTable [
 
 	^ BytecodeTable
@@ -975,14 +981,14 @@ StackInterpreter class >> initializePrimitiveTable [
 	"self initializePrimitiveTable"
 
 	"NOTE: The real limit here is 2047 because of the old method header layout but there is no point in going over the needed size"
-	MaxPrimitiveIndex := 660.	
+	MaxPrimitiveIndex := 660.
 	MaxQuickPrimitiveIndex := 519.
 	PrimNumberExternalCall := 117.
 	PrimNumberDoPrimitive := 118.
 	PrimNumberFFICall := 120.
 	PrimNumberDoExternalCall := 218.
 	PrimitiveTable := Array new: MaxPrimitiveIndex + 1.
-	self primitivesClass table: PrimitiveTable from: 
+	self primitivesClass table: PrimitiveTable from:
 	#(	"Integer Primitives (0-19)"
 		(0 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called")
 		(1 primitiveAdd)
@@ -1163,7 +1169,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		(161 primitiveSetOrHasIdentityHash)
 		(162 primitiveFail)			"reserved for immutablity primitives"
 		(163 primitiveGetImmutability)
-		(164 primitiveSetImmutability)	
+		(164 primitiveSetImmutability)
 		(165 primitiveIntegerAt)		"hacked in here for now"
 		(166 primitiveIntegerAtPut)
 		(167 primitiveYield)
@@ -1214,7 +1220,7 @@ StackInterpreter class >> initializePrimitiveTable [
 
 		(210 primitiveContextAt)
 		(211 primitiveContextAtPut)
-		(212 primitiveContextSize)	
+		(212 primitiveContextSize)
 		(213 primitiveContextXray)
 		(214 primitiveVoidVMState)
 		(215 primitiveFlushCacheByMethod) "primitiveVoidVMStateForMethod in the CoInterpreter"
@@ -1303,7 +1309,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		"Pinned object creation primitives"
 		(598 primitiveNewPinned)
 		(599 primitiveNewWithArgPinned)
-		
+
 		"Memory accessor primitives"
 		(600 primitiveLoadBoolean8FromBytes)
 		(601 primitiveLoadUInt8FromBytes)
@@ -1365,7 +1371,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		(657 primitiveStoreChar32IntoExternalAddress)
 		(658 primitiveStoreFloat32IntoExternalAddress)
 		(659 primitiveStoreFloat64IntoExternalAddress)
-		
+
 		(660 primitiveFail)
 		)
 ]
@@ -1582,7 +1588,7 @@ StackInterpreter class >> primitiveTable [
 	| cg |
 	cg := MLVMCCodeGenerator new.
 	cg vmClass: self.
-	^PrimitiveTable collect:
+	^ self basicPrimitiveTable collect:
 		[:thing|
 		(thing isInteger "quick prims, 0 for fast primitve fail"
 		 or: [thing == #primitiveFail])
@@ -2771,7 +2777,7 @@ StackInterpreter >> bytecodePrimAdd [
 				self externalizeIPandSP.
 				self primitiveFloatAdd: rcvr toArg: arg.
 				self internalizeIPandSP.
-				self successful ifTrue: [ ^ self fetchNextBytecode "success" ] ] value ].
+				self successful ifTrue: [ ^ self fetchNextBytecode "success" ] ] ].
 
 	self normalSendSpecialSelector: 0 argumentCount: 1
 ]
@@ -14741,22 +14747,20 @@ StackInterpreter >> subscript: array with: index format: fmt [
 
 	<inline: true>
 	<druidDeferredInline>
-	
-	fmt <= objectMemory lastPointerFormat ifTrue:
-		[^objectMemory fetchPointer: index - 1 ofObject: array].
-	fmt >= objectMemory firstByteFormat ifTrue:
-		[^objectMemory integerObjectOf:
-			(objectMemory fetchByte: index - 1 ofObject: array)].
-	objectMemory hasSpurMemoryManagerAPI ifTrue:
-		[fmt >= objectMemory firstShortFormat ifTrue:
-			[^objectMemory integerObjectOf:
-				(objectMemory fetchUnsignedShort16: index - 1 ofObject: array)].
-		 fmt = objectMemory sixtyFourBitIndexableFormat ifTrue:
-			[^self positive64BitIntegerFor:
-				(objectMemory fetchLong64: index - 1 ofObject: array)]].
+	fmt <= objectMemory lastPointerFormat ifTrue: [
+		^ objectMemory fetchPointer: index - 1 ofObject: array ].
+	fmt >= objectMemory firstByteFormat ifTrue: [
+		^ objectMemory integerObjectOf:
+			  (objectMemory fetchByte: index - 1 ofObject: array) ].
+	fmt >= objectMemory firstShortFormat ifTrue: [
+		^ objectMemory integerObjectOf:
+			  (objectMemory fetchUnsignedShort16: index - 1 ofObject: array) ].
+	fmt = objectMemory sixtyFourBitIndexableFormat ifTrue: [
+		^ self positive64BitIntegerFor:
+			  (objectMemory fetchLong64: index - 1 ofObject: array) ].
 	"32bit-word type objects; for now assume no 64-bit indexable objects"
-	^self positive32BitIntegerFor:
-			(objectMemory fetchLong32: index - 1 ofObject: array)
+	^ self positive32BitIntegerFor:
+		  (objectMemory fetchLong32: index - 1 ofObject: array)
 ]
 
 { #category : #'indexing primitive support' }

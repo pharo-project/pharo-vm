@@ -259,18 +259,10 @@ VMMaker >> availablePlugins [
 VMMaker >> buildCodeGeneratorForCogit [
 	"Answer the code generator for translating the cogit."
 
-	^(Smalltalk classNamed: #CurrentReadOnlySourceFiles)
-		ifNil: [self
-				buildCodeGeneratorForCogit: self interpreterClass cogitClass
-				includeAPIMethods: true
-				initializeClasses: true]
-		ifNotNil:
-			[:crosf|
-			 crosf cacheDuring:
-				[self
-					buildCodeGeneratorForCogit: self interpreterClass cogitClass
-					includeAPIMethods: true
-					initializeClasses: true]]
+	^ self
+		buildCodeGeneratorForCogit: self interpreterClass cogitClass
+		includeAPIMethods: true
+		initializeClasses: true
 ]
 
 { #category : #'generate sources' }
@@ -1190,6 +1182,13 @@ VMMaker >> sourceFilePathFor: sourceFileName [
 ]
 
 { #category : #accessing }
+VMMaker >> stopOnErrors [
+
+	^ stopOnErrors
+		ifNil: [ stopOnErrors := true ]
+]
+
+{ #category : #accessing }
 VMMaker >> stopOnErrors: aValue [
 
 	stopOnErrors := aValue
@@ -1231,7 +1230,7 @@ VMMaker >> storeInternalPluginList [
 			[:cls|
 			s space; nextPut: $\; cr; nextPutAll: cls moduleName].
 		s cr].
-	filePath := self makefileDirectory fullNameFor: self internalPluginListName.
+	filePath := self makefileDirectory / self internalPluginListName.
 	(CCodeGenerator basicNew needToGenerateHeader: filePath file: filePath contents: contents) ifTrue:
 		[[fileStream := VMMaker forceNewFileNamed: filePath] 
 			on: FileDoesNotExistException 

@@ -756,6 +756,8 @@ InterpreterPrimitives >> primitiveAdd [
 InterpreterPrimitives >> primitiveAddLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| a b result oopResult aIsNegative bIsNegative resultIsNegative oopArg oopRcvr |
+	
+	<numberOfArguments: 1>
 	<export: true>
 	<var: 'a' type: 'usqLong'>
 	<var: 'b' type: 'usqLong'>
@@ -834,7 +836,7 @@ InterpreterPrimitives >> primitiveAllInstances [
 	"Answer an array of all instances of the receiver that exist
 	 when the primitive is called, excluding any that may be
 	 garbage collected as a side effect of allocating the result array."
-
+	<numberOfArguments: 0>
 	<export: true>
 	| result |
 	result := objectMemory allInstancesOf: self stackTop.
@@ -851,7 +853,7 @@ InterpreterPrimitives >> primitiveAllObjects [
 	"Answer an array of all objects that exist when the primitive
 	 is called, excluding those that may be garbage collected as
 	 a side effect of allocating the result array."
-
+	<numberOfArguments: 0>
 	<export: true>
 	| result |
 	result := objectMemory allObjects.
@@ -866,8 +868,11 @@ InterpreterPrimitives >> primitiveAllObjects [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveArctan [
 	"N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
-	| rcvr |
+	<numberOfArguments: 0>
 	<var: #rcvr type: #double>
+	
+	| rcvr |
+
 	rcvr := self stackFloatValue: 0.
 	self successful ifTrue:
 		[self stackTopPut: (objectMemory floatObjectOf:
@@ -943,6 +948,8 @@ InterpreterPrimitives >> primitiveArrayBecomeOneWayNoCopyHash [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveAsCharacter [
+	<numberOfArguments: 0>
+
 	| characterCode characterObject |
 	characterCode := self stackTop.
 	((objectMemory isIntegerObject: characterCode)
@@ -982,6 +989,7 @@ InterpreterPrimitives >> primitiveAtPut [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveBehaviorHash [
+	<numberOfArguments: 0>
 	| hashOrError |
 	self assert: ((objectMemory isNonImmediate: self stackTop)
 				  and: [self addressCouldBeClassObj: self stackTop]).
@@ -1009,6 +1017,8 @@ InterpreterPrimitives >> primitiveBitAnd [
 InterpreterPrimitives >> primitiveBitAndLargeIntegers [
 	"Primitive logical operations for large integers in 64 bit range"
 	| integerRcvr integerArg oopResult |
+	
+	<numberOfArguments: 1>
 	<export: true>
 	<var: 'integerRcvr' type: 'usqLong'>
 	<var: 'integerArg' type: 'usqLong'>
@@ -1039,6 +1049,8 @@ InterpreterPrimitives >> primitiveBitOr [
 InterpreterPrimitives >> primitiveBitOrLargeIntegers [
 	"Primitive logical operations for large integers in 64 bit range"
 	| integerRcvr integerArg oopResult |
+	
+	<numberOfArguments: 1>
 	<export: true>
 	<var: 'integerRcvr' type: 'usqLong'>
 	<var: 'integerArg' type: 'usqLong'>
@@ -1099,6 +1111,8 @@ InterpreterPrimitives >> primitiveBitShift [
 InterpreterPrimitives >> primitiveBitShiftLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| a shift result oopResult aIsNegative oopRcvr |
+	
+	<numberOfArguments: 1>
 	<export: true>
 	<var: 'a' type: 'usqLong'>
 	<var: 'result' type: 'usqLong'>
@@ -1149,6 +1163,8 @@ InterpreterPrimitives >> primitiveBitXor [
 InterpreterPrimitives >> primitiveBitXorLargeIntegers [
 	"Primitive logical operations for large integers in 64 bit range"
 	| integerRcvr integerArg oopResult |
+
+	<numberOfArguments: 1>
 	<export: true>
 	<var: 'integerRcvr' type: 'usqLong'>
 	<var: 'integerArg' type: 'usqLong'>
@@ -1554,6 +1570,8 @@ InterpreterPrimitives >> primitiveDiv [
 InterpreterPrimitives >> primitiveDivLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| result oopResult a aIsNegative b bIsNegative oopArg oopRcvr rem |
+	
+	<numberOfArguments: 1>
 	<export: true>
 	<var: 'a' type: 'usqLong'>
 	<var: 'b' type: 'usqLong'>
@@ -1670,6 +1688,8 @@ InterpreterPrimitives >> primitiveEqual [
 InterpreterPrimitives >> primitiveEqualLargeIntegers [
 	"Primitive comparison operations for large integers in 64 bit range"
 	| integerRcvr integerArg |
+	
+	<numberOfArguments: 1>
 	<export: true>
 	<var: 'integerRcvr' type: 'sqLong'>
 	<var: 'integerArg' type: 'sqLong'>
@@ -1730,6 +1750,8 @@ InterpreterPrimitives >> primitiveExponent [
 	"Exponent part of this float.
 	 N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
 	| rcvr pwr |
+	
+	<numberOfArguments: 0>
 	<var: #rcvr type: #double>
 	<var: #pwr type: #int>
 	rcvr := self stackFloatValue: 0.
@@ -1963,6 +1985,8 @@ InterpreterPrimitives >> primitiveFractionalPart [
 	"Fractional part of this float.
 	 N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
 	| rcvr trunc |
+	
+	<numberOfArguments: 0>
 	<var: #rcvr type: #double>
 	<var: #trunc type: #double>
 	rcvr := self stackFloatValue: 0.
@@ -2124,6 +2148,7 @@ InterpreterPrimitives >> primitiveGetenv [
 	<export: true>
 	<var: #key type: #'char *'>
 	<var: #var type: #'char *'>
+	<numberOfArguments: 1>
 	key := self cStringOrNullFor: self stackTop.
 	key = 0 ifTrue:
 		[self successful ifTrue:
@@ -2168,6 +2193,8 @@ InterpreterPrimitives >> primitiveGreaterOrEqual [
 InterpreterPrimitives >> primitiveGreaterOrEqualLargeIntegers [
 	"Primitive comparison operations for large integers in 64 bit range"
 	| integerRcvr integerArg |
+	
+	<numberOfArguments: 1>
 	<export: true>
 	<var: 'integerRcvr' type: 'sqLong'>
 	<var: 'integerArg' type: 'sqLong'>
@@ -2198,6 +2225,7 @@ InterpreterPrimitives >> primitiveGreaterThan [
 InterpreterPrimitives >> primitiveGreaterThanLargeIntegers [
 	"Primitive comparison operations for large integers in 64 bit range"
 	| integerRcvr integerArg |
+	<numberOfArguments: 1>
 	<export: true>
 	<var: 'integerRcvr' type: 'sqLong'>
 	<var: 'integerArg' type: 'sqLong'>
@@ -2274,6 +2302,8 @@ InterpreterPrimitives >> primitiveIdentical [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveIdentityHash [
+	<numberOfArguments: 0>
+
 	| thisReceiver |
 	thisReceiver := self stackTop.
 	((objectMemory isImmediate: thisReceiver)
@@ -2358,6 +2388,8 @@ InterpreterPrimitives >> primitiveIncrementalGC [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveInstVarAt [
+	<numberOfArguments: 1>
+
 	| index rcvr hdr fmt totalLength fixedFields value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2378,6 +2410,8 @@ InterpreterPrimitives >> primitiveInstVarAt [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveInstVarAtPut [
+	<numberOfArguments: 2>
+
 	| newValue index rcvr hdr fmt totalLength fixedFields |
 	newValue := self stackTop.
 	index := self stackValue: 1.
@@ -2403,6 +2437,7 @@ InterpreterPrimitives >> primitiveInstVarAtPut [
 
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveIntegerAt [
+	<numberOfArguments: 1>
 
 	"Answer the signed integer element of a pure bits receiver.
 	 If the receiver is indexable pointers simply function like at:.
@@ -2483,6 +2518,7 @@ InterpreterPrimitives >> primitiveIntegerAt [
 
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveIntegerAtPut [
+	<numberOfArguments: 2>
 
 	"Assign an indexable variable of a pure bits receiver with a signed integer.
 	 If the receiver is indexable pointers simply function like at:put: primitive 61.
@@ -2652,6 +2688,8 @@ InterpreterPrimitives >> primitiveLessOrEqual [
 InterpreterPrimitives >> primitiveLessOrEqualLargeIntegers [
 	"Primitive comparison operations for large integers in 64 bit range"
 	| integerRcvr integerArg |
+	
+	<numberOfArguments: 1>
 	<export: true>
 	<var: 'integerRcvr' type: 'sqLong'>
 	<var: 'integerArg' type: 'sqLong'>
@@ -2747,10 +2785,12 @@ InterpreterPrimitives >> primitiveLocalMicrosecondClock [
 
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveLogN [
+	<numberOfArguments: 0>
+	<var: #rcvr type: #double>
+
 	"Natural log.
 	 N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
 	| rcvr |
-	<var: #rcvr type: #double>
 	rcvr := self stackFloatValue: 0.
 	self successful ifTrue:
 		[self stackTopPut: (objectMemory floatObjectOf:
@@ -2845,6 +2885,8 @@ InterpreterPrimitives >> primitiveMod [
 InterpreterPrimitives >> primitiveModLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| result oopResult a aIsNegative b bIsNegative oopArg oopRcvr |
+	
+	<numberOfArguments: 1>
 	<export: true>
 	<var: 'a' type: 'usqLong'>
 	<var: 'b' type: 'usqLong'>
@@ -2896,6 +2938,8 @@ InterpreterPrimitives >> primitiveMultiply [
 InterpreterPrimitives >> primitiveMultiplyLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| a b result oopResult aIsNegative bIsNegative oopArg oopRcvr |
+	
+	<numberOfArguments: 1>
 	<export: true>
 	<var: 'a' type: 'usqLong'>
 	<var: 'b' type: 'usqLong'>
@@ -3081,6 +3125,8 @@ InterpreterPrimitives >> primitiveNotEqual [
 InterpreterPrimitives >> primitiveNotEqualLargeIntegers [
 	"Primitive comparison operations for large integers in 64 bit range"
 	| integerRcvr integerArg |
+	
+	<numberOfArguments: 1>
 	<export: true>
 	<var: 'integerRcvr' type: 'sqLong'>
 	<var: 'integerArg' type: 'sqLong'>
@@ -3334,6 +3380,8 @@ InterpreterPrimitives >> primitiveQuo [
 InterpreterPrimitives >> primitiveQuoLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| result oopResult a aIsNegative b bIsNegative oopArg oopRcvr |
+	
+	<numberOfArguments: 1>
 	<export: true>
 	<var: 'a' type: 'usqLong'>
 	<var: 'b' type: 'usqLong'>
@@ -3374,6 +3422,8 @@ InterpreterPrimitives >> primitiveRelinquishProcessor [
 InterpreterPrimitives >> primitiveRemLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| result oopResult a aIsNegative b oopArg oopRcvr |
+	
+	<numberOfArguments: 1>
 	<export: true>
 	<var: 'a' type: 'usqLong'>
 	<var: 'b' type: 'usqLong'>
@@ -3616,8 +3666,11 @@ InterpreterPrimitives >> primitiveSignalAtBytesLeft [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSine [
 	"N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
-	| rcvr |
+	<numberOfArguments: 0>
 	<var: #rcvr type: #double>
+
+	| rcvr |
+	
 	rcvr := self stackFloatValue: 0.
 	self successful ifTrue:
 		[self stackTopPut: (objectMemory floatObjectOf:
@@ -4130,8 +4183,11 @@ InterpreterPrimitives >> primitiveSpecialObjectsOop [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSquareRoot [
 	"N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
-	| rcvr |
+	<numberOfArguments: 0>
 	<var: #rcvr type: #double>
+
+	| rcvr |
+	
 	rcvr := self stackFloatValue: 0.
 	(self successful and: [rcvr >= 0.0])
 		ifTrue: [self stackTopPut: (objectMemory floatObjectOf: rcvr sqrt)]
@@ -4365,6 +4421,8 @@ InterpreterPrimitives >> primitiveSubtract2 [
 InterpreterPrimitives >> primitiveSubtractLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| a b result oopResult aIsNegative bIsNegative resultIsNegative oopArg oopRcvr |
+	
+	<numberOfArguments: 1>	
 	<export: true>
 	<var: 'a' type: 'usqLong'>
 	<var: 'b' type: 'usqLong'>
@@ -4467,6 +4525,8 @@ InterpreterPrimitives >> primitiveTestShortenIndexableSize [
 InterpreterPrimitives >> primitiveTimesTwoPower [
 	"Multiply the receiver by the power of the argument."
 	| rcvr result arg |
+	
+	<numberOfArguments: 1>
 	<var: #rcvr type: #double>
 	<var: #result type: #double>
 	arg := self stackTop.
@@ -4490,6 +4550,8 @@ InterpreterPrimitives >> primitiveTimesTwoPower [
 InterpreterPrimitives >> primitiveTruncated [
 	"N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
 	| rcvr trunc |
+	
+	<numberOfArguments: 0>
 	<var: #rcvr type: #double>
 	<var: #trunc type: #double>
 	rcvr := self stackFloatValue: 0.
@@ -5012,6 +5074,6 @@ InterpreterPrimitives >> sumSmallInteger: anInteger withSmallInteger: anotherInt
 
 	result := a + b.
 
-	(objectMemory isIntegerValue: result) ifFalse: [ ^ aBlock value ].
+	(objectMemory isIntegerValue: result) ifFalse: [ aBlock value ].
 	^ objectMemory integerObjectOf: result
 ]
