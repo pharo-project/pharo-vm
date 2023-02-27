@@ -1644,7 +1644,7 @@ CogObjectRepresentationFor32BitSpur >> markAndTraceCacheTagLiteral: literal in: 
 	<var: #cogMethodOrNil type: #'CogMethod *'>
 	<var: #address type: #usqInt>
 	| objOop |
-	(self couldBeObject: literal) ifFalse:
+	(objectMemory couldBeObject: literal) ifFalse:
 		[^false].
 	self assert: (objectMemory addressCouldBeObj: literal).
 	(objectMemory isForwarded: literal) ifFalse:

@@ -108,11 +108,6 @@ CogObjectRepresentationForSpur class >> typeForSelf [
 	^#implicit
 ]
 
-{ #category : #'garbage collection' }
-CogObjectRepresentationForSpur >> allYoungObjectsAgeInFullGC [
-	^false
-]
-
 { #category : #'sista support' }
 CogObjectRepresentationForSpur >> allocateCounters: nCounters [
 	self subclassResponsibility
@@ -244,14 +239,6 @@ CogObjectRepresentationForSpur >> branchIf: reg notInstanceOfBehaviors: arrayObj
 	^ self mixed: numNonImmediates branchIf: reg notInstanceOfBehaviors: arrayObj target: targetFixUp
 ]
 
-{ #category : #'garbage collection' }
-CogObjectRepresentationForSpur >> cacheTagIsMarked: cacheTag [
-	"Answer if the cacheTag is not unmarked, i.e. answer true for compact class
-	 indices and immediates; only answer false for unmarked objects.  In Spur
-	 linked send cache tags are class indices so effectively they're always marked."
-	^true
-]
-
 { #category : #'sista support' }
 CogObjectRepresentationForSpur >> callStoreCheckTrampoline [
 	cogit CallRT: ceStoreCheckTrampoline
@@ -354,28 +341,6 @@ CogObjectRepresentationForSpur >> classForInlineCacheTag: classIndex [
 { #category : #'garbage collection' }
 CogObjectRepresentationForSpur >> couldBeDerivedObject: bodyAddress [
 	^self oop: bodyAddress - objectMemory baseHeaderSize isGreaterThanOrEqualTo: objectMemory startOfMemory
-]
-
-{ #category : #'garbage collection' }
-CogObjectRepresentationForSpur >> couldBeObject: literal [
-	^(objectMemory isNonImmediate: literal)
-	  and: [self oop: literal isGreaterThanOrEqualTo: objectMemory startOfMemory]
-]
-
-{ #category : #'bytecode generator support' }
-CogObjectRepresentationForSpur >> createsArraysInline [
-	"Answer if the object representation allocates arrays inline.  By
-	 default answer false. Better code can be generated when creating
-	 arrays inline if values are /not/ flushed to the stack."
-	^true
-]
-
-{ #category : #'bytecode generator support' }
-CogObjectRepresentationForSpur >> createsClosuresInline [
-	"Answer if the object representation allocates closures inline.  By
-	 default answer false. Better code can be generated when creating
-	 closures inline if copied values are /not/ flushed to the stack."
-	^true
 ]
 
 { #category : #initialization }
@@ -628,14 +593,16 @@ CogObjectRepresentationForSpur >> genDoubleArithmetic: arithmeticOperator preOpC
 	cogit genPrimReturn.
 	jumpImmediate jmpTarget: cogit Label.
 	self maybeGenConvertIfSmallFloatIn: Arg0Reg scratchReg: TempReg into: DPFPReg1 andJumpTo: doOp.
-	self smallIntegerIsOnlyImmediateType ifFalse:
-		[jumpNonInt := self genJumpNotSmallInteger: Arg0Reg scratchReg: TempReg].
+
+	jumpNonInt := self genJumpNotSmallInteger: Arg0Reg scratchReg: TempReg.
+	
 	self genConvertSmallIntegerToIntegerInReg: ClassReg.
 	cogit ConvertR: ClassReg Rd: DPFPReg1.
 	cogit Jump: doOp.
 	jumpFailAlloc jmpTarget:  (jumpFailClass jmpTarget: cogit Label).
-	self smallIntegerIsOnlyImmediateType ifFalse:
-		[jumpNonInt jmpTarget: jumpFailClass getJmpTarget].
+
+	jumpNonInt jmpTarget: jumpFailClass getJmpTarget.
+
 	preOpCheckOrNil ifNotNil:
 		[jumpFailCheck jmpTarget: jumpFailClass getJmpTarget].
 	^0
@@ -670,14 +637,12 @@ CogObjectRepresentationForSpur >> genDoubleComparison: jumpOpcodeGenerator inver
 	cogit genPrimReturn.
 	jumpImmediate jmpTarget: cogit Label.
 	self maybeGenConvertIfSmallFloatIn: Arg0Reg scratchReg: TempReg into: DPFPReg1 andJumpTo: compare.
-	self smallIntegerIsOnlyImmediateType ifFalse:
-		[jumpNonInt := self genJumpNotSmallInteger: Arg0Reg scratchReg: TempReg].
+	jumpNonInt := self genJumpNotSmallInteger: Arg0Reg scratchReg: TempReg.
 	self genConvertSmallIntegerToIntegerInReg: Arg0Reg.
 	cogit ConvertR: Arg0Reg Rd: DPFPReg1.
 	cogit Jump: compare.
 	jumpFail jmpTarget: cogit Label.
-	self smallIntegerIsOnlyImmediateType ifFalse:
-		[jumpNonInt jmpTarget: jumpFail getJmpTarget].
+	jumpNonInt jmpTarget: jumpFail getJmpTarget.
 	^CompletePrimitive
 ]
 
@@ -3648,8 +3613,7 @@ CogObjectRepresentationForSpur >> genSmallIntegerComparison: jumpOpcode orDouble
 	"Fall through on non-SmallInteger argument.  Argument may be a Float : let us check or fail"
 	"If we are compiling in a platform where the only immediate values are smallintegers, then at this point we know we have a non-immediate (since it was tested before).
 	Otherwise, check if this is an immediate value or not. If it is immediate (e.g., a character) then just jump to the end."
-	[self smallIntegerIsOnlyImmediateType ifFalse:
-		[jumpNonInt := self genJumpImmediate: Arg0Reg].
+	[jumpNonInt := self genJumpImmediate: Arg0Reg.
 	self genGetCompactClassIndexNonImmOf: Arg0Reg into: SendNumArgsReg.
 	self genCmpClassFloatCompactIndexR: SendNumArgsReg.
 	jumpFail := cogit JumpNonZero: 0.
@@ -3667,9 +3631,7 @@ CogObjectRepresentationForSpur >> genSmallIntegerComparison: jumpOpcode orDouble
 	jumpCond jmpTarget: (cogit genMoveTrueR: ReceiverResultReg).
 	cogit genPrimReturn.
 
-	self smallIntegerIsOnlyImmediateType
-		ifTrue: [jumpFail jmpTarget: cogit Label]
-		ifFalse: [jumpNonInt jmpTarget: (jumpFail jmpTarget: cogit Label)]].
+	jumpNonInt jmpTarget: (jumpFail jmpTarget: cogit Label)].
 	^CompletePrimitive
 ]
 
@@ -4091,13 +4053,6 @@ CogObjectRepresentationForSpur >> generateObjectRepresentationTrampolines [
 		[ceLargeActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: true inBlock: InFullBlock called: 'ceLargeFullBlockContext'].
 ]
 
-{ #category : #'bytecode generator support' }
-CogObjectRepresentationForSpur >> getActiveContextAllocatesInMachineCode [
-	"Make sure SendNumArgsReg and ClassReg are available in addition to
-	 ReceiverResultReg and TempReg in genGetActiveContextNumArgs:large:inBlock:."
-	^true
-]
-
 { #category : #'compile abstract instructions' }
 CogObjectRepresentationForSpur >> getLiteralCountOf: methodReg plusOne: plusOne inBytes: inBytes into: litCountReg scratch: scratchReg [
 	"Get the literal count of a CompiledMethod into headerReg, plus one if requested.
@@ -4142,27 +4097,10 @@ CogObjectRepresentationForSpur >> inlineCacheTagForInstance: oop [
 	^self subclassResponsibility
 ]
 
-{ #category : #'garbage collection' }
-CogObjectRepresentationForSpur >> inlineCacheTagIsYoung: cacheTag [
-	"Since all cache tags in Spur are class indices none of
-	 them are young or have to be updated in a scavenge."
-	^false
-]
-
-{ #category : #'in-line cacheing' }
-CogObjectRepresentationForSpur >> inlineCacheTagsMayBeObjects [
-	^false
-]
-
 { #category : #testing }
 CogObjectRepresentationForSpur >> isImmediate: oop [
 	<doNotGenerate>
 	^objectMemory isImmediate: oop
-]
-
-{ #category : #'object representation' }
-CogObjectRepresentationForSpur >> isSmallIntegerTagNonZero [
-	^true
 ]
 
 { #category : #'compile abstract instructions' }
@@ -4191,7 +4129,7 @@ CogObjectRepresentationForSpur >> markAndTraceCacheTagLiteral: literal in: cogMe
 
 { #category : #'garbage collection' }
 CogObjectRepresentationForSpur >> markAndTraceLiteral: literal [
-	(self couldBeObject: literal) ifTrue:
+	(objectMemory couldBeObject: literal) ifTrue:
 		[self assert: (objectMemory addressCouldBeObj: literal).
 		 objectMemory markAndTrace: literal]
 ]
@@ -4202,7 +4140,7 @@ CogObjectRepresentationForSpur >> markAndTraceLiteral: literal in: cogMethod at:
 	<var: #cogMethod type: #'CogMethod *'>
 	<var: #address type: #'sqInt *'>
 	| objOop |
-	(self couldBeObject: literal) ifFalse:
+	(objectMemory couldBeObject: literal) ifFalse:
 		[^self].
 	self assert: (objectMemory addressCouldBeObj: literal).
 	(objectMemory isForwarded: literal) ifFalse:
@@ -4220,7 +4158,7 @@ CogObjectRepresentationForSpur >> markAndTraceLiteral: literal in: cogMethodOrNi
 	<var: #cogMethodOrNil type: #'CogMethod *'>
 	<var: #address type: #usqInt>
 	| objOop |
-	(self couldBeObject: literal) ifFalse:
+	(objectMemory couldBeObject: literal) ifFalse:
 		[^false].
 	self assert: (objectMemory addressCouldBeObj: literal).
 	(objectMemory isForwarded: literal) ifFalse:
@@ -4234,7 +4172,7 @@ CogObjectRepresentationForSpur >> markAndTraceLiteral: literal in: cogMethodOrNi
 
 { #category : #'garbage collection' }
 CogObjectRepresentationForSpur >> markAndTraceLiteralIfYoung: literal [
-	((self couldBeObject: literal)
+	((objectMemory couldBeObject: literal)
 	 and: [objectMemory isYoungObject: literal]) ifTrue:
 		[self assert: (objectMemory addressCouldBeObj: literal).
 		 objectMemory markAndTrace: literal]
@@ -4558,11 +4496,6 @@ CogObjectRepresentationForSpur >> shouldAnnotateObjectReference: anOop [
 { #category : #'compile abstract instructions' }
 CogObjectRepresentationForSpur >> slotOffsetOfInstVarIndex: index [
 	^index * objectMemory wordSize + objectMemory baseHeaderSize
-]
-
-{ #category : #testing }
-CogObjectRepresentationForSpur >> smallIntegerIsOnlyImmediateType [
-	^false
 ]
 
 { #category : #'debug support' }

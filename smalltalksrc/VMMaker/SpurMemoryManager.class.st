@@ -4090,6 +4090,15 @@ SpurMemoryManager >> convertToArray [
 	memory:= memory as: Array
 ]
 
+{ #category : #'object testing' }
+SpurMemoryManager >> couldBeObject: literal [
+
+	^ (self isNonImmediate: literal) and: [
+		  self
+			  oop: literal
+			  isGreaterThanOrEqualTo: self startOfMemory ]
+]
+
 { #category : #'debug support' }
 SpurMemoryManager >> countMarkedAndUnmarkdObjects: printFlags [
 	"print the count of marked and unmarked objects.

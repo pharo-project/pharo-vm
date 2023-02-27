@@ -3867,9 +3867,8 @@ Cogit >> ceCPICMiss: cPIC receiver: receiver [
 	cacheTag := objectRepresentation inlineCacheTagForInstance: receiver.
 	(cPIC cPICNumCases >= MaxCPICCases
 	 or: [(errorSelectorOrNil notNil and: [errorSelectorOrNil ~= SelectorDoesNotUnderstand])
-	 or: [(objectRepresentation inlineCacheTagIsYoung: cacheTag)
 	 or: [newTargetMethodOrNil isNil
-	 or: [objectMemory isYoung: newTargetMethodOrNil]]]]) ifTrue:
+	 or: [objectMemory isYoung: newTargetMethodOrNil]]]) ifTrue:
 		[result := self patchToOpenPICFor: cPIC selector
 					numArgs: cPIC cmNumArgs
 					receiver: receiver.
@@ -4051,10 +4050,9 @@ Cogit >> ceSICMiss: receiver [
 	self assert: outerReturn = coInterpreter stackTop.
 	cacheTag := objectRepresentation inlineCacheTagForInstance: receiver.
 	((errorSelectorOrNil notNil and: [errorSelectorOrNil ~= SelectorDoesNotUnderstand])
-	 or: [(objectRepresentation inlineCacheTagIsYoung: cacheTag)
 	 or: [(backEnd inlineCacheTagAt: outerReturn) = self picAbortDiscriminatorValue
 	 or: [newTargetMethodOrNil isNil
-	 or: [objectMemory isYoung: newTargetMethodOrNil]]]]) ifTrue:
+	 or: [objectMemory isYoung: newTargetMethodOrNil]]]) ifTrue:
 		[result := self patchToOpenPICFor: targetMethod selector
 					numArgs: targetMethod cmNumArgs
 					receiver: receiver.
@@ -4232,7 +4230,7 @@ Cogit >> checkIfValidOopRef: annotation pc: mcpc cogMethod: cogMethod [
 					^1]]
 			ifFalse: "unlinked send or super send; cacheTag is a selector unless 64-bit, in which case it is an index."
 				[(self inlineCacheTagsAreIndexes
-				  or: [objectRepresentation checkValidOopReference: selectorOrCacheTag]) ifFalse:
+				  or: [objectMemory checkValidOopReference: selectorOrCacheTag]) ifFalse:
 					[coInterpreter print: 'selector leak in CM '; printHex: cogMethod asInteger; print: ' @ '; printHex: mcpc asInteger; cr.
 					^1]]].
 	^0 "keep scanning"
@@ -4247,7 +4245,7 @@ Cogit >> checkIfValidOopRefAndTarget: annotation pc: mcpc cogMethod: cogMethod [
 		[literal := literalsManager fetchLiteralAtAnnotatedAddress: mcpc asUnsignedInteger using: backEnd.
 		 (self asserta: (objectMemory checkValidOopReference: literal)) ifFalse:
 			[^1].
-		((objectRepresentation couldBeObject: literal)
+		((objectMemory couldBeObject: literal)
 		 and: [objectMemory isReallyYoungObject: literal]) ifTrue:
 			[(self asserta: (self cCoerceSimple: cogMethod to: #'CogMethod *') cmRefersToYoung) ifFalse:
 				[^2]]].
@@ -4260,14 +4258,14 @@ Cogit >> checkIfValidOopRefAndTarget: annotation pc: mcpc cogMethod: cogMethod [
 			entryPoint := entryPt.
 			tagCouldBeObject
 				ifTrue:
-					[(objectRepresentation couldBeObject: cacheTag)
+					[(objectMemory couldBeObject: cacheTag)
 						ifTrue:
 							[(self asserta: (objectRepresentation checkValidOopReference: cacheTag)) ifFalse:
 								[^4]]
 						ifFalse:
 							[(self asserta: (objectRepresentation validInlineCacheTag: cacheTag)) ifFalse:
 								[^5]].
-					((objectRepresentation couldBeObject: cacheTag)
+					((objectMemory couldBeObject: cacheTag)
 					 and: [objectMemory isReallyYoungObject: cacheTag]) ifTrue:
 						[(self asserta: (self cCoerceSimple: cogMethod to: #'CogMethod *') cmRefersToYoung) ifFalse:
 							[^6]]]
@@ -4354,7 +4352,7 @@ Cogit >> checkIntegrityOfObjectReferencesInCode: gcModes [
 Cogit >> checkMaybeObjRefInClosedPIC: maybeObject [
 	maybeObject = 0 ifTrue:
 		[^true].
-	(objectRepresentation couldBeObject: maybeObject) ifFalse:
+	(objectMemory couldBeObject: maybeObject) ifFalse:
 		[^true].
 	^objectRepresentation checkValidObjectReference: maybeObject
 ]
@@ -4384,13 +4382,7 @@ Cogit >> checkValidObjectReferencesInClosedPIC: cPIC [
 	"For each case we check any object reference at the end address - sizeof(conditional instruction) and then increment the end address by case size"
 	2 to: cPIC cPICNumCases do:
 		[:i|
-		(self inlineCacheTagsAreIndexes not
-		 and: [objectRepresentation inlineCacheTagsMayBeObjects]) ifTrue:
-			[(self checkMaybeObjRefInClosedPIC: (backEnd literal32BeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize)) ifFalse:
-				[self print: 'object leak in CPIC '; printHex: cPIC asInteger;
-					print: ' @ '; printHex: pc - backEnd jumpLongConditionalByteSize - backEnd loadLiteralByteSize; cr.
-				 ok := false]].
-		(self checkMaybeObjRefInClosedPIC: (backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize - backEnd cmpC32RTempByteSize)) ifFalse:
+			(self checkMaybeObjRefInClosedPIC: (backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize - backEnd cmpC32RTempByteSize)) ifFalse:
 			[self print: 'object leak in CPIC '; printHex: cPIC asInteger;
 				print: ' @ '; printHex: pc - backEnd jumpLongConditionalByteSize; cr.
 			 ok := false].
@@ -4429,7 +4421,7 @@ Cogit >> closedPICRefersToUnmarkedObject: cPIC [
 	"Check the potential method oop for the first case only.
 	 Inline cache tags for the 1st case are at the send site."
 	pc := self addressOfEndOfCase: 1 inCPIC: cPIC.
-	(objectRepresentation couldBeObject: (object := backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongByteSize)) ifTrue:
+	(objectMemory couldBeObject: (object := backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongByteSize)) ifTrue:
 		[(objectMemory isMarked: object) ifFalse:
 			[^true]].
 
@@ -4440,13 +4432,9 @@ Cogit >> closedPICRefersToUnmarkedObject: cPIC [
 	2 to: cPIC cPICNumCases do:
 		[:i| 
 		pc := self addressOfEndOfCase: i inCPIC: cPIC.
-		(self inlineCacheTagsAreIndexes not
-		 and: [objectRepresentation inlineCacheTagsMayBeObjects
-		 and: [objectRepresentation couldBeObject: (object := backEnd literal32BeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize)]]) ifTrue:
-			[(objectMemory isMarked: object) ifFalse:
-				[^true]].
+
 		"Check the potential method oop for subsequent cases."
-		(objectRepresentation couldBeObject: (object := backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize - backEnd cmpC32RTempByteSize)) ifTrue:
+		(objectMemory couldBeObject: (object := backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize - backEnd cmpC32RTempByteSize)) ifTrue:
 			[(objectMemory isMarked: object) ifFalse:
 				[^true]].
 		"Check subsequent targets"
@@ -4748,8 +4736,6 @@ Cogit >> cogExtendPIC: cPIC CaseNMethod: caseNMethod tag: caseNTag isMNUCase: is
 		point: (objectMemory numBytesOf: cPIC selector)
 		isMNUCase: isMNUCase.
 
-	self assert: (objectRepresentation inlineCacheTagIsYoung: caseNTag) not.
-
 	self enableCodeZoneWriteDuring: [  
 			"Caller patches to open pic if caseNMethod is young."
 			self assert: (caseNMethod notNil and: [(objectMemory isYoung: caseNMethod) not]).
@@ -4896,7 +4882,7 @@ Cogit >> cogMethodDoesntLookKosher: cogMethod [
 	cogMethod cmType = CMMethod ifTrue:
 		[(objectMemory isIntegerObject: cogMethod methodHeader) ifFalse:
 			[^11].
-		 (objectRepresentation couldBeObject: cogMethod methodObject) ifFalse:
+		 (objectMemory couldBeObject: cogMethod methodObject) ifFalse:
 			[^12].
 		 (cogMethod stackCheckOffset > 0
 		  and: [cogMethod stackCheckOffset < cmNoCheckEntryOffset]) ifTrue:
@@ -5064,9 +5050,6 @@ Cogit >> cogit [
 Cogit >> cogitPostGCAction: gcMode [
 
 	<api>
-	(gcMode = GCModeFull and: [ 
-		 objectRepresentation allYoungObjectsAgeInFullGC ]) ifTrue: [ 
-		methodZone voidYoungReferrersPostTenureAll ].
 	gcMode = GCModeBecome ifTrue: [ 
 		methodZone followForwardedLiteralsInOpenPICList ].
 	"Post-GC update every full method's objectHeader to whatever it needs to be"
@@ -5820,7 +5803,6 @@ Cogit >> configureCPIC: cPIC Case0: case0CogMethod Case1Method: case1Method tag:
 	"adjust the call at missOffset, the ceAbortXArgs"
 	backEnd rewriteCallAt: cPIC asInteger + missOffset target: (self picAbortTrampolineFor: numArgs).
 	
-	self assert: (objectRepresentation inlineCacheTagIsYoung: case1Tag) not.
 	(isMNUCase not
 	 and: [coInterpreter methodHasCogMethod: case1Method])
 		ifTrue:
@@ -6165,8 +6147,7 @@ Cogit >> entryCacheTagAndCouldBeObjectAt: mcpc annotation: annotation into: trin
 	 Note that selectors can be immediate so there is no guarantee that they
 	 are markable/remappable objects."
 	tagCouldBeObj := self inlineCacheTagsAreIndexes not
-						and: [objectRepresentation inlineCacheTagsMayBeObjects
-							or: [self entryPointTagIsSelector: entryPoint]].
+						and: [self entryPointTagIsSelector: entryPoint].
 	trinaryBlock
 		value: entryPoint
 		value: cacheTag
@@ -6636,7 +6617,7 @@ Cogit >> followMaybeObjRefInClosedPICAt: mcpc [
 	each cpic case"
 	| object subject |
 	object := backEnd literalBeforeFollowingAddress: mcpc.
-	(objectRepresentation couldBeObject: object) ifFalse:
+	(objectMemory couldBeObject: object) ifFalse:
 		[^false].
 	(objectMemory isForwarded: object) ifFalse:
 		[^objectMemory isYoungObject: object].
@@ -8796,8 +8777,7 @@ Cogit >> linkSendAt: callSiteReturnAddress in: sendingMethod to: targetMethod of
 	inlineCacheTag := theEntryOffset = cmNoCheckEntryOffset
 						ifTrue: [targetMethod selector "i.e. no change"]
 						ifFalse: [objectRepresentation inlineCacheTagForInstance: receiver].
-	(objectRepresentation inlineCacheTagIsYoung: inlineCacheTag) ifTrue:
-		[methodZone ensureInYoungReferrers: sendingMethod].
+
 	address := targetMethod asInteger + theEntryOffset.
 
 	self 
@@ -8905,7 +8885,7 @@ Cogit >> lookupAddress: address [
 				[(cogMethod := methodZone methodFor: address) ~= 0 ifTrue:
 					[cogMethod := self cCoerceSimple: cogMethod to: #'CogMethod *'.
 					 ^((cogMethod selector ~= objectMemory nilObject
-					    and: [objectRepresentation couldBeObject: cogMethod selector])
+					    and: [objectMemory couldBeObject: cogMethod selector])
 						ifTrue: [coInterpreter stringOf: cogMethod selector]
 						ifFalse: [cogMethod asInteger hex]),
 					   '@', ((address - cogMethod asInteger) hex allButFirst: 3)]]
@@ -9170,10 +9150,6 @@ Cogit >> mapObjectReferencesInClosedPIC: cPIC [
 	"Next we check the potential class ref in the compare instruction, and the potential method oop load for each case."
 	2 to: cPIC cPICNumCases do:
 		[:i|
-		(self inlineCacheTagsAreIndexes not
-		 and: [objectRepresentation inlineCacheTagsMayBeObjects]) ifTrue:
-			[(self remapMaybeObjRefInClosedPICAt: pc - backEnd jumpLongConditionalByteSize) ifTrue:
-				[refersToYoung := true]].
 		(self remapMaybeObjRefInClosedPICAt: pc - backEnd jumpLongConditionalByteSize - backEnd cmpC32RTempByteSize) ifTrue:
 			[refersToYoung := true].
 		pc := pc + cPICCaseSize].
@@ -9321,9 +9297,7 @@ Cogit >> mapObjectReferencesInMachineCodeForFullGC [
 						 self mapFor: cogMethod
 							 performUntil: #remapIfObjectRef:pc:hasYoung:
 							 arg: 0.
-						 (cogMethod cmRefersToYoung
-						  and: [objectRepresentation allYoungObjectsAgeInFullGC]) ifTrue:
-							[cogMethod cmRefersToYoung: false]]].
+						]].
 			cogMethod := methodZone methodAfter: cogMethod].
 			methodZone pruneYoungReferrers.
 	] flushingCacheWith: 	[ 		
@@ -9634,13 +9608,12 @@ Cogit >> markLiteralsAndUnlinkIfUnmarkedSend: annotation pc: mcpc method: cogMet
 
 	(self isPureSendAnnotation: annotation) ifTrue:
 		[self entryCacheTagAndCouldBeObjectAt: mcpc annotation: annotation into:
-			[:entryPoint :cacheTag :tagCouldBeObj | | cacheTagMarked |
-			 cacheTagMarked := tagCouldBeObj and: [objectRepresentation cacheTagIsMarked: cacheTag].
+			[:entryPoint :cacheTag :tagCouldBeObj |
 			 entryPoint > methodZoneBase
 				ifTrue: "It's a linked send."
 					[self targetMethodAndSendTableFor: entryPoint annotation: annotation into:
 						[:targetMethod :sendTable| 
-						 (cacheTagMarked not
+						 (tagCouldBeObj not
 						  or: [self markAndTraceOrFreeCogMethod: targetMethod
 								firstVisit: targetMethod asUnsignedInteger > mcpc asUnsignedInteger]) ifTrue:
 							["Either the cacheTag is unmarked (e.g. new class) or the target
@@ -11039,7 +11012,7 @@ Cogit >> remapIfObjectRef: annotation pc: mcpc hasYoung: hasYoungPtr [
 	annotation = IsObjectReference ifTrue:
 		[| literal mappedLiteral |
 		 literal := literalsManager fetchLiteralAtAnnotatedAddress: mcpc asUnsignedInteger using: backEnd.
-		 (objectRepresentation couldBeObject: literal) ifTrue:
+		 (objectMemory couldBeObject: literal) ifTrue:
 			[mappedLiteral := objectRepresentation remapObject: literal.
 			 literal ~= mappedLiteral ifTrue:
 				[literalsManager storeLiteral: mappedLiteral atAnnotatedAddress: mcpc asUnsignedInteger using: backEnd.
@@ -11052,7 +11025,7 @@ Cogit >> remapIfObjectRef: annotation pc: mcpc hasYoung: hasYoungPtr [
 		[self entryCacheTagAndCouldBeObjectAt: mcpc annotation: annotation into:
 			[:entryPoint :cacheTag :tagCouldBeObj | | mappedCacheTag |
 			 (tagCouldBeObj
-			  and: [objectRepresentation couldBeObject: cacheTag]) ifTrue:
+			  and: [objectMemory couldBeObject: cacheTag]) ifTrue:
 				[mappedCacheTag := objectRepresentation remapObject: cacheTag.
 				 cacheTag ~= mappedCacheTag ifTrue:
 					[backEnd rewriteInlineCacheTag: mappedCacheTag at: mcpc asUnsignedInteger.
@@ -11081,7 +11054,7 @@ Cogit >> remapMaybeObjRefInClosedPICAt: mcpc [
 	 the load of the method literal or the compare of the class tag."
 	| object subject |
 	object := backEnd literalBeforeFollowingAddress: mcpc.
-	(objectRepresentation couldBeObject: object) ifFalse:
+	(objectMemory couldBeObject: object) ifFalse:
 		[^false].
 	subject := objectRepresentation remapOop: object.
 	object ~= subject ifTrue:
@@ -12121,12 +12094,6 @@ Cogit >> varBaseAddress [
 Cogit >> voidCogCompiledCode [
 	<api>
 	methodZone clearCogCompiledCode
-]
-
-{ #category : #'in-line cacheing' }
-Cogit >> voidNSSendCache: nsSendCache [
-	<inline: true>
-	nsSendCache classTag: objectRepresentation illegalClassTag; enclosingObject: 0; target: 0
 ]
 
 { #category : #'debug printing' }
