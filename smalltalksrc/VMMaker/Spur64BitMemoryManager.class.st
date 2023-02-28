@@ -1176,8 +1176,11 @@ Spur64BitMemoryManager >> smallFloatValueOf: oop [
 	<var: #bits type: #usqLong>
 	bits := self smallFloatBitsOf: oop.
 	self cCode:
-			["self memcpy: (self addressOf: value) _: (self addressOf: bits) _: (self sizeof: value).
-			"^ bits float64FromRawBits]
+			[
+			"TODO!!!"
+			self memcpy: (self addressOf: value) _: (self addressOf: bits) _: (self sizeof: value).
+			^ value
+			"^ bits float64FromRawBits"]
 		inSmalltalk:
 			[^(Float new: 2)
 				at: 1 put: bits >> 32;
