@@ -12250,49 +12250,55 @@ SpurMemoryManager >> trueObject: anOop [
 { #category : #accessing }
 SpurMemoryManager >> uint16At: address [
 
-	<doNotGenerate>
+	<inline: true>
+
 	^ self shortAt: address
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> uint16At: address put: aValue [
 
-	<doNotGenerate>
+	<inline: true>
+
 	^ self shortAt: address put: aValue
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> uint32At: address [
 
-	<doNotGenerate>
+	<inline: true>
+
 	^ self long32At: address
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> uint32At: address put: aValue [
 
-	<doNotGenerate>
+	<inline: true>
+
 	^ self long32At: address put: aValue
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> uint64At: address [
 
-	<doNotGenerate>
+	<inline: true>
+
 	^ self long64At: address
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> uint64At: address put: aValue [
 
-	<doNotGenerate>
+	<inline: true>
+
 	^ self long64At: address put: aValue
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> uint8At: address [
 
-	<doNotGenerate>
+	<inline: true>
 	^ self byteAt: address
 ]
 
