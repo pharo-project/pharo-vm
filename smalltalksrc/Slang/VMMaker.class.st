@@ -1181,6 +1181,13 @@ VMMaker >> sourceFilePathFor: sourceFileName [
 	^ self coreVMDirectory / sourceFileName
 ]
 
+{ #category : #'error notification' }
+VMMaker >> stopOnErrors [
+
+	^ stopOnErrors
+		ifNil: [ stopOnErrors := true ]
+]
+
 { #category : #accessing }
 VMMaker >> stopOnErrors: aValue [
 
