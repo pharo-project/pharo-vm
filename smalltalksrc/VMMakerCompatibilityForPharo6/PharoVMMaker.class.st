@@ -137,6 +137,28 @@ PharoVMMaker >> generateCoInterpreter [
 ]
 
 { #category : #generation }
+PharoVMMaker >> generateDruidVM [
+
+	| interpreterCompiler compilerClassName compilationUnit |
+	compilerClassName := #DruidJIT.
+	StackInterpreter initializePrimitiveTable.
+	interpreterCompiler := DRInterpreterCompiler
+		                       fromInterpreter:
+			                       (DRDummyInterpreter new primitives:
+				                        DRBasicCogInterpreterArithmeticPrimitives
+					                        primitiveTable)
+		                       compilerClass:
+		                       DRPrimitiveCompilerCompilerCollector.
+			compilationUnit := interpreterCompiler generateIR.
+	interpreterCompiler generateBuildModelAndCompileIn: compilerClassName.
+
+	self
+		generate: CoInterpreter
+		memoryManager: Spur64BitCoMemoryManager
+		compilerClass: (self class environment at: compilerClassName)
+]
+
+{ #category : #generation }
 PharoVMMaker >> generateSistaVM [
 
 	self

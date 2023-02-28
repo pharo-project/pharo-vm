@@ -1182,13 +1182,6 @@ VMMaker >> sourceFilePathFor: sourceFileName [
 ]
 
 { #category : #accessing }
-VMMaker >> stopOnErrors [
-
-	^ stopOnErrors
-		ifNil: [ stopOnErrors := true ]
-]
-
-{ #category : #accessing }
 VMMaker >> stopOnErrors: aValue [
 
 	stopOnErrors := aValue

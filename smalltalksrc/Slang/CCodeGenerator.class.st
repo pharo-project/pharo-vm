@@ -4753,13 +4753,6 @@ CCodeGenerator >> stepExpressionIsNegative: aNode [
 	^false
 ]
 
-{ #category : #accessing }
-CCodeGenerator >> stopOnErrors [
-
-	^ stopOnErrors
-		ifNil: [ stopOnErrors := true ]
-]
-
 { #category : #utilities }
 CCodeGenerator >> stopOnErrors: aBoolean [
 	stopOnErrors := aBoolean
