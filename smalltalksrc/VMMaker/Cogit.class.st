@@ -3234,7 +3234,7 @@ Cogit >> allMachineCodeObjectReferencesValid [
 		(cogMethod cmType = CMMethod
 		 and: [SistaVM]) ifTrue:
 			[(SistaVM and: [cogMethod counters ~= 0]) ifTrue:
-				[(self asserta: (objectRepresentation checkValidDerivedObjectReference: cogMethod counters)) ifFalse:
+				[(self asserta: (objectMemory checkValidDerivedObjectReference: cogMethod counters)) ifFalse:
 					[ok := false]]].
 		cogMethod cmType = CMPolymorphicIC ifTrue:
 			[(self asserta: (self noTargetsFreeInClosedPIC: cogMethod)) ifFalse:

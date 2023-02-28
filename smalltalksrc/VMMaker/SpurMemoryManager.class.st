@@ -3421,10 +3421,16 @@ SpurMemoryManager >> checkOopIntegrity: obj named: name index: i [
 ]
 
 { #category : #'debug support' }
+SpurMemoryManager >> checkValidDerivedObjectReference: bodyAddress [
+
+	^(heapMap heapMapAtWord: (self pointerForOop: bodyAddress - self baseHeaderSize)) ~= 0
+]
+
+{ #category : #'debug support' }
 SpurMemoryManager >> checkValidOopReference: anOop [
 
 	^ (self isImmediate: anOop) or: [
-		  (self heapMapAtWord: (self pointerForOop: anOop)) ~= 0 ]
+		  (heapMap heapMapAtWord: (self pointerForOop: anOop)) ~= 0 ]
 ]
 
 { #category : #'simulation only' }

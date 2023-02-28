@@ -323,11 +323,6 @@ CogObjectRepresentationForSpur >> checkRememberedInTrampoline [
 ]
 
 { #category : #'debug support' }
-CogObjectRepresentationForSpur >> checkValidDerivedObjectReference: bodyAddress [
-	^(objectMemory heapMapAtWord: (self pointerForOop: bodyAddress - objectMemory baseHeaderSize)) ~= 0
-]
-
-{ #category : #'garbage collection' }
 CogObjectRepresentationForSpur >> checkValidObjectReference: anOop [
 	^(objectMemory isImmediate: anOop) not
 	   and: [(objectMemory heapMapAtWord: (self pointerForOop: anOop)) ~= 0]
