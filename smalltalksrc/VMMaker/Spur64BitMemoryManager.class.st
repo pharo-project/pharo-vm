@@ -628,7 +628,7 @@ Spur64BitMemoryManager >> isSmallFloatValue: aFloat [
 	<var: #aFloat type: #double>
 	| exponent rawFloat |
 	self
-		cCode: [rawFloat := aFloat rawFloatBits "memcpy: (self addressOf: rawFloat) _: (self addressOf: aFloat) _: (self sizeof: rawFloat)"]
+		cCode: [rawFloat := "TODO" "aFloat rawFloatBits" self memcpy: (self addressOf: rawFloat) _: (self addressOf: aFloat) _: (self sizeof: rawFloat)]
 		inSmalltalk: [rawFloat := (aFloat at: 1) << 32 + (aFloat at: 2)].
 	exponent := rawFloat >> self smallFloatMantissaBits bitAnd: 16r7FF.
 	^exponent > self smallFloatExponentOffset
@@ -1138,7 +1138,7 @@ Spur64BitMemoryManager >> smallFloatObjectOf: aFloat [
 	<var: #rot type: #usqLong>
 	self assert: (self isSmallFloatValue: aFloat).
 	self
-		cCode: [ aFloat rawFloatBits" self memcpy: (self addressOf: rawFloat) _: (self addressOf: aFloat) _: (self sizeof: rawFloat)"]
+		cCode: [ "TODO" "aFloat rawFloatBits" rawFloat := self memcpy: (self addressOf: rawFloat) _: (self addressOf: aFloat) _: (self sizeof: rawFloat)]
 		inSmalltalk: [rawFloat := (aFloat at: 1) << 32 + (aFloat at: 2)].
 	rot := self rotateLeft: rawFloat.
 	rot > 1 ifTrue: "a.k.a. ~= +/-0.0"
