@@ -2138,7 +2138,7 @@ CCodeGenerator >> generateCASTInlineCppIfElse: tast asArgument: asArgument [
 		tast arguments size >= 3 ifTrue: [ 
 			^ generateCAST value: tast arguments third ].
 		^ CEmptyStatementNode new ].
-	self haltIf: [ self currentMethod selector = #setInterpreter:].
+	(self currentMethod selector = #setInterpreter:) ifTrue: [1halt].
 	cppIf := CPreprocessorIfNode
 		         if: (tast arguments first asCASTExpressionIn: self)
 		         then: (self
