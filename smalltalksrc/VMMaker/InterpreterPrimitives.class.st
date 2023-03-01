@@ -5058,7 +5058,7 @@ InterpreterPrimitives >> sumSmallInteger: anInteger withSmallInteger: anotherInt
 
 	result := a + b.
 
-	(objectMemory isIntegerValue: result) ifFalse: [ ^ self error: 'Overflow' ].
+	(objectMemory isIntegerValue: result) ifFalse: [ ^ self druidExitPoint ].
 	
 	^ aBlock value: (objectMemory integerObjectOf: result)
 ]
