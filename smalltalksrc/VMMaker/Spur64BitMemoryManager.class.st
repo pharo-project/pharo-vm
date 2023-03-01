@@ -623,20 +623,22 @@ Spur64BitMemoryManager >> isNonIntegerObject: oop [
 
 { #category : #'interpreter access' }
 Spur64BitMemoryManager >> isSmallFloatValue: aFloat [
+
 	<inline: true>
 	<var: #rawFloat type: #usqLong>
 	<var: #aFloat type: #double>
 	| exponent rawFloat |
 	self
-		cCode: [rawFloat := "TODO" "aFloat rawFloatBits" self memcpy: (self addressOf: rawFloat) _: (self addressOf: aFloat) _: (self sizeof: rawFloat)]
-		inSmalltalk: [rawFloat := (aFloat at: 1) << 32 + (aFloat at: 2)].
+		cCode: [ self rawFloatBitsOf: aFloat in: rawFloat ]
+		inSmalltalk: [ rawFloat := (aFloat at: 1) << 32 + (aFloat at: 2) ].
+		
 	exponent := rawFloat >> self smallFloatMantissaBits bitAnd: 16r7FF.
-	^exponent > self smallFloatExponentOffset
-	 	ifTrue: [exponent <= (255 + self smallFloatExponentOffset)]
-		ifFalse:
-			[(rawFloat bitAnd: (1 << self smallFloatMantissaBits - 1)) = 0
-				ifTrue: [exponent = 0]
-				ifFalse: [exponent = self smallFloatExponentOffset]]
+	^ exponent > self smallFloatExponentOffset
+		  ifTrue: [ exponent <= (255 + self smallFloatExponentOffset) ]
+		  ifFalse: [
+			  (rawFloat bitAnd: 1 << self smallFloatMantissaBits - 1) = 0
+				  ifTrue: [ exponent = 0 ]
+				  ifFalse: [ exponent = self smallFloatExponentOffset ] ]
 ]
 
 { #category : #'interpreter access' }
@@ -855,6 +857,16 @@ Spur64BitMemoryManager >> oldSmallFloatTag [
 Spur64BitMemoryManager >> positiveSmallFloatZero [
 	<inline: true>
 	^self smallFloatTag
+]
+
+{ #category : #'interpreter access' }
+Spur64BitMemoryManager >> rawFloatBitsOf: aFloat in: rawFloat [
+
+	<inline: true>
+	self
+		memcpy: (self addressOf: rawFloat)
+		_: (self addressOf: aFloat)
+		_: (self sizeof: rawFloat)
 ]
 
 { #category : #'object access' }
@@ -1138,7 +1150,7 @@ Spur64BitMemoryManager >> smallFloatObjectOf: aFloat [
 	<var: #rot type: #usqLong>
 	self assert: (self isSmallFloatValue: aFloat).
 	self
-		cCode: [ "TODO" "aFloat rawFloatBits" rawFloat := self memcpy: (self addressOf: rawFloat) _: (self addressOf: aFloat) _: (self sizeof: rawFloat)]
+		cCode: [ self rawFloatBitsOf: aFloat in: rawFloat]
 		inSmalltalk: [rawFloat := (aFloat at: 1) << 32 + (aFloat at: 2)].
 	rot := self rotateLeft: rawFloat.
 	rot > 1 ifTrue: "a.k.a. ~= +/-0.0"
