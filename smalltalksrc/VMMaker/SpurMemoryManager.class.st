@@ -3608,6 +3608,7 @@ SpurMemoryManager >> classIndexOf: objOop [
 		32-bit access will be quicker on 64-bits by virtue of fetching half the bits.  But experiments
 		show that doing this does not produce any increase; at least any signal is lost in the noise."
 	<api>
+	<returnTypeC: #sqInt>
 	^(self wordAt: objOop) bitAnd: self classIndexMask
 ]
 
@@ -3965,7 +3966,7 @@ SpurMemoryManager >> coallesceFreeChunk: objOop [
 { #category : #'object access' }
 SpurMemoryManager >> compactClassIndexOf: objOop [
 	<api>
-	<inline: true>
+	<returnTypeC: #sqInt>
 	^self classIndexOf: objOop
 ]
 
@@ -4737,6 +4738,8 @@ SpurMemoryManager >> fetchClassTagOf: oop [
 
 { #category : #'interpreter access' }
 SpurMemoryManager >> fetchClassTagOfNonImm: obj [
+	<inline: true>
+	<returnTypeC: #sqInt>
 	"In Spur an object's classIndex is the tag in all method caches."
 	^self classIndexOf: obj
 ]
