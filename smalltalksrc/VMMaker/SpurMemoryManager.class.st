@@ -7693,7 +7693,12 @@ SpurMemoryManager >> isYoungObject: objOop [
 { #category : #'object access' }
 SpurMemoryManager >> keyOfEphemeron: objOop [
 	"Answer the object the ephemeron guards.  This is its first element."
-	self assert: ((self isNonImmediate: objOop) and: [self isObjEphemeron: objOop]).
+	self assert: ((self isNonImmediate: objOop)
+		and: [ (self isObjEphemeron: objOop) ]).
+		
+	"Accessing the first slot of an ephemeron always works.
+	All objects have always at least one slot to use as a forwarding pointer, initialized as nil.
+	0-sized ephemeron will have this slot and work as a normal object"
 	^self fetchPointer: 0 ofObject: objOop
 ]
 
