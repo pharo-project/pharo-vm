@@ -2155,6 +2155,25 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveQuoReturnsZeroWithZeroReceiver [
 ]
 
 { #category : #'tests - primitiveStringCompare' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveStringCompareBigString [
+	
+
+	| aByteSymbol endInstruction primitiveAddress |
+	"256 has a size bigger than 8 bits"
+	aByteSymbol := (String loremIpsum: 256) asSymbol forMemory: memory inMethod: nil.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveStringCompareWith.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: aByteSymbol arguments: { aByteSymbol }.
+	self runFrom: primitiveAddress until: callerAddress.
+
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 0).
+]
+
+{ #category : #'tests - primitiveStringCompare' }
 VMJittedGeneralPrimitiveTest >> testPrimitiveStringCompareWithHigherSymbol [
 	
 

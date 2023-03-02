@@ -2274,7 +2274,11 @@ CogObjectRepresentationForSpur >> genPrimitiveStringCompareWith [
 	cogit AddCq: objectMemory baseHeaderSize R: minSizeReg.
 	
 	instr := cogit MoveXbr: TempReg R: string1Reg R: string1CharOrByteSizeReg.
+		cogit backEnd byteReadsZeroExtend ifFalse:
+			[cogit AndCq: 255 R: string1CharOrByteSizeReg].
 	cogit MoveXbr: TempReg R: string2Reg R: string2CharOrByteSizeReg.
+		cogit backEnd byteReadsZeroExtend ifFalse:
+			[cogit AndCq: 255 R: string2CharOrByteSizeReg].
 	cogit SubR: string2CharOrByteSizeReg R: string1CharOrByteSizeReg. 
 	jumpMidFailure := cogit JumpNonZero: 0. "the 2 compared characters are different, exit the loop"
 	cogit AddCq: 1 R: TempReg.
