@@ -287,6 +287,13 @@ VMClass class >> objectRepresentationClass [
 	^self objectMemoryClass objectRepresentationClass
 ]
 
+{ #category : #accessing }
+VMClass class >> resetInitializationOptions [
+
+	self release.
+	InitializationOptions := nil
+]
+
 { #category : #translation }
 VMClass class >> shouldGenerateTypedefFor: aStructClass [
 	"Hack to work-around multiple definitions.  Sometimes a type has been defined in an include."
