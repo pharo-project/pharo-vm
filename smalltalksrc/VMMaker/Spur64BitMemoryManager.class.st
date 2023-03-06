@@ -545,7 +545,7 @@ Spur64BitMemoryManager >> integerValueOf: oop [
 
 	"Translator produces 'oop >> 3'"
 
-	self cCode: [ ^ oop >> 3 ] inSmalltalk: [ 
+	self cCode: [ ^ oop >>> 3 ] inSmalltalk: [ 
 		^ (oop bitShift: -63) = 1
 			  ifTrue: [ "negative"
 				  ((oop bitShift: self numTagBits negated) bitAnd:
