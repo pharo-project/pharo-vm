@@ -14,6 +14,17 @@ DruidJIT class >> initializePrimitiveTable [
 	self table: primitiveTable from: self primitiveTableArray
 ]
 
+{ #category : #translation }
+DruidJIT class >> objectRepresentationAncilliaryClasses [
+
+	^ Array empty
+]
+
+{ #category : #'accessing class hierarchy' }
+DruidJIT class >> objectRepresentationClass [
+
+]
+
 { #category : #'class initialization' }
 DruidJIT class >> primitiveTableArray [
 
