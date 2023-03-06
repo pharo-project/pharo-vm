@@ -1,8 +1,30 @@
 Class {
 	#name : #DruidJIT,
 	#superclass : #StackToRegisterMappingCogit,
+	#instVars : [
+		'ceDereferenceSelectorIndex',
+		'ceStoreTrampolines',
+		'ceNewHashTrampoline',
+		'ceInlineNewHashTrampoline',
+		'ceStoreCheckTrampoline',
+		'ceStoreCheckContextReceiverTrampoline',
+		'ceScheduleScavengeTrampoline',
+		'ceSmallActiveContextInMethodTrampoline',
+		'ceSmallActiveContextInFullBlockTrampoline',
+		'ceLargeActiveContextInMethodTrampoline',
+		'ceLargeActiveContextInFullBlockTrampoline'
+	],
+	#classVars : [
+		'NumStoreTrampolines'
+	],
 	#category : #'VMMaker-JIT'
 }
+
+{ #category : #initialization }
+DruidJIT class >> initialize [
+	
+	NumStoreTrampolines := 5
+]
 
 { #category : #'class initialization' }
 DruidJIT class >> initializePrimitiveTable [
@@ -42,16 +64,70 @@ DruidJIT class >> primitiveTableArray [
 		  { 10. #gen_PrimitiveDivide. 1 } }
 ]
 
+{ #category : #'garbage collection' }
+DruidJIT >> allYoungObjectsAgeInFullGC [
+	^false
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> checkValidObjectReference: anOop [
+	^(objectMemory isImmediate: anOop) not
+	   and: [(objectMemory heapMapAtWord: (self pointerForOop: anOop)) ~= 0]
+]
+
 { #category : #'trait candidates' }
 DruidJIT >> checkValidOopReference: anOop [
 	^(objectMemory isImmediate: anOop)
 	   or: [(objectMemory heapMapAtWord: (self pointerForOop: anOop)) ~= 0]
 ]
 
+{ #category : #'in-line cacheing' }
+DruidJIT >> classForInlineCacheTag: classIndex [
+	^objectMemory classOrNilAtIndex: classIndex
+]
+
 { #category : #'trait candidates' }
 DruidJIT >> couldBeObject: literal [
 	^(objectMemory isNonImmediate: literal)
 	  and: [self oop: literal isGreaterThanOrEqualTo: objectMemory startOfMemory]
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genGetInlineCacheClassTagFrom: sourceReg into: destReg forEntry: forEntry [
+	"Extract the inline cache tag for the object in sourceReg into destReg. The inline
+	 cache tag for a given object is the value loaded in inline caches to distinguish
+	 objects of different classes.  In Spur this is either the tags for immediates, or
+	 the receiver's classIndex.  Answer the label for the start of the sequence."
+	| jumpImm entryLabel |
+	<var: #jumpImm type: #'AbstractInstruction *'>
+	<var: #entryLabel type: #'AbstractInstruction *'>
+	forEntry ifTrue:
+		[ self AlignmentNops: objectMemory wordSize].
+	entryLabel := self Label.
+	self AndCq: objectMemory tagMask R: sourceReg R: destReg.
+	jumpImm := self JumpNonZero: 0.
+	"Get least significant half of header word in destReg"
+	self flag: #endianness.
+	self MoveMw: 0 r: sourceReg R: destReg.
+	self AndCq: objectMemory classIndexMask R: destReg.
+
+	"The entry and the noCheckEntry (that will generated after) need to be aligned differently.
+	We do that by forcing some odd number of extra Nop operations here.
+	One Nop is not enough because that causes x86-64 entries to have the same allignment.
+	
+	In ARM64 all instructions are 4 byte long, thus 3 Nops make 
+	   - the entry to be aligned to 8 bytes and
+	   - the no check entry aligned to 4 bytes.
+	
+	In x86-64 instruction size is variable, and 3 Nops take 3 bytes."
+	forEntry ifTrue: [ 
+		self Nop.
+		self Nop.
+		self Nop.
+	].
+
+	jumpImm jmpTarget: self Label.
+	^entryLabel
 ]
 
 { #category : #generated }
@@ -326,11 +402,58 @@ DruidJIT >> gen_PrimitiveSubtract [
 	^ CompletePrimitive
 ]
 
+{ #category : #initialization }
+DruidJIT >> generateObjectRepresentationTrampolines [
+	"Do the store check.  Answer the argument for the benefit of the code generator;
+	 ReceiverResultReg may be caller-saved and hence smashed by this call.  Answering
+	 it allows the code generator to reload ReceiverResultReg cheaply.
+	 In Spur the only thing we leave to the run-time is adding the receiver to the
+	 remembered set and setting its isRemembered bit."
+	self 
+		cppIf: IMMUTABILITY
+		ifTrue: 
+			[self cCode: [] inSmalltalk:
+				[ceStoreTrampolines := CArrayAccessor on: (Array new: NumStoreTrampolines)].
+			 0 to: NumStoreTrampolines - 1 do:
+				[:instVarIndex |
+				 ceStoreTrampolines
+					at: instVarIndex
+					put: (self 
+							genStoreTrampolineCalled: (self 
+															trampolineName: 'ceStoreTrampoline' 
+															numArgs: instVarIndex 
+															limit: NumStoreTrampolines - 2) 
+							instVarIndex: instVarIndex)]].
+	ceNewHashTrampoline := self genNewHashTrampoline: false called: 'ceNewHash'.
+	SistaVM ifTrue: [ceInlineNewHashTrampoline := self genNewHashTrampoline: true  called: 'ceInlineNewHash'].
+	ceStoreCheckTrampoline := self genStoreCheckTrampoline.
+	ceStoreCheckContextReceiverTrampoline := self genStoreCheckContextReceiverTrampoline.
+	ceScheduleScavengeTrampoline := self
+											genTrampolineFor: #ceScheduleScavenge
+											called: 'ceScheduleScavengeTrampoline'
+											regsToSave: CallerSavedRegisterMask.
+	ceSmallActiveContextInMethodTrampoline := self genActiveContextTrampolineLarge: false inBlock: 0 called: 'ceSmallMethodContext'.
+	SistaV1BytecodeSet ifTrue:
+		[ceSmallActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: false inBlock: InFullBlock called: 'ceSmallFullBlockContext'].
+	ceLargeActiveContextInMethodTrampoline := self genActiveContextTrampolineLarge: true inBlock: 0 called: 'ceLargeMethodContext'.
+	SistaV1BytecodeSet ifTrue:
+		[ceLargeActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: true inBlock: InFullBlock called: 'ceLargeFullBlockContext'].
+]
+
 { #category : #'trait candidates' }
 DruidJIT >> hasValidHeaderPostGC: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	<inline: true>
 	^cogMethod objectHeader = objectMemory nullHeaderForMachineCodeMethod
+]
+
+{ #category : #initialization }
+DruidJIT >> initialize [
+
+	<doNotGenerate>
+	super initialize.
+	
+	ceStoreTrampolines := (CArrayAccessor on: (Array new: NumStoreTrampolines))
 ]
 
 { #category : #'trait candidates' }
@@ -349,6 +472,110 @@ DruidJIT >> inlineCacheTagIsYoung: cacheTag [
 	^false
 ]
 
+{ #category : #'garbage collection' }
+DruidJIT >> markAndTraceLiteral: literal in: cogMethod at: address [
+	"Mark and trace a literal in a sqInt variable of cogMethod."
+	<var: #cogMethod type: #'CogMethod *'>
+	<var: #address type: #'sqInt *'>
+	| objOop |
+	(self couldBeObject: literal) ifFalse:
+		[^self].
+	self assert: (objectMemory addressCouldBeObj: literal).
+	(objectMemory isForwarded: literal) ifFalse:
+		[objectMemory markAndTrace: literal.
+		 ^self].
+	objOop := objectMemory followForwarded: literal.
+	address at: 0 put: objOop.
+	self markAndTraceUpdatedLiteral: objOop in: cogMethod
+]
+
+{ #category : #'garbage collection' }
+DruidJIT >> markAndTraceLiteral: literal in: cogMethodOrNil atpc: address [
+	"Mark and trace a literal in a machine code instruction preceding address in cogMethodOrNil.
+	 Answer if code was modified."
+	<var: #cogMethodOrNil type: #'CogMethod *'>
+	<var: #address type: #usqInt>
+	| objOop |
+	(self couldBeObject: literal) ifFalse:
+		[^false].
+	self assert: (objectMemory addressCouldBeObj: literal).
+	(objectMemory isForwarded: literal) ifFalse:
+		[objectMemory markAndTrace: literal.
+		 ^false].
+	objOop := objectMemory followForwarded: literal.
+	self backEnd storeLiteral: objOop beforeFollowingAddress: address.
+	self markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil.
+	^true
+]
+
+{ #category : #'garbage collection' }
+DruidJIT >> markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil [
+	"Common code to mark a literal in cogMethod and add
+	 the cogMethod to youngReferrers if the literal is young."
+	<var: #cogMethodOrNil type: #'CogMethod *'>
+	(objectMemory isNonImmediate: objOop) ifTrue:
+		[(cogMethodOrNil notNil
+		  and: [objectMemory isYoungObject: objOop]) ifTrue:
+			[methodZone ensureInYoungReferrers: cogMethodOrNil].
+		 objectMemory markAndTrace: objOop]
+]
+
+{ #category : #initialization }
+DruidJIT >> maybeGenerateSelectorIndexDereferenceRoutine [
+	"Generate the routine that converts selector indices into selector objects.
+	 It is called from the send trampolines.
+	 If the selector index is negative, convert it into a positive index into the
+	 special selectors array and index that.  Otherwise, index the current method.
+	 The routine uses Extra0Reg & Extra1Reg, which are available, since they
+	 are not live at point of send."
+	| jumpNegative jumpNotBlock jumpFullBlock |
+	<var: 'jumpNegative' type: #'AbstractInstruction *'>
+	<var: 'jumpNotBlock' type: #'AbstractInstruction *'>
+	<var: 'jumpFullBlock' type: #'AbstractInstruction *'>
+	self zeroOpcodeIndex.
+	self CmpCq: 0 R: ClassReg.
+	jumpNegative := self JumpLess: 0.
+	self
+		MoveMw: FoxMethod r: FPReg R: Extra0Reg;
+		AddCq: 2 R: ClassReg; "Change selector index to 1-relative, skipping the method header"
+		TstCq: MFMethodFlagIsBlockFlag R: Extra0Reg.
+	jumpNotBlock := self JumpZero: 0.
+	"If in a block, need to find the home method...  If using full blocks, need to test the cpicHasMNUCaseOrCMIsFullBlock bit"
+	self AndCq: methodZone zoneAlignment negated R: Extra0Reg.
+	SistaV1BytecodeSet ifTrue:
+		[self bitAndByteOffsetOfIsFullBlockBitInto:
+			[:bitmask :byteOffset|
+			jumpFullBlock := self
+				MoveMb: byteOffset r: Extra0Reg R: Extra1Reg;
+				TstCq: bitmask R: Extra1Reg;
+				JumpNonZero: 0]].
+	self 
+		MoveM16: 0 r: Extra0Reg R: Extra1Reg;
+		SubR: Extra1Reg R: Extra0Reg.
+	jumpNotBlock jmpTarget: self Label.
+	SistaV1BytecodeSet ifTrue:
+		[jumpFullBlock jmpTarget: jumpNotBlock getJmpTarget].
+	self "Now fetch the method object and index with the literal index to retrieve the selector"
+		AndCq: methodZone zoneAlignment negated R: Extra0Reg;
+		MoveMw: (self offset: CogMethod of: #methodObject) r: Extra0Reg R: Extra1Reg;
+		MoveXwr: ClassReg R: Extra1Reg R: ClassReg;
+		RetN: 0.
+	jumpNegative jmpTarget: self Label.
+	self
+		NegateR: ClassReg;
+		LogicalShiftLeftCq: 1 R: ClassReg;
+		MoveAw: objectMemory specialObjectsArrayAddress R: Extra0Reg;
+		SubCq: 1 R: ClassReg;
+		MoveMw: SpecialSelectors + 1 * objectMemory wordSize r: Extra0Reg R: Extra1Reg; "Index, including header size"
+		MoveXwr: ClassReg R: Extra1Reg R: ClassReg;
+		RetN: 0.
+	ceDereferenceSelectorIndex := self methodZoneBase.
+	self
+		outputInstructionsForGeneratedRuntimeAt: ceDereferenceSelectorIndex;
+		recordGeneratedRunTime: 'ceDereferenceSelectorIndex' address: ceDereferenceSelectorIndex;
+		recordRunTimeObjectReferences
+]
+
 { #category : #'trait candidates' }
 DruidJIT >> numRegArgs [
 	"Define how many register arguments a StackToRegisterMappingCogit can
@@ -362,6 +589,21 @@ DruidJIT >> numRegArgs [
 	<api>
 	<option: #StackToRegisterMappingCogit>
 	^2
+]
+
+{ #category : #'garbage collection' }
+DruidJIT >> remapObject: objOop [
+	self assert: (objectMemory addressCouldBeObj: objOop).
+	^(objectMemory shouldRemapObj: objOop)
+		ifTrue: [objectMemory remapObj: objOop]
+		ifFalse: [objOop]
+]
+
+{ #category : #'garbage collection' }
+DruidJIT >> remapOop: objOop [
+	^(objectMemory shouldRemapOop: objOop)
+		ifTrue: [objectMemory remapObj: objOop]
+		ifFalse: [objOop]
 ]
 
 { #category : #'trait candidates' }
