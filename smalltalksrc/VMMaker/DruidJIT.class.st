@@ -64,9 +64,17 @@ DruidJIT class >> primitiveTableArray [
 		  { 10. #gen_PrimitiveDivide. 1 } }
 ]
 
-{ #category : #'garbage collection' }
+{ #category : #'trait candidates' }
 DruidJIT >> allYoungObjectsAgeInFullGC [
 	^false
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> cacheTagIsMarked: cacheTag [
+	"Answer if the cacheTag is not unmarked, i.e. answer true for compact class
+	 indices and immediates; only answer false for unmarked objects.  In Spur
+	 linked send cache tags are class indices so effectively they're always marked."
+	^true
 ]
 
 { #category : #'trait candidates' }
@@ -81,7 +89,7 @@ DruidJIT >> checkValidOopReference: anOop [
 	   or: [(objectMemory heapMapAtWord: (self pointerForOop: anOop)) ~= 0]
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : #'trait candidates' }
 DruidJIT >> classForInlineCacheTag: classIndex [
 	^objectMemory classOrNilAtIndex: classIndex
 ]
@@ -92,7 +100,7 @@ DruidJIT >> couldBeObject: literal [
 	  and: [self oop: literal isGreaterThanOrEqualTo: objectMemory startOfMemory]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genGetInlineCacheClassTagFrom: sourceReg into: destReg forEntry: forEntry [
 	"Extract the inline cache tag for the object in sourceReg into destReg. The inline
 	 cache tag for a given object is the value loaded in inline caches to distinguish
@@ -402,7 +410,7 @@ DruidJIT >> gen_PrimitiveSubtract [
 	^ CompletePrimitive
 ]
 
-{ #category : #initialization }
+{ #category : #'trait candidates' }
 DruidJIT >> generateObjectRepresentationTrampolines [
 	"Do the store check.  Answer the argument for the benefit of the code generator;
 	 ReceiverResultReg may be caller-saved and hence smashed by this call.  Answering
@@ -447,7 +455,7 @@ DruidJIT >> hasValidHeaderPostGC: cogMethod [
 	^cogMethod objectHeader = objectMemory nullHeaderForMachineCodeMethod
 ]
 
-{ #category : #initialization }
+{ #category : #'trait candidates' }
 DruidJIT >> initialize [
 
 	<doNotGenerate>
@@ -472,7 +480,18 @@ DruidJIT >> inlineCacheTagIsYoung: cacheTag [
 	^false
 ]
 
-{ #category : #'garbage collection' }
+{ #category : #'trait candidates' }
+DruidJIT >> markAndTraceCacheTagLiteral: literal in: cogMethodOrNil atpc: address [
+	"Mark and trace a literal in an inline cache preceding address in cogMethodOrNil.
+	 Answer if code was modified.  In 64-bit Spur, cache tags are either selector
+	 indices or class indices and so this is a noop."
+	<var: #cogMethodOrNil type: #'CogMethod *'>
+	<var: #address type: #usqInt>
+	<inline: true>
+	^false
+]
+
+{ #category : #'trait candidates' }
 DruidJIT >> markAndTraceLiteral: literal in: cogMethod at: address [
 	"Mark and trace a literal in a sqInt variable of cogMethod."
 	<var: #cogMethod type: #'CogMethod *'>
@@ -489,7 +508,7 @@ DruidJIT >> markAndTraceLiteral: literal in: cogMethod at: address [
 	self markAndTraceUpdatedLiteral: objOop in: cogMethod
 ]
 
-{ #category : #'garbage collection' }
+{ #category : #'trait candidates' }
 DruidJIT >> markAndTraceLiteral: literal in: cogMethodOrNil atpc: address [
 	"Mark and trace a literal in a machine code instruction preceding address in cogMethodOrNil.
 	 Answer if code was modified."
@@ -508,7 +527,7 @@ DruidJIT >> markAndTraceLiteral: literal in: cogMethodOrNil atpc: address [
 	^true
 ]
 
-{ #category : #'garbage collection' }
+{ #category : #'trait candidates' }
 DruidJIT >> markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil [
 	"Common code to mark a literal in cogMethod and add
 	 the cogMethod to youngReferrers if the literal is young."
@@ -520,7 +539,7 @@ DruidJIT >> markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil [
 		 objectMemory markAndTrace: objOop]
 ]
 
-{ #category : #initialization }
+{ #category : #'trait candidates' }
 DruidJIT >> maybeGenerateSelectorIndexDereferenceRoutine [
 	"Generate the routine that converts selector indices into selector objects.
 	 It is called from the send trampolines.
@@ -591,7 +610,7 @@ DruidJIT >> numRegArgs [
 	^2
 ]
 
-{ #category : #'garbage collection' }
+{ #category : #'trait candidates' }
 DruidJIT >> remapObject: objOop [
 	self assert: (objectMemory addressCouldBeObj: objOop).
 	^(objectMemory shouldRemapObj: objOop)
@@ -599,7 +618,7 @@ DruidJIT >> remapObject: objOop [
 		ifFalse: [objOop]
 ]
 
-{ #category : #'garbage collection' }
+{ #category : #'trait candidates' }
 DruidJIT >> remapOop: objOop [
 	^(objectMemory shouldRemapOop: objOop)
 		ifTrue: [objectMemory remapObj: objOop]
