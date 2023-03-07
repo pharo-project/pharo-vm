@@ -172,6 +172,151 @@ DruidJIT >> genCheckRememberedBitOf: objReg scratch: scratchReg [
 	^self JumpNonZero: 0
 ]
 
+{ #category : #'bytecode generator support' }
+DruidJIT >> genCreateFullClosure: compiledBlock numArgs: numArgs numCopied: numCopied ignoreContext: ignoreContext contextNumArgs: contextNumArgs large: contextIsLarge inBlock: contextIsBlock [
+	"Create a full closure with the given values."
+	| numSlots byteSize header skip |
+	<var: #skip type: #'AbstractInstruction *'>
+
+	"First get thisContext into ReceiverResultReg and thence in ClassReg."
+	ignoreContext
+		ifTrue: [ self genMoveNilR: ClassReg ]
+		ifFalse: 
+			[self genGetActiveContextNumArgs: contextNumArgs large: contextIsLarge inBlock: contextIsBlock.
+			self MoveR: ReceiverResultReg R: ClassReg ].
+	
+	numSlots := FullClosureFirstCopiedValueIndex + numCopied.
+	byteSize := objectMemory smallObjectBytesForSlots: numSlots.
+	self assert: ClassFullBlockClosureCompactIndex ~= 0.
+	header := objectMemory
+					headerForSlots: numSlots
+					format: objectMemory indexablePointersFormat
+					classIndex: ClassFullBlockClosureCompactIndex.
+	self MoveAw: objectMemory freeStartAddress R: ReceiverResultReg.
+	self genStoreHeader: header intoNewInstance: ReceiverResultReg using: TempReg.
+	self
+		LoadEffectiveAddressMw: byteSize r: ReceiverResultReg R: TempReg;
+		MoveR: TempReg Aw: objectMemory freeStartAddress;
+		CmpCq: objectMemory getScavengeThreshold R: TempReg.
+	skip := self JumpBelow: 0.
+	self CallRT: ceScheduleScavengeTrampoline.
+	skip jmpTarget: self Label.
+
+	self
+		MoveR: ClassReg Mw: FullClosureOuterContextIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg;
+		genMoveConstant: compiledBlock R: TempReg;
+		MoveR: TempReg Mw: FullClosureCompiledBlockIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg;
+		MoveCq: (objectMemory integerObjectOf: numArgs) R: TempReg;
+		MoveR: TempReg Mw: FullClosureNumArgsIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg.
+	^0
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genEnsureObjInRegNotForwarded: reg scratchReg: scratch [
+	"Make sure that the object in reg is not forwarded.  This routine assumes the object will
+	 never be forwarded to an immediate, as it is used to unforward  literal variables (associations). 
+	 Use the fact that isForwardedObjectClassIndexPun is a power of two to save an instruction."
+	| loop ok |
+	<var: #ok type: #'AbstractInstruction *'>
+	<var: #loop type: #'AbstractInstruction *'>
+	self assert: reg ~= scratch.
+	loop := self Label.
+	"notionally
+		self genGetClassIndexOfNonImm: reg into: scratch.
+		cogit CmpCq: objectMemory isForwardedObjectClassIndexPun R: TempReg.
+	 but the following is an instruction shorter:"
+	self MoveMw: 0 r: reg R: scratch.
+	self
+		AndCq: objectMemory classIndexMask - objectMemory isForwardedObjectClassIndexPun
+		R: scratch.
+	ok := self JumpNonZero:  0.
+	self genLoadSlot: 0 sourceReg: reg destReg: reg.
+	self Jump: loop.
+	ok jmpTarget: self Label.
+	^0
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch [
+	^ self 
+		genEnsureOopInRegNotForwarded: reg 
+		scratchReg: scratch 
+		jumpBackTo: self Label "label is just before the forwarder check"
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch ifForwarder: fwdJumpTarget ifNotForwarder: nonFwdJumpTargetOrZero [
+	"Make sure that the oop in reg is not forwarded.  
+	 Use the fact that isForwardedObjectClassIndexPun is a power of two to save an instruction."
+	| imm ok finished |
+	self assert: reg ~= scratch.
+	imm := self genJumpImmediate: reg.
+	"notionally
+		self genGetClassIndexOfNonImm: reg into: scratch.
+		cogit CmpCq: objectMemory isForwardedObjectClassIndexPun R: TempReg.
+	 but the following is an instruction shorter:"
+	self MoveMw: 0 r: reg R: scratch.
+	self
+		AndCq: objectMemory classIndexMask - objectMemory isForwardedObjectClassIndexPun
+		R: scratch.
+	ok := self JumpNonZero: 0.
+	self genLoadSlot: 0 sourceReg: reg destReg: reg.
+	self Jump: fwdJumpTarget.
+	finished := nonFwdJumpTargetOrZero asUnsignedInteger = 0
+					ifTrue: [self Label]
+					ifFalse: [nonFwdJumpTargetOrZero].
+	imm jmpTarget: (ok jmpTarget: finished).
+	^0
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch jumpBackTo: instruction [
+	<var: #instruction type: #'AbstractInstruction *'>
+	<inline: true>
+	^ self 
+		genEnsureOopInRegNotForwarded: reg 
+		scratchReg: scratch 
+		ifForwarder: instruction
+		ifNotForwarder: 0
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch updatingSlot: index in: objReg [
+	"Make sure that the oop in reg is not forwarded, updating the slot in objReg with the value."
+	| loop imm ok |
+	<var: #ok type: #'AbstractInstruction *'>
+	<var: #imm type: #'AbstractInstruction *'>
+	<var: #loop type: #'AbstractInstruction *'>
+	"Open-code
+		self genEnsureOopInRegNotForwarded: reg
+			scratchReg: scratch
+			updatingMw: index * objectMemory wordSize + objectMemory baseHeaderSize
+			r: objReg.
+	 to avoid calling the store check unless the receiver is forwarded."
+	self assert: (reg ~= scratch and: [objReg ~= scratch]).
+	loop := self Label.
+	imm := self genJumpImmediate: reg.
+	"notionally
+		self genGetClassIndexOfNonImm: reg into: scratch.
+		cogit CmpCq: objectMemory isForwardedObjectClassIndexPun R: TempReg.
+	 but the following is an instruction shorter:"
+	self MoveMw: 0 r: reg R: scratch.
+	self
+		AndCq: objectMemory classIndexMask - objectMemory isForwardedObjectClassIndexPun
+		R: scratch.
+	ok := self JumpNonZero:  0.
+	self genLoadSlot: 0 sourceReg: reg destReg: reg.
+	self MoveR: reg Mw: index * objectMemory wordSize + objectMemory baseHeaderSize r: objReg.
+
+	"Check that we're meeting the contract of ceStoreCheckContextReceiverTrampoline."
+	self assert: (reg = Arg0Reg and: [scratch = TempReg and: [objReg = ReceiverResultReg]]).
+	self CallRT: ceStoreCheckContextReceiverTrampoline.
+
+	self Jump: loop.
+	ok jmpTarget: (imm jmpTarget: self Label).
+	^0
+]
+
 { #category : #'trait candidates' }
 DruidJIT >> genGetActiveContextLarge: isLarge inBlock: isInBlock [
 	"Create a trampoline to answer the active context that will
@@ -326,6 +471,23 @@ DruidJIT >> genGetActiveContextLarge: isLarge inBlock: isInBlock [
 	^0
 ]
 
+{ #category : #'bytecode generator support' }
+DruidJIT >> genGetActiveContextNumArgs: numArgs large: isLargeContext inBlock: isInBlock [
+	"Get the active context into ReceiverResultReg, creating it if necessary."
+	| routine |
+	routine := isLargeContext
+				ifFalse: [isInBlock caseOf: {
+						[0]				-> [ceSmallActiveContextInMethodTrampoline].
+						[InFullBlock]	-> [ceSmallActiveContextInFullBlockTrampoline] }]
+				ifTrue: [isInBlock caseOf: {
+						[0]				-> [ceLargeActiveContextInMethodTrampoline].
+						[InFullBlock]	-> [ceLargeActiveContextInFullBlockTrampoline] }].
+	self
+		MoveCq: numArgs R: SendNumArgsReg;
+		CallRT: routine.
+	^0
+]
+
 { #category : #'trait candidates' }
 DruidJIT >> genGetClassTagOf: instReg into: destReg scratchReg: scratchReg [
 	^self genGetInlineCacheClassTagFrom: instReg into: destReg forEntry: true
@@ -369,6 +531,24 @@ DruidJIT >> genGetInlineCacheClassTagFrom: sourceReg into: destReg forEntry: for
 	^entryLabel
 ]
 
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genInlinedIdenticalOrNotIfGuts: orNot [
+	<inline: true>
+
+	^ self genForwardersInlinedIdenticalOrNotIf: orNot
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genJumpBaseHeaderImmutable: baseHeaderReg [
+	"baseHeader holds at least the least significant 32 bits of the object"
+	<returnTypeC: #'AbstractInstruction *'>
+	<option: #IMMUTABILITY>
+	<inline: true>
+	
+	self  TstCq: objectMemory immutableBitMask R: baseHeaderReg.
+	^ self JumpNonZero: 0
+]
+
 { #category : #'trait candidates' }
 DruidJIT >> genJumpBaseHeaderMutable: baseHeaderReg [
 	"baseHeader holds at least the least significant 32 bits of the object"
@@ -385,6 +565,23 @@ DruidJIT >> genJumpImmediate: aRegister [
 
 	self TstCq: objectMemory tagMask R: aRegister.
 	^ self JumpNonZero: 0
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genJumpImmutable: sourceReg scratchReg: scratchReg [
+	<returnTypeC: #'AbstractInstruction *'>
+	<option: #IMMUTABILITY>
+	self MoveMw: 0 r: sourceReg R: scratchReg. 
+	^ self genJumpBaseHeaderImmutable: scratchReg
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genJumpInOldSpace: reg [
+	"Jump if reg is old."
+	<inline: true>
+	^ self
+		CmpCq: objectMemory storeCheckBoundary R: reg; "N.B. FLAGS := destReg - scratchReg"
+		JumpAboveOrEqual: 0
 ]
 
 { #category : #'trait candidates' }
@@ -491,6 +688,17 @@ DruidJIT >> genStoreHeader: header intoNewInstance: rcvrReg using: scratchReg [
 	self
 		MoveCq: header R: scratchReg;
 		MoveR: scratchReg Mw: 0 r: rcvrReg
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genStoreSourceReg: sourceReg slotIndex: index intoNewObjectInDestReg: destReg [
+	"This method is used for unchecked stores in objects after their creation (typically, inlined creation of Array, closures and some temp vectors). 
+	Currently there is no need to do the immutability check here"
+
+	self MoveR: sourceReg
+		   Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
+		   r: destReg.
+	^ 0
 ]
 
 { #category : #'trait candidates' }
@@ -868,6 +1076,13 @@ DruidJIT >> generateObjectRepresentationTrampolines [
 		[ceLargeActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: true inBlock: InFullBlock called: 'ceLargeFullBlockContext'].
 ]
 
+{ #category : #'bytecode generator support' }
+DruidJIT >> getActiveContextAllocatesInMachineCode [
+	"Make sure SendNumArgsReg and ClassReg are available in addition to
+	 ReceiverResultReg and TempReg in genGetActiveContextNumArgs:large:inBlock:."
+	^true
+]
+
 { #category : #'trait candidates' }
 DruidJIT >> hasValidHeaderPostGC: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
@@ -898,6 +1113,15 @@ DruidJIT >> inlineCacheTagIsYoung: cacheTag [
 	"Since all cache tags in Spur are class indices none of
 	 them are young or have to be updated in a scavenge."
 	^false
+]
+
+{ #category : #testing }
+DruidJIT >> isUnannotatableConstant: simStackEntry [
+	<inline: true>
+	<var: 'simStackEntry' type: #'CogSimStackEntry *'>
+	^simStackEntry type = SSConstant
+	  and: [(objectMemory isImmediate: simStackEntry constant)
+		or: [(self shouldAnnotateObjectReference: simStackEntry constant) not]]
 ]
 
 { #category : #'trait candidates' }
