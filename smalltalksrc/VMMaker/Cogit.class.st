@@ -1279,7 +1279,7 @@ Cogit class >> isCogitClass [
 Cogit class >> isNonArgumentImplicitReceiverVariableName: aString [
 	^#('cogit' 'coInterpreter'
 		'methodZone' 'literalsManager'
-		'objectMemory' 'objectRepresentation' 'manager') includes: aString
+		'objectMemory' 'objectRepresentation' 'manager' 'ceStoreTrampolines') includes: aString
 ]
 
 { #category : #'in-image compilation support' }

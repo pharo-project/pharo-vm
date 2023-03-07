@@ -15,6 +15,7 @@ Class {
 		'ceLargeActiveContextInFullBlockTrampoline'
 	],
 	#classVars : [
+		'CheckRememberedInTrampoline',
 		'NumStoreTrampolines'
 	],
 	#category : #'VMMaker-JIT'
@@ -92,6 +93,25 @@ DruidJIT >> allYoungObjectsAgeInFullGC [
 ]
 
 { #category : #'trait candidates' }
+DruidJIT >> bitAndByteOffsetOfIsFullBlockBitInto: aBlock [
+
+	"This supplies the bitmask for the isFullBlock bit, and the offset of the byte containing
+	 that bit in a CogMethod header to aBlock.  We don't have named variables holding this
+	 offset.  The following assert tests whether the values are correct by creating a surrogate
+	 on an empty ByteArray, setting the bit, and checking that the expected values are set
+	 in the ByteArray."
+	self cCode: [] inSmalltalk:
+		[| m |
+		m := ByteArray new: 16.
+		CogBlockMethodSurrogate64 new
+			at: 0 memory: m headerSize: 8 cogit: nil;
+			cpicHasMNUCaseOrCMIsFullBlock: true.
+		self assert: m = #[0 0 0 0 0 0 0 0 16 0 0 0 0 0 0 0 ].
+		self assert: (m at: objectMemory baseHeaderSize + 1) = 16].
+	aBlock value: 16 value: objectMemory baseHeaderSize + 1 "zero-relative"
+]
+
+{ #category : #'trait candidates' }
 DruidJIT >> cacheTagIsMarked: cacheTag [
 	"Answer if the cacheTag is not unmarked, i.e. answer true for compact class
 	 indices and immediates; only answer false for unmarked objects.  In Spur
@@ -120,6 +140,195 @@ DruidJIT >> classForInlineCacheTag: classIndex [
 DruidJIT >> couldBeObject: literal [
 	^(objectMemory isNonImmediate: literal)
 	  and: [self oop: literal isGreaterThanOrEqualTo: objectMemory startOfMemory]
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> genActiveContextTrampolineLarge: isLarge inBlock: isInBlock called: aString [
+	<var: #aString type: #'char *'>
+	"Create a trampoline to answer the active context that will
+	 answer it if a frame is already married, and create it otherwise.
+	 Assume numArgs is in SendNumArgsReg and ClassReg is free."
+	| startAddress |
+	startAddress := self methodZoneBase.
+	self zeroOpcodeIndex.
+	self genGetActiveContextLarge: isLarge inBlock: isInBlock.
+	self outputInstructionsForGeneratedRuntimeAt: startAddress.
+	self recordGeneratedRunTime: aString address: startAddress.
+	self recordRunTimeObjectReferences.
+	^startAddress
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> genCheckRememberedBitOf: objReg scratch: scratchReg [
+	"Check the remembered bit of the object in objReg; answer the jump taken if the bit is already set.
+	 Only need to fetch the byte containing it, which reduces the size of the mask constant."
+	| rememberedBitByteOffset mask |
+	rememberedBitByteOffset := self backEnd isBigEndian
+									ifTrue: [objectMemory baseHeaderSize - 1 - (objectMemory rememberedBitShift // 8)]
+									ifFalse:[objectMemory rememberedBitShift // 8].
+	mask := 1 << (objectMemory rememberedBitShift \\ 8).
+	self MoveMb: rememberedBitByteOffset r: objReg R: scratchReg.
+	self TstCq: mask R: scratchReg.
+	^self JumpNonZero: 0
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> genGetActiveContextLarge: isLarge inBlock: isInBlock [
+	"Create a trampoline to answer the active context that will
+	 answer it if a frame is already married, and create it otherwise.
+	 Assume numArgs is in SendNumArgsReg and ClassReg is free."
+	| header slotSize jumpSingle loopHead jumpNeedScavenge continuation exit |
+	<var: #jumpNeedScavenge type: #'AbstractInstruction *'>
+	<var: #continuation type: #'AbstractInstruction *'>
+	<var: #jumpSingle type: #'AbstractInstruction *'>
+	<var: #loopHead type: #'AbstractInstruction *'>
+	<var: #exit type: #'AbstractInstruction *'>
+	self "load the flag; stash it in both TempReg & ClassReg; do the compare (a prime candidated for use of AndCq:R:R:)"
+		MoveMw: FoxMethod r: FPReg R: ClassReg;
+		AndCq: MFMethodFlagHasContextFlag R: ClassReg R: TempReg.
+	jumpSingle := self JumpZero: 0. "jump if flag bit not set"
+	self "since the flag bit was set, get the context in the receiver reg and return"
+		MoveMw: FoxThisContext r: FPReg R: ReceiverResultReg;
+		RetN: 0.
+	jumpSingle jmpTarget: self Label.
+
+	"OK, it doesn't exist; instantiate and initialize it"
+	"set the hasContext flag; See CoInterpreter class>>initializeFrameIndices"
+	self
+		OrCq: MFMethodFlagHasContextFlag R: ClassReg;
+		MoveR: ClassReg Mw: FoxMethod r: FPReg.
+	"now get the home CogMethod into ClassReg and save for post-instantiation."
+	isInBlock caseOf: {
+	[InFullBlock]	-> [self SubCq: 3 R: ClassReg]. "-3 is -(hasContext+isBlock) flags"
+	[0]				-> [self SubCq: 1 R: ClassReg]. "-1 is hasContext flag" }.
+
+	"instantiate the context..."
+	slotSize := isLarge ifTrue: [LargeContextSlots] ifFalse: [SmallContextSlots].
+	header := objectMemory
+					headerForSlots: slotSize
+					format: objectMemory indexablePointersFormat
+					classIndex: ClassMethodContextCompactIndex.
+	self flag: #endianness.
+	self MoveAw: objectMemory freeStartAddress R: ReceiverResultReg.
+	self genStoreHeader: header intoNewInstance: ReceiverResultReg using: TempReg.
+	self
+		MoveR: ReceiverResultReg R: TempReg;
+		AddCq: (objectMemory smallObjectBytesForSlots: slotSize) R: TempReg;
+		MoveR: TempReg Aw: objectMemory freeStartAddress;
+		CmpCq: objectMemory getScavengeThreshold R: TempReg.
+	jumpNeedScavenge := self JumpAboveOrEqual: 0.
+
+	"Now initialize the fields of the context.  See CoInterpreter>>marryFrame:SP:copyTemps:"
+	"sender gets frame pointer as a SmallInteger"
+	continuation :=
+	self MoveR: FPReg R: TempReg.
+	self genSetSmallIntegerTagsIn: TempReg.
+	self MoveR: TempReg Mw: objectMemory baseHeaderSize + (SenderIndex * objectMemory bytesPerOop) r: ReceiverResultReg.
+
+	"pc gets frame caller as a SmallInteger"
+	self MoveMw: FoxSavedFP r: FPReg R: TempReg.
+	self genSetSmallIntegerTagsIn: TempReg.
+	self MoveR: TempReg Mw: objectMemory baseHeaderSize + (InstructionPointerIndex * objectMemory bytesPerOop) r: ReceiverResultReg.
+
+	"Set the method field, freeing up ClassReg again, and frame's context field,"
+	self
+		MoveMw: (self offset: CogMethod of: #methodObject) r: ClassReg R: TempReg;
+		MoveR: TempReg Mw: objectMemory baseHeaderSize + (MethodIndex * objectMemory wordSize) r: ReceiverResultReg;
+		MoveR: ReceiverResultReg Mw: FoxThisContext r: FPReg.
+
+	"Now compute stack pointer; this is stackPointer (- 1 for return pc if a CISC) - framePointer - wordSize (1 each for saved pc, method, context, receiver) + 1 (1-relative) + numArgs"
+	"TPR note - the code here is actually doing
+	context stackPointer := ((((fp - sp) / wordSize) - [3|4]) + num args) asSmallInteger"
+	self
+		MoveR: FPReg R: TempReg;
+		SubR: SPReg R: TempReg;
+		LogicalShiftRightCq: self log2BytesPerWord R: TempReg;
+		SubCq: (self backEnd hasLinkRegister ifTrue: [3] ifFalse: [4]) R: TempReg;
+		AddR: SendNumArgsReg R: TempReg.
+	self genConvertIntegerToSmallIntegerInReg: TempReg.
+	self MoveR: TempReg Mw: objectMemory baseHeaderSize + (StackPointerIndex * objectMemory bytesPerOop) r: ReceiverResultReg.
+
+	"Set closureOrNil to either the stacked receiver or nil"
+	isInBlock > 0
+		ifTrue:
+			[self
+				MoveR: SendNumArgsReg R: TempReg;
+				AddCq: 2 R: TempReg; "+2 for saved fp and saved pc"
+				MoveXwr: TempReg R: FPReg R: TempReg]
+		ifFalse:
+			[self genMoveNilR: TempReg].
+	self MoveR: TempReg Mw: objectMemory baseHeaderSize + (ClosureIndex * objectMemory bytesPerOop) r: ReceiverResultReg.
+
+	"Set the receiver"
+	self
+		MoveMw: FoxMFReceiver r: FPReg R: TempReg;
+		MoveR: TempReg Mw: objectMemory baseHeaderSize + (ReceiverIndex * objectMemory bytesPerOop) r: ReceiverResultReg.
+
+	"Now copy the arguments.  This is tricky because of the shortage of registers,.  ClassReg ranges
+	 from 1 to numArgs (SendNumArgsReg), and from ReceiverIndex + 1 to ReceiverIndex + numArgs.
+	 1 to: numArgs do:
+		[:i|
+		temp := longAt(FPReg + ((SendNumArgs - i + 2) * wordSize)). +2 for saved pc and savedfp
+		longAtput(FPReg + FoxMFReceiver + (i * wordSize), temp)]"
+	"TPR note: this is a prime candidate for passing off to the backend to do at least faintly optimal code"
+	self MoveCq: 1 R: ClassReg.
+	loopHead := self CmpR: SendNumArgsReg R: ClassReg.
+	exit := self JumpGreater: 0.
+	self
+		MoveR: SendNumArgsReg R: TempReg;
+		SubR: ClassReg R: TempReg;
+		AddCq: 2 R: TempReg; "+2 for saved fp and saved pc"
+		MoveXwr: TempReg R: FPReg R: TempReg;
+		AddCq: ReceiverIndex + (objectMemory baseHeaderSize / objectMemory wordSize) R: ClassReg; "Now convert ClassReg from frame index to context index"
+		MoveR: TempReg Xwr: ClassReg R: ReceiverResultReg;
+		SubCq: ReceiverIndex + (objectMemory baseHeaderSize / objectMemory wordSize) - 1 R: ClassReg; "convert back adding 1 ;-)"
+		Jump: loopHead.
+	exit jmpTarget: self Label.
+
+	"Finally nil or copy the non-argument temps.
+	 ClassReg := FPReg + FoxMFReceiver.
+	 SendNumArgsReg := SendNumArgsReg+ReceiverIndex.
+	 [ClassReg := ClassReg - wordSize.
+	  backEnd hasLinkRegister
+			ifTrue: [ClassReg > SPReg]
+			ifFalse: [ClassReg >= SPReg]] whileTrue:
+		[receiver[SendNumArgsReg] := *ClassReg.
+		 SendNumArgsReg := SendNumArgsReg + 1]]"
+	coInterpreter marryFrameCopiesTemps ifFalse:
+		[self MoveCq: objectMemory nilObject R: TempReg].
+	self
+		MoveR: FPReg R: ClassReg;
+		AddCq: FoxMFReceiver R: ClassReg;
+		AddCq: ReceiverIndex + 1 + (objectMemory baseHeaderSize / objectMemory wordSize) R: SendNumArgsReg.
+	loopHead :=
+	self SubCq: objectMemory wordSize R: ClassReg.
+	self CmpR: SPReg R: ClassReg.
+	"If on a CISC there's a retpc for the trampoline call on top of stack; if on a RISC there isn't."
+	exit := self backEnd hasLinkRegister
+				ifTrue: [self JumpBelow: 0]
+				ifFalse: [self JumpBelowOrEqual: 0].
+	coInterpreter marryFrameCopiesTemps ifTrue:
+		[self MoveMw: 0 r: ClassReg R: TempReg].
+	self
+		MoveR: TempReg Xwr: SendNumArgsReg R: ReceiverResultReg;
+		AddCq: 1 R: SendNumArgsReg;
+		Jump: loopHead.
+	exit jmpTarget: self Label.
+
+	self RetN: 0.
+	
+	jumpNeedScavenge jmpTarget: self Label.
+	self backEnd saveAndRestoreLinkRegAround:
+		[self
+			CallRT: ceScheduleScavengeTrampoline
+			registersToBeSavedMask: (self registerMaskFor: ReceiverResultReg and: SendNumArgsReg and: ClassReg)].
+	self Jump: continuation.
+	^0
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> genGetClassTagOf: instReg into: destReg scratchReg: scratchReg [
+	^self genGetInlineCacheClassTagFrom: instReg into: destReg forEntry: true
 ]
 
 { #category : #'trait candidates' }
@@ -158,6 +367,193 @@ DruidJIT >> genGetInlineCacheClassTagFrom: sourceReg into: destReg forEntry: for
 
 	jumpImm jmpTarget: self Label.
 	^entryLabel
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> genJumpBaseHeaderMutable: baseHeaderReg [
+	"baseHeader holds at least the least significant 32 bits of the object"
+	<returnTypeC: #'AbstractInstruction *'>
+	<option: #IMMUTABILITY>
+	<inline: true>
+	self TstCq: objectMemory immutableBitMask R: baseHeaderReg.
+	^ self JumpZero: 0
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> genJumpImmediate: aRegister [
+	<returnTypeC: #'AbstractInstruction *'>
+
+	self TstCq: objectMemory tagMask R: aRegister.
+	^ self JumpNonZero: 0
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> genJumpMutable: sourceReg scratchReg: scratchReg [
+	<returnTypeC: #'AbstractInstruction *'>
+	<option: #IMMUTABILITY>
+
+	self MoveMw: 0 r: sourceReg R: scratchReg. 
+	^ self genJumpBaseHeaderMutable: scratchReg
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> genLoadSlot: index sourceReg: sourceReg destReg: destReg [
+	
+	self
+		MoveMw: index * objectMemory wordSize + objectMemory baseHeaderSize
+		r: sourceReg
+		R: destReg.
+	^0
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> genNewHashTrampoline: saveRegs called: name [
+	"In non sista VM this is used only from the identityHash primitive, hence only the result of the trampoline, the hash, should be in ReceiverResultReg, other registers can just be ignored.
+	In the sista VM, the inlined hash operation requires registers to be saved"
+	<inline: true>
+	^ self
+		genTrampolineFor: #ceNewHashOf:
+		called: name
+		numArgs: 1
+		arg: ReceiverResultReg
+		arg: nil
+		arg: nil
+		arg: nil
+		regsToSave: (saveRegs
+						ifTrue: [CallerSavedRegisterMask bitClear: (self registerMaskFor: ReceiverResultReg)]
+						ifFalse: [self emptyRegisterMask])
+		pushLinkReg: true
+		resultReg: ReceiverResultReg
+		appendOpcodes: false
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> genSetSmallIntegerTagsIn: scratchReg [
+	self OrCq: 1 R: scratchReg.
+	^0
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> genStoreCheckContextReceiverTrampoline [
+	"Create a trampoline to store-check the update of the receiver in a closure's
+	 outerContext in compileBlockFrameBuild:."
+	| startAddress |
+	startAddress := self methodZoneBase.
+	self zeroOpcodeIndex.
+	self genStoreCheckReceiverReg: ReceiverResultReg valueReg: Arg0Reg scratchReg: TempReg inFrame: false.
+	self RetN: 0.
+	self outputInstructionsForGeneratedRuntimeAt: startAddress.
+	self recordGeneratedRunTime: 'ceStoreCheckContextReceiver' address: startAddress.
+	self recordRunTimeObjectReferences.
+	^startAddress
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> genStoreCheckReceiverReg: destReg valueReg: valueReg scratchReg: scratchReg inFrame: inFrame [
+	"Generate the code for a store check of valueReg into destReg."
+	| jmpImmediate jmpDestYoung jmpSourceOld jmpAlreadyRemembered |
+	<var: #jmpImmediate type: #'AbstractInstruction *'>
+	<var: #jmpDestYoung type: #'AbstractInstruction *'>
+	<var: #jmpSourceOld type: #'AbstractInstruction *'>
+	<var: #jmpAlreadyRemembered type: #'AbstractInstruction *'>
+	"Is value stored an immediate?  If so we're done"
+	jmpImmediate := self genJumpImmediate: valueReg.
+	"Get the old/new boundary in scratchReg"
+	self MoveCw: objectMemory storeCheckBoundary R: scratchReg.
+	"Is target young?  If so we're done"
+	self CmpR: scratchReg R: destReg. "N.B. FLAGS := destReg - scratchReg"
+	jmpDestYoung := self JumpBelow: 0.
+	"Is value stored old?  If so we're done."
+	self CmpR: scratchReg R: valueReg. "N.B. FLAGS := valueReg - scratchReg"
+	jmpSourceOld := self JumpAboveOrEqual: 0.
+	"value is young and target is old.
+	 Need to remember this only if the remembered bit is not already set."
+	CheckRememberedInTrampoline ifFalse:
+		[jmpAlreadyRemembered := self genCheckRememberedBitOf: destReg scratch: scratchReg].
+	"Remembered bit is not set.  Call store check to insert dest into remembered table."
+	self assert: destReg = ReceiverResultReg.
+	self 
+		evaluateTrampolineCallBlock: [self CallRT: ceStoreCheckTrampoline]
+		protectLinkRegIfNot: inFrame.
+	jmpImmediate jmpTarget:
+	(jmpDestYoung jmpTarget:
+	(jmpSourceOld jmpTarget:
+		self Label)).
+	CheckRememberedInTrampoline ifFalse:
+		[jmpAlreadyRemembered jmpTarget: jmpSourceOld getJmpTarget].
+	^0
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> genStoreHeader: header intoNewInstance: rcvrReg using: scratchReg [
+	"Generate the instructions to move the constant header into a new instance pointed to by rcvrReg."
+	<inline: true>
+	self
+		MoveCq: header R: scratchReg;
+		MoveR: scratchReg Mw: 0 r: rcvrReg
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> genStoreTrampolineCalled: trampolineName instVarIndex: instVarIndex [
+	"Convention:
+	- RcvrResultReg holds the object mutated.
+	If immutability failure:
+	- TempReg holds the instance variable index mutated 
+		if instVarIndex > numDedicatedStoreTrampoline
+	- ClassReg holds the value to store
+	Registers are not lived across this trampoline as the 
+	immutability failure may need new stack frames."
+	
+	| jumpSC jumpRC |
+	<option: #IMMUTABILITY>
+	<var: #trampolineName type: #'char *'>
+	<var: #jumpSC type: #'AbstractInstruction *'>
+	<var: #jumpRC type: #'AbstractInstruction *'>
+	<inline: false>
+	self zeroOpcodeIndex.
+	"SendNumArgsReg is mutated but we don't care as register are not live across the trampoline.
+	 There is no reason why registers cannot be saved over the remember: call, but since the
+	 immutability check is a suspension point, registers cannot remain live."
+	jumpSC := self genJumpMutable: ReceiverResultReg scratchReg: SendNumArgsReg.
+	self
+		compileTrampolineFor: #ceCannotAssignTo:withIndex:valueToAssign:
+		numArgs: 3
+		arg: ReceiverResultReg
+		arg: (instVarIndex < (NumStoreTrampolines - 1)
+				ifTrue: [self trampolineArgConstant: instVarIndex]
+				ifFalse: [TempReg])
+		arg: ClassReg
+		arg: nil
+		regsToSave: self emptyRegisterMask
+		pushLinkReg: true
+		resultReg: NoReg.
+		
+	"Store check"
+	jumpSC jmpTarget: self Label.
+	"If on 64-bits and doing the remembered bit test here, we can combine the tests to fetch the header once."
+	CheckRememberedInTrampoline ifTrue:
+		[objectMemory wordSize = 8
+			ifTrue:
+				[self TstCq: 1 << objectMemory rememberedBitShift R: SendNumArgsReg.
+				 jumpRC := self JumpZero: 0.
+				 self RetN: 0]
+			ifFalse:
+				[jumpRC := self genCheckRememberedBitOf: ReceiverResultReg scratch: SendNumArgsReg.
+				 self assert: jumpRC opcode = JumpNonZero.
+				 jumpRC opcode: JumpZero.
+				 self RetN: 0].
+		 jumpRC jmpTarget: self Label].
+	^ self genTrampolineFor: #remember:
+		called: trampolineName
+		numArgs: 1
+		arg: ReceiverResultReg
+		arg: nil
+		arg: nil
+		arg: nil
+		regsToSave: self emptyRegisterMask
+		pushLinkReg: true
+		resultReg: NoReg
+		appendOpcodes: true
 ]
 
 { #category : #generated }
@@ -441,9 +837,11 @@ DruidJIT >> generateObjectRepresentationTrampolines [
 	 remembered set and setting its isRemembered bit."
 	self 
 		cppIf: IMMUTABILITY
-		ifTrue: 
-			[self cCode: [] inSmalltalk:
-				[ceStoreTrampolines := CArrayAccessor on: (Array new: NumStoreTrampolines)].
+		ifTrue: [
+			self 
+				cCode: [] 
+				inSmalltalk: [ ceStoreTrampolines := CArrayAccessor on: (Array new: NumStoreTrampolines) ].
+				
 			 0 to: NumStoreTrampolines - 1 do:
 				[:instVarIndex |
 				 ceStoreTrampolines
@@ -562,6 +960,38 @@ DruidJIT >> markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil [
 ]
 
 { #category : #'trait candidates' }
+DruidJIT >> maybeCompileRetryOnPrimitiveFail: primIndex [
+	"If primIndex has an accessorDepth and fails, or it is external and fails with PrimErrNoMemory,
+	 call ceCheckAndMaybeRetryPrimitive if so  If ceCheck.... answers true, retry the primitive."
+	| jmp |
+	<var: #jmp type: #'AbstractInstruction *'>
+	(coInterpreter accessorDepthForPrimitiveIndex: primIndex) >= 0
+		ifTrue:
+			[jmp := self
+				MoveAw: coInterpreter primFailCodeAddress R: TempReg;
+				CmpCq: 0 R: TempReg;
+				JumpZero: 0]
+		ifFalse:
+			[coInterpreter primNumberExternalCall ~= primIndex ifTrue:
+				[^0].
+			 jmp := self
+				MoveAw: coInterpreter primFailCodeAddress R: TempReg;
+				CmpCq: PrimErrNoMemory R: TempReg;
+				JumpNonZero: 0].
+	self
+		compileCallFor: #ceCheckAndMaybeRetryPrimitive:
+		numArgs: 1
+		arg: (self trampolineArgConstant: primIndex)
+		arg: nil
+		arg: nil
+		arg: nil
+		resultReg: TempReg
+		regsToSave: self emptyRegisterMask.
+	jmp jmpTarget: self Label.
+	^0
+]
+
+{ #category : #'trait candidates' }
 DruidJIT >> maybeGenerateSelectorIndexDereferenceRoutine [
 	"Generate the routine that converts selector indices into selector objects.
 	 It is called from the send trampolines.
@@ -615,6 +1045,15 @@ DruidJIT >> maybeGenerateSelectorIndexDereferenceRoutine [
 		outputInstructionsForGeneratedRuntimeAt: ceDereferenceSelectorIndex;
 		recordGeneratedRunTime: 'ceDereferenceSelectorIndex' address: ceDereferenceSelectorIndex;
 		recordRunTimeObjectReferences
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> maybeShiftClassTagRegisterForMethodCacheProbe: classTagReg [
+	"Generate a shift of the register containing the class tag in a method cache probe.
+	 c.f. SpurMemoryManager>>methodCacheHashOf:with:"
+
+	self LogicalShiftLeftCq: 2 R: classTagReg.
+	^0
 ]
 
 { #category : #'trait candidates' }
