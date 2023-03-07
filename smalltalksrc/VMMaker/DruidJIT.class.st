@@ -20,6 +20,28 @@ Class {
 	#category : #'VMMaker-JIT'
 }
 
+{ #category : #translation }
+DruidJIT class >> declareCVarsIn: aCodeGen [
+	"Deal wuth the fact that the number of trampolines depends on IMMUTABILITY
+	 and that IMMUTABILITY can be defined at compile time.  Yes, this is a mess."
+	| current values |
+	current := InitializationOptions at: #IMMUTABILITY ifAbsent: nil.
+	values := #(true false) collect:
+				[:bool|
+				 InitializationOptions at: #IMMUTABILITY put: bool.
+				 self initializeNumTrampolines.
+				 (Cogit classPool at: #NumTrampolines) printString].
+	current
+		ifNil: [InitializationOptions removeKey: #IMMUTABILITY]
+		ifNotNil: [InitializationOptions at: #IMMUTABILITY put: current].
+	values first ~= values last ifTrue:
+		[aCodeGen addConstantForBinding: #NumTrampolines -> ('(IMMUTABILITY ? ' , values first , ' : ' , values last , ')')].
+
+	aCodeGen
+		var: #ceStoreTrampolines
+		declareC: ('#if IMMUTABILITY\sqInt ceStoreTrampolines[', NumStoreTrampolines printString, '];\#endif') withCRs
+]
+
 { #category : #initialization }
 DruidJIT class >> initialize [
 	
