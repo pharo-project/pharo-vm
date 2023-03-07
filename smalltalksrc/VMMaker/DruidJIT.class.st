@@ -755,6 +755,13 @@ DruidJIT >> genNewHashTrampoline: saveRegs called: name [
 		appendOpcodes: false
 ]
 
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genRemoveSmallIntegerTagsInScratchReg: scratchReg [
+
+	self SubCq: 1 R: scratchReg.
+	^0
+]
+
 { #category : #'trait candidates' }
 DruidJIT >> genSetSmallIntegerTagsIn: scratchReg [
 	self OrCq: 1 R: scratchReg.
@@ -1023,6 +1030,35 @@ DruidJIT >> genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg slotIndex:
 		self Label)).
 	CheckRememberedInTrampoline ifFalse:
 		[jmpAlreadyRemembered jmpTarget: jmpSourceOld getJmpTarget].
+	^ 0
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genStoreWithImmutabilityButNoStoreCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needRestoreRcvr: needRestoreRcvr [
+	"Gen an immutability check with no store check (e.g. assigning an immediate literal)"
+	<option: #IMMUTABILITY>
+	<var: #mutableJump type: #'AbstractInstruction *'>
+	<var: #immutabilityFailure type: #'AbstractInstruction *'>
+	| immutabilityFailure mutableJump |
+	
+	"imm check has its own trampoline"
+	mutableJump := self genJumpMutable: destReg scratchReg: scratchReg.
+	self genStoreTrampolineCall: index.
+	self voidReceiverOptStatus.
+	needRestoreRcvr ifTrue:
+		[self putSelfInReceiverResultReg].
+	immutabilityFailure := self Jump: 0.
+	mutableJump jmpTarget: self Label.
+
+	self genTraceStores.
+	
+	"do the store"
+	self MoveR: sourceReg
+		   Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
+		   r: destReg.
+		
+	immutabilityFailure jmpTarget: self Label.
+
 	^ 0
 ]
 
@@ -1633,4 +1669,13 @@ DruidJIT >> validInlineCacheTag: classIndexOrTagPattern [
 	^(classIndexOrTagPattern >= 1
 	  and: [classIndexOrTagPattern <= 3])
 	  or: [(objectMemory classAtIndex: classIndexOrTagPattern) notNil]
+]
+
+{ #category : #'sista support' }
+DruidJIT >> valueOfAssociation: associationOop [
+	| association |
+	association := associationOop.
+	(objectMemory isForwarded: association) ifTrue:
+		[association := objectMemory followForwarded: association].
+	^objectMemory fetchPointer: ValueIndex ofObject: association
 ]
