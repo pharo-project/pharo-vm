@@ -681,6 +681,32 @@ DruidJIT >> genStoreCheckReceiverReg: destReg valueReg: valueReg scratchReg: scr
 	^0
 ]
 
+{ #category : #initialization }
+DruidJIT >> genStoreCheckTrampoline [
+	| jumpSC |
+	<var: #jumpSC type: #'AbstractInstruction *'>
+	<inline: true>
+	CheckRememberedInTrampoline ifTrue:
+		[ self zeroOpcodeIndex.
+		 jumpSC := self genCheckRememberedBitOf: ReceiverResultReg scratch: self backEnd cResultRegister.
+		 self assert: jumpSC opcode = JumpNonZero.
+		 jumpSC opcode: JumpZero.
+		 self RetN: 0.
+		 jumpSC jmpTarget: self Label].
+	^ self
+		genTrampolineFor: #remember:
+		called: 'ceStoreCheckTrampoline'
+		numArgs: 1
+		arg: ReceiverResultReg
+		arg: nil
+		arg: nil
+		arg: nil
+		regsToSave: (CallerSavedRegisterMask bitClear: (self registerMaskFor: ReceiverResultReg))
+		pushLinkReg: true
+		resultReg: self returnRegForStoreCheck
+		appendOpcodes: CheckRememberedInTrampoline
+]
+
 { #category : #'trait candidates' }
 DruidJIT >> genStoreHeader: header intoNewInstance: rcvrReg using: scratchReg [
 	"Generate the instructions to move the constant header into a new instance pointed to by rcvrReg."
@@ -1122,6 +1148,11 @@ DruidJIT >> isUnannotatableConstant: simStackEntry [
 	^simStackEntry type = SSConstant
 	  and: [(objectMemory isImmediate: simStackEntry constant)
 		or: [(self shouldAnnotateObjectReference: simStackEntry constant) not]]
+]
+
+{ #category : #initialization }
+DruidJIT >> log2BytesPerWord [
+	^3
 ]
 
 { #category : #'trait candidates' }
