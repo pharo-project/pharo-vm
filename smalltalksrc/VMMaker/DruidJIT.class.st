@@ -172,6 +172,14 @@ DruidJIT >> genCheckRememberedBitOf: objReg scratch: scratchReg [
 	^self JumpNonZero: 0
 ]
 
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genConvertIntegerToSmallIntegerInReg: reg [
+
+	self LogicalShiftLeftCq: objectMemory numTagBits R: reg.
+	self AddCq: 1 R: reg.
+	^0
+]
+
 { #category : #'bytecode generator support' }
 DruidJIT >> genCreateFullClosure: compiledBlock numArgs: numArgs numCopied: numCopied ignoreContext: ignoreContext contextNumArgs: contextNumArgs large: contextIsLarge inBlock: contextIsBlock [
 	"Create a full closure with the given values."
@@ -488,6 +496,71 @@ DruidJIT >> genGetActiveContextNumArgs: numArgs large: isLargeContext inBlock: i
 	^0
 ]
 
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genGetClassObjectOf: instReg into: destReg scratchReg: scratchReg instRegIsReceiver: instRegIsReceiver [
+	"Fetch the instance's class into destReg.  If the instance is not the receiver and is forwarded, follow forwarding."
+	| jumpIsImm jumpNotForwarded loop |
+	<var: #jumpIsImm type: #'AbstractInstruction *'>
+	<var: #jumpNotForwarded type: #'AbstractInstruction *'>
+	<var: #loop type: #'AbstractInstruction *'>
+	(instReg = destReg or: [instReg = scratchReg or: [destReg = scratchReg]]) ifTrue:
+		[^BadRegisterSet].
+	loop := self MoveR: instReg R: scratchReg.
+	self AndCq: objectMemory tagMask R: scratchReg.
+	jumpIsImm := self JumpNonZero: 0.
+	self flag: #endianness.
+	"Get least significant half of header word in destReg"
+	self MoveMw: 0 r: instReg R: scratchReg.
+	"mask off class index"
+	self AndCq: objectMemory classIndexMask R: scratchReg.
+	instRegIsReceiver ifFalse:
+		["if it is forwarded..."
+		self CmpCq: objectMemory isForwardedObjectClassIndexPun R: scratchReg.
+		jumpNotForwarded := self JumpNonZero: 0.
+		"...follow the forwarding pointer and loop to fetch its classIndex"
+		self MoveMw: objectMemory baseHeaderSize r: instReg R: instReg.
+		self Jump: loop.
+		jumpNotForwarded jmpTarget: self Label].
+	jumpIsImm jmpTarget:
+	(self MoveR: scratchReg R: destReg).
+	scratchReg = TempReg
+		ifTrue:
+			[self PushR: instReg.
+			 self genGetClassObjectOfClassIndex: destReg into: instReg scratchReg: TempReg.
+			 self MoveR: instReg R: destReg.
+			 self PopR: instReg]
+		ifFalse:
+			[self genGetClassObjectOfClassIndex: destReg into: scratchReg scratchReg: TempReg.
+			 self MoveR: scratchReg R: destReg].
+	^0
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genGetClassObjectOfClassIndex: instReg into: destReg scratchReg: scratchReg [
+	"Fetch the class object whose index is in instReg into destReg.
+	 It is non-obvious, but the Cogit assumes loading a class does not involve
+	 a runtime call, so do not call classAtIndex:"
+	self assert: instReg ~= destReg.
+	self assert: instReg ~= scratchReg.
+	self assert: destReg ~= scratchReg.
+	self
+		MoveR: instReg R: scratchReg;
+		LogicalShiftRightCq: objectMemory classTableMajorIndexShift R: scratchReg;
+		LogicalShiftLeftCq: objectMemory shiftForWord R: scratchReg.
+	self assert: (self shouldAnnotateObjectReference: objectMemory classTableRootObj) not.
+	(self backEnd isWithinMwOffsetRange: objectMemory classTableRootObj + objectMemory baseHeaderSize)
+		ifTrue: [self MoveMw: objectMemory classTableRootObj + objectMemory baseHeaderSize r: scratchReg R: destReg]
+		ifFalse: [self
+					AddCq: objectMemory classTableRootObj R: scratchReg;
+					MoveMw: objectMemory baseHeaderSize r: scratchReg R: destReg].
+	self
+		MoveR: instReg R: scratchReg;
+		AndCq: objectMemory classTableMinorIndexMask R: scratchReg;
+		AddCq: objectMemory baseHeaderSize >> objectMemory shiftForWord R: scratchReg;
+		MoveXwr: scratchReg R: destReg R: destReg.
+	^0
+]
+
 { #category : #'trait candidates' }
 DruidJIT >> genGetClassTagOf: instReg into: destReg scratchReg: scratchReg [
 	^self genGetInlineCacheClassTagFrom: instReg into: destReg forEntry: true
@@ -593,6 +666,33 @@ DruidJIT >> genJumpMutable: sourceReg scratchReg: scratchReg [
 	^ self genJumpBaseHeaderMutable: scratchReg
 ]
 
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genJumpNotSmallInteger: reg [
+	"Generate a compare and branch to test if aRegister contains other than a SmallInteger."
+	^ self
+		TstCq: objectMemory smallIntegerTag R: reg;
+		JumpZero: 0
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genJumpNotSmallIntegerInScratchReg: aRegister [
+	<inline: true>
+	^self genJumpNotSmallInteger: aRegister
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genJumpNotSmallIntegersIn: aRegister and: bRegister scratch: scratchRegister [
+	"Generate a compare and branch to test if aRegister and bRegister contains other than SmallIntegers,
+	 i.e. don't branch if both aRegister and bRegister contain SmallIntegers.
+	 Answer the jump.  Destroy scratchRegister if required."
+	<returnTypeC: #'AbstractInstruction *'>
+	<inline: true>
+	self
+		MoveR: aRegister R: scratchRegister;
+		AndR: bRegister R: scratchRegister.
+	^self genJumpNotSmallIntegerInScratchReg: scratchRegister
+]
+
 { #category : #'trait candidates' }
 DruidJIT >> genLoadSlot: index sourceReg: sourceReg destReg: destReg [
 	
@@ -600,6 +700,37 @@ DruidJIT >> genLoadSlot: index sourceReg: sourceReg destReg: destReg [
 		MoveMw: index * objectMemory wordSize + objectMemory baseHeaderSize
 		r: sourceReg
 		R: destReg.
+	^0
+]
+
+{ #category : #'bytecode generator support' }
+DruidJIT >> genNewArrayOfSize: size initialized: initialized [
+	"Generate a call to code that allocates a new Array of size.
+	 The Array should be initialized with nils iff initialized is true.
+	 The size arg is passed in SendNumArgsReg, the result
+	 must come back in ReceiverResultReg."
+	| header skip |
+	<var: #skip type: #'AbstractInstruction *'>
+	self assert: size < objectMemory numSlotsMask.
+	header := objectMemory
+					headerForSlots: size
+					format: objectMemory arrayFormat
+					classIndex: ClassArrayCompactIndex.
+	self MoveAw: objectMemory freeStartAddress R: ReceiverResultReg.
+	self genStoreHeader: header intoNewInstance: ReceiverResultReg using: TempReg.
+	(initialized and: [size > 0]) ifTrue:
+		[self genMoveConstant: objectMemory nilObject R: TempReg.
+		 0 to: size - 1 do:
+			[:i| self MoveR: TempReg
+					Mw: i * objectMemory wordSize + objectMemory baseHeaderSize
+					r: ReceiverResultReg]].
+	self
+		LoadEffectiveAddressMw: (objectMemory smallObjectBytesForSlots: size) r: ReceiverResultReg R: TempReg;
+		MoveR: TempReg Aw: objectMemory freeStartAddress;
+		CmpCq: objectMemory getScavengeThreshold R: TempReg.
+	skip := self JumpBelow: 0.
+	self CallRT: ceScheduleScavengeTrampoline.
+	skip jmpTarget: self Label.
 	^0
 ]
 
@@ -717,6 +848,47 @@ DruidJIT >> genStoreHeader: header intoNewInstance: rcvrReg using: scratchReg [
 ]
 
 { #category : #'compile abstract instructions' }
+DruidJIT >> genStoreSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg inFrame: inFrame [
+	<inline: true>
+	self 
+		cppIf: IMMUTABILITY
+		ifTrue:
+			[ ^ self 
+				genStoreWithImmutabilityCheckSourceReg: sourceReg 
+				slotIndex: index 
+				destReg: destReg 
+				scratchReg: scratchReg 
+				needsStoreCheck: true 
+				needRestoreRcvr: false "RcvrResultReg doesn't need to be live across the instructions" ]
+		ifFalse: 
+			[ ^ self 
+				genStoreSourceReg: sourceReg 
+				slotIndex: index 
+				destReg: destReg 
+				scratchReg: scratchReg 
+				inFrame: inFrame 
+				needsStoreCheck: true ]
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genStoreSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg inFrame: inFrame needsStoreCheck: needsStoreCheck [
+	
+	self genTraceStores.
+	"do the store"
+	self MoveR: sourceReg
+		   Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
+		   r: destReg.
+	"now the check. needStoreCheck is false if the JIT has figured out that the value stored does not need the check (immediate, nil, true, false)"
+	needsStoreCheck ifTrue: 
+		[ ^ self 
+			genStoreCheckReceiverReg: destReg 
+			valueReg: sourceReg 
+			scratchReg: scratchReg 
+			inFrame: inFrame ].
+	^ 0
+]
+
+{ #category : #'compile abstract instructions' }
 DruidJIT >> genStoreSourceReg: sourceReg slotIndex: index intoNewObjectInDestReg: destReg [
 	"This method is used for unchecked stores in objects after their creation (typically, inlined creation of Array, closures and some temp vectors). 
 	Currently there is no need to do the immutability check here"
@@ -725,6 +897,19 @@ DruidJIT >> genStoreSourceReg: sourceReg slotIndex: index intoNewObjectInDestReg
 		   Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
 		   r: destReg.
 	^ 0
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genStoreTrampolineCall: instVarIndex [
+	<inline: true>
+	self assert: IMMUTABILITY.
+	instVarIndex >= (NumStoreTrampolines - 1)
+		ifTrue: 
+			[ self MoveCq: instVarIndex R: TempReg.
+			  self CallRT: (ceStoreTrampolines at: NumStoreTrampolines - 1) ]
+		ifFalse: 
+			[ self CallRT: (ceStoreTrampolines at: instVarIndex) ].
+	 self annotateBytecode: self Label
 ]
 
 { #category : #'trait candidates' }
@@ -788,6 +973,87 @@ DruidJIT >> genStoreTrampolineCalled: trampolineName instVarIndex: instVarIndex 
 		pushLinkReg: true
 		resultReg: NoReg
 		appendOpcodes: true
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needRestoreRcvr: needRestoreRcvr [ 
+	"Store check code is duplicated to use a single trampoline"
+	<option: #IMMUTABILITY>
+	| immutableJump jmpImmediate jmpDestYoung jmpSourceOld jmpAlreadyRemembered |
+	<var: #immutableJump type: #'AbstractInstruction *'>
+	<var: #jmpImmediate type: #'AbstractInstruction *'>
+	<var: #jmpDestYoung type: #'AbstractInstruction *'>
+	<var: #jmpSourceOld type: #'AbstractInstruction *'>
+	<var: #jmpAlreadyRemembered type: #'AbstractInstruction *'>
+
+	immutableJump := self genJumpImmutable: destReg scratchReg: scratchReg.
+	
+	self genTraceStores.
+	
+	"do the store"
+	self MoveR: sourceReg
+		   Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
+		   r: destReg.
+	
+	"store check"
+	jmpImmediate := self genJumpImmediate: sourceReg.
+	"Get the old/new boundary in scratchReg"
+	self MoveCw: objectMemory storeCheckBoundary R: scratchReg.
+	"Is target young?  If so we're done"
+	self CmpR: scratchReg R: destReg. "N.B. FLAGS := destReg - scratchReg"
+	jmpDestYoung := self JumpBelow: 0.
+	"Is value stored old?  If so we're done."
+	self CmpR: scratchReg R: sourceReg. "N.B. FLAGS := valueReg - scratchReg"
+	jmpSourceOld := self JumpAboveOrEqual: 0.
+	"value is young and target is old.
+	 Need to remember this only if the remembered bit is not already set."
+	CheckRememberedInTrampoline ifFalse:
+		[jmpAlreadyRemembered := self genCheckRememberedBitOf: destReg scratch: scratchReg].
+	"Set the inst var index for the benefit of the immutability check. The trampoline will
+	 repeat the check to choose between the immutbality violation and the store check."
+	immutableJump jmpTarget: self Label.
+	self genStoreTrampolineCall: index.
+	self voidReceiverOptStatus.
+	needRestoreRcvr ifTrue:
+		[self putSelfInReceiverResultReg].
+
+	jmpImmediate jmpTarget:
+	(jmpDestYoung jmpTarget:
+	(jmpSourceOld jmpTarget:
+		self Label)).
+	CheckRememberedInTrampoline ifFalse:
+		[jmpAlreadyRemembered jmpTarget: jmpSourceOld getJmpTarget].
+	^ 0
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> genStoreWithImmutabilityCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needsStoreCheck: needsStoreCheck needRestoreRcvr: needRestoreRcvr [
+	<option: #IMMUTABILITY>
+	"We know there is a frame as immutability check requires a frame"
+	"needRestoreRcvr has to be true to keep RcvrResultReg live with the receiver in it across the trampoline"
+	
+	"Trampoline convention..."
+	self assert: destReg == ReceiverResultReg.
+	self assert: scratchReg == TempReg.
+  	self assert: sourceReg == ClassReg.
+	
+	"The two paths are very different as the trampoline is shared in 1 case so we split here"
+	needsStoreCheck
+		ifTrue: 
+			[ self 
+				genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg 
+				slotIndex: index 
+				destReg: destReg 
+				scratchReg: scratchReg 
+				needRestoreRcvr: needRestoreRcvr ]
+		ifFalse: 
+			[ self 
+				genStoreWithImmutabilityButNoStoreCheckSourceReg: sourceReg 
+				slotIndex: index 
+				destReg: destReg 
+				scratchReg: scratchReg 
+				needRestoreRcvr: needRestoreRcvr ].
+	^ 0
 ]
 
 { #category : #generated }
@@ -1341,12 +1607,24 @@ DruidJIT >> remapOop: objOop [
 		ifFalse: [objOop]
 ]
 
+{ #category : #'calling convention' }
+DruidJIT >> selectorIndexDereferenceRoutine [
+	"If the object representation is 64-bits, selectors must be accessed via indices in the inline caches.
+	 Answer the routine that will map from indices to selector objects if so, otherwise nil."
+	^ceDereferenceSelectorIndex
+]
+
 { #category : #'trait candidates' }
 DruidJIT >> shouldAnnotateObjectReference: anOop [
 	"Objects in newSpace or oldSpace except nil, true, false & classTableRootObj need to be annotated."
 	^(objectMemory isNonImmediate: anOop)
 	  and: [(self oop: anOop isGreaterThan: objectMemory classTableRootObj)
 		or: [self oop: anOop isLessThan: objectMemory nilObject]]
+]
+
+{ #category : #'compile abstract instructions' }
+DruidJIT >> slotOffsetOfInstVarIndex: index [
+	^index * objectMemory wordSize + objectMemory baseHeaderSize
 ]
 
 { #category : #'trait candidates' }
