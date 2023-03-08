@@ -8,6 +8,8 @@ Class {
 VMSpurImageHeaderWritingTest >> setUp [
 
 	super setUp.
+
+	interpreter setImageVersion: 110.
 	
 	memory garbageCollectForSnapshot.
 
@@ -136,6 +138,16 @@ VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectImageFormat [
 	header := self readHeader.
 
 	self assert: header imageFormat equals: interpreter imageFormatVersion
+]
+
+{ #category : #tests }
+VMSpurImageHeaderWritingTest >> testWritingImageWritesCorrectImageVersion [
+
+	| header |
+
+	header := self readHeader.
+
+	self assert: header imageVersion equals: interpreter getImageVersion
 ]
 
 { #category : #tests }

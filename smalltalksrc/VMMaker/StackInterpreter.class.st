@@ -405,7 +405,8 @@ Class {
 		'messageCount',
 		'imageReader',
 		'imageWriter',
-		'pendingFinalizationSignals'
+		'pendingFinalizationSignals',
+		'imageVersion'
 	],
 	#classVars : [
 		'AlternateHeaderHasPrimFlag',
@@ -7182,6 +7183,12 @@ StackInterpreter >> getImageHeaderFlags [
 ]
 
 { #category : #accessing }
+StackInterpreter >> getImageVersion [
+
+	^ imageVersion
+]
+
+{ #category : #accessing }
 StackInterpreter >> getMaxExtSemTabSizeSet [
 	
 	^ maxExtSemTabSizeSet
@@ -7665,6 +7672,7 @@ StackInterpreter >> initialize [
 	statProcessSwitch := statStackPageDivorce :=
 	statIdleUsecs := 0.
 	messageCount := 0.
+	imageVersion := 0.
 ]
 
 { #category : #initialization }
@@ -10517,12 +10525,12 @@ StackInterpreter >> newHeader [
 	header oldBaseAddr: objectMemory oldSpaceStart.
 	header initialSpecialObjectsOop: objectMemory specialObjectsOop.
 	header hdrLastHash: objectMemory lastHash.
-	header screenSize: 0.
 	header headerFlags: self getImageHeaderFlags.
 	header extraVMMemory: (self getExtraVMMemory ifNil: [ 0 ]).
 	header hdrNumStackPages: self getDesiredNumStackPages.
 	header hdrCogCodeSize: self unknownShortOrCodeSizeInKs.
 	header hdrEdenBytes: self getDesiredEdenBytes.
+	header imageVersion: self getImageVersion.
 
 	header hdrMaxExtSemTabSize: (
 		self getMaxExtSemTabSizeSet
@@ -13588,6 +13596,13 @@ StackInterpreter >> setImageName: aString [
 	<doNotGenerate>
 	"Simulation support for when running it with an image"
 	self shouldNotImplement 
+]
+
+{ #category : #accessing }
+StackInterpreter >> setImageVersion: aValue [
+
+	"It is a short value"
+	imageVersion := aValue bitAnd: 16rFFFF
 ]
 
 { #category : #'process primitive support' }
