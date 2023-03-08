@@ -406,7 +406,7 @@ Class {
 		'imageReader',
 		'imageWriter',
 		'pendingFinalizationSignals',
-		'imageVersion'
+		'imageVersionNumber'
 	],
 	#classVars : [
 		'AlternateHeaderHasPrimFlag',
@@ -7185,7 +7185,7 @@ StackInterpreter >> getImageHeaderFlags [
 { #category : #accessing }
 StackInterpreter >> getImageVersion [
 
-	^ imageVersion
+	^ imageVersionNumber
 ]
 
 { #category : #accessing }
@@ -7672,7 +7672,7 @@ StackInterpreter >> initialize [
 	statProcessSwitch := statStackPageDivorce :=
 	statIdleUsecs := 0.
 	messageCount := 0.
-	imageVersion := 0.
+	imageVersionNumber := 0.
 ]
 
 { #category : #initialization }
@@ -13602,7 +13602,7 @@ StackInterpreter >> setImageName: aString [
 StackInterpreter >> setImageVersion: aValue [
 
 	"It is a short value"
-	imageVersion := aValue bitAnd: 16rFFFF
+	imageVersionNumber := aValue bitAnd: 16rFFFF
 ]
 
 { #category : #'process primitive support' }
