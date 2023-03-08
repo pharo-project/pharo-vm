@@ -172,7 +172,7 @@ DruidJIT >> genCheckRememberedBitOf: objReg scratch: scratchReg [
 	^self JumpNonZero: 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genConvertIntegerToSmallIntegerInReg: reg [
 
 	self LogicalShiftLeftCq: objectMemory numTagBits R: reg.
@@ -180,7 +180,7 @@ DruidJIT >> genConvertIntegerToSmallIntegerInReg: reg [
 	^0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : #'trait candidates' }
 DruidJIT >> genCreateFullClosure: compiledBlock numArgs: numArgs numCopied: numCopied ignoreContext: ignoreContext contextNumArgs: contextNumArgs large: contextIsLarge inBlock: contextIsBlock [
 	"Create a full closure with the given values."
 	| numSlots byteSize header skip |
@@ -219,7 +219,7 @@ DruidJIT >> genCreateFullClosure: compiledBlock numArgs: numArgs numCopied: numC
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genEnsureObjInRegNotForwarded: reg scratchReg: scratch [
 	"Make sure that the object in reg is not forwarded.  This routine assumes the object will
 	 never be forwarded to an immediate, as it is used to unforward  literal variables (associations). 
@@ -244,7 +244,7 @@ DruidJIT >> genEnsureObjInRegNotForwarded: reg scratchReg: scratch [
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch [
 	^ self 
 		genEnsureOopInRegNotForwarded: reg 
@@ -252,7 +252,7 @@ DruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch [
 		jumpBackTo: self Label "label is just before the forwarder check"
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch ifForwarder: fwdJumpTarget ifNotForwarder: nonFwdJumpTargetOrZero [
 	"Make sure that the oop in reg is not forwarded.  
 	 Use the fact that isForwardedObjectClassIndexPun is a power of two to save an instruction."
@@ -277,7 +277,7 @@ DruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch ifForwarder: 
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch jumpBackTo: instruction [
 	<var: #instruction type: #'AbstractInstruction *'>
 	<inline: true>
@@ -288,7 +288,7 @@ DruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch jumpBackTo: i
 		ifNotForwarder: 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch updatingSlot: index in: objReg [
 	"Make sure that the oop in reg is not forwarded, updating the slot in objReg with the value."
 	| loop imm ok |
@@ -479,7 +479,7 @@ DruidJIT >> genGetActiveContextLarge: isLarge inBlock: isInBlock [
 	^0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : #'trait candidates' }
 DruidJIT >> genGetActiveContextNumArgs: numArgs large: isLargeContext inBlock: isInBlock [
 	"Get the active context into ReceiverResultReg, creating it if necessary."
 	| routine |
@@ -496,7 +496,7 @@ DruidJIT >> genGetActiveContextNumArgs: numArgs large: isLargeContext inBlock: i
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genGetClassObjectOf: instReg into: destReg scratchReg: scratchReg instRegIsReceiver: instRegIsReceiver [
 	"Fetch the instance's class into destReg.  If the instance is not the receiver and is forwarded, follow forwarding."
 	| jumpIsImm jumpNotForwarded loop |
@@ -535,7 +535,7 @@ DruidJIT >> genGetClassObjectOf: instReg into: destReg scratchReg: scratchReg in
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genGetClassObjectOfClassIndex: instReg into: destReg scratchReg: scratchReg [
 	"Fetch the class object whose index is in instReg into destReg.
 	 It is non-obvious, but the Cogit assumes loading a class does not involve
@@ -604,14 +604,14 @@ DruidJIT >> genGetInlineCacheClassTagFrom: sourceReg into: destReg forEntry: for
 	^entryLabel
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genInlinedIdenticalOrNotIfGuts: orNot [
 	<inline: true>
 
 	^ self genForwardersInlinedIdenticalOrNotIf: orNot
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genJumpBaseHeaderImmutable: baseHeaderReg [
 	"baseHeader holds at least the least significant 32 bits of the object"
 	<returnTypeC: #'AbstractInstruction *'>
@@ -640,7 +640,7 @@ DruidJIT >> genJumpImmediate: aRegister [
 	^ self JumpNonZero: 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genJumpImmutable: sourceReg scratchReg: scratchReg [
 	<returnTypeC: #'AbstractInstruction *'>
 	<option: #IMMUTABILITY>
@@ -648,7 +648,7 @@ DruidJIT >> genJumpImmutable: sourceReg scratchReg: scratchReg [
 	^ self genJumpBaseHeaderImmutable: scratchReg
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genJumpInOldSpace: reg [
 	"Jump if reg is old."
 	<inline: true>
@@ -666,7 +666,7 @@ DruidJIT >> genJumpMutable: sourceReg scratchReg: scratchReg [
 	^ self genJumpBaseHeaderMutable: scratchReg
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genJumpNotSmallInteger: reg [
 	"Generate a compare and branch to test if aRegister contains other than a SmallInteger."
 	^ self
@@ -674,13 +674,13 @@ DruidJIT >> genJumpNotSmallInteger: reg [
 		JumpZero: 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genJumpNotSmallIntegerInScratchReg: aRegister [
 	<inline: true>
 	^self genJumpNotSmallInteger: aRegister
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genJumpNotSmallIntegersIn: aRegister and: bRegister scratch: scratchRegister [
 	"Generate a compare and branch to test if aRegister and bRegister contains other than SmallIntegers,
 	 i.e. don't branch if both aRegister and bRegister contain SmallIntegers.
@@ -703,7 +703,7 @@ DruidJIT >> genLoadSlot: index sourceReg: sourceReg destReg: destReg [
 	^0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : #'trait candidates' }
 DruidJIT >> genNewArrayOfSize: size initialized: initialized [
 	"Generate a call to code that allocates a new Array of size.
 	 The Array should be initialized with nils iff initialized is true.
@@ -755,7 +755,7 @@ DruidJIT >> genNewHashTrampoline: saveRegs called: name [
 		appendOpcodes: false
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genRemoveSmallIntegerTagsInScratchReg: scratchReg [
 
 	self SubCq: 1 R: scratchReg.
@@ -819,7 +819,7 @@ DruidJIT >> genStoreCheckReceiverReg: destReg valueReg: valueReg scratchReg: scr
 	^0
 ]
 
-{ #category : #initialization }
+{ #category : #'trait candidates' }
 DruidJIT >> genStoreCheckTrampoline [
 	| jumpSC |
 	<var: #jumpSC type: #'AbstractInstruction *'>
@@ -854,7 +854,7 @@ DruidJIT >> genStoreHeader: header intoNewInstance: rcvrReg using: scratchReg [
 		MoveR: scratchReg Mw: 0 r: rcvrReg
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genStoreSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg inFrame: inFrame [
 	<inline: true>
 	self 
@@ -877,7 +877,7 @@ DruidJIT >> genStoreSourceReg: sourceReg slotIndex: index destReg: destReg scrat
 				needsStoreCheck: true ]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genStoreSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg inFrame: inFrame needsStoreCheck: needsStoreCheck [
 	
 	self genTraceStores.
@@ -895,7 +895,7 @@ DruidJIT >> genStoreSourceReg: sourceReg slotIndex: index destReg: destReg scrat
 	^ 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genStoreSourceReg: sourceReg slotIndex: index intoNewObjectInDestReg: destReg [
 	"This method is used for unchecked stores in objects after their creation (typically, inlined creation of Array, closures and some temp vectors). 
 	Currently there is no need to do the immutability check here"
@@ -906,7 +906,7 @@ DruidJIT >> genStoreSourceReg: sourceReg slotIndex: index intoNewObjectInDestReg
 	^ 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genStoreTrampolineCall: instVarIndex [
 	<inline: true>
 	self assert: IMMUTABILITY.
@@ -982,7 +982,7 @@ DruidJIT >> genStoreTrampolineCalled: trampolineName instVarIndex: instVarIndex 
 		appendOpcodes: true
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needRestoreRcvr: needRestoreRcvr [ 
 	"Store check code is duplicated to use a single trampoline"
 	<option: #IMMUTABILITY>
@@ -1033,7 +1033,7 @@ DruidJIT >> genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg slotIndex:
 	^ 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genStoreWithImmutabilityButNoStoreCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needRestoreRcvr: needRestoreRcvr [
 	"Gen an immutability check with no store check (e.g. assigning an immediate literal)"
 	<option: #IMMUTABILITY>
@@ -1062,7 +1062,7 @@ DruidJIT >> genStoreWithImmutabilityButNoStoreCheckSourceReg: sourceReg slotInde
 	^ 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> genStoreWithImmutabilityCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needsStoreCheck: needsStoreCheck needRestoreRcvr: needRestoreRcvr [
 	<option: #IMMUTABILITY>
 	"We know there is a frame as immutability check requires a frame"
@@ -1404,7 +1404,7 @@ DruidJIT >> generateObjectRepresentationTrampolines [
 		[ceLargeActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: true inBlock: InFullBlock called: 'ceLargeFullBlockContext'].
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : #'trait candidates' }
 DruidJIT >> getActiveContextAllocatesInMachineCode [
 	"Make sure SendNumArgsReg and ClassReg are available in addition to
 	 ReceiverResultReg and TempReg in genGetActiveContextNumArgs:large:inBlock:."
@@ -1443,7 +1443,7 @@ DruidJIT >> inlineCacheTagIsYoung: cacheTag [
 	^false
 ]
 
-{ #category : #testing }
+{ #category : #'trait candidates' }
 DruidJIT >> isUnannotatableConstant: simStackEntry [
 	<inline: true>
 	<var: 'simStackEntry' type: #'CogSimStackEntry *'>
@@ -1452,7 +1452,7 @@ DruidJIT >> isUnannotatableConstant: simStackEntry [
 		or: [(self shouldAnnotateObjectReference: simStackEntry constant) not]]
 ]
 
-{ #category : #initialization }
+{ #category : #'trait candidates' }
 DruidJIT >> log2BytesPerWord [
 	^3
 ]
@@ -1643,7 +1643,7 @@ DruidJIT >> remapOop: objOop [
 		ifFalse: [objOop]
 ]
 
-{ #category : #'calling convention' }
+{ #category : #'trait candidates' }
 DruidJIT >> selectorIndexDereferenceRoutine [
 	"If the object representation is 64-bits, selectors must be accessed via indices in the inline caches.
 	 Answer the routine that will map from indices to selector objects if so, otherwise nil."
@@ -1658,7 +1658,7 @@ DruidJIT >> shouldAnnotateObjectReference: anOop [
 		or: [self oop: anOop isLessThan: objectMemory nilObject]]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : #'trait candidates' }
 DruidJIT >> slotOffsetOfInstVarIndex: index [
 	^index * objectMemory wordSize + objectMemory baseHeaderSize
 ]
@@ -1671,7 +1671,7 @@ DruidJIT >> validInlineCacheTag: classIndexOrTagPattern [
 	  or: [(objectMemory classAtIndex: classIndexOrTagPattern) notNil]
 ]
 
-{ #category : #'sista support' }
+{ #category : #'trait candidates' }
 DruidJIT >> valueOfAssociation: associationOop [
 	| association |
 	association := associationOop.
