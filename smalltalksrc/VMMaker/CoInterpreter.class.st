@@ -957,6 +957,14 @@ CoInterpreter >> ceBaseFrameReturn: returnValue [
 	contextToReturnTo := stackPages longAt: stackPage baseAddress.
 	self assert: (objectMemory addressCouldBeObj: contextToReturnTo).
 
+	(objectMemory numSlotsOf: self activeProcess) > 9 ifTrue: [ | previousOverflow |
+		previousOverflow := objectMemory fetchPointer: 9 ofObject: self activeProcess.
+		(objectMemory isIntegerObject: previousOverflow)
+			ifTrue: [ previousOverflow := ((objectMemory integerValueOf: previousOverflow) - 1) max: 0 ]
+			ifFalse: [ previousOverflow := 0 ].
+		objectMemory storeInteger: 9 ofObject: self activeProcess withValue: previousOverflow.
+		].
+
 	"The stack page is effectively free now, so free it.  We must free it to be
 	 correct in determining if contextToReturnTo is still married, and in case
 	 makeBaseFrameFor: cogs a method, which may cause a code compaction,

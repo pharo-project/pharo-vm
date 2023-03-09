@@ -4559,6 +4559,15 @@ StackInterpreter >> commonReturn [
 	newPage := stackPages stackPageFor: frameToReturnTo.
 	newPage ~~ stackPage ifTrue: [
 		| currentCtx thePage nextCntx |
+		
+		(objectMemory numSlotsOf: self activeProcess) > 9 ifTrue: [ | previousOverflow |
+		previousOverflow := objectMemory fetchPointer: 9 ofObject: self activeProcess.
+		(objectMemory isIntegerObject: previousOverflow)
+			ifTrue: [ previousOverflow := ((objectMemory integerValueOf: previousOverflow) - 1) max: 0 ]
+			ifFalse: [ previousOverflow := 0 ].
+		objectMemory storeInteger: 9 ofObject: self activeProcess withValue: previousOverflow.
+		].
+		
 		currentCtx := self frameCallerContext: stackPage baseFP.
 		stackPages freeStackPage: stackPage.
 		[
