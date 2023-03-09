@@ -1386,16 +1386,18 @@ CoInterpreter >> ceNonLocalReturn: returnValue [
 		 currentCtx := self frameCallerContext: stackPage baseFP.
 		 self assert: (objectMemory isContext: currentCtx).
 		 stackPages freeStackPage: stackPage.
+		self decrementProcessStackPageOverflowCount.
 		 [self assert: (objectMemory isContext: currentCtx).
 		  (self isMarriedOrWidowedContext: currentCtx)
 		   and: [(stackPages stackPageFor: (theFP := self frameOfMarriedContext: currentCtx)) = newPage]] whileFalse:
 			[
-					self decrementProcessStackPageOverflowCount.
 			(self isMarriedOrWidowedContext: currentCtx)
 				ifTrue:
 					[thePage := stackPages stackPageFor: theFP.
 					 currentCtx := self frameCallerContext: thePage baseFP.
-					 stackPages freeStackPage: thePage]
+					 stackPages freeStackPage: thePage.
+					self decrementProcessStackPageOverflowCount.
+					]
 				ifFalse:
 					[nextCntx := objectMemory fetchPointer: SenderIndex ofObject: currentCtx.
 					 self markContextAsDead: currentCtx.
