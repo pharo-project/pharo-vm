@@ -17,7 +17,8 @@ Class {
 		'hdrLastHash',
 		'imageFormat',
 		'screenSize',
-		'imageHeaderSize'
+		'imageHeaderSize',
+		'imageVersion'
 	],
 	#category : #'VMMaker-ImageFormat'
 }
@@ -194,6 +195,18 @@ SpurImageHeaderStruct >> imageHeaderSize: anObject [
 ]
 
 { #category : #accessing }
+SpurImageHeaderStruct >> imageVersion [
+
+	^ imageVersion
+]
+
+{ #category : #accessing }
+SpurImageHeaderStruct >> imageVersion: anObject [
+
+	imageVersion := anObject
+]
+
+{ #category : #accessing }
 SpurImageHeaderStruct >> initialSpecialObjectsOop [
 
 	^ initialSpecialObjectsOop
@@ -215,18 +228,6 @@ SpurImageHeaderStruct >> oldBaseAddr [
 SpurImageHeaderStruct >> oldBaseAddr: anObject [
 
 	oldBaseAddr := anObject
-]
-
-{ #category : #accessing }
-SpurImageHeaderStruct >> screenSize [
-
-	^ screenSize
-]
-
-{ #category : #accessing }
-SpurImageHeaderStruct >> screenSize: anObject [
-
-	screenSize := anObject
 ]
 
 { #category : #accessing }

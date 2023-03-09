@@ -5070,6 +5070,21 @@ VMPrimitiveTest >> testPrimitiveSubtractWithOverflowPreservesStack [
 ]
 
 { #category : #'tests - primitiveVMParameter' }
+VMPrimitiveTest >> testPrimitiveVMParameterGetsImageVersion [
+
+	interpreter setImageVersion: 110.
+
+	interpreter push: memory nilObject.
+	interpreter push: (memory integerObjectOf: 79).
+
+	interpreter argumentCount: 1.
+	interpreter primitiveVMParameter.
+	
+	self assert: interpreter successful.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 110).
+]
+
+{ #category : #'tests - primitiveVMParameter' }
 VMPrimitiveTest >> testPrimitiveVMParameterReturnsArrayOfOops [
 
 	| slots |
@@ -5086,11 +5101,25 @@ VMPrimitiveTest >> testPrimitiveVMParameterReturnsArrayOfOops [
 	interpreter preemptionYields: true.
 	interpreter primitiveVMParameter.
 	
-	"Check this is an array that has 78 OOP entries"
+	"Check this is an array that has 79 OOP entries"
 	self assert: (memory isArray: interpreter stackTop).
 	slots := memory numSlotsOf: interpreter stackTop.
-	self assert: slots equals: 78.
+	self assert: slots equals: 79.
 	
 	0 to: slots - 1 do: [ :i |
 		memory okayOop: (memory fetchPointer: i ofObject: interpreter stackTop) ]
+]
+
+{ #category : #'tests - primitiveVMParameter' }
+VMPrimitiveTest >> testPrimitiveVMParameterSetsImageVersion [
+
+	interpreter push: memory nilObject.
+	interpreter push: (memory integerObjectOf: 79).
+	interpreter push: (memory integerObjectOf: 110).
+
+	interpreter argumentCount: 2.
+	interpreter primitiveVMParameter.
+	
+	self assert: interpreter successful.
+	self assert: interpreter getImageVersion equals: 110.
 ]
