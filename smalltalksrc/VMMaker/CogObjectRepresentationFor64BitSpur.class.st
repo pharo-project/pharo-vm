@@ -7,12 +7,6 @@ Class {
 	#category : #'VMMaker-JIT'
 }
 
-{ #category : #'accessing class hierarchy' }
-CogObjectRepresentationFor64BitSpur class >> defaultObjectMemoryClass [
-	"For in-image compilation.  Spur64BitCoMemoryManager is as yet undefined."
-	^Smalltalk classNamed: #Spur64BitCoMemoryManager
-]
-
 { #category : #accessing }
 CogObjectRepresentationFor64BitSpur class >> wordSize [
 	^8
@@ -68,7 +62,7 @@ CogObjectRepresentationFor64BitSpur >> allocateCounters: nCounters [
 
 { #category : #'in-line cacheing' }
 CogObjectRepresentationFor64BitSpur >> bitAndByteOffsetOfIsFullBlockBitInto: aBlock [
-	<inline: true>
+
 	"This supplies the bitmask for the isFullBlock bit, and the offset of the byte containing
 	 that bit in a CogMethod header to aBlock.  We don't have named variables holding this
 	 offset.  The following assert tests whether the values are correct by creating a surrogate
@@ -604,7 +598,7 @@ CogObjectRepresentationFor64BitSpur >> genGetSizeOf: sourceReg into: destReg for
 	| jumpNotIndexable
 	  jumpBytesDone jumpShortsDone jumpArrayDone jump32BitLongsDone jump64BitLongsDone
 	  jumpIsBytes jumpHasFixedFields jumpIsShorts jumpIs32BitLongs jumpIsContext  |
-	<inline: true>
+
 	"c.f. StackInterpreter>>stSizeOf: SpurMemoryManager>>lengthOf:format: fixedFieldsOf:format:length:"
 
 	"formatReg := self formatOf: sourceReg"
@@ -869,7 +863,7 @@ CogObjectRepresentationFor64BitSpur >> genJumpNotSmallIntegerValue: aRegister sc
 	<returnTypeC: #'AbstractInstruction *'>
 	^cogit
 		MoveR: aRegister R: scratchReg;
-		ArithmeticShiftRightCq: 64 - objectMemory numTagBits R: scratchReg;
+		ArithmeticShiftRightCq: 63 - objectMemory numTagBits R: scratchReg;
 		AddCq: 1 R: scratchReg;
 		AndCq: 1 << (objectMemory numTagBits + 1) - 1 R: scratchReg; "sign and top numTags bits must be the same"
 		CmpCq: 1 R: scratchReg;
@@ -1371,7 +1365,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtSigned: signedVersion [
 { #category : #'primitive generators' }
 CogObjectRepresentationFor64BitSpur >> genPrimitiveIdentityHash [
 	"Arguably we should fail for immediates, but so far no one has complained, so..."
-	| jumpImm jumpNotSet jumpNotCharacter ret |
+	| jumpImm jumpNotSet jumpNotCharacter returnInstruction |
 	<var: #jumpImm type: #'AbstractInstruction *'>
 	<var: #jumpNotSet type: #'AbstractInstruction *'>
 	<var: #jumpNotCharacter type: #'AbstractInstruction *'>
@@ -1380,14 +1374,14 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveIdentityHash [
 	cogit CmpCq: ConstZero R: TempReg.
 	jumpNotSet := cogit JumpZero: 0.
 	cogit MoveR: TempReg R: ReceiverResultReg.
-	ret := cogit genPrimReturn.
+	returnInstruction := cogit genPrimReturn.
 	jumpImm jmpTarget: (cogit AndCq: objectMemory tagMask R: ReceiverResultReg R: TempReg).
 	cogit CmpCq: objectMemory characterTag R: TempReg.
 	jumpNotCharacter := cogit JumpNonZero: 0.
 	self genConvertCharacterToSmallIntegerInReg: ReceiverResultReg.
-	ret := cogit genPrimReturn.
+	returnInstruction := cogit genPrimReturn.
 	jumpNotCharacter jmpTarget: (cogit CmpCq: objectMemory smallFloatTag R: TempReg).
-	cogit JumpNonZero: ret.
+	cogit JumpNonZero: returnInstruction.
 	self genConvertSmallFloatToSmallFloatHashAsIntegerInReg: ReceiverResultReg scratch: TempReg.
 	cogit genPrimReturn.
 	jumpNotSet jmpTarget: cogit Label.
@@ -1403,17 +1397,17 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveIdentityHash [
 
 { #category : #'primitive generators' }
 CogObjectRepresentationFor64BitSpur >> genPrimitiveImmediateAsInteger [
-	| jumpNotCharacter ret |
+	| jumpNotCharacter returnInstruction |
 	<var: #jumpNotCharacter type: #'AbstractInstruction *'>
 	jumpNotCharacter := cogit
 		AndCq: objectMemory tagMask R: ReceiverResultReg R: TempReg;
 		CmpCq: objectMemory characterTag R: TempReg;
 		JumpNonZero: 0.
 	self genConvertCharacterToSmallIntegerInReg: ReceiverResultReg.
-	ret := cogit genPrimReturn.
+	returnInstruction := cogit genPrimReturn.
 	jumpNotCharacter jmpTarget:
 		(cogit CmpCq: objectMemory smallFloatTag R: TempReg).
-	cogit JumpNonZero: ret.
+	cogit JumpNonZero: returnInstruction.
 	self genConvertSmallFloatToSmallFloatHashAsIntegerInReg: ReceiverResultReg scratch: TempReg.
 	cogit genPrimReturn.
 	^UnfailingPrimitive
@@ -1520,10 +1514,8 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNew [
 	- the result fits in eden (actually below scavengeThreshold)"
 
 	| headerReg fillReg instSpecReg byteSizeReg
-	  jumpUnhashed jumpVariableOrEphemeron jumpNoSpace jumpTooBig jumpHasSlots
-	  fillLoop skip |
+	  jumpUnhashed jumpVariableOrEphemeron jumpNoSpace jumpTooBig jumpHasSlots skip |
 	<var: 'skip' type: #'AbstractInstruction *'>
-	<var: 'fillLoop' type: #'AbstractInstruction *'>
 	<var: 'jumpTooBig' type: #'AbstractInstruction *'>
 	<var: 'jumpHasSlots' type: #'AbstractInstruction *'>
 	<var: 'jumpNoSpace' type: #'AbstractInstruction *'>
@@ -1583,11 +1575,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNew [
 	"now fill"
 	cogit LoadEffectiveAddressMw: objectMemory baseHeaderSize r: ReceiverResultReg R: Arg1Reg.
 	cogit MoveCq: objectMemory nilObject R: fillReg.
-	fillLoop := 
-	cogit MoveR: fillReg Mw: 0 r: Arg1Reg.
-	cogit AddCq: 8 R: Arg1Reg.
-	cogit CmpR: Arg1Reg R: byteSizeReg.
-	cogit JumpAbove: fillLoop.
+	cogit fillFrom: Arg1Reg until: byteSizeReg with: fillReg usingVr: VReg1.
 	cogit genPrimReturn.
 
 	jumpUnhashed jmpTarget:
@@ -1735,11 +1723,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNewWithArg [
 	cogit MoveR: headerReg Mw: 0 r: ReceiverResultReg.
 	"now fill"
 	cogit LoadEffectiveAddressMw: objectMemory baseHeaderSize r: ReceiverResultReg R: Arg1Reg.
-	fillLoop := 
-	cogit MoveR: fillReg Mw: 0 r: Arg1Reg.
-	cogit AddCq: 8 R: Arg1Reg.
-	cogit CmpR: Arg1Reg R: byteSizeReg.
-	cogit JumpAbove: fillLoop.
+	cogit fillFrom: Arg1Reg until: byteSizeReg with: fillReg usingVr: VReg1.
 	cogit genPrimReturn.
 	
 	jumpNoSpace jmpTarget:

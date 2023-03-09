@@ -1,6 +1,3 @@
-#ifndef PHAROVM_PHARO_H
-#define PHAROVM_PHARO_H
-
 #pragma once
 
 #include "exportDefinition.h"
@@ -83,5 +80,3 @@ void *readAddress(sqInt anExternalAddress);
 
 EXPORT(int) isVMRunOnWorkerThread();
 void setMaxStacksToPrint(sqInt anInteger);
-
-#endif //PHAROVM_PHARO_H

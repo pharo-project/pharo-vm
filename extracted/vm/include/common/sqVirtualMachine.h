@@ -131,7 +131,6 @@ typedef struct VirtualMachine {
 
 	/* InterpreterProxy methodsFor: 'special objects' */
 
-	sqInt (*characterTable)(void);
 	sqInt (*falseObject)(void);
 	sqInt (*nilObject)(void);
 	sqInt (*trueObject)(void);
@@ -163,7 +162,6 @@ typedef struct VirtualMachine {
 	sqInt (*byteSwapped)(sqInt w);
 	sqInt (*failed)(void);
 	void (*fullGC)(void);
-	void (*incrementalGC)(void);
 	sqInt (*primitiveFail)(void);
 	sqInt (*showDisplayBitsLeftTopRightBottom)(sqInt aForm, sqInt l, sqInt t, sqInt r, sqInt b);
 	sqInt (*signalSemaphoreWithIndex)(sqInt semaIndex);
@@ -280,7 +278,6 @@ typedef struct VirtualMachine {
 #if VM_PROXY_MINOR > 8
 	/* See interp.h and above for standard error codes. */
 	sqInt  (*primitiveFailFor)(sqInt code);
-	void (*(*setInterruptCheckChain)(void (*aFunction)(void)))();
 	sqInt  (*sendInvokeCallbackStackRegistersJmpbuf)(sqInt thunkPtrAsInt, sqInt stackPtrAsInt, sqInt regsPtrAsInt, sqInt jmpBufPtrAsInt);
 	sqInt  (*reestablishContextPriorToCallback)(sqInt callbackContext);
 	sqInt  (*isOopImmutable)(sqInt oop);
@@ -321,7 +318,6 @@ typedef struct VirtualMachine {
   sqIntptr_t  (*stackSignedMachineIntegerValue)(sqInt);
   usqIntptr_t (*positiveMachineIntegerValueOf)(sqInt);
   usqIntptr_t (*stackPositiveMachineIntegerValue)(sqInt);
-  sqInt	 (*getInterruptPending)(void);
   char  *(*cStringOrNullFor)(sqInt);
   sqInt  (*signalNoResume)(sqInt);
 #endif

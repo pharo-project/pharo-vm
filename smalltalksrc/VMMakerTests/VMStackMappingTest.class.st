@@ -7,22 +7,27 @@ Class {
 { #category : #helpers }
 VMStackMappingTest >> buildStackFromFrames [
 
-	3 timesRepeat:[  | method |
-		method := methodBuilder newMethod build.
-		stackBuilder addNewFrame 
+	3 timesRepeat: [ 
+		| method |
+		method := methodBuilder newMethod buildMethod.
+		stackBuilder addNewFrame
 			method: method;
-			beSuspended
-		].
+			beSuspended ].
 
-	stackBuilder buildStack.
-
+	stackBuilder buildStack
 ]
 
 { #category : #helpers }
 VMStackMappingTest >> newContext [
+
 	| method |
-	method:= methodBuilder newMethod build.
-	^self newSmallContextReceiver: memory nilObject method: method arguments: #() temporaries: #() ip: 10.
+	method := methodBuilder newMethod buildMethod.
+	^ self
+		  newSmallContextReceiver: memory nilObject
+		  method: method
+		  arguments: #(  )
+		  temporaries: #(  )
+		  ip: 10
 ]
 
 { #category : #tests }

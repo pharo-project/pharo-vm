@@ -152,7 +152,7 @@ StackInterpreterPrimitives >> doPrimitiveWorkerCallout [
 	<option: #FEATURE_THREADED_FFI>
 	
 	<export: true>
-	| externalFunction cif PARAM_EXTERNALFUNCTION PARAM_ARGUMENTS PARAM_SEMAPHORE_INDEX PARAM_RECEIVER argumentsArrayOop argumentSize parameters returnHolder receiver worker semaphoreIndex task |
+	| externalFunction cif PARAM_EXTERNALFUNCTION PARAM_ARGUMENTS PARAM_SEMAPHORE_INDEX PARAM_RECEIVER argumentsArrayOop argumentSize parameters returnHolder primitiveReceiver worker semaphoreIndex task |
 	<var: #parameters type: #'void **'>
 	<var: #returnHolder type: #'void *'>
 	<var: #task type: #'WorkerTask *'>
@@ -181,8 +181,8 @@ StackInterpreterPrimitives >> doPrimitiveWorkerCallout [
 		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
 
 	" 3. Obtain the receiver and extract the worker "
-	receiver := self stackValue: PARAM_RECEIVER.
-	worker := self getWorkerFromAddress: (self getHandler: receiver).
+	primitiveReceiver := self stackValue: PARAM_RECEIVER.
+	worker := self getWorkerFromAddress: (self getHandler: primitiveReceiver).
 
 	self failed
 		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
@@ -240,19 +240,18 @@ StackInterpreterPrimitives >> doPrimitiveWorkerExtractReturnValue [
 	<inline: false>
 	<option: #FEATURE_THREADED_FFI>
 	
-	| returnHolder task PARAM_RECEIVER PARAM_TASK_ADDRESS  worker taskAddress receiver |
+	| returnHolder task PARAM_RECEIVER PARAM_TASK_ADDRESS  worker taskAddress primitiveReceiver |
 	<var: #returnHolder type: #'void *'>
 	<var: #task type: #'WorkerTask *'>
 	<var: #worker type: #'Worker *'>
-	<var: #externalFunction type: #'void *'>
 
 	PARAM_RECEIVER 				:= 1.
 	PARAM_TASK_ADDRESS			:= 0.
 
 	"1. Extract Task address and worker"
 	taskAddress := self readAddress: (self stackValue: PARAM_TASK_ADDRESS).
-	receiver := self stackValue: PARAM_RECEIVER.
-	worker := self getWorkerFromAddress: (self getHandler: receiver).
+	primitiveReceiver := self stackValue: PARAM_RECEIVER.
+	worker := self getWorkerFromAddress: (self getHandler: primitiveReceiver).
 
 	self failed
 		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
@@ -436,14 +435,6 @@ StackInterpreterPrimitives >> logDebug: aString [
 	<doNotGenerate>
 
 	aString traceCr.
-]
-
-{ #category : #logging }
-StackInterpreterPrimitives >> logDebug: aFormat _: aParameter [
-
-	<doNotGenerate>
-
-	(aFormat printf: { aParameter }) traceCr
 ]
 
 { #category : #'object access primitives' }
@@ -742,7 +733,7 @@ StackInterpreterPrimitives >> noInlineLoadFloatOrIntFrom: floatOrInt [
 ]
 
 { #category : #'object access primitives' }
-StackInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
+StackInterpreterPrimitives >> pathTo: goal using: anArray followWeak: followWeak [
 	"Trace objects and frames from the root, marking visited objects, pushing the current path on stack, until goal is found.
 	 If found, unmark, leaving path in stack, and answer 0.  Otherwise answer an error:
 		PrimErrBadArgument if stack is not an Array
@@ -750,13 +741,13 @@ StackInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 		PrimErrNotFound if goal cannot be found"
 	<var: #index type: #sqInt> "beware, must be signed"
 	| current index next stackSize stackp freeStartAtStart |
-	(objectMemory isArray: stack) ifFalse:
+	(objectMemory isArray: anArray) ifFalse:
 		[^PrimErrBadArgument].
 	self assert: objectMemory allObjectsUnmarked.
 	freeStartAtStart := objectMemory freeStart. "check no allocations during search"
-	objectMemory beRootIfOld: stack. "so no store checks are necessary on stack"
-	stackSize := objectMemory lengthOf: stack.
-	objectMemory mark: stack.
+	objectMemory beRootIfOld: anArray. "so no store checks are necessary on stack"
+	stackSize := objectMemory lengthOf: anArray.
+	objectMemory mark: anArray.
 	"no need. the current context is not reachable from the active process (suspendedContext is nil)"
 	"objectMemory mark: self activeProcess."
 	current := objectMemory specialObjectsOop.
@@ -784,8 +775,8 @@ StackInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 		 next = goal ifTrue:
 			[self assert: freeStartAtStart = objectMemory freeStart.
 			 self unmarkAfterPathTo.
-			 objectMemory storePointer: stackp ofObject: stack withValue: current.
-			 self pruneStack: stack stackp: stackp.
+			 objectMemory storePointer: stackp ofObject: anArray withValue: current.
+			 self pruneStack: anArray stackp: stackp.
 			 ^0].
 		 ((objectMemory isNonIntegerObject: next)
 		  and: [(stackPages couldBeFramePointer: next)
@@ -798,11 +789,11 @@ StackInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 				[stackp + 2 > stackSize ifTrue:
 					[self assert: freeStartAtStart = objectMemory freeStart.
 					 self unmarkAfterPathTo.
-					 objectMemory nilFieldsOf: stack.
+					 objectMemory nilFieldsOf: anArray.
 					 ^PrimErrBadIndex]. "PrimErrNoMemory ?"
 				 objectMemory
-					storePointerUnchecked: stackp ofObject: stack withValue: current;
-					storePointerUnchecked: stackp + 1 ofObject: stack withValue: (objectMemory integerObjectOf: index).
+					storePointerUnchecked: stackp ofObject: anArray withValue: current;
+					storePointerUnchecked: stackp + 1 ofObject: anArray withValue: (objectMemory integerObjectOf: index).
 				 stackp := stackp + 2.
 				 (stackPages couldBeFramePointer: (self cCoerceSimple: next to: #'char *'))
 					ifTrue:
@@ -817,10 +808,10 @@ StackInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 		 current = objectMemory specialObjectsOop ifTrue:
 			[self assert: freeStartAtStart = objectMemory freeStart.
 			 self unmarkAfterPathTo.
-			 objectMemory nilFieldsOf: stack.
+			 objectMemory nilFieldsOf: anArray.
 			^PrimErrNotFound].
-		 index := objectMemory integerValueOf: (objectMemory fetchPointer: stackp - 1 ofObject: stack).
-		 current := objectMemory fetchPointer: stackp - 2 ofObject: stack.
+		 index := objectMemory integerValueOf: (objectMemory fetchPointer: stackp - 1 ofObject: anArray).
+		 current := objectMemory fetchPointer: stackp - 2 ofObject: anArray.
 		 stackp := stackp - 2] repeat
 ]
 
@@ -844,108 +835,21 @@ StackInterpreterPrimitives >> popSameThreadCalloutSuspendedProcess [
 
 { #category : #'system control primitives' }
 StackInterpreterPrimitives >> primitiveAllVMParameters: paramsArraySize [
+
 	"See primitiveVMParameter method comment"
 
 	| result |
-	result := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: paramsArraySize.
-	objectMemory storePointerUnchecked: 0	ofObject: result withValue: (self positiveMachineIntegerFor: objectMemory oldSpaceSize).
-	objectMemory storePointerUnchecked: 1	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory newSpaceSize).
-	objectMemory storePointerUnchecked: 2	ofObject: result withValue: (self positiveMachineIntegerFor: objectMemory totalMemorySize).
-	"objectMemory storePointerUnchecked: 3	ofObject: result withValue: objectMemory nilObject was allocationCount".
-	"objectMemory storePointerUnchecked: 4	ofObject: result withValue: objectMemory nilObject allocationsBetweenGCs".
-	objectMemory storePointerUnchecked: 5	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory tenuringThreshold).
-	objectMemory storePointerUnchecked: 6	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statFullGCs).
-	objectMemory storePointerUnchecked: 7	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statFullGCUsecs + 500 // 1000).
-	objectMemory
-		storePointerUnchecked: 8
-		ofObject: result
-		withValue: (objectMemory integerObjectOf: (objectMemory hasSpurMemoryManagerAPI
-														ifTrue: [objectMemory statScavenges]
-														ifFalse: [objectMemory statIncrGCs])).
-	objectMemory
-		storePointerUnchecked: 9
-		ofObject: result
-		withValue: (objectMemory integerObjectOf: (objectMemory hasSpurMemoryManagerAPI
-														ifTrue: [objectMemory statScavengeGCUsecs]
-														ifFalse: [objectMemory statIncrGCUsecs]) + 500 // 1000).
-	objectMemory storePointerUnchecked: 10	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statTenures).
-	"JITTER VM info unused; 11 - 14/12 - 15 available for reuse"
-	11 to: 18 do:
-		[:i | objectMemory storePointerUnchecked: i ofObject: result withValue: ConstZero].
-	objectMemory storePointerUnchecked: 15 ofObject: result withValue: (objectMemory positive64BitIntegerFor: statIdleUsecs).
-	(SistaVM and: [self isCog]) ifTrue:
-		[objectMemory storePointerUnchecked: 16 ofObject: result withValue: (objectMemory floatObjectOf: self getCogCodeZoneThreshold)].
-	objectMemory hasSpurMemoryManagerAPI ifTrue:
-		[objectMemory
-			storePointerUnchecked: 17	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statCompactionUsecs + 500 // 1000);
-			storePointerUnchecked: 18	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory scavengeThresholdAsExtent)].
-	objectMemory storePointerUnchecked: 19	ofObject: result withValue: (objectMemory positive64BitIntegerFor: self ioUTCStartMicroseconds).
-	objectMemory storePointerUnchecked: 20	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory rootTableCount).
-	objectMemory storePointerUnchecked: 21	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statRootTableOverflows).
-	objectMemory storePointerUnchecked: 22	ofObject: result withValue: (objectMemory integerObjectOf: extraVMMemory).
-	objectMemory storePointerUnchecked: 23	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory shrinkThreshold).
-	objectMemory storePointerUnchecked: 24	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory growHeadroom).
-	objectMemory storePointerUnchecked: 25	ofObject: result withValue: (objectMemory integerObjectOf: self ioHeartbeatMilliseconds).
-	objectMemory storePointerUnchecked: 26	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statMarkCount).
-	objectMemory storePointerUnchecked: 27	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statSweepCount).
-	objectMemory storePointerUnchecked: 28	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statMkFwdCount).
-	objectMemory storePointerUnchecked: 29	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statCompMoveCount).
-	objectMemory storePointerUnchecked: 30	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statGrowMemory).
-	objectMemory storePointerUnchecked: 31	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statShrinkMemory).
-	objectMemory storePointerUnchecked: 32	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statRootTableCount).
-	objectMemory hasSpurMemoryManagerAPI ifTrue: "was statAllocationCount"
-		[objectMemory storePointerUnchecked: 33	ofObject: result withValue: (objectMemory positive64BitIntegerFor: objectMemory currentAllocatedBytes)].
-	objectMemory storePointerUnchecked: 34	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statSurvivorCount).
-	objectMemory storePointerUnchecked: 35	ofObject: result withValue: (objectMemory integerObjectOf: (self microsecondsToMilliseconds: objectMemory statGCEndUsecs)).
-	objectMemory storePointerUnchecked: 36	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statSpecialMarkCount).
-	objectMemory storePointerUnchecked: 37	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statIGCDeltaUsecs + 500 // 1000).
-	objectMemory storePointerUnchecked: 38	ofObject: result withValue: (objectMemory integerObjectOf: statPendingFinalizationSignals).
-	objectMemory storePointerUnchecked: 39	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory wordSize).
-	objectMemory storePointerUnchecked: 40	ofObject: result withValue: (objectMemory integerObjectOf: self imageFormatVersion).
-	objectMemory storePointerUnchecked: 41	ofObject: result withValue: (objectMemory integerObjectOf: numStackPages).
-	objectMemory storePointerUnchecked: 42	ofObject: result withValue: (objectMemory integerObjectOf: desiredNumStackPages).
-	objectMemory storePointerUnchecked: 43	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory edenBytes).
-	objectMemory storePointerUnchecked: 44	ofObject: result withValue: (objectMemory integerObjectOf: desiredEdenBytes).
-	objectMemory storePointerUnchecked: 45	ofObject: result withValue: self getCogCodeSize.
-	objectMemory storePointerUnchecked: 46	ofObject: result withValue: self getDesiredCogCodeSize.
-	objectMemory storePointerUnchecked: 47	ofObject: result withValue: self getCogVMFlags.
-	objectMemory storePointerUnchecked: 48	ofObject: result withValue: (objectMemory integerObjectOf: self ioGetMaxExtSemTableSize).
-	"50 & 51 (49 & 50) reserved for parameters that persist in the image"
-	objectMemory storePointerUnchecked: 51	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory rootTableCapacity).
-	objectMemory hasSpurMemoryManagerAPI ifTrue:
-		[objectMemory
-			storePointerUnchecked: 52 ofObject: result withValue: (objectMemory integerObjectOf: objectMemory numSegments);
-			storePointerUnchecked: 53 ofObject: result withValue: (objectMemory integerObjectOf: objectMemory freeSize);
-			storePointerUnchecked: 54 ofObject: result withValue: (objectMemory floatObjectOf: objectMemory getHeapGrowthToSizeGCRatio)].
-	objectMemory storePointerUnchecked: 55	ofObject: result withValue: (self positive64BitIntegerFor: statProcessSwitch).
-	objectMemory storePointerUnchecked: 56	ofObject: result withValue: (self positive64BitIntegerFor: statIOProcessEvents).
-	objectMemory storePointerUnchecked: 57	ofObject: result withValue: (self positive64BitIntegerFor: statForceInterruptCheck).
-	objectMemory storePointerUnchecked: 58	ofObject: result withValue: (self positive64BitIntegerFor: statCheckForEvents).
-	objectMemory storePointerUnchecked: 59	ofObject: result withValue: (self positive64BitIntegerFor: statStackOverflow).
-	objectMemory storePointerUnchecked: 60	ofObject: result withValue: (self positive64BitIntegerFor: statStackPageDivorce).
-	objectMemory storePointerUnchecked: 61	ofObject: result withValue: self getCodeCompactionCount.
-	objectMemory storePointerUnchecked: 62	ofObject: result withValue: self getCodeCompactionMSecs.
-	objectMemory storePointerUnchecked: 63	ofObject: result withValue: self getCogMethodCount.
-	objectMemory storePointerUnchecked: 64	ofObject: result withValue: self getCogVMFeatureFlags.
-	objectMemory storePointerUnchecked: 65	ofObject: result withValue: (objectMemory integerObjectOf: self stackPageByteSize).
-	objectMemory hasSpurMemoryManagerAPI ifTrue:
-		[objectMemory
-			storePointerUnchecked: 66 ofObject: result withValue: (objectMemory integerObjectOf: objectMemory maxOldSpaceSize)].
-	objectMemory storePointerUnchecked: 67 ofObject: result withValue: (objectMemory floatObjectOf: stackPages statAverageLivePagesWhenMapping).
-	objectMemory storePointerUnchecked: 68 ofObject: result withValue: (objectMemory integerObjectOf: stackPages statMaxPageCountWhenMapping).
-	objectMemory
-		storePointerUnchecked: 69
-		ofObject: result
-		withValue: (objectMemory integerObjectOf: (self cCode: 'VM_PROXY_MAJOR' inSmalltalk: [self class vmProxyMajorVersion])).
-	objectMemory
-		storePointerUnchecked: 70
-		ofObject: result
-		withValue: (objectMemory integerObjectOf: (self cCode: 'VM_PROXY_MINOR' inSmalltalk: [self class vmProxyMinorVersion])).	
-	objectMemory storePointerUnchecked: 71	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statMarkUsecs + 500 // 1000).
-	objectMemory storePointerUnchecked: 72	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statSweepUsecs + 500 // 1000).
-	objectMemory hasSpurMemoryManagerAPI ifTrue:
-		[objectMemory
-			storePointerUnchecked: 73	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statMaxAllocSegmentTime + 500 // 1000)].
+	result := objectMemory
+		          eeInstantiateClassIndex: objectMemory arrayClassIndexPun
+		          format: objectMemory arrayFormat
+		          numSlots: paramsArraySize.
+
+	1 to: paramsArraySize do: [ :index | 
+		objectMemory
+			storePointerUnchecked: index - 1
+			ofObject: result
+			withValue: ((self primitiveGetVMParameter: index) ifNil: [ 
+					 objectMemory nilObject ]) ].
 
 	objectMemory beRootIfOld: result.
 	self methodReturnValue: result
@@ -999,7 +903,7 @@ StackInterpreterPrimitives >> primitiveContextAt [
 	self externalWriteBackHeadFramePointers.
 	(self isStillMarriedContext: aContext) ifFalse:
 		[fmt := objectMemory formatOfHeader: hdr.
-		 totalLength := objectMemory lengthOf: aContext baseHeader: hdr format: fmt.
+		 totalLength := objectMemory lengthOf: aContext format: fmt.
 		 fixedFields := objectMemory fixedFieldsOf: aContext format: fmt length: totalLength.
 		 stSize := self fetchStackPointerOf: aContext.
 		 (index between: 1 and: stSize) ifFalse:
@@ -1037,7 +941,7 @@ StackInterpreterPrimitives >> primitiveContextAtPut [
 	self externalWriteBackHeadFramePointers.
 	(self isStillMarriedContext: aContext) ifFalse:
 		[fmt := objectMemory formatOfHeader: hdr.
-		 totalLength := objectMemory lengthOf: aContext baseHeader: hdr format: fmt.
+		 totalLength := objectMemory lengthOf: aContext format: fmt.
 		 fixedFields := objectMemory fixedFieldsOf: aContext format: fmt length: totalLength.
 		 stSize := self fetchStackPointerOf: aContext.
 		 (index between: 1 and: stSize) ifFalse:
@@ -1063,7 +967,7 @@ StackInterpreterPrimitives >> primitiveContextSize [
 	rcvr := self stackTop.
 	hdr := objectMemory baseHeader: rcvr.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: rcvr baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: rcvr format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: rcvr format: fmt length: totalLength.
 	(objectMemory isContextHeader: hdr)
 		ifTrue:
@@ -1095,115 +999,99 @@ StackInterpreterPrimitives >> primitiveContextXray [
 	self pop: 1 thenPush: (objectMemory integerObjectOf: flags)
 ]
 
-{ #category : #'I/O primitives' }
-StackInterpreterPrimitives >> primitiveDeferDisplayUpdates [
-	"Set or clear the flag that controls whether modifications of 
-	 the Display object are propagated to the underlying 
-	 platform's screen."
-	| flag |
-	flag := self stackTop.
-	flag = objectMemory trueObject
-		ifTrue: [deferDisplayUpdates := true]
-		ifFalse:
-			[flag = objectMemory falseObject
-				ifTrue: [deferDisplayUpdates := false]
-				ifFalse: [^self primitiveFail]].
-	self cCode: [] inSmalltalk: [self fullDisplayUpdate].
-	self pop: 1
-]
-
 { #category : #'plugin primitives' }
 StackInterpreterPrimitives >> primitiveDoNamedPrimitiveWithArgs [
+
 	"Simulate an primitiveExternalCall invocation (e.g. for the Debugger).  Do not cache anything.
 	 e.g. ContextPart>>tryNamedPrimitiveIn: aCompiledMethod for: aReceiver withArgs: arguments"
-	| argumentArray arraySize methodArg methodHeader
-	  moduleName functionName moduleLength functionLength
-	  spec addr primRcvr isArray |
+
 	<var: #addr declareC: 'void (*addr)()'>
-	objectMemory hasSpurMemoryManagerAPI ifTrue: "See checkForAndFollowForwardedPrimitiveState"
-		[metaAccessorDepth := -2].
+	| argumentArray arraySize methodArg methodHeader moduleName functionName moduleLength functionLength spec addr primRcvr isArray |
+	metaAccessorDepth := -2.
+	"See checkForAndFollowForwardedPrimitiveState"
 	argumentArray := self stackTop.
 	methodArg := self stackValue: 2.
-	((objectMemory isArray: argumentArray)
-	 and: [objectMemory isOopCompiledMethod: methodArg]) ifFalse:
-		[^self primitiveFailFor: -2]. "invalid args"
+	((objectMemory isArray: argumentArray) and: [ 
+		 objectMemory isOopCompiledMethod: methodArg ]) ifFalse: [ 
+		^ self primitiveFailFor: -2 ]. "invalid args"
 	arraySize := objectMemory numSlotsOf: argumentArray.
-	(self roomToPushNArgs: arraySize) ifFalse:
-		[^self primitiveFailFor: -2]. "invalid args"
+	(self roomToPushNArgs: arraySize) ifFalse: [ 
+		^ self primitiveFailFor: -2 ]. "invalid args"
 
 	methodHeader := objectMemory methodHeaderOf: methodArg.
-	(objectMemory literalCountOfMethodHeader: methodHeader) > 2 ifFalse:
-		[^self primitiveFailFor: -3]. "invalid methodArg state"
-	spec := objectMemory fetchPointer: 1 "first literal" ofObject: methodArg.
+	(objectMemory literalCountOfMethodHeader: methodHeader) > 2 ifFalse: [ 
+		^ self primitiveFailFor: -3 ]. "invalid methodArg state"
+	spec := objectMemory fetchPointer: 1 ofObject: methodArg. "first literal"
 	isArray := self isInstanceOfClassArray: spec.
-	(isArray
-	and: [(objectMemory numSlotsOf: spec) = 4
-	and: [(self primitiveIndexOfMethod: methodArg header: methodHeader) = PrimNumberExternalCall]]) ifFalse:
-		[^self primitiveFailFor: -3]. "invalid methodArg state"
+	(isArray and: [ 
+		 (objectMemory numSlotsOf: spec) = 4 and: [ 
+			 (self primitiveIndexOfMethod: methodArg header: methodHeader)
+			 = PrimNumberExternalCall ] ]) ifFalse: [ 
+		^ self primitiveFailFor: -3 ]. "invalid methodArg state"
 
-	(self argumentCountOfMethodHeader: methodHeader) = arraySize ifFalse:
-		[^self primitiveFailFor: -2]. "invalid args (Array args wrong size)"
+	(self argumentCountOfMethodHeader: methodHeader) = arraySize 
+		ifFalse: [ ^ self primitiveFailFor: -2 ]. "invalid args (Array args wrong size)"
 
 	"The function has not been loaded yet. Fetch module and function name."
 	moduleName := objectMemory fetchPointer: 0 ofObject: spec.
 	moduleName = objectMemory nilObject
-		ifTrue: [moduleLength := 0]
-		ifFalse: [self success: (objectMemory isBytes: moduleName).
-				moduleLength := objectMemory lengthOf: moduleName].
+		ifTrue: [ moduleLength := 0 ]
+		ifFalse: [ 
+			self success: (objectMemory isBytes: moduleName).
+			moduleLength := objectMemory lengthOf: moduleName ].
 	functionName := objectMemory fetchPointer: 1 ofObject: spec.
 	self success: (objectMemory isBytes: functionName).
 	functionLength := objectMemory lengthOf: functionName.
-	self successful ifFalse: [^self primitiveFailFor: -3]. "invalid methodArg state"
+	self successful ifFalse: [ ^ self primitiveFailFor: -3 ]. "invalid methodArg state"
 
 	"Spur needs to know the primitive's accessorDepth."
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[addr := self ioLoadExternalFunction: functionName + objectMemory baseHeaderSize
-						OfLength: functionLength
-						FromModule: moduleName + objectMemory baseHeaderSize
-						OfLength: moduleLength
-						AccessorDepthInto: (self addressOf: metaAccessorDepth
-												 put: [:val| metaAccessorDepth := val]).
-			 addr = 0 ifTrue:
-				[metaAccessorDepth := -2]]
-		ifFalse:
-			[addr := self ioLoadExternalFunction: functionName + objectMemory baseHeaderSize
-						OfLength: functionLength
-						FromModule: moduleName + objectMemory baseHeaderSize
-						OfLength: moduleLength].
-	addr = 0 ifTrue:
-		[^self primitiveFailFor: -1]. "could not find function; answer generic failure (see below)"
+	addr := self
+		        ioLoadExternalFunction:
+		        functionName + objectMemory baseHeaderSize
+		        OfLength: functionLength
+		        FromModule: moduleName + objectMemory baseHeaderSize
+		        OfLength: moduleLength
+		        AccessorDepthInto: (self
+				         addressOf: metaAccessorDepth
+				         put: [ :val | metaAccessorDepth := val ]).
+	addr = 0 ifTrue: [ metaAccessorDepth := -2 ].
+	addr = 0 ifTrue: [ ^ self primitiveFailFor: -1 ]. "could not find function; answer generic failure (see below)"
 
 	"Cannot fail this primitive from now on.  Can only fail the external primitive."
 	tempOop := objectMemory
-						eeInstantiateClassIndex: ClassArrayCompactIndex
-						format: objectMemory arrayFormat
-						numSlots: 4.
+		           eeInstantiateClassIndex: ClassArrayCompactIndex
+		           format: objectMemory arrayFormat
+		           numSlots: 4.
 	objectMemory
-		storePointerUnchecked: 0 ofObject: tempOop withValue: (argumentArray := self popStack);
-		storePointerUnchecked: 1 ofObject: tempOop withValue: (primRcvr := self popStack);
-		storePointerUnchecked: 2 ofObject: tempOop withValue: self popStack; "the method"
-		storePointerUnchecked: 3 ofObject: tempOop withValue: self popStack. "the context receiver"
+		storePointerUnchecked: 0
+		ofObject: tempOop
+		withValue: (argumentArray := self popStack);
+		storePointerUnchecked: 1
+		ofObject: tempOop
+		withValue: (primRcvr := self popStack);
+		storePointerUnchecked: 2 ofObject: tempOop withValue: self popStack;
+		"the method"storePointerUnchecked: 3
+		ofObject: tempOop
+		withValue: self popStack. "the context receiver"
 	self push: primRcvr. "replace context receiver with actual receiver"
 	argumentCount := arraySize.
-	1 to: arraySize do:
-		[:index| self push: (objectMemory fetchPointer: index - 1 ofObject: argumentArray)].
+	1 to: arraySize do: [ :index | 
+		self push:
+			(objectMemory fetchPointer: index - 1 ofObject: argumentArray) ].
 	self callExternalPrimitive: addr.
-	self successful ifFalse: "If primitive failed, then restore state for failure code"
-		[self pop: arraySize + 1.
-		 self push: (objectMemory fetchPointer: 3 ofObject: tempOop).
-		 self push: (objectMemory fetchPointer: 2 ofObject: tempOop).
-		 self push: (objectMemory fetchPointer: 1 ofObject: tempOop).
-		 self push: (objectMemory fetchPointer: 0 ofObject: tempOop).
-		 argumentCount := 3.
-		 "Must reset primitiveFunctionPointer for checkForAndFollowForwardedPrimitiveState"
-		 objectMemory hasSpurMemoryManagerAPI ifTrue:
-			[primitiveFunctionPointer := #primitiveDoNamedPrimitiveWithArgs].
-		 "Hack.  A nil prim error code (primErrorCode = 1) is interpreted by the image
+	self successful ifFalse: [ "If primitive failed, then restore state for failure code"
+		self pop: arraySize + 1.
+		self push: (objectMemory fetchPointer: 3 ofObject: tempOop).
+		self push: (objectMemory fetchPointer: 2 ofObject: tempOop).
+		self push: (objectMemory fetchPointer: 1 ofObject: tempOop).
+		self push: (objectMemory fetchPointer: 0 ofObject: tempOop).
+		argumentCount := 3.
+		"Must reset primitiveFunctionPointer for checkForAndFollowForwardedPrimitiveState"
+		primitiveFunctionPointer := #primitiveDoNamedPrimitiveWithArgs.
+		"Hack.  A nil prim error code (primErrorCode = 1) is interpreted by the image
 		  as meaning this primitive is not implemented.  So to pass back nil as an error
 		  code we use -1 to indicate generic failure."
-		 primFailCode = 1 ifTrue:
-			[primFailCode := -1]]
+		primFailCode = 1 ifTrue: [ primFailCode := -1 ] ]
 ]
 
 { #category : #'control primitives' }
@@ -1213,8 +1101,8 @@ StackInterpreterPrimitives >> primitiveDoPrimitiveWithArgs [
 	 If this primitive fails, arrange that its error code is a negative integer, to
 	 distinguish between this failing and the primitive it invokes failing."
 	| argumentArray arraySize index primIdx savedNumArgs rcvr |
-	objectMemory hasSpurMemoryManagerAPI ifTrue: "See checkForAndFollowForwardedPrimitiveState"
-		[metaAccessorDepth := -2].
+	"See checkForAndFollowForwardedPrimitiveState"
+	metaAccessorDepth := -2.
 	(argumentCount between: 2 and: 3) ifFalse:
 		[^self primitiveFailFor: PrimErrUnsupported negated].
 	argumentArray := self stackTop.
@@ -1262,8 +1150,8 @@ StackInterpreterPrimitives >> primitiveDoPrimitiveWithArgs [
 	tempOop := argumentArray. "prim might alloc/gc"
 
 	"Run the primitive (sets primFailCode)"
-	objectMemory hasSpurMemoryManagerAPI ifTrue: "See checkForAndFollowForwardedPrimitiveState"
-		[metaAccessorDepth := primitiveAccessorDepthTable at: primIdx].
+	"See checkForAndFollowForwardedPrimitiveState"
+	metaAccessorDepth := primitiveAccessorDepthTable at: primIdx.
 	self slowPrimitiveResponse.
 
 	self successful ifFalse: "If primitive failed, then restore state for failure code"
@@ -1338,6 +1226,7 @@ StackInterpreterPrimitives >> primitiveExecuteMethodArgsArray [
 
 { #category : #'plugin primitives' }
 StackInterpreterPrimitives >> primitiveExternalCall [
+
 	"Call an external primitive. External primitive methods first literals are an array of
 		* The module name (String | Symbol)
 		* The function name (String | Symbol)
@@ -1353,109 +1242,114 @@ StackInterpreterPrimitives >> primitiveExternalCall [
 	method has been  looked up and not been found, the function address is stored as -1
 	(i.e., the SmallInteger -1 to distinguish from 16rFFFFFFFF which may be returned from
 	lookup), and the primitive fails with PrimErrNotFound."
-	| lit addr moduleName functionName moduleLength functionLength accessorDepth index |
+
 	<var: #addr declareC: 'void (*addr)()'>
-		
+	| lit addr moduleName functionName moduleLength functionLength accessorDepth index |
+	((objectMemory isOopCompiledMethod: newMethod) and: [ 
+		 (objectMemory literalCountOf: newMethod) > 0 and: [ 
+			 lit := self literal: 0 ofMethod: newMethod.
+			 (objectMemory isArray: lit) and: [ 
+				 (objectMemory numSlotsOf: lit) = 4 and: [ 
+					 index := objectMemory fetchPointer: 3 ofObject: lit.
+					 objectMemory isIntegerObject: index ] ] ] ]) ifFalse: [ 
+		^ self primitiveFailFor: PrimErrBadMethod ].
+
 	"Check for it being a method for primitiveDoPrimitiveWithArgs.
 	 Fetch the first literal of the method; check its an Array of length 4.
 	 Look at the function index in case it has been loaded before"
-	((objectMemory isOopCompiledMethod: newMethod)
-	 and: [(objectMemory literalCountOf: newMethod) > 0
-	 and: [lit := self literal: 0 ofMethod: newMethod.
-		(objectMemory isArray: lit)
-	 and: [(objectMemory numSlotsOf: lit) = 4
-	 and: [index := objectMemory fetchPointer: 3 ofObject: lit.
-		objectMemory isIntegerObject: index]]]]) ifFalse:
-		[^self primitiveFailFor: PrimErrBadMethod].
 
 	index := objectMemory integerValueOf: index.
 	"Check if we have already looked up the function and failed."
-		
-	index < 0 ifTrue:
-		["Function address was not found in this session, 
+
+	index < 0 ifTrue: [ "Function address was not found in this session, 
 		  Void the primitive function."
-		 self rewriteMethodCacheEntryForExternalPrimitiveToFunction: 0.
-		 ^self primitiveFailFor: PrimErrNotFound].
+		self rewriteMethodCacheEntryForExternalPrimitiveToFunction: 0.
+		^ self primitiveFailFor: PrimErrNotFound ].
 
 	"Try to call the function directly"
-	(index > 0 and: [index <= MaxExternalPrimitiveTableSize]) ifTrue:
-		[addr := externalPrimitiveTable at: index - 1.
-		 addr ~= 0 ifTrue:
-			[self rewriteMethodCacheEntryForExternalPrimitiveToFunction: (self cCode: 'addr' inSmalltalk: [1000 + index]).
-			 self callExternalPrimitive: addr. "On Spur, sets primitiveFunctionPointer"
-			 self maybeRetryPrimitiveOnFailure.
-			 ^nil].
+	(index > 0 and: [ index <= MaxExternalPrimitiveTableSize ]) ifTrue: [ 
+		addr := externalPrimitiveTable at: index - 1.
+		addr ~= 0 ifTrue: [ 
+			self rewriteMethodCacheEntryForExternalPrimitiveToFunction:
+				(self cCode: 'addr' inSmalltalk: [ 1000 + index ]).
+			self callExternalPrimitive: addr. "On Spur, sets primitiveFunctionPointer"
+			self maybeRetryPrimitiveOnFailure.
+			^ nil ].
 		"if we get here, then an index to the external prim was 
 		kept on the ST side although the underlying prim 
 		table was already flushed"
-		^self primitiveFailFor: PrimErrNamedInternal].
+		^ self primitiveFailFor: PrimErrNamedInternal ].
 
 	"Clean up session id and external primitive index"
-	objectMemory storePointerUnchecked: 2 ofObject: lit withValue: ConstZero.
-	objectMemory storePointerUnchecked: 3 ofObject: lit withValue: ConstZero.
+	objectMemory
+		storePointerUnchecked: 2
+		ofObject: lit
+		withValue: ConstZero.
+	objectMemory
+		storePointerUnchecked: 3
+		ofObject: lit
+		withValue: ConstZero.
 
 	"The function has not been loaded yet. Fetch module and function name."
 	moduleName := objectMemory fetchPointer: 0 ofObject: lit.
 	moduleName = objectMemory nilObject
-		ifTrue: [moduleLength := 0]
-		ifFalse: [(objectMemory isBytes: moduleName) ifFalse:
-					[self primitiveFailFor: PrimErrBadMethod].
-				moduleLength := objectMemory lengthOf: moduleName].
+		ifTrue: [ moduleLength := 0 ]
+		ifFalse: [ 
+			(objectMemory isBytes: moduleName) ifFalse: [ 
+				self primitiveFailFor: PrimErrBadMethod ].
+			moduleLength := objectMemory lengthOf: moduleName ].
 	functionName := objectMemory fetchPointer: 1 ofObject: lit.
-	(objectMemory isBytes: functionName) ifFalse:
-		[self primitiveFailFor: PrimErrBadMethod].
+	(objectMemory isBytes: functionName) ifFalse: [ 
+		self primitiveFailFor: PrimErrBadMethod ].
 	functionLength := objectMemory lengthOf: functionName.
 
 	"Spur needs to know the primitive's accessorDepth which is stored in the third slot of the first literal."
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[addr := self ioLoadExternalFunction: functionName + objectMemory baseHeaderSize
-						OfLength: functionLength
-						FromModule: moduleName + objectMemory baseHeaderSize
-						OfLength: moduleLength
-						AccessorDepthInto: (self addressOf: accessorDepth
-												 put: [:val| accessorDepth := val]).
-			 addr = 0
-				ifTrue: [index := -1]
-				ifFalse: "add the function to the external primitive table"
-					[index := self addToExternalPrimitiveTable: addr.
-					 objectMemory
-						storePointerUnchecked: 2
-						ofObject: lit
-						withValue: (objectMemory integerObjectOf: accessorDepth)]]
-		ifFalse:
-			[addr := self ioLoadExternalFunction: functionName + objectMemory baseHeaderSize
-						OfLength: functionLength
-						FromModule: moduleName + objectMemory baseHeaderSize
-						OfLength: moduleLength.
-			 addr = 0
-				ifTrue: [index := -1]
-				ifFalse: "add the function to the external primitive table"
-					[index := self addToExternalPrimitiveTable: addr]].
+	addr := self
+		        ioLoadExternalFunction:
+		        functionName + objectMemory baseHeaderSize
+		        OfLength: functionLength
+		        FromModule: moduleName + objectMemory baseHeaderSize
+		        OfLength: moduleLength
+		        AccessorDepthInto:
+		        (self
+			         addressOf: accessorDepth
+			         put: [ :val | accessorDepth := val ]).
+	addr = 0
+		ifTrue: [ index := -1 ]
+		ifFalse: [ "add the function to the external primitive table"
+			index := self addToExternalPrimitiveTable: addr.
+			objectMemory
+				storePointerUnchecked: 2
+				ofObject: lit
+				withValue: (objectMemory integerObjectOf: accessorDepth) ].
 
 	"Store the index (or -1 if failure) back in the literal"
-	objectMemory storePointerUnchecked: 3 ofObject: lit withValue: (objectMemory integerObjectOf: index).
+	objectMemory
+		storePointerUnchecked: 3
+		ofObject: lit
+		withValue: (objectMemory integerObjectOf: index).
 
 	"If the function has been successfully loaded cache and call it"
 	index >= 0
-		ifTrue:
-			[self rewriteMethodCacheEntryForExternalPrimitiveToFunction: (self cCode: [addr] inSmalltalk: [1000 + index]).
-			 self callExternalPrimitive: addr.
-			 self maybeRetryPrimitiveOnFailure]
-		ifFalse: "Otherwise void the primitive function and fail"
-			[self rewriteMethodCacheEntryForExternalPrimitiveToFunction: 0.
-			 self assert: (objectMemory fetchPointer: 2 ofObject: lit) = ConstZero.
-			 self primitiveFailFor: PrimErrNotFound]
+		ifTrue: [ 
+			self rewriteMethodCacheEntryForExternalPrimitiveToFunction:
+				(self cCode: [ addr ] inSmalltalk: [ 1000 + index ]).
+			self callExternalPrimitive: addr.
+			self maybeRetryPrimitiveOnFailure ]
+		ifFalse: [ "Otherwise void the primitive function and fail"
+			self rewriteMethodCacheEntryForExternalPrimitiveToFunction: 0.
+			self assert:
+				(objectMemory fetchPointer: 2 ofObject: lit) = ConstZero.
+			self primitiveFailFor: PrimErrNotFound ]
 ]
 
 { #category : #ffi }
 StackInterpreterPrimitives >> primitiveFFIAllocate [
 	"Primitive. Allocate an object on the external heap."
 	| byteSize addr oop |
-
+	<returnTypeC: #void>
 	<export: true>
 	<inline: false>
-	<var: #ptr type: #'sqIntptr_t *'>
 
 	byteSize := self stackIntegerValue: 0.
 	self failed ifTrue: [ ^ self ].
@@ -1472,10 +1366,9 @@ StackInterpreterPrimitives >> primitiveFFIAllocate [
 StackInterpreterPrimitives >> primitiveFFIFree [
 	"Primitive. Free the object pointed to on the external heap."
 	| addr oop |
-
+	<returnTypeC: #void>
 	<export: true>
 	<inline: false>
-	<var: #ptr type: #'sqIntptr_t *'>
 
 	oop  := self stackObjectValue: 0.
 	addr := self readAddress: oop.
@@ -1708,22 +1601,19 @@ StackInterpreterPrimitives >> primitiveGetCurrentWorkingDirectory [
 ]
 
 { #category : #'system control primitives' }
-StackInterpreterPrimitives >> primitiveGetVMParameter: arg [ 
+StackInterpreterPrimitives >> primitiveGetVMParameter: index [ 
 	"See primitiveVMParameter method comment.
-	 N.B. written as a returning case to avoid branch limits in the V3 bytecode set."
-	arg caseOf: {
+		Return an OOP if success.
+		Return nil if no argument is available for the index"
+	index caseOf: {
 			[1]  ->	[^self positiveMachineIntegerFor: objectMemory oldSpaceSize].
 			[2]  ->	[^objectMemory integerObjectOf: objectMemory newSpaceSize].
 			[3]  ->	[^self positiveMachineIntegerFor: objectMemory totalMemorySize].
 			[6]  ->	[^objectMemory integerObjectOf: objectMemory tenuringThreshold].
 			[7]  ->	[^objectMemory integerObjectOf: objectMemory statFullGCs].
 			[8]  ->	[^objectMemory integerObjectOf: objectMemory statFullGCUsecs + 500 // 1000].
-			[9]  ->	[^objectMemory integerObjectOf: (objectMemory hasSpurMemoryManagerAPI
-														ifTrue: [objectMemory statScavenges]
-														ifFalse: [objectMemory statIncrGCs])].
-			[10] ->	[^objectMemory integerObjectOf: (objectMemory hasSpurMemoryManagerAPI
-														ifTrue: [objectMemory statScavengeGCUsecs]
-														ifFalse: [objectMemory statIncrGCUsecs]) + 500 // 1000].
+			[9]  ->	[^objectMemory integerObjectOf: objectMemory statScavenges].
+			[10] ->	[^objectMemory integerObjectOf: objectMemory statScavengeGCUsecs + 500 // 1000].
 			[11] ->	[^objectMemory integerObjectOf: objectMemory statTenures].
 			[12] ->	[^ConstZero]. "Was JITTER VM info"
 			[13] ->	[^ConstZero]. "Was JITTER VM info"
@@ -1733,12 +1623,8 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: arg [
 			[17] ->	[^(SistaVM and: [self isCog])
 						ifTrue: [objectMemory floatObjectOf: self getCogCodeZoneThreshold]
 						ifFalse: [ConstZero]].
-			[18] ->	[^objectMemory hasSpurMemoryManagerAPI
-						ifTrue: [objectMemory integerObjectOf: objectMemory statCompactionUsecs + 500 // 1000]
-						ifFalse: [ConstZero]].
-			[19] ->	[^objectMemory hasSpurMemoryManagerAPI
-						ifTrue: [objectMemory integerObjectOf: objectMemory scavengeThresholdAsExtent]
-						ifFalse: [ConstZero]].
+			[18] ->	[^objectMemory integerObjectOf: objectMemory statCompactionUsecs + 500 // 1000].
+			[19] ->	[^objectMemory integerObjectOf: objectMemory scavengeThresholdAsExtent].
 			[20] ->	[^objectMemory positive64BitIntegerFor: self ioUTCStartMicroseconds].
 			[21] ->	[^objectMemory integerObjectOf: objectMemory rootTableCount].
 			[22] ->	[^objectMemory integerObjectOf: objectMemory statRootTableOverflows].
@@ -1753,13 +1639,12 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: arg [
 			[31] ->	[^objectMemory integerObjectOf: objectMemory statGrowMemory].
 			[32] ->	[^objectMemory integerObjectOf: objectMemory statShrinkMemory].
 			[33] ->	[^objectMemory integerObjectOf: objectMemory statRootTableCount].
-			[34] ->	[^objectMemory hasSpurMemoryManagerAPI ifTrue:"was statAllocationCount"
-						[objectMemory positive64BitIntegerFor: objectMemory currentAllocatedBytes]].
+			[34] ->	[^objectMemory positive64BitIntegerFor: objectMemory currentAllocatedBytes].
 			[35] ->	[^objectMemory integerObjectOf: objectMemory statSurvivorCount].
 			[36] ->	[^objectMemory integerObjectOf: (self microsecondsToMilliseconds: objectMemory statGCEndUsecs)].
 			[37] ->	[^objectMemory integerObjectOf: objectMemory statSpecialMarkCount].
 			[38] ->	[^objectMemory integerObjectOf: objectMemory statIGCDeltaUsecs + 500 // 1000].
-			[39] ->	[^objectMemory integerObjectOf: statPendingFinalizationSignals].
+			[39] ->	[^ConstZero]. "free"
 			[40] ->	[^objectMemory integerObjectOf: objectMemory wordSize].
 			[41] ->	[^objectMemory integerObjectOf: self imageFormatVersion].
 			[42] ->	[^objectMemory integerObjectOf: numStackPages].
@@ -1771,14 +1656,11 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: arg [
 			[48] ->	[^self getCogVMFlags].
 			[49] ->	[^objectMemory integerObjectOf: self ioGetMaxExtSemTableSize].
 			[52] ->	[^objectMemory integerObjectOf: objectMemory rootTableCapacity].
-			[53] ->	[^objectMemory hasSpurMemoryManagerAPI ifTrue:
-						[objectMemory integerObjectOf: objectMemory numSegments]].
-			[54] ->	[^objectMemory hasSpurMemoryManagerAPI ifTrue:
-						[objectMemory integerObjectOf: objectMemory freeSize]].
-			[55] ->	[^objectMemory hasSpurMemoryManagerAPI ifTrue:
-						[objectMemory floatObjectOf: objectMemory getHeapGrowthToSizeGCRatio]].
+			[53] ->	[^objectMemory integerObjectOf: objectMemory numSegments].
+			[54] ->	[^objectMemory integerObjectOf: objectMemory freeSize].
+			[55] ->	[^objectMemory floatObjectOf: objectMemory getHeapGrowthToSizeGCRatio].
 			[56] ->	[^self positive64BitIntegerFor: statProcessSwitch].
-			[57] ->	[^self positive64BitIntegerFor: statIOProcessEvents].
+			[57] ->	[^ConstZero "free"].
 			[58] ->	[^self positive64BitIntegerFor: statForceInterruptCheck].
 			[59] ->	[^self positive64BitIntegerFor: statCheckForEvents].
 			[60] ->	[^self positive64BitIntegerFor: statStackOverflow].
@@ -1788,15 +1670,14 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: arg [
 			[64] ->	[^self getCogMethodCount].
 			[65] ->	[^self getCogVMFeatureFlags].
 			[66] ->	[^objectMemory integerObjectOf: self stackPageByteSize].
-			[67] ->	[^objectMemory hasSpurMemoryManagerAPI ifTrue:
-						[objectMemory integerObjectOf: objectMemory maxOldSpaceSize]].
+			[67] ->	[^objectMemory integerObjectOf: objectMemory maxOldSpaceSize].
 			[68] ->	[^objectMemory floatObjectOf: stackPages statAverageLivePagesWhenMapping].
 			[69] ->	[^objectMemory integerObjectOf: stackPages statMaxPageCountWhenMapping].
-			[70] ->	[^self integerObjectOf: (self cCode: 'VM_PROXY_MAJOR' inSmalltalk: [self class vmProxyMajorVersion])].
-			[71] ->	[^self integerObjectOf: (self cCode: 'VM_PROXY_MINOR' inSmalltalk: [self class vmProxyMinorVersion])].
+			[70] ->	[^objectMemory integerObjectOf: (self cCode: 'VM_PROXY_MAJOR' inSmalltalk: [self class vmProxyMajorVersion])].
+			[71] ->	[^objectMemory integerObjectOf: (self cCode: 'VM_PROXY_MINOR' inSmalltalk: [self class vmProxyMinorVersion])].
 			[72] ->	[^objectMemory integerObjectOf: objectMemory statMarkUsecs + 500 // 1000].
 			[73] ->	[^objectMemory integerObjectOf: objectMemory statSweepUsecs + 500 // 1000].
-			[74] ->	[^objectMemory hasSpurMemoryManagerAPI ifTrue: [objectMemory integerObjectOf: objectMemory statMaxAllocSegmentTime + 500 // 1000]].
+			[74] ->	[^objectMemory integerObjectOf: objectMemory statMaxAllocSegmentTime + 500 // 1000].
 			[75] ->	[^self getMethodCompilationCount]. 
 			[76] ->	[^self getMethodCompilationMSecs]. 
 			[77] ->	[^self getBlockCompilationCount]. 
@@ -1826,7 +1707,7 @@ StackInterpreterPrimitives >> primitiveInstVarAt [
 	index := objectMemory integerValueOf: index.
 	hdr := objectMemory baseHeader: rcvr.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: rcvr baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: rcvr format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: rcvr format: fmt length: totalLength.
 	(index >= 1 and: [index <= fixedFields]) ifFalse:
 		[^self primitiveFailFor: PrimErrBadIndex].
@@ -1854,7 +1735,7 @@ StackInterpreterPrimitives >> primitiveInstVarAtPut [
 	index := objectMemory integerValueOf: index.
 	hdr := objectMemory baseHeader: rcvr.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: rcvr baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: rcvr format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: rcvr format: fmt length: totalLength.
 	(index >= 1 and: [index <= fixedFields]) ifFalse:
 		[^self primitiveFailFor: PrimErrBadIndex].
@@ -2347,7 +2228,6 @@ StackInterpreterPrimitives >> primitiveLoadSymbolFromModule [
 
 	<export: true>
 	<var: #address type: #'void *'>
-	<var: #ptr type: #'void **'>
 	<var: #symbolString type: #'char *'>
 	
 	self methodArgumentCount = 2 ifFalse:
@@ -2651,6 +2531,7 @@ StackInterpreterPrimitives >> primitiveObjectPointsTo [
 
 { #category : #'control primitives' }
 StackInterpreterPrimitives >> primitivePerform [
+
 	<returnTypeC: #void>
 	| newReceiver lookupClassTag performMethod |
 	performMethod := newMethod.
@@ -2662,35 +2543,38 @@ StackInterpreterPrimitives >> primitivePerform [
 
 	"Slide arguments down over selector"
 	argumentCount := argumentCount - 1.
-	argumentCount to: 1 by: -1 do:
-		[:i|
+	argumentCount to: 1 by: -1 do: [ :i | 
 		stackPages
 			longAt: stackPointer + (i * objectMemory wordSize)
-			put: (stackPages longAt: stackPointer + ((i - 1) * objectMemory wordSize))].
+			put:
+			(stackPages longAt: stackPointer + (i - 1 * objectMemory wordSize)) ].
 	self pop: 1.
 	lookupClassTag := objectMemory fetchClassTagOf: newReceiver.
 	self sendBreakpoint: messageSelector receiver: newReceiver.
-	self printSends ifTrue:
-		[self printActivationNameForSelector: messageSelector
-			startClass: (objectMemory classForClassTag: lookupClassTag); cr].
+	self printSends ifTrue: [ 
+		self
+			printActivationNameForSelector: messageSelector
+			startClass: (objectMemory classForClassTag: lookupClassTag);
+			cr ].
 	self findNewMethodInClassTag: lookupClassTag.
 
 	"Only test CompiledMethods for argument count - other objects will have to take their chances"
-	((objectMemory isOopCompiledMethod: newMethod)
-	  and: [(self argumentCountOf: newMethod) = argumentCount]) ifFalse:
-		["Slide the args back up (sigh) and re-insert the selector."
+	((objectMemory isOopCompiledMethod: newMethod) and: [ 
+		 (self argumentCountOf: newMethod) = argumentCount ]) ifFalse: [ "Slide the args back up (sigh) and re-insert the selector."
 		self unPop: 1.
-		1 to: argumentCount by: 1 do:
-			[:i |
-			stackPages longAt: stackPointer + ((i - 1) * objectMemory wordSize)
-				put: (stackPages longAt: stackPointer + (i * objectMemory wordSize))].
-		stackPages longAt: stackPointer + (argumentCount * objectMemory wordSize) put: messageSelector.
+		1 to: argumentCount by: 1 do: [ :i | 
+			stackPages
+				longAt: stackPointer + (i - 1 * objectMemory wordSize)
+				put:
+				(stackPages longAt: stackPointer + (i * objectMemory wordSize)) ].
+		stackPages
+			longAt: stackPointer + (argumentCount * objectMemory wordSize)
+			put: messageSelector.
 		argumentCount := argumentCount + 1.
 		newMethod := performMethod.
-		 "Must reset primitiveFunctionPointer for checkForAndFollowForwardedPrimitiveState"
-		 objectMemory hasSpurMemoryManagerAPI ifTrue:
-			[primitiveFunctionPointer := #primitivePerform].
-		^self primitiveFailFor: PrimErrBadNumArgs].
+		"Must reset primitiveFunctionPointer for checkForAndFollowForwardedPrimitiveState"
+		primitiveFunctionPointer := #primitivePerform.
+		^ self primitiveFailFor: PrimErrBadNumArgs ].
 
 	self executeNewMethod.
 	"Recursive xeq affects primErrorCode"
@@ -2703,9 +2587,6 @@ StackInterpreterPrimitives >> primitivePin [
 	 Answer whether the object was already pinned. N.B. pinning does *not* prevent
 	 an object from being garbage collected."
 	| obj boolean wasPinned |
-	objectMemory hasSpurMemoryManagerAPI ifFalse:
-		[^self primitiveFailFor: PrimErrUnsupported].
-
 	obj := self stackValue: 1.
 	((objectMemory isImmediate: obj)
 	 or: [objectMemory isForwarded: obj]) ifTrue:
@@ -2777,14 +2658,7 @@ StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 	"assume failure, then set success for handled indices"
 	self primitiveFailFor: PrimErrBadArgument.
 	index caseOf: {
-		[5] ->	[objectMemory hasSpurMemoryManagerAPI ifFalse:
-					["Was:
-							result := allocationsBetweenGCs.
-							allocationsBetweenGCs := arg."
-						"Ignore for now, because old images won't start up otherwise.
-						 See 45 for eden size setting."
-					 result := objectMemory nilObject.
-					 self initPrimCall]].
+		[5] ->	[ "Nothing?" ].
 		[6] ->	[result := objectMemory integerObjectOf: objectMemory tenuringThreshold.
 				 primFailCode := objectMemory tenuringThreshold: arg].
 		[11] ->	[arg >= 0 ifTrue:
@@ -2809,11 +2683,11 @@ StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 					[result := objectMemory integerObjectOf: self ioHeartbeatMilliseconds.
 					 self ioSetHeartbeatMilliseconds: arg.
 					 self initPrimCall]].
-		[34] ->	[(objectMemory hasSpurMemoryManagerAPI "was statAllocationCount; now statAllocatedBytes"
-				  and: [arg >= 0]) ifTrue:
-					[result := objectMemory positive64BitIntegerFor: objectMemory currentAllocatedBytes.
-					 objectMemory setCurrentAllocatedBytesTo: arg.
-					 self initPrimCall]].
+		[34] ->	[
+			arg >= 0 ifTrue: [
+				result := objectMemory positive64BitIntegerFor: objectMemory currentAllocatedBytes.
+				objectMemory setCurrentAllocatedBytesTo: arg.
+				self initPrimCall ]].
 		[43] ->	[(arg between: 0 and: 65535) ifTrue:
 					[result := objectMemory integerObjectOf: desiredNumStackPages.
 					 desiredNumStackPages := arg.
@@ -2835,13 +2709,12 @@ StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 					[result := objectMemory integerObjectOf: self ioGetMaxExtSemTableSize.
 					 self initPrimCall. "i.e. ioSetMaxExtSemTableSize: is allowed to fail"
 					 self setMaxExtSemSizeTo: arg]].
-		[55] ->	[objectMemory hasSpurMemoryManagerAPI ifTrue:
-					[result := objectMemory floatObjectOf: objectMemory getHeapGrowthToSizeGCRatio.
-					 primFailCode := objectMemory setHeapGrowthToSizeGCRatio: (self noInlineLoadFloatOrIntFrom: argOop)]].
-		[67] ->	[(arg >= 0
-				  and: [objectMemory hasSpurMemoryManagerAPI]) ifTrue:
-					[result := objectMemory integerObjectOf: objectMemory maxOldSpaceSize.
-					 primFailCode := objectMemory setMaxOldSpaceSize: arg]].
+		[55] ->	[result := objectMemory floatObjectOf: objectMemory getHeapGrowthToSizeGCRatio.
+					 primFailCode := objectMemory setHeapGrowthToSizeGCRatio: (self noInlineLoadFloatOrIntFrom: argOop)].
+		[67] ->	[
+			arg >= 0 ifTrue: [
+				result := objectMemory integerObjectOf: objectMemory maxOldSpaceSize.
+				 primFailCode := objectMemory setMaxOldSpaceSize: arg ]].
 		[68] ->	[result := objectMemory floatObjectOf: stackPages statAverageLivePagesWhenMapping.
 				 self initPrimCall. "i.e. statAverageLivePagesWhenMapping: is allowed to fail"
 				 stackPages statAverageLivePagesWhenMapping: (self noInlineLoadFloatOrIntFrom: argOop)].
@@ -2849,11 +2722,11 @@ StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 					[result := objectMemory integerObjectOf: stackPages statMaxPageCountWhenMapping.
 					 stackPages statMaxPageCountWhenMapping: arg.
 					 self initPrimCall]].
-		[74] ->	[(arg >= 0
-				  and: [objectMemory hasSpurMemoryManagerAPI]) ifTrue:
-					[result := objectMemory integerObjectOf: objectMemory statMaxAllocSegmentTime + 500 // 1000.
-					 stackPages statMaxAllocSegmentTime: arg. "usually 0"
-					 self initPrimCall]] }
+		[74] ->	[
+			arg >= 0 ifTrue: [
+				result := objectMemory integerObjectOf: objectMemory statMaxAllocSegmentTime + 500 // 1000.
+				stackPages statMaxAllocSegmentTime: arg. "usually 0"
+				self initPrimCall ]] }
 		otherwise: [].
 
 	self successful
@@ -2959,8 +2832,7 @@ StackInterpreterPrimitives >> primitiveSlotAt [
 			 ^0].
 		 ^self primitiveFailFor: PrimErrBadIndex].
 
-	(objectMemory hasSpurMemoryManagerAPI
-	 and: [fmt >= objectMemory firstShortFormat]) ifTrue:
+	fmt >= objectMemory firstShortFormat ifTrue:
 		[numSlots := objectMemory num16BitUnitsOf: rcvr.
 		 (self asUnsigned: index) < numSlots ifTrue:
 			[self pop: argumentCount + 1 thenPushInteger: (objectMemory fetchUnsignedShort16: index ofObject: rcvr).
@@ -2988,83 +2860,89 @@ StackInterpreterPrimitives >> primitiveSlotAt [
 
 { #category : #'object access primitives' }
 StackInterpreterPrimitives >> primitiveSlotAtPut [
+
 	"Assign a slot in an object.  This numbers all slots from 1, ignoring the distinction between
 	 named and indexed inst vars.  In objects with both named and indexed inst vars, the named
 	 inst vars precede the indexed ones.  In non-object indexed objects (objects that contain
 	 bits, not object references) this primitive assigns a raw integral value at each slot."
+
 	| newValue index rcvr fmt numSlots value |
 	newValue := self stackTop.
 	index := self stackValue: 1.
 	rcvr := self stackValue: 2.
-	(objectMemory isIntegerObject: index) ifFalse:
-		[^self primitiveFailFor: PrimErrBadArgument].
-	(objectMemory isImmediate: rcvr) ifTrue:
-		[^self primitiveFailFor: PrimErrBadReceiver].
-	(objectMemory isObjImmutable: rcvr) ifTrue:
-		[^self primitiveFailFor: PrimErrNoModification].
+	(objectMemory isIntegerObject: index) ifFalse: [ 
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory isImmediate: rcvr) ifTrue: [ 
+		^ self primitiveFailFor: PrimErrBadReceiver ].
+	(objectMemory isObjImmutable: rcvr) ifTrue: [ 
+		^ self primitiveFailFor: PrimErrNoModification ].
 
 	fmt := objectMemory formatOf: rcvr.
 	index := (objectMemory integerValueOf: index) - 1.
 
-	fmt <= objectMemory lastPointerFormat ifTrue:
-		[numSlots := objectMemory numSlotsOf: rcvr.
-		 (self asUnsigned: index) < numSlots ifTrue:
-			[(objectMemory isContextNonImm: rcvr)
-				ifTrue: [self externalInstVar: index ofContext: rcvr put: newValue]
-				ifFalse: [objectMemory storePointer: index ofObject: rcvr withValue: newValue].
-			 self pop: argumentCount + 1 thenPush: newValue.
-			 ^0].
-		 ^self primitiveFailFor: PrimErrBadIndex].
+	fmt <= objectMemory lastPointerFormat ifTrue: [ 
+		numSlots := objectMemory numSlotsOf: rcvr.
+		(self asUnsigned: index) < numSlots ifTrue: [ 
+			(objectMemory isContextNonImm: rcvr)
+				ifTrue: [ 
+				self externalInstVar: index ofContext: rcvr put: newValue ]
+				ifFalse: [ 
+				objectMemory
+					storePointer: index
+					ofObject: rcvr
+					withValue: newValue ].
+			self pop: argumentCount + 1 thenPush: newValue.
+			^ 0 ].
+		^ self primitiveFailFor: PrimErrBadIndex ].
 
 	value := self positiveMachineIntegerValueOf: newValue.
-	self failed ifTrue:
-		[primFailCode := PrimErrBadArgument.
-		^0].
+	self failed ifTrue: [ 
+		primFailCode := PrimErrBadArgument.
+		^ 0 ].
 
-	fmt >= objectMemory firstByteFormat ifTrue:
-		[fmt >= objectMemory firstCompiledMethodFormat ifTrue:
-			[^self primitiveFailFor: PrimErrUnsupported].
-		 (self asUnsigned: value) > 16rFF ifTrue:
-			[^self primitiveFailFor: PrimErrBadArgument].
-		 numSlots := objectMemory numBytesOfBytes: rcvr.
-		 (self asUnsigned: index) < numSlots ifTrue:
-			[objectMemory storeByte: index ofObject: rcvr withValue: value.
-			 self pop: argumentCount + 1 thenPush: newValue.
-			 ^0].
-		 ^self primitiveFailFor: PrimErrBadIndex].
+	fmt >= objectMemory firstByteFormat ifTrue: [ 
+		fmt >= objectMemory firstCompiledMethodFormat ifTrue: [ 
+			^ self primitiveFailFor: PrimErrUnsupported ].
+		(self asUnsigned: value) > 16rFF ifTrue: [ 
+			^ self primitiveFailFor: PrimErrBadArgument ].
+		numSlots := objectMemory numBytesOfBytes: rcvr.
+		(self asUnsigned: index) < numSlots ifTrue: [ 
+			objectMemory storeByte: index ofObject: rcvr withValue: value.
+			self pop: argumentCount + 1 thenPush: newValue.
+			^ 0 ].
+		^ self primitiveFailFor: PrimErrBadIndex ].
 
-	(objectMemory hasSpurMemoryManagerAPI
-	 and: [fmt >= objectMemory firstShortFormat]) ifTrue:
-		[(self asUnsigned: value) > 16rFFFF ifTrue:
-			[^self primitiveFailFor: PrimErrBadArgument].
-		 numSlots := objectMemory num16BitUnitsOf: rcvr.
-		 (self asUnsigned: index) < numSlots ifTrue:
-			[objectMemory storeShort16: index ofObject: rcvr withValue: value.
-			 self pop: argumentCount + 1 thenPush: newValue.
-			 ^0].
-		 ^self primitiveFailFor: PrimErrBadIndex].
+	fmt >= objectMemory firstShortFormat ifTrue: [ 
+		(self asUnsigned: value) > 16rFFFF ifTrue: [ 
+			^ self primitiveFailFor: PrimErrBadArgument ].
+		numSlots := objectMemory num16BitUnitsOf: rcvr.
+		(self asUnsigned: index) < numSlots ifTrue: [ 
+			objectMemory storeShort16: index ofObject: rcvr withValue: value.
+			self pop: argumentCount + 1 thenPush: newValue.
+			^ 0 ].
+		^ self primitiveFailFor: PrimErrBadIndex ].
 
-	(objectMemory bytesPerOop = 8
-	 and: [fmt = objectMemory sixtyFourBitIndexableFormat]) ifTrue:
-		[numSlots := objectMemory num64BitUnitsOf: rcvr.
-		 (self asUnsigned: index) < numSlots ifTrue:
-			[objectMemory storeLong64: index ofObject: rcvr withValue: value.
-			 self pop: argumentCount + 1 thenPush: newValue.
-			 ^0].
-		 ^self primitiveFailFor: PrimErrBadIndex].
+	(objectMemory bytesPerOop = 8 and: [ 
+		 fmt = objectMemory sixtyFourBitIndexableFormat ]) ifTrue: [ 
+		numSlots := objectMemory num64BitUnitsOf: rcvr.
+		(self asUnsigned: index) < numSlots ifTrue: [ 
+			objectMemory storeLong64: index ofObject: rcvr withValue: value.
+			self pop: argumentCount + 1 thenPush: newValue.
+			^ 0 ].
+		^ self primitiveFailFor: PrimErrBadIndex ].
 
-	fmt >= objectMemory firstLongFormat ifTrue:
-		[(objectMemory wordSize > 4
-		  and: [(self asUnsigned: value) > 16rFFFFFFFF]) ifTrue:
-			[^self primitiveFailFor: PrimErrBadArgument].
-		 numSlots := objectMemory num32BitUnitsOf: rcvr.
-		 (self asUnsigned: index) < numSlots ifTrue:
-			[objectMemory storeLong32: index ofObject: rcvr withValue: value.
-			 self pop: argumentCount + 1 thenPush: newValue.
-			 ^0].
-		 ^self primitiveFailFor: PrimErrBadIndex].
+	fmt >= objectMemory firstLongFormat ifTrue: [ 
+		(objectMemory wordSize > 4 and: [ 
+			 (self asUnsigned: value) > 16rFFFFFFFF ]) ifTrue: [ 
+			^ self primitiveFailFor: PrimErrBadArgument ].
+		numSlots := objectMemory num32BitUnitsOf: rcvr.
+		(self asUnsigned: index) < numSlots ifTrue: [ 
+			objectMemory storeLong32: index ofObject: rcvr withValue: value.
+			self pop: argumentCount + 1 thenPush: newValue.
+			^ 0 ].
+		^ self primitiveFailFor: PrimErrBadIndex ].
 
-	^self primitiveFailFor: PrimErrBadReceiver
+	^ self primitiveFailFor: PrimErrBadReceiver
 ]
 
 { #category : #'ffi - memory accessor primitives' }
@@ -4034,83 +3912,10 @@ StackInterpreterPrimitives >> primitiveVMParameter [
 		0 args:	return an Array of VM parameter values;
 		1 arg:	return the indicated VM parameter;
 		2 args:	set the VM indicated parameter.
-	VM parameters are numbered as follows:
-		1	end (v3)/size(Spur) of old-space (0-based, read-only)
-		2	end (v3)/size(Spur) of young/new-space (read-only)
-		3	end (v3)/size(Spur) of heap (read-only)
-		4	nil (was allocationCount (read-only))
-		5	nil (was allocations between GCs (read-write)
-		6	survivor count tenuring threshold (read-write)
-		7	full GCs since startup (read-only)
-		8	total milliseconds in full GCs since startup (read-only)
-		9	incremental GCs (SqueakV3) or scavenges (Spur) since startup (read-only)
-		10	total milliseconds in incremental GCs (SqueakV3) or scavenges (Spur) since startup (read-only)
-		11	tenures of surving objects since startup or reset (read-write)
-		12-20 were specific to ikp's JITTER VM, now 12-15 are open for use
-		16	total microseconds at idle since start-up (if non-zero)
-		17	fraction of the code zone to use (Sista only; used to control code zone use to preserve sendAndBranchData on counter tripped callback)
-		18	total milliseconds in compaction phase of full GC since start-up (Spur only)
-		19	scavenge threshold, the effective size of eden.  When eden fills to the threshold a scavenge is scheduled. Newer Spur VMs only.
-		20	utc microseconds at VM start-up (actually at time initialization, which precedes image load).
-		21	root/remembered table size (occupancy) (read-only)
-		22	root table overflows since startup (read-only)
-		23	bytes of extra memory to reserve for VM buffers, plugins, etc (stored in image file header).
-		24	memory threshold above which shrinking object memory (rw)
-		25	memory headroom when growing object memory (rw)
-		26	interruptChecksEveryNms - force an ioProcessEvents every N milliseconds (rw)
-		27	number of times mark loop iterated for current IGC/FGC (read-only) includes ALL marking
-		28	number of times sweep loop iterated for current IGC/FGC (read-only)
-		29	number of times make forward loop iterated for current IGC/FGC (read-only)
-		30	number of times compact move loop iterated for current IGC/FGC (read-only)
-		31	number of grow memory requests (read-only)
-		32	number of shrink memory requests (read-only)
-		33	number of root table entries used for current IGC/FGC (read-only)
-		34	Spur: bytes allocated in total since start-up or reset (read-write) (Used to be number of allocations done before current IGC/FGC (read-only))
-		35	number of survivor objects after current IGC/FGC (read-only)
-		36	millisecond clock when current IGC/FGC completed (read-only)
-		37	number of marked objects for Roots of the world, not including Root Table entries for current IGC/FGC (read-only)
-		38	milliseconds taken by current IGC (read-only)
-		39	Number of finalization signals for Weak Objects pending when current IGC/FGC completed (read-only)
-		40	BytesPerOop for this image
-		41	imageFormatVersion for the VM
-		42	number of stack pages in use
-		43	desired number of stack pages (stored in image file header, max 65535)
-		44	size of eden, in bytes
-		45	desired size of eden, in bytes (stored in image file header)
-		46	machine code zone size, in bytes (Cog only; otherwise nil)
-		47	desired machine code zone size (stored in image file header; Cog only; otherwise nil)
-		48	various header flags.  See getCogVMFlags.
-		49	max size the image promises to grow the external semaphore table to (0 sets to default, which is 256 as of writing)
-		50-51 nil; reserved for VM parameters that persist in the image (such as eden above)
-		52	root/remembered table capacity
-		53	number of segments (Spur only; otherwise nil)
-		54	total size of free old space (Spur only, otherwise nil)
-		55	ratio of growth and image size at or above which a GC will be performed post scavenge
-		56	number of process switches since startup (read-only)
-		57	number of ioProcessEvents calls since startup (read-only)
-		58	number of ForceInterruptCheck calls since startup (read-only)
-		59	number of check event calls since startup (read-only)
-		60	number of stack page overflows since startup (read-only)
-		61	number of stack page divorces since startup (read-only)
-		62	compiled code compactions since startup (read-only; Cog only; otherwise nil)
-		63	total milliseconds in compiled code compactions since startup (read-only; Cog only; otherwise nil)
-		64	the number of methods that currently have jitted machine-code
-		65	whether the VM supports a certain feature, MULTIPLE_BYTECODE_SETS is bit 0, IMMUTABILITY is bit 1
-		66	the byte size of a stack page
-		67	the max allowed size of old space (Spur only; nil otherwise; 0 implies no limit except that of the underlying platform)
-		68	the average number of live stack pages when scanned by GC (at scavenge/gc/become et al) (read-write)
-		69	the maximum number of live stack pages when scanned by GC (at scavenge/gc/become et al) (read-write)
-		70	the vmProxyMajorVersion (the interpreterProxy VM_MAJOR_VERSION)
-		71	the vmProxyMinorVersion (the interpreterProxy VM_MINOR_VERSION)
-		72 total milliseconds in full GCs Mark phase since startup (read-only)
-		73 total milliseconds in full GCs Sweep phase since startup (read-only, can be 0 depending on compactors)
-		74 maximum pause time due to segment allocation
-		75 number of JIT compiled methods since startup (read-only)
-		76 total milliseconds spent on JIT compiled methods since startup (read-only)
-		77 number of JIT compiled block since startup (read-only)
-		78 total milliseconds spent on JIT compiled block since startup (read-only)
-		
-	Note: Thanks to Ian Piumarta for this primitive."
+
+	The description of each parameter is available in the Image (`VirtualMachine>>#parameterLabels`)
+	Do not forget to update it when new parameters are added.
+	Otherwise the *real* list is in the code: `StackInterpreterPrimitives>>#primitiveGetVMParameter:`"
 
 	| paramsArraySize index |
 	paramsArraySize := 78.
@@ -4176,7 +3981,7 @@ StackInterpreterPrimitives >> primitiveWorkerExtractReturnValue [
 ]
 
 { #category : #'object access primitives' }
-StackInterpreterPrimitives >> pruneStack: stack stackp: stackp [
+StackInterpreterPrimitives >> pruneStack: anArray stackp: stackp [
 	"Prune the stack to contain only the path, removing stacked indices
 	 and mapping frame pointers to contexts  The  issue here is that a
 	 GC can occur during ensureFrameIsMarried:SP:, but frame pointers
@@ -4191,21 +3996,21 @@ StackInterpreterPrimitives >> pruneStack: stack stackp: stackp [
 	finger := 1.
 	2 to: stackp - 1 by: 2 do:
 		[:i|
-		objOrFP := objectMemory fetchPointer: i ofObject: stack.
+		objOrFP := objectMemory fetchPointer: i ofObject: anArray.
 		(stackPages couldBeFramePointer: (self cCoerceSimple: objOrFP to: #'char *')) ifTrue:
 			[objOrFP := self withSmallIntegerTags: objOrFP].
 		objectMemory
 			storePointerUnchecked: finger
-			ofObject: stack
+			ofObject: anArray
 			withValue: objOrFP.
 		finger := finger + 1].
-	finger to: (objectMemory lengthOf: stack) - 1 do:
+	finger to: (objectMemory lengthOf: anArray) - 1 do:
 		[:i|
 		objectMemory
 			storePointerUnchecked: i
-			ofObject: stack
+			ofObject: anArray
 			withValue: objectMemory nilObject].
-	objectMemory pushRemappableOop: (theStack := stack).
+	objectMemory pushRemappableOop: (theStack := anArray).
 	1 to: finger - 1 do:
 		[:i| | thePage theFP theFPAbove |
 		objOrFP := objectMemory fetchPointer: i ofObject: theStack.
@@ -4310,13 +4115,6 @@ StackInterpreterPrimitives >> readAddress: anOop [
 		ifFalse: [ self primitiveFail. ^ nil ].
 
 	^ objectMemory fetchPointer: 0 ofObject: anOop.
-]
-
-{ #category : #'I/O primitive support' }
-StackInterpreterPrimitives >> sqImageFile: imageFile Seek: position [
-
-	<doNotGenerate>
-	imageFile position: position
 ]
 
 { #category : #'object access primitives' }

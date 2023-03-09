@@ -963,14 +963,14 @@ CogObjectRepresentationForSpur >> genGetIdentityHash: rcvrReg resultReg: resultR
 	cogit voidReceiverResultRegContainsSelf. 
 	resultReg = ReceiverResultReg 
 		ifTrue: 
-			[cogit ssTop popToReg: rcvrReg.
+			[cogit ssTop moveToReg: rcvrReg.
 			 self genGetHashFieldNonImmOf: rcvrReg asSmallIntegerInto: resultReg.
 			 cogit CmpCq: ConstZero R: resultReg.
 			 jumpSet := cogit JumpNonZero: 0.
 			 cogit MoveR: rcvrReg R: resultReg.
 			 cogit CallRT: ceInlineNewHashTrampoline]
 		ifFalse: 
-			[cogit ssTop popToReg: ReceiverResultReg.
+			[cogit ssTop moveToReg: ReceiverResultReg.
 		 	 self genGetHashFieldNonImmOf: ReceiverResultReg asSmallIntegerInto: resultReg.
 			 cogit CmpCq: ConstZero R: resultReg.
 			 jumpSet := cogit JumpNonZero: 0.
@@ -1305,13 +1305,13 @@ CogObjectRepresentationForSpur >> genPrimitiveIntegerAtPut [
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoad: accessedElementByteSize fromBytesWith: aBlock [
-	<inline: true>
+
 	^ self genPrimitiveLoad: accessedElementByteSize fromBytesWith: aBlock needsToTrap: false
 ]
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoad: accessedElementByteSize fromBytesWith: aBlock needsToTrap: needsToTrap [
-	<inline: true>
+
 	| nSlotsOrBytesReg jumpBadIndex formatReg jumpIsPointers jumpOutOfBounds jumpSmaller jumpImmediate |
 	nSlotsOrBytesReg := ClassReg.
 	
@@ -1547,13 +1547,13 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadFloat64FromExternalAddress [
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadFromExternalAddressWith: aBlock [
-	<inline: true>
+
 	^ self genPrimitiveLoadFromExternalAddressWith: aBlock needsToTrap: false
 ]
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadFromExternalAddressWith: aBlock needsToTrap: needsToTrap [
-	<inline: true>
+
 	| jumpBadIndex jumpImmediate jumpNonExternalAddress |
 
 	cogit genLoadArgAtDepth: 0 into: Arg0Reg.
@@ -1755,13 +1755,13 @@ CogObjectRepresentationForSpur >> genPrimitiveSize [
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStore: accessedElementByteSize intoBytesWith: aBlock [
-	<inline: true>
+
 	^ self genPrimitiveStore: accessedElementByteSize intoBytesWith: aBlock needsToTrap: false
 ]
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStore: accessedElementByteSize intoBytesWith: aBlock needsToTrap: needsToTrap [
-	<inline: true>
+
 	| nSlotsOrBytesReg jumpBadIndex formatReg jumpIsPointers jumpOutOfBounds jumpSmaller jumpImmediate destPointerRegister |
 	nSlotsOrBytesReg := ClassReg.
 	destPointerRegister := ClassReg.
@@ -2082,13 +2082,13 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreInt8IntoExternalAddress [
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreIntoExternalAddressWith: aBlock [
-	<inline: true>
+
 	^ self genPrimitiveStoreIntoExternalAddressWith: aBlock needsToTrap: false
 ]
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreIntoExternalAddressWith: aBlock needsToTrap: needsToTrap [
-	<inline: true>
+
 	| jumpBadIndex jumpNonExternalAddress jumpImmediate destPointerRegister |
 	destPointerRegister := ClassReg.
 
@@ -2222,7 +2222,6 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreUInt8IntoExternalAddress [
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStringCompareWith [
-	"primitiveCompareWith:"
 	
 	| instr jump jumpAbove jumpIncorrectFormat1 jumpIncorrectFormat2 jumpIncorrectFormat3 jumpIncorrectFormat4 jumpMidFailure jumpSuccess minSizeReg string1CharOrByteSizeReg string2CharOrByteSizeReg string1Reg string2Reg |
 	
@@ -2284,7 +2283,11 @@ CogObjectRepresentationForSpur >> genPrimitiveStringCompareWith [
 	cogit AddCq: objectMemory baseHeaderSize R: minSizeReg.
 	
 	instr := cogit MoveXbr: TempReg R: string1Reg R: string1CharOrByteSizeReg.
+		cogit backEnd byteReadsZeroExtend ifFalse:
+			[cogit AndCq: 255 R: string1CharOrByteSizeReg].
 	cogit MoveXbr: TempReg R: string2Reg R: string2CharOrByteSizeReg.
+		cogit backEnd byteReadsZeroExtend ifFalse:
+			[cogit AndCq: 255 R: string2CharOrByteSizeReg].
 	cogit SubR: string2CharOrByteSizeReg R: string1CharOrByteSizeReg. 
 	jumpMidFailure := cogit JumpNonZero: 0. "the 2 compared characters are different, exit the loop"
 	cogit AddCq: 1 R: TempReg.
@@ -2977,11 +2980,6 @@ CogObjectRepresentationForSpur >> getLiteralCountOf: methodReg plusOne: plusOne 
 	  If inBytes is true, scale the count by the word size.  Deal with the possibility of
 	 the method being cogged."
 	self subclassResponsibility
-]
-
-{ #category : #testing }
-CogObjectRepresentationForSpur >> hasSpurMemoryManagerAPI [
-	^true
 ]
 
 { #category : #'garbage collection' }

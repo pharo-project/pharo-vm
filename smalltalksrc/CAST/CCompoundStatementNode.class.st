@@ -97,7 +97,9 @@ CCompoundStatementNode >> isEmpty [
 
 { #category : #accessing }
 CCompoundStatementNode >> last [
-	
+	"For some unknown reason, the some compound can be empty."
+	[ statements last isEmpty ] whileTrue: [ statements removeAt: statements size ].
+	"Recursive call to get the real last if last is also a compound"
 	^ statements last last
 ]
 

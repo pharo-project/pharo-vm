@@ -12,12 +12,25 @@ Class {
 { #category : #allocating }
 SlangMemoryManager >> allocate: desiredSize [
 
-	| allocatedAddress newMemoryRegion allocatedSize newMemory |
+	^ self allocate: desiredSize desiredPosition: nextAvailableAddress
+]
+
+{ #category : #allocating }
+SlangMemoryManager >> allocate: desiredSize desiredPosition: desiredPos [ 
+
+	| allocatedAddress newMemoryRegion allocatedSize newMemory desiredPosition |
 	"Allocate chunks multiple of 4KB, as they are required by the machine code simulator"
+
 	allocatedSize := (desiredSize / 4096) ceiling * 4096.
 
-	allocatedAddress := nextAvailableAddress.
-	nextAvailableAddress := nextAvailableAddress + allocatedSize.
+	desiredPosition := (desiredPos / 4096) ceiling * 4096.
+
+	self assert: desiredPosition \\ 4096 = 0.
+
+	allocatedAddress := desiredPosition max: nextAvailableAddress.
+	self assert: allocatedAddress \\ 4096 = 0.
+
+	nextAvailableAddress := allocatedAddress + allocatedSize.
 
 	"Warrantee that memory regions do not move, for simulation purposes with the FFI"
 	newMemory := ByteArray new: allocatedSize.
@@ -37,12 +50,6 @@ SlangMemoryManager >> allocate: desiredSize [
 ]
 
 { #category : #allocating }
-SlangMemoryManager >> allocate: desiredSize desiredPosition: desiredPosition [ 
-
-	^ self allocate: desiredSize
-]
-
-{ #category : #allocating }
 SlangMemoryManager >> checkIsRegionAddress: address [
 
 	((address bitAnd: 16rfff) > 0)
@@ -58,6 +65,66 @@ SlangMemoryManager >> copyFrom: start to: end [
 	^ region memory
 		copyFrom: start - region start + 1
 		to: end - region start + 1
+]
+
+{ #category : #'memory-access' }
+SlangMemoryManager >> float32At: address [ 
+
+	| region |
+	"Check the access is aligned to the size we want to read"
+	address \\ 4 ~= 0 ifTrue: [self unalignedAccessError].
+	
+	"Get the memory region where the address is stored"
+	region := self regionForAddress: address.
+	
+	^ region
+		floatAt: address - region start
+
+]
+
+{ #category : #'memory-access' }
+SlangMemoryManager >> float32At: address put: value [ 
+	
+	| region |
+	"Check the access is aligned to the size we want to read"
+	address \\ 4 ~= 0 ifTrue: [self unalignedAccessError].
+	
+	"Get the memory region where the address is stored"
+	region := self regionForAddress: address.
+	
+	^ region
+		floatAt: address - region start
+		put: value
+]
+
+{ #category : #'memory-access' }
+SlangMemoryManager >> float64At: address [ 
+
+	| region |
+	"Check the access is aligned to the size we want to read"
+	address \\ 8 ~= 0 ifTrue: [self unalignedAccessError].
+	
+	"Get the memory region where the address is stored"
+	region := self regionForAddress: address.
+	
+	^ region
+		doubleAt: address - region start
+
+]
+
+{ #category : #'memory-access' }
+SlangMemoryManager >> float64At: address put: value [ 
+	
+	| region |
+	"Check the access is aligned to the size we want to read"
+	address \\ 8 ~= 0 ifTrue: [self unalignedAccessError].
+	
+	"Get the memory region where the address is stored"
+	region := self regionForAddress: address.
+	
+	^ region
+		doubleAt: address - region start
+		put: value
 ]
 
 { #category : #allocating }
@@ -79,6 +146,14 @@ SlangMemoryManager >> initialize [
 	super initialize.
 	nextAvailableAddress := 4*1024.
 	memoryMap := Dictionary new
+]
+
+{ #category : #'memory-access' }
+SlangMemoryManager >> isValidAddress: address [
+
+	"Memory regions are allocated in multiples of 4KB (12 bits).
+	The Memory map indexes memory regions by the high part"
+	^ memoryMap includesKey: address >> 12
 ]
 
 { #category : #'memory-access' }
@@ -190,6 +265,16 @@ SlangMemoryManager >> registerNewRegion: newMemoryRegion size: desiredSize addre
 ]
 
 { #category : #'memory-access' }
+SlangMemoryManager >> uint32AtPointer: anInteger [
+	^ self unsignedLong32At: anInteger 
+]
+
+{ #category : #'memory-access' }
+SlangMemoryManager >> uint32AtPointer: anInteger put: anInteger2 [ 
+	^ self unsignedLong32At: anInteger put: anInteger2 
+]
+
+{ #category : #'memory-access' }
 SlangMemoryManager >> unsignedByteAt: anInteger [
 	
 	^ self readUnsignedIntegerAt: anInteger size: 1
@@ -208,9 +293,9 @@ SlangMemoryManager >> unsignedLong32At: address [
 ]
 
 { #category : #'memory-access' }
-SlangMemoryManager >> unsignedLong32At: address put: a32BitValue [ 
+SlangMemoryManager >> unsignedLong32At: address put: aValue [
 
-	^ self writeUnsignedInteger: a32BitValue at: address size: 4
+	^ self writeUnsignedInteger: aValue at: address size: 4
 ]
 
 { #category : #'memory-access' }

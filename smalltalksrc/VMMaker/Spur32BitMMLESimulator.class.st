@@ -23,7 +23,7 @@ Spur32BitMMLESimulator >> bootstrapping: aBoolean [
 Spur32BitMMLESimulator >> byteAt: byteAddress [
 	| lowBits long32 |
 	lowBits := byteAddress bitAnd: 3.
-	long32 := self long32At: byteAddress - lowBits.
+	long32 := self uint32AtPointer: byteAddress - lowBits.
 	^(long32 bitShift: -8 * lowBits) bitAnd: 16rFF
 ]
 
@@ -32,10 +32,10 @@ Spur32BitMMLESimulator >> byteAt: byteAddress put: byte [
 	| lowBits long32 longAddress mask value |
 	lowBits := byteAddress bitAnd: 3.
 	longAddress := byteAddress - lowBits.
-	long32 := self long32At: longAddress.
+	long32 := self uint32AtPointer: longAddress.
 	mask := (16rFF bitShift: 8 * lowBits) bitInvert.
 	value := byte bitShift: 8 * lowBits.
-	self long32At: longAddress put: ((long32 bitAnd: mask) bitOr: value).
+	self uint32AtPointer: longAddress put: ((long32 bitAnd: mask) bitOr: value).
 	^byte
 ]
 
@@ -77,11 +77,11 @@ Spur32BitMMLESimulator >> endianness [
 
 { #category : #'float primitives' }
 Spur32BitMMLESimulator >> fetchFloatAt: floatBitsAddress into: aFloat [
-	aFloat at: 2 put: (self long32At: floatBitsAddress).
-	aFloat at: 1 put: (self long32At: floatBitsAddress+4)
+	aFloat at: 2 put: (self uint32AtPointer: floatBitsAddress).
+	aFloat at: 1 put: (self uint32AtPointer: floatBitsAddress+4)
 ]
 
-{ #category : #'object access' }
+{ #category : #'as yet unclassified' }
 Spur32BitMMLESimulator >> fetchPointer: fieldIndex ofObject: objOop [
 	self assert: (self isForwarded: objOop) not.
 	self assert: (fieldIndex >= 0 and: [fieldIndex < (self numSlotsOfAny: objOop)
@@ -241,8 +241,8 @@ Spur32BitMMLESimulator >> long64At: byteAddress [
 	"memory is a Bitmap, a 32-bit indexable array of bits"
 	| hiWord loWord |
 	byteAddress \\ 8 ~= 0 ifTrue: [self unalignedAccessError].
-	loWord := memoryManager unsignedLong32At: byteAddress.
-	hiWord := memoryManager unsignedLong32At: byteAddress + 4.
+	loWord := memoryManager uint32AtPointer: byteAddress.
+	hiWord := memoryManager uint32AtPointer: byteAddress + 4.
 	^hiWord = 0
 		ifTrue: [loWord]
 		ifFalse: [(hiWord bitShift: 32) + loWord]
@@ -260,7 +260,7 @@ Spur32BitMMLESimulator >> long64At: byteAddress put: a64BitValue [
 { #category : #'memory access' }
 Spur32BitMMLESimulator >> longAt: byteAddress [
 
-	^ memoryManager unsignedLong32At: byteAddress
+	^ memoryManager long32At: byteAddress
 ]
 
 { #category : #'memory access' }
@@ -270,7 +270,7 @@ Spur32BitMMLESimulator >> longAt: byteAddress put: a32BitValue [
 		[self halt]."
 	"(byteAddress between: 16r33FBB8 and: 16r33FBCF) ifTrue:
 		[self halt]."
-	memoryManager unsignedLong32At: byteAddress put: a32BitValue
+	memoryManager uint32AtPointer: byteAddress put: a32BitValue
 ]
 
 { #category : #'gc - global' }
@@ -279,15 +279,6 @@ Spur32BitMMLESimulator >> markAndTrace: objOop [
 	objOop = 16rB25FD8 ifTrue: [self halt].
 	objOop = 16rB26010 ifTrue: [self halt]."
 	^super markAndTrace: objOop
-]
-
-{ #category : #snapshot }
-Spur32BitMMLESimulator >> memoryBaseForImageRead [
-	"Answer the address to read the image into.  Override so that when bootstrapping,
-	 the segmentManager's segments are undisturbed in adjustSegmentSwizzlesBy:"
-	^bootstrapping
-		ifTrue: [0] 
-		ifFalse: [super memoryBaseForImageRead]
 ]
 
 { #category : #compaction }
@@ -332,13 +323,15 @@ Spur32BitMMLESimulator >> parent: anObject [
 
 { #category : #'debug support' }
 Spur32BitMMLESimulator >> runLeakCheckerFor: gcModes excludeUnmarkedObjs: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid [
-	(coInterpreter displayView isNil
-	 and: [gcModes anyMask: checkForLeaks]) ifTrue:
-		[coInterpreter transcript nextPutAll: 'leak-checking...'; flush].
-	^super
-		runLeakCheckerFor: gcModes
-		excludeUnmarkedObjs: excludeUnmarkedObjs
-		classIndicesShouldBeValid: classIndicesShouldBeValid
+
+	(gcModes anyMask: checkForLeaks) ifTrue: [ 
+		coInterpreter transcript
+			nextPutAll: 'leak-checking...';
+			flush ].
+	^ super
+		  runLeakCheckerFor: gcModes
+		  excludeUnmarkedObjs: excludeUnmarkedObjs
+		  classIndicesShouldBeValid: classIndicesShouldBeValid
 ]
 
 { #category : #'gc - global' }

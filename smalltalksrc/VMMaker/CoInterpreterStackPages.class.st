@@ -172,7 +172,7 @@ CoInterpreterStackPages >> longAt: byteAddress [
 	<doNotGenerate>
 	"Note: Adjusted for Smalltalk's 1-based array indexing."
 	self assert: (byteAddress >= minStackAddress and: [byteAddress < maxStackAddress]).
-	^objectMemory longAt: byteAddress
+	^objectMemory unsignedLongAt: byteAddress
 ]
 
 { #category : #'memory access' }
@@ -220,6 +220,21 @@ CoInterpreterStackPages >> pageIndexFor: pointer "<Integer>" stackBasePlus1: stk
 CoInterpreterStackPages >> surrogateAtAddress: anAddress [
 	<doNotGenerate>
 	^pageMap at: anAddress
+]
+
+{ #category : #'memory access' }
+CoInterpreterStackPages >> unsignedLongAt: byteAddress [
+	<doNotGenerate>
+	"Note: Adjusted for Smalltalk's 1-based array indexing."
+	self assert: (byteAddress >= minStackAddress and: [byteAddress < maxStackAddress]).
+	^objectMemory unsignedLongAt: byteAddress
+]
+
+{ #category : #'memory access' }
+CoInterpreterStackPages >> unsignedLongAt: byteAddress put: a32Or64BitValue [
+	<doNotGenerate>
+	self assert: (byteAddress >= minStackAddress and: [byteAddress < maxStackAddress]).
+	^objectMemory unsignedLongAt: byteAddress put: a32Or64BitValue
 ]
 
 { #category : #'debug printing' }

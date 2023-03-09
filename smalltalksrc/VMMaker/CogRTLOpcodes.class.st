@@ -12,6 +12,7 @@ Class {
 		'AddRsRs',
 		'AddcCqR',
 		'AddcRR',
+		'AlignedSt1VrRMw',
 		'AlignmentNops',
 		'AndCqR',
 		'AndCqRR',
@@ -36,9 +37,12 @@ Class {
 		'ConvertRsRd',
 		'DivRdRd',
 		'DivRsRs',
+		'DupRVr',
+		'FaddSRvRvRv',
 		'Fill32',
 		'FirstJump',
 		'FirstShortJump',
+		'FsubSRvRvRv',
 		'Jump',
 		'JumpAbove',
 		'JumpAboveOrEqual',
@@ -72,6 +76,7 @@ Class {
 		'Label',
 		'LastJump',
 		'LastRTLCode',
+		'Ld1VrRMw',
 		'Literal',
 		'LoadEffectiveAddressMwrR',
 		'LogicalShiftLeftCqR',
@@ -137,6 +142,7 @@ Class {
 		'SignExtend8RR',
 		'SqrtRd',
 		'SqrtRs',
+		'St1VrRMw',
 		'Stop',
 		'SubCqR',
 		'SubCwR',
@@ -190,6 +196,13 @@ CogRTLOpcodes class >> initialize [
 		X32r	- memory 32-bit halfword whose address is r * (4 bytes size) away from an address in a register (64-bit ISAs only)
 		Xwr		- memory word whose address is r * word size away from an address in a register
 		Xowr	- memory word whose address is o + (r * word size) away from an address in a register (scaled indexed)
+		
+		SIMD
+		====
+		
+		R64	   - 64bit Register.
+		Vr    - Vector Register
+		
 
 	An alternative would be to decouple opcodes from operands, e.g.
 		Move := 1. Add := 2. Sub := 3...
@@ -317,6 +330,14 @@ CogRTLOpcodes class >> initialize [
 
 						SignExtend8RR SignExtend16RR SignExtend32RR
 						ZeroExtend8RR ZeroExtend16RR ZeroExtend32RR
+
+						"SIMD ops"
+						DupRVr
+						St1VrRMw
+						AlignedSt1VrRMw
+						Ld1VrRMw
+						FaddSRvRvRv
+						FsubSRvRvRv
 
 						LastRTLCode).
 

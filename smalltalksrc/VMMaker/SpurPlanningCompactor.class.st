@@ -76,101 +76,6 @@ SpurPlanningCompactor class >> declareCVarsIn: aCCodeGenerator [
 		var: 'savedFirstFieldsSpace' type: #SpurContiguousObjStack
 ]
 
-{ #category : #analysis }
-SpurPlanningCompactor class >> identify32BitSignedComparisons [
-	"self identify32BitSignedComparisons"
-	self identifySignedComparisonsFor: #(ObjectMemory Spur32BitMemoryManager)
-		noise: #('(manager bytesInObject: largestFreeChunk) >= spaceEstimate'
-				'(self classIndexOf: o*) > self isForwardedObjectClassIndexPun'
-				'GCModeFull > 0'
-				'ReceiverIndex + (objectMemory integerValueOf: sp*) < (objectMemory lengthOf: o*)'
-				'availableSpace > 0'
-				'bytes + 2 * 8 > availableSpace'
-				'fmt* < manager firstCompiledMethodFormat'
-				'fmt* < self firstCompiledMethodFormat'
-				'fmt* <= 5'
-				'gcPhaseInProgress > 0'
-				'i <= finishIndex'
-				'numPointerSlots > 0'
-				'scavenger rememberedSetSize > 0')
-]
-
-{ #category : #analysis }
-SpurPlanningCompactor class >> identify64BitSignedComparisons [
-	"self identify64BitSignedComparisons"
-	self identifySignedComparisonsFor: #(ObjectMemory Spur64BitMemoryManager)
-		noise: #('(manager bytesInObject: largestFreeChunk) >= spaceEstimate'
-				'(self classIndexOf: o*) > self isForwardedObjectClassIndexPun'
-				'GCModeFull > 0'
-				'ReceiverIndex + (objectMemory integerValueOf: sp*) < (objectMemory lengthOf: o*)'
-				'availableSpace > 0'
-				'bytes + 2 * 8 > availableSpace'
-				'fmt* < manager firstCompiledMethodFormat'
-				'fmt* < self firstCompiledMethodFormat'
-				'fmt* <= 5'
-				'gcPhaseInProgress > 0'
-				'i <= finishIndex'
-				'numPointerSlots > 0'
-				'scavenger rememberedSetSize > 0')
-]
-
-{ #category : #analysis }
-SpurPlanningCompactor class >> identifyMul: options noise: noise [
-	"Mul can overflow...
-	SpurPlanningCompactor identifyMul: #(
-	ObjectMemory Spur32BitMemoryManager
-	compactorClass SpurSelectiveCompactor) noise: #()"
-	| vmm cg |
-	vmm := (VMMaker forPlatform: 'Cross')
-				interpreterClass: StackInterpreter;
-				options: options.
-	cg := vmm buildCodeGeneratorForInterpreter.
-	cg vmClass preGenerationHook: cg.
-	cg inferTypes.
-	cg retainMethods: self selectors.
-	cg prepareMethods.
-	cg doInlining: true.
-	self selectors sort do:
-		[:sel|
-		(cg methodNamed: sel) ifNotNil:
-			[:m|
-			m parseTree nodesDo:
-				[:node|
-				(node isSend
-				 and: [#* = node selector]) ifTrue:
-					[Transcript newLine; nextPutAll: sel; space; print: node; flush]]]]
-]
-
-{ #category : #analysis }
-SpurPlanningCompactor class >> identifySignedComparisonsFor: options noise: noise [
-	"self identify32BitSignedComparisons"
-	"self identify64BitSignedComparisons"
-	| vmm cg |
-	vmm := (VMMaker forPlatform: 'Cross')
-				interpreterClass: StackInterpreter;
-				options: options.
-	cg := vmm buildCodeGeneratorForInterpreter.
-	cg vmClass preGenerationHook: cg.
-	cg inferTypes.
-	cg retainMethods: self selectors.
-	cg prepareMethods.
-	cg doInlining: true.
-	self selectors sort do:
-		[:sel|
-		(cg methodNamed: sel) ifNotNil:
-			[:m|
-			m parseTree nodesDo:
-				[:node|
-				(node isSend
-				 and: [(#(< > <= >=) includes: node selector)
-				 and: [({node receiver. node args first } anySatisfy:
-						[:o| (cg typeFor: o in: m)
-								ifNil: [true]
-								ifNotNil: [:t| (cg isIntegralCType: t) and: [t first ~= $u]]])
-				 and: [noise noneSatisfy: [:n| n match: node printString]]]]) ifTrue:
-					[Transcript newLine; nextPutAll: sel; space; print: node; flush]]]]
-]
-
 { #category : #simulation }
 SpurPlanningCompactor class >> simulatorClass [
 	^SpurPlanningCompactorSimulator
@@ -222,8 +127,12 @@ SpurPlanningCompactor >> compact [
 	 Let the segmentManager mark which segments contain pinned objects via notePinned:."
 	| finalPass firstPass |
 	<inline: #never> "for profiling"
-	self initializeScanCheckingForFullyCompactedHeap ifTrue:
-		[^self unmarkObjectsInFullyCompactedHeap].
+	
+	"Check if compaction is required, and if not, cleanup the heap.
+	A compaction is not required if the heap is considered compacted already."
+	self initializeScanCheckingForFullyCompactedHeap ifTrue: [
+		^self unmarkObjectsInFullyCompactedHeap ].
+	
 	self initializeCompaction.
 	firstPass := true.
 	[finalPass := self planCompactSavingForwarders.
@@ -260,8 +169,8 @@ SpurPlanningCompactor >> copyAndUnmark: firstPass [
 	<inline: #never>
 	| finalPass |
 	self logPhase: 'copying and unmarking...'.
-	firstPass ifTrue:
-		[self unmarkInitialImmobileObjects].
+	firstPass ifTrue: [
+		self unmarkInitialImmobileObjects ].
 	finalPass := self copyAndUnmarkMobileObjects.
 	(self thereAreObjectsToMove
 	 and: [finalPass not
@@ -465,6 +374,18 @@ SpurPlanningCompactor >> initializeCompaction [
 
 { #category : #compaction }
 SpurPlanningCompactor >> initializeScanCheckingForFullyCompactedHeap [
+
+	"Return if the heap is fully compacted.
+	That is, if there are no marked objects after some free chunk.
+	
+	The downside of this definition, is that a heap that has a sequence of objects:
+	  - marked object
+	  - unmarked object
+	  - free space
+	  - end of the heap
+	
+	Is considered compacted, and thus the unmarked object will not be coallesced with the free space in this pass"
+
 	"Scan for firstFreeObject and firstMobileObject from the start of memory.
 	 Answer if the heap is already fully compacted."
 	firstMobileObject := lastMobileObject := objectAfterLastMobileObject := nil.
@@ -755,13 +676,24 @@ SpurPlanningCompactor >> thereAreObjectsToMove [
 
 { #category : #compaction }
 SpurPlanningCompactor >> unmarkInitialImmobileObjects [
-	"Sweep the initial immobile heap, unmarking all objects up to the first mobile object."
-	manager allOldSpaceObjectsFrom: manager firstObject do:
-		[:o|
+	
+	self unmarkInitialImmobileObjectsFreeUnmarked: false
+]
+
+{ #category : #compaction }
+SpurPlanningCompactor >> unmarkInitialImmobileObjectsFreeUnmarked: freeUnmarked [
+	"Sweep the initial immobile heap, unmarking all objects up to the first mobile object.
+	
+	Precondition: all used objects are marked.
+	
+	If freeUnmarked, free unmarked objects as they are found"
+	manager allOldSpaceObjectsFrom: manager firstObject do: [:o|
 		self check: o.
-		(self oop: o isGreaterThanOrEqualTo: firstMobileObject) ifTrue:
-			[^self].
-		manager setIsMarkedOf: o to: false]
+		(self oop: o isGreaterThanOrEqualTo: firstMobileObject)
+			ifTrue: [ ^self ].
+		(freeUnmarked and: [ (manager isMarked: o) not ])
+			ifTrue: [ manager freeObjectWithoutCoalesce: o ]
+			ifFalse: [ manager setIsMarkedOf: o to: false ]]
 ]
 
 { #category : #compaction }
@@ -791,7 +723,7 @@ SpurPlanningCompactor >> unmarkObjectsFromFirstFreeObject [
 
 { #category : #compaction }
 SpurPlanningCompactor >> unmarkObjectsInFullyCompactedHeap [
-	self unmarkInitialImmobileObjects.
+	self unmarkInitialImmobileObjectsFreeUnmarked: true.
 	manager unmarkSurvivingObjectsForCompact
 ]
 
@@ -808,6 +740,22 @@ SpurPlanningCompactor >> unpinRememberedSet [
 	<inline: true>
 	firstFieldOfRememberedSet := manager fetchPointer: 0 ofObject: manager rememberedSetObj.
 	manager setIsPinnedOf: manager rememberedSetObj to: false
+]
+
+{ #category : #compaction }
+SpurPlanningCompactor >> updatePointer: i in: obj [
+	"Sweep the pointer i-th field in obj, updating its possible reference to a mobile object to its eventual location."
+	<inline: true>
+	| oop fwd |
+	oop := manager fetchPointer: i ofObject: obj.
+	((manager isNonImmediate: oop) and: [self isMobile: oop]) ifTrue:
+		[self assert: (manager isMarked: oop).
+		 "If for some reason a hidden root is unmarked at this point, the status of this object is far from clear.
+		  Possibly, the object was created during the GC, so its status related to a possible forward pointer is unknown.
+		  So better just forbids this."
+		 fwd := manager fetchPointer: 0 ofObject: oop.
+		 self assert: (self isPostMobile: fwd).
+		 manager storePointerUnchecked: i ofObject: obj withValue: fwd]
 ]
 
 { #category : #compaction }
@@ -837,13 +785,7 @@ SpurPlanningCompactor >> updatePointersIn: obj [
 	| numPointerSlots |
 	numPointerSlots := manager numPointerSlotsOf: obj.
 	0 to: numPointerSlots - 1 do:
-		[:i| | oop fwd |
-		 oop := manager fetchPointer: i ofObject: obj.
-		 ((manager isNonImmediate: oop) and: [self isMobile: oop]) ifTrue:
-			[self assert: ((manager isMarked: oop) or: [obj = manager hiddenRootsObject]).
-			 fwd := manager fetchPointer: 0 ofObject: oop.
-			 self assert: (self isPostMobile: fwd).
-			 manager storePointerUnchecked: i ofObject: obj withValue: fwd]]
+		[:i| self updatePointer: i in: obj ]
 ]
 
 { #category : #compaction }
@@ -867,13 +809,7 @@ SpurPlanningCompactor >> updatePointersIn: obj savedFirstFieldPointer: firstFiel
 			 self assert: (self isPostMobile: fwd).
 			 manager longAt: firstFieldPtr put: fwd]].
 	1 to: numPointerSlots - 1 do:
-		[:i|
-		 oop := manager fetchPointer: i ofObject: obj.
-		 ((manager isNonImmediate: oop) and: [self isMobile: oop]) ifTrue:
-			[self assert: ((manager isMarked: oop) or: [obj = manager hiddenRootsObject]).
-			 fwd := manager fetchPointer: 0 ofObject: oop.
-			 self assert: (self isPostMobile: fwd).
-			 manager storePointerUnchecked: i ofObject: obj withValue: fwd]]
+		[:i| self updatePointer: i in: obj ]
 ]
 
 { #category : #compaction }

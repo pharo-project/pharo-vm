@@ -104,6 +104,12 @@ VMStackBuilder >> initialize [
 ]
 
 { #category : #accessing }
+VMStackBuilder >> lastFrame [
+	
+	^ frames last
+]
+
+{ #category : #accessing }
 VMStackBuilder >> methodBuilder [
 
 	^ methodBuilder
@@ -191,7 +197,11 @@ VMStackBuilder >> setInterpreterVariables [
 	interpreter internalizeIPandSP.
 	
 	lastFrame := frames last.
+
 	interpreter method: lastFrame method.
+	
+	interpreter initExtensions.
+	
 
 ]
 

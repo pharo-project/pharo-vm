@@ -16,8 +16,3 @@ CompiledMethod >> asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aC
 
 	^ self parseTree asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCodeGenerator
 ]
-
-{ #category : #'*VMMaker-support' }
-CompiledMethod >> detailedSymbolic [
-	^String streamContents: [:s| (DetailedInstructionPrinter on: self) printInstructionsOn: s]
-]

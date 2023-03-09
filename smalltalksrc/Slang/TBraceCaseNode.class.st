@@ -3,7 +3,8 @@ Class {
 	#superclass : #TParseNode,
 	#instVars : [
 		'caseLabels',
-		'cases'
+		'cases',
+		'oldCases'
 	],
 	#category : #'Slang-AST'
 }
@@ -11,8 +12,8 @@ Class {
 { #category : #transformations }
 TBraceCaseNode >> bindVariableUsesIn: aDictionary [
 
-	caseLabels := caseLabels collect: [:node| node bindVariableUsesIn: aDictionary].
-	cases := cases collect: [:node| node bindVariableUsesIn: aDictionary]
+	self caseLabels: (caseLabels collect: [:node| node bindVariableUsesIn: aDictionary]).
+	self cases: (cases collect: [:node| node bindVariableUsesIn: aDictionary])
 ]
 
 { #category : #transformations }
@@ -33,8 +34,16 @@ TBraceCaseNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFol
 { #category : #transformations }
 TBraceCaseNode >> bindVariablesIn: aDictionary [
 
-	caseLabels := caseLabels collect: [:node| node bindVariablesIn: aDictionary].
-	cases := cases collect: [:node| node bindVariablesIn: aDictionary]
+	self caseLabels: (caseLabels collect: [:node| node bindVariablesIn: aDictionary]).
+	self cases: (cases collect: [:node| node bindVariablesIn: aDictionary])
+]
+
+{ #category : #transformations }
+TBraceCaseNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	(cautionaryBlock value: self) ifTrue: [^self].
+	self caseLabels: (caseLabels collect: [:node| node bindVariablesIn: aDictionary unless: cautionaryBlock]).
+	self cases: (cases collect: [:node| node bindVariablesIn: aDictionary unless: cautionaryBlock])
 ]
 
 { #category : #accessing }
@@ -46,9 +55,11 @@ TBraceCaseNode >> caseLabels [
 
 { #category : #accessing }
 TBraceCaseNode >> caseLabels: anObject [
+
 	"Set the value of caseLabels"
 
-	caseLabels := anObject
+	caseLabels := anObject.
+	caseLabels do: [ :e | e parent: self ]
 ]
 
 { #category : #accessing }
@@ -62,7 +73,8 @@ TBraceCaseNode >> cases [
 TBraceCaseNode >> cases: anObject [
 	"Set the value of cases"
 
-	cases := anObject
+	cases := anObject.	
+	cases do: [ :e | e parent: self ]
 ]
 
 { #category : #enumerating }
@@ -113,8 +125,8 @@ TBraceCaseNode >> nodesDo: aBlock unless: cautionaryBlock [
 TBraceCaseNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
-		caseLabels := caseLabels collect: [:node| node replaceNodesIn: aDictionary].
-		cases := cases collect: [:node| node replaceNodesIn: aDictionary].
+		self caseLabels: (caseLabels collect: [:node| node replaceNodesIn: aDictionary]).
+		self cases: (cases collect: [:node| node replaceNodesIn: aDictionary]).
 		self]
 ]
 

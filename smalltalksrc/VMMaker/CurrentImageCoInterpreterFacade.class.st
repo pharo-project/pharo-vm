@@ -200,11 +200,6 @@ CurrentImageCoInterpreterFacade >> characterObjectOf: anInteger [
 ]
 
 { #category : #accessing }
-CurrentImageCoInterpreterFacade >> characterTable [
-	^self subclassResponsibility
-]
-
-{ #category : #accessing }
 CurrentImageCoInterpreterFacade >> classCharacter [
 	^self oopForObject: Character
 ]
@@ -401,12 +396,6 @@ CurrentImageCoInterpreterFacade >> getCheckAllocFiller [
 	^coInterpreter getCheckAllocFiller ifNil: [false]
 ]
 
-{ #category : #testing }
-CurrentImageCoInterpreterFacade >> headerIndicatesAlternateBytecodeSet: methodHeader [
-	"A negative header selects the alternate bytecode set."
-	^(self objectForOop: methodHeader) < 0
-]
-
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> identityHashHalfWordMask [
 	^objectMemory identityHashHalfWordMask
@@ -430,7 +419,7 @@ CurrentImageCoInterpreterFacade >> indexablePointersFormat [
 { #category : #'initialize-release' }
 CurrentImageCoInterpreterFacade >> initialize [
 	objectMemory := self class objectMemoryClass simulatorClass new.
-	objectMemory allocateMemoryOfSize: 1024*1024.
+	objectMemory memoryManager allocate: 1024*1024.
 	memory := objectMemory memory.
 	objectMemory
 		initializeFreeSpaceForFacadeFrom: self startOfMemory
@@ -501,11 +490,6 @@ CurrentImageCoInterpreterFacade >> isCogCompiledCodeCompactionCalledFor [
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> isCogMethodReference: methodHeader [
 	^coInterpreter isCogMethodReference: methodHeader
-]
-
-{ #category : #testing }
-CurrentImageCoInterpreterFacade >> isCurrentImageFacade [
-	^true
 ]
 
 { #category : #accessing }
@@ -742,12 +726,6 @@ CurrentImageCoInterpreterFacade >> methodNeedsLargeContext: aMethodOop [
 	^(self objectForOop: aMethodOop) frameSize > CompiledMethod smallFrameSize
 ]
 
-{ #category : #testing }
-CurrentImageCoInterpreterFacade >> methodUsesAlternateBytecodeSet: methodObjOop [
-	"A negative header selects the alternate bytecode set."
-	^(self objectForOop: methodObjOop) signFlag
-]
-
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> nameOfClass: objOop [
 	^(objectMap keyAtValue: objOop) name
@@ -863,16 +841,6 @@ CurrentImageCoInterpreterFacade >> oopForObject: o [
 	self subclassResponsibility
 ]
 
-{ #category : #testing }
-CurrentImageCoInterpreterFacade >> picDataFor: cogMethod [
-	| cm nBytes nEntries oversizeData |
-	cm := cogMethod methodObject.
-	nBytes := (self byteSizeOf: cm) - (self startPCOfMethod: cm).
-	oversizeData := Array new: nBytes.
-	nEntries := cogit picDataFor: cogMethod into: (self oopForObject: oversizeData).
-	^oversizeData copyFrom: 1 to: nEntries
-]
-
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> primErrTable [
 	^objectMap at: Smalltalk primitiveErrorTable
@@ -948,10 +916,10 @@ CurrentImageCoInterpreterFacade >> printCogMethod: cogMethod [
 	cogMethod cmType = CMBlock ifTrue:
 		[self print: ': block home: ';
 			printHex: (self cCoerceSimple: cogMethod to: #'CogBlockMethod *') cmHomeMethod asUnsignedInteger].
-	cogMethod cmType = CMClosedPIC ifTrue:
+	cogMethod cmType = CMPolymorphicIC ifTrue:
 		[self print: ': Closed PIC N: ';
 			printHex: cogMethod cPICNumCases].
-	cogMethod cmType = CMOpenPIC ifTrue:
+	cogMethod cmType = CMMegamorphicIC ifTrue:
 		[self print: ': Open PIC '].
 	self print: ' selector: '; printHex: cogMethod selector.
 	cogMethod selector = objectMemory nilObject
@@ -987,6 +955,16 @@ CurrentImageCoInterpreterFacade >> printNum: anInteger [
 { #category : #printing }
 CurrentImageCoInterpreterFacade >> printStringOf: anOop [
 	Transcript nextPutAll: (self objectForOop: anOop)
+]
+
+{ #category : #testing }
+CurrentImageCoInterpreterFacade >> profilingDataFor: cogMethod [
+	| cm nBytes nEntries oversizeData |
+	cm := cogMethod methodObject.
+	nBytes := (self byteSizeOf: cm) - (self startPCOfMethod: cm).
+	oversizeData := Array new: nBytes.
+	nEntries := cogit profilingDataFor: cogMethod into: (self oopForObject: oversizeData).
+	^oversizeData copyFrom: 1 to: nEntries
 ]
 
 { #category : #printing }

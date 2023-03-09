@@ -23,20 +23,16 @@ Spur64BitMMLECoSimulator >> bootstrapping: aBoolean [
 Spur64BitMMLECoSimulator >> byteAt: byteAddress [
 	| lowBits long32 |
 	lowBits := byteAddress bitAnd: 3.
-	long32 := self long32At: byteAddress - lowBits.
+	long32 := self uint32AtPointer: byteAddress - lowBits.
 	^(long32 bitShift: -8 * lowBits) bitAnd: 16rFF
 ]
 
 { #category : #'memory access' }
 Spur64BitMMLECoSimulator >> byteAt: byteAddress put: byte [
 	| lowBits long32 longAddress mask value |
-	lowBits := byteAddress bitAnd: 3.
-	longAddress := byteAddress - lowBits.
-	long32 := self long32At: longAddress.
-	mask := (16rFF bitShift: 8 * lowBits) bitInvert.
-	value := byte bitShift: 8 * lowBits.
-	self long32At: longAddress put: ((long32 bitAnd: mask) bitOr: value).
-	^byte
+	
+	memoryManager unsignedByteAt: byteAddress put: byte.
+	^ byte
 ]
 
 { #category : #'memory access' }
@@ -90,8 +86,8 @@ Spur64BitMMLECoSimulator >> endianness [
 
 { #category : #'float primitives' }
 Spur64BitMMLECoSimulator >> fetchFloatAt: floatBitsAddress into: aFloat [
-	aFloat at: 2 put: (self long32At: floatBitsAddress).
-	aFloat at: 1 put: (self long32At: floatBitsAddress+4)
+	aFloat at: 2 put: (self uint32AtPointer: floatBitsAddress).
+	aFloat at: 1 put: (self uint32AtPointer: floatBitsAddress+4)
 ]
 
 { #category : #'object access' }
@@ -216,7 +212,7 @@ Spur64BitMMLECoSimulator >> intAt: byteAddress put: a64BitValue [
 { #category : #'memory access' }
 Spur64BitMMLECoSimulator >> long32At: byteAddress [
 	
-	^ memoryManager unsignedLong32At: byteAddress
+	^ memoryManager uint32AtPointer: byteAddress
 ]
 
 { #category : #'memory access' }
@@ -234,8 +230,8 @@ Spur64BitMMLECoSimulator >> long64At: byteAddress [
 	"memory is a Bitmap, a 32-bit indexable array of bits"
 	| hiWord loWord |
 	byteAddress \\ 8 ~= 0 ifTrue: [self unalignedAccessError].
-	loWord := memoryManager unsignedLong32At: byteAddress.
-	hiWord := memoryManager unsignedLong32At: byteAddress + 4.
+	loWord := memoryManager uint32AtPointer: byteAddress.
+	hiWord := memoryManager uint32AtPointer: byteAddress + 4.
 	^hiWord = 0
 		ifTrue: [loWord]
 		ifFalse: [(hiWord bitShift: 32) + loWord]
@@ -244,9 +240,7 @@ Spur64BitMMLECoSimulator >> long64At: byteAddress [
 { #category : #'memory access' }
 Spur64BitMMLECoSimulator >> long64At: byteAddress put: a64BitValue [
 	byteAddress \\ 8 ~= 0 ifTrue: [self unalignedAccessError].
-	self
-		long32At: byteAddress put: (a64BitValue bitAnd: 16rffffffff);
-		long32At: byteAddress + 4 put: a64BitValue >> 32.
+	memoryManager unsignedLong64At: byteAddress put: a64BitValue.
 	^a64BitValue
 ]
 
@@ -254,7 +248,7 @@ Spur64BitMMLECoSimulator >> long64At: byteAddress put: a64BitValue [
 Spur64BitMMLECoSimulator >> longAt: byteAddress [
 	"Answer the 64-bit word at byteAddress which must be 0 mod 4."
 
-	^ memoryManager unsignedLong64At: byteAddress
+	^ memoryManager long64At: byteAddress
 ]
 
 { #category : #'memory access' }
@@ -269,15 +263,6 @@ Spur64BitMMLECoSimulator >> markAndTrace: objOop [
 	objOop = 16rB25FD8 ifTrue: [self halt].
 	objOop = 16rB26010 ifTrue: [self halt]."
 	^super markAndTrace: objOop
-]
-
-{ #category : #snapshot }
-Spur64BitMMLECoSimulator >> memoryBaseForImageRead [
-	"Answer the address to read the image into.  Override so that when bootstrapping,
-	 the segmentManager's segments are undisturbed in adjustSegmentSwizzlesBy:"
-	^bootstrapping
-		ifTrue: [0] 
-		ifFalse: [super memoryBaseForImageRead]
 ]
 
 { #category : #initialization }
@@ -308,13 +293,15 @@ Spur64BitMMLECoSimulator >> parent: anObject [
 
 { #category : #'debug support' }
 Spur64BitMMLECoSimulator >> runLeakCheckerFor: gcModes excludeUnmarkedObjs: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid [
-	(coInterpreter displayView isNil
-	 and: [gcModes anyMask: checkForLeaks]) ifTrue:
-		[coInterpreter transcript nextPutAll: 'leak-checking...'; flush].
-	^super
-		runLeakCheckerFor: gcModes
-		excludeUnmarkedObjs: excludeUnmarkedObjs
-		classIndicesShouldBeValid: classIndicesShouldBeValid
+
+	(gcModes anyMask: checkForLeaks) ifTrue: [ 
+		coInterpreter transcript
+			nextPutAll: 'leak-checking...';
+			flush ].
+	^ super
+		  runLeakCheckerFor: gcModes
+		  excludeUnmarkedObjs: excludeUnmarkedObjs
+		  classIndicesShouldBeValid: classIndicesShouldBeValid
 ]
 
 { #category : #'gc - global' }
@@ -328,12 +315,6 @@ Spur64BitMMLECoSimulator >> scavengingGCTenuringIf: tenuringCriterion [
 			[coInterpreter cloneSimulation objectMemory scavengingGCTenuringIf: tenuringCriterion.
 			 Smalltalk garbageCollect]].
 	^super scavengingGCTenuringIf: tenuringCriterion
-]
-
-{ #category : #'free space' }
-Spur64BitMMLECoSimulator >> setFree: o [
-	"o = 16rB34D40 ifTrue: [self halt]."
-	super setFree: o
 ]
 
 { #category : #'header access' }
@@ -354,7 +335,7 @@ Spur64BitMMLECoSimulator >> shortAt: byteAddress [
     "Return the half-word at byteAddress which must be even."
 	| lowBits long |
 	lowBits := byteAddress bitAnd: 2.
-	long := self long32At: byteAddress - lowBits.
+	long := self uint32AtPointer: byteAddress - lowBits.
 	^ lowBits = 2
 		ifTrue: [ long bitShift: -16 ]
 		ifFalse: [ long bitAnd: 16rFFFF ]
@@ -367,21 +348,21 @@ Spur64BitMMLECoSimulator >> shortAt: byteAddress put: a16BitValue [
 	lowBits := byteAddress bitAnd: 2.
 	lowBits = 0
 		ifTrue: "storing into LS word"
-			[long := self long32At: byteAddress.
-			 self long32At: byteAddress
+			[long := self uint32AtPointer: byteAddress.
+			 self uint32AtPointer: byteAddress
 				put: ((long bitAnd: 16rFFFF0000) bitOr: a16BitValue)]
 		ifFalse: "storing into MS word"
 			[longAddress := byteAddress - 2.
-			long := self long32At: longAddress.
-			self long32At: longAddress
+			long := self uint32AtPointer: longAddress.
+			self uint32AtPointer: longAddress
 				put: ((long bitAnd: 16rFFFF) bitOr: (a16BitValue bitShift: 16))].
 	^a16BitValue
 ]
 
 { #category : #'float primitives' }
 Spur64BitMMLECoSimulator >> storeFloatAt: floatBitsAddress from: aFloat [
-	self long32At: floatBitsAddress put: (aFloat at: 2).
-	self long32At: floatBitsAddress+4 put: (aFloat at: 1)
+	self uint32AtPointer: floatBitsAddress put: (aFloat at: 2).
+	self uint32AtPointer: floatBitsAddress+4 put: (aFloat at: 1)
 ]
 
 { #category : #'ad-hoc tests' }

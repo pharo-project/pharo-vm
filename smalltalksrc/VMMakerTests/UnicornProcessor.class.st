@@ -10,13 +10,13 @@ Class {
 { #category : #'as yet unclassified' }
 UnicornProcessor >> cResultRegister [
 	
-	^ machineSimulator cResultRegister
+	^ machineSimulator cResultRegisterValue
 ]
 
 { #category : #'as yet unclassified' }
 UnicornProcessor >> cResultRegister: anInteger [ 
 	
-	machineSimulator cReturnRegisterValue: anInteger
+	machineSimulator cResultRegisterValue: anInteger
 ]
 
 { #category : #'as yet unclassified' }
@@ -55,6 +55,12 @@ UnicornProcessor >> ecx: anInteger [
 	machineSimulator ecx: anInteger
 ]
 
+{ #category : #'as yet unclassified' }
+UnicornProcessor >> edi: anInteger [ 
+	
+	machineSimulator edi: anInteger
+]
+
 { #category : #registers }
 UnicornProcessor >> edx: anInteger [ 
 	
@@ -68,9 +74,10 @@ UnicornProcessor >> esp: anInteger [
 ]
 
 { #category : #caching }
-UnicornProcessor >> flushICacheFrom: anInteger to: anInteger2 [ 
+UnicornProcessor >> flushICacheFrom: startAddress to: endAddress [
 
 	"Do nothing for now..."
+	machineSimulator flushICacheFrom: startAddress to: endAddress
 ]
 
 { #category : #registers }
@@ -134,13 +141,13 @@ UnicornProcessor >> machineSimulator: aMachineSimulator [
 { #category : #registers }
 UnicornProcessor >> pc [
 	
-	^ machineSimulator instructionPointerValue
+	^ machineSimulator instructionPointerRegisterValue
 ]
 
 { #category : #registers }
 UnicornProcessor >> pc: anInteger [ 
 	
-	^ machineSimulator instructionPointerValue: anInteger
+	^ machineSimulator instructionPointerRegisterValue: anInteger
 ]
 
 { #category : #'stack-management' }
@@ -257,6 +264,12 @@ UnicornProcessor >> rcx: anInteger [
 	machineSimulator rcx: anInteger
 ]
 
+{ #category : #'as yet unclassified' }
+UnicornProcessor >> rdi: anInteger [ 
+
+	machineSimulator rdi: anInteger 
+]
+
 { #category : #registers }
 UnicornProcessor >> rdx: anInteger [ 
 	
@@ -269,6 +282,12 @@ UnicornProcessor >> retpcIn: aSpurSimulatedMemory [
 	^ machineSimulator retpcIn: aSpurSimulatedMemory 
 ]
 
+{ #category : #'as yet unclassified' }
+UnicornProcessor >> rsi: anInteger [ 
+	
+	machineSimulator rsi: anInteger
+]
+
 { #category : #registers }
 UnicornProcessor >> rsp: anInteger [ 
 	
@@ -279,7 +298,7 @@ UnicornProcessor >> rsp: anInteger [
 UnicornProcessor >> runInMemory: aMemory minimumAddress: minimumAddress readOnlyBelow: minimumWritableAddress [
 
 
-	^ machineSimulator startAt: machineSimulator instructionPointerValue
+	^ machineSimulator startAt: machineSimulator instructionPointerRegisterValue
 		until: 0
 		timeout: 0
 		count: 0
@@ -288,7 +307,7 @@ UnicornProcessor >> runInMemory: aMemory minimumAddress: minimumAddress readOnly
 { #category : #'as yet unclassified' }
 UnicornProcessor >> runUntil: anAddress [
 
-	^ machineSimulator startAt: machineSimulator instructionPointerValue
+	^ machineSimulator startAt: machineSimulator instructionPointerRegisterValue
 		until: anAddress
 		timeout: 100000 "microseconds = 100ms"
 		count: 0

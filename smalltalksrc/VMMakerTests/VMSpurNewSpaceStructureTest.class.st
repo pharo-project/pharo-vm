@@ -38,7 +38,7 @@ VMSpurNewSpaceStructureTest >> testInstantiateNewObjectWithSlotMovesFreeStartAft
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryEdenEndIsAtTheStartOfOldSpace [
 
-	self assert: memory scavenger eden limit equals: memory oldSpaceStart
+	self assert: memory scavenger eden limit equals: memory newSpaceLimit 
 ]
 
 { #category : #'tests-1-memory-initialization' }

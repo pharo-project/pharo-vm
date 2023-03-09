@@ -76,12 +76,12 @@ VMAbstractFFITest >> newExternalAddress: anInteger [
 ]
 
 { #category : #'as yet unclassified' }
-VMAbstractFFITest >> newMethodWithBytecodes: aCollection [ 
+VMAbstractFFITest >> newMethodWithBytecodes: aCollection [
 
-	^ methodBuilder 
-		newMethod;
-		bytecodes: aCollection;
-		build
+	^ methodBuilder
+		  newMethod;
+		  bytecodes: aCollection;
+		  buildMethod
 ]
 
 { #category : #helpers }

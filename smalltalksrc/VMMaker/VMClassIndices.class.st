@@ -8,6 +8,8 @@ Class {
 		'ClassBlockContextCompactIndex',
 		'ClassByteArrayCompactIndex',
 		'ClassByteStringCompactIndex',
+		'ClassFloat32RegisterIndex',
+		'ClassFloat64RegisterIndex',
 		'ClassFloatCompactIndex',
 		'ClassFullBlockClosureCompactIndex',
 		'ClassLargeNegativeIntegerCompactIndex',
