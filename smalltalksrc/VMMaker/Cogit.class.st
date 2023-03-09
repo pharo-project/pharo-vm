@@ -265,7 +265,8 @@ Class {
 		'statCompileFullBlockCount',
 		'statCompileFullBlockUsecs',
 		'statCompileMethodCount',
-		'statCompileMethodUsecs'
+		'statCompileMethodUsecs',
+		'ceFrameOverflowTrampoline'
 	],
 	#classVars : [
 		'AnnotationConstantNames',
@@ -1341,9 +1342,16 @@ Cogit class >> notesAndQueries [
 
 { #category : #accessing }
 Cogit class >> numTrampolines [
-	^39 "31 + 4 each for self and super sends"
+	"
+	Answer the number of trampolines defined by this class. By convention all trampolines must be stored in variables starting with ce.
+	It is important that this number is consistent with the trampolines that are allocated at runtime. We use this number to allocate an Array that holds metadata about the trampolines, having a wrong number of trampolines specified here may provoke a out of bounds access on the metadata arrays.
 
-	"self withAllSubclasses collect: [:c| {c. (c instVarNames select: [:ea| ea beginsWith: 'ce']) size}]"
+	One way to find them programmatically is using the following expression:
+
+	self withAllSubclasses sum: [:c| (c instVarNames select: [:ea| ea beginsWith: 'ce']) size ]
+	"
+
+	^ 40 "32 + 4 each for self and super sends"
 ]
 
 { #category : #translation }
@@ -3928,14 +3936,14 @@ Cogit >> ceCheckForInterruptTrampoline: anInteger [
 	ceCheckForInterruptTrampoline := anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #trampolines }
 Cogit >> ceDereferenceSelectorIndex [
 	
 	<doNotGenerate>
 	^ objectRepresentation selectorIndexDereferenceRoutine
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #trampolines }
 Cogit >> ceDereferenceSelectorIndex: anInteger [ 
 	
 	<doNotGenerate>
@@ -6723,7 +6731,7 @@ Cogit >> followMethodReferencesInClosedPIC: cPIC [
 { #category : #tram }
 Cogit >> frameOverflowTrampoline [
 	
-	^ frameOverflowTrampoline
+	^ ceFrameOverflowTrampoline
 ]
 
 { #category : #'simulation only' }
@@ -7904,7 +7912,7 @@ Cogit >> generateEnilopmarts [
 { #category : #trampolines }
 Cogit >> generateFrameOverflowTrampoline [
 	
-	frameOverflowTrampoline := self genTrampolineFor: #ceFrameOverflowTrampoline called: 'ceFrameOverflowTrampoline'.
+	ceFrameOverflowTrampoline := self genTrampolineFor: #ceFrameOverflowTrampoline called: 'ceFrameOverflowTrampoline'.
 
 ]
 
@@ -8171,8 +8179,8 @@ Cogit >> generateTrampolines [
 			objectRepresentation maybeGenerateSelectorIndexDereferenceRoutine.
 			self generateSendTrampolines.
 			self generateMissAbortTrampolines.
-			objectRepresentation generateObjectRepresentationTrampolines.
 			self generateRunTimeTrampolines.
+			objectRepresentation generateObjectRepresentationTrampolines.
 			SistaVM ifTrue: [self generateSistaRuntime].
 			self generateEnilopmarts.
 			self generateTracingTrampolines.
@@ -8273,7 +8281,7 @@ Cogit >> getPrimitiveIndex [
 	^primitiveIndex
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 Cogit >> guardPageSize: anInteger [ 
 
 	<doNotGenerate>
@@ -8810,7 +8818,7 @@ Cogit >> labelForSimulationAccessor: blockOrMessageSendOrSelector [
 						ifFalse: [blockOrMessageSendOrSelector]])
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 Cogit >> lastNInstructions: aCollection [ 
 	<doNotGenerate>
 	lastNInstructions := aCollection
@@ -10739,7 +10747,7 @@ Cogit >> promptForBreakPC [
 	self breakPC: pc
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 Cogit >> receiverTags: anInteger [ 
 	receiverTags := anInteger
 ]
@@ -11712,7 +11720,7 @@ Cogit >> stackPointerAddress [
 	^coInterpreter stackPointerAddress
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 Cogit >> stackPointerAlignment [
 	<doNotGenerate>
 	^ backEnd stackPointerAlignment

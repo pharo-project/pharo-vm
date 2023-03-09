@@ -34,6 +34,7 @@ VMBlockTest >> installFullBlockClosureClass [
 
 { #category : #supports }
 VMBlockTest >> methodReturningABlock [
+	<compilerOptions: #(- #optionConstantBlockClosure)>
 	
 	^ []
 	

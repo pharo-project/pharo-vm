@@ -10004,9 +10004,7 @@ StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 					ifFalse: [SmallContextSlots].
 
 	(numStack + ReceiverIndex <= numSlots) ifFalse: [	
-			self error:
-				'The number of elements in the frame is bigger than the context. 
-			The method is wrongly compiled. The memory has been corrupted. I quit.'].
+			self ceFrameOverflowTrampoline ].
 
 	theContext := objectMemory eeInstantiateMethodContextSlots: numSlots.
 	"Mark context as married by setting its sender to the frame pointer plus SmallInteger

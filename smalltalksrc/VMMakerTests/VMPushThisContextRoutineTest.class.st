@@ -116,7 +116,7 @@ VMPushThisContextRoutineTest >> testMarryingAContextWithLongerStackDetectsTheErr
 	self runFrom: routine until: cogit frameOverflowTrampoline.	
 	self assert: (memory numSlotsOf: machineSimulator receiverRegisterValue) equals: LargeContextSlots.
 	
-	self assert: machineSimulator instructionPointerValue equals: cogit frameOverflowTrampoline
+	self assert: machineSimulator instructionPointerRegisterValue equals: cogit frameOverflowTrampoline
 ]
 
 { #category : #tests }

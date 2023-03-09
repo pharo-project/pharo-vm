@@ -19,6 +19,21 @@ StackInterpreterPrimitives >> allocateParameters: anInteger using: allocationBlo
 		inSmalltalk: [ CArrayAccessor on: (Array new: anInteger) ]
 ]
 
+{ #category : #trampolines }
+StackInterpreterPrimitives >> ceFrameOverflowTrampoline [
+	
+	<api>
+	
+	"When trying to marry a context, the frame has more elements than expected. 
+	So, we cannot do more than crashing and explosing and generating fireworks.
+	This is good to put a breakpoint. This is usually provoked by an error in the compiler 
+	or using reflection in a nasty way."
+		
+	self error:
+		'The number of elements in the frame is bigger than the context. 
+	The method is wrongly compiled. The memory has been corrupted. I quit.'
+]
+
 { #category : #'primitive support' }
 StackInterpreterPrimitives >> cloneContext: aContext [ 
 	| sz cloned spouseFP sp |
