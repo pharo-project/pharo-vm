@@ -7135,11 +7135,11 @@ StackInterpreter >> handleStackOverflow [
 	statStackOverflow := statStackOverflow + 1.
 	
 	(objectMemory numSlotsOf: self activeProcess) > 9 ifTrue: [ | previousOverflow |
-		previousOverflow := objectMemory fetchPointer: 10 ofObject: self activeProcess.
+		previousOverflow := objectMemory fetchPointer: 9 ofObject: self activeProcess.
 		(objectMemory isIntegerObject: previousOverflow)
 			ifTrue: [ previousOverflow := (objectMemory integerValueOf: previousOverflow) + 1 ]
 			ifFalse: [ previousOverflow := 1 ].
-		objectMemory storeInteger: 10 ofObject: self activeProcess withValue: previousOverflow.
+		objectMemory storeInteger: 9 ofObject: self activeProcess withValue: previousOverflow.
 	].
 
 	"The stack has overflowed this page.  If the system is executing some recursive algorithm,
