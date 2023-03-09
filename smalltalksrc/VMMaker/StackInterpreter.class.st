@@ -626,9 +626,6 @@ StackInterpreter class >> initializeBytecodeTable [
 	VMBytecodeConstants falsifyBytecodeSetFlags: InitializationOptions.
 	BytecodeSetHasDirectedSuperSend := false.
 
-	(InitializationOptions at: #bytecodeTableInitializer ifAbsent: nil) 
-		ifNotNil: [ :initalizer | ^ self perform: initalizer ].
-
 	^ self initializeBytecodeTableForSistaV1
 ]
 

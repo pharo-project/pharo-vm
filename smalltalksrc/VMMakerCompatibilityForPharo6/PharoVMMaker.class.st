@@ -211,7 +211,9 @@ PharoVMMaker >> vmMakerWith: interpreterClass memoryManager: memoryManager [
 
 	| platformDirectory |
 	VMMakerConfiguration initializeForPharo.
-	(interpreterClass bindingOf: #COGMTVM) value: false.
+
+	(interpreterClass bindingOf: #COGMTVM)
+		ifNotNil: [ : binding | binding value: false ].
 
 	platformDirectory := self platformDirectoryFor: memoryManager.
 
@@ -219,7 +221,7 @@ PharoVMMaker >> vmMakerWith: interpreterClass memoryManager: memoryManager [
 	^ (VMMaker
 		   makerFor: interpreterClass
 		   and: StackToRegisterMappingCogit
-		   with: { 
+		   with: {
 				   #COGMTVM.
 				   false.
 				   #ObjectMemory.
