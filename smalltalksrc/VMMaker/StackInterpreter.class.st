@@ -7133,6 +7133,14 @@ StackInterpreter >> handleStackOverflow [
 
 	self maybeTraceStackOverflow.
 	statStackOverflow := statStackOverflow + 1.
+	
+	(objectMemory numSlotsOf: self activeProcess) > 9 ifTrue: [ | previousOverflow |
+		previousOverflow := objectMemory fetchPointer: 10 ofObject: self activeProcess.
+		(objectMemory isIntegerObject: previousOverflow)
+			ifTrue: [ previousOverflow := (objectMemory integerValueOf: objectMemory) + 1 ]
+			ifFalse: [ previousOverflow := 1 ].
+		objectMemory storePointer: 10 ofObject: self activeProcess withValue: previousOverflow.
+	].
 
 	"The stack has overflowed this page.  If the system is executing some recursive algorithm,
 	 e.g. fibonacci, then the system could thrash overflowing the stack if the call soon returns
