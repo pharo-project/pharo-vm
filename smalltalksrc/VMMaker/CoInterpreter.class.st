@@ -3386,20 +3386,23 @@ CoInterpreter >> iframeSavedIP: theFP put: savedIP [
 { #category : #trampolines }
 CoInterpreter >> incrementProcessStackPageOverflowCount [
 
-	(objectMemory numSlotsOf: self activeProcess) > 9 ifTrue: [
-		| previousOverflow |
-		previousOverflow := objectMemory
-			                    fetchPointer: 9
+	(objectMemory numSlotsOf: self activeProcess) > 10 ifTrue: [
+		| previousOverflow maxOverflow |
+		previousOverflow := (objectMemory
+			                    fetchInteger: 9
+			                    ofObject: self activeProcess) + 1.
+		maxOverflow := objectMemory
+			                    fetchInteger: 10
 			                    ofObject: self activeProcess.
-		(objectMemory isIntegerObject: previousOverflow)
-			ifTrue: [
-				previousOverflow := (objectMemory integerValueOf: previousOverflow)
-				                    + 1 ]
-			ifFalse: [ previousOverflow := 1 ].
+		maxOverflow := maxOverflow max: previousOverflow.
 		objectMemory
 			storeInteger: 9
 			ofObject: self activeProcess
-			withValue: previousOverflow ]
+			withValue: previousOverflow.
+		objectMemory
+			storeInteger: 10
+			ofObject: self activeProcess
+			withValue: maxOverflow ]
 ]
 
 { #category : #initialization }
