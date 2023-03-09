@@ -211,23 +211,14 @@ PharoVMMaker >> vmMakerWith: interpreterClass memoryManager: memoryManager [
 
 	| platformDirectory |
 	VMMakerConfiguration initializeForPharo.
-	(interpreterClass bindingOf: #COGMTVM) value: false.
-
 	platformDirectory := self platformDirectoryFor: memoryManager.
-
 
 	^ (VMMaker
 		   makerFor: interpreterClass
 		   and: StackToRegisterMappingCogit
-		   with: { 
-				   #COGMTVM.
-				   false.
-				   #ObjectMemory.
-				   memoryManager name.
-				   #MULTIPLEBYTECODESETS.
-				   true.
-				   #bytecodeTableInitializer.
-				   #initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid }
+		   with: {
+				   #ObjectMemory . memoryManager name .
+				   #MULTIPLEBYTECODESETS . true }
 		   to: platformDirectory
 		   platformDir: platformDirectory
 		   including: #(  )
