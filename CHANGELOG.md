@@ -2,6 +2,12 @@
 
 I am a changelog... do not expect too much from me :D
 
+## v10.0.1
+
+- Adding image version field to the image header
+- Fixes in String comparison primitive when JIT
+- Improvements in dependency of the VMMaker code.
+
 ## v10.0.0
 
 - Slang (Smalltalk to C Translator)
