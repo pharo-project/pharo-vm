@@ -569,6 +569,7 @@ VMMaker >> generateCogitFileFor: cogitClass [
 	 inferTypesForImplicitlyTypedVariablesAndMethods was done, and answer the code generator."
 
 	| cg |
+	
 	cg := self buildCodeGeneratorForCogit.
 
 	cg inferTypes.
@@ -583,6 +584,7 @@ VMMaker >> generateCogitFileFor: cogitClass [
 VMMaker >> generateCogitFiles [
 	"Translate the Smalltalk description of the virtual machine's JITs into C."
 	| cogitClass cg |
+	
 	(cogitClass := self interpreterClass cogitClass) ifNil: [^nil].
 	self generateCogitIncludeFileFor: cogitClass.
 	cogitClass translateableInstructionSubclassesAndInstalledOptionsDo:
@@ -616,6 +618,8 @@ VMMaker >> generateEntire [
 	"Generate the interp, internal plugins and exports as well as the external plugins.
 	 If this comes from a generator method, log it for convenience."
 	abortBlock := [^self].
+	
+	self halt.
 	self logGeneration.
 	self generateMainVM.
 	self generateExternalPlugins
@@ -1181,7 +1185,7 @@ VMMaker >> sourceFilePathFor: sourceFileName [
 	^ self coreVMDirectory / sourceFileName
 ]
 
-{ #category : #accessing }
+{ #category : #'error notification' }
 VMMaker >> stopOnErrors [
 
 	^ stopOnErrors

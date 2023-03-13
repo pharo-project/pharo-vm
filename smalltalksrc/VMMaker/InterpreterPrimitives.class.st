@@ -1371,12 +1371,12 @@ InterpreterPrimitives >> primitiveCompareWith [
 				[^self primitiveFailFor: PrimErrBadArgument]].
 	string1 := self stackValue: argumentCount.
 	string2 := self stackValue: argumentCount - 1. 
-			
+	
 	"2 - check their types - all parameters are ByteObject"
 	((objectMemory isBytes: string1)
 	 and: [objectMemory isBytes: string2]) ifFalse: 
 		[^self primitiveFailFor: PrimErrBadArgument].
-	
+
 	"3 - compare the strings"	
 	strLength1 := objectMemory numBytesOfBytes: string1.
 	strLength2 := objectMemory numBytesOfBytes: string2.
@@ -1385,8 +1385,8 @@ InterpreterPrimitives >> primitiveCompareWith [
 				[:str :index | objectMemory fetchByte: index ofObject: str ]]
 		ifNotNil: 
 			[self rawCompare: string1 length: strLength1 with: string2 length: strLength2 accessBlock:
-				[:str :index | objectMemory fetchByte: (objectMemory fetchByte: index ofObject: str) + 1 ofObject: order ]].
-
+				[:str :index | 
+					objectMemory fetchByte: (objectMemory fetchByte: index ofObject: str) ofObject: order ]].
 	self methodReturnInteger: result
 
 	
@@ -5058,7 +5058,7 @@ InterpreterPrimitives >> sumSmallInteger: anInteger withSmallInteger: anotherInt
 
 	result := a + b.
 
-	(objectMemory isIntegerValue: result) ifFalse: [ ^ self error: 'Overflow' ].
+	(objectMemory isIntegerValue: result) ifFalse: [ ^ self druidExitPoint ].
 	
 	^ aBlock value: (objectMemory integerObjectOf: result)
 ]
