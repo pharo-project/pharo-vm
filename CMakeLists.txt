@@ -557,5 +557,18 @@ add_subdirectory(ffiTestLibrary ${CMAKE_CURRENT_BINARY_DIR}/build/ffiTestLibrary
 add_third_party_dependencies_per_platform()
 
 # Packaging Setup
-
 include(cmake/packaging.cmake)
+
+# GraphViz Setup
+include(cmake/CMakeGraphVizOptions.cmake)
+option(BUILD_WITH_GRAPHVIZ "Generate dependency graphs" ON)
+if (BUILD_WITH_GRAPHVIZ)
+    add_custom_target(graphviz ALL
+        COMMENT "Build GraphViz Dependency Graph"
+        COMMAND cp ${CMAKE_SOURCE_DIR}/cmake/CMakeGraphVizOptions.cmake .
+        COMMAND ${CMAKE_COMMAND} "--graphviz=${GRAPHVIZ_GRAPH_NAME}.dot" .
+        COMMAND dot -Tpng ${GRAPHVIZ_GRAPH_NAME}.dot -o ${GRAPHVIZ_GRAPH_NAME}.png
+        COMMAND cp ${GRAPHVIZ_GRAPH_NAME}.png ${CMAKE_SOURCE_DIR}/build
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+endif()
