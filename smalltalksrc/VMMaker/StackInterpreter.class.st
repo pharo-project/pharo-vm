@@ -392,7 +392,8 @@ Class {
 		'imageReader',
 		'imageWriter',
 		'pendingFinalizationSignals',
-		'imageVersionNumber'
+		'imageVersionNumber',
+		'desiredStackPageBytes'
 	],
 	#classVars : [
 		'AlternateHeaderHasPrimFlag',
@@ -13505,6 +13506,22 @@ StackInterpreter >> setDesiredEdenBytes: bytes [
 	^0
 ]
 
+{ #category : #initialization }
+StackInterpreter >> setDesiredStackPageBytes: desiredBytes [
+	"Set the number of bytes desired for a stack page.
+	This setting governs a compromise between overflow rate and latency in divorcing a page.
+	Using this page size, we will accomodates a number of frames inside the page.
+	The minimum frame size is 7 slots in the StackInterpreter, and 6 slots in the CoInterpreter.
+	The maximum size is 56 + 7 slots in the StackInterpreter and 56 + 8 slots in the CoInterpreter.
+
+	For example, 
+	 - 4069 byte pages gives 256 slots in 64-bits
+	 =>allowing between 4 to 32 frames in the CoInterpreter."
+	<api>
+	<inline: true>
+	desiredStackPageBytes := desiredBytes
+]
+
 { #category : #accessing }
 StackInterpreter >> setExtraVMMemory: anInteger [ 
 
@@ -13636,6 +13653,9 @@ StackInterpreter >> setNumStackPages: requestedNumPages [
 
 	desiredNumStackPages := requestedNumPages.
 
+	
+	desiredStackPageBytes = 0 ifTrue: [
+		self setDesiredStackPageBytes: 256 * objectMemory wordSize ].
 ]
 
 { #category : #'process primitive support' }
@@ -14530,10 +14550,10 @@ StackInterpreter >> stackPageFrameBytes [
 	"Answer a byte size that accomodates a useful number of frames.  The minimum frame size is
 	 7 slots in the StackInterpreter, and 6 slots in the CoInterpreter, and the maximum size is 56 + 7
 	 slots in the StackInterpreter and 56 + 8 slots in the CoInterpreter. 256 slots gives from 4 to 36
-	 frames in the StackInterpreter and from 4 to 42 in the CoInterpreter. Hence 2048 bytes in 32-bits
+	 frames in the StackInterpreter and from 4 to 32 in the CoInterpreter. Hence 2048 bytes in 32-bits
 	 and 4096 bytes in 64-bits; a compromise between overflow rate and latency in divorcing a page."
 	<inline: true>
-	^256 * objectMemory wordSize
+	^desiredStackPageBytes
 ]
 
 { #category : #'stack pages' }
