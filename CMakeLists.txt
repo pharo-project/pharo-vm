@@ -561,12 +561,18 @@ add_third_party_dependencies_per_platform()
 include(cmake/packaging.cmake)
 
 # GraphViz Setup
-include(cmake/CMakeGraphVizOptions.cmake)
-if (BUILD_WITH_GRAPHVIZ)
-    add_custom_target(graphviz ALL
-        COMMENT "Build GraphViz Dependency Graph"
-        COMMAND cp ${CMAKE_SOURCE_DIR}/cmake/CMakeGraphVizOptions.cmake .
-        COMMAND ${CMAKE_COMMAND} "--graphviz=${GRAPHVIZ_GRAPH_NAME}.dot" .
-        COMMAND dot -Tpng ${GRAPHVIZ_GRAPH_NAME}.dot -o ${GRAPHVIZ_GRAPH_NAME}.png
-    )
-endif()
+find_program(DOT dot)
+if (DOT)
+    include(cmake/CMakeGraphVizOptions.cmake)
+    if (BUILD_WITH_GRAPHVIZ)
+        add_custom_target(graphviz ALL
+            COMMENT "Build GraphViz Dependency Graph"
+            COMMAND cp ${CMAKE_SOURCE_DIR}/cmake/CMakeGraphVizOptions.cmake .
+            COMMAND ${CMAKE_COMMAND} "--graphviz=${GRAPHVIZ_GRAPH_NAME}.dot" .
+            COMMAND dot -Tpng ${GRAPHVIZ_GRAPH_NAME}.dot -o ${GRAPHVIZ_GRAPH_NAME}.png
+        )
+    endif()
+else()
+	MESSAGE(STATUS "dot executable from Graphviz not found. Dependency graphs not generated")
+endif (DOT)
+
