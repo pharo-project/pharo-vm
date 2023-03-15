@@ -568,7 +568,6 @@ if (BUILD_WITH_GRAPHVIZ)
         COMMAND cp ${CMAKE_SOURCE_DIR}/cmake/CMakeGraphVizOptions.cmake .
         COMMAND ${CMAKE_COMMAND} "--graphviz=${GRAPHVIZ_GRAPH_NAME}.dot" .
         COMMAND dot -Tpng ${GRAPHVIZ_GRAPH_NAME}.dot -o ${GRAPHVIZ_GRAPH_NAME}.png
-        COMMAND cp ${GRAPHVIZ_GRAPH_NAME}.png ${CMAKE_SOURCE_DIR}/build
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
     )
 endif()
