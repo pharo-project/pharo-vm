@@ -35,6 +35,7 @@ option(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS		"Use inline memory accessors ins
 option(PHARO_VM_IN_WORKER_THREAD			"Have support for pharo running in a different thread that the main one"	 ON)
 option(BUILD_IS_RELEASE					"Is this a release version?"							OFF)
 option(DEPENDENCIES_FORCE_BUILD         "Force build libraries" OFF)
+option(BUILD_WITH_GRAPHVIZ              "Generate dependency graphs" ON)
 
 set(APPNAME			"Pharo"         CACHE STRING                 "VM Application name")
 set(FLAVOUR			"CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
@@ -561,13 +562,11 @@ include(cmake/packaging.cmake)
 
 # GraphViz Setup
 include(cmake/CMakeGraphVizOptions.cmake)
-option(BUILD_WITH_GRAPHVIZ "Generate dependency graphs" ON)
 if (BUILD_WITH_GRAPHVIZ)
     add_custom_target(graphviz ALL
         COMMENT "Build GraphViz Dependency Graph"
         COMMAND cp ${CMAKE_SOURCE_DIR}/cmake/CMakeGraphVizOptions.cmake .
         COMMAND ${CMAKE_COMMAND} "--graphviz=${GRAPHVIZ_GRAPH_NAME}.dot" .
         COMMAND dot -Tpng ${GRAPHVIZ_GRAPH_NAME}.dot -o ${GRAPHVIZ_GRAPH_NAME}.png
-        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
     )
 endif()
