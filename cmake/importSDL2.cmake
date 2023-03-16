@@ -1,14 +1,12 @@
 function(find_system_SDL2)
     message(STATUS "Looking for SDL2 in the system")
-    #find_package(SDL2)
-    # message("<FindSDL2.cmake>")
+    # Try to use SDL2 provided .cmake files (see NO_MODULE below)
+    # find_package(SDL2)
     include(FindPackageHandleStandardArgs)
     # first specifically look for the CMake config version of SDL2 (either system or package manager)
     # provides two TARGETs SDL2::SDL2 and SDL2::SDL2Main
+    # SDL2 already provides a -config.cmake file, then use their configuration elements
     find_package(SDL2 QUIET NO_MODULE)
-    add_custom_target(SDL2 COMMENT "Target for IMPORTED_LOCATION")
-    set_target_properties(SDL2 PROPERTIES 
-      IMPORTED_LOCATION ${SDL2_LIBDIR})
     if(NOT SDL2_FOUND)
       message(STATUS "SDL2 not found.")
     endif()
@@ -58,6 +56,25 @@ function(build_SDL2)
     set(SDL2_FOUND "From build_SDL2" PARENT_SCOPE)
 endfunction()
 
+function(link_to_system_SDL2)
+  # Obtain the library location from the SDL2 CMake exported properties
+  get_target_property(SDL2_LIBDIR SDL2::SDL2 IMPORTED_LOCATION)
+  # SDL2_LIBDIR now contains the full path to the library including the file (.so/.dll/.dylib)
+  message(STATUS "Linking to system libSDL2 from ${SDL2_LIBDIR}")  
+  # Warning: Symbolic links created here are harcoded in the SDL2 class>>findSDL2 method
+  if (WIN)
+    add_custom_target(libsdl2_copy
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${SDL2_LIBDIR} ${LIBRARY_OUTPUT_PATH}/SDL2.dll)
+  elseif(OSX)
+      add_custom_target(libsdl2_copy
+        COMMAND ${CMAKE_COMMAND} -E create_symlink ${SDL2_LIBDIR} ${LIBRARY_OUTPUT_PATH}/libSDL2-2.0.0.dylib)
+      else() # LINUX
+        add_custom_target(libsdl2_copy
+        COMMAND ${CMAKE_COMMAND} -E create_symlink ${SDL2_LIBDIR} ${LIBRARY_OUTPUT_PATH}/libSDL2-2.0.so.0.2.1)
+  endif()
+  add_dependencies(${VM_LIBRARY_NAME} libsdl2_copy)
+endfunction()
+
 if (BUILD_BUNDLE)
   if(DEPENDENCIES_FORCE_BUILD)
     build_SDL2()
@@ -81,12 +98,8 @@ if (BUILD_BUNDLE)
         download_SDL2()
       endif()
     else()
-      # SDL2 found, then copy it
-      get_target_property(SDL2_LIBDIR SDL2 IMPORTED_LOCATION)
-      message(STATUS "Linking to system libSDL2-2.0 from ${SDL2_LIBDIR}")
-      add_custom_target(libsdl2_copy
-        COMMAND ${CMAKE_COMMAND} -E create_symlink ${SDL2_LIBDIR}/libSDL2-2.0.0.dylib ${LIBRARY_OUTPUT_PATH}/libSDL2-2.0.0.dylib)
-      add_dependencies(${VM_LIBRARY_NAME} libsdl2_copy)
+      # SDL2 found, then make a symlink to it
+      link_to_system_SDL2()
 	  endif()
   endif()
 endif()
