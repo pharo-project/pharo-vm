@@ -561,8 +561,11 @@ add_third_party_dependencies_per_platform()
 include(cmake/packaging.cmake)
 
 # GraphViz Setup
+# First check we have the GraphViz "dot" program to draw directed graphs
 find_program(DOT dot)
 if (DOT)
+	# Include options for the builtin GraphViz support
+	# https://cmake.org/cmake/help/latest/module/CMakeGraphVizOptions.html
     include(cmake/CMakeGraphVizOptions.cmake)
     if (BUILD_WITH_GRAPHVIZ)
         add_custom_target(graphviz ALL
