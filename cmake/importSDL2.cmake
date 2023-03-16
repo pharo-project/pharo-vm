@@ -1,6 +1,14 @@
 function(find_system_SDL2)
     message(STATUS "Looking for SDL2 in the system")
-    find_package(SDL2)
+    #find_package(SDL2)
+    # message("<FindSDL2.cmake>")
+    include(FindPackageHandleStandardArgs)
+    # first specifically look for the CMake config version of SDL2 (either system or package manager)
+    # provides two TARGETs SDL2::SDL2 and SDL2::SDL2Main
+    find_package(SDL2 QUIET NO_MODULE)
+    add_custom_target(SDL2 COMMENT "Target for IMPORTED_LOCATION")
+    set_target_properties(SDL2 PROPERTIES 
+      IMPORTED_LOCATION ${SDL2_LIBDIR})
     if(NOT SDL2_FOUND)
       message(STATUS "SDL2 not found.")
     endif()
@@ -41,7 +49,7 @@ function(build_SDL2)
     add_subdirectory(${SDL2_SOURCE_DIR} ${SDL2_BINARY_DIR} EXCLUDE_FROM_ALL)
 
     set_target_properties(SDL2 PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
-    
+
     add_custom_target(SDL2_copy
 			COMMAND ${CMAKE_COMMAND} -E create_symlink libSDL2-2.0.dylib ${LIBRARY_OUTPUT_PATH}/libSDL2-2.0.0.dylib
     )
@@ -54,7 +62,7 @@ if (BUILD_BUNDLE)
   if(DEPENDENCIES_FORCE_BUILD)
     build_SDL2()
   elseif(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES)
-  #Download SDL2 binaries directly
+    #Download SDL2 binaries directly
     download_SDL2()
   else()
     #Look for SDL2 in the system, then build or download if possible
@@ -72,6 +80,13 @@ if (BUILD_BUNDLE)
       else()
         download_SDL2()
       endif()
-    endif()
+    else()
+      # SDL2 found, then copy it
+      get_target_property(SDL2_LIBDIR SDL2 IMPORTED_LOCATION)
+      message(STATUS "Linking to system libSDL2-2.0 from ${SDL2_LIBDIR}")
+      add_custom_target(libsdl2_copy
+        COMMAND ${CMAKE_COMMAND} -E create_symlink ${SDL2_LIBDIR}/libSDL2-2.0.0.dylib ${LIBRARY_OUTPUT_PATH}/libSDL2-2.0.0.dylib)
+      add_dependencies(${VM_LIBRARY_NAME} libsdl2_copy)
+	  endif()
   endif()
 endif()
