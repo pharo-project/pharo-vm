@@ -115,14 +115,6 @@ IF(NOT SDL2_BUILDING_LIBRARY)
 	ENDIF(NOT ${SDL2_INCLUDE_DIR} MATCHES ".framework")
 ENDIF(NOT SDL2_BUILDING_LIBRARY)
 
-if(NOT TARGET SDL2)
-    add_library(SDL2 SHARED IMPORTED)
-    set_target_properties(SDL2 PROPERTIES
-            IMPORTED_LOCATION "${LIBGIT2_LIBRARY}"
-            INTERFACE_INCLUDE_DIRECTORIES "${LIBGIT2_INCLUDE_PATH}"
-    )
-endif()
-
 # SDL2 may require threads on your system.
 # The Apple build may not need an explicit flag because one of the
 # frameworks may already provide it.
