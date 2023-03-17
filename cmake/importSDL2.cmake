@@ -78,8 +78,7 @@ if (BUILD_BUNDLE)
         download_SDL2()
       endif()
     else()
-      # SDL2 found, then make a symlink to it
-      # Obtain the library location from the SDL2 CMake exported properties
+      # SDL2 found, get the library location from the SDL2 CMake exported properties
       get_target_property(SDL2_LIBDIR SDL2::SDL2 IMPORTED_LOCATION)
       # SDL2_LIBDIR now contains the full path to the library including the file (.so/.dll/.dylib)
       message(STATUS "Using system libSDL2 from ${SDL2_LIBDIR}")  
