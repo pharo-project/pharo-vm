@@ -1,11 +1,11 @@
 Class {
-	#name : #DruidMirorCogit,
+	#name : #DruidMirrorCogit,
 	#superclass : #StackToRegisterMappingCogit,
 	#category : #'VMMaker-JIT'
 }
 
 { #category : #initialization }
-DruidMirorCogit class >> initializePrimitiveTable [
+DruidMirrorCogit class >> initializePrimitiveTable [
 
 	<generated>
 	MaxCompiledPrimitiveIndex := 10.
@@ -15,11 +15,11 @@ DruidMirorCogit class >> initializePrimitiveTable [
 ]
 
 { #category : #'class initialization' }
-DruidMirorCogit class >> primitiveTableArray [
+DruidMirrorCogit class >> primitiveTableArray [
 
 	^ DruidJIT primitiveTableArray collect: [ :tuple |
 		  {
 			  tuple first.
-			  (tuple second copyReplaceAll: '_' with: '').
+			  (tuple second copyReplaceAll: '_' with: '') asSymbol.
 			  tuple third } ]
 ]
