@@ -566,7 +566,6 @@ find_program(DOT dot)
 if (DOT)
 	# Include options for the builtin GraphViz support
 	# https://cmake.org/cmake/help/latest/module/CMakeGraphVizOptions.html
-    include(cmake/CMakeGraphVizOptions.cmake)
     if (BUILD_WITH_GRAPHVIZ)
         add_custom_target(graphviz ALL
             COMMENT "Build GraphViz Dependency Graph"
