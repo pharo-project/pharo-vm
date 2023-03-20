@@ -137,6 +137,12 @@ PharoVMMaker >> generateCoInterpreter [
 ]
 
 { #category : #generation }
+PharoVMMaker >> generateDruidMirorVM [
+
+	self generate: CoInterpreter memoryManager: Spur64BitCoMemoryManager compilerClass: DruidMirorCogit	
+]
+
+{ #category : #generation }
 PharoVMMaker >> generateDruidVM [
 
 	self
