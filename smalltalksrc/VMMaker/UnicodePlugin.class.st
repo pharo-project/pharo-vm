@@ -103,7 +103,7 @@ UnicodePlugin >> primitiveClipboardPut [
 
 	utf16 := self cCoerce: (interpreterProxy firstIndexableField: strOop) to: #'unsigned short *'.
 	utf16Length := 2 * (interpreterProxy stSizeOf: strOop).
-	((count >= 0) & (count < utf16Length)) ifTrue: [utf16Length := count].
+	(count >= 0 and: [ (count < utf16Length) ]) ifTrue: [utf16Length := count].
 
 	self unicodeClipboard: utf16 Put: utf16Length.
 

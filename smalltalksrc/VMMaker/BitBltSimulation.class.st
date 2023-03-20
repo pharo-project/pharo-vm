@@ -625,7 +625,7 @@ BitBltSimulation >> alphaBlendConst: sourceWord with: destinationWord paintMode:
 	unAlpha := 255 - sourceAlpha.
 	result := destinationWord.
 	destPPW = 1 ifTrue:["32bpp blends include alpha"
-		paintMode & (sourceWord = 0)  "painting a transparent pixel" ifFalse:[
+		(paintMode and: [ sourceWord = 0 ])  "painting a transparent pixel" ifFalse:[
 
 				blendRB := ((sourceWord bitAnd: 16rFF00FF) * sourceAlpha) +
 						((destinationWord bitAnd: 16rFF00FF) * unAlpha) + 16rFF00FF.	"blendRB red and blue"
@@ -647,8 +647,8 @@ BitBltSimulation >> alphaBlendConst: sourceWord with: destinationWord paintMode:
 		1 to: destPPW do:[:j |
 			sourcePixVal := sourceShifted bitAnd: pixMask.
 			((maskShifted bitAnd: pixMask) = 0  "no effect if outside of dest rectangle"
-				or: [paintMode & (sourcePixVal = 0)  "or painting a transparent pixel"])
-			ifFalse:
+				or: [ (paintMode and: [ sourcePixVal = 0 ])  "or painting a transparent pixel"])
+						ifFalse:
 				[destPixVal := destShifted bitAnd: pixMask.
 				pixBlend := 0.
 				1 to: 3 do:
@@ -1034,30 +1034,29 @@ BitBltSimulation >> bitXor: sourceWord with: destinationWord [
 { #category : #setup }
 BitBltSimulation >> checkSourceOverlap [
 	"check for possible overlap of source and destination"
-	"ar 10/19/1999: This method requires surfaces to be locked."
-	| t |
+
 	<inline: true>
-	(sourceForm = destForm and: [dy >= sy]) ifTrue:
-		[dy > sy ifTrue:
-			["have to start at bottom"
-			vDir := -1.
-			sy := sy + bbH - 1.
-			dy := dy + bbH - 1]
-		ifFalse:
-			[(dy = sy) & (dx > sx) ifTrue:
-				["y's are equal, but x's are backward"
-				hDir := -1.
-				sx := sx + bbW - 1.
-				"start at right"
-				dx := dx + bbW - 1.
-				"and fix up masks"
-				nWords > 1 ifTrue: 
-					[t := mask1.
-					mask1 := mask2.
-					mask2 := t]]].
+	| t |
+	(sourceForm = destForm and: [ dy >= sy ]) ifTrue: [ 
+		dy > sy
+			ifTrue: [ "have to start at bottom"
+				vDir := -1.
+				sy := sy + bbH - 1.
+				dy := dy + bbH - 1 ]
+			ifFalse: [ 
+				(dy = sy and: [ dx > sx ]) ifTrue: [ "y's are equal, but x's are backward"
+					hDir := -1.
+					sx := sx + bbW - 1.
+					"start at right"
+					dx := dx + bbW - 1.
+					"and fix up masks"
+					nWords > 1 ifTrue: [ 
+						t := mask1.
+						mask1 := mask2.
+						mask2 := t ] ] ].
 		"Dest inits may be affected by this change"
-		destIndex := destBits + (dy * destPitch) + ((dx // destPPW) *4).
-		destDelta := (destPitch * vDir) - (4 * (nWords * hDir))]
+		destIndex := destBits + (dy * destPitch) + (dx // destPPW * 4).
+		destDelta := destPitch * vDir - (4 * (nWords * hDir)) ]
 ]
 
 { #category : #'combination rules' }
@@ -1213,11 +1212,11 @@ BitBltSimulation >> copyBitsFastPathSpecialised [
 
  	"we skip the tryCopyingBitsQuickly and leave that to falback code"
 	 
-	(combinationRule = 30) | (combinationRule = 31) ifTrue:
-		["Check and fetch source alpha parameter for alpha blend"
+	(combinationRule = 30 or: [ combinationRule = 31 ]) 
+		ifTrue: ["Check and fetch source alpha parameter for alpha blend"
 		interpreterProxy methodArgumentCount = 1
 			ifTrue: [sourceAlpha := interpreterProxy stackIntegerValue: 0.
-					(interpreterProxy failed not and: [(sourceAlpha >= 0) & (sourceAlpha <= 255)])
+					(interpreterProxy failed not and: [ sourceAlpha >= 0 and: [  sourceAlpha <= 255 ]])
 						ifFalse: [^ interpreterProxy primitiveFail]]
 			ifFalse: [^ interpreterProxy primitiveFail]].
 
@@ -1228,7 +1227,7 @@ BitBltSimulation >> copyBitsFastPathSpecialised [
 	"self performCopyLoop."
 
 	"this is done inversely to plain copyBitsLockedAndClipped"
-	(combinationRule ~= 22) & (combinationRule ~= 32) ifTrue:
+	(combinationRule ~= 22 and: [ combinationRule ~= 32 ]) ifTrue:
 		["zero width and height; return the count"
 		affectedL := dx.
 		affectedR := dx + bbW.
