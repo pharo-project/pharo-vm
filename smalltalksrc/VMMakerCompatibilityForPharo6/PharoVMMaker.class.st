@@ -152,6 +152,18 @@ PharoVMMaker >> generateDruidVM [
 ]
 
 { #category : #generation }
+PharoVMMaker >> generateJITVM [
+
+	self generateCoInterpreter
+]
+
+{ #category : #generation }
+PharoVMMaker >> generateJITZeroVM [
+
+	self generate: CoInterpreter memoryManager: Spur64BitCoMemoryManager compilerClass: JITZeroCogit	
+]
+
+{ #category : #generation }
 PharoVMMaker >> generateSistaVM [
 
 	self
