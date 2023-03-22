@@ -3398,8 +3398,10 @@ CoInterpreter >> incrementProcessStackPageOverflowCount [
 			                    fetchInteger: 10
 			                    ofObject: self activeProcess.
 		
-		previousOverflow = 17 ifTrue: [
-			self printCallStack
+		previousOverflow > 17 ifTrue: [
+			self printCallStack.
+			self cr.
+			self cr
 		].	
 		
 		maxOverflow := maxOverflow max: previousOverflow.

@@ -3947,6 +3947,7 @@ StackInterpreterPrimitives >> primitiveTerminateTo [
 									["We can free the entire page without further ado."
 									 currentCtx := self frameCallerContext: thePage baseFP.
 									 "for a short time invariant is violated; assert follows"
+									self decrementProcessStackPageOverflowCount.
 									 stackPages freeStackPageNoAssert: thePage]]]
 				ifFalse:
 					[nextCntx := objectMemory fetchPointer: SenderIndex ofObject: currentCtx.
