@@ -294,6 +294,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS}
 add_compile_definitions(IMMUTABILITY=1)
 add_compile_definitions(COGMTVM=0)
 add_compile_definitions(PharoVM=1)
+add_compile_definitions(_FILE_OFFSET_BITS=64)
 
 #
 # This definition is used to improve the logging of the messages, to cut-down the path
