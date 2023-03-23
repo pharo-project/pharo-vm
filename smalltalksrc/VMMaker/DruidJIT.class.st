@@ -84,7 +84,16 @@ DruidJIT class >> primitiveTableArray [
 		  { 7. #gen_PrimitiveEqual. 1 }.
 		  { 8. #gen_PrimitiveNotEqual. 1 }.
 		  { 9. #gen_PrimitiveMultiply. 1 }.
-		  { 10. #gen_PrimitiveDivide. 1 } }
+		  { 10. #gen_PrimitiveDivide. 1 }.
+		#(73 genNonImplementedPrimitive -1 #maycallback) "(73 primitiveInstVarAt)".
+#(117 genNonImplementedPrimitive -1 #maycallback) "primitiveExternalCall".
+#(120 genNonImplementedPrimitive -1 #maycallback) "primitiveFFICall".
+#(148 genNonImplementedPrimitive 0 #maycallback)			"a.k.a. clone".
+#(160 genNonImplementedPrimitive -1 #maycallback) "primitive adopt instance".
+#(173 genNonImplementedPrimitive -1 #maycallback) "(173 primitiveSlotAt 1)".
+#(216 genNonImplementedPrimitive -1 #maycallback) "primitive method xray".
+		
+		 }
 ]
 
 { #category : #'trait candidates' }
