@@ -322,12 +322,6 @@ CogObjectRepresentationForSpur >> checkRememberedInTrampoline [
 	^ CheckRememberedInTrampoline
 ]
 
-{ #category : #'debug support' }
-CogObjectRepresentationForSpur >> checkValidObjectReference: anOop [
-	^(objectMemory isImmediate: anOop) not
-	   and: [(objectMemory heapMapAtWord: (self pointerForOop: anOop)) ~= 0]
-]
-
 { #category : #'in-line cacheing' }
 CogObjectRepresentationForSpur >> classForInlineCacheTag: classIndex [
 	^self subclassResponsibility
@@ -336,13 +330,6 @@ CogObjectRepresentationForSpur >> classForInlineCacheTag: classIndex [
 { #category : #'garbage collection' }
 CogObjectRepresentationForSpur >> couldBeDerivedObject: bodyAddress [
 	^self oop: bodyAddress - objectMemory baseHeaderSize isGreaterThanOrEqualTo: objectMemory startOfMemory
-]
-
-{ #category : #initialization }
-CogObjectRepresentationForSpur >> ensureNoForwardedLiteralsIn: aMethodObj [
-	"Ensure there are no forwarded literals in the argument."
-	<doNotGenerate>
-	objectMemory ensureNoForwardedLiteralsIn: aMethodObj
 ]
 
 { #category : #'sista support' }
@@ -1026,7 +1013,7 @@ CogObjectRepresentationForSpur >> genGetClassObjectOfClassIndex: instReg into: d
 		MoveR: instReg R: scratchReg;
 		LogicalShiftRightCq: objectMemory classTableMajorIndexShift R: scratchReg;
 		LogicalShiftLeftCq: objectMemory shiftForWord R: scratchReg.
-	self assert: (self shouldAnnotateObjectReference: objectMemory classTableRootObj) not.
+	self assert: (cogit shouldAnnotateObjectReference: objectMemory classTableRootObj) not.
 	(cogit backEnd isWithinMwOffsetRange: objectMemory classTableRootObj + objectMemory baseHeaderSize)
 		ifTrue: [cogit MoveMw: objectMemory classTableRootObj + objectMemory baseHeaderSize r: scratchReg R: destReg]
 		ifFalse: [cogit
@@ -4056,13 +4043,6 @@ CogObjectRepresentationForSpur >> getLiteralCountOf: methodReg plusOne: plusOne 
 	self subclassResponsibility
 ]
 
-{ #category : #'garbage collection' }
-CogObjectRepresentationForSpur >> hasValidHeaderPostGC: cogMethod [
-	<var: #cogMethod type: #'CogMethod *'>
-	<inline: true>
-	^cogMethod objectHeader = objectMemory nullHeaderForMachineCodeMethod
-]
-
 { #category : #'in-line cacheing' }
 CogObjectRepresentationForSpur >> illegalClassTag [
 	"Answer a class tag that will fail for every object."
@@ -4104,7 +4084,7 @@ CogObjectRepresentationForSpur >> isUnannotatableConstant: simStackEntry [
 	<var: 'simStackEntry' type: #'CogSimStackEntry *'>
 	^simStackEntry type = SSConstant 
 	  and: [(objectMemory isImmediate: simStackEntry constant)
-		or: [(self shouldAnnotateObjectReference: simStackEntry constant) not]]
+		or: [(cogit shouldAnnotateObjectReference: simStackEntry constant) not]]
 ]
 
 { #category : #'compile abstract instructions' }
@@ -4478,14 +4458,6 @@ CogObjectRepresentationForSpur >> setIfRequiredTargetOf: jumpRemembered toTarget
 	<inline: true> "To avoid typing..."
 	CheckRememberedInTrampoline ifFalse:
 		[jumpRemembered jmpTarget: jmpImmediate getJmpTarget].
-]
-
-{ #category : #'garbage collection' }
-CogObjectRepresentationForSpur >> shouldAnnotateObjectReference: anOop [
-	"Objects in newSpace or oldSpace except nil, true, false & classTableRootObj need to be annotated."
-	^(objectMemory isNonImmediate: anOop)
-	  and: [(self oop: anOop isGreaterThan: objectMemory classTableRootObj)
-		or: [self oop: anOop isLessThan: objectMemory nilObject]]
 ]
 
 { #category : #'compile abstract instructions' }

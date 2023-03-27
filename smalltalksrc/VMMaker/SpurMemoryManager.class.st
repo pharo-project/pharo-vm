@@ -3427,6 +3427,12 @@ SpurMemoryManager >> checkValidDerivedObjectReference: bodyAddress [
 ]
 
 { #category : #'debug support' }
+SpurMemoryManager >> checkValidObjectReference: anOop [
+	^(self isImmediate: anOop) not
+	   and: [(heapMap heapMapAtWord: (self pointerForOop: anOop)) ~= 0]
+]
+
+{ #category : #'debug support' }
 SpurMemoryManager >> checkValidOopReference: anOop [
 
 	^ (self isImmediate: anOop) or: [

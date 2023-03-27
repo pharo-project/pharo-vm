@@ -4588,7 +4588,7 @@ StackToRegisterMappingCogit >> ssTopNeedsStoreCheck [
 	<inline: true>
 	^self ssTop type ~= SSConstant
 	  or: [(objectMemory isNonImmediate: self ssTop constant)
-		and: [objectRepresentation shouldAnnotateObjectReference:  self ssTop constant]]
+		and: [self shouldAnnotateObjectReference:  self ssTop constant]]
 ]
 
 { #category : #'simulation stack' }

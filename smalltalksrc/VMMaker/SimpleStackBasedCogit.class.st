@@ -1166,7 +1166,7 @@ SimpleStackBasedCogit >> genCallPrimitiveBytecode [
 SimpleStackBasedCogit >> genCmpConstant: constant R: register [
 	"If the objectMemory allows it, generates a quick constant cmp, else generates a word constant cmp"
 	<inline: true>
-	^ (objectRepresentation shouldAnnotateObjectReference: constant)
+	^ (self shouldAnnotateObjectReference: constant)
 		ifTrue: [ self annotate: (self CmpCw: constant R: register) objRef: constant ]
 		ifFalse: [ self CmpCq: constant R: register ]
 	
@@ -1730,7 +1730,7 @@ SimpleStackBasedCogit >> genLookupForPerformNumArgs: numArgs [
 SimpleStackBasedCogit >> genMoveConstant: constant R: reg [
 	"If the objectMemory allows it, generates a quick constant move, else generates a word constant move"
 	<inline: true>
-	^ (objectRepresentation shouldAnnotateObjectReference: constant)
+	^ (self shouldAnnotateObjectReference: constant)
 		ifTrue: [ self annotate: (self MoveCw: constant R: reg) objRef: constant ]
 		ifFalse: [ self MoveCq: constant R: reg ]
 	
@@ -1782,7 +1782,7 @@ SimpleStackBasedCogit >> genMustBeBooleanTrampolineFor: boolean called: trampoli
 	<inline: false>
 	self zeroOpcodeIndex.
 	"If the objectRepresentation does want true & false to be mobile then we need to record these addresses."
-	self assert: (objectRepresentation shouldAnnotateObjectReference: boolean) not.
+	self assert: (self shouldAnnotateObjectReference: boolean) not.
 	self AddCq: boolean R: TempReg.
 	^self genTrampolineFor: #ceSendMustBeBoolean:
 		called: trampolineName
@@ -2041,7 +2041,7 @@ SimpleStackBasedCogit >> genPushActiveContextBytecode [
 SimpleStackBasedCogit >> genPushConstant: constant [
 	"If the objectMemory allows it, generates a quick constant push, else generates a word constant push"
 	<inline: true>
-	^ (objectRepresentation shouldAnnotateObjectReference: constant)
+	^ (self shouldAnnotateObjectReference: constant)
 		ifTrue: [ self annotate: (self PushCw: constant) objRef: constant ]
 		ifFalse: [ self PushCq: constant ]
 	
@@ -2789,7 +2789,7 @@ SimpleStackBasedCogit >> genStoreRemoteTempLongBytecode [
 SimpleStackBasedCogit >> genSubConstant: constant R: reg [
 	"If the objectMemory allows it, generates a quick constant sub, else generates a word constant sub"
 	<inline: true>
-	^ (objectRepresentation shouldAnnotateObjectReference: constant)
+	^ (self shouldAnnotateObjectReference: constant)
 		ifTrue: [ self annotate: (self SubCw: constant R: reg) objRef: reg. ]
 		ifFalse: [ self SubCq: constant R: reg ]
 ]
@@ -3256,6 +3256,13 @@ SimpleStackBasedCogit >> setInterpreter: aCoInterpreter [
 	 or are used only in the simulation."
 	<doNotGenerate>
 	super setInterpreter: aCoInterpreter.
+	
+	objectRepresentation := self objectRepresentationClass
+								forCogit: self methodZone: methodZone.
+	methodZone setInterpreter: aCoInterpreter
+				objectRepresentation: objectRepresentation
+				cogit: self.	
+	
 	primitiveGeneratorTable := self class primitiveTable.
 	externalPrimJumpOffsets := CArrayAccessor on: (Array new: MaxNumArgs + 1).
 	externalPrimCallOffsets := CArrayAccessor on: (Array new: MaxNumArgs + 1).

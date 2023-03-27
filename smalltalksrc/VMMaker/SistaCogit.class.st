@@ -1696,7 +1696,7 @@ SistaCogit >> genMustBeBooleanTrampolineFor: boolean called: trampolineName [
 	self MoveMw: FoxMFReceiver r: FPReg R: ReceiverResultReg.
 	self RetN: 0.
 	"If the objectRepresentation does want true & false to be mobile then we need to record these addresses."
-	self assert: (objectRepresentation shouldAnnotateObjectReference: boolean) not.
+	self assert: (self shouldAnnotateObjectReference: boolean) not.
 	jumpMBB jmpTarget: (self AddCq: boolean R: TempReg).
 	^self genTrampolineFor: #ceSendMustBeBoolean:
 		called: trampolineName

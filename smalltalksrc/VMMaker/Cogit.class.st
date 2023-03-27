@@ -3250,7 +3250,7 @@ Cogit >> allMethodsHaveCorrectHeader [
 	cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
 	[cogMethod < methodZone limitZony] whileTrue:
 		[cogMethod cmType = CMMethod ifTrue:
-			[(objectRepresentation hasValidHeaderPostGC: cogMethod) ifFalse:
+			[(self hasValidHeaderPostGC: cogMethod) ifFalse:
 				[^false]].
 		 cogMethod := methodZone methodAfter: cogMethod].
 	^true
@@ -3298,7 +3298,7 @@ Cogit >> allowEarlyOpenPICPromotion [
 Cogit >> annotate: abstractInstruction objRef: anOop [
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
 	<returnTypeC: #'AbstractInstruction *'>
-	(objectRepresentation shouldAnnotateObjectReference: anOop) ifTrue:
+	(self shouldAnnotateObjectReference: anOop) ifTrue:
 		[(objectMemory isYoungObject: anOop) ifTrue:
 			[hasYoungReferent := true].
 		 abstractInstruction annotation: IsObjectReference].
@@ -4260,7 +4260,7 @@ Cogit >> checkIfValidOopRefAndTarget: annotation pc: mcpc cogMethod: cogMethod [
 				ifTrue:
 					[(objectMemory couldBeObject: cacheTag)
 						ifTrue:
-							[(self asserta: (objectRepresentation checkValidOopReference: cacheTag)) ifFalse:
+							[(self asserta: (objectMemory checkValidOopReference: cacheTag)) ifFalse:
 								[^4]]
 						ifFalse:
 							[(self asserta: (objectRepresentation validInlineCacheTag: cacheTag)) ifFalse:
@@ -4317,7 +4317,7 @@ Cogit >> checkIntegrityOfObjectReferencesInCode: gcModes [
 			 cogMethod cmType = CMMethod
 				ifTrue:
 					[self assert: cogMethod objectHeader = objectMemory nullHeaderForMachineCodeMethod.
-					 (objectRepresentation checkValidObjectReference: cogMethod methodObject) ifFalse:
+					 (objectMemory checkValidObjectReference: cogMethod methodObject) ifFalse:
 						[coInterpreter print: 'object leak in CM '; printHex: cogMethod asInteger; print: ' methodObject'; cr.
 						 ok := false].
 					 (objectMemory isOopCompiledMethod: cogMethod methodObject) ifFalse:
@@ -4354,7 +4354,7 @@ Cogit >> checkMaybeObjRefInClosedPIC: maybeObject [
 		[^true].
 	(objectMemory couldBeObject: maybeObject) ifFalse:
 		[^true].
-	^objectRepresentation checkValidObjectReference: maybeObject
+	^objectMemory checkValidObjectReference: maybeObject
 ]
 
 { #category : #debugging }
@@ -4565,7 +4565,7 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 			isMNUCase: false].
 	aMethodObj = breakMethod ifTrue: [self halt: 'Compilation of breakMethod'].
 
-	objectRepresentation ensureNoForwardedLiteralsIn: aMethodObj.
+	objectMemory ensureNoForwardedLiteralsIn: aMethodObj.
 	methodObj := aMethodObj.
 	methodHeader := objectMemory methodHeaderOf: aMethodObj.
 	receiverTags := objectMemory receiverTagBitsForMethod: methodObj.
@@ -4792,7 +4792,7 @@ Cogit >> cogFullBlockMethod: aMethodObj numCopied: numCopied [
 	self assert: (objectMemory isOopCompiledMethod: (coInterpreter ultimateLiteralOf: aMethodObj)).
 	aMethodObj = breakMethod ifTrue: [self halt: 'Compilation of breakMethod'].
 
-	objectRepresentation ensureNoForwardedLiteralsIn: aMethodObj.
+	objectMemory ensureNoForwardedLiteralsIn: aMethodObj.
 	methodObj := aMethodObj.
 	methodHeader := objectMemory methodHeaderOf: aMethodObj.
 	receiverTags := objectMemory receiverTagBitsForMethod: methodObj.
@@ -8386,6 +8386,13 @@ Cogit >> handleWriteSimulationTrap: aProcessorSimulationTrap [
 	processor pc: aProcessorSimulationTrap nextpc
 ]
 
+{ #category : #'garbage collection' }
+Cogit >> hasValidHeaderPostGC: cogMethod [
+	<var: #cogMethod type: #'CogMethod *'>
+	<inline: true>
+	^cogMethod objectHeader = objectMemory nullHeaderForMachineCodeMethod
+]
+
 { #category : #compaction }
 Cogit >> incrementUsageOfTargetIfLinkedSend: annotation mcpc: mcpc ignored: superfluity [
 	<var: #mcpc type: #'char *'>
@@ -11305,11 +11312,6 @@ Cogit >> setInterpreter: aCoInterpreter [
 	coInterpreter := aCoInterpreter.
 	objectMemory := aCoInterpreter objectMemory.
 	methodZone := self class methodZoneClass new.
-	objectRepresentation := self objectRepresentationClass
-								forCogit: self methodZone: methodZone.
-	methodZone setInterpreter: aCoInterpreter
-				objectRepresentation: objectRepresentation
-				cogit: self.
 	generatorTable := self class generatorTable.
 	processor := ProcessorClass new.
 	simulatedAddresses := Dictionary new.
@@ -11407,6 +11409,14 @@ Cogit >> shortcutTrampoline: aProcessorSimulationTrap to: aBlock [
 		simulateLeafReturnIn: coInterpreter memory.
 	backEnd hasLinkRegister ifTrue:
 		[processor lr: (processor popWordIn: coInterpreter memory)]
+]
+
+{ #category : #'garbage collection' }
+Cogit >> shouldAnnotateObjectReference: anOop [
+	"Objects in newSpace or oldSpace except nil, true, false & classTableRootObj need to be annotated."
+	^(objectMemory isNonImmediate: anOop)
+	  and: [(self oop: anOop isGreaterThan: objectMemory classTableRootObj)
+		or: [self oop: anOop isLessThan: objectMemory nilObject]]
 ]
 
 { #category : #'bytecode generator support' }

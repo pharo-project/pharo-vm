@@ -793,7 +793,7 @@ RegisterAllocatingCogit >> genMustBeBooleanTrampolineFor: boolean branchBytes: b
 	<inline: false>
 	self zeroOpcodeIndex.
 	"If the objectRepresentation does want true & false to be mobile then we need to record these addresses."
-	self assert: (objectRepresentation shouldAnnotateObjectReference: boolean) not.
+	self assert: (self shouldAnnotateObjectReference: boolean) not.
 	self AddCq: boolean R: TempReg.
 	^self genTrampolineFor: #ceSendMustBeBooleanTo:interpretingAtDelta:
 		called: trampolineName
