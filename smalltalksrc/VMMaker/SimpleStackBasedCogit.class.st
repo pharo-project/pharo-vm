@@ -193,7 +193,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 SimpleStackBasedCogit class >> objectRepresentationAncilliaryClasses [
 
 	^ (self objectRepresentationClass withAllSuperclasses copyUpThrough:
-		   CogObjectRepresentation) reverse
+		   CogObjectRepresentationForSpur) reverse
 ]
 
 { #category : #'class initialization' }
