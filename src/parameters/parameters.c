@@ -469,7 +469,7 @@ processStackPageSizeOption(const char* value, VMParameters * params)
 {
 	int intValue = 0;
 
-    intValue = strtol(value, NULL, 10);
+    intValue = parseByteSize(value);
 
 	if(intValue < 0)
 	{
