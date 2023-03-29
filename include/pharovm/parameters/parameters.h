@@ -55,6 +55,7 @@ LINUX:
   -eden <size>[mk]      use given eden size
   -leakcheck num        check for leaks in the heap
   -stackpages <num>     use given number of stack pages
+  -stackPageBytes <size[mk] use given bytes as stack page size
   -noevents             disable event-driven input support
   -nohandlers           disable sigsegv & sigusr1 handlers
   -pollpip              output . on each poll for input
@@ -110,6 +111,9 @@ typedef struct VMParameters_
 
 	//The number of smalltalk frames to print in a process dump, (0 to print all).
 	int maxStackFramesToPrint;
+
+    // The amount of bytes used for a stack page
+    int stackPageSize;
 
 	//The max size of the old space (as the new space is fixed size, we can take it as a hint of the memory size used by the VM).
 	long long maxOldSpaceSize;
