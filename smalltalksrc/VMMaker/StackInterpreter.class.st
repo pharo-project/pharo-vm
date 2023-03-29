@@ -7127,7 +7127,7 @@ StackInterpreter >> handleStackOverflow [
 	"Check for stack overflow, moving frames to another stack if so.
 	 This should *only* be sent from checkForStackOverflow."
 	<inline: #never>
-	| newPage theFP callerFP overflowLimitAddress overflowCount |
+	| newPage theFP callerFP overflowLimitAddress overflowCount ourContext lookupClassTag |
 	<var: #newPage type: #'StackPage *'>
 	<var: #theFP type: #'char *'>
 	<var: #callerFP type: #'char *'>
@@ -7174,7 +7174,19 @@ StackInterpreter >> handleStackOverflow [
 			[self assert: (self validInstructionPointer: instructionPointer + 1
 							inFrame: framePointer).
 			 self assert: ((self frameHasContext: framePointer) not
-						or: [objectMemory isContext: (self frameContext: framePointer)])]
+						or: [objectMemory isContext: (self frameContext: framePointer)])].
+	
+	"Send the #stackOverflow message to the current context.
+	If the image does not support stack overflow callbacks, just skip it"
+	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
+	self push: ourContext.
+	messageSelector := objectMemory splObj: SelectorStackOverflow.
+	messageSelector = objectMemory nilObject ifTrue: [ ^ self ].
+	
+	argumentCount := 0.
+	lookupClassTag := objectMemory fetchClassTagOf: ourContext.
+	self findNewMethodInClassTag: lookupClassTag.
+	self executeNewMethod
 ]
 
 { #category : #'message sending' }

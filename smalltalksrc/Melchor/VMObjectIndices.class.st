@@ -77,6 +77,7 @@ Class {
 		'SelectorMustBeBoolean',
 		'SelectorRunWithIn',
 		'SelectorSistaTrap',
+		'SelectorStackOverflow',
 		'SelectorStart',
 		'SelectorUnknownBytecode',
 		'SenderIndex',
