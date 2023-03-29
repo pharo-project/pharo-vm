@@ -796,7 +796,6 @@ CoInterpreter >> baseFrameCannotReturnTo: contextToReturnTo [
 	 in which case the frame must be free to avoid the relocation machinery
 	 tracing the dead frame.  Since freeing now temporarily violates the page-list
 	 ordering invariant, use the assert-free version."
-	self decrementProcessStackPageOverflowCount.
 	stackPages freeStackPageNoAssert: stackPage.
 	retToContext := objectMemory isContext: contextToReturnTo.
 	(retToContext and: [ self isStillMarriedContext: contextToReturnTo ])
@@ -1012,8 +1011,6 @@ CoInterpreter >> ceBaseFrameReturn: returnValue [
 				and: [objectMemory isContext: (stackPages longAt: stackPage baseAddress - objectMemory wordSize)]).
 	contextToReturnTo := stackPages longAt: stackPage baseAddress.
 	self assert: (objectMemory addressCouldBeObj: contextToReturnTo).
-
-	self decrementProcessStackPageOverflowCount.
 
 	"The stack page is effectively free now, so free it.  We must free it to be
 	 correct in determining if contextToReturnTo is still married, and in case
@@ -1386,7 +1383,6 @@ CoInterpreter >> ceNonLocalReturn: returnValue [
 		 currentCtx := self frameCallerContext: stackPage baseFP.
 		 self assert: (objectMemory isContext: currentCtx).
 		 stackPages freeStackPage: stackPage.
-		self decrementProcessStackPageOverflowCount.
 		 [self assert: (objectMemory isContext: currentCtx).
 		  (self isMarriedOrWidowedContext: currentCtx)
 		   and: [(stackPages stackPageFor: (theFP := self frameOfMarriedContext: currentCtx)) = newPage]] whileFalse:
@@ -1396,7 +1392,6 @@ CoInterpreter >> ceNonLocalReturn: returnValue [
 					[thePage := stackPages stackPageFor: theFP.
 					 currentCtx := self frameCallerContext: thePage baseFP.
 					 stackPages freeStackPage: thePage.
-					self decrementProcessStackPageOverflowCount.
 					]
 				ifFalse:
 					[nextCntx := objectMemory fetchPointer: SenderIndex ofObject: currentCtx.
@@ -2281,25 +2276,6 @@ CoInterpreter >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
 		stackPages unsignedLongAt: p + FoxMFReceiver - FoxIFReceiver put: (stackPages unsignedLongAt: p)].
 	stackPointer := stackPointer + FoxMFReceiver - FoxIFReceiver.
 	^pc
-]
-
-{ #category : #trampolines }
-CoInterpreter >> decrementProcessStackPageOverflowCount [
-
-	(objectMemory numSlotsOf: self activeProcess) > 9 ifTrue: [
-		| previousOverflow |
-		previousOverflow := objectMemory
-			                    fetchPointer: 9
-			                    ofObject: self activeProcess.
-		(objectMemory isIntegerObject: previousOverflow)
-			ifTrue: [
-				previousOverflow := (objectMemory integerValueOf: previousOverflow)
-				                    - 1 max: 0 ]
-			ifFalse: [ previousOverflow := 0 ].
-		objectMemory
-			storeInteger: 9
-			ofObject: self activeProcess
-			withValue: previousOverflow ]
 ]
 
 { #category : #'stack pages' }
@@ -3384,35 +3360,6 @@ CoInterpreter >> iframeSavedIP: theFP put: savedIP [
 	<var: #theFP type: #'char *'>
 	self assert: (self isMachineCodeFrame: theFP) not.
 	stackPages unsignedLongAt: theFP + FoxIFSavedIP put: savedIP
-]
-
-{ #category : #trampolines }
-CoInterpreter >> incrementProcessStackPageOverflowCount [
-
-	(objectMemory numSlotsOf: self activeProcess) > 10 ifTrue: [
-		| previousOverflow maxOverflow |
-		previousOverflow := (objectMemory
-			                    fetchInteger: 9
-			                    ofObject: self activeProcess) + 1.
-		maxOverflow := objectMemory
-			                    fetchInteger: 10
-			                    ofObject: self activeProcess.
-		
-		previousOverflow > 17 ifTrue: [
-			self printCallStack.
-			self cr.
-			self cr
-		].	
-		
-		maxOverflow := maxOverflow max: previousOverflow.
-		objectMemory
-			storeInteger: 9
-			ofObject: self activeProcess
-			withValue: previousOverflow.
-		objectMemory
-			storeInteger: 10
-			ofObject: self activeProcess
-			withValue: maxOverflow ]
 ]
 
 { #category : #initialization }

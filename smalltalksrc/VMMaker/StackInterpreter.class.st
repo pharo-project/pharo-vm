@@ -4564,7 +4564,6 @@ StackInterpreter >> commonReturn [
 		
 		currentCtx := self frameCallerContext: stackPage baseFP.
 		stackPages freeStackPage: stackPage.
-		self decrementProcessStackPageOverflowCount.
 		[ 
 		self assert: (objectMemory isContext: currentCtx).
 		(self isMarriedOrWidowedContext: currentCtx) and: [
@@ -4580,8 +4579,7 @@ StackInterpreter >> commonReturn [
 								through: (self findFrameAbove: theFP inPage: thePage)
 								toPage: stackPages newStackPage ].
 						currentCtx := self frameCallerContext: thePage baseFP.
-						stackPages freeStackPage: thePage.
-						self decrementProcessStackPageOverflowCount. ]
+						stackPages freeStackPage: thePage ]
 					ifFalse: [ 
 						nextCntx := objectMemory
 							            fetchPointer: SenderIndex
