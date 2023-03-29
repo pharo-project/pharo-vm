@@ -65,6 +65,7 @@ Class {
 		'PriorityIndex',
 		'ProcessInExternalCodeTag',
 		'ProcessListsIndex',
+		'ProcessShouldOverflowIndex',
 		'ProcessSignalingLowSpace',
 		'ReceiverIndex',
 		'SchedulerAssociation',

@@ -1418,7 +1418,8 @@ StackInterpreter class >> initializeSchedulerIndices [
 	"Class Process"
 	SuspendedContextIndex := 1.
 	PriorityIndex := 2.
-	MyListIndex := 3
+	MyListIndex := 3.
+	ProcessShouldOverflowIndex := 9
 ]
 
 { #category : #initialization }
@@ -7127,7 +7128,7 @@ StackInterpreter >> handleStackOverflow [
 	"Check for stack overflow, moving frames to another stack if so.
 	 This should *only* be sent from checkForStackOverflow."
 	<inline: #never>
-	| newPage theFP callerFP overflowLimitAddress overflowCount ourContext lookupClassTag |
+	| newPage theFP callerFP overflowLimitAddress overflowCount ourContext lookupClassTag shouldOverflowIndex |
 	<var: #newPage type: #'StackPage *'>
 	<var: #theFP type: #'char *'>
 	<var: #callerFP type: #'char *'>
@@ -7137,8 +7138,6 @@ StackInterpreter >> handleStackOverflow [
 
 	self maybeTraceStackOverflow.
 	statStackOverflow := statStackOverflow + 1.
-	
-	self incrementProcessStackPageOverflowCount.
 
 	"The stack has overflowed this page.  If the system is executing some recursive algorithm,
 	 e.g. fibonacci, then the system could thrash overflowing the stack if the call soon returns
@@ -7178,6 +7177,11 @@ StackInterpreter >> handleStackOverflow [
 	
 	"Send the #stackOverflow message to the current context.
 	If the image does not support stack overflow callbacks, just skip it"
+	(objectMemory numSlotsOf: self activeProcess) < ProcessShouldOverflowIndex
+		ifTrue: [ ^ self ].
+	shouldOverflowIndex := objectMemory fetchPointer: ProcessShouldOverflowIndex ofObject: self activeProcess.
+	shouldOverflowIndex ~= objectMemory trueObject ifTrue: [ ^ self ].
+	
 	messageSelector := objectMemory splObj: SelectorStackOverflow.
 	messageSelector = objectMemory nilObject ifTrue: [ ^ self ].
 
