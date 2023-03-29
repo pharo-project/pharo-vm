@@ -7178,11 +7178,11 @@ StackInterpreter >> handleStackOverflow [
 	
 	"Send the #stackOverflow message to the current context.
 	If the image does not support stack overflow callbacks, just skip it"
-	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
-	self push: ourContext.
 	messageSelector := objectMemory splObj: SelectorStackOverflow.
 	messageSelector = objectMemory nilObject ifTrue: [ ^ self ].
-	
+
+	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
+	self push: ourContext.
 	argumentCount := 0.
 	lookupClassTag := objectMemory fetchClassTagOf: ourContext.
 	self findNewMethodInClassTag: lookupClassTag.
@@ -7196,11 +7196,16 @@ StackInterpreter >> handleStackOverflowOrEventAllowContextSwitch: mayContextSwit
 	 Check for stackOverflow and  interrupts anddeal with each appropriately.
 	 Answer if a context switch occurred."
 	<inline: false>
+	
+	| isInterrupt |
+	isInterrupt := stackLimit ~= stackPage realStackLimit.
+	isInterrupt ifTrue: [ self restoreStackLimit ].
+	
 	self checkForStackOverflow.
+	
 	"If the stackLimit differs from the realStackLimit then the stackLimit
 	 has been set to indicate an event or interrupt that needs servicing."
-	stackLimit = stackPage realStackLimit ifTrue:
-		[^false].
+	isInterrupt ifFalse: [ ^ false ].
 	^self checkForEventsMayContextSwitch: mayContextSwitch
 ]
 
