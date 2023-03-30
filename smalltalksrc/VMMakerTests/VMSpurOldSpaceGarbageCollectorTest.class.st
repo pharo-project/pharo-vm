@@ -220,6 +220,61 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableSho
 	self assertHashOf: self keptObjectInVMVariable1 equals: hash
 ]
 
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testCompactEphemeronQueuePass1 [
+
+	| ephemeron |
+
+	"For first compaction pass"
+	"Hole, then mourn queue"
+	self newOldSpaceObjectWithSlots: 0.
+	memory initializeMournQueue.
+
+	"For second compaction pass"
+	"Hole, then ephemeron. Does not really need to be an ephemeron for this tests, any object does it"
+	self newOldSpaceObjectWithSlots: 0.	
+	ephemeron := self newOldSpaceObjectWithSlots: 0.
+	self keepObjectInVMVariable1: ephemeron.
+	memory push: ephemeron onObjStack: memory mournQueue.
+
+	"Compact"
+	memory garbageCollectForSnapshot.
+	
+	"Assert?"
+	self assert: (memory sizeOfObjStack: memory mournQueue) equals: 1.
+	self assert: memory dequeueMourner equals: self keptObjectInVMVariable1.
+]
+
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testCompactEphemeronQueuePass2 [
+
+	| ephemeron |
+
+	"For first compaction pass"
+	"Hole, then mourn queue"
+	self newOldSpaceObjectWithSlots: 0.
+	memory initializeMournQueue.
+
+	"For second compaction pass"
+	"Hole, then ephemeron. Does not really need to be an ephemeron for this tests, any object does it"
+	self newOldSpaceObjectWithSlots: 0.	
+	ephemeron := self newOldSpaceObjectWithSlots: 0.
+	self keepObjectInVMVariable1: ephemeron.
+	memory push: ephemeron onObjStack: memory mournQueue.
+
+	"Set the number of objects to compact per compact Phase.
+	We set N=1 to make two compaction phases.
+	The first phase will compact the mourn queue.
+	The second phase will compact the ephemeron."
+	memory compactor savedFirstFieldSpaceMaxSlots: 1.
+	
+	"Compact"
+	memory garbageCollectForSnapshot.
+	
+	self assert: (memory sizeOfObjStack: memory mournQueue) equals: 1.
+	self assert: memory dequeueMourner equals: self keptObjectInVMVariable1.
+]
+
 { #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testDoNotCollectRoots [
 
