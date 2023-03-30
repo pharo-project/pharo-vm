@@ -464,6 +464,7 @@ SpurPlanningCompactor >> planCompactSavingForwarders [
 	toFinger := manager startOfObject: firstFreeObject.
 	top := savedFirstFieldsSpace start.
 	startOfPreviousPin := 0.
+	lastMobileObject := nil.
 	manager allOldSpaceEntitiesFrom: firstFreeObject do:
 		[:o|
 		 self check: o.
@@ -509,6 +510,7 @@ SpurPlanningCompactor >> planCompactSavingForwarders [
 						[savedFirstFieldsSpace top: top - manager bytesPerOop.
 						 objectAfterLastMobileObject := manager oldSpaceObjectAfter: lastMobileObject.
 						 ^false]]]].
+
 	"If the heap is already fully compacted there will be no lastMobileObject..."
 	lastMobileObject ifNotNil:
 		[savedFirstFieldsSpace top: top - manager bytesPerOop.
