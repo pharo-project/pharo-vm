@@ -2,6 +2,13 @@
 
 I am a changelog... do not wait too much from me :D
 
+## v9.0.22
+
+- Fixing size of LibC structures for file access to handle iNodes of 64 bits.
+This is needed in 32 bits systems that runs in a container or have big disks.
+It requires adding \_FILE\_OFFSET\_BITS=64 compile option.
+
+
 ## v9.0.21
 
 - Implementing High resolution clock for ARM64 (Used during profiling)
