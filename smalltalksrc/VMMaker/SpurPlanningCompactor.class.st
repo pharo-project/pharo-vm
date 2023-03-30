@@ -60,7 +60,8 @@ Class {
 		'mobileStart',
 		'objectAfterLastMobileObject',
 		'savedFirstFieldsSpace',
-		'savedFirstFieldsSpaceNotInOldSpace'
+		'savedFirstFieldsSpaceNotInOldSpace',
+		'savedFirstFieldSpaceMaxSlots'
 	],
 	#pools : [
 		'VMBytecodeConstants'
