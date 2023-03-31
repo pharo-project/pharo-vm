@@ -225,22 +225,19 @@ VMSpurOldSpaceGarbageCollectorTest >> testCompactEphemeronQueuePass1 [
 
 	| ephemeron |
 
-	"For first compaction pass"
 	"Hole, then mourn queue"
 	self newOldSpaceObjectWithSlots: 0.
 	memory initializeMournQueue.
 
-	"For second compaction pass"
 	"Hole, then ephemeron. Does not really need to be an ephemeron for this tests, any object does it"
 	self newOldSpaceObjectWithSlots: 0.	
 	ephemeron := self newOldSpaceObjectWithSlots: 0.
 	self keepObjectInVMVariable1: ephemeron.
 	memory push: ephemeron onObjStack: memory mournQueue.
 
-	"Compact"
+	"Compact in one pass"
 	memory garbageCollectForSnapshot.
 	
-	"Assert?"
 	self assert: (memory sizeOfObjStack: memory mournQueue) equals: 1.
 	self assert: memory dequeueMourner equals: self keptObjectInVMVariable1.
 ]
