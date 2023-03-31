@@ -369,11 +369,12 @@ SpurPlanningCompactor >> freeFrom: initialToFinger upTo: limit nextObject: nextO
 		[manager addFreeChunkWithBytes: limit - toFinger at: toFinger]
 ]
 
-{ #category : #'instance initialization' }
+{ #category : #initialization }
 SpurPlanningCompactor >> initialize [
 	biasForGC := true.
 	savedFirstFieldsSpace := SpurContiguousObjStack new.
-	savedFirstFieldsSpaceNotInOldSpace := true
+	savedFirstFieldsSpaceNotInOldSpace := true.
+	savedFirstFieldSpaceMaxSlots := nil.
 ]
 
 { #category : #compaction }
