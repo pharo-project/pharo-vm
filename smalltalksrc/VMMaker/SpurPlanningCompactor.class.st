@@ -60,7 +60,8 @@ Class {
 		'mobileStart',
 		'objectAfterLastMobileObject',
 		'savedFirstFieldsSpace',
-		'savedFirstFieldsSpaceNotInOldSpace'
+		'savedFirstFieldsSpaceNotInOldSpace',
+		'savedFirstFieldSpaceMaxSlots'
 	],
 	#pools : [
 		'VMBytecodeConstants'
@@ -160,6 +161,23 @@ SpurPlanningCompactor >> compact [
 		 self updateSavedFirstFieldsSpaceIfNecessary].
 	manager checkFreeSpace: GCModeFull.
 	self endCompaction
+]
+
+{ #category : #'space management' }
+SpurPlanningCompactor >> configureSavedFirstFieldsSpaceStart: theStart limit: theLimit isOldSpace: isOldSpace [
+	"Use teden to hold the savedFirstFieldsSpace."
+
+	<inline: true>
+	| limit |
+	limit := theLimit.
+	savedFirstFieldSpaceMaxSlots ifNotNil: [
+		limit := limit min:
+			(theStart + (savedFirstFieldSpaceMaxSlots * manager bytesPerOop)) ].
+
+	savedFirstFieldsSpace
+		start: theStart;
+		limit: limit.
+	savedFirstFieldsSpaceNotInOldSpace := isOldSpace not
 ]
 
 { #category : #compaction }
@@ -351,11 +369,12 @@ SpurPlanningCompactor >> freeFrom: initialToFinger upTo: limit nextObject: nextO
 		[manager addFreeChunkWithBytes: limit - toFinger at: toFinger]
 ]
 
-{ #category : #'instance initialization' }
+{ #category : #initialization }
 SpurPlanningCompactor >> initialize [
 	biasForGC := true.
 	savedFirstFieldsSpace := SpurContiguousObjStack new.
-	savedFirstFieldsSpaceNotInOldSpace := true
+	savedFirstFieldsSpaceNotInOldSpace := true.
+	savedFirstFieldSpaceMaxSlots := nil.
 ]
 
 { #category : #compaction }
@@ -463,6 +482,7 @@ SpurPlanningCompactor >> planCompactSavingForwarders [
 	toFinger := manager startOfObject: firstFreeObject.
 	top := savedFirstFieldsSpace start.
 	startOfPreviousPin := 0.
+	lastMobileObject := nil.
 	manager allOldSpaceEntitiesFrom: firstFreeObject do:
 		[:o|
 		 self check: o.
@@ -508,6 +528,7 @@ SpurPlanningCompactor >> planCompactSavingForwarders [
 						[savedFirstFieldsSpace top: top - manager bytesPerOop.
 						 objectAfterLastMobileObject := manager oldSpaceObjectAfter: lastMobileObject.
 						 ^false]]]].
+
 	"If the heap is already fully compacted there will be no lastMobileObject..."
 	lastMobileObject ifNotNil:
 		[savedFirstFieldsSpace top: top - manager bytesPerOop.
@@ -593,6 +614,12 @@ SpurPlanningCompactor >> repinRememberedSet [
 		[manager storePointerUnchecked: 0 ofObject: manager rememberedSetObj withValue: firstFieldOfRememberedSet].
 	manager setIsPinnedOf: manager rememberedSetObj to: true.
 	scavenger relocateRememberedSet
+]
+
+{ #category : #'space management' }
+SpurPlanningCompactor >> savedFirstFieldSpaceMaxSlots: aNumber [
+
+	savedFirstFieldSpaceMaxSlots := aNumber
 ]
 
 { #category : #'space management' }
@@ -947,11 +974,12 @@ SpurPlanningCompactor >> updateSavedFirstFieldsSpaceIfNecessary [
 { #category : #'space management' }
 SpurPlanningCompactor >> useEdenForSavedFirstFieldsSpace [
 	"Use teden to hold the savedFirstFieldsSpace."
+
 	<inline: true>
-	savedFirstFieldsSpace
-		start: scavenger eden start;
-		limit: scavenger eden limit.
-	savedFirstFieldsSpaceNotInOldSpace := true.
+	self
+		configureSavedFirstFieldsSpaceStart: scavenger eden start
+		limit: scavenger eden limit
+		isOldSpace: false.
 	self deny: self savedFirstFieldsSpaceWasAllocated
 ]
 
@@ -960,12 +988,14 @@ SpurPlanningCompactor >> useFreeChunkForSavedFirstFieldsSpace: highestSuitableFr
 	"Use the supplied free chunk to hold the savedFirstFieldsSpace. Invoked when
 	 eden is found not to be big enough for the job. Avoid the first few fields so as
 	 not to destroy the free chunk and there by confuse object enumeration."
+
 	<inline: true>
 	self assert: (manager validFreeTreeChunk: highestSuitableFreeBlock).
-	savedFirstFieldsSpace
-		start: highestSuitableFreeBlock + (manager freeChunkLargerIndex * manager bytesPerOop);
-		limit: (manager addressAfter: highestSuitableFreeBlock).
-	savedFirstFieldsSpaceNotInOldSpace := false.
+	self
+		configureSavedFirstFieldsSpaceStart: highestSuitableFreeBlock
+			+ (manager freeChunkLargerIndex * manager bytesPerOop)
+		limit: (manager addressAfter: highestSuitableFreeBlock)
+		isOldSpace: false.
 	self deny: self savedFirstFieldsSpaceWasAllocated
 ]
 
@@ -973,22 +1003,24 @@ SpurPlanningCompactor >> useFreeChunkForSavedFirstFieldsSpace: highestSuitableFr
 SpurPlanningCompactor >> useSegmentForSavedFirstFieldsSpace: spaceEstimate [
 	"Attempt to allocate a memory segment large enough to hold the savedFirstFieldsSpace.
 	 Invoked when neither eden nor a large free chunk are found to be big enough for the job."
-	| roundedSize allocatedSize |
+
 	<var: #segAddress type: #'void *'>
+	| roundedSize allocatedSize |
 	roundedSize := spaceEstimate + 1023 // 1024 * 1024.
-	(manager "sent to the manager so that the simulator can increase memory to simulate a new segment"
-		sqAllocateMemorySegmentOfSize: roundedSize
-		Above: (manager segmentManager firstGapOfSizeAtLeast: roundedSize)
-		AllocatedSizeInto: (self cCode: [self addressOf: allocatedSize]
-								inSmalltalk: [[:sz| allocatedSize := sz]])) ifNotNil:
-		[:segAddress|
-		 savedFirstFieldsSpace
-			start: segAddress asUnsignedIntegerPtr;
-			limit: segAddress asUnsignedIntegerPtr + allocatedSize.
-		 savedFirstFieldsSpaceNotInOldSpace := true.
-		 self assert: self savedFirstFieldsSpaceWasAllocated.
-		 ^true].
-	^false
+	(manager
+		 sqAllocateMemorySegmentOfSize: roundedSize
+		 Above: (manager segmentManager firstGapOfSizeAtLeast: roundedSize)
+		 AllocatedSizeInto: (self
+				  cCode: [ self addressOf: allocatedSize ]
+				  inSmalltalk: [ [ :sz | allocatedSize := sz ] ])) ifNotNil: [ :segAddress |
+		self
+			configureSavedFirstFieldsSpaceStart:
+			segAddress asUnsignedIntegerPtr
+			limit: segAddress asUnsignedIntegerPtr + allocatedSize
+			isOldSpace: true.
+		self assert: self savedFirstFieldsSpaceWasAllocated.
+		^ true ]. "sent to the manager so that the simulator can increase memory to simulate a new segment"
+	^ false
 ]
 
 { #category : #private }

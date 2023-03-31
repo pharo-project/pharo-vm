@@ -10642,7 +10642,6 @@ SpurMemoryManager >> relocateObjStackForPlanningCompactor: objStack [
 					to: ObjStackNextx + (self rawHashBitsOf: stackOrNil).
 	 stackOrNil = objStack ifTrue:
 		[result := relocated].
-	 self setHashBitsOf: stackOrNil to: 0.
 	 next ~= 0]
 		whileTrue:
 			[stackOrNil := next].
