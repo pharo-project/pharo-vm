@@ -2,6 +2,13 @@
 
 I am a changelog... do not expect too much from me :D
 
+## v10.0.2
+
+- Generate Pharo VM dependency graph by @hernanmd in #554
+- Link against a shared SDL2 if already installed in target by @hernanmd in #555
+- Slang: Integer>>#bitOr: and Integer>>#| are translated to C code differently by @hernanmd in #523
+- Fix ephemeron compaction by @guillep in #561
+
 ## v10.0.1
 
 - Adding image version field to the image header
