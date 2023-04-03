@@ -333,6 +333,7 @@ add_compile_definitions(
     PharoVM=1
     $<$<CONFIG:DEBUG>:DEBUGVM=1>
     $<$<NOT:$<CONFIG:DEBUG>>:DEBUGVM=0>
+    _FILE_OFFSET_BITS=64
 )
 
 #
