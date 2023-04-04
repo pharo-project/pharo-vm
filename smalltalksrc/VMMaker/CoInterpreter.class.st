@@ -536,15 +536,34 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 { #category : #'control primitives' }
 CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch [
 	"Similar to activateNewMethod but for Closure and newMethod."
-	| numCopied methodHeader numTemps inInterpreter switched |
+
 	<inline: true>
-	self assert: theMethod = (objectMemory fetchPointer: FullClosureCompiledBlockIndex ofObject: blockClosure).
+	| methodHeader |
+	self assert: theMethod = (objectMemory
+			 fetchPointer: FullClosureCompiledBlockIndex
+			 ofObject: blockClosure).
+
 	methodHeader := self rawHeaderOf: theMethod.
-	(self isCogMethodReference: methodHeader) ifTrue:
-		[^self
-			executeFullCogBlock: (self cogMethodOf: theMethod)
-			closure: blockClosure
-			mayContextSwitch: mayContextSwitch].
+	(self isCogMethodReference: methodHeader) ifTrue: [
+		^ self
+			  executeFullCogBlock: (self cogMethodOf: theMethod)
+			  closure: blockClosure
+			  mayContextSwitch: mayContextSwitch ].
+
+	self
+		activateNewFullClosure: blockClosure
+		method: theMethod
+		numArgs: numArgs
+		mayContextSwitch: mayContextSwitch
+		methodHeader: methodHeader
+]
+
+{ #category : #'control primitives' }
+CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch methodHeader: aMethodHeader [
+
+	<druidExitPoint>
+	| numCopied inInterpreter methodHeader numTemps switched |
+	methodHeader := aMethodHeader.
 	numCopied := self copiedValueCountOfFullClosure: blockClosure.
 	"How do we know when to compile a block method?
 	 One simple criterion is to check if the block is running within its inner context,
@@ -554,22 +573,21 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 	 method unless we try and remember which ones can't be cogged.  So also record
 	 the last block method we failed to compile and avoid recompiling it."
 	(self methodWithHeaderShouldBeCogged: methodHeader)
-		ifTrue:
-			[(instructionPointer < objectMemory startOfMemory "If from machine code (via value primitive) attempt jitting"
-			  or: [theMethod = lastCoggableInterpretedBlockMethod]) "If from interpreter and repeat block, attempt jitting"
-				ifTrue:
-					[theMethod ~= lastUncoggableInterpretedBlockMethod ifTrue:
-						[cogit cogFullBlockMethod: theMethod numCopied: numCopied.
-						 (self methodHasCogMethod: theMethod) ifTrue:
-							[^self executeFullCogBlock: (self cogMethodOf: theMethod)
-								closure: blockClosure
-								mayContextSwitch: mayContextSwitch].
-						 cogCompiledCodeCompactionCalledFor ifFalse:
-							[lastUncoggableInterpretedBlockMethod := theMethod]]]
-				ifFalse:
-					[lastCoggableInterpretedBlockMethod := theMethod]]
-		ifFalse:
-			[self maybeFlagMethodAsInterpreted: theMethod].
+		ifTrue: [
+			(instructionPointer < objectMemory startOfMemory or: [
+				 theMethod = lastCoggableInterpretedBlockMethod ])
+				ifTrue: [
+					theMethod ~= lastUncoggableInterpretedBlockMethod ifTrue: [
+						cogit cogFullBlockMethod: theMethod numCopied: numCopied.
+						(self methodHasCogMethod: theMethod) ifTrue: [
+							^ self
+								  executeFullCogBlock: (self cogMethodOf: theMethod)
+								  closure: blockClosure
+								  mayContextSwitch: mayContextSwitch ].
+						cogCompiledCodeCompactionCalledFor ifFalse: [
+							lastUncoggableInterpretedBlockMethod := theMethod ] ] ]
+				ifFalse: [ lastCoggableInterpretedBlockMethod := theMethod ] "If from machine code (via value primitive) attempt jitting" "If from interpreter and repeat block, attempt jitting" ]
+		ifFalse: [ self maybeFlagMethodAsInterpreted: theMethod ].
 
 	self assert: (self methodHasCogMethod: theMethod) not.
 	"Because this is an uncogged method we need to continue via the interpreter.
@@ -581,26 +599,32 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 	 then make sure we restore the saved instruction pointer and avoid pushing
 	 ceReturnToInterpreterPC which is only valid between an interpreter caller
 	 frame and a machine code callee frame."
-	(inInterpreter := instructionPointer >= objectMemory startOfMemory) ifFalse:
-		[instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
-			[instructionPointer := self iframeSavedIP: framePointer]].
+	(inInterpreter := instructionPointer >= objectMemory startOfMemory)
+		ifFalse: [
+			instructionPointer = cogit ceReturnToInterpreterPC ifTrue: [
+				instructionPointer := self iframeSavedIP: framePointer ] ].
 
 	self push: instructionPointer.
 	self push: framePointer.
 	framePointer := stackPointer.
 	self push: theMethod.
 	self push: objectMemory nilObject. "FxThisContext field"
-	self push: (self encodeFrameFieldHasContext: false isBlock: true numArgs: numArgs).
+	self push:
+		(self
+			 encodeFrameFieldHasContext: false
+			 isBlock: true
+			 numArgs: numArgs).
 	self push: 0. "FoxIFSavedIP"
 	"Because inst var access is not checked, we must follow the receiver in Spur to ensure it is valid."
-	self push: (objectMemory followField: FullClosureReceiverIndex ofObject: blockClosure).
+	self push: (objectMemory
+			 followField: FullClosureReceiverIndex
+			 ofObject: blockClosure).
 
 	"Copy the copied values..."
-	0 to: numCopied - 1 do:
-		[:i|
+	0 to: numCopied - 1 do: [ :i |
 		self push: (objectMemory
-					fetchPointer: i + FullClosureFirstCopiedValueIndex
-					ofObject: blockClosure)].
+				 fetchPointer: i + FullClosureFirstCopiedValueIndex
+				 ofObject: blockClosure) ].
 
 	self assert: (self frameIsBlockActivation: framePointer).
 	self assert: (self frameHasContext: framePointer) not.
@@ -608,16 +632,20 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 	methodHeader := objectMemory methodHeaderOf: theMethod.
 	numTemps := self temporaryCountOfMethodHeader: methodHeader.
 
-	numArgs + numCopied + 1 to: numTemps do: [ :i | self push: objectMemory nilObject].
+	numArgs + numCopied + 1 to: numTemps do: [ :i |
+	self push: objectMemory nilObject ].
 
-	instructionPointer := (self initialIPForHeader: methodHeader method: theMethod) - 1.
-	
+	instructionPointer := (self
+		                       initialIPForHeader: methodHeader
+		                       method: theMethod) - 1.
+
 	self setMethod: theMethod.
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)"
 	switched := false.
-	stackPointer < stackLimit ifTrue:
-		[switched := self handleStackOverflowOrEventAllowContextSwitch: mayContextSwitch].
+	stackPointer < stackLimit ifTrue: [
+		switched := self handleStackOverflowOrEventAllowContextSwitch:
+			            mayContextSwitch ].
 	self returnToExecutive: inInterpreter postContextSwitch: switched
 ]
 
