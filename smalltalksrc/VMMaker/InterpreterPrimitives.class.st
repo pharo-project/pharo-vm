@@ -803,6 +803,8 @@ InterpreterPrimitives >> primitiveAdoptInstance [
 	 the receiver isn't, or when the format of the receiver is different from the format of
 	 the argument's class, or when the arguments class is fixed and the receiver's size
 	 differs from the size that an instance of the argument's class should have."
+	<maycallback>
+	
 	| rcvr arg err |
 
 	arg := self stackTop.
@@ -1199,6 +1201,8 @@ InterpreterPrimitives >> primitiveBytesLeft [
 
 { #category : #'plugin primitives' }
 InterpreterPrimitives >> primitiveCalloutToFFI [
+	<maycallback>
+	
 	"Perform a function call to a foreign function.
 	Only invoked from method containing explicit external call spec.
 	Due to this we use the pluggable prim mechanism explicitly here
@@ -1292,6 +1296,8 @@ InterpreterPrimitives >> primitiveClockLogAddresses [
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveClone [
 	"Return a shallow copy of the receiver."
+
+	<maycallback>
 
 	| rcvr newCopy |
 	rcvr := self stackTop.
@@ -2389,6 +2395,7 @@ InterpreterPrimitives >> primitiveIncrementalGC [
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveInstVarAt [
 	<numberOfArguments: 1>
+	<maycallback>
 
 	| index rcvr hdr fmt totalLength fixedFields value |
 	index := self stackTop.
@@ -3752,6 +3759,9 @@ InterpreterPrimitives >> primitiveSlotAt [
 	 inst vars precede the indexed ones.  In non-object indexed objects (objects that contain
 	 bits, not object references) this primitive answers the raw integral value at each slot. 
 	 e.g. for Strings it answers the character code, not the Character object at each slot."
+	
+	<maycallback>
+		
 	| index rcvr fmt numSlots |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
