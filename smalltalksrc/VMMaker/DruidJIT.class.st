@@ -59,14 +59,17 @@ DruidJIT class >> initializeBytecodeTableForSistaV1 [
 	BytecodeSetHasExtensions := true.
 	FirstSpecialSelector := 96.
 	NumSpecialSelectors := 32.
-	self generatorTableFrom: {  }
+	self generatorTableFrom: { 
+		#(1   0 223 unknownBytecode).
+		#(2 224 247 unknownBytecode).
+		#(3 248 255 unknownBytecode) }
 ]
 
 { #category : #'class initialization' }
 DruidJIT class >> initializePrimitiveTable [
 
 	<generated>
-	MaxCompiledPrimitiveIndex := 9.
+	MaxCompiledPrimitiveIndex := 17.
 	primitiveTable := CArrayAccessor on:
 		                  (Array new: MaxCompiledPrimitiveIndex + 1).
 	self table: primitiveTable from: self primitiveTableArray.
@@ -97,7 +100,15 @@ DruidJIT class >> primitiveTableArray [
 		  { 6. #gen_PrimitiveGreaterOrEqual. 1 }.
 		  { 7. #gen_PrimitiveEqual. 1 }.
 		  { 8. #gen_PrimitiveNotEqual. 1 }.
-		  { 9. #gen_PrimitiveMultiply. 1 } }
+		  { 9. #gen_PrimitiveMultiply. 1 }.
+		  { 10. #gen_primitiveDivide. 1 }.
+		  { 73. #genNonImplementedPrimitive. -1. #maycallback }.
+		  { 117. #genNonImplementedPrimitive. -1. #maycallback }.
+		  { 120. #genNonImplementedPrimitive. -1. #maycallback }.
+		  { 148. #genNonImplementedPrimitive. -1. #maycallback }.
+		  { 160. #genNonImplementedPrimitive. -1. #maycallback }.
+		  { 173. #genNonImplementedPrimitive. -1. #maycallback }.
+		  { 216. #genNonImplementedPrimitive. -1. #maycallback } }
 ]
 
 { #category : #'trait candidates' }
