@@ -860,7 +860,9 @@ StackInterpreterPrimitives >> primitiveClone [
 	"Return a shallow copy of the receiver.
 	 Special-case non-single contexts (because of context-to-stack mapping).
 	 Can't fail for contexts cuz of image context instantiation code (sigh)."
-
+	
+	<maycallback>
+	
 	| rcvr newCopy |
 	rcvr := self stackTop.
 	(objectMemory isImmediate: rcvr)
@@ -1226,6 +1228,7 @@ StackInterpreterPrimitives >> primitiveExecuteMethodArgsArray [
 
 { #category : #'plugin primitives' }
 StackInterpreterPrimitives >> primitiveExternalCall [
+	<maycallback>
 
 	"Call an external primitive. External primitive methods first literals are an array of
 		* The module name (String | Symbol)
@@ -1696,6 +1699,9 @@ StackInterpreterPrimitives >> primitiveIncrementalGC [
 
 { #category : #'object access primitives' }
 StackInterpreterPrimitives >> primitiveInstVarAt [
+	<numberOfArguments: 1>
+	<maycallback>
+	
 	| index rcvr hdr fmt totalLength fixedFields value |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -2796,6 +2802,7 @@ StackInterpreterPrimitives >> primitiveSlotAt [
 	 inst vars precede the indexed ones.  In non-object indexed objects (objects that contain
 	 bits, not object references) this primitive answers the raw integral value at each slot. 
 	 e.g. for Strings it answers the character code, not the Character object at each slot."
+	<maycallback>
 	| index rcvr fmt numSlots |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
