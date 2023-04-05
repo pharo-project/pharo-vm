@@ -1,6 +1,9 @@
 # Change log
 
-I am a changelog... do not expect too much from me :D
+## v10.0.3
+
+ - Fix ARM32 by @tesonep in #562
+ - Verify ephemeron key is not immediate when marking by @guillep in #565
 
 ## v10.0.2
 
