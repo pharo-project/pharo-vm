@@ -406,6 +406,24 @@ VMSimpleStackBasedCogitAbstractTest >> generateCaptureCStackPointers [
 ]
 
 { #category : #'helpers - cog methods' }
+VMSimpleStackBasedCogitAbstractTest >> generateCogClosure: aBlockClosure selector: anSelectorOop [ 
+
+	| targetCog allocatedAddress |
+
+	allocatedAddress := self compile: [ 
+			cogit compileFullBlockEntry.
+			aBlockClosure value ] 
+		  bytecodes: 1 headerSize: (cogit sizeof: CogMethod).
+	
+	targetCog := cogit cogMethodSurrogateAt: allocatedAddress.
+	targetCog selector: anSelectorOop.
+	targetCog blockSize: cogit methodZone freeStart - allocatedAddress.
+	
+	^ targetCog
+
+]
+
+{ #category : #'helpers - cog methods' }
 VMSimpleStackBasedCogitAbstractTest >> generateCogMethod: aBlockClosure selector: anSelectorOop [ 
 
 	| targetCog allocatedAddress |
@@ -743,6 +761,16 @@ VMSimpleStackBasedCogitAbstractTest >> runGeneratedCode [
 		until: self getLastAddress
 		timeout: 0
 		count: 0
+]
+
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> runUntil: address [
+
+	machineSimulator startAt: initialAddress
+		until: address
+		timeout: 0
+		count: 3000.
+
 ]
 
 { #category : #helpers }

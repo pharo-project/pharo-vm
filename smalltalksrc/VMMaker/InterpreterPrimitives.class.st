@@ -1999,6 +1999,7 @@ InterpreterPrimitives >> primitiveFractionalPart [
 { #category : #'control primitives' }
 InterpreterPrimitives >> primitiveFullClosureValue [
 	<option: #SistaV1BytecodeSet>
+	<numberOfArguments: 0>
 	| blockClosure numArgs closureMethod |
 	blockClosure := self stackValue: argumentCount.
 	numArgs := self argumentCountOfClosure: blockClosure.
