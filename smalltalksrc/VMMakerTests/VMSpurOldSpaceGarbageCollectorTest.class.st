@@ -417,6 +417,24 @@ VMSpurOldSpaceGarbageCollectorTest >> testEphemeronOverflowUnscannedEphemeronQue
 ]
 
 { #category : #tests }
+VMSpurOldSpaceGarbageCollectorTest >> testEphemeronWithImmediateKeyShouldNotFail [
+
+	| ephemeron1 key |
+	ephemeron1 := self newEphemeronObjectWithSlots: 5.
+	self keepObjectInVMVariable1: ephemeron1.
+	key := memory integerObjectOf: 15.
+	memory storePointer: 0 ofObject: ephemeron1 withValue: key.
+
+	memory setCheckForLeaks: 63. "all"
+	memory fullGC.
+
+	self
+		assert:
+		(memory fetchInteger: 0 ofObject: self keptObjectInVMVariable1)
+		equals: 15
+]
+
+{ #category : #tests }
 VMSpurOldSpaceGarbageCollectorTest >> testGrowOldSpace [
 
 	| freespace freespace2 slotsNumber anObjectOop |
