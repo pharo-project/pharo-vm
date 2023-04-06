@@ -924,6 +924,7 @@ StackToRegisterMappingCogit >> ceCallCogCodePopReceiverArg1Arg0Regs [
 { #category : #trampolines }
 StackToRegisterMappingCogit >> ceMethodAbortTrampoline: trampoline [
 
+	<doNotGenerate>
 	super ceMethodAbortTrampoline: trampoline.
 	^ methodAbortTrampolines at: 0 put: trampoline
 ]
