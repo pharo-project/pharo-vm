@@ -16,7 +16,8 @@ Class {
 		'swapBytes',
 		'hdrLastHash',
 		'imageFormat',
-		'imageHeaderSize'
+		'imageHeaderSize',
+		'imageVersion'
 	],
 	#category : #'VMMaker-ImageFormat'
 }
@@ -190,6 +191,18 @@ SpurImageHeaderStruct >> imageHeaderSize [
 SpurImageHeaderStruct >> imageHeaderSize: anObject [
 
 	imageHeaderSize := anObject
+]
+
+{ #category : #accessing }
+SpurImageHeaderStruct >> imageVersion [
+
+	^ imageVersion
+]
+
+{ #category : #accessing }
+SpurImageHeaderStruct >> imageVersion: anObject [
+
+	imageVersion := anObject
 ]
 
 { #category : #accessing }

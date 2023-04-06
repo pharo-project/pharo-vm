@@ -1,6 +1,11 @@
 function(find_system_SDL2)
     message(STATUS "Looking for SDL2 in the system")
-    find_package(SDL2)
+    # Try to use SDL2 provided .cmake files (see NO_MODULE below)
+    include(FindPackageHandleStandardArgs)
+    # first specifically look for the CMake config version of SDL2 (either system or package manager)
+    # provides two TARGETs SDL2::SDL2 and SDL2::SDL2Main
+    # SDL2 already provides a -config.cmake file, then use their configuration elements
+    find_package(SDL2 QUIET NO_MODULE)
     if(NOT SDL2_FOUND)
       message(STATUS "SDL2 not found.")
     endif()
@@ -41,7 +46,7 @@ function(build_SDL2)
     add_subdirectory(${SDL2_SOURCE_DIR} ${SDL2_BINARY_DIR} EXCLUDE_FROM_ALL)
 
     set_target_properties(SDL2 PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
-    
+
     add_custom_target(SDL2_copy
 			COMMAND ${CMAKE_COMMAND} -E create_symlink libSDL2-2.0.dylib ${LIBRARY_OUTPUT_PATH}/libSDL2-2.0.0.dylib
     )
@@ -54,7 +59,7 @@ if (BUILD_BUNDLE)
   if(DEPENDENCIES_FORCE_BUILD)
     build_SDL2()
   elseif(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES)
-  #Download SDL2 binaries directly
+    #Download SDL2 binaries directly
     download_SDL2()
   else()
     #Look for SDL2 in the system, then build or download if possible
@@ -72,6 +77,11 @@ if (BUILD_BUNDLE)
       else()
         download_SDL2()
       endif()
-    endif()
+    else()
+      # SDL2 found, get the library location from the SDL2 CMake exported properties
+      get_target_property(SDL2_LIBDIR SDL2::SDL2 IMPORTED_LOCATION)
+      # SDL2_LIBDIR now contains the full path to the library including the file (.so/.dll/.dylib)
+      message(STATUS "Using system libSDL2 from ${SDL2_LIBDIR}")  
+	  endif()
   endif()
 endif()

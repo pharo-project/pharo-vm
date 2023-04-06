@@ -35,6 +35,7 @@ option(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS		"Use inline memory accessors ins
 option(PHARO_VM_IN_WORKER_THREAD			"Have support for pharo running in a different thread that the main one"	 ON)
 option(BUILD_IS_RELEASE					"Is this a release version?"							OFF)
 option(DEPENDENCIES_FORCE_BUILD         "Force build libraries" OFF)
+option(BUILD_WITH_GRAPHVIZ              "Generate dependency graphs" ON)
 
 set(APPNAME			"Pharo"         CACHE STRING                 "VM Application name")
 set(FLAVOUR			"CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
@@ -52,7 +53,7 @@ extractVCSInformation(GIT_COMMIT_HASH GIT_DESCRIBE GIT_COMMIT_DATE)
 
 set(VERSION_MAJOR 10)
 set(VERSION_MINOR 0)
-set(VERSION_PATCH_NUMBER 0)
+set(VERSION_PATCH_NUMBER 3)
 
 if(BUILD_IS_RELEASE)
 	set(VERSION_PATCH "${VERSION_PATCH_NUMBER}")
@@ -334,6 +335,7 @@ add_compile_definitions(
     PharoVM=1
     $<$<CONFIG:DEBUG>:DEBUGVM=1>
     $<$<NOT:$<CONFIG:DEBUG>>:DEBUGVM=0>
+    _FILE_OFFSET_BITS=64
 )
 
 #
@@ -559,5 +561,23 @@ add_subdirectory(ffiTestLibrary ${CMAKE_CURRENT_BINARY_DIR}/build/ffiTestLibrary
 add_third_party_dependencies_per_platform()
 
 # Packaging Setup
-
 include(cmake/packaging.cmake)
+
+# GraphViz Setup
+# First check we have the GraphViz "dot" program to draw directed graphs
+find_program(DOT dot)
+if (DOT)
+	# Include options for the builtin GraphViz support
+	# https://cmake.org/cmake/help/latest/module/CMakeGraphVizOptions.html
+    if (BUILD_WITH_GRAPHVIZ)
+        add_custom_target(graphviz ALL
+            COMMENT "Build GraphViz Dependency Graph"
+            COMMAND cp ${CMAKE_SOURCE_DIR}/cmake/CMakeGraphVizOptions.cmake .
+            COMMAND ${CMAKE_COMMAND} "--graphviz=${GRAPHVIZ_GRAPH_NAME}.dot" .
+            COMMAND dot -Tpng ${GRAPHVIZ_GRAPH_NAME}.dot -o ${GRAPHVIZ_GRAPH_NAME}.png
+        )
+    endif()
+else()
+	MESSAGE(STATUS "dot executable from Graphviz not found. Dependency graphs not generated")
+endif (DOT)
+

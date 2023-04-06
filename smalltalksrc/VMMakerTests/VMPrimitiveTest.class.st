@@ -4864,6 +4864,105 @@ VMPrimitiveTest >> testPrimitiveStringAtShouldNotModifyStringIfFailedWhenNonChar
 	self assert: string contentEquals: (self newString: 'po')
 ]
 
+{ #category : #'tests - primitiveStringCompare' }
+VMPrimitiveTest >> testPrimitiveStringCompareWithHigherSymbol [
+
+	| asciiOrder aByteSymbol bByteSymbol |
+	aByteSymbol := #a forMemory: memory inMethod: nil.
+	bByteSymbol := #b forMemory: memory inMethod: nil.
+
+	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
+
+	interpreter push: bByteSymbol.
+	interpreter push: aByteSymbol.
+	interpreter push: asciiOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveStringCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 1)
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMPrimitiveTest >> testPrimitiveStringCompareWithIsNotCaseSensitive [
+
+	| nonCaseSensitiveOrder lowerByteSymbol upperByteSymbol |
+	lowerByteSymbol := #a forMemory: memory inMethod: nil.
+	upperByteSymbol := #A forMemory: memory inMethod: nil. 
+
+	nonCaseSensitiveOrder := self newByteArrayWithContent: String newCaseInsensitiveOrder.
+
+	interpreter push: lowerByteSymbol.
+	interpreter push: upperByteSymbol.
+	interpreter push: nonCaseSensitiveOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveStringCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMPrimitiveTest >> testPrimitiveStringCompareWithLimitCaseRegretion [
+
+	| nonCaseSensitiveOrder lowerByteSymbol upperByteSymbol |
+	lowerByteSymbol := #z forMemory: memory inMethod: nil.
+	upperByteSymbol := #Z forMemory: memory inMethod: nil. 
+
+	nonCaseSensitiveOrder := self newByteArrayWithContent: String newCaseInsensitiveOrder.
+
+	interpreter push: lowerByteSymbol.
+	interpreter push: upperByteSymbol.
+	interpreter push: nonCaseSensitiveOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveStringCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMPrimitiveTest >> testPrimitiveStringCompareWithLowerSymbol [
+
+	| asciiOrder aByteSymbol bByteSymbol |
+	aByteSymbol := #a forMemory: memory inMethod: nil.
+	bByteSymbol := #b forMemory: memory inMethod: nil.
+
+	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
+
+	interpreter push: aByteSymbol.
+	interpreter push: bByteSymbol.
+	interpreter push: asciiOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveStringCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: -1)
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMPrimitiveTest >> testPrimitiveStringCompareWithTheSameSymbol [
+
+	| byteSymbol asciiOrder |
+	byteSymbol := #a forMemory: memory inMethod: nil.
+	
+	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
+	
+	interpreter push: byteSymbol.
+	interpreter push: byteSymbol.
+	interpreter push: asciiOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveStringCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
+]
+
 { #category : #'tests - primitiveSubtract' }
 VMPrimitiveTest >> testPrimitiveSubtracFailsWithTypeErrorOnFirstOperand [
 	
@@ -4967,6 +5066,21 @@ VMPrimitiveTest >> testPrimitiveSubtractWithOverflowPreservesStack [
 ]
 
 { #category : #'tests - primitiveVMParameter' }
+VMPrimitiveTest >> testPrimitiveVMParameterGetsImageVersion [
+
+	interpreter setImageVersion: 110.
+
+	interpreter push: memory nilObject.
+	interpreter push: (memory integerObjectOf: 79).
+
+	interpreter argumentCount: 1.
+	interpreter primitiveVMParameter.
+	
+	self assert: interpreter successful.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 110).
+]
+
+{ #category : #'tests - primitiveVMParameter' }
 VMPrimitiveTest >> testPrimitiveVMParameterReturnsArrayOfOops [
 
 	| slots |
@@ -4983,11 +5097,25 @@ VMPrimitiveTest >> testPrimitiveVMParameterReturnsArrayOfOops [
 	interpreter preemptionYields: true.
 	interpreter primitiveVMParameter.
 	
-	"Check this is an array that has 78 OOP entries"
+	"Check this is an array that has 79 OOP entries"
 	self assert: (memory isArray: interpreter stackTop).
 	slots := memory numSlotsOf: interpreter stackTop.
-	self assert: slots equals: 78.
+	self assert: slots equals: 79.
 	
 	0 to: slots - 1 do: [ :i |
 		memory okayOop: (memory fetchPointer: i ofObject: interpreter stackTop) ]
+]
+
+{ #category : #'tests - primitiveVMParameter' }
+VMPrimitiveTest >> testPrimitiveVMParameterSetsImageVersion [
+
+	interpreter push: memory nilObject.
+	interpreter push: (memory integerObjectOf: 79).
+	interpreter push: (memory integerObjectOf: 110).
+
+	interpreter argumentCount: 2.
+	interpreter primitiveVMParameter.
+	
+	self assert: interpreter successful.
+	self assert: interpreter getImageVersion equals: 110.
 ]

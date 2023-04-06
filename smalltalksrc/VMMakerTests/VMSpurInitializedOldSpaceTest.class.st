@@ -18,12 +18,7 @@ VMSpurInitializedOldSpaceTest >> assertFreeListEmpty: aFreeListOop [
 
 { #category : #helpers }
 VMSpurInitializedOldSpaceTest >> createEphemeronClass [
-	ourEphemeronClass := self newObjectWithSlots: 3.
-	memory 
-		storePointer: "InstanceSpecificationIndex" 2
-		ofObject: ourEphemeronClass
-		withValue: (memory integerObjectOf: Ephemeron format).
-	memory ensureBehaviorHash: ourEphemeronClass.
+	ourEphemeronClass := self createEphemeronClassForSlots: 3
 ]
 
 { #category : #helpers }

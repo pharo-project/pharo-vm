@@ -96,18 +96,6 @@ Spur64BitMMLESimulator >> freeLists [
 	^freeLists
 ]
 
-{ #category : #'gc - global' }
-Spur64BitMMLESimulator >> globalGarbageCollect [
-	"If we're /not/ a clone, clone the VM and push it over the cliff.
-	 If it survives, destroy the clone and continue.  We should be OK until next time."
-	parent ifNil:
-		[coInterpreter cr; print: 'GC number '; print: statFullGCs; tab; flush.
-		 CloneOnGC ifTrue:
-			[coInterpreter cloneSimulation objectMemory globalGarbageCollect.
-			 Smalltalk garbageCollect]].
-	^super globalGarbageCollect
-]
-
 { #category : #'growing/shrinking memory' }
 Spur64BitMMLESimulator >> growOldSpaceByAtLeast: minAmmount [
 	"Attempt to grow memory by at least minAmmount.

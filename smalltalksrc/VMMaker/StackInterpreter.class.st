@@ -405,7 +405,8 @@ Class {
 		'messageCount',
 		'imageReader',
 		'imageWriter',
-		'pendingFinalizationSignals'
+		'pendingFinalizationSignals',
+		'imageVersionNumber'
 	],
 	#classVars : [
 		'AlternateHeaderHasPrimFlag',
@@ -650,9 +651,6 @@ StackInterpreter class >> initializeBytecodeTable [
 
 	VMBytecodeConstants falsifyBytecodeSetFlags: InitializationOptions.
 	BytecodeSetHasDirectedSuperSend := false.
-
-	(InitializationOptions at: #bytecodeTableInitializer ifAbsent: nil) 
-		ifNotNil: [ :initalizer | ^ self perform: initalizer ].
 
 	^ self initializeBytecodeTableForSistaV1
 ]
@@ -1185,7 +1183,7 @@ StackInterpreter class >> initializePrimitiveTable [
 
 		"Were File Primitives (150-169) - NO LONGER INDEXED"
 		(150 157 primitiveFail)
-		(158 primitiveCompareWith)
+		(158 primitiveStringCompareWith)
 		(159 primitiveHashMultiply)
 		(160 primitiveAdoptInstance)
 		(161 primitiveSetOrHasIdentityHash)
@@ -1759,7 +1757,7 @@ StackInterpreter class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord ge
 			as: 1
 			comment: 'Allow this to be overridden on the compiler command line'
 			on: aStream].
-	SistaVM | IMMUTABILITY ifTrue:
+	(SistaVM or: [ IMMUTABILITY ]) ifTrue:
 		[aStream cr].
 	aCCodeGenerator putDefineOf: #STACKVM as: 1 on: aStream.
 	(InitializationOptions at: #SpurObjectMemory ifAbsent: false) ifTrue:
@@ -3786,13 +3784,15 @@ StackInterpreter >> charsOfLong: long [
 
 { #category : #'debug support' }
 StackInterpreter >> checkAllAccessibleObjectsOkay [
+
 	"Ensure that all accessible objects in the heap are okay."
+
 	<api>
 	| ok |
 	ok := true.
-	objectMemory allObjectsDo:
-		[:oop| ok := ok & (self checkOkayFields: oop)].
-	^ok
+	objectMemory allObjectsDo: [ :oop | 
+		ok := ok and: [ self checkOkayFields: oop ] ].
+	^ ok
 ]
 
 { #category : #'primitive support' }
@@ -4143,25 +4143,25 @@ StackInterpreter >> checkOkayInterpreterObjects: writeBack [
 	<api>
 	| ok oopOrZero oop |
 	ok := true.
-	ok := ok & (self checkOkayFields: objectMemory nilObject).
-	ok := ok & (self checkOkayFields: objectMemory falseObject).
-	ok := ok & (self checkOkayFields: objectMemory trueObject).
-	ok := ok & (self checkOkayFields: objectMemory specialObjectsOop).
-	ok := ok & (self checkOkayFields: messageSelector).
-	ok := ok & (self checkOkayFields: newMethod).
-	ok := ok & (self checkOkayFields: lkupClass).
+	ok := ok and: [ (self checkOkayFields: objectMemory nilObject) ].
+	ok := ok and: [ (self checkOkayFields: objectMemory falseObject) ].
+	ok := ok and: [ (self checkOkayFields: objectMemory trueObject) ].
+	ok := ok and: [ (self checkOkayFields: objectMemory specialObjectsOop) ].
+	ok := ok and: [ (self checkOkayFields: messageSelector) ].
+	ok := ok and: [ (self checkOkayFields: newMethod) ].
+	ok := ok and: [ (self checkOkayFields: lkupClass) ].
 	0 to: MethodCacheEntries - 1 by: MethodCacheEntrySize do:
 		[ :i |
 		oopOrZero := methodCache at: i + MethodCacheSelector.
 		oopOrZero = 0 ifFalse:
-			[ok := ok & (self checkOkayFields: (methodCache at: i + MethodCacheSelector)).
-			ok := ok & (self checkOkayFields: (methodCache at: i + MethodCacheMethod))]].
+			[ok := ok and: [ (self checkOkayFields: (methodCache at: i + MethodCacheSelector)) ].
+			ok := ok and: [ (self checkOkayFields: (methodCache at: i + MethodCacheMethod))]] ].
 	1 to: objectMemory remapBufferCount do:
 		[ :i |
 		oop := objectMemory remapBuffer at: i.
 		(objectMemory isImmediate: oop) ifFalse:
-			[ok := ok & (self checkOkayFields: oop)]].
-	ok := ok & (self checkOkayStackZone: writeBack).
+			[ok := ok and: [ (self checkOkayFields: oop)]] ].
+	ok := ok and: [ (self checkOkayStackZone: writeBack) ].
 	^ok
 ]
 
@@ -4184,12 +4184,12 @@ StackInterpreter >> checkOkayStackPage: thePage [
 	 [theSP <= frameRcvrOffset] whileTrue:
 		[oop := stackPages unsignedLongAt: theSP.
 		 (objectMemory isIntegerObject: oop) ifFalse:
-			[ok := ok & (self checkOkayFields: oop)].
+			[ok := ok and: [ (self checkOkayFields: oop)] ].
 		 theSP := theSP + objectMemory wordSize].
 	(self frameHasContext: theFP) ifTrue:
 		[self assert: (objectMemory isContext: (self frameContext: theFP)).
-		 ok := ok & (self checkOkayFields: (self frameContext: theFP))].
-	ok := ok & (self checkOkayFields: (self frameMethodObject: theFP)).
+		 ok := ok and: [ (self checkOkayFields: (self frameContext: theFP))] ].
+	ok := ok and: [ (self checkOkayFields: (self frameMethodObject: theFP)) ].
 	(callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
 		[theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
 		 theFP := callerFP].
@@ -4199,7 +4199,7 @@ StackInterpreter >> checkOkayStackPage: thePage [
 	[theSP <= thePage baseAddress] whileTrue:
 		[oop := stackPages unsignedLongAt: theSP.
 		 (objectMemory isIntegerObject: oop) ifFalse:
-			[ok := ok & (self checkOkayFields: oop)].
+			[ok := ok and: [ (self checkOkayFields: oop)] ].
 		 theSP := theSP + objectMemory wordSize].
 	^ok
 ]
@@ -4218,7 +4218,7 @@ StackInterpreter >> checkOkayStackZone: writeBack [
 		[:i|
 		thePage := stackPages stackPageAt: i.
 		(stackPages isFree: thePage) ifFalse:
-			[ok := ok & (self checkOkayStackPage: thePage)]].
+			[ok := ok and: [ (self checkOkayStackPage: thePage)]] ].
 
 	^ok
 ]
@@ -7134,6 +7134,12 @@ StackInterpreter >> getImageHeaderFlags [
 ]
 
 { #category : #accessing }
+StackInterpreter >> getImageVersion [
+
+	^ imageVersionNumber
+]
+
+{ #category : #accessing }
 StackInterpreter >> getMaxExtSemTabSizeSet [
 	
 	^ maxExtSemTabSizeSet
@@ -7620,6 +7626,7 @@ StackInterpreter >> initialize [
 	statProcessSwitch := statStackPageDivorce :=
 	statIdleUsecs := 0.
 	messageCount := 0.
+	imageVersionNumber := 0.
 ]
 
 { #category : #initialization }
@@ -10481,6 +10488,7 @@ StackInterpreter >> newHeader [
 	header hdrNumStackPages: self getDesiredNumStackPages.
 	header hdrCogCodeSize: self unknownShortOrCodeSizeInKs.
 	header hdrEdenBytes: self getDesiredEdenBytes.
+	header imageVersion: self getImageVersion.
 
 	header hdrMaxExtSemTabSize: (
 		self getMaxExtSemTabSizeSet
@@ -13549,6 +13557,13 @@ StackInterpreter >> setImageName: aString [
 	<doNotGenerate>
 	"Simulation support for when running it with an image"
 	self shouldNotImplement 
+]
+
+{ #category : #accessing }
+StackInterpreter >> setImageVersion: aValue [
+
+	"It is a short value"
+	imageVersionNumber := aValue bitAnd: 16rFFFF
 ]
 
 { #category : #'process primitive support' }

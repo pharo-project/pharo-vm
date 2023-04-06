@@ -83,8 +83,9 @@ SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 
 	header hdrLastHash: (self getLongFromFile: f swap: header swapBytes).
 
-	"savedWindowSize :="
+	"Unused, it was ScreenSize, used until Pharo9 Images"
 	self getLongFromFile: f swap: header swapBytes.
+
 	header headerFlags: (self getLongFromFile: f swap: header swapBytes).
 
 	header extraVMMemory:
@@ -99,14 +100,11 @@ SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 
 	header hdrMaxExtSemTabSize:
 		(self getShortFromFile: f swap: header swapBytes).
-	"pad to word boundary.  This slot can be used for anything else that will fit in 16 bits.
-	 Preserve it to be polite to other VMs."
-	"the2ndUnknownShort :="
-	self getShortFromFile: f swap: header swapBytes.
-	header firstSegSize: (self getLongFromFile: f swap: header swapBytes).
 
-	header freeOldSpaceInImage:
-		(self getLongFromFile: f swap: header swapBytes).
+	header imageVersion: (self getShortFromFile: f swap: header swapBytes).
+
+	header firstSegSize: (self getLongFromFile: f swap: header swapBytes).
+	header freeOldSpaceInImage: (self getLongFromFile: f swap: header swapBytes).
 
 	"position file after the header"
 	self sqImageFile: f Seek: headerStart + header imageHeaderSize.

@@ -499,3 +499,29 @@ VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingSameDyi
 		assert: (memory fetchPointer: 0 ofObject: ephemeronObjectOop)
 		equals: (memory remapObj: nonEphemeronObjectOop)
 ]
+
+{ #category : #'tests-ephemerons-globals' }
+VMSpurScavengeEphemeronTest >> testScavengeZeroSizedEphemeronShouldTreatItAsNormalObject [
+	| ephemeronObjectOop zeroSizedEphemeronClass hashBefore addressBefore |
+	
+	"Create a zero sized ephemeron"
+	zeroSizedEphemeronClass := self createEphemeronClassForSlots: 0.
+	ephemeronObjectOop := memory instantiateClass: zeroSizedEphemeronClass.
+		
+	"Force object to not be collected by putting them in special variables"
+	hashBefore := memory hashBitsOf: ephemeronObjectOop.
+	addressBefore := ephemeronObjectOop.
+	self keepObjectInVMVariable1: ephemeronObjectOop.
+
+	"This should work ok, as the minimal object always at least one slot to use as a forwarding pointer.
+	This means that a 0 sized ephemeron will have a slot referencing nil and it should work as a normal object"
+	memory fullGC.
+
+	"The object should move, but should be the same and keep the same hash"
+	self
+		deny: addressBefore
+		equals: self keptObjectInVMVariable1.
+	self
+		assert: hashBefore
+		equals: (memory hashBitsOf: self keptObjectInVMVariable1).
+]

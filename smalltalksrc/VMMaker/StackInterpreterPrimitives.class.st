@@ -1681,7 +1681,8 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: index [
 			[75] ->	[^self getMethodCompilationCount]. 
 			[76] ->	[^self getMethodCompilationMSecs]. 
 			[77] ->	[^self getBlockCompilationCount]. 
-			[78] ->	[^self getBlockCompilationMSecs] }
+			[78] ->	[^self getBlockCompilationMSecs].
+			[79] ->  [^objectMemory integerObjectOf: self getImageVersion ] }
 		otherwise: [^nil]
 ]
 
@@ -2766,7 +2767,11 @@ StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 			arg >= 0 ifTrue: [
 				result := objectMemory integerObjectOf: objectMemory statMaxAllocSegmentTime + 500 // 1000.
 				stackPages statMaxAllocSegmentTime: arg. "usually 0"
-				self initPrimCall ]] }
+				self initPrimCall ]].
+		[79] -> [ (arg between: 0 and: 65535) ifTrue:
+					[result := objectMemory integerObjectOf: self getImageVersion.
+					 self setImageVersion: arg.
+					 self initPrimCall] ] }
 		otherwise: [].
 
 	self successful
@@ -3950,7 +3955,7 @@ StackInterpreterPrimitives >> primitiveTerminateTo [
 StackInterpreterPrimitives >> primitiveVMParameter [
 	"Behaviour depends on argument count:
 		0 args:	return an Array of VM parameter values;
-		1 arg:	return the indicated VM parameter;
+		1 arg:	   return the indicated VM parameter;
 		2 args:	set the VM indicated parameter.
 
 	The description of each parameter is available in the Image (`VirtualMachine>>#parameterLabels`)
@@ -3958,7 +3963,7 @@ StackInterpreterPrimitives >> primitiveVMParameter [
 	Otherwise the *real* list is in the code: `StackInterpreterPrimitives>>#primitiveGetVMParameter:`"
 
 	| paramsArraySize index |
-	paramsArraySize := 78.
+	paramsArraySize := 79.
 	argumentCount = 0 ifTrue: [^self primitiveAllVMParameters: paramsArraySize].
 	argumentCount > 2 ifTrue: [^self primitiveFailFor: PrimErrBadNumArgs].
 	

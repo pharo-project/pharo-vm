@@ -8,6 +8,8 @@ Class {
 VMImageHeaderWritingTest >> setUp [
 
 	super setUp.
+
+	interpreter setImageVersion: 110.
 	
 	memory garbageCollectForSnapshot.
 
@@ -31,6 +33,16 @@ VMImageHeaderWritingTest >> testImageHeaderWithPermanentObjects [
 			assert: header dataSize 
 			equals: memory segmentManager totalBytesInNonEmptySegments 
 				+ (memory bytesInObject: permanentObject) + 16 "PermSpace has an empty object as first object.".
+]
+
+{ #category : #tests }
+VMImageHeaderWritingTest >> testWritingImageWritesCorrectImageVersion [
+
+	| header |
+
+	header := self readHeader.
+
+	self assert: header imageVersion equals: interpreter getImageVersion
 ]
 
 { #category : #tests }

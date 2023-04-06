@@ -462,6 +462,24 @@ VMSpurMemoryManagerTest >> newBitIndexableOfSize: aSize bytesPerSlot: bytesPerSl
 		  classIndex: self nextOrdinaryClassIndex
 ]
 
+{ #category : #asd }
+VMSpurMemoryManagerTest >> newByteArrayWithContent: aCollection [
+
+	| oop |
+	oop := self
+		       newObjectWithSlots: aCollection size / memory wordSize
+		       format: ByteArray instSpec
+		       classIndex: memory arrayClassIndexPun. "I don't care of the class"
+
+	0 to: aCollection size - 1 do: [ :index | 
+		memory
+			storeByte: index
+			ofObject: oop
+			withValue: (aCollection at: index + 1) ].
+		
+	^ oop
+]
+
 { #category : #'helpers - classes' }
 VMSpurMemoryManagerTest >> newClassInOldSpaceWithSlots: numberOfSlots instSpec: format [
 	| newClass formatWithSlots |

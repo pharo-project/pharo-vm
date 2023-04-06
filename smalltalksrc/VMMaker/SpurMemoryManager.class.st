@@ -3362,7 +3362,7 @@ SpurMemoryManager >> checkOkayOop: oop [
 
 	"format check"
 	fmt := self formatOf: oop.
-	(fmt = 6) | (fmt = 8) ifTrue:
+	(fmt = 6 or: [ fmt = 8 ]) ifTrue:
 		[self print: 'oop '; printHex: oop; print: ' has an unknown format type'. ^false].
 	(fmt = self forwardedFormat) ~= (classIndex = self isForwardedObjectClassIndexPun) ifTrue:
 		[self print: 'oop '; printHex: oop; print: ' has mis-matched format/classIndex fields; only one of them is the isForwarded value'. ^false].
@@ -7960,7 +7960,12 @@ SpurMemoryManager >> isYoung: oop [
 { #category : #'object access' }
 SpurMemoryManager >> keyOfEphemeron: objOop [
 	"Answer the object the ephemeron guards.  This is its first element."
-	self assert: ((self isNonImmediate: objOop) and: [self isObjEphemeron: objOop]).
+	self assert: ((self isNonImmediate: objOop)
+		and: [ (self isObjEphemeron: objOop) ]).
+		
+	"Accessing the first slot of an ephemeron always works.
+	All objects have always at least one slot to use as a forwarding pointer, initialized as nil.
+	0-sized ephemeron will have this slot and work as a normal object"
 	^self fetchPointer: 0 ofObject: objOop
 ]
 
@@ -8612,7 +8617,6 @@ SpurMemoryManager >> markInactiveEphemerons [
 
 { #category : #'gc - global' }
 SpurMemoryManager >> markLoopFrom: objOop [
-
 	"Scan objOop and all objects on the mark stack, until the mark stack is empty.
 	 N.B. When the incremental GC is written this will probably be refactored as
 	 markLoopFrom: objOop while: aBlock"
@@ -8623,25 +8627,29 @@ SpurMemoryManager >> markLoopFrom: objOop [
 	objToScan := objOop.
 	"To avoid overflowing the mark stack when we encounter large objects, we
 	 push the obj, then its numStrongSlots, and then index the object from the stack."
-
-	[ 
+	[
 	(self isImmediate: objToScan)
 		ifTrue: [ scanLargeObject := true ]
 		ifFalse: [
-			numStrongSlots := ((self isEphemeron: objToScan) and: [ self isMarked: (self keyOfEphemeron: objToScan) ])
-				ifTrue: [ self numSlotsOf: objToScan ]
-				ifFalse: [ self numStrongSlotsOfInephemeral: objToScan ].
+			numStrongSlots := ((self isEphemeron: objToScan) and: [
+				                   | key |
+				                   (self isImmediate:
+					                    (key := self keyOfEphemeron: objToScan)) or: [
+					                   self isMarked: key ] ])
+				                  ifTrue: [ self numSlotsOf: objToScan ]
+				                  ifFalse: [
+				                  self numStrongSlotsOfInephemeral: objToScan ].
 			scanLargeObject := numStrongSlots > self traceImmediatelySlotLimit ].
 	scanLargeObject
 		ifTrue: [ "scanning a large object. scan until hitting an unmarked object, then switch to it, if any."
 			(self isImmediate: objToScan)
-				ifTrue: [ 
+				ifTrue: [
 					index := self integerValueOf: objToScan.
 					objToScan := self topOfObjStack: markStack ]
-				ifFalse: [ 
+				ifFalse: [
 					index := numStrongSlots.
 					self markAndTraceClassOf: objToScan ].
-			[ index > 0 ] whileTrue: [ 
+			[ index > 0 ] whileTrue: [
 				index := index - 1.
 				field := self fetchPointer: index ofObject: objToScan.
 				((self isNonImmediate: field) and: [(self isPermanent: field) not]) ifTrue: [ 
@@ -8650,21 +8658,21 @@ SpurMemoryManager >> markLoopFrom: objOop [
 							         fixFollowedField: index
 							         ofObject: objToScan
 							         withInitialValue: field ].
-					(self markAndShouldScan: field) ifTrue: [ 
-						index > 0 ifTrue: [ 
-							(self topOfObjStack: markStack) ~= objToScan ifTrue: [ 
+					(self markAndShouldScan: field) ifTrue: [
+						index > 0 ifTrue: [
+							(self topOfObjStack: markStack) ~= objToScan ifTrue: [
 								self push: objToScan onObjStack: markStack ].
 							self push: (self integerObjectOf: index) onObjStack: markStack ].
 						objToScan := field.
 						index := -1 ] ] ].
 			index >= 0 ifTrue: [ "if loop terminated without finding an unmarked referent, switch to top of stack."
 				objToScan := self popObjStack: markStack.
-				objToScan = objOop ifTrue: [ 
+				objToScan = objOop ifTrue: [
 					objToScan := self popObjStack: markStack ] ] ]
 		ifFalse: [ "scanning a small object. scan, marking, pushing unmarked referents, then switch to the top of the stack."
 			index := numStrongSlots.
 			self markAndTraceClassOf: objToScan.
-			[ index > 0 ] whileTrue: [ 
+			[ index > 0 ] whileTrue: [
 				index := index - 1.
 				field := self fetchPointer: index ofObject: objToScan.
 				((self isNonImmediate: field) and: [(self isPermanent: field) not]) ifTrue: [ 
@@ -8673,12 +8681,12 @@ SpurMemoryManager >> markLoopFrom: objOop [
 							         fixFollowedField: index
 							         ofObject: objToScan
 							         withInitialValue: field ].
-					(self markAndShouldScan: field) ifTrue: [ 
+					(self markAndShouldScan: field) ifTrue: [
 						self push: field onObjStack: markStack.
-						((self rawNumSlotsOf: field) > self traceImmediatelySlotLimit 
-							 and: [ 
+						((self rawNumSlotsOf: field) > self traceImmediatelySlotLimit
+							 and: [
 								 (numStrongSlots := self numStrongSlotsOfInephemeral: field)
-								 > self traceImmediatelySlotLimit ]) ifTrue: [ 
+								 > self traceImmediatelySlotLimit ]) ifTrue: [
 							self
 								push: (self integerObjectOf: numStrongSlots)
 								onObjStack: markStack ] ] ] ].
@@ -9581,30 +9589,33 @@ SpurMemoryManager >> numStrongSlotsOfInephemeral: objOop [
 	"Answer the number of strong pointer fields in the given object,
 	 which is expected not to be an active ephemeron.
 	 Works with CompiledMethods, as well as ordinary objects."
+
 	<inline: true>
-	| fmt numSlots  contextSize numLiterals header |
+	| fmt numSlots contextSize numLiterals header |
 	fmt := self formatOf: objOop.
-	self assert: (fmt ~= self ephemeronFormat or: [self isMarkedOrPermanent: (self keyOfEphemeron: objOop)]).
-	fmt <= self lastPointerFormat ifTrue:
-		[numSlots := self numSlotsOf: objOop.
-		 fmt <= self arrayFormat ifTrue:
-			[^numSlots].
-		 fmt = self indexablePointersFormat ifTrue:
-			[(self isContextNonImm: objOop) ifTrue:
-				[coInterpreter setTraceFlagOnContextsFramesPageIfNeeded: objOop.
-				 "contexts end at the stack pointer"
-				 contextSize := coInterpreter fetchStackPointerOf: objOop.
-				 ^CtxtTempFrameStart + contextSize].
-			 ^numSlots].
-		 fmt = self weakArrayFormat ifTrue:
-			[^self fixedFieldsOfClass: (self fetchClassOfNonImm: objOop)]].
-	fmt = self forwardedFormat ifTrue: [^1].
-	fmt < self firstCompiledMethodFormat ifTrue: [^0]. "no pointers"
+	self assert: (fmt ~= self ephemeronFormat or: [
+			 | key |
+			 (self isImmediate: (key := self keyOfEphemeron: objOop)) or: [
+				 self isMarkedOrPermanent: key ] ]).
+	fmt <= self lastPointerFormat ifTrue: [
+		numSlots := self numSlotsOf: objOop.
+		fmt <= self arrayFormat ifTrue: [ ^ numSlots ].
+		fmt = self indexablePointersFormat ifTrue: [
+			(self isContextNonImm: objOop) ifTrue: [
+				coInterpreter setTraceFlagOnContextsFramesPageIfNeeded: objOop.
+				"contexts end at the stack pointer"
+				contextSize := coInterpreter fetchStackPointerOf: objOop.
+				^ CtxtTempFrameStart + contextSize ].
+			^ numSlots ].
+		fmt = self weakArrayFormat ifTrue: [
+			^ self fixedFieldsOfClass: (self fetchClassOfNonImm: objOop) ] ].
+	fmt = self forwardedFormat ifTrue: [ ^ 1 ].
+	fmt < self firstCompiledMethodFormat ifTrue: [ ^ 0 ]. "no pointers"
 
 	"CompiledMethod: contains both pointers and bytes"
 	header := self methodHeaderOf: objOop.
 	numLiterals := self literalCountOfMethodHeader: header.
-	^numLiterals + LiteralStart
+	^ numLiterals + LiteralStart
 ]
 
 { #category : #'object access' }
@@ -9833,7 +9844,7 @@ SpurMemoryManager >> okayOop: signedOop [
 
 	"format check"
 	fmt := self formatOf: oop.
-	(fmt = 6) | (fmt = 8) ifTrue:
+	(fmt = 6 or: [ fmt = 8 ]) ifTrue:
 		[self error: 'oop has an unknown format type'. ^false].
 	(fmt = self forwardedFormat) ~= (classIndex = self isForwardedObjectClassIndexPun) ifTrue:
 		[self error: 'oop has mis-matched format/classIndex fields; only one of them is the isForwarded value'. ^false].
@@ -11026,7 +11037,6 @@ SpurMemoryManager >> relocateObjStackForPlanningCompactor: objStack [
 					to: ObjStackNextx + (self rawHashBitsOf: stackOrNil).
 	 stackOrNil = objStack ifTrue:
 		[result := relocated].
-	 self setHashBitsOf: stackOrNil to: 0.
 	 next ~= 0]
 		whileTrue:
 			[stackOrNil := next].

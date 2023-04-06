@@ -152,6 +152,8 @@ AbstractImageAccess >> loadHeaderToMemory: header [
 	objectMemory specialObjectsOop: header initialSpecialObjectsOop.
 	objectMemory lastHash: header hdrLastHash.
 	
+	interpreter setImageVersion: header imageVersion.
+	
 	interpreter setImageHeaderFlagsFrom: header headerFlags.
 	interpreter setExtraVMMemory: header extraVMMemory.
 

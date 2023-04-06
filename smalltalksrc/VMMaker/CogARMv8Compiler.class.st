@@ -2015,7 +2015,7 @@ CogARMv8Compiler >> concretizeLd1VrRMw [
 	offset := operands at: 3.
 	opCode := 2r0111. "TODO support multiple-register variants"
 
-	(offset = 0 | (offset = 16))
+	(offset = 0 or: [ offset = 16 ])
 		ifTrue: [ 
 			size = 64
 				ifTrue: [ q := 1. t := 11 ]
@@ -3120,7 +3120,7 @@ CogARMv8Compiler >> concretizeSt1VrRMw [
 	offset := operands at: 3.
 	opCode := 2r0111. "TODO support multiple-register variants"
 
-	(offset = 0 | (offset = 16))
+	(offset = 0 or: [ offset = 16 ])
 		ifTrue: [ 
 			size = 64
 				ifTrue: [ q := 1. t := 11 ]
