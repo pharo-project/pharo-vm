@@ -50,7 +50,10 @@ Class {
 		'ceSendMustBeBooleanAddFalseLongTrampoline',
 		'recompileForLoopRegisterAssignments',
 		'scratchBytecodePC',
-		'objectRepresentation'
+		'objectRepresentation',
+		'compilationPass',
+		'ceCannotResumeTrampoline',
+		'ceSendMustBeBooleanAddFalseTrampoline'
 	],
 	#category : #'VMMaker-JIT'
 }

@@ -4,6 +4,79 @@ Class {
 	#category : #'VMMaker-JIT'
 }
 
+{ #category : #'primitive generators' }
+PharoStackToRegisterMappingCogit >> adjustArgumentsForPerform: numArgs [
+	"Generate code to adjust the possibly stacked arguments immediately
+	 before jumping to a method looked up by a perform primitive."
+	self assert: self numRegArgs <= 2.
+	self assert: numArgs >= 1.
+	numArgs <= self numRegArgs ifTrue:
+		[numArgs = 2 ifTrue:
+			[self MoveR: Arg1Reg R: Arg0Reg].
+		 ^self].
+
+	"If the arity is one more than the max numRegArgs, the receiver and all arguments have to be removed from the stack."
+	self numRegArgs + 1 = numArgs ifTrue:
+		[backEnd hasLinkRegister
+			ifTrue:
+				[self numRegArgs = 2
+					ifTrue:
+						[self MoveMw: 0 r: SPReg R: Arg1Reg.
+						 self MoveMw: self wordSize r: SPReg R: Arg0Reg]
+					ifFalse:
+						[self MoveMw: 0 r: SPReg R: Arg0Reg].
+				 self AddCq: numArgs + 1 * self wordSize R: SPReg]
+			ifFalse:
+				[self MoveMw: 0 r: SPReg R: TempReg. "save retpc"
+				 self numRegArgs = 2
+					ifTrue:
+						[self MoveMw: self wordSize r: SPReg R: Arg1Reg.
+						 self MoveMw: self wordSize * 2 r: SPReg R: Arg0Reg]
+					ifFalse:
+						[self MoveMw: self wordSize r: SPReg R: Arg0Reg].
+				 self AddCq: numArgs + 1 * self wordSize R: SPReg.
+				 self MoveR: TempReg Mw: 0 r: SPReg "Overwrite pushed receiver; ReceiverResultReg already contains receiver."].
+		 ^self].
+
+	"e.g.	Receiver				Receiver
+			Selector/Arg0	=>		Arg1
+			Arg1					Arg2
+	 		Arg2			sp->	Arg3
+	 sp->	Arg3"
+	super adjustArgumentsForPerform: numArgs
+]
+
+{ #category : #'bytecode generator support' }
+PharoStackToRegisterMappingCogit >> allocateEqualsEqualsRegistersArgNeedsReg: argNeedsReg rcvrNeedsReg: rcvrNeedsReg into: binaryBlock [
+
+	| argReg rcvrReg |
+	self assert: (argNeedsReg or: [rcvrNeedsReg]).
+	argReg := rcvrReg := NoReg.
+	argNeedsReg
+		ifTrue: 
+			[rcvrNeedsReg
+				ifTrue:
+					[self allocateRegForStackTopTwoEntriesInto: [:rTop :rNext| argReg := rTop. rcvrReg := rNext].
+					 self ssTop moveToReg: argReg.
+					 (self ssValue: 1) moveToReg: rcvrReg]
+				ifFalse:
+					[argReg := self allocateRegForStackEntryAt: 0.
+					 self ssTop moveToReg: argReg.
+					 "If the receiver is a spilled constant we need to pop it from the stack."
+					 (self ssValue: 1) spilled ifTrue:
+						[self AddCq: self wordSize R: SPReg]]]
+		ifFalse:
+			[self assert: rcvrNeedsReg.
+			 self deny: self ssTop spilled.
+			 rcvrReg := self allocateRegForStackEntryAt: 1.
+			 (self ssValue: 1) moveToReg: rcvrReg].
+		
+	self deny: (argNeedsReg and: [argReg = NoReg]).
+	self deny: (rcvrNeedsReg and: [rcvrReg = NoReg]).
+
+	binaryBlock value: rcvrReg value: argReg
+]
+
 { #category : #'bytecode generators' }
 PharoStackToRegisterMappingCogit >> doubleExtendedDoAnythingBytecode [
 	"Replaces the Blue Book double-extended send [132], in which the first byte was wasted on 8 bits of argument count. 
@@ -51,6 +124,84 @@ PharoStackToRegisterMappingCogit >> duplicateTopBytecode [
 	^self ssPushDesc: desc
 ]
 
+{ #category : #testing }
+PharoStackToRegisterMappingCogit >> extASpecifiesNoMustBeBoolean [
+	<inline: true>
+	^ extA anyMask: 1
+]
+
+{ #category : #testing }
+PharoStackToRegisterMappingCogit >> extBSpecifiesImmCheck [ 
+	"This is a negative check"
+	<inline: true>
+	^ extB noMask: 4
+]
+
+{ #category : #testing }
+PharoStackToRegisterMappingCogit >> extBSpecifiesMaybeContext [
+	<inline: true>
+	^ extB anyMask: 2
+]
+
+{ #category : #testing }
+PharoStackToRegisterMappingCogit >> extBSpecifiesStoreCheck [ 
+	"This is a negative check"
+	<inline: true>
+	^ extB noMask: 1
+]
+
+{ #category : #'mapped inline primitive generators - vectorial' }
+PharoStackToRegisterMappingCogit >> genAddFloat32Vector [ 
+	| array1Reg array2Reg sumReg |
+
+	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
+	
+	array2Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
+	array1Reg := self allocateVectorRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: array2Reg).
+	"The sum register is the same that the array1Reg"
+	sumReg := array1Reg.
+	
+	self ssTop moveToVectorReg: array2Reg.
+	self ssPop: 1.
+	
+	self ssTop moveToVectorReg: array1Reg.
+	self ssPop: 1.
+	
+	self ssPushVectorRegister: sumReg.
+	self ssTop moveToVectorReg: sumReg.
+
+	self FaddS: 32 Rv: array1Reg Rv: array2Reg Rv: sumReg.
+	
+	"Returns 0 if worked"
+	^0
+]
+
+{ #category : #'mapped inline primitive generators - vectorial' }
+PharoStackToRegisterMappingCogit >> genAddFloat64Vector [ 
+	| array1Reg array2Reg sumReg |
+	
+	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].	
+	
+	array2Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
+	array1Reg := self allocateVectorRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: array2Reg).
+	"The result register is the same that the array1Reg"
+	sumReg := array1Reg.
+	
+	self ssTop moveToVectorReg: array2Reg.
+	self ssPop: 1.
+	
+	self ssTop moveToVectorReg: array1Reg.
+	self ssPop: 1.
+	
+	self ssPushVectorRegister: sumReg.
+	self ssTop moveToVectorReg: sumReg.
+	
+	self FaddS: 64 Rv: array1Reg Rv: array2Reg Rv: sumReg.
+	
+	"Returns 0 if worked"
+	^0
+]
+
 { #category : #'bytecode generators' }
 PharoStackToRegisterMappingCogit >> genBlockReturn [
 	"Return from block, assuming result already loaded into ReceiverResultReg."
@@ -78,6 +229,22 @@ PharoStackToRegisterMappingCogit >> genCallPrimitiveBytecode [
 	primSet := prim >> 13 bitAnd: 3.
 	prim := prim bitAnd: 8191.
 	^EncounteredUnknownBytecode
+]
+
+{ #category : #'bytecode generator support' }
+PharoStackToRegisterMappingCogit >> genCmpArgIsConstant: argIsConstant rcvrIsConstant: rcvrIsConstant argReg: argReg rcvrReg: rcvrReg [
+	"Generates the Cmp instruction for the top two ssStack values. 
+	ssTop is called the argument and ssValue: 1 is called the receiver.
+	0 or 1 value on ssStack is a constant (but not 2). If a value is a constant, then noReg is passed as argReg or rcvrReg.
+	The instruction is different if one of the operands is a constant.
+	In the case of the v3 memory manager, the constant could be annotable."
+	<inline: true>
+	self assert: (argReg ~= NoReg or: [rcvrReg ~= NoReg]).
+	argIsConstant 
+		ifTrue: [ self genCmpConstant: self ssTop constant R: rcvrReg ]
+		ifFalse: [ rcvrIsConstant
+			ifTrue: [ self genCmpConstant: (self ssValue: 1) constant R: argReg ]
+			ifFalse: [ self CmpR: argReg R: rcvrReg ] ].
 ]
 
 { #category : #'bytecode generators' }
@@ -377,6 +544,53 @@ PharoStackToRegisterMappingCogit >> genInlinedIdenticalOrNotIf: orNot [
 	^objectRepresentation genInlinedIdenticalOrNotIfGuts: orNot
 ]
 
+{ #category : #'bytecode generator support' }
+PharoStackToRegisterMappingCogit >> genJumpIf: boolean to: targetBytecodePC [
+	<inline: false>
+	| desc fixup ok eventualTarget |
+	<var: #desc type: #'CogSimStackEntry *'>
+	<var: #fixup type: #'BytecodeFixup *'>
+	<var: #ok type: #'AbstractInstruction *'>
+	eventualTarget := self eventualTargetOf: targetBytecodePC.
+	self ssFlushTo: simStackPtr - 1.
+	desc := self ssTop.
+	self ssPop: 1.
+	(self stackEntryIsBoolean: desc) ifTrue:
+		["Must arrange there's a fixup at the target whether it is jumped to or
+		  not so that the simStackPtr can be kept correct."
+		 fixup := self ensureFixupAt: eventualTarget.
+		 "Must annotate the bytecode for correct pc mapping."
+		 self annotateBytecode: (desc constant = boolean
+									ifTrue: [self Jump: fixup]
+									ifFalse: [self prevInstIsPCAnnotated
+												ifTrue: [self Nop]
+												ifFalse: [self Label]]).
+		 extA := 0.
+		 ^0].
+	desc moveToReg: TempReg.
+	"Cunning trick by LPD.  If true and false are contiguous subtract the smaller.
+	 Correct result is either 0 or the distance between them.  If result is not 0 or
+	 their distance send mustBeBoolean."
+	self assert: (objectMemory objectAfter: objectMemory falseObject) = objectMemory trueObject.
+	self genSubConstant: boolean R: TempReg.
+	self JumpZero: (self ensureFixupAt: eventualTarget).
+	
+	self extASpecifiesNoMustBeBoolean ifTrue: 
+		[ extA := 0. 
+		self annotateBytecode: self lastOpcode.
+		^ 0].
+	extA := 0.
+	
+	self CmpCq: (boolean = objectMemory falseObject
+					ifTrue: [objectMemory trueObject - objectMemory falseObject]
+					ifFalse: [objectMemory falseObject - objectMemory trueObject])
+		R: TempReg.
+	ok := self JumpZero: 0.
+	self genCallMustBeBooleanFor: boolean.
+	ok jmpTarget: (self annotateBytecode: self Label).
+	^0
+]
+
 { #category : #'primitive generators' }
 PharoStackToRegisterMappingCogit >> genLoadArgAtDepth: n into: reg [
 	"All machine code primitives apart from perform: have only
@@ -385,12 +599,77 @@ PharoStackToRegisterMappingCogit >> genLoadArgAtDepth: n into: reg [
 	self assert: n < objectRepresentation numRegArgs
 ]
 
+{ #category : #'mapped inline primitive generators' }
+PharoStackToRegisterMappingCogit >> genMappedInlinePrimitive: primIndex [
+
+	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
+
+	"Number of arguments:
+	 0-49 nullary
+	 50-99 unary
+	 100-149  binary
+	 150-199 trinary
+	 200-255 variable"
+
+	"Specification:
+	50	EnsureEnoughWords
+	literal which is a Smi => ret value is receiver
+	150	immCheckPointerAt:put:
+	pointer object (Fixed sized or not) and not a context, Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)
+	151	immCheckStoreCheckPointerAt:put:
+	pointer object (Fixed sized or not) and not a context, Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)
+	152	immCheckMaybeContextPointerAt:put:
+	pointer object (Fixed sized or not), Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)
+	153	immCheckMaybeContextStoreCheckPointerAt:put:
+	pointer object (Fixed sized or not), Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)
+	154	immCheckByteAt:put:
+	byte object, Smi, 8 bits unsigned Smi => arg2 (1-based, optimised if arg1 is a constant)
+	155	immCheckShortAt:put:
+	short object, Smi, 16 bits unsigned Smi => arg2 (1-based, optimised if arg1 is a constant)
+	156	immCheckWordAt:put:
+	word object, Smi, 32 bits unsigned Smi => arg2 (1-based, optimised if arg1 is a constant)
+	157	immCheckDoubleWordAt:put:
+	double word object, Smi, 64 bits unsigned Smi or LargePositiveInteger => arg2 (1-based, optimised if arg1 is a constant)
+	250	directCall
+	method to call on top of stack =>  (variable number of parameters)"
+
+	| result |
+	result := primIndex
+		          caseOf: { 
+				          ([ 0 ] -> [ self genAddFloat64Vector ]).
+				          ([ 1 ] -> [ self genPushFloat64ArrayToRegister ]).
+				          ([ 2 ] -> [ self genStoreFloat64RegisterIntoArray ]).
+				          ([ 3 ] -> [ self genAddFloat32Vector ]).
+				          ([ 4 ] -> [ self genPushFloat32ArrayToRegister ]).
+				          ([ 5 ] -> [ self genStoreFloat32RegisterIntoArray ]).
+				          ([ 6 ] -> [ self genSubFloat64Vector ]) }
+		          otherwise: [ EncounteredUnknownBytecode ].
+	"These primitives may end up calling a message send if preconditions are not met. Thus, the
+	bytecode needs to be annotated with `isMapped`, and each primitive must be annotated"
+	self annotateBytecode: self Label.
+	^ result
+]
+
 { #category : #'bytecode generators' }
 PharoStackToRegisterMappingCogit >> genPopStackBytecode [
 	self ssTop spilled ifTrue:
 		[self AddCq: objectMemory wordSize R: SPReg].
 	self ssPop: 1.
 	^0
+]
+
+{ #category : #'primitive generators' }
+PharoStackToRegisterMappingCogit >> genPrimitivePerform [
+	"Generate an in-line perform primitive.  The lookup code requires the selector to be in Arg0Reg.
+	 adjustArgumentsForPerform: adjusts the arguments once genLookupForPerformNumArgs:
+	 has generated the code for the lookup."
+	methodOrBlockNumArgs > self numRegArgs ifTrue:
+		[self MoveMw: (backEnd hasLinkRegister
+					ifTrue: [methodOrBlockNumArgs - 1]
+					ifFalse: [methodOrBlockNumArgs]) * self wordSize
+			r: SPReg
+			R: Arg0Reg].
+	^self genLookupForPerformNumArgs: methodOrBlockNumArgs
 ]
 
 { #category : #'bytecode generators' }
@@ -407,6 +686,91 @@ PharoStackToRegisterMappingCogit >> genPushActiveContextBytecode [
 		large: (coInterpreter methodNeedsLargeContext: methodObj)
 		inBlock: inBlock.
 	^self ssPushRegister: ReceiverResultReg
+]
+
+{ #category : #'mapped inline primitive generators - vectorial' }
+PharoStackToRegisterMappingCogit >> genPushFloat32ArrayToRegister [
+
+	| arrayReg indexReg vectorReg |
+	
+	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
+
+	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
+	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
+	
+	self ssTop moveToReg: arrayReg.
+	self ssPop: 1.
+	
+	self ssTop moveToReg: indexReg.
+	self ssPop: 1.
+	
+	self AddCq: objectMemory baseHeaderSize R: arrayReg.
+
+	"The index is a SmallInteger, so it is shifted left 3 and plus 1. So, as we need to untag it and then shift it 2 (for getting number of bytes from number of elements), we just shift 1. 
+	Only valid in 32bits Lanes and 64bits machine."
+
+	self assert: (objectMemory wordSize = 8).
+	
+	self LogicalShiftRightCq: 1 R: indexReg.
+	self AddR: indexReg R: arrayReg.
+	
+	vectorReg := self allocateVectorRegNotConflictingWith: 0.
+	self ssPushVectorRegister: vectorReg.
+	
+	self Ld1S: 32 Vr: vectorReg R: arrayReg Mw: 0.
+	
+	"Returns 0 if worked"
+	^0
+]
+
+{ #category : #'mapped inline primitive generators - vectorial' }
+PharoStackToRegisterMappingCogit >> genPushFloat64ArrayToRegister [
+
+	| arrayReg indexReg vectorReg |
+	
+	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
+
+	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
+	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
+	
+	self ssTop moveToReg: arrayReg.
+	self ssPop: 1.
+	
+	self ssTop moveToReg: indexReg.
+	self ssPop: 1.
+	
+	self AddCq: objectMemory baseHeaderSize R: arrayReg.
+
+	"The index is a SmallInteger, so it is shifted left 3 and plus 1. So, as we need to untag it and then shift it 3 (for getting number of bytes from number of elements), we just substract 1. 
+	Only valid in 64bits Lanes and 64bits machine."
+
+	self assert: (objectMemory wordSize = 8).
+	
+	self SubCq: 1 R: indexReg.
+	self AddR: indexReg R: arrayReg.
+	
+	vectorReg := self allocateVectorRegNotConflictingWith: 0.
+	self ssPushVectorRegister: vectorReg.
+	
+	self Ld1S: 64 Vr: vectorReg R: arrayReg Mw: 0.
+	
+	"Returns 0 if worked"
+	^0
+]
+
+{ #category : #'bytecode generator support' }
+PharoStackToRegisterMappingCogit >> genPushLiteral: literal [
+	^self ssPushConstant: literal
+]
+
+{ #category : #'bytecode generator support' }
+PharoStackToRegisterMappingCogit >> genPushLiteralIndex: literalIndex [ "<SmallInteger>"
+	"Override to avoid the BytecodeSetHasDirectedSuperSend check, which is unnecessary
+	 here given the simulation stack."
+	<inline: false>
+	| literal |
+	literal := self getLiteral: literalIndex.
+	^self genPushLiteral: literal
 ]
 
 { #category : #'bytecode generator support' }
@@ -439,6 +803,22 @@ PharoStackToRegisterMappingCogit >> genPushLiteralVariable: literalIndex [
 		destReg: freeReg.
 	self ssPushRegister: freeReg.
 	^0
+]
+
+{ #category : #'bytecode generator support' }
+PharoStackToRegisterMappingCogit >> genPushMaybeContextReceiverVariable: slotIndex [ 
+	<inline: false>
+	self ssAllocateCallReg: ReceiverResultReg and: SendNumArgsReg.
+	self ensureReceiverResultRegContainsSelf.
+	^ self genPushMaybeContextSlotIndex: slotIndex
+]
+
+{ #category : #'bytecode generator support' }
+PharoStackToRegisterMappingCogit >> genPushMaybeContextRemoteInstVar: slotIndex inObjectAt: index [
+	<inline: false>
+	self ssAllocateCallReg: ReceiverResultReg and: SendNumArgsReg.
+	self genLoadTemp: index in: ReceiverResultReg.
+	^ self genPushMaybeContextSlotIndex: slotIndex
 ]
 
 { #category : #'bytecode generator support' }
@@ -838,6 +1218,105 @@ PharoStackToRegisterMappingCogit >> genSpecialSelectorComparison [
 	^self genMarshalledSend: index negated - 1 numArgs: 1 sendTable: ordinarySendTrampolines
 ]
 
+{ #category : #'bytecode generator support' }
+PharoStackToRegisterMappingCogit >> genStaticallyResolvedSpecialSelectorComparison [
+	"Assumes both operands are ints"
+	<var: #primDescriptor type: #'BytecodeDescriptor *'>
+	| rcvrInt argInt primDescriptor result |
+	primDescriptor := self generatorAt: byte0.
+	argInt := self ssTop constant.
+	rcvrInt := (self ssValue: 1) constant.
+	self cCode: '' inSmalltalk: "In Simulator ints are unsigned..."
+		[rcvrInt := objectMemory integerValueOf: rcvrInt.
+		argInt := objectMemory integerValueOf: argInt].
+	 primDescriptor opcode caseOf: {
+		[JumpLess]				-> [result := rcvrInt < argInt].
+		[JumpLessOrEqual]		-> [result := rcvrInt <= argInt].
+		[JumpGreater]			-> [result := rcvrInt > argInt].
+		[JumpGreaterOrEqual]	-> [result := rcvrInt >= argInt].
+		[JumpZero]				-> [result := rcvrInt = argInt].
+		[JumpNonZero]			-> [result := rcvrInt ~= argInt] }.
+	 "Must annotate the bytecode for correct pc mapping."
+	 self ssPop: 2.
+	 ^self ssPushAnnotatedConstant: (result
+			ifTrue: [objectMemory trueObject]
+			ifFalse: [objectMemory falseObject])
+]
+
+{ #category : #'mapped inline primitive generators - vectorial' }
+PharoStackToRegisterMappingCogit >> genStoreFloat32RegisterIntoArray [
+	| arrayReg indexReg vectorReg |
+	
+	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
+	
+	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
+	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
+	
+	self ssTop moveToReg: arrayReg.
+	self ssPop: 1.
+	
+	self ssTop moveToReg: indexReg.
+	self ssPop: 1.
+	
+	self AddCq: objectMemory baseHeaderSize R: arrayReg.
+
+	"The index is a SmallInteger, so it is shifted left 3 and plus 1. So, as we need to untag it and then shift it left 2 (for getting number of bytes from number of elements), we just shift it 1 right. 
+	Only valid in 32bits Lanes and 64bits machine."
+
+	self assert: (objectMemory wordSize = 8).
+	
+	self LogicalShiftRightCq: 1 R: indexReg.
+	self AddR: indexReg R: arrayReg.
+	
+	vectorReg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
+	self ssTop moveToVectorReg: vectorReg.
+	self ssPop: 1.
+	
+	self St1S: 32 Vr: vectorReg R: arrayReg Mw: 0.
+	
+	self ssPushRegister: arrayReg.
+	
+	"Returns 0 if worked"
+	^0
+]
+
+{ #category : #'mapped inline primitive generators - vectorial' }
+PharoStackToRegisterMappingCogit >> genStoreFloat64RegisterIntoArray [
+	| arrayReg indexReg vectorReg |
+	
+	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
+	
+	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
+	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
+	
+	self ssTop moveToReg: arrayReg.
+	self ssPop: 1.
+	
+	self ssTop moveToReg: indexReg.
+	self ssPop: 1.
+	
+	self AddCq: objectMemory baseHeaderSize R: arrayReg.
+
+	"The index is a SmallInteger, so it is shifted left 3 and plus 1. So, as we need to untag it and then shift it 3 (for getting number of bytes from number of elements), we just substract 1. 
+	Only valid in 64bits Lanes and 64bits machine."
+
+	self assert: (objectMemory wordSize = 8).
+	
+	self SubCq: 1 R: indexReg.
+	self AddR: indexReg R: arrayReg.
+	
+	vectorReg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
+	self ssTop moveToVectorReg: vectorReg.
+	self ssPop: 1.
+	
+	self St1S: 64 Vr: vectorReg R: arrayReg Mw: 0.
+	
+	self ssPushRegister: arrayReg.
+	
+	"Returns 0 if worked"
+	^0
+]
+
 { #category : #'bytecode generator stores' }
 PharoStackToRegisterMappingCogit >> genStorePop: popBoolean LiteralVariable: litVarIndex [
 	<inline: true>
@@ -998,6 +1477,33 @@ PharoStackToRegisterMappingCogit >> genStorePop: popBoolean TemporaryVariable: t
 	^0
 ]
 
+{ #category : #'mapped inline primitive generators - vectorial' }
+PharoStackToRegisterMappingCogit >> genSubFloat64Vector [
+	| array1Reg array2Reg subReg |
+	
+	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
+	
+	array1Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
+	array2Reg := self allocateVectorRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: array1Reg).
+	
+	"The result register is the same that the array2Reg"
+	subReg := array2Reg.
+	
+	self ssTop moveToVectorReg: array1Reg.
+	self ssPop: 1.
+	
+	self ssTop moveToVectorReg: array2Reg.
+	self ssPop: 1.
+	
+	self ssPushVectorRegister: subReg.
+	self ssTop moveToVectorReg: subReg.
+	
+	self FsubS: 64 Rv: array2Reg Rv: array1Reg Rv: subReg.
+	
+	"Returns 0 if worked"
+	^0
+]
+
 { #category : #'bytecode generator stores' }
 PharoStackToRegisterMappingCogit >> genTraceStores [
 	<inline: true>
@@ -1053,8 +1559,50 @@ PharoStackToRegisterMappingCogit >> isUnannotatableConstant: simStackEntry [
 		or: [(self shouldAnnotateObjectReference: simStackEntry constant) not]]
 ]
 
+{ #category : #testing }
+PharoStackToRegisterMappingCogit >> sistaNeedsStoreCheck [
+	<inline: true>
+	"The store check can be ignored if the value assigned doesn't need it (immediate, etc)
+	In addition, the extB low bit is marked by the optimizer if the store check is not required"
+	^ self ssTopNeedsStoreCheck and: [ self extBSpecifiesStoreCheck ]
+]
+
+{ #category : #'span functions' }
+PharoStackToRegisterMappingCogit >> sistaV1: descriptor Num: pc Push: nExts Nils: aMethodObj [
+	<var: #descriptor type: #'BytecodeDescriptor *'>
+	<inline: true>
+	^descriptor generator == #genPushConstantNilBytecode
+		ifTrue: [1]
+		ifFalse: [0]
+]
+
+{ #category : #'span functions' }
+PharoStackToRegisterMappingCogit >> sistaV1PushNilSize: aMethodObj numInitialNils: numInitialNils [
+	"230		11100110	iiiiiiii		PushNClosureTemps iiiiiiii"
+	<inline: true>
+	^numInitialNils
+]
+
 { #category : #'compile abstract instructions' }
 PharoStackToRegisterMappingCogit >> slotOffsetOfInstVarIndex: index [
 
 	^ index * objectMemory wordSize + objectMemory baseHeaderSize
+]
+
+{ #category : #testing }
+PharoStackToRegisterMappingCogit >> ssTopNeedsStoreCheck [
+	<inline: true>
+	^self ssTop type ~= SSConstant
+	  or: [(objectMemory isNonImmediate: self ssTop constant)
+		and: [self shouldAnnotateObjectReference:  self ssTop constant]]
+]
+
+{ #category : #testing }
+PharoStackToRegisterMappingCogit >> stackEntryIsBoolean: simStackEntry [
+
+	<var: #simStackEntry type: #'CogSimStackEntry *'>
+	<inline: true>
+	^ simStackEntry type = SSConstant and: [
+		  simStackEntry constant = objectMemory trueObject or: [
+			  simStackEntry constant = objectMemory falseObject ] ]
 ]

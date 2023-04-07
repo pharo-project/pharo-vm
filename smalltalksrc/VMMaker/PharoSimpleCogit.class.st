@@ -2,15 +2,84 @@ Class {
 	#name : #PharoSimpleCogit,
 	#superclass : #StackToRegisterMappingCogit,
 	#instVars : [
-		'objectRepresentation'
+		'objectRepresentation',
+		'ceCannotResumeTrampoline',
+		'ceSendMustBeBooleanAddFalseTrampoline',
+		'ceSendMustBeBooleanAddTrueTrampoline',
+		'ceSendMustBeBooleanTrampoline',
+		'ceFetchContextInstVarTrampoline',
+		'ceStoreContextInstVarTrampoline'
 	],
 	#category : #'VMMaker-JIT'
 }
+
+{ #category : #'primitive generators' }
+PharoSimpleCogit >> adjustArgumentsForPerform: numArgs [
+	"e.g.	Receiver				Receiver	or	Receiver				Receiver	(RISC)
+			Selector/Arg0	=>		Arg1			Selector/Arg0	=>		Arg1
+			Arg1					Arg2			Arg1					Arg2
+			Arg2					Arg3			Arg2			sp->	Arg3
+	 		Arg3			sp->	retpc	sp->	Arg3
+	 sp->	retpc"
+
+	backEnd hasLinkRegister
+		ifTrue: [
+			numArgs - 2 to: 0 by: -1 do: [ :index |
+				self MoveMw: index * self wordSize r: SPReg R: TempReg.
+				self MoveR: TempReg Mw: index + 1 * self wordSize r: SPReg ].
+			self AddCq: self wordSize R: SPReg ]
+		ifFalse: [
+			numArgs - 1 to: 1 by: -1 do: [ :index |
+				self MoveMw: index * self wordSize r: SPReg R: TempReg.
+				self MoveR: TempReg Mw: index + 1 * self wordSize r: SPReg ].
+			self PopR: TempReg.
+			self MoveR: TempReg Mw: 0 r: SPReg ]
+]
+
+{ #category : #accessing }
+PharoSimpleCogit >> ceCannotResumePC [
+	<api>
+	<cmacro: '() ((usqInt)ceCannotResumeTrampoline)'>
+	<returnTypeC: #usqInt> "for Slang"
+	^ceCannotResumeTrampoline
+]
+
+{ #category : #accessing }
+PharoSimpleCogit >> ceSendMustBeBooleanAddFalseTrampoline: anInteger [
+
+	<doNotGenerate>
+
+	ceSendMustBeBooleanAddFalseTrampoline := anInteger
+]
+
+{ #category : #accessing }
+PharoSimpleCogit >> ceSendMustBeBooleanAddTrueTrampoline: anInteger [ 
+
+	<doNotGenerate>
+	
+	ceSendMustBeBooleanAddTrueTrampoline :=	anInteger
+
+]
+
+{ #category : #initialization }
+PharoSimpleCogit >> ceSendMustBeBooleanTrampoline: aTrampolineAddress [
+
+	ceSendMustBeBooleanTrampoline := aTrampolineAddress
+]
 
 { #category : #'in-line cacheing' }
 PharoSimpleCogit >> classForInlineCacheTag: classIndex [
 
 	^ objectMemory classOrNilAtIndex: classIndex
+]
+
+{ #category : #'span functions' }
+PharoSimpleCogit >> distanceForShortForwardBranch: pc inMethod: aMethodObj [
+	"N.B.  This serves for both BlueBook/V3 and V4 short jumps."
+	<var: #descriptor type: #'BytecodeDescriptor *'>
+	<inline: true>
+	
+	^((objectMemory fetchByte: pc ofObject: aMethodObj) bitAnd: 7) + 1
 ]
 
 { #category : #'bytecode generators' }
@@ -125,6 +194,14 @@ PharoSimpleCogit >> genCallMappedInlinedPrimitive [
 	^EncounteredUnknownBytecode
 ]
 
+{ #category : #'trampoline support' }
+PharoSimpleCogit >> genCallMustBeBooleanFor: boolean [
+	"Call ceSendMustBeBooleanTo: via the relevant trampoline."
+	^self CallRT: (boolean = objectMemory falseObject
+					ifTrue: [ceSendMustBeBooleanAddFalseTrampoline]
+					ifFalse: [ceSendMustBeBooleanAddTrueTrampoline])
+]
+
 { #category : #'bytecode generators' }
 PharoSimpleCogit >> genCallPrimitiveBytecode [
 	"V3PlusClosures:	139 10001011	iiiiiiii   jjjjjjjj  Call Primitive #iiiiiiii + (jjjjjjjj * 256)
@@ -133,6 +210,18 @@ PharoSimpleCogit >> genCallPrimitiveBytecode [
 							m=1 means inlined primitive, no hard return after execution."
 	(bytecodePC = initialPC and: [byte2 < 128]) ifFalse: [^EncounteredUnknownBytecode].
 	^0
+]
+
+{ #category : #'primitive generators' }
+PharoSimpleCogit >> genDoubleFailIfZeroArgRcvr: rcvrReg arg: argReg [
+	<option: #DPFPReg0>
+	<var: 'rcvrReg' type: #int>
+	<var: 'argReg' type: #int>
+	<returnTypeC: #'AbstractInstruction *'>
+	self MoveCq: 0 R: TempReg.
+	self ConvertR: TempReg Rd: DPFPReg2.
+	self CmpRd: DPFPReg2 Rd: argReg.
+	^self JumpFPEqual: 0
 ]
 
 { #category : #'compile abstract instructions' }
@@ -586,6 +675,63 @@ PharoSimpleCogit >> genGetInlineCacheClassTagFrom: receiverRegister into: destin
 		forEntry: isEntry
 ]
 
+{ #category : #'bytecode generator support' }
+PharoSimpleCogit >> genInlinedIdenticalOrNotIf: orNot [
+	| jumpNotEqual jumpPush |
+	<var: #jumpNotEqual type: #'AbstractInstruction *'>
+	<var: #jumpPush type: #'AbstractInstruction *'>
+	self PopR: Arg0Reg.
+	self
+		genEnsureOopInRegNotForwarded: Arg0Reg
+		scratchReg: TempReg.
+	self MoveMw: 0 r: SPReg R: ClassReg.
+	self
+		genEnsureOopInRegNotForwarded: ClassReg
+		scratchReg: TempReg.
+	self CmpR: Arg0Reg R: ClassReg.
+	jumpNotEqual := self genConditionalBranch: (orNot ifTrue: [JumpZero] ifFalse: [JumpNonZero]) operand: 0.
+	self annotate: (self genMoveTrueR: Arg0Reg)
+		objRef: objectMemory trueObject.
+	jumpPush := self Jump: 0.
+	jumpNotEqual jmpTarget: (self genMoveFalseR: Arg0Reg).
+	jumpPush jmpTarget: (self MoveR: Arg0Reg Mw: 0 r: SPReg).
+	^0
+]
+
+{ #category : #'compile abstract instructions' }
+PharoSimpleCogit >> genJumpBaseHeaderImmutable: baseHeaderReg [
+	"baseHeader holds at least the least significant 32 bits of the object"
+
+	<returnTypeC: #'AbstractInstruction *'>
+	<option: #IMMUTABILITY>
+	<inline: true>
+	self TstCq: objectMemory immutableBitMask R: baseHeaderReg.
+	^ self JumpNonZero: 0
+]
+
+{ #category : #'bytecode generator support' }
+PharoSimpleCogit >> genJumpIf: boolean to: targetBytecodePC [
+	<inline: false>
+	"Cunning trick by LPD.  If true and false are contiguous subtract the smaller.
+	 Correct result is either 0 or the distance between them.  If result is not 0 or
+	 their distance send mustBeBoolean."
+	| ok |
+	<var: #ok type: #'AbstractInstruction *'>
+	extA := 0.
+	self assert: (objectMemory objectAfter: objectMemory falseObject) = objectMemory trueObject.
+	self PopR: TempReg.
+	self genSubConstant: boolean R: TempReg.
+	self JumpZero: (self ensureFixupAt: targetBytecodePC).
+	self CmpCq: (boolean = objectMemory falseObject
+					ifTrue: [objectMemory trueObject - objectMemory falseObject]
+					ifFalse: [objectMemory falseObject - objectMemory trueObject])
+		R: TempReg.
+	ok := self JumpZero: 0.
+	self genCallMustBeBooleanFor: boolean.
+	ok jmpTarget: (self annotateBytecode: self Label).
+	^0
+]
+
 { #category : #'bytecode generators' }
 PharoSimpleCogit >> genLongJumpIfFalse [
 	| distance target |
@@ -643,6 +789,114 @@ PharoSimpleCogit >> genLongUnconditionalForwardJump [
 	^self genJumpTo: targetpc
 ]
 
+{ #category : #'primitive generators' }
+PharoSimpleCogit >> genLookupForPerformNumArgs: numArgs [
+	"Compile the code for a probe of the first-level method cache for a perform primtiive.
+	 The selector is assumed to be in Arg0Reg.  Defer to adjustArgumentsForPerform: to
+	 adjust the arguments before the jump to the method."
+	| jumpSelectorMiss jumpClassMiss jumpInterpret itsAHit cacheBaseReg |
+	<var: #jumpSelectorMiss type: #'AbstractInstruction *'>
+	<var: #jumpClassMiss type: #'AbstractInstruction *'>
+	<var: #jumpInterpret type: #'AbstractInstruction *'>
+	<var: #itsAHit type: #'AbstractInstruction *'>
+
+	"N.B.  Can't assume TempReg already contains the tag because a method can
+	 of course be invoked via the unchecked entry-point, e.g. as does perform:."
+	self genGetInlineCacheClassTagFrom: ReceiverResultReg into: SendNumArgsReg forEntry: false.
+
+	self flag: #lookupInMethodCacheSel:classTag:. "so this method shows up as a sender of lookupInMethodCacheSel:class:"
+
+	cacheBaseReg := NoReg.
+	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress) ifFalse:
+		[self MoveCq: coInterpreter methodCacheAddress R: (cacheBaseReg := Extra0Reg)].
+
+	"Do first of three probes.  See CoInterpreter>>lookupInMethodCacheSel:classTag:"
+	jumpSelectorMiss := self compilePerformMethodCacheProbeFor: Arg0Reg withShift: 0 baseRegOrNone: cacheBaseReg.
+	jumpClassMiss := self JumpNonZero: 0.
+
+	"Fetch the method, and check if it is cogged."
+	itsAHit := self MoveMw: (cacheBaseReg = NoReg
+								ifTrue: [coInterpreter methodCacheAddress asUnsignedInteger + (MethodCacheMethod << objectMemory shiftForWord)]
+								ifFalse: [MethodCacheMethod << objectMemory shiftForWord])
+					r: ClassReg
+					R: SendNumArgsReg.
+	"If the method is not compiled fall back on the interpreter primitive."
+	self genLoadSlot: HeaderIndex sourceReg: SendNumArgsReg destReg: ClassReg.
+	jumpInterpret := self genJumpImmediate: ClassReg.
+	"Adjust arguments and jump to the method's unchecked entry-point."
+	self AddCq: cmNoCheckEntryOffset R: ClassReg.
+	self adjustArgumentsForPerform: numArgs.
+	self JumpR: ClassReg.
+
+	"First probe missed.  Do second of three probes.  Shift hash right one and retry."
+	jumpSelectorMiss jmpTarget: (jumpClassMiss jmpTarget: self Label).
+	jumpSelectorMiss := self compilePerformMethodCacheProbeFor: Arg0Reg withShift: 1 baseRegOrNone: cacheBaseReg.
+	self JumpZero: itsAHit.
+
+	"Second probe missed.  Do last probe.  Shift hash right two and retry."
+	jumpSelectorMiss jmpTarget: self Label.
+	jumpSelectorMiss := self compilePerformMethodCacheProbeFor: Arg0Reg withShift: 2 baseRegOrNone: cacheBaseReg.
+	self JumpZero: itsAHit.
+
+	"Last probe missed.  Caller will generate the call to fall back on the interpreter primitive."
+	jumpSelectorMiss jmpTarget:
+	(jumpInterpret jmpTarget: self Label).
+	^0
+]
+
+{ #category : #'constant support' }
+PharoSimpleCogit >> genMoveFalseR: reg [
+	<inline: true>
+	^ self genMoveConstant: objectMemory falseObject R: reg
+	
+]
+
+{ #category : #'constant support' }
+PharoSimpleCogit >> genMoveTrueR: reg [
+	<inline: true>
+	^ self genMoveConstant: objectMemory trueObject R: reg
+	
+]
+
+{ #category : #initialization }
+PharoSimpleCogit >> genMustBeBooleanTrampolineCalled: trampolineName [
+	<var: #trampolineName type: #'char *'>
+	<inline: false>
+	self zeroOpcodeIndex.
+	^self genTrampolineFor: #ceSendMustBeBoolean:
+		called: trampolineName
+		numArgs: 1
+		arg: TempReg
+		arg: nil
+		arg: nil
+		arg: nil
+		regsToSave: self emptyRegisterMask
+		pushLinkReg: true
+		resultReg: NoReg
+		appendOpcodes: true
+]
+
+{ #category : #initialization }
+PharoSimpleCogit >> genMustBeBooleanTrampolineFor: boolean called: trampolineName [
+	<var: #trampolineName type: #'char *'>
+	<inline: false>
+	self zeroOpcodeIndex.
+	"If the objectRepresentation does want true & false to be mobile then we need to record these addresses."
+	self assert: (self shouldAnnotateObjectReference: boolean) not.
+	self AddCq: boolean R: TempReg.
+	^self genTrampolineFor: #ceSendMustBeBoolean:
+		called: trampolineName
+		numArgs: 1
+		arg: TempReg
+		arg: nil
+		arg: nil
+		arg: nil
+		regsToSave: self emptyRegisterMask
+		pushLinkReg: true
+		resultReg: NoReg
+		appendOpcodes: true
+]
+
 { #category : #'bytecode generator support' }
 PharoSimpleCogit >> genNewArrayOfSize: size initialized: initialized [
 
@@ -679,6 +933,19 @@ PharoSimpleCogit >> genPrimitiveHashMultiply [
 
 	jmpFailImm jmpTarget: (jmpFailNonImm jmpTarget: self Label).
 	^0
+]
+
+{ #category : #'primitive generators' }
+PharoSimpleCogit >> genPrimitivePerform [
+	"Generate an in-line perform primitive.  The lookup code requires the selector to be in Arg0Reg.
+	 adjustArgumentsForPerform: adjusts the arguments once genLookupForPerformNumArgs:
+	 has generated the code for the lookup."
+	self MoveMw: (backEnd hasLinkRegister
+					ifTrue: [methodOrBlockNumArgs - 1]
+					ifFalse: [methodOrBlockNumArgs]) * self wordSize
+		r: SPReg
+		R: Arg0Reg.
+	^self genLookupForPerformNumArgs: methodOrBlockNumArgs
 ]
 
 { #category : #'bytecode generators' }
@@ -733,6 +1000,74 @@ PharoSimpleCogit >> genPushLiteralVariable16CasesBytecode [
 { #category : #'bytecode generators' }
 PharoSimpleCogit >> genPushLiteralVariableBytecode [
 	^self genPushLiteralVariable: (byte0 bitAnd: 31)
+]
+
+{ #category : #'bytecode generator support' }
+PharoSimpleCogit >> genPushMaybeContextReceiverVariable: slotIndex [ 
+	<inline: false>
+	| jmpSingle jmpDone |
+	<var: #jmpSingle type: #'AbstractInstruction *'>
+	<var: #jmpDone type: #'AbstractInstruction *'>
+	self assert: needsFrame.
+	"See CoInterpreter>>contextInstructionPointer:frame: for an explanation
+	 of the instruction pointer slot handling."
+	slotIndex = InstructionPointerIndex ifTrue:
+		[self putSelfInReceiverResultReg.
+		 self MoveCq: slotIndex R: SendNumArgsReg.
+		 self CallRT: ceFetchContextInstVarTrampoline.
+		 self PushR: SendNumArgsReg.
+		 ^0].
+	self MoveMw: FoxMFReceiver r: FPReg R: ReceiverResultReg.
+	self
+		genLoadSlot: SenderIndex
+		sourceReg: ReceiverResultReg
+		destReg: TempReg.
+	jmpSingle := self genJumpNotSmallInteger: TempReg.
+	self MoveCq: slotIndex R: SendNumArgsReg.
+	self CallRT: ceFetchContextInstVarTrampoline.
+	jmpDone := self Jump: 0.
+	jmpSingle jmpTarget: self Label.
+	self
+		genLoadSlot: slotIndex
+		sourceReg: ReceiverResultReg
+		destReg: SendNumArgsReg.
+	jmpDone jmpTarget: (self PushR: SendNumArgsReg).
+	^0
+]
+
+{ #category : #'bytecode generator support' }
+PharoSimpleCogit >> genPushMaybeContextRemoteInstVar: slotIndex inObjectAt: objectIndex [
+	| jmpSingle jmpDone |
+	<var: #jmpSingle type: #'AbstractInstruction *'>
+	<var: #jmpDone type: #'AbstractInstruction *'>
+	self assert: needsFrame.
+	"See CoInterpreter>>contextInstructionPointer:frame: for an explanation
+	 of the instruction pointer slot handling."
+	self MoveMw: (self frameOffsetOfTemporary: objectIndex) r: FPReg R: ReceiverResultReg.
+	self 
+		genEnsureOopInRegNotForwarded: ReceiverResultReg 
+		scratchReg: TempReg.
+	slotIndex = InstructionPointerIndex ifTrue:
+		[self MoveCq: slotIndex R: SendNumArgsReg.
+		 self CallRT: ceFetchContextInstVarTrampoline.
+		 self PushR: SendNumArgsReg.
+		 ^0].
+	self
+		genLoadSlot: SenderIndex
+		sourceReg: ReceiverResultReg
+		destReg: TempReg.
+	jmpSingle := self genJumpNotSmallInteger: TempReg.
+	self MoveCq: slotIndex R: SendNumArgsReg.
+	self CallRT: ceFetchContextInstVarTrampoline.
+	jmpDone := self Jump: 0.
+	jmpSingle jmpTarget: self Label.
+	self
+		genLoadSlot: slotIndex
+		sourceReg: ReceiverResultReg
+		destReg: SendNumArgsReg.
+	jmpDone jmpTarget: (self PushR: SendNumArgsReg).
+	^0
+
 ]
 
 { #category : #'bytecode generators' }
@@ -793,6 +1128,33 @@ PharoSimpleCogit >> genPushRemoteTempLongBytecode [
 { #category : #'bytecode generators' }
 PharoSimpleCogit >> genPushTemporaryVariableBytecode [
 	^self genPushTemporaryVariable: (byte0 bitAnd: 15)
+]
+
+{ #category : #'primitive generators' }
+PharoSimpleCogit >> genQuickReturnConst [
+	<api> "because selected by CoInterpreter>>quickPrimitiveGeneratorFor:"
+	| constant |
+	constant := coInterpreter quickPrimitiveConstantFor: primitiveIndex.
+	self genMoveConstant: constant R: ReceiverResultReg.
+	self genUpArrowReturn.
+	^UnfailingPrimitive
+]
+
+{ #category : #'primitive generators' }
+PharoSimpleCogit >> genQuickReturnInstVar [
+	<api> "because selected by CoInterpreter>>quickPrimitiveGeneratorFor:"
+	| index |
+	index := coInterpreter quickPrimitiveInstVarIndexFor: primitiveIndex.
+	self genLoadSlot: index sourceReg: ReceiverResultReg destReg: ReceiverResultReg.
+	self genUpArrowReturn.
+	^UnfailingPrimitive
+]
+
+{ #category : #'primitive generators' }
+PharoSimpleCogit >> genQuickReturnSelf [
+	<api> "because selected by CoInterpreter>>quickPrimitiveGeneratorFor:"
+	self genUpArrowReturn.
+	^UnfailingPrimitive
 ]
 
 { #category : #'bytecode generators' }
@@ -990,6 +1352,104 @@ PharoSimpleCogit >> genStoreAndPopTemporaryVariableBytecode [
 ]
 
 { #category : #'bytecode generator support' }
+PharoSimpleCogit >> genStorePop: popBoolean LiteralVariable: litVarIndex [
+	<inline: false>
+	| association |
+	"The only reason we assert needsFrame here is that in a frameless method
+	 ReceiverResultReg must and does contain only self, but the ceStoreCheck
+	 trampoline expects the target of the store to be in ReceiverResultReg.  So
+	 in a frameless method we would have a conflict between the receiver and
+	 the literal store, unless we we smart enough to realise that ReceiverResultReg
+	 was unused after the literal variable store, unlikely given that methods
+	 return self by default."
+	self assert: needsFrame.
+	association := self getLiteral: litVarIndex.
+	self genMoveConstant: association R: ReceiverResultReg.
+	self
+		genEnsureObjInRegNotForwarded: ReceiverResultReg
+		scratchReg: TempReg.
+	popBoolean
+		ifTrue: [self PopR: ClassReg]
+		ifFalse: [self MoveMw: 0 r: SPReg R: ClassReg].
+	self
+		genStoreSourceReg: ClassReg 
+		slotIndex: ValueIndex 
+		destReg: ReceiverResultReg 
+		scratchReg: TempReg 
+		inFrame: needsFrame.
+	^0
+]
+
+{ #category : #'bytecode generator support' }
+PharoSimpleCogit >> genStorePop: popBoolean MaybeContextReceiverVariable: slotIndex [
+	<inline: false>
+	| jmpSingle jmpDone |
+	<var: #jmpSingle type: #'AbstractInstruction *'>
+	<var: #jmpDone type: #'AbstractInstruction *'>
+	"The reason we need a frame here is that assigning to an inst var of a context may
+	 involve wholesale reorganization of stack pages, and the only way to preserve the
+	 execution state of an activation in that case is if it has a frame."
+	self assert: needsFrame.
+	self putSelfInReceiverResultReg.
+	self
+		genLoadSlot: SenderIndex
+		sourceReg: ReceiverResultReg
+		destReg: TempReg.
+	self MoveMw: 0 r: SPReg R: ClassReg.
+	jmpSingle := self genJumpNotSmallInteger: TempReg.
+	self MoveCq: slotIndex R: SendNumArgsReg.
+	self CallRT: ceStoreContextInstVarTrampoline.
+	jmpDone := self Jump: 0.
+	jmpSingle jmpTarget: self Label.
+	popBoolean ifTrue:
+		[self AddCq: self wordSize R: SPReg].
+	self
+		genStoreSourceReg: ClassReg 
+		slotIndex: slotIndex 
+		destReg: ReceiverResultReg 
+		scratchReg: TempReg 
+		inFrame: needsFrame.
+	jmpDone jmpTarget: self Label.
+	^0
+]
+
+{ #category : #'bytecode generator support' }
+PharoSimpleCogit >> genStorePop: popBoolean MaybeContextRemoteInstVar: slotIndex ofObjectAt: objectIndex [
+	<inline: false>
+	| jmpSingle jmpDone |
+	<var: #jmpSingle type: #'AbstractInstruction *'>
+	<var: #jmpDone type: #'AbstractInstruction *'>
+	"The reason we need a frame here is that assigning to an inst var of a context may
+	 involve wholesale reorganization of stack pages, and the only way to preserve the
+	 execution state of an activation in that case is if it has a frame."
+	self assert: needsFrame.
+	self MoveMw: (self frameOffsetOfTemporary: objectIndex) r: FPReg R: ReceiverResultReg.
+	self 
+		genEnsureOopInRegNotForwarded: ReceiverResultReg 
+		scratchReg: TempReg.
+	self
+		genLoadSlot: SenderIndex
+		sourceReg: ReceiverResultReg
+		destReg: TempReg.
+	self MoveMw: 0 r: SPReg R: ClassReg.
+	jmpSingle := self genJumpNotSmallInteger: TempReg.
+	self MoveCq: slotIndex R: SendNumArgsReg.
+	self CallRT: ceStoreContextInstVarTrampoline.
+	jmpDone := self Jump: 0.
+	jmpSingle jmpTarget: self Label.
+	popBoolean ifTrue:
+		[self AddCq: self wordSize R: SPReg].
+	self
+		genStoreSourceReg: ClassReg 
+		slotIndex: slotIndex 
+		destReg: ReceiverResultReg 
+		scratchReg: TempReg 
+		inFrame: needsFrame.
+	jmpDone jmpTarget: self Label.
+	^0
+]
+
+{ #category : #'bytecode generator support' }
 PharoSimpleCogit >> genStorePop: popBoolean ReceiverVariable: slotIndex [
 	<inline: false>
 	needsFrame ifTrue:
@@ -1059,6 +1519,18 @@ PharoSimpleCogit >> genStorePop: popBoolean RemoteTemp: slotIndex At: remoteTemp
 		inFrame: needsFrame
 ]
 
+{ #category : #'bytecode generator support' }
+PharoSimpleCogit >> genStorePop: popBoolean TemporaryVariable: tempIndex [
+	<inline: false>
+	popBoolean
+		ifTrue: [self PopR: TempReg]
+		ifFalse: [self MoveMw: 0 r: SPReg R: TempReg].
+	self MoveR: TempReg
+		Mw: (self frameOffsetOfTemporary: tempIndex)
+		r: FPReg.
+	^0
+]
+
 { #category : #'bytecode generators' }
 PharoSimpleCogit >> genStoreRemoteTempLongBytecode [
 	^self genStorePop: false RemoteTemp: byte1 At: byte2
@@ -1108,6 +1580,51 @@ PharoSimpleCogit >> genUpArrowReturn [
 PharoSimpleCogit >> generateObjectRepresentationTrampolines [
 
 	objectRepresentation generateObjectRepresentationTrampolines
+]
+
+{ #category : #accessing }
+PharoSimpleCogit >> generateRunTimeTrampolines [
+
+	super generateRunTimeTrampolines.
+
+	"Neither of the context inst var access trampolines save registers.  Their operation could cause
+	 arbitrary update of stack frames, so the assumption is that callers flush the stack before calling
+	 the context inst var access trampolines, and that everything except the result is dead afterwards."
+	ceFetchContextInstVarTrampoline := self
+		                                   genTrampolineFor:
+		                                   #ceContext:instVar:
+		                                   called:
+		                                   'ceFetchContextInstVarTrampoline'
+		                                   arg: ReceiverResultReg
+		                                   arg: SendNumArgsReg
+		                                   result: SendNumArgsReg.
+	ceStoreContextInstVarTrampoline := self
+		                                   genTrampolineFor:
+		                                   #ceContext:instVar:value:
+		                                   called:
+		                                   'ceStoreContextInstVarTrampoline'
+		                                   arg: ReceiverResultReg
+		                                   arg: SendNumArgsReg
+		                                   arg: ClassReg
+		                                   result: ReceiverResultReg. "to keep ReceiverResultReg live."
+
+	ceSendMustBeBooleanTrampoline := self
+		                                 genMustBeBooleanTrampolineCalled:
+		                                 'ceSendMustBeBooleanTrampoline'.
+	ceSendMustBeBooleanAddFalseTrampoline := self
+		                                         genMustBeBooleanTrampolineFor:
+		                                         objectMemory falseObject
+		                                         called:
+		                                         'ceSendMustBeBooleanAddFalseTrampoline'.
+	ceSendMustBeBooleanAddTrueTrampoline := self
+		                                        genMustBeBooleanTrampolineFor:
+		                                        objectMemory trueObject
+		                                        called:
+		                                        'ceSendMustBeBooleanAddTrueTrampoline'.
+
+	ceCannotResumeTrampoline := self
+		                            genTrampolineFor: #ceCannotResume
+		                            called: 'ceCannotResumeTrampoline'
 ]
 
 { #category : #'in-line cacheing' }
@@ -1163,6 +1680,30 @@ PharoSimpleCogit >> objectRepresentation: anObjectRepresentation [
 	objectRepresentation := anObjectRepresentation
 ]
 
+{ #category : #'span functions' }
+PharoSimpleCogit >> parseV4Exts: nExts priorTo: bcpc in: aMethodObj into: aBinaryBlock [
+	"224		11100000	aaaaaaaa	Extend A (Ext A = Ext A prev * 256 + Ext A)
+	 225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
+	| extAValue extBValue pc byte extByte |
+
+	extAValue := extBValue := 0.
+	pc := bcpc - nExts - nExts.
+	[pc < bcpc] whileTrue:
+		[byte := objectMemory fetchByte: pc ofObject: aMethodObj.
+		 pc := pc + 1.
+		 extByte := objectMemory fetchByte: pc ofObject: aMethodObj.
+		 pc := pc + 1.
+		 self assert: (byte = 224 or: [byte = 225]).
+		 byte = 224
+			ifTrue:
+				[extAValue := (extAValue bitShift: 8) + extByte]
+			ifFalse:
+				[extBValue := (extBValue = 0 and: [extByte > 127])
+							ifTrue: [extByte - 256]
+							ifFalse: [(extBValue bitShift: 8) + extByte]]].
+	aBinaryBlock value: extAValue value: extBValue
+]
+
 { #category : #initialization }
 PharoSimpleCogit >> setInterpreter: anInterpreter [
 
@@ -1171,4 +1712,51 @@ PharoSimpleCogit >> setInterpreter: anInterpreter [
 	objectRepresentation := self objectRepresentationClass
 		                        forCogit: self
 		                        methodZone: methodZone
+]
+
+{ #category : #'span functions' }
+PharoSimpleCogit >> v3: descriptor Long: pc Branch: nExts Distance: aMethodObj [
+	"Answer the distance of a two byte forward long jump."
+	<var: #descriptor type: #'BytecodeDescriptor *'>
+	self assert: nExts = 0.
+	^(((objectMemory fetchByte: pc ofObject: aMethodObj) bitAnd: 7) - 4 << 8)
+	 + (objectMemory fetchByte: pc + 1 ofObject: aMethodObj)
+]
+
+{ #category : #'span functions' }
+PharoSimpleCogit >> v3: descriptor LongForward: pc Branch: nExts Distance: aMethodObj [
+	"Answer the distance of a two byte forward long jump."
+	<var: #descriptor type: #'BytecodeDescriptor *'>
+	self assert: nExts = 0.
+	^(((objectMemory fetchByte: pc ofObject: aMethodObj) bitAnd: 3) << 8)
+	 + (objectMemory fetchByte: pc + 1 ofObject: aMethodObj)
+]
+
+{ #category : #'span functions' }
+PharoSimpleCogit >> v3: unusedButKeptForPolymorphism ShortForward: pc Branch: unusedButKeptForPolymorphism2 Distance: aMethodObj [
+	
+	^ self distanceForShortForwardBranch: pc inMethod: aMethodObj
+]
+
+{ #category : #'span functions' }
+PharoSimpleCogit >> v4: descriptor Long: pc Branch: nExts Distance: aMethodObj [
+	"242		11110010	i i i i i i i i	Jump i i i i i i i i (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)"
+	| extBValue |
+	self assert: nExts >= 0.
+	self parseV4Exts: nExts priorTo: pc in: aMethodObj into: [:ea :eb| extBValue := eb].
+	^(objectMemory fetchByte: pc + 1 ofObject: aMethodObj)
+	+ (extBValue << 8)
+]
+
+{ #category : #'span functions' }
+PharoSimpleCogit >> v4: descriptor LongForward: pc Branch: nExts Distance: aMethodObj [
+	"242		11110010	i i i i i i i i	Jump i i i i i i i i (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)"
+	"243		11110011	i i i i i i i i	Pop and Jump 0n True i i i i i i i i (+ Extend A * 256)"
+	"244		11110100	i i i i i i i i	Pop and Jump 0n False i i i i i i i i (+ Extend A * 256)"
+	<var: #descriptor type: #'BytecodeDescriptor *'>
+	| extBValue |
+	self assert: nExts >= 0.
+	self parseV4Exts: nExts priorTo: pc in: aMethodObj into: [:ea :eb| extBValue := eb].
+	^(objectMemory fetchByte: pc + 1 ofObject: aMethodObj)
+	+ (extBValue << 8)
 ]

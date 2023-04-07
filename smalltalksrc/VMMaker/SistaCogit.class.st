@@ -51,7 +51,9 @@ Class {
 		'ceTrapTrampoline',
 		'branchReachedOnlyForCounterTrip',
 		'counters',
-		'objectRepresentation'
+		'objectRepresentation',
+		'ceCannotResumeTrampoline',
+		'ceSendMustBeBooleanAddFalseTrampoline'
 	],
 	#classVars : [
 		'CounterBytes',
@@ -2343,7 +2345,8 @@ SistaCogit >> genUnoptimizedSpecialSelectorComparison [
 ]
 
 { #category : #initialization }
-SistaCogit >> generateSistaRuntime [
+SistaCogit >> generateRunTimeTrampolines [
+	super generateRunTimeTrampolines.
 	"Trap sends Sista trap message to context with top of stack, so we don't need any arguments..."
 	ceTrapTrampoline := self genTrampolineFor: #ceSistaTrap called: 'ceSistaTrapTrampoline'
 ]

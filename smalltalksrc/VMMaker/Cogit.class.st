@@ -196,17 +196,12 @@ Class {
 		'ceCPICMissTrampoline',
 		'ceReturnToInterpreterTrampoline',
 		'ceBaseFrameReturnTrampoline',
-		'ceSendMustBeBooleanAddTrueTrampoline',
-		'ceSendMustBeBooleanAddFalseTrampoline',
-		'ceCannotResumeTrampoline',
 		'ceEnterCogCodePopReceiverReg',
 		'ceCallCogCodePopReceiverReg',
 		'ceCallCogCodePopReceiverAndClassRegs',
 		'cePrimReturnEnterCogCode',
 		'cePrimReturnEnterCogCodeProfiling',
 		'ceNonLocalReturnTrampoline',
-		'ceFetchContextInstVarTrampoline',
-		'ceStoreContextInstVarTrampoline',
 		'ceFlushICache',
 		'ceCheckFeaturesFunction',
 		'ceTraceLinkedSendTrampoline',
@@ -241,8 +236,6 @@ Class {
 		'cPICPrototype',
 		'cPICEndOfCodeOffset',
 		'cPICEndOfCodeLabel',
-		'ceMallocTrampoline',
-		'ceFreeTrampoline',
 		'debugBytecodePointers',
 		'debugOpcodeIndices',
 		'disassemblingMethod',
@@ -1862,7 +1855,7 @@ Cogit >> CmpC32: wordConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self
-		gen: (objectMemory wordSize = 8
+		gen: (self wordSize = 8
 				ifTrue: [CmpC32R]
 				ifFalse: [CmpCwR])
 		literal: wordConstant
@@ -2323,7 +2316,7 @@ Cogit >> LogicalShiftRightR: reg1 R: reg2 [
 Cogit >> MoveA32: address R: reg [ 
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
-	^self gen: (objectMemory wordSize = 8
+	^self gen: (self wordSize = 8
 					ifTrue: [MoveA32R]
 					ifFalse: [MoveAwR])
 		literal: address
@@ -2352,7 +2345,7 @@ Cogit >> MoveC32: wordConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self
-		gen: (objectMemory wordSize = 8
+		gen: (self wordSize = 8
 				ifTrue: [MoveC32R]
 				ifFalse: [MoveCwR])
 		literal: wordConstant
@@ -2480,7 +2473,7 @@ Cogit >> MovePatcheableC32: wordConstant R: reg [
 Cogit >> MoveR: reg A32: address [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
-	^self gen: (objectMemory wordSize = 8
+	^self gen: (self wordSize = 8
 					ifTrue: [MoveRA32]
 					ifFalse: [MoveRAw])
 		operand: reg
@@ -2560,7 +2553,7 @@ Cogit >> MoveR: reg1 R: reg2 [
 Cogit >> MoveR: srcReg Rd: destDPReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
-	self assert: objectMemory wordSize = 8.
+	self assert: self wordSize = 8.
 	^self gen: MoveRRd operand: srcReg operand: destDPReg
 ]
 
@@ -2596,7 +2589,7 @@ Cogit >> MoveRd: sourceDPReg M64: offset r: baseReg [
 Cogit >> MoveRd: srcDPReg R: destReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
-	self assert: objectMemory wordSize = 8.
+	self assert: self wordSize = 8.
 	^self gen: MoveRdR operand: srcDPReg operand: destReg
 ]
 
@@ -3090,7 +3083,7 @@ Cogit >> addCogMethodsToHeapMap [
 { #category : #'method map' }
 Cogit >> addToMap: annotation instruction: instruction byte: byte at: address for: mcpc [
 	<inline: true>
-	objectMemory byteAt: address put: byte.
+	self byteAt: address put: byte.
 	self cCode: [] inSmalltalk:
 		[| s bytecode |
 		(compilationTrace anyMask: 64) ifTrue:
@@ -3107,7 +3100,6 @@ Cogit >> addToMap: annotation instruction: instruction byte: byte at: address fo
 				 instruction printStateOn: s.
 				 s space.
 				 bytecode := objectMemory fetchByte: instruction bcpc ofObject: methodObj.
-				 bytecode := bytecode.
 				 (self generatorAt: bytecode) printStateOn: s.
 				 s cr; flush]]]
 ]
@@ -3159,7 +3151,7 @@ Cogit >> addressOfEndOfCase: n inCPIC: cPIC [
 Cogit >> addressSpaceMask [
 	<doNotGenerate>
 	"Quad-byte-align, because the ARM requires 4-byte aligned jump & call targets."
-	^((1 << (8 * objectMemory wordSize)) - 1) bitAnd: -4
+	^((1 << (8 * self wordSize)) - 1) bitAnd: -4
 ]
 
 { #category : #'generate machine code' }
@@ -3171,7 +3163,7 @@ Cogit >> alignUptoRoutineBoundary: anAddress [
 Cogit >> allButTopBitOfAddressSpaceMask [
 	<doNotGenerate>
 	"Quad-byte-align, because the ARM requires 4-byte aligned jump & call targets."
-	^((1 << (8 * objectMemory wordSize - 1)) - 1) bitAnd: -4
+	^((1 << (8 * self wordSize - 1)) - 1) bitAnd: -4
 ]
 
 { #category : #disassembly }
@@ -3895,14 +3887,6 @@ Cogit >> ceCallCogCodePopReceiverReg [
 	self simulateEnilopmart: ceCallCogCodePopReceiverReg numArgs: 1
 ]
 
-{ #category : #accessing }
-Cogit >> ceCannotResumePC [
-	<api>
-	<cmacro: '() ((usqInt)ceCannotResumeTrampoline)'>
-	<returnTypeC: #usqInt> "for Slang"
-	^ceCannotResumeTrampoline
-]
-
 { #category : #'jit - api' }
 Cogit >> ceCaptureCStackPointers [
 	<api: 'extern void (*ceCaptureCStackPointers)()'>
@@ -3943,21 +3927,6 @@ Cogit >> ceEnterCogCodePopReceiverReg [
 Cogit >> ceEnterCogCodePopReceiverRegEnilopmart [
 	<doNotGenerate>
 	^ ceEnterCogCodePopReceiverReg
-]
-
-{ #category : #'trampoline support' }
-Cogit >> ceFree: pointer [
-	<api>
-	<var: #pointer type: #'void*'>
-	self free: pointer
-]
-
-{ #category : #'trampoline support' }
-Cogit >> ceMalloc: size [
-	<api>
-	<var: #size type: #'size_t'>
-	<returnTypeC: #'void*'>
-	^ self malloc: size
 ]
 
 { #category : #accessing }
@@ -4024,7 +3993,6 @@ Cogit >> ceSICMiss: receiver [
 	self assert: (outerReturn between: methodZoneBase and: methodZone freeStart).
 	entryPoint := backEnd callTargetFromReturnAddress: outerReturn.
 
-	self assert: targetMethod selector ~= objectMemory nilObject.
 	self assert: targetMethod asInteger + cmEntryOffset = entryPoint.
 
 	self lookup: targetMethod selector
@@ -4094,29 +4062,6 @@ Cogit >> ceSICMiss: receiver [
 		andCacheTag: (backEnd inlineCacheTagAt: outerReturn).
 	"NOTREACHED"
 	^nil
-]
-
-{ #category : #accessing }
-Cogit >> ceSendMustBeBooleanAddFalseTrampoline: anInteger [
-
-	<doNotGenerate>
-
-	ceSendMustBeBooleanAddFalseTrampoline := anInteger
-]
-
-{ #category : #accessing }
-Cogit >> ceSendMustBeBooleanAddTrueTrampoline: anInteger [ 
-
-	<doNotGenerate>
-	
-	ceSendMustBeBooleanAddTrueTrampoline :=	anInteger
-
-]
-
-{ #category : #initialization }
-Cogit >> ceSendMustBeBooleanTrampoline: aTrampolineAddress [
-
-	ceSendMustBeBooleanTrampoline := aTrampolineAddress
 ]
 
 { #category : #accessing }
@@ -4580,7 +4525,7 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 { #category : #'simulation only' }
 Cogit >> cogBlockMethodSurrogateAt: address [
 	<doNotGenerate>
-	self assert: (address bitAnd: objectMemory wordSize - 1) = 0.
+	self assert: (address bitAnd: self wordSize - 1) = 0.
 	^cogBlockMethodSurrogateClass new
 		at: address
 		objectMemory: objectMemory
@@ -4865,7 +4810,7 @@ Cogit >> cogMethodDoesntLookKosher: cogMethod [
 	<api>
 	<inline: false>
 	<var: #cogMethod type: #'CogMethod *'>
-	((cogMethod blockSize bitAnd: objectMemory wordSize - 1) ~= 0
+	((cogMethod blockSize bitAnd: self wordSize - 1) ~= 0
 	 or: [cogMethod blockSize < (self sizeof: CogMethod)
 	 or: [cogMethod blockSize >= 32768]]) ifTrue:
 		[^1].
@@ -4928,7 +4873,7 @@ Cogit >> cogMethodOrBlockSurrogateAt: address [
 { #category : #'simulation only' }
 Cogit >> cogMethodSurrogateAt: address [
 	<doNotGenerate>
-	self assert: (address < 0 or: [(address bitAnd: objectMemory wordSize - 1) = 0]).
+	self assert: (address < 0 or: [(address bitAnd: self wordSize - 1) = 0]).
 	^cogMethodSurrogateClass new
 		at: address
 		objectMemory: objectMemory
@@ -5278,11 +5223,11 @@ Cogit >> compileCallFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrCo
 	regsToSave := resultRegOrNone = NoReg
 						ifTrue: [regMask]
 						ifFalse: [regMask bitClear: (self registerMaskFor: resultRegOrNone)].
-	cStackAlignment > objectMemory wordSize ifTrue:
+	cStackAlignment > self wordSize ifTrue:
 		[backEnd
 			genAlignCStackSavingRegisters: regsToSave
 			numArgs: numArgs
-			wordAlignment: cStackAlignment / objectMemory wordSize].
+			wordAlignment: cStackAlignment / self wordSize].
 	backEnd
 		genSaveRegs: regsToSave;
 		genMarshallNArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3.
@@ -5306,11 +5251,11 @@ Cogit >> compileCallFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrCo
 	regsToSave := resultRegOrNone = NoReg
 						ifTrue: [regMask]
 						ifFalse: [regMask bitClear: (self registerMaskFor: resultRegOrNone)].
-	cStackAlignment > objectMemory wordSize ifTrue:
+	cStackAlignment > self wordSize ifTrue:
 		[backEnd
 			genAlignCStackSavingRegisters: regsToSave
 			numArgs: numArgs
-			wordAlignment: cStackAlignment / objectMemory wordSize].
+			wordAlignment: cStackAlignment / self wordSize].
 	backEnd
 		genSaveRegs: regsToSave;
 		genMarshallNArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3.
@@ -5334,11 +5279,11 @@ Cogit >> compileCallFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrCo
 	regsToSave := resultRegOrNone = NoReg
 						ifTrue: [regMask]
 						ifFalse: [regMask bitClear: (self registerMaskFor: resultRegOrNone)].
-	cStackAlignment > objectMemory wordSize ifTrue:
+	cStackAlignment > self wordSize ifTrue:
 		[backEnd
 			genAlignCStackSavingRegisters: regsToSave
 			numArgs: numArgs
-			wordAlignment: cStackAlignment / objectMemory wordSize].
+			wordAlignment: cStackAlignment / self wordSize].
 	backEnd
 		genSaveRegs: regsToSave;
 		genMarshallNArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3.
@@ -5346,8 +5291,6 @@ Cogit >> compileCallFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrCo
 						inSmalltalk: [self simulatedTrampolineFor: aRoutine]).
 	resultRegOrNone ~= NoReg ifTrue:
 		[backEnd genWriteCResultIntoReg: resultRegOrNone].
-	resultReg2OrNone ~= NoReg ifTrue:
-		[backEnd genWriteCSecondResultIntoReg: resultReg2OrNone].
 	backEnd genRemoveNArgsFromStack: numArgs.
 	backEnd genRestoreRegs: regsToSave
 ]
@@ -5564,7 +5507,7 @@ Cogit >> compileFullBlockEntry [
 	fullBlockNoContextSwitchEntry := self MoveCq: 0 R: SendNumArgsReg.
 	jumpNoContextSwitch := self Jump: 0.
 
-	self AlignmentNops: (objectMemory wordSize max: 8).
+	self AlignmentNops: (self wordSize max: 8).
 	"Context switch entry (use ReceiverResultReg as a non-zero value; it's shorter)."
 	fullBlockEntry := self MoveR: ReceiverResultReg R: SendNumArgsReg.
 	jumpNoContextSwitch jmpTarget: self Label.
@@ -5729,7 +5672,7 @@ Cogit >> computeEntryOffsets [
 	cmEntryOffset := entry address - methodZoneBase.
 	cmNoCheckEntryOffset := noCheckEntry address - methodZoneBase.
 	missOffset := sendMissCall address + sendMissCall machineCodeSize - methodZoneBase.
-	entryPointMask := objectMemory wordSize - 1.
+	entryPointMask := self wordSize - 1.
 	[(cmEntryOffset bitAnd: entryPointMask) = (cmNoCheckEntryOffset bitAnd: entryPointMask)] whileTrue:
 		[entryPointMask := entryPointMask + entryPointMask + 1].
 	entryPointMask >= (methodZone roundUpLength: 1) ifTrue:
@@ -6004,18 +5947,6 @@ Cogit >> disassembleTrampolineTable [
 		[:i|
 		self disassembleTrampolineFor: (trampolineAddresses at: i + 1) asInteger.
 		coInterpreter transcript newLine]
-]
-
-{ #category : #'simulation only' }
-Cogit >> doesNotUnderstand: aMessage [
-	(aMessage selector beginsWith: 'print') ifTrue:
-		[(coInterpreter respondsTo: aMessage selector) ifTrue:
-			[^aMessage lookupClass: nil; sentTo: coInterpreter].
-		(methodZone respondsTo: aMessage selector) ifTrue:
-			[^aMessage lookupClass: nil; sentTo: methodZone].
-		(objectMemory respondsTo: aMessage selector) ifTrue:
-			[^aMessage lookupClass: nil; sentTo: objectMemory]].
-	^super doesNotUnderstand: aMessage
 ]
 
 { #category : #'register management' }
@@ -6342,7 +6273,7 @@ Cogit >> fakeAddressFor: anObject index: index [
 	 in determining the varBaseAddress we take a guess at the final
 	 size of simulatedAddresses."
 	<doNotGenerate>
-	^(index + 101 * objectMemory wordSize) negated
+	^(index + 101 * self wordSize) negated
 		bitAnd: ((backEnd notNil
 				and: [backEnd wantsNearAddressFor: anObject])
 					ifTrue: [self addressSpaceMask]
@@ -6887,14 +6818,6 @@ Cogit >> gen: opcode "<Integer>" uniqueLiteral: operandOne "<Integer>" operand: 
 	^literalsManager
 		uniqueLiteral: operandOne
 		forInstruction: (self gen: opcode operand: operandOne operand: operandTwo)
-]
-
-{ #category : #'trampoline support' }
-Cogit >> genCallMustBeBooleanFor: boolean [
-	"Call ceSendMustBeBooleanTo: via the relevant trampoline."
-	^self CallRT: (boolean = objectMemory falseObject
-					ifTrue: [ceSendMustBeBooleanAddFalseTrampoline]
-					ifFalse: [ceSendMustBeBooleanAddTrueTrampoline])
 ]
 
 { #category : #initialization }
@@ -7974,62 +7897,17 @@ Cogit >> generateReturnToInterpreterPCTrampoline [
 
 { #category : #initialization }
 Cogit >> generateRunTimeTrampolines [
-
 	"Generate the run-time entries at the base of the native code zone and update the base."
-	ceSendMustBeBooleanTrampoline := self
-		                                         genMustBeBooleanTrampolineCalled:
-		                                         'ceSendMustBeBooleanTrampoline'.
-	ceSendMustBeBooleanAddFalseTrampoline := self
-		                                         genMustBeBooleanTrampolineFor:
-		                                         objectMemory falseObject
-		                                         called:
-		                                         'ceSendMustBeBooleanAddFalseTrampoline'.
-	ceSendMustBeBooleanAddTrueTrampoline := self
-		                                        genMustBeBooleanTrampolineFor:
-		                                        objectMemory trueObject
-		                                        called:
-		                                        'ceSendMustBeBooleanAddTrueTrampoline'.
+
 	ceNonLocalReturnTrampoline := self genNonLocalReturnTrampoline.
 	ceCheckForInterruptTrampoline := self genCheckForInterruptsTrampoline.
-	"Neither of the context inst var access trampolines save registers.  Their operation could cause
-	 arbitrary update of stack frames, so the assumption is that callers flush the stack before calling
-	 the context inst var access trampolines, and that everything except the result is dead afterwards."
-	ceFetchContextInstVarTrampoline := self
-		                                   genTrampolineFor:
-		                                   #ceContext:instVar:
-		                                   called:
-		                                   'ceFetchContextInstVarTrampoline'
-		                                   arg: ReceiverResultReg
-		                                   arg: SendNumArgsReg
-		                                   result: SendNumArgsReg.
-	ceStoreContextInstVarTrampoline := self
-		                                   genTrampolineFor:
-		                                   #ceContext:instVar:value:
-		                                   called:
-		                                   'ceStoreContextInstVarTrampoline'
-		                                   arg: ReceiverResultReg
-		                                   arg: SendNumArgsReg
-		                                   arg: ClassReg
-		                                   result: ReceiverResultReg. "to keep ReceiverResultReg live."
-	ceCannotResumeTrampoline := self
-		                            genTrampolineFor: #ceCannotResume
-		                            called: 'ceCannotResumeTrampoline'.
 	"These two are unusual; they are reached by return instructions."
 	ceBaseFrameReturnTrampoline := self
 		                               genReturnTrampolineFor:
 		                               #ceBaseFrameReturn:
 		                               called: 'ceBaseFrameReturnTrampoline'
 		                               arg: ReceiverResultReg.
-	self generateReturnToInterpreterPCTrampoline.
-	ceMallocTrampoline := self
-		                      genTrampolineFor: #ceMalloc:
-		                      called: 'ceMallocTrampoline'
-		                      arg: ReceiverResultReg
-		                      result: TempReg.
-	ceFreeTrampoline := self
-		                    genTrampolineFor: #ceFree:
-		                    called: 'ceFreeTrampoline'
-		                    arg: ReceiverResultReg
+	self generateReturnToInterpreterPCTrampoline
 ]
 
 { #category : #initialization }
@@ -8118,7 +7996,6 @@ Cogit >> generateTrampolines [
 			self generateMissAbortTrampolines.
 			self generateObjectRepresentationTrampolines.
 			self generateRunTimeTrampolines.
-			SistaVM ifTrue: [self generateSistaRuntime].
 			self generateEnilopmarts.
 			self generateTracingTrampolines.
 			self recordGeneratedRunTime: 'methodZoneBase' address: methodZoneBase]
@@ -8333,7 +8210,7 @@ Cogit >> handleCallOrJumpSimulationTrap: aProcessorSimulationTrap [
 						["This is a rare case (e.g. in Scorch where a married context's sender is set to nil on trapTrpped and hence the stack layout is altered."
 						 (function == #primitiveSlotAtPut and: [objectMemory isContext: (coInterpreter frameReceiver: coInterpreter framePointer)]) ifFalse:
 							[self assert: savedFramePointer = coInterpreter framePointer.
-							 self assert: savedStackPointer + (savedArgumentCount * objectMemory wordSize)
+							 self assert: savedStackPointer + (savedArgumentCount * self wordSize)
 									= coInterpreter stackPointer]]]
 			ifFalse:
 				[self assert: savedFramePointer = coInterpreter framePointer.
@@ -8343,7 +8220,7 @@ Cogit >> handleCallOrJumpSimulationTrap: aProcessorSimulationTrap [
 		 rpc := processor retpcIn: memory.
 		 self assert: (rpc >= codeBase and: [rpc < methodZone freeStart]).
 		 processor
-			smashCallerSavedRegistersWithValuesFrom: 16r80000000 by: objectMemory wordSize in: memory;
+			smashCallerSavedRegistersWithValuesFrom: 16r80000000 by: self wordSize in: memory;
 			simulateReturnIn: memory].
 	self assert: (result isInteger "an oop result"
 			or: [result == coInterpreter
@@ -8593,7 +8470,7 @@ Cogit >> inlineCacheTagsAreIndexes [
 	 for selectors in a method's literal frame and negative for selectors in the specialSelectorsOop.
 	 And it implies that linked inline cache entries contain class indices, not class oops."
 	<inline: true>
-	^objectMemory wordSize = 8
+	^self wordSize = 8
 ]
 
 { #category : #'in-line cacheing' }
@@ -10408,7 +10285,7 @@ Cogit >> picInterpretAbortOffset [
 Cogit >> positiveMachineIntegerFor: value [
 	<var: #value type: #'usqIntptr_t'>
 	<inline: true>
-	^objectMemory wordSize = 8
+	^self wordSize = 8
 		ifTrue: [coInterpreter positive64BitIntegerFor: value]
 		ifFalse: [coInterpreter positive32BitIntegerFor: value]
 ]
@@ -11575,7 +11452,7 @@ Cogit >> simulateEnilopmart: enilopmartAddress numArgs: n [
 	(printInstructions or: [printRegisters]) ifTrue:
 		[coInterpreter printExternalHeadFrame].
 	processor
-		smashRegistersWithValuesFrom: 16r80000000 by: objectMemory wordSize;
+		smashRegistersWithValuesFrom: 16r80000000 by: self wordSize;
 		simulateLeafCallOf: enilopmartAddress
 		nextpc: 16rBADF00D
 		memory: nil.
@@ -12245,6 +12122,12 @@ Cogit >> withAnnotation: annotation mcpc: mcpc evaluate: binaryBlock [
 Cogit >> withAnnotation: annotation pc: mcpc evaluate: aBinaryBlock [
 	<doNotGenerate>
 	^(aBinaryBlock value: annotation value: mcpc) ifTrue: [1] ifFalse: [0]
+]
+
+{ #category : #accessing }
+Cogit >> wordSize [
+
+	^ objectMemory wordSize
 ]
 
 { #category : #accessing }
