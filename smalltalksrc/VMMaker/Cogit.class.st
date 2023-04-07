@@ -6175,29 +6175,33 @@ Cogit >> endPCOf: aMethod [
 { #category : #initialization }
 Cogit >> ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes [
 
-	| opcodeBytes fixupBytes allocBytes clearFixupsBytes clearOpcodesBytes|
+	| opcodeBytes fixupBytes allocBytes clearFixupsBytes clearOpcodesBytes |
 	numAbstractOpcodes := numberOfAbstractOpcodes.
-	
-	opcodeBytes := (self sizeof: CogAbstractInstruction) * MaxNumberOfAbstractOpcodes.
-	fixupBytes := (self sizeof: CogBytecodeFixup) * MaxNumberOfAbstractOpcodes.
-	allocBytes := opcodeBytes + fixupBytes.
-	
-	clearOpcodesBytes := (self sizeof: CogAbstractInstruction) * numberOfAbstractOpcodes.
-	clearFixupsBytes := (self sizeof: CogBytecodeFixup) * numberOfAbstractOpcodes.
-		
-	self
-		cCode:
-			[abstractOpcodes 
-				ifNil: [
-					abstractOpcodes := self malloc: allocBytes.
-					fixups := (abstractOpcodes asUnsignedInteger + opcodeBytes) asVoidPointer].
-				
-			 self b: abstractOpcodes zero: clearOpcodesBytes.
-			 self b: fixups zero: clearFixupsBytes]
-		inSmalltalk:
-			[abstractOpcodes := CArrayAccessor on: ((1 to: numAbstractOpcodes) collect: [:ign| CogCompilerClass for: self]).
-			 fixups := CArrayAccessor on: ((1 to: numAbstractOpcodes) collect: [:ign| self bytecodeFixupClass for: self])].
 
+	opcodeBytes := (self sizeof: CogAbstractInstruction)
+	               * MaxNumberOfAbstractOpcodes.
+	fixupBytes := (self sizeof: CogBytecodeFixup)
+	              * MaxNumberOfAbstractOpcodes.
+	allocBytes := opcodeBytes + fixupBytes.
+
+	clearOpcodesBytes := (self sizeof: CogAbstractInstruction)
+	                     * numberOfAbstractOpcodes.
+	clearFixupsBytes := (self sizeof: CogBytecodeFixup)
+	                    * numberOfAbstractOpcodes.
+
+	abstractOpcodes ifNil: [
+		self
+			cCode: [
+				abstractOpcodes := self malloc: allocBytes.
+				fixups := (abstractOpcodes asUnsignedInteger + opcodeBytes)
+					          asVoidPointer ]
+			inSmalltalk: [
+				abstractOpcodes := CArrayAccessor on:
+					                   ((1 to: MaxNumberOfAbstractOpcodes) collect: [
+						                    :ign | CogCompilerClass for: self ]).
+				fixups := CArrayAccessor on:
+					          ((1 to: MaxNumberOfAbstractOpcodes) collect: [ :ign |
+						           self bytecodeFixupClass for: self ]) ] ]
 ]
 
 { #category : #'compile abstract instructions' }
