@@ -299,6 +299,9 @@ message(STATUS "Full Platform name: ${FULL_PLATFORM_NAME}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g ${COMMON_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${COMMON_FLAGS}")
 
+# Set compilation flags for debug (or not)
+# This could be replaced by CMake generator expressions in newer versions
+# However, we need to stay compatible with old CMake versions for builds in old debians
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
 	set(OPTIMIZATION_LEVEL -O0)
 	set(DEBUGVM 1)
