@@ -122,6 +122,9 @@ SpurImageWriter >> writeImageFile: imageFileName fromHeader: header [
 	<var: #imageFileName declareC: 'char *imageFileName'>
 	<var: #f type: #sqImageFile>
 	<var: #header type: #SpurImageHeaderStruct>
+	<var: #imageBytes type:#'size_t'>
+	<var: #bytesWritten type:#'size_t'>
+
 	| headerStart imageHeaderSize f imageBytes bytesWritten |
 	headerStart := 0.
 	imageHeaderSize := header imageHeaderSize.
@@ -196,6 +199,8 @@ SpurImageWriter >> writeSegment: segment nextSegment: nextSegment toFile: aBinar
 	<var: 'aBinaryStream' type: #sqImageFile>
 	<var: 'firstSavedBridgeWord' type: #usqLong>
 	<var: 'secondSavedBridgeWord' type: #usqLong>
+	<var: #nWritten type:#'size_t'>
+	
 	<inline: false>
 
 	| pier1 pier2 firstSavedBridgeWord secondSavedBridgeWord nWritten |

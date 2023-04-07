@@ -192,6 +192,10 @@ SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 	<var: #f type: #sqImageFile>
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
 	<var: 'aHeader' type: #SpurImageHeaderStruct>
+	<var: #bytesRead type: #'size_t'>
+	<var: #totalBytesRead type: #'size_t'>
+	<var: #nextSegmentSize type: #'size_t'>
+	
 	| bytesRead totalBytesRead bridgehead bridge nextSegmentSize oldBase newBase bridgeSpan |
 
 	self prepareSegmentsToRead.
