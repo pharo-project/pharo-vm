@@ -3902,11 +3902,17 @@ StackInterpreter >> checkForAndFollowForwardedPrimitiveState [
 	 check the accessorDepth for the primitive and if non-negative scan the
 	 args to the depth, following any forwarders.  Answer if any are found so
 	 the prim can be retried.  The primitive index is derived from newMethod."
+
 	<option: #SpurObjectMemory>
-	| primIndex accessorDepth |
+	| primIndex |
 	self assert: self failed.
 	primIndex := self primitiveIndexOf: newMethod.
-	self assert: (argumentCount = (self argumentCountOf: newMethod) or: [self isMetaPrimitiveIndex: primIndex]).
+	self assert: (argumentCount = (self argumentCountOf: newMethod) or: [ self isMetaPrimitiveIndex: primIndex ]).
+	^ self checkForAndFollowForwardedPrimitiveState: primIndex
+]
+
+{ #category : #'primitive support' }
+StackInterpreter >> checkForAndFollowForwardedPrimitiveState: primitiveIndex [
 	"If the primitive is one of the meta primitives PrimNumberDoPrimitive or
 	 PrimNumberDoExternalCall, then metaAccessorDepth will have been set
 	 to nil at the start of the primitive, and to the accessor depth of the called
@@ -3917,17 +3923,16 @@ StackInterpreter >> checkForAndFollowForwardedPrimitiveState [
 	 primitive is primitiveExternalCall then the accessor depth is that of
 	 primitiveExternalCall until primitiveFunctionPointer is assigned, at which
 	 point the accessor depth is taken from the slot in newMethod's first literal."
-	accessorDepth := ((self isMetaPrimitiveIndex: primIndex)
-						 and: [metaAccessorDepth > -2])
-							ifTrue: [metaAccessorDepth]
-							ifFalse:
-								[(primIndex = PrimNumberExternalCall
-								  and: [primitiveFunctionPointer ~~ #primitiveExternalCall])
-									ifTrue: [self primitiveAccessorDepthForExternalPrimitiveMethod: newMethod]
-									ifFalse: [primitiveAccessorDepthTable at: primIndex]].
-	self assert: (self saneFunctionPointerForFailureOfPrimIndex: primIndex).
-	^self followForwardedForAccessorDepth: accessorDepth
 
+	| accessorDepth |
+	accessorDepth := ((self isMetaPrimitiveIndex: primitiveIndex) and: [ metaAccessorDepth > -2 ])
+		                 ifTrue: [ metaAccessorDepth ]
+		                 ifFalse: [
+			                 (primitiveIndex = PrimNumberExternalCall and: [ primitiveFunctionPointer ~~ #primitiveExternalCall ])
+				                 ifTrue: [ self primitiveAccessorDepthForExternalPrimitiveMethod: newMethod ]
+				                 ifFalse: [ primitiveAccessorDepthTable at: primitiveIndex ] ].
+	self assert: (self saneFunctionPointerForFailureOfPrimIndex: primitiveIndex).
+	^ self followForwardedForAccessorDepth: accessorDepth
 ]
 
 { #category : #'process primitive support' }
