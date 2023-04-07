@@ -6860,7 +6860,7 @@ Cogit >> gen: opcode operand: operand [
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
 	| abstractInstruction |
-	abstractInstruction := self gen: opcodeIndex.
+	abstractInstruction := self gen: opcode.
 	abstractInstruction operands at: 0 put: operand.
 	^ abstractInstruction
 ]
