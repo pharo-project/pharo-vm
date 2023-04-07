@@ -299,9 +299,19 @@ message(STATUS "Full Platform name: ${FULL_PLATFORM_NAME}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g ${COMMON_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${COMMON_FLAGS}")
 
+# Set compilation flags for debug (or not)
+# This could be replaced by CMake generator expressions in newer versions
+# However, we need to stay compatible with old CMake versions for builds in old debians
+if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+	set(OPTIMIZATION_LEVEL -O0)
+	set(DEBUGVM 1)
+else()
+	set(OPTIMIZATION_LEVEL -O2)
+	set(DEBUGVM 0)
+endif()
+
 add_compile_options(
-    $<$<CONFIG:DEBUG>:-O0>
-    $<$<NOT:$<CONFIG:DEBUG>>:-O2>
+	${OPTIMIZATION_LEVEL}
     -Wno-sometimes-uninitialized
     -Wno-self-assign
     -Wno-unused-variable
@@ -327,12 +337,13 @@ add_compile_options(
     -Wno-shift-negative-value
 )
 
+
+
 add_compile_definitions(
     IMMUTABILITY=1
     COGMTVM=0
     PharoVM=1
-    $<$<CONFIG:DEBUG>:DEBUGVM=1>
-    $<$<NOT:$<CONFIG:DEBUG>>:DEBUGVM=0>
+    DEBUGVM=${DEBUGVM}
     _FILE_OFFSET_BITS=64
 )
 
