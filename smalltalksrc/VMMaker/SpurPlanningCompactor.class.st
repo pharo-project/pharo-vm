@@ -1018,7 +1018,7 @@ SpurPlanningCompactor >> useFreeChunkForSavedFirstFieldsSpace: highestSuitableFr
 		configureSavedFirstFieldsSpaceStart: highestSuitableFreeBlock
 			+ (manager freeChunkLargerIndex * manager bytesPerOop)
 		limit: (manager addressAfter: highestSuitableFreeBlock)
-		isOldSpace: false.
+		isOldSpace: true.
 	self deny: self savedFirstFieldsSpaceWasAllocated
 ]
 
@@ -1039,7 +1039,7 @@ SpurPlanningCompactor >> useSegmentForSavedFirstFieldsSpace: spaceEstimate [
 			self
 				configureSavedFirstFieldsSpaceStart: segAddress asUnsignedIntegerPtr
 				limit: segAddress asUnsignedIntegerPtr + allocatedSize
-				isOldSpace: true.
+				isOldSpace: false.
 				self assert: self savedFirstFieldsSpaceWasAllocated.
 		 ^true].
 	^false
