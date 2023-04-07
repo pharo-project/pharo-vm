@@ -278,6 +278,7 @@ def upload(platform, configuration, archiveName, isStableRelease = false) {
 	def wordSize = is32Bits(platform) ? "32" : "64"
 	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
 	def expandedCSourceFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-c-src.zip").trim()
+	def expandedCSourceTarName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-c-src.tar.gz").trim()
 	def expandedHeadersFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-include.zip").trim()
 
 	sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
@@ -295,12 +296,21 @@ def upload(platform, configuration, archiveName, isStableRelease = false) {
 		${expandedHeadersFileName} \
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/include/latest${mainBranchVersion()}.zip"
 
+		// Upload Souces ZIP 
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedCSourceFileName} \
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedCSourceFileName} \
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source/latest${mainBranchVersion()}.zip"
+
+		// Upload Sources TAR.GZ
+		sh "scp -o StrictHostKeyChecking=no \
+		${expandedCSourceTarName} \
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source"
+		sh "scp -o StrictHostKeyChecking=no \
+		${expandedCSourceTarName} \
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source/latest${mainBranchVersion()}.tar.gz"
 		
 		if(isStableRelease){
 			sh "scp -o StrictHostKeyChecking=no \
