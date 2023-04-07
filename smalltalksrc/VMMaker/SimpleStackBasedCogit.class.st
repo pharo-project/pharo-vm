@@ -12,7 +12,11 @@ Class {
 		'externalPrimJumpOffsets',
 		'externalSetPrimOffsets',
 		'introspectionDataIndex',
-		'introspectionData'
+		'introspectionData',
+		'tempOop',
+		'ceTraceStoreTrampoline',
+		'ceTraceBlockActivationTrampoline',
+		'ceReapAndResetErrorCodeTrampoline'
 	],
 	#pools : [
 		'VMClassIndices',
@@ -354,19 +358,23 @@ SimpleStackBasedCogit >> compileFrameBuild [
 ]
 
 { #category : #'compile abstract instructions' }
-SimpleStackBasedCogit >> compileFullBlockFramelessEntry: numCopied [ 
+SimpleStackBasedCogit >> compileFullBlockFramelessEntry: numCopied [
 	"Make sure ReceiverResultReg holds the receiver, loaded from the closure,
 	 which is what is initially in ReceiverResultReg.  "
+
 	self flag: #TODO. "we could follow the receiver only if the block has inst var ref. Currently we use scanMethod for fullBlock 
 	and that scanner does not provide this information. We could extend it based on the scanBlock: method"
 	"Use ReceiverResultReg for the closure to agree with store check trampoline"
-	objectRepresentation
+	self
 		genLoadSlot: FullClosureReceiverIndex
-			sourceReg: ReceiverResultReg
-				destReg: Arg0Reg.
-	objectRepresentation
-		genEnsureOopInRegNotForwarded: Arg0Reg scratchReg: TempReg updatingSlot: FullClosureReceiverIndex in: ReceiverResultReg.
-	self MoveR: Arg0Reg R: ReceiverResultReg.
+		sourceReg: ReceiverResultReg
+		destReg: Arg0Reg.
+	self
+		genEnsureOopInRegNotForwarded: Arg0Reg
+		scratchReg: TempReg
+		updatingSlot: FullClosureReceiverIndex
+		in: ReceiverResultReg.
+	self MoveR: Arg0Reg R: ReceiverResultReg
 ]
 
 { #category : #'compile abstract instructions' }
@@ -386,52 +394,56 @@ SimpleStackBasedCogit >> compileFullBlockMethodFrameBuild: numCopied [
 	sp->	Nth temp
 	Avoid use of SendNumArgsReg which is the flag determining whether
 	context switch is allowed on stack-overflow."
+
 	<inline: false>
-	needsFrame ifFalse: [^self].
-	backEnd hasLinkRegister ifTrue: [self PushR: LinkReg].
+	needsFrame ifFalse: [ ^ self ].
+	backEnd hasLinkRegister ifTrue: [ self PushR: LinkReg ].
 	self PushR: FPReg.
 	self MoveR: SPReg R: FPReg.
 	"Think of ClassReg as ClosureReg"
 	self MoveR: ReceiverResultReg R: ClassReg.
 	"The block method field must have its MFMethodFlagIsBlockFlag bit set.
 	 We arrange this using a labelOffset.  A hack, but it works."
-	methodLabel addDependent: (self annotateAbsolutePCRef:
-			(self PushCw: methodLabel asInteger));
-			setLabelOffset: MFMethodFlagIsBlockFlag.. "method"
-	self genMoveNilR: SendNumArgsReg.
+	methodLabel
+		addDependent:
+			(self annotateAbsolutePCRef: (self PushCw: methodLabel asInteger));
+		setLabelOffset: MFMethodFlagIsBlockFlag.
+	self genMoveNilR: SendNumArgsReg. "method"
 	self PushR: SendNumArgsReg. "context"
 	"Closure is on stack and initially in ReceiverResultReg.
-	 It is safe to use Arg0Reg because reg args are pushed by the value primitives if there are any.".
+	 It is safe to use Arg0Reg because reg args are pushed by the value primitives if there are any."
 
 	self flag: #TODO. "we could follow the receiver only if the block has inst var ref. Currently we use scanMethod for fullBlock 
 	and that scanner does not provide this information. We could extend it based on the scanBlock: method"
 	"Use ReceiverResultReg for the closure to agree with store check trampoline"
-	objectRepresentation
+	self
 		genLoadSlot: FullClosureReceiverIndex
-			sourceReg: ClassReg
-				destReg: Arg0Reg.
-	objectRepresentation
-		genEnsureOopInRegNotForwarded: Arg0Reg scratchReg: TempReg updatingSlot: FullClosureReceiverIndex in: ReceiverResultReg.
+		sourceReg: ClassReg
+		destReg: Arg0Reg.
+	self
+		genEnsureOopInRegNotForwarded: Arg0Reg
+		scratchReg: TempReg
+		updatingSlot: FullClosureReceiverIndex
+		in: ReceiverResultReg.
 	self MoveR: Arg0Reg R: ReceiverResultReg.
 
 	self PushR: ReceiverResultReg. "closure receiver"
 	"Push copied values"
-	0 to: numCopied - 1 do:
-		[:i|
-		objectRepresentation
+	0 to: numCopied - 1 do: [ :i |
+		self
 			genLoadSlot: i + FullClosureFirstCopiedValueIndex
 			sourceReg: ClassReg
 			destReg: TempReg.
-		self PushR: TempReg].
+		self PushR: TempReg ].
 	"Push slots for temps"
-	methodOrBlockNumArgs + numCopied + 1 to: (coInterpreter temporaryCountOfMethodHeader: methodHeader) do:
-		[:i|
-		self PushR: SendNumArgsReg].
-	
+	methodOrBlockNumArgs + numCopied + 1 to:
+	(coInterpreter temporaryCountOfMethodHeader: methodHeader) do: [ :i |
+	self PushR: SendNumArgsReg ].
+
 	self MoveAw: coInterpreter stackLimitAddress R: TempReg.
 	self CmpR: TempReg R: SPReg. "N.B. FLAGS := SPReg - TempReg"
 	self JumpBelow: stackOverflowCall.
-	stackCheckLabel := (self annotateBytecode: self Label)
+	stackCheckLabel := self annotateBytecode: self Label
 ]
 
 { #category : #'compile abstract instructions' }
@@ -554,7 +566,7 @@ SimpleStackBasedCogit >> compileInterpreterPrimitive: primitiveRoutine flags: fl
 		"If set, jump to record sample call."
 		cogPrimitiveCallState jmpSamplePrim: (self JumpNonZero: 0).
 		cogPrimitiveCallState continuePostSamplePrim: self Label].
-	objectRepresentation maybeCompileRetryOnPrimitiveFail: primitiveIndex.
+	self maybeCompileRetryOnPrimitiveFail: primitiveIndex.
 	self maybeCompileAllocFillerCheck.
 	"Switch back to the Smalltalk stack.  Stack better be in either of these two states:
 		success:	stackPointer ->	result (was receiver)
@@ -773,7 +785,7 @@ SimpleStackBasedCogit >> compileOpenPIC: selector numArgs: numArgs [
 	<var: #jumpBCMethod type: #'AbstractInstruction *'>
 	self preenMethodLabel.
 	self compilePICAbort: numArgs.
-	entry := objectRepresentation genGetClassTagOf: ReceiverResultReg into: SendNumArgsReg scratchReg: TempReg.
+	entry := self genGetClassTagOf: ReceiverResultReg into: SendNumArgsReg scratchReg: TempReg.
 
 	self flag: #lookupInMethodCacheSel:classTag:. "so this method shows up as a sender of lookupInMethodCacheSel:class:"
 
@@ -793,8 +805,8 @@ SimpleStackBasedCogit >> compileOpenPIC: selector numArgs: numArgs [
 					R: SendNumArgsReg.
 			.
 	"If the method is compiled jump to its unchecked entry-point, otherwise interpret it."
-	objectRepresentation genLoadSlot: HeaderIndex sourceReg: SendNumArgsReg destReg: ClassReg.
-	jumpBCMethod := objectRepresentation genJumpImmediate: ClassReg.
+	self genLoadSlot: HeaderIndex sourceReg: SendNumArgsReg destReg: ClassReg.
+	jumpBCMethod := self genJumpImmediate: ClassReg.
 	jumpBCMethod jmpTarget: picInterpretAbort.
 	self AddCq: cmNoCheckEntryOffset R: ClassReg.
 	self JumpR: ClassReg.
@@ -838,7 +850,7 @@ SimpleStackBasedCogit >> compileOpenPICMethodCacheProbeFor: selector withShift: 
 	| jumpSelectorMiss |
 	<var: 'jumpSelectorMiss' type: #'AbstractInstruction *'>
 	self MoveR: SendNumArgsReg R: ClassReg.
-	objectRepresentation maybeShiftClassTagRegisterForMethodCacheProbe: ClassReg.
+	self maybeShiftClassTagRegisterForMethodCacheProbe: ClassReg.
 	self annotate: (self XorCw: selector R: ClassReg) objRef: selector.
 	self assert: shift <= objectMemory shiftForWord.
 	"Need to shift the hash right by shift to form the probe, and then shift the probe left by shiftForWord to form the index.
@@ -876,7 +888,7 @@ SimpleStackBasedCogit >> compilePerformMethodCacheProbeFor: selectorReg withShif
 	| jumpSelectorMiss |
 	<var: 'jumpSelectorMiss' type: #'AbstractInstruction *'>
 	self MoveR: SendNumArgsReg R: ClassReg.
-	objectRepresentation maybeShiftClassTagRegisterForMethodCacheProbe: ClassReg.
+	self maybeShiftClassTagRegisterForMethodCacheProbe: ClassReg.
 	self XorR: selectorReg R: ClassReg.
 	self assert: shift <= objectMemory shiftForWord.
 	"Need to shift the hash right by shift to form the probe, and then shift the probe left by shiftForWord to form the index.
@@ -907,7 +919,6 @@ SimpleStackBasedCogit >> compilePerformMethodCacheProbeFor: selectorReg withShif
 
 { #category : #'primitive generators' }
 SimpleStackBasedCogit >> compilePrimitive [
-
 	"Compile a primitive.  If possible, performance-critical primtiives will
 	 be generated by their own routines (primitiveGenerator).  Otherwise,
 	 if there is a primitive at all, we call the C routine with the usual
@@ -928,24 +939,23 @@ SimpleStackBasedCogit >> compilePrimitive [
 	 ResultReceiverReg instead of accessing the stack, so the receiver better be at
 	 numArgs down the stack.  Use the interpreter version if not."
 	aPrimitiveDescriptor := self primitiveDescriptor.
-	
-	( aPrimitiveDescriptor primitiveGenerator notNil and: [ 
-		 aPrimitiveDescriptor primNumArgs < 0 or: [ 
+
+	(aPrimitiveDescriptor primitiveGenerator notNil and: [
+		 aPrimitiveDescriptor primNumArgs < 0 or: [ "means don't care"
 			 aPrimitiveDescriptor primNumArgs
-			 = (coInterpreter argumentCountOf: methodObj) ] "means don't care" ] ) 
-		ifTrue: [ 
-			code := objectRepresentation perform:
-				        aPrimitiveDescriptor primitiveGenerator ].
-	(code < 0 and: [ code ~= UnimplementedPrimitive ]) ifTrue: [ "Generator failed, so no point continuing..." 
+			 = (coInterpreter argumentCountOf: methodObj) ] ]) ifTrue: [
+		code := self executePrimitiveGenerator:
+			        aPrimitiveDescriptor primitiveGenerator ].
+	(code < 0 and: [ code ~= UnimplementedPrimitive ]) ifTrue: [ "Generator failed, so no point continuing..."
 		^ code ].
 	code = UnfailingPrimitive ifTrue: [ ^ 0 ].
 	"If the machine code verison handles all cases the only reason to call the interpreter
 	 primitive is to reap the primitive error code.  Don't bother if it isn't used."
-	(code = CompletePrimitive and: [ 
+	(code = CompletePrimitive and: [
 		 (self methodUsesPrimitiveErrorCode: methodObj header: methodHeader)
 			 not ]) ifTrue: [ ^ 0 ].
 	"Discard any arg load code generated by the primitive generator."
-	code = UnimplementedPrimitive ifTrue: [ 
+	code = UnimplementedPrimitive ifTrue: [
 		opcodeIndex := opcodeIndexAtPrimitive ].
 
 	flags := self
@@ -953,15 +963,15 @@ SimpleStackBasedCogit >> compilePrimitive [
 		         primitiveDescriptor: aPrimitiveDescriptor.
 	(flags anyMask: PrimCallDoNotJIT) ifTrue: [ ^ ShouldNotJIT ].
 
-	(flags anyMask: PrimCallOnSmalltalkStack) ifTrue: [ 
+	(flags anyMask: PrimCallOnSmalltalkStack) ifTrue: [
 		self assert: flags = PrimCallOnSmalltalkStack.
 		^ self compileMachineCodeInterpreterPrimitive:
 			  (coInterpreter mcprimFunctionForPrimitiveIndex: primitiveIndex) ].
 
 	((primitiveRoutine := coInterpreter
 		                      functionPointerForCompiledMethod: methodObj
-		                      primitiveIndex: primitiveIndex) = 0 or: [ 
-		 primitiveRoutine = #primitiveFail ]) ifTrue: [ 
+		                      primitiveIndex: primitiveIndex) = 0 or: [
+		 primitiveRoutine = #primitiveFail ]) ifTrue: [
 		^ self genFastPrimFail ]. "no primitive"
 	minValidCallAddress := minValidCallAddress min:
 		                       primitiveRoutine asUnsignedInteger.
@@ -990,46 +1000,6 @@ SimpleStackBasedCogit >> distanceForShortForwardBranch: pc inMethod: aMethodObj 
 	^((objectMemory fetchByte: pc ofObject: aMethodObj) bitAnd: 7) + 1
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> doubleExtendedDoAnythingBytecode [
-	"Replaces the Blue Book double-extended send [132], in which the first byte was wasted on 8 bits of argument count. 
-	Here we use 3 bits for the operation sub-type (opType),  and the remaining 5 bits for argument count where needed. 
-	The last byte give access to 256 instVars or literals. 
-	See also secondExtendedSendBytecode"
-	| opType |
-	opType := byte1 >> 5.
-	opType = 0 ifTrue:
-		[^self genSend: byte2 numArgs: (byte1 bitAnd: 31)].
-	opType = 1 ifTrue:
-		[^self genSendSuper: byte2 numArgs: (byte1 bitAnd: 31)].
-	"We need a map entry for this bytecode for correct parsing.
-	 The sends will get an IsSend entry anyway.  The other cases need a fake one."
-	opType caseOf: {
-			[2]	->	[(coInterpreter isReadMediatedContextInstVarIndex: byte2)
-						ifTrue: [self genPushMaybeContextReceiverVariable: byte2]
-						ifFalse: [self genPushReceiverVariable: byte2]].
-			[3]	->	[self genPushLiteralIndex: byte2].
-			[4]	->	[self genPushLiteralVariable: byte2].
-			[7]	->	[self genStorePop: false LiteralVariable: byte2.
-					 self cppIf: IMMUTABILITY ifTrue: ["genStorePop:LiteralVariable: annotates; don't annotate twice" ^0]] }
-		otherwise: "5 & 6"
-			[(coInterpreter isWriteMediatedContextInstVarIndex: byte2)
-				ifTrue: [self genStorePop: opType = 6 MaybeContextReceiverVariable: byte2]
-				ifFalse: [self genStorePop: opType = 6 ReceiverVariable: byte2].
-			 self cppIf: IMMUTABILITY ifTrue: ["genStorePop:...ReceiverVariable: annotate; don't annotate twice" ^0]].
-	"We need a map entry for this bytecode for correct parsing (if the method builds a frame)."
-	needsFrame ifTrue:
-		[self annotateBytecode: self Label].
-	^0
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> duplicateTopBytecode [
-	self MoveMw: 0 r: SPReg R: TempReg.
-	self PushR: TempReg.
-	^0
-]
-
 { #category : #accessing }
 SimpleStackBasedCogit >> endPC: anInteger [ 
 	<doNotGenerate>
@@ -1052,52 +1022,10 @@ SimpleStackBasedCogit >> evaluateTrampolineCallBlock: block protectLinkRegIfNot:
 			[ block value ].
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> extendedPushBytecode [
-	| variableType variableIndex |
-	variableType := (byte1 >> 6) bitAnd: 16r3.
-	variableIndex := byte1 bitAnd: 16r3F.
-	variableType = 0 ifTrue:
-		[^self genPushReceiverVariable: variableIndex].
-	variableType = 1 ifTrue:
-		[^self genPushTemporaryVariable: variableIndex].
-	variableType = 2 ifTrue:
-		[^self genPushLiteralIndex: variableIndex].
-	^self genPushLiteralVariable: variableIndex
-]
+{ #category : #'primitive generators' }
+SimpleStackBasedCogit >> executePrimitiveGenerator: aPrimitiveGenerator [
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> extendedStoreAndPopBytecode [
-	| variableType variableIndex |
-	variableType := byte1 >> 6 bitAnd: 3.
-	variableIndex := byte1 bitAnd: 63.
-	variableType = 0 ifTrue:
-		[^self genStorePop: true ReceiverVariable: variableIndex].
-	variableType = 1 ifTrue:
-		[self genStorePop: true TemporaryVariable: variableIndex.
-		"needs a fake map entry if Immutability is ON..."
-		self cppIf: IMMUTABILITY ifTrue: [ self annotateBytecode: self Label. ].
-		^ 0].
-	variableType = 3 ifTrue:
-		[^self genStorePop: true LiteralVariable: variableIndex].
-	^EncounteredUnknownBytecode
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> extendedStoreBytecode [
-	| variableType variableIndex |
-	variableType := byte1 >> 6 bitAnd: 3.
-	variableIndex := byte1 bitAnd: 63.
-	variableType = 0 ifTrue:
-		[^self genStorePop: false ReceiverVariable: variableIndex].
-	variableType = 1 ifTrue:
-		[self genStorePop: false TemporaryVariable: variableIndex.
-		"needs a fake map entry if Immutability is ON..."
-		self cppIf: IMMUTABILITY ifTrue: [ self annotateBytecode: self Label. ].
-		^ 0].
-	variableType = 3 ifTrue:
-		[^self genStorePop: false LiteralVariable: variableIndex].
-	^EncounteredUnknownBytecode
+	self subclassResponsibility
 ]
 
 { #category : #'bytecode generator support' }
@@ -1134,34 +1062,6 @@ SimpleStackBasedCogit >> fullBlockNoContextSwitchEntryOffset [
 	^cbNoSwitchEntryOffset
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genBlockReturn [
-	"Return from block, assuming result already loaded into ReceiverResultReg."
-	needsFrame ifTrue:
-		[self MoveR: FPReg R: SPReg.
-		 self PopR: FPReg.
-		 backEnd hasLinkRegister ifTrue:
-			[self PopR: LinkReg]].
-	self RetN: methodOrBlockNumArgs + 1 * objectMemory wordSize.
-	^0
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genCallMappedInlinedPrimitive [
-	"Implemented with SistaCogit only"
-	^EncounteredUnknownBytecode
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genCallPrimitiveBytecode [
-	"V3PlusClosures:	139 10001011	iiiiiiii   jjjjjjjj  Call Primitive #iiiiiiii + (jjjjjjjj * 256)
-	 NewsqueakV4:		249 11111001	iiiiiiii   jjjjjjjj  Call Primitive #iiiiiiii + (jjjjjjjj * 256)
-	 SistaV1:			248 11111000 iiiiiiii mjjjjjjj  Call Primitive #iiiiiiii + ( jjjjjjj * 256)
-							m=1 means inlined primitive, no hard return after execution."
-	(bytecodePC = initialPC and: [byte2 < 128]) ifFalse: [^EncounteredUnknownBytecode].
-	^0
-]
-
 { #category : #'constant support' }
 SimpleStackBasedCogit >> genCmpConstant: constant R: register [
 	"If the objectMemory allows it, generates a quick constant cmp, else generates a word constant cmp"
@@ -1184,338 +1084,76 @@ SimpleStackBasedCogit >> genDoubleFailIfZeroArgRcvr: rcvrReg arg: argReg [
 	^self JumpFPEqual: 0
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtJumpIfFalse [
-	"244		11110100	i i i i i i i i	Pop and Jump 0n False i i i i i i i i (+ Extend B * 256, where Extend B >= 0)"
-	| distance target |
-	distance := byte1 + (extB << 8).
-	self assert: distance = (self v4: (self generatorAt: byte0)
-								LongForward: bytecodePC
-								Branch: (extA ~= 0 ifTrue: [1] ifFalse: [0]) + (extB ~= 0 ifTrue: [1] ifFalse: [0])
-								Distance: methodObj).
-	extB := 0.
-	numExtB := 0.
-	target := distance + 2 + bytecodePC.
-	^self genJumpIf: objectMemory falseObject to: target
-]
+{ #category : #'bytecode generator support' }
+SimpleStackBasedCogit >> genEnsureObjInRegNotForwarded: reg scratchReg: scratch [
+	"Make sure that the object in reg is not forwarded.  This routine assumes the object will
+	 never be forwarded to an immediate, as it is used to unforward  literal variables (associations). 
+	 Use the fact that isForwardedObjectClassIndexPun is a power of two to save an instruction."
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtJumpIfTrue [
-	"243		11110011	i i i i i i i i	Pop and Jump 0n True i i i i i i i i (+ Extend B * 256, where Extend B >= 0)"
-	| distance target |
-	distance := byte1 + (extB << 8).
-	self assert: distance = (self v4: (self generatorAt: byte0)
-								LongForward: bytecodePC
-								Branch: (extA ~= 0 ifTrue: [1] ifFalse: [0]) + (extB ~= 0 ifTrue: [1] ifFalse: [0])
-								Distance: methodObj).
-	extB := 0.
-	numExtB := 0.
-	target := distance + 2 + bytecodePC.
-	^self genJumpIf: objectMemory trueObject to: target
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtNopBytecode [
-	"SistaV1:		 91		01011011'		Nop"
-	extA := numExtB := extB := 0.
-	^0
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtPushCharacterBytecode [
-	"SistaV1:		233		11101001	iiiiiiii		Push Character #iiiiiiii (+ Extend B * 256)"
-	| value |
-	value := byte1 + (extB << 8).
-	extB := 0.
-	numExtB := 0.
-	^self genPushLiteral: (objectMemory characterObjectOf: value)
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtPushFullClosureBytecode [
-	"Full Block creation compilation. The block's actual code will be compiled separatedly."
-	"*	255		11111111	xxxxxxxx	siyyyyyy	push Closure Compiled block literal index xxxxxxxx (+ Extend A * 256) numCopied yyyyyy receiverOnStack: s = 1 ignoreOuterContext: i = 1"
-	| numCopied ignoreContext receiverIsOnStack compiledBlock |
-	self assert: needsFrame.
-	compiledBlock := self getLiteral: byte1 + (extA << 8).
-	extA := 0.
-	numCopied := byte2 bitAnd: 1<< 6 - 1.
-	receiverIsOnStack := byte2 anyMask: 1 << 7.
-	ignoreContext := byte2 anyMask: 1 << 6.
-	objectRepresentation
-		genCreateFullClosure: compiledBlock
-		numArgs: (coInterpreter argumentCountOf: compiledBlock)
-		numCopied: numCopied
-		ignoreContext: ignoreContext
-		contextNumArgs: methodOrBlockNumArgs
-		large: (coInterpreter methodNeedsLargeContext: methodObj)
-		inBlock: inBlock.
-	"Closure in ReceiverResultReg"
-	1 to: numCopied do:
-		[:i|
-		self
-			PopR: TempReg;
-			MoveR: TempReg
-				Mw: numCopied - i + FullClosureFirstCopiedValueIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize
-					r: ReceiverResultReg].
-	receiverIsOnStack
-		ifTrue: [self PopR: TempReg]
-		ifFalse: [ self MoveMw: FoxMFReceiver r: FPReg R: TempReg].
+	<var: #ok type: #'AbstractInstruction *'>
+	<var: #loop type: #'AbstractInstruction *'>
+	| loop ok |
+	self assert: reg ~= scratch.
+	loop := self Label.
+	"notionally
+		self genGetClassIndexOfNonImm: reg into: scratch.
+		self CmpCq: objectMemory isForwardedObjectClassIndexPun R: TempReg.
+	 but the following is an instruction shorter:"
+	self MoveMw: 0 r: reg R: scratch.
 	self
-		MoveR: TempReg
-		Mw: FullClosureReceiverIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize
-		r: ReceiverResultReg.
-	self PushR: ReceiverResultReg.
-	^0
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtPushIntegerBytecode [
-	"NewsqueakV4:	229		11100101	iiiiiiii	Push Integer #iiiiiiii (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)
-	SistaV1:		232		11101000	iiiiiiii	Push Integer #iiiiiiii (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)"
-	| value |
-	value := byte1 + (extB << 8).
-	extB := 0.
-	numExtB := 0.
-	^self genPushLiteral: (objectMemory integerObjectOf: value)
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtPushLiteralBytecode [
-	"228		11100100	i i i i i i i i	Push Literal #iiiiiiii (+ Extend A * 256)"
-	| index |
-	index := byte1 + (extA << 8).
-	extA := 0.
-	^self genPushLiteralIndex: index
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtPushLiteralVariableBytecode [
-	"227		11100011	i i i i i i i i	Push Literal Variable #iiiiiiii (+ Extend A * 256)"
-	| index |
-	index := byte1 + (extA << 8).
-	extA := 0.
-	^self genPushLiteralVariable: index
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtPushPseudoVariable [
-	"SistaV1: *	82			01010010			Push thisContext, (then Extend B = 1 => push thisProcess)"
-	| ext |
-	ext := extB.
-	extB := 0.
-	numExtB := 0.
-	ext caseOf: {
-		[0]	->	[^self genPushActiveContextBytecode].
-		}
-		otherwise:
-			[^self unknownBytecode].
-	^0
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtPushPseudoVariableOrOuterBytecode [
-	"77			01001101		Push false [* 1:true, 2:nil, 3:thisContext, ..., -N: pushEnclosingObjectAt: N, N = Extend B]"
-	| ext |
-	ext := extB.
-	extB := 0.
-	numExtB := 0.
-	ext caseOf: {
-		[0]	->	[^self genPushLiteral: objectMemory falseObject].
-		[1]	->	[^self genPushLiteral: objectMemory trueObject].
-		[2]	->	[^self genPushLiteral: objectMemory nilObject].
-		[3]	->	[^self genPushActiveContextBytecode]
-		}
-		otherwise:
-			[ext < 0 ifTrue:
-				[^self genPushEnclosingObjectAt: 0 - ext].
-			 self warning: 'undefined extension for extPushPseudoVariableOrOuter'.
-			 ^self unknownBytecode].
-	^0
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtPushReceiverVariableBytecode [
-	"226		11100010	i i i i i i i i	Push Receiver Variable #iiiiiiii (+ Extend A * 256)"
-	| index |
-	index := byte1 + (extA << 8).
-	extA := 0.
-	^(coInterpreter isReadMediatedContextInstVarIndex: index)
-		ifTrue: [self genPushMaybeContextReceiverVariable: index]
-		ifFalse: [self genPushReceiverVariable: index]
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtPushRemoteTempOrInstVarLongBytecode [
-	| index |
-	^ (byte2 noMask: coInterpreter remoteIsInstVarAccess)
-		ifTrue: [ self genPushRemoteTempLongBytecode ]
-		ifFalse: 
-			[ index := byte1 + (extA << 8).
-			extA := 0.
-			extB := 0. "don't use flags in the simple cogit"
-			numExtB := 0.
-			(coInterpreter isReadMediatedContextInstVarIndex: index)
-				ifTrue: [self 
-							genPushMaybeContextRemoteInstVar: index 
-							inObjectAt: byte2 - coInterpreter remoteIsInstVarAccess]
-				ifFalse: [self 
-							genPushRemoteInstVar: index 
-							inObjectAt: byte2 - coInterpreter remoteIsInstVarAccess]]
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtReturnTopFromBlock [
-	"218		11011010		Return Stack Top From Block [* return from enclosing block N, N = Extend A]
-	 If extA is zero, return to the caller of the current block activation.
-	 If extA is non-zero return to the caller of the Nth enclosing block activation."
-	extA = 0 ifTrue:
-		[^self genReturnTopFromBlock].
-	self shouldBeImplemented.
-	extA := 0.
-	^EncounteredUnknownBytecode
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtSendBytecode [
-	"238		11101110	i i i i i j j j	Send Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments"
-	| litIndex nArgs |
-	litIndex := (byte1 >> 3) + (extA << 5).
-	extA := 0.
-	nArgs := (byte1 bitAnd: 7) + (extB << 3).
-	extB := 0.
-	numExtB := 0.
-	^self genSend: litIndex numArgs: nArgs
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtSendSuperBytecode [
-	"239		11101111	i i i i i j j j	Send To Superclass Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments"
-	| isDirected litIndex nArgs |
-	(isDirected := extB >= 64) ifTrue:
-		[extB := extB bitAnd: 63].
-	litIndex := (byte1 >> 3) + (extA << 5).
-	extA := 0.
-	nArgs := (byte1 bitAnd: 7) + (extB << 3).
-	extB := 0.
-	numExtB := 0.
-	^isDirected
-		ifTrue: [self genSendDirectedSuper: litIndex numArgs: nArgs]
-		ifFalse: [self genSendSuper: litIndex numArgs: nArgs]
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtStoreAndPopLiteralVariableBytecode [
-	"236		11101100	i i i i i i i i	Pop and Store Literal Variable #iiiiiiii (+ Extend A * 256)"
-	| index |
-	index := byte1 + (extA << 8).
-	extA := 0.
-	^self genStorePop: true LiteralVariable: index
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtStoreAndPopReceiverVariableBytecode [
-	"235		11101011	i i i i i i i i	Pop and Store Receiver Variable #iiiiiii (+ Extend A * 256)"
-	| index |
-	index := byte1 + (extA << 8).
-	extA := 0.
-	^(coInterpreter isWriteMediatedContextInstVarIndex: index)
-		ifTrue: [self genStorePop: true MaybeContextReceiverVariable: index]
-		ifFalse: [self genStorePop: true ReceiverVariable: index]
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtStoreAndPopRemoteTempOrInstVarLongBytecode [
-	^ self genExtStorePopRemoteTempOrInstVarLongBytecodePopBoolean: true
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtStoreLiteralVariableBytecode [
-	"233		11101001	i i i i i i i i	Store Literal Variable #iiiiiiii (+ Extend A * 256)"
-	| index |
-	index := byte1 + (extA << 8).
-	extA := 0.
-	^self genStorePop: false LiteralVariable: index
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtStorePopRemoteTempOrInstVarLongBytecodePopBoolean: popBoolean [
-	| index |
-	extB := 0. "simple cogit don't use the extra flag"
-	numExtB := 0.
-	(byte2 noMask: coInterpreter remoteIsInstVarAccess)
-		ifTrue: 
-			[ self genStorePop: popBoolean RemoteTemp: byte1 At: byte2.
-			self cppIf: IMMUTABILITY ifTrue: [ self annotateBytecode: self Label ] ]
-		ifFalse: 
-			[ index := byte1 + (extA << 8).
-			extA := 0.
-			(coInterpreter isWriteMediatedContextInstVarIndex: index)
-				ifTrue: [ self 
-						genStorePop: popBoolean 
-						MaybeContextRemoteInstVar: index 
-						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess ]
-				ifFalse: [ self 
-						genStorePop: popBoolean 
-						RemoteInstVar: index 
-						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess  ] ].
+		AndCq: objectMemory classIndexMask
+			- objectMemory isForwardedObjectClassIndexPun
+		R: scratch.
+	ok := self JumpNonZero: 0.
+	self genLoadSlot: 0 sourceReg: reg destReg: reg.
+	self Jump: loop.
+	ok jmpTarget: self Label.
 	^ 0
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtStoreReceiverVariableBytecode [
-	"232		11101000	i i i i i i i i	Store Receiver Variable #iiiiiii (+ Extend A * 256)"
-	| index |
-	index := byte1 + (extA << 8).
-	extA := 0.
-	^(coInterpreter isWriteMediatedContextInstVarIndex: index)
-		ifTrue: [self genStorePop: false MaybeContextReceiverVariable: index]
-		ifFalse: [self genStorePop: false ReceiverVariable: index]
+{ #category : #'bytecode generator support' }
+SimpleStackBasedCogit >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch [
+
+	^ self
+		  genEnsureOopInRegNotForwarded: reg
+		  scratchReg: scratch
+		  jumpBackTo: self Label "label is just before the forwarder check"
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtStoreRemoteTempOrInstVarLongBytecode [
-	^ self genExtStorePopRemoteTempOrInstVarLongBytecodePopBoolean: false
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtTrapIfNotInstanceOfBehaviorsBytecode [
-	"SistaV1: *	236		11101100	iiiiiiii		Trap If Not Instance Of Behavior/Array Of Behavior #iiiiiiii (+ Extend A * 256, where Extend A >= 0)"
-	"This really only makes sense for the optimizing JITs"
-	^EncounteredUnknownBytecode
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtUnconditionalJump [
-	"242		11110010	i i i i i i i i	Jump i i i i i i i i (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)"
-	| distance target |
-	distance := byte1 + (extB << 8).
-	self assert: distance = (self v4: (self generatorAt: byte0)
-								Long: bytecodePC
-								Branch: (extA ~= 0 ifTrue: [1] ifFalse: [0]) + (extB ~= 0 ifTrue: [1] ifFalse: [0])
-								Distance: methodObj).
-	extB := 0.
-	numExtB := 0.
-	target := distance + 2 + bytecodePC.
-	distance < 0 ifTrue:
-		[^self genJumpBackTo: target].
-	self genJumpTo: target.
-	"The bytecode must be mapped since it can be either forward or backward, and
-	  backwards branches must be mapped. So if forward, we need to map."
-	self annotateBytecode: self lastOpcode.
+{ #category : #'bytecode generator support' }
+SimpleStackBasedCogit >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch ifForwarder: fwdJumpTarget ifNotForwarder: nonFwdJumpTargetOrZero [
+	"Make sure that the oop in reg is not forwarded.  
+	 Use the fact that isForwardedObjectClassIndexPun is a power of two to save an instruction."
+	| imm ok finished |
+	self assert: reg ~= scratch.
+	imm := self genJumpImmediate: reg.
+	"notionally
+		self genGetClassIndexOfNonImm: reg into: scratch.
+		cogit CmpCq: objectMemory isForwardedObjectClassIndexPun R: TempReg.
+	 but the following is an instruction shorter:"
+	self MoveMw: 0 r: reg R: scratch.
+	self
+		AndCq: objectMemory classIndexMask - objectMemory isForwardedObjectClassIndexPun
+		R: scratch.
+	ok := self JumpNonZero: 0.
+	self genLoadSlot: 0 sourceReg: reg destReg: reg.
+	self Jump: fwdJumpTarget.
+	finished := nonFwdJumpTargetOrZero asUnsignedInteger = 0
+					ifTrue: [self Label]
+					ifFalse: [nonFwdJumpTargetOrZero].
+	imm jmpTarget: (ok jmpTarget: finished).
 	^0
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtendedSendBytecode [
-	"Can use any of the first 32 literals for the selector and pass up to 7 arguments."
-
-	^self genSend: (byte1 bitAnd: 16r1F) numArgs: byte1 >> 5
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtendedSuperBytecode [
-	^self genSendSuper: (byte1 bitAnd: 16r1F) numArgs: byte1 >> 5
+{ #category : #'bytecode generator support' }
+SimpleStackBasedCogit >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch jumpBackTo: instruction [
+	<var: #instruction type: #'AbstractInstruction *'>
+	<inline: true>
+	^ self 
+		genEnsureOopInRegNotForwarded: reg 
+		scratchReg: scratch 
+		ifForwarder: instruction
+		ifNotForwarder: 0
 ]
 
 { #category : #'primitive generators' }
@@ -1542,17 +1180,42 @@ SimpleStackBasedCogit >> genFastPrimTraceUsing: r1 and: r2 [
 	self MoveR: TempReg Xwr: r2 R: r1
 ]
 
+{ #category : #'primitive generators' }
+SimpleStackBasedCogit >> genGetBits: mask ofFormatByteOf: sourceReg into: destReg [
+
+	self flag: #endianness.
+	self MoveMb: 3 r: sourceReg R: destReg.
+	self AndCq: mask R: destReg. "formatReg := self formatOfHeader: destReg"
+	^ 0
+]
+
+{ #category : #'in-line cacheing' }
+SimpleStackBasedCogit >> genGetClassTagOf: instReg into: destReg scratchReg: scratchReg [
+
+	^ self
+		  genGetInlineCacheClassTagFrom: instReg
+		  into: destReg
+		  forEntry: true
+]
+
+{ #category : #'primitive generators' }
+SimpleStackBasedCogit >> genGetFormatOf: srcReg into: destReg [
+	"Get the format field of the object in srcReg into destReg.
+	 srcReg may equal destReg."
+	^self genGetBits: objectMemory formatMask ofFormatByteOf: srcReg into: destReg
+]
+
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> genInlinedIdenticalOrNotIf: orNot [
 	| jumpNotEqual jumpPush |
 	<var: #jumpNotEqual type: #'AbstractInstruction *'>
 	<var: #jumpPush type: #'AbstractInstruction *'>
 	self PopR: Arg0Reg.
-	objectRepresentation
+	self
 		genEnsureOopInRegNotForwarded: Arg0Reg
 		scratchReg: TempReg.
 	self MoveMw: 0 r: SPReg R: ClassReg.
-	objectRepresentation
+	self
 		genEnsureOopInRegNotForwarded: ClassReg
 		scratchReg: TempReg.
 	self CmpR: Arg0Reg R: ClassReg.
@@ -1599,6 +1262,23 @@ SimpleStackBasedCogit >> genJumpIf: boolean to: targetBytecodePC [
 	^0
 ]
 
+{ #category : #'compile abstract instructions' }
+SimpleStackBasedCogit >> genJumpImmediate: aRegister [
+
+	<returnTypeC: #'AbstractInstruction *'>
+	self TstCq: objectMemory tagMask R: aRegister.
+	^ self JumpNonZero: 0
+]
+
+{ #category : #'primitive generators' }
+SimpleStackBasedCogit >> genJumpNotSmallInteger: reg [
+	"Generate a compare and branch to test if aRegister contains other than a SmallInteger."
+
+	^ self
+		  TstCq: objectMemory smallIntegerTag R: reg;
+		  JumpZero: 0
+]
+
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> genJumpTo: targetBytecodePC [
 	self Jump: (self ensureFixupAt: targetBytecodePC).
@@ -1614,61 +1294,14 @@ SimpleStackBasedCogit >> genLoadArgAtDepth: n into: reg [
 		R: reg
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genLongJumpIfFalse [
-	| distance target |
-	distance := self v3: (self generatorAt: byte0) LongForward: bytecodePC Branch: 0 Distance: methodObj.
-	target := distance + 2 + bytecodePC.
-	^self genJumpIf: objectMemory falseObject to: target
-]
+{ #category : #'compile abstract instructions' }
+SimpleStackBasedCogit >> genLoadSlot: index sourceReg: sourceReg destReg: destReg [
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genLongJumpIfTrue [
-	| distance target |
-	distance := self v3: (self generatorAt: byte0) LongForward: bytecodePC Branch: 0 Distance: methodObj.
-	target := distance + 2 + bytecodePC.
-	^self genJumpIf: objectMemory trueObject to: target
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genLongPushTemporaryVariableBytecode [
-	"230		11100110	i i i i i i i i	Push Temporary Variable #iiiiiiii"
-	^self genPushTemporaryVariable: byte1
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genLongStoreAndPopTemporaryVariableBytecode [
-	"237		11101101	i i i i i i i i	Pop and Store Temporary Variable #iiiiiiii"
-	^self genStorePop: true TemporaryVariable: byte1
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genLongStoreTemporaryVariableBytecode [
-	"234		11101010	i i i i i i i i	Store Temporary Variable #iiiiiiii"
-	^self genStorePop: false TemporaryVariable: byte1
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genLongUnconditionalBackwardJump [
-	| distance |
-	distance := self v3: (self generatorAt: byte0)
-					Long: bytecodePC
-					Branch: 0
-					Distance: methodObj.
-	self assert: distance < 0.
-	^self genJumpBackTo: distance + 2 + bytecodePC
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genLongUnconditionalForwardJump [
-	| distance targetpc |
-	distance := self v3: (self generatorAt: byte0)
-					Long: bytecodePC
-					Branch: 0
-					Distance: methodObj.
-	self assert: distance >= 0.
-	targetpc := distance + 2 + bytecodePC.
-	^self genJumpTo: targetpc
+	self
+		MoveMw: index * objectMemory wordSize + objectMemory baseHeaderSize
+		r: sourceReg
+		R: destReg.
+	^ 0
 ]
 
 { #category : #'primitive generators' }
@@ -1684,7 +1317,7 @@ SimpleStackBasedCogit >> genLookupForPerformNumArgs: numArgs [
 
 	"N.B.  Can't assume TempReg already contains the tag because a method can
 	 of course be invoked via the unchecked entry-point, e.g. as does perform:."
-	objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: SendNumArgsReg forEntry: false.
+	self genGetInlineCacheClassTagFrom: ReceiverResultReg into: SendNumArgsReg forEntry: false.
 
 	self flag: #lookupInMethodCacheSel:classTag:. "so this method shows up as a sender of lookupInMethodCacheSel:class:"
 
@@ -1703,8 +1336,8 @@ SimpleStackBasedCogit >> genLookupForPerformNumArgs: numArgs [
 					r: ClassReg
 					R: SendNumArgsReg.
 	"If the method is not compiled fall back on the interpreter primitive."
-	objectRepresentation genLoadSlot: HeaderIndex sourceReg: SendNumArgsReg destReg: ClassReg.
-	jumpInterpret := objectRepresentation genJumpImmediate: ClassReg.
+	self genLoadSlot: HeaderIndex sourceReg: SendNumArgsReg destReg: ClassReg.
+	jumpInterpret := self genJumpImmediate: ClassReg.
 	"Adjust arguments and jump to the method's unchecked entry-point."
 	self AddCq: cmNoCheckEntryOffset R: ClassReg.
 	self adjustArgumentsForPerform: numArgs.
@@ -1795,12 +1428,6 @@ SimpleStackBasedCogit >> genMustBeBooleanTrampolineFor: boolean called: trampoli
 		pushLinkReg: true
 		resultReg: NoReg
 		appendOpcodes: true
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPopStackBytecode [
-	self AddCq: objectMemory wordSize R: SPReg.
-	^0
 ]
 
 { #category : #'primitive generators' }
@@ -1939,7 +1566,7 @@ SimpleStackBasedCogit >> genPrimitiveFullClosureValue [
 	<var: #jumpBCMethod type: #'AbstractInstruction *'>
 	<var: #primitiveRoutine declareC: 'void (*primitiveRoutine)(void)'>
 	| jumpFailNArgs jumpFailImmediateMethod jumpFail4 jumpBCMethod primitiveRoutine result |
-	objectRepresentation
+	self
 		genLoadSlot: FullClosureNumArgsIndex
 		sourceReg: ReceiverResultReg
 		destReg: TempReg.
@@ -1950,20 +1577,20 @@ SimpleStackBasedCogit >> genPrimitiveFullClosureValue [
 
 	"We defer unforwarding the receiver to the prologue; scanning blocks
 	 for inst var refs and only unforwarding if the block refers to inst vars."
-	objectRepresentation
+	self
 		genLoadSlot: FullClosureCompiledBlockIndex
 		sourceReg: ReceiverResultReg
 		destReg: SendNumArgsReg.
-	jumpFailImmediateMethod := objectRepresentation genJumpImmediate:
+	jumpFailImmediateMethod := self genJumpImmediate:
 		                           SendNumArgsReg.
-	objectRepresentation genGetFormatOf: SendNumArgsReg into: TempReg.
+	self genGetFormatOf: SendNumArgsReg into: TempReg.
 	self CmpCq: objectMemory firstCompiledMethodFormat R: TempReg.
 	jumpFail4 := self JumpLess: 0.
-	objectRepresentation
+	self
 		genLoadSlot: HeaderIndex
 		sourceReg: SendNumArgsReg
 		destReg: ClassReg.
-	jumpBCMethod := objectRepresentation genJumpImmediate: ClassReg.
+	jumpBCMethod := self genJumpImmediate: ClassReg.
 
 	primitiveRoutine := coInterpreter
 		                    functionPointerForCompiledMethod: methodObj
@@ -1988,32 +1615,6 @@ SimpleStackBasedCogit >> genPrimitiveFullClosureValue [
 ]
 
 { #category : #'primitive generators' }
-SimpleStackBasedCogit >> genPrimitiveHashMultiply [
-	"Implement 28-bit hashMultiply for SmallInteger and LargePositiveInteger receivers."
-	| jmpFailImm jmpFailNonImm jmpNotSmallInt reenter |
-	jmpNotSmallInt := objectRepresentation genJumpNotSmallInteger: ReceiverResultReg.
-
-	objectRepresentation genConvertSmallIntegerToIntegerInReg: ReceiverResultReg.
-	reenter :=
-	self MoveCq: HashMultiplyConstant R: TempReg.
-	self MulR: TempReg R: ReceiverResultReg.
-	self AndCq: HashMultiplyMask R: ReceiverResultReg.
-	objectRepresentation genConvertIntegerToSmallIntegerInReg: ReceiverResultReg.
-	self RetN: 0.
-
-	jmpNotSmallInt jmpTarget: self Label.
-	jmpFailImm := objectRepresentation genJumpImmediate: ReceiverResultReg.
-	objectRepresentation genGetCompactClassIndexNonImmOf: ReceiverResultReg into: ClassReg.
-	self CmpCq: ClassLargePositiveIntegerCompactIndex R: ClassReg.
-	jmpFailNonImm := self JumpNonZero: 0.
-	objectRepresentation genLoadSlot: 0 sourceReg: ReceiverResultReg destReg: ReceiverResultReg.
-	self Jump: reenter.
-
-	jmpFailImm jmpTarget: (jmpFailNonImm jmpTarget: self Label).
-	^0
-]
-
-{ #category : #'primitive generators' }
 SimpleStackBasedCogit >> genPrimitivePerform [
 	"Generate an in-line perform primitive.  The lookup code requires the selector to be in Arg0Reg.
 	 adjustArgumentsForPerform: adjusts the arguments once genLookupForPerformNumArgs:
@@ -2026,17 +1627,6 @@ SimpleStackBasedCogit >> genPrimitivePerform [
 	^self genLookupForPerformNumArgs: methodOrBlockNumArgs
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPushActiveContextBytecode [
-	self assert: needsFrame.
-	objectRepresentation
-		genGetActiveContextNumArgs: methodOrBlockNumArgs
-		large: (coInterpreter methodNeedsLargeContext: methodObj)
-		inBlock: inBlock.
-	self PushR: ReceiverResultReg.
-	^0
-]
-
 { #category : #'constant support' }
 SimpleStackBasedCogit >> genPushConstant: constant [
 	"If the objectMemory allows it, generates a quick constant push, else generates a word constant push"
@@ -2047,51 +1637,10 @@ SimpleStackBasedCogit >> genPushConstant: constant [
 	
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPushConstantFalseBytecode [
-	^self genPushLiteral: objectMemory falseObject
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPushConstantNilBytecode [
-	^self genPushLiteral: objectMemory nilObject
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPushConstantOneBytecode [
-	"79			01001111		Push 1"
-	^self genPushLiteral: (objectMemory integerObjectOf: 1)
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPushConstantTrueBytecode [
-	^self genPushLiteral: objectMemory trueObject
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPushConstantZeroBytecode [
-	"78			01001110		Push 0"
-	^self genPushLiteral: (objectMemory integerObjectOf: 0)
-]
-
-{ #category : #'bytecode generator support' }
-SimpleStackBasedCogit >> genPushEnclosingObjectAt: level [
-	"Uncached push enclosing object"
-	self MoveCq: level R: SendNumArgsReg.
-	self CallRT: ceEnclosingObjectTrampoline.
-	self PushR: ReceiverResultReg.
-	^0
-]
-
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> genPushLiteral: literal [
 	self genPushConstant: literal.
 	^0
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPushLiteralConstantBytecode [
-	^self genPushLiteralIndex: (byte0 bitAnd: 31)
 ]
 
 { #category : #'bytecode generator support' }
@@ -2106,12 +1655,6 @@ SimpleStackBasedCogit >> genPushLiteralIndex: literalIndex [ "<SmallInteger>"
 				[tempOop := literal.
 				 ^0]]].
 	^self genPushLiteral: literal
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPushLiteralVariable16CasesBytecode [
-	"16-31		0001 i i i i		Push Literal Variable #iiii"
-	^self genPushLiteralVariable: (byte0 bitAnd: 15)
 ]
 
 { #category : #'bytecode generator support' }
@@ -2132,20 +1675,15 @@ SimpleStackBasedCogit >> genPushLiteralVariable: literalIndex [
 				 ^0]]].
 	"N.B. Do _not_ use ReceiverResultReg to avoid overwriting receiver in assignment in frameless methods."
 	self genMoveConstant: association R: ClassReg.
-	objectRepresentation
+	self
 		genEnsureObjInRegNotForwarded: ClassReg
 		scratchReg: TempReg.
-	objectRepresentation
+	self
 		genLoadSlot: ValueIndex
 		sourceReg: ClassReg
 		destReg: TempReg.
 	self PushR: TempReg.
 	^0
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPushLiteralVariableBytecode [
-	^self genPushLiteralVariable: (byte0 bitAnd: 31)
 ]
 
 { #category : #'bytecode generator support' }
@@ -2164,16 +1702,16 @@ SimpleStackBasedCogit >> genPushMaybeContextReceiverVariable: slotIndex [
 		 self PushR: SendNumArgsReg.
 		 ^0].
 	self MoveMw: FoxMFReceiver r: FPReg R: ReceiverResultReg.
-	objectRepresentation
+	self
 		genLoadSlot: SenderIndex
 		sourceReg: ReceiverResultReg
 		destReg: TempReg.
-	jmpSingle := objectRepresentation genJumpNotSmallIntegerInScratchReg: TempReg.
+	jmpSingle := self genJumpNotSmallInteger: TempReg.
 	self MoveCq: slotIndex R: SendNumArgsReg.
 	self CallRT: ceFetchContextInstVarTrampoline.
 	jmpDone := self Jump: 0.
 	jmpSingle jmpTarget: self Label.
-	objectRepresentation
+	self
 		genLoadSlot: slotIndex
 		sourceReg: ReceiverResultReg
 		destReg: SendNumArgsReg.
@@ -2190,7 +1728,7 @@ SimpleStackBasedCogit >> genPushMaybeContextRemoteInstVar: slotIndex inObjectAt:
 	"See CoInterpreter>>contextInstructionPointer:frame: for an explanation
 	 of the instruction pointer slot handling."
 	self MoveMw: (self frameOffsetOfTemporary: objectIndex) r: FPReg R: ReceiverResultReg.
-	objectRepresentation 
+	self 
 		genEnsureOopInRegNotForwarded: ReceiverResultReg 
 		scratchReg: TempReg.
 	slotIndex = InstructionPointerIndex ifTrue:
@@ -2198,16 +1736,16 @@ SimpleStackBasedCogit >> genPushMaybeContextRemoteInstVar: slotIndex inObjectAt:
 		 self CallRT: ceFetchContextInstVarTrampoline.
 		 self PushR: SendNumArgsReg.
 		 ^0].
-	objectRepresentation
+	self
 		genLoadSlot: SenderIndex
 		sourceReg: ReceiverResultReg
 		destReg: TempReg.
-	jmpSingle := objectRepresentation genJumpNotSmallIntegerInScratchReg: TempReg.
+	jmpSingle := self genJumpNotSmallInteger: TempReg.
 	self MoveCq: slotIndex R: SendNumArgsReg.
 	self CallRT: ceFetchContextInstVarTrampoline.
 	jmpDone := self Jump: 0.
 	jmpSingle jmpTarget: self Label.
-	objectRepresentation
+	self
 		genLoadSlot: slotIndex
 		sourceReg: ReceiverResultReg
 		destReg: SendNumArgsReg.
@@ -2216,82 +1754,27 @@ SimpleStackBasedCogit >> genPushMaybeContextRemoteInstVar: slotIndex inObjectAt:
 
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPushNewArrayBytecode [
-	| size popValues |
-	self assert: needsFrame.
-	popValues := byte1 > 127.
-	size := byte1 bitAnd: 127.
-	objectRepresentation genNewArrayOfSize: size initialized: popValues not.
-	popValues ifTrue:
-		[size - 1 to: 0 by: -1 do:
-			[:i|
-			self PopR: TempReg.
-			objectRepresentation
-				genStoreSourceReg: TempReg
-				slotIndex: i
-				intoNewObjectInDestReg: ReceiverResultReg]].
-	self PushR: ReceiverResultReg.
-	^0
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPushQuickIntegerConstantBytecode [
-	^self genPushLiteral: (objectMemory integerObjectOf: byte0 - 117)
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPushReceiverBytecode [
-	needsFrame
-		ifTrue:
-			[self MoveMw: FoxMFReceiver r: FPReg R: TempReg.
-			 self PushR: TempReg]
-		ifFalse:
-			[self PushR: ReceiverResultReg].
-	^0
-]
-
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> genPushReceiverVariable: index [
 	<inline: false>
 	| maybeErr |
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg].
-	maybeErr := objectRepresentation genLoadSlot: index sourceReg: ReceiverResultReg destReg: TempReg.
+	maybeErr := self genLoadSlot: index sourceReg: ReceiverResultReg destReg: TempReg.
 	maybeErr < 0 ifTrue:
 		[^maybeErr].
 	self PushR: TempReg.
 	^0
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPushReceiverVariableBytecode [
-	^self genPushReceiverVariable: (byte0 bitAnd: 15)
-]
-
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> genPushRemoteInstVar: index inObjectAt: objectIndex [
 	self MoveMw: (self frameOffsetOfTemporary: objectIndex) r: FPReg R: ClassReg.
-	objectRepresentation 
+	self 
 		genEnsureOopInRegNotForwarded: ClassReg 
 		scratchReg: TempReg.
-	objectRepresentation
+	self
 		genLoadSlot: index
-		sourceReg: ClassReg
-		destReg: TempReg.
-	self PushR: TempReg.
-	^0
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPushRemoteTempLongBytecode [
-	self MoveMw: (self frameOffsetOfTemporary: byte2) r: FPReg R: ClassReg.
-	TempVectReadBarrier
-		ifTrue: [objectRepresentation
-				genEnsureObjInRegNotForwarded: ClassReg
-				scratchReg: TempReg].
-	objectRepresentation
-		genLoadSlot: byte1
 		sourceReg: ClassReg
 		destReg: TempReg.
 	self PushR: TempReg.
@@ -2303,11 +1786,6 @@ SimpleStackBasedCogit >> genPushTemporaryVariable: index [
 	self MoveMw: (self frameOffsetOfTemporary: index) r: FPReg R: TempReg.
 	self PushR: TempReg.
 	^0
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genPushTemporaryVariableBytecode [
-	^self genPushTemporaryVariable: (byte0 bitAnd: 15)
 ]
 
 { #category : #'primitive generators' }
@@ -2325,7 +1803,7 @@ SimpleStackBasedCogit >> genQuickReturnInstVar [
 	<api> "because selected by CoInterpreter>>quickPrimitiveGeneratorFor:"
 	| index |
 	index := coInterpreter quickPrimitiveInstVarIndexFor: primitiveIndex.
-	objectRepresentation genLoadSlot: index sourceReg: ReceiverResultReg destReg: ReceiverResultReg.
+	self genLoadSlot: index sourceReg: ReceiverResultReg destReg: ReceiverResultReg.
 	self genUpArrowReturn.
 	^UnfailingPrimitive
 ]
@@ -2335,64 +1813,6 @@ SimpleStackBasedCogit >> genQuickReturnSelf [
 	<api> "because selected by CoInterpreter>>quickPrimitiveGeneratorFor:"
 	self genUpArrowReturn.
 	^UnfailingPrimitive
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genReturnFalse [
-	self genMoveFalseR: ReceiverResultReg.
-	^self genUpArrowReturn
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genReturnNil [
-	self genMoveNilR: ReceiverResultReg.
-	^self genUpArrowReturn
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genReturnNilFromBlock [
-	self assert: inBlock > 0.
-	self genMoveNilR: ReceiverResultReg.
-	^self genBlockReturn
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genReturnReceiver [
-	"Frameless method activation looks like
-				receiver
-				args
-		sp->	ret pc.
-	 Return pops receiver and arguments off the stack.  Callee pushes the result."
-	needsFrame ifTrue:
-		[self putSelfInReceiverResultReg].
-	^self genUpArrowReturn
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genReturnTopFromBlock [
-	self assert: inBlock > 0.
-	self PopR: ReceiverResultReg.
-	^self genBlockReturn
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genReturnTopFromMethod [
-	"Return pops receiver and arguments off the stack.  Callee pushes the result."
-	self PopR: ReceiverResultReg.
-	^self genUpArrowReturn
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genReturnTrue [
-	self genMoveTrueR: ReceiverResultReg.
-	^self genUpArrowReturn
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSecondExtendedSendBytecode [
-	"Can use any of the first 64 literals for the selector and pass up to 3 arguments."
-
-	^self genSend: (byte1 bitAnd: 16r3F) numArgs: byte1 >> 6
 ]
 
 { #category : #'bytecode generator support' }
@@ -2412,7 +1832,7 @@ SimpleStackBasedCogit >> genSend: selectorIndex numArgs: numArgs sendTable: send
 	self MoveMw: numArgs * objectMemory wordSize r: SPReg R: ReceiverResultReg.
 	"Deal with stale super sends; see SpurMemoryManager's class comment."
 	(self annotationIsForUncheckedEntryPoint: annotation) ifTrue:
-		[objectRepresentation genEnsureOopInRegNotForwarded: ReceiverResultReg scratchReg: TempReg].
+		[self genEnsureOopInRegNotForwarded: ReceiverResultReg scratchReg: TempReg].
 	"0 through (NumSendTrampolines - 2) numArgs sends have the arg count implciti in the trampoline.
 	 The last send trampoline (NumSendTrampolines - 1) passes numArgs in SendNumArgsReg."
 	numArgs >= (NumSendTrampolines - 1) ifTrue:
@@ -2444,131 +1864,10 @@ SimpleStackBasedCogit >> genSendDirectedSuper: selectorIndex numArgs: numArgs [
 	^result
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSendLiteralSelector0ArgsBytecode [
-	^self genSend: (byte0 bitAnd: 15) numArgs: 0
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSendLiteralSelector1ArgBytecode [
-	^self genSend: (byte0 bitAnd: 15) numArgs: 1
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSendLiteralSelector2ArgsBytecode [
-
-	^self genSend: (byte0 bitAnd: 15) numArgs: 2
-]
-
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> genSendSuper: selectorIndex numArgs: numArgs [
 	<inline: false>
 	^self genSend: selectorIndex numArgs: numArgs sendTable: superSendTrampolines
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genShortJumpIfFalse [
-
-	| distance target |
-	distance := self
-		            distanceForShortForwardBranch: bytecodePC
-		            inMethod: methodObj.
-	target := distance + 1 + bytecodePC.
-	^ self genJumpIf: objectMemory falseObject to: target
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genShortJumpIfTrue [
-
-	| distance target |
-	distance := self
-		            distanceForShortForwardBranch: bytecodePC
-		            inMethod: methodObj.
-	target := distance + 1 + bytecodePC.
-	^ self genJumpIf: objectMemory trueObject to: target
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genShortUnconditionalJump [
-
-	| distance target |
-	distance := self
-		            distanceForShortForwardBranch: bytecodePC
-		            inMethod: methodObj.
-	target := distance + 1 + bytecodePC.
-	^ self genJumpTo: target
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreAndPopLiteralVariableBytecode [
-	^ self genSistaExtStoreLiteralVariableBytecodePopBoolean: true
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreAndPopReceiverVariableBytecode [
-	^ self genSistaExtStoreAndPopReceiverVariableBytecodePopBoolean: true
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreAndPopReceiverVariableBytecodePopBoolean: boolean [
-	| index |
-	extB := 0. "Simple cogit don't use the extra flags"
-	numExtB := 0.
-	index := byte1 + (extA << 8).
-	extA := 0.
-	^(coInterpreter isWriteMediatedContextInstVarIndex: index)
-		ifTrue: [self genStorePop: boolean MaybeContextReceiverVariable: index ]
-		ifFalse: [self genStorePop: boolean ReceiverVariable: index ]
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreLiteralVariableBytecode [
-	^ self genSistaExtStoreLiteralVariableBytecodePopBoolean: false
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreLiteralVariableBytecodePopBoolean: boolean [
-	| index |
-	extB := 0. "SimpleCogit don't use the extra flags"
-	numExtB := 0.
-	index := byte1 + (extA << 8).
-	extA := 0.
-	^ self genStorePop: boolean LiteralVariable: index
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreReceiverVariableBytecode [
-	^ self genSistaExtStoreAndPopReceiverVariableBytecodePopBoolean: false
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSpecialSelectorClass [
-	self MoveMw: 0 r: SPReg R: SendNumArgsReg.
-	objectRepresentation
-		genGetClassObjectOf: SendNumArgsReg
-		into: ClassReg
-		scratchReg: TempReg
-		instRegIsReceiver: false.
-	self MoveR: ClassReg Mw: 0 r: SPReg.
-	^0
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSpecialSelectorEqualsEquals [
-	^ self genInlinedIdenticalOrNotIf: false
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSpecialSelectorNotEqualsEquals [
-	^ self genInlinedIdenticalOrNotIf: true
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSpecialSelectorSend [
-	| index numArgs |
-	index := byte0 - self firstSpecialSelectorBytecodeOffset.
-	numArgs := coInterpreter specialSelectorNumArgs: index.
-	^self genSend: index negated - 1 numArgs: numArgs
 ]
 
 { #category : #'simulation stack' }
@@ -2585,21 +1884,6 @@ SimpleStackBasedCogit >> genStackArgAt: n into: reg [
 
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genStoreAndPopReceiverVariableBytecode [
-	^self genStorePop: true ReceiverVariable: (byte0 bitAnd: 7)
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genStoreAndPopRemoteTempLongBytecode [
-	^self genStorePop: true RemoteTemp: byte1 At: byte2
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genStoreAndPopTemporaryVariableBytecode [
-	^self genStorePop: true TemporaryVariable: (byte0 bitAnd: 7)
-]
-
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> genStorePop: popBoolean LiteralVariable: litVarIndex [
 	<inline: false>
@@ -2614,7 +1898,7 @@ SimpleStackBasedCogit >> genStorePop: popBoolean LiteralVariable: litVarIndex [
 	self assert: needsFrame.
 	association := self getLiteral: litVarIndex.
 	self genMoveConstant: association R: ReceiverResultReg.
-	objectRepresentation
+	self
 		genEnsureObjInRegNotForwarded: ReceiverResultReg
 		scratchReg: TempReg.
 	popBoolean
@@ -2640,12 +1924,12 @@ SimpleStackBasedCogit >> genStorePop: popBoolean MaybeContextReceiverVariable: s
 	 execution state of an activation in that case is if it has a frame."
 	self assert: needsFrame.
 	self putSelfInReceiverResultReg.
-	objectRepresentation
+	self
 		genLoadSlot: SenderIndex
 		sourceReg: ReceiverResultReg
 		destReg: TempReg.
 	self MoveMw: 0 r: SPReg R: ClassReg.
-	jmpSingle := objectRepresentation genJumpNotSmallIntegerInScratchReg: TempReg.
+	jmpSingle := self genJumpNotSmallInteger: TempReg.
 	self MoveCq: slotIndex R: SendNumArgsReg.
 	self CallRT: ceStoreContextInstVarTrampoline.
 	jmpDone := self Jump: 0.
@@ -2673,15 +1957,15 @@ SimpleStackBasedCogit >> genStorePop: popBoolean MaybeContextRemoteInstVar: slot
 	 execution state of an activation in that case is if it has a frame."
 	self assert: needsFrame.
 	self MoveMw: (self frameOffsetOfTemporary: objectIndex) r: FPReg R: ReceiverResultReg.
-	objectRepresentation 
+	self 
 		genEnsureOopInRegNotForwarded: ReceiverResultReg 
 		scratchReg: TempReg.
-	objectRepresentation
+	self
 		genLoadSlot: SenderIndex
 		sourceReg: ReceiverResultReg
 		destReg: TempReg.
 	self MoveMw: 0 r: SPReg R: ClassReg.
-	jmpSingle := objectRepresentation genJumpNotSmallIntegerInScratchReg: TempReg.
+	jmpSingle := self genJumpNotSmallInteger: TempReg.
 	self MoveCq: slotIndex R: SendNumArgsReg.
 	self CallRT: ceStoreContextInstVarTrampoline.
 	jmpDone := self Jump: 0.
@@ -2699,76 +1983,6 @@ SimpleStackBasedCogit >> genStorePop: popBoolean MaybeContextRemoteInstVar: slot
 ]
 
 { #category : #'bytecode generator support' }
-SimpleStackBasedCogit >> genStorePop: popBoolean ReceiverVariable: slotIndex [
-	<inline: false>
-	needsFrame ifTrue:
-		[self putSelfInReceiverResultReg].
-	popBoolean
-		ifTrue: [self PopR: ClassReg]
-		ifFalse: [self MoveMw: 0 r: SPReg R: ClassReg].
-	objectRepresentation
-		genStoreSourceReg: ClassReg 
-		slotIndex: slotIndex 
-		destReg: ReceiverResultReg 
-		scratchReg: TempReg 
-		inFrame: needsFrame.
-	^0
-]
-
-{ #category : #'bytecode generator support' }
-SimpleStackBasedCogit >> genStorePop: popBoolean RemoteInstVar: slotIndex ofObjectAt: objectIndex [
-	<inline: false>
-	"The only reason we assert needsFrame here is that in a frameless method
-	 ReceiverResultReg must and does contain only self, but the ceStoreCheck
-	 trampoline expects the target of the store to be in ReceiverResultReg.  So
-	 in a frameless method we would have a conflict between the receiver and
-	 the temote temp store, unless we we smart enough to realise that
-	 ReceiverResultReg was unused after the literal variable store, unlikely given
-	 that methods return self by default."
-	self assert: needsFrame.
-	popBoolean
-		ifTrue: [self PopR: ClassReg]
-		ifFalse: [self MoveMw: 0 r: SPReg R: ClassReg].
-	self MoveMw: (self frameOffsetOfTemporary: objectIndex) r: FPReg R: ReceiverResultReg.
-	objectRepresentation 
-		genEnsureOopInRegNotForwarded: ReceiverResultReg 
-		scratchReg: TempReg.
-	^objectRepresentation
-		genStoreSourceReg: ClassReg
-		slotIndex: slotIndex
-		destReg: ReceiverResultReg
-		scratchReg: TempReg
-		inFrame: needsFrame
-]
-
-{ #category : #'bytecode generator support' }
-SimpleStackBasedCogit >> genStorePop: popBoolean RemoteTemp: slotIndex At: remoteTempIndex [
-	<inline: false>
-	"The only reason we assert needsFrame here is that in a frameless method
-	 ReceiverResultReg must and does contain only self, but the ceStoreCheck
-	 trampoline expects the target of the store to be in ReceiverResultReg.  So
-	 in a frameless method we would have a conflict between the receiver and
-	 the temote temp store, unless we we smart enough to realise that
-	 ReceiverResultReg was unused after the literal variable store, unlikely given
-	 that methods return self by default."
-	self assert: needsFrame.
-	popBoolean
-		ifTrue: [self PopR: ClassReg]
-		ifFalse: [self MoveMw: 0 r: SPReg R: ClassReg].
-	self MoveMw: (self frameOffsetOfTemporary: remoteTempIndex) r: FPReg R: ReceiverResultReg.
-	TempVectReadBarrier
-		ifTrue: [objectRepresentation
-				genEnsureObjInRegNotForwarded: ReceiverResultReg
-				scratchReg: TempReg].
-	^objectRepresentation
-		genStoreSourceReg: ClassReg
-		slotIndex: slotIndex
-		destReg: ReceiverResultReg
-		scratchReg: TempReg
-		inFrame: needsFrame
-]
-
-{ #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> genStorePop: popBoolean TemporaryVariable: tempIndex [
 	<inline: false>
 	popBoolean
@@ -2780,11 +1994,6 @@ SimpleStackBasedCogit >> genStorePop: popBoolean TemporaryVariable: tempIndex [
 	^0
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genStoreRemoteTempLongBytecode [
-	^self genStorePop: false RemoteTemp: byte1 At: byte2
-]
-
 { #category : #'constant support' }
 SimpleStackBasedCogit >> genSubConstant: constant R: reg [
 	"If the objectMemory allows it, generates a quick constant sub, else generates a word constant sub"
@@ -2794,47 +2003,10 @@ SimpleStackBasedCogit >> genSubConstant: constant R: reg [
 		ifFalse: [ self SubCq: constant R: reg ]
 ]
 
-{ #category : #initialization }
-SimpleStackBasedCogit >> genTraceStoreTrampoline [
-	ceTraceStoreTrampoline := self genTrampolineFor: #ceTraceStoreOf:into:
-										called: 'ceTraceStoreTrampoline'
-										arg: ClassReg
-										arg: ReceiverResultReg
-										regsToSave: CallerSavedRegisterMask
-]
-
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> genTraceStores [
 	<inline: true>
 	traceStores > 0 ifTrue: [ self CallRT: ceTraceStoreTrampoline ].
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genUnconditionalTrapBytecode [
-	"SistaV1: *	217		Trap"
-	^EncounteredUnknownBytecode
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genUpArrowReturn [
-	"Generate a method return from within a method or a block.
-	 Frameless method activation looks like
-				receiver
-				args
-		sp->	ret pc.
-	 Return pops receiver and arguments off the stack.  Callee pushes the result."
-	inBlock > 0 ifTrue:
-		[self assert: needsFrame.
-		 self CallRT: ceNonLocalReturnTrampoline.
-		 self annotateBytecode: self Label.
-		 ^0].
-	needsFrame ifTrue:
-		[self MoveR: FPReg R: SPReg.
-		 self PopR: FPReg.
-		 backEnd hasLinkRegister ifTrue:
-			[self PopR: LinkReg]].
-	self RetN: methodOrBlockNumArgs + 1 * objectMemory wordSize.
-	^0
 ]
 
 { #category : #'primitive generators - call' }
@@ -2934,25 +2106,6 @@ SimpleStackBasedCogit >> mapPCDataFor: cogMethod into: arrayObj [
 	^introspectionDataIndex
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> marshallAbsentReceiverSendArguments: numArgs [
-	self assert: needsFrame.
-	self putSelfInReceiverResultReg.
-
-	"Shuffle arguments if necessary and push receiver."
-	numArgs = 0
-		ifTrue:
-			[self PushR: ReceiverResultReg]
-		ifFalse:
-			[self MoveMw: 0 r: SPReg R: TempReg.
-			self PushR: TempReg.
-			2 to: numArgs do:
-				[:index|
-				self MoveMw: index * objectMemory wordSize r: SPReg R: TempReg.
-				self MoveR: TempReg Mw: index - 1 * BytesPerWord r: SPReg].
-			self MoveR: ReceiverResultReg Mw: numArgs * BytesPerWord r: SPReg].
-]
-
 { #category : #'primitive generators' }
 SimpleStackBasedCogit >> maybeCompileAllocFillerCheck [
 	"If allocCheckFiller is true, words in newSpace from freeStart to scavengeThreshold
@@ -2969,6 +2122,47 @@ SimpleStackBasedCogit >> maybeCompileAllocFillerCheck [
 		 self MoveCq: PrimErrWritePastObject R: TempReg.
 		 self MoveR: TempReg Aw: coInterpreter primFailCodeAddress.
 		 jmpOk jmpTarget: self Label]
+]
+
+{ #category : #'primitive generators - call' }
+SimpleStackBasedCogit >> maybeCompileRetryOnPrimitiveFail: primIndex [
+	"If primIndex has an accessorDepth and fails, or it is external and fails with PrimErrNoMemory,
+	 call ceCheckAndMaybeRetryPrimitive if so  If ceCheck.... answers true, retry the primitive."
+	| jmp |
+	<var: #jmp type: #'AbstractInstruction *'>
+	(coInterpreter accessorDepthForPrimitiveIndex: primIndex) >= 0
+		ifTrue:
+			[jmp := self
+				MoveAw: coInterpreter primFailCodeAddress R: TempReg;
+				CmpCq: 0 R: TempReg;
+				JumpZero: 0]
+		ifFalse:
+			[coInterpreter primNumberExternalCall ~= primIndex ifTrue:
+				[^0].
+			 jmp := self
+				MoveAw: coInterpreter primFailCodeAddress R: TempReg;
+				CmpCq: PrimErrNoMemory R: TempReg;
+				JumpNonZero: 0].
+	self
+		compileCallFor: #ceCheckAndMaybeRetryPrimitive:
+		numArgs: 1
+		arg: (self trampolineArgConstant: primIndex)
+		arg: nil
+		arg: nil
+		arg: nil
+		resultReg: TempReg
+		regsToSave: self emptyRegisterMask.
+	jmp jmpTarget: self Label.
+	^0
+]
+
+{ #category : #'in-line cacheing' }
+SimpleStackBasedCogit >> maybeShiftClassTagRegisterForMethodCacheProbe: classTagReg [
+	"Generate a shift of the register containing the class tag in a method cache probe.
+	 c.f. SpurMemoryManager>>methodCacheHashOf:with:"
+
+	self LogicalShiftLeftCq: 2 R: classTagReg.
+	^0
 ]
 
 { #category : #trampolines }
@@ -3254,19 +2448,19 @@ SimpleStackBasedCogit >> setInterpreter: aCoInterpreter [
 	"Initialization of the code generator in the simulator.
 	 These objects already exist in the generated C VM
 	 or are used only in the simulation."
+
 	<doNotGenerate>
 	super setInterpreter: aCoInterpreter.
-	
-	objectRepresentation := self objectRepresentationClass
-								forCogit: self methodZone: methodZone.
-	methodZone setInterpreter: aCoInterpreter
-				objectRepresentation: objectRepresentation
-				cogit: self.	
-	
+
+	methodZone setInterpreter: aCoInterpreter cogit: self.
+
 	primitiveGeneratorTable := self class primitiveTable.
-	externalPrimJumpOffsets := CArrayAccessor on: (Array new: MaxNumArgs + 1).
-	externalPrimCallOffsets := CArrayAccessor on: (Array new: MaxNumArgs + 1).
-	externalSetPrimOffsets := CArrayAccessor on: (Array new: MaxNumArgs + 1)
+	externalPrimJumpOffsets := CArrayAccessor on:
+		                           (Array new: MaxNumArgs + 1).
+	externalPrimCallOffsets := CArrayAccessor on:
+		                           (Array new: MaxNumArgs + 1).
+	externalSetPrimOffsets := CArrayAccessor on:
+		                          (Array new: MaxNumArgs + 1)
 ]
 
 { #category : #'bytecode generator support' }

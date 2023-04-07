@@ -66,7 +66,6 @@ Class {
 		'methodBytesFreedSinceLastCompaction',
 		'compactionInProgress',
 		'coInterpreter',
-		'objectRepresentation',
 		'cogit',
 		'objectMemory',
 		'percentageToEnsureRelease'
@@ -855,10 +854,10 @@ CogMethodZone >> savePICUsageCount: cogMethod [
 ]
 
 { #category : #initialization }
-CogMethodZone >> setInterpreter: aCoInterpreter objectRepresentation: anObjectRepresentation cogit: aCogit [
+CogMethodZone >> setInterpreter: aCoInterpreter cogit: aCogit [
+
 	<doNotGenerate>
 	coInterpreter := aCoInterpreter.
-	objectRepresentation := anObjectRepresentation.
 	cogit := aCogit.
 	objectMemory := aCoInterpreter objectMemory
 ]

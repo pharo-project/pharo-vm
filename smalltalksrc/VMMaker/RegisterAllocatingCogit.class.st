@@ -49,7 +49,8 @@ Class {
 		'ceSendMustBeBooleanAddTrueLongTrampoline',
 		'ceSendMustBeBooleanAddFalseLongTrampoline',
 		'recompileForLoopRegisterAssignments',
-		'scratchBytecodePC'
+		'scratchBytecodePC',
+		'objectRepresentation'
 	],
 	#category : #'VMMaker-JIT'
 }
@@ -608,8 +609,8 @@ RegisterAllocatingCogit >> genForwardersInlinedIdenticalOrNotIf: orNot [
 	 else jump forward either to the next forwarder check or to the postBranch or branch target (fixup).
 	 But if there is merge code along a path, the jump must be to the merge code."
 	(unforwardArg and: [unforwardRcvr]) ifTrue:
-		[objectRepresentation genEnsureOopInRegNotForwarded: argReg scratchReg: TempReg jumpBackTo: retry].
-	objectRepresentation 
+		[self genEnsureOopInRegNotForwarded: argReg scratchReg: TempReg jumpBackTo: retry].
+	self 
 		genEnsureOopInRegNotForwarded: (unforwardRcvr ifTrue: [rcvrReg] ifFalse: [argReg]) 
 		scratchReg: TempReg 
 		ifForwarder: retry
@@ -883,10 +884,10 @@ RegisterAllocatingCogit >> genSpecialSelectorArithmetic [
 	self ssPop: 2.
 	jumpNotSmallInts := (rcvrIsInt and: [argIsInt]) ifFalse:
 							[argIsInt
-								ifTrue: [objectRepresentation genJumpNotSmallInteger: rcvrReg]
+								ifTrue: [self genJumpNotSmallInteger: rcvrReg]
 								ifFalse:
 									[rcvrIsInt
-										ifTrue: [objectRepresentation genJumpNotSmallInteger: argReg]
+										ifTrue: [self genJumpNotSmallInteger: argReg]
 										ifFalse: [objectRepresentation genJumpNotSmallIntegersIn: rcvrReg and: argReg scratch: TempReg]]].
 	rcvrReg ~= destReg ifTrue:
 		[self MoveR: rcvrReg R: destReg].
@@ -981,7 +982,7 @@ RegisterAllocatingCogit >> genSpecialSelectorClass [
 	destReg := self allocateRegNotConflictingWith: (self registerMaskFor: topReg).
 	scratchReg := self allocateRegNotConflictingWith: (self registerMaskFor: topReg and: destReg).
 	self ssTop moveToReg: topReg.
-	self asserta: (objectRepresentation
+	self asserta: (self
 					genGetClassObjectOf: topReg
 					into: destReg
 					scratchReg: scratchReg
@@ -1040,10 +1041,10 @@ RegisterAllocatingCogit >> genSpecialSelectorComparison [
 
 	jumpNotSmallInts := (rcvrIsInt and: [argIsIntConst]) ifFalse:
 							[argIsIntConst
-								ifTrue: [objectRepresentation genJumpNotSmallInteger: rcvrReg]
+								ifTrue: [self genJumpNotSmallInteger: rcvrReg]
 								ifFalse:
 									[rcvrIsInt
-										ifTrue: [objectRepresentation genJumpNotSmallInteger: argReg]
+										ifTrue: [self genJumpNotSmallInteger: argReg]
 										ifFalse: [objectRepresentation genJumpNotSmallIntegersIn: rcvrReg and: argReg scratch: TempReg]]].
 	argIsIntConst
 		ifTrue: [self CmpCq: argInt R: rcvrReg]

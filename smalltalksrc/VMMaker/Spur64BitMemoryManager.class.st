@@ -287,15 +287,6 @@ Spur64BitMemoryManager >> exponentOfSmallFloat: oop [
 			 exp + self smallFloatExponentOffset - 1022]
 ]
 
-{ #category : #'interpreter access' }
-Spur64BitMemoryManager >> fetchClassTagOf: oop [
-	<api>
-	| tagBits |
-	^(tagBits := oop bitAnd: self tagMask) ~= 0
-		ifTrue: [tagBits]
-		ifFalse: [self classIndexOf: oop]
-]
-
 { #category : #'object access' }
 Spur64BitMemoryManager >> fetchLong32: fieldIndex ofFloatObject: oop [
 

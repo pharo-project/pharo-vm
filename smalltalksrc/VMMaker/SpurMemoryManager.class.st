@@ -4764,7 +4764,11 @@ SpurMemoryManager >> fetchClassOfNonImm: objOop [
 
 { #category : #'interpreter access' }
 SpurMemoryManager >> fetchClassTagOf: oop [
-	self subclassResponsibility
+
+	<api>
+	^ (self isImmediate: oop)
+		  ifTrue: [ oop bitAnd: self tagMask ]
+		  ifFalse: [ self classIndexOf: oop ]
 ]
 
 { #category : #'interpreter access' }

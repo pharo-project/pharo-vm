@@ -153,11 +153,6 @@ CogObjectRepresentationFor64BitSpur >> branchIf: reg hasNotImmediateTag: classIn
 	jmpImmediate jmpTarget: targetFixUp
 ]
 
-{ #category : #'in-line cacheing' }
-CogObjectRepresentationFor64BitSpur >> classForInlineCacheTag: classIndex [
-	^objectMemory classOrNilAtIndex: classIndex
-]
-
 { #category : #'sista support' }
 CogObjectRepresentationFor64BitSpur >> fetchImmediateTagOtherThanTag1: tag1 tag2: tag2 [
 	"Answers the immediate tag which is not tag1 nor tag2, usually Character."
@@ -572,7 +567,7 @@ CogObjectRepresentationFor64BitSpur >> genGetNumBytesOf: srcReg into: destReg [
 	jmp := cogit JumpLess: 0.
 	self genGetOverflowSlotsOf: srcReg into: destReg.
 	jmp jmpTarget: (cogit LogicalShiftLeftCq: objectMemory shiftForWord R: destReg). 
-	self genGetBits: 7 ofFormatByteOf: srcReg into: TempReg.
+	cogit genGetBits: 7 ofFormatByteOf: srcReg into: TempReg.
 	"Now: fmt bitAnd: 3 in TempReg"
 	cogit SubR: TempReg R: destReg.
 	^0
@@ -666,7 +661,7 @@ CogObjectRepresentationFor64BitSpur >> genGetSizeOf: sourceReg into: destReg for
 	cogit CmpCq: ClassMethodContextCompactIndex R: scratchReg.
 	jumpIsContext := cogit JumpZero: 0.
 	self genGetClassObjectOfClassIndex: formatReg into: Extra0Reg scratchReg: scratchReg.
-	self genLoadSlot: InstanceSpecificationIndex sourceReg: Extra0Reg destReg: formatReg.
+	cogit genLoadSlot: InstanceSpecificationIndex sourceReg: Extra0Reg destReg: formatReg.
 	self genConvertSmallIntegerToIntegerInReg: formatReg.
 	cogit
 		AndCq: objectMemory fixedFieldsOfClassFormatMask R: formatReg;
@@ -843,20 +838,6 @@ CogObjectRepresentationFor64BitSpur >> genJumpNotSmallFloatValueBits: reg scratc
 ]
 
 { #category : #'compile abstract instructions' }
-CogObjectRepresentationFor64BitSpur >> genJumpNotSmallInteger: reg [
-	"Generate a compare and branch to test if aRegister contains other than a SmallInteger."
-	^cogit
-		TstCq: objectMemory smallIntegerTag R: reg;
-		JumpZero: 0
-]
-
-{ #category : #'compile abstract instructions' }
-CogObjectRepresentationFor64BitSpur >> genJumpNotSmallIntegerInScratchReg: aRegister [
-	<inline: true>
-	^self genJumpNotSmallInteger: aRegister
-]
-
-{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor64BitSpur >> genJumpNotSmallIntegerValue: aRegister scratch: scratchReg [
 	"Generate a test for aRegister containing an integer value outside the SmallInteger range, and a jump if so, answering the jump.
 	 c.f. Spur64BitMemoryManager>>isIntegerValue:"
@@ -930,7 +911,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtPutSigned: signedVersion [
 		[ self genGetFormatOf: ReceiverResultReg
 			into: (formatReg := SendNumArgsReg)
 			leastSignificantHalfOfBaseHeaderIntoScratch: TempReg.
-		jumpImmutable := self genJumpBaseHeaderImmutable: TempReg ]
+		jumpImmutable := cogit genJumpBaseHeaderImmutable: TempReg ]
 		ifFalse: 
 		[ self genGetFormatOf: ReceiverResultReg
 			into: (formatReg := SendNumArgsReg)
@@ -977,7 +958,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtPutSigned: signedVersion [
 	jumpIsContext := cogit JumpZero: 0.
 	"get # fixed fields in formatReg"
 	self genGetClassObjectOfClassIndex: formatReg into: Extra0Reg scratchReg: TempReg.
-	self genLoadSlot: InstanceSpecificationIndex sourceReg: Extra0Reg destReg: formatReg.
+	cogit genLoadSlot: InstanceSpecificationIndex sourceReg: Extra0Reg destReg: formatReg.
 	self genConvertSmallIntegerToIntegerInReg: formatReg.
 	cogit AndCq: objectMemory fixedFieldsOfClassFormatMask R: formatReg.
 	cogit SubR: formatReg R: nSlotsOrBytesReg.
@@ -1298,7 +1279,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtSigned: signedVersion [
 	cogit CmpCq: ClassMethodContextCompactIndex R: TempReg.
 	jumpIsContext := cogit JumpZero: 0.
 	self genGetClassObjectOfClassIndex: formatReg into: Extra0Reg scratchReg: TempReg.
-	self genLoadSlot: InstanceSpecificationIndex sourceReg: Extra0Reg destReg: formatReg.
+	cogit genLoadSlot: InstanceSpecificationIndex sourceReg: Extra0Reg destReg: formatReg.
 	self genConvertSmallIntegerToIntegerInReg: formatReg.
 	cogit
 		AndCq: objectMemory fixedFieldsOfClassFormatMask R: formatReg;
@@ -1536,7 +1517,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNew [
 	self genGetHashFieldNonImmOf: ReceiverResultReg into: headerReg.
 	jumpUnhashed := cogit JumpZero: 0.
 	"get class's format inst var for both inst spec (format field) and num fixed fields"
-	self genLoadSlot: InstanceSpecificationIndex sourceReg: ReceiverResultReg destReg: TempReg.
+	cogit genLoadSlot: InstanceSpecificationIndex sourceReg: ReceiverResultReg destReg: TempReg.
 	self genConvertSmallIntegerToIntegerInReg: TempReg.
 	cogit MoveR: TempReg R: instSpecReg.
 	cogit LogicalShiftRightCq: objectMemory fixedFieldsFieldWidth R: TempReg.
@@ -1637,7 +1618,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNewWithArg [
 	"get index and fail if not a +ve integer"
 	jumpNElementsNonInt := self genJumpNotSmallInteger: Arg0Reg scratchReg: TempReg.
 	"get class's format inst var for inst spec (format field)"
-	self genLoadSlot: InstanceSpecificationIndex sourceReg: ReceiverResultReg destReg: instSpecReg.
+	cogit genLoadSlot: InstanceSpecificationIndex sourceReg: ReceiverResultReg destReg: instSpecReg.
 	cogit LogicalShiftRightCq: objectMemory fixedFieldsFieldWidth + self numSmallIntegerTagBits R: instSpecReg.
 	cogit AndCq: objectMemory formatMask R: instSpecReg.
 	"Add format to classIndex/format header now"
@@ -2088,7 +2069,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveStringAtPut [
 		[ self genGetFormatOf: ReceiverResultReg
 			into: (formatReg := SendNumArgsReg)
 			leastSignificantHalfOfBaseHeaderIntoScratch: TempReg.
-		jumpImmutable := self genJumpBaseHeaderImmutable: TempReg ]
+		jumpImmutable := cogit genJumpBaseHeaderImmutable: TempReg ]
 		ifFalse: 
 		[ self genGetFormatOf: ReceiverResultReg
 			into: (formatReg := SendNumArgsReg)
@@ -2242,15 +2223,6 @@ CogObjectRepresentationFor64BitSpur >> inlineCacheTagForClass: classOop [
 	^objectMemory classTagForClass: classOop
 ]
 
-{ #category : #'in-line cacheing' }
-CogObjectRepresentationFor64BitSpur >> inlineCacheTagForInstance: oop [
-	"Answer the relevant inline cache tag for an instance.
-	 c.f. getInlineCacheClassTagFrom:into: & inlineCacheTagForClass:"
-	^(objectMemory isImmediate: oop)
-		ifTrue: [oop bitAnd: objectMemory tagMask]
-		ifFalse: [objectMemory classIndexOf: oop]
-]
-
 { #category : #initialization }
 CogObjectRepresentationFor64BitSpur >> log2BytesPerWord [
 	^3
@@ -2368,12 +2340,4 @@ CogObjectRepresentationFor64BitSpur >> selectorIndexDereferenceRoutine [
 CogObjectRepresentationFor64BitSpur >> selectorIndexDereferenceRoutine: anInteger [ 
 	
 	ceDereferenceSelectorIndex := anInteger
-]
-
-{ #category : #'debug support' }
-CogObjectRepresentationFor64BitSpur >> validInlineCacheTag: classIndexOrTagPattern [
-	"The three valid tag patterns are 1 (SmallInteger), 2 (Character) and 3 (SmallFloat64)."
-	^(classIndexOrTagPattern >= 1
-	  and: [classIndexOrTagPattern <= 3])
-	  or: [(objectMemory classAtIndex: classIndexOrTagPattern) notNil]
 ]
