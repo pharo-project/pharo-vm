@@ -3260,31 +3260,51 @@ Cogit >> allMethodsHaveCorrectHeader [
 
 { #category : #initialization }
 Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes [
-
 	"Allocate the various arrays needed to compile abstract instructions.
 	 Notionally we only need as many fixups as there are bytecodes.  But we
 	 reuse fixups to record pc-dependent instructions in generateInstructionsAt:
 	 and so need at least as many as there are abstract opcodes."
 
 	<inline: true>
-	self ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes.
-	self zeroOpcodeIndexForNewOpcodes.
-	labelCounter := 0
+	self
+		allocateOpcodes: numberOfAbstractOpcodes
+		bytecodes: numberOfBytecodes
+		ifFail: [ self error: 'Cannot allocate requested opcodes' ]
 ]
 
 { #category : #initialization }
 Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes ifFail: failBlock [
-
 	"Allocate the various arrays needed to compile abstract instructions, failing if the size
 	 needed is considered too high.  Notionally we only need as many fixups as there are
 	 bytecodes.  But we reuse fixups to record pc-dependent instructions in
 	 generateInstructionsAt: and so need at least as many as there are abstract opcodes."
 
 	<inline: true>
-	numberOfAbstractOpcodes > MaxNumberOfAbstractOpcodes ifTrue: [ 
+	numberOfAbstractOpcodes > MaxNumberOfAbstractOpcodes ifTrue: [
 		^ failBlock value ].
+	
+	"Remember how many opcodes were allocated, then lazy initialize to max"
+	numAbstractOpcodes := numberOfAbstractOpcodes.
+	abstractOpcodes ifNil: [
+		| opcodeBytes fixupBytes allocBytes |
+		opcodeBytes := (self sizeof: CogAbstractInstruction)
+		               * MaxNumberOfAbstractOpcodes.
+		fixupBytes := (self sizeof: CogBytecodeFixup)
+		              * MaxNumberOfAbstractOpcodes.
+		allocBytes := opcodeBytes + fixupBytes.
 
-	self ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes.
+		self
+			cCode: [
+				abstractOpcodes := self malloc: allocBytes.
+				fixups := (abstractOpcodes asUnsignedInteger + opcodeBytes)
+					          asVoidPointer ]
+			inSmalltalk: [
+				abstractOpcodes := CArrayAccessor on:
+					                   ((1 to: MaxNumberOfAbstractOpcodes) collect: [
+						                    :ign | CogCompilerClass for: self ]).
+				fixups := CArrayAccessor on:
+					          ((1 to: MaxNumberOfAbstractOpcodes) collect: [ :ign |
+						           self bytecodeFixupClass for: self ]) ] ].
 
 	self zeroOpcodeIndexForNewOpcodes.
 	labelCounter := 0
@@ -6172,34 +6192,6 @@ Cogit >> endPCOf: aMethod [
 	^end
 ]
 
-{ #category : #initialization }
-Cogit >> ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes [
-
-	| opcodeBytes fixupBytes allocBytes clearFixupsBytes clearOpcodesBytes|
-	numAbstractOpcodes := numberOfAbstractOpcodes.
-	
-	opcodeBytes := (self sizeof: CogAbstractInstruction) * MaxNumberOfAbstractOpcodes.
-	fixupBytes := (self sizeof: CogBytecodeFixup) * MaxNumberOfAbstractOpcodes.
-	allocBytes := opcodeBytes + fixupBytes.
-	
-	clearOpcodesBytes := (self sizeof: CogAbstractInstruction) * numberOfAbstractOpcodes.
-	clearFixupsBytes := (self sizeof: CogBytecodeFixup) * numberOfAbstractOpcodes.
-		
-	self
-		cCode:
-			[abstractOpcodes 
-				ifNil: [
-					abstractOpcodes := self malloc: allocBytes.
-					fixups := (abstractOpcodes asUnsignedInteger + opcodeBytes) asVoidPointer].
-				
-			 self b: abstractOpcodes zero: clearOpcodesBytes.
-			 self b: fixups zero: clearFixupsBytes]
-		inSmalltalk:
-			[abstractOpcodes := CArrayAccessor on: ((1 to: numAbstractOpcodes) collect: [:ign| CogCompilerClass for: self]).
-			 fixups := CArrayAccessor on: ((1 to: numAbstractOpcodes) collect: [:ign| self bytecodeFixupClass for: self])].
-
-]
-
 { #category : #'compile abstract instructions' }
 Cogit >> ensureFixupAt: targetPC [
 	"Make sure there's a flagged fixup at the target pc in fixups.
@@ -6817,6 +6809,10 @@ Cogit >> gen: opcode [ "<Integer>"
 	opcodeIndex := opcodeIndex + 1.
 	abstractInstruction opcode: opcode.
 	self cCode: '' inSmalltalk: [abstractInstruction bcpc: bytecodePC].
+	
+	"Force the initialization of the annotation to nil"
+	abstractInstruction annotation: nil.
+	
 	^abstractInstruction
 ]
 
@@ -6845,18 +6841,16 @@ Cogit >> gen: opcode "<Integer>" literal: operandOne "<Integer>" operand: operan
 ]
 
 { #category : #'compile abstract instructions' }
-Cogit >> gen: opcode "<Integer>" operand: operand [ "<Integer|CogAbstractInstruction>"
-	| abstractInstruction |
+Cogit >> gen: opcode operand: operand [
+	"<Integer|CogAbstractInstruction>"
+
 	<inline: false>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
-	self assert: opcodeIndex < numAbstractOpcodes.
-	abstractInstruction := self abstractInstructionAt: opcodeIndex.
-	opcodeIndex := opcodeIndex + 1.
-	abstractInstruction opcode: opcode.
+	| abstractInstruction |
+	abstractInstruction := self gen: opcode.
 	abstractInstruction operands at: 0 put: operand.
-	self cCode: '' inSmalltalk: [abstractInstruction bcpc: bytecodePC].
-	^abstractInstruction
+	^ abstractInstruction
 ]
 
 { #category : #'compile abstract instructions' }
@@ -6872,54 +6866,49 @@ Cogit >> gen: opcode "<Integer>" operand: operandOne "<Integer|CogAbstractInstru
 ]
 
 { #category : #'compile abstract instructions' }
-Cogit >> gen: opcode "<Integer>" operand: operandOne "<Integer|CogAbstractInstruction>" operand: operandTwo [ "<Integer|CogAbstractInstruction>"
-	| abstractInstruction |
+Cogit >> gen: opcode operand: operandOne operand: operandTwo [
+	"<Integer|CogAbstractInstruction>"
+
 	<inline: false>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
-	self assert: opcodeIndex < numAbstractOpcodes.
-	abstractInstruction := self abstractInstructionAt: opcodeIndex.
-	opcodeIndex := opcodeIndex + 1.
-	abstractInstruction opcode: opcode.
-	abstractInstruction operands at: 0 put: operandOne.
+	| abstractInstruction |
+	abstractInstruction := self gen: opcode operand: operandOne.
 	abstractInstruction operands at: 1 put: operandTwo.
-	self cCode: '' inSmalltalk: [abstractInstruction bcpc: bytecodePC].
-	^abstractInstruction
+	^ abstractInstruction
 ]
 
 { #category : #'compile abstract instructions' }
-Cogit >> gen: opcode "<Integer>" operand: operandOne "<Integer|CogAbstractInstruction>" operand: operandTwo "<Integer|CogAbstractInstruction>" operand: operandThree [ "<Integer|CogAbstractInstruction>"
-	| abstractInstruction |
+Cogit >> gen: opcode operand: operandOne operand: operandTwo operand: operandThree [
+	"<Integer|CogAbstractInstruction>"
+
 	<inline: false>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
-	self assert: opcodeIndex < numAbstractOpcodes.
-	abstractInstruction := self abstractInstructionAt: opcodeIndex.
-	opcodeIndex := opcodeIndex + 1.
-	abstractInstruction opcode: opcode.
-	abstractInstruction operands at: 0 put: operandOne.
-	abstractInstruction operands at: 1 put: operandTwo.
+	| abstractInstruction |
+	abstractInstruction := self
+		                       gen: opcode
+		                       operand: operandOne
+		                       operand: operandTwo.
 	abstractInstruction operands at: 2 put: operandThree.
-	self cCode: '' inSmalltalk: [abstractInstruction bcpc: bytecodePC].
-	^abstractInstruction
+	^ abstractInstruction
 ]
 
 { #category : #'compile abstract instructions' }
-Cogit >> gen: opcode "<Integer>" operand: operandOne "<Integer|CogAbstractInstruction>" operand: operandTwo "<Integer|CogAbstractInstruction>" operand: operandThree "<Integer|CogAbstractInstruction>" operand: operandFour [ "<Integer|CogAbstractInstruction>"
-	| abstractInstruction |
+Cogit >> gen: opcode operand: operandOne operand: operandTwo operand: operandThree operand: operandFour [
+	"<Integer|CogAbstractInstruction>"
+
 	<inline: false>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
-	self assert: opcodeIndex < numAbstractOpcodes.
-	abstractInstruction := self abstractInstructionAt: opcodeIndex.
-	opcodeIndex := opcodeIndex + 1.
-	abstractInstruction opcode: opcode.
-	abstractInstruction operands at: 0 put: operandOne.
-	abstractInstruction operands at: 1 put: operandTwo.
-	abstractInstruction operands at: 2 put: operandThree.
+	| abstractInstruction |
+	abstractInstruction := self
+		                       gen: opcode
+		                       operand: operandOne
+		                       operand: operandTwo
+		                       operand: operandThree.
 	abstractInstruction operands at: 3 put: operandFour.
-	self cCode: '' inSmalltalk: [abstractInstruction bcpc: bytecodePC].
-	^abstractInstruction
+	^ abstractInstruction
 ]
 
 { #category : #'compile abstract instructions' }

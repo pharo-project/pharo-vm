@@ -921,7 +921,7 @@ StackToRegisterMappingCogit >> ceCallCogCodePopReceiverArg1Arg0Regs [
 	self simulateEnilopmart: ceCallCogCodePopReceiverArg1Arg0Regs numArgs: 3
 ]
 
-{ #category : #trampolines }
+{ #category : #accessing }
 StackToRegisterMappingCogit >> ceMethodAbortTrampoline: trampoline [
 
 	<doNotGenerate>
