@@ -4114,7 +4114,7 @@ SpurMemoryManager >> convertToArray [
 
 { #category : #'object testing' }
 SpurMemoryManager >> couldBeObject: literal [
-
+	<api>
 	^ (self isNonImmediate: literal) and: [
 		  self
 			  oop: literal

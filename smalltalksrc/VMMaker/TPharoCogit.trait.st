@@ -55,7 +55,7 @@ TPharoCogit >> distanceForShortForwardBranch: pc inMethod: aMethodObj [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	<inline: true>
 	
-	^((objectMemory fetchByte: pc ofObject: aMethodObj) bitAnd: 7) + 1
+	^((self objectMemory fetchByte: pc ofObject: aMethodObj) bitAnd: 7) + 1
 ]
 
 { #category : #'profiling primitives' }
@@ -108,14 +108,14 @@ TPharoCogit >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch updatingSl
 	 but the following is an instruction shorter:"
 	self MoveMw: 0 r: reg R: scratch.
 	self
-		AndCq: objectMemory classIndexMask
-			- objectMemory isForwardedObjectClassIndexPun
+		AndCq: self objectMemory classIndexMask
+			- self objectMemory isForwardedObjectClassIndexPun
 		R: scratch.
 	ok := self JumpNonZero: 0.
 	self genLoadSlot: 0 sourceReg: reg destReg: reg.
 	self
 		MoveR: reg
-		Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
+		Mw: index * self objectMemory wordSize + self objectMemory baseHeaderSize
 		r: objReg.
 
 	"Check that we're meeting the contract of ceStoreCheckContextReceiverTrampoline."
@@ -133,47 +133,50 @@ TPharoCogit >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch updatingSl
 TPharoCogit >> genExtJumpIfFalse [
 	"244		11110100	i i i i i i i i	Pop and Jump 0n False i i i i i i i i (+ Extend B * 256, where Extend B >= 0)"
 	| distance target |
-	distance := byte1 + (extB << 8).
-	self assert: distance = (self v4: (self generatorAt: byte0)
-								LongForward: bytecodePC
-								Branch: (extA ~= 0 ifTrue: [1] ifFalse: [0]) + (extB ~= 0 ifTrue: [1] ifFalse: [0])
-								Distance: methodObj).
-	extB := 0.
-	numExtB := 0.
-	target := distance + 2 + bytecodePC.
-	^self genJumpIf: objectMemory falseObject to: target
+	distance := self byte1 + (self extB << 8).
+	self assert: distance = (self v4: (self generatorAt: self byte0)
+								LongForward: self bytecodePC
+								Branch: (self extA ~= 0 ifTrue: [1] ifFalse: [0]) + (self extB ~= 0 ifTrue: [1] ifFalse: [0])
+								Distance: self methodObj).
+	self extB: 0.
+	self numExtB: 0.
+	target := distance + 2 + self bytecodePC.
+	^self genJumpIf: self objectMemory falseObject to: target
 ]
 
 { #category : #'bytecode generators' }
 TPharoCogit >> genExtJumpIfTrue [
 	"243		11110011	i i i i i i i i	Pop and Jump 0n True i i i i i i i i (+ Extend B * 256, where Extend B >= 0)"
 	| distance target |
-	distance := byte1 + (extB << 8).
-	self assert: distance = (self v4: (self generatorAt: byte0)
-								LongForward: bytecodePC
-								Branch: (extA ~= 0 ifTrue: [1] ifFalse: [0]) + (extB ~= 0 ifTrue: [1] ifFalse: [0])
-								Distance: methodObj).
-	extB := 0.
-	numExtB := 0.
-	target := distance + 2 + bytecodePC.
-	^self genJumpIf: objectMemory trueObject to: target
+	distance := self byte1 + (self extB << 8).
+	self assert: distance = (self v4: (self generatorAt: self byte0)
+								LongForward: self bytecodePC
+								Branch: (self extA ~= 0 ifTrue: [1] ifFalse: [0]) + (self extB ~= 0 ifTrue: [1] ifFalse: [0])
+								Distance: self methodObj).
+	self extB: 0.
+	self numExtB: 0.
+	target := distance + 2 + self bytecodePC.
+	^self genJumpIf: self objectMemory trueObject to: target
 ]
 
 { #category : #'bytecode generators' }
 TPharoCogit >> genExtNopBytecode [
 	"SistaV1:		 91		01011011'		Nop"
-	extA := numExtB := extB := 0.
-	^0
+
+	self extA: 0.
+	self numExtB: 0.
+	self extB: 0.
+	^ 0
 ]
 
 { #category : #'bytecode generators' }
 TPharoCogit >> genExtPushCharacterBytecode [
 	"SistaV1:		233		11101001	iiiiiiii		Push Character #iiiiiiii (+ Extend B * 256)"
 	| value |
-	value := byte1 + (extB << 8).
-	extB := 0.
-	numExtB := 0.
-	^self genPushLiteral: (objectMemory characterObjectOf: value)
+	value := self byte1 + (self extB << 8).
+	self extB: 0.
+	self numExtB: 0.
+	^self genPushLiteral: (self objectMemory characterObjectOf: value)
 ]
 
 { #category : #'bytecode generators' }
@@ -181,18 +184,18 @@ TPharoCogit >> genExtPushIntegerBytecode [
 	"NewsqueakV4:	229		11100101	iiiiiiii	Push Integer #iiiiiiii (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)
 	SistaV1:		232		11101000	iiiiiiii	Push Integer #iiiiiiii (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)"
 	| value |
-	value := byte1 + (extB << 8).
-	extB := 0.
-	numExtB := 0.
-	^self genPushLiteral: (objectMemory integerObjectOf: value)
+	value := self byte1 + (self extB << 8).
+	self extB: 0.
+	self numExtB: 0.
+	^self genPushLiteral: (self objectMemory integerObjectOf: value)
 ]
 
 { #category : #'bytecode generators' }
 TPharoCogit >> genExtPushLiteralBytecode [
 	"228		11100100	i i i i i i i i	Push Literal #iiiiiiii (+ Extend A * 256)"
 	| index |
-	index := byte1 + (extA << 8).
-	extA := 0.
+	index := self byte1 + (self extA << 8).
+	self extA: 0.
 	^self genPushLiteralIndex: index
 ]
 
@@ -200,8 +203,8 @@ TPharoCogit >> genExtPushLiteralBytecode [
 TPharoCogit >> genExtPushLiteralVariableBytecode [
 	"227		11100011	i i i i i i i i	Push Literal Variable #iiiiiiii (+ Extend A * 256)"
 	| index |
-	index := byte1 + (extA << 8).
-	extA := 0.
+	index := self byte1 + (self extA << 8).
+	self extA: 0.
 	^self genPushLiteralVariable: index
 ]
 
@@ -209,9 +212,9 @@ TPharoCogit >> genExtPushLiteralVariableBytecode [
 TPharoCogit >> genExtPushPseudoVariable [
 	"SistaV1: *	82			01010010			Push thisContext, (then Extend B = 1 => push thisProcess)"
 	| ext |
-	ext := extB.
-	extB := 0.
-	numExtB := 0.
+	ext := self extB.
+	self extB: 0.
+	self numExtB: 0.
 	ext caseOf: {
 		[0]	->	[^self genPushActiveContextBytecode].
 		}
@@ -224,9 +227,9 @@ TPharoCogit >> genExtPushPseudoVariable [
 TPharoCogit >> genExtPushReceiverVariableBytecode [
 	"226		11100010	i i i i i i i i	Push Receiver Variable #iiiiiiii (+ Extend A * 256)"
 	| index |
-	index := byte1 + (extA << 8).
-	extA := 0.
-	^(coInterpreter isReadMediatedContextInstVarIndex: index)
+	index := self byte1 + (self extA << 8).
+	self extA: 0.
+	^(self coInterpreter isReadMediatedContextInstVarIndex: index)
 		ifTrue: [self genPushMaybeContextReceiverVariable: index]
 		ifFalse: [self genPushReceiverVariable: index]
 ]
@@ -235,11 +238,11 @@ TPharoCogit >> genExtPushReceiverVariableBytecode [
 TPharoCogit >> genExtSendBytecode [
 	"238		11101110	i i i i i j j j	Send Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments"
 	| litIndex nArgs |
-	litIndex := (byte1 >> 3) + (extA << 5).
-	extA := 0.
-	nArgs := (byte1 bitAnd: 7) + (extB << 3).
-	extB := 0.
-	numExtB := 0.
+	litIndex := (self byte1 >> 3) + (self extA << 5).
+	self extA: 0.
+	nArgs := (self byte1 bitAnd: 7) + (self extB << 3).
+	self extB: 0.
+	self numExtB: 0.
 	^self genSend: litIndex numArgs: nArgs
 ]
 
@@ -247,13 +250,13 @@ TPharoCogit >> genExtSendBytecode [
 TPharoCogit >> genExtSendSuperBytecode [
 	"239		11101111	i i i i i j j j	Send To Superclass Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments"
 	| isDirected litIndex nArgs |
-	(isDirected := extB >= 64) ifTrue:
-		[extB := extB bitAnd: 63].
-	litIndex := (byte1 >> 3) + (extA << 5).
-	extA := 0.
-	nArgs := (byte1 bitAnd: 7) + (extB << 3).
-	extB := 0.
-	numExtB := 0.
+	(isDirected := self extB >= 64) ifTrue:
+		[self extB: (self extB bitAnd: 63)].
+	litIndex := (self byte1 >> 3) + (self extA << 5).
+	self extA: 0.
+	nArgs := (self byte1 bitAnd: 7) + (self extB << 3).
+	self extB: 0.
+	self numExtB: 0.
 	^isDirected
 		ifTrue: [self genSendDirectedSuper: litIndex numArgs: nArgs]
 		ifFalse: [self genSendSuper: litIndex numArgs: nArgs]
@@ -263,8 +266,8 @@ TPharoCogit >> genExtSendSuperBytecode [
 TPharoCogit >> genExtStoreAndPopLiteralVariableBytecode [
 	"236		11101100	i i i i i i i i	Pop and Store Literal Variable #iiiiiiii (+ Extend A * 256)"
 	| index |
-	index := byte1 + (extA << 8).
-	extA := 0.
+	index := self byte1 + (self extA << 8).
+	self extA: 0.
 	^self genStorePop: true LiteralVariable: index
 ]
 
@@ -272,9 +275,9 @@ TPharoCogit >> genExtStoreAndPopLiteralVariableBytecode [
 TPharoCogit >> genExtStoreAndPopReceiverVariableBytecode [
 	"235		11101011	i i i i i i i i	Pop and Store Receiver Variable #iiiiiii (+ Extend A * 256)"
 	| index |
-	index := byte1 + (extA << 8).
-	extA := 0.
-	^(coInterpreter isWriteMediatedContextInstVarIndex: index)
+	index := self byte1 + (self extA << 8).
+	self extA: 0.
+	^(self coInterpreter isWriteMediatedContextInstVarIndex: index)
 		ifTrue: [self genStorePop: true MaybeContextReceiverVariable: index]
 		ifFalse: [self genStorePop: true ReceiverVariable: index]
 ]
@@ -283,8 +286,8 @@ TPharoCogit >> genExtStoreAndPopReceiverVariableBytecode [
 TPharoCogit >> genExtStoreLiteralVariableBytecode [
 	"233		11101001	i i i i i i i i	Store Literal Variable #iiiiiiii (+ Extend A * 256)"
 	| index |
-	index := byte1 + (extA << 8).
-	extA := 0.
+	index := self byte1 + (self extA << 8).
+	self extA: 0.
 	^self genStorePop: false LiteralVariable: index
 ]
 
@@ -292,9 +295,9 @@ TPharoCogit >> genExtStoreLiteralVariableBytecode [
 TPharoCogit >> genExtStoreReceiverVariableBytecode [
 	"232		11101000	i i i i i i i i	Store Receiver Variable #iiiiiii (+ Extend A * 256)"
 	| index |
-	index := byte1 + (extA << 8).
-	extA := 0.
-	^(coInterpreter isWriteMediatedContextInstVarIndex: index)
+	index := self byte1 + (self extA << 8).
+	self extA: 0.
+	^(self coInterpreter isWriteMediatedContextInstVarIndex: index)
 		ifTrue: [self genStorePop: false MaybeContextReceiverVariable: index]
 		ifFalse: [self genStorePop: false ReceiverVariable: index]
 ]
@@ -303,14 +306,14 @@ TPharoCogit >> genExtStoreReceiverVariableBytecode [
 TPharoCogit >> genExtUnconditionalJump [
 	"242		11110010	i i i i i i i i	Jump i i i i i i i i (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)"
 	| distance target |
-	distance := byte1 + (extB << 8).
-	self assert: distance = (self v4: (self generatorAt: byte0)
-								Long: bytecodePC
-								Branch: (extA ~= 0 ifTrue: [1] ifFalse: [0]) + (extB ~= 0 ifTrue: [1] ifFalse: [0])
-								Distance: methodObj).
-	extB := 0.
-	numExtB := 0.
-	target := distance + 2 + bytecodePC.
+	distance := self byte1 + (self extB << 8).
+	self assert: distance = (self v4: (self generatorAt: self byte0)
+								Long: self bytecodePC
+								Branch: (self extA ~= 0 ifTrue: [1] ifFalse: [0]) + (self extB ~= 0 ifTrue: [1] ifFalse: [0])
+								Distance: self methodObj).
+	self extB: 0.
+	self numExtB: 0.
+	target := distance + 2 + self bytecodePC.
 	distance < 0 ifTrue:
 		[^self genJumpBackTo: target].
 	self genJumpTo: target.
@@ -332,20 +335,20 @@ TPharoCogit >> genGetClassObjectOf: instReg into: destReg scratchReg: scratchReg
 		 instReg = scratchReg or: [ destReg = scratchReg ] ]) ifTrue: [
 		^ BadRegisterSet ].
 	loop := self MoveR: instReg R: scratchReg.
-	self AndCq: objectMemory tagMask R: scratchReg.
+	self AndCq: self objectMemory tagMask R: scratchReg.
 	jumpIsImm := self JumpNonZero: 0.
 	self flag: #endianness.
 	"Get least significant half of header word in destReg"
 	self MoveMw: 0 r: instReg R: scratchReg.
 	"mask off class index"
-	self AndCq: objectMemory classIndexMask R: scratchReg.
+	self AndCq: self objectMemory classIndexMask R: scratchReg.
 	instRegIsReceiver ifFalse: [ "if it is forwarded..."
 		self
-			CmpCq: objectMemory isForwardedObjectClassIndexPun
+			CmpCq: self objectMemory isForwardedObjectClassIndexPun
 			R: scratchReg.
 		jumpNotForwarded := self JumpNonZero: 0.
 		"...follow the forwarding pointer and loop to fetch its classIndex"
-		self MoveMw: objectMemory baseHeaderSize r: instReg R: instReg.
+		self MoveMw: self objectMemory baseHeaderSize r: instReg R: instReg.
 		self Jump: loop.
 		jumpNotForwarded jmpTarget: self Label ].
 	jumpIsImm jmpTarget: (self MoveR: scratchReg R: destReg).
@@ -378,28 +381,28 @@ TPharoCogit >> genGetClassObjectOfClassIndex: instReg into: destReg scratchReg: 
 	self assert: destReg ~= scratchReg.
 	self
 		MoveR: instReg R: scratchReg;
-		LogicalShiftRightCq: objectMemory classTableMajorIndexShift
+		LogicalShiftRightCq: self objectMemory classTableMajorIndexShift
 		R: scratchReg;
-		LogicalShiftLeftCq: objectMemory shiftForWord R: scratchReg.
+		LogicalShiftLeftCq: self objectMemory shiftForWord R: scratchReg.
 	self assert:
-		(self shouldAnnotateObjectReference: objectMemory classTableRootObj)
+		(self shouldAnnotateObjectReference: self objectMemory classTableRootObj)
 			not.
 	(self backEnd isWithinMwOffsetRange:
-		 objectMemory classTableRootObj + objectMemory baseHeaderSize)
+		 self objectMemory classTableRootObj + self objectMemory baseHeaderSize)
 		ifTrue: [
 			self
 				MoveMw:
-				objectMemory classTableRootObj + objectMemory baseHeaderSize
+				self objectMemory classTableRootObj + self objectMemory baseHeaderSize
 				r: scratchReg
 				R: destReg ]
 		ifFalse: [
 			self
-				AddCq: objectMemory classTableRootObj R: scratchReg;
-				MoveMw: objectMemory baseHeaderSize r: scratchReg R: destReg ].
+				AddCq: self objectMemory classTableRootObj R: scratchReg;
+				MoveMw: self objectMemory baseHeaderSize r: scratchReg R: destReg ].
 	self
 		MoveR: instReg R: scratchReg;
-		AndCq: objectMemory classTableMinorIndexMask R: scratchReg;
-		AddCq: objectMemory baseHeaderSize >> objectMemory shiftForWord
+		AndCq: self objectMemory classTableMinorIndexMask R: scratchReg;
+		AddCq: self objectMemory baseHeaderSize >> self objectMemory shiftForWord
 		R: scratchReg;
 		MoveXwr: scratchReg R: destReg R: destReg.
 	^ 0
@@ -422,26 +425,26 @@ TPharoCogit >> genJumpBaseHeaderImmutable: baseHeaderReg [
 	<returnTypeC: #'AbstractInstruction *'>
 	<option: #IMMUTABILITY>
 	<inline: true>
-	self TstCq: objectMemory immutableBitMask R: baseHeaderReg.
+	self TstCq: self objectMemory immutableBitMask R: baseHeaderReg.
 	^ self JumpNonZero: 0
 ]
 
 { #category : #'bytecode generators' }
 TPharoCogit >> genLongPushTemporaryVariableBytecode [
 	"230		11100110	i i i i i i i i	Push Temporary Variable #iiiiiiii"
-	^self genPushTemporaryVariable: byte1
+	^self genPushTemporaryVariable: self byte1
 ]
 
 { #category : #'bytecode generators' }
 TPharoCogit >> genLongStoreAndPopTemporaryVariableBytecode [
 	"237		11101101	i i i i i i i i	Pop and Store Temporary Variable #iiiiiiii"
-	^self genStorePop: true TemporaryVariable: byte1
+	^self genStorePop: true TemporaryVariable: self byte1
 ]
 
 { #category : #'bytecode generators' }
 TPharoCogit >> genLongStoreTemporaryVariableBytecode [
 	"234		11101010	i i i i i i i i	Store Temporary Variable #iiiiiiii"
-	^self genStorePop: false TemporaryVariable: byte1
+	^self genStorePop: false TemporaryVariable: self byte1
 ]
 
 { #category : #'primitive generators' }
@@ -462,8 +465,8 @@ TPharoCogit >> genLookupForPerformNumArgs: numArgs [
 	self flag: #lookupInMethodCacheSel:classTag:. "so this method shows up as a sender of lookupInMethodCacheSel:class:"
 
 	cacheBaseReg := NoReg.
-	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress) ifFalse:
-		[self MoveCq: coInterpreter methodCacheAddress R: (cacheBaseReg := Extra0Reg)].
+	(self backEnd isWithinMwOffsetRange: self coInterpreter methodCacheAddress) ifFalse:
+		[self MoveCq: self coInterpreter methodCacheAddress R: (cacheBaseReg := Extra0Reg)].
 
 	"Do first of three probes.  See CoInterpreter>>lookupInMethodCacheSel:classTag:"
 	jumpSelectorMiss := self compilePerformMethodCacheProbeFor: Arg0Reg withShift: 0 baseRegOrNone: cacheBaseReg.
@@ -471,15 +474,15 @@ TPharoCogit >> genLookupForPerformNumArgs: numArgs [
 
 	"Fetch the method, and check if it is cogged."
 	itsAHit := self MoveMw: (cacheBaseReg = NoReg
-								ifTrue: [coInterpreter methodCacheAddress asUnsignedInteger + (MethodCacheMethod << objectMemory shiftForWord)]
-								ifFalse: [MethodCacheMethod << objectMemory shiftForWord])
+								ifTrue: [self coInterpreter methodCacheAddress asUnsignedInteger + (MethodCacheMethod << self objectMemory shiftForWord)]
+								ifFalse: [MethodCacheMethod << self objectMemory shiftForWord])
 					r: ClassReg
 					R: SendNumArgsReg.
 	"If the method is not compiled fall back on the interpreter primitive."
 	self genLoadSlot: HeaderIndex sourceReg: SendNumArgsReg destReg: ClassReg.
 	jumpInterpret := self genJumpImmediate: ClassReg.
 	"Adjust arguments and jump to the method's unchecked entry-point."
-	self AddCq: cmNoCheckEntryOffset R: ClassReg.
+	self AddCq: self cmNoCheckEntryOffset R: ClassReg.
 	self adjustArgumentsForPerform: numArgs.
 	self JumpR: ClassReg.
 
@@ -502,14 +505,14 @@ TPharoCogit >> genLookupForPerformNumArgs: numArgs [
 { #category : #'constant support' }
 TPharoCogit >> genMoveFalseR: reg [
 	<inline: true>
-	^ self genMoveConstant: objectMemory falseObject R: reg
+	^ self genMoveConstant: self objectMemory falseObject R: reg
 	
 ]
 
 { #category : #'constant support' }
 TPharoCogit >> genMoveTrueR: reg [
 	<inline: true>
-	^ self genMoveConstant: objectMemory trueObject R: reg
+	^ self genMoveConstant: self objectMemory trueObject R: reg
 	
 ]
 
@@ -608,7 +611,7 @@ TPharoCogit >> genPushMaybeContextReceiverVariable: slotIndex [
 	| jmpSingle jmpDone |
 	<var: #jmpSingle type: #'AbstractInstruction *'>
 	<var: #jmpDone type: #'AbstractInstruction *'>
-	self assert: needsFrame.
+	self assert: self needsFrame.
 	"See CoInterpreter>>contextInstructionPointer:frame: for an explanation
 	 of the instruction pointer slot handling."
 	slotIndex = InstructionPointerIndex ifTrue:
@@ -649,7 +652,7 @@ TPharoCogit >> genPushTemporaryVariableBytecode [
 TPharoCogit >> genQuickReturnConst [
 	<api> "because selected by CoInterpreter>>quickPrimitiveGeneratorFor:"
 	| constant |
-	constant := coInterpreter quickPrimitiveConstantFor: primitiveIndex.
+	constant := self coInterpreter quickPrimitiveConstantFor: self primitiveIndex.
 	self genMoveConstant: constant R: ReceiverResultReg.
 	self genUpArrowReturn.
 	^UnfailingPrimitive
@@ -659,7 +662,7 @@ TPharoCogit >> genQuickReturnConst [
 TPharoCogit >> genQuickReturnInstVar [
 	<api> "because selected by CoInterpreter>>quickPrimitiveGeneratorFor:"
 	| index |
-	index := coInterpreter quickPrimitiveInstVarIndexFor: primitiveIndex.
+	index := self coInterpreter quickPrimitiveInstVarIndexFor: self primitiveIndex.
 	self genLoadSlot: index sourceReg: ReceiverResultReg destReg: ReceiverResultReg.
 	self genUpArrowReturn.
 	^UnfailingPrimitive
@@ -686,7 +689,7 @@ TPharoCogit >> genReturnNil [
 
 { #category : #'bytecode generators' }
 TPharoCogit >> genReturnNilFromBlock [
-	self assert: inBlock > 0.
+	self assert: self inBlock > 0.
 	self genMoveNilR: ReceiverResultReg.
 	^self genBlockReturn
 ]
@@ -699,18 +702,18 @@ TPharoCogit >> genReturnTrue [
 
 { #category : #'bytecode generators' }
 TPharoCogit >> genSendLiteralSelector0ArgsBytecode [
-	^self genSend: (byte0 bitAnd: 15) numArgs: 0
+	^self genSend: (self byte0 bitAnd: 15) numArgs: 0
 ]
 
 { #category : #'bytecode generators' }
 TPharoCogit >> genSendLiteralSelector1ArgBytecode [
-	^self genSend: (byte0 bitAnd: 15) numArgs: 1
+	^self genSend: (self byte0 bitAnd: 15) numArgs: 1
 ]
 
 { #category : #'bytecode generators' }
 TPharoCogit >> genSendLiteralSelector2ArgsBytecode [
 
-	^self genSend: (byte0 bitAnd: 15) numArgs: 2
+	^self genSend: (self byte0 bitAnd: 15) numArgs: 2
 ]
 
 { #category : #'bytecode generators' }
@@ -718,10 +721,10 @@ TPharoCogit >> genShortJumpIfFalse [
 
 	| distance target |
 	distance := self
-		            distanceForShortForwardBranch: bytecodePC
-		            inMethod: methodObj.
-	target := distance + 1 + bytecodePC.
-	^ self genJumpIf: objectMemory falseObject to: target
+		            distanceForShortForwardBranch: self bytecodePC
+		            inMethod: self methodObj.
+	target := distance + 1 + self bytecodePC.
+	^ self genJumpIf: self objectMemory falseObject to: target
 ]
 
 { #category : #'bytecode generators' }
@@ -729,10 +732,10 @@ TPharoCogit >> genShortJumpIfTrue [
 
 	| distance target |
 	distance := self
-		            distanceForShortForwardBranch: bytecodePC
-		            inMethod: methodObj.
-	target := distance + 1 + bytecodePC.
-	^ self genJumpIf: objectMemory trueObject to: target
+		            distanceForShortForwardBranch: self bytecodePC
+		            inMethod: self methodObj.
+	target := distance + 1 + self bytecodePC.
+	^ self genJumpIf: self objectMemory trueObject to: target
 ]
 
 { #category : #'bytecode generators' }
@@ -740,9 +743,9 @@ TPharoCogit >> genShortUnconditionalJump [
 
 	| distance target |
 	distance := self
-		            distanceForShortForwardBranch: bytecodePC
-		            inMethod: methodObj.
-	target := distance + 1 + bytecodePC.
+		            distanceForShortForwardBranch: self bytecodePC
+		            inMethod: self methodObj.
+	target := distance + 1 + self bytecodePC.
 	^ self genJumpTo: target
 ]
 
@@ -759,29 +762,29 @@ TPharoCogit >> genSpecialSelectorNotEqualsEquals [
 { #category : #'bytecode generators' }
 TPharoCogit >> genSpecialSelectorSend [
 	| index numArgs |
-	index := byte0 - self firstSpecialSelectorBytecodeOffset.
-	numArgs := coInterpreter specialSelectorNumArgs: index.
+	index := self byte0 - self firstSpecialSelectorBytecodeOffset.
+	numArgs := self coInterpreter specialSelectorNumArgs: index.
 	^self genSend: index negated - 1 numArgs: numArgs
 ]
 
 { #category : #'bytecode generators' }
 TPharoCogit >> genStoreAndPopReceiverVariableBytecode [
-	^self genStorePop: true ReceiverVariable: (byte0 bitAnd: 7)
+	^self genStorePop: true ReceiverVariable: (self byte0 bitAnd: 7)
 ]
 
 { #category : #'bytecode generators' }
 TPharoCogit >> genStoreAndPopRemoteTempLongBytecode [
-	^self genStorePop: true RemoteTemp: byte1 At: byte2
+	^self genStorePop: true RemoteTemp: self byte1 At: self byte2
 ]
 
 { #category : #'bytecode generators' }
 TPharoCogit >> genStoreAndPopTemporaryVariableBytecode [
-	^self genStorePop: true TemporaryVariable: (byte0 bitAnd: 7)
+	^self genStorePop: true TemporaryVariable: (self byte0 bitAnd: 7)
 ]
 
 { #category : #'bytecode generators' }
 TPharoCogit >> genStoreRemoteTempLongBytecode [
-	^self genStorePop: false RemoteTemp: byte1 At: byte2
+	^self genStorePop: false RemoteTemp: self byte1 At: self byte2
 ]
 
 { #category : #'bytecode generators' }
@@ -791,7 +794,7 @@ TPharoCogit >> genStoreSourceReg: sourceReg slotIndex: index intoNewObjectInDest
 
 	self
 		MoveR: sourceReg
-		Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
+		Mw: index * self objectMemory wordSize + self objectMemory baseHeaderSize
 		r: destReg.
 	^ 0
 ]
@@ -840,12 +843,13 @@ TPharoCogit >> generateRunTimeTrampolines [
 		                                 'ceSendMustBeBooleanTrampoline'.
 	ceSendMustBeBooleanAddFalseTrampoline := self
 		                                         genMustBeBooleanTrampolineFor:
-		                                         objectMemory falseObject
+		                                         self objectMemory
+			                                         falseObject
 		                                         called:
 		                                         'ceSendMustBeBooleanAddFalseTrampoline'.
 	ceSendMustBeBooleanAddTrueTrampoline := self
 		                                        genMustBeBooleanTrampolineFor:
-		                                        objectMemory trueObject
+		                                        self objectMemory trueObject
 		                                        called:
 		                                        'ceSendMustBeBooleanAddTrueTrampoline'.
 
@@ -880,9 +884,9 @@ TPharoCogit >> parseV4Exts: nExts priorTo: bcpc in: aMethodObj into: aBinaryBloc
 	extAValue := extBValue := 0.
 	pc := bcpc - nExts - nExts.
 	[pc < bcpc] whileTrue:
-		[byte := objectMemory fetchByte: pc ofObject: aMethodObj.
+		[byte := self objectMemory fetchByte: pc ofObject: aMethodObj.
 		 pc := pc + 1.
-		 extByte := objectMemory fetchByte: pc ofObject: aMethodObj.
+		 extByte := self objectMemory fetchByte: pc ofObject: aMethodObj.
 		 pc := pc + 1.
 		 self assert: (byte = 224 or: [byte = 225]).
 		 byte = 224
@@ -917,7 +921,7 @@ TPharoCogit >> v4: descriptor Long: pc Branch: nExts Distance: aMethodObj [
 	| extBValue |
 	self assert: nExts >= 0.
 	self parseV4Exts: nExts priorTo: pc in: aMethodObj into: [:ea :eb| extBValue := eb].
-	^(objectMemory fetchByte: pc + 1 ofObject: aMethodObj)
+	^(self objectMemory fetchByte: pc + 1 ofObject: aMethodObj)
 	+ (extBValue << 8)
 ]
 
@@ -930,6 +934,6 @@ TPharoCogit >> v4: descriptor LongForward: pc Branch: nExts Distance: aMethodObj
 	| extBValue |
 	self assert: nExts >= 0.
 	self parseV4Exts: nExts priorTo: pc in: aMethodObj into: [:ea :eb| extBValue := eb].
-	^(objectMemory fetchByte: pc + 1 ofObject: aMethodObj)
+	^(self objectMemory fetchByte: pc + 1 ofObject: aMethodObj)
 	+ (extBValue << 8)
 ]

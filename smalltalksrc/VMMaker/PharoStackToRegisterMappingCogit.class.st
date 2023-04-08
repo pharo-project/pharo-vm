@@ -1,7 +1,7 @@
 Class {
 	#name : #PharoStackToRegisterMappingCogit,
 	#superclass : #StackToRegisterMappingCogit,
-	#traits : 'TPharoCogit @ {#genBlockReturn->#basicGenBlockReturn}',
+	#traits : 'TPharoCogit',
 	#classTraits : 'TPharoCogit classTrait',
 	#category : #'VMMaker-JIT'
 }
