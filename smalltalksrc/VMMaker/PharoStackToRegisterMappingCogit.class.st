@@ -6,6 +6,137 @@ Class {
 	#category : #'VMMaker-JIT'
 }
 
+{ #category : #'class initialization' }
+PharoStackToRegisterMappingCogit class >> initializeBytecodeTableForSistaV1 [
+	"StackToRegisterMappingCogit initializeBytecodeTableForSistaV1"
+
+	numPushNilsFunction := #sistaV1:Num:Push:Nils:.
+	pushNilSizeFunction := #sistaV1PushNilSize:numInitialNils:.
+	BytecodeSetHasDirectedSuperSend := true.
+	BytecodeSetHasExtensions := true.
+	FirstSpecialSelector := 96.
+	NumSpecialSelectors := 32.
+	self flag:
+'Special selector send class must be inlined to agree with the interpreter, which
+ inlines class.  If class is sent to e.g. a general instance of ProtoObject then unless
+ class is inlined there will be an MNU.  It must be that the Cointerpreter and Cogit
+ have identical semantics.  We get away with not hardwiring the other special
+ selectors either because in the Cointerpreter they are not inlined or because they
+ are inlined only to instances of classes for which there will always be a method.'.
+	self generatorTableFrom: #(
+		"1 byte bytecodes"
+		"pushes"
+		(1    0   15 genPushReceiverVariableBytecode isInstVarRef		needsFrameNever: 1)
+		(1  16   31 genPushLiteralVariable16CasesBytecode			needsFrameNever: 1)
+		(1  32   63 genPushLiteralConstantBytecode					needsFrameNever: 1)
+		(1  64   75 genPushTemporaryVariableBytecode				needsFrameIfMod16GENumArgs: 1)
+		(1  76   76 genPushReceiverBytecode							needsFrameNever: 1)
+		(1  77   77 genPushConstantTrueBytecode						needsFrameNever: 1)
+		(1  78   78 genPushConstantFalseBytecode					needsFrameNever: 1)
+		(1  79   79 genPushConstantNilBytecode						needsFrameNever: 1)
+		(1  80   80 genPushConstantZeroBytecode						needsFrameNever: 1)
+		(1  81   81 genPushConstantOneBytecode						needsFrameNever: 1)
+		(1  82   82 genExtPushPseudoVariable)
+		(1  83   83 duplicateTopBytecode								needsFrameNever: 1)
+
+		(1  84   87 unknownBytecode)
+
+		"returns"
+		(1  88   88 genReturnReceiver				return needsFrameIfInBlock: isMappedInBlock 0)
+		(1  89   89 genReturnTrue					return needsFrameIfInBlock: isMappedInBlock 0)
+		(1  90   90 genReturnFalse					return needsFrameIfInBlock: isMappedInBlock 0)
+		(1  91   91 genReturnNil					return needsFrameIfInBlock: isMappedInBlock 0)
+		(1  92   92 genReturnTopFromMethod		return needsFrameIfInBlock: isMappedInBlock -1)
+		(1  93   93 genReturnNilFromBlock			return needsFrameNever: -1)
+		(1  94   94 genReturnTopFromBlock		return needsFrameNever: -1)
+		(1  95   95 genExtNopBytecode			needsFrameNever: 0)
+
+		"sends"
+		(1  96   96 genSpecialSelectorArithmetic isMapped AddRR)
+		(1  97   97 genSpecialSelectorArithmetic isMapped SubRR)
+		(1  98   98 genSpecialSelectorComparison isMapped JumpLess)
+		(1  99   99 genSpecialSelectorComparison isMapped JumpGreater)
+		(1 100 100 genSpecialSelectorComparison isMapped JumpLessOrEqual)
+		(1 101 101 genSpecialSelectorComparison isMapped JumpGreaterOrEqual)
+		(1 102 102 genSpecialSelectorComparison isMapped JumpZero)
+		(1 103 103 genSpecialSelectorComparison isMapped JumpNonZero)
+		(1 104 109 genSpecialSelectorSend isMapped)	 " #* #/ #\\ #@ #bitShift: //"
+		(1 110 110 genSpecialSelectorArithmetic isMapped AndRR)
+		(1 111 111 genSpecialSelectorArithmetic isMapped OrRR)
+		(1 112 117 genSpecialSelectorSend isMapped) "#at: #at:put: #size #next #nextPut: #atEnd"
+		(1 118 118 genSpecialSelectorEqualsEquals needsFrameNever: notMapped -1) "not mapped because it is directly inlined (for now)"
+		(1 119 119 genSpecialSelectorClass needsFrameIfStackGreaterThanOne: notMapped 0) "not mapped because it is directly inlined (for now)"
+		(1 120 120 genSpecialSelectorNotEqualsEquals needsFrameNever: notMapped -1) "not mapped because it is directly inlined (for now)"
+		(1 121 127 genSpecialSelectorSend isMapped) "#value #value: #do: #new #new: #x #y"
+
+		(1 128 143 genSendLiteralSelector0ArgsBytecode isMapped)
+		(1 144 159 genSendLiteralSelector1ArgBytecode isMapped)
+		(1 160 175 genSendLiteralSelector2ArgsBytecode isMapped)
+
+		"jumps"
+		(1 176 183 genShortUnconditionalJump	branch v3:ShortForward:Branch:Distance:)
+		(1 184 191 genShortJumpIfTrue			branch isBranchTrue isMapped "because of mustBeBoolean"
+													v3:ShortForward:Branch:Distance:)
+		(1 192 199 genShortJumpIfFalse			branch isBranchFalse isMapped "because of mustBeBoolean"
+													v3:ShortForward:Branch:Distance:)
+		(1 200 207 genStoreAndPopReceiverVariableBytecode isInstVarRef is1ByteInstVarStore isMappedIfImmutability needsFrameIfImmutability: -1)
+		
+		(1 208 215 genStoreAndPopTemporaryVariableBytecode)
+
+		(1 216 216 genPopStackBytecode needsFrameNever: -1)
+
+		(1 217 217 genUnconditionalTrapBytecode isMapped)
+
+		(1 218 223 unknownBytecode)
+
+		"2 byte bytecodes"
+		(2 224 224 extABytecode extension)
+		(2 225 225 extBBytecode extension)
+
+		"pushes"
+		(2 226 226 genExtPushReceiverVariableBytecode isInstVarRef)		"Needs a frame for context inst var access"
+		(2 227 227 genExtPushLiteralVariableBytecode			needsFrameNever: 1)
+		(2 228 228 genExtPushLiteralBytecode					needsFrameNever: 1)
+		(2 229 229 genLongPushTemporaryVariableBytecode)
+		(2 230 230 unknownBytecode)
+		(2 231 231 genPushNewArrayBytecode)
+		(2 232 232 genExtPushIntegerBytecode				needsFrameNever: 1)
+		(2 233 233 genExtPushCharacterBytecode				needsFrameNever: 1)
+
+		"returns"
+		"sends"
+		(2 234 234 genExtSendBytecode isMapped)
+		(2 235 235 genExtSendSuperBytecode isMapped)
+
+		"sista bytecodes"
+		(2 236 236 genCallMappedInlinedPrimitive isMapped)
+
+		"jumps"
+		(2 237 237 genExtUnconditionalJump	branch isMapped "because of interrupt check" v4:Long:Branch:Distance:)
+		(2 238 238 genExtJumpIfTrue			branch isBranchTrue isMapped "because of mustBeBoolean" v4:Long:Branch:Distance:)
+		(2 239 239 genExtJumpIfFalse			branch isBranchFalse isMapped "because of mustBeBoolean" v4:Long:Branch:Distance:)
+
+		"stores"
+		(2 240 240 genExtStoreAndPopReceiverVariableBytecode isInstVarRef isMappedIfImmutability)
+		(2 241 241 genExtStoreAndPopLiteralVariableBytecode isMappedIfImmutability)
+		(2 242 242 genLongStoreAndPopTemporaryVariableBytecode)
+		(2 243 243 genExtStoreReceiverVariableBytecode isInstVarRef isMappedIfImmutability)
+		(2 244 244 genExtStoreLiteralVariableBytecode isMappedIfImmutability)
+		(2 245 245 genLongStoreTemporaryVariableBytecode)
+
+		(2 246 247	unknownBytecode)
+
+		"3 byte bytecodes"
+		(3 248 248 genCallPrimitiveBytecode hasUnsafeJump)
+		(3 249 249 genExtPushFullClosureBytecode)
+		(3 250 250 unknownBytecode) "was genExtPushClosureBytecode"
+		(3 251 251 genPushRemoteTempLongBytecode)
+		(3 252 252 genStoreRemoteTempLongBytecode)
+		(3 253 253 genStoreAndPopRemoteTempLongBytecode)
+		
+		(3 254 255	unknownBytecode))
+]
+
 { #category : #'bytecode generator support' }
 PharoStackToRegisterMappingCogit >> allocateEqualsEqualsRegistersArgNeedsReg: argNeedsReg rcvrNeedsReg: rcvrNeedsReg into: binaryBlock [
 
@@ -35,45 +166,6 @@ PharoStackToRegisterMappingCogit >> allocateEqualsEqualsRegistersArgNeedsReg: ar
 	self deny: (rcvrNeedsReg and: [rcvrReg = NoReg]).
 
 	binaryBlock value: rcvrReg value: argReg
-]
-
-{ #category : #'bytecode generators' }
-PharoStackToRegisterMappingCogit >> doubleExtendedDoAnythingBytecode [
-	"Replaces the Blue Book double-extended send [132], in which the first byte was wasted on 8 bits of argument count. 
-	Here we use 3 bits for the operation sub-type (opType),  and the remaining 5 bits for argument count where needed. 
-	The last byte give access to 256 instVars or literals. 
-	See also secondExtendedSendBytecode"
-	| opType |
-	opType := byte1 >> 5.
-	opType = 0 ifTrue:
-		[^self genSend: byte2 numArgs: (byte1 bitAnd: 31)].
-	opType = 1 ifTrue:
-		[^self genSendSuper: byte2 numArgs: (byte1 bitAnd: 31)].
-	"We need a map entry for this bytecode for correct parsing.
-	 The sends will get an IsSend entry anyway.  The other cases need a fake one."
-	opType caseOf: {
-			[2]	->	[(coInterpreter isReadMediatedContextInstVarIndex: byte2)
-						ifTrue: [self genPushMaybeContextReceiverVariable: byte2]
-						ifFalse: [self genPushReceiverVariable: byte2.
-								self annotateInstructionForBytecode.
-								^0]].
-			[3]	->	[self genPushLiteralIndex: byte2.
-					 self annotateInstructionForBytecode.
-					 ^0].
-			[4]	->	[self genPushLiteralVariable: byte2.].
-			[7]	->	[self genStorePop: false LiteralVariable: byte2.
-					self cppIf: IMMUTABILITY ifTrue: [ "genStorePop:LiteralVariable: annotates; don't annotate twice" ^0 ] ] }
-		otherwise: "5 & 6"
-			[(coInterpreter isWriteMediatedContextInstVarIndex: byte2)
-				ifTrue: [self genStorePop: opType = 6 MaybeContextReceiverVariable: byte2]
-				ifFalse: [self genStorePop: opType = 6 ReceiverVariable: byte2].
-			self cppIf: IMMUTABILITY ifTrue: [ "genStorePop:...ReceiverVariable: annotate; don't annotate twice" ^0 ]].
-	"We need a map entry for this bytecode for correct parsing (if the method builds a frame)."
-	self assert: needsFrame.
-	"genPushMaybeContextInstVar, pushLitVar, store & storePop all generate code"
-	self assert: self prevInstIsPCAnnotated not.
-	self annotateBytecode: self Label.
-	^0
 ]
 
 { #category : #'bytecode generators' }
@@ -199,50 +291,6 @@ PharoStackToRegisterMappingCogit >> genCmpArgIsConstant: argIsConstant rcvrIsCon
 			ifFalse: [ self CmpR: argReg R: rcvrReg ] ].
 ]
 
-{ #category : #'compile abstract instructions' }
-PharoStackToRegisterMappingCogit >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch updatingSlot: index in: objReg [
-	"Make sure that the oop in reg is not forwarded, updating the slot in objReg with the value."
-
-	<var: #ok type: #'AbstractInstruction *'>
-	<var: #imm type: #'AbstractInstruction *'>
-	<var: #loop type: #'AbstractInstruction *'>
-	| loop imm ok |
-	self assert: (reg ~= scratch and: [ objReg ~= scratch ]).
-	"Open-code
-		self genEnsureOopInRegNotForwarded: reg
-			scratchReg: scratch
-			updatingMw: index * objectMemory wordSize + objectMemory baseHeaderSize
-			r: objReg.
-	 to avoid calling the store check unless the receiver is forwarded."
-	loop := self Label.
-	imm := self genJumpImmediate: reg.
-	"notionally
-		self genGetClassIndexOfNonImm: reg into: scratch.
-		cogit CmpCq: objectMemory isForwardedObjectClassIndexPun R: TempReg.
-	 but the following is an instruction shorter:"
-	self MoveMw: 0 r: reg R: scratch.
-	self
-		AndCq: objectMemory classIndexMask
-			- objectMemory isForwardedObjectClassIndexPun
-		R: scratch.
-	ok := self JumpNonZero: 0.
-	self genLoadSlot: 0 sourceReg: reg destReg: reg.
-	self
-		MoveR: reg
-		Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
-		r: objReg.
-
-	"Check that we're meeting the contract of ceStoreCheckContextReceiverTrampoline."
-	self assert: (reg = Arg0Reg and: [
-			 scratch = TempReg and: [ objReg = ReceiverResultReg ] ]).
-	self CallRT:
-		objectRepresentation ceStoreCheckContextReceiverTrampoline.
-
-	self Jump: loop.
-	ok jmpTarget: (imm jmpTarget: self Label).
-	^ 0
-]
-
 { #category : #'bytecode generators' }
 PharoStackToRegisterMappingCogit >> genExtPushFullClosureBytecode [
 	"Full Block creation compilation. The block's actual code will be compiled separatedly."
@@ -283,22 +331,6 @@ PharoStackToRegisterMappingCogit >> genExtPushFullClosureBytecode [
 			intoNewObjectInDestReg: ReceiverResultReg.
 	self ssPushRegister: ReceiverResultReg.
 	^0
-]
-
-{ #category : #'bytecode generators' }
-PharoStackToRegisterMappingCogit >> genExtPushRemoteTempOrInstVarLongBytecode [
-	| index maybeContext |
-	^ (byte2 noMask: coInterpreter remoteIsInstVarAccess)
-		ifTrue: [ self genPushRemoteTempLongBytecode ]
-		ifFalse: 
-			[ maybeContext := self extBSpecifiesMaybeContext.
-			index := byte1 + (extA << 8).
-			extA := 0.
-			extB := 0.
-			numExtB := 0.
-			((coInterpreter isReadMediatedContextInstVarIndex: index) and: [ maybeContext ])
-				ifTrue: [ self genPushMaybeContextRemoteInstVar: index inObjectAt: byte2 - coInterpreter remoteIsInstVarAccess ]
-				ifFalse: [ self genPushRemoteInstVar: index inObjectAt: byte2 - coInterpreter remoteIsInstVarAccess ] ]
 ]
 
 { #category : #'bytecode generators' }
@@ -836,14 +868,6 @@ PharoStackToRegisterMappingCogit >> genPushMaybeContextReceiverVariable: slotInd
 ]
 
 { #category : #'bytecode generator support' }
-PharoStackToRegisterMappingCogit >> genPushMaybeContextRemoteInstVar: slotIndex inObjectAt: index [
-	<inline: false>
-	self ssAllocateCallReg: ReceiverResultReg and: SendNumArgsReg.
-	self genLoadTemp: index in: ReceiverResultReg.
-	^ self genPushMaybeContextSlotIndex: slotIndex
-]
-
-{ #category : #'bytecode generator support' }
 PharoStackToRegisterMappingCogit >> genPushMaybeContextSlotIndex: slotIndex [
 	<inline: true>
 	"This method expects ReceiverResultReg to hold the object read"
@@ -1003,50 +1027,6 @@ PharoStackToRegisterMappingCogit >> genSendTrampolineFor: aRoutine numArgs: numA
 		resultReg: NoReg
 		appendOpcodes: true.
 	^startAddress
-]
-
-{ #category : #'bytecode generators' }
-PharoStackToRegisterMappingCogit >> genSistaExtStoreAndPopReceiverVariableBytecodePopBoolean: popBoolean [
-	<inline: true>
-	| index needsStoreCheck needsImmCheck maybeContext result |
-	needsStoreCheck := self sistaNeedsStoreCheck.
-	needsImmCheck := self extBSpecifiesImmCheck.
-	"Long form and short form exist for popInto. Only the long form exists for store.
-	Store have an explicit flag to mark context accessing, while popInto context accessing are done through the long form,
-	hence generate the context form if the flag is set or if this is a popInto."
-	maybeContext := popBoolean or: [self extBSpecifiesMaybeContext].
-	extB := 0.
-	numExtB := 0.
-	index := byte1 + (extA << 8).
-	extA := 0.
-	result := ((coInterpreter isWriteMediatedContextInstVarIndex: index) and: [maybeContext])
-		ifTrue: [self 
-				genStorePop: popBoolean 
-				MaybeContextReceiverVariable: index 
-				needsStoreCheck: needsStoreCheck 
-				needsImmutabilityCheck: needsImmCheck]
-		ifFalse: [self 
-				 genStorePop: popBoolean 
-				 ReceiverVariable: index 
-				 needsStoreCheck: needsStoreCheck 
-				 needsImmutabilityCheck: needsImmCheck].
-	self cppIf: IMMUTABILITY ifTrue: [ needsImmCheck ifFalse: [self annotateBytecode: self Label ] ].
-	^result
-]
-
-{ #category : #'bytecode generators' }
-PharoStackToRegisterMappingCogit >> genSistaExtStoreLiteralVariableBytecodePopBoolean: boolean [
-	<inline: true>
-	| index needsStoreCheck needsImmCheck |
-	needsStoreCheck := self sistaNeedsStoreCheck.
-	needsImmCheck := self extBSpecifiesImmCheck.
-	index := byte1 + (extA << 8).
-	extA := numExtB := extB := 0.
-	^self 
-		genStorePop: boolean 
-		LiteralVariable: index 
-		needsStoreCheck: needsStoreCheck 
-		needsImmutabilityCheck: needsImmCheck
 ]
 
 { #category : #'bytecode generators' }
