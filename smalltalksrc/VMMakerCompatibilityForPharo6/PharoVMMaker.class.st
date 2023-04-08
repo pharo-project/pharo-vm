@@ -91,7 +91,10 @@ PharoVMMaker class >> withCoInterpreter [
 { #category : #generation }
 PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager [
 
-	self generate: interpreterClass memoryManager: memoryManager compilerClass: StackToRegisterMappingCogit
+	self
+		generate: interpreterClass
+		memoryManager: memoryManager
+		compilerClass: PharoStackToRegisterMappingCogit
 ]
 
 { #category : #generation }

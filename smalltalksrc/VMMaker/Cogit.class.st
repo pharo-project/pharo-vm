@@ -245,8 +245,7 @@ Class {
 		'statCompileFullBlockCount',
 		'statCompileFullBlockUsecs',
 		'statCompileMethodCount',
-		'statCompileMethodUsecs',
-		'ceSendMustBeBooleanTrampoline'
+		'statCompileMethodUsecs'
 	],
 	#classVars : [
 		'AnnotationConstantNames',
@@ -823,7 +822,6 @@ Cogit class >> initializeAnnotationConstants [
 
 { #category : #'class initialization' }
 Cogit class >> initializeBytecodeTable [
-
 	"SimpleStackBasedCogit initializeBytecodeTableWith: Dictionary new"
 
 	"StackToRegisterMappingCogit initializeBytecodeTableWith: Dictionary new"
@@ -833,9 +831,8 @@ Cogit class >> initializeBytecodeTable [
 	initializer := InitializationOptions
 		               at: #bytecodeTableInitializer
 		               ifAbsent: [ #initializeBytecodeTableForSistaV1 ].
-	"Now make sure all classes in the hierarchy have initialized to the same bytecode table."
-	(self withAllSuperclasses copyUpTo: Cogit) reverseDo: [ :cogitClass | "i.e. exclude Cogit" 
-		cogitClass perform: initializer ]
+
+	self perform: initializer
 ]
 
 { #category : #'class initialization' }
@@ -3562,6 +3559,12 @@ Cogit >> breakPC: anAddressArrayOrNil [
 	<doNotGenerate>
 	breakPC := anAddressArrayOrNil.
 	singleStep := singleStep or: [anAddressArrayOrNil singleStepRequiredToTriggerIn: self]
+]
+
+{ #category : #accessing }
+Cogit >> byte0 [
+
+	^ byte0
 ]
 
 { #category : #accessing }

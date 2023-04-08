@@ -86,12 +86,6 @@ CogObjectRepresentationFor32BitSpur >> branchIf: reg hasNotImmediateTag: classIn
 ]
 
 { #category : #'compile abstract instructions' }
-CogObjectRepresentationFor32BitSpur >> ceStoreCheckContextReceiverTrampoline [
-
-	^ ceStoreCheckContextReceiverTrampoline
-]
-
-{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genAddSmallIntegerTagsTo: aRegister [
 	cogit AddCq: 1 R: aRegister.
 	^0

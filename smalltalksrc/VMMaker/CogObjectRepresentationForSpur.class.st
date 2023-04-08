@@ -299,6 +299,12 @@ CogObjectRepresentationForSpur >> ceSmallActiveContextInMethodTrampoline: anInte
 	ceSmallActiveContextInMethodTrampoline := anInteger
 ]
 
+{ #category : #'compile abstract instructions' }
+CogObjectRepresentationForSpur >> ceStoreCheckContextReceiverTrampoline [
+
+	^ ceStoreCheckContextReceiverTrampoline
+]
+
 { #category : #accessing }
 CogObjectRepresentationForSpur >> ceStoreCheckTrampoline [
 	
