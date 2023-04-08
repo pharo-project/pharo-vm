@@ -221,6 +221,29 @@ SimpleStackBasedCogit class >> table: primArray from: specArray [
 				primMayCallBack: false]]
 ]
 
+{ #category : #'primitive generators' }
+SimpleStackBasedCogit >> adjustArgumentsForPerform: numArgs [
+	"e.g.	Receiver				Receiver	or	Receiver				Receiver	(RISC)
+			Selector/Arg0	=>		Arg1			Selector/Arg0	=>		Arg1
+			Arg1					Arg2			Arg1					Arg2
+			Arg2					Arg3			Arg2			sp->	Arg3
+	 		Arg3			sp->	retpc	sp->	Arg3
+	 sp->	retpc"
+
+	backEnd hasLinkRegister
+		ifTrue: [
+			numArgs - 2 to: 0 by: -1 do: [ :index |
+				self MoveMw: index * self wordSize r: SPReg R: TempReg.
+				self MoveR: TempReg Mw: index + 1 * self wordSize r: SPReg ].
+			self AddCq: self wordSize R: SPReg ]
+		ifFalse: [
+			numArgs - 1 to: 1 by: -1 do: [ :index |
+				self MoveMw: index * self wordSize r: SPReg R: TempReg.
+				self MoveR: TempReg Mw: index + 1 * self wordSize r: SPReg ].
+			self PopR: TempReg.
+			self MoveR: TempReg Mw: 0 r: SPReg ]
+]
+
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> annotationForSendTable: sendTable [
 	"c.f. offsetAndSendTableFor:annotation:into:"
@@ -1026,6 +1049,18 @@ SimpleStackBasedCogit >> fullBlockNoContextSwitchEntryOffset [
 	<api>
 	<cmacro>
 	^cbNoSwitchEntryOffset
+]
+
+{ #category : #'bytecode generators' }
+SimpleStackBasedCogit >> genBlockReturn [
+	"Return from block, assuming result already loaded into ReceiverResultReg."
+	needsFrame ifTrue:
+		[self MoveR: FPReg R: SPReg.
+		 self PopR: FPReg.
+		 backEnd hasLinkRegister ifTrue:
+			[self PopR: LinkReg]].
+	self RetN: methodOrBlockNumArgs + 1 * objectMemory wordSize.
+	^0
 ]
 
 { #category : #'constant support' }

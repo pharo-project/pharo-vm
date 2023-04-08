@@ -6,29 +6,6 @@ Class {
 	#category : #'VMMaker-JIT'
 }
 
-{ #category : #'primitive generators' }
-PharoSimpleCogit >> adjustArgumentsForPerform: numArgs [
-	"e.g.	Receiver				Receiver	or	Receiver				Receiver	(RISC)
-			Selector/Arg0	=>		Arg1			Selector/Arg0	=>		Arg1
-			Arg1					Arg2			Arg1					Arg2
-			Arg2					Arg3			Arg2			sp->	Arg3
-	 		Arg3			sp->	retpc	sp->	Arg3
-	 sp->	retpc"
-
-	backEnd hasLinkRegister
-		ifTrue: [
-			numArgs - 2 to: 0 by: -1 do: [ :index |
-				self MoveMw: index * self wordSize r: SPReg R: TempReg.
-				self MoveR: TempReg Mw: index + 1 * self wordSize r: SPReg ].
-			self AddCq: self wordSize R: SPReg ]
-		ifFalse: [
-			numArgs - 1 to: 1 by: -1 do: [ :index |
-				self MoveMw: index * self wordSize r: SPReg R: TempReg.
-				self MoveR: TempReg Mw: index + 1 * self wordSize r: SPReg ].
-			self PopR: TempReg.
-			self MoveR: TempReg Mw: 0 r: SPReg ]
-]
-
 { #category : #accessing }
 PharoSimpleCogit >> ceCannotResumePC [
 	<api>
@@ -58,12 +35,6 @@ PharoSimpleCogit >> ceSendMustBeBooleanAddTrueTrampoline: anInteger [
 PharoSimpleCogit >> ceSendMustBeBooleanTrampoline: aTrampolineAddress [
 
 	ceSendMustBeBooleanTrampoline := aTrampolineAddress
-]
-
-{ #category : #'in-line cacheing' }
-PharoSimpleCogit >> classForInlineCacheTag: classIndex [
-
-	^ objectMemory classOrNilAtIndex: classIndex
 ]
 
 { #category : #'span functions' }
@@ -115,12 +86,6 @@ PharoSimpleCogit >> duplicateTopBytecode [
 	^0
 ]
 
-{ #category : #'primitive generators' }
-PharoSimpleCogit >> executePrimitiveGenerator: aPrimitiveGenerator [
-
-	objectRepresentation perform: aPrimitiveGenerator
-]
-
 { #category : #'bytecode generators' }
 PharoSimpleCogit >> extendedPushBytecode [
 	| variableType variableIndex |
@@ -167,18 +132,6 @@ PharoSimpleCogit >> extendedStoreBytecode [
 	variableType = 3 ifTrue:
 		[^self genStorePop: false LiteralVariable: variableIndex].
 	^EncounteredUnknownBytecode
-]
-
-{ #category : #'bytecode generators' }
-PharoSimpleCogit >> genBlockReturn [
-	"Return from block, assuming result already loaded into ReceiverResultReg."
-	needsFrame ifTrue:
-		[self MoveR: FPReg R: SPReg.
-		 self PopR: FPReg.
-		 backEnd hasLinkRegister ifTrue:
-			[self PopR: LinkReg]].
-	self RetN: methodOrBlockNumArgs + 1 * objectMemory wordSize.
-	^0
 ]
 
 { #category : #'bytecode generators' }
@@ -481,41 +434,12 @@ PharoSimpleCogit >> genExtStoreAndPopReceiverVariableBytecode [
 ]
 
 { #category : #'bytecode generators' }
-PharoSimpleCogit >> genExtStoreAndPopRemoteTempOrInstVarLongBytecode [
-	^ self genExtStorePopRemoteTempOrInstVarLongBytecodePopBoolean: true
-]
-
-{ #category : #'bytecode generators' }
 PharoSimpleCogit >> genExtStoreLiteralVariableBytecode [
 	"233		11101001	i i i i i i i i	Store Literal Variable #iiiiiiii (+ Extend A * 256)"
 	| index |
 	index := byte1 + (extA << 8).
 	extA := 0.
 	^self genStorePop: false LiteralVariable: index
-]
-
-{ #category : #'bytecode generators' }
-PharoSimpleCogit >> genExtStorePopRemoteTempOrInstVarLongBytecodePopBoolean: popBoolean [
-	| index |
-	extB := 0. "simple cogit don't use the extra flag"
-	numExtB := 0.
-	(byte2 noMask: coInterpreter remoteIsInstVarAccess)
-		ifTrue: 
-			[ self genStorePop: popBoolean RemoteTemp: byte1 At: byte2.
-			self cppIf: IMMUTABILITY ifTrue: [ self annotateBytecode: self Label ] ]
-		ifFalse: 
-			[ index := byte1 + (extA << 8).
-			extA := 0.
-			(coInterpreter isWriteMediatedContextInstVarIndex: index)
-				ifTrue: [ self 
-						genStorePop: popBoolean 
-						MaybeContextRemoteInstVar: index 
-						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess ]
-				ifFalse: [ self 
-						genStorePop: popBoolean 
-						RemoteInstVar: index 
-						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess  ] ].
-	^ 0
 ]
 
 { #category : #'bytecode generators' }
@@ -527,11 +451,6 @@ PharoSimpleCogit >> genExtStoreReceiverVariableBytecode [
 	^(coInterpreter isWriteMediatedContextInstVarIndex: index)
 		ifTrue: [self genStorePop: false MaybeContextReceiverVariable: index]
 		ifFalse: [self genStorePop: false ReceiverVariable: index]
-]
-
-{ #category : #'bytecode generators' }
-PharoSimpleCogit >> genExtStoreRemoteTempOrInstVarLongBytecode [
-	^ self genExtStorePopRemoteTempOrInstVarLongBytecodePopBoolean: false
 ]
 
 { #category : #'bytecode generators' }
@@ -657,15 +576,6 @@ PharoSimpleCogit >> genGetClassObjectOfClassIndex: instReg into: destReg scratch
 		R: scratchReg;
 		MoveXwr: scratchReg R: destReg R: destReg.
 	^ 0
-]
-
-{ #category : #'compile abstract instructions' }
-PharoSimpleCogit >> genGetInlineCacheClassTagFrom: receiverRegister into: destinationRegister forEntry: isEntry [
-
-	objectRepresentation
-		genGetInlineCacheClassTagFrom: receiverRegister
-		into: destinationRegister
-		forEntry: isEntry
 ]
 
 { #category : #'bytecode generator support' }
@@ -888,12 +798,6 @@ PharoSimpleCogit >> genMustBeBooleanTrampolineFor: boolean called: trampolineNam
 		pushLinkReg: true
 		resultReg: NoReg
 		appendOpcodes: true
-]
-
-{ #category : #'bytecode generator support' }
-PharoSimpleCogit >> genNewArrayOfSize: size initialized: initialized [
-
-	objectRepresentation genNewArrayOfSize: size initialized: initialized
 ]
 
 { #category : #'bytecode generators' }
@@ -1460,32 +1364,6 @@ PharoSimpleCogit >> genStorePop: popBoolean ReceiverVariable: slotIndex [
 ]
 
 { #category : #'bytecode generator support' }
-PharoSimpleCogit >> genStorePop: popBoolean RemoteInstVar: slotIndex ofObjectAt: objectIndex [
-	<inline: false>
-	"The only reason we assert needsFrame here is that in a frameless method
-	 ReceiverResultReg must and does contain only self, but the ceStoreCheck
-	 trampoline expects the target of the store to be in ReceiverResultReg.  So
-	 in a frameless method we would have a conflict between the receiver and
-	 the temote temp store, unless we we smart enough to realise that
-	 ReceiverResultReg was unused after the literal variable store, unlikely given
-	 that methods return self by default."
-	self assert: needsFrame.
-	popBoolean
-		ifTrue: [self PopR: ClassReg]
-		ifFalse: [self MoveMw: 0 r: SPReg R: ClassReg].
-	self MoveMw: (self frameOffsetOfTemporary: objectIndex) r: FPReg R: ReceiverResultReg.
-	self 
-		genEnsureOopInRegNotForwarded: ReceiverResultReg 
-		scratchReg: TempReg.
-	^objectRepresentation
-		genStoreSourceReg: ClassReg
-		slotIndex: slotIndex
-		destReg: ReceiverResultReg
-		scratchReg: TempReg
-		inFrame: needsFrame
-]
-
-{ #category : #'bytecode generator support' }
 PharoSimpleCogit >> genStorePop: popBoolean RemoteTemp: slotIndex At: remoteTempIndex [
 	<inline: false>
 	"The only reason we assert needsFrame here is that in a frameless method
@@ -1569,12 +1447,6 @@ PharoSimpleCogit >> genUpArrowReturn [
 	^0
 ]
 
-{ #category : #initialization }
-PharoSimpleCogit >> generateObjectRepresentationTrampolines [
-
-	objectRepresentation generateObjectRepresentationTrampolines
-]
-
 { #category : #accessing }
 PharoSimpleCogit >> generateRunTimeTrampolines [
 
@@ -1627,15 +1499,6 @@ PharoSimpleCogit >> inlineCacheTagForInstance: oop [
 	^ objectMemory fetchClassTagOf: oop
 ]
 
-{ #category : #'garbage collection' }
-PharoSimpleCogit >> markAndTraceCacheTagLiteral: aCacheTag in: aMethod atpc: mcpc [
-
-	objectRepresentation
-		markAndTraceCacheTagLiteral: aCacheTag
-		in: aMethod
-		atpc: mcpc
-]
-
 { #category : #'bytecode generators' }
 PharoSimpleCogit >> marshallAbsentReceiverSendArguments: numArgs [
 	self assert: needsFrame.
@@ -1653,24 +1516,6 @@ PharoSimpleCogit >> marshallAbsentReceiverSendArguments: numArgs [
 				self MoveMw: index * objectMemory wordSize r: SPReg R: TempReg.
 				self MoveR: TempReg Mw: index - 1 * BytesPerWord r: SPReg].
 			self MoveR: ReceiverResultReg Mw: numArgs * BytesPerWord r: SPReg].
-]
-
-{ #category : #initialization }
-PharoSimpleCogit >> maybeGenerateSelectorIndexDereferenceRoutine [
-
-	objectRepresentation maybeGenerateSelectorIndexDereferenceRoutine
-]
-
-{ #category : #'simulation only' }
-PharoSimpleCogit >> objectRepresentation [
-	<doNotGenerate>
-	^objectRepresentation
-]
-
-{ #category : #'simulation only' }
-PharoSimpleCogit >> objectRepresentation: anObjectRepresentation [
-	<doNotGenerate>
-	objectRepresentation := anObjectRepresentation
 ]
 
 { #category : #'span functions' }
@@ -1695,16 +1540,6 @@ PharoSimpleCogit >> parseV4Exts: nExts priorTo: bcpc in: aMethodObj into: aBinar
 							ifTrue: [extByte - 256]
 							ifFalse: [(extBValue bitShift: 8) + extByte]]].
 	aBinaryBlock value: extAValue value: extBValue
-]
-
-{ #category : #initialization }
-PharoSimpleCogit >> setInterpreter: anInterpreter [
-
-	<doNotGenerate>
-	super setInterpreter: anInterpreter.
-	objectRepresentation := self objectRepresentationClass
-		                        forCogit: self
-		                        methodZone: methodZone
 ]
 
 { #category : #'span functions' }

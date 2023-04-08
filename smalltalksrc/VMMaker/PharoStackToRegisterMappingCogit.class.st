@@ -1,50 +1,10 @@
 Class {
 	#name : #PharoStackToRegisterMappingCogit,
-	#superclass : #PharoSimpleCogit,
+	#superclass : #StackToRegisterMappingCogit,
+	#traits : 'TPharoCogit @ {#genBlockReturn->#basicGenBlockReturn}',
+	#classTraits : 'TPharoCogit classTrait',
 	#category : #'VMMaker-JIT'
 }
-
-{ #category : #'primitive generators' }
-PharoStackToRegisterMappingCogit >> adjustArgumentsForPerform: numArgs [
-	"Generate code to adjust the possibly stacked arguments immediately
-	 before jumping to a method looked up by a perform primitive."
-	self assert: self numRegArgs <= 2.
-	self assert: numArgs >= 1.
-	numArgs <= self numRegArgs ifTrue:
-		[numArgs = 2 ifTrue:
-			[self MoveR: Arg1Reg R: Arg0Reg].
-		 ^self].
-
-	"If the arity is one more than the max numRegArgs, the receiver and all arguments have to be removed from the stack."
-	self numRegArgs + 1 = numArgs ifTrue:
-		[backEnd hasLinkRegister
-			ifTrue:
-				[self numRegArgs = 2
-					ifTrue:
-						[self MoveMw: 0 r: SPReg R: Arg1Reg.
-						 self MoveMw: self wordSize r: SPReg R: Arg0Reg]
-					ifFalse:
-						[self MoveMw: 0 r: SPReg R: Arg0Reg].
-				 self AddCq: numArgs + 1 * self wordSize R: SPReg]
-			ifFalse:
-				[self MoveMw: 0 r: SPReg R: TempReg. "save retpc"
-				 self numRegArgs = 2
-					ifTrue:
-						[self MoveMw: self wordSize r: SPReg R: Arg1Reg.
-						 self MoveMw: self wordSize * 2 r: SPReg R: Arg0Reg]
-					ifFalse:
-						[self MoveMw: self wordSize r: SPReg R: Arg0Reg].
-				 self AddCq: numArgs + 1 * self wordSize R: SPReg.
-				 self MoveR: TempReg Mw: 0 r: SPReg "Overwrite pushed receiver; ReceiverResultReg already contains receiver."].
-		 ^self].
-
-	"e.g.	Receiver				Receiver
-			Selector/Arg0	=>		Arg1
-			Arg1					Arg2
-	 		Arg2			sp->	Arg3
-	 sp->	Arg3"
-	super adjustArgumentsForPerform: numArgs
-]
 
 { #category : #'bytecode generator support' }
 PharoStackToRegisterMappingCogit >> allocateEqualsEqualsRegistersArgNeedsReg: argNeedsReg rcvrNeedsReg: rcvrNeedsReg into: binaryBlock [
@@ -203,14 +163,6 @@ PharoStackToRegisterMappingCogit >> genAddFloat64Vector [
 ]
 
 { #category : #'bytecode generators' }
-PharoStackToRegisterMappingCogit >> genBlockReturn [
-	"Return from block, assuming result already loaded into ReceiverResultReg."
-	super genBlockReturn.
-	deadCode := true. "can't fall through"
-	^0
-]
-
-{ #category : #'bytecode generators' }
 PharoStackToRegisterMappingCogit >> genCallMappedInlinedPrimitive [
 	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
 	^ self genMappedInlinePrimitive: byte1
@@ -245,6 +197,50 @@ PharoStackToRegisterMappingCogit >> genCmpArgIsConstant: argIsConstant rcvrIsCon
 		ifFalse: [ rcvrIsConstant
 			ifTrue: [ self genCmpConstant: (self ssValue: 1) constant R: argReg ]
 			ifFalse: [ self CmpR: argReg R: rcvrReg ] ].
+]
+
+{ #category : #'compile abstract instructions' }
+PharoStackToRegisterMappingCogit >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch updatingSlot: index in: objReg [
+	"Make sure that the oop in reg is not forwarded, updating the slot in objReg with the value."
+
+	<var: #ok type: #'AbstractInstruction *'>
+	<var: #imm type: #'AbstractInstruction *'>
+	<var: #loop type: #'AbstractInstruction *'>
+	| loop imm ok |
+	self assert: (reg ~= scratch and: [ objReg ~= scratch ]).
+	"Open-code
+		self genEnsureOopInRegNotForwarded: reg
+			scratchReg: scratch
+			updatingMw: index * objectMemory wordSize + objectMemory baseHeaderSize
+			r: objReg.
+	 to avoid calling the store check unless the receiver is forwarded."
+	loop := self Label.
+	imm := self genJumpImmediate: reg.
+	"notionally
+		self genGetClassIndexOfNonImm: reg into: scratch.
+		cogit CmpCq: objectMemory isForwardedObjectClassIndexPun R: TempReg.
+	 but the following is an instruction shorter:"
+	self MoveMw: 0 r: reg R: scratch.
+	self
+		AndCq: objectMemory classIndexMask
+			- objectMemory isForwardedObjectClassIndexPun
+		R: scratch.
+	ok := self JumpNonZero: 0.
+	self genLoadSlot: 0 sourceReg: reg destReg: reg.
+	self
+		MoveR: reg
+		Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
+		r: objReg.
+
+	"Check that we're meeting the contract of ceStoreCheckContextReceiverTrampoline."
+	self assert: (reg = Arg0Reg and: [
+			 scratch = TempReg and: [ objReg = ReceiverResultReg ] ]).
+	self CallRT:
+		objectRepresentation ceStoreCheckContextReceiverTrampoline.
+
+	self Jump: loop.
+	ok jmpTarget: (imm jmpTarget: self Label).
+	^ 0
 ]
 
 { #category : #'bytecode generators' }
@@ -655,6 +651,32 @@ PharoStackToRegisterMappingCogit >> genPopStackBytecode [
 	self ssTop spilled ifTrue:
 		[self AddCq: objectMemory wordSize R: SPReg].
 	self ssPop: 1.
+	^0
+]
+
+{ #category : #'primitive generators' }
+PharoStackToRegisterMappingCogit >> genPrimitiveHashMultiply [
+	"Implement 28-bit hashMultiply for SmallInteger and LargePositiveInteger receivers."
+	| jmpFailImm jmpFailNonImm jmpNotSmallInt reenter |
+	jmpNotSmallInt := self genJumpNotSmallInteger: ReceiverResultReg.
+
+	objectRepresentation genConvertSmallIntegerToIntegerInReg: ReceiverResultReg.
+	reenter :=
+	self MoveCq: HashMultiplyConstant R: TempReg.
+	self MulR: TempReg R: ReceiverResultReg.
+	self AndCq: HashMultiplyMask R: ReceiverResultReg.
+	objectRepresentation genConvertIntegerToSmallIntegerInReg: ReceiverResultReg.
+	self RetN: 0.
+
+	jmpNotSmallInt jmpTarget: self Label.
+	jmpFailImm := self genJumpImmediate: ReceiverResultReg.
+	objectRepresentation genGetCompactClassIndexNonImmOf: ReceiverResultReg into: ClassReg.
+	self CmpCq: ClassLargePositiveIntegerCompactIndex R: ClassReg.
+	jmpFailNonImm := self JumpNonZero: 0.
+	self genLoadSlot: 0 sourceReg: ReceiverResultReg destReg: ReceiverResultReg.
+	self Jump: reenter.
+
+	jmpFailImm jmpTarget: (jmpFailNonImm jmpTarget: self Label).
 	^0
 ]
 
@@ -1548,6 +1570,13 @@ PharoStackToRegisterMappingCogit >> genUpArrowReturn [
 							ifTrue: [methodOrBlockNumArgs + 1 * objectMemory wordSize]
 							ifFalse: [0])].
 	^0
+]
+
+{ #category : #'in-line cacheing' }
+PharoStackToRegisterMappingCogit >> inlineCacheTagForInstance: oop [
+	"Answer the relevant inline cache tag for an instance.
+	 c.f. getInlineCacheClassTagFrom:into: & inlineCacheTagForClass:"
+	^ objectMemory fetchClassTagOf: oop
 ]
 
 { #category : #testing }
