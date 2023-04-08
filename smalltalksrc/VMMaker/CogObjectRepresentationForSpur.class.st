@@ -61,6 +61,7 @@ CogObjectRepresentationForSpur class >> declareCVarsIn: aCodeGen [
 		ifNotNil: [InitializationOptions at: #IMMUTABILITY put: current].
 	values first ~= values last ifTrue:
 		[aCodeGen addConstantForBinding: #NumTrampolines -> ('(IMMUTABILITY ? ' , values first , ' : ' , values last , ')')].
+
 	aCodeGen
 		var: #ceStoreTrampolines
 		declareC: ('#if IMMUTABILITY\sqInt ceStoreTrampolines[', NumStoreTrampolines printString, '];\#endif') withCRs

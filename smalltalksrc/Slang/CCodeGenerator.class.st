@@ -138,6 +138,7 @@ CCodeGenerator >> addClass: aClass silently: silentlyBoolean [
 				[:sel :i |
 				bar value: i.
 				self addMethodFor: aClass selector: sel]].
+
 	aClass declareCVarsIn: self
 ]
 
@@ -2138,7 +2139,7 @@ CCodeGenerator >> generateCASTInlineCppIfElse: tast asArgument: asArgument [
 		tast arguments size >= 3 ifTrue: [ 
 			^ generateCAST value: tast arguments third ].
 		^ CEmptyStatementNode new ].
-	self haltIf: [ self currentMethod selector = #setInterpreter:].
+	(self currentMethod selector = #setInterpreter:) ifTrue: [1halt].
 	cppIf := CPreprocessorIfNode
 		         if: (tast arguments first asCASTExpressionIn: self)
 		         then: (self
@@ -3575,17 +3576,18 @@ CCodeGenerator >> localizeGlobalVariables [
 	"find all globals used in only one method"
 	candidates := globalVariableUsage select: [:e | e size = 1].
 	"Don't localize globals; nor those that are only assigned to; they're for debugging..."
-	(candidates keys select: [:k| (self mustBeGlobal: k)
-								or: [(self methodNamed: (globalVariableUsage at: k) anyOne)
-										ifNil: [false]
-										ifNotNil: [:m| (m readsVariable: k) not]]]) do:
-		[:k| candidates removeKey: k].
+	(candidates keys select: [:k| 
+		(self mustBeGlobal: k) or: [(self methodNamed: (globalVariableUsage at: k) anyOne)
+			ifNil: [false]
+			ifNotNil: [:m| (m readsVariable: k) not]]]) 
+				do: [ : k | candidates removeKey: k ].
 	
 	elected := Set new.
 	localized := Dictionary new. "for an ordered report"
 	"move any suitable global to be local to the single method using it"
 	candidates keysAndValuesDo:
 		[:key :targets |
+		
 		targets do:
 			[:name |
 			(methods at: name ifAbsent: []) ifNotNil:
@@ -4753,8 +4755,9 @@ CCodeGenerator >> stepExpressionIsNegative: aNode [
 	^false
 ]
 
-{ #category : #accessing }
+{ #category : #'error notification' }
 CCodeGenerator >> stopOnErrors [
+	"Answer <true> if we should stop on errors during generation"
 
 	^ stopOnErrors
 		ifNil: [ stopOnErrors := true ]

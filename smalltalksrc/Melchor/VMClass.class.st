@@ -287,6 +287,13 @@ VMClass class >> objectRepresentationClass [
 	^self objectMemoryClass objectRepresentationClass
 ]
 
+{ #category : #accessing }
+VMClass class >> resetInitializationOptions [
+
+	self release.
+	InitializationOptions := nil
+]
+
 { #category : #translation }
 VMClass class >> shouldGenerateTypedefFor: aStructClass [
 	"Hack to work-around multiple definitions.  Sometimes a type has been defined in an include."
@@ -499,14 +506,20 @@ VMClass >> defined: aSymbol [
 		ifNotNil: [:binding| binding value ~~ #undefined]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : #'druid support' }
 VMClass >> druidExitPoint [
 
 	"Mark an exit point. From this point on, the current execution branch should not be compiled"
 	<druidExitPoint>
 ]
 
-{ #category : #'object access primitives' }
+{ #category : #'druid support' }
+VMClass >> druidFail [
+
+	self error
+]
+
+{ #category : #'druid support' }
 VMClass >> druidIgnore: aBlock [
 
 	"Execute the block during interpretation, ignore it during compilation.

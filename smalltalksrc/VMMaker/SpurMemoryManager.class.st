@@ -3606,6 +3606,11 @@ SpurMemoryManager >> classFormatFromInstFormat: instFormat [
 	^instFormat bitAnd: -4
 ]
 
+{ #category : #'plugin support' }
+SpurMemoryManager >> classFullBlockClosureCompactIndex [
+	^ ClassFullBlockClosureCompactIndex 
+]
+
 { #category : #'header format' }
 SpurMemoryManager >> classIndexFieldWidth [
 	"22-bit class mask => ~ 4M classes"
@@ -3631,6 +3636,7 @@ SpurMemoryManager >> classIndexOf: objOop [
 		32-bit access will be quicker on 64-bits by virtue of fetching half the bits.  But experiments
 		show that doing this does not produce any increase; at least any signal is lost in the noise."
 	<api>
+	<returnTypeC: #sqInt>
 	^(self wordAt: objOop) bitAnd: self classIndexMask
 ]
 
@@ -3988,7 +3994,7 @@ SpurMemoryManager >> coallesceFreeChunk: objOop [
 { #category : #'object access' }
 SpurMemoryManager >> compactClassIndexOf: objOop [
 	<api>
-	<inline: true>
+	<returnTypeC: #sqInt>
 	^self classIndexOf: objOop
 ]
 
@@ -4773,6 +4779,8 @@ SpurMemoryManager >> fetchClassTagOf: oop [
 
 { #category : #'interpreter access' }
 SpurMemoryManager >> fetchClassTagOfNonImm: obj [
+	<inline: true>
+	<returnTypeC: #sqInt>
 	"In Spur an object's classIndex is the tag in all method caches."
 	^self classIndexOf: obj
 ]
@@ -7729,7 +7737,12 @@ SpurMemoryManager >> isYoungObject: objOop [
 { #category : #'object access' }
 SpurMemoryManager >> keyOfEphemeron: objOop [
 	"Answer the object the ephemeron guards.  This is its first element."
-	self assert: ((self isNonImmediate: objOop) and: [self isObjEphemeron: objOop]).
+	self assert: ((self isNonImmediate: objOop)
+		and: [ (self isObjEphemeron: objOop) ]).
+		
+	"Accessing the first slot of an ephemeron always works.
+	All objects have always at least one slot to use as a forwarding pointer, initialized as nil.
+	0-sized ephemeron will have this slot and work as a normal object"
 	^self fetchPointer: 0 ofObject: objOop
 ]
 
@@ -12286,49 +12299,55 @@ SpurMemoryManager >> trueObject: anOop [
 { #category : #accessing }
 SpurMemoryManager >> uint16At: address [
 
-	<doNotGenerate>
+	<inline: true>
+
 	^ self shortAt: address
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> uint16At: address put: aValue [
 
-	<doNotGenerate>
+	<inline: true>
+
 	^ self shortAt: address put: aValue
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> uint32At: address [
 
-	<doNotGenerate>
+	<inline: true>
+
 	^ self long32At: address
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> uint32At: address put: aValue [
 
-	<doNotGenerate>
+	<inline: true>
+
 	^ self long32At: address put: aValue
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> uint64At: address [
 
-	<doNotGenerate>
+	<inline: true>
+
 	^ self long64At: address
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> uint64At: address put: aValue [
 
-	<doNotGenerate>
+	<inline: true>
+
 	^ self long64At: address put: aValue
 ]
 
 { #category : #accessing }
 SpurMemoryManager >> uint8At: address [
 
-	<doNotGenerate>
+	<inline: true>
 	^ self byteAt: address
 ]
 

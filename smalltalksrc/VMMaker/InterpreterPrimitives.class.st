@@ -803,6 +803,8 @@ InterpreterPrimitives >> primitiveAdoptInstance [
 	 the receiver isn't, or when the format of the receiver is different from the format of
 	 the argument's class, or when the arguments class is fixed and the receiver's size
 	 differs from the size that an instance of the argument's class should have."
+	<maycallback>
+	
 	| rcvr arg err |
 
 	arg := self stackTop.
@@ -1199,6 +1201,8 @@ InterpreterPrimitives >> primitiveBytesLeft [
 
 { #category : #'plugin primitives' }
 InterpreterPrimitives >> primitiveCalloutToFFI [
+	<maycallback>
+	
 	"Perform a function call to a foreign function.
 	Only invoked from method containing explicit external call spec.
 	Due to this we use the pluggable prim mechanism explicitly here
@@ -1293,6 +1297,8 @@ InterpreterPrimitives >> primitiveClockLogAddresses [
 InterpreterPrimitives >> primitiveClone [
 	"Return a shallow copy of the receiver."
 
+	<maycallback>
+
 	| rcvr newCopy |
 	rcvr := self stackTop.
 	(objectMemory isImmediate: rcvr)
@@ -1371,12 +1377,12 @@ InterpreterPrimitives >> primitiveCompareWith [
 				[^self primitiveFailFor: PrimErrBadArgument]].
 	string1 := self stackValue: argumentCount.
 	string2 := self stackValue: argumentCount - 1. 
-			
+	
 	"2 - check their types - all parameters are ByteObject"
 	((objectMemory isBytes: string1)
 	 and: [objectMemory isBytes: string2]) ifFalse: 
 		[^self primitiveFailFor: PrimErrBadArgument].
-	
+
 	"3 - compare the strings"	
 	strLength1 := objectMemory numBytesOfBytes: string1.
 	strLength2 := objectMemory numBytesOfBytes: string2.
@@ -1385,8 +1391,8 @@ InterpreterPrimitives >> primitiveCompareWith [
 				[:str :index | objectMemory fetchByte: index ofObject: str ]]
 		ifNotNil: 
 			[self rawCompare: string1 length: strLength1 with: string2 length: strLength2 accessBlock:
-				[:str :index | objectMemory fetchByte: (objectMemory fetchByte: index ofObject: str) + 1 ofObject: order ]].
-
+				[:str :index | 
+					objectMemory fetchByte: (objectMemory fetchByte: index ofObject: str) ofObject: order ]].
 	self methodReturnInteger: result
 
 	
@@ -1999,6 +2005,7 @@ InterpreterPrimitives >> primitiveFractionalPart [
 { #category : #'control primitives' }
 InterpreterPrimitives >> primitiveFullClosureValue [
 	<option: #SistaV1BytecodeSet>
+	<numberOfArguments: 0>
 	| blockClosure numArgs closureMethod |
 	blockClosure := self stackValue: argumentCount.
 	numArgs := self argumentCountOfClosure: blockClosure.
@@ -2389,6 +2396,7 @@ InterpreterPrimitives >> primitiveIncrementalGC [
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveInstVarAt [
 	<numberOfArguments: 1>
+	<maycallback>
 
 	| index rcvr hdr fmt totalLength fixedFields value |
 	index := self stackTop.
@@ -3752,6 +3760,9 @@ InterpreterPrimitives >> primitiveSlotAt [
 	 inst vars precede the indexed ones.  In non-object indexed objects (objects that contain
 	 bits, not object references) this primitive answers the raw integral value at each slot. 
 	 e.g. for Strings it answers the character code, not the Character object at each slot."
+	
+	<maycallback>
+		
 	| index rcvr fmt numSlots |
 	index := self stackTop.
 	rcvr := self stackValue: 1.
@@ -5058,7 +5069,7 @@ InterpreterPrimitives >> sumSmallInteger: anInteger withSmallInteger: anotherInt
 
 	result := a + b.
 
-	(objectMemory isIntegerValue: result) ifFalse: [ ^ self error: 'Overflow' ].
+	(objectMemory isIntegerValue: result) ifFalse: [ ^ self druidExitPoint ].
 	
 	^ aBlock value: (objectMemory integerObjectOf: result)
 ]

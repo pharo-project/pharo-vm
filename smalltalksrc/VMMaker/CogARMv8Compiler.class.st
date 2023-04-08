@@ -3772,7 +3772,8 @@ CogARMv8Compiler >> fConvertSourceRegisterFP: sourceRegister ofPrecision: precis
 	
 	FCVTZS <Xd>, <Dn>
 	"
-	
+	<inline: true>
+
 	^ (signed bitAnd: 1) << 31
 		bitOr: (2r0011110 << 24
 		bitOr: ((precision bitAnd: 2r11) << 22
