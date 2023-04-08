@@ -478,11 +478,6 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 		'printRegisters' 'printInstructions' 'clickConfirm' 'singleStep') do:
 			[:simulationVariableNotNeededForRealVM|
 			aCCodeGenerator removeVariable: simulationVariableNotNeededForRealVM].
-	#(	'selfSendTrampolines' 'dynamicSuperSendTrampolines'
-			'implicitReceiverSendTrampolines' 'outerSendTrampolines'
-			'ceEnclosingObjectTrampoline' 'numIRCs' 'indexOfIRC' 'theIRCs') do:
-				[:variableNotNeededInNormalVM|
-				aCCodeGenerator removeVariable: variableNotNeededInNormalVM].
 
 	aCCodeGenerator
 		addHeaderFile:'<stddef.h>'; "for e.g. offsetof"
@@ -12127,6 +12122,7 @@ Cogit >> withAnnotation: annotation pc: mcpc evaluate: aBinaryBlock [
 { #category : #accessing }
 Cogit >> wordSize [
 
+	<doNotGenerate>
 	^ objectMemory wordSize
 ]
 

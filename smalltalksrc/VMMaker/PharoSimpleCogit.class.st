@@ -1,15 +1,8 @@
 Class {
 	#name : #PharoSimpleCogit,
-	#superclass : #StackToRegisterMappingCogit,
-	#instVars : [
-		'objectRepresentation',
-		'ceCannotResumeTrampoline',
-		'ceSendMustBeBooleanAddFalseTrampoline',
-		'ceSendMustBeBooleanAddTrueTrampoline',
-		'ceSendMustBeBooleanTrampoline',
-		'ceFetchContextInstVarTrampoline',
-		'ceStoreContextInstVarTrampoline'
-	],
+	#superclass : #SimpleStackBasedCogit,
+	#traits : 'TPharoCogit',
+	#classTraits : 'TPharoCogit classTrait',
 	#category : #'VMMaker-JIT'
 }
 

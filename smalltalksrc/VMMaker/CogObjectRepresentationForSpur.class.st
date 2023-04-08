@@ -831,10 +831,9 @@ CogObjectRepresentationForSpur >> genGetActiveContextNumArgs: numArgs large: isL
 
 { #category : #'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genGetBits: mask ofFormatByteOf: sourceReg into: destReg [
-	self flag: #endianness.
-	cogit MoveMb: 3 r: sourceReg R: destReg.
-	cogit AndCq: mask R: destReg.	"formatReg := self formatOfHeader: destReg"
-	^0
+
+	<doNotGenerate>
+	^ cogit genGetBits: mask ofFormatByteOf: sourceReg into: destReg
 ]
 
 { #category : #'compile abstract instructions' }
@@ -1058,6 +1057,7 @@ CogObjectRepresentationForSpur >> genJumpCharacterInScratchReg: reg [
 { #category : #'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genJumpImmediate: aRegister [
 
+	<doNotGenerate>
 	^ cogit genJumpImmediate: aRegister
 ]
 
@@ -1093,7 +1093,9 @@ CogObjectRepresentationForSpur >> genJumpNotImmediate: aRegister [
 { #category : #'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genJumpNotSmallInteger: reg [
 	"Generate a compare and branch to test if aRegister contains other than a SmallInteger."
-	^cogit genJumpNotSmallInteger: reg
+
+	<doNotGenerate>
+	^ cogit genJumpNotSmallInteger: reg
 ]
 
 { #category : #'compile abstract instructions' }
@@ -1145,6 +1147,7 @@ CogObjectRepresentationForSpur >> genJumpSmallInteger: aRegister scratchReg: scr
 { #category : #'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genLoadSlot: index sourceReg: sourceReg destReg: destReg [
 
+	<doNotGenerate>
 	cogit genLoadSlot: index sourceReg: sourceReg destReg: destReg.
 	^ 0
 ]
@@ -3831,11 +3834,9 @@ CogObjectRepresentationForSpur >> isImmediate: oop [
 
 { #category : #'compile abstract instructions' }
 CogObjectRepresentationForSpur >> isUnannotatableConstant: simStackEntry [
-	<inline: true>
-	<var: 'simStackEntry' type: #'CogSimStackEntry *'>
-	^simStackEntry type = SSConstant 
-	  and: [(objectMemory isImmediate: simStackEntry constant)
-		or: [(cogit shouldAnnotateObjectReference: simStackEntry constant) not]]
+
+	<doNotGenerate>
+	^ cogit isUnannotatableConstant: simStackEntry
 ]
 
 { #category : #'compile abstract instructions' }
