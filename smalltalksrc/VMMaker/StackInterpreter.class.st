@@ -5471,35 +5471,6 @@ StackInterpreter >> extUnconditionalJump [
 ]
 
 { #category : #'stack bytecodes' }
-StackInterpreter >> extendedPushBytecode [
-
-	| descriptor variableType variableIndex |
-	descriptor := self fetchByte.
-	self fetchNextBytecode.
-	variableType := (descriptor >> 6) bitAnd: 16r3.
-	variableIndex := descriptor bitAnd: 16r3F.
-	variableType=0 ifTrue: [^self pushReceiverVariable: variableIndex].
-	variableType=1 ifTrue: [^self pushTemporaryVariable: variableIndex].
-	variableType=2 ifTrue: [^self pushLiteralConstant: variableIndex].
-	variableType=3 ifTrue: [^self pushLiteralVariable: variableIndex].
-
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extendedStoreAndPopBytecode [
-	<inline: true>
-	self extendedStoreBytecodePop: true
-	"may not be reached (immutable receiver)"
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extendedStoreBytecode [
-	<inline: true>
-	self extendedStoreBytecodePop: false
-	"may not be reached (immutable receiver)"
-]
-
-{ #category : #'stack bytecodes' }
 StackInterpreter >> extendedStoreBytecodePop: popBoolean [
 
 	<inline: true>

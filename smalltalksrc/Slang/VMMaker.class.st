@@ -154,29 +154,6 @@ VMMaker class >> fullNameForPath: aPathString [
 	^ aPathString asFileReference asAbsolute fullName
 ]
 
-{ #category : #utilities }
-VMMaker class >> generate: interpreterClass and: cogitClass with: optionsPairsArray to: srcDirName platformDir: platDirName including: inclusions configuration: vmmakerConfiguration [
-	"Generate the VM to the given target directory. Include only plugins in pluginList.
-	 Example:
-		(VMMaker
-			generate: CoInterpreter
-			and: SimpleStackBasedCogit
-			to: (FileDirectory default pathFromURI: '../src')
-			platformDir: (FileDirectory default pathFromURI: '../platforms')
-			including:#(	AsynchFilePlugin FloatArrayPlugin RePlugin B2DPlugin FloatMathPlugin SecurityPlugin
-						BMPReadWriterPlugin IA32ABI SocketPlugin BitBltPlugin JPEGReadWriter2Plugin SurfacePlugin
-						DSAPrims JPEGReaderPlugin UUIDPlugin DropPlugin LargeIntegers UnixOSProcessPlugin
-						FileCopyPlugin Matrix2x3Plugin Win32OSProcessPlugin FilePlugin MiscPrimitivePlugin ZipPlugin))"
-	(self
-		makerFor: interpreterClass
-		and: cogitClass
-		with: optionsPairsArray
-		to: srcDirName
-		platformDir: platDirName
-		including: inclusions
-		configuration: vmmakerConfiguration) generateEntire
-]
-
 { #category : #initialisation }
 VMMaker class >> isActiveVMMakerClassFor: platformName [ 
 	"Does this class claim to be that properly active subclass of VMMaker for 
@@ -611,18 +588,6 @@ VMMaker >> generateCogitIncludeFileFor: cogitClass [
 		[file := self class forceNewFileNamed: fileName.
 		 [file nextPutAll: code] ensure:
 			[file close]]
-]
-
-{ #category : #'generate sources' }
-VMMaker >> generateEntire [
-	"Generate the interp, internal plugins and exports as well as the external plugins.
-	 If this comes from a generator method, log it for convenience."
-	abortBlock := [^self].
-	
-	self halt.
-	self logGeneration.
-	self generateMainVM.
-	self generateExternalPlugins
 ]
 
 { #category : #exports }
