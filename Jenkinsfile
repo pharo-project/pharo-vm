@@ -103,18 +103,18 @@ def recordCygwinVersions(buildDirectory){
 	archiveArtifacts artifacts: "${buildDirectory}/cygwinVersions.txt"
 }
 
-def runBuild(platformName, configuration, headless = true){
+def runBuild(platformName, configuration, headless = true, someAdditionalParameters = ""){
 	cleanWs()
 	
 	def platform = headless ? platformName : "${platformName}-stockReplacement"
 	def buildDirectory = headless ? "build" :"build-stockReplacement"
-	def additionalParameters = ""
+	def additionalParameters = someAdditionalParameters
 	
-	additionalParameters += headless ? "" : "-DALWAYS_INTERACTIVE=1 "
-	additionalParameters += isRelease() ? "-DBUILD_IS_RELEASE=ON " : "-DBUILD_IS_RELEASE=OFF "
+	additionalParameters += headless ? "" : " -DALWAYS_INTERACTIVE=1 "
+	additionalParameters += isRelease() ? " -DBUILD_IS_RELEASE=ON " : " -DBUILD_IS_RELEASE=OFF "
 
 	if(configuration == 'StackVM'){
-		additionalParameters += "-DFEATURE_MESSAGE_COUNT=TRUE "
+		additionalParameters += " -DFEATURE_MESSAGE_COUNT=TRUE "
 		platform = "${platformName}-StackVM"
 		buildDirectory = "build-StackVM"
 	}
@@ -131,16 +131,20 @@ def runBuild(platformName, configuration, headless = true){
       recordCygwinVersions(buildDirectory)
       runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository -DICEBERG_DEFAULT_REMOTE=httpsUrl"
       runInCygwin "cd ${buildDirectory} && VERBOSE=1 make install package"
+      runInCygwin "mkdir -p artifacts-${platformName} && cp -a ${buildDirectory}/build/packages/* artifacts-${platformName}/"
     }else{
       cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
       dir("${buildDirectory}"){
         shell "VERBOSE=1 make install package"
       }
+      shell "mkdir -p artifacts-${platformName} && cp -a ${buildDirectory}/build/packages/* artifacts-${platformName}/"
     }
 	
 		stash excludes: '_CPack_Packages', includes: "${buildDirectory}/build/packages/*", name: "packages-${platform}-${configuration}"
         stash includes: "repository/scripts/*", name: "scripts"
 		archiveArtifacts artifacts: "${buildDirectory}/build/packages/*", excludes: '_CPack_Packages'
+		archiveArtifacts artifacts: "artifacts-${platformName}/*", excludes: '_CPack_Packages'
+
 	}
 }
 
@@ -197,6 +201,10 @@ def runUnitTests(platform){
           shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
           shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'Slang-Tests'"
          } 
+
+        shell "zip ./VMMaker-Image.zip ./image/VMMaker.*"
+        archiveArtifacts artifacts: 'VMMaker-Image.zip'
+
         // Stop if tests fail
         // Archive xml reports either case
         try {
@@ -464,6 +472,9 @@ try{
 				}
 				timeout(30){
 					runBuild(platform, "StackVM")
+				}
+				timeout(30){
+					runBuild("${platform}-ComposedFormat", "CoInterpreter", true, " -DIMAGE_FORMAT=ComposedFormat ")
 				}
 				timeout(30){
 					// Only build the Stock replacement version in the main branch

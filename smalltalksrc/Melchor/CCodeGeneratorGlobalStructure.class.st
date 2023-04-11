@@ -13,6 +13,23 @@ Class {
 	#category : #Melchor
 }
 
+{ #category : #'CAST translation' }
+CCodeGeneratorGlobalStructure >> bindBlock: aTBlockNode withArgs: arguments [
+
+	| blockStatements argumentNames replacements |
+	blockStatements := aTBlockNode statements.
+	argumentNames := aTBlockNode arguments.
+
+	self assert: argumentNames size = arguments size.
+
+	replacements := argumentNames
+		                with: arguments
+		                collect: [ :name :value | name -> value ].
+
+	^ blockStatements collect: [ :anStatement | 
+		  anStatement copy bindVariableUsesIn: replacements asDictionary ]
+]
+
 { #category : #'C code generator' }
 CCodeGeneratorGlobalStructure >> buildSortedVariablesCollection [
 	"Build sorted vars, end result will be sorted collection based on static usage, 
@@ -97,20 +114,23 @@ CCodeGeneratorGlobalStructure >> emitCVariablesOn: aStream [
 					ifTrue: [structure]
 					ifFalse: [nonstruct].
 		decl := variableDeclarations at: varString ifAbsent: ['sqInt ' , varString].
-		decl first == $# "support cgen var: #bytecodeSetSelector declareC: '#define bytecodeSetSelector 0' hack"
-			ifTrue:
-				[target nextPutAll: decl; cr]
-			ifFalse:
-				[self isGeneratingPluginCode
+			(decl beginsWith: 'implicit') ifFalse: [
+				decl first == $# "support cgen var: #bytecodeSetSelector declareC: '#define bytecodeSetSelector 0' hack"
 					ifTrue:
-						[varString = 'interpreterProxy'
-							ifTrue: "quite special..."
-								[self preDeclareInterpreterProxyOn: target]
-							ifFalse: [target nextPutAll: 'static ']]
+						[target nextPutAll: decl; cr]
 					ifFalse:
-						[(self vmClass mustBeGlobal: varString) ifFalse:
-							[target nextPutAll: (inStruct ifTrue: ['_iss '] ifFalse: ['static '])]].
-				target nextPutAll: decl; nextPut: $;; cr]].
+						[self isGeneratingPluginCode
+							ifTrue:
+								[varString = 'interpreterProxy'
+									ifTrue: "quite special..."
+										[self preDeclareInterpreterProxyOn: target]
+									ifFalse: [target nextPutAll: 'static ']]
+							ifFalse:
+								[(self vmClass mustBeGlobal: varString) ifFalse:
+									[target nextPutAll: (inStruct ifTrue: ['_iss '] ifFalse: ['static '])]].
+						target nextPutAll: decl; nextPut: $;; cr]
+			]
+		].
 	structure
 		nextPutAll: '#undef _iss'; cr;
 		nextPutAll: '#if SQ_USE_GLOBAL_STRUCT'; cr;
@@ -166,11 +186,124 @@ CCodeGeneratorGlobalStructure >> emitGlobalStructFlagOn: aStream [
 		cr
 ]
 
+{ #category : #'CAST translation' }
+CCodeGeneratorGlobalStructure >> generateCASTSetFieldTo: aTSendNode [ 
+
+	| structType fieldName fieldVale setFieldStatements |
+	
+	self assert: aTSendNode arguments size = 2.
+
+	fieldName := aTSendNode arguments first.
+	fieldVale := aTSendNode arguments second.
+	
+	structType := self structTypeFor: aTSendNode receiver.
+	
+
+	setFieldStatements := structType asClass allSlots collect: [ :slot |
+		| comparison |
+		
+		comparison := TSendNode 
+									receiver: (TSendNode 
+											receiver: (TConstantNode value: slot name asString) 
+											selector: 'strcmp:' 
+											arguments: { fieldName })
+									selector: '='
+									arguments: { TConstantNode value: 0 }.
+
+		TSendNode 
+			receiver: comparison
+			selector: 'ifTrue:' 
+			arguments: { 
+				TStatementListNode 
+					statements: { 
+						TSendNode 
+							receiver: aTSendNode receiver 
+							selector: (slot name, ':') 
+							arguments: { fieldVale } 
+					}
+			}			
+
+	].
+
+	^ CCompoundStatementNode statements: (setFieldStatements collect: [ :e | e asCASTIn: self]).
+
+]
+
+{ #category : #'CAST translation' }
+CCodeGeneratorGlobalStructure >> generateCASTWithFieldsDoSeparatedBy: aTSendNode [
+
+	| structType allRewrittenStatements blockSeparatorStatements fieldBlock allFieldArguments |
+	self assert: aTSendNode arguments size = 2.
+	self assert: aTSendNode arguments first arguments size = 2.
+	self assert: aTSendNode arguments second arguments size = 0.
+
+	fieldBlock := aTSendNode arguments first.
+	blockSeparatorStatements := aTSendNode arguments second statements.
+
+	structType := self structTypeFor: aTSendNode receiver.
+
+	allFieldArguments := structType asClass allSlots collect: [ :slot | 
+		                     { 
+			                     (TConstantNode value: slot name asString).
+			                     (TSendNode
+				                      receiver: aTSendNode receiver
+				                      selector: slot name
+				                      arguments: {  }) } ].
+
+	allRewrittenStatements := OrderedCollection new.
+
+	allFieldArguments
+		do: [ :fieldArgs | 
+			allRewrittenStatements addAll:
+				(self bindBlock: fieldBlock withArgs: fieldArgs) ]
+		separatedBy: [ 
+		allRewrittenStatements addAll: blockSeparatorStatements ].
+
+	^ CCompoundStatementNode statements:
+		  (allRewrittenStatements collect: [ :e | e asCASTIn: self ])
+]
+
+{ #category : #'CAST translation' }
+CCodeGeneratorGlobalStructure >> generateCASTWithStructNameDo: aTSendNode [
+
+	| argumentName structType rewrittenStatements aBlock |
+	self assert: aTSendNode arguments size = 1.
+	self assert: aTSendNode arguments first arguments size = 1.
+
+	structType := self structTypeFor: aTSendNode receiver.
+
+	aBlock := aTSendNode arguments first.
+	argumentName := aTSendNode arguments first arguments first.
+
+	rewrittenStatements := self
+		                       bindBlock: aBlock
+		                       withArgs:
+		                       { (TConstantNode value: structType asString) }.
+
+	^ CCompoundStatementNode statements:
+		  (rewrittenStatements collect: [ :e | e asCASTIn: self ])
+]
+
 { #category : #'C code generator' }
 CCodeGeneratorGlobalStructure >> initialize [
 	super initialize.
 	localStructDef := nil. "ignored ivar - no longer used"
 	structDefDefine := '1'
+]
+
+{ #category : #initialization }
+CCodeGeneratorGlobalStructure >> initializeCASTTranslationDictionary [
+
+	super initializeCASTTranslationDictionary.
+
+	castTranslationDict at: #withStructNameDo: put: #generateCASTWithStructNameDo:.
+	castTranslationDict at: #withFieldsDo:separatedBy: put: #generateCASTWithFieldsDoSeparatedBy:.
+	castTranslationDict at: #setField:to: put: #generateCASTSetFieldTo:.
+]
+
+{ #category : #public }
+CCodeGeneratorGlobalStructure >> isGlobalStructureBuild [
+	^true
 ]
 
 { #category : #utilities }
@@ -214,4 +347,12 @@ CCodeGeneratorGlobalStructure >> structDefDefine: aString [
 '0' - which would mean never do it
 '1' - which would mean always do it"
 	structDefDefine := aString
+]
+
+{ #category : #'CAST translation' }
+CCodeGeneratorGlobalStructure >> structTypeFor: structNode [
+
+	| nodeType |
+	nodeType := self typeFor: structNode in: self currentMethod.
+	^ nodeType trimRight: [ :c | { $* . $ } includes: c ]
 ]

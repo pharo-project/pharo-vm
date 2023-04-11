@@ -103,7 +103,7 @@ VMPrimitiveTest >> setUpForwardedObjects [
 { #category : #running }
 VMPrimitiveTest >> tearDown [
 
-	imageName ifNotNil: [ imageName asFileReference ensureDelete ].
+	imageName ifNotNil: [ imageName asFileReference ensureDeleteAll ].
 	super tearDown
 ]
 
@@ -507,17 +507,16 @@ VMPrimitiveTest >> testPrimitiveAsCharacter [
 ]
 
 { #category : #'tests - primitiveAsCharacter' }
-VMPrimitiveTest >> testPrimitiveAsCharacterCompilesWithNoArg [
-	
-	interpreter primitiveAsCharacter. 
-
-	self deny: interpreter failed.
-]
-
-{ #category : #'tests - primitiveAsCharacter' }
 VMPrimitiveTest >> testPrimitiveAsCharacterFailsForOutOfRangeArg [
 
-	interpreter push: (memory integerObjectOf: 16rFF000000).
+	| invalidNumber |
+	invalidNumber := memory integerObjectOf: 16rFF000000.
+	
+	wordSize = 4 
+		ifTrue: [ invalidNumber := invalidNumber bitAnd: 16rFFFFFFFF ]
+		ifFalse: [ invalidNumber := invalidNumber bitAnd: 16rFFFFFFFFFFFFFFFF ].
+
+	interpreter push: invalidNumber.
 	"This number is undecodable both for 64 and 32 bits architectures"
 	
 	interpreter primitiveAsCharacter. 
@@ -2832,7 +2831,7 @@ VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceAllocatesInOldSpace [
 
 	newObj := interpreter stackTop.
 
-	self assert: (memory isOldObject: newObj)
+	self assert: (memory getMemoryMap isOldObject: newObj)
 ]
 
 { #category : #'tests - primitiveNewWithArgs' }
@@ -4575,7 +4574,7 @@ VMPrimitiveTest >> testPrimitiveSnapshotContextsShouldBeTenured [
 { #category : #'tests - snapshot' }
 VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
 
-	| method file |
+	| method |
 	interpreter pluginList: #(  ).
 	self setUpScheduler.
 	self initializeOldSpaceForFullGC.
@@ -4591,10 +4590,7 @@ VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
 	interpreter setImageHeaderFlagsFrom: 0.
 	interpreter primitiveSnapshot.
 
-	file := imageName asFileReference.
-
-	self assert: file exists.
-	self assert: file size > 0
+	interpreter imageReader validateImage: imageName 
 ]
 
 { #category : #'tests - snapshot' }

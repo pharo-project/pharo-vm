@@ -10,7 +10,7 @@ Class {
 { #category : #helpers }
 VMJittedPrimitiveAtTest >> assertFallsThrough [
 
-	self runFrom: initialAddress until: stop address.
+	self runFrom: cogInitialAddress until: stop address.
 	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]
 
@@ -541,7 +541,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtFixedObjectWithNoInstanceVariablesShou
 	self
 		prepareStackForSendReceiver: objectWithNoInstanceVariables
 		arguments: { memory integerObjectOf: 1 }.
-	self runFrom: initialAddress until: stop address.
+	self runFrom: cogInitialAddress until: stop address.
 
 	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]
@@ -550,7 +550,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtFixedObjectWithNoInstanceVariablesShou
 VMJittedPrimitiveAtTest >> testPrimitiveAtImmediateCharacterShouldFallThrough [
 	
 	machineSimulator receiverRegisterValue: (memory characterObjectOf: $a codePoint).
-	self runFrom: initialAddress until: stop address.
+	self runFrom: cogInitialAddress until: stop address.
 
 	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]
@@ -562,7 +562,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtImmediateFloatShouldFallThrough [
 	self wordSize = 4 ifTrue: [ ^self skip ].
 
 	machineSimulator receiverRegisterValue: (memory smallFloatObjectOf: 1.0).
-	self runFrom: initialAddress until: stop address.
+	self runFrom: cogInitialAddress until: stop address.
 
 	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]
@@ -571,7 +571,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtImmediateFloatShouldFallThrough [
 VMJittedPrimitiveAtTest >> testPrimitiveAtSmallIntegerShouldFallThrough [
 		
 	machineSimulator receiverRegisterValue: (memory integerObjectOf: 17).
-	self runFrom: initialAddress until: stop address.
+	self runFrom: cogInitialAddress until: stop address.
 
 	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]

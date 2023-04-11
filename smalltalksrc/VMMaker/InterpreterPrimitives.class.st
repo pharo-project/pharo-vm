@@ -4154,7 +4154,7 @@ InterpreterPrimitives >> primitiveStringReplace [
 			start := start + arrayInstSize.
 			stop := stop + arrayInstSize.
 			srcDelta := replStart + replInstSize - start.
-			(objectMemory isOldObject: array)
+			(objectMemory getMemoryMap isOldObject: array)
 				ifTrue: [ 
 					| mustRemember oop |
 					mustRemember := false.
@@ -4165,7 +4165,7 @@ InterpreterPrimitives >> primitiveStringReplace [
 							storePointerUnchecked: i
 							ofObject: array
 							withValue: oop ].
-					mustRemember ifTrue: [ objectMemory possibleRootStoreInto: array ] ]
+					mustRemember ifTrue: [ objectMemory possibleOldObjectStoreInto: array ] ]
 				ifFalse: [ 
 					start - 1 to: stop - 1 do: [ :i | 
 						objectMemory

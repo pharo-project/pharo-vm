@@ -334,7 +334,7 @@ StackInterpreterPrimitives >> fieldsInFrame: theFP [
 
 { #category : #'object access primitives' }
 StackInterpreterPrimitives >> frameIsMarked: theFPInt [
-	^((stackPages longAt: theFPInt + FoxFrameFlags) bitAnd: 2) ~= 0
+	^((stackPages unsignedLongAt: theFPInt + FoxFrameFlags) bitAnd: 2) ~= 0
 ]
 
 { #category : #'ffi - helpers' }
@@ -440,8 +440,8 @@ StackInterpreterPrimitives >> logDebug: aString [
 { #category : #'object access primitives' }
 StackInterpreterPrimitives >> markFrame: theFPInt [
 	stackPages
-		longAt: theFPInt + FoxFrameFlags
-		put: ((stackPages longAt: theFPInt + FoxFrameFlags) bitOr: 2)
+		unsignedLongAt: theFPInt + FoxFrameFlags
+		put: ((stackPages unsignedLongAt: theFPInt + FoxFrameFlags) bitOr: 2)
 ]
 
 { #category : #'ffi - helpers' }
@@ -1747,6 +1747,15 @@ StackInterpreterPrimitives >> primitiveInstVarAtPut [
 	self pop: argumentCount + 1 thenPush: newValue
 ]
 
+{ #category : #'perm - space' }
+StackInterpreterPrimitives >> primitiveIsInPermSpace [
+
+	| rcvr |
+
+	rcvr := self stackTop.		
+	self pop: argumentCount + 1 thenPushBool: (objectMemory isPermanent: rcvr).
+]
+
 { #category : #'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadBoolean8FromBytes [
 	<var: #bytes type: #'char*' >
@@ -2483,6 +2492,38 @@ StackInterpreterPrimitives >> primitiveLongRunningPrimitiveSemaphore [
 	self pop: 1
 ]
 
+{ #category : #'perm - space' }
+StackInterpreterPrimitives >> primitiveMoveToPermSpace [
+
+	| rcvr permObject |
+	rcvr := self stackTop.
+	
+	(objectMemory getMemoryMap isPermanentObject: rcvr)
+		ifTrue: [ ^ self ].
+	
+	permObject := objectMemory moveToPermSpace: rcvr.	
+	self successful ifFalse: [ ^ self ].
+	
+	self pop: argumentCount + 1 thenPush: permObject.
+]
+
+{ #category : #'perm - space' }
+StackInterpreterPrimitives >> primitiveMoveToPermSpaceInBulk [
+
+	| rcvr |
+	rcvr := self stackTop.
+	
+	(objectMemory isArrayNonImm: rcvr)
+		ifFalse: [ 
+			self primitiveFailFor: PrimErrBadReceiver. 
+			^ nil].
+	
+	objectMemory moveToPermSpaceInBulk: rcvr.	
+	self successful ifFalse: [ ^ self ].
+	
+	self pop: argumentCount + 1 thenPush: rcvr.
+]
+
 { #category : #'object access primitives' }
 StackInterpreterPrimitives >> primitiveObjectPointsTo [
 	"This primitive is assumed to be fast (see e.g. MethodDictionary>>includesKey:) so make it so.
@@ -2546,9 +2587,8 @@ StackInterpreterPrimitives >> primitivePerform [
 	argumentCount := argumentCount - 1.
 	argumentCount to: 1 by: -1 do: [ :i | 
 		stackPages
-			longAt: stackPointer + (i * objectMemory wordSize)
-			put:
-			(stackPages longAt: stackPointer + (i - 1 * objectMemory wordSize)) ].
+			unsignedLongAt: stackPointer + (i * objectMemory wordSize)
+			put: (stackPages unsignedLongAt: stackPointer + ((i - 1) * objectMemory wordSize))].
 	self pop: 1.
 	lookupClassTag := objectMemory fetchClassTagOf: newReceiver.
 	self sendBreakpoint: messageSelector receiver: newReceiver.
@@ -2565,11 +2605,11 @@ StackInterpreterPrimitives >> primitivePerform [
 		self unPop: 1.
 		1 to: argumentCount by: 1 do: [ :i | 
 			stackPages
-				longAt: stackPointer + (i - 1 * objectMemory wordSize)
+				unsignedLongAt: stackPointer + (i - 1 * objectMemory wordSize)
 				put:
-				(stackPages longAt: stackPointer + (i * objectMemory wordSize)) ].
+				(stackPages unsignedLongAt: stackPointer + (i * objectMemory wordSize)) ].
 		stackPages
-			longAt: stackPointer + (argumentCount * objectMemory wordSize)
+			unsignedLongAt: stackPointer + (argumentCount * objectMemory wordSize)
 			put: messageSelector.
 		argumentCount := argumentCount + 1.
 		newMethod := performMethod.
@@ -3803,9 +3843,9 @@ StackInterpreterPrimitives >> primitiveTerminateTo [
 						by: objectMemory wordSize negated
 						do: [:source|
 							newSP := newSP - objectMemory wordSize.
-							stackPages longAt: newSP put: (stackPages longAt: source)].
-					 stackPages longAt: newFP + FoxSavedFP put: contextsFP.
-					 stackPages longAt: newFP + FoxCallerSavedIP put: contextsIP.
+							stackPages unsignedLongAt: newSP put: (stackPages unsignedLongAt: source)].
+					 stackPages unsignedLongAt: newFP + FoxSavedFP put: contextsFP.
+					 stackPages unsignedLongAt: newFP + FoxCallerSavedIP put: contextsIP.
 					 self assert: (objectMemory isContext: thisCtx).
 					 objectMemory storePointerUnchecked: SenderIndex
 						ofObject: thisCtx
@@ -3887,7 +3927,7 @@ StackInterpreterPrimitives >> primitiveTerminateTo [
 									 frameAbove := self findFrameAbove: contextsFP inPage: thePage.
 									 frameAbove ~= 0 ifTrue:
 										[contextsSP := (self frameCallerSP: frameAbove) - objectMemory wordSize.
-										 stackPages longAt: contextsSP put: (self frameCallerSavedIP: frameAbove).
+										 stackPages unsignedLongAt: contextsSP put: (self frameCallerSavedIP: frameAbove).
 										 self setHeadFP: contextsFP andSP: contextsSP inPage: thePage].
 									 currentCtx := aContextOrNil]
 								ifFalse:

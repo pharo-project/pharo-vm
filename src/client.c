@@ -1,3 +1,4 @@
+#include <sys/stat.h>
 #include "pharovm/pharo.h"
 #include "pharovm/pharoClient.h"
 #include "pharovm/fileDialog.h"
@@ -7,6 +8,7 @@ extern void setMaxStacksToPrint(sqInt anInteger);
 extern void setMaxOldSpaceSize(sqInt anInteger);
 extern void setDesiredCogCodeSize(sqInt anInteger);
 extern void setDesiredEdenBytes(sqLong anInteger);
+extern void setMinimalPermSpaceSize(sqLong anInteger);
 
 #if defined(__GNUC__) && ( defined(i386) || defined(__i386) || defined(__i386__)  \
 			|| defined(i486) || defined(__i486) || defined (__i486__) \
@@ -66,6 +68,7 @@ EXPORT(int) vm_init(VMParameters* parameters)
 	setMaxStacksToPrint(parameters->maxStackFramesToPrint);
 	setMaxOldSpaceSize(parameters->maxOldSpaceSize);
 	setDesiredEdenBytes(parameters->edenSize);
+	setMinimalPermSpaceSize(parameters->minPermSpaceSize);
 
 	if(parameters->maxCodeSize > 0) {
 #ifndef COGVM
@@ -203,24 +206,15 @@ vm_main(int argc, const char** argv, const char** env)
 static int
 loadPharoImage(const char* fileName)
 {
-    size_t imageSize = 0;
-    sqImageFile imageFile = NULL;
+    struct stat sb;
 
-    /* Open the image file. */
-    imageFile = sqImageFileOpen(fileName, "rb");
-    if(!imageFile)
-	{
-    	logErrorFromErrno("Opening Image");
+    /* Check image exists */
+    if (stat(fileName, &sb) == -1) {
+        logErrorFromErrno("Image file not found");
         return false;
     }
 
-    /* Get the size of the image file*/
-    sqImageFileSeekEnd(imageFile, 0);
-    imageSize = sqImageFilePosition(imageFile);
-    sqImageFileSeek(imageFile, 0);
-
-    readImageFromFileStartingAt(imageFile, 0);
-    sqImageFileClose(imageFile);
+    readImageNamed(fileName);
 
     char* fullImageName = alloca(FILENAME_MAX);
 	fullImageName = getFullPath(fileName, fullImageName, FILENAME_MAX);

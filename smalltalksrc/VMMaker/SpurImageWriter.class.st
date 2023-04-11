@@ -86,20 +86,6 @@ SpurImageWriter >> sqImage: file File: imageName StartLocation: location [
 ]
 
 { #category : #'accessing - files' }
-SpurImageWriter >> sqImageFile: imageName Open: fileMode [
-
-	<doNotGenerate>
-	^imageName asFileReference binaryWriteStream
-]
-
-{ #category : #'accessing - files' }
-SpurImageWriter >> sqImageFileClose: file [
-
-	<doNotGenerate>
-	file close
-]
-
-{ #category : #'accessing - files' }
 SpurImageWriter >> sqImageFilePosition: file [
 
 	<doNotGenerate>
@@ -136,9 +122,15 @@ SpurImageWriter >> writeImageFile: imageFileName fromHeader: header [
 	<var: #imageFileName declareC: 'char *imageFileName'>
 	<var: #f type: #sqImageFile>
 	<var: #header type: #SpurImageHeaderStruct>
+	<var: #imageBytes type:#'size_t'>
+	<var: #bytesWritten type:#'size_t'>
+
 	| headerStart imageHeaderSize f imageBytes bytesWritten |
 	headerStart := 0.
 	imageHeaderSize := header imageHeaderSize.
+
+	objectMemory totalBytesInPermanentSpace = 0 
+		ifFalse: [ ^ self primitiveFail].
 
 	self logDebug: 'Writing snapshot file %s' _: imageFileName.
 
@@ -186,20 +178,15 @@ SpurImageWriter >> writeImageSegmentsToFile: aBinaryStream [
 
 	<var: 'aBinaryStream' type: #sqImageFile>
 	<var: 'aSegment' type:#'SpurSegmentInfo *'>
-	<inline: false>
 
-	| total |
+	self beginWriteImageSegments.
 
-	self assert: segmentManager firstSegmentBytes > 0.
-	
-	total := 0.
+	^ segmentManager withNonEmptySegmentsDo: [ :aSegment :segmentIndex | 
+		self 
+			writeSegment: aSegment
+			nextSegment: (segmentManager nextNonEmptySegmentAfter: segmentIndex)
+			toFile: aBinaryStream ].
 
-	segmentManager withNonEmptySegmentsDo: [ :aSegment :segmentIndex | 
-		total := total + (self writeSegment: aSegment
-								nextSegment: (segmentManager nextNonEmptySegmentAfter: segmentIndex)
-								toFile: aBinaryStream) ].
-	
-	^total
 ]
 
 { #category : #writing }
@@ -212,6 +199,9 @@ SpurImageWriter >> writeSegment: segment nextSegment: nextSegment toFile: aBinar
 	<var: 'aBinaryStream' type: #sqImageFile>
 	<var: 'firstSavedBridgeWord' type: #usqLong>
 	<var: 'secondSavedBridgeWord' type: #usqLong>
+	<var: #nWritten type:#'size_t'>
+	
+	<inline: false>
 
 	| pier1 pier2 firstSavedBridgeWord secondSavedBridgeWord nWritten |
 
@@ -235,20 +225,11 @@ SpurImageWriter >> writeSegment: segment nextSegment: nextSegment toFile: aBinar
 		long64At: pier2
 		put: (nextSegment ifNil: [0] ifNotNil: [nextSegment segSize]).
 	
-	nWritten := self cCode:
-						[self
-							sq: segment segStart asVoidPointer
-							Image: 1
-							File: segment segSize
-							Write: aBinaryStream]
-					inSmalltalk: [ | region |
-						region := (objectMemory memoryManager regionForAddress: segment segStart).
-
-						aBinaryStream
-							next: segment segSize
-							putAll: region memory
-							startingAt: segment segStart - region start + 1.
-						segment segSize].
+	nWritten := self
+						sq: segment segStart asVoidPointer
+						Image: 1
+						File: segment segSize
+						Write: aBinaryStream.
 
 	objectMemory
 		long64At: pier1 put: firstSavedBridgeWord;
