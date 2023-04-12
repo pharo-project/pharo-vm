@@ -12529,7 +12529,9 @@ SpurMemoryManager >> totalBytesInPermanentSpace [
 SpurMemoryManager >> totalFreeListBytes [
 	"This method both computes the actual number of free bytes by traversing all free objects
 	 on the free lists/tree, and checks that the tree is valid.  It is used mainly by checkFreeSpace."
-	| totalFreeBytes bytesInChunk listNode nextNode |
+	| totalFreeBytes bytesInChunk listNode nextNode |	
+	<var: 'totalFreeBytes' type: #'sqInt'>
+
 	totalFreeBytes := 0.
 	1 to: self numFreeLists - 1 do:
 		[:i| 
