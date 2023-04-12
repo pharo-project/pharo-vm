@@ -270,13 +270,13 @@ StackBuilderTest >> testMethodHasMoreTemporariesThanFrameShouldUpdateFrame [
 
 { #category : #'test-order' }
 StackBuilderTest >> testOrderArgument1InBaseFrame [
-	self assert: (interpreter stackPages longAtPointer: interpreter stackPage baseFP + (self offsetArgument1FromBaseFP * memory bytesPerOop))
+	self assert: (interpreter stackPages unsignedLongAt: interpreter stackPage baseFP + (self offsetArgument1FromBaseFP * memory bytesPerOop))
 		equals: argument1
 ]
 
 { #category : #'test-order' }
 StackBuilderTest >> testOrderArgument2InBaseFrame [
-	self assert: (interpreter stackPages longAtPointer: interpreter stackPage baseFP + (self offsetArgument2FromBaseFP * memory bytesPerOop))
+	self assert: (interpreter stackPages unsignedLongAt: interpreter stackPage baseFP + (self offsetArgument2FromBaseFP * memory bytesPerOop))
 		equals: argument2
 ]
 

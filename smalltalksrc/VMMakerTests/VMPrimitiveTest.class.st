@@ -103,7 +103,7 @@ VMPrimitiveTest >> setUpForwardedObjects [
 { #category : #running }
 VMPrimitiveTest >> tearDown [
 
-	imageName ifNotNil: [ imageName asFileReference ensureDelete ].
+	imageName ifNotNil: [ imageName asFileReference ensureDeleteAll ].
 	super tearDown
 ]
 
@@ -507,17 +507,16 @@ VMPrimitiveTest >> testPrimitiveAsCharacter [
 ]
 
 { #category : #'tests - primitiveAsCharacter' }
-VMPrimitiveTest >> testPrimitiveAsCharacterCompilesWithNoArg [
-	
-	interpreter primitiveAsCharacter. 
-
-	self deny: interpreter failed.
-]
-
-{ #category : #'tests - primitiveAsCharacter' }
 VMPrimitiveTest >> testPrimitiveAsCharacterFailsForOutOfRangeArg [
 
-	interpreter push: (memory integerObjectOf: 16rFF000000).
+	| invalidNumber |
+	invalidNumber := memory integerObjectOf: 16rFF000000.
+	
+	wordSize = 4 
+		ifTrue: [ invalidNumber := invalidNumber bitAnd: 16rFFFFFFFF ]
+		ifFalse: [ invalidNumber := invalidNumber bitAnd: 16rFFFFFFFFFFFFFFFF ].
+
+	interpreter push: invalidNumber.
 	"This number is undecodable both for 64 and 32 bits architectures"
 	
 	interpreter primitiveAsCharacter. 
@@ -2832,7 +2831,7 @@ VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceAllocatesInOldSpace [
 
 	newObj := interpreter stackTop.
 
-	self assert: (memory isOldObject: newObj)
+	self assert: (memory getMemoryMap isOldObject: newObj)
 ]
 
 { #category : #'tests - primitiveNewWithArgs' }
@@ -4575,7 +4574,7 @@ VMPrimitiveTest >> testPrimitiveSnapshotContextsShouldBeTenured [
 { #category : #'tests - snapshot' }
 VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
 
-	| method file |
+	| method |
 	interpreter pluginList: #(  ).
 	self setUpScheduler.
 	self initializeOldSpaceForFullGC.
@@ -4591,10 +4590,7 @@ VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
 	interpreter setImageHeaderFlagsFrom: 0.
 	interpreter primitiveSnapshot.
 
-	file := imageName asFileReference.
-
-	self assert: file exists.
-	self assert: file size > 0
+	interpreter imageReader validateImage: imageName 
 ]
 
 { #category : #'tests - snapshot' }
@@ -5070,6 +5066,21 @@ VMPrimitiveTest >> testPrimitiveSubtractWithOverflowPreservesStack [
 ]
 
 { #category : #'tests - primitiveVMParameter' }
+VMPrimitiveTest >> testPrimitiveVMParameterGetsImageVersion [
+
+	interpreter setImageVersion: 110.
+
+	interpreter push: memory nilObject.
+	interpreter push: (memory integerObjectOf: 79).
+
+	interpreter argumentCount: 1.
+	interpreter primitiveVMParameter.
+	
+	self assert: interpreter successful.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 110).
+]
+
+{ #category : #'tests - primitiveVMParameter' }
 VMPrimitiveTest >> testPrimitiveVMParameterReturnsArrayOfOops [
 
 	| slots |
@@ -5086,11 +5097,25 @@ VMPrimitiveTest >> testPrimitiveVMParameterReturnsArrayOfOops [
 	interpreter preemptionYields: true.
 	interpreter primitiveVMParameter.
 	
-	"Check this is an array that has 78 OOP entries"
+	"Check this is an array that has 79 OOP entries"
 	self assert: (memory isArray: interpreter stackTop).
 	slots := memory numSlotsOf: interpreter stackTop.
-	self assert: slots equals: 78.
+	self assert: slots equals: 79.
 	
 	0 to: slots - 1 do: [ :i |
 		memory okayOop: (memory fetchPointer: i ofObject: interpreter stackTop) ]
+]
+
+{ #category : #'tests - primitiveVMParameter' }
+VMPrimitiveTest >> testPrimitiveVMParameterSetsImageVersion [
+
+	interpreter push: memory nilObject.
+	interpreter push: (memory integerObjectOf: 79).
+	interpreter push: (memory integerObjectOf: 110).
+
+	interpreter argumentCount: 2.
+	interpreter primitiveVMParameter.
+	
+	self assert: interpreter successful.
+	self assert: interpreter getImageVersion equals: 110.
 ]

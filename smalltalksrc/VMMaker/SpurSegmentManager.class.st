@@ -45,7 +45,7 @@ totalHeapSizeIncludingBridges
 "
 Class {
 	#name : #SpurSegmentManager,
-	#superclass : #CogClass,
+	#superclass : #VMClass,
 	#instVars : [
 		'manager',
 		'numSegments',
@@ -82,17 +82,19 @@ SpurSegmentManager class >> isNonArgumentImplicitReceiverVariableName: instVarNa
 SpurSegmentManager >> addSegmentOfSize: ammount [
 	<returnTypeC: #'SpurSegmentInfo *'>
 	<inline: false>
-	| allocatedSize |
+	| allocatedSize segAddress |
 	<var: #newSeg type: #'SpurSegmentInfo *'>
 	<var: #segAddress type: #'void *'>
 	<var: #allocatedSize type: #'usqInt'>
 	self cCode: [] inSmalltalk: [segments ifNil: [^nil]]. "bootstrap"
-	(manager "sent to the manager so that the simulator can increase memory to simulate a new segment"
-			sqAllocateMemorySegmentOfSize: ammount
-			Above: (self firstGapOfSizeAtLeast: ammount)
-			AllocatedSizeInto: (self cCode: [self addressOf: allocatedSize]
-									inSmalltalk: [[:sz| allocatedSize := sz]])) ifNotNil:
-		[:segAddress| | newSegIndex newSeg |
+
+	manager getMemoryMap 
+		allocateSegmentOfSize: ammount 
+		minAddress: (self firstGapOfSizeAtLeast: ammount)
+		resultsIn: [ :address :aSize | allocatedSize := aSize. segAddress := address ].
+
+	segAddress ifNotNil:
+		[| newSegIndex newSeg |
 		 newSegIndex := self insertSegmentFor: segAddress asUnsignedIntegerPtr.
 		 "Simulation insertion code duplicates entries if newSegIndex ~= numSegments - 1"
 		 self cCode: '' inSmalltalk: [segments at: newSegIndex put: SpurSegmentInfo new].
@@ -211,7 +213,7 @@ SpurSegmentManager >> checkSegments [
 		[:i|
 		self assert: (manager addressCouldBeObj: (segments at: i) segStart).
 		self assert: (self isValidSegmentBridge: (self bridgeAt: i))].
-	self assert: (segments at: numSegments - 1) segLimit - manager bridgeSize = manager endOfMemory
+	self assert: (segments at: numSegments - 1) segLimit - manager bridgeSize = manager getMemoryMap oldSpaceEnd 
 ]
 
 { #category : #loading }
@@ -232,8 +234,8 @@ SpurSegmentManager >> collapseSegmentsPostSwizzle [
 				[self allocateOrExtendSegmentInfos]].
 	numSegments := 1.
 	(segments at: 0)
-		segStart: manager oldSpaceStart;
-		segSize: (totalHeapSizeIncludingBridges := manager endOfMemory - manager oldSpaceStart).
+		segStart: manager getMemoryMap oldSpaceStart;
+		segSize: (totalHeapSizeIncludingBridges := manager getMemoryMap oldSpaceEnd - manager getMemoryMap oldSpaceStart).
 	manager bootstrapping ifTrue:
 		["finally plant a bridge at the end of the coalesced segment and cut back the
 		  manager's notion of the end of memory to immediately before the bridge."
@@ -243,7 +245,7 @@ SpurSegmentManager >> collapseSegmentsPostSwizzle [
 
 { #category : #'simulation only' }
 SpurSegmentManager >> computeTotalHeapSizeIncludingBridges [
-	totalHeapSizeIncludingBridges := manager endOfMemory - manager oldSpaceStart
+	totalHeapSizeIncludingBridges := manager getMemoryMap oldSpaceEnd - manager getMemoryMap oldSpaceStart
 ]
 
 { #category : #'growing/shrinking memory' }
@@ -332,7 +334,7 @@ SpurSegmentManager >> initializeFromFreeChunks: freeChunks [
 					[:i| | bridge start size |
 					bridge := freeChunks at: i.
 					start := i = 1
-								ifTrue: [manager newSpaceLimit]
+								ifTrue: [manager getMemoryMap newSpaceEnd]
 								ifFalse: [manager addressAfter: (freeChunks at: i - 1)].
 					size := bridge + manager baseHeaderSize - start.
 					SpurSegmentInfo new
@@ -392,7 +394,7 @@ SpurSegmentManager >> isInSegments: address [
 { #category : #testing }
 SpurSegmentManager >> isValidSegmentBridge: objOop [
 	"bridges bridge the gaps between segments. They are the last object in each segment."
-	^((manager addressCouldBeObj: objOop) or: [objOop = manager endOfMemory])
+	^((manager addressCouldBeObj: objOop) or: [objOop = manager getMemoryMap oldSpaceEnd])
 	  and: [(manager isSegmentBridge: objOop)
 	  and: [(manager hasOverflowHeader: objOop)
 		or: [(manager numSlotsOfAny: objOop) = 0]]]
@@ -449,10 +451,10 @@ SpurSegmentManager >> numSegments [
 { #category : #bootstrapping }
 SpurSegmentManager >> plantBridgeAtTheEndOfMemory [
 
-	self assert: manager endOfMemory = (segments at: 0) segLimit.
+	self assert: manager getMemoryMap oldSpaceEnd = (segments at: 0) segLimit.
 	manager
 		initSegmentBridgeWithBytes: manager bridgeSize
-		at: manager endOfMemory - manager bridgeSize
+		at: manager getMemoryMap oldSpaceEnd - manager bridgeSize
 ]
 
 { #category : #snapshot }
@@ -461,10 +463,10 @@ SpurSegmentManager >> postSnapshot [
 	<inline: false>
 	| seg |
 	<var: #seg type: #'SpurSegmentInfo *'>
-	"Set endOfMemory first, to avoid assert fails in freeChunkWithBytes:at:."
+	"Set oldSpaceEnd first, to avoid assert fails in freeChunkWithBytes:at:."
 	seg := self addressOf: (segments at: numSegments - 1).
 	seg lastFreeObject
-		ifNil: [self assert: manager endOfMemory = (seg segLimit - manager bridgeSize)]
+		ifNil: [self assert: manager getMemoryMap oldSpaceEnd = (seg segLimit - manager bridgeSize)]
 		ifNotNil: [manager setEndOfMemory: seg savedSegSize + seg segStart - manager bridgeSize].
 
 	numSegments - 1 to: 0 by: -1 do:
@@ -513,7 +515,7 @@ SpurSegmentManager >> prepareForSnapshot [
 		[:freeChunk| | node next seg |
 		 node := freeChunk.
 		 [node ~= 0] whileTrue:
-			[next := manager objectAfter: node limit: manager endOfMemory.
+			[next := manager objectAfter: node limit: manager getMemoryMap oldSpaceEnd .
 			 (manager isSegmentBridge: next)
 				ifTrue:
 					[seg := self segmentContainingObj: node.
@@ -666,7 +668,11 @@ SpurSegmentManager >> swizzleObj: objOop [
 
 { #category : #snapshot }
 SpurSegmentManager >> totalBytesInNonEmptySegments [
+
+	<var: #total type: #'size_t'>
+
 	| total |
+	
 	total := 0.
 	0 to: numSegments - 1 do:
 		[:i|
@@ -711,9 +717,18 @@ SpurSegmentManager >> withNewSegmentDo: aClosure [
 { #category : #snapshot }
 SpurSegmentManager >> withNonEmptySegmentsDo: aBlockClosure [
 
-	0 to: self numSegments - 1 do:
-		[:i|
-		(segments at: i) segSize > manager bridgeSize 
-			ifTrue: [ aBlockClosure value: (self addressOf: (segments at: i)) value: i]].
+	| total |
+	
+	<var: #total type: #'size_t'>
+	
+	total := 0.
 
+	0 to: self numSegments - 1 do:
+		[ :i |
+		(segments at: i) segSize > manager bridgeSize 
+			ifTrue: [ 
+				total := total + (aBlockClosure value: (self addressOf: (segments at: i)) value: i)]
+		].
+
+	^ total
 ]

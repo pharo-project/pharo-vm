@@ -20,7 +20,7 @@ Instance Variables
 "
 Class {
 	#name : #SpurCompactor,
-	#superclass : #CogClass,
+	#superclass : #VMClass,
 	#instVars : [
 		'coInterpreter',
 		'manager',

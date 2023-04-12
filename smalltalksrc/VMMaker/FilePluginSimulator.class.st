@@ -287,7 +287,7 @@ FilePluginSimulator >> sqFileInit [
 
 { #category : #simulation }
 FilePluginSimulator >> sqFileSize: file [
-	^file size
+	^file stream size
 ]
 
 { #category : #simulation }

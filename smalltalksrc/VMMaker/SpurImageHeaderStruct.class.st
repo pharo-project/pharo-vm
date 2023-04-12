@@ -16,8 +16,8 @@ Class {
 		'swapBytes',
 		'hdrLastHash',
 		'imageFormat',
-		'screenSize',
-		'imageHeaderSize'
+		'imageHeaderSize',
+		'imageVersion'
 	],
 	#category : #'VMMaker-ImageFormat'
 }
@@ -35,7 +35,7 @@ SpurImageHeaderStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBloc
 	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a struct of this type."
 
 	<var: #dataSize type: #size_t>
-	<var: #desiredHeapSize type: #usqInt>
+	<var: #desiredHeapSize type: #size_t>
 	<var: #headerStart type: #squeakFileOffsetType>
 
 	self filteredInstVarNames do:
@@ -44,7 +44,7 @@ SpurImageHeaderStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBloc
 			value: ivn
 			value: (ivn caseOf: {
 						['dataSize']				-> [#'size_t'].
-						['desiredHeapSize']	-> [#'usqInt'].
+						['desiredHeapSize']	-> [#'size_t'].
 						['headerStart']			-> [#'squeakFileOffsetType'].
 				} otherwise: [ #'sqInt' ])]
 ]
@@ -194,6 +194,18 @@ SpurImageHeaderStruct >> imageHeaderSize: anObject [
 ]
 
 { #category : #accessing }
+SpurImageHeaderStruct >> imageVersion [
+
+	^ imageVersion
+]
+
+{ #category : #accessing }
+SpurImageHeaderStruct >> imageVersion: anObject [
+
+	imageVersion := anObject
+]
+
+{ #category : #accessing }
 SpurImageHeaderStruct >> initialSpecialObjectsOop [
 
 	^ initialSpecialObjectsOop
@@ -203,6 +215,15 @@ SpurImageHeaderStruct >> initialSpecialObjectsOop [
 SpurImageHeaderStruct >> initialSpecialObjectsOop: anObject [
 
 	initialSpecialObjectsOop := anObject
+]
+
+{ #category : #initialization }
+SpurImageHeaderStruct >> initialize [ 
+	
+	<doNotGenerate>
+	
+	super initialize.
+	swapBytes := 0
 ]
 
 { #category : #accessing }
@@ -215,18 +236,6 @@ SpurImageHeaderStruct >> oldBaseAddr [
 SpurImageHeaderStruct >> oldBaseAddr: anObject [
 
 	oldBaseAddr := anObject
-]
-
-{ #category : #accessing }
-SpurImageHeaderStruct >> screenSize [
-
-	^ screenSize
-]
-
-{ #category : #accessing }
-SpurImageHeaderStruct >> screenSize: anObject [
-
-	screenSize := anObject
 ]
 
 { #category : #accessing }

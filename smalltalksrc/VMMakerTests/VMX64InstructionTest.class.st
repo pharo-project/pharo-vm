@@ -8,7 +8,7 @@ Class {
 }
 
 { #category : #'building suites' }
-VMX64InstructionTest class >> testParameters [
+VMX64InstructionTest class >> wordSizeParameters [ 
 
 	^ ParametrizedTestMatrix new
 		addCase: { #ISA -> #X64. #wordSize -> 8};
@@ -29,19 +29,19 @@ VMX64InstructionTest >> testDupAndStoreFromVectorRegister [
 	self compile: [
 		cogit MoveCq: 16r0123456789ABCDEF R: 2.
 		cogit DupS: 64 R: 2 Vr: 0.
-		cogit MoveCq: memory newSpaceStart R: 2.
+		cogit MoveCq: memory getMemoryMap newSpaceStart R: 2.
 		cogit AlignedSt1S: 64 Vr: 0 R: 2 Mw: 16 ].
 	
 	self runGeneratedCode.
 		
-	mem := machineSimulator memoryAt: memory newSpaceStart readNext: 16. 	
+	mem := machineSimulator memoryAt: memory getMemoryMap newSpaceStart readNext: 16. 	
 		
 	self 
 		assert: mem 
 		equals: #[16rEF 16rCD 16rAB 16r89 16r67 16r45 16r23 16r01 16rEF 16rCD 16rAB 16r89 16r67 16r45 16r23 16r01 ].
 
 	self assert: machineSimulator rdx 
-		equals: memory newSpaceStart + 16
+		equals: memory getMemoryMap newSpaceStart + 16
 
 ]
 
@@ -53,20 +53,20 @@ VMX64InstructionTest >> testDupAndStoreFromVectorRegisterUnAligned [
 	self compile: [
 		cogit MoveCq: 16r0123456789ABCDEF R: 2.
 		cogit DupS: 64 R: 2 Vr: 0.
-		cogit MoveCq: memory newSpaceStart + 8 R: 2.
+		cogit MoveCq: memory getMemoryMap newSpaceStart + 8 R: 2.
 		cogit St1S: 64 Vr: 0 R: 2 Mw: 16 ].
 	
 	
 	self runGeneratedCode.
 		
-	mem := machineSimulator memoryAt: memory newSpaceStart + 8 readNext: 16. 	
+	mem := machineSimulator memoryAt: memory getMemoryMap newSpaceStart + 8 readNext: 16. 	
 		
 	self 
 		assert: mem 
 		equals: #[16rEF 16rCD 16rAB 16r89 16r67 16r45 16r23 16r01 16rEF 16rCD 16rAB 16r89 16r67 16r45 16r23 16r01 ].
 
 	self assert: machineSimulator rdx 
-		equals: memory newSpaceStart + 8 + 16
+		equals: memory getMemoryMap newSpaceStart + 8 + 16
 
 ]
 

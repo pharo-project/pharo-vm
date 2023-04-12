@@ -1,6 +1,22 @@
 # Change log
 
-I am a changelog... do not expect too much from me :D
+## v10.0.3
+
+ - Fix ARM32 by @tesonep in #562
+ - Verify ephemeron key is not immediate when marking by @guillep in #565
+
+## v10.0.2
+
+- Generate Pharo VM dependency graph by @hernanmd in #554
+- Link against a shared SDL2 if already installed in target by @hernanmd in #555
+- Slang: Integer>>#bitOr: and Integer>>#| are translated to C code differently by @hernanmd in #523
+- Fix ephemeron compaction by @guillep in #561
+
+## v10.0.1
+
+- Adding image version field to the image header
+- Fixes in String comparison primitive when JIT
+- Improvements in dependency of the VMMaker code.
 
 ## v10.0.0
 

@@ -21,6 +21,8 @@ vm openAsMorph; run
 Class {
 	#name : #StackInterpreterSimulator,
 	#superclass : #StackInterpreterPrimitives,
+	#traits : 'TVMSimulator',
+	#classTraits : 'TVMSimulator classTrait',
 	#instVars : [
 		'parent',
 		'bootstrapping',
@@ -85,6 +87,15 @@ StackInterpreterSimulator class >> new [
 ]
 
 { #category : #'instance creation' }
+StackInterpreterSimulator class >> newBasicWithOptions: optionsDictionaryOrArray [
+
+	^ self
+		  onObjectMemory: nil
+		  options: optionsDictionaryOrArray
+		  initializer: [ :interpreter | interpreter basicInitialize ]
+]
+
+{ #category : #'instance creation' }
 StackInterpreterSimulator class >> newWithOptions: optionsDictionaryOrArray [
 	^self onObjectMemory: nil options: optionsDictionaryOrArray
 ]
@@ -96,6 +107,15 @@ StackInterpreterSimulator class >> onObjectMemory: anObjectMemory [
 
 { #category : #'instance creation' }
 StackInterpreterSimulator class >> onObjectMemory: anObjectMemory options: optionsDictionaryOrArray [
+
+	^ self
+		  onObjectMemory: anObjectMemory
+		  options: optionsDictionaryOrArray
+		  initializer: [ :interpreter | interpreter initialize ]
+]
+
+{ #category : #'instance creation' }
+StackInterpreterSimulator class >> onObjectMemory: anObjectMemory options: optionsDictionaryOrArray initializer: initializer [
 	| simulatorClass |
 	^self == StackInterpreterSimulator
 		ifTrue:
@@ -108,7 +128,7 @@ StackInterpreterSimulator class >> onObjectMemory: anObjectMemory options: optio
 				onObjectMemory: (anObjectMemory ifNil:
 										[self objectMemoryClass simulatorClass new])
 				options: optionsDictionaryOrArray]
-		ifFalse: [super basicNew objectMemory: anObjectMemory; initialize]
+		ifFalse: [initializer value: (super basicNew objectMemory: anObjectMemory)]
 ]
 
 { #category : #'debug support' }
@@ -208,8 +228,8 @@ StackInterpreterSimulator >> basicInitialize [
 	"This will be overriden when calling initializePluginEntries"
 	mappedPluginEntries := OrderedCollection new.
 	
-	imageReader := SpurImageReader newWithMemory: objectMemory andInterpreter: self.
-	imageWriter := SpurImageWriter newWithMemory: objectMemory andInterpreter: self
+	imageReader := self class imageReaderClass newWithMemory: objectMemory andInterpreter: self.
+	imageWriter := self class imageWriterClass newWithMemory: objectMemory andInterpreter: self	
 ]
 
 { #category : #utilities }
@@ -756,11 +776,6 @@ StackInterpreterSimulator >> instVar: index ofContext: aMarriedContext put: anOo
 ]
 
 { #category : #'interpreter shell' }
-StackInterpreterSimulator >> insufficientMemoryAvailableError [
-	self error: 'Failed to allocate memory for the heap'
-]
-
-{ #category : #'interpreter shell' }
 StackInterpreterSimulator >> insufficientMemorySpecifiedError [
 	self error: 'Insufficient memory for this image'
 ]
@@ -1028,7 +1043,9 @@ StackInterpreterSimulator >> isPrimitiveFunctionPointerAnIndex [
 StackInterpreterSimulator >> literal: offset [
 	"trap pushes of forwarded literals to help debug following forwarded primitive args.
 	 it is not an error to push a forwarded literal, but we'd like to step through any resulting
-	 primtive failure code"
+	 primtive failure code.
+	 Use #literalMaybeForwarder: for resolve forwarders if nedeed
+	"
 	| lit |
 	lit := super literal: offset.
 	(objectMemory isOopForwarded: lit) ifTrue:
@@ -1118,34 +1135,6 @@ StackInterpreterSimulator >> nameOfClass: classOop [
 StackInterpreterSimulator >> nextShortFrom: aStream [
 	"Read a 16-bit quantity from the given (binary) stream."
 	^self subclassResponsibility
-]
-
-{ #category : #initialization }
-StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
-
-	"CogVMSimulator new openOn: 'clone.im' extraMemory: 100000"
-
-	| f |
-	
-	"We set the memory manager if it is not already set"	
-	memoryManager ifNil: [	
-		memoryManager := MachineSimulatorMemoryManager new.
-		objectMemory memoryManager: memoryManager.
-		memoryManager wordSize: objectMemory wordSize.
-	].
-
-	"open image file and read the header"
-	(f := self openImageFileNamed: fileName) ifNil: [ ^ self ].
-
-	"Set the image name and the first argument; there are
-	 no arguments during simulation unless set explicitly."
-	systemAttributes
-		at: 1 put: fileName;
-		at: 2 put: nil.
-
-	[ imageReader readImageFromFile: f StartingAt: 0 ] 
-		ensure: [ f close ].
-
 ]
 
 { #category : #accessing }
@@ -1356,6 +1345,7 @@ StackInterpreterSimulator >> primitiveSuspend [
 
 { #category : #'system control primitives' }
 StackInterpreterSimulator >> primitiveVMParameter [
+	
 	(self stackTop = (objectMemory integerObjectOf: 9)
 	 or: [self stackTop = (objectMemory integerObjectOf: 52)]) ifTrue:
 		[self halt].
@@ -1410,7 +1400,7 @@ StackInterpreterSimulator >> printFrameFlagsForFP: theFP [
 	<var: #theFP type: #'char *'>
 	<var: #address type: #'char *'>
 	address := theFP + FoxFrameFlags.
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHex: address;
 		printChar: $/;
 		printNum: (stackPages memIndexFor: address);
@@ -1430,7 +1420,7 @@ StackInterpreterSimulator >> printFrameOop: name at: address [
 	<inline: false>
 	<var: #name type: #'char *'>
 	<var: #address type: #'char *'>
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHex: address;
 		printChar: $/;
 		printNum: (stackPages memIndexFor: address);
@@ -1451,7 +1441,7 @@ StackInterpreterSimulator >> printFrameThing: name andFrame: theFP at: address [
 	<inline: false>
 	<var: #name type: #'char *'>
 	<var: #address type: #'char *'>
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHex: address;
 		printChar: $/;
 		printNum: (stackPages memIndexFor: address);
@@ -1471,7 +1461,7 @@ StackInterpreterSimulator >> printFrameThing: name at: address [
 	<inline: false>
 	<var: #name type: #'char *'>
 	<var: #address type: #'char *'>
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHex: address;
 		printChar: $/;
 		printNum: (stackPages memIndexFor: address);
@@ -1834,11 +1824,6 @@ StackInterpreterSimulator >> startInSender [
 		withValue: (self fetchStackPointerOf: senderContext) + 1
 ]
 
-{ #category : #initialization }
-StackInterpreterSimulator >> startOfMemory [
-	self shouldNotImplement
-]
-
 { #category : #'debugging traps' }
 StackInterpreterSimulator >> success: successBoolean [
 	"successBoolean ifFalse:
@@ -2021,25 +2006,4 @@ StackInterpreterSimulator >> windowIsClosing [
 		[effectiveQuitBlock value]
 			on: BlockCannotReturn
 			do: [:ex|]]	"Cause return from #test, et al"
-]
-
-{ #category : #'debug printing' }
-StackInterpreterSimulator >> withMemoryProtectionDo: aBlock [
-	objectMemory writeProtectMemory.
-	stackPages writeProtectMemory.
-	^aBlock ensure:
-		[objectMemory writeEnableMemory.
-		 stackPages writeEnableMemory]
-]
-
-{ #category : #'frame access' }
-StackInterpreterSimulator >> withoutSmallIntegerTags: anInteger [
-	| signBit |
-	self assert: (anInteger >= 0 and: [anInteger highBit <= (objectMemory wordSize * 8)]).
-	signBit := 1 << (objectMemory wordSize * 8 - 1).
-	^(anInteger bitAnd: signBit) ~= 0
-		ifTrue: ["negative"
-				(anInteger bitClear: signBit + 1) - signBit]
-		ifFalse: ["positive"
-				anInteger - 1]
 ]

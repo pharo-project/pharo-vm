@@ -56,13 +56,13 @@ CogCheck32BitHeapMap >> clearHeapMap [
 { #category : #accessing }
 CogCheck32BitHeapMap >> heapMapAtWord: address [
 	"answer the bit corresponding to address aBit in the map"
-	^(pages at: (self pageIndex: address))
-		ifNil: [0]
-		ifNotNil:
-			[:page|
-			((page at: (self byteIndex: address))
-				bitShift: 0 - (self bitIndex: address))
-					bitAnd: 1]
+	^ pages at: (self pageIndex: address)
+			ifPresent: [:page|
+				((page at: (self byteIndex: address))
+					bitShift: 0 - (self bitIndex: address))
+						bitAnd: 1]
+			ifAbsent: [0]
+
 ]
 
 { #category : #accessing }
@@ -70,9 +70,7 @@ CogCheck32BitHeapMap >> heapMapAtWord: address Put: aBit [
 	"set the bit corresponding to address in the map to aBit"
 	| pageIndex page bitIndex byte byteIndex |
 	pageIndex := self pageIndex: address.
-	page := pages at: pageIndex.
-	page ifNil:
-		[page := pages at: pageIndex put: (ByteArray new: PageSize)].
+	page := pages at: pageIndex ifAbsentPut: [ ByteArray new: PageSize ].
 	byteIndex := self byteIndex: address.
 	bitIndex := self bitIndex: address.
 	byte := page at: byteIndex.
@@ -82,9 +80,11 @@ CogCheck32BitHeapMap >> heapMapAtWord: address Put: aBit [
 	page at: byteIndex put: byte
 ]
 
-{ #category : #'instance initialization' }
+{ #category : #initialization }
 CogCheck32BitHeapMap >> initialize [
-	pages := Array new: 256
+	
+	super initialize.
+	pages := Dictionary new
 ]
 
 { #category : #accessing }

@@ -41,6 +41,8 @@ cos
 Class {
 	#name : #CogVMSimulator,
 	#superclass : #CoInterpreterPrimitives,
+	#traits : 'TVMSimulator',
+	#classTraits : 'TVMSimulator classTrait',
 	#instVars : [
 		'parent',
 		'enableCog',
@@ -267,8 +269,8 @@ CogVMSimulator >> basicInitialize [
 	"This will be overriden when calling initializePluginEntries"
 	mappedPluginEntries := OrderedCollection new.
 	
-	imageReader := SpurImageReader newWithMemory: objectMemory andInterpreter: self.
-	imageWriter := SpurImageWriter newWithMemory: objectMemory andInterpreter: self	
+	imageReader := self class imageReaderClass newWithMemory: objectMemory andInterpreter: self.
+	imageWriter := self class imageWriterClass newWithMemory: objectMemory andInterpreter: self	
 ]
 
 { #category : #hooks }
@@ -963,7 +965,7 @@ CogVMSimulator >> frameCallerContext: theFP [
 	self assert: (self isBaseFrame: theFP).
 	thePage := stackPages stackPageFor: theFP.
 	self assert: theFP + (self frameStackedReceiverOffset: theFP) + (2 * objectMemory wordSize) = thePage baseAddress.
-	self assert: (stackPages longAt: thePage baseAddress - objectMemory wordSize) = (self frameContext: theFP).
+	self assert: (stackPages unsignedLongAt: thePage baseAddress - objectMemory wordSize) = (self frameContext: theFP).
 	^super frameCallerContext: theFP
 ]
 
@@ -1133,10 +1135,6 @@ CogVMSimulator >> initStackPagesForTests [
 	stackPages := self stackPagesClass new setInterpreter: self.
 	objectMemory memoryManager allocate: 1024 * 1024.
 	cogCodeSize := 0.
-	heapBase := self methodCacheSize
-				+ self primTraceLogSize
-				+ self rumpCStackSize
-				+ self computeStackZoneSize.
 	self initStackPages
 ]
 
@@ -1209,11 +1207,6 @@ CogVMSimulator >> instVar: index ofContext: aMarriedContext put: anOop [
 	"(self stringOf: (self penultimateLiteralOf: (self fetchPointer: MethodIndex ofObject: aMarriedContext))) = #indexOf:startingAt:ifAbsent: ifTrue:
 		[self halt]."
 	^super instVar: index ofContext: aMarriedContext put: anOop
-]
-
-{ #category : #'interpreter shell' }
-CogVMSimulator >> insufficientMemoryAvailableError [
-	self error: 'Failed to allocate memory for the heap'
 ]
 
 { #category : #'interpreter shell' }
@@ -1709,11 +1702,6 @@ CogVMSimulator >> mcprimFunctionForPrimitiveIndex: primIndex [
 	^self mapFunctionToAddress: (super mcprimFunctionForPrimitiveIndex: primIndex)
 ]
 
-{ #category : #accessing }
-CogVMSimulator >> memory [
-	^objectMemory memory
-]
-
 { #category : #'spur bootstrap' }
 CogVMSimulator >> methodCache [
 	^methodCache
@@ -1813,34 +1801,6 @@ CogVMSimulator >> nextShortFrom: aStream [
 { #category : #'test support' }
 CogVMSimulator >> numStackPages [
 	^numStackPages
-]
-
-{ #category : #initialization }
-CogVMSimulator >> openOn: fileName extraMemory: extraBytes [
-
-	"CogVMSimulator new openOn: 'clone.im' extraMemory: 100000"
-
-	| f |
-	
-	"We set the memory manager if it is not already set"	
-	memoryManager ifNil: [	
-		memoryManager := MachineSimulatorMemoryManager new.
-		objectMemory memoryManager: memoryManager.
-		memoryManager wordSize: objectMemory wordSize.
-	].
-
-	"open image file and read the header"
-	(f := self openImageFileNamed: fileName) ifNil: [ ^ self ].
-
-	"Set the image name and the first argument; there are
-	 no arguments during simulation unless set explicitly."
-	systemAttributes
-		at: 1 put: fileName;
-		at: 2 put: nil.
-
-	[ imageReader readImageFromFile: f StartingAt: 0 ] 
-		ensure: [ f close ].
-
 ]
 
 { #category : #'stack pages' }
@@ -2246,7 +2206,7 @@ CogVMSimulator >> printNum: anInteger [
 { #category : #'rump c stack' }
 CogVMSimulator >> printRumpCStackTo: address [
 	self assert: (self isOnRumpCStack: address).
-	heapBase - objectMemory wordSize
+	objectMemory getMemoryMap startOfObjectMemory - objectMemory wordSize
 		to: address
 		by: objectMemory wordSize negated
 		do:
@@ -2278,7 +2238,7 @@ CogVMSimulator >> printStringOf: oop on: aStream [
 	| fmt cnt i |
 	(objectMemory isIntegerObject: oop) ifTrue:
 		[^nil].
-	(oop between: objectMemory startOfMemory and: objectMemory freeStart) ifFalse:
+	(oop between: objectMemory getMemoryMap startOfObjectMemory and: objectMemory freeStart) ifFalse:
 		[^nil].
 	(oop bitAnd: (objectMemory wordSize - 1)) ~= 0 ifTrue:
 		[^nil].
@@ -2523,11 +2483,6 @@ CogVMSimulator >> startInContextSuchThat: aBlock [
 	self storeInteger: StackPointerIndex
 		ofObject: context
 		withValue: (self fetchStackPointerOf: context) + 1
-]
-
-{ #category : #'debugging traps' }
-CogVMSimulator >> startOfMemory [
-	self shouldNotImplement
 ]
 
 { #category : #'simulation only' }

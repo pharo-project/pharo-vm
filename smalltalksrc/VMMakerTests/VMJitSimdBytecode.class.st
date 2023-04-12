@@ -5,12 +5,9 @@ Class {
 }
 
 { #category : #tests }
-VMJitSimdBytecode class >> testParameters [ 
+VMJitSimdBytecode class >> wordSizeParameters [ 
 
-	^ ParametrizedTestMatrix new
-		addCase: { #ISA -> #'aarch64'. #wordSize -> 8};
-		addCase: { #ISA -> #'X64'. #wordSize -> 8};
-		yourself
+	^ self wordSize64Parameters 
 ]
 
 { #category : #running }

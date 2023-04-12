@@ -12,11 +12,11 @@ VMSpurOldSpaceGarbageCollectorTest >> assertHashOf: anOop equals: aHash [
 	self assert: (memory hashBitsOf: anOop) equals: aHash
 ]
 
-{ #category : #assertion }
-VMSpurOldSpaceGarbageCollectorTest >> assertObjectWereReclaimed: aBlock [ 
-	| initialSpace firstObjectToBeRemembered sizeOfObject |
+{ #category : #helpers }
+VMSpurOldSpaceGarbageCollectorTest >> deltaFreeSpaceAfterGC: aBlock [ 
+	| initialSpace lastObjectToBeRemembered sizeOfLastObject |
 	"The planning compactor frees object by sliding, and therefore does not reclaim memory if there is only dead objects in the oldspace."
-	
+	"The free objects are only reclaimed when there is a object after it."
 	"We allocate objects during the setup"
 	memory fullGC. 
 	
@@ -24,13 +24,13 @@ VMSpurOldSpaceGarbageCollectorTest >> assertObjectWereReclaimed: aBlock [
 	
 	aBlock value.
 	
-	firstObjectToBeRemembered := self newOldSpaceObjectWithSlots: 0.
-	self keepObjectInVMVariable1: firstObjectToBeRemembered.
-	sizeOfObject := memory bytesInObject: firstObjectToBeRemembered.
+	lastObjectToBeRemembered := self newOldSpaceObjectWithSlots: 0.
+	self keepObjectInVMVariable1: lastObjectToBeRemembered.
+	sizeOfLastObject := memory bytesInObject: lastObjectToBeRemembered.
 	
 	memory fullGC.
 	
-	self assert: initialSpace - sizeOfObject equals: memory totalFreeListBytes
+	^ initialSpace - sizeOfLastObject - memory totalFreeListBytes
 ]
 
 { #category : #ephemerons }
@@ -121,7 +121,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectRightBeforeOverflowingFr
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSize [
 
 	| anObjectOop slotsNumber |
-	slotsNumber := memory totalFreeOldSpace - (objectHeaderSize * 2) / memory wordSize.
+	slotsNumber := memory totalFreeOldSpace - (self objectHeaderSize * 2) / memory wordSize.
 	
 	anObjectOop := self newOldSpaceObjectWithSlots: slotsNumber. "Big object have 2 wordSize of header"
 
@@ -132,7 +132,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSize [
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSizeShouldBeZero [
 
 	| anObjectOop slotsNumber |
-	slotsNumber := memory totalFreeOldSpace - (objectHeaderSize * 2) / memory wordSize.
+	slotsNumber := memory totalFreeOldSpace - (self objectHeaderSize * 2) / memory wordSize.
 	
 	anObjectOop := self newObjectWithSlots: slotsNumber. "Big object have 2 wordSize of header"
 	
@@ -151,57 +151,70 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSizeShouldP
 ]
 
 { #category : #'tests-OldSpaceSize' }
-VMSpurOldSpaceGarbageCollectorTest >> testAllocateUnreferencedCycleShouldBeReclaimed [
-	self assertObjectWereReclaimed: [
-		| obj1 obj2 |
-	
-		obj1 := self newOldSpaceObjectWithSlots: 1.
-		obj2 := self newOldSpaceObjectWithSlots: 1.
-		memory storePointer: 0 ofObject: obj1 withValue: obj2.
-		memory storePointer: 0 ofObject: obj2 withValue: obj1.
-	]
-]
-
-{ #category : #tests }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectNotReferencedShouldBeCollected [
 
-	| oldFreeSpaceSize obj2 keptObjectSize |
-	
-	"The free objects are only reclaimed when there is a object after it. 
-	For example if I have a free object and then only free space, the compactor assumes 
-	that the heap is compacted, but it does not compact the free list. So the last free chunk is never 
-	count on.
-	This is a ""feature"" of the compactor. Changing the compactor strategy may change this behavior."
-	
-	memory fullGC.
-	oldFreeSpaceSize := memory totalFreeListBytes.
-	
-	self newOldSpaceObjectWithSlots: 0.	
-	obj2 := self newOldSpaceObjectWithSlots: 0.
-	
-	self keepObjectInVMVariable1: obj2.
-	keptObjectSize := memory bytesInObject: obj2.
-	
-	memory fullGC.
-	
-	self assert: memory totalFreeListBytes equals: oldFreeSpaceSize - keptObjectSize.
+	| deltaFreeSpace |
+	deltaFreeSpace := self deltaFreeSpaceAfterGC: [ 
+		              self newOldSpaceObjectWithSlots: 0 ].
+
+	self assert: deltaFreeSpace equals: 0
 ]
 
-{ #category : #tests }
+{ #category : #'tests-OldSpaceSize' }
+VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromNewObjectShouldBeCollected [
+
+	| deltaFreeSpace |
+	deltaFreeSpace := self deltaFreeSpaceAfterGC: [ 
+		              | oldObj newObj |
+		              oldObj := self newOldSpaceObjectWithSlots: 0.
+		              newObj := self newObjectWithSlots: 1.
+		              memory storePointer: 0 ofObject: newObj withValue: oldObj ].
+
+	self assert: deltaFreeSpace equals: 0
+]
+
+{ #category : #'tests-OldSpaceSize' }
+VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromRememberedPermObjectShouldBeKept [
+
+	| oldObjectSize deltaFreeSpace |
+	deltaFreeSpace := self deltaFreeSpaceAfterGC: [ | permOop oldOop |
+		                  permOop := self newPermanentObjectWithSlots: 1.
+		                  oldOop := self newOldSpaceObjectWithSlots: 0.
+		                  oldObjectSize := memory bytesInObject: oldOop.
+		                  memory storePointer: 0 ofObject: permOop withValue: oldOop ].
+
+	self assert: deltaFreeSpace equals: oldObjectSize
+]
+
+{ #category : #'tests-OldSpaceSize' }
+VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromUnreferencedCycleObjectShouldBeCollected [
+
+	| deltaFreeSpace |
+	deltaFreeSpace := self deltaFreeSpaceAfterGC: [ 
+		              | obj1 obj2 |
+		              obj1 := self newOldSpaceObjectWithSlots: 1.
+		              obj2 := self newOldSpaceObjectWithSlots: 1.
+		              memory storePointer: 0 ofObject: obj1 withValue: obj2.
+		              memory storePointer: 0 ofObject: obj2 withValue: obj1 ].
+
+	self assert: deltaFreeSpace equals: 0
+]
+
+{ #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableShouldBeKept [
-	| anObjectOop |
-	memory fullGC.
-	
-	anObjectOop := self newOldSpaceObjectWithSlots: 0.
 
-	self keepObjectInVMVariable1: anObjectOop.
-	
-	memory fullGC.
-	
-	self deny: (memory isFreeObject: anObjectOop)
+	| oldOop objectSize deltaFreeSpace |
+	deltaFreeSpace := self deltaFreeSpaceAfterGC: [ 
+		                  oldOop := self newOldSpaceObjectWithSlots: 0.
+		                  objectSize := memory bytesInObject: oldOop.
+		                  self keepObjectInVMVariable2: oldOop ].
+
+
+	self deny: (memory isFreeObject: oldOop).
+	self assert: deltaFreeSpace equals: objectSize
 ]
 
-{ #category : #tests }
+{ #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableShouldBeMoved [
 
 	| anObjectOop hash |
@@ -218,6 +231,105 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableSho
 	
 	self deny: anObjectOop equals: self keptObjectInVMVariable1.
 	self assertHashOf: self keptObjectInVMVariable1 equals: hash
+]
+
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testCompactEphemeronQueuePass1 [
+
+	| ephemeron |
+
+	"Hole, then mourn queue"
+	self newOldSpaceObjectWithSlots: 0.
+	memory initializeMournQueue.
+
+	"Hole, then ephemeron. Does not really need to be an ephemeron for this tests, any object does it"
+	self newOldSpaceObjectWithSlots: 0.	
+	ephemeron := self newOldSpaceObjectWithSlots: 0.
+	self keepObjectInVMVariable1: ephemeron.
+	memory push: ephemeron onObjStack: memory mournQueue.
+
+	"Compact in one pass"
+	memory garbageCollectForSnapshot.
+	
+	self assert: (memory sizeOfObjStack: memory mournQueue) equals: 1.
+	self assert: memory dequeueMourner equals: self keptObjectInVMVariable1.
+]
+
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testCompactEphemeronQueuePass2 [
+
+	| ephemeron |
+
+	"For first compaction pass"
+	"Hole, then mourn queue"
+	self newOldSpaceObjectWithSlots: 0.
+	memory initializeMournQueue.
+
+	"For second compaction pass"
+	"Hole, then ephemeron. Does not really need to be an ephemeron for this tests, any object does it"
+	self newOldSpaceObjectWithSlots: 0.	
+	ephemeron := self newOldSpaceObjectWithSlots: 0.
+	self keepObjectInVMVariable1: ephemeron.
+	memory push: ephemeron onObjStack: memory mournQueue.
+
+	"Set the number of objects to compact per compact Phase.
+	We set N=1 to make two compaction phases.
+	The first phase will compact the mourn queue.
+	The second phase will compact the ephemeron."
+	memory compactor savedFirstFieldSpaceMaxSlots: 1.
+	
+	"Compact"
+	memory garbageCollectForSnapshot.
+	
+	self assert: (memory sizeOfObjStack: memory mournQueue) equals: 1.
+	self assert: memory dequeueMourner equals: self keptObjectInVMVariable1.
+]
+
+{ #category : #'tests-OldSpaceSize' }
+VMSpurOldSpaceGarbageCollectorTest >> testArrayOfPermanentObjectsPointingToOldObjectsIsCorrectlyMantained [
+
+	| deltaFreeSpace arrayOfPerms objectsSize aPermObject anOldObject originalRememberedSetSize afteRememberedSetSize numberOfObjects |
+
+	originalRememberedSetSize := memory bytesInObject: memory fromPermSpaceRememberedSet objectOop. 
+	numberOfObjects := 4096.
+
+	deltaFreeSpace := self deltaFreeSpaceAfterGC: [ 
+								arrayOfPerms := self newOldSpaceArrayWithSlots: numberOfObjects.
+								objectsSize := memory bytesInObject: arrayOfPerms.
+								0 to: numberOfObjects - 1 do: [ :i |
+									anOldObject := self newOldSpaceObjectWithSlots: 0.
+									aPermObject := self newPermanentObjectWithSlots: 1.
+									objectsSize := objectsSize + (memory bytesInObject: anOldObject).
+									memory storePointer: 0 ofObject: aPermObject withValue: anOldObject.
+									memory storePointer: i ofObject: arrayOfPerms withValue: aPermObject ].
+		                  self keepObjectInVMVariable2: arrayOfPerms ].
+
+	afteRememberedSetSize := memory bytesInObject: memory fromPermSpaceRememberedSet objectOop.
+
+	self assert: deltaFreeSpace equals: objectsSize + (afteRememberedSetSize - originalRememberedSetSize)
+]
+
+{ #category : #'tests-OldSpaceSize' }
+VMSpurOldSpaceGarbageCollectorTest >> testArrayOfPermanentObjectsPointingToOldObjectsIsCorrectlyMantainedWhenObjectsMoved [
+
+	| numberOfObjects originalHashes permArray anOldObject |
+	numberOfObjects := 4096.
+	originalHashes := Array new: numberOfObjects.
+
+	self deltaFreeSpaceAfterGC: [ 
+		permArray := self newPermanentObjectWithSlots: numberOfObjects.
+
+		"Objects to be collected"
+		self newOldSpaceObjectWithSlots: 0.
+		self newOldSpaceObjectWithSlots: 0.
+
+		1 to: numberOfObjects do: [ :i |
+			anOldObject := self newOldSpaceObjectWithSlots: 0.
+			originalHashes at: i put: (memory hashBitsOf: anOldObject). 
+			memory storePointer: (i - 1) ofObject: permArray withValue: anOldObject ]].
+
+	1 to: numberOfObjects do: [ :i |
+		self assert: (originalHashes at: i) equals: (memory hashBitsOf: (memory fetchPointer: i - 1 ofObject: permArray))]
 ]
 
 { #category : #'tests-OldSpaceSize' }
@@ -362,6 +474,24 @@ VMSpurOldSpaceGarbageCollectorTest >> testEphemeronOverflowUnscannedEphemeronQue
 	self
 		assert: mourned
 		equals: numberJustOverLimit
+]
+
+{ #category : #tests }
+VMSpurOldSpaceGarbageCollectorTest >> testEphemeronWithImmediateKeyShouldNotFail [
+
+	| ephemeron1 key |
+	ephemeron1 := self newEphemeronObjectWithSlots: 5.
+	self keepObjectInVMVariable1: ephemeron1.
+	key := memory integerObjectOf: 15.
+	memory storePointer: 0 ofObject: ephemeron1 withValue: key.
+
+	memory setCheckForLeaks: 63. "all"
+	memory fullGC.
+
+	self
+		assert:
+		(memory fetchInteger: 0 ofObject: self keptObjectInVMVariable1)
+		equals: 15
 ]
 
 { #category : #tests }
