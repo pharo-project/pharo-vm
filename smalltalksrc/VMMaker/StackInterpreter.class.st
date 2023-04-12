@@ -4471,6 +4471,13 @@ StackInterpreter >> commonReturn [
 	self stackTopPut: localReturnValue
 ]
 
+{ #category : #'return bytecodes' }
+StackInterpreter >> commonReturn: value [
+
+	localReturnValue := value.
+	self commonReturn
+]
+
 { #category : #'send bytecodes' }
 StackInterpreter >> commonSendOrdinary [
 	"Send a message, starting lookup with the receiver's class."
@@ -13032,14 +13039,14 @@ StackInterpreter >> retryPrimitiveOnFailure [
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnFalse [
-	localReturnValue := objectMemory falseObject.
-	self commonReturn
+
+	self commonReturn: objectMemory falseObject
 ]
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnNil [
-	localReturnValue := objectMemory nilObject.
-	self commonReturn
+
+	self commonReturn: objectMemory nilObject
 ]
 
 { #category : #'return bytecodes' }
@@ -13051,8 +13058,8 @@ StackInterpreter >> returnNilFromBlock [
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnReceiver [
-	localReturnValue := self receiver.
-	self commonReturn
+
+	self commonReturn: self receiver
 ]
 
 { #category : #'return bytecodes' }
@@ -13067,14 +13074,13 @@ StackInterpreter >> returnTopFromBlock [
 { #category : #'return bytecodes' }
 StackInterpreter >> returnTopFromMethod [
 
-	localReturnValue := self stackTop.
-	self commonReturn
+	self commonReturn: self stackTop
 ]
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnTrue [
-	localReturnValue := objectMemory trueObject.
-	self commonReturn
+
+	self commonReturn: objectMemory trueObject
 ]
 
 { #category : #'image save/restore' }
