@@ -10169,6 +10169,12 @@ StackInterpreter >> messageSelector [
 	^ messageSelector
 ]
 
+{ #category : #'spur bootstrap' }
+StackInterpreter >> messageSelector: s [
+	<doNotGenerate>
+	messageSelector := s
+]
+
 { #category : #simulation }
 StackInterpreter >> metaclassNumSlots [
 	<doNotGenerate>
