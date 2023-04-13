@@ -2,16 +2,16 @@
 
 ## v10.0.4
 
-* Composed image format by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/377
-* Composed image format: C translation by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/388
-* Perm space on image by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/416
-* New & old remembered sets by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/418
-* Reduce segment files size on move objects to PermSpace by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/508
-* Adding Support for PermSpace by @tesonep in https://github.com/pharo-project/pharo-vm/pull/488
+- Composed image format by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/377
+- Composed image format: C translation by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/388
+- Perm space on image by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/416
+- New & old remembered sets by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/418
+- Reduce segment files size on move objects to PermSpace by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/508
+- Adding Support for PermSpace by @tesonep in https://github.com/pharo-project/pharo-vm/pull/488
 
-* Adding option to not use contant block optimization for test by @StevenCostiou in https://github.com/pharo-project/pharo-vm/pull/573
-* Do not use newer CMAKE features by @estebanlm in https://github.com/pharo-project/pharo-vm/pull/572
-* Split a method in two to reuse part in espell by @jecisc in https://github.com/pharo-project/pharo-vm/pull/569
+- Adding option to not use contant block optimization for test by @StevenCostiou in https://github.com/pharo-project/pharo-vm/pull/573
+- Do not use newer CMAKE features by @estebanlm in https://github.com/pharo-project/pharo-vm/pull/572
+- Split a method in two to reuse part in espell by @jecisc in https://github.com/pharo-project/pharo-vm/pull/569
 
 
 ## New Contributors
@@ -19,7 +19,7 @@
 * @estebanlm made their first contribution in https://github.com/pharo-project/pharo-vm/pull/572
 * @jecisc made their first contribution in https://github.com/pharo-project/pharo-vm/pull/569
 
-**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.3...v10.0.4-rc
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.3...v10.0.4
 
 ## v10.0.3
 
