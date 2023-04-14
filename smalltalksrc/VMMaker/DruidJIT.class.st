@@ -50,12 +50,30 @@ DruidJIT class >> initialize [
 ]
 
 { #category : #'class initialization' }
+DruidJIT class >> initializeBytecodeTableForSistaV1 [
+
+	<generated>
+	numPushNilsFunction := #sistaV1:Num:Push:Nils:.
+	pushNilSizeFunction := #sistaV1PushNilSize:numInitialNils:.
+	BytecodeSetHasDirectedSuperSend := true.
+	BytecodeSetHasExtensions := true.
+	FirstSpecialSelector := 96.
+	NumSpecialSelectors := 32.
+	self generatorTableFrom: { 
+		#(1   0 223 unknownBytecode).
+		#(2 224 247 unknownBytecode).
+		#(3 248 255 unknownBytecode) }
+]
+
+{ #category : #'class initialization' }
 DruidJIT class >> initializePrimitiveTable [
 
 	<generated>
 	MaxCompiledPrimitiveIndex := 17.
-	primitiveTable := CArrayAccessor on: (Array new: MaxCompiledPrimitiveIndex + 1).
-	self table: primitiveTable from: self primitiveTableArray
+	primitiveTable := CArrayAccessor on:
+		                  (Array new: MaxCompiledPrimitiveIndex + 1).
+	self table: primitiveTable from: self primitiveTableArray.
+	^ primitiveTable
 ]
 
 { #category : #translation }
@@ -74,23 +92,23 @@ DruidJIT class >> primitiveTableArray [
 
 	<generated>
 	^ {
-		  { 1. #gen_primitiveAdd. 1 }.
-		  { 2. #gen_primitiveSubtract. 1 }.
-		  { 3. #gen_primitiveLessThan. 1 }.
-		  { 4. #gen_primitiveGreaterThan. 1 }.
-		  { 5. #gen_primitiveLessOrEqual. 1 }.
-		  { 6. #gen_primitiveGreaterOrEqual. 1 }.
-		  { 7. #gen_primitiveEqual. 1 }.
-		  { 8. #gen_primitiveNotEqual. 1 }.
-		  { 9. #gen_primitiveMultiply. 1 }.
+		  { 1. #gen_PrimitiveAdd. 1 }.
+		  { 2. #gen_PrimitiveSubtract. 1 }.
+		  { 3. #gen_PrimitiveLessThan. 1 }.
+		  { 4. #gen_PrimitiveGreaterThan. 1 }.
+		  { 5. #gen_PrimitiveLessOrEqual. 1 }.
+		  { 6. #gen_PrimitiveGreaterOrEqual. 1 }.
+		  { 7. #gen_PrimitiveEqual. 1 }.
+		  { 8. #gen_PrimitiveNotEqual. 1 }.
+		  { 9. #gen_PrimitiveMultiply. 1 }.
 		  { 10. #gen_primitiveDivide. 1 }.
-		  { 73. #genNonImplementedPrimitive.  -1. #maycallback }.
-		  { 117. #genNonImplementedPrimitive.  -1. #maycallback }.
-		  { 120. #genNonImplementedPrimitive.  -1. #maycallback }.
-		  { 148. #genNonImplementedPrimitive.  -1. #maycallback }.
-		  { 160. #genNonImplementedPrimitive.  -1. #maycallback }.
-		  { 173. #genNonImplementedPrimitive.  -1. #maycallback }.
-		  { 216. #genNonImplementedPrimitive.  -1. #maycallback } }
+		  { 73. #genNonImplementedPrimitive. -1. #maycallback }.
+		  { 117. #genNonImplementedPrimitive. -1. #maycallback }.
+		  { 120. #genNonImplementedPrimitive. -1. #maycallback }.
+		  { 148. #genNonImplementedPrimitive. -1. #maycallback }.
+		  { 160. #genNonImplementedPrimitive. -1. #maycallback }.
+		  { 173. #genNonImplementedPrimitive. -1. #maycallback }.
+		  { 216. #genNonImplementedPrimitive. -1. #maycallback } }
 ]
 
 { #category : #'trait candidates' }
