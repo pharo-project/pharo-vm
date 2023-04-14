@@ -344,6 +344,17 @@ VMSpurOldSpaceGarbageCollectorTest >> testDoNotCollectRoots [
 ]
 
 { #category : #'tests-OldSpaceSize' }
+VMSpurOldSpaceGarbageCollectorTest >> testDoNotCollectRoots [
+
+	memory fullGC.
+	
+	self deny: (memory isFreeObject: (memory nilObject)).
+	self deny: (memory isFreeObject: (memory trueObject)).
+	self deny: (memory isFreeObject: (memory falseObject)).
+	self deny: (memory isFreeObject: (memory freeListsObj)).
+]
+
+{ #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testDoubleForwardToYoungs [
 
 		| obj1 obj2 obj3 arrFrom arrTo arrFrom2 arrTo2 |
