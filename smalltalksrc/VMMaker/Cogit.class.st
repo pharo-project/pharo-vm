@@ -6813,7 +6813,10 @@ Cogit >> gen: opcode [ "<Integer>"
 	"Force the initialization of the annotation to nil"
 	abstractInstruction annotation: nil.
 	abstractInstruction dependent: nil.
-	
+	abstractInstruction address: nil.
+	abstractInstruction machineCodeSize: nil.
+	abstractInstruction maxSize: nil.
+
 	^abstractInstruction
 ]
 
