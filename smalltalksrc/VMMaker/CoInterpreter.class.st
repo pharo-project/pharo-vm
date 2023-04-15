@@ -2242,13 +2242,13 @@ CoInterpreter >> commenceCogCompiledCodeCompaction [
 		["better not have already been pushed"
 		 self assert: self stackTop asUnsignedInteger ~= instructionPointer.
 		 self push: instructionPointer.
-		 self externalWriteBackHeadStackPointer].
+		 self writeBackHeadStackPointer].
 	
 	cogit compactCogCompiledCode.
 	self nilUncoggableMethods.
 	instructionPointer ~= 0 ifTrue:
 		[instructionPointer := self popStack.
-		 self externalWriteBackHeadStackPointer].
+		 self writeBackHeadStackPointer].
 
 	statCodeCompactionCount := statCodeCompactionCount + 1.
 	statCodeCompactionUsecs := statCodeCompactionUsecs + (self ioUTCMicrosecondsNow - startTime).
@@ -2483,7 +2483,7 @@ CoInterpreter >> divorceAMachineCodeFrameWithCogMethod: cogMethod in: aStackPage
 	[((self isMachineCodeFrame: theFP)
 	  and: [cogMethod = (self mframeHomeMethod: theFP)]) ifTrue:
 		[theContext := self ensureFrameIsMarried: theFP SP: theSP.
-		 self externalDivorceFrame: theFP andContext: theContext.
+		 self divorceFrame: theFP andContext: theContext.
 		 ^true].
 	 calleeFP := theFP.
 	 theFP := self frameCallerFP: theFP.
@@ -2874,13 +2874,6 @@ CoInterpreter >> externalCannotReturn: resultOop from: aContext [
 		ceSendAbort: (objectMemory splObj: SelectorCannotReturn)
 		to: aContext
 		numArgs: 1
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> externalWriteBackHeadStackPointer [
-	self assert: (stackPointer < stackPage baseAddress
-				and: [stackPointer > (stackPage realStackLimit - (LargeContextSlots * objectMemory bytesPerOop))]).
-	stackPage headSP: stackPointer
 ]
 
 { #category : #'debug support' }
@@ -6538,4 +6531,11 @@ CoInterpreter >> widowOrForceToBytecodePC: ctxt [
 				[self deny: (self isMachineCodeFrame: (self frameOfMarriedContext: ctxt))]]
 		ifFalse:
 			[self ensureContextHasBytecodePC: ctxt]
+]
+
+{ #category : #'cog jit support' }
+CoInterpreter >> writeBackHeadStackPointer [
+	self assert: (stackPointer < stackPage baseAddress
+				and: [stackPointer > (stackPage realStackLimit - (LargeContextSlots * objectMemory bytesPerOop))]).
+	stackPage headSP: stackPointer
 ]

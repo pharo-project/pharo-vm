@@ -4972,6 +4972,57 @@ StackInterpreter >> divorceAllFrames [
 ]
 
 { #category : #'frame access' }
+StackInterpreter >> divorceFrame: theFP andContext: ctxt [
+	"Divorce a single frame and its context.  If it is not the top frame of a stack this means splitting its stack."
+	| thePage onCurrent theSP callerCtx newPage frameAbove callerFP callerSP callerIP theIP |
+	<inline: false>
+	<var: #theFP type: #'char *'>
+	<var: #thePage type: #'StackPage *'>
+	<var: #theSP type: #'char *'>
+	<var: #newPage type: #'StackPage *'>
+	<var: #frameAbove type: #'char *'>
+	<var: #callerFP type: #'char *'>
+	<var: #callerSP type: #'char *'>
+	"stackPage needs to have current head pointers to avoid confusion."
+	self assert: (stackPage = 0 or: [stackPage = stackPages mostRecentlyUsedPage]).
+	thePage := stackPages stackPageFor: theFP.
+	(onCurrent := thePage = stackPage) ifFalse:
+		[stackPages markStackPageNextMostRecentlyUsed: thePage].
+	theSP := self findSPOf: theFP on: thePage.
+	self updateStateOfSpouseContextForFrame: theFP WithSP: theSP.
+	callerCtx := self ensureCallerContext: theFP.
+	(frameAbove := self findFrameAbove: theFP inPage: thePage) = 0
+		ifTrue: "If we're divorcing the top frame we can simply peel it off."
+			[theIP := stackPages unsignedLongAt: thePage headSP]
+		ifFalse: "othewise move all frames above to a new stack and then peel the frame off."
+			[newPage := stackPages newStackPage.
+			 theIP := self oopForPointer: (self frameCallerSavedIP: frameAbove).
+			 frameAbove := self moveFramesIn: thePage through: frameAbove toPage: newPage.
+			 onCurrent
+				ifTrue:
+					[self setStackPageAndLimit: newPage.
+					 self setStackPointersFromPage: newPage]
+				ifFalse:
+					[stackPages markStackPageMostRecentlyUsed: newPage].
+			 self assert: (self frameCallerContext: frameAbove) = ctxt].
+	objectMemory storePointerUnchecked: InstructionPointerIndex
+		ofObject: ctxt
+		withValue: (self contextInstructionPointer: theIP frame: theFP).
+	objectMemory storePointer: SenderIndex
+		ofObject: ctxt
+		withValue: callerCtx.
+	callerFP := self frameCallerFP: theFP.
+	callerFP = 0 "theFP is a base frame; it is now alone; free the entire page"
+		ifTrue: [stackPages freeStackPage: thePage]
+		ifFalse:
+			[callerIP := self oopForPointer: (self frameCallerSavedIP: theFP).
+			 callerSP := (self frameCallerSP: theFP) - objectMemory wordSize.
+			 stackPages unsignedLongAt: callerSP put: callerIP.
+			 self setHeadFP: callerFP andSP: callerSP inPage: thePage]
+	
+]
+
+{ #category : #'frame access' }
 StackInterpreter >> divorceFramesIn: aStackPage [
 	| theFP calleeFP theSP theIP calleeContext theContext |
 	<inline: false>
@@ -5232,6 +5283,36 @@ StackInterpreter >> ensureImageFormatIsUpToDate: swapBytes [
 	swapBytes
 		ifTrue: [self reverseBytesInImage]
 		ifFalse: [self convertFloatsToPlatformOrder]
+]
+
+{ #category : #'frame access' }
+StackInterpreter >> ensureIsBaseFrame: aFramePtr [
+	"Ensure aFramePtr is a base frame.  Then we can assign its sender.
+	 Answer the possibly moved location of the frame."
+	| theFP thePage onCurrent |
+	<var: #aFramePtr type: #'char *'>
+	<var: #theFP type: #'char *'>
+	<var: #thePage type: #'StackPage *'>
+	<returnTypeC: 'char *'>
+	(self isBaseFrame: aFramePtr) ifTrue:
+		[^aFramePtr].
+	theFP := aFramePtr.
+	thePage := stackPages stackPageFor: theFP.
+	onCurrent := thePage = stackPage.
+	"Storing the frame's sender with its caller's context
+	 has the side effect of making theFP a base frame."
+	theFP := self
+				storeSenderOfFrame: theFP
+				withValue: (self ensureCallerContext: theFP).
+	onCurrent
+		ifTrue:
+			[self assert: stackPage ~~ thePage. "stackPage has moved to a new page"
+			 self setStackPointersFromPage: stackPage]
+		ifFalse:
+			[stackPages markStackPageMostRecentlyUsed: stackPage].
+	self assert: stackPages pageListIsWellFormed.
+	self assert: stackPage = stackPages mostRecentlyUsedPage.
+	^theFP
 ]
 
 { #category : #'send bytecodes' }
@@ -5679,129 +5760,6 @@ StackInterpreter >> extendedStoreBytecodePop: popBoolean [
 		self storeLiteralVariable: variableIndex withValue: value.
 		^ self fetchNextBytecode ].
 	self error: 'illegal store'
-]
-
-{ #category : #'frame access' }
-StackInterpreter >> externalDivorceFrame: theFP andContext: ctxt [
-	"Divorce a single frame and its context.  If it is not the top frame of a stack this means splitting its stack."
-	| thePage onCurrent theSP callerCtx newPage frameAbove callerFP callerSP callerIP theIP |
-	<inline: false>
-	<var: #theFP type: #'char *'>
-	<var: #thePage type: #'StackPage *'>
-	<var: #theSP type: #'char *'>
-	<var: #newPage type: #'StackPage *'>
-	<var: #frameAbove type: #'char *'>
-	<var: #callerFP type: #'char *'>
-	<var: #callerSP type: #'char *'>
-	"stackPage needs to have current head pointers to avoid confusion."
-	self assert: (stackPage = 0 or: [stackPage = stackPages mostRecentlyUsedPage]).
-	thePage := stackPages stackPageFor: theFP.
-	(onCurrent := thePage = stackPage) ifFalse:
-		[stackPages markStackPageNextMostRecentlyUsed: thePage].
-	theSP := self findSPOf: theFP on: thePage.
-	self updateStateOfSpouseContextForFrame: theFP WithSP: theSP.
-	callerCtx := self ensureCallerContext: theFP.
-	(frameAbove := self findFrameAbove: theFP inPage: thePage) = 0
-		ifTrue: "If we're divorcing the top frame we can simply peel it off."
-			[theIP := stackPages unsignedLongAt: thePage headSP]
-		ifFalse: "othewise move all frames above to a new stack and then peel the frame off."
-			[newPage := stackPages newStackPage.
-			 theIP := self oopForPointer: (self frameCallerSavedIP: frameAbove).
-			 frameAbove := self moveFramesIn: thePage through: frameAbove toPage: newPage.
-			 onCurrent
-				ifTrue:
-					[self setStackPageAndLimit: newPage.
-					 self setStackPointersFromPage: newPage]
-				ifFalse:
-					[stackPages markStackPageMostRecentlyUsed: newPage].
-			 self assert: (self frameCallerContext: frameAbove) = ctxt].
-	objectMemory storePointerUnchecked: InstructionPointerIndex
-		ofObject: ctxt
-		withValue: (self contextInstructionPointer: theIP frame: theFP).
-	objectMemory storePointer: SenderIndex
-		ofObject: ctxt
-		withValue: callerCtx.
-	callerFP := self frameCallerFP: theFP.
-	callerFP = 0 "theFP is a base frame; it is now alone; free the entire page"
-		ifTrue: [stackPages freeStackPage: thePage]
-		ifFalse:
-			[callerIP := self oopForPointer: (self frameCallerSavedIP: theFP).
-			 callerSP := (self frameCallerSP: theFP) - objectMemory wordSize.
-			 stackPages unsignedLongAt: callerSP put: callerIP.
-			 self setHeadFP: callerFP andSP: callerSP inPage: thePage]
-	
-]
-
-{ #category : #'frame access' }
-StackInterpreter >> externalEnsureIsBaseFrame: aFramePtr [
-	"Ensure aFramePtr is a base frame.  Then we can assign its sender.
-	 Answer the possibly moved location of the frame."
-	| theFP thePage onCurrent |
-	<var: #aFramePtr type: #'char *'>
-	<var: #theFP type: #'char *'>
-	<var: #thePage type: #'StackPage *'>
-	<returnTypeC: 'char *'>
-	(self isBaseFrame: aFramePtr) ifTrue:
-		[^aFramePtr].
-	theFP := aFramePtr.
-	thePage := stackPages stackPageFor: theFP.
-	onCurrent := thePage = stackPage.
-	"Storing the frame's sender with its caller's context
-	 has the side effect of making theFP a base frame."
-	theFP := self
-				storeSenderOfFrame: theFP
-				withValue: (self ensureCallerContext: theFP).
-	onCurrent
-		ifTrue:
-			[self assert: stackPage ~~ thePage. "stackPage has moved to a new page"
-			 self setStackPointersFromPage: stackPage]
-		ifFalse:
-			[stackPages markStackPageMostRecentlyUsed: stackPage].
-	self assert: stackPages pageListIsWellFormed.
-	self assert: stackPage = stackPages mostRecentlyUsedPage.
-	^theFP
-]
-
-{ #category : #'frame access' }
-StackInterpreter >> externalSetStackPageAndPointersForSuspendedContextOfProcess: aProcess [
-	"Set stackPage, instructionPointer, framePointer and stackPointer for the suspendedContext of
-	 aProcess, marrying the context if necessary, and niling the suspendedContext slot.  This is used
-	 on process switch to ensure a context has a stack frame and so can continue execution."
-	| newContext theFrame thePage newPage |
-	<inline: true>
-	<var: #theFrame type: #'char *'>
-	<var: #thePage type: #'StackPage *'>
-	<var: #newPage type: #'StackPage *'>
-	
-	newContext := objectMemory fetchPointer: SuspendedContextIndex ofObject: aProcess.
-	self assert: (objectMemory isContext: newContext).
-	(self isMarriedOrWidowedContext: newContext) ifTrue:
-		[self assert: (self checkIsStillMarriedContext: newContext currentFP: framePointer)].
-	objectMemory
-		storePointerUnchecked: SuspendedContextIndex
-		ofObject: aProcess
-		withValue: objectMemory nilObject.
-	(self isStillMarriedContext: newContext)
-		ifTrue:
-			[theFrame := self frameOfMarriedContext: newContext.
-			 thePage := stackPages stackPageFor: theFrame.
-			 theFrame ~= thePage headFP ifTrue:
-				["explicit assignment of suspendedContext can cause switch to interior frame."
-				 newPage := stackPages newStackPage.
-				 self moveFramesIn: thePage
-					through: (self findFrameAbove: theFrame inPage: thePage)
-					toPage: newPage.
-				  stackPages markStackPageLeastMostRecentlyUsed: newPage].
-			 self assert: thePage headFP = theFrame]
-		ifFalse:
-			[thePage := self makeBaseFrameFor: newContext.
-			 theFrame := thePage baseFP].
-	self setStackPageAndLimit: thePage.
-	self setStackPointersFromPage: thePage.
-	(self isMachineCodeFrame: framePointer) ifFalse:
-		[self setMethod: (self iframeMethod: framePointer)].
-	instructionPointer := self popStack.
-	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer
 ]
 
 { #category : #'primitive support' }
@@ -7779,7 +7737,7 @@ StackInterpreter >> instVar: index ofContext: aMarriedContext put: anOop [
 			ifTrue: [ self setStackPointersFromPage: stackPage ]
 			ifFalse: [ stackPages markStackPageMostRecentlyUsed: stackPage ].
 		^ nil ].
-	self externalDivorceFrame: theFP andContext: aMarriedContext.
+	self divorceFrame: theFP andContext: aMarriedContext.
 	(self
 		 is: index
 		 methodAssignmentToContextWithMachineCodePC: aMarriedContext)
@@ -12986,7 +12944,7 @@ StackInterpreter >> reestablishContextPriorToCallback: callbackContext [
 							 framePointer := self frameCallerFP: framePointer.
 							 ^true]]
 				ifFalse:
-					[self externalDivorceFrame: theFP andContext: callbackContext.
+					[self divorceFrame: theFP andContext: callbackContext.
 					 self markContextAsDead: callbackContext]].
 	"Make the calloutContext the active frame.  The case where calloutContext
 	 is immediately below callbackContext on the same page is handled above."
@@ -13708,6 +13666,48 @@ StackInterpreter >> setStackPageAndLimit: thePage [
 	stackLimit ~= self allOnesAsCharStar ifTrue:
 		[stackLimit := stackPage stackLimit].
 	stackPages markStackPageMostRecentlyUsed: thePage
+]
+
+{ #category : #'frame access' }
+StackInterpreter >> setStackPageAndPointersForSuspendedContextOfProcess: aProcess [
+	"Set stackPage, instructionPointer, framePointer and stackPointer for the suspendedContext of
+	 aProcess, marrying the context if necessary, and niling the suspendedContext slot.  This is used
+	 on process switch to ensure a context has a stack frame and so can continue execution."
+	| newContext theFrame thePage newPage |
+	<inline: true>
+	<var: #theFrame type: #'char *'>
+	<var: #thePage type: #'StackPage *'>
+	<var: #newPage type: #'StackPage *'>
+	
+	newContext := objectMemory fetchPointer: SuspendedContextIndex ofObject: aProcess.
+	self assert: (objectMemory isContext: newContext).
+	(self isMarriedOrWidowedContext: newContext) ifTrue:
+		[self assert: (self checkIsStillMarriedContext: newContext currentFP: framePointer)].
+	objectMemory
+		storePointerUnchecked: SuspendedContextIndex
+		ofObject: aProcess
+		withValue: objectMemory nilObject.
+	(self isStillMarriedContext: newContext)
+		ifTrue:
+			[theFrame := self frameOfMarriedContext: newContext.
+			 thePage := stackPages stackPageFor: theFrame.
+			 theFrame ~= thePage headFP ifTrue:
+				["explicit assignment of suspendedContext can cause switch to interior frame."
+				 newPage := stackPages newStackPage.
+				 self moveFramesIn: thePage
+					through: (self findFrameAbove: theFrame inPage: thePage)
+					toPage: newPage.
+				  stackPages markStackPageLeastMostRecentlyUsed: newPage].
+			 self assert: thePage headFP = theFrame]
+		ifFalse:
+			[thePage := self makeBaseFrameFor: newContext.
+			 theFrame := thePage baseFP].
+	self setStackPageAndLimit: thePage.
+	self setStackPointersFromPage: thePage.
+	(self isMachineCodeFrame: framePointer) ifFalse:
+		[self setMethod: (self iframeMethod: framePointer)].
+	instructionPointer := self popStack.
+	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer
 ]
 
 { #category : #'stack pages' }
@@ -15160,7 +15160,7 @@ StackInterpreter >> transferTo: newProc from: sourceCode [
 	objectMemory storePointer: SuspendedContextIndex ofObject: oldProc withValue: activeContext.
 	objectMemory storePointer: ActiveProcessIndex ofObject: sched withValue: newProc.
 	objectMemory storePointerUnchecked: MyListIndex ofObject: newProc withValue: objectMemory nilObject.
-	self externalSetStackPageAndPointersForSuspendedContextOfProcess: newProc
+	self setStackPageAndPointersForSuspendedContextOfProcess: newProc
 ]
 
 { #category : #'sista bytecodes' }

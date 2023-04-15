@@ -683,6 +683,13 @@ CogVMSimulator >> dispatchOn: anInteger in: selectorArray [
 	self perform: (selectorArray at: (anInteger + 1)).
 ]
 
+{ #category : #'debugging traps' }
+CogVMSimulator >> divorceFrame: theFP andContext: ctxt [
+	"((#(16r100570 16r101BC8) includes: theFP) or: [#(16r17159A4 16r1715948) includes: ctxt]) ifTrue:
+		[self halt]."
+	^super divorceFrame: theFP andContext: ctxt
+]
+
 { #category : #'process primitive support' }
 CogVMSimulator >> doSignalExternalSemaphores: minTableSize [
 	"This is a non-thread-safe simulation.  See platforms/Cross/vm/sqExternalSemaphores.c
@@ -806,13 +813,6 @@ CogVMSimulator >> extUnconditionalJump [
 CogVMSimulator >> externalCannotReturn: resultOop from: aContext [
 	self halt.
 	^super externalCannotReturn: resultOop from: aContext
-]
-
-{ #category : #'debugging traps' }
-CogVMSimulator >> externalDivorceFrame: theFP andContext: ctxt [
-	"((#(16r100570 16r101BC8) includes: theFP) or: [#(16r17159A4 16r1715948) includes: ctxt]) ifTrue:
-		[self halt]."
-	^super externalDivorceFrame: theFP andContext: ctxt
 ]
 
 { #category : #'interpreter shell' }

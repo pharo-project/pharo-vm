@@ -475,13 +475,10 @@ StackInterpreterSimulator >> dispatchOn: anInteger in: selectorArray [
 ]
 
 { #category : #'debugging traps' }
-StackInterpreterSimulator >> divorceFramesIn: aStackPage [
-	"| thisPage |
-	(self checkIsStillMarriedContext: 22189568 currentFP: framePointer) ifTrue:
-		[thisPage := stackPages stackPageFor: (self frameOfMarriedContext: 22189568).
-		 aStackPage == thisPage ifTrue:
-			[self halt]]."
-	^super divorceFramesIn: aStackPage
+StackInterpreterSimulator >> divorceFrame: theFP andContext: ctxt [
+	"(theFP = -208 or: [ctxt = 22189568]) ifTrue:
+		[self halt]."
+	^super divorceFrame: theFP andContext: ctxt
 ]
 
 { #category : #'process primitive support' }
@@ -582,13 +579,6 @@ StackInterpreterSimulator >> endPCOf: aMethod [
 			otherwise: [].
 		 pc := is pc - 1].
 	^end
-]
-
-{ #category : #'debugging traps' }
-StackInterpreterSimulator >> externalDivorceFrame: theFP andContext: ctxt [
-	"(theFP = -208 or: [ctxt = 22189568]) ifTrue:
-		[self halt]."
-	^super externalDivorceFrame: theFP andContext: ctxt
 ]
 
 { #category : #'interpreter shell' }

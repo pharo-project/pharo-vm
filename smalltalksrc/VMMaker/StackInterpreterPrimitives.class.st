@@ -3565,7 +3565,7 @@ StackInterpreterPrimitives >> primitiveStoreStackp [
 		 ((onCurrentPage := thePage = stackPage)
 		 and: [theFP = framePointer]) ifTrue:
 			[^self primitiveFail]. "Probably easy to do this right here right now (just move stackPointer).  But fail for now."
-		 self externalDivorceFrame: theFP andContext: ctxt.
+		 self divorceFrame: theFP andContext: ctxt.
 		 onCurrentPage
 			ifTrue:
 				[self setStackPointersFromPage: stackPage]
@@ -3858,7 +3858,7 @@ StackInterpreterPrimitives >> primitiveTerminateTo [
 				self pop: 1.
 				self assert: stackPage = stackPages mostRecentlyUsedPage.
 				^nil].
-			 theFP := self externalEnsureIsBaseFrame: theFP. "May cause a GC!!"
+			 theFP := self ensureIsBaseFrame: theFP. "May cause a GC!!"
 			 currentCtx := self frameCallerContext: theFP.
 			 "May also reclaim aContextOrNil's page, hence..."
 			 (aContextOrNil ~= objectMemory nilObject and: [self isStillMarriedContext: aContextOrNil])
@@ -3913,7 +3913,7 @@ StackInterpreterPrimitives >> primitiveTerminateTo [
 						ifTrue:
 							[frameAbove := self findFrameAbove: theFP inPage: thePage.
 							self assert: frameAbove ~= 0.
-							frameAbove := self externalEnsureIsBaseFrame: frameAbove. "May cause a GC!! May also reclaim aContextOrNil's page, hence..."
+							frameAbove := self ensureIsBaseFrame: frameAbove. "May cause a GC!! May also reclaim aContextOrNil's page, hence..."
 							(aContextOrNil ~= objectMemory nilObject and: [self isStillMarriedContext: aContextOrNil])
 								ifTrue: [contextsFP := self frameOfMarriedContext: aContextOrNil.
 										pageToStopOn := stackPages stackPageFor: contextsFP]

@@ -604,7 +604,7 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 				 self assert: stackPage = stackPages mostRecentlyUsedPage.
 				 ^nil].
 			 self assertValidStackedInstructionPointers: #'__LINE__'.
-			 theFP := self externalEnsureIsBaseFrame: theFP. "May cause a GC!!"
+			 theFP := self ensureIsBaseFrame: theFP. "May cause a GC!!"
 			 currentCtx := self frameCallerContext: theFP.
 			 "May also reclaim aContextOrNil's page, hence..."
 			 (aContextOrNil ~= objectMemory nilObject and: [self isStillMarriedContext: aContextOrNil])
@@ -660,7 +660,7 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 						ifTrue:
 							[frameAbove := self findFrameAbove: theFP inPage: thePage.
 							self assert: frameAbove ~= 0.
-							frameAbove := self externalEnsureIsBaseFrame: frameAbove. "May cause a GC!! May also reclaim aContextOrNil's page, hence..."
+							frameAbove := self ensureIsBaseFrame: frameAbove. "May cause a GC!! May also reclaim aContextOrNil's page, hence..."
 							(aContextOrNil ~= objectMemory nilObject and: [self isStillMarriedContext: aContextOrNil])
 								ifTrue: [contextsFP := self frameOfMarriedContext: aContextOrNil.
 										pageToStopOn := stackPages stackPageFor: contextsFP]
