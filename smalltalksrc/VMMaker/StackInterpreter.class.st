@@ -402,7 +402,6 @@ Class {
 		'libFFI',
 		'codeGeneratorToComputeAccessorDepth',
 		'showSurfaceFn',
-		'messageCount',
 		'imageReader',
 		'imageWriter',
 		'pendingFinalizationSignals',
@@ -5656,20 +5655,6 @@ StackInterpreter >> extSendSuperBytecode [
 ]
 
 { #category : #'stack bytecodes' }
-StackInterpreter >> extStoreAndPopLiteralVariableBytecode [
-
-	"236		11101100	i i i i i i i i	Pop and Store Literal Variable #iiiiiiii (+ Extend A * 256)"
-
-	| variableIndex value |
-	variableIndex := self fetchByte + (extA << 8).
-	value := self stackTop.
-	self pop: 1.
-	extA := 0.
-	self storeLiteralVariable: variableIndex withValue: value.
-	self fetchNextBytecode
-]
-
-{ #category : #'stack bytecodes' }
 StackInterpreter >> extStoreAndPopReceiverVariableBytecode [
 
 	"235		11101011	i i i i i i i i	Pop and Store Receiver Variable #iiiiiii (+ Extend A * 256)"
@@ -5682,18 +5667,6 @@ StackInterpreter >> extStoreAndPopReceiverVariableBytecode [
 	self
 		storeMaybeContextReceiverVariable: variableIndex
 		withValue: value.
-	self fetchNextBytecode
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extStoreLiteralVariableBytecode [
-
-	"233		11101001	i i i i i i i i	Store Literal Variable #iiiiiiii (+ Extend A * 256)"
-
-	| variableIndex |
-	variableIndex := self fetchByte + (extA << 8).
-	extA := 0.
-	self storeLiteralVariable: variableIndex withValue: self stackTop.
 	self fetchNextBytecode
 ]
 
@@ -5738,46 +5711,6 @@ StackInterpreter >> extendedPushBytecode [
 	variableType=2 ifTrue: [^self pushLiteralConstant: variableIndex].
 	variableType=3 ifTrue: [^self pushLiteralVariable: variableIndex].
 
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extendedStoreAndPopBytecode [
-	<inline: true>
-	self extendedStoreBytecodePop: true
-	"may not be reached (immutable receiver)"
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extendedStoreBytecode [
-	<inline: true>
-	self extendedStoreBytecodePop: false
-	"may not be reached (immutable receiver)"
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extendedStoreBytecodePop: popBoolean [
-
-	<inline: true>
-	| descriptor variableType variableIndex value |
-	descriptor := self fetchByte.
-	variableType := descriptor >> 6 bitAnd: 3.
-	variableIndex := descriptor bitAnd: 63.
-	value := self stackTop.
-	popBoolean ifTrue: [ self pop: 1 ].
-	variableType = 0 ifTrue: [ 
-		objectMemory
-			storePointerImmutabilityCheck: variableIndex
-			ofObject: self receiver
-			withValue: value.
-		^ self fetchNextBytecode ].
-	variableType = 1 ifTrue: [ 
-		self fetchNextBytecode.
-		self temporary: variableIndex in: framePointer put: value.
-		^ self "keep slang happy" ].
-	variableType = 3 ifTrue: [ 
-		self storeLiteralVariable: variableIndex withValue: value.
-		^ self fetchNextBytecode ].
-	self error: 'illegal store'
 ]
 
 { #category : #'primitive support' }
