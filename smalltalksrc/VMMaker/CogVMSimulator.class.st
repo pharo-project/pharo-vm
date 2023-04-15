@@ -1264,23 +1264,20 @@ CogVMSimulator >> interpret [
 
 	Override for simulation to insert bytecode breakpoint support."
 
-	<inline: false>
 	"If stacklimit is zero then the stack pages have not been initialized."
-	stackLimit = 0 ifTrue:
-		[^self initStackPagesAndInterpret].
 
-	self internalizeIPandSP.
+	<inline: false>
+	stackLimit = 0 ifTrue: [ ^ self initStackPagesAndInterpret ].
+
 	self initExtensions.
 	self fetchNextBytecode.
-	[true] whileTrue:
-		[self assertValidExecutionPointers.
-		 atEachStepBlock value. "N.B. may be nil"
-		 self dispatchOn: currentBytecode in: BytecodeTable.
-		 self incrementByteCount].
-	instructionPointer := instructionPointer - 1.  "undo the pre-increment of IP before returning"
-	self externalizeIPandSP.
-	^nil
-
+	[ true ] whileTrue: [
+		self assertValidExecutionPointers.
+		atEachStepBlock value. "N.B. may be nil"
+		self dispatchOn: currentBytecode in: BytecodeTable.
+		self incrementByteCount ].
+	instructionPointer := instructionPointer - 1. "undo the pre-increment of IP before returning"
+	^ nil
 ]
 
 { #category : #'stack pages' }
@@ -2302,16 +2299,14 @@ CogVMSimulator >> rumpCStackSize [
 
 { #category : #testing }
 CogVMSimulator >> run [
-
 	"Just run"
 
 	quitBlock := [ ^ self close ].
 	self initStackPages.
 	self loadInitialContext.
 	self initialEnterSmalltalkExecutive.
-	instructionPointer := instructionPointer - 1.
+	instructionPointer := instructionPointer - 1
 	"undo the pre-increment of IP before returning"
-	self externalizeIPandSP
 ]
 
 { #category : #'primitive support' }

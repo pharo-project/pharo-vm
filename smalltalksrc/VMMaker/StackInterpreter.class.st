@@ -2278,9 +2278,7 @@ StackInterpreter >> binaryAtInlinePrimitive: primIndex [
 			 ((objectMemory isContextNonImm: rec) and: [ 
 				  self isMarriedOrWidowedContext: rec ])
 				 ifTrue: [ 
-					 self externalizeIPandSP.
-					 result := self externalInstVar: argIntAdjusted ofContext: rec.
-					 self internalizeIPandSP ]
+					 result := self externalInstVar: argIntAdjusted ofContext: rec. ]
 				 ifFalse: [ 
 				 result := objectMemory fetchPointer: argIntAdjusted ofObject: rec ] ]).
 			"2066	byteAt:
@@ -2723,9 +2721,7 @@ StackInterpreter >> bytecodePrimAdd [
 					[self pop: 2 thenPush: (objectMemory integerObjectOf: result).
 					^ self fetchNextBytecode "success"]]
 		ifFalse: [self initPrimCall.
-				self externalizeIPandSP.
 				self primitiveFloatAdd: rcvr toArg: arg.
-				self internalizeIPandSP.
 				self successful ifTrue: [^ self fetchNextBytecode "success"]].
 
 	messageSelector := self specialSelector: 0.
@@ -2835,9 +2831,7 @@ StackInterpreter >> bytecodePrimBitAnd [
 		 ^self fetchNextBytecode "success"].
 
 	self initPrimCall.
-	self externalizeIPandSP.
 	self primitiveBitAnd.
-	self internalizeIPandSP.
 	self successful ifTrue:
 		[^self fetchNextBytecode "success"].
 
@@ -2857,9 +2851,7 @@ StackInterpreter >> bytecodePrimBitOr [
 		 ^self fetchNextBytecode "success"].
 
 	self initPrimCall.
-	self externalizeIPandSP.
 	self primitiveBitOr.
-	self internalizeIPandSP.
 	self successful ifTrue:
 		[^self fetchNextBytecode "success"].
 
@@ -2872,9 +2864,7 @@ StackInterpreter >> bytecodePrimBitOr [
 StackInterpreter >> bytecodePrimBitShift [
 
 	self initPrimCall.
-	self externalizeIPandSP.
 	self primitiveBitShift.
-	self internalizeIPandSP.
 	self successful ifTrue: [^ self fetchNextBytecode "success"].
 
 	messageSelector := self specialSelector: 12.
@@ -2921,9 +2911,7 @@ StackInterpreter >> bytecodePrimDivide [
 						ifTrue: [self pop: 2 thenPush: (objectMemory integerObjectOf: result).
 							^ self fetchNextBytecode"success"]]]
 		ifFalse: [self initPrimCall.
-			self externalizeIPandSP.
 			self primitiveFloatDivide: rcvr byArg: arg.
-			self internalizeIPandSP.
 			self successful ifTrue: [^ self fetchNextBytecode"success"]].
 
 	messageSelector := self specialSelector: 9.
@@ -3322,9 +3310,7 @@ StackInterpreter >> bytecodePrimMultiply [
       					self pop: 2 thenPush: oop.
 						^self fetchNextBytecode "success"]]
 		ifFalse: [self initPrimCall.
-				self externalizeIPandSP.
 				self primitiveFloatMultiply: rcvr byArg: arg.
-				self internalizeIPandSP.
 				self successful ifTrue: [^ self fetchNextBytecode "success"]].
 
 	messageSelector := self specialSelector: 8.
@@ -3527,9 +3513,7 @@ StackInterpreter >> bytecodePrimSubtract [
 					[self pop: 2 thenPush: (objectMemory integerObjectOf: result).
 					^self fetchNextBytecode "success"]]
 		ifFalse: [self initPrimCall.
-				self externalizeIPandSP.
 				self primitiveFloatSubtract: rcvr fromArg: arg.
-				self internalizeIPandSP.
 				self successful ifTrue: [^self fetchNextBytecode "success"]].
 
 	messageSelector := self specialSelector: 1.
@@ -3545,10 +3529,8 @@ StackInterpreter >> bytecodePrimValue [
 	argumentCount := 0.
 	isBlock := self isInstanceOfClassBlockClosure: rcvr.
 	isBlock ifTrue: [ 
-		self externalizeIPandSP.
 		self initPrimCall.
 		self primitiveFullClosureValue.
-		self internalizeIPandSP.
 		self successful ifTrue: [ ^ self fetchNextBytecode ].
 		primFailCode := 0 ].
 	messageSelector := self specialSelector: 25.
@@ -3557,18 +3539,16 @@ StackInterpreter >> bytecodePrimValue [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimValueWithArg [
+
 	| rcvr isBlock |
 	rcvr := self stackValue: 1.
 	argumentCount := 1.
 	isBlock := self isInstanceOfClassBlockClosure: rcvr.
-	isBlock ifTrue:
-		[self externalizeIPandSP.
+	isBlock ifTrue: [
 		self initPrimCall.
 		self primitiveFullClosureValue.
-		self internalizeIPandSP.
-		self successful ifTrue:
-			[^self fetchNextBytecode].
-		primFailCode := 0].
+		self successful ifTrue: [ ^ self fetchNextBytecode ].
+		primFailCode := 0 ].
 	messageSelector := self specialSelector: 26.
 	self normalSend
 ]
@@ -4513,7 +4493,6 @@ StackInterpreter >> commonCallerReturn [
 
 { #category : #'return bytecodes' }
 StackInterpreter >> commonReturn [
-
 	"Do an ^-return (return from method), checking for unwinds if this is a block activation.
 	 Note: Assumed to be inlined into the dispatch loop."
 
@@ -4524,7 +4503,7 @@ StackInterpreter >> commonReturn [
 	<var: #newPage type: #'StackPage *'>
 	<var: #thePage type: #'StackPage *'>
 	| closure home unwindContextOrNilOrZero frameToReturnTo contextToReturnTo theFP callerFP newPage |
-	(self iframeIsBlockActivation: framePointer) ifFalse: [ 
+	(self iframeIsBlockActivation: framePointer) ifFalse: [
 		^ self commonCallerReturn ].
 
 	"If this is a method simply return to the  sender/caller."
@@ -4532,18 +4511,17 @@ StackInterpreter >> commonReturn [
 	"Update the current page's headFrame pointers to enable the search for unwind protects below
 	 to identify widowed contexts correctly."
 	self writeBackHeadFramePointers.
-	self externalizeIPandSP.
 
 	"Since this is a block activation the closure is on the stack above any args and the frame."
 	closure := self pushedReceiverOrClosureOfFrame: framePointer.
 	home := nil. "avoid compiler warning"
 	"Walk the closure's lexical chain to find the context or frame to return from (home).
 	 If home is missing (Sista closures) then throw cannotReturn rather than crash."
-	[ closure ~= objectMemory nilObject ] whileTrue: [ 
+	[ closure ~= objectMemory nilObject ] whileTrue: [
 		home := objectMemory
 			        followField: FullClosureOuterContextIndex
 			        ofObject: closure.
-		(objectMemory isContext: home) ifFalse: [ 
+		(objectMemory isContext: home) ifFalse: [
 			^ self internalCannotReturn: localReturnValue ].
 		closure := objectMemory followField: ClosureIndex ofObject: home ].
 	"home is to be returned from provided there is no unwind-protect activation between
@@ -4551,9 +4529,9 @@ StackInterpreter >> commonReturn [
 	 will answer either the context for an unwind-protect activation or nilObj if the sender
 	 cannot be found or 0 if no unwind is found but the sender is."
 	unwindContextOrNilOrZero := self findUnwindThroughContext: home.
-	unwindContextOrNilOrZero = objectMemory nilObject ifTrue: [ "error: can't find home on chain; cannot return" 
+	unwindContextOrNilOrZero = objectMemory nilObject ifTrue: [ "error: can't find home on chain; cannot return"
 		^ self internalCannotReturn: localReturnValue ].
-	unwindContextOrNilOrZero ~= 0 ifTrue: [ 
+	unwindContextOrNilOrZero ~= 0 ifTrue: [
 		^ self
 			  internalAboutToReturn: localReturnValue
 			  through: unwindContextOrNilOrZero ].
@@ -4562,19 +4540,19 @@ StackInterpreter >> commonReturn [
 	 We could be returning to either a context or a frame.  Find out which."
 	contextToReturnTo := nil.
 	(self isMarriedOrWidowedContext: home)
-		ifTrue: [ 
+		ifTrue: [
 			self assert:
 				(self checkIsStillMarriedContext: home currentFP: framePointer).
 			theFP := self frameOfMarriedContext: home.
 			(self isBaseFrame: theFP)
 				ifTrue: [ contextToReturnTo := self frameCallerContext: theFP ]
 				ifFalse: [ frameToReturnTo := self frameCallerFP: theFP ] ]
-		ifFalse: [ 
+		ifFalse: [
 			contextToReturnTo := objectMemory
 				                     fetchPointer: SenderIndex
 				                     ofObject: home.
-			((objectMemory isContext: contextToReturnTo) and: [ 
-				 self isMarriedOrWidowedContext: contextToReturnTo ]) ifTrue: [ 
+			((objectMemory isContext: contextToReturnTo) and: [
+				 self isMarriedOrWidowedContext: contextToReturnTo ]) ifTrue: [
 				self assert: (self
 						 checkIsStillMarriedContext: contextToReturnTo
 						 currentFP: framePointer).
@@ -4582,10 +4560,10 @@ StackInterpreter >> commonReturn [
 				contextToReturnTo := nil ] ].
 
 	"If returning to a context we must make a frame for it unless it is dead."
-	contextToReturnTo ~= nil ifTrue: [ 
+	contextToReturnTo ~= nil ifTrue: [
 		frameToReturnTo := self establishFrameForContextToReturnTo:
 			                   contextToReturnTo.
-		frameToReturnTo = 0 ifTrue: [ "error: home's sender is dead; cannot return" 
+		frameToReturnTo = 0 ifTrue: [ "error: home's sender is dead; cannot return"
 			^ self internalCannotReturn: localReturnValue ] ].
 
 	"Now we have a frame to return to.  If it is on a different page we must free intervening pages and
@@ -4595,18 +4573,18 @@ StackInterpreter >> commonReturn [
 	 frame linked to because these may be in use, e.g. via co-routining (see baseFrameReturn)."
 	self assert: stackPages pageListIsWellFormed.
 	newPage := stackPages stackPageFor: frameToReturnTo.
-	newPage ~~ stackPage ifTrue: [ 
+	newPage ~~ stackPage ifTrue: [
 		| currentCtx thePage nextCntx |
 		currentCtx := self frameCallerContext: stackPage baseFP.
 		stackPages freeStackPage: stackPage.
-		[ 
+		[
 		self assert: (objectMemory isContext: currentCtx).
-		(self isMarriedOrWidowedContext: currentCtx) and: [ 
+		(self isMarriedOrWidowedContext: currentCtx) and: [
 			(stackPages stackPageFor:
-				 (theFP := self frameOfMarriedContext: currentCtx)) = newPage ] ] 
-			whileFalse: [ 
+				 (theFP := self frameOfMarriedContext: currentCtx)) = newPage ] ]
+			whileFalse: [
 				(self isMarriedOrWidowedContext: currentCtx)
-					ifTrue: [ 
+					ifTrue: [
 						thePage := stackPages stackPageFor: theFP.
 						theFP ~= thePage headFP ifTrue: [ "Since we've just deallocated a page we know that newStackPage won't deallocate an existing one."
 							self
@@ -4615,7 +4593,7 @@ StackInterpreter >> commonReturn [
 								toPage: stackPages newStackPage ].
 						currentCtx := self frameCallerContext: thePage baseFP.
 						stackPages freeStackPage: thePage ]
-					ifFalse: [ 
+					ifFalse: [
 						nextCntx := objectMemory
 							            fetchPointer: SenderIndex
 							            ofObject: currentCtx.
@@ -4630,10 +4608,10 @@ StackInterpreter >> commonReturn [
 	 in the caller frame. We need to peel back any frames on the page until we get to the correct frame."
 
 	framePointer = frameToReturnTo
-		ifTrue: [ "pop the saved IP, push the return value and continue." 
+		ifTrue: [ "pop the saved IP, push the return value and continue."
 			instructionPointer := self pointerForOop: self stackTop ]
-		ifFalse: [ 
-			[ 
+		ifFalse: [
+			[
 			callerFP := framePointer.
 			framePointer := self frameCallerFP: framePointer.
 			framePointer ~~ frameToReturnTo ] whileTrue.
@@ -5870,18 +5848,6 @@ StackInterpreter >> externalWriteBackHeadFramePointers [
 	self deny: stackPage isFree.
 	self setHeadFP: framePointer andSP: stackPointer inPage: stackPage.
 	self assert: stackPages pageListIsWellFormed
-]
-
-{ #category : #utilities }
-StackInterpreter >> externalizeFPandSP [
-	"Copy the frame and stack pointers to global variables for use in primitives and other functions outside the interpret loop."
-	self assert: (stackPointer < stackPage baseAddress
-				and: [stackPointer > (stackPage realStackLimit - (LargeContextSlots * objectMemory bytesPerOop))]).
-]
-
-{ #category : #utilities }
-StackInterpreter >> externalizeIPandSP [
-	"Copy the local instruction, stack and frame pointers to global variables for use in primitives and other functions outside the interpret loop."
 ]
 
 { #category : #'primitive support' }
@@ -7399,12 +7365,10 @@ StackInterpreter >> ifAppropriateCompileToNativeCode: aMethodObj selector: selec
 { #category : #'jump bytecodes' }
 StackInterpreter >> ifBackwardsCheckForEvents: offset [
 	"Backward jump means we're in a loop; check for possible interrupts."
+
 	<inline: true>
-	(offset < 0
-	 and: [stackPointer < stackLimit]) ifTrue:
-		[self externalizeIPandSP.
-		 self checkForEventsMayContextSwitch: true.
-		 self internalizeIPandSP]
+	(offset < 0 and: [ stackPointer < stackLimit ]) ifTrue: [
+		self checkForEventsMayContextSwitch: true ]
 ]
 
 { #category : #'stack pages' }
@@ -7818,14 +7782,12 @@ StackInterpreter >> instVar: index ofContext: aMarriedContext put: anOop [
 			ifFalse:
 				[stackPages markStackPageMostRecentlyUsed: stackPage].
 		 ^nil].
-	self externalizeIPandSP.
 	self externalDivorceFrame: theFP andContext: aMarriedContext.
 	(self is: index methodAssignmentToContextWithMachineCodePC: aMarriedContext) ifTrue:
 		[self ensureContextHasBytecodePC: aMarriedContext].
 	objectMemory storePointer: index ofObject: aMarriedContext withValue: anOop.
 	index = StackPointerIndex ifTrue:
 		[self ensureContextIsExecutionSafeAfterAssignToStackPointer: aMarriedContext].
-	self internalizeIPandSP.
 	"Assigning various fields can force a divorce which can change the stackPage."
 	stackPages markStackPageMostRecentlyUsed: stackPage.
 	self assertValidExecutionPointe: instructionPointer asUnsignedInteger r: framePointer s: stackPointer imbar: true line: #'__LINE__'
@@ -7971,10 +7933,8 @@ StackInterpreter >> internalActivateNewMethod [
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
 	stackPointer < stackLimit ifTrue: [ 
-		self externalizeIPandSP.
 		self handleStackOverflowOrEventAllowContextSwitch:
-			(self canContextSwitchIfActivating: newMethod header: methodHeader).
-		self internalizeIPandSP ]
+			(self canContextSwitchIfActivating: newMethod header: methodHeader). ]
 ]
 
 { #category : #'return bytecodes' }
@@ -7998,9 +7958,7 @@ StackInterpreter >> internalExecuteNewMethod [
 		self isPrimitiveFunctionPointerAnIndex ifTrue: [ 
 			self internalQuickPrimitiveResponse.
 			^ self "keep slang happy" ].
-		self externalizeIPandSP.
 		succeeded := self slowPrimitiveResponse.
-		self internalizeIPandSP.
 		succeeded ifTrue: [ ^ self ] ].
 	"if not primitive, or primitive failed, activate the method"
 	^ self internalActivateNewMethod
@@ -8012,7 +7970,6 @@ StackInterpreter >> internalFindNewMethodOrdinary [
 	<inline: true>
 	(self inlineLookupInMethodCacheSel: messageSelector classTag: lkupClassTag) ifFalse:
 		["entry was not found in the cache; look it up the hard way"
-		 self externalizeIPandSP.
 		 ((objectMemory isOopForwarded: messageSelector)
 		  or: [objectMemory isForwardedClassTag: lkupClassTag]) ifTrue:
 			[(objectMemory isOopForwarded: messageSelector) ifTrue:
@@ -8025,7 +7982,6 @@ StackInterpreter >> internalFindNewMethodOrdinary [
 		 (objectMemory isOopForwarded: lkupClass) ifTrue:
 				[lkupClass := objectMemory followForwarded: lkupClass].
 		 self lookupMethodInClass: lkupClass.
-		 self internalizeIPandSP.
 		 self addNewMethodToCache: lkupClass].
 
 ]
@@ -8072,12 +8028,6 @@ StackInterpreter >> internalQuickPrimitiveResponse [
 	^ true
 ]
 
-{ #category : #utilities }
-StackInterpreter >> internalizeIPandSP [
-	"Copy the instruction, stack and frame pointers to local variables for rapid access within the interpret loop."
-	stackPointer := self pointerForOop: stackPointer
-]
-
 { #category : #'interpreter shell' }
 StackInterpreter >> interpret [
 	"This is the main interpreter loop. It normally loops forever, fetching and executing bytecodes. When running in the context of a browser plugin VM, however, it must return control to the browser periodically. This should done only when the state of the currently running Squeak thread is safely stored in the object heap. Since this is the case at the moment that a check for interrupts is performed, that is when we return to the browser if it is time to do so. Interrupt checks happen quite frequently."
@@ -8090,12 +8040,10 @@ StackInterpreter >> interpret [
 	stackLimit = 0 ifTrue:
 		[^self initStackPagesAndInterpret].
 
-	self internalizeIPandSP.
 	self initExtensions.
 	self fetchNextBytecode.
 	[true] whileTrue: [self dispatchOn: currentBytecode in: BytecodeTable].
 	instructionPointer := instructionPointer - 1.  "undo the pre-increment of IP before returning"
-	self externalizeIPandSP.
 	^nil
 
 ]
@@ -8110,14 +8058,13 @@ StackInterpreter >> interpretUntilReturn [
 StackInterpreter >> interpretWhile: aFullBlockClosure [ 
 	<doNotGenerate>
 	
-	self internalizeIPandSP.
 	self fetchNextBytecode.
 	[aFullBlockClosure value] whileTrue:
 		[self dispatchCurrentBytecode.
 		 self incrementByteCount].
-	instructionPointer := instructionPointer - 1.
 	"undo the pre-increment of IP before returning"
-	self externalizeIPandSP
+	instructionPointer := instructionPointer - 1.
+
 ]
 
 { #category : #'stack pages' }
@@ -9520,7 +9467,6 @@ StackInterpreter >> mappedDirectCall [
 
 { #category : #'sista bytecodes' }
 StackInterpreter >> mappedEnsureEnoughWords [
-
 	"50	EnsureEnoughWords
 	 literal which is a Smi => ret value is receiver"
 
@@ -9530,10 +9476,7 @@ StackInterpreter >> mappedEnsureEnoughWords [
 	slots := objectMemory integerValueOf: top.
 	self assert: slots >= 0.
 	ok := objectMemory checkForAvailableSlots: slots.
-	ok ifFalse: [ 
-		self externalizeIPandSP.
-		self checkForEventsMayContextSwitch: true.
-		self internalizeIPandSP ]
+	ok ifFalse: [ self checkForEventsMayContextSwitch: true ]
 ]
 
 { #category : #'sista bytecodes' }
@@ -9599,7 +9542,6 @@ StackInterpreter >> mappedImmcheckDataAtPut: primIndex [
 
 { #category : #'sista bytecodes' }
 StackInterpreter >> mappedImmcheckMaybeContextStoreCheckPointerAtPut [
-
 	"153	immCheckMaybeContextStoreCheckPointerAt:put:
 	 pointer object (Fixed sized or not), Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)"
 
@@ -9612,15 +9554,13 @@ StackInterpreter >> mappedImmcheckMaybeContextStoreCheckPointerAtPut [
 	self pop: 3.
 	self push: result.
 	(self isWriteMediatedContextInstVarIndex: argIntAdjusted)
-		ifFalse: [ 
+		ifFalse: [
 			objectMemory
 				storePointerImmutabilityCheck: argIntAdjusted
 				ofObject: rec
 				withValue: result ]
-		ifTrue: [ 
-			self externalizeIPandSP.
-			self externalInstVar: argIntAdjusted ofContext: rec put: result.
-			self internalizeIPandSP ]
+		ifTrue: [
+		self externalInstVar: argIntAdjusted ofContext: rec put: result ]
 ]
 
 { #category : #'sista bytecodes' }
@@ -12756,27 +12696,30 @@ StackInterpreter >> pushMaybeContextReceiverVariable: fieldIndex [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushNewArrayBytecode [
+
 	| size popValues array |
 	size := self fetchByte.
 	popValues := size > 127.
 	size := size bitAnd: 127.
 	self fetchNextBytecode.
-	self externalizeIPandSP. "in case of abort"
 	array := objectMemory
-		eeInstantiateSmallClassIndex: ClassArrayCompactIndex
-		format: objectMemory arrayFormat
-		numSlots: size.
+		         eeInstantiateSmallClassIndex: ClassArrayCompactIndex
+		         format: objectMemory arrayFormat
+		         numSlots: size.
 	popValues
-		ifTrue:
-			[0 to: size - 1 do:
-				[:i|
-				"Assume: have just allocated a new Array; it must be young. Thus, can use unchecked stores."
-				objectMemory storePointerUnchecked: i ofObject: array withValue: (self stackValue: size - i - 1)].
-			 self pop: size]
-		ifFalse:
-			[0 to: size - 1 do:
-				[:i|
-				objectMemory storePointerUnchecked: i ofObject: array withValue: objectMemory nilObject]].
+		ifTrue: [
+			0 to: size - 1 do: [ :i | "Assume: have just allocated a new Array; it must be young. Thus, can use unchecked stores."
+				objectMemory
+					storePointerUnchecked: i
+					ofObject: array
+					withValue: (self stackValue: size - i - 1) ].
+			self pop: size ]
+		ifFalse: [
+			0 to: size - 1 do: [ :i |
+				objectMemory
+					storePointerUnchecked: i
+					ofObject: array
+					withValue: objectMemory nilObject ] ].
 	self push: array
 ]
 
@@ -15125,15 +15068,15 @@ StackInterpreter >> trinaryAtPutInlinePrimitive: primIndex [
 	| result rec argIntAdjusted arg1 |
 	arg1 := self stackValue: 1.
 	rec := self stackValue: 2.
-	self deny: ((objectMemory isOopForwarded: rec) or: [ 
+	self deny: ((objectMemory isOopForwarded: rec) or: [
 			 objectMemory isImmediate: rec ]).
 	self assert: (objectMemory isIntegerObject: arg1).
 	argIntAdjusted := (objectMemory integerValueOf: arg1) - 1.
 	self assert: argIntAdjusted >= 0.
 	result := self stackTop.
 
-	primIndex caseOf: { 
-			([ 0 ] -> [ 
+	primIndex caseOf: {
+			([ 0 ] -> [
 			 self assert: (objectMemory isPointers: rec).
 			 self assert: argIntAdjusted < (objectMemory numSlotsOfAny: rec).
 			 objectMemory
@@ -15142,7 +15085,7 @@ StackInterpreter >> trinaryAtPutInlinePrimitive: primIndex [
 				 withValue: result ]).
 			"3001	storeCheckPointerAt:put:
 		 Mutable pointer object (Fixed sized or not) and not a context, Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)"
-			([ 1 ] -> [ 
+			([ 1 ] -> [
 			 self assert: (objectMemory isPointers: rec).
 			 self assert: argIntAdjusted < (objectMemory numSlotsOfAny: rec).
 			 objectMemory
@@ -15151,35 +15094,31 @@ StackInterpreter >> trinaryAtPutInlinePrimitive: primIndex [
 				 withValue: result ]).
 			"3002	maybeContextPointerAt:put:
 		 Mutable pointer object (Fixed sized or not), Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)"
-			([ 2 ] -> [ 
-			 ((objectMemory isContextNonImm: rec) and: [ 
+			([ 2 ] -> [
+			 ((objectMemory isContextNonImm: rec) and: [
 				  self isMarriedOrWidowedContext: rec ])
-				 ifTrue: [ 
-					 self externalizeIPandSP.
-					 self externalInstVar: argIntAdjusted ofContext: rec put: result.
-					 self internalizeIPandSP ]
-				 ifFalse: [ 
+				 ifTrue: [
+				 self externalInstVar: argIntAdjusted ofContext: rec put: result ]
+				 ifFalse: [
 					 objectMemory
 						 storePointer: argIntAdjusted
 						 ofObject: rec
 						 withValue: result ] ]).
 			"3003	maybeContextStoreCheckPointerAt:put:
 		Mutable pointer object (Fixed sized or not), Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)"
-			([ 3 ] -> [ 
-			 ((objectMemory isContextNonImm: rec) and: [ 
+			([ 3 ] -> [
+			 ((objectMemory isContextNonImm: rec) and: [
 				  self isMarriedOrWidowedContext: rec ])
-				 ifTrue: [ 
-					 self externalizeIPandSP.
-					 self externalInstVar: argIntAdjusted ofContext: rec put: result.
-					 self internalizeIPandSP ]
-				 ifFalse: [ 
+				 ifTrue: [
+				 self externalInstVar: argIntAdjusted ofContext: rec put: result ]
+				 ifFalse: [
 					 objectMemory
 						 storePointer: argIntAdjusted
 						 ofObject: rec
 						 withValue: result ] ]).
 			"3004	byteAt:put:
 		Mutable byte object, Smi, 8 bits unsigned Smi => arg2 (1-based, optimised if arg1 is a constant)"
-			([ 4 ] -> [ 
+			([ 4 ] -> [
 			 self assert: (objectMemory isBytes: rec).
 			 self assert: argIntAdjusted < (objectMemory numBytesOf: rec).
 			 self assert: (objectMemory isIntegerObject: result).
@@ -15189,7 +15128,7 @@ StackInterpreter >> trinaryAtPutInlinePrimitive: primIndex [
 				 withValue: (objectMemory integerValueOf: result) ]).
 			"3005	shortAt:put:
 		 Mutable short object, Smi, 16 bits unsigned Smi => arg2 (1-based, optimised if arg1 is a constant)"
-			([ 5 ] -> [ 
+			([ 5 ] -> [
 			 self assert: (objectMemory isShorts: rec).
 			 self assert: argIntAdjusted < (objectMemory num16BitUnitsOf: rec).
 			 self assert: (objectMemory isIntegerObject: result).
@@ -15199,7 +15138,7 @@ StackInterpreter >> trinaryAtPutInlinePrimitive: primIndex [
 				 withValue: (objectMemory integerValueOf: result) ]).
 			"3006	wordAt:put:
 		 Mutable word object, Smi, 32 bits unsigned Smi => arg2 (1-based, optimised if arg1 is a constant)"
-			([ 6 ] -> [ 
+			([ 6 ] -> [
 			 self assert: (objectMemory isWords: rec).
 			 self assert: argIntAdjusted < (objectMemory num32BitUnitsOf: rec).
 			 objectMemory
@@ -15208,7 +15147,7 @@ StackInterpreter >> trinaryAtPutInlinePrimitive: primIndex [
 				 withValue: (objectMemory positive32BitValueOf: result) ]).
 			"3007	doubleWordAt:put:
 		 Mutable double word object, Smi, 64 bits unsigned Smi or LargePositiveInteger => arg2 (1-based, optimised if arg1 is a constant)"
-			([ 7 ] -> [ 
+			([ 7 ] -> [
 			 self assert: (objectMemory isLong64s: rec).
 			 self assert: argIntAdjusted < (objectMemory num64BitUnitsOf: rec).
 			 objectMemory

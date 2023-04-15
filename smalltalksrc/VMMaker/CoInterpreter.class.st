@@ -3093,14 +3093,6 @@ CoInterpreter >> externalWriteBackHeadStackPointer [
 	stackPage headSP: stackPointer
 ]
 
-{ #category : #utilities }
-CoInterpreter >> externalizeIPandSP [
-	"Copy the local instruction, stack and frame pointers to global variables for use in primitives and other functions outside the interpret loop."
-
-	self assert: instructionPointer asUnsignedInteger ~= cogit ceReturnToInterpreterPC.
-	stackPointer := stackPointer.
-]
-
 { #category : #'debug support' }
 CoInterpreter >> fastLogPrim: aSelectorOrImmediate [
 	"Fast tracing of named primitives.  primTraceLogIndex is a byte variable.
@@ -3677,7 +3669,6 @@ CoInterpreter >> ifAppropriateCompileToNativeCode: aMethodObj selector: selector
 
 { #category : #'jump bytecodes' }
 CoInterpreter >> ifBackwardsCheckForEvents: offsetToJumpBytecode [
-
 	"Backward jump means we're in a loop.
 		- check for possible interrupts.
 		- check for long-running loops and JIT if appropriate."
@@ -3686,12 +3677,10 @@ CoInterpreter >> ifBackwardsCheckForEvents: offsetToJumpBytecode [
 	| switched backwardJumpCountByte |
 	offsetToJumpBytecode >= 0 ifTrue: [ ^ self ].
 
-	stackPointer < stackLimit ifTrue:
-		[self externalizeIPandSP.
-		 switched := self checkForEventsMayContextSwitch: true.
-		 self returnToExecutive: true postContextSwitch: switched.
-		 switched ifTrue:
-			[^self]].
+	stackPointer < stackLimit ifTrue: [
+		switched := self checkForEventsMayContextSwitch: true.
+		self returnToExecutive: true postContextSwitch: switched.
+		switched ifTrue: [ ^ self ] ].
 
 	"We use the least significant byte of the flags word (which is marked as an immediate) and
 	 subtract two each time to avoid disturbing the least significant tag bit.  Since the byte is
@@ -3700,20 +3689,21 @@ CoInterpreter >> ifBackwardsCheckForEvents: offsetToJumpBytecode [
 	(backwardJumpCountByte := backwardJumpCountByte - 2) = 1
 		ifTrue: [
 			(self methodWithHeaderShouldBeCogged:
-				(objectMemory methodHeaderOf: method)) ifTrue: [
-				self externalizeIPandSP.
-				self attemptToSwitchToMachineCode: 
-					(self oopForPointer: instructionPointer) - offsetToJumpBytecode - method
-					- objectMemory baseHeaderSize - 1
-				 "If attemptToSwitchToMachineCode: returns the method could not be cogged, hence..."].
-			 "can't cog method; avoid asking to cog it again for the longest possible time."
-			 backwardJumpCountByte := 16r7F ]
+				 (objectMemory methodHeaderOf: method)) ifTrue: [
+				self attemptToSwitchToMachineCode:
+					(self oopForPointer: instructionPointer) - offsetToJumpBytecode
+					- method - objectMemory baseHeaderSize - 1
+				"If attemptToSwitchToMachineCode: returns the method could not be cogged, hence..." ].
+			"can't cog method; avoid asking to cog it again for the longest possible time."
+			backwardJumpCountByte := 16r7F ]
 		ifFalse: [
 			backwardJumpCountByte = -1 ifTrue: [ "initialize the count"
 				self assert: minBackwardJumpCountForCompile <= 128.
-				backwardJumpCountByte := minBackwardJumpCountForCompile - 1 << 1 + 1 ] ].
-	self iframeBackwardBranchByte: framePointer put: backwardJumpCountByte
-
+				backwardJumpCountByte := minBackwardJumpCountForCompile - 1 << 1
+				                         + 1 ] ].
+	self
+		iframeBackwardBranchByte: framePointer
+		put: backwardJumpCountByte
 ]
 
 { #category : #'debug support' }
@@ -3929,7 +3919,7 @@ CoInterpreter >> internalActivateNewMethod [
 	self push: rcvr.
 
 	"Initialize temps..."
-	argumentCount + 1 to: numTemps do: [ :i | 
+	argumentCount + 1 to: numTemps do: [ :i |
 	self push: objectMemory nilObject ].
 
 	"-1 to account for pre-increment in fetchNextBytecode"
@@ -3938,14 +3928,22 @@ CoInterpreter >> internalActivateNewMethod [
 			                       initialIPForHeader: methodHeader
 			                       method: newMethod) - 1.
 
-	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [
-		"Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
+	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader).
-		primFailCode ~= 0 ifTrue: [ | shouldSkipStoreBytecode |
-			shouldSkipStoreBytecode := self reapAndResetErrorCodeTo: framePointer header: methodHeader.
-			shouldSkipStoreBytecode ifTrue: [ 
-				instructionPointer := instructionPointer + (self sizeOfLongStoreTempBytecode: methodHeader)  ] ] ].
+		instructionPointer := instructionPointer
+		                      +
+		                      (self sizeOfCallPrimitiveBytecode:
+			                       methodHeader).
+		primFailCode ~= 0 ifTrue: [
+			| shouldSkipStoreBytecode |
+			shouldSkipStoreBytecode := self
+				                           reapAndResetErrorCodeTo: framePointer
+				                           header: methodHeader.
+			shouldSkipStoreBytecode ifTrue: [
+				instructionPointer := instructionPointer
+				                      +
+				                      (self sizeOfLongStoreTempBytecode:
+					                       methodHeader) ] ] ].
 
 	self assert: (self frameNumArgs: framePointer) = argumentCount.
 	self assert: (self frameIsBlockActivation: framePointer) not.
@@ -3953,36 +3951,31 @@ CoInterpreter >> internalActivateNewMethod [
 
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
-	stackPointer < stackLimit ifTrue: [ 
-		self externalizeIPandSP.
+	stackPointer < stackLimit ifTrue: [
 		switched := self handleStackOverflowOrEventAllowContextSwitch:
 			            (self
 				             canContextSwitchIfActivating: newMethod
 				             header: methodHeader).
-		self returnToExecutive: true postContextSwitch: switched.
-		self internalizeIPandSP ]
+		self returnToExecutive: true postContextSwitch: switched ]
 ]
 
 { #category : #'message sending' }
 CoInterpreter >> internalExecuteNewMethod [
-
 	"For interpreter performance and to ease the objectAsMethod implementation eagerly
 	 evaluate the primtiive, i.e. if the method is cogged and has a primitive /do not/ evaluate
 	 the machine code primitive, just evaluate primitiveFunctionPointer directly."
 
 	<inline: true>
-	primitiveFunctionPointer ~= 0 ifTrue: [ 
+	primitiveFunctionPointer ~= 0 ifTrue: [
 		| succeeded |
-		self isPrimitiveFunctionPointerAnIndex ifTrue: [ 
+		self isPrimitiveFunctionPointerAnIndex ifTrue: [
 			^ self internalQuickPrimitiveResponse ].
 		"slowPrimitiveResponse may of course context-switch.  If so we must reenter the
 		  new process appropriately, returning only if we've found an interpreter frame."
-		self externalizeIPandSP.
 		succeeded := self slowPrimitiveResponse.
-		instructionPointer = cogit ceReturnToInterpreterPC ifTrue: [ 
+		instructionPointer = cogit ceReturnToInterpreterPC ifTrue: [
 			instructionPointer := self iframeSavedIP: framePointer ].
-		self internalizeIPandSP.
-		succeeded ifTrue: [ 
+		succeeded ifTrue: [
 			self return: self popStack toExecutive: true.
 			^ nil ] ].
 	"if not primitive, or primitive failed, activate the method"
@@ -3990,55 +3983,52 @@ CoInterpreter >> internalExecuteNewMethod [
 		ifTrue: [
 			self iframeSavedIP: framePointer put: instructionPointer asInteger.
 			instructionPointer := cogit ceReturnToInterpreterPC.
-			self externalizeFPandSP.
-			self activateCoggedNewMethod: true.
-			self internalizeIPandSP ]
-		ifFalse: [self internalActivateNewMethod]
+			self activateCoggedNewMethod: true ]
+		ifFalse: [ self internalActivateNewMethod ]
 ]
 
 { #category : #'message sending' }
 CoInterpreter >> internalFindNewMethodOrdinary [
 	"Find the compiled method to be run when the current messageSelector is
 	 sent to the given class, setting the values of newMethod and primitiveIndex."
-	| ok |
+
 	<inline: true>
-	ok := self inlineLookupInMethodCacheSel: messageSelector classTag: lkupClassTag.
-	ok	ifTrue:
-			[self ifAppropriateCompileToNativeCode: newMethod selector: messageSelector]
-		ifFalse:
-			[self externalizeIPandSP.
-			 ((objectMemory isOopForwarded: messageSelector)
-			  or: [objectMemory isForwardedClassTag: lkupClassTag]) ifTrue:
-				[(objectMemory isOopForwarded: messageSelector) ifTrue:
-					[messageSelector := self handleForwardedSelectorFaultFor: messageSelector].
-				 (objectMemory isForwardedClassTag: lkupClassTag) ifTrue:
-					[lkupClassTag := self handleForwardedSendFaultForTag: lkupClassTag].
-				(self lookupInMethodCacheSel: messageSelector classTag: lkupClassTag) ifTrue:
-					[^self ifAppropriateCompileToNativeCode: newMethod selector: messageSelector]].
+	| ok |
+	ok := self
+		      inlineLookupInMethodCacheSel: messageSelector
+		      classTag: lkupClassTag.
+	ok
+		ifTrue: [
+			self
+				ifAppropriateCompileToNativeCode: newMethod
+				selector: messageSelector ]
+		ifFalse: [
+			((objectMemory isOopForwarded: messageSelector) or: [
+				 objectMemory isForwardedClassTag: lkupClassTag ]) ifTrue: [
+				(objectMemory isOopForwarded: messageSelector) ifTrue: [
+					messageSelector := self handleForwardedSelectorFaultFor:
+						                   messageSelector ].
+				(objectMemory isForwardedClassTag: lkupClassTag) ifTrue: [
+					lkupClassTag := self handleForwardedSendFaultForTag: lkupClassTag ].
+				(self
+					 lookupInMethodCacheSel: messageSelector
+					 classTag: lkupClassTag) ifTrue: [
+					^ self
+						  ifAppropriateCompileToNativeCode: newMethod
+						  selector: messageSelector ] ].
 			lkupClass := objectMemory classForClassTag: lkupClassTag.
-			self assert: (lkupClass notNil and: [self addressCouldBeClassObj: lkupClass]).
+			self assert:
+				(lkupClass notNil and: [ self addressCouldBeClassObj: lkupClass ]).
 			self lookupMethodInClass: lkupClass.
-			self internalizeIPandSP.
-			self addNewMethodToCache: lkupClass]
+			self addNewMethodToCache: lkupClass ]
 ]
 
 { #category : #'frame access' }
 CoInterpreter >> internalMustMapMachineCodePC: theIP context: aOnceMarriedContext [
 	"Must externalize before calling mustMapMachineCodePC:context:
 	 because it may cause a code compaction."
-	| result |
-	self externalizeIPandSP.
-	result := self mustMapMachineCodePC: theIP context: aOnceMarriedContext.
-	self internalizeIPandSP.
-	^result
-]
 
-{ #category : #utilities }
-CoInterpreter >> internalizeIPandSP [
-	"Copy the instruction, stack and frame pointers to local variables for rapid access within the interpret loop."
-
-	self assert: instructionPointer ~= cogit ceReturnToInterpreterPC.
-	stackPointer := self pointerForOop: stackPointer
+	^ self mustMapMachineCodePC: theIP context: aOnceMarriedContext
 ]
 
 { #category : #'trampoline support' }
@@ -6225,7 +6215,6 @@ CoInterpreter >> returnToMachineCodeFrame [
 		line: #__LINE__.
 	self stackTopPut: instructionPointer.
 	self push: localReturnValue.
-	self externalizeFPandSP.
 	self cCode: '' inSmalltalk: [ 
 		self maybeCheckStackDepth: 1 sp: stackPointer pc: instructionPointer ].
 	self callEnilopmart: #ceEnterCogCodePopReceiverReg

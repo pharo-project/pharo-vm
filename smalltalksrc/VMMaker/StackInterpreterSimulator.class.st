@@ -808,7 +808,6 @@ StackInterpreterSimulator >> interpret [
 
 	<inline: false>
 	stackLimit = 0 ifTrue: [ ^ self initStackPagesAndInterpret ].
-	self internalizeIPandSP.
 	self initExtensions.
 	self fetchNextBytecode.
 	[ true ] whileTrue: [
@@ -817,7 +816,6 @@ StackInterpreterSimulator >> interpret [
 		self dispatchCurrentBytecode.
 		self incrementByteCount ].
 	instructionPointer := instructionPointer - 1.  "undo the pre-increment of IP before returning"
-	self externalizeIPandSP.
 	^ nil
 ]
 
@@ -1590,23 +1588,20 @@ StackInterpreterSimulator >> rewriteMethodCacheEntryForExternalPrimitiveToFuncti
 
 { #category : #testing }
 StackInterpreterSimulator >> run [
-
 	"Just run"
 
 	quitBlock := [ ^ self close ].
 	self initStackPages.
 	self loadInitialContext.
 	self initialEnterSmalltalkExecutive.
-	instructionPointer := instructionPointer - 1.
+	instructionPointer := instructionPointer - 1
 	"undo the pre-increment of IP before returning"
-	self externalizeIPandSP
 ]
 
 { #category : #testing }
 StackInterpreterSimulator >> runAtEachStep: aBlock [
 	self initStackPages.
 	self loadInitialContext.
-	self internalizeIPandSP.
 	self fetchNextBytecode.
 	[true] whileTrue:
 		[self assertValidExecutionPointers.
@@ -1615,44 +1610,40 @@ StackInterpreterSimulator >> runAtEachStep: aBlock [
 		 self incrementByteCount].
 	instructionPointer := instructionPointer - 1.
 	"undo the pre-increment of IP before returning"
-	self externalizeIPandSP
 ]
 
 { #category : #testing }
 StackInterpreterSimulator >> runAtEachStep: aBlock breakCount: aBreakCount [
+
 	self initStackPages.
 	self loadInitialContext.
-	self internalizeIPandSP.
 	self fetchNextBytecode.
-	[true] whileTrue:
-		[self assertValidExecutionPointers.
-		 aBlock value: currentBytecode.
-		 self dispatchOn: currentBytecode in: BytecodeTable.
-		 self incrementByteCount.
-		 byteCount = aBreakCount ifTrue:
-			[self halt]].
-	instructionPointer := instructionPointer - 1.
+	[ true ] whileTrue: [
+		self assertValidExecutionPointers.
+		aBlock value: currentBytecode.
+		self dispatchOn: currentBytecode in: BytecodeTable.
+		self incrementByteCount.
+		byteCount = aBreakCount ifTrue: [ self halt ] ].
+	instructionPointer := instructionPointer - 1
 	"undo the pre-increment of IP before returning"
-	self externalizeIPandSP
 ]
 
 { #category : #testing }
-StackInterpreterSimulator >> runForNBytes: nBytecodes [ 
+StackInterpreterSimulator >> runForNBytes: nBytecodes [
 	"Do nByteCodes more bytecode dispatches.
 	Keep byteCount up to date.
 	This can be run repeatedly."
+
 	| endCount |
 	self initStackPages.
 	self loadInitialContext.
 	endCount := byteCount + nBytecodes.
-	self internalizeIPandSP.
 	self fetchNextBytecode.
-	[byteCount < endCount] whileTrue:
-		[self dispatchOn: currentBytecode in: BytecodeTable.
-		 self incrementByteCount].
-	instructionPointer := instructionPointer - 1.
+	[ byteCount < endCount ] whileTrue: [
+		self dispatchOn: currentBytecode in: BytecodeTable.
+		self incrementByteCount ].
+	instructionPointer := instructionPointer - 1
 	"undo the pre-increment of IP before returning"
-	self externalizeIPandSP
 ]
 
 { #category : #'I/O primitives' }
@@ -1840,42 +1831,6 @@ StackInterpreterSimulator >> systemAttributes [
 StackInterpreterSimulator >> tab [
 
 	traceOn ifTrue: [ transcript tab ].
-]
-
-{ #category : #testing }
-StackInterpreterSimulator >> test1 [
-	self initStackPages.
-	self loadInitialContext.
-	transcript clear.
-	byteCount := 0.
-	breakCount := -1.
-	self setBreakSelector: #blockCopy:.
-	quitBlock := [^self close].
-	printSends := printReturns := true.
-	self internalizeIPandSP.
-	self fetchNextBytecode.
-	[true] whileTrue:
-		[self assertValidExecutionPointers.
-		 "byteCount >= 22283 ifTrue:
-			[(self checkIsStillMarriedContext: 22186072 currentFP: localFP) ifFalse:
-				[self halt]]."
-		 (printBytecodeAtEachStep
-		  "and: [self isMarriedOrWidowedContext: 22189568]") ifTrue:
-			["| thePage |
-			 thePage := stackPages stackPageFor: (self frameOfMarriedContext: 22189568).
-			 thePage == stackPage
-				ifTrue: [self shortPrintFrameAndCallers: localFP SP: localSP]
-				ifFalse: [self shortPrintFrameAndCallers: thePage headFrameFP SP: thePage headFrameSP]."
-			 self printCurrentBytecodeOn: Transcript.
-			 Transcript cr; flush].
-
-		 self dispatchOn: currentBytecode in: BytecodeTable.
-		 self incrementByteCount.
-		 byteCount = breakCount ifTrue:
-			["printFrameAtEachStep := true."
-			 printSends := printBytecodeAtEachStep := true.
-			 self halt: 'hit breakCount break-point']].
-	self externalizeIPandSP
 ]
 
 { #category : #testing }

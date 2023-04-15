@@ -20,12 +20,9 @@ VMContextAccessTest >> assertContext: newContext equals: contextOop onInstVar: a
 { #category : #tests }
 VMContextAccessTest >> pushActiveContext [
 
-	interpreter internalizeIPandSP.
 	interpreter pushActiveContextBytecode.
-	interpreter externalizeIPandSP.
 
-	^ interpreter stackTop.
-
+	^ interpreter stackTop
 ]
 
 { #category : #running }

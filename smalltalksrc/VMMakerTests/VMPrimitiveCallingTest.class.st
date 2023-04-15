@@ -45,7 +45,6 @@ VMPrimitiveCallingTest >> testPrimitiveFailingDoesNotSkipSecondBytecodeIfNotLong
 
 	interpreter activateNewMethod.
 	
-	interpreter internalizeIPandSP.
 	self assert: interpreter fetchByte equals: 16rF4
 ]
 
@@ -89,13 +88,11 @@ VMPrimitiveCallingTest >> testPrimitiveFailingSetsErrorCodeInCorrectTempWithInte
 	interpreter primFailCode: -1.
 
 	"Move the frame pointer to its caller but keep the correct one in the local FP".
-	interpreter internalizeIPandSP.
 	interpreter framePointer: (interpreter frameCallerFP: interpreter framePointer).
 
 	"Use the internal version using the localFP"
 	interpreter internalActivateNewMethod.
 	
 	"Then externalize and assert"
-	interpreter externalizeFPandSP.
 	self assert: (interpreter temporary: 0 in: interpreter framePointer) equals: (memory integerObjectOf: -1)
 ]

@@ -194,7 +194,6 @@ VMStackBuilder >> setInterpreterVariables [
 	| lastFrame |
 	interpreter setStackPageAndLimit: page.
 	interpreter setStackPointersFromPage: page.
-	interpreter internalizeIPandSP.
 	
 	lastFrame := frames last.
 
