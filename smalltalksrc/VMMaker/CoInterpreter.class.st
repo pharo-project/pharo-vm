@@ -2957,41 +2957,30 @@ CoInterpreter >> executeFullCogBlock: cogMethod closure: closure mayContextSwitc
 
 { #category : #'message sending' }
 CoInterpreter >> executeNewMethod [
-	"Execute newMethod - either primitiveFunctionPointer must be set directly
-	 (i.e. from primitiveExecuteMethod et al), or it would have been set probing
-	 the method cache (i.e. primitivePerform et al).
-	 Eagerly compile it if appropriate so that doits are fast."
+
 	| methodHeader inInterpreter |
-	inInterpreter := (self isInstructionPointerInInterpreter: instructionPointer).
-	primitiveFunctionPointer ~= 0 ifTrue:
-		[self isPrimitiveFunctionPointerAnIndex ifTrue:
-			[self executeQuickPrimitive.
-			 self return: self popStack toExecutive: inInterpreter.
-			 ^nil].
-		 "slowPrimitiveResponse may of course context-switch.  If so we must reenter the
-		  new process appopriately, returning only if we've reached here directly from the
-		  interpreter and have found an interpreter frame.  The instructionPointer tells us
-		  from whence we came."
-		 self slowPrimitiveResponse ifTrue:
-			[self return: self popStack toExecutive: inInterpreter.
-			 ^nil]].
-	"Eagerly compile it if appropriate so that doits are fast."
-	methodHeader := self rawHeaderOf: newMethod.
-	(self isCogMethodReference: methodHeader) ifFalse:
-		[(self methodWithHeaderShouldBeCogged: methodHeader)
-			ifTrue:
-				[cogit cog: newMethod selector: objectMemory nilObject.
-				 methodHeader := self rawHeaderOf: newMethod]
-			ifFalse: [self maybeFlagMethodAsInterpreted: newMethod]].
-	"if not primitive, or primitive failed, activate the method"
-	(self isCogMethodReference: methodHeader)
-		ifTrue:
-			[(self isInstructionPointerInInterpreter: instructionPointer) ifTrue:
-				[self iframeSavedIP: framePointer put: instructionPointer asInteger.
-				 instructionPointer := cogit ceReturnToInterpreterPC].
-			self activateCoggedNewMethod: inInterpreter]
-		ifFalse:
-			[self activateNewMethod]
+	inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
+	self
+		executePrimitiveFromInterpreter: inInterpreter
+		ifFail: [ "Eagerly compile it if appropriate so that doits are fast."
+			methodHeader := self rawHeaderOf: newMethod.
+			(self isCogMethodReference: methodHeader) ifFalse: [
+				(self methodWithHeaderShouldBeCogged: methodHeader)
+					ifTrue: [
+						cogit cog: newMethod selector: objectMemory nilObject.
+						methodHeader := self rawHeaderOf: newMethod ]
+					ifFalse: [ self maybeFlagMethodAsInterpreted: newMethod ] ].
+			"if not primitive, or primitive failed, activate the method"
+			(self isCogMethodReference: methodHeader)
+				ifTrue: [
+					(self isInstructionPointerInInterpreter: instructionPointer)
+						ifTrue: [
+							self
+								iframeSavedIP: framePointer
+								put: instructionPointer asInteger.
+							instructionPointer := cogit ceReturnToInterpreterPC ].
+					self activateCoggedNewMethod: inInterpreter ]
+				ifFalse: [ self activateNewMethod ] ]
 ]
 
 { #category : #'stack bytecodes' }
@@ -3966,25 +3955,17 @@ CoInterpreter >> internalExecuteNewMethod [
 	 the machine code primitive, just evaluate primitiveFunctionPointer directly."
 
 	<inline: true>
-	primitiveFunctionPointer ~= 0 ifTrue: [
-		| succeeded |
-		self isPrimitiveFunctionPointerAnIndex ifTrue: [
-			^ self executeQuickPrimitive ].
-		"slowPrimitiveResponse may of course context-switch.  If so we must reenter the
-		  new process appropriately, returning only if we've found an interpreter frame."
-		succeeded := self slowPrimitiveResponse.
-		instructionPointer = cogit ceReturnToInterpreterPC ifTrue: [
-			instructionPointer := self iframeSavedIP: framePointer ].
-		succeeded ifTrue: [
-			self return: self popStack toExecutive: true.
-			^ nil ] ].
-	"if not primitive, or primitive failed, activate the method"
-	(self methodHasCogMethod: newMethod)
-		ifTrue: [
-			self iframeSavedIP: framePointer put: instructionPointer asInteger.
-			instructionPointer := cogit ceReturnToInterpreterPC.
-			self activateCoggedNewMethod: true ]
-		ifFalse: [ self internalActivateNewMethod ]
+	self
+		executePrimitiveFromInterpreter: true
+		ifFail: [ "if not primitive, or primitive failed, activate the method"
+			(self methodHasCogMethod: newMethod)
+				ifTrue: [
+					self
+						iframeSavedIP: framePointer
+						put: instructionPointer asInteger.
+					instructionPointer := cogit ceReturnToInterpreterPC.
+					self activateCoggedNewMethod: true ]
+				ifFalse: [ self internalActivateNewMethod ] ]
 ]
 
 { #category : #'message sending' }

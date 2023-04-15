@@ -5309,17 +5309,35 @@ StackInterpreter >> establishFrameForContextToReturnTo: contextToReturnTo [
 
 { #category : #'message sending' }
 StackInterpreter >> executeNewMethod [
-	"Execute newMethod - either primitiveFunctionPointer must be set directly
-	 (i.e. from primitiveExecuteMethod et al), or it would have been set probing
-	 the method cache (i.e. primitivePerform et al)."
-	primitiveFunctionPointer ~= 0 ifTrue:
-		[self isPrimitiveFunctionPointerAnIndex ifTrue:
-			[self executeQuickPrimitive.
-			 ^nil].
-		 self slowPrimitiveResponse.
-		 self successful ifTrue: [^nil]].
 	"if not primitive, or primitive failed, activate the method"
-	self activateNewMethod
+
+	self
+		executePrimitiveFromInterpreter: true
+		ifFail: [ "if not primitive, or primitive failed, activate the method"
+			self activateNewMethod ]
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> executePrimitiveFromInterpreter: inInterpreter ifFail: aBlock [
+	"For interpreter performance and to ease the objectAsMethod implementation eagerly
+	 evaluate the primtiive, i.e. if the method is cogged and has a primitive /do not/ evaluate
+	 the machine code primitive, just evaluate primitiveFunctionPointer directly."
+
+	primitiveFunctionPointer ~= 0 ifTrue: [
+		| succeeded |
+		self isPrimitiveFunctionPointerAnIndex ifTrue: [
+			self executeQuickPrimitive.
+			self return: self popStack toExecutive: inInterpreter.
+			^ nil ].
+		"slowPrimitiveResponse may of course context-switch. 
+		If so we must reenter the new process appropriately, returning only if we've found an interpreter frame.
+		The instructionPointer tells us from whence we came."
+		succeeded := self slowPrimitiveResponse.
+		succeeded ifTrue: [
+			self return: self popStack toExecutive: inInterpreter.
+			^ nil ] ].
+
+	^ aBlock value
 ]
 
 { #category : #'primitive support' }
@@ -7951,17 +7969,12 @@ StackInterpreter >> internalActivateNewMethod [
 
 { #category : #'message sending' }
 StackInterpreter >> internalExecuteNewMethod [
-
-	<inline: true>
-	| succeeded |
-	primitiveFunctionPointer ~= 0 ifTrue: [ 
-		self isPrimitiveFunctionPointerAnIndex ifTrue: [ 
-			self executeQuickPrimitive.
-			^ self "keep slang happy" ].
-		succeeded := self slowPrimitiveResponse.
-		succeeded ifTrue: [ ^ self ] ].
 	"if not primitive, or primitive failed, activate the method"
-	^ self internalActivateNewMethod
+
+	self
+		executePrimitiveFromInterpreter: true
+		ifFail: [ "if not primitive, or primitive failed, activate the method"
+			self internalActivateNewMethod ]
 ]
 
 { #category : #'message sending' }
@@ -13106,6 +13119,12 @@ StackInterpreter >> retryPrimitiveOnFailure [
 			[self maybeMapPrimitiveFunctionPointerBackToSomethingEvaluable].
 		 self dispatchFunctionPointer: primitiveFunctionPointer].
 	^retried
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> return: returnValue toExecutive: inInterpreter [
+
+	"Do nothing in the interpreter"
 ]
 
 { #category : #'return bytecodes' }
