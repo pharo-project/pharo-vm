@@ -188,21 +188,6 @@ CogVMSimulator >> atEachStepBlock: aBlock [
 	atEachStepBlock := aBlock
 ]
 
-{ #category : #'jump bytecodes' }
-CogVMSimulator >> attemptToSwitchToMachineCode: bcpc [
-	"method = 16r96A294 ifTrue: [self halt]."
-	^super attemptToSwitchToMachineCode: bcpc
-]
-
-{ #category : #'return bytecodes' }
-CogVMSimulator >> baseFrameReturn [
-	"| contextToReturnTo |
-	contextToReturnTo := self frameCallerContext: localFP.
-	(self stringOf: (self penultimateLiteralOf: (self fetchPointer: MethodIndex ofObject: contextToReturnTo))) = #indexOf:startingAt:ifAbsent: ifTrue:
-		[self halt]."
-	^super baseFrameReturn
-]
-
 { #category : #initialization }
 CogVMSimulator >> basicInitialize [
 	"Initialize the CogVMSimulator when running the interpreter inside Smalltalk.  The

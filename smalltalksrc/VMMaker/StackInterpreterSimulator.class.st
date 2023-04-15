@@ -169,17 +169,6 @@ StackInterpreterSimulator >> atEachStepBlock: aBlock [
 	atEachStepBlock := aBlock
 ]
 
-{ #category : #'return bytecodes' }
-StackInterpreterSimulator >> baseFrameReturn [
-	| contextToReturnTo |
-	contextToReturnTo := self frameCallerContext: framePointer.
-	((objectMemory isContext: contextToReturnTo)
-	 and: [self isMarriedOrWidowedContext: contextToReturnTo]) ifTrue:
-		[(self checkIsStillMarriedContext: contextToReturnTo currentFP: nil) ifFalse:
-			[self halt]].
-	^super baseFrameReturn
-]
-
 { #category : #initialization }
 StackInterpreterSimulator >> basicInitialize [
 	"Initialize the StackInterpreterSimulator when running the interpreter

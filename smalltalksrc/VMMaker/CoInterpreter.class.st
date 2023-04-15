@@ -499,7 +499,7 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 { #category : #'control primitives' }
 CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch [
 	"Similar to activateNewMethod but for Closure and newMethod."
-	| numCopied methodHeader numTemps inInterpreter switched |
+	| numCopied methodHeader inInterpreter |
 	<inline: true>
 	self assert: theMethod = (objectMemory fetchPointer: FullClosureCompiledBlockIndex ofObject: blockClosure).
 	methodHeader := self rawHeaderOf: theMethod.
@@ -508,7 +508,7 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 			executeFullCogBlock: (self cogMethodOf: theMethod)
 			closure: blockClosure
 			mayContextSwitch: mayContextSwitch].
-	numCopied := self copiedValueCountOfFullClosure: blockClosure.
+
 	"How do we know when to compile a block method?
 	 One simple criterion is to check if the block is running within its inner context,
 	 i.e. if the outerContext is married.
@@ -521,8 +521,9 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 			[((self isInstructionPointerInInterpreter: instructionPointer) not "If from machine code (via value primitive) attempt jitting"
 			  or: [theMethod = lastCoggableInterpretedBlockMethod]) "If from interpreter and repeat block, attempt jitting"
 				ifTrue:
-					[theMethod ~= lastUncoggableInterpretedBlockMethod ifTrue:
-						[cogit cogFullBlockMethod: theMethod numCopied: numCopied.
+					[theMethod ~= lastUncoggableInterpretedBlockMethod ifTrue: [
+						numCopied := self copiedValueCountOfFullClosure: blockClosure.
+						cogit cogFullBlockMethod: theMethod numCopied: numCopied.
 						 (self methodHasCogMethod: theMethod) ifTrue:
 							[^self executeFullCogBlock: (self cogMethodOf: theMethod)
 								closure: blockClosure
@@ -547,41 +548,8 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 	(inInterpreter := self isInstructionPointerInInterpreter: instructionPointer) ifFalse:
 		[instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
 			[instructionPointer := self iframeSavedIP: framePointer]].
-
-	self push: instructionPointer.
-	self push: framePointer.
-	framePointer := stackPointer.
-	self push: theMethod.
-	self push: objectMemory nilObject. "FxThisContext field"
-	self push: (self encodeFrameFieldHasContext: false isBlock: true numArgs: numArgs).
-	self push: 0. "FoxIFSavedIP"
-	"Because inst var access is not checked, we must follow the receiver in Spur to ensure it is valid."
-	self push: (objectMemory followField: FullClosureReceiverIndex ofObject: blockClosure).
-
-	"Copy the copied values..."
-	0 to: numCopied - 1 do:
-		[:i|
-		self push: (objectMemory
-					fetchPointer: i + FullClosureFirstCopiedValueIndex
-					ofObject: blockClosure)].
-
-	self assert: (self frameIsBlockActivation: framePointer).
-	self assert: (self frameHasContext: framePointer) not.
-
-	methodHeader := objectMemory methodHeaderOf: theMethod.
-	numTemps := self temporaryCountOfMethodHeader: methodHeader.
-
-	numArgs + numCopied + 1 to: numTemps do: [ :i | self push: objectMemory nilObject].
-
-	instructionPointer := (self initialIPForHeader: methodHeader method: theMethod) - 1.
 	
-	self setMethod: theMethod.
-
-	"Now check for stack overflow or an event (interrupt, must scavenge, etc)"
-	switched := false.
-	stackPointer < stackLimit ifTrue:
-		[switched := self handleStackOverflowOrEventAllowContextSwitch: mayContextSwitch].
-	self returnToExecutive: inInterpreter postContextSwitch: switched
+	^ super activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch
 ]
 
 { #category : #'message sending' }
@@ -638,28 +606,12 @@ CoInterpreter >> allocateMemoryForImage: f withHeader: header [
 	cogCodeSize := cogCodeSize min: cogit maxCogCodeSize.
 
 	objectMemory getMemoryMap initialCodeZoneSize: cogCodeSize.
-
-	self allocateMemoryForImageHeader: header.
-
-	imageReader loadImageFromFile: f withHeader: header.
-
+	super allocateMemoryForImage: f withHeader: header.
 	self beforeCodeZoneInitialization.
 
 	cogit
 		initializeCodeZoneFrom: objectMemory getMemoryMap codeZoneStart
 		upTo: objectMemory getMemoryMap codeZoneEnd
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> argumentCount [
-	<doNotGenerate>
-	^argumentCount
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> argumentCount: numArgs [
-	<doNotGenerate>
-	argumentCount := numArgs
 ]
 
 { #category : #'trampoline support' }
