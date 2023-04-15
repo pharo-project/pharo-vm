@@ -1342,7 +1342,7 @@ CoInterpreter >> ceContext: maybeContext instVar: slotIndex [
 	(objectMemory isContextNonImm: maybeContext)
 		ifTrue:
 			[instructionPointer := self popStack.
-			 result := self externalInstVar: slotIndex ofContext: maybeContext.
+			 result := self instVar: slotIndex ofContext: maybeContext.
 			 self push: instructionPointer]
 		ifFalse: [result := objectMemory fetchPointer: slotIndex ofObject: maybeContext].
 	^result
@@ -1358,7 +1358,7 @@ CoInterpreter >> ceContext: maybeMarriedContext instVar: slotIndex value: anOop 
 	 and: [self isMarriedOrWidowedContext: maybeMarriedContext])
 		ifTrue:
 			[instructionPointer := self popStack.
-			 self externalInstVar: slotIndex ofContext: maybeMarriedContext put: anOop.
+			 self instVar: slotIndex ofContext: maybeMarriedContext put: anOop.
 			 self push: instructionPointer]
 		ifFalse:
 			[objectMemory storePointer: slotIndex ofObject: maybeMarriedContext withValue: anOop].
@@ -1516,7 +1516,7 @@ CoInterpreter >> ceNonLocalReturn: returnValue [
 
 	"Update the current page's headFrame pointers to enable the search for unwind protects below
 	 to identify widowed contexts correctly."
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 
 	"Since this is a block activation the closure is on the stack above any args and the frame."
 	closure := self pushedReceiverOrClosureOfFrame: framePointer.
@@ -2988,37 +2988,6 @@ CoInterpreter >> externalCannotReturn: resultOop from: aContext [
 		numArgs: 1
 ]
 
-{ #category : #'frame access' }
-CoInterpreter >> externalInstVar: offset ofContext: aContext [
-	"Fetch an instance variable from a maybe married context.
-	 If the context is still married compute the value of the
-	 relevant inst var from the spouse frame's state.
-
-	 If the context is single but has a negative instruction pointer
-	 recognise that the instruction pointer is actually into machine
-	 code and convert it to the corresponding bytecode pc."
-	<inline: false>
-	| value |
-
-	self assert: (objectMemory isContext: aContext).
-	self assert: offset <= (ReceiverIndex + (self checkStackPointerForMaybeMarriedContext: aContext)).
-	"method, closureOrNil & receiver need no special handling; only
-	 sender, pc & stackp have to be computed for married contexts."
-	(self isReadMediatedContextInstVarIndex: offset) ifFalse:
-		[^objectMemory fetchPointer: offset ofObject: aContext].
-
-	self externalWriteBackHeadFramePointers.
-	(self isStillMarriedContext: aContext) ifTrue:
-		[^self fetchPointer: offset ofMarriedContext: aContext].
-	
-	value := objectMemory fetchPointer: offset ofObject: aContext.
-	(offset = InstructionPointerIndex
- 	 and: [(objectMemory isIntegerObject: value)
- 	 and: [value signedIntFromLong < 0]]) ifTrue:
-		[^self mustMapMachineCodePC: (objectMemory integerValueOf: value) context: aContext].
-	^value
-]
-
 { #category : #'cog jit support' }
 CoInterpreter >> externalWriteBackHeadStackPointer [
 	self assert: (stackPointer < stackPage baseAddress
@@ -3155,7 +3124,7 @@ CoInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 	<var: #callerFP type: #'char *'>
 	<var: #thePage type: #'StackPage *'>
 
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 
 	(theBecomeEffectsFlags anyMask: BecameCompiledMethodFlag) ifTrue:
 		[(objectMemory isForwarded: method) ifTrue:
@@ -3752,41 +3721,33 @@ CoInterpreter >> initStackPagesAndInterpret [
 
 { #category : #'frame access' }
 CoInterpreter >> instVar: offset ofContext: aContext [
-	"Fetch an instance avriable from a maybe married context.
+	"Fetch an instance variable from a maybe married context.
 	 If the context is still married compute the value of the
 	 relevant inst var from the spouse frame's state.
 
 	 If the context is single but has a negative instruction pointer
 	 recognise that the instruction pointer is actually into machine
 	 code and convert it to the corresponding bytecode pc."
-	| value spouseFP |
-	<var: #spouseFP type: #'char *'>
-	<inline: true>
-	self assert: offset < MethodIndex.
-	self assert: (objectMemory isContext: aContext).
-	self writeBackHeadFramePointers.
-	(self isMarriedOrWidowedContext: aContext) ifFalse:
-		[value := objectMemory fetchPointer: offset ofObject: aContext.
-		 (offset = InstructionPointerIndex
-		  and: [(objectMemory isIntegerObject: value)
-		  and: [value signedIntFromLong < 0]]) ifTrue:
-			[value := self internalMustMapMachineCodePC: (objectMemory integerValueOf: value)
-						context: aContext].
-		 ^value].
+	<inline: false>
+	| value |
 
-	(self isWidowedContext: aContext) ifTrue:
+	self assert: (objectMemory isContext: aContext).
+	self assert: offset <= (ReceiverIndex + (self checkStackPointerForMaybeMarriedContext: aContext)).
+	"method, closureOrNil & receiver need no special handling; only
+	 sender, pc & stackp have to be computed for married contexts."
+	(self isReadMediatedContextInstVarIndex: offset) ifFalse:
 		[^objectMemory fetchPointer: offset ofObject: aContext].
 
-	spouseFP := self frameOfMarriedContext: aContext.
-	offset = SenderIndex ifTrue:
-		[^self ensureCallerContext: spouseFP].
-	offset = StackPointerIndex ifTrue:
-		[self assert: ReceiverIndex + (self stackPointerIndexForFrame: spouseFP) < (objectMemory lengthOf: aContext).
-		^objectMemory integerObjectOf: (self stackPointerIndexForFrame: spouseFP)].
-	offset = InstructionPointerIndex ifTrue:
-		[^self instructionPointerForFrame: spouseFP currentFP: framePointer currentIP: (self oopForPointer: instructionPointer)].
-	self error: 'bad index'.
-	^0
+	self writeBackHeadFramePointers.
+	(self isStillMarriedContext: aContext) ifTrue:
+		[^self fetchPointer: offset ofMarriedContext: aContext].
+	
+	value := objectMemory fetchPointer: offset ofObject: aContext.
+	(offset = InstructionPointerIndex
+ 	 and: [(objectMemory isIntegerObject: value)
+ 	 and: [value signedIntFromLong < 0]]) ifTrue:
+		[^self mustMapMachineCodePC: (objectMemory integerValueOf: value) context: aContext].
+	^value
 ]
 
 { #category : #'cog jit support' }
@@ -3835,67 +3796,6 @@ CoInterpreter >> instructionPointerForFrame: spouseFP currentFP: currentFP curre
 		ifTrue: [self mustMapMachineCodePC: (objectMemory integerValueOf: value)
 					context: (self frameContext: spouseFP)]
 		ifFalse: [value]
-]
-
-{ #category : #'message sending' }
-CoInterpreter >> internalJustActivateNewMethod [
-
-	<inline: true>
-	| methodHeader numTemps rcvr |
-	methodHeader := self rawHeaderOf: newMethod.
-	self assert: (self isCogMethodReference: methodHeader) not.
-
-	numTemps := self temporaryCountOfMethodHeader: methodHeader.
-	self assert:
-		argumentCount = (self argumentCountOfMethodHeader: methodHeader).
-	rcvr := self stackValue: argumentCount. "could new rcvr be set at point of send?"
-	self assert: (objectMemory isOopForwarded: rcvr) not.
-
-	self push: instructionPointer.
-	self push: framePointer.
-	framePointer := stackPointer.
-	self push: newMethod.
-	self setMethod: newMethod methodHeader: methodHeader.
-	self push: objectMemory nilObject. "FxThisContext field"
-	self push: (self
-			 encodeFrameFieldHasContext: false
-			 isBlock: false
-			 numArgs: (self argumentCountOfMethodHeader: methodHeader)).
-	self push: 0. "FoxIFSavedIP"
-	self push: rcvr.
-
-	"Initialize temps..."
-	argumentCount + 1 to: numTemps do: [ :i |
-	self push: objectMemory nilObject ].
-
-	"-1 to account for pre-increment in fetchNextBytecode"
-	instructionPointer := self pointerForOop:
-		                      (self
-			                       initialIPForHeader: methodHeader
-			                       method: newMethod) - 1.
-
-	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
-		with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		instructionPointer := instructionPointer
-		                      +
-		                      (self sizeOfCallPrimitiveBytecode:
-			                       methodHeader).
-		primFailCode ~= 0 ifTrue: [
-			| shouldSkipStoreBytecode |
-			shouldSkipStoreBytecode := self
-				                           reapAndResetErrorCodeTo: framePointer
-				                           header: methodHeader.
-			shouldSkipStoreBytecode ifTrue: [
-				instructionPointer := instructionPointer
-				                      +
-				                      (self sizeOfLongStoreTempBytecode:
-					                       methodHeader) ] ] ].
-
-	self assert: (self frameNumArgs: framePointer) = argumentCount.
-	self assert: (self frameIsBlockActivation: framePointer) not.
-	self assert: (self frameHasContext: framePointer) not.
-
-	^ methodHeader
 ]
 
 { #category : #'frame access' }
@@ -6598,7 +6498,7 @@ CoInterpreter >> transferTo: newProc from: sourceCode [
 	<inline: false>
 	statProcessSwitch := statProcessSwitch + 1.
 	self push: instructionPointer.
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer.
 	"ensureMethodIsCogged: in makeBaseFrameFor: in
 	 externalSetStackPageAndPointersForSuspendedContextOfProcess:

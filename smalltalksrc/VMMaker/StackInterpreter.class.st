@@ -2283,7 +2283,7 @@ StackInterpreter >> binaryAtInlinePrimitive: primIndex [
 			 ((objectMemory isContextNonImm: rec) and: [ 
 				  self isMarriedOrWidowedContext: rec ])
 				 ifTrue: [ 
-					 result := self externalInstVar: argIntAdjusted ofContext: rec. ]
+					 result := self instVar: argIntAdjusted ofContext: rec. ]
 				 ifFalse: [ 
 				 result := objectMemory fetchPointer: argIntAdjusted ofObject: rec ] ]).
 			"2066	byteAt:
@@ -3880,7 +3880,7 @@ StackInterpreter >> checkForEventsMayContextSwitch: mayContextSwitch [
 
 	"restore the stackLimit if it has been smashed."
 	self restoreStackLimit.
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	self assert: stackPage = stackPages mostRecentlyUsedPage.
 
 	"Allow the platform to do anything it needs to do synchronously."
@@ -4001,7 +4001,7 @@ StackInterpreter >> checkForStackOverflow [
 	 piggy-backs off the stackLimit by setting it to all ones, the check for overflow must be
 	 against the real stack limit to find out if overflow has actually occurred."
 	<inline: true>
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	stackPointer < stackPage realStackLimit ifTrue:
 		[self handleStackOverflow]
 ]
@@ -4201,7 +4201,7 @@ StackInterpreter >> checkOkayStackZone: writeBack [
 	<var: #thePage type: #'StackPage *'>
 	<inline: false>
 	writeBack ifTrue:
-		[self externalWriteBackHeadFramePointers].
+		[self writeBackHeadFramePointers].
 	ok := true.
 
 	0 to: numStackPages - 1 do:
@@ -5001,7 +5001,7 @@ StackInterpreter >> divorceAllFrames [
 	<inline: false>
 	<var: #aPage type: #'StackPage *'>
 	stackPage ~= 0 ifTrue:
-		[self externalWriteBackHeadFramePointers].
+		[self writeBackHeadFramePointers].
 	activeContext := self
 						ensureFrameIsMarried: framePointer
 						SP: stackPointer + objectMemory wordSize.
@@ -5781,63 +5781,6 @@ StackInterpreter >> externalEnsureIsBaseFrame: aFramePtr [
 ]
 
 { #category : #'frame access' }
-StackInterpreter >> externalInstVar: offset ofContext: aContext [
-	"Fetch an instance variable from a maybe married context.
-	 If the context is still married compute the value of the
-	 relevant inst var from the spouse frame's state."
-	<inline: false>
-
-	self assert: (objectMemory isContext: aContext).
-	self assert: offset <= (ReceiverIndex + (self checkStackPointerForMaybeMarriedContext: aContext)).
-	"method, closureOrNil & receiver need no special handling; only
-	 sender, pc & stackp have to be computed for married contexts."
-	(self isReadMediatedContextInstVarIndex: offset) ifTrue:
-		[self externalWriteBackHeadFramePointers.
-		 (self isStillMarriedContext: aContext) ifTrue:
-			[^self fetchPointer: offset ofMarriedContext: aContext]].
-	
-	^objectMemory fetchPointer: offset ofObject: aContext
-]
-
-{ #category : #'frame access' }
-StackInterpreter >> externalInstVar: index ofContext: maybeMarriedContext put: anOop [
-	| theFP thePage onCurrentPage |
-	<var: #theFP type: #'char *'>
-	<var: #thePage type: #'StackPage *'>
-	self assert: (objectMemory isContext: maybeMarriedContext).
-	self externalWriteBackHeadFramePointers.
-	"Assign the field of a married context."
-	self deny: (objectMemory isObjImmutable: maybeMarriedContext).
-	(self isStillMarriedContext: maybeMarriedContext) ifFalse:
-		[objectMemory storePointer: index ofObject: maybeMarriedContext withValue: anOop.
-		 index = StackPointerIndex ifTrue:
-			[self ensureContextIsExecutionSafeAfterAssignToStackPointer: maybeMarriedContext].
-		 ^nil].
-	theFP := self frameOfMarriedContext: maybeMarriedContext.
-	thePage := stackPages stackPageFor: theFP.
-	self assert: stackPage = stackPages mostRecentlyUsedPage.
-	onCurrentPage := thePage = stackPage.
-	index = SenderIndex
-		ifTrue:
-			[self storeSenderOfFrame: theFP withValue: anOop]
-		ifFalse:
-			[self externalDivorceFrame: theFP andContext: maybeMarriedContext.
-			 (self is: index methodAssignmentToContextWithMachineCodePC: maybeMarriedContext) ifTrue:
-				[self ensureContextHasBytecodePC: maybeMarriedContext].
-			 objectMemory storePointer: index ofObject: maybeMarriedContext withValue: anOop.
-			 index = StackPointerIndex ifTrue:
-				[self ensureContextIsExecutionSafeAfterAssignToStackPointer: maybeMarriedContext]].
-	onCurrentPage
-		ifTrue:
-			[self setStackPointersFromPage: stackPage]
-		ifFalse:
-			[stackPages markStackPageMostRecentlyUsed: stackPage].
-	stackPages assert: stackPage = stackPages mostRecentlyUsedPage.
-	stackPages assert: stackPages pageListIsWellFormed.
-	stackPages assert: self validStackPageBaseFrames
-]
-
-{ #category : #'frame access' }
 StackInterpreter >> externalSetStackPageAndPointersForSuspendedContextOfProcess: aProcess [
 	"Set stackPage, instructionPointer, framePointer and stackPointer for the suspendedContext of
 	 aProcess, marrying the context if necessary, and niling the suspendedContext slot.  This is used
@@ -5877,15 +5820,6 @@ StackInterpreter >> externalSetStackPageAndPointersForSuspendedContextOfProcess:
 		[self setMethod: (self iframeMethod: framePointer)].
 	instructionPointer := self popStack.
 	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer
-]
-
-{ #category : #'stack pages' }
-StackInterpreter >> externalWriteBackHeadFramePointers [
-	self assert:  (framePointer - stackPointer) < (LargeContextSlots * objectMemory bytesPerOop).
-	self assert: stackPage = stackPages mostRecentlyUsedPage.
-	self deny: stackPage isFree.
-	self setHeadFP: framePointer andSP: stackPointer inPage: stackPage.
-	self assert: stackPages pageListIsWellFormed
 ]
 
 { #category : #'primitive support' }
@@ -6686,7 +6620,7 @@ StackInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 		 self cCode: [] inSmalltalk: [stackPages allPagesFree].
 		 ^self].
 
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 
 	(theBecomeEffectsFlags anyMask: BecameCompiledMethodFlag) ifTrue:
 		[(objectMemory isForwarded: method) ifTrue:
@@ -7563,7 +7497,7 @@ StackInterpreter >> initStackPageGC [
 	<inline: true>
 	"Need to write back the frame pointers unless all pages are free (as in snapshot)"
 	stackPage ~= 0 ifTrue:
-		[self externalWriteBackHeadFramePointers].
+		[self writeBackHeadFramePointers].
 
 	0 to: numStackPages - 1 do:
 		[:i| | thePage |
@@ -7802,69 +7736,76 @@ StackInterpreter >> instVar: offset ofContext: aContext [
 	"Fetch an instance variable from a maybe married context.
 	 If the context is still married compute the value of the
 	 relevant inst var from the spouse frame's state."
-	| spouseFP |
-	<var: #spouseFP type: #'char *'>
-	<inline: true>
-	self assert: offset < MethodIndex.
+	"Fetch an instance variable from a maybe married context.
+	 If the context is still married compute the value of the
+	 relevant inst var from the spouse frame's state."
+	<inline: false>
+
 	self assert: (objectMemory isContext: aContext).
-	(self isMarriedOrWidowedContext: aContext) ifFalse:
-		[^objectMemory fetchPointer: offset ofObject: aContext].
+	self assert: offset <= (ReceiverIndex + (self checkStackPointerForMaybeMarriedContext: aContext)).
 
-	self writeBackHeadFramePointers.
-	(self isWidowedContext: aContext) ifTrue:
-		[^objectMemory fetchPointer: offset ofObject: aContext].
-
-	spouseFP := self frameOfMarriedContext: aContext.
-	offset = SenderIndex ifTrue:
-		[^self ensureCallerContext: spouseFP].
-	offset = StackPointerIndex ifTrue:
-		[self assert: ReceiverIndex + (self stackPointerIndexForFrame: spouseFP) < (objectMemory lengthOf: aContext).
-		^objectMemory integerObjectOf: (self stackPointerIndexForFrame: spouseFP)].
-	offset = InstructionPointerIndex ifTrue:
-		[^self instructionPointerForFrame: spouseFP currentFP: framePointer currentIP: (self oopForPointer: instructionPointer)].
-	self error: 'bad index'.
-	^0
+	"method, closureOrNil & receiver need no special handling; only
+	 sender, pc & stackp have to be computed for married contexts."
+	(self isReadMediatedContextInstVarIndex: offset) ifTrue:
+		[self writeBackHeadFramePointers.
+		 (self isStillMarriedContext: aContext) ifTrue:
+			[^self fetchPointer: offset ofMarriedContext: aContext]].
+	
+	^objectMemory fetchPointer: offset ofObject: aContext
 ]
 
 { #category : #'frame access' }
 StackInterpreter >> instVar: index ofContext: aMarriedContext put: anOop [
+
+	<inline: true>
 	| theFP |
 	"Assign the field of a married context.  The important case to optimize is
 	 assigning the sender.  We could also consider optimizing assigning the IP but
 	 typically that is followed by an assignment to the stack pointer and we can't
 	 efficiently assign the stack pointer because it involves moving frames around."
-	<inline: true>
 	self assert: (self isMarriedOrWidowedContext: aMarriedContext).
 	self deny: (objectMemory isObjImmutable: aMarriedContext).
 	self writeBackHeadFramePointers.
-	(self isStillMarriedContext: aMarriedContext) ifFalse:
-		[objectMemory storePointer: index ofObject: aMarriedContext withValue: anOop.
-		 index = StackPointerIndex ifTrue:
-			[self ensureContextIsExecutionSafeAfterAssignToStackPointer: aMarriedContext].
-		 ^nil].
+	(self isStillMarriedContext: aMarriedContext) ifFalse: [
+		objectMemory
+			storePointer: index
+			ofObject: aMarriedContext
+			withValue: anOop.
+		index = StackPointerIndex ifTrue: [
+			self ensureContextIsExecutionSafeAfterAssignToStackPointer:
+				aMarriedContext ].
+		^ nil ].
 	theFP := self frameOfMarriedContext: aMarriedContext.
-	index = SenderIndex ifTrue:
-		[| thePage onCurrentPage |
-		 thePage := stackPages stackPageFor: theFP.
-		 self assert: stackPage = stackPages mostRecentlyUsedPage.
-		 onCurrentPage := thePage = stackPage.
-		 self storeSenderOfFrame: theFP withValue: anOop.
-		 onCurrentPage
-			ifTrue:
-				[framePointer := stackPage headFP.
-				 stackPointer := stackPage headSP]
-			ifFalse:
-				[stackPages markStackPageMostRecentlyUsed: stackPage].
-		 ^nil].
+	index = SenderIndex ifTrue: [
+		| thePage onCurrentPage |
+		thePage := stackPages stackPageFor: theFP.
+		self assert: stackPage = stackPages mostRecentlyUsedPage.
+		onCurrentPage := thePage = stackPage.
+		self storeSenderOfFrame: theFP withValue: anOop.
+		onCurrentPage
+			ifTrue: [ self setStackPointersFromPage: stackPage ]
+			ifFalse: [ stackPages markStackPageMostRecentlyUsed: stackPage ].
+		^ nil ].
 	self externalDivorceFrame: theFP andContext: aMarriedContext.
-	(self is: index methodAssignmentToContextWithMachineCodePC: aMarriedContext) ifTrue:
-		[self ensureContextHasBytecodePC: aMarriedContext].
-	objectMemory storePointer: index ofObject: aMarriedContext withValue: anOop.
-	index = StackPointerIndex ifTrue:
-		[self ensureContextIsExecutionSafeAfterAssignToStackPointer: aMarriedContext].
+	(self
+		 is: index
+		 methodAssignmentToContextWithMachineCodePC: aMarriedContext)
+		ifTrue: [ self ensureContextHasBytecodePC: aMarriedContext ].
+	objectMemory
+		storePointer: index
+		ofObject: aMarriedContext
+		withValue: anOop.
+	index = StackPointerIndex ifTrue: [
+		self ensureContextIsExecutionSafeAfterAssignToStackPointer:
+			aMarriedContext ].
 	"Assigning various fields can force a divorce which can change the stackPage."
 	stackPages markStackPageMostRecentlyUsed: stackPage.
-	self assertValidExecutionPointe: instructionPointer asUnsignedInteger r: framePointer s: stackPointer imbar: true line: #'__LINE__'
+	self
+		assertValidExecutionPointe: instructionPointer asUnsignedInteger
+		r: framePointer
+		s: stackPointer
+		imbar: true
+		line: #__LINE__
 ]
 
 { #category : #'indexing primitive support' }
@@ -7958,65 +7899,6 @@ StackInterpreter >> internalAboutToReturn: resultOop through: aContext [
 	messageSelector := objectMemory splObj: SelectorAboutToReturn.
 	argumentCount := 2.
 	^self normalSend
-]
-
-{ #category : #'message sending' }
-StackInterpreter >> internalJustActivateNewMethod [
-
-	<inline: true>
-	| methodHeader numArgs numTemps rcvr |
-	methodHeader := objectMemory methodHeaderOf: newMethod.
-	"Create the frame for the method activation"
-	numTemps := self temporaryCountOfMethodHeader: methodHeader.
-	numArgs := self argumentCountOfMethodHeader: methodHeader.
-
-	rcvr := self stackValue: numArgs. "could new rcvr be set at point of send?"
-	self assert: (objectMemory isOopForwarded: rcvr) not.
-
-	self push: instructionPointer.
-	self push: framePointer.
-	framePointer := stackPointer.
-	self push: newMethod.
-	self setMethod: newMethod methodHeader: methodHeader.
-	self push: objectMemory nilObject. "FxThisContext field"
-	self push: (self
-			 encodeFrameFieldHasContext: false
-			 isBlock: false
-			 numArgs: numArgs).
-	self push: rcvr.
-
-	"Initialize temps to nil"
-	numArgs + 1 to: numTemps do: [ :i |
-		self push: objectMemory nilObject ].
-
-	"-1 to account for pre-increment in fetchNextBytecode"
-	instructionPointer := self pointerForOop:
-		                      (self
-			                       initialIPForHeader: methodHeader
-			                       method: newMethod) - 1.
-
-	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
-		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		instructionPointer := instructionPointer
-		                      +
-		                      (self sizeOfCallPrimitiveBytecode:
-			                       methodHeader).
-		primFailCode ~= 0 ifTrue: [
-			| shouldSkipStoreBytecode |
-			shouldSkipStoreBytecode := self
-				                           reapAndResetErrorCodeTo: framePointer
-				                           header: methodHeader.
-			shouldSkipStoreBytecode ifTrue: [
-				instructionPointer := instructionPointer
-				                      +
-				                      (self sizeOfLongStoreTempBytecode:
-					                       methodHeader) ] ] ].
-
-	self assert: (self frameNumArgs: framePointer) = argumentCount.
-	self assert: (self frameIsBlockActivation: framePointer) not.
-	self assert: (self frameHasContext: framePointer) not.
-
-	^ methodHeader
 ]
 
 { #category : #'return bytecodes' }
@@ -9585,7 +9467,7 @@ StackInterpreter >> mappedImmcheckMaybeContextStoreCheckPointerAtPut [
 				ofObject: rec
 				withValue: result ]
 		ifTrue: [
-		self externalInstVar: argIntAdjusted ofContext: rec put: result ]
+		self instVar: argIntAdjusted ofContext: rec put: result ]
 ]
 
 { #category : #'sista bytecodes' }
@@ -9844,7 +9726,7 @@ StackInterpreter >> marriedContext: spouseContext pointsTo: anOop stackDeltaForC
 	(objectMemory isIntegerObject: anOop)
 		ifTrue: "Check stack and instruction pointer fields."
 			[(anOop = (objectMemory integerObjectOf: (self stackPointerIndexForFrame: theFP WithSP: theSP))
-			or: [anOop = (self externalInstVar: InstructionPointerIndex ofContext: spouseContext)]) ifTrue:
+			or: [anOop = (self instVar: InstructionPointerIndex ofContext: spouseContext)]) ifTrue:
 				[^true]]
 		ifFalse: "Check method and sender fields, avoiding unnecessarily reifying sender context."
 			[anOop = (self frameMethodObject: theFP) ifTrue:
@@ -10934,7 +10816,7 @@ StackInterpreter >> postGCAction: gcModeArg [
 StackInterpreter >> preBecomeAction [
 	"Need to write back the frame pointers unless all pages are free (as in snapshot)"
 	stackPage ~= 0 ifTrue:
-		[self externalWriteBackHeadFramePointers]
+		[self writeBackHeadFramePointers]
 ]
 
 { #category : #'object memory support' }
@@ -10942,7 +10824,7 @@ StackInterpreter >> preGCAction: gcModeArg [
 
 	"Need to write back the frame pointers unless all pages are free (as in snapshot)"
 
-	stackPage ~= 0 ifTrue: [ self externalWriteBackHeadFramePointers ].
+	stackPage ~= 0 ifTrue: [ self writeBackHeadFramePointers ].
 	gcModeArg = GCModeFull ifTrue: [ self flushMethodCache ]
 ]
 
@@ -12408,7 +12290,7 @@ StackInterpreter >> processesInProcessListDo: aBlock [
 	 Note: It is a fatal VM error if there is no runnable process."
 
 	| schedLists p processList proc ctxt |
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	schedLists := objectMemory
 		              fetchPointer: ProcessListsIndex
 		              ofObject: self schedulerPointer.
@@ -12921,12 +12803,12 @@ StackInterpreter >> reestablishContextPriorToCallback: callbackContext [
 	self flag: #obsolete.
 	(self isLiveContext: callbackContext) ifFalse:
 		[^false].
-	calloutContext := self externalInstVar: SenderIndex ofContext: callbackContext.
+	calloutContext := self instVar: SenderIndex ofContext: callbackContext.
 	(self isLiveContext: calloutContext) ifFalse:
 		[^false].
 	"We're about to leave this stack page; must save the current frame's instructionPointer."
 	self push: instructionPointer.
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	"Mark callbackContext as dead; the common case is that it is the current frame.
 	 We go the extra mile for the debugger."
 	(self isSingleContext: callbackContext)
@@ -15099,7 +14981,7 @@ StackInterpreter >> transferTo: newProc [
 	<inline: false>
 	statProcessSwitch := statProcessSwitch + 1.
 	self push: instructionPointer.
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	self assertValidExecutionPointe: instructionPointer + 1 r: framePointer s: stackPointer.
 	sched := self schedulerPointer.
 	oldProc := objectMemory fetchPointer: ActiveProcessIndex ofObject: sched.
@@ -15147,7 +15029,7 @@ StackInterpreter >> trinaryAtPutInlinePrimitive: primIndex [
 			 ((objectMemory isContextNonImm: rec) and: [
 				  self isMarriedOrWidowedContext: rec ])
 				 ifTrue: [
-				 self externalInstVar: argIntAdjusted ofContext: rec put: result ]
+				 self instVar: argIntAdjusted ofContext: rec put: result ]
 				 ifFalse: [
 					 objectMemory
 						 storePointer: argIntAdjusted
@@ -15159,7 +15041,7 @@ StackInterpreter >> trinaryAtPutInlinePrimitive: primIndex [
 			 ((objectMemory isContextNonImm: rec) and: [
 				  self isMarriedOrWidowedContext: rec ])
 				 ifTrue: [
-				 self externalInstVar: argIntAdjusted ofContext: rec put: result ]
+				 self instVar: argIntAdjusted ofContext: rec put: result ]
 				 ifFalse: [
 					 objectMemory
 						 storePointer: argIntAdjusted
@@ -15850,7 +15732,7 @@ StackInterpreter >> wakeHighestPriority [
 	 Note: It is a fatal VM error if there is no runnable process."
 
 	| schedLists p processList proc ctxt |
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	schedLists := objectMemory
 		              fetchPointer: ProcessListsIndex
 		              ofObject: self schedulerPointer.
@@ -15923,7 +15805,9 @@ StackInterpreter >> wordSwapped: w [
 
 { #category : #'stack pages' }
 StackInterpreter >> writeBackHeadFramePointers [
+	self assert:  (framePointer - stackPointer) < (LargeContextSlots * objectMemory bytesPerOop).
 	self assert: stackPage = stackPages mostRecentlyUsedPage.
+	self deny: stackPage isFree.
 	self setHeadFP: framePointer andSP: stackPointer inPage: stackPage.
 	self assert: stackPages pageListIsWellFormed
 ]

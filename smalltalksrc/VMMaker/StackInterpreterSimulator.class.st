@@ -591,23 +591,6 @@ StackInterpreterSimulator >> externalDivorceFrame: theFP andContext: ctxt [
 	^super externalDivorceFrame: theFP andContext: ctxt
 ]
 
-{ #category : #'frame access' }
-StackInterpreterSimulator >> externalInstVar: index ofContext: aMarriedContext put: anOop [
-	| imMarried shesMarried result |
-	index == SenderIndex ifTrue:
-		[imMarried := self checkIsStillMarriedContext: aMarriedContext currentFP: framePointer.
-		(objectMemory isContext: anOop) ifTrue:
-			[shesMarried := self checkIsStillMarriedContext: anOop currentFP: framePointer.
-			 "self shortPrintContext: aMarriedContext.
-			  self shortPrintContext: anOop"]].
-	result := super externalInstVar: index ofContext: aMarriedContext put: anOop.
-	imMarried ifNotNil:
-		[self assert: imMarried == (self checkIsStillMarriedContext: aMarriedContext currentFP: nil).
-		 shesMarried ifNotNil:
-			[self assert: shesMarried == (self checkIsStillMarriedContext: anOop currentFP: nil)]].
-	^result
-]
-
 { #category : #'interpreter shell' }
 StackInterpreterSimulator >> fetchByte [
 	^objectMemory byteAt: (instructionPointer := instructionPointer + 1).
@@ -755,35 +738,9 @@ StackInterpreterSimulator >> initializePluginEntries [
 	self loadNewPlugin: ''
 ]
 
-{ #category : #'frame access' }
-StackInterpreterSimulator >> instVar: index ofContext: aMarriedContext put: anOop [
-	| imMarried shesMarried result |
-	index == SenderIndex ifTrue:
-		[imMarried := self checkIsStillMarriedContext: aMarriedContext currentFP: framePointer.
-		(objectMemory isContext: anOop) ifTrue:
-			[shesMarried := self checkIsStillMarriedContext: anOop currentFP: framePointer.
-			"self cr.
-			self shortPrintContext: aMarriedContext.
-			self shortPrintContext: anOop.
-			(#('yield:' 'nextPut:') includesAnyOf: {self stringOf: (self selectorOfContext: aMarriedContext). self stringOf: (self selectorOfContext: anOop)}) ifTrue:
-				[self halt]"]].
-	result := super instVar: index ofContext: aMarriedContext put: anOop.
-	imMarried ifNotNil:
-		[self assert: imMarried == (self checkIsStillMarriedContext: aMarriedContext currentFP: nil).
-		 shesMarried ifNotNil:
-			[self assert: shesMarried == (self checkIsStillMarriedContext: anOop currentFP: nil)]].
-	^result
-]
-
 { #category : #'interpreter shell' }
 StackInterpreterSimulator >> insufficientMemorySpecifiedError [
 	self error: 'Insufficient memory for this image'
-]
-
-{ #category : #'debugging traps' }
-StackInterpreterSimulator >> internalMustBeBoolean [
-	self halt.
-	^super internalMustBeBoolean
 ]
 
 { #category : #'interpreter shell' }

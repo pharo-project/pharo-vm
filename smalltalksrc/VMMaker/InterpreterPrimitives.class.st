@@ -3025,7 +3025,7 @@ InterpreterPrimitives >> primitivePathToUsing [
 	 the current context"
 	| err path |
 	<export: true>
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	argumentCount >= 2 ifFalse:
 		[^self primitiveFailFor: PrimErrBadNumArgs].
 	(self stackTop = objectMemory trueObject

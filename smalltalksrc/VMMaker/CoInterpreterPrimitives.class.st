@@ -462,7 +462,7 @@ CoInterpreterPrimitives >> primitiveMethodXray [
 						             selector: objectMemory nilObject.
 					(cogMethod = nil and: [ cogCompiledCodeCompactionCalledFor ]) 
 						ifTrue: [ 
-							self externalWriteBackHeadFramePointers.
+							self writeBackHeadFramePointers.
 							self commenceCogCompiledCodeCompaction.
 							cogMethod := cogit
 								             cog: self stackTop
@@ -726,7 +726,7 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 		[^self primitiveFail].		
 
 	"All stackPages need to have current head pointers to avoid confusion."
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 
 	"If we're searching for aContextOrNil it might be on a stack page.  Helps to know
 	 if we can free a whole page or not, or if we can short-cut the termination."
@@ -912,7 +912,7 @@ CoInterpreterPrimitives >> primitiveVoidVMStateForMethod [
 	self flushMethodCacheForMethod: methodObj.
 	activeContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
 	self ensurePushedInstructionPointer.
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	(hasCogMethod := self methodHasCogMethod: methodObj) ifTrue:
 		[self divorceMachineCodeFramesWithMethod: methodObj].
 	"One might think (as this author did) that the heap scan is unnecessary if the method does not
