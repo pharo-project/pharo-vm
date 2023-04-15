@@ -94,16 +94,6 @@ Class {
 		'initialMemoryAddress'
 	],
 	#classVars : [
-		'CSCallbackEnter',
-		'CSCallbackLeave',
-		'CSCheckEvents',
-		'CSEnterCriticalSection',
-		'CSExitCriticalSection',
-		'CSResume',
-		'CSSignal',
-		'CSSuspend',
-		'CSWait',
-		'CSYield',
 		'HasBeenReturnedFromMCPC',
 		'HasBeenReturnedFromMCPCOop',
 		'MFMethodFlagFrameIsMarkedFlag',
@@ -310,17 +300,7 @@ CoInterpreter class >> initializeMiscConstants [
 
 	TraceIsFromMachineCode := 1.
 	TraceIsFromInterpreter := 2.
-	CSCallbackEnter := 3.
-	CSCallbackLeave := 4.
-	CSEnterCriticalSection := 5.
-	CSExitCriticalSection := 6.
-	CSResume := 7.
-	CSSignal := 8.
-	CSSuspend := 9.
-	CSWait := 10.
-	CSYield := 11.
-	CSCheckEvents := 12.
-
+	
 	TraceSources := CArrayAccessor on: #('?' 'm' 'i' 'callbackEnter' 'callbackLeave' 'enterCritical' 'exitCritical' 'resume' 'signal'  'suspend' 'wait' 'yield' 'eventcheck' ).
 
 	"this is simulation only"
@@ -1057,98 +1037,6 @@ CoInterpreter >> callRegisterArgCogMethod: cogMethod at: entryOffset receiver: r
 	self push: rcvr.
 	self callEnilopmart: #ceCallCogCodePopReceiverReg
 	"NOTREACHED"
-]
-
-{ #category : #'callback support' }
-CoInterpreter >> callbackEnter: callbackID [
-	"Re-enter the interpreter for executing a callback"
-	| currentCStackPointer currentCFramePointer savedReenterInterpreter
-	  wasInMachineCode calledFromMachineCode |
-	<volatile>
-	<export: true>
-	<var: #currentCStackPointer type: #'void *'>
-	<var: #currentCFramePointer type: #'void *'>
-	<var: #callbackID type: #'sqInt *'>
-	<var: #savedReenterInterpreter type: #'jmp_buf'>
-
-	"For now, do not allow a callback unless we're in a primitiveResponse"
-	(self asserta: primitiveFunctionPointer ~= 0) ifFalse:
-		[^false].
-
-	self assert: primFailCode = 0.
-
-	"Check if we've exceeded the callback depth"
-	(self asserta: jmpDepth < MaxJumpBuf) ifFalse:
-		[^false].
-	jmpDepth := jmpDepth + 1.
-
-	wasInMachineCode := self isMachineCodeFrame: framePointer.
-	calledFromMachineCode := (self isInstructionPointerInInterpreter: instructionPointer) not.
-
-	"Suspend the currently active process"
-	suspendedCallbacks at: jmpDepth put: self activeProcess.
-	"We need to preserve newMethod explicitly since it is not activated yet
-	and therefore no context has been created for it. If the caller primitive
-	for any reason decides to fail we need to make sure we execute the correct
-	method and not the one 'last used' in the call back"
-	suspendedMethods at: jmpDepth put: newMethod.
-	self flag: 'need to debug this properly.  Conceptually it is the right thing to do but it crashes in practice'.
-	false
-		ifTrue:
-			["Signal external semaphores since a signalSemaphoreWithIndex: request may
-			  have been issued immediately prior to this callback before the VM has any
-			  chance to do a signalExternalSemaphores in checkForEventsMayContextSwitch:"
-			 self signalExternalSemaphores.
-			 "If no process is awakened by signalExternalSemaphores then transfer
-			  to the highest priority runnable one."
-			 (suspendedCallbacks at: jmpDepth) = self activeProcess ifTrue:
-				[self transferTo: self wakeHighestPriority from: CSCallbackLeave]]
-		ifFalse:
-			[self transferTo: self wakeHighestPriority from: CSCallbackLeave].
-
-	"Typically, invoking the callback means that some semaphore has been 
-	signaled to indicate the callback. Force an interrupt check as soon as possible."
-	self forceInterruptCheck.
-
-	"Save the previous CStackPointers and interpreter entry jmp_buf."
-	currentCStackPointer := cogit getCStackPointer.
-	currentCFramePointer := cogit getCFramePointer.
-	self memcpy: savedReenterInterpreter asVoidPointer
-		_: reenterInterpreter
-		_: (self sizeof: #'jmp_buf').
-	cogit assertCStackWellAligned.
-	(self setjmp: (jmpBuf at: jmpDepth)) = 0 ifTrue: "Fill in callbackID"
-		[callbackID at: 0 put: jmpDepth.
-		 self enterSmalltalkExecutive.
-		 self assert: false "NOTREACHED"].
-
-	"Restore the previous CStackPointers and interpreter entry jmp_buf."
-	cogit setCStackPointer: currentCStackPointer.
-	cogit setCFramePointer: currentCFramePointer.
-	self memcpy: reenterInterpreter
-		_: (self cCoerceSimple: savedReenterInterpreter to: #'void *')
-		_: (self sizeof: #'jmp_buf').
-
-	"Transfer back to the previous process so that caller can push result"
-	self putToSleep: self activeProcess yieldingIf: preemptionYields.
-	self transferTo: (suspendedCallbacks at: jmpDepth) from: CSCallbackLeave.
-	newMethod := suspendedMethods at: jmpDepth.	"see comment above"
-	argumentCount := self argumentCountOf: newMethod.
-	self assert: wasInMachineCode = (self isMachineCodeFrame: framePointer).
-	calledFromMachineCode
-		ifTrue:
-			[(self isInstructionPointerInInterpreter: instructionPointer) ifTrue:
-				[self iframeSavedIP: framePointer put: instructionPointer.
-				 instructionPointer := cogit ceReturnToInterpreterPC]]
-		ifFalse:
-			["Even if the context was flushed to the heap and rebuilt in transferTo:from:
-			  above it will remain an interpreted frame because the context's pc would
-			  remain a bytecode pc.  So the instructionPointer must also be a bytecode pc."
-			 self assert: (self isMachineCodeFrame: framePointer) not.
-			 self assert: (self isInstructionPointerInInterpreter: instructionPointer)].
-	self assert: primFailCode = 0.
-	jmpDepth := jmpDepth-1.
-	^true
 ]
 
 { #category : #enilopmarts }
@@ -3196,17 +3084,6 @@ CoInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 				 (objectMemory isForwarded: oop) ifTrue:
 					[stackPages unsignedLongAt: theSP put: (objectMemory followForwarded: oop)].
 				 theSP := theSP + objectMemory wordSize]]]
-]
-
-{ #category : #'process primitive support' }
-CoInterpreter >> forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter [
-	"Do a returnToExecutive: inInterpreter postContextSwitch: true for a process primtive
-	 being sure to sample the profile clock before making the switch."
-	<inline: true>
-	"If we are profiling, take accurate primitive measures"
-	nextProfileTick > 0 ifTrue:
-		[self checkProfileTick: newMethod].
-	^self returnToExecutive: inInterpreter postContextSwitch: true
 ]
 
 { #category : #'process primitive support' }
@@ -5880,29 +5757,6 @@ CoInterpreter >> resume: aProcess preemptedYieldingIf: yieldImplicitly [
 	self shouldNotImplement
 ]
 
-{ #category : #'process primitive support' }
-CoInterpreter >> resume: aProcess preemptedYieldingIf: yieldImplicitly from: sourceCode [
-	"Make aProcess runnable and if its priority is higher than  that of the
-	 current process, preempt the current process.   Answer if the current
-	 process was preempted.  If the current process was preempted then if
-	 yieldImplicitly add the current process to the back of its run queue,
-	 causing an implicit yeild to other processes on the run queue,  otherwise
-	 add the current process to the front of its run queue, hence not yielding.
-	 Blue book behaviour is to yield implicitly but is arguably incorrect.
-	 Override to add tracing info."
-	| activeProc activePriority newPriority |
-	<inline: false>
-	activeProc := self activeProcess.
-	activePriority := self quickFetchInteger: PriorityIndex ofObject: activeProc.
-	newPriority := self quickFetchInteger: PriorityIndex ofObject: aProcess.
-	newPriority <= activePriority ifTrue:
-		[self putToSleep: aProcess yieldingIf: true.
-		 ^false].
-	self putToSleep: activeProc yieldingIf: yieldImplicitly.
-	self transferTo: aProcess from: sourceCode.
-	^true
-]
-
 { #category : #enilopmarts }
 CoInterpreter >> return: returnValue toExecutive: inInterpreter [
 	"We have made a context switch, either when interpreting or from machine code.
@@ -6480,38 +6334,6 @@ CoInterpreter >> temporaryLocation: offset in: theFP numArgs: numArgs [
 CoInterpreter >> transcript [
 	<doNotGenerate>
 	^Transcript
-]
-
-{ #category : #'process primitive support' }
-CoInterpreter >> transferTo: newProc [
-	"replaced by transferTo:from: for better tracing (for debugging)"
-
-	^ self transferTo: newProc from: 0
-]
-
-{ #category : #'process primitive support' }
-CoInterpreter >> transferTo: newProc from: sourceCode [
-	"Record a process to be awoken on the next interpreter cycle.
-	 Reimplement to record the source of the switch for debugging,
-	 and to cope with possible code compaction in makeBaseFrameFor:."
-	| activeContext sched oldProc |
-	<inline: false>
-	statProcessSwitch := statProcessSwitch + 1.
-	self push: instructionPointer.
-	self writeBackHeadFramePointers.
-	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer.
-	"ensureMethodIsCogged: in makeBaseFrameFor: in
-	 externalSetStackPageAndPointersForSuspendedContextOfProcess:
-	 below may do a code compaction. Nil instructionPointer to avoid it getting pushed twice."
-	instructionPointer := 0.
-	sched := self schedulerPointer.
-	oldProc := objectMemory fetchPointer: ActiveProcessIndex ofObject: sched.
-	self recordContextSwitchFrom: oldProc in: sourceCode.
-	activeContext := self ensureFrameIsMarried: framePointer SP: stackPointer + objectMemory wordSize.
-	objectMemory storePointer: SuspendedContextIndex ofObject: oldProc withValue: activeContext.
-	objectMemory storePointer: ActiveProcessIndex ofObject: sched withValue: newProc.
-	objectMemory storePointerUnchecked: MyListIndex ofObject: newProc withValue: objectMemory nilObject.
-	self externalSetStackPageAndPointersForSuspendedContextOfProcess: newProc
 ]
 
 { #category : #'compiled methods' }

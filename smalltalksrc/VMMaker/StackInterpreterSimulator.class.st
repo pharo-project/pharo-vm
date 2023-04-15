@@ -1284,14 +1284,6 @@ StackInterpreterSimulator >> primitiveStoreStackp [
 	"self printContext: self stackTop"
 ]
 
-{ #category : #'debugging traps' }
-StackInterpreterSimulator >> primitiveSuspend [
-	"Catch errors before we start the whole morphic error process"
-
-	"byteCount > 1000000 ifTrue: [self halt]."  "Ignore early process activity"
-	^ super primitiveSuspend
-]
-
 { #category : #'system control primitives' }
 StackInterpreterSimulator >> primitiveVMParameter [
 	
@@ -1835,12 +1827,6 @@ StackInterpreterSimulator >> transcript [
 { #category : #accessing }
 StackInterpreterSimulator >> transcript: aTranscript [
 	transcript := aTranscript
-]
-
-{ #category : #'debugging traps' }
-StackInterpreterSimulator >> transferTo: aProc [
-	"self halt."
-	^super transferTo: aProc
 ]
 
 { #category : #accessing }

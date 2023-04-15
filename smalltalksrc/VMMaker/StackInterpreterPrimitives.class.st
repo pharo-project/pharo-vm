@@ -4125,7 +4125,7 @@ StackInterpreterPrimitives >> ptExitInterpreterToCallback: aPointer [
 	
 	suspendedProcess := self popSameThreadCalloutSuspendedProcess.
 	self putToSleep: self activeProcess yieldingIf: preemptionYields.
-	self transferTo: suspendedProcess.
+	self transferTo: suspendedProcess from: CSCallbackLeave.
 	
 	newMethod := self popStack.
 	

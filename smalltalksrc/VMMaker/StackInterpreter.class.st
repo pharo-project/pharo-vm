@@ -421,6 +421,16 @@ Class {
 		'AtPutBase',
 		'BytecodeEncoderClassName',
 		'BytecodeTable',
+		'CSCallbackEnter',
+		'CSCallbackLeave',
+		'CSCheckEvents',
+		'CSEnterCriticalSection',
+		'CSExitCriticalSection',
+		'CSResume',
+		'CSSignal',
+		'CSSuspend',
+		'CSWait',
+		'CSYield',
 		'CacheProbeMax',
 		'DirBadPath',
 		'DirEntryFound',
@@ -974,6 +984,17 @@ StackInterpreter class >> initializeMiscConstants [
 	StackPageUnreached := 0.
 	StackPageReachedButUntraced := 1.
 	StackPageTraced := 2.
+	
+	CSCallbackEnter := 3.
+	CSCallbackLeave := 4.
+	CSEnterCriticalSection := 5.
+	CSExitCriticalSection := 6.
+	CSResume := 7.
+	CSSignal := 8.
+	CSSuspend := 9.
+	CSWait := 10.
+	CSYield := 11.
+	CSCheckEvents := 12.
 
 	DumpStackOnLowSpace := 0.
 	MillisecondClockMask := 16r1FFFFFFF.
@@ -3628,70 +3649,6 @@ StackInterpreter >> callPrimitiveBytecode [
 ]
 
 { #category : #'callback support' }
-StackInterpreter >> callbackEnter: callbackID [
-	"Re-enter the interpreter to execute a (non-ALien,non-FFI) callback (as used by the Python bridge)."
-	<volatile>
-	<export: true>
-	<var: #callbackID type: #'sqInt *'>
-	| savedReenterInterpreter |
-	<var: #savedReenterInterpreter type: #'jmp_buf'>
-
-	"For now, do not allow a callback unless we're in a primitiveResponse"
-	(self asserta: primitiveFunctionPointer ~= 0) ifFalse:
-		[^false].
-
-	self assert: primFailCode = 0.
-
-	"Check if we've exceeded the callback depth"
-	(self asserta: jmpDepth < MaxJumpBuf) ifFalse:
-		[^false].
-	jmpDepth := jmpDepth + 1.
-
-	"Suspend the currently active process"
-	suspendedCallbacks at: jmpDepth put: self activeProcess.
-	"We need to preserve newMethod explicitly since it is not activated yet
-	and therefore no context has been created for it. If the caller primitive
-	for any reason decides to fail we need to make sure we execute the correct
-	method and not the one 'last used' in the call back"
-	suspendedMethods at: jmpDepth put: newMethod.
-	"Signal external semaphores since a signalSemaphoreWithIndex: request may
-	 have been issued immediately prior to this callback before the VM has any
-	 chance to do a signalExternalSemaphores in checkForEventsMayContextSwitch:"
-	self signalExternalSemaphores.
-	"If no process is awakened by signalExternalSemaphores then transfer
-	 to the highest priority runnable one."
-	(suspendedCallbacks at: jmpDepth) = self activeProcess ifTrue:
-		[self transferTo: self wakeHighestPriority].
-
-	"Typically, invoking the callback means that some semaphore has been 
-	signaled to indicate the callback. Force an interrupt check as soon as possible."
-	self forceInterruptCheck.
-
-	"Save the previous interpreter entry jmp_buf."
-	self memcpy: savedReenterInterpreter asVoidPointer
-		_: reenterInterpreter
-		_: (self sizeof: #'jmp_buf').
-	(self setjmp: (jmpBuf at: jmpDepth)) = 0 ifTrue: "Fill in callbackID"
-		[callbackID at: 0 put: jmpDepth.
-		 self enterSmalltalkExecutive.
-		 self assert: false "NOTREACHED"].
-
-	"Restore the previous interpreter entry jmp_buf."
-	self memcpy: reenterInterpreter
-		_: (self cCoerceSimple: savedReenterInterpreter to: #'void *')
-		_: (self sizeof: #'jmp_buf').
-
-	"Transfer back to the previous process so that caller can push result"
-	self putToSleep: self activeProcess yieldingIf: preemptionYields.
-	self transferTo: (suspendedCallbacks at: jmpDepth).
-	newMethod := suspendedMethods at: jmpDepth.	"see comment above"
-	argumentCount := self argumentCountOf: newMethod.
-	self assert: primFailCode = 0.
-	jmpDepth := jmpDepth - 1.
-	^true
-]
-
-{ #category : #'callback support' }
 StackInterpreter >> callbackLeave: cbID [
 	"Leave from a previous callback"
 	<export: true>
@@ -5132,6 +5089,31 @@ StackInterpreter >> doSignalSemaphoreWithIndex: index [
 	
 	^(objectMemory isSemaphoreOop: sema)
 	  and: [self synchronousSignal: sema]
+]
+
+{ #category : #'process primitive support' }
+StackInterpreter >> doWaitSemaphore: sema reEnterInterpreter: hasToReenter [
+	| excessSignals activeProc inInterpreter |
+	<api>
+	<returnTypeC: #void>	
+
+	excessSignals := self fetchInteger: ExcessSignalsIndex ofObject: sema.
+	excessSignals > 0
+		ifTrue:
+			[self storeInteger: ExcessSignalsIndex
+				ofObject: sema
+				withValue: excessSignals - 1]
+		ifFalse:
+			["We're going to switch process, either to an interpreted frame or a machine
+			  code frame. To know whether to return or enter machine code we have to
+			  know from whence we came.  We could have come from the interpreter,
+			  either directly or via a machine code primitive.  We could have come from
+			  machine code.  The instructionPointer tells us where from:"
+			inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
+			activeProc := self activeProcess.
+			self addLastLink: activeProc toList: sema.
+			self transferTo: self wakeHighestPriority from: CSWait.
+			hasToReenter ifTrue: [self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]]
 ]
 
 { #category : #initialization }
@@ -6696,6 +6678,17 @@ StackInterpreter >> followSemaphoreIn: anArray at: index [
 	(objectMemory isForwarded: obj) ifTrue:
 		[obj := objectMemory followForwarded: obj.
 		 objectMemory storePointer: index ofObject: anArray withValue: obj]
+]
+
+{ #category : #'process primitive support' }
+StackInterpreter >> forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter [
+	"Do a returnToExecutive: inInterpreter postContextSwitch: true for a process primtive
+	 being sure to sample the profile clock before making the switch."
+	<inline: true>
+	"If we are profiling, take accurate primitive measures"
+	nextProfileTick > 0 ifTrue:
+		[self checkProfileTick: newMethod].
+	^self returnToExecutive: inInterpreter postContextSwitch: true
 ]
 
 { #category : #'process primitive support' }
@@ -10859,6 +10852,75 @@ StackInterpreter >> primitiveAccessorDepthForExternalPrimitiveMethod: methodObj 
 			ofObject: (self literal: 0 ofMethod: methodObj))
 ]
 
+{ #category : #'process primitives' }
+StackInterpreter >> primitiveEnterCriticalSection [
+	"Attempt to enter a CriticalSection/Mutex.  If not owned, set the owner to the current
+	 process and answer false. If owned by the current process  answer true.   Otherwise
+	 suspend the process.  Answer if the receiver is owned by the current process."
+	| criticalSection owningProcessIndex owningProcess activeProc inInterpreter |
+	argumentCount > 0
+		ifTrue:
+			[criticalSection := self stackValue: 1.  "rcvr"
+			 activeProc := self stackTop]
+		ifFalse:
+			[criticalSection := self stackTop.  "rcvr"
+			 activeProc := self activeProcess].
+	owningProcessIndex := ExcessSignalsIndex. "CriticalSections are laid out like Semaphores"
+	owningProcess := objectMemory fetchPointer: owningProcessIndex ofObject: criticalSection.
+	owningProcess = objectMemory nilObject ifTrue:
+		[objectMemory storePointer: owningProcessIndex
+			ofObject: criticalSection
+			withValue: activeProc.
+		 ^self pop: argumentCount + 1 thenPush: objectMemory falseObject].
+	owningProcess = activeProc ifTrue:
+		[^self pop: argumentCount + 1 thenPush: objectMemory trueObject].
+	"Arrange to answer false (unowned) when the process is resumed."
+	self pop: argumentCount + 1 thenPush: objectMemory falseObject.
+	"We're going to switch process, either to an interpreted frame or a machine
+	 code frame. To know whether to return or enter machine code we have to
+	 know from whence we came.  We could have come from the interpreter,
+	 either directly or via a machine code primitive.  We could have come from
+	 machine code.  The instructionPointer tells us where from:"
+	inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
+	self addLastLink: activeProc toList: criticalSection.
+	self transferTo: self wakeHighestPriority from: CSEnterCriticalSection.
+	self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter
+]
+
+{ #category : #'process primitives' }
+StackInterpreter >> primitiveExitCriticalSection [
+	"Exit the critical section.
+	 This may change the active process as a result."
+	| criticalSection owningProcessIndex inInterpreter owningProcess |
+	criticalSection := self stackTop.  "rcvr"
+	owningProcessIndex := ExcessSignalsIndex. "CriticalSections are laid out like Semaphores"
+	(self isEmptyList: criticalSection)
+		ifTrue:
+			[objectMemory storePointerUnchecked: owningProcessIndex
+				ofObject: criticalSection
+				withValue: objectMemory nilObject]
+		ifFalse:
+			["We're going to switch process, either to an interpreted frame or a machine
+			  code frame. To know whether to return or enter machine code we have to
+			  know from whence we came.  We could have come from the interpreter,
+			  either directly or via a machine code primitive.  We could have come from
+			  machine code.  The instructionPointer tells us where from:"
+			 inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
+			 owningProcess := self removeFirstLinkOfList: criticalSection.
+			 "store check unnecessary because aSemaphore referred to owningProcess
+			  via its FirstLinkIndex slot before owningProcess was removed."
+			 objectMemory storePointerUnchecked: owningProcessIndex
+				ofObject: criticalSection
+				withValue: owningProcess.
+			 "Note that resume: isn't fair; it won't suspend the active process.
+			  For fairness we must do the equivalent of a primitiveYield, but that
+			  may break old code, so we stick with unfair resume:."
+			 (self resume: owningProcess
+				preemptedYieldingIf: preemptionYields
+				from: CSExitCriticalSection) ifTrue:
+						[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]]
+]
+
 { #category : #'simd primitives' }
 StackInterpreter >> primitiveFloat64ArrayAdd [
 
@@ -11105,6 +11167,33 @@ StackInterpreter >> primitiveObject: actualReceiver perform: selector withArgume
 	^nil
 ]
 
+{ #category : #'process primitives' }
+StackInterpreter >> primitiveResume [
+	"Put this process on the scheduler's lists thus allowing it to proceed next time there is
+	 a chance for processes of it's priority level.  It must go to the back of its run queue so
+	 as not to preempt any already running processes at this level.  If the process's priority
+	 is higher than the current process, preempt the current process."
+
+	| proc inInterpreter |
+	proc := self stackTop. "rcvr"
+	(objectMemory isContext:
+		 (objectMemory followField: SuspendedContextIndex ofObject: proc))
+		ifFalse: [ ^ self primitiveFail ].
+	"We're about to switch process, either to an interpreted frame or a
+	 machine code frame. To know whether to return or enter machine code
+	 we have to know from whence we came.  We could have come from the
+	 interpreter, either directly or via a machine code primitive.  We could have
+	 come from machine code.  The instructionPointer tells us where from:"
+	inInterpreter := self isInstructionPointerInInterpreter:
+		                 instructionPointer.
+	(self
+		 resume: proc
+		 preemptedYieldingIf: preemptionYields
+		 from: CSResume) ifTrue: [
+		self forProcessPrimitiveReturnToExecutivePostContextSwitch:
+			inInterpreter ]
+]
+
 { #category : #'primitives message counting' }
 StackInterpreter >> primitiveStartProfiling [
 
@@ -11123,10 +11212,76 @@ StackInterpreter >> primitiveStopProfiling [
 	
 ]
 
+{ #category : #'process primitives' }
+StackInterpreter >> primitiveSuspend [
+	"Primitive. Suspend the receiver, aProcess such that it can be executed again
+	by sending #resume. If the given process is not currently running, take it off
+	its corresponding list. The primitive returns the list the receiver was previously on."
+	| process myList |
+	process := self stackTop.
+	process = self activeProcess ifTrue:
+		[| inInterpreter |
+		"We're going to switch process, either to an interpreted frame or a machine
+		 code frame. To know whether to return or enter machine code we have to
+		 know from whence we came.  We could have come from the interpreter,
+		 either directly or via a machine code primitive.  We could have come from
+		 machine code.  The instructionPointer tells us where from:"
+		self pop: 1 thenPush: objectMemory nilObject.
+		inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
+		self transferTo: self wakeHighestPriority from: CSSuspend.
+		^self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter].
+	myList := objectMemory fetchPointer: MyListIndex ofObject: process.
+	"XXXX Fixme. We should really check whether myList is a kind of LinkedList or not
+	but we can't easily so just do a quick check for nil which is the most common case."
+	myList = objectMemory nilObject ifTrue:
+		[^self primitiveFailFor: PrimErrBadReceiver].
+	"Alas in Spur we need a read barrier"
+	(objectMemory isForwarded: myList) ifTrue:
+		[myList := objectMemory followForwarded: myList.
+		 objectMemory storePointer: MyListIndex ofObject: process withValue: myList].
+	self removeProcess: process fromList: myList.
+	self successful ifTrue:
+		[objectMemory storePointer: MyListIndex ofObject: process withValue: objectMemory nilObject.
+		 self pop: 1 thenPush: myList]
+]
+
 { #category : #'as yet unclassified' }
 StackInterpreter >> primitiveTable [
 	<doNotGenerate>
 	^ primitiveTable
+]
+
+{ #category : #'process primitives' }
+StackInterpreter >> primitiveYield [
+	"primitively do the equivalent of Process>>yield"
+
+	| scheduler activeProc priority processLists processList inInterpreter |
+	scheduler := self schedulerPointer.
+	activeProc := objectMemory
+		              fetchPointer: ActiveProcessIndex
+		              ofObject: scheduler.
+	priority := self
+		            quickFetchInteger: PriorityIndex
+		            ofObject: activeProc.
+	processLists := objectMemory
+		                fetchPointer: ProcessListsIndex
+		                ofObject: scheduler.
+	processList := objectMemory
+		               fetchPointer: priority - 1
+		               ofObject: processLists.
+
+	(self isEmptyList: processList) ifTrue: [ ^ nil ].
+	"We're going to switch process, either to an interpreted frame or a machine
+	 code frame. To know whether to return or enter machine code we have to
+	 know from whence we came.  We could have come from the interpreter,
+	 either directly or via a machine code primitive.  We could have come from
+	 machine code.  The instructionPointer tells us where from:"
+	inInterpreter := self isInstructionPointerInInterpreter:
+		                 instructionPointer.
+	self addLastLink: activeProc toList: processList.
+	self transferTo: self wakeHighestPriority from: CSYield.
+	self forProcessPrimitiveReturnToExecutivePostContextSwitch:
+		inInterpreter
 ]
 
 { #category : #'debug printing' }
@@ -12791,6 +12946,12 @@ StackInterpreter >> receiver [
 	^stackPages unsignedLongAt: framePointer + FoxReceiver
 ]
 
+{ #category : #'process primitive support' }
+StackInterpreter >> recordContextSwitchFrom: oldProc in: sourceCode [
+	
+	"Noop in pure interpreter"
+]
+
 { #category : #'callback support' }
 StackInterpreter >> reestablishContextPriorToCallback: callbackContext [
 	"callbackContext is an activation of invokeCallback:[stack:registers:jmpbuf:].
@@ -12989,14 +13150,15 @@ StackInterpreter >> resume: aProcess [
 ]
 
 { #category : #'process primitive support' }
-StackInterpreter >> resume: aProcess preemptedYieldingIf: yieldImplicitly [
+StackInterpreter >> resume: aProcess preemptedYieldingIf: yieldImplicitly from: sourceCode [
 	"Make aProcess runnable and if its priority is higher than  that of the
 	 current process, preempt the current process.   Answer if the current
 	 process was preempted.  If the current process was preempted then if
 	 yieldImplicitly add the current process to the back of its run queue,
-	 causing an implicit yiled to other processes on the run queue,  otherwise
+	 causing an implicit yeild to other processes on the run queue,  otherwise
 	 add the current process to the front of its run queue, hence not yielding.
-	 Blue book behaviour is to yield implicitly but is arguably incorrect."
+	 Blue book behaviour is to yield implicitly but is arguably incorrect.
+	 Override to add tracing info."
 	| activeProc activePriority newPriority |
 	<inline: false>
 	activeProc := self activeProcess.
@@ -13006,7 +13168,7 @@ StackInterpreter >> resume: aProcess preemptedYieldingIf: yieldImplicitly [
 		[self putToSleep: aProcess yieldingIf: true.
 		 ^false].
 	self putToSleep: activeProc yieldingIf: yieldImplicitly.
-	self transferTo: aProcess.
+	self transferTo: aProcess from: sourceCode.
 	^true
 ]
 
@@ -14811,7 +14973,7 @@ StackInterpreter >> supendActiveProcess [
 	
 	| activeProc |
 	activeProc := self activeProcess.
-	self transferTo: self wakeHighestPriority.
+	self transferTo: self wakeHighestPriority from: CSCallbackEnter.
 	^ activeProc
 ]
 
@@ -14871,7 +15033,8 @@ StackInterpreter >> symbolicMethod: aMethod [
 { #category : #'process primitive support' }
 StackInterpreter >> synchronousSignal: aSemaphore [ 
 	"Signal the given semaphore from within the interpreter.
-	 Answer if the current process was preempted."
+	 Answer if the current process was preempted.
+	 Override to add tracing info."
 	| excessSignals |
 	<inline: false>
 	(self isEmptyList: aSemaphore) ifTrue:
@@ -14886,6 +15049,7 @@ StackInterpreter >> synchronousSignal: aSemaphore [
 
 	^self resume: (self removeFirstLinkOfList: aSemaphore)
 		preemptedYieldingIf: preemptionYields
+		from: CSSignal
 ]
 
 { #category : #'debug printing' }
@@ -14975,16 +15139,23 @@ StackInterpreter >> traceProfileState [
 ]
 
 { #category : #'process primitive support' }
-StackInterpreter >> transferTo: newProc [ 
+StackInterpreter >> transferTo: newProc from: sourceCode [
 	"Record a process to be awoken on the next interpreter cycle."
 	| activeContext sched oldProc |
 	<inline: false>
 	statProcessSwitch := statProcessSwitch + 1.
 	self push: instructionPointer.
 	self writeBackHeadFramePointers.
-	self assertValidExecutionPointe: instructionPointer + 1 r: framePointer s: stackPointer.
+	self assertValidExecutionPointers.
+
+	"ensureMethodIsCogged: in makeBaseFrameFor: in
+	 externalSetStackPageAndPointersForSuspendedContextOfProcess:
+	 below may do a code compaction. Nil instructionPointer to avoid it getting pushed twice."
+	instructionPointer := 0.
 	sched := self schedulerPointer.
 	oldProc := objectMemory fetchPointer: ActiveProcessIndex ofObject: sched.
+	self recordContextSwitchFrom: oldProc in: sourceCode.
+
 	activeContext := self ensureFrameIsMarried: framePointer SP: stackPointer + objectMemory wordSize.
 	objectMemory storePointer: SuspendedContextIndex ofObject: oldProc withValue: activeContext.
 	objectMemory storePointer: ActiveProcessIndex ofObject: sched withValue: newProc.

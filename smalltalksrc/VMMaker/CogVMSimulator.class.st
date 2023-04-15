@@ -815,16 +815,6 @@ CogVMSimulator >> externalDivorceFrame: theFP andContext: ctxt [
 	^super externalDivorceFrame: theFP andContext: ctxt
 ]
 
-{ #category : #'frame access' }
-CogVMSimulator >> externalSetStackPageAndPointersForSuspendedContextOfProcess: aProcess [
-	"Override to check stack depth (hence in the simulator only)."
-	super externalSetStackPageAndPointersForSuspendedContextOfProcess:  aProcess.
-	(self isMachineCodeFrame: framePointer) ifTrue:
-		[self maybeCheckStackDepth: 0
-			sp: stackPointer
-			pc: instructionPointer]
-]
-
 { #category : #'interpreter shell' }
 CogVMSimulator >> fetchByte [
 	^objectMemory byteAt: (instructionPointer := instructionPointer + 1)
