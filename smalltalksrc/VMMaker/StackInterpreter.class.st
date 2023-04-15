@@ -5314,12 +5314,46 @@ StackInterpreter >> executeNewMethod [
 	 the method cache (i.e. primitivePerform et al)."
 	primitiveFunctionPointer ~= 0 ifTrue:
 		[self isPrimitiveFunctionPointerAnIndex ifTrue:
-			[self externalQuickPrimitiveResponse.
+			[self executeQuickPrimitive.
 			 ^nil].
 		 self slowPrimitiveResponse.
 		 self successful ifTrue: [^nil]].
 	"if not primitive, or primitive failed, activate the method"
 	self activateNewMethod
+]
+
+{ #category : #'primitive support' }
+StackInterpreter >> executeQuickPrimitive [
+
+	"Invoke a quick primitive.
+	 Called under the assumption that primFunctionPtr has been preloaded"
+
+	| localPrimIndex |
+	self assert: self isPrimitiveFunctionPointerAnIndex.
+	localPrimIndex := self
+		                  cCoerceSimple: primitiveFunctionPointer
+		                  to: #sqInt.
+	self assert: (localPrimIndex > 255 and: [ localPrimIndex < 520 ]).
+	"Quick return inst vars"
+	localPrimIndex >= 264 ifTrue: [ 
+		self stackTopPut: (objectMemory
+				 fetchPointer: localPrimIndex - 264
+				 ofObject: self stackTop).
+		^ true ].
+	"Quick return constants"
+	localPrimIndex = 256 ifTrue: [ ^ true "return self" ].
+	localPrimIndex = 257 ifTrue: [ 
+		self stackTopPut: objectMemory trueObject.
+		^ true ].
+	localPrimIndex = 258 ifTrue: [ 
+		self stackTopPut: objectMemory falseObject.
+		^ true ].
+	localPrimIndex = 259 ifTrue: [ 
+		self stackTopPut: objectMemory nilObject.
+		^ true ].
+	self stackTopPut:
+		(objectMemory integerObjectOf: localPrimIndex - 261).
+	^ true
 ]
 
 { #category : #'translation support' }
@@ -5775,28 +5809,6 @@ StackInterpreter >> externalInstVar: index ofContext: maybeMarriedContext put: a
 	stackPages assert: stackPage = stackPages mostRecentlyUsedPage.
 	stackPages assert: stackPages pageListIsWellFormed.
 	stackPages assert: self validStackPageBaseFrames
-]
-
-{ #category : #'primitive support' }
-StackInterpreter >> externalQuickPrimitiveResponse [
-	"Invoke a quick primitive.
-	 Called under the assumption that primFunctionPtr has been preloaded"
-	
-	| localPrimIndex |
-	self assert: self isPrimitiveFunctionPointerAnIndex.
-	localPrimIndex := self cCoerceSimple: primitiveFunctionPointer to: #sqInt.
-	self assert: (localPrimIndex > 255 and: [localPrimIndex < 520]).
-	"Quick return inst vars"
-	localPrimIndex >= 264 ifTrue:
-		[self pop: 1 thenPush: (objectMemory fetchPointer: localPrimIndex - 264 ofObject: self stackTop).
-		 ^true].
-	"Quick return constants"
-	localPrimIndex = 256 ifTrue: [^true "return self"].
-	localPrimIndex = 257 ifTrue: [self pop: 1 thenPush: objectMemory trueObject. ^true].
-	localPrimIndex = 258 ifTrue: [self pop: 1 thenPush: objectMemory falseObject. ^true].
-	localPrimIndex = 259 ifTrue: [self pop: 1 thenPush: objectMemory nilObject. ^true].
-	self pop: 1 thenPush: (objectMemory integerObjectOf: localPrimIndex - 261).
-	^true
 ]
 
 { #category : #'frame access' }
@@ -7937,18 +7949,6 @@ StackInterpreter >> internalActivateNewMethod [
 			(self canContextSwitchIfActivating: newMethod header: methodHeader). ]
 ]
 
-{ #category : #'return bytecodes' }
-StackInterpreter >> internalCannotReturn: resultOop [
-	| ourContext |
-	<inline: true>
-	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
-	self push: ourContext.
-	self push: resultOop.
-	messageSelector := objectMemory splObj: SelectorCannotReturn.
-	argumentCount := 1.
-	^self normalSend
-]
-
 { #category : #'message sending' }
 StackInterpreter >> internalExecuteNewMethod [
 
@@ -7956,7 +7956,7 @@ StackInterpreter >> internalExecuteNewMethod [
 	| succeeded |
 	primitiveFunctionPointer ~= 0 ifTrue: [ 
 		self isPrimitiveFunctionPointerAnIndex ifTrue: [ 
-			self internalQuickPrimitiveResponse.
+			self executeQuickPrimitive.
 			^ self "keep slang happy" ].
 		succeeded := self slowPrimitiveResponse.
 		succeeded ifTrue: [ ^ self ] ].
@@ -7992,40 +7992,6 @@ StackInterpreter >> internalMustBeBoolean [
 	messageSelector := objectMemory splObj: SelectorMustBeBoolean.
 	argumentCount := 0.
 	self normalSend
-]
-
-{ #category : #'primitive support' }
-StackInterpreter >> internalQuickPrimitiveResponse [
-
-	"Invoke a quick primitive.
-	 Called under the assumption that primFunctionPtr has been preloaded"
-
-	| localPrimIndex |
-	self assert: self isPrimitiveFunctionPointerAnIndex.
-	localPrimIndex := self
-		                  cCoerceSimple: primitiveFunctionPointer
-		                  to: #sqInt.
-	self assert: (localPrimIndex > 255 and: [ localPrimIndex < 520 ]).
-	"Quick return inst vars"
-	localPrimIndex >= 264 ifTrue: [ 
-		self stackTopPut: (objectMemory
-				 fetchPointer: localPrimIndex - 264
-				 ofObject: self stackTop).
-		^ true ].
-	"Quick return constants"
-	localPrimIndex = 256 ifTrue: [ ^ true "return self" ].
-	localPrimIndex = 257 ifTrue: [ 
-		self stackTopPut: objectMemory trueObject.
-		^ true ].
-	localPrimIndex = 258 ifTrue: [ 
-		self stackTopPut: objectMemory falseObject.
-		^ true ].
-	localPrimIndex = 259 ifTrue: [ 
-		self stackTopPut: objectMemory nilObject.
-		^ true ].
-	self stackTopPut:
-		(objectMemory integerObjectOf: localPrimIndex - 261).
-	^ true
 ]
 
 { #category : #'interpreter shell' }

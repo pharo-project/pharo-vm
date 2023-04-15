@@ -2965,7 +2965,7 @@ CoInterpreter >> executeNewMethod [
 	inInterpreter := (self isInstructionPointerInInterpreter: instructionPointer).
 	primitiveFunctionPointer ~= 0 ifTrue:
 		[self isPrimitiveFunctionPointerAnIndex ifTrue:
-			[self externalQuickPrimitiveResponse.
+			[self executeQuickPrimitive.
 			 self return: self popStack toExecutive: inInterpreter.
 			 ^nil].
 		 "slowPrimitiveResponse may of course context-switch.  If so we must reenter the
@@ -3969,7 +3969,7 @@ CoInterpreter >> internalExecuteNewMethod [
 	primitiveFunctionPointer ~= 0 ifTrue: [
 		| succeeded |
 		self isPrimitiveFunctionPointerAnIndex ifTrue: [
-			^ self internalQuickPrimitiveResponse ].
+			^ self executeQuickPrimitive ].
 		"slowPrimitiveResponse may of course context-switch.  If so we must reenter the
 		  new process appropriately, returning only if we've found an interpreter frame."
 		succeeded := self slowPrimitiveResponse.
@@ -4074,7 +4074,7 @@ CoInterpreter >> interpretMethodFromMachineCode [
 			 stackPage headFP: framePointer.
 			 self isPrimitiveFunctionPointerAnIndex
 				ifTrue:
-					[self externalQuickPrimitiveResponse.
+					[self executeQuickPrimitive.
 					 primFailCode := 0]
 				ifFalse:
 					[self slowPrimitiveResponse].

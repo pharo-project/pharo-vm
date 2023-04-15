@@ -1137,7 +1137,7 @@ StackInterpreterPrimitives >> primitiveDoPrimitiveWithArgs [
 		 index := index + 1].
 
 	self isPrimitiveFunctionPointerAnIndex ifTrue:
-		[self externalQuickPrimitiveResponse.
+		[self executeQuickPrimitive.
 		 tempOop2 := 0.
 		^nil].
 	"We use tempOop instead of pushRemappableOop:/popRemappableOop here because in
