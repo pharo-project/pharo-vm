@@ -801,89 +801,19 @@ CoInterpreter >> attemptToSwitchToMachineCode: bcpc [
 ]
 
 { #category : #'return bytecodes' }
-CoInterpreter >> baseFrameReturn [
+CoInterpreter >> baseFrameCannotReturnTo: contextToReturnTo [
 
-	"Return from a baseFrame (the bottom frame in a stackPage).  The context to
-	 return to (which may be married) is stored in the first word of the stack."
-
-	<inline: true>
-	<var: #theFP type: #'char *'>
-	<var: #theSP type: #'char *'>
-	<var: #thePage type: #'StackPage *'>
-	<var: #newPage type: #'StackPage *'>
-	<var: #frameAbove type: #'char *'>
-	<returnTypeC: #void>
-
-	| contextToReturnTo retToContext theFP theSP thePage newPage frameAbove |
-	contextToReturnTo := self frameCallerContext: framePointer.
-
-	"The stack page is effectively free now, so free it.  We must free it to be
-	 correct in determining if contextToReturnTo is still married, and in case
-	 makeBaseFrameFor: cogs a method, which may cause a code compaction,
-	 in which case the frame must be free to avoid the relocation machinery
-	 tracing the dead frame.  Since freeing now temporarily violates the page-list
-	 ordering invariant, use the assert-free version."
-	stackPages freeStackPageNoAssert: stackPage.
-	retToContext := objectMemory isContext: contextToReturnTo.
-	(retToContext and: [ self isStillMarriedContext: contextToReturnTo ])
-		ifTrue: [ 
-			theFP := self frameOfMarriedContext: contextToReturnTo.
-			thePage := stackPages stackPageFor: theFP.
-			theFP = thePage headFP
-				ifTrue: [ theSP := thePage headSP ]
-				ifFalse: [ "Returning to some interior frame, presumably because of a sender assignment.
-					  Move the frames above to another page (they may be in use, e.g. via coroutining).
-					  Make the interior frame the top frame."
-					frameAbove := self findFrameAbove: theFP inPage: thePage.
-					"Since we've just deallocated a page we know that newStackPage won't deallocate an existing one."
-					newPage := stackPages newStackPage.
-					self assert: newPage = stackPage.
-					self moveFramesIn: thePage through: frameAbove toPage: newPage.
-					stackPages markStackPageMostRecentlyUsed: newPage.
-					theFP := thePage headFP.
-					theSP := thePage headSP ] ]
-		ifFalse: [ 
-			(retToContext and: [ 
-				 objectMemory isIntegerObject: (objectMemory
-						  fetchPointer: InstructionPointerIndex
-						  ofObject: contextToReturnTo) ]) ifFalse: [ 
-				| contextToReturnFrom |
-				contextToReturnFrom := stackPages longAt:
-					                       stackPage baseAddress
-					                       - objectMemory wordSize.
-				self
-					tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom:
-					contextToReturnFrom
-					to: contextToReturnTo
-					returnValue: localReturnValue.
-				^ self
-					  externalCannotReturn: localReturnValue
-					  from: contextToReturnFrom ].
-			"We must void the instructionPointer to stop it being updated if makeBaseFrameFor:
-			  cogs a method, which may cause a code compaction."
-			instructionPointer := 0.
-			thePage := self makeBaseFrameFor: contextToReturnTo.
-			theFP := thePage headFP.
-			theSP := thePage headSP ].
-	self setStackPageAndLimit: thePage.
-	self assert: (stackPages stackPageFor: theFP) = stackPage.
-	stackPointer := theSP.
-	framePointer := theFP.
-	instructionPointer := self pointerForOop: self stackTop.
-
-	(self isInstructionPointerInInterpreter: instructionPointer)
-		ifFalse: [ 
-			instructionPointer asUnsignedInteger
-			~= cogit ceReturnToInterpreterPC ifTrue: [ "localIP in the cog method zone indicates a return to machine code." 
-				^ self returnToMachineCodeFrame ].
-			instructionPointer := self pointerForOop:
-				                      (self iframeSavedIP: framePointer) ].
-	self assert: (self
-			 checkIsStillMarriedContext: contextToReturnTo
-			 currentFP: framePointer).
-	self setMethod: (self iframeMethod: framePointer).
-	self stackTopPut: localReturnValue.
-	^ self fetchNextBytecode
+	| contextToReturnFrom |
+	contextToReturnFrom := stackPages longAt:
+		                       stackPage baseAddress - objectMemory wordSize.
+	self
+		tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom:
+		contextToReturnFrom
+		to: contextToReturnTo
+		returnValue: localReturnValue.
+	^ self
+		  externalCannotReturn: localReturnValue
+		  from: contextToReturnFrom
 ]
 
 { #category : #hooks }
@@ -2210,67 +2140,6 @@ CoInterpreter >> commenceCogCompiledCodeCompaction [
 		 self asserta: (self checkCodeIntegrity: false)]
 ]
 
-{ #category : #'return bytecodes' }
-CoInterpreter >> commonCallerReturn [
-
-	"Return to the previous context/frame (sender for method activations, caller for block activations)."
-
-	<sharedCodeNamed: 'commonCallerReturn' inCase: #returnTopFromBlock>
-	<var: #callersFPOrNull type: #'char *'>
-	| callersFPOrNull |
-	callersFPOrNull := self frameCallerFP: framePointer.
-	callersFPOrNull = 0 ifTrue: [ 
-		self assert: framePointer = stackPage baseFP.
-		^ self baseFrameReturn ]. "baseFrame"
-
-	instructionPointer := self frameCallerSavedIP: framePointer.
-	stackPointer := framePointer
-	                + (self frameStackedReceiverOffset: framePointer).
-	framePointer := callersFPOrNull.
-	(self isInstructionPointerInInterpreter: instructionPointer)
-		ifFalse: [ 
-			instructionPointer asUnsignedInteger
-			~= cogit ceReturnToInterpreterPC ifTrue: [ "localIP in the cog method zone indicates a return to machine code." 
-				^ self returnToMachineCodeFrame ].
-			instructionPointer := self pointerForOop:
-				                      (self iframeSavedIP: framePointer) ].
-	self setMethod: (self iframeMethod: framePointer).
-	self fetchNextBytecode.
-	self stackTopPut: localReturnValue
-]
-
-{ #category : #'send bytecodes' }
-CoInterpreter >> commonSendOrdinary [
-	"Send a message, starting lookup with the receiver's class."
-	"Assume: messageSelector and argumentCount have been set, and that 
-	the receiver and arguments have been pushed onto the stack,"
-	"Note: This method is inlined into the interpreter dispatch loop."
-	<sharedCodeNamed: 'commonSendOrdinary' inCase: #extSendBytecode>
-	self sendBreakpoint: messageSelector receiver: (self stackValue: argumentCount).
-	cogit recordSendTrace ifTrue:
-		[self recordTrace: (objectMemory classForClassTag: lkupClassTag)
-			thing: messageSelector
-			source: TraceIsFromInterpreter.
-		cogit printOnTrace ifTrue:
-			[self printActivationNameForSelector: messageSelector
-				startClass: (objectMemory classForClassTag: lkupClassTag); cr]].
-	self findNewMethodOrdinary.
-	self executeNewMethod.
-	self fetchNextBytecode
-]
-
-{ #category : #'indexing primitive support' }
-CoInterpreter >> commonVariable: rcvr at: index cacheIndex: atIx [
-	"There is no atCache in the CoInterpreter."
-	self shouldNotImplement
-]
-
-{ #category : #'indexing primitive support' }
-CoInterpreter >> commonVariable: rcvr at: index put: value cacheIndex: atIx [
-	"There is no atCache in the CoInterpreter."
-	self shouldNotImplement
-]
-
 { #category : #'debug support' }
 CoInterpreter >> compilationBreak: selectorOop point: selectorLength isMNUCase: isMNUCase [
 	<api>
@@ -2379,12 +2248,6 @@ CoInterpreter >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
 		stackPages unsignedLongAt: p + FoxMFReceiver - FoxIFReceiver put: (stackPages unsignedLongAt: p)].
 	stackPointer := stackPointer + FoxMFReceiver - FoxIFReceiver.
 	^pc
-]
-
-{ #category : #'stack pages' }
-CoInterpreter >> defaultNativeStackFrameSize [
-	<api>
-	^ super defaultNativeStackFrameSize
 ]
 
 { #category : #'process primitive support' }
@@ -2656,13 +2519,6 @@ CoInterpreter >> enterSmalltalkExecutiveImplementation [
 	^0
 ]
 
-{ #category : #'cog jit support' }
-CoInterpreter >> error: aString [
-	<api: 'extern void error(char *s)'>
-	<doNotGenerate>
-	super error: aString
-]
-
 { #category : #enilopmarts }
 CoInterpreter >> executeCogMethod: cogMethod fromLinkedSendWithReceiver: rcvr [
 	<api>
@@ -2813,27 +2669,12 @@ CoInterpreter >> fastLogPrim: aSelectorOrImmediate [
 CoInterpreter >> findNewMethodInClassTag: classTagArg [
 	"Find the compiled method to be run when the current messageSelector is
 	 sent to the given classTag, setting the values of newMethod and primitiveIndex."
-	| ok classTag |
+
 	<inline: false>
-	ok := self lookupInMethodCacheSel: messageSelector classTag: classTagArg.
-	ok	ifTrue:
-			[self ifAppropriateCompileToNativeCode: newMethod selector: messageSelector]
-		ifFalse:
-			["entry was not found in the cache; perhaps soemthing was forwarded."
-			 classTag := classTagArg.
-			 ((objectMemory isOopForwarded: messageSelector)
-			  or: [objectMemory isForwardedClassTag: classTag]) ifTrue:
-				[(objectMemory isOopForwarded: messageSelector) ifTrue:
-					[messageSelector := self handleForwardedSelectorFaultFor: messageSelector].
-				 (objectMemory isForwardedClassTag: classTag) ifTrue:
-					[classTag := self handleForwardedSendFaultForTag: classTag].
-				ok := self lookupInMethodCacheSel: messageSelector classTag: classTag.
-				ok ifTrue:
-					[^self ifAppropriateCompileToNativeCode: newMethod selector: messageSelector]].
-			 "entry was not found in the cache; look it up the hard way "
-			 lkupClass := objectMemory classForClassTag: classTag.
-			 self lookupMethodInClass: lkupClass.
-			 self addNewMethodToCache: lkupClass]
+	self findNewMethodInClassTag: classTagArg ifFound: [
+		self
+			ifAppropriateCompileToNativeCode: newMethod
+			selector: messageSelector ]
 ]
 
 { #category : #'message sending' }
@@ -4510,11 +4351,11 @@ CoInterpreter >> maybeReturnToMachineCodeFrame [
 	"If the frame we're returning to is a machine code one, then return to it.
 	 Otherwise, if it's an interpreter frame, load the saved ip."
 	<inline: true>
-	instructionPointer asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory ifTrue:
-		[instructionPointer asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue:
-			["localIP in the cog method zone indicates a return to machine code."
-			 ^self returnToMachineCodeFrame].
-		 instructionPointer := self pointerForOop: (self iframeSavedIP: framePointer)]
+	(self isInstructionPointerInInterpreter: instructionPointer) ifFalse: [
+		instructionPointer asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue: [
+			"localIP in the cog method zone indicates a return to machine code."
+			^self returnToMachineCodeFrame].
+		 instructionPointer := self pointerForOop: (self iframeSavedIP: framePointer) ]
 ]
 
 { #category : #'debug support' }
@@ -5611,6 +5452,18 @@ CoInterpreter >> receiver [
 CoInterpreter >> recordContextSwitchFrom: aProcess in: sourceCode [
 	cogit recordEventTrace ifTrue:
 		[self recordTrace: TraceContextSwitch thing: aProcess source: sourceCode]
+]
+
+{ #category : #'send bytecodes' }
+CoInterpreter >> recordSendTrace [
+
+	<inline: true>
+	cogit recordSendTrace ifTrue: [
+		self
+			recordTrace: (objectMemory classForClassTag: lkupClassTag)
+			thing: messageSelector
+			source: TraceIsFromInterpreter.
+		super recordSendTrace ]
 ]
 
 { #category : #'debug support' }

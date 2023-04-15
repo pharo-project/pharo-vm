@@ -2226,52 +2226,71 @@ StackInterpreter >> assertValidStackLimits: ln [
 ]
 
 { #category : #'return bytecodes' }
-StackInterpreter >> baseFrameReturn [
+StackInterpreter >> baseFrameCannotReturnTo: contextToReturnTo [
 
-	"Return from a baseFrame (the bottom frame in a stackPage).  The context to
-	 return to (which may be married) is stored in the saved instruction pointer slot."
+	^ self sendCannotReturn: localReturnValue
+]
+
+{ #category : #'return bytecodes' }
+StackInterpreter >> baseFrameReturn [
+	"Return from a baseFrame (the bottom frame in a stackPage).
+	The context to return to may be married"
 
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	<var: #theSP type: #'char *'>
 	<var: #thePage type: #'StackPage *'>
+	<var: #newPage type: #'StackPage *'>
 	<var: #frameAbove type: #'char *'>
-	| contextToReturnTo isAContext theFP theSP thePage frameAbove |
+	<returnTypeC: #void>
+	| contextToReturnTo retToContext theFP theSP thePage newPage frameAbove |
 	contextToReturnTo := self frameCallerContext: framePointer.
-	isAContext := objectMemory isContext: contextToReturnTo.
-	(isAContext and: [ self isStillMarriedContext: contextToReturnTo ])
-		ifTrue: [ 
+
+	"The stack page is effectively free now, so free it.  We must free it to be
+	 correct in determining if contextToReturnTo is still married, and in case
+	 makeBaseFrameFor: cogs a method, which may cause a code compaction,
+	 in which case the frame must be free to avoid the relocation machinery
+	 tracing the dead frame.  Since freeing now temporarily violates the page-list
+	 ordering invariant, use the assert-free version."
+	stackPages freeStackPageNoAssert: stackPage.
+	retToContext := objectMemory isContext: contextToReturnTo.
+	(retToContext and: [ self isStillMarriedContext: contextToReturnTo ])
+		ifTrue: [
 			theFP := self frameOfMarriedContext: contextToReturnTo.
 			thePage := stackPages stackPageFor: theFP.
 			theFP = thePage headFP
-				ifTrue: [ 
-					theSP := thePage headSP.
-					stackPages freeStackPageNoAssert: stackPage "for a short time invariant is violated; assert follows" ]
+				ifTrue: [ theSP := thePage headSP ]
 				ifFalse: [ "Returning to some interior frame, presumably because of a sender assignment.
 					  Move the frames above to another page (they may be in use, e.g. via coroutining).
 					  Make the interior frame the top frame."
 					frameAbove := self findFrameAbove: theFP inPage: thePage.
-					"Reuse the page we're exiting, which avoids allocating a new page and
-					  manipulating the page list to mark the page we're entering as least recently
-					  used (to avoid it being deallocated when allocating a new page)."
-					self moveFramesIn: thePage through: frameAbove toPage: stackPage.
+					"Since we've just deallocated a page we know that newStackPage won't deallocate an existing one."
+					newPage := stackPages newStackPage.
+					self assert: newPage = stackPage.
+					self moveFramesIn: thePage through: frameAbove toPage: newPage.
+					stackPages markStackPageMostRecentlyUsed: newPage.
 					theFP := thePage headFP.
 					theSP := thePage headSP ] ]
-		ifFalse: [ 
-			(isAContext and: [ 
+		ifFalse: [
+			(retToContext and: [
 				 objectMemory isIntegerObject: (objectMemory
 						  fetchPointer: InstructionPointerIndex
-						  ofObject: contextToReturnTo) ]) ifFalse: [ 
-				^ self sendCannotReturn: localReturnValue ].
+						  ofObject: contextToReturnTo) ]) ifFalse: [
+				^ self baseFrameCannotReturnTo: contextToReturnTo ].
+			"We must void the instructionPointer to stop it being updated if makeBaseFrameFor:
+			  cogs a method, which may cause a code compaction."
+			instructionPointer := 0.
 			thePage := self makeBaseFrameFor: contextToReturnTo.
 			theFP := thePage headFP.
-			theSP := thePage headSP.
-			stackPages freeStackPageNoAssert: stackPage "for a short time invariant is violated; assert follows" ].
+			theSP := thePage headSP ].
 	self setStackPageAndLimit: thePage.
 	self assert: (stackPages stackPageFor: theFP) = stackPage.
+
 	stackPointer := theSP.
 	framePointer := theFP.
 	instructionPointer := self pointerForOop: self stackTop.
+	self maybeReturnToMachineCodeFrame.
+
 	self assert: (self
 			 checkIsStillMarriedContext: contextToReturnTo
 			 currentFP: framePointer).
@@ -4465,6 +4484,7 @@ StackInterpreter >> commonCallerReturn [
 	stackPointer := framePointer
 	                + (self frameStackedReceiverOffset: framePointer).
 	framePointer := callersFPOrNull.
+	self maybeReturnToMachineCodeFrame.
 	self setMethod: (self iframeMethod: framePointer).
 	self fetchNextBytecode.
 	self stackTopPut: localReturnValue
@@ -4611,9 +4631,7 @@ StackInterpreter >> commonSendOrdinary [
 	"Note: This method is inlined into the interpreter dispatch loop."
 	<sharedCodeInCase: #extSendBytecode>
 	self sendBreakpoint: messageSelector receiver: (self stackValue: argumentCount).
-	self printSends ifTrue:
-		[self printActivationNameForSelector: messageSelector startClass: (objectMemory classForClassTag: lkupClassTag); cr].
-	messageCount := messageCount + 1.
+	self recordSendTrace.
 	self findNewMethodOrdinary.
 	self executeNewMethod.
 	self fetchNextBytecode
@@ -4900,12 +4918,6 @@ StackInterpreter >> currentBytecode [
 
 	<doNotGenerate>
 	^ currentBytecode
-]
-
-{ #category : #'stack pages' }
-StackInterpreter >> defaultNativeStackFrameSize [
-	"default native stack frame size"
-	^ 256
 ]
 
 { #category : #initialization }
@@ -5371,6 +5383,13 @@ StackInterpreter >> enterSmalltalkExecutiveImplementation [
 	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: true line: #'__LINE__'.
 	self interpret.
 	^0
+]
+
+{ #category : #'cog jit support' }
+StackInterpreter >> error: aString [
+	<api: 'extern void error(char *s)'>
+	<doNotGenerate>
+	super error: aString
 ]
 
 { #category : #'frame access' }
@@ -5981,26 +6000,42 @@ StackInterpreter >> findMethodWithPrimitive: primitive FromFP: startFP UpToConte
 
 { #category : #'message sending' }
 StackInterpreter >> findNewMethodInClassTag: classTagArg [
-	"Find the compiled method to be run when the current 
-	messageSelector is sent to the given class, setting the values 
-	of 'newMethod' and 'primitiveIndex'."
-	| ok classTag |
+	"Find the compiled method to be run when the current messageSelector is
+	 sent to the given classTag, setting the values of newMethod and primitiveIndex."
+
 	<inline: false>
-	ok := self lookupInMethodCacheSel: messageSelector classTag: classTagArg.
-	ok ifFalse: "entry was not found in the cache; look it up the hard way "
-		[classTag := classTagArg.
-		 ((objectMemory isOopForwarded: messageSelector)
-		  or: [objectMemory isForwardedClassTag: classTag]) ifTrue:
-			[(objectMemory isOopForwarded: messageSelector) ifTrue:
-				[messageSelector := self handleForwardedSelectorFaultFor: messageSelector].
-			 (objectMemory isForwardedClassTag: classTag) ifTrue:
-				[classTag := self handleForwardedSendFaultForTag: classTag].
-			ok := self lookupInMethodCacheSel: messageSelector classTag: classTag.
-			ok ifTrue:
-				[^nil]].
- 		 lkupClass := objectMemory classForClassTag: classTag.
-		 self lookupMethodInClass: lkupClass.
-		 self addNewMethodToCache: lkupClass]
+	self findNewMethodInClassTag: classTagArg ifFound: [ nil ]
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
+	"Find the compiled method to be run when the current messageSelector is
+	 sent to the given classTag, setting the values of newMethod and primitiveIndex."
+
+	<inline: true>
+	| classTag |
+	classTag := classTagArg.
+	(self inlineLookupInMethodCacheSel: messageSelector classTag: classTag)
+		ifFalse: [
+			"Entry was not found in the cache; perhaps something was forwarded.
+			Resolve forwarders and retry"
+			((objectMemory isOopForwarded: messageSelector) or: [
+				 objectMemory isForwardedClassTag: classTag ]) ifTrue: [
+				(objectMemory isOopForwarded: messageSelector) ifTrue: [
+					messageSelector := self handleForwardedSelectorFaultFor:
+						                   messageSelector ].
+				(objectMemory isForwardedClassTag: classTag) ifTrue: [
+					classTag := self handleForwardedSendFaultForTag: classTag ].
+				(self lookupInMethodCacheSel: messageSelector classTag: classTag)
+					ifTrue: [ ^ aBlock value ] ].
+
+			"Entry was not found in the cache; look it up the hard way "
+			lkupClass := objectMemory classForClassTag: classTag.
+			(objectMemory isOopForwarded: lkupClass) ifTrue: [
+				lkupClass := objectMemory followForwarded: lkupClass ].
+			self lookupMethodInClass: lkupClass.
+			self addNewMethodToCache: lkupClass ]
+		ifTrue: [ aBlock value ]
 ]
 
 { #category : #'message sending' }
@@ -6015,28 +6050,9 @@ StackInterpreter >> findNewMethodOrdinary [
 StackInterpreter >> findNewMethodOrdinaryIfFound: aBlock [
 	"Find the compiled method to be run when the current messageSelector is sent to the class 'lkupClass', setting the values of 'newMethod' and 'primitiveIndex'."
 
-	<inline: true>
-	(self
-		 inlineLookupInMethodCacheSel: messageSelector
-		 classTag: lkupClassTag)
-		ifFalse: [ "entry was not found in the cache; look it up the hard way"
-			((objectMemory isOopForwarded: messageSelector) or: [
-				 objectMemory isForwardedClassTag: lkupClassTag ]) ifTrue: [
-				(objectMemory isOopForwarded: messageSelector) ifTrue: [
-					messageSelector := self handleForwardedSelectorFaultFor:
-						                   messageSelector ].
-				(objectMemory isForwardedClassTag: lkupClassTag) ifTrue: [
-					lkupClassTag := self handleForwardedSendFaultForTag: lkupClassTag ].
-				(self
-					 lookupInMethodCacheSel: messageSelector
-					 classTag: lkupClassTag) ifTrue: [ ^ aBlock value ] ].
-
-			lkupClass := objectMemory classForClassTag: lkupClassTag.
-			(objectMemory isOopForwarded: lkupClass) ifTrue: [
-				lkupClass := objectMemory followForwarded: lkupClass ].
-			self lookupMethodInClass: lkupClass.
-			self addNewMethodToCache: lkupClass ]
-		ifTrue: aBlock
+	| classTag |
+	classTag := lkupClassTag.
+	^ self findNewMethodInClassTag: lkupClassTag ifFound: aBlock
 ]
 
 { #category : #'frame access' }
@@ -7497,7 +7513,6 @@ StackInterpreter >> initialize [
 	statForceInterruptCheck := statStackOverflow := statCheckForEvents :=
 	statProcessSwitch := statStackPageDivorce :=
 	statIdleUsecs := 0.
-	messageCount := 0.
 	imageVersionNumber := 0.
 ]
 
@@ -11096,24 +11111,6 @@ StackInterpreter >> primitiveResume [
 			inInterpreter ]
 ]
 
-{ #category : #'primitives message counting' }
-StackInterpreter >> primitiveStartProfiling [
-
-	self cppIf: FEATURE_MESSAGE_COUNT 
-		ifTrue: [ messageCount := 0 ] 
-		ifFalse: [ self primitiveFailFor: PrimErrUnsupported ]
-
-]
-
-{ #category : #'primitives message counting' }
-StackInterpreter >> primitiveStopProfiling [
-
-	self cppIf: FEATURE_MESSAGE_COUNT 
-		ifTrue: [ self pop: 1 thenPushInteger: messageCount ] 
-		ifFalse: [ self primitiveFailFor: PrimErrUnsupported ]
-	
-]
-
 { #category : #'process primitives' }
 StackInterpreter >> primitiveSuspend [
 	"Primitive. Suspend the receiver, aProcess such that it can be executed again
@@ -12852,6 +12849,16 @@ StackInterpreter >> receiver [
 StackInterpreter >> recordContextSwitchFrom: oldProc in: sourceCode [
 	
 	"Noop in pure interpreter"
+]
+
+{ #category : #'send bytecodes' }
+StackInterpreter >> recordSendTrace [
+
+	self printSends ifTrue: [
+		self
+			printActivationNameForSelector: messageSelector
+			startClass: (objectMemory classForClassTag: lkupClassTag);
+			cr ]
 ]
 
 { #category : #'callback support' }
@@ -14704,19 +14711,6 @@ StackInterpreter >> storeInteger: fieldIndex ofObject: objectPointer withValue: 
 					withValue: (objectMemory integerObjectOf: integerValue)]
 		ifFalse: [self primitiveFail].
 	^nil
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> storeLiteralVariable: literalIndex withValue: anObject [
-	"push/store/popLiteralVariable all fetch a literal, and either read or write the literal's value field.
-	 The fetch of the literal needs an explicit check (otherwise we would have to scan all literals in
-	 all methods in the stack zone, and the entire method on return, and global variables are relatively
-	 rare; in my work image 8.7% of literals are globals)."
-
-
-	| litVar |
-	litVar := self literalMaybeForwarder: literalIndex.
-	objectMemory storePointerImmutabilityCheck: ValueIndex ofObject: litVar withValue: anObject
 ]
 
 { #category : #'stack bytecodes' }
