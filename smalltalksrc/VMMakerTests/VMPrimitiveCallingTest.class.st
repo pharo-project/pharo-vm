@@ -90,8 +90,7 @@ VMPrimitiveCallingTest >> testPrimitiveFailingSetsErrorCodeInCorrectTempWithInte
 	"Move the frame pointer to its caller but keep the correct one in the local FP".
 	interpreter framePointer: (interpreter frameCallerFP: interpreter framePointer).
 
-	"Use the internal version using the localFP"
-	interpreter internalActivateNewMethod.
+	interpreter activateNewMethod.
 	
 	"Then externalize and assert"
 	self assert: (interpreter temporary: 0 in: interpreter framePointer) equals: (memory integerObjectOf: -1)

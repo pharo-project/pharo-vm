@@ -1853,12 +1853,17 @@ StackInterpreter >> activateNewFullClosure: blockClosure method: theMethod numAr
 
 { #category : #'message sending' }
 StackInterpreter >> activateNewMethod [
-	| methodHeader |
+
+	| methodHeader switched |
 	methodHeader := self justActivateNewMethod: false. "either interpreted or machine code"
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
-	stackPointer < stackLimit ifTrue:
-		[self handleStackOverflowOrEventAllowContextSwitch: (self canContextSwitchIfActivating: newMethod header: methodHeader)]
+	stackPointer < stackLimit ifTrue: [
+		switched := self handleStackOverflowOrEventAllowContextSwitch:
+			            (self
+				             canContextSwitchIfActivating: newMethod
+				             header: methodHeader).
+		self returnToExecutive: true postContextSwitch: switched ]
 ]
 
 { #category : #'process primitive support' }
@@ -4636,7 +4641,7 @@ StackInterpreter >> commonSendOrdinary [
 		[self printActivationNameForSelector: messageSelector startClass: (objectMemory classForClassTag: lkupClassTag); cr].
 	messageCount := messageCount + 1.
 	self internalFindNewMethodOrdinary.
-	self internalExecuteNewMethod.
+	self executeNewMethod.
 	self fetchNextBytecode
 ]
 
@@ -5311,8 +5316,11 @@ StackInterpreter >> establishFrameForContextToReturnTo: contextToReturnTo [
 StackInterpreter >> executeNewMethod [
 	"if not primitive, or primitive failed, activate the method"
 
+	| inInterpreter |
+	inInterpreter := self isInstructionPointerInInterpreter:
+		                 instructionPointer.
 	self
-		executePrimitiveFromInterpreter: true
+		executePrimitiveFromInterpreter: inInterpreter
 		ifFail: [ "if not primitive, or primitive failed, activate the method"
 			self activateNewMethod ]
 ]
@@ -7917,67 +7925,6 @@ StackInterpreter >> internalAboutToReturn: resultOop through: aContext [
 ]
 
 { #category : #'message sending' }
-StackInterpreter >> internalActivateNewMethod [
-
-	<inline: true>
-	| methodHeader numTemps rcvr |
-	methodHeader := objectMemory methodHeaderOf: newMethod.
-	numTemps := self temporaryCountOfMethodHeader: methodHeader.
-	self assert:
-		argumentCount = (self argumentCountOfMethodHeader: methodHeader).
-	rcvr := self stackValue: argumentCount. "could new rcvr be set at point of send?"
-	self assert: (objectMemory isOopForwarded: rcvr) not.
-
-	self push: instructionPointer.
-	self push: framePointer.
-	framePointer := stackPointer.
-	self push: newMethod.
-	self setMethod: newMethod methodHeader: methodHeader.
-	self push: objectMemory nilObject. "FxThisContext field"
-	self push: (self
-			 encodeFrameFieldHasContext: false
-			 isBlock: false
-			 numArgs: (self argumentCountOfMethodHeader: methodHeader)).
-	self push: rcvr.
-
-	"Initialize temps..."
-	argumentCount + 1 to: numTemps do: [ :i | 
-	self push: objectMemory nilObject ].
-
-	"-1 to account for pre-increment in fetchNextBytecode"
-	instructionPointer := self pointerForOop:
-		           (self initialIPForHeader: methodHeader method: newMethod)
-		           - 1.
-
-	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
-		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		 instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader).
-		 primFailCode ~= 0 ifTrue: [ | shouldSkipStoreBytecode |
-			shouldSkipStoreBytecode := self reapAndResetErrorCodeTo: framePointer header: methodHeader.
-			shouldSkipStoreBytecode ifTrue: [ 
-				instructionPointer := instructionPointer + (self sizeOfLongStoreTempBytecode: methodHeader)  ] ] ].
-
-	self assert: (self frameNumArgs: framePointer) = argumentCount.
-	self assert: (self frameIsBlockActivation: framePointer) not.
-	self assert: (self frameHasContext: framePointer) not.
-
-	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
-	stackPointer < stackLimit ifTrue: [ 
-		self handleStackOverflowOrEventAllowContextSwitch:
-			(self canContextSwitchIfActivating: newMethod header: methodHeader). ]
-]
-
-{ #category : #'message sending' }
-StackInterpreter >> internalExecuteNewMethod [
-	"if not primitive, or primitive failed, activate the method"
-
-	self
-		executePrimitiveFromInterpreter: true
-		ifFail: [ "if not primitive, or primitive failed, activate the method"
-			self internalActivateNewMethod ]
-]
-
-{ #category : #'message sending' }
 StackInterpreter >> internalFindNewMethodOrdinary [
 	"Find the compiled method to be run when the current messageSelector is sent to the class 'lkupClass', setting the values of 'newMethod' and 'primitiveIndex'."
 	<inline: true>
@@ -7997,6 +7944,65 @@ StackInterpreter >> internalFindNewMethodOrdinary [
 		 self lookupMethodInClass: lkupClass.
 		 self addNewMethodToCache: lkupClass].
 
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> internalJustActivateNewMethod [
+
+	<inline: true>
+	| methodHeader numArgs numTemps rcvr |
+	methodHeader := objectMemory methodHeaderOf: newMethod.
+	"Create the frame for the method activation"
+	numTemps := self temporaryCountOfMethodHeader: methodHeader.
+	numArgs := self argumentCountOfMethodHeader: methodHeader.
+
+	rcvr := self stackValue: numArgs. "could new rcvr be set at point of send?"
+	self assert: (objectMemory isOopForwarded: rcvr) not.
+
+	self push: instructionPointer.
+	self push: framePointer.
+	framePointer := stackPointer.
+	self push: newMethod.
+	self setMethod: newMethod methodHeader: methodHeader.
+	self push: objectMemory nilObject. "FxThisContext field"
+	self push: (self
+			 encodeFrameFieldHasContext: false
+			 isBlock: false
+			 numArgs: numArgs).
+	self push: rcvr.
+
+	"Initialize temps to nil"
+	numArgs + 1 to: numTemps do: [ :i |
+		self push: objectMemory nilObject ].
+
+	"-1 to account for pre-increment in fetchNextBytecode"
+	instructionPointer := self pointerForOop:
+		                      (self
+			                       initialIPForHeader: methodHeader
+			                       method: newMethod) - 1.
+
+	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
+		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
+		instructionPointer := instructionPointer
+		                      +
+		                      (self sizeOfCallPrimitiveBytecode:
+			                       methodHeader).
+		primFailCode ~= 0 ifTrue: [
+			| shouldSkipStoreBytecode |
+			shouldSkipStoreBytecode := self
+				                           reapAndResetErrorCodeTo: framePointer
+				                           header: methodHeader.
+			shouldSkipStoreBytecode ifTrue: [
+				instructionPointer := instructionPointer
+				                      +
+				                      (self sizeOfLongStoreTempBytecode:
+					                       methodHeader) ] ] ].
+
+	self assert: (self frameNumArgs: framePointer) = argumentCount.
+	self assert: (self frameIsBlockActivation: framePointer) not.
+	self assert: (self frameHasContext: framePointer) not.
+
+	^ methodHeader
 ]
 
 { #category : #'return bytecodes' }
@@ -8262,6 +8268,12 @@ StackInterpreter >> isFrame: aFrame onPage: aPage [
 		[prevFP := theFP.
 		 theFP := self frameCallerFP: theFP].
 	^false
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> isInstructionPointerInInterpreter: anInstructionPointer [
+
+	^ true
 ]
 
 { #category : #'internal interpreter access' }
@@ -8658,10 +8670,11 @@ StackInterpreter >> jumplfTrueBy: offset [
 
 { #category : #'message sending' }
 StackInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
-	| methodHeader numArgs numTemps rcvr |
+
 	<inline: true>
-	"Create the frame for the method activation"
+	| methodHeader numArgs numTemps rcvr |
 	methodHeader := objectMemory methodHeaderOf: newMethod.
+	"Create the frame for the method activation"
 	numTemps := self temporaryCountOfMethodHeader: methodHeader.
 	numArgs := self argumentCountOfMethodHeader: methodHeader.
 
@@ -8674,25 +8687,44 @@ StackInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 	self push: newMethod.
 	self setMethod: newMethod methodHeader: methodHeader.
 	self push: objectMemory nilObject. "FxThisContext field"
-	self push: (self encodeFrameFieldHasContext: false isBlock: false numArgs: numArgs).
+	self push: (self
+			 encodeFrameFieldHasContext: false
+			 isBlock: false
+			 numArgs: numArgs).
 	self push: rcvr.
 
-	"clear remaining temps to nil"
-	numArgs+1 to: numTemps do:
-		[:i | self push: objectMemory nilObject].
+	"Initialize temps to nil"
+	numArgs + 1 to: numTemps do: [ :i |
+		self push: objectMemory nilObject ].
 
-	instructionPointer := (self initialIPForHeader: methodHeader method: newMethod) - 1.
+	"-1 to account for pre-increment in fetchNextBytecode"
+	instructionPointer := self pointerForOop:
+		                      (self
+			                       initialIPForHeader: methodHeader
+			                       method: newMethod) - 1.
 
-	(self methodHeaderHasPrimitive: methodHeader) ifTrue:
-		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
+	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		 instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader).
-		 primFailCode ~= 0 ifTrue: [ | shouldSkipStoreBytecode |
-			shouldSkipStoreBytecode := self reapAndResetErrorCodeTo: framePointer header: methodHeader.
-			shouldSkipStoreBytecode ifTrue: [ 
-				instructionPointer := instructionPointer + (self sizeOfLongStoreTempBytecode: methodHeader)  ] ] ].
+		instructionPointer := instructionPointer
+		                      +
+		                      (self sizeOfCallPrimitiveBytecode:
+			                       methodHeader).
+		primFailCode ~= 0 ifTrue: [
+			| shouldSkipStoreBytecode |
+			shouldSkipStoreBytecode := self
+				                           reapAndResetErrorCodeTo: framePointer
+				                           header: methodHeader.
+			shouldSkipStoreBytecode ifTrue: [
+				instructionPointer := instructionPointer
+				                      +
+				                      (self sizeOfLongStoreTempBytecode:
+					                       methodHeader) ] ] ].
 
-	^methodHeader
+	self assert: (self frameNumArgs: framePointer) = argumentCount.
+	self assert: (self frameIsBlockActivation: framePointer) not.
+	self assert: (self frameHasContext: framePointer) not.
+
+	^ methodHeader
 ]
 
 { #category : #'debug printing' }
@@ -9441,7 +9473,7 @@ StackInterpreter >> mappedDirectCall [
 	argumentCount := self argumentCountOfMethodHeader: methodHeader.
 	"The primitive function pointer is not cached in the interpreter, but it's called quickly in the JIT"
 	primitiveFunctionPointer := self functionPointerFor: localPrimIndex inClass: objectMemory nilObject..
-	self internalActivateNewMethod
+	self activateNewMethod
 ]
 
 { #category : #'sista bytecodes' }
@@ -13150,6 +13182,12 @@ StackInterpreter >> returnNilFromBlock [
 StackInterpreter >> returnReceiver [
 	localReturnValue := self receiver.
 	self commonReturn
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedContext [
+
+	"Noop in pure interpreter"
 ]
 
 { #category : #'return bytecodes' }

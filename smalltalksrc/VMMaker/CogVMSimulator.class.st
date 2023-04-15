@@ -343,12 +343,6 @@ CogVMSimulator >> callExternalPrimitive: mapIndex [
 	^ (entry at: 1) perform: (entry at: 2)
 ]
 
-{ #category : #enilopmarts }
-CogVMSimulator >> ceActivateFailingPrimitiveMethod: aPrimitiveMethod [
-	"self halt."
-	^super ceActivateFailingPrimitiveMethod: aPrimitiveMethod
-]
-
 { #category : #trampolines }
 CogVMSimulator >> ceBaseFrameReturn: returnValue [
 	"self printCallStackOf: (stackPages longAt: stackPage baseAddress) currentFP: stackPage baseFP.
@@ -2519,30 +2513,6 @@ CogVMSimulator >> testBecome [
 	(objectMemory fetchPointer: 1 ofObject: list1) = p4 ifFalse: [self halt].
 	(objectMemory fetchPointer: 0 ofObject: list2) = p1 ifFalse: [self halt].
 	(objectMemory fetchPointer: 1 ofObject: list2) = p2 ifFalse: [self halt].
-]
-
-{ #category : #testing }
-CogVMSimulator >> testPCMapping [
-	objectMemory allObjectsDo:
-		[:o|
-		((objectMemory isCompiledMethod: o)
-		 and: [self methodShouldBeCogged: o]) ifTrue:
-			[(self methodHasCogMethod: o) ifFalse:
-				[[([cogit cog: o selector: objectMemory nilObject]
-					on: Error
-					do: [:ex|
-						ex messageText = 'This won''t work...' ifTrue:
-							[ex resumeUnchecked: nil].
-						ex pass]) isNil
-				   and: [cogCompiledCodeCompactionCalledFor]] whileTrue:
-					[cogMethodZone clearCogCompiledCode.
-					 cogCompiledCodeCompactionCalledFor := false]].
-			 (self methodHasCogMethod: o)
-				ifTrue:
-					[transcript nextPut: $.; flush.
-					 cogit testMcToBcPcMappingForMethod: (self cogMethodOf: o)]
-				ifFalse:
-					[transcript nextPutAll: 'failed to compile method '; print: o; cr; flush]]]
 ]
 
 { #category : #'simulation only' }
