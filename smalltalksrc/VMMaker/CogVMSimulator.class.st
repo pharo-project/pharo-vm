@@ -328,148 +328,6 @@ CogVMSimulator >> callExternalPrimitive: mapIndex [
 	^ (entry at: 1) perform: (entry at: 2)
 ]
 
-{ #category : #trampolines }
-CogVMSimulator >> ceBaseFrameReturn: returnValue [
-	"self printCallStackOf: (stackPages longAt: stackPage baseAddress) currentFP: stackPage baseFP.
-	Transcript print: byteCount; tab; print: thisContext; cr.
-	(self confirm: 'continue?') ifFalse: [self returnValue hex]."
-	"returnValue = 16r01934F78 ifTrue: [self halt]."
-	"| contextToReturnTo |
-	contextToReturnTo := stackPages longAt: stackPage baseAddress.
-	(self stringOf: (self penultimateLiteralOf: (self fetchPointer: MethodIndex ofObject: contextToReturnTo))) = #indexOf:startingAt:ifAbsent: ifTrue:
-		[self halt]."
-	^super ceBaseFrameReturn: returnValue
-]
-
-{ #category : #trampolines }
-CogVMSimulator >> ceContext: aOnceMarriedContext instVar: slotIndex [
-	cogit assertCStackWellAligned.
-	^super ceContext: aOnceMarriedContext instVar: slotIndex
-]
-
-{ #category : #trampolines }
-CogVMSimulator >> ceContext: aOnceMarriedContext instVar: slotIndex value: anOop [
-	"aOnceMarriedContext = 26431360 ifTrue:
-		[transcript cr; cr.
-		 self printContext: aOnceMarriedContext.
-		 transcript cr.
-		 (self isContext: anOop)
-			ifTrue: [self printContext: anOop]
-			ifFalse: [self printOop: anOop].
-		 self halt]."
-	cogit assertCStackWellAligned.
-	^super ceContext: aOnceMarriedContext instVar: slotIndex value: anOop
-]
-
-{ #category : #'cog jit support' }
-CogVMSimulator >> ceCounterTripped: condition [
-	| counterTrippedSelector |
-	self transcript cr; nextPutAll: 'counter tripped in '.
-	self shortPrintFrame: framePointer.
-	counterTrippedSelector := objectMemory maybeSplObj: SelectorCounterTripped.
-	(counterTrippedSelector isNil
-	or: [counterTrippedSelector = objectMemory nilObject]) ifFalse:
-		[self halt: 'counter tripped'].
-	^super ceCounterTripped: condition
-]
-
-{ #category : #trampolines }
-CogVMSimulator >> ceMNUFromPICMNUMethod: aMethodObj receiver: rcvr [
-	| cPIC |
-	cPIC := self cCoerceSimple: self stackTop - cogit mnuOffset to: #'CogMethod *'.
-	self assert: (cPIC cmType = CMPolymorphicIC or: [cPIC cmType = CMMegamorphicIC]).
-	self mnuBreakpoint: cPIC selector receiver: nil.
-	^super ceMNUFromPICMNUMethod: aMethodObj receiver: rcvr
-]
-
-{ #category : #'debug support' }
-CogVMSimulator >> ceNonLocalReturn: returnValue [
-	"self halt."
-	^super ceNonLocalReturn: returnValue
-]
-
-{ #category : #trampolines }
-CogVMSimulator >> ceReapAndResetErrorCodeFor: cogMethod [
-	"Override to map the address into a CogMethodSurrogate"
-	| surrogate |
-	surrogate := cogMethod isInteger
-					ifTrue: [cogit cogMethodSurrogateAt: cogMethod]
-					ifFalse: [cogMethod].
-	^super ceReapAndResetErrorCodeFor: surrogate
-]
-
-{ #category : #trampolines }
-CogVMSimulator >> ceSend: selector super: superNormalBar to: rcvr numArgs: numArgs [
-	"self stringOf: selector"
-	"self printOop: rcvr"
-	"(superNormalBar ~= 0 and: [(self stringOf: selector) = #bitShift:]) ifTrue:
-		[self halt]."
-	self logSend: selector.
-	cogit assertCStackWellAligned.
-	self maybeCheckStackDepth: numArgs + 1 sp: stackPointer pc: (stackPages longAt: stackPointer).
-	^super ceSend: selector super: superNormalBar to: rcvr numArgs: numArgs
-]
-
-{ #category : #trampolines }
-CogVMSimulator >> ceSendAbort: selector to: rcvr numArgs: numArgs [
-	"self stringOf: selector"
-	"self printOop: rcvr"
-	self logSend: selector.
-	cogit assertCStackWellAligned.
-	self maybeCheckStackDepth: numArgs + 1
-		sp: stackPointer
-		pc: (stackPages longAt: stackPointer).
-	^super ceSendAbort: selector to: rcvr numArgs: numArgs
-]
-
-{ #category : #trampolines }
-CogVMSimulator >> ceSendFromInLineCacheMiss: oPIC [
-	"Override to map the address into a CogMethodSurrogate"
-	| surrogate |
-	surrogate := oPIC isInteger
-					ifTrue: [cogit cogMethodSurrogateAt: oPIC]
-					ifFalse: [oPIC].
-	self logSend: surrogate selector.
-	(surrogate cmNumArgs = 0
-	 and: [(self stackValue: 1) = 16r8169D0
-	 and: [self stackTop = 16r53EA7]]) ifTrue:
-		[self halt].
-	^super ceSendFromInLineCacheMiss: surrogate
-]
-
-{ #category : #trampolines }
-CogVMSimulator >> ceSendMustBeBoolean: anObject [
-	self halt.
-	^super ceSendMustBeBoolean: anObject
-]
-
-{ #category : #trampolines }
-CogVMSimulator >> ceStackOverflow: contextSwitchIfNotNil [
-	"Override to bump up the byteCount from which the microsecond clock is derived."
-	byteCount := byteCount + 1000.
-	^super ceStackOverflow: contextSwitchIfNotNil
-]
-
-{ #category : #'debug support' }
-CogVMSimulator >> ceTraceBlockActivation [
-	cogit printOnTrace ifTrue:
-		[transcript print: byteCount; nextPut: $/; print: (sendCount := sendCount + 1); space].
-	cogit assertCStackWellAligned.
-	super ceTraceBlockActivation.
-	^#continue
-]
-
-{ #category : #'debug support' }
-CogVMSimulator >> ceTraceLinkedSend: theReceiver [
-	(sendCount := sendCount + 1) \\ 500 = 0 ifTrue:
-		[self changed: #byteCountText].
-	cogit printOnTrace ifTrue:
-		[transcript print: byteCount; nextPut: $/; print: sendCount; space].
-	cogit assertCStackWellAligned.
-	super ceTraceLinkedSend: theReceiver.
-	^#continue
-]
-
 { #category : #'object memory support' }
 CogVMSimulator >> checkStackIntegrity [
 	"Override to deal with incomplete initialization."
@@ -583,18 +441,6 @@ CogVMSimulator >> cogit [
 CogVMSimulator >> collectSends [
 	expectedSends := WriteStream on: (Array new: 65536).
 	expecting := false
-]
-
-{ #category : #'cog jit support' }
-CogVMSimulator >> commenceCogCompiledCodeCompaction [
-
-	^super commenceCogCompiledCodeCompaction
-]
-
-{ #category : #'frame access' }
-CogVMSimulator >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
-	"bytecodeSetSelector ~= 0 ifTrue: [self halt]".
-	^super convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc
 ]
 
 { #category : #'I/O primitives support' }
@@ -746,22 +592,6 @@ CogVMSimulator >> enableCog: aBoolean [
 	enableCog := aBoolean
 ]
 
-{ #category : #'frame access' }
-CogVMSimulator >> ensureContextIsExecutionSafeAfterAssignToStackPointer: aContext [
-	"16r1934F80 = aContext ifTrue:
-		[self halt]."
-	^super ensureContextIsExecutionSafeAfterAssignToStackPointer: aContext
-]
-
-{ #category : #'frame access' }
-CogVMSimulator >> ensureMethodIsCogged: methodObj maybeClosure: maybeClosure [
-	"Uncomment this to compact frequently and hence test if clients are ready for the shock."
-	"[self commenceCogCompiledCodeCompaction]
-		on: Halt
-		do: [:ex| ex resume: nil]."
-	^super ensureMethodIsCogged: methodObj maybeClosure: maybeClosure
-]
-
 { #category : #'debug support' }
 CogVMSimulator >> expectSends: anArray [
 	expectedSends := ReadStream on: anArray.
@@ -794,12 +624,6 @@ CogVMSimulator >> extUnconditionalJump [
 	^super extUnconditionalJump
 ]
 
-{ #category : #'debugging traps' }
-CogVMSimulator >> externalCannotReturn: resultOop from: aContext [
-	self halt.
-	^super externalCannotReturn: resultOop from: aContext
-]
-
 { #category : #'interpreter shell' }
 CogVMSimulator >> fetchByte [
 	^objectMemory byteAt: (instructionPointer := instructionPointer + 1)
@@ -820,33 +644,6 @@ CogVMSimulator >> filterPerformOf: selector to: receiver [
 		[:messages|
 		^messages includes: (self stringOf: selector)].
 	^false
-]
-
-{ #category : #testing }
-CogVMSimulator >> findNewMethodInClassTag: classTag [
-"
-	| cName |
-	traceOn ifTrue:
-		[cName := (self sizeBitsOf: class) = 16r20
-			ifTrue: ['class ' , (self nameOfClass: (self fetchPointer: 6 ofObject: class))]
-			ifFalse: [(self nameOfClass: class)].
-		self cr; print: cName , '>>' , (self stringOf: messageSelector)].
-"
-	messageSelector = (objectMemory splObj: SelectorDoesNotUnderstand) ifTrue: [self halt].
-
-	self logSend: messageSelector.
-"
-	(sendCount > 1000 and: [sendCount\\10 = 0]) ifTrue:
-		[Transcript print: sendCount; space.
-		self validate].
-"
-"
-	(sendCount > 100150) ifTrue:
-		[self qvalidate.
-		messageQueue == nil ifTrue: [messageQueue := OrderedCollection new].
-		messageQueue addLast: (self stringOf: messageSelector)].
-"
-	^super findNewMethodInClassTag: classTag
 ]
 
 { #category : #'memory access' }
@@ -872,23 +669,6 @@ CogVMSimulator >> forShortPrintString: shortPrintString filterPerformMessages: a
 	performFilters ifNil:
 		[performFilters := Dictionary new].
 	performFilters at: shortPrintString put: aCollection
-]
-
-{ #category : #'frame access' }
-CogVMSimulator >> frameCallerContext: theFP [
-	"In the StackInterpreter the saved ip field of a base frame holds the base
-	 frame's caller context. But in the Cog VM the first word on the stack holds
-	 the base frame's caller context, which is immediately above the stacked
-	 receiver.  The asserts using frameStackedReceiverOffset: are simulation
-	 only since they depend on being able to access numArgs and frameContext
-	 from the frame's method and in a base return the frame state, being below
-	 the stack pointer, may have already been smashed by an interrupt."
-	| thePage |
-	self assert: (self isBaseFrame: theFP).
-	thePage := stackPages stackPageFor: theFP.
-	self assert: theFP + (self frameStackedReceiverOffset: theFP) + (2 * objectMemory wordSize) = thePage baseAddress.
-	self assert: (stackPages unsignedLongAt: thePage baseAddress - objectMemory wordSize) = (self frameContext: theFP).
-	^super frameCallerContext: theFP
 ]
 
 { #category : #'frame access' }
@@ -1358,20 +1138,6 @@ CogVMSimulator >> isPrimitiveFunctionPointerAnIndex [
 	  and: [primitiveFunctionPointer <= MaxQuickPrimitiveIndex]]
 ]
 
-{ #category : #'frame access' }
-CogVMSimulator >> isWidowedContext: aOnceMarriedContext [
-	"See if the argument is connected with a live frame or not.
-	 If it is not, turn it into a bereaved single context."
-	(stackPages isFree: stackPage) ifFalse: "in baseReturn the active page has been freed."
-		[((stackPages somePageHasHeadFrameFP: framePointer)
-		  or: [(stackPages somePageHasHeadFrameFP: framePointer)
-		  or: [stackPages allPagesFree]]) ifFalse:
-			[(thisContext sender sender method = (CoInterpreter >> #baseFrameReturn)
-			  or: [thisContext sender sender method = (CoInterpreter >> #ceBaseFrameReturn:)]) ifFalse:
-				[self halt: 'currentFP may not be written back to stack page']]].
-	^super isWidowedContext: aOnceMarriedContext
-]
-
 { #category : #'plugin support' }
 CogVMSimulator >> loadNewPlugin: pluginString [
 	(breakSelector notNil
@@ -1406,12 +1172,6 @@ CogVMSimulator >> longAt: byteAddress [
 { #category : #'memory access' }
 CogVMSimulator >> longAt: byteAddress put: a32BitValue [
 	^objectMemory longAt: byteAddress put: a32BitValue
-]
-
-{ #category : #'message sending' }
-CogVMSimulator >> lookupMethodInClass: class [
-	lookupCount := lookupCount + 1.
-	^super lookupMethodInClass: class
 ]
 
 { #category : #'callback support' }
@@ -2325,12 +2085,6 @@ CogVMSimulator >> systemAttributes [
 CogVMSimulator >> tab [
 
 	traceOn ifTrue: [ transcript tab ].
-]
-
-{ #category : #'return bytecodes' }
-CogVMSimulator >> tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom: contextToReturnFrom to: contextToReturnTo returnValue: returnValue [
-	self halt.
-	^super tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom: contextToReturnFrom to: contextToReturnTo returnValue: returnValue
 ]
 
 { #category : #testing }

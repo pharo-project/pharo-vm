@@ -1004,12 +1004,6 @@ StackInterpreterSimulator >> longAt: byteAddress put: a32BitValue [
 	^objectMemory longAt: byteAddress put: a32BitValue
 ]
 
-{ #category : #'message sending' }
-StackInterpreterSimulator >> lookupMethodInClass: class [
-	lookupCount := lookupCount + 1.
-	^super lookupMethodInClass: class
-]
-
 { #category : #'callback support' }
 StackInterpreterSimulator >> lookupOrdinaryNoMNUEtcInClass: class [
 	lookupCount := lookupCount + 1.
