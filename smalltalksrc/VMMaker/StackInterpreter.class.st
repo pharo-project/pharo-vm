@@ -4640,7 +4640,7 @@ StackInterpreter >> commonSendOrdinary [
 	self printSends ifTrue:
 		[self printActivationNameForSelector: messageSelector startClass: (objectMemory classForClassTag: lkupClassTag); cr].
 	messageCount := messageCount + 1.
-	self internalFindNewMethodOrdinary.
+	self findNewMethodOrdinary.
 	self executeNewMethod.
 	self fetchNextBytecode
 ]
@@ -6176,6 +6176,42 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg [
  		 lkupClass := objectMemory classForClassTag: classTag.
 		 self lookupMethodInClass: lkupClass.
 		 self addNewMethodToCache: lkupClass]
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> findNewMethodOrdinary [
+	"Find the compiled method to be run when the current messageSelector is sent to the class 'lkupClass', setting the values of 'newMethod' and 'primitiveIndex'."
+
+	<inline: true>
+	^ self findNewMethodOrdinaryIfFound: [ nil ]
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> findNewMethodOrdinaryIfFound: aBlock [
+	"Find the compiled method to be run when the current messageSelector is sent to the class 'lkupClass', setting the values of 'newMethod' and 'primitiveIndex'."
+
+	<inline: true>
+	(self
+		 inlineLookupInMethodCacheSel: messageSelector
+		 classTag: lkupClassTag)
+		ifFalse: [ "entry was not found in the cache; look it up the hard way"
+			((objectMemory isOopForwarded: messageSelector) or: [
+				 objectMemory isForwardedClassTag: lkupClassTag ]) ifTrue: [
+				(objectMemory isOopForwarded: messageSelector) ifTrue: [
+					messageSelector := self handleForwardedSelectorFaultFor:
+						                   messageSelector ].
+				(objectMemory isForwardedClassTag: lkupClassTag) ifTrue: [
+					lkupClassTag := self handleForwardedSendFaultForTag: lkupClassTag ].
+				(self
+					 lookupInMethodCacheSel: messageSelector
+					 classTag: lkupClassTag) ifTrue: [ ^ aBlock value ] ].
+
+			lkupClass := objectMemory classForClassTag: lkupClassTag.
+			(objectMemory isOopForwarded: lkupClass) ifTrue: [
+				lkupClass := objectMemory followForwarded: lkupClass ].
+			self lookupMethodInClass: lkupClass.
+			self addNewMethodToCache: lkupClass ]
+		ifTrue: aBlock
 ]
 
 { #category : #'frame access' }
@@ -7922,28 +7958,6 @@ StackInterpreter >> internalAboutToReturn: resultOop through: aContext [
 	messageSelector := objectMemory splObj: SelectorAboutToReturn.
 	argumentCount := 2.
 	^self normalSend
-]
-
-{ #category : #'message sending' }
-StackInterpreter >> internalFindNewMethodOrdinary [
-	"Find the compiled method to be run when the current messageSelector is sent to the class 'lkupClass', setting the values of 'newMethod' and 'primitiveIndex'."
-	<inline: true>
-	(self inlineLookupInMethodCacheSel: messageSelector classTag: lkupClassTag) ifFalse:
-		["entry was not found in the cache; look it up the hard way"
-		 ((objectMemory isOopForwarded: messageSelector)
-		  or: [objectMemory isForwardedClassTag: lkupClassTag]) ifTrue:
-			[(objectMemory isOopForwarded: messageSelector) ifTrue:
-				[messageSelector := self handleForwardedSelectorFaultFor: messageSelector].
-			 (objectMemory isForwardedClassTag: lkupClassTag) ifTrue:
-				[lkupClassTag := self handleForwardedSendFaultForTag: lkupClassTag].
-			(self lookupInMethodCacheSel: messageSelector classTag: lkupClassTag) ifTrue:
-				[^nil]].
-		 lkupClass := objectMemory classForClassTag: lkupClassTag.
-		 (objectMemory isOopForwarded: lkupClass) ifTrue:
-				[lkupClass := objectMemory followForwarded: lkupClass].
-		 self lookupMethodInClass: lkupClass.
-		 self addNewMethodToCache: lkupClass].
-
 ]
 
 { #category : #'message sending' }

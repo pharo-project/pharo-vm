@@ -2414,7 +2414,7 @@ CoInterpreter >> commonSendOrdinary [
 		cogit printOnTrace ifTrue:
 			[self printActivationNameForSelector: messageSelector
 				startClass: (objectMemory classForClassTag: lkupClassTag); cr]].
-	self internalFindNewMethodOrdinary.
+	self findNewMethodOrdinary.
 	self executeNewMethod.
 	self fetchNextBytecode
 ]
@@ -3061,6 +3061,18 @@ CoInterpreter >> findNewMethodInClassTag: classTagArg [
 			 lkupClass := objectMemory classForClassTag: classTag.
 			 self lookupMethodInClass: lkupClass.
 			 self addNewMethodToCache: lkupClass]
+]
+
+{ #category : #'message sending' }
+CoInterpreter >> findNewMethodOrdinary [
+	"Find the compiled method to be run when the current messageSelector is
+	 sent to the given class, setting the values of newMethod and primitiveIndex."
+
+	<inline: true>
+	^ self findNewMethodOrdinaryIfFound: [
+		  self
+			  ifAppropriateCompileToNativeCode: newMethod
+			  selector: messageSelector ]
 ]
 
 { #category : #'method lookup cache' }
@@ -3823,42 +3835,6 @@ CoInterpreter >> instructionPointerForFrame: spouseFP currentFP: currentFP curre
 		ifTrue: [self mustMapMachineCodePC: (objectMemory integerValueOf: value)
 					context: (self frameContext: spouseFP)]
 		ifFalse: [value]
-]
-
-{ #category : #'message sending' }
-CoInterpreter >> internalFindNewMethodOrdinary [
-	"Find the compiled method to be run when the current messageSelector is
-	 sent to the given class, setting the values of newMethod and primitiveIndex."
-
-	<inline: true>
-	| ok |
-	ok := self
-		      inlineLookupInMethodCacheSel: messageSelector
-		      classTag: lkupClassTag.
-	ok
-		ifTrue: [
-			self
-				ifAppropriateCompileToNativeCode: newMethod
-				selector: messageSelector ]
-		ifFalse: [
-			((objectMemory isOopForwarded: messageSelector) or: [
-				 objectMemory isForwardedClassTag: lkupClassTag ]) ifTrue: [
-				(objectMemory isOopForwarded: messageSelector) ifTrue: [
-					messageSelector := self handleForwardedSelectorFaultFor:
-						                   messageSelector ].
-				(objectMemory isForwardedClassTag: lkupClassTag) ifTrue: [
-					lkupClassTag := self handleForwardedSendFaultForTag: lkupClassTag ].
-				(self
-					 lookupInMethodCacheSel: messageSelector
-					 classTag: lkupClassTag) ifTrue: [
-					^ self
-						  ifAppropriateCompileToNativeCode: newMethod
-						  selector: messageSelector ] ].
-			lkupClass := objectMemory classForClassTag: lkupClassTag.
-			self assert:
-				(lkupClass notNil and: [ self addressCouldBeClassObj: lkupClass ]).
-			self lookupMethodInClass: lkupClass.
-			self addNewMethodToCache: lkupClass ]
 ]
 
 { #category : #'message sending' }
