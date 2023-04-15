@@ -781,12 +781,6 @@ StackInterpreterSimulator >> insufficientMemorySpecifiedError [
 ]
 
 { #category : #'debugging traps' }
-StackInterpreterSimulator >> internalCannotReturn: resultOop [
-	self halt.
-	^super internalCannotReturn: resultOop
-]
-
-{ #category : #'debugging traps' }
 StackInterpreterSimulator >> internalMustBeBoolean [
 	self halt.
 	^super internalMustBeBoolean

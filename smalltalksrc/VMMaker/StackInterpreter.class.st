@@ -2219,7 +2219,7 @@ StackInterpreter >> baseFrameReturn [
 				 objectMemory isIntegerObject: (objectMemory
 						  fetchPointer: InstructionPointerIndex
 						  ofObject: contextToReturnTo) ]) ifFalse: [ 
-				^ self internalCannotReturn: localReturnValue ].
+				^ self sendCannotReturn: localReturnValue ].
 			thePage := self makeBaseFrameFor: contextToReturnTo.
 			theFP := thePage headFP.
 			theSP := thePage headSP.
@@ -4522,7 +4522,7 @@ StackInterpreter >> commonReturn [
 			        followField: FullClosureOuterContextIndex
 			        ofObject: closure.
 		(objectMemory isContext: home) ifFalse: [
-			^ self internalCannotReturn: localReturnValue ].
+			^ self sendCannotReturn: localReturnValue ].
 		closure := objectMemory followField: ClosureIndex ofObject: home ].
 	"home is to be returned from provided there is no unwind-protect activation between
 	 this frame and home's sender.  Search for an unwind.  findUnwindThroughContext:
@@ -4530,7 +4530,7 @@ StackInterpreter >> commonReturn [
 	 cannot be found or 0 if no unwind is found but the sender is."
 	unwindContextOrNilOrZero := self findUnwindThroughContext: home.
 	unwindContextOrNilOrZero = objectMemory nilObject ifTrue: [ "error: can't find home on chain; cannot return"
-		^ self internalCannotReturn: localReturnValue ].
+		^ self sendCannotReturn: localReturnValue ].
 	unwindContextOrNilOrZero ~= 0 ifTrue: [
 		^ self
 			  internalAboutToReturn: localReturnValue
@@ -4564,7 +4564,7 @@ StackInterpreter >> commonReturn [
 		frameToReturnTo := self establishFrameForContextToReturnTo:
 			                   contextToReturnTo.
 		frameToReturnTo = 0 ifTrue: [ "error: home's sender is dead; cannot return"
-			^ self internalCannotReturn: localReturnValue ] ].
+			^ self sendCannotReturn: localReturnValue ] ].
 
 	"Now we have a frame to return to.  If it is on a different page we must free intervening pages and
 	 nil out intervening contexts.  We must free intervening stack pages because if we leave the pages
@@ -13356,6 +13356,18 @@ StackInterpreter >> sendBreakpoint: selector receiver: rcvr [
 	self sendBreak: (objectMemory firstFixedFieldOfMaybeImmediate: selector)
 		point: (objectMemory lengthOfMaybeImmediate: selector)
 		receiver: rcvr
+]
+
+{ #category : #'return bytecodes' }
+StackInterpreter >> sendCannotReturn: resultOop [
+	| ourContext |
+	<inline: true>
+	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
+	self push: ourContext.
+	self push: resultOop.
+	messageSelector := objectMemory splObj: SelectorCannotReturn.
+	argumentCount := 1.
+	^self normalSend
 ]
 
 { #category : #'send bytecodes' }

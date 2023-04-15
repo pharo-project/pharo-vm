@@ -1214,12 +1214,6 @@ CogVMSimulator >> insufficientMemorySpecifiedError [
 	self error: 'Insufficient memory for this image'
 ]
 
-{ #category : #'debugging traps' }
-CogVMSimulator >> internalCannotReturn: resultOop [
-	self halt.
-	^super internalCannotReturn: resultOop
-]
-
 { #category : #testing }
 CogVMSimulator >> internalFindNewMethodOrdinary [
 "
