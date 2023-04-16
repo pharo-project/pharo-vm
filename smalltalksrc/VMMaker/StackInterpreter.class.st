@@ -4631,7 +4631,7 @@ StackInterpreter >> commonSendOrdinary [
 	"Note: This method is inlined into the interpreter dispatch loop."
 	<sharedCodeInCase: #extSendBytecode>
 	self sendBreakpoint: messageSelector receiver: (self stackValue: argumentCount).
-	self recordSendTrace.
+	self doRecordSendTrace.
 	self findNewMethodOrdinary.
 	self executeNewMethod.
 	self fetchNextBytecode
@@ -5156,6 +5156,16 @@ StackInterpreter >> doPrimitiveMod: rcvr by: arg [
 			ifTrue: [integerResult := integerResult + integerArg]].
 	self success: (objectMemory isIntegerValue: integerResult).
 	^ integerResult
+]
+
+{ #category : #'send bytecodes' }
+StackInterpreter >> doRecordSendTrace [
+	<inline: true>
+	self printSends ifTrue: [
+		self
+			printActivationNameForSelector: messageSelector
+			startClass: (objectMemory classForClassTag: lkupClassTag);
+			cr ]
 ]
 
 { #category : #'process primitive support' }
@@ -12963,16 +12973,6 @@ StackInterpreter >> receiver [
 StackInterpreter >> recordContextSwitchFrom: oldProc in: sourceCode [
 	
 	"Noop in pure interpreter"
-]
-
-{ #category : #'send bytecodes' }
-StackInterpreter >> recordSendTrace [
-
-	self printSends ifTrue: [
-		self
-			printActivationNameForSelector: messageSelector
-			startClass: (objectMemory classForClassTag: lkupClassTag);
-			cr ]
 ]
 
 { #category : #'callback support' }

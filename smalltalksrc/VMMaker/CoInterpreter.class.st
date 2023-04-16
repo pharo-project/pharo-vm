@@ -2320,6 +2320,18 @@ CoInterpreter >> divorceSomeMachineCodeFramesWithMethod: cogMethod [
 	^divorcedSome
 ]
 
+{ #category : #'send bytecodes' }
+CoInterpreter >> doRecordSendTrace [
+
+	<inline: true>
+	cogit recordSendTrace ifTrue: [
+		self
+			recordTrace: (objectMemory classForClassTag: lkupClassTag)
+			thing: messageSelector
+			source: TraceIsFromInterpreter.
+		super doRecordSendTrace ]
+]
+
 { #category : #'debug support' }
 CoInterpreter >> dumpPrimTraceLog [
 	"The prim trace log is a circular buffer of entries. If there is
@@ -5157,18 +5169,6 @@ CoInterpreter >> receiver [
 CoInterpreter >> recordContextSwitchFrom: aProcess in: sourceCode [
 	cogit recordEventTrace ifTrue:
 		[self recordTrace: TraceContextSwitch thing: aProcess source: sourceCode]
-]
-
-{ #category : #'send bytecodes' }
-CoInterpreter >> recordSendTrace [
-
-	<inline: true>
-	cogit recordSendTrace ifTrue: [
-		self
-			recordTrace: (objectMemory classForClassTag: lkupClassTag)
-			thing: messageSelector
-			source: TraceIsFromInterpreter.
-		super recordSendTrace ]
 ]
 
 { #category : #'debug support' }
