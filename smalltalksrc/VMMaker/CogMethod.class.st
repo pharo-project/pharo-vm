@@ -48,6 +48,11 @@ Class {
 		'methodHeader',
 		'selector'
 	],
+	#pools : [
+		'CogMethodConstants',
+		'VMBasicConstants',
+		'VMBytecodeConstants'
+	],
 	#category : #'VMMaker-JIT'
 }
 
