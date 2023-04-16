@@ -15194,7 +15194,7 @@ StackInterpreter >> transferTo: newProc from: sourceCode [
 	statProcessSwitch := statProcessSwitch + 1.
 	self push: instructionPointer.
 	self writeBackHeadFramePointers.
-	self assertValidExecutionPointers.
+	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: true line: #'__LINE__'.
 
 	"ensureMethodIsCogged: in makeBaseFrameFor: in
 	 externalSetStackPageAndPointersForSuspendedContextOfProcess:
