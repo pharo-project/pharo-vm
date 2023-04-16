@@ -353,7 +353,6 @@ Cogit class >> ancilliaryClasses [
 		CogBytecodeDescriptor.
 		CogBytecodeFixup.
 		CogPrimitiveDescriptor.
-		CogBlockMethod.
 		CogMethod.
 		CogPrimitiveCallState.
 		self activeCompilerClass literalsManagerClass},
@@ -869,7 +868,7 @@ Cogit class >> initializeBytecodeTable [
 
 { #category : #'class initialization' }
 Cogit class >> initializeCogMethodConstants [
-	CMMegamorphicIC := 1 + (CMPolymorphicIC := 1 + (CMBlock := 1 + (CMMethod := 1 + (CMFree := 1))))
+	CMMegamorphicIC := 1 + (CMPolymorphicIC := 1 + (CMMethod := 1 + (CMFree := 1)))
 ]
 
 { #category : #'class initialization' }
@@ -1469,7 +1468,7 @@ Cogit class >> runtime [
 { #category : #translation }
 Cogit class >> shouldGenerateTypedefFor: aStructClass [
 	"Hack to work-around mutliple definitions.  Sometimes a type has been defined in an include."
-	^({ CogBlockMethod. CogMethod. SistaCogMethod } includes: aStructClass) not
+	^({ CogMethod. SistaCogMethod } includes: aStructClass) not
 ]
 
 { #category : #translation }
@@ -3179,31 +3178,6 @@ Cogit >> allButTopBitOfAddressSpaceMask [
 	^((1 << (8 * objectMemory wordSize - 1)) - 1) bitAnd: -4
 ]
 
-{ #category : #disassembly }
-Cogit >> allCogMethodsFor: cogMethod [
-	<doNotGenerate>
-	| blockEntry end methods pc |
-	cogMethod isInteger ifTrue: [^self allCogMethodsFor: (self cogMethodSurrogateAt: cogMethod)].
-	cogMethod cmType = CMBlock ifTrue:
-		[^self allCogMethodsFor: cogMethod cmHomeMethod].
-	(cogMethod cmType ~= CMMethod
-	 or: [cogMethod picUsage = 0]) ifTrue:
-		[^{cogMethod}].
-
-	methods := OrderedCollection with: cogMethod.
-	pc := blockEntry := cogMethod picUsage + cogMethod asInteger.
-	end := (self mapEndFor: cogMethod) - 1.
-	[pc < end] whileTrue:
-		[| targetpc |
-		 targetpc := blockEntry.
-		 (backEnd isJumpAt: pc) ifTrue:
-			[targetpc := backEnd jumpTargetPCAt: pc.
-			 targetpc < blockEntry ifTrue:
-				[methods add: (self cCoerceSimple: targetpc - (self sizeof: CogBlockMethod) to: #'CogBlockMethod *')]].
-		 pc := pc + (backEnd instructionSizeAt: pc)].
-	^methods sort
-]
-
 { #category : #'garbage collection' }
 Cogit >> allMachineCodeObjectReferencesValid [
 	"Check that all methods have valid selectors, and that all linked sends are to valid targets and have valid cache tags"
@@ -3624,8 +3598,6 @@ Cogit >> cCoerceSimple: value to: cTypeString [
 			[^(value isInteger and: [value < 0])
 				ifTrue: [value] "it's an error code; leave it be"
 				ifFalse: [self cogMethodSurrogateAt: value asUnsignedInteger]].
-		cTypeString == #'CogBlockMethod *' ifTrue:
-			[^self cogBlockMethodSurrogateAt: value asUnsignedInteger].
 		(cTypeString == #'AbstractInstruction *'
 		 and: [value isBehavior]) ifTrue:
 			[^CogCompilerClass].
@@ -4552,57 +4524,6 @@ Cogit >> codeEntryNameFor: address [
 	^nil
 ]
 
-{ #category : #disassembly }
-Cogit >> codeRangesFor: cogMethod [
-	"Answer a sequence of ranges of code for the main method and all of the blocks in a CogMethod.
-	 N.B.  These are in order of block dispatch, _not_ necessarily address order in the method."
-	<doNotGenerate>
-	| pc end blockEntry starts |
-	cogMethod cmType = CMPolymorphicIC ifTrue:
-		[end := cogMethod asInteger + cPICEndOfCodeOffset - backEnd jumpLongByteSize.
-		 ^{ CogCodeRange
-				from: cogMethod asInteger + (self sizeof: CogMethod)
-				to: end
-				cogMethod: cogMethod
-				startpc: nil }].
-	end := (self mapEndFor: cogMethod) - 1.
-	cogMethod picUsage = 0 ifTrue:
-		[^{ CogCodeRange
-				from: cogMethod asInteger + (self sizeof: CogMethod)
-				to: end
-				cogMethod: cogMethod
-				startpc: (cogMethod cmType ~= CMMegamorphicIC ifTrue:
-							[coInterpreter startPCOfMethodHeader: cogMethod methodHeader]) }].
-	pc := blockEntry := cogMethod picUsage + cogMethod asInteger.
-	starts := OrderedCollection with: cogMethod.
-	[pc < end] whileTrue:
-		[| targetpc |
-		 targetpc := blockEntry.
-		 (backEnd isJumpAt: pc) ifTrue:
-			[targetpc := backEnd jumpTargetPCAt: pc.
-			 targetpc < blockEntry ifTrue:
-				[starts add: (self cCoerceSimple: targetpc - (self sizeof: CogBlockMethod) to: #'CogBlockMethod *')]].
-		 pc := pc + (backEnd instructionSizeAt: pc)].
-	starts := starts asSortedCollection.
-	^(1 to: starts size + 1) collect:
-		[:i| | cogSubMethod nextpc |
-		i <= starts size
-			ifTrue:
-				[cogSubMethod := starts at: i.
-				 nextpc := i < starts size ifTrue: [(starts at: i + 1) address] ifFalse: [blockEntry].
-				 CogCodeRange
-					from: cogSubMethod address + (self sizeof: cogSubMethod)
-					to: nextpc - 1
-					cogMethod: cogSubMethod
-					startpc: (i = 1
-								ifTrue: [coInterpreter startPCOfMethodHeader: cogMethod methodHeader]
-								ifFalse: [cogSubMethod startpc])]
-			ifFalse:
-				[CogCodeRange
-					from: blockEntry
-					to: end]]
-]
-
 { #category : #'jit - api' }
 Cogit >> cog: aMethodObj selector: aSelectorOop [
 	"Attempt to produce a machine code method for the bytecode method
@@ -4651,22 +4572,6 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 	statCompileMethodUsecs := statCompileMethodUsecs + (coInterpreter ioUTCMicrosecondsNow - startTime).		
 		
 	^cogMethod
-]
-
-{ #category : #'simulation only' }
-Cogit >> cogBlockMethodSurrogateAt: address [
-	<doNotGenerate>
-	self assert: (address bitAnd: objectMemory wordSize - 1) = 0.
-	^cogBlockMethodSurrogateClass new
-		at: address
-		objectMemory: objectMemory
-		cogit: self
-]
-
-{ #category : #'simulation only' }
-Cogit >> cogBlockMethodSurrogateClass [
-	<doNotGenerate>
-	^cogBlockMethodSurrogateClass
 ]
 
 { #category : #disassembly }
@@ -4994,16 +4899,6 @@ Cogit >> cogMethodDoesntLookKosher: cogMethod [
 		 ^0].
 
 	^9
-]
-
-{ #category : #'simulation only' }
-Cogit >> cogMethodOrBlockSurrogateAt: address [
-	<doNotGenerate>
-	| surrogate |
-	surrogate := self cogMethodSurrogateAt: address.
-	^surrogate cmType = CMBlock
-		ifTrue: [self cogBlockMethodSurrogateAt: address]
-		ifFalse: [surrogate]
 ]
 
 { #category : #'simulation only' }
@@ -6015,20 +5910,6 @@ Cogit >> disableCodeZoneWrite [
 		ifTrue:[	self pthread_jit_write_protect_np: true ].
 	
 	jitCodeZoneWriteEnabled := false
-]
-
-{ #category : #disassembly }
-Cogit >> disassemble: targetmcpc from: startpc to: endpc arg: aStream [
-	<doNotGenerate>
-	| startbcpc |
-	self disassembleFrom: startpc to: endpc - 1 labels: Dictionary new on: aStream.
-	startbcpc := (self cCoerceSimple: targetmcpc - (self sizeof: CogBlockMethod) to: #'CogBlockMethod *') startpc.
-	aStream nextPutAll: 'block startpc: '.
-	startbcpc printOn: aStream base: 16.
-	aStream nextPut: $/.
-	(objectMemory integerObjectOf: startbcpc) printOn: aStream base: 16.
-	aStream cr; flush.
-	^0
 ]
 
 { #category : #disassembly }
@@ -8618,11 +8499,7 @@ Cogit >> initialize [
 	wordSize := self class objectMemoryClass wordSize.
 	cogMethodSurrogateClass := wordSize = 4
 											ifTrue: [CogMethodSurrogate32]
-											ifFalse: [CogMethodSurrogate64].
-	cogBlockMethodSurrogateClass := wordSize = 4
-											ifTrue: [CogBlockMethodSurrogate32]
-											ifFalse: [CogBlockMethodSurrogate64].
-	
+											ifFalse: [CogMethodSurrogate64].	
 	statCompileFullBlockCount := 0.
 	statCompileFullBlockUsecs := 0.
 	statCompileMethodCount := 0.
@@ -9820,16 +9697,10 @@ Cogit >> markLiteralsAndUnlinkUnmarkedSendsIn: cogMethod [
 { #category : #'jit - api' }
 Cogit >> markMethodAndReferents: aCogMethod [
 	<api>
-	<var: #aCogMethod type: #'CogBlockMethod *'>
-	| cogMethod |
-	<var: #cogMethod type: #'CogMethod *'>
-	self assert: (aCogMethod cmType = CMMethod
-				or: [aCogMethod cmType = CMBlock]).
-	cogMethod := aCogMethod cmType = CMMethod
-					ifTrue: [self cCoerceSimple: aCogMethod to: #'CogMethod *']
-					ifFalse: [aCogMethod cmHomeMethod].
-	cogMethod cmUsageCount: CMMaxUsageCount.
-	self mapFor: cogMethod
+	<var: #aCogMethod type: #'CogMethod *'>
+	self assert: (aCogMethod cmType = CMMethod).
+	aCogMethod cmUsageCount: CMMaxUsageCount.
+	self mapFor: aCogMethod
 		performUntil: #incrementUsageOfTargetIfLinkedSend:mcpc:ignored:
 		arg: 0
 ]
@@ -10550,22 +10421,16 @@ Cogit >> printMethodHeader: cogMethod on: aStream [
 	self cCode: ''
 		inSmalltalk:
 			[cogMethod isInteger ifTrue:
-				[^self printMethodHeader: (self cogMethodOrBlockSurrogateAt: cogMethod) on: aStream]].
+				[^self printMethodHeader: (self cogMethodSurrogateAt: cogMethod) on: aStream]].
 	aStream newLine.
 	cogMethod asInteger printOn: aStream base: 16.
 	cogMethod cmType = CMMethod ifTrue:
 		[aStream newLine; tab; nextPutAll: 'objhdr: '.
 		cogMethod objectHeader printOn: aStream base: 16].
-	cogMethod cmType = CMBlock ifTrue:
-		[aStream newLine; tab; nextPutAll: 'homemth: '.
-		cogMethod cmHomeMethod asUnsignedInteger printOn: aStream base: 16.
-		aStream
-			nextPutAll: ' (offset '; print: cogMethod homeOffset; nextPut: $);
-			newLine; tab; nextPutAll: 'startpc: '; print: cogMethod startpc].
 	aStream
 		newLine; tab; nextPutAll: 'nArgs: ';	print: cogMethod cmNumArgs;
 		tab;    nextPutAll: 'type: ';	print: cogMethod cmType.
-	(cogMethod cmType ~= 0 and: [cogMethod cmType ~= CMBlock]) ifTrue:
+	(cogMethod cmType ~= 0) ifTrue:
 		[aStream newLine; tab; nextPutAll: 'blksiz: '.
 		cogMethod blockSize printOn: aStream base: 16.
 		cogMethod cmType = CMMethod ifTrue:
@@ -10597,20 +10462,13 @@ Cogit >> printMethodHeader: cogMethod on: aStream [
 			 cogMethod stackCheckOffset > 0 ifTrue:
 				[aStream nextPut: $/.
 				 cogMethod asInteger + cogMethod stackCheckOffset printOn: aStream base: 16].
-			cogMethod cmType = CMBlock
-				ifTrue:
-					[aStream
-						newLine; tab;
-						nextPutAll: 'cbUsesInstVars ';
-						nextPutAll: (cogMethod cbUsesInstVars ifTrue: ['yes'] ifFalse: ['no'])]
-				ifFalse:
-					[aStream
+				 aStream
 						newLine; tab;
 						nextPutAll: 'cmRefersToYoung: ';
 						nextPutAll: (cogMethod cmRefersToYoung ifTrue: ['yes'] ifFalse: ['no']);
 						tab;
 						nextPutAll: 'cmIsFullBlock: ';
-						nextPutAll: (cogMethod cmIsFullBlock ifTrue: ['yes'] ifFalse: ['no'])].
+						nextPutAll: (cogMethod cmIsFullBlock ifTrue: ['yes'] ifFalse: ['no']).
 			cogMethod cmType = CMMethod ifTrue:
 				[([cogMethod nextMethodOrIRCs] on: MessageNotUnderstood do: [:ex| nil]) ifNotNil:
 					[:nmoircs| aStream newLine; tab; nextPutAll: 'nextMethodOrIRCs: '.
@@ -11805,45 +11663,12 @@ Cogit >> stackPointerAlignment [
 	^ backEnd stackPointerAlignment
 ]
 
-{ #category : #disassembly }
-Cogit >> startMcpcAndCogMethodForMcpc: mcpc in: cogMethod do: aBinaryBlock [
-	"Evaluate aBinaryBlock with the startmcpc and method containing mcpc in cogMethod."
-	<doNotGenerate>
-	| startMcpc |
-	startMcpc := ((self codeRangesFor: cogMethod)
-					detect: [:range| range includes: mcpc]
-					ifNone:
-						[(self codeRangesFor: cogMethod)
-							detect: [:range| range last + 1 = mcpc]
-							ifNone: [^nil]]) first.
-	^aBinaryBlock
-		value: startMcpc
-		value: (startMcpc = (cogMethod asInteger + (self sizeof: CogMethod))
-					ifTrue: [cogMethod]
-					ifFalse: [self cCoerceSimple: startMcpc - (self sizeof: CogBlockMethod)
-								to: #'CogBlockMethod *'])
-]
-
 { #category : #literals }
 Cogit >> storeLiteral: objOop atAnnotatedAddress: address [ 
 	
 	<inline: true>
 	literalsManager storeLiteral: objOop atAnnotatedAddress: address using: backEnd 
 	
-]
-
-{ #category : #'method map' }
-Cogit >> subMethodsAsRangesFor: surrogateOrAddress [
-	<doNotGenerate>
-	| cogMethod codeRanges |
-	cogMethod := surrogateOrAddress isInteger
-								ifTrue: [self cogMethodSurrogateAt: surrogateOrAddress]
-								ifFalse: [surrogateOrAddress].
-	^cogMethod cmType = CMMethod ifTrue:
-		[codeRanges := self codeRangesFor: cogMethod.
-		 ^codeRanges size > 1 "omit the block dispatch range"
-			ifTrue: [codeRanges allButLast]
-			ifFalse: [codeRanges]]
 ]
 
 { #category : #'in-line cacheing' }

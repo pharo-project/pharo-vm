@@ -310,11 +310,11 @@ CogVMSimulator >> byteCountText [
 CogVMSimulator >> cCoerceSimple: value to: cTypeString [
 	"Type coercion for translation and simulation.
 	 For simulation answer a suitable surrogate for the struct types"
-	^cTypeString
-		caseOf:
-		   {	[#'CogMethod *']		->	[cogit cogMethodSurrogateAt: value asUnsignedInteger].
-			[#'CogBlockMethod *']	->	[cogit cogBlockMethodSurrogateAt: value asUnsignedInteger] }
-		otherwise: [value]
+
+	^ cTypeString
+		  caseOf: { ([ #'CogMethod *' ]
+			   -> [ cogit cogMethodSurrogateAt: value asUnsignedInteger ]) }
+		  otherwise: [ value ]
 ]
 
 { #category : #'plugin support' }
@@ -750,21 +750,9 @@ CogVMSimulator >> iframeIsBlockActivation: theFP [
 ]
 
 { #category : #'frame access' }
-CogVMSimulator >> iframeMethod: theFP [
-	self assert: (self isMachineCodeFrame: theFP) not.
-	^super iframeMethod: theFP
-]
-
-{ #category : #'frame access' }
 CogVMSimulator >> iframeNumArgs: theFP [
 	self assert: (self isMachineCodeFrame: theFP) not.
 	^super iframeNumArgs: theFP
-]
-
-{ #category : #'frame access' }
-CogVMSimulator >> iframeSavedIP: theFP [
-	self assert: (self isMachineCodeFrame: theFP) not.
-	^super iframeSavedIP: theFP
 ]
 
 { #category : #'image save/restore' }
@@ -1219,38 +1207,37 @@ CogVMSimulator >> mappedPluginEntries [
 
 { #category : #'debug support' }
 CogVMSimulator >> maybeCheckStackDepth: delta sp: sp pc: mcpc [
-	| asp bcpc startbcpc cogHomeMethod cogBlockMethod csp debugStackPointers |
-	debugStackDepthDictionary ifNil: [^self].
-	(self isMachineCodeFrame: framePointer) ifFalse: [^self].
-	cogBlockMethod := self mframeCogMethod: framePointer.
-	cogHomeMethod := self asCogHomeMethod: cogBlockMethod.
+
+	| asp bcpc startbcpc cogMethod csp debugStackPointers |
+	debugStackDepthDictionary ifNil: [ ^ self ].
+	(self isMachineCodeFrame: framePointer) ifFalse: [ ^ self ].
+	cogMethod := self mframeCogMethod: framePointer.
 	debugStackPointers := debugStackDepthDictionary
-								at: cogHomeMethod methodObject
-								ifAbsentPut: [self debugStackPointersFor: cogHomeMethod methodObject].
-	startbcpc := cogHomeMethod = cogBlockMethod
-					ifTrue: [self startPCOfMethod: cogHomeMethod methodObject]
-					ifFalse: [self startPCOfClosure: (self pushedReceiverOrClosureOfFrame: framePointer)].
-	bcpc := cogit bytecodePCFor: mcpc startBcpc: startbcpc in: cogBlockMethod.
+		                      at: cogMethod methodObject
+		                      ifAbsentPut: [
+		                      self debugStackPointersFor:
+			                      cogMethod methodObject ].
+	startbcpc := self startPCOfMethod: cogMethod methodObject.
+	bcpc := cogit bytecodePCFor: mcpc startBcpc: startbcpc in: cogMethod.
 	self assert: bcpc ~= 0.
-	((cogBlockMethod ~= cogHomeMethod or: [cogBlockMethod cmIsFullBlock])
-	 and: [cogit isNonLocalReturnPC: mcpc]) ifTrue:
-		[| lastbcpc |
-		 "Method returns within a block (within an unwind-protect) must check the stack depth at the
+	(cogMethod cmIsFullBlock and: [ cogit isNonLocalReturnPC: mcpc ])
+		ifTrue: [
+			| lastbcpc |
+			"Method returns within a block (within an unwind-protect) must check the stack depth at the
 		  return, not the bytecode following, but the pc mapping maps to the bytecode following the
 		  return. lastBytecodePCForBlockAt:in: catches method returns at the end of a block, modifying
 		  the bcpc to that of the return.  isNonLocalReturnPC: catches method returns not at the end.
 		  Assumes method return bytecodes are 1 bytecode long;a  dodgy assumption, but good enough."
-		 lastbcpc :=  cogit endPCOf: cogHomeMethod methodObject.
-		 bcpc > lastbcpc ifTrue: [bcpc := lastbcpc]].
-	asp := self stackPointerIndexForFrame: framePointer WithSP: sp + objectMemory wordSize.
-	csp := debugStackPointers at: bcpc ifAbsent: [-1].
+			lastbcpc := cogit endPCOf: cogMethod methodObject.
+			bcpc > lastbcpc ifTrue: [ bcpc := lastbcpc ] ].
+	asp := self
+		       stackPointerIndexForFrame: framePointer
+		       WithSP: sp + objectMemory wordSize.
+	csp := debugStackPointers at: bcpc ifAbsent: [ -1 ].
 	"Compensate for some edge cases"
-	asp - delta = csp ifTrue:
-		["Compensate for the implicit context receiver push in a trap bytecode with the absence of a contnuation.
+	asp - delta = csp ifTrue: [ "Compensate for the implicit context receiver push in a trap bytecode with the absence of a contnuation.
 		  Assumes trap bytecodes are 1 byte bytecodes."
-		 (SistaVM
-		  and: [cogit isTrapAt: mcpc]) ifTrue:
-			[csp := csp + 1] ].
+		(SistaVM and: [ cogit isTrapAt: mcpc ]) ifTrue: [ csp := csp + 1 ] ].
 	self assert: asp - delta + 1 = csp
 ]
 
@@ -1424,14 +1411,6 @@ CogVMSimulator >> pluginEntryFor: mapIndex [
 CogVMSimulator >> pluginList: aCollection [ 
 
 	pluginList := aCollection
-]
-
-{ #category : #'object memory support' }
-CogVMSimulator >> preGCAction: gcModeArg [
-	"Override to void debugStackPointers on any GC/remap"
-	debugStackDepthDictionary ifNotNil:
-		[debugStackDepthDictionary := Dictionary new].
-	^super preGCAction: gcModeArg
 ]
 
 { #category : #'other primitives' }
@@ -1861,20 +1840,6 @@ CogVMSimulator >> reverseBytesInImage [
 		during: [super reverseBytesInImage]
 ]
 
-{ #category : #'method lookup cache' }
-CogVMSimulator >> rewriteMethodCacheEntryForExternalPrimitiveToFunction: localPrimAddress [
-	super rewriteMethodCacheEntryForExternalPrimitiveToFunction:
-				(self mapFunctionToAddress: (localPrimAddress = 0
-												ifTrue: [#primitiveFail]
-												ifFalse: [localPrimAddress])).
-	"Hack; the super call will rewrite the entry to the address of the function.
-	 So (when simulating) undo the damage and put back the functionPointer"
-	(methodCache at: lastMethodCacheProbeWrite + MethodCacheMethod) = newMethod ifTrue:
-		[methodCache
-			at: lastMethodCacheProbeWrite + MethodCachePrimFunction
-			put: (self cCoerce: localPrimAddress to: #'sqIntptr_t')]
-]
-
 { #category : #'rump c stack' }
 CogVMSimulator >> rumpCStackAddress [
 
@@ -1946,12 +1911,6 @@ CogVMSimulator >> setImageName: aString [
 CogVMSimulator >> shortPrintContext: aContext [
 	transcript newLine.
 	^super shortPrintContext: aContext
-]
-
-{ #category : #'debug printing' }
-CogVMSimulator >> shortPrintFrame: theFP [
-	self transcript newLine.
-	^super shortPrintFrame: theFP
 ]
 
 { #category : #'process primitive support' }
@@ -2132,15 +2091,6 @@ CogVMSimulator >> unableToReadImageError [
 	self error:  'Read failed or premature end of image file'
 ]
 
-{ #category : #'frame access' }
-CogVMSimulator >> updateStateOfSpouseContextForFrame: theFP WithSP: theSP [
-	 "26431360 = (self frameContext: theFP) ifTrue:
-		[self halt]."
-	"((self stringOf: (self penultimateLiteralOf: (self frameMethodObject: theFP))) = #indexOf:startingAt:ifAbsent:) ifTrue:
-		[self halt]."
-	^super updateStateOfSpouseContextForFrame: theFP WithSP: theSP
-]
-
 { #category : #'debug support' }
 CogVMSimulator >> veryDeepCopyWith: deepCopier [
 	"Override to short-circuit the copying of any VMPluginCodeGenerators referenced from mappedPluginEntries and
@@ -2173,12 +2123,6 @@ CogVMSimulator >> vmPathGet: stringBase Length: stringSize [
 CogVMSimulator >> warpBits [
 
 	^ myBitBlt warpBits
-]
-
-{ #category : #'debug printing' }
-CogVMSimulator >> whereIs: anOop [
-	(self isOnRumpCStack: anOop) ifTrue: [^'is on rump C stack'].
-	^super whereIs: anOop
 ]
 
 { #category : #UI }

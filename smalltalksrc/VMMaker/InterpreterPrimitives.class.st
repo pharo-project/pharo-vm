@@ -589,6 +589,7 @@ InterpreterPrimitives >> pop: nItems thenPushBool: boolean [
 InterpreterPrimitives >> positive32BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a positive SmallInteger or a four-byte LargePositiveInteger."
+	<api>
 	<returnTypeC: #'unsigned int'>
 	objectMemory hasSixtyFourBitImmediates
 		ifTrue:
@@ -610,7 +611,7 @@ InterpreterPrimitives >> positive32BitValueOf: oop [
 InterpreterPrimitives >> positive64BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a positive SmallInteger or an eight-byte LargePositiveInteger."
-
+	<api>
 	<returnTypeC: #usqLong>
 	| sz value ok |
 	<var: #value type: #usqLong>
@@ -4532,6 +4533,7 @@ InterpreterPrimitives >> signalNoResume: aSemaphore [
 InterpreterPrimitives >> signed32BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a SmallInteger or a four-byte LargeInteger."
+	<api>
 	<returnTypeC: #int>
 	
 	objectMemory hasSixtyFourBitImmediates
@@ -4556,6 +4558,7 @@ InterpreterPrimitives >> signed64BitValueOf: oop [
 	"Convert the given object into an integer value.
 	 The object may be either a positive SmallInteger or a eight-byte LargeInteger."
 	| sz value negative ok magnitude |
+	<api>
 	<inline: false>
 	<returnTypeC: #sqLong>
 	<var: #value type: #sqLong>

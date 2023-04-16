@@ -8324,6 +8324,33 @@ StackInterpreter >> isWriteMediatedContextInstVarIndex: index [
 	^index <= ReceiverIndex
 ]
 
+{ #category : #'internal interpreter access' }
+StackInterpreter >> itemporary: offset in: theFP [
+
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	| frameNumArgs |
+	^ offset < (frameNumArgs := self frameNumArgs: theFP)
+		  ifTrue: [
+			  stackPages unsignedLongAt: theFP + FoxCallerSavedIP
+				  + (frameNumArgs - offset * objectMemory wordSize) ]
+		  ifFalse: [
+			  stackPages unsignedLongAt:
+				  (self frameReceiverLocation: theFP) - objectMemory wordSize
+				  + (frameNumArgs - offset * objectMemory wordSize) ]
+]
+
+{ #category : #'internal interpreter access' }
+StackInterpreter >> itemporary: offset in: theFP put: valueOop [
+	"See StackInterpreter class>>initializeFrameIndices"
+	| frameNumArgs |
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^offset < (frameNumArgs := self frameNumArgs: theFP)
+		ifTrue: [stackPages unsignedLongAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
+		ifFalse: [stackPages unsignedLongAt: theFP + FoxReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
+]
+
 { #category : #'jump bytecodes' }
 StackInterpreter >> jump: offset [
 
@@ -9701,9 +9728,10 @@ StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 	<var: #theFP type: #'char *'>
 	<var: #theSP type: #'char *'>
 	self assert: (self frameHasContext: theFP) not.
+	self assert: (self isBaseFrame: theFP) not. "base frames must aready be married for cannotReturn: processing"
 
 	"The SP is expected to be pointing at the last oop on the stack, not at the pc"
-	self assert: (objectMemory addressCouldBeOop: (stackPages unsignedLongAt: theSP)).
+	self assert: (objectMemory addressCouldBeOop: (objectMemory longAt:  theSP)).
 
 	methodHeader := objectMemory methodHeaderOf: (self iframeMethod: theFP).
 	"Decide how much of the stack to preserve in widowed contexts.  Preserving too much
@@ -9713,7 +9741,6 @@ StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 	 no temporaries.  Note that we still set the stack pointer to its current value, but stack
 	 contents other than the arguments are nil."
 	numArgs := self frameNumArgs: theFP.
-	numStack := self stackPointerIndexForFrame: theFP WithSP: theSP.
 
 	closureOrNil := (self frameIsBlockActivation: theFP)
 						ifTrue: [self pushedReceiverOrClosureOfFrame: theFP]
@@ -9722,8 +9749,10 @@ StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 	numSlots := (self methodHeaderIndicatesLargeFrame: methodHeader)
 					ifTrue: [LargeContextSlots]
 					ifFalse: [SmallContextSlots].
+	numStack := self stackPointerIndexForFrame: theFP WithSP: theSP.
 	theContext := objectMemory eeInstantiateMethodContextSlots: numSlots.
-	self assert: numStack + ReceiverIndex <= numSlots. 
+	self setFrameContext: theFP to: theContext.
+	self assert: numStack + ReceiverIndex <= numSlots.
 	"Mark context as married by setting its sender to the frame pointer plus SmallInteger
 	 tags and the InstructionPointer to the saved fp (which ensures correct alignment
 	 w.r.t. the frame when we check for validity)"
@@ -9738,7 +9767,7 @@ StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 		withValue: (objectMemory integerObjectOf: numStack).
 	objectMemory storePointerUnchecked: MethodIndex
 		ofObject: theContext
-		withValue: (self iframeMethod: theFP).
+		withValue: (self frameMethodObject: theFP).
 	objectMemory storePointerUnchecked: ClosureIndex ofObject: theContext withValue: closureOrNil.
 	objectMemory storePointerUnchecked: ReceiverIndex
 		ofObject: theContext
@@ -9748,10 +9777,8 @@ StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 	1 to: numArgs do:
 		[:i|
 		objectMemory storePointerUnchecked: ReceiverIndex + i
-			ofObject: theContext "inline self temporary: i - 1 in:theFP" 
-			withValue: (stackPages unsignedLongAt: theFP
-										+ FoxCallerSavedIP
-										+ ((numArgs - i + 1) * objectMemory wordSize))].
+			ofObject: theContext
+			withValue: (self temporary: i - 1 in: theFP)].
 	copyTemps ifTrue:
 		[numTemps := self frameNumTemps: theFP.
 		 1 to: numTemps do:
@@ -9767,7 +9794,6 @@ StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 			ofObject: theContext
 			withValue: objectMemory nilObject].
 
-	self setFrameContext: theFP to: theContext.
 	self setFrameHasContext: theFP.
 
 	self assert: (self frameHasContext: theFP).
@@ -9790,7 +9816,6 @@ StackInterpreter >> maybeFailForLastObjectOverwrite [
 { #category : #'cog jit support' }
 StackInterpreter >> maybeFixClonedCompiledMethod: objOop [
 	"This is a noop in the Stack VM"
-	<inline: true>
 ]
 
 { #category : #'compiled methods' }
@@ -9913,6 +9938,12 @@ StackInterpreter >> maybeSelectorOfMethod: methodObj [
 	 and: [(objectMemory fetchClassTagOfNonImm: maybeSelector)
 			= (objectMemory fetchClassTagOfNonImm: (objectMemory splObj: SelectorDoesNotUnderstand))]]]]) ifTrue:
 		[maybeSelector]
+]
+
+{ #category : #'stack bytecodes' }
+StackInterpreter >> maybeTraceBlockCreation: aBlock [
+
+	"Noop in the interpreter"
 ]
 
 { #category : #'debug support' }
@@ -10077,11 +10108,6 @@ StackInterpreter >> methodUsesPrimitiveErrorCode: aMethodObj [
 				ofObject: aMethodObj)]
 ]
 
-{ #category : #'frame access' }
-StackInterpreter >> mframeCogMethod: theFP [
-	self shouldNotImplement
-]
-
 { #category : #'primitive support' }
 StackInterpreter >> microsecondsToMilliseconds: microseconds [
 	<var: #microseconds type: #usqLong>
@@ -10139,40 +10165,44 @@ StackInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 	<var: #fpInNewPage type: #'char *'>
 	<var: #offsetCallerFP type: #'char *'>
 	<var: #source type: #'char *'>
-	<returnTypeC: 'char *'>
+	<returnTypeC: #'char *'>
+	"A base frame must have a context for cannotReturn: processing."
+	self assert: (self isBaseFrame: theFP) not.
+	self assert: self validStackPageBaseFrames.
+	callerFP := self frameCallerFP: theFP.
+	self assert: (self frameHasContext: callerFP).
+	self assert: (objectMemory isContext: (self frameContext: callerFP)).
 	newSP := newPage baseAddress + objectMemory wordSize.
 	stackedReceiverOffset := self frameStackedReceiverOffset: theFP.
-	"First move the data.  We will fix up frame pointers later."
+	"First move the data, leaving room for the caller and base frame contexts.  We will fix up frame pointers later."
 	theFP + stackedReceiverOffset
 		to: oldPage headSP
 		by: objectMemory wordSize negated
 		do: [:source|
 			newSP := newSP - objectMemory wordSize.
-			stackPages unsignedLongAt: newSP put: (stackPages unsignedLongAt: source)].
+			stackPages longAt: newSP put: (stackPages longAt: source)].
 	"newSP = oldSP + delta => delta = newSP - oldSP"
 	delta := newSP - oldPage headSP.
 	newFP := newPage baseAddress - stackedReceiverOffset.
 	self setHeadFP: oldPage headFP + delta andSP: newSP inPage: newPage.
 	newPage baseFP: newFP.
-	callerFP := self frameCallerFP: theFP.
-	self assert: (self isBaseFrame: theFP) not.
-	self assert: (self frameHasContext: callerFP).
 	callerIP := self oopForPointer: (self frameCallerSavedIP: theFP).
-	stackPages unsignedLongAt: theFP + stackedReceiverOffset put: callerIP.
+	stackPages longAt: theFP + stackedReceiverOffset put: callerIP.
 	self assert: (callerFP < oldPage baseAddress
 				and: [callerFP > (oldPage realStackLimit - (LargeContextSlots * objectMemory bytesPerOop / 2))]).
 	oldPage
 		headFP: callerFP;
 		headSP: theFP + stackedReceiverOffset.
 	"Mark the new base frame in the new page (FoxCallerContext a.k.a. FoxCallerSavedIP)"
-	stackPages unsignedLongAt: newFP + FoxCallerContext put:  (self frameContext: callerFP).
-	stackPages unsignedLongAt: newFP + FoxSavedFP put: 0.
+	self frameCallerContext: newFP put: (self frameContext: callerFP).
+	stackPages
+		longAt: newFP + FoxSavedFP put: 0.
 	"Now relocate frame pointers, updating married contexts to refer to their moved spouse frames."
 	fpInNewPage := newPage headFP.
 	[offsetCallerFP := self frameCallerFP: fpInNewPage.
 	 offsetCallerFP ~= 0 ifTrue:
 		[offsetCallerFP := offsetCallerFP + delta].
-	 stackPages unsignedLongAt: fpInNewPage + FoxSavedFP put: (self oopForPointer: offsetCallerFP).
+	 stackPages longAt: fpInNewPage + FoxSavedFP put: (self oopForPointer: offsetCallerFP).
 	 (self frameHasContext: fpInNewPage) ifTrue:
 		[theContext := self frameContext: fpInNewPage.
 		 objectMemory storePointerUnchecked: SenderIndex
@@ -10183,6 +10213,7 @@ StackInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 			withValue: (self withSmallIntegerTags: offsetCallerFP)].
 	 fpInNewPage := offsetCallerFP.
 	 fpInNewPage ~= 0] whileTrue.
+	self assert: self validStackPageBaseFrames.
 	^newFP
 ]
 
@@ -10629,6 +10660,7 @@ StackInterpreter >> positive32BitIntegerFor: integerValue [
 	"integerValue is interpreted as POSITIVE, e.g. as the result of Bitmap>at:.
 	 N.B.  Returning in each arm separately enables Slang inlining.
 	 /Don't/ return the ifTrue:ifFalse: unless Slang inlining of conditionals is fixed."
+	<api>
 	<inline: true>
 	<var: 'integerValue' type: #'unsigned int'>
 	objectMemory hasSixtyFourBitImmediates
@@ -12528,36 +12560,43 @@ StackInterpreter >> pushFullClosureNumArgs: numArgs copiedValues: numCopiedArg c
 	"The compiler has pushed the values to be copied, if any. The receiver has been pushed on stack before if specified. 
 	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
 	 Sets outerContext, compiledBlock, numArgs and receiver as specified.."
+
 	<inline: true>
 	| numCopied newClosure context startIndex |
 	"No need to record the pushed copied values in the outerContext."
 	context := ignoreContext
-		ifTrue: [objectMemory nilObject ]
-		ifFalse: [self ensureFrameIsMarried: framePointer SP: stackPointer + (numCopiedArg * objectMemory bytesPerOop)].
+		           ifTrue: [ objectMemory nilObject ]
+		           ifFalse: [
+			           self
+				           ensureFrameIsMarried: framePointer
+				           SP:
+				           stackPointer
+				           + (numCopiedArg * objectMemory bytesPerOop) ].
 	newClosure := self
-					fullClosureIn: context 
-					numArgs: numArgs 
-					numCopiedValues: numCopiedArg 
-					compiledBlock: compiledBlock.
+		              fullClosureIn: context
+		              numArgs: numArgs
+		              numCopiedValues: numCopiedArg
+		              compiledBlock: compiledBlock.
+	self maybeTraceBlockCreation: newClosure.
 	receiverIsOnStack
-		ifFalse: 
-			[ startIndex := FullClosureFirstCopiedValueIndex.
-			   objectMemory storePointerUnchecked: FullClosureReceiverIndex
+		ifFalse: [
+			startIndex := FullClosureFirstCopiedValueIndex.
+			objectMemory
+				storePointerUnchecked: FullClosureReceiverIndex
 				ofObject: newClosure
 				withValue: self receiver.
 			numCopied := numCopiedArg ]
-		ifTrue:
-			[ startIndex := FullClosureReceiverIndex.
+		ifTrue: [
+			startIndex := FullClosureReceiverIndex.
 			numCopied := numCopiedArg + 1 ].
-	numCopied > 0 ifTrue:
-		[0 to: numCopied - 1 do:
-			[ :i |
-			"Assume: have just allocated a new BlockClosure; it must be young.
+	numCopied > 0 ifTrue: [
+		0 to: numCopied - 1 do: [ :i | "Assume: have just allocated a new BlockClosure; it must be young.
 			 Thus, can use unchecked stores."
-			 objectMemory storePointerUnchecked: i + startIndex
+			objectMemory
+				storePointerUnchecked: i + startIndex
 				ofObject: newClosure
-				withValue: (self stackValue: numCopied - i - 1)].
-		 self pop: numCopied].
+				withValue: (self stackValue: numCopied - i - 1) ].
+		self pop: numCopied ].
 	self fetchNextBytecode.
 	self push: newClosure
 ]
@@ -12713,7 +12752,7 @@ StackInterpreter >> pushReceiverVariableBytecode [
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushRemoteTemp: index inVectorAt: tempVectorIndex [
 	| tempVector |
-	tempVector := self temporary: tempVectorIndex in: framePointer.
+	tempVector := self itemporary: tempVectorIndex in: framePointer.
 	TempVectReadBarrier
 		ifTrue: 
 			[(objectMemory isForwarded: tempVector) ifTrue:
@@ -12733,7 +12772,7 @@ StackInterpreter >> pushRemoteTempLongBytecode [
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushTemporaryVariable: temporaryIndex [
 
-	self push: (self temporary: temporaryIndex in: framePointer).
+	self push: (self itemporary: temporaryIndex in: framePointer).
 ]
 
 { #category : #'stack bytecodes' }
@@ -13048,17 +13087,6 @@ StackInterpreter >> restoreStackLimit [
 ]
 
 { #category : #'process primitive support' }
-StackInterpreter >> resume: aProcess [
-	"Replaced by resume:preemptedYieldingIf:"
-	"Make aProcess runnable and if its priority is higher than
-	 that of the current process, preempt the current process.
-	 Answer if the current process was preempted.  Override
-	 to add tracing info (see resume:from:)."
-	<doNotGenerate>
-	self shouldNotImplement
-]
-
-{ #category : #'process primitive support' }
 StackInterpreter >> resume: aProcess preemptedYieldingIf: yieldImplicitly from: sourceCode [
 	"Make aProcess runnable and if its priority is higher than  that of the
 	 current process, preempt the current process.   Answer if the current
@@ -13211,16 +13239,8 @@ StackInterpreter >> roomToPushNArgs: n [
 	 won't actually push the arguments in the current context if the primitive fails.  With
 	 this assumption it is safe to answer based on the maximum argument count, /not/
 	 the ammount of space in the current frame were it converted to a context.."
-	false
-		ifTrue: "old code that checked size of context..."
-			[| cntxSize |
-			 self assert: method = (stackPages unsignedLongAt: framePointer + FoxMethod).
-			 cntxSize := (self methodHeaderIndicatesLargeFrame: (objectMemory methodHeaderOf: method))
-							ifTrue: [LargeContextSlots - CtxtTempFrameStart]
-							ifFalse: [SmallContextSlots - CtxtTempFrameStart].
-			 ^self stackPointerIndex + n <= cntxSize]
-		ifFalse: "simpler code that simply insists args are <= max arg count"
-			[^n <= (LargeContextSlots - CtxtTempFrameStart)]
+
+	^ n <= (LargeContextSlots - CtxtTempFrameStart)
 ]
 
 { #category : #simulation }
@@ -13465,7 +13485,6 @@ StackInterpreter >> setFrameContext: theFP to: aContext [
 
 { #category : #'frame access' }
 StackInterpreter >> setFrameHasContext: theFP [
-	"See encodeFrameFieldHasContext:numArgs:"
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	stackPages byteAt: theFP + FoxFrameFlags + 2 put: 1
@@ -14009,6 +14028,7 @@ StackInterpreter >> signed32BitIntegerFor: integerValue [
 	"Answer a full 32 bit integer object for the given integer value.
 	 N.B.  Returning in each arm separately enables Slang inlining.
 	 /Don't/ return the ifTrue:ifFalse: unless Slang inlining of conditionals is fixed."
+	<api>
 	<inline: true>
 	objectMemory hasSixtyFourBitImmediates
 		ifTrue:
@@ -14028,7 +14048,7 @@ StackInterpreter >> signed32BitIntegerFor: integerValue [
 StackInterpreter >> signed64BitIntegerFor: integerValue [
 
 	"Answer a Large Integer object for the given integer value.  N.B. will *not* cause a GC."
-
+	<api>
 	<var: 'integerValue' type: #sqLong>
 	<inline: false>
 	<var: 'magnitude' type: #usqLong>
@@ -14324,7 +14344,11 @@ StackInterpreter >> specialSelectorArray: anOop [
 
 { #category : #'message sending' }
 StackInterpreter >> specialSelectorNumArgs: index [
-	^objectMemory integerValueOf: (objectMemory fetchPointer: (index * 2) + 1 ofObject: (objectMemory splObj: SpecialSelectors))
+
+	<api>
+	^ objectMemory integerValueOf: (objectMemory
+			   fetchPointer: index * 2 + 1
+			   ofObject: (objectMemory splObj: SpecialSelectors))
 ]
 
 { #category : #'indexing primitive support' }
@@ -14562,8 +14586,11 @@ StackInterpreter >> stackPointerIndexForFrame: theFP [
 { #category : #'frame access' }
 StackInterpreter >> stackPointerIndexForFrame: theFP WithSP: theSP [
 	"Return the 1-based index rel to the given frame"
+
 	"In the StackInterpreter stacks grow down."
-	^(((theFP + FoxReceiver) - theSP) >> objectMemory shiftForWord) + (self frameNumArgs: theFP)
+
+	^ (self frameReceiverLocation: theFP) - theSP
+	  >> objectMemory shiftForWord + (self frameNumArgs: theFP)
 ]
 
 { #category : #'stack access' }
@@ -14630,6 +14657,7 @@ StackInterpreter >> startPCOfMethod: aCompiledMethod [
 StackInterpreter >> startPCOfMethodHeader: methodHeader [
 	"Answer the zero-relative index to the initial byte for a method.
 	 Zero-relative version of CompiledMethod>>startpc."
+	<api>
 	^(objectMemory literalCountOfMethodHeader: methodHeader) + LiteralStart * objectMemory bytesPerOop
 ]
 
@@ -14662,13 +14690,13 @@ StackInterpreter >> storeAndPopTemporaryVariableBytecode [
 		cCode: [ "this bytecode will be expanded so that refs to currentBytecode below will be constant"
 			self fetchNextBytecode.
 			self
-				temporary: (currentBytecode bitAnd: 7)
+				itemporary: (currentBytecode bitAnd: 7)
 				in: framePointer
 				put: self stackTop.
 			self pop: 1 ]
 		inSmalltalk: [ "Interpreter version has fetchNextBytecode out of order"
 			self
-				temporary: (currentBytecode bitAnd: 7)
+				itemporary: (currentBytecode bitAnd: 7)
 				in: framePointer
 				put: self stackTop.
 			self fetchNextBytecode.
@@ -14742,7 +14770,7 @@ StackInterpreter >> storeMaybeContextReceiverVariable: fieldIndex withValue: anO
 StackInterpreter >> storeRemoteTemp: index inVectorAt: tempVectorIndex [
 
 	| tempVector |
-	tempVector := self temporary: tempVectorIndex in: framePointer.
+	tempVector := self itemporary: tempVectorIndex in: framePointer.
 	TempVectReadBarrier ifTrue: [ 
 		(objectMemory isForwarded: tempVector) ifTrue: [ 
 			tempVector := self
@@ -15004,24 +15032,16 @@ StackInterpreter >> tempCountOf: methodPointer [
 
 { #category : #'internal interpreter access' }
 StackInterpreter >> temporary: offset in: theFP [
-	"See StackInterpreter class>>initializeFrameIndices"
-	| frameNumArgs |
+
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^offset < (frameNumArgs := self frameNumArgs: theFP)
-		ifTrue: [stackPages unsignedLongAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize)]
-		ifFalse: [stackPages unsignedLongAt: theFP + FoxReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize)]
+	^ self itemporary: offset in: theFP
 ]
 
 { #category : #'internal interpreter access' }
 StackInterpreter >> temporary: offset in: theFP put: valueOop [
-	"See StackInterpreter class>>initializeFrameIndices"
-	| frameNumArgs |
-	<inline: true>
-	<var: #theFP type: #'char *'>
-	^offset < (frameNumArgs := self frameNumArgs: theFP)
-		ifTrue: [stackPages unsignedLongAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
-		ifFalse: [stackPages unsignedLongAt: theFP + FoxReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
+
+	^ self itemporary: offset in: theFP put: valueOop
 ]
 
 { #category : #'compiled methods' }
@@ -15038,7 +15058,9 @@ StackInterpreter >> temporaryLocation: offset in: theFP numArgs: numArgs [
 	<returnTypeC: #'char *'>
 	^offset < numArgs
 		ifTrue: [theFP + FoxCallerSavedIP + ((numArgs - offset) * objectMemory wordSize)]
-		ifFalse: [theFP + FoxReceiver - objectMemory wordSize + ((numArgs - offset) * objectMemory wordSize)]
+		ifFalse: [
+			(self frameReceiverLocation: theFP) - objectMemory wordSize
+			+ ((numArgs - offset) * objectMemory wordSize)]
 ]
 
 { #category : #simulation }
@@ -15610,7 +15632,7 @@ StackInterpreter >> unfollowTempVector: tempVector atIndex: tempVectorIndex in: 
 	<inline: #never> "So rare it mustn't bulk up the common path"
 	| followed |
 	followed := objectMemory followForwarded: tempVector.
-	self temporary: tempVectorIndex in: theFP put: followed.
+	self itemporary: tempVectorIndex in: theFP put: followed.
 	^followed
 ]
 
@@ -15701,15 +15723,17 @@ StackInterpreter >> updateObjectsPostByteSwap [
 StackInterpreter >> updateStateOfSpouseContextForFrame: theFP WithSP: theSP [
 	"Update the frame's spouse context with the frame's current state except for the
 	 sender and instruction pointer, which are used to mark the context as married."
-	| theContext tempIndex pointer |
+	| theContext tempIndex pointer argsPointer |
 	<inline: false>
 	<var: #theFP type: #'char *'>
 	<var: #theSP type: #'char *'>
 	<var: #pointer type: #'char *'>
+	<var: #argsPointer type: #'char *'>
 	self assert: (self frameHasContext: theFP).
 	theContext := self frameContext: theFP.
+	self assert: (objectMemory isContext: theContext).
 	self assert: (self frameReceiver: theFP)
-				= (objectMemory fetchPointer: ReceiverIndex ofObject: theContext).
+				= (objectMemory noFixupFollowField: ReceiverIndex ofObject: theContext).
 	tempIndex := self frameNumArgs: theFP.
 	"update the arguments. this would appear not to be strictly necessary, but is for two reasons.
 	 First, the fact that arguments are read-only is only as convention in the Smalltalk compiler;
@@ -15717,22 +15741,23 @@ StackInterpreter >> updateStateOfSpouseContextForFrame: theFP WithSP: theSP [
 	 Second, the Squeak runUntilErrorOrReturnFrom: nightmare pops the stack top, which may, in
 	 certain circumstances, be the last argument, and hence the last argument may not have been
 	 stored into the context."
-	pointer := theFP + (self frameStackedReceiverOffsetNumArgs: tempIndex).
+	argsPointer := theFP + (self frameStackedReceiverOffsetNumArgs: tempIndex).
 	1 to: tempIndex do:
 		[:i|
-		pointer := pointer - objectMemory wordSize.
-		self assert: (objectMemory addressCouldBeOop: (stackPages unsignedLongAt: pointer)).
+		argsPointer := argsPointer - objectMemory wordSize.
+		self assert: (objectMemory addressCouldBeOop: (stackPages longAt: argsPointer)).
 		 objectMemory storePointer: ReceiverIndex + i
 			ofObject: theContext
-			withValue: (stackPages unsignedLongAt: pointer)].
+			withValue: (stackPages longAt: argsPointer)].
+	
 	"now update the non-argument stack contents."
-	pointer := theFP + FoxReceiver - objectMemory wordSize.
+	pointer := (self frameReceiverLocation: theFP) - objectMemory wordSize.
 	[pointer >= theSP] whileTrue:
-		[self assert: (objectMemory addressCouldBeOop: (stackPages unsignedLongAt: pointer)).
+		[self assert: (objectMemory addressCouldBeOop: (stackPages longAt: pointer)).
 		 tempIndex := tempIndex + 1.
 		 objectMemory storePointer: ReceiverIndex + tempIndex
 			ofObject: theContext
-			withValue: (stackPages unsignedLongAt: pointer).
+			withValue: (stackPages longAt: pointer).
 		 pointer := pointer - objectMemory wordSize].
 	self assert: ReceiverIndex + tempIndex < (objectMemory lengthOf: theContext).
 	objectMemory storePointerUnchecked: StackPointerIndex

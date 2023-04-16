@@ -1492,16 +1492,6 @@ StackInterpreterSimulator >> reverseBytesInImage [
 		during: [super reverseBytesInImage]
 ]
 
-{ #category : #'method lookup cache' }
-StackInterpreterSimulator >> rewriteMethodCacheEntryForExternalPrimitiveToFunction: localPrimAddress [
-	self assert: (localPrimAddress isSymbol
-			or: [localPrimAddress isInteger
-				and: [localPrimAddress = 0
-					or: [(localPrimAddress between: 256 and: 519)
-					or: [localPrimAddress > 1000]]]]).
-	^super rewriteMethodCacheEntryForExternalPrimitiveToFunction: localPrimAddress
-]
-
 { #category : #testing }
 StackInterpreterSimulator >> run [
 	"Just run"
@@ -1811,13 +1801,6 @@ StackInterpreterSimulator >> turnOnPrimTraceLog [
 { #category : #'interpreter shell' }
 StackInterpreterSimulator >> unableToReadImageError [
 	self error:  'Read failed or premature end of image file'
-]
-
-{ #category : #'debugging traps' }
-StackInterpreterSimulator >> updateStateOfSpouseContextForFrame: theFP WithSP: theSP [
-	"(self frameContext: theFP) = 22163268 ifTrue:
-		[self halt]."
-	^super updateStateOfSpouseContextForFrame: theFP WithSP: theSP
 ]
 
 { #category : #'debug support' }

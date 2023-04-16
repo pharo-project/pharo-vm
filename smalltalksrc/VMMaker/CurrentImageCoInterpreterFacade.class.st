@@ -173,11 +173,13 @@ CurrentImageCoInterpreterFacade >> bytesPerOop [
 CurrentImageCoInterpreterFacade >> cCoerceSimple: value to: cTypeString [
 	"Type coercion for translation and simulation.
 	 For simulation answer a suitable surrogate for the struct types"
-	^cTypeString
-		caseOf:
-		   {	[#'CogMethod *']		->	[value < 0 ifTrue: [value] ifFalse: [cogit cogMethodSurrogateAt: value asUnsignedInteger]].
-			[#'CogBlockMethod *']	->	[cogit cogBlockMethodSurrogateAt: value asUnsignedInteger] }
-		otherwise: [super cCoerceSimple: value to: cTypeString]
+
+	^ cTypeString
+		  caseOf: { ([ #'CogMethod *' ] -> [
+			   value < 0
+				   ifTrue: [ value ]
+				   ifFalse: [ cogit cogMethodSurrogateAt: value asUnsignedInteger ] ]) }
+		  otherwise: [ super cCoerceSimple: value to: cTypeString ]
 ]
 
 { #category : #'cog jit support' }
@@ -908,9 +910,6 @@ CurrentImageCoInterpreterFacade >> printCogMethod: cogMethod [
 							header: cogMethod methodHeader.
 		 primitive ~= 0 ifTrue:
 			[self print: ' prim '; printNum: primitive]].
-	cogMethod cmType = CMBlock ifTrue:
-		[self print: ': block home: ';
-			printHex: (self cCoerceSimple: cogMethod to: #'CogBlockMethod *') cmHomeMethod asUnsignedInteger].
 	cogMethod cmType = CMPolymorphicIC ifTrue:
 		[self print: ': Closed PIC N: ';
 			printHex: cogMethod cPICNumCases].
