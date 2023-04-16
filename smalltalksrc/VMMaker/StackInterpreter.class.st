@@ -5674,6 +5674,20 @@ StackInterpreter >> extSendSuperBytecode [
 ]
 
 { #category : #'stack bytecodes' }
+StackInterpreter >> extStoreAndPopLiteralVariableBytecode [
+
+	"236		11101100	i i i i i i i i	Pop and Store Literal Variable #iiiiiiii (+ Extend A * 256)"
+
+	| variableIndex value |
+	variableIndex := self fetchByte + (extA << 8).
+	value := self stackTop.
+	self pop: 1.
+	extA := 0.
+	self storeLiteralVariable: variableIndex withValue: value.
+	self fetchNextBytecode
+]
+
+{ #category : #'stack bytecodes' }
 StackInterpreter >> extStoreAndPopReceiverVariableBytecode [
 
 	"235		11101011	i i i i i i i i	Pop and Store Receiver Variable #iiiiiii (+ Extend A * 256)"
@@ -5686,6 +5700,18 @@ StackInterpreter >> extStoreAndPopReceiverVariableBytecode [
 	self
 		storeMaybeContextReceiverVariable: variableIndex
 		withValue: value.
+	self fetchNextBytecode
+]
+
+{ #category : #'stack bytecodes' }
+StackInterpreter >> extStoreLiteralVariableBytecode [
+
+	"233		11101001	i i i i i i i i	Store Literal Variable #iiiiiiii (+ Extend A * 256)"
+
+	| variableIndex |
+	variableIndex := self fetchByte + (extA << 8).
+	extA := 0.
+	self storeLiteralVariable: variableIndex withValue: self stackTop.
 	self fetchNextBytecode
 ]
 
@@ -14788,6 +14814,19 @@ StackInterpreter >> storeInteger: fieldIndex ofObject: objectPointer withValue: 
 					withValue: (objectMemory integerObjectOf: integerValue)]
 		ifFalse: [self primitiveFail].
 	^nil
+]
+
+{ #category : #'stack bytecodes' }
+StackInterpreter >> storeLiteralVariable: literalIndex withValue: anObject [
+	"push/store/popLiteralVariable all fetch a literal, and either read or write the literal's value field.
+	 The fetch of the literal needs an explicit check (otherwise we would have to scan all literals in
+	 all methods in the stack zone, and the entire method on return, and global variables are relatively
+	 rare; in my work image 8.7% of literals are globals)."
+
+
+	| litVar |
+	litVar := self literalMaybeForwarder: literalIndex.
+	objectMemory storePointerImmutabilityCheck: ValueIndex ofObject: litVar withValue: anObject
 ]
 
 { #category : #'stack bytecodes' }
