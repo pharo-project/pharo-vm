@@ -719,13 +719,6 @@ CogVMSimulator >> halfWordLowInLong32: long32 [
 	^self subclassResponsibility
 ]
 
-{ #category : #'message sending' }
-CogVMSimulator >> handleMNU: selectorIndex InMachineCodeTo: rcvr classForMessage: classForMessage [
-	selectorIndex = SelectorCannotInterpret ifTrue:
-		[self halt].
-	^super handleMNU: selectorIndex InMachineCodeTo: rcvr classForMessage: classForMessage
-]
-
 { #category : #'debug support' }
 CogVMSimulator >> headerStart: oop [
 
@@ -735,24 +728,6 @@ CogVMSimulator >> headerStart: oop [
 { #category : #'debug support' }
 CogVMSimulator >> heapMapAtWord: address Put: aBit [
 	^objectMemory heapMap heapMapAtWord: address asUnsignedInteger Put: aBit
-]
-
-{ #category : #'debugging traps' }
-CogVMSimulator >> ifAppropriateCompileToNativeCode: aMethodObject selector: selector [
-	enableCog ifTrue:
-		[super ifAppropriateCompileToNativeCode: aMethodObject selector: selector]
-]
-
-{ #category : #'frame access' }
-CogVMSimulator >> iframeIsBlockActivation: theFP [
-	self assert: (self isMachineCodeFrame: theFP) not.
-	^super iframeIsBlockActivation: theFP
-]
-
-{ #category : #'frame access' }
-CogVMSimulator >> iframeNumArgs: theFP [
-	self assert: (self isMachineCodeFrame: theFP) not.
-	^super iframeNumArgs: theFP
 ]
 
 { #category : #'image save/restore' }
@@ -1166,14 +1141,6 @@ CogVMSimulator >> longAt: byteAddress put: a32BitValue [
 CogVMSimulator >> lookupOrdinaryNoMNUEtcInClass: class [
 	lookupCount := lookupCount + 1.
 	^super lookupOrdinaryNoMNUEtcInClass: class
-]
-
-{ #category : #'frame access' }
-CogVMSimulator >> makeBaseFrameFor: aContext [ "<Integer>"
-	"aContext =  26431360 ifTrue: [self halt]."
-	"(objectMemory fetchPointer: MethodIndex ofObject: aContext) = 16rD4C178 ifTrue:
-		[self halt]."
-	^super makeBaseFrameFor: aContext
 ]
 
 { #category : #'cog jit support' }

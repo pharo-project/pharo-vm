@@ -388,7 +388,7 @@ SimpleStackBasedCogit >> compileFullBlockMethodFrameBuild: numCopied [
 	 We arrange this using a labelOffset.  A hack, but it works."
 	methodLabel addDependent: (self annotateAbsolutePCRef:
 			(self PushCw: methodLabel asInteger));
-			setLabelOffset: MFMethodFlagIsBlockFlag.. "method"
+			setLabelOffset: MFMethodFlagIsBlockFlag. "method"
 	self genMoveNilR: SendNumArgsReg.
 	self PushR: SendNumArgsReg. "context"
 	"Closure is on stack and initially in ReceiverResultReg.

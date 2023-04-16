@@ -6731,6 +6731,14 @@ StackInterpreter >> frameLastArgumentOffset [
 ]
 
 { #category : #'frame access' }
+StackInterpreter >> frameMethodField: theFP [
+	<inline: true>
+	<var: #theFP type: #'char *'>
+
+	^stackPages unsignedLongAt: theFP + FoxMethod
+]
+
+{ #category : #'frame access' }
 StackInterpreter >> frameMethodObject: theFP [
 	"Homonym of frameMethod: for compatibility with CoInterpreter"
 	<inline: true>
@@ -7353,6 +7361,21 @@ StackInterpreter >> iframeMethod: theFP [
 	<var: #theFP type: #'char *'>
 	<returnTypeC: #usqInt>
 	^stackPages unsignedLongAt: theFP + FoxMethod
+]
+
+{ #category : #'frame access' }
+StackInterpreter >> iframeNumArgs: theFP [
+	"See encodeFrameFieldHasContext:numArgs:"
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^self frameNumArgs: theFP
+]
+
+{ #category : #'internal interpreter access' }
+StackInterpreter >> iframeReceiverLocation: theFP [
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^theFP + FoxReceiver
 ]
 
 { #category : #'image save/restore' }
@@ -8330,13 +8353,13 @@ StackInterpreter >> itemporary: offset in: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	| frameNumArgs |
-	^ offset < (frameNumArgs := self frameNumArgs: theFP)
+	^ offset < (frameNumArgs := self iframeNumArgs: theFP)
 		  ifTrue: [
 			  stackPages unsignedLongAt: theFP + FoxCallerSavedIP
 				  + (frameNumArgs - offset * objectMemory wordSize) ]
 		  ifFalse: [
 			  stackPages unsignedLongAt:
-				  (self frameReceiverLocation: theFP) - objectMemory wordSize
+				  (self iframeReceiverLocation: theFP) - objectMemory wordSize
 				  + (frameNumArgs - offset * objectMemory wordSize) ]
 ]
 
@@ -8346,9 +8369,9 @@ StackInterpreter >> itemporary: offset in: theFP put: valueOop [
 	| frameNumArgs |
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^offset < (frameNumArgs := self frameNumArgs: theFP)
+	^offset < (frameNumArgs := self iframeNumArgs: theFP)
 		ifTrue: [stackPages unsignedLongAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
-		ifFalse: [stackPages unsignedLongAt: theFP + FoxReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
+		ifFalse: [stackPages unsignedLongAt: (self iframeReceiverLocation: theFP) - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
 ]
 
 { #category : #'jump bytecodes' }
@@ -8780,7 +8803,7 @@ StackInterpreter >> longPushTemporaryVariableBytecode [
 	| index |
 	index := self fetchByte.
 	self fetchNextBytecode.
-	self push: (self temporary: index in: framePointer)
+	self push: (self itemporary: index in: framePointer)
 ]
 
 { #category : #'stack bytecodes' }
@@ -8810,7 +8833,7 @@ StackInterpreter >> longStoreTemporaryVariableBytecode [
 	| index |
 	index := self fetchByte.
 	self fetchNextBytecode.
-	self temporary: index in: framePointer put: self stackTop
+	self itemporary: index in: framePointer put: self stackTop
 ]
 
 { #category : #'jump bytecodes' }
@@ -9088,7 +9111,7 @@ StackInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 	numArgs + 1 to: stackPtrIndex do:
 		[:i|
 		stackPages
-			unsignedLongAt: (pointer := pointer - objectMemory wordSize)
+			longAt: (pointer := pointer - objectMemory wordSize)
 			put: (objectMemory fetchPointer: ReceiverIndex + i ofObject: aContext)].
 	"top of stack is the instruction pointer"
 	theIP := self iframeInstructionPointerForIndex: theIP method: theMethod.
@@ -9197,63 +9220,81 @@ StackInterpreter >> mapProfileState [
 
 { #category : #'object memory support' }
 StackInterpreter >> mapStackPages [
+
 	<inline: #never>
 	<var: #thePage type: #'StackPage *'>
 	<var: #theSP type: #'char *'>
 	<var: #theFP type: #'char *'>
+	<var: #frameRcvrOffset type: #'char *'>
 	<var: #callerFP type: #'char *'>
 	<var: #theIPPtr type: #'char *'>
 	| numLivePages |
 	numLivePages := 0.
-	0 to: numStackPages - 1 do:
-		[:i| | thePage theSP theFP callerFP theIPPtr theIP oop |
+	0 to: numStackPages - 1 do: [ :i |
+		| thePage theSP theFP frameRcvrOffset callerFP theIPPtr theIP oop |
 		thePage := stackPages stackPageAt: i.
-		thePage isFree ifFalse:
-			[self assert: (self ifCurrentStackPageHasValidHeadPointers: thePage).
-			 numLivePages := numLivePages + 1.
-			 theSP := thePage headSP.
-			 theFP := thePage  headFP.
-			 "Skip the instruction pointer on top of stack of inactive pages."
-			 thePage = stackPage
-				ifTrue: [theIPPtr := 0]
-				ifFalse:
-					[theIPPtr := theSP.
-					 theSP := theSP + objectMemory wordSize].
-			[self assert: (thePage addressIsInPage: theFP).
-			 self assert: (thePage addressIsInPage: theSP).
-			 self assert: (theIPPtr = 0 or: [thePage addressIsInPage: theIPPtr]).
-			 [theSP <= (theFP + FoxReceiver)] whileTrue:
-				[oop := stackPages unsignedLongAt: theSP.
-				 (objectMemory shouldRemapOop: oop) ifTrue:
-					[stackPages unsignedLongAt: theSP put: (objectMemory remapObj: oop)].
-				 theSP := theSP + objectMemory wordSize].
-			 (self frameHasContext: theFP) ifTrue:
-				[(objectMemory shouldRemapObj: (self frameContext: theFP)) ifTrue:
-					[stackPages
+		thePage isFree ifFalse: [
+			self assert: (self ifCurrentStackPageHasValidHeadPointers: thePage).
+			numLivePages := numLivePages + 1.
+			theSP := thePage headSP.
+			theFP := thePage headFP.
+			"Skip the instruction pointer on top of stack of inactive pages."
+			thePage = stackPage
+				ifTrue: [ theIPPtr := 0 ]
+				ifFalse: [
+					theIPPtr := theSP.
+					theSP := theSP + objectMemory wordSize ].
+			[
+			self assert: (thePage addressIsInPage: theFP).
+			self assert: (thePage addressIsInPage: theSP).
+			self assert:
+				(theIPPtr = 0 or: [ thePage addressIsInPage: theIPPtr ]).
+			frameRcvrOffset := self frameReceiverLocation: theFP.
+			[ theSP <= frameRcvrOffset ] whileTrue: [
+				oop := stackPages unsignedLongAt: theSP.
+				(objectMemory shouldRemapOop: oop) ifTrue: [
+					stackPages
+						unsignedLongAt: theSP
+						put: (objectMemory remapObj: oop) ].
+				theSP := theSP + objectMemory wordSize ].
+			(self frameHasContext: theFP) ifTrue: [
+				(objectMemory shouldRemapObj: (self frameContext: theFP)) ifTrue: [
+					stackPages
 						unsignedLongAt: theFP + FoxThisContext
-						put: (objectMemory remapObj: (self frameContext: theFP))].
-				 "With SpurPlanningCompactor can't assert since object body is yet to move."
-				 (objectMemory slidingCompactionInProgress not) ifTrue:
-					[self assert: ((self isMarriedOrWidowedContext: (self frameContext: theFP))
-								  and: [(self frameOfMarriedContext: (self frameContext: theFP)) = theFP])]].
-			 (objectMemory shouldRemapObj: (self iframeMethod: theFP)) ifTrue:
-				[theIPPtr ~= 0 ifTrue:
-					[self assert: (stackPages unsignedLongAt: theIPPtr) > (self iframeMethod: theFP).
-					 theIP := (stackPages unsignedLongAt: theIPPtr) - (self iframeMethod: theFP)].
-				 stackPages
+						put: (objectMemory remapObj: (self frameContext: theFP)) ].
+				"With SpurPlanningCompactor can't assert since object body is yet to move."
+				objectMemory slidingCompactionInProgress not ifTrue: [
+					self assert:
+						((self isMarriedOrWidowedContext: (self frameContext: theFP))
+							 and: [
+							 (self frameOfMarriedContext: (self frameContext: theFP))
+							 = theFP ]) ] ].
+			(objectMemory shouldRemapObj: (self iframeMethod: theFP)) ifTrue: [
+				theIPPtr ~= 0 ifTrue: [
+					self assert:
+						(stackPages unsignedLongAt: theIPPtr)
+						> (self iframeMethod: theFP).
+					theIP := (stackPages unsignedLongAt: theIPPtr)
+					         - (self iframeMethod: theFP) ].
+				stackPages
 					unsignedLongAt: theFP + FoxMethod
 					put: (objectMemory remapObj: (self iframeMethod: theFP)).
-				 theIPPtr ~= 0 ifTrue:
-					[stackPages unsignedLongAt: theIPPtr put: theIP + (self iframeMethod: theFP)]].
-			 (callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
-				[theSP := (theIPPtr := theFP + FoxCallerSavedIP) + objectMemory wordSize.
-				 theFP := callerFP].
-			 theSP := theFP + FoxCallerContext. "a.k.a. FoxCallerSavedIP"
-			 [theSP <= thePage baseAddress] whileTrue:
-				[oop := stackPages unsignedLongAt: theSP.
-				 (objectMemory shouldRemapOop: oop) ifTrue:
-					[stackPages unsignedLongAt: theSP put: (objectMemory remapObj: oop)].
-				 theSP := theSP + objectMemory wordSize]]].
+				theIPPtr ~= 0 ifTrue: [
+					stackPages
+						unsignedLongAt: theIPPtr
+						put: theIP + (self iframeMethod: theFP) ] ].
+			(callerFP := self frameCallerFP: theFP) ~= 0 ] whileTrue: [
+				theSP := (theIPPtr := theFP + FoxCallerSavedIP)
+				         + objectMemory wordSize.
+				theFP := callerFP ].
+			theSP := theFP + FoxCallerContext. "a.k.a. FoxCallerSavedIP"
+			[ theSP <= thePage baseAddress ] whileTrue: [
+				oop := stackPages unsignedLongAt: theSP.
+				(objectMemory shouldRemapOop: oop) ifTrue: [
+					stackPages
+						unsignedLongAt: theSP
+						put: (objectMemory remapObj: oop) ].
+				theSP := theSP + objectMemory wordSize ] ] ].
 	stackPages recordLivePagesOnMapping: numLivePages
 ]
 
@@ -9719,21 +9760,32 @@ StackInterpreter >> marryFrame: theFP SP: theSP [
 
 { #category : #'frame access' }
 StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
-	"Marry an unmarried frame.  This means creating a spouse context
-	 initialized with a subset of the frame's state that references the frame.
-	 For the default closure implementation we do not need to copy temps.
-	 Different closure implementations may require temps to be copied."
-	| theContext methodHeader numSlots numArgs numStack closureOrNil numTemps |
+	"Marry an unmarried frame. This means creating a spouse context
+	initialized with a subset of the frame's state that references the frame.
+	For the default closure implementation we do not need to copy temps.
+	Different closure implementations may require temps to be copied.
+	 
+	Set the ``has context'' flag appropriately for both machine code and interpreter frames"
+
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	<var: #theSP type: #'char *'>
+	| theContext methodHeader closureOrNil numSlots numArgs numStack numTemps |	
+	(self isMachineCodeFrame: theFP)
+		ifTrue: [ | methodFieldOrObj |
+			methodFieldOrObj := self frameMethodField: theFP.
+			stackPages
+				longAt: theFP + FoxMethod
+				put: methodFieldOrObj + MFMethodFlagHasContextFlag ]
+		ifFalse: [ self setIFrameHasContext: theFP ].
+	
 	self assert: (self frameHasContext: theFP) not.
 	self assert: (self isBaseFrame: theFP) not. "base frames must aready be married for cannotReturn: processing"
 
 	"The SP is expected to be pointing at the last oop on the stack, not at the pc"
-	self assert: (objectMemory addressCouldBeOop: (objectMemory longAt:  theSP)).
+	self assert: (objectMemory addressCouldBeOop: (objectMemory longAt: theSP)).
 
-	methodHeader := objectMemory methodHeaderOf: (self iframeMethod: theFP).
+	methodHeader := objectMemory methodHeaderOf: (self frameMethodObject: theFP).
 	"Decide how much of the stack to preserve in widowed contexts.  Preserving too much
 	 state will potentially hold onto garbage.  Holding onto too little may mean that a dead
 	 context isn't informative enough in a debugging situation.  If copyTemps is false (as it
@@ -9743,12 +9795,13 @@ StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 	numArgs := self frameNumArgs: theFP.
 
 	closureOrNil := (self frameIsBlockActivation: theFP)
-						ifTrue: [self pushedReceiverOrClosureOfFrame: theFP]
-						ifFalse: [objectMemory nilObject].
+						ifTrue: [ self pushedReceiverOrClosureOfFrame: theFP ]
+						ifFalse: [ objectMemory nilObject ].
 
 	numSlots := (self methodHeaderIndicatesLargeFrame: methodHeader)
 					ifTrue: [LargeContextSlots]
 					ifFalse: [SmallContextSlots].
+
 	numStack := self stackPointerIndexForFrame: theFP WithSP: theSP.
 	theContext := objectMemory eeInstantiateMethodContextSlots: numSlots.
 	self setFrameContext: theFP to: theContext.
@@ -9768,40 +9821,36 @@ StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 	objectMemory storePointerUnchecked: MethodIndex
 		ofObject: theContext
 		withValue: (self frameMethodObject: theFP).
-	objectMemory storePointerUnchecked: ClosureIndex ofObject: theContext withValue: closureOrNil.
+	objectMemory storePointerUnchecked: ClosureIndex
+		ofObject: theContext
+		withValue: closureOrNil.
 	objectMemory storePointerUnchecked: ReceiverIndex
 		ofObject: theContext
 		withValue: (self frameReceiver: theFP).
 	"If copyTemps is false, store just the arguments.  If the frame is divorced the context
 	 will have valid arguments but all temporaries will be nil."
-	1 to: numArgs do:
-		[:i|
+	1 to: numArgs do: [ :i |
 		objectMemory storePointerUnchecked: ReceiverIndex + i
 			ofObject: theContext
-			withValue: (self temporary: i - 1 in: theFP)].
-	copyTemps ifTrue:
-		[numTemps := self frameNumTemps: theFP.
-		 1 to: numTemps do:
-			[:i|
+			withValue: (self temporary: i - 1 in: theFP) ].
+	copyTemps ifTrue: [
+		numTemps := self frameNumTemps: theFP.
+		1 to: numTemps do: [ :i |
 			objectMemory storePointerUnchecked: ReceiverIndex + i + numArgs
 				ofObject: theContext
-				withValue: (self temporary: i - 1 in: theFP)].
-		 numArgs := numArgs + numTemps].
+				withValue: (self temporary: i - 1 in: theFP) ].
+		numArgs := numArgs + numTemps ].
 
-	numArgs + 1 to: numStack do:
-		[:i|
+	numArgs + 1 to: numStack do: [ :i |
 		objectMemory storePointerUnchecked: ReceiverIndex + i
 			ofObject: theContext
-			withValue: objectMemory nilObject].
-
-	self setFrameHasContext: theFP.
+			withValue: objectMemory nilObject ].
 
 	self assert: (self frameHasContext: theFP).
 	self assert: (self frameOfMarriedContext: theContext) = theFP.
 	self assert: numStack + ReceiverIndex < (objectMemory lengthOf: theContext).
 
-	^theContext
-
+	^ theContext
 ]
 
 { #category : #'primitive support' }
@@ -13483,13 +13532,6 @@ StackInterpreter >> setFrameContext: theFP to: aContext [
 	stackPages unsignedLongAt: theFP + FoxThisContext put: aContext
 ]
 
-{ #category : #'frame access' }
-StackInterpreter >> setFrameHasContext: theFP [
-	<inline: true>
-	<var: #theFP type: #'char *'>
-	stackPages byteAt: theFP + FoxFrameFlags + 2 put: 1
-]
-
 { #category : #'object memory support' }
 StackInterpreter >> setGCMode: mode [
 	"This is a no-op in the StackVM"
@@ -13508,6 +13550,13 @@ StackInterpreter >> setHeadFP: theFP andSP: theSP inPage: thePage [
 	self assert: (theFP < thePage baseAddress
 				and: [theFP > (thePage realStackLimit - (LargeContextSlots * objectMemory bytesPerOop / 2))]).
 	thePage headFP: theFP; headSP: theSP
+]
+
+{ #category : #'frame access' }
+StackInterpreter >> setIFrameHasContext: theFP [
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	stackPages byteAt: theFP + FoxFrameFlags + 2 put: 1
 ]
 
 { #category : #'image save/restore' }
