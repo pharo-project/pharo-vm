@@ -1709,7 +1709,7 @@ CoInterpreter >> ceSendMustBeBooleanTo: aNonBooleanObject interpretingAtDelta: j
 	 mustBeBoolean errors are extremely rare and so we choose brevity over performance in this case."
 
 	<api>
-	<var: 'cogMethod' type: #'CogBlockMethod *'>
+	<var: 'cogMethod' type: #'CogMethod *'>
 	<var: 'p' type: #'char *'>
 	| cogMethod methodObj methodHeader startBcpc |
 	self assert: (objectMemory addressCouldBeOop: aNonBooleanObject).
@@ -2183,7 +2183,7 @@ CoInterpreter >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
 	"Convert the current interpreter frame into a machine code frame
 	 and answer the machine code pc matching bcpc."
 	| startBcpc methodField closure cogMethod pc |
-	<var: #cogMethod type: #'CogBlockMethod *'>
+	<var: #cogMethod type: #'CogMethod *'>
 	<var: #p type: #'char *'>
 	self assert: (self isMachineCodeFrame: framePointer) not.
 	"Update the return pc, perhaps saving it in the caller's iframeSavedIP."
@@ -2204,11 +2204,11 @@ CoInterpreter >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
 		ifTrue: [
 			closure := self pushedReceiverOrClosureOfFrame: framePointer.
 			startBcpc := self startPCOfMethodHeader: cogHomeMethod methodHeader.
-			cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogBlockMethod *'.
+			cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogMethod *'.
 			methodField := cogMethod asInteger + MFMethodFlagIsBlockFlag]
 		ifFalse: [
 			startBcpc := self startPCOfMethodHeader: cogHomeMethod methodHeader.
-			cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogBlockMethod *'.
+			cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogMethod *'.
 			methodField := cogHomeMethod asInteger ].
 	"compute the pc before converting the frame to help with debugging."
 	pc := cogit mcPCForBackwardBranch: bcpc startBcpc: startBcpc in: cogMethod.
@@ -4253,10 +4253,9 @@ CoInterpreter >> methodWithHeaderShouldBeCogged: methodHeader [
 
 { #category : #'frame access' }
 CoInterpreter >> mframeCogMethod: theFP [
-	"Answer the Cog method for a machine code frame.  This may be
-	 either a full CogMethod or merely a CogBlockMethod rump header."
+	"Answer the Cog method for a machine code frame"
 	<var: #theFP type: #'char *'>
-	^self cCoerceSimple: (self mframeMethod: theFP) to: #'CogBlockMethod *'
+	^self cCoerceSimple: (self mframeMethod: theFP) to: #'CogMethod *'
 ]
 
 { #category : #'frame access' }
@@ -4777,7 +4776,7 @@ CoInterpreter >> printFrame: theFP WithSP: theSP [
 	<var: #theSP type: #'char *'>
 	<var: #addr type: #'char *'>
 	<var: #rcvrAddress type: #'char *'>
-	<var: #cogMethod type: #'CogBlockMethod *'>
+	<var: #cogMethod type: #'CogMethod *'>
 	<var: #homeMethod type: #'CogMethod *'>
 	self cCode: '' inSmalltalk: [self transcript newLine].
 	(stackPages couldBeFramePointer: theFP) ifNil:
@@ -5242,7 +5241,7 @@ CoInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedCon
 	 in which case we're in a machine-code primitive called from the interpreter."
 	<inline: false>
 	| cogMethod retValue fullyInInterpreter |
-	<var: #cogMethod type: #'CogBlockMethod *'>
+	<var: #cogMethod type: #'CogMethod *'>
 
 	cogit assertCStackWellAligned.
 	(self isMachineCodeFrame: framePointer) ifTrue:

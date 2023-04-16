@@ -2888,7 +2888,7 @@ SimpleStackBasedCogit >> mapPCDataFor: cogMethod into: arrayObj [
 					storePointerUnchecked: 3 ofObject: introspectionData withValue: (objectMemory integerObjectOf: cmNoCheckEntryOffset)].
 		 ^4].
 	errCode := self
-					mapFor: (self cCoerceSimple: cogMethod to: #'CogBlockMethod *')
+					mapFor: cogMethod
 					bcpc: (coInterpreter startPCOfMethod: cogMethod methodObject)
 					performUntil: #pcDataFor:Annotation:Mcpc:Bcpc:Method:
 					arg: cogMethod asVoidPointer.

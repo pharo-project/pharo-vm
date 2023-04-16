@@ -492,124 +492,131 @@ Cogit class >> cogToBytecodeMethodMapping [
 
 { #category : #translation }
 Cogit class >> declareCVarsIn: aCCodeGenerator [
-	#(	'coInterpreter' 'objectMemory' 'methodZone' 'objectRepresentation'
-		'cogBlockMethodSurrogateClass' 'cogMethodSurrogateClass' 'processor' 'lastNInstructions' 'simulatedAddresses'
-		'simulatedTrampolines' 'simulatedVariableGetters' 'simulatedVariableSetters'
-		'printRegisters' 'printInstructions' 'clickConfirm' 'singleStep') do:
-			[:simulationVariableNotNeededForRealVM|
-			aCCodeGenerator removeVariable: simulationVariableNotNeededForRealVM].
-	#(	'selfSendTrampolines' 'dynamicSuperSendTrampolines'
-			'implicitReceiverSendTrampolines' 'outerSendTrampolines'
-			'ceEnclosingObjectTrampoline' 'numIRCs' 'indexOfIRC' 'theIRCs') do:
-				[:variableNotNeededInNormalVM|
-				aCCodeGenerator removeVariable: variableNotNeededInNormalVM].
+
+	#( 'coInterpreter' 'objectMemory' 'methodZone' 'objectRepresentation'
+	   'cogBlockMethodSurrogateClass' 'cogMethodSurrogateClass'
+	   'processor' 'lastNInstructions' 'simulatedAddresses'
+	   'simulatedTrampolines' 'simulatedVariableGetters'
+	   'simulatedVariableSetters' 'printRegisters' 'printInstructions'
+	   'clickConfirm' 'singleStep' ) do: [
+		:simulationVariableNotNeededForRealVM |
+		aCCodeGenerator removeVariable: simulationVariableNotNeededForRealVM ].
+	#( 'selfSendTrampolines' 'dynamicSuperSendTrampolines'
+	   'implicitReceiverSendTrampolines'
+	   'outerSendTrampolines' 'ceEnclosingObjectTrampoline'
+	   'numIRCs' 'indexOfIRC' 'theIRCs' ) do: [
+		:variableNotNeededInNormalVM |
+		aCCodeGenerator removeVariable: variableNotNeededInNormalVM ].
 
 	aCCodeGenerator
-		addHeaderFile:'<stddef.h>'; "for e.g. offsetof"
-		addHeaderFile:'"jit/jit.h"';
-		addHeaderFile:'"debug.h"';		
-		addHeaderFile:'"sqCogStackAlignment.h"';
-		addHeaderFile:'"dispdbg.h"'; "must precede cointerp.h & cogit.h otherwise NoDbgRegParms gets screwed up"
-		addHeaderFile:'"cogmethod.h"'.
+		addHeaderFile: '<stddef.h>';
+		"for e.g. offsetof"addHeaderFile: '"jit/jit.h"';
+		addHeaderFile: '"debug.h"';
+		addHeaderFile: '"sqCogStackAlignment.h"';
+		addHeaderFile: '"dispdbg.h"';
+		"must precede cointerp.h & cogit.h otherwise NoDbgRegParms gets screwed up"
+		addHeaderFile: '"cogmethod.h"'.
 
 	aCCodeGenerator
-		addHeaderFile:'"vmMemoryMap.h"';	
-		addHeaderFile:'"vmRememberedSet.h"';	
-		addHeaderFile:'"cointerp.h"';
-		addHeaderFile:'"cogit.h"';
-		addHeaderFile:'<stdint.h>'.
-		
-	aCCodeGenerator 
-		addHeaderFile: '<pthread.h>'.
-		
+		addHeaderFile: '"vmMemoryMap.h"';
+		addHeaderFile: '"vmRememberedSet.h"';
+		addHeaderFile: '"cointerp.h"';
+		addHeaderFile: '"cogit.h"';
+		addHeaderFile: '<stdint.h>'.
+
+	aCCodeGenerator addHeaderFile: '<pthread.h>'.
+
 	aCCodeGenerator
-		var: #ceGetFP
-			declareC: 'usqIntptr_t (*ceGetFP)(void)';
-		var: #ceGetSP
-			declareC: 'usqIntptr_t (*ceGetSP)(void)';
+		var: #ceGetFP declareC: 'usqIntptr_t (*ceGetFP)(void)';
+		var: #ceGetSP declareC: 'usqIntptr_t (*ceGetSP)(void)';
 		var: #ceCaptureCStackPointers
-			declareC: 'void (*ceCaptureCStackPointers)(void)';
+		declareC: 'void (*ceCaptureCStackPointers)(void)';
 		var: #ceEnterCogCodePopReceiverReg
-			declareC: 'void (*ceEnterCogCodePopReceiverReg)(void)';
+		declareC: 'void (*ceEnterCogCodePopReceiverReg)(void)';
 		var: #realCEEnterCogCodePopReceiverReg
-			declareC: 'void (*realCEEnterCogCodePopReceiverReg)(void)';
+		declareC: 'void (*realCEEnterCogCodePopReceiverReg)(void)';
 		var: #ceCallCogCodePopReceiverReg
-			declareC: 'void (*ceCallCogCodePopReceiverReg)(void)';
+		declareC: 'void (*ceCallCogCodePopReceiverReg)(void)';
 		var: #realCECallCogCodePopReceiverReg
-			declareC: 'void (*realCECallCogCodePopReceiverReg)(void)';
+		declareC: 'void (*realCECallCogCodePopReceiverReg)(void)';
 		var: #ceCallCogCodePopReceiverAndClassRegs
-			declareC: 'void (*ceCallCogCodePopReceiverAndClassRegs)(void)';
+		declareC: 'void (*ceCallCogCodePopReceiverAndClassRegs)(void)';
 		var: #realCECallCogCodePopReceiverAndClassRegs
-			declareC: 'void (*realCECallCogCodePopReceiverAndClassRegs)(void)';
+		declareC: 'void (*realCECallCogCodePopReceiverAndClassRegs)(void)';
 		var: #ceFlushICache
-			declareC: 'static void (*ceFlushICache)(usqIntptr_t from, usqIntptr_t to)';
+		declareC:
+			'static void (*ceFlushICache)(usqIntptr_t from, usqIntptr_t to)';
 		var: #ceCheckFeaturesFunction
-			declareC: 'static usqIntptr_t (*ceCheckFeaturesFunction)(void)';
+		declareC: 'static usqIntptr_t (*ceCheckFeaturesFunction)(void)';
 		var: #ceTryLockVMOwner
-			declareC: 'usqIntptr_t (*ceTryLockVMOwner)(void)';
-		var: #ceUnlockVMOwner
-			declareC: 'void (*ceUnlockVMOwner)(void)';
+		declareC: 'usqIntptr_t (*ceTryLockVMOwner)(void)';
+		var: #ceUnlockVMOwner declareC: 'void (*ceUnlockVMOwner)(void)';
 		var: #postCompileHook
-			declareC: 'void (*postCompileHook)(CogMethod *)';
+		declareC: 'void (*postCompileHook)(CogMethod *)';
 		var: #openPICList declareC: 'CogMethod *openPICList = 0';
-		var: #maxMethodBefore type: #'CogBlockMethod *';
+		var: #maxMethodBefore type: #'CogMethod *';
 		var: 'enumeratingCogMethod' type: #'CogMethod *'.
 	aCCodeGenerator
-		declareVar: 'aMethodLabel' type: #'AbstractInstruction'; "Has to come lexicographically before backEnd & methodLabel"
-		var: #backEnd declareC: 'AbstractInstruction * const backEnd = &aMethodLabel';
-		var: #methodLabel declareC: 'AbstractInstruction * const methodLabel = &aMethodLabel'.
-	self declareC: #(abstractOpcodes stackCheckLabel
-					blockEntryLabel blockEntryNoContextSwitch
-					stackOverflowCall sendMiss
-					entry noCheckEntry selfSendEntry dynSuperEntry
-					fullBlockNoContextSwitchEntry fullBlockEntry
-					picMNUAbort picInterpretAbort  endCPICCase0 endCPICCase1 cPICEndOfCodeLabel)
-			as: #'AbstractInstruction *'
-				in: aCCodeGenerator.
-	aCCodeGenerator
-		declareVar: #fixups type: #'BytecodeFixup *'.
+		declareVar: 'aMethodLabel' type: #AbstractInstruction;
+		"Has to come lexicographically before backEnd & methodLabel"var:
+			#backEnd
+		declareC: 'AbstractInstruction * const backEnd = &aMethodLabel';
+		var: #methodLabel
+		declareC: 'AbstractInstruction * const methodLabel = &aMethodLabel'.
+	self
+		declareC:
+			#( abstractOpcodes stackCheckLabel blockEntryLabel blockEntryNoContextSwitch
+			   stackOverflowCall sendMiss entry noCheckEntry selfSendEntry
+			   dynSuperEntry fullBlockNoContextSwitchEntry
+			   fullBlockEntry picMNUAbort picInterpretAbort endCPICCase0
+			   endCPICCase1 cPICEndOfCodeLabel )
+		as: #'AbstractInstruction *'
+		in: aCCodeGenerator.
+	aCCodeGenerator declareVar: #fixups type: #'BytecodeFixup *'.
 	aCCodeGenerator
 		var: #jitCodeZoneWriteEnabled
-			declareC: 'int jitCodeZoneWriteEnabled = 0';
+		declareC: 'int jitCodeZoneWriteEnabled = 0';
 		var: #ordinarySendTrampolines
-			declareC: 'sqInt ordinarySendTrampolines[NumSendTrampolines]';
+		declareC: 'sqInt ordinarySendTrampolines[NumSendTrampolines]';
 		var: #superSendTrampolines
-			declareC: 'sqInt superSendTrampolines[NumSendTrampolines]'.
-	BytecodeSetHasDirectedSuperSend ifTrue:
-		[aCCodeGenerator
+		declareC: 'sqInt superSendTrampolines[NumSendTrampolines]'.
+	BytecodeSetHasDirectedSuperSend ifTrue: [
+		aCCodeGenerator
 			var: #directedSuperSendTrampolines
-				declareC: 'sqInt directedSuperSendTrampolines[NumSendTrampolines]';
+			declareC: 'sqInt directedSuperSendTrampolines[NumSendTrampolines]';
 			var: #directedSuperBindingSendTrampolines
-				declareC: 'sqInt directedSuperBindingSendTrampolines[NumSendTrampolines]'].
+			declareC:
+				'sqInt directedSuperBindingSendTrampolines[NumSendTrampolines]' ].
 	aCCodeGenerator
 		var: #trampolineAddresses
-			declareC: 'static char *trampolineAddresses[NumTrampolines*2]';
+		declareC: 'static char *trampolineAddresses[NumTrampolines*2]';
 		var: #objectReferencesInRuntime
-			declareC: 'static usqInt objectReferencesInRuntime[NumObjRefsInRuntime+1]';
-		var: #labelCounter
-			type: #int;
+		declareC:
+			'static usqInt objectReferencesInRuntime[NumObjRefsInRuntime+1]';
+		var: #labelCounter type: #int;
 		var: #traceFlags
-			declareC: 'int traceFlags = 8 /* prim trace log on by default */';
+		declareC: 'int traceFlags = 8 /* prim trace log on by default */';
 		var: #cStackAlignment
-			declareC: 'const int cStackAlignment = STACK_ALIGN_BYTES'.
+		declareC: 'const int cStackAlignment = STACK_ALIGN_BYTES'.
 	aCCodeGenerator
 		declareVar: #CFramePointer type: #'void *';
 		declareVar: #CStackPointer type: #'void *';
-		declareVar: #minValidCallAddress type: #'usqIntptr_t';
-		declareVar: #debugPrimCallStackOffset type: #'usqIntptr_t'.
-	aCCodeGenerator vmClass generatorTable ifNotNil:
-		[:bytecodeGenTable|
+		declareVar: #minValidCallAddress type: #usqIntptr_t;
+		declareVar: #debugPrimCallStackOffset type: #usqIntptr_t.
+	aCCodeGenerator vmClass generatorTable ifNotNil: [ :bytecodeGenTable |
 		aCCodeGenerator
 			var: #generatorTable
-				declareC: 'static BytecodeDescriptor generatorTable[', bytecodeGenTable size printString, ']',
-							(self tableInitializerFor: bytecodeGenTable
-								in: aCCodeGenerator)].
+			declareC: 'static BytecodeDescriptor generatorTable['
+				, bytecodeGenTable size printString , ']'
+				, (self tableInitializerFor: bytecodeGenTable in: aCCodeGenerator) ].
 	"In C the abstract opcode names clash with the Smalltak generator syntactic sugar.
 	 Most of the syntactic sugar is inlined, but alas some remains.  Rename the syntactic
 	 sugar to avoid the clash."
-	(self organization listAtCategoryNamed: #'abstract instructions') do:
-		[:s|
-		aCCodeGenerator addSelectorTranslation: s to: 'g', (aCCodeGenerator cFunctionNameFor: s)].
+	(self organization methodSelectorsInProtocol:
+		 #'abstract instructions') do: [ :s |
+		aCCodeGenerator
+			addSelectorTranslation: s
+			to: 'g' , (aCCodeGenerator cFunctionNameFor: s) ].
 	aCCodeGenerator addSelectorTranslation: #halt: to: 'haltmsg'
 ]
 
@@ -3570,9 +3577,9 @@ Cogit >> bytecodeFixupClass [
 { #category : #'method map' }
 Cogit >> bytecodePCFor: mcpc startBcpc: startbcpc in: cogMethod [
 	"Answer the zero-relative bytecode pc matching the machine code pc argument in
-	 cogMethod, given the start of the bytecodes for cogMethod's block or method object."
+	 cogMethod, given the start of the bytecodes for cogMethod's method object."
 	<api>
-	<var: #cogMethod type: #'CogBlockMethod *'>
+	<var: #cogMethod type: #'CogMethod *'>
 	^self
 		mapFor: cogMethod
 		bcpc: startbcpc
@@ -5086,12 +5093,10 @@ Cogit >> collectCogMethodConstituent: cogMethod [
 	 First value is the address of the cog method.
 	 Following values are pairs of machine code pc and bytecode pc"
 	<var: #cogMethod type: #'CogMethod *'>
-	<var: #cogBlockMethod type: #'CogBlockMethod *'>
-	| cm nSlots errCode cogBlockMethod address data |
+	| cm nSlots errCode address data |
 	(cogMethod cmType = CMMethod) 
 		ifFalse: [^self positiveMachineIntegerFor: cogMethod asUnsignedInteger ].
-	cogBlockMethod := self cCoerceSimple: cogMethod to: #'CogBlockMethod *'.
-	cogBlockMethod stackCheckOffset = 0 "isFrameless ?"
+	cogMethod stackCheckOffset = 0 "isFrameless ?"
 		ifTrue: [^self positiveMachineIntegerFor: cogMethod asUnsignedInteger].
 	cm := cogMethod methodObject.
 	nSlots := ((objectMemory byteSizeOf: cm) - (coInterpreter startPCOfMethod: cm)) * 2 + objectMemory minSlotsForShortening + 1."+1 for first address"
@@ -5107,7 +5112,7 @@ Cogit >> collectCogMethodConstituent: cogMethod [
 		withValue: address.
 	cogConstituentIndex := 1.
 	errCode := self
-		mapFor: cogBlockMethod
+		mapFor: cogMethod
 		bcpc: (coInterpreter startPCOfMethod: cogMethod methodObject)
 		performUntil: #collectCogConstituentFor:Annotation:Mcpc:Bcpc:Method:
 		arg: cogMethod asVoidPointer.
@@ -9008,7 +9013,7 @@ Cogit >> mapFor: cogMethod bcpc: startbcpc performUntil: functionSymbol arg: arg
 	 and to be usable for both pc-mapping and method introspection, we encode
 	 the annotation and the isBackwardBranch flag in the same parameter.
 	 Guilty as charged."
-	<var: #cogMethod type: #'CogBlockMethod *'>
+	<var: #cogMethod type: #'CogMethod *'>
 	<var: #functionSymbol declareC: 'sqInt (*functionSymbol)(BytecodeDescriptor *desc, sqInt annotationAndIsBackwardBranch, char *mcpc, sqInt bcpc, void *arg)'>
 	<var: #arg type: #'void *'>
 	<inline: true>
@@ -9896,7 +9901,7 @@ Cogit >> maybeUnsafeJumpContinuation: latestContinuation at: bcpc for: descripto
 Cogit >> mcPCFor: bcpc startBcpc: startbcpc in: cogMethod [
 	"Answer the absolute machine code pc matching the zero-relative bytecode pc argument
 	 in cogMethod, given the start of the bytecodes for cogMethod's block or method object."
-	<var: #cogMethod type: #'CogBlockMethod *'>
+	<var: #cogMethod type: #'CogMethod *'>
 	<returnTypeC: #usqInt>
 	^self
 		mapFor: cogMethod
@@ -9909,9 +9914,9 @@ Cogit >> mcPCFor: bcpc startBcpc: startbcpc in: cogMethod [
 Cogit >> mcPCForBackwardBranch: bcpc startBcpc: startbcpc in: cogMethod [
 	"Answer the absolute machine code pc matching the zero-relative
 	 bytecode pc of a backward branch in cogMethod, given the start
-	 of the bytecodes for cogMethod's block or method object."
+	 of the bytecodes for cogMethod's method object."
 	<api>
-	<var: #cogMethod type: #'CogBlockMethod *'>
+	<var: #cogMethod type: #'CogMethod *'>
 	<returnTypeC: #usqInt>
 	^self
 		mapFor: cogMethod
