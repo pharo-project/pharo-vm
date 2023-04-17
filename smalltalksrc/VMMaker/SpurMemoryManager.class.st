@@ -4462,11 +4462,11 @@ SpurMemoryManager >> eeInstantiateSmallClassIndex: knownClassIndex format: objFo
 	 before returning it to Smalltalk. Since this call is used in routines that do just that we
 	 are safe.  Break this rule and die in GC.  Result is guaranteed to be young."
 	<inline: true>
-	self assert: (numSlots >= 0 and: [knownClassIndex ~= 0 and: [(self knownClassAtIndex: knownClassIndex) ~= nilObj]]).
+	self assert: (numSlots >= 0 and: [knownClassIndex ~= 0 and: [(self classAtIndex: knownClassIndex) ~= nilObj]]).
 	self assert: (objFormat < self firstByteFormat
 					ifTrue: [objFormat]
 					ifFalse: [objFormat bitAnd: self byteFormatMask])
-				= (self instSpecOfClass: (self knownClassAtIndex: knownClassIndex)).
+				= (self instSpecOfClass: (self classAtIndex: knownClassIndex)).
 	^self allocateSmallNewSpaceSlots: numSlots format: objFormat classIndex: knownClassIndex
 ]
 
