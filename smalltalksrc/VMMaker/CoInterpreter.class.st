@@ -5232,6 +5232,12 @@ CoInterpreter >> return: returnValue toExecutive: inInterpreter [
 	^nil
 ]
 
+{ #category : #trampolines }
+CoInterpreter >> returnToExecutive: inInterpreter [
+
+	self return: self popStack toExecutive: inInterpreter
+]
+
 { #category : #enilopmarts }
 CoInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedContext [
 	"Return to the current frame, either by entering machine code, or longjmp-ing back to the

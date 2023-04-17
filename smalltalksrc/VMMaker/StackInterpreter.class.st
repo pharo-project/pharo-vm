@@ -5444,14 +5444,14 @@ StackInterpreter >> executePrimitiveFromInterpreter: inInterpreter ifFail: aBloc
 		| succeeded |
 		self isPrimitiveFunctionPointerAnIndex ifTrue: [
 			self executeQuickPrimitive.
-			self return: self popStack toExecutive: inInterpreter.
+			self returnToExecutive: inInterpreter.
 			^ nil ].
 		"slowPrimitiveResponse may of course context-switch. 
 		If so we must reenter the new process appropriately, returning only if we've found an interpreter frame.
 		The instructionPointer tells us from whence we came."
 		succeeded := self slowPrimitiveResponse.
 		succeeded ifTrue: [
-			self return: self popStack toExecutive: inInterpreter.
+			self returnToExecutive: inInterpreter.
 			^ nil ] ].
 
 	^ aBlock value
@@ -13252,6 +13252,13 @@ StackInterpreter >> returnNilFromBlock [
 StackInterpreter >> returnReceiver [
 	localReturnValue := self receiver.
 	self commonReturn
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> returnToExecutive: inInterpreter [
+	"Noop in the non jitted vm"
+
+	^ nil
 ]
 
 { #category : #'message sending' }
