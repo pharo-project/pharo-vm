@@ -3306,6 +3306,7 @@ Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes i
 					          ((1 to: MaxNumberOfAbstractOpcodes) collect: [ :ign |
 						           self bytecodeFixupClass for: self ]) ] ].
 
+	self b: fixups zero: numberOfBytecodes * (self sizeof: CogBytecodeFixup).
 	self zeroOpcodeIndexForNewOpcodes.
 	labelCounter := 0
 ]
@@ -3408,6 +3409,15 @@ Cogit >> assertSaneJumpTarget: jumpTarget [
 			or: [(jumpTarget asUnsignedInteger
 					between: codeBase
 					and: methodZone limitZony asInteger + (closedPICSize max: openPICSize))]]])
+]
+
+{ #category : #initialization }
+Cogit >> b: anArray zero: bytes [
+
+	<doNotGenerate>
+	1 to: bytes do: [ :i | 
+		"CArray are base 0"
+		anArray at: i - 1 put: 0 ]
 ]
 
 { #category : #'trampoline support' }
@@ -6812,7 +6822,11 @@ Cogit >> gen: opcode [ "<Integer>"
 	
 	"Force the initialization of the annotation to nil"
 	abstractInstruction annotation: nil.
-	
+	abstractInstruction dependent: nil.
+	abstractInstruction address: nil.
+	abstractInstruction machineCodeSize: nil.
+	abstractInstruction maxSize: nil.
+
 	^abstractInstruction
 ]
 
