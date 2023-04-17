@@ -14635,6 +14635,7 @@ StackInterpreter >> stackPointer: theSP [
 StackInterpreter >> stackPointerForMaybeMarriedContext: aContext [
 	"Return the stackPointer of a Context or BlockContext."
 	| sp |
+	<var: 'sp' type: 'sqInt'>
 	<inline: true>
 	(self isStillMarriedContext: aContext) ifTrue:
 		[sp := self stackPointerIndexForFrame: (self frameOfMarriedContext: aContext).
