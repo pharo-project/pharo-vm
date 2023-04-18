@@ -8,7 +8,7 @@ Class {
 DruidMirrorCogit class >> bytecodeTable [
 
 	^ DruidJIT bytecodeTable collect: [ :entry | "Replace just the bytecode's name"
-		  entry copyReplaceAt: 4 with: [ :e | e copyReplaceAll: '_' with: '' ] ]
+		  entry copyReplaceAt: 4 with: [ :e | (e copyReplaceAll: '_' with: '') asSymbol ] ]
 ]
 
 { #category : #initialization }
@@ -37,5 +37,5 @@ DruidMirrorCogit class >> initializePrimitiveTable [
 DruidMirrorCogit class >> primitiveTableArray [
 
 	^ DruidJIT primitiveTableArray collect: [ :entry | "Replace just the primitive's name"
-		  entry copyReplaceAt: 2 with: [ :e | e copyReplaceAll: '_' with: '' ] ]
+		   entry copyReplaceAt: 2 with: [ :e | (e copyReplaceAll: '_' with: '') asSymbol ]  ]
 ]
