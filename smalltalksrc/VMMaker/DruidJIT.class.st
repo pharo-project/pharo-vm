@@ -26,11 +26,11 @@ DruidJIT class >> bytecodeTable [
 
 	<generated>
 	^ {
-		  { 1. 33. 33. #gen_PushLiteralConstantBytecode . #needsFrameNever: . 1 }.
+		  { 1. 32. 32. #gen_PushLiteralConstantBytecode . #needsFrameNever: . 1 }.
 		  { 1. 76. 76. #gen_PushReceiverBytecode . #needsFrameNever: . 1 }.
 		  { 1. 92. 92. #gen_ReturnTopFromMethod . #return . #needsFrameIfInBlock: . #isMappedInBlock . -1}.
-		  { 1. 0. 32. #unknownBytecode }.
-		  { 1. 34. 75. #unknownBytecode }.
+		  { 1. 0. 31. #unknownBytecode }.
+		  { 1. 33. 75. #unknownBytecode }.
 		  { 1. 77. 91. #unknownBytecode }.
 		  { 1. 93. 223. #unknownBytecode }.
 		  { 2. 224. 247. #unknownBytecode }.
@@ -2266,9 +2266,8 @@ DruidJIT >> gen_PushLiteralConstantBytecode [
 	| currentBlock |
 	self MoveR: FPReg R: TempReg.
 	self MoveM64: FoxMethod r: TempReg R: TempReg.
-	self MoveCq: LiteralStart R: ClassReg.
-	self AddCq: 1 R: ClassReg.
 	self AddCq: 8 R: TempReg.
+	self MoveCq: LiteralStart R: ClassReg.
 	self LogicalShiftLeftCq: 3 R: ClassReg.
 	self AddR: ClassReg R: TempReg.
 	self MoveM64: 0 r: TempReg R: ClassReg.
