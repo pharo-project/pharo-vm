@@ -26,7 +26,7 @@ DruidJIT class >> bytecodeTable [
 
 	<generated>
 	^ {
-		  { 1. 32. 32. #gen_PushLiteralConstantBytecode . #needsFrameNever: . 1 }.
+		  { 1. 32. 32. #gen_PushLiteralConstantBytecode }.
 		  { 1. 76. 76. #gen_PushReceiverBytecode . #needsFrameNever: . 1 }.
 		  { 1. 92. 92. #gen_ReturnTopFromMethod . #return . #needsFrameIfInBlock: . #isMappedInBlock . -1}.
 		  { 1. 0. 31. #unknownBytecode }.
