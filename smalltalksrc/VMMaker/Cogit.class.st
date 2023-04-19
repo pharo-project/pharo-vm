@@ -3296,8 +3296,8 @@ Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes i
 		self
 			cCode: [
 				abstractOpcodes := self malloc: allocBytes.
-				fixups := (abstractOpcodes asUnsignedInteger + opcodeBytes)
-					          asVoidPointer ]
+				fixups := (abstractOpcodes asUnsignedInteger + opcodeBytes) asVoidPointer.
+				self b: fixups zero: numberOfBytecodes * (self sizeof: CogBytecodeFixup). ]
 			inSmalltalk: [
 				abstractOpcodes := CArrayAccessor on:
 					                   ((1 to: MaxNumberOfAbstractOpcodes) collect: [
@@ -3306,7 +3306,6 @@ Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes i
 					          ((1 to: MaxNumberOfAbstractOpcodes) collect: [ :ign |
 						           self bytecodeFixupClass for: self ]) ] ].
 
-	self b: fixups zero: numberOfBytecodes * (self sizeof: CogBytecodeFixup).
 	self zeroOpcodeIndexForNewOpcodes.
 	labelCounter := 0
 ]
