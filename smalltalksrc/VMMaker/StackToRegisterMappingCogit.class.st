@@ -3700,7 +3700,9 @@ StackToRegisterMappingCogit >> needsFrameIfFollowsSend: stackDelta [
 
 { #category : #'compile abstract instructions' }
 StackToRegisterMappingCogit >> needsFrameIfMod16GENumArgs: stackDelta [
-	^byte0 \\ 16 >= methodOrBlockNumArgs
+	"We need a frame if it is accessing to a temporal variable (not an argument)"
+
+	^ byte0 \\ 16 >= methodOrBlockNumArgs
 ]
 
 { #category : #'compile abstract instructions' }
