@@ -28,3 +28,12 @@ SequenceableCollection >> copyReplaceAll: oldSubstring with: newSubstring tokeni
 	'pid_t (*pid)(pid_t pid)' copyReplaceAll: 'pid' with: 'foo' tokenish: [:ch| ch = $_ or: [ch isAlphaNumeric]]"
 
 ]
+
+{ #category : #'*VMMaker' }
+SequenceableCollection >> copyReplaceAt: index with: blockTransform [
+
+	^ self
+		  copyReplaceFrom: index
+		  to: index
+		  with: { (blockTransform cull: (self at: index)) }
+]

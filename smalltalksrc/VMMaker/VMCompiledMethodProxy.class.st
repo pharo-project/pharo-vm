@@ -13,7 +13,7 @@ Class {
 
 { #category : #accessing }
 VMCompiledMethodProxy >> at: index [
-	^(index between: self numLiterals + 1 * objectMemory wordSize + 1 and: self size)
+	^(index between: self numLiterals + 1 * objectMemory wordSize + 1 and: self endPC)
 		ifTrue: [objectMemory fetchByte: index - 1 ofObject: oop]
 		ifFalse: [self errorSubscriptBounds: index]
 ]

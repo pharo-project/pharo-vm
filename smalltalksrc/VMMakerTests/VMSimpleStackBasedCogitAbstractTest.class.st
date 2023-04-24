@@ -612,6 +612,32 @@ VMSimpleStackBasedCogitAbstractTest >> prepareCall [
 ]
 
 { #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> prepareStackForPrimitiveReceiver: aReceiver arguments: arguments method: aMethod [
+
+	machineSimulator baseRegisterValue: cogit varBaseAddress.
+
+	"The receiver always goes in registers"
+	self machineSimulator receiverRegisterValue: aReceiver.
+
+	"If the cogit is the StackToRegisterMapping the arguments should go registers, else by stack"
+	self argumentsOnRegisters
+		ifTrue: [ 
+			arguments withIndexDo: [ :a :i | 
+				i = 1 ifTrue: [ self machineSimulator arg0RegisterValue: a ].
+				i = 2 ifTrue: [ self machineSimulator arg1RegisterValue: a ].
+				i > 2 ifTrue: [ 
+					self error:
+						'Cogit calling convention only supports 2 arguments by registers' ] ] ]
+		ifFalse: [ 
+			self pushAddress: aReceiver.
+			arguments do: [ :anArgument | self pushAddress: anArgument ] ].
+
+	"Caller side"	
+	self prepareCall
+	
+]
+
+{ #category : #helpers }
 VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver [
 
 	self prepareStackForSendReceiver: aReceiver arguments: #()
@@ -631,6 +657,9 @@ VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver ar
 	"The receiver always goes in registers"
 	self machineSimulator receiverRegisterValue: aReceiver.
 
+	self pushAddress: aReceiver.
+	arguments do: [ :anArgument | self pushAddress: anArgument ].
+	
 	"If the cogit is the StackToRegisterMapping the arguments should go registers, else by stack"
 	self argumentsOnRegisters
 		ifTrue: [ 
@@ -639,10 +668,7 @@ VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver ar
 				i = 2 ifTrue: [ self machineSimulator arg1RegisterValue: a ].
 				i > 2 ifTrue: [ 
 					self error:
-						'Cogit calling convention only supports 2 arguments by registers' ] ] ]
-		ifFalse: [ 
-			self pushAddress: aReceiver.
-			arguments do: [ :anArgument | self pushAddress: anArgument ] ].
+						'Cogit calling convention only supports 2 arguments by registers' ] ] ].
 
 	"Caller side"	
 	self prepareCall
