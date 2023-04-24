@@ -3674,6 +3674,12 @@ StackToRegisterMappingCogit >> methodFoundInvalidPostScan [
 	^super methodFoundInvalidPostScan
 ]
 
+{ #category : #accessing }
+StackToRegisterMappingCogit >> methodOrBlockNumTemps [
+
+	^ methodOrBlockNumTemps
+]
+
 { #category : #'compile abstract instructions' }
 StackToRegisterMappingCogit >> needsFrameIfExtBGT2: stackDelta [
 	^extB < 0 or: [extB > 2]
@@ -4220,6 +4226,15 @@ StackToRegisterMappingCogit >> simStackSlots [
 	 plus a slot for the receiver and some overflow for safety."
 	<inline: true>
 	^((LargeContextSlots - CtxtTempFrameStart + 1 max: 64) * 11 // 10)
+]
+
+{ #category : #'simulation stack' }
+StackToRegisterMappingCogit >> simStackTempAt: tempIndex [
+	<inline: true>
+	
+	| index |
+	index := tempIndex + 1 "Receiver".
+	^self simStackAt: index
 ]
 
 { #category : #testing }
