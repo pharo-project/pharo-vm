@@ -2738,9 +2738,10 @@ StackInterpreter >> bytecodePrimAdd [
 	arg := self stackValue: 0.
 	(objectMemory areIntegers: rcvr and: arg)
 		ifTrue: [ 
+			self druidIgnore: [
 			self sumSmallInteger: rcvr withSmallInteger: arg ifNotOverflow: [ :result |
 				self pop: 2 thenPush: result.
-				^ self fetchNextBytecode "success" ] ]
+				^ self fetchNextBytecode "success" ] ] ]
 		ifFalse: [
 			"Do not JIT compile float case..."
 			self druidIgnore: [
@@ -13045,13 +13046,17 @@ StackInterpreter >> retryPrimitiveOnFailure [
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnFalse [
-
+	<compilationInfo: #return>
+	<compilationInfo: #isMappedInBlock>
+	<needsFrameIfInBlock: 0>
 	self commonReturn: objectMemory falseObject
 ]
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnNil [
-
+	<compilationInfo: #return>
+	<compilationInfo: #isMappedInBlock>
+	<needsFrameIfInBlock: 0>
 	self commonReturn: objectMemory nilObject
 ]
 
