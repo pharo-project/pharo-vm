@@ -263,17 +263,21 @@ SpurGenerationScavenger >> computeRefCountToShrinkRememberedSet [
 
 { #category : #scavenger }
 SpurGenerationScavenger >> computeTenuringThreshold [
-	| fractionSurvived |
+
 	<var: 'fractionSurvived' type: #float>
+	| fractionSurvived |
 	fractionSurvived := futureSpace limit = futureSpace start
-							ifTrue:
-								[0.0]
-							ifFalse:
-								[(futureSurvivorStart - futureSpace start) asFloat
-									/ (futureSpace limit - futureSpace start)].
+		                    ifTrue: [ 0.0 ]
+		                    ifFalse: [
+			                    (futureSurvivorStart - futureSpace start) asFloat
+			                    / (futureSpace limit - futureSpace start) ].
+
 	tenureThreshold := fractionSurvived > 0.9
-							ifTrue: [((pastSpace limit - pastSpace start) * (1.0 - tenuringProportion)) rounded + pastSpace start]
-							ifFalse: [0]
+		                   ifTrue: [ "Duplicated!"
+			                   (futureSpace limit - futureSpace start
+			                    * (1.0 - tenuringProportion)) rounded
+			                   + futureSpace start ]
+		                   ifFalse: [ 0 ]
 ]
 
 { #category : #scavenger }
