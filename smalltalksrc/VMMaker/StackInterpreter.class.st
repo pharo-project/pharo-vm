@@ -12638,6 +12638,7 @@ StackInterpreter >> pushReceiverVariable: fieldIndex [
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushReceiverVariableBytecode [
 	<expandCases>
+	<compilationInfo: #isInstVarRef>
 	<needsFrameNever: 1>
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
