@@ -1283,7 +1283,7 @@ SpurGenerationScavenger >> scavengeUnfiredEphemeronsOnEphemeronList [
 ]
 
 { #category : #accessing }
-SpurGenerationScavenger >> scavengerTenuringThreshold [ "(Slang flattens so need unique selectors)"
+SpurGenerationScavenger >> scavengerTenuringProportion [ "(Slang flattens so need unique selectors)"
 	<returnTypeC: #float>
 	^tenureThreshold >= pastSpace start
 		ifTrue: [(tenureThreshold - pastSpace start) asFloat / (pastSpace limit - pastSpace start)]
@@ -1291,7 +1291,7 @@ SpurGenerationScavenger >> scavengerTenuringThreshold [ "(Slang flattens so need
 ]
 
 { #category : #accessing }
-SpurGenerationScavenger >> scavengerTenuringThreshold: aProportion [ "(Slang flattens so need unique selectors)"
+SpurGenerationScavenger >> scavengerTenuringProportionToKeepInPastSpace: aProportion [ "(Slang flattens so need unique selectors)"
 	<var: 'aProportion' type: #double>
 	tenuringProportion := aProportion.
 	tenureThreshold := aProportion = 0.0

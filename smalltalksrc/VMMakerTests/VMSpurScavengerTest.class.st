@@ -169,11 +169,11 @@ VMSpurScavengerTest >> testComputeTenuringThresholdWithFewSurvivors [
 	memory coInterpreter method: rootObjectAddress.
 
 	self assert: memory scavenger tenuringProportion equals: 0.9. "When tenuring, keep 90% of the objects"
-	self assert: memory scavenger scavengerTenuringThreshold equals: 0 "Not tenure next pass".
+	self assert: memory scavenger scavengerTenuringProportion equals: 0 "Not tenure next pass".
 	
 	memory doScavenge: 1 "TenureByAge".
 
-	self assert: memory scavenger scavengerTenuringThreshold closeTo: 0 "Past space keep not full -> Not tenure next pass"
+	self assert: memory scavenger scavengerTenuringProportion closeTo: 0 "Past space keep not full -> Not tenure next pass"
 ]
 
 { #category : #'tests-8-scavenge-tenuring' }
@@ -184,11 +184,11 @@ VMSpurScavengerTest >> testComputeTenuringThresholdWithManySurvivors [
 	memory coInterpreter method: rootObjectAddress.
 
 	self assert: memory scavenger tenuringProportion equals: 0.9. "When tenuring, keep 90% of the objects"
-	self assert: memory scavenger scavengerTenuringThreshold equals: 0. "Not tenure next pass"
+	self assert: memory scavenger scavengerTenuringProportion equals: 0. "Not tenure next pass"
 
 	memory doScavenge: 1. "TenureByAge"
 
-	self assert: memory scavenger scavengerTenuringThreshold closeTo: 0.1 "Past space is full -> Tenure next pass"
+	self assert: memory scavenger scavengerTenuringProportion closeTo: 0.1 "Past space is full -> Tenure next pass"
 ]
 
 { #category : #'tests-4-scavenge-stack' }
@@ -736,13 +736,13 @@ VMSpurScavengerTest >> testShouldTenureObjectsWhenPastSpaceIsFull [
 	rootObjectAddress := self fullNewSpace.
 	memory coInterpreter method: rootObjectAddress.
 
-	self assert: memory scavenger scavengerTenuringThreshold equals: 0. "Start without tenuring"
+	self assert: memory scavenger scavengerTenuringProportion equals: 0. "Start without tenuring"
 
 	memory doScavenge: 1. "TenureByAge"
 	newRootObjectAddress := memory remapObj: rootObjectAddress.
 
 	"Survivors should touched the threshold, so next scavenge will be tenured"
-	self assert: memory scavenger scavengerTenuringThreshold closeTo: 0.1.
+	self assert: memory scavenger scavengerTenuringProportion closeTo: 0.1.
 	self assert: (memory isInNewSpace: newRootObjectAddress).
 	
 	memory doScavenge: 1. "TenureByAge"
