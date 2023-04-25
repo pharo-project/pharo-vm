@@ -1365,7 +1365,7 @@ SpurGenerationScavenger >> shouldBeTenured: survivor [
 	^tenureCriterion
 		caseOf: {
 			[TenureByAge]	->
-				[survivor < tenureThreshold ifTrue: [ coInterpreter print: 'Tenuring!\n' .true ] ifFalse: [ false ] ]. 
+				[survivor < tenureThreshold]. 
 			[TenureByClass] ->
 				[(manager classIndexOf: survivor) = tenuringClassIndex].
 			[TenureToShrinkRT]	->
