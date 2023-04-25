@@ -5207,7 +5207,9 @@ SpurMemoryManager >> flushNewSpace [
 	| savedTenuringThreshold |
 	savedTenuringThreshold := scavenger getRawTenuringThreshold.
 	scavenger setRawTenuringThreshold: memoryMap newSpaceEnd.
+	coInterpreter print: '<Flushing>\n'.
 	self scavengingGCTenuringIf: TenureByAge.
+	coInterpreter print: '</Flushing>\n'.
 	scavenger setRawTenuringThreshold: savedTenuringThreshold.
 	self assert: fromOldSpaceRememberedSet rememberedSetSize = 0.
 	self assert: pastSpaceStart = scavenger pastSpace start.

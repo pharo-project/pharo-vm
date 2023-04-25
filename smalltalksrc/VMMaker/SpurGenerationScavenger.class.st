@@ -1357,10 +1357,11 @@ SpurGenerationScavenger >> shouldBeTenured: survivor [
 		ACM TOPLAS, Volume 14 Issue 1, Jan. 1992, pp 1 - 27.
 
 	 The other policies are for special purposes."
+	
 	^tenureCriterion
 		caseOf: {
 			[TenureByAge]	->
-				[survivor < tenureThreshold]. 
+				[survivor < tenureThreshold ifTrue: [ coInterpreter print: 'Tenuring!\n' .true ] ifFalse: [ false ] ]. 
 			[TenureByClass] ->
 				[(manager classIndexOf: survivor) = tenuringClassIndex].
 			[TenureToShrinkRT]	->

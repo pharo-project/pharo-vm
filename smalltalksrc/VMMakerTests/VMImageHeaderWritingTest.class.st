@@ -36,16 +36,6 @@ VMImageHeaderWritingTest >> testImageHeaderWithPermanentObjects [
 ]
 
 { #category : #tests }
-VMImageHeaderWritingTest >> testWritingImageWritesCorrectImageVersion [
-
-	| header |
-
-	header := self readHeader.
-
-	self assert: header imageVersion equals: interpreter getImageVersion
-]
-
-{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectBaseAddress [
 
 	| header |
@@ -165,6 +155,16 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectImageFormat [
 	header := self readHeader.
 
 	self assert: header imageFormat equals: interpreter imageFormatVersion
+]
+
+{ #category : #tests }
+VMImageHeaderWritingTest >> testWritingImageWritesCorrectImageVersion [
+
+	| header |
+
+	header := self readHeader.
+
+	self assert: header imageVersion equals: interpreter getImageVersion
 ]
 
 { #category : #tests }
