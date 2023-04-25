@@ -15465,12 +15465,15 @@ StackInterpreter >> undoFetchNextBytecode [
 
 { #category : #'compiled methods' }
 StackInterpreter >> unfollow: litVar atIndex: literalIndex [
+	"So rare it mustn't bulk up the common path"
+
 	<option: #SpurMemoryManager>
-	<inline: #never> "So rare it mustn't bulk up the common path"
+	<inline: #never>
 	| followed |
 	followed := objectMemory followForwarded: litVar.
-	self literal: literalIndex ofMethod: method put: followed.
-	^followed
+	self druidIgnore: [
+		self literal: literalIndex ofMethod: method put: followed ].
+	^ followed
 ]
 
 { #category : #'compiled methods' }
