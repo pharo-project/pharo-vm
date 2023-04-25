@@ -11,6 +11,27 @@ VMSpurScavengerTest >> assertPastSpaceIsEmpty [
 		equals: memory scavenger pastSpace start
 ]
 
+{ #category : #'as yet unclassified' }
+VMSpurScavengerTest >> fullNewSpace [
+
+	| rootObjectAddress referencedObjectAddress |
+	rootObjectAddress := self newObjectWithSlots: 200.
+
+	1 to: 200 do: [ :i |
+		referencedObjectAddress := self newObjectWithSlots: 100.
+		memory
+			storePointer: i - 1
+			ofObject: rootObjectAddress
+			withValue: referencedObjectAddress.
+		1 to: 100 do: [ :i2 |
+			memory
+				storePointer: i2 - 1
+				ofObject: referencedObjectAddress
+				withValue: (self newObjectWithSlots: 10) ] ].
+
+	^ rootObjectAddress
+]
+
 { #category : #helpers }
 VMSpurScavengerTest >> makeBaseFrameWithMethod: aMethodOop context: aContextOop receiver: aReceiverOop args: argsOops andStack: stackOops [
 	
@@ -137,6 +158,37 @@ VMSpurScavengerTest >> testArgumentInStackShouldSurviveScanvenge [
 	"Remap our object address to its new location"
 	newObjectAddress := memory remapObj: newObjectOop.
 	self assert: (memory hashBitsOf: newObjectAddress) equals: newObjectHash
+]
+
+{ #category : #'tests-8-scavenge-tenuring' }
+VMSpurScavengerTest >> testComputeTenuringThresholdWithFewSurvivors [
+
+	| rootObjectAddress |
+
+	rootObjectAddress := self newZeroSizedObject.
+	memory coInterpreter method: rootObjectAddress.
+
+	self assert: memory scavenger tenuringProportion equals: 0.9. "When tenuring, keep 90% of the objects"
+	self assert: memory scavenger scavengerTenuringThreshold equals: 0 "Not tenure next pass".
+	
+	memory doScavenge: 1 "TenureByAge".
+
+	self assert: memory scavenger scavengerTenuringThreshold closeTo: 0 "Past space keep not full -> Not tenure next pass"
+]
+
+{ #category : #'tests-8-scavenge-tenuring' }
+VMSpurScavengerTest >> testComputeTenuringThresholdWithManySurvivors [
+
+	| rootObjectAddress |
+	rootObjectAddress := self fullNewSpace.
+	memory coInterpreter method: rootObjectAddress.
+
+	self assert: memory scavenger tenuringProportion equals: 0.9. "When tenuring, keep 90% of the objects"
+	self assert: memory scavenger scavengerTenuringThreshold equals: 0. "Not tenure next pass"
+
+	memory doScavenge: 1. "TenureByAge"
+
+	self assert: memory scavenger scavengerTenuringThreshold closeTo: 0.1 "Past space is full -> Tenure next pass"
 ]
 
 { #category : #'tests-4-scavenge-stack' }
@@ -292,9 +344,6 @@ VMSpurScavengerTest >> testMovingReferencedObjectShouldUpdateReference [
 	
 	memory coInterpreter method: rootObjectAddress.
 
-	"Nil should survive, but newObjectOop should survive too.
-	Nil is referenced by the roots because many of their slots are nilled.
-	newObjectOop is referenced by the stack"
 	memory doScavenge: 1 "TenureByAge".
 	
 	"Remap our object address to its new location"
@@ -427,9 +476,6 @@ VMSpurScavengerTest >> testReferencedObjectShouldSurviveScavenge [
 	
 	memory coInterpreter method: rootObjectAddress.
 
-	"Nil should survive, but newObjectOop should survive too.
-	Nil is referenced by the roots because many of their slots are nilled.
-	newObjectOop is referenced by the stack"
 	memory doScavenge: 1 "TenureByAge".
 	
 	"Remap our object address to its new location"
@@ -650,6 +696,62 @@ VMSpurScavengerTest >> testScavengedRootObjectsShouldBeCopiedBeforeOtherObjects 
 	self assert: (memory remapObj: secondRootObjectAddress) < (memory remapObj: nonRootObjectAddress)
 ]
 
+{ #category : #'tests-8-scavenge-tenuring' }
+VMSpurScavengerTest >> testShouldTenureBasedOnTheThreshold [
+
+	| firstObjectAddress secondObjectAddress |
+
+	firstObjectAddress := self newZeroSizedObject.
+	secondObjectAddress := self newZeroSizedObject.
+	memory coInterpreter method: firstObjectAddress.
+	memory coInterpreter profileSemaphore: secondObjectAddress.
+
+	memory doScavenge: 1. "TenureByAge"
+	firstObjectAddress := memory remapObj: firstObjectAddress.
+	secondObjectAddress := memory remapObj: secondObjectAddress.
+
+	"Both still in new space"
+	self assert: (memory isInNewSpace: firstObjectAddress).
+	self assert: (memory isInNewSpace: secondObjectAddress).
+	
+	"Set threshold aftes first object"
+	memory scavenger setRawTenuringThreshold: firstObjectAddress + 1.
+	
+	memory doScavenge: 1. "TenureByAge"
+	firstObjectAddress := memory remapObj: firstObjectAddress.
+	secondObjectAddress := memory remapObj: secondObjectAddress.
+
+	"Objects before the threshold where tenured"
+	self assert: (memory isInOldSpace: firstObjectAddress).
+	"Next objects keep in new space"
+	self assert: (memory isInNewSpace: secondObjectAddress)
+
+]
+
+{ #category : #'tests-8-scavenge-tenuring' }
+VMSpurScavengerTest >> testShouldTenureObjectsWhenPastSpaceIsFull [
+
+	| rootObjectAddress newRootObjectAddress |
+
+	rootObjectAddress := self fullNewSpace.
+	memory coInterpreter method: rootObjectAddress.
+
+	self assert: memory scavenger scavengerTenuringThreshold equals: 0. "Start without tenuring"
+
+	memory doScavenge: 1. "TenureByAge"
+	newRootObjectAddress := memory remapObj: rootObjectAddress.
+
+	"Survivors should touched the threshold, so next scavenge will be tenured"
+	self assert: memory scavenger scavengerTenuringThreshold closeTo: 0.1.
+	self assert: (memory isInNewSpace: newRootObjectAddress).
+	
+	memory doScavenge: 1. "TenureByAge"
+	newRootObjectAddress := memory remapObj: newRootObjectAddress.
+
+	"Some objects should be tenured"
+	self assert: (memory isInOldSpace: newRootObjectAddress)
+]
+
 { #category : #'tests-3-scavenge-basic' }
 VMSpurScavengerTest >> testUnreferencedObjectCycleShouldNotSurviveScavenge [
 	| objectA objectB |
@@ -664,9 +766,6 @@ VMSpurScavengerTest >> testUnreferencedObjectCycleShouldNotSurviveScavenge [
 		ofObject: objectB
 		withValue: objectA.
 
-	"Nil should survive, but newObjectOop should survive too.
-	Nil is referenced by the roots because many of their slots are nilled.
-	newObjectOop is referenced by the stack"
 	memory doScavenge: 1. "TenureByAge"
 	
 	self assertPastSpaceIsEmpty
@@ -682,9 +781,6 @@ VMSpurScavengerTest >> testUnreferencedObjectGraphShouldNotSurviveScavenge [
 		ofObject: unreferencedRootObjectAddress
 		withValue: referencedObjectAddress.
 
-	"Nil should survive, but newObjectOop should survive too.
-	Nil is referenced by the roots because many of their slots are nilled.
-	newObjectOop is referenced by the stack"
 	memory doScavenge: 1. "TenureByAge"
 	
 	self assertPastSpaceIsEmpty

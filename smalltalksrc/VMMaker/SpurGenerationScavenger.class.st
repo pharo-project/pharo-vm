@@ -1414,6 +1414,12 @@ SpurGenerationScavenger >> tenuringClassIndex: anInteger [
 	tenuringClassIndex := anInteger
 ]
 
+{ #category : #accessing }
+SpurGenerationScavenger >> tenuringProportion [
+
+	^ tenuringProportion
+]
+
 { #category : #logging }
 SpurGenerationScavenger >> writeScavengeLog [
 	"Output the entire record."
