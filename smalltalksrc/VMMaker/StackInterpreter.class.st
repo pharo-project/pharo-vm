@@ -12397,7 +12397,7 @@ StackInterpreter >> pushConstantTwoBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushConstantZeroBytecode [
-
+	<needsFrameNever: 1>
 	self fetchNextBytecode.
 	self push: ConstZero.
 
@@ -13063,7 +13063,9 @@ StackInterpreter >> returnNilFromBlock [
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnReceiver [
-
+	<compilationInfo: #return>
+	<compilationInfo: #isMappedInBlock>
+	<needsFrameIfInBlock: 0>
 	self commonReturn: self receiver
 ]
 
@@ -13087,7 +13089,9 @@ StackInterpreter >> returnTopFromMethod [
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnTrue [
-
+	<compilationInfo: #return>
+	<compilationInfo: #isMappedInBlock>
+	<needsFrameIfInBlock: 0>
 	self commonReturn: objectMemory trueObject
 ]
 

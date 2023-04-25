@@ -42,7 +42,7 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 13. 13. #unknownBytecode }.
 		  { 1. 14. 14. #unknownBytecode }.
 		  { 1. 15. 15. #unknownBytecode }.
-		  { 1. 16. 16. #gen_PushLiteralVariable16CasesBytecode0 }.
+		  { 1. 16. 16. #unknownBytecode }.
 		  { 1. 17. 17. #unknownBytecode }.
 		  { 1. 18. 18. #unknownBytecode }.
 		  { 1. 19. 19. #unknownBytecode }.
@@ -58,39 +58,71 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 29. 29. #unknownBytecode }.
 		  { 1. 30. 30. #unknownBytecode }.
 		  { 1. 31. 31. #unknownBytecode }.
-		  { 1. 32. 32. #gen_PushLiteralConstantBytecode0 }.
-		  { 1. 33. 33. #unknownBytecode }.
-		  { 1. 34. 34. #unknownBytecode }.
-		  { 1. 35. 35. #unknownBytecode }.
-		  { 1. 36. 36. #unknownBytecode }.
-		  { 1. 37. 37. #unknownBytecode }.
-		  { 1. 38. 38. #unknownBytecode }.
-		  { 1. 39. 39. #unknownBytecode }.
-		  { 1. 40. 40. #unknownBytecode }.
-		  { 1. 41. 41. #unknownBytecode }.
-		  { 1. 42. 42. #unknownBytecode }.
-		  { 1. 43. 43. #unknownBytecode }.
-		  { 1. 44. 44. #unknownBytecode }.
-		  { 1. 45. 45. #unknownBytecode }.
-		  { 1. 46. 46. #unknownBytecode }.
-		  { 1. 47. 47. #unknownBytecode }.
-		  { 1. 48. 48. #unknownBytecode }.
-		  { 1. 49. 49. #unknownBytecode }.
-		  { 1. 50. 50. #unknownBytecode }.
-		  { 1. 51. 51. #unknownBytecode }.
-		  { 1. 52. 52. #unknownBytecode }.
-		  { 1. 53. 53. #unknownBytecode }.
-		  { 1. 54. 54. #unknownBytecode }.
-		  { 1. 55. 55. #unknownBytecode }.
-		  { 1. 56. 56. #unknownBytecode }.
-		  { 1. 57. 57. #unknownBytecode }.
-		  { 1. 58. 58. #unknownBytecode }.
-		  { 1. 59. 59. #unknownBytecode }.
-		  { 1. 60. 60. #unknownBytecode }.
-		  { 1. 61. 61. #unknownBytecode }.
-		  { 1. 62. 62. #unknownBytecode }.
-		  { 1. 63. 63. #unknownBytecode }.
-		  { 1. 64. 64. #gen_PushTemporaryVariableBytecode0 }.
+		  { 1. 32. 32. #gen_PushLiteralConstantBytecode0.
+		  #needsFrameNever:. 1 }.
+		  { 1. 33. 33. #gen_PushLiteralConstantBytecode1.
+		  #needsFrameNever:. 1 }.
+		  { 1. 34. 34. #gen_PushLiteralConstantBytecode2.
+		  #needsFrameNever:. 1 }.
+		  { 1. 35. 35. #gen_PushLiteralConstantBytecode3.
+		  #needsFrameNever:. 1 }.
+		  { 1. 36. 36. #gen_PushLiteralConstantBytecode4.
+		  #needsFrameNever:. 1 }.
+		  { 1. 37. 37. #gen_PushLiteralConstantBytecode5.
+		  #needsFrameNever:. 1 }.
+		  { 1. 38. 38. #gen_PushLiteralConstantBytecode6.
+		  #needsFrameNever:. 1 }.
+		  { 1. 39. 39. #gen_PushLiteralConstantBytecode7.
+		  #needsFrameNever:. 1 }.
+		  { 1. 40. 40. #gen_PushLiteralConstantBytecode8.
+		  #needsFrameNever:. 1 }.
+		  { 1. 41. 41. #gen_PushLiteralConstantBytecode9.
+		  #needsFrameNever:. 1 }.
+		  { 1. 42. 42. #gen_PushLiteralConstantBytecode10.
+		  #needsFrameNever:. 1 }.
+		  { 1. 43. 43. #gen_PushLiteralConstantBytecode11.
+		  #needsFrameNever:. 1 }.
+		  { 1. 44. 44. #gen_PushLiteralConstantBytecode12.
+		  #needsFrameNever:. 1 }.
+		  { 1. 45. 45. #gen_PushLiteralConstantBytecode13.
+		  #needsFrameNever:. 1 }.
+		  { 1. 46. 46. #gen_PushLiteralConstantBytecode14.
+		  #needsFrameNever:. 1 }.
+		  { 1. 47. 47. #gen_PushLiteralConstantBytecode15.
+		  #needsFrameNever:. 1 }.
+		  { 1. 48. 48. #gen_PushLiteralConstantBytecode16.
+		  #needsFrameNever:. 1 }.
+		  { 1. 49. 49. #gen_PushLiteralConstantBytecode17.
+		  #needsFrameNever:. 1 }.
+		  { 1. 50. 50. #gen_PushLiteralConstantBytecode18.
+		  #needsFrameNever:. 1 }.
+		  { 1. 51. 51. #gen_PushLiteralConstantBytecode19.
+		  #needsFrameNever:. 1 }.
+		  { 1. 52. 52. #gen_PushLiteralConstantBytecode20.
+		  #needsFrameNever:. 1 }.
+		  { 1. 53. 53. #gen_PushLiteralConstantBytecode21.
+		  #needsFrameNever:. 1 }.
+		  { 1. 54. 54. #gen_PushLiteralConstantBytecode22.
+		  #needsFrameNever:. 1 }.
+		  { 1. 55. 55. #gen_PushLiteralConstantBytecode23.
+		  #needsFrameNever:. 1 }.
+		  { 1. 56. 56. #gen_PushLiteralConstantBytecode24.
+		  #needsFrameNever:. 1 }.
+		  { 1. 57. 57. #gen_PushLiteralConstantBytecode25.
+		  #needsFrameNever:. 1 }.
+		  { 1. 58. 58. #gen_PushLiteralConstantBytecode26.
+		  #needsFrameNever:. 1 }.
+		  { 1. 59. 59. #gen_PushLiteralConstantBytecode27.
+		  #needsFrameNever:. 1 }.
+		  { 1. 60. 60. #gen_PushLiteralConstantBytecode28.
+		  #needsFrameNever:. 1 }.
+		  { 1. 61. 61. #gen_PushLiteralConstantBytecode29.
+		  #needsFrameNever:. 1 }.
+		  { 1. 62. 62. #gen_PushLiteralConstantBytecode30.
+		  #needsFrameNever:. 1 }.
+		  { 1. 63. 63. #gen_PushLiteralConstantBytecode31.
+		  #needsFrameNever:. 1 }.
+		  { 1. 64. 64. #unknownBytecode }.
 		  { 1. 65. 65. #unknownBytecode }.
 		  { 1. 66. 66. #unknownBytecode }.
 		  { 1. 67. 67. #unknownBytecode }.
@@ -102,7 +134,8 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 73. 73. #unknownBytecode }.
 		  { 1. 74. 74. #unknownBytecode }.
 		  { 1. 75. 75. #unknownBytecode }.
-		  { 1. 76. 76. #gen_PushReceiverBytecode }.
+		  { 1. 76. 76. #gen_PushReceiverBytecode. #needsFrameNever:.
+		  1 }.
 		  { 1. 77. 77. #unknownBytecode }.
 		  { 1. 78. 78. #unknownBytecode }.
 		  { 1. 79. 79. #unknownBytecode }.
@@ -118,7 +151,8 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 89. 89. #unknownBytecode }.
 		  { 1. 90. 90. #unknownBytecode }.
 		  { 1. 91. 91. #unknownBytecode }.
-		  { 1. 92. 92. #gen_ReturnTopFromMethod }.
+		  { 1. 92. 92. #gen_ReturnTopFromMethod. #return. #isMappedInBlock.
+		  #needsFrameIfInBlock:.  -1 }.
 		  { 1. 93. 93. #unknownBytecode }.
 		  { 1. 94. 94. #unknownBytecode }.
 		  { 1. 95. 95. #unknownBytecode }.
@@ -1722,25 +1756,25 @@ DruidJIT >> gen_PrimitiveDivide [
 	self
 		DivR: ClassReg
 		R: TempReg
-		Quo: SendNumArgsReg
-		Rem: Extra0Reg.
-	self CmpCq: 0 R: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: SendNumArgsReg.
+	self CmpCq: 0 R: SendNumArgsReg.
 	jump4 := self JumpNonZero: 0.
 	self
 		DivR: ClassReg
 		R: TempReg
-		Quo: Extra0Reg
-		Rem: SendNumArgsReg.
-	self MoveR: Extra0Reg R: SendNumArgsReg.
-	self ArithmeticShiftRightCq: 60 R: SendNumArgsReg.
-	self AddCq: 1 R: SendNumArgsReg.
-	self AndCq: 15 R: SendNumArgsReg.
-	self CmpCq: 1 R: SendNumArgsReg.
+		Quo: SendNumArgsReg
+		Rem: Extra0Reg.
+	self MoveR: SendNumArgsReg R: Extra0Reg.
+	self ArithmeticShiftRightCq: 60 R: Extra0Reg.
+	self AddCq: 1 R: Extra0Reg.
+	self AndCq: 15 R: Extra0Reg.
+	self CmpCq: 1 R: Extra0Reg.
 	jump5 := self JumpGreater: 0.
-	self MoveR: Extra0Reg R: SendNumArgsReg.
-	self LogicalShiftLeftCq: 3 R: SendNumArgsReg.
-	self AddCq: 1 R: SendNumArgsReg.
-	self MoveR: SendNumArgsReg R: ReceiverResultReg.
+	self MoveR: SendNumArgsReg R: Extra0Reg.
+	self LogicalShiftLeftCq: 3 R: Extra0Reg.
+	self AddCq: 1 R: Extra0Reg.
+	self MoveR: Extra0Reg R: ReceiverResultReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -2156,22 +2190,21 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	self
 		DivR: Extra2Reg
 		R: SendNumArgsReg
-		Quo: Extra2Reg
-		Rem: SendNumArgsReg.
-	self MoveCq: 8 R: SendNumArgsReg.
-	self SubR: TempReg R: SendNumArgsReg.
-	self AndCq: 7 R: SendNumArgsReg.
-	self AddR: SendNumArgsReg R: ClassReg.
-	self MoveR: Extra2Reg R: SendNumArgsReg.
+		Quo: SendNumArgsReg
+		Rem: Extra2Reg.
+	self MoveCq: 8 R: Extra2Reg.
+	self SubR: TempReg R: Extra2Reg.
+	self AndCq: 7 R: Extra2Reg.
+	self AddR: Extra2Reg R: ClassReg.
 	jump9 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveR: TempReg R: SendNumArgsReg.
-	self AddCq: 3 R: SendNumArgsReg.
-	self MoveCq: 4 R: Extra2Reg.
+	self MoveR: TempReg R: Extra2Reg.
+	self AddCq: 3 R: Extra2Reg.
+	self MoveCq: 4 R: SendNumArgsReg.
 	self
-		DivR: Extra2Reg
-		R: SendNumArgsReg
+		DivR: SendNumArgsReg
+		R: Extra2Reg
 		Quo: Extra2Reg
 		Rem: SendNumArgsReg.
 	self MoveCq: 4 R: SendNumArgsReg.
@@ -2970,6 +3003,18 @@ DruidJIT >> gen_PushTemporaryVariableBytecode0 [
 	| currentBlock |
 	(self simStackTempAt: 0) moveToReg: TempReg.
 	self ssPushRegister: TempReg.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_ReturnReceiver [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self ensureReceiverResultRegContainsSelf.
+	self MoveR: ReceiverResultReg R: TempReg.
+	self MoveR: TempReg R: ReceiverResultReg.
+	self genUpArrowReturn.
 	^ 0
 ]
 
