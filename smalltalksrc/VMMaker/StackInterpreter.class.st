@@ -12514,6 +12514,7 @@ StackInterpreter >> pushLiteralConstant: literalIndex [
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushLiteralConstantBytecode [
 	<expandCases>
+	<needsFrameNever: 1>
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
 			[self fetchNextBytecode.
@@ -12620,6 +12621,7 @@ StackInterpreter >> pushNewArrayBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushReceiverBytecode [
+	<needsFrameNever: 1>
 
 	self fetchNextBytecode.
 	self push: self receiver.
@@ -12635,6 +12637,7 @@ StackInterpreter >> pushReceiverVariable: fieldIndex [
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushReceiverVariableBytecode [
 	<expandCases>
+	<needsFrameNever: 1>
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
 			[self fetchNextBytecode.
@@ -13073,6 +13076,9 @@ StackInterpreter >> returnTopFromBlock [
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnTopFromMethod [
+	<compilationInfo: #return>
+	<compilationInfo: #isMappedInBlock>
+	<needsFrameIfInBlock: -1>
 
 	self commonReturn: self stackTop
 ]
