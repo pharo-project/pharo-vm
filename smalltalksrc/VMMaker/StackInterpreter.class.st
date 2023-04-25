@@ -12527,6 +12527,7 @@ StackInterpreter >> pushLiteralConstantBytecode [
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushLiteralVariable16CasesBytecode [
 	<expandCases>
+	<needsFrameNever: 1>
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
 			[self fetchNextBytecode.
@@ -12676,6 +12677,7 @@ StackInterpreter >> pushTemporaryVariable: temporaryIndex [
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushTemporaryVariableBytecode [
 	<expandCases>
+	<needsFrameIfMod16GENumArgs: 1>
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
 			[self fetchNextBytecode.
