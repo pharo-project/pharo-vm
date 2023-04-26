@@ -2738,9 +2738,10 @@ StackInterpreter >> bytecodePrimAdd [
 	arg := self stackValue: 0.
 	(objectMemory areIntegers: rcvr and: arg)
 		ifTrue: [ 
+			self druidIgnore: [
 			self sumSmallInteger: rcvr withSmallInteger: arg ifNotOverflow: [ :result |
 				self pop: 2 thenPush: result.
-				^ self fetchNextBytecode "success" ] ]
+				^ self fetchNextBytecode "success" ] ] ]
 		ifFalse: [
 			"Do not JIT compile float case..."
 			self druidIgnore: [
@@ -12397,7 +12398,7 @@ StackInterpreter >> pushConstantTwoBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushConstantZeroBytecode [
-
+	<needsFrameNever: 1>
 	self fetchNextBytecode.
 	self push: ConstZero.
 
@@ -12527,6 +12528,7 @@ StackInterpreter >> pushLiteralConstantBytecode [
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushLiteralVariable16CasesBytecode [
 	<expandCases>
+	<needsFrameNever: 1>
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
 			[self fetchNextBytecode.
@@ -12637,6 +12639,7 @@ StackInterpreter >> pushReceiverVariable: fieldIndex [
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushReceiverVariableBytecode [
 	<expandCases>
+	<compilationInfo: #isInstVarRef>
 	<needsFrameNever: 1>
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
@@ -12676,6 +12679,7 @@ StackInterpreter >> pushTemporaryVariable: temporaryIndex [
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushTemporaryVariableBytecode [
 	<expandCases>
+	<needsFrameIfMod16GENumArgs: 1>
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
 			[self fetchNextBytecode.
@@ -13042,13 +13046,17 @@ StackInterpreter >> retryPrimitiveOnFailure [
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnFalse [
-
+	<compilationInfo: #return>
+	<compilationInfo: #isMappedInBlock>
+	<needsFrameIfInBlock: 0>
 	self commonReturn: objectMemory falseObject
 ]
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnNil [
-
+	<compilationInfo: #return>
+	<compilationInfo: #isMappedInBlock>
+	<needsFrameIfInBlock: 0>
 	self commonReturn: objectMemory nilObject
 ]
 
@@ -13061,7 +13069,9 @@ StackInterpreter >> returnNilFromBlock [
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnReceiver [
-
+	<compilationInfo: #return>
+	<compilationInfo: #isMappedInBlock>
+	<needsFrameIfInBlock: 0>
 	self commonReturn: self receiver
 ]
 
@@ -13085,7 +13095,9 @@ StackInterpreter >> returnTopFromMethod [
 
 { #category : #'return bytecodes' }
 StackInterpreter >> returnTrue [
-
+	<compilationInfo: #return>
+	<compilationInfo: #isMappedInBlock>
+	<needsFrameIfInBlock: 0>
 	self commonReturn: objectMemory trueObject
 ]
 

@@ -3107,26 +3107,26 @@ InterpreterPrimitives >> primitiveNextObject [
 ]
 
 { #category : #'arithmetic integer primitives' }
-InterpreterPrimitives >> primitiveNotEqual [	
-	| integerReceiver integerArgument result |
-	
+InterpreterPrimitives >> primitiveNotEqual [
+
 	<numberOfArguments: 1>
-	
+	| integerReceiver integerArgument result |
 	integerArgument := self stackTop.
 	integerReceiver := self stackValue: 1.
 	(objectMemory areIntegers: integerReceiver and: integerArgument)
-		ifTrue: [self pop: 2 thenPushBool: integerReceiver ~= integerArgument]
+		ifTrue: [
+		self pop: 2 thenPushBool: integerReceiver ~= integerArgument ]
 		ifFalse: [
-			self druidExitPoint.
-			result := objectMemory hasSixtyFourBitImmediates
-						ifTrue:
-							[(self signedMachineIntegerValueOf: integerReceiver)
-								~= (self signedMachineIntegerValueOf: integerArgument)]
-						ifFalse:
-							[(self positiveMachineIntegerValueOf: integerReceiver)
-								~= (self positiveMachineIntegerValueOf: integerArgument)].
-			 self successful ifTrue:
-				[self pop: 2 thenPushBool: result]]
+			self druidIgnore: [
+				result := objectMemory hasSixtyFourBitImmediates
+					          ifTrue: [
+						          (self signedMachineIntegerValueOf: integerReceiver)
+						          ~= (self signedMachineIntegerValueOf: integerArgument) ]
+					          ifFalse: [
+						          (self positiveMachineIntegerValueOf: integerReceiver)
+						          ~=
+						          (self positiveMachineIntegerValueOf: integerArgument) ].
+				self successful ifTrue: [ self pop: 2 thenPushBool: result ] ] ]
 ]
 
 { #category : #'arithmetic largeint primitives' }
