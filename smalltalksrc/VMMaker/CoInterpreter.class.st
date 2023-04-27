@@ -1125,17 +1125,17 @@ CoInterpreter >> bytecodePCFor: theIP cogMethod: cogMethod startBcpc: startBcpc 
 { #category : #'common selector sends' }
 CoInterpreter >> bytecodePrimAt [
 	"Override to eliminate the atCache, something of little benefit to the JIT."
-	messageSelector := self specialSelector: 16.
-	argumentCount := 1.
-	self normalSend
+
+	<compilationInfo: #isMapped>
+	self normalSendSpecialSelector: 16 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
 CoInterpreter >> bytecodePrimAtPut [
 	"Override to eliminate the atCache, something of little benefit to the JIT."
-	messageSelector := self specialSelector: 17.
-	argumentCount := 2.
-	self normalSend
+	<compilationInfo: #isMapped>
+
+	self normalSendSpecialSelector: 17 argumentCount: 2
 ]
 
 { #category : #enilopmarts }
