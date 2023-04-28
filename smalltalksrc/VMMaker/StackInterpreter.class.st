@@ -8629,12 +8629,14 @@ StackInterpreter >> jumplfFalseBy: offset [
 	| boolean |
 	boolean := self stackTop.
 	boolean = objectMemory falseObject
-		ifTrue: [ self jump: offset ]
+		ifTrue: [ 
+			self pop: 1.
+			self jump: offset ]
 		ifFalse: [ 
 			boolean = objectMemory trueObject ifFalse: [ 
 				^ self internalMustBeBoolean ].
+			self pop: 1.
 			self fetchNextBytecode ].
-	self pop: 1
 ]
 
 { #category : #'jump bytecodes' }
@@ -13630,11 +13632,21 @@ StackInterpreter >> shadowCallStackSize [
 { #category : #'jump bytecodes' }
 StackInterpreter >> shortConditionalJumpFalse [
 
+	<compilationInfo: #branch>
+	<compilationInfo: #isBranchFalse>
+	<compilationInfo: #isMapped> "because of mustBeBoolean"
+	<compilationInfo: #v3:ShortForward:Branch:Distance:>
+
 	self jumplfFalseBy: (currentBytecode bitAnd: 7) + 1
 ]
 
 { #category : #'jump bytecodes' }
 StackInterpreter >> shortConditionalJumpTrue [
+
+	<compilationInfo: #branch>
+	<compilationInfo: #isBranchTrue>
+	<compilationInfo: #isMapped> "because of mustBeBoolean"
+	<compilationInfo: #v3:ShortForward:Branch:Distance:>
 
 	self jumplfTrueBy: (currentBytecode bitAnd: 7) + 1
 ]
