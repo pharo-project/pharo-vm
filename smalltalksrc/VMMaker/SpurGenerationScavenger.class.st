@@ -682,7 +682,7 @@ SpurGenerationScavenger >> logEndScavenge [
 SpurGenerationScavenger >> logScavenge [
 	<inline: #always>
 	scavengeLog ifNotNil:
-		[self writeScavengeLog]
+		[self writeScavengeLogAsSTON]
 ]
 
 { #category : #logging }
@@ -1444,5 +1444,13 @@ SpurGenerationScavenger >> writeScavengeLog [
 				scavengeLogRecord eRememberedSetSize.
 				scavengeLogRecord eStatTenures - scavengeLogRecord sStatTenures.
 				manager statSGCDeltaUsecs}.
+	scavengeLog fflush
+]
+
+{ #category : #logging }
+SpurGenerationScavenger >> writeScavengeLogAsSTON [
+
+	<inline: #never>
+	self writeSTON: scavengeLogRecord toFile: scavengeLog.
 	scavengeLog fflush
 ]

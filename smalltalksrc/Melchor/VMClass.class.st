@@ -553,6 +553,14 @@ VMClass >> fgetc: file [
 	^ file next
 ]
 
+{ #category : #formats }
+VMClass >> fieldFormat [
+
+	<cmacro: '() "\t#%s : %" PRIdSQINT'>
+
+	^ '\t#%s : %' , PRIdSQINT.
+]
+
 { #category : #'memory access' }
 VMClass >> floatAtPointer: pointer [
 
@@ -606,6 +614,13 @@ VMClass >> fprintf: aStream format: aFormat arguments: arguments [
 VMClass >> free: pointer [
 	<doNotGenerate>
 	"Do nothing"
+]
+
+{ #category : #formats }
+VMClass >> headFormat [
+	
+	<inline: true>
+	^ '%s {\n'.
 ]
 
 { #category : #'memory access' }
@@ -1318,4 +1333,16 @@ VMClass >> vmPath [
 VMClass >> vmPathSize [
 	<doNotGenerate>
 	^self vmPath size
+]
+
+{ #category : #writing }
+VMClass >> writeSTON: struct toFile: f [
+
+	<inline: true>
+	struct withStructNameDo: [ :name | self fprintf: f _: self headFormat _: name ].
+	struct withFieldsDo: [ :fieldName :fieldValue |
+			self fprintf: f _: self fieldFormat _: fieldName _: (self cCoerce: fieldValue to: #sqInt)]
+		separatedBy: [ self fprintf: f _: ',\n'].
+		
+	self fprintf: f _: '\n}'. 
 ]

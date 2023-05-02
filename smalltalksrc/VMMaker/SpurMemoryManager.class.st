@@ -12956,12 +12956,14 @@ SpurMemoryManager >> updateFullGCStats [
 	statMarkUsecs := statMarkUsecs + (gcMarkEndUsecs - gcStartUsecs).
 	
 	scavenger logStream
-		f: 'fullGCs:%ld, fullUsecs:%ld, compactionUsecs:%ld, sweepUsecs:%ld, markUsecs:%ld\n'
+		f: 'FullGCStats {fullGCs:%ld, fullUsecs:%ld, compactionUsecs:%ld, sweepUsecs:%ld, markUsecs:%ld}\n'
 		printf:{	statFullGCs.
 				statFullGCUsecs.
 				statCompactionUsecs.
 				gcSweepEndUsecs.
 				statMarkUsecs }.
+		
+	scavenger logStream fflush
 ]
 
 { #category : #initialization }
