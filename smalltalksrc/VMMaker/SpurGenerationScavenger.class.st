@@ -608,8 +608,7 @@ SpurGenerationScavenger >> initialize [
 	eden := SpurNewSpaceSpace new.
 	tenureThreshold := 0.
 	statSurvivorCount := statTenures := 0.
-	scavengeLogRecord := SpurScavengeLogRecord new.
-	self openScavengeLog
+	scavengeLogRecord := SpurScavengeLogRecord new
 ]
 
 { #category : #'weakness and ephemerality' }
@@ -783,7 +782,9 @@ SpurGenerationScavenger >> newSpaceStart: startAddress newSpaceBytes: totalBytes
 	self initFutureSpaceStart.
 	manager initSpaceForAllocationCheck: (self addressOf: eden) limit: eden limit.
 
-	tenuringProportion := 0.9
+	tenuringProportion := 0.9.
+	
+	self openScavengeLog
 ]
 
 { #category : #'weakness and ephemerality' }
