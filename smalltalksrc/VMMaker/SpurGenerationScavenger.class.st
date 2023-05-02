@@ -1452,6 +1452,6 @@ SpurGenerationScavenger >> writeScavengeLogAsSTON [
 
 	<inline: #never>
 	self writeSTON: scavengeLogRecord toFile: scavengeLog.
-	scavengeLog f: '\n---\n' printf: {  }.
+	self fprintf: scavengeLog _: '\n---\n'.
 	scavengeLog fflush
 ]
