@@ -296,7 +296,9 @@ StackToRegisterMappingCogit class >> initializeBytecodeTableForSistaV1 [
 		(1  82   82 genExtPushPseudoVariable)
 		(1  83   83 duplicateTopBytecode								needsFrameNever: 1)
 
-		(1  84   87 unknownBytecode)
+		(1  84   85 unknownBytecode)
+		(1 	 86		86 genSpecialSelectorComparisonUnsafe isMapped JumpLessOrEqual)
+		(1  87   87 genSpecialSelectorArithmeticUnsafe isMapped AddRR)
 
 		"returns"
 		(1  88   88 genReturnReceiver				return needsFrameIfInBlock: isMappedInBlock 0)
@@ -2639,6 +2641,65 @@ StackToRegisterMappingCogit >> genSpecialSelectorArithmetic [
 ]
 
 { #category : #'bytecode generators' }
+StackToRegisterMappingCogit >> genSpecialSelectorArithmeticUnsafe [
+	| primDescriptor rcvrIsConst argIsConst rcvrIsInt argIsInt rcvrInt argInt result |
+	<var: #primDescriptor type: #'BytecodeDescriptor *'>
+	primDescriptor := self generatorAt: byte0.
+
+	argIsInt := ((argIsConst := self ssTop type = SSConstant)
+				 and: [objectMemory isIntegerObject: (argInt := self ssTop constant)])
+				 or: [self mclassIsSmallInteger and: [self ssTop isSameEntryAs: self simSelf]].
+
+	rcvrIsInt := ((rcvrIsConst := (self ssValue: 1) type = SSConstant)
+				  and: [objectMemory isIntegerObject: (rcvrInt := (self ssValue: 1) constant)])
+				or: [self mclassIsSmallInteger and: [(self ssValue: 1) isSameEntryAs: self simSelf]].
+
+	(argIsInt and: [argIsConst and: [rcvrIsInt and: [rcvrIsConst]]]) ifTrue:
+		[rcvrInt := objectMemory integerValueOf: rcvrInt.
+		 argInt := objectMemory integerValueOf: argInt.
+		 primDescriptor opcode caseOf: {
+			[AddRR]	-> [result := rcvrInt + argInt].
+			[SubRR]	-> [result := rcvrInt - argInt].
+			[AndRR]	-> [result := rcvrInt bitAnd: argInt].
+			[OrRR]	-> [result := rcvrInt bitOr: argInt] }.
+		(objectMemory isIntegerValue: result) ifTrue:
+			["Must annotate the bytecode for correct pc mapping."
+			^self ssPop: 2; ssPushAnnotatedConstant: (objectMemory integerObjectOf: result)].
+		^self genSpecialSelectorSend].
+
+	"If there's any constant involved other than a SmallInteger don't attempt to inline."
+	((rcvrIsConst and: [rcvrIsInt not])
+	 or: [argIsConst and: [argIsInt not]]) ifTrue:
+		[^self genSpecialSelectorSend].
+
+	"If we know nothing about the types then better not to inline as the inline cache and
+	 primitive code is not terribly slow so wasting time on duplicating tag tests is pointless."
+	(argIsInt or: [rcvrIsInt]) ifFalse:
+		[^self genSpecialSelectorSend].
+
+	argIsConst
+		ifTrue:
+			[self ssFlushTo: simStackPtr - 2.
+			 (self ssValue: 1) moveToReg: ReceiverResultReg.
+			 self ssPop: 2]
+		ifFalse:
+			[self marshallSendArguments: 1].
+
+	primDescriptor opcode caseOf: {
+		[AddRR] -> [argIsConst
+						ifTrue:
+							[self AddCq: argInt - ConstZero R: ReceiverResultReg.]
+						ifFalse:
+							[objectRepresentation genRemoveSmallIntegerTagsInScratchReg: ReceiverResultReg.
+							 self AddR: Arg0Reg R: ReceiverResultReg.]
+						]}.
+
+	self annotateInstructionForBytecode.
+	 self ssPushRegister: ReceiverResultReg.
+	 ^0
+]
+
+{ #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genSpecialSelectorClass [
 	| topReg |
 	topReg := self ssTop registerOrNone.
@@ -2720,6 +2781,61 @@ StackToRegisterMappingCogit >> genSpecialSelectorComparison [
 		[self MoveCq: argInt R: Arg0Reg].
 	index := byte0 - self firstSpecialSelectorBytecodeOffset.
 	^self genMarshalledSend: index negated - 1 numArgs: 1 sendTable: ordinarySendTrampolines
+]
+
+{ #category : #'bytecode generators' }
+StackToRegisterMappingCogit >> genSpecialSelectorComparisonUnsafe [
+	| nextPC postBranchPC targetPC primDescriptor branchDescriptor
+	  rcvrIsInt rcvrIsConst argIsIntConst argInt jumpNotSmallInts inlineCAB index |
+	<var: #primDescriptor type: #'BytecodeDescriptor *'>
+	<var: #branchDescriptor type: #'BytecodeDescriptor *'>
+	<var: #jumpNotSmallInts type: #'AbstractInstruction *'>
+	self ssFlushTo: simStackPtr - 2.
+	primDescriptor := self generatorAt: byte0.
+	argIsIntConst := self ssTop type = SSConstant
+				 and: [objectMemory isIntegerObject: (argInt := self ssTop constant)].
+	rcvrIsInt := ((rcvrIsConst := (self ssValue: 1) type = SSConstant)
+				  and: [objectMemory isIntegerObject: (self ssValue: 1) constant])
+				or: [self mclassIsSmallInteger and: [(self ssValue: 1) isSameEntryAs: self simSelf]].
+
+	(argIsIntConst and: [rcvrIsInt and: [rcvrIsConst]]) ifTrue:
+		[^ self genStaticallyResolvedSpecialSelectorComparison].
+
+	self extractMaybeBranchDescriptorInto: [ :descr :next :postBranch :target | 
+		branchDescriptor := descr. nextPC := next. postBranchPC := postBranch. targetPC := target ].
+
+	"Only interested in inlining if followed by a conditional branch."
+	inlineCAB := branchDescriptor isBranchTrue or: [branchDescriptor isBranchFalse].
+	"Further, only interested in inlining = and ~= if there's a SmallInteger constant involved.
+	 The relational operators successfully statically predict SmallIntegers; the equality operators do not."
+	(inlineCAB and: [primDescriptor opcode = JumpZero or: [primDescriptor opcode = JumpNonZero]]) ifTrue:
+		[inlineCAB := argIsIntConst or: [rcvrIsInt]].
+	inlineCAB ifFalse:
+		[^self genSpecialSelectorSend].
+
+	argIsIntConst
+		ifTrue:
+			[(self ssValue: 1) moveToReg: ReceiverResultReg.
+			 self ssPop: 2]
+		ifFalse:
+			[self marshallSendArguments: 1].
+
+	argIsIntConst
+		ifTrue: [self CmpCq: argInt R: ReceiverResultReg]
+		ifFalse: [self CmpR: Arg0Reg R: ReceiverResultReg].
+	"Cmp is weird/backwards so invert the comparison.  Further since there is a following conditional
+	 jump bytecode define non-merge fixups and leave the cond bytecode to set the mergeness."
+	self genConditionalBranch: (branchDescriptor isBranchTrue
+				ifTrue: [primDescriptor opcode]
+				ifFalse: [self inverseBranchFor: primDescriptor opcode])
+		operand: (self ensureNonMergeFixupAt: targetPC) asUnsignedInteger.
+	self Jump: (self ensureNonMergeFixupAt: postBranchPC).
+	self annotateInstructionForBytecode.
+	 self ensureFixupAt: postBranchPC.
+	 self ensureFixupAt: targetPC.
+	 deadCode := true.
+	 ^0.
+
 ]
 
 { #category : #'bytecode generator support' }
