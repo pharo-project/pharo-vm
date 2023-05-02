@@ -11,6 +11,14 @@ Class {
 	#category : #'VMMaker-SpurMemoryManager'
 }
 
+{ #category : #enumerating }
+SpurFullGCLogRecord class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
+	self allInstVarNames do:
+		[:ivn|
+		(SpurMemoryManager isNonArgumentImplicitReceiverVariableName: ivn) ifFalse:
+			[aBinaryBlock value: ivn value: #usqInt]]
+]
+
 { #category : #accessing }
 SpurFullGCLogRecord >> compactionUsecs [
 
