@@ -576,7 +576,7 @@ SpurGenerationScavenger >> futureSpaceIsFull [
 		                    ifTrue: [ 0.0 ]
 		                    ifFalse: [
 			                    (futureSurvivorStart - futureSpace start) asFloat "Survivor size"
-			                    / futureSpace size ].
+			                    / futureSpace spaceSize ].
 
 	^ fractionSurvived > 0.9 
 ]
@@ -1429,7 +1429,7 @@ SpurGenerationScavenger >> tenuringProportion [
 { #category : #tenuring }
 SpurGenerationScavenger >> tenuringThresholdForSpace: aSpace [
 
-	^ (aSpace size * (1.0 - tenuringProportion)) rounded + aSpace start
+	^ (aSpace spaceSize * (1.0 - tenuringProportion)) rounded + aSpace start
 ]
 
 { #category : #logging }
