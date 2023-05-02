@@ -1282,15 +1282,15 @@ SpurGenerationScavenger >> scavengeUnfiredEphemeronsOnEphemeronList [
 	^unfiredEphemeronsScavenged
 ]
 
-{ #category : #accessing }
-SpurGenerationScavenger >> scavengerTenuringProportion [ "(Slang flattens so need unique selectors)"
+{ #category : #tenuring }
+SpurGenerationScavenger >> scavengerTenuringProportion [
 	<returnTypeC: #float>
 	^tenureThreshold >= pastSpace start
 		ifTrue: [(tenureThreshold - pastSpace start) asFloat / (pastSpace limit - pastSpace start)]
 		ifFalse: [0]
 ]
 
-{ #category : #accessing }
+{ #category : #tenuring }
 SpurGenerationScavenger >> scavengerTenuringProportionToKeepInPastSpace: aProportion [ "(Slang flattens so need unique selectors)"
 	<var: 'aProportion' type: #double>
 	tenuringProportion := aProportion.
@@ -1325,7 +1325,7 @@ SpurGenerationScavenger >> setCorpseOffsetOf: corpse to: offset [
 						classIndex: manager isForwardedObjectClassIndexPun)]
 ]
 
-{ #category : #accessing }
+{ #category : #tenuring }
 SpurGenerationScavenger >> setRawTenuringThreshold: threshold [
 	tenureThreshold := threshold
 ]
@@ -1348,7 +1348,7 @@ SpurGenerationScavenger >> setRefCountToShrinkRT: population [
 	refCountToShrinkRT := i max: 0
 ]
 
-{ #category : #scavenger }
+{ #category : #tenuring }
 SpurGenerationScavenger >> shouldBeTenured: survivor [
 	"Answer if an object should be tenured.  The default policy tenuring policy
 	 is to use the tenuringThreshold to decide. If the survivors (measured in
@@ -1404,17 +1404,17 @@ SpurGenerationScavenger >> strategizeToLimitRememberedSet [
 		 self computeRefCountToShrinkRememberedSet]
 ]
 
-{ #category : #accessing }
+{ #category : #tenuring }
 SpurGenerationScavenger >> tenuringClassIndex [
 	^tenuringClassIndex
 ]
 
-{ #category : #accessing }
+{ #category : #tenuring }
 SpurGenerationScavenger >> tenuringClassIndex: anInteger [
 	tenuringClassIndex := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : #tenuring }
 SpurGenerationScavenger >> tenuringProportion [
 
 	^ tenuringProportion
