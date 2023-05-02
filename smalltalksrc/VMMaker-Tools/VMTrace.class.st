@@ -23,6 +23,59 @@ VMTrace class >> loadFrom: fileReference [
 		  yourself"
 ]
 
+{ #category : #private }
+VMTrace class >> loadGCLogFrom: fileReference [
+
+	| lines messagesData messageNodes |
+	lines := '---' split: fileReference contents.
+	^ lines allButLast collect: [ :ston | STON fromString: ston ]
+]
+
+{ #category : #'as yet unclassified' }
+VMTrace class >> plotScavenge: scavengesAndFullGCs [
+
+	| chart plot y scavenges fullGCs tenures |
+	scavenges := scavengesAndFullGCs select: [ :e |
+		             e className includesSubstring: 'Scavenge' ].
+	fullGCs := scavengesAndFullGCs select: [ :e |
+		           e className includesSubstring: 'FullGC' ].
+	tenures := scavenges collect: [ :e | e tTenureThreshold ].
+
+	y := scavenges collect: [ :e | e eSurvivorBytes ].
+
+
+	chart := RSChart new.
+
+	plot := RSLinePlot new
+		        color: Color black;
+		        x: (1 to: scavenges size) y: y.
+
+	chart addPlot: plot.
+
+	tenures doWithIndex: [ :bytes :i |
+		bytes > 0 ifTrue: [
+			chart addPlot: (RSScatterPlot new x: { i } y: { bytes }) ] ].
+
+
+	chart addDecoration: (RSHorizontalTick new
+			 numberOfTicks: 10;
+			 labelConversion: [ :e | e asInteger printString ];
+			 yourself).
+	chart addDecoration: (RSVerticalTick new
+			 numberOfTicks: 10;
+			 labelConversion: [ :e | e asInteger humanReadableByteSizeString ];
+			 yourself).
+
+	fullGCs doWithIndex: [ :e :i |
+		| x |
+		x := (scavengesAndFullGCs indexOf: e) - i + 1.
+		chart addDecoration:
+			((RSXMarkerDecoration new atValue: x) color: Color red) ].
+
+
+	^ chart build
+]
+
 { #category : #'as yet unclassified' }
 VMTrace class >> supportedJITCompilationMethods: supportedBytecodes [
 
