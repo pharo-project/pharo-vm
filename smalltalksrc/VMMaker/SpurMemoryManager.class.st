@@ -12954,6 +12954,14 @@ SpurMemoryManager >> updateFullGCStats [
 	statCompactionUsecs := statCompactionUsecs + (statGCEndUsecs - compactionStartUsecs).
 	gcSweepEndUsecs = 0 ifFalse: [statSweepUsecs := statSweepUsecs + (gcSweepEndUsecs - compactionStartUsecs)].
 	statMarkUsecs := statMarkUsecs + (gcMarkEndUsecs - gcStartUsecs).
+	
+	scavenger logStream
+		f: 'fullGCs:%ld, fullUsecs:%ld, compactionUsecs:%ld, sweepUsecs:%ld, markUsecs:%ld\n'
+		printf:{	statFullGCs.
+				statFullGCUsecs.
+				statCompactionUsecs.
+				gcSweepEndUsecs.
+				statMarkUsecs }.
 ]
 
 { #category : #initialization }
