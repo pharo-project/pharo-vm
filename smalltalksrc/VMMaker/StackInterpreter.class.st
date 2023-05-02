@@ -683,7 +683,9 @@ StackInterpreter class >> initializeBytecodeTableForSistaV1 [
 		( 82	 extPushPseudoVariable)
 		( 83	 duplicateTopBytecode)
 	
-		( 84 87	unknownBytecode)
+		( 84 86	unknownBytecode)
+		( 87	bytecodePrimAddUnsafe)
+			
 		( 88	returnReceiver)
 		( 89	returnTrue)
 		( 90	returnFalse)
@@ -1942,6 +1944,12 @@ StackInterpreter >> addIdleUsecs: idleUsecs [
 	statIdleUsecs := statIdleUsecs + idleUsecs
 ]
 
+{ #category : #'common selector sends' }
+StackInterpreter >> addIntegerObject: rcvr with: arg [
+
+	^ (objectMemory integerValueOf: rcvr) + (objectMemory integerValueOf: arg)
+]
+
 { #category : #'process primitive support' }
 StackInterpreter >> addLastLink: proc toList: aList [ 
 	"Add the given process to the end of the given linked list
@@ -2714,12 +2722,67 @@ StackInterpreter >> booleanValueOf: obj [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimAdd [
+
+	^ self
+		  bytecodePrimAddWithPrecondition: [ :rcvr :arg | objectMemory areIntegers: rcvr and: arg ]
+		  andPostcondition: [ :result | objectMemory isIntegerValue: result ]
+]
+
+{ #category : #'common selector sends' }
+StackInterpreter >> bytecodePrimAdd2 [
 	| rcvr arg result |
 	rcvr := self stackValue: 1.
 	arg := self stackValue: 0.
+	self bytecodePrecondition: [ objectMemory areIntegers: rcvr and: arg ] do: [ 
+		result := self addIntegerObject: rcvr with: arg.
+		self bytecodePostCondition: [ objectMemory isIntegerValue: result ] do: [ 
+			self pop: 2 thenPush: (objectMemory integerObjectOf: result).
+			^ self fetchNextBytecode "success"
+			 ]
+		 ].
+	
+	
+	messageSelector := self specialSelector: 0.
+	argumentCount := 1.
+	self normalSend.
+	
+	
+	
+	
+	
+	
 	(objectMemory areIntegers: rcvr and: arg)
-		ifTrue: [result := (objectMemory integerValueOf: rcvr) + (objectMemory integerValueOf: arg).
+		ifTrue: [result := self addIntegerObject: rcvr with: arg.
 				(objectMemory isIntegerValue: result) ifTrue:
+					[self pop: 2 thenPush: (objectMemory integerObjectOf: result).
+					^ self fetchNextBytecode "success"]]
+		ifFalse: [self initPrimCall.
+				self externalizeIPandSP.
+				self primitiveFloatAdd: rcvr toArg: arg.
+				self internalizeIPandSP.
+				self successful ifTrue: [^ self fetchNextBytecode "success"]].
+
+	messageSelector := self specialSelector: 0.
+	argumentCount := 1.
+	self normalSend
+]
+
+{ #category : #'common selector sends' }
+StackInterpreter >> bytecodePrimAddUnsafe [
+
+	^ self
+		  bytecodePrimAddWithPrecondition: [ :rcvr :arg | true ]
+		  andPostcondition: [ :result | true ]
+]
+
+{ #category : #'common selector sends' }
+StackInterpreter >> bytecodePrimAddWithPrecondition: precondition andPostcondition: postcondition [
+	| rcvr arg result |
+	rcvr := self stackValue: 1.
+	arg := self stackValue: 0.
+	(precondition value: rcvr value: arg)
+		ifTrue: [result := self addIntegerObject: rcvr with: arg.
+				(postcondition value: result) ifTrue:
 					[self pop: 2 thenPush: (objectMemory integerObjectOf: result).
 					^ self fetchNextBytecode "success"]]
 		ifFalse: [self initPrimCall.
