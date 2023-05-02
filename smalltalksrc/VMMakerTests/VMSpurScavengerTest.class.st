@@ -11,10 +11,12 @@ VMSpurScavengerTest >> assertPastSpaceIsEmpty [
 		equals: memory scavenger pastSpace start
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #helpers }
 VMSpurScavengerTest >> fullNewSpace [
 
-	| rootObjectAddress referencedObjectAddress |
+	| rootObjectAddress referencedObjectAddress freeStartAtBeginning |
+	freeStartAtBeginning := memory freeStart.
+
 	rootObjectAddress := self newObjectWithSlots: 200.
 
 	1 to: 200 do: [ :i |
@@ -27,9 +29,12 @@ VMSpurScavengerTest >> fullNewSpace [
 			memory
 				storePointer: i2 - 1
 				ofObject: referencedObjectAddress
-				withValue: (self newObjectWithSlots: 10) ] ].
+				withValue: (self newObjectWithSlots: 10).
 
-	^ rootObjectAddress
+			memory freeStart - freeStartAtBeginning
+			> memory scavenger futureSpace size ifTrue: [ ^ rootObjectAddress ] ] ].
+
+	self error: 'New space is not full!'
 ]
 
 { #category : #helpers }
