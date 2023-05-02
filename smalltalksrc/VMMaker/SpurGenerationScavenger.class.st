@@ -261,22 +261,11 @@ SpurGenerationScavenger >> computeRefCountToShrinkRememberedSet [
 	(manager allNewSpaceObjectsDo: [:o| manager rtRefCountOf: o put: 0])"
 ]
 
-{ #category : #scavenger }
+{ #category : #tenuring }
 SpurGenerationScavenger >> computeTenuringThreshold [
 
-	<var: 'fractionSurvived' type: #float>
-	| fractionSurvived |
-	fractionSurvived := futureSpace limit = futureSpace start
-		                    ifTrue: [ 0.0 ]
-		                    ifFalse: [
-			                    (futureSurvivorStart - futureSpace start) asFloat
-			                    / (futureSpace limit - futureSpace start) ].
-
-	tenureThreshold := fractionSurvived > 0.9
-		                   ifTrue: [ "Duplicated!"
-			                   (futureSpace limit - futureSpace start
-			                    * (1.0 - tenuringProportion)) rounded
-			                   + futureSpace start ]
+	tenureThreshold := self futureSpaceIsFull
+		                   ifTrue: [ self tenuringThresholdForSpace: futureSpace ]
 		                   ifFalse: [ 0 ]
 ]
 
@@ -575,6 +564,23 @@ SpurGenerationScavenger >> futureSpace [
 	^futureSpace
 ]
 
+{ #category : #tenuring }
+SpurGenerationScavenger >> futureSpaceIsFull [
+
+	"After the scavenge, if the future space remains full (more than 90%).
+	Useful to configure tenuring for next pass."
+
+	<var: 'fractionSurvived' type: #float>
+	| fractionSurvived |
+	fractionSurvived := futureSpace limit = futureSpace start
+		                    ifTrue: [ 0.0 ]
+		                    ifFalse: [
+			                    (futureSurvivorStart - futureSpace start) asFloat "Survivor size"
+			                    / futureSpace size ].
+
+	^ fractionSurvived > 0.9 
+]
+
 { #category : #'debug support' }
 SpurGenerationScavenger >> futureSpaceObjectsDo: aBlock [
 	| obj |
@@ -591,7 +597,7 @@ SpurGenerationScavenger >> futureSurvivorStart [
 	^futureSurvivorStart
 ]
 
-{ #category : #accessing }
+{ #category : #tenuring }
 SpurGenerationScavenger >> getRawTenuringThreshold [
 	^tenureThreshold
 ]
@@ -1291,12 +1297,12 @@ SpurGenerationScavenger >> scavengerTenuringProportion [
 ]
 
 { #category : #tenuring }
-SpurGenerationScavenger >> scavengerTenuringProportionToKeepInPastSpace: aProportion [ "(Slang flattens so need unique selectors)"
+SpurGenerationScavenger >> scavengerTenuringProportionToKeepInPastSpace: aProportion [
 	<var: 'aProportion' type: #double>
 	tenuringProportion := aProportion.
 	tenureThreshold := aProportion = 0.0
 							ifTrue: [0]
-							ifFalse: [((pastSpace limit - pastSpace start) * (1.0 - aProportion)) rounded + pastSpace start]
+							ifFalse: [self tenuringThresholdForSpace: pastSpace ]
 ]
 
 { #category : #'weakness and ephemerality' }
@@ -1418,6 +1424,12 @@ SpurGenerationScavenger >> tenuringClassIndex: anInteger [
 SpurGenerationScavenger >> tenuringProportion [
 
 	^ tenuringProportion
+]
+
+{ #category : #tenuring }
+SpurGenerationScavenger >> tenuringThresholdForSpace: aSpace [
+
+	^ (aSpace size * (1.0 - tenuringProportion)) rounded + aSpace start
 ]
 
 { #category : #logging }
