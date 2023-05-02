@@ -617,7 +617,8 @@ Class {
 		'unscannedEphemeronsQueueInitialSize',
 		'permSpaceFreeStart',
 		'fromOldSpaceRememberedSet',
-		'fromPermSpaceRememberedSet'
+		'fromPermSpaceRememberedSet',
+		'fullGCLogRecord'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -738,7 +739,8 @@ SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
 	aCCodeGenerator 
 		var: #memoryMap type: #'VMMemoryMap *';
 		var: #fromOldSpaceRememberedSet type: #'VMRememberedSet *';
-		var: #fromPermSpaceRememberedSet type: #'VMRememberedSet *'		
+		var: #fromPermSpaceRememberedSet type: #'VMRememberedSet *';
+		var: #fullGCLogRecord type: #SpurFullGCLogRecord
 ]
 
 { #category : #translation }
@@ -6473,6 +6475,8 @@ SpurMemoryManager >> initialize [
 	maxOldSpaceSize := self class initializationOptions
 							ifNotNil: [:initOpts| initOpts at: #maxOldSpaceSize ifAbsent: [0]]
 							ifNil: [0].
+							
+	fullGCLogRecord := SpurFullGCLogRecord new.
 
 ]
 
@@ -12955,14 +12959,16 @@ SpurMemoryManager >> updateFullGCStats [
 	gcSweepEndUsecs = 0 ifFalse: [statSweepUsecs := statSweepUsecs + (gcSweepEndUsecs - compactionStartUsecs)].
 	statMarkUsecs := statMarkUsecs + (gcMarkEndUsecs - gcStartUsecs).
 	
-	scavenger logStream
-		f: 'FullGCStats {fullGCs:%ld, fullUsecs:%ld, compactionUsecs:%ld, sweepUsecs:%ld, markUsecs:%ld}\n---\n'
-		printf:{	statFullGCs.
-				statFullGCUsecs.
-				statCompactionUsecs.
-				gcSweepEndUsecs.
-				statMarkUsecs }.
-		
+	fullGCLogRecord 
+		fullGCs: statFullGCs;
+		fullUsecs: statFullGCUsecs;
+		compactionUsecs: statCompactionUsecs;
+		sweepUsecs: gcSweepEndUsecs;
+		markUsecs: statMarkUsecs.
+	
+	self writeSTON: fullGCLogRecord toFile: scavenger logStream.
+	self fprintf: scavenger logStream _: '\n---\n'.
+	
 	scavenger logStream fflush
 ]
 

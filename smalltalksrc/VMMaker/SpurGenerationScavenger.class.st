@@ -1451,6 +1451,7 @@ SpurGenerationScavenger >> writeScavengeLog [
 SpurGenerationScavenger >> writeScavengeLogAsSTON [
 
 	<inline: #never>
+	scavengeLogRecord deltaUsecs: manager statSGCDeltaUsecs.
 	self writeSTON: scavengeLogRecord toFile: scavengeLog.
 	self fprintf: scavengeLog _: '\n---\n'.
 	scavengeLog fflush
