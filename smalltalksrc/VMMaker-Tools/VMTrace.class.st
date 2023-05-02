@@ -63,7 +63,7 @@ VMTrace class >> plotScavenge: scavengesAndFullGCs [
 			 yourself).
 	chart addDecoration: (RSVerticalTick new
 			 numberOfTicks: 10;
-			 labelConversion: [ :e | e asInteger humanReadableByteSizeString ];
+			 labelConversion: [ :e | e rounded humanReadableByteSizeString ];
 			 yourself).
 
 	fullGCs doWithIndex: [ :e :i |
@@ -72,6 +72,9 @@ VMTrace class >> plotScavenge: scavengesAndFullGCs [
 		chart addDecoration:
 			((RSXMarkerDecoration new atValue: x) color: Color red) ].
 
+
+	chart ylabel: 'Survivors'.
+	chart xlabel: 'Scavenges'.
 
 	^ chart build
 ]
