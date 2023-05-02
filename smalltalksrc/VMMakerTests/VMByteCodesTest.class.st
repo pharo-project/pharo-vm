@@ -367,6 +367,102 @@ VMByteCodesTest >> testDuplicateStackTop [
 	
 ]
 
+{ #category : #'tests-addition' }
+VMByteCodesTest >> testLessOrEqualEqualIntegerObjects [
+
+	stackBuilder
+		addNewFrame;
+		buildStack.
+
+	interpreter pushInteger: 7.
+	interpreter pushInteger: 7.
+
+	self
+		assert: [ 	self interpret: [ interpreter bytecodePrimLessOrEqualSistaV1 ] ]
+		popped: 2
+		andPushed: memory trueObject
+]
+
+{ #category : #'tests-addition' }
+VMByteCodesTest >> testLessOrEqualEqualIntegerObjectsUnsafe [
+
+	stackBuilder
+		addNewFrame;
+		buildStack.
+
+	interpreter pushInteger: 7.
+	interpreter pushInteger: 7.
+
+	self
+		assert: [ 	self interpret: [ interpreter bytecodePrimLessOrEqualSistaV1Unsafe ] ]
+		popped: 2
+		andPushed: memory trueObject
+]
+
+{ #category : #'tests-addition' }
+VMByteCodesTest >> testLessOrEqualHigherIntegerObjects [
+
+	stackBuilder
+		addNewFrame;
+		buildStack.
+
+	interpreter pushInteger: 13.
+	interpreter pushInteger: 7.
+
+	self
+		assert: [ 	self interpret: [ interpreter bytecodePrimLessOrEqualSistaV1 ] ]
+		popped: 2
+		andPushed: memory falseObject
+]
+
+{ #category : #'tests-addition' }
+VMByteCodesTest >> testLessOrEqualHigherIntegerObjectsUnsafe [
+
+	stackBuilder
+		addNewFrame;
+		buildStack.
+
+	interpreter pushInteger: 13.
+	interpreter pushInteger: 7.
+
+	self
+		assert: [ 	self interpret: [ interpreter bytecodePrimLessOrEqualSistaV1Unsafe ] ]
+		popped: 2
+		andPushed: memory falseObject
+]
+
+{ #category : #'tests-addition' }
+VMByteCodesTest >> testLessOrEqualLowerIntegerObjects [
+
+	stackBuilder
+		addNewFrame;
+		buildStack.
+
+	interpreter pushInteger: 7.
+	interpreter pushInteger: 13.
+
+	self
+		assert: [ 	self interpret: [ interpreter bytecodePrimLessOrEqualSistaV1 ] ]
+		popped: 2
+		andPushed: memory trueObject
+]
+
+{ #category : #'tests-addition' }
+VMByteCodesTest >> testLessOrEqualLowerIntegerObjectsUnsafe [
+
+	stackBuilder
+		addNewFrame;
+		buildStack.
+
+	interpreter pushInteger: 7.
+	interpreter pushInteger: 13.
+
+	self
+		assert: [ 	self interpret: [ interpreter bytecodePrimLessOrEqualSistaV1Unsafe ] ]
+		popped: 2
+		andPushed: memory trueObject
+]
+
 { #category : #'tests-push-simple' }
 VMByteCodesTest >> testPopStackTopBytecode [
 
