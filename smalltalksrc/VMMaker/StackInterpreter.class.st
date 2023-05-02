@@ -683,7 +683,8 @@ StackInterpreter class >> initializeBytecodeTableForSistaV1 [
 		( 82	 extPushPseudoVariable)
 		( 83	 duplicateTopBytecode)
 	
-		( 84 86	unknownBytecode)
+		( 84 85	unknownBytecode)
+		( 86	bytecodePrimLessOrEqualSistaV1Unsafe)
 		( 87	bytecodePrimAddUnsafe)
 			
 		( 88	returnReceiver)
@@ -3229,10 +3230,17 @@ StackInterpreter >> bytecodePrimLessOrEqual [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimLessOrEqualSistaV1 [
+
+	^ self bytecodePrimLessOrEqualSistaV1Precondition: [ :rcvr :arg |
+		  objectMemory areIntegers: rcvr and: arg ]
+]
+
+{ #category : #'common selector sends' }
+StackInterpreter >> bytecodePrimLessOrEqualSistaV1Precondition: precondition [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
 	arg := self stackValue: 0.
-	(objectMemory areIntegers: rcvr and: arg) ifTrue:
+	(precondition value: rcvr value: arg) ifTrue:
 		["The C code can avoid detagging since tagged integers are still signed.
 		 But this means the simulator must override to do detagging."
 		^self cCode: [self booleanCheatSistaV1: rcvr <= arg]
@@ -3245,6 +3253,13 @@ StackInterpreter >> bytecodePrimLessOrEqualSistaV1 [
 	messageSelector := self specialSelector: 4.
 	argumentCount := 1.
 	self normalSend
+]
+
+{ #category : #'common selector sends' }
+StackInterpreter >> bytecodePrimLessOrEqualSistaV1Unsafe [
+
+	^ self bytecodePrimLessOrEqualSistaV1Precondition: [ :rcvr :arg |
+		  true ]
 ]
 
 { #category : #'common selector sends' }
