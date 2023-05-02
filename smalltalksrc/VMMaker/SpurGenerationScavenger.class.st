@@ -261,19 +261,12 @@ SpurGenerationScavenger >> computeRefCountToShrinkRememberedSet [
 	(manager allNewSpaceObjectsDo: [:o| manager rtRefCountOf: o put: 0])"
 ]
 
-{ #category : #scavenger }
+{ #category : #tenuring }
 SpurGenerationScavenger >> computeTenuringThreshold [
-	| fractionSurvived |
-	<var: 'fractionSurvived' type: #float>
-	fractionSurvived := futureSpace limit = futureSpace start
-							ifTrue:
-								[0.0]
-							ifFalse:
-								[(futureSurvivorStart - futureSpace start) asFloat
-									/ (futureSpace limit - futureSpace start)].
-	tenureThreshold := fractionSurvived > 0.9
-							ifTrue: [((pastSpace limit - pastSpace start) * (1.0 - tenuringProportion)) rounded + pastSpace start]
-							ifFalse: [0]
+
+	tenureThreshold := self futureSpaceIsFull
+		                   ifTrue: [ self tenuringThresholdForSpace: futureSpace ]
+		                   ifFalse: [ 0 ]
 ]
 
 { #category : #scavenger }
@@ -571,6 +564,23 @@ SpurGenerationScavenger >> futureSpace [
 	^futureSpace
 ]
 
+{ #category : #tenuring }
+SpurGenerationScavenger >> futureSpaceIsFull [
+
+	"After the scavenge, if the future space remains full (more than 90%).
+	Useful to configure tenuring for next pass."
+
+	<var: 'fractionSurvived' type: #float>
+	| fractionSurvived |
+	fractionSurvived := futureSpace limit = futureSpace start
+		                    ifTrue: [ 0.0 ]
+		                    ifFalse: [
+			                    (futureSurvivorStart - futureSpace start) asFloat "Survivor size"
+			                    / futureSpace size ].
+
+	^ fractionSurvived > 0.9 
+]
+
 { #category : #'debug support' }
 SpurGenerationScavenger >> futureSpaceObjectsDo: aBlock [
 	| obj |
@@ -587,7 +597,7 @@ SpurGenerationScavenger >> futureSurvivorStart [
 	^futureSurvivorStart
 ]
 
-{ #category : #accessing }
+{ #category : #tenuring }
 SpurGenerationScavenger >> getRawTenuringThreshold [
 	^tenureThreshold
 ]
@@ -1280,21 +1290,21 @@ SpurGenerationScavenger >> scavengeUnfiredEphemeronsOnEphemeronList [
 	^unfiredEphemeronsScavenged
 ]
 
-{ #category : #accessing }
-SpurGenerationScavenger >> scavengerTenuringThreshold [ "(Slang flattens so need unique selectors)"
+{ #category : #tenuring }
+SpurGenerationScavenger >> scavengerTenuringProportion [
 	<returnTypeC: #float>
 	^tenureThreshold >= pastSpace start
 		ifTrue: [(tenureThreshold - pastSpace start) asFloat / (pastSpace limit - pastSpace start)]
 		ifFalse: [0]
 ]
 
-{ #category : #accessing }
-SpurGenerationScavenger >> scavengerTenuringThreshold: aProportion [ "(Slang flattens so need unique selectors)"
+{ #category : #tenuring }
+SpurGenerationScavenger >> scavengerTenuringProportionToKeepInPastSpace: aProportion [
 	<var: 'aProportion' type: #double>
 	tenuringProportion := aProportion.
 	tenureThreshold := aProportion = 0.0
 							ifTrue: [0]
-							ifFalse: [((pastSpace limit - pastSpace start) * (1.0 - aProportion)) rounded + pastSpace start]
+							ifFalse: [self tenuringThresholdForSpace: pastSpace ]
 ]
 
 { #category : #'weakness and ephemerality' }
@@ -1323,7 +1333,7 @@ SpurGenerationScavenger >> setCorpseOffsetOf: corpse to: offset [
 						classIndex: manager isForwardedObjectClassIndexPun)]
 ]
 
-{ #category : #accessing }
+{ #category : #tenuring }
 SpurGenerationScavenger >> setRawTenuringThreshold: threshold [
 	tenureThreshold := threshold
 ]
@@ -1346,7 +1356,7 @@ SpurGenerationScavenger >> setRefCountToShrinkRT: population [
 	refCountToShrinkRT := i max: 0
 ]
 
-{ #category : #scavenger }
+{ #category : #tenuring }
 SpurGenerationScavenger >> shouldBeTenured: survivor [
 	"Answer if an object should be tenured.  The default policy tenuring policy
 	 is to use the tenuringThreshold to decide. If the survivors (measured in
@@ -1359,6 +1369,7 @@ SpurGenerationScavenger >> shouldBeTenured: survivor [
 		ACM TOPLAS, Volume 14 Issue 1, Jan. 1992, pp 1 - 27.
 
 	 The other policies are for special purposes."
+	
 	^tenureCriterion
 		caseOf: {
 			[TenureByAge]	->
@@ -1401,14 +1412,26 @@ SpurGenerationScavenger >> strategizeToLimitRememberedSet [
 		 self computeRefCountToShrinkRememberedSet]
 ]
 
-{ #category : #accessing }
+{ #category : #tenuring }
 SpurGenerationScavenger >> tenuringClassIndex [
 	^tenuringClassIndex
 ]
 
-{ #category : #accessing }
+{ #category : #tenuring }
 SpurGenerationScavenger >> tenuringClassIndex: anInteger [
 	tenuringClassIndex := anInteger
+]
+
+{ #category : #tenuring }
+SpurGenerationScavenger >> tenuringProportion [
+
+	^ tenuringProportion
+]
+
+{ #category : #tenuring }
+SpurGenerationScavenger >> tenuringThresholdForSpace: aSpace [
+
+	^ (aSpace size * (1.0 - tenuringProportion)) rounded + aSpace start
 ]
 
 { #category : #logging }
