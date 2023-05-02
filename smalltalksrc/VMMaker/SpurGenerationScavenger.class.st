@@ -609,6 +609,7 @@ SpurGenerationScavenger >> initialize [
 	tenureThreshold := 0.
 	statSurvivorCount := statTenures := 0.
 	scavengeLogRecord := SpurScavengeLogRecord new.
+	self openScavengeLog
 ]
 
 { #category : #'weakness and ephemerality' }
