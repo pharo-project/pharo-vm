@@ -68,7 +68,7 @@ VMTrace class >> plotScavenge: scavengesAndFullGCs [
 
 	fullGCs doWithIndex: [ :e :i |
 		| x |
-		x := (scavengesAndFullGCs indexOf: e) - i + 1.
+		x := (scavengesAndFullGCs indexOf: e) - i.
 		chart addDecoration:
 			((RSXMarkerDecoration new atValue: x) color: Color red) ].
 
