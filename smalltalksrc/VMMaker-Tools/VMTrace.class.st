@@ -32,9 +32,29 @@ VMTrace class >> loadGCLogFrom: fileReference [
 ]
 
 { #category : #'as yet unclassified' }
-VMTrace class >> plotScavenge: scavengesAndFullGCs [
+VMTrace class >> plotAllScavengesIn: logFiles [
 
-	| chart plot y scavenges fullGCs tenures |
+	| c shapes |
+	c := RSCanvas new.
+	
+	shapes := logFiles sorted collect: [ :f |
+		          | trace plotName plot shape |
+		          trace := self loadGCLogFrom: f.
+		          plotName := f path segments allButLast last.
+		          plot := self plotScavenge: { plotName } , trace.
+		          c add: (shape := plot asShape).
+		          shape ].
+
+	RSGridLayout on: shapes.
+	c @ RSCanvasController.
+	^ c
+]
+
+{ #category : #'as yet unclassified' }
+VMTrace class >> plotScavenge: trace [
+
+	| chart plot y scavenges fullGCs tenures scavengesAndFullGCs |
+	scavengesAndFullGCs := trace allButFirst.
 	scavenges := scavengesAndFullGCs select: [ :e |
 		             e className includesSubstring: 'Scavenge' ].
 	fullGCs := scavengesAndFullGCs select: [ :e |
@@ -75,6 +95,7 @@ VMTrace class >> plotScavenge: scavengesAndFullGCs [
 
 	chart ylabel: 'Survivors'.
 	chart xlabel: 'Scavenges'.
+	chart title: trace first.
 
 	^ chart build
 ]
