@@ -656,7 +656,7 @@ CogObjectRepresentationForSpur >> genGetActiveContextLarge: isLarge inBlock: isI
 	"Create a trampoline to answer the active context that will
 	 answer it if a frame is already married, and create it otherwise.
 	 Assume numArgs is in SendNumArgsReg and ClassReg is free."
-	| header slotSize jumpSingle loopHead jumpNeedScavenge continuation exit |
+	| header slotSize jumpSingle loopHead jumpNeedScavenge continuation exit jmpFrameOverflow |
 	<var: #jumpNeedScavenge type: #'AbstractInstruction *'>
 	<var: #continuation type: #'AbstractInstruction *'>
 	<var: #jumpSingle type: #'AbstractInstruction *'>
@@ -794,6 +794,10 @@ CogObjectRepresentationForSpur >> genGetActiveContextLarge: isLarge inBlock: isI
 		Jump: loopHead.
 	exit jmpTarget: cogit Label.
 
+	cogit 
+		CmpCq: slotSize + (objectMemory baseHeaderSize / objectMemory wordSize) R: SendNumArgsReg.
+	jmpFrameOverflow := cogit JumpAbove: 0.		
+
 	cogit RetN: 0.
 	
 	jumpNeedScavenge jmpTarget: cogit Label.
@@ -802,6 +806,11 @@ CogObjectRepresentationForSpur >> genGetActiveContextLarge: isLarge inBlock: isI
 			CallRT: ceScheduleScavengeTrampoline
 			registersToBeSavedMask: (cogit registerMaskFor: ReceiverResultReg and: SendNumArgsReg and: ClassReg)].
 	cogit Jump: continuation.
+
+	"If the frame is bigger than expected, we jump to the frame overflow trampoline"
+	jmpFrameOverflow jmpTarget: cogit Label.
+	cogit CallRT: cogit frameOverflowTrampoline.
+	
 	^0
 ]
 

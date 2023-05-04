@@ -266,6 +266,7 @@ Class {
 		'statCompileFullBlockUsecs',
 		'statCompileMethodCount',
 		'statCompileMethodUsecs',
+		'ceFrameOverflowTrampoline'
 		'jitCodeZoneWriteEnabled'
 	],
 	#classVars : [
@@ -1347,9 +1348,16 @@ Cogit class >> notesAndQueries [
 
 { #category : #accessing }
 Cogit class >> numTrampolines [
-	^39 "31 + 4 each for self and super sends"
+	"
+	Answer the number of trampolines defined by this class. By convention all trampolines must be stored in variables starting with ce.
+	It is important that this number is consistent with the trampolines that are allocated at runtime. We use this number to allocate an Array that holds metadata about the trampolines, having a wrong number of trampolines specified here may provoke a out of bounds access on the metadata arrays.
 
-	"self withAllSubclasses collect: [:c| {c. (c instVarNames select: [:ea| ea beginsWith: 'ce']) size}]"
+	One way to find them programmatically is using the following expression:
+
+	self withAllSubclasses sum: [:c| (c instVarNames select: [:ea| ea beginsWith: 'ce']) size ]
+	"
+
+	^ 40 "32 + 4 each for self and super sends"
 ]
 
 { #category : #translation }
@@ -3935,14 +3943,14 @@ Cogit >> ceCheckForInterruptTrampoline: anInteger [
 	ceCheckForInterruptTrampoline := anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #trampolines }
 Cogit >> ceDereferenceSelectorIndex [
 	
 	<doNotGenerate>
 	^ objectRepresentation selectorIndexDereferenceRoutine
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #trampolines }
 Cogit >> ceDereferenceSelectorIndex: anInteger [ 
 	
 	<doNotGenerate>
@@ -6750,6 +6758,12 @@ Cogit >> followMethodReferencesInClosedPIC: cPIC [
 	^refersToYoung
 ]
 
+{ #category : #tram }
+Cogit >> frameOverflowTrampoline [
+	
+	^ ceFrameOverflowTrampoline
+]
+
 { #category : #'simulation only' }
 Cogit >> framePointerAddress [
 	"redirect for the backEnd's genSaveStackPointers"
@@ -7928,6 +7942,13 @@ Cogit >> generateEnilopmarts [
 	self recordGeneratedRunTime: 'cePrimReturnEnterCogCodeProfiling' address: cePrimReturnEnterCogCodeProfiling
 ]
 
+{ #category : #trampolines }
+Cogit >> generateFrameOverflowTrampoline [
+	
+	ceFrameOverflowTrampoline := self genTrampolineFor: #ceFrameOverflowTrampoline called: 'ceFrameOverflowTrampoline'.
+
+]
+
 { #category : #'generate machine code' }
 Cogit >> generateInstructionsAt: eventualAbsoluteAddress [
 	"Size pc-dependent instructions and assign eventual addresses to all instructions.
@@ -8064,60 +8085,47 @@ Cogit >> generateReturnToInterpreterPCTrampoline [
 
 { #category : #initialization }
 Cogit >> generateRunTimeTrampolines [
-
 	"Generate the run-time entries at the base of the native code zone and update the base."
-
-	ceSendMustBeBooleanAddFalseTrampoline := self
-		                                         genMustBeBooleanTrampolineFor:
-		                                         objectMemory falseObject
-		                                         called:
-		                                         'ceSendMustBeBooleanAddFalseTrampoline'.
-	ceSendMustBeBooleanAddTrueTrampoline := self
-		                                        genMustBeBooleanTrampolineFor:
-		                                        objectMemory trueObject
-		                                        called:
-		                                        'ceSendMustBeBooleanAddTrueTrampoline'.
+	
+	ceSendMustBeBooleanAddFalseTrampoline := self genMustBeBooleanTrampolineFor: objectMemory falseObject
+														called: 'ceSendMustBeBooleanAddFalseTrampoline'.
+	ceSendMustBeBooleanAddTrueTrampoline := self genMustBeBooleanTrampolineFor: objectMemory trueObject
+														called: 'ceSendMustBeBooleanAddTrueTrampoline'.
 	ceNonLocalReturnTrampoline := self genNonLocalReturnTrampoline.
 	ceCheckForInterruptTrampoline := self genCheckForInterruptsTrampoline.
 	"Neither of the context inst var access trampolines save registers.  Their operation could cause
 	 arbitrary update of stack frames, so the assumption is that callers flush the stack before calling
 	 the context inst var access trampolines, and that everything except the result is dead afterwards."
-	ceFetchContextInstVarTrampoline := self
-		                                   genTrampolineFor:
-		                                   #ceContext:instVar:
-		                                   called:
-		                                   'ceFetchContextInstVarTrampoline'
-		                                   arg: ReceiverResultReg
-		                                   arg: SendNumArgsReg
-		                                   result: SendNumArgsReg.
-	ceStoreContextInstVarTrampoline := self
-		                                   genTrampolineFor:
-		                                   #ceContext:instVar:value:
-		                                   called:
-		                                   'ceStoreContextInstVarTrampoline'
-		                                   arg: ReceiverResultReg
-		                                   arg: SendNumArgsReg
-		                                   arg: ClassReg
-		                                   result: ReceiverResultReg. "to keep ReceiverResultReg live."
-	ceCannotResumeTrampoline := self
-		                            genTrampolineFor: #ceCannotResume
-		                            called: 'ceCannotResumeTrampoline'.
+	ceFetchContextInstVarTrampoline := self genTrampolineFor: #ceContext:instVar:
+											called: 'ceFetchContextInstVarTrampoline'
+											arg: ReceiverResultReg
+											arg: SendNumArgsReg
+											result: SendNumArgsReg.
+	ceStoreContextInstVarTrampoline := self genTrampolineFor: #ceContext:instVar:value:
+											called: 'ceStoreContextInstVarTrampoline'
+											arg: ReceiverResultReg
+											arg: SendNumArgsReg
+											arg: ClassReg
+											result: ReceiverResultReg. "to keep ReceiverResultReg live.".
+	ceCannotResumeTrampoline := self genTrampolineFor: #ceCannotResume
+											called: 'ceCannotResumeTrampoline'.
 	"These two are unusual; they are reached by return instructions."
-	ceBaseFrameReturnTrampoline := self
-		                               genReturnTrampolineFor:
-		                               #ceBaseFrameReturn:
-		                               called: 'ceBaseFrameReturnTrampoline'
-		                               arg: ReceiverResultReg.
-	self generateReturnToInterpreterPCTrampoline.
-	ceMallocTrampoline := self
-		                      genTrampolineFor: #ceMalloc:
-		                      called: 'ceMallocTrampoline'
-		                      arg: ReceiverResultReg
-		                      result: TempReg.
-	ceFreeTrampoline := self
-		                    genTrampolineFor: #ceFree:
-		                    called: 'ceFreeTrampoline'
-		                    arg: ReceiverResultReg
+	ceBaseFrameReturnTrampoline := self genReturnTrampolineFor: #ceBaseFrameReturn:
+											called: 'ceBaseFrameReturnTrampoline'
+											arg: ReceiverResultReg.
+	ceReturnToInterpreterTrampoline := self
+											genReturnTrampolineFor: #ceReturnToInterpreter:
+											called: 'ceReturnToInterpreterTrampoline'
+											arg: ReceiverResultReg.
+	ceMallocTrampoline := self genTrampolineFor: #ceMalloc:
+											called: 'ceMallocTrampoline'
+											arg: ReceiverResultReg
+											result: TempReg.
+	ceFreeTrampoline := self genTrampolineFor: #ceFree:
+											called: 'ceFreeTrampoline'
+											arg: ReceiverResultReg.
+											
+	self generateFrameOverflowTrampoline
 ]
 
 { #category : #initialization }
@@ -8204,8 +8212,8 @@ Cogit >> generateTrampolines [
 			objectRepresentation maybeGenerateSelectorIndexDereferenceRoutine.
 			self generateSendTrampolines.
 			self generateMissAbortTrampolines.
-			objectRepresentation generateObjectRepresentationTrampolines.
 			self generateRunTimeTrampolines.
+			objectRepresentation generateObjectRepresentationTrampolines.
 			SistaVM ifTrue: [self generateSistaRuntime].
 			self generateEnilopmarts.
 			self generateTracingTrampolines.
@@ -8306,7 +8314,7 @@ Cogit >> getPrimitiveIndex [
 	^primitiveIndex
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 Cogit >> guardPageSize: anInteger [ 
 
 	<doNotGenerate>
@@ -8897,7 +8905,7 @@ Cogit >> labelForSimulationAccessor: blockOrMessageSendOrSelector [
 						ifFalse: [blockOrMessageSendOrSelector]])
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 Cogit >> lastNInstructions: aCollection [ 
 	<doNotGenerate>
 	lastNInstructions := aCollection
@@ -10826,7 +10834,7 @@ Cogit >> promptForBreakPC [
 	self breakPC: pc
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 Cogit >> receiverTags: anInteger [ 
 	receiverTags := anInteger
 ]
@@ -11799,7 +11807,7 @@ Cogit >> stackPointerAddress [
 	^coInterpreter stackPointerAddress
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 Cogit >> stackPointerAlignment [
 	<doNotGenerate>
 	^ backEnd stackPointerAlignment

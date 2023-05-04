@@ -243,6 +243,14 @@ InterpreterPrimitives >> doWaitSemaphore: sema reEnterInterpreter: hasToReenter 
 	self doWaitSemaphore: sema
 ]
 
+{ #category : #'error handling' }
+InterpreterPrimitives >> error: aMessage [
+
+	<doNotGenerate>
+
+	^ VMError new signal: aMessage
+]
+
 { #category : #'primitive support' }
 InterpreterPrimitives >> failed [
 	<api>

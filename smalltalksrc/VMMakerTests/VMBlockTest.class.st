@@ -36,7 +36,6 @@ VMBlockTest >> installFullBlockClosureClass [
 VMBlockTest >> methodReturningABlock [
 	<compilerOptions: #(- #optionConstantBlockClosure)>
 	^ []
-	
 ]
 
 { #category : #'as yet unclassified' }
