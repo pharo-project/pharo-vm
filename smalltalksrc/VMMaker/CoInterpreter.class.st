@@ -4463,6 +4463,22 @@ CoInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 ]
 
 { #category : #'internal interpreter access' }
+CoInterpreter >> mtemporary: offset in: theFP [
+
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	| frameNumArgs |
+	^ offset < (frameNumArgs := self mframeNumArgs: theFP)
+		  ifTrue: [
+			  stackPages unsignedLongAt: theFP + FoxCallerSavedIP
+				  + (frameNumArgs - offset * objectMemory wordSize) ]
+		  ifFalse: [
+			  stackPages unsignedLongAt:
+				  (self frameReceiverLocation: theFP) - objectMemory wordSize
+				  + (frameNumArgs - offset * objectMemory wordSize) ]
+]
+
+{ #category : #'internal interpreter access' }
 CoInterpreter >> mtemporary: offset in: theFP put: valueOop [
 	"Temporary access for a machine code frame only."
 	"See StackInterpreter class>>initializeFrameIndices"
@@ -5586,6 +5602,15 @@ CoInterpreter >> tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom: cont
 	self stackTopPut: returnValue.
 	"Assign it to instructionPointer as externalCannotReturn:from: pushes it."
 	instructionPointer := cogit ceCannotResumePC
+]
+
+{ #category : #'internal interpreter access' }
+CoInterpreter >> temporary: offset in: theFP [
+
+	<inline: true>
+	^ (self isMachineCodeFrame: theFP)
+		  ifTrue: [ self mtemporary: offset in: theFP ]
+		  ifFalse: [ self itemporary: offset in: theFP ]
 ]
 
 { #category : #'internal interpreter access' }
