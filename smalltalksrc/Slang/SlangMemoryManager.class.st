@@ -159,6 +159,12 @@ SlangMemoryManager >> initialize [
 ]
 
 { #category : #'memory-access' }
+SlangMemoryManager >> int32AtPointer: address put: aValue [ 
+	
+	^ self writeSignedInteger: aValue at: address size: 4
+]
+
+{ #category : #'memory-access' }
 SlangMemoryManager >> isValidAddress: address [
 
 	"Memory regions are allocated in multiples of 4KB (12 bits).

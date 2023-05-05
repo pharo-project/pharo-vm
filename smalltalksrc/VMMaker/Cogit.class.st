@@ -8211,7 +8211,7 @@ Cogit >> halt: aString [
 	Halt new signal: aString
 ]
 
-{ #category : #'translation support' }
+{ #category : #halting }
 Cogit >> haltIf: aBlock [
 
 	aBlock value ifTrue: [ self halt ]
