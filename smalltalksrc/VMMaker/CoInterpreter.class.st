@@ -3523,10 +3523,12 @@ CoInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 	<inline: true>
 	| methodHeader cogMethod numArgs numTemps rcvr |
 	methodHeader := self rawHeaderOf: newMethod.
-	(mustBeInterpreterFrame not and: [
-		 self isCogMethodReference: methodHeader ]) ifTrue: [
-		cogMethod := self cCoerceSimple: methodHeader to: #'CogMethod *'.
-		methodHeader := cogMethod methodHeader ].
+	((self isCogMethodReference: methodHeader)) ifTrue: [ | theCogMethod |
+		theCogMethod := self cCoerceSimple: methodHeader to: #'CogMethod *'.
+		methodHeader := theCogMethod methodHeader.
+		mustBeInterpreterFrame not ifTrue: [ 
+			"Will be used to mark if we need to execute in interpreted mode or not"
+			cogMethod := theCogMethod ]].
 	numTemps := self temporaryCountOfMethodHeader: methodHeader.
 	numArgs := self argumentCountOfMethodHeader: methodHeader.
 
