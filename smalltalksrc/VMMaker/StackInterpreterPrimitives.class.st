@@ -23,6 +23,7 @@ StackInterpreterPrimitives >> allocateParameters: anInteger using: allocationBlo
 StackInterpreterPrimitives >> cloneContext: aContext [ 
 	| sz cloned spouseFP sp |
 	<var: #spouseFP type: #'char *'>
+	<var: #sp type: #'sqInt'>
 	sz := objectMemory numSlotsOf: aContext.
 	cloned := objectMemory eeInstantiateMethodContextSlots: sz.
 	cloned ~= 0 ifTrue:
