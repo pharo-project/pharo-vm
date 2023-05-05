@@ -8214,7 +8214,7 @@ Cogit >> halt: aString [
 { #category : #'translation support' }
 Cogit >> haltIf: aBlock [
 
-	aBlock ifTrue: [ self halt ]
+	aBlock value ifTrue: [ self halt ]
 
 ]
 
