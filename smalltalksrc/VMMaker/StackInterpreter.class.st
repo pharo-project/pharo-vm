@@ -9806,17 +9806,19 @@ StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	<var: #theSP type: #'char *'>
-	| theContext methodHeader closureOrNil numSlots numArgs numStack numTemps |	
+	| theContext methodHeader closureOrNil numSlots numArgs numStack numTemps |
+
+	self assert: (self frameHasContext: theFP) not.
+
 	(self isMachineCodeFrame: theFP)
 		ifTrue: [ | methodFieldOrObj |
+			"base frames must aready be married for cannotReturn: processing"
+			self assert: (self isBaseFrame: theFP) not.
 			methodFieldOrObj := self frameMethodField: theFP.
 			stackPages
 				longAt: theFP + FoxMethod
 				put: methodFieldOrObj + MFMethodFlagHasContextFlag ]
 		ifFalse: [ self setIFrameHasContext: theFP ].
-	
-	self assert: (self frameHasContext: theFP) not.
-	self assert: (self isBaseFrame: theFP) not. "base frames must aready be married for cannotReturn: processing"
 
 	"The SP is expected to be pointing at the last oop on the stack, not at the pc"
 	self assert: (objectMemory addressCouldBeOop: (objectMemory longAt: theSP)).
