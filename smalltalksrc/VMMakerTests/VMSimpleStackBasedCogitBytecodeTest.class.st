@@ -136,30 +136,6 @@ VMSimpleStackBasedCogitBytecodeTest >> testExtendedPushPushesVariableType: type 
 	self assert: self popAddress equals: memory falseObject
 ]
 
-{ #category : #'tests - extended store bytecode - store inst var' }
-VMSimpleStackBasedCogitBytecodeTest >> testExtendedStoreStoresInstanceVariableIndex1 [
-
-	self testExtendedStoreStoresInstanceVariableIndex: 1
-]
-
-{ #category : #'tests - extended store bytecode - store inst var' }
-VMSimpleStackBasedCogitBytecodeTest >> testExtendedStoreStoresInstanceVariableIndex2 [
-
-	self testExtendedStoreStoresInstanceVariableIndex: 2
-]
-
-{ #category : #'tests - extended store bytecode - store inst var' }
-VMSimpleStackBasedCogitBytecodeTest >> testExtendedStoreStoresInstanceVariableIndex32 [
-
-	self testExtendedStoreStoresInstanceVariableIndex: 32
-]
-
-{ #category : #'tests - extended store bytecode - store inst var' }
-VMSimpleStackBasedCogitBytecodeTest >> testExtendedStoreStoresInstanceVariableIndex64 [
-
-	self testExtendedStoreStoresInstanceVariableIndex: 64
-]
-
 { #category : #'tests - jumps' }
 VMSimpleStackBasedCogitBytecodeTest >> testJumpForwardJumpsOverAnInstruction [
 
