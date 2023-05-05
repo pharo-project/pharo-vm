@@ -328,6 +328,16 @@ CogVMSimulator >> callExternalPrimitive: mapIndex [
 	^ (entry at: 1) perform: (entry at: 2)
 ]
 
+{ #category : #trampolines }
+CogVMSimulator >> ceReapAndResetErrorCodeFor: cogMethod [
+	"Override to map the address into a CogMethodSurrogate"
+	| surrogate |
+	surrogate := cogMethod isInteger
+					ifTrue: [cogit cogMethodSurrogateAt: cogMethod]
+					ifFalse: [cogMethod].
+	^super ceReapAndResetErrorCodeFor: surrogate
+]
+
 { #category : #'object memory support' }
 CogVMSimulator >> checkStackIntegrity [
 	"Override to deal with incomplete initialization."
@@ -1805,6 +1815,22 @@ CogVMSimulator >> reverseBytesInImage [
 	UIManager default
 		informUser: 'Swapping bytes of foreign image...'
 		during: [super reverseBytesInImage]
+]
+
+{ #category : #'method lookup cache' }
+CogVMSimulator >> rewriteMethodCacheEntryForExternalPrimitiveToFunction: localPrimAddress [
+
+	super rewriteMethodCacheEntryForExternalPrimitiveToFunction:
+		(self mapFunctionToAddress: (localPrimAddress = 0
+				  ifTrue: [ #primitiveFail ]
+				  ifFalse: [ localPrimAddress ])).
+	"Hack; the super call will rewrite the entry to the address of the function.
+	 So (when simulating) undo the damage and put back the functionPointer"
+	(methodCache at: lastMethodCacheProbeWrite + MethodCacheMethod)
+	= newMethod ifTrue: [
+		methodCache
+			at: lastMethodCacheProbeWrite + MethodCachePrimFunction
+			put: (self cCoerce: localPrimAddress to: #sqIntptr_t) ]
 ]
 
 { #category : #'rump c stack' }
