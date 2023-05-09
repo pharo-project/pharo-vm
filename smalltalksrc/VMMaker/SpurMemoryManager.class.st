@@ -12449,7 +12449,7 @@ SpurMemoryManager >> tenuringThreshold [
 	 accessed as a proportion of pastSpace from 0 to 1.   In the Squeak image the tenuring
 	 threshold is an object count. Marry the two notions by multiplying the proportion by
 	 the size of pastSpace and dividing by the average object size, as derived from observation."
-	^(scavenger scavengerTenuringThreshold * scavenger pastSpaceBytes // self averageObjectSizeInBytes) asInteger
+	^(scavenger scavengerTenuringProportion * scavenger pastSpaceBytes // self averageObjectSizeInBytes) asInteger
 ]
 
 { #category : #accessing }
@@ -12457,7 +12457,7 @@ SpurMemoryManager >> tenuringThreshold: threshold [
 	"c.f. tenuringThreshold"
 	threshold < 0 ifTrue:
 		[^PrimErrBadArgument].
-	scavenger scavengerTenuringThreshold:
+	scavenger scavengerTenuringProportionToKeepInPastSpace:
 		(threshold * self averageObjectSizeInBytes) asFloat
 		/ scavenger pastSpaceBytes asFloat.
 	^0
