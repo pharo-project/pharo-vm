@@ -455,7 +455,6 @@ try{
 	def platforms = parallelBuilderPlatforms + ['Linux-aarch64', 'Linux-armv7l']
 	def builders = [:]
 	def dockerBuilders = [:]
-	def tests = [:]
 
 	node('Darwin-x86_64'){
 		runUnitTests('Darwin-x86_64')
@@ -473,6 +472,12 @@ try{
 				timeout(30){
 					runBuild(platform, "StackVM")
 				}
+				timeout(45){
+					runTests(platform, "CoInterpreter", ".*", false)
+				}
+				timeout(45){
+					runTests(platform, "CoInterpreter", ".*", true)
+				}
 				timeout(30){
 					runBuild("${platform}-ComposedFormat", "CoInterpreter", true, " -DIMAGE_FORMAT=ComposedFormat ")
 				}
@@ -483,23 +488,12 @@ try{
 					}
 				}
 			}
-		}
-		
-		tests[platform] = {
-			node(platform){
-				timeout(45){
-					runTests(platform, "CoInterpreter", ".*", false)
-				}
-				timeout(45){
-					runTests(platform, "CoInterpreter", ".*", true)
-				}				
-			}
-		}
+		}		
 	}
 
 	dockerBuilders['Linux-aarch64'] = {
-		buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter")	
-
+		buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter")
+        runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
 		if(isMainBranch()){
 			buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", false)
 		}
@@ -507,7 +501,7 @@ try{
 
 	dockerBuilders['Linux-armv7l'] = {
 		buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter")	
-
+        runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
 		if(isMainBranch()){
 			buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", false)
 		}
@@ -516,20 +510,10 @@ try{
 	parallel builders
 
 	parallel dockerBuilders
-	
-	tests['Linux-aarch64'] = { 
-		runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
-	}
-
-	tests['Linux-armv7l'] = { 
-		runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
-	}
-	
+		
 	uploadPackages(platforms)
 
 	buildGTKBundle()
-
-	parallel tests
 
 } catch (e) {
   throw e
