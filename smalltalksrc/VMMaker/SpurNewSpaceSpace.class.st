@@ -42,6 +42,13 @@ SpurNewSpaceSpace >> size [
 ]
 
 { #category : #accessing }
+SpurNewSpaceSpace >> spaceSize [
+	<inline: true>
+	
+	^ self limit - self start
+]
+
+{ #category : #accessing }
 SpurNewSpaceSpace >> start [
 	^start
 ]
