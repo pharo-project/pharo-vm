@@ -124,7 +124,7 @@ VMJittedLookupTest >> testLookUpMNUShouldJItCompile [
 ]
 
 { #category : #tests }
-VMJittedLookupTest >> testLookUpMNUWithWrapperShouldNotJItCompile [
+VMJittedLookupTest >> testLookUpMNUWithAnyNonMethodObjectShouldNotJItCompile [
 
 	| superclass superclassMethodDictionary foundMethod |
 	
