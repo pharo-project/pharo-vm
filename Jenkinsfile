@@ -256,7 +256,16 @@ def runTests(platform, configuration, packages, withWorker, additionalParameters
 							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'" 
 						}
 				}
-				junit allowEmptyResults: true, testResults: "*.xml"
+                
+                // If the tests fail, continue and just mark this as a failure
+                try {
+                  junit allowEmptyResults: true, testResults: "*.xml"
+                } catch (ex) {
+                  if (currentBuild.result == 'UNSTABLE'){
+                    currentBuild.result = 'FAILURE'
+                  }
+                  archiveArtifacts artifacts: '*.xml', excludes: '_CPack_Packages'
+                }
 			} finally{
 				if(fileExists('PharoDebug.log')){
 					shell "mv PharoDebug.log PharoDebug-${stageName}.log"
@@ -273,7 +282,6 @@ def runTests(platform, configuration, packages, withWorker, additionalParameters
 				}
 			}
 		}
-		archiveArtifacts artifacts: 'runTests/*.xml', excludes: '_CPack_Packages'
 	}
 }
 
