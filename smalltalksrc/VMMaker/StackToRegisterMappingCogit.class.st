@@ -2642,61 +2642,33 @@ StackToRegisterMappingCogit >> genSpecialSelectorArithmetic [
 
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genSpecialSelectorArithmeticUnsafe [
-	| primDescriptor rcvrIsConst argIsConst rcvrIsInt argIsInt rcvrInt argInt result |
+
 	<var: #primDescriptor type: #'BytecodeDescriptor *'>
+	| primDescriptor rcvrIsConst argIsConst rcvrIsInt argIsInt rcvrInt argInt result |
 	primDescriptor := self generatorAt: byte0.
 
-	argIsInt := ((argIsConst := self ssTop type = SSConstant)
-				 and: [objectMemory isIntegerObject: (argInt := self ssTop constant)])
-				 or: [self mclassIsSmallInteger and: [self ssTop isSameEntryAs: self simSelf]].
 
-	rcvrIsInt := ((rcvrIsConst := (self ssValue: 1) type = SSConstant)
-				  and: [objectMemory isIntegerObject: (rcvrInt := (self ssValue: 1) constant)])
-				or: [self mclassIsSmallInteger and: [(self ssValue: 1) isSameEntryAs: self simSelf]].
-
-	(argIsInt and: [argIsConst and: [rcvrIsInt and: [rcvrIsConst]]]) ifTrue:
-		[rcvrInt := objectMemory integerValueOf: rcvrInt.
-		 argInt := objectMemory integerValueOf: argInt.
-		 primDescriptor opcode caseOf: {
-			[AddRR]	-> [result := rcvrInt + argInt].
-			[SubRR]	-> [result := rcvrInt - argInt].
-			[AndRR]	-> [result := rcvrInt bitAnd: argInt].
-			[OrRR]	-> [result := rcvrInt bitOr: argInt] }.
-		(objectMemory isIntegerValue: result) ifTrue:
-			["Must annotate the bytecode for correct pc mapping."
-			^self ssPop: 2; ssPushAnnotatedConstant: (objectMemory integerObjectOf: result)].
-		^self genSpecialSelectorSend].
-
-	"If there's any constant involved other than a SmallInteger don't attempt to inline."
-	((rcvrIsConst and: [rcvrIsInt not])
-	 or: [argIsConst and: [argIsInt not]]) ifTrue:
-		[^self genSpecialSelectorSend].
-
-	"If we know nothing about the types then better not to inline as the inline cache and
-	 primitive code is not terribly slow so wasting time on duplicating tag tests is pointless."
-	(argIsInt or: [rcvrIsInt]) ifFalse:
-		[^self genSpecialSelectorSend].
+	argIsConst := self ssTop type = SSConstant.
+	argInt := self ssTop constant.
 
 	argIsConst
-		ifTrue:
-			[self ssFlushTo: simStackPtr - 2.
-			 (self ssValue: 1) moveToReg: ReceiverResultReg.
-			 self ssPop: 2]
-		ifFalse:
-			[self marshallSendArguments: 1].
+		ifTrue: [
+			self ssFlushTo: simStackPtr - 2.
+			(self ssValue: 1) moveToReg: ReceiverResultReg.
+			self ssPop: 2 ]
+		ifFalse: [ self marshallSendArguments: 1 ].
 
-	primDescriptor opcode caseOf: {
-		[AddRR] -> [argIsConst
-						ifTrue:
-							[self AddCq: argInt - ConstZero R: ReceiverResultReg.]
-						ifFalse:
-							[objectRepresentation genRemoveSmallIntegerTagsInScratchReg: ReceiverResultReg.
-							 self AddR: Arg0Reg R: ReceiverResultReg.]
-						]}.
+	primDescriptor opcode caseOf: { ([ AddRR ] -> [
+		 argIsConst
+			 ifTrue: [ self AddCq: argInt - ConstZero R: ReceiverResultReg ]
+			 ifFalse: [
+				 objectRepresentation genRemoveSmallIntegerTagsInScratchReg:
+					 ReceiverResultReg.
+				 self AddR: Arg0Reg R: ReceiverResultReg ] ]) }.
 
 	self annotateInstructionForBytecode.
-	 self ssPushRegister: ReceiverResultReg.
-	 ^0
+	self ssPushRegister: ReceiverResultReg.
+	^ 0
 ]
 
 { #category : #'bytecode generators' }
