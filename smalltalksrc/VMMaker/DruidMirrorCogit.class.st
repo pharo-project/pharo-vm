@@ -8,7 +8,10 @@ Class {
 DruidMirrorCogit class >> bytecodeTable [
 
 	^ DruidJIT bytecodeTable collect: [ :entry | "Replace just the bytecode's name"
-		  entry copyReplaceAt: 4 with: [ :e | (e copyReplaceAll: '_' with: '') asSymbol ] ]
+		  entry copyReplaceAt: 4 with: [ :e | | selector |
+			selector := (e copyReplaceAll: '_' with: '') asSymbol.
+			selector last isDigit ifTrue: [ selector := selector allButLast ].
+			selector  ] ]
 ]
 
 { #category : #initialization }
