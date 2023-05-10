@@ -64,5 +64,5 @@ VMTStackFrame >> memory: anObject [
 
 { #category : #accessing }
 VMTStackFrame >> method [
-	^ self interpreter frameMethod: framePointer
+	^ self interpreter iframeMethod: framePointer
 ]

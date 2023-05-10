@@ -19,7 +19,7 @@ VMJITPrimitiveCallingTest >> initStack [
 
 ]
 
-{ #category : #'tests - without tracing' }
+{ #category : #running }
 VMJITPrimitiveCallingTest >> setUp [
 	super setUp.
 

@@ -4875,7 +4875,7 @@ SpurMemoryManager >> fetchLong64: longIndex ofObject: objOop [
 
 { #category : #'heap management' }
 SpurMemoryManager >> fetchPointer: fieldIndex ofFreeChunk: objOop [
-	^self longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+	^self unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 ]
 
 { #category : #'heap management' }
@@ -12281,7 +12281,7 @@ SpurMemoryManager >> storePointerUnchecked: fieldIndex ofObject: objOop withValu
 	<api>
 	self assert: (self isOopForwarded: objOop) not.
 	^self
-		unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: valuePointer
 ]
 

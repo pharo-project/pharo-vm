@@ -128,7 +128,7 @@ VMStackFrame >> machineCodeMethod [
 { #category : #accessing }
 VMStackFrame >> method [
 
-	^ interpreter frameMethod: framePointer
+	^ interpreter iframeMethod: framePointer
 ]
 
 { #category : #accessing }

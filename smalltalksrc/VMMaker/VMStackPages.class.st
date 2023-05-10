@@ -280,6 +280,23 @@ VMStackPages >> isFree: thePage [
 	^thePage baseFP = 0
 ]
 
+{ #category : #'memory access' }
+VMStackPages >> longAt: anInteger [ 
+
+	<doNotGenerate>
+	"Note: Adjusted for Smalltalk's 1-based array indexing."
+	self assert: (anInteger >= minStackAddress and: [anInteger < maxStackAddress]).
+	^objectMemory longAt: anInteger
+]
+
+{ #category : #'memory access' }
+VMStackPages >> longAt: byteAddress put: a32Or64BitValue [
+
+	<doNotGenerate>
+	self assert: (byteAddress >= minStackAddress and: [byteAddress < maxStackAddress]).
+	^objectMemory longAt: byteAddress put: a32Or64BitValue
+]
+
 { #category : #'page access' }
 VMStackPages >> markStackPageLeastMostRecentlyUsed: page [ "<InterpreterStackPage>"
 	"This method is used to move a page to the end of the used pages.
