@@ -17,11 +17,11 @@ CogRegisterAllocatingSimStackEntry >> copyLiveRegisterIfSameAs: simStackEntry [
 
 { #category : #'compile abstract instructions' }
 CogRegisterAllocatingSimStackEntry >> ensureSpilledAt: baseOffset from: baseRegister [
-	spilled ifTrue:
-		[type = SSSpill ifTrue:
-			[self assert: ((offset = baseOffset and: [register = baseRegister]) or: [cogit violatesEnsureSpilledSpillAssert]).
-			 liveRegister := NoReg.
-			 ^self]].
+
+	spilled ifTrue: [
+		type = SSSpill ifTrue: [
+			liveRegister := NoReg.
+			^ self ] ].
 	self assert: type ~= SSSpill.
 	cogit traceSpill: self.
 	"N.B. Keep the type of SSConstant spills as SSConstant so that when joins occur
@@ -29,22 +29,22 @@ CogRegisterAllocatingSimStackEntry >> ensureSpilledAt: baseOffset from: baseRegi
 	 can be recovered.  e.g. as in
 		self at: 1 put: (self foo ifTrue: [self bar] ifFalse: [self baz])."
 	type = SSConstant
-		ifTrue:
-			[liveRegister = NoReg
-				ifTrue: [cogit genPushConstant: constant]
-				ifFalse: [cogit PushR: liveRegister]]
-		ifFalse:
-			[type = SSBaseOffset
-				ifTrue:
-					[liveRegister = NoReg
-						ifTrue: 
-							[cogit MoveMw: offset r: register R: TempReg.
-					 		 cogit PushR: TempReg]
-						ifFalse: [cogit PushR: liveRegister]]
-				ifFalse:
-					[self assert: type = SSRegister.
-					 cogit PushR: register].
-			 type := SSSpill].
+		ifTrue: [
+			liveRegister = NoReg
+				ifTrue: [ cogit genPushConstant: constant ]
+				ifFalse: [ cogit PushR: liveRegister ] ]
+		ifFalse: [
+			type = SSBaseOffset
+				ifTrue: [
+					liveRegister = NoReg
+						ifTrue: [
+							cogit MoveMw: offset r: register R: TempReg.
+							cogit PushR: TempReg ]
+						ifFalse: [ cogit PushR: liveRegister ] ]
+				ifFalse: [
+					self assert: type = SSRegister.
+					cogit PushR: register ].
+			type := SSSpill ].
 	liveRegister := NoReg.
 	spilled := true.
 	offset := baseOffset.

@@ -10,6 +10,11 @@ Class {
 	#category : #'VMMaker-JIT'
 }
 
+{ #category : #accessing }
+CogObjectRepresentationFor32BitSpur class >> wordSize [
+	^4
+]
+
 { #category : #'sista support' }
 CogObjectRepresentationFor32BitSpur >> allImmediate: immediateMask branchIf: reg instanceOfBehaviors: arrayObj target: targetFixUp [
 	< inline: true>	
@@ -78,14 +83,6 @@ CogObjectRepresentationFor32BitSpur >> branchIf: reg hasNotImmediateTag: classIn
 		 cogit MoveR: reg R: TempReg.
 		 jmpImmediate := self genJumpNotCharacterInScratchReg: TempReg].
 	jmpImmediate jmpTarget: targetFixUp
-]
-
-{ #category : #'in-line cacheing' }
-CogObjectRepresentationFor32BitSpur >> classForInlineCacheTag: inlineCacheTag [
-	"Character gets mapped to zero.  See inlineCacheTagForInstance:."
-	^objectMemory classOrNilAtIndex: (inlineCacheTag = 0
-											ifTrue: [objectMemory characterTag]
-											ifFalse: [inlineCacheTag])
 ]
 
 { #category : #'compile abstract instructions' }
@@ -247,7 +244,7 @@ CogObjectRepresentationFor32BitSpur >> genGetNumBytesOf: srcReg into: destReg [
 	jmp := cogit JumpLess: 0.
 	self genGetOverflowSlotsOf: srcReg into: destReg.
 	jmp jmpTarget: (cogit LogicalShiftLeftCq: objectMemory shiftForWord R: destReg). 
-	self genGetBits: 3 ofFormatByteOf: srcReg into: TempReg.
+	cogit genGetBits: 3 ofFormatByteOf: srcReg into: TempReg.
 	"Now: fmt bitAnd: 3 in TempReg"
 	cogit SubR: TempReg R: destReg.
 	^0
@@ -338,7 +335,7 @@ CogObjectRepresentationFor32BitSpur >> genGetSizeOf: sourceReg into: destReg for
 	jumpIsContext := cogit JumpZero: 0.
 	cogit PushR: destReg.
 	self genGetClassObjectOfClassIndex: formatReg into: destReg scratchReg: scratchReg.
-	self genLoadSlot: InstanceSpecificationIndex sourceReg: destReg destReg: formatReg.
+	cogit genLoadSlot: InstanceSpecificationIndex sourceReg: destReg destReg: formatReg.
 	self genConvertSmallIntegerToIntegerInReg: formatReg.
 	cogit
 		PopR: destReg;
@@ -364,20 +361,6 @@ CogObjectRepresentationFor32BitSpur >> genJumpIsSmallIntegerValue: aRegister scr
 		LogicalShiftLeftCq: 1 R: scratchReg;
 		XorR: aRegister R: scratchReg;
 		JumpGreaterOrEqual: 0
-]
-
-{ #category : #'compile abstract instructions' }
-CogObjectRepresentationFor32BitSpur >> genJumpNotSmallInteger: aRegister [
-	<returnTypeC: #'AbstractInstruction *'>
-	cogit TstCq: 1 R: aRegister.
-	^cogit JumpZero: 0
-]
-
-{ #category : #'compile abstract instructions' }
-CogObjectRepresentationFor32BitSpur >> genJumpNotSmallIntegerInScratchReg: aRegister [
-	<returnTypeC: #'AbstractInstruction *'>
-	cogit AndCq: 1 R: aRegister.
-	^cogit JumpZero: 0
 ]
 
 { #category : #'compile abstract instructions' }
@@ -449,7 +432,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveAtPut [
 		[ self genGetFormatOf: ReceiverResultReg
 			into: (formatReg := SendNumArgsReg)
 			leastSignificantHalfOfBaseHeaderIntoScratch: TempReg.
-		jumpImmutable := self genJumpBaseHeaderImmutable: TempReg ]
+		jumpImmutable := cogit genJumpBaseHeaderImmutable: TempReg ]
 		ifFalse: 
 		[ self genGetFormatOf: ReceiverResultReg
 			into: (formatReg := SendNumArgsReg)
@@ -497,7 +480,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveAtPut [
 	"get # fixed fields in formatReg"
 	cogit PushR: nSlotsOrBytesReg.
 	self genGetClassObjectOfClassIndex: formatReg into: nSlotsOrBytesReg scratchReg: TempReg.
-	self genLoadSlot: InstanceSpecificationIndex sourceReg: nSlotsOrBytesReg destReg: formatReg.
+	cogit genLoadSlot: InstanceSpecificationIndex sourceReg: nSlotsOrBytesReg destReg: formatReg.
 	cogit PopR: nSlotsOrBytesReg.
 	self genConvertSmallIntegerToIntegerInReg: formatReg.
 	cogit AndCq: objectMemory fixedFieldsOfClassFormatMask R: formatReg.
@@ -628,7 +611,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveAtPutSigned: signedVersion [
 		[ self genGetFormatOf: ReceiverResultReg
 			into: (formatReg := SendNumArgsReg)
 			leastSignificantHalfOfBaseHeaderIntoScratch: TempReg.
-		jumpImmutable := self genJumpBaseHeaderImmutable: TempReg ]
+		jumpImmutable := cogit genJumpBaseHeaderImmutable: TempReg ]
 		ifFalse: 
 		[ self genGetFormatOf: ReceiverResultReg
 			into: (formatReg := SendNumArgsReg)
@@ -676,7 +659,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveAtPutSigned: signedVersion [
 	"get # fixed fields in formatReg"
 	cogit PushR: nSlotsOrBytesReg.
 	self genGetClassObjectOfClassIndex: formatReg into: nSlotsOrBytesReg scratchReg: TempReg.
-	self genLoadSlot: InstanceSpecificationIndex sourceReg: nSlotsOrBytesReg destReg: formatReg.
+	cogit genLoadSlot: InstanceSpecificationIndex sourceReg: nSlotsOrBytesReg destReg: formatReg.
 	cogit PopR: nSlotsOrBytesReg.
 	self genConvertSmallIntegerToIntegerInReg: formatReg.
 	cogit AndCq: objectMemory fixedFieldsOfClassFormatMask R: formatReg.
@@ -914,7 +897,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveAtSigned: signedVersion [
 	jumpIsContext := cogit JumpZero: 0.
 	cogit PushR: nSlotsOrBytesReg.
 	self genGetClassObjectOfClassIndex: formatReg into: nSlotsOrBytesReg scratchReg: TempReg.
-	self genLoadSlot: InstanceSpecificationIndex sourceReg: nSlotsOrBytesReg destReg: formatReg.
+	cogit genLoadSlot: InstanceSpecificationIndex sourceReg: nSlotsOrBytesReg destReg: formatReg.
 	cogit PopR: nSlotsOrBytesReg.
 	self genConvertSmallIntegerToIntegerInReg: formatReg.
 	cogit
@@ -1019,7 +1002,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveNew [
 	self genGetHashFieldNonImmOf: ReceiverResultReg into: halfHeaderReg.
 	jumpUnhashed := cogit JumpZero: 0.
 	"get class's format inst var for both inst spec (format field) and num fixed fields"
-	self genLoadSlot: InstanceSpecificationIndex sourceReg: ReceiverResultReg destReg: TempReg.
+	cogit genLoadSlot: InstanceSpecificationIndex sourceReg: ReceiverResultReg destReg: TempReg.
 	self genConvertSmallIntegerToIntegerInReg: TempReg.
 	cogit MoveR: TempReg R: instSpecReg.
 	cogit LogicalShiftRightCq: objectMemory fixedFieldsFieldWidth R: TempReg.
@@ -1131,7 +1114,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveNewWithArg [
 	"get index and fail if not a +ve integer"
 	jumpNElementsNonInt := self genJumpNotSmallInteger: Arg0Reg.
 	"get class's format inst var for inst spec (format field)"
-	self genLoadSlot: InstanceSpecificationIndex sourceReg: ReceiverResultReg destReg: instSpecReg.
+	cogit genLoadSlot: InstanceSpecificationIndex sourceReg: ReceiverResultReg destReg: instSpecReg.
 	cogit LogicalShiftRightCq: objectMemory fixedFieldsFieldWidth + self numSmallIntegerTagBits R: instSpecReg.
 	cogit AndCq: objectMemory formatMask R: instSpecReg.
 	"Add format to classIndex/format half header now"
@@ -1465,7 +1448,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveStringAtPut [
 		[ self genGetFormatOf: ReceiverResultReg
 			into: (formatReg := SendNumArgsReg)
 			leastSignificantHalfOfBaseHeaderIntoScratch: TempReg.
-		jumpImmutable := self genJumpBaseHeaderImmutable: TempReg ]
+		jumpImmutable := cogit genJumpBaseHeaderImmutable: TempReg ]
 		ifFalse: 
 		[ self genGetFormatOf: ReceiverResultReg
 			into: (formatReg := SendNumArgsReg)
@@ -1606,15 +1589,6 @@ CogObjectRepresentationFor32BitSpur >> inlineCacheTagForClass: classOop [
 		ifFalse: [hash]
 ]
 
-{ #category : #'in-line cacheing' }
-CogObjectRepresentationFor32BitSpur >> inlineCacheTagForInstance: oop [
-	"Answer the relevant inline cache tag for an instance.
-	 c.f. getInlineCacheClassTagFrom:into: & inlineCacheTagForClass:"
-	^(objectMemory isImmediate: oop)
-		ifTrue: [oop bitAnd: 1] "SmallInteger => 1, Character => 0"
-		ifFalse: [objectMemory classIndexOf: oop]
-]
-
 { #category : #'primitive generators' }
 CogObjectRepresentationFor32BitSpur >> jumpNotSmallIntegerUnsignedValueInRegister: reg [
 	cogit CmpCq: 16r3FFFFFFF R: reg.
@@ -1639,7 +1613,7 @@ CogObjectRepresentationFor32BitSpur >> markAndTraceCacheTagLiteral: literal in: 
 	<var: #cogMethodOrNil type: #'CogMethod *'>
 	<var: #address type: #usqInt>
 	| objOop |
-	(self couldBeObject: literal) ifFalse:
+	(objectMemory couldBeObject: literal) ifFalse:
 		[^false].
 	self assert: (objectMemory addressCouldBeObj: literal).
 	(objectMemory isForwarded: literal) ifFalse:
@@ -1647,7 +1621,7 @@ CogObjectRepresentationFor32BitSpur >> markAndTraceCacheTagLiteral: literal in: 
 		 ^false].
 	objOop := objectMemory followForwarded: literal.
 	cogit backEnd rewriteInlineCacheTag: objOop at: address.
-	self markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil.
+	cogit markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil.
 	^true
 ]
 
@@ -1669,12 +1643,4 @@ CogObjectRepresentationFor32BitSpur >> numSmallIntegerBits [
 { #category : #'object representation' }
 CogObjectRepresentationFor32BitSpur >> numSmallIntegerTagBits [
 	^1
-]
-
-{ #category : #'debug support' }
-CogObjectRepresentationFor32BitSpur >> validInlineCacheTag: classIndexOrTagPattern [
-	"The two valid tag patterns are 0 (Character) and 1 (SmallInteger)"
-	<var: 'classIndexOrTagPattern' type: #usqInt>
-	^classIndexOrTagPattern <= 1
-	  or: [(objectMemory classAtIndex: classIndexOrTagPattern) notNil]
 ]

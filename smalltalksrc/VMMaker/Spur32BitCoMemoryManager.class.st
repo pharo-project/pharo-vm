@@ -286,14 +286,6 @@ Spur32BitCoMemoryManager >> scavengeThresholdAddress [
 		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #getScavengeThreshold in: self]
 ]
 
-{ #category : #'cog jit support' }
-Spur32BitCoMemoryManager >> smallIntegerTag [
-	"Beware, SmallInteger tags are 1 or 3.  But SmallInteger's identityHash is 1."
-	<api>
-	<cmacro>
-	^1
-]
-
 { #category : #accessing }
 Spur32BitCoMemoryManager >> startOfMemory [
 	"Return the start of object memory.  This is immediately after the native code zone.

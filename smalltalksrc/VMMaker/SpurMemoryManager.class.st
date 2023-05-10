@@ -3420,6 +3420,29 @@ SpurMemoryManager >> checkOopIntegrity: obj named: name index: i [
 	^false
 ]
 
+{ #category : #'debug support' }
+SpurMemoryManager >> checkValidDerivedObjectReference: bodyAddress [
+
+	<api>
+	^(heapMap heapMapAtWord: (self pointerForOop: bodyAddress - self baseHeaderSize)) ~= 0
+]
+
+{ #category : #'debug support' }
+SpurMemoryManager >> checkValidObjectReference: anOop [
+
+	<api>
+	^(self isImmediate: anOop) not
+	   and: [(heapMap heapMapAtWord: (self pointerForOop: anOop)) ~= 0]
+]
+
+{ #category : #'debug support' }
+SpurMemoryManager >> checkValidOopReference: anOop [
+
+	<api>
+	^ (self isImmediate: anOop) or: [
+		  (heapMap heapMapAtWord: (self pointerForOop: anOop)) ~= 0 ]
+]
+
 { #category : #'simulation only' }
 SpurMemoryManager >> checkedIntegerValueOf: intOop [
 	<doNotGenerate>
@@ -4089,6 +4112,15 @@ SpurMemoryManager >> convertToArray [
 	memory:= memory as: Array
 ]
 
+{ #category : #'object testing' }
+SpurMemoryManager >> couldBeObject: literal [
+	<api>
+	^ (self isNonImmediate: literal) and: [
+		  self
+			  oop: literal
+			  isGreaterThanOrEqualTo: self startOfMemory ]
+]
+
 { #category : #'debug support' }
 SpurMemoryManager >> countMarkedAndUnmarkdObjects: printFlags [
 	"print the count of marked and unmarked objects.
@@ -4738,7 +4770,11 @@ SpurMemoryManager >> fetchClassOfNonImm: objOop [
 
 { #category : #'interpreter access' }
 SpurMemoryManager >> fetchClassTagOf: oop [
-	self subclassResponsibility
+
+	<api>
+	^ (self isImmediate: oop)
+		  ifTrue: [ oop bitAnd: self tagMask ]
+		  ifFalse: [ self classIndexOf: oop ]
 ]
 
 { #category : #'interpreter access' }

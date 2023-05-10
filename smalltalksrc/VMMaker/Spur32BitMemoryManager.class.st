@@ -263,15 +263,6 @@ Spur32BitMemoryManager >> defaultEdenBytes [
 		 and: [self isIntegerValue: (coInterpreter signed64BitValueOf: o)]]) ifTrue: [l := l + 1]]. l"
 ]
 
-{ #category : #'interpreter access' }
-Spur32BitMemoryManager >> fetchClassTagOf: oop [
-	<api>
-	| tagBits |
-	^(tagBits := oop bitAnd: self tagMask) ~= 0
-		ifTrue: [(tagBits bitAnd: 1) ~= 0 ifTrue: [1] ifFalse: [tagBits]]
-		ifFalse: [self classIndexOf: oop]
-]
-
 { #category : #'object access' }
 Spur32BitMemoryManager >> fetchLong32: fieldIndex ofFloatObject: oop [
 	"index by word size, and return a pointer as long as the word size"
@@ -939,13 +930,6 @@ Spur32BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 				setClassIndexOf: freeChunk to: self wordSizeClassIndexPun;
 				setFormatOf: freeChunk to: self firstLongFormat].
 	^delta
-]
-
-{ #category : #'cog jit support' }
-Spur32BitMemoryManager >> smallIntegerTag [
-	"Beware, SmallInteger tags are 1 or 3.  But SmallInteger's identityHash is 1."
-	<cmacro>
-	^1
 ]
 
 { #category : #allocation }

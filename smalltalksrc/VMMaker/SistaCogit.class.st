@@ -50,7 +50,10 @@ Class {
 		'initialCounterValue',
 		'ceTrapTrampoline',
 		'branchReachedOnlyForCounterTrip',
-		'counters'
+		'counters',
+		'objectRepresentation',
+		'ceCannotResumeTrampoline',
+		'ceSendMustBeBooleanAddFalseTrampoline'
 	],
 	#classVars : [
 		'CounterBytes',
@@ -1357,8 +1360,8 @@ SistaCogit >> genForwardersInlinedIdenticalOrNotIf: orNot [
 	"If branching the stack must be flushed for the merge"
 	self ssFlushTo: simStackPtr - 2.
 	
-	unforwardArg ifTrue: [ objectRepresentation genEnsureOopInRegNotForwarded: argReg scratchReg: TempReg ].
-	unforwardRcvr ifTrue: [ objectRepresentation genEnsureOopInRegNotForwarded: rcvrReg scratchReg: TempReg ].
+	unforwardArg ifTrue: [ self genEnsureOopInRegNotForwarded: argReg scratchReg: TempReg ].
+	unforwardRcvr ifTrue: [ self genEnsureOopInRegNotForwarded: rcvrReg scratchReg: TempReg ].
 	
 	regMask := argReg = NoReg
 					ifTrue: [self registerMaskFor: rcvrReg]
@@ -1427,7 +1430,7 @@ SistaCogit >> genJumpBinaryInlinePrimitive: primIndex [
 		"7017	jumpIfReadOnly:
 		 Not a forwarder, literal which is a Smi"
 		[17]	->	[self cppIf: #IMMUTABILITY
-						ifTrue: [(objectRepresentation genJumpImmutable: testReg scratchReg: TempReg) jmpTarget: (self ensureFixupAt: target)]
+						ifTrue: [(self genJumpImmutable: testReg scratchReg: TempReg) jmpTarget: (self ensureFixupAt: target)]
 						ifFalse: [0"Do nothing - fall through"].
 					^0].
 		"7018	jumpIfYoung:
@@ -1696,7 +1699,7 @@ SistaCogit >> genMustBeBooleanTrampolineFor: boolean called: trampolineName [
 	self MoveMw: FoxMFReceiver r: FPReg R: ReceiverResultReg.
 	self RetN: 0.
 	"If the objectRepresentation does want true & false to be mobile then we need to record these addresses."
-	self assert: (objectRepresentation shouldAnnotateObjectReference: boolean) not.
+	self assert: (self shouldAnnotateObjectReference: boolean) not.
 	jumpMBB jmpTarget: (self AddCq: boolean R: TempReg).
 	^self genTrampolineFor: #ceSendMustBeBoolean:
 		called: trampolineName
@@ -2000,10 +2003,10 @@ SistaCogit >> genSpecialSelectorComparison [
 			[self marshallSendArguments: 1].
 	jumpNotSmallInts := (rcvrIsInt and: [argIsIntConst]) ifFalse:
 							[argIsIntConst
-								ifTrue: [objectRepresentation genJumpNotSmallInteger: ReceiverResultReg]
+								ifTrue: [self genJumpNotSmallInteger: ReceiverResultReg]
 								ifFalse:
 									[rcvrIsInt
-										ifTrue: [objectRepresentation genJumpNotSmallInteger: Arg0Reg]
+										ifTrue: [self genJumpNotSmallInteger: Arg0Reg]
 										ifFalse: [objectRepresentation genJumpNotSmallIntegersIn: ReceiverResultReg and: Arg0Reg scratch: TempReg]]].
 
 	counterReg := self allocateRegNotConflictingWith: (self registerMaskFor: ReceiverResultReg and: Arg0Reg).
@@ -2308,7 +2311,7 @@ SistaCogit >> genUnaryUnforwardInlinePrimitive [
 	| topReg |
 	topReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
 	self ssTop moveToReg: topReg.
-	objectRepresentation genEnsureOopInRegNotForwarded: topReg scratchReg: TempReg.
+	self genEnsureOopInRegNotForwarded: topReg scratchReg: TempReg.
 	self ssPop: 1.
 	^self ssPushRegister: topReg
 ]
@@ -2320,7 +2323,7 @@ SistaCogit >> genUnaryUnforwardNonImmediateInlinePrimitive [
 	| topReg |
 	topReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
 	self ssTop moveToReg: topReg.
-	objectRepresentation genEnsureObjInRegNotForwarded: topReg scratchReg: TempReg.
+	self genEnsureObjInRegNotForwarded: topReg scratchReg: TempReg.
 	self ssPop: 1.
 	^self ssPushRegister: topReg
 ]
@@ -2342,7 +2345,8 @@ SistaCogit >> genUnoptimizedSpecialSelectorComparison [
 ]
 
 { #category : #initialization }
-SistaCogit >> generateSistaRuntime [
+SistaCogit >> generateRunTimeTrampolines [
+	super generateRunTimeTrampolines.
 	"Trap sends Sista trap message to context with top of stack, so we don't need any arguments..."
 	ceTrapTrampoline := self genTrampolineFor: #ceSistaTrap called: 'ceSistaTrapTrampoline'
 ]
