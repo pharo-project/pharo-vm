@@ -4372,7 +4372,7 @@ StackInterpreter >> cloneOSErrorObj: errObj numSlots: numSlots [
 	| clone |
 	clone := objectMemory
 		         eeInstantiateSmallClass:
-		         (objectMemory classIndexOf: errObj)
+		         (objectMemory fetchClassOfNonImm: errObj)
 		         numSlots: numSlots.
 	0 to: numSlots - 1 do: [ :i |
 		objectMemory
