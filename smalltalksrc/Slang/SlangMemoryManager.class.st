@@ -175,7 +175,7 @@ SlangMemoryManager >> isValidAddress: address [
 { #category : #'memory-access' }
 SlangMemoryManager >> long32At: address [
 	
-	^ self readSignedIntegerAt: address size: 4
+	^ self readUnsignedIntegerAt: address size: 4
 ]
 
 { #category : #'memory-access' }
