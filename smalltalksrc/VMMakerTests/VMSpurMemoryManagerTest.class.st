@@ -108,7 +108,7 @@ VMSpurMemoryManagerTest >> createEphemeronClass [
 	memory 
 		storePointer: "InstanceSpecificationIndex" 2
 		ofObject: ourEphemeronClass
-		withValue: (memory integerObjectOf: Ephemeron format).
+		withValue: (memory integerObjectOf: FinalizationRegistryEntry format).
 	memory ensureBehaviorHash: ourEphemeronClass.
 ]
 

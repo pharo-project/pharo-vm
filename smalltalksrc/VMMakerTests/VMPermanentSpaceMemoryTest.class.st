@@ -178,6 +178,7 @@ VMPermanentSpaceMemoryTest >> testMovingOldObjectToPermSpaceIsCorrectlyForwarded
 	self assert: (memory isForwarded: (memory fetchPointer: 0 ofObject: rootObject)).
 
 	memory fullGC.
+	rootObject := self keptObjectInVMVariable1.
 	
 	self deny: (memory isForwarded: (memory fetchPointer: 0 ofObject: rootObject)).
 	self assert: (memory fetchPointer: 0 ofObject: rootObject) equals: permanentObject.
