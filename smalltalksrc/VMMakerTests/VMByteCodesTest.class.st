@@ -69,10 +69,8 @@ VMByteCodesTest >> firstStoreAndPopTemporaryVariableBytecode [
 
 { #category : #'helper-interpret' }
 VMByteCodesTest >> interpret: aBlock [
-	interpreter internalizeIPandSP.
-	aBlock value.
-	interpreter externalizeIPandSP.
 
+	aBlock value
 ]
 
 { #category : #'tests-simd' }
@@ -596,7 +594,7 @@ VMByteCodesTest >> testReturnsMarriedFrameWidowsContext [
 	topFrameContext := interpreter stackTop.
 	"The interpreter does not update the pages, they are updated on demand. 
 	Before checking a frame isWindowed we have to synchronize the interpreter variables with the stackPages"
-	interpreter externalWriteBackHeadFramePointers.
+	interpreter writeBackHeadFramePointers.
 	self assert: (interpreter isWidowedContext: topFrameContext)
 ]
 

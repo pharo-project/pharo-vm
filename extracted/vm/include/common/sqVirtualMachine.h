@@ -247,19 +247,6 @@ typedef struct VirtualMachine {
 #if VM_PROXY_MINOR > 7
   /* New methods for proxy version 1.8 */
 
-  /* callbackEnter: Re-enter the interpreter loop for a callback.
-     Arguments:
-       callbackID: Pointer to a location receiving the callback ID
-                   used in callbackLeave
-     Returns: True if successful, false otherwise */
-  sqInt (*callbackEnter)(sqInt *callbackID);
-
-  /* callbackLeave: Leave the interpreter from a previous callback
-     Arguments:
-       callbackID: The ID of the callback received from callbackEnter()
-     Returns: True if succcessful, false otherwise. */
-  sqInt (*callbackLeave)(sqInt  callbackID);
-
   /* addGCRoot: Add a variable location to the garbage collector.
      The contents of the variable location will be updated accordingly.
      Arguments:

@@ -191,15 +191,6 @@ void waitOnExternalSemaphoreIndex(sqInt semaphoreIndex);
 
 
 /* Proxy declarations for v1.8 */
-#if NewspeakVM
-static sqInt
-callbackEnter(sqInt *callbackID) { return 0; }
-static sqInt
-callbackLeave(sqInt callbackID) { return 0; }
-#else
-sqInt callbackEnter(sqInt *callbackID);
-sqInt callbackLeave(sqInt  callbackID);
-#endif
 sqInt addGCRoot(sqInt *varLoc);
 sqInt removeGCRoot(sqInt *varLoc);
 
@@ -431,8 +422,6 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 #endif
 
 #if VM_PROXY_MINOR > 7
-	VM->callbackEnter = callbackEnter;
-	VM->callbackLeave = callbackLeave;
 	VM->addGCRoot = addGCRoot;
 	VM->removeGCRoot = removeGCRoot;
 #endif

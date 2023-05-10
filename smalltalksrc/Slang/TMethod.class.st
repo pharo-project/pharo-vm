@@ -3158,8 +3158,6 @@ TMethod >> tryToInlineMethodStatementsIn: aCodeGen statementListsInto: aBlock [
 	stmtLists do: [ :stmtList | 
 		newStatements := OrderedCollection new: stmtList statements size.
 		stmtList statements do: [ :stmt | 
-			1 haltIf: [ 
-				stmt isSend and: [ stmt selector = #initStackPagesAndInterpret ] ].
 			(self
 				 inlineCodeOrNilForStatement: stmt
 				 returningNodes: returningNodes
