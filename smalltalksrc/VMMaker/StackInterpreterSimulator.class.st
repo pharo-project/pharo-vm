@@ -1022,12 +1022,6 @@ StackInterpreterSimulator >> markContextAsDead: oop [
 	^super markContextAsDead: oop
 ]
 
-{ #category : #'spur bootstrap' }
-StackInterpreterSimulator >> messageSelector: s [
-	"For e.g. SpurBootstrap"
-	messageSelector := s
-]
-
 { #category : #'simulation only' }
 StackInterpreterSimulator >> methodForContext: aContextOop [
 	self assert: (objectMemory isContext: aContextOop).
