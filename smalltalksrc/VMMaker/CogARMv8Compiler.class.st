@@ -1187,8 +1187,8 @@ CogARMv8Compiler >> computeMaximumSize [
 										ifTrue: [:u :i | 4]
 										ifFalse: [self notYetImplemented. self literalLoadInstructionBytes + 4]]. 
 		[MoveMbrR]			-> [^self is9BitValue: (operands at: 0)
-										ifTrue: [:value | 8 "2 instrutions" ]
-										ifFalse: [ self literalLoadInstructionBytes + 4 ]].
+										ifTrue: [:value | 8 ]
+										ifFalse: [ 8 ]].
 
 		[MoveRM8r]				-> [^self is12BitValue: (operands at: 1)
 										ifTrue: [:u :i | 4]
