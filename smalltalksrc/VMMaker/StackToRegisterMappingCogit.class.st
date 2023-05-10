@@ -1981,6 +1981,12 @@ StackToRegisterMappingCogit >> methodFoundInvalidPostScan [
 	^super methodFoundInvalidPostScan
 ]
 
+{ #category : #accessing }
+StackToRegisterMappingCogit >> methodOrBlockNumTemps [
+
+	^ methodOrBlockNumTemps
+]
+
 { #category : #'compile abstract instructions' }
 StackToRegisterMappingCogit >> needsFrameIfExtBGT2: stackDelta [
 	^extB < 0 or: [extB > 2]
@@ -2001,7 +2007,9 @@ StackToRegisterMappingCogit >> needsFrameIfFollowsSend: stackDelta [
 
 { #category : #'compile abstract instructions' }
 StackToRegisterMappingCogit >> needsFrameIfMod16GENumArgs: stackDelta [
-	^byte0 \\ 16 >= methodOrBlockNumArgs
+	"We need a frame if it is accessing to a temporal variable (not an argument)"
+
+	^ byte0 \\ 16 >= methodOrBlockNumArgs
 ]
 
 { #category : #'compile abstract instructions' }
@@ -2511,9 +2519,42 @@ StackToRegisterMappingCogit >> simStackSlots [
 ]
 
 { #category : #'simulation stack' }
+
 StackToRegisterMappingCogit >> slotOffsetOfInstVarIndex: index [
 	
 	self subclassResponsibility
+]
+
+StackToRegisterMappingCogit >> simStackTempAt: tempIndex [
+	<inline: true>
+	
+	| index |
+	index := tempIndex + 1 "Receiver".
+	^self simStackAt: index
+]
+
+{ #category : #testing }
+StackToRegisterMappingCogit >> sistaNeedsStoreCheck [
+	<inline: true>
+	"The store check can be ignored if the value assigned doesn't need it (immediate, etc)
+	In addition, the extB low bit is marked by the optimizer if the store check is not required"
+	^ self ssTopNeedsStoreCheck and: [ self extBSpecifiesStoreCheck ]
+]
+
+{ #category : #'span functions' }
+StackToRegisterMappingCogit >> sistaV1: descriptor Num: pc Push: nExts Nils: aMethodObj [
+	<var: #descriptor type: #'BytecodeDescriptor *'>
+	<inline: true>
+	^descriptor generator == #genPushConstantNilBytecode
+		ifTrue: [1]
+		ifFalse: [0]
+]
+
+{ #category : #'span functions' }
+StackToRegisterMappingCogit >> sistaV1PushNilSize: aMethodObj numInitialNils: numInitialNils [
+	"230		11100110	iiiiiiii		PushNClosureTemps iiiiiiii"
+	<inline: true>
+	^numInitialNils
 ]
 
 { #category : #'simulation stack' }

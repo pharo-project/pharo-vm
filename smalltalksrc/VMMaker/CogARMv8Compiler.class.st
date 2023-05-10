@@ -1193,8 +1193,8 @@ CogARMv8Compiler >> computeMaximumSize [
 										ifTrue: [:u :i | 4]
 										ifFalse: [self notYetImplemented. self literalLoadInstructionBytes + 4]]. 
 		[MoveMbrR]			-> [^self is9BitValue: (operands at: 0)
-										ifTrue: [:value | 8 "2 instrutions" ]
-										ifFalse: [ self literalLoadInstructionBytes + 4 ]].
+										ifTrue: [:value | 4 ]
+										ifFalse: [ 8 ]].
 
 		[MoveRM8r]				-> [^self is12BitValue: (operands at: 1)
 										ifTrue: [:u :i | 4]
@@ -2323,19 +2323,18 @@ CogARMv8Compiler >> concretizeMoveM16rR [
 	baseRegister := operands at: 1.
 	destReg := operands at: 2.
 
-	(offset >= 0 and: [ (offset / 2 bitAnd: 16rFFF) = (offset / 2)]) 
-		ifTrue: [ self
-				machineCodeAt: 0
-				put:
-					(self
-						ldrhBaseRegister: baseRegister
-						offsetDividedBy2: offset / 2
-						destinationRegister: destReg).
-			^ machineCodeSize := 4  ].
-	
+	"If the offset is divisible of 2 and fits in 12 bits, then we can encode it as a load base + offsetInHalfWords, where offsetInHalfWords is offsetInHalfWords / 2"
+	(offset >= 0 and: [
+		 offset \\ 2 = 0 and: [ (offset / 2 bitAnd: 16rFFF) = (offset / 2) ] ])
+		ifTrue: [
+			self machineCodeAt: 0 put: (self
+					 ldrhBaseRegister: baseRegister
+					 offsetDividedBy2: offset / 2
+					 destinationRegister: destReg).
+			^ machineCodeSize := 4 ].
+
 	self notYetImplemented.
-	
-	^0
+	^ 0
 ]
 
 { #category : #'generate machine code - concretize' }
@@ -4752,11 +4751,15 @@ CogARMv8Compiler >> ldrSize: is64Bits baseRegister: baseReg unsignedOffset: imme
 	
 	LDR <Xt>, [<Xn|SP>{, #<pimm>}]"
 	
+	| offsetUnit |
 	self assert: immediate12bitValue >= 0.
+	
+	"the offsets are expressed as multiples of a word, depending on how many are we loading"
+	offsetUnit := (is64Bits = 1 ifTrue:[ 8 ] ifFalse: [4]).
 	^ 1 << 31
 		bitOr: ((is64Bits bitAnd: 1) << 30
 		bitOr: (2r11100101 << 22
-		bitOr: ((immediate12bitValue / 8 bitAnd: 2r111111111111) << 10
+		bitOr: ((immediate12bitValue / offsetUnit bitAnd: 2r111111111111) << 10
 		bitOr:((baseReg bitAnd: 2r11111) << 5
 		bitOr: (destinationRegister bitAnd: 2r11111)))))
 ]
