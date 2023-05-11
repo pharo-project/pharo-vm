@@ -3433,6 +3433,7 @@ StackToRegisterMappingCogit >> initializeFixup: fixup [
 	<var: #fixup type: #'BytecodeFixup *'>
 	<inline: true>
 	fixup
+		simStackPtr: simStackPtr;
 		becomeMergeFixup;
 		setIsBackwardBranchFixup
 ]
@@ -4015,7 +4016,7 @@ StackToRegisterMappingCogit >> profilingDataFor: cogMethod into: arrayObj [
 	introspectionDataIndex := counterIndex := 0.
 	introspectionData := arrayObj.
 	errCode := self
-		           mapFor: (self cCoerceSimple: cogMethod to: #'CogBlockMethod *')
+		           mapFor: (self cCoerceSimple: cogMethod to: #'CogMethod *')
 		           bcpc: (coInterpreter startPCOfMethod: cogMethod methodObject)
 		           performUntil: #profilingDataFor:Annotation:Mcpc:Bcpc:Method:
 		           arg: cogMethod asVoidPointer.

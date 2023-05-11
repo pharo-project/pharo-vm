@@ -108,7 +108,7 @@ VMSpurMemoryManagerTest >> createEphemeronClass [
 	memory 
 		storePointer: "InstanceSpecificationIndex" 2
 		ofObject: ourEphemeronClass
-		withValue: (memory integerObjectOf: Ephemeron format).
+		withValue: (memory integerObjectOf: FinalizationRegistryEntry format).
 	memory ensureBehaviorHash: ourEphemeronClass.
 ]
 
@@ -774,6 +774,30 @@ VMSpurMemoryManagerTest >> setMethodClassIntoClassTable [
 		storePointer: 16 "not necessarily ok, this is not enforced by the VM"
 		ofObject: memory classTableFirstPage
 		withValue: aClass
+]
+
+{ #category : #tests }
+VMSpurMemoryManagerTest >> setSmallIntegerClassIntoClassTable [
+
+	| class |
+	"install the class in both 1 and 3 index of class table
+	see SpurMemoryManager >> fetchClassOf: for more informations"
+	class := self
+		newClassInOldSpaceWithSlots: 0
+		instSpec: memory forwardedFormat.
+	memory setHashBitsOf: class to: memory smallIntegerTag.
+
+	memory
+		storePointer: memory smallIntegerTag
+		ofObject: memory classTableFirstPage
+		withValue: class.
+	
+	memory
+		storePointer: 3
+		ofObject: memory classTableFirstPage
+		withValue: class.
+	^class
+	
 ]
 
 { #category : #running }

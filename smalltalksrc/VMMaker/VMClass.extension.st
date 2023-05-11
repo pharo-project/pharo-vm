@@ -39,9 +39,6 @@ VMClass class >> initializeMiscConstants [
 	FEATURE_THREADED_FFI := InitializationOptions
 		                        at: #FEATURE_THREADED_FFI
 		                        ifAbsentPut: [ false ].
-	FEATURE_MESSAGE_COUNT := InitializationOptions
-		                         at: #FEATURE_MESSAGE_COUNT
-		                         ifAbsentPut: [ false ].
 
 	SistaVM := InitializationOptions at: #SistaVM ifAbsentPut: [ false ].
 	TempVectReadBarrier := InitializationOptions

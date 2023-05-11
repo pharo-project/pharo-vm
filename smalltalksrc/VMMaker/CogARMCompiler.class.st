@@ -654,7 +654,7 @@ CogARMCompiler >> computeMaximumSize [
 		[MoveRMwr]			-> [self is12BitValue: (operands at: 1)
 										ifTrue: [:u :i| ^ 4]
 										ifFalse: [^ self literalLoadInstructionBytes + 4]].
-		[MoveRdM64r]			-> [self literalLoadInstructionBytes + 4]. 
+		[MoveRdM64r]			-> [^ 4]. 
 		[MoveMbrR]				-> [self is12BitValue: (operands at: 0)
 										ifTrue: [:u :i| ^ 4]
 										ifFalse: [^ self literalLoadInstructionBytes + 4]].

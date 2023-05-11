@@ -4455,19 +4455,19 @@ SpurMemoryManager >> eeInstantiateSmallClass: classObj numSlots: numSlots [
 ]
 
 { #category : #instantiation }
-SpurMemoryManager >> eeInstantiateSmallClassIndex: knownClassIndex format: objFormat numSlots: numSlots [
+SpurMemoryManager >> eeInstantiateSmallClassIndex: classIndex format: objFormat numSlots: numSlots [
 	"Instantiate a small instance of a compact class.  ee stands for execution engine and
 	 implies that this allocation will *NOT* cause a GC.  small implies the object will have
 	 less than 255 slots. N.B. the instantiated object IS NOT FILLED and must be completed
 	 before returning it to Smalltalk. Since this call is used in routines that do just that we
 	 are safe.  Break this rule and die in GC.  Result is guaranteed to be young."
 	<inline: true>
-	self assert: (numSlots >= 0 and: [knownClassIndex ~= 0 and: [(self knownClassAtIndex: knownClassIndex) ~= nilObj]]).
+	self assert: (numSlots >= 0 and: [classIndex ~= 0 and: [(self classAtIndex: classIndex) ~= nilObj]]).
 	self assert: (objFormat < self firstByteFormat
 					ifTrue: [objFormat]
 					ifFalse: [objFormat bitAnd: self byteFormatMask])
-				= (self instSpecOfClass: (self knownClassAtIndex: knownClassIndex)).
-	^self allocateSmallNewSpaceSlots: numSlots format: objFormat classIndex: knownClassIndex
+				= (self instSpecOfClass: (self classAtIndex: classIndex)).
+	^self allocateSmallNewSpaceSlots: numSlots format: objFormat classIndex: classIndex
 ]
 
 { #category : #'debug support' }
@@ -4875,7 +4875,7 @@ SpurMemoryManager >> fetchLong64: longIndex ofObject: objOop [
 
 { #category : #'heap management' }
 SpurMemoryManager >> fetchPointer: fieldIndex ofFreeChunk: objOop [
-	^self longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+	^self unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 ]
 
 { #category : #'heap management' }
@@ -12281,7 +12281,7 @@ SpurMemoryManager >> storePointerUnchecked: fieldIndex ofObject: objOop withValu
 	<api>
 	self assert: (self isOopForwarded: objOop) not.
 	^self
-		unsignedLongAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
+		longAt: objOop + self baseHeaderSize + (fieldIndex << self shiftForWord)
 		put: valuePointer
 ]
 
@@ -12449,7 +12449,7 @@ SpurMemoryManager >> tenuringThreshold [
 	 accessed as a proportion of pastSpace from 0 to 1.   In the Squeak image the tenuring
 	 threshold is an object count. Marry the two notions by multiplying the proportion by
 	 the size of pastSpace and dividing by the average object size, as derived from observation."
-	^(scavenger scavengerTenuringThreshold * scavenger pastSpaceBytes // self averageObjectSizeInBytes) asInteger
+	^(scavenger scavengerTenuringProportion * scavenger pastSpaceBytes // self averageObjectSizeInBytes) asInteger
 ]
 
 { #category : #accessing }
@@ -12457,7 +12457,7 @@ SpurMemoryManager >> tenuringThreshold: threshold [
 	"c.f. tenuringThreshold"
 	threshold < 0 ifTrue:
 		[^PrimErrBadArgument].
-	scavenger scavengerTenuringThreshold:
+	scavenger scavengerTenuringProportionToKeepInPastSpace:
 		(threshold * self averageObjectSizeInBytes) asFloat
 		/ scavenger pastSpaceBytes asFloat.
 	^0
