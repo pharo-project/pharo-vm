@@ -3433,6 +3433,7 @@ StackToRegisterMappingCogit >> initializeFixup: fixup [
 	<var: #fixup type: #'BytecodeFixup *'>
 	<inline: true>
 	fixup
+		simStackPtr: simStackPtr;
 		becomeMergeFixup;
 		setIsBackwardBranchFixup
 ]

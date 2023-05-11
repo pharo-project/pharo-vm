@@ -4367,33 +4367,34 @@ StackInterpreter >> cloneOSErrorObj: errObj numSlots: numSlots [
 	"If errObj is a pointer object with at least two slots, then answer a clone
 	  of the error object with the second slot set to the value of osErrorCode,
 	  and if an PrimErrFFIException, then the third slow with the exceptionPC."
-	| clone |
+
 	<inline: true>
+	| clone |
 	clone := objectMemory
-							eeInstantiateSmallClassIndex: (objectMemory classIndexOf: errObj)
-							format: objectMemory nonIndexablePointerFormat
-							numSlots: numSlots.
-	0 to: numSlots - 1 do:
-		[:i| objectMemory
-				storePointerUnchecked: i
-				ofObject: clone
-				withValue: (objectMemory fetchPointer: i ofObject: errObj)].
-	(numSlots > 2
-	 and: [primFailCode = PrimErrFFIException])
-		ifTrue:
-			[objectMemory
+		         eeInstantiateSmallClass:
+		         (objectMemory fetchClassOfNonImm: errObj)
+		         numSlots: numSlots.
+	0 to: numSlots - 1 do: [ :i |
+		objectMemory
+			storePointerUnchecked: i
+			ofObject: clone
+			withValue: (objectMemory fetchPointer: i ofObject: errObj) ].
+	(numSlots > 2 and: [ primFailCode = PrimErrFFIException ])
+		ifTrue: [
+			objectMemory
 				storePointerUnchecked: 1
-					ofObject: clone
-						withValue: (self positive64BitIntegerFor: (self cCoerceSimple: osErrorCode to: #usqLong));
+				ofObject: clone
+				withValue: (self positive64BitIntegerFor:
+							 (self cCoerceSimple: osErrorCode to: #usqLong));
 				storePointerUnchecked: 2
-					ofObject: clone
-						withValue: (self positiveMachineIntegerFor: exceptionPC)]
-		ifFalse:
-			[objectMemory
+				ofObject: clone
+				withValue: (self positiveMachineIntegerFor: exceptionPC) ]
+		ifFalse: [
+			objectMemory
 				storePointerUnchecked: 1
 				ofObject: clone
-				withValue: (self signed64BitIntegerFor: osErrorCode)].
-	^clone
+				withValue: (self signed64BitIntegerFor: osErrorCode) ].
+	^ clone
 ]
 
 { #category : #'as yet unclassified' }
