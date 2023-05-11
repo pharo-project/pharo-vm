@@ -12413,6 +12413,7 @@ StackInterpreter >> printStackReferencesTo: oop [
 { #category : #'debug printing' }
 StackInterpreter >> printStringOf: oop [
 	| fmt len cnt max i |
+	<api>
 	<inline: false>
 	(objectMemory isImmediate: oop) ifTrue:
 		[^self].
