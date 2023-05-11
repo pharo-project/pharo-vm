@@ -90,6 +90,18 @@ SlangMemoryRegion >> originallyRequestedMemory: anObject [
 	originallyRequestedMemory := anObject
 ]
 
+{ #category : #printing }
+SlangMemoryRegion >> printOn: aStream [
+
+	super printOn: aStream.
+
+	aStream
+		nextPut: $ ;
+		print: start;
+		nextPut: $-;
+		print: (start+originallyRequestedMemory)
+]
+
 { #category : #'bulk-replace' }
 SlangMemoryRegion >> replaceFrom: anInteger to: anInteger2 with: aSlangMemoryRegion [ 
 

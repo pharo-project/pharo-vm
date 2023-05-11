@@ -28,11 +28,7 @@ VMSimpleStackBasedCogitBytecodeTest >> doExtendedStoreStoresVariableType: type i
 	"The object is filled with nils.
 	Push false into the stack and execute the store and pop bytecode."	
 	self pushAddress: memory falseObject.
-	
-	"Set an address as store check trampoline.
-	The bytecode below will jump to it if it is a old -> young store"
-	cogit objectRepresentation ceStoreCheckTrampoline: memory nilObject.
-	
+		
 	"The first byte of the push receiver instance variable bytecode family is used to identify which variable (0-based again)"
 	cogit byte1: type << 6 + index - 1.
 	self compile: [ cogit extendedStoreBytecode ].	
@@ -52,11 +48,7 @@ VMSimpleStackBasedCogitBytecodeTest >> doPopIntoReceiverVariableBytecodeStoresVa
 	"The object is filled with nils.
 	Push false into the stack and execute the store and pop bytecode."	
 	self pushAddress: memory falseObject.
-	
-	"Set an address as store check trampoline.
-	The bytecode below will jump to it if it is a old -> young store"
-	cogit objectRepresentation ceStoreCheckTrampoline: memory nilObject.
-	
+		
 	"The first byte of the push receiver instance variable bytecode family is used to identify which variable (0-based again)"
 	cogit byte0: instanceVariableToWrite - 1.		
 	self compile: [ 
@@ -106,6 +98,13 @@ VMSimpleStackBasedCogitBytecodeTest >> doTestReturnReturnsToCallerWithFrame: isF
 	
 	self compile: compilationBlock.	
 	self runUntilReturn.
+]
+
+{ #category : #'tests - extended store bytecode - store inst var' }
+VMSimpleStackBasedCogitBytecodeTest >> setUp [
+
+	super setUp.
+	self setUpTrampolines
 ]
 
 { #category : #'tests - extended push bytecode - push inst var' }

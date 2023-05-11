@@ -1,6 +1,8 @@
 Class {
 	#name : #Spur64BitMMLESimulator,
 	#superclass : #Spur64BitMemoryManager,
+	#traits : 'TVMSpurMemoryManagerSimulator',
+	#classTraits : 'TVMSpurMemoryManagerSimulator classTrait',
 	#instVars : [
 		'parent',
 		'bootstrapping'
@@ -89,54 +91,9 @@ Spur64BitMMLESimulator >> fetchPointer: fieldIndex ofObject: objOop [
 	^super fetchPointer: fieldIndex ofObject: objOop
 ]
 
-{ #category : #'object format' }
-Spur64BitMMLESimulator >> firstIndexableField: objOop [
-	"NOTE: overridden from SpurMemoryManager to add coercion to CArray, so please duplicate any changes.
-	 There are only two important cases, both for objects with named inst vars, i.e. formats 2,3 & 5.
-	 The first indexable field for formats 2 & 5 is the slot count (by convention, even though that's off the end
-	 of the object).  For 3 we must go to the class."
-	| fmt classFormat |
-	<returnTypeC: #'void *'>
-	fmt := self formatOf: objOop.
-	fmt <= self lastPointerFormat ifTrue: "pointer; may need to delve into the class format word"
-		[(fmt between: self indexablePointersFormat and: self weakArrayFormat) ifTrue:
-			[classFormat := self formatOfClass: (self fetchClassOfNonImm: objOop).
-			 ^self cCoerce: (self pointerForOop: objOop
-												+ self baseHeaderSize
-												+ ((self fixedFieldsOfClassFormat: classFormat) << self shiftForWord))
-					to: #'oop *'].
-		^self cCoerce: (self pointerForOop: objOop + self baseHeaderSize)
-				to: #'oop *'].
-	"All bit objects, and indeed CompiledMethod, though this is a no-no, start at 0"
-	self assert: (fmt >= self sixtyFourBitIndexableFormat and: [fmt < self firstCompiledMethodFormat]).
-	^self
-		cCoerce: (self pointerForOop: objOop + self baseHeaderSize)
-		to: (fmt < self firstByteFormat
-				ifTrue:
-					[fmt = self sixtyFourBitIndexableFormat
-						ifTrue: ["64 bit field objects" #'long long *']
-						ifFalse:
-							[fmt < self firstShortFormat
-								ifTrue: ["32 bit field objects" #'int *']
-								ifFalse: ["16-bit field objects" #'short *']]]
-				ifFalse: ["byte objects (including CompiledMethod" #'char *'])
-]
-
 { #category : #'spur bootstrap' }
 Spur64BitMMLESimulator >> freeLists [
 	^freeLists
-]
-
-{ #category : #'gc - global' }
-Spur64BitMMLESimulator >> globalGarbageCollect [
-	"If we're /not/ a clone, clone the VM and push it over the cliff.
-	 If it survives, destroy the clone and continue.  We should be OK until next time."
-	parent ifNil:
-		[coInterpreter cr; print: 'GC number '; print: statFullGCs; tab; flush.
-		 CloneOnGC ifTrue:
-			[coInterpreter cloneSimulation objectMemory globalGarbageCollect.
-			 Smalltalk garbageCollect]].
-	^super globalGarbageCollect
 ]
 
 { #category : #'growing/shrinking memory' }
@@ -267,14 +224,6 @@ Spur64BitMMLESimulator >> longAt: byteAddress put: a64BitValue [
 	^self long64At: byteAddress put: a64BitValue
 ]
 
-{ #category : #'gc - global' }
-Spur64BitMMLESimulator >> markAndTrace: objOop [
-	"objOop = 16rB26020 ifTrue: [self halt].
-	objOop = 16rB25FD8 ifTrue: [self halt].
-	objOop = 16rB26010 ifTrue: [self halt]."
-	^super markAndTrace: objOop
-]
-
 { #category : #compaction }
 Spur64BitMMLESimulator >> moveARunOfObjectsStartingAt: startAddress upTo: limit [
 	| result |.
@@ -317,13 +266,15 @@ Spur64BitMMLESimulator >> parent: anObject [
 
 { #category : #'debug support' }
 Spur64BitMMLESimulator >> runLeakCheckerFor: gcModes excludeUnmarkedObjs: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid [
-	(coInterpreter displayView isNil
-	 and: [gcModes anyMask: checkForLeaks]) ifTrue:
-		[coInterpreter transcript nextPutAll: 'leak-checking...'; flush].
-	^super
-		runLeakCheckerFor: gcModes
-		excludeUnmarkedObjs: excludeUnmarkedObjs
-		classIndicesShouldBeValid: classIndicesShouldBeValid
+
+	(gcModes anyMask: checkForLeaks) ifTrue: [ 
+		coInterpreter transcript
+			nextPutAll: 'leak-checking...';
+			flush ].
+	^ super
+		  runLeakCheckerFor: gcModes
+		  excludeUnmarkedObjs: excludeUnmarkedObjs
+		  classIndicesShouldBeValid: classIndicesShouldBeValid
 ]
 
 { #category : #'gc - global' }
@@ -337,21 +288,6 @@ Spur64BitMMLESimulator >> scavengingGCTenuringIf: tenuringCriterion [
 			[coInterpreter cloneSimulation objectMemory scavengingGCTenuringIf: tenuringCriterion.
 			 Smalltalk garbageCollect]].
 	^super scavengingGCTenuringIf: tenuringCriterion
-]
-
-{ #category : #'header access' }
-Spur64BitMMLESimulator >> setIsMarkedOf: objOop to: aBoolean [
-	"objOop = 16rB26020 ifTrue: [self halt]."
-	"(#(16r1971D0 16r196EE0 16r197048 16r197148) includes: objOop) ifTrue:
-		[self halt]."
-	super setIsMarkedOf: objOop to: aBoolean.
-	"(aBoolean
-	 and: [(self isContextNonImm: objOop)
-	 and: [(coInterpreter
-			checkIsStillMarriedContext: objOop
-			currentFP: coInterpreter framePointer)
-	 and: [(coInterpreter stackPages stackPageFor: (coInterpreter frameOfMarriedContext: objOop)) trace = 0]]]) ifTrue:
-		[self halt]"
 ]
 
 { #category : #'memory access' }

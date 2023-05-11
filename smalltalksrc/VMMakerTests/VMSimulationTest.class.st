@@ -11,12 +11,14 @@ VMSimulationTest >> testSetUpJITSimulationReadsImage [
 	"Smoke test, check that the VM can open the image file"
 	self timeLimit: 60 seconds.
 	
-	InterpreterStackPages initialize.
+	VMStackPages initialize.
 	options := {
 	    #ObjectMemory -> #Spur64BitCoMemoryManager.
 	    #ISA -> #aarch64.
 	    #BytesPerWord -> 8.
 	    #bytecodeTableInitializer -> #initializeBytecodeTableForSistaV1.
+	    #ImageWriter -> #SpurImageWriter.
+	    #ImageReader -> #SpurImageReader.
 	} asDictionary.
 
 	c := CogVMSimulator newWithOptions: options.
@@ -32,11 +34,13 @@ VMSimulationTest >> testSetUpNonJITSimulationReadsImage [
 	"Smoke test, check that the VM can open the image file"
 	self timeLimit: 60 seconds.
 	
-	InterpreterStackPages initialize.
+	VMStackPages initialize.
 	options := {
 	    #ObjectMemory -> #Spur64BitMemoryManager.
 	    #BytesPerWord -> 8.
 	    #bytecodeTableInitializer -> #initializeBytecodeTableForSistaV1.
+	    #ImageWriter -> #SpurImageWriter.
+	    #ImageReader -> #SpurImageReader.
 	} asDictionary.
 
 	c := StackInterpreterSimulator newWithOptions: options.

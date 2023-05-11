@@ -62,8 +62,6 @@ VMInterpreterTests >> setUp [
 		
 	self initializeOldSpaceForScavenger.
 
-	
-
 
 ]
 

@@ -4,7 +4,6 @@ Extension { #name : #SlangBasicTranslationTest }
 SlangBasicTranslationTest >> setUp [
 
 	super setUp.
-
 	generator := MLVMCCodeGenerator new.
 	generator vmMaker: VMMaker new.
 	generator vmMaker vmmakerConfiguration: VMMakerConfiguration.

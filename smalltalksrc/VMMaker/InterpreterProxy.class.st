@@ -355,11 +355,6 @@ InterpreterProxy >> getDeferDisplayUpdates [
 ]
 
 { #category : #other }
-InterpreterProxy >> getInterruptPending [
-	^self notYetImplementedError
-]
-
-{ #category : #other }
 InterpreterProxy >> getStackPointer [
 	<returnTypeC: #'sqInt *'>
 	^self notYetImplementedError
@@ -380,11 +375,6 @@ InterpreterProxy >> getThisSessionID [
 { #category : #testing }
 InterpreterProxy >> includesBehavior: aClass ThatOf: aSuperclass [
 	^aClass includesBehavior: aSuperclass
-]
-
-{ #category : #other }
-InterpreterProxy >> incrementalGC [
-	Smalltalk garbageCollectMost.
 ]
 
 { #category : #initialize }
@@ -1026,13 +1016,6 @@ InterpreterProxy >> sendInvokeCallbackContext: vmCallbackContext [
 	 The arguments are raw C addresses and are converted to integer objects on the way."
 	<returnTypeC: #sqInt>
 	self notYetImplemented
-]
-
-{ #category : #other }
-InterpreterProxy >> setInterruptCheckChain: aFunction [
-	<returnTypeC: 'void (*setInterruptCheckChain(void (*aFunction)(void)))()'>
-	<var: #aFunction declareC: 'void (*aFunction)()'>
-	^self notYetImplementedError
 ]
 
 { #category : #other }

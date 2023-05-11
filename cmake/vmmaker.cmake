@@ -15,9 +15,6 @@
 # TODOs:
 #  - Make the VMFlavours autodescribed? Slang could output a list of generated files that we could use
 
-#Setting vmmaker directory and image 
-set( VMMAKER_DIR    "${CMAKE_CURRENT_BINARY_DIR_TO_OUT}/build/vmmaker")
-set( VMMAKER_IMAGE  "${VMMAKER_DIR}/image/VMMaker.image")
 
 if(${SIZEOF_VOID_P} STREQUAL "8")
     set(PHARO_CURRENT_GENERATED ${GENERATED_SOURCE_DIR}/generated/64)
@@ -48,12 +45,23 @@ set(PLUGIN_GENERATED_FILES
 
 if(GENERATE_SOURCES)
 
+    #Setting vmmaker directory and image
+    set( VMMAKER_DIR    "${CMAKE_CURRENT_BINARY_DIR_TO_OUT}/build/vmmaker")
+
+    # If we are generating the vmmaker image, set a the image path
+    # Otherwise set it with a default, but parametrizable
+    if(${GENERATE_VMMAKER})
+        set(VMMAKER_IMAGE "${VMMAKER_DIR}/image/VMMaker.image")
+    else()
+        set(VMMAKER_IMAGE "${VMMAKER_DIR}/image/VMMaker.image" CACHE STRING "Path to the VMMaker image used to generate the C files. Default to ${VMMAKER_DIR}/image/VMMaker.image")
+    endif()
+
     #Setting platform specific vmmaker virtual machine, with cached download or override
     if (GENERATE_PHARO_VM) 
         message("Overriding VM used for code generation")  
         set(VMMAKER_VM ${GENERATE_PHARO_VM})
         # add empty target because is required later when installing vmmaker
-        add_custom_target(build_vmmaker_get_vm-build)
+	add_custom_target(vmmaker_vm)
     else()
         #Pick platform specific VM to download
         if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -87,51 +95,54 @@ if(GENERATE_SOURCES)
 
         #Download VM
         ExternalProject_Add(
-            build_vmmaker_get_vm
+            vmmaker_vm
 
             URL ${VM_URL}
             URL_HASH ${VM_URL_HASH}
-            BUILD_COMMAND       echo 
-            UPDATE_COMMAND      echo 
-            CONFIGURE_COMMAND   echo 
-            INSTALL_COMMAND     echo 
+	    BUILD_COMMAND       ""
+	    UPDATE_COMMAND      ""
+	    CONFIGURE_COMMAND   ""
+	    INSTALL_COMMAND     ""
 
             PREFIX "${VMMAKER_DIR}"
             SOURCE_DIR "${VMMAKER_DIR}/vm"
             BUILD_IN_SOURCE True
-
-            STEP_TARGETS   build
             )
     endif()
 
-    #Bootstrap VMMaker.image from downloaded image
-    ExternalProject_Add(
-            build_vmmaker_get_image
+    if(GENERATE_VMMAKER)
+        #Bootstrap VMMaker.image from downloaded plain Pharo image
+        ExternalProject_Add(
+            vmmaker
 
             URL https://files.pharo.org/image/110/Pharo11-SNAPSHOT.build.169.sha.0137cce.arch.64bit.zip
             URL_HASH SHA256=b5428a51fae33dfef5c4be966b7be58cafdee922cfe3621ad01d17a74ddb1a37
             BUILD_COMMAND ${VMMAKER_VM} --headless ${VMMAKER_DIR}/image/Pharo11-SNAPSHOT-64bit-0137cce.image --no-default-preferences save VMMaker
-            COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences --save --quit "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}" "${ICEBERG_DEFAULT_REMOTE}"
-            UPDATE_COMMAND      echo 
-            CONFIGURE_COMMAND   echo
-            INSTALL_COMMAND     echo
+	    COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences --save --quit "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}" "${ICEBERG_DEFAULT_REMOTE}"
+            UPDATE_COMMAND      ""
+            CONFIGURE_COMMAND   ""
+            INSTALL_COMMAND     ""
 
             PREFIX "${VMMAKER_DIR}"
             SOURCE_DIR "${VMMAKER_DIR}/image"
             BUILD_IN_SOURCE True
             WORKING_DIRECTORY "${VMMAKER_DIR}"
 
-            DEPENDS build_vmmaker_get_vm-build
+            DEPENDS vmmaker_vm
             )
 
-    #Custom command that generates the vm source code from VMMaker into "out/build/XXXX/generated" folder
+    else()
+        #Use the given vmimage
+	add_custom_target(vmmaker DEPENDS ${VMMAKER_IMAGE})
+    endif()
+
+    #Custom command that generates the vm source code from VMMaker into the generated folder
     add_custom_command(
         OUTPUT ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES}
-        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\'\"
-        DEPENDS build_vmmaker_get_image
+        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\' imageFormat: \'${IMAGE_FORMAT}\'\"
+        DEPENDS vmmaker ${VMMAKER_IMAGE} ${VMMAKER_VM}
         COMMENT "Generating VM files for flavour: ${FLAVOUR}")
-    
-    add_custom_target(vmmaker DEPENDS build_vmmaker_get_image)
+
     add_custom_target(generate-sources DEPENDS ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES})
 
 endif()

@@ -2039,15 +2039,14 @@ SlangBasicTranslationTest >> testSendAllMask [
 { #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendAnd [
 
-	| translation send |
+	| send |
 
 	send := TSendNode new
 					setSelector: #&
 					receiver: (TConstantNode value: false)
 					arguments: { TConstantNode value: true }.
-	translation := self translate: send.
+	self should: [ self translate: send ] raise: TranslationError.
 
-	self assert: translation equals: '0 && 1'
 ]
 
 { #category : #'tests-builtins' }
@@ -3045,7 +3044,7 @@ SlangBasicTranslationTest >> testSendIfFalseAsArgumentWithNonLeafReceiver [
 		        expression: (TSendNode new
 				         setSelector: #ifFalse:
 				         receiver: (TSendNode new
-						          setSelector: #&
+						          setSelector: #<
 						          receiver: (TVariableNode new setName: 'x')
 						          arguments: { (TVariableNode new setName: 'y') })
 				         arguments: { (TStatementListNode new statements: { 
@@ -3057,7 +3056,7 @@ SlangBasicTranslationTest >> testSendIfFalseAsArgumentWithNonLeafReceiver [
 								           expression: (TConstantNode value: 1)) }) }).
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'y = ((!(x && y))
+	self assert: translation trimBoth equals: 'y = ((!(x < y))
 	 ? ((a = 0), (c = 1))
 	 : 0)'
 ]
@@ -3073,7 +3072,7 @@ SlangBasicTranslationTest >> testSendIfFalseAsArgumentWithReceiverSendNot [
 				         receiver: (TSendNode new
 						          setSelector: #not
 						          receiver: (TSendNode new
-								           setSelector: #&
+								           setSelector: #<
 								           receiver: (TVariableNode new setName: 'x')
 								           arguments: { (TVariableNode new setName: 'y') })
 						          arguments: {  })
@@ -3086,7 +3085,7 @@ SlangBasicTranslationTest >> testSendIfFalseAsArgumentWithReceiverSendNot [
 								           expression: (TConstantNode value: 1)) }) }).
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'y = ((x && y)
+	self assert: translation trimBoth equals: 'y = ((x < y)
 	 ? ((a = 0), (c = 1))
 	 : 0)'
 ]
@@ -3306,7 +3305,7 @@ SlangBasicTranslationTest >> testSendIfFalseWithNonLeafReceiver [
 	send := TSendNode new
 		        setSelector: #ifFalse:
 		        receiver: (TSendNode new
-				         setSelector: #&
+				         setSelector: #>
 				         receiver: (TVariableNode new setName: 'x')
 				         arguments: { (TVariableNode new setName: 'y') })
 		        arguments: { (TStatementListNode new statements: { 
@@ -3318,7 +3317,7 @@ SlangBasicTranslationTest >> testSendIfFalseWithNonLeafReceiver [
 						          expression: (TConstantNode value: 1)) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'if (!(x && y)) {
+	self assert: translation trimBoth equals: 'if (!(x > y)) {
 	a = 0;
 	c = 1;
 }'
@@ -3850,7 +3849,7 @@ SlangBasicTranslationTest >> testSendIfTrueAsArgumentWithNonLeafReceiver [
 		        expression: (TSendNode new
 				         setSelector: #ifTrue:
 				         receiver: (TSendNode new
-						          setSelector: #&
+						          setSelector: #==
 						          receiver: (TVariableNode new setName: 'x')
 						          arguments: { (TVariableNode new setName: 'y') })
 				         arguments: { (TStatementListNode new statements: { 
@@ -3862,7 +3861,7 @@ SlangBasicTranslationTest >> testSendIfTrueAsArgumentWithNonLeafReceiver [
 								           expression: (TConstantNode value: 1)) }) }).
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'y = ((x && y)
+	self assert: translation trimBoth equals: 'y = ((x == y)
 	 ? ((a = 0), (c = 1))
 	 : 0)'
 ]
@@ -4124,7 +4123,7 @@ SlangBasicTranslationTest >> testSendIfTrueWithReceiverBinaryOperation [
 	send := TSendNode new
 		        setSelector: #ifTrue:
 		        receiver: (TSendNode new
-				         setSelector: #&
+				         setSelector: #<
 				         receiver: (TVariableNode new setName: 'a')
 				         arguments: { (TVariableNode new setName: 'b') })
 		        arguments: { (TStatementListNode new statements: { 
@@ -4136,7 +4135,7 @@ SlangBasicTranslationTest >> testSendIfTrueWithReceiverBinaryOperation [
 						          expression: (TConstantNode value: 1)) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'if (a && b) {
+	self assert: translation trimBoth equals: 'if (a < b) {
 	a = 0;
 	c = 1;
 }'
@@ -4649,15 +4648,13 @@ SlangBasicTranslationTest >> testSendNotNil [
 { #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendOr [
 
-	| translation send |
+	| send |
 
 	send := TSendNode new
 					setSelector: #|
 					receiver: (TConstantNode value: 0)
 					arguments: { TConstantNode value: 1 }.
-	translation := self translate: send.
-
-	self assert: translation equals: '0 || 1'
+	self should: [ self translate: send ] raise: TranslationError.
 ]
 
 { #category : #'tests-builtins' }
@@ -5686,7 +5683,7 @@ SlangBasicTranslationTest >> testSendWhileFalseWithOneStatementInReceiverBlock [
 		        setSelector: #whileFalse:
 		        receiver:
 			        (TStatementListNode new statements: { (TSendNode new
-					          setSelector: #&
+					          setSelector: #>
 					          receiver: (TVariableNode new setName: 'a')
 					          arguments: { (TVariableNode new setName: 'b') }) })
 		        arguments: { (TStatementListNode new statements:
@@ -5695,7 +5692,7 @@ SlangBasicTranslationTest >> testSendWhileFalseWithOneStatementInReceiverBlock [
 					          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'while (!(a && b)) {
+	self assert: translation trimBoth equals: 'while (!(a > b)) {
 	var -= 7;
 }'
 ]
@@ -5785,7 +5782,7 @@ SlangBasicTranslationTest >> testSendWhileTrueWithNilAsArgument [
 						          setVariable: variable
 						          expression: expression).
 					         (TSendNode new
-						          setSelector: #&
+						          setSelector: #<
 						          receiver: (TVariableNode new setName: 'a')
 						          arguments: { (TVariableNode new setName: 'b') }) })
 		        arguments: { (TStatementListNode new statements:
@@ -5794,7 +5791,7 @@ SlangBasicTranslationTest >> testSendWhileTrueWithNilAsArgument [
 
 	self assert: translation trimBoth equals: 'do{
 	var -= 7;
-}while(a && b)'
+}while(a < b)'
 ]
 
 { #category : #'tests-builtins' }
@@ -5811,7 +5808,7 @@ SlangBasicTranslationTest >> testSendWhileTrueWithOneStatementInReceiverBlock [
 		        setSelector: #whileTrue:
 		        receiver:
 			        (TStatementListNode new statements: { (TSendNode new
-					          setSelector: #&
+					          setSelector: #>
 					          receiver: (TVariableNode new setName: 'a')
 					          arguments: { (TVariableNode new setName: 'b') }) })
 		        arguments: { (TStatementListNode new statements:
@@ -5820,7 +5817,7 @@ SlangBasicTranslationTest >> testSendWhileTrueWithOneStatementInReceiverBlock [
 					          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'while (a && b) {
+	self assert: translation trimBoth equals: 'while (a > b) {
 	var -= 7;
 }'
 ]

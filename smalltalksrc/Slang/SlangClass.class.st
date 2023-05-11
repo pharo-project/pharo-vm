@@ -170,6 +170,17 @@ SlangClass >> objectMemoryClass [
 ]
 
 { #category : #'translation support' }
+SlangClass >> simulationOnly: aBlock [
+
+	"Evaluate piece of code only during simulation.
+	This should get translated as a NOP"
+	<inline: #always>
+	self
+		cCode: [  ]
+		inSmalltalk: aBlock
+]
+
+{ #category : #'translation support' }
 SlangClass >> sizeof: objectSymbolOrClass [
 	<doNotGenerate>
 	| index |

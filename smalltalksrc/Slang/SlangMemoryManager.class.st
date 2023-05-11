@@ -2,9 +2,9 @@ Class {
 	#name : #SlangMemoryManager,
 	#superclass : #Object,
 	#instVars : [
-		'nextAvailableAddress',
 		'memoryMap',
-		'wordSize'
+		'wordSize',
+		'initialAddress'
 	],
 	#category : #'Slang-Simulation'
 }
@@ -12,7 +12,7 @@ Class {
 { #category : #allocating }
 SlangMemoryManager >> allocate: desiredSize [
 
-	^ self allocate: desiredSize desiredPosition: nextAvailableAddress
+	^ self allocate: desiredSize desiredPosition: initialAddress
 ]
 
 { #category : #allocating }
@@ -21,16 +21,12 @@ SlangMemoryManager >> allocate: desiredSize desiredPosition: desiredPos [
 	| allocatedAddress newMemoryRegion allocatedSize newMemory desiredPosition |
 	"Allocate chunks multiple of 4KB, as they are required by the machine code simulator"
 
-	allocatedSize := (desiredSize / 4096) ceiling * 4096.
+	allocatedSize := self roundUpToPageSize: desiredSize.
+	desiredPosition := self roundUpToPageSize: desiredPos.
 
-	desiredPosition := (desiredPos / 4096) ceiling * 4096.
+	self checkIsRegionAddress: desiredPosition.
 
-	self assert: desiredPosition \\ 4096 = 0.
-
-	allocatedAddress := desiredPosition max: nextAvailableAddress.
-	self assert: allocatedAddress \\ 4096 = 0.
-
-	nextAvailableAddress := desiredPosition + allocatedSize.
+	allocatedAddress := self findHoleBiggerThan: allocatedSize from: desiredPosition.
 
 	"Warrantee that memory regions do not move, for simulation purposes with the FFI"
 	newMemory := ByteArray new: allocatedSize.
@@ -65,6 +61,20 @@ SlangMemoryManager >> copyFrom: start to: end [
 	^ region memory
 		copyFrom: start - region start + 1
 		to: end - region start + 1
+]
+
+{ #category : #allocating }
+SlangMemoryManager >> findHoleBiggerThan: desiredSize from: desiredPosition [
+
+	| foundPosition |
+	self assert: desiredSize >= self pageSize.
+
+	foundPosition := desiredPosition.
+	
+	[ self wholeAt: foundPosition fits: desiredSize  ] 
+		whileFalse: [ foundPosition := foundPosition + desiredSize ].
+		
+	^ foundPosition
 ]
 
 { #category : #'memory-access' }
@@ -137,15 +147,23 @@ SlangMemoryManager >> free: address [
 { #category : #accessing }
 SlangMemoryManager >> initialAddress: anInteger [ 
 	
-	nextAvailableAddress := anInteger
+	initialAddress := anInteger
 ]
 
 { #category : #allocating }
 SlangMemoryManager >> initialize [
 
 	super initialize.
-	nextAvailableAddress := 4*1024.
+	initialAddress := 4*1024.
 	memoryMap := Dictionary new
+]
+
+{ #category : #'memory-access' }
+SlangMemoryManager >> isValidAddress: address [
+
+	"Memory regions are allocated in multiples of 4KB (12 bits).
+	The Memory map indexes memory regions by the high part"
+	^ memoryMap includesKey: address >> 12
 ]
 
 { #category : #'memory-access' }
@@ -182,6 +200,12 @@ SlangMemoryManager >> longAt: address [
 SlangMemoryManager >> longAt: address put: aWordSizedValue [
 	
 	^ self writeSignedInteger: aWordSizedValue at: address size: self wordSize
+]
+
+{ #category : #utils }
+SlangMemoryManager >> pageSize [
+
+	^ 4096
 ]
 
 { #category : #'memory-access' }
@@ -251,9 +275,15 @@ SlangMemoryManager >> regionsDo: aFullBlockClosure [
 { #category : #allocating }
 SlangMemoryManager >> registerNewRegion: newMemoryRegion size: desiredSize address: allocatedAddress [
 
-	allocatedAddress to: allocatedAddress + desiredSize by: 4096 do: [ 
+	allocatedAddress to: (allocatedAddress + desiredSize - 1) by: self pageSize do: [ 
 		:pageAddress | "Index regions by the high bits of the address" 
 		memoryMap at: pageAddress >> 12 put: newMemoryRegion ]
+]
+
+{ #category : #utils }
+SlangMemoryManager >> roundUpToPageSize: desiredSize [
+
+	^ (desiredSize / self pageSize) ceiling * self pageSize
 ]
 
 { #category : #'memory-access' }
@@ -324,6 +354,13 @@ SlangMemoryManager >> unsignedShortAt: anAddress [
 SlangMemoryManager >> unsignedShortAt: anAddress put: aValue [
 	
 	^ self writeUnsignedInteger: aValue at: anAddress size: 2
+]
+
+{ #category : #allocating }
+SlangMemoryManager >> wholeAt: foundPosition fits: desiredSize [
+
+	^ (foundPosition to: (foundPosition + desiredSize) by: self pageSize)
+		allSatisfy: [ :position | self checkIsRegionAddress: position. (memoryMap includesKey: position >> 12) not ]
 ]
 
 { #category : #accessing }

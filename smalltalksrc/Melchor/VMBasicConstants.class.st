@@ -33,8 +33,7 @@ Class {
 		'HashMultiplyConstant',
 		'HashMultiplyMask',
 		'IMMUTABILITY',
-		'MULTIPLEBYTECODESETS',
-		'NewspeakVM',
+		'PRIdSQINT',
 		'PharoVM',
 		'PrimErrBadArgument',
 		'PrimErrBadIndex',
@@ -61,11 +60,11 @@ Class {
 		'PrimErrUnsupported',
 		'PrimErrWritePastObject',
 		'PrimNoErr',
-		'SPURVM',
 		'STACKVM',
 		'SistaVM',
 		'TempVectReadBarrier',
-		'VMBIGENDIAN'
+		'VMBIGENDIAN',
+		'WIN32'
 	],
 	#category : #Melchor
 }
@@ -120,6 +119,8 @@ VMBasicConstants class >> namesDefinedAtCompileTime [
 		UNIX
 		WIN32 _WIN32 _WIN32_WCE
 		WIN64 _WIN64 _WIN64_WCE
+		
+		PRIdSQINT
 		
 		FEATURE_FFI
 		FEATURE_THREADED_FFI

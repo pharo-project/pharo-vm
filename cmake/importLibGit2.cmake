@@ -13,6 +13,7 @@ function(download_git2)
   message(STATUS "Downloading Git2 binary")
   if(WIN)
     add_third_party_dependency("libgit2-1.4.4")
+    add_third_party_dependency("libgit2-1.5.1")
     add_third_party_dependency("libgit2-win-1.0.0")
     add_third_party_dependency("libgit2-0.25.1-fixLibGit")
     add_third_party_dependency("zlib-1.2.11-fixLibGit")
@@ -90,9 +91,8 @@ function(build_git2)
 
 		add_custom_target(libgit2_copy
 			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LibGit2_BINARY_DIR}/libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.dylib
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.dylib
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.4.dylib
+			COMMAND ${CMAKE_COMMAND} -E create_symlink libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.dylib
+			COMMAND ${CMAKE_COMMAND} -E create_symlink libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.dylib
 			COMMENT "Copying Libgit binaries from '${LibGit2_BINARY_DIR}' to '${LIBRARY_OUTPUT_PATH}'" VERBATIM)
 	else()
 		message(FATAL "Aggggh not implemented yet")
