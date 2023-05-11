@@ -23,7 +23,7 @@ VMTHiddenRootTable >> children [
 		oop := memory fetchPointer: index - 1 ofObject: memory hiddenRootsObject.
 		roots add: (VMTHiddenRoot new
 			memory: memory;
-			index: index;
+			index: index - 1;
 			label: 'Class Table Page ', index asString;
 			oop: oop;
 			yourself).
@@ -34,13 +34,6 @@ VMTHiddenRootTable >> children [
 			index: 4096;
 			label: 'Mark Stack';
 			oop: (memory fetchPointer: 4096 ofObject: memory hiddenRootsObject);
-			yourself).
-
-	roots add: (VMTHiddenRoot new
-			memory: memory;
-			index: 4097;
-			label: 'Weakling Stack';
-			oop: (memory fetchPointer: 4097 ofObject: memory hiddenRootsObject);
 			yourself).
 
 	roots add: (VMTHiddenRoot new

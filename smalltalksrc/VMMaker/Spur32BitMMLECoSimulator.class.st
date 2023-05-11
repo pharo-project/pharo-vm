@@ -1,6 +1,8 @@
 Class {
 	#name : #Spur32BitMMLECoSimulator,
 	#superclass : #Spur32BitCoMemoryManager,
+	#traits : 'TVMSpurMemoryManagerSimulator',
+	#classTraits : 'TVMSpurMemoryManagerSimulator classTrait',
 	#instVars : [
 		'parent',
 		'bootstrapping'
@@ -23,7 +25,7 @@ Spur32BitMMLECoSimulator >> bootstrapping: aBoolean [
 Spur32BitMMLECoSimulator >> byteAt: byteAddress [
 	| lowBits long32 |
 	lowBits := byteAddress bitAnd: 3.
-	long32 := memoryManager unsignedLong32At: byteAddress - lowBits.
+	long32 := memoryManager uint32AtPointer: byteAddress - lowBits.
 	^(long32 bitShift: -8 * lowBits) bitAnd: 16rFF
 ]
 
@@ -32,10 +34,10 @@ Spur32BitMMLECoSimulator >> byteAt: byteAddress put: byte [
 	| lowBits long32 longAddress mask value |
 	lowBits := byteAddress bitAnd: 3.
 	longAddress := byteAddress - lowBits.
-	long32 := self long32At: longAddress.
+	long32 := self uint32AtPointer: longAddress.
 	mask := (16rFF bitShift: 8 * lowBits) bitInvert.
 	value := byte bitShift: 8 * lowBits.
-	self long32At: longAddress put: ((long32 bitAnd: mask) bitOr: value).
+	self uint32AtPointer: longAddress put: ((long32 bitAnd: mask) bitOr: value).
 	^byte
 ]
 
@@ -82,8 +84,8 @@ Spur32BitMMLECoSimulator >> endianness [
 
 { #category : #'float primitives' }
 Spur32BitMMLECoSimulator >> fetchFloatAt: floatBitsAddress into: aFloat [
-	aFloat at: 2 put: (self long32At: floatBitsAddress).
-	aFloat at: 1 put: (self long32At: floatBitsAddress+4)
+	aFloat at: 2 put: (self uint32AtPointer: floatBitsAddress).
+	aFloat at: 1 put: (self uint32AtPointer: floatBitsAddress+4)
 ]
 
 { #category : #'object access' }
@@ -92,39 +94,6 @@ Spur32BitMMLECoSimulator >> fetchPointer: fieldIndex ofObject: objOop [
 	self assert: (fieldIndex >= 0 and: [fieldIndex < (self numSlotsOfAny: objOop)
 				or: [fieldIndex = 0 "forwarders"]]).
 	^super fetchPointer: fieldIndex ofObject: objOop
-]
-
-{ #category : #'object format' }
-Spur32BitMMLECoSimulator >> firstIndexableField: objOop [
-	"NOTE: overridden from SpurMemoryManager to add coercion to CArray, so please duplicate any changes.
-	 There are only two important cases, both for objects with named inst vars, i.e. formats 2,3 & 5.
-	 The first indexable field for formats 2 & 5 is the slot count (by convention, even though that's off the end
-	 of the object).  For 3 we must go to the class."
-	| fmt classFormat |
-	<returnTypeC: #'void *'>
-	fmt := self formatOf: objOop.
-	fmt <= self lastPointerFormat ifTrue: "pointer; may need to delve into the class format word"
-		[(fmt between: self indexablePointersFormat and: self weakArrayFormat) ifTrue:
-			[classFormat := self formatOfClass: (self fetchClassOfNonImm: objOop).
-			 ^self cCoerce: (self pointerForOop: objOop
-												+ self baseHeaderSize
-												+ ((self fixedFieldsOfClassFormat: classFormat) << self shiftForWord))
-					to: #'oop *'].
-		^self cCoerce: (self pointerForOop: objOop + self baseHeaderSize)
-				to: #'oop *'].
-	"All bit objects, and indeed CompiledMethod, though this is a no-no, start at 0"
-	self assert: (fmt >= self sixtyFourBitIndexableFormat and: [fmt < self firstCompiledMethodFormat]).
-	^self
-		cCoerce: (self pointerForOop: objOop + self baseHeaderSize)
-		to: (fmt < self firstByteFormat
-				ifTrue:
-					[fmt = self sixtyFourBitIndexableFormat
-						ifTrue: ["64 bit field objects" #'long long *']
-						ifFalse:
-							[fmt < self firstShortFormat
-								ifTrue: ["32 bit field objects" #'int *']
-								ifFalse: ["16-bit field objects" #'short *']]]
-				ifFalse: ["byte objects (including CompiledMethod" #'char *'])
 ]
 
 { #category : #'spur bootstrap' }
@@ -229,8 +198,8 @@ Spur32BitMMLECoSimulator >> long64At: byteAddress [
 	"memory is a Bitmap, a 32-bit indexable array of bits"
 	| hiWord loWord |
 	byteAddress \\ 8 ~= 0 ifTrue: [self unalignedAccessError].
-	loWord := memoryManager unsignedLong32At: byteAddress.
-	hiWord := memoryManager unsignedLong32At: byteAddress + 4.
+	loWord := memoryManager uint32AtPointer: byteAddress.
+	hiWord := memoryManager uint32AtPointer: byteAddress + 4.
 	^hiWord = 0
 		ifTrue: [loWord]
 		ifFalse: [(hiWord bitShift: 32) + loWord]
@@ -248,7 +217,7 @@ Spur32BitMMLECoSimulator >> long64At: byteAddress put: a64BitValue [
 { #category : #'memory access' }
 Spur32BitMMLECoSimulator >> longAt: byteAddress [
 
-	^memoryManager unsignedLong32At: byteAddress
+	^memoryManager long32At: byteAddress
 ]
 
 { #category : #'memory access' }
@@ -259,7 +228,7 @@ Spur32BitMMLECoSimulator >> longAt: byteAddress put: a32BitValue [
 	"((byteAddress between: 16rda8ac and: 16rda8c0)
 	 or: [byteAddress between: 16r8eb98 and: 16r8ebb0]) ifTrue:
 		[self halt]."
-	^ memoryManager unsignedLong32At: byteAddress put: a32BitValue
+	^ memoryManager uint32AtPointer: byteAddress put: a32BitValue
 ]
 
 { #category : #'gc - global' }
@@ -268,15 +237,6 @@ Spur32BitMMLECoSimulator >> markAndTrace: objOop [
 	objOop = 16rB25FD8 ifTrue: [self halt].
 	objOop = 16rB26010 ifTrue: [self halt]."
 	^super markAndTrace: objOop
-]
-
-{ #category : #snapshot }
-Spur32BitMMLECoSimulator >> memoryBaseForImageRead [
-	"Answer the address to read the image into.  Override so that when bootstrapping,
-	 the segmentManager's segments are undisturbed in adjustSegmentSwizzlesBy:"
-	^bootstrapping
-		ifTrue: [0] 
-		ifFalse: [super memoryBaseForImageRead]
 ]
 
 { #category : #initialization }
@@ -312,13 +272,15 @@ Spur32BitMMLECoSimulator >> parent: anObject [
 
 { #category : #'debug support' }
 Spur32BitMMLECoSimulator >> runLeakCheckerFor: gcModes excludeUnmarkedObjs: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid [
-	(coInterpreter displayView isNil
-	 and: [gcModes anyMask: checkForLeaks]) ifTrue:
-		[coInterpreter transcript nextPutAll: 'leak-checking...'; flush].
-	^super
-		runLeakCheckerFor: gcModes
-		excludeUnmarkedObjs: excludeUnmarkedObjs
-		classIndicesShouldBeValid: classIndicesShouldBeValid
+
+	(gcModes anyMask: checkForLeaks) ifTrue: [ 
+		coInterpreter transcript
+			nextPutAll: 'leak-checking...';
+			flush ].
+	^ super
+		  runLeakCheckerFor: gcModes
+		  excludeUnmarkedObjs: excludeUnmarkedObjs
+		  classIndicesShouldBeValid: classIndicesShouldBeValid
 ]
 
 { #category : #'gc - global' }
@@ -332,12 +294,6 @@ Spur32BitMMLECoSimulator >> scavengingGCTenuringIf: tenuringCriterion [
 			[coInterpreter cloneSimulation objectMemory scavengingGCTenuringIf: tenuringCriterion.
 			 Smalltalk garbageCollect]].
 	^super scavengingGCTenuringIf: tenuringCriterion
-]
-
-{ #category : #'free space' }
-Spur32BitMMLECoSimulator >> setFree: o [
-	"o = 16rB34D40 ifTrue: [self halt]."
-	super setFree: o
 ]
 
 { #category : #'header access' }

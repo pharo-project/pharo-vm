@@ -136,39 +136,6 @@ VMFrameBuilder >> framePointer [
 	^ myFramePointer
 ]
 
-{ #category : #inspect }
-VMFrameBuilder >> gtInspectorItemsIn: composite [
-	<gtInspectorPresentationOrder: 1>
-
-	| values |
-	values :={
-		#stack -> stack.
-		#temps -> temps.
-		#receiver -> receiver.
-		#context -> context.
-		#flags ->  flags.
-		#method ->  method.
-		#'caller''s method ip' -> nil.
-		#'callerFP' -> callerFrame.
-"		#arguments -> args."
-		#receiver -> receiver.
-		 }.
-	^ composite fastTable
-		title: 'frame';
-		display: [ values ];
-		column: 'names' evaluated: [ :anAssociation | 
-			(anAssociation value isCollection and: [ anAssociation value isString not])
-			 ifTrue: [ GTObjectPrinter asNonTruncatedTextFrom: anAssociation key -> 
-					(anAssociation value asArray 
-						collect:[ :each | (self adaptAddressToMemoryIfInteger: nil -> each) value ])]
-			ifFalse:[  
-				self adaptAddressToMemoryIfInteger: anAssociation.
-					].
-				GTObjectPrinter asNonTruncatedTextFrom: anAssociation ]
-	
-
-]
-
 { #category : #initialization }
 VMFrameBuilder >> initializeWithInterpreter: anInterpreter andMemory: aMemory andMethodBuilder: aMethodBuilder [
 	memory := aMemory.
@@ -291,7 +258,6 @@ VMFrameBuilder >> pushFlags [
 
 { #category : #building }
 VMFrameBuilder >> pushFrame [
-	interpreter push: context.
 	interpreter push: receiver.
 	
 	temps do: [ :oop |  interpreter push: oop ].
@@ -302,6 +268,7 @@ VMFrameBuilder >> pushYourself [
 	self setVariablesFromCompiledMethod.
 
 	interpreter push: method.
+	interpreter push: context.
 	self pushFlags.
 	self pushFrame.
 	self pushCurrentFramesStack.

@@ -29,25 +29,36 @@ Class {
 		'argument2',
 		'argument1'
 	],
+	#pools : [
+		'VMStackFrameOffsets'
+	],
 	#category : #'VMMakerTests-InterpreterTests'
 }
 
 { #category : #offset }
 StackBuilderTest >> addFullFrame [
+
 	| frame |
-	method := methodBuilder newMethod numberOfTemporaries: 2; numberOfArguments: 2; build.
+	method := methodBuilder newMethod
+		          numberOfTemporaries: 2;
+		          numberOfArguments: 2;
+		          buildMethod.
 
 	frame := stackBuilder addNewFrame.
 	instructionPointer := method + 17.
 	frame beSuspendedAt: instructionPointer.
-	
+
 	stackElement1 := memory integerObjectOf: 4.
 	stackElement2 := memory integerObjectOf: 5.
-	frame stack: { stackElement1. stackElement2 }.
-	
+	frame stack: { 
+			stackElement1.
+			stackElement2 }.
+
 	temp1 := memory integerObjectOf: 6.
 	temp2 := memory integerObjectOf: 7.
-	frame temps: { temp1. temp2 }.
+	frame temps: { 
+			temp1.
+			temp2 }.
 
 	receiver := memory integerObjectOf: 8.
 	frame receiver: receiver.
@@ -55,7 +66,7 @@ StackBuilderTest >> addFullFrame [
 	frame context: context.
 
 	frame method: method.
-	^ frame 
+	^ frame
 ]
 
 { #category : #offset }
@@ -86,12 +97,12 @@ StackBuilderTest >> offsetCallerFP [
 
 { #category : #offset }
 StackBuilderTest >> offsetContext [ 
-	^ self offsetReceiver + 1
+	^ self offsetFlags + 1
 ]
 
 { #category : #offset }
 StackBuilderTest >> offsetFlags [
-	^ self offsetContext + 1
+	^ self offsetReceiver + 1
 ]
 
 { #category : #offset }
@@ -101,7 +112,7 @@ StackBuilderTest >> offsetInstructionPointer [
 
 { #category : #offset }
 StackBuilderTest >> offsetMethod [
-	^ self offsetFlags + 1
+	^ self offsetContext + 1
 ]
 
 { #category : #offset }
@@ -165,9 +176,10 @@ StackBuilderTest >> testFrameHasMoreArgumentsThanMethodShouldFail [
 	| frame |
 	stackBuilder reset.
 
-	method := methodBuilder newMethod build.
+	method := methodBuilder newMethod buildMethod.
 	frame := stackBuilder addNewFrame.
-	frame method: method;
+	frame
+		method: method;
 		argumentSize: 1.
 
 	self should: [ stackBuilder buildStack ] raise: Error
@@ -175,13 +187,14 @@ StackBuilderTest >> testFrameHasMoreArgumentsThanMethodShouldFail [
 
 { #category : #'test-setFromMethod' }
 StackBuilderTest >> testFrameHasMoreTemporariesThanMethodShouldFail [
-	
+
 	| frame |
 	stackBuilder reset.
-	
-	method := methodBuilder newMethod build.
+
+	method := methodBuilder newMethod buildMethod.
 	frame := stackBuilder addNewFrame.
-	frame method: method;
+	frame
+		method: method;
 		temps: { memory nilObject }.
 
 	self should: [ stackBuilder buildStack ] raise: Error
@@ -206,11 +219,12 @@ StackBuilderTest >> testHeadFramePointerCallerIsNotBaseFramePointer [
 { #category : #'test-setFromMethod' }
 StackBuilderTest >> testInstructionPointerIsSetBeforeFirstBytecodeOfLastMethodPushed [
 
-	method := methodBuilder newMethod build.
-	stackBuilder addNewFrame method: method. 
+	method := methodBuilder newMethod buildMethod.
+	stackBuilder addNewFrame method: method.
 	stackBuilder buildStack.
-	
-	self assert: interpreter instructionPointer
+
+	self
+		assert: interpreter instructionPointer
 		equals: (methodBuilder bytecodeAt: 0 forMethod: method)
 ]
 
@@ -221,13 +235,16 @@ StackBuilderTest >> testMethodHasMoreArgumentsThanFrameShouldUpdateFrame [
 	stackBuilder reset.
 
 	argNum := 1.
-	method := methodBuilder newMethod ; numberOfArguments: argNum ; build.
+	method := methodBuilder
+		          newMethod;
+		          numberOfArguments: argNum;
+		          buildMethod.
 	frame := stackBuilder addNewFrame.
 	frame method: method.
 
 	self assert: frame argumentSize equals: 0.
 	stackBuilder buildStack.
-	self assert: frame argumentSize equals: argNum.
+	self assert: frame argumentSize equals: argNum
 ]
 
 { #category : #'test-setFromMethod' }
@@ -237,50 +254,55 @@ StackBuilderTest >> testMethodHasMoreTemporariesThanFrameShouldUpdateFrame [
 	stackBuilder reset.
 
 	tempNum := 1.
-	method := methodBuilder newMethod ; numberOfTemporaries: tempNum ; build.
+	method := methodBuilder
+		          newMethod;
+		          numberOfTemporaries: tempNum;
+		          buildMethod.
 	frame := stackBuilder addNewFrame.
 	frame method: method.
 
 	self assert: frame temps isEmpty.
 	stackBuilder buildStack.
-	self assert: frame temps equals: (OrderedCollection new: tempNum withAll: memory nilObject).
+	self
+		assert: frame temps
+		equals: (OrderedCollection new: tempNum withAll: memory nilObject)
 ]
 
 { #category : #'test-order' }
 StackBuilderTest >> testOrderArgument1InBaseFrame [
-	self assert: (interpreter stackPages longAtPointer: interpreter stackPage baseFP + (self offsetArgument1FromBaseFP * memory bytesPerOop))
+	self assert: (interpreter stackPages unsignedLongAt: interpreter stackPage baseFP + (self offsetArgument1FromBaseFP * memory bytesPerOop))
 		equals: argument1
 ]
 
 { #category : #'test-order' }
 StackBuilderTest >> testOrderArgument2InBaseFrame [
-	self assert: (interpreter stackPages longAtPointer: interpreter stackPage baseFP + (self offsetArgument2FromBaseFP * memory bytesPerOop))
+	self assert: (interpreter stackPages unsignedLongAt: interpreter stackPage baseFP + (self offsetArgument2FromBaseFP * memory bytesPerOop))
 		equals: argument2
 ]
 
 { #category : #'test-order' }
 StackBuilderTest >> testOrderContext [
-	self assert: (interpreter internalStackValue: self offsetContext)
+	self assert: (interpreter stackValue: self offsetContext)
 		equals: context
 ]
 
 { #category : #'test-order' }
 StackBuilderTest >> testOrderMethod [
-	self assert: (interpreter internalStackValue: self offsetMethod)
+	self assert: (interpreter stackValue: self offsetMethod)
 		equals: method
 ]
 
 { #category : #'test-order' }
 StackBuilderTest >> testOrderReceiver [
-	self assert: (interpreter internalStackValue: self offsetReceiver)
+	self assert: (interpreter stackValue: self offsetReceiver)
 		equals: receiver
 ]
 
 { #category : #'test-order' }
 StackBuilderTest >> testOrderStackElementIsReversed [
-	self assert: (interpreter internalStackValue: self offsetStackElement1)
+	self assert: (interpreter stackValue: self offsetStackElement1)
 		equals: stackElement1.
-	self assert: (interpreter internalStackValue: self offsetStackElement2)
+	self assert: (interpreter stackValue: self offsetStackElement2)
 		equals: stackElement2.
 ]
 
@@ -288,15 +310,15 @@ StackBuilderTest >> testOrderStackElementIsReversed [
 StackBuilderTest >> testOrderStackTopOfSuspendedProcessIsInstructionPointer [
 	"When a process is suspended, the Instruction Pointer is pushed on the stack of the frame.
 	It should be the last thing pushed, and therefore, be at the top. "
-	self assert: (interpreter internalStackValue: self offsetInstructionPointer) 
+	self assert: (interpreter stackValue: self offsetInstructionPointer) 
 		equals: instructionPointer.
 ]
 
 { #category : #'test-order' }
 StackBuilderTest >> testOrderTempIsReversed [
-	self assert: (interpreter internalStackValue: self offsetTemp1)
+	self assert: (interpreter stackValue: self offsetTemp1)
 		equals: temp1.
-	self assert: (interpreter internalStackValue: self offsetTemp2)
+	self assert: (interpreter stackValue: self offsetTemp2)
 		equals: temp2.
 ]
 

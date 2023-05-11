@@ -120,13 +120,6 @@ InterpreterProxy >> cStringOrNullFor: oop [
 ]
 
 { #category : #'callback support' }
-InterpreterProxy >> callbackEnter: callbackID [
-	"Re-enter the interpreter for executing a callback"
-	<var: #callbackID type: #'sqInt *'>
-	^self notYetImplementedError
-]
-
-{ #category : #'callback support' }
 InterpreterProxy >> callbackLeave: cbID [
 	"Leave from a previous callback"
 	^self notYetImplementedError
@@ -136,11 +129,6 @@ InterpreterProxy >> callbackLeave: cbID [
 InterpreterProxy >> characterObjectOf: characterCode [
 	<option: #(atLeastVMProxyMajor:minor: 1 13)>
 	^StackInterpreter objectMemoryClass characterObjectOf: characterCode
-]
-
-{ #category : #'special objects' }
-InterpreterProxy >> characterTable [
-	^Character characterTable
 ]
 
 { #category : #'object access' }
@@ -360,11 +348,6 @@ InterpreterProxy >> getDeferDisplayUpdates [
 ]
 
 { #category : #other }
-InterpreterProxy >> getInterruptPending [
-	^self notYetImplementedError
-]
-
-{ #category : #other }
 InterpreterProxy >> getStackPointer [
 	<returnTypeC: #'sqInt *'>
 	^self notYetImplementedError
@@ -385,11 +368,6 @@ InterpreterProxy >> getThisSessionID [
 { #category : #testing }
 InterpreterProxy >> includesBehavior: aClass ThatOf: aSuperclass [
 	^aClass includesBehavior: aSuperclass
-]
-
-{ #category : #other }
-InterpreterProxy >> incrementalGC [
-	Smalltalk garbageCollectMost.
 ]
 
 { #category : #initialize }
@@ -819,7 +797,7 @@ InterpreterProxy >> pop: nItems [
 
 { #category : #'stack access' }
 InterpreterProxy >> pop: nItems thenPush: oop [
-	<returnTypeC: #sqInt>
+	<returnTypeC: #void>
 	self pop: nItems.
 	self push: oop
 ]
@@ -863,7 +841,7 @@ InterpreterProxy >> positive32BitIntegerFor: integerValue [
 
 { #category : #converting }
 InterpreterProxy >> positive32BitValueOf: oop [
-	<returnTypeC: #usqInt>
+	<returnTypeC: #'unsigned int'>
 	oop isInteger ifFalse:[self error:'Not an integer object'].
 	oop < 0 
 		ifTrue:[self primitiveFail. ^0]
@@ -989,7 +967,7 @@ InterpreterProxy >> pushInteger: integerValue [
 
 { #category : #'instance creation' }
 InterpreterProxy >> pushRemappableOop: oop [
-	<returnTypeC: #sqInt>
+	<returnTypeC: #void>
 	remapBuffer addLast: oop
 ]
 
@@ -1031,13 +1009,6 @@ InterpreterProxy >> sendInvokeCallbackContext: vmCallbackContext [
 	 The arguments are raw C addresses and are converted to integer objects on the way."
 	<returnTypeC: #sqInt>
 	self notYetImplemented
-]
-
-{ #category : #other }
-InterpreterProxy >> setInterruptCheckChain: aFunction [
-	<returnTypeC: 'void (*setInterruptCheckChain(void (*aFunction)(void)))()'>
-	<var: #aFunction declareC: 'void (*aFunction)()'>
-	^self notYetImplementedError
 ]
 
 { #category : #other }

@@ -295,7 +295,6 @@ extern HWND  consoleWindow;       /* console */
 
 
 extern HWND stWindow;	     	         /*	the squeak window */
-extern HWND browserWindow;	     	     /*	the browser window */
 extern HINSTANCE hInstance;	     /*	the instance of squeak running */
 extern HCURSOR currentCursor;	     /*	current cursor displayed by squeak */
 extern HPALETTE palette;	     /*	the palette (might be unused) */
@@ -310,7 +309,6 @@ extern BOOL fIsConsole;          /* Are we running as a console app? */
 /* Startup options */
 extern BOOL  fHeadlessImage; /* Do we run headless? */
 extern BOOL  fRunService;    /* Do we run as NT service? */
-extern BOOL  fBrowserMode;   /* Do we run in a web browser? */
 extern DWORD dwMemorySize;   /* How much memory do we use? */
 extern BOOL  fUseDirectSound;/* Do we use DirectSound?! */
 extern BOOL  fUseOpenGL;     /* Do we use OpenGL?! */

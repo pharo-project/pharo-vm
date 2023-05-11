@@ -44,6 +44,14 @@ Class {
 		'SPReg',
 		'SendNumArgsReg',
 		'TempReg',
+		'VReg0',
+		'VReg1',
+		'VReg2',
+		'VReg3',
+		'VReg4',
+		'VReg5',
+		'VReg6',
+		'VReg7',
 		'VarBaseReg'
 	],
 	#category : #'VMMaker-JIT'
@@ -65,7 +73,7 @@ CogAbstractRegisters class >> initialize [
 	NoReg := -1.
 
 	"The core set of abstract registers that define the Cogit's model of Smalltalk code
-	 provide for a register-based calling convention oriented towards inline cacheing and
+	 provide for a register-based calling convention oriented towards inline caching and
 	 executing a core set of machine code primitives in registers.  The set is composed of
 	 8 registers, dictated by the available registers on IA32."
 	"Smalltalk machine code executes on stack pages in the stack zone, requiring frame and stack pointers."
@@ -113,7 +121,17 @@ CogAbstractRegisters class >> initialize [
 	DPFPReg13	:= #undefined.
 	DPFPReg14	:= #undefined.
 	DPFPReg15	:= #undefined.
-
+		
+	"Up to 8 SIMD registers. e.g. IA32+SSE can use 8, Armv8 can use 32."
+	VReg0 := #undefined.
+	VReg1 := #undefined.
+	VReg2 := #undefined.
+	VReg3 := #undefined.
+	VReg4 := #undefined.
+	VReg5 := #undefined.
+	VReg6 := #undefined.
+	VReg7 := #undefined.
+		
 	NumFloatRegisters	:= #undefined.	"Number of floating-point registers (we don;t do single-precision; we don't do xmm high (yet)."
 ]
 

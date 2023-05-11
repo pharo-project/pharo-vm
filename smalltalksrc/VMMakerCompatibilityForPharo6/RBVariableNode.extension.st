@@ -12,8 +12,3 @@ RBVariableNode >> asTranslatorNodeIn: aTMethod [
 RBVariableNode >> isVariableNode [
 	^true
 ]
-
-{ #category : #'*VMMakerCompatibilityForPharo6-accessing' }
-RBVariableNode >> key [
-	^name
-]

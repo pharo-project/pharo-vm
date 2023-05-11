@@ -5,14 +5,6 @@ Class {
 }
 
 { #category : #running }
-VMSistaTrampolineTest >> initializationOptions [
-
-	^ super initializationOptions , { 
-		#MULTIPLEBYTECODESETS 		. true.
-		#bytecodeTableInitializer 	. #initializeBytecodeTableForSistaV1 }
-]
-
-{ #category : #running }
 VMSistaTrampolineTest >> jitOptions [
 
 	^ super jitOptions

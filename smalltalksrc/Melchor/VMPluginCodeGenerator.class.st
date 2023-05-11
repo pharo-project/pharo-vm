@@ -241,33 +241,9 @@ VMPluginCodeGenerator >> generateCASTRemapOopIn: aTSendNode [
 ]
 
 { #category : #'CAST translation' }
-VMPluginCodeGenerator >> generateCASTSpurRemapOopIn: aTSendNode [ 
+VMPluginCodeGenerator >> generateCASTSpurRemapOopIn: aTSendNode [
 
-	^ aTSendNode args second asCASTIn: self
-]
-
-{ #category : #'C translation' }
-VMPluginCodeGenerator >> generateInterpreterProxyFunctionDereference: aNode on: aStream indent: anInteger [
-	| pluginsToClone |
-	pluginsToClone := self pluginFunctionsToClone copyWithoutAll: self selectorsThatAreGeneratedAsMacros.
-	pluginsToClone isEmpty ifTrue:
-		[^self].
-	aStream newLine.
-	self withConditionalDefineOf: 'SQUEAK_BUILTIN_PLUGIN'
-		comment: nil
-		on: aStream
-		do: [pluginsToClone do:
-				[:s| | cs |
-				cs := self cFunctionNameFor: s.
-				self withOptionalVerbiageFor: s
-					on: aStream
-					do: [aStream tab: anInteger; nextPutAll: cs; nextPutAll: ' = interpreterProxy->'; nextPutAll: cs; nextPut: $;; newLine]
-					ifOptionalDo:
-						[self
-							withConditionalDefineOf: cs
-							comment: nil
-							on: aStream
-							do: [aStream tab: anInteger; nextPutAll: cs; nextPutAll: ' = 0;'; newLine]]]]
+	^ aTSendNode arguments second asCASTIn: self
 ]
 
 { #category : #'type inference' }
@@ -578,7 +554,7 @@ VMPluginCodeGenerator >> structTargetKindForDeclaration: decl [ "<String>"
 VMPluginCodeGenerator >> typeFor: aNode in: aTMethod [
 	"Override to provide the type for InterpreterProxy's implicit stack variable."
 	aNode isVariable ifTrue:
-		[^(aTMethod typeFor: aNode in: self) ifNil:
+		[^(aTMethod typeFor: aNode name in: self) ifNil:
 			[aNode name = 'stack'
 				ifTrue: [#'sqInt *']
 				ifFalse: [#sqInt]]].

@@ -51,7 +51,7 @@ VMFFIWorkerArgumentMarshallingTest >> doWorkerCallWithValue: smalltalkValue ofTy
 		                      withArgumentTypes: { argumentType }
 		                      withReturnType: interpreter libFFI void.
 
-	parametersArray := self newObjectWithSlots: 1.
+	parametersArray := self newArrayWithSlots: 1.
 
 	memory
 		storePointer: 0
@@ -60,7 +60,7 @@ VMFFIWorkerArgumentMarshallingTest >> doWorkerCallWithValue: smalltalkValue ofTy
 
 	worker := interpreter libFFI testWorker.
 
-	workerOop := self newObjectWithSlots: 1.
+	workerOop := self newArrayWithSlots: 1.
 
 	memory
 		storePointer: 0
@@ -101,11 +101,11 @@ VMFFIWorkerArgumentMarshallingTest >> testCalloutWithoutArgumentsMarshallsCorrec
 		                      withArgumentTypes: {}
 		                      withReturnType: interpreter libFFI void.
 
-	parametersArray := self newObjectWithSlots: 0.
+	parametersArray := self newArrayWithSlots: 0.
 
 	worker := interpreter libFFI testWorker.
 
-	workerOop := self newObjectWithSlots: 1.
+	workerOop := self newArrayWithSlots: 1.
 
 	memory
 		storePointer: 0

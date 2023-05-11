@@ -366,3 +366,5 @@ healthchecksdb
 /out/build
 /stack32/generated
 /stack64/generated
+
+**/.DS_Store

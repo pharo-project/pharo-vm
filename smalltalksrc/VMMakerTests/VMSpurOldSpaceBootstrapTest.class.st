@@ -9,9 +9,15 @@ VMSpurOldSpaceBootstrapTest >> testClassTableHasTablePagesAndHiddenRoots [
 
 	| tableRoot |
 	memory nilObject: self newZeroSizedObject.
+	memory falseObject: self newZeroSizedObject.
+	memory trueObject: self newZeroSizedObject.
 	"Initialize old space with free list, class table, hidden roots and remembered set to be able to scavenge"
 	memory initializeFreeList.
+
 	memory segmentManager collapseSegmentsPostSwizzle.
+	memory segmentManager plantBridgeAtTheEndOfMemory.
+	memory segmentManager assertBridge.
+
 	memory updateFreeLists.
 	memory computeFreeSpacePostSwizzle.
 	memory initializeOldSpaceFirstFree: memory freeOldSpaceStart.

@@ -42,7 +42,7 @@ variables
 "
 Class {
 	#name : #CurrentImageCoInterpreterFacade,
-	#superclass : #CogClass,
+	#superclass : #VMClass,
 	#instVars : [
 		'memory',
 		'cogit',
@@ -173,11 +173,13 @@ CurrentImageCoInterpreterFacade >> bytesPerOop [
 CurrentImageCoInterpreterFacade >> cCoerceSimple: value to: cTypeString [
 	"Type coercion for translation and simulation.
 	 For simulation answer a suitable surrogate for the struct types"
-	^cTypeString
-		caseOf:
-		   {	[#'CogMethod *']		->	[value < 0 ifTrue: [value] ifFalse: [cogit cogMethodSurrogateAt: value asUnsignedInteger]].
-			[#'CogBlockMethod *']	->	[cogit cogBlockMethodSurrogateAt: value asUnsignedInteger] }
-		otherwise: [super cCoerceSimple: value to: cTypeString]
+
+	^ cTypeString
+		  caseOf: { ([ #'CogMethod *' ] -> [
+			   value < 0
+				   ifTrue: [ value ]
+				   ifFalse: [ cogit cogMethodSurrogateAt: value asUnsignedInteger ] ]) }
+		  otherwise: [ super cCoerceSimple: value to: cTypeString ]
 ]
 
 { #category : #'cog jit support' }
@@ -197,11 +199,6 @@ CurrentImageCoInterpreterFacade >> canContextSwitchIfActivating: method header: 
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> characterObjectOf: anInteger [
 	^objectMemory characterObjectOf: anInteger
-]
-
-{ #category : #accessing }
-CurrentImageCoInterpreterFacade >> characterTable [
-	^self subclassResponsibility
 ]
 
 { #category : #accessing }
@@ -401,12 +398,6 @@ CurrentImageCoInterpreterFacade >> getCheckAllocFiller [
 	^coInterpreter getCheckAllocFiller ifNil: [false]
 ]
 
-{ #category : #testing }
-CurrentImageCoInterpreterFacade >> headerIndicatesAlternateBytecodeSet: methodHeader [
-	"A negative header selects the alternate bytecode set."
-	^(self objectForOop: methodHeader) < 0
-]
-
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> identityHashHalfWordMask [
 	^objectMemory identityHashHalfWordMask
@@ -430,10 +421,10 @@ CurrentImageCoInterpreterFacade >> indexablePointersFormat [
 { #category : #'initialize-release' }
 CurrentImageCoInterpreterFacade >> initialize [
 	objectMemory := self class objectMemoryClass simulatorClass new.
-	objectMemory allocateMemoryOfSize: 1024*1024.
+	objectMemory memoryManager allocate: 1024*1024.
 	memory := objectMemory memory.
 	objectMemory
-		initializeFreeSpaceForFacadeFrom: self startOfMemory
+		initializeFreeSpaceForFacadeFrom: objectMemory getMemoryMap startOfObjectMemory
 		to: self variablesBase.
 	coInterpreter := CoInterpreter new.
 	coInterpreter
@@ -501,11 +492,6 @@ CurrentImageCoInterpreterFacade >> isCogCompiledCodeCompactionCalledFor [
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> isCogMethodReference: methodHeader [
 	^coInterpreter isCogMethodReference: methodHeader
-]
-
-{ #category : #testing }
-CurrentImageCoInterpreterFacade >> isCurrentImageFacade [
-	^true
 ]
 
 { #category : #accessing }
@@ -705,11 +691,6 @@ CurrentImageCoInterpreterFacade >> mcprimFunctionForPrimitiveIndex: primIndex [
 ]
 
 { #category : #accessing }
-CurrentImageCoInterpreterFacade >> memory [
-	^memory
-]
-
-{ #category : #accessing }
 CurrentImageCoInterpreterFacade >> methodCacheAddress [
 	"Use the top half of memory for variables, methodcache and rumpCStack,
 	 and the bottom half for allocating code and objects:
@@ -740,12 +721,6 @@ CurrentImageCoInterpreterFacade >> methodHeaderOf: methodOop [
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> methodNeedsLargeContext: aMethodOop [ 
 	^(self objectForOop: aMethodOop) frameSize > CompiledMethod smallFrameSize
-]
-
-{ #category : #testing }
-CurrentImageCoInterpreterFacade >> methodUsesAlternateBytecodeSet: methodObjOop [
-	"A negative header selects the alternate bytecode set."
-	^(self objectForOop: methodObjOop) signFlag
 ]
 
 { #category : #accessing }
@@ -863,16 +838,6 @@ CurrentImageCoInterpreterFacade >> oopForObject: o [
 	self subclassResponsibility
 ]
 
-{ #category : #testing }
-CurrentImageCoInterpreterFacade >> picDataFor: cogMethod [
-	| cm nBytes nEntries oversizeData |
-	cm := cogMethod methodObject.
-	nBytes := (self byteSizeOf: cm) - (self startPCOfMethod: cm).
-	oversizeData := Array new: nBytes.
-	nEntries := cogit picDataFor: cogMethod into: (self oopForObject: oversizeData).
-	^oversizeData copyFrom: 1 to: nEntries
-]
-
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> primErrTable [
 	^objectMap at: Smalltalk primitiveErrorTable
@@ -945,13 +910,10 @@ CurrentImageCoInterpreterFacade >> printCogMethod: cogMethod [
 							header: cogMethod methodHeader.
 		 primitive ~= 0 ifTrue:
 			[self print: ' prim '; printNum: primitive]].
-	cogMethod cmType = CMBlock ifTrue:
-		[self print: ': block home: ';
-			printHex: (self cCoerceSimple: cogMethod to: #'CogBlockMethod *') cmHomeMethod asUnsignedInteger].
-	cogMethod cmType = CMClosedPIC ifTrue:
+	cogMethod cmType = CMPolymorphicIC ifTrue:
 		[self print: ': Closed PIC N: ';
 			printHex: cogMethod cPICNumCases].
-	cogMethod cmType = CMOpenPIC ifTrue:
+	cogMethod cmType = CMMegamorphicIC ifTrue:
 		[self print: ': Open PIC '].
 	self print: ' selector: '; printHex: cogMethod selector.
 	cogMethod selector = objectMemory nilObject
@@ -987,6 +949,16 @@ CurrentImageCoInterpreterFacade >> printNum: anInteger [
 { #category : #printing }
 CurrentImageCoInterpreterFacade >> printStringOf: anOop [
 	Transcript nextPutAll: (self objectForOop: anOop)
+]
+
+{ #category : #testing }
+CurrentImageCoInterpreterFacade >> profilingDataFor: cogMethod [
+	| cm nBytes nEntries oversizeData |
+	cm := cogMethod methodObject.
+	nBytes := (self byteSizeOf: cm) - (self startPCOfMethod: cm).
+	oversizeData := Array new: nBytes.
+	nEntries := cogit profilingDataFor: cogMethod into: (self oopForObject: oversizeData).
+	^oversizeData copyFrom: 1 to: nEntries
 ]
 
 { #category : #printing }
@@ -1118,19 +1090,6 @@ CurrentImageCoInterpreterFacade >> stackLimitAddress [
 { #category : #accessing }
 CurrentImageCoInterpreterFacade >> stackPointerAddress [
 	^self addressForLabel: #stackPointer
-]
-
-{ #category : #accessing }
-CurrentImageCoInterpreterFacade >> startOfMemory [
-	"Use the top half of memory for variables, methodcache and rumpCStack,
-	 and the bottom half for allocating code and objects:
-
-		0 - 256k:			code zone
-		256k to 512k		object zone
-		512k to 768k		variables
-		768k to 1023k		method cache
-		 1023k to 1024k	rump C stack"
-	^memory byteSize / 4
 ]
 
 { #category : #accessing }

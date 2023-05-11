@@ -26,23 +26,19 @@ VMPrimitiveTest >> assert: anOop contentEquals: oopToCompare [
 	
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual' }
-VMPrimitiveTest >> installFloatClass [
+{ #category : #'as yet unclassified' }
+VMPrimitiveTest >> fillNewSpace [
 
-	| classFloat |
-	classFloat := self
-		              newClassInOldSpaceWithSlots: 0
-		              instSpec: memory firstLongFormat.
-	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
-	memory
-		storePointer: ClassFloatCompactIndex
-		ofObject: memory classTableFirstPage
-		withValue: classFloat
+	"Allocate enough space to generate a full new space"
 
-	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
+	self assert: (memory
+			 allocateSlots: (memory scavengeThreshold - memory freeStart
+				  - (2 * memory baseHeaderSize) roundDownTo: 8) // self wordSize
+			 format: memory arrayFormat
+			 classIndex: memory arrayClassIndexPun) isNotNil
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'instance creation' }
 VMPrimitiveTest >> newArrayWith: aCollection [ 
 	| array |
 	array := self newObjectWithSlots: aCollection size format: memory arrayFormat classIndex: memory arrayClassIndexPun.
@@ -55,24 +51,29 @@ VMPrimitiveTest >> newArrayWith: aCollection [
 
 { #category : #running }
 VMPrimitiveTest >> setUp [
-	
+
 	"taken from VMSimpleStackBasedCogitBytecodeTest >> #setup"
+
 	| newMethod ctx page |
 	super setUp.
 
 	"Create the root context with a valid method"
 	"Let's create a method with enough size. It should have at least a literal (4 or 8 bytes depending the word size) and some bytecodes, so we can put the IP inside the method"
-	newMethod := methodBuilder newMethod build.
-	
+	newMethod := methodBuilder newMethod buildMethod.
+
 	"The context has 5 (in 32 bits) or 9 (in 64 bits) as initial IP, as method has at least one literal"
-	ctx := self newSmallContextReceiver: memory nilObject method: newMethod arguments: #() temporaries: #() ip: self wordSize + 1.
-	
+	ctx := self
+		       newSmallContextReceiver: memory nilObject
+		       method: newMethod
+		       arguments: #(  )
+		       temporaries: #(  )
+		       ip: self wordSize + 1.
+
 	page := interpreter makeBaseFrameFor: ctx.
 	interpreter setStackPointersFromPage: page.
 	interpreter setStackPageAndLimit: page.
-	
-	self setUpScheduler.
-	imageName := VMPrimitiveTest name 
+
+	imageName := VMPrimitiveTest name
 ]
 
 { #category : #'tests - primitiveIdentical' }
@@ -102,7 +103,7 @@ VMPrimitiveTest >> setUpForwardedObjects [
 { #category : #running }
 VMPrimitiveTest >> tearDown [
 
-	imageName ifNotNil: [ imageName asFileReference ensureDelete ].
+	imageName ifNotNil: [ imageName asFileReference ensureDeleteAll ].
 	super tearDown
 ]
 
@@ -506,17 +507,16 @@ VMPrimitiveTest >> testPrimitiveAsCharacter [
 ]
 
 { #category : #'tests - primitiveAsCharacter' }
-VMPrimitiveTest >> testPrimitiveAsCharacterCompilesWithNoArg [
-	
-	interpreter primitiveAsCharacter. 
-
-	self deny: interpreter failed.
-]
-
-{ #category : #'tests - primitiveAsCharacter' }
 VMPrimitiveTest >> testPrimitiveAsCharacterFailsForOutOfRangeArg [
 
-	interpreter push: (memory integerObjectOf: 16rFF000000).
+	| invalidNumber |
+	invalidNumber := memory integerObjectOf: 16rFF000000.
+	
+	wordSize = 4 
+		ifTrue: [ invalidNumber := invalidNumber bitAnd: 16rFFFFFFFF ]
+		ifFalse: [ invalidNumber := invalidNumber bitAnd: 16rFFFFFFFFFFFFFFFF ].
+
+	interpreter push: invalidNumber.
 	"This number is undecodable both for 64 and 32 bits architectures"
 	
 	interpreter primitiveAsCharacter. 
@@ -1559,6 +1559,30 @@ VMPrimitiveTest >> testPrimitiveEqualWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed. 
 ]
 
+{ #category : #'tests - primitiveAdd - Float64Array' }
+VMPrimitiveTest >> testPrimitiveFloat64ArrayAdd [
+
+	| x y z result firstTerm size |
+	firstTerm := 1.0 to: 2.0.
+	size := firstTerm size.
+
+	x := self new64BitIndexableFromArray: firstTerm.
+	y := self new64BitIndexableFromArray: (firstTerm collect: [:i | i * 10]).
+	z := self new64BitIndexableOfSize: size.
+	
+	interpreter push: x.
+	interpreter push: y.
+	interpreter push: z.
+	interpreter primitiveFloat64ArrayAdd.
+	
+	self deny: interpreter failed.
+	
+	result := interpreter stackTop.
+	
+	self assert: (memory fetchFloat64: 0 ofObject: result) equals: 11.0.
+	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 22.0.
+]
+
 { #category : #'tests - primitiveImmutability' }
 VMPrimitiveTest >> testPrimitiveGetImmutabilityOfImmediateReturnsTrue [
 
@@ -2283,6 +2307,166 @@ VMPrimitiveTest >> testPrimitiveLessThanWithNoErrorPopsOperands [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 ]
 
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesFrom64BitArrays [
+
+	| class array |
+
+	self installFloatClass.
+
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: (memory sixtyFourBitIndexableFormat).
+	array := memory instantiateClass: class indexableSize: 1.
+	memory storeFloat64: 0 ofObject: array withValue: 42.0.
+	
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: 0).
+	interpreter primitiveLoadFloat64FromBytes.
+	
+	self deny: interpreter failed.
+	self assert: (memory fetchFloat64: 0 ofObject: array) equals: 42.0.
+	self assert: (memory floatValueOf: interpreter stackTop) equals: 42.0. 
+]
+
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesFrom64BitEmptyArrays [
+
+	| class array |
+
+	self installFloatClass.
+
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: (memory sixtyFourBitIndexableFormat).
+	array := memory instantiateClass: class indexableSize: 1.
+	
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: 0).
+	interpreter primitiveLoadFloat64FromBytes.
+	
+	self deny: interpreter failed.
+	self assert: (memory floatValueOf: interpreter stackTop) equals: 0.0. 
+]
+
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesFromByteArrays [
+
+	| class array |
+
+	self installFloatClass.
+
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: (memory firstByteFormat).
+	array := memory instantiateClass: class indexableSize: 8.
+	memory storeFloat64: 0 ofObject: array withValue: 42.0.
+	
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: 0).
+	interpreter primitiveLoadFloat64FromBytes.
+	
+	self deny: interpreter failed.
+	self assert: (memory fetchFloat64: 0 ofObject: array) equals: 42.0.
+	self assert: (memory floatValueOf: interpreter stackTop) equals: 42.0. 
+]
+
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesFromInteger16Arrays [
+
+	| class array |
+
+	self installFloatClass.
+
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: (memory firstShortFormat).
+	array := memory instantiateClass: class indexableSize: 8.
+	memory storeFloat64: 0 ofObject: array withValue: 42.0.
+	
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: 0).
+	interpreter primitiveLoadFloat64FromBytes.
+	
+	self deny: interpreter failed.
+	self assert: (memory fetchFloat64: 0 ofObject: array) equals: 42.0.
+	self assert: (memory floatValueOf: interpreter stackTop) equals: 42.0. 
+]
+
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesFromInteger32Arrays [
+
+	| class array |
+
+	self installFloatClass.
+
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: (memory firstLongFormat).
+	array := memory instantiateClass: class indexableSize: 8.
+	memory storeFloat64: 0 ofObject: array withValue: 42.0.
+	
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: 0).
+	interpreter primitiveLoadFloat64FromBytes.
+	
+	self deny: interpreter failed.
+	self assert: (memory fetchFloat64: 0 ofObject: array) equals: 42.0.
+	self assert: (memory floatValueOf: interpreter stackTop) equals: 42.0. 
+]
+
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesNegativeIndex [
+
+	| class array |
+	self installFloatClass.
+
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory sixtyFourBitIndexableFormat.
+	array := memory instantiateClass: class indexableSize: 1.
+
+	interpreter push: 42.
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: -1).
+	interpreter primitiveLoadFloat64FromBytes.
+
+	self assert: interpreter failed.
+	"Stack keep as start"
+	interpreter pop: 2.
+	self assert: interpreter stackTop equals: 42
+]
+
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesOverflowIndex [
+
+	| class array |
+	self installFloatClass.
+
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory sixtyFourBitIndexableFormat.
+	array := memory instantiateClass: class indexableSize: 1.
+
+	interpreter push: 42.
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: 8).
+	interpreter primitiveLoadFloat64FromBytes.
+
+	self assert: interpreter failed.
+	"Stack keep as start"
+	interpreter pop: 2.
+	self assert: interpreter stackTop equals: 42
+]
+
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesSecondBytes [
+
+	| class array |
+
+	self installFloatClass.
+
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: (memory sixtyFourBitIndexableFormat).
+	array := memory instantiateClass: class indexableSize: 2.
+	memory storeFloat64: 0 ofObject: array withValue: 41.0.
+	memory storeFloat64: 1 ofObject: array withValue: 42.0.
+	
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: 8).
+	interpreter primitiveLoadFloat64FromBytes.
+	
+	self deny: interpreter failed.
+	self assert: (memory fetchFloat64: 0 ofObject: array) equals: 41.0.
+	self assert: (memory fetchFloat64: 1 ofObject: array) equals: 42.0.
+	self assert: (memory floatValueOf: interpreter stackTop) equals: 42.0. 
+]
+
 { #category : #'tests - primitiveMod' }
 VMPrimitiveTest >> testPrimitiveMod [
 
@@ -2472,11 +2656,8 @@ VMPrimitiveTest >> testPrimitiveNewCreatesTheObjectWithCorrectSize [
 { #category : #'tests - primitiveNew' }
 VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceAllocatesInOldSpace [
 	| class |
-	"Allocate enough space to generate a full new space"
-	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 1
-				format: memory arrayFormat
-				classIndex: memory arrayClassIndexPun) isNotNil.
+
+	self fillNewSpace.
 
 	class := self newClassInOldSpaceWithSlots: 256 instSpec: memory nonIndexablePointerFormat.
 	interpreter push: class.
@@ -2489,11 +2670,8 @@ VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceAllocatesInOldSpace [
 { #category : #'tests - primitiveNew' }
 VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceScheduleGC [
 	| class |
-	"Allocate enough space to generate a full new space"
-	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 1
-				format: memory arrayFormat
-				classIndex: memory arrayClassIndexPun) isNotNil.
+
+	self fillNewSpace.
 	
 	class := self newClassInOldSpaceWithSlots: 256 instSpec: memory nonIndexablePointerFormat.
 	
@@ -2531,11 +2709,7 @@ VMPrimitiveTest >> testPrimitiveNewPinnedObjectInFullNewSpaceIsSchedulingGC [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 3 instSpec: memory nonIndexablePointerFormat.
 
-	"Allocate enough space to generate a full new space"
-	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 3
-				format: memory arrayFormat
-				classIndex: memory arrayClassIndexPun) isNotNil.
+	self fillNewSpace.
 
 	self deny: memory needGCFlag.
 	
@@ -2646,12 +2820,8 @@ VMPrimitiveTest >> testPrimitiveNewWithArgCreatesTheObjectWithCorrectSize [
 VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceAllocatesInOldSpace [
 	| newObj class |
 
-	"Allocate enough space to generate a full new space"
-	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 1
-				format: memory arrayFormat
-				classIndex: memory arrayClassIndexPun) isNotNil.
-
+	self fillNewSpace.
+	
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
 
 	interpreter push: class.
@@ -2661,19 +2831,15 @@ VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceAllocatesInOldSpace [
 
 	newObj := interpreter stackTop.
 
-	self assert: (memory isOldObject: newObj)
+	self assert: (memory getMemoryMap isOldObject: newObj)
 ]
 
 { #category : #'tests - primitiveNewWithArgs' }
 VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceScheduleGC [
 	| class |
 
-	"Allocate enough space to generate a full new space"
-	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 1
-				format: memory arrayFormat
-				classIndex: memory arrayClassIndexPun) isNotNil.
-
+	self fillNewSpace.
+	
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
 
 	interpreter push: class.
@@ -3053,14 +3219,15 @@ VMPrimitiveTest >> testPrimitiveSetImmutabilityOfObjectAsTrueSetsImmutability [
 VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForContext [
 
 	| method |
-	method := methodBuilder newMethod build.
-	
+	method := methodBuilder newMethod buildMethod.
+
 	interpreter push: method.
 	interpreter primitiveSize.
-	
-	"One literal + 10 bytecodes"
-	self assert: interpreter stackTop equals: (memory integerObjectOf: (10 + wordSize)).
 
+	"One literal + 10 bytecodes"
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: 10 + wordSize)
 ]
 
 { #category : #'tests - primitiveSize' }
@@ -3080,14 +3247,15 @@ VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForIndexableObject [
 VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForMethod [
 
 	| method |
-	method := methodBuilder newMethod build.
-	
+	method := methodBuilder newMethod buildMethod.
+
 	interpreter push: method.
 	interpreter primitiveSize.
-	
-	"One literal + 10 bytecodes"
-	self assert: interpreter stackTop equals: (memory integerObjectOf: (10 + wordSize)).
 
+	"One literal + 10 bytecodes"
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: 10 + wordSize)
 ]
 
 { #category : #'tests - primitiveSize' }
@@ -4372,35 +4540,46 @@ VMPrimitiveTest >> testPrimitiveSmallFloatSubtractPopsOperands [
 
 { #category : #'tests - snapshot' }
 VMPrimitiveTest >> testPrimitiveSnapshotContextsShouldBeTenured [
-	| method frame contextOop contextIdentityHash suspendedContext |
 
-	interpreter pluginList: #(). 
+	| method frame contextOop contextIdentityHash suspendedContext |
+	interpreter pluginList: #(  ).
+	self setUpScheduler.
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
-	method := methodBuilder newMethod build.
-	frame := stackBuilder addNewFrame method: method ; yourself.
+	method := methodBuilder newMethod buildMethod.
+	frame := stackBuilder addNewFrame
+		         method: method;
+		         yourself.
 	stackBuilder buildStack.
-	
-	contextOop := interpreter ensureFrameIsMarried: frame framePointer SP: frame stackPointer.
+
+	contextOop := interpreter
+		              ensureFrameIsMarried: frame framePointer
+		              SP: frame stackPointer.
 	contextIdentityHash := memory hashBitsOf: contextOop.
-	
+
 	interpreter instructionPointer: method + 17.
 	interpreter imageName: imageName.
 	interpreter setImageHeaderFlagsFrom: 0.
-	
+
 	interpreter primitiveSnapshot.
-	
-	suspendedContext := memory fetchPointer: SuspendedContextIndex ofObject: memory memoryActiveProcess.
-	self assert: (memory hashBitsOf: suspendedContext) equals: contextIdentityHash.
+
+	suspendedContext := memory
+		                    fetchPointer: SuspendedContextIndex
+		                    ofObject: memory memoryActiveProcess.
+	self
+		assert: (memory hashBitsOf: suspendedContext)
+		equals: contextIdentityHash
 ]
 
 { #category : #'tests - snapshot' }
 VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
-	| method file |
-	interpreter pluginList: #(). 
+
+	| method |
+	interpreter pluginList: #(  ).
+	self setUpScheduler.
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
-	method := methodBuilder newMethod build.
+	method := methodBuilder newMethod buildMethod.
 
 	stackBuilder addNewFrame method: method.
 	stackBuilder buildStack.
@@ -4410,37 +4589,171 @@ VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
 	interpreter imageName: imageName.
 	interpreter setImageHeaderFlagsFrom: 0.
 	interpreter primitiveSnapshot.
-	
-	file := imageName asFileReference.
 
-	self assert: file exists.
-	self assert: file size > 0.
-
-
+	interpreter imageReader validateImage: imageName 
 ]
 
 { #category : #'tests - snapshot' }
 VMPrimitiveTest >> testPrimitiveSnapshotNewKeptObjectShouldBeTenured [
-	| method object objectHash |
-	interpreter pluginList: #(). 
 
+	| method object objectHash |
+	interpreter pluginList: #(  ).
+	self setUpScheduler.
 	self initializeOldSpaceForFullGC.
 	self setContextClassIntoClassTable.
-	
-	method := methodBuilder newMethod build.
+
+	method := methodBuilder newMethod buildMethod.
 	stackBuilder addNewFrame method: method.
 	stackBuilder buildStack.
 	interpreter instructionPointer: method + 17.
 	interpreter imageName: imageName.
 	interpreter setImageHeaderFlagsFrom: 0.
-	
+
 	object := self newObjectWithSlots: 0.
 	self keepObjectInVMVariable1: object.
 	objectHash := memory hashBitsOf: object.
-	
+
 	interpreter primitiveSnapshot.
 
-	self assert: (memory hashBitsOf: self keptObjectInVMVariable1) equals: objectHash
+	self
+		assert: (memory hashBitsOf: self keptObjectInVMVariable1)
+		equals: objectHash
+]
+
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveStoreFloat64FromBytesNegativeIndex [
+
+	| class array |
+	self installFloatClass.
+
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory sixtyFourBitIndexableFormat.
+	array := memory instantiateClass: class indexableSize: 1.
+
+	interpreter push: 42.
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: -1).
+	interpreter push: (memory integerObjectOf: 17).
+	interpreter primitiveStoreFloat64IntoBytes.
+
+	self assert: interpreter failed.
+	"Stack keep as start"
+	interpreter pop: 3.
+	self assert: interpreter stackTop equals: 42
+]
+
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveStoreFloat64FromBytesOverflowIndex [
+
+	| class array |
+	self installFloatClass.
+
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory sixtyFourBitIndexableFormat.
+	array := memory instantiateClass: class indexableSize: 1.
+
+	interpreter push: 42.
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: 8).
+	interpreter push: (memory integerObjectOf: 17).
+	interpreter primitiveStoreFloat64IntoBytes.
+
+	self assert: interpreter failed.
+	"Stack keep as start"
+	interpreter pop: 3.
+	self assert: interpreter stackTop equals: 42
+]
+
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytesFor64BitArrays [
+
+	| class array |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: (memory sixtyFourBitIndexableFormat).
+	array := memory instantiateClass: class indexableSize: 1.
+	
+	self installFloatClass.
+	
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: 0).
+	interpreter push: (memory floatObjectOf: 42.0).
+	interpreter primitiveStoreFloat64IntoBytes.
+	
+	self deny: interpreter failed.
+	self assert: (memory fetchFloat64: 0 ofObject: array) equals: 42.0.
+
+]
+
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytesForByteArrays [
+
+	| class array |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: (memory firstByteFormat).
+	array := memory instantiateClass: class indexableSize: 8.
+	
+	self installFloatClass.
+	
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: 0).
+	interpreter push: (memory floatObjectOf: 42.0).
+	interpreter primitiveStoreFloat64IntoBytes.
+	
+	self deny: interpreter failed.
+	self assert: (memory fetchFloat64: 0 ofObject: array) equals: 42.0.
+
+]
+
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytesForInteger16Arrays [
+
+	| class array |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: (memory firstShortFormat).
+	array := memory instantiateClass: class indexableSize: 4.
+	
+	self installFloatClass.
+	
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: 0).
+	interpreter push: (memory floatObjectOf: 42.0).
+	interpreter primitiveStoreFloat64IntoBytes.
+	
+	self deny: interpreter failed.
+	self assert: (memory fetchFloat64: 0 ofObject: array) equals: 42.0.
+
+]
+
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytesForInteger32Arrays [
+
+	| class array |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: (memory firstLongFormat).
+	array := memory instantiateClass: class indexableSize: 2.
+	
+	self installFloatClass.
+	
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: 0).
+	interpreter push: (memory floatObjectOf: 42.0).
+	interpreter primitiveStoreFloat64IntoBytes.
+	
+	self deny: interpreter failed.
+	self assert: (memory fetchFloat64: 0 ofObject: array) equals: 42.0.
+
+]
+
+{ #category : #'tests - primitiveFloat64' }
+VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytesForSecondSlotArrays [
+
+	| class array |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: (memory sixtyFourBitIndexableFormat).
+	array := memory instantiateClass: class indexableSize: 2.
+	
+	self installFloatClass.
+	
+	interpreter push: array.
+	interpreter push: (memory integerObjectOf: 8).
+	interpreter push: (memory floatObjectOf: 42.0).
+	interpreter primitiveStoreFloat64IntoBytes.
+	
+	self deny: interpreter failed.
+	self assert: (memory fetchFloat64: 1 ofObject: array) equals: 42.0.
 
 ]
 
@@ -4551,6 +4864,105 @@ VMPrimitiveTest >> testPrimitiveStringAtShouldNotModifyStringIfFailedWhenNonChar
 	self assert: string contentEquals: (self newString: 'po')
 ]
 
+{ #category : #'tests - primitiveStringCompare' }
+VMPrimitiveTest >> testPrimitiveStringCompareWithHigherSymbol [
+
+	| asciiOrder aByteSymbol bByteSymbol |
+	aByteSymbol := #a forMemory: memory inMethod: nil.
+	bByteSymbol := #b forMemory: memory inMethod: nil.
+
+	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
+
+	interpreter push: bByteSymbol.
+	interpreter push: aByteSymbol.
+	interpreter push: asciiOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveStringCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 1)
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMPrimitiveTest >> testPrimitiveStringCompareWithIsNotCaseSensitive [
+
+	| nonCaseSensitiveOrder lowerByteSymbol upperByteSymbol |
+	lowerByteSymbol := #a forMemory: memory inMethod: nil.
+	upperByteSymbol := #A forMemory: memory inMethod: nil. 
+
+	nonCaseSensitiveOrder := self newByteArrayWithContent: String newCaseInsensitiveOrder.
+
+	interpreter push: lowerByteSymbol.
+	interpreter push: upperByteSymbol.
+	interpreter push: nonCaseSensitiveOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveStringCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMPrimitiveTest >> testPrimitiveStringCompareWithLimitCaseRegretion [
+
+	| nonCaseSensitiveOrder lowerByteSymbol upperByteSymbol |
+	lowerByteSymbol := #z forMemory: memory inMethod: nil.
+	upperByteSymbol := #Z forMemory: memory inMethod: nil. 
+
+	nonCaseSensitiveOrder := self newByteArrayWithContent: String newCaseInsensitiveOrder.
+
+	interpreter push: lowerByteSymbol.
+	interpreter push: upperByteSymbol.
+	interpreter push: nonCaseSensitiveOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveStringCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMPrimitiveTest >> testPrimitiveStringCompareWithLowerSymbol [
+
+	| asciiOrder aByteSymbol bByteSymbol |
+	aByteSymbol := #a forMemory: memory inMethod: nil.
+	bByteSymbol := #b forMemory: memory inMethod: nil.
+
+	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
+
+	interpreter push: aByteSymbol.
+	interpreter push: bByteSymbol.
+	interpreter push: asciiOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveStringCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: -1)
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMPrimitiveTest >> testPrimitiveStringCompareWithTheSameSymbol [
+
+	| byteSymbol asciiOrder |
+	byteSymbol := #a forMemory: memory inMethod: nil.
+	
+	asciiOrder := self newByteArrayWithContent: String newAsciiOrder.
+	
+	interpreter push: byteSymbol.
+	interpreter push: byteSymbol.
+	interpreter push: asciiOrder.
+
+	interpreter argumentCount: 2.
+	interpreter primitiveStringCompareWith.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
+]
+
 { #category : #'tests - primitiveSubtract' }
 VMPrimitiveTest >> testPrimitiveSubtracFailsWithTypeErrorOnFirstOperand [
 	
@@ -4651,4 +5063,59 @@ VMPrimitiveTest >> testPrimitiveSubtractWithOverflowPreservesStack [
 	self assert: (interpreter stackValue: 1) equals: minSmallInt.
 	
 	
+]
+
+{ #category : #'tests - primitiveVMParameter' }
+VMPrimitiveTest >> testPrimitiveVMParameterGetsImageVersion [
+
+	interpreter setImageVersion: 110.
+
+	interpreter push: memory nilObject.
+	interpreter push: (memory integerObjectOf: 79).
+
+	interpreter argumentCount: 1.
+	interpreter primitiveVMParameter.
+	
+	self assert: interpreter successful.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 110).
+]
+
+{ #category : #'tests - primitiveVMParameter' }
+VMPrimitiveTest >> testPrimitiveVMParameterReturnsArrayOfOops [
+
+	| slots |
+	self createArrayClass.
+	self createLargeIntegerClasses.
+	self installFloatClass.
+	
+	interpreter setExtraVMMemory: 0.
+	memory shrinkThreshold: 0.
+	memory growHeadroom: 0.
+	memory setCurrentAllocatedBytesTo: 0.
+	memory setHeapGrowthToSizeGCRatio: 0.0.
+	interpreter setImageHeaderFlagsFrom: 0.
+	interpreter preemptionYields: true.
+	interpreter primitiveVMParameter.
+	
+	"Check this is an array that has 79 OOP entries"
+	self assert: (memory isArray: interpreter stackTop).
+	slots := memory numSlotsOf: interpreter stackTop.
+	self assert: slots equals: 79.
+	
+	0 to: slots - 1 do: [ :i |
+		memory okayOop: (memory fetchPointer: i ofObject: interpreter stackTop) ]
+]
+
+{ #category : #'tests - primitiveVMParameter' }
+VMPrimitiveTest >> testPrimitiveVMParameterSetsImageVersion [
+
+	interpreter push: memory nilObject.
+	interpreter push: (memory integerObjectOf: 79).
+	interpreter push: (memory integerObjectOf: 110).
+
+	interpreter argumentCount: 2.
+	interpreter primitiveVMParameter.
+	
+	self assert: interpreter successful.
+	self assert: interpreter getImageVersion equals: 110.
 ]

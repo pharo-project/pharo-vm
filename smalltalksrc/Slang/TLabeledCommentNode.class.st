@@ -27,6 +27,12 @@ TLabeledCommentNode class >> withComment: aComment [
 		yourself
 ]
 
+{ #category : #visiting }
+TLabeledCommentNode >> accept: aVisitor [
+	
+	^ aVisitor visitLabeledCommentNode: self
+]
+
 { #category : #tranforming }
 TLabeledCommentNode >> asCASTIn: aBuilder [
 
@@ -71,6 +77,12 @@ TLabeledCommentNode >> asmLabel: labelString [
 	asmLabel := labelString
 ]
 
+{ #category : #accessing }
+TLabeledCommentNode >> children [
+	
+	^ #()
+]
+
 { #category : #testing }
 TLabeledCommentNode >> isComment [
 	"Answer true if the receiver is just a comment (i.e., it has no label)."
@@ -88,6 +100,13 @@ TLabeledCommentNode >> isLabel [
 TLabeledCommentNode >> isLeaf [
 
 	^true
+]
+
+{ #category : #comparing }
+TLabeledCommentNode >> isSameAs: anotherNode [ 
+	
+	^anotherNode isLabel
+	 and: [comment = anotherNode comment]
 ]
 
 { #category : #accessing }

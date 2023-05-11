@@ -73,6 +73,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 	"SimpleStackBasedCogit initializeBytecodeTableForSistaV1"
 
 	BytecodeSetHasDirectedSuperSend := true.
+	BytecodeSetHasExtensions := true.	
 	FirstSpecialSelector := 96.
 	NumSpecialSelectors := 32.
 	self flag:
@@ -85,7 +86,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 	self generatorTableFrom: #(
 		"1 byte bytecodes"
 		"pushes"
-		(1    0   15 genPushReceiverVariableBytecode isInstVarRef)
+		(1   0   15 genPushReceiverVariableBytecode isInstVarRef)
 		(1  16   31 genPushLiteralVariable16CasesBytecode	needsFrameNever: 1)
 		(1  32   63 genPushLiteralConstantBytecode			needsFrameNever: 1)
 		(1  64   75 genPushTemporaryVariableBytecode)
@@ -111,7 +112,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 		(1  95   95 genExtNopBytecode			needsFrameNever: 0)
 
 		"sends"
-		(1   96 117 genSpecialSelectorSend isMapped) "#+ #- #< #> #<= #>= #= #~= #* #/ #\\ #@ #bitShift: #// #bitAnd: #bitOr: #at: #at:put: #size #next #nextPut: #atEnd"
+		(1  96 117 genSpecialSelectorSend isMapped) "#+ #- #< #> #<= #>= #= #~= #* #/ #\\ #@ #bitShift: #// #bitAnd: #bitOr: #at: #at:put: #size #next #nextPut: #atEnd"
 		(1 118 118 genSpecialSelectorEqualsEquals needsFrameNever: notMapped -1) "not mapped because it is directly inlined (for now)"
 		(1 119 119 genSpecialSelectorClass needsFrameNever: notMapped 0) "not mapped because it is directly inlined (for now)"
 		(1 120 120 genSpecialSelectorNotEqualsEquals needsFrameNever: notMapped -1) "not mapped because it is directly inlined (for now)"
@@ -173,7 +174,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 		(2 244 244 genExtStoreLiteralVariableBytecode isMappedIfImmutability)
 		(2 245 245 genLongStoreTemporaryVariableBytecode)
 
-		(2 246 247	unknownBytecode)
+		(2 246 247 unknownBytecode)
 
 		"3 byte bytecodes"
 		(3 248 248 genCallPrimitiveBytecode)
@@ -387,7 +388,7 @@ SimpleStackBasedCogit >> compileFullBlockMethodFrameBuild: numCopied [
 	 We arrange this using a labelOffset.  A hack, but it works."
 	methodLabel addDependent: (self annotateAbsolutePCRef:
 			(self PushCw: methodLabel asInteger));
-			setLabelOffset: MFMethodFlagIsBlockFlag.. "method"
+			setLabelOffset: MFMethodFlagIsBlockFlag. "method"
 	self genMoveNilR: SendNumArgsReg.
 	self PushR: SendNumArgsReg. "context"
 	"Closure is on stack and initially in ReceiverResultReg.
@@ -1025,7 +1026,7 @@ SimpleStackBasedCogit >> entryOffset: anInteger [
 
 { #category : #'trampoline support' }
 SimpleStackBasedCogit >> evaluateTrampolineCallBlock: block protectLinkRegIfNot: inFrame [
-	<inline: true>
+
 	inFrame 
 		ifFalse: 
 			[ backEnd saveAndRestoreLinkRegAround: [ block value ] ]
@@ -1061,23 +1062,6 @@ SimpleStackBasedCogit >> extendedStoreAndPopBytecode [
 		^ 0].
 	variableType = 3 ifTrue:
 		[^self genStorePop: true LiteralVariable: variableIndex].
-	^EncounteredUnknownBytecode
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> extendedStoreBytecode [
-	| variableType variableIndex |
-	variableType := byte1 >> 6 bitAnd: 3.
-	variableIndex := byte1 bitAnd: 63.
-	variableType = 0 ifTrue:
-		[^self genStorePop: false ReceiverVariable: variableIndex].
-	variableType = 1 ifTrue:
-		[self genStorePop: false TemporaryVariable: variableIndex.
-		"needs a fake map entry if Immutability is ON..."
-		self cppIf: IMMUTABILITY ifTrue: [ self annotateBytecode: self Label. ].
-		^ 0].
-	variableType = 3 ifTrue:
-		[^self genStorePop: false LiteralVariable: variableIndex].
 	^EncounteredUnknownBytecode
 ]
 
@@ -1913,16 +1897,6 @@ SimpleStackBasedCogit >> genPrimitiveFullClosureValue [
 
 	"We defer unforwarding the receiver to the prologue; scanning blocks
 	 for inst var refs and only unforwarding if the block refers to inst vars."
-	(false and: [ objectRepresentation hasSpurMemoryManagerAPI ]) 
-		ifTrue: [ 
-			objectRepresentation
-				genLoadSlot: FullClosureReceiverIndex
-				sourceReg: ReceiverResultReg
-				destReg: SendNumArgsReg;
-				genEnsureOopInRegNotForwarded: SendNumArgsReg
-				scratchReg: TempReg
-				updatingSlot: FullClosureReceiverIndex
-				in: ReceiverResultReg ].
 	objectRepresentation
 		genLoadSlot: FullClosureCompiledBlockIndex
 		sourceReg: ReceiverResultReg
@@ -2813,8 +2787,6 @@ SimpleStackBasedCogit >> genUpArrowReturn [
 { #category : #'primitive generators - call' }
 SimpleStackBasedCogit >> generateCheckProfileTickFromJump: arrivingJmp returningTo: returningLabel beforeCallDo: aBlockClosure [
 
-	<inline: true>
-
 	arrivingJmp jmpTarget: self Label.
 
 	aBlockClosure value.
@@ -2899,7 +2871,7 @@ SimpleStackBasedCogit >> mapPCDataFor: cogMethod into: arrayObj [
 					storePointerUnchecked: 3 ofObject: introspectionData withValue: (objectMemory integerObjectOf: cmNoCheckEntryOffset)].
 		 ^4].
 	errCode := self
-					mapFor: (self cCoerceSimple: cogMethod to: #'CogBlockMethod *')
+					mapFor: cogMethod
 					bcpc: (coInterpreter startPCOfMethod: cogMethod methodObject)
 					performUntil: #pcDataFor:Annotation:Mcpc:Bcpc:Method:
 					arg: cogMethod asVoidPointer.
@@ -2986,7 +2958,7 @@ SimpleStackBasedCogit >> parseV4Exts: nExts priorTo: bcpc in: aMethodObj into: a
 	"224		11100000	aaaaaaaa	Extend A (Ext A = Ext A prev * 256 + Ext A)
 	 225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
 	| extAValue extBValue pc byte extByte |
-	<inline: true>
+
 	extAValue := extBValue := 0.
 	pc := bcpc - nExts - nExts.
 	[pc < bcpc] whileTrue:

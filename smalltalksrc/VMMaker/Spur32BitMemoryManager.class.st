@@ -320,14 +320,6 @@ Spur32BitMemoryManager >> hasSixtyFourBitImmediates [
 	^false
 ]
 
-{ #category : #'method access' }
-Spur32BitMemoryManager >> headerIndicatesAlternateBytecodeSet: methodHeader [
-	"A negative header selects the alternate bytecode set."
-	<api>
-	<inline: true>
-	^methodHeader signedIntFromLong < 0
-]
-
 { #category : #immediates }
 Spur32BitMemoryManager >> imageFormatVersion [
 	"Return a magic constant that changes when the image format changes.
@@ -715,7 +707,7 @@ Spur32BitMemoryManager >> objectAfter: objOop limit: limit [
 	(self oop: followingWordAddress isGreaterThanOrEqualTo: limit) ifTrue:
 		[^limit].
 	self flag: #endianness.
-	followingWord := self longAt: followingWordAddress + 4.
+	followingWord := self unsignedLongAt: followingWordAddress + 4.
 	^followingWord >> self numSlotsHalfShift = self numSlotsMask
 		ifTrue: [followingWordAddress + self baseHeaderSize]
 		ifFalse: [followingWordAddress]
@@ -850,11 +842,13 @@ Spur32BitMemoryManager >> setIsImmutableOf: objOop to: aBoolean [
 { #category : #'header access' }
 Spur32BitMemoryManager >> setIsMarkedOf: objOop to: aBoolean [
 	self assert: (self isFreeObject: objOop) not.
+	self assert: (memoryMap isPermanentObject: objOop) not.
+	
 	self flag: #endianness.
-	self longAt: objOop + 4
+	self unsignedLongAt: objOop + 4
 		put: (aBoolean
-				ifTrue: [(self longAt: objOop + 4) bitOr: 1 << self markedBitHalfShift]
-				ifFalse: [(self longAt: objOop + 4) bitAnd: (1 << self markedBitHalfShift) bitInvert32])
+				ifTrue: [(self unsignedLongAt: objOop + 4) bitOr: 1 << self markedBitHalfShift]
+				ifFalse: [(self unsignedLongAt: objOop + 4) bitAnd: (1 << self markedBitHalfShift) bitInvert32])
 ]
 
 { #category : #'header access' }
@@ -892,7 +886,7 @@ Spur32BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 	<inline: false>
 	<api>
 	| numSlots bytesBefore delta copy freeChunk |
-	self assert: (self oop: (self addressAfter: objOop) isLessThanOrEqualTo: endOfMemory).
+	self assert: (self oop: (self addressAfter: objOop) isLessThanOrEqualTo: memoryMap oldSpaceEnd).
 	numSlots := self numSlotsForShortening: objOop toIndexableSize: indexableSize.
 	numSlots = (self numSlotsOf: objOop) ifTrue:
 		[^0].
@@ -911,7 +905,7 @@ Spur32BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 				ofObject: copy
 				withValue: (self fetchPointer: i ofObject: objOop)].
 		 (self isRemembered: objOop) ifTrue:
-			[scavenger remember: copy].
+			[fromOldSpaceRememberedSet doRemember: copy].
 		 self forward: objOop to: copy.
 		 ^0].
 
@@ -924,14 +918,14 @@ Spur32BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 			[self assert: numSlots < self numSlotsMask.
 			 self rawNumSlotsOf: objOop put: numSlots].
 
-	self assert: (self oop: (self addressAfter: objOop) + delta isLessThanOrEqualTo: endOfMemory).
+	self assert: (self oop: (self addressAfter: objOop) + delta isLessThanOrEqualTo: memoryMap oldSpaceEnd).
 	"Since the 32-bit system rounds objects up to 64-bits, loosing
 	 a slot may not actually change the bytes occupied by the object."
 	delta = 0 ifTrue:
 		[^0].
 
 	freeChunk := self initFreeChunkWithBytes: delta at: (self addressAfter: objOop).
-	self assert: (self addressAfter: freeChunk) <= endOfMemory.
+	self assert: (self addressAfter: freeChunk) <= memoryMap oldSpaceEnd.
 	(self isInOldSpace: objOop)
 		ifTrue:
 			[totalFreeOldSpace := totalFreeOldSpace + delta.
@@ -966,6 +960,20 @@ Spur32BitMemoryManager >> tagMask [
 	<api>
 	<cmacro>
 	^3
+]
+
+{ #category : #'memory access' }
+Spur32BitMemoryManager >> unsignedLongAt: anAddress [
+
+	<doNotGenerate>
+	^ self uint32AtPointer: anAddress
+]
+
+{ #category : #'memory access' }
+Spur32BitMemoryManager >> unsignedLongAt: anAddress put: aValue [
+
+	<doNotGenerate>
+	^ self uint32AtPointer: anAddress put: aValue
 ]
 
 { #category : #'header formats' }

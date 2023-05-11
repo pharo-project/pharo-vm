@@ -532,6 +532,12 @@ VMSpurOldSpaceTest >> testEqualSizeChildNodeShouldBeNextNode [
 	self assert: nextChild equals: child2.
 ]
 
+{ #category : #'tests-5-allocation-strategy' }
+VMSpurOldSpaceTest >> testFalseObjectIsNotAnArray [
+
+	self deny: (memory isArray: memory falseObject).
+]
+
 { #category : #'tests-3-free-lists' }
 VMSpurOldSpaceTest >> testFreeAChunkShouldBePutAsHeadOfFreeList [
 	| firstAddress secondAddress freeListHead chunkSize |
@@ -772,7 +778,19 @@ VMSpurOldSpaceTest >> testNewObjectShouldBeOld [
 	| oop |
 	oop := memory allocateSlotsInOldSpace: 0 format: 0 classIndex: self zeroSizedObjectClassIndex.
 	
-	self assert: (memory isOldObject: oop)
+	self assert: (memory getMemoryMap isOldObject: oop)
+]
+
+{ #category : #'tests-5-allocation-strategy' }
+VMSpurOldSpaceTest >> testNilObjectIsNotAnArray [
+
+	self deny: (memory isArray: memory nilObject).
+]
+
+{ #category : #'tests-5-allocation-strategy' }
+VMSpurOldSpaceTest >> testNilObjectObjectFormatIsZero [
+
+	self assert: (memory formatOf: memory nilObject) equals: 0.
 ]
 
 { #category : #'tests-2-allocation-basic' }
@@ -838,4 +856,10 @@ VMSpurOldSpaceTest >> testSmallerChildNodeShouldBeFreeTreeChild [
 	parentNode := memory fetchPointer: memory freeChunkParentIndex ofFreeChunk: smallerChild.
 	
 	self assert: parentNode equals: freeTreeRoot
+]
+
+{ #category : #'tests-5-allocation-strategy' }
+VMSpurOldSpaceTest >> testTrueObjectIsNotAnArray [
+
+	self deny: (memory isArray: memory trueObject).
 ]

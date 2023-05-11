@@ -17,6 +17,11 @@
 
 #endif
 
+#if __FreeBSD__
+
+#include <ucontext.h>
+
+#endif
 
 #ifdef HAVE_EXECINFO_H
 # include <execinfo.h>
@@ -427,6 +432,9 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 # elif __FreeBSD__ && __i386__
 			void *fp = (void *)(uap ? uap->uc_mcontext.mc_ebp: 0);
 			void *sp = (void *)(uap ? uap->uc_mcontext.mc_esp: 0);
+# elif __FreeBSD__ && __x86_64__
+			void *fp = (void *)(uap ? uap->uc_mcontext.mc_rbp: 0);
+			void *sp = (void *)(uap ? uap->uc_mcontext.mc_rsp: 0);
 # elif __OpenBSD__
 			void *fp = (void *)(uap ? uap->sc_rbp: 0);
 			void *sp = (void *)(uap ? uap->sc_rsp: 0);

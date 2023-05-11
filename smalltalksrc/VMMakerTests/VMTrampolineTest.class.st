@@ -62,34 +62,47 @@ VMTrampolineTest >> setUp [
 
 { #category : #tests }
 VMTrampolineTest >> testCallEnilopmartSucceedsExecution [
+
 	| inc baseMethod baseMethodIP ctx page |
 	"Add 1 to the receiver result reg as a small integer"
 	inc := self compile: [ 
-		cogit AddCq: 1 << memory numSmallIntegerTagBits R: ReceiverResultReg.
-		"Force a return to our call"
-		cogit PushCw: callerAddress.
-		cogit RetN: 0 ].
+		       cogit
+			       AddCq: 1 << memory numSmallIntegerTagBits
+			       R: ReceiverResultReg.
+		       "Force a return to our call"
+		       cogit PushCw: callerAddress.
+		       cogit RetN: 0 ].
 
-	initialAddress := self compileWithoutOutput: [ cogit
-		genEnilopmartFor: ReceiverResultReg
-		forCall: false
-		called: 'ceEnterCogCodePopReceiverReg' ] bytecodes: 10.
+	cogInitialAddress := self
+		                  compileWithoutOutput: [ 
+			                  cogit
+				                  genEnilopmartFor: ReceiverResultReg
+				                  forCall: false
+				                  called: 'ceEnterCogCodePopReceiverReg' ]
+		                  bytecodes: 10.
 
 	"Initialize with some stack pointer and frame pointer"
 	baseMethod := methodBuilder newMethod
-		literals: { memory nilObject. memory nilObject }; 
-		build.
-	
+		              literals: { 
+				              memory nilObject.
+				              memory nilObject };
+		              buildMethod.
+
 	baseMethodIP := memory lastPointerOf: baseMethod.
-	
+
 	"The context has 5 (in 32 bits) or 9 (in 64 bits) as initial IP, as method has at least one literal"
-	ctx := self newSmallContextReceiver: memory nilObject method: baseMethod arguments: #() temporaries: #() ip: baseMethodIP + 1.
+	ctx := self
+		       newSmallContextReceiver: memory nilObject
+		       method: baseMethod
+		       arguments: #(  )
+		       temporaries: #(  )
+		       ip: baseMethodIP + 1.
 
 	"The base context has a trampoline as the savedIP so it can return to a context that is in the heap"
-	cogit ceBaseFrameReturnTrampoline: 16rAABBCCDD.	
+	cogit ceBaseFrameReturnTrampoline: 16rAABBCCDD.
 	cogit setCStackPointer: interpreter rumpCStackAddress.
 	cogit setCFramePointer: interpreter rumpCStackAddress.
-	
+
 	page := interpreter makeBaseFrameFor: ctx.
 	interpreter setStackPointersFromPage: page.
 	interpreter setStackPageAndLimit: page.
@@ -97,15 +110,17 @@ VMTrampolineTest >> testCallEnilopmartSucceedsExecution [
 
 	"Initialize Stack to the correct pointers in the selected page"
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
-	
-	"Calling convention of enilopmarts: target address and arguments are pushed to the stack"	
+
+	"Calling convention of enilopmarts: target address and arguments are pushed to the stack"
 	interpreter push: inc.
 	interpreter push: (memory integerObjectOf: 2).
 
 	self prepareCall.
 	self runUntilReturn.
 
-	self assert: machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 3)
+	self
+		assert: machineSimulator receiverRegisterValue
+		equals: (memory integerObjectOf: 3)
 ]
 
 { #category : #tests }
@@ -150,7 +165,7 @@ VMTrampolineTest >> testLoadStackPointersShouldLoadFramePointer [
 	self interpreter framePointer: 42.
 	self framePointerRegisterValue: 0.
 
-	self runFrom: initialAddress until: self getLastAddress.
+	self runFrom: cogInitialAddress until: self getLastAddress.
 
 	"The generated code should load in FP the value stored in `framePointer`"
 	self assert: self framePointerRegisterValue equals: 42
@@ -168,7 +183,7 @@ VMTrampolineTest >> testLoadStackPointersShouldLoadStackPointer [
 	self interpreter framePointer: 0.
 	machineSimulator smalltalkStackPointerRegisterValue: 0.
 	
-	self runFrom: initialAddress until: self getLastAddress.
+	self runFrom: cogInitialAddress until: self getLastAddress.
 
 	"The generated code should load in SP the value stored in `stackPointer`"
 	self assert: machineSimulator smalltalkStackPointerRegisterValue equals: 17
@@ -232,7 +247,7 @@ VMTrampolineTest >> testSmalltalkToCStackShouldLoadCFramePointer [
 	cogit setCFramePointer: 888.
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
 
-	self runFrom: initialAddress until: self getLastAddress.
+	self runFrom: cogInitialAddress until: self getLastAddress.
 
 	self assert: machineSimulator framePointerRegisterValue equals: 888
 ]
@@ -246,7 +261,7 @@ VMTrampolineTest >> testSmalltalkToCStackShouldLoadCStackPointer [
 	cogit setCFramePointer: 888.
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
 
-	self runFrom: initialAddress until: self getLastAddress.
+	self runFrom: cogInitialAddress until: self getLastAddress.
 
 	self assert: machineSimulator stackPointerRegisterValue equals: 777
 ]
@@ -261,7 +276,7 @@ VMTrampolineTest >> testSmalltalkToCStackShouldPushLinkRegister [
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
 	machineSimulator linkRegisterValue: 42.
 
-	self runFrom: initialAddress until: self getLastAddress.
+	self runFrom: cogInitialAddress until: self getLastAddress.
 
 	"The generated code should push the link register in the interpreter stack"
 	self assert: self interpreter stackTop equals: 42
@@ -278,7 +293,7 @@ VMTrampolineTest >> testSmalltalkToCStackSwitchShouldUpdateInterpreterFramePoint
 	self cogit setCFramePointer: 116.
 	self framePointerRegisterValue: 42.
 
-	self runFrom: initialAddress until: self getLastAddress.
+	self runFrom: cogInitialAddress until: self getLastAddress.
 
 	"The generated code should load in the interpreter stackPointer the value stored in the SP register"
 	self assert: self interpreter framePointer equals: 42
@@ -295,7 +310,7 @@ VMTrampolineTest >> testSmalltalkToCStackSwitchShouldUpdateInterpreterStackPoint
 	self cogit setCFramePointer: 116.
 	machineSimulator smalltalkStackPointerRegisterValue: 42.
 
-	self runFrom: initialAddress until: self getLastAddress.
+	self runFrom: cogInitialAddress until: self getLastAddress.
 
 	"The generated code should load in the interpreter stackPointer the value stored in the SP register"
 	self assert: self interpreter stackPointer equals: 42

@@ -129,13 +129,6 @@ CogMethodSurrogate >> cPICNumCases: n [
 ]
 
 { #category : #accessing }
-CogMethodSurrogate >> cmHomeMethod [
-	^cogit cogMethodSurrogateAt: ((SistaV1BytecodeSet and: [self cmIsFullBlock])
-										ifTrue: [address]
-										ifFalse: [address - self homeOffset])
-]
-
-{ #category : #accessing }
 CogMethodSurrogate >> cmIsFullBlock [
 	"Answer the value of cpicHasMNUCaseOrCMIsFullBlock"
 
@@ -156,7 +149,7 @@ CogMethodSurrogate >> cpicHasMNUCase [
 	<inline: true>
 
 	^SistaV1BytecodeSet
-		ifTrue: [self cpicHasMNUCaseOrCMIsFullBlock and: [self cmType = CMClosedPIC]]
+		ifTrue: [self cpicHasMNUCaseOrCMIsFullBlock and: [self cmType = CMPolymorphicIC]]
 		ifFalse: [self cpicHasMNUCaseOrCMIsFullBlock]
 ]
 

@@ -9,7 +9,7 @@ VMSpurNewSpaceStructureTest >> fillEden [
 
 	"Allocate enough objects to fill the eden."
 	1
-		to: memory scavenger eden size // emptyObjectSize
+		to: memory scavenger eden size // self emptyObjectSize
 		do: [ :index | self newZeroSizedObject ]
 ]
 
@@ -21,7 +21,7 @@ VMSpurNewSpaceStructureTest >> testInstantiateNewObjectMovesFreeStartAfterObject
 	self newZeroSizedObject.
 	
 	"New zero sized object has 64bit header + 1 * 64bit empty slot = 16bytes"
-	self assert: memory freeStart equals: freeStartBefore + emptyObjectSize
+	self assert: memory freeStart equals: freeStartBefore + self emptyObjectSize
 ]
 
 { #category : #'tests-2-instantiation' }
@@ -32,21 +32,20 @@ VMSpurNewSpaceStructureTest >> testInstantiateNewObjectWithSlotMovesFreeStartAft
 	self newObjectWithSlots: 0.
 	
 	"New zero sized object has 64bit header + 1 * 64bit empty slot = 16bytes"
-	self assert: memory freeStart equals: freeStartBefore + emptyObjectSize
+	self assert: memory freeStart equals: freeStartBefore + self emptyObjectSize
 ]
 
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryEdenEndIsAtTheStartOfOldSpace [
 
-	self assert: memory scavenger eden limit equals: memory oldSpaceStart
+	self assert: memory scavenger eden limit equals: memory getMemoryMap newSpaceEnd 
 ]
 
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryEdenIsRestOfNewSpace [
 	
 	self
-		assert: memory scavenger eden size
-		equals: newSpaceSize - memory scavenger pastSpace size - memory scavenger futureSpace size
+		assert: memory scavenger eden size > (environmentBuilder newSpaceSize - memory scavenger pastSpace size - memory scavenger futureSpace size - interpreter interpreterAllocationReserveBytes) 
 ]
 
 { #category : #'tests-1-memory-initialization' }
@@ -64,7 +63,7 @@ VMSpurNewSpaceStructureTest >> testNewMemoryFutureSpaceEndIsAtTheStartOfEden [
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryFutureSpaceIsRoughlyOneSeventhOfNewSpace [
 	
-	self assert: memory scavenger futureSpace size equals: (newSpaceSize // 7 truncateTo: memory allocationUnit)
+	self assert: memory scavenger futureSpace size equals: (environmentBuilder newSpaceSize // 7 truncateTo: memory allocationUnit)
 ]
 
 { #category : #'tests-1-memory-initialization' }
@@ -73,24 +72,6 @@ VMSpurNewSpaceStructureTest >> testNewMemoryFutureSurvivorSpaceIsAtFutureSpaceSt
 	"The future survivor start indicates during the execution of the scavenger, where the next free space in future space starts."
 	
 	self assert: memory scavenger futureSurvivorStart equals: memory scavenger futureSpace start
-]
-
-{ #category : #'tests-1-memory-initialization' }
-VMSpurNewSpaceStructureTest >> testNewMemoryLimitIsSumOfSpaces [
-	
-	self assert: memory memoryLimit equals: oldSpaceSize + newSpaceSize + stackSpaceSize + initialAddress + self primitiveTraceLogSize + methodCacheSize 
-]
-
-{ #category : #'tests-1-memory-initialization' }
-VMSpurNewSpaceStructureTest >> testNewMemoryNewSpaceLimitIsNewSpaceStartPlusSize [
-	
-	self assert: memory newSpaceLimit equals: newSpaceSize + stackSpaceSize + initialAddress	+ self primitiveTraceLogSize + methodCacheSize 
-]
-
-{ #category : #'tests-1-memory-initialization' }
-VMSpurNewSpaceStructureTest >> testNewMemoryNewSpaceStartIsStackSize [
-
-	self assert: memory newSpaceStart equals: stackSpaceSize + initialAddress + self primitiveTraceLogSize + methodCacheSize 
 ]
 
 { #category : #'tests-1-memory-initialization' }
@@ -111,13 +92,13 @@ VMSpurNewSpaceStructureTest >> testNewMemoryPastSpaceFreeStartIsAtPastSpaceStart
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryPastSpaceIsAtTheStartOfNewSpace [
 	
-	self assert: memory scavenger pastSpace start equals: memory newSpaceStart
+	self assert: memory scavenger pastSpace start equals: memory getMemoryMap newSpaceStart
 ]
 
 { #category : #'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryPastSpaceIsRoughlyOneSeventhOfNewSpace [
 	
-	self assert: memory scavenger pastSpaceBytes equals: (newSpaceSize // 7 truncateTo: memory allocationUnit)
+	self assert: memory scavenger pastSpaceBytes equals: (environmentBuilder newSpaceSize // 7 truncateTo: memory allocationUnit)
 ]
 
 { #category : #'tests-2-instantiation' }

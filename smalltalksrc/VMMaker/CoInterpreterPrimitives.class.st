@@ -4,45 +4,11 @@ Class {
 	#category : #'VMMaker-JIT'
 }
 
-{ #category : #'process primitives' }
-CoInterpreterPrimitives >> doWaitSemaphore: sema [
-
-	<api>
-	<returnTypeC: #void>
-	
-	self doWaitSemaphore: sema reEnterInterpreter: true
-]
-
-{ #category : #'process primitives' }
-CoInterpreterPrimitives >> doWaitSemaphore: sema reEnterInterpreter: hasToReenter [
-	| excessSignals activeProc inInterpreter |
-	<api>
-	<returnTypeC: #void>	
-
-	excessSignals := self fetchInteger: ExcessSignalsIndex ofObject: sema.
-	excessSignals > 0
-		ifTrue:
-			[self storeInteger: ExcessSignalsIndex
-				ofObject: sema
-				withValue: excessSignals - 1]
-		ifFalse:
-			["We're going to switch process, either to an interpreted frame or a machine
-			  code frame. To know whether to return or enter machine code we have to
-			  know from whence we came.  We could have come from the interpreter,
-			  either directly or via a machine code primitive.  We could have come from
-			  machine code.  The instructionPointer tells us where from:"
-			inInterpreter := instructionPointer >= objectMemory startOfMemory.
-			activeProc := self activeProcess.
-			self addLastLink: activeProc toList: sema.
-			self transferTo: self wakeHighestPriority from: CSWait.
-			hasToReenter ifTrue: [self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]]
-]
-
 { #category : #'object access primitives' }
 CoInterpreterPrimitives >> frameIsMarked: theFPInt [
 	| methodField |
 	methodField := stackPages longAt: theFPInt + FoxMethod.
-	^methodField asUnsignedInteger < objectMemory startOfMemory
+	^methodField asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory
 		ifTrue: [(methodField bitAnd: 4) ~= 0]
 		ifFalse: [((stackPages longAt: theFPInt + FoxIFrameFlags) bitAnd: 2) ~= 0]
 ]
@@ -50,15 +16,15 @@ CoInterpreterPrimitives >> frameIsMarked: theFPInt [
 { #category : #'object access primitives' }
 CoInterpreterPrimitives >> markFrame: theFPInt [
 	| methodField |
-	methodField := stackPages longAt: theFPInt + FoxMethod.
-	methodField asUnsignedInteger < objectMemory startOfMemory
+	methodField := stackPages unsignedLongAt: theFPInt + FoxMethod.
+	methodField asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory
 		ifTrue:
 			[stackPages
-				longAt: theFPInt + FoxMethod
+				unsignedLongAt: theFPInt + FoxMethod
 				put: (methodField bitOr: 4)]
 		ifFalse:
 			[stackPages
-				longAt: theFPInt + FoxIFrameFlags
+				unsignedLongAt: theFPInt + FoxIFrameFlags
 				put: ((stackPages longAt: theFPInt + FoxIFrameFlags) bitOr: 2)]
 ]
 
@@ -122,7 +88,7 @@ CoInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 			ifTrue: [self assert: (self isFrame: (self cCoerceSimple: next to: #'char *')
 										onPage: (stackPages stackPageFor: (self cCoerceSimple: next to: #'char *')))]
 			ifFalse:
-				[next >= heapBase ifTrue: "exclude Cog methods"
+				[next >= objectMemory getMemoryMap startOfObjectMemory ifTrue: "exclude Cog methods"
 					[self assert: (self checkOkayOop: next)]].
 		 next = goal ifTrue:
 			[self assert: freeStartAtStart = objectMemory freeStart.
@@ -134,7 +100,7 @@ CoInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
 		  and: [(stackPages couldBeFramePointer: next)
 				ifTrue: [(self frameIsMarked: next) not]
 				ifFalse:
-					[next >= heapBase "exclude Cog methods"
+					[next >= objectMemory getMemoryMap startOfObjectMemory "exclude Cog methods"
 					  and: [(objectMemory isMarked: next) not
 					  and: [((objectMemory isPointers: next) or: [objectMemory isCompiledMethod: next])
 					  and: [followWeak or: [(objectMemory isWeakNonImm: next) not]]]]]])
@@ -177,22 +143,6 @@ CoInterpreterPrimitives >> pcDataFor: cogMethod [
 	data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: nSlots.
 	data ifNil: [^-1].
 	nEntries := cogit mapPCDataFor: cogMethod into: data.
-	nEntries = 0 ifTrue:
-		[^0].
-	nEntries < nSlots ifTrue:
-		[objectMemory shorten: data toIndexableSize: nEntries].
-	^data
-]
-
-{ #category : #'method introspection support' }
-CoInterpreterPrimitives >> picDataFor: cogMethod [
-	<var: #cogMethod type: #'CogMethod *'>
-	| cm nSlots nEntries data |
-	cm := cogMethod methodObject.
-	nSlots := (objectMemory byteSizeOf: cm) - (self startPCOfMethod: cm) + objectMemory minSlotsForShortening.
-	data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: nSlots.
-	data ifNil: [^-1].
-	nEntries := cogit picDataFor: cogMethod into: data.
 	nEntries = 0 ifTrue:
 		[^0].
 	nEntries < nSlots ifTrue:
@@ -270,75 +220,6 @@ CoInterpreterPrimitives >> primitiveContextXray [
 	(self maybeMethodHasCogMethod: theMethod) ifTrue:
 		[flags := flags bitOr: 16].
 	self pop: 1 thenPush: (objectMemory integerObjectOf: flags)
-]
-
-{ #category : #'process primitives' }
-CoInterpreterPrimitives >> primitiveEnterCriticalSection [
-	"Attempt to enter a CriticalSection/Mutex.  If not owned, set the owner to the current
-	 process and answer false. If owned by the current process  answer true.   Otherwise
-	 suspend the process.  Answer if the receiver is owned by the current process."
-	| criticalSection owningProcessIndex owningProcess activeProc inInterpreter |
-	argumentCount > 0
-		ifTrue:
-			[criticalSection := self stackValue: 1.  "rcvr"
-			 activeProc := self stackTop]
-		ifFalse:
-			[criticalSection := self stackTop.  "rcvr"
-			 activeProc := self activeProcess].
-	owningProcessIndex := ExcessSignalsIndex. "CriticalSections are laid out like Semaphores"
-	owningProcess := objectMemory fetchPointer: owningProcessIndex ofObject: criticalSection.
-	owningProcess = objectMemory nilObject ifTrue:
-		[objectMemory storePointer: owningProcessIndex
-			ofObject: criticalSection
-			withValue: activeProc.
-		 ^self pop: argumentCount + 1 thenPush: objectMemory falseObject].
-	owningProcess = activeProc ifTrue:
-		[^self pop: argumentCount + 1 thenPush: objectMemory trueObject].
-	"Arrange to answer false (unowned) when the process is resumed."
-	self pop: argumentCount + 1 thenPush: objectMemory falseObject.
-	"We're going to switch process, either to an interpreted frame or a machine
-	 code frame. To know whether to return or enter machine code we have to
-	 know from whence we came.  We could have come from the interpreter,
-	 either directly or via a machine code primitive.  We could have come from
-	 machine code.  The instructionPointer tells us where from:"
-	inInterpreter := instructionPointer >= objectMemory startOfMemory.
-	self addLastLink: activeProc toList: criticalSection.
-	self transferTo: self wakeHighestPriority from: CSEnterCriticalSection.
-	self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter
-]
-
-{ #category : #'process primitives' }
-CoInterpreterPrimitives >> primitiveExitCriticalSection [
-	"Exit the critical section.
-	 This may change the active process as a result."
-	| criticalSection owningProcessIndex inInterpreter owningProcess |
-	criticalSection := self stackTop.  "rcvr"
-	owningProcessIndex := ExcessSignalsIndex. "CriticalSections are laid out like Semaphores"
-	(self isEmptyList: criticalSection)
-		ifTrue:
-			[objectMemory storePointerUnchecked: owningProcessIndex
-				ofObject: criticalSection
-				withValue: objectMemory nilObject]
-		ifFalse:
-			["We're going to switch process, either to an interpreted frame or a machine
-			  code frame. To know whether to return or enter machine code we have to
-			  know from whence we came.  We could have come from the interpreter,
-			  either directly or via a machine code primitive.  We could have come from
-			  machine code.  The instructionPointer tells us where from:"
-			 inInterpreter := instructionPointer >= objectMemory startOfMemory.
-			 owningProcess := self removeFirstLinkOfList: criticalSection.
-			 "store check unnecessary because aSemaphore referred to owningProcess
-			  via its FirstLinkIndex slot before owningProcess was removed."
-			 objectMemory storePointerUnchecked: owningProcessIndex
-				ofObject: criticalSection
-				withValue: owningProcess.
-			 "Note that resume: isn't fair; it won't suspend the active process.
-			  For fairness we must do the equivalent of a primitiveYield, but that
-			  may break old code, so we stick with unfair resume:."
-			 (self resume: owningProcess
-				preemptedYieldingIf: preemptionYields
-				from: CSExitCriticalSection) ifTrue:
-						[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]]
 ]
 
 { #category : #'system control primitives' }
@@ -430,8 +311,26 @@ CoInterpreterPrimitives >> primitiveMethodPCData [
 	self pop: 1 thenPush: data
 ]
 
+{ #category : #'method introspection primitives' }
+CoInterpreterPrimitives >> primitiveMethodProfilingData [
+	<export: true>
+	| methodReceiver data |
+	argumentCount ~= 0 ifTrue:
+		[^self primitiveFailFor: PrimErrBadNumArgs].
+	methodReceiver := self stackTop.
+	data := 0.
+	(self methodHasCogMethod: methodReceiver) ifTrue:
+		[data := self profilingDataFor: (self cogMethodOf: methodReceiver).
+		 data = -1 ifTrue:
+			[^self primitiveFailFor: PrimErrNoMemory]].
+	data = 0 ifTrue:
+		[data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: 0].
+	self pop: 1 thenPush: data
+]
+
 { #category : #'indexing primitives' }
 CoInterpreterPrimitives >> primitiveMethodXray [
+
 	"Lift the veil from a method and answer an integer describing the interior state
 	 of its machine code.
 	 Used for e.g. VM tests so they can verify they're testing what they think they're testing.
@@ -443,33 +342,45 @@ CoInterpreterPrimitives >> primitiveMethodXray [
 	 Bit 4 = method too big to be jitted (more than 64k of code, or needs more than 1.5Mb of stack space to compile)
 	 Bit 5 = method contains unknown/unjittable bytecode
 	 Bit 6 = method should not be jitted because it contains a primitive not to be called from machine code (unused)"
-	| alreadyCogged flags cogMethod |
+
 	<var: #cogMethod type: #'CogMethod *'>
-	(self methodWithHeaderShouldBeCogged: (objectMemory methodHeaderOf: self stackTop))
-		ifTrue:
-			[alreadyCogged := self maybeMethodHasCogMethod: self stackTop.
-			 flags := 1.
-			 alreadyCogged ifFalse:
-				[cogMethod := cogit cog: self stackTop selector: objectMemory nilObject.
-				 (cogMethod = nil
-				  and: [cogCompiledCodeCompactionCalledFor]) ifTrue:
-					[self commenceCogCompiledCodeCompaction.
-					 cogMethod := cogit cog: self stackTop selector: objectMemory nilObject].
-			 cogMethod asInteger
-				caseOf: {
-					[MethodTooBig] -> [flags := 1 + 16].
-					[EncounteredUnknownBytecode] -> [flags := 1 + 32].
-					[ShouldNotJIT] -> [flags := 1 + 64] }
-				otherwise: [self deny: (cogMethod asInteger between: MaxNegativeErrorCode and: NotFullyInitialized)]].
-			 (flags = 1
-			  and: [self maybeMethodHasCogMethod: self stackTop]) ifTrue:
-				[cogMethod := self cogMethodOf: self stackTop.
-				 flags := cogMethod stackCheckOffset = 0 ifTrue: [7] ifFalse: [3].
-				 cogMethod cmRefersToYoung ifTrue:
-					[flags := flags + 8].
-				 alreadyCogged ifFalse:
-					[cogit freeMethod: cogMethod]]]
-		ifFalse: [flags := 0].
+	| alreadyCogged flags cogMethod |
+	(self methodWithHeaderShouldBeCogged:
+		 (objectMemory methodHeaderOf: self stackTop))
+		ifTrue: [ 
+			alreadyCogged := self maybeMethodHasCogMethod: self stackTop.
+			flags := 1.
+
+			alreadyCogged
+				ifTrue: [ flags := flags + 2 ]
+				ifFalse: [ 
+					cogMethod := cogit
+						             cog: self stackTop
+						             selector: objectMemory nilObject.
+					(cogMethod = nil and: [ cogCompiledCodeCompactionCalledFor ]) 
+						ifTrue: [ 
+							self writeBackHeadFramePointers.
+							self commenceCogCompiledCodeCompaction.
+							cogMethod := cogit
+								             cog: self stackTop
+								             selector: objectMemory nilObject ].
+					cogMethod asInteger
+						caseOf: { 
+								([ MethodTooBig ] -> [ flags := flags + 16 ]).
+								([ EncounteredUnknownBytecode ] -> [ flags := flags + 32 ]).
+								([ ShouldNotJIT ] -> [ flags := flags + 64 ]) }
+						otherwise: [ 
+							self deny: (cogMethod asInteger
+									 between: MaxNegativeErrorCode
+									 and: NotFullyInitialized) ] ].
+
+			(self maybeMethodHasCogMethod: self stackTop) 
+				ifTrue: [ 
+					cogMethod := self cogMethodOf: self stackTop.
+					cogMethod stackCheckOffset = 0 ifTrue: [ flags := flags + 4 ].
+					cogMethod cmRefersToYoung ifTrue: [ flags := flags + 8 ].
+					alreadyCogged ifFalse: [ cogit safeFreeMethod: cogMethod ] ] ]
+		ifFalse: [ flags := 0 ].
 	self pop: 1 thenPush: (objectMemory integerObjectOf: flags)
 ]
 
@@ -580,46 +491,6 @@ CoInterpreterPrimitives >> primitiveResetCountersInMethod [
 ]
 
 { #category : #'process primitives' }
-CoInterpreterPrimitives >> primitiveResume [
-	"Put this process on the scheduler's lists thus allowing it to proceed next time there is
-	 a chance for processes of it's priority level.  It must go to the back of its run queue so
-	 as not to preempt any already running processes at this level.  If the process's priority
-	 is higher than the current process, preempt the current process."
-	| proc inInterpreter |
-	proc := self stackTop.  "rcvr"
-	(objectMemory isContext: (objectMemory followField: SuspendedContextIndex ofObject: proc)) ifFalse:
-		[^self primitiveFail].
-	"We're about to switch process, either to an interpreted frame or a
-	 machine code frame. To know whether to return or enter machine code
-	 we have to know from whence we came.  We could have come from the
-	 interpreter, either directly or via a machine code primitive.  We could have
-	 come from machine code.  The instructionPointer tells us where from:"
-	inInterpreter := instructionPointer >= objectMemory startOfMemory.
-	(self resume: proc preemptedYieldingIf: preemptionYields from: CSResume) ifTrue:
-		[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]
-
-	"Personally I would like to check MyList, which should not be one of the elements of the scheduler lists.
-	 But there are awful race conditions in things like should:notTakeMoreThan: that mean we can't.
-	 eem 9/27/2010 23:08. e.g.
-
-	| proc myList classLinkedList |
-	proc := self stackTop.
-	myList := objectMemory fetchPointer: MyListIndex ofObject: proc.
-	classLinkedList := self superclassOf: (objectMemory splObj: ClassSemaphore).
-	((self fetchClassOfNonInt: myList) ~= classLinkedList
-	and: [objectMemory isContext: (objectMemory fetchPointer: SuspendedContextIndex ofObject: proc)]) ifFalse:
-		[^self primitiveFail].
-	''We're about to switch process, either to an interpreted frame or a
-	 machine code frame. To know whether to return or enter machine code
-	 we have to know from whence we came.  We could have come from the
-	 interpreter, either directly or via a machine code primitive.  We could have
-	 come from machine code.  The instructionPointer tells us where from:''
-	inInterpreter := instructionPointer >= objectMemory startOfMemory.
-	(self resume: proc  preemptedYieldingIf: preemptionYields from: CSResume) ifTrue:
-		[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]"
-]
-
-{ #category : #'process primitives' }
 CoInterpreterPrimitives >> primitiveSignal [
 	"Synchronously signal the semaphore.
 	 This may change the active process as a result."
@@ -629,27 +500,9 @@ CoInterpreterPrimitives >> primitiveSignal [
 	 we have to know from whence we came.  We could have come from the
 	 interpreter, either directly or via a machine code primitive.  We could have
 	 come from machine code.  The instructionPointer tells us where from:"
-	inInterpreter := instructionPointer >= objectMemory startOfMemory.
+	inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
 	(self synchronousSignal: self stackTop) ifTrue:
 		[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]
-]
-
-{ #category : #'method introspection primitives' }
-CoInterpreterPrimitives >> primitiveSistaMethodPICAndCounterData [
-	<export: true>
-	<option: #SistaCogit>
-	| methodReceiver data |
-	argumentCount ~= 0 ifTrue:
-		[^self primitiveFailFor: PrimErrBadNumArgs].
-	methodReceiver := self stackTop.
-	data := 0.
-	(self methodHasCogMethod: methodReceiver) ifTrue:
-		[data := self picDataFor: (self cogMethodOf: methodReceiver).
-		 data = -1 ifTrue:
-			[^self primitiveFailFor: PrimErrNoMemory]].
-	data = 0 ifTrue:
-		[data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: 0].
-	self pop: 1 thenPush: data
 ]
 
 { #category : #'system control primitives' }
@@ -666,39 +519,6 @@ CoInterpreterPrimitives >> primitiveSnapshot [
 		instructionPointer := instructionPointer - 1].
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter
 	"NOTREACHED"
-]
-
-{ #category : #'process primitives' }
-CoInterpreterPrimitives >> primitiveSuspend [
-	"Primitive. Suspend the receiver, aProcess such that it can be executed again
-	by sending #resume. If the given process is not currently running, take it off
-	its corresponding list. The primitive returns the list the receiver was previously on."
-	| process myList |
-	process := self stackTop.
-	process = self activeProcess ifTrue:
-		[| inInterpreter |
-		"We're going to switch process, either to an interpreted frame or a machine
-		 code frame. To know whether to return or enter machine code we have to
-		 know from whence we came.  We could have come from the interpreter,
-		 either directly or via a machine code primitive.  We could have come from
-		 machine code.  The instructionPointer tells us where from:"
-		self pop: 1 thenPush: objectMemory nilObject.
-		inInterpreter := instructionPointer >= objectMemory startOfMemory.
-		self transferTo: self wakeHighestPriority from: CSSuspend.
-		^self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter].
-	myList := objectMemory fetchPointer: MyListIndex ofObject: process.
-	"XXXX Fixme. We should really check whether myList is a kind of LinkedList or not
-	but we can't easily so just do a quick check for nil which is the most common case."
-	myList = objectMemory nilObject ifTrue:
-		[^self primitiveFailFor: PrimErrBadReceiver].
-	"Alas in Spur we need a read barrier"
-	(objectMemory isForwarded: myList) ifTrue:
-		[myList := objectMemory followForwarded: myList.
-		 objectMemory storePointer: MyListIndex ofObject: process withValue: myList].
-	self removeProcess: process fromList: myList.
-	self successful ifTrue:
-		[objectMemory storePointer: MyListIndex ofObject: process withValue: objectMemory nilObject.
-		 self pop: 1 thenPush: myList]
 ]
 
 { #category : #'control primitives' }
@@ -730,7 +550,7 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 		[^self primitiveFail].		
 
 	"All stackPages need to have current head pointers to avoid confusion."
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 
 	"If we're searching for aContextOrNil it might be on a stack page.  Helps to know
 	 if we can free a whole page or not, or if we can short-cut the termination."
@@ -752,7 +572,7 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 					[stackedReceiverOffset := self frameStackedReceiverOffset: theFP.
 					 frameAbove := self findFrameAbove: contextsFP inPage: pageToStopOn.
 					 contextsIP := (self frameCallerSavedIP: frameAbove) asUnsignedInteger.
-					 self assert: ((contextsIP asUnsignedInteger >= objectMemory startOfMemory)
+					 self assert: ((contextsIP asUnsignedInteger >= objectMemory getMemoryMap startOfObjectMemory)
 								or: [contextsIP = cogit ceReturnToInterpreterPC]) == (self isMachineCodeFrame: contextsFP) not.
 					 newSP := self frameCallerSP: frameAbove.
 					 newFP := newSP - stackedReceiverOffset - objectMemory wordSize.
@@ -761,15 +581,15 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 						by: objectMemory wordSize negated
 						do: [:source|
 							newSP := newSP - objectMemory wordSize.
-							stackPages longAt: newSP put: (stackPages longAt: source)].
-					 stackPages longAt: newFP + FoxSavedFP put: contextsFP.
+							stackPages unsignedLongAt: newSP put: (stackPages unsignedLongAt: source)].
+					 stackPages unsignedLongAt: newFP + FoxSavedFP put: contextsFP.
 					"Ensure contract between machine-code callee and interpreter caller frames is preserved.
 					 Return pc needs to be ceReturnToInterpreterPC."
 					 ((self isMachineCodeFrame: newFP)
-					  and: [contextsIP >= objectMemory startOfMemory]) ifTrue:
+					  and: [contextsIP >= objectMemory getMemoryMap startOfObjectMemory]) ifTrue:
 						[self iframeSavedIP: contextsFP put: contextsIP.
 						 contextsIP := cogit ceReturnToInterpreterPC].
-					 stackPages longAt: newFP + FoxCallerSavedIP put: contextsIP.
+					 stackPages unsignedLongAt: newFP + FoxCallerSavedIP put: contextsIP.
 					 self assert: (objectMemory isContext: thisCtx).
 					 objectMemory storePointerUnchecked: SenderIndex
 						ofObject: thisCtx
@@ -784,7 +604,7 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 				 self assert: stackPage = stackPages mostRecentlyUsedPage.
 				 ^nil].
 			 self assertValidStackedInstructionPointers: #'__LINE__'.
-			 theFP := self externalEnsureIsBaseFrame: theFP. "May cause a GC!!"
+			 theFP := self ensureIsBaseFrame: theFP. "May cause a GC!!"
 			 currentCtx := self frameCallerContext: theFP.
 			 "May also reclaim aContextOrNil's page, hence..."
 			 (aContextOrNil ~= objectMemory nilObject and: [self isStillMarriedContext: aContextOrNil])
@@ -840,7 +660,7 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 						ifTrue:
 							[frameAbove := self findFrameAbove: theFP inPage: thePage.
 							self assert: frameAbove ~= 0.
-							frameAbove := self externalEnsureIsBaseFrame: frameAbove. "May cause a GC!! May also reclaim aContextOrNil's page, hence..."
+							frameAbove := self ensureIsBaseFrame: frameAbove. "May cause a GC!! May also reclaim aContextOrNil's page, hence..."
 							(aContextOrNil ~= objectMemory nilObject and: [self isStillMarriedContext: aContextOrNil])
 								ifTrue: [contextsFP := self frameOfMarriedContext: aContextOrNil.
 										pageToStopOn := stackPages stackPageFor: contextsFP]
@@ -854,7 +674,7 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 									 frameAbove := self findFrameAbove: contextsFP inPage: thePage.
 									 frameAbove ~= 0 ifTrue:
 										[contextsSP := (self frameCallerSP: frameAbove) - objectMemory wordSize.
-										 stackPages longAt: contextsSP put: (self frameCallerSavedIP: frameAbove).
+										 stackPages unsignedLongAt: contextsSP put: (self frameCallerSavedIP: frameAbove).
 										 self setHeadFP: contextsFP andSP: contextsSP inPage: thePage].
 									 currentCtx := aContextOrNil]
 								ifFalse:
@@ -916,7 +736,7 @@ CoInterpreterPrimitives >> primitiveVoidVMStateForMethod [
 	self flushMethodCacheForMethod: methodObj.
 	activeContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
 	self ensurePushedInstructionPointer.
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	(hasCogMethod := self methodHasCogMethod: methodObj) ifTrue:
 		[self divorceMachineCodeFramesWithMethod: methodObj].
 	"One might think (as this author did) that the heap scan is unnecessary if the method does not
@@ -950,27 +770,20 @@ CoInterpreterPrimitives >> primitiveVoidVMStateForMethod [
 	self pop: argumentCount
 ]
 
-{ #category : #'process primitives' }
-CoInterpreterPrimitives >> primitiveYield [
-"primitively do the equivalent of Process>yield"
-	| scheduler activeProc priority processLists processList inInterpreter |
-	scheduler := self schedulerPointer.
-	activeProc := objectMemory fetchPointer: ActiveProcessIndex ofObject: scheduler.
-	priority := self quickFetchInteger: PriorityIndex ofObject: activeProc.
-	processLists := objectMemory fetchPointer: ProcessListsIndex ofObject: scheduler.
-	processList := objectMemory fetchPointer: priority - 1 ofObject: processLists.
-
-	(self isEmptyList: processList) ifTrue:
-		[^nil].
-	"We're going to switch process, either to an interpreted frame or a machine
-	 code frame. To know whether to return or enter machine code we have to
-	 know from whence we came.  We could have come from the interpreter,
-	 either directly or via a machine code primitive.  We could have come from
-	 machine code.  The instructionPointer tells us where from:"
-	inInterpreter := instructionPointer >= objectMemory startOfMemory.
-	self addLastLink: activeProc toList: processList.
-	self transferTo: self wakeHighestPriority from: CSYield.
-	self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter
+{ #category : #'method introspection support' }
+CoInterpreterPrimitives >> profilingDataFor: cogMethod [
+	<var: #cogMethod type: #'CogMethod *'>
+	| cm nSlots nEntries data |
+	cm := cogMethod methodObject.
+	nSlots := (objectMemory byteSizeOf: cm) - (self startPCOfMethod: cm) + objectMemory minSlotsForShortening.
+	data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: nSlots.
+	data ifNil: [^-1].
+	nEntries := cogit profilingDataFor: cogMethod into: data.
+	nEntries = 0 ifTrue:
+		[^0].
+	nEntries < nSlots ifTrue:
+		[objectMemory shorten: data toIndexableSize: nEntries].
+	^data
 ]
 
 { #category : #'object access primitives' }
@@ -984,14 +797,14 @@ CoInterpreterPrimitives >> unmarkAllFrames [
 		thePage := stackPages stackPageAt: i.
 		(stackPages isFree: thePage) ifFalse:
 			[theFP := thePage  headFP.
-			 [methodField := stackPages longAt: theFP + FoxMethod.
-			 methodField asUnsignedInteger < objectMemory startOfMemory
+			 [methodField := stackPages unsignedLongAt: theFP + FoxMethod.
+			 methodField asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory
 				ifTrue:
 					[(methodField bitAnd: 4) ~= 0 ifTrue:
-						[self longAt: theFP + FoxMethod put: methodField - 4]]
+						[self unsignedLongAt: theFP + FoxMethod put: methodField - 4]]
 				ifFalse:
-					[flags := stackPages longAt: theFP + FoxIFrameFlags.
+					[flags := stackPages unsignedLongAt: theFP + FoxIFrameFlags.
 					  (flags bitAnd: 2) ~= 0 ifTrue:
-						[stackPages longAt: theFP + FoxIFrameFlags put: flags - 2]].
+						[stackPages unsignedLongAt: theFP + FoxIFrameFlags put: flags - 2]].
 			  (theFP := self frameCallerFP: theFP) ~= 0] whileTrue]]
 ]

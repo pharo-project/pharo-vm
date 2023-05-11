@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <MacTypes.h>
 #import <AppKit/AppKit.h>
 #include "pharovm/fileDialog.h"
 #include "pharovm/stringUtilities.h"

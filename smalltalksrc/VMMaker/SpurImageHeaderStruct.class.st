@@ -2,7 +2,6 @@ Class {
 	#name : #SpurImageHeaderStruct,
 	#superclass : #VMStructType,
 	#instVars : [
-		'headerSize',
 		'dataSize',
 		'oldBaseAddr',
 		'initialSpecialObjectsOop',
@@ -15,9 +14,12 @@ Class {
 		'firstSegSize',
 		'freeOldSpaceInImage',
 		'swapBytes',
-		'hdrLastHash'
+		'hdrLastHash',
+		'imageFormat',
+		'imageHeaderSize',
+		'imageVersion'
 	],
-	#category : #'VMMaker-JIT'
+	#category : #'VMMaker-ImageFormat'
 }
 
 { #category : #'simulation only' }
@@ -33,7 +35,7 @@ SpurImageHeaderStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBloc
 	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a struct of this type."
 
 	<var: #dataSize type: #size_t>
-	<var: #desiredHeapSize type: #usqInt>
+	<var: #desiredHeapSize type: #size_t>
 	<var: #headerStart type: #squeakFileOffsetType>
 
 	self filteredInstVarNames do:
@@ -42,7 +44,7 @@ SpurImageHeaderStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBloc
 			value: ivn
 			value: (ivn caseOf: {
 						['dataSize']				-> [#'size_t'].
-						['desiredHeapSize']	-> [#'usqInt'].
+						['desiredHeapSize']	-> [#'size_t'].
 						['headerStart']			-> [#'squeakFileOffsetType'].
 				} otherwise: [ #'sqInt' ])]
 ]
@@ -168,15 +170,39 @@ SpurImageHeaderStruct >> headerFlags: anObject [
 ]
 
 { #category : #accessing }
-SpurImageHeaderStruct >> headerSize [
+SpurImageHeaderStruct >> imageFormat [
 
-	^ headerSize
+	^ imageFormat
 ]
 
 { #category : #accessing }
-SpurImageHeaderStruct >> headerSize: anObject [
+SpurImageHeaderStruct >> imageFormat: anObject [
 
-	headerSize := anObject
+	imageFormat := anObject
+]
+
+{ #category : #accessing }
+SpurImageHeaderStruct >> imageHeaderSize [
+
+	^ imageHeaderSize
+]
+
+{ #category : #accessing }
+SpurImageHeaderStruct >> imageHeaderSize: anObject [
+
+	imageHeaderSize := anObject
+]
+
+{ #category : #accessing }
+SpurImageHeaderStruct >> imageVersion [
+
+	^ imageVersion
+]
+
+{ #category : #accessing }
+SpurImageHeaderStruct >> imageVersion: anObject [
+
+	imageVersion := anObject
 ]
 
 { #category : #accessing }
@@ -189,6 +215,15 @@ SpurImageHeaderStruct >> initialSpecialObjectsOop [
 SpurImageHeaderStruct >> initialSpecialObjectsOop: anObject [
 
 	initialSpecialObjectsOop := anObject
+]
+
+{ #category : #initialization }
+SpurImageHeaderStruct >> initialize [ 
+	
+	<doNotGenerate>
+	
+	super initialize.
+	swapBytes := 0
 ]
 
 { #category : #accessing }
