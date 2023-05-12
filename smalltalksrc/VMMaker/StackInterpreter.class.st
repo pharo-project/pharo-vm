@@ -932,8 +932,6 @@ StackInterpreter class >> initializeFrameIndices [
 	IFrameSlots := fxCallerSavedIP - fxIFReceiver + 1.
 
 	FoxCallerSavedIP := fxCallerSavedIP * BytesPerWord.
-	"In base frames the caller saved ip field holds the caller context."
-	FoxCallerContext := FoxCallerSavedIP.
 	FoxSavedFP := fxSavedFP * BytesPerWord.
 	FoxMethod := fxMethod * BytesPerWord.
 	FoxThisContext := fxThisContext * BytesPerWord.
@@ -6712,11 +6710,15 @@ StackInterpreter >> frameCallerContext: theFP [
 
 { #category : #'frame access' }
 StackInterpreter >> frameCallerContext: theFP put: aValue [
+	"The first word on the stack holds the base frame's caller context, which is immediately above the stacked receiver."
 	<var: #theFP type: #'char *'>
 	<inline: true>
 	self assert: (aValue = objectMemory nilObject or: [objectMemory isContext: aValue]).
+	self assert: (self isBaseFrame: theFP).
+	self assert: theFP + (self frameStackedReceiverOffset: theFP) + (2 * objectMemory wordSize) = (stackPages stackPageFor: theFP) baseAddress.
+	self assert: (stackPages longAt: theFP + (self frameStackedReceiverOffset: theFP) + objectMemory wordSize) = (self frameContext: theFP).
 	^stackPages
-		longAt: theFP + FoxCallerContext "a.k.a. FoxCallerSavedIP"
+		longAt: theFP + (self frameStackedReceiverOffset: theFP) + (2 * objectMemory wordSize)
 		put: aValue
 ]
 

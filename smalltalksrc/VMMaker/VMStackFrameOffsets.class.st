@@ -5,7 +5,6 @@ Class {
 	#name : #VMStackFrameOffsets,
 	#superclass : #SharedPool,
 	#classVars : [
-		'FoxCallerContext',
 		'FoxCallerSavedIP',
 		'FoxIFReceiver',
 		'FoxIFSavedIP',
