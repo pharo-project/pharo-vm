@@ -2145,7 +2145,7 @@ CoInterpreter >> compilationBreakpointFor: selectorOop [
 ]
 
 { #category : #'frame access' }
-CoInterpreter >> contextInstructionPointer: theIP frame: theFP [
+CoInterpreter >> contextInstructionPointer: anIP frame: theFP [
 	"Answer a value to store in the InstructionPointer index of a context object for theIP and theFP.
 	 Mapping native pcs to bytecode pcs is quite expensive, requiring a search through the method
 	 map.  We mitigate this cost by deferring mapping until we really have to, which is when a context's
@@ -2159,17 +2159,20 @@ CoInterpreter >> contextInstructionPointer: theIP frame: theFP [
 	 start, in block alignment units.  So when mapping back we can find the start of the block.
 
 	 See mustMapMachineCodePC:context: for the code that does the actual mapping."
+
 	<var: #theFP type: #'char *'>
 	<inline: false>
+	| theIP |
+	theIP := anIP.
 	self assert: (self validInstructionPointer: theIP inFrame: theFP).
-	(self isMachineCodeFrame: theFP) ifTrue:
-		[^self encodedNativePCOf: theIP cogMethod: (self mframeCogMethod: theFP)].
-	^objectMemory integerObjectOf: (theIP = cogit ceReturnToInterpreterPC
-							ifTrue: [self iframeSavedIP: theFP]
-							ifFalse: [theIP])
-						- (self iframeMethod: theFP)
-						- objectMemory baseHeaderSize
-						+ 2
+	(self isMachineCodeFrame: theFP) ifTrue: [
+		^ self
+			  encodedNativePCOf: theIP
+			  cogMethod: (self mframeCogMethod: theFP) ].
+	theIP := theIP = cogit ceReturnToInterpreterPC
+		         ifTrue: [ self iframeSavedIP: theFP ]
+		         ifFalse: [ theIP ].
+	^ super contextInstructionPointer: anIP frame: theFP
 ]
 
 { #category : #'frame access' }
@@ -3256,6 +3259,7 @@ CoInterpreter >> instVar: offset ofContext: aContext [
 
 	self assert: (objectMemory isContext: aContext).
 	self assert: offset <= (ReceiverIndex + (self checkStackPointerForMaybeMarriedContext: aContext)).
+
 	"method, closureOrNil & receiver need no special handling; only
 	 sender, pc & stackp have to be computed for married contexts."
 	(self isReadMediatedContextInstVarIndex: offset) ifFalse:
@@ -3289,24 +3293,20 @@ CoInterpreter >> instructionPointerForFrame: spouseFP currentFP: currentFP curre
 	 frame on some other stack the frame pc is the value on top of stack.  Otherwise the
 	 frame pc is the saved pc of the frame above.  Once the frame pc is found it must be
 	 mapped to a bytecode pc."
+
 	<var: #spouseFP type: #'char *'>
 	<var: #currentFP type: #'char *'>
-	| value theIP thePage theFPAbove |
-	<var: #thePage type: #'StackPage *'>
-	<var: #theFPAbove type: #'char *'>
-	spouseFP = currentFP
-		ifTrue: [theIP := self oopForPointer: instrPtr]
-		ifFalse:
-			[thePage := stackPages stackPageFor: spouseFP.
-			 theFPAbove := self findFrameAbove: spouseFP inPage: thePage.
-			 theIP := theFPAbove = 0
-						ifTrue: [stackPages longAt: thePage headSP]
-						ifFalse:[self oopForPointer: (self frameCallerSavedIP: theFPAbove)]].
-	value := self contextInstructionPointer: theIP frame: spouseFP.
-	^value signedIntFromLong < 0
-		ifTrue: [self mustMapMachineCodePC: (objectMemory integerValueOf: value)
-					context: (self frameContext: spouseFP)]
-		ifFalse: [value]
+	| value |
+	value := super
+		         instructionPointerForFrame: spouseFP
+		         currentFP: currentFP
+		         currentIP: instrPtr.
+	^ value signedIntFromLong < 0
+		  ifTrue: [
+			  self
+				  mustMapMachineCodePC: (objectMemory integerValueOf: value)
+				  context: (self frameContext: spouseFP) ]
+		  ifFalse: [ value ]
 ]
 
 { #category : #'frame access' }
