@@ -89,17 +89,16 @@ VMMachineCodeDebuggerInstruction >> machineSimulator: aProcessorSimulator [
 ]
 
 { #category : #accessor }
-VMMachineCodeDebuggerInstruction >> usedRegisters [ 
-
+VMMachineCodeDebuggerInstruction >> usedRegisters [
 	"Detect any register name from an asm instruction"
+
 	| registerAliases cleanASM tokens usedRegisters |
-	registerAliases := self machineSimulator registerAliases.
+	registerAliases := self machineSimulator registerList.
 	"Clean and split the ASM"
 	cleanASM := self assemblyCodeString copyWithoutAll: ',()'.
 	tokens := cleanASM splitOn: [ :each | each isSeparator ].
 	"Check if any of the substring "
-	usedRegisters := tokens collect: [ :substring |  
-			          			  (registerAliases keyAtValue: substring asSymbol ifAbsent: [  ]) value ] 
- 		                     thenSelect: [ :value | value isNotNil ].
+	usedRegisters := tokens select: [ :token |
+		                 registerAliases includes: token ].
 	^ usedRegisters removeDuplicates
 ]

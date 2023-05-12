@@ -243,8 +243,8 @@ VMMachineCodeDebugger >> highlightSelectedIRInstructionMCInstructions [
 { #category : #actions }
 VMMachineCodeDebugger >> highlightSelectedInstructionRegisters [
 
-	self selectedInstruction
-		ifNotNil: [ self highlightRegisters: self selectedInstruction ]
+	self selectedInstruction ifNotNil: [
+		self highlightRegisters: self selectedInstruction ]
 ]
 
 { #category : #showing }
