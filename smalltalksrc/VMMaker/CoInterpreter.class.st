@@ -5330,32 +5330,6 @@ CoInterpreter >> stackLimitAddress [
 ]
 
 { #category : #'stack pages' }
-CoInterpreter >> stackLimitOffset [
-	"Answer the amount of slots needed to fit a new frame at the point the stack
-	 limit is checked.  A frame looks like this at the point the stack limit is checked:
-			stacked receiver/closure
-			arg0
-			...
-			argN
-			caller's method ip/base frame's sender context
-	fp->	saved fp
-			method
-			context (uninitialized?)
-			method header fields (interpreter only)
-			saved method ip (uninitialized?; interpreter only)
-			receiver
-			first temp
-			...
-	sp->	Nth temp
-	So the amount of headroom is
-		the maximum number of arguments + 1 (for stacked receiver and arguments)
-		+ the frame size
-		+ the max number of temps.
-	 Since a method's number of temps includes its arguments the actual offset is:"
-	^(IFrameSlots + 64) * objectMemory wordSize
-]
-
-{ #category : #'stack pages' }
 CoInterpreter >> stackPageHeadroom [
 	"Return a minimum amount of headroom for each stack page (in bytes).
 	 In the interpreter we don't actually need any headroom.  In a JIT the stack
@@ -5507,31 +5481,6 @@ CoInterpreter >> validInstructionPointer: instrPointer inMethod: aMethod framePo
 				 	 ^theInstrPointer >= (header + (cogit sizeof: CogMethod))
 				 	 and: [theInstrPointer < (header + cogMethod blockSize)]]].
 	^super validInstructionPointer: theInstrPointer inMethod: aMethod framePointer: fp
-]
-
-{ #category : #'stack pages' }
-CoInterpreter >> validStackPageBaseFrame: aPage [
-	"Check that the base frame in the stack page has a valid sender and saved context."
-	<var: #aPage type: #'StackPage *'>
-	<inline: false>
-	| savedThisContext senderContextOrNil |
-	senderContextOrNil := stackPages unsignedLongAt: aPage baseAddress.
-	savedThisContext := stackPages unsignedLongAt: aPage baseAddress - objectMemory wordSize.
-	(self asserta: aPage baseFP + (self frameStackedReceiverOffset: aPage baseFP) + (2 * objectMemory wordSize) = aPage baseAddress) ifFalse:
-		[^false].
-	(self asserta: (objectMemory addressCouldBeObj: senderContextOrNil)) ifFalse:
-		[^false].
-	(self asserta: (objectMemory addressCouldBeObj: savedThisContext)) ifFalse:
-		[^false].
-	(self asserta: (senderContextOrNil = objectMemory nilObject or: [objectMemory isContext: senderContextOrNil])) ifFalse:
-		[^false].
-	(self asserta: (objectMemory isContext: savedThisContext)) ifFalse:
-		[^false].
-	(self asserta: (self frameCallerContext: aPage baseFP) = senderContextOrNil) ifFalse:
-		[^false].
-	(self asserta: (self frameContext: aPage baseFP) = savedThisContext) ifFalse:
-		[^false].
-	^true
 ]
 
 { #category : #'cog jit support' }

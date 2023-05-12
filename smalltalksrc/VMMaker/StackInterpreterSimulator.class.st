@@ -218,17 +218,6 @@ StackInterpreterSimulator >> basicInitialize [
 	imageWriter := self class imageWriterClass newWithMemory: objectMemory andInterpreter: self	
 ]
 
-{ #category : #utilities }
-StackInterpreterSimulator >> booleanCheat: cond [
-	disableBooleanCheat
-		ifTrue: [self pop: 2
-					thenPush: (cond
-								ifTrue: [objectMemory trueObject]
-								ifFalse: [objectMemory falseObject]).
-				self fetchNextBytecode]
-		ifFalse: [super booleanCheat: cond]
-]
-
 { #category : #'spur bootstrap' }
 StackInterpreterSimulator >> bootstrapping [
 	^bootstrapping
@@ -1363,12 +1352,6 @@ StackInterpreterSimulator >> profileSends: nBytecodes [
 		inBlock: [self runForNBytes: nBytecodes]
 		showTree: true.
 	self close
-]
-
-{ #category : #'debugging traps' }
-StackInterpreterSimulator >> pushMaybeContextReceiverVariable: index [
-	"(index = SenderIndex or: [index = ClosureIndex]) ifTrue: [self halt]."
-	^super pushMaybeContextReceiverVariable: index
 ]
 
 { #category : #'I/O primitives support' }

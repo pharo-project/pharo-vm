@@ -14631,8 +14631,9 @@ StackInterpreter >> stackLimitOffset [
 			caller's method ip/base frame's sender context
 	fp->	saved fp
 			method
-			method header fields
-			context (uninitialized)
+			context (uninitialized?)
+			method header fields (interpreter only)
+			saved method ip (uninitialized?; interpreter only when JIT VM)
 			receiver
 			first temp
 			...
