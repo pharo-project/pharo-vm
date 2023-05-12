@@ -21,6 +21,8 @@ vm openAsMorph; run
 Class {
 	#name : #StackInterpreterSimulator,
 	#superclass : #StackInterpreterPrimitives,
+	#traits : 'TVMSimulator',
+	#classTraits : 'TVMSimulator classTrait',
 	#instVars : [
 		'parent',
 		'bootstrapping',
@@ -32,15 +34,12 @@ Class {
 		'printReturns',
 		'traceOn',
 		'myBitBlt',
-		'displayForm',
-		'fakeForm',
 		'filesOpen',
 		'imageName',
 		'pluginList',
 		'mappedPluginEntries',
 		'quitBlock',
 		'transcript',
-		'displayView',
 		'eventTransformer',
 		'printFrameAtEachStep',
 		'printBytecodeAtEachStep',
@@ -88,6 +87,15 @@ StackInterpreterSimulator class >> new [
 ]
 
 { #category : #'instance creation' }
+StackInterpreterSimulator class >> newBasicWithOptions: optionsDictionaryOrArray [
+
+	^ self
+		  onObjectMemory: nil
+		  options: optionsDictionaryOrArray
+		  initializer: [ :interpreter | interpreter basicInitialize ]
+]
+
+{ #category : #'instance creation' }
 StackInterpreterSimulator class >> newWithOptions: optionsDictionaryOrArray [
 	^self onObjectMemory: nil options: optionsDictionaryOrArray
 ]
@@ -99,6 +107,15 @@ StackInterpreterSimulator class >> onObjectMemory: anObjectMemory [
 
 { #category : #'instance creation' }
 StackInterpreterSimulator class >> onObjectMemory: anObjectMemory options: optionsDictionaryOrArray [
+
+	^ self
+		  onObjectMemory: anObjectMemory
+		  options: optionsDictionaryOrArray
+		  initializer: [ :interpreter | interpreter initialize ]
+]
+
+{ #category : #'instance creation' }
+StackInterpreterSimulator class >> onObjectMemory: anObjectMemory options: optionsDictionaryOrArray initializer: initializer [
 	| simulatorClass |
 	^self == StackInterpreterSimulator
 		ifTrue:
@@ -111,7 +128,7 @@ StackInterpreterSimulator class >> onObjectMemory: anObjectMemory options: optio
 				onObjectMemory: (anObjectMemory ifNil:
 										[self objectMemoryClass simulatorClass new])
 				options: optionsDictionaryOrArray]
-		ifFalse: [super basicNew objectMemory: anObjectMemory; initialize]
+		ifFalse: [initializer value: (super basicNew objectMemory: anObjectMemory)]
 ]
 
 { #category : #'debug support' }
@@ -155,7 +172,7 @@ StackInterpreterSimulator >> atEachStepBlock: aBlock [
 { #category : #'return bytecodes' }
 StackInterpreterSimulator >> baseFrameReturn [
 	| contextToReturnTo |
-	contextToReturnTo := self frameCallerContext: localFP.
+	contextToReturnTo := self frameCallerContext: framePointer.
 	((objectMemory isContext: contextToReturnTo)
 	 and: [self isMarriedOrWidowedContext: contextToReturnTo]) ifTrue:
 		[(self checkIsStillMarriedContext: contextToReturnTo currentFP: nil) ifFalse:
@@ -201,7 +218,6 @@ StackInterpreterSimulator >> basicInitialize [
 	traceOn := true.
 	printSends := printReturns := printFrameAtEachStep := printBytecodeAtEachStep := false.
 	myBitBlt := BitBltSimulator new setInterpreter: self.
-	displayForm := fakeForm := 'Display has not yet been installed' asDisplayText form.
 	eventQueue := SharedQueue new.
 	suppressHeartbeatFlag := false.
 	systemAttributes := Dictionary new.
@@ -211,12 +227,15 @@ StackInterpreterSimulator >> basicInitialize [
 	
 	"This will be overriden when calling initializePluginEntries"
 	mappedPluginEntries := OrderedCollection new.
+	
+	imageReader := self class imageReaderClass newWithMemory: objectMemory andInterpreter: self.
+	imageWriter := self class imageWriterClass newWithMemory: objectMemory andInterpreter: self	
 ]
 
 { #category : #utilities }
 StackInterpreterSimulator >> booleanCheat: cond [
 	disableBooleanCheat
-		ifTrue: [self internalPop: 2
+		ifTrue: [self pop: 2
 					thenPush: (cond
 								ifTrue: [objectMemory trueObject]
 								ifFalse: [objectMemory falseObject]).
@@ -239,16 +258,6 @@ StackInterpreterSimulator >> bootstrapping: aBoolean [
 { #category : #accessing }
 StackInterpreterSimulator >> breakCount [
 	^breakCount
-]
-
-{ #category : #'interpreter shell' }
-StackInterpreterSimulator >> browserPluginInitialiseIfNeeded [
-"do nothing - its a macro in C code to support Mac browser plugin strangeness"
-]
-
-{ #category : #'interpreter shell' }
-StackInterpreterSimulator >> browserPluginReturnIfNeeded [
-"do nothing - its a macro in C code to support Mac browser plugin strangeness"
 ]
 
 { #category : #'memory access' }
@@ -293,13 +302,13 @@ StackInterpreterSimulator >> cCoerceSimple: value to: cTypeString [
 
 { #category : #'plugin support' }
 StackInterpreterSimulator >> callExternalPrimitive: mapIndex [
+
 	| entry |
 	entry := self pluginEntryFor: mapIndex.
 	"Spur needs the primitiveFunctionPointer to be set correctly
 	 for accurate following of forwarders on primitive failure."
-	objectMemory hasSpurMemoryManagerAPI ifTrue:
-		[primitiveFunctionPointer := entry at: 2].
-	^(entry at: 1) perform: (entry at: 2)
+	primitiveFunctionPointer := entry at: 2.
+	^ (entry at: 1) perform: (entry at: 2)
 ]
 
 { #category : #'object memory support' }
@@ -356,42 +365,29 @@ StackInterpreterSimulator >> clipboardSize [
 	^ Clipboard clipboardText size
 ]
 
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> clipboardWrite: sz From: actualDataAddress At: ignored [
-
-	Clipboard clipboardText: (self stringOf: actualDataAddress - objectMemory baseHeaderSize)
-]
-
 { #category : #'debug support' }
 StackInterpreterSimulator >> cloneSimulation [
-	| savedAtEachStepBlock savedDisplayView savedDisplayForm savedQuitBlock savedTranscript |
-	savedAtEachStepBlock := atEachStepBlock. atEachStepBlock := nil.
-	savedDisplayView := displayView. displayView := nil.
-	savedDisplayForm := displayForm. displayForm = nil.
-	savedQuitBlock := quitBlock. quitBlock := nil.
-	savedTranscript := transcript. transcript := nil.
 
-	^[| theClone |
-	 Smalltalk garbageCollect.
-	 theClone := self veryDeepCopy.
-	 theClone parent: self; transcript: Transcript.
-	 theClone objectMemory parent: objectMemory.
-	 theClone]
-		ensure:
-			[atEachStepBlock := savedAtEachStepBlock.
-			 displayView := savedDisplayView.
-			 displayForm = savedDisplayForm.
-			 quitBlock := savedQuitBlock.
-			 transcript := savedTranscript]
-]
+	| savedAtEachStepBlock savedQuitBlock savedTranscript |
+	savedAtEachStepBlock := atEachStepBlock.
+	atEachStepBlock := nil.
+	savedQuitBlock := quitBlock.
+	quitBlock := nil.
+	savedTranscript := transcript.
+	transcript := nil.
 
-{ #category : #'debug support' }
-StackInterpreterSimulator >> cloneSimulationWindow [
-	| label |
-	label := 'Clone of ', (displayView containingWindow label allButFirst: 'Simulation of ' size).
-	^self cloneSimulation openAsMorph
-		setLabel: label;
-		yourself
+	^ [ 
+	  | theClone |
+	  Smalltalk garbageCollect.
+	  theClone := self veryDeepCopy.
+	  theClone
+		  parent: self;
+		  transcript: Transcript.
+	  theClone objectMemory parent: objectMemory.
+	  theClone ] ensure: [ 
+		  atEachStepBlock := savedAtEachStepBlock.
+		  quitBlock := savedQuitBlock.
+		  transcript := savedTranscript ]
 ]
 
 { #category : #initialization }
@@ -458,6 +454,11 @@ StackInterpreterSimulator >> disableBooleanCheat: aBoolean [
 	disableBooleanCheat := aBoolean
 ]
 
+{ #category : #'interpreter shell' }
+StackInterpreterSimulator >> dispatchCurrentBytecode [
+	self dispatchOn: currentBytecode in: BytecodeTable.
+]
+
 { #category : #'plugin primitive support' }
 StackInterpreterSimulator >> dispatchMappedPluginEntry: n [ 
 	^(mappedPluginEntries at: n) first
@@ -470,45 +471,7 @@ StackInterpreterSimulator >> dispatchOn: anInteger in: selectorArray [
 	The given integer must be between 0 and selectorArray size-1, inclusive.
 	For speed, no range test is done, since it is done by the at: operation.
 	Note that, unlike many other arrays used in the Interpreter, this method expect NO CArrayAccessor wrapping - it would duplicate the +1. Maybe this would be better updated to make it all uniform"
-	selectorArray == BytecodeTable ifTrue:
-		[self assert: (anInteger between: bytecodeSetSelector and: bytecodeSetSelector + 255)].
 	self perform: (selectorArray at: (anInteger + 1)).
-]
-
-{ #category : #accessing }
-StackInterpreterSimulator >> displayForm [
-	"The VM SImulator draws directly on an imageMorph named displayView
-	  displayView is housed on a Form named displayForm
-	  displayForm is initialized in my initialize method. 
-	  it 'needs' to be initialized there to support Eliot's legacy openAsMorph functionality
-	"
-	^displayForm
-]
-
-{ #category : #'I/O primitives support' }
-StackInterpreterSimulator >> displayLocation [
-
-	^ Display extent - displayForm extent - (10@10)
-]
-
-{ #category : #accessing }
-StackInterpreterSimulator >> displayView [
-	"The VM SImulator draws directly on an imageMorph named displayView
-	  displayView is housed on a Form named displayForm
-	  Since this is housed directly on the Morph, I have this tight compling from here->model->morph. 
-	"
-	self flag: 'tty'.	
-	^displayView
-]
-
-{ #category : #accessing }
-StackInterpreterSimulator >> displayView: anImageMorph [
-	"The VM SImulator draws directly on an imageMorph named displayView
-	  displayView is housed on a Form named displayForm
-	  Since this is housed directly on the Morph, I have this tight compling from here->model->morph. 
-	"
-	self flag: 'tty'.
-	displayView := anImageMorph
 ]
 
 { #category : #'debugging traps' }
@@ -621,17 +584,6 @@ StackInterpreterSimulator >> endPCOf: aMethod [
 	^end
 ]
 
-{ #category : #testing }
-StackInterpreterSimulator >> ensureDebugAtEachStepBlock [
-	atEachStepBlock := [printFrameAtEachStep ifTrue:
-							[self printFrame: localFP WithSP: localSP].
-						 printBytecodeAtEachStep ifTrue:
-							[self printCurrentBytecodeOn: transcript.
-							 transcript cr; flush].
-						 byteCount = breakCount ifTrue:
-							["printFrameAtEachStep :=" printBytecodeAtEachStep := true]]
-]
-
 { #category : #'debugging traps' }
 StackInterpreterSimulator >> externalDivorceFrame: theFP andContext: ctxt [
 	"(theFP = -208 or: [ctxt = 22189568]) ifTrue:
@@ -643,9 +595,9 @@ StackInterpreterSimulator >> externalDivorceFrame: theFP andContext: ctxt [
 StackInterpreterSimulator >> externalInstVar: index ofContext: aMarriedContext put: anOop [
 	| imMarried shesMarried result |
 	index == SenderIndex ifTrue:
-		[imMarried := self checkIsStillMarriedContext: aMarriedContext currentFP: localFP.
+		[imMarried := self checkIsStillMarriedContext: aMarriedContext currentFP: framePointer.
 		(objectMemory isContext: anOop) ifTrue:
-			[shesMarried := self checkIsStillMarriedContext: anOop currentFP: localFP.
+			[shesMarried := self checkIsStillMarriedContext: anOop currentFP: framePointer.
 			 "self shortPrintContext: aMarriedContext.
 			  self shortPrintContext: anOop"]].
 	result := super externalInstVar: index ofContext: aMarriedContext put: anOop.
@@ -658,7 +610,7 @@ StackInterpreterSimulator >> externalInstVar: index ofContext: aMarriedContext p
 
 { #category : #'interpreter shell' }
 StackInterpreterSimulator >> fetchByte [
-	^objectMemory byteAt: (localIP := localIP + 1).
+	^objectMemory byteAt: (instructionPointer := instructionPointer + 1).
 ]
 
 { #category : #'control primitives' }
@@ -708,26 +660,6 @@ StackInterpreterSimulator >> framePointer [
 	^framePointer
 ]
 
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> fullDisplay [
-	| primFailCodeValue |
-	displayForm ifNil: [^self].
-	primFailCodeValue := primFailCode.
-	self initPrimCall.
-	self updateDisplayLeft: 0 Top: 0 Right: displayWidth Bottom: displayHeight.
-	primFailCode := primFailCodeValue
-]
-
-{ #category : #'debug support' }
-StackInterpreterSimulator >> fullDisplayUpdate [
-	"Preserve self successful when call asynchronously from Simulator"
-	| primFailCodeValue |
-	primFailCodeValue := primFailCode.
-	self initPrimCall.
-	super fullDisplayUpdate.
-	primFailCode := primFailCodeValue
-]
-
 { #category : #'interpreter shell' }
 StackInterpreterSimulator >> functionPointerFor: primIndex inClass: lookupClass [
 	"Override Interpreter to handle the external primitives caching.  See also
@@ -744,15 +676,6 @@ StackInterpreterSimulator >> getErrorObjectFromPrimFailCode [
 	^super getErrorObjectFromPrimFailCode
 ]
 
-{ #category : #'image save/restore' }
-StackInterpreterSimulator >> getShortFromFile: aFile swap: swapFlag [
-	| aShort |
-	aShort := self nextShortFrom: aFile.
-	^swapFlag 
-		ifTrue: [(aShort bitShift: -8) + ((aShort bitAnd: 16rFF) bitShift: 8)]
-		ifFalse: [aShort]
-]
-
 { #category : #'memory access' }
 StackInterpreterSimulator >> halfWordHighInLong32: long32 [
 	^self subclassResponsibility
@@ -761,22 +684,6 @@ StackInterpreterSimulator >> halfWordHighInLong32: long32 [
 { #category : #'memory access' }
 StackInterpreterSimulator >> halfWordLowInLong32: long32 [
 	^self subclassResponsibility
-]
-
-{ #category : #'I/O primitives support' }
-StackInterpreterSimulator >> handleListenEvent: aMorphicEvent [
-	"openAsMorph[NoTranscript] registered me for listen events via HandMorph>>addEventListener.
-	Transform the listen event and add it to my event queue.  ALso check if the displayForm shoudl resize."
-	(displayForm ~~ fakeForm and: [displayForm extent ~= displayView extent]) ifTrue:
-		[| newForm |
-		newForm := Form
-						extent: displayView extent
-						depth: displayForm depth.
-		 displayForm displayOn: newForm.
-		 displayForm := newForm].
-	((aMorphicEvent isMouse or: [aMorphicEvent isKeyboard])
-	 and: [displayView bounds containsPoint: aMorphicEvent position]) ifTrue:
-		[eventTransformer degenerateEvent: aMorphicEvent for: self]
 ]
 
 { #category : #'debug support' }
@@ -806,20 +713,14 @@ StackInterpreterSimulator >> imageNameGet: p Length: sz [
 
 { #category : #'file primitives' }
 StackInterpreterSimulator >> imageNamePut: p Length: sz [
-	| newName window |
+
+	| newName |
 	newName := ByteString new: sz.
-	1 to: sz  do:
-		[:i |
+	1 to: sz do: [ :i | 
 		newName
 			at: i
-			put: (Character value: (objectMemory byteAt: p + i - 1))].
-	imageName := newName.
-	(displayView notNil
-	 and: [(window := displayView containingWindow) notNil]) ifTrue:
-		[window setLabel: (window label
-							copyReplaceFrom: (window label lastIndexOf: Character space) + 1
-							to: window label size
-							with: (self localNameFor: imageName))]
+			put: (Character value: (objectMemory byteAt: p + i - 1)) ].
+	imageName := newName
 ]
 
 { #category : #'file primitives' }
@@ -830,11 +731,9 @@ StackInterpreterSimulator >> imageNameSize [
 { #category : #'interpreter shell' }
 StackInterpreterSimulator >> incrementByteCount [
 	(byteCount := byteCount + 1) = breakCount ifTrue:
-		[self doOrDefer: [self changed: #byteCountText].
-		 self halt: 'breakCount reached'].
+		[ self halt: 'breakCount reached' ].
 	byteCount \\ 1000 = 0 ifTrue:
-		[self doOrDefer: [self changed: #byteCountText].
-		 self forceInterruptCheck]
+		[ self forceInterruptCheck ]
 ]
 
 { #category : #initialization }
@@ -849,23 +748,20 @@ StackInterpreterSimulator >> initialize [
 
 { #category : #'plugin support' }
 StackInterpreterSimulator >> initializePluginEntries [
+
 	mappedPluginEntries := OrderedCollection new.
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[primitiveAccessorDepthTable := Array new: primitiveTable size.
-			 pluginList := {}.
-			 self loadNewPlugin: '']
-		ifFalse:
-			[pluginList := {'' -> self }]
+	primitiveAccessorDepthTable := Array new: primitiveTable size.
+	pluginList := {  }.
+	self loadNewPlugin: ''
 ]
 
 { #category : #'frame access' }
 StackInterpreterSimulator >> instVar: index ofContext: aMarriedContext put: anOop [
 	| imMarried shesMarried result |
 	index == SenderIndex ifTrue:
-		[imMarried := self checkIsStillMarriedContext: aMarriedContext currentFP: localFP.
+		[imMarried := self checkIsStillMarriedContext: aMarriedContext currentFP: framePointer.
 		(objectMemory isContext: anOop) ifTrue:
-			[shesMarried := self checkIsStillMarriedContext: anOop currentFP: localFP.
+			[shesMarried := self checkIsStillMarriedContext: anOop currentFP: framePointer.
 			"self cr.
 			self shortPrintContext: aMarriedContext.
 			self shortPrintContext: anOop.
@@ -877,11 +773,6 @@ StackInterpreterSimulator >> instVar: index ofContext: aMarriedContext put: anOo
 		 shesMarried ifNotNil:
 			[self assert: shesMarried == (self checkIsStillMarriedContext: anOop currentFP: nil)]].
 	^result
-]
-
-{ #category : #'interpreter shell' }
-StackInterpreterSimulator >> insufficientMemoryAvailableError [
-	self error: 'Failed to allocate memory for the heap'
 ]
 
 { #category : #'interpreter shell' }
@@ -903,6 +794,7 @@ StackInterpreterSimulator >> internalMustBeBoolean [
 
 { #category : #'interpreter shell' }
 StackInterpreterSimulator >> interpret [
+
 	"This is the main interpreter loop. It normally loops forever, fetching and executing bytecodes.
 	 When running in the context of a web browser plugin VM, however, it must return control to the
 	 web browser periodically. This should done only when the state of the currently running Squeak
@@ -912,40 +804,21 @@ StackInterpreterSimulator >> interpret [
 
 	Override for simulation to insert bytecode breakpoint support."
 
-	<inline: false>
 	"If stacklimit is zero then the stack pages have not been initialized."
-	stackLimit = 0 ifTrue:
-		[^self initStackPagesAndInterpret].
-	"record entry time when running as a browser plug-in"
-	self browserPluginInitialiseIfNeeded.
+
+	<inline: false>
+	stackLimit = 0 ifTrue: [ ^ self initStackPagesAndInterpret ].
 	self internalizeIPandSP.
 	self initExtensions.
 	self fetchNextBytecode.
-	[true] whileTrue:
-		[self assertValidExecutionPointers.
-		 atEachStepBlock value. "N.B. may be nil"
-		 self dispatchOn: currentBytecode in: BytecodeTable.
-		 self incrementByteCount].
-	localIP := localIP - 1.  "undo the pre-increment of IP before returning"
+	[ true ] whileTrue: [
+		self assertValidExecutionPointers.
+		atEachStepBlock value. "N.B. may be nil"
+		self dispatchCurrentBytecode.
+		self incrementByteCount ].
+	instructionPointer := instructionPointer - 1.  "undo the pre-increment of IP before returning"
 	self externalizeIPandSP.
-	^nil
-]
-
-{ #category : #'as yet unclassified' }
-StackInterpreterSimulator >> interpretUntilReturn [
-	self shouldBeImplemented.
-]
-
-{ #category : #'as yet unclassified' }
-StackInterpreterSimulator >> interpretWhile: aFullBlockClosure [ 
-	self internalizeIPandSP.
-	self fetchNextBytecode.
-	[aFullBlockClosure value] whileTrue:
-		[self dispatchOn: currentBytecode in: BytecodeTable.
-		 self incrementByteCount].
-	localIP := localIP - 1.
-	"undo the pre-increment of IP before returning"
-	self externalizeIPandSP
+	^ nil
 ]
 
 { #category : #'stack pages' }
@@ -958,15 +831,6 @@ StackInterpreterSimulator >> interpreterAllocationReserveBytes [
 { #category : #'interpreter shell' }
 StackInterpreterSimulator >> invalidCompactClassError: name [
 	self error: 'Class ', name, ' does not have the required compact class index'
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> ioBeDisplay: bitsOrHandleCArray width: width height: height depth: depth [
-	"The real platform may want to note the location of the display and respond to the fact of
-	 its installation.  Here merely create a scratch form the same size as Smalltalk displayObj"
-	super ioBeDisplay: bitsOrHandleCArray asInteger width: width height: height depth: depth.
-	displayForm := Form extent: width @ height depth: depth.
-	displayView ifNotNil: [displayView image: displayForm]
 ]
 
 { #category : #security }
@@ -994,23 +858,6 @@ StackInterpreterSimulator >> ioExitWithErrorCode: ec [
 { #category : #'process primitive support' }
 StackInterpreterSimulator >> ioGetMaxExtSemTableSize [
 	^extSemTabSize
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> ioGetNextEvent: evtBuf [
-	| evt |
-	"SimulatorMorphicModel browse"
-	eventQueue ifNil:
-		[^self primitiveFail].
-	eventQueue isEmpty ifFalse:
-		[evt :=  eventQueue next.
-		 1 to: evtBuf size do:
-			[:i| (evt at: i) ifNotNil: [:val| evtBuf at: (i - 1) put: val asInteger]]]
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> ioHasDisplayDepth: depth [
-	^Display supportsDisplayDepth: depth
 ]
 
 { #category : #'I/O primitives support' }
@@ -1119,15 +966,6 @@ StackInterpreterSimulator >> ioMicroMSecs [
 ]
 
 { #category : #'I/O primitives' }
-StackInterpreterSimulator >> ioMousePoint [
-	| relPt |
-	^displayForm
-		ifNil: [99 << 16 + 66]
-		ifNotNil: [relPt := Sensor cursorPoint - self displayLocation.
-				relPt x << 16 + relPt y]
-]
-
-{ #category : #'I/O primitives' }
 StackInterpreterSimulator >> ioProcessEvents [
 ]
 
@@ -1135,12 +973,6 @@ StackInterpreterSimulator >> ioProcessEvents [
 StackInterpreterSimulator >> ioRelinquishProcessorForMicroseconds: microseconds [
 	"In the simulator give an indication that we're idling and check for input."
 
-	1halt.
-	Display reverse: ((displayView
-						ifNil: [0@0]
-						ifNotNil: [displayView bounds origin]) extent: 16@16).
-	Sensor peekEvent ifNotNil:
-		[self forceInterruptCheck].
 	Processor activeProcess == UIManager default uiProcess ifTrue:
 		[World doOneCycle].
 	microseconds >= 1000
@@ -1161,55 +993,11 @@ StackInterpreterSimulator >> ioScreenScaleFactor [
 	^ 1.0
 ]
 
-{ #category : #'I/O primitives support' }
-StackInterpreterSimulator >> ioScreenSize [
-	"Answer the screen extent packed into 32 bits.  In the simulator,
-	 displayForm gets initialized with a fake form; don't be deceived."
-	| extent |
-	extent := (displayForm notNil and: [displayForm ~~ fakeForm])
-				ifTrue: [displayForm extent]
-				ifFalse: [self desiredDisplayExtent].
-	^extent x << 16 + extent y
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> ioSetInputSemaphore: index [
-
-	self primitiveFail
-]
-
 { #category : #'process primitive support' }
 StackInterpreterSimulator >> ioSetMaxExtSemTableSize: anInteger [
 	"Inform the VM of the maximum size the image will grow the exernal semaphore table (specialObjectsArray at: 39) to.
 	 This allows the VM to allocate storage such that external semaphores can be signalled without locking."
 	extSemTabSize := anInteger
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> ioShow: destBits D: w i: h s: d p: left l: right a: top y: bottom [
-	"This is the simulator's implementation of ioShowDisplay."
-	| raster pixPerWord simDisp realDisp rect |
-	displayForm ifNil: [^self].
-	displayBits = 0 ifTrue: [^self].
-	pixPerWord := 32 // d.
-	raster := displayForm width + (pixPerWord - 1) // pixPerWord.
-	simDisp := Form new hackBits: objectMemory memory.
-	displayForm unhibernate.
-	realDisp := Form new hackBits: displayForm bits.
-	realDisp
-		copy: (0 @ (top * raster) extent: 4 @ (bottom - top * raster))
-		from: 0 @ (destBits // 4 + (top * raster))
-		in: simDisp
-		rule: Form over.
-	displayView ifNotNil: [^displayView changed].
-	
-	"If running without a view, just blat the bits onto the screen..."
-	rect := 0 @ top corner: displayForm width @ bottom.
-	Display
-		copy: (rect translateBy: self displayLocation)
-		from: rect topLeft
-		in: displayForm
-		rule: Form over
 ]
 
 { #category : #'process primitive support' }
@@ -1251,16 +1039,13 @@ StackInterpreterSimulator >> isPrimitiveFunctionPointerAnIndex [
 	  and: [primitiveFunctionPointer <= MaxQuickPrimitiveIndex]]
 ]
 
-{ #category : #testing }
-StackInterpreterSimulator >> isThreadedVM [
-	^false
-]
-
 { #category : #'compiled methods' }
 StackInterpreterSimulator >> literal: offset [
 	"trap pushes of forwarded literals to help debug following forwarded primitive args.
 	 it is not an error to push a forwarded literal, but we'd like to step through any resulting
-	 primtive failure code"
+	 primtive failure code.
+	 Use #literalMaybeForwarder: for resolve forwarders if nedeed
+	"
 	| lit |
 	lit := super literal: offset.
 	(objectMemory isOopForwarded: lit) ifTrue:
@@ -1277,165 +1062,6 @@ StackInterpreterSimulator >> loadNewPlugin: pluginString [
 		[:entry|
 		 pluginList := pluginList copyWith: entry.
 		 entry]
-]
-
-{ #category : #'spur bootstrap' }
-StackInterpreterSimulator >> localFP [
-	^localFP
-]
-
-{ #category : #'spur bootstrap' }
-StackInterpreterSimulator >> localIP [
-	^localIP
-]
-
-{ #category : #'spur bootstrap' }
-StackInterpreterSimulator >> localIP: pc [
-	localIP := pc
-]
-
-{ #category : #'spur bootstrap' }
-StackInterpreterSimulator >> localSP [
-	^localSP
-]
-
-{ #category : #testing }
-StackInterpreterSimulator >> logOfBytesVerify: nBytes fromFileNamed: fileName fromStart: loggingStart [
-	"Verify a questionable interpreter against a successful run"
-	"self logOfBytesVerify: 10000 fromFileNamed: 'clone32Bytecodes.log' "
-	
-	| logFile rightWord prevCtxt |
-	logFile := (FileStream readOnlyFileNamed: fileName) binary.
-	transcript clear.
-	byteCount := 0.
-	quitBlock := [^self close].
-	self initStackPages.
-	self loadInitialContext.
-	self internalizeIPandSP.
-	self fetchNextBytecode.
-	prevCtxt := 0.  prevCtxt := prevCtxt.
-	[byteCount < nBytes] whileTrue:
-		[
-"
-byteCount > 14560 ifTrue:
-[self externalizeIPandSP.
-prevCtxt = activeContext ifFalse:
- [prevCtxt := activeContext.
- transcript cr; nextPutAll: (self printTop: 2); endEntry].
-transcript cr; print: byteCount; nextPutAll: ': ' , (activeContext hex); space;
- print: (instructionPointer - method - (BaseHeaderSize - 2));
- nextPutAll: ': <' , (self byteAt: localIP) hex , '>'; space;
- nextPutAll: (self symbolic: currentBytecode at: localIP inMethod: method); space;
- print: (self stackPointerIndex - TempFrameStart + 1); endEntry.
-byteCount = 14590 ifTrue: [self halt]].
-"
-		loggingStart >= byteCount ifTrue:
-			[rightWord := logFile nextWord.
-			 currentBytecode = rightWord ifFalse:
-				[self halt: 'halt at ', byteCount printString]].
-		self dispatchOn: currentBytecode in: BytecodeTable.
-		self incrementByteCount].
-	self externalizeIPandSP.
-	logFile close.
-	self inform: nBytes printString , ' bytecodes verfied.'
-]
-
-{ #category : #testing }
-StackInterpreterSimulator >> logOfBytesWrite: nBytes toFileNamed: fileName fromStart: loggingStart [
-	"Write a log file for testing a flaky interpreter on the same image"
-	"self logOfBytesWrite: 10000 toFileNamed: 'clone32Bytecodes.log' "
-	
-	| logFile |
-	logFile := (FileStream newFileNamed: fileName) binary.
-	transcript clear.
-	byteCount := 0.
-	quitBlock := [^self close].
-	self initStackPages.
-	self loadInitialContext.
-	self internalizeIPandSP.
-	self fetchNextBytecode.
-	[byteCount < nBytes] whileTrue:
-		[byteCount >= loggingStart ifTrue:
-			[logFile nextWordPut: currentBytecode].
-		self dispatchOn: currentBytecode in: BytecodeTable.
-		self incrementByteCount].
-	self externalizeIPandSP.
-	logFile close
-]
-
-{ #category : #testing }
-StackInterpreterSimulator >> logOfSendsVerify: nSends fromFileNamed: fileName fromStart: loggingStart [
-	"Write a log file for testing a flaky interpreter on the same image"
-	"self logOfSendsWrite: 10000 toFileNamed: 'clone32Messages.log' "
-	
-	| logFile priorFrame rightSelector prevCtxt |
-	logFile := FileStream readOnlyFileNamed: fileName.
-	transcript clear.
-	byteCount := 0.
-	sendCount := 0.
-	priorFrame := localFP.
-	quitBlock := [^self close].
-	self initStackPages.
-	self loadInitialContext.
-	self internalizeIPandSP.
-	self fetchNextBytecode.
-	prevCtxt := 0.  prevCtxt := prevCtxt.
-	[sendCount < nSends] whileTrue:
-		[
-"
-byteCount>500 ifTrue:
-[byteCount>550 ifTrue: [self halt].
-self externalizeIPandSP.
-prevCtxt = localFP ifFalse:
- [prevCtxt := localFP.
- transcript cr; nextPutAll: (self printTop: 2); endEntry].
-transcript cr; print: byteCount; nextPutAll: ': ' , (localFP hex); space;
- print: (instructionPointer - method - (BaseHeaderSize - 2));
- nextPutAll: ': <' , (self byteAt: localIP) hex , '>'; space;
- nextPutAll: (self symbolic: currentBytecode at: localIP inMethod: method); space;
- print: (self stackPointerIndex - TempFrameStart + 1); endEntry.
-].
-"
-		self dispatchOn: currentBytecode in: BytecodeTable.
-		localFP = priorFrame ifFalse:
-			[sendCount := sendCount + 1.
-			 loggingStart >= sendCount ifTrue:
-				[rightSelector := logFile nextLine.
-				 (self stringOf: messageSelector) = rightSelector ifFalse:
-					[self halt: 'halt at ', sendCount printString]].
-			priorFrame := localFP].
-		self incrementByteCount].
-	self externalizeIPandSP.
-	logFile close.
-	self inform: nSends printString , ' sends verfied.'
-]
-
-{ #category : #testing }
-StackInterpreterSimulator >> logOfSendsWrite: nSends toFileNamed: fileName fromStart: loggingStart [
-	"Write a log file for testing a flaky interpreter on the same image"
-	"self logOfSendsWrite: 10000 toFileNamed: 'clone32Messages.log' "
-	
-	| logFile priorFrame |
-	logFile := FileStream newFileNamed: fileName.
-	transcript clear.
-	byteCount := 0.
-	sendCount := 0.
-	priorFrame := localFP.
-	quitBlock := [^self close].
-	self initStackPages.
-	self loadInitialContext.
-	self internalizeIPandSP.
-	self fetchNextBytecode.
-	[sendCount < nSends] whileTrue:
-		[self dispatchOn: currentBytecode in: BytecodeTable.
-		localFP = priorFrame ifFalse:
-			[sendCount >= loggingStart ifTrue:
-				[sendCount := sendCount + 1.
-				logFile nextPutAll: (self stringOf: messageSelector); cr].
-			priorFrame := localFP].
-		self incrementByteCount].
-	self externalizeIPandSP.
-	logFile close
 ]
 
 { #category : #'memory access' }
@@ -1511,31 +1137,6 @@ StackInterpreterSimulator >> nextShortFrom: aStream [
 	^self subclassResponsibility
 ]
 
-{ #category : #initialization }
-StackInterpreterSimulator >> openOn: fileName extraMemory: extraBytes [
-
-	"CogVMSimulator new openOn: 'clone.im' extraMemory: 100000"
-
-	| f |
-	
-	"open image file and read the header"
-	memoryManager := MachineSimulatorMemoryManager new.
-	objectMemory memoryManager: memoryManager.
-	memoryManager wordSize: objectMemory wordSize.
-
-	(f := self openImageFileNamed: fileName) ifNil: [ ^ self ].
-
-	"Set the image name and the first argument; there are
-	 no arguments during simulation unless set explicitly."
-	systemAttributes
-		at: 1 put: fileName;
-		at: 2 put: nil.
-
-	[ self readImageFromFile: f StartingAt: 0 ] 
-		ensure: [ f close ].
-
-]
-
 { #category : #accessing }
 StackInterpreterSimulator >> parent [
 
@@ -1592,12 +1193,6 @@ StackInterpreterSimulator >> primitiveAtPut [
 	"16r1510B8 = (self stackValue: 2) ifTrue:
 		[self halt]."
 	^super primitiveAtPut
-]
-
-{ #category : #'other primitives' }
-StackInterpreterSimulator >> primitiveBeep [
-
-	Beeper beep.
 ]
 
 { #category : #'debugging traps' }
@@ -1750,6 +1345,7 @@ StackInterpreterSimulator >> primitiveSuspend [
 
 { #category : #'system control primitives' }
 StackInterpreterSimulator >> primitiveVMParameter [
+	
 	(self stackTop = (objectMemory integerObjectOf: 9)
 	 or: [self stackTop = (objectMemory integerObjectOf: 52)]) ifTrue:
 		[self halt].
@@ -1781,9 +1377,7 @@ StackInterpreterSimulator >> printChar: aByte [
 StackInterpreterSimulator >> printCurrentBytecodeOn: aStream [
 	| code |
 	code := currentBytecode radix: 16.
-	aStream newLine; print: localIP - method - 3; tab.
-	bytecodeSetSelector > 0 ifTrue:
-		[aStream nextPutAll: 'ALT '].
+	aStream newLine; print: instructionPointer - method - 3; tab.
 	aStream
 		nextPut: (code size < 2
 					ifTrue: [$0]
@@ -1806,7 +1400,7 @@ StackInterpreterSimulator >> printFrameFlagsForFP: theFP [
 	<var: #theFP type: #'char *'>
 	<var: #address type: #'char *'>
 	address := theFP + FoxFrameFlags.
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHex: address;
 		printChar: $/;
 		printNum: (stackPages memIndexFor: address);
@@ -1826,7 +1420,7 @@ StackInterpreterSimulator >> printFrameOop: name at: address [
 	<inline: false>
 	<var: #name type: #'char *'>
 	<var: #address type: #'char *'>
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHex: address;
 		printChar: $/;
 		printNum: (stackPages memIndexFor: address);
@@ -1847,7 +1441,7 @@ StackInterpreterSimulator >> printFrameThing: name andFrame: theFP at: address [
 	<inline: false>
 	<var: #name type: #'char *'>
 	<var: #address type: #'char *'>
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHex: address;
 		printChar: $/;
 		printNum: (stackPages memIndexFor: address);
@@ -1867,7 +1461,7 @@ StackInterpreterSimulator >> printFrameThing: name at: address [
 	<inline: false>
 	<var: #name type: #'char *'>
 	<var: #address type: #'char *'>
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHex: address;
 		printChar: $/;
 		printNum: (stackPages memIndexFor: address);
@@ -1908,7 +1502,7 @@ StackInterpreterSimulator >> printHexnpnp: anInteger [
 
 { #category : #'debug printing' }
 StackInterpreterSimulator >> printLCS [
-	self printCallStackFP: localFP
+	self printCallStackFP: framePointer
 ]
 
 { #category : #'debug printing' }
@@ -1996,18 +1590,14 @@ StackInterpreterSimulator >> rewriteMethodCacheEntryForExternalPrimitiveToFuncti
 
 { #category : #testing }
 StackInterpreterSimulator >> run [
+
 	"Just run"
-	quitBlock := [displayView ifNotNil:
-				   [displayView containingWindow ifNotNil:
-					[:topWindow|
-					((World submorphs includes: topWindow)
-					 and: [UIManager default confirm: 'close?']) ifTrue:
-						[topWindow delete]]].
-				  ^self close].
+
+	quitBlock := [ ^ self close ].
 	self initStackPages.
 	self loadInitialContext.
 	self initialEnterSmalltalkExecutive.
-	localIP := localIP - 1.
+	instructionPointer := instructionPointer - 1.
 	"undo the pre-increment of IP before returning"
 	self externalizeIPandSP
 ]
@@ -2023,13 +1613,13 @@ StackInterpreterSimulator >> runAtEachStep: aBlock [
 		 aBlock value: currentBytecode.
 		 self dispatchOn: currentBytecode in: BytecodeTable.
 		 self incrementByteCount].
-	localIP := localIP - 1.
+	instructionPointer := instructionPointer - 1.
 	"undo the pre-increment of IP before returning"
 	self externalizeIPandSP
 ]
 
 { #category : #testing }
-StackInterpreterSimulator >> runAtEachStep: aBlock breakCount: breakCount [
+StackInterpreterSimulator >> runAtEachStep: aBlock breakCount: aBreakCount [
 	self initStackPages.
 	self loadInitialContext.
 	self internalizeIPandSP.
@@ -2039,9 +1629,9 @@ StackInterpreterSimulator >> runAtEachStep: aBlock breakCount: breakCount [
 		 aBlock value: currentBytecode.
 		 self dispatchOn: currentBytecode in: BytecodeTable.
 		 self incrementByteCount.
-		 byteCount = breakCount ifTrue:
+		 byteCount = aBreakCount ifTrue:
 			[self halt]].
-	localIP := localIP - 1.
+	instructionPointer := instructionPointer - 1.
 	"undo the pre-increment of IP before returning"
 	self externalizeIPandSP
 ]
@@ -2060,7 +1650,7 @@ StackInterpreterSimulator >> runForNBytes: nBytecodes [
 	[byteCount < endCount] whileTrue:
 		[self dispatchOn: currentBytecode in: BytecodeTable.
 		 self incrementByteCount].
-	localIP := localIP - 1.
+	instructionPointer := instructionPointer - 1.
 	"undo the pre-increment of IP before returning"
 	self externalizeIPandSP
 ]
@@ -2073,39 +1663,6 @@ StackInterpreterSimulator >> savedWindowSize [
 { #category : #accessing }
 StackInterpreterSimulator >> setBreakCount: anInteger [
 	breakCount := anInteger
-]
-
-{ #category : #UI }
-StackInterpreterSimulator >> setClickStepBreakBlock [
-	"Set the break block to present a confirmer, breaking if true, and restoring the previous break block.
-	 If an open debugger on the receiver can be found, proceed it."
-	<doNotGenerate>
-	| previousAtEachStepBlock |
-	(atEachStepBlock isNil or: [atEachStepBlock method ~~ thisContext method]) ifTrue:
-		[previousAtEachStepBlock := atEachStepBlock.
-		 atEachStepBlock :=
-							[previousAtEachStepBlock value.
-							 self changed: #byteCountText.
-							 (UIManager confirm: 'step?') ifFalse:
-								[atEachStepBlock := previousAtEachStepBlock.
-								 self halt]]].
-	(World submorphs
-		detect:
-			[:m|
-			 m model class == Debugger
-			 and: [(m model interruptedProcess suspendedContext findContextSuchThat:
-					[:ctxt|
-					 ctxt receiver == self
-					 and: [ctxt selector == #run]]) notNil]]
-		ifNone: []) ifNotNil:
-			[:debuggerWindow|
-			 WorldState addDeferredUIMessage:
-				[debuggerWindow model proceed]]
-]
-
-{ #category : #'spur bootstrap' }
-StackInterpreterSimulator >> setDisplayForm: aForm [
-	displayForm := aForm
 ]
 
 { #category : #accessing }
@@ -2267,11 +1824,6 @@ StackInterpreterSimulator >> startInSender [
 		withValue: (self fetchStackPointerOf: senderContext) + 1
 ]
 
-{ #category : #initialization }
-StackInterpreterSimulator >> startOfMemory [
-	self shouldNotImplement
-]
-
 { #category : #'debugging traps' }
 StackInterpreterSimulator >> success: successBoolean [
 	"successBoolean ifFalse:
@@ -2288,32 +1840,6 @@ StackInterpreterSimulator >> systemAttributes [
 StackInterpreterSimulator >> tab [
 
 	traceOn ifTrue: [ transcript tab ].
-]
-
-{ #category : #testing }
-StackInterpreterSimulator >> test [
-	self initStackPages.
-	self loadInitialContext.
-	transcript clear.
-	byteCount := 0.
-	breakCount := -1.
-	quitBlock := [^self close].
-	printSends := printReturns := true.
-	self internalizeIPandSP.
-	self fetchNextBytecode.
-	[true] whileTrue:
-		[self assertValidExecutionPointers.
-		 printFrameAtEachStep ifTrue:
-			[self printFrame: localFP WithSP: localSP].
-		 printBytecodeAtEachStep ifTrue:
-			[self printCurrentBytecodeOn: Transcript.
-			 Transcript cr; flush].
-		 self dispatchOn: currentBytecode in: BytecodeTable.
-		 self incrementByteCount.
-		 byteCount = breakCount ifTrue:
-			["printFrameAtEachStep :=" printBytecodeAtEachStep := true.
-			 self halt: 'hit breakCount break-point']].
-	self externalizeIPandSP
 ]
 
 { #category : #testing }
@@ -2383,33 +1909,6 @@ StackInterpreterSimulator >> testBecome [
 ]
 
 { #category : #testing }
-StackInterpreterSimulator >> testBreakCount: breakCount printSends: shouldPrintSends printFrames: shouldPrintFrames printBytecodes: shouldPrintBytecodes [
-	self initStackPages.
-	self loadInitialContext.
-	transcript clear.
-	byteCount := 0.
-	quitBlock := [^self close].
-	printSends := true & shouldPrintSends. "true & foo allows evaluating printFoo := true in the debugger"
-	printFrameAtEachStep := true & shouldPrintFrames.
-	printBytecodeAtEachStep := true & shouldPrintBytecodes.
-	self internalizeIPandSP.
-	self fetchNextBytecode.
-	[true] whileTrue:
-		[self assertValidExecutionPointers.
-		 printFrameAtEachStep ifTrue:
-			[self printFrame: localFP WithSP: localSP].
-		 printBytecodeAtEachStep ifTrue:
-			[self printCurrentBytecodeOn: Transcript.
-			 Transcript cr; flush].
-		 self dispatchOn: currentBytecode in: BytecodeTable.
-		 self incrementByteCount.
-		 byteCount = breakCount ifTrue:
-			["printFrameAtEachStep :=" printBytecodeAtEachStep := true.
-			 self halt: 'hit breakCount break-point']].
-	self externalizeIPandSP
-]
-
-{ #category : #testing }
 StackInterpreterSimulator >> testWithFramePrint [
 	printFrameAtEachStep := printBytecodeAtEachStep := true.
 	self test
@@ -2420,30 +1919,6 @@ StackInterpreterSimulator >> time: ignored [
 	"Simulate the glibc time() function"
 
 	^ DateAndTime now asUnixTime 
-]
-
-{ #category : #UI }
-StackInterpreterSimulator >> toggleTranscript [
-	| transcriptPane |
-	transcript ifNil: [transcript := Transcript. ^self].
-	displayView ifNil: [^self changed: #flash].
-	transcriptPane := (displayView outermostMorphThat: [:m| m isSystemWindow])
-							submorphThat: [:m| m model isStream]
-							ifNone: [^self changed: #flash].
-	transcript := transcript = Transcript
-					ifTrue: [transcriptPane model]
-					ifFalse: [Transcript]
-]
-
-{ #category : #UI }
-StackInterpreterSimulator >> toggleTranscriptForSimulatorMorph: aTranscriptStreamOrTranscript [
-	"tty think this through when not so tired"
-	self flag: 'tty'.
-	transcript ifNil: [transcript := Transcript. ^self].
-	displayView ifNil: [^self changed: #flash].
-	transcript := transcript = Transcript
-					ifTrue: [aTranscriptStreamOrTranscript]
-					ifFalse: [Transcript]
 ]
 
 { #category : #accessing }
@@ -2480,82 +1955,20 @@ StackInterpreterSimulator >> updateStateOfSpouseContextForFrame: theFP WithSP: t
 	^super updateStateOfSpouseContextForFrame: theFP WithSP: theSP
 ]
 
-{ #category : #UI }
-StackInterpreterSimulator >> utilitiesMenu: aMenuMorph [
-	aMenuMorph
-		add: 'toggle transcript' action: #toggleTranscript;
-		add: 'clone VM' action: #cloneSimulationWindow;
-		addLine;
-		add: 'print ext head frame' action: #printExternalHeadFrame;
-		add: 'print int head frame' action: #printHeadFrame;
-		add: 'short print ext frame & callers' action: [self shortPrintFrameAndCallers: framePointer];
-		add: 'short print int frame & callers' action: [self shortPrintFrameAndCallers: localFP];
-		add: 'long print ext frame & callers' action: [self printFrameAndCallers: framePointer SP: stackPointer];
-		add: 'long print int frame & callers' action: [self printFrameAndCallers: localFP SP: localSP];
-		add: 'print frame...' action: [(self promptHex: 'print frame') ifNotNil: [:fp| self printFrame: fp]];
-		add: 'print call stack' action: #printCallStack;
-		add: 'print stack call stack' action: #printStackCallStack;
-		add: 'print stack call stack of...' action: [(self promptHex: 'frame') ifNotNil: [:fp| self printStackCallStackOf: fp]];
-		add: 'print call stack of...' action: [(self promptHex: 'context or process oop') ifNotNil: [:obj| self printCallStackOf: obj]];
-		add: 'print call stack of frame...' action: [(self promptHex: 'frame') ifNotNil: [:fp| self printCallStackFP: fp]];
-		add: 'print all stacks' action: #printAllStacks;
-		add: 'write back local ptrs' action: [stackPointer := localSP. framePointer := localFP. instructionPointer := localIP.
-											self writeBackHeadFramePointers];
-		add: 'print prim trace log' action: #dumpPrimTraceLog;
-		addLine;
-		add: 'print oop...' action: [(self promptHex: 'print oop') ifNotNil: [:oop| self printOop: oop]];
-		add: 'long print oop...' action: [(self promptHex: 'print oop') ifNotNil: [:oop| self longPrintOop: oop]];
-		add: 'print context...' action: [(self promptHex: 'print context') ifNotNil: [:oop| self printContext: oop]];
-		addLine;
-		add: 'inspect object memory' target: objectMemory action: #inspect;
-		add: 'run leak checker' action: [Cursor execute showWhile: [self runLeakChecker]];
-		add: 'inspect interpreter' action: #inspect;
-		addLine;
-		add: 'set break count...' action: [|s| s := UIManager default request: 'break count (dec)'.
-											s notEmpty ifTrue: [breakCount := Integer readFrom: s readStream]];
-		add: 'set break selector...' action: [|s| s := UIManager default request: 'break selector (MNU:foo for MNU)'.
-											s notEmpty ifTrue:
-												[(s size > 4 and: [s beginsWith: 'MNU:'])
-													ifTrue: [self setBreakMNUSelector: (s allButFirst: 4)]
-													ifFalse: [self setBreakSelector: s]]];
-		add: 'turn valid exec ptrs assert o', (assertVEPAES ifTrue: ['ff'] ifFalse: ['n']) action: [assertVEPAES := assertVEPAES not];
-		add: 'click step' action: [self setClickStepBreakBlock];
-		add: (printSends
-				ifTrue: ['no print sends']
-				ifFalse: ['print sends'])
-			action: [self ensureDebugAtEachStepBlock.
-					printSends := printSends not];
-		"currently printReturns does nothing"
-		"add: (printReturns
-				ifTrue: ['no print returns']
-				ifFalse: ['print returns'])
-			action: [self ensureDebugAtEachStepBlock.
-					printReturns := printReturns not];"
-		add: (printBytecodeAtEachStep
-				ifTrue: ['no print bytecode each bytecode']
-				ifFalse: ['print bytecode each bytecode'])
-			action: [self ensureDebugAtEachStepBlock.
-					printBytecodeAtEachStep := printBytecodeAtEachStep not];
-		add: (printFrameAtEachStep
-				ifTrue: ['no print frame each bytecode']
-				ifFalse: ['print frame each bytecode'])
-			action: [self ensureDebugAtEachStepBlock.
-					printFrameAtEachStep := printFrameAtEachStep not].
-	^aMenuMorph
-]
-
 { #category : #'debug support' }
 StackInterpreterSimulator >> veryDeepCopyWith: deepCopier [
+
 	"Override to short-circuit the copying of any VMPluginCodeGenerators referenced from mappedPluginEntries.
 	 These can in turn hold onto Monticello state, resulting in a huge ammount of unnecessary copying."
-	self objectMemory hasSpurMemoryManagerAPI ifTrue: 
-		[deepCopier references
-			at: mappedPluginEntries ifAbsentPut: [mappedPluginEntries].
-		mappedPluginEntries do:
-			[:tuple| | block |
-			block := tuple third.
-			deepCopier references at: block ifAbsentPut: [block]]].
-	^super veryDeepCopyWith: deepCopier
+
+	deepCopier references
+		at: mappedPluginEntries
+		ifAbsentPut: [ mappedPluginEntries ].
+	mappedPluginEntries do: [ :tuple | 
+		| block |
+		block := tuple third.
+		deepCopier references at: block ifAbsentPut: [ block ] ].
+	^ super veryDeepCopyWith: deepCopier
 ]
 
 { #category : #'file primitives' }
@@ -2593,25 +2006,4 @@ StackInterpreterSimulator >> windowIsClosing [
 		[effectiveQuitBlock value]
 			on: BlockCannotReturn
 			do: [:ex|]]	"Cause return from #test, et al"
-]
-
-{ #category : #'debug printing' }
-StackInterpreterSimulator >> withMemoryProtectionDo: aBlock [
-	objectMemory writeProtectMemory.
-	stackPages writeProtectMemory.
-	^aBlock ensure:
-		[objectMemory writeEnableMemory.
-		 stackPages writeEnableMemory]
-]
-
-{ #category : #'frame access' }
-StackInterpreterSimulator >> withoutSmallIntegerTags: anInteger [
-	| signBit |
-	self assert: (anInteger >= 0 and: [anInteger highBit <= (objectMemory wordSize * 8)]).
-	signBit := 1 << (objectMemory wordSize * 8 - 1).
-	^(anInteger bitAnd: signBit) ~= 0
-		ifTrue: ["negative"
-				(anInteger bitClear: signBit + 1) - signBit]
-		ifFalse: ["positive"
-				anInteger - 1]
 ]

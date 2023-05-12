@@ -511,6 +511,30 @@ CogAbstractInstruction >> availableRegisterOrNoneFor: liveRegsMask [
 	^NoReg
 ]
 
+{ #category : #'register allocation' }
+CogAbstractInstruction >> availableVectorRegisterOrNoneFor: liveRegsMask [
+	"Answer an unused abstract vector register in the liveRegMask.
+	 Subclasses with more registers can override to answer them."
+	<returnTypeC: #sqInt>
+	(cogit register: VReg0 isInMask: liveRegsMask) ifFalse:
+		[^VReg0].
+	(cogit register: VReg1 isInMask: liveRegsMask) ifFalse:
+		[^VReg1].
+	(cogit register: VReg2 isInMask: liveRegsMask) ifFalse:
+		[^VReg2].
+	(cogit register: VReg3 isInMask: liveRegsMask) ifFalse:
+		[^VReg3].
+	(cogit register: VReg4 isInMask: liveRegsMask) ifFalse:
+		[^VReg4].
+	(cogit register: VReg5 isInMask: liveRegsMask) ifFalse:
+		[^VReg5].
+	(cogit register: VReg6 isInMask: liveRegsMask) ifFalse:
+		[^VReg6].
+	(cogit register: VReg7 isInMask: liveRegsMask) ifFalse:
+		[^VReg7].
+	^NoReg
+]
+
 { #category : #accessing }
 CogAbstractInstruction >> bcpc [
 	^bcpc
@@ -632,11 +656,14 @@ CogAbstractInstruction >> cogit: aCogit [
 
 { #category : #'generate machine code' }
 CogAbstractInstruction >> computeJumpTargetOffsetPlus: anPCOffset [
-	<inline: true> "Since it's an extraction from other methods."
+
+	"Since it's an extraction from other methods."
+
+	<inline: true>
+	<var: #jumpTarget type: #sqInt>
 	| jumpTarget |
-	<var: #jumpTarget type: #'AbstractInstruction *'>
 	jumpTarget := self jumpTargetAddress.
-	^jumpTarget signedIntFromLong - (address + anPCOffset) signedIntFromLong.
+	^ jumpTarget - (cogit cCoerceSimple: address + anPCOffset to: #sqInt)
 ]
 
 { #category : #'generate machine code' }
@@ -709,6 +736,18 @@ CogAbstractInstruction >> disassembleOn: aStream [
 		to: machineCodeSize - 1
 		in: machineCode object
 		on: aStream
+]
+
+{ #category : #accessing }
+CogAbstractInstruction >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
+	<inline: true>
+	| fillLoop |
+	fillLoop := cogit MoveR: fillReg Mw: 0 r: startMemoryAddr.
+	cogit AddCq: 8 R: startMemoryAddr.
+	cogit CmpR: startMemoryAddr R: endMemoryAddr.
+	cogit JumpAbove: fillLoop.
+	
+	^0 "Necessary to keep Slang happy"
 ]
 
 { #category : #abi }
@@ -1190,12 +1229,15 @@ CogAbstractInstruction >> jumpTargetAddress [
 	<inline: true> "Since it's an extraction from other methods."
 	| jumpTarget |
 	<var: #jumpTarget type: #'AbstractInstruction *'>
+	<returnTypeC: #'sqInt'>
+
 	jumpTarget := cogit cCoerceSimple: (operands at: 0) to: #'AbstractInstruction *'.
 	cogit assertSaneJumpTarget: jumpTarget.
 	(self isAnInstruction: jumpTarget) ifTrue:
 		[jumpTarget := cogit cCoerceSimple: jumpTarget address to: #'AbstractInstruction *'].
 	self assert: jumpTarget ~= 0.
-	^jumpTarget
+	
+	^ cogit cCoerceSimple: jumpTarget to: #sqInt.
 ]
 
 { #category : #'generate machine code' }

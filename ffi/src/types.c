@@ -1,7 +1,7 @@
 #include "pThreadedFFI.h"
 
 void fillBasicType(sqInt aOop){
-	void* address;
+	void* address = NULL;
 	int typeCode;
 
 	typeCode = fetchIntegerofObject(2, aOop);

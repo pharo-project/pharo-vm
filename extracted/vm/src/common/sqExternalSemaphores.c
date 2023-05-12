@@ -1,8 +1,9 @@
 /* sqExternalSemaphores.c
  *	Cross-platform thread-safe external semaphore signalling.
  *
- *	Authors: Eliot Miranda & Brad Fowlow
+ *	Authors: Eliot Miranda & Brad Fowlow & Pablo Tesone & Guillermo Polito
  *
+ *	Copyright (c) 2020 Pharo Consortium.
  *	Copyright (c) 2013 3D Immersive Collaboration Consulting, LLC.
  *
  *	All rights reserved.
@@ -34,6 +35,10 @@
 #include "sqMemoryFence.h"
 #include "pharovm/semaphores/platformSemaphore.h"
 #include "pharovm/interpreter.h"
+
+#if !defined(_WIN32)
+#include <signal.h>
+#endif
 
 #if !COGMTVM
 sqOSThread ioVMThread; /* initialized in the various <plat>/vm/sqFooMain.c */
@@ -129,12 +134,24 @@ signalSemaphoreWithIndex(sqInt index)
 	int i = index - 1;
 	int v;
 
+#if !defined(_WIN32)
+    sigset_t blockedSignalSet;
+    sigemptyset(&blockedSignalSet);
+    sigaddset(&blockedSignalSet, SIGCHLD);
+    sigaddset(&blockedSignalSet, SIGINT);
+    sigaddset(&blockedSignalSet, SIGSTOP);
+    sigaddset(&blockedSignalSet, SIGTSTP);
+#endif
+
 	/* An index of zero should be and is silently ignored. */
 	assert(index >= 0 && index <= numSignalRequests);
 
 	if ((unsigned)i >= numSignalRequests)
 		return 0;
 
+#if !defined(_WIN32)
+    sigprocmask(SIG_BLOCK, &blockedSignalSet, NULL);
+#endif
 	requestMutex->wait(requestMutex);
 
 	sqLowLevelMFence();
@@ -152,6 +169,9 @@ signalSemaphoreWithIndex(sqInt index)
 	forceInterruptCheck();
 
 	requestMutex->signal(requestMutex);
+#if !defined(_WIN32)
+    sigprocmask(SIG_UNBLOCK, &blockedSignalSet, NULL);
+#endif
 
 	aioInterruptPoll();
 
@@ -177,11 +197,24 @@ doSignalExternalSemaphores(sqInt externalSemaphoreTableSize)
 	volatile int i, lowTide, highTide;
 	char switched, signalled = 0;
 
+#if !defined(_WIN32)
+    sigset_t blockedSignalSet;
+    sigemptyset(&blockedSignalSet);
+    sigaddset(&blockedSignalSet, SIGCHLD);
+    sigaddset(&blockedSignalSet, SIGINT);
+    sigaddset(&blockedSignalSet, SIGSTOP);
+    sigaddset(&blockedSignalSet, SIGTSTP);
+
+    sigprocmask(SIG_BLOCK, &blockedSignalSet, NULL);
+#endif
 	requestMutex->wait(requestMutex);
 
 	sqLowLevelMFence();
 	if (!checkSignalRequests){
 		requestMutex->signal(requestMutex);
+#if !defined(_WIN32)
+        sigprocmask(SIG_UNBLOCK, &blockedSignalSet, NULL);
+#endif
 		return 0;
 	}
 
@@ -219,6 +252,9 @@ doSignalExternalSemaphores(sqInt externalSemaphoreTableSize)
 		}
 
 	requestMutex->signal(requestMutex);
+#if !defined(_WIN32)
+    sigprocmask(SIG_UNBLOCK, &blockedSignalSet, NULL);
+#endif
 
 	return switched;
 }

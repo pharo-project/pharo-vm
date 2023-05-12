@@ -82,7 +82,7 @@ Spur64BitMemoryManager >> bytesInObject: objOop [
 	| header headerNumSlots numSlots |
 	<var: 'header' type: #usqLong>
 	self flag: #endianness.
-	header := self longAt: objOop.
+	header := self long64At: objOop.
 	headerNumSlots := header >> self numSlotsFullShift.
 	numSlots := headerNumSlots = self numSlotsMask
 					ifTrue: [self rawOverflowSlotsOf: objOop]
@@ -292,14 +292,17 @@ Spur64BitMemoryManager >> fetchClassTagOf: oop [
 
 { #category : #'object access' }
 Spur64BitMemoryManager >> fetchLong32: fieldIndex ofFloatObject: oop [
+
 	"index by word size, and return a pointer as long as the word size"
+
+	<returnTypeC: #usqInt>
 	| bits |
-	(self isImmediateFloat: oop) ifFalse:
-		[^self fetchLong32: fieldIndex ofObject: oop].
+	(self isImmediateFloat: oop) ifFalse: [ 
+		^ self fetchLong32: fieldIndex ofObject: oop ].
 	bits := self smallFloatBitsOf: oop.
 	^ fieldIndex = 0
-		ifTrue: [bits bitAnd: 16rFFFFFFFF]
-		ifFalse: [bits >> 32]
+		  ifTrue: [ bits bitAnd: 16rFFFFFFFF ]
+		  ifFalse: [ bits >> 32 ]
 ]
 
 { #category : #instantiation }
@@ -357,14 +360,6 @@ Spur64BitMemoryManager >> hasSixtyFourBitImmediates [
 	"The V3 64-bit memory manager has 64-bit oops, but its SmallIntegers only have
 	 31 bits of precision.  The Spur 64-bit memory manager has 61-bit immediates."
 	^true
-]
-
-{ #category : #'method access' }
-Spur64BitMemoryManager >> headerIndicatesAlternateBytecodeSet: methodHeader [
-	"A negative header selects the alternate bytecode set."
-	<api>
-	<inline: true>
-	^methodHeader signedIntFromLong64 < 0
 ]
 
 { #category : #immediates }
@@ -761,25 +756,6 @@ Spur64BitMemoryManager >> negativeSmallFloatZero [
 	^self smallFloatSignBit + self smallFloatTag
 ]
 
-{ #category : #simulation }
-Spur64BitMemoryManager >> newInputEventAccessorOfSize: numElements [
-	<doNotGenerate>
-	self flag: #endianness.
-	^(CPluggableAccessor on: (WordArray new: 16))
-		atBlock: [:obj :idx| | v pidx2 |
-				pidx2 := (idx - 1) * 2.
-				v := (obj at: pidx2 + 1) + ((obj at: pidx2 + 2) << 32).
-				v >> 63 > 0 ifTrue:
-					[v := v - (1 << 64)].
-				v]
-		atPutBlock: [:obj :idx :val| |pidx2|
-					pidx2 := (idx - 1) * 2.
-					obj at: pidx2 + 1 put: (val bitAnd: 16rFFFFFFFF).
-					obj at: pidx2 + 2 put: (val >> 32 bitAnd: 16rFFFFFFFF).
-					val];
-		objectSize: 8
-]
-
 { #category : #'free space' }
 Spur64BitMemoryManager >> numFreeLists [
 	"Answer the number of free lists.  We use freeListsMask, a bitmap, to avoid
@@ -828,7 +804,7 @@ Spur64BitMemoryManager >> objectAfter: objOop limit: limit [
 	(self oop: followingWordAddress isGreaterThanOrEqualTo: limit) ifTrue:
 		[^limit].
 	self flag: #endianness.
-	followingWord := self longAt: followingWordAddress.
+	followingWord := self unsignedLongAt: followingWordAddress.
 	^followingWord >> self numSlotsFullShift = self numSlotsMask
 		ifTrue: [followingWordAddress + self baseHeaderSize]
 		ifFalse: [followingWordAddress]
@@ -923,12 +899,6 @@ Spur64BitMemoryManager >> rtRefCountOf: obj put: refCount [
 	self longAt: obj put: header
 ]
 
-{ #category : #'image segment in/out' }
-Spur64BitMemoryManager >> savedOutHashFillValue [
-	<inline: true>
-	^self maxIdentityHash + 1 << 32 + (self maxIdentityHash + 1)
-]
-
 { #category : #'header access' }
 Spur64BitMemoryManager >> set: objOop classIndexTo: classIndex formatTo: format [
 	"0 = 0 sized objects (UndefinedObject True False et al)
@@ -1003,10 +973,12 @@ Spur64BitMemoryManager >> setIsImmutableOf: objOop to: aBoolean [
 { #category : #'header access' }
 Spur64BitMemoryManager >> setIsMarkedOf: objOop to: aBoolean [
 	self assert: (self isFreeObject: objOop) not.
-	self longAt: objOop
+	self assert: (memoryMap isPermanentObject: objOop) not.
+		
+	self unsignedLongAt: objOop
 		put: (aBoolean
-				ifTrue: [(self longAt: objOop) bitOr: 1 << self markedBitFullShift]
-				ifFalse: [(self longAt: objOop) bitAnd: (1 << self markedBitFullShift) bitInvert64])
+				ifTrue: [(self unsignedLongAt: objOop) bitOr: 1 << self markedBitFullShift]
+				ifFalse: [(self unsignedLongAt: objOop) bitAnd: (1 << self markedBitFullShift) bitInvert64])
 ]
 
 { #category : #'header access' }
@@ -1019,10 +991,10 @@ Spur64BitMemoryManager >> setIsPinnedOf: objOop to: aBoolean [
 
 { #category : #'header access' }
 Spur64BitMemoryManager >> setIsRememberedOf: objOop to: aBoolean [
-	self longAt: objOop
+	self unsignedLong64At: objOop
 		put: (aBoolean
-				ifTrue: [(self longAt: objOop) bitOr: 1 << self rememberedBitShift]
-				ifFalse: [(self longAt: objOop) bitAnd: (1 << self rememberedBitShift) bitInvert64])
+				ifTrue: [(self unsignedLong64At: objOop) bitOr: 1 << self rememberedBitShift]
+				ifFalse: [(self unsignedLong64At: objOop) bitAnd: (1 << self rememberedBitShift) bitInvert64])
 ]
 
 { #category : #'word size' }
@@ -1064,7 +1036,7 @@ Spur64BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 				ofObject: copy
 				withValue: (self fetchPointer: i ofObject: objOop)].
 		 (self isRemembered: objOop) ifTrue:
-			[scavenger remember: copy].
+			[fromOldSpaceRememberedSet doRemember: copy].
 		 self forward: objOop to: copy.
 		 ^0].
 
@@ -1078,7 +1050,7 @@ Spur64BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 			 self rawNumSlotsOf: objOop put: numSlots].
 
 	freeChunk := self initFreeChunkWithBytes: delta at: (self addressAfter: objOop).
-	self assert: (self addressAfter: freeChunk) <= endOfMemory.
+	self assert: (self addressAfter: freeChunk) <= memoryMap oldSpaceEnd.
 	(self isInOldSpace: objOop)
 		ifTrue:
 			[totalFreeOldSpace := totalFreeOldSpace + delta.
@@ -1216,6 +1188,20 @@ Spur64BitMemoryManager >> tagMask [
 	<api>
 	<cmacro>
 	^7
+]
+
+{ #category : #'memory access' }
+Spur64BitMemoryManager >> unsignedLongAt: anAddress [
+
+	<doNotGenerate>
+	^ self unsignedLong64At: anAddress
+]
+
+{ #category : #'memory access' }
+Spur64BitMemoryManager >> unsignedLongAt: anAddress put: aValue [ 
+
+	<doNotGenerate>
+	^ self unsignedLong64At: anAddress put: aValue
 ]
 
 { #category : #'header formats' }

@@ -226,12 +226,12 @@ Matrix2x3Plugin >> primitiveIsIdentity [
 	matrix := self loadArgumentMatrix: (interpreterProxy stackValue: 0).
 	interpreterProxy failed ifFalse:
 		[interpreterProxy methodReturnBool:(
-			((matrix at: 0) = (self cCoerce: 1.0 to: #float)) &
-			((matrix at: 1) = (self cCoerce: 0.0 to: #float)) &
-			((matrix at: 2) = (self cCoerce: 0.0 to: #float)) &
-			((matrix at: 3) = (self cCoerce: 0.0 to: #float)) &
-			((matrix at: 4) = (self cCoerce: 1.0 to: #float)) &
-			((matrix at: 5) = (self cCoerce: 0.0 to: #float)))]
+			((matrix at: 0) = (self cCoerce: 1.0 to: #float)) and: [ 
+			((matrix at: 1) = (self cCoerce: 0.0 to: #float)) and: [ 
+			((matrix at: 2) = (self cCoerce: 0.0 to: #float)) and: [ 
+			((matrix at: 3) = (self cCoerce: 0.0 to: #float)) and: [ 
+			((matrix at: 4) = (self cCoerce: 1.0 to: #float)) and: [ 
+			((matrix at: 5) = (self cCoerce: 0.0 to: #float)) ] ] ] ] ]) ]
 ]
 
 { #category : #primitives }
@@ -242,10 +242,10 @@ Matrix2x3Plugin >> primitiveIsPureTranslation [
 	matrix := self loadArgumentMatrix: (interpreterProxy stackValue: 0).
 	interpreterProxy failed ifFalse:
 		[interpreterProxy methodReturnBool:(
-			((matrix at: 0) = (self cCoerce: 1.0 to: #float)) &
-			((matrix at: 1) = (self cCoerce: 0.0 to: #float)) &
-			((matrix at: 3) = (self cCoerce: 0.0 to: #float)) &
-			((matrix at: 4) = (self cCoerce: 1.0 to: #float)))]
+			((matrix at: 0) = (self cCoerce: 1.0 to: #float)) and: [ 
+			((matrix at: 1) = (self cCoerce: 0.0 to: #float)) and: [ 
+			((matrix at: 3) = (self cCoerce: 0.0 to: #float)) and: [ 
+			((matrix at: 4) = (self cCoerce: 1.0 to: #float)) ] ] ])]
 ]
 
 { #category : #primitives }

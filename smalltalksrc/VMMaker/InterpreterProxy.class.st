@@ -138,11 +138,6 @@ InterpreterProxy >> characterObjectOf: characterCode [
 	^StackInterpreter objectMemoryClass characterObjectOf: characterCode
 ]
 
-{ #category : #'special objects' }
-InterpreterProxy >> characterTable [
-	^Character characterTable
-]
-
 { #category : #'object access' }
 InterpreterProxy >> characterValueOf: aCharacter [
 	<option: #(atLeastVMProxyMajor:minor: 1 13)>
@@ -154,11 +149,6 @@ InterpreterProxy >> checkedIntegerValueOf: intOop [
 	(self isIntegerObject: intOop)
 		ifTrue:[^self integerValueOf: intOop]
 		ifFalse:[self primitiveFail. ^0].
-]
-
-{ #category : #'FFI support' }
-InterpreterProxy >> classAlien [
-        ^Smalltalk at: #Alien ifAbsent: [nil]
 ]
 
 { #category : #'special classes' }
@@ -184,26 +174,6 @@ InterpreterProxy >> classCharacter [
 { #category : #'FFI support' }
 InterpreterProxy >> classExternalAddress [
 	^Smalltalk at: #ExternalAddress ifAbsent:[nil]
-]
-
-{ #category : #'FFI support' }
-InterpreterProxy >> classExternalData [
-	^Smalltalk at: #ExternalData ifAbsent:[nil]
-]
-
-{ #category : #'FFI support' }
-InterpreterProxy >> classExternalFunction [
-	^Smalltalk at: #ExternalFunction ifAbsent:[nil]
-]
-
-{ #category : #'FFI support' }
-InterpreterProxy >> classExternalLibrary [
-	^Smalltalk at: #ExternalLibrary ifAbsent:[nil]
-]
-
-{ #category : #'FFI support' }
-InterpreterProxy >> classExternalStructure [
-	^Smalltalk at: #ExternalStructure ifAbsent:[nil]
 ]
 
 { #category : #'special classes' }
@@ -241,11 +211,6 @@ InterpreterProxy >> classString [
 	^ByteString
 ]
 
-{ #category : #'FFI support' }
-InterpreterProxy >> classUnsafeAlien [
-        ^Smalltalk at: #UnsafeAlien ifAbsent: [nil]
-]
-
 { #category : #'instance creation' }
 InterpreterProxy >> clone: oop [
 	^oop shallowCopy
@@ -261,11 +226,6 @@ InterpreterProxy >> copyBits [
 InterpreterProxy >> copyBitsFrom: leftX to: rightX at: yValue [
 	<returnTypeC: #sqInt>
 	bb copyBitsFrom: leftX to: rightX at: yValue.
-]
-
-{ #category : #'FFI support' }
-InterpreterProxy >> disownVM: flags [
-	^self notYetImplementedError
 ]
 
 { #category : #'special objects' }
@@ -384,12 +344,6 @@ InterpreterProxy >> floatValueOf: oop [
 ]
 
 { #category : #other }
-InterpreterProxy >> fullDisplayUpdate [
-	<returnTypeC: #sqInt>
-	Display display
-]
-
-{ #category : #other }
 InterpreterProxy >> fullGC [
 	<returnTypeC: #sqInt>
 	Smalltalk garbageCollect
@@ -398,11 +352,6 @@ InterpreterProxy >> fullGC [
 { #category : #'special objects' }
 InterpreterProxy >> getDeferDisplayUpdates [
 	^false
-]
-
-{ #category : #other }
-InterpreterProxy >> getInterruptPending [
-	^self notYetImplementedError
 ]
 
 { #category : #other }
@@ -426,11 +375,6 @@ InterpreterProxy >> getThisSessionID [
 { #category : #testing }
 InterpreterProxy >> includesBehavior: aClass ThatOf: aSuperclass [
 	^aClass includesBehavior: aSuperclass
-]
-
-{ #category : #other }
-InterpreterProxy >> incrementalGC [
-	Smalltalk garbageCollectMost.
 ]
 
 { #category : #initialize }
@@ -860,7 +804,7 @@ InterpreterProxy >> pop: nItems [
 
 { #category : #'stack access' }
 InterpreterProxy >> pop: nItems thenPush: oop [
-	<returnTypeC: #sqInt>
+	<returnTypeC: #void>
 	self pop: nItems.
 	self push: oop
 ]
@@ -904,7 +848,7 @@ InterpreterProxy >> positive32BitIntegerFor: integerValue [
 
 { #category : #converting }
 InterpreterProxy >> positive32BitValueOf: oop [
-	<returnTypeC: #usqInt>
+	<returnTypeC: #'unsigned int'>
 	oop isInteger ifFalse:[self error:'Not an integer object'].
 	oop < 0 
 		ifTrue:[self primitiveFail. ^0]
@@ -1030,7 +974,7 @@ InterpreterProxy >> pushInteger: integerValue [
 
 { #category : #'instance creation' }
 InterpreterProxy >> pushRemappableOop: oop [
-	<returnTypeC: #sqInt>
+	<returnTypeC: #void>
 	remapBuffer addLast: oop
 ]
 
@@ -1072,13 +1016,6 @@ InterpreterProxy >> sendInvokeCallbackContext: vmCallbackContext [
 	 The arguments are raw C addresses and are converted to integer objects on the way."
 	<returnTypeC: #sqInt>
 	self notYetImplemented
-]
-
-{ #category : #other }
-InterpreterProxy >> setInterruptCheckChain: aFunction [
-	<returnTypeC: 'void (*setInterruptCheckChain(void (*aFunction)(void)))()'>
-	<var: #aFunction declareC: 'void (*aFunction)()'>
-	^self notYetImplementedError
 ]
 
 { #category : #other }

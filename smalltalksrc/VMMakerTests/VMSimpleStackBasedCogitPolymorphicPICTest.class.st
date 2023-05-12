@@ -54,7 +54,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> assertPIC: pic hits: hitMethod [
 	 - The instruction pointer is at no check entry offset of the hitted method
 	 - The class register value case 0 tag regardless of the hit
 	 - the receiver register value contains the receiver"
-	self assert: machineSimulator instructionPointerValue equals: hitMethod address + cogit noCheckEntryOffset.
+	self assert: machineSimulator instructionPointerRegisterValue equals: hitMethod address + cogit noCheckEntryOffset.
 	self assert: machineSimulator classRegisterValue equals: (picTypeTags at: 0).
 	self assert: machineSimulator receiverRegisterValue equals: receiver
 ]
@@ -75,7 +75,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> assertPICMiss: pic [
 	 - The instruction pointer is at the trampoline
 	 - The class register value contains the pic
 	 - the receiver register value contains the receiver"	
-	self assert: machineSimulator instructionPointerValue equals: cogit ceCPICMissTrampoline.
+	self assert: machineSimulator instructionPointerRegisterValue equals: cogit ceCPICMissTrampoline.
 	self assert: machineSimulator classRegisterValue equals: pic address.
 	self assert: machineSimulator receiverRegisterValue equals: receiver
 ]
@@ -124,9 +124,11 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> setUp [
 	self setUpCogMethodEntry.
 	cogit generateClosedPICPrototype.
 
-	cogit methodZone manageFrom: cogit methodZoneBase to: cogit methodZone effectiveLimit.
+	cogit methodZone
+		manageFrom: cogit methodZoneBase
+		to: cogit methodZone effectiveLimit.
 
-	"Prepare the methods to put in PICs"	
+	"Prepare the methods to put in PICs"
 	receiver := memory nilObject.
 	selector := self newOldSpaceObjectWithSlots: 0.
 	numArgs := 0.
@@ -138,16 +140,22 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> setUp [
 	"Configure by default some type tags.
 	None of them should match by costruction the tag of the receiver.
 	Specific tests should override this to force a PIC HIT"
-	1 to: 6 "Maximum polymorphic  cases" do: [ :index | | cogMethod compiledMethod |
+	1 to: 6 do: [ :index | 
+		| cogMethod compiledMethod |
 		picTypeTags at: index - 1 put: receiverTag + index.
 
-		compiledMethod := methodBuilder newMethod literals: { selector }; buildMethod.
-		cogMethod := self generateCogMethod: [ cogit RetN: 0 ] selector: selector.
-		cogit coInterpreter rawHeaderOf: compiledMethod put: cogMethod asInteger.
-		
+		compiledMethod := methodBuilder newMethod
+			                  literals: { selector };
+			                  buildMethod.
+		cogMethod := self
+			             generateCogMethod: [ cogit RetN: 0 ]
+			             selector: selector.
+		cogit coInterpreter
+			rawHeaderOf: compiledMethod
+			put: cogMethod asInteger.
+
 		compiledMethods at: index - 1 put: compiledMethod.
-		cogMethods at: index - 1 put: cogMethod.
-	]
+		cogMethods at: index - 1 put: cogMethod ] "Maximum polymorphic  cases"
 ]
 
 { #category : #'tests - metadata' }
@@ -208,7 +216,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> testIsClosedPic [
 	| pic |	
 	pic := self makePolymorphicPIC.
 
-	self assert: pic cmType equals: CMClosedPIC. 
+	self assert: pic cmType equals: CMPolymorphicIC. 
 ]
 
 { #category : #'tests - hit/miss' }

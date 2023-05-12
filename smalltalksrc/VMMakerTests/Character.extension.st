@@ -1,7 +1,13 @@
 Extension { #name : #Character }
 
 { #category : #'*VMMakerTests' }
-Character >> forMemory: aMemory [
+Character >> forMemory: memory [
 
-	^ aMemory characterObjectOf: self codePoint
+	^ memory characterObjectOf: self codePoint
+]
+
+{ #category : #'*VMMakerTests' }
+Character >> forMethodBuilder: aBuilder [
+
+	^ self forMemory: aBuilder memory
 ]

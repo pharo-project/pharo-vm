@@ -7,6 +7,59 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #generated }
+TReturnNode class >> expression: anExpression [
+
+	^ self new
+		expression: anExpression;
+		yourself
+]
+
+{ #category : #comparing }
+TReturnNode >> = aNode [
+
+	super = aNode ifFalse: [ ^false ].
+	aNode isReturn ifFalse: [ ^false ].
+	expression = aNode expression ifFalse: [ ^ false ].
+	^ true
+]
+
+{ #category : #visiting }
+TReturnNode >> accept: aVisitor [
+	
+	^ aVisitor visitReturnNode: self
+]
+
+{ #category : #tranforming }
+TReturnNode >> asCASTIn: aBuilder [
+
+	| cast |
+	(expression isSwitch or: [expression isCaseStmt]) ifTrue: [
+		^ expression asCASTIn: aBuilder addToEndOfCases: self ].
+
+	'void' = aBuilder currentMethod returnType ifTrue: [
+		"If the function is void, don't say 'return x' instead say ' x; return' "
+		| statements |
+		statements := OrderedCollection new.
+		expression isLeaf ifFalse: [
+			statements add: (expression asCASTIn: aBuilder) ].
+		statements add: CReturnStatementNode new.
+		^ (CCompoundStatementNode statements: statements)
+			needsBrackets: false "Slang compatibility";
+			yourself ].
+	
+	cast := expression asCASTExpressionIn: aBuilder.
+	
+	"If the expression is a sequence, inject the return at the last element.
+	It may be more clean to do that at the TAST level instead of the CAST level. I dunno."
+	cast isCompoundStatement ifTrue: [
+		cast last: (CReturnStatementNode expression: cast last).
+		^ cast ].
+		
+	"Or else build a return"
+	^ CReturnStatementNode expression: cast.
+]
+
 { #category : #transformations }
 TReturnNode >> asReturnNode [
 	^self
@@ -15,7 +68,7 @@ TReturnNode >> asReturnNode [
 { #category : #transformations }
 TReturnNode >> bindVariableUsesIn: aDictionary [
 
-	expression := expression bindVariableUsesIn: aDictionary.
+	self expression: (expression bindVariableUsesIn: aDictionary)
 ]
 
 { #category : #transformations }
@@ -34,50 +87,25 @@ TReturnNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold i
 { #category : #transformations }
 TReturnNode >> bindVariablesIn: aDictionary [
 
-	expression := expression bindVariablesIn: aDictionary.
+	self expression: (expression bindVariablesIn: aDictionary)
+]
+
+{ #category : #transformations }
+TReturnNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	(cautionaryBlock value: self) ifTrue: [^self].	
+	self expression: (expression bindVariablesIn: aDictionary unless: cautionaryBlock)
+]
+
+{ #category : #accessing }
+TReturnNode >> children [
+
+	^ { expression }
 ]
 
 { #category : #transformations }
 TReturnNode >> copyWithoutReturn [
 	^expression
-]
-
-{ #category : #'C code generation' }
-TReturnNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-
-	(expression isSwitch
-	 or: [expression isCaseStmt]) ifTrue:
-		[^expression emitCCodeOn: aStream addToEndOfCases: self level: level generator: aCodeGen].
-
-	(expression isSend and: [expression isValueExpansion]) ifTrue:
-		[^self emitValueExpansionOn: aStream level: level generator: aCodeGen].
-
-	'void' = aCodeGen currentMethod returnType ifTrue: "If the function is void, don't say 'return x' instead say ' x; return' "
-		[expression isLeaf ifFalse:
-			[expression emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen.	
-			 aStream nextPut: $;; crtab: level].
-		 aStream nextPutAll: 'return'.
-		 ^self].
-	aStream nextPutAll: 'return '.
-	expression
-		emitCCodeAsArgumentOn: aStream
-		level: (expression isStmtList ifTrue: [level + 1] ifFalse: [level])
-		generator: aCodeGen
-]
-
-{ #category : #'C code generation' }
-TReturnNode >> emitValueExpansionOn: aStream level: level generator: aCodeGen [
-	| stmtList lastStmt copy |
-	self assert: (expression isSend and: [expression isValueExpansion]).
-	stmtList := expression receiver.
-	lastStmt := stmtList statements last.
-	lastStmt isReturn ifTrue:
-		[^expression emitCCodeOn: aStream level: level generator: aCodeGen].
-	copy := stmtList copy.
-	copy statements
-		at: stmtList statements size
-		put: (TReturnNode new setExpression: lastStmt).
-	copy emitCCodeOn: aStream level: level generator: aCodeGen
 ]
 
 { #category : #testing }
@@ -92,10 +120,24 @@ TReturnNode >> expression [
 	^expression
 ]
 
+{ #category : #accessing }
+TReturnNode >> expression: anExpression [
+
+	expression := anExpression.
+	expression parent: self.
+]
+
 { #category : #testing }
 TReturnNode >> isReturn [
 
 	^true
+]
+
+{ #category : #comparing }
+TReturnNode >> isSameAs: aTParseNode [
+
+	aTParseNode isReturn ifFalse: [ ^ false ].
+	^ expression isSameAs: aTParseNode expression
 ]
 
 { #category : #enumerating }
@@ -133,12 +175,14 @@ TReturnNode >> nodesDo: aBlock unless: cautionaryBlock [
 { #category : #copying }
 TReturnNode >> postCopy [
 
-	expression := expression copy
+	self expression: expression copy
 ]
 
 { #category : #'C code generation' }
-TReturnNode >> prependCCodeOn: aStream level: level generator: aCCodeGenerator [ 
-	aStream nextPutAll: 'return '
+TReturnNode >> prependCASTIn: aBuilder expression: nodeExp [
+
+	^ CReturnStatementNode expression:
+		  (nodeExp asCASTExpressionIn: aBuilder)
 ]
 
 { #category : #printing }
@@ -154,17 +198,24 @@ TReturnNode >> removeAssertions [
 ]
 
 { #category : #transformations }
+TReturnNode >> replaceChild: aNode with: aReplacementNode [
+
+	expression == aNode ifFalse: [ self error: 'Node is not a child of current node' ].
+	self expression: aReplacementNode
+]
+
+{ #category : #transformations }
 TReturnNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
-		expression := expression replaceNodesIn: aDictionary.
+		self expression: (expression replaceNodesIn: aDictionary).
 		self]
 ]
 
 { #category : #accessing }
 TReturnNode >> setExpression: aNode [
 
-	expression := aNode.
+	self expression: aNode
 ]
 
 { #category : #'type inference' }

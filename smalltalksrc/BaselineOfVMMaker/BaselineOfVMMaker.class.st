@@ -13,30 +13,36 @@ BaselineOfVMMaker >> baseline: spec [
 			
 			"Slang, the basics"			
 			spec
-				package: 'Slang';
+				package: 'CAST' with: [
+					spec requires: #( 'SmaCC-GLR' )
+				];
+				package: 'Slang' with: [
+					spec requires: #( 'CAST' )
+				];
 				package: 'Slang-Tests' with: [
 					spec requires: #('Slang') ].
 			
 			"Melchor is a VM-oriented Slang"
 			spec package: 'Melchor' with: [
-				spec requires: #('Slang') ].
+				spec requires: #('Slang' 'Slang-Tests') ].
 			
 			"External Dependencies"
+			spec baseline: 'SmaCC-GLR' with: [ 
+				spec
+					loads: #( 'SmaCC-GLR-Runtime' );
+					className: 'BaselineOfSmaCC';
+					repository: 'github://guillep/SmaCC' ].
 			spec baseline: 'Unicorn' with: [ 
-				spec repository: 'github://guillep/pharo-unicorn' ].
+				spec repository: 'github://pharo-project/pharo-unicorn:unicorn2' ].
 			spec baseline: 'LLVMDisassembler' with: [ 
-				spec repository: 'github://guillep/pharo-llvmDisassembler' ].
+				spec repository: 'github://pharo-project/pharo-llvmDisassembler' ].
+			spec baseline: 'OpalSimdBytecode' with: [ 
+				spec repository: 'github://nrainhart/pharo-opal-simd-bytecode:main' ].
 
 			"Tests"			
 			spec
 				package: 'VMMakerTests' with: [
-					spec requires: #('VMMakerCompatibilityForPharo6' 'Unicorn' 'LLVMDisassembler' 'Slang-Tests') ];
-				package: 'VMMaker-MT-Tests' with: [
-					spec requires: #('VMMakerTests') ].
-
-			spec
-				package: 'VMMaker-OriginalTests' with: [
-					spec requires: #('VMMakerCompatibilityForPharo6') ].
+					spec requires: #('VMMakerCompatibilityForPharo6' 'Unicorn' 'LLVMDisassembler' 'Slang-Tests' 'OpalSimdBytecode') ].
 
 			"Tools"			
 			spec package: 'VMMaker-Tools' with: [ 
@@ -52,17 +58,16 @@ BaselineOfVMMaker >> baseline: spec [
 				
 			"Main VMMaker packages"	
 			spec
-				package: 'VMMaker-Slang'
-				with: [ spec requires: #( 'Melchor' 'VMMaker' ) ];
 				package: 'VMMaker'
-				with: [ spec requires: #( 'Melchor' 'VMMakerLoadingDependencies' 'Printf') ].
+				with: [ spec requires: #( 
+					'VMMakerLoadingDependencies' 'Printf' 'Melchor') ].
 								
 			"VM plugins"
 			spec package: 'FileAttributesPlugin' with: [ spec requires: #( 'VMMakerCompatibilityForPharo6') ].
 			
 			spec group: 'plugins' with: #('FileAttributesPlugin').
-			spec group: 'core' with: #('VMMaker-Slang').
+			spec group: 'core' with: #('VMMaker').
 			spec group: 'tools' with: #('VMMaker-Tools').			
-			spec group: 'tests' with: #('VMMakerTests' 'VMMaker-OriginalTests' 'VMMaker-MT-Tests').			
+			spec group: 'tests' with: #('VMMakerTests').
 			spec group: 'default' with: #( 'core' 'plugins' 'tools' 'tests') ]
 ]

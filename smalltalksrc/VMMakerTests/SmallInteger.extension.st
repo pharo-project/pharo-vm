@@ -1,7 +1,7 @@
 Extension { #name : #SmallInteger }
 
 { #category : #'*VMMakerTests' }
-SmallInteger >> forMemory: aMemory [
+SmallInteger >> forMemory: aMemory inMethod: anObject [
 	
 	(self > aMemory maxSmallInteger or: [ self < aMemory minSmallInteger ]) ifTrue: [ self halt ].
 	

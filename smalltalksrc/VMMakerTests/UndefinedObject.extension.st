@@ -1,7 +1,7 @@
 Extension { #name : #UndefinedObject }
 
 { #category : #'*VMMakerTests' }
-UndefinedObject >> forMemory: aMemory [
+UndefinedObject >> forMemory: aMemory inMethod: anObject [
 
 	^ aMemory nilObject
 ]

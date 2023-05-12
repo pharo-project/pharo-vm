@@ -5,7 +5,6 @@ Class {
 		'BadRegisterSet',
 		'CogCompilerClass',
 		'InFullBlock',
-		'InVanillaBlock',
 		'NumSendTrampolines',
 		'SSBaseOffset',
 		'SSConstant',
@@ -25,6 +24,7 @@ Class {
 		'SSSpillFloat64',
 		'SSSpillInt64',
 		'SSSpillNative',
+		'SSVectorRegister',
 		'UnimplementedOperation'
 	],
 	#category : #'VMMaker-JIT'

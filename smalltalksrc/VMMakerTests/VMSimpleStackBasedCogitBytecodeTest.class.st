@@ -28,11 +28,7 @@ VMSimpleStackBasedCogitBytecodeTest >> doExtendedStoreStoresVariableType: type i
 	"The object is filled with nils.
 	Push false into the stack and execute the store and pop bytecode."	
 	self pushAddress: memory falseObject.
-	
-	"Set an address as store check trampoline.
-	The bytecode below will jump to it if it is a old -> young store"
-	cogit objectRepresentation ceStoreCheckTrampoline: memory nilObject.
-	
+		
 	"The first byte of the push receiver instance variable bytecode family is used to identify which variable (0-based again)"
 	cogit byte1: type << 6 + index - 1.
 	self compile: [ cogit extendedStoreBytecode ].	
@@ -52,11 +48,7 @@ VMSimpleStackBasedCogitBytecodeTest >> doPopIntoReceiverVariableBytecodeStoresVa
 	"The object is filled with nils.
 	Push false into the stack and execute the store and pop bytecode."	
 	self pushAddress: memory falseObject.
-	
-	"Set an address as store check trampoline.
-	The bytecode below will jump to it if it is a old -> young store"
-	cogit objectRepresentation ceStoreCheckTrampoline: memory nilObject.
-	
+		
 	"The first byte of the push receiver instance variable bytecode family is used to identify which variable (0-based again)"
 	cogit byte0: instanceVariableToWrite - 1.		
 	self compile: [ 
@@ -94,7 +86,7 @@ VMSimpleStackBasedCogitBytecodeTest >> doTestReturnReturnsObjectInReturnRegister
 	self compile: compilationBlock.
 	self runUntilReturn.
 
-	self assert: machineSimulator returnRegisterValue equals: anAddress
+	self assert: machineSimulator receiverRegisterValue equals: anAddress
 ]
 
 { #category : #'tests - single bytecode - return' }
@@ -106,6 +98,13 @@ VMSimpleStackBasedCogitBytecodeTest >> doTestReturnReturnsToCallerWithFrame: isF
 	
 	self compile: compilationBlock.	
 	self runUntilReturn.
+]
+
+{ #category : #'tests - extended store bytecode - store inst var' }
+VMSimpleStackBasedCogitBytecodeTest >> setUp [
+
+	super setUp.
+	self setUpTrampolines
 ]
 
 { #category : #'tests - extended push bytecode - push inst var' }
@@ -231,30 +230,42 @@ VMSimpleStackBasedCogitBytecodeTest >> testExtendedStoreStoresInstanceVariableIn
 
 { #category : #'tests - jumps' }
 VMSimpleStackBasedCogitBytecodeTest >> testJumpForwardJumpsOverAnInstruction [
-	
-	cogit methodObj: (methodBuilder newMethod bytecodes: #[144 122 121]; buildMethod).
-	
-	self compile: [ | fixup nextOpcodeIndex |
-		cogit byte0: 144.
-		cogit bytecodePC: 8. "The method has a header so, the first bytecode is in offset 8"
-		cogit genShortUnconditionalJump.  
-		
-		cogit byte0: 122.
-		cogit bytecodePC: 9.
-		cogit genReturnFalse.
-		
-		cogit byte0: 121.
-		cogit bytecodePC: 10. 
-		"We need to store the value to know if the bytecode has generated instructions"
-		nextOpcodeIndex := cogit getOpcodeIndex.
-		cogit genReturnTrue.
-		"As the bytecode is the target of a jump it has a fixup. We need to process it"
-		fixup := cogit fixupAt: 10.
-		cogit patchFixupTargetIfNeeded: fixup nextOpcodeIndex: nextOpcodeIndex. ] bytecodes: 3.	
+
+	| firstBytecode |
+	cogit methodObj: (methodBuilder newMethod
+			 bytecodes: #[ 144 122 121 ];
+			 buildMethod).
+
+	firstBytecode := memory wordSize.
+
+	self
+		compile: [ 
+			| fixup nextOpcodeIndex |
+			cogit byte0: 144.
+			cogit bytecodePC: firstBytecode. "The method has a header so, the first bytecode is in offset 8"
+			cogit genShortUnconditionalJump.
+
+			cogit byte0: 122.
+			cogit bytecodePC: firstBytecode + 1.
+			cogit genReturnFalse.
+
+			cogit byte0: 121.
+			cogit bytecodePC: firstBytecode + 2.
+			"We need to store the value to know if the bytecode has generated instructions"
+			nextOpcodeIndex := cogit getOpcodeIndex.
+			cogit genReturnTrue.
+			"As the bytecode is the target of a jump it has a fixup. We need to process it"
+			fixup := cogit fixupAt: firstBytecode + 2.
+			cogit
+				patchFixupTargetIfNeeded: fixup
+				nextOpcodeIndex: nextOpcodeIndex ]
+		bytecodes: 3.
 
 	self runUntilReturn.
-	
-	self assert: machineSimulator receiverRegisterValue equals: memory trueObject
+
+	self
+		assert: machineSimulator receiverRegisterValue
+		equals: memory trueObject
 ]
 
 { #category : #'tests - single bytecode - pop into temp' }
@@ -964,173 +975,151 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThirdTempVariablePushesVariable [
 VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForFullBlockWithFullFrameCallsLargeFullBlockTrampoline [
 
 	| numberOfArguments methodObject method |
-	
-	cogit ceLargeActiveContextInFullBlockTrampoline: (self compile: [ cogit RetN: 0 ]).
-	
-	self 
-		createFramefulCallFrom: callerAddress 
+	cogit ceLargeActiveContextInFullBlockTrampoline:
+		(self compile: [ cogit RetN: 0 ]).
+
+	self
+		createFramefulCallFrom: callerAddress
 		receiver: memory nilObject
-		arguments: { memory falseObject . memory trueObject . memory falseObject }
-		temporaries: #().
+		arguments: { 
+				memory falseObject.
+				memory trueObject.
+				memory falseObject }
+		temporaries: #(  ).
 	numberOfArguments := 3.
-	methodObject := methodBuilder newMethod 
-		isSmall: false;
-		numberOfArguments: numberOfArguments;
-		buildMethod.
-		
-	method := self compile: [
-		cogit inBlock: InFullBlock.
-		cogit methodOrBlockNumArgs: numberOfArguments.
-		cogit methodObj: methodObject.
-		cogit genPushActiveContextBytecode ].
-	
-	self runFrom: method until: cogit ceLargeActiveContextInFullBlockTrampoline.
-	
-	self assert: machineSimulator instructionPointerValue equals: cogit ceLargeActiveContextInFullBlockTrampoline.
-	self assert: machineSimulator sendNumberOfArgumentsRegisterValue equals: numberOfArguments.
+	methodObject := methodBuilder newMethod
+		                isSmall: false;
+		                numberOfArguments: numberOfArguments;
+		                buildMethod.
+
+	method := self compile: [ 
+		          cogit inBlock: InFullBlock.
+		          cogit methodOrBlockNumArgs: numberOfArguments.
+		          cogit methodObj: methodObject.
+		          cogit genPushActiveContextBytecode ].
+
+	self
+		runFrom: method
+		until: cogit ceLargeActiveContextInFullBlockTrampoline.
+
+	self
+		assert: machineSimulator instructionPointerRegisterValue
+		equals: cogit ceLargeActiveContextInFullBlockTrampoline.
+	self
+		assert: machineSimulator sendNumberOfArgumentsRegisterValue
+		equals: numberOfArguments
 ]
 
 { #category : #'tests - thisContext' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForFullBlockWithSmallFrameCallsLargeFullBlockTrampoline [
 
 	| numberOfArguments methodObject method |
-	
-	cogit ceSmallActiveContextInFullBlockTrampoline: (self compile: [ cogit RetN: 0 ]).
-	
-	self 
-		createFramefulCallFrom: callerAddress 
+	cogit ceSmallActiveContextInFullBlockTrampoline:
+		(self compile: [ cogit RetN: 0 ]).
+
+	self
+		createFramefulCallFrom: callerAddress
 		receiver: memory nilObject
-		arguments: { memory falseObject . memory trueObject . memory falseObject }
-		temporaries: #().
+		arguments: { 
+				memory falseObject.
+				memory trueObject.
+				memory falseObject }
+		temporaries: #(  ).
 	numberOfArguments := 3.
-	methodObject := methodBuilder newMethod 
-		isSmall: true;
-		numberOfArguments: numberOfArguments;
-		buildMethod.
-	method := self compile: [
-		cogit inBlock: InFullBlock.
-		cogit methodOrBlockNumArgs: numberOfArguments.
-		cogit methodObj: methodObject.
-		cogit genPushActiveContextBytecode ].
-	
-	self runFrom: method until: cogit ceSmallActiveContextInFullBlockTrampoline.
-	
-	self assert: machineSimulator instructionPointerValue equals: cogit ceSmallActiveContextInFullBlockTrampoline.
-	self assert: machineSimulator sendNumberOfArgumentsRegisterValue equals: numberOfArguments.
+	methodObject := methodBuilder newMethod
+		                isSmall: true;
+		                numberOfArguments: numberOfArguments;
+		                buildMethod.
+	method := self compile: [ 
+		          cogit inBlock: InFullBlock.
+		          cogit methodOrBlockNumArgs: numberOfArguments.
+		          cogit methodObj: methodObject.
+		          cogit genPushActiveContextBytecode ].
+
+	self
+		runFrom: method
+		until: cogit ceSmallActiveContextInFullBlockTrampoline.
+
+	self
+		assert: machineSimulator instructionPointerRegisterValue
+		equals: cogit ceSmallActiveContextInFullBlockTrampoline.
+	self
+		assert: machineSimulator sendNumberOfArgumentsRegisterValue
+		equals: numberOfArguments
 ]
 
 { #category : #'tests - thisContext' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForMethodWithLargeFrameCallsLargeMethodTrampoline [
 
 	| numberOfArguments methodObject method |
-	
-	cogit ceLargeActiveContextInMethodTrampoline: (self compile: [ cogit RetN: 0 ]).
-	
-	self 
-		createFramefulCallFrom: callerAddress 
+	cogit ceLargeActiveContextInMethodTrampoline:
+		(self compile: [ cogit RetN: 0 ]).
+
+	self
+		createFramefulCallFrom: callerAddress
 		receiver: memory nilObject
-		arguments: { memory falseObject . memory trueObject . memory falseObject }
-		temporaries: #().
+		arguments: { 
+				memory falseObject.
+				memory trueObject.
+				memory falseObject }
+		temporaries: #(  ).
 	numberOfArguments := 3.
-	methodObject := methodBuilder newMethod 
-		isSmall: false;
-		numberOfArguments: numberOfArguments;
-		buildMethod.
+	methodObject := methodBuilder newMethod
+		                isSmall: false;
+		                numberOfArguments: numberOfArguments;
+		                buildMethod.
 	method := self compile: [ 
-		cogit methodOrBlockNumArgs: numberOfArguments.
-		cogit methodObj: methodObject.
-		cogit genPushActiveContextBytecode ].
-	
-	self runFrom: method until: cogit ceLargeActiveContextInMethodTrampoline.
-	
-	self assert: machineSimulator instructionPointerValue equals: cogit ceLargeActiveContextInMethodTrampoline.
-	self assert: machineSimulator sendNumberOfArgumentsRegisterValue equals: numberOfArguments.
+		          cogit methodOrBlockNumArgs: numberOfArguments.
+		          cogit methodObj: methodObject.
+		          cogit genPushActiveContextBytecode ].
+
+	self
+		runFrom: method
+		until: cogit ceLargeActiveContextInMethodTrampoline.
+
+	self
+		assert: machineSimulator instructionPointerRegisterValue
+		equals: cogit ceLargeActiveContextInMethodTrampoline.
+	self
+		assert: machineSimulator sendNumberOfArgumentsRegisterValue
+		equals: numberOfArguments
 ]
 
 { #category : #'tests - thisContext' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForMethodWithSmallFrameCallsSmallMethodTrampoline [
 
 	| numberOfArguments methodObject method |
-	
-	cogit ceSmallActiveContextInMethodTrampoline: (self compile: [ cogit RetN: 0 ]).
-	
-	self 
-		createFramefulCallFrom: callerAddress 
+	cogit ceSmallActiveContextInMethodTrampoline:
+		(self compile: [ cogit RetN: 0 ]).
+
+	self
+		createFramefulCallFrom: callerAddress
 		receiver: memory nilObject
-		arguments: { memory falseObject . memory trueObject . memory falseObject }
-		temporaries: #().
+		arguments: { 
+				memory falseObject.
+				memory trueObject.
+				memory falseObject }
+		temporaries: #(  ).
 	numberOfArguments := 3.
-	methodObject := methodBuilder newMethod 
-		isSmall: true;
-		numberOfArguments: numberOfArguments;
-		buildMethod.
+	methodObject := methodBuilder newMethod
+		                isSmall: true;
+		                numberOfArguments: numberOfArguments;
+		                buildMethod.
 	method := self compile: [ 
-		cogit methodOrBlockNumArgs: numberOfArguments.
-		cogit methodObj: methodObject.
-		cogit genPushActiveContextBytecode ].
-	
-	self runFrom: method until: cogit ceSmallActiveContextInMethodTrampoline.
-	
-	self assert: machineSimulator instructionPointerValue equals: cogit ceSmallActiveContextInMethodTrampoline.
-	self assert: machineSimulator sendNumberOfArgumentsRegisterValue equals: numberOfArguments.
-]
+		          cogit methodOrBlockNumArgs: numberOfArguments.
+		          cogit methodObj: methodObject.
+		          cogit genPushActiveContextBytecode ].
 
-{ #category : #'tests - thisContext' }
-VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForVanillaBlockWithLargeFrameCallsLargeVanillaBlockTrampoline [
+	self
+		runFrom: method
+		until: cogit ceSmallActiveContextInMethodTrampoline.
 
-	| numberOfArguments methodObject method |
-	
-	cogit ceLargeActiveContextInBlockTrampoline: (self compile: [ cogit RetN: 0 ]).
-	
-	self 
-		createFramefulCallFrom: callerAddress 
-		receiver: memory nilObject
-		arguments: { memory falseObject . memory trueObject . memory falseObject }
-		temporaries: #().
-	numberOfArguments := 3.
-	methodObject := methodBuilder newMethod 
-		isSmall: false;
-		numberOfArguments: numberOfArguments;
-		buildMethod.
-	method := self compile: [
-		cogit inBlock: InVanillaBlock.
-		cogit methodOrBlockNumArgs: numberOfArguments.
-		cogit methodObj: methodObject.
-		cogit genPushActiveContextBytecode ].
-	
-	self runFrom: method until: cogit ceLargeActiveContextInBlockTrampoline.
-	
-	self assert: machineSimulator instructionPointerValue equals: cogit ceLargeActiveContextInBlockTrampoline.
-	self assert: machineSimulator sendNumberOfArgumentsRegisterValue equals: numberOfArguments.
-]
-
-{ #category : #'tests - thisContext' }
-VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForVanillaBlockWithSmallFrameCallsLargeVanillaBlockTrampoline [
-
-	| numberOfArguments methodObject method |
-	
-	cogit ceSmallActiveContextInBlockTrampoline: (self compile: [ cogit RetN: 0 ]).
-	
-	self 
-		createFramefulCallFrom: callerAddress 
-		receiver: memory nilObject
-		arguments: { memory falseObject . memory trueObject . memory falseObject }
-		temporaries: #().
-	numberOfArguments := 3.
-	methodObject := methodBuilder newMethod 
-		isSmall: true;
-		numberOfArguments: numberOfArguments;
-		buildMethod.
-	method := self compile: [
-		cogit inBlock: InVanillaBlock.
-		cogit methodOrBlockNumArgs: numberOfArguments.
-		cogit methodObj: methodObject.
-		cogit genPushActiveContextBytecode ].
-	
-	self runFrom: method until: cogit ceSmallActiveContextInBlockTrampoline.
-	
-	self assert: machineSimulator instructionPointerValue equals: cogit ceSmallActiveContextInBlockTrampoline.
-	self assert: machineSimulator sendNumberOfArgumentsRegisterValue equals: numberOfArguments.
+	self
+		assert: machineSimulator instructionPointerRegisterValue
+		equals: cogit ceSmallActiveContextInMethodTrampoline.
+	self
+		assert: machineSimulator sendNumberOfArgumentsRegisterValue
+		equals: numberOfArguments
 ]
 
 { #category : #'tests - single bytecode - return' }
@@ -1312,15 +1301,15 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendEqualsEqualsWithNonIdenticalObjec
 
 { #category : #'tests - sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralOneWithZeroArgsMovesSelectorIndexClassRegisterIn64bits [
-	
+
 	| selector literalIndex |
 	self wordSize = 4 ifTrue: [ ^ self skip ].
 
 	sendTrampolineAddress := self compile: [ cogit RetN: 0 ].
-	cogit ordinarySendTrampolineAt: 0 "num args" put: sendTrampolineAddress.
-	
+	cogit ordinarySendTrampolineAt: 0 put: sendTrampolineAddress. "num args"
+
 	self createFramefulCallFrom: callerAddress.
-	
+
 	literalIndex := 1.
 	"The literal index is extracted from the byte0 of the instruction
 	It is encoded with the bytecode number.
@@ -1328,118 +1317,158 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralOneWithZeroArgsMovesSelect
 	The literal taken starts from zero in 208, one in 209... and so on"
 	cogit byte0: 208 + literalIndex.
 	selector := memory falseObject.
-	cogit methodObj: (methodBuilder newMethod literalAt: literalIndex put: selector ; buildMethod).
+	cogit methodObj: (methodBuilder newMethod
+			 literalAt: literalIndex put: selector;
+			 buildMethod).
 
 	"The method will have 3 literals.
 	The first literal is the methodHeader (smallInteger with flags).
 	Literal 0 -> we are not using it (now it is nil)
 	Literal 1 -> our selector"
-	
-	sendAddress := self compile: [ cogit genSendLiteralSelector0ArgsBytecode ].
+
+	sendAddress := self compile: [ 
+		               cogit genSendLiteralSelector0ArgsBytecode ].
 
 	"Push receiver, arg, then send"
 	self pushAddress: memory falseObject.
 	self runFrom: sendAddress until: sendTrampolineAddress.
-	
-	self
-		assert: machineSimulator classRegisterValue
-		equals: literalIndex
+
+	self assert: machineSimulator classRegisterValue equals: literalIndex
 ]
 
 { #category : #'tests - sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralOneWithZeroArgsMovesSelectorIntoClassRegisterIn32bits [
-	
+
 	| selector literalIndex |
 	self wordSize = 8 ifTrue: [ ^ self skip ].
 
 	sendTrampolineAddress := self compile: [ cogit RetN: 0 ].
-	cogit ordinarySendTrampolineAt: 0 "num args" put: sendTrampolineAddress.
-	
+	cogit ordinarySendTrampolineAt: 0 put: sendTrampolineAddress. "num args"
+
 	self createFramefulCallFrom: callerAddress.
-	
+
 	literalIndex := 1.
 	cogit byte0: literalIndex.
 	selector := memory falseObject.
-	cogit methodObj: (methodBuilder newMethod literalAt: literalIndex put: selector ; buildMethod).
-	sendAddress := self compile: [ cogit genSendLiteralSelector0ArgsBytecode ].
+	cogit methodObj: (methodBuilder newMethod
+			 literalAt: literalIndex put: selector;
+			 buildMethod).
+	sendAddress := self compile: [ 
+		               cogit genSendLiteralSelector0ArgsBytecode ].
 
 	"Push receiver, arg, then send"
 	self pushAddress: memory falseObject.
 	self pushAddress: memory trueObject.
 	self runFrom: sendAddress until: sendTrampolineAddress.
-	
-	self
-		assert: machineSimulator classRegisterValue
-		equals: selector
+
+	self assert: machineSimulator classRegisterValue equals: selector
 ]
 
 { #category : #'tests - sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsMovesReceiverFromStackTopIntoReceiverRegister [
 
 	sendTrampolineAddress := self compile: [ cogit RetN: 0 ].
-	cogit ordinarySendTrampolineAt: 0 "num args" put: sendTrampolineAddress.
-	
+	cogit ordinarySendTrampolineAt: 0 put: sendTrampolineAddress. "num args"
+
 	self createFramefulCallFrom: callerAddress.
-	
+
 	cogit byte0: 0.
-	cogit methodObj: (methodBuilder newMethod literals: { memory nilObject }; buildMethod).
-	sendAddress := self compile: [ cogit genSendLiteralSelector0ArgsBytecode ].
+	cogit methodObj: (methodBuilder newMethod
+			 literals: { memory nilObject };
+			 buildMethod).
+	sendAddress := self compile: [ 
+		               cogit genSendLiteralSelector0ArgsBytecode ].
 
 	"Push receiver then send"
 	self pushAddress: memory falseObject.
 	self runFrom: sendAddress until: sendTrampolineAddress.
-	
-	self assert: machineSimulator receiverRegisterValue equals: memory falseObject
+
+	self
+		assert: machineSimulator receiverRegisterValue
+		equals: memory falseObject
 ]
 
 { #category : #'tests - sends' }
-VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsMovesSelectorIntoClassRegisterIn32bits [
-	
-	| selector |
-	self wordSize = 8 ifTrue: [ ^ self skip ].
+VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsMovesSelectorIndexClassRegisterIn64bits [
+
+	| selector literalIndex |
+	self wordSize = 4 ifTrue: [ ^ self skip ].
 
 	sendTrampolineAddress := self compile: [ cogit RetN: 0 ].
-	cogit ordinarySendTrampolineAt: 0 "num args" put: sendTrampolineAddress.
-	
+	cogit ordinarySendTrampolineAt: 0 put: sendTrampolineAddress. "num args"
+
 	self createFramefulCallFrom: callerAddress.
-	
+
 	cogit byte0: 0.
 	selector := memory falseObject.
-	cogit methodObj: (methodBuilder newMethod literals: { selector }; buildMethod).
-	sendAddress := self compile: [ cogit genSendLiteralSelector0ArgsBytecode ].
+	cogit methodObj: (methodBuilder newMethod
+			 literalAt: (literalIndex := 0) put: selector;
+			 buildMethod).
+	sendAddress := self compile: [ 
+		               cogit genSendLiteralSelector0ArgsBytecode ].
 
 	"Push receiver, arg, then send"
 	self pushAddress: memory falseObject.
 	self pushAddress: memory trueObject.
 	self runFrom: sendAddress until: sendTrampolineAddress.
-	
-	self
-		assert: machineSimulator classRegisterValue
-		equals: selector
+
+	self assert: machineSimulator classRegisterValue equals: literalIndex
+]
+
+{ #category : #'tests - sends' }
+VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsMovesSelectorIntoClassRegisterIn32bits [
+
+	| selector |
+	self wordSize = 8 ifTrue: [ ^ self skip ].
+
+	sendTrampolineAddress := self compile: [ cogit RetN: 0 ].
+	cogit ordinarySendTrampolineAt: 0 put: sendTrampolineAddress. "num args"
+
+	self createFramefulCallFrom: callerAddress.
+
+	cogit byte0: 0.
+	selector := memory falseObject.
+	cogit methodObj: (methodBuilder newMethod
+			 literals: { selector };
+			 buildMethod).
+	sendAddress := self compile: [ 
+		               cogit genSendLiteralSelector0ArgsBytecode ].
+
+	"Push receiver, arg, then send"
+	self pushAddress: memory falseObject.
+	self pushAddress: memory trueObject.
+	self runFrom: sendAddress until: sendTrampolineAddress.
+
+	self assert: machineSimulator classRegisterValue equals: selector
 ]
 
 { #category : #'tests - sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsPushesReturnValueFromReceiverRegisterAfterReturn [
 
 	sendTrampolineAddress := self compile: [ cogit RetN: 0 ].
-	cogit ordinarySendTrampolineAt: 0 "num args" put: sendTrampolineAddress.
-	
+	cogit ordinarySendTrampolineAt: 0 put: sendTrampolineAddress. "num args"
+
 	self createFramefulCallFrom: callerAddress.
-	
+
 	cogit byte0: 0.
-	cogit methodObj: (methodBuilder newMethod literals: { memory falseObject } ; buildMethod).
-	sendAddress := self compile: [ cogit genSendLiteralSelector0ArgsBytecode ].
+	cogit methodObj: (methodBuilder newMethod
+			 literals: { memory falseObject };
+			 buildMethod).
+	sendAddress := self compile: [ 
+		               cogit genSendLiteralSelector0ArgsBytecode ].
 
 	"Push receiver, arg, then send"
 	self pushAddress: memory falseObject.
 	self pushAddress: memory trueObject.
 	self runFrom: sendAddress until: sendTrampolineAddress.
-		
+
 	"Now return from called function/method and execute until the end of the send instruction"
-	machineSimulator returnRegisterValue: (memory integerObjectOf: 42).
-	self runFrom: machineSimulator instructionPointerValue until: self getLastAddress.
-	
-	self assert: self popAddress equals: (memory integerObjectOf: 42).
+	machineSimulator receiverRegisterValue: (memory integerObjectOf: 42).
+	self
+		runFrom: machineSimulator instructionPointerRegisterValue
+		until: self getLastAddress.
+
+	self assert: self popAddress equals: (memory integerObjectOf: 42)
 ]
 
 { #category : #'tests - special sends' }
@@ -1564,8 +1593,8 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendOneArgSpecialMessagePushesReturnV
 	self runFrom: sendAddress until: sendTrampolineAddress.
 	
 	"Now return from called function/method and execute until the end of the send instruction"
-	machineSimulator returnRegisterValue: (memory integerObjectOf: 42).
-	self runFrom: machineSimulator instructionPointerValue until: self getLastAddress.
+	machineSimulator receiverRegisterValue: (memory integerObjectOf: 42).
+	self runFrom: machineSimulator instructionPointerRegisterValue until: self getLastAddress.
 	
 	self assert: self popAddress equals: (memory integerObjectOf: 42).
 ]
@@ -1673,8 +1702,8 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendTwoArgSpecialMessagePushesReturnV
 	self runFrom: sendAddress until: sendTrampolineAddress.
 	
 	"Now return from called function/method and execute until the end of the send instruction"
-	machineSimulator returnRegisterValue: (memory integerObjectOf: 42).
-	self runFrom: machineSimulator instructionPointerValue until: self getLastAddress.
+	machineSimulator receiverRegisterValue: (memory integerObjectOf: 42).
+	self runFrom: machineSimulator instructionPointerRegisterValue until: self getLastAddress.
 	
 	self assert: self popAddress equals: (memory integerObjectOf: 42).
 ]
@@ -1766,8 +1795,8 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendZeroArgSpecialMessagePushesReturn
 	self runFrom: sendAddress until: sendTrampolineAddress.
 	
 	"Now return from called function/method and execute until the end of the send instruction"
-	machineSimulator returnRegisterValue: (memory integerObjectOf: 42).
-	self runFrom: machineSimulator instructionPointerValue until: self getLastAddress.
+	machineSimulator receiverRegisterValue: (memory integerObjectOf: 42).
+	self runFrom: machineSimulator instructionPointerRegisterValue until: self getLastAddress.
 	
 	self assert: self popAddress equals: (memory integerObjectOf: 42).
 ]

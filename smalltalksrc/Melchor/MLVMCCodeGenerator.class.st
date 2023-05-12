@@ -56,7 +56,7 @@ MLVMCCodeGenerator >> computeKernelReturnTypes [
 		 fetchFloatAt:into: #void storeFloatAt:from: #void
 			fetchFloatAtPointer:into: #void storeFloatAtPointer:from: #void
 		 fetchSingleFloatAt:into: #void storeSingleFloatAt:from: #void
-			fetchSingleFloatAtPointer:into: #void storeSingleFloatAtPointer:from: #void
+			 storeSingleFloatAtPointer:from: #void
 
 		 pointerForOop: #'char *' oopForPointer: #sqInt
 		 baseHeaderSize #sqInt wordSize #sqInt bytesPerOop #sqInt).
@@ -114,15 +114,15 @@ MLVMCCodeGenerator >> doInlining: inlineFlagOrSymbol [
 	"Inline the bodies of all methods that are suitable for inlining."
 	"Modified slightly for the core VM translator, since the first level of inlining for the interpret loop must be performed in order that the instruction implementations can easily discover their addresses. Remember to inline the bytecode routines as well"
 
-	| removed |
+	| interpretMethod |
 	inlineFlagOrSymbol isSymbol ifTrue:
-		[self inlineDispatchesInMethodNamed: #interpret localizingVars: #().	
+		[self inlineDispatchesInMethodNamed: #interpret.
 		 self doBasicInlining: inlineFlagOrSymbol.
 		 self pruneUnreachableMethods.
 		 ^self].
 
 	inlineFlagOrSymbol ifFalse:
-		[self inlineDispatchesInMethodNamed: #interpret localizingVars: #().	
+		[self inlineDispatchesInMethodNamed: #interpret.
 		self pruneUnreachableMethods.
 		^self].
 
@@ -134,17 +134,14 @@ MLVMCCodeGenerator >> doInlining: inlineFlagOrSymbol [
 		displayProgress: 'Inlining bytecodes'
 		from: 1 to: 2
 		during: [:bar |
-			self inlineDispatchesInMethodNamed: #interpret
-				localizingVars: self vmClass namesOfVariablesToLocalize.
-			bar value: 1.
-			removed := self removeMethodsReferingToGlobals: self vmClass namesOfVariablesToLocalize
-							except: #interpret.
-			bar value: 2].
+			self inlineDispatchesInMethodNamed: #interpret.
+			bar value: 1 ].
 
-	"only prune when generating the interpreter itself"
 	self pruneUnreachableMethods.
-
-	self reportShouldNotBeRemoved: removed  varList: self vmClass namesOfVariablesToLocalize
+	interpretMethod := self methodNamed: #interpret.
+	self
+		localizeVariables: self vmClass namesOfVariablesToLocalize
+		inMethod: interpretMethod
 ]
 
 { #category : #'C code generator' }
@@ -228,23 +225,19 @@ MLVMCCodeGenerator >> emitCVariableDeclarationFor: aDeclaration andVarString: va
 { #category : #'C code generator' }
 MLVMCCodeGenerator >> emitExportNamed: exportsNamePrefix forMethod: method pluginName: pluginName on: aStream [
 
-	| excludeDepth primName |
+	| primName |
 	"Don't include the depth in the vm's named primitives if the vm is non-Spur."
-	excludeDepth := exportsNamePrefix = 'vm' and: [ 
-		                pluginName isEmpty and: [ self shouldExcludeDepth ] ].
-
 	primName := self cFunctionNameFor: method selector.
 	aStream
 		tab;
 		nextPutAll: '{(void*)_m, "';
 		nextPutAll: primName.
-	excludeDepth ifFalse: [ 
-		(self accessorDepthCalculator accessorDepthForSelector:
-			 primName asSymbol) ifNotNil: [ :depth | "store the accessor depth in a hidden byte immediately after the primName"
-			self assert: depth < 128.
-			aStream
-				nextPutAll: '\000\';
-				nextPutAll: ((depth bitAnd: 255) printStringBase: 8 nDigits: 3) ] ].
+	(self accessorDepthCalculator accessorDepthForSelector:
+		 primName asSymbol) ifNotNil: [ :depth | "store the accessor depth in a hidden byte immediately after the primName"
+		self assert: depth < 128.
+		aStream
+			nextPutAll: '\000\';
+			nextPutAll: ((depth bitAnd: 255) printStringBase: 8 nDigits: 3) ].
 	aStream
 		nextPutAll: '", (void*)';
 		nextPutAll: primName;
@@ -297,59 +290,6 @@ MLVMCCodeGenerator >> emitGlobalCVariablesOn: aStream [
 						nextPut: $;;
 						newLine]]].
 	aStream newLine
-]
-
-{ #category : #'C translation' }
-MLVMCCodeGenerator >> generateIntegerObjectOf: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream."
-	| expr mustCastToUnsigned type typeIsUnsigned |
-	expr := msgNode args first.
-	aStream nextPutAll: '(('.
-	"Note that the default type of an integer constant in C is int.  Hence we /must/
-	 cast expression to long if in the 64-bit world, since e.g. in 64-bits
-		(int)(16r1FFFFF << 3) = (int)16rFFFFFFF8 = -8
-	 whereas
-		(long)(16r1FFFFF << 3) = (long) 16rFFFFFFF8 = 4294967288."
-	type := self typeFor: expr in: currentMethod.
-	typeIsUnsigned := type first = $u.
-	mustCastToUnsigned := typeIsUnsigned not
-		or: [(self sizeOfIntegralCType: type) < (self sizeOfIntegralCType: #usqInt)].
-	mustCastToUnsigned ifTrue:
-		[aStream nextPutAll: '(usqInt)'].
-	self emitCExpression: expr on: aStream.
-	aStream
-		nextPutAll: ' << ';
-		print: self vmClass objectMemoryClass numSmallIntegerTagBits;
-		nextPutAll: ') | 1)'
-]
-
-{ #category : #'C translation' }
-MLVMCCodeGenerator >> generateIntegerValueOf: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream."
-
-	aStream nextPut: $(.
-	self emitCExpression: msgNode args first on: aStream.
-	aStream nextPutAll: ' >> ';
-		print: self vmClass objectMemoryClass numSmallIntegerTagBits;
-		nextPut: $).
-]
-
-{ #category : #'C translation' }
-MLVMCCodeGenerator >> generateIsIntegerObject: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream."
-
-	self vmClass objectMemoryClass numSmallIntegerTagBits = 1
-		ifTrue:
-			[aStream nextPutAll: '('.
-			 self emitCExpression: msgNode args first on: aStream.
-			 aStream nextPutAll: ' & 1)']
-		ifFalse:
-			[aStream nextPutAll: '((('.
-			 self emitCExpression: msgNode args first on: aStream.
-			 aStream
-				nextPutAll: ') & ';
-				print: 1 << self vmClass objectMemoryClass numSmallIntegerTagBits - 1;
-				nextPutAll: ') == 1)']
 ]
 
 { #category : #'C code generator' }
@@ -424,6 +364,15 @@ MLVMCCodeGenerator >> maybeEmitPrimitiveFailureDefineFor: selector on: aStream [
 		[aStream nextPutAll: '#else\# define ' withCRs; nextPutAll: selector; nextPutAll: ' (void (*)(void))0\' withCRs]
 ]
 
+{ #category : #'C translation support' }
+MLVMCCodeGenerator >> maybeGenerateCASTPrimitiveFailureDefineFor: selector [
+	 (self vmClass notNil
+	 and: [(self vmClass inheritsFrom: self vmmakerConfiguration baseInterpreterClass)
+	 and: [(self vmClass primitiveTable includes: selector)]]) ifTrue:
+		[^ CPreprocessorDefineNode token: (CIdentifierNode name: selector) rawMacro: '(void (*)(void))0' ].
+	^ nil
+]
+
 { #category : #translating }
 MLVMCCodeGenerator >> mostBasicConstantSelectors [
 
@@ -483,65 +432,15 @@ MLVMCCodeGenerator >> optionIsTrue: pragma in: aClass [
 
 { #category : #'C code generator' }
 MLVMCCodeGenerator >> removeVariable: aName [
+
 	"Remove the given (instance) variable from the code base."
-	self removeVariable: aName
-		ifAbsent:
-			[(self vmClass notNil
-			  and: [self vmClass isNonArgumentImplicitReceiverVariableName: aName]) ifFalse:
-				[logger
-					newLine;
-					show: 'warning, variable '
-						, aName
-						, ' doesn''t exist or has already been removed';
-						newLine]]
-]
 
-{ #category : #'C translation support' }
-MLVMCCodeGenerator >> reportShouldNotBeRemoved: removed varList: varList [
-	"Report whether any of the removed methods are still used."
-	| varListAsStrings shouldNotBeRemoved |
-	varListAsStrings := varList collect: [ :sym | sym asString ].
-	shouldNotBeRemoved := Set new.
-	removed do:
-		[:m|
-		m isAPIMethod ifTrue:
-			[shouldNotBeRemoved add: m selector]].
-	methods do:
-		[:m|
-		(m selector = #interpret
-		 or: [removed includes: m selector]) ifFalse:
-			[m allCalls do:
-				[:sel|
-				(removed includesKey: sel) ifTrue:
-					[shouldNotBeRemoved add: sel]]]].
-	self vmClass additionalSelectorTables do:
-		[:selectorTable|
-		 selectorTable do:
-			[:selOrInteger|
-			selOrInteger isInteger ifFalse:
-				[(removed includesKey: selOrInteger) ifTrue:
-					[shouldNotBeRemoved add: selOrInteger]]]].
-	shouldNotBeRemoved do:
-		[:sel| | str |
-		str := String streamContents:
-				[:strm| | them |
-				strm
-					nextPutAll: 'Removed ';
-					nextPutAll: sel;
-					nextPutAll: ' because it refers to the local variable'.
-				them := (removed at: sel) freeVariableReferences asSet intersection: varListAsStrings.
-				them size > 1 ifTrue:
-					[strm nextPut: $s.
-					 them := self sortStrings: them].
-				them do: [:var| strm space; nextPutAll: var].
-
-				strm
-					nextPutAll: ' of interpret.';
-					newLine;
-					nextPutAll: 'But it is either used outside of interpret or exported!!';
-					newLine].
-		logger newLine; show: str.
-		self inform: str]
+	self removeVariable: aName ifAbsent: [ 
+		(self vmClass notNil and: [ 
+			 self vmClass isNonArgumentImplicitReceiverVariableName: aName ]) 
+			ifFalse: [ 
+				self error: 'warning, variable ' , aName
+					, ' doesn''t exist or has already been removed' ] ]
 ]
 
 { #category : #'C code generator' }
@@ -561,13 +460,6 @@ MLVMCCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledM
 				in: aTMethod
 				boundTo: aCalledMethod
 				typeIfNil: typeIfNil ]
-]
-
-{ #category : #'C code generator' }
-MLVMCCodeGenerator >> shouldExcludeDepth [
-
-	"Don't include the depth in the vm's named primitives if the vm is non-Spur."
-	^ self vmClass notNil and: [ self vmClass objectMemoryClass hasSpurMemoryManagerAPI not ]
 ]
 
 { #category : #'C translation support' }
@@ -618,8 +510,9 @@ MLVMCCodeGenerator >> unusedConstants [
 
 { #category : #'C code generator' }
 MLVMCCodeGenerator >> validateCppIf: nodeOrNil withValue: value [
+
 	(self vmClass notNil and: [ 
-		 nodeOrNil args first isConstant and: [ 
+		 nodeOrNil arguments first isConstant and: [ 
 			 value isSymbol and: [ 
 				 (self vmClass defineAtCompileTime: value) not and: [ 
 					 (self vmClass bindingOf: value) notNil ] ] ] ]) ifTrue: [ 

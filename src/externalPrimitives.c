@@ -186,14 +186,12 @@ getModuleSymbol(void *module, const char *symbol)
 	FARPROC address = GetProcAddress((HMODULE)(module ? module : GetModuleHandle(NULL)), symbol);
 
 	if(address == NULL){
-	  LPVOID lpMsgBuf;
-	  DWORD lastError;
 
-	  lastError = GetLastError();
-	  FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |  FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-					NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-					(LPTSTR) &lpMsgBuf, 0, NULL );
-	  logWarn("Looking up symbol %s: %s", symbol, lpMsgBuf);
+		DWORD errorCode = GetLastError();
+		char* errorMessage = formatMessageFromErrorCode(errorCode);
+
+		logWarn("Looking up symbol %s: %s", symbol, errorMessage);
+		free(errorMessage);	  
 	}
 
 	if(address == NULL && module == NULL){

@@ -31,12 +31,6 @@ Primitive(primitiveGetSameThreadRunnerAddress) {
 void sameThreadCallbackEnter(struct _Runner* runner, struct _CallbackInvocation* callback){
 
 	VMCallbackContext *vmcc;
-	sqInt flags;
-
-//	if ((flags = ownVM(0)) < 0) {
-//		fprintf(stderr,"Warning; callback failed to own the VM\n");
-//		return;
-//	}
 
 	vmcc = malloc(sizeof(VMCallbackContext));
 
@@ -50,13 +44,11 @@ void sameThreadCallbackEnter(struct _Runner* runner, struct _CallbackInvocation*
 		vmcc->floatregargsp = NULL;
 		ptEnterInterpreterFromCallback(vmcc);
 		fprintf(stderr,"Warning; callback failed to invoke\n");
-//		disownVM(flags);
 		return;
 	}
 
 	free(vmcc);
 
-//	disownVM(flags);
 }
 
 void sameThreadCallbackExit(struct _Runner* runner, struct _CallbackInvocation* callback){

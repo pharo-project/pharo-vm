@@ -5,18 +5,10 @@ Class {
 }
 
 { #category : #running }
-VMSistaTrampolineTest >> initializationOptions [
-
-	^ super initializationOptions , { 
-		#MULTIPLEBYTECODESETS 		. true.
-		#bytecodeTableInitializer 	. #initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid }
-]
-
-{ #category : #running }
 VMSistaTrampolineTest >> jitOptions [
 
 	^ super jitOptions
-		  at: #bytecodeTableInitializer put: #initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid;
+		  at: #bytecodeTableInitializer put: #initializeBytecodeTableForSistaV1;
 		  yourself
 ]
 

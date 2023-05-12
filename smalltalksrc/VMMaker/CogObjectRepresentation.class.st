@@ -3,7 +3,7 @@ I am an abstract superclass for object representations whose job it is to genera
 "
 Class {
 	#name : #CogObjectRepresentation,
-	#superclass : #CogClass,
+	#superclass : #VMClass,
 	#instVars : [
 		'cogit',
 		'methodZone',
@@ -26,8 +26,8 @@ Class {
 		'CogMethodConstants',
 		'CogRTLOpcodes',
 		'VMBasicConstants',
+		'VMClassIndices',
 		'VMObjectIndices',
-		'VMSqueakClassIndices',
 		'VMStackFrameOffsets'
 	],
 	#category : #'VMMaker-JIT'
@@ -125,6 +125,38 @@ CogObjectRepresentation >> ensureNoForwardedLiteralsIn: aMethodObj [
 CogObjectRepresentation >> freeCounters: theCounters [
 	<var: #theCounters type: #usqInt>
 	self subclassResponsibility
+]
+
+{ #category : #'compile abstract instructions' }
+CogObjectRepresentation >> genCheckObjectPosition: destReg scratchReg: scratchReg valueReg: valueReg results: resultBlock [ 
+
+	| isDestYoung isOldAndOld isPermAndPerm recvIsPerm exit valueIsMachineCode| 
+
+	<inline: true>
+	<var: #recvIsPerm type: #'AbstractInstruction *'>
+	<var: #exit type: #'AbstractInstruction *'>
+
+	cogit CmpCq: objectMemory getMemoryMap getNewSpaceStart  R: valueReg.
+	valueIsMachineCode := cogit JumpBelow: 0.
+	
+	cogit CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: destReg.
+	recvIsPerm := cogit JumpAboveOrEqual: 0.
+
+	cogit CmpCq: objectMemory getMemoryMap getOldSpaceStart R: destReg.
+	isDestYoung := cogit JumpBelow: 0.
+
+	cogit CmpCq: objectMemory getMemoryMap getOldSpaceStart R: valueReg.
+	isOldAndOld := cogit JumpAboveOrEqual: 0.
+	exit := cogit Jump: 0.
+
+	recvIsPerm jmpTarget: (cogit Label).
+	cogit CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: valueReg.
+	isPermAndPerm := cogit JumpAbove: 0.
+
+	exit jmpTarget: (cogit Label).
+		
+	resultBlock value: isDestYoung value: isOldAndOld value: isPermAndPerm value: valueIsMachineCode.
+	^ 0 
 ]
 
 { #category : #'compile abstract instructions' }
@@ -672,17 +704,6 @@ CogObjectRepresentation >> genPrimitiveClass [
 		 cogit MoveR: ClassReg R: ReceiverResultReg].
 	cogit genPrimReturn.
 	^UnfailingPrimitive
-]
-
-{ #category : #'primitive generators' }
-CogObjectRepresentation >> genPrimitiveClosureValue [
-	"Defer to the cogit for this one.  This is for two reasons:
-	 a)	Cogit's version speeds up cull: et al by not calling the interpreter primitive if numArgs is wrong.
-		Our convention for compiling the interpreter primitive call doesn't agree with this usage.
-	b)	Cogit refuses to compile primitiveClosureValueNoContextSwitch until the blockNoContextSwitchOffset
-		is known, and that isn't information the CogObjectRepresentation is privvy to."
-	<doNotGenerate>
-	^cogit genPrimitiveClosureValue
 ]
 
 { #category : #'primitive generators' }
@@ -1667,11 +1688,6 @@ CogObjectRepresentation >> generateObjectRepresentationTrampolines [
 CogObjectRepresentation >> getActiveContextAllocatesInMachineCode [
 	"subclasses override if they want, and will have SendNumArgsReg and ClassReg
 	 available in addition to ReceiverResultReg and TempReg if they do."
-	^false
-]
-
-{ #category : #testing }
-CogObjectRepresentation >> hasSpurMemoryManagerAPI [
 	^false
 ]
 

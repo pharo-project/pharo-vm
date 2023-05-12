@@ -9,36 +9,60 @@ cmake_minimum_required(VERSION 3.7.2)
 # Use new and simpler escape sequences
 cmake_policy(SET CMP0053 NEW)
 
+include(cmake/BuildType.cmake)
 include(macros.cmake)
 
-set(VERSION_MAJOR 9)
-set(VERSION_MINOR 0)
-set(VERSION_PATCH 6)
-
-message("CMAKE_GENERATOR=${CMAKE_GENERATOR}")
+message(STATUS "CMAKE_GENERATOR=${CMAKE_GENERATOR}")
 
 # Build options
-option(FEATURE_FFI                   "Enable FFI"                                            ON)
-option(FEATURE_THREADED_FFI          "Enable Threaded (running in another thread) FFI"       ON)
-option(FEATURE_NETWORK               "Enable network and sockets"                            ON)
-option(FEATURE_LIB_SDL2              "Build SDL2 support"                                    ON)
-option(FEATURE_LIB_CAIRO             "Build Cairo support"                                   ON)
-option(FEATURE_LIB_FREETYPE2         "Build freetype2 support"                               ON)
-option(FEATURE_LIB_GIT2              "Build LibGit2 support"                                 ON)
-# PTHREADW32_DIR should be set to the location of the PTHREADW32
-option(FEATURE_LIB_PTHREADW32        "Windows only, link to win32 version of pthread"       OFF)
-option(GENERATE_SOURCES              "If it generates the sources"                           ON)
-option(ALWAYS_INTERACTIVE            "Be interactive by default"                            OFF)
-option(BUILD_BUNDLE                  "Builds a bundle with all dependencies"                 ON)
-option(FEATURE_COMPILE_GNUISATION    "Use gcc gnu extensions to compile the VM"              ON)
-option(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES        "Prefer downloading dependencies"              OFF)
-option(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS             "Use inline memory accessors instead of macros" ON)
-option(PHARO_VM_IN_WORKER_THREAD     "Have support for pharo running in a different thread that the main one"	ON)
+option(VERBOSE_BUILD					"Verbose Build"									OFF)
+option(FEATURE_FFI					"Enable FFI"									 ON)
+option(FEATURE_THREADED_FFI				"Enable Threaded (running in another thread) FFI"				 ON)
+option(FEATURE_MESSAGE_COUNT				"Enable the option to count messages, only valid for StackVM"			OFF)
+option(FEATURE_NETWORK					"Enable network and sockets"							 ON)
+option(FEATURE_LIB_SDL2					"Build SDL2 support"								 ON)
+option(FEATURE_LIB_CAIRO				"Build Cairo support"								 ON)
+option(FEATURE_LIB_FREETYPE2				"Build freetype2 support"							 ON)
+option(FEATURE_LIB_GIT2					"Build LibGit2 support"								 ON)
+option(FEATURE_LIB_PTHREADW32				"Windows only, link to win32 version of pthread"				OFF)
+option(GENERATE_VMMAKER					"If it generates the VMMaker image"						 ON)
+option(GENERATE_SOURCES					"If it generates the C sources"							 ON)
+option(ALWAYS_INTERACTIVE				"Be interactive by default"							OFF)
+option(BUILD_BUNDLE					"Builds a bundle with all dependencies"						 ON)
+option(FEATURE_COMPILE_GNUISATION			"Use gcc gnu extensions to compile the VM"					 ON)
+option(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES	"Prefer downloading dependencies"						OFF)
+option(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS		"Use inline memory accessors instead of macros"					 ON)
+option(PHARO_VM_IN_WORKER_THREAD			"Have support for pharo running in a different thread that the main one"	 ON)
+option(BUILD_IS_RELEASE					"Is this a release version?"							OFF)
+option(DEPENDENCIES_FORCE_BUILD         "Force build libraries" OFF)
+option(BUILD_WITH_GRAPHVIZ              "Generate dependency graphs" ON)
 
-set(APPNAME						"Pharo"         CACHE STRING                 "VM Application name")
-set(FLAVOUR						"CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
-set(PHARO_LIBRARY_PATH			"@executable_path/Plugins" CACHE STRING      "The RPATH to use in the build")
-set(ICEBERG_DEFAULT_REMOTE		"scpUrl"        CACHE STRING                 "If Iceberg uses HTTPS (httpsUrl) or tries first with SSH (scpUrl)")
+set(APPNAME			"Pharo"         CACHE STRING                 "VM Application name")
+set(FLAVOUR			"CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
+set(PHARO_LIBRARY_PATH		"@executable_path/Plugins" CACHE STRING      "The RPATH to use in the build")
+set(ICEBERG_DEFAULT_REMOTE	"scpUrl"        CACHE STRING                 "If Iceberg uses HTTPS (httpsUrl) or tries first with SSH (scpUrl)")
+set(IMAGE_FORMAT	"SpurFormat"	CACHE STRING				 "Image Format to use in the builtVM (SpurFormat / ComposedFormat)")
+
+if(VERBOSE_BUILD)
+    set(CMAKE_VERBOSE_MAKEFILE TRUE)
+endif(VERBOSE_BUILD)
+
+# Extract VCS information
+include(cmake/versionExtraction.cmake)
+extractVCSInformation(GIT_COMMIT_HASH GIT_DESCRIBE GIT_COMMIT_DATE)
+
+set(VERSION_MAJOR 10)
+set(VERSION_MINOR 0)
+set(VERSION_PATCH_NUMBER 3)
+
+if(BUILD_IS_RELEASE)
+	set(VERSION_PATCH "${VERSION_PATCH_NUMBER}")
+else()
+	set(VERSION_PATCH "${VERSION_PATCH_NUMBER}-${GIT_COMMIT_HASH}")
+endif(BUILD_IS_RELEASE)
+
+message(STATUS "Building version ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+message(STATUS "Commit hash ${GIT_COMMIT_HASH} : ${GIT_COMMIT_DATE}")
 
 
 # Visual Studio stores user build settings in file 'CmakeSettings.json'.  We would like to manage that via a project template.
@@ -58,26 +82,22 @@ if(EXISTS "${user_file}")
     set(template_uuid ${CMAKE_MATCH_1})
 
     if("${user_uuid}" STREQUAL "${template_uuid}")
-        message("Project build settings unchanged (${template_file})")
+        message(STATUS "Project build settings unchanged (${template_file})")
     else()
-        message("NOTICE!! Project template build settings have changed.")
-        message("NOTICE!! Back up your user build settings (${user_file})")
-        message("NOTICE!! and replace whole file with project template build settings (${template_file}).")
-        message("NOTICE!! Then restore parts of your user settings as you require.")
+        message(STATUS "NOTICE!! Project template build settings have changed.")
+        message(STATUS "NOTICE!! Back up your user build settings (${user_file})")
+        message(STATUS "NOTICE!! and replace whole file with project template build settings (${template_file}).")
+        message(STATUS "NOTICE!! Then restore parts of your user settings as you require.")
         message(FATAL_ERROR "Read output NOTICES!!")
     endif()
 else()
-    message("No user build settings.")
+    message(STATUS "No user build settings.")
 endif()
 
 # BUILD VM
 
 # Configure CMake to load our modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
-# Extract VCS information
-include(cmake/versionExtraction.cmake)
-extractVCSInformation(GIT_COMMIT_HASH GIT_DESCRIBE GIT_COMMIT_DATE)
 
 #Variable used to set the VM date
 set(BUILT_FROM "${GIT_DESCRIBE} - Commit: ${GIT_COMMIT_HASH} - Date: ${GIT_COMMIT_DATE}")
@@ -161,26 +181,6 @@ if(MSVC AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     endif()
 endif()
 
-# If we are generating sources, set the source dir as the generation source dir.
-# Otherwise set it to by default to the current source dir, parametrizable
-if(${GENERATE_SOURCES})
-    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR})
-else()
-    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE STRING "Source directory where to find the generated source. Default value is CMAKE_CURRENT_SOURCE_DIR")
-endif()
-
-if (${FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS})
-    add_compile_definitions(USE_INLINE_MEMORY_ACCESSORS=1)
-endif()
-
-set(PLUGIN_GENERATED_FILES 
-  	${GENERATED_SOURCE_DIR}/generated/plugins/src/FilePlugin/FilePlugin.c)
-
-
-if(FLAVOUR MATCHES "CoInterpreter")
-  add_compile_definitions(ASYNC_FFI_QUEUE=1)
-endif()
-
 # Configuration
 include(CheckIncludeFiles)
 include(CheckFunctionExists)
@@ -229,7 +229,7 @@ elseif(WIN)
 
 
 #    if(NOT MSVC)
-        set(COMMON_FLAGS "-fwrapv -fdeclspec -msse2 -ggdb2 -m64 -mno-rtd -mms-bitfields -O2 -momit-leaf-frame-pointer -funroll-loops -D_MT -fno-builtin-printf -fno-builtin-putchar -fno-builtin-fprintf -Wall -Wno-unused-variable -fno-optimize-sibling-calls")
+        set(COMMON_FLAGS "-fwrapv -fdeclspec -msse2 -ggdb2 -m64 -mno-rtd -mms-bitfields -momit-leaf-frame-pointer -funroll-loops -D_MT -fno-builtin-printf -fno-builtin-putchar -fno-builtin-fprintf -Wall -Wno-unused-variable -fno-optimize-sibling-calls")
 #    endif()
 
     set(OS_TYPE "Win32")
@@ -239,7 +239,7 @@ elseif(WIN)
     SET(CMAKE_SYSTEM_NAME Windows)
 
     add_compile_definitions(WIN32_LEAN_AND_MEAN)
-    add_compile_definitions(NO_ISNAN NO_SERVICE "'VM_LABEL(foo)=0'" LSB_FIRST=1 AllocationCheckFiller=0xADD4E55)
+    add_compile_definitions(NO_ISNAN NO_SERVICE LSB_FIRST=1 AllocationCheckFiller=0xADD4E55)
 
     #Setting minimal Windows Version to VISTA
     add_compile_definitions(_WIN32_WINNT=0x0600 WINVER=0x0600 NTDDI_VERSION=0x06000000 WIN64=1)
@@ -250,7 +250,7 @@ elseif(UNIX)
     set(CMAKE_CURRENT_SOURCE_DIR_TO_OUT ${CMAKE_CURRENT_SOURCE_DIR})
     set(CMAKE_CURRENT_BINARY_DIR_TO_OUT ${CMAKE_CURRENT_BINARY_DIR})
 
-    set(COMMON_FLAGS "-O2 -Wall -Werror=implicit-function-declaration")
+    set(COMMON_FLAGS "-Wall -Werror=implicit-function-declaration")
 
     add_compile_definitions(LSB_FIRST=1)
 
@@ -272,18 +272,81 @@ elseif(UNIX)
     endif()
 endif()
 
-set(OPTIMIZATION_FLAGS "")
+# If we are generating sources, set the binary dir as the generation source dir, as vmmaker will generate the C files here. (we do not alter the source directory)
+# Otherwise set it to by default to the current binary dir, parametrizable
+if(${GENERATE_SOURCES})
+    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR_TO_OUT})
+else()
+    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR_TO_OUT} CACHE STRING "Source directory where to find the generated source. Default value is CMAKE_CURRENT_BINARY_DIR")
+endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${COMMON_FLAGS} ${OPTIMIZATION_FLAGS} -DNDEBUG -DDEBUGVM=0")
+if (${FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS})
+    add_compile_definitions(USE_INLINE_MEMORY_ACCESSORS=1)
+endif()
 
-add_compile_definitions(IMMUTABILITY=1)
-add_compile_definitions(COGMTVM=0)
-add_compile_definitions(PharoVM=1)
+set(PLUGIN_GENERATED_FILES 
+  	${GENERATED_SOURCE_DIR}/generated/plugins/src/FilePlugin/FilePlugin.c)
 
-#We require that VM_LABEL does nothing.
-#We should actually cleanup all the places where this is set/used in the VM
-add_compile_definitions("VM_LABEL\(foo\)=0")
+
+if(FLAVOUR MATCHES "CoInterpreter")
+  add_compile_definitions(ASYNC_FFI_QUEUE=1)
+endif()
+
+
+get_platform_name(FULL_PLATFORM_NAME)
+message(STATUS "Full Platform name: ${FULL_PLATFORM_NAME}")
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g ${COMMON_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${COMMON_FLAGS}")
+
+# Set compilation flags for debug (or not)
+# This could be replaced by CMake generator expressions in newer versions
+# However, we need to stay compatible with old CMake versions for builds in old debians
+if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+	set(OPTIMIZATION_LEVEL -O0)
+	set(DEBUGVM 1)
+else()
+	set(OPTIMIZATION_LEVEL -O2)
+	set(DEBUGVM 0)
+endif()
+
+add_compile_options(
+	${OPTIMIZATION_LEVEL}
+    -Wno-sometimes-uninitialized
+    -Wno-self-assign
+    -Wno-unused-variable
+    -Wno-unused-but-set-variable
+    -Wno-int-conversion
+    -Wno-unused-value
+    -Wno-absolute-value
+    -Wno-unused-function
+    -Wno-non-literal-null-conversion
+    -Wno-pointer-integer-compare
+    -Wno-unknown-pragmas
+    -Wno-pointer-sign
+    -Wno-constant-conversion
+    -Wno-tautological-pointer-compare
+    -Wno-deprecated-declarations
+    -Wno-pointer-to-int-cast
+    -Wno-compare-distinct-pointer-types
+    -Wno-conditional-type-mismatch
+    -Wno-incompatible-function-pointer-types
+    -Wno-return-type
+    -Wno-unused-local-typedef
+    -Wno-incompatible-pointer-types
+    -Wno-shift-negative-value
+    -Wno-unknown-warning-option
+)
+
+
+
+add_compile_definitions(
+    IMMUTABILITY=1
+    COGMTVM=0
+    PharoVM=1
+    DEBUGVM=${DEBUGVM}
+    _FILE_OFFSET_BITS=64
+)
 
 #
 # This definition is used to improve the logging of the messages, to cut-down the path
@@ -392,12 +455,13 @@ list(APPEND SUPPORT_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/externalPrimitives.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/client.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/pathUtilities.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/parameterVector.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/fileDialogCommon.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/stringUtilities.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/imageAccess.c
     
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/parameterVector.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/parameters.c
+
     ${CMAKE_CURRENT_SOURCE_DIR}/src/semaphores/platformSemaphore.c
 
     ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/heartbeat.c
@@ -432,7 +496,6 @@ if(${FEATURE_FFI})
         )
     endif()
 endif()
-
 
 set(VM_SOURCES
     ${SUPPORT_SOURCES}
@@ -474,6 +537,11 @@ if (${FEATURE_FFI})
 endif()
 
 
+if(${FEATURE_MESSAGE_COUNT})
+    target_compile_definitions(${VM_LIBRARY_NAME} 
+        PRIVATE FEATURE_MESSAGE_COUNT=1)
+endif()
+
 #If in OSX, configure creation of Bundle
 if(OSX)
   set_target_properties(
@@ -496,5 +564,23 @@ add_subdirectory(ffiTestLibrary ${CMAKE_CURRENT_BINARY_DIR}/build/ffiTestLibrary
 add_third_party_dependencies_per_platform()
 
 # Packaging Setup
-
 include(cmake/packaging.cmake)
+
+# GraphViz Setup
+# First check we have the GraphViz "dot" program to draw directed graphs
+find_program(DOT dot)
+if (DOT)
+	# Include options for the builtin GraphViz support
+	# https://cmake.org/cmake/help/latest/module/CMakeGraphVizOptions.html
+    if (BUILD_WITH_GRAPHVIZ)
+        add_custom_target(graphviz ALL
+            COMMENT "Build GraphViz Dependency Graph"
+            COMMAND cp ${CMAKE_SOURCE_DIR}/cmake/CMakeGraphVizOptions.cmake .
+            COMMAND ${CMAKE_COMMAND} "--graphviz=${GRAPHVIZ_GRAPH_NAME}.dot" .
+            COMMAND dot -Tpng ${GRAPHVIZ_GRAPH_NAME}.dot -o ${GRAPHVIZ_GRAPH_NAME}.png
+        )
+    endif()
+else()
+	MESSAGE(STATUS "dot executable from Graphviz not found. Dependency graphs not generated")
+endif (DOT)
+

@@ -8,7 +8,7 @@ Class {
 		'jmpSampleNonPrim',
 		'continuePostSampleNonPrim'
 	],
-	#category : #'VMMaker-Multithreading'
+	#category : #'VMMaker-JIT'
 }
 
 { #category : #'simulation only' }

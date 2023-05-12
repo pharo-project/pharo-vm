@@ -7,6 +7,18 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #visiting }
+TInlineNode >> accept: aVisitor [
+	
+	^ aVisitor visitInlineNode: self
+]
+
+{ #category : #tranforming }
+TInlineNode >> asCASTIn: aBuilder [
+
+	^ method asCASTInlinedIn: aBuilder
+]
+
 { #category : #transformations }
 TInlineNode >> bindVariableUsesIn: aDictionary [
 	method := method bindVariableUsesIn: aDictionary.
@@ -25,15 +37,38 @@ TInlineNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold i
 					yourself]
 ]
 
-{ #category : #'C code generation' }
-TInlineNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-	method emitInlineOn: aStream level: level generator: aCodeGen.
+{ #category : #transformations }
+TInlineNode >> bindVariablesIn: aDictionary [
 
+	method := method bindVariablesIn: aDictionary.
+
+]
+
+{ #category : #transformations }
+TInlineNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	(cautionaryBlock value: self) ifTrue: [^self].
+	method := method bindVariablesIn: aDictionary unless: cautionaryBlock.
+
+]
+
+{ #category : #accessing }
+TInlineNode >> children [
+
+	^ { method }
 ]
 
 { #category : #testing }
 TInlineNode >> isInline [
 	^true
+]
+
+{ #category : #comparing }
+TInlineNode >> isSameAs: anotherNode [
+	
+	^ anotherNode isInline
+		and: [ method selector = anotherNode method selector
+			and: [ method parseTree isSameAs: anotherNode method parseTree ] ]
 ]
 
 { #category : #accessing }

@@ -57,13 +57,13 @@ Object >> cCoerce: value to: cType [
 { #category : #'*VMMaker-plugin generation' }
 Object class >> ccg: cg generateCoerceToOopFrom: aNode on: aStream [
 	"N.B.  The is used both for generation and simulation so answer the result (for interpretation)"
-	^cg emitCExpression: aNode on: aStream
+	^ (aNode asCASTExpressionIn: cg) prettyPrintOn: aStream
 ]
 
 { #category : #'*VMMaker-plugin generation' }
 Object class >> ccg: cg generateCoerceToValueFrom: aNode on: aStream [
 	"N.B.  The could be used both for generation and simulation so answer the result (for interpretation)"
-	^cg emitCExpression: aNode on: aStream
+	^ (aNode asCASTExpressionIn: cg) prettyPrintOn: aStream
 ]
 
 { #category : #'*VMMaker-plugin generation' }
@@ -180,11 +180,6 @@ Object >> suppressFailureGuards: failureGuardFlag [
 { #category : #'*VMMaker-translation support' }
 Object >> touch: something [
 	"For translation only; eliminated by CCodeGenerator.  Used to squash unused varable warnings."
-]
-
-{ #category : #'*VMMaker-translation support' }
-Object >> var: varSymbol declareC: declString [
-	"For translation only; noop when running in Smalltalk."
 ]
 
 { #category : #'*VMMaker-translation support' }

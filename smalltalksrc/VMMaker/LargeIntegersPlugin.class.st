@@ -125,7 +125,7 @@ LargeIntegersPlugin >> anyBitOfLargeInt: anOop from: start to: stopArg [
 	<var: #ix type: #usqInt>
 	self
 		debugCode: [self msg: 'anyBitOfLargeInt: anOop from: start to: stopArg'].
-	start < 1 | (stopArg < 1)
+	(start < 1 or: [ stopArg < 1 ])
 		ifTrue: [^ interpreterProxy primitiveFail].
 	magnitude := anOop.
 	stop := stopArg min: (self highBitOfLargeInt: magnitude).

@@ -5,10 +5,17 @@ Class {
 	#name : #TParseNode,
 	#superclass : #Object,
 	#instVars : [
+		'parent',
 		'comment'
 	],
 	#category : #'Slang-AST'
 }
+
+{ #category : #visiting }
+TParseNode >> accept: aVisitor [
+
+	self subclassResponsibility
+]
 
 { #category : #utilities }
 TParseNode >> allCalls [
@@ -32,11 +39,9 @@ TParseNode >> allSatisfy: aBlock [
 ]
 
 { #category : #enumerating }
-TParseNode >> allSatisfy: aBlock unless: cautionaryBlock [
-	self
-		nodesDo: [:n| (aBlock value: n) ifFalse: [^false]]
-		unless: cautionaryBlock.
-	^true
+TParseNode >> allStatementsDo: aFullBlockClosure [ 
+	
+	self children do: [ :child | child allStatementsDo: aFullBlockClosure ]
 ]
 
 { #category : #enumerating }
@@ -45,12 +50,32 @@ TParseNode >> anySatisfy: aBlock [
 	^false
 ]
 
-{ #category : #enumerating }
-TParseNode >> anySatisfy: aBlock unless: cautionaryBlock [
-	self
-		nodesDo: [:n| (aBlock value: n) ifTrue: [^true]]
-		unless: cautionaryBlock.
-	^false
+{ #category : #transforming }
+TParseNode >> asCASTExpressionIn: aBuilder [
+
+	"By default use the normal translation.
+	Override for those translations that are not expressions by default"	
+	^ self asCASTIn: aBuilder
+]
+
+{ #category : #tranforming }
+TParseNode >> asCASTIn: aBuilder [
+
+	self subclassResponsibility
+]
+
+{ #category : #'C code generation' }
+TParseNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
+	aNodeOrNil ifNotNil:
+		[^ aNodeOrNil prependCASTIn: aBuilder expression: self].
+	^ self asCASTExpressionIn: aBuilder
+]
+
+{ #category : #linearisation }
+TParseNode >> asExpressionIn: aMLStatementListBuider [ 
+	
+	"A TNode returns itself as an expression"
+	^ self
 ]
 
 { #category : #transformations }
@@ -58,6 +83,22 @@ TParseNode >> asReturnNode [
 	^TReturnNode new 
 		setExpression: self;
 		yourself
+]
+
+{ #category : #linearisation }
+TParseNode >> asStatementIn: aMLStatementListBuider [ 
+
+	"A TNode returns itself as a statement"
+	^ self
+]
+
+{ #category : #transformations }
+TParseNode >> assignLastExpressionTo: aTVariableNode [ 
+	
+	"An expression just assigns itself"
+	 ^ TAssignmentNode new
+			setVariable: aTVariableNode
+			expression: self
 ]
 
 { #category : #transformations }
@@ -82,12 +123,17 @@ TParseNode >> bindVariablesIn: aDictionary [
 	^self
 ]
 
+{ #category : #transformations }
+TParseNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
+
+	^self
+]
+
 { #category : #enumerating }
 TParseNode >> collect: aBlock [
 	| nodes |
-	self halt. "This is a misnomer; should be deleted"
 	nodes := OrderedCollection new.
-	self nodesDo: [:n| (aBlock value: n) ifTrue: [nodes add: n]].
+	self nodesDo: [:n| nodes add: (aBlock value: n) ].
 	^nodes
 ]
 
@@ -126,53 +172,16 @@ TParseNode >> detect: aBlock ifNone: defaultBlock [
 	^defaultBlock value
 ]
 
-{ #category : #'C code generation' }
-TParseNode >> emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen [
-	^self emitCCodeOn: aStream level: level generator: aCodeGen
-]
-
-{ #category : #'C code generation' }
-TParseNode >> emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen [
-	^self emitCCodeOn: aStream level: level generator: aCodeGen
-]
-
-{ #category : #'C code generation' }
-TParseNode >> emitCCodeOn: aStream level: lev generator: gen [
-	self subclassResponsibility.
-]
-
-{ #category : #'C code generation' }
-TParseNode >> emitCCodeOn: aStream prependToEnd: aNodeOrNil level: lev generator: gen [
-	aNodeOrNil ifNotNil:
-		[aNodeOrNil prependCCodeOn: aStream level: lev generator: gen].
-	self emitCCodeAsExpressionOn: aStream
-		level: ((aNodeOrNil notNil and: [self isLeaf]) ifTrue: [0] ifFalse: [lev])
-		generator: gen
-]
-
-{ #category : #'C code generation' }
-TParseNode >> emitCCommentOn: aStream level: level generator: aCodeGen [
-	"Emit the transferred Smalltalk comments as C comments."
-
-	((aCodeGen previousCommenter: self) == self or: [comment isNil]) ifTrue:
-		[aCodeGen previousCommentMarksInlining: false.
-		 ^self].
-	(comment isString ifTrue: [{comment}] ifFalse: [comment]) withIndexDo:
-		[:commentString :index |
-		(index = 1 and: [commentString beginsWith: 'begin ']) ifTrue:
-			[(aCodeGen previousCommentMarksInlining: true) ifTrue: [^true]].
-		aStream crtab: level; nextPutAll: '/* '.
-		(commentString findTokens: Character cr)
-			do: [:line| aStream nextPutAll: line withBlanksTrimmed]
-			separatedBy: [aStream crtab: level; next: 3 put: Character space].
-		aStream nextPutAll: ' */'].
-	 aStream cr
-]
-
 { #category : #testing }
 TParseNode >> endsWithReturn [
 
 	^false
+]
+
+{ #category : #flattenin }
+TParseNode >> flattened [
+	
+	^ { self }
 ]
 
 { #category : #testing }
@@ -281,7 +290,7 @@ TParseNode >> isReturningIf [
 TParseNode >> isSameAs: aTParseNode [
 	"Answer if the ParseTree rooted at this node is the same as aTParseNode.
 	 By default answer false and have subclasses override as appropriate."
-	^false
+	^ self subclassResponsibility
 ]
 
 { #category : #testing }
@@ -291,7 +300,7 @@ TParseNode >> isSend [
 ]
 
 { #category : #testing }
-TParseNode >> isStmtList [
+TParseNode >> isStatementList [
 
 	^false
 ]
@@ -330,16 +339,6 @@ TParseNode >> needsTrailingSemicolon [
 	^true
 ]
 
-{ #category : #utilities }
-TParseNode >> nodeCount [
-	"Answer the number of nodes in this parseTree (a rough measure of its size)."
-
-	| cnt |
-	cnt := 0.
-	self nodesDo: [ :n | cnt := cnt + 1 ].
-	^cnt
-]
-
 { #category : #enumerating }
 TParseNode >> nodesDo: aBlock [
 	"Apply aBlock to all nodes in the receiver.
@@ -368,17 +367,6 @@ TParseNode >> nodesDo: aBlock unless: cautionaryBlock [
 	 answers true or are children of those for which cautionaryBlock answers true."
 	(cautionaryBlock value: self) ifFalse:
 		[aBlock value: self]
-]
-
-{ #category : #enumerating }
-TParseNode >> nodesSelect: selectBlock thenCollect: collectBlock [
-	| result |
-	result := OrderedCollection new.
-	self nodesDo:
-		[:node|
-		(selectBlock value: node) ifTrue:
-			[result addLast: (collectBlock value: node)]].
-	^result
 ]
 
 { #category : #enumerating }
@@ -420,6 +408,18 @@ TParseNode >> occurrencesOf: aNode [
 	^count
 ]
 
+{ #category : #accessing }
+TParseNode >> parent [
+
+	^ parent
+]
+
+{ #category : #accessing }
+TParseNode >> parent: anObject [
+
+	parent := anObject
+]
+
 { #category : #printing }
 TParseNode >> printOn: aStream [ 
 	"Append a description of the receiver onto the given stream."
@@ -440,6 +440,18 @@ TParseNode >> removeAssertions [
 ]
 
 { #category : #transformations }
+TParseNode >> replaceBy: aNode [
+
+	self parent replaceChild: self with: aNode
+]
+
+{ #category : #transformations }
+TParseNode >> replaceChild: aNode with: aReplacementNode [
+
+	self subclassResponsibility
+]
+
+{ #category : #transformations }
 TParseNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [self]
@@ -454,42 +466,24 @@ TParseNode >> select: aBlock [
 ]
 
 { #category : #testing }
-TParseNode >> stream: aStream endsWithAnyOf: characters [
-	"Answer if the given stream ends in any of the characters, ignoring whitespace."
-	| pos ch popped |
-	pos := aStream position.
-	aStream class = WriteStream ifTrue: "i.e. nested in StreamContents"
-		[[pos > 0] whileTrue:
-			[ch := aStream originalContents at: pos.
-			 ch isSeparator ifFalse:
-				[^characters includes: ch].
-			 pos := pos - 1].
-		 ^false].
-
-	popped := OrderedCollection new.
-	[pos > 0] whileTrue:
-		[ch := popped addFirst: (aStream position: pos - 1; peek).
-		 ch isSeparator ifFalse:
-			[popped notEmpty ifTrue: "it almost always is"
-				["*don't* use nextPutAll: to work around a bug in UTF8TextConverter
-				  >>nextPut:toStream: which avoids line-end conversion; sigh."
-				 popped do:
-					[:c| aStream nextPut: c]].
-			 ^characters includes: ch].
-		 pos := pos - 1].
-	"*don't* use nextPutAll: to work around a bug in UTF8TextConverter>>
-	 nextPut:toStream: which avoids line-end conversion; sigh."
-	popped do:
-		[:c| aStream nextPut: c].
-	^false
-]
-
-{ #category : #testing }
 TParseNode >> structTargetKindIn: aCodeGen [
 	"Answer if the recever evaluates to a struct or struct pointer
 	 and hence can be dereferenced using . or ->.  Answer any of
 	 #struct #pointer or nil"
 	^nil
+]
+
+{ #category : #accessing }
+TParseNode >> tMethod [
+
+	"Climb up the parent links up to the TMethod node"
+
+	| n |
+	n := self.
+	[ true ] whileTrue: [
+		n ifNil: [ ^ nil ].
+		n class == TMethod ifTrue: [ ^ n ].
+		n := n parent ]
 ]
 
 { #category : #'type inference' }

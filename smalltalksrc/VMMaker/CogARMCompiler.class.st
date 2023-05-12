@@ -256,6 +256,16 @@ CogARMCompiler class >> initializeAbstractRegisters [
 	DPFPReg6			:= D6.
 	DPFPReg7			:= D7.
 
+	"These registers are undefined"
+	VReg0 := -1.
+	VReg1 := -1.
+	VReg2 := -1.
+	VReg3 := -1.
+	VReg4 := -1.
+	VReg5 := -1.
+	VReg6 := -1.
+	VReg7 := -1.
+
 	NumFloatRegisters := 8
 ]
 
@@ -339,6 +349,9 @@ CogARMCompiler >> aeabiDivModFunctionAddr [
 	"Answer the address of the __aeabi_idivmod() call provided by the ARM low level libs to do an integer divide that returns the quo in R0 and rem in R1.
 	 A word on the somewhat strange usage of idivmod herein; we need a declaration for the _aeabi_idivmod helper function, despite the fact that in a simple C program test, you don't.
 	 To get that declaration we need a variable to hang it off; thus the non-existent var idivmod, and in simulation we need to simulate it, which is what aeabiDiv:Mod: does."
+	
+	| idivmod | "This variable should be in here to be able to be translated"
+	
 	<returnTypeC: #usqInt>
 	<var: #idivmod declareC: 'extern void __aeabi_idivmod(int dividend, int divisor)'>
 
@@ -532,48 +545,48 @@ CogARMCompiler >> computeMaximumSize [
 		[Stop]					-> [^4].
 
 		"Arithmetic"
-		[AddCqR]				-> [^self rotateable8bitSignedImmediate: (operands at: 0)
-										ifTrue: [:r :i :n| 4]
-										ifFalse: [self literalLoadInstructionBytes + 4]].
-		[AndCqR]				-> [^self rotateable8bitBitwiseImmediate: (operands at: 0)
-										ifTrue: [:r :i :n| 4]
+		[AddCqR]				-> [self rotateable8bitSignedImmediate: (operands at: 0)
+										ifTrue: [:r :i :n| ^ 4]
+										ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[AndCqR]				-> [self rotateable8bitBitwiseImmediate: (operands at: 0)
+										ifTrue: [:r :i :n| ^ 4]
 										ifFalse:
 											[self literalLoadInstructionBytes = 4
-												ifTrue: [8]
+												ifTrue: [^ 8]
 												ifFalse:
 													[1 << (operands at: 0) highBit = ((operands at: 0) + 1)
-														ifTrue: [8]
-														ifFalse: [self literalLoadInstructionBytes + 4]]]].
-		[AndCqRR]				-> [^self rotateable8bitBitwiseImmediate: (operands at: 0)
-										ifTrue: [:r :i :n| 4]
+														ifTrue: [^ 8]
+														ifFalse: [^ self literalLoadInstructionBytes + 4]]]].
+		[AndCqRR]				-> [self rotateable8bitBitwiseImmediate: (operands at: 0)
+										ifTrue: [:r :i :n| ^ 4]
 										ifFalse:
 											[self literalLoadInstructionBytes = 4
-												ifTrue: [8]
+												ifTrue: [^ 8]
 												ifFalse:
 													[1 << (operands at: 0) highBit = ((operands at: 0) + 1)
-														ifTrue: [8]
-														ifFalse: [self literalLoadInstructionBytes + 4]]]].
-		[CmpCqR]				-> [^self rotateable8bitSignedImmediate: (operands at: 0)
-											ifTrue: [:r :i :n| 4]
-											ifFalse: [self literalLoadInstructionBytes + 4]].
-		[OrCqR]					-> [^self rotateable8bitImmediate: (operands at: 0)
-											ifTrue: [:r :i| 4]
-											ifFalse: [self literalLoadInstructionBytes + 4]].
-		[SubCqR]				-> [^self rotateable8bitSignedImmediate: (operands at: 0)
-											ifTrue: [:r :i :n| 4]
-											ifFalse: [self literalLoadInstructionBytes + 4]].
-		[TstCqR]				-> [^self rotateable8bitImmediate: (operands at: 0)
-											ifTrue: [:r :i| 4]
-											ifFalse: [self literalLoadInstructionBytes + 4]].
-		[XorCqR]				-> [^self rotateable8bitBitwiseImmediate: (operands at: 0)
-										ifTrue: [:r :i :n| 4]
+														ifTrue: [^ 8]
+														ifFalse: [^ self literalLoadInstructionBytes + 4]]]].
+		[CmpCqR]				-> [self rotateable8bitSignedImmediate: (operands at: 0)
+											ifTrue: [:r :i :n| ^ 4]
+											ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[OrCqR]					-> [self rotateable8bitImmediate: (operands at: 0)
+											ifTrue: [:r :i| ^ 4]
+											ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[SubCqR]				-> [self rotateable8bitSignedImmediate: (operands at: 0)
+											ifTrue: [:r :i :n| ^ 4]
+											ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[TstCqR]				-> [self rotateable8bitImmediate: (operands at: 0)
+											ifTrue: [:r :i| ^ 4]
+											ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[XorCqR]				-> [self rotateable8bitBitwiseImmediate: (operands at: 0)
+										ifTrue: [:r :i :n| ^ 4]
 										ifFalse:
 											[self literalLoadInstructionBytes = 4
-												ifTrue: [8]
+												ifTrue: [^ 8]
 												ifFalse:
 													[1 << (operands at: 0) highBit = ((operands at: 0) + 1)
-														ifTrue: [8]
-														ifFalse: [self literalLoadInstructionBytes + 4]]]].
+														ifTrue: [^ 8]
+														ifFalse: [^ self literalLoadInstructionBytes + 4]]]].
 		[AddCwR]				-> [^self literalLoadInstructionBytes + 4].
 		[AndCwR]				-> [^self literalLoadInstructionBytes + 4].
 		[CmpCwR]				-> [^self literalLoadInstructionBytes + 4].
@@ -588,9 +601,9 @@ CogARMCompiler >> computeMaximumSize [
 		[SubRR]					-> [^4].
 		[NegateR]				-> [^4].
 		[LoadEffectiveAddressMwrR]
-									-> [^self rotateable8bitImmediate: (operands at: 0)
-											ifTrue: [:r :i| 4]
-											ifFalse: [self literalLoadInstructionBytes + 4]].
+									-> [self rotateable8bitImmediate: (operands at: 0)
+											ifTrue: [:r :i| ^ 4]
+											ifFalse: [^ self literalLoadInstructionBytes + 4]].
 
 		[LogicalShiftLeftCqR]		-> [^4].
 		[LogicalShiftRightCqR]		-> [^4].
@@ -612,76 +625,76 @@ CogARMCompiler >> computeMaximumSize [
 		[PopLDM]				-> [^4].
 		[PushSTM]				-> [^4].
 		"Data Movement"						
-		[MoveCqR]				-> [^self literalLoadInstructionBytes = 4
-										ifTrue: [self literalLoadInstructionBytes]
+		[MoveCqR]				-> [self literalLoadInstructionBytes = 4
+										ifTrue: [^ self literalLoadInstructionBytes]
 										ifFalse:
 											[self rotateable8bitBitwiseImmediate: (operands at: 0)
-												ifTrue: [:r :i :n| 4]
-												ifFalse: [self literalLoadInstructionBytes]]].
-		[MoveCwR]				-> [^self literalLoadInstructionBytes = 4
-										ifTrue: [self literalLoadInstructionBytes]
+												ifTrue: [:r :i :n| ^ 4]
+												ifFalse: [^ self literalLoadInstructionBytes]]].
+		[MoveCwR]				-> [self literalLoadInstructionBytes = 4
+										ifTrue: [^ self literalLoadInstructionBytes]
 										ifFalse:
 											[(self inCurrentCompilation: (operands at: 0))
-												ifTrue: [4]
-												ifFalse: [self literalLoadInstructionBytes]]].
+												ifTrue: [^ 4]
+												ifFalse: [^ self literalLoadInstructionBytes]]].
 		[MoveRR]				-> [^4].
 		[MoveRdRd]				-> [^4].
-		[MoveAwR]				-> [^(self isAddressRelativeToVarBase: (operands at: 0))
-													ifTrue: [4]
-													ifFalse: [self literalLoadInstructionBytes + 4]].
-		[MoveRAw]				-> [^(self isAddressRelativeToVarBase: (operands at: 1))
-													ifTrue: [4]
-													ifFalse: [self literalLoadInstructionBytes + 4]].
-		[MoveAbR]				-> [^(self isAddressRelativeToVarBase: (operands at: 0))
-													ifTrue: [4]
-													ifFalse: [self literalLoadInstructionBytes + 4]].
-		[MoveRAb]				-> [^(self isAddressRelativeToVarBase: (operands at: 1))
-													ifTrue: [4]
-													ifFalse: [self literalLoadInstructionBytes + 4]].
-		[MoveRMwr]			-> [^self is12BitValue: (operands at: 1)
-										ifTrue: [:u :i| 4]
-										ifFalse: [self literalLoadInstructionBytes + 4]].
-		[MoveRdM64r]			-> [^self literalLoadInstructionBytes + 4]. 
-		[MoveMbrR]				-> [^self is12BitValue: (operands at: 0)
-										ifTrue: [:u :i| 4]
-										ifFalse: [self literalLoadInstructionBytes + 4]].
-		[MoveRMbr]				-> [^self is12BitValue: (operands at: 1)
-										ifTrue: [:u :i| 4]
-										ifFalse: [self literalLoadInstructionBytes + 4]].
-		[MoveRM16r]				-> [^self is12BitValue: (operands at: 1)
-										ifTrue: [:u :i| 4]
-										ifFalse: [self literalLoadInstructionBytes + 4]].
-		[MoveM16rR]			-> [^self rotateable8bitImmediate: (operands at: 0)
-											ifTrue: [:r :i| 4]
-											ifFalse: [self literalLoadInstructionBytes + 4]].
+		[MoveAwR]				-> [(self isAddressRelativeToVarBase: (operands at: 0))
+													ifTrue: [^ 4]
+													ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[MoveRAw]				-> [(self isAddressRelativeToVarBase: (operands at: 1))
+													ifTrue: [^ 4]
+													ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[MoveAbR]				-> [(self isAddressRelativeToVarBase: (operands at: 0))
+													ifTrue: [^ 4]
+													ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[MoveRAb]				-> [(self isAddressRelativeToVarBase: (operands at: 1))
+													ifTrue: [^ 4]
+													ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[MoveRMwr]			-> [self is12BitValue: (operands at: 1)
+										ifTrue: [:u :i| ^ 4]
+										ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[MoveRdM64r]			-> [self literalLoadInstructionBytes + 4]. 
+		[MoveMbrR]				-> [self is12BitValue: (operands at: 0)
+										ifTrue: [:u :i| ^ 4]
+										ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[MoveRMbr]				-> [self is12BitValue: (operands at: 1)
+										ifTrue: [:u :i| ^ 4]
+										ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[MoveRM16r]				-> [self is12BitValue: (operands at: 1)
+										ifTrue: [:u :i| ^ 4]
+										ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[MoveM16rR]			-> [self rotateable8bitImmediate: (operands at: 0)
+											ifTrue: [:r :i| ^ 4]
+											ifFalse: [^ self literalLoadInstructionBytes + 4]].
 		[MoveM64rRd]			-> [^self literalLoadInstructionBytes + 4].
-		[MoveMwrR]			-> [^self is12BitValue: (operands at: 0)
-										ifTrue: [:u :i| 4]
-										ifFalse: [self literalLoadInstructionBytes + 4]].
+		[MoveMwrR]			-> [self is12BitValue: (operands at: 0)
+										ifTrue: [:u :i| ^ 4]
+										ifFalse: [^ self literalLoadInstructionBytes + 4]].
 		[MoveXbrRR]			-> [^4].
 		[MoveRXbrR]			-> [^4].
 		[MoveXwrRR]			-> [^4].
 		[MoveRXwrR]			-> [^4].
 		[PopR]					-> [^4].
 		[PushR]					-> [^4].
-		[PushCw]				-> [^self literalLoadInstructionBytes = 4
-										ifTrue: [self literalLoadInstructionBytes + 4]
+		[PushCw]				-> [self literalLoadInstructionBytes = 4
+										ifTrue: [^ self literalLoadInstructionBytes + 4]
 										ifFalse:
 											[(self inCurrentCompilation: (operands at: 0))
-												ifTrue: [8]
+												ifTrue: [^ 8]
 												ifFalse:
 													[self rotateable8bitBitwiseImmediate: (operands at: 0)
-														ifTrue: [:r :i :n| 8]
-														ifFalse: [self literalLoadInstructionBytes + 4]]]].
-		[PushCq]				-> [^self literalLoadInstructionBytes = 4
-										ifTrue: [self literalLoadInstructionBytes + 4]
+														ifTrue: [:r :i :n| ^ 8]
+														ifFalse: [^ self literalLoadInstructionBytes + 4]]]].
+		[PushCq]				-> [self literalLoadInstructionBytes = 4
+										ifTrue: [^ self literalLoadInstructionBytes + 4]
 										ifFalse:
 											[self rotateable8bitBitwiseImmediate: (operands at: 0)
-												ifTrue: [:r :i :n| 8]
-												ifFalse: [self literalLoadInstructionBytes + 4]]].
-		[PrefetchAw] 			-> [^(self isAddressRelativeToVarBase: (operands at: 0))
-										ifTrue: [4]
-										ifFalse: [self literalLoadInstructionBytes + 4]].
+												ifTrue: [:r :i :n| ^ 8]
+												ifFalse: [^ self literalLoadInstructionBytes + 4]]].
+		[PrefetchAw] 			-> [(self isAddressRelativeToVarBase: (operands at: 0))
+										ifTrue: [^ 4]
+										ifFalse: [^ self literalLoadInstructionBytes + 4]].
 		"Conversion"
 		[ConvertRRd]			-> [^8].
 				
@@ -2447,7 +2460,7 @@ CogARMCompiler >> instructionAddressBefore: followingAddress [
 CogARMCompiler >> instructionBeforeAddress: followingAddress [
 	"Answer the instruction immediately preceding followingAddress."
 	<inline: true>
-	^objectMemory longAt: (self instructionAddressBefore: followingAddress)
+	^objectMemory uint32AtPointer: (self instructionAddressBefore: followingAddress)
 ]
 
 { #category : #testing }
@@ -2525,7 +2538,7 @@ CogARMCompiler >> inverseOpcodeFor: armOpcode [
 CogARMCompiler >> is12BitValue: constant ifTrue: trueAlternativeBlock	ifFalse: falseAlternativeBlock [
 	"For LDR and STR, there is an instruction allowing for one instruction encoding if the offset is encodable in signed 12 bit form. pass the trueBlock the value and a 1-bit flag to tell it the sign.
 	The falseBlock can do whatever it needs to, typically building the constant as a full 32bit value and then ld/st with that as a register offset"
-	<inline: true>
+
 	constant abs <= 4095 "(2 raisedTo: 12)-1"
 		ifTrue:
 			[constant >= 0 
@@ -2537,7 +2550,7 @@ CogARMCompiler >> is12BitValue: constant ifTrue: trueAlternativeBlock	ifFalse: f
 { #category : #testing }
 CogARMCompiler >> is8BitValue: constant ifTrue: trueAlternativeBlock	ifFalse: falseAlternativeBlock [
 	"For extended LDR and STR for half & double, there is an instruction allowing for one instruction encoding if the offset is encodable in 8 bit."
-	<inline: true>
+
 	constant abs <= 255 "(2 raisedTo: 8)-1"
 		ifTrue:
 			[constant >= 0 
@@ -2681,6 +2694,13 @@ CogARMCompiler >> leafCallStackPointerDelta [
 	 to capture the c stack pointer to use in trampolines back into the C run-time."
 	"This might actually be false, since directly after a call, lr, fp and variable registers need be pushed onto the stack. It depends on the implementation of call."
 	^0
+]
+
+{ #category : #'inline cacheing' }
+CogARMCompiler >> literalBeforeInlineCacheTagAt: callSiteReturnAddress [
+
+	self notYetImplemented: 'Should implement access to the class in directed super sends for ARMv7'.
+	^ 0
 ]
 
 { #category : #accessing }
@@ -2978,7 +2998,7 @@ CogARMCompiler >> outputMachineCodeAt: targetAddress [
 	<inline: true>
 	0 to: machineCodeSize - 1 by: 4 do:
 		[:j|
-		objectMemory longAt: targetAddress + j put: (machineCode at: j // 4)]
+		objectMemory uint32AtPointer: targetAddress + j put: (machineCode at: j // 4)]
 ]
 
 { #category : #'generate machine code' }
@@ -3012,8 +3032,10 @@ CogARMCompiler >> prepareStackToCallCFunctionInSmalltalkStack: anObject [
 
 	cogit MoveR: SPReg R: ClassReg.
 	cogit MoveR: SPReg R: Extra2Reg.
+
 	
-	cogit AndCq: ((1 << 32) - 16) R: Extra2Reg. 
+	
+	cogit AndCq: 16rFFFFFFF0 R: Extra2Reg. 
 	cogit MoveR: Extra2Reg R: SPReg.
 ]
 
@@ -3038,7 +3060,7 @@ CogARMCompiler >> relocateCallBeforeReturnPC: retpc by: delta [
 		 self assert: ((self instructionIsB: instr) or: [self instructionIsBL: instr]).
 		 distanceDiv4 := instr bitAnd: 16rFFFFFF.
 		 distanceDiv4 := distanceDiv4 + (delta // 4).
-		 objectMemory longAt: (self instructionAddressBefore: retpc ) put: ((instr bitAnd: 16rFF000000) bitOr: (distanceDiv4 bitAnd: 16rFFFFFF))]
+		 objectMemory uint32AtPointer: (self instructionAddressBefore: retpc ) put: ((instr bitAnd: 16rFF000000) bitOr: (distanceDiv4 bitAnd: 16rFFFFFF))]
 ]
 
 { #category : #'calling C function in Smalltalk stack' }
@@ -3145,7 +3167,7 @@ CogARMCompiler >> rewriteTransferAt: callSiteReturnAddress target: callTargetAdd
 	instr := self instructionBeforeAddress: callSiteReturnAddress.
 	self assert: ((self instructionIsB: instr) or: [self instructionIsBL: instr]).
 	
-	objectMemory longAt:  (self instructionAddressBefore: callSiteReturnAddress) put: ((instr bitAnd: 16rFF000000) bitOr: (callDistance // 4 bitAnd: 16rFFFFFF)).
+	objectMemory uint32AtPointer:  (self instructionAddressBefore: callSiteReturnAddress) put: ((instr bitAnd: 16rFF000000) bitOr: (callDistance // 4 bitAnd: 16rFFFFFF)).
 
 	self assert: (self callTargetFromReturnAddress: callSiteReturnAddress) = callTargetAddress.
 
@@ -3154,7 +3176,7 @@ CogARMCompiler >> rewriteTransferAt: callSiteReturnAddress target: callTargetAdd
 
 { #category : #testing }
 CogARMCompiler >> rotateable8bitBitwiseImmediate: constant ifTrue: trueAlternativeBlock ifFalse: falseAlternativeBlock [
-	<inline: true>
+
 	"Invoke trueAlternativeBlock with shift, value and inverted if constant can be represented
 	 by a possibly rotated 8-bit constant, otherwise invoke falseAlternativeBlock. For data
 	 processing operands, there is the immediate shifter_operand variant,  where an 8 bit value
@@ -3180,7 +3202,7 @@ CogARMCompiler >> rotateable8bitBitwiseImmediate: constant ifTrue: trueAlternati
 
 { #category : #testing }
 CogARMCompiler >> rotateable8bitImmediate: constant ifTrue: trueAlternativeBlock ifFalse: falseAlternativeBlock [
-	<inline: true>
+
 	"For data processing operands, there is the immediate shifter_operand variant, 
 	 where an 8 bit value is ring shifted _right_ by i.
 	 This is only suitable for quick constants(Cq), which won't change."
@@ -3196,7 +3218,7 @@ CogARMCompiler >> rotateable8bitImmediate: constant ifTrue: trueAlternativeBlock
 
 { #category : #testing }
 CogARMCompiler >> rotateable8bitSignedImmediate: constant ifTrue: trueAlternativeBlock ifFalse: falseAlternativeBlock [
-	<inline: true>
+
 	"Invoke trueAlternativeBlock with shift, value and negated if constant can be represented
 	 by a possibly rotated 8-bit constant, otherwise invoke falseAlternativeBlock. For data
 	 processing operands, there is the immediate shifter_operand variant,  where an 8 bit value
@@ -3222,7 +3244,7 @@ CogARMCompiler >> rotateable8bitSignedImmediate: constant ifTrue: trueAlternativ
 CogARMCompiler >> saveAndRestoreLinkRegAround: aBlock [
 	"If the processor's ABI includes a link register, generate instructions
 	 to save and restore it around aBlock, which is assumed to generate code."
-	<inline: true>
+
 	| inst |
 	inst := cogit PushR: LinkReg.
 	aBlock value.
@@ -3275,7 +3297,7 @@ CogARMCompiler >> stop [
 CogARMCompiler >> stopsFrom: startAddr to: endAddr [
 	self assert: endAddr - startAddr + 1 \\ 4 = 0.
 	startAddr to: endAddr by: 4 do: 
-		[:addr | objectMemory longAt: addr put: self stop].
+		[:addr | objectMemory uint32AtPointer: addr put: self stop].
 ]
 
 { #category : #'inline cacheing' }

@@ -146,8 +146,9 @@ SlangClass >> eassert: aBooleanExpressionOrBlock [
 
 { #category : #'translation support' }
 SlangClass >> error [
+	"Throw a generic Error exception."
 
-	<cmacro: ''>
+	^self error: 'Error!'.
 ]
 
 { #category : #accessing }
@@ -166,6 +167,17 @@ SlangClass >> interpreterClass [
 SlangClass >> objectMemoryClass [
 	
 	self subclassResponsibility
+]
+
+{ #category : #'translation support' }
+SlangClass >> simulationOnly: aBlock [
+
+	"Evaluate piece of code only during simulation.
+	This should get translated as a NOP"
+	<inline: #always>
+	self
+		cCode: [  ]
+		inSmalltalk: aBlock
 ]
 
 { #category : #'translation support' }

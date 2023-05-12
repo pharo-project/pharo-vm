@@ -108,23 +108,3 @@ RBMethodNode >> quickMethodReturnLiteral [
 		ifTrue: [node name]
 		ifFalse: [node value]
 ]
-
-{ #category : #'*VMMakerCompatibilityForPharo6-results' }
-RBMethodNode >> schematicTempNamesString [
-	scope ifNil: [self generateIR].
-	^String streamContents:
-		[:s|
-		 self printSchematicTempsFor: self in: scope on: s.
-		 scope
-			childrenDo:
-				[:childBlockScope|
-				 childBlockScope isOptimizedBlockScope ifFalse:
-					[s nextPut: $[.
-					 self printSchematicTempsFor: childBlockScope node in: childBlockScope on: s]]
-			after:
-				[:childBlockScope|
-				 childBlockScope isOptimizedBlockScope ifFalse:
-					[s nextPut: $]]]
-			suchThat: [:childScope| childScope isBlockScope]]
-		  
-]

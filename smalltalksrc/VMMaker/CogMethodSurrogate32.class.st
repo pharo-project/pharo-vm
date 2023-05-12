@@ -41,20 +41,8 @@ CogMethodSurrogate32 class >> offsetOf: aByteSymbol [
 		{	[#methodObject]		-> [8 + baseHeaderSize].
 			[#methodHeader]		-> [12 + baseHeaderSize].
 			[#selector]				-> [16 + baseHeaderSize].
-			[#blockEntryOffset]	-> [6 + baseHeaderSize].
+			[#picUsage]	-> [6 + baseHeaderSize].
 		}
-]
-
-{ #category : #accessing }
-CogMethodSurrogate32 >> blockEntryOffset [
-	^memory unsignedShortAt: address + 6 + baseHeaderSize
-]
-
-{ #category : #accessing }
-CogMethodSurrogate32 >> blockEntryOffset: aValue [
-	^memory
-		unsignedShortAt: address + baseHeaderSize + 6
-		put: aValue
 ]
 
 { #category : #accessing }
@@ -71,36 +59,48 @@ CogMethodSurrogate32 >> blockSize: aValue [
 
 { #category : #accessing }
 CogMethodSurrogate32 >> methodHeader [
-	^memory unsignedLongAt: address + 12 + baseHeaderSize
+	^memory unsignedLong32At: address + 12 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> methodHeader: aValue [
 	^memory
-		unsignedLongAt: address + baseHeaderSize + 12
+		unsignedLong32At: address + baseHeaderSize + 12
 		put: aValue
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> methodObject [
-	^memory unsignedLongAt: address + 8 + baseHeaderSize
+	^memory unsignedLong32At: address + 8 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> methodObject: aValue [
 	^memory
-		unsignedLongAt: address + baseHeaderSize + 8
+		unsignedLong32At: address + baseHeaderSize + 8
+		put: aValue
+]
+
+{ #category : #accessing }
+CogMethodSurrogate32 >> picUsage [
+	^memory unsignedShortAt: address + 6 + baseHeaderSize
+]
+
+{ #category : #accessing }
+CogMethodSurrogate32 >> picUsage: aValue [
+	^memory
+		unsignedShortAt: address + baseHeaderSize + 6
 		put: aValue
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> selector [
-	^memory unsignedLongAt: address + 16 + baseHeaderSize
+	^memory unsignedLong32At: address + 16 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate32 >> selector: aValue [
 	^memory
-		unsignedLongAt: address + baseHeaderSize + 16
+		unsignedLong32At: address + baseHeaderSize + 16
 		put: aValue
 ]

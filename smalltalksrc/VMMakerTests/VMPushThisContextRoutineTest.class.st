@@ -2,7 +2,7 @@ Class {
 	#name : #VMPushThisContextRoutineTest,
 	#superclass : #VMSimpleStackBasedCogitAbstractTest,
 	#pools : [
-		'VMSqueakClassIndices'
+		'VMClassIndices'
 	],
 	#category : #'VMMakerTests-JitTests'
 }
@@ -32,37 +32,44 @@ VMPushThisContextRoutineTest >> testMarriedContextReturnsSpouseObject [
 
 	| isLargeContext isInBlock routine numberOfArguments methodObject contextOop |
 	isLargeContext := false.
-	isInBlock := 0 "non-block, i.e., a normal method".
-	cogit objectRepresentation ceScheduleScavengeTrampoline: (self compile: [ cogit Stop ]).
-	routine := self compile: [ cogit objectRepresentation genGetActiveContextLarge: isLargeContext inBlock: isInBlock ].
+	isInBlock := 0. "non-block, i.e., a normal method"
+	cogit objectRepresentation ceScheduleScavengeTrampoline:
+		(self compile: [ cogit Stop ]).
+	routine := self compile: [ 
+		           cogit objectRepresentation
+			           genGetActiveContextLarge: isLargeContext
+			           inBlock: isInBlock ].
 	numberOfArguments := 3.
 	contextOop := memory integerObjectOf: 42.
 
-	methodObject := methodBuilder newMethod 
-		isSmall: false;
-		numberOfArguments: numberOfArguments;
-		buildMethod.
+	methodObject := methodBuilder newMethod
+		                isSmall: false;
+		                numberOfArguments: numberOfArguments;
+		                buildMethod.
 
 	self machineCodeFrameBuilder
 		returnAddress: callerAddress;
 		spouseContext: contextOop;
 		arguments: { 
-			memory integerObjectOf: 1.
-			memory integerObjectOf: 2.
-			memory integerObjectOf: 3. };
+				(memory integerObjectOf: 1).
+				(memory integerObjectOf: 2).
+				(memory integerObjectOf: 3) };
 		temporaries: { 
-			memory integerObjectOf: 4.
-			memory integerObjectOf: 5.
-			memory integerObjectOf: 6.
-			memory integerObjectOf: 7. };
+				(memory integerObjectOf: 4).
+				(memory integerObjectOf: 5).
+				(memory integerObjectOf: 6).
+				(memory integerObjectOf: 7) };
 		buildFrame.
-		
+
 	"Push the address of the caller of the routine"
-	machineSimulator sendNumberOfArgumentsRegisterValue: numberOfArguments.
+	machineSimulator sendNumberOfArgumentsRegisterValue:
+		numberOfArguments.
 	self prepareCall.
 	self runFrom: routine until: callerAddress.
-	
-	self assert: machineSimulator receiverRegisterValue equals: contextOop
+
+	self
+		assert: machineSimulator receiverRegisterValue
+		equals: contextOop
 ]
 
 { #category : #tests }
@@ -246,7 +253,7 @@ VMPushThisContextRoutineTest >> testNewMarriedSmallContextHasClosureInSetOne [
 
 	| isLargeContext isInBlock routine numberOfArguments |
 	isLargeContext := false.
-	isInBlock := InVanillaBlock "non-block, i.e., a normal method".
+	isInBlock := InFullBlock "non-block, i.e., a normal method".
 	cogit objectRepresentation ceScheduleScavengeTrampoline: (self compile: [ cogit Stop ]).
 	routine := self compile: [ cogit objectRepresentation genGetActiveContextLarge: isLargeContext inBlock: isInBlock ].
 	

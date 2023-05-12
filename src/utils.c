@@ -220,25 +220,26 @@ EXPORT(void) setVMPath(const char* name){
 	strcpy(vmFullPath, name);
 #endif
 
-	int bufferSize = strlen(name) + 1;
-	char* tmpBasedir = (char*)alloca(bufferSize);
-
 #if __APPLE__
 	fillApplicationDirectory(vmPath);
 
 #else
+	int bufferSize = strlen(name) + 1;
+
+	char* tmpBasedir = (char*)alloca(bufferSize);
+
 	getBasePath(name, tmpBasedir, bufferSize);
 
-#ifdef _WIN32
+# ifdef _WIN32
 	/*
 	* Unsafe version of deprecated strcpy for compatibility
 	* - does not check error code
 	* - does use count as the size of the destination buffer
 	*/
 	strcpy_s(vmPath, bufferSize, tmpBasedir);
-#else
+# else
 	strcpy(vmPath, tmpBasedir);
-#endif
+# endif
 #endif
 }
 
@@ -493,7 +494,6 @@ static void redZoneTestSigHandler(int sig)
 
 #ifndef _WIN32
 static long int min(long int x, long int y) { return (x < y) ? x : y; }
-static long int max(long int x, long int y) { return (x > y) ? x : y; }
 #endif
 
 static int getRedZoneSize()

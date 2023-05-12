@@ -44,13 +44,12 @@ VMPluginCodeGenerator >> collectAndCheckInterpreterProxyInterfaceFor: selectors 
 							[(objectMemoryClass whichClassIncludesSelector: selector) ifNil:
 								[self vmmakerConfiguration interpreterProxyClass]]).
 		actual := self compileToTMethodSelector: selector in: self vmmakerConfiguration interpreterProxyClass.
-		{ actual. reference } do:
-			[:tMethod|
-			 tMethod recordDeclarationsIn: self.
-			 tMethod returnType ifNil:
-				[tMethod inferReturnTypeIn: self.
-				 tMethod returnType ifNil:
-					[tMethod returnType: #sqInt]]].
+		{ actual. reference } do: [:tMethod|
+			tMethod recordDeclarationsIn: self.
+			tMethod returnType ifNil: [
+				(SlangTyper on: self) inferReturnTypeOf: tMethod.
+				tMethod returnType ifNil: [
+					tMethod returnType: #sqInt ]]].
 		(reference returnType ~= actual returnType
 		 or: [(1 to: reference args size) anySatisfy:
 				[:i| (reference typeFor: (reference args at: i) in: self)
@@ -188,118 +187,63 @@ VMPluginCodeGenerator >> emitIfdefForPluginFunctionOption: anArrayOrSymbol on: a
 														withArguments: anArrayOrSymbol allButFirst])
 ]
 
-{ #category : #'C translation' }
-VMPluginCodeGenerator >> generateIntegerObjectOf: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream."
-	| expr mustCastToUnsigned type typeIsUnsigned |
-	expr := msgNode args first.
-	aStream nextPutAll: '(('.
-	"Note that the default type of an integer constant in C is int.  Hence we /must/
-	 cast expression to long if in the 64-bit world, since e.g. in 64-bits
-		(int)(16r1FFFFF << 3) = (int)16rFFFFFFF8 = -8
-	 whereas
-		(long)(16r1FFFFF << 3) = (long) 16rFFFFFFF8 = 4294967288."
-	type := self typeFor: expr in: currentMethod.
-	typeIsUnsigned := type first = $u.
-	mustCastToUnsigned := typeIsUnsigned not
-		or: [(self sizeOfIntegralCType: type) < (self sizeOfIntegralCType: #usqInt)].
-	mustCastToUnsigned ifTrue:
-		[aStream nextPutAll: '(usqInt)'].
-	self emitCExpression: expr on: aStream.
-	aStream nextPutAll: ' << NumSmallIntegerTagBits) | 1)'
-]
-
-{ #category : #'C translation' }
-VMPluginCodeGenerator >> generateIntegerValueOf: msgNode on: aStream indent: level [
-	"Generate the C code for this message onto the given stream."
-
-	aStream nextPut: $(.
-	self emitCExpression: msgNode args first on: aStream.
-	aStream nextPutAll: ' >> NumSmallIntegerTagBits)'
-]
-
-{ #category : #'C translation' }
-VMPluginCodeGenerator >> generateInterpreterProxyFunctionDereference: aNode on: aStream indent: anInteger [
-	| pluginsToClone |
+{ #category : #'CAST translation' }
+VMPluginCodeGenerator >> generateCASTInterpreterProxyFunctionDereference: aTSendNode [ 
+	
+	| pluginsToClone thenStatement |
 	pluginsToClone := self pluginFunctionsToClone copyWithoutAll: self selectorsThatAreGeneratedAsMacros.
-	pluginsToClone isEmpty ifTrue:
-		[^self].
-	aStream newLine.
-	self withConditionalDefineOf: 'SQUEAK_BUILTIN_PLUGIN'
+	pluginsToClone isEmpty ifTrue: [ ^ CEmptyStatementNode new ].
+	
+	thenStatement := CCompoundStatementNode new.
+	pluginsToClone do: [:s| | cs |
+		cs := self cFunctionNameFor: s.
+		thenStatement add: (self
+			withCASTOptionalVerbiageFor: s
+			mainNode: (CCompoundStatementNode statements: {CAssignmentNode
+				lvalue: (CIdentifierNode name: cs)
+				rvalue: ( CStructurePointerAccessNode
+					structurePointer: (CIdentifierNode name: 'interpreterProxy')
+					member: (CIdentifierNode name: cs))})
+			ifOptionalNode: (CCompoundStatementNode statements: {self
+				withCASTConditionalDefineOf: cs
+				comment: nil
+				thenStatement: (CAssignmentNode 
+					lvalue: (CIdentifierNode name: cs)
+					rvalue: (CConstantNode value: 0))})) ].
+	
+	^ self withCASTConditionalDefineOf: 'SQUEAK_BUILTIN_PLUGIN'
 		comment: nil
-		on: aStream
-		do: [pluginsToClone do:
-				[:s| | cs |
-				cs := self cFunctionNameFor: s.
-				self withOptionalVerbiageFor: s
-					on: aStream
-					do: [aStream tab: anInteger; nextPutAll: cs; nextPutAll: ' = interpreterProxy->'; nextPutAll: cs; nextPut: $;; newLine]
-					ifOptionalDo:
-						[self
-							withConditionalDefineOf: cs
-							comment: nil
-							on: aStream
-							do: [aStream tab: anInteger; nextPutAll: cs; nextPutAll: ' = 0;'; newLine]]]]
+		thenStatement: thenStatement.
 ]
 
-{ #category : #'C translation' }
-VMPluginCodeGenerator >> generateRemapOopIn: aNode on: aStream indent: level [
+{ #category : #'CAST translation' }
+VMPluginCodeGenerator >> generateCASTRemapOopIn: aTSendNode [ 
+	
 	"Generate the C code for this message onto the given stream."
-	| arm |
+
+	| arm result |
 	"Avoid nesting #if SPURVM...#else...#endif within arms of an outer #if SPURVM...#else...#endif."
-	(Notification new tag: #inRemapOopInArm; signal) ifNotNil:
-		[:inRemapOopInArm|
-		 ^inRemapOopInArm
-			ifTrue: [self generateSpurRemapOopIn: aNode on: aStream indent: level]
-			ifFalse: [self generateV3RemapOopIn: aNode on: aStream indent: level]].
-	[aStream newLine; nextPutAll: '#if SPURVM'; newLine.
-	 arm := true.
-	 self generateSpurRemapOopIn: aNode on: aStream indent: level.
-	 aStream newLine; nextPutAll: '#else /* SPURVM */'; newLine.
-	 arm := false.
-	 self generateV3RemapOopIn: aNode on: aStream indent: level.
-	 aStream newLine; nextPutAll: '#endif /* SPURVM */'; newLine]
+	(Notification new
+		 tag: #inRemapOopInArm;
+		 signal) ifNotNil: [ :inRemapOopInArm | 
+		^ inRemapOopInArm ifTrue: [ 
+			  self generateCASTSpurRemapOopIn: aTSendNode ] ].
+	[ 
+	arm := true.
+	result := self generateCASTSpurRemapOopIn: aTSendNode.
+	arm := false.
+	^ result ]
 		on: Notification
-		do: [:ex|
+		do: [ :ex | 
 			ex tag == #inRemapOopInArm
-				ifTrue: [ex resume: arm]
-				ifFalse: [ex pass]]
+				ifTrue: [ ex resume: arm ]
+				ifFalse: [ ex pass ] ]
 ]
 
-{ #category : #'C translation' }
-VMPluginCodeGenerator >> generateSpurRemapOopIn: aNode on: aStream indent: level [
-	"Generate just the block argument for this message as Spur does not GC on allocation."
+{ #category : #'CAST translation' }
+VMPluginCodeGenerator >> generateCASTSpurRemapOopIn: aTSendNode [
 
-	aNode args second emitCCodeOn: aStream level: level generator: self
-]
-
-{ #category : #'C translation' }
-VMPluginCodeGenerator >> generateV3RemapOopIn: aNode on: aStream indent: level [
-	"Generate call on remapOop: for the variable oopOrList (or all of the
-	 variables in oopOrList) before evaluating aBlock, and restore them after.
-	 This keeps the oops valid if, as V3 will, there is a GC on allocation."
-
-	| idList |
-	pluginFunctionsUsed add: #pushRemappableOop:; add: #popRemappableOop.
-	idList := aNode args first nameOrValue.
-	idList class == Array ifFalse: [idList := Array with: idList].
-	idList do:
-		[:each | 
-		 aStream
-			tab: level;
-			nextPutAll: 'pushRemappableOop(';
-			nextPutAll: each asString;
-			nextPutAll: ');']
-		separatedBy: [aStream newLine].
-	aStream newLine.
-	aNode args second emitCCodeOn: aStream level: level generator: self.
-	level timesRepeat: [aStream tab].
-	idList reversed do:
-		[:each |
-		 aStream 
-			nextPutAll: each asString;
-			nextPutAll: ' = popRemappableOop()']
-		separatedBy: [aStream nextPut: $;; crtab: level]
+	^ aTSendNode arguments second asCASTIn: self
 ]
 
 { #category : #'type inference' }
@@ -319,15 +263,14 @@ VMPluginCodeGenerator >> initialize [
 ]
 
 { #category : #public }
-VMPluginCodeGenerator >> initializeCTranslationDictionary [ 
-	"Initialize the dictionary mapping message names to actions for C code generation."
+VMPluginCodeGenerator >> initializeCASTTranslationDictionary [
 
-	super initializeCTranslationDictionary.
-	translationDict
+	super initializeCASTTranslationDictionary.
+	castTranslationDict
 		at: #expandDereferenceInterpreterProxyFunctionTable
-			put: #generateInterpreterProxyFunctionDereference:on:indent:;
+			put: #generateCASTInterpreterProxyFunctionDereference:;
 		at: #remapOop:in:
-			put: #generateRemapOopIn:on:indent:
+			put: #generateCASTRemapOopIn:
 ]
 
 { #category : #testing }
@@ -452,13 +395,12 @@ VMPluginCodeGenerator >> preDeclareInterpreterProxyOn: aStream [
 				do: [tMethod static: false; export: false; emitCFunctionPrototype: aStream generator: self]
 				ifOptionalDo:
 					[aStream nextPutAll: '# define '.
-					 (TSendNode new
+					 ((TSendNode new
 						setSelector: tMethod selector
 							receiver: (TVariableNode new setName: 'interpreterProxy')
 								arguments: (tMethod args collect: [:a| TVariableNode new setName: a]))
-						emitCCodeAsArgumentOn: aStream
-							level: 0
-								generator: self.
+						asCASTExpressionIn: self)
+							prettyPrintOn: aStream.
 					 aStream nextPutAll: ' 0'; newLine]]].
 	aStream nextPutAll: 'extern'; newLine; nextPutAll: '#endif'; newLine
 ]
@@ -590,98 +532,6 @@ VMPluginCodeGenerator >> sizeOfIntegralCType: anIntegralCType [ "<String>"
 			ifFalse: [self error: 'unrecognized integral type']]
 ]
 
-{ #category : #private }
-VMPluginCodeGenerator >> storeVirtualMachineProxyHeader: categoryList on: fileName [
-	"Store the interpreter definitions on the given file"
-	| stream |
-	stream := (ZnNewLineWriterStream on: fileName asFileReference writeStream)
-		forLf;
-		yourself.
-		
-	stream nextPutAll:
-'#ifndef _SqueakVM_H
-#define _SqueakVM_H
-
-/* Increment the following number if you change the order of
-   functions listed or if you remove functions */
-#define VM_PROXY_MAJOR 1
-
-/* Increment the following number if you add functions at the end */
-#define VM_PROXY_MINOR 0
-
-typedef struct VirtualMachine {
-	int (*minorVersion) (void);
-	int (*majorVersion) (void);
-'.
-
-	categoryList do:[:assoc|
-		stream newLine; newLine; tab; nextPutAll:'/* InterpreterProxy methodsFor: ''',assoc key, ''' */'; newLine; newLine; tab.
-		(self sortStrings: assoc value) do:[:sel|
-			(methods at: sel) emitProxyFunctionPrototype: stream generator: self.
-			stream nextPutAll: ';'; newLine; tab]].
-
-	stream nextPutAll:'
-} VirtualMachine;
-
-#endif /* _SqueakVM_H */
-'.
-	stream close.
-]
-
-{ #category : #private }
-VMPluginCodeGenerator >> storeVirtualMachineProxyImplementation: categoryList on: fileName [
-	"Store the interpreter definitions on the given file"
-	| stream |
-	stream := (ZnNewLineWriterStream on: fileName asFileReference writeStream)
-		forLf;
-		yourself.
-
-	stream nextPutAll:'
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include "sqVirtualMachine.h"'; newLine;newLine.
-	stream nextPutAll:'/*** Function prototypes ***/'.
-
-	categoryList do:[:assoc|
-		stream newLine; newLine; nextPutAll:'/* InterpreterProxy methodsFor: ''',assoc key, ''' */'; newLine.
-		(self sortStrings: assoc value) do:[:sel|
-			(methods at: sel) emitCFunctionPrototype: stream generator: self]].
-
-	stream newLine; nextPutAll:'struct VirtualMachine *VM = NULL;'; newLine.
-	stream newLine; nextPutAll:
-'static int majorVersion(void) {
-	return VM_PROXY_MAJOR;
-}
-
-static int minorVersion(void) {
-	return VM_PROXY_MINOR;
-}
-
-struct VirtualMachine* sqGetInterpreterProxy(void)
-{
-	if(VM) return VM;
-	VM = (struct VirtualMachine *) calloc(1, sizeof(VirtualMachine));
-	/* Initialize Function pointers */
-	VM->majorVersion = majorVersion;
-	VM->minorVersion = minorVersion;
-'.
-	categoryList do:[:assoc|
-		stream newLine; newLine; tab; nextPutAll:'/* InterpreterProxy methodsFor: ''',assoc key, ''' */'; newLine; tab.
-		assoc value asSortedCollection do:[:sel|
-		stream nextPutAll:'VM->';
-			nextPutAll: (self cFunctionNameFor: sel);
-			nextPutAll:' = ';
-			nextPutAll: (self cFunctionNameFor: sel);
-			nextPutAll:';';
-			newLine; tab]].
-
-	stream newLine; newLine; tab; nextPutAll:'return VM;'; newLine; nextPutAll:'}'; newLine.
-	stream close.
-]
-
 { #category : #'C code generator' }
 VMPluginCodeGenerator >> structClasses [
 	
@@ -704,11 +554,28 @@ VMPluginCodeGenerator >> structTargetKindForDeclaration: decl [ "<String>"
 VMPluginCodeGenerator >> typeFor: aNode in: aTMethod [
 	"Override to provide the type for InterpreterProxy's implicit stack variable."
 	aNode isVariable ifTrue:
-		[^(aTMethod typeFor: aNode in: self) ifNil:
+		[^(aTMethod typeFor: aNode name in: self) ifNil:
 			[aNode name = 'stack'
 				ifTrue: [#'sqInt *']
 				ifFalse: [#sqInt]]].
 	^super typeFor: aNode in: aTMethod
+]
+
+{ #category : #'C translation' }
+VMPluginCodeGenerator >> withCASTOptionalVerbiageFor: selector mainNode: mainNode ifOptionalNode: optionalNode [
+
+	^ (self vmmakerConfiguration interpreterProxyClass >> selector pragmaAt: #option:)
+		ifNil: [ mainNode ]
+		ifNotNil: [:pragma| | option condition |
+			option := pragma arguments first.
+			condition := option isSymbol
+				ifTrue: [ option ]
+				ifFalse: [
+					self perform: option first withArguments: option allButFirst].
+			CPreprocessorIfNode 
+				if: (CConstantNode value: condition)
+				then: mainNode
+				else: optionalNode ]
 ]
 
 { #category : #'C translation' }

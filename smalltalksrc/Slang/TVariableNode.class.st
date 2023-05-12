@@ -7,6 +7,34 @@ Class {
 	#category : #'Slang-AST'
 }
 
+{ #category : #'instance creation' }
+TVariableNode class >> named: aName [
+
+	^ self new
+		setName: aName;
+		yourself
+]
+
+{ #category : #'instance creation' }
+TVariableNode class >> selfNode [
+
+	^ self named: 'self'
+]
+
+{ #category : #visiting }
+TVariableNode >> accept: aVisitor [
+	
+	^ aVisitor visitVariableNode: self
+]
+
+{ #category : #tranforming }
+TVariableNode >> asCASTIn: aBuilder [
+
+	^ name = 'nil'
+		  ifTrue: [ CIdentifierNode name: aBuilder nilTranslation ]
+		  ifFalse: [ CIdentifierNode name: (aBuilder returnPrefixFromVariable: name) ]
+]
+
 { #category : #transformations }
 TVariableNode >> bindVariableUsesIn: aDictionary [
 
@@ -24,14 +52,23 @@ TVariableNode >> bindVariablesIn: aDictionary [
 	^ (aDictionary at: name ifAbsent: [^ self]) copy
 ]
 
-{ #category : #'C code generation' }
-TVariableNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
+{ #category : #transformations }
+TVariableNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
-	aStream nextPutAll: (name = 'nil'
-						ifTrue: [aCodeGen cLiteralFor: nil]
-						ifFalse: [aCodeGen returnPrefixFromVariable: name]).
-	aCodeGen currentMethod ifNotNil:
-		[:m| m noteUsedVariableName: name]
+	(cautionaryBlock value: self) ifTrue: [^self].
+	^ (aDictionary at: name ifAbsent: [^ self]) copy
+]
+
+{ #category : #accessing }
+TVariableNode >> children [
+	
+	^ #()
+]
+
+{ #category : #displaying }
+TVariableNode >> displayString [
+
+	^ name asString
 ]
 
 { #category : #testing }
@@ -80,7 +117,11 @@ TVariableNode >> nodesDo: aBlock parent: parent [
 { #category : #printing }
 TVariableNode >> printOn: aStream level: level [
 
-	aStream nextPutAll: name.
+	super printOn: aStream level: level.
+	aStream
+		nextPutAll: '(';
+		nextPutAll: name;
+		nextPutAll: ')'
 ]
 
 { #category : #accessing }
@@ -99,7 +140,7 @@ TVariableNode >> structTargetKindIn: aCodeGen [
 
 { #category : #'type inference' }
 TVariableNode >> typeOrNilFrom: aCodeGenerator in: aTMethod [
-	^aTMethod typeFor: self in: aCodeGenerator
+	^aTMethod typeFor: self name in: aCodeGenerator
 ]
 
 { #category : #accessing }

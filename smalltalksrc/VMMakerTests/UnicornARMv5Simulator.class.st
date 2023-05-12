@@ -11,15 +11,9 @@ UnicornARMv5Simulator >> arg0Register [
 ]
 
 { #category : #registers }
-UnicornARMv5Simulator >> argument0RegisterValue [
-	
-	^ self r3
-]
+UnicornARMv5Simulator >> arg1Register [
 
-{ #category : #accessing }
-UnicornARMv5Simulator >> argument0RegisterValue: anInteger [ 
-
-	self writeRegister: UcARMRegisters r3 value: anInteger
+	^ UcARMRegisters r4
 ]
 
 { #category : #registers }
@@ -31,13 +25,7 @@ UnicornARMv5Simulator >> baseRegister [
 { #category : #'c calling convention' }
 UnicornARMv5Simulator >> cResultRegister [
 	
-	^ self r0
-]
-
-{ #category : #'c calling convention' }
-UnicornARMv5Simulator >> cReturnRegisterValue: anInteger [ 
-
-	self r0: anInteger 
+	^ UcARMRegisters r0
 ]
 
 { #category : #'c calling convention' }
@@ -114,14 +102,14 @@ UnicornARMv5Simulator >> createUnicorn [
 	Create a region of 4KB and map it also at a multiple of 4KB."
 	mappedMemory := ByteArray new: 4096.
 	mappedMemory replaceFrom: 1 to: bytes size with: bytes.
-	unicorn := Unicorn arm.
-	unicorn mapHostMemory: mappedMemory atAddress: 4096 withPermissions: UnicornConstants permissionAll.
+	simulator := Unicorn arm.
+	simulator mapHostMemory: mappedMemory atAddress: 4096 withPermissions: UnicornConstants permissionAll.
 
-	unicorn doStartAt: 4096 until: 0 timeout: 0 count: 5 "instructions".
+	simulator doStartAt: 4096 until: 0 timeout: 0 count: 5 "instructions".
 
 	"Cleanup: unmap the memory so the ByteArray can be safely get garbage collected and that memory region can be reused"
-	unicorn unmapMemoryAt: 4096 size: 4096.
-	^ unicorn
+	simulator unmapMemoryAt: 4096 size: 4096.
+	^ simulator
 ]
 
 { #category : #disassembling }
@@ -139,14 +127,14 @@ UnicornARMv5Simulator >> doStartAt: startAddress until: until timeout: timeout c
 	more than one instruction. It has the problem that it misses the count or the current address"
 
 	actualCount := 0.
-	self instructionPointerValue: startAddress.
+	self instructionPointerRegisterValue: startAddress.
 	startTime := Time millisecondClockValue.
 	remainingTimeout := timeout.
 
 	[ true ]
 		whileTrue: [ 
-			[result :=  unicorn
-				startAt: self instructionPointerValue
+			[result :=  simulator
+				startAt: self instructionPointerRegisterValue
 				until: 0
 				timeout: 0
 				count: 1.
@@ -157,12 +145,12 @@ UnicornARMv5Simulator >> doStartAt: startAddress until: until timeout: timeout c
 						error signal ].
 		
 			"If execution did not stop because of a stop reason, verify the error code"
-			unicorn verifyErrorCode: result.
+			simulator verifyErrorCode: result.
 
 			
 					actualCount := actualCount + 1] 
 				on: UnicornInvalidMemoryAccess do: [ :invalidAccess |
-					self instructionPointerValue = until ifTrue: [ ^ 0 ].
+					self instructionPointerRegisterValue = until ifTrue: [ ^ 0 ].
 					
 					(self handleInvalidAccess: invalidAccess)
 						ifFalse: [ ^ result ].
@@ -183,13 +171,25 @@ UnicornARMv5Simulator >> doStartAt: startAddress until: until timeout: timeout c
 								target: until;
 								signal ]].
 
-			self instructionPointerValue = until ifTrue: [ ^ result ]]
+			self instructionPointerRegisterValue = until ifTrue: [ ^ result ]]
 ]
 
 { #category : #'as yet unclassified' }
-UnicornARMv5Simulator >> doublePrecisionFloatingPointRegister0Value [
+UnicornARMv5Simulator >> doublePrecisionFloatingPointRegister0 [
 
-	^ self readFloat64Register: UcARMRegisters d0
+	^ UcARMRegisters d0
+]
+
+{ #category : #'as yet unclassified' }
+UnicornARMv5Simulator >> doublePrecisionFloatingPointRegister1 [
+
+	^ UcARMRegisters d1
+]
+
+{ #category : #'as yet unclassified' }
+UnicornARMv5Simulator >> doublePrecisionFloatingPointRegister2 [
+
+	^ UcARMRegisters d2
 ]
 
 { #category : #'as yet unclassified' }
@@ -204,28 +204,9 @@ UnicornARMv5Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstructio
 ]
 
 { #category : #registers }
-UnicornARMv5Simulator >> fp [
-	^ self readRegister: UcARMRegisters fp
-]
-
-{ #category : #registers }
-UnicornARMv5Simulator >> fp: anInteger [ 
-	
-	self writeRegister: UcARMRegisters fp value: anInteger
-]
-
-{ #category : #registers }
 UnicornARMv5Simulator >> framePointerRegister [
 	
 	^ UcARMRegisters fp
-]
-
-{ #category : #accessing }
-UnicornARMv5Simulator >> getLastAddress: abstractInstructions [ 
-	
-	| last |
-	last := (abstractInstructions reject: [ :e | e isLiteral ]) last.
-	^ last address + last machineCodeSize 
 ]
 
 { #category : #accessing }
@@ -255,40 +236,6 @@ UnicornARMv5Simulator >> integerRegisterState [
 UnicornARMv5Simulator >> linkRegister [
 	
 	^ UcARMRegisters lr
-]
-
-{ #category : #accessing }
-UnicornARMv5Simulator >> linkRegisterValue [
-
-	^ self readRegister: self linkRegister 
-]
-
-{ #category : #registers }
-UnicornARMv5Simulator >> linkRegisterValue: aValue [ 
-
-	^ self writeRegister: self linkRegister value: aValue
-]
-
-{ #category : #registers }
-UnicornARMv5Simulator >> lr [
-	^ self readRegister: UcARMRegisters lr	
-]
-
-{ #category : #registers }
-UnicornARMv5Simulator >> lr: anInteger [ 
-	
-	self writeRegister: UcARMRegisters lr value: anInteger
-]
-
-{ #category : #registers }
-UnicornARMv5Simulator >> pc [
-	^ self readRegister: UcARMRegisters pc
-]
-
-{ #category : #registers }
-UnicornARMv5Simulator >> pc: anInteger [ 
-	
-	self writeRegister: UcARMRegisters pc value: anInteger
 ]
 
 { #category : #'as yet unclassified' }
@@ -516,11 +463,6 @@ UnicornARMv5Simulator >> smashCallerSavedRegistersWithValuesFrom: base by: step 
 UnicornARMv5Simulator >> smashRegisterAccessors [
 
 	^ #(r0: r1: r2: r3:)
-]
-
-{ #category : #registers }
-UnicornARMv5Simulator >> sp [
-	^ self readRegister: UcARMRegisters sp
 ]
 
 { #category : #registers }

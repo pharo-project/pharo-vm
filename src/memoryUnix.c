@@ -49,9 +49,6 @@ sqInt uxMemoryExtraBytesLeft(sqInt includingSwap);
 int overallocateMemory	= 0;
 
 static sqInt   devZero	= -1;
-static char *heap	=  0;
-static sqInt   heapSize	=  0;
-static sqInt   heapLimit	=  0;
 
 #ifndef max
 # define max(a, b)  (((a) > (b)) ? (a) : (b))
@@ -123,17 +120,23 @@ void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
 /* answer the address of (minHeapSize <= N <= desiredHeapSize) bytes of memory. */
 usqInt
 sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseAddress) {
-
-	if (heap) {
-		logError("uxAllocateMemory: already called\n");
-		exit(1);
-	}
+    char *heap    =  0;
+    sqInt   heapSize    =  0;
+    sqInt   heapLimit    =  0;
 
 	pageSize = getpagesize();
 	pageMask = ~(pageSize - 1);
 
+	logDebug("Requested Size %"PRIdSQINT, desiredHeapSize);
+
 	heapLimit = valign(max(desiredHeapSize, 1));
+	if(heapLimit < desiredHeapSize){
+		heapLimit += pageSize;
+	}
+	
 	usqInt desiredBaseAddressAligned = valign(desiredBaseAddress);
+
+	logDebug("Aligned Requested Size %"PRIdSQINT, heapLimit);
 
 	logDebug("Trying to load the image in %p\n",
 			(void* )desiredBaseAddressAligned);
@@ -149,19 +152,19 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
  * To avoid it, we force to use the required base address
  */
 #ifndef __APPLE__
-		if(heap != MAP_FAILED && (usqInt)heap != desiredBaseAddressAligned){
+		if(heap != 0 && (usqInt)heap != desiredBaseAddressAligned){
 
 			desiredBaseAddressAligned = valign(desiredBaseAddressAligned + pageSize);
 
 			if((usqInt)heap < desiredBaseAddress){
 				logError("I cannot find a good memory address starting from: %p", (void*)desiredBaseAddress);
-				exit(-1);
+				return 0;
 			}
 
 			//If I overflow.
 			if(desiredBaseAddress > desiredBaseAddressAligned){
 				logError("I cannot find a good memory address starting from: %p", (void*)desiredBaseAddress);
-				exit(-1);
+				return 0;
 			}
 
 			munmap(heap, heapLimit);
@@ -170,29 +173,14 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 #endif
 	}
 
-	if (!heap) {
-		logError("Failed to allocate at least %lld bytes)\n",
-				(long long )minHeapSize);
-		exit(-1);
-	}
-
 	heapSize = heapLimit;
 
-	logDebug("Loading the image in %p\n", (void* )heap);
+	if(heap){
+		logDebug("Loading the image in %p\n", (void* )heap);
+	}
 
 	return (usqInt) heap;
 }
-
-/* answer the number of bytes available for growing the heap. */
-
-sqInt uxMemoryExtraBytesLeft(sqInt includingSwap)
-{
-  return heapLimit - heapSize;
-}
-
-
-sqInt sqMemoryExtraBytesLeft(sqInt includingSwap)			{ return uxMemoryExtraBytesLeft(includingSwap); }
-
 
 /* Deallocate a region of memory previously allocated by
  * sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto.  Cannot fail.
@@ -204,44 +192,3 @@ sqDeallocateMemorySegmentAtOfSize(void *addr, sqInt sz)
 		logErrorFromErrno("sqDeallocateMemorySegment... munmap");
 }
 
-void *
-sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto(sqInt size, void *minAddress, sqInt *allocatedSizePointer)
-{
-	void *alloc;
-	long bytes = roundUpToPage(size);
-	void *startAddress;
-	int count = 0;
-
-	if (!pageSize) {
-		pageSize = getpagesize();
-		pageMask = pageSize - 1;
-	}
-	*allocatedSizePointer = bytes;
-	while ((char *)minAddress + bytes > (char *)minAddress) {
-		startAddress = (void*)roundUpToPage((sqInt)minAddress);
-
-		alloc = mmap(startAddress, bytes,
-					PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
-		if (alloc == MAP_FAILED) {
-			logWarnFromErrno("sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto mmap");
-			return 0;
-		}
-
-		if(count >= 6){
-			logTrace("More than 6 retries... maybe something is wrong\n");
-		}
-
-		logTrace("Asked: %10p %10p %10p\n", alloc, minAddress, startAddress);
-		if (alloc >= minAddress){
-			logTrace("Allocated Piece: %10p\n", alloc);
-			return alloc;
-		}
-
-		count++;
-
-		if (munmap(alloc, bytes) != 0)
-			logWarnFromErrno("sqAllocateMemorySegment... munmap");
-		minAddress = (void *)((char *)minAddress + bytes);
-	}
-	return 0;
-}

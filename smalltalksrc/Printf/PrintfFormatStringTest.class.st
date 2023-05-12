@@ -54,6 +54,14 @@ PrintfFormatStringTest >> testOneIntegerWithLength [
 ]
 
 { #category : #'as yet unclassified' }
+PrintfFormatStringTest >> testOneLongLongInteger [
+
+	self
+		assert: 'Here is a number "2199023255552".'
+		equals: ('Here is a number "%lld".' printf: 2199023255552)
+]
+
+{ #category : #'as yet unclassified' }
 PrintfFormatStringTest >> testOnePrintPointer [
 
 	self assert: 'Here is a pointer "0x12345678".' equals: ('Here is a pointer "%p".' printf: 16r12345678)

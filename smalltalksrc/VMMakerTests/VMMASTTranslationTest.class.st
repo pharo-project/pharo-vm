@@ -41,6 +41,16 @@ VMMASTTranslationTest >> inlineTwiceSecondLevelMethodWithLoop [
 ]
 
 { #category : #'generation-targets' }
+VMMASTTranslationTest >> inlinedMethodWithLocalWithSameName [
+
+	<inline:true>
+	<var: 'cond' type: 'pthread_cond_t'>
+	| cond |
+	cond := 50
+
+]
+
+{ #category : #'generation-targets' }
 VMMASTTranslationTest >> methodWithArgument: anArgument [
 ]
 
@@ -99,6 +109,15 @@ VMMASTTranslationTest >> methodWithIfNotNilWithArgument [
 ]
 
 { #category : #'generation-targets' }
+VMMASTTranslationTest >> methodWithLocalVarAndAndInlinedMethod [
+
+	<var: 'cond' type: 'pthread_cond_t'>
+	| cond |
+	cond := 42.
+	self inlinedMethodWithLocalWithSameName.
+]
+
+{ #category : #'generation-targets' }
 VMMASTTranslationTest >> methodWithLoop [
 
 	1 to: 10 do: [ :i | self foo: i ]
@@ -122,91 +141,106 @@ VMMASTTranslationTest >> testArgumentIsNoTemp [
 VMMASTTranslationTest >> testComplexIfNilIfNotNilWithArgument [
 
 	| translation method codeGenerator assignment conditional condition |
-	method := (self class >> #methodWithIfNilIfNotNilWithArgument).
+	method := self class >> #methodWithIfNilIfNotNilWithArgument.
 	translation := method asTranslationMethodOfClass: TMethod.
 	codeGenerator := CCodeGeneratorGlobalStructure new.
 	codeGenerator addMethod: translation.
 	codeGenerator doInlining: true.
 
-	self assert: translation parseTree statements size equals: 3.
-	assignment := translation parseTree statements first.
+	self
+		assert: translation parseTree statements first statements size
+		equals: 2.
+	assignment := translation parseTree statements first statements first.
 	self assert: assignment expression isSend.
 	self assert: assignment expression receiver name equals: 'self'.
 	self assert: assignment expression selector equals: #something.
 	self assert: assignment isAssignment.
-	
-	conditional := translation parseTree statements second.
+
+	conditional := translation parseTree statements first statements
+		               second.
 	self assert: conditional isSend.
 	self assert: conditional selector equals: #ifTrue:ifFalse:.
-	self assert: conditional args first isStmtList.
-	self assert: conditional args second isStmtList.
-	self assert: conditional args first args isEmpty.
-	self assert: conditional args second args notEmpty.
-	
+	self assert: conditional arguments first isStatementList.
+	self assert: conditional arguments second isStatementList.
+	self assert: conditional arguments first arguments isEmpty.
+	self assert: conditional arguments second arguments notEmpty.
+
 	condition := conditional receiver.
 	self assert: condition isSend.
 	self assert: condition selector equals: #==.
-	self assert: condition receiver name equals: conditional args second args first.
-	self assert: condition args first name equals: 'nil'.
+	self
+		assert: condition receiver name
+		equals: conditional arguments second arguments first.
+	self assert: condition arguments first name equals: 'nil'
 ]
 
 { #category : #tests }
 VMMASTTranslationTest >> testComplexIfNotNilIfNilWithArgument [
 
 	| translation method codeGenerator assignment conditional condition |
-	method := (self class >> #methodWithIfNilIfNotNilWithArgument).
+	method := self class >> #methodWithIfNilIfNotNilWithArgument.
 	translation := method asTranslationMethodOfClass: TMethod.
 	codeGenerator := CCodeGeneratorGlobalStructure new.
 	codeGenerator addMethod: translation.
 	codeGenerator doInlining: true.
 
-	self assert: translation parseTree statements size equals: 3.
-	assignment := translation parseTree statements first.
+	self
+		assert: translation parseTree statements first statements size
+		equals: 2.
+	assignment := translation parseTree statements first statements first.
 	self assert: assignment expression isSend.
 	self assert: assignment expression receiver name equals: 'self'.
 	self assert: assignment expression selector equals: #something.
 	self assert: assignment isAssignment.
-	
-	conditional := translation parseTree statements second.
+
+	conditional := translation parseTree statements first statements
+		               second.
 	self assert: conditional isSend.
 	self assert: conditional selector equals: #ifTrue:ifFalse:.
-	self assert: conditional args first isStmtList.
-	self assert: conditional args second isStmtList.
-	self assert: conditional args first args isEmpty.
-	self assert: conditional args second args notEmpty.
-	
+	self assert: conditional arguments first isStatementList.
+	self assert: conditional arguments second isStatementList.
+	self assert: conditional arguments first arguments isEmpty.
+	self assert: conditional arguments second arguments notEmpty.
+
 	condition := conditional receiver.
 	self assert: condition isSend.
 	self assert: condition selector equals: #==.
-	self assert: condition receiver name equals: conditional args second args first.
-	self assert: condition args first name equals: 'nil'.
+	self
+		assert: condition receiver name
+		equals: conditional arguments second arguments first.
+	self assert: condition arguments first name equals: 'nil'
 ]
 
 { #category : #tests }
 VMMASTTranslationTest >> testComplexIfNotNilWithArgument [
 
 	| translation method codeGenerator assignment conditional condition |
-	method := (self class >> #methodWithIfNotNilWithArgument).
+	method := self class >> #methodWithIfNotNilWithArgument.
 	translation := method asTranslationMethodOfClass: TMethod.
 	codeGenerator := CCodeGeneratorGlobalStructure new.
 	codeGenerator addMethod: translation.
 	codeGenerator doInlining: true.
 
-	self assert: translation parseTree statements size equals: 3.
-	assignment := translation parseTree statements first.
+	self
+		assert: translation parseTree statements first statements size
+		equals: 2.
+	assignment := translation parseTree statements first statements first.
 	self assert: assignment isAssignment.
-	
-	conditional := translation parseTree statements second.
+
+	conditional := translation parseTree statements first statements
+		               second.
 	self assert: conditional isSend.
 	self assert: conditional selector equals: #ifFalse:.
-	self assert: conditional args first isStmtList.
-	self assert: conditional args first args notEmpty.
-	
+	self assert: conditional arguments first isStatementList.
+	self assert: conditional arguments first arguments notEmpty.
+
 	condition := conditional receiver.
 	self assert: condition isSend.
 	self assert: condition selector equals: #==.
-	self assert: condition receiver name equals: conditional args first args first.
-	self assert: condition args first name equals: 'nil'.
+	self
+		assert: condition receiver name
+		equals: conditional arguments first arguments first.
+	self assert: condition arguments first name equals: 'nil'
 ]
 
 { #category : #tests }
@@ -222,7 +256,7 @@ VMMASTTranslationTest >> testEmptyBlockGeneratesSingleNilStatement [
 
 	block := translation statements first receiver.
 	self assert: block statements size equals: 1.
-	self assert: block statements first name equals: 'nil'
+	self assert: block statements first value equals: nil
 ]
 
 { #category : #tests }
@@ -238,22 +272,40 @@ VMMASTTranslationTest >> testIfNilIfNotNilBecomesIfTrueIfFalse [
 VMMASTTranslationTest >> testIfNilIfNotNilDoesNotInvertBlocks [
 
 	| translation |
-	translation := (self class >> #methodWithIfNilIfNotNil) asTranslationMethodOfClass: TMethod.
-	
-	self assert: translation statements first selector equals: #ifTrue:ifFalse:.
-	self assert: translation statements first args first statements first value equals: 1.
-	self assert: translation statements first args second statements first value equals: 2.
+	translation := self class >> #methodWithIfNilIfNotNil 
+		               asTranslationMethodOfClass: TMethod.
+
+	self
+		assert: translation statements first selector
+		equals: #ifTrue:ifFalse:.
+	self
+		assert:
+		translation statements first arguments first statements first value
+		equals: 1.
+	self
+		assert:
+		translation statements first arguments second statements first value
+		equals: 2
 ]
 
 { #category : #tests }
 VMMASTTranslationTest >> testIfNotNilIfNilInversesBlocks [
 
 	| translation |
-	translation := (self class >> #methodWithIfNotNilIfNil) asTranslationMethodOfClass: TMethod.
-	
-	self assert: translation statements first selector equals: #ifTrue:ifFalse:.
-	self assert: translation statements first args first statements first value equals: 2.
-	self assert: translation statements first args second statements first value equals: 1
+	translation := self class >> #methodWithIfNotNilIfNil 
+		               asTranslationMethodOfClass: TMethod.
+
+	self
+		assert: translation statements first selector
+		equals: #ifTrue:ifFalse:.
+	self
+		assert:
+		translation statements first arguments first statements first value
+		equals: 2.
+	self
+		assert:
+		translation statements first arguments second statements first value
+		equals: 1
 ]
 
 { #category : #tests }
@@ -284,7 +336,7 @@ VMMASTTranslationTest >> testInlineSecondLevelMethodWithLoopDeclaresLoopIndexVar
 		codeGenerator addMethod: e ].
 	codeGenerator doInlining: true.
 
-	self assert: translation locals size equals: 1
+	self assert: translation locals asSet size equals: 1
 ]
 
 { #category : #tests }
@@ -299,7 +351,7 @@ VMMASTTranslationTest >> testInlineTwiceMethodWithLoopDeclaresTwiceLoopIndexVari
 	codeGenerator addMethod: inlinedMethod.
 	codeGenerator doInlining: true.
 
-	self assert: translation locals size equals: 2
+	self assert: translation locals asSet size equals: 2
 ]
 
 { #category : #tests }
@@ -315,7 +367,27 @@ VMMASTTranslationTest >> testInlineTwiceSecondLevelMethodWithLoopDeclaresLoopInd
 		codeGenerator addMethod: e ].
 	codeGenerator doInlining: true.
 
-	self assert: translation locals size equals: 2
+	self assert: translation locals asSet size equals: 2
+]
+
+{ #category : #tests }
+VMMASTTranslationTest >> testInlinedLocalVariableWithSameNameIsProperlyRenamed [
+
+	|  method codeGenerator  methodTranslation inlinedMethod inlinedMethodTranslation |
+	method := (self class >> #methodWithLocalVarAndAndInlinedMethod).
+	methodTranslation := method asTranslationMethodOfClass: TMethod.
+	methodTranslation declarations at: #cond put: 'pthread_cond_t cond'. 
+
+	inlinedMethod := (self class >> #inlinedMethodWithLocalWithSameName).
+	inlinedMethodTranslation := inlinedMethod asTranslationMethodOfClass: TMethod.
+	inlinedMethodTranslation declarations at: #cond put: 'pthread_cond_t cond'. 
+	
+	codeGenerator := CCodeGeneratorGlobalStructure new.
+	codeGenerator addMethod: methodTranslation.
+	codeGenerator addMethod: inlinedMethodTranslation.
+	codeGenerator doInlining: true.
+
+	self assert: (methodTranslation declarations at: #cond2) equals: 'pthread_cond_t cond2'
 ]
 
 { #category : #tests }
@@ -334,9 +406,9 @@ VMMASTTranslationTest >> testMethodWithConditionInLoopLimitHasLimitVariable [
 	| translation method loop |
 	method := self class >> #methodWithExpressionInLoopCondition.
 	translation := method asTranslationMethodOfClass: TMethod.
-	
+
 	loop := translation statements first.
-	self assert: loop args size equals: 4
+	self assert: loop arguments size equals: 4
 ]
 
 { #category : #tests }
@@ -345,9 +417,9 @@ VMMASTTranslationTest >> testMethodWithConstantConditionInLoopHasNoLimitVariable
 	| translation method loop |
 	method := self class >> #methodWithLoop.
 	translation := method asTranslationMethodOfClass: TMethod.
-	
+
 	loop := translation statements first.
-	self assert: loop args size equals: 6
+	self assert: loop arguments size equals: 6
 ]
 
 { #category : #tests }

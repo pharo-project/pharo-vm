@@ -41,9 +41,9 @@ VMStructType class >> checkGenerateSurrogate: surrogateClass bytesPerWord: bytes
 	 CogBlockMethod checkGenerateSurrogate: CogBlockMethodSurrogate64 bytesPerWord: 8.
 	 CogMethod checkGenerateSurrogate: CogMethodSurrogate64 bytesPerWord: 8"
 	| accessors oldBytesPerWord |
-	oldBytesPerWord := BytesPerWord.
-	accessors := [self fieldAccessorSourceFor: surrogateClass bytesPerWord: (BytesPerWord := bytesPerWord)]
-					ensure: [BytesPerWord := oldBytesPerWord].
+	oldBytesPerWord := VMMakerConfiguration bytesPerWord.
+	accessors := [self fieldAccessorSourceFor: surrogateClass bytesPerWord: (VMMakerConfiguration bytesPerWord:  bytesPerWord)]
+					ensure: [VMMakerConfiguration bytesPerWord: oldBytesPerWord].
 	accessors keysAndValuesDo:
 		[:mr :source|
 		source ~= mr sourceString ifTrue:
@@ -337,6 +337,13 @@ VMStructType class >> timeStamp [
 { #category : #translation }
 VMStructType class >> typedef [
 	^String streamContents: [:s| self printTypedefOn: s]
+]
+
+{ #category : #'debug support' }
+VMStructType >> logError: aMessage [
+	
+	<doNotGenerate>
+	self logError: aMessage withArgs: #()
 ]
 
 { #category : #printing }

@@ -14,7 +14,6 @@ Class {
 		'isBranchTrue',
 		'isBranchFalse',
 		'isReturn',
-		'isBlockCreation',
 		'isMapped',
 		'isMappedInBlock',
 		'isExtension',
@@ -88,22 +87,8 @@ CogBytecodeDescriptor >> is1ByteInstVarStore: anObject [
 ]
 
 { #category : #accessing }
-CogBytecodeDescriptor >> isBlockCreation [
-	"Answer the value of isBlockCreation"
-
-	^isBlockCreation
-]
-
-{ #category : #accessing }
-CogBytecodeDescriptor >> isBlockCreation: anObject [
-	"Set the value of isBlockCreation"
-
-	^isBlockCreation := anObject
-]
-
-{ #category : #accessing }
 CogBytecodeDescriptor >> isBranch [
-	^self spanFunction notNil and: [self isBlockCreation not]
+	^self spanFunction notNil
 ]
 
 { #category : #accessing }

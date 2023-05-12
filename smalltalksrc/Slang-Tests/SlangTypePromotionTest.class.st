@@ -103,11 +103,7 @@ SlangTypePromotionTest >> testFloatAndNil [
 	secondType := nil.
 	resType := ccg promoteArithmeticTypes: firstType and: secondType.
 	
-	self assert: resType equals: #float.
-	
-	"this feels wrong"
-	"inconsistent with integer types too"
-	self assert: false.
+	self assert: resType equals: nil
 ]
 
 { #category : #'float-types' }
@@ -269,11 +265,7 @@ SlangTypePromotionTest >> testNilAndFloat [
 	secondType := #float.
 	resType := ccg promoteArithmeticTypes: firstType and: secondType.
 	
-	self assert: resType equals: #float.
-	
-	"this feels wrong"
-	"inconsistent with integer types too"
-	self assert: false.
+	self assert: resType equals: nil
 ]
 
 { #category : #general }

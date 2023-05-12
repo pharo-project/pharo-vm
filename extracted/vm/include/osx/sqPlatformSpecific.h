@@ -93,24 +93,11 @@ sqAllocateMemory(minimumMemory, heapSize, baseAddress)
 #undef ioMSecs
 #define ioUtcWithOffset ioUtcWithOffset
 
-/* macro to return from interpret() loop in browser plugin VM */
-#define ReturnFromInterpret() return 0
 
 /* undef the memory routines for our logic */
 #undef sqMemoryExtraBytesLeft
 
 sqInt sqMemoryExtraBytesLeft(sqInt includingSwap);
-
-    #undef insufficientMemorySpecifiedError
-    #undef insufficientMemoryAvailableError
-    #undef unableToReadImageError
-int plugInNotifyUser(char *msg);
-    #define insufficientMemorySpecifiedError() plugInNotifyUser("The amount of memory specified by the Setting Slider is not enough for the installed Squeak image file.")
-    #define insufficientMemoryAvailableError() plugInNotifyUser("There is not enough memory to give Squeak the amount specified by the Setting Slider")
-    #define unableToReadImageError() plugInNotifyUser("Read failed or premature end of image file")
-	#undef browserPluginReturnIfNeeded
-	int plugInTimeToReturn(void);
-	#define browserPluginReturnIfNeeded() if (plugInTimeToReturn()) {ReturnFromInterpret();}
 
 sqInt ioSetCursorARGB(sqInt cursorBitsIndex, sqInt extentX, sqInt extentY, sqInt offsetX, sqInt offsetY);
 

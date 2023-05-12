@@ -19,9 +19,8 @@ SlangTypeForDereferenceTest >> testAtOnArray [
 	self assert: tMethod isNotNil.
 	self assert: (ccg typeFor: tMethod statements first expression in: tMethod) equals: #int."at: node"
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #int."returnNode"
-	self assert: tMethod returnType equals: #sqInt.
 	
-	self assert: false. "Unexpected type conversion"
+	self assertReturnTypeOf: tMethod equalsHarmonized: #int
 ]
 
 { #category : #tests }
@@ -66,7 +65,6 @@ SlangTypeForDereferenceTest >> testTwoAtOnMatrix [
 	self assert: (ccg typeFor: tMethod statements first expression receiver in: tMethod) equals: #'int *'."inner at:"
 	self assert: (ccg typeFor: tMethod statements first expression in: tMethod) equals: #int."outer at:"
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #int."return node"
-	self assert: tMethod returnType equals: #sqInt.
-
-	self assert: false. "Unexpected type conversion"
+	
+	self assertReturnTypeOf: tMethod equalsHarmonized: #int
 ]

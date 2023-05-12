@@ -6,91 +6,246 @@ Class {
 	#superclass : #Object,
 	#instVars : [
 		'outputDirectory',
-		'stopOnErrors'
+		'stopOnErrors',
+		'generatePlugins',
+		'wordSizesToGenerate',
+		'imageFormatName'
 	],
 	#category : #'VMMakerCompatibilityForPharo6-CommandLine'
 }
 
-{ #category : #generation }
-PharoVMMaker class >> generate: aClassName [
+{ #category : #defaults }
+PharoVMMaker class >> default32BitsMemoryManagerClass [
 
-	self generate: aClassName outputDirectory: FileSystem workingDirectory
+	^ Spur32BitCoMemoryManager
+]
+
+{ #category : #defaults }
+PharoVMMaker class >> default64BitsMemoryManagerClass [
+
+	^ Spur64BitCoMemoryManager
+]
+
+{ #category : #defaults }
+PharoVMMaker class >> defaultImageFormatName [
+
+	^ 'SpurImage'
+]
+
+{ #category : #defaults }
+PharoVMMaker class >> defaultInterpreterClass [
+
+	^ CoInterpreter
+]
+
+{ #category : #defaults }
+PharoVMMaker class >> defaultMemoryManagerClass [
+
+	^ self default64BitsMemoryManagerClass 
 ]
 
 { #category : #generation }
-PharoVMMaker class >> generate: aClassName outputDirectory: aDirectory [
+PharoVMMaker class >> defaultOutputDirectory [
 
-	Transcript 
+	^ FileSystem workingDirectory
+]
+
+{ #category : #generation }
+PharoVMMaker class >> generate: anInterpreterClass [
+
+	self
+		generate: anInterpreterClass
+		outputDirectory: self defaultOutputDirectory
+]
+
+{ #category : #generation }
+PharoVMMaker class >> generate: anInterpreterClass outputDirectory: aDirectory [
+
+	^ self generate: anInterpreterClass outputDirectory: aDirectory imageFormat: self defaultImageFormatName
+]
+
+{ #category : #generation }
+PharoVMMaker class >> generate: anInterpreterClass outputDirectory: aDirectory imageFormat: imageFormatName [
+
+	Transcript
 		nextPutAll: 'Generating ';
-	 	nextPutAll: aClassName printString;
+		nextPutAll: anInterpreterClass printString;
 		nextPutAll: ' in ';
 		nextPutAll: aDirectory printString;
+		nextPutAll: ' with ';
+		nextPutAll: imageFormatName;
 		nextPutAll: '...';
 		newLine;
 		flush.
-	
+
 	self new
+		imageFormatName: imageFormatName;
 		outputDirectory: aDirectory;
-		perform: #generate , aClassName asSymbol
+		perform: #generate , anInterpreterClass asSymbol
+]
+
+{ #category : #generation }
+PharoVMMaker class >> on: anInterpreterClass [
+
+	^ self
+		  on: anInterpreterClass
+		  outputDirectory: self defaultOutputDirectory
+]
+
+{ #category : #generation }
+PharoVMMaker class >> on: anInterpreterClass outputDirectory: aDirectory [
+
+	^ self new
+		  outputDirectory: aDirectory;
+		  vmMakerOn: anInterpreterClass
+]
+
+{ #category : #generation }
+PharoVMMaker class >> withCoInterpreter [
+
+	^ self on: CoInterpreter
 ]
 
 { #category : #generation }
 PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager [
 
-	| platformDirectory |
+	self generate: interpreterClass memoryManager: memoryManager compilerClass: StackToRegisterMappingCogit
+]
+
+{ #category : #generation }
+PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compilerClass: compilerClass [
+
+	self generate: interpreterClass memoryManager: memoryManager compilerClass: compilerClass options: #()
+]
+
+{ #category : #generation }
+PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compilerClass: compilerClass options: options [
+
+	| platformDirectory vmmaker imageReaderClassName imageWriterClassName |
+	
+	(#(SpurFormat ComposedFormat) includes: imageFormatName)
+		ifFalse:[ self error: 'Invalid Image Format'].
+	
+	imageFormatName = 'ComposedFormat' 
+		ifTrue: [imageReaderClassName 	:= ComposedImageReader name.
+					imageWriterClassName 	:= ComposedImageWriter name]
+		ifFalse: [imageReaderClassName := SpurImageReader name.
+					imageWriterClassName 	:= SpurImageWriter name].
+	
 	
 	Author useAuthor: 'vmMaker' during: [
 	
 		VMMakerConfiguration initializeForPharo.
-		(interpreterClass bindingOf: #COGMTVM) value: false.
 
 		platformDirectory := self platformDirectoryFor: memoryManager.
 
 		[ 
 		
-		(VMMaker
+		vmmaker := VMMaker
 			makerFor: interpreterClass
-			and: StackToRegisterMappingCogit
-			with: {#COGMTVM. false.
-					#ObjectMemory. memoryManager name.
-					#MULTIPLEBYTECODESETS. true.
-					#bytecodeTableInitializer. #initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid}
+			and: compilerClass
+			with: {#ObjectMemory. memoryManager name.
+					 #bytecodeTableInitializer. #initializeBytecodeTableForSistaV1.
+					 #ImageReader. imageReaderClassName.
+		  			 #ImageWriter. imageWriterClassName} , options
 			to: platformDirectory
 			platformDir:platformDirectory
 			including: #()
-			configuration: VMMakerConfiguration)
+			configuration: VMMakerConfiguration.
+
+		vmmaker
 				stopOnErrors: stopOnErrors;
-				internal: #() external: #(FilePlugin SurfacePlugin);
+				internal: #() external: #(FilePlugin SurfacePlugin FloatArrayPlugin);
 				generateInterpreterFile;
-				generateCogitFiles;
-				generateExternalPlugins] valueSupplyingAnswer:true.]
+				generateCogitFiles.
+		generatePlugins ifTrue: [ vmmaker generateExternalPlugins ]] valueSupplyingAnswer:true.]
 ]
 
 { #category : #generation }
 PharoVMMaker >> generateCoInterpreter [
 
-	self generate: CoInterpreter memoryManager: Spur64BitCoMemoryManager.
-	self generate: CoInterpreter memoryManager: Spur32BitCoMemoryManager.	
+	self generates64Bits ifTrue: [self generate: CoInterpreter memoryManager: Spur64BitCoMemoryManager].
+	self generates32Bits ifTrue: [ self generate: CoInterpreter memoryManager: Spur32BitCoMemoryManager ].
+
+]
+
+{ #category : #accessing }
+PharoVMMaker >> generatePlugins [
+
+	^ generatePlugins
+]
+
+{ #category : #accessing }
+PharoVMMaker >> generatePlugins: anObject [
+
+	generatePlugins := anObject
+]
+
+{ #category : #generation }
+PharoVMMaker >> generateSistaVM [
+
+	self generates64Bits ifTrue: [	
+			self
+				generate: CoInterpreter
+				memoryManager: Spur64BitCoMemoryManager
+				compilerClass: SistaCogit
+				options: #( SistaVM true )].
+	
+	
+	self generates32Bits ifTrue: [
+			self
+				generate: CoInterpreter
+				memoryManager: Spur32BitCoMemoryManager
+				compilerClass: SistaCogit
+				options: #( SistaVM true )].
+
+
 ]
 
 { #category : #generation }
 PharoVMMaker >> generateStackVM [
 
-	self generate: StackInterpreter memoryManager: Spur64BitMemoryManager.
-	self generate: StackInterpreter memoryManager: Spur32BitMemoryManager.
-
+	self generates64Bits ifTrue: [self generate: StackInterpreter memoryManager: Spur64BitMemoryManager].
+	self generates32Bits ifTrue: [ self generate: StackInterpreter memoryManager: Spur32BitMemoryManager ].
 
 ]
 
+{ #category : #testing }
+PharoVMMaker >> generates32Bits [
+
+	^ wordSizesToGenerate includes: 4
+]
+
+{ #category : #testing }
+PharoVMMaker >> generates64Bits [
+	
+	^ wordSizesToGenerate includes: 8
+]
+
 { #category : #accessing }
+PharoVMMaker >> imageFormatName: aString [ 
+	
+	imageFormatName := aString
+]
+
+{ #category : #initialization }
 PharoVMMaker >> initialize [
 	super initialize.
-	stopOnErrors := false
+	stopOnErrors := false.
+	generatePlugins := true.
+	wordSizesToGenerate := #(4 8).
+	imageFormatName := self class defaultImageFormatName
+]
+
+{ #category : #initialization }
+PharoVMMaker >> initializeOutputDirectory [
+
+	^ outputDirectory := self class defaultOutputDirectory
 ]
 
 { #category : #accessing }
 PharoVMMaker >> outputDirectory [
-	^ outputDirectory
+	^ outputDirectory ifNil: [ self initializeOutputDirectory ]
 ]
 
 { #category : #accessing }
@@ -112,4 +267,45 @@ PharoVMMaker >> stopOnErrors [
 { #category : #accessing }
 PharoVMMaker >> stopOnErrors: anObject [
 	stopOnErrors := anObject
+]
+
+{ #category : #generation }
+PharoVMMaker >> vmMakerOn: anInterpreterClass [
+
+	^ self
+		  vmMakerWith: self class defaultInterpreterClass
+		  memoryManager: self class defaultMemoryManagerClass
+]
+
+{ #category : #generation }
+PharoVMMaker >> vmMakerWith: interpreterClass memoryManager: memoryManager [
+
+	| platformDirectory |
+	VMMakerConfiguration initializeForPharo.
+	platformDirectory := self platformDirectoryFor: memoryManager.
+
+	^ (VMMaker
+		   makerFor: interpreterClass
+		   and: StackToRegisterMappingCogit
+		   with: {
+				   #ObjectMemory . memoryManager name .
+				   #MULTIPLEBYTECODESETS . true }
+		   to: platformDirectory
+		   platformDir: platformDirectory
+		   including: #(  )
+		   configuration: VMMakerConfiguration)
+		  stopOnErrors: stopOnErrors;
+		  yourself
+]
+
+{ #category : #accessing }
+PharoVMMaker >> wordSizesToGenerate [
+
+	^ wordSizesToGenerate
+]
+
+{ #category : #accessing }
+PharoVMMaker >> wordSizesToGenerate: anObject [
+
+	wordSizesToGenerate := anObject
 ]

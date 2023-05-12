@@ -5,7 +5,7 @@ Class {
 }
 
 { #category : #'building suites' }
-VMARMV8SpecificEncodingTest class >> testParameters [
+VMARMV8SpecificEncodingTest class >> wordSizeParameters [
 
 	^ ParametrizedTestMatrix new
 		addCase: { #ISA -> #'aarch64'. #wordSize -> 8};
@@ -16,8 +16,8 @@ VMARMV8SpecificEncodingTest class >> testParameters [
 VMARMV8SpecificEncodingTest >> armInstructionAt: index [
 
 	| addr inst |
-	addr := initialAddress + ((index - 1) * 8).
-	inst := memory long32At: addr.
+	addr := cogInitialAddress + ((index - 1) * 8).
+	inst := memory uint32AtPointer: addr.
 	
 	^ inst aarch64Disassembled
 ]
@@ -27,7 +27,7 @@ VMARMV8SpecificEncodingTest >> doTestEncodeMoveMbrR: constant [
 
 	| expectedAddress expectedValue |
 	
-	expectedAddress := initialAddress + 1024.
+	expectedAddress := cogInitialAddress + 1024.
 	expectedValue := 16r10.
 
 	self compile: [
@@ -35,13 +35,13 @@ VMARMV8SpecificEncodingTest >> doTestEncodeMoveMbrR: constant [
 	
 	memory byteAt: expectedAddress put: expectedValue.
 	
-	machineSimulator argument0RegisterValue: 0.
+	machineSimulator arg0RegisterValue: 0.
 	machineSimulator receiverRegisterValue: expectedAddress + constant negated.
 
 	self runGeneratedCode.
 	
 	self 
-		assert: machineSimulator argument0RegisterValue 
+		assert: machineSimulator arg0RegisterValue 
 		equals: expectedValue.
 
 ]
@@ -51,7 +51,7 @@ VMARMV8SpecificEncodingTest >> doTestEncodeMoveMwrR: constant [
 
 	| expectedAddress expectedValue |
 	
-	expectedAddress := initialAddress + 1024.
+	expectedAddress := cogInitialAddress + 1024.
 	expectedValue := 16r10001000.
 
 	self compile: [
@@ -59,13 +59,13 @@ VMARMV8SpecificEncodingTest >> doTestEncodeMoveMwrR: constant [
 	
 	memory long32At: expectedAddress put: expectedValue.
 	
-	machineSimulator argument0RegisterValue: 0.
+	machineSimulator arg0RegisterValue: 0.
 	machineSimulator receiverRegisterValue: expectedAddress + constant negated.
 
 	self runGeneratedCode.
 	
 	self 
-		assert: machineSimulator argument0RegisterValue 
+		assert: machineSimulator arg0RegisterValue 
 		equals: expectedValue.
 
 ]
@@ -75,14 +75,14 @@ VMARMV8SpecificEncodingTest >> doTestEncodeMoveRMwr: constant [
 
 	| expectedAddress expectedValue |
 	
-	expectedAddress := initialAddress + 400.
+	expectedAddress := cogInitialAddress + 400.
 	expectedValue := 16r100.
 
 	self compile: [
 		cogit MoveR: ReceiverResultReg Mw: constant r: Arg0Reg].
 	
 	machineSimulator receiverRegisterValue: 16r100.
-	machineSimulator argument0RegisterValue: expectedAddress + constant negated.
+	machineSimulator arg0RegisterValue: expectedAddress + constant negated.
 
 	self runGeneratedCode.
 	
@@ -101,6 +101,7 @@ VMARMV8SpecificEncodingTest >> testEncodeCmpCqRNonEncodeable12BitConstant [
 		cogit CmpCq: constant R: ReceiverResultReg ].
 	
 	machineSimulator receiverRegisterValue: constant.
+
 	self runGeneratedCode.
 	
 	"Assert Cmp was equals"

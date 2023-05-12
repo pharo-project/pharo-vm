@@ -27,6 +27,12 @@ MockSlangClass >> constantClass [
 	^ mockConstantClass
 ]
 
+{ #category : #compatibility }
+MockSlangClass >> defineAtCompileTime: aString [ 
+	
+	^ self class defineAtCompileTime: aString 
+]
+
 { #category : #accessing }
 MockSlangClass >> initializationOptions [
 	

@@ -1,6 +1,9 @@
 Class {
 	#name : #VMSimpleStackBasedCogitMegamorphicPICTest,
 	#superclass : #VMSimpleStackBasedCogitAbstractTest,
+	#pools : [
+		'VMMethodCacheConstants'
+	],
 	#category : #'VMMakerTests-JitTests'
 }
 
@@ -12,7 +15,8 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> setUp [
 	self setUpCogMethodEntry.
 
 	memory coInterpreter
-		moveMethodCacheToMemoryAt: initialAddress "+ The guard page? memory cogCodeBase" + self initialCodeSize + stackSpaceSize.
+		moveMethodCacheToMemoryAt: (memory memoryManager allocate: MethodCacheEntrySize * MethodCacheSize * (interpreter sizeof: #sqInt)).
+
 	specialSelectorsArray := self newOldSpaceObjectWithSlots: 2.
 	memory coInterpreter
 		specialSelectorArray: specialSelectorsArray;
@@ -152,19 +156,18 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICType [
 	| selector createdPic |
 	selector := memory trueObject.
 	createdPic := cogit cogOpenPICSelector: selector numArgs: 1.
-	self assert: createdPic cmType equals: CMOpenPIC.
+	self assert: createdPic cmType equals: CMMegamorphicIC.
 
 ]
 
 { #category : #'tests - PIC' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testRelinkCallSiteToMegamorphicPICCallsNewPIC [
-	
-	| selector literalIndex method createdPic returnAfterCallAddress patchedCogMethod |	
-	
+
+	| selector literalIndex method createdPic returnAfterCallAddress patchedCogMethod startAddress |
 	sendTrampolineAddress := self compile: [ cogit RetN: 0 ].
-	cogit ordinarySendTrampolineAt: 0 "num args" put: sendTrampolineAddress.
+	cogit ordinarySendTrampolineAt: 0 put: sendTrampolineAddress. "num args"
 	self createFramefulCallFrom: callerAddress.
-	
+
 	literalIndex := 1.
 	"The literal index is extracted from the byte0 of the instruction
 	It is encoded with the bytecode number.
@@ -172,38 +175,50 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testRelinkCallSiteToMegamorphicPICC
 	The literal taken starts from zero in 208, one in 209... and so on"
 	cogit byte0: 208 + literalIndex.
 	selector := memory falseObject.
-	method := methodBuilder newMethod literalAt: literalIndex put: selector ; buildMethod.
+	method := methodBuilder newMethod
+		          literalAt: literalIndex put: selector;
+		          buildMethod.
 	cogit methodObj: method.
 
 	"The method will have 3 literals.
 	The first literal is the methodHeader (smallInteger with flags).
 	Literal 0 -> we are not using it (now it is nil)
 	Literal 1 -> our selector"
-	patchedCogMethod := self 
-		generateCogMethod: [ cogit genSendLiteralSelector0ArgsBytecode ] 
-		selector: selector.
+	patchedCogMethod := self
+		                    generateCogMethod: [ 
+		                    cogit genSendLiteralSelector0ArgsBytecode ]
+		                    selector: selector.
 
 	createdPic := cogit cogOpenPICSelector: selector numArgs: 1.
 
 	"We call to get to the send trampoline"
-	self runFrom: patchedCogMethod asInteger + cogit noCheckEntryOffset until: sendTrampolineAddress. 
+	self
+		runFrom: patchedCogMethod asInteger + cogit noCheckEntryOffset
+		until: sendTrampolineAddress.
 
-	returnAfterCallAddress := machineSimulator hasLinkRegister 
-		ifTrue: [ machineSimulator linkRegisterValue ] 
-		ifFalse: [ machineSimulator peekAddress ].
-	
+	returnAfterCallAddress := machineSimulator hasLinkRegister
+		                          ifTrue: [ 
+		                          machineSimulator linkRegisterValue ]
+		                          ifFalse: [ machineSimulator peekAddress ].
 	"Let's rewrite the call site"
 	cogit backEnd
-				rewriteInlineCacheAt: returnAfterCallAddress
-				tag: (cogit inlineCacheValueForSelector: selector
-						  in: patchedCogMethod
-						  at: returnAfterCallAddress)
-				target: createdPic asInteger + cogit entryOffset.
+		rewriteInlineCacheAt: returnAfterCallAddress
+		tag: (cogit
+				 inlineCacheValueForSelector: selector
+				 in: patchedCogMethod
+				 at: returnAfterCallAddress)
+		target: createdPic asInteger + cogit entryOffset.
+		
+	startAddress := patchedCogMethod address + cogit noCheckEntryOffset.	
+	
+	cogit flushICacheFrom: startAddress to: startAddress + 32.
 
 	"Let's rerun it to check if it gets to the patched address openPic"
-	self 
-		runFrom: patchedCogMethod address + cogit noCheckEntryOffset 
-		until: createdPic asInteger + cogit entryOffset. 
-	
-	self assert: machineSimulator instructionPointerValue equals: createdPic asInteger + cogit entryOffset
+	self
+		runFrom: startAddress
+		until: createdPic asInteger + cogit entryOffset.
+
+	self
+		assert: machineSimulator instructionPointerRegisterValue
+		equals: createdPic asInteger + cogit entryOffset
 ]

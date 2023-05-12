@@ -8,15 +8,15 @@ Class {
 VMSpecialSendArithmethicTest class >> testParameters [ 
 
 	^ super testParameters * { 
-		{ #sentSelector -> #+. #sendBytecode -> 176. #value1 -> 42. #value2 -> 54. #expectedResult -> 96. #expectedReflexiveResult -> 84 }.
-		{ #sentSelector -> #-.  #sendBytecode -> 177. #value1 -> 42. #value2 -> 54. #expectedResult -> -12. #expectedReflexiveResult -> 0 }.		
+		{ #sentSelector -> #+. #sendBytecode -> 96. #value1 -> 42. #value2 -> 54. #expectedResult -> 96. #expectedReflexiveResult -> 84 }.
+		{ #sentSelector -> #-.  #sendBytecode -> 97. #value1 -> 42. #value2 -> 54. #expectedResult -> -12. #expectedReflexiveResult -> 0 }.		
 	 }
 ]
 
 { #category : #running }
 VMSpecialSendArithmethicTest >> assertSpecialSendTo: receiverOop withArg: argOop [ 
 
-	self assert: machineSimulator instructionPointerValue equals: sendTrampolineAddress.
+	self assert: machineSimulator instructionPointerRegisterValue equals: sendTrampolineAddress.
 	self assert: machineSimulator receiverRegisterValue equals: receiverOop.
 	self assert: machineSimulator arg0RegisterValue equals: argOop.
 ]
