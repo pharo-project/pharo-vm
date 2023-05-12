@@ -462,14 +462,6 @@ CogVMSimulator >> cr [
 	traceOn ifTrue: [ transcript cr; flush ].
 ]
 
-{ #category : #'debugging traps' }
-CogVMSimulator >> createActualMessageTo: class [
-
-	class = objectMemory nilObject ifTrue: [self halt].
-
-	^super createActualMessageTo: class
-]
-
 { #category : #'debug support' }
 CogVMSimulator >> debugStackPointersFor: aMethod [
 	^CArrayAccessor on:
@@ -612,16 +604,6 @@ CogVMSimulator >> extBBytecode [
 	(extA = 0 and: [extB = 0]) ifTrue:
 		[lastExtPC := instructionPointer].
 	^super extBBytecode
-]
-
-{ #category : #'jump bytecodes' }
-CogVMSimulator >> extUnconditionalJump [
-	"242		11110010	i i i i i i i i	Jump i i i i i i i i (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)"
-	"| byte offset |
-	byte := objectMemory byteAt: localIP + 1.
-	offset := byte + (extB << 8).
-	(offset < 0 and: [(self iframeBackwardBranchByte: localFP) - 2 = 1]) ifTrue: [self halt]."
-	^super extUnconditionalJump
 ]
 
 { #category : #'interpreter shell' }
@@ -1110,12 +1092,6 @@ CogVMSimulator >> longAt: byteAddress [
 { #category : #'memory access' }
 CogVMSimulator >> longAt: byteAddress put: a32BitValue [
 	^objectMemory longAt: byteAddress put: a32BitValue
-]
-
-{ #category : #'callback support' }
-CogVMSimulator >> lookupOrdinaryNoMNUEtcInClass: class [
-	lookupCount := lookupCount + 1.
-	^super lookupOrdinaryNoMNUEtcInClass: class
 ]
 
 { #category : #'cog jit support' }

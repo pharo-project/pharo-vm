@@ -7329,11 +7329,6 @@ StackInterpreter >> highestPriorityProcess [
 	^processOrNil
 ]
 
-{ #category : #'message sending' }
-StackInterpreter >> ifAppropriateCompileToNativeCode: aMethodObj selector: selector [
-	"Convenient  noop in the StackInterpreter e.g. for sendInvokeCallbackContext:"
-]
-
 { #category : #'jump bytecodes' }
 StackInterpreter >> ifBackwardsCheckForEvents: offset [
 	"Backward jump means we're in a loop; check for possible interrupts."

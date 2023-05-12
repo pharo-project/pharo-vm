@@ -597,12 +597,6 @@ StackInterpreterSimulator >> functionPointerFor: primIndex inClass: lookupClass 
 		ifFalse: [0]
 ]
 
-{ #category : #'debugging traps' }
-StackInterpreterSimulator >> getErrorObjectFromPrimFailCode [
-	(primFailCode > 1 and: [(#(primitiveNew primitiveNewWithArg primitiveFetchNextMourner primitiveAdoptInstance) includes: primitiveFunctionPointer) not]) ifTrue: [self halt].
-	^super getErrorObjectFromPrimFailCode
-]
-
 { #category : #'memory access' }
 StackInterpreterSimulator >> halfWordHighInLong32: long32 [
 	^self subclassResponsibility
@@ -969,12 +963,6 @@ StackInterpreterSimulator >> longAt: byteAddress put: a32BitValue [
 	^objectMemory longAt: byteAddress put: a32BitValue
 ]
 
-{ #category : #'callback support' }
-StackInterpreterSimulator >> lookupOrdinaryNoMNUEtcInClass: class [
-	lookupCount := lookupCount + 1.
-	^super lookupOrdinaryNoMNUEtcInClass: class
-]
-
 { #category : #'plugin support' }
 StackInterpreterSimulator >> mappedPluginEntries [
 	^mappedPluginEntries
@@ -1241,27 +1229,6 @@ StackInterpreterSimulator >> printECS [
 ]
 
 { #category : #'debug printing' }
-StackInterpreterSimulator >> printFrameFlagsForFP: theFP [
-	| address it |
-	<inline: false>
-	<var: #theFP type: #'char *'>
-	<var: #address type: #'char *'>
-	address := theFP + FoxIFrameFlags.
-	it := stackPages unsignedLongAt: address.
-	self printHex: address;
-		printChar: $/;
-		printNum: (stackPages memIndexFor: address);
-		print: ':       flags: ';
-		printHex: it.
-	it ~= 0 ifTrue:
-		[self printChar: $=; printNum: it].
-	self print: '  numArgs: '; printNum: (self frameNumArgs: theFP);
-		print: '  hasContext: '; printNum: (self frameHasContext: theFP);
-		print: '  isBlock: '; printNum: (self frameIsBlockActivation: theFP);
-		cr
-]
-
-{ #category : #'debug printing' }
 StackInterpreterSimulator >> printFrameOop: name at: address [
 	| it |
 	<inline: false>
@@ -1504,12 +1471,6 @@ StackInterpreterSimulator >> setImageName: aString [
 StackInterpreterSimulator >> shortPrintContext: aContext [
 	transcript newLine.
 	^super shortPrintContext: aContext
-]
-
-{ #category : #'debug printing' }
-StackInterpreterSimulator >> shortPrintFrame: theFP [
-	self transcript newLine.
-	^super shortPrintFrame: theFP
 ]
 
 { #category : #'process primitive support' }
