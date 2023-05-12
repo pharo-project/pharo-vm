@@ -3693,24 +3693,6 @@ StackInterpreter >> callPrimitiveBytecode [
 					[^self respondToUnknownBytecode]]
 ]
 
-{ #category : #'callback support' }
-StackInterpreter >> callbackLeave: cbID [
-	"Leave from a previous callback"
-	<export: true>
-
-	"For now, do not allow a callback return unless we're in a primitiveResponse"
-	(self asserta: primitiveFunctionPointer ~= 0) ifFalse:
-		[^false].
-
-	"Check if this is the top-level callback"
-	cbID = jmpDepth ifFalse:[^false].
-	cbID < 1 ifTrue:[^false].
-	"This is ugly but necessary, or otherwise the Mac will not build"
-	self long: (jmpBuf at: jmpDepth) jmp: 1.
-	"NOTREACHED"
-	^nil
-]
-
 { #category : #'message sending' }
 StackInterpreter >> canContextSwitchIfActivating: theMethod header: methodHeader [
 	"Context switch should not be allowed on every method activation.  In particular
@@ -8011,13 +7993,6 @@ StackInterpreter >> ioLocalSecondsOffset [
 	"simulation-only implementation"
 	<doNotGenerate>
 	^DateAndTime localOffset asSeconds
-]
-
-{ #category : #'I/O primitive support' }
-StackInterpreter >> ioNoteDisplayChanged: bitsOrHandle width: width height: height depth: depth [
-	"The real platform may want to note the location of the display and respond to the fact of
-	 its installation."
-	<doNotGenerate>
 ]
 
 { #category : #'primitive support' }
@@ -13039,62 +13014,6 @@ StackInterpreter >> recordContextSwitchFrom: oldProc in: sourceCode [
 	"Noop in pure interpreter"
 ]
 
-{ #category : #'callback support' }
-StackInterpreter >> reestablishContextPriorToCallback: callbackContext [
-	"callbackContext is an activation of invokeCallback:[stack:registers:jmpbuf:].
-	 Its sender is the VM's state prior to the callback.  Reestablish that state,
-	 and mark calloutContext as dead."
-	| calloutContext theFP thePage |
-	<export: true>
-	<var: #theFP type: #'char *'>
-	<var: #thePage type: #'StackPage *'>
-	self flag: #obsolete.
-	(self isLiveContext: callbackContext) ifFalse:
-		[^false].
-	calloutContext := self instVar: SenderIndex ofContext: callbackContext.
-	(self isLiveContext: calloutContext) ifFalse:
-		[^false].
-	"We're about to leave this stack page; must save the current frame's instructionPointer."
-	self push: instructionPointer.
-	self writeBackHeadFramePointers.
-	"Mark callbackContext as dead; the common case is that it is the current frame.
-	 We go the extra mile for the debugger."
-	(self isSingleContext: callbackContext)
-		ifTrue: [self markContextAsDead: callbackContext]
-		ifFalse:
-			[theFP := self frameOfMarriedContext: callbackContext.
-			 framePointer = theFP "common case"
-				ifTrue:
-					[(self isBaseFrame: theFP)
-						ifTrue: [stackPages freeStackPage: stackPage]
-						ifFalse: "calloutContext is immediately below on the same page.  Make it current."
-							[instructionPointer := (self frameCallerSavedIP: framePointer) asUnsignedInteger.
-							 stackPointer := framePointer + (self frameStackedReceiverOffset: framePointer) + objectMemory wordSize.
-							 framePointer := self frameCallerFP: framePointer.
-							 ^true]]
-				ifFalse:
-					[self divorceFrame: theFP andContext: callbackContext.
-					 self markContextAsDead: callbackContext]].
-	"Make the calloutContext the active frame.  The case where calloutContext
-	 is immediately below callbackContext on the same page is handled above."
-	(self isStillMarriedContext: calloutContext)
-		ifTrue:
-			[theFP := self frameOfMarriedContext: calloutContext.
-			 thePage := stackPages stackPageFor: theFP.
-			 "findSPOf:on: points to the word beneath the instructionPointer, but
-			  there is no instructionPointer on the top frame of the current page."
-			 self assert: thePage ~= stackPage.
-			 stackPointer := (self findSPOf: theFP on: thePage) - objectMemory wordSize.
-			 framePointer := theFP.
-			 self assert: stackPointer < framePointer]
-		ifFalse:
-			[thePage := self makeBaseFrameFor: calloutContext.
-			 self setStackPointersFromPage: thePage].
-	instructionPointer := self popStack.
-	self setStackPageAndLimit: thePage.
-	^true
-]
-
 { #category : #'object memory support' }
 StackInterpreter >> remapCallbackState [
 	"Callback support - trace suspended callback list"
@@ -14115,12 +14034,6 @@ StackInterpreter >> shortReversePrintFrameAndCallers: aFramePointer [
 StackInterpreter >> shortUnconditionalJump [
 	<expandCases>
 	self jump: (currentBytecode bitAnd: 7) + 1.
-]
-
-{ #category : #'I/O primitive support' }
-StackInterpreter >> showDisplayBits: aForm Left: l Top: t Right: r Bottom: b [
-	"Repaint the portion of the Smalltalk screen bounded by the affected rectangle. Used to synchronize the screen after a Bitblt to the Smalltalk Display object."
-	self updateDisplayLeft: l Top: t Right: r Bottom: b
 ]
 
 { #category : #'send bytecodes' }
@@ -15813,30 +15726,6 @@ StackInterpreter >> unknownInlinePrimitive [
 StackInterpreter >> unknownShortOrCodeSizeInKs [
 	"preserve whatever this value was (for images run on Cog)"
 	^theUnknownShort
-]
-
-{ #category : #'I/O primitive support' }
-StackInterpreter >> updateDisplayLeft: l Top: t Right: r Bottom: b [
-	"Repaint the portion of the Smalltalk screen bounded by the affected rectangle.
-	 Used to synchronize the screen after a Bitblt to the Smalltalk Display object."
-	| left right top bottom surfaceHandle |
-	left := l max: 0.
-	right := r min: displayWidth.
-	top := t max: 0.
-	bottom := b min: displayHeight.
-	(left <= right and: [top <= bottom]) ifFalse: [^nil].
-	(objectMemory isIntegerObject: displayBits asInteger)
-		ifTrue:
-			[surfaceHandle := objectMemory integerValueOf: displayBits asInteger.
-			 showSurfaceFn = 0 ifTrue:
-				[showSurfaceFn := self ioLoadFunction: 'ioShowSurface' From: 'SurfacePlugin'.
-				 showSurfaceFn = 0 ifTrue: [^self primitiveFailFor: PrimErrNotFound]].
-			 self show: surfaceHandle Sur: left fa: top ce: right - left Fn: bottom - top]
-		ifFalse:
-			[self assert: (objectMemory isNonImmediate: displayBits asInteger).
-			 self ioShow: displayBits asInteger
-				D: displayWidth i: displayHeight s: displayDepth
-				p: left l: right a: top y: bottom]
 ]
 
 { #category : #'image save/restore' }

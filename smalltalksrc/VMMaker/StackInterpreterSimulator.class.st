@@ -34,13 +34,11 @@ Class {
 		'printReturns',
 		'traceOn',
 		'myBitBlt',
-		'filesOpen',
 		'imageName',
 		'pluginList',
 		'mappedPluginEntries',
 		'quitBlock',
 		'transcript',
-		'eventTransformer',
 		'printFrameAtEachStep',
 		'printBytecodeAtEachStep',
 		'systemAttributes',
@@ -51,7 +49,6 @@ Class {
 		'extSemTabSize',
 		'atEachStepBlock',
 		'disableBooleanCheat',
-		'performFilters',
 		'eventQueue',
 		'assertVEPAES',
 		'primTraceLog'
@@ -463,13 +460,6 @@ StackInterpreterSimulator >> dispatchOn: anInteger in: selectorArray [
 	self perform: (selectorArray at: (anInteger + 1)).
 ]
 
-{ #category : #'debugging traps' }
-StackInterpreterSimulator >> divorceFrame: theFP andContext: ctxt [
-	"(theFP = -208 or: [ctxt = 22189568]) ifTrue:
-		[self halt]."
-	^super divorceFrame: theFP andContext: ctxt
-]
-
 { #category : #'process primitive support' }
 StackInterpreterSimulator >> doSignalExternalSemaphores: minTableSize [
 	"This is a non-thread-safe simulation.  See platforms/Cross/vm/sqExternalSemaphores.c
@@ -575,16 +565,6 @@ StackInterpreterSimulator >> fetchByte [
 	^objectMemory byteAt: (instructionPointer := instructionPointer + 1).
 ]
 
-{ #category : #'control primitives' }
-StackInterpreterSimulator >> filterPerformOf: selector to: receiver [
-	"This is to allow simulator to filter start-up items to avoid as-yet unsimulatable plugins."
-	performFilters ifNil: [^false].
-	(performFilters at: (self shortPrint: receiver) ifAbsent: []) ifNotNil:
-		[:messages|
-		^messages includes: (self stringOf: selector)].
-	^false
-]
-
 { #category : #'memory access' }
 StackInterpreterSimulator >> firstIndexableField: oop [
 	"This is in ObjectMemory and overridden in the obj mem simulators"
@@ -600,21 +580,6 @@ StackInterpreterSimulator >> flush [
 StackInterpreterSimulator >> flushExternalPrimitives [
 	self initializePluginEntries.
 	super flushExternalPrimitives
-]
-
-{ #category : #'control primitives' }
-StackInterpreterSimulator >> forShortPrintString: shortPrintString filterPerformMessages: aCollection [
-	performFilters ifNil:
-		[performFilters := Dictionary new].
-	performFilters at: shortPrintString put: aCollection
-]
-
-{ #category : #'frame access' }
-StackInterpreterSimulator >> frameOfMarriedContext: aContext [ 
-	| senderOop |
-	senderOop := objectMemory fetchPointer: SenderIndex ofObject: aContext.
-	self assert: (objectMemory isIntegerObject: senderOop).
-	^self withoutSmallIntegerTags: senderOop
 ]
 
 { #category : #'spur bootstrap' }
@@ -1015,13 +980,6 @@ StackInterpreterSimulator >> mappedPluginEntries [
 	^mappedPluginEntries
 ]
 
-{ #category : #'frame access' }
-StackInterpreterSimulator >> markContextAsDead: oop [
-	"(self withoutSmallIntegerTags: (objectMemory fetchPointer: SenderIndex ofObject: oop)) = -16r26824 ifTrue:
-		[self halt]."
-	^super markContextAsDead: oop
-]
-
 { #category : #'simulation only' }
 StackInterpreterSimulator >> methodForContext: aContextOop [
 	self assert: (objectMemory isContext: aContextOop).
@@ -1218,29 +1176,10 @@ StackInterpreterSimulator >> primitiveNewWithArg [
 	 1->0}"
 ]
 
-{ #category : #'control primitives' }
-StackInterpreterSimulator >> primitiveObject: actualReceiver perform: selector withArguments: argumentArray lookedUpIn: lookupClass [
-	"Override to allow simulator to filter start-up items to avoid as-yet unsimulatable plugins."
-
-	(self filterPerformOf: selector to: actualReceiver) ifTrue:
-		[^self pop: argumentCount + 1 thenPush: actualReceiver].
-	^super primitiveObject: actualReceiver perform: selector withArguments: argumentArray lookedUpIn: lookupClass
-]
-
 { #category : #'object access primitives' }
 StackInterpreterSimulator >> primitiveObjectPointsTo [
 	"self halt."
 	^super primitiveObjectPointsTo
-]
-
-{ #category : #'debugging traps' }
-StackInterpreterSimulator >> primitivePerform [
-	| selector |
-	selector := self stackValue: argumentCount - 1.
-	self sendBreakpoint: selector receiver: (self stackValue: argumentCount).
-	(self filterPerformOf: selector to: (self stackValue: argumentCount)) ifTrue:
-		[^self pop: argumentCount].
-	^super primitivePerform
 ]
 
 { #category : #'object access primitives' }
