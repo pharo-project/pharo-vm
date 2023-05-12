@@ -254,7 +254,6 @@ CoInterpreter class >> initializeFrameIndices [
 	FoxThisContext := fxThisContext * BytesPerWord.
 	FoxIFrameFlags := fxIFrameFlags * BytesPerWord.
 	FoxIFSavedIP := fxIFSavedIP * BytesPerWord.
-	FoxReceiver := #undefined.
 	FoxIFReceiver := fxIFReceiver * BytesPerWord.
 	FoxMFReceiver := fxMFReceiver * BytesPerWord.
 

@@ -12,7 +12,6 @@ Class {
 		'FoxIFrameFlags',
 		'FoxMFReceiver',
 		'FoxMethod',
-		'FoxReceiver',
 		'FoxSavedFP',
 		'FoxThisContext',
 		'FrameSlots',

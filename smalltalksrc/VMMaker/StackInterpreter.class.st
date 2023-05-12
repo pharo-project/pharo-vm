@@ -923,9 +923,9 @@ StackInterpreter class >> initializeFrameIndices [
 	FoxCallerContext := FoxCallerSavedIP.
 	FoxSavedFP := fxSavedFP * BytesPerWord.
 	FoxMethod := fxMethod * BytesPerWord.
-	FoxIFrameFlags := fxIFrameFlags * BytesPerWord.
 	FoxThisContext := fxThisContext * BytesPerWord.
-	FoxReceiver := fxIReceiver * BytesPerWord.
+	FoxIFrameFlags := fxIFrameFlags * BytesPerWord.
+	FoxIFReceiver := fxIReceiver * BytesPerWord.
 
 	"Mark the CoInterpreter-specific offsets as #undefined to
 	 avoid including them accidentally in StackInterpreter code."
@@ -4247,7 +4247,7 @@ StackInterpreter >> checkStackIntegrity [
 			 "Skip the instruction pointer on top of stack of inactive pages."
 			 thePage = stackPage ifFalse:
 				[theSP := theSP + objectMemory wordSize].
-			 [[theSP <= (theFP + FoxReceiver)] whileTrue:
+			 [[theSP <= (theFP + FoxIFReceiver)] whileTrue:
 				[oop := stackPages unsignedLongAt: theSP.
 				 ((objectMemory isNonImmediate: oop) 
 				   and: [(objectMemory heapMapAtWord: (self pointerForOop: oop)) = 0]) ifTrue:
@@ -6584,10 +6584,10 @@ StackInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 			 theIPPtr := thePage = stackPage ifTrue: [0] ifFalse: [thePage headSP asUnsignedInteger].
 			 [self assert: (thePage addressIsInPage: theFP).
 			  self assert: (theIPPtr = 0 or: [thePage addressIsInPage: theIPPtr asVoidPointer]).
-			  oop := stackPages unsignedLongAt: theFP + FoxReceiver.
+			  oop := stackPages unsignedLongAt: theFP + FoxIFReceiver.
 			  (objectMemory isOopForwarded: oop) ifTrue:
 				[stackPages
-					unsignedLongAt: theFP + FoxReceiver
+					unsignedLongAt: theFP + FoxIFReceiver
 					put: (objectMemory followForwarded: oop)].
 			  ((self frameHasContext: theFP)
 			   and: [(objectMemory isForwarded: (self frameContext: theFP))]) ifTrue:
@@ -6810,14 +6810,14 @@ StackInterpreter >> framePointer: theFP [
 StackInterpreter >> frameReceiver: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages unsignedLongAt: theFP + FoxReceiver
+	^stackPages unsignedLongAt: theFP + FoxIFReceiver
 ]
 
 { #category : #'frame access' }
 StackInterpreter >> frameReceiverLocation: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^theFP + FoxReceiver
+	^theFP + FoxIFReceiver
 ]
 
 { #category : #'frame access' }
@@ -7411,7 +7411,7 @@ StackInterpreter >> iframeNumArgs: theFP [
 StackInterpreter >> iframeReceiverLocation: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^theFP + FoxReceiver
+	^theFP + FoxIFReceiver
 ]
 
 { #category : #'image save/restore' }
@@ -11698,17 +11698,17 @@ StackInterpreter >> printFrame: theFP WithSP: theSP [
 	self printFrameOop: 'method' at: theFP + FoxMethod.
 	self printFrameFlagsForFP: theFP.
 	self printFrameThing: 'context' at: theFP + FoxThisContext.
-	self printFrameOop: 'receiver' at: theFP + FoxReceiver.
+	self printFrameOop: 'receiver' at: theFP + FoxIFReceiver.
 	topThing := stackPages unsignedLongAt: theSP.
 	(topThing >= theMethod
 	 and: [topThing <= (theMethod + (objectMemory sizeBitsOfSafe: theMethod))])
 		ifTrue:
-			[theFP + FoxReceiver - objectMemory wordSize to: theSP + objectMemory wordSize by: objectMemory wordSize negated do:
+			[theFP + FoxIFReceiver - objectMemory wordSize to: theSP + objectMemory wordSize by: objectMemory wordSize negated do:
 				[:addr|
 				self printFrameOop: 'temp/stck' at: addr].
 			self printFrameThing: 'frame ip' at: theSP]
 		ifFalse:
-			[theFP + FoxReceiver - objectMemory wordSize to: theSP by: objectMemory wordSize negated do:
+			[theFP + FoxIFReceiver - objectMemory wordSize to: theSP by: objectMemory wordSize negated do:
 				[:addr|
 				self printFrameOop: 'temp/stck' at: addr]]
 ]
@@ -12975,7 +12975,7 @@ StackInterpreter >> reapAndResetErrorCodeTo: theFP header: methodHeader [
 { #category : #'internal interpreter access' }
 StackInterpreter >> receiver [
 	<inline: true>
-	^stackPages unsignedLongAt: framePointer + FoxReceiver
+	^stackPages unsignedLongAt: framePointer + FoxIFReceiver
 ]
 
 { #category : #'process primitive support' }
