@@ -5964,7 +5964,7 @@ StackInterpreter >> findHomeForContext: aContext [
 	^self findHomeForContext: (objectMemory fetchPointer: FullClosureOuterContextIndex ofObject: closureOrNil)
 ]
 
-{ #category : #'handler search' }
+{ #category : #'stack unwinding' }
 StackInterpreter >> findMethodWithPrimitive: primitive FromContext: senderContext UpToContext: homeContext [
 	"See findUnwindThroughContext:.  Alas this is mutually recursive with
 	 findMethodWithPrimitive:FromFP:SP:ThroughContext: instead of iterative.
@@ -5993,7 +5993,7 @@ StackInterpreter >> findMethodWithPrimitive: primitive FromContext: senderContex
 		UpToContext: homeContext
 ]
 
-{ #category : #'handler search' }
+{ #category : #'stack unwinding' }
 StackInterpreter >> findMethodWithPrimitive: primitive FromFP: startFP UpToContext: homeContext [
 	"See findUnwindThroughContext:.  Alas this is mutually recursive with
 	 findMethodWithPrimitive:FromContext:ThroughContext: instead of iterative.
