@@ -140,11 +140,6 @@ StackInterpreterSimulator >> allObjectsSelect: objBlock [
 	^selected
 ]
 
-{ #category : #'spur bootstrap' }
-StackInterpreterSimulator >> argumentCount: n [
-	argumentCount := n
-]
-
 { #category : #'debug support' }
 StackInterpreterSimulator >> assertValidExecutionPointers [
 	assertVEPAES ifTrue:
@@ -312,18 +307,6 @@ StackInterpreterSimulator >> classAndSelectorOfMethod: meth forReceiver: rcvr [
 	^ Array
 		with: (objectMemory fetchClassOf: rcvr)
 		with: (objectMemory splObj: SelectorDoesNotUnderstand)
-]
-
-{ #category : #'plugin support' }
-StackInterpreterSimulator >> classNameOf: aClass Is: className [
-	"Check if aClass' name is className"
-	| name |
-	(objectMemory lengthOf: aClass) <= classNameIndex ifTrue:
-		[^false]. "Not a class but maybe behavior" 
-	name := objectMemory fetchPointer: classNameIndex ofObject: aClass.
-	(objectMemory isBytes: name) ifFalse:
-		[^false].
-	^ className = (self stringOf: name)
 ]
 
 { #category : #'I/O primitives' }
@@ -501,11 +484,6 @@ StackInterpreterSimulator >> dumpMethodHeader: hdr [
 		strm nextPutAll: '<nLits=', ((hdr >> 10) bitAnd: 16rFF) printString , '>'.
 		strm nextPutAll: '<prim=', ((hdr >> 1) bitAnd: 16r1FF) printString , '>'.
 		]
-]
-
-{ #category : #'debug printing' }
-StackInterpreterSimulator >> elementsPerPrintOopLine [
-	^4
 ]
 
 { #category : #'compiled methods' }

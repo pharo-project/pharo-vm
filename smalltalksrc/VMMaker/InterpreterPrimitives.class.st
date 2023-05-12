@@ -127,12 +127,6 @@ InterpreterPrimitives >> asUnsigned: anInteger [
 	^self cCode: [anInteger asUnsignedInteger] inSmalltalk: [anInteger bitAnd: objectMemory maxCInteger]
 ]
 
-{ #category : #'stack access' }
-InterpreterPrimitives >> booleanValueOf: obj [
-
-	self subclassResponsibility
-]
-
 { #category : #'primitive support' }
 InterpreterPrimitives >> cStringOrNullFor: oop [
 	"Answer either a malloced string with the null-terminated contents of oop if oop is a string,

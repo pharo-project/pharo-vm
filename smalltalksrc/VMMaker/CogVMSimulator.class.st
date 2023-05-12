@@ -363,18 +363,6 @@ CogVMSimulator >> classAndSelectorOfMethod: meth forReceiver: rcvr [
 		with: (objectMemory splObj: SelectorDoesNotUnderstand)
 ]
 
-{ #category : #'plugin support' }
-CogVMSimulator >> classNameOf: aClass Is: className [
-	"Check if aClass' name is className"
-	| name |
-	(objectMemory lengthOf: aClass) <= classNameIndex ifTrue:
-		[^false]. "Not a class but maybe behavior" 
-	name := objectMemory fetchPointer: classNameIndex ofObject: aClass.
-	(objectMemory isBytes: name) ifFalse:
-		[^false].
-	^ className = (self stringOf: name)
-]
-
 { #category : #'I/O primitives' }
 CogVMSimulator >> clipboardRead: sz Into: actualAddress At: zeroBaseIndex [
 	| str |
@@ -430,12 +418,6 @@ CogVMSimulator >> codeGeneratorToComputeAccessorDepth [
 			initializeClasses: false)
 				logger: self transcript;
 				yourself]
-]
-
-{ #category : #'as yet unclassified' }
-CogVMSimulator >> codeGeneratorToComputeAccessorDepth: aCCodeGenerator [ 
-
-	codeGeneratorToComputeAccessorDepth := aCCodeGenerator
 ]
 
 { #category : #'simulation only' }
@@ -571,11 +553,6 @@ CogVMSimulator >> dumpMethodHeader: hdr [
 		strm nextPutAll: '<nLits=', ((hdr >> 10) bitAnd: 16rFF) printString , '>'.
 		strm nextPutAll: '<prim=', ((hdr >> 1) bitAnd: 16r1FF) printString , '>'.
 		]
-]
-
-{ #category : #'debug printing' }
-CogVMSimulator >> elementsPerPrintOopLine [
-	^4
 ]
 
 { #category : #'debugging traps' }
