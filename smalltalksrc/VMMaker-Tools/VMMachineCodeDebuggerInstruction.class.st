@@ -34,7 +34,7 @@ VMMachineCodeDebuggerInstruction >> branchTargetAddress [
 	^ instruction branchTargetAddress
 ]
 
-{ #category : #accessor }
+{ #category : #accessing }
 VMMachineCodeDebuggerInstruction >> bytes: aByteArray [ 
 	bytes := aByteArray
 ]
@@ -88,7 +88,7 @@ VMMachineCodeDebuggerInstruction >> machineSimulator: aProcessorSimulator [
 	machineSimulator := aProcessorSimulator
 ]
 
-{ #category : #accessor }
+{ #category : #accessing }
 VMMachineCodeDebuggerInstruction >> usedRegisters [
 	"Detect any register name from an asm instruction"
 

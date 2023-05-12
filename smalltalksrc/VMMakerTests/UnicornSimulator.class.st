@@ -136,7 +136,8 @@ UnicornSimulator >> registerHook: aBlock atAddress: anAddress [
 
 	simulator
 		registerInvalidMemoryAccessHook: UcHookType fetchingAccess value
-		doing: [ :type :address :size :value | address = anAddress ifTrue: aBlock ]
+		doing: [ :type :address :size :value |
+			address = anAddress ifTrue: [ aBlock value ] ]
 ]
 
 { #category : #executing }

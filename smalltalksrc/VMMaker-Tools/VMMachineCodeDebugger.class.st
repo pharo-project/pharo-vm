@@ -32,7 +32,8 @@ VMMachineCodeDebugger class >> defaultLayout [
 			add: (SpBoxLayout newHorizontal
 					add: (SpBoxLayout newHorizontal
 						add: #ipInput;
-						add: #jumpToButton);
+						add: #jumpToButton;
+						yourself);
 					add: #stepButton;
 					add: #disassembleAtPCButton;
 					yourself);
