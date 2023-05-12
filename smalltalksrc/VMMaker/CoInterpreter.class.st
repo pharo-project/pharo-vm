@@ -551,7 +551,6 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 CoInterpreter >> activateNewMethod [
 
 	| methodHeader inInterpreter switched |
-	
 	"Eagerly compile it if appropriate so that doits are fast."
 	methodHeader := self rawHeaderOf: newMethod.
 	(self isCogMethodReference: methodHeader) ifFalse: [
@@ -563,7 +562,7 @@ CoInterpreter >> activateNewMethod [
 
 	inInterpreter := self isInstructionPointerInInterpreter:
 		                 instructionPointer.
-	methodHeader := self justActivateNewMethod: true.
+	methodHeader := self activateNewMethodInterpreted.
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
 	switched := true.
@@ -894,33 +893,6 @@ CoInterpreter >> callRegisterArgCogMethod: cogMethod at: entryOffset receiver: r
 	self push: rcvr.
 	self callEnilopmart: #ceCallCogCodePopReceiverReg
 	"NOTREACHED"
-]
-
-{ #category : #enilopmarts }
-CoInterpreter >> ceActivateFailingPrimitiveMethod: aPrimitiveMethod [
-
-	"An external call or FFI primitive has failed.  Build the frame and
-	 activate as appropriate.  Enter either the interpreter or machine
-	 code depending on whether aPrimitiveMethod has been or is still
-	 cogged.  Note that we could always interpret but want the efficiency
-	 of executing machine code if it is available."
-
-	<api>
-	| methodHeader result |
-	self assert: primFailCode ~= 0.
-	self assert: newMethod = aPrimitiveMethod.
-	"If we're on Spur, retry the primitive, if appropriate,
-	 returning if successful after retry."
-	self retryPrimitiveOnFailure.
-	self successful ifTrue: [ 
-		result := self stackTop.
-		self stackTopPut: instructionPointer.
-		self push: result.
-		self callEnilopmart: #ceEnterCogCodePopReceiverReg ].
-	methodHeader := self rawHeaderOf: aPrimitiveMethod.
-	(self isCogMethodReference: methodHeader)
-		ifTrue: [ self activateCoggedNewMethod: false ]
-		ifFalse: [ self activateNewMethod ]
 ]
 
 { #category : #trampolines }
@@ -3255,87 +3227,6 @@ CoInterpreter >> isMachineCodeIP: anInstrPointer [
 	^anInstrPointer asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory
 ]
 
-{ #category : #'message sending' }
-CoInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
-
-	"Create the frame for the method activation.
-	If mustBeInterpreterFrame is true, force it to be an interpreter frame regardless of the method being compiled"
-	<var: #cogMethod type: #'CogMethod *'>
-	<var: #initialIP type: #usqInt>
-	<inline: true>
-	| methodHeader numArgs numTemps rcvr cogMethod |
-	methodHeader := self rawHeaderOf: newMethod.
-	((self isCogMethodReference: methodHeader)) ifTrue: [ | theCogMethod |
-		theCogMethod := self cCoerceSimple: methodHeader to: #'CogMethod *'.
-		methodHeader := theCogMethod methodHeader.
-		mustBeInterpreterFrame not ifTrue: [ 
-			"Will be used to mark if we need to execute in interpreted mode or not"
-			cogMethod := theCogMethod ]].
-	numTemps := self temporaryCountOfMethodHeader: methodHeader.
-	numArgs := self argumentCountOfMethodHeader: methodHeader.
-
-	rcvr := self stackValue: numArgs. "could new rcvr be set at point of send?"
-	self assert: (objectMemory isOopForwarded: rcvr) not.
-
-	(cogMethod notNil and: [
-		 self isInstructionPointerInInterpreter: instructionPointer ])
-		ifTrue: [
-			self iframeSavedIP: framePointer put: instructionPointer.
-			instructionPointer := cogit ceReturnToInterpreterPC ].
-	self push: instructionPointer.
-	self push: framePointer.
-	framePointer := stackPointer.
-	cogMethod ifNil: [
-		| initialIP |
-		initialIP := self
-			initialIPForHeader: methodHeader
-			method: newMethod.
-		self push: newMethod.
-		self setMethod: newMethod methodHeader: methodHeader.
-		self push: objectMemory nilObject. "FoxThisContext field"
-		self push: (self
-				encodeFrameFieldHasContext: false
-				isBlock: false
-				numArgs: numArgs).
-		self push: 0. "FoxIFSavedIP"
-		"-1 to account for pre-increment in fetchNextBytecode"
-		instructionPointer := self pointerForOop: initialIP - 1. ]
-	ifNotNil: [
-		self push: cogMethod asUnsignedInteger.
-		self push: objectMemory nilObject. "FoxThisContext field"
-		instructionPointer := cogMethod asUnsignedInteger
-		                      + cogMethod stackCheckOffset ].
-	self push: rcvr.
-
-	"Initialize temps to nil"
-	numArgs + 1 to: numTemps do: [ :i |
-		self push: objectMemory nilObject ].
-
-	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
-		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		cogMethod ifNil: [
-			instructionPointer := instructionPointer
-			                      +
-			                      (self sizeOfCallPrimitiveBytecode:
-				                       methodHeader) ].
-		primFailCode ~= 0 ifTrue: [
-			| shouldSkipStoreBytecode |
-			shouldSkipStoreBytecode := self
-				                           reapAndResetErrorCodeTo: framePointer
-				                           header: methodHeader.
-			(cogMethod isNil and: [ shouldSkipStoreBytecode ]) ifTrue: [
-				instructionPointer := instructionPointer
-				                      +
-				                      (self sizeOfLongStoreTempBytecode:
-					                       methodHeader) ] ] ].
-
-	self assert: (self frameNumArgs: framePointer) = argumentCount.
-	self assert: (self frameIsBlockActivation: framePointer) not.
-	self assert: (self frameHasContext: framePointer) not.
-
-	^ methodHeader
-]
-
 { #category : #simulation }
 CoInterpreter >> lookupAddress: address [
 	"If address appears to be that of a Symbol or a few well-known objects (such as classes) answer it, otherwise answer nil.
@@ -5048,6 +4939,18 @@ CoInterpreter >> saveCStackStateForCallbackContext: vmCallbackContext [
 		savedCStackPointer: cogit getCStackPointer;
 		savedCFramePointer: cogit getCFramePointer.
 	super saveCStackStateForCallbackContext: vmCallbackContext
+]
+
+{ #category : #'message sending' }
+CoInterpreter >> saveCallerFrameStateCallingNewInterpreterFrame: isInterpreterFrame [
+
+	(isInterpreterFrame not and: [
+		 self isInstructionPointerInInterpreter: instructionPointer ])
+		ifTrue: [
+			self iframeSavedIP: framePointer put: instructionPointer.
+			instructionPointer := cogit ceReturnToInterpreterPC ].
+	
+	super saveCallerFrameStateCallingNewInterpreterFrame: isInterpreterFrame
 ]
 
 { #category : #'cog jit support' }

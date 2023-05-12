@@ -204,12 +204,9 @@ Class {
 		'ceEnterCogCodePopReceiverReg',
 		'ceCallCogCodePopReceiverReg',
 		'ceCallCogCodePopReceiverAndClassRegs',
-		'cePrimReturnEnterCogCode',
-		'cePrimReturnEnterCogCodeProfiling',
 		'ceNonLocalReturnTrampoline',
 		'ceFetchContextInstVarTrampoline',
 		'ceStoreContextInstVarTrampoline',
-		'ceEnclosingObjectTrampoline',
 		'ceFlushICache',
 		'ceCheckFeaturesFunction',
 		'ceTraceLinkedSendTrampoline',
@@ -223,8 +220,6 @@ Class {
 		'directedSuperSendTrampolines',
 		'directedSuperBindingSendTrampolines',
 		'dynamicSuperSendTrampolines',
-		'outerSendTrampolines',
-		'selfSendTrampolines',
 		'firstSend',
 		'lastSend',
 		'realCEEnterCogCodePopReceiverReg',
@@ -242,13 +237,8 @@ Class {
 		'extB',
 		'numExtB',
 		'tempOop',
-		'numIRCs',
-		'indexOfIRC',
-		'theIRCs',
 		'receiverTags',
-		'implicitReceiverSendTrampolines',
 		'cogMethodSurrogateClass',
-		'cogBlockMethodSurrogateClass',
 		'CStackPointer',
 		'CFramePointer',
 		'cPICPrototype',
@@ -7801,17 +7791,7 @@ Cogit >> generateEnilopmarts [
 				self genEnilopmartFor: ReceiverResultReg
 					and: ClassReg
 					forCall: true
-					called: 'ceCallCogCodePopReceiverAndClassRegs'].
-
-	self genPrimReturnEnterCogCodeEnilopmart: false.
-	cePrimReturnEnterCogCode := methodZoneBase.
-	self outputInstructionsForGeneratedRuntimeAt: cePrimReturnEnterCogCode.
-	self recordGeneratedRunTime: 'cePrimReturnEnterCogCode' address: cePrimReturnEnterCogCode.
-
-	self genPrimReturnEnterCogCodeEnilopmart: true.
-	cePrimReturnEnterCogCodeProfiling := methodZoneBase.
-	self outputInstructionsForGeneratedRuntimeAt: cePrimReturnEnterCogCodeProfiling.
-	self recordGeneratedRunTime: 'cePrimReturnEnterCogCodeProfiling' address: cePrimReturnEnterCogCodeProfiling
+					called: 'ceCallCogCodePopReceiverAndClassRegs']
 ]
 
 { #category : #'generate machine code' }

@@ -430,14 +430,6 @@ StackInterpreterPrimitives >> loadModuleByName: moduleNameOop [
 	^ self ioLoadModule: moduleNameString OfLength: moduleNameStringSize
 ]
 
-{ #category : #logging }
-StackInterpreterPrimitives >> logDebug: aString [
-
-	<doNotGenerate>
-
-	aString traceCr.
-]
-
 { #category : #'object access primitives' }
 StackInterpreterPrimitives >> markFrame: theFPInt [
 	stackPages

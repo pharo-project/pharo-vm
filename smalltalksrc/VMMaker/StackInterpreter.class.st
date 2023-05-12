@@ -1825,21 +1825,6 @@ StackInterpreter >> abstractDetailedSymbolicMethod: aMethod [
 	ts flush
 ]
 
-{ #category : #'primitive support' }
-StackInterpreter >> activateFailingPrimitiveMethod [
-	"Assuming the primFailCode (and any other relevant failure state) has been set,
-	 switch the VM to the interpreter if necessary (if in the CoInterpreter executing machine code),
-	 and activate the newMethod (which is expected to have a primitive)."
-	self assert: primFailCode ~= 0.
-	self assert: (objectMemory addressCouldBeObj: newMethod).
-	self assert: (objectMemory isCompiledMethod: newMethod).
-	self assert: (self primitiveIndexOf: newMethod) ~= 0.
-	self justActivateNewMethod: true. "Frame must be interpreted"
-	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
-	"NOTREACHED"
-	^nil
-]
-
 { #category : #'control primitives' }
 StackInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch [
 	"Similar to activateNewMethod but for Closure and newMethod."
@@ -1890,7 +1875,7 @@ StackInterpreter >> activateNewFullClosure: blockClosure method: theMethod numAr
 StackInterpreter >> activateNewMethod [
 
 	| methodHeader switched |
-	methodHeader := self justActivateNewMethod: false. "either interpreted or machine code"
+	methodHeader := self activateNewMethodInterpreted.
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
 	stackPointer < stackLimit ifTrue: [
@@ -1899,6 +1884,67 @@ StackInterpreter >> activateNewMethod [
 				             canContextSwitchIfActivating: newMethod
 				             header: methodHeader).
 		self returnToExecutive: true postContextSwitch: switched ]
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> activateNewMethodInterpreted [
+	"Create the frame for the method activation.
+	If mustBeInterpreterFrame is true, force it to be an interpreter frame regardless of the method being compiled"
+
+	<inline: true>
+	| methodHeader numArgs numTemps rcvr |
+	methodHeader := objectMemory methodHeaderOf: newMethod.
+	numTemps := self temporaryCountOfMethodHeader: methodHeader.
+	numArgs := self argumentCountOfMethodHeader: methodHeader.
+
+	rcvr := self stackValue: numArgs. "could new rcvr be set at point of send?"
+	self assert: (objectMemory isOopForwarded: rcvr) not.
+
+	self saveCallerFrameStateCallingNewInterpreterFrame: true.
+
+
+	self push: newMethod.
+	self setMethod: newMethod methodHeader: methodHeader.
+	self push: objectMemory nilObject. "FoxThisContext field"
+	self push: (self
+			 encodeFrameFieldHasContext: false
+			 isBlock: false
+			 numArgs: numArgs).
+
+	COGVM ifTrue: [ self push: 0 "FoxIFSavedIP" ].
+	"-1 to account for pre-increment in fetchNextBytecode"
+	instructionPointer := self pointerForOop:
+		                      (self
+			                       initialIPForHeader: methodHeader
+			                       method: newMethod) - 1.
+	self push: rcvr.
+
+	"Initialize temps to nil"
+	numArgs + 1 to: numTemps do: [ :i |
+		self push: objectMemory nilObject ].
+
+	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
+		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
+		instructionPointer := instructionPointer
+		                      +
+		                      (self sizeOfCallPrimitiveBytecode:
+			                       methodHeader).
+		primFailCode ~= 0 ifTrue: [
+			| shouldSkipStoreBytecode |
+			shouldSkipStoreBytecode := self
+				                           reapAndResetErrorCodeTo: framePointer
+				                           header: methodHeader.
+			shouldSkipStoreBytecode ifTrue: [
+				instructionPointer := instructionPointer
+				                      +
+				                      (self sizeOfLongStoreTempBytecode:
+					                       methodHeader) ] ] ].
+
+	self assert: (self frameNumArgs: framePointer) = argumentCount.
+	self assert: (self frameIsBlockActivation: framePointer) not.
+	self assert: (self frameHasContext: framePointer) not.
+
+	^ methodHeader
 ]
 
 { #category : #'process primitive support' }
@@ -8662,66 +8708,6 @@ StackInterpreter >> jumplfTrueBy: offset [
 	self pop: 1
 ]
 
-{ #category : #'message sending' }
-StackInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
-
-	"Create the frame for the method activation.
-	If mustBeInterpreterFrame is true, force it to be an interpreter frame regardless of the method being compiled"
-	<var: #initialIP type: #usqInt>
-	<inline: true>
-	| methodHeader numArgs numTemps rcvr initialIP |
-	methodHeader := self rawHeaderOf: newMethod.
-	numTemps := self temporaryCountOfMethodHeader: methodHeader.
-	numArgs := self argumentCountOfMethodHeader: methodHeader.
-
-	rcvr := self stackValue: numArgs. "could new rcvr be set at point of send?"
-	self assert: (objectMemory isOopForwarded: rcvr) not.
-
-	self push: instructionPointer.
-	self push: framePointer.
-	framePointer := stackPointer.
-		initialIP := self
-			initialIPForHeader: methodHeader
-			method: newMethod.
-		self push: newMethod.
-		self setMethod: newMethod methodHeader: methodHeader.
-		self push: objectMemory nilObject. "FoxThisContext field"
-		self push: (self
-				encodeFrameFieldHasContext: false
-				isBlock: false
-				numArgs: numArgs).
-		"-1 to account for pre-increment in fetchNextBytecode"
-		instructionPointer := self pointerForOop: initialIP - 1.
-	self push: rcvr.
-
-	"Initialize temps to nil"
-	numArgs + 1 to: numTemps do: [ :i |
-		self push: objectMemory nilObject ].
-
-	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
-		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		instructionPointer := instructionPointer
-		                      +
-		                      (self sizeOfCallPrimitiveBytecode:
-			                       methodHeader).
-		primFailCode ~= 0 ifTrue: [
-			| shouldSkipStoreBytecode |
-			shouldSkipStoreBytecode := self
-				                           reapAndResetErrorCodeTo: framePointer
-				                           header: methodHeader.
-			shouldSkipStoreBytecode ifTrue: [
-				instructionPointer := instructionPointer
-				                      +
-				                      (self sizeOfLongStoreTempBytecode:
-					                       methodHeader) ] ] ].
-
-	self assert: (self frameNumArgs: framePointer) = argumentCount.
-	self assert: (self frameIsBlockActivation: framePointer) not.
-	self assert: (self frameHasContext: framePointer) not.
-
-	^ methodHeader
-]
-
 { #category : #'debug printing' }
 StackInterpreter >> lengthOfNameOfClass: classOop [
 	<inline: false>
@@ -8819,6 +8805,14 @@ StackInterpreter >> log10: n [
 	"compat with C library."
 	<doNotGenerate>
 	^n log: 10
+]
+
+{ #category : #logging }
+StackInterpreter >> logDebug: aString [
+
+	<doNotGenerate>
+
+	aString traceCr.
 ]
 
 { #category : #simulation }
@@ -13598,6 +13592,14 @@ StackInterpreter >> saveCStackStateForCallbackContext: vmCallbackContext [
 	
 ]
 
+{ #category : #'message sending' }
+StackInterpreter >> saveCallerFrameStateCallingNewInterpreterFrame: isInterpreterFrame [
+
+	self push: instructionPointer.
+	self push: framePointer.
+	framePointer := stackPointer
+]
+
 { #category : #'process primitive support' }
 StackInterpreter >> schedulerPointer [
 
@@ -14523,18 +14525,20 @@ StackInterpreter >> slowPrimitiveResponse [
 ]
 
 { #category : #'image save/restore' }
-StackInterpreter >> snapshot: embedded [ 
+StackInterpreter >> snapshot: embedded [
 	"update state of active context"
-	| activeContext activeProc rcvr stackIndex |
 
+	| activeContext activeProc rcvr stackIndex |
 	"For now the stack munging below doesn't deal with more than one argument.
 	 It can, and should."
-	argumentCount ~= 0 ifTrue:
-		[^self primitiveFailFor: PrimErrBadNumArgs].
+	argumentCount ~= 0 ifTrue: [
+		^ self primitiveFailFor: PrimErrBadNumArgs ].
 
 	"Need to convert all frames into contexts since the snapshot file only holds objects."
 	self push: instructionPointer.
-	activeContext := self voidVMStateForSnapshotFlushingExternalPrimitivesIf: true.
+	activeContext := self
+		                 voidVMStateForSnapshotFlushingExternalPrimitivesIf:
+		                 true.
 
 	"update state of active process"
 	activeProc := self activeProcess.
@@ -14553,33 +14557,37 @@ StackInterpreter >> snapshot: embedded [
 	tempOop := 0.
 
 
-	self successful ifTrue:
-		["Without contexts or stacks simulate
+	self successful ifTrue: [ "Without contexts or stacks simulate
 			rcvr := self popStack. ''pop rcvr''
 			self push: trueObj.
 		  to arrange that the snapshot resumes with true.  N.B. stackIndex is one-relative."
-		stackIndex := self quickFetchInteger: StackPointerIndex ofObject: activeContext.
-		rcvr := objectMemory fetchPointer: stackIndex + CtxtTempFrameStart - 1 ofObject: activeContext.
+		stackIndex := self
+			              quickFetchInteger: StackPointerIndex
+			              ofObject: activeContext.
+		rcvr := objectMemory
+			        fetchPointer: stackIndex + CtxtTempFrameStart - 1
+			        ofObject: activeContext.
 		objectMemory
 			storePointerUnchecked: stackIndex + CtxtTempFrameStart - 1
 			ofObject: activeContext
 			withValue: objectMemory trueObject.
-		"now attempt to write the snapshot file"		
+		"now attempt to write the snapshot file"
 		self writeImageFileIO.
 		"Without contexts or stacks simulate
 			self pop: 1"
 		objectMemory
 			storePointerUnchecked: StackPointerIndex
 			ofObject: activeContext
-			withValue: (objectMemory integerObjectOf: stackIndex - 1)].
+			withValue: (objectMemory integerObjectOf: stackIndex - 1) ].
 
 	objectMemory postSnapshot.
-	self marryContextInNewStackPageAndInitializeInterpreterRegisters: activeContext.
+	self marryContextInNewStackPageAndInitializeInterpreterRegisters:
+		activeContext.
 	self successful
-		ifTrue: [self push: objectMemory falseObject]
-		ifFalse:
-			[self push: rcvr.
-			 self justActivateNewMethod: true] "no point checking for machine code; there isn't any at this point"
+		ifTrue: [ self push: objectMemory falseObject ]
+		ifFalse: [ "no point checking for machine code; there isn't any at this point"
+			self push: rcvr.
+			self activateNewMethodInterpreted ]
 ]
 
 { #category : #'debug printing' }
