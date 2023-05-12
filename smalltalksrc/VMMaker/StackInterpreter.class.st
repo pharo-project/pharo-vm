@@ -9099,20 +9099,31 @@ StackInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 	"Marry aContext with the base frame of a new stack page.  Build the base
 	 frame to reflect the context's state.  Answer the new page."
 	<returnTypeC: #'StackPage *'>
-	| page pointer theMethod theIP numArgs stackPtrIndex maybeClosure rcvr |
 	<inline: false>
 	<var: #page type: #'StackPage *'>
 	<var: #pointer type: #'char *'>
+	"theIP must be typed as signed because if it is assigned to a pointer (as in the JIT'ed VM) it may be implicitly typed as unsigned."
+	<var: #theIP type: #sqInt>
+
+	| page pointer theMethod theIP numArgs stackPtrIndex maybeClosure rcvr |
+
 	self assert: (objectMemory isContext: aContext).
 	self assert: (self isSingleContext: aContext).
 	self assert: (objectMemory goodContextSize: aContext).
-	page := stackPages newStackPage.
-	pointer := page baseAddress.
 	theIP := objectMemory fetchPointer: InstructionPointerIndex ofObject: aContext.
+	theIP := (objectMemory isIntegerObject: theIP)
+				ifTrue: [objectMemory integerValueOf: theIP]
+				ifFalse: [self error: 'context is not resumable'].
 	theMethod := objectMemory followObjField: MethodIndex ofObject: aContext.
-	(objectMemory isIntegerObject: theIP) ifFalse:
-		[self error: 'context is not resumable'].
-	theIP := objectMemory integerValueOf: theIP.
+	page := stackPages newStackPage.
+	"first word on stack is caller context of base frame"
+	stackPages
+		unsignedLongAt: (pointer := page baseAddress)
+		put: (objectMemory followObjField: SenderIndex ofObject: aContext).
+	"second word is the context itself; needed for cannotReturn processing; see ceBaseReturn:."
+	stackPages
+		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
+		put: aContext.
 	rcvr := objectMemory followField: ReceiverIndex ofObject: aContext.
 	"If the frame is a closure activation then the closure should be on the stack in
 	 the pushed receiver position (closures receive the value[:value:] messages).
@@ -9123,7 +9134,9 @@ StackInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 			[(objectMemory isForwarded: maybeClosure) ifTrue:
 				[maybeClosure := objectMemory fixFollowedField: ClosureIndex ofObject: aContext withInitialValue: maybeClosure].
 			 numArgs := self argumentCountOfClosure: maybeClosure.
-			 stackPages longAt: pointer put: maybeClosure]
+			 stackPages
+				longAt: (pointer := pointer - objectMemory wordSize)
+				put: maybeClosure]
 		ifFalse:
 			[| header |
 			 header := objectMemory methodHeaderOf: theMethod.
@@ -9132,7 +9145,9 @@ StackInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 			 ((self methodHeaderHasPrimitive: header)
 			  and: [theIP = (1 + (self startPCOfMethodHeader: header))]) ifTrue:
 				[theIP := theIP + (self sizeOfCallPrimitiveBytecode: header)].
-			 stackPages unsignedLongAt: pointer put: rcvr].
+			 stackPages
+				unsignedLongAt: (pointer := pointer - objectMemory wordSize)
+				put: rcvr].
 	"Put the arguments on the stack"
 	1 to: numArgs do:
 		[:i|
@@ -9142,24 +9157,35 @@ StackInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 		"nil the slot in the context so that it doesn't inadvertently hang onto some collectable object.
 		 Thanks to Ryan Macnak for identifying this bug"
 		objectMemory storePointerUnchecked: ReceiverIndex + i ofObject: aContext withValue: objectMemory nilObject].
-	"saved caller ip is sender context in base frame"
+	"saved caller ip is nil in pure interpreter's base frame"
 	stackPages
 		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
-		put: (objectMemory followObjField: SenderIndex ofObject: aContext).
+		put: objectMemory nilObject.
 	"base frame's saved fp is null"
 	stackPages
 		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 		put: 0.
-	page baseFP: pointer; headFP: pointer.
-	stackPages
-		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
-		put: theMethod.
-	stackPages
-		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
-		put: aContext.
-	stackPages
-		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
-		put: (self encodeFrameFieldHasContext: true isBlock: maybeClosure ~= objectMemory nilObject numArgs: numArgs).
+	
+	"N.B.  Don't set the baseFP, which marks the page as in use, until after
+	 ensureMethodIsCogged: and/or instructionPointer:forContext:frame:. These
+	 can cause a compiled code compaction which, if marked as in use, will
+	 examine this partially initialized page and crash."
+	page headFP: pointer.
+	"Create either a machine code frame or an interpreter frame based on the pc.  If the pc is -ve
+	 it is a machine code pc and so we produce a machine code frame.  If +ve an interpreter frame.
+	 N.B. Do *not* change this to try and map from a bytecode pc to a machine code frame under
+	 any circumstances.  See ensureContextIsExecutionSafeAfterAssignToStackPointer:"
+		stackPages
+			unsignedLongAt: (pointer := pointer - objectMemory wordSize)
+			put: theMethod.
+		stackPages
+			unsignedLongAt: (pointer := pointer - objectMemory wordSize)
+			put: aContext.
+		stackPages
+			unsignedLongAt: (pointer := pointer - objectMemory wordSize)
+			put: (self encodeFrameFieldHasContext: true isBlock: maybeClosure ~= objectMemory nilObject numArgs: numArgs).
+		theIP := self iframeInstructionPointerForIndex: theIP method: theMethod.
+	page baseFP: page headFP.
 	self assert: (self frameHasContext: page baseFP).
 	self assert: (self frameNumArgs: page baseFP) == numArgs.
 	stackPages
@@ -9171,9 +9197,11 @@ StackInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 		[:i|
 		stackPages
 			longAt: (pointer := pointer - objectMemory wordSize)
-			put: (objectMemory fetchPointer: ReceiverIndex + i ofObject: aContext)].
+			put: (objectMemory fetchPointer: ReceiverIndex + i ofObject: aContext).
+		"nil the slot in the context so that it doesn't inadvertently hang onto some collectable object.
+		 Thanks to Ryan Macnak for identifying this bug"
+		objectMemory storePointerUnchecked: ReceiverIndex + i ofObject: aContext withValue: objectMemory nilObject ].
 	"top of stack is the instruction pointer"
-	theIP := self iframeInstructionPointerForIndex: theIP method: theMethod.
 	stackPages unsignedLongAt: (pointer := pointer - objectMemory wordSize) put: theIP.
 	page headSP: pointer.
 	self assert: (self context: aContext hasValidInversePCMappingOf: theIP in: page baseFP).
