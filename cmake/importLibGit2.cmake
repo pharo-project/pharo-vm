@@ -13,29 +13,19 @@ function(download_git2)
   message(STATUS "Downloading Git2 binary")
   if(WIN)
     add_third_party_dependency("libgit2-1.4.4")
-    add_third_party_dependency("libgit2-win-1.0.0")
-    add_third_party_dependency("libgit2-0.25.1-fixLibGit")
-    add_third_party_dependency("zlib-1.2.11-fixLibGit")
-    add_third_party_dependency("openssl-1.0.2q-fixLigGit")
-    add_third_party_dependency("libssh2-1.9.0")
+    add_third_party_dependency("libgit2-1.5.2")
+    add_third_party_dependency("libgit2-1.6.4")
+    add_third_party_dependency("libgit2-default-2023-04-14")
+    add_third_party_dependency("zlib-1.2.13")
+    add_third_party_dependency("openssl-1.1.1k")
+    add_third_party_dependency("ssh2-1.10.0")
   elseif(OSX)
-    If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64")
-      add_third_party_dependency("libgit2-1.4.4")
-      add_third_party_dependency("libgit2-1.0.1")
-      add_third_party_dependency("libssh2-1.9.0")
-      add_third_party_dependency("openssl-1.1.1k")
-    else()
-      #Libgit >= 1.4 depend on ssh2 1.9 and ssl 1.1.1
-      add_third_party_dependency("libgit2-1.4.4")
-      add_third_party_dependency("libssh2-1.9.0")
-      add_third_party_dependency("openssl-1.1.1k")
-      
-      #Libgit <= 1.0 depend on ssh2 1.7 and ssl 1.0
-      add_third_party_dependency("libgit2-mac-1.0.0")
-      add_third_party_dependency("libgit2-0.25.1")
-      add_third_party_dependency("libssh2-1.7.0")
-      add_third_party_dependency("openssl-1.0.2q")
-    endif()
+    add_third_party_dependency("libgit2-1.4.4")
+    add_third_party_dependency("libgit2-1.5.2")
+    add_third_party_dependency("libgit2-1.6.4")
+    add_third_party_dependency("libgit2-default-2023-04-14")
+    add_third_party_dependency("libssh2-1.10.0")
+    add_third_party_dependency("openssl-1.1.1k")
   else() # LINUX
     If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv7l" OR (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64"))
       add_third_party_dependency("openssl-1.1.1k")
@@ -59,18 +49,18 @@ function(download_git2)
 endfunction()
 
 function(build_git2)
-	message(STATUS "Building LibGit2 1.4.4 with LibSSH 1.9.0")
+	message(STATUS "Building LibGit2 1.6.4 with LibSSH 1.10.0")
 	
 	include(cmake/DownloadProject.cmake)
 	download_project(PROJ LibSSH2
 		GIT_REPOSITORY      https://github.com/libssh2/libssh2.git
-		GIT_TAG             "libssh2-1.9.0"
+		GIT_TAG             "libssh2-1.10.0"
 		${UPDATE_DISCONNECTED_IF_AVAILABLE}
 	)
 
 	download_project(PROJ LibGit2
 		GIT_REPOSITORY      https://github.com/libgit2/libgit2.git
-		GIT_TAG             "v1.4.4"
+		GIT_TAG             "v1.6.4"
 		${UPDATE_DISCONNECTED_IF_AVAILABLE}
 	)
 
@@ -90,9 +80,8 @@ function(build_git2)
 
 		add_custom_target(libgit2_copy
 			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LibGit2_BINARY_DIR}/libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.dylib
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.dylib
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.4.dylib
+			COMMAND ${CMAKE_COMMAND} -E create_symlink libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.1.4.dylib
+			COMMAND ${CMAKE_COMMAND} -E create_symlink libgit2.1.4.4.dylib ${LIBRARY_OUTPUT_PATH}/libgit2.dylib
 			COMMENT "Copying Libgit binaries from '${LibGit2_BINARY_DIR}' to '${LIBRARY_OUTPUT_PATH}'" VERBATIM)
 	else()
 		message(FATAL "Aggggh not implemented yet")

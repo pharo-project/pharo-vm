@@ -36,6 +36,9 @@ VMJitMethodTest >> initStack [
 	machineSimulator framePointerRegisterValue: interpreter framePointer.
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
 
+	cogit setCStackPointer: interpreter rumpCStackAddress.
+	cogit setCFramePointer: interpreter rumpCStackAddress.
+
 ]
 
 { #category : #running }
@@ -258,9 +261,12 @@ VMJitMethodTest >> testMixedInlinedLiteralsSmoteTest [
 VMJitMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 	| callingMethod cm x y z firstTerm size frame |
 	
+	cogit setCStackPointer: interpreter rumpCStackAddress.
+	cogit setCFramePointer: interpreter rumpCStackAddress.	
+	
 	firstTerm := 1.0 to: 2.0.
 	size := firstTerm size.
-
+	
 	x := self new64BitIndexableFromArray: firstTerm.
 	y := self new64BitIndexableFromArray:
 		     (firstTerm collect: [ :i | i * 10 ]).
@@ -309,6 +315,7 @@ VMJitMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 		                 (self findMethod: #addVector:with:intoVector:).
 
 	self initStack.
+
 	"As we are entering the interpreter first, the SP and FP has to be in the CStack."
 	machineSimulator sp: cogit getCStackPointer.
 	machineSimulator fp: cogit getCFramePointer.
@@ -316,14 +323,20 @@ VMJitMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 	frame := stackBuilder
 		         args: { x };
 		         addNewFrame.
-	stackBuilder frames first context: 17513312."TODO set proper context"
 	frame stack: { 
 			x.
 			y.
 			z };
 			method: callingMethod.
 	
-	stackBuilder buildStack.
+	"We need to set the first context to the base of the current page"
+	stackBuilder createStackPage.
+	stackBuilder preparePage.
+
+	stackBuilder frames first context: (interpreter stackPages unsignedLongAt: (stackBuilder page baseAddress - self wordSize)).
+
+	stackBuilder pushFrames.
+	stackBuilder setInterpreterVariables.
 
 	cogit generateReturnToInterpreterPCTrampoline.
 	interpreter newMethod: callingMethod.

@@ -76,7 +76,6 @@ Class {
 		'profileSemaphore',
 		'nextProfileTick',
 		'preemptionYields',
-		'newFinalization',
 		'ffiExceptionResponse'
 	],
 	#classVars : [
@@ -163,7 +162,7 @@ InterpreterPrimitives >> cStringOrNullFor: oop [
 { #category : #'object access primitives' }
 InterpreterPrimitives >> canBeImmutable: oop [
 	<option: #IMMUTABILITY>
-	| scheduler processLists |
+	| scheduler processLists schedAssoc |
 	
 	self assert: (objectMemory isNonImmediate: oop).
 	
@@ -183,7 +182,10 @@ InterpreterPrimitives >> canBeImmutable: oop [
 	
 	"Simple version of process management: we forbid Process and LinkedList instances to be immutable 
 	 as well as the Processor and the array of activeProcess"
-	scheduler := objectMemory fetchPointer: ValueIndex ofObject: (objectMemory splObj: SchedulerAssociation).
+	schedAssoc := objectMemory splObj: SchedulerAssociation.
+	schedAssoc = objectMemory nilObject ifTrue: [ ^ true ].
+
+	scheduler := objectMemory fetchPointer: ValueIndex ofObject: schedAssoc.
 	processLists := objectMemory fetchPointer: ProcessListsIndex ofObject: scheduler.
 	oop = scheduler ifTrue: [ ^ false ].
 	oop = processLists ifTrue: [ ^ false ].
@@ -218,27 +220,12 @@ InterpreterPrimitives >> canBeImmutable: oop [
 ]
 
 { #category : #'process primitive support' }
-InterpreterPrimitives >> doWaitSemaphore: aSemaphoreOop [
-	| excessSignals activeProc |
-	<api>
-	<returnTypeC: #void>
-	
-	excessSignals := self fetchInteger: ExcessSignalsIndex ofObject: aSemaphoreOop.
-	excessSignals > 0
-		ifTrue:
-			[self storeInteger: ExcessSignalsIndex ofObject: aSemaphoreOop withValue: excessSignals - 1 ]
-		ifFalse:
-			[activeProc := self activeProcess.
-			 self addLastLink: activeProc toList: aSemaphoreOop.
-			 self transferTo: self wakeHighestPriority ]
-]
+InterpreterPrimitives >> doWaitSemaphore: sema [
 
-{ #category : #'process primitive support' }
-InterpreterPrimitives >> doWaitSemaphore: sema reEnterInterpreter: hasToReenter [
 	<api>
 	<returnTypeC: #void>
 	
-	self doWaitSemaphore: sema
+	self doWaitSemaphore: sema reEnterInterpreter: true
 ]
 
 { #category : #'primitive support' }
@@ -280,8 +267,7 @@ InterpreterPrimitives >> initPrimCall [
 InterpreterPrimitives >> initialize [
 
 	"Here we can initialize the variables C initializes to zero.  #initialize methods do /not/ get translated."
-	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := ffiExceptionResponse := 0.
-	newFinalization := false
+	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := ffiExceptionResponse := 0
 ]
 
 { #category : #'simulation support' }
@@ -603,6 +589,7 @@ InterpreterPrimitives >> pop: nItems thenPushBool: boolean [
 InterpreterPrimitives >> positive32BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a positive SmallInteger or a four-byte LargePositiveInteger."
+	<api>
 	<returnTypeC: #'unsigned int'>
 	objectMemory hasSixtyFourBitImmediates
 		ifTrue:
@@ -624,7 +611,7 @@ InterpreterPrimitives >> positive32BitValueOf: oop [
 InterpreterPrimitives >> positive64BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a positive SmallInteger or an eight-byte LargePositiveInteger."
-
+	<api>
 	<returnTypeC: #usqLong>
 	| sz value ok |
 	<var: #value type: #usqLong>
@@ -1277,46 +1264,6 @@ InterpreterPrimitives >> primitiveCompareBytes [
 
 ]
 
-{ #category : #'string primitives' }
-InterpreterPrimitives >> primitiveCompareWith [
-	"<string1> primitiveCompareWith: string2 [collated: order] "
-	<export: true>
-	
-	| string1 string2 order strLength1 strLength2 result |
-
-	"1 - fetch the parameters from the stack"	
-	argumentCount = 1 ifFalse:
-		[argumentCount ~= 2 ifTrue:
-			[^self primitiveFailFor: PrimErrBadNumArgs].
-			 order := self stackTop.
-			 ((objectMemory isBytes: order)
-			 and: [(objectMemory numBytesOfBytes: order) = 256]) ifFalse:
-				[^self primitiveFailFor: PrimErrBadArgument]].
-	string1 := self stackValue: argumentCount.
-	string2 := self stackValue: argumentCount - 1. 
-			
-	"2 - check their types - all parameters are ByteObject"
-	((objectMemory isBytes: string1)
-	 and: [objectMemory isBytes: string2]) ifFalse: 
-		[^self primitiveFailFor: PrimErrBadArgument].
-	
-	"3 - compare the strings"	
-	strLength1 := objectMemory numBytesOfBytes: string1.
-	strLength2 := objectMemory numBytesOfBytes: string2.
-	result := order 
-		ifNil: [self rawCompare: string1 length: strLength1 with: string2 length: strLength2 accessBlock:
-				[:str :index | objectMemory fetchByte: index ofObject: str ]]
-		ifNotNil: 
-			[self rawCompare: string1 length: strLength1 with: string2 length: strLength2 accessBlock:
-				[:str :index | objectMemory fetchByte: (objectMemory fetchByte: index ofObject: str) + 1 ofObject: order ]].
-
-	self methodReturnInteger: result
-
-	
-	
-	
-]
-
 { #category : #'sound primitives' }
 InterpreterPrimitives >> primitiveConstantFill [
 	"Fill the receiver, which must be an indexable non-pointer
@@ -1558,36 +1505,6 @@ InterpreterPrimitives >> primitiveDivideLargeIntegers [
 
 ]
 
-{ #category : #'process primitives' }
-InterpreterPrimitives >> primitiveEnterCriticalSection [
-	"Attempt to enter a CriticalSection/Mutex.  If not owned, set the owner to the current
-	 process and answer false. If owned by the current process  answer true.   Otherwise
-	 suspend the process.  Answer if the receiver is owned by the current process.
-	 For simulation if there is an argument it is taken to be the effective activeProcess
-	 (see Process>>effectiveProcess)."
-	| criticalSection owningProcessIndex owningProcess activeProc |
-	argumentCount > 0
-		ifTrue:
-			[criticalSection := self stackValue: 1.  "rcvr"
-			 activeProc := self stackTop]
-		ifFalse:
-			[criticalSection := self stackTop.  "rcvr"
-			 activeProc := self activeProcess].
-	owningProcessIndex := ExcessSignalsIndex. "CriticalSections are laid out like Semaphores"
-	owningProcess := objectMemory fetchPointer: owningProcessIndex ofObject: criticalSection.
-	owningProcess = objectMemory nilObject ifTrue:
-		[objectMemory storePointer: owningProcessIndex
-			ofObject: criticalSection
-			withValue: activeProc.
-		 ^self pop: argumentCount + 1 thenPush: objectMemory falseObject].
-	owningProcess = activeProc ifTrue:
-		[^self pop: argumentCount + 1 thenPush: objectMemory trueObject].
-	"Arrange to answer false (unowned) when the process is resumed."
-	self pop: argumentCount + 1 thenPush: objectMemory falseObject.
-	self addLastLink: activeProc toList: criticalSection.
-	self transferTo: self wakeHighestPriority
-]
-
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveEqual [
 	| integerReceiver integerArgument result |
@@ -1620,31 +1537,6 @@ InterpreterPrimitives >> primitiveEqualLargeIntegers [
 
 	self successful ifTrue:
 		[self pop: 2 thenPushBool: integerRcvr = integerArg]
-]
-
-{ #category : #'process primitives' }
-InterpreterPrimitives >> primitiveExitCriticalSection [
-	"Exit the critical section.
-	 This may change the active process as a result."
-	| criticalSection owningProcessIndex owningProcess |
-	criticalSection := self stackTop.  "rcvr"
-	owningProcessIndex := ExcessSignalsIndex. "CriticalSections are laid out like Semaphores"
-	(self isEmptyList: criticalSection)
-		ifTrue:
-			[objectMemory storePointerUnchecked: owningProcessIndex
-				ofObject: criticalSection
-				withValue: objectMemory nilObject]
-		ifFalse:
-			[owningProcess := self removeFirstLinkOfList: criticalSection.
-			 "store check unnecessary because criticalSection referred to owningProcess
-			  via its FirstLinkIndex slot before owningProcess was removed."
-			 objectMemory storePointerUnchecked: owningProcessIndex
-				ofObject: criticalSection
-				withValue: owningProcess.
-			 "Note that resume: isn't fair; it won't suspend the active process.
-			  For fairness we must do the equivalent of a primitiveYield, but that
-			  may break old code, so we stick with unfair resume:."
-			self resume: owningProcess preemptedYieldingIf: preemptionYields]
 ]
 
 { #category : #'system control primitives' }
@@ -3064,7 +2956,7 @@ InterpreterPrimitives >> primitivePathToUsing [
 	 the current context"
 	| err path |
 	<export: true>
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	argumentCount >= 2 ifFalse:
 		[^self primitiveFailFor: PrimErrBadNumArgs].
 	(self stackTop = objectMemory trueObject
@@ -3291,32 +3183,6 @@ InterpreterPrimitives >> primitiveRemLargeIntegers [
 
 	oopResult := self magnitude64BitIntegerFor: result neg: aIsNegative.
 	self successful ifTrue: [self pop: 2 thenPush: oopResult].
-]
-
-{ #category : #'process primitives' }
-InterpreterPrimitives >> primitiveResume [
-	"Put this process on the scheduler's lists thus allowing it to proceed next time there is
-	 a chance for processes of it's priority level.  It must go to the back of its run queue so
-	 as not to preempt any already running processes at this level.  If the process's priority
-	 is higher than the current process, preempt the current process."
-	| proc |
-	proc := self stackTop.  "rcvr"
-	(objectMemory isContext: (objectMemory fetchPointer: SuspendedContextIndex ofObject: proc)) ifFalse:
-		[^self primitiveFail].
-	self resume: proc preemptedYieldingIf: preemptionYields
-
-	"Personally I would like to check MyList, which should not be one of the elements of the scheduler lists.
-	 But there are awful race conditions in things like should:notTakeMoreThan: that mean we can't.
-	 eem 9/27/2010 23:08. e.g.
-
-	| proc myList classLinkedList |
-	proc := self stackTop.
-	myList := objectMemory fetchPointer: MyListIndex ofObject: proc.
-	classLinkedList := self superclassOf: (objectMemory splObj: ClassSemaphore).
-	((self fetchClassOfNonInt: myList) ~= classLinkedList
-	and: [objectMemory isContext: (objectMemory fetchPointer: SuspendedContextIndex ofObject: proc)]) ifFalse:
-		[^self primitiveFail].
-	self resume: proc preemptedYieldingIf: preemptionYields"
 ]
 
 { #category : #'I/O primitives' }
@@ -4094,6 +3960,46 @@ InterpreterPrimitives >> primitiveStringAtPut [
 	self commonAtPut: true.
 ]
 
+{ #category : #'string primitives' }
+InterpreterPrimitives >> primitiveStringCompareWith [
+	"<string1> primitiveCompareWith: string2 [collated: order] "
+	<export: true>
+	
+	| string1 string2 order strLength1 strLength2 result |
+
+	"1 - fetch the parameters from the stack"	
+	argumentCount = 1 ifFalse:
+		[argumentCount ~= 2 ifTrue:
+			[^self primitiveFailFor: PrimErrBadNumArgs].
+			 order := self stackTop.
+			 ((objectMemory isBytes: order)
+			 and: [(objectMemory numBytesOfBytes: order) = 256]) ifFalse:
+				[^self primitiveFailFor: PrimErrBadArgument]].
+	string1 := self stackValue: argumentCount.
+	string2 := self stackValue: argumentCount - 1. 
+	
+	"2 - check their types - all parameters are ByteObject"
+	((objectMemory isBytes: string1)
+	 and: [objectMemory isBytes: string2]) ifFalse: 
+		[^self primitiveFailFor: PrimErrBadArgument].
+
+	"3 - compare the strings"	
+	strLength1 := objectMemory numBytesOfBytes: string1.
+	strLength2 := objectMemory numBytesOfBytes: string2.
+	result := order 
+		ifNil: [self rawCompare: string1 length: strLength1 with: string2 length: strLength2 accessBlock:
+				[:str :index | objectMemory fetchByte: index ofObject: str ]]
+		ifNotNil: 
+			[self rawCompare: string1 length: strLength1 with: string2 length: strLength2 accessBlock:
+				[:str :index | 
+					objectMemory fetchByte: (objectMemory fetchByte: index ofObject: str) ofObject: order ]].
+	self methodReturnInteger: result
+
+	
+	
+	
+]
+
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveStringReplace [
 
@@ -4153,7 +4059,7 @@ InterpreterPrimitives >> primitiveStringReplace [
 			start := start + arrayInstSize.
 			stop := stop + arrayInstSize.
 			srcDelta := replStart + replInstSize - start.
-			(objectMemory isOldObject: array)
+			(objectMemory getMemoryMap isOldObject: array)
 				ifTrue: [ 
 					| mustRemember oop |
 					mustRemember := false.
@@ -4164,7 +4070,7 @@ InterpreterPrimitives >> primitiveStringReplace [
 							storePointerUnchecked: i
 							ofObject: array
 							withValue: oop ].
-					mustRemember ifTrue: [ objectMemory possibleRootStoreInto: array ] ]
+					mustRemember ifTrue: [ objectMemory possibleOldObjectStoreInto: array ] ]
 				ifFalse: [ 
 					start - 1 to: stop - 1 do: [ :i | 
 						objectMemory
@@ -4256,31 +4162,6 @@ InterpreterPrimitives >> primitiveSubtractLargeIntegers [
 	oopResult := self magnitude64BitIntegerFor: result neg: resultIsNegative.
 	self successful ifTrue:[self pop: 2 thenPush: oopResult].
 
-]
-
-{ #category : #'process primitives' }
-InterpreterPrimitives >> primitiveSuspend [
-	"Primitive. Suspend the receiver, aProcess such that it can be executed again
-	by sending #resume. If the given process is not currently running, take it off
-	its corresponding list. The primitive returns the list the receiver was previously on."
-	| process myList |
-	process := self stackTop.
-	process = self activeProcess ifTrue:
-		[self pop: 1 thenPush: objectMemory nilObject.
-		 ^self transferTo: self wakeHighestPriority].
-	myList := objectMemory fetchPointer: MyListIndex ofObject: process.
-	"XXXX Fixme. We should really check whether myList is a kind of LinkedList or not
-	but we can't easily so just do a quick check for nil which is the most common case."
-	myList = objectMemory nilObject ifTrue:
-		[^self primitiveFailFor: PrimErrBadReceiver].
-	"Alas in Spur we need a read barrier"
-	(objectMemory isForwarded: myList) ifTrue:
-		[myList := objectMemory followForwarded: myList.
-		 objectMemory storePointer: MyListIndex ofObject: process withValue: myList].
-	self removeProcess: process fromList: myList.
-	self successful ifTrue:
-		[objectMemory storePointer: MyListIndex ofObject: process withValue: objectMemory nilObject.
-		 self pop: 1 thenPush: myList]
 ]
 
 { #category : #'process primitives' }
@@ -4583,21 +4464,6 @@ InterpreterPrimitives >> primitiveWait [
 	self doWaitSemaphore: sema
 ]
 
-{ #category : #'process primitives' }
-InterpreterPrimitives >> primitiveYield [
-	"Primitively do the equivalent of Process>yield, avoiding the overhead of a fork and a wait in the standard implementation."
-	| scheduler activeProc priority processLists processList |
-	scheduler := self schedulerPointer.
-	activeProc := objectMemory fetchPointer: ActiveProcessIndex ofObject: scheduler.
-	priority := self quickFetchInteger: PriorityIndex ofObject: activeProc.
-	processLists := objectMemory fetchPointer: ProcessListsIndex ofObject: scheduler.
-	processList := objectMemory fetchPointer: priority - 1 ofObject: processLists.
-
-	(self isEmptyList: processList) ifFalse:
-		[self addLastLink: activeProc toList: processList.
-		 self transferTo: self wakeHighestPriority]
-]
-
 { #category : #accessing }
 InterpreterPrimitives >> profileMethod: anOop [
 
@@ -4667,6 +4533,7 @@ InterpreterPrimitives >> signalNoResume: aSemaphore [
 InterpreterPrimitives >> signed32BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a SmallInteger or a four-byte LargeInteger."
+	<api>
 	<returnTypeC: #int>
 	
 	objectMemory hasSixtyFourBitImmediates
@@ -4691,6 +4558,7 @@ InterpreterPrimitives >> signed64BitValueOf: oop [
 	"Convert the given object into an integer value.
 	 The object may be either a positive SmallInteger or a eight-byte LargeInteger."
 	| sz value negative ok magnitude |
+	<api>
 	<inline: false>
 	<returnTypeC: #sqLong>
 	<var: #value type: #sqLong>

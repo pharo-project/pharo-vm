@@ -307,19 +307,21 @@ CogSimStackEntry >> register: anObject [
 { #category : #accessing }
 CogSimStackEntry >> registerMask [
 	"Answer a bit mask for the receiver's register, if any."
-	^ ((type = SSBaseOffset) | (type = SSRegister) | (type = SSVectorRegister))
-		  ifTrue: [ cogit registerMaskFor: register ]
-		  ifFalse: [ 0 ]
+	^ (type = SSBaseOffset or: [ type = SSRegister or: [ type = SSVectorRegister ] ])
+		ifTrue: [ cogit registerMaskFor: register ]
+		ifFalse: [ 0 ]
 ]
 
 { #category : #accessing }
 CogSimStackEntry >> registerMaskOrNone [
-	^((type = SSRegister) | (type = SSVectorRegister)) ifTrue: [cogit registerMaskFor: register] ifFalse: [0]
+	^(type = SSRegister or: [ type = SSVectorRegister ]) ifTrue: [cogit registerMaskFor: register] ifFalse: [0]
 ]
 
 { #category : #accessing }
 CogSimStackEntry >> registerOrNone [
-	^((type = SSRegister) | (type = SSVectorRegister)) ifTrue: [register] ifFalse: [NoReg]
+	^ ((type = SSRegister) or: [ type = SSVectorRegister ])
+		ifTrue: [register] 
+		ifFalse: [NoReg]
 ]
 
 { #category : #accessing }

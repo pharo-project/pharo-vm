@@ -545,48 +545,48 @@ CogARMCompiler >> computeMaximumSize [
 		[Stop]					-> [^4].
 
 		"Arithmetic"
-		[AddCqR]				-> [^self rotateable8bitSignedImmediate: (operands at: 0)
-										ifTrue: [:r :i :n| 4]
-										ifFalse: [self literalLoadInstructionBytes + 4]].
-		[AndCqR]				-> [^self rotateable8bitBitwiseImmediate: (operands at: 0)
-										ifTrue: [:r :i :n| 4]
+		[AddCqR]				-> [self rotateable8bitSignedImmediate: (operands at: 0)
+										ifTrue: [:r :i :n| ^ 4]
+										ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[AndCqR]				-> [self rotateable8bitBitwiseImmediate: (operands at: 0)
+										ifTrue: [:r :i :n| ^ 4]
 										ifFalse:
 											[self literalLoadInstructionBytes = 4
-												ifTrue: [8]
+												ifTrue: [^ 8]
 												ifFalse:
 													[1 << (operands at: 0) highBit = ((operands at: 0) + 1)
-														ifTrue: [8]
-														ifFalse: [self literalLoadInstructionBytes + 4]]]].
-		[AndCqRR]				-> [^self rotateable8bitBitwiseImmediate: (operands at: 0)
-										ifTrue: [:r :i :n| 4]
+														ifTrue: [^ 8]
+														ifFalse: [^ self literalLoadInstructionBytes + 4]]]].
+		[AndCqRR]				-> [self rotateable8bitBitwiseImmediate: (operands at: 0)
+										ifTrue: [:r :i :n| ^ 4]
 										ifFalse:
 											[self literalLoadInstructionBytes = 4
-												ifTrue: [8]
+												ifTrue: [^ 8]
 												ifFalse:
 													[1 << (operands at: 0) highBit = ((operands at: 0) + 1)
-														ifTrue: [8]
-														ifFalse: [self literalLoadInstructionBytes + 4]]]].
-		[CmpCqR]				-> [^self rotateable8bitSignedImmediate: (operands at: 0)
-											ifTrue: [:r :i :n| 4]
-											ifFalse: [self literalLoadInstructionBytes + 4]].
-		[OrCqR]					-> [^self rotateable8bitImmediate: (operands at: 0)
-											ifTrue: [:r :i| 4]
-											ifFalse: [self literalLoadInstructionBytes + 4]].
-		[SubCqR]				-> [^self rotateable8bitSignedImmediate: (operands at: 0)
-											ifTrue: [:r :i :n| 4]
-											ifFalse: [self literalLoadInstructionBytes + 4]].
-		[TstCqR]				-> [^self rotateable8bitImmediate: (operands at: 0)
-											ifTrue: [:r :i| 4]
-											ifFalse: [self literalLoadInstructionBytes + 4]].
-		[XorCqR]				-> [^self rotateable8bitBitwiseImmediate: (operands at: 0)
-										ifTrue: [:r :i :n| 4]
+														ifTrue: [^ 8]
+														ifFalse: [^ self literalLoadInstructionBytes + 4]]]].
+		[CmpCqR]				-> [self rotateable8bitSignedImmediate: (operands at: 0)
+											ifTrue: [:r :i :n| ^ 4]
+											ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[OrCqR]					-> [self rotateable8bitImmediate: (operands at: 0)
+											ifTrue: [:r :i| ^ 4]
+											ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[SubCqR]				-> [self rotateable8bitSignedImmediate: (operands at: 0)
+											ifTrue: [:r :i :n| ^ 4]
+											ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[TstCqR]				-> [self rotateable8bitImmediate: (operands at: 0)
+											ifTrue: [:r :i| ^ 4]
+											ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[XorCqR]				-> [self rotateable8bitBitwiseImmediate: (operands at: 0)
+										ifTrue: [:r :i :n| ^ 4]
 										ifFalse:
 											[self literalLoadInstructionBytes = 4
-												ifTrue: [8]
+												ifTrue: [^ 8]
 												ifFalse:
 													[1 << (operands at: 0) highBit = ((operands at: 0) + 1)
-														ifTrue: [8]
-														ifFalse: [self literalLoadInstructionBytes + 4]]]].
+														ifTrue: [^ 8]
+														ifFalse: [^ self literalLoadInstructionBytes + 4]]]].
 		[AddCwR]				-> [^self literalLoadInstructionBytes + 4].
 		[AndCwR]				-> [^self literalLoadInstructionBytes + 4].
 		[CmpCwR]				-> [^self literalLoadInstructionBytes + 4].
@@ -601,9 +601,9 @@ CogARMCompiler >> computeMaximumSize [
 		[SubRR]					-> [^4].
 		[NegateR]				-> [^4].
 		[LoadEffectiveAddressMwrR]
-									-> [^self rotateable8bitImmediate: (operands at: 0)
-											ifTrue: [:r :i| 4]
-											ifFalse: [self literalLoadInstructionBytes + 4]].
+									-> [self rotateable8bitImmediate: (operands at: 0)
+											ifTrue: [:r :i| ^ 4]
+											ifFalse: [^ self literalLoadInstructionBytes + 4]].
 
 		[LogicalShiftLeftCqR]		-> [^4].
 		[LogicalShiftRightCqR]		-> [^4].
@@ -625,76 +625,76 @@ CogARMCompiler >> computeMaximumSize [
 		[PopLDM]				-> [^4].
 		[PushSTM]				-> [^4].
 		"Data Movement"						
-		[MoveCqR]				-> [^self literalLoadInstructionBytes = 4
-										ifTrue: [self literalLoadInstructionBytes]
+		[MoveCqR]				-> [self literalLoadInstructionBytes = 4
+										ifTrue: [^ self literalLoadInstructionBytes]
 										ifFalse:
 											[self rotateable8bitBitwiseImmediate: (operands at: 0)
-												ifTrue: [:r :i :n| 4]
-												ifFalse: [self literalLoadInstructionBytes]]].
-		[MoveCwR]				-> [^self literalLoadInstructionBytes = 4
-										ifTrue: [self literalLoadInstructionBytes]
+												ifTrue: [:r :i :n| ^ 4]
+												ifFalse: [^ self literalLoadInstructionBytes]]].
+		[MoveCwR]				-> [self literalLoadInstructionBytes = 4
+										ifTrue: [^ self literalLoadInstructionBytes]
 										ifFalse:
 											[(self inCurrentCompilation: (operands at: 0))
-												ifTrue: [4]
-												ifFalse: [self literalLoadInstructionBytes]]].
+												ifTrue: [^ 4]
+												ifFalse: [^ self literalLoadInstructionBytes]]].
 		[MoveRR]				-> [^4].
 		[MoveRdRd]				-> [^4].
-		[MoveAwR]				-> [^(self isAddressRelativeToVarBase: (operands at: 0))
-													ifTrue: [4]
-													ifFalse: [self literalLoadInstructionBytes + 4]].
-		[MoveRAw]				-> [^(self isAddressRelativeToVarBase: (operands at: 1))
-													ifTrue: [4]
-													ifFalse: [self literalLoadInstructionBytes + 4]].
-		[MoveAbR]				-> [^(self isAddressRelativeToVarBase: (operands at: 0))
-													ifTrue: [4]
-													ifFalse: [self literalLoadInstructionBytes + 4]].
-		[MoveRAb]				-> [^(self isAddressRelativeToVarBase: (operands at: 1))
-													ifTrue: [4]
-													ifFalse: [self literalLoadInstructionBytes + 4]].
-		[MoveRMwr]			-> [^self is12BitValue: (operands at: 1)
-										ifTrue: [:u :i| 4]
-										ifFalse: [self literalLoadInstructionBytes + 4]].
-		[MoveRdM64r]			-> [^self literalLoadInstructionBytes + 4]. 
-		[MoveMbrR]				-> [^self is12BitValue: (operands at: 0)
-										ifTrue: [:u :i| 4]
-										ifFalse: [self literalLoadInstructionBytes + 4]].
-		[MoveRMbr]				-> [^self is12BitValue: (operands at: 1)
-										ifTrue: [:u :i| 4]
-										ifFalse: [self literalLoadInstructionBytes + 4]].
-		[MoveRM16r]				-> [^self is12BitValue: (operands at: 1)
-										ifTrue: [:u :i| 4]
-										ifFalse: [self literalLoadInstructionBytes + 4]].
-		[MoveM16rR]			-> [^self rotateable8bitImmediate: (operands at: 0)
-											ifTrue: [:r :i| 4]
-											ifFalse: [self literalLoadInstructionBytes + 4]].
+		[MoveAwR]				-> [(self isAddressRelativeToVarBase: (operands at: 0))
+													ifTrue: [^ 4]
+													ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[MoveRAw]				-> [(self isAddressRelativeToVarBase: (operands at: 1))
+													ifTrue: [^ 4]
+													ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[MoveAbR]				-> [(self isAddressRelativeToVarBase: (operands at: 0))
+													ifTrue: [^ 4]
+													ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[MoveRAb]				-> [(self isAddressRelativeToVarBase: (operands at: 1))
+													ifTrue: [^ 4]
+													ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[MoveRMwr]			-> [self is12BitValue: (operands at: 1)
+										ifTrue: [:u :i| ^ 4]
+										ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[MoveRdM64r]			-> [^ 4]. 
+		[MoveMbrR]				-> [self is12BitValue: (operands at: 0)
+										ifTrue: [:u :i| ^ 4]
+										ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[MoveRMbr]				-> [self is12BitValue: (operands at: 1)
+										ifTrue: [:u :i| ^ 4]
+										ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[MoveRM16r]				-> [self is12BitValue: (operands at: 1)
+										ifTrue: [:u :i| ^ 4]
+										ifFalse: [^ self literalLoadInstructionBytes + 4]].
+		[MoveM16rR]			-> [self rotateable8bitImmediate: (operands at: 0)
+											ifTrue: [:r :i| ^ 4]
+											ifFalse: [^ self literalLoadInstructionBytes + 4]].
 		[MoveM64rRd]			-> [^self literalLoadInstructionBytes + 4].
-		[MoveMwrR]			-> [^self is12BitValue: (operands at: 0)
-										ifTrue: [:u :i| 4]
-										ifFalse: [self literalLoadInstructionBytes + 4]].
+		[MoveMwrR]			-> [self is12BitValue: (operands at: 0)
+										ifTrue: [:u :i| ^ 4]
+										ifFalse: [^ self literalLoadInstructionBytes + 4]].
 		[MoveXbrRR]			-> [^4].
 		[MoveRXbrR]			-> [^4].
 		[MoveXwrRR]			-> [^4].
 		[MoveRXwrR]			-> [^4].
 		[PopR]					-> [^4].
 		[PushR]					-> [^4].
-		[PushCw]				-> [^self literalLoadInstructionBytes = 4
-										ifTrue: [self literalLoadInstructionBytes + 4]
+		[PushCw]				-> [self literalLoadInstructionBytes = 4
+										ifTrue: [^ self literalLoadInstructionBytes + 4]
 										ifFalse:
 											[(self inCurrentCompilation: (operands at: 0))
-												ifTrue: [8]
+												ifTrue: [^ 8]
 												ifFalse:
 													[self rotateable8bitBitwiseImmediate: (operands at: 0)
-														ifTrue: [:r :i :n| 8]
-														ifFalse: [self literalLoadInstructionBytes + 4]]]].
-		[PushCq]				-> [^self literalLoadInstructionBytes = 4
-										ifTrue: [self literalLoadInstructionBytes + 4]
+														ifTrue: [:r :i :n| ^ 8]
+														ifFalse: [^ self literalLoadInstructionBytes + 4]]]].
+		[PushCq]				-> [self literalLoadInstructionBytes = 4
+										ifTrue: [^ self literalLoadInstructionBytes + 4]
 										ifFalse:
 											[self rotateable8bitBitwiseImmediate: (operands at: 0)
-												ifTrue: [:r :i :n| 8]
-												ifFalse: [self literalLoadInstructionBytes + 4]]].
-		[PrefetchAw] 			-> [^(self isAddressRelativeToVarBase: (operands at: 0))
-										ifTrue: [4]
-										ifFalse: [self literalLoadInstructionBytes + 4]].
+												ifTrue: [:r :i :n| ^ 8]
+												ifFalse: [^ self literalLoadInstructionBytes + 4]]].
+		[PrefetchAw] 			-> [(self isAddressRelativeToVarBase: (operands at: 0))
+										ifTrue: [^ 4]
+										ifFalse: [^ self literalLoadInstructionBytes + 4]].
 		"Conversion"
 		[ConvertRRd]			-> [^8].
 				

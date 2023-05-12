@@ -1,9 +1,6 @@
 Class {
 	#name : #VMSpurInitializedOldSpaceTest,
 	#superclass : #VMSpurMemoryManagerTest,
-	#instVars : [
-		'ourEphemeronClass'
-	],
 	#category : #'VMMakerTests-MemoryTests'
 }
 
@@ -21,12 +18,7 @@ VMSpurInitializedOldSpaceTest >> assertFreeListEmpty: aFreeListOop [
 
 { #category : #helpers }
 VMSpurInitializedOldSpaceTest >> createEphemeronClass [
-	ourEphemeronClass := self newObjectWithSlots: 3.
-	memory 
-		storePointer: "InstanceSpecificationIndex" 2
-		ofObject: ourEphemeronClass
-		withValue: (memory integerObjectOf: Ephemeron format).
-	memory ensureBehaviorHash: ourEphemeronClass.
+	ourEphemeronClass := self createEphemeronClassForSlots: 3
 ]
 
 { #category : #helpers }
@@ -105,17 +97,6 @@ VMSpurInitializedOldSpaceTest >> largerNodeOf: aNode [
 ]
 
 { #category : #helpers }
-VMSpurInitializedOldSpaceTest >> newEphemeronObject [
-
-"In pharo Ephemerons have 3 slots"
-	
-	^ self
-		newObjectWithSlots: 3
-		format: memory ephemeronFormat
-		classIndex: (memory ensureBehaviorHash: ourEphemeronClass)
-]
-
-{ #category : #helpers }
 VMSpurInitializedOldSpaceTest >> newEphemeronObjectWithSlots: slots [
 
 	| class |
@@ -142,6 +123,25 @@ VMSpurInitializedOldSpaceTest >> newOldEphemeronObjectWithSlots: slots [
 		newOldSpaceObjectWithSlots: slots
 		format: memory ephemeronFormat
 		classIndex: (memory ensureBehaviorHash: class)
+]
+
+{ #category : #'instance creation' }
+VMSpurInitializedOldSpaceTest >> newPermanentByteObjectOfSize: byteSize [
+	
+	| oop numSlots instSpec |
+
+	numSlots := memory numSlotsForBytes: byteSize.
+	instSpec := memory byteFormatForNumBytes: byteSize.
+	
+	oop := memory
+			allocateSlotsInPermSpace: numSlots
+			format: instSpec
+			classIndex: (memory ensureBehaviorHash: memory classByteArray).
+
+	0 to: byteSize - 1 do: [ :index | 
+		memory storeByte: index ofObject: oop withValue: 	0 ].
+
+	^ oop
 ]
 
 { #category : #helpers }
@@ -175,6 +175,7 @@ VMSpurInitializedOldSpaceTest >> setUp [
 	self initializeOldSpaceForScavenger.
 	self initializeOldSpaceForFullGC.
 	memory lastHash: 1.
+	memory classByteArray: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0)).
 ]
 
 { #category : #helpers }

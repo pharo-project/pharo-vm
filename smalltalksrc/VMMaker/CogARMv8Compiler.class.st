@@ -1187,8 +1187,8 @@ CogARMv8Compiler >> computeMaximumSize [
 										ifTrue: [:u :i | 4]
 										ifFalse: [self notYetImplemented. self literalLoadInstructionBytes + 4]]. 
 		[MoveMbrR]			-> [^self is9BitValue: (operands at: 0)
-										ifTrue: [:value | 8 "2 instrutions" ]
-										ifFalse: [ self literalLoadInstructionBytes + 4 ]].
+										ifTrue: [:value | 8 ]
+										ifFalse: [ 8 ]].
 
 		[MoveRM8r]				-> [^self is12BitValue: (operands at: 1)
 										ifTrue: [:u :i | 4]
@@ -2015,7 +2015,7 @@ CogARMv8Compiler >> concretizeLd1VrRMw [
 	offset := operands at: 3.
 	opCode := 2r0111. "TODO support multiple-register variants"
 
-	(offset = 0 | (offset = 16))
+	(offset = 0 or: [ offset = 16 ])
 		ifTrue: [ 
 			size = 64
 				ifTrue: [ q := 1. t := 11 ]
@@ -3120,7 +3120,7 @@ CogARMv8Compiler >> concretizeSt1VrRMw [
 	offset := operands at: 3.
 	opCode := 2r0111. "TODO support multiple-register variants"
 
-	(offset = 0 | (offset = 16))
+	(offset = 0 or: [ offset = 16 ])
 		ifTrue: [ 
 			size = 64
 				ifTrue: [ q := 1. t := 11 ]

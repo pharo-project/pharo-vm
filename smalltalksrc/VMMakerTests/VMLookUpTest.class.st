@@ -7,7 +7,8 @@ Class {
 		'receiver',
 		'methodDictionary',
 		'arrayOfMethods',
-		'receiverClass'
+		'receiverClass',
+		'linearSearchLimit'
 	],
 	#pools : [
 		'VMBasicConstants',
@@ -15,6 +16,38 @@ Class {
 	],
 	#category : #'VMMakerTests-InterpreterTests'
 }
+
+{ #category : #tests }
+VMLookUpTest class >> testParameters [
+
+	^ super testParameters * (ParametrizedTestMatrix new
+		   addCase: { (#linearSearchLimit -> 3) };
+		   addCase: { (#linearSearchLimit -> 300) };
+		   yourself)
+]
+
+{ #category : #assertions }
+VMLookUpTest >> assertNonForwardedSelectorsIn: aMethodDictionary [
+
+	| length |
+	length := memory numSlotsOf: aMethodDictionary.
+	SelectorStart to: length - 1 do: [ :i | 
+		| selector |
+		selector := memory fetchPointer: i ofObject: aMethodDictionary.
+		self deny: (memory isForwarded: selector) ]
+]
+
+{ #category : #accessing }
+VMLookUpTest >> linearSearchLimit [
+
+	^ linearSearchLimit
+]
+
+{ #category : #accessing }
+VMLookUpTest >> linearSearchLimit: anObject [
+
+	linearSearchLimit := anObject
+]
 
 { #category : #tests }
 VMLookUpTest >> setArrayClassIntoClassTable [
@@ -92,16 +125,20 @@ VMLookUpTest >> setUp [
 		storePointer: ProcessListsIndex
 		ofObject: processorOop
 		withValue: processorListArray.
-	memory lastHash: 1.
 
-	interpreter setBreakSelector: nil
+	interpreter setBreakSelector: nil.
+	interpreter methodDictLinearSearchLimit: linearSearchLimit.
+
 ]
 
 { #category : #tests }
 VMLookUpTest >> setUpClassAndMethod [
 
+
 	methodOop := methodBuilder newMethod buildMethod.
-	selectorOop := memory integerObjectOf: 42.
+	selectorOop := self
+		newClassInOldSpaceWithSlots: 0
+		instSpec: memory nonIndexablePointerFormat.
 	receiver := memory integerObjectOf: 56.
 	receiverClass := self setSmallIntegerClassIntoClassTable
 ]
@@ -114,6 +151,22 @@ VMLookUpTest >> testInstallSmallIntegerClassIntoClassTable [
 	self
 		assert: (memory fetchClassOf: (memory integerObjectOf: 17))
 		equals: receiverClass
+]
+
+{ #category : #tests }
+VMLookUpTest >> testLookUpFindsForwardedMethod [
+
+	| aMethodDictionary |
+	self setUpClassAndMethod.	
+	self setUpMethodDictionaryIn: receiverClass.
+	aMethodDictionary := memory fetchPointer: MethodDictionaryIndex ofObject: receiverClass.
+	self installSelector: selectorOop method: methodOop  inMethodDictionary: aMethodDictionary.
+
+	methodOop := memory moveToPermSpace: methodOop.
+
+	interpreter messageSelector: selectorOop.
+	interpreter lookupMethodInClass: receiverClass.
+	self assert: interpreter newMethod equals: methodOop.
 ]
 
 { #category : #tests }
@@ -154,6 +207,23 @@ VMLookUpTest >> testLookUpFindsMethodInSuperclass [
 	interpreter messageSelector: selectorOop.
 	interpreter lookupMethodInClass: receiverClass.
 	self assert: interpreter newMethod equals: methodOop
+]
+
+{ #category : #tests }
+VMLookUpTest >> testLookUpFindsMethodWithForwardedSelector [
+
+	| aMethodDictionary |
+	self setUpClassAndMethod.	
+	self setUpMethodDictionaryIn: receiverClass.
+	aMethodDictionary := memory fetchPointer: MethodDictionaryIndex ofObject: receiverClass.
+	self installSelector: selectorOop method: methodOop  inMethodDictionary: aMethodDictionary.
+
+	selectorOop := memory moveToPermSpace: selectorOop.
+
+	interpreter messageSelector: selectorOop.
+	interpreter lookupMethodInClass: receiverClass.
+	self assert: interpreter newMethod equals: methodOop.
+	self assertNonForwardedSelectorsIn: aMethodDictionary
 ]
 
 { #category : #tests }
@@ -422,7 +492,6 @@ VMLookUpTest >> testPrimitivePerformCreatesCorrectFrame [
 	interpreter argumentCount: 1.
 	interpreter primitivePerform.
 	
-	interpreter internalizeIPandSP.
 	frame := VMStackFrame newFramePointer: (interpreter framePointer) withInterpreter: interpreter.
 	self assert: frame receiver equals: receiverOop.
  	self assert: frame method equals: methodOop.
@@ -464,7 +533,7 @@ VMLookUpTest >> testPrimitivePerformFindsMethodOop [
 	interpreter primitivePerform.
 	
 	self assert: interpreter newMethod equals: methodOop.
-	self assert: interpreter instructionPointer equals: methodOop + objectHeaderSize + wordSize - 1 "+ header object + header of compiledMethod - (1)"
+	self assert: interpreter instructionPointer equals: methodOop + self objectHeaderSize + wordSize - 1 "+ header object + header of compiledMethod - (1)"
  	
 	"(1) the Instruction Pointer is set to be just before the bytecode to execute, so fetchNextBytecode will fetch the first bytecode ( #justActivateNewMethod: )"
 ]

@@ -1,6 +1,9 @@
 Class {
 	#name : #MLLocalizationTestCase,
-	#superclass : #SlangAbstractTestCase,
+	#superclass : #TestCase,
+	#instVars : [
+		'ccg'
+	],
 	#category : #Melchor
 }
 
@@ -92,9 +95,11 @@ MLLocalizationTestCase >> linearizedBlockOfCaseMethod: aTMethod [
 
 { #category : #running }
 MLLocalizationTestCase >> setUp [
-
 	super setUp.
-	MockLocalizationInterpreterMock initialize.
+	ccg := MLVMCCodeGenerator new.
+	ccg vmMaker: VMMaker new.
+	ccg vmMaker vmmakerConfiguration: VMMakerConfiguration.
+	MockLocalizationInterpreterMock initialize
 ]
 
 { #category : #helpers }

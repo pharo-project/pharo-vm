@@ -38,12 +38,6 @@ VMPinnedObjectTest >> newKeptPinnedObject [
 	^ newPinned
 ]
 
-{ #category : #tests }
-VMPinnedObjectTest >> setUp [
-	super setUp.
-	self setUpScheduler.
-]
-
 { #category : #testCompactor }
 VMPinnedObjectTest >> testAllocatingObjectAfterAPinObjectShouldSlideAtStartOfOldSpace [
 	| aliveObject destination shouldBeFreed aliveHash |

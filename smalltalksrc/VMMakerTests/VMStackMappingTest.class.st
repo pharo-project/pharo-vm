@@ -42,7 +42,7 @@ VMStackMappingTest >> testDivorceAMarriedContextShuoldMakeItSingle [
 	context := self newContext.
 	interpreter marryContextInNewStackPageAndInitializeInterpreterRegisters: context.
 	fp := interpreter frameOfMarriedContext: context. 
-	interpreter externalDivorceFrame: fp andContext: context.
+	interpreter divorceFrame: fp andContext: context.
 	self assert: (interpreter isSingleContext: context)
 ]
 
@@ -84,7 +84,7 @@ VMStackMappingTest >> testMarryThenDivorceBaseFrameShouldFreeOldPage [
 	framePointerToMarry := interpreter stackPage baseFP.
 	stackPointerToMarry := interpreter frameCallerSP: (interpreter frameCallerFP: interpreter framePointer).
 	aContext := interpreter ensureFrameIsMarried: framePointerToMarry SP: stackPointerToMarry.
-	interpreter externalDivorceFrame: framePointerToMarry andContext: aContext.
+	interpreter divorceFrame: framePointerToMarry andContext: aContext.
 
 	self assert: oldPage isFree
 ]
@@ -97,7 +97,7 @@ VMStackMappingTest >> testMarryThenDivorceBaseFrameShouldSetDivorcedContextAsSen
 	framePointerToMarry := interpreter stackPage baseFP.
 	stackPointerToMarry := interpreter frameCallerSP: (interpreter frameCallerFP: interpreter framePointer).
 	aContext := interpreter ensureFrameIsMarried: framePointerToMarry SP: stackPointerToMarry.
-	interpreter externalDivorceFrame: framePointerToMarry andContext: aContext.
+	interpreter divorceFrame: framePointerToMarry andContext: aContext.
 	expectedDivorcedContext := interpreter frameCallerContext: interpreter stackPage baseFP.
 	
 	self assert: expectedDivorcedContext equals: aContext.
@@ -112,7 +112,7 @@ VMStackMappingTest >> testMarryThenDivorceBaseFrameShouldSplitPage [
 	framePointerToMarry := interpreter stackPage baseFP.
 	stackPointerToMarry := interpreter frameCallerSP: (interpreter frameCallerFP: interpreter framePointer).
 	aContext := interpreter ensureFrameIsMarried: framePointerToMarry SP: stackPointerToMarry.
-	interpreter externalDivorceFrame: framePointerToMarry andContext: aContext.
+	interpreter divorceFrame: framePointerToMarry andContext: aContext.
 	newPage := interpreter stackPage.
 	self deny: oldPage equals: newPage
 ]
@@ -125,7 +125,7 @@ VMStackMappingTest >> testMarryThenDivorceMiddleFrame [
 	framePointerToMarry := interpreter frameCallerFP: interpreter framePointer.
 	stackPointerToMarry := interpreter frameCallerSP: interpreter framePointer.
 	aContext := interpreter ensureFrameIsMarried: framePointerToMarry SP: stackPointerToMarry.
-	interpreter externalDivorceFrame: framePointerToMarry andContext: aContext.
+	interpreter divorceFrame: framePointerToMarry andContext: aContext.
 	self assert: (interpreter isSingleContext: aContext).
 ]
 
@@ -138,7 +138,7 @@ VMStackMappingTest >> testMarryThenDivorceMiddleFrameShouldSetDivorcedContextAsS
 	stackPointerToMarry := interpreter frameCallerSP: interpreter framePointer.
 	aContext := interpreter ensureFrameIsMarried: framePointerToMarry SP: stackPointerToMarry.
 	oldBaseFramePointer := interpreter stackPage baseFP.
-	interpreter externalDivorceFrame: framePointerToMarry andContext: aContext.
+	interpreter divorceFrame: framePointerToMarry andContext: aContext.
 	expectedDivorcedContext := interpreter frameCallerContext: interpreter stackPage baseFP.
 	
 	self assert: (interpreter frameHasContext: oldBaseFramePointer).
@@ -158,7 +158,7 @@ VMStackMappingTest >> testMarryThenDivorceMiddleFrameShouldSplitPage [
 	framePointerToMarry := interpreter frameCallerFP: interpreter framePointer.
 	stackPointerToMarry := interpreter frameCallerSP: interpreter framePointer.
 	aContext := interpreter ensureFrameIsMarried: framePointerToMarry SP: stackPointerToMarry.
-	interpreter externalDivorceFrame: framePointerToMarry andContext: aContext.
+	interpreter divorceFrame: framePointerToMarry andContext: aContext.
 	newNumberOfUsedPages := interpreter stackPages pages count:[ :aPage | aPage isFree not ].
 	self assert: initialiNumberOfusedPages + 1 equals: newNumberOfUsedPages
 ]
@@ -171,7 +171,7 @@ VMStackMappingTest >> testMarryThenDivorceTopFrame [
 	framePointerToMarry := interpreter framePointer.
 	stackPointerToMarry := interpreter stackPointer.
 	aContext := interpreter ensureFrameIsMarried: framePointerToMarry SP: stackPointerToMarry.
-	interpreter externalDivorceFrame: framePointerToMarry andContext: aContext.
+	interpreter divorceFrame: framePointerToMarry andContext: aContext.
 	self assert: (interpreter isSingleContext: aContext).
 ]
 
@@ -182,7 +182,7 @@ VMStackMappingTest >> testMarryThenDivorceTopFrameShouldNotSplitPage [
 
 	initialiNumberOfusedPages := interpreter stackPages pages count:[ :aPage | aPage isFree not ].
 	aContext := interpreter ensureFrameIsMarried: interpreter framePointer SP: interpreter stackPointer.
-	interpreter externalDivorceFrame: interpreter framePointer andContext: aContext.
+	interpreter divorceFrame: interpreter framePointer andContext: aContext.
 	newNumberOfUsedPages := interpreter stackPages pages count:[ :aPage | aPage isFree not ].
 	self assert: initialiNumberOfusedPages equals: 	newNumberOfUsedPages
 ]

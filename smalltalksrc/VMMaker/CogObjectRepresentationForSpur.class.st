@@ -305,13 +305,13 @@ CogObjectRepresentationForSpur >> checkValidOopReference: anOop [
 
 { #category : #'garbage collection' }
 CogObjectRepresentationForSpur >> couldBeDerivedObject: bodyAddress [
-	^self oop: bodyAddress - objectMemory baseHeaderSize isGreaterThanOrEqualTo: objectMemory startOfMemory
+	^self oop: bodyAddress - objectMemory baseHeaderSize isGreaterThanOrEqualTo: objectMemory getMemoryMap startOfObjectMemory
 ]
 
 { #category : #'garbage collection' }
 CogObjectRepresentationForSpur >> couldBeObject: literal [
 	^(objectMemory isNonImmediate: literal)
-	  and: [self oop: literal isGreaterThanOrEqualTo: objectMemory startOfMemory]
+	  and: [self oop: literal isGreaterThanOrEqualTo: objectMemory getMemoryMap startOfObjectMemory]
 ]
 
 { #category : #'bytecode generator support' }
@@ -2213,7 +2213,6 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreUInt8IntoExternalAddress [
 
 { #category : #'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStringCompareWith [
-	"primitiveCompareWith:"
 	
 	| instr jump jumpAbove jumpIncorrectFormat1 jumpIncorrectFormat2 jumpIncorrectFormat3 jumpIncorrectFormat4 jumpMidFailure jumpSuccess minSizeReg string1CharOrByteSizeReg string2CharOrByteSizeReg string1Reg string2Reg |
 	
@@ -2275,7 +2274,11 @@ CogObjectRepresentationForSpur >> genPrimitiveStringCompareWith [
 	cogit AddCq: objectMemory baseHeaderSize R: minSizeReg.
 	
 	instr := cogit MoveXbr: TempReg R: string1Reg R: string1CharOrByteSizeReg.
+		cogit backEnd byteReadsZeroExtend ifFalse:
+			[cogit AndCq: 255 R: string1CharOrByteSizeReg].
 	cogit MoveXbr: TempReg R: string2Reg R: string2CharOrByteSizeReg.
+		cogit backEnd byteReadsZeroExtend ifFalse:
+			[cogit AndCq: 255 R: string2CharOrByteSizeReg].
 	cogit SubR: string2CharOrByteSizeReg R: string1CharOrByteSizeReg. 
 	jumpMidFailure := cogit JumpNonZero: 0. "the 2 compared characters are different, exit the loop"
 	cogit AddCq: 1 R: TempReg.
@@ -2578,23 +2581,32 @@ CogObjectRepresentationForSpur >> genStoreCheckContextReceiverTrampoline [
 { #category : #'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genStoreCheckReceiverReg: destReg valueReg: valueReg scratchReg: scratchReg inFrame: inFrame [
 	"Generate the code for a store check of valueReg into destReg."
-	| jmpImmediate jmpDestYoung jmpSourceOld jmpAlreadyRemembered |
+
+	| jmpImmediate jmpDestYoung jmpOldAndOld jmpPermAndPerm jmpAlreadyRemembered jmpIsMachineCode|
+
 	<var: #jmpImmediate type: #'AbstractInstruction *'>
 	<var: #jmpDestYoung type: #'AbstractInstruction *'>
-	<var: #jmpSourceOld type: #'AbstractInstruction *'>
+	<var: #jmpOldAndOld type: #'AbstractInstruction *'>
+	<var: #jmpPermAndPerm type: #'AbstractInstruction *'>
 	<var: #jmpAlreadyRemembered type: #'AbstractInstruction *'>
+	<var: #jmpIsMachineCode type: #'AbstractInstruction *'>
+
+
 	"Is value stored an immediate?  If so we're done"
 	jmpImmediate := self genJumpImmediate: valueReg.
-	"Get the old/new boundary in scratchReg"
-	cogit MoveCw: objectMemory storeCheckBoundary R: scratchReg.
-	"Is target young?  If so we're done"
-	cogit CmpR: scratchReg R: destReg. "N.B. FLAGS := destReg - scratchReg"
-	jmpDestYoung := cogit JumpBelow: 0.
-	"Is value stored old?  If so we're done."
-	cogit CmpR: scratchReg R: valueReg. "N.B. FLAGS := valueReg - scratchReg"
-	jmpSourceOld := cogit JumpAboveOrEqual: 0.
-	"value is young and target is old.
-	 Need to remember this only if the remembered bit is not already set."
+
+	self 
+		genCheckObjectPosition: destReg 
+		scratchReg: scratchReg 
+		valueReg: valueReg
+		results: [ :isDestYoung :isOldAndOld :isPermAndPerm :valueIsMachineCode | 
+			jmpDestYoung := isDestYoung.
+			jmpOldAndOld := isOldAndOld.
+			jmpIsMachineCode := valueIsMachineCode.
+			jmpPermAndPerm := isPermAndPerm].
+
+
+	"Need to remember this only if the remembered bit is not already set."
 	CheckRememberedInTrampoline ifFalse:
 		[jmpAlreadyRemembered := self genCheckRememberedBitOf: destReg scratch: scratchReg].
 	"Remembered bit is not set.  Call store check to insert dest into remembered table."
@@ -2604,10 +2616,13 @@ CogObjectRepresentationForSpur >> genStoreCheckReceiverReg: destReg valueReg: va
 		protectLinkRegIfNot: inFrame.
 	jmpImmediate jmpTarget:
 	(jmpDestYoung jmpTarget:
-	(jmpSourceOld jmpTarget:
-		cogit Label)).
+	(jmpIsMachineCode jmpTarget:
+	(jmpOldAndOld jmpTarget: 
+	(jmpPermAndPerm jmpTarget:
+		cogit Label)))).
+
 	CheckRememberedInTrampoline ifFalse:
-		[jmpAlreadyRemembered jmpTarget: jmpSourceOld getJmpTarget].
+		[jmpAlreadyRemembered jmpTarget: jmpOldAndOld getJmpTarget].
 	^0
 ]
 
@@ -2624,7 +2639,7 @@ CogObjectRepresentationForSpur >> genStoreCheckTrampoline [
 		 cogit RetN: 0.
 		 jumpSC jmpTarget: cogit Label].
 	^cogit
-		genTrampolineFor: #remember:
+		genTrampolineFor: #rememberObjInCorrectRememberedSet:
 		called: 'ceStoreCheckTrampoline'
 		numArgs: 1
 		arg: ReceiverResultReg
@@ -2704,7 +2719,7 @@ CogObjectRepresentationForSpur >> genStoreTrampolineCalled: trampolineName instV
 	<inline: false>
 	cogit zeroOpcodeIndex.
 	"SendNumArgsReg is mutated but we don't care as register are not live across the trampoline.
-	 There is no reason why registers cannot be saved over the remember: call, but since the
+	 There is no reason why registers cannot be saved over the rememberObjInCorrectRememberedSet: call, but since the
 	 immutability check is a suspension point, registers cannot remain live."
 	jumpSC := self genJumpMutable: ReceiverResultReg scratchReg: SendNumArgsReg.
 	cogit
@@ -2735,7 +2750,7 @@ CogObjectRepresentationForSpur >> genStoreTrampolineCalled: trampolineName instV
 				 jumpRC opcode: JumpZero.
 				 cogit RetN: 0].
 		 jumpRC jmpTarget: cogit Label].
-	^ cogit genTrampolineFor: #remember:
+	^ cogit genTrampolineFor: #rememberObjInCorrectRememberedSet:
 		called: trampolineName
 		numArgs: 1
 		arg: ReceiverResultReg
@@ -2803,12 +2818,14 @@ CogObjectRepresentationForSpur >> genStoreValue: value instance: destReg numSlot
 CogObjectRepresentationForSpur >> genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needRestoreRcvr: needRestoreRcvr [ 
 	"Store check code is duplicated to use a single trampoline"
 	<option: #IMMUTABILITY>
-	| immutableJump jmpImmediate jmpDestYoung jmpSourceOld jmpAlreadyRemembered |
+	| immutableJump jmpImmediate jmpDestYoung jmpOldAndOld jmpPermAndPerm jmpAlreadyRemembered jmpIsMachineCode|
 	<var: #immutableJump type: #'AbstractInstruction *'>
 	<var: #jmpImmediate type: #'AbstractInstruction *'>
 	<var: #jmpDestYoung type: #'AbstractInstruction *'>
-	<var: #jmpSourceOld type: #'AbstractInstruction *'>
+	<var: #jmpOldAndOld type: #'AbstractInstruction *'>
+	<var: #jmpPermAndPerm type: #'AbstractInstruction *'>
 	<var: #jmpAlreadyRemembered type: #'AbstractInstruction *'>
+	<var: #jmpIsMachineCode type: #'AbstractInstruction *'>
 
 	immutableJump := self genJumpImmutable: destReg scratchReg: scratchReg.
 	
@@ -2818,19 +2835,21 @@ CogObjectRepresentationForSpur >> genStoreWithImmutabilityAndStoreCheckSourceReg
 	cogit MoveR: sourceReg
 		   Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
 		   r: destReg.
-	
+
 	"store check"
 	jmpImmediate := self genJumpImmediate: sourceReg.
-	"Get the old/new boundary in scratchReg"
-	cogit MoveCw: objectMemory storeCheckBoundary R: scratchReg.
-	"Is target young?  If so we're done"
-	cogit CmpR: scratchReg R: destReg. "N.B. FLAGS := destReg - scratchReg"
-	jmpDestYoung := cogit JumpBelow: 0.
-	"Is value stored old?  If so we're done."
-	cogit CmpR: scratchReg R: sourceReg. "N.B. FLAGS := valueReg - scratchReg"
-	jmpSourceOld := cogit JumpAboveOrEqual: 0.
-	"value is young and target is old.
-	 Need to remember this only if the remembered bit is not already set."
+
+	self 
+		genCheckObjectPosition: destReg 
+		scratchReg: scratchReg 
+		valueReg: sourceReg
+		results: [ :isDestYoung :isOldAndOld :isPermAndPerm :valueIsMachineCode| 
+			jmpDestYoung := isDestYoung.
+			jmpOldAndOld := isOldAndOld.
+			jmpIsMachineCode := valueIsMachineCode.			
+			jmpPermAndPerm := isPermAndPerm].
+
+	"Need to remember this only if the remembered bit is not already set."
 	CheckRememberedInTrampoline ifFalse:
 		[jmpAlreadyRemembered := self genCheckRememberedBitOf: destReg scratch: scratchReg].
 	"Set the inst var index for the benefit of the immutability check. The trampoline will
@@ -2843,10 +2862,12 @@ CogObjectRepresentationForSpur >> genStoreWithImmutabilityAndStoreCheckSourceReg
 
 	jmpImmediate jmpTarget:
 	(jmpDestYoung jmpTarget:
-	(jmpSourceOld jmpTarget:
-		cogit Label)).
+	(jmpOldAndOld jmpTarget:
+	(jmpIsMachineCode jmpTarget:
+	(jmpPermAndPerm jmpTarget:
+		cogit Label)))).
 	CheckRememberedInTrampoline ifFalse:
-		[jmpAlreadyRemembered jmpTarget: jmpSourceOld getJmpTarget].
+		[jmpAlreadyRemembered jmpTarget: jmpOldAndOld getJmpTarget].
 	^ 0
 ]
 
@@ -3047,7 +3068,8 @@ CogObjectRepresentationForSpur >> markAndTraceLiteral: literal in: cogMethodOrNi
 		[objectMemory markAndTrace: literal.
 		 ^false].
 	objOop := objectMemory followForwarded: literal.
-	cogit backEnd storeLiteral: objOop beforeFollowingAddress: address.
+	
+	cogit storeLiteral: objOop atAnnotatedAddress: address.
 	self markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil.
 	^true
 ]
@@ -3055,7 +3077,7 @@ CogObjectRepresentationForSpur >> markAndTraceLiteral: literal in: cogMethodOrNi
 { #category : #'garbage collection' }
 CogObjectRepresentationForSpur >> markAndTraceLiteralIfYoung: literal [
 	((self couldBeObject: literal)
-	 and: [objectMemory isYoungObject: literal]) ifTrue:
+	 and: [objectMemory getMemoryMap isYoungObject: literal]) ifTrue:
 		[self assert: (objectMemory addressCouldBeObj: literal).
 		 objectMemory markAndTrace: literal]
 ]
@@ -3067,7 +3089,7 @@ CogObjectRepresentationForSpur >> markAndTraceUpdatedLiteral: objOop in: cogMeth
 	<var: #cogMethodOrNil type: #'CogMethod *'>
 	(objectMemory isNonImmediate: objOop) ifTrue:
 		[(cogMethodOrNil notNil
-		  and: [objectMemory isYoungObject: objOop]) ifTrue:
+		  and: [objectMemory getMemoryMap isYoungObject: objOop]) ifTrue:
 			[methodZone ensureInYoungReferrers: cogMethodOrNil].
 		 objectMemory markAndTrace: objOop]
 ]

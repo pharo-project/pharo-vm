@@ -191,15 +191,6 @@ void waitOnExternalSemaphoreIndex(sqInt semaphoreIndex);
 
 
 /* Proxy declarations for v1.8 */
-#if NewspeakVM
-static sqInt
-callbackEnter(sqInt *callbackID) { return 0; }
-static sqInt
-callbackLeave(sqInt callbackID) { return 0; }
-#else
-sqInt callbackEnter(sqInt *callbackID);
-sqInt callbackLeave(sqInt  callbackID);
-#endif
 sqInt addGCRoot(sqInt *varLoc);
 sqInt removeGCRoot(sqInt *varLoc);
 
@@ -243,12 +234,6 @@ static sqInt isNonIntegerObject(sqInt objectPointer)
 {
 	return !isIntegerObject(objectPointer);
 }
-#endif
-
-#if STACKVM
-extern void (*setInterruptCheckChain(void (*aFunction)(void)))();
-#else
-void (*setInterruptCheckChain(void (*aFunction)(void)))() { return 0; }
 #endif
 
 extern sqInt isYoung(sqInt);
@@ -437,15 +422,12 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 #endif
 
 #if VM_PROXY_MINOR > 7
-	VM->callbackEnter = callbackEnter;
-	VM->callbackLeave = callbackLeave;
 	VM->addGCRoot = addGCRoot;
 	VM->removeGCRoot = removeGCRoot;
 #endif
 
 #if VM_PROXY_MINOR > 8
 	VM->primitiveFailFor    = primitiveFailFor;
-	VM->setInterruptCheckChain = setInterruptCheckChain;
 	VM->isOopImmutable = isOopImmutable;
 	VM->isOopMutable   = isOopMutable;
 #endif
@@ -484,7 +466,6 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 	VM->stackSignedMachineIntegerValue = stackSignedMachineIntegerValue;
 	VM->positiveMachineIntegerValueOf = positiveMachineIntegerValueOf;
 	VM->stackPositiveMachineIntegerValue = stackPositiveMachineIntegerValue;
-	VM->getInterruptPending = getInterruptPending;
 	VM->cStringOrNullFor = cStringOrNullFor;
 	VM->signalNoResume = signalNoResume;
 #endif

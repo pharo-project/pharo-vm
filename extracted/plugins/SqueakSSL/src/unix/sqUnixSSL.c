@@ -22,6 +22,12 @@
 #include <netinet/in.h>
 #endif
 
+#ifdef __FreeBSD__
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#endif
+
 typedef struct sqSSL {
 	int state;
 	int certFlags;

@@ -34,7 +34,7 @@ VMBlockTest >> installFullBlockClosureClass [
 
 { #category : #supports }
 VMBlockTest >> methodReturningABlock [
-	
+	<compilerOptions: #(- #optionConstantBlockClosure)>
 	^ []
 	
 ]
@@ -184,7 +184,7 @@ VMBlockTest >> testCreatingABlockClosureShouldHaveOuterContextObject [
 	"The current frame returned, the context is widowed, but the VM does not mark what are the alive frames all the time"
 	self deny: (interpreter isWidowedContext: (memory outerContextOf: interpreter stackTop)).
 	"From time to time, the VM will mark the frames that are alive, and then be able to recognize that a context is widowed"
-	interpreter externalWriteBackHeadFramePointers.
+	interpreter writeBackHeadFramePointers.
 	self assert: (interpreter isWidowedContext: (memory outerContextOf: interpreter stackTop))
 ]
 

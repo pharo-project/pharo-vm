@@ -18,6 +18,7 @@ VMClass class >> initializeMiscConstants [
 	VMBIGENDIAN class. "Mention this for the benefit of CCodeGenerator>>emitCConstantsOn:"
 	STACKVM := COGVM := false.
 
+
 	InitializationOptions ifNil: [ 
 		InitializationOptions := Dictionary new ].
 	omc := InitializationOptions
@@ -38,9 +39,6 @@ VMClass class >> initializeMiscConstants [
 	FEATURE_THREADED_FFI := InitializationOptions
 		                        at: #FEATURE_THREADED_FFI
 		                        ifAbsentPut: [ false ].
-	FEATURE_MESSAGE_COUNT := InitializationOptions
-		                         at: #FEATURE_MESSAGE_COUNT
-		                         ifAbsentPut: [ false ].
 
 	SistaVM := InitializationOptions at: #SistaVM ifAbsentPut: [ false ].
 	TempVectReadBarrier := InitializationOptions
@@ -71,5 +69,17 @@ VMClass class >> initializeMiscConstants [
 	"And not these; they're compile-time"
 	IMMUTABILITY := InitializationOptions
 		                at: #IMMUTABILITY
-		                ifAbsent: [ true ]
+		                ifAbsent: [ true ].
+	WIN32 := InitializationOptions at: #WIN32 ifAbsent: [false].
+	PRIdSQINT := InitializationOptions at: #FormatSqInt ifAbsent: [ 'ld' ]
+]
+
+{ #category : #'*VMMaker' }
+VMClass >> isEndOfLine: aCharacter [
+
+	<inline: true>
+	
+	^ self 
+		cCode: [ aCharacter = 13 or: [ aCharacter = 10 ] ] 
+		inSmalltalk: [ Character cr = aCharacter or: [ Character lf = aCharacter ] ]
 ]

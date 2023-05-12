@@ -60,7 +60,9 @@ Class {
 		'mobileStart',
 		'objectAfterLastMobileObject',
 		'savedFirstFieldsSpace',
-		'savedFirstFieldsSpaceNotInOldSpace'
+		'savedFirstFieldsSpaceNotInOldSpace',
+		'firstFieldOfPermRememberedSet',
+		'savedFirstFieldSpaceMaxSlots'
 	],
 	#pools : [
 		'VMBytecodeConstants'
@@ -100,16 +102,16 @@ SpurPlanningCompactor >> check: obj [
 
 { #category : #private }
 SpurPlanningCompactor >> coalesceFrom: maybeStartOfFree [
-	"manager printOopsFrom: maybeStartOfFree to: manager endOfMemory"
+	"manager printOopsFrom: maybeStartOfFree to: manager getMemoryMap oldSpaceEnd"
 	<var: 'maybeStartOfFree' type: #usqInt>
 	|obj next objBytes nextBytes|
 	<var: 'obj' type: #usqInt>
 	<var: 'next' type: #usqInt>
-	maybeStartOfFree >= manager endOfMemory ifTrue:
+	maybeStartOfFree >= manager getMemoryMap oldSpaceEnd ifTrue:
 		[^self].
 	obj := manager objectStartingAt: maybeStartOfFree.
 	[next := manager oldSpaceObjectAfter: obj.
-	 next < manager endOfMemory] whileTrue:
+	 next < manager getMemoryMap oldSpaceEnd] whileTrue:
 		[((manager isFreeObject: obj) and: [manager isFreeObject: next])
 			ifTrue:
 				[objBytes := manager bytesInObject: obj.
@@ -160,6 +162,23 @@ SpurPlanningCompactor >> compact [
 		 self updateSavedFirstFieldsSpaceIfNecessary].
 	manager checkFreeSpace: GCModeFull.
 	self endCompaction
+]
+
+{ #category : #'space management' }
+SpurPlanningCompactor >> configureSavedFirstFieldsSpaceStart: theStart limit: theLimit isOldSpace: isOldSpace [
+	"Use teden to hold the savedFirstFieldsSpace."
+
+	<inline: true>
+	| limit |
+	limit := theLimit.
+	savedFirstFieldSpaceMaxSlots ifNotNil: [
+		limit := limit min:
+			(theStart + (savedFirstFieldSpaceMaxSlots * manager bytesPerOop)) ].
+
+	savedFirstFieldsSpace
+		start: theStart;
+		limit: limit.
+	savedFirstFieldsSpaceNotInOldSpace := isOldSpace not
 ]
 
 { #category : #compaction }
@@ -242,7 +261,7 @@ SpurPlanningCompactor >> copyAndUnmarkMobileObjects [
 						 previousPin >= o
 							ifTrue: [previousPin := nil. startOfPreviousPin := 0]
 							ifFalse: [startOfPreviousPin := manager startOfObject: previousPin]].
-					 self copyAndUnmarkObject: o to: toFinger bytes: bytes firstField: (manager longAt: top).
+					 self copyAndUnmarkObject: o to: toFinger bytes: bytes firstField: (manager unsignedLongAt: top).
 					 toFinger := toFinger + bytes.
 					 (top := top + manager bytesPerOop) >= savedFirstFieldsSpace limit ifTrue:
 						[self assert: savedFirstFieldsSpace top = (top - manager bytesPerOop).
@@ -256,7 +275,7 @@ SpurPlanningCompactor >> copyAndUnmarkMobileObjects [
 							ifFalse:
 								[firstFreeObject := previousPin].
 						^false]]]].
-	self freeFrom: toFinger upTo: manager endOfMemory nextObject: (previousPin ifNil: [objectAfterLastMobileObject ifNil: [manager objectAfter: firstFreeObject]]).
+	self freeFrom: toFinger upTo: manager getMemoryMap oldSpaceEnd nextObject: (previousPin ifNil: [objectAfterLastMobileObject ifNil: [manager objectAfter: firstFreeObject]]).
 	self coalesceFrom: toFinger.
 	^true
 ]
@@ -293,13 +312,13 @@ SpurPlanningCompactor >> findHighestSuitableFreeBlock: spaceEstimate [
 	"If a freeBlock of size at least spaceEstimate exists high enough in the heap, choose it.
 	 Ignoring pinned objects for now, the total ammount of shrinkage is expected to be
 	 at least totalFreeOldSpace (because of collected objects).  So any free chunk which is
-	 at or above endOfMemory - totalFreeOldSpace should not be corrupted during compaction.
+	 at or above oldSpaceEnd - totalFreeOldSpace should not be corrupted during compaction.
 	 Let's play with this for a while and see how we get on."
 	<inline: true>
 	manager findLargestFreeChunk ifNotNil:
 		[:largestFreeChunk|
 		((manager bytesInObject: largestFreeChunk) >= spaceEstimate
-		 and: [largestFreeChunk asUnsignedInteger > (manager endOfMemory - manager freeSize) asUnsignedInteger]) ifTrue:
+		 and: [largestFreeChunk asUnsignedInteger > (manager getMemoryMap oldSpaceEnd - manager freeSize) asUnsignedInteger]) ifTrue:
 			[^largestFreeChunk]].
 	^nil
 ]
@@ -351,11 +370,12 @@ SpurPlanningCompactor >> freeFrom: initialToFinger upTo: limit nextObject: nextO
 		[manager addFreeChunkWithBytes: limit - toFinger at: toFinger]
 ]
 
-{ #category : #'instance initialization' }
+{ #category : #initialization }
 SpurPlanningCompactor >> initialize [
 	biasForGC := true.
 	savedFirstFieldsSpace := SpurContiguousObjStack new.
-	savedFirstFieldsSpaceNotInOldSpace := true
+	savedFirstFieldsSpaceNotInOldSpace := true.
+	savedFirstFieldSpaceMaxSlots := nil.
 ]
 
 { #category : #compaction }
@@ -392,7 +412,7 @@ SpurPlanningCompactor >> initializeScanCheckingForFullyCompactedHeap [
 	self reinitializeScanFrom: manager hiddenRootsObject.
 	firstFreeObject ifNil:
 		[self error: 'uncompactable heap; no unmarked objects found'].
-	^firstMobileObject >= manager endOfMemory
+	^firstMobileObject >= manager getMemoryMap oldSpaceEnd 
 ]
 
 { #category : #private }
@@ -463,6 +483,7 @@ SpurPlanningCompactor >> planCompactSavingForwarders [
 	toFinger := manager startOfObject: firstFreeObject.
 	top := savedFirstFieldsSpace start.
 	startOfPreviousPin := 0.
+	lastMobileObject := nil.
 	manager allOldSpaceEntitiesFrom: firstFreeObject do:
 		[:o|
 		 self check: o.
@@ -508,6 +529,7 @@ SpurPlanningCompactor >> planCompactSavingForwarders [
 						[savedFirstFieldsSpace top: top - manager bytesPerOop.
 						 objectAfterLastMobileObject := manager oldSpaceObjectAfter: lastMobileObject.
 						 ^false]]]].
+
 	"If the heap is already fully compacted there will be no lastMobileObject..."
 	lastMobileObject ifNotNil:
 		[savedFirstFieldsSpace top: top - manager bytesPerOop.
@@ -534,7 +556,7 @@ SpurPlanningCompactor >> reinitializeScanFrom: initialObject [
 	"Search for firstFreeObject and firstMobileObject from initialObject, which is the
 	 hiddenRootsObject on the first pass, and the objectAfterLastMobileObject on
 	 subsequent passes)."
-	firstMobileObject := manager endOfMemory.
+	firstMobileObject := manager getMemoryMap oldSpaceEnd.
 	firstFreeObject := self scanForFirstFreeAndFirstMobileObjectFrom: initialObject.
 	firstFreeObject ifNotNil:
 		[mobileStart := manager startOfObject: firstFreeObject].
@@ -589,10 +611,21 @@ SpurPlanningCompactor >> remapObj: objOop [
 { #category : #private }
 SpurPlanningCompactor >> repinRememberedSet [
 	<inline: true>
-	scavenger rememberedSetSize > 0 ifTrue:
-		[manager storePointerUnchecked: 0 ofObject: manager rememberedSetObj withValue: firstFieldOfRememberedSet].
-	manager setIsPinnedOf: manager rememberedSetObj to: true.
-	scavenger relocateRememberedSet
+	manager getFromOldSpaceRememberedSet rememberedSetSize > 0 ifTrue:
+		[manager storePointerUnchecked: 0 ofObject: manager oldRememberedSetObj withValue: firstFieldOfRememberedSet].
+	manager setIsPinnedOf: manager oldRememberedSetObj to: true.
+	manager getFromOldSpaceRememberedSet relocateRememberedSet.
+	
+	manager getFromPermSpaceRememberedSet rememberedSetSize > 0 ifTrue:
+		[manager storePointerUnchecked: 0 ofObject: manager permRememberedSetObj withValue: firstFieldOfPermRememberedSet].
+	manager setIsPinnedOf: manager permRememberedSetObj to: true.
+	manager getFromPermSpaceRememberedSet relocateRememberedSet
+]
+
+{ #category : #'space management' }
+SpurPlanningCompactor >> savedFirstFieldSpaceMaxSlots: aNumber [
+
+	savedFirstFieldSpaceMaxSlots := aNumber
 ]
 
 { #category : #'space management' }
@@ -640,7 +673,7 @@ SpurPlanningCompactor >> selectSavedFirstFieldsSpace [
 	 the alternatives can't be had."
 	<inline: true>
 	| spaceEstimate sizeOfEden |
-	spaceEstimate := manager endOfMemory - manager firstObject // 40.
+	spaceEstimate := manager getMemoryMap oldSpaceEnd - manager firstObject // 40.
 	sizeOfEden := scavenger eden limit - scavenger eden start.
 	spaceEstimate > sizeOfEden ifTrue:
 		[(self findHighestSuitableFreeBlock: spaceEstimate) ifNotNil:
@@ -686,14 +719,17 @@ SpurPlanningCompactor >> unmarkInitialImmobileObjectsFreeUnmarked: freeUnmarked 
 	
 	Precondition: all used objects are marked.
 	
-	If freeUnmarked, free unmarked objects as they are found"
+	If freeUnmarked, free unmarked objects as they are found.
+	If the object is a fixed known object (nil, false, true) we should not free it"
 	manager allOldSpaceObjectsFrom: manager firstObject do: [:o|
 		self check: o.
 		(self oop: o isGreaterThanOrEqualTo: firstMobileObject)
 			ifTrue: [ ^self ].
-		(freeUnmarked and: [ (manager isMarked: o) not ])
-			ifTrue: [ manager freeObjectWithoutCoalesce: o ]
-			ifFalse: [ manager setIsMarkedOf: o to: false ]]
+		(freeUnmarked 
+			and: [ (manager isMarked: o) not 
+			and: [ (manager isFixedKnownObject: o) not ]])
+				ifTrue: [ manager freeObjectWithoutCoalesce: o ]
+				ifFalse: [ manager setIsMarkedOf: o to: false ]]
 ]
 
 { #category : #compaction }
@@ -738,8 +774,27 @@ SpurPlanningCompactor >> unmarkPinned: pinnedObj [
 { #category : #private }
 SpurPlanningCompactor >> unpinRememberedSet [
 	<inline: true>
-	firstFieldOfRememberedSet := manager fetchPointer: 0 ofObject: manager rememberedSetObj.
-	manager setIsPinnedOf: manager rememberedSetObj to: false
+	firstFieldOfRememberedSet := manager fetchPointer: 0 ofObject: manager oldRememberedSetObj.
+	manager setIsPinnedOf: manager oldRememberedSetObj to: false.
+
+	firstFieldOfPermRememberedSet := manager fetchPointer: 0 ofObject: manager permRememberedSetObj.
+	manager setIsPinnedOf: manager permRememberedSetObj to: false
+]
+
+{ #category : #compaction }
+SpurPlanningCompactor >> updatePointer: i in: obj [
+	"Sweep the pointer i-th field in obj, updating its possible reference to a mobile object to its eventual location."
+	<inline: true>
+	| oop fwd |
+	oop := manager fetchPointer: i ofObject: obj.
+	((manager isNonImmediate: oop) and: [self isMobile: oop]) ifTrue:
+		[self assert: (manager isMarked: oop).
+		 "If for some reason a hidden root is unmarked at this point, the status of this object is far from clear.
+		  Possibly, the object was created during the GC, so its status related to a possible forward pointer is unknown.
+		  So better just forbids this."
+		 fwd := manager fetchPointer: 0 ofObject: oop.
+		 self assert: (self isPostMobile: fwd).
+		 manager storePointerUnchecked: i ofObject: obj withValue: fwd]
 ]
 
 { #category : #compaction }
@@ -769,13 +824,7 @@ SpurPlanningCompactor >> updatePointersIn: obj [
 	| numPointerSlots |
 	numPointerSlots := manager numPointerSlotsOf: obj.
 	0 to: numPointerSlots - 1 do:
-		[:i| | oop fwd |
-		 oop := manager fetchPointer: i ofObject: obj.
-		 ((manager isNonImmediate: oop) and: [self isMobile: oop]) ifTrue:
-			[self assert: ((manager isMarked: oop) or: [obj = manager hiddenRootsObject]).
-			 fwd := manager fetchPointer: 0 ofObject: oop.
-			 self assert: (self isPostMobile: fwd).
-			 manager storePointerUnchecked: i ofObject: obj withValue: fwd]]
+		[:i| self updatePointer: i in: obj ]
 ]
 
 { #category : #compaction }
@@ -799,13 +848,7 @@ SpurPlanningCompactor >> updatePointersIn: obj savedFirstFieldPointer: firstFiel
 			 self assert: (self isPostMobile: fwd).
 			 manager longAt: firstFieldPtr put: fwd]].
 	1 to: numPointerSlots - 1 do:
-		[:i|
-		 oop := manager fetchPointer: i ofObject: obj.
-		 ((manager isNonImmediate: oop) and: [self isMobile: oop]) ifTrue:
-			[self assert: ((manager isMarked: oop) or: [obj = manager hiddenRootsObject]).
-			 fwd := manager fetchPointer: 0 ofObject: oop.
-			 self assert: (self isPostMobile: fwd).
-			 manager storePointerUnchecked: i ofObject: obj withValue: fwd]]
+		[:i| self updatePointer: i in: obj ]
 ]
 
 { #category : #compaction }
@@ -824,11 +867,22 @@ SpurPlanningCompactor >> updatePointersInInitialImmobileObjects [
 SpurPlanningCompactor >> updatePointersInManagerHeapEntities [
 	"The special non-pointer objects containing pointers, which are the objStacks and the rememberedSet,
 	 must be updated manually since they will not be recognized as containing pointers in the normal sweep."
+
 	manager relocateObjStacksForPlanningCompactor.
-	(scavenger rememberedSetSize > 0
+	
+	(manager getFromOldSpaceRememberedSet rememberedSetSize > 0
 	 and: [self isMobile: firstFieldOfRememberedSet]) ifTrue:
 		[firstFieldOfRememberedSet := manager fetchPointer: 0 ofObject: firstFieldOfRememberedSet].
-	self relocateObjectsInHeapEntity: manager rememberedSetObj from: 1 to: scavenger rememberedSetSize - 1
+	self relocateObjectsInHeapEntity: manager oldRememberedSetObj from: 1 to: manager getFromOldSpaceRememberedSet rememberedSetSize - 1.
+
+	(manager getFromPermSpaceRememberedSet rememberedSetSize > 0) ifTrue:
+		[self updatePointersIn: firstFieldOfPermRememberedSet ].
+	
+	manager getFromPermSpaceRememberedSet 
+		rememberedSetWithIndexDo: [ :oop :index | 
+			self updatePointersIn: oop ] startingAt: 1.
+	
+
 	"Note that we /must not/ set the rememberedSetObj here since it is a slot in the hiddenRootsObj
 	 and will be updated normally in updatePointersInInitialImmobileObjects.  So do not do
 	(self isMobile: manager rememberedSetObj) ifTrue:
@@ -943,11 +997,12 @@ SpurPlanningCompactor >> updateSavedFirstFieldsSpaceIfNecessary [
 { #category : #'space management' }
 SpurPlanningCompactor >> useEdenForSavedFirstFieldsSpace [
 	"Use teden to hold the savedFirstFieldsSpace."
+
 	<inline: true>
-	savedFirstFieldsSpace
-		start: scavenger eden start;
-		limit: scavenger eden limit.
-	savedFirstFieldsSpaceNotInOldSpace := true.
+	self
+		configureSavedFirstFieldsSpaceStart: scavenger eden start
+		limit: scavenger eden limit
+		isOldSpace: false.
 	self deny: self savedFirstFieldsSpaceWasAllocated
 ]
 
@@ -956,12 +1011,14 @@ SpurPlanningCompactor >> useFreeChunkForSavedFirstFieldsSpace: highestSuitableFr
 	"Use the supplied free chunk to hold the savedFirstFieldsSpace. Invoked when
 	 eden is found not to be big enough for the job. Avoid the first few fields so as
 	 not to destroy the free chunk and there by confuse object enumeration."
+
 	<inline: true>
 	self assert: (manager validFreeTreeChunk: highestSuitableFreeBlock).
-	savedFirstFieldsSpace
-		start: highestSuitableFreeBlock + (manager freeChunkLargerIndex * manager bytesPerOop);
-		limit: (manager addressAfter: highestSuitableFreeBlock).
-	savedFirstFieldsSpaceNotInOldSpace := false.
+	self
+		configureSavedFirstFieldsSpaceStart: highestSuitableFreeBlock
+			+ (manager freeChunkLargerIndex * manager bytesPerOop)
+		limit: (manager addressAfter: highestSuitableFreeBlock)
+		isOldSpace: true.
 	self deny: self savedFirstFieldsSpaceWasAllocated
 ]
 
@@ -969,20 +1026,21 @@ SpurPlanningCompactor >> useFreeChunkForSavedFirstFieldsSpace: highestSuitableFr
 SpurPlanningCompactor >> useSegmentForSavedFirstFieldsSpace: spaceEstimate [
 	"Attempt to allocate a memory segment large enough to hold the savedFirstFieldsSpace.
 	 Invoked when neither eden nor a large free chunk are found to be big enough for the job."
-	| roundedSize allocatedSize |
 	<var: #segAddress type: #'void *'>
+	| roundedSize allocatedSize segAddress |
 	roundedSize := spaceEstimate + 1023 // 1024 * 1024.
-	(manager "sent to the manager so that the simulator can increase memory to simulate a new segment"
-		sqAllocateMemorySegmentOfSize: roundedSize
-		Above: (manager segmentManager firstGapOfSizeAtLeast: roundedSize)
-		AllocatedSizeInto: (self cCode: [self addressOf: allocatedSize]
-								inSmalltalk: [[:sz| allocatedSize := sz]])) ifNotNil:
-		[:segAddress|
-		 savedFirstFieldsSpace
-			start: segAddress asUnsignedIntegerPtr;
-			limit: segAddress asUnsignedIntegerPtr + allocatedSize.
-		 savedFirstFieldsSpaceNotInOldSpace := true.
-		 self assert: self savedFirstFieldsSpaceWasAllocated.
+	
+	manager getMemoryMap 
+		allocateSegmentOfSize: roundedSize 
+		minAddress: (manager segmentManager firstGapOfSizeAtLeast: roundedSize)
+		resultsIn: [ :address :aSize | allocatedSize := aSize. segAddress := address ].
+	
+		segAddress ifNotNil: [
+			self
+				configureSavedFirstFieldsSpaceStart: segAddress asUnsignedIntegerPtr
+				limit: segAddress asUnsignedIntegerPtr + allocatedSize
+				isOldSpace: false.
+				self assert: self savedFirstFieldsSpaceWasAllocated.
 		 ^true].
 	^false
 ]

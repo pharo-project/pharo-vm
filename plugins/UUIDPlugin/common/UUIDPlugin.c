@@ -39,7 +39,7 @@ struct VirtualMachine* interpreterProxy;
 	{
 	  uuid_t uuid;
 
-	#if defined(HAVE_UUIDGEN)
+	#if defined(HAVE_UUIDGEN) || __FreeBSD__
 	  uuidgen(&uuid, 1);
 	#else
 	  uuid_generate(uuid);

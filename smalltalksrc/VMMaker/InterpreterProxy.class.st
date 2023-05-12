@@ -120,13 +120,6 @@ InterpreterProxy >> cStringOrNullFor: oop [
 ]
 
 { #category : #'callback support' }
-InterpreterProxy >> callbackEnter: callbackID [
-	"Re-enter the interpreter for executing a callback"
-	<var: #callbackID type: #'sqInt *'>
-	^self notYetImplementedError
-]
-
-{ #category : #'callback support' }
 InterpreterProxy >> callbackLeave: cbID [
 	"Leave from a previous callback"
 	^self notYetImplementedError
@@ -352,11 +345,6 @@ InterpreterProxy >> fullGC [
 { #category : #'special objects' }
 InterpreterProxy >> getDeferDisplayUpdates [
 	^false
-]
-
-{ #category : #other }
-InterpreterProxy >> getInterruptPending [
-	^self notYetImplementedError
 ]
 
 { #category : #other }
@@ -1021,13 +1009,6 @@ InterpreterProxy >> sendInvokeCallbackContext: vmCallbackContext [
 	 The arguments are raw C addresses and are converted to integer objects on the way."
 	<returnTypeC: #sqInt>
 	self notYetImplemented
-]
-
-{ #category : #other }
-InterpreterProxy >> setInterruptCheckChain: aFunction [
-	<returnTypeC: 'void (*setInterruptCheckChain(void (*aFunction)(void)))()'>
-	<var: #aFunction declareC: 'void (*aFunction)()'>
-	^self notYetImplementedError
 ]
 
 { #category : #other }

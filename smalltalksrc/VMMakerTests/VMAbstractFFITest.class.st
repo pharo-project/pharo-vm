@@ -75,15 +75,6 @@ VMAbstractFFITest >> newExternalAddress: anInteger [
 	^ anExternalAddress
 ]
 
-{ #category : #'as yet unclassified' }
-VMAbstractFFITest >> newMethodWithBytecodes: aCollection [
-
-	^ methodBuilder
-		  newMethod;
-		  bytecodes: aCollection;
-		  buildMethod
-]
-
 { #category : #helpers }
 VMAbstractFFITest >> readyProcesses [
 	
@@ -91,4 +82,14 @@ VMAbstractFFITest >> readyProcesses [
 	collection := OrderedCollection new.
 	interpreter processesInProcessListDo: [ :e | collection add: e ].
 	^ collection
+]
+
+{ #category : #initialization }
+VMAbstractFFITest >> setUp [ 
+
+	super setUp.
+	
+	interpreter libFFI: LibFFI new.
+	interpreter libFFI interpreter: interpreter.
+
 ]
