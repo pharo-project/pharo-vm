@@ -13094,6 +13094,12 @@ StackInterpreter >> quinaryInlinePrimitive: primIndex [
 	self unknownInlinePrimitive
 ]
 
+{ #category : #'compiled methods' }
+StackInterpreter >> rawHeaderOf: methodPointer [
+	<doNotGenerate>
+	^objectMemory rawHeaderOf: methodPointer
+]
+
 { #category : #'primitive support' }
 StackInterpreter >> reapAndResetErrorCodeTo: theFP header: methodHeader [
 
@@ -13123,7 +13129,7 @@ StackInterpreter >> reapAndResetErrorCodeTo: theFP header: methodHeader [
 { #category : #'internal interpreter access' }
 StackInterpreter >> receiver [
 	<inline: true>
-	^stackPages unsignedLongAt: framePointer + FoxIFReceiver
+	^stackPages longAt: framePointer + FoxIFReceiver
 ]
 
 { #category : #'process primitive support' }
@@ -14024,7 +14030,7 @@ StackInterpreter >> shortPrintContext: aContext [
 StackInterpreter >> shortPrintFrame: theFP [
 	<inline: false>
 	<var: #theFP type: #'char *'>
-	| rcvr |
+	| rcvr mthd |
 	
 	printedStackFrames := printedStackFrames + 1.
 	(maxStacksToPrint ~= 0 and:[ printedStackFrames > maxStacksToPrint])
@@ -14032,15 +14038,18 @@ StackInterpreter >> shortPrintFrame: theFP [
 			maxStackMessagePrinted = 1 ifFalse: [  
 				self print: '    ... more contexts ...'; cr.
 				maxStackMessagePrinted := 1 ].
-			^ nil ].	
+			^ nil ].
 	
 	(stackPages couldBeFramePointer: theFP) ifFalse:
 		[self print: 'invalid frame pointer'; cr.
 		 ^nil].
 	rcvr := self frameReceiver: theFP.
+	mthd := self frameMethodObject: theFP.
 	self printHexPtr: theFP.
 	self space.
-	self printActivationNameFor: (self iframeMethod: theFP)
+	self printChar: ((self isMachineCodeFrame: theFP) ifTrue: [$M] ifFalse: [$I]).
+	self space.
+	self printActivationNameFor: mthd
 		receiver: rcvr
 		isBlock: (self frameIsBlockActivation: theFP)
 		firstTemporary: (self temporary: 0 in: theFP).

@@ -5029,12 +5029,6 @@ CoInterpreter >> quickPrimitiveInstVarIndexFor: primIndex [
 ]
 
 { #category : #'compiled methods' }
-CoInterpreter >> rawHeaderOf: methodPointer [
-	<api>
-	^objectMemory fetchPointer: HeaderIndex ofObject: methodPointer
-]
-
-{ #category : #'compiled methods' }
 CoInterpreter >> rawHeaderOf: methodOop put: cogMethodOrMethodHeader [
 	<api>
 	"Since methods may be updated while forwarding during become, make the assert accomodate this."
@@ -5043,12 +5037,6 @@ CoInterpreter >> rawHeaderOf: methodOop put: cogMethodOrMethodHeader [
 		storePointerUnchecked: HeaderIndex
 		ofObject: methodOop
 		withValue: cogMethodOrMethodHeader
-]
-
-{ #category : #'internal interpreter access' }
-CoInterpreter >> receiver [
-	<inline: true>
-	^stackPages longAt: framePointer + FoxIFReceiver
 ]
 
 { #category : #'debug support' }
@@ -5296,37 +5284,6 @@ CoInterpreter >> setUpForUseByFacade: aCurrentImageCoInterpreterFacade [
 	numStackPages := 0
 ]
 
-{ #category : #'debug printing' }
-CoInterpreter >> shortPrintFrame: theFP [
-	<inline: false>
-	<var: #theFP type: #'char *'>
-	| rcvr mthd |
-	
-	printedStackFrames := printedStackFrames + 1.
-	(maxStacksToPrint ~= 0 and:[ printedStackFrames > maxStacksToPrint])
-		ifTrue: [ 
-			maxStackMessagePrinted = 1 ifFalse: [  
-				self print: '    ... more contexts ...'; cr.
-				maxStackMessagePrinted := 1 ].
-			^ nil ].
-	
-	(stackPages couldBeFramePointer: theFP) ifFalse:
-		[self print: 'invalid frame pointer'; cr.
-		 ^nil].
-	rcvr := self frameReceiver: theFP.
-	mthd := self frameMethodObject: theFP.
-	self printHexPtr: theFP.
-	self space.
-	self printChar: ((self isMachineCodeFrame: theFP) ifTrue: [$M] ifFalse: [$I]).
-	self space.
-	self printActivationNameFor: mthd
-		receiver: rcvr
-		isBlock: (self frameIsBlockActivation: theFP)
-		firstTemporary: (self temporary: 0 in: theFP).
-	self space.
-	self shortPrintOop: rcvr "shortPrintOop: adds a cr"
-]
-
 { #category : #'cog jit support' }
 CoInterpreter >> siglong: aJumpBuf jmp: returnValue [
 	"Hack simulation of sigsetjmp/siglongjmp.
@@ -5471,7 +5428,7 @@ CoInterpreter >> temporary: offset in: theFP [
 	<inline: true>
 	^ (self isMachineCodeFrame: theFP)
 		  ifTrue: [ self mtemporary: offset in: theFP ]
-		  ifFalse: [ self itemporary: offset in: theFP ]
+		  ifFalse: [ super temporary: offset in: theFP ]
 ]
 
 { #category : #'internal interpreter access' }
@@ -5479,7 +5436,7 @@ CoInterpreter >> temporary: offset in: theFP put: valueOop [
 	<inline: true>
 	^(self isMachineCodeFrame: theFP)
 		ifTrue: [self mtemporary: offset in: theFP put: valueOop]
-		ifFalse: [self itemporary: offset in: theFP put: valueOop]
+		ifFalse: [super temporary: offset in: theFP put: valueOop]
 ]
 
 { #category : #'image save/restore' }

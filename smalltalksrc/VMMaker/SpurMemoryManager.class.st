@@ -8939,7 +8939,7 @@ SpurMemoryManager >> methodHeaderFromSavedFirstField: oop [
 SpurMemoryManager >> methodHeaderOf: methodObj [
 	"Answer the method header of a CompiledMethod object."
 	self assert: (self isCompiledMethod: methodObj).
-	^self fetchPointer: HeaderIndex ofObject: methodObj
+	^ self rawHeaderOf: methodObj
 ]
 
 { #category : #'simulation only' }
@@ -10897,6 +10897,13 @@ SpurMemoryManager >> rawHashBitsOf: objOop [
 	<api>
 	self flag: #endianness.
 	^(self uint32AtPointer: objOop + 4) bitAnd: self identityHashHalfWordMask
+]
+
+{ #category : #'compiled methods' }
+SpurMemoryManager >> rawHeaderOf: methodPointer [
+
+	<api>
+	^ self fetchPointer: HeaderIndex ofObject: methodPointer
 ]
 
 { #category : #'object access' }
