@@ -1901,128 +1901,35 @@ CoInterpreter >> checkLogIntegrity [
 ]
 
 { #category : #'debug support' }
-CoInterpreter >> checkOkayFields: oop [
+CoInterpreter >> checkMethodHeader: fieldOop ofMethod: oop ifInvalid: aBlock [
 
-	"Check if the argument is an ok object.
-	 If this is a pointers object, check that its fields are all okay oops."
-
-	| hasYoung i fieldOop |
-	(oop = nil or: [ oop = 0 ]) ifTrue: [ ^ true ]. "?? eem 1/16/2013"
-	(objectMemory isIntegerObject: oop) ifTrue: [ ^ true ].
-	(objectMemory checkOkayOop: oop) ifFalse: [ ^ false ].
-	(objectMemory checkOopHasOkayClass: oop) ifFalse: [ ^ false ].
-	((objectMemory isPointersNonImm: oop) or: [ 
-		 objectMemory isCompiledMethod: oop ]) ifFalse: [ ^ true ].
-	hasYoung := false.
-	(objectMemory isCompiledMethod: oop)
-		ifTrue: [ 
-		i := (objectMemory literalCountOf: oop) + LiteralStart - 1 ]
-		ifFalse: [ 
-			(objectMemory isContext: oop)
-				ifTrue: [ 
-				i := CtxtTempFrameStart + (self fetchStackPointerOf: oop) - 1 ]
-				ifFalse: [ i := (objectMemory lengthOf: oop) - 1 ] ].
-	[ i >= 0 ] whileTrue: [ 
-		fieldOop := objectMemory fetchPointer: i ofObject: oop.
-		(objectMemory isNonIntegerObject: fieldOop) ifTrue: [ 
-			(i = 0 and: [ objectMemory isCompiledMethod: oop ])
-				ifTrue: [ 
-					(cogMethodZone methodFor: (self pointerForOop: fieldOop)) = 0 
-						ifTrue: [ 
-							self
-								print: 'method ';
-								printHex: oop;
-								print: ' has an invalid cog method reference'.
-							^ false ] ]
-				ifFalse: [ 
-					hasYoung := hasYoung or: [ objectMemory isYoung: fieldOop ].
-					(objectMemory checkOkayOop: fieldOop) ifFalse: [ ^ false ].
-					(self checkOopHasOkayClass: fieldOop) ifFalse: [ ^ false ] ] ].
-		i := i - 1 ].
-	hasYoung ifTrue: [ ^ objectMemory checkOkayYoungReferrer: oop ].
-	^ true
+	(cogMethodZone methodFor: (self pointerForOop: fieldOop)) = 0
+		ifFalse: [ ^ self ].
+	self
+		print: 'method ';
+		printHex: oop;
+		print: ' has an invalid cog method reference'.
+	^ aBlock value
 ]
 
 { #category : #'object memory support' }
-CoInterpreter >> checkStackIntegrity [
-	"Perform an integrity/leak check using the heapMap.  Assume
-	 clearLeakMapAndMapAccesibleObjects has set a bit at each
-	 object's header.  Scan all objects accessible from the stack
-	 checking that every pointer points to a header.  Answer if no
-	 dangling pointers were detected."
-	| ok |
-	<inline: false>
-	<var: #thePage type: #'StackPage *'>
-	<var: #theSP type: #'char *'>
+CoInterpreter >> checkMethodIntegrityInFrame: theFP [
+
 	<var: #theFP type: #'char *'>
-	<var: #callerFP type: #'char *'>
-	<var: #frameRcvrOffset type: #'char *'>
 	<var: #cogMethod type: #'CogMethod *'>
-	ok := true.
-	0 to: numStackPages - 1 do:
-		[:i| | thePage theSP theFP frameRcvrOffset callerFP oop |
-		thePage := stackPages stackPageAt: i.
-		(stackPages isFree: thePage) ifFalse:
-			[thePage = stackPage
-				ifTrue:
-					[theSP := stackPointer.
-					 theFP := framePointer]
-				ifFalse:
-					[theSP := thePage headSP.
-					 theFP := thePage  headFP].
-			 "Skip the instruction pointer on top of stack of inactive pages."
-			 thePage = stackPage ifFalse:
-				[theSP := theSP + objectMemory wordSize].
-			 [frameRcvrOffset := self frameReceiverLocation: theFP.
-				[theSP <= frameRcvrOffset] whileTrue:
-				[oop := stackPages unsignedLongAt: theSP.
-				 ((objectMemory isNonImmediate: oop) 
-				   and: [(objectMemory heapMapAtWord: (self pointerForOop: oop)) = 0]) ifTrue:
-					[self printFrameThing: 'object leak in frame temp' andFrame: theFP at: theSP.
-					 ok := false].
-				 theSP := theSP + objectMemory wordSize].
-			 (self frameHasContext: theFP) ifTrue:
-				[oop := self frameContext: theFP.
-				 ((objectMemory isImmediate: oop) 
-				   or: [(objectMemory heapMapAtWord: (self pointerForOop: oop)) = 0]) ifTrue:
-					[self printFrameThing: 'object leak in frame ctxt' andFrame: theFP at: theFP + FoxThisContext.
-					 ok := false].
-				 (objectMemory isContext: oop) ifFalse:
-					[self printFrameThing: 'frame ctxt should be context' andFrame: theFP at: theFP + FoxThisContext.
-					 ok := false].
-				 ((objectMemory isContext: oop) and: [self isMarriedOrWidowedContext: oop]) ifFalse:
-					[self printFrameThing: 'frame ctxt should be married' andFrame: theFP at: theFP + FoxThisContext.
-					 ok := false].
-				 ((objectMemory isContext: oop)
-					and: [(self isMarriedOrWidowedContext: oop)
-					and: [(self frameOfMarriedContext: oop) = theFP]]) ifFalse: [
-						self printFrameThing: 'frame ctxt should be married to this frame ' andFrame: theFP at: theFP + FoxThisContext.
-						ok := false]].
-			 (self isMachineCodeFrame: theFP)
-				ifFalse:
-					[oop := self iframeMethod: theFP.
-					 ((objectMemory isImmediate: oop) 
-					   or: [(objectMemory heapMapAtWord: (self pointerForOop: oop)) = 0]) ifTrue:
-						[self printFrameThing: 'object leak in iframe mthd' andFrame: theFP at: theFP + FoxMethod.
-						 ok := false]]
-				ifTrue:
-					[| cogMethod |
-					 cogMethod := self mframeHomeMethod: theFP.
-					 (objectMemory heapMapAtWord: (self pointerForOop: cogMethod)) = 0 ifTrue:
-						[self printFrameThing: 'object leak in mframe mthd' andFrame: theFP at: theFP + FoxMethod.
-						 ok := false]].
-			 (callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
-				[theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
-				 theFP := callerFP].
-			 theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
-			 [theSP <= thePage baseAddress] whileTrue:
-				[oop := stackPages unsignedLongAt: theSP.
-				 ((objectMemory isNonImmediate: oop) 
-				   and: [(objectMemory heapMapAtWord: (self pointerForOop: oop)) = 0]) ifTrue:
-					[self printFrameThing: 'object leak in frame arg' andFrame: theFP at: theSP.
-					 ok := false].
-				 theSP := theSP + objectMemory wordSize]]].
-	^ok
+	| cogMethod |
+	(self isMachineCodeFrame: theFP) ifFalse: [
+		^ super checkMethodIntegrityInFrame: theFP ].
+
+	cogMethod := self mframeHomeMethod: theFP.
+	(objectMemory heapMapAtWord: (self pointerForOop: cogMethod)) = 0
+		ifTrue: [
+			self
+				printFrameThing: 'object leak in mframe mthd'
+				andFrame: theFP
+				at: theFP + FoxMethod.
+			^ false ].
+	^ true
 ]
 
 { #category : #'process primitive support' }
@@ -2718,100 +2625,6 @@ CoInterpreter >> followForwardedMethodsInMethodZone [
 	cogit followForwardedMethods
 ]
 
-{ #category : #'object memory support' }
-CoInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
-	"Spur's become: is lazy, turning the becommed object into a forwarding object to the other.
-	 The read-barrier is minimised by arranging that forwarding pointers will fail a method cache
-	 probe, since notionally objects' internals are accessed only via sending messages to them,
-	 the exception is primitives that access the internals of the non-receiver argument(s).
-
-	 To avoid a read barrier on bytecode, literal and inst var fetch and non-local return, we scan
-	 the receivers (including the stacked receiver for non-local return) and method references
-	 in the stack zone and follow any forwarded ones.  This is of course way cheaper than
-	 scanning all of memory as in the old become."
-
-	| theIPPtr |
-	<inline: false>
-	<var: #theSP type: #'char *'>
-	<var: #theFP type: #'char *'>
-	<var: #theIPPtr type: #usqInt>
-	<var: #callerFP type: #'char *'>
-	<var: #thePage type: #'StackPage *'>
-
-	self writeBackHeadFramePointers.
-
-	(theBecomeEffectsFlags anyMask: BecameCompiledMethodFlag) ifTrue:
-		[(objectMemory isForwarded: method) ifTrue:
-			[theIPPtr := instructionPointer - method.
-			 method := objectMemory followForwarded: method.
-			 instructionPointer := method + theIPPtr].
-		(objectMemory isOopForwarded: newMethod) ifTrue:
-			[newMethod := objectMemory followForwarded: newMethod]].
-
-	self assert: stackPage ~= 0.
-	0 to: numStackPages - 1 do:
-		[:i| | thePage theSP theFP callerFP oop offset |
-		thePage := stackPages stackPageAt: i.
-		thePage isFree ifFalse:
-			[self assert: (self ifCurrentStackPageHasValidHeadPointers: thePage).
-			 theFP := thePage headFP.
-			 "Skip the instruction pointer on top of stack of inactive pages."
-			 theIPPtr := thePage = stackPage ifTrue: [0] ifFalse: [thePage headSP asUnsignedInteger].
-			 [
-				self assert: (thePage addressIsInPage: theFP).
-				self assert: (theIPPtr = 0 or: [thePage addressIsInPage: theIPPtr asVoidPointer]).
-				(self isMachineCodeFrame: theFP) ifFalse: [
-					oop := stackPages unsignedLongAt: theFP + FoxIFReceiver.
-					(objectMemory isOopForwarded: oop) ifTrue: [
-						stackPages
-							unsignedLongAt: theFP + FoxIFReceiver
-							put: (objectMemory followForwarded: oop) ].
-					oop := self iframeMethod: theFP.
-					(objectMemory isForwarded: oop) ifTrue: [
-						| newOop |
-						newOop := objectMemory followForwarded: oop.
-						offset := newOop - oop.
-						(theIPPtr ~= 0 and: [(stackPages unsignedLongAt: theIPPtr) > oop]) ifTrue: [
-							stackPages
-								unsignedLongAt: theIPPtr
-								put: (stackPages unsignedLongAt: theIPPtr) + offset].
-						stackPages
-							unsignedLongAt: theFP + FoxMethod
-							put: (oop := newOop).
-						stackPages
-							unsignedLongAt: theFP + FoxIFSavedIP
-							put: (stackPages unsignedLongAt: theFP + FoxIFSavedIP) + offset ]]
-					ifTrue: [
-						oop := stackPages unsignedLongAt: theFP + FoxMFReceiver.
-						(objectMemory isOopForwarded: oop) ifTrue: [
-							stackPages
-								unsignedLongAt: theFP + FoxMFReceiver
-								put: (objectMemory followForwarded: oop) ].
-					 	self assert: (objectMemory isForwarded: (self mframeHomeMethod: theFP) methodObject) not].
-
-			((self frameHasContext: theFP)
-			   and: [(objectMemory isForwarded: (self frameContext: theFP))]) ifTrue: [
-					stackPages
-						unsignedLongAt: theFP + FoxThisContext
-						put: (objectMemory followForwarded: (self frameContext: theFP)) ].
-			  offset := self frameStackedReceiverOffset: theFP.
-			  oop := stackPages unsignedLongAt: theFP + offset.
-			  (objectMemory isOopForwarded: oop) ifTrue:
-				[stackPages
-					unsignedLongAt: theFP + offset
-					put: (objectMemory followForwarded: oop)].
-			  (callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
-				[theIPPtr := (theFP + FoxCallerSavedIP) asUnsignedInteger.
-				 theFP := callerFP].
-				"And finally follow the saved context and the caller context."
-				theSP := thePage baseAddress - objectMemory wordSize.
-				[theSP <= thePage baseAddress] whileTrue: [
-					oop := stackPages unsignedLongAt: theSP.
-					(objectMemory isForwarded: oop) ifTrue: [
-						stackPages unsignedLongAt: theSP put: (objectMemory followForwarded: oop) ].
-					theSP := theSP + objectMemory wordSize ]]]
-]
-
 { #category : #'process primitive support' }
 CoInterpreter >> forceInterruptCheckFromHeartbeat [
 	"Force an interrupt check ASAP. This version is the
@@ -2890,6 +2703,16 @@ CoInterpreter >> frameReceiver: theFP [
 	^ (self isMachineCodeFrame: theFP)
 		  ifTrue: [ self mframeReceiver: theFP ]
 		  ifFalse: [ super frameReceiver: theFP ]
+]
+
+{ #category : #'frame access' }
+CoInterpreter >> frameReceiver: theFP put: anOop [
+
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^ (self isMachineCodeFrame: theFP)
+		  ifTrue: [ self mframeReceiver: theFP put: anOop ]
+		  ifFalse: [ super frameReceiver: theFP put: anOop ]
 ]
 
 { #category : #'frame access' }
@@ -4237,6 +4060,13 @@ CoInterpreter >> mframeReceiver: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	^stackPages longAt: theFP + FoxMFReceiver
+]
+
+{ #category : #'frame access' }
+CoInterpreter >> mframeReceiver: theFP put: anOop [
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^stackPages longAt: theFP + FoxMFReceiver put: anOop
 ]
 
 { #category : #'debug support' }
