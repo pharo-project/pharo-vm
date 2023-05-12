@@ -8580,10 +8580,12 @@ StackInterpreter >> jumplfTrueBy: offset [
 { #category : #'message sending' }
 StackInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 
+	"Create the frame for the method activation.
+	If mustBeInterpreterFrame is true, force it to be an interpreter frame regardless of the method being compiled"
+	<var: #initialIP type: #usqInt>
 	<inline: true>
-	| methodHeader numArgs numTemps rcvr |
-	methodHeader := objectMemory methodHeaderOf: newMethod.
-	"Create the frame for the method activation"
+	| methodHeader numArgs numTemps rcvr initialIP |
+	methodHeader := self rawHeaderOf: newMethod.
 	numTemps := self temporaryCountOfMethodHeader: methodHeader.
 	numArgs := self argumentCountOfMethodHeader: methodHeader.
 
@@ -8593,24 +8595,23 @@ StackInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 	self push: instructionPointer.
 	self push: framePointer.
 	framePointer := stackPointer.
-	self push: newMethod.
-	self setMethod: newMethod methodHeader: methodHeader.
-	self push: objectMemory nilObject. "FxThisContext field"
-	self push: (self
-			 encodeFrameFieldHasContext: false
-			 isBlock: false
-			 numArgs: numArgs).
+		initialIP := self
+			initialIPForHeader: methodHeader
+			method: newMethod.
+		self push: newMethod.
+		self setMethod: newMethod methodHeader: methodHeader.
+		self push: objectMemory nilObject. "FoxThisContext field"
+		self push: (self
+				encodeFrameFieldHasContext: false
+				isBlock: false
+				numArgs: numArgs).
+		"-1 to account for pre-increment in fetchNextBytecode"
+		instructionPointer := self pointerForOop: initialIP - 1.
 	self push: rcvr.
 
 	"Initialize temps to nil"
 	numArgs + 1 to: numTemps do: [ :i |
 		self push: objectMemory nilObject ].
-
-	"-1 to account for pre-increment in fetchNextBytecode"
-	instructionPointer := self pointerForOop:
-		                      (self
-			                       initialIPForHeader: methodHeader
-			                       method: newMethod) - 1.
 
 	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."

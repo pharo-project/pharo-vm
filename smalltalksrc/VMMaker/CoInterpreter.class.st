@@ -3434,10 +3434,12 @@ CoInterpreter >> isMachineCodeIP: anInstrPointer [
 { #category : #'message sending' }
 CoInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 
+	"Create the frame for the method activation.
+	If mustBeInterpreterFrame is true, force it to be an interpreter frame regardless of the method being compiled"
 	<var: #cogMethod type: #'CogMethod *'>
 	<var: #initialIP type: #usqInt>
 	<inline: true>
-	| methodHeader cogMethod numArgs numTemps rcvr |
+	| methodHeader numArgs numTemps rcvr cogMethod |
 	methodHeader := self rawHeaderOf: newMethod.
 	((self isCogMethodReference: methodHeader)) ifTrue: [ | theCogMethod |
 		theCogMethod := self cCoerceSimple: methodHeader to: #'CogMethod *'.
@@ -3459,31 +3461,31 @@ CoInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 	self push: instructionPointer.
 	self push: framePointer.
 	framePointer := stackPointer.
-	cogMethod
-		ifNotNil: [
-			self push: cogMethod asUnsignedInteger.
-			self push: objectMemory nilObject. "FoxThisContext field"
-			instructionPointer := cogMethod asUnsignedInteger
-			                      + cogMethod stackCheckOffset ]
-		ifNil: [
-			| initialIP |
-			initialIP := self
-				             initialIPForHeader: methodHeader
-				             method: newMethod.
-			self push: newMethod.
-			self setMethod: newMethod methodHeader: methodHeader.
-			self push: objectMemory nilObject. "FoxThisContext field"
-			self push: (self
-					 encodeFrameFieldHasContext: false
-					 isBlock: false
-					 numArgs: numArgs).
-			self push: 0. "FoxIFSavedIP"
-			instructionPointer := initialIP - 1 ].
+	cogMethod ifNil: [
+		| initialIP |
+		initialIP := self
+			initialIPForHeader: methodHeader
+			method: newMethod.
+		self push: newMethod.
+		self setMethod: newMethod methodHeader: methodHeader.
+		self push: objectMemory nilObject. "FoxThisContext field"
+		self push: (self
+				encodeFrameFieldHasContext: false
+				isBlock: false
+				numArgs: numArgs).
+		self push: 0. "FoxIFSavedIP"
+		"-1 to account for pre-increment in fetchNextBytecode"
+		instructionPointer := self pointerForOop: initialIP - 1. ]
+	ifNotNil: [
+		self push: cogMethod asUnsignedInteger.
+		self push: objectMemory nilObject. "FoxThisContext field"
+		instructionPointer := cogMethod asUnsignedInteger
+		                      + cogMethod stackCheckOffset ].
 	self push: rcvr.
 
-	"clear remaining temps to nil"
+	"Initialize temps to nil"
 	numArgs + 1 to: numTemps do: [ :i |
-	self push: objectMemory nilObject ].
+		self push: objectMemory nilObject ].
 
 	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
@@ -3502,6 +3504,10 @@ CoInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 				                      +
 				                      (self sizeOfLongStoreTempBytecode:
 					                       methodHeader) ] ] ].
+
+	self assert: (self frameNumArgs: framePointer) = argumentCount.
+	self assert: (self frameIsBlockActivation: framePointer) not.
+	self assert: (self frameHasContext: framePointer) not.
 
 	^ methodHeader
 ]
