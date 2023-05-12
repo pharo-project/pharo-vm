@@ -335,7 +335,7 @@ StackInterpreterPrimitives >> fieldsInFrame: theFP [
 
 { #category : #'object access primitives' }
 StackInterpreterPrimitives >> frameIsMarked: theFPInt [
-	^((stackPages unsignedLongAt: theFPInt + FoxFrameFlags) bitAnd: 2) ~= 0
+	^((stackPages unsignedLongAt: theFPInt + FoxIFrameFlags) bitAnd: 2) ~= 0
 ]
 
 { #category : #'ffi - helpers' }
@@ -441,8 +441,8 @@ StackInterpreterPrimitives >> logDebug: aString [
 { #category : #'object access primitives' }
 StackInterpreterPrimitives >> markFrame: theFPInt [
 	stackPages
-		unsignedLongAt: theFPInt + FoxFrameFlags
-		put: ((stackPages unsignedLongAt: theFPInt + FoxFrameFlags) bitOr: 2)
+		unsignedLongAt: theFPInt + FoxIFrameFlags
+		put: ((stackPages unsignedLongAt: theFPInt + FoxIFrameFlags) bitOr: 2)
 ]
 
 { #category : #'ffi - helpers' }
@@ -4181,9 +4181,9 @@ StackInterpreterPrimitives >> unmarkAllFrames [
 		thePage := stackPages stackPageAt: i.
 		(stackPages isFree: thePage) ifFalse:
 			[theFP := thePage  headFP.
-			 [flags := objectMemory longAt: theFP + FoxFrameFlags.
+			 [flags := objectMemory longAt: theFP + FoxIFrameFlags.
 			  (flags bitAnd: 2) ~= 0 ifTrue:
-				[objectMemory longAt: theFP + FoxFrameFlags put: flags - 2].
+				[objectMemory longAt: theFP + FoxIFrameFlags put: flags - 2].
 			  (theFP := self frameCallerFP: theFP) ~= 0] whileTrue]]
 ]
 

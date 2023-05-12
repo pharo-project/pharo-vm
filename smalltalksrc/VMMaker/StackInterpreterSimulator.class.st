@@ -1307,7 +1307,7 @@ StackInterpreterSimulator >> printFrameFlagsForFP: theFP [
 	<inline: false>
 	<var: #theFP type: #'char *'>
 	<var: #address type: #'char *'>
-	address := theFP + FoxFrameFlags.
+	address := theFP + FoxIFrameFlags.
 	it := stackPages unsignedLongAt: address.
 	self printHex: address;
 		printChar: $/;

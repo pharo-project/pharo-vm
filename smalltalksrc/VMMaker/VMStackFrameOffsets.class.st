@@ -7,7 +7,6 @@ Class {
 	#classVars : [
 		'FoxCallerContext',
 		'FoxCallerSavedIP',
-		'FoxFrameFlags',
 		'FoxIFReceiver',
 		'FoxIFSavedIP',
 		'FoxIFrameFlags',

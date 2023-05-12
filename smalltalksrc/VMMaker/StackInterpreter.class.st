@@ -891,8 +891,8 @@ StackInterpreter class >> initializeFrameIndices [
 			caller's method ip/base frame's sender context
 	fp->	saved fp
 			method
-			frame flags
-			context (uninitialized)
+			context (initialized to nil)
+			frame flags (interpreter only)
 			receiver
 			first temp
 			...
@@ -905,33 +905,32 @@ StackInterpreter class >> initializeFrameIndices [
 	The first frame in a stack page is the baseFrame and is marked as such by a null saved fp,
 	in which case the saved method ip is actually the context (possibly hybrid) beneath the base frame"
 
-	| fxCallerSavedIP fxSavedFP fxMethod fxFrameFlags fxThisContext fxReceiver |
+	| fxCallerSavedIP fxSavedFP fxMethod fxIFrameFlags fxThisContext fxIReceiver |
 	fxCallerSavedIP := 1.
 	fxSavedFP := 0.
 	fxMethod := -1.
 	fxThisContext := -2.
-	fxFrameFlags := -3.	"Can find numArgs, needed for fast temp access. args are above fxCallerSavedIP.
+	fxIFrameFlags := -3.	"Can find numArgs, needed for fast temp access. args are above fxCallerSavedIP.
 						 Can find ``is block'' bit
 						 Can find ``has context'' bit"
 
-	fxReceiver := -4.
+	fxIReceiver := -4.
 
-	FrameSlots := fxCallerSavedIP - fxReceiver + 1.
+	FrameSlots := fxCallerSavedIP - fxIReceiver + 1.
 
 	FoxCallerSavedIP := fxCallerSavedIP * BytesPerWord.
 	"In base frames the caller saved ip field holds the caller context."
 	FoxCallerContext := FoxCallerSavedIP.
 	FoxSavedFP := fxSavedFP * BytesPerWord.
 	FoxMethod := fxMethod * BytesPerWord.
-	FoxFrameFlags := fxFrameFlags * BytesPerWord.
+	FoxIFrameFlags := fxIFrameFlags * BytesPerWord.
 	FoxThisContext := fxThisContext * BytesPerWord.
-	FoxReceiver := fxReceiver * BytesPerWord.
+	FoxReceiver := fxIReceiver * BytesPerWord.
 
 	"Mark the CoInterpreter-specific offsets as #undefined to
 	 avoid including them accidentally in StackInterpreter code."
 	IFrameSlots := #undefined.
 	MFrameSlots := #undefined.
-	FoxIFrameFlags := #undefined.
 	FoxIFSavedIP := #undefined.
 	FoxIFReceiver := #undefined.
 	FoxMFReceiver := #undefined
@@ -6748,14 +6747,14 @@ StackInterpreter >> frameHasContext: theFP [
 	"See encodeFrameFieldHasContext:numArgs:"
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^(stackPages byteAt: theFP + FoxFrameFlags + 2) ~= 0
+	^(stackPages byteAt: theFP + FoxIFrameFlags + 2) ~= 0
 ]
 
 { #category : #'frame access' }
 StackInterpreter >> frameIsBlockActivation: theFP [ "<Integer>"
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^(stackPages byteAt: theFP + FoxFrameFlags + 3) ~= 0
+	^(stackPages byteAt: theFP + FoxIFrameFlags + 3) ~= 0
 ]
 
 { #category : #'frame access' }
@@ -6788,7 +6787,7 @@ StackInterpreter >> frameNumArgs: theFP [
 	"See encodeFrameFieldHasContext:numArgs:"
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages byteAt: theFP + FoxFrameFlags + 1
+	^stackPages byteAt: theFP + FoxIFrameFlags + 1
 ]
 
 { #category : #'frame access' }
@@ -11742,7 +11741,7 @@ StackInterpreter >> printFrameFlagsForFP: theFP [
 	<inline: false>
 	<var: #theFP type: #'char *'>
 	<var: #address type: #'char *'>
-	address := theFP + FoxFrameFlags.
+	address := theFP + FoxIFrameFlags.
 	it := stackPages unsignedLongAt: address.
 	self printHexPtr: address;
 		print: ':       flags: ';
@@ -13599,7 +13598,7 @@ StackInterpreter >> setHeadFP: theFP andSP: theSP inPage: thePage [
 StackInterpreter >> setIFrameHasContext: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	stackPages byteAt: theFP + FoxFrameFlags + 2 put: 1
+	stackPages byteAt: theFP + FoxIFrameFlags + 2 put: 1
 ]
 
 { #category : #'image save/restore' }
