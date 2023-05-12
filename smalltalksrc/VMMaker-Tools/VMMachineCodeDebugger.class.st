@@ -29,16 +29,14 @@ VMMachineCodeDebugger class >> defaultLayout [
 			add: #stack expand: true fill: true padding: 5;
 			yourself) expand: true fill: true padding: 5;
 		add: (SpBoxLayout newHorizontal
-			add: (SpBoxLayout newVertical
-					add: #machineState;
+			add: (SpBoxLayout newHorizontal
 					add: (SpBoxLayout newHorizontal
 						add: #ipInput;
 						add: #jumpToButton);
 					add: #stepButton;
 					add: #disassembleAtPCButton;
 					yourself);
-			add: #stack;
-			yourself);
+			yourself) expand: false fill: true padding: 5;
 		yourself
 ]
 
