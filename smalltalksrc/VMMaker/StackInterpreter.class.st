@@ -10317,7 +10317,10 @@ StackInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 	callerFP := self frameCallerFP: theFP.
 	self assert: (self frameHasContext: callerFP).
 	self assert: (objectMemory isContext: (self frameContext: callerFP)).
-	newSP := newPage baseAddress + objectMemory wordSize.
+	theContext := self ensureFrameIsMarried: theFP SP: (self frameReceiverLocation: theFP).
+	stackPages
+		unsignedLongAt: (newSP := newPage baseAddress) put: (self frameContext: callerFP);
+		unsignedLongAt: (newSP := newSP - objectMemory wordSize) put:  theContext.
 	stackedReceiverOffset := self frameStackedReceiverOffset: theFP.
 	"First move the data, leaving room for the caller and base frame contexts.  We will fix up frame pointers later."
 	theFP + stackedReceiverOffset
@@ -10328,7 +10331,7 @@ StackInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 			stackPages longAt: newSP put: (stackPages longAt: source)].
 	"newSP = oldSP + delta => delta = newSP - oldSP"
 	delta := newSP - oldPage headSP.
-	newFP := newPage baseAddress - stackedReceiverOffset.
+	newFP := newPage baseAddress - stackedReceiverOffset - (2 * objectMemory wordSize).
 	self setHeadFP: oldPage headFP + delta andSP: newSP inPage: newPage.
 	newPage baseFP: newFP.
 	callerIP := self oopForPointer: (self frameCallerSavedIP: theFP).
@@ -10338,9 +10341,9 @@ StackInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 	oldPage
 		headFP: callerFP;
 		headSP: theFP + stackedReceiverOffset.
-	"Mark the new base frame in the new page (FoxCallerContext a.k.a. FoxCallerSavedIP)"
-	self frameCallerContext: newFP put: (self frameContext: callerFP).
+	"Mark the new base frame in the new page"
 	stackPages
+		longAt: newFP + FoxCallerSavedIP put: objectMemory nilObject;
 		longAt: newFP + FoxSavedFP put: 0.
 	"Now relocate frame pointers, updating married contexts to refer to their moved spouse frames."
 	fpInNewPage := newPage headFP.
