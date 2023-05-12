@@ -11730,41 +11730,69 @@ StackInterpreter >> printFrame: theFP [
 
 { #category : #'debug printing' }
 StackInterpreter >> printFrame: theFP WithSP: theSP [
+
 	<api>
-	| theMethod numArgs topThing |
 	<inline: false>
 	<var: #theFP type: #'char *'>
 	<var: #theSP type: #'char *'>
 	<var: #addr type: #'char *'>
-	self cCode: '' inSmalltalk: [self transcript newLine].
-	(stackPages couldBeFramePointer: theFP) ifFalse:
-		[self printHexPtr: theFP; print: ' is not in the stack zone?!'; cr.
-		 ^nil].
-	theMethod := self iframeMethod: theFP.
-	numArgs := self frameNumArgs: theFP.
+	| theMethod theMethodEnd numArgs topThing limit |
+	self cCode: '' inSmalltalk: [ self transcript newLine ].
+	(stackPages couldBeFramePointer: theFP) ifFalse: [
+		self
+			printHexPtr: theFP;
+			print: ' is not in the stack zone?!';
+			cr.
+		^ nil ].
+	theMethod := self frameMethodObject: theFP.
+	theMethodEnd := theMethod + (objectMemory sizeBitsOfSafe: theMethod).
+	numArgs := self iframeNumArgs: theFP.
 	self shortPrintFrame: theFP.
-	self printFrameOop: 'rcvr/clsr'
-		at: theFP + FoxCallerSavedIP + ((numArgs + 1) * objectMemory wordSize).
-	numArgs to: 1 by: -1 do:
-		[:i| self printFrameOop: 'arg' at: theFP + FoxCallerSavedIP + (i * objectMemory wordSize)].
-	self printFrameThing: 'cllr ip/ctxt' at: theFP + FoxCallerSavedIP.
+	(self isBaseFrame: theFP) ifTrue: [
+		self
+			printFrameOop: '(caller ctxt'
+			at: theFP + (self frameStackedReceiverOffset: theFP)
+				+ (2 * objectMemory wordSize).
+		self
+			printFrameOop: '(saved ctxt'
+			at: theFP + (self frameStackedReceiverOffset: theFP)
+				+ (1 * objectMemory wordSize) ].
+	self
+		printFrameOop: 'rcvr/clsr'
+		at: theFP + FoxCallerSavedIP + (numArgs + 1 * objectMemory wordSize).
+	numArgs to: 1 by: -1 do: [ :i |
+		self
+			printFrameOop: 'arg'
+			index: numArgs - i
+			at: theFP + FoxCallerSavedIP + (i * objectMemory wordSize) ].
+	self
+		printFrameThing: 'caller ip'
+		at: theFP + FoxCallerSavedIP
+		extraString: nil.
 	self printFrameThing: 'saved fp' at: theFP + FoxSavedFP.
-	self printFrameOop: 'method' at: theFP + FoxMethod.
+	self printFrameMethodFor: theFP.
+	self printFrameOop: 'context' at: theFP + FoxThisContext.
 	self printFrameFlagsForFP: theFP.
-	self printFrameThing: 'context' at: theFP + FoxThisContext.
-	self printFrameOop: 'receiver' at: theFP + FoxIFReceiver.
+	self
+		printFrameOop: 'receiver'
+		at: (self frameReceiverLocation: theFP).
+
 	topThing := stackPages unsignedLongAt: theSP.
-	(topThing >= theMethod
-	 and: [topThing <= (theMethod + (objectMemory sizeBitsOfSafe: theMethod))])
-		ifTrue:
-			[theFP + FoxIFReceiver - objectMemory wordSize to: theSP + objectMemory wordSize by: objectMemory wordSize negated do:
-				[:addr|
-				self printFrameOop: 'temp/stck' at: addr].
-			self printFrameThing: 'frame ip' at: theSP]
-		ifFalse:
-			[theFP + FoxIFReceiver - objectMemory wordSize to: theSP by: objectMemory wordSize negated do:
-				[:addr|
-				self printFrameOop: 'temp/stck' at: addr]]
+	limit := theSP.
+	(topThing >= theMethod and: [ topThing <= theMethodEnd ]) ifTrue: [
+		limit := limit + objectMemory wordSize ].
+
+	(self frameReceiverLocation: theFP) - objectMemory wordSize to: limit
+	by: objectMemory wordSize negated do: [ :addr |
+	self printFrameOop: 'temp/stck' at: addr ].
+	(topThing >= theMethod and: [ topThing <= theMethodEnd ]) ifTrue: [
+		self
+			printFrameThing: 'frame ip'
+			at: theSP
+			extra: ((self isMachineCodeFrame: theFP)
+					 ifTrue: [ topThing - theMethod ]
+					 ifFalse: [
+					 topThing - theMethod + 2 - objectMemory baseHeaderSize ]) ]
 ]
 
 { #category : #'debug printing' }
@@ -11806,6 +11834,24 @@ StackInterpreter >> printFrameFlagsForFP: theFP [
 		print: ((self frameHasContext: theFP) ifTrue: [' hasContext'] ifFalse: [' noContext']);
 		print: ((self frameIsBlockActivation: theFP) ifTrue: [' isBlock'] ifFalse: [' notBlock']);
 		cr
+]
+
+{ #category : #'debug printing' }
+StackInterpreter >> printFrameMethodFor: theFP [
+	<inline: false>
+	| address it obj |
+	<var: #theFP type: #'char *'>
+	<var: #address type: #'char *'>
+
+	address := theFP + FoxMethod.
+	it := stackPages longAt: address.
+	self printHex: address asInteger;
+		printChar: $:.
+	self print: '      method: ';
+		printHex: it.
+	self tab.
+	obj := self frameMethodObject: theFP.
+	self shortPrintOop: obj
 ]
 
 { #category : #'debug printing' }
@@ -11892,6 +11938,54 @@ StackInterpreter >> printFrameThing: name at: address [
 			ifTrue: [self print: 'nil']
 			ifFalse:
 				[self printNum: it]].
+	self cr
+]
+
+{ #category : #'debug printing' }
+StackInterpreter >> printFrameThing: name at: address extra: extraValue [
+	| it len |
+	<inline: false>
+	<var: #name type: #'char *'>
+	<var: #address type: #'char *'>
+	it := stackPages longAt: address.
+	self printHexPtr: address;
+		printChar: $:.
+	len := self strlen: name.
+	1 to: 12 - len do: [:i| self space].
+	self print: name;
+		print: ': ';
+		printHex: it.
+	it ~= 0 ifTrue:
+		[self printChar: $=.
+		 it = objectMemory nilObject
+			ifTrue: [self print: 'nil']
+			ifFalse:
+				[self printNum: it]].
+	self space; printNum: extraValue; cr
+]
+
+{ #category : #'debug printing' }
+StackInterpreter >> printFrameThing: name at: address extraString: extraStringOrNil [
+	| it len |
+	<inline: false>
+	<var: #name type: #'char *'>
+	<var: #address type: #'char *'>
+	<var: #extraStringOrNil type: #'char *'>
+	it := stackPages longAt: address.
+	self printHexPtr: address;
+		printChar: $:.
+	len := self strlen: name.
+	1 to: 12 - len do: [:i| self space].
+	self print: name;
+		print: ': ';
+		printHex: it.
+	it ~= 0 ifTrue:
+		[self printChar: $=.
+		 it = objectMemory nilObject
+			ifTrue: [self print: 'nil']
+			ifFalse:
+				[self printNum: it]].
+	extraStringOrNil ifNotNil: [self space; print: extraStringOrNil].
 	self cr
 ]
 
@@ -15193,6 +15287,12 @@ StackInterpreter >> traceProfileState [
 		[(objectMemory isForwarded: longRunningPrimitiveCheckSemaphore) ifTrue:
 			[longRunningPrimitiveCheckSemaphore := objectMemory followForwarded: longRunningPrimitiveCheckSemaphore].
 		 objectMemory markAndTrace: longRunningPrimitiveCheckSemaphore]
+]
+
+{ #category : #simulation }
+StackInterpreter >> transcript [
+	<doNotGenerate>
+	^Transcript
 ]
 
 { #category : #'process primitive support' }
