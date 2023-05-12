@@ -893,30 +893,43 @@ StackInterpreter class >> initializeFrameIndices [
 			method
 			context (initialized to nil)
 			frame flags (interpreter only)
+			saved method ip (initialized to 0; only in interpreter when VM supports JIT compilation)
 			receiver
 			first temp
 			...
 	sp->	Nth temp
 
-	frame flags holds the number of arguments (since argument temporaries are above the frame)
-	the flag for a block activation
-	and the flag indicating if the context field is valid (whether the frame is married).
+	In an interpreter frame
+		frame flags holds
+			the backward jump count (see ifBackwardsCheckForEvents)
+			the number of arguments (since argument temporaries are above the frame)
+			the flag for a block activation
+			and the flag indicating if the context field is valid (whether the frame is married).
+		if machine code is supported, saved method ip holds the saved method ip when the callee frame is a machine code frame
+		This is because the saved method ip is actually the ceReturnToInterpreterTrampoline address.
+	In a machine code frame
+		the flag indicating if the context is valid is the least significant bit of the method pointer
+		the flag for a block activation is the next most significant bit of the method pointer
+
+	Interpreter frames are distinguished from method frames by the method field which will
+	be a pointer into the heap for an interpreter frame and a pointer into the method zone for
+	a machine code frame.
 
 	The first frame in a stack page is the baseFrame and is marked as such by a null saved fp,
 	in which case the saved method ip is actually the context (possibly hybrid) beneath the base frame"
 
-	| fxCallerSavedIP fxSavedFP fxMethod fxIFrameFlags fxThisContext fxIReceiver |
+	| fxCallerSavedIP fxSavedFP fxMethod fxIFrameFlags fxThisContext fxIFReceiver |
 	fxCallerSavedIP := 1.
 	fxSavedFP := 0.
 	fxMethod := -1.
 	fxThisContext := -2.
 	fxIFrameFlags := -3.	"Can find numArgs, needed for fast temp access. args are above fxCallerSavedIP.
-						 Can find ``is block'' bit
-						 Can find ``has context'' bit"
+							 Can find ``is block'' bit
+							 Can find ``has context'' bit"
 
-	fxIReceiver := -4.
+	fxIFReceiver := -4.
 
-	FrameSlots := fxCallerSavedIP - fxIReceiver + 1.
+	IFrameSlots := fxCallerSavedIP - fxIFReceiver + 1.
 
 	FoxCallerSavedIP := fxCallerSavedIP * BytesPerWord.
 	"In base frames the caller saved ip field holds the caller context."
@@ -925,11 +938,10 @@ StackInterpreter class >> initializeFrameIndices [
 	FoxMethod := fxMethod * BytesPerWord.
 	FoxThisContext := fxThisContext * BytesPerWord.
 	FoxIFrameFlags := fxIFrameFlags * BytesPerWord.
-	FoxIFReceiver := fxIReceiver * BytesPerWord.
+	FoxIFReceiver := fxIFReceiver * BytesPerWord.
 
 	"Mark the CoInterpreter-specific offsets as #undefined to
 	 avoid including them accidentally in StackInterpreter code."
-	IFrameSlots := #undefined.
 	MFrameSlots := #undefined.
 	FoxIFSavedIP := #undefined.
 	FoxIFReceiver := #undefined.
@@ -6684,9 +6696,18 @@ StackInterpreter >> forceInterruptCheckFromHeartbeat [
 
 { #category : #'frame access' }
 StackInterpreter >> frameCallerContext: theFP [
-	<inline: true>
+	"The first word on the stack holds the base frame's caller context, which is immediately above the stacked receiver."
+
 	<var: #theFP type: #'char *'>
-	^stackPages unsignedLongAt: theFP + FoxCallerContext "a.k.a. FoxCallerSavedIP"
+	<var: #thePage type: #'StackPage *'>
+	| thePage callerContextOrNil |
+	self assert: (self isBaseFrame: theFP).
+	thePage := stackPages stackPageFor: theFP.
+	callerContextOrNil := stackPages unsignedLongAt: thePage baseAddress.
+	self assert: (objectMemory addressCouldBeObj: callerContextOrNil).
+	self assert: (callerContextOrNil = objectMemory nilObject or: [
+			 objectMemory isContext: callerContextOrNil ]).
+	^ callerContextOrNil
 ]
 
 { #category : #'frame access' }
@@ -7927,7 +7948,7 @@ StackInterpreter >> interpreterAllocationReserveBytes [
 	<inline: #never>
 	| maxUsedBytesPerPage maxFramesPerPage |
 	maxUsedBytesPerPage := self stackPageFrameBytes + self stackLimitOffset.
-	maxFramesPerPage := maxUsedBytesPerPage / objectMemory wordSize // FrameSlots.
+	maxFramesPerPage := maxUsedBytesPerPage / objectMemory wordSize // IFrameSlots.
 	^maxFramesPerPage * LargeContextSlots * objectMemory bytesPerOop * numStackPages
 ]
 
@@ -9305,25 +9326,26 @@ StackInterpreter >> mapStackPages [
 							 and: [
 							 (self frameOfMarriedContext: (self frameContext: theFP))
 							 = theFP ]) ] ].
-			(objectMemory shouldRemapObj: (self iframeMethod: theFP)) ifTrue: [
-				theIPPtr ~= 0 ifTrue: [
-					self assert:
-						(stackPages unsignedLongAt: theIPPtr)
-						> (self iframeMethod: theFP).
-					theIP := (stackPages unsignedLongAt: theIPPtr)
-					         - (self iframeMethod: theFP) ].
-				stackPages
-					unsignedLongAt: theFP + FoxMethod
-					put: (objectMemory remapObj: (self iframeMethod: theFP)).
-				theIPPtr ~= 0 ifTrue: [
+			(self isMachineCodeFrame: theFP) ifFalse: [
+				(objectMemory shouldRemapObj: (self iframeMethod: theFP)) ifTrue: [
+					theIPPtr ~= 0 ifTrue: [
+						theIP := stackPages unsignedLongAt: theIPPtr.
+						self assert: theIP > (self iframeMethod: theFP).
+						theIP := theIP - (self iframeMethod: theFP) ].
 					stackPages
-						unsignedLongAt: theIPPtr
-						put: theIP + (self iframeMethod: theFP) ] ].
+						unsignedLongAt: theFP + FoxMethod
+						put: (objectMemory remapObj: (self iframeMethod: theFP)).
+					theIPPtr ~= 0 ifTrue: [
+						stackPages
+							unsignedLongAt: theIPPtr
+							put: theIP + (self iframeMethod: theFP) ] ] ].
 			(callerFP := self frameCallerFP: theFP) ~= 0 ] whileTrue: [
 				theSP := (theIPPtr := theFP + FoxCallerSavedIP)
 				         + objectMemory wordSize.
 				theFP := callerFP ].
-			theSP := theFP + FoxCallerContext. "a.k.a. FoxCallerSavedIP"
+
+			"In base frames the caller saved ip field holds the caller context."
+			theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
 			[ theSP <= thePage baseAddress ] whileTrue: [
 				oop := stackPages unsignedLongAt: theSP.
 				(objectMemory shouldRemapOop: oop) ifTrue: [
@@ -14548,7 +14570,7 @@ StackInterpreter >> stackLimitOffset [
 		+ the frame size
 		+ the max number of temps.
 	 Since a method's number of temps includes its arguments the actual offset is:"
-	^(FrameSlots + 64) * objectMemory wordSize
+	^(IFrameSlots + 64) * objectMemory wordSize
 ]
 
 { #category : #'stack access' }

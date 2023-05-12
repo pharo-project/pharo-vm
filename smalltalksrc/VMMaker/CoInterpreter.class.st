@@ -204,7 +204,7 @@ CoInterpreter class >> initializeFrameIndices [
 			method
 			context (initialized to nil)
 			frame flags (interpreter only)
-			saved method ip (initialized to 0; interpreter only)
+			saved method ip (initialized to 0; only in interpreter when VM supports JIT compilation)
 			receiver
 			first temp
 			...
@@ -216,7 +216,7 @@ CoInterpreter class >> initializeFrameIndices [
 			the number of arguments (since argument temporaries are above the frame)
 			the flag for a block activation
 			and the flag indicating if the context field is valid (whether the frame is married).
-		saved method ip holds the saved method ip when the callee frame is a machine code frame.
+		if machine code is supported, saved method ip holds the saved method ip when the callee frame is a machine code frame
 		This is because the saved method ip is actually the ceReturnToInterpreterTrampoline address.
 	In a machine code frame
 		the flag indicating if the context is valid is the least significant bit of the method pointer
@@ -241,8 +241,6 @@ CoInterpreter class >> initializeFrameIndices [
 	fxIFReceiver := -5.
 	fxMFReceiver := -3.
 
-	"For debugging undefine values that differ in the StackInterpreter."
-	FrameSlots := #undefined.
 	IFrameSlots := fxCallerSavedIP - fxIFReceiver + 1.
 	MFrameSlots := fxCallerSavedIP - fxMFReceiver + 1.
 
@@ -3884,13 +3882,10 @@ CoInterpreter >> mapStackPages [
 				(objectMemory shouldRemapObj: (self iframeMethod: theFP)) ifTrue: [
 					theIPPtr ~= 0 ifTrue: [
 						theIP := stackPages unsignedLongAt: theIPPtr.
-						theIP = cogit ceReturnToInterpreterPC
-							ifTrue: [
-								self assert:
-									(self iframeSavedIP: theFP) > (self iframeMethod: theFP).
-								theIPPtr := theFP + FoxIFSavedIP.
-								theIP := stackPages unsignedLongAt: theIPPtr ]
-							ifFalse: [ self assert: theIP > (self iframeMethod: theFP) ].
+						theIP = cogit ceReturnToInterpreterPC ifTrue: [
+							theIPPtr := theFP + FoxIFSavedIP.
+							theIP := stackPages unsignedLongAt: theIPPtr ].
+						self assert: theIP > (self iframeMethod: theFP).
 						theIP := theIP - (self iframeMethod: theFP) ].
 					stackPages
 						unsignedLongAt: theFP + FoxMethod
@@ -3903,6 +3898,8 @@ CoInterpreter >> mapStackPages [
 				theSP := (theIPPtr := theFP + FoxCallerSavedIP)
 				         + objectMemory wordSize.
 				theFP := callerFP ].
+
+			"In base frames the caller saved ip field holds the caller context."
 			theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
 			[ theSP <= thePage baseAddress ] whileTrue: [
 				oop := stackPages unsignedLongAt: theSP.
