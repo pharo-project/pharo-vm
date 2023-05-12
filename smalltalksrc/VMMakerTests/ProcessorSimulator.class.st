@@ -66,55 +66,55 @@ ProcessorSimulator >> aliasSmalltalkForRegister: aRegisterName [
 	^ registerSmalltalkAliases at: aRegisterName ifAbsent: [ '' ]
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> arg0Register [
 
 	^ self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> arg0RegisterValue [
 
 	^ self readRegister: self arg0Register
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> arg0RegisterValue: aValue [
 
 	^ self writeRegister: self arg0Register value: aValue
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> arg1Register [
 
 	^ self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> arg1RegisterValue [
 
 	^ self readRegister: self arg1Register
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> arg1RegisterValue: aValue [
 
 	^ self writeRegister: self arg1Register value: aValue
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> baseRegister [
 
 	self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> baseRegisterValue [
 
 	^ self readRegister: self baseRegister
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> baseRegisterValue: aValue [
 
 	^ self writeRegister: self baseRegister value: aValue
@@ -126,7 +126,7 @@ ProcessorSimulator >> cResultRegister [
 	^ self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'c calling convention' }
 ProcessorSimulator >> cResultRegisterValue [
 
 	^ self readRegister: self cResultRegister
@@ -214,19 +214,19 @@ ProcessorSimulator >> carg3RegisterValue [
 	^ self readRegister: self carg3Register
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> classRegister [
 
 	^ self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> classRegisterValue [
 
 	^ self readRegister: self classRegister
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> classRegisterValue: aValue [
 
 	^ self writeRegister: self classRegister value: aValue
@@ -271,55 +271,55 @@ ProcessorSimulator >> disassembler [
 	self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> doublePrecisionFloatingPointRegister0 [
 
 	self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> doublePrecisionFloatingPointRegister0Value [
 
 	^ self readFloat64Register: self doublePrecisionFloatingPointRegister0
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> doublePrecisionFloatingPointRegister0Value: aValue [
 
 	^ self writeFloat64Register: self doublePrecisionFloatingPointRegister0 value: aValue
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> doublePrecisionFloatingPointRegister1 [
 
 	self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> doublePrecisionFloatingPointRegister1Value [
 
 	^ self readFloat64Register: self doublePrecisionFloatingPointRegister1
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> doublePrecisionFloatingPointRegister1Value: aValue [
 
 	^ self writeFloat64Register: self doublePrecisionFloatingPointRegister1 value: aValue
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> doublePrecisionFloatingPointRegister2 [
 
 	self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> doublePrecisionFloatingPointRegister2Value [
 
 	^ self readFloat64Register: self doublePrecisionFloatingPointRegister2
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> doublePrecisionFloatingPointRegister2Value: aValue [
 
 	^ self writeFloat64Register: self doublePrecisionFloatingPointRegister2 value: aValue
@@ -328,7 +328,7 @@ ProcessorSimulator >> doublePrecisionFloatingPointRegister2Value: aValue [
 { #category : #disassembling }
 ProcessorSimulator >> extractDestinationRegisterFromAssembly: aLLVMInstruction [
 
-	^  (aLLVMInstruction assemblyCodeString substrings: String tab, ',') second trimBoth
+	^  self subclassResponsibility
 ]
 
 { #category : #memory }
@@ -337,37 +337,37 @@ ProcessorSimulator >> finishMappingMemory [
 	self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> flushICacheFrom: startAddress to: endAddress [
 
 	simulator removeInstructionCacheFrom: startAddress to: endAddress
 ]
 
-{ #category : #shortcut }
+{ #category : #'accessing-registers-shortcuts' }
 ProcessorSimulator >> fp [
 
 	^ self framePointerRegisterValue
 ]
 
-{ #category : #shortcut }
+{ #category : #'accessing-registers-shortcuts' }
 ProcessorSimulator >> fp: aValue [
 
 	^ self framePointerRegisterValue: aValue
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> framePointerRegister [
 
 	^ self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> framePointerRegisterValue [
 
 	^ self readRegister: self framePointerRegister
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> framePointerRegisterValue: aValue [
 
 	self writeRegister: self framePointerRegister value: aValue
@@ -409,25 +409,25 @@ ProcessorSimulator >> initializeRegisterSmalltalkAliases [
 	"Hook for subclasses"
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> instructionPointerRegister [
 
 	^ self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> instructionPointerRegisterValue [
 
 	^ self readRegister: self instructionPointerRegister
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> instructionPointerRegisterValue: aValue [
 
 	^ self writeRegister: self instructionPointerRegister value: aValue
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> integerRegisterState [
 
 	^ {  }
@@ -451,31 +451,31 @@ ProcessorSimulator >> lastInstructionCount [
 	^ simulator lastInstructionCount
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> linkRegister [
 
 	self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> linkRegisterValue [
 
 	^ self readRegister: self linkRegister
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> linkRegisterValue: aValue [
 
 	^ self writeRegister: self linkRegister value: aValue
 ]
 
-{ #category : #shortcut }
+{ #category : #'accessing-registers-shortcuts' }
 ProcessorSimulator >> lr [
 
 	^ self linkRegisterValue
 ]
 
-{ #category : #shortcut }
+{ #category : #'accessing-registers-shortcuts' }
 ProcessorSimulator >> lr: aValue [
 
 	^ self linkRegisterValue: aValue
@@ -523,19 +523,19 @@ ProcessorSimulator >> memoryAt: address write: bytes size: size [
 	simulator memoryAt: address write: bytes size: size
 ]
 
-{ #category : #shortcut }
+{ #category : #'accessing-registers-shortcuts' }
 ProcessorSimulator >> pc [
 
 	^ self instructionPointerRegisterValue
 ]
 
-{ #category : #shortcut }
+{ #category : #'accessing-registers-shortcuts' }
 ProcessorSimulator >> pc: aValue [
 
 	^ self instructionPointerRegisterValue: aValue
 ]
 
-{ #category : #'helpers - stack' }
+{ #category : #'accessing-stack' }
 ProcessorSimulator >> peek [
 
 	| stackAddressIntegerValue peekedByteArray |
@@ -549,13 +549,13 @@ ProcessorSimulator >> peek [
 	^ peekedByteArray
 ]
 
-{ #category : #'helpers - stack' }
+{ #category : #'accessing-stack' }
 ProcessorSimulator >> peekAddress [
 
 	^ self peek integerAt: 1 size: self wordSize signed: false
 ]
 
-{ #category : #'helpers - stack' }
+{ #category : #'accessing-stack' }
 ProcessorSimulator >> popBytes [
 
 	| stackAddressIntegerValue aByteArray |
@@ -572,7 +572,7 @@ ProcessorSimulator >> popBytes [
 	^ aByteArray
 ]
 
-{ #category : #'helpers - stack' }
+{ #category : #'accessing-stack' }
 ProcessorSimulator >> popWord [
 
 	| aByteArray |
@@ -580,7 +580,7 @@ ProcessorSimulator >> popWord [
 	^ aByteArray integerAt: 1 size: self wordSize signed: false.
 ]
 
-{ #category : #'helpers - stack' }
+{ #category : #'accessing-stack' }
 ProcessorSimulator >> pushBytes: aByteArray [
 
 	| stackAddressIntegerValue |
@@ -601,7 +601,7 @@ ProcessorSimulator >> pushBytes: aByteArray [
 
 ]
 
-{ #category : #'helpers - stack' }
+{ #category : #'accessing-stack' }
 ProcessorSimulator >> pushWord: anInteger [
 
 	| aByteArray |
@@ -610,7 +610,7 @@ ProcessorSimulator >> pushWord: anInteger [
 	self pushBytes: aByteArray
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> readFloat64Register: aRegisterID [
 
 	| registerValue |
@@ -620,7 +620,7 @@ ProcessorSimulator >> readFloat64Register: aRegisterID [
 	^ registerValue doubleAt: 1
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> readRawRegister: aRegisterID size: aSize [
 
 	| registerValue |
@@ -629,7 +629,7 @@ ProcessorSimulator >> readRawRegister: aRegisterID size: aSize [
 	^ registerValue
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> readRegister: aRegisterID [
 
 	| registerValue size |
@@ -638,37 +638,37 @@ ProcessorSimulator >> readRegister: aRegisterID [
 	^ registerValue integerAt: 1 size: size signed: false
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> receiverRegister [
 
 	^ self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> receiverRegisterValue [
 
 	^ self readRegister: self receiverRegister
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> receiverRegisterValue: anInteger [
 
 	self writeRegister: self receiverRegister value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> register: anIndex readInto: aByteArray [
 
 	simulator register: anIndex readInto: aByteArray
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> registerAliases [
 
 	^ registerAliases
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> registerDescriptors [
 
 	^ self registerList collect: [ :reg |
@@ -680,98 +680,98 @@ ProcessorSimulator >> registerDescriptors [
 			yourself ]
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> registerList [
 
 	self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> sendNumberOfArgumentsRegister [
 
-	self shouldBeImplemented.
+	self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> sendNumberOfArgumentsRegisterValue [
 
 	^ self readRegister: self sendNumberOfArgumentsRegister
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> sendNumberOfArgumentsRegisterValue: aValue [
 
 	^ self writeRegister: self sendNumberOfArgumentsRegister value: aValue
 ]
 
-{ #category : #actions }
+{ #category : #'simulation-support' }
 ProcessorSimulator >> simulateLeafCallOf: address nextpc: nextpc memory: aMemory [
 
 	self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> smalltalkStackPointerRegister [
 	"By default they are the same"
 	^ self stackPointerRegister
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> smalltalkStackPointerRegisterValue [
 
 	^ self readRegister: self smalltalkStackPointerRegister
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> smalltalkStackPointerRegisterValue: aValue [
 
 	self writeRegister: self smalltalkStackPointerRegister value: aValue
 ]
 
-{ #category : #registers }
+{ #category : #'simulation-support' }
 ProcessorSimulator >> smashRegisterAccessors [
 
 	^ self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> smashRegistersWithValuesFrom: base by: step [
 
 	self smashRegisterAccessors withIndexDo: [:accessor :index|
 		self perform: accessor with: index - 1 * step + base]
 ]
 
-{ #category : #shortcut }
+{ #category : #'accessing-registers-shortcuts' }
 ProcessorSimulator >> sp [
 
 	^ self stackPointerRegisterValue
 ]
 
-{ #category : #shortcut }
+{ #category : #'accessing-registers-shortcuts' }
 ProcessorSimulator >> sp: aValue [
 
 	^ self stackPointerRegisterValue: aValue
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> stackPointerRegister [
 
 	self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> stackPointerRegisterValue [
 
 	^ self readRegister: self stackPointerRegister
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> stackPointerRegisterValue: aValue [
 
 	self writeRegister: self stackPointerRegister value: aValue
 ]
 
-{ #category : #'stack-access' }
+{ #category : #'accessing-stack' }
 ProcessorSimulator >> stackValueAt: anInteger [
 
 	"Get a value from the stack at a 0-base position"
@@ -780,7 +780,7 @@ ProcessorSimulator >> stackValueAt: anInteger [
 	^ aByteArray integerAt: 1 size: self wordSize signed: false
 ]
 
-{ #category : #'stack-access' }
+{ #category : #'accessing-stack' }
 ProcessorSimulator >> stackValueBytesAt: position [
 
 	"Get the bytes from the stack at a 0-base position"
@@ -809,14 +809,14 @@ ProcessorSimulator >> stackValues [
 	]
 ]
 
-{ #category : #actions }
+{ #category : #'simulation-support' }
 ProcessorSimulator >> startAt: begin until: until timeout: timeout count: count [
 
 	self subclassResponsibility
 
 ]
 
-{ #category : #actions }
+{ #category : #'simulation-support' }
 ProcessorSimulator >> step [
 
 	self
@@ -826,19 +826,19 @@ ProcessorSimulator >> step [
 		count: 1
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> temporaryRegister [
 
 	^ self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> temporaryRegisterValue [
 
 	^ self readRegister: self temporaryRegister
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> temporaryRegisterValue: anInteger [
 
 	^ self writeRegister: self temporaryRegister value: anInteger
@@ -855,7 +855,7 @@ ProcessorSimulator >> wordSize [
 	self subclassResponsibility
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> writeFloat64Register: aRegister value: aDouble [
 
 	| value |
@@ -865,7 +865,7 @@ ProcessorSimulator >> writeFloat64Register: aRegister value: aDouble [
 
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 ProcessorSimulator >> writeRegister: aRegister value: anInteger [
 
 	| value |
