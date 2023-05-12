@@ -4780,9 +4780,12 @@ StackInterpreter >> context: aContext hasValidInversePCMappingOf: theIP in: theF
 
 { #category : #'frame access' }
 StackInterpreter >> contextInstructionPointer: theIP frame: theFP [
+
 	<var: #theFP type: #'char *'>
-	self assert: (self validInstructionPointer: theIP + 1 inFrame: theFP).
-	^objectMemory integerObjectOf: theIP - (self iframeMethod: theFP) - objectMemory baseHeaderSize + 2
+	self assert: (self validInstructionPointer: theIP inFrame: theFP).
+	^ objectMemory integerObjectOf:
+		  theIP - (self iframeMethod: theFP) - objectMemory baseHeaderSize
+		  + 2
 ]
 
 { #category : #'image save/restore' }
@@ -6749,17 +6752,17 @@ StackInterpreter >> frameContext: theFP [
 
 { #category : #'frame access' }
 StackInterpreter >> frameHasContext: theFP [
-	"See encodeFrameFieldHasContext:numArgs:"
+
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^(stackPages byteAt: theFP + FoxIFrameFlags + 2) ~= 0
+	^ self iframeHasContext: theFP
 ]
 
 { #category : #'frame access' }
 StackInterpreter >> frameIsBlockActivation: theFP [ "<Integer>"
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^(stackPages byteAt: theFP + FoxIFrameFlags + 3) ~= 0
+	^ self iframeIsBlockActivation: theFP
 ]
 
 { #category : #'frame access' }
@@ -6781,10 +6784,10 @@ StackInterpreter >> frameMethodField: theFP [
 
 { #category : #'frame access' }
 StackInterpreter >> frameMethodObject: theFP [
-	"Homonym of frameMethod: for compatibility with CoInterpreter"
+
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages unsignedLongAt: theFP + FoxMethod
+	^ self iframeMethod: theFP
 ]
 
 { #category : #'frame access' }
@@ -6813,16 +6816,17 @@ StackInterpreter >> framePointer: theFP [
 
 { #category : #'frame access' }
 StackInterpreter >> frameReceiver: theFP [
+
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages unsignedLongAt: theFP + FoxIFReceiver
+	^ self iframeReceiver: theFP
 ]
 
 { #category : #'frame access' }
 StackInterpreter >> frameReceiverLocation: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^theFP + FoxIFReceiver
+	^self iframeReceiverLocation: theFP
 ]
 
 { #category : #'frame access' }
@@ -7384,6 +7388,14 @@ StackInterpreter >> ifValidWriteBackStack: theCFP Pointers: theCSP Save: savedFP
 ]
 
 { #category : #'frame access' }
+StackInterpreter >> iframeHasContext: theFP [
+	"See encodeFrameFieldHasContext:numArgs:"
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^(stackPages byteAt: theFP + FoxIFrameFlags + 2) ~= 0
+]
+
+{ #category : #'frame access' }
 StackInterpreter >> iframeInstructionPointerForIndex: ip method: aMethod [
 	"Answer the instruction pointer for use in an interpreter frame (a pointer to a bytecode)."
 	self assert: (ip between: (((LiteralStart + (objectMemory literalCountOf: aMethod)) * objectMemory bytesPerOop)) + 1
@@ -7393,7 +7405,9 @@ StackInterpreter >> iframeInstructionPointerForIndex: ip method: aMethod [
 
 { #category : #'frame access' }
 StackInterpreter >> iframeIsBlockActivation: theFP [ "<Integer>"
-	^self frameIsBlockActivation: theFP
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^(stackPages byteAt: theFP + FoxIFrameFlags + 3) ~= 0
 ]
 
 { #category : #'frame access' }
@@ -7409,7 +7423,14 @@ StackInterpreter >> iframeNumArgs: theFP [
 	"See encodeFrameFieldHasContext:numArgs:"
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^self frameNumArgs: theFP
+	^stackPages byteAt: theFP + FoxIFrameFlags + 1
+]
+
+{ #category : #'frame access' }
+StackInterpreter >> iframeReceiver: theFP [
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^stackPages unsignedLongAt: theFP + FoxIFReceiver
 ]
 
 { #category : #'internal interpreter access' }
@@ -7846,7 +7867,7 @@ StackInterpreter >> instructionPointerForFrame: spouseFP currentFP: currentFP cu
 			[thePage := stackPages stackPageFor: spouseFP.
 			 theFPAbove := self findFrameAbove: spouseFP inPage: thePage.
 			 theIP := theFPAbove = 0
-						ifTrue: [stackPages unsignedLongAt: thePage headSP]
+						ifTrue: [stackPages longAt: thePage headSP]
 						ifFalse:[self oopForPointer: (self frameCallerSavedIP: theFPAbove)]].
 	^self contextInstructionPointer: theIP frame: spouseFP
 ]

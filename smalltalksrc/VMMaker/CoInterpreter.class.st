@@ -2825,29 +2825,12 @@ CoInterpreter >> forceInterruptCheckFromHeartbeat [
 ]
 
 { #category : #'frame access' }
-CoInterpreter >> frameCallerContext: theFP [
-	"In the StackInterpreter the saved ip field of a base frame holds the
-	 base frame's caller context. But in the Cog VM the first word on the
-	 stack holds the base frame's caller context, which is immediately
-	 above the stacked receiver."
-	<var: #theFP type: #'char *'>
-	| thePage callerContextOrNil |
-	<var: #thePage type: #'StackPage *'>
-	self assert: (self isBaseFrame: theFP).
-	thePage := stackPages stackPageFor: theFP.
-	callerContextOrNil := stackPages unsignedLongAt: thePage baseAddress.
-	self assert: (objectMemory addressCouldBeObj: callerContextOrNil).
-	self assert: (callerContextOrNil = objectMemory nilObject or: [objectMemory isContext: callerContextOrNil]).
-	^callerContextOrNil
-]
-
-{ #category : #'frame access' }
 CoInterpreter >> frameHasContext: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	^(self isMachineCodeFrame: theFP)
 		ifTrue: [self mframeHasContext: theFP]
-		ifFalse: [self iframeHasContext: theFP]
+		ifFalse: [super frameHasContext: theFP]
 ]
 
 { #category : #'frame access' }
@@ -2856,16 +2839,17 @@ CoInterpreter >> frameIsBlockActivation: theFP [ "<Integer>"
 	<var: #theFP type: #'char *'>
 	^(self isMachineCodeFrame: theFP)
 		ifTrue: [self mframeIsBlockActivation: theFP]
-		ifFalse: [self iframeIsBlockActivation: theFP]
+		ifFalse: [super frameIsBlockActivation: theFP]
 ]
 
 { #category : #'frame access' }
 CoInterpreter >> frameMethodObject: theFP [
+
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^(self isMachineCodeFrame: theFP)
-		ifTrue: [(self mframeHomeMethod: theFP) methodObject]
-		ifFalse: [self iframeMethod: theFP]
+	^ (self isMachineCodeFrame: theFP)
+		  ifTrue: [ (self mframeHomeMethod: theFP) methodObject ]
+		  ifFalse: [ super frameMethodObject: theFP ]
 ]
 
 { #category : #'frame access' }
@@ -2896,11 +2880,12 @@ CoInterpreter >> framePointerAddress [
 
 { #category : #'frame access' }
 CoInterpreter >> frameReceiver: theFP [
+
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^(self isMachineCodeFrame: theFP)
-		ifTrue: [self mframeReceiver: theFP]
-		ifFalse: [self iframeReceiver: theFP]
+	^ (self isMachineCodeFrame: theFP)
+		  ifTrue: [ self mframeReceiver: theFP ]
+		  ifFalse: [ super frameReceiver: theFP ]
 ]
 
 { #category : #'frame access' }
@@ -2909,7 +2894,7 @@ CoInterpreter >> frameReceiverLocation: theFP [
 	<var: #theFP type: #'char *'>
 	^(self isMachineCodeFrame: theFP)
 		ifTrue: [theFP + FoxMFReceiver]
-		ifFalse: [theFP + FoxIFReceiver]
+		ifFalse: [ super frameReceiverLocation: theFP ]
 ]
 
 { #category : #'object memory support' }
@@ -3233,44 +3218,6 @@ CoInterpreter >> iframeBackwardBranchByte: theFP put: aByte [
 	stackPages
 		byteAt: theFP + (VMBIGENDIAN ifTrue: [FoxIFrameFlags + objectMemory wordSize - 1] ifFalse: [FoxIFrameFlags])
 		put: aByte
-]
-
-{ #category : #'frame access' }
-CoInterpreter >> iframeHasContext: theFP [
-	"See encodeFrameFieldHasContext:numArgs:"
-	<inline: true>
-	<var: #theFP type: #'char *'>
-	^(stackPages byteAt: theFP + FoxIFrameFlags + 2) ~= 0
-]
-
-{ #category : #'frame access' }
-CoInterpreter >> iframeIsBlockActivation: theFP [ "<Integer>"
-	<inline: true>
-	<var: #theFP type: #'char *'>
-	^(stackPages byteAt: theFP + FoxIFrameFlags + 3) ~= 0
-]
-
-{ #category : #'frame access' }
-CoInterpreter >> iframeNumArgs: theFP [
-	"See encodeFrameFieldHasContext:numArgs:"
-	<inline: true>
-	<var: #theFP type: #'char *'>
-	^stackPages byteAt: theFP + FoxIFrameFlags + 1
-]
-
-{ #category : #'frame access' }
-CoInterpreter >> iframeReceiver: theFP [
-	<inline: true>
-	<var: #theFP type: #'char *'>
-	^stackPages unsignedLongAt: theFP + FoxIFReceiver
-]
-
-{ #category : #'frame access' }
-CoInterpreter >> iframeReceiverLocation: theFP [
-
-	<inline: true>
-	<var: #theFP type: #'char *'>
-	^ theFP + FoxIFReceiver
 ]
 
 { #category : #'frame access' }
@@ -5376,14 +5323,6 @@ CoInterpreter >> setDesiredCogCodeSize: dccs [
 { #category : #'object memory support' }
 CoInterpreter >> setGCMode: mode [
 	gcMode := mode
-]
-
-{ #category : #'frame access' }
-CoInterpreter >> setIFrameHasContext: theFP [
-	"See encodeFrameFieldHasContext:numArgs:"
-	<inline: true>
-	<var: #theFP type: #'char *'>
-	stackPages byteAt: theFP + FoxIFrameFlags + 2 put: 1
 ]
 
 { #category : #'image save/restore' }
