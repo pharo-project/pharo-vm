@@ -1974,7 +1974,7 @@ CoInterpreter >> checkStackIntegrity [
 			 thePage = stackPage ifFalse:
 				[theSP := theSP + objectMemory wordSize].
 			 [frameRcvrOffset := self frameReceiverLocation: theFP.
-			  [theSP <= frameRcvrOffset] whileTrue:
+				[theSP <= frameRcvrOffset] whileTrue:
 				[oop := stackPages unsignedLongAt: theSP.
 				 ((objectMemory isNonImmediate: oop) 
 				   and: [(objectMemory heapMapAtWord: (self pointerForOop: oop)) = 0]) ifTrue:
@@ -1993,21 +1993,23 @@ CoInterpreter >> checkStackIntegrity [
 				 ((objectMemory isContext: oop) and: [self isMarriedOrWidowedContext: oop]) ifFalse:
 					[self printFrameThing: 'frame ctxt should be married' andFrame: theFP at: theFP + FoxThisContext.
 					 ok := false].
-				 ((objectMemory isContext: oop) and: [(self frameOfMarriedContext: oop) = theFP]) ifFalse:
-					[self printFrameThing: 'frame ctxt should be married to this frame ' andFrame: theFP at: theFP + FoxThisContext.
-					 ok := false]].
+				 ((objectMemory isContext: oop)
+					and: [(self isMarriedOrWidowedContext: oop)
+					and: [(self frameOfMarriedContext: oop) = theFP]]) ifFalse: [
+						self printFrameThing: 'frame ctxt should be married to this frame ' andFrame: theFP at: theFP + FoxThisContext.
+						ok := false]].
 			 (self isMachineCodeFrame: theFP)
-				ifTrue:
-					[| cogMethod |
-					 cogMethod := self mframeHomeMethod: theFP.
-					 (objectMemory heapMapAtWord: (self pointerForOop: cogMethod)) = 0 ifTrue:
-						[self printFrameThing: 'object leak in mframe mthd' andFrame: theFP at: theFP + FoxMethod.
-						 ok := false]]
 				ifFalse:
 					[oop := self iframeMethod: theFP.
 					 ((objectMemory isImmediate: oop) 
 					   or: [(objectMemory heapMapAtWord: (self pointerForOop: oop)) = 0]) ifTrue:
 						[self printFrameThing: 'object leak in iframe mthd' andFrame: theFP at: theFP + FoxMethod.
+						 ok := false]]
+				ifTrue:
+					[| cogMethod |
+					 cogMethod := self mframeHomeMethod: theFP.
+					 (objectMemory heapMapAtWord: (self pointerForOop: cogMethod)) = 0 ifTrue:
+						[self printFrameThing: 'object leak in mframe mthd' andFrame: theFP at: theFP + FoxMethod.
 						 ok := false]].
 			 (callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
 				[theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
@@ -2726,9 +2728,8 @@ CoInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 	 To avoid a read barrier on bytecode, literal and inst var fetch and non-local return, we scan
 	 the receivers (including the stacked receiver for non-local return) and method references
 	 in the stack zone and follow any forwarded ones.  This is of course way cheaper than
-	 scanning all of memory as in the old become.
+	 scanning all of memory as in the old become."
 
-	 Override to handle machine code frames"
 	| theIPPtr |
 	<inline: false>
 	<var: #theSP type: #'char *'>
@@ -2756,43 +2757,43 @@ CoInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 			 theFP := thePage headFP.
 			 "Skip the instruction pointer on top of stack of inactive pages."
 			 theIPPtr := thePage = stackPage ifTrue: [0] ifFalse: [thePage headSP asUnsignedInteger].
-			 [self assert: (thePage addressIsInPage: theFP).
-			  self assert: (theIPPtr = 0 or: [thePage addressIsInPage: theIPPtr asVoidPointer]).
-			  (self isMachineCodeFrame: theFP)
-				ifTrue:
-					[oop := stackPages unsignedLongAt: theFP + FoxMFReceiver.
-					 (objectMemory isOopForwarded: oop) ifTrue:
-						[stackPages
-							unsignedLongAt: theFP + FoxMFReceiver
-							put: (objectMemory followForwarded: oop)].
-					 self assert: (objectMemory isForwarded: (self mframeHomeMethod: theFP) methodObject) not]
-				ifFalse:
-					[oop := stackPages unsignedLongAt: theFP + FoxIFReceiver.
-					 (objectMemory isOopForwarded: oop) ifTrue:
-						[stackPages
+			 [
+				self assert: (thePage addressIsInPage: theFP).
+				self assert: (theIPPtr = 0 or: [thePage addressIsInPage: theIPPtr asVoidPointer]).
+				(self isMachineCodeFrame: theFP) ifFalse: [
+					oop := stackPages unsignedLongAt: theFP + FoxIFReceiver.
+					(objectMemory isOopForwarded: oop) ifTrue: [
+						stackPages
 							unsignedLongAt: theFP + FoxIFReceiver
-							put: (objectMemory followForwarded: oop)].
-					 oop := self iframeMethod: theFP.
-					 (objectMemory isForwarded: oop) ifTrue:
-						[| newOop |
-						 newOop := objectMemory followForwarded: oop.
-						 offset := newOop - oop.
-						 (theIPPtr ~= 0
-						  and: [(stackPages unsignedLongAt: theIPPtr) > oop]) ifTrue:
-							[stackPages
+							put: (objectMemory followForwarded: oop) ].
+					oop := self iframeMethod: theFP.
+					(objectMemory isForwarded: oop) ifTrue: [
+						| newOop |
+						newOop := objectMemory followForwarded: oop.
+						offset := newOop - oop.
+						(theIPPtr ~= 0 and: [(stackPages unsignedLongAt: theIPPtr) > oop]) ifTrue: [
+							stackPages
 								unsignedLongAt: theIPPtr
 								put: (stackPages unsignedLongAt: theIPPtr) + offset].
 						stackPages
-							unsignedLongAt: theFP + FoxIFSavedIP
-							put: (stackPages unsignedLongAt: theFP + FoxIFSavedIP) + offset.
-						stackPages
 							unsignedLongAt: theFP + FoxMethod
-							put: (oop := newOop)]].
-			  ((self frameHasContext: theFP)
-			   and: [(objectMemory isForwarded: (self frameContext: theFP))]) ifTrue:
-				[stackPages
-					unsignedLongAt: theFP + FoxThisContext
-					put: (objectMemory followForwarded: (self frameContext: theFP))].
+							put: (oop := newOop).
+						stackPages
+							unsignedLongAt: theFP + FoxIFSavedIP
+							put: (stackPages unsignedLongAt: theFP + FoxIFSavedIP) + offset ]]
+					ifTrue: [
+						oop := stackPages unsignedLongAt: theFP + FoxMFReceiver.
+						(objectMemory isOopForwarded: oop) ifTrue: [
+							stackPages
+								unsignedLongAt: theFP + FoxMFReceiver
+								put: (objectMemory followForwarded: oop) ].
+					 	self assert: (objectMemory isForwarded: (self mframeHomeMethod: theFP) methodObject) not].
+
+			((self frameHasContext: theFP)
+			   and: [(objectMemory isForwarded: (self frameContext: theFP))]) ifTrue: [
+					stackPages
+						unsignedLongAt: theFP + FoxThisContext
+						put: (objectMemory followForwarded: (self frameContext: theFP)) ].
 			  offset := self frameStackedReceiverOffset: theFP.
 			  oop := stackPages unsignedLongAt: theFP + offset.
 			  (objectMemory isOopForwarded: oop) ifTrue:
@@ -2802,13 +2803,13 @@ CoInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 			  (callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
 				[theIPPtr := (theFP + FoxCallerSavedIP) asUnsignedInteger.
 				 theFP := callerFP].
-			 "And finally follow the saved context and the caller context."
-			 theSP := thePage baseAddress - objectMemory wordSize.
-			 [theSP <= thePage baseAddress] whileTrue:
-				[oop := stackPages unsignedLongAt: theSP.
-				 (objectMemory isForwarded: oop) ifTrue:
-					[stackPages unsignedLongAt: theSP put: (objectMemory followForwarded: oop)].
-				 theSP := theSP + objectMemory wordSize]]]
+				"And finally follow the saved context and the caller context."
+				theSP := thePage baseAddress - objectMemory wordSize.
+				[theSP <= thePage baseAddress] whileTrue: [
+					oop := stackPages unsignedLongAt: theSP.
+					(objectMemory isForwarded: oop) ifTrue: [
+						stackPages unsignedLongAt: theSP put: (objectMemory followForwarded: oop) ].
+					theSP := theSP + objectMemory wordSize ]]]
 ]
 
 { #category : #'process primitive support' }
