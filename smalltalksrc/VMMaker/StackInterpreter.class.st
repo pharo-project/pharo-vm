@@ -1892,59 +1892,8 @@ StackInterpreter >> activateNewMethodInterpreted [
 	If mustBeInterpreterFrame is true, force it to be an interpreter frame regardless of the method being compiled"
 
 	<inline: true>
-	| methodHeader numArgs numTemps rcvr |
-	methodHeader := objectMemory methodHeaderOf: newMethod.
-	numTemps := self temporaryCountOfMethodHeader: methodHeader.
-	numArgs := self argumentCountOfMethodHeader: methodHeader.
-
-	rcvr := self stackValue: numArgs. "could new rcvr be set at point of send?"
-	self assert: (objectMemory isOopForwarded: rcvr) not.
-
 	self saveCallerFrameStateCallingNewInterpreterFrame: true.
-
-
-	self push: newMethod.
-	self setMethod: newMethod methodHeader: methodHeader.
-	self push: objectMemory nilObject. "FoxThisContext field"
-	self push: (self
-			 encodeFrameFieldHasContext: false
-			 isBlock: false
-			 numArgs: numArgs).
-
-	COGVM ifTrue: [ self push: 0 "FoxIFSavedIP" ].
-	"-1 to account for pre-increment in fetchNextBytecode"
-	instructionPointer := self pointerForOop:
-		                      (self
-			                       initialIPForHeader: methodHeader
-			                       method: newMethod) - 1.
-	self push: rcvr.
-
-	"Initialize temps to nil"
-	numArgs + 1 to: numTemps do: [ :i |
-		self push: objectMemory nilObject ].
-
-	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
-		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		instructionPointer := instructionPointer
-		                      +
-		                      (self sizeOfCallPrimitiveBytecode:
-			                       methodHeader).
-		primFailCode ~= 0 ifTrue: [
-			| shouldSkipStoreBytecode |
-			shouldSkipStoreBytecode := self
-				                           reapAndResetErrorCodeTo: framePointer
-				                           header: methodHeader.
-			shouldSkipStoreBytecode ifTrue: [
-				instructionPointer := instructionPointer
-				                      +
-				                      (self sizeOfLongStoreTempBytecode:
-					                       methodHeader) ] ] ].
-
-	self assert: (self frameNumArgs: framePointer) = argumentCount.
-	self assert: (self frameIsBlockActivation: framePointer) not.
-	self assert: (self frameHasContext: framePointer) not.
-
-	^ methodHeader
+	^ self setupFrameForNewMethodInterpreted
 ]
 
 { #category : #'process primitive support' }
@@ -2352,6 +2301,12 @@ StackInterpreter >> baseFrameReturn [
 	self setMethod: (self iframeMethod: framePointer).
 	self stackTopPut: localReturnValue.
 	^ self fetchNextBytecode
+]
+
+{ #category : #'frame access' }
+StackInterpreter >> baseFrameSavedCallerIP [
+
+	^ objectMemory nilObject
 ]
 
 { #category : #'frame access' }
@@ -7978,6 +7933,18 @@ StackInterpreter >> instructionPointer: anInteger [
 ]
 
 { #category : #'frame access' }
+StackInterpreter >> instructionPointerForBaseFrameContext: aContext [
+
+	| theIP |
+	theIP := objectMemory
+		         fetchPointer: InstructionPointerIndex
+		         ofObject: aContext.
+	^ (objectMemory isIntegerObject: theIP)
+		  ifTrue: [ objectMemory integerValueOf: theIP ]
+		  ifFalse: [ self error: 'context is not resumable' ]
+]
+
+{ #category : #'frame access' }
 StackInterpreter >> instructionPointerForFrame: spouseFP currentFP: currentFP currentIP: instrPtr [
 	"Answer the bytecode pc object (i.e. SmallInteger) for an active frame.  The bytecode
 	 pc is derived from the frame's pc.  If the frame is the top frame on the current stack
@@ -8760,12 +8727,6 @@ StackInterpreter >> literalCountOfAlternateHeader: headerPointer [
 ]
 
 { #category : #'compiled methods' }
-StackInterpreter >> literalCountOfOriginalHeader: headerPointer [
-	<inline: true>
-	^(headerPointer >> 10) bitAnd: 16rFF
-]
-
-{ #category : #'compiled methods' }
 StackInterpreter >> literalMaybeForwarder: offset [
 
 	| literal |
@@ -9169,130 +9130,126 @@ StackInterpreter >> lookupSelector: selector inClass: class [
 ]
 
 { #category : #'frame access' }
-StackInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
+StackInterpreter >> makeBaseFrameFor: aContext [
 	"Marry aContext with the base frame of a new stack page.  Build the base
-	 frame to reflect the context's state.  Answer the new page."
+	 frame to reflect the context's state.  Answer the new page.
+	Simply hold the caller context in the first word of the stack."
+
 	<returnTypeC: #'StackPage *'>
 	<inline: false>
 	<var: #page type: #'StackPage *'>
-	<var: #pointer type: #'char *'>
-	"theIP must be typed as signed because if it is assigned to a pointer (as in the JIT'ed VM) it may be implicitly typed as unsigned."
-	<var: #theIP type: #sqInt>
-
-	| page pointer theMethod theIP numArgs stackPtrIndex maybeClosure rcvr |
-
+	<var: #theInstructionpointer type: #sqInt>
+	| page theMethod numArgs stackPtrIndex maybeClosure rcvr theInstructionPointer |
 	self assert: (objectMemory isContext: aContext).
 	self assert: (self isSingleContext: aContext).
 	self assert: (objectMemory goodContextSize: aContext).
-	theIP := objectMemory fetchPointer: InstructionPointerIndex ofObject: aContext.
-	theIP := (objectMemory isIntegerObject: theIP)
-				ifTrue: [objectMemory integerValueOf: theIP]
-				ifFalse: [self error: 'context is not resumable'].
-	theMethod := objectMemory followObjField: MethodIndex ofObject: aContext.
+
 	page := stackPages newStackPage.
+	"Initialize the stack pointer above the base address.
+	This will make the next push to push to the first slot of the page."
+	stackPointer := page baseAddress + objectMemory wordSize.
+
 	"first word on stack is caller context of base frame"
-	stackPages
-		unsignedLongAt: (pointer := page baseAddress)
-		put: (objectMemory followObjField: SenderIndex ofObject: aContext).
+	self push:
+		(objectMemory followObjField: SenderIndex ofObject: aContext).
 	"second word is the context itself; needed for cannotReturn processing; see ceBaseReturn:."
-	stackPages
-		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
-		put: aContext.
+	self push: aContext.
+
+	"Push the receiver and arguments to the stack."
+	"If this is a closure activation, the closure was the actual receiver of a #value[:...] message."
+	"The actual receiver (the self object) will be (also) pushed later inside the frame."
 	rcvr := objectMemory followField: ReceiverIndex ofObject: aContext.
-	"If the frame is a closure activation then the closure should be on the stack in
-	 the pushed receiver position (closures receive the value[:value:] messages).
-	 Otherwise it should be the receiver proper."
-	maybeClosure := objectMemory fetchPointer: ClosureIndex ofObject: aContext.
-	maybeClosure ~= objectMemory nilObject
-		ifTrue:
-			[(objectMemory isForwarded: maybeClosure) ifTrue:
-				[maybeClosure := objectMemory fixFollowedField: ClosureIndex ofObject: aContext withInitialValue: maybeClosure].
-			 numArgs := self argumentCountOfClosure: maybeClosure.
-			 stackPages
-				longAt: (pointer := pointer - objectMemory wordSize)
-				put: maybeClosure]
-		ifFalse:
-			[| header |
-			 header := objectMemory methodHeaderOf: theMethod.
-			 numArgs := self argumentCountOfMethodHeader: header.
-			 "If this is a synthetic context its IP could be pointing at the CallPrimitive opcode.  If so, skip it."
-			 ((self methodHeaderHasPrimitive: header)
-			  and: [theIP = (1 + (self startPCOfMethodHeader: header))]) ifTrue:
-				[theIP := theIP + (self sizeOfCallPrimitiveBytecode: header)].
-			 stackPages
-				unsignedLongAt: (pointer := pointer - objectMemory wordSize)
-				put: rcvr].
+	maybeClosure := objectMemory
+		                followField: ClosureIndex
+		                ofObject: aContext.
+	self push: (maybeClosure ~= objectMemory nilObject
+			 ifTrue: [ maybeClosure ]
+			 ifFalse: [ rcvr ]).
+
 	"Put the arguments on the stack"
-	1 to: numArgs do:
-		[:i|
-		stackPages
-			unsignedLongAt: (pointer := pointer - objectMemory wordSize)
-			put: (objectMemory fetchPointer: ReceiverIndex + i ofObject: aContext).
-		"nil the slot in the context so that it doesn't inadvertently hang onto some collectable object.
-		 Thanks to Ryan Macnak for identifying this bug"
-		objectMemory storePointerUnchecked: ReceiverIndex + i ofObject: aContext withValue: objectMemory nilObject].
-	"saved caller ip is nil in pure interpreter's base frame"
-	stackPages
-		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
-		put: objectMemory nilObject.
+	theMethod := objectMemory
+		             followObjField: MethodIndex
+		             ofObject: aContext.
+	numArgs := maybeClosure ~= objectMemory nilObject
+		           ifTrue: [ self argumentCountOfClosure: maybeClosure ]
+		           ifFalse: [
+			           self argumentCountOfMethodHeader:
+				           (objectMemory methodHeaderOf: theMethod) ].
+	1 to: numArgs do: [ :i |
+		self push:
+			(objectMemory fetchPointer: ReceiverIndex + i ofObject: aContext).
+		"nil the slots in the context so that it doesn't inadvertently hang onto some collectable object"
+		objectMemory
+			storePointerUnchecked: ReceiverIndex + i
+			ofObject: aContext
+			withValue: objectMemory nilObject ].
+
+	instructionPointer := self baseFrameSavedCallerIP.
 	"base frame's saved fp is null"
-	stackPages
-		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
-		put: 0.
-	
-	"N.B.  Don't set the baseFP, which marks the page as in use, until after
-	 ensureMethodIsCogged: and/or instructionPointer:forContext:frame:. These
-	 can cause a compiled code compaction which, if marked as in use, will
-	 examine this partially initialized page and crash."
-	page headFP: pointer.
+	framePointer := 0.
+	self saveCallerFrameStateCallingNewInterpreterFrame: true.
+
+	"We finished pushing all the meta-data required for the base-frame to work.
+	Proceed to start a new frame"
 	"Create either a machine code frame or an interpreter frame based on the pc.  If the pc is -ve
 	 it is a machine code pc and so we produce a machine code frame.  If +ve an interpreter frame.
 	 N.B. Do *not* change this to try and map from a bytecode pc to a machine code frame under
 	 any circumstances.  See ensureContextIsExecutionSafeAfterAssignToStackPointer:"
-		stackPages
-			unsignedLongAt: (pointer := pointer - objectMemory wordSize)
-			put: theMethod.
-		stackPages
-			unsignedLongAt: (pointer := pointer - objectMemory wordSize)
-			put: aContext.
-		stackPages
-			unsignedLongAt: (pointer := pointer - objectMemory wordSize)
-			put: (self encodeFrameFieldHasContext: true isBlock: maybeClosure ~= objectMemory nilObject numArgs: numArgs).
-		theIP := self iframeInstructionPointerForIndex: theIP method: theMethod.
-	page baseFP: page headFP.
+	theInstructionPointer := self
+		                         setupFrameFixedPart: theMethod
+		                         withHeader:
+		                         (objectMemory methodHeaderOf: theMethod)
+		                         withContext: aContext
+		                         maybeClosure: maybeClosure
+		                         withNumArgs: numArgs
+		                         withReceiver: rcvr.
 	self assert: (self frameHasContext: page baseFP).
 	self assert: (self frameNumArgs: page baseFP) == numArgs.
-	stackPages
-		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
-		put: rcvr.
-	stackPtrIndex := self quickFetchInteger: StackPointerIndex ofObject: aContext.
-	self assert: ReceiverIndex + stackPtrIndex < (objectMemory lengthOf: aContext).
-	numArgs + 1 to: stackPtrIndex do:
-		[:i|
-		stackPages
-			longAt: (pointer := pointer - objectMemory wordSize)
-			put: (objectMemory fetchPointer: ReceiverIndex + i ofObject: aContext).
-		"nil the slot in the context so that it doesn't inadvertently hang onto some collectable object.
-		 Thanks to Ryan Macnak for identifying this bug"
-		objectMemory storePointerUnchecked: ReceiverIndex + i ofObject: aContext withValue: objectMemory nilObject ].
-	"top of stack is the instruction pointer"
-	stackPages unsignedLongAt: (pointer := pointer - objectMemory wordSize) put: theIP.
-	page headSP: pointer.
-	self assert: (self context: aContext hasValidInversePCMappingOf: theIP in: page baseFP).
+
+	"Push all elements in the context operand stack in the frame, including temps"
+	stackPtrIndex := self
+		                 quickFetchInteger: StackPointerIndex
+		                 ofObject: aContext.
+	self assert:
+		ReceiverIndex + stackPtrIndex < (objectMemory lengthOf: aContext).
+	numArgs + 1 to: stackPtrIndex do: [ :i |
+		self push:
+			(objectMemory fetchPointer: ReceiverIndex + i ofObject: aContext).
+		"nil the slot in the context so that it doesn't inadvertently hang onto some collectable object."
+		objectMemory
+			storePointerUnchecked: ReceiverIndex + i
+			ofObject: aContext
+			withValue: objectMemory nilObject ].
+
+	"Top of stack is the instruction pointer in a suspended frame"
+	self push: theInstructionPointer.
+
+	"Commit the current frame to the page, making sure to set this first frame as base frame too"
+	self setHeadFP: framePointer andSP: stackPointer inPage: page.
+	page baseFP: page headFP.
+
+	self assert: (self
+			 context: aContext
+			 hasValidInversePCMappingOf: theInstructionPointer
+			 in: page baseFP).
 
 	"Mark context as married by setting its sender to the frame pointer plus SmallInteger
 	 tags and the InstructionPointer to the saved fp (which ensures correct alignment
 	 w.r.t. the frame when we check for validity) plus SmallInteger tags."
-	objectMemory storePointerUnchecked: SenderIndex
+	objectMemory
+		storePointerUnchecked: SenderIndex
 		ofObject: aContext
 		withValue: (self withSmallIntegerTags: page baseFP).
-	objectMemory storePointerUnchecked: InstructionPointerIndex
+	objectMemory
+		storePointerUnchecked: InstructionPointerIndex
 		ofObject: aContext
 		withValue: (self withSmallIntegerTags: 0).
-	self assert: (objectMemory isIntegerObject: (objectMemory fetchPointer: SenderIndex ofObject: aContext)).
+
+	self assert: (objectMemory isIntegerObject:
+			 (objectMemory fetchPointer: SenderIndex ofObject: aContext)).
 	self assert: (self frameOfMarriedContext: aContext) = page baseFP.
 	self assert: (self validStackPageBaseFrame: page).
-	^page
+	^ page
 ]
 
 { #category : #'frame access' }
@@ -13972,10 +13929,110 @@ StackInterpreter >> setTraceFlagOnContextsFramesPageIfNeeded: aContext [
 			[thePage trace: StackPageReachedButUntraced]]
 ]
 
-{ #category : #'stack pages' }
-StackInterpreter >> shadowCallStackSize [
-	"1 MB shadow call stack size"
-	^ 1 *1024 * 1024
+{ #category : #'frame access' }
+StackInterpreter >> setupFrameFixedPart: theMethod withHeader: methodHeader withContext: aContext maybeClosure: maybeClosure withNumArgs: numArgs withReceiver: rcvr [
+
+	<var: #theInstructionpointer type: #sqInt>
+	<var: #contextSavedIP type: #sqInt>
+	<inline: true>
+	| contextSavedIP theInstructionPointer |
+	contextSavedIP := self instructionPointerForBaseFrameContext:
+		                  aContext.
+	self
+		setupFrameFixedPartForNewMethodInterpreted: theMethod
+		withHeader: (objectMemory methodHeaderOf: theMethod)
+		withContext: aContext
+		isBlock: maybeClosure ~= objectMemory nilObject
+		withNumArgs: numArgs
+		withReceiver: rcvr.
+
+	theInstructionPointer := self
+		                         iframeInstructionPointerForIndex:
+		                         contextSavedIP
+		                         method: theMethod.
+	^ theInstructionPointer
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> setupFrameFixedPartForNewMethodInterpreted: theMethod withHeader: methodHeader withContext: aContext isBlock: aBoolean withNumArgs: numArgs withReceiver: rcvr [
+
+	<inline: true>
+	self push: theMethod.
+	self setMethod: theMethod methodHeader: methodHeader.
+	self push: aContext.
+	self push: (self
+			 encodeFrameFieldHasContext: aContext ~= objectMemory nilObject
+			 isBlock: aBoolean
+			 numArgs: numArgs).
+
+	COGVM ifTrue: [ self push: 0 "FoxIFSavedIP" ].
+	self push: rcvr.
+	^ methodHeader
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> setupFrameFixedPartForNewMethodInterpreted: theMethod withHeader: methodHeader withNumArgs: numArgs withReceiver: rcvr [
+
+	<inline: true>
+	^ self
+		  setupFrameFixedPartForNewMethodInterpreted: theMethod
+		  withHeader: methodHeader
+		  withContext: objectMemory nilObject
+		  isBlock: false
+		  withNumArgs: numArgs
+		  withReceiver: rcvr
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> setupFrameForNewMethodInterpreted [
+
+	<inline: true>
+	| methodHeader numTemps numArgs rcvr |
+	methodHeader := objectMemory methodHeaderOf: newMethod.
+	numTemps := self temporaryCountOfMethodHeader: methodHeader.
+	numArgs := self argumentCountOfMethodHeader: methodHeader.
+
+	rcvr := self stackValue: numArgs. "could new rcvr be set at point of send?"
+	self assert: (objectMemory isOopForwarded: rcvr) not.
+
+	self
+		setupFrameFixedPartForNewMethodInterpreted: newMethod
+		withHeader: methodHeader
+		withNumArgs: numArgs
+		withReceiver: rcvr.
+
+	"-1 to account for pre-increment in fetchNextBytecode"
+	instructionPointer := self pointerForOop:
+		                      (self
+			                       initialIPForHeader: methodHeader
+			                       method: newMethod) - 1.
+
+	"Initialize temps to nil"
+	numArgs + 1 to: numTemps do: [ :i |
+	self push: objectMemory nilObject ].
+
+	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
+		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
+		instructionPointer := instructionPointer
+		                      +
+		                      (self sizeOfCallPrimitiveBytecode:
+			                       methodHeader).
+		primFailCode ~= 0 ifTrue: [
+			| shouldSkipStoreBytecode |
+			shouldSkipStoreBytecode := self
+				                           reapAndResetErrorCodeTo: framePointer
+				                           header: methodHeader.
+			shouldSkipStoreBytecode ifTrue: [
+				instructionPointer := instructionPointer
+				                      +
+				                      (self sizeOfLongStoreTempBytecode:
+					                       methodHeader) ] ] ].
+
+	self assert: (self frameNumArgs: framePointer) = argumentCount.
+	self assert: (self frameIsBlockActivation: framePointer) not.
+	self assert: (self frameHasContext: framePointer) not.
+
+	^ methodHeader
 ]
 
 { #category : #'jump bytecodes' }
