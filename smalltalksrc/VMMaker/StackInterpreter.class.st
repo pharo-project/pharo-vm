@@ -942,7 +942,6 @@ StackInterpreter class >> initializeFrameIndices [
 	 avoid including them accidentally in StackInterpreter code."
 	MFrameSlots := #undefined.
 	FoxIFSavedIP := #undefined.
-	FoxIFReceiver := #undefined.
 	FoxMFReceiver := #undefined
 ]
 
@@ -4928,7 +4927,6 @@ StackInterpreter >> createActualMessageTo: lookupClass [
 	| argumentArray message |
 	self assert: ((objectMemory isImmediate: messageSelector) or: [ 
 			 objectMemory addressCouldBeObj: messageSelector ]). "This is a useful break-point"
-	self mnuBreakpoint: messageSelector receiver: nil.
 	argumentArray := objectMemory
 		                 eeInstantiateSmallClassIndex:
 		                 ClassArrayCompactIndex
@@ -10298,33 +10296,6 @@ StackInterpreter >> microsecondsToMilliseconds: microseconds [
 	^microseconds // 1000 bitAnd: MillisecondClockMask
 ]
 
-{ #category : #'debug support' }
-StackInterpreter >> mnuBreak: selectorString point: selectorLength receiver: receiverOrNil [
-	<doNotGenerate> "C version is in platforms/Cross/vm/dispdbg.h"
-	"self shortPrintFrameAndCallers: localFP"
-	| i |
-	breakSelectorLength negated = selectorLength ifTrue:
-		[i := breakSelectorLength negated.
-		 [i > 0] whileTrue:
-			[(objectMemory byteAt: selectorString + i - 1) = (breakSelector at: i) asInteger
-				ifTrue: [(i := i - 1) = 0 ifTrue:
-							[self changed: #byteCountText.
-							 self halt: 'MNU of '
-									, breakSelector,
-									(receiverOrNil
-										ifNotNil: [' to ', (self shortPrint: receiverOrNil)]
-										ifNil: [''])]]
-				ifFalse: [i := 0]]]
-]
-
-{ #category : #'debug support' }
-StackInterpreter >> mnuBreakpoint: selector receiver: rcvr [
-	<inline: true>
-	self mnuBreak: (objectMemory firstFixedFieldOfMaybeImmediate: selector)
-		point: (objectMemory lengthOfMaybeImmediate: selector)
-		receiver: rcvr
-]
-
 { #category : #initialization }
 StackInterpreter >> moduleUnloaded: aModuleName [ 
 	"The module with the given name was just unloaded. 
@@ -10404,17 +10375,6 @@ StackInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 	^newFP
 ]
 
-{ #category : #'internal interpreter access' }
-StackInterpreter >> nacFetchStackPointerOf: aContext [
-	"A version of fetchStackPointerOf: for use when objects may be forwarded.
-	 Does not do an assert-check of the stack pointer being in bounds."
-	| sp |
-	<inline: true>
-	sp := objectMemory fetchPointer: StackPointerIndex ofObject: aContext.
-	(objectMemory isIntegerObject: sp) ifFalse: [^0].
-	^objectMemory integerValueOf: sp
-]
-
 { #category : #'debug printing' }
 StackInterpreter >> nameOfClass: classOop [
 	"Brain-damaged nameOfClass: for C VM.  Does *not* answer Foo class for metaclasses.
@@ -10433,12 +10393,6 @@ StackInterpreter >> nameOfClass: classOop [
 		objectMemory isBytes: maybeNameOop]) ifFalse:
 		[^'bad class'].
 	^objectMemory firstIndexableField: maybeNameOop
-]
-
-{ #category : #'stack pages' }
-StackInterpreter >> nativeStackSize [
-	"4 MB native stack size"
-	^ 4 *1024 * 1024
 ]
 
 { #category : #'image save/restore' }

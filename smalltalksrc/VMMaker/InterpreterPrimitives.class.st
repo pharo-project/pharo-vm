@@ -570,12 +570,6 @@ InterpreterPrimitives >> noInlineSigned32BitValueGutsOf: oop [
 	^value
 ]
 
-{ #category : #'stack access' }
-InterpreterPrimitives >> pop: nItems thenPushBool: boolean [
-
-	self subclassResponsibility
-]
-
 { #category : #'primitive support' }
 InterpreterPrimitives >> positive32BitValueOf: oop [
 	"Convert the given object into an integer value.
