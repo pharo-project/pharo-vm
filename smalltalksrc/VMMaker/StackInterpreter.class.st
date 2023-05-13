@@ -9349,7 +9349,7 @@ StackInterpreter >> mapStackPages [
 	| numLivePages |
 	numLivePages := 0.
 	0 to: numStackPages - 1 do: [ :i |
-		| thePage theSP theFP frameRcvrOffset callerFP theIPPtr theIP oop |
+		| thePage theSP theFP frameRcvrOffset callerFP theIPPtr oop |
 		thePage := stackPages stackPageAt: i.
 		thePage isFree ifFalse: [
 			self assert: (self ifCurrentStackPageHasValidHeadPointers: thePage).
@@ -9358,7 +9358,7 @@ StackInterpreter >> mapStackPages [
 			theFP := thePage headFP.
 			"Skip the instruction pointer on top of stack of inactive pages."
 			thePage = stackPage
-				ifTrue: [ theIPPtr := 0 ]
+				ifTrue: [ theIPPtr := self savedInstructioPointerLocation: theFP ]
 				ifFalse: [
 					theIPPtr := theSP.
 					theSP := theSP + objectMemory wordSize ].
@@ -9389,17 +9389,19 @@ StackInterpreter >> mapStackPages [
 							 = theFP ]) ] ].
 			(self isMachineCodeFrame: theFP) ifFalse: [
 				(objectMemory shouldRemapObj: (self iframeMethod: theFP)) ifTrue: [
-					theIPPtr ~= 0 ifTrue: [
-						theIP := stackPages unsignedLongAt: theIPPtr.
-						self assert: theIP > (self iframeMethod: theFP).
-						theIP := theIP - (self iframeMethod: theFP) ].
+					| methodOopBeforeRemapping remappedMethodOop delta |
+					methodOopBeforeRemapping := self iframeMethod: theFP.
+					remappedMethodOop := objectMemory remapObj:
+						                     methodOopBeforeRemapping.
+					delta := methodOopBeforeRemapping + remappedMethodOop.
 					stackPages
 						unsignedLongAt: theFP + FoxMethod
-						put: (objectMemory remapObj: (self iframeMethod: theFP)).
+						put: remappedMethodOop.
 					theIPPtr ~= 0 ifTrue: [
-						stackPages
-							unsignedLongAt: theIPPtr
-							put: theIP + (self iframeMethod: theFP) ] ] ].
+						self
+							remapInstructionPointerInFrame: theFP
+							inSavedInstructionPointerLocation: theIPPtr
+							byRemapDelta: delta ] ] ].
 			(callerFP := self frameCallerFP: theFP) ~= 0 ] whileTrue: [
 				theSP := (theIPPtr := theFP + FoxCallerSavedIP)
 				         + objectMemory wordSize.
@@ -9673,6 +9675,12 @@ StackInterpreter >> markAndTraceMachineCodeOfMarkedMethods [
 ]
 
 { #category : #'object memory support' }
+StackInterpreter >> markAndTraceMethodInFrame: theFP [
+
+	objectMemory markAndTrace: (self iframeMethod: theFP)
+]
+
+{ #category : #'object memory support' }
 StackInterpreter >> markAndTraceOrFreeMachineCode: fullGCFlag [
 	"This is a no-op in the StackVM"
 ]
@@ -9714,7 +9722,7 @@ StackInterpreter >> markAndTraceStackPage: thePage [
 	(self frameHasContext: theFP) ifTrue:
 		[self assert: (objectMemory isContext: (self frameContext: theFP)).
 		 objectMemory markAndTrace: (self frameContext: theFP)].
-	objectMemory markAndTrace: (self iframeMethod: theFP).
+	self markAndTraceMethodInFrame: theFP.
 	(callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
 		[theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
 		 theFP := callerFP].
@@ -13183,6 +13191,18 @@ StackInterpreter >> remapCallbackState [
 			[suspendedMethods at: i put: (objectMemory remapObj: oop)]]
 ]
 
+{ #category : #'object memory support' }
+StackInterpreter >> remapInstructionPointerInFrame: theFP inSavedInstructionPointerLocation: theIPPtr byRemapDelta: delta [
+	"The IP is in theIPPtr and needs to be mapped by delta, which is the distance the method has moved"
+
+	| theIP frameSavedInstructionPointerLocation |
+	frameSavedInstructionPointerLocation := theIPPtr.
+	theIP := stackPages unsignedLongAt: theIPPtr.
+	stackPages
+		unsignedLongAt: frameSavedInstructionPointerLocation
+		put: theIP - delta
+]
+
 { #category : #'stack bytecodes' }
 StackInterpreter >> remoteIsInstVarAccess [
 	"If this byte is set in the second byte (zero-based) of the instruction, 
@@ -13555,6 +13575,12 @@ StackInterpreter >> saveCallerFrameStateCallingNewInterpreterFrame: isInterprete
 	self push: instructionPointer.
 	self push: framePointer.
 	framePointer := stackPointer
+]
+
+{ #category : #'object memory support' }
+StackInterpreter >> savedInstructioPointerLocation: theFP [
+
+	^ 0
 ]
 
 { #category : #'process primitive support' }

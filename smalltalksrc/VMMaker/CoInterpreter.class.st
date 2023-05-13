@@ -3329,94 +3329,6 @@ CoInterpreter >> mapPrimTraceLog [
 			[primTraceLog at: i put: (objectMemory remapObj: selector)]]
 ]
 
-{ #category : #'object memory support' }
-CoInterpreter >> mapStackPages [
-
-	<inline: #never>
-	<var: #thePage type: #'StackPage *'>
-	<var: #theSP type: #'char *'>
-	<var: #theFP type: #'char *'>
-	<var: #frameRcvrOffset type: #'char *'>
-	<var: #callerFP type: #'char *'>
-	<var: #theIPPtr type: #'char *'>
-	| numLivePages |
-	numLivePages := 0.
-	0 to: numStackPages - 1 do: [ :i |
-		| thePage theSP theFP frameRcvrOffset callerFP theIPPtr theIP oop |
-		thePage := stackPages stackPageAt: i.
-		thePage isFree ifFalse: [
-			self assert: (self ifCurrentStackPageHasValidHeadPointers: thePage).
-			numLivePages := numLivePages + 1.
-			theSP := thePage headSP.
-			theFP := thePage headFP.
-			"Skip the instruction pointer on top of stack of inactive pages."
-			thePage = stackPage
-				ifTrue: [
-					theIPPtr := ((self isMachineCodeFrame: theFP) or: [
-						             (self iframeSavedIP: theFP) = 0 ])
-						            ifTrue: [ 0 ]
-						            ifFalse: [ theFP + FoxIFSavedIP ] ]
-				ifFalse: [
-					theIPPtr := theSP.
-					theSP := theSP + objectMemory wordSize ].
-			[
-			self assert: (thePage addressIsInPage: theFP).
-			self assert: (thePage addressIsInPage: theSP).
-			self assert:
-				(theIPPtr = 0 or: [ thePage addressIsInPage: theIPPtr ]).
-			frameRcvrOffset := self frameReceiverLocation: theFP.
-			[ theSP <= frameRcvrOffset ] whileTrue: [
-				oop := stackPages unsignedLongAt: theSP.
-				(objectMemory shouldRemapOop: oop) ifTrue: [
-					stackPages
-						unsignedLongAt: theSP
-						put: (objectMemory remapObj: oop) ].
-				theSP := theSP + objectMemory wordSize ].
-			(self frameHasContext: theFP) ifTrue: [
-				(objectMemory shouldRemapObj: (self frameContext: theFP)) ifTrue: [
-					stackPages
-						unsignedLongAt: theFP + FoxThisContext
-						put: (objectMemory remapObj: (self frameContext: theFP)) ].
-				"With SpurPlanningCompactor can't assert since object body is yet to move."
-				objectMemory slidingCompactionInProgress not ifTrue: [
-					self assert:
-						((self isMarriedOrWidowedContext: (self frameContext: theFP))
-							 and: [
-							 (self frameOfMarriedContext: (self frameContext: theFP))
-							 = theFP ]) ] ].
-			(self isMachineCodeFrame: theFP) ifFalse: [
-				(objectMemory shouldRemapObj: (self iframeMethod: theFP)) ifTrue: [
-					theIPPtr ~= 0 ifTrue: [
-						theIP := stackPages unsignedLongAt: theIPPtr.
-						theIP = cogit ceReturnToInterpreterPC ifTrue: [
-							theIPPtr := theFP + FoxIFSavedIP.
-							theIP := stackPages unsignedLongAt: theIPPtr ].
-						self assert: theIP > (self iframeMethod: theFP).
-						theIP := theIP - (self iframeMethod: theFP) ].
-					stackPages
-						unsignedLongAt: theFP + FoxMethod
-						put: (objectMemory remapObj: (self iframeMethod: theFP)).
-					theIPPtr ~= 0 ifTrue: [
-						stackPages
-							unsignedLongAt: theIPPtr
-							put: theIP + (self iframeMethod: theFP) ] ] ].
-			(callerFP := self frameCallerFP: theFP) ~= 0 ] whileTrue: [
-				theSP := (theIPPtr := theFP + FoxCallerSavedIP)
-				         + objectMemory wordSize.
-				theFP := callerFP ].
-
-			"In base frames the caller saved ip field holds the caller context."
-			theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
-			[ theSP <= thePage baseAddress ] whileTrue: [
-				oop := stackPages unsignedLongAt: theSP.
-				(objectMemory shouldRemapOop: oop) ifTrue: [
-					stackPages
-						unsignedLongAt: theSP
-						put: (objectMemory remapObj: oop) ].
-				theSP := theSP + objectMemory wordSize ] ] ].
-	stackPages recordLivePagesOnMapping: numLivePages
-]
-
 { #category : #'debug support' }
 CoInterpreter >> mapTraceLog [
 	"The trace log is a circular buffer of pairs of entries. If there is
@@ -3493,6 +3405,14 @@ CoInterpreter >> markAndTraceMachineCodeOfMarkedMethods [
 	cogit markAndTraceMachineCodeOfMarkedMethods
 ]
 
+{ #category : #'object memory support' }
+CoInterpreter >> markAndTraceMethodInFrame: theFP [
+
+	(self isMachineCodeFrame: theFP)
+		ifTrue: [ self markAndTraceMachineCodeMethod: (self mframeCogMethod: theFP) ]
+		ifFalse: [ super markAndTraceMethodInFrame: theFP ]
+]
+
 { #category : #'debug support' }
 CoInterpreter >> markAndTracePrimTraceLog [
 	"The prim trace log is a circular buffer of selectors. If there is
@@ -3514,55 +3434,6 @@ CoInterpreter >> markAndTracePrimTraceLog [
 		(selector ~= 0
 		  and: [objectMemory isNonImmediate: selector]) ifTrue:
 			[objectMemory markAndTrace: selector]]
-]
-
-{ #category : #'object memory support' }
-CoInterpreter >> markAndTraceStackPage: thePage [
-	| theSP theFP frameRcvrOffset callerFP oop |
-	<var: #thePage type: #'StackPage *'>
-	<var: #theSP type: #'char *'>
-	<var: #theFP type: #'char *'>
-	<var: #frameRcvrOffset type: #'char *'>
-	<var: #callerFP type: #'char *'>
-	<inline: false>
-
-	self assert: (stackPages isFree: thePage) not.
-	self assert: (self ifCurrentStackPageHasValidHeadPointers: thePage).
-	self assert: thePage trace ~= StackPageTraced.
-	thePage trace: StackPageTraced.
-
-	theSP := thePage headSP.
-	theFP := thePage  headFP.
-	"Skip the instruction pointer on top of stack of inactive pages."
-	thePage = stackPage ifFalse:
-		[theSP := theSP + objectMemory wordSize].
-	[frameRcvrOffset := self frameReceiverLocation: theFP.
-	 [theSP <= frameRcvrOffset] whileTrue:
-		[oop := stackPages unsignedLongAt: theSP.
-		 (objectMemory isOopForwarded: oop) ifTrue:
-			[oop := objectMemory followForwarded: oop.
-			 stackPages unsignedLongAt: theSP put: oop].
-		 (objectMemory isImmediate: oop) ifFalse:
-			[objectMemory markAndTrace: oop].
-		 theSP := theSP + objectMemory wordSize].
-	(self frameHasContext: theFP) ifTrue:
-		[self assert: (objectMemory isContext: (self frameContext: theFP)).
-		 objectMemory markAndTrace: (self frameContext: theFP)].
-	(self isMachineCodeFrame: theFP)
-		ifTrue: [self markAndTraceMachineCodeMethod: (self mframeCogMethod: theFP)]
-		ifFalse: [objectMemory markAndTrace: (self iframeMethod: theFP)].
-	(callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
-		[theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
-		 theFP := callerFP].
-	theSP := theFP + FoxCallerSavedIP + objectMemory wordSize. "caller ip is ceBaseReturnPC in the JIT'ed VM and null in interpreter"
-	[theSP <= thePage baseAddress] whileTrue:
-		[oop := stackPages unsignedLongAt: theSP.
-		 (objectMemory isOopForwarded: oop) ifTrue:
-			[oop := objectMemory followForwarded: oop.
-			 stackPages unsignedLongAt: theSP put: oop].
-		 (objectMemory isImmediate: oop) ifFalse:
-			[objectMemory markAndTrace: oop].
-		 theSP := theSP + objectMemory wordSize]
 ]
 
 { #category : #'object memory support' }
@@ -4634,6 +4505,24 @@ CoInterpreter >> recordTrace: classOrInteger thing: selector source: source [
 	traceLogIndex := traceLogIndex + 3 \\ TraceBufferSize
 ]
 
+{ #category : #'object memory support' }
+CoInterpreter >> remapInstructionPointerInFrame: theFP inSavedInstructionPointerLocation: theIPPtr byRemapDelta: delta [
+	"The IP is in theIPPtr and needs to be mapped by delta, which is the distance the method has moved.
+	If this is an interpreter frame that has called a machine code frame, the saved IP will be a trampoline, so the MC method can return without extra checks.
+	In that case, the current saved IP is a the FoxIFSavedIP of the frame"
+
+	| theIP frameSavedInstructionPointerLocation |
+	frameSavedInstructionPointerLocation := theIPPtr.
+	theIP := stackPages unsignedLongAt: theIPPtr.
+	theIP = cogit ceReturnToInterpreterPC ifTrue: [
+		frameSavedInstructionPointerLocation := theFP + FoxIFSavedIP ].
+	
+	super
+		remapInstructionPointerInFrame: theFP
+		inSavedInstructionPointerLocation: frameSavedInstructionPointerLocation
+		byRemapDelta: delta
+]
+
 { #category : #'debug support' }
 CoInterpreter >> reportMinimumUnusedHeadroom [
 	"Report the stack page size and minimum unused headroom to stdout."
@@ -4807,6 +4696,15 @@ CoInterpreter >> saveCallerFrameStateCallingNewInterpreterFrame: isInterpreterFr
 			instructionPointer := cogit ceReturnToInterpreterPC ].
 	
 	super saveCallerFrameStateCallingNewInterpreterFrame: isInterpreterFrame
+]
+
+{ #category : #'object memory support' }
+CoInterpreter >> savedInstructioPointerLocation: theFP [
+
+	^ ((self isMachineCodeFrame: theFP) or: [
+		   (self iframeSavedIP: theFP) = 0 ])
+		  ifTrue: [ super savedInstructioPointerLocation: theFP ]
+		  ifFalse: [ theFP + FoxIFSavedIP ]
 ]
 
 { #category : #'cog jit support' }
