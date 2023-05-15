@@ -93,6 +93,11 @@ TMethod >> addLocal: aString [
 	self locals add: aString
 ]
 
+{ #category : #adding }
+TMethod >> addLocals: locals [ 
+	locals do: [ :local | self addLocal: local ]
+]
+
 { #category : #initialization }
 TMethod >> addTypeForSelf [
 	"If self should be typed then add a suitable type declaration.
@@ -109,10 +114,12 @@ TMethod >> addTypeForSelf [
 TMethod >> addVarsDeclarationsAndLabelsOf: methodToBeInlined except: doNotRename [
 	"Prepare to inline the body of the given method into the receiver by making the args and locals of the argument to the receiver be locals of the receiver. Record any type declarations for these variables. Record labels. Assumes that the variables have already be renamed to avoid name clashes."
 
-	self locals
-		addAll: (methodToBeInlined args reject: [ :v | doNotRename includes: v]);
-		addAll: (methodToBeInlined locals reject: [ :v | doNotRename includes: v]);
-		yourself.
+    | newLocals |
+
+   newLocals := methodToBeInlined args , methodToBeInlined allLocals asOrderedCollection .
+
+	self addLocals: (newLocals reject: [ :v | doNotRename includes: v]).
+
 	methodToBeInlined declarations keysAndValuesDo:
 		[ :v :decl |
 		(doNotRename includes: v) ifFalse:
@@ -651,9 +658,17 @@ TMethod >> declarationAt: aVariableName ifPresent: presentBlock [
 ]
 
 { #category : #accessing }
-TMethod >> declarationAt: aVariableName  "<String>" put: aDeclaration [ "<String>" "^aDeclaration"
+TMethod >> declarationAt: aVariableName put: aDeclaration [
 
-	^declarations at: aVariableName put: aDeclaration
+	| isRelevantVariable |
+	isRelevantVariable := (aVariableName beginsWithAnyOf:
+		                       #( #self , #cascade, #toDoLimit )) not.
+
+	parseTree notNil and: [
+		isRelevantVariable and: [
+			(self declaresVariableWithName: aVariableName ) not ifTrue: [
+				self error: 'Undefined local type declaration' ] ] ].
+	^ declarations at: aVariableName put: aDeclaration
 ]
 
 { #category : #accessing }
@@ -677,6 +692,15 @@ TMethod >> declareNonConflictingLocalNamedLike: aString [
 	cachedLocals := nil.
 	self locals add: newVarName.
 	^ newVarName
+]
+
+{ #category : #testing }
+TMethod >> declaresVariableWithName: aVariableName [
+
+	| referencesInScope |
+	referencesInScope := self allLocals , self args.
+
+	^ referencesInScope includes: aVariableName
 ]
 
 { #category : #testing }
@@ -2784,7 +2808,7 @@ TMethod >> setSelector: sel definingClass: class args: argList locals: localList
 	definingClass := class.
 	args := argList asOrderedCollection collect: [:arg | arg name].
 	declarations := Dictionary new.
-	self addTypeForSelf.
+	
 	primitive := aNumber.
 	properties := methodProperties.
 	comment := aComment.
@@ -2797,7 +2821,7 @@ TMethod >> setSelector: sel definingClass: class args: argList locals: localList
 
 	self parseTree: (aBlockNode asTranslatorNodeIn: self).
 	self locals: tempParseTree locals, (localList  collect: [:arg | arg name]).
-	
+	self addTypeForSelf.
 	
 	complete := false.  "set to true when all possible inlining has been done"
 	export := self extractExportDirective.

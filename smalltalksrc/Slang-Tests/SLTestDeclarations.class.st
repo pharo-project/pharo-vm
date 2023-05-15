@@ -11,6 +11,14 @@ SLTestDeclarations >> setUp [
 ]
 
 { #category : #tests }
+SLTestDeclarations >> testAddTypeForSelfWithDeclarationsDoesNotThrowError [
+
+	| method |
+	method := ccg methodNamed: #methodWithUndefinedLocal.
+	self shouldnt: [ method addTypeForSelf ] raise: Error
+]
+
+{ #category : #tests }
 SLTestDeclarations >> testAllLocalsReturnsBlockLocals [
 
 	self
@@ -68,4 +76,12 @@ SLTestDeclarations >> testLocalsReturnsDirectLocals [
 	self
 		assertCollection: (ccg methodNamed: #methodWithLocal) locals
 		hasSameElements: #( 'var' )
+]
+
+{ #category : #tests }
+SLTestDeclarations >> testUndefinedLocalWithDeclarationsThrowsError [
+
+	| method |
+	method := ccg methodNamed: #methodWithUndefinedLocal.
+	self should: [ method recordDeclarationsIn: ccg ] raise: Error
 ]

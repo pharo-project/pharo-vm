@@ -4,6 +4,12 @@ Class {
 	#category : #'Slang-Tests'
 }
 
+{ #category : #translation }
+SLBasicTestDeclarationClass class >> typeForSelf [
+
+	^#implicit
+]
+
 { #category : #'as yet unclassified' }
 SLBasicTestDeclarationClass >> methodWithBlockLocalDeclaration [
 
@@ -29,5 +35,11 @@ SLBasicTestDeclarationClass >> methodWithLocalWithDeclaration [
 SLBasicTestDeclarationClass >> methodWithNonExistingLocalDeclaration [
 
 	"var does not exist"
+	<var: 'var' type: 'toto'>
+]
+
+{ #category : #'as yet unclassified' }
+SLBasicTestDeclarationClass >> methodWithUndefinedLocal [
+
 	<var: 'var' type: 'toto'>
 ]

@@ -11544,7 +11544,6 @@ SpurMemoryManager >> setMaxOldSpaceSize: limit [
 SpurMemoryManager >> setMinimalPermSpaceSize: min [
 
 	<api>
-	<var: #limit type: #usqInt>
 	
 	self ensureMemoryMap.
 	self getMemoryMap minPermSpaceSize: min.
