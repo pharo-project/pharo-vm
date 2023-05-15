@@ -52,10 +52,8 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 13. 13. #unknownBytecode }.
 		  { 1. 14. 14. #unknownBytecode }.
 		  { 1. 15. 15. #unknownBytecode }.
-		  { 1. 16. 16. #gen_PushLiteralVariable16CasesBytecode0.
-		  #needsFrameNever:. 1 }.
-		  { 1. 17. 17. #gen_PushLiteralVariable16CasesBytecode1.
-		  #needsFrameNever:. 1 }.
+		  { 1. 16. 16. #unknownBytecode }.
+		  { 1. 17. 17. #unknownBytecode }.
 		  { 1. 18. 18. #unknownBytecode }.
 		  { 1. 19. 19. #unknownBytecode }.
 		  { 1. 20. 20. #unknownBytecode }.
@@ -70,10 +68,8 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 29. 29. #unknownBytecode }.
 		  { 1. 30. 30. #unknownBytecode }.
 		  { 1. 31. 31. #unknownBytecode }.
-		  { 1. 32. 32. #gen_PushLiteralConstantBytecode0.
-		  #needsFrameNever:. 1 }.
-		  { 1. 33. 33. #gen_PushLiteralConstantBytecode1.
-		  #needsFrameNever:. 1 }.
+		  { 1. 32. 32. #unknownBytecode }.
+		  { 1. 33. 33. #unknownBytecode }.
 		  { 1. 34. 34. #unknownBytecode }.
 		  { 1. 35. 35. #unknownBytecode }.
 		  { 1. 36. 36. #unknownBytecode }.
@@ -189,13 +185,13 @@ DruidJIT class >> bytecodeTable [
 		  #isMapped }.
 		  { 1. 126. 126. #gen_BytecodePrimPointX. #isMapped }.
 		  { 1. 127. 127. #gen_BytecodePrimPointY. #isMapped }.
-		  { 1. 128. 128. #unknownBytecode }.
-		  { 1. 129. 129. #unknownBytecode }.
-		  { 1. 130. 130. #unknownBytecode }.
-		  { 1. 131. 131. #unknownBytecode }.
-		  { 1. 132. 132. #unknownBytecode }.
-		  { 1. 133. 133. #unknownBytecode }.
-		  { 1. 134. 134. #unknownBytecode }.
+		  { 1. 128. 128. #gen_SendLiteralSelector0ArgsBytecode0 }.
+		  { 1. 129. 129. #gen_SendLiteralSelector0ArgsBytecode1 }.
+		  { 1. 130. 130. #gen_SendLiteralSelector0ArgsBytecode2 }.
+		  { 1. 131. 131. #gen_SendLiteralSelector0ArgsBytecode3 }.
+		  { 1. 132. 132. #gen_SendLiteralSelector0ArgsBytecode4 }.
+		  { 1. 133. 133. #gen_SendLiteralSelector0ArgsBytecode5 }.
+		  { 1. 134. 134. #gen_SendLiteralSelector0ArgsBytecode6 }.
 		  { 1. 135. 135. #unknownBytecode }.
 		  { 1. 136. 136. #unknownBytecode }.
 		  { 1. 137. 137. #unknownBytecode }.
@@ -205,13 +201,13 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 141. 141. #unknownBytecode }.
 		  { 1. 142. 142. #unknownBytecode }.
 		  { 1. 143. 143. #unknownBytecode }.
-		  { 1. 144. 144. #unknownBytecode }.
-		  { 1. 145. 145. #unknownBytecode }.
-		  { 1. 146. 146. #unknownBytecode }.
-		  { 1. 147. 147. #unknownBytecode }.
-		  { 1. 148. 148. #unknownBytecode }.
-		  { 1. 149. 149. #unknownBytecode }.
-		  { 1. 150. 150. #unknownBytecode }.
+		  { 1. 144. 144. #gen_SendLiteralSelector1ArgBytecode0 }.
+		  { 1. 145. 145. #gen_SendLiteralSelector1ArgBytecode1 }.
+		  { 1. 146. 146. #gen_SendLiteralSelector1ArgBytecode2 }.
+		  { 1. 147. 147. #gen_SendLiteralSelector1ArgBytecode3 }.
+		  { 1. 148. 148. #gen_SendLiteralSelector1ArgBytecode4 }.
+		  { 1. 149. 149. #gen_SendLiteralSelector1ArgBytecode5 }.
+		  { 1. 150. 150. #gen_SendLiteralSelector1ArgBytecode6 }.
 		  { 1. 151. 151. #unknownBytecode }.
 		  { 1. 152. 152. #unknownBytecode }.
 		  { 1. 153. 153. #unknownBytecode }.
@@ -221,15 +217,15 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 157. 157. #unknownBytecode }.
 		  { 1. 158. 158. #unknownBytecode }.
 		  { 1. 159. 159. #unknownBytecode }.
-		  { 1. 160. 160. #unknownBytecode }.
-		  { 1. 161. 161. #unknownBytecode }.
-		  { 1. 162. 162. #unknownBytecode }.
-		  { 1. 163. 163. #unknownBytecode }.
-		  { 1. 164. 164. #unknownBytecode }.
-		  { 1. 165. 165. #unknownBytecode }.
-		  { 1. 166. 166. #unknownBytecode }.
-		  { 1. 167. 167. #unknownBytecode }.
-		  { 1. 168. 168. #unknownBytecode }.
+		  { 1. 160. 160. #gen_SendLiteralSelector2ArgsBytecode0 }.
+		  { 1. 161. 161. #gen_SendLiteralSelector2ArgsBytecode1 }.
+		  { 1. 162. 162. #gen_SendLiteralSelector2ArgsBytecode2 }.
+		  { 1. 163. 163. #gen_SendLiteralSelector2ArgsBytecode3 }.
+		  { 1. 164. 164. #gen_SendLiteralSelector2ArgsBytecode4 }.
+		  { 1. 165. 165. #gen_SendLiteralSelector2ArgsBytecode5 }.
+		  { 1. 166. 166. #gen_SendLiteralSelector2ArgsBytecode6 }.
+		  { 1. 167. 167. #gen_SendLiteralSelector2ArgsBytecode7 }.
+		  { 1. 168. 168. #gen_SendLiteralSelector2ArgsBytecode8 }.
 		  { 1. 169. 169. #unknownBytecode }.
 		  { 1. 170. 170. #unknownBytecode }.
 		  { 1. 171. 171. #unknownBytecode }.
@@ -2805,39 +2801,39 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	self
 		DivR: Extra2Reg
 		R: ClassReg
-		Quo: ClassReg
-		Rem: Extra2Reg.
-	self MoveCq: 8 R: Extra2Reg.
-	self SubR: TempReg R: Extra2Reg.
-	self AndCq: 7 R: Extra2Reg.
-	self AddR: Extra2Reg R: SendNumArgsReg.
+		Quo: Extra2Reg
+		Rem: ClassReg.
+	self MoveCq: 8 R: ClassReg.
+	self SubR: TempReg R: ClassReg.
+	self AndCq: 7 R: ClassReg.
+	self AddR: ClassReg R: SendNumArgsReg.
+	self MoveR: Extra2Reg R: ClassReg.
 	jump9 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveR: TempReg R: Extra2Reg.
-	self AddCq: 3 R: Extra2Reg.
-	self MoveCq: 4 R: ClassReg.
+	self MoveR: TempReg R: ClassReg.
+	self AddCq: 3 R: ClassReg.
+	self MoveCq: 4 R: Extra2Reg.
 	self
-		DivR: ClassReg
-		R: Extra2Reg
-		Quo: Extra2Reg
-		Rem: ClassReg.
-	self MoveCq: 4 R: ClassReg.
-	self SubR: TempReg R: ClassReg.
-	self AndCq: 3 R: ClassReg.
-	self AddR: ClassReg R: SendNumArgsReg.
-	self MoveR: Extra2Reg R: ClassReg.
+		DivR: Extra2Reg
+		R: ClassReg
+		Quo: ClassReg
+		Rem: Extra2Reg.
+	self MoveCq: 4 R: Extra2Reg.
+	self SubR: TempReg R: Extra2Reg.
+	self AndCq: 3 R: Extra2Reg.
+	self AddR: Extra2Reg R: SendNumArgsReg.
 	jump8 := self Jump: 0.
 	currentBlock := self Label.
 	jump7 jmpTarget: currentBlock.
 	self CmpCq: 34 R: Extra0Reg.
 	jump7 := self JumpZero: 0.
-	self MoveR: TempReg R: ClassReg.
-	self AddCq: 1 R: ClassReg.
-	self MoveCq: 2 R: Extra2Reg.
+	self MoveR: TempReg R: Extra2Reg.
+	self AddCq: 1 R: Extra2Reg.
+	self MoveCq: 2 R: ClassReg.
 	self
-		DivR: Extra2Reg
-		R: ClassReg
+		DivR: ClassReg
+		R: Extra2Reg
 		Quo: Extra2Reg
 		Rem: ClassReg.
 	self AndCq: 1 R: TempReg.
@@ -2859,13 +2855,16 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	self
 		DivR: Extra2Reg
 		R: ClassReg
-		Quo: Extra2Reg
-		Rem: ClassReg.
+		Quo: ClassReg
+		Rem: Extra2Reg.
 	self AndCq: 1 R: TempReg.
 	self AddR: TempReg R: SendNumArgsReg.
-	self MoveCq: 0 R: ClassReg.
+	self MoveCq: 0 R: TempReg.
+	self MoveR: ClassReg R: Extra2Reg.
+	self MoveR: TempReg R: ClassReg.
 	currentBlock := self Label.
 	jump13 jmpTarget: currentBlock.
+	self MoveR: Extra2Reg R: TempReg.
 	jump13 := self Jump: 0.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
@@ -2875,15 +2874,15 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	jump5 jmpTarget: currentBlock.
 	self AndCq: 16rFFFF R: ClassReg.
 	self AddR: TempReg R: ClassReg.
-	self MoveCq: objectMemory nilObject R: Extra2Reg.
-	self MoveR: Extra2Reg R: Extra1Reg.
+	self MoveCq: objectMemory nilObject R: TempReg.
+	self MoveR: TempReg R: Extra1Reg.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
 	self AndCq: 16rFFFF R: ClassReg.
 	self AddR: TempReg R: ClassReg.
-	self MoveCq: objectMemory nilObject R: Extra2Reg.
-	self MoveR: Extra2Reg R: Extra1Reg.
+	self MoveCq: objectMemory nilObject R: TempReg.
+	self MoveR: TempReg R: Extra1Reg.
 	jump4 := self Jump: 0.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -2899,11 +2898,11 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	jump4 jmpTarget: currentBlock.
 	self CmpCq: 0 R: Extra0Reg.
 	jump4 := self JumpZero: 0.
-	self MoveR: ClassReg R: Extra2Reg.
+	self MoveR: ClassReg R: TempReg.
 	self MoveR: Extra1Reg R: ClassReg.
 	currentBlock := self Label.
 	jump13 jmpTarget: currentBlock.
-	self MoveR: Extra2Reg R: Extra3Reg.
+	self MoveR: TempReg R: Extra3Reg.
 	self MoveR: Extra3Reg Mw: 8 r: SPReg.
 	self MoveR: SendNumArgsReg R: Extra3Reg.
 	self MoveR: Extra3Reg Mw: 16 r: SPReg.
@@ -3863,6 +3862,305 @@ DruidJIT >> gen_ReturnTrue [
 	self MoveCq: objectMemory trueObject R: TempReg.
 	self MoveR: TempReg R: ReceiverResultReg.
 	self genUpArrowReturn.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector0ArgsBytecode0 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 0.
+	self
+		genMarshalledSend: 0
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector0ArgsBytecode1 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 0.
+	self
+		genMarshalledSend: 1
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector0ArgsBytecode2 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 0.
+	self
+		genMarshalledSend: 2
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector0ArgsBytecode3 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 0.
+	self
+		genMarshalledSend: 3
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector0ArgsBytecode4 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 0.
+	self
+		genMarshalledSend: 4
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector0ArgsBytecode5 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 0.
+	self
+		genMarshalledSend: 5
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector0ArgsBytecode6 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 0.
+	self
+		genMarshalledSend: 6
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector1ArgBytecode0 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 1.
+	self
+		genMarshalledSend: 0
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector1ArgBytecode1 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 1.
+	self
+		genMarshalledSend: 1
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector1ArgBytecode2 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 1.
+	self
+		genMarshalledSend: 2
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector1ArgBytecode3 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 1.
+	self
+		genMarshalledSend: 3
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector1ArgBytecode4 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 1.
+	self
+		genMarshalledSend: 4
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector1ArgBytecode5 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 1.
+	self
+		genMarshalledSend: 5
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector1ArgBytecode6 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 1.
+	self
+		genMarshalledSend: 6
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector2ArgsBytecode0 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 2.
+	self
+		genMarshalledSend: 0
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector2ArgsBytecode1 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 2.
+	self
+		genMarshalledSend: 1
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector2ArgsBytecode2 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 2.
+	self
+		genMarshalledSend: 2
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector2ArgsBytecode3 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 2.
+	self
+		genMarshalledSend: 3
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector2ArgsBytecode4 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 2.
+	self
+		genMarshalledSend: 4
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector2ArgsBytecode5 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 2.
+	self
+		genMarshalledSend: 5
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector2ArgsBytecode6 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 2.
+	self
+		genMarshalledSend: 6
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector2ArgsBytecode7 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 2.
+	self
+		genMarshalledSend: 7
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector2ArgsBytecode8 [
+	"AutoGenerated by Druid"
+
+	| currentBlock |
+	self marshallSendArguments: 2.
+	self
+		genMarshalledSend: 8
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
