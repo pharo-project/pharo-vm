@@ -114,6 +114,20 @@ long aioFileDescriptor_numberOfHandles(){
 	return count;
 }
 
+EXPORT(void) aioFileDescriptor_printHandlers(){
+	AioFileDescriptor* element = fileDescriptorList;
+	long count = 0;
+
+	printf("List of registered aioHandlers\n");
+	printf("==============================\n\n");
+
+	while(element){
+		printf("FD: %d Mask: %d Flags: %d ClientData %p handlerFn %p\n", element->fd, element->mask, element->flags, element->clientData, element->handlerFn);
+		element = element->next;
+	}
+
+}
+
 void aioFileDescriptor_fillHandles(HANDLE* handles){
 	AioFileDescriptor* element = fileDescriptorList;
 	long index = 0;
@@ -144,15 +158,10 @@ void aioFileDescriptor_signal_withHandle(HANDLE event){
 			/**
 			 * The event should be reset once it has been processed.
 			 */
-			if((element->flags & AIO_EXT) == 0){
-				WSAResetEvent(element->readEvent);
+			WSAResetEvent(element->readEvent);
 
-				if(element->mask == 0) {
-					return;
-				}
-				//We set the event to 0 so it is not recalled after
-				WSAEventSelect(element->fd, element->readEvent, 0);
-			}
+			//We set the event to 0 so it is not recalled after
+			WSAEventSelect(element->fd, element->readEvent, 0);
 
 			element->handlerFn(element->fd, element->clientData, AIO_R);
 			return;
@@ -163,15 +172,10 @@ void aioFileDescriptor_signal_withHandle(HANDLE event){
 			/**
 			 * The event should be reset once it has been processed.
 			 */
-			if((element->flags & AIO_EXT) == 0){
-				WSAResetEvent(element->writeEvent);
+			WSAResetEvent(element->writeEvent);
 
-				if(element->mask == 0) {
-					return;
-				}
-				//We set the event to 0 so it is not recalled after
-				WSAEventSelect(element->fd, element->writeEvent, 0);
-			}
+			//We set the event to 0 so it is not recalled after
+			WSAEventSelect(element->fd, element->writeEvent, 0);
 
 			element->handlerFn(element->fd, element->clientData, AIO_W);
 			return;
@@ -368,38 +372,29 @@ struct sliceData {
 DWORD WINAPI waitHandlesThreadFunction(struct sliceData* sliceData ){
 
 	DWORD returnValue;
-	HANDLE* handles;
-	int size;
-	long microSeconds;
 
-	// I copy the data just in case.
+	returnValue = WaitForMultipleObjectsEx(sliceData->size, sliceData->handles, FALSE, sliceData->microSeconds / 1000, FALSE);
 
-	size = sliceData->size;
-	microSeconds = sliceData->microSeconds;
-
-	handles = malloc(sizeof(HANDLE) * size);
-	for(int i = 0; i < size; i++){
-		handles[i] = sliceData->handles[i];
-	}
-
+	free(sliceData->handles);
 	free(sliceData);
-
-	returnValue = WaitForMultipleObjectsEx(size, handles, FALSE, microSeconds / 1000, FALSE);
-
-	free(handles);
 	return 0;
 }
 
 static HANDLE sliceWaitForMultipleObjects(HANDLE* allHandles, int initialIndex, int sizeToProcess, long microSeconds){
 
 	HANDLE r;
+	HANDLE* handles;
 	struct sliceData* sliceData = malloc(sizeof(struct sliceData));
 
 	sliceData->handles = &(allHandles[initialIndex]);
 	sliceData->size = sizeToProcess;
 	sliceData->microSeconds = microSeconds;
-
-//	logTrace("Launching slice from %d size %d", initialIndex, sizeToProcess);
+	
+	handles = malloc(sizeof(HANDLE) * sizeToProcess);
+	for(int i = 0; i < sizeToProcess; i++){
+		handles[i] = sliceData->handles[i];
+	}
+	sliceData->handles = handles;
 
 	r = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) waitHandlesThreadFunction, sliceData, 0, NULL);
 
@@ -477,6 +472,11 @@ EXPORT(long) aioPoll(long microSeconds){
 		waitingHandles[i] = sliceWaitForMultipleObjects(allHandles, initialIndex, sizeToProcess, microSeconds);
 
 		if(waitingHandles[i] == NULL){
+
+			for(int j=1; j < i; j++){
+				CloseHandle(waitingHandles[j]);
+			}
+
 			free(waitingHandles);
 			free(allHandles);
 
@@ -489,13 +489,12 @@ EXPORT(long) aioPoll(long microSeconds){
 
 	returnValue = WaitForMultipleObjectsEx(numberOfThreads + 1, waitingHandles, FALSE, microSeconds / 1000, FALSE);
 
-	if(returnValue == WAIT_TIMEOUT){
-		heartbeat_poll_exit(microSeconds);
+	/*
+	 * Closing handles
+	 */
 
-		free(waitingHandles);
-		free(allHandles);
-
-		return hasEvents;
+	for(int i=1; i <= numberOfThreads; i++){
+		CloseHandle(waitingHandles[i]);
 	}
 
 	if(returnValue == WAIT_FAILED){
@@ -517,15 +516,12 @@ EXPORT(long) aioPoll(long microSeconds){
 	heartbeat_poll_exit(microSeconds);
 
 	/*
-	 * If it is the first is the interrupt event that we use to break the poll.
-	 * If it is interrupted we need to clear the interrupt event
+	 * If interruptEvent was signalled (to interrupt the timeout) we need to clear it.
 	 */
-
 	if(returnValue == WAIT_OBJECT_0){
 		ResetEvent(interruptEvent);
-	}else{
-		hasEvents = checkEventsInHandles(allHandles, size);
 	}
+	hasEvents = checkEventsInHandles(allHandles, size);
 
 	free(waitingHandles);
 	free(allHandles);

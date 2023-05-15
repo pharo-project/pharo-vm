@@ -28,7 +28,7 @@ VMFFICallbacksTest >> testPrimitiveSameThreadCallbackInCalloutSuspendsActiveProc
 	
 	oldActiveProcess := interpreter activeProcess.
 
-	parametersArray := self newObjectWithSlots: 0.
+	parametersArray := self newArrayWithSlots: 0.
 
 	interpreter push: memory nilObject.
 	interpreter push: tfExternalFunction.
@@ -64,7 +64,7 @@ VMFFICallbacksTest >> testPrimitiveSameThreadCallbackReturnKeepsAllOtherProcesse
 	tfExternalFunction := self createReturnFloatExternalFunctionFor: [ 
 		[interpreter ptEnterInterpreterFromCallback: callbackContext] on: ExitInterpreter do: [ 3.14 ] ].
 	
-	parametersArray := self newObjectWithSlots: 0.
+	parametersArray := self newArrayWithSlots: 0.
 
 	interpreter push: memory nilObject.
 	interpreter push: tfExternalFunction.
@@ -91,7 +91,7 @@ VMFFICallbacksTest >> testPrimitiveSameThreadCallbackReturnResumesCalloutProcess
 	
 	oldActiveProcess := interpreter activeProcess.
 
-	parametersArray := self newObjectWithSlots: 0.
+	parametersArray := self newArrayWithSlots: 0.
 
 	interpreter push: memory nilObject.
 	interpreter push: tfExternalFunction.
@@ -127,7 +127,7 @@ VMFFICallbacksTest >> testPrimitiveSameThreadReentrantCallbackRestoresCalloutPro
 	
 	oldActiveProcess := interpreter activeProcess.
 
-	parametersArray := self newObjectWithSlots: 0.
+	parametersArray := self newArrayWithSlots: 0.
 
 	interpreter interpreteBlock: [ 
 		numberOfCallbacks := numberOfCallbacks + 1.

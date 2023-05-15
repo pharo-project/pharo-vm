@@ -76,7 +76,6 @@ Class {
 		'gcMode',
 		'cogCodeSize',
 		'desiredCogCodeSize',
-		'heapBase',
 		'lastCoggableInterpretedBlockMethod',
 		'deferSmash',
 		'deferredSmash',
@@ -95,16 +94,6 @@ Class {
 		'initialMemoryAddress'
 	],
 	#classVars : [
-		'CSCallbackEnter',
-		'CSCallbackLeave',
-		'CSCheckEvents',
-		'CSEnterCriticalSection',
-		'CSExitCriticalSection',
-		'CSResume',
-		'CSSignal',
-		'CSSuspend',
-		'CSWait',
-		'CSYield',
 		'HasBeenReturnedFromMCPC',
 		'HasBeenReturnedFromMCPCOop',
 		'MFMethodFlagFrameIsMarkedFlag',
@@ -137,11 +126,12 @@ Class {
 { #category : #translation }
 CoInterpreter class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
-	^(super ancilliaryClasses copyWithout: InterpreterStackPages),
-	   {	CoInterpreterStackPages.
-		CogBlockMethod.
-		CogPrimitiveDescriptor. },
-	((Cogit ancilliaryClasses) select: [:class| class inheritsFrom: CogBlockMethod])
+
+	^ super ancilliaryClasses , {
+		  CogMethod.
+		  CogPrimitiveDescriptor }
+	  , (Cogit ancilliaryClasses select: [ :class |
+			   class inheritsFrom: CogMethod ])
 ]
 
 { #category : #translation }
@@ -163,7 +153,6 @@ CoInterpreter class >> declareCVarsIn: aCCodeGenerator [
 		declareInterpreterVersionIn: aCCodeGenerator
 		defaultName: aCCodeGenerator interpreterVersion.
 	aCCodeGenerator
-		var: #heapBase type: #usqInt;
 		var: #statCodeCompactionUsecs type: #usqLong;
 		var: #maxLiteralCountForCompile
 			declareC: 'sqInt maxLiteralCountForCompile = MaxLiteralCountForCompile /* ', MaxLiteralCountForCompile printString, ' */';
@@ -312,17 +301,7 @@ CoInterpreter class >> initializeMiscConstants [
 
 	TraceIsFromMachineCode := 1.
 	TraceIsFromInterpreter := 2.
-	CSCallbackEnter := 3.
-	CSCallbackLeave := 4.
-	CSEnterCriticalSection := 5.
-	CSExitCriticalSection := 6.
-	CSResume := 7.
-	CSSignal := 8.
-	CSSuspend := 9.
-	CSWait := 10.
-	CSYield := 11.
-	CSCheckEvents := 12.
-
+	
 	TraceSources := CArrayAccessor on: #('?' 'm' 'i' 'callbackEnter' 'callbackLeave' 'enterCritical' 'exitCritical' 'resume' 'signal'  'suspend' 'wait' 'yield' 'eventcheck' ).
 
 	"this is simulation only"
@@ -341,7 +320,8 @@ CoInterpreter class >> initializePrimitiveTable [
 	PrimitiveTable
 		at: 253 + 1 put: #primitiveCollectCogCodeConstituents;
 		at: 215 + 1 put: #primitiveVoidVMStateForMethod;
-		at: 216 + 1 put: #primitiveMethodXray
+		at: 216 + 1 put: #primitiveMethodXray;
+		at: 217 + 1 put: #primitiveMethodProfilingData
 ]
 
 { #category : #documentation }
@@ -383,11 +363,6 @@ CoInterpreter class >> interpreterMachineCodeTransitions [
 { #category : #accessing }
 CoInterpreter class >> interpreterVersion [ 
 	^ 'Cog'
-]
-
-{ #category : #translation }
-CoInterpreter class >> isAcceptableAncilliaryClass: aClass [
-	^aClass ~~ InterpreterStackPages
 ]
 
 { #category : #translation }
@@ -493,7 +468,7 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 				[self callRegisterArgCogMethod: cogMethod at: cogit noCheckEntryOffset receiver: rcvr]].
 		 self push: cogMethod asInteger + cogit noCheckEntryOffset.
 		 self push: rcvr.
-		 cogit ceCallCogCodePopReceiverReg.
+		 self callEnilopmart: #ceCallCogCodePopReceiverReg.
 		 self error: 'should not be reached'].
 	self push: framePointer.
 	framePointer := stackPointer.
@@ -508,14 +483,14 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 
 	((self methodHeaderHasPrimitive: methodHeader)
 	 and: [primFailCode ~= 0]) ifTrue:
-		[self reapAndResetErrorCodeTo: stackPointer header: methodHeader].
+		[self reapAndResetErrorCodeTo: framePointer header: methodHeader].
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
 	stackPointer >= stackLimit ifTrue:
 		[self assert: cogMethod stackCheckOffset > cogit noCheckEntryOffset.
 		 self push: cogMethod asInteger + cogMethod stackCheckOffset.
 		 self push: rcvr.
-		 cogit ceEnterCogCodePopReceiverReg.
+		 self callEnilopmart: #ceEnterCogCodePopReceiverReg.
 		 self error: 'should not be reached'].
 	instructionPointer := cogMethod asInteger + cogMethod stackCheckOffset.
 	switched := self handleStackOverflowOrEventAllowContextSwitch: (self canContextSwitchIfActivating: newMethod header: methodHeader).
@@ -525,7 +500,7 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 { #category : #'control primitives' }
 CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch [
 	"Similar to activateNewMethod but for Closure and newMethod."
-	| numCopied methodHeader numTemps inInterpreter switched |
+	| numCopied methodHeader inInterpreter |
 	<inline: true>
 	self assert: theMethod = (objectMemory fetchPointer: FullClosureCompiledBlockIndex ofObject: blockClosure).
 	methodHeader := self rawHeaderOf: theMethod.
@@ -534,7 +509,7 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 			executeFullCogBlock: (self cogMethodOf: theMethod)
 			closure: blockClosure
 			mayContextSwitch: mayContextSwitch].
-	numCopied := self copiedValueCountOfFullClosure: blockClosure.
+
 	"How do we know when to compile a block method?
 	 One simple criterion is to check if the block is running within its inner context,
 	 i.e. if the outerContext is married.
@@ -544,11 +519,12 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 	 the last block method we failed to compile and avoid recompiling it."
 	(self methodWithHeaderShouldBeCogged: methodHeader)
 		ifTrue:
-			[(instructionPointer < objectMemory startOfMemory "If from machine code (via value primitive) attempt jitting"
+			[((self isInstructionPointerInInterpreter: instructionPointer) not "If from machine code (via value primitive) attempt jitting"
 			  or: [theMethod = lastCoggableInterpretedBlockMethod]) "If from interpreter and repeat block, attempt jitting"
 				ifTrue:
-					[theMethod ~= lastUncoggableInterpretedBlockMethod ifTrue:
-						[cogit cogFullBlockMethod: theMethod numCopied: numCopied.
+					[theMethod ~= lastUncoggableInterpretedBlockMethod ifTrue: [
+						numCopied := self copiedValueCountOfFullClosure: blockClosure.
+						cogit cogFullBlockMethod: theMethod numCopied: numCopied.
 						 (self methodHasCogMethod: theMethod) ifTrue:
 							[^self executeFullCogBlock: (self cogMethodOf: theMethod)
 								closure: blockClosure
@@ -570,97 +546,38 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 	 then make sure we restore the saved instruction pointer and avoid pushing
 	 ceReturnToInterpreterPC which is only valid between an interpreter caller
 	 frame and a machine code callee frame."
-	(inInterpreter := instructionPointer >= objectMemory startOfMemory) ifFalse:
+	(inInterpreter := self isInstructionPointerInInterpreter: instructionPointer) ifFalse:
 		[instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
 			[instructionPointer := self iframeSavedIP: framePointer]].
-
-	self push: instructionPointer.
-	self push: framePointer.
-	framePointer := stackPointer.
-	self push: theMethod.
-	self push: objectMemory nilObject. "FxThisContext field"
-	self push: (self encodeFrameFieldHasContext: false isBlock: true numArgs: numArgs).
-	self push: 0. "FoxIFSavedIP"
-	"Because inst var access is not checked, we must follow the receiver in Spur to ensure it is valid."
-	self push: (objectMemory followField: FullClosureReceiverIndex ofObject: blockClosure).
-
-	"Copy the copied values..."
-	0 to: numCopied - 1 do:
-		[:i|
-		self push: (objectMemory
-					fetchPointer: i + FullClosureFirstCopiedValueIndex
-					ofObject: blockClosure)].
-
-	self assert: (self frameIsBlockActivation: framePointer).
-	self assert: (self frameHasContext: framePointer) not.
-
-	methodHeader := objectMemory methodHeaderOf: theMethod.
-	numTemps := self temporaryCountOfMethodHeader: methodHeader.
-
-	numArgs + numCopied + 1 to: numTemps do: [ :i | self push: objectMemory nilObject].
-
-	instructionPointer := (self initialIPForHeader: methodHeader method: theMethod) - 1.
 	
-	self setMethod: theMethod.
-
-	"Now check for stack overflow or an event (interrupt, must scavenge, etc)"
-	switched := false.
-	stackPointer < stackLimit ifTrue:
-		[switched := self handleStackOverflowOrEventAllowContextSwitch: mayContextSwitch].
-	self returnToExecutive: inInterpreter postContextSwitch: switched
+	^ super activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch
 ]
 
 { #category : #'message sending' }
 CoInterpreter >> activateNewMethod [
-	| methodHeader numArgs numTemps rcvr inInterpreter switched |
 
-	methodHeader := objectMemory methodHeaderOf: newMethod.
-	numTemps := self temporaryCountOfMethodHeader: methodHeader.
-	numArgs := self argumentCountOfMethodHeader: methodHeader.
+	| methodHeader inInterpreter switched |
+	
+	"Eagerly compile it if appropriate so that doits are fast."
+	methodHeader := self rawHeaderOf: newMethod.
+	(self isCogMethodReference: methodHeader) ifFalse: [
+		(self methodWithHeaderShouldBeCogged: methodHeader)
+			ifTrue: [
+				cogit cog: newMethod selector: objectMemory nilObject.
+				methodHeader := self rawHeaderOf: newMethod ]
+			ifFalse: [ self maybeFlagMethodAsInterpreted: newMethod ] ].
 
-	rcvr := self stackValue: numArgs. "could new rcvr be set at point of send?"
-	self assert: (objectMemory isOopForwarded: rcvr) not.
-
-	"Because this is an uncogged method we need to continue via the interpreter.
-	 We could have been reached either from the interpreter, in which case we
-	 should simply return, or from a machine code frame or from a compiled
-	 primitive.  In these latter two cases we must longjmp back to the interpreter.
-	 The instructionPointer tells us which path we took.
-	 If the sender was an interpreter frame but called through a (failing) primitive
-	 then make sure we restore the saved instruction pointer and avoid pushing
-	 ceReturnToInterpreterPC which is only valid between an interpreter caller
-	 frame and a machine code callee frame."
-	(inInterpreter := instructionPointer >= objectMemory startOfMemory) ifFalse:
-		[instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
-			[instructionPointer := self iframeSavedIP: framePointer]].
-	self push: instructionPointer.
-	self push: framePointer.
-	framePointer := stackPointer.
-	self push: newMethod.
-	self setMethod: newMethod methodHeader: methodHeader.
-	self push: objectMemory nilObject. "FxThisContext field"
-	self push: (self encodeFrameFieldHasContext: false isBlock: false numArgs: numArgs).
-	self push: 0. "FoxIFSavedIP"
-	self push: rcvr.
-
-	"clear remaining temps to nil"
-	numArgs+1 to: numTemps do:
-		[:i | self push: objectMemory nilObject].
-
-	instructionPointer := (self initialIPForHeader: methodHeader method: newMethod) - 1.
-
-	(self methodHeaderHasPrimitive: methodHeader) ifTrue:
-		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
-		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		 instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader).
-		 primFailCode ~= 0 ifTrue:
-			[self reapAndResetErrorCodeTo: stackPointer header: methodHeader]].
+	inInterpreter := self isInstructionPointerInInterpreter:
+		                 instructionPointer.
+	methodHeader := self justActivateNewMethod: true.
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
 	switched := true.
-	stackPointer < stackLimit ifTrue:
-		[switched := self handleStackOverflowOrEventAllowContextSwitch:
-							(self canContextSwitchIfActivating: newMethod header: methodHeader)].
+	stackPointer < stackLimit ifTrue: [
+		switched := self handleStackOverflowOrEventAllowContextSwitch:
+			            (self
+				             canContextSwitchIfActivating: newMethod
+				             header: methodHeader) ].
 	self returnToExecutive: inInterpreter postContextSwitch: switched
 ]
 
@@ -675,31 +592,10 @@ CoInterpreter >> addNewMethodToCache: classObj [
 ]
 
 { #category : #'image save/restore' }
-CoInterpreter >> allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: desiredPositionOfHeap [ 
-
-	<var: #f type: #sqImageFile>
-	<var: #header type: #'SpurImageHeaderStruct'>
-
-	"We set the heapBase in the interpreter. It is only used by the CoInterpreter"
-	heapBase := super allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: desiredPositionOfHeap.
-	^ heapBase
-	
-]
-
-{ #category : #allocating }
-CoInterpreter >> allocateJITMemory: desiredSize _: desiredPosition [ 
-
-	<doNotGenerate>
-	^ memoryManager allocate: desiredSize desiredPosition: desiredPosition
-]
-
-{ #category : #'image save/restore' }
 CoInterpreter >> allocateMemoryForImage: f withHeader: header [
 
 	<var: #f type: #sqImageFile>
-	<var: #header type: #'SpurImageHeaderStruct'>
-
-	| cogCodeBase desiredPositionOfHeap |
+	<var: #header type: #SpurImageHeaderStruct>
 
 	cogCodeSize := desiredCogCodeSize ~= 0
 		               ifTrue: [ desiredCogCodeSize ]
@@ -707,39 +603,16 @@ CoInterpreter >> allocateMemoryForImage: f withHeader: header [
 			               header hdrCogCodeSize = 0
 				               ifTrue: [ cogit defaultCogCodeSize ]
 				               ifFalse: [ header hdrCogCodeSize ] ].
-			
+
 	cogCodeSize := cogCodeSize min: cogit maxCogCodeSize.
 
-	cogCodeBase := self
-		               allocateJITMemory: cogCodeSize
-		               desiredPosition: header oldBaseAddr - cogCodeSize.
-
-	"We want to avoid the swizzle in case the allocation of the code space is much below in the address space than the requested one"
-	desiredPositionOfHeap := cogCodeBase + cogCodeSize max: header oldBaseAddr.
-
-	self allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: desiredPositionOfHeap.
-	
-	self loadImageFromFile: f withHeader: header.
-	
+	objectMemory getMemoryMap initialCodeZoneSize: cogCodeSize.
+	super allocateMemoryForImage: f withHeader: header.
 	self beforeCodeZoneInitialization.
 
 	cogit
-		initializeCodeZoneFrom: cogCodeBase
-		upTo: cogCodeBase + cogCodeSize.
-
-
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> argumentCount [
-	<doNotGenerate>
-	^argumentCount
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> argumentCount: numArgs [
-	<doNotGenerate>
-	argumentCount := numArgs
+		initializeCodeZoneFrom: objectMemory getMemoryMap codeZoneStart
+		upTo: objectMemory getMemoryMap codeZoneEnd
 ]
 
 { #category : #'trampoline support' }
@@ -748,16 +621,6 @@ CoInterpreter >> argumentCountAddress [
 	<returnTypeC: #usqInt>
 	^self cCode: [(self addressOf: argumentCount) asUnsignedInteger]
 		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #argumentCount in: self]
-]
-
-{ #category : #'frame access' }
-CoInterpreter >> asCogHomeMethod: aCogMethod [
-	"Coerce either a CMMethod or a CMBlock to the home CMMethod"
-	<var: #aCogMethod type: #'CogBlockMethod *'>
-	<returnTypeC: #'CogMethod *'>
-	^aCogMethod cmType = CMMethod
-		ifTrue: [self cCoerceSimple: aCogMethod to: #'CogMethod *']
-		ifFalse: [aCogMethod cmHomeMethod]
 ]
 
 { #category : #'debug support' }
@@ -779,8 +642,6 @@ CoInterpreter >> assertValidExecutionPointe: lip r: lifp s: lisp imbar: inInterp
 		ifTrue:
 			[self assert: (self isMachineCodeFrame: lifp) not l: ln.
 			 self assert: method = methodField l: ln.
-			 self cppIf: MULTIPLEBYTECODESETS
-				ifTrue: [self assert: (self methodUsesAlternateBytecodeSet: method) = (bytecodeSetSelector = 256) l: ln].
 			 (self asserta: (objectMemory cheapAddressCouldBeInHeap: methodField) l: ln) ifTrue:
 				[theIP := lip = cogit ceReturnToInterpreterPC
 							ifTrue: [self iframeSavedIP: lifp]
@@ -796,9 +657,7 @@ CoInterpreter >> assertValidExecutionPointe: lip r: lifp s: lisp imbar: inInterp
 			 ((self asserta: methodField asUnsignedInteger >= cogit minCogMethodAddress l: ln)
 			  and: [self asserta: methodField asUnsignedInteger < cogit maxCogMethodAddress l: ln]) ifTrue:
 				[cogMethod := self mframeHomeMethod: lifp.
-				 self assert: (lip > (methodField + ((self mframeIsBlockActivation: lifp)
-													ifTrue: [self sizeof: CogBlockMethod]
-													ifFalse: [self sizeof: CogMethod]))
+				 self assert: (lip > (methodField + (self sizeof: CogMethod))
 						and: [lip < (methodField + cogMethod blockSize)])
 					l: ln].
 			 self assert: ((self mframeIsBlockActivation: lifp)
@@ -806,7 +665,7 @@ CoInterpreter >> assertValidExecutionPointe: lip r: lifp s: lisp imbar: inInterp
 				l: ln].
 	(self isBaseFrame: lifp) ifTrue:
 		[self assert: (self frameHasContext: lifp) l: ln.
-		 self assert: (self frameContext: lifp) = (stackPages longAt: stackPage baseAddress - objectMemory wordSize) l: ln]
+		 self assert: (self frameContext: lifp) = (stackPages unsignedLongAt: stackPage baseAddress - objectMemory wordSize) l: ln]
 ]
 
 { #category : #'debug support' }
@@ -819,16 +678,15 @@ CoInterpreter >> assertValidExternalStackPointers [
 
 { #category : #'cog jit support' }
 CoInterpreter >> assertValidMachineCodeFrame: instrPtr [
+
 	<api>
-	| cogMethod homeMethod |
-	<var: #cogMethod type: #'CogBlockMethod *'>
-	<var: #homeMethod type: #'CogMethod *'>
+	<var: #cogMethod type: #'CogMethod *'>
+	| cogMethod |
 	self assert: (self isMachineCodeFrame: framePointer).
 	cogMethod := self mframeCogMethod: framePointer.
-	homeMethod := self asCogHomeMethod: cogMethod.
-	self assert: (cogMethodZone methodFor: cogMethod) = homeMethod.
-	self assert: (instrPtr > cogMethod asInteger
-				and: [instrPtr < (homeMethod asInteger + homeMethod blockSize)])
+	self assert: (cogMethodZone methodFor: cogMethod) = cogMethod.
+	self assert: (instrPtr > cogMethod asInteger and: [
+			 instrPtr < (cogMethod asInteger + cogMethod blockSize) ])
 ]
 
 { #category : #'debug support' }
@@ -876,7 +734,7 @@ CoInterpreter >> assertValidStackedInstructionPointersIn: aStackPage line: ln [
 			[theIP := instructionPointer.
 			theFP := framePointer]
 		ifFalse:
-			[theIP := (stackPages longAt: aStackPage headSP) asUnsignedInteger.
+			[theIP := (stackPages unsignedLongAt: aStackPage headSP) asUnsignedInteger.
 			 theFP := aStackPage headFP.
 			 stackPage = aStackPage ifTrue:
 				[self assert: framePointer = theFP l: ln]].
@@ -898,7 +756,7 @@ CoInterpreter >> assertValidStackedInstructionPointersIn: aStackPage line: ln [
 						  and: [theIP < (methodObj + (objectMemory numBytesOfBytes: methodObj) + objectMemory baseHeaderSize - 1)])
 				l: ln.
 			 prevFrameWasCogged := false].
-	 theIP := (stackPages longAt: theFP + FoxCallerSavedIP) asUnsignedInteger.
+	 theIP := (stackPages unsignedLongAt: theFP + FoxCallerSavedIP) asUnsignedInteger.
 	 (callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
 		[theFP := callerFP].
 	self assert: theIP = cogit ceBaseFrameReturnPC l: ln.
@@ -927,79 +785,23 @@ CoInterpreter >> attemptToSwitchToMachineCode: bcpc [
 		 self assertValidMachineCodeFrame: pc.
 		 self push: pc.
 		 self push: objectMemory nilObject.
-		 cogit ceEnterCogCodePopReceiverReg]
+		 self callEnilopmart: #ceEnterCogCodePopReceiverReg]
 ]
 
 { #category : #'return bytecodes' }
-CoInterpreter >> baseFrameReturn [
-	"Return from a baseFrame (the bottom frame in a stackPage).  The context to
-	 return to (which may be married) is stored in the first word of the stack."
-	<inline: true>
-	| contextToReturnTo retToContext theFP theSP thePage newPage frameAbove |
-	<var: #theFP type: #'char *'>
-	<var: #theSP type: #'char *'>
-	<var: #thePage type: #'StackPage *'>
-	<var: #newPage type: #'StackPage *'>
-	<var: #frameAbove type: #'char *'>
-	contextToReturnTo := self frameCallerContext: localFP.
+CoInterpreter >> baseFrameCannotReturnTo: contextToReturnTo [
 
-	"The stack page is effectively free now, so free it.  We must free it to be
-	 correct in determining if contextToReturnTo is still married, and in case
-	 makeBaseFrameFor: cogs a method, which may cause a code compaction,
-	 in which case the frame must be free to avoid the relocation machinery
-	 tracing the dead frame.  Since freeing now temporarily violates the page-list
-	 ordering invariant, use the assert-free version."
-	stackPages freeStackPageNoAssert: stackPage.
-	retToContext := objectMemory isContext: contextToReturnTo.
-	(retToContext
-	 and: [self isStillMarriedContext: contextToReturnTo])
-		ifTrue:
-			[theFP := self frameOfMarriedContext: contextToReturnTo.
-			 thePage := stackPages stackPageFor: theFP.
-			 theFP = thePage headFP
-				ifTrue:
-					[theSP := thePage headSP]
-				ifFalse:
-					["Returning to some interior frame, presumably because of a sender assignment.
-					  Move the frames above to another page (they may be in use, e.g. via coroutining).
-					  Make the interior frame the top frame."
-					 frameAbove := self findFrameAbove: theFP inPage: thePage.
-					 "Since we've just deallocated a page we know that newStackPage won't deallocate an existing one."
-					 newPage := stackPages newStackPage.
-					 self assert: newPage = stackPage.
-					 self moveFramesIn: thePage through: frameAbove toPage: newPage.
-					 stackPages markStackPageMostRecentlyUsed: newPage.
-					 theFP := thePage headFP.
-					 theSP := thePage headSP]]
-		ifFalse:
-			[(retToContext
-			  and: [objectMemory isIntegerObject: (objectMemory fetchPointer: InstructionPointerIndex ofObject: contextToReturnTo)]) ifFalse:
-				[| contextToReturnFrom |
-				 contextToReturnFrom := stackPages longAt: stackPage baseAddress - objectMemory wordSize.
-				 self tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom: contextToReturnFrom
-					to: contextToReturnTo
-					returnValue: localReturnValue.
-				^self externalCannotReturn: localReturnValue from: contextToReturnFrom].
-			 "We must void the instructionPointer to stop it being updated if makeBaseFrameFor:
-			  cogs a method, which may cause a code compaction."
-			 instructionPointer := 0.
-			 thePage := self makeBaseFrameFor: contextToReturnTo.
-			 theFP := thePage headFP.
-			 theSP := thePage headSP].
-	self setStackPageAndLimit: thePage.
-	self assert: (stackPages stackPageFor: theFP) = stackPage.
-	localSP := theSP.
-	localFP := theFP.
-	localIP := self pointerForOop: self internalStackTop.
-	localIP asUnsignedInteger < objectMemory startOfMemory ifTrue:
-		[localIP asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue:
-			["localIP in the cog method zone indicates a return to machine code."
-			 ^self returnToMachineCodeFrame].
-		 localIP := self pointerForOop: (self iframeSavedIP: localFP)].
-	self assert: (self checkIsStillMarriedContext: contextToReturnTo currentFP: localFP).
-	self setMethod: (self iframeMethod: localFP).
-	self internalStackTopPut: localReturnValue.
-	^self fetchNextBytecode
+	| contextToReturnFrom |
+	contextToReturnFrom := stackPages longAt:
+		                       stackPage baseAddress - objectMemory wordSize.
+	self
+		tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom:
+		contextToReturnFrom
+		to: contextToReturnTo
+		returnValue: localReturnValue.
+	^ self
+		  externalCannotReturn: localReturnValue
+		  from: contextToReturnFrom
 ]
 
 { #category : #hooks }
@@ -1011,27 +813,20 @@ CoInterpreter >> beforeCodeZoneInitialization [
 CoInterpreter >> bytecodePCFor: theIP cogMethod: cogMethod startBcpc: startBcpc [
 	"Answer the mapping of the native pc theIP to a zero-relative bytecode pc.
 	 See contextInstructionPointer:frame: for the explanation."
+
 	<var: #cogMethod type: #'CogMethod *'>
-	| cogMethodForIP mcpc |
 	<inline: true>
-	<var: #cogMethodForIP type: #'CogBlockMethod *'>
+	| mcpc |
 	self assert: theIP < 0.
-	(theIP signedBitShift: -16) < -1 "See contextInstructionPointer:frame:"
-		ifTrue:
-			[cogMethodForIP := self cCoerceSimple: cogMethod asInteger - ((theIP signedBitShift: -16) * cogit blockAlignment)
-									to: #'CogBlockMethod *'.
-			 self assert: cogMethodForIP cmType = CMBlock.
-			 self assert: cogMethodForIP cmHomeMethod = cogMethod.
-			 mcpc := cogMethodForIP asInteger - theIP signedIntFromShort]
-		ifFalse:
-			[cogMethodForIP := self cCoerceSimple: cogMethod to: #'CogBlockMethod *'.
-			 self assert: cogMethodForIP cmType = CMMethod.
-			 mcpc := cogMethod asInteger - theIP.
-			 "map any pcs in primitive code (i.e. return addresses for interpreter primitive calls) to the initial pc"
-			 mcpc asUnsignedInteger < cogMethod stackCheckOffset ifTrue:
-				[^startBcpc]].
-	self assert: (mcpc between: cogMethod asInteger and: cogMethod asInteger + cogMethod blockSize).
-	^cogit bytecodePCFor: mcpc startBcpc: startBcpc in: cogMethodForIP
+	self assert: cogMethod cmType = CMMethod.
+	mcpc := cogMethod asInteger - theIP.
+	"map any pcs in primitive code (i.e. return addresses for interpreter primitive calls) to the initial pc"
+	mcpc asUnsignedInteger < cogMethod stackCheckOffset ifTrue: [
+		^ startBcpc ].
+	self assert: (mcpc
+			 between: cogMethod asInteger
+			 and: cogMethod asInteger + cogMethod blockSize).
+	^ cogit bytecodePCFor: mcpc startBcpc: startBcpc in: cogMethod
 ]
 
 { #category : #'common selector sends' }
@@ -1048,6 +843,18 @@ CoInterpreter >> bytecodePrimAtPut [
 	messageSelector := self specialSelector: 17.
 	argumentCount := 2.
 	self normalSend
+]
+
+{ #category : #enilopmarts }
+CoInterpreter >> callEnilopmart: anElinopmart [
+
+	<inline: true>
+
+	"Since the called method lives outside of the interpreter, use a perform to convey it.
+	This is a limitation of Slang that does not distinguish between: 
+	 - methods outside the interpreter (but within the VM)
+	 - built in methods with special translations"
+	^ cogit perform: anElinopmart
 ]
 
 { #category : #'cog jit support' }
@@ -1078,139 +885,48 @@ CoInterpreter >> callRegisterArgCogMethod: cogMethod at: entryOffset receiver: r
 		 self stackValue: 1 put: (self stackValue: 3). "first arg"
 		 self stackValue: 2 put: rcvr.
 		 self stackValue: 3 put: cogMethod asInteger + entryOffset.
-		 cogit ceCallCogCodePopReceiverArg1Arg0Regs
+		 self callEnilopmart: #ceCallCogCodePopReceiverArg1Arg0Regs
 		"NOTREACHED"].
 	cogMethod cmNumArgs = 1 ifTrue:
 		[self stackValue: 2 put: self stackTop. "retpc"
 		 self push: (self stackValue: 1). "arg"
 		 self stackValue: 1 put: rcvr.
 		 self stackValue: 2 put: cogMethod asInteger + entryOffset.
-		 cogit ceCallCogCodePopReceiverArg0Regs
+		 self callEnilopmart: #ceCallCogCodePopReceiverArg0Regs
 		"NOTREACHED"].
 	self assert: cogMethod cmNumArgs = 0.
 	self stackValue: 1 put: self stackTop. "retpc"
 	self stackValue: 0 put: cogMethod asInteger + entryOffset.
 	self push: rcvr.
-	cogit ceCallCogCodePopReceiverReg
+	self callEnilopmart: #ceCallCogCodePopReceiverReg
 	"NOTREACHED"
-]
-
-{ #category : #'callback support' }
-CoInterpreter >> callbackEnter: callbackID [
-	"Re-enter the interpreter for executing a callback"
-	| currentCStackPointer currentCFramePointer savedReenterInterpreter
-	  wasInMachineCode calledFromMachineCode |
-	<volatile>
-	<export: true>
-	<var: #currentCStackPointer type: #'void *'>
-	<var: #currentCFramePointer type: #'void *'>
-	<var: #callbackID type: #'sqInt *'>
-	<var: #savedReenterInterpreter type: #'jmp_buf'>
-
-	"For now, do not allow a callback unless we're in a primitiveResponse"
-	(self asserta: primitiveFunctionPointer ~= 0) ifFalse:
-		[^false].
-
-	self assert: primFailCode = 0.
-
-	"Check if we've exceeded the callback depth"
-	(self asserta: jmpDepth < MaxJumpBuf) ifFalse:
-		[^false].
-	jmpDepth := jmpDepth + 1.
-
-	wasInMachineCode := self isMachineCodeFrame: framePointer.
-	calledFromMachineCode := instructionPointer <= objectMemory startOfMemory.
-
-	"Suspend the currently active process"
-	suspendedCallbacks at: jmpDepth put: self activeProcess.
-	"We need to preserve newMethod explicitly since it is not activated yet
-	and therefore no context has been created for it. If the caller primitive
-	for any reason decides to fail we need to make sure we execute the correct
-	method and not the one 'last used' in the call back"
-	suspendedMethods at: jmpDepth put: newMethod.
-	self flag: 'need to debug this properly.  Conceptually it is the right thing to do but it crashes in practice'.
-	false
-		ifTrue:
-			["Signal external semaphores since a signalSemaphoreWithIndex: request may
-			  have been issued immediately prior to this callback before the VM has any
-			  chance to do a signalExternalSemaphores in checkForEventsMayContextSwitch:"
-			 self signalExternalSemaphores.
-			 "If no process is awakened by signalExternalSemaphores then transfer
-			  to the highest priority runnable one."
-			 (suspendedCallbacks at: jmpDepth) = self activeProcess ifTrue:
-				[self transferTo: self wakeHighestPriority from: CSCallbackLeave]]
-		ifFalse:
-			[self transferTo: self wakeHighestPriority from: CSCallbackLeave].
-
-	"Typically, invoking the callback means that some semaphore has been 
-	signaled to indicate the callback. Force an interrupt check as soon as possible."
-	self forceInterruptCheck.
-
-	"Save the previous CStackPointers and interpreter entry jmp_buf."
-	currentCStackPointer := cogit getCStackPointer.
-	currentCFramePointer := cogit getCFramePointer.
-	self memcpy: savedReenterInterpreter asVoidPointer
-		_: reenterInterpreter
-		_: (self sizeof: #'jmp_buf').
-	cogit assertCStackWellAligned.
-	(self setjmp: (jmpBuf at: jmpDepth)) = 0 ifTrue: "Fill in callbackID"
-		[callbackID at: 0 put: jmpDepth.
-		 self enterSmalltalkExecutive.
-		 self assert: false "NOTREACHED"].
-
-	"Restore the previous CStackPointers and interpreter entry jmp_buf."
-	cogit setCStackPointer: currentCStackPointer.
-	cogit setCFramePointer: currentCFramePointer.
-	self memcpy: reenterInterpreter
-		_: (self cCoerceSimple: savedReenterInterpreter to: #'void *')
-		_: (self sizeof: #'jmp_buf').
-
-	"Transfer back to the previous process so that caller can push result"
-	self putToSleep: self activeProcess yieldingIf: preemptionYields.
-	self transferTo: (suspendedCallbacks at: jmpDepth) from: CSCallbackLeave.
-	newMethod := suspendedMethods at: jmpDepth.	"see comment above"
-	argumentCount := self argumentCountOf: newMethod.
-	self assert: wasInMachineCode = (self isMachineCodeFrame: framePointer).
-	calledFromMachineCode
-		ifTrue:
-			[instructionPointer asUnsignedInteger >= objectMemory startOfMemory ifTrue:
-				[self iframeSavedIP: framePointer put: instructionPointer.
-				 instructionPointer := cogit ceReturnToInterpreterPC]]
-		ifFalse:
-			["Even if the context was flushed to the heap and rebuilt in transferTo:from:
-			  above it will remain an interpreted frame because the context's pc would
-			  remain a bytecode pc.  So the instructionPointer must also be a bytecode pc."
-			 self assert: (self isMachineCodeFrame: framePointer) not.
-			 self assert: instructionPointer > objectMemory startOfMemory].
-	self assert: primFailCode = 0.
-	jmpDepth := jmpDepth-1.
-	^true
 ]
 
 { #category : #enilopmarts }
 CoInterpreter >> ceActivateFailingPrimitiveMethod: aPrimitiveMethod [
+
 	"An external call or FFI primitive has failed.  Build the frame and
 	 activate as appropriate.  Enter either the interpreter or machine
 	 code depending on whether aPrimitiveMethod has been or is still
 	 cogged.  Note that we could always interpret but want the efficiency
 	 of executing machine code if it is available."
+
 	<api>
 	| methodHeader result |
 	self assert: primFailCode ~= 0.
 	self assert: newMethod = aPrimitiveMethod.
 	"If we're on Spur, retry the primitive, if appropriate,
 	 returning if successful after retry."
-	objectMemory hasSpurMemoryManagerAPI ifTrue:
-		[self retryPrimitiveOnFailure.
-		 self successful ifTrue:
-			[result := self stackTop.
-			 self stackTopPut: instructionPointer.
-			 self push: result.
-			 cogit ceEnterCogCodePopReceiverReg]].
+	self retryPrimitiveOnFailure.
+	self successful ifTrue: [ 
+		result := self stackTop.
+		self stackTopPut: instructionPointer.
+		self push: result.
+		self callEnilopmart: #ceEnterCogCodePopReceiverReg ].
 	methodHeader := self rawHeaderOf: aPrimitiveMethod.
 	(self isCogMethodReference: methodHeader)
-		ifTrue: [self activateCoggedNewMethod: false]
-		ifFalse: [self activateNewMethod]
+		ifTrue: [ self activateCoggedNewMethod: false ]
+		ifFalse: [ self activateNewMethod ]
 ]
 
 { #category : #trampolines }
@@ -1286,7 +1002,7 @@ CoInterpreter >> ceBaseFrameReturn: returnValue [
 	self assert: (stackPages stackPageFor: framePointer) = stackPage.
 	(self isMachineCodeFrame: framePointer) ifTrue:
 		[self push: returnValue.
-		 cogit ceEnterCogCodePopReceiverReg.
+		 self callEnilopmart: #ceEnterCogCodePopReceiverReg.
 		 "NOTREACHED"].
 	instructionPointer := self stackTop.
 	instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
@@ -1340,7 +1056,7 @@ CoInterpreter >> ceCheckAndMaybeRetryPrimitive: primIndex [
 	<api>
 	<option: #SpurObjectMemory>
 	| retried |
-	
+
 	cogit recordPrimTrace ifTrue:
 		[self fastLogPrim: TracePrimitiveFailure].
 	retried := self retryPrimitiveOnFailure.
@@ -1377,7 +1093,7 @@ CoInterpreter >> ceContext: maybeContext instVar: slotIndex [
 	(objectMemory isContextNonImm: maybeContext)
 		ifTrue:
 			[instructionPointer := self popStack.
-			 result := self externalInstVar: slotIndex ofContext: maybeContext.
+			 result := self instVar: slotIndex ofContext: maybeContext.
 			 self push: instructionPointer]
 		ifFalse: [result := objectMemory fetchPointer: slotIndex ofObject: maybeContext].
 	^result
@@ -1393,7 +1109,7 @@ CoInterpreter >> ceContext: maybeMarriedContext instVar: slotIndex value: anOop 
 	 and: [self isMarriedOrWidowedContext: maybeMarriedContext])
 		ifTrue:
 			[instructionPointer := self popStack.
-			 self externalInstVar: slotIndex ofContext: maybeMarriedContext put: anOop.
+			 self instVar: slotIndex ofContext: maybeMarriedContext put: anOop.
 			 self push: instructionPointer]
 		ifFalse:
 			[objectMemory storePointer: slotIndex ofObject: maybeMarriedContext withValue: anOop].
@@ -1460,14 +1176,14 @@ CoInterpreter >> ceInterpretMethodFromPIC: aMethodObj receiver: rcvr [
 	<var: #pic type: #'CogMethod *'>
 	"pop off inner return and locate open or closed PIC"
 	pic := self cCoerceSimple: self popStack - cogit interpretOffset to: #'CogMethod *'.
-	self assert: (pic cmType = CMOpenPIC or: [pic cmType = CMClosedPIC]).
+	self assert: (pic cmType = CMMegamorphicIC or: [pic cmType = CMPolymorphicIC]).
 	"If found from an open PIC then it must be an uncogged method and, since it's been found
 	 in the method cache, should be cogged if possible.  If found from a closed PIC then at the
 	 time the closed PIC was created the method was uncoggable, either because there was
 	 no space, it had too many literals or it contained an illegal bytecode).  So don't try and cog
 	 it, but subsequently it may have been cogged via another path.  If the method is, or ends up
 	 cogged, jump to machine code, otherwise interpret."
-	pic cmType = CMOpenPIC ifTrue:
+	pic cmType = CMMegamorphicIC ifTrue:
 		[self assert: (self methodHasCogMethod: aMethodObj) not.
 		 (self methodShouldBeCogged: aMethodObj) ifTrue:
 			[cogit cog: aMethodObj selector: pic selector]].
@@ -1495,7 +1211,7 @@ CoInterpreter >> ceMNUFromPICMNUMethod: aMethodObj receiver: rcvr [
 				or: [(objectMemory addressCouldBeObj: aMethodObj)
 					and: [objectMemory isOopCompiledMethod: aMethodObj]]).
 	cPIC := self cCoerceSimple: self popStack - cogit mnuOffset to: #'CogMethod *'.
-	self assert: (cPIC cmType = CMClosedPIC or: [cPIC cmType = CMOpenPIC]).
+	self assert: (cPIC cmType = CMPolymorphicIC or: [cPIC cmType = CMMegamorphicIC]).
 	argumentCount := cPIC cmNumArgs.
 	messageSelector := cPIC selector.
 	aMethodObj ~= 0 ifTrue:
@@ -1551,7 +1267,7 @@ CoInterpreter >> ceNonLocalReturn: returnValue [
 
 	"Update the current page's headFrame pointers to enable the search for unwind protects below
 	 to identify widowed contexts correctly."
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 
 	"Since this is a block activation the closure is on the stack above any args and the frame."
 	closure := self pushedReceiverOrClosureOfFrame: framePointer.
@@ -1653,7 +1369,7 @@ CoInterpreter >> ceReapAndResetErrorCodeFor: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	self assert: primFailCode ~= 0.
 	newMethod := cogMethod methodObject.
-	self reapAndResetErrorCodeTo: stackPointer + objectMemory wordSize
+	self reapAndResetErrorCodeTo: framePointer
 		header: cogMethod methodHeader
 ]
 
@@ -1942,7 +1658,7 @@ CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPIC [
 	classTag := objectMemory fetchClassTagOf: rcvr.
 	argumentCount := numArgs.
 	false ifTrue: "would like to assert this but must also allow for an interpretable method in the cache."
-		[self deny: (cogMethodOrPIC cmType = CMOpenPIC
+		[self deny: (cogMethodOrPIC cmType = CMMegamorphicIC
 					and: [self newMethodInLookupCacheAt: cogMethodOrPIC selector and: classTag])].
 	(self lookupInMethodCacheSel: cogMethodOrPIC selector classTag: classTag)
 		ifTrue:"check for coggability because method is in the cache"
@@ -1951,7 +1667,8 @@ CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPIC [
 				selector: cogMethodOrPIC selector]
 		ifFalse:
 			[(objectMemory isOopForwarded: cogMethodOrPIC selector) ifTrue:
-				[self handleForwardedSelectorFaultFor: cogMethodOrPIC selector.
+				[
+				 cogit setSelectorOf: cogMethodOrPIC to: (self handleForwardedSelectorFaultFor: cogMethodOrPIC selector).
 				 ^self ceSendFromInLineCacheMiss: cogMethodOrPIC].
 			 (objectMemory isForwardedClassTag: classTag) ifTrue:
 				[self handleForwardedSendFaultForReceiver: rcvr stackDelta: 1 "skip return pc".
@@ -1992,52 +1709,51 @@ CoInterpreter >> ceSendMustBeBooleanTo: aNonBooleanObject interpretingAtDelta: j
 	 and hence retry the mustBeBoolean send therein.  N.B. We could do this for immutability violations
 	 too, but immutability is used in actual applications and so should be performant, whereas
 	 mustBeBoolean errors are extremely rare and so we choose brevity over performance in this case."
+
 	<api>
-	| cogMethod methodObj methodHeader startBcpc |
-	<var: 'cogMethod' type: #'CogBlockMethod *'>
+	<var: 'cogMethod' type: #'CogMethod *'>
 	<var: 'p' type: #'char *'>
+	| cogMethod methodObj methodHeader startBcpc |
 	self assert: (objectMemory addressCouldBeOop: aNonBooleanObject).
 	cogMethod := self mframeCogMethod: framePointer.
-	((self mframeIsBlockActivation: framePointer)
-	 and: [cogMethod cmIsFullBlock not])
-		ifTrue:
-			[methodHeader := (self cCoerceSimple: cogMethod cmHomeMethod to: #'CogMethod *') methodHeader.
-			 methodObj := (self cCoerceSimple: cogMethod cmHomeMethod to: #'CogMethod *') methodObject.
-			 startBcpc := cogMethod startpc]
-		ifFalse:
-			[methodHeader := (self cCoerceSimple: cogMethod to: #'CogMethod *') methodHeader.
-			 methodObj := (self cCoerceSimple: cogMethod to: #'CogMethod *') methodObject.
-			 startBcpc := self startPCOfMethod: methodObj].
+	methodHeader := (self cCoerceSimple: cogMethod to: #'CogMethod *')
+		                methodHeader.
+	methodObj := (self cCoerceSimple: cogMethod to: #'CogMethod *')
+		             methodObject.
+	startBcpc := self startPCOfMethod: methodObj.
 
 	"Map the machine code instructionPointer to the interpreter instructionPointer of the branch."
 	instructionPointer := self popStack.
-	instructionPointer := cogit bytecodePCFor: instructionPointer startBcpc: startBcpc in: cogMethod.
-	instructionPointer := methodObj + objectMemory baseHeaderSize + instructionPointer - jumpSize - 1. "pre-decrement"
+	instructionPointer := cogit
+		                      bytecodePCFor: instructionPointer
+		                      startBcpc: startBcpc
+		                      in: cogMethod.
+	instructionPointer := methodObj + objectMemory baseHeaderSize
+	                      + instructionPointer - jumpSize - 1. "pre-decrement"
 
 	"Make space for the two extra fields in an interpreter frame"
-	stackPointer to: framePointer + FoxMFReceiver by: objectMemory wordSize do:
-		[:p| | oop |
-		 oop := objectMemory longAt: p.
-		 objectMemory
-			longAt: p - objectMemory wordSize - objectMemory wordSize
-			put: (objectMemory longAt: p)].
-	stackPointer := stackPointer - objectMemory wordSize - objectMemory wordSize.
+	stackPointer to: framePointer + FoxMFReceiver by:
+		objectMemory wordSize do: [ :p |
+		| oop |
+		oop := objectMemory unsignedLongAt: p.
+		objectMemory
+			unsignedLongAt: p - objectMemory wordSize - objectMemory wordSize
+			put: (objectMemory unsignedLongAt: p) ].
+	stackPointer := stackPointer - objectMemory wordSize
+	                - objectMemory wordSize.
 	self push: aNonBooleanObject.
 	"Fill in the fields"
 	objectMemory
-		longAt: framePointer + FoxIFrameFlags
-			put: (self
-					encodeFrameFieldHasContext: (self mframeHasContext: framePointer)
-					isBlock: (self mframeIsBlockActivation: framePointer)
-					numArgs: cogMethod cmNumArgs);
-		longAt: framePointer + FoxIFSavedIP
-			put: 0;
-		longAt: framePointer + FoxMethod
-			put: methodObj.
+		unsignedLongAt: framePointer + FoxIFrameFlags put: (self
+				 encodeFrameFieldHasContext: (self mframeHasContext: framePointer)
+				 isBlock: (self mframeIsBlockActivation: framePointer)
+				 numArgs: cogMethod cmNumArgs);
+		unsignedLongAt: framePointer + FoxIFSavedIP put: 0;
+		unsignedLongAt: framePointer + FoxMethod put: methodObj.
 
 	"and now reenter the interpreter..."
 	self setMethod: methodObj methodHeader: methodHeader.
-	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
+	self siglong: reenterInterpreter jmp: ReturnToInterpreter
 ]
 
 { #category : #trampolines }
@@ -2067,10 +1783,10 @@ CoInterpreter >> ceStackOverflow: contextSwitchIfNotNil [
 	 closure (see e.g. SimpleStackBasedCogit>>compileMethodBody)."
 	<api>
 	| cogMethod switched cesoRetAddr |
-	<var: #cogMethod type: #'CogBlockMethod *'>
+	<var: #cogMethod type: #'CogMethod *'>
 	cesoRetAddr := self popStack. "discard the ceStackOverflow call return address."
 	cogMethod := self mframeCogMethod: framePointer.
-	self assert: cesoRetAddr - cogit abortOffset = (self asCogHomeMethod: cogMethod) asInteger.
+	self assert: cesoRetAddr - cogit abortOffset = cogMethod asInteger.
 	instructionPointer := cogMethod asInteger + cogMethod stackCheckOffset.
 	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: false line: #'__LINE__'.
 	method := newMethod := messageSelector := objectMemory nilObject.
@@ -2192,40 +1908,45 @@ CoInterpreter >> checkLogIntegrity [
 
 { #category : #'debug support' }
 CoInterpreter >> checkOkayFields: oop [
+
 	"Check if the argument is an ok object.
 	 If this is a pointers object, check that its fields are all okay oops."
 
 	| hasYoung i fieldOop |
-	(oop = nil or: [oop = 0]) ifTrue: [ ^true ]. "?? eem 1/16/2013"
-	(objectMemory isIntegerObject: oop) ifTrue: [ ^true ].
-	(objectMemory checkOkayOop: oop) ifFalse: [ ^false ].
-	(objectMemory checkOopHasOkayClass: oop) ifFalse: [ ^false ].
-	((objectMemory isPointersNonImm: oop) or: [objectMemory isCompiledMethod: oop]) ifFalse: [ ^true ].
-	hasYoung := objectMemory hasSpurMemoryManagerAPI not
-				  and: [objectMemory isYoungObject: (objectMemory fetchClassOfNonImm: oop)].
+	(oop = nil or: [ oop = 0 ]) ifTrue: [ ^ true ]. "?? eem 1/16/2013"
+	(objectMemory isIntegerObject: oop) ifTrue: [ ^ true ].
+	(objectMemory checkOkayOop: oop) ifFalse: [ ^ false ].
+	(objectMemory checkOopHasOkayClass: oop) ifFalse: [ ^ false ].
+	((objectMemory isPointersNonImm: oop) or: [ 
+		 objectMemory isCompiledMethod: oop ]) ifFalse: [ ^ true ].
+	hasYoung := false.
 	(objectMemory isCompiledMethod: oop)
-		ifTrue:
-			[i := (objectMemory literalCountOf: oop) + LiteralStart - 1]
-		ifFalse:
-			[(objectMemory isContext: oop)
-				ifTrue: [i := CtxtTempFrameStart + (self fetchStackPointerOf: oop) - 1]
-				ifFalse: [i := (objectMemory lengthOf: oop) - 1]].
-	[i >= 0] whileTrue:
-		[fieldOop := objectMemory fetchPointer: i ofObject: oop.
-		(objectMemory isNonIntegerObject: fieldOop) ifTrue:
-			[(i = 0 and: [objectMemory isCompiledMethod: oop])
-				ifTrue:
-					[(cogMethodZone methodFor: (self pointerForOop: fieldOop)) = 0 ifTrue:
-						[self print: 'method '; printHex: oop; print: ' has an invalid cog method reference'.
-						^false]]
-				ifFalse:
-					[hasYoung := hasYoung or: [objectMemory isYoung: fieldOop].
-					(objectMemory checkOkayOop: fieldOop) ifFalse: [ ^false ].
-					(self checkOopHasOkayClass: fieldOop) ifFalse: [ ^false ]]].
-		i := i - 1].
-	hasYoung ifTrue:
-		[^objectMemory checkOkayYoungReferrer: oop].
-	^true
+		ifTrue: [ 
+		i := (objectMemory literalCountOf: oop) + LiteralStart - 1 ]
+		ifFalse: [ 
+			(objectMemory isContext: oop)
+				ifTrue: [ 
+				i := CtxtTempFrameStart + (self fetchStackPointerOf: oop) - 1 ]
+				ifFalse: [ i := (objectMemory lengthOf: oop) - 1 ] ].
+	[ i >= 0 ] whileTrue: [ 
+		fieldOop := objectMemory fetchPointer: i ofObject: oop.
+		(objectMemory isNonIntegerObject: fieldOop) ifTrue: [ 
+			(i = 0 and: [ objectMemory isCompiledMethod: oop ])
+				ifTrue: [ 
+					(cogMethodZone methodFor: (self pointerForOop: fieldOop)) = 0 
+						ifTrue: [ 
+							self
+								print: 'method ';
+								printHex: oop;
+								print: ' has an invalid cog method reference'.
+							^ false ] ]
+				ifFalse: [ 
+					hasYoung := hasYoung or: [ objectMemory isYoung: fieldOop ].
+					(objectMemory checkOkayOop: fieldOop) ifFalse: [ ^ false ].
+					(self checkOopHasOkayClass: fieldOop) ifFalse: [ ^ false ] ] ].
+		i := i - 1 ].
+	hasYoung ifTrue: [ ^ objectMemory checkOkayYoungReferrer: oop ].
+	^ true
 ]
 
 { #category : #'object memory support' }
@@ -2260,7 +1981,7 @@ CoInterpreter >> checkStackIntegrity [
 				[theSP := theSP + objectMemory wordSize].
 			 [frameRcvrOffset := self frameReceiverLocation: theFP.
 			  [theSP <= frameRcvrOffset] whileTrue:
-				[oop := stackPages longAt: theSP.
+				[oop := stackPages unsignedLongAt: theSP.
 				 ((objectMemory isNonImmediate: oop) 
 				   and: [(objectMemory heapMapAtWord: (self pointerForOop: oop)) = 0]) ifTrue:
 					[self printFrameThing: 'object leak in frame temp' andFrame: theFP at: theSP.
@@ -2299,7 +2020,7 @@ CoInterpreter >> checkStackIntegrity [
 				 theFP := callerFP].
 			 theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
 			 [theSP <= thePage baseAddress] whileTrue:
-				[oop := stackPages longAt: theSP.
+				[oop := stackPages unsignedLongAt: theSP.
 				 ((objectMemory isNonImmediate: oop) 
 				   and: [(objectMemory heapMapAtWord: (self pointerForOop: oop)) = 0]) ifTrue:
 					[self printFrameThing: 'object leak in frame arg' andFrame: theFP at: theSP.
@@ -2340,7 +2061,7 @@ CoInterpreter >> cogMethodOf: aMethodOop [
 	| methodHeader |
 	methodHeader := self rawHeaderOf: aMethodOop.
 	self assert: ((objectMemory isNonImmediate: methodHeader)
-				and: [methodHeader asUnsignedInteger < objectMemory startOfMemory]).
+				and: [methodHeader asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory]).
 	^self cCoerceSimple: methodHeader to: #'CogMethod *'
 ]
 
@@ -2383,13 +2104,13 @@ CoInterpreter >> commenceCogCompiledCodeCompaction [
 		["better not have already been pushed"
 		 self assert: self stackTop asUnsignedInteger ~= instructionPointer.
 		 self push: instructionPointer.
-		 self externalWriteBackHeadStackPointer].
+		 self writeBackHeadStackPointer].
 	
 	cogit compactCogCompiledCode.
 	self nilUncoggableMethods.
 	instructionPointer ~= 0 ifTrue:
 		[instructionPointer := self popStack.
-		 self externalWriteBackHeadStackPointer].
+		 self writeBackHeadStackPointer].
 
 	statCodeCompactionCount := statCodeCompactionCount + 1.
 	statCodeCompactionUsecs := statCodeCompactionUsecs + (self ioUTCMicrosecondsNow - startTime).
@@ -2397,62 +2118,6 @@ CoInterpreter >> commenceCogCompiledCodeCompaction [
 	objectMemory checkForLeaks ~= 0 ifTrue:
 		[objectMemory clearLeakMapAndMapAccessibleObjects.
 		 self asserta: (self checkCodeIntegrity: false)]
-]
-
-{ #category : #'return bytecodes' }
-CoInterpreter >> commonCallerReturn [
-	"Return to the previous context/frame (sender for method activations, caller for block activations)."
-	<sharedCodeNamed: 'commonCallerReturn' inCase: #returnTopFromBlock>
-	| callersFPOrNull |
-	<var: #callersFPOrNull type: #'char *'>
-	callersFPOrNull := self frameCallerFP: localFP.
-	callersFPOrNull = 0 "baseFrame" ifTrue:
-		[self assert: localFP = stackPage baseFP.
-		 ^self baseFrameReturn].
-
-	localIP := self frameCallerSavedIP: localFP.
-	localSP := localFP + (self frameStackedReceiverOffset: localFP).
-	localFP := callersFPOrNull.
-	localIP asUnsignedInteger < objectMemory startOfMemory ifTrue:
-		[localIP asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue:
-			["localIP in the cog method zone indicates a return to machine code."
-			 ^self returnToMachineCodeFrame].
-		 localIP := self pointerForOop: (self iframeSavedIP: localFP)].
-	self setMethod: (self iframeMethod: localFP).
-	self fetchNextBytecode.
-	self internalStackTopPut: localReturnValue
-]
-
-{ #category : #'send bytecodes' }
-CoInterpreter >> commonSendOrdinary [
-	"Send a message, starting lookup with the receiver's class."
-	"Assume: messageSelector and argumentCount have been set, and that 
-	the receiver and arguments have been pushed onto the stack,"
-	"Note: This method is inlined into the interpreter dispatch loop."
-	<sharedCodeNamed: 'commonSendOrdinary' inCase: #extSendBytecode>
-	self sendBreakpoint: messageSelector receiver: (self internalStackValue: argumentCount).
-	cogit recordSendTrace ifTrue:
-		[self recordTrace: (objectMemory classForClassTag: lkupClassTag)
-			thing: messageSelector
-			source: TraceIsFromInterpreter.
-		cogit printOnTrace ifTrue:
-			[self printActivationNameForSelector: messageSelector
-				startClass: (objectMemory classForClassTag: lkupClassTag); cr]].
-	self internalFindNewMethodOrdinary.
-	self internalExecuteNewMethod.
-	self fetchNextBytecode
-]
-
-{ #category : #'indexing primitive support' }
-CoInterpreter >> commonVariable: rcvr at: index cacheIndex: atIx [
-	"There is no atCache in the CoInterpreter."
-	self shouldNotImplement
-]
-
-{ #category : #'indexing primitive support' }
-CoInterpreter >> commonVariable: rcvr at: index put: value cacheIndex: atIx [
-	"There is no atCache in the CoInterpreter."
-	self shouldNotImplement
 ]
 
 { #category : #'debug support' }
@@ -2520,32 +2185,32 @@ CoInterpreter >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
 	"Convert the current interpreter frame into a machine code frame
 	 and answer the machine code pc matching bcpc."
 	| startBcpc methodField closure cogMethod pc |
-	<var: #cogMethod type: #'CogBlockMethod *'>
+	<var: #cogMethod type: #'CogMethod *'>
 	<var: #p type: #'char *'>
 	self assert: (self isMachineCodeFrame: framePointer) not.
 	"Update the return pc, perhaps saving it in the caller's iframeSavedIP."
 	(self isBaseFrame: framePointer)
 		ifTrue:
 			[stackPages
-				longAt: framePointer + FoxCallerSavedIP
+				unsignedLongAt: framePointer + FoxCallerSavedIP
 				put: cogit ceBaseFrameReturnPC]
 		ifFalse:
 			[(self isMachineCodeFrame: (self frameCallerFP: framePointer)) ifFalse:
 				[self iframeSavedIP: (self frameCallerFP: framePointer)
 					put: (self frameCallerSavedIP: framePointer) asInteger.
 				 stackPages
-					longAt: framePointer + FoxCallerSavedIP
+					unsignedLongAt: framePointer + FoxCallerSavedIP
 					put: cogit ceReturnToInterpreterPC]].
 	"Compute the cog method field"
 	(self iframeIsBlockActivation: framePointer)
 		ifTrue: [
 			closure := self pushedReceiverOrClosureOfFrame: framePointer.
 			startBcpc := self startPCOfMethodHeader: cogHomeMethod methodHeader.
-			cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogBlockMethod *'.
+			cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogMethod *'.
 			methodField := cogMethod asInteger + MFMethodFlagIsBlockFlag]
 		ifFalse: [
 			startBcpc := self startPCOfMethodHeader: cogHomeMethod methodHeader.
-			cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogBlockMethod *'.
+			cogMethod := self cCoerceSimple: cogHomeMethod to: #'CogMethod *'.
 			methodField := cogHomeMethod asInteger ].
 	"compute the pc before converting the frame to help with debugging."
 	pc := cogit mcPCForBackwardBranch: bcpc startBcpc: startBcpc in: cogMethod.
@@ -2553,22 +2218,16 @@ CoInterpreter >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
 	self assert: bcpc = (cogit bytecodePCFor: pc startBcpc: startBcpc in: cogMethod).
 	"now convert to a machine code frame"
 	stackPages
-		longAt: framePointer + FoxMethod
+		unsignedLongAt: framePointer + FoxMethod
 		put: methodField
 			+ ((self iframeHasContext: framePointer)
 				ifTrue: [MFMethodFlagHasContextFlag]
 				ifFalse: [0]).
 	framePointer + FoxIFReceiver to: stackPointer by: objectMemory wordSize negated do:
 		[:p|
-		stackPages longAt: p + FoxMFReceiver - FoxIFReceiver put: (stackPages longAt: p)].
+		stackPages unsignedLongAt: p + FoxMFReceiver - FoxIFReceiver put: (stackPages unsignedLongAt: p)].
 	stackPointer := stackPointer + FoxMFReceiver - FoxIFReceiver.
 	^pc
-]
-
-{ #category : #'stack pages' }
-CoInterpreter >> defaultNativeStackFrameSize [
-	<api>
-	^ super defaultNativeStackFrameSize
 ]
 
 { #category : #'process primitive support' }
@@ -2619,7 +2278,7 @@ CoInterpreter >> divorceAMachineCodeFrameWithCogMethod: cogMethod in: aStackPage
 	[((self isMachineCodeFrame: theFP)
 	  and: [cogMethod = (self mframeHomeMethod: theFP)]) ifTrue:
 		[theContext := self ensureFrameIsMarried: theFP SP: theSP.
-		 self externalDivorceFrame: theFP andContext: theContext.
+		 self divorceFrame: theFP andContext: theContext.
 		 ^true].
 	 calleeFP := theFP.
 	 theFP := self frameCallerFP: theFP.
@@ -2661,6 +2320,18 @@ CoInterpreter >> divorceSomeMachineCodeFramesWithMethod: cogMethod [
 			 (self divorceAMachineCodeFrameWithCogMethod: cogMethod in: aPage) ifTrue:
 				[divorcedSome := true]]].
 	^divorcedSome
+]
+
+{ #category : #'send bytecodes' }
+CoInterpreter >> doRecordSendTrace [
+
+	<inline: true>
+	cogit recordSendTrace ifTrue: [
+		self
+			recordTrace: (objectMemory classForClassTag: lkupClassTag)
+			thing: messageSelector
+			source: TraceIsFromInterpreter.
+		super doRecordSendTrace ]
 ]
 
 { #category : #'debug support' }
@@ -2705,22 +2376,11 @@ CoInterpreter >> encodedNativePCOf: mcpc cogMethod: cogMethod [
 	 machine code from bytecode pcs, which we do by using negative values for
 	 machine code pcs.
 
-	 As a whorish performance hack we also include the block method offset in
-	 the pc of a block. The least significant 16 bits are the native pc and the most
-	 significant 15 bits are the block start, in block alignment units.  So when
-	 mapping back we can find the start of the block.
-
 	 See mustMapMachineCodePC:context: for the code that does the actual mapping."
-	<var: #cogMethod type: #'CogBlockMethod *'>
-	| homeMethod blockOffset |
-	<var: #homeMethod type: #'CogMethod *'>
+	<var: #cogMethod type: #'CogMethod *'>
 	mcpc = cogit ceCannotResumePC ifTrue:
 		[^HasBeenReturnedFromMCPCOop].
-	cogMethod cmType = CMMethod ifTrue:
-		[^objectMemory integerObjectOf: cogMethod asInteger - mcpc].
-	homeMethod := cogMethod cmHomeMethod.
-	blockOffset := homeMethod asInteger - cogMethod asInteger / cogit blockAlignment.
-	^objectMemory integerObjectOf: ((blockOffset bitShift: 16) bitOr: (cogMethod asInteger - mcpc bitAnd: 16rFFFF))
+	^objectMemory integerObjectOf: cogMethod asInteger - mcpc
 ]
 
 { #category : #'frame access' }
@@ -2803,7 +2463,7 @@ CoInterpreter >> ensurePushedInstructionPointer [
 	 from the interpreter, either directly or via a machine code primitive.  We
 	 could have come from machine code.  The instructionPointer tells us where
 	 from.  Make sure the instruction pointer is pushed and/or saved."
-	instructionPointer asUnsignedInteger >= objectMemory startOfMemory
+	(self isInstructionPointerInInterpreter: instructionPointer)
 		ifTrue:
 			"invoked directly from the interpreter"
 			[self iframeSavedIP: framePointer put: instructionPointer.
@@ -2840,13 +2500,6 @@ CoInterpreter >> enterSmalltalkExecutiveImplementation [
 	^0
 ]
 
-{ #category : #'cog jit support' }
-CoInterpreter >> error: aString [
-	<api: 'extern void error(char *s)'>
-	<doNotGenerate>
-	super error: aString
-]
-
 { #category : #enilopmarts }
 CoInterpreter >> executeCogMethod: cogMethod fromLinkedSendWithReceiver: rcvr [
 	<api>
@@ -2868,7 +2521,7 @@ CoInterpreter >> executeCogMethod: cogMethod fromLinkedSendWithReceiver: rcvr [
 	self
 		push: cogMethod asInteger + cogit entryOffset;
 		push: rcvr.
-	cogit ceCallCogCodePopReceiverReg
+	self callEnilopmart: #ceCallCogCodePopReceiverReg
 	"NOTREACHED"
 ]
 
@@ -2892,7 +2545,7 @@ CoInterpreter >> executeCogMethod: cogMethod fromUnlinkedSendWithReceiver: rcvr 
 	self
 		push: cogMethod asInteger + cogit noCheckEntryOffset;
 		push: rcvr.
-	cogit ceCallCogCodePopReceiverReg
+	self callEnilopmart: #ceCallCogCodePopReceiverReg
 	"NOTREACHED"
 ]
 
@@ -2916,16 +2569,16 @@ CoInterpreter >> executeCogPIC: cogPIC fromLinkedSendWithReceiver: rcvr andCache
 		[cogPIC cmNumArgs <= cogit numRegArgs ifTrue:
 			[self push: cacheTag.
 			 cogPIC cmNumArgs caseOf: {
-				[0]	->	[cogit ceCall0ArgsPIC].
-				[1]	->	[cogit ceCall1ArgsPIC].
-				[2]	->	[cogit ceCall2ArgsPIC]
+				[0]	->	[self callEnilopmart: #ceCall0ArgsPIC].
+				[1]	->	[self callEnilopmart: #ceCall1ArgsPIC].
+				[2]	->	[self callEnilopmart: #ceCall2ArgsPIC]
 			 	}
 				otherwise: [].
 			 self error: 'not reached']].
 	self
 		push: rcvr;
 		push: cacheTag.
-	cogit ceCallCogCodePopReceiverAndClassRegs
+	self callEnilopmart: #ceCallCogCodePopReceiverAndClassRegs
 	"NOTREACHED"
 ]
 
@@ -2947,69 +2600,8 @@ CoInterpreter >> executeFullCogBlock: cogMethod closure: closure mayContextSwitc
 				ifTrue: [cogit fullBlockEntryOffset]
 				ifFalse: [cogit fullBlockNoContextSwitchEntryOffset]).
 	self push: closure.
-	cogit ceCallCogCodePopReceiverReg
+	self callEnilopmart: #ceCallCogCodePopReceiverReg
 	"NOTREACHED"
-]
-
-{ #category : #'message sending' }
-CoInterpreter >> executeNewMethod [
-	"Execute newMethod - either primitiveFunctionPointer must be set directly
-	 (i.e. from primitiveExecuteMethod et al), or it would have been set probing
-	 the method cache (i.e. primitivePerform et al).
-	 Eagerly compile it if appropriate so that doits are fast."
-	| methodHeader inInterpreter |
-	inInterpreter := instructionPointer >= objectMemory startOfMemory.
-	primitiveFunctionPointer ~= 0 ifTrue:
-		[self isPrimitiveFunctionPointerAnIndex ifTrue:
-			[self externalQuickPrimitiveResponse.
-			 self return: self popStack toExecutive: inInterpreter.
-			 ^nil].
-		 "slowPrimitiveResponse may of course context-switch.  If so we must reenter the
-		  new process appopriately, returning only if we've reached here directly from the
-		  interpreter and have found an interpreter frame.  The instructionPointer tells us
-		  from whence we came."
-		 self slowPrimitiveResponse ifTrue:
-			[self return: self popStack toExecutive: inInterpreter.
-			 ^nil]].
-	"Eagerly compile it if appropriate so that doits are fast."
-	methodHeader := self rawHeaderOf: newMethod.
-	(self isCogMethodReference: methodHeader) ifFalse:
-		[(self methodWithHeaderShouldBeCogged: methodHeader)
-			ifTrue:
-				[cogit cog: newMethod selector: objectMemory nilObject.
-				 methodHeader := self rawHeaderOf: newMethod]
-			ifFalse: [self maybeFlagMethodAsInterpreted: newMethod]].
-	"if not primitive, or primitive failed, activate the method"
-	(self isCogMethodReference: methodHeader)
-		ifTrue:
-			[instructionPointer asUnsignedInteger >= objectMemory startOfMemory ifTrue:
-				[self iframeSavedIP: framePointer put: instructionPointer asInteger.
-				 instructionPointer := cogit ceReturnToInterpreterPC].
-			self activateCoggedNewMethod: inInterpreter]
-		ifFalse:
-			[self activateNewMethod]
-]
-
-{ #category : #'stack bytecodes' }
-CoInterpreter >> extendedStoreBytecodePop: popBoolean [
-	"Override to use itemporary:in:put:"
-	| descriptor variableType variableIndex value |
-	<inline: true>
-	descriptor := self fetchByte.
-	variableType := descriptor >> 6 bitAnd: 3.
-	variableIndex := descriptor bitAnd: 63.
-	value := self internalStackTop.
-	popBoolean ifTrue: [ self internalPop: 1 ].
-	variableType = 0 ifTrue:
-		[objectMemory storePointerImmutabilityCheck: variableIndex ofObject: self receiver withValue: value.
-		^ self fetchNextBytecode.].
-	variableType = 1 ifTrue:
-		[ self fetchNextBytecode.
-		^self itemporary: variableIndex in: localFP put: value].
-	variableType = 3 ifTrue:
-		[self storeLiteralVariable: variableIndex withValue: value.
-		^ self fetchNextBytecode.].
-	self error: 'illegal store'
 ]
 
 { #category : #'return bytecodes' }
@@ -3044,54 +2636,6 @@ CoInterpreter >> externalCannotReturn: resultOop from: aContext [
 		numArgs: 1
 ]
 
-{ #category : #'frame access' }
-CoInterpreter >> externalInstVar: offset ofContext: aContext [
-	"Fetch an instance variable from a maybe married context.
-	 If the context is still married compute the value of the
-	 relevant inst var from the spouse frame's state.
-
-	 If the context is single but has a negative instruction pointer
-	 recognise that the instruction pointer is actually into machine
-	 code and convert it to the corresponding bytecode pc."
-	<inline: false>
-	| value |
-
-	self assert: (objectMemory isContext: aContext).
-	self assert: offset <= (ReceiverIndex + (self checkStackPointerForMaybeMarriedContext: aContext)).
-	"method, closureOrNil & receiver need no special handling; only
-	 sender, pc & stackp have to be computed for married contexts."
-	(self isReadMediatedContextInstVarIndex: offset) ifFalse:
-		[^objectMemory fetchPointer: offset ofObject: aContext].
-
-	self externalWriteBackHeadFramePointers.
-	(self isStillMarriedContext: aContext) ifTrue:
-		[^self fetchPointer: offset ofMarriedContext: aContext].
-	
-	value := objectMemory fetchPointer: offset ofObject: aContext.
-	(offset = InstructionPointerIndex
- 	 and: [(objectMemory isIntegerObject: value)
- 	 and: [value signedIntFromLong < 0]]) ifTrue:
-		[^self mustMapMachineCodePC: (objectMemory integerValueOf: value) context: aContext].
-	^value
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> externalWriteBackHeadStackPointer [
-	self assert: (stackPointer < stackPage baseAddress
-				and: [stackPointer > (stackPage realStackLimit - (LargeContextSlots * objectMemory bytesPerOop))]).
-	stackPage headSP: stackPointer
-]
-
-{ #category : #utilities }
-CoInterpreter >> externalizeIPandSP [
-	"Copy the local instruction, stack and frame pointers to global variables for use in primitives and other functions outside the interpret loop."
-
-	self assert: localIP asUnsignedInteger ~= cogit ceReturnToInterpreterPC.
-	instructionPointer := self oopForPointer: localIP.
-	stackPointer := localSP.
-	framePointer := localFP
-]
-
 { #category : #'debug support' }
 CoInterpreter >> fastLogPrim: aSelectorOrImmediate [
 	"Fast tracing of named primitives.  primTraceLogIndex is a byte variable.
@@ -3106,27 +2650,24 @@ CoInterpreter >> fastLogPrim: aSelectorOrImmediate [
 CoInterpreter >> findNewMethodInClassTag: classTagArg [
 	"Find the compiled method to be run when the current messageSelector is
 	 sent to the given classTag, setting the values of newMethod and primitiveIndex."
-	| ok classTag |
+
 	<inline: false>
-	ok := self lookupInMethodCacheSel: messageSelector classTag: classTagArg.
-	ok	ifTrue:
-			[self ifAppropriateCompileToNativeCode: newMethod selector: messageSelector]
-		ifFalse:
-			["entry was not found in the cache; perhaps soemthing was forwarded."
-			 classTag := classTagArg.
-			 ((objectMemory isOopForwarded: messageSelector)
-			  or: [objectMemory isForwardedClassTag: classTag]) ifTrue:
-				[(objectMemory isOopForwarded: messageSelector) ifTrue:
-					[messageSelector := self handleForwardedSelectorFaultFor: messageSelector].
-				 (objectMemory isForwardedClassTag: classTag) ifTrue:
-					[classTag := self handleForwardedSendFaultForTag: classTag].
-				ok := self lookupInMethodCacheSel: messageSelector classTag: classTag.
-				ok ifTrue:
-					[^self ifAppropriateCompileToNativeCode: newMethod selector: messageSelector]].
-			 "entry was not found in the cache; look it up the hard way "
-			 lkupClass := objectMemory classForClassTag: classTag.
-			 self lookupMethodInClass: lkupClass.
-			 self addNewMethodToCache: lkupClass]
+	self findNewMethodInClassTag: classTagArg ifFound: [
+		self
+			ifAppropriateCompileToNativeCode: newMethod
+			selector: messageSelector ]
+]
+
+{ #category : #'message sending' }
+CoInterpreter >> findNewMethodOrdinary [
+	"Find the compiled method to be run when the current messageSelector is
+	 sent to the given class, setting the values of newMethod and primitiveIndex."
+
+	<inline: true>
+	^ self findNewMethodOrdinaryIfFound: [
+		  self
+			  ifAppropriateCompileToNativeCode: newMethod
+			  selector: messageSelector ]
 ]
 
 { #category : #'method lookup cache' }
@@ -3156,30 +2697,20 @@ CoInterpreter >> flushExternalPrimitiveOf: methodObj [
 			to: #primitiveExternalCall]
 ]
 
-{ #category : #'method lookup cache' }
-CoInterpreter >> flushMethodCache [
-	"Flush the method cache. The method cache is flushed on every programming change and garbage collect."
-
-	super flushMethodCache.
-	cogit unlinkAllSends
-]
-
 { #category : #'message sending' }
 CoInterpreter >> followForwardedFieldsInCurrentMethod [
-	| cogMethod |
+
 	<var: #cogMethod type: #'CogMethod *'>
 	<inline: false>
+	| cogMethod |
 	(self isMachineCodeFrame: framePointer)
-		ifTrue:
-			[cogMethod := self mframeHomeMethod: framePointer.
-			 objectMemory
+		ifTrue: [
+			cogMethod := self mframeHomeMethod: framePointer.
+			objectMemory
 				followForwardedObjectFields: cogMethod methodObject
 				toDepth: 0.
-			 cogit followForwardedLiteralsIn: cogMethod]
-		ifFalse:
-			[objectMemory
-				followForwardedObjectFields: method
-				toDepth: 0]
+			cogit followForwardedLiteralsIn: cogMethod ]
+		ifFalse: [ super followForwardedFieldsInCurrentMethod ]
 ]
 
 { #category : #'object memory support' }
@@ -3209,7 +2740,7 @@ CoInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 	<var: #callerFP type: #'char *'>
 	<var: #thePage type: #'StackPage *'>
 
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 
 	(theBecomeEffectsFlags anyMask: BecameCompiledMethodFlag) ifTrue:
 		[(objectMemory isForwarded: method) ifTrue:
@@ -3232,17 +2763,17 @@ CoInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 			  self assert: (theIPPtr = 0 or: [thePage addressIsInPage: theIPPtr asVoidPointer]).
 			  (self isMachineCodeFrame: theFP)
 				ifTrue:
-					[oop := stackPages longAt: theFP + FoxMFReceiver.
+					[oop := stackPages unsignedLongAt: theFP + FoxMFReceiver.
 					 (objectMemory isOopForwarded: oop) ifTrue:
 						[stackPages
-							longAt: theFP + FoxMFReceiver
+							unsignedLongAt: theFP + FoxMFReceiver
 							put: (objectMemory followForwarded: oop)].
 					 self assert: (objectMemory isForwarded: (self mframeHomeMethod: theFP) methodObject) not]
 				ifFalse:
-					[oop := stackPages longAt: theFP + FoxIFReceiver.
+					[oop := stackPages unsignedLongAt: theFP + FoxIFReceiver.
 					 (objectMemory isOopForwarded: oop) ifTrue:
 						[stackPages
-							longAt: theFP + FoxIFReceiver
+							unsignedLongAt: theFP + FoxIFReceiver
 							put: (objectMemory followForwarded: oop)].
 					 oop := self iframeMethod: theFP.
 					 (objectMemory isForwarded: oop) ifTrue:
@@ -3250,26 +2781,26 @@ CoInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 						 newOop := objectMemory followForwarded: oop.
 						 offset := newOop - oop.
 						 (theIPPtr ~= 0
-						  and: [(stackPages longAt: theIPPtr) > oop]) ifTrue:
+						  and: [(stackPages unsignedLongAt: theIPPtr) > oop]) ifTrue:
 							[stackPages
-								longAt: theIPPtr
-								put: (stackPages longAt: theIPPtr) + offset].
+								unsignedLongAt: theIPPtr
+								put: (stackPages unsignedLongAt: theIPPtr) + offset].
 						stackPages
-							longAt: theFP + FoxIFSavedIP
-							put: (stackPages longAt: theFP + FoxIFSavedIP) + offset.
+							unsignedLongAt: theFP + FoxIFSavedIP
+							put: (stackPages unsignedLongAt: theFP + FoxIFSavedIP) + offset.
 						stackPages
-							longAt: theFP + FoxMethod
+							unsignedLongAt: theFP + FoxMethod
 							put: (oop := newOop)]].
 			  ((self frameHasContext: theFP)
 			   and: [(objectMemory isForwarded: (self frameContext: theFP))]) ifTrue:
 				[stackPages
-					longAt: theFP + FoxThisContext
+					unsignedLongAt: theFP + FoxThisContext
 					put: (objectMemory followForwarded: (self frameContext: theFP))].
 			  offset := self frameStackedReceiverOffset: theFP.
-			  oop := stackPages longAt: theFP + offset.
+			  oop := stackPages unsignedLongAt: theFP + offset.
 			  (objectMemory isOopForwarded: oop) ifTrue:
 				[stackPages
-					longAt: theFP + offset
+					unsignedLongAt: theFP + offset
 					put: (objectMemory followForwarded: oop)].
 			  (callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
 				[theIPPtr := (theFP + FoxCallerSavedIP) asUnsignedInteger.
@@ -3277,21 +2808,10 @@ CoInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 			 "And finally follow the saved context and the caller context."
 			 theSP := thePage baseAddress - objectMemory wordSize.
 			 [theSP <= thePage baseAddress] whileTrue:
-				[oop := stackPages longAt: theSP.
+				[oop := stackPages unsignedLongAt: theSP.
 				 (objectMemory isForwarded: oop) ifTrue:
-					[stackPages longAt: theSP put: (objectMemory followForwarded: oop)].
+					[stackPages unsignedLongAt: theSP put: (objectMemory followForwarded: oop)].
 				 theSP := theSP + objectMemory wordSize]]]
-]
-
-{ #category : #'process primitive support' }
-CoInterpreter >> forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter [
-	"Do a returnToExecutive: inInterpreter postContextSwitch: true for a process primtive
-	 being sure to sample the profile clock before making the switch."
-	<inline: true>
-	"If we are profiling, take accurate primitive measures"
-	nextProfileTick > 0 ifTrue:
-		[self checkProfileTick: newMethod].
-	^self returnToExecutive: inInterpreter postContextSwitch: true
 ]
 
 { #category : #'process primitive support' }
@@ -3321,7 +2841,7 @@ CoInterpreter >> frameCallerContext: theFP [
 	<var: #thePage type: #'StackPage *'>
 	self assert: (self isBaseFrame: theFP).
 	thePage := stackPages stackPageFor: theFP.
-	callerContextOrNil := stackPages longAt: thePage baseAddress.
+	callerContextOrNil := stackPages unsignedLongAt: thePage baseAddress.
 	self assert: (objectMemory addressCouldBeObj: callerContextOrNil).
 	self assert: (callerContextOrNil = objectMemory nilObject or: [objectMemory isContext: callerContextOrNil]).
 	^callerContextOrNil
@@ -3363,13 +2883,6 @@ CoInterpreter >> frameIsBlockActivation: theFP [ "<Integer>"
 ]
 
 { #category : #'frame access' }
-CoInterpreter >> frameMethodField: theFP [
-	<inline: true>
-	<var: #theFP type: #'char *'>
-	^stackPages longAt: theFP + FoxMethod
-]
-
-{ #category : #'frame access' }
 CoInterpreter >> frameMethodObject: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
@@ -3381,11 +2894,12 @@ CoInterpreter >> frameMethodObject: theFP [
 { #category : #'frame access' }
 CoInterpreter >> frameNumArgs: theFP [
 	"See encodeFrameFieldHasContext:numArgs:"
+
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^(self isMachineCodeFrame: theFP)
-		ifTrue: [(self mframeCogMethod: theFP) cmNumArgs]
-		ifFalse: [stackPages byteAt: theFP + FoxIFrameFlags + 1]
+	^ (self isMachineCodeFrame: theFP)
+		  ifTrue: [ self mframeNumArgs: theFP ]
+		  ifFalse: [ self iframeNumArgs: theFP ]
 ]
 
 { #category : #'frame access' }
@@ -3540,12 +3054,10 @@ CoInterpreter >> getCogVMFlags [
 	 Bit 1: if set, methods that are interpreted will have the flag bit set in their header
 	 Bit 2: if set, implies preempting a process does not put it to the back of its run queue
 	 Bit 3: specific to CoInterpreterMT
-	 Bit 4: if set, implies the new finalization scheme where WeakArrays are queued
+	 Bit 4: unused
 	 Bit 5: if set, implies wheel events will be delivered as such and not mapped to arrow key events"
 	^objectMemory integerObjectOf: (flagInterpretedMethods ifTrue: [2] ifFalse: [0])
 									+ (preemptionYields ifTrue: [0] ifFalse: [4])
-									+ (newFinalization ifTrue: [16] ifFalse: [0])
-									+ (sendWheelEvents ifTrue: [32] ifFalse: [0])
 									+ (imageHeaderFlags >> 2 bitClear: 2 + 4 + 16 + 32)
 ]
 
@@ -3575,13 +3087,10 @@ CoInterpreter >> getGCMode [
 { #category : #'image save/restore' }
 CoInterpreter >> getImageHeaderFlags [
 	"Answer the flags that are contained in the 7th long of the image header."
-	^fullScreenFlag "0 or 1"
-	+ (VMBIGENDIAN ifTrue: [0] ifFalse: [2]) "this is the imageFloatsLittleEndian flag"
-	+ (flagInterpretedMethods ifTrue: [8] ifFalse: [0])
-	+ (preemptionYields ifTrue: [0] ifFalse: [16r10])
-	+ (newFinalization ifTrue: [16r40] ifFalse: [0])
-	+ (sendWheelEvents ifTrue: [16r80] ifFalse: [0])
-	+ (imageHeaderFlags bitClear: 16rDB) "these are any flags we do not recognize"
+
+	^ super getImageHeaderFlags + (flagInterpretedMethods
+		   ifTrue: [ 8 ]
+		   ifFalse: [ 0 ])
 ]
 
 { #category : #'internal interpreter access' }
@@ -3653,18 +3162,6 @@ CoInterpreter >> handleMNU: selectorIndex InMachineCodeTo: rcvr classForMessage:
 	"NOTREACHED"
 ]
 
-{ #category : #accessing }
-CoInterpreter >> heapBase [
-	<cmacro: '() heapBase'>
-	^heapBase
-]
-
-{ #category : #accessing }
-CoInterpreter >> heapBase: anInteger [ 
-	<doNotGenerate>
-	heapBase := anInteger
-]
-
 { #category : #'message sending' }
 CoInterpreter >> ifAppropriateCompileToNativeCode: aMethodObj selector: selector [
 	| methodHeader cogMethod |
@@ -3687,37 +3184,38 @@ CoInterpreter >> ifBackwardsCheckForEvents: offsetToJumpBytecode [
 	"Backward jump means we're in a loop.
 		- check for possible interrupts.
 		- check for long-running loops and JIT if appropriate."
-	| switched backwardJumpCountByte |
-	<inline: true>
-	offsetToJumpBytecode >= 0 ifTrue:
-		[^self].
 
-	localSP < stackLimit ifTrue:
-		[self externalizeIPandSP.
-		 switched := self checkForEventsMayContextSwitch: true.
-		 self returnToExecutive: true postContextSwitch: switched.
-		 self browserPluginReturnIfNeeded.
-		 self internalizeIPandSP.
-		 switched ifTrue:
-			[^self]].
+	<inline: true>
+	| switched backwardJumpCountByte |
+	offsetToJumpBytecode >= 0 ifTrue: [ ^ self ].
+
+	stackPointer < stackLimit ifTrue: [
+		switched := self checkForEventsMayContextSwitch: true.
+		self returnToExecutive: true postContextSwitch: switched.
+		switched ifTrue: [ ^ self ] ].
 
 	"We use the least significant byte of the flags word (which is marked as an immediate) and
 	 subtract two each time to avoid disturbing the least significant tag bit.  Since the byte is
 	 initialized to 1 (on frame build), on first decrement it will become -1.  Trip when it reaches 1 again."
-	backwardJumpCountByte := self iframeBackwardBranchByte: localFP.
+	backwardJumpCountByte := self iframeBackwardBranchByte: framePointer.
 	(backwardJumpCountByte := backwardJumpCountByte - 2) = 1
-		ifTrue:
-			[(self methodWithHeaderShouldBeCogged: (objectMemory methodHeaderOf: method)) ifTrue:
-				[self externalizeIPandSP.
-				 self attemptToSwitchToMachineCode: (self oopForPointer: localIP) - offsetToJumpBytecode - method - objectMemory baseHeaderSize - 1
-				 "If attemptToSwitchToMachineCode: returns the method could not be cogged, hence..."].
-			 "can't cog method; avoid asking to cog it again for the longest possible time."
-			 backwardJumpCountByte := 16r7F]
-		ifFalse:
-			[backwardJumpCountByte = -1 ifTrue: "initialize the count"
-				[self assert: minBackwardJumpCountForCompile <= 128.
-				 backwardJumpCountByte := minBackwardJumpCountForCompile - 1 << 1 + 1]].
-	self iframeBackwardBranchByte: localFP put: backwardJumpCountByte
+		ifTrue: [
+			(self methodWithHeaderShouldBeCogged:
+				 (objectMemory methodHeaderOf: method)) ifTrue: [
+				self attemptToSwitchToMachineCode:
+					(self oopForPointer: instructionPointer) - offsetToJumpBytecode
+					- method - objectMemory baseHeaderSize - 1
+				"If attemptToSwitchToMachineCode: returns the method could not be cogged, hence..." ].
+			"can't cog method; avoid asking to cog it again for the longest possible time."
+			backwardJumpCountByte := 16r7F ]
+		ifFalse: [
+			backwardJumpCountByte = -1 ifTrue: [ "initialize the count"
+				self assert: minBackwardJumpCountForCompile <= 128.
+				backwardJumpCountByte := minBackwardJumpCountForCompile - 1 << 1
+				                         + 1 ] ].
+	self
+		iframeBackwardBranchByte: framePointer
+		put: backwardJumpCountByte
 ]
 
 { #category : #'debug support' }
@@ -3787,109 +3285,68 @@ CoInterpreter >> iframeNumArgs: theFP [
 CoInterpreter >> iframeReceiver: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages longAt: theFP + FoxIFReceiver
+	^stackPages unsignedLongAt: theFP + FoxIFReceiver
+]
+
+{ #category : #'frame access' }
+CoInterpreter >> iframeReceiverLocation: theFP [
+
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^ theFP + FoxIFReceiver
 ]
 
 { #category : #'frame access' }
 CoInterpreter >> iframeSavedIP: theFP [
 	<var: #theFP type: #'char *'>
-	^stackPages longAt: theFP + FoxIFSavedIP
+	^stackPages unsignedLongAt: theFP + FoxIFSavedIP
 ]
 
 { #category : #'frame access' }
 CoInterpreter >> iframeSavedIP: theFP put: savedIP [
 	<var: #theFP type: #'char *'>
 	self assert: (self isMachineCodeFrame: theFP) not.
-	stackPages longAt: theFP + FoxIFSavedIP put: savedIP
+	stackPages unsignedLongAt: theFP + FoxIFSavedIP put: savedIP
 ]
 
 { #category : #initialization }
 CoInterpreter >> initStackPagesAndInterpret [
-	"Initialize the stack pages and enter interpret. Use alloca'ed memory so that when
-	 we have a JIT its stack pointer will be on the native stack since alloca allocates
-	 memory on the stack. Certain thread systems use the native stack pointer as the
-	 frame ID so putting the stack anywhere else can confuse the thread system."
 
-	"Override to establish the setjmp/longjmp handler for reentering the interpreter
-	 from machine code, and disable executablity on the heap and stack pages."
+	self sqMakeMemoryNotExecutableFrom: objectMemory getMemoryMap startOfObjectMemory asUnsignedInteger
+		To: objectMemory getMemoryMap oldSpaceEnd asUnsignedInteger.
 
-	"This should be in its own initStackPages method but Slang can't inline
-	 C code strings."
-	| stackPageBytes stackPagesBytes theStackMemory |
-	<var: #theStackMemory type: #'char *'>
-	stackPageBytes := self stackPageByteSize.
-	stackPagesBytes := self computeStackZoneSize.
-	theStackMemory := self
-							cCode: [self alloca: stackPagesBytes]
-							inSmalltalk: [stackPages initializeWithByteSize: stackPagesBytes for: self].
-	self cCode: [self me: theStackMemory ms: 0 et: stackPagesBytes].
-	self sqMakeMemoryNotExecutableFrom: objectMemory startOfMemory asUnsignedInteger
-		To: objectMemory memoryLimit asUnsignedInteger.
-	self sqMakeMemoryNotExecutableFrom: theStackMemory asUnsignedInteger
-		To: theStackMemory asUnsignedInteger + stackPagesBytes.
-	stackPages
-		initializeStack: theStackMemory
-		numSlots: stackPagesBytes / objectMemory wordSize
-		pageSize: stackPageBytes / objectMemory wordSize.
-	self assert: self minimumUnusedHeadroom = stackPageBytes.
-
-	"Once the stack pages are initialized we can continue to bootstrap the system."
-	self loadInitialContext.
-	"We're ready for the heartbeat (poll interrupt)"
-	self ioInitHeartbeat.
-	self initialEnterSmalltalkExecutive.
-	^nil
+	^ super initStackPagesAndInterpret
 ]
 
 { #category : #'frame access' }
 CoInterpreter >> instVar: offset ofContext: aContext [
-	"Fetch an instance avriable from a maybe married context.
+	"Fetch an instance variable from a maybe married context.
 	 If the context is still married compute the value of the
 	 relevant inst var from the spouse frame's state.
 
 	 If the context is single but has a negative instruction pointer
 	 recognise that the instruction pointer is actually into machine
 	 code and convert it to the corresponding bytecode pc."
-	| value spouseFP |
-	<var: #spouseFP type: #'char *'>
-	<inline: true>
-	self assert: offset < MethodIndex.
-	self assert: (objectMemory isContext: aContext).
-	self writeBackHeadFramePointers.
-	(self isMarriedOrWidowedContext: aContext) ifFalse:
-		[value := objectMemory fetchPointer: offset ofObject: aContext.
-		 (offset = InstructionPointerIndex
-		  and: [(objectMemory isIntegerObject: value)
-		  and: [value signedIntFromLong < 0]]) ifTrue:
-			[value := self internalMustMapMachineCodePC: (objectMemory integerValueOf: value)
-						context: aContext].
-		 ^value].
+	<inline: false>
+	| value |
 
-	(self isWidowedContext: aContext) ifTrue:
+	self assert: (objectMemory isContext: aContext).
+	self assert: offset <= (ReceiverIndex + (self checkStackPointerForMaybeMarriedContext: aContext)).
+	"method, closureOrNil & receiver need no special handling; only
+	 sender, pc & stackp have to be computed for married contexts."
+	(self isReadMediatedContextInstVarIndex: offset) ifFalse:
 		[^objectMemory fetchPointer: offset ofObject: aContext].
 
-	spouseFP := self frameOfMarriedContext: aContext.
-	offset = SenderIndex ifTrue:
-		[^self ensureCallerContext: spouseFP].
-	offset = StackPointerIndex ifTrue:
-		[self assert: ReceiverIndex + (self stackPointerIndexForFrame: spouseFP) < (objectMemory lengthOf: aContext).
-		^objectMemory integerObjectOf: (self stackPointerIndexForFrame: spouseFP)].
-	offset = InstructionPointerIndex ifTrue:
-		[^self instructionPointerForFrame: spouseFP currentFP: localFP currentIP: (self oopForPointer: localIP)].
-	self error: 'bad index'.
-	^0
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> instructionPointer [
-	<doNotGenerate>
-	^instructionPointer
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> instructionPointer: aValue [
-	<doNotGenerate>
-	instructionPointer := aValue
+	self writeBackHeadFramePointers.
+	(self isStillMarriedContext: aContext) ifTrue:
+		[^self fetchPointer: offset ofMarriedContext: aContext].
+	
+	value := objectMemory fetchPointer: offset ofObject: aContext.
+	(offset = InstructionPointerIndex
+ 	 and: [(objectMemory isIntegerObject: value)
+ 	 and: [value signedIntFromLong < 0]]) ifTrue:
+		[^self mustMapMachineCodePC: (objectMemory integerValueOf: value) context: aContext].
+	^value
 ]
 
 { #category : #'trampoline support' }
@@ -3928,134 +3385,12 @@ CoInterpreter >> instructionPointerForFrame: spouseFP currentFP: currentFP curre
 		ifFalse: [value]
 ]
 
-{ #category : #'message sending' }
-CoInterpreter >> internalActivateNewMethod [
-	| methodHeader numTemps rcvr switched |
-	<inline: true>
-
-	methodHeader := self rawHeaderOf: newMethod.
-	self assert: (self isCogMethodReference: methodHeader) not.
-	numTemps := self temporaryCountOfMethodHeader: methodHeader.
-	self assert: argumentCount = (self argumentCountOfMethodHeader: methodHeader).
-	rcvr := self internalStackValue: argumentCount. "could new rcvr be set at point of send?"
-	self assert: (objectMemory isOopForwarded: rcvr) not.
-
-	self internalPush: localIP.
-	self internalPush: localFP.
-	localFP := localSP.
-	self internalPush: newMethod.
-	self setMethod: newMethod methodHeader: methodHeader.
-	self internalPush: objectMemory nilObject. "FxThisContext field"
-	self internalPush: (self
-						encodeFrameFieldHasContext: false
-						isBlock: false
-						numArgs: (self argumentCountOfMethodHeader: methodHeader)).
-	self internalPush: 0. "FoxIFSavedIP"
-	self internalPush: rcvr.
-
-	"Initialize temps..."
-	argumentCount + 1 to: numTemps do:
-		[:i | self internalPush: objectMemory nilObject].
-
-	"-1 to account for pre-increment in fetchNextBytecode"
-	localIP := self pointerForOop: (self initialIPForHeader: methodHeader method: newMethod) - 1.
-
-	(self methodHeaderHasPrimitive: methodHeader) ifTrue:
-		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
-		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		 localIP := localIP + (self sizeOfCallPrimitiveBytecode: methodHeader).
-		 primFailCode ~= 0 ifTrue:
-			[self reapAndResetErrorCodeTo: localSP header: methodHeader]].
-
-	self assert: (self frameNumArgs: localFP) = argumentCount.
-	self assert: (self frameIsBlockActivation: localFP) not.
-	self assert: (self frameHasContext: localFP) not.
-
-	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
-	localSP < stackLimit ifTrue:
-		[self externalizeIPandSP.
-		 switched := self handleStackOverflowOrEventAllowContextSwitch:
-						(self canContextSwitchIfActivating: newMethod header: methodHeader).
-		 self returnToExecutive: true postContextSwitch: switched.
-		 self internalizeIPandSP]
-]
-
-{ #category : #'message sending' }
-CoInterpreter >> internalExecuteNewMethod [
-	<inline: true>
-	"For interpreter performance and to ease the objectAsMethod implementation eagerly
-	 evaluate the primtiive, i.e. if the method is cogged and has a primitive /do not/ evaluate
-	 the machine code primitive, just evaluate primitiveFunctionPointer directly."
-	primitiveFunctionPointer ~= 0 ifTrue:
-		[| succeeded |
-		 self isPrimitiveFunctionPointerAnIndex ifTrue:
-			[^self internalQuickPrimitiveResponse].
-		 "slowPrimitiveResponse may of course context-switch.  If so we must reenter the
-		  new process appropriately, returning only if we've found an interpreter frame."
-		 self externalizeIPandSP.
-		 succeeded := self slowPrimitiveResponse.
-		 instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
-			[instructionPointer := self iframeSavedIP: framePointer].
-		 self internalizeIPandSP.
-		 succeeded ifTrue:
-			[self return: self popStack toExecutive: true.
-			 self browserPluginReturnIfNeeded.
-			^nil]].
-	"if not primitive, or primitive failed, activate the method"
-	(self methodHasCogMethod: newMethod)
-		ifTrue: [self iframeSavedIP: localFP put: localIP asInteger.
-				instructionPointer := cogit ceReturnToInterpreterPC.
-				self externalizeFPandSP.
-				self activateCoggedNewMethod: true.
-				self internalizeIPandSP]
-		ifFalse: [self internalActivateNewMethod]
-]
-
-{ #category : #'message sending' }
-CoInterpreter >> internalFindNewMethodOrdinary [
-	"Find the compiled method to be run when the current messageSelector is
-	 sent to the given class, setting the values of newMethod and primitiveIndex."
-	| ok |
-	<inline: true>
-	ok := self inlineLookupInMethodCacheSel: messageSelector classTag: lkupClassTag.
-	ok	ifTrue:
-			[self ifAppropriateCompileToNativeCode: newMethod selector: messageSelector]
-		ifFalse:
-			[self externalizeIPandSP.
-			 ((objectMemory isOopForwarded: messageSelector)
-			  or: [objectMemory isForwardedClassTag: lkupClassTag]) ifTrue:
-				[(objectMemory isOopForwarded: messageSelector) ifTrue:
-					[messageSelector := self handleForwardedSelectorFaultFor: messageSelector].
-				 (objectMemory isForwardedClassTag: lkupClassTag) ifTrue:
-					[lkupClassTag := self handleForwardedSendFaultForTag: lkupClassTag].
-				(self lookupInMethodCacheSel: messageSelector classTag: lkupClassTag) ifTrue:
-					[^self ifAppropriateCompileToNativeCode: newMethod selector: messageSelector]].
-			lkupClass := objectMemory classForClassTag: lkupClassTag.
-			self assert: (lkupClass notNil and: [self addressCouldBeClassObj: lkupClass]).
-			self lookupMethodInClass: lkupClass.
-			self internalizeIPandSP.
-			self addNewMethodToCache: lkupClass]
-]
-
 { #category : #'frame access' }
 CoInterpreter >> internalMustMapMachineCodePC: theIP context: aOnceMarriedContext [
 	"Must externalize before calling mustMapMachineCodePC:context:
 	 because it may cause a code compaction."
-	| result |
-	self externalizeIPandSP.
-	result := self mustMapMachineCodePC: theIP context: aOnceMarriedContext.
-	self internalizeIPandSP.
-	^result
-]
 
-{ #category : #utilities }
-CoInterpreter >> internalizeIPandSP [
-	"Copy the instruction, stack and frame pointers to local variables for rapid access within the interpret loop."
-
-	self assert: instructionPointer ~= cogit ceReturnToInterpreterPC.
-	localIP := self pointerForOop: instructionPointer.
-	localSP := self pointerForOop: stackPointer.
-	localFP := self pointerForOop: framePointer.
+	^ self mustMapMachineCodePC: theIP context: aOnceMarriedContext
 ]
 
 { #category : #'trampoline support' }
@@ -4067,7 +3402,7 @@ CoInterpreter >> interpretAddress [
 	<api>
 	<returnTypeC: #usqInt>
 	^self cCode: [(self addressOf: #interpret) asUnsignedInteger]
-		inSmalltalk: [heapBase]
+		inSmalltalk: [objectMemory getMemoryMap startOfObjectMemory]
 ]
 
 { #category : #'message sending' }
@@ -4076,48 +3411,35 @@ CoInterpreter >> interpretMethodFromMachineCode [
 	 messageSelector, primitiveFunctionPointer and argumentCount have been set in the caller.
 	 Once evaluated either continue in the interpreter via a jongjmp or in machine code via an
 	 enilopmart (a form of longjmp - a stinking rose by any other name)."
+
 	<inline: false>
 	cogit assertCStackWellAligned.
-	self assert: (self validInstructionPointer: instructionPointer inFrame: framePointer).
-	primitiveFunctionPointer ~= 0
-		ifTrue:
-			[primitiveFunctionPointer = #primitiveInvokeObjectAsMethod
-				ifTrue: [self assert: (objectMemory isOopCompiledMethod: newMethod) not]
-				ifFalse: [self assert: ((objectMemory isOopCompiledMethod: newMethod)
-									  and: [(self primitiveIndexOf: newMethod) ~= 0])].
-			 "Invoke an interpreter primitive (because the method is to be interpreted or has not yet been
+	self assert: (self
+			 validInstructionPointer: instructionPointer
+			 inFrame: framePointer).
+
+	"Invoke an interpreter primitive (because the method is to be interpreted or has not yet been
 			  compiled).  This is very similar to invoking an interpreter primitive from a compiled primitive
 			  (see e.g. SimpleStackBasedCogit>>compileInterpreterPrimitive:).  Cut back the stack pointer
 			  (done above) to skip the return address and invoke the function.  On return if it has succeeded
 			  simply continue otherwise restore the stackPointer, collect the pc and interpret.  Note that
 			  frame building primitives such as primitiveClosureValue, primitiveEvaluateMethod et al will not
-			  return but will instead jump into either machine code or longjmp back to the interpreter."
-			"Assign stackPage headFP so we can tell if the primitive built a frame.  We can't simply save
+			  return but will instead jump into either machine code or longjmp back to the interpreter.""Assign stackPage headFP so we can tell if the primitive built a frame.  We can't simply save
 			 the framePointer since e.g. assignment to contexts (via primitiveInstVarAt:put:) can change the
 			 framePointer.  But context assignments will change both the framePointer and stackPage headFP."
-			
-			 self assert: (framePointer < stackPage baseAddress
-						and: [framePointer > (stackPage realStackLimit - (LargeContextSlots * objectMemory bytesPerOop / 2))]).
-			 stackPage headFP: framePointer.
-			 self isPrimitiveFunctionPointerAnIndex
-				ifTrue:
-					[self externalQuickPrimitiveResponse.
-					 primFailCode := 0]
-				ifFalse:
-					[self slowPrimitiveResponse].
-			self successful ifTrue:
-				[self return: self popStack toExecutive: false
-				 "NOTREACHED"]]
-		ifFalse:
-			[self assert: ((objectMemory isOopCompiledMethod: newMethod)
-						   and: [(self primitiveIndexOf: newMethod) = 0
-								or: [(self functionPointerFor: (self primitiveIndexOf: newMethod) inClass: objectMemory nilObject) = 0
-								or: [self isNullExternalPrimitiveCall: newMethod]]])].
-	"if not primitive, or primitive failed, activate the method and reenter the interpreter"
-	self activateNewMethod.
-	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
-	"NOTREACHED"
-	^nil
+
+	self assert: (framePointer < stackPage baseAddress and: [
+			 framePointer > (stackPage realStackLimit
+			  - (LargeContextSlots * objectMemory bytesPerOop / 2)) ]).
+	stackPage headFP: framePointer.
+
+	self
+		executePrimitiveFromInterpreter: false
+		ifFail: [ "if not primitive, or primitive failed, activate the method and reenter the interpreter"
+			self activateNewMethod.
+			self siglong: reenterInterpreter jmp: ReturnToInterpreter.
+			"NOTREACHED"
+			^ nil ]
 ]
 
 { #category : #'stack pages' }
@@ -4160,116 +3482,104 @@ CoInterpreter >> isCogCompiledCodeCompactionCalledFor [
 CoInterpreter >> isCogMethodReference: methodHeader [
 	<api>
 	self assert: ((objectMemory isIntegerObject: methodHeader)
-				or: [methodHeader asUnsignedInteger < objectMemory startOfMemory
+				or: [methodHeader asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory
 					and: [methodHeader asUnsignedInteger >= cogit minCogMethodAddress]]).
 	^objectMemory isNonIntegerObject: methodHeader
 ]
 
+{ #category : #testing }
+CoInterpreter >> isInstructionPointerInInterpreter: anIP [
+
+	<inline: true>
+	^ (self isMachineCodeIP: anIP asUnsignedInteger) not
+]
+
 { #category : #'frame access' }
-CoInterpreter >> isMachineCodeFrame: theFP [ 
+CoInterpreter >> isMachineCodeFrame: theFP [
+
 	<var: #theFP type: #'char *'>
-	^(stackPages longAt: theFP + FoxMethod) asUnsignedInteger < objectMemory startOfMemory
+	^ self isMachineCodeIP:
+		  (stackPages unsignedLongAt: theFP + FoxMethod) asUnsignedInteger
 ]
 
 { #category : #'debug support' }
 CoInterpreter >> isMachineCodeIP: anInstrPointer [
-	^anInstrPointer < objectMemory startOfMemory
-]
-
-{ #category : #'internal interpreter access' }
-CoInterpreter >> itemporary: offset in: theFP [
-	"Temporary access for an interpreter frame only."
-	"See StackInterpreter class>>initializeFrameIndices"
-	| frameNumArgs |
-	<inline: true>
-	<var: #theFP type: #'char *'>
-	^offset < (frameNumArgs := self iframeNumArgs: theFP)
-		ifTrue: [stackPages longAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize)]
-		ifFalse: [stackPages longAt: theFP + FoxIFReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize)]
-]
-
-{ #category : #'internal interpreter access' }
-CoInterpreter >> itemporary: offset in: theFP put: valueOop [
-	"Temporary access for an interpreter frame only."
-	"See StackInterpreter class>>initializeFrameIndices"
-	| frameNumArgs |
-	<inline: true>
-	<var: #theFP type: #'char *'>
-	^offset < (frameNumArgs := self iframeNumArgs: theFP)
-		ifTrue: [stackPages longAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
-		ifFalse: [stackPages longAt: theFP + FoxIFReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
+	^anInstrPointer asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory
 ]
 
 { #category : #'message sending' }
 CoInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
-	| methodHeader cogMethod numArgs numTemps rcvr initialIP |
+
 	<var: #cogMethod type: #'CogMethod *'>
 	<var: #initialIP type: #usqInt>
 	<inline: true>
+	| methodHeader cogMethod numArgs numTemps rcvr |
 	methodHeader := self rawHeaderOf: newMethod.
-	(mustBeInterpreterFrame not
-	 and: [self isCogMethodReference: methodHeader]) ifTrue:
-		[cogMethod := self cCoerceSimple: methodHeader to: #'CogMethod *'.
-		 methodHeader := cogMethod methodHeader].
+	((self isCogMethodReference: methodHeader)) ifTrue: [ | theCogMethod |
+		theCogMethod := self cCoerceSimple: methodHeader to: #'CogMethod *'.
+		methodHeader := theCogMethod methodHeader.
+		mustBeInterpreterFrame not ifTrue: [ 
+			"Will be used to mark if we need to execute in interpreted mode or not"
+			cogMethod := theCogMethod ]].
 	numTemps := self temporaryCountOfMethodHeader: methodHeader.
 	numArgs := self argumentCountOfMethodHeader: methodHeader.
 
 	rcvr := self stackValue: numArgs. "could new rcvr be set at point of send?"
 	self assert: (objectMemory isOopForwarded: rcvr) not.
 
-	(cogMethod notNil
-	and: [instructionPointer asUnsignedInteger >= objectMemory startOfMemory]) ifTrue:
-		[self iframeSavedIP: framePointer put: instructionPointer.
-		 instructionPointer := cogit ceReturnToInterpreterPC].
+	(cogMethod notNil and: [
+		 self isInstructionPointerInInterpreter: instructionPointer ])
+		ifTrue: [
+			self iframeSavedIP: framePointer put: instructionPointer.
+			instructionPointer := cogit ceReturnToInterpreterPC ].
 	self push: instructionPointer.
 	self push: framePointer.
 	framePointer := stackPointer.
-	initialIP := self initialIPForHeader: methodHeader method: newMethod.
 	cogMethod
-		ifNotNil:
-			[self push: cogMethod asUnsignedInteger.
-			 self push: objectMemory nilObject. "FoxThisContext field"
-			 instructionPointer := cogMethod asUnsignedInteger + cogMethod stackCheckOffset]
-		ifNil:
-			[self push: newMethod.
-			 self setMethod: newMethod methodHeader: methodHeader.
-			 self push: objectMemory nilObject. "FoxThisContext field"
-			 self push: (self encodeFrameFieldHasContext: false isBlock: false numArgs: numArgs).
-			 self push: 0. "FoxIFSavedIP"
-			 instructionPointer := initialIP - 1].
+		ifNotNil: [
+			self push: cogMethod asUnsignedInteger.
+			self push: objectMemory nilObject. "FoxThisContext field"
+			instructionPointer := cogMethod asUnsignedInteger
+			                      + cogMethod stackCheckOffset ]
+		ifNil: [
+			| initialIP |
+			initialIP := self
+				             initialIPForHeader: methodHeader
+				             method: newMethod.
+			self push: newMethod.
+			self setMethod: newMethod methodHeader: methodHeader.
+			self push: objectMemory nilObject. "FoxThisContext field"
+			self push: (self
+					 encodeFrameFieldHasContext: false
+					 isBlock: false
+					 numArgs: numArgs).
+			self push: 0. "FoxIFSavedIP"
+			instructionPointer := initialIP - 1 ].
 	self push: rcvr.
 
 	"clear remaining temps to nil"
-	numArgs+1 to: numTemps do:
-		[:i | self push: objectMemory nilObject].
+	numArgs + 1 to: numTemps do: [ :i |
+	self push: objectMemory nilObject ].
 
-	(self methodHeaderHasPrimitive: methodHeader) ifTrue:
-		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
+	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		 cogMethod ifNil:
-			[instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader)].
-		 primFailCode ~= 0 ifTrue:
-			[self reapAndResetErrorCodeTo: stackPointer header: methodHeader]].
+		cogMethod ifNil: [
+			instructionPointer := instructionPointer
+			                      +
+			                      (self sizeOfCallPrimitiveBytecode:
+				                       methodHeader) ].
+		primFailCode ~= 0 ifTrue: [
+			| shouldSkipStoreBytecode |
+			shouldSkipStoreBytecode := self
+				                           reapAndResetErrorCodeTo: framePointer
+				                           header: methodHeader.
+			(cogMethod isNil and: [ shouldSkipStoreBytecode ]) ifTrue: [
+				instructionPointer := instructionPointer
+				                      +
+				                      (self sizeOfLongStoreTempBytecode:
+					                       methodHeader) ] ] ].
 
-	^methodHeader
-]
-
-{ #category : #'stack bytecodes' }
-CoInterpreter >> longPushTemporaryVariableBytecode [
-	"230		11100110	i i i i i i i i	Push Temporary Variable #iiiiiiii"
-	| index |
-	index := self fetchByte.
-	self fetchNextBytecode.
-	self internalPush: (self itemporary: index in: localFP)
-]
-
-{ #category : #'stack bytecodes' }
-CoInterpreter >> longStoreTemporaryVariableBytecode [
-	"234		11101010	i i i i i i i i	Store Temporary Variable #iiiiiiii"
-	| index |
-	index := self fetchByte.
-	self fetchNextBytecode.
-	self itemporary: index in: localFP put: self internalStackTop
+	^ methodHeader
 ]
 
 { #category : #simulation }
@@ -4352,11 +3662,11 @@ CoInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 	page := stackPages newStackPage.
 	"first word on stack is caller context of base frame"
 	stackPages
-		longAt: (pointer := page baseAddress)
+		unsignedLongAt: (pointer := page baseAddress)
 		put: (objectMemory followObjField: SenderIndex ofObject: aContext).
 	"second word is the context itself; needed for cannotReturn processing; see ceBaseReturn:."
 	stackPages
-		longAt: (pointer := pointer - objectMemory wordSize)
+		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 		put: aContext.
 	rcvr := objectMemory followField: ReceiverIndex ofObject: aContext.
 	"If the frame is a closure activation then the closure should be on the stack in
@@ -4380,21 +3690,21 @@ CoInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 			  and: [theIP = (1 + (self startPCOfMethodHeader: header))]) ifTrue:
 				[theIP := theIP + (self sizeOfCallPrimitiveBytecode: header)].
 			 stackPages
-				longAt: (pointer := pointer - objectMemory wordSize)
+				unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 				put: rcvr].
 	"Put the arguments on the stack"
 	1 to: numArgs do:
 		[:i|
 		stackPages
-			longAt: (pointer := pointer - objectMemory wordSize)
+			unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 			put: (objectMemory fetchPointer: ReceiverIndex + i ofObject: aContext)].
 	"saved caller ip is base return trampoline"
 	stackPages
-		longAt: (pointer := pointer - objectMemory wordSize)
+		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 		put: cogit ceBaseFrameReturnPC.
 	"base frame's saved fp is null"
 	stackPages
-		longAt: (pointer := pointer - objectMemory wordSize)
+		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 		put: 0.
 	"N.B.  Don't set the baseFP, which marks the page as in use, until after
 	 ensureMethodIsCogged: and/or instructionPointer:forContext:frame:. These
@@ -4422,7 +3732,7 @@ CoInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 						ifTrue: [cogit ceCannotResumePC]
 						ifFalse: [theMethod asInteger - theIP].
 					stackPages
-						longAt: (pointer := pointer - objectMemory wordSize)
+						unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 						put: theMethod + MFMethodFlagHasContextFlag + MFMethodFlagIsBlockFlag]
 				ifFalse:
 					[self assert: (theIP signedBitShift: -16) >= -1.
@@ -4432,30 +3742,30 @@ CoInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 								ifTrue: [cogit ceCannotResumePC]
 								ifFalse: [theMethod asInteger - theIP].
 					 stackPages
-						longAt: (pointer := pointer - objectMemory wordSize)
+						unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 						put: theMethod + MFMethodFlagHasContextFlag].
 			 stackPages
-				longAt: (pointer := pointer - objectMemory wordSize)
+				unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 				put: aContext]
 		ifFalse:
 			[stackPages
-				longAt: (pointer := pointer - objectMemory wordSize)
+				unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 				put: theMethod.
 			stackPages
-				longAt: (pointer := pointer - objectMemory wordSize)
+				unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 				put: aContext.
 			stackPages
-				longAt: (pointer := pointer - objectMemory wordSize)
+				unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 				put: (self encodeFrameFieldHasContext: true isBlock: maybeClosure ~= objectMemory nilObject numArgs: numArgs).
 			stackPages
-				longAt: (pointer := pointer - objectMemory wordSize)
+				unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 				put: 0. "FoxIFSavedIP"
 			theIP := self iframeInstructionPointerForIndex: theIP method: theMethod].
 	page baseFP: page headFP.
 	self assert: (self frameHasContext: page baseFP).
 	self assert: (self frameNumArgs: page baseFP) == numArgs.
 	stackPages
-		longAt: (pointer := pointer - objectMemory wordSize)
+		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 		put: rcvr.
 	stackPtrIndex := self quickFetchInteger: StackPointerIndex ofObject: aContext.
 	self assert: ReceiverIndex + stackPtrIndex < (objectMemory lengthOf: aContext).
@@ -4468,7 +3778,7 @@ CoInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 		 Thanks to Ryan Macnak for identifying this bug"
 		objectMemory storePointerUnchecked: ReceiverIndex + i ofObject: aContext withValue: objectMemory nilObject].
 	"top of stack is the instruction pointer"
-	stackPages longAt: (pointer := pointer - objectMemory wordSize) put: theIP.
+	stackPages unsignedLongAt: (pointer := pointer - objectMemory wordSize) put: theIP.
 	page headSP: pointer.
 	self assert: (self context: aContext hasValidInversePCMappingOf: theIP in: page baseFP).
 
@@ -4519,6 +3829,7 @@ CoInterpreter >> mapPrimTraceLog [
 
 { #category : #'object memory support' }
 CoInterpreter >> mapStackPages [
+
 	<inline: #never>
 	<var: #thePage type: #'StackPage *'>
 	<var: #theSP type: #'char *'>
@@ -4528,68 +3839,80 @@ CoInterpreter >> mapStackPages [
 	<var: #theIPPtr type: #'char *'>
 	| numLivePages |
 	numLivePages := 0.
-	0 to: numStackPages - 1 do:
-		[:i| | thePage theSP theFP frameRcvrOffset callerFP theIPPtr theIP oop |
+	0 to: numStackPages - 1 do: [ :i |
+		| thePage theSP theFP frameRcvrOffset callerFP theIPPtr theIP oop |
 		thePage := stackPages stackPageAt: i.
-		thePage isFree ifFalse:
-			[self assert: (self ifCurrentStackPageHasValidHeadPointers: thePage).
-			 numLivePages := numLivePages + 1.
-			 theSP := thePage headSP.
-			 theFP := thePage  headFP.
-			 "Skip the instruction pointer on top of stack of inactive pages."
-			 thePage = stackPage
-				ifTrue: [theIPPtr := ((self isMachineCodeFrame: theFP)
-									or: [(self iframeSavedIP: theFP) = 0])
-										ifTrue: [0]
-										ifFalse: [theFP + FoxIFSavedIP]]
-				ifFalse:
-					[theIPPtr := theSP.
-					 theSP := theSP + objectMemory wordSize].
-			[self assert: (thePage addressIsInPage: theFP).
-			 self assert: (thePage addressIsInPage: theSP).
-			 self assert: (theIPPtr = 0 or: [thePage addressIsInPage: theIPPtr]).
-			 frameRcvrOffset := self frameReceiverLocation: theFP.
-	 		  [theSP <= frameRcvrOffset] whileTrue:
-				[oop := stackPages longAt: theSP.
-				 (objectMemory shouldRemapOop: oop) ifTrue:
-					[stackPages longAt: theSP put: (objectMemory remapObj: oop)].
-				 theSP := theSP + objectMemory wordSize].
-			 (self frameHasContext: theFP) ifTrue:
-				[(objectMemory shouldRemapObj: (self frameContext: theFP)) ifTrue:
-					[stackPages
-						longAt: theFP + FoxThisContext
-						put: (objectMemory remapObj: (self frameContext: theFP))].
-				 "With SqueakV3 objectMemory or SpurPlanningCompactor can't assert since object body is yet to move."
-				 (objectMemory hasSpurMemoryManagerAPI
-				  and: [objectMemory slidingCompactionInProgress not]) ifTrue:
-					[self assert: ((self isMarriedOrWidowedContext: (self frameContext: theFP))
-								and: [(self frameOfMarriedContext: (self frameContext: theFP)) = theFP])]].
-			(self isMachineCodeFrame: theFP) ifFalse:
-				[(objectMemory shouldRemapObj: (self iframeMethod: theFP)) ifTrue:
-					[theIPPtr ~= 0 ifTrue:
-						[theIP := stackPages longAt: theIPPtr.
-						 theIP = cogit ceReturnToInterpreterPC
-							ifTrue:
-								[self assert: (self iframeSavedIP: theFP) > (self iframeMethod: theFP).
-								 theIPPtr := theFP + FoxIFSavedIP.
-								 theIP := stackPages longAt: theIPPtr]
-							ifFalse:
-								[self assert: theIP > (self iframeMethod: theFP)].
-						 theIP := theIP - (self iframeMethod: theFP)].
-					 stackPages
-						longAt: theFP + FoxMethod
+		thePage isFree ifFalse: [
+			self assert: (self ifCurrentStackPageHasValidHeadPointers: thePage).
+			numLivePages := numLivePages + 1.
+			theSP := thePage headSP.
+			theFP := thePage headFP.
+			"Skip the instruction pointer on top of stack of inactive pages."
+			thePage = stackPage
+				ifTrue: [
+					theIPPtr := ((self isMachineCodeFrame: theFP) or: [
+						             (self iframeSavedIP: theFP) = 0 ])
+						            ifTrue: [ 0 ]
+						            ifFalse: [ theFP + FoxIFSavedIP ] ]
+				ifFalse: [
+					theIPPtr := theSP.
+					theSP := theSP + objectMemory wordSize ].
+			[
+			self assert: (thePage addressIsInPage: theFP).
+			self assert: (thePage addressIsInPage: theSP).
+			self assert:
+				(theIPPtr = 0 or: [ thePage addressIsInPage: theIPPtr ]).
+			frameRcvrOffset := self frameReceiverLocation: theFP.
+			[ theSP <= frameRcvrOffset ] whileTrue: [
+				oop := stackPages unsignedLongAt: theSP.
+				(objectMemory shouldRemapOop: oop) ifTrue: [
+					stackPages
+						unsignedLongAt: theSP
+						put: (objectMemory remapObj: oop) ].
+				theSP := theSP + objectMemory wordSize ].
+			(self frameHasContext: theFP) ifTrue: [
+				(objectMemory shouldRemapObj: (self frameContext: theFP)) ifTrue: [
+					stackPages
+						unsignedLongAt: theFP + FoxThisContext
+						put: (objectMemory remapObj: (self frameContext: theFP)) ].
+				"With SpurPlanningCompactor can't assert since object body is yet to move."
+				objectMemory slidingCompactionInProgress not ifTrue: [
+					self assert:
+						((self isMarriedOrWidowedContext: (self frameContext: theFP))
+							 and: [
+							 (self frameOfMarriedContext: (self frameContext: theFP))
+							 = theFP ]) ] ].
+			(self isMachineCodeFrame: theFP) ifFalse: [
+				(objectMemory shouldRemapObj: (self iframeMethod: theFP)) ifTrue: [
+					theIPPtr ~= 0 ifTrue: [
+						theIP := stackPages unsignedLongAt: theIPPtr.
+						theIP = cogit ceReturnToInterpreterPC
+							ifTrue: [
+								self assert:
+									(self iframeSavedIP: theFP) > (self iframeMethod: theFP).
+								theIPPtr := theFP + FoxIFSavedIP.
+								theIP := stackPages unsignedLongAt: theIPPtr ]
+							ifFalse: [ self assert: theIP > (self iframeMethod: theFP) ].
+						theIP := theIP - (self iframeMethod: theFP) ].
+					stackPages
+						unsignedLongAt: theFP + FoxMethod
 						put: (objectMemory remapObj: (self iframeMethod: theFP)).
-					 theIPPtr ~= 0 ifTrue:
-						[stackPages longAt: theIPPtr put: theIP + (self iframeMethod: theFP)]]].
-			 (callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
-				[theSP := (theIPPtr := theFP + FoxCallerSavedIP) + objectMemory wordSize.
-				 theFP := callerFP].
-			 theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
-			 [theSP <= thePage baseAddress] whileTrue:
-				[oop := stackPages longAt: theSP.
-				 (objectMemory shouldRemapOop: oop) ifTrue:
-					[stackPages longAt: theSP put: (objectMemory remapObj: oop)].
-				 theSP := theSP + objectMemory wordSize]]].
+					theIPPtr ~= 0 ifTrue: [
+						stackPages
+							unsignedLongAt: theIPPtr
+							put: theIP + (self iframeMethod: theFP) ] ] ].
+			(callerFP := self frameCallerFP: theFP) ~= 0 ] whileTrue: [
+				theSP := (theIPPtr := theFP + FoxCallerSavedIP)
+				         + objectMemory wordSize.
+				theFP := callerFP ].
+			theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
+			[ theSP <= thePage baseAddress ] whileTrue: [
+				oop := stackPages unsignedLongAt: theSP.
+				(objectMemory shouldRemapOop: oop) ifTrue: [
+					stackPages
+						unsignedLongAt: theSP
+						put: (objectMemory remapObj: oop) ].
+				theSP := theSP + objectMemory wordSize ] ] ].
 	stackPages recordLivePagesOnMapping: numLivePages
 ]
 
@@ -4631,7 +3954,7 @@ CoInterpreter >> mapVMRegisters [
 	| mapInstructionPointer |
 	(objectMemory shouldRemapObj: method) ifTrue:
 		["i.e. interpreter instructionPointer in method as opposed to machine code?"
-		(mapInstructionPointer := instructionPointer > method) ifTrue:
+		(mapInstructionPointer := instructionPointer asUnsignedInteger > method) ifTrue:
 			[instructionPointer := instructionPointer - method]. "*rel to method"
 		method := objectMemory remapObj: method.
 		mapInstructionPointer ifTrue:
@@ -4654,11 +3977,9 @@ CoInterpreter >> markActiveMethodsAndReferents [
 
 { #category : #'gc -- mark and sweep' }
 CoInterpreter >> markAndTraceMachineCodeMethod: aCogMethod [
-	<var: #aCogMethod type: #'CogBlockMethod *'>
-	| homeMethod |
-	<var: #homeMethod type: #'CogMethod *'>
-	homeMethod := self asCogHomeMethod: aCogMethod.
-	objectMemory markAndTrace: homeMethod methodObject
+
+	<var: #aCogMethod type: #'CogMethod *'>
+	objectMemory markAndTrace: aCogMethod methodObject
 ]
 
 { #category : #'object memory support' }
@@ -4716,10 +4037,10 @@ CoInterpreter >> markAndTraceStackPage: thePage [
 		[theSP := theSP + objectMemory wordSize].
 	[frameRcvrOffset := self frameReceiverLocation: theFP.
 	 [theSP <= frameRcvrOffset] whileTrue:
-		[oop := stackPages longAt: theSP.
+		[oop := stackPages unsignedLongAt: theSP.
 		 (objectMemory isOopForwarded: oop) ifTrue:
 			[oop := objectMemory followForwarded: oop.
-			 stackPages longAt: theSP put: oop].
+			 stackPages unsignedLongAt: theSP put: oop].
 		 (objectMemory isImmediate: oop) ifFalse:
 			[objectMemory markAndTrace: oop].
 		 theSP := theSP + objectMemory wordSize].
@@ -4734,10 +4055,10 @@ CoInterpreter >> markAndTraceStackPage: thePage [
 		 theFP := callerFP].
 	theSP := theFP + FoxCallerSavedIP + objectMemory wordSize. "caller ip is ceBaseReturnPC"
 	[theSP <= thePage baseAddress] whileTrue:
-		[oop := stackPages longAt: theSP.
+		[oop := stackPages unsignedLongAt: theSP.
 		 (objectMemory isOopForwarded: oop) ifTrue:
 			[oop := objectMemory followForwarded: oop.
-			 stackPages longAt: theSP put: oop].
+			 stackPages unsignedLongAt: theSP put: oop].
 		 (objectMemory isImmediate: oop) ifFalse:
 			[objectMemory markAndTrace: oop].
 		 theSP := theSP + objectMemory wordSize]
@@ -4779,116 +4100,6 @@ CoInterpreter >> markCogMethodsAndReferentsOnPage: thePage [
 		[cogit markMethodAndReferents: (self mframeCogMethod: theFP)].
 	(callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
 		[theFP := callerFP]
-]
-
-{ #category : #'frame access' }
-CoInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
-	"Marry an unmarried frame.  This means creating a spouse context
-	 initialized with a subset of the frame's state that references the frame.
-	 For the default closure implementation we do not need to copy temps.
-	 Different closure implementations may require temps to be copied.
-
-	 This method is important enough for performance to be worth streamlining.
-
-	Override to set the ``has context'' flag appropriately for both machine code and interpreter frames
-	and to streamline the machine code/interpreter differences.."
-	| theContext methodFieldOrObj closureOrNil rcvr numSlots numArgs numStack numTemps |
-	<inline: true>
-	<var: #theFP type: #'char *'>
-	<var: #theSP type: #'char *'>
-	<var: #cogMethod type: #'CogMethod *'>
-	self assert: (self frameHasContext: theFP) not.
-	self assert: (self isBaseFrame: theFP) not. "base frames must aready be married for cannotReturn: processing"
-
-	"The SP is expected to be pointing at the last oop on the stack, not at the pc"
-	self assert: (objectMemory addressCouldBeOop: (objectMemory longAt: theSP)).
-
-	"Decide how much of the stack to preserve in widowed contexts.  Preserving too much
-	 state will potentially hold onto garbage.  Holding onto too little may mean that a dead
-	 context isn't informative enough in a debugging situation.  If copyTemps is false (as it
-	 is in the default closure implementation) compromise, retaining only the arguments with
-	 no temporaries.  Note that we still set the stack pointer to its current value, but stack
-	 contents other than the arguments are nil."
-	methodFieldOrObj := self frameMethodField: theFP.
-	methodFieldOrObj asUnsignedInteger < objectMemory startOfMemory "inline (self isMachineCodeFrame: theFP)"
-		ifTrue:
-			[| cogMethod |
-			 stackPages
-				longAt: theFP + FoxMethod
-				put: methodFieldOrObj + MFMethodFlagHasContextFlag.
-			 cogMethod := self cCoerceSimple: (methodFieldOrObj bitAnd: MFMethodMask) to: #'CogMethod *'.
-			 numArgs := cogMethod cmNumArgs.
-			 cogMethod cmType = CMMethod
-				ifTrue:
-					[closureOrNil := cogMethod cmIsFullBlock
-										ifTrue: [self frameStackedReceiver: theFP numArgs: numArgs]
-										ifFalse: [objectMemory nilObject]]
-				ifFalse:
-					[cogMethod := (self cCoerceSimple: cogMethod to: #'CogBlockMethod *') cmHomeMethod.
-					 closureOrNil := self frameStackedReceiver: theFP numArgs: numArgs].
-			 numSlots := (self methodHeaderIndicatesLargeFrame: cogMethod methodHeader)
-							ifTrue: [LargeContextSlots]
-							ifFalse: [SmallContextSlots].
-			 methodFieldOrObj := cogMethod methodObject.
-			 rcvr := self mframeReceiver: theFP.
-			 numStack := self stackPointerIndexForMFrame: theFP WithSP: theSP numArgs: numArgs]
-		ifFalse:
-			[self setIFrameHasContext: theFP.
-			 numArgs := self iframeNumArgs: theFP.
-			 numSlots := (self methodHeaderIndicatesLargeFrame: (objectMemory methodHeaderOf: methodFieldOrObj))
-							ifTrue: [LargeContextSlots]
-							ifFalse: [SmallContextSlots].
-			 closureOrNil := (self iframeIsBlockActivation: theFP)
-								ifTrue: [self frameStackedReceiver: theFP numArgs: numArgs]
-								ifFalse: [objectMemory nilObject].
-			 rcvr := self iframeReceiver: theFP.
-			 numStack := self stackPointerIndexForIFrame: theFP WithSP: theSP numArgs: numArgs].
-	theContext := objectMemory eeInstantiateMethodContextSlots: numSlots.
-	self setFrameContext: theFP to: theContext.
-	"Mark context as married by setting its sender to the frame pointer plus SmallInteger
-	 tags and the InstructionPointer to the saved fp (which ensures correct alignment
-	 w.r.t. the frame when we check for validity)"
-	objectMemory storePointerUnchecked: SenderIndex
-		ofObject: theContext
-		withValue: (self withSmallIntegerTags: theFP).
-	objectMemory storePointerUnchecked: InstructionPointerIndex
-		ofObject: theContext
-		withValue: (self withSmallIntegerTags: (self frameCallerFP: theFP)).
-	objectMemory storePointerUnchecked: StackPointerIndex
-		ofObject: theContext
-		withValue: (objectMemory integerObjectOf: numStack).
-	objectMemory storePointerUnchecked: MethodIndex
-		ofObject: theContext
-		withValue: methodFieldOrObj.
-	objectMemory storePointerUnchecked: ClosureIndex ofObject: theContext withValue: closureOrNil.
-	objectMemory storePointerUnchecked: ReceiverIndex
-		ofObject: theContext
-		withValue: rcvr.
-	1 to: numArgs do:
-		[:i|
-		objectMemory storePointerUnchecked: ReceiverIndex + i
-			ofObject: theContext
-			withValue: (self temporary: i - 1 in: theFP)].
-	copyTemps ifTrue:
-		[numTemps := self frameNumTemps: theFP.
-		 1 to: numTemps do:
-			[:i|
-			objectMemory storePointerUnchecked: ReceiverIndex + i + numArgs
-				ofObject: theContext
-				withValue: (self temporary: i - 1 in: theFP)].
-		 numArgs := numArgs + numTemps].
-
-	numArgs + 1 to: numStack do:
-		[:i|
-		objectMemory storePointerUnchecked: ReceiverIndex + i
-			ofObject: theContext
-			withValue: objectMemory nilObject].
-
-	self assert: (self frameHasContext: theFP).
-	self assert: (self frameOfMarriedContext: theContext) = theFP.
-	self assert: numStack + ReceiverIndex < (objectMemory lengthOf: theContext).
-
-	^theContext
 ]
 
 { #category : #'frame access' }
@@ -4944,11 +4155,21 @@ CoInterpreter >> maybeReturnToMachineCodeFrame [
 	"If the frame we're returning to is a machine code one, then return to it.
 	 Otherwise, if it's an interpreter frame, load the saved ip."
 	<inline: true>
-	localIP asUnsignedInteger < objectMemory startOfMemory ifTrue:
-		[localIP asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue:
-			["localIP in the cog method zone indicates a return to machine code."
-			 ^self returnToMachineCodeFrame].
-		 localIP := self pointerForOop: (self iframeSavedIP: localFP)]
+	(self isInstructionPointerInInterpreter: instructionPointer) ifFalse: [
+		instructionPointer asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue: [
+			"localIP in the cog method zone indicates a return to machine code."
+			^self returnToMachineCodeFrame].
+		 instructionPointer := self pointerForOop: (self iframeSavedIP: framePointer) ]
+]
+
+{ #category : #'stack bytecodes' }
+CoInterpreter >> maybeTraceBlockCreation: newClosure [
+
+	cogit recordSendTrace ifTrue: [
+		self
+			recordTrace: TraceBlockCreation
+			thing: newClosure
+			source: TraceIsFromInterpreter ]
 ]
 
 { #category : #'debug support' }
@@ -5028,10 +4249,9 @@ CoInterpreter >> methodWithHeaderShouldBeCogged: methodHeader [
 
 { #category : #'frame access' }
 CoInterpreter >> mframeCogMethod: theFP [
-	"Answer the Cog method for a machine code frame.  This may be
-	 either a full CogMethod or merely a CogBlockMethod rump header."
+	"Answer the Cog method for a machine code frame"
 	<var: #theFP type: #'char *'>
-	^self cCoerceSimple: (self mframeMethod: theFP) to: #'CogBlockMethod *'
+	^self cCoerceSimple: (self mframeMethod: theFP) to: #'CogMethod *'
 ]
 
 { #category : #'frame access' }
@@ -5051,8 +4271,6 @@ CoInterpreter >> mframeHomeMethod: theFP [
 	<var: #theFP type: #'char *'>
 	| methodField |
 	methodField := self frameMethodField: theFP.
-	(methodField bitAnd: MFMethodFlagIsBlockFlag) ~= 0 ifTrue:
-		[^(self cCoerceSimple: (methodField bitAnd: MFMethodMask) to: #'CogBlockMethod *') cmHomeMethod].
 	^self cCoerceSimple: (methodField bitAnd: MFMethodMask) to: #'CogMethod *'
 ]
 
@@ -5145,23 +4363,29 @@ CoInterpreter >> mnuCompilationBreakpointFor: selectorOop [
 CoInterpreter >> mnuMethodOrNilFor: rcvr [
 	"Lookup the doesNotUnderstand: selector in the class of the argument rcvr.
 	 Answer either the matching method (cogged if appropriate), or nil, if not found."
+
 	| currentClass mnuSelector dictionary mnuMethod methodHeader |
 	self deny: (objectMemory isOopForwarded: rcvr).
 	currentClass := objectMemory fetchClassOf: rcvr.
 	mnuSelector := objectMemory splObj: SelectorDoesNotUnderstand.
-	[currentClass ~= objectMemory nilObject] whileTrue:
-		[dictionary := objectMemory fetchPointer: MethodDictionaryIndex ofObject: currentClass.
-		 dictionary = objectMemory nilObject ifTrue:
-			[^nil].
-		 mnuMethod := self lookupMethodFor: mnuSelector InDictionary: dictionary.
-		 mnuMethod ifNotNil:
-			[methodHeader := self rawHeaderOf: mnuMethod.
-			 ((self isCogMethodReference: methodHeader) not
-			  and: [self methodWithHeaderShouldBeCogged: methodHeader]) ifTrue:
-				[cogit cog: mnuMethod selector: mnuSelector].
-			^mnuMethod].
-		currentClass := self superclassOf: currentClass].
-	^nil
+	[ currentClass ~= objectMemory nilObject ] whileTrue: [
+		dictionary := objectMemory
+			              fetchPointer: MethodDictionaryIndex
+			              ofObject: currentClass.
+		dictionary = objectMemory nilObject ifTrue: [ ^ nil ].
+		mnuMethod := self
+			             lookupMethodFor: mnuSelector
+			             InDictionary: dictionary.
+		(mnuMethod notNil and: [
+			 (objectMemory isImmediate: mnuMethod) not and: [
+				 objectMemory isCompiledMethod: mnuMethod ] ]) ifTrue: [
+			methodHeader := self rawHeaderOf: mnuMethod.
+			((self isCogMethodReference: methodHeader) not and: [
+				 self methodWithHeaderShouldBeCogged: methodHeader ]) ifTrue: [
+				cogit cog: mnuMethod selector: mnuSelector ].
+			^ mnuMethod ].
+		currentClass := self superclassOf: currentClass ].
+	^ nil
 ]
 
 { #category : #'frame access' }
@@ -5187,11 +4411,10 @@ CoInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 	callerFP := self frameCallerFP: theFP.
 	self assert: (self frameHasContext: callerFP).
 	self assert: (objectMemory isContext: (self frameContext: callerFP)).
-	theContext := self ensureFrameIsMarried: theFP
-					SP: theFP + ((self isMachineCodeFrame: theFP) ifTrue: [FoxMFReceiver] ifFalse: [FoxIFReceiver]).
+	theContext := self ensureFrameIsMarried: theFP SP: (self frameReceiverLocation: theFP).
 	stackPages
-		longAt: (newSP := newPage baseAddress) put: (self frameContext: callerFP);
-		longAt: (newSP := newSP - objectMemory wordSize) put:  theContext.
+		unsignedLongAt: (newSP := newPage baseAddress) put: (self frameContext: callerFP);
+		unsignedLongAt: (newSP := newSP - objectMemory wordSize) put:  theContext.
 	stackedReceiverOffset := self frameStackedReceiverOffset: theFP.
 	"First move the data, leaving room for the caller and base frame contexts.  We will fix up frame pointers later."
 	theFP + stackedReceiverOffset
@@ -5206,7 +4429,7 @@ CoInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 	self setHeadFP: oldPage headFP + delta andSP: newSP inPage: newPage.
 	newPage baseFP: newFP.
 	callerIP := self oopForPointer: (self frameCallerSavedIP: theFP).
-	callerIP asUnsignedInteger >= objectMemory startOfMemory ifTrue:
+	callerIP asUnsignedInteger >= objectMemory getMemoryMap startOfObjectMemory ifTrue:
 		[self iframeSavedIP: callerFP put: callerIP.
 		 callerIP := cogit ceReturnToInterpreterPC].
 	stackPages longAt: theFP + stackedReceiverOffset put: callerIP.
@@ -5240,6 +4463,22 @@ CoInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 ]
 
 { #category : #'internal interpreter access' }
+CoInterpreter >> mtemporary: offset in: theFP [
+
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	| frameNumArgs |
+	^ offset < (frameNumArgs := self mframeNumArgs: theFP)
+		  ifTrue: [
+			  stackPages unsignedLongAt: theFP + FoxCallerSavedIP
+				  + (frameNumArgs - offset * objectMemory wordSize) ]
+		  ifFalse: [
+			  stackPages unsignedLongAt:
+				  (self frameReceiverLocation: theFP) - objectMemory wordSize
+				  + (frameNumArgs - offset * objectMemory wordSize) ]
+]
+
+{ #category : #'internal interpreter access' }
 CoInterpreter >> mtemporary: offset in: theFP put: valueOop [
 	"Temporary access for a machine code frame only."
 	"See StackInterpreter class>>initializeFrameIndices"
@@ -5247,7 +4486,7 @@ CoInterpreter >> mtemporary: offset in: theFP put: valueOop [
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	^stackPages
-		longAt: (offset < (frameNumArgs := self mframeNumArgs: theFP)
+		unsignedLongAt: (offset < (frameNumArgs := self mframeNumArgs: theFP)
 					ifTrue: [theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize)]
 					ifFalse: [theFP + FoxMFReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize)])
 		put: valueOop
@@ -5262,6 +4501,10 @@ CoInterpreter >> mustMapMachineCodePC: theIP context: aOnceMarriedContext [
 	<var: #cogMethod type: #'CogMethod *'>
 	theIP = HasBeenReturnedFromMCPC ifTrue:
 		[^objectMemory nilObject].
+	
+	"We need to ensure that the context does not have forwarders"
+	objectMemory followForwardedObjectFields: aOnceMarriedContext toDepth: 0.
+	
 	maybeClosure := objectMemory fetchPointer: ClosureIndex ofObject: aOnceMarriedContext.
 	methodObj := objectMemory fetchPointer: MethodIndex ofObject: aOnceMarriedContext.
 	self assert: (theIP signedBitShift: -16) = -1.
@@ -5275,12 +4518,6 @@ CoInterpreter >> mustMapMachineCodePC: theIP context: aOnceMarriedContext [
 	 and: [self methodHeaderHasPrimitive: cogMethod methodHeader]]) ifTrue:
 		[bcpc := bcpc + (self sizeOfCallPrimitiveBytecode: cogMethod methodHeader)].
 	^objectMemory integerObjectOf: bcpc + 1
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> newMethod [
-	<doNotGenerate>
-	^newMethod
 ]
 
 { #category : #'trampoline support' }
@@ -5344,12 +4581,6 @@ CoInterpreter >> nextProfileTickLow [
 	^nextProfileTick bitAnd: 16rFFFFFFFF
 ]
 
-{ #category : #simulation }
-CoInterpreter >> nilLocalFP [
-	<doNotGenerate>
-	localFP := nil
-]
-
 { #category : #'cog jit support' }
 CoInterpreter >> nilUncoggableMethods [
 	<inline: true>
@@ -5366,38 +4597,15 @@ CoInterpreter >> noAssertHeaderOf: methodPointer [
 		ifFalse: [methodHeader]
 ]
 
-{ #category : #trampolines }
-CoInterpreter >> positive32BitIntegerFor: integerValue [
-	<api>
-	^super positive32BitIntegerFor: integerValue
-]
-
-{ #category : #trampolines }
-CoInterpreter >> positive32BitValueOf: oop [
-	<api>
-	^super positive32BitValueOf: oop
-]
-
-{ #category : #trampolines }
-CoInterpreter >> positive64BitIntegerFor: integerValue [
-	<api>
-	^super positive64BitIntegerFor: integerValue
-]
-
-{ #category : #trampolines }
-CoInterpreter >> positive64BitValueOf: oop [
-	<api>
-	^super positive64BitValueOf: oop
-]
-
 { #category : #'object memory support' }
 CoInterpreter >> postBecomeAction: theBecomeEffectsFlags [
+
 	"Clear the gcMode var and let the Cogit do its post GC checks."
+
 	super postBecomeAction: theBecomeEffectsFlags.
 
-	(objectMemory hasSpurMemoryManagerAPI
-	 and: [theBecomeEffectsFlags anyMask: OldBecameNewFlag]) ifTrue:
-		[cogit addAllToYoungReferrers].
+	(theBecomeEffectsFlags anyMask: OldBecameNewFlag) ifTrue: [ 
+		cogit addAllToYoungReferrers ].
 	cogit cogitPostGCAction: gcMode.
 	self nilUncoggableMethods.
 	gcMode := 0
@@ -5445,18 +4653,6 @@ CoInterpreter >> preGCAction: gcModeArg [
 CoInterpreter >> primErrTable [
 	<api>
 	^objectMemory splObj: PrimErrTableIndex
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> primFailCode [
-	<doNotGenerate>
-	^primFailCode
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> primFailCode: anInteger [
-	<doNotGenerate>
-	primFailCode := anInteger
 ]
 
 { #category : #'trampoline support' }
@@ -5542,7 +4738,7 @@ CoInterpreter >> primitiveFailAddress [
 	<api>
 	<returnTypeC: #usqInt>
 	^self cCode: [(self addressOf: #primitiveFail) asUnsignedInteger]
-		inSmalltalk: [heapBase]
+		inSmalltalk: [objectMemory getMemoryMap startOfObjectMemory]
 ]
 
 { #category : #'cog jit support' }
@@ -5573,13 +4769,10 @@ CoInterpreter >> printCogMethod: cogMethod [
 							header: cogMethod methodHeader.
 		 primitive ~= 0 ifTrue:
 			[self print: ' prim '; printNum: primitive]].
-	cogMethod cmType = CMBlock ifTrue:
-		[self print: ': block home: ';
-			printHex: (self cCoerceSimple: cogMethod to: #'CogBlockMethod *') cmHomeMethod asUnsignedInteger].
-	cogMethod cmType = CMClosedPIC ifTrue:
+	cogMethod cmType = CMPolymorphicIC ifTrue:
 		[self print: ': Closed PIC N: ';
 			printHex: cogMethod cPICNumCases].
-	cogMethod cmType = CMOpenPIC ifTrue:
+	cogMethod cmType = CMMegamorphicIC ifTrue:
 		[self print: ': Open PIC '].
 	self print: ' selector: '; printHex: cogMethod selector.
 	cogMethod selector = objectMemory nilObject
@@ -5601,7 +4794,7 @@ CoInterpreter >> printFrame: theFP WithSP: theSP [
 	<var: #theSP type: #'char *'>
 	<var: #addr type: #'char *'>
 	<var: #rcvrAddress type: #'char *'>
-	<var: #cogMethod type: #'CogBlockMethod *'>
+	<var: #cogMethod type: #'CogMethod *'>
 	<var: #homeMethod type: #'CogMethod *'>
 	self cCode: '' inSmalltalk: [self transcript newLine].
 	(stackPages couldBeFramePointer: theFP) ifNil:
@@ -5885,13 +5078,17 @@ CoInterpreter >> printMethodFieldForPrintContext: aContext [
 { #category : #'debug printing' }
 CoInterpreter >> printMethodHeaderOop: anOop [
 	"Print the CogMethod and its header if this is a CogMethod reference."
-	| cogMethod |
+
 	<var: #cogMethod type: #'CogMethod *'>
-	(self isCogMethodReference: anOop) ifTrue:
-		[cogMethod := cogMethodZone methodFor: (self pointerForOop: anOop).
-		 cogMethod ~= 0 ifTrue:
-			[^self printHex: anOop; space; printDecodeMethodHeaderOop: cogMethod methodHeader]].
-	^self printDecodeMethodHeaderOop: anOop
+	| cogMethod |
+	(self isCogMethodReference: anOop) ifTrue: [
+		cogMethod := cogMethodZone methodFor: (self pointerForOop: anOop).
+		cogMethod ~= 0 ifTrue: [
+			^ self
+				  printHex: anOop;
+				  space;
+				  printDecodeMethodHeaderOop: cogMethod methodHeader ] ].
+	^ super printMethodHeaderOop: anOop
 ]
 
 { #category : #'debug support' }
@@ -5924,65 +5121,6 @@ CoInterpreter >> printPrimLogEntryAt: i [
 CoInterpreter >> printSends [
 	<inline: true>
 	^cogit printOnTrace
-]
-
-{ #category : #'stack bytecodes' }
-CoInterpreter >> pushFullClosureNumArgs: numArgs copiedValues: numCopiedArg compiledBlock: compiledBlock receiverIsOnStack: receiverIsOnStack ignoreContext: ignoreContext [
-	"The compiler has pushed the values to be copied, if any. The receiver has been pushed on stack before if specified. 
-	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
-	 Sets outerContext, compiledBlock, numArgs and receiver as specified.."
-	<inline: true>
-	| numCopied newClosure context startIndex |
-	"No need to record the pushed copied values in the outerContext."
-	context := ignoreContext
-		ifTrue: [objectMemory nilObject ]
-		ifFalse: [self ensureFrameIsMarried: localFP SP: localSP + (numCopiedArg * objectMemory bytesPerOop)].
-	newClosure := self
-					fullClosureIn: context 
-					numArgs: numArgs 
-					numCopiedValues: numCopiedArg 
-					compiledBlock: compiledBlock.
-	cogit recordSendTrace ifTrue:
-		[self recordTrace: TraceBlockCreation thing: newClosure source: TraceIsFromInterpreter].
-	receiverIsOnStack
-		ifFalse: 
-			[ startIndex := FullClosureFirstCopiedValueIndex.
-			   objectMemory storePointerUnchecked: FullClosureReceiverIndex
-				ofObject: newClosure
-				withValue: self receiver.
-			numCopied := numCopiedArg ]
-		ifTrue:
-			[ startIndex := FullClosureReceiverIndex.
-			numCopied := numCopiedArg + 1 ].
-	numCopied > 0 ifTrue:
-		[0 to: numCopied - 1 do:
-			[ :i |
-			"Assume: have just allocated a new BlockClosure; it must be young.
-			 Thus, can use unchecked stores."
-			 objectMemory storePointerUnchecked: i + startIndex
-				ofObject: newClosure
-				withValue: (self internalStackValue: numCopied - i - 1)].
-		 self internalPop: numCopied].
-	self fetchNextBytecode.
-	self internalPush: newClosure
-]
-
-{ #category : #'stack bytecodes' }
-CoInterpreter >> pushRemoteTemp: index inVectorAt: tempVectorIndex [
-	"Override to use itemporary:in:put:"
-	| tempVector |
-	tempVector := self itemporary: tempVectorIndex in: localFP.
-	TempVectReadBarrier
-		ifTrue: 
-			[(objectMemory isForwarded: tempVector) ifTrue:
-				[tempVector := self unfollowTempVector: tempVector atIndex: tempVectorIndex in: localFP]].
-	self internalPush: (objectMemory fetchPointer: index ofObject: tempVector)
-]
-
-{ #category : #'stack bytecodes' }
-CoInterpreter >> pushTemporaryVariable: temporaryIndex [
-	"Override to use itemporary:in:put:"
-	self internalPush: (self itemporary: temporaryIndex in: localFP)
 ]
 
 { #category : #'cog jit support' }
@@ -6041,7 +5179,7 @@ CoInterpreter >> rawHeaderOf: methodOop put: cogMethodOrMethodHeader [
 { #category : #'internal interpreter access' }
 CoInterpreter >> receiver [
 	<inline: true>
-	^stackPages longAt: localFP + FoxIFReceiver
+	^stackPages longAt: framePointer + FoxIFReceiver
 ]
 
 { #category : #'debug support' }
@@ -6085,54 +5223,6 @@ CoInterpreter >> restoreCStackStateForCallbackContext: vmCallbackContext [
 	super restoreCStackStateForCallbackContext: vmCallbackContext
 ]
 
-{ #category : #'process primitive support' }
-CoInterpreter >> resume: aProcess [
-	"Replaced by resume:preemptedYieldingIf:from:"
-	"Make aProcess runnable and if its priority is higher than
-	 that of the current process, preempt the current process.
-	 Answer if the current process was preempted.  Override
-	 to add tracing info (see resume:from:)."
-	<doNotGenerate>
-	self shouldNotImplement
-]
-
-{ #category : #'process primitive support' }
-CoInterpreter >> resume: aProcess preemptedYieldingIf: yieldImplicitly [
-	"Replaced by resume:preemptedYieldingIf:from:"
-	"Make aProcess runnable and if its priority is higher than  that of the
-	 current process, preempt the current process.   Answer if the current
-	 process was preempted.  If the current process was preempted then if
-	 yieldImplicitly add the current process to the back of its run queue,
-	 causing an implicit yiled to other processes on the run queue,  otherwise
-	 add the current process to the front of its run queue, hence not yielding.
-	 Blue book behaviour is to yield implicitly but is arguably incorrect."
-	<doNotGenerate>
-	self shouldNotImplement
-]
-
-{ #category : #'process primitive support' }
-CoInterpreter >> resume: aProcess preemptedYieldingIf: yieldImplicitly from: sourceCode [
-	"Make aProcess runnable and if its priority is higher than  that of the
-	 current process, preempt the current process.   Answer if the current
-	 process was preempted.  If the current process was preempted then if
-	 yieldImplicitly add the current process to the back of its run queue,
-	 causing an implicit yeild to other processes on the run queue,  otherwise
-	 add the current process to the front of its run queue, hence not yielding.
-	 Blue book behaviour is to yield implicitly but is arguably incorrect.
-	 Override to add tracing info."
-	| activeProc activePriority newPriority |
-	<inline: false>
-	activeProc := self activeProcess.
-	activePriority := self quickFetchInteger: PriorityIndex ofObject: activeProc.
-	newPriority := self quickFetchInteger: PriorityIndex ofObject: aProcess.
-	newPriority <= activePriority ifTrue:
-		[self putToSleep: aProcess yieldingIf: true.
-		 ^false].
-	self putToSleep: activeProc yieldingIf: yieldImplicitly.
-	self transferTo: aProcess from: sourceCode.
-	^true
-]
-
 { #category : #enilopmarts }
 CoInterpreter >> return: returnValue toExecutive: inInterpreter [
 	"We have made a context switch, either when interpreting or from machine code.
@@ -6144,7 +5234,7 @@ CoInterpreter >> return: returnValue toExecutive: inInterpreter [
 		[self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: false line: #'__LINE__'.
 		 self push: instructionPointer.
 		 self push: returnValue.
-		 cogit ceEnterCogCodePopReceiverReg
+		 self callEnilopmart: #ceEnterCogCodePopReceiverReg
 		 "NOTREACHED"].
 	self push: returnValue.
 	self setMethod: (self iframeMethod: framePointer).
@@ -6158,6 +5248,12 @@ CoInterpreter >> return: returnValue toExecutive: inInterpreter [
 	^nil
 ]
 
+{ #category : #trampolines }
+CoInterpreter >> returnToExecutive: inInterpreter [
+
+	self return: self popStack toExecutive: inInterpreter
+]
+
 { #category : #enilopmarts }
 CoInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedContext [
 	"Return to the current frame, either by entering machine code, or longjmp-ing back to the
@@ -6169,7 +5265,7 @@ CoInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedCon
 	 in which case we're in a machine-code primitive called from the interpreter."
 	<inline: false>
 	| cogMethod retValue fullyInInterpreter |
-	<var: #cogMethod type: #'CogBlockMethod *'>
+	<var: #cogMethod type: #'CogMethod *'>
 
 	cogit assertCStackWellAligned.
 	(self isMachineCodeFrame: framePointer) ifTrue:
@@ -6181,8 +5277,8 @@ CoInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedCon
 		 switchedContext
 			ifTrue:
 				[cogMethod := self mframeCogMethod: framePointer.
-				self assert: (instructionPointer > cogit minCogMethodAddress 
-							and: [instructionPointer < cogit maxCogMethodAddress]).
+				self assert: (instructionPointer asUnsignedInteger > cogit minCogMethodAddress 
+							and: [instructionPointer asUnsignedInteger < cogit maxCogMethodAddress]).
 				 (instructionPointer ~= (cogMethod asInteger + cogMethod stackCheckOffset)
 				  and: [cogit isSendReturnPC: instructionPointer])
 					ifTrue:
@@ -6193,7 +5289,7 @@ CoInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedCon
 			ifFalse: [retValue := self mframeReceiver: framePointer].
 		 self push: instructionPointer.
 		 self push: retValue.
-		 cogit ceEnterCogCodePopReceiverReg
+		 self callEnilopmart: #ceEnterCogCodePopReceiverReg
 		 "NOTREACHED"].
 	self setMethod: (self iframeMethod: framePointer).
 	fullyInInterpreter := inInterpreter.
@@ -6209,18 +5305,24 @@ CoInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedCon
 
 { #category : #'return bytecodes' }
 CoInterpreter >> returnToMachineCodeFrame [
+
 	"Return to the previous context/frame after assigning localIP, localSP and localFP."
+
 	<inline: true>
 	cogit assertCStackWellAligned.
-	self assert: localIP asUnsignedInteger < objectMemory startOfMemory.
-	self assert: (self isMachineCodeFrame: localFP).
-	self assertValidExecutionPointe: localIP asUnsignedInteger r: localFP s: localSP imbar: false line: #'__LINE__'.
-	self internalStackTopPut: localIP.
-	self internalPush: localReturnValue.
-	self externalizeFPandSP.
-	self cCode: '' inSmalltalk:
-		[self maybeCheckStackDepth: 1 sp: stackPointer pc: localIP].
-	cogit ceEnterCogCodePopReceiverReg
+	self assert: (self isInstructionPointerInInterpreter: instructionPointer) not.
+	self assert: (self isMachineCodeFrame: framePointer).
+	self
+		assertValidExecutionPointe: instructionPointer asUnsignedInteger
+		r: framePointer
+		s: stackPointer
+		imbar: false
+		line: #__LINE__.
+	self stackTopPut: instructionPointer.
+	self push: localReturnValue.
+	self cCode: '' inSmalltalk: [ 
+		self maybeCheckStackDepth: 1 sp: stackPointer pc: instructionPointer ].
+	self callEnilopmart: #ceEnterCogCodePopReceiverReg
 	"NOTREACHED"
 ]
 
@@ -6233,39 +5335,19 @@ CoInterpreter >> rewriteMethodCacheEntryForExternalPrimitiveToFunction: localPri
 	 rewrite the primitive call in it to call localPrimAddress. Used to update calls through
 	 primitiveExternalCall to directly call the target function or to revert to calling
 	 primitiveExternalCall after a flush."
+
 	<var: #localPrimAddress declareC: 'void (*localPrimAddress)(void)'>
 	<inline: false>
-	(self methodHasCogMethod: newMethod) ifTrue:
-		[cogit
+	(self methodHasCogMethod: newMethod) ifTrue: [
+		cogit
 			rewritePrimInvocationIn: (self cogMethodOf: newMethod)
 			to: (localPrimAddress = 0
-				ifTrue: [self cCoerceSimple: #primitiveFail to: #'void (*)(void)']
-				ifFalse: [localPrimAddress])].
-	(methodCache at: lastMethodCacheProbeWrite + MethodCacheMethod) = newMethod ifTrue:
-		[methodCache
-			at: lastMethodCacheProbeWrite + MethodCachePrimFunction
-			put: (self cCoerce: localPrimAddress to: #'sqIntptr_t')]
-]
+					 ifTrue: [
+					 self cCoerceSimple: #primitiveFail to: #'void (*)(void)' ]
+					 ifFalse: [ localPrimAddress ]) ].
 
-{ #category : #'primitive support' }
-CoInterpreter >> roomToPushNArgs: n [
-	"Answer if there is room to push n arguments onto the current stack.  We assume
-	 this is called by primitives that check there is enough room in any new context, and
-	 won't actually push the arguments in the current context if the primitive fails.  With
-	 this assumption it is safe to answer based on the maximum argument count, /not/
-	 the ammount of space in the current frame were it converted to a context.."
-	false
-		ifTrue: "old code that checked size of context..."
-			[| methodHeader cntxSize |
-			(self isMachineCodeFrame: framePointer)
-				ifTrue: [methodHeader := (self mframeHomeMethod: framePointer) methodHeader]
-				ifFalse: [methodHeader := objectMemory methodHeaderOf: (self iframeMethod: framePointer)].
-			cntxSize := (self methodHeaderIndicatesLargeFrame: methodHeader)
-							ifTrue: [LargeContextSlots - CtxtTempFrameStart]
-							ifFalse: [SmallContextSlots - CtxtTempFrameStart].
-			^self stackPointerIndex + n <= cntxSize]
-		ifFalse: "simpler code that simply insists args are <= max arg count"
-			[^n <= (LargeContextSlots - CtxtTempFrameStart)]
+	super rewriteMethodCacheEntryForExternalPrimitiveToFunction:
+		localPrimAddress
 ]
 
 { #category : #'callback support' }
@@ -6305,8 +5387,6 @@ CoInterpreter >> setCogVMFlags: flags [
 	flagInterpretedMethods := flags anyMask: 2.
 	preemptionYields := flags noMask: 4.
 	"noThreadingOfGUIThread := flags anyMask: 8.. specific to CoInterpreterMT"
-	newFinalization := flags anyMask: 16.
-	sendWheelEvents := flags anyMask: 32
 ]
 
 { #category : #'internal interpreter access' }
@@ -6333,19 +5413,16 @@ CoInterpreter >> setIFrameHasContext: theFP [
 CoInterpreter >> setImageHeaderFlagsFrom: headerFlags [
 	"Set the flags that are contained in the 7th long of the image header."
 	imageHeaderFlags := headerFlags. "so as to preserve unrecognised flags."
-	fullScreenFlag := headerFlags bitAnd: 1.
 	imageFloatsBigEndian := (headerFlags noMask: 2) ifTrue: [1] ifFalse: [0].
 	"processHasThreadId := headerFlags anyMask: 4. specific to CoInterpreterMT"
 	flagInterpretedMethods := headerFlags anyMask: 8.
 	preemptionYields := headerFlags noMask: 16.
 	"noThreadingOfGUIThread := headerFlags anyMask: 32. specific to CoInterpreterMT"
-	newFinalization := headerFlags anyMask: 64.
-	sendWheelEvents := headerFlags anyMask: 128
 ]
 
 { #category : #'internal interpreter access' }
 CoInterpreter >> setMethod: aMethodObj [
-	self assert: aMethodObj asUnsignedInteger >= objectMemory startOfMemory.
+	self assert: aMethodObj asUnsignedInteger >= objectMemory getMemoryMap startOfObjectMemory.
 	super setMethod: aMethodObj
 ]
 
@@ -6394,37 +5471,10 @@ CoInterpreter >> siglong: aJumpBuf jmp: returnValue [
 	"Hack simulation of sigsetjmp/siglongjmp.
 	 Signal the exception that simulates a longjmp back to the interpreter." 
 	<doNotGenerate>
-	(aJumpBuf == reenterInterpreter
-	 and: [returnValue ~= 2 "2 == returnToThreadSchedulingLoopVia:"]) ifTrue:
-		[self assert: (self isOnRumpCStack: cogit processor sp).
-		 self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: true line: nil].
 	"Restore the Registers"
 	cogit processor sp: (aJumpBuf properties at: #savedSP).
-	aJumpBuf returnValue: returnValue; signal.
-]
+	super siglong: aJumpBuf jmp: returnValue
 
-{ #category : #trampolines }
-CoInterpreter >> signed32BitIntegerFor: integerValue [
-	<api>
-	^super signed32BitIntegerFor: integerValue
-]
-
-{ #category : #trampolines }
-CoInterpreter >> signed32BitValueOf: oop [
-	<api>
-	^super signed32BitValueOf: oop
-]
-
-{ #category : #trampolines }
-CoInterpreter >> signed64BitIntegerFor: integerValue [
-	<api>
-	^super signed64BitIntegerFor: integerValue
-]
-
-{ #category : #trampolines }
-CoInterpreter >> signed64BitValueOf: oop [
-	<api>
-	^super signed64BitValueOf: oop
 ]
 
 { #category : #'runtime support' }
@@ -6447,13 +5497,6 @@ CoInterpreter >> slowPrimitiveResponse [
 	cogit recordPrimTrace ifTrue:
 		[self fastLogPrim: messageSelector].
 	^super slowPrimitiveResponse
-]
-
-{ #category : #'cog jit support' }
-CoInterpreter >> specialSelectorNumArgs: index [ "<SmallInteger>"
-	<api>
-	^objectMemory integerValueOf: (objectMemory fetchPointer: (index * 2) + 1
-							ofObject: (objectMemory splObj: SpecialSelectors))
 ]
 
 { #category : #'trampoline support' }
@@ -6501,18 +5544,14 @@ CoInterpreter >> stackPageHeadroom [
 ]
 
 { #category : #initialization }
-CoInterpreter >> stackPagesClass [
-	<doNotGenerate>
-	^VMBIGENDIAN
-		ifTrue: [CoInterpreterStackPagesMSB]
-		ifFalse: [CoInterpreterStackPagesLSB]
-]
+CoInterpreter >> stackPagesInitializedAt: theStackMemory totalSize: stackPagesBytes pageSize: stackPageBytes [
 
-{ #category : #'cog jit support' }
-CoInterpreter >> stackPointer: theSP [
-	"Simulation only"
-	<doNotGenerate>
-	stackPointer := theSP
+	<inline: true>
+
+	self sqMakeMemoryNotExecutableFrom: theStackMemory asUnsignedInteger
+		To: theStackMemory asUnsignedInteger + stackPagesBytes.
+
+	self assert: self minimumUnusedHeadroom = stackPageBytes.
 ]
 
 { #category : #'trampoline support' }
@@ -6524,91 +5563,10 @@ CoInterpreter >> stackPointerAddress [
 ]
 
 { #category : #'frame access' }
-CoInterpreter >> stackPointerIndexForFrame: theFP WithSP: theSP [
-	"Return the 1-based index rel to the given frame"
-	"In the StackInterpreter stacks grow down."
-	^(self isMachineCodeFrame: theFP)
-		ifTrue: [(((theFP + FoxMFReceiver) - theSP) >> objectMemory shiftForWord) + (self mframeNumArgs: theFP)]
-		ifFalse: [(((theFP + FoxIFReceiver) - theSP) >> objectMemory shiftForWord) + (self iframeNumArgs: theFP)]
-]
-
-{ #category : #'frame access' }
-CoInterpreter >> stackPointerIndexForIFrame: theFP WithSP: theSP numArgs: numArgs [
-	"Return the 1-based index rel to the given frame"
-	"In the StackInterpreter stacks grow down."
-	^(((theFP + FoxIFReceiver) - theSP) >> objectMemory shiftForWord) + numArgs
-]
-
-{ #category : #'frame access' }
-CoInterpreter >> stackPointerIndexForMFrame: theFP WithSP: theSP numArgs: numArgs [
+CoInterpreter >> stackPointerIndexForFrame: theFP WithSP: theSP numArgs: numArgs [
 	"Return the 1-based index rel to the given machine code frame"
 	"In the StackInterpreter stacks grow down."
-	^(((theFP + FoxMFReceiver) - theSP) >> objectMemory shiftForWord) + numArgs
-]
-
-{ #category : #'compiled methods' }
-CoInterpreter >> startPCOfClosure: aBlockClosure [
-	"Zero-relative version of BlockClosure>>startpc."
-
-	"It should be implemented for FullBlockClosures... this implementation was for old BlockClosures"
-	"^(objectMemory integerValueOf: (objectMemory fetchPointer: ClosureStartPCIndex ofObject: aBlockClosure)) - 1"
-	1halt. 
-
-]
-
-{ #category : #'compiled methods' }
-CoInterpreter >> startPCOfMethodHeader: aCompiledMethodHeader [
-	<api>
-	"Zero-relative version of CompiledMethod>>startpc."
-	^(objectMemory literalCountOfMethodHeader: aCompiledMethodHeader) + LiteralStart * objectMemory bytesPerOop
-]
-
-{ #category : #'stack bytecodes' }
-CoInterpreter >> storeAndPopTemporaryVariableBytecode [
-	<expandCases>
-	self
-		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
-			[self fetchNextBytecode.
-			 self itemporary: (currentBytecode bitAnd: 7) in: localFP put: self internalStackTop.
-			 self internalPop: 1]
-		inSmalltalk: "Interpreter version has fetchNextBytecode out of order"
-			[self itemporary: (currentBytecode bitAnd: 7) in: localFP put: self internalStackTop.
-			 self fetchNextBytecode.
-			 self internalPop: 1]
-]
-
-{ #category : #'stack bytecodes' }
-CoInterpreter >> storeRemoteTemp: index inVectorAt: tempVectorIndex [
-	"Override to use itemporary:in:put:"
-	| tempVector |
-	tempVector := self itemporary: tempVectorIndex in: localFP.
-	TempVectReadBarrier
-		ifTrue: 
-			[(objectMemory isForwarded: tempVector) ifTrue:
-				[tempVector := self unfollowTempVector: tempVector atIndex: tempVectorIndex in: localFP]].
-	objectMemory storePointer: index ofObject: tempVector withValue: self internalStackTop
-]
-
-{ #category : #'process primitive support' }
-CoInterpreter >> synchronousSignal: aSemaphore [ 
-	"Signal the given semaphore from within the interpreter.
-	 Answer if the current process was preempted.
-	 Override to add tracing info."
-	| excessSignals |
-	<inline: false>
-	(self isEmptyList: aSemaphore) ifTrue:
-		["no process is waiting on this semaphore"
-		 excessSignals := self fetchInteger: ExcessSignalsIndex ofObject: aSemaphore.
-		 self storeInteger: ExcessSignalsIndex
-			ofObject: aSemaphore
-			withValue: excessSignals + 1.
-		 ^false].
-
-	objectMemory ensureSemaphoreUnforwardedThroughContext: aSemaphore.
-
-	^self resume: (self removeFirstLinkOfList: aSemaphore)
-		preemptedYieldingIf: preemptionYields
-		from: CSSignal
+	^(((self frameReceiverLocation: theFP) - theSP) >> objectMemory shiftForWord) + numArgs
 ]
 
 { #category : #'return bytecodes' }
@@ -6648,17 +5606,11 @@ CoInterpreter >> tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom: cont
 
 { #category : #'internal interpreter access' }
 CoInterpreter >> temporary: offset in: theFP [
-	"See StackInterpreter class>>initializeFrameIndices"
-	| frameNumArgs |
+
 	<inline: true>
-	<var: #theFP type: #'char *'>
-	^(self isMachineCodeFrame: theFP)
-		ifTrue:
-			[offset < (frameNumArgs := self mframeNumArgs: theFP)
-				ifTrue: [stackPages longAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize)]
-				ifFalse: [stackPages longAt: theFP + FoxMFReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize)]]
-		ifFalse:
-			[self itemporary: offset in: theFP]
+	^ (self isMachineCodeFrame: theFP)
+		  ifTrue: [ self mtemporary: offset in: theFP ]
+		  ifFalse: [ self itemporary: offset in: theFP ]
 ]
 
 { #category : #'internal interpreter access' }
@@ -6669,67 +5621,10 @@ CoInterpreter >> temporary: offset in: theFP put: valueOop [
 		ifFalse: [self itemporary: offset in: theFP put: valueOop]
 ]
 
-{ #category : #'internal interpreter access' }
-CoInterpreter >> temporaryLocation: offset in: theFP numArgs: numArgs [
-	"Answer the pointer to a given temporary (for debug frame printing in odd circumstances)"
-	<var: #theFP type: #'char *'>
-	<returnTypeC: #'char *'>
-	^offset < numArgs
-		ifTrue: [theFP + FoxCallerSavedIP + ((numArgs - offset) * objectMemory wordSize)]
-		ifFalse: [theFP
-			+ ((self isMachineCodeFrame: theFP)
-					ifTrue: [FoxMFReceiver - objectMemory wordSize]
-					ifFalse: [FoxIFReceiver - objectMemory wordSize])
-			+ ((numArgs - offset) * objectMemory wordSize)]
-]
-
 { #category : #simulation }
 CoInterpreter >> transcript [
 	<doNotGenerate>
 	^Transcript
-]
-
-{ #category : #'process primitive support' }
-CoInterpreter >> transferTo: newProc [
-	"replaced by transferTo:from: for better tracing (for debugging)"
-
-	^ self transferTo: newProc from: 0
-]
-
-{ #category : #'process primitive support' }
-CoInterpreter >> transferTo: newProc from: sourceCode [
-	"Record a process to be awoken on the next interpreter cycle.
-	 Reimplement to record the source of the switch for debugging,
-	 and to cope with possible code compaction in makeBaseFrameFor:."
-	| activeContext sched oldProc |
-	<inline: false>
-	statProcessSwitch := statProcessSwitch + 1.
-	self push: instructionPointer.
-	self externalWriteBackHeadFramePointers.
-	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer.
-	"ensureMethodIsCogged: in makeBaseFrameFor: in
-	 externalSetStackPageAndPointersForSuspendedContextOfProcess:
-	 below may do a code compaction. Nil instructionPointer to avoid it getting pushed twice."
-	instructionPointer := 0.
-	sched := self schedulerPointer.
-	oldProc := objectMemory fetchPointer: ActiveProcessIndex ofObject: sched.
-	self recordContextSwitchFrom: oldProc in: sourceCode.
-	activeContext := self ensureFrameIsMarried: framePointer SP: stackPointer + objectMemory wordSize.
-	objectMemory storePointer: SuspendedContextIndex ofObject: oldProc withValue: activeContext.
-	objectMemory storePointer: ActiveProcessIndex ofObject: sched withValue: newProc.
-	objectMemory storePointerUnchecked: MyListIndex ofObject: newProc withValue: objectMemory nilObject.
-	self externalSetStackPageAndPointersForSuspendedContextOfProcess: newProc
-]
-
-{ #category : #'compiled methods' }
-CoInterpreter >> unfollowTempVector: tempVector atIndex: tempVectorIndex in: theFP [
-	"override for itemporary"
-	<option: #TempVectReadBarrier>
-	<inline: #never> "So rare it mustn't bulk up the common path"
-	| followed |
-	followed := objectMemory followForwarded: tempVector.
-	self itemporary: tempVectorIndex in: theFP put: followed.
-	^followed
 ]
 
 { #category : #'image save/restore' }
@@ -6756,71 +5651,19 @@ CoInterpreter >> updateStackZoneReferencesToCompiledCodePreCompaction [
 				[theMethodField := self frameMethodField: theFP.
 				 theFlags := theMethodField bitAnd: MFMethodFlagsMask.
 				 theMethod := self cCoerceSimple: theMethodField - theFlags to: #'CogMethod *'.
-				 theMethod cmType = CMBlock ifTrue:
-					[theMethod := (self cCoerceSimple: theMethodField - theFlags to: #'CogBlockMethod *') cmHomeMethod].
-				 theIP := (stackPages longAt: theIPPtr) asUnsignedInteger.
+				 theIP := (stackPages unsignedLongAt: theIPPtr) asUnsignedInteger.
 				 (theIP ~= cogit ceCannotResumePC
 				  and: [(theIP >= theMethod asUnsignedInteger
 							   and: [theIP < (theMethod asUnsignedInteger + theMethod blockSize)])]) ifTrue:
 					[stackPages
-						longAt: theIPPtr
+						unsignedLongAt: theIPPtr
 						put: theIP + theMethod objectHeader].
 				 stackPages
-					longAt: theFP + FoxMethod
+					unsignedLongAt: theFP + FoxMethod
 					put: theMethodField + theMethod objectHeader].
 			 (callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
 				[theIPPtr := theFP + FoxCallerSavedIP.
 				 theFP := callerFP]]]
-]
-
-{ #category : #'frame access' }
-CoInterpreter >> updateStateOfSpouseContextForFrame: theFP WithSP: theSP [
-	"Update the frame's spouse context with the frame's current state except for the
-	 sender and instruction pointer, which are used to mark the context as married."
-	| theContext tempIndex pointer argsPointer |
-	<inline: false>
-	<var: #theFP type: #'char *'>
-	<var: #theSP type: #'char *'>
-	<var: #pointer type: #'char *'>
-	<var: #argsPointer type: #'char *'>
-	self assert: (self frameHasContext: theFP).
-	theContext := self frameContext: theFP.
-	self assert: (objectMemory isContext: theContext).
-	self assert: (self frameReceiver: theFP)
-				= (objectMemory noFixupFollowField: ReceiverIndex ofObject: theContext).
-	(self isMachineCodeFrame: theFP)
-		ifTrue:
-			[tempIndex := self mframeNumArgs: theFP.
-			 pointer := theFP + FoxMFReceiver - objectMemory wordSize]
-		ifFalse:
-			[tempIndex := self iframeNumArgs: theFP.
-			 pointer := theFP + FoxIFReceiver - objectMemory wordSize].
-	"update the arguments. this would appear not to be strictly necessary, but is for two reasons.
-	 First, the fact that arguments are read-only is only as convention in the Smalltalk compiler;
-	 other languages may choose to modify arguments.
-	 Second, the Squeak runUntilErrorOrReturnFrom: nightmare pops the stack top, which may, in
-	 certain circumstances, be the last argument, and hence the last argument may not have been
-	 stored into the context."
-	argsPointer := theFP + (self frameStackedReceiverOffsetNumArgs: tempIndex).
-	1 to: tempIndex do:
-		[:i|
-		argsPointer := argsPointer - objectMemory wordSize.
-		self assert: (objectMemory addressCouldBeOop: (stackPages longAt: argsPointer)).
-		 objectMemory storePointer: ReceiverIndex + i
-			ofObject: theContext
-			withValue: (stackPages longAt: argsPointer)].
-	"now update the non-argument stack contents."
-	[pointer >= theSP] whileTrue:
-		[self assert: (objectMemory addressCouldBeOop: (stackPages longAt: pointer)).
-		 tempIndex := tempIndex + 1.
-		 objectMemory storePointer: ReceiverIndex + tempIndex
-			ofObject: theContext
-			withValue: (stackPages longAt: pointer).
-		 pointer := pointer - objectMemory wordSize].
-	self assert: ReceiverIndex + tempIndex < (objectMemory lengthOf: theContext).
-	objectMemory storePointerUnchecked: StackPointerIndex
-		ofObject: theContext
-		withValue: (objectMemory integerObjectOf: tempIndex)
 ]
 
 { #category : #'debug support' }
@@ -6843,7 +5686,7 @@ CoInterpreter >> validInstructionPointer: instrPointer inMethod: aMethod framePo
 				theInstrPointer := instrPointer.
 				header := self rawHeaderOf: aMethod.
 				((self isCogMethodReference: header)
-				   and: [theInstrPointer < objectMemory startOfMemory]) ifTrue:
+				   and: [theInstrPointer < objectMemory getMemoryMap startOfObjectMemory]) ifTrue:
 				 	[cogMethod := self cCoerceSimple: header to: #'CogMethod *'.
 				 	 ^theInstrPointer >= (header + (cogit sizeof: CogMethod))
 				 	 and: [theInstrPointer < (header + cogMethod blockSize)]]].
@@ -6856,8 +5699,8 @@ CoInterpreter >> validStackPageBaseFrame: aPage [
 	<var: #aPage type: #'StackPage *'>
 	<inline: false>
 	| savedThisContext senderContextOrNil |
-	senderContextOrNil := stackPages longAt: aPage baseAddress.
-	savedThisContext := stackPages longAt: aPage baseAddress - objectMemory wordSize.
+	senderContextOrNil := stackPages unsignedLongAt: aPage baseAddress.
+	savedThisContext := stackPages unsignedLongAt: aPage baseAddress - objectMemory wordSize.
 	(self asserta: aPage baseFP + (self frameStackedReceiverOffset: aPage baseFP) + (2 * objectMemory wordSize) = aPage baseAddress) ifFalse:
 		[^false].
 	(self asserta: (objectMemory addressCouldBeObj: senderContextOrNil)) ifFalse:
@@ -6923,4 +5766,11 @@ CoInterpreter >> widowOrForceToBytecodePC: ctxt [
 				[self deny: (self isMachineCodeFrame: (self frameOfMarriedContext: ctxt))]]
 		ifFalse:
 			[self ensureContextHasBytecodePC: ctxt]
+]
+
+{ #category : #'cog jit support' }
+CoInterpreter >> writeBackHeadStackPointer [
+	self assert: (stackPointer < stackPage baseAddress
+				and: [stackPointer > (stackPage realStackLimit - (LargeContextSlots * objectMemory bytesPerOop))]).
+	stackPage headSP: stackPointer
 ]

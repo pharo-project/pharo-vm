@@ -26,8 +26,11 @@
 /* Quad-byte stack alignment on ARM64 is required.
    (SP mod 16) == 0
  */
+
+
 # define STACK_ALIGN_BYTES 16
-# define STACK_FP_ALIGNMENT 8
+# define STACK_FP_ALIGNMENT 0
+
 #elif defined(__arm__) || defined(__arm32__) || defined(ARM32)
 /* 8-byte stack alignment on ARM32 is required for instructions which
  * require 8-byte aligned addresses to access doubles in memory.
@@ -81,12 +84,12 @@
 	/* https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#Extended-Asm
 	 * http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.den0024a/index.html
 	 */
-#  if __GNUC__
+#  if __GNUC__ || __clang__
 #   define getfp() ({ usqIntptr_t fp;								\
-					  asm volatile ("mov x0, x29" : "=r"(x29) : );	\
+					  asm volatile ("mov %0, x29" : "=r"(fp) : );	\
 					  fp; })
 #   define getsp() ({ usqIntptr_t sp;								\
-					  asm volatile ("mov x0, sp" : "=r"(sp) : );	\
+					  asm volatile ("mov %0, sp" : "=r"(sp) : );	\
 					  sp; })
 
 # define setsp(sp) asm volatile ("ldr x16, %0 \n\t" "mov sp, x16"  : : "m"(sp) )
@@ -126,8 +129,8 @@
 # define STACK_ALIGN_MASK (STACK_ALIGN_BYTES-1)
 #	define assertCStackWellAligned() do {									\
 	extern sqInt cFramePointerInUse;										\
-	if (cFramePointerInUse)													\
-		assert((getfp() & STACK_ALIGN_MASK) == STACK_FP_ALIGNMENT);		\
+	if (cFramePointerInUse){													\
+		assert((getfp() & STACK_ALIGN_MASK) == STACK_FP_ALIGNMENT);}		\
 	assert((getsp() & STACK_ALIGN_MASK) == 0);	\
 } while (0)
 #else /* defined(STACK_ALIGN_BYTES) */

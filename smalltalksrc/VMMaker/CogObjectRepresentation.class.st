@@ -3,7 +3,7 @@ I am an abstract superclass for object representations whose job it is to genera
 "
 Class {
 	#name : #CogObjectRepresentation,
-	#superclass : #CogClass,
+	#superclass : #VMClass,
 	#instVars : [
 		'cogit',
 		'methodZone',
@@ -125,6 +125,38 @@ CogObjectRepresentation >> ensureNoForwardedLiteralsIn: aMethodObj [
 CogObjectRepresentation >> freeCounters: theCounters [
 	<var: #theCounters type: #usqInt>
 	self subclassResponsibility
+]
+
+{ #category : #'compile abstract instructions' }
+CogObjectRepresentation >> genCheckObjectPosition: destReg scratchReg: scratchReg valueReg: valueReg results: resultBlock [ 
+
+	| isDestYoung isOldAndOld isPermAndPerm recvIsPerm exit valueIsMachineCode| 
+
+	<inline: true>
+	<var: #recvIsPerm type: #'AbstractInstruction *'>
+	<var: #exit type: #'AbstractInstruction *'>
+
+	cogit CmpCq: objectMemory getMemoryMap getNewSpaceStart  R: valueReg.
+	valueIsMachineCode := cogit JumpBelow: 0.
+	
+	cogit CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: destReg.
+	recvIsPerm := cogit JumpAboveOrEqual: 0.
+
+	cogit CmpCq: objectMemory getMemoryMap getOldSpaceStart R: destReg.
+	isDestYoung := cogit JumpBelow: 0.
+
+	cogit CmpCq: objectMemory getMemoryMap getOldSpaceStart R: valueReg.
+	isOldAndOld := cogit JumpAboveOrEqual: 0.
+	exit := cogit Jump: 0.
+
+	recvIsPerm jmpTarget: (cogit Label).
+	cogit CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: valueReg.
+	isPermAndPerm := cogit JumpAbove: 0.
+
+	exit jmpTarget: (cogit Label).
+		
+	resultBlock value: isDestYoung value: isOldAndOld value: isPermAndPerm value: valueIsMachineCode.
+	^ 0 
 ]
 
 { #category : #'compile abstract instructions' }
@@ -1656,11 +1688,6 @@ CogObjectRepresentation >> generateObjectRepresentationTrampolines [
 CogObjectRepresentation >> getActiveContextAllocatesInMachineCode [
 	"subclasses override if they want, and will have SendNumArgsReg and ClassReg
 	 available in addition to ReceiverResultReg and TempReg if they do."
-	^false
-]
-
-{ #category : #testing }
-CogObjectRepresentation >> hasSpurMemoryManagerAPI [
 	^false
 ]
 

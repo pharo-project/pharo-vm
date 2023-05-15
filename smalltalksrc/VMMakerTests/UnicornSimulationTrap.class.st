@@ -28,7 +28,7 @@ UnicornSimulationTrap >> nextpc [
 	
 	| instruction |
 	instruction := self simulator disassembleCurrentInstruction.
-	^ self simulator instructionPointerValue + instruction size
+	^ self simulator instructionPointerRegisterValue + instruction size
 ]
 
 { #category : #accessing }

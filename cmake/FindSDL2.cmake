@@ -64,14 +64,13 @@
 # (To distribute this file outside of CMake, substitute the full
 #  License text for the above reference.)
 
-# message("<FindSDL2.cmake>")
-
 SET(SDL2_SEARCH_PATHS
 	~/Library/Frameworks
 	/Library/Frameworks
 	/usr/local
 	/usr
 	/sw # Fink
+	/opt/homebrew
 	/opt/local # DarwinPorts
 	/opt/csw # Blastwave
 	/opt
@@ -79,9 +78,9 @@ SET(SDL2_SEARCH_PATHS
 )
 
 FIND_PATH(SDL2_INCLUDE_DIR SDL.h
-	HINTS
-	$ENV{SDL2DIR}
-	PATH_SUFFIXES include/SDL2 include
+	HINTS $ENV{SDL2DIR}
+	# path suffixes to search inside ENV{SDLDIR}
+	PATH_SUFFIXES SDL2 include/SDL2 include
 	PATHS ${SDL2_SEARCH_PATHS}
 )
 
@@ -94,8 +93,9 @@ endif()
 FIND_LIBRARY(SDL2_LIBRARY_TEMP
 	NAMES SDL2
 	HINTS
-	$ENV{SDL2DIR}
-	PATH_SUFFIXES ${PATH_SUFFIXES}
+		$ENV{SDL2DIR}
+	PATH_SUFFIXES 
+		lib ${PATH_SUFFIXES}
 	PATHS ${SDL2_SEARCH_PATHS}
 )
 
@@ -170,3 +170,4 @@ ENDIF(SDL2_LIBRARY_TEMP)
 INCLUDE(FindPackageHandleStandardArgs)
 
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(SDL2 REQUIRED_VARS SDL2_LIBRARY SDL2_INCLUDE_DIR)
+

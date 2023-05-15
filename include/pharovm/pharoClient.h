@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "parameters.h"
+#include "pharovm/parameters/parameters.h"
 
 // CHECK ME: envp is not portable, does it make sense to have it as a parameter here?
 EXPORT(int) vm_main_with_parameters(VMParameters *parameters);

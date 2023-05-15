@@ -62,7 +62,7 @@ secHasEnvironmentAccess
 "
 Class {
 	#name : #InterpreterPrimitives,
-	#superclass : #VMClass,
+	#superclass : #AbstractInterpreter,
 	#instVars : [
 		'objectMemory',
 		'messageSelector',
@@ -76,8 +76,6 @@ Class {
 		'profileSemaphore',
 		'nextProfileTick',
 		'preemptionYields',
-		'newFinalization',
-		'sHEAFn',
 		'ffiExceptionResponse'
 	],
 	#classVars : [
@@ -100,8 +98,7 @@ Class {
 InterpreterPrimitives class >> declareCVarsIn: aCCodeGen [
 	aCCodeGen
 		var: 'osErrorCode' type: #sqLong;
-		var: 'exceptionPC' type: #usqInt;
-		var: 'sHEAFn' declareC: 'int (*sHEAFn)() = 0' "the hasEnvironmentAccess function"
+		var: 'exceptionPC' type: #usqInt
 ]
 
 { #category : #'C translation' }
@@ -165,7 +162,7 @@ InterpreterPrimitives >> cStringOrNullFor: oop [
 { #category : #'object access primitives' }
 InterpreterPrimitives >> canBeImmutable: oop [
 	<option: #IMMUTABILITY>
-	| scheduler processLists |
+	| scheduler processLists schedAssoc |
 	
 	self assert: (objectMemory isNonImmediate: oop).
 	
@@ -185,7 +182,10 @@ InterpreterPrimitives >> canBeImmutable: oop [
 	
 	"Simple version of process management: we forbid Process and LinkedList instances to be immutable 
 	 as well as the Processor and the array of activeProcess"
-	scheduler := objectMemory fetchPointer: ValueIndex ofObject: (objectMemory splObj: SchedulerAssociation).
+	schedAssoc := objectMemory splObj: SchedulerAssociation.
+	schedAssoc = objectMemory nilObject ifTrue: [ ^ true ].
+
+	scheduler := objectMemory fetchPointer: ValueIndex ofObject: schedAssoc.
 	processLists := objectMemory fetchPointer: ProcessListsIndex ofObject: scheduler.
 	oop = scheduler ifTrue: [ ^ false ].
 	oop = processLists ifTrue: [ ^ false ].
@@ -219,37 +219,13 @@ InterpreterPrimitives >> canBeImmutable: oop [
 	^ true
 ]
 
-{ #category : #'simulation support' }
-InterpreterPrimitives >> doOrDefer: aBlock [
-	<doNotGenerate>
-	"Either evaluate aBlock immediately if in the uiProcess or defer aBlock as a UI message"
-	Processor activeProcess == self uiProcess
-		ifTrue: [aBlock value]
-		ifFalse: [WorldState addDeferredUIMessage: aBlock]
-]
-
 { #category : #'process primitive support' }
-InterpreterPrimitives >> doWaitSemaphore: aSemaphoreOop [
-	| excessSignals activeProc |
+InterpreterPrimitives >> doWaitSemaphore: sema [
+
 	<api>
 	<returnTypeC: #void>
 	
-	excessSignals := self fetchInteger: ExcessSignalsIndex ofObject: aSemaphoreOop.
-	excessSignals > 0
-		ifTrue:
-			[self storeInteger: ExcessSignalsIndex ofObject: aSemaphoreOop withValue: excessSignals - 1 ]
-		ifFalse:
-			[activeProc := self activeProcess.
-			 self addLastLink: activeProc toList: aSemaphoreOop.
-			 self transferTo: self wakeHighestPriority ]
-]
-
-{ #category : #'process primitive support' }
-InterpreterPrimitives >> doWaitSemaphore: sema reEnterInterpreter: hasToReenter [
-	<api>
-	<returnTypeC: #void>
-	
-	self doWaitSemaphore: sema
+	self doWaitSemaphore: sema reEnterInterpreter: true
 ]
 
 { #category : #'primitive support' }
@@ -289,14 +265,9 @@ InterpreterPrimitives >> initPrimCall [
 
 { #category : #initialization }
 InterpreterPrimitives >> initialize [
-	"Here we can initialize the variables C initializes to zero.  #initialize methods do /not/ get translated."
-	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := inFFIFlags := ffiExceptionResponse := 0.
-	newFinalization := false
-]
 
-{ #category : #initialization }
-InterpreterPrimitives >> initializeInterpreter: bytesToShift [
-	sHEAFn := self ioLoadFunction: 'secHasEnvironmentAccess' From: 'SecurityPlugin'
+	"Here we can initialize the variables C initializes to zero.  #initialize methods do /not/ get translated."
+	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := ffiExceptionResponse := 0
 ]
 
 { #category : #'simulation support' }
@@ -438,45 +409,44 @@ InterpreterPrimitives >> isSignedInteger: integer inRangeForBits: nBits [
 
 { #category : #'primitive support' }
 InterpreterPrimitives >> magnitude64BitIntegerFor: magnitude neg: isNegative [
+
 	"Return a Large Integer object for the given integer magnitude and sign"
-	| newLargeInteger largeClass highWord sz isSmall smallVal |
+
 	<var: 'magnitude' type: #usqLong>
 	<var: 'highWord' type: #usqInt>
-
+	| newLargeInteger largeClass highWord sz isSmall smallVal |
 	isSmall := isNegative
-				ifTrue: [magnitude <= (objectMemory maxSmallInteger + 1)]
-				ifFalse: [magnitude <= objectMemory maxSmallInteger].
-	isSmall ifTrue:
-		[smallVal := self cCoerceSimple: magnitude to: #sqInt.
-		 isNegative ifTrue: [smallVal := 0 - smallVal].
-		 ^objectMemory integerObjectOf: smallVal].
+		           ifTrue: [ 
+		           magnitude <= (objectMemory maxSmallInteger + 1) ]
+		           ifFalse: [ magnitude <= objectMemory maxSmallInteger ].
+	isSmall ifTrue: [ 
+		smallVal := self cCoerceSimple: magnitude to: #sqInt.
+		isNegative ifTrue: [ smallVal := 0 - smallVal ].
+		^ objectMemory integerObjectOf: smallVal ].
 
 	largeClass := isNegative
-					ifTrue: [objectMemory classLargeNegativeInteger]
-					ifFalse: [objectMemory classLargePositiveInteger].
+		              ifTrue: [ objectMemory classLargeNegativeInteger ]
+		              ifFalse: [ objectMemory classLargePositiveInteger ].
 	objectMemory wordSize = 8
-		ifTrue: [sz := 8]
-		ifFalse:
-			[(highWord := magnitude >> 32) = 0
-				ifTrue: [sz := 4] 
-				ifFalse:
-					[sz := 5.
-					 (highWord := highWord >> 8) = 0 ifFalse:
-						[sz := sz + 1.
-						 (highWord := highWord >> 8) = 0 ifFalse:
-							[sz := sz + 1.
-							 (highWord := highWord >> 8) = 0 ifFalse: [sz := sz + 1]]]]].
-	newLargeInteger := objectMemory instantiateClass: largeClass indexableSize:  sz.
-	SPURVM
-		ifTrue:
-			["Memory is eight byte aligned in SPUR, so we are sure to have room for 64bits word whatever allocated sz"
-			objectMemory storeLong64: 0 ofObject: newLargeInteger withValue: (objectMemory byteSwapped64IfBigEndian: magnitude)]
-		ifFalse:
-			[sz > 4
-				ifTrue: [objectMemory storeLong64: 0 ofObject: newLargeInteger withValue: (objectMemory byteSwapped64IfBigEndian: magnitude)]
-				ifFalse: [objectMemory storeLong32: 0 ofObject: newLargeInteger withValue: (objectMemory byteSwapped32IfBigEndian: magnitude)]].
-
-	^newLargeInteger
+		ifTrue: [ sz := 8 ]
+		ifFalse: [ 
+			(highWord := magnitude >> 32) = 0
+				ifTrue: [ sz := 4 ]
+				ifFalse: [ 
+					sz := 5.
+					(highWord := highWord >> 8) = 0 ifFalse: [ 
+						sz := sz + 1.
+						(highWord := highWord >> 8) = 0 ifFalse: [ 
+							sz := sz + 1.
+							(highWord := highWord >> 8) = 0 ifFalse: [ sz := sz + 1 ] ] ] ] ].
+	newLargeInteger := objectMemory
+		                   instantiateClass: largeClass
+		                   indexableSize: sz.
+	objectMemory
+		storeLong64: 0
+		ofObject: newLargeInteger
+		withValue: (objectMemory byteSwapped64IfBigEndian: magnitude).
+	^ newLargeInteger
 ]
 
 { #category : #'primitive support' }
@@ -619,6 +589,7 @@ InterpreterPrimitives >> pop: nItems thenPushBool: boolean [
 InterpreterPrimitives >> positive32BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a positive SmallInteger or a four-byte LargePositiveInteger."
+	<api>
 	<returnTypeC: #'unsigned int'>
 	objectMemory hasSixtyFourBitImmediates
 		ifTrue:
@@ -640,7 +611,7 @@ InterpreterPrimitives >> positive32BitValueOf: oop [
 InterpreterPrimitives >> positive64BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a positive SmallInteger or an eight-byte LargePositiveInteger."
-
+	<api>
 	<returnTypeC: #usqLong>
 	| sz value ok |
 	<var: #value type: #usqLong>
@@ -1118,22 +1089,22 @@ InterpreterPrimitives >> primitiveBitXorLargeIntegers [
 
 { #category : #'memory space primitives' }
 InterpreterPrimitives >> primitiveBytesLeft [
+
 	"Answer bytes available at this moment. For more meaningful 
 	 results, calls to this primitive should be precedeed by a full 
 	 or incremental garbage collection."
+
 	| aBool |
-	self methodArgumentCount = 0 ifTrue: "old behavior - just return the size of free memory"
-		[^self pop: 1 thenPushInteger: objectMemory freeSize].
-	self methodArgumentCount = 1 ifTrue:
-		["Spur behavior; if argument is nil answer size of largest free chunk in oldSpace."
-		(objectMemory hasSpurMemoryManagerAPI
-		 and: [self stackTop = objectMemory nilObject]) ifTrue:
-			[^self pop: 2 thenPushInteger: objectMemory sizeOfLargestFreeChunk].
+	self methodArgumentCount = 0 ifTrue: [ "old behavior - just return the size of free memory" 
+		^ self pop: 1 thenPushInteger: objectMemory freeSize ].
+	self methodArgumentCount = 1 ifTrue: [ "Spur behavior; if argument is nil answer size of largest free chunk in oldSpace."
+		self stackTop = objectMemory nilObject ifTrue: [ 
+			^ self pop: 2 thenPushInteger: objectMemory sizeOfLargestFreeChunk ].
 		"new behaviour -including or excluding swap space depending on aBool"
 		aBool := self booleanValueOf: self stackTop.
-		self successful ifTrue:
-			[^self pop: 2 thenPushInteger: (objectMemory bytesLeft: aBool)]].
-	^self primitiveFail
+		self successful ifTrue: [ 
+			^ self pop: 2 thenPushInteger: (objectMemory bytesLeft: aBool) ] ].
+	^ self primitiveFail
 ]
 
 { #category : #'plugin primitives' }
@@ -1190,7 +1161,7 @@ InterpreterPrimitives >> primitiveClass [
 { #category : #'process primitives' }
 InterpreterPrimitives >> primitiveClearVMProfile [
 	"Primitive. Void the VM profile histograms."
-	self cCode: 'ioClearProfile()'.
+	self ioClearProfile.
 	self pop: argumentCount
 ]
 
@@ -1291,46 +1262,6 @@ InterpreterPrimitives >> primitiveCompareBytes [
 			ifFalse:[^self pop: 2 thenPush: objectMemory falseObject]].
 	self pop: 2 thenPush: objectMemory trueObject.
 
-]
-
-{ #category : #'string primitives' }
-InterpreterPrimitives >> primitiveCompareWith [
-	"<string1> primitiveCompareWith: string2 [collated: order] "
-	<export: true>
-	
-	| string1 string2 order strLength1 strLength2 result |
-
-	"1 - fetch the parameters from the stack"	
-	argumentCount = 1 ifFalse:
-		[argumentCount ~= 2 ifTrue:
-			[^self primitiveFailFor: PrimErrBadNumArgs].
-			 order := self stackTop.
-			 ((objectMemory isBytes: order)
-			 and: [(objectMemory numBytesOfBytes: order) = 256]) ifFalse:
-				[^self primitiveFailFor: PrimErrBadArgument]].
-	string1 := self stackValue: argumentCount.
-	string2 := self stackValue: argumentCount - 1. 
-			
-	"2 - check their types - all parameters are ByteObject"
-	((objectMemory isBytes: string1)
-	 and: [objectMemory isBytes: string2]) ifFalse: 
-		[^self primitiveFailFor: PrimErrBadArgument].
-	
-	"3 - compare the strings"	
-	strLength1 := objectMemory numBytesOfBytes: string1.
-	strLength2 := objectMemory numBytesOfBytes: string2.
-	result := order 
-		ifNil: [self rawCompare: string1 length: strLength1 with: string2 length: strLength2 accessBlock:
-				[:str :index | objectMemory fetchByte: index ofObject: str ]]
-		ifNotNil: 
-			[self rawCompare: string1 length: strLength1 with: string2 length: strLength2 accessBlock:
-				[:str :index | objectMemory fetchByte: (objectMemory fetchByte: index ofObject: str) + 1 ofObject: order ]].
-
-	self methodReturnInteger: result
-
-	
-	
-	
 ]
 
 { #category : #'sound primitives' }
@@ -1574,36 +1505,6 @@ InterpreterPrimitives >> primitiveDivideLargeIntegers [
 
 ]
 
-{ #category : #'process primitives' }
-InterpreterPrimitives >> primitiveEnterCriticalSection [
-	"Attempt to enter a CriticalSection/Mutex.  If not owned, set the owner to the current
-	 process and answer false. If owned by the current process  answer true.   Otherwise
-	 suspend the process.  Answer if the receiver is owned by the current process.
-	 For simulation if there is an argument it is taken to be the effective activeProcess
-	 (see Process>>effectiveProcess)."
-	| criticalSection owningProcessIndex owningProcess activeProc |
-	argumentCount > 0
-		ifTrue:
-			[criticalSection := self stackValue: 1.  "rcvr"
-			 activeProc := self stackTop]
-		ifFalse:
-			[criticalSection := self stackTop.  "rcvr"
-			 activeProc := self activeProcess].
-	owningProcessIndex := ExcessSignalsIndex. "CriticalSections are laid out like Semaphores"
-	owningProcess := objectMemory fetchPointer: owningProcessIndex ofObject: criticalSection.
-	owningProcess = objectMemory nilObject ifTrue:
-		[objectMemory storePointer: owningProcessIndex
-			ofObject: criticalSection
-			withValue: activeProc.
-		 ^self pop: argumentCount + 1 thenPush: objectMemory falseObject].
-	owningProcess = activeProc ifTrue:
-		[^self pop: argumentCount + 1 thenPush: objectMemory trueObject].
-	"Arrange to answer false (unowned) when the process is resumed."
-	self pop: argumentCount + 1 thenPush: objectMemory falseObject.
-	self addLastLink: activeProc toList: criticalSection.
-	self transferTo: self wakeHighestPriority
-]
-
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveEqual [
 	| integerReceiver integerArgument result |
@@ -1636,31 +1537,6 @@ InterpreterPrimitives >> primitiveEqualLargeIntegers [
 
 	self successful ifTrue:
 		[self pop: 2 thenPushBool: integerRcvr = integerArg]
-]
-
-{ #category : #'process primitives' }
-InterpreterPrimitives >> primitiveExitCriticalSection [
-	"Exit the critical section.
-	 This may change the active process as a result."
-	| criticalSection owningProcessIndex owningProcess |
-	criticalSection := self stackTop.  "rcvr"
-	owningProcessIndex := ExcessSignalsIndex. "CriticalSections are laid out like Semaphores"
-	(self isEmptyList: criticalSection)
-		ifTrue:
-			[objectMemory storePointerUnchecked: owningProcessIndex
-				ofObject: criticalSection
-				withValue: objectMemory nilObject]
-		ifFalse:
-			[owningProcess := self removeFirstLinkOfList: criticalSection.
-			 "store check unnecessary because criticalSection referred to owningProcess
-			  via its FirstLinkIndex slot before owningProcess was removed."
-			 objectMemory storePointerUnchecked: owningProcessIndex
-				ofObject: criticalSection
-				withValue: owningProcess.
-			 "Note that resume: isn't fair; it won't suspend the active process.
-			  For fairness we must do the equivalent of a primitiveYield, but that
-			  may break old code, so we stick with unfair resume:."
-			self resume: owningProcess preemptedYieldingIf: preemptionYields]
 ]
 
 { #category : #'system control primitives' }
@@ -1984,19 +1860,11 @@ InterpreterPrimitives >> primitiveFullClosureValueWithArgs [
 
 { #category : #'memory space primitives' }
 InterpreterPrimitives >> primitiveFullGC [
-	"Do a full garbage collection.  In SqueakV3ObjectMemory, answer the number
-	 of bytes available (including swap space if dynamic memory management is
-	 supported).  In Spur, answer the size of the largest free chunk."
 
-	objectMemory hasSpurMemoryManagerAPI ifTrue:
-		[self pop: 1 thenPushInteger: objectMemory fullGC.
-		 ^self].
-	objectMemory fullGCLock > 0 ifTrue:
-		[self primitiveFailFor: PrimErrInappropriate.
-		 ^self].
-	objectMemory incrementalGC.  "maximimize space for forwarding table"
-	objectMemory fullGC.
-	self pop: 1 thenPushInteger: (objectMemory bytesLeft: true)
+	"Do a full garbage collection. Answer the size of the largest free chunk."
+
+	self pop: 1 thenPushInteger: objectMemory fullGC.
+	^ self
 ]
 
 { #category : #'system control primitives' }
@@ -2073,8 +1941,6 @@ InterpreterPrimitives >> primitiveGetenv [
 	<export: true>
 	<var: #key type: #'char *'>
 	<var: #var type: #'char *'>
-	sHEAFn ~= 0 ifTrue: "secHasEnvironmentAccess"
-		[self sHEAFn ifFalse: [^self primitiveFailFor: PrimErrInappropriate]].
 	key := self cStringOrNullFor: self stackTop.
 	key = 0 ifTrue:
 		[self successful ifTrue:
@@ -2295,12 +2161,11 @@ InterpreterPrimitives >> primitiveImmediateAsInteger [
 
 { #category : #'memory space primitives' }
 InterpreterPrimitives >> primitiveIncrementalGC [
+
 	"Do a quick, incremental garbage collection and return the number of bytes immediately available.
 	 (Note: more space may be made available by doing a full garbage collection."
 
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue: [objectMemory scavengingGC]
-		ifFalse: [objectMemory incrementalGC].
+	objectMemory scavengingGC.
 	self pop: 1 thenPushInteger: (objectMemory bytesLeft: false)
 ]
 
@@ -2316,7 +2181,7 @@ InterpreterPrimitives >> primitiveInstVarAt [
 	index := objectMemory integerValueOf: index.
 	hdr := self baseHeader: rcvr.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := self lengthOf: rcvr baseHeader: hdr format: fmt.
+	totalLength := self lengthOf: rcvr format: fmt.
 	fixedFields := self fixedFieldsOf: rcvr format: fmt length: totalLength.
 	(index >= 1 and: [index <= fixedFields]) ifFalse:
 		[^self primitiveFailFor: PrimErrBadIndex].
@@ -2341,7 +2206,7 @@ InterpreterPrimitives >> primitiveInstVarAtPut [
 	index := objectMemory integerValueOf: index.
 	hdr := objectMemory baseHeader: rcvr.
 	fmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: rcvr baseHeader: hdr format: fmt.
+	totalLength := objectMemory lengthOf: rcvr format: fmt.
 	fixedFields := objectMemory fixedFieldsOf: rcvr format: fmt length: totalLength.
 	(index >= 1 and: [index <= fixedFields]) ifFalse:
 		[^self primitiveFailFor: PrimErrBadIndex].
@@ -2351,16 +2216,164 @@ InterpreterPrimitives >> primitiveInstVarAtPut [
 
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveIntegerAt [
-	SPURVM
-		ifTrue: [self primitiveSpurIntegerAt] "Answer the signed integer element of a pure bits receiver"
-		ifFalse: [self primitiveV3IntegerAt]    "Answer the 32 bit signed integer contents of a words receiver"
+
+	"Answer the signed integer element of a pure bits receiver.
+	 If the receiver is indexable pointers simply function like at:.
+	 Favour bits access over pointer access (normal at: being available)."
+
+	| index rcvr fmt numSlots value |
+	index := self stackTop.
+	rcvr := self stackValue: 1.
+	(objectMemory isIntegerObject: index) ifFalse:
+		[^self primitiveFailFor: PrimErrBadArgument].
+	(objectMemory isImmediate: rcvr) ifTrue:
+		[^self primitiveFailFor: PrimErrBadReceiver].
+	fmt := objectMemory formatOf: rcvr.
+	index := (objectMemory integerValueOf: index) - 1.
+
+	fmt >= objectMemory firstByteFormat ifTrue:
+		[fmt >= objectMemory firstCompiledMethodFormat ifTrue:
+			[^self primitiveFailFor: PrimErrUnsupported].
+		 numSlots := objectMemory numBytesOfBytes: rcvr.
+		 (self asUnsigned: index) < numSlots ifTrue:
+			[value := objectMemory fetchByte: index ofObject: rcvr.
+			 value > 127 ifTrue: [value := value - 256].
+			 self methodReturnInteger: value.
+			 ^0].
+		 ^self primitiveFailFor: PrimErrBadIndex].
+
+	fmt >= objectMemory firstShortFormat ifTrue:
+		[numSlots := objectMemory num16BitUnitsOf: rcvr.
+		 (self asUnsigned: index) < numSlots ifTrue:
+			[value := objectMemory fetchShort16: index ofObject: rcvr.
+			 value > 32767 ifTrue: [value := value - 65536].
+			 self methodReturnInteger: value.
+			 ^0].
+		 ^self primitiveFailFor: PrimErrBadIndex].
+
+	fmt = objectMemory sixtyFourBitIndexableFormat ifTrue:
+		[numSlots := objectMemory num64BitUnitsOf: rcvr.
+		 (self asUnsigned: index) < numSlots ifTrue:
+			[self
+				cCode:
+					[self methodReturnValue: (self signed64BitIntegerFor: (objectMemory fetchLong64: index ofObject: rcvr))]
+				inSmalltalk:
+					[value := objectMemory fetchLong64: index ofObject: rcvr.
+					 value > ((2 raisedTo: 63) - 1) ifTrue:
+						[value := value - (2 raisedTo: 64)].
+					 self methodReturnValue: (self signed64BitIntegerFor: value)].
+			 ^0].
+		 ^self primitiveFailFor: PrimErrBadIndex].
+
+	fmt >= objectMemory firstLongFormat ifTrue:
+		[numSlots := objectMemory num32BitUnitsOf: rcvr.
+		 (self asUnsigned: index) < numSlots ifTrue:
+			[objectMemory bytesPerOop = 8
+				ifTrue:
+					[value := objectMemory fetchLong32: index ofObject: rcvr.
+					 value > 2147483647 ifTrue: [value := value - 4294967296].
+					 self methodReturnInteger: value]
+				ifFalse: [self methodReturnValue: (self signed32BitIntegerFor: (objectMemory fetchLong32: index ofObject: rcvr))].
+			 ^0].
+		 ^self primitiveFailFor: PrimErrBadIndex].
+
+	(fmt <= objectMemory lastPointerFormat
+	 and: [objectMemory isIndexableFormat: fmt]) ifTrue:
+		[| numFixed |
+		 numSlots := objectMemory numSlotsOf: rcvr.
+		 fmt = objectMemory arrayFormat ifTrue:
+			[(self asUnsigned: index) < numSlots ifTrue:
+				[self methodReturnValue: (objectMemory fetchPointer: index ofObject: rcvr).
+				 ^0]].
+		 numFixed := self numFixedSlotsOf: rcvr.
+		 (index + 1 between: numFixed and: numSlots) ifTrue:
+			[self methodReturnValue: (objectMemory fetchPointer: index + numFixed ofObject: rcvr).
+			 ^0].
+		 ^self primitiveFailFor: PrimErrBadIndex].
+
+	^self primitiveFailFor: PrimErrBadReceiver
 ]
 
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveIntegerAtPut [
-	SPURVM
-		ifTrue: [self primitiveSpurIntegerAtPut] "Assign an indexable variable of a pure bits receiver with a signed integer."
-		ifFalse: [self primitiveV3IntegerAtPut]    "Assign an indexable variable of a words receiver with a 32 bit signed integer."
+
+	"Assign an indexable variable of a pure bits receiver with a signed integer.
+	 If the receiver is indexable pointers simply function like at:put: primitive 61.
+	 Favour bits access over pointer access (normal at:put: being available)."
+
+	| index rcvr value valueOop fmt numSlots |
+	valueOop := self stackValue: 0.
+	index := self stackValue: 1.
+	rcvr := self stackValue: 2.
+	value := self signed64BitValueOf: valueOop.
+	(self successful
+	 and: [objectMemory isIntegerObject: index]) ifFalse:
+		[^self primitiveFailFor: PrimErrBadArgument].
+	(objectMemory isImmediate: rcvr) ifTrue:
+		[^self primitiveFailFor: PrimErrBadReceiver].
+	(objectMemory isObjImmutable: rcvr) ifTrue:
+		[^self primitiveFailFor: PrimErrNoModification].
+	fmt := objectMemory formatOf: rcvr.
+	index := (objectMemory integerValueOf: index) - 1.
+
+	fmt >= objectMemory firstByteFormat ifTrue:
+		[fmt >= objectMemory firstCompiledMethodFormat ifTrue:
+			[^self primitiveFailFor: PrimErrUnsupported].
+		 (self isSignedInteger: value inRangeForBits: 8) ifFalse:
+			[^self primitiveFailFor: PrimErrBadArgument].
+		 numSlots := objectMemory numBytesOfBytes: rcvr.
+		 (self asUnsigned: index) < numSlots ifTrue:
+			[objectMemory storeByte: index ofObject: rcvr withValue: (self cCode: [value] inSmalltalk: [value bitAnd: 16rFF]).
+			 self methodReturnValue: valueOop.
+			 ^0].
+		 ^self primitiveFailFor: PrimErrBadIndex].
+
+	fmt >= objectMemory firstShortFormat ifTrue:
+		[(self isSignedInteger: value inRangeForBits: 16) ifFalse:
+			[^self primitiveFailFor: PrimErrBadArgument].
+		 numSlots := objectMemory num16BitUnitsOf: rcvr.
+		 (self asUnsigned: index) < numSlots ifTrue:
+			[objectMemory storeShort16: index ofObject: rcvr withValue: (self cCode: [value] inSmalltalk: [value bitAnd: 16rFFFF]).
+			 self methodReturnValue: valueOop.
+			 ^0].
+		 ^self primitiveFailFor: PrimErrBadIndex].
+
+	fmt = objectMemory sixtyFourBitIndexableFormat ifTrue:
+		["No range check on value in this case because signed64BitValueOf: performed it above."
+		 numSlots := objectMemory num64BitUnitsOf: rcvr.
+		 (self asUnsigned: index) < numSlots ifTrue:
+			[objectMemory storeLong64: index ofObject: rcvr withValue: (self cCode: [value] inSmalltalk: [value bitAnd: 16rFFFFFFFFFFFFFFFF]).
+			 self methodReturnValue: valueOop.
+			 ^0].
+		 ^self primitiveFailFor: PrimErrBadIndex].
+
+	fmt >= objectMemory firstLongFormat ifTrue:
+		[(self isSignedInteger: value inRangeForBits: 32) ifFalse:
+			[^self primitiveFailFor: PrimErrBadArgument].
+		 numSlots := objectMemory num32BitUnitsOf: rcvr.
+		 (self asUnsigned: index) < numSlots ifTrue:
+			[objectMemory storeLong32: index ofObject: rcvr withValue: (self cCode: [value] inSmalltalk: [value bitAnd: 16rFFFFFFFF]).
+			 self methodReturnValue: valueOop.
+			 ^0].
+		 ^self primitiveFailFor: PrimErrBadIndex].
+
+	(fmt <= objectMemory lastPointerFormat
+	 and: [objectMemory isIndexableFormat: fmt]) ifTrue:
+		[| numFixed |
+		 numSlots := objectMemory numSlotsOf: rcvr.
+		 fmt = objectMemory arrayFormat ifTrue:
+			[(self asUnsigned: index) < numSlots ifTrue:
+				[self storePointer: index ofObject: rcvr withValue: valueOop.
+				 self methodReturnValue: valueOop.
+				 ^0]].
+		 numFixed := self numFixedSlotsOf: rcvr.
+		 (index + 1 between: numFixed and: numSlots) ifTrue:
+			[self storePointer: index + numFixed ofObject: rcvr withValue: valueOop.
+			 self methodReturnValue: valueOop.
+			 ^0].
+		 ^self primitiveFailFor: PrimErrBadIndex].
+
+	^self primitiveFailFor: PrimErrBadReceiver
 ]
 
 { #category : #'process primitives' }
@@ -2380,14 +2393,10 @@ InterpreterPrimitives >> primitiveInvokeObjectAsMethod [
 	"
 	<returnTypeC: #void>
 	| runReceiver runArgs lookupClassTag |
-	runArgs := objectMemory hasSpurMemoryManagerAPI
-					ifTrue: [objectMemory
+	runArgs := objectMemory
 								eeInstantiateClassIndex: ClassArrayCompactIndex
 								format: objectMemory arrayFormat
-								numSlots: argumentCount]
-					ifFalse: [objectMemory
-								eeInstantiateClass: (objectMemory splObj: ClassArray)
-								indexableSize: argumentCount].
+								numSlots: argumentCount.
 	argumentCount - 1 to: 0 by: -1  do:
 		[:i| objectMemory storePointerUnchecked: i ofObject: runArgs withValue: self popStack].
 
@@ -2717,67 +2726,59 @@ InterpreterPrimitives >> primitiveMultiplyLargeIntegers [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveNew [
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			["Allocate a new fixed-size instance.  Fail if the allocation would leave
+
+	"Allocate a new fixed-size instance.  Fail if the allocation would leave
 			  less than lowSpaceThreshold bytes free. This *will not* cause a GC :-)"
-			(objectMemory instantiateClass: self stackTop)
-				ifNotNil: [:obj| self pop: argumentCount + 1 thenPush: obj]
-				ifNil: [self primitiveFailFor: ((objectMemory isFixedSizePointerFormat: (objectMemory instSpecOfClass: self stackTop))
-											ifTrue: [PrimErrNoMemory]
-											ifFalse: [PrimErrBadReceiver])]]
-		ifFalse:
-			["Allocate a new fixed-size instance. Fail if the allocation would leave
-			  less than lowSpaceThreshold bytes free. May cause a GC."
-			| spaceOkay |
-			"The following may cause GC! Use var for result to permit inlining."
-			spaceOkay := objectMemory
-								sufficientSpaceToInstantiate: self stackTop
-								indexableSize: 0.
-			spaceOkay
-				ifTrue:
-					[self
-						pop: argumentCount + 1
-						thenPush: (objectMemory
-									instantiateClass: self stackTop
-									indexableSize: 0)]
-				ifFalse: [self primitiveFailFor: PrimErrNoMemory]]
+
+	(objectMemory instantiateClass: self stackTop)
+		ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
+		ifNil: [ 
+			self primitiveFailFor: ((objectMemory isFixedSizePointerFormat:
+					  (objectMemory instSpecOfClass: self stackTop))
+					 ifTrue: [ PrimErrNoMemory ]
+					 ifFalse: [ PrimErrBadReceiver ]) ]
 ]
 
 { #category : #'compiled methods' }
 InterpreterPrimitives >> primitiveNewMethod [
+
 	| header bytecodeCount class size theMethod literalCount |
 	header := self stackTop.
 	bytecodeCount := self stackValue: 1.
-	((objectMemory isIntegerObject: header)
-	 and: [(objectMemory isIntegerObject: bytecodeCount)
-	 and: [(bytecodeCount := objectMemory integerValueOf: bytecodeCount) >= 0]]) ifFalse:
-		[self primitiveFailFor: PrimErrBadArgument.
-		 ^self].
+	((objectMemory isIntegerObject: header) and: [ 
+		 (objectMemory isIntegerObject: bytecodeCount) and: [ 
+			 (bytecodeCount := objectMemory integerValueOf: bytecodeCount) >= 0 ] ]) 
+		ifFalse: [ 
+			self primitiveFailFor: PrimErrBadArgument.
+			^ self ].
 	class := self stackValue: 2.
 	literalCount := objectMemory literalCountOfMethodHeader: header.
-	size := literalCount + LiteralStart * objectMemory bytesPerOop + bytecodeCount.
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[theMethod := objectMemory instantiateCompiledMethodClass: class indexableSize: size.
-			 theMethod ifNil:
-				[self primitiveFailFor: ((objectMemory isCompiledMethodFormat: (objectMemory instSpecOfClass: class))
-										ifTrue: [PrimErrNoMemory]
-										ifFalse: [PrimErrBadReceiver]).
-				 ^self]]
-		ifFalse:
-			[theMethod := objectMemory instantiateClass: class indexableSize: size].
-	objectMemory storePointerUnchecked: HeaderIndex ofObject: theMethod withValue: header.
-	1 to: literalCount do:
-		[:i | objectMemory storePointer: i ofObject: theMethod withValue: objectMemory nilObject].
+	size := literalCount + LiteralStart * objectMemory bytesPerOop
+	        + bytecodeCount.
+	theMethod := objectMemory
+		             instantiateCompiledMethodClass: class
+		             indexableSize: size.
+	theMethod ifNil: [ 
+		self primitiveFailFor: ((objectMemory isCompiledMethodFormat:
+				  (objectMemory instSpecOfClass: class))
+				 ifTrue: [ PrimErrNoMemory ]
+				 ifFalse: [ PrimErrBadReceiver ]).
+		^ self ].
+	objectMemory
+		storePointerUnchecked: HeaderIndex
+		ofObject: theMethod
+		withValue: header.
+	1 to: literalCount do: [ :i | 
+		objectMemory
+			storePointer: i
+			ofObject: theMethod
+			withValue: objectMemory nilObject ].
 	self pop: 3 thenPush: theMethod
 ]
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveNewPinned [
 	
-	self assert: objectMemory hasSpurMemoryManagerAPI.
-		
 	"Allocate a new pinned fixed-size instance.  Fail if the allocation would leave
 			  less than lowSpaceThreshold bytes free. This *will not* cause a GC :-)"
 	(objectMemory instantiateClass: self stackTop isPinned: true)
@@ -2790,37 +2791,30 @@ InterpreterPrimitives >> primitiveNewPinned [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveNewWithArg [
+
 	"Allocate a new indexable instance. Fail if the allocation would leave less than lowSpaceThreshold bytes free. May cause a GC."
-	| size spaceOkay instSpec |
+
+	| size instSpec |
 	size := self positiveMachineIntegerValueOf: self stackTop.
-	self successful ifFalse:"positiveMachineIntegerValueOf: succeeds only for non-negative integers."
-		[^self primitiveFailFor: PrimErrBadArgument].
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue:
-			[(objectMemory instantiateClass: (self stackValue: 1) indexableSize: size)
-				ifNotNil: [:obj| self pop: argumentCount + 1 thenPush: obj]
-				ifNil: [instSpec := objectMemory instSpecOfClass: (self stackValue: 1).
-					  self primitiveFailFor: (((objectMemory isIndexableFormat: instSpec)
-											and: [(objectMemory isCompiledMethodFormat: instSpec) not])
-												ifTrue: [PrimErrNoMemory]
-												ifFalse: [PrimErrBadReceiver])]]
-		ifFalse:
-			[spaceOkay := objectMemory sufficientSpaceToInstantiate: (self stackValue: 1) indexableSize: size.
-			 spaceOkay
-				ifTrue:
-					[self
-						pop: argumentCount + 1
-						thenPush: (objectMemory instantiateClass: (self stackValue: 1) indexableSize: size)]
-				ifFalse:
-					[self primitiveFailFor: PrimErrNoMemory]]
+	self successful ifFalse: [ "positiveMachineIntegerValueOf: succeeds only for non-negative integers." 
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory
+		 instantiateClass: (self stackValue: 1)
+		 indexableSize: size)
+		ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
+		ifNil: [ 
+			instSpec := objectMemory instSpecOfClass: (self stackValue: 1).
+			self primitiveFailFor:
+				(((objectMemory isIndexableFormat: instSpec) and: [ 
+					  (objectMemory isCompiledMethodFormat: instSpec) not ])
+					 ifTrue: [ PrimErrNoMemory ]
+					 ifFalse: [ PrimErrBadReceiver ]) ]
 ]
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveNewWithArgPinned [
 	| size instSpec |
 	
-	self assert: objectMemory hasSpurMemoryManagerAPI.
-
 	size := self positiveMachineIntegerValueOf: self stackTop.
 
 	(objectMemory
@@ -2962,7 +2956,7 @@ InterpreterPrimitives >> primitivePathToUsing [
 	 the current context"
 	| err path |
 	<export: true>
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	argumentCount >= 2 ifFalse:
 		[^self primitiveFailFor: PrimErrBadNumArgs].
 	(self stackTop = objectMemory trueObject
@@ -3191,32 +3185,6 @@ InterpreterPrimitives >> primitiveRemLargeIntegers [
 	self successful ifTrue: [self pop: 2 thenPush: oopResult].
 ]
 
-{ #category : #'process primitives' }
-InterpreterPrimitives >> primitiveResume [
-	"Put this process on the scheduler's lists thus allowing it to proceed next time there is
-	 a chance for processes of it's priority level.  It must go to the back of its run queue so
-	 as not to preempt any already running processes at this level.  If the process's priority
-	 is higher than the current process, preempt the current process."
-	| proc |
-	proc := self stackTop.  "rcvr"
-	(objectMemory isContext: (objectMemory fetchPointer: SuspendedContextIndex ofObject: proc)) ifFalse:
-		[^self primitiveFail].
-	self resume: proc preemptedYieldingIf: preemptionYields
-
-	"Personally I would like to check MyList, which should not be one of the elements of the scheduler lists.
-	 But there are awful race conditions in things like should:notTakeMoreThan: that mean we can't.
-	 eem 9/27/2010 23:08. e.g.
-
-	| proc myList classLinkedList |
-	proc := self stackTop.
-	myList := objectMemory fetchPointer: MyListIndex ofObject: proc.
-	classLinkedList := self superclassOf: (objectMemory splObj: ClassSemaphore).
-	((self fetchClassOfNonInt: myList) ~= classLinkedList
-	and: [objectMemory isContext: (objectMemory fetchPointer: SuspendedContextIndex ofObject: proc)]) ifFalse:
-		[^self primitiveFail].
-	self resume: proc preemptedYieldingIf: preemptionYields"
-]
-
 { #category : #'I/O primitives' }
 InterpreterPrimitives >> primitiveScreenDepth [
 	"Return a SmallInteger indicating the current depth of the OS screen. Negative values are used to imply LSB type pixel format an there is some support in the VM for handling either MSB or LSB"
@@ -3291,28 +3259,30 @@ InterpreterPrimitives >> primitiveSetLogDirectory [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveSetOrHasIdentityHash [
+
 	| hash oldHash thisReceiver isReceiverAClass |
-	argumentCount = 0 ifTrue:
-		[| hasHash |
-		 hasHash := (objectMemory isNonImmediate: self stackTop)
-						and: [objectMemory hasIdentityHash: self stackTop].
-		 self pop: argumentCount + 1 thenPushBool: hasHash.
-		 ^self].
-	argumentCount = 2 
-		ifTrue: 
-			[isReceiverAClass := self booleanValueOf: self stackTop.
-			self successful ifFalse: [self primitiveFailFor: PrimErrBadArgument] ]
-		ifFalse: [isReceiverAClass := false].
+	argumentCount = 0 ifTrue: [ 
+		| hasHash |
+		hasHash := (objectMemory isNonImmediate: self stackTop) and: [ 
+			           objectMemory hasIdentityHash: self stackTop ].
+		self pop: argumentCount + 1 thenPushBool: hasHash.
+		^ self ].
+	argumentCount = 2
+		ifTrue: [ 
+			isReceiverAClass := self booleanValueOf: self stackTop.
+			self successful ifFalse: [ 
+				self primitiveFailFor: PrimErrBadArgument ] ]
+		ifFalse: [ isReceiverAClass := false ].
 	hash := self stackIntegerValue: argumentCount - 1.
 	thisReceiver := self stackObjectValue: argumentCount.
-	self successful ifTrue:
-		[oldHash := objectMemory hashBitsOf: thisReceiver.
-		 objectMemory setHashBitsOf: thisReceiver to: hash.
-		(isReceiverAClass and: [objectMemory hasSpurMemoryManagerAPI]) ifTrue:
-				[objectMemory classAtIndex: hash put: thisReceiver.
-				"next line figures out if the index is anbiguous and fix all the instances if needed"
-				objectMemory allInstancesOf: thisReceiver].
-		 self pop: argumentCount + 1 thenPushInteger: oldHash]
+	self successful ifTrue: [ 
+		oldHash := objectMemory hashBitsOf: thisReceiver.
+		objectMemory setHashBitsOf: thisReceiver to: hash.
+		isReceiverAClass ifTrue: [ 
+			objectMemory classAtIndex: hash put: thisReceiver.
+			"next line figures out if the index is anbiguous and fix all the instances if needed"
+			objectMemory allInstancesOf: thisReceiver ].
+		self pop: argumentCount + 1 thenPushInteger: oldHash ]
 ]
 
 { #category : #'I/O primitives' }
@@ -3439,7 +3409,6 @@ InterpreterPrimitives >> primitiveSize [
 	
 	totalLength := objectMemory
 		               lengthOf: rcvr
-		               baseHeader: hdr
 		               format: fmt.
 	fixedFields := objectMemory
 		               fixedFieldsOf: rcvr
@@ -3521,8 +3490,7 @@ InterpreterPrimitives >> primitiveSlotAt [
 			 ^0].
 		 ^self primitiveFailFor: PrimErrBadIndex].
 
-	(objectMemory hasSpurMemoryManagerAPI
-	 and: [fmt >= objectMemory firstShortFormat]) ifTrue:
+	(fmt >= objectMemory firstShortFormat) ifTrue:
 		[numSlots := objectMemory num16BitUnitsOf: rcvr.
 		 (self asUnsigned: index) < numSlots ifTrue:
 			[self pop: argumentCount + 1 thenPushInteger: (objectMemory fetchUnsignedShort16: index ofObject: rcvr).
@@ -3594,8 +3562,7 @@ InterpreterPrimitives >> primitiveSlotAtPut [
 			 ^0].
 		 ^self primitiveFailFor: PrimErrBadIndex].
 
-	(objectMemory hasSpurMemoryManagerAPI
-	 and: [fmt >= objectMemory firstShortFormat]) ifTrue:
+	(fmt >= objectMemory firstShortFormat) ifTrue:
 		[(self asUnsigned: value) > 16rFFFF ifTrue:
 			[^self primitiveFailFor: PrimErrBadArgument].
 		 numSlots := objectMemory num16BitUnitsOf: rcvr.
@@ -3925,258 +3892,6 @@ InterpreterPrimitives >> primitiveSpecialObjectsOop [
 	self pop: 1 thenPush: objectMemory specialObjectsOop.
 ]
 
-{ #category : #'indexing primitives' }
-InterpreterPrimitives >> primitiveSpurIntegerAt [
-	"Answer the signed integer element of a pure bits receiver.
-	 If the receiver is indexable pointers simply function like at:.
-	 Favour bits access over pointer access (normal at: being available)."
-
-	<inline: true>
-	| index rcvr fmt numSlots value |
-	index := self stackTop.
-	rcvr := self stackValue: 1.
-	(objectMemory isIntegerObject: index) ifFalse:
-		[^self primitiveFailFor: PrimErrBadArgument].
-	(objectMemory isImmediate: rcvr) ifTrue:
-		[^self primitiveFailFor: PrimErrBadReceiver].
-	fmt := objectMemory formatOf: rcvr.
-	index := (objectMemory integerValueOf: index) - 1.
-
-	fmt >= objectMemory firstByteFormat ifTrue:
-		[fmt >= objectMemory firstCompiledMethodFormat ifTrue:
-			[^self primitiveFailFor: PrimErrUnsupported].
-		 numSlots := objectMemory numBytesOfBytes: rcvr.
-		 (self asUnsigned: index) < numSlots ifTrue:
-			[value := objectMemory fetchByte: index ofObject: rcvr.
-			 value > 127 ifTrue: [value := value - 256].
-			 self methodReturnInteger: value.
-			 ^0].
-		 ^self primitiveFailFor: PrimErrBadIndex].
-
-	fmt >= objectMemory firstShortFormat ifTrue:
-		[numSlots := objectMemory num16BitUnitsOf: rcvr.
-		 (self asUnsigned: index) < numSlots ifTrue:
-			[value := objectMemory fetchShort16: index ofObject: rcvr.
-			 value > 32767 ifTrue: [value := value - 65536].
-			 self methodReturnInteger: value.
-			 ^0].
-		 ^self primitiveFailFor: PrimErrBadIndex].
-
-	fmt = objectMemory sixtyFourBitIndexableFormat ifTrue:
-		[numSlots := objectMemory num64BitUnitsOf: rcvr.
-		 (self asUnsigned: index) < numSlots ifTrue:
-			[self
-				cCode:
-					[self methodReturnValue: (self signed64BitIntegerFor: (objectMemory fetchLong64: index ofObject: rcvr))]
-				inSmalltalk:
-					[value := objectMemory fetchLong64: index ofObject: rcvr.
-					 value > ((2 raisedTo: 63) - 1) ifTrue:
-						[value := value - (2 raisedTo: 64)].
-					 self methodReturnValue: (self signed64BitIntegerFor: value)].
-			 ^0].
-		 ^self primitiveFailFor: PrimErrBadIndex].
-
-	fmt >= objectMemory firstLongFormat ifTrue:
-		[numSlots := objectMemory num32BitUnitsOf: rcvr.
-		 (self asUnsigned: index) < numSlots ifTrue:
-			[objectMemory bytesPerOop = 8
-				ifTrue:
-					[value := objectMemory fetchLong32: index ofObject: rcvr.
-					 value > 2147483647 ifTrue: [value := value - 4294967296].
-					 self methodReturnInteger: value]
-				ifFalse: [self methodReturnValue: (self signed32BitIntegerFor: (objectMemory fetchLong32: index ofObject: rcvr))].
-			 ^0].
-		 ^self primitiveFailFor: PrimErrBadIndex].
-
-	(fmt <= objectMemory lastPointerFormat
-	 and: [objectMemory isIndexableFormat: fmt]) ifTrue:
-		[| numFixed |
-		 numSlots := objectMemory numSlotsOf: rcvr.
-		 fmt = objectMemory arrayFormat ifTrue:
-			[(self asUnsigned: index) < numSlots ifTrue:
-				[self methodReturnValue: (objectMemory fetchPointer: index ofObject: rcvr).
-				 ^0]].
-		 numFixed := self numFixedSlotsOf: rcvr.
-		 (index + 1 between: numFixed and: numSlots) ifTrue:
-			[self methodReturnValue: (objectMemory fetchPointer: index + numFixed ofObject: rcvr).
-			 ^0].
-		 ^self primitiveFailFor: PrimErrBadIndex].
-
-	^self primitiveFailFor: PrimErrBadReceiver
-]
-
-{ #category : #'indexing primitives' }
-InterpreterPrimitives >> primitiveSpurIntegerAtPut [
-	"Assign an indexable variable of a pure bits receiver with a signed integer.
-	 If the receiver is indexable pointers simply function like at:put: primitive 61.
-	 Favour bits access over pointer access (normal at:put: being available)."
-
-	<inline: true>
-	| index rcvr value valueOop fmt numSlots |
-	valueOop := self stackValue: 0.
-	index := self stackValue: 1.
-	rcvr := self stackValue: 2.
-	value := self signed64BitValueOf: valueOop.
-	(self successful
-	 and: [objectMemory isIntegerObject: index]) ifFalse:
-		[^self primitiveFailFor: PrimErrBadArgument].
-	(objectMemory isImmediate: rcvr) ifTrue:
-		[^self primitiveFailFor: PrimErrBadReceiver].
-	(objectMemory isObjImmutable: rcvr) ifTrue:
-		[^self primitiveFailFor: PrimErrNoModification].
-	fmt := objectMemory formatOf: rcvr.
-	index := (objectMemory integerValueOf: index) - 1.
-
-	fmt >= objectMemory firstByteFormat ifTrue:
-		[fmt >= objectMemory firstCompiledMethodFormat ifTrue:
-			[^self primitiveFailFor: PrimErrUnsupported].
-		 (self isSignedInteger: value inRangeForBits: 8) ifFalse:
-			[^self primitiveFailFor: PrimErrBadArgument].
-		 numSlots := objectMemory numBytesOfBytes: rcvr.
-		 (self asUnsigned: index) < numSlots ifTrue:
-			[objectMemory storeByte: index ofObject: rcvr withValue: (self cCode: [value] inSmalltalk: [value bitAnd: 16rFF]).
-			 self methodReturnValue: valueOop.
-			 ^0].
-		 ^self primitiveFailFor: PrimErrBadIndex].
-
-	fmt >= objectMemory firstShortFormat ifTrue:
-		[(self isSignedInteger: value inRangeForBits: 16) ifFalse:
-			[^self primitiveFailFor: PrimErrBadArgument].
-		 numSlots := objectMemory num16BitUnitsOf: rcvr.
-		 (self asUnsigned: index) < numSlots ifTrue:
-			[objectMemory storeShort16: index ofObject: rcvr withValue: (self cCode: [value] inSmalltalk: [value bitAnd: 16rFFFF]).
-			 self methodReturnValue: valueOop.
-			 ^0].
-		 ^self primitiveFailFor: PrimErrBadIndex].
-
-	fmt = objectMemory sixtyFourBitIndexableFormat ifTrue:
-		["No range check on value in this case because signed64BitValueOf: performed it above."
-		 numSlots := objectMemory num64BitUnitsOf: rcvr.
-		 (self asUnsigned: index) < numSlots ifTrue:
-			[objectMemory storeLong64: index ofObject: rcvr withValue: (self cCode: [value] inSmalltalk: [value bitAnd: 16rFFFFFFFFFFFFFFFF]).
-			 self methodReturnValue: valueOop.
-			 ^0].
-		 ^self primitiveFailFor: PrimErrBadIndex].
-
-	fmt >= objectMemory firstLongFormat ifTrue:
-		[(self isSignedInteger: value inRangeForBits: 32) ifFalse:
-			[^self primitiveFailFor: PrimErrBadArgument].
-		 numSlots := objectMemory num32BitUnitsOf: rcvr.
-		 (self asUnsigned: index) < numSlots ifTrue:
-			[objectMemory storeLong32: index ofObject: rcvr withValue: (self cCode: [value] inSmalltalk: [value bitAnd: 16rFFFFFFFF]).
-			 self methodReturnValue: valueOop.
-			 ^0].
-		 ^self primitiveFailFor: PrimErrBadIndex].
-
-	(fmt <= objectMemory lastPointerFormat
-	 and: [objectMemory isIndexableFormat: fmt]) ifTrue:
-		[| numFixed |
-		 numSlots := objectMemory numSlotsOf: rcvr.
-		 fmt = objectMemory arrayFormat ifTrue:
-			[(self asUnsigned: index) < numSlots ifTrue:
-				[self storePointer: index ofObject: rcvr withValue: valueOop.
-				 self methodReturnValue: valueOop.
-				 ^0]].
-		 numFixed := self numFixedSlotsOf: rcvr.
-		 (index + 1 between: numFixed and: numSlots) ifTrue:
-			[self storePointer: index + numFixed ofObject: rcvr withValue: valueOop.
-			 self methodReturnValue: valueOop.
-			 ^0].
-		 ^self primitiveFailFor: PrimErrBadIndex].
-
-	^self primitiveFailFor: PrimErrBadReceiver
-]
-
-{ #category : #'indexing primitives' }
-InterpreterPrimitives >> primitiveSpurStringReplace [
-	"<array> primReplaceFrom: start to: stop with: replacement startingAt: repStart  
-		<primitive: 105>"
-	<inline: true>
-	| array start stop repl replStart arrayFmt arrayLength arrayInstSize replFmt replLength replInstSize srcDelta |
-	array := self stackValue: 4.
-	start := self stackValue: 3.
-	stop := self stackValue: 2.
-	repl := self stackValue: 1.
-	replStart := self stackValue: 0.
-
-	((objectMemory isNonIntegerObject: start)
-	 or: [(objectMemory isNonIntegerObject: stop)
-	 or: [(objectMemory isNonIntegerObject: replStart)
-	 or: [objectMemory isImmediate: repl]]]) ifTrue: "can happen in LgInt copy"
-		[^self primitiveFailFor: PrimErrBadArgument].
-
-	start := objectMemory integerValueOf: start.
-	stop := objectMemory integerValueOf: stop.
-	replStart := objectMemory integerValueOf: replStart.
-
-	(stop >= start and: [objectMemory isObjImmutable: array]) ifTrue:
-		[^self primitiveFailFor: PrimErrNoModification].
-
-	arrayFmt := objectMemory formatOf: array.
-	arrayLength := objectMemory lengthOf: array format: arrayFmt.
-	arrayFmt := objectMemory classFormatFromInstFormat: arrayFmt.
-	replFmt := objectMemory formatOf: repl.
-	replLength := objectMemory lengthOf: repl format: replFmt.
-	replFmt := objectMemory classFormatFromInstFormat: replFmt.
-
-	"Array formats (without oddFields bits) must be the same"
-	(arrayFmt = replFmt
-	 and: [arrayFmt < objectMemory firstCompiledMethodFormat]) ifFalse:
-		[^self primitiveFailFor: PrimErrInappropriate].
-
-	"N.B. In the below start - 1 to: stop - 1 do:, Slang is intelligent enough to use < instead of <= so avoiding the stop - 1."
-	arrayFmt <= objectMemory lastPointerFormat
-		ifTrue:
-			[arrayInstSize := objectMemory fixedFieldsOf: array format: arrayFmt length: arrayLength.
-			 replInstSize := objectMemory fixedFieldsOf: repl format: replFmt length: replLength.
-			 (start >= 1 and: [start - 1 <= stop and: [stop + arrayInstSize <= arrayLength
-			  and: [replStart >= 1 and: [stop - start + replStart + replInstSize <= replLength]]]]) ifFalse:
-				[^self primitiveFailFor: PrimErrBadIndex].
-			 start := start + arrayInstSize.
-			 stop := stop + arrayInstSize.
-			 srcDelta := (replStart + replInstSize) - start.
-			 (objectMemory isOldObject: array)
-				ifTrue:
-					[| mustRemember oop |
-					 mustRemember := false.
-					 start - 1 to: stop - 1 do:
-						[:i |
-						oop := objectMemory fetchPointer: srcDelta + i ofObject: repl.
-						(objectMemory isYoung: oop) ifTrue:
-							[mustRemember := true].
-						objectMemory storePointerUnchecked: i ofObject: array withValue: oop].
-					 mustRemember ifTrue:
-						[objectMemory possibleRootStoreInto: array]]
-				ifFalse:
-					[start - 1 to: stop - 1 do:
-						[:i | objectMemory storePointerUnchecked: i ofObject: array withValue: (objectMemory fetchPointer: srcDelta + i ofObject: repl)]]]
-		ifFalse:
-			[(start >= 1 and: [start - 1 <= stop and: [stop <= arrayLength
-			  and: [replStart >= 1 and: [stop - start + replStart <= replLength]]]]) ifFalse:
-				[^self primitiveFailFor: PrimErrBadIndex].
-			 srcDelta := replStart - start.
-			 arrayFmt >= objectMemory firstShortFormat
-				ifTrue: "8 & 16-bit word type objects"
-					[arrayFmt >= objectMemory firstByteFormat
-						ifTrue: "byte-type objects"
-							[start - 1 to: stop - 1 do:
-								[:i | objectMemory storeByte: i ofObject: array withValue: (objectMemory fetchByte: srcDelta + i ofObject: repl)]]
-						ifFalse: "short type objects"
-							[start - 1 to: stop - 1 do:
-								[:i | objectMemory storeShort16: i ofObject: array withValue: (objectMemory fetchShort16: srcDelta + i ofObject: repl)]]]
-				ifFalse: "32 & 64-bit word type objects"
-					[arrayFmt >= objectMemory firstLongFormat
-						ifTrue: "word-type objects"
-							[start - 1 to: stop - 1 do:
-								[:i | objectMemory storeLong32: i ofObject: array withValue: (objectMemory fetchLong32: srcDelta + i ofObject: repl)]]
-						ifFalse: "long type objects"
-							[start - 1 to: stop - 1 do:
-								[:i | objectMemory storeLong64: i ofObject: array withValue: (objectMemory fetchLong64: srcDelta + i ofObject: repl)]]]].
-	"We might consider comparing stop - start to some value here and using forceInterruptCheck"
-
-	self pop: argumentCount "leave rcvr on stack"
-]
-
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSquareRoot [
 	"N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
@@ -4245,13 +3960,167 @@ InterpreterPrimitives >> primitiveStringAtPut [
 	self commonAtPut: true.
 ]
 
+{ #category : #'string primitives' }
+InterpreterPrimitives >> primitiveStringCompareWith [
+	"<string1> primitiveCompareWith: string2 [collated: order] "
+	<export: true>
+	
+	| string1 string2 order strLength1 strLength2 result |
+
+	"1 - fetch the parameters from the stack"	
+	argumentCount = 1 ifFalse:
+		[argumentCount ~= 2 ifTrue:
+			[^self primitiveFailFor: PrimErrBadNumArgs].
+			 order := self stackTop.
+			 ((objectMemory isBytes: order)
+			 and: [(objectMemory numBytesOfBytes: order) = 256]) ifFalse:
+				[^self primitiveFailFor: PrimErrBadArgument]].
+	string1 := self stackValue: argumentCount.
+	string2 := self stackValue: argumentCount - 1. 
+	
+	"2 - check their types - all parameters are ByteObject"
+	((objectMemory isBytes: string1)
+	 and: [objectMemory isBytes: string2]) ifFalse: 
+		[^self primitiveFailFor: PrimErrBadArgument].
+
+	"3 - compare the strings"	
+	strLength1 := objectMemory numBytesOfBytes: string1.
+	strLength2 := objectMemory numBytesOfBytes: string2.
+	result := order 
+		ifNil: [self rawCompare: string1 length: strLength1 with: string2 length: strLength2 accessBlock:
+				[:str :index | objectMemory fetchByte: index ofObject: str ]]
+		ifNotNil: 
+			[self rawCompare: string1 length: strLength1 with: string2 length: strLength2 accessBlock:
+				[:str :index | 
+					objectMemory fetchByte: (objectMemory fetchByte: index ofObject: str) ofObject: order ]].
+	self methodReturnInteger: result
+
+	
+	
+	
+]
+
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveStringReplace [
+
 	"<array> primReplaceFrom: start to: stop with: replacement startingAt: repStart  
 		<primitive: 105>"
-	objectMemory hasSpurMemoryManagerAPI
-		ifTrue: [self primitiveSpurStringReplace]
-		ifFalse: [self primitiveV3StringReplace]
+
+	<inline: true>
+	| array start stop repl replStart arrayFmt arrayLength arrayInstSize replFmt replLength replInstSize srcDelta |
+	array := self stackValue: 4.
+	start := self stackValue: 3.
+	stop := self stackValue: 2.
+	repl := self stackValue: 1.
+	replStart := self stackValue: 0.
+
+	((objectMemory isNonIntegerObject: start) or: [ 
+		 (objectMemory isNonIntegerObject: stop) or: [ 
+			 (objectMemory isNonIntegerObject: replStart) or: [ 
+				 objectMemory isImmediate: repl ] ] ]) ifTrue: [ "can happen in LgInt copy" 
+		^ self primitiveFailFor: PrimErrBadArgument ].
+
+	start := objectMemory integerValueOf: start.
+	stop := objectMemory integerValueOf: stop.
+	replStart := objectMemory integerValueOf: replStart.
+
+	(stop >= start and: [ objectMemory isObjImmutable: array ]) ifTrue: [ 
+		^ self primitiveFailFor: PrimErrNoModification ].
+
+	arrayFmt := objectMemory formatOf: array.
+	arrayLength := objectMemory lengthOf: array format: arrayFmt.
+	arrayFmt := objectMemory classFormatFromInstFormat: arrayFmt.
+	replFmt := objectMemory formatOf: repl.
+	replLength := objectMemory lengthOf: repl format: replFmt.
+	replFmt := objectMemory classFormatFromInstFormat: replFmt.
+
+	"Array formats (without oddFields bits) must be the same"
+	(arrayFmt = replFmt and: [ 
+		 arrayFmt < objectMemory firstCompiledMethodFormat ]) ifFalse: [ 
+		^ self primitiveFailFor: PrimErrInappropriate ].
+
+	"N.B. In the below start - 1 to: stop - 1 do:, Slang is intelligent enough to use < instead of <= so avoiding the stop - 1."
+	arrayFmt <= objectMemory lastPointerFormat
+		ifTrue: [ 
+			arrayInstSize := objectMemory
+				                 fixedFieldsOf: array
+				                 format: arrayFmt
+				                 length: arrayLength.
+			replInstSize := objectMemory
+				                fixedFieldsOf: repl
+				                format: replFmt
+				                length: replLength.
+			(start >= 1 and: [ 
+				 start - 1 <= stop and: [ 
+					 stop + arrayInstSize <= arrayLength and: [ 
+						 replStart >= 1 and: [ 
+							 stop - start + replStart + replInstSize <= replLength ] ] ] ]) 
+				ifFalse: [ ^ self primitiveFailFor: PrimErrBadIndex ].
+			start := start + arrayInstSize.
+			stop := stop + arrayInstSize.
+			srcDelta := replStart + replInstSize - start.
+			(objectMemory getMemoryMap isOldObject: array)
+				ifTrue: [ 
+					| mustRemember oop |
+					mustRemember := false.
+					start - 1 to: stop - 1 do: [ :i | 
+						oop := objectMemory fetchPointer: srcDelta + i ofObject: repl.
+						(objectMemory isYoung: oop) ifTrue: [ mustRemember := true ].
+						objectMemory
+							storePointerUnchecked: i
+							ofObject: array
+							withValue: oop ].
+					mustRemember ifTrue: [ objectMemory possibleOldObjectStoreInto: array ] ]
+				ifFalse: [ 
+					start - 1 to: stop - 1 do: [ :i | 
+						objectMemory
+							storePointerUnchecked: i
+							ofObject: array
+							withValue:
+							(objectMemory fetchPointer: srcDelta + i ofObject: repl) ] ] ]
+		ifFalse: [ 
+			(start >= 1 and: [ 
+				 start - 1 <= stop and: [ 
+					 stop <= arrayLength and: [ 
+						 replStart >= 1 and: [ stop - start + replStart <= replLength ] ] ] ]) 
+				ifFalse: [ ^ self primitiveFailFor: PrimErrBadIndex ].
+			srcDelta := replStart - start.
+			arrayFmt >= objectMemory firstShortFormat
+				ifTrue: [ "8 & 16-bit word type objects"
+					arrayFmt >= objectMemory firstByteFormat
+						ifTrue: [ "byte-type objects"
+							start - 1 to: stop - 1 do: [ :i | 
+								objectMemory
+									storeByte: i
+									ofObject: array
+									withValue:
+									(objectMemory fetchByte: srcDelta + i ofObject: repl) ] ]
+						ifFalse: [ "short type objects"
+							start - 1 to: stop - 1 do: [ :i | 
+								objectMemory
+									storeShort16: i
+									ofObject: array
+									withValue:
+									(objectMemory fetchShort16: srcDelta + i ofObject: repl) ] ] ]
+				ifFalse: [ "32 & 64-bit word type objects"
+					arrayFmt >= objectMemory firstLongFormat
+						ifTrue: [ "word-type objects"
+							start - 1 to: stop - 1 do: [ :i | 
+								objectMemory
+									storeLong32: i
+									ofObject: array
+									withValue:
+									(objectMemory fetchLong32: srcDelta + i ofObject: repl) ] ]
+						ifFalse: [ "long type objects"
+							start - 1 to: stop - 1 do: [ :i | 
+								objectMemory
+									storeLong64: i
+									ofObject: array
+									withValue:
+									(objectMemory fetchLong64: srcDelta + i ofObject: repl) ] ] ] ].
+	"We might consider comparing stop - start to some value here and using forceInterruptCheck"
+
+	self pop: argumentCount "leave rcvr on stack"
 ]
 
 { #category : #'arithmetic integer primitives' }
@@ -4293,31 +4162,6 @@ InterpreterPrimitives >> primitiveSubtractLargeIntegers [
 	oopResult := self magnitude64BitIntegerFor: result neg: resultIsNegative.
 	self successful ifTrue:[self pop: 2 thenPush: oopResult].
 
-]
-
-{ #category : #'process primitives' }
-InterpreterPrimitives >> primitiveSuspend [
-	"Primitive. Suspend the receiver, aProcess such that it can be executed again
-	by sending #resume. If the given process is not currently running, take it off
-	its corresponding list. The primitive returns the list the receiver was previously on."
-	| process myList |
-	process := self stackTop.
-	process = self activeProcess ifTrue:
-		[self pop: 1 thenPush: objectMemory nilObject.
-		 ^self transferTo: self wakeHighestPriority].
-	myList := objectMemory fetchPointer: MyListIndex ofObject: process.
-	"XXXX Fixme. We should really check whether myList is a kind of LinkedList or not
-	but we can't easily so just do a quick check for nil which is the most common case."
-	myList = objectMemory nilObject ifTrue:
-		[^self primitiveFailFor: PrimErrBadReceiver].
-	"Alas in Spur we need a read barrier"
-	(objectMemory isForwarded: myList) ifTrue:
-		[myList := objectMemory followForwarded: myList.
-		 objectMemory storePointer: MyListIndex ofObject: process withValue: myList].
-	self removeProcess: process fromList: myList.
-	self successful ifTrue:
-		[objectMemory storePointer: MyListIndex ofObject: process withValue: objectMemory nilObject.
-		 self pop: 1 thenPush: myList]
 ]
 
 { #category : #'process primitives' }
@@ -4531,72 +4375,6 @@ InterpreterPrimitives >> primitiveV3IntegerAtPut [
 	self pop: 3 thenPush: valueOop "pop all; return value"
 ]
 
-{ #category : #'indexing primitives' }
-InterpreterPrimitives >> primitiveV3StringReplace [
-	"<array> primReplaceFrom: start to: stop with: replacement startingAt: repStart  
-		<primitive: 105>"
-	<inline: true>
-	| array start stop repl replStart hdr arrayFmt totalLength arrayInstSize replFmt replInstSize srcIndex |
-	array := self stackValue: 4.
-	start := self stackIntegerValue: 3.
-	stop := self stackIntegerValue: 2.
-	repl := self stackValue: 1.
-	replStart := self stackIntegerValue: 0.
-
-	self successful ifFalse:
-		[^self primitiveFailFor: PrimErrBadArgument]. 
-	(objectMemory isImmediate: repl) ifTrue: "can happen in LgInt copy"
-		[^self primitiveFailFor: PrimErrBadArgument].
-	(stop >= start and: [objectMemory isObjImmutable: array]) ifTrue:
-		[^self primitiveFailFor: PrimErrNoModification].
-
-	hdr := objectMemory baseHeader: array.
-	arrayFmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: array baseHeader: hdr format: arrayFmt.
-	arrayInstSize := objectMemory fixedFieldsOf: array format: arrayFmt length: totalLength.
-	(start >= 1 and: [start - 1 <= stop and: [stop + arrayInstSize <= totalLength]]) ifFalse:
-		[^self primitiveFailFor: PrimErrBadIndex].
-
-	hdr := objectMemory baseHeader: repl.
-	replFmt := objectMemory formatOfHeader: hdr.
-	totalLength := objectMemory lengthOf: repl baseHeader: hdr format: replFmt.
-	replInstSize := objectMemory fixedFieldsOf: repl format: replFmt length: totalLength.
-	(replStart >= 1 and: [stop - start + replStart + replInstSize <= totalLength]) ifFalse:
-		[^self primitiveFailFor: PrimErrBadIndex].
-
-	"Array formats (without byteSize bits, if bytes array) must be the same"
-	arrayFmt < objectMemory firstByteFormat
-		ifTrue: [arrayFmt = replFmt ifFalse:
-					[^self primitiveFailFor: PrimErrInappropriate]]
-		ifFalse: [(arrayFmt bitAnd: objectMemory byteFormatMask) = (replFmt bitAnd: objectMemory byteFormatMask) ifFalse:
-					[^self primitiveFailFor: PrimErrInappropriate]].
-
-	srcIndex := replStart + replInstSize - 1.
-	"- 1 for 0-based access"
-
-	arrayFmt <= objectMemory lastPointerFormat
-		ifTrue:
-			[start + arrayInstSize - 1 to: stop + arrayInstSize - 1 do:
-				[:i |
-				objectMemory storePointer: i ofObject: array withValue: (objectMemory fetchPointer: srcIndex ofObject: repl).
-				srcIndex := srcIndex + 1]]
-		ifFalse:
-			[arrayFmt < objectMemory firstByteFormat
-				ifTrue: "32-bit-word type objects"
-					[start + arrayInstSize - 1 to: stop + arrayInstSize - 1 do:
-						[:i |
-						objectMemory storeLong32: i ofObject: array withValue: (objectMemory fetchLong32: srcIndex ofObject: repl).
-						srcIndex := srcIndex + 1]]
-				ifFalse: "byte-type objects"
-					[start + arrayInstSize - 1 to: stop + arrayInstSize - 1 do:
-						[:i |
-						objectMemory storeByte: i ofObject: array withValue: (objectMemory fetchByte: srcIndex ofObject: repl).
-						srcIndex := srcIndex + 1]]].
-	"We might consider comparing stop - start to some value here and using forceInterruptCheck"
-
-	self pop: argumentCount "leave rcvr on stack"
-]
-
 { #category : #'process primitives' }
 InterpreterPrimitives >> primitiveVMCurrentThreadId [
 	"Simulation only.  Fail."
@@ -4686,21 +4464,6 @@ InterpreterPrimitives >> primitiveWait [
 	self doWaitSemaphore: sema
 ]
 
-{ #category : #'process primitives' }
-InterpreterPrimitives >> primitiveYield [
-	"Primitively do the equivalent of Process>yield, avoiding the overhead of a fork and a wait in the standard implementation."
-	| scheduler activeProc priority processLists processList |
-	scheduler := self schedulerPointer.
-	activeProc := objectMemory fetchPointer: ActiveProcessIndex ofObject: scheduler.
-	priority := self quickFetchInteger: PriorityIndex ofObject: activeProc.
-	processLists := objectMemory fetchPointer: ProcessListsIndex ofObject: scheduler.
-	processList := objectMemory fetchPointer: priority - 1 ofObject: processLists.
-
-	(self isEmptyList: processList) ifFalse:
-		[self addLastLink: activeProc toList: processList.
-		 self transferTo: self wakeHighestPriority]
-]
-
 { #category : #accessing }
 InterpreterPrimitives >> profileMethod: anOop [
 
@@ -4740,7 +4503,7 @@ InterpreterPrimitives >> quot: integerRcvr ient: integerArg [
 { #category : #'string primitives' }
 InterpreterPrimitives >> rawCompare: string1 length: strLength1 with: string2 length: strLength2 accessBlock: accessBlock [
 	| c1 c2 min |
-	<inline: true> "needs to be forced else slang does not inline it by default"
+
 	min := strLength1 min: strLength2.
 	0 to: min-1 do: 
 		[:i | c1 := accessBlock value: string1 value: i.
@@ -4752,12 +4515,6 @@ InterpreterPrimitives >> rawCompare: string1 length: strLength1 with: string2 le
 	
 	
 	
-]
-
-{ #category : #'simulation support' }
-InterpreterPrimitives >> sHEAFn [
-	<doNotGenerate>
-	^true
 ]
 
 { #category : #'primitive support' }
@@ -4776,6 +4533,7 @@ InterpreterPrimitives >> signalNoResume: aSemaphore [
 InterpreterPrimitives >> signed32BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a SmallInteger or a four-byte LargeInteger."
+	<api>
 	<returnTypeC: #int>
 	
 	objectMemory hasSixtyFourBitImmediates
@@ -4800,6 +4558,7 @@ InterpreterPrimitives >> signed64BitValueOf: oop [
 	"Convert the given object into an integer value.
 	 The object may be either a positive SmallInteger or a eight-byte LargeInteger."
 	| sz value negative ok magnitude |
+	<api>
 	<inline: false>
 	<returnTypeC: #sqLong>
 	<var: #value type: #sqLong>

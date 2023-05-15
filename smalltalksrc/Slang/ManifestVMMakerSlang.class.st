@@ -11,3 +11,8 @@ Class {
 ManifestVMMakerSlang class >> manuallyResolvedDependencies [
 	^ #(#'FileSystem-Core' #'Collections-Abstract')
 ]
+
+{ #category : #'code-critics' }
+ManifestVMMakerSlang class >> ruleStringConcatenationRuleV1FalsePositive [
+	^ #(#(#(#RGPackageDefinition #(#Slang)) #'2022-01-03T12:05:51.106983+01:00') )
+]

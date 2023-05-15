@@ -1,7 +1,5 @@
 #import <Foundation/Foundation.h>
 #import <Cocoa/Cocoa.h>
-#include <string>
-#include <vector>
 
 extern "C" {    
     void fillApplicationDirectory(char* vmPath);

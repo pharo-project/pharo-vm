@@ -2,22 +2,21 @@ Class {
 	#name : #VMSpurMemoryManagerTest,
 	#superclass : #ParametrizedTestCase,
 	#instVars : [
-		'newSpaceSize',
 		'memory',
 		'interpreter',
 		'oldSpaceSize',
 		'nextIndex',
-		'objectHeaderSize',
 		'zeroSizedObjectClassIndex',
-		'emptyObjectSize',
-		'initialAddress',
-		'stackSpaceSize',
 		'stackBuilder',
-		'methodCacheSize',
 		'rumpCStackSize',
 		'wordSize',
 		'methodBuilder',
-		'bytecodeMethod'
+		'edenSize',
+		'imageReaderClass',
+		'imageWriterClass',
+		'environmentBuilder',
+		'ourEphemeronClass',
+		'ourWeakClass'
 	],
 	#pools : [
 		'VMBasicConstants',
@@ -29,11 +28,38 @@ Class {
 }
 
 { #category : #'building suites' }
+VMSpurMemoryManagerTest class >> imageFormatParameters [ 
+
+	^ { 
+		{ #imageReaderClass -> ComposedImageReader. #imageWriterClass -> ComposedImageWriter }.
+		{ #imageReaderClass -> SpurImageReader. #imageWriterClass -> SpurImageWriter }.
+	}
+]
+
+{ #category : #'building suites' }
 VMSpurMemoryManagerTest class >> testParameters [ 
+
+	^ self wordSizeParameters * self imageFormatParameters 
+]
+
+{ #category : #'building suites' }
+VMSpurMemoryManagerTest class >> wordSizeParameters [ 
 
 	^ ParametrizedTestMatrix new
 			forSelector: #wordSize addOptions: { 8 . 4 };
 			yourself
+]
+
+{ #category : #configuring }
+VMSpurMemoryManagerTest >> configureEnvironmentBuilder [
+
+	environmentBuilder
+		interpreterClass: self interpreterClass;
+		objectMemoryClass: self memoryClass;
+		initializationOptions: self initializationOptions;
+		wordSize: self wordSize;
+		initialCodeSize: self initialCodeSize;
+		primitiveTraceLogSize: self primitiveTraceLogSize
 ]
 
 { #category : #helpers }
@@ -45,7 +71,7 @@ VMSpurMemoryManagerTest >> createActiveProcess [
 	processorOopAssociation := self newObjectWithSlots: 2.
 	processorOop := self newObjectWithSlots: 2.
 	priorities := 2.
-	processorListsArray := self newObjectWithSlots: priorities.
+	processorListsArray := self newArrayWithSlots: priorities.
 	1 to: priorities do: [ :index |
 		"Put an empty linked list in each"
 		memory storePointer: index - 1 ofObject: processorListsArray withValue: (self newObjectWithSlots: 2) ].
@@ -55,22 +81,108 @@ VMSpurMemoryManagerTest >> createActiveProcess [
 	memory storePointer: ProcessListsIndex ofObject: processorOop withValue: processorListsArray.
 	
 	"Create a new process with the 4 mandatory instance variables and set it as active process"
-	memory storePointer: ActiveProcessIndex ofObject: processorOop withValue:  (self newObjectWithSlots: 4).
+	memory storePointer: ActiveProcessIndex ofObject: processorOop withValue:  (self newArrayWithSlots: 4).
+]
+
+{ #category : #initialization }
+VMSpurMemoryManagerTest >> createArrayClass [
+
+	| ourArrayClass |
+
+	ourArrayClass := self newObjectWithSlots: 3.
+	memory
+		storePointer: "InstanceSpecificationIndex" 2
+		ofObject: ourArrayClass
+		withValue: (memory integerObjectOf: Array format).
+	memory setHashBitsOf: ourArrayClass to: memory arrayClassIndexPun.
+	memory
+		storePointer: 16 "not necessarily ok, this is not enforced by the VM"
+		ofObject: memory classTableFirstPage
+		withValue: ourArrayClass
+
 ]
 
 { #category : #helpers }
-VMSpurMemoryManagerTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod [
+VMSpurMemoryManagerTest >> createEphemeronClass [
+	ourEphemeronClass := self newObjectWithSlots: 3.
+	memory 
+		storePointer: "InstanceSpecificationIndex" 2
+		ofObject: ourEphemeronClass
+		withValue: (memory integerObjectOf: FinalizationRegistryEntry format).
+	memory ensureBehaviorHash: ourEphemeronClass.
+]
+
+{ #category : #utils }
+VMSpurMemoryManagerTest >> createLargeIntegerClasses [
+
+	| classLargeInteger classLargeNegativeInteger |
+	classLargeInteger := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstByteFormat.
+	
+	memory setHashBitsOf: classLargeInteger to: ClassLargePositiveIntegerCompactIndex.
+	memory
+		storePointer: ClassLargePositiveIntegerCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classLargeInteger.
+
+	classLargeNegativeInteger := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstByteFormat.
+	
+	memory setHashBitsOf: classLargeNegativeInteger to: ClassLargeNegativeIntegerCompactIndex.
+	memory
+		storePointer: ClassLargeNegativeIntegerCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classLargeNegativeInteger.
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> createMethodOopFromHostMethod: aPharoCompiledMethod [
 
 	| methodOop |
-	bytecodeMethod := aPharoCompiledMethod methodClass compiler
-		            encoderClass: EncoderForSistaV1;
-		            options: #( + optionFullBlockClosure );
-		            compile: aPharoCompiledMethod sourceCode.
-
 	methodOop := methodBuilder
-		             fillFromPharoMethod: bytecodeMethod;
-		             build.
+		             fillFromPharoMethod: aPharoCompiledMethod;
+		             buildMethod.
 	^ methodOop
+]
+
+{ #category : #tests }
+VMSpurMemoryManagerTest >> createWeakArrayClass [
+	ourWeakClass := self newObjectWithSlots: 3.
+	memory
+		storePointer: "InstanceSpecificationIndex" 2
+		ofObject: ourWeakClass
+		withValue: (memory integerObjectOf: WeakArray format).
+	memory ensureBehaviorHash: ourWeakClass.
+	
+]
+
+{ #category : #accessing }
+VMSpurMemoryManagerTest >> emptyObjectSize [ 
+
+	"It is the header plus a word, padded to 8 bytes alignment"
+	^ self objectHeaderSize + "memory wordSize" 8
+]
+
+{ #category : #accessing }
+VMSpurMemoryManagerTest >> imageReaderClass [
+
+	^ imageReaderClass
+]
+
+{ #category : #accessing }
+VMSpurMemoryManagerTest >> imageReaderClass: anObject [
+
+	imageReaderClass := anObject
+]
+
+{ #category : #accessing }
+VMSpurMemoryManagerTest >> imageWriterClass [
+
+	^ imageWriterClass
+]
+
+{ #category : #accessing }
+VMSpurMemoryManagerTest >> imageWriterClass: anObject [
+
+	imageWriterClass := anObject
 ]
 
 { #category : #accessing }
@@ -85,7 +197,11 @@ VMSpurMemoryManagerTest >> initializationOptions [
 		  #BytesPerWord.
 		  self wordSize.
 		  #ObjectMemory.
-		  memory class name }
+		  self memoryClass name.
+		  #ImageReader.
+		  imageReaderClass name.
+		  #ImageWriter.
+		  imageWriterClass name }
 ]
 
 { #category : #helpers }
@@ -96,7 +212,7 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForFullGC [
 	memory markStack: memory nilObject.
 	memory weaklingStack: memory nilObject.
 	
-	ourArrayClass := self newObjectWithSlots: 3.
+	ourArrayClass := self newArrayWithSlots: 3.
 	memory
 		storePointer: "InstanceSpecificationIndex" 2
 		ofObject: ourArrayClass
@@ -114,11 +230,13 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForFullGC [
 VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 
 	| freeListOop firstClassTablePage |
-	memory coInterpreter bootstrapping: true.
-
 	"Initialize old space with free list, class table, hidden roots and remembered set to be able to scavenge"
 	memory initializeFreeList.
+
 	memory segmentManager collapseSegmentsPostSwizzle.
+	memory segmentManager plantBridgeAtTheEndOfMemory.
+	memory segmentManager assertBridge.
+
 	memory updateFreeLists.
 	memory initializeOldSpaceFirstFree: memory freeOldSpaceStart.
 
@@ -142,42 +260,84 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 	memory coInterpreter profileSemaphore: memory nilObject.
 	memory mournQueue: memory nilObject.
 	memory specialObjectsOop: memory nilObject.
-		
+
 	freeListOop := memory initializeFreeListInOldSpace: true.
 	memory initializeFreeSpacePostLoad: freeListOop.
 	memory computeFreeSpacePostSwizzle.
-		
-	memory endOfMemory: memory endOfMemory + memory bridgeSize.
-	
-	memory initializeOldSpaceFirstFree: (memory addressAfter: freeListOop).
-	
+
+	memory getMemoryMap setOldSpaceEnd:
+		memory getMemoryMap oldSpaceEnd + memory bridgeSize.
+
+	memory initializeOldSpaceFirstFree:
+		(memory addressAfter: freeListOop).
+
 	memory allocateClassTable.
-	
-	firstClassTablePage := memory fetchPointer: 0 ofObject: memory hiddenRootsObject.
-	
-	memory scavenger initializeRememberedSet.
-	memory scavenger remember: memory hiddenRootsObject.
-	memory scavenger remember: firstClassTablePage. 
+
+	firstClassTablePage := memory
+		                       fetchPointer: 0
+		                       ofObject: memory hiddenRootsObject.
+
+	memory fromOldSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
+	memory fromPermSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
+
+	memory getFromOldSpaceRememberedSet doRemember:
+		memory hiddenRootsObject.
+	memory getFromOldSpaceRememberedSet doRemember: firstClassTablePage.
 	memory specialObjectsOop: (self newObjectWithSlots: 60).
-	
+
 	memory scavengingGCTenuringIf: 1.
-	self deny: memory needGCFlag.
+	self deny: memory needGCFlag
 ]
 
 { #category : #running }
 VMSpurMemoryManagerTest >> initializeSpecialSelectors [
 
 	| specialSelectorsArrayOop |
-	specialSelectorsArrayOop := self newOldSpaceObjectWithSlots:
+	specialSelectorsArrayOop := self newOldSpaceArrayWithSlots:
 		                            Smalltalk specialSelectors size.
 
 	Smalltalk specialSelectors withIndexDo: [ :anElement :anIndex | 
 		memory
 			storePointer: anIndex - 1
 			ofObject: specialSelectorsArrayOop
-			withValue: (anElement forMemory: memory) ].
-		
+			withValue: (anElement forMemory: memory inMethod: nil) ].
+
 	memory splObj: SpecialSelectors put: specialSelectorsArrayOop
+]
+
+{ #category : #'tests-simd' }
+VMSpurMemoryManagerTest >> installFloat64RegisterClass [
+
+	| registerClass |
+	registerClass := self
+		              newClassInOldSpaceWithSlots: 0
+		              instSpec: memory sixtyFourBitIndexableFormat.
+		
+	memory setHashBitsOf: registerClass to: ClassFloat64RegisterIndex.
+	
+	memory
+		storePointer: ClassFloat64RegisterIndex
+		ofObject: memory classTableFirstPage
+		withValue: registerClass.
+		
+	memory splObj: ClassFloat64Register put: registerClass
+
+]
+
+{ #category : #'tests - primitiveGreaterOrEqual' }
+VMSpurMemoryManagerTest >> installFloatClass [
+
+	| classFloat |
+	classFloat := self
+		              newClassInOldSpaceWithSlots: 0
+		              instSpec: memory firstLongFormat.
+	memory setHashBitsOf: classFloat to: ClassFloatCompactIndex.
+	memory
+		storePointer: ClassFloatCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: classFloat
+
+	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
 ]
 
 { #category : #accessor }
@@ -225,6 +385,101 @@ VMSpurMemoryManagerTest >> memory [
 	^ memory
 ]
 
+{ #category : #running }
+VMSpurMemoryManagerTest >> memoryClass [
+
+	^ self wordSize = 4
+		ifTrue: [ Spur32BitMemoryManager ]
+		ifFalse: [ Spur64BitMemoryManager ]
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> new16BitIndexableOfSize: aSize [
+
+	^ self newBitIndexableOfSize: aSize bytesPerSlot: 2 format: memory firstShortFormat
+]
+
+{ #category : #'helpers - methods' }
+VMSpurMemoryManagerTest >> new32BitIndexableFromArray: array [
+
+	| indexable |
+	indexable := self new32BitIndexableOfSize: array size.
+	0 to: (array size - 1) do: [ :i | 
+		memory storeFloat32: i ofObject: indexable withValue: (array at: i + 1) ].
+	^ indexable
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> new32BitIndexableOfSize: aSize [
+
+	^ self newBitIndexableOfSize: aSize bytesPerSlot: 4 format: memory firstLongFormat
+]
+
+{ #category : #'helpers - methods' }
+VMSpurMemoryManagerTest >> new64BitIndexableFromArray: array [
+
+	| indexable |
+	indexable := self new64BitIndexableOfSize: array size.
+	0 to: (array size - 1) do: [ :i | 
+		memory storeFloat64: i ofObject: indexable withValue: (array at: i + 1) ].
+	^ indexable
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> new64BitIndexableOfSize: aSize [
+
+	^ self newBitIndexableOfSize: aSize bytesPerSlot: 8 format: memory sixtyFourBitIndexableFormat
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> new8BitIndexableOfSize: aSize [
+
+	^ self newBitIndexableOfSize: aSize bytesPerSlot: 1 format: memory firstByteFormat
+]
+
+{ #category : #'helpers - objects' }
+VMSpurMemoryManagerTest >> newArrayWithSlots: slots [
+	
+	^ self newArrayWithSlots: slots classIndex: memory arrayClassIndexPun
+]
+
+{ #category : #'helpers - objects' }
+VMSpurMemoryManagerTest >> newArrayWithSlots: slots classIndex: anIndex [
+	
+	^ self newObjectWithSlots: slots format: memory arrayFormat classIndex: anIndex
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> newBitIndexableOfSize: aSize bytesPerSlot: bytesPerSlot format: format [
+
+	| padding numberOfWordSizeSlots desiredByteSize |
+	desiredByteSize := aSize * bytesPerSlot roundUpTo: self wordSize.
+	numberOfWordSizeSlots := desiredByteSize / self wordSize.
+	padding := desiredByteSize / bytesPerSlot - aSize.
+	^ memory
+		  allocateNewSpaceSlots: numberOfWordSizeSlots
+		  format: format + padding
+		  classIndex: self nextOrdinaryClassIndex
+]
+
+{ #category : #asd }
+VMSpurMemoryManagerTest >> newByteArrayWithContent: aCollection [
+
+	| oop |
+	oop := self
+		       newObjectWithSlots: aCollection size / memory wordSize
+		       format: ByteArray instSpec
+		       classIndex: memory arrayClassIndexPun. "I don't care of the class"
+
+	0 to: aCollection size - 1 do: [ :index | 
+		memory
+			storeByte: index
+			ofObject: oop
+			withValue: (aCollection at: index + 1) ].
+		
+	^ oop
+]
+
 { #category : #'helpers - classes' }
 VMSpurMemoryManagerTest >> newClassInOldSpaceWithSlots: numberOfSlots instSpec: format [
 	| newClass formatWithSlots |
@@ -244,25 +499,14 @@ VMSpurMemoryManagerTest >> newClassInOldSpaceWithSlots: numberOfSlots instSpec: 
 ]
 
 { #category : #helpers }
-VMSpurMemoryManagerTest >> newInterpreter [
+VMSpurMemoryManagerTest >> newEphemeronObject [
 
-	memory := self newMemory.
-
-	self interpreterClass
-		initializeWithOptions: self initializationOptions
-		objectMemoryClass: memory class.
-
-	^ self interpreterClass basicNew
-		  objectMemory: memory;
-		  basicInitialize
-]
-
-{ #category : #running }
-VMSpurMemoryManagerTest >> newMemory [
-
-	^ self wordSize = 4
-		ifTrue: [ Spur32BitMemoryManager simulatorClass new ]
-		ifFalse: [ Spur64BitMemoryManager simulatorClass new ]
+"In pharo Ephemerons have 3 slots"
+	
+	^ self
+		newObjectWithSlots: 3
+		format: memory ephemeronFormat
+		classIndex: (memory ensureBehaviorHash: ourEphemeronClass)
 ]
 
 { #category : #'helpers - methods' }
@@ -286,19 +530,24 @@ VMSpurMemoryManagerTest >> newMethodWithSmallContext: isSmall WithArguments: arg
 	^ method
 ]
 
-{ #category : #helpers }
+{ #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newObjectWithSlots: slots [
 	
 	^ self newObjectWithSlots: slots classIndex: memory arrayClassIndexPun
 ]
 
-{ #category : #helpers }
+{ #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newObjectWithSlots: slots classIndex: anIndex [
-	
-	^ self newObjectWithSlots: slots format: memory arrayFormat classIndex: anIndex
+
+	| format |
+	format := slots = 0
+		          ifTrue: [ memory zeroSlotsNonIndexablePointerFormat ]
+		          ifFalse: [ memory nonIndexablePointerFormat ].
+
+	^ self newObjectWithSlots: slots format: format classIndex: anIndex
 ]
 
-{ #category : #helpers }
+{ #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newObjectWithSlots: slots format: aFormat classIndex: anIndex [
 	
 	| oop |
@@ -310,27 +559,89 @@ VMSpurMemoryManagerTest >> newObjectWithSlots: slots format: aFormat classIndex:
 	^ oop
 ]
 
-{ #category : #helpers }
+{ #category : #'instance creation' }
+VMSpurMemoryManagerTest >> newOldByteObjectOfSize: byteSize [
+	
+	| oop numSlots instSpec |
+
+	numSlots := memory numSlotsForBytes: byteSize.
+	instSpec := memory byteFormatForNumBytes: byteSize.
+	
+	oop := memory
+			allocateSlotsInOldSpace: numSlots
+			format: instSpec
+			classIndex: (memory ensureBehaviorHash: memory classByteArray).
+
+	0 to: byteSize - 1 do: [ :index | 
+		memory storeByte: index ofObject: oop withValue: 	0 ].
+
+	^ oop
+]
+
+{ #category : #'helpers - objects' }
+VMSpurMemoryManagerTest >> newOldSpaceArrayWithSlots: slots [
+
+	^ self
+		  newOldSpaceObjectWithSlots: slots format: memory arrayFormat
+		  classIndex: memory arrayClassIndexPun
+]
+
+{ #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newOldSpaceObjectWithSlots: slots [
 	
 	^ self newOldSpaceObjectWithSlots: slots classIndex: memory arrayClassIndexPun
 ]
 
-{ #category : #helpers }
+{ #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newOldSpaceObjectWithSlots: slots classIndex: anIndex [
+	
+	| format |
+	format := slots = 0 ifTrue: [ memory zeroSlotsNonIndexablePointerFormat ] ifFalse: [ memory arrayFormat ].
 	
 	^ self
 		newOldSpaceObjectWithSlots: slots
-		format: memory arrayFormat
+		format: format
 		classIndex: anIndex
 ]
 
-{ #category : #helpers }
+{ #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newOldSpaceObjectWithSlots: slots format: aFormat classIndex: anIndex [
 	
 	| oop |
 	oop := memory
 			allocateSlotsInOldSpace: slots
+			format: aFormat
+			classIndex: anIndex.
+	oop ifNotNil: [ memory fillObj: oop numSlots: slots with: memory nilObject ].
+	^ oop
+]
+
+{ #category : #'helpers - objects' }
+VMSpurMemoryManagerTest >> newPermanentObjectWithSlots: slots [ 
+
+	^ self newPermanentSpaceObjectWithSlots: slots classIndex: memory arrayClassIndexPun
+]
+
+{ #category : #'helpers - objects' }
+VMSpurMemoryManagerTest >> newPermanentSpaceObjectWithSlots: slots classIndex: anIndex [
+
+	| format |
+	format := slots = 0
+		          ifTrue: [ memory zeroSlotsNonIndexablePointerFormat ]
+		          ifFalse: [ memory arrayFormat ].
+
+	^ self
+		  newPermanentSpaceObjectWithSlots: slots
+		  format: format
+		  classIndex: anIndex
+]
+
+{ #category : #'helpers - objects' }
+VMSpurMemoryManagerTest >> newPermanentSpaceObjectWithSlots: slots format: aFormat classIndex: anIndex [
+	
+	| oop |
+	oop := memory
+			allocateSlotsInPermSpace: slots
 			format: aFormat
 			classIndex: anIndex.
 	oop ifNotNil: [ memory fillObj: oop numSlots: slots with: memory nilObject ].
@@ -402,6 +713,15 @@ VMSpurMemoryManagerTest >> newString: aString [
 	^ vmString
 ]
 
+{ #category : #tests }
+VMSpurMemoryManagerTest >> newWeakObjectOfSize: aSize [
+	
+	^ self
+		newObjectWithSlots: aSize
+		format: memory weakArrayFormat
+		classIndex: (memory ensureBehaviorHash: ourWeakClass)
+]
+
 { #category : #helpers }
 VMSpurMemoryManagerTest >> newZeroSizedObject [
 	
@@ -419,21 +739,15 @@ VMSpurMemoryManagerTest >> nextOrdinaryClassIndex [
 		ifNotNil: [ nextIndex := nextIndex + 1 ]
 ]
 
-{ #category : #helpers }
-VMSpurMemoryManagerTest >> primitiveTraceLogSize [
-	^ 0
+{ #category : #accessing }
+VMSpurMemoryManagerTest >> objectHeaderSize [
+
+	^ memory baseHeaderSize 
 ]
 
 { #category : #helpers }
-VMSpurMemoryManagerTest >> roundToPageSize: anInteger [ 
-
-	"Unicorn simulator requires mapped memory to be multiple of 4096"
-	| pageSize remainder |
-	pageSize := 4096.
-	remainder := anInteger \\ pageSize.
-	remainder = 0 ifTrue: [ ^ anInteger ].
-
-	^ anInteger + (pageSize - remainder)
+VMSpurMemoryManagerTest >> primitiveTraceLogSize [
+	^ 0
 ]
 
 { #category : #running }
@@ -441,7 +755,7 @@ VMSpurMemoryManagerTest >> setContextClassIntoClassTable [
 	| aClass |
 	aClass := self
 		newClassInOldSpaceWithSlots: 0
-		instSpec: Array instSpec.
+		instSpec: Context instSpec.
 	memory setHashBitsOf: aClass to: ClassMethodContextCompactIndex.
 	memory
 		storePointer: ClassMethodContextCompactIndex
@@ -462,56 +776,43 @@ VMSpurMemoryManagerTest >> setMethodClassIntoClassTable [
 		withValue: aClass
 ]
 
-{ #category : #running }
-VMSpurMemoryManagerTest >> setUp [
-	| memoryManager |
-	super setUp.
+{ #category : #tests }
+VMSpurMemoryManagerTest >> setSmallIntegerClassIntoClassTable [
 
-	"100 k at least to put the class table in the old space.
-	Get total size be a multiple of 4K so Unicorn CPU emulator accepts it"
-	oldSpaceSize := 999 * 1024.
- 	newSpaceSize := 1 * 1024.
-	stackSpaceSize := 9 * 4096.
-	methodCacheSize := 4096 * self wordSize.
-	rumpCStackSize := 0.
-	
-	initialAddress := 16r1000000.
-	
-	objectHeaderSize := 8 "bytes. Always.".
-	emptyObjectSize := objectHeaderSize + 8 "minimum required single empty slot, to use for forwarders".
-	
-	"Set it to bootstrapping to allow smaller memories"
-	memoryManager := MachineSimulatorMemoryManager new.
-	memoryManager initialAddress: initialAddress.
-	memoryManager wordSize: self wordSize.
-	
-	interpreter := self newInterpreter.
-	interpreter memoryManager: memoryManager.
+	| class |
+	"install the class in both 1 and 3 index of class table
+	see SpurMemoryManager >> fetchClassOf: for more informations"
+	class := self
+		newClassInOldSpaceWithSlots: 0
+		instSpec: memory forwardedFormat.
+	memory setHashBitsOf: class to: memory smallIntegerTag.
 
-	memory := interpreter objectMemory.
-	memory memoryManager: memoryManager.	
-	memory coInterpreter: interpreter.
-	interpreter objectMemory: memory.
-	
-	memory bootstrapping: true.
+	memory
+		storePointer: memory smallIntegerTag
+		ofObject: memory classTableFirstPage
+		withValue: class.
 	
 	memory
-		allocateMemoryOfSize: oldSpaceSize
-		newSpaceSize: newSpaceSize
-		stackSize: stackSpaceSize
-		codeSize: self initialCodeSize
-		methodCacheSize: methodCacheSize
-		primitiveTraceLogSize: (self roundToPageSize: self primitiveTraceLogSize)
-		rumpCStackSize: rumpCStackSize
-		initialAddress: initialAddress.
-	memory initializePostBootstrap.
-	memory setHeapSizeAtPreviousGC.
-	memory segmentManager collapseSegmentsPostSwizzle.
+		storePointer: 3
+		ofObject: memory classTableFirstPage
+		withValue: class.
+	^class
 	
-	"Schedule a GC, so it does not try to schedule one"
-	memory needGCFlag: 1.
-	
-	methodBuilder := VMMethodBuilder new
+]
+
+{ #category : #running }
+VMSpurMemoryManagerTest >> setUp [
+	super setUp.
+
+	environmentBuilder := VMSimulatedEnvironmentBuilder new.
+	self configureEnvironmentBuilder.
+
+	environmentBuilder build.
+
+	interpreter := environmentBuilder interpreter.
+	memory := environmentBuilder objectMemory.
+		
+	methodBuilder := VMCompiledCodeBuilder new
 		interpreter: interpreter; 
 		memory: memory;
 		yourself.
@@ -521,6 +822,9 @@ VMSpurMemoryManagerTest >> setUp [
 		memory: memory;
 		methodBuilder: methodBuilder;
 		yourself.
+		
+	oldSpaceSize := environmentBuilder oldSpaceSize.
+	memory lastHash: 1.
 ]
 
 { #category : #running }
@@ -530,7 +834,7 @@ VMSpurMemoryManagerTest >> setUpScheduler [
 	| processorOopAssociation processorOop processorListArray processorListPriority1 processorListPriority2 activeProcessOop |
 	processorOopAssociation := self newObjectWithSlots: 2.
 	processorOop := self newObjectWithSlots: 2.
-	processorListArray := self newObjectWithSlots: 2.
+	processorListArray := self newArrayWithSlots: 2.
 	
 	processorListPriority1 := self newObjectWithSlots: 2.
 	processorListPriority2 := self newObjectWithSlots: 2.
@@ -541,7 +845,6 @@ VMSpurMemoryManagerTest >> setUpScheduler [
 	memory splObj: SchedulerAssociation put: processorOopAssociation.
 	memory storePointer: ValueIndex ofObject: processorOopAssociation withValue: processorOop.
 	memory storePointer: ProcessListsIndex ofObject: processorOop withValue: processorListArray.
-	memory lastHash: 1.
 	
 	activeProcessOop := self newObjectWithSlots: 4 "Creates the active process".
 	memory 
@@ -569,14 +872,10 @@ VMSpurMemoryManagerTest >> setUpUsingImage [
 	interpreter openOn: 'YourImageHere.image'.
 	interpreter initStackPages.
 	interpreter loadInitialContext.
-	
-	objectHeaderSize := 8 "bytes. Always.".
-	emptyObjectSize := objectHeaderSize + 8 "minimum required single empty slot, to use for forwarders".
-	
-	newSpaceSize := memory oldSpaceStart -memory newSpaceStart.
+		
 	oldSpaceSize := memory oldSpaceSize.
 	
-	methodBuilder := VMMethodBuilder new
+	methodBuilder := VMCompiledCodeBuilder new
 		interpreter: interpreter; 
 		memory: memory;
 		yourself.
@@ -592,7 +891,7 @@ VMSpurMemoryManagerTest >> setUpUsingImage [
 { #category : #accessing }
 VMSpurMemoryManagerTest >> sizeOfObjectWithSlots: slots [
 
-	^ objectHeaderSize + ((slots min: 1 "at least one for the forwarder pointer") * memory wordSize "bytes")
+	^ self objectHeaderSize + ((slots min: 1 "at least one for the forwarder pointer") * memory wordSize "bytes")
 ]
 
 { #category : #accessing }

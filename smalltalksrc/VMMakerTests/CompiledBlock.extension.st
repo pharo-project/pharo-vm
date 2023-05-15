@@ -1,9 +1,17 @@
 Extension { #name : #CompiledBlock }
 
 { #category : #'*VMMakerTests' }
-CompiledBlock >> forMethodBuilder: aBuilder [
+CompiledBlock >> forMemory: memory inMethod: aMethodBuilder [ 
 
-	^ aBuilder newCompiledBlockBuilder
+	| methodBuilder |
+	
+	methodBuilder := VMCompiledCodeBuilder new
+		interpreter: aMethodBuilder interpreter; 
+		memory: memory;
 		fillFromPharoMethod: self;
-		build
+		yourself.
+
+	methodBuilder setOuterCode: aMethodBuilder.
+
+	^ methodBuilder buildMethod
 ]

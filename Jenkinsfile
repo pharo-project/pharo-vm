@@ -103,18 +103,18 @@ def recordCygwinVersions(buildDirectory){
 	archiveArtifacts artifacts: "${buildDirectory}/cygwinVersions.txt"
 }
 
-def runBuild(platformName, configuration, headless = true){
+def runBuild(platformName, configuration, headless = true, someAdditionalParameters = ""){
 	cleanWs()
 	
 	def platform = headless ? platformName : "${platformName}-stockReplacement"
 	def buildDirectory = headless ? "build" :"build-stockReplacement"
-	def additionalParameters = ""
+	def additionalParameters = someAdditionalParameters
 	
-	additionalParameters += headless ? "" : "-DALWAYS_INTERACTIVE=1 "
-	additionalParameters += isRelease() ? "-DBUILD_IS_RELEASE=ON " : "-DBUILD_IS_RELEASE=OFF "
+	additionalParameters += headless ? "" : " -DALWAYS_INTERACTIVE=1 "
+	additionalParameters += isRelease() ? " -DBUILD_IS_RELEASE=ON " : " -DBUILD_IS_RELEASE=OFF "
 
 	if(configuration == 'StackVM'){
-		additionalParameters += "-DFEATURE_MESSAGE_COUNT=TRUE "
+		additionalParameters += " -DFEATURE_MESSAGE_COUNT=TRUE "
 		platform = "${platformName}-StackVM"
 		buildDirectory = "build-StackVM"
 	}
@@ -131,15 +131,20 @@ def runBuild(platformName, configuration, headless = true){
       recordCygwinVersions(buildDirectory)
       runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository -DICEBERG_DEFAULT_REMOTE=httpsUrl"
       runInCygwin "cd ${buildDirectory} && VERBOSE=1 make install package"
+      runInCygwin "mkdir -p artifacts-${platformName} && cp -a ${buildDirectory}/build/packages/* artifacts-${platformName}/"
     }else{
       cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
       dir("${buildDirectory}"){
         shell "VERBOSE=1 make install package"
       }
+      shell "mkdir -p artifacts-${platformName} && cp -a ${buildDirectory}/build/packages/* artifacts-${platformName}/"
     }
 	
 		stash excludes: '_CPack_Packages', includes: "${buildDirectory}/build/packages/*", name: "packages-${platform}-${configuration}"
+        stash includes: "repository/scripts/*", name: "scripts"
 		archiveArtifacts artifacts: "${buildDirectory}/build/packages/*", excludes: '_CPack_Packages'
+		archiveArtifacts artifacts: "artifacts-${platformName}/*", excludes: '_CPack_Packages'
+
 	}
 }
 
@@ -183,19 +188,23 @@ def runUnitTests(platform){
 		saveIsReleaseFlag()
     }
 
-    cmakeBuild generator: "Unix Makefiles", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath"
+    cmakeBuild generator: "Unix Makefiles", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath", cmakeArgs: "-DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl"
     dir("runTests"){
       shell "VERBOSE=1 make vmmaker"
       dir("build/vmmaker"){
         shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libllvm-full.zip"
         shell "unzip libllvm-full.zip -d ./vm/Contents/MacOS/Plugins"
-        shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libunicorn.zip"
-        shell "unzip libunicorn.zip  -d ./vm/Contents/MacOS/Plugins"
+        shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libunicorn.2.zip"
+        shell "unzip libunicorn.2.zip  -d ./vm/Contents/MacOS/Plugins"
 
         timeout(20){
           shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
           shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'Slang-Tests'"
          } 
+
+        shell "zip ./VMMaker-Image.zip ./image/VMMaker.*"
+        archiveArtifacts artifacts: 'VMMaker-Image.zip'
+
         // Stop if tests fail
         // Archive xml reports either case
         try {
@@ -219,7 +228,8 @@ def runTests(platform, configuration, packages, withWorker, additionalParameters
   def hasWorker = withWorker ? "--worker" : ""
 
 	stage(stageName){
-		unstash name: "packages-${platform}-${configuration}"
+		unstash name: "scripts"
+        unstash name: "packages-${platform}-${configuration}"
 		shell "mkdir runTests"
 		dir("runTests"){
 			try{
@@ -228,19 +238,34 @@ def runTests(platform, configuration, packages, withWorker, additionalParameters
           
 				if(isWindows()){
 					runInCygwin "cd runTests && unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
-					runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'"
+					// Disable testAfterSequence that creates incorrect bytecode sequences
+                    runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} ../repository/scripts/patchPharoPreTests.st"
+                    runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'"
 					} else {
 						shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
 
 						if(platform == 'Darwin-x86_64' || platform == 'Darwin-arm64'){
+        					// Disable testAfterSequence that creates incorrect bytecode sequences
+                            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} ../repository/scripts/patchPharoPreTests.st"
 							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'"
 						}
 
 						if(platform == 'Linux-x86_64' || platform == 'Linux-aarch64' || platform == 'Linux-armv7l'){
+        					// Disable testAfterSequence that creates incorrect bytecode sequences
+                            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} ../repository/scripts/patchPharoPreTests.st"
 							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'" 
 						}
 				}
-				junit allowEmptyResults: true, testResults: "*.xml"
+                
+                // If the tests fail, continue and just mark this as a failure
+                try {
+                  junit allowEmptyResults: true, testResults: "*.xml"
+                } catch (ex) {
+                  if (currentBuild.result == 'UNSTABLE'){
+                    currentBuild.result = 'FAILURE'
+                  }
+                  archiveArtifacts artifacts: '*.xml', excludes: '_CPack_Packages'
+                }
 			} finally{
 				if(fileExists('PharoDebug.log')){
 					shell "mv PharoDebug.log PharoDebug-${stageName}.log"
@@ -257,7 +282,6 @@ def runTests(platform, configuration, packages, withWorker, additionalParameters
 				}
 			}
 		}
-		archiveArtifacts artifacts: 'runTests/*.xml', excludes: '_CPack_Packages'
 	}
 }
 
@@ -270,6 +294,7 @@ def upload(platform, configuration, archiveName, isStableRelease = false) {
 	def wordSize = is32Bits(platform) ? "32" : "64"
 	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
 	def expandedCSourceFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-c-src.zip").trim()
+	def expandedCSourceTarName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-c-src.tar.gz").trim()
 	def expandedHeadersFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-include.zip").trim()
 
 	sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
@@ -287,12 +312,21 @@ def upload(platform, configuration, archiveName, isStableRelease = false) {
 		${expandedHeadersFileName} \
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/include/latest${mainBranchVersion()}.zip"
 
+		// Upload Souces ZIP 
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedCSourceFileName} \
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedCSourceFileName} \
 		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source/latest${mainBranchVersion()}.zip"
+
+		// Upload Sources TAR.GZ
+		sh "scp -o StrictHostKeyChecking=no \
+		${expandedCSourceTarName} \
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source"
+		sh "scp -o StrictHostKeyChecking=no \
+		${expandedCSourceTarName} \
+		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source/latest${mainBranchVersion()}.tar.gz"
 		
 		if(isStableRelease){
 			sh "scp -o StrictHostKeyChecking=no \
@@ -337,7 +371,7 @@ def uploadStackVM(platform, configuration, archiveName, isStableRelease = false)
 	unstash name: "packages-${archiveName}-StackVM-${configuration}"
 
 	def wordSize = is32Bits(platform) ? "32" : "64"
-	def oldName = sh(returnStdout: true, script: "ls build-stockReplacement/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
+	def oldName = sh(returnStdout: true, script: "ls build-StackVM/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
 	def expandedBinaryFileName = oldName.replaceAll("-bin.zip", "-StackVM-bin.zip")
 	
 	sh(script: "cp ${oldName} ${expandedBinaryFileName}")
@@ -429,7 +463,6 @@ try{
 	def platforms = parallelBuilderPlatforms + ['Linux-aarch64', 'Linux-armv7l']
 	def builders = [:]
 	def dockerBuilders = [:]
-	def tests = [:]
 
 	node('Darwin-x86_64'){
 		runUnitTests('Darwin-x86_64')
@@ -447,6 +480,15 @@ try{
 				timeout(30){
 					runBuild(platform, "StackVM")
 				}
+				timeout(45){
+					runTests(platform, "CoInterpreter", ".*", false)
+				}
+				timeout(45){
+					runTests(platform, "CoInterpreter", ".*", true)
+				}
+				timeout(30){
+					runBuild("${platform}-ComposedFormat", "CoInterpreter", true, " -DIMAGE_FORMAT=ComposedFormat ")
+				}
 				timeout(30){
 					// Only build the Stock replacement version in the main branch
 					if(isMainBranch()){
@@ -454,23 +496,12 @@ try{
 					}
 				}
 			}
-		}
-		
-		tests[platform] = {
-			node(platform){
-				timeout(45){
-					runTests(platform, "CoInterpreter", ".*", false)
-				}
-				timeout(45){
-					runTests(platform, "CoInterpreter", ".*", true)
-				}				
-			}
-		}
+		}		
 	}
 
 	dockerBuilders['Linux-aarch64'] = {
-		buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter")	
-
+		buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter")
+        runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
 		if(isMainBranch()){
 			buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", false)
 		}
@@ -478,7 +509,7 @@ try{
 
 	dockerBuilders['Linux-armv7l'] = {
 		buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter")	
-
+        runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
 		if(isMainBranch()){
 			buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", false)
 		}
@@ -487,20 +518,10 @@ try{
 	parallel builders
 
 	parallel dockerBuilders
-	
-	tests['Linux-aarch64'] = { 
-		runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
-	}
-
-	tests['Linux-armv7l'] = { 
-		runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
-	}
-	
+		
 	uploadPackages(platforms)
 
 	buildGTKBundle()
-
-	parallel tests
 
 } catch (e) {
   throw e

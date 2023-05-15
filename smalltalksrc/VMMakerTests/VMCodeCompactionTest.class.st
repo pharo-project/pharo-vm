@@ -16,7 +16,7 @@ VMCodeCompactionTest >> createBaseFrameWithMachineCodeMethod: aMachineCodeMethod
 		
 	"The context has 5 (in 32 bits) or 9 (in 64 bits) as initial IP, as method has at least one literal"
 	aCompiledMethod := aMachineCodeMethod methodObject.
-	
+
 	ctx := self newSmallContextReceiver: memory nilObject method: aCompiledMethod arguments: #() temporaries: #() ip: cogit entryOffset negated.
 
 	"The base context has a trampoline as the savedIP so it can return to a context that is in the heap"
@@ -50,14 +50,21 @@ VMCodeCompactionTest >> fillCodeZone [
 
 	| aMethod |
 
-	[aMethod := self jitMethod: (self findMethod: #methodToCompile1).
+	[
+	aMethod := self jitMethod: (self findMethod: #methodToCompile1).
 	aMethod notNil and: [ | headerSize methodSize |
 		headerSize := cogit sizeof: CogMethod.
 		methodSize := headerSize + aMethod blockSize.
 		(cogit methodZone methodAfter: aMethod) asInteger + methodSize
 			< cogit methodZone effectiveLimit ] ] whileTrue.
+	
 
+]
 
+{ #category : #running }
+VMCodeCompactionTest >> initialCodeSize [
+
+	^ 16 * 1024
 ]
 
 { #category : #tests }
@@ -94,7 +101,7 @@ VMCodeCompactionTest >> testCompactDuringInterpreterPrimitiveThatMovesCurrentMet
 	cogit setCFramePointer: interpreter rumpCStackAddress.
 	
 	self prepareStackForSendReceiver: memory nilObject arguments: {memory falseObject}.
-	machineSimulator instructionPointerValue: compactMethod address + cogit noCheckEntryOffset. 
+	machineSimulator instructionPointerRegisterValue: compactMethod address + cogit noCheckEntryOffset. 
 	
 	self runFrom: compactMethod address + cogit noCheckEntryOffset until: callerAddress.
 
@@ -133,7 +140,7 @@ VMCodeCompactionTest >> testCompactDuringInterpreterPrimitiveThatMovesCurrentMet
 	cogit setCFramePointer: interpreter rumpCStackAddress.
 	
 	self prepareStackForSendReceiver: memory nilObject arguments: {memory falseObject}.
-	machineSimulator instructionPointerValue: compactMethod address + cogit noCheckEntryOffset. 
+	machineSimulator instructionPointerRegisterValue: compactMethod address + cogit noCheckEntryOffset. 
 	
 	self runFrom: compactMethod address + cogit noCheckEntryOffset until: callerAddress.
 
@@ -195,7 +202,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocateInSendsLiterals [
 
 	"In StackToRegisterMappingCogit the argument came in the registerArg0"
 	self
-		assert: machineSimulator argument0RegisterValue
+		assert: machineSimulator arg0RegisterValue
 		equals: memory nilObject
 ]
 
@@ -311,7 +318,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocateMonomorphicCallsite [
 		until: (interpreter cogMethodOf: calleeMethodOop) asInteger + cogit entryOffset.
 
 	self
-		assert: machineSimulator instructionPointerValue
+		assert: machineSimulator instructionPointerRegisterValue
 		equals: (interpreter cogMethodOf: calleeMethodOop) asInteger + cogit entryOffset
 ]
 
@@ -384,7 +391,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICCallsite [
 		until: (interpreter cogMethodOf: calleeMethodOop) asInteger + cogit noCheckEntryOffset.
 
 	self
-		assert: machineSimulator instructionPointerValue
+		assert: machineSimulator instructionPointerRegisterValue
 		equals: (interpreter cogMethodOf: calleeMethodOop) asInteger + cogit noCheckEntryOffset.
 	
 	"Check case 2"
@@ -395,7 +402,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICCallsite [
 		until: (interpreter cogMethodOf: calleeMethodOop2) asInteger + cogit noCheckEntryOffset.
 
 	self
-		assert: machineSimulator instructionPointerValue
+		assert: machineSimulator instructionPointerRegisterValue
 		equals: (interpreter cogMethodOf: calleeMethodOop2) asInteger + cogit noCheckEntryOffset.
 	
 	"Check PIC MISS trampoline"
@@ -408,7 +415,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICCallsite [
 		until: cogit ceCPICMissTrampoline.
 
 	self
-		assert: machineSimulator instructionPointerValue
+		assert: machineSimulator instructionPointerRegisterValue
 		equals: cogit ceCPICMissTrampoline
 ]
 
@@ -421,66 +428,84 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICInterpreterAbo
 
 	| firstMethod callerMethodOop calleeCogMethod selector callerCogMethod calleeMethodOop calleeCogMethod2 calleeMethodOop2 pic |
 	"Create a method that will be collected and force compaction of all the next ones"
-	firstMethod := self jitMethod: (self findMethod: #methodToCompile1) selector: memory trueObject.
+	firstMethod := self
+		               jitMethod: (self findMethod: #methodToCompile1)
+		               selector: memory trueObject.
 	firstMethod cmUsageCount: 0.
-	
+
 	"Caller that will be linked to the PIC"
 	selector := memory falseObject.
-	callerCogMethod := self jitMethod: (self findMethod: #methodWithSend:) selector: selector.
+	callerCogMethod := self
+		                   jitMethod: (self findMethod: #methodWithSend:)
+		                   selector: selector.
 	callerCogMethod cmUsageCount: 4.
 	callerMethodOop := callerCogMethod methodObject.
-	
+
 	"Methods that will be linked to"
-	calleeCogMethod := self jitMethod: (self findMethod: #methodWithSend) selector: selector.
+	calleeCogMethod := self
+		                   jitMethod: (self findMethod: #methodWithSend)
+		                   selector: selector.
 	calleeCogMethod cmUsageCount: 4.
 	calleeMethodOop := calleeCogMethod methodObject.
-	
-	calleeMethodOop2 := methodBuilder fillFromPharoMethod: (self findMethod: #methodWithSend); build.
-	
+
+	calleeMethodOop2 := methodBuilder
+		                    fillFromPharoMethod:
+			                    (self findMethod: #methodWithSend);
+		                    buildMethod.
+
 	"Setup the frame to do the patch"
 	"Push receiver then send, to finally stop at the trampoline and patch the call-site"
 	self createFramefulCallFrom: callerAddress.
-	self prepareStackForSendReceiver: memory falseObject arguments: { memory falseObject }.
-	self runFrom: callerCogMethod address + cogit noCheckEntryOffset until: sendTrampolineAddress.
+	self
+		prepareStackForSendReceiver: memory falseObject
+		arguments: { memory falseObject }.
+	self
+		runFrom: callerCogMethod address + cogit noCheckEntryOffset
+		until: sendTrampolineAddress.
 
 	"First monomorphic link"
-	cogit 
+	cogit
 		linkSendAt: machineSimulator getReturnAddress
-		in: callerMethodOop 
+		in: callerMethodOop
 		to: calleeCogMethod
-		offset: cogit entryOffset 
+		offset: cogit entryOffset
 		receiver: memory falseObject.
 
 	"Then create the PIC and link it"
 	interpreter setBreakSelectorLength: memory minSmallInteger.
-	pic := cogit cogPICSelector: selector
-		numArgs: 1
-		Case0Method: calleeCogMethod
-		Case1Method: calleeMethodOop2
-		tag: (cogit objectRepresentation inlineCacheTagForInstance: (memory integerObjectOf: 7))
-		isMNUCase: false.
+	pic := cogit
+		       cogPICSelector: selector
+		       numArgs: 1
+		       Case0Method: calleeCogMethod
+		       Case1Method: calleeMethodOop2
+		       tag: (cogit objectRepresentation inlineCacheTagForInstance:
+				        (memory integerObjectOf: 7))
+		       isMNUCase: false.
 	pic cmUsageCount: 4.
 	cogit backEnd
 		rewriteCallAt: machineSimulator getReturnAddress
 		target: pic asInteger + cogit entryOffset.
-		
+
 	"Fill the code zone with more methods to force compaction"
 	self fillCodeZone.
-		
+
 	self createBaseFrame.
 	interpreter commenceCogCompiledCodeCompaction.
-	
+
 	"After compaction the send should arrive to the callee entry offset"
-	
+
 	"Check case 2"
 	self createFramefulCallFrom: callerAddress.
-	self prepareStackForSendReceiver: memory falseObject arguments: { memory integerObjectOf: 7 }.
 	self
-		runFrom: (interpreter cogMethodOf: callerMethodOop) address + cogit noCheckEntryOffset
+		prepareStackForSendReceiver: memory falseObject
+		arguments: { (memory integerObjectOf: 7) }.
+	self
+		runFrom: (interpreter cogMethodOf: callerMethodOop) address
+			+ cogit noCheckEntryOffset
 		until: cogit cePICAbortTrampoline.
 
 	self
-		assert: machineSimulator instructionPointerValue
+		assert: machineSimulator instructionPointerRegisterValue
 		equals: cogit cePICAbortTrampoline
 ]
 
@@ -554,7 +579,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICMNUAbortCallsi
 		until: cogit cePICAbortTrampoline.
 
 	self
-		assert: machineSimulator instructionPointerValue
+		assert: machineSimulator instructionPointerRegisterValue
 		equals: cogit cePICAbortTrampoline
 ]
 

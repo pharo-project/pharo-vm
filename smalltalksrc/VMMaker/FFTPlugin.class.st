@@ -74,11 +74,11 @@ FFTPlugin >> loadFFTFrom: fftOop [
 
 	"Check assumptions about sizes"
 	interpreterProxy success:
-		(1 << nu = fftSize) & 
-		(fftSize // 4 + 1 = sinTableSize) & 
-		(fftSize = realDataSize) & 
-		(fftSize = imagDataSize) &
-		(realDataSize = imagDataSize).
+		((1 << nu = fftSize) and: [  
+		(fftSize // 4 + 1 = sinTableSize) and: [ 
+		(fftSize = realDataSize) and: [ 
+		(fftSize = imagDataSize) and: [ 
+		(realDataSize = imagDataSize) ] ] ] ]).
 
 	^interpreterProxy failed == false
 ]
