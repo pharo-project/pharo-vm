@@ -116,6 +116,22 @@ sqInt sqResolverStatus(void)
 
 /*** trivialities ***/
 
+sqInt sqResolverHostNameSize(void){ return strlen(localHostName); }
+
+void sqResolverHostNameResultSize(char *name, sqInt nameSize){
+  int len;
+  
+  len = strlen(localHostName);
+  
+  if (nameSize < len){
+    success(false);
+    return;
+  }
+  
+  memcpy(name, localHostName, len);
+}
+
+
 sqInt sqResolverAddrLookupResultSize(void)	{ return strlen(lastName); }
 sqInt sqResolverError(void)			{ return lastError; }
 sqInt sqResolverLocalAddress(void) {

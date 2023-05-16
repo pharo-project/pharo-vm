@@ -49,6 +49,9 @@ sqInt sqResolverGetAddressInfoType(void);
 sqInt sqResolverGetAddressInfoProtocol(void);
 sqInt sqResolverGetAddressInfoNext(void);
 
+sqInt sqResolverHostNameSize(void);
+void sqResolverHostNameResultSize(char *name, sqInt nameSize);
+
 void  sqResolverGetNameInfoSizeFlags(char *addr, sqInt addrSize, sqInt flags);
 sqInt sqResolverGetNameInfoHostSize(void);
 void  sqResolverGetNameInfoHostResultSize(char *name, sqInt nameSize);
