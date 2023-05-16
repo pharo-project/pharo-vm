@@ -2702,10 +2702,10 @@ StackInterpreter >> booleanCheatTrueSistaV1 [
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
 
 	<sharedCodeInCase: #bytecodePrimLessThanSistaV1>
+	self pop: 2.
 	self druidIgnore: [
 		| bytecode offset |
 		bytecode := self fetchByte. "assume next bytecode is jumpIfFalse (99%)"
-		self pop: 2.
 		bytecode >= 192 ifTrue: [
 			bytecode <= 199 ifTrue: [ "short jumpIfFalse 192 - 199"
 				^ self fetchNextBytecode ].
