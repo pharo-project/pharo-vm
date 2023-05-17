@@ -175,12 +175,12 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 126. 126. #unknownBytecode }.
 		  { 1. 127. 127. #unknownBytecode }.
 		  { 1. 128. 128. #gen_SendLiteralSelector0ArgsBytecode0 }.
-		  { 1. 129. 129. #unknownBytecode }.
-		  { 1. 130. 130. #unknownBytecode }.
-		  { 1. 131. 131. #unknownBytecode }.
-		  { 1. 132. 132. #unknownBytecode }.
-		  { 1. 133. 133. #unknownBytecode }.
-		  { 1. 134. 134. #unknownBytecode }.
+		  { 1. 129. 129. #gen_SendLiteralSelector0ArgsBytecode1 }.
+		  { 1. 130. 130. #gen_SendLiteralSelector0ArgsBytecode2 }.
+		  { 1. 131. 131. #gen_SendLiteralSelector0ArgsBytecode3 }.
+		  { 1. 132. 132. #gen_SendLiteralSelector0ArgsBytecode4 }.
+		  { 1. 133. 133. #gen_SendLiteralSelector0ArgsBytecode5 }.
+		  { 1. 134. 134. #gen_SendLiteralSelector0ArgsBytecode6 }.
 		  { 1. 135. 135. #unknownBytecode }.
 		  { 1. 136. 136. #unknownBytecode }.
 		  { 1. 137. 137. #unknownBytecode }.
