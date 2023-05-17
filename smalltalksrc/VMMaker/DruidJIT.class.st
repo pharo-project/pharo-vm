@@ -26,16 +26,26 @@ DruidJIT class >> bytecodeTable [
 
 	<generated>
 	^ {
-		  { 1. 0. 0. #unknownBytecode }.
-		  { 1. 1. 1. #unknownBytecode }.
-		  { 1. 2. 2. #unknownBytecode }.
-		  { 1. 3. 3. #unknownBytecode }.
-		  { 1. 4. 4. #unknownBytecode }.
-		  { 1. 5. 5. #unknownBytecode }.
-		  { 1. 6. 6. #unknownBytecode }.
-		  { 1. 7. 7. #unknownBytecode }.
-		  { 1. 8. 8. #unknownBytecode }.
-		  { 1. 9. 9. #unknownBytecode }.
+		  { 1. 0. 0. #gen_PushReceiverVariableBytecode0.
+		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  { 1. 1. 1. #gen_PushReceiverVariableBytecode1.
+		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  { 1. 2. 2. #gen_PushReceiverVariableBytecode2.
+		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  { 1. 3. 3. #gen_PushReceiverVariableBytecode3.
+		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  { 1. 4. 4. #gen_PushReceiverVariableBytecode4.
+		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  { 1. 5. 5. #gen_PushReceiverVariableBytecode5.
+		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  { 1. 6. 6. #gen_PushReceiverVariableBytecode6.
+		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  { 1. 7. 7. #gen_PushReceiverVariableBytecode7.
+		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  { 1. 8. 8. #gen_PushReceiverVariableBytecode8.
+		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  { 1. 9. 9. #gen_PushReceiverVariableBytecode9.
+		  #isInstVarRef. #needsFrameNever:. 1 }.
 		  { 1. 10. 10. #unknownBytecode }.
 		  { 1. 11. 11. #unknownBytecode }.
 		  { 1. 12. 12. #unknownBytecode }.
@@ -90,9 +100,12 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 61. 61. #unknownBytecode }.
 		  { 1. 62. 62. #unknownBytecode }.
 		  { 1. 63. 63. #unknownBytecode }.
-		  { 1. 64. 64. #unknownBytecode }.
-		  { 1. 65. 65. #unknownBytecode }.
-		  { 1. 66. 66. #unknownBytecode }.
+		  { 1. 64. 64. #gen_PushTemporaryVariableBytecode0.
+		  #needsFrameIfMod16GENumArgs:. 1 }.
+		  { 1. 65. 65. #gen_PushTemporaryVariableBytecode1.
+		  #needsFrameIfMod16GENumArgs:. 1 }.
+		  { 1. 66. 66. #gen_PushTemporaryVariableBytecode2.
+		  #needsFrameIfMod16GENumArgs:. 1 }.
 		  { 1. 67. 67. #unknownBytecode }.
 		  { 1. 68. 68. #unknownBytecode }.
 		  { 1. 69. 69. #unknownBytecode }.
@@ -102,23 +115,30 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 73. 73. #unknownBytecode }.
 		  { 1. 74. 74. #unknownBytecode }.
 		  { 1. 75. 75. #unknownBytecode }.
-		  { 1. 76. 76. #unknownBytecode }.
+		  { 1. 76. 76. #gen_PushReceiverBytecode. #needsFrameNever:.
+		  1 }.
 		  { 1. 77. 77. #unknownBytecode }.
 		  { 1. 78. 78. #unknownBytecode }.
 		  { 1. 79. 79. #unknownBytecode }.
-		  { 1. 80. 80. #unknownBytecode }.
-		  { 1. 81. 81. #unknownBytecode }.
+		  { 1. 80. 80. #gen_PushConstantZeroBytecode.
+		  #needsFrameNever:. 1 }.
+		  { 1. 81. 81. #gen_PushConstantOneBytecode }.
 		  { 1. 82. 82. #unknownBytecode }.
 		  { 1. 83. 83. #unknownBytecode }.
 		  { 1. 84. 84. #unknownBytecode }.
 		  { 1. 85. 85. #unknownBytecode }.
 		  { 1. 86. 86. #unknownBytecode }.
 		  { 1. 87. 87. #unknownBytecode }.
-		  { 1. 88. 88. #unknownBytecode }.
-		  { 1. 89. 89. #unknownBytecode }.
-		  { 1. 90. 90. #unknownBytecode }.
-		  { 1. 91. 91. #unknownBytecode }.
-		  { 1. 92. 92. #unknownBytecode }.
+		  { 1. 88. 88. #gen_ReturnReceiver. #return. #isMappedInBlock.
+		  #needsFrameIfInBlock:. 0 }.
+		  { 1. 89. 89. #gen_ReturnTrue. #return. #isMappedInBlock.
+		  #needsFrameIfInBlock:. 0 }.
+		  { 1. 90. 90. #gen_ReturnFalse. #return. #isMappedInBlock.
+		  #needsFrameIfInBlock:. 0 }.
+		  { 1. 91. 91. #gen_ReturnNil. #return. #isMappedInBlock.
+		  #needsFrameIfInBlock:. 0 }.
+		  { 1. 92. 92. #gen_ReturnTopFromMethod. #return. #isMappedInBlock.
+		  #needsFrameIfInBlock:.  -1 }.
 		  { 1. 93. 93. #unknownBytecode }.
 		  { 1. 94. 94. #unknownBytecode }.
 		  { 1. 95. 95. #unknownBytecode }.
@@ -144,8 +164,7 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 115. 115. #unknownBytecode }.
 		  { 1. 116. 116. #unknownBytecode }.
 		  { 1. 117. 117. #unknownBytecode }.
-		  { 1. 118. 118. #gen_BytecodePrimIdenticalSistaV1.
-		  #notMapped. #needsFrameNever:.  -1 }.
+		  { 1. 118. 118. #unknownBytecode }.
 		  { 1. 119. 119. #unknownBytecode }.
 		  { 1. 120. 120. #unknownBytecode }.
 		  { 1. 121. 121. #unknownBytecode }.
