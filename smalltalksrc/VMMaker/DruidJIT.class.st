@@ -26,26 +26,16 @@ DruidJIT class >> bytecodeTable [
 
 	<generated>
 	^ {
-		  { 1. 0. 0. #gen_PushReceiverVariableBytecode0.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
-		  { 1. 1. 1. #gen_PushReceiverVariableBytecode1.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
-		  { 1. 2. 2. #gen_PushReceiverVariableBytecode2.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
-		  { 1. 3. 3. #gen_PushReceiverVariableBytecode3.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
-		  { 1. 4. 4. #gen_PushReceiverVariableBytecode4.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
-		  { 1. 5. 5. #gen_PushReceiverVariableBytecode5.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
-		  { 1. 6. 6. #gen_PushReceiverVariableBytecode6.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
-		  { 1. 7. 7. #gen_PushReceiverVariableBytecode7.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
-		  { 1. 8. 8. #gen_PushReceiverVariableBytecode8.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
-		  { 1. 9. 9. #gen_PushReceiverVariableBytecode9.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  { 1. 0. 0. #unknownBytecode }.
+		  { 1. 1. 1. #unknownBytecode }.
+		  { 1. 2. 2. #unknownBytecode }.
+		  { 1. 3. 3. #unknownBytecode }.
+		  { 1. 4. 4. #unknownBytecode }.
+		  { 1. 5. 5. #unknownBytecode }.
+		  { 1. 6. 6. #unknownBytecode }.
+		  { 1. 7. 7. #unknownBytecode }.
+		  { 1. 8. 8. #unknownBytecode }.
+		  { 1. 9. 9. #unknownBytecode }.
 		  { 1. 10. 10. #unknownBytecode }.
 		  { 1. 11. 11. #unknownBytecode }.
 		  { 1. 12. 12. #unknownBytecode }.
@@ -100,12 +90,9 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 61. 61. #unknownBytecode }.
 		  { 1. 62. 62. #unknownBytecode }.
 		  { 1. 63. 63. #unknownBytecode }.
-		  { 1. 64. 64. #gen_PushTemporaryVariableBytecode0.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 65. 65. #gen_PushTemporaryVariableBytecode1.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 66. 66. #gen_PushTemporaryVariableBytecode2.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
+		  { 1. 64. 64. #unknownBytecode }.
+		  { 1. 65. 65. #unknownBytecode }.
+		  { 1. 66. 66. #unknownBytecode }.
 		  { 1. 67. 67. #unknownBytecode }.
 		  { 1. 68. 68. #unknownBytecode }.
 		  { 1. 69. 69. #unknownBytecode }.
@@ -115,81 +102,66 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 73. 73. #unknownBytecode }.
 		  { 1. 74. 74. #unknownBytecode }.
 		  { 1. 75. 75. #unknownBytecode }.
-		  { 1. 76. 76. #gen_PushReceiverBytecode. #needsFrameNever:.
-		  1 }.
+		  { 1. 76. 76. #unknownBytecode }.
 		  { 1. 77. 77. #unknownBytecode }.
 		  { 1. 78. 78. #unknownBytecode }.
 		  { 1. 79. 79. #unknownBytecode }.
-		  { 1. 80. 80. #gen_PushConstantZeroBytecode.
-		  #needsFrameNever:. 1 }.
-		  { 1. 81. 81. #gen_PushConstantOneBytecode }.
+		  { 1. 80. 80. #unknownBytecode }.
+		  { 1. 81. 81. #unknownBytecode }.
 		  { 1. 82. 82. #unknownBytecode }.
 		  { 1. 83. 83. #unknownBytecode }.
 		  { 1. 84. 84. #unknownBytecode }.
 		  { 1. 85. 85. #unknownBytecode }.
 		  { 1. 86. 86. #unknownBytecode }.
 		  { 1. 87. 87. #unknownBytecode }.
-		  { 1. 88. 88. #gen_ReturnReceiver. #return. #isMappedInBlock.
-		  #needsFrameIfInBlock:. 0 }.
-		  { 1. 89. 89. #gen_ReturnTrue. #return. #isMappedInBlock.
-		  #needsFrameIfInBlock:. 0 }.
-		  { 1. 90. 90. #gen_ReturnFalse. #return. #isMappedInBlock.
-		  #needsFrameIfInBlock:. 0 }.
-		  { 1. 91. 91. #gen_ReturnNil. #return. #isMappedInBlock.
-		  #needsFrameIfInBlock:. 0 }.
-		  { 1. 92. 92. #gen_ReturnTopFromMethod. #return. #isMappedInBlock.
-		  #needsFrameIfInBlock:.  -1 }.
+		  { 1. 88. 88. #unknownBytecode }.
+		  { 1. 89. 89. #unknownBytecode }.
+		  { 1. 90. 90. #unknownBytecode }.
+		  { 1. 91. 91. #unknownBytecode }.
+		  { 1. 92. 92. #unknownBytecode }.
 		  { 1. 93. 93. #unknownBytecode }.
 		  { 1. 94. 94. #unknownBytecode }.
 		  { 1. 95. 95. #unknownBytecode }.
-		  { 1. 96. 96. #gen_BytecodePrimAdd }.
-		  { 1. 97. 97. #gen_BytecodePrimSubtract. #isMapped }.
-		  { 1. 98. 98. #gen_BytecodePrimLessThanSistaV1.
-		  #isMapped }.
-		  { 1. 99. 99. #gen_BytecodePrimGreaterThanSistaV1.
-		  #isMapped }.
-		  { 1. 100. 100. #gen_BytecodePrimLessOrEqualSistaV1.
-		  #isMapped }.
-		  { 1. 101. 101. #gen_BytecodePrimGreaterOrEqualSistaV1.
-		  #isMapped }.
-		  { 1. 102. 102. #gen_BytecodePrimEqualSistaV1.
-		  #isMapped }.
-		  { 1. 103. 103. #gen_BytecodePrimNotEqualSistaV1.
-		  #isMapped }.
-		  { 1. 104. 104. #gen_BytecodePrimMultiply. #isMapped }.
-		  { 1. 105. 105. #gen_BytecodePrimDivide. #isMapped }.
-		  { 1. 106. 106. #gen_BytecodePrimMod. #isMapped }.
-		  { 1. 107. 107. #gen_BytecodePrimMakePoint.
-		  #isMapped }.
-		  { 1. 108. 108. #gen_BytecodePrimBitShift. #isMapped }.
-		  { 1. 109. 109. #gen_BytecodePrimDiv. #isMapped }.
-		  { 1. 110. 110. #gen_BytecodePrimBitAnd. #isMapped }.
-		  { 1. 111. 111. #gen_BytecodePrimBitOr. #isMapped }.
-		  { 1. 112. 112. #gen_BytecodePrimAt. #isMapped }.
-		  { 1. 113. 113. #gen_BytecodePrimAtPut. #isMapped }.
-		  { 1. 114. 114. #gen_BytecodePrimSize. #isMapped }.
-		  { 1. 115. 115. #gen_BytecodePrimNext. #isMapped }.
-		  { 1. 116. 116. #gen_BytecodePrimNextPut. #isMapped }.
-		  { 1. 117. 117. #gen_BytecodePrimAtEnd. #isMapped }.
-		  { 1. 118. 118. #unknownBytecode }.
+		  { 1. 96. 96. #unknownBytecode }.
+		  { 1. 97. 97. #unknownBytecode }.
+		  { 1. 98. 98. #unknownBytecode }.
+		  { 1. 99. 99. #unknownBytecode }.
+		  { 1. 100. 100. #unknownBytecode }.
+		  { 1. 101. 101. #unknownBytecode }.
+		  { 1. 102. 102. #unknownBytecode }.
+		  { 1. 103. 103. #unknownBytecode }.
+		  { 1. 104. 104. #unknownBytecode }.
+		  { 1. 105. 105. #unknownBytecode }.
+		  { 1. 106. 106. #unknownBytecode }.
+		  { 1. 107. 107. #unknownBytecode }.
+		  { 1. 108. 108. #unknownBytecode }.
+		  { 1. 109. 109. #unknownBytecode }.
+		  { 1. 110. 110. #unknownBytecode }.
+		  { 1. 111. 111. #unknownBytecode }.
+		  { 1. 112. 112. #unknownBytecode }.
+		  { 1. 113. 113. #unknownBytecode }.
+		  { 1. 114. 114. #unknownBytecode }.
+		  { 1. 115. 115. #unknownBytecode }.
+		  { 1. 116. 116. #unknownBytecode }.
+		  { 1. 117. 117. #unknownBytecode }.
+		  { 1. 118. 118. #gen_BytecodePrimIdenticalSistaV1.
+		  #notMapped. #needsFrameNever:.  -1 }.
 		  { 1. 119. 119. #unknownBytecode }.
 		  { 1. 120. 120. #unknownBytecode }.
-		  { 1. 121. 121. #gen_BytecodePrimValue. #isMapped }.
-		  { 1. 122. 122. #gen_BytecodePrimValueWithArg.
-		  #isMapped }.
-		  { 1. 123. 123. #gen_BytecodePrimDo. #isMapped }.
-		  { 1. 124. 124. #gen_BytecodePrimNew. #isMapped }.
-		  { 1. 125. 125. #gen_BytecodePrimNewWithArg.
-		  #isMapped }.
-		  { 1. 126. 126. #gen_BytecodePrimPointX. #isMapped }.
-		  { 1. 127. 127. #gen_BytecodePrimPointY. #isMapped }.
-		  { 1. 128. 128. #gen_SendLiteralSelector0ArgsBytecode0 }.
-		  { 1. 129. 129. #gen_SendLiteralSelector0ArgsBytecode1 }.
-		  { 1. 130. 130. #gen_SendLiteralSelector0ArgsBytecode2 }.
-		  { 1. 131. 131. #gen_SendLiteralSelector0ArgsBytecode3 }.
-		  { 1. 132. 132. #gen_SendLiteralSelector0ArgsBytecode4 }.
-		  { 1. 133. 133. #gen_SendLiteralSelector0ArgsBytecode5 }.
-		  { 1. 134. 134. #gen_SendLiteralSelector0ArgsBytecode6 }.
+		  { 1. 121. 121. #unknownBytecode }.
+		  { 1. 122. 122. #unknownBytecode }.
+		  { 1. 123. 123. #unknownBytecode }.
+		  { 1. 124. 124. #unknownBytecode }.
+		  { 1. 125. 125. #unknownBytecode }.
+		  { 1. 126. 126. #unknownBytecode }.
+		  { 1. 127. 127. #unknownBytecode }.
+		  { 1. 128. 128. #unknownBytecode }.
+		  { 1. 129. 129. #unknownBytecode }.
+		  { 1. 130. 130. #unknownBytecode }.
+		  { 1. 131. 131. #unknownBytecode }.
+		  { 1. 132. 132. #unknownBytecode }.
+		  { 1. 133. 133. #unknownBytecode }.
+		  { 1. 134. 134. #unknownBytecode }.
 		  { 1. 135. 135. #unknownBytecode }.
 		  { 1. 136. 136. #unknownBytecode }.
 		  { 1. 137. 137. #unknownBytecode }.
@@ -199,13 +171,13 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 141. 141. #unknownBytecode }.
 		  { 1. 142. 142. #unknownBytecode }.
 		  { 1. 143. 143. #unknownBytecode }.
-		  { 1. 144. 144. #gen_SendLiteralSelector1ArgBytecode0 }.
-		  { 1. 145. 145. #gen_SendLiteralSelector1ArgBytecode1 }.
-		  { 1. 146. 146. #gen_SendLiteralSelector1ArgBytecode2 }.
-		  { 1. 147. 147. #gen_SendLiteralSelector1ArgBytecode3 }.
-		  { 1. 148. 148. #gen_SendLiteralSelector1ArgBytecode4 }.
-		  { 1. 149. 149. #gen_SendLiteralSelector1ArgBytecode5 }.
-		  { 1. 150. 150. #gen_SendLiteralSelector1ArgBytecode6 }.
+		  { 1. 144. 144. #unknownBytecode }.
+		  { 1. 145. 145. #unknownBytecode }.
+		  { 1. 146. 146. #unknownBytecode }.
+		  { 1. 147. 147. #unknownBytecode }.
+		  { 1. 148. 148. #unknownBytecode }.
+		  { 1. 149. 149. #unknownBytecode }.
+		  { 1. 150. 150. #unknownBytecode }.
 		  { 1. 151. 151. #unknownBytecode }.
 		  { 1. 152. 152. #unknownBytecode }.
 		  { 1. 153. 153. #unknownBytecode }.
@@ -215,15 +187,15 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 157. 157. #unknownBytecode }.
 		  { 1. 158. 158. #unknownBytecode }.
 		  { 1. 159. 159. #unknownBytecode }.
-		  { 1. 160. 160. #gen_SendLiteralSelector2ArgsBytecode0 }.
-		  { 1. 161. 161. #gen_SendLiteralSelector2ArgsBytecode1 }.
-		  { 1. 162. 162. #gen_SendLiteralSelector2ArgsBytecode2 }.
-		  { 1. 163. 163. #gen_SendLiteralSelector2ArgsBytecode3 }.
-		  { 1. 164. 164. #gen_SendLiteralSelector2ArgsBytecode4 }.
-		  { 1. 165. 165. #gen_SendLiteralSelector2ArgsBytecode5 }.
-		  { 1. 166. 166. #gen_SendLiteralSelector2ArgsBytecode6 }.
-		  { 1. 167. 167. #gen_SendLiteralSelector2ArgsBytecode7 }.
-		  { 1. 168. 168. #gen_SendLiteralSelector2ArgsBytecode8 }.
+		  { 1. 160. 160. #unknownBytecode }.
+		  { 1. 161. 161. #unknownBytecode }.
+		  { 1. 162. 162. #unknownBytecode }.
+		  { 1. 163. 163. #unknownBytecode }.
+		  { 1. 164. 164. #unknownBytecode }.
+		  { 1. 165. 165. #unknownBytecode }.
+		  { 1. 166. 166. #unknownBytecode }.
+		  { 1. 167. 167. #unknownBytecode }.
+		  { 1. 168. 168. #unknownBytecode }.
 		  { 1. 169. 169. #unknownBytecode }.
 		  { 1. 170. 170. #unknownBytecode }.
 		  { 1. 171. 171. #unknownBytecode }.
@@ -358,7 +330,7 @@ DruidJIT class >> initializeBytecodeTableForSistaV1 [
 DruidJIT class >> initializePrimitiveTable [
 
 	<generated>
-	MaxCompiledPrimitiveIndex := 20.
+	MaxCompiledPrimitiveIndex := 7.
 	primitiveTable := CArrayAccessor on:
 		                  (Array new: MaxCompiledPrimitiveIndex + 1).
 	self table: primitiveTable from: self primitiveTableArray.
@@ -381,19 +353,6 @@ DruidJIT class >> primitiveTableArray [
 
 	<generated>
 	^ {
-		  { 1. #gen_PrimitiveAdd. 1 }.
-		  { 2. #gen_PrimitiveSubtract. 1 }.
-		  { 3. #gen_PrimitiveLessThan. 1 }.
-		  { 4. #gen_PrimitiveGreaterThan. 1 }.
-		  { 5. #gen_PrimitiveLessOrEqual. 1 }.
-		  { 6. #gen_PrimitiveGreaterOrEqual. 1 }.
-		  { 7. #gen_PrimitiveEqual. 1 }.
-		  { 8. #gen_PrimitiveNotEqual. 1 }.
-		  { 9. #gen_PrimitiveMultiply. 1 }.
-		  { 10. #gen_PrimitiveDivide. 1 }.
-		  { 60. #gen_PrimitiveAt. 1 }.
-		  { 70. #gen_PrimitiveNew. 0 }.
-		  { 71. #gen_PrimitiveNewWithArg. 1 }.
 		  { 73. #genNonImplementedPrimitive.  -1. #maycallback }.
 		  { 117. #genNonImplementedPrimitive.  -1. #maycallback }.
 		  { 120. #genNonImplementedPrimitive.  -1. #maycallback }.
