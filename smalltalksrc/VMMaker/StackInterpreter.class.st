@@ -2678,17 +2678,20 @@ StackInterpreter >> booleanValueOf: obj [
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimAdd [
 
+	<compilationInfo: #isMapped>
 	| rcvr arg |
 	rcvr := self stackValue: 1.
 	arg := self stackValue: 0.
 	(objectMemory areIntegers: rcvr and: arg)
-		ifTrue: [ 
+		ifTrue: [
 			self druidIgnore: [
-			self sumSmallInteger: rcvr withSmallInteger: arg ifNotOverflow: [ :result |
-				self pop: 2 thenPush: result.
-				^ self fetchNextBytecode "success" ] ] ]
-		ifFalse: [
-			"Do not JIT compile float case..."
+				self
+					sumSmallInteger: rcvr
+					withSmallInteger: arg
+					ifNotOverflow: [ :result |
+						self pop: 2 thenPush: result.
+						^ self fetchNextBytecode "success" ] ] ]
+		ifFalse: [ "Do not JIT compile float case..."
 			self druidIgnore: [
 				self initPrimCall.
 				self externalizeIPandSP.
