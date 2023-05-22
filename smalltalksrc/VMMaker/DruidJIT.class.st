@@ -176,8 +176,8 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 124. 124. #gen_BytecodePrimNew. #isMapped }.
 		  { 1. 125. 125. #gen_BytecodePrimNewWithArg.
 		  #isMapped }.
-		  { 1. 126. 126. #gen_BytecodePrimPointX. #isMapped }.
-		  { 1. 127. 127. #gen_BytecodePrimPointY. #isMapped }.
+		  { 1. 126. 126. #unknownBytecode }.
+		  { 1. 127. 127. #unknownBytecode }.
 		  { 1. 128. 128. #gen_SendLiteralSelector0ArgsBytecode0.
 		  #isMapped }.
 		  { 1. 129. 129. #gen_SendLiteralSelector0ArgsBytecode1.
