@@ -165,8 +165,8 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 109. 109. #gen_BytecodePrimDiv. #isMapped }.
 		  { 1. 110. 110. #gen_BytecodePrimBitAnd. #isMapped }.
 		  { 1. 111. 111. #gen_BytecodePrimBitOr. #isMapped }.
-		  { 1. 112. 112. #unknownBytecode }.
-		  { 1. 113. 113. #unknownBytecode }.
+		  { 1. 112. 112. #gen_BytecodePrimAt. #isMapped }.
+		  { 1. 113. 113. #gen_BytecodePrimAtPut. #isMapped }.
 		  { 1. 114. 114. #gen_BytecodePrimSize. #isMapped }.
 		  { 1. 115. 115. #gen_BytecodePrimNext. #isMapped }.
 		  { 1. 116. 116. #gen_BytecodePrimNextPut. #isMapped }.
@@ -229,15 +229,24 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 157. 157. #unknownBytecode }.
 		  { 1. 158. 158. #unknownBytecode }.
 		  { 1. 159. 159. #unknownBytecode }.
-		  { 1. 160. 160. #unknownBytecode }.
-		  { 1. 161. 161. #unknownBytecode }.
-		  { 1. 162. 162. #unknownBytecode }.
-		  { 1. 163. 163. #unknownBytecode }.
-		  { 1. 164. 164. #unknownBytecode }.
-		  { 1. 165. 165. #unknownBytecode }.
-		  { 1. 166. 166. #unknownBytecode }.
-		  { 1. 167. 167. #unknownBytecode }.
-		  { 1. 168. 168. #unknownBytecode }.
+		  { 1. 160. 160. #gen_SendLiteralSelector2ArgsBytecode0.
+		  #isMapped }.
+		  { 1. 161. 161. #gen_SendLiteralSelector2ArgsBytecode1.
+		  #isMapped }.
+		  { 1. 162. 162. #gen_SendLiteralSelector2ArgsBytecode2.
+		  #isMapped }.
+		  { 1. 163. 163. #gen_SendLiteralSelector2ArgsBytecode3.
+		  #isMapped }.
+		  { 1. 164. 164. #gen_SendLiteralSelector2ArgsBytecode4.
+		  #isMapped }.
+		  { 1. 165. 165. #gen_SendLiteralSelector2ArgsBytecode5.
+		  #isMapped }.
+		  { 1. 166. 166. #gen_SendLiteralSelector2ArgsBytecode6.
+		  #isMapped }.
+		  { 1. 167. 167. #gen_SendLiteralSelector2ArgsBytecode7.
+		  #isMapped }.
+		  { 1. 168. 168. #gen_SendLiteralSelector2ArgsBytecode8.
+		  #isMapped }.
 		  { 1. 169. 169. #unknownBytecode }.
 		  { 1. 170. 170. #unknownBytecode }.
 		  { 1. 171. 171. #unknownBytecode }.
