@@ -197,17 +197,6 @@ StackInterpreterSimulator >> basicInitialize [
 	imageWriter := SpurImageWriter newWithMemory: objectMemory andInterpreter: self
 ]
 
-{ #category : #utilities }
-StackInterpreterSimulator >> booleanCheat: cond [
-	disableBooleanCheat
-		ifTrue: [self pop: 2
-					thenPush: (cond
-								ifTrue: [objectMemory trueObject]
-								ifFalse: [objectMemory falseObject]).
-				self fetchNextBytecode]
-		ifFalse: [super booleanCheat: cond]
-]
-
 { #category : #'spur bootstrap' }
 StackInterpreterSimulator >> bootstrapping [
 	^bootstrapping
