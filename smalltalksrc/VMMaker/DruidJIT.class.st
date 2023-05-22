@@ -174,13 +174,20 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 125. 125. #unknownBytecode }.
 		  { 1. 126. 126. #unknownBytecode }.
 		  { 1. 127. 127. #unknownBytecode }.
-		  { 1. 128. 128. #gen_SendLiteralSelector0ArgsBytecode0 }.
-		  { 1. 129. 129. #gen_SendLiteralSelector0ArgsBytecode1 }.
-		  { 1. 130. 130. #gen_SendLiteralSelector0ArgsBytecode2 }.
-		  { 1. 131. 131. #gen_SendLiteralSelector0ArgsBytecode3 }.
-		  { 1. 132. 132. #gen_SendLiteralSelector0ArgsBytecode4 }.
-		  { 1. 133. 133. #gen_SendLiteralSelector0ArgsBytecode5 }.
-		  { 1. 134. 134. #gen_SendLiteralSelector0ArgsBytecode6 }.
+		  { 1. 128. 128. #gen_SendLiteralSelector0ArgsBytecode0.
+		  #isMapped }.
+		  { 1. 129. 129. #gen_SendLiteralSelector0ArgsBytecode1.
+		  #isMapped }.
+		  { 1. 130. 130. #gen_SendLiteralSelector0ArgsBytecode2.
+		  #isMapped }.
+		  { 1. 131. 131. #gen_SendLiteralSelector0ArgsBytecode3.
+		  #isMapped }.
+		  { 1. 132. 132. #gen_SendLiteralSelector0ArgsBytecode4.
+		  #isMapped }.
+		  { 1. 133. 133. #gen_SendLiteralSelector0ArgsBytecode5.
+		  #isMapped }.
+		  { 1. 134. 134. #gen_SendLiteralSelector0ArgsBytecode6.
+		  #isMapped }.
 		  { 1. 135. 135. #unknownBytecode }.
 		  { 1. 136. 136. #unknownBytecode }.
 		  { 1. 137. 137. #unknownBytecode }.
@@ -190,13 +197,20 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 141. 141. #unknownBytecode }.
 		  { 1. 142. 142. #unknownBytecode }.
 		  { 1. 143. 143. #unknownBytecode }.
-		  { 1. 144. 144. #gen_SendLiteralSelector1ArgBytecode0 }.
-		  { 1. 145. 145. #gen_SendLiteralSelector1ArgBytecode1 }.
-		  { 1. 146. 146. #gen_SendLiteralSelector1ArgBytecode2 }.
-		  { 1. 147. 147. #gen_SendLiteralSelector1ArgBytecode3 }.
-		  { 1. 148. 148. #gen_SendLiteralSelector1ArgBytecode4 }.
-		  { 1. 149. 149. #gen_SendLiteralSelector1ArgBytecode5 }.
-		  { 1. 150. 150. #gen_SendLiteralSelector1ArgBytecode6 }.
+		  { 1. 144. 144. #gen_SendLiteralSelector1ArgBytecode0.
+		  #isMapped }.
+		  { 1. 145. 145. #gen_SendLiteralSelector1ArgBytecode1.
+		  #isMapped }.
+		  { 1. 146. 146. #gen_SendLiteralSelector1ArgBytecode2.
+		  #isMapped }.
+		  { 1. 147. 147. #gen_SendLiteralSelector1ArgBytecode3.
+		  #isMapped }.
+		  { 1. 148. 148. #gen_SendLiteralSelector1ArgBytecode4.
+		  #isMapped }.
+		  { 1. 149. 149. #gen_SendLiteralSelector1ArgBytecode5.
+		  #isMapped }.
+		  { 1. 150. 150. #gen_SendLiteralSelector1ArgBytecode6.
+		  #isMapped }.
 		  { 1. 151. 151. #unknownBytecode }.
 		  { 1. 152. 152. #unknownBytecode }.
 		  { 1. 153. 153. #unknownBytecode }.
