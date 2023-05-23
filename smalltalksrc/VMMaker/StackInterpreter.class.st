@@ -13184,9 +13184,9 @@ StackInterpreter >> sendBreakpoint: selector receiver: rcvr [
 
 { #category : #'send bytecodes' }
 StackInterpreter >> sendLiteralSelector0ArgsBytecode [
-
 	"Can use any of the first 16 literals for the selector."
 
+	<compilationInfo: #isMapped>
 	self
 		normalLiteralSelectorAt: (currentBytecode bitAnd: 16rF)
 		argumentCount: 0
@@ -13194,8 +13194,9 @@ StackInterpreter >> sendLiteralSelector0ArgsBytecode [
 
 { #category : #'send bytecodes' }
 StackInterpreter >> sendLiteralSelector1ArgBytecode [
-
 	"Can use any of the first 16 literals for the selector."
+
+	<compilationInfo: #isMapped>
 	self
 		normalLiteralSelectorAt: (currentBytecode bitAnd: 16rF)
 		argumentCount: 1
@@ -13203,9 +13204,9 @@ StackInterpreter >> sendLiteralSelector1ArgBytecode [
 
 { #category : #'send bytecodes' }
 StackInterpreter >> sendLiteralSelector2ArgsBytecode [
-
 	"Can use any of the first 16 literals for the selector."
 
+	<compilationInfo: #isMapped>
 	self
 		normalLiteralSelectorAt: (currentBytecode bitAnd: 16rF)
 		argumentCount: 2
