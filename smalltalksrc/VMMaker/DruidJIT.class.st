@@ -146,7 +146,7 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 93. 93. #unknownBytecode }.
 		  { 1. 94. 94. #unknownBytecode }.
 		  { 1. 95. 95. #unknownBytecode }.
-		  { 1. 96. 96. #gen_BytecodePrimAdd }.
+		  { 1. 96. 96. #gen_BytecodePrimAdd. #isMapped }.
 		  { 1. 97. 97. #gen_BytecodePrimSubtract. #isMapped }.
 		  { 1. 98. 98. #gen_BytecodePrimLessThanSistaV1.
 		  #isMapped }.
