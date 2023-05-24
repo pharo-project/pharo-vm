@@ -666,8 +666,10 @@ TMethod >> declarationAt: aVariableName put: aDeclaration [
 
 
 	isRelevantVariable and: [
-		(self declaresVariableWithName: aVariableName) not ifTrue: [
-			self error: 'Undefined local type declaration' ] ].
+		(self declaresVariableWithName: aVariableName) ifFalse: [
+			TranslationError signal:
+				'Undefined local or argument ' , aVariableName
+				, ' type declaration' ] ].
 	^ declarations at: aVariableName put: aDeclaration
 ]
 

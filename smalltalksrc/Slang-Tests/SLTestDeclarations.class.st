@@ -83,5 +83,5 @@ SLTestDeclarations >> testUndefinedLocalWithDeclarationsThrowsError [
 
 	| method |
 	method := ccg methodNamed: #methodWithUndefinedLocal.
-	self should: [ method recordDeclarationsIn: ccg ] raise: Error
+	self should: [ method recordDeclarationsIn: ccg ] raise: TranslationError
 ]
