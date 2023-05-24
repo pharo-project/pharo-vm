@@ -662,12 +662,12 @@ TMethod >> declarationAt: aVariableName put: aDeclaration [
 
 	| isRelevantVariable |
 	isRelevantVariable := (aVariableName beginsWithAnyOf:
-		                       #( #self , #cascade, #toDoLimit )) not.
+		                       #( #self , #cascade , #toDoLimit )) not.
 
-	parseTree notNil and: [
-		isRelevantVariable and: [
-			(self declaresVariableWithName: aVariableName ) not ifTrue: [
-				self error: 'Undefined local type declaration' ] ] ].
+
+	isRelevantVariable and: [
+		(self declaresVariableWithName: aVariableName) not ifTrue: [
+			self error: 'Undefined local type declaration' ] ].
 	^ declarations at: aVariableName put: aDeclaration
 ]
 
