@@ -4820,6 +4820,12 @@ StackToRegisterMappingCogit >> updateSimSpillBase [
 	self assert: (simSpillBase > simStackPtr or: [(self simStackAt: simSpillBase) spilled == false])
 ]
 
+{ #category : #accessing }
+StackToRegisterMappingCogit >> useTwoPaths: aBoolean [
+
+	useTwoPaths := aBoolean
+]
+
 { #category : #'span functions' }
 StackToRegisterMappingCogit >> v4PushNilSize: aMethodObj numInitialNils: numInitialNils [
 	"77			01001101				Push false [* 1:true, 2:nil, 3:thisContext, ..., -N: pushExplicitOuter: N, N = Extend B]
