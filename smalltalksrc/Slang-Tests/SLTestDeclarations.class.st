@@ -69,3 +69,10 @@ SLTestDeclarations >> testLocalsReturnsDirectLocals [
 		assertCollection: (ccg methodNamed: #methodWithLocal) locals
 		hasSameElements: #( 'var' )
 ]
+
+{ #category : #tests }
+SLTestDeclarations >> testStructInstanceVariablesWithoutTypeDeclaration [
+	ccg addStructClasses: (Array with: MockVMStructWithoutTypeDeclarations) silently: true.
+	
+	self should: [ ccg emitCTypesOn: (WriteStream on:#()) ] raise: TranslationError
+]

@@ -112,7 +112,7 @@ VMStructType class >> fieldAccessorSourceFor: surrogateClass bytesPerWord: bytes
 VMStructType class >> fieldAccessorsForBytesPerWord: bytesPerWord [
 	| fieldSpecs |
 	fieldSpecs := OrderedCollection new.
-	self instVarNamesAndTypesForTranslationDo:
+	self instVarTypeDeclarationsDo:
 		[:ivn :typeTuple| | index replacement |
 		(index := typeTuple indexOf: #BytesPerWord ifAbsent: 0) > 0
 			ifTrue:
@@ -220,6 +220,27 @@ VMStructType class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a struct of this type."
 
 	self subclassResponsibility
+]
+
+{ #category : #translation }
+VMStructType class >> instVarTypeDeclarationsDo: aBinaryBlock [
+
+	| instVarNameTypeDeclarations |
+	instVarNameTypeDeclarations := Dictionary new.
+
+	self instVarNamesAndTypesForTranslationDo: [ :ivn :type |
+		instVarNameTypeDeclarations at: ivn put: type ].
+
+
+
+
+	self filteredInstVarNames do: [ :ivn |
+		instVarNameTypeDeclarations at: ivn ifAbsent: [
+			TranslationError signal:
+				'Missing type declartions for instance variable ' , ivn ] ].
+
+	instVarNameTypeDeclarations associationsDo: [ :declaration |
+		aBinaryBlock value: declaration key value: declaration value ]
 ]
 
 { #category : #accessing }

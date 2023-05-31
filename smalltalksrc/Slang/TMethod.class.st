@@ -652,7 +652,6 @@ TMethod >> declarationAt: aVariableName ifPresent: presentBlock [
 
 { #category : #accessing }
 TMethod >> declarationAt: aVariableName  "<String>" put: aDeclaration [ "<String>" "^aDeclaration"
-
 	^declarations at: aVariableName put: aDeclaration
 ]
 
