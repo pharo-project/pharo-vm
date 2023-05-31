@@ -28,6 +28,12 @@ SpurScavengeLogRecord class >> instVarNamesAndTypesForTranslationDo: aBinaryBloc
 ]
 
 { #category : #accessing }
+SpurScavengeLogRecord >> deltaTenured [
+
+	^ eStatTenures - sStatTenures 
+]
+
+{ #category : #accessing }
 SpurScavengeLogRecord >> deltaUsecs [
 
 	^ deltaUsecs
