@@ -34,15 +34,6 @@ VMStackPage class >> alignedByteSizeOf: anObject forClient: aVMClass [
 	^self surrogateClass alignedByteSize
 ]
 
-{ #category : #translation }
-VMStackPage class >> filteredInstVarNames [
-	| instVarNames |
-	
-	instVarNames := super filteredInstVarNames.
-	
-	^BytesPerWord = 4 ifTrue:  [ ^instVarNames copyWithout: #padToWord ] ifFalse: [ ^instVarNames ]
-]
-
 { #category : #'code generation' }
 VMStackPage class >> getter: getter bitPosition: bitPosition bitWidth: bitWidth type: typeOrNil [
 	^String streamContents:
@@ -93,15 +84,16 @@ VMStackPage class >> initialize [
 VMStackPage class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a StackPage struct."
 
-	self filteredInstVarNames do: [ :ivn |
-		aBinaryBlock
-			value: ivn
-			value: ((ivn = 'trace' or: [ ivn = 'padToWord' ])
-					 ifTrue: [ #int ]
-					 ifFalse: [
-						 (ivn endsWith: 'Page')
-							 ifTrue: [ 'struct _StackPage *' ]
-							 ifFalse: [ #'char *' ] ]) ]
+	self allInstVarNames do: [ :ivn |
+		(ivn = 'padToWord' and: [ BytesPerWord = 4 ]) ifFalse: [
+			aBinaryBlock
+				value: ivn
+				value: ((ivn = 'trace' or: [ ivn = 'padToWord' ])
+						 ifTrue: [ #int ]
+						 ifFalse: [
+							 (ivn endsWith: 'Page')
+								 ifTrue: [ 'struct _StackPage *' ]
+								 ifFalse: [ #'char *' ] ]) ] ]
 ]
 
 { #category : #'code generation' }

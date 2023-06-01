@@ -232,12 +232,11 @@ VMStructType class >> instVarTypeDeclarationsDo: aBinaryBlock [
 		instVarNameTypeDeclarations at: ivn put: type ].
 
 
-
-
 	self filteredInstVarNames do: [ :ivn |
-		instVarNameTypeDeclarations at: ivn ifAbsent: [
-			TranslationError signal:
-				'Missing type declartions for instance variable ' , ivn ] ].
+		(#( 'homeOffset' 'startpc' 'padToWord' ) includes: ivn) ifFalse: [
+			instVarNameTypeDeclarations at: ivn ifAbsent: [
+				TranslationError signal:
+					'Missing type declartions for instance variable ' , ivn ] ] ].
 
 	instVarNameTypeDeclarations associationsDo: [ :declaration |
 		aBinaryBlock value: declaration key value: declaration value ]
