@@ -775,7 +775,10 @@ StackToRegisterMappingCogit >> allocateRegNotConflictingWith: regMask ifNone: aB
 	reg = NoReg ifTrue: [ reg := self freeAnyRegNotConflictingWith: regMask ].
 	
 	"Couldn't spill, call the fallback block"
-	reg = NoReg ifTrue: [ ^ aBlock value ].
+	reg = NoReg ifTrue: [ 
+		self flag: #todo. "The line below should return".
+		"But currently slang does not accept it"
+		aBlock value ].
 		
 	reg = ReceiverResultReg ifTrue: "If we've allocated RcvrResultReg, it's not live anymore"
 		[self voidReceiverResultRegContainsSelf].
