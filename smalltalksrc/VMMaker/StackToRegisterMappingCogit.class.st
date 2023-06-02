@@ -750,11 +750,33 @@ StackToRegisterMappingCogit >> allocateRegForStackTopTwoEntriesInto: binaryBlock
 
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> allocateRegNotConflictingWith: regMask [
+
+	"Allocate a register not conflicting with the given mask.
+	If there are no free registers satisfying a condition, spill one register.
+	If spill fails, panic! as we the client expects a register"
+
+	^ self
+		  allocateRegNotConflictingWith: regMask
+		  ifNone: [ self error: 'Could not allocate register' ]
+]
+
+{ #category : #'simulation stack' }
+StackToRegisterMappingCogit >> allocateRegNotConflictingWith: regMask ifNone: aBlock [
+
+	"Allocate a register not conflicting with the given mask.
+	If there are no free registers satisfying a condition, spill one register.
+	If spill fails, call the argument block"
+
 	| reg |
 	"if there's a free register, use it"
 	reg := backEnd availableRegisterOrNoneFor: (self liveRegisters bitOr: regMask).
-	reg = NoReg ifTrue: "No free register, choose one that does not conflict with regMask"
-		[reg := self freeAnyRegNotConflictingWith: regMask].
+	
+	"No free register, choose one that does not conflict with regMask"
+	reg = NoReg ifTrue: [ reg := self freeAnyRegNotConflictingWith: regMask ].
+	
+	"Couldn't spill, call the fallback block"
+	reg = NoReg ifTrue: [ ^ aBlock value ].
+		
 	reg = ReceiverResultReg ifTrue: "If we've allocated RcvrResultReg, it's not live anymore"
 		[self voidReceiverResultRegContainsSelf].
 	^ reg
@@ -1367,23 +1389,33 @@ StackToRegisterMappingCogit >> freeAnyFloatRegNotConflictingWith: regMask [
 
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> freeAnyRegNotConflictingWith: regMask [
-	"Spill the closest register on stack not conflicting with regMask. 
-	Assertion Failure if regMask has already all the registers"
+	"Spill the oldest register on stack not conflicting with regMask. 
+	Returns the allocated register.
+	
+	Returns NoReg if no register was found, whether 
+	 - the stack is spilled or;
+	 - the mask conflicts with all entries "
+
 	<var: #desc type: #'CogSimStackEntry *'>
 	| reg index |
 	self assert: needsFrame.
+	
 	reg := NoReg.
 	index := simSpillBase max: 0.
-	[reg = NoReg and: [index < simStackPtr]] whileTrue: 
-		[ | desc |
-		 desc := self simStackAt: index.
-		 desc type = SSRegister ifTrue:
-			[(regMask anyMask: (self registerMaskFor: desc register)) ifFalse: 
-				[reg := desc register]].
-		 index := index + 1].
-	self deny: reg = NoReg.
-	self ssAllocateRequiredReg: reg.
-	^reg
+	"Walk the stack from spill base (or base of the stack if no spilling) to top.
+	Stop when we find a register or we reached the stack top"
+	[ reg = NoReg and: [ index < simStackPtr ] ] whileTrue: [
+		| desc |
+		desc := self simStackAt: index.
+		"If we find a register that does not conflict, choose it"
+		(desc type = SSRegister and: [
+			(regMask anyMask: (self registerMaskFor: desc register)) not]) ifTrue: [
+				reg := desc register ].
+		index := index + 1 ].
+
+	"If we found a register, spill its stack location"
+	reg = NoReg ifFalse: [ self ssAllocateRequiredReg: reg ].
+	^ reg
 ]
 
 { #category : #'mapped inline primitive generators - vectorial' }
