@@ -34,6 +34,17 @@ VMStackPage class >> alignedByteSizeOf: anObject forClient: aVMClass [
 	^self surrogateClass alignedByteSize
 ]
 
+{ #category : #translation }
+VMStackPage class >> filteredInstVarNames [
+
+	| instVarNames |
+	instVarNames := super filteredInstVarNames.
+
+	^ BytesPerWord = 4
+		  ifTrue: [ ^ instVarNames copyWithout: #padToWord ]
+		  ifFalse: [ ^ instVarNames ]
+]
+
 { #category : #'code generation' }
 VMStackPage class >> getter: getter bitPosition: bitPosition bitWidth: bitWidth type: typeOrNil [
 	^String streamContents:
