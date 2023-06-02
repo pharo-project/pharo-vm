@@ -1934,6 +1934,31 @@ StackToRegisterMappingCogit >> genJumpTo: targetBytecodePC [
 	^0
 ]
 
+{ #category : #'bytecode generator support' }
+StackToRegisterMappingCogit >> genJumpTo: targetBytecodePC followDeadCode: followDeadCode [
+	| eventualTarget generator fixup |
+	eventualTarget := self eventualTargetOf: targetBytecodePC.
+	(eventualTarget > bytecodePC
+	 and: [self stackTopIsBoolean
+	 and: [(generator := self generatorForPC: eventualTarget) isConditionalBranch]])
+		ifTrue:
+			[eventualTarget := eventualTarget
+							  + generator numBytes
+							  + (generator isBranchTrue == (self ssTop constant = objectMemory trueObject)
+									ifTrue: [self spanFor: generator at: eventualTarget exts: 0 in: methodObj]
+									ifFalse: [0]).
+			self ssPop: 1.
+			self ssFlushTo: simStackPtr.
+			fixup := self ensureFixupAt: eventualTarget.
+			self ssPop: -1]
+		ifFalse:
+			[self ssFlushTo: simStackPtr.
+			fixup := self ensureFixupAt: eventualTarget].
+	deadCode := followDeadCode.
+	self Jump: fixup.
+	^0
+]
+
 { #category : #'primitive generators' }
 StackToRegisterMappingCogit >> genLoadArgAtDepth: n into: reg [
 	"All machine code primitives apart from perform: have only
