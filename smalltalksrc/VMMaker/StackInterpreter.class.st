@@ -10623,6 +10623,7 @@ StackInterpreter >> popStack [
 { #category : #'stack bytecodes' }
 StackInterpreter >> popStackBytecode [
 
+	<needsFrameNever: -1>
 	self fetchNextBytecode.
 	self pop: 1.
 
@@ -13726,6 +13727,9 @@ StackInterpreter >> shortReversePrintFrameAndCallers: aFramePointer [
 { #category : #'jump bytecodes' }
 StackInterpreter >> shortUnconditionalJump [
 	<expandCases>
+	<compilationInfo: #branch>
+	<compilationInfo: #v3:ShortForward:Branch:Distance:>
+
 	self jump: (currentBytecode bitAnd: 7) + 1.
 ]
 
