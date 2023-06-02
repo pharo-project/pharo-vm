@@ -1404,6 +1404,13 @@ SlangBasicTranslationTest >> testLabelWithCommentWithPreviousCommentMarkingAnInl
 	self assert: translation equals: ''
 ]
 
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testMethodCantHaveReservedSelectorName [
+
+	self should: [TMethod new selector: 'register'] raise: TranslationError.
+
+]
+
 { #category : #'tests-method' }
 SlangBasicTranslationTest >> testMethodComment [
 
@@ -6388,6 +6395,13 @@ SlangBasicTranslationTest >> testVariableAssignment [
 			expression: expression).
 
 	self assert: translation equals: 'var = 7'
+]
+
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testVariableCantHaveReservedName [
+
+	self should: [TVariableNode new setName: 'register'] raise: TranslationError.
+
 ]
 
 { #category : #'tests-blocks' }
