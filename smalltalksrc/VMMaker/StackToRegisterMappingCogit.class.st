@@ -757,7 +757,7 @@ StackToRegisterMappingCogit >> allocateRegNotConflictingWith: regMask [
 
 	^ self
 		  allocateRegNotConflictingWith: regMask
-		  ifNone: [ self error: 'Could not allocate register' ]
+		  ifNone: [ self error: 'Could not allocate register'. 0 "to keep slang happy" ]
 ]
 
 { #category : #'simulation stack' }
