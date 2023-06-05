@@ -109,7 +109,7 @@ EXPORT(sqInt) setInterpreter(struct VirtualMachine *anInterpreter)
 
 	interpreterProxy = anInterpreter;
 	
-	return 0;
+	return 1;
 }
 
 EXPORT(const char*)
@@ -138,11 +138,9 @@ primitiveMakeUUID(void)
 	sqInt oop;
 
 	oop = interpreterProxy->stackValue(0);
-	if (!(((interpreterProxy->methodArgumentCount()) == 0)
-			&& ((interpreterProxy->isBytes(oop))
-					&& ((interpreterProxy->byteSizeOf(oop)) == 16)))) {
-		return interpreterProxy->primitiveFail();
-	}
+    if (!((interpreterProxy->methodArgumentCount() == 0) && interpreterProxy->isBytes(oop) && (interpreterProxy->byteSizeOf(oop) == 16))) {
+        return interpreterProxy->primitiveFail();
+    }
 	location = interpreterProxy->firstIndexableField(oop);
 	MakeUUID(location);
 	return oop;
