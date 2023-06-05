@@ -41,8 +41,8 @@ VMStackPage class >> filteredInstVarNames [
 	instVarNames := super filteredInstVarNames.
 
 	^ BytesPerWord = 4
-		  ifTrue: [ ^ instVarNames copyWithout: #padToWord ]
-		  ifFalse: [ ^ instVarNames ]
+		  ifTrue: [ instVarNames copyWithout: #padToWord ]
+		  ifFalse: [ instVarNames ]
 ]
 
 { #category : #'code generation' }
