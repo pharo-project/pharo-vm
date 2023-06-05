@@ -118,7 +118,7 @@ TMethod >> addVarsDeclarationsAndLabelsOf: methodToBeInlined except: doNotRename
 
    newLocals := methodToBeInlined args , methodToBeInlined allLocals asOrderedCollection .
 
-	self addLocals: (newLocals reject: [ :v | doNotRename includes: v]).
+	self addLocals: (newLocals copyWithoutAll: doNotRename).
 
 	methodToBeInlined declarations keysAndValuesDo:
 		[ :v :decl |
@@ -660,16 +660,8 @@ TMethod >> declarationAt: aVariableName ifPresent: presentBlock [
 { #category : #accessing }
 TMethod >> declarationAt: aVariableName put: aDeclaration [
 
-	| isRelevantVariable |
-	isRelevantVariable := (aVariableName beginsWithAnyOf:
-		                       #( #self , #cascade , #toDoLimit )) not.
+	self validateVariableDeclarationExists: aVariableName.
 
-
-	isRelevantVariable and: [
-		(self declaresVariableWithName: aVariableName) ifFalse: [
-			TranslationError signal:
-				'Undefined local or argument ' , aVariableName
-				, ' type declaration' ] ].
 	^ declarations at: aVariableName put: aDeclaration
 ]
 
@@ -3299,6 +3291,20 @@ TMethod >> usesVariableUninlinably: argName in: aCodeGen [
 				  node arguments anySatisfy: [ :argNode | 
 					  argNode anySatisfy: [ :subNode | 
 						  subNode isVariable and: [ subNode name = argName ] ] ] ] ] ]
+]
+
+{ #category : #accessing }
+TMethod >> validateVariableDeclarationExists: aVariableName [
+
+	| shouldCheckVariable |
+	shouldCheckVariable := (aVariableName beginsWithAnyOf:
+		                       #( #self , #cascade , #toDoLimit )) not.
+
+	(shouldCheckVariable and: [
+		 (self declaresVariableWithName: aVariableName) not]) ifTrue: [
+		TranslationError signal:
+			'Undefined local or argument ' , aVariableName
+			, ' type declaration' ]
 ]
 
 { #category : #utilities }
