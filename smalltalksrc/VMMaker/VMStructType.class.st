@@ -233,12 +233,13 @@ VMStructType class >> instVarTypeDeclarationsDo: aBinaryBlock [
 
 
 	self filteredInstVarNames do: [ :ivn |
-		instVarNameTypeDeclarations at: ivn ifAbsent: [
-			TranslationError signal:
-				'Missing type declartions for instance variable ' , ivn ] ].
+		| typeDeclaration |
+		typeDeclaration := instVarNameTypeDeclarations at: ivn ifAbsent: [
+			                   TranslationError signal:
+				                   'Missing type declartions for instance variable '
+				                   , ivn ].
 
-	self filteredInstVarNames do: [ :ivn |
-		aBinaryBlock value: ivn value: (instVarNameTypeDeclarations at: ivn) ]
+		aBinaryBlock value: ivn value: typeDeclaration ]
 ]
 
 { #category : #accessing }
