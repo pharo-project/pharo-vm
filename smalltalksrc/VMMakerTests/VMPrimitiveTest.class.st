@@ -1254,6 +1254,190 @@ VMPrimitiveTest >> testPrimitiveClassReturnsAClass [
 	
 ]
 
+{ #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveCompareBytesEmpty [
+
+	| array1 array2 |
+	array1 := self new8BitIndexableOfSize: 0.
+	array2 := self new8BitIndexableOfSize: 0.
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory trueObject
+]
+
+{ #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithDifferentSize1 [
+
+	| array1 array2 size |
+	size := 1.
+	array1 := self new8BitIndexableOfSize: size.
+	array2 := self new8BitIndexableOfSize: size + 1.
+
+	1 to: size do: [ :i |
+		memory storeByte: i - 1 ofObject: array1 withValue: 0.
+		memory storeByte: i - 1 ofObject: array2 withValue: 0 ].
+	memory storeByte: size - 1 ofObject: array2 withValue: 0.
+
+	"Arg > Receiver"
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
+{ #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithDifferentSize2 [
+
+	| array1 array2 size |
+	size := 1.
+	array1 := self new8BitIndexableOfSize: size.
+	array2 := self new8BitIndexableOfSize: size + 1.
+
+	1 to: size do: [ :i |
+		memory storeByte: i - 1 ofObject: array1 withValue: 0.
+		memory storeByte: i - 1 ofObject: array2 withValue: 0 ].
+	memory storeByte: size - 1 ofObject: array2 withValue: 0.
+
+	"Receiver > Arg"
+	interpreter push: array2.
+	interpreter push: array1.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
+{ #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithDifferentValues [
+
+	| array1 array2 size |
+	size := 2.
+	array1 := self new8BitIndexableOfSize: size.
+	array2 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+		memory storeByte: i - 1 ofObject: array1 withValue: 0.
+		memory storeByte: i - 1 ofObject: array2 withValue: 1 ].
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
+{ #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithLastDifferentValue [
+
+	| array1 array2 size |
+	size := 2.
+	array1 := self new8BitIndexableOfSize: size.
+	array2 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+		memory storeByte: i - 1 ofObject: array1 withValue: 0.
+		memory storeByte: i - 1 ofObject: array2 withValue: 0 ].
+	memory storeByte: size - 1 ofObject: array2 withValue: 1.
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
+{ #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteArgument [
+
+	| array1 size |
+	size := 2.
+	array1 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
+
+	interpreter push: array1.
+	interpreter push: memory nilObject.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter failed 
+]
+
+{ #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteReceiver [
+
+	| array1 size |
+	size := 2.
+	array1 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
+
+	interpreter push: memory nilObject.
+	interpreter push: array1.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter failed 
+]
+
+{ #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteReceiverShouldLeaveTheSameStack [
+
+	| array1 size |
+	size := 2.
+	array1 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
+
+	interpreter push: memory nilObject.
+	interpreter push: array1.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: (interpreter stackValue: 0) equals: array1.
+	self assert: (interpreter stackValue: 1) equals: memory nilObject
+]
+
+{ #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithSize [
+
+	| array1 array2 size |
+	size := 1.
+	array1 := self new8BitIndexableOfSize: size.
+	array2 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+		memory storeByte: i - 1 ofObject: array1 withValue: 0.
+		memory storeByte: i - 1 ofObject: array2 withValue: 0 ].
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory trueObject
+]
+
 { #category : #'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDiv [
 
