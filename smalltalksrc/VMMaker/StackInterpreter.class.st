@@ -1202,7 +1202,8 @@ StackInterpreter class >> initializePrimitiveTable [
 		(149 primitiveGetAttribute)
 
 		"Were File Primitives (150-169) - NO LONGER INDEXED"
-		(150 157 primitiveFail)
+		(150 156 primitiveFail)
+		(157 primitiveCompareBytes)
 		(158 primitiveStringCompareWith)
 		(159 primitiveHashMultiply)
 		(160 primitiveAdoptInstance)
@@ -1489,9 +1490,6 @@ StackInterpreter class >> isObjectAccessor: selector [
 	^(InterpreterProxy whichCategoryIncludesSelector: selector) = #'object access'
 	 or: [(SpurMemoryManager whichCategoryIncludesSelector: selector) = #'object access']
 
-	"This for checking.  The above two protocols are somewhat disjoint."
-	"(InterpreterProxy allMethodsInCategory: #'object access') copyWithoutAll: (SpurMemoryManager allMethodsInCategory: #'object access')"
-	"(SpurMemoryManager allMethodsInCategory: #'object access') copyWithoutAll: (InterpreterProxy allMethodsInCategory: #'object access')"
 ]
 
 { #category : #'spur compilation support' }
