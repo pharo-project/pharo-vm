@@ -35,7 +35,7 @@ UUIDPlugin >> primitiveMakeUUID [
 	<export: true>
 	<var: #location type: #'char*'>
 	oop := interpreterProxy stackValue: 0.
-	(interpreterProxy methodArgumentCount = 0
+	(interpreterProxy methodArgumentCount = 1
 	 and: [(interpreterProxy isBytes: oop)
 	 and: [(interpreterProxy byteSizeOf: oop) = 16]]) ifFalse:
 		[^interpreterProxy primitiveFail].
