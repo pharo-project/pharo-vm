@@ -127,7 +127,8 @@ TVariableNode >> printOn: aStream level: level [
 { #category : #accessing }
 TVariableNode >> setName: aString [
 
-	(CCodeGenerator reservedWords includes: aString) ifTrue: [
+	(CCodeGenerator reservedWords includes:
+		 aString) ifTrue: [
 		TranslationError signal: aString , ' is a reserved word' ].
 
 	name := aString
