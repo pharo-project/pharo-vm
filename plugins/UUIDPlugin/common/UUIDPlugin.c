@@ -134,11 +134,12 @@ shutdownModule(void)
 EXPORT(sqInt)
 primitiveMakeUUID(void)
 {
+
 	char *location;
 	sqInt oop;
 
 	oop = interpreterProxy->stackValue(0);
-    if (!((interpreterProxy->methodArgumentCount() == 1) && interpreterProxy->isBytes(oop) && (interpreterProxy->byteSizeOf(oop) == 16))) {
+    if (!((interpreterProxy->methodArgumentCount() == 0) && interpreterProxy->isBytes(oop) && (interpreterProxy->byteSizeOf(oop) == 16))) {
         return interpreterProxy->primitiveFail();
     }
 	location = interpreterProxy->firstIndexableField(oop);
