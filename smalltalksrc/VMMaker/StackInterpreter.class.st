@@ -1202,8 +1202,9 @@ StackInterpreter class >> initializePrimitiveTable [
 		(149 primitiveGetAttribute)
 
 		"Were File Primitives (150-169) - NO LONGER INDEXED"
-		(150 156 primitiveFail)
-		(157 primitiveCompareBytes)
+		(150 155 primitiveFail)
+		(156 primitiveCompareBytes)
+		(157 primitiveCompareBytes2)
 		(158 primitiveStringCompareWith)
 		(159 primitiveHashMultiply)
 		(160 primitiveAdoptInstance)

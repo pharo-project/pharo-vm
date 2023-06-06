@@ -1255,6 +1255,22 @@ VMPrimitiveTest >> testPrimitiveClassReturnsAClass [
 ]
 
 { #category : #'tests - primitiveDivide' }
+VMPrimitiveTest >> testPrimitiveCompareBytes2 [
+
+	| array1 array2 |
+	array1 := self new8BitIndexableOfSize: 0.
+	array2 := self new8BitIndexableOfSize: 0.
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes2.
+
+	self assert: interpreter stackTop equals: memory trueObject
+]
+
+{ #category : #'tests - primitiveDivide' }
 VMPrimitiveTest >> testPrimitiveCompareBytesEmpty [
 
 	| array1 array2 |
