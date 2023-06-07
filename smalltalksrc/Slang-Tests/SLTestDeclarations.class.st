@@ -14,8 +14,8 @@ SLTestDeclarations >> setUp [
 SLTestDeclarations >> testAddTypeForSelfWithDeclarationsDoesNotThrowError [
 
 	| method |
-	method := ccg methodNamed: #methodWithUndefinedLocal.
-	self shouldnt: [ method addTypeForSelf ] raise: Error
+	method := ccg methodNamed: #methodWithNonExistingLocalDeclaration.
+	self shouldnt: [ method addTypeForSelf ] raise: TranslationError
 ]
 
 { #category : #tests }
@@ -82,6 +82,6 @@ SLTestDeclarations >> testLocalsReturnsDirectLocals [
 SLTestDeclarations >> testUndefinedLocalWithDeclarationsThrowsError [
 
 	| method |
-	method := ccg methodNamed: #methodWithUndefinedLocal.
+	method := ccg methodNamed: #methodWithNonExistingLocalDeclaration.
 	self should: [ method recordDeclarationsIn: ccg ] raise: TranslationError
 ]

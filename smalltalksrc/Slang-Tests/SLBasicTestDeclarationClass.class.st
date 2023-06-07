@@ -37,9 +37,3 @@ SLBasicTestDeclarationClass >> methodWithNonExistingLocalDeclaration [
 	"var does not exist"
 	<var: 'var' type: 'toto'>
 ]
-
-{ #category : #'as yet unclassified' }
-SLBasicTestDeclarationClass >> methodWithUndefinedLocal [
-
-	<var: 'var' type: 'toto'>
-]
