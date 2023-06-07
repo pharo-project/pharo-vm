@@ -236,7 +236,7 @@ VMStructType class >> instVarTypeDeclarationsDo: aBinaryBlock [
 		| typeDeclaration |
 		typeDeclaration := instVarNameTypeDeclarations at: ivn ifAbsent: [
 			                   TranslationError signal:
-				                   'Missing type declartions for instance variable '
+				                   'Missing type declaration for instance variable '
 				                   , ivn ].
 
 		aBinaryBlock value: ivn value: typeDeclaration ]
