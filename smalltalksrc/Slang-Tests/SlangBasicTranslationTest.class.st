@@ -1405,10 +1405,45 @@ SlangBasicTranslationTest >> testLabelWithCommentWithPreviousCommentMarkingAnInl
 ]
 
 { #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testMethodCantHaveReservedArgumentNames [
+
+	| methodInitialization |
+	methodInitialization := [
+	                        TMethod new
+		                        setSelector: 'foo'
+		                        definingClass: MockEmptyVMStruct
+		                        args: { RBVariableNode named: 'continue' }
+		                        locals: Array empty
+		                        block:
+		                        (RBBlockNode body:
+			                         (RBSequenceNode statements:
+				                          Array empty))
+		                        primitive: nil
+		                        properties: nil
+		                        comment: nil ].
+
+	self should: methodInitialization raise: TranslationError
+]
+
+{ #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testMethodCantHaveReservedSelectorName [
 
-	self should: [TMethod new selector: 'register'] raise: TranslationError.
+	| methodInitialization |
+	methodInitialization := [
+	                        TMethod new
+		                        setSelector: 'break'
+		                        definingClass: MockEmptyVMStruct
+		                        args: Array empty
+		                        locals: Array empty
+		                        block:
+		                        (RBBlockNode body:
+			                         (RBSequenceNode statements:
+				                          Array empty))
+		                        primitive: nil
+		                        properties: nil
+		                        comment: nil ].
 
+	self should: methodInitialization raise: TranslationError
 ]
 
 { #category : #'tests-method' }
@@ -3295,14 +3330,14 @@ SlangBasicTranslationTest >> testSendIfFalseIfTrueWithSingleStatementArguments [
 		        setSelector: #ifFalse:ifTrue:
 		        receiver: (TVariableNode new setName: 'x')
 		        arguments: { 
-				        TVariableNode new setName: 'break'.
-				        TVariableNode new setName: 'continue' }.
+				        TVariableNode new setName: 'foo'.
+				        TVariableNode new setName: 'bar' }.
 	translation := self translate: send.
 
 	self assert: translation trimBoth equals: 'if (x) 
-	continue;
+	bar;
  else 
-	break;'
+	foo;'
 ]
 
 { #category : #'tests-builtins' }
@@ -4087,14 +4122,14 @@ SlangBasicTranslationTest >> testSendIfTrueIfFalseWithSingleStatementArguments [
 		        setSelector: #ifTrue:ifFalse:
 		        receiver: (TVariableNode new setName: 'x')
 		        arguments: { 
-				        TVariableNode new setName: 'break'.
-				        TVariableNode new setName: 'continue' }.
+				        TVariableNode new setName: 'foo'.
+				        TVariableNode new setName: 'bar' }.
 	translation := self translate: send.
 
 	self assert: translation trimBoth equals: 'if (x) 
-	break;
+	foo;
  else 
-	continue;'
+	bar;'
 ]
 
 { #category : #'tests-builtins' }
@@ -4198,11 +4233,11 @@ SlangBasicTranslationTest >> testSendIfTrueWithSingleStatementArgument [
 	send := TSendNode new
 		        setSelector: #ifTrue:
 		        receiver: (TVariableNode new setName: 'x')
-		        arguments: { TVariableNode new setName: 'break' }.
+		        arguments: { TVariableNode new setName: 'foo' }.
 	translation := self translate: send.
 
 	self assert: translation trimBoth equals: 'if (x) 
-	break;'
+	foo;'
 ]
 
 { #category : #'tests-builtins' }
