@@ -135,16 +135,19 @@ EXPORT(sqInt)
 primitiveMakeUUID(void)
 {
 
-	char *location;
-	sqInt oop;
+    char *location;
+    sqInt oop;
 
-	oop = interpreterProxy->stackValue(0);
-    if (!((interpreterProxy->methodArgumentCount() == 0) && interpreterProxy->isBytes(oop) && (interpreterProxy->byteSizeOf(oop) == 16))) {
+    oop = interpreterProxy->stackValue(0);
+    if (!(interpreterProxy->methodArgumentCount() == 0
+        && interpreterProxy->isBytes(oop)
+            && interpreterProxy->byteSizeOf(oop) == 16)) {
+	    
         return interpreterProxy->primitiveFail();
     }
-	location = interpreterProxy->firstIndexableField(oop);
-	MakeUUID(location);
-	return oop;
+    location = interpreterProxy->firstIndexableField(oop);
+    MakeUUID(location);
+    return oop;
 }
 
 #ifdef SQUEAK_BUILTIN_PLUGIN
