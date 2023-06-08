@@ -4314,7 +4314,7 @@ SpurMemoryManager >> doBecome: obj1 to: obj2 copyHash: copyHashFlag [
 ]
 
 { #category : #'private - perm space' }
-SpurMemoryManager >> doMoveToPermSpace: objOop [ 
+SpurMemoryManager >> doMoveToPermSpace: objOop addToRememberedSet: shouldAddToRememberedSet [ 
 
 	| numSlots numPointerSlots fmt newObj shouldBeRememberedInPermSpace hash |
 	numSlots := self numSlotsOf: objOop.
@@ -4362,7 +4362,7 @@ SpurMemoryManager >> doMoveToPermSpace: objOop [
 	(self isRemembered: objOop) ifTrue: [ 
 		fromOldSpaceRememberedSet forgetObject: objOop ].
 
-	shouldBeRememberedInPermSpace 
+	(shouldBeRememberedInPermSpace and: [ shouldAddToRememberedSet ])
 		ifTrue: [ fromPermSpaceRememberedSet doRemember: newObj ].
 
 	(hash := self rawHashBitsOf: objOop) ~= 0 ifTrue: [ 
@@ -9016,16 +9016,15 @@ SpurMemoryManager >> moveToPermSpace: objOop [
 
 	<inline: false>
 	| newObj |
-
 	"Clearing the flag for all"
 	becomeEffectsFlags := 0.
 
-	(self isValidToMoveToPermSpace: objOop) ifFalse: [ 
-		self primitiveFailFor: PrimErrBadReceiver. 
-			^ nil  ].
+	(self isValidToMoveToPermSpace: objOop) ifFalse: [
+		self primitiveFailFor: PrimErrBadReceiver.
+		^ nil ].
 
 	"Clonning in permSpace"
-	newObj := self doMoveToPermSpace: objOop.
+	newObj := self doMoveToPermSpace: objOop addToRememberedSet: true.
 
 	self doAfterMoveToPermSpace.
 
@@ -9042,30 +9041,30 @@ SpurMemoryManager >> moveToPermSpaceInBulk: anArrayOop [
 	becomeEffectsFlags := 0.
 
 	size := self numSlotsOf: anArrayOop.
-	
-	0 to: size - 1 do: [ :index | 
-		
-		objOop := self fetchPointer: index ofObject: anArrayOop.
-		
-		(self isValidToMoveToPermSpace: objOop) ifFalse: [ 
-			self primitiveFailFor: PrimErrBadReceiver. 
-				^ nil  ]].
 
-
-	0 to: size - 1 do: [ :index | 
+	0 to: size - 1 do: [ :index |
 		objOop := self fetchPointer: index ofObject: anArrayOop.
 
-		(self getMemoryMap isPermanentObject: objOop)
-			ifFalse: [
-				"Clonning in permSpace"
-				newObj := self doMoveToPermSpace: objOop.
-				newObj ifNil: [ ^ anArrayOop ].
-			
-				self storePointer: index ofObject: anArrayOop withValue: newObj]].
+		(self isValidToMoveToPermSpace: objOop) ifFalse: [
+			self primitiveFailFor: PrimErrBadReceiver.
+			^ nil ] ].
+
+
+	0 to: size - 1 do: [ :index |
+		objOop := self fetchPointer: index ofObject: anArrayOop.
+
+		(self getMemoryMap isPermanentObject: objOop) ifFalse: [ 
+			"Clonning in permSpace - We don't add to the remembered set, this will be done after all is moved. To minimize the size of the remembered set"
+			newObj := self doMoveToPermSpace: objOop addToRememberedSet: false.
+			newObj ifNil: [ ^ anArrayOop ].
+
+			self storePointer: index ofObject: anArrayOop withValue: newObj ] ].
 
 	self followForwardedObjectFields: anArrayOop toDepth: 1.
+	self recreateFromPermSpaceRememberedSet.
 
-	becomeEffectsFlags := BecamePointerObjectFlag + BecameActiveClassFlag bitOr: BecameCompiledMethodFlag.
+	becomeEffectsFlags := BecamePointerObjectFlag + BecameActiveClassFlag
+		                      bitOr: BecameCompiledMethodFlag.
 	self doAfterMoveToPermSpace.
 
 	^ anArrayOop
@@ -11016,6 +11015,42 @@ SpurMemoryManager >> readUINT8AtPointer: aCArrayAccessor [
 	| intPtr |
 	intPtr := self cCoerce: aCArrayAccessor to: #'uint8_t *'.
 	^ intPtr at: 0
+]
+
+{ #category : #'perm - space' }
+SpurMemoryManager >> recreateFromPermSpaceRememberedSet [
+
+	self getFromPermSpaceRememberedSet emptyRememberedSet.
+
+	self allPermSpaceObjectsDo: [ :aPermSpaceObject | 
+			| slotIndex referenced numPointerSlots shouldBeRememberedInPermSpace |
+	
+		"We clear the bit of all remembered objects, it will be recalculated"
+		self setIsRememberedOf: aPermSpaceObject to: false.	
+		numPointerSlots := self numPointerSlotsOf: aPermSpaceObject.	
+		
+		shouldBeRememberedInPermSpace := false.
+	
+		slotIndex := 0.
+		[ shouldBeRememberedInPermSpace not and: [slotIndex < numPointerSlots]  ]
+			whileTrue: [ 
+				referenced := self fetchPointer: slotIndex ofObject: aPermSpaceObject.
+
+				"We check if we have an object in the pointer slots of objOop"
+					((self isNonImmediate: referenced) and: [self isInObjectMemory: referenced ])
+						ifTrue: [ 
+							(self isForwarded: referenced)
+								ifTrue: [ referenced := self followForwarded: referenced ].
+							((self isFixedKnownObject: referenced) not 
+								and: [(self getMemoryMap isYoungObject: referenced) or: [ 
+										self getMemoryMap isOldObject: referenced ]])
+									ifTrue: [ shouldBeRememberedInPermSpace := true ] 
+								].
+				slotIndex := slotIndex + 1.
+			].
+		
+		shouldBeRememberedInPermSpace ifTrue: [ self getFromPermSpaceRememberedSet doRemember: aPermSpaceObject ]
+	]		
 ]
 
 { #category : #compaction }

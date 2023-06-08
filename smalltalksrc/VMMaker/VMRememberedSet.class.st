@@ -89,6 +89,21 @@ VMRememberedSet >> doRemember: objOop [
 	^objOop
 ]
 
+{ #category : #initialization }
+VMRememberedSet >> emptyRememberedSet [
+
+	| oldObj |
+	
+	oldObj := self objectOop.
+	oldObj = manager nilObject
+		ifFalse: [ 
+			manager rememberedSet: rootIndex oop: manager nilObject.
+			manager freeObject: oldObj ].
+		
+	self initializeRememberedSetShouldStartEmpty: true. 
+
+]
+
 { #category : #'store check' }
 VMRememberedSet >> forgetObject: objOop [
 
@@ -137,7 +152,7 @@ VMRememberedSet >> growRememberedSet [
 	newObj ifNil:
 		[newObj := manager allocatePinnedSlots: numSlots + 1024.
 		 newObj ifNil:
-			[(manager growOldSpaceByAtLeast: numSlots + 1024) ifNil: [self error: 'could not grow remembered set'].
+			[(manager growOldSpaceByAtLeast: (numSlots + 1024) * self wordSize) ifNil: [self error: 'could not grow remembered set'].
 			 newObj := manager allocatePinnedSlots: numSlots + 1024. "cannot fail"]].
 
 	manager rememberedSet: rootIndex oop: newObj.
@@ -243,6 +258,20 @@ VMRememberedSet >> numRememberedEphemerons [
 { #category : #accessing }
 VMRememberedSet >> numRememberedEphemerons: anInteger [ 
 	numRememberedEphemerons := anInteger
+]
+
+{ #category : #scavenger }
+VMRememberedSet >> numberOfNewSpaceReferers [
+
+	<api>
+	| newSpaceReferers |
+	newSpaceReferers := 0.
+
+	self rememberedSetWithIndexDo: [ :oop :i |
+		(manager hasYoungReferents: oop) ifTrue: [
+			newSpaceReferers := newSpaceReferers + 1 ] ].
+
+	^ newSpaceReferers
 ]
 
 { #category : #accessing }

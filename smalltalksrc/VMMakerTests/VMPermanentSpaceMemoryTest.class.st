@@ -295,6 +295,82 @@ VMPermanentSpaceMemoryTest >> testObjectWithForwarderIsCorrectlyResolved [
 ]
 
 { #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPassingObjectInBulkToPermSpaceKeepsFirstInRememberedSet [
+
+	| oldObject1 permanentObject1 oldObject2 array |
+	
+	oldObject1 := self newOldSpaceObjectWithSlots: 1.
+	oldObject2 := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObject1  withValue: oldObject2.
+	
+	array := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: array withValue: oldObject1.
+	
+	memory moveToPermSpaceInBulk: array.
+
+	permanentObject1 := memory fetchPointer: 0 ofObject: array.
+
+	self assert: (memory isRemembered: permanentObject1).
+	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject1 ).	
+
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPassingObjectsInBulkPreservesObjectAlreadyInTheRememberedSet [
+
+	| oldObject1 permanentObject1 oldObject2 permanentObject2 array youngObject |
+	
+	oldObject1 := self newOldSpaceObjectWithSlots: 1.
+	oldObject2 := self newOldSpaceObjectWithSlots: 1.
+	youngObject := self newZeroSizedObject.
+
+	memory storePointer: 0 ofObject: oldObject1  withValue: youngObject.
+	memory storePointer: 0 ofObject: oldObject2  withValue: youngObject.
+
+	permanentObject1 := memory moveToPermSpace: oldObject1.
+	
+	self assert: (memory isRemembered: permanentObject1).	
+	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject1).
+	
+	array := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: array withValue: oldObject2.
+	
+	memory moveToPermSpaceInBulk: array.
+
+	permanentObject2 := memory fetchPointer: 0 ofObject: array.
+
+	self assert: (memory isRemembered: permanentObject1).	
+	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject1).
+
+	self assert: (memory isRemembered: permanentObject2).	
+	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject2).
+
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPassingTwoObjectsInBulkToPermSpaceIsRemovedFromRememberedSet [
+
+	| oldObject1 permanentObject1 oldObject2 permanentObject2 array |
+	
+	oldObject1 := self newOldSpaceObjectWithSlots: 1.
+	oldObject2 := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObject1  withValue: oldObject2.
+	
+	array := self newArrayWithSlots: 2.
+	memory storePointer: 0 ofObject: array withValue: oldObject1.
+	memory storePointer: 1 ofObject: array withValue: oldObject2.
+	
+	memory moveToPermSpaceInBulk: array.
+
+	permanentObject1 := memory fetchPointer: 0 ofObject: array.
+	permanentObject2 := memory fetchPointer: 1 ofObject: array.
+
+	self deny: (memory isRemembered: permanentObject1).
+	self deny: (memory getFromOldSpaceRememberedSet isInRememberedSet: permanentObject1).
+	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject1).		
+]
+
+{ #category : #'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceIsRemovedFromRememberedSet [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
