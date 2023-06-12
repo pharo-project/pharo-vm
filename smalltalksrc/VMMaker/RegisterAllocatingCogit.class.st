@@ -350,7 +350,7 @@ RegisterAllocatingCogit >> ensureReceiverResultRegContainsSelf [
 							[:e|
 							 e registerOrNone = ReceiverResultReg ifTrue:
 								[e type = SSRegister
-									ifTrue: [e register: freeReg]
+									ifTrue: [e registerr: freeReg]
 									ifFalse: [e liveRegister: freeReg]]]]
 					ifFalse:
 						[self ssAllocateRequiredReg: ReceiverResultReg].
@@ -358,7 +358,7 @@ RegisterAllocatingCogit >> ensureReceiverResultRegContainsSelf [
 				 self simSelf liveRegister: ReceiverResultReg]]
 		ifFalse:
 			[self assert: (self simSelf type = SSRegister
-						  and: [self simSelf register = ReceiverResultReg
+						  and: [self simSelf registerr = ReceiverResultReg
 						  and: [self receiverIsInReceiverResultReg]])].
 	"the storeToReg: in putSelfInReceiverResultReg in
 	 ensureReceiverResultRegContainsSelf copies the register to all copies.
@@ -442,7 +442,7 @@ RegisterAllocatingCogit >> flushLiveRegistersForSend [
 						or: [((self simStackAt: i) type = SSBaseOffset
 							or: [i > methodOrBlockNumTemps
 								and: [(self simStackAt: i) type = SSSpill]])
-							 and: [(self simStackAt: i) register = FPReg
+							 and: [(self simStackAt: i) registerr = FPReg
 							 and: [i = 0
 								or: [(self simStackAt: i) offset = (self frameOffsetOfTemporary: i - 1)]]]]]).
 		 (self simStackAt: i) liveRegister: NoReg]
@@ -496,9 +496,9 @@ RegisterAllocatingCogit >> freeAnyRegNotConflictingWith: regMask [
 	[index < simStackPtr] whileTrue: 
 		[desc := self simStackAt: index.
 		 desc type = SSRegister ifTrue:
-			[(regMask anyMask: (self registerMaskFor: desc register)) ifFalse: 
-				[self ssAllocateRequiredReg: desc register.
-				 ^desc register]].
+			[(regMask anyMask: (self registerMaskFor: desc registerr)) ifFalse: 
+				[self ssAllocateRequiredReg: desc registerr.
+				 ^desc registerr]].
 		 index := index + 1].
 	1 to: methodOrBlockNumTemps do:
 		[:i|
@@ -700,10 +700,10 @@ RegisterAllocatingCogit >> genJumpIf: boolean to: targetBytecodePC [
 
 	"try and use the top entry's register if any, but only if it can be destroyed."
 	reg := (desc type ~= SSRegister
-			or: [(self anyReferencesToRegister: desc register inAllButTopNItems: 0)
-			or: [(desc register = ReceiverResultReg and: [self receiverIsInReceiverResultReg])]])
+			or: [(self anyReferencesToRegister: desc registerr inAllButTopNItems: 0)
+			or: [(desc registerr = ReceiverResultReg and: [self receiverIsInReceiverResultReg])]])
 				ifTrue: [TempReg]
-				ifFalse: [desc register].
+				ifFalse: [desc registerr].
 	desc moveToReg: reg.
 	"Cunning trick by LPD.  If true and false are contiguous subtract the smaller.
 	 Correct result is either 0 or the distance between them.  If result is not 0 or
@@ -1230,7 +1230,7 @@ RegisterAllocatingCogit >> initSimStackForFramelessMethod: startpc [
 	0 to: simStackPtr do:
 		[:i| | desc |
 		desc := self simStackAt: i.
-		desc liveRegister: (desc type = SSRegister ifTrue: [desc register] ifFalse: [NoReg])]
+		desc liveRegister: (desc type = SSRegister ifTrue: [desc registerr] ifFalse: [NoReg])]
 ]
 
 { #category : #initialization }
@@ -1582,7 +1582,7 @@ RegisterAllocatingCogit >> receiverRefOnScratchSimStack [
 	self assert: scratchSpillBase >= 0.
 	simStackPtr to: scratchSpillBase by: -1 do:
 		[:i|
-		 ((self simStack: scratchSimStack at: i) register = ReceiverResultReg
+		 ((self simStack: scratchSimStack at: i) registerr = ReceiverResultReg
 		  and: [(self simStack: scratchSimStack at: i) type = SSBaseOffset]) ifTrue:
 			[^true]].
 	^false
@@ -1743,7 +1743,7 @@ RegisterAllocatingCogit >> resolveConflicts: registersInCommon with: mergeSimSta
 		 and: [(self register: reg isInMask: registersInCommon)
 		 and: [reg ~= (self simStack: mergeSimStack at: i) registerOrNone]]) ifTrue:
 			[ssEntry type = SSRegister
-				ifTrue: [ssEntry register: (registerLocations at: reg)]
+				ifTrue: [ssEntry registerr: (registerLocations at: reg)]
 				ifFalse: [ssEntry liveRegister: (registerLocations at: reg)]]].
 	self deny: self duplicateRegisterAssignmentsInTemporaries.
 	self assert: (self conflictsResolvedBetweenSimStackAnd: mergeSimStack)
@@ -1844,7 +1844,7 @@ RegisterAllocatingCogit >> simStackMergeCompatibleWith: fixup [
 		(target isSameEntryAs: current) ifFalse:
 			[^current type caseOf: {
 				[SSBaseOffset]	-> [(current offset = (self frameOffsetOfTemporary: i - 1)
-									and: [current register = FPReg])
+									and: [current registerr = FPReg])
 										ifTrue: [true] "current has been spilled virtually"
 										ifFalse:
 											[target type caseOf: {
@@ -1863,10 +1863,10 @@ RegisterAllocatingCogit >> simStackMergeCompatibleWith: fixup [
 										[SSConstant]	-> [current constant = target constant].
 										[SSRegister]	-> [false] }].
 				[SSRegister]	-> [target type caseOf: {
-										[SSBaseOffset]	-> [current register = target liveRegister].
-										[SSSpill]		-> [current register = target liveRegister].
-										[SSConstant]	-> [current register = target liveRegister].
-										[SSRegister]	-> [current register = target register] }] }]].
+										[SSBaseOffset]	-> [current registerr = target liveRegister].
+										[SSSpill]		-> [current registerr = target liveRegister].
+										[SSConstant]	-> [current registerr = target liveRegister].
+										[SSRegister]	-> [current registerr = target registerr] }] }]].
 	^true
 ]
 
@@ -1933,7 +1933,7 @@ RegisterAllocatingCogit >> ssFlushFrom: start upThroughRegister: reg [
 	"Any occurrences on the stack of the register must be
 	 flushed, and hence any values colder than them stack."
 	<var: #desc type: #'SimStackEntry *'>
-	self ssFlushFrom: start upThrough: [ :desc | desc type = SSRegister and: [ desc register = reg ] ]
+	self ssFlushFrom: start upThrough: [ :desc | desc type = SSRegister and: [ desc registerr = reg ] ]
 ]
 
 { #category : #'simulation stack' }
@@ -1973,9 +1973,9 @@ RegisterAllocatingCogit >> ssStorePop: popBoolean toPreferredReg: preferredReg [
 	actualReg := preferredReg.
 	self ssTop type = SSRegister ifTrue: 
 		[self assert: (self ssTop liveRegister = NoReg
-					  or: [self ssTop liveRegister = self ssTop register]).
+					  or: [self ssTop liveRegister = self ssTop registerr]).
 		self assert: self ssTop spilled not.
-		actualReg := self ssTop register].
+		actualReg := self ssTop registerr].
 	self ssTop liveRegister ~= NoReg ifTrue:
 		[actualReg := self ssTop liveRegister].
 	liveRegisters := self liveRegistersExceptingTopNItems: 1 in: simStack.
