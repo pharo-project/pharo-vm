@@ -11762,15 +11762,15 @@ Cogit >> targetMethodAndSendTableFor: entryPoint annotation: annotation into: bi
 	"Evaluate binaryBlock with the targetMethod and relevant send table for a linked-send
 	 to entryPoint.  Do so based on the alignment of entryPoint."
 
-	<var: #targetMethod type: #'CogMethod *'>
-
-	self offsetAndSendTableFor: entryPoint
+	self
+		offsetAndSendTableFor: entryPoint
 		annotation: annotation
-		into: [:offset :sendTable| | targetCogCode |
-			targetCogCode := self cCoerceSimple: entryPoint - offset to: #'CogMethod *'.
-			binaryBlock
-				value: targetCogCode
-				value: sendTable]
+		into: [ :offset :sendTable |
+			| targetCogCode |
+			targetCogCode := self
+				                 cCoerceSimple: entryPoint - offset
+				                 to: #'CogMethod *'.
+			binaryBlock value: targetCogCode value: sendTable ]
 ]
 
 { #category : #debugging }

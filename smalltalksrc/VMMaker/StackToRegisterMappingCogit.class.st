@@ -1337,14 +1337,14 @@ StackToRegisterMappingCogit >> fixupAtIndex: index [
 StackToRegisterMappingCogit >> freeAnyFloatRegNotConflictingWith: regMask [
 	"Spill the closest register on stack not conflicting with regMask. 
 	Assertion Failure if regMask has already all the registers"
-	<var: #desc type: #'CogSimStackEntry *'>
+
 	| reg index |
 	self assert: needsFrame.
 	reg := NoReg.
 	index := simSpillBase max: 0.
 	self deny: reg = NoReg.
 	self ssAllocateRequiredFloatReg: reg.
-	^reg
+	^ reg
 ]
 
 { #category : #'simulation stack' }
