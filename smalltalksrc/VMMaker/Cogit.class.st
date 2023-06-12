@@ -2376,19 +2376,19 @@ Cogit >> MoveC32: wordConstant R: reg [
 ]
 
 { #category : #'abstract instructions' }
-Cogit >> MoveCf32: constantFloat32 Rs: register [
+Cogit >> MoveCf32: constantFloat32 Rs: reg [
 	<inline: true>
 	<var: #constantFloat32 type: #float>
 	<returnTypeC: #'AbstractInstruction *'>
-	^ backEnd genMoveCf32: constantFloat32 Rs: register
+	^ backEnd genMoveCf32: constantFloat32 Rs: reg
 ]
 
 { #category : #'abstract instructions' }
-Cogit >> MoveCf64: constantFloat64 Rd: register [
+Cogit >> MoveCf64: constantFloat64 Rd: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #constantFloat64 type: #double>
-	^ backEnd genMoveCf64: constantFloat64 Rd: register
+	^ backEnd genMoveCf64: constantFloat64 Rd: reg
 ]
 
 { #category : #'abstract instructions' }

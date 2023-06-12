@@ -48,7 +48,7 @@ Class {
 		'type',
 		'spilled',
 		'liveRegister',
-		'register',
+		'registerr',
 		'offset',
 		'constant',
 		'bcptr'
@@ -76,11 +76,11 @@ CogSimStackEntry class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	self filteredInstVarNames do:
 		[:ivn|
 		aBinaryBlock
-			value: (ivn = 'register' ifTrue: ['registerr'] ifFalse: [ivn]) "avoid reservedWord conflict"
+			value: ivn
 			value: (ivn caseOf: {
 						['type']			-> [#char].
 						['spilled']		-> [#char].
-						['register']		-> [#'signed char']. "because NoReg = -1"
+						['registerr']		-> [#'signed char']. "because NoReg = -1"
 						['liveRegister']	-> [#'signed char'].}
 					otherwise:
 						[#sqInt])]
@@ -140,7 +140,7 @@ CogSimStackEntry >> ensureSpilledAt: baseOffset from: baseRegister [
 	<var: #inst type: #'AbstractInstruction *'>
 	spilled ifTrue:
 		[type = SSSpill ifTrue:
-			[self assert: ((offset = baseOffset and: [register = baseRegister]) or: [cogit violatesEnsureSpilledSpillAssert]).
+			[self assert: ((offset = baseOffset and: [registerr = baseRegister]) or: [cogit violatesEnsureSpilledSpillAssert]).
 			 ^self]].
 	self assert: type ~= SSSpill.
 	cogit traceSpill: self.
@@ -150,14 +150,14 @@ CogSimStackEntry >> ensureSpilledAt: baseOffset from: baseRegister [
 		ifFalse:
 			[type = SSBaseOffset
 				ifTrue:
-					[cogit MoveMw: offset r: register R: TempReg.
+					[cogit MoveMw: offset r: registerr R: TempReg.
 					 inst := cogit PushR: TempReg]
 				ifFalse:
 					[self assert: type = SSRegister.
-					 inst := cogit PushR: register].
+					 inst := cogit PushR: registerr].
 			 type := SSSpill.
 			 offset := baseOffset.
-			 register := baseRegister].
+			 registerr := baseRegister].
 	spilled := true.
 ]
 
@@ -170,7 +170,7 @@ CogSimStackEntry >> floatRegisterMask [
 CogSimStackEntry >> isFrameSimSelf [
 	"Answer if the receiver is self.  This only works in a frameful method, hence the weird name."
 	<inline: true>
-	^type = SSBaseOffset and: [register = FPReg and: [offset = FoxMFReceiver]]
+	^type = SSBaseOffset and: [registerr = FPReg and: [offset = FoxMFReceiver]]
 ]
 
 { #category : #comparing }
@@ -178,7 +178,7 @@ CogSimStackEntry >> isFrameTempVar [
 	"Answer if the receiver is a temporary variable.  This
 	 only works in a frameful method, hence the weird name."
 	<inline: true>
-	^type = SSBaseOffset and: [register = FPReg and: [offset ~= FoxMFReceiver]]
+	^type = SSBaseOffset and: [registerr = FPReg and: [offset ~= FoxMFReceiver]]
 ]
 
 { #category : #comparing }
@@ -186,15 +186,15 @@ CogSimStackEntry >> isFrameVar [
 	"Answer if the receiver is a temporary variable or self.  This
 	 only works in a frameful method, hence the weird name."
 	<inline: true>
-	^type = SSBaseOffset and: [register = FPReg]
+	^type = SSBaseOffset and: [registerr = FPReg]
 ]
 
 { #category : #comparing }
 CogSimStackEntry >> isSameEntryAs: ssEntry [
 	<var: 'ssEntry' type: #'CogSimStackEntry *'>
 	^type = ssEntry type
-	  and: [((type = SSBaseOffset or: [type == SSSpill]) and: [offset = ssEntry offset and: [register = ssEntry register]])
-		or: [(type = SSRegister and: [register = ssEntry register])
+	  and: [((type = SSBaseOffset or: [type == SSSpill]) and: [offset = ssEntry offset and: [registerr = ssEntry registerr]])
+		or: [(type = SSRegister and: [registerr = ssEntry registerr])
 		or: [(type = SSConstant and: [constant = ssEntry constant])]]]
 ]
 
@@ -224,10 +224,10 @@ CogSimStackEntry >> moveToReg: reg [
 			[cogit PopR: reg]
 		ifFalse:
 			[type caseOf: {
-				[SSBaseOffset]	-> [cogit MoveMw: offset r: register R: reg].
+				[SSBaseOffset]	-> [cogit MoveMw: offset r: registerr R: reg].
 				[SSConstant]	-> [cogit genMoveConstant: constant R: reg].
-				[SSRegister]	-> [reg ~= register
-										ifTrue: [cogit MoveR: register R: reg]
+				[SSRegister]	-> [reg ~= registerr
+										ifTrue: [cogit MoveR: registerr R: reg]
 										ifFalse: [cogit Label]] }]
 ]
 
@@ -239,7 +239,7 @@ CogSimStackEntry >> moveToVectorReg: reg [
 			[self notYetImplemented]
 		ifFalse:
 			[type caseOf: {
-				[SSVectorRegister]	-> [reg ~= register
+				[SSVectorRegister]	-> [reg ~= registerr
 										ifTrue: [self notYetImplemented]
 										ifFalse: [cogit Label]] }]
 ]
@@ -266,7 +266,7 @@ CogSimStackEntry >> printStateOn: aStream [
 	type caseOf: {
 		[SSBaseOffset]	-> [aStream
 								nextPutAll: 'bo ';
-								nextPutAll: (cogit backEnd nameForRegister: register).
+								nextPutAll: (cogit backEnd nameForRegister: registerr).
 							offset negative ifFalse: [aStream nextPut: $+].
 							aStream print: offset].
 		[SSConstant]	-> [aStream
@@ -274,15 +274,15 @@ CogSimStackEntry >> printStateOn: aStream [
 								nextPutAll: (cogit coInterpreter shortPrint: constant)].
 		[SSRegister]	-> [aStream
 								nextPutAll: 'reg ';
-								nextPutAll: (cogit backEnd nameForRegister: register)].
+								nextPutAll: (cogit backEnd nameForRegister: registerr)].
 		[SSSpill]		-> [aStream
 								nextPutAll: 'spill @ ';
-								nextPutAll: (cogit backEnd nameForRegister: register).
+								nextPutAll: (cogit backEnd nameForRegister: registerr).
 							offset negative ifFalse: [aStream nextPut: $+].
 							aStream print: offset].
 		[SSVectorRegister] -> [ aStream
 											nextPutAll: 'Vector Register ';
-											print: register ] }.
+											print: registerr ] }.
 	(spilled and: [type ~= SSSpill]) ifTrue:
 		[aStream nextPutAll: ' (spilled)'].
 	bcptr ifNotNil:
@@ -291,37 +291,37 @@ CogSimStackEntry >> printStateOn: aStream [
 ]
 
 { #category : #accessing }
-CogSimStackEntry >> register [
-	"Answer the value of register"
-	self assert: (type = SSBaseOffset or: [type = SSRegister or: [type = SSVectorRegister]]).
-	^register
-]
-
-{ #category : #accessing }
-CogSimStackEntry >> register: anObject [
-	"Set the value of register"
-
-	^register := anObject
-]
-
-{ #category : #accessing }
 CogSimStackEntry >> registerMask [
 	"Answer a bit mask for the receiver's register, if any."
 	^ (type = SSBaseOffset or: [ type = SSRegister or: [ type = SSVectorRegister ] ])
-		ifTrue: [ cogit registerMaskFor: register ]
+		ifTrue: [ cogit registerMaskFor: registerr ]
 		ifFalse: [ 0 ]
 ]
 
 { #category : #accessing }
 CogSimStackEntry >> registerMaskOrNone [
-	^(type = SSRegister or: [ type = SSVectorRegister ]) ifTrue: [cogit registerMaskFor: register] ifFalse: [0]
+	^(type = SSRegister or: [ type = SSVectorRegister ]) ifTrue: [cogit registerMaskFor: registerr] ifFalse: [0]
 ]
 
 { #category : #accessing }
 CogSimStackEntry >> registerOrNone [
 	^ ((type = SSRegister) or: [ type = SSVectorRegister ])
-		ifTrue: [register] 
+		ifTrue: [registerr] 
 		ifFalse: [NoReg]
+]
+
+{ #category : #accessing }
+CogSimStackEntry >> registerr [
+	"Answer the value of register"
+	self assert: (type = SSBaseOffset or: [type = SSRegister or: [type = SSVectorRegister]]).
+	^registerr
+]
+
+{ #category : #accessing }
+CogSimStackEntry >> registerr: anObject [
+	"Set the value of register"
+
+	^registerr := anObject
 ]
 
 { #category : #accessing }
@@ -341,11 +341,11 @@ CogSimStackEntry >> spilled: anObject [
 { #category : #'compile abstract instructions' }
 CogSimStackEntry >> storeToReg: reg [
 	type caseOf: {
-		[SSBaseOffset]	-> [cogit MoveMw: offset r: register R: reg].
-		[SSSpill]		-> [cogit MoveMw: offset r: register R: reg].
+		[SSBaseOffset]	-> [cogit MoveMw: offset r: registerr R: reg].
+		[SSSpill]		-> [cogit MoveMw: offset r: registerr R: reg].
 		[SSConstant]	-> [cogit genMoveConstant: constant R: reg].
-		[SSRegister]	-> [reg ~= register
-								ifTrue: [cogit MoveR: register R: reg]
+		[SSRegister]	-> [reg ~= registerr
+								ifTrue: [cogit MoveR: registerr R: reg]
 								ifFalse: [cogit Label]] }
 ]
 

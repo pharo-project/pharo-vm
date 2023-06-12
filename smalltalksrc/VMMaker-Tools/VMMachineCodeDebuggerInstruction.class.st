@@ -34,7 +34,7 @@ VMMachineCodeDebuggerInstruction >> branchTargetAddress [
 	^ instruction branchTargetAddress
 ]
 
-{ #category : #accessor }
+{ #category : #accessing }
 VMMachineCodeDebuggerInstruction >> bytes: aByteArray [ 
 	bytes := aByteArray
 ]
@@ -78,6 +78,27 @@ VMMachineCodeDebuggerInstruction >> instruction: aLLVMInstruction [
 ]
 
 { #category : #accessing }
-VMMachineCodeDebuggerInstruction >> machineSimulator: anUnicornARMv8Simulator [ 
-	machineSimulator := anUnicornARMv8Simulator
+VMMachineCodeDebuggerInstruction >> machineSimulator [ 
+
+	^ machineSimulator
+]
+
+{ #category : #accessing }
+VMMachineCodeDebuggerInstruction >> machineSimulator: aProcessorSimulator [ 
+	machineSimulator := aProcessorSimulator
+]
+
+{ #category : #accessing }
+VMMachineCodeDebuggerInstruction >> usedRegisters [
+	"Detect any register name from an asm instruction"
+
+	| registerAliases cleanASM tokens usedRegisters |
+	registerAliases := self machineSimulator registerList.
+	"Clean and split the ASM"
+	cleanASM := self assemblyCodeString copyWithoutAll: ',()'.
+	tokens := cleanASM splitOn: [ :each | each isSeparator ].
+	"Check if any of the substring "
+	usedRegisters := tokens select: [ :token |
+		                 registerAliases includes: token ].
+	^ usedRegisters removeDuplicates
 ]
