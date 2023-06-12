@@ -257,10 +257,6 @@ StackToRegisterMappingCogit class >> declareCVarsIn: aCodeGen [
 				declareC: 'sqInt (* const numPushNilsFunction)(struct _BytecodeDescriptor *,sqInt,sqInt,sqInt) = ', (aCodeGen cFunctionNameFor: self numPushNilsFunction);
 			var: 'pushNilSizeFunction'
 				declareC: 'sqInt (* const pushNilSizeFunction)(sqInt,sqInt) = ', (aCodeGen cFunctionNameFor: self pushNilSizeFunction)].
-
-	aCodeGen
-		addSelectorTranslation: #register to: (aCodeGen cFunctionNameFor: 'registerr');
-		addSelectorTranslation: #register: to: (aCodeGen cFunctionNameFor: 'registerr:')
 ]
 
 { #category : #'class initialization' }
@@ -1189,7 +1185,7 @@ StackToRegisterMappingCogit >> ensureReceiverResultRegContainsSelf [
 				 self simSelf liveRegister: ReceiverResultReg]]
 		ifFalse:
 			[self assert: (self simSelf type = SSRegister
-						  and: [self simSelf register = ReceiverResultReg
+						  and: [self simSelf registerr = ReceiverResultReg
 						  and: [self receiverIsInReceiverResultReg]])]
 ]
 
@@ -1341,14 +1337,14 @@ StackToRegisterMappingCogit >> fixupAtIndex: index [
 StackToRegisterMappingCogit >> freeAnyFloatRegNotConflictingWith: regMask [
 	"Spill the closest register on stack not conflicting with regMask. 
 	Assertion Failure if regMask has already all the registers"
-	<var: #desc type: #'CogSimStackEntry *'>
+
 	| reg index |
 	self assert: needsFrame.
 	reg := NoReg.
 	index := simSpillBase max: 0.
 	self deny: reg = NoReg.
 	self ssAllocateRequiredFloatReg: reg.
-	^reg
+	^ reg
 ]
 
 { #category : #'simulation stack' }
@@ -1364,8 +1360,8 @@ StackToRegisterMappingCogit >> freeAnyRegNotConflictingWith: regMask [
 		[ | desc |
 		 desc := self simStackAt: index.
 		 desc type = SSRegister ifTrue:
-			[(regMask anyMask: (self registerMaskFor: desc register)) ifFalse: 
-				[reg := desc register]].
+			[(regMask anyMask: (self registerMaskFor: desc registerr)) ifFalse: 
+				[reg := desc registerr]].
 		 index := index + 1].
 	self deny: reg = NoReg.
 	self ssAllocateRequiredReg: reg.
@@ -3331,7 +3327,7 @@ StackToRegisterMappingCogit >> initSimStackForFramefulMethod: startpc [
 	self simSelf
 		type: SSBaseOffset;
 		spilled: true;
-		register: FPReg;
+		registerr: FPReg;
 		offset: FoxMFReceiver;
 		liveRegister: NoReg.
 	"args"
@@ -3341,7 +3337,7 @@ StackToRegisterMappingCogit >> initSimStackForFramefulMethod: startpc [
 		desc
 			type: SSBaseOffset;
 			spilled: true;
-			register: FPReg;
+			registerr: FPReg;
 			offset: FoxCallerSavedIP + ((methodOrBlockNumArgs - i + 1) * objectMemory wordSize);
 			bcptr: startpc].
 	"temps"
@@ -3351,7 +3347,7 @@ StackToRegisterMappingCogit >> initSimStackForFramefulMethod: startpc [
 		desc
 			type: SSBaseOffset;
 			spilled: true;
-			register: FPReg;
+			registerr: FPReg;
 			offset: FoxMFReceiver - (i - methodOrBlockNumArgs * objectMemory wordSize);
 			bcptr: startpc]
 ]
@@ -3365,7 +3361,7 @@ StackToRegisterMappingCogit >> initSimStackForFramelessBlock: startpc [
 	self simSelf
 		type: SSRegister;
 		spilled: false;
-		register: ReceiverResultReg;
+		registerr: ReceiverResultReg;
 		liveRegister: ReceiverResultReg.
 	self assert: methodOrBlockNumTemps >= methodOrBlockNumArgs.
 	1 to: methodOrBlockNumTemps do:
@@ -3374,7 +3370,7 @@ StackToRegisterMappingCogit >> initSimStackForFramelessBlock: startpc [
 		desc
 			type: SSBaseOffset;
 			spilled: true;
-			register: SPReg;
+			registerr: SPReg;
 			offset: ((backEnd hasLinkRegister
 								ifTrue: [methodOrBlockNumArgs - i]
 								ifFalse: [methodOrBlockNumArgs + 1 - i]) * objectMemory wordSize);
@@ -3390,7 +3386,7 @@ StackToRegisterMappingCogit >> initSimStackForFramelessMethod: startpc [
 	self simSelf
 		type: SSRegister;
 		spilled: false;
-		register: ReceiverResultReg;
+		registerr: ReceiverResultReg;
 		liveRegister: ReceiverResultReg.
 	self assert: methodOrBlockNumTemps = methodOrBlockNumArgs.
 	self assert: self numRegArgs <= 2.
@@ -3400,14 +3396,14 @@ StackToRegisterMappingCogit >> initSimStackForFramelessMethod: startpc [
 			 desc
 				type: SSRegister;
 				spilled: false;
-				register: Arg0Reg;
+				registerr: Arg0Reg;
 				bcptr: startpc.
 			 methodOrBlockNumArgs > 1 ifTrue:
 				[desc := self simStackAt: 2.
 				 desc
 					type: SSRegister;
 					spilled: false;
-					register: Arg1Reg;
+					registerr: Arg1Reg;
 					bcptr: startpc]]
 		ifFalse:
 			[1 to: methodOrBlockNumArgs do:
@@ -3415,7 +3411,7 @@ StackToRegisterMappingCogit >> initSimStackForFramelessMethod: startpc [
 				desc := self simStackAt: i.
 				desc
 					type: SSBaseOffset;
-					register: SPReg;
+					registerr: SPReg;
 					spilled: true;
 					offset: ((backEnd hasLinkRegister
 								ifTrue: [methodOrBlockNumArgs - i]
@@ -3587,7 +3583,7 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 					[(self simStackAt: simStackPtr - numArgs)
 						storeToReg: ReceiverResultReg;
 					 	type: SSRegister;
-						register: ReceiverResultReg.
+						registerr: ReceiverResultReg.
 					 self ssFlushTo: simStackPtr]]
 		ifFalse:
 			"Move the args to the register arguments, being careful to do
@@ -4133,7 +4129,7 @@ StackToRegisterMappingCogit >> restoreSimStackAtMergePoint: fixup [
 		 (self simStackAt: i)
 			type: SSSpill;
 			offset: FoxMFReceiver - (i - methodOrBlockNumArgs * objectMemory bytesPerOop);
-			register: FPReg;
+			registerr: FPReg;
 			spilled: true].
 	simSpillBase := simStackPtr + 1.
 	^ 0
@@ -4450,7 +4446,7 @@ StackToRegisterMappingCogit >> ssFlushUpThroughReceiverVariable: slotIndex [
 	self ssFlushUpThrough: 
 		[ :desc |  
 			desc type = SSBaseOffset
-			 and: [desc register = ReceiverResultReg
+			 and: [desc registerr = ReceiverResultReg
 			 and: [desc offset = (objectRepresentation slotOffsetOfInstVarIndex: slotIndex) ] ] ]
 ]
 
@@ -4459,7 +4455,7 @@ StackToRegisterMappingCogit >> ssFlushUpThroughRegister: reg [
 	"Any occurrences on the stack of the register must be
 	 flushed, and hence any values colder than them stack."
 	<var: #desc type: #'CogSimStackEntry *'>
-	self ssFlushUpThrough: [ :desc | desc type = SSRegister and: [ desc register = reg ] ]
+	self ssFlushUpThrough: [ :desc | desc type = SSRegister and: [ desc registerr = reg ] ]
 ]
 
 { #category : #'simulation stack' }
@@ -4473,7 +4469,7 @@ StackToRegisterMappingCogit >> ssFlushUpThroughTemporaryVariable: tempIndex [
 	self ssFlushUpThrough: 
 		[ :desc |
 			desc type = SSBaseOffset
-		 	and: [desc register = FPReg
+		 	and: [desc registerr = FPReg
 		 	and: [desc offset = offset ] ] ]
 ]
 
@@ -4503,7 +4499,7 @@ StackToRegisterMappingCogit >> ssPushBase: reg offset: offset [
 	self ssTop
 		type: SSBaseOffset;
 		spilled: false;
-		register: reg;
+		registerr: reg;
 		offset: offset;
 		bcptr: bytecodePC.
 	self updateSimSpillBase.
@@ -4552,7 +4548,7 @@ StackToRegisterMappingCogit >> ssPushRegister: reg [
 	self ssTop
 		type: SSRegister;
 		spilled: false;
-		register: reg;
+		registerr: reg;
 		bcptr: bytecodePC.
 	self updateSimSpillBase.
 	^0
@@ -4564,7 +4560,7 @@ StackToRegisterMappingCogit >> ssPushVectorRegister: reg [
 	self ssTop
 		type: SSVectorRegister;
 		spilled: false;
-		register: reg;
+		registerr: reg;
 		bcptr: bytecodePC.
 	self ssTop.
 	self updateSimSpillBase.
@@ -4600,7 +4596,7 @@ StackToRegisterMappingCogit >> ssStorePop: popBoolean toPreferredReg: preferredR
 	actualReg := preferredReg.
 	self ssTop type = SSRegister ifTrue: 
 		[self assert: self ssTop spilled not.
-		 actualReg := self ssTop register].
+		 actualReg := self ssTop registerr].
 	self ssStorePop: popBoolean toReg: actualReg. "generates nothing if ssTop is already in actualReg"
 	^ actualReg
 ]

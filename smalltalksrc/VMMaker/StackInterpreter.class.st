@@ -10967,22 +10967,20 @@ StackInterpreter >> primitiveExitCriticalSection [
 { #category : #'simd primitives' }
 StackInterpreter >> primitiveFloat64ArrayAdd [
 
-	<var: #rcvr type: #'double *'>
-	<var: #arg type: #'double *'>
 	| arg1 arg2 res arraySize |
 	arg1 := self stackValue: 2.
 	arg2 := self stackValue: 1.
 	res := self stackTop.
 	arraySize := objectMemory numSlotsOf: res.
 
-	(objectMemory isSixtyFourBitIndexableOop: arg1)
-		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-	(objectMemory isSixtyFourBitIndexableOop: arg2)
-		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-	(objectMemory isSixtyFourBitIndexableOop: res)
-		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory isSixtyFourBitIndexableOop: arg1) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory isSixtyFourBitIndexableOop: arg2) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory isSixtyFourBitIndexableOop: res) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
 
-	0 to: arraySize - 1 do: [ :i | 
+	0 to: arraySize - 1 do: [ :i |
 		| tmp |
 		tmp := (objectMemory fetchFloat64: i ofObject: arg1)
 		       + (objectMemory fetchFloat64: i ofObject: arg2).
@@ -12954,7 +12952,6 @@ StackInterpreter >> reapAndResetErrorCodeTo: theFP header: methodHeader [
 	 and if so, assign it through theFP into the correct temporary variable.
 	Then zero the primFailCode.  This is infrequent code, so keep it out of the common path."
 
-	<var: 'theSP' type: #'char *'>
 	<inline: #never>
 	| initialPC |
 	self assert: primFailCode ~= 0.

@@ -4,6 +4,12 @@ Class {
 	#category : #'Slang-Tests'
 }
 
+{ #category : #translation }
+SLBasicTestDeclarationClass class >> typeForSelf [
+
+	^#implicit
+]
+
 { #category : #'as yet unclassified' }
 SLBasicTestDeclarationClass >> methodWithBlockLocalDeclaration [
 
