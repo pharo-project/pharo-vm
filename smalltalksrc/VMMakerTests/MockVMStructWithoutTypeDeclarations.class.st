@@ -5,7 +5,7 @@ Class {
 		'foo',
 		'bar'
 	],
-	#category : #'Slang-Tests'
+	#category : #VMMakerTests
 }
 
 { #category : #enumerating }

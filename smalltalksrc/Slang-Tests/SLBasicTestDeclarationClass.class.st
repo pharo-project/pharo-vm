@@ -37,12 +37,3 @@ SLBasicTestDeclarationClass >> methodWithNonExistingLocalDeclaration [
 	"var does not exist"
 	<var: 'var' type: 'toto'>
 ]
-
-{ #category : #'as yet unclassified' }
-SLBasicTestDeclarationClass >> methodWithStructWithoutTypeDeclarations [
-	| var |
-	<var: 'var' type: 'MockVMStructWithoutTypeDeclarations *'>
-	
-	var := MockVMStructWithoutTypeDeclarations new.
-	
-]
