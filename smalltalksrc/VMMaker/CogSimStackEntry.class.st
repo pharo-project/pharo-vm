@@ -70,11 +70,6 @@ CogSimStackEntry class >> byteSizeForSimulator: aVMClass [
 ]
 
 { #category : #translation }
-CogSimStackEntry class >> filteredInstVarNames [
-	^(super filteredInstVarNames copyWithout: #register) copyWith: #registerr "avoid reservedWord conflict"
-]
-
-{ #category : #translation }
 CogSimStackEntry class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"Enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a CogSimStackEntry struct."
 	"self typedef"
