@@ -658,8 +658,11 @@ TMethod >> declarationAt: aVariableName ifPresent: presentBlock [
 ]
 
 { #category : #accessing }
-TMethod >> declarationAt: aVariableName  "<String>" put: aDeclaration [ "<String>" "^aDeclaration"
-	^declarations at: aVariableName put: aDeclaration
+TMethod >> declarationAt: aVariableName put: aDeclaration [
+
+	self validateVariableDeclarationExists: aVariableName.
+
+	^ declarations at: aVariableName put: aDeclaration
 ]
 
 { #category : #accessing }

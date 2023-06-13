@@ -82,7 +82,7 @@ SLTestDeclarations >> testLocalsReturnsDirectLocals [
 SLTestDeclarations >> testStructInstanceVariablesWithoutTypeDeclaration [
 
 	ccg
-		addStructClasses: { MockVMStructWithoutTypeDeclarations }
+		addStructClasses: (OrderedCollection with: MockVMStructWithoutTypeDeclarations) 
 		silently: true.
 
 	self
