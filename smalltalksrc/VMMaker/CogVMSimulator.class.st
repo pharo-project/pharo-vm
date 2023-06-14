@@ -1024,12 +1024,6 @@ CogVMSimulator >> ifAppropriateCompileToNativeCode: aMethodObject selector: sele
 ]
 
 { #category : #'frame access' }
-CogVMSimulator >> iframeIsBlockActivation: theFP [
-	self assert: (self isMachineCodeFrame: theFP) not.
-	^super iframeIsBlockActivation: theFP
-]
-
-{ #category : #'frame access' }
 CogVMSimulator >> iframeMethod: theFP [
 	self assert: (self isMachineCodeFrame: theFP) not.
 	^super iframeMethod: theFP

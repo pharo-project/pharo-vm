@@ -2612,37 +2612,6 @@ StackInterpreter >> binarySmiCompInlinePrimitive: primIndex [
 ]
 
 { #category : #utilities }
-StackInterpreter >> booleanCheat: cond [
-	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
-	<inline: true>
-
-	cond
-		ifTrue: [self booleanCheatTrue]
-		ifFalse: [self booleanCheatFalse]
-]
-
-{ #category : #utilities }
-StackInterpreter >> booleanCheatFalse [
-
-	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
-
-	<sharedCodeInCase: #bytecodePrimGreaterThan>
-	| bytecode offset |
-	bytecode := self fetchByte. "assume next bytecode is jumpIfFalse (99%)"
-	self pop: 2.
-	(bytecode < 160 and: [ bytecode > 151 ]) ifTrue: [ "short jumpIfFalse" 
-		^ self jump: bytecode - 151 ].
-
-	bytecode = 172 ifTrue: [ "long jumpIfFalse"
-		offset := self fetchByte.
-		^ self jump: offset ].
-
-	"not followed by a jumpIfFalse; (un)do instruction fetch and push boolean result"
-	currentBytecode := bytecode.
-	self push: objectMemory falseObject
-]
-
-{ #category : #utilities }
 StackInterpreter >> booleanCheatFalseSistaV1 [
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
 
@@ -2674,38 +2643,14 @@ StackInterpreter >> booleanCheatSistaV1: cond [
 ]
 
 { #category : #utilities }
-StackInterpreter >> booleanCheatTrue [
-
-	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
-
-	<sharedCodeInCase: #bytecodePrimLessThan>
-	| bytecode offset |
-	bytecode := self fetchByte. "assume next bytecode is jumpIfFalse (99%)"
-	self pop: 2.
-	(bytecode < 173 and: [ bytecode > 151 ]) ifTrue: [ 
-		bytecode < 160 ifTrue: [ "short jumpIfFalse 152 - 159" 
-			^ self fetchNextBytecode ].
-		bytecode = 172 ifTrue: [ "long jumpIfFalse"
-			self fetchByte.
-			^ self fetchNextBytecode ].
-		bytecode > 167 ifTrue: [ "long jumpIfTrue 168 - 171"
-			offset := bytecode - 168 << 8 + self fetchByte.
-			^ self jump: offset ] ].
-
-	"not followed by a jumpIfFalse; (un)do instruction fetch and push boolean result"
-	currentBytecode := bytecode.
-	self push: objectMemory trueObject
-]
-
-{ #category : #utilities }
 StackInterpreter >> booleanCheatTrueSistaV1 [
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
 
 	<sharedCodeInCase: #bytecodePrimLessThanSistaV1>
+	self pop: 2.
 	self druidIgnore: [
 		| bytecode offset |
 		bytecode := self fetchByte. "assume next bytecode is jumpIfFalse (99%)"
-		self pop: 2.
 		bytecode >= 192 ifTrue: [
 			bytecode <= 199 ifTrue: [ "short jumpIfFalse 192 - 199"
 				^ self fetchNextBytecode ].
@@ -2733,17 +2678,20 @@ StackInterpreter >> booleanValueOf: obj [
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimAdd [
 
+	<compilationInfo: #isMapped>
 	| rcvr arg |
 	rcvr := self stackValue: 1.
 	arg := self stackValue: 0.
 	(objectMemory areIntegers: rcvr and: arg)
-		ifTrue: [ 
+		ifTrue: [
 			self druidIgnore: [
-			self sumSmallInteger: rcvr withSmallInteger: arg ifNotOverflow: [ :result |
-				self pop: 2 thenPush: result.
-				^ self fetchNextBytecode "success" ] ] ]
-		ifFalse: [
-			"Do not JIT compile float case..."
+				self
+					sumSmallInteger: rcvr
+					withSmallInteger: arg
+					ifNotOverflow: [ :result |
+						self pop: 2 thenPush: result.
+						^ self fetchNextBytecode "success" ] ] ]
+		ifFalse: [ "Do not JIT compile float case..."
 			self druidIgnore: [
 				self initPrimCall.
 				self externalizeIPandSP.
@@ -2963,20 +2911,6 @@ StackInterpreter >> bytecodePrimDo [
 ]
 
 { #category : #'common selector sends' }
-StackInterpreter >> bytecodePrimEqual [
-	| rcvr arg aBool |
-	rcvr := self stackValue: 1.
-	arg := self stackValue: 0.
-	(objectMemory areIntegers: rcvr and: arg) ifTrue: [^self booleanCheat: rcvr = arg].
-
-	self initPrimCall.
-	aBool := self primitiveFloatEqual: rcvr toArg: arg.
-	self successful ifTrue: [^self booleanCheat: aBool].
-
-	self normalSendSpecialSelector: 6 argumentCount: 1
-]
-
-{ #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimEqualSistaV1 [
 
 	<compilationInfo: #isMapped>
@@ -2993,24 +2927,6 @@ StackInterpreter >> bytecodePrimEqualSistaV1 [
 		self successful ifTrue: [ ^ self booleanCheatSistaV1: aBool ] ].
 
 	self normalSendSpecialSelector: 6 argumentCount: 1
-]
-
-{ #category : #'common selector sends' }
-StackInterpreter >> bytecodePrimGreaterOrEqual [
-	| rcvr arg aBool |
-	rcvr := self stackValue: 1.
-	arg := self stackValue: 0.
-	(objectMemory areIntegers: rcvr and: arg) ifTrue:
-		["The C code can avoid detagging since tagged integers are still signed.
-		 But this means the simulator must override to do detagging."
-		^self cCode: [self booleanCheat: rcvr >= arg]
-			inSmalltalk: [self booleanCheat: (objectMemory integerValueOf: rcvr) >= (objectMemory integerValueOf: arg)]].
-
-	self initPrimCall.
-	aBool := self primitiveFloatGreaterOrEqual: rcvr toArg: arg.
-	self successful ifTrue: [^self booleanCheat: aBool].
-
-	self normalSendSpecialSelector: 5 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3037,24 +2953,6 @@ StackInterpreter >> bytecodePrimGreaterOrEqualSistaV1 [
 ]
 
 { #category : #'common selector sends' }
-StackInterpreter >> bytecodePrimGreaterThan [
-	| rcvr arg aBool |
-	rcvr := self stackValue: 1.
-	arg := self stackValue: 0.
-	(objectMemory areIntegers: rcvr and: arg) ifTrue:
-		["The C code can avoid detagging since tagged integers are still signed.
-		 But this means the simulator must override to do detagging."
-		^self cCode: [self booleanCheat: rcvr > arg]
-			inSmalltalk: [self booleanCheat: (objectMemory integerValueOf: rcvr) > (objectMemory integerValueOf: arg)]].
-
-	self initPrimCall.
-	aBool := self primitiveFloatGreater: rcvr thanArg: arg.
-	self successful ifTrue: [^self booleanCheat: aBool].
-
-	self normalSendSpecialSelector: 3 argumentCount: 1
-]
-
-{ #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimGreaterThanSistaV1 [
 
 	<compilationInfo: #isMapped>
@@ -3078,18 +2976,6 @@ StackInterpreter >> bytecodePrimGreaterThanSistaV1 [
 ]
 
 { #category : #'common selector sends' }
-StackInterpreter >> bytecodePrimIdentical [
-	| rcvr arg |
-	rcvr := self stackValue: 1.
-	(objectMemory isOopForwarded: rcvr) ifTrue:
-		[rcvr := self handleSpecialSelectorSendFaultFor: rcvr].
-	arg := self stackValue: 0.
-	(objectMemory isOopForwarded: arg) ifTrue:
-		[arg := self handleSpecialSelectorSendFaultFor: arg].
-	self booleanCheat: rcvr = arg
-]
-
-{ #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimIdenticalSistaV1 [
 	<compilationInfo: #notMapped>
 	<needsFrameNever: -1>
@@ -3101,24 +2987,6 @@ StackInterpreter >> bytecodePrimIdenticalSistaV1 [
 	(objectMemory isOopForwarded: arg) ifTrue:
 		[arg := self handleSpecialSelectorSendFaultFor: arg].
 	self booleanCheatSistaV1: rcvr = arg
-]
-
-{ #category : #'common selector sends' }
-StackInterpreter >> bytecodePrimLessOrEqual [
-	| rcvr arg aBool |
-	rcvr := self stackValue: 1.
-	arg := self stackValue: 0.
-	(objectMemory areIntegers: rcvr and: arg) ifTrue:
-		["The C code can avoid detagging since tagged integers are still signed.
-		 But this means the simulator must override to do detagging."
-		^self cCode: [self booleanCheat: rcvr <= arg]
-			inSmalltalk: [self booleanCheat: (objectMemory integerValueOf: rcvr) <= (objectMemory integerValueOf: arg)]].
-
-	self initPrimCall.
-	aBool := self primitiveFloatLessOrEqual: rcvr toArg: arg.
-	self successful ifTrue: [^self booleanCheat: aBool].
-
-	self normalSendSpecialSelector: 4 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3142,24 +3010,6 @@ StackInterpreter >> bytecodePrimLessOrEqualSistaV1 [
 		self successful ifTrue: [ ^ self booleanCheatSistaV1: aBool ] ].
 
 	self normalSendSpecialSelector: 4 argumentCount: 1
-]
-
-{ #category : #'common selector sends' }
-StackInterpreter >> bytecodePrimLessThan [
-	| rcvr arg aBool |
-	rcvr := self stackValue: 1.
-	arg := self stackValue: 0.
-	(objectMemory areIntegers: rcvr and: arg) ifTrue:
-		["The C code can avoid detagging since tagged integers are still signed.
-		 But this means the simulator must override to do detagging."
-		^self cCode: [self booleanCheat: rcvr < arg]
-			inSmalltalk: [self booleanCheat: (objectMemory integerValueOf: rcvr) < (objectMemory integerValueOf: arg)]].
-
-	self initPrimCall.
-	aBool := self primitiveFloatLess: rcvr thanArg: arg.
-	self successful ifTrue: [^ self booleanCheat: aBool].
-
-	self normalSendSpecialSelector: 2 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3296,20 +3146,6 @@ StackInterpreter >> bytecodePrimNextPut [
 ]
 
 { #category : #'common selector sends' }
-StackInterpreter >> bytecodePrimNotEqual [
-	| rcvr arg aBool |
-	rcvr := self stackValue: 1.
-	arg := self stackValue: 0.
-	(objectMemory areIntegers: rcvr and: arg) ifTrue: [^self booleanCheat: rcvr ~= arg].
-
-	self initPrimCall.
-	aBool := self primitiveFloatEqual: rcvr toArg: arg.
-	self successful ifTrue: [^self booleanCheat: aBool not].
-
-	self normalSendSpecialSelector: 7 argumentCount: 1
-]
-
-{ #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimNotEqualSistaV1 [
 
 	<compilationInfo: #isMapped>
@@ -3325,18 +3161,6 @@ StackInterpreter >> bytecodePrimNotEqualSistaV1 [
 		self successful ifTrue: [ ^ self booleanCheatSistaV1: aBool not ] ].
 
 	self normalSendSpecialSelector: 7 argumentCount: 1
-]
-
-{ #category : #'common selector sends' }
-StackInterpreter >> bytecodePrimNotIdentical [
-	| rcvr arg |
-	rcvr := self stackValue: 1.
-	(objectMemory isOopForwarded: rcvr) ifTrue:
-		[rcvr := self handleSpecialSelectorSendFaultFor: rcvr].
-	arg := self stackValue: 0.
-	(objectMemory isOopForwarded: arg) ifTrue:
-		[arg := self handleSpecialSelectorSendFaultFor: arg].
-	self booleanCheat: rcvr ~= arg
 ]
 
 { #category : #'common selector sends' }
@@ -10799,6 +10623,7 @@ StackInterpreter >> popStack [
 { #category : #'stack bytecodes' }
 StackInterpreter >> popStackBytecode [
 
+	<needsFrameNever: -1>
 	self fetchNextBytecode.
 	self pop: 1.
 
@@ -13360,9 +13185,9 @@ StackInterpreter >> sendBreakpoint: selector receiver: rcvr [
 
 { #category : #'send bytecodes' }
 StackInterpreter >> sendLiteralSelector0ArgsBytecode [
-
 	"Can use any of the first 16 literals for the selector."
 
+	<compilationInfo: #isMapped>
 	self
 		normalLiteralSelectorAt: (currentBytecode bitAnd: 16rF)
 		argumentCount: 0
@@ -13370,8 +13195,9 @@ StackInterpreter >> sendLiteralSelector0ArgsBytecode [
 
 { #category : #'send bytecodes' }
 StackInterpreter >> sendLiteralSelector1ArgBytecode [
-
 	"Can use any of the first 16 literals for the selector."
+
+	<compilationInfo: #isMapped>
 	self
 		normalLiteralSelectorAt: (currentBytecode bitAnd: 16rF)
 		argumentCount: 1
@@ -13379,9 +13205,9 @@ StackInterpreter >> sendLiteralSelector1ArgBytecode [
 
 { #category : #'send bytecodes' }
 StackInterpreter >> sendLiteralSelector2ArgsBytecode [
-
 	"Can use any of the first 16 literals for the selector."
 
+	<compilationInfo: #isMapped>
 	self
 		normalLiteralSelectorAt: (currentBytecode bitAnd: 16rF)
 		argumentCount: 2
@@ -13901,6 +13727,9 @@ StackInterpreter >> shortReversePrintFrameAndCallers: aFramePointer [
 { #category : #'jump bytecodes' }
 StackInterpreter >> shortUnconditionalJump [
 	<expandCases>
+	<compilationInfo: #branch>
+	<compilationInfo: #v3:ShortForward:Branch:Distance:>
+
 	self jump: (currentBytecode bitAnd: 7) + 1.
 ]
 
