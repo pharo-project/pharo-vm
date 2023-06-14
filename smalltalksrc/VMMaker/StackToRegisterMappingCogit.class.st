@@ -4480,7 +4480,7 @@ StackToRegisterMappingCogit >> ssPop: n [
 	"Check how many elements to pop from the stack have been spilled.
 	If the spill base is above the stack, it means we popped spilled elements.
 	If the spill base is below or equals to the stack pointer, we don't need ot do anything"	
-	spilledToPop := simSpillBase - simStackPtr.
+	spilledToPop := simSpillBase - 1 - simStackPtr.
 	spilledToPop > 0 ifTrue:
 		[self AddCq: spilledToPop * objectMemory wordSize R: SPReg].
 	
