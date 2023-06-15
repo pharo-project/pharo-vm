@@ -376,7 +376,7 @@ SpurGenerationScavenger >> copyToOldSpace: survivor bytes: bytesInObject format:
 			[:p| | field |
 			field := manager longAt: survivor + p.
 			(manager isReallyYoung: field) ifTrue:
-				[manager getFromOldSpaceRememberedSet doRemember: newOop.
+				[manager getFromOldSpaceRememberedSet remember: newOop.
 				 ^newOop]]].
 	^newOop
 ]
@@ -727,7 +727,7 @@ SpurGenerationScavenger >> logTenuringPolicy [
 { #category : #scavenger }
 SpurGenerationScavenger >> mapOopsFromPermSpace [
 
-	| destIndex sourceIndex referrer |
+	| destIndex sourceIndex referrer result |
 
 	<inline: #never>
 
@@ -738,21 +738,32 @@ SpurGenerationScavenger >> mapOopsFromPermSpace [
 	It has to be in the remembered set if there are references to non permanent objects.
 	I will be compacting the rememberedSet while iterating it"
 
-	[sourceIndex < manager getFromPermSpaceRememberedSet rememberedSetSize] whileTrue:
-		[	referrer := manager getFromPermSpaceRememberedSet objectAt: sourceIndex.
+	[sourceIndex < manager getFromPermToNewSpaceRememberedSet rememberedSetSize] whileTrue:
+		[	referrer := manager getFromPermToNewSpaceRememberedSet objectAt: sourceIndex.
 
 			self deny: (manager isEphemeron: referrer).
 			self deny: (manager isWeakNonImm: referrer).
 			
-			(self scavengeReferentsOfFromPermSpace: referrer)
+			result := self scavengeReferentsOfFromPermSpace: referrer.
+			
+			result = 1
 				ifTrue:
-						[manager getFromPermSpaceRememberedSet save: referrer at: destIndex.
+						[
+						"Refers new space, we keep it"
+						 manager getFromPermToNewSpaceRememberedSet save: referrer at: destIndex.
 						 destIndex := destIndex + 1]
 				ifFalse:
-						[ manager setIsRememberedOf: referrer to: false].
+						[ 
+						"We clean the remembered set flag, it is only marking if it is maybe pointing to new objects"
+						manager setIsRememberedOf: referrer to: false.
+						"Refers to Old Space, if refers to perm space only, I do nothing. I remove it from the remembered set fromPermSpaceToNewSpace"
+						result = 2 ifTrue: [ 
+							(manager getFromPermToOldSpaceRememberedSet isInRememberedSet: referrer)
+								ifFalse: [ manager getFromPermToOldSpaceRememberedSet rememberWithoutMarkingAsRemembered: referrer ]]
+					].
 		 sourceIndex := sourceIndex + 1].
 	
-	manager getFromPermSpaceRememberedSet setRememberedSetSize: destIndex.
+	manager getFromPermToNewSpaceRememberedSet setRememberedSetSize: destIndex.
 	
 	"self assert: (manager isPermSpaceRememberedSetSane)."
 ]
@@ -779,7 +790,8 @@ SpurGenerationScavenger >> newSpaceStart: startAddress newSpaceBytes: totalBytes
 	eden start: futureSpace limit; limit: startAddress + totalBytes.
 	
 	manager getFromOldSpaceRememberedSet fudge: self rememberedSetFudge.
-	manager getFromPermSpaceRememberedSet fudge: self rememberedSetFudge.
+	manager getFromPermToOldSpaceRememberedSet fudge: self rememberedSetFudge.
+	manager getFromPermToNewSpaceRememberedSet fudge: self rememberedSetFudge.
 	
 	self assert: self futureSpace limit <= (startAddress + totalBytes).
 	self assert: self eden start \\ manager allocationUnit
@@ -865,13 +877,21 @@ SpurGenerationScavenger >> printRememberedSet [
 			space;
 			shortPrintOop: oop ].
 		
-	coInterpreter print: 'From Permpace:'; cr.
+	coInterpreter print: 'From Permpace to OldSpace:'; cr.
 
-	manager getFromPermSpaceRememberedSet rememberedSetWithIndexDo: [ :oop :i | 
+	manager getFromPermToOldSpaceRememberedSet rememberedSetWithIndexDo: [ :oop :i | 
 		coInterpreter
 			printNum: i;
 			space;
-			shortPrintOop: oop ]	
+			shortPrintOop: oop ].	
+		
+	coInterpreter print: 'From Permpace to NewSpace:'; cr.
+
+	manager getFromPermToNewSpaceRememberedSet rememberedSetWithIndexDo: [ :oop :i | 
+		coInterpreter
+			printNum: i;
+			space;
+			shortPrintOop: oop ]		
 ]
 
 { #category : #'debug support' }
@@ -985,7 +1005,7 @@ SpurGenerationScavenger >> processWeaklings [
 			((self processWeakSurvivor: weakObj) and: [ 
 				 (manager getMemoryMap isOldObject: weakObj) and: [ 
 					 (manager isRemembered: weakObj) not ] ]) ifTrue: [ 
-				manager getFromOldSpaceRememberedSet doRemember: weakObj ].
+				manager getFromOldSpaceRememberedSet remember: weakObj ].
 			weakCorpse := self nextCorpseOrNil: weakCorpse ].
 		weakList := nil ]
 ]
@@ -1114,7 +1134,7 @@ SpurGenerationScavenger >> scavengeLoop [
 ]
 
 { #category : #scavenger }
-SpurGenerationScavenger >> scavengeReferentsOf: referrer additionalShouldKeepReferrerTestingBlock: shouldKeepReferrerTestingBlock [
+SpurGenerationScavenger >> scavengeReferentsOf: referrer additionalTestingBlock: additionalTestingBlock [
 	"scavengeReferentsOf: referrer inspects all the pointers in referrer.  If
 	 any are new objects, it has them moved to FutureSurvivorSpace, and
 	 answers truth. If there are no new referents, it answers falsity. To handle
@@ -1156,12 +1176,12 @@ SpurGenerationScavenger >> scavengeReferentsOf: referrer additionalShouldKeepRef
 							[newLocation := self copyAndForward: referent.
 							 (manager isYoung: newLocation) 
 								ifTrue: [foundNewReferentOrIsWeakling := true]
-								ifFalse: [(shouldKeepReferrerTestingBlock value: referrer value: newLocation) ifTrue: [ foundNewReferentOrIsWeakling := true ]]].
+								ifFalse: [additionalTestingBlock value: referrer value: newLocation]].
 					 manager storePointerUnchecked: i ofMaybeForwardedObject: referrer withValue: newLocation]
 				ifFalse:
 					[
 					manager storePointerUnchecked: i ofMaybeForwardedObject: referrer withValue: referent.
-					(shouldKeepReferrerTestingBlock value: referrer value: referent) ifTrue: [ foundNewReferentOrIsWeakling := true ]]]].
+					additionalTestingBlock value: referrer value: referent]]].
 	^foundNewReferentOrIsWeakling
 ]
 
@@ -1170,7 +1190,9 @@ SpurGenerationScavenger >> scavengeReferentsOfFromOldSpace: referrer [
 
 	<inline: #never>
 
-	^ self scavengeReferentsOf: referrer additionalShouldKeepReferrerTestingBlock: [ :aReferrer :aReferent | false ].
+	^ self 
+		scavengeReferentsOf: referrer 
+		additionalTestingBlock: [ :aReferrer :aReferent | "Do nothing" ].
 ]
 
 { #category : #scavenger }
@@ -1178,15 +1200,20 @@ SpurGenerationScavenger >> scavengeReferentsOfFromPermSpace: referrer [
 
 	<inline: #never>
 	
-	| returnValue |
+	| returnValue refersOldSpace |
+	
+	refersOldSpace := false.
 	
 	returnValue := self
 		  scavengeReferentsOf: referrer
-		  additionalShouldKeepReferrerTestingBlock: [ :aReferrer :referent | 
-			  (manager isPermanent: referent) not 
-					and: [ (manager isFixedKnownObject: referent) not ] ].
+		  additionalTestingBlock: [ :aReferrer :referent | 
+			(refersOldSpace not and: [(manager isPermanent: referent) not and: [ (manager isFixedKnownObject: referent) not ]])
+				ifTrue: [ refersOldSpace := true ]
+			 ].
 	
-	^ returnValue.
+	returnValue ifTrue: [ ^ 1 "Refers NewSpace" ].
+	refersOldSpace ifTrue: [ ^ 2 "Refers OldSpace only" ].
+	^ 3 "Refers PermSpace only"
 ]
 
 { #category : #scavenger }

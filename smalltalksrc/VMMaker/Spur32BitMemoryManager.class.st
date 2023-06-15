@@ -905,7 +905,7 @@ Spur32BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 				ofObject: copy
 				withValue: (self fetchPointer: i ofObject: objOop)].
 		 (self isRemembered: objOop) ifTrue:
-			[fromOldSpaceRememberedSet doRemember: copy].
+			[fromOldSpaceRememberedSet remember: copy].
 		 self forward: objOop to: copy.
 		 ^0].
 

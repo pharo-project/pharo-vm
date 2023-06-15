@@ -42,7 +42,7 @@ VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWh
 	self deny: (memory isRemembered: permanentObject1).
 	self deny: (memory getFromOldSpaceRememberedSet isInRememberedSet:
 			 permanentObject1).
-	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet:
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet:
 			 permanentObject1)
 ]
 
@@ -63,7 +63,7 @@ VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWh
 	self deny: (memory isRemembered: permanentObject1).
 	self deny: (memory getFromOldSpaceRememberedSet isInRememberedSet:
 			 permanentObject1).
-	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet:
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet:
 			 permanentObject1)
 ]
 
@@ -115,18 +115,20 @@ VMPermanentSpaceMemoryTest >> testMoveOldObjectInRememberedSetIsMovedFromSet [
 	
 	self assert: (memory isRemembered: oldObject). 
 	self assert: (memory getFromOldSpaceRememberedSet isInRememberedSet: oldObject). 
-	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: oldObject). 
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: oldObject). 
 	
 	permanentObject := memory moveToPermSpace: oldObject.	
 	
 	self assert: (memory isRemembered: permanentObject). 
 	
-	"Old object is now a forwarder shoul not be in any remembered set"
+	"Old object is now a forwarder should not be in any remembered set"
 	self deny: (memory getFromOldSpaceRememberedSet isInRememberedSet: oldObject). 
-	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: oldObject). 
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: oldObject). 
+	self deny: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: oldObject). 
 
 	self deny: (memory getFromOldSpaceRememberedSet isInRememberedSet: permanentObject). 
-	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject). 
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject). 
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject). 
 
 ]
 
@@ -143,7 +145,7 @@ VMPermanentSpaceMemoryTest >> testMovingAnObjectReferencingAYoungOnePutsInRememb
 	permanentObject := memory moveToPermSpace: rootObject.	
 		
 	self assert: (memory isRemembered: permanentObject).
-	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
 ]
 
 { #category : #'test - moving' }
@@ -158,8 +160,9 @@ VMPermanentSpaceMemoryTest >> testMovingAnObjectReferencingAnOldOnePutsInRemembe
 
 	permanentObject := memory moveToPermSpace: rootObject.	
 	
-	self assert: (memory isRemembered: permanentObject).
-	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject).
+	"Perm to Old objects are not set the remembered bit"
+	self deny: (memory isRemembered: permanentObject).
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
 ]
 
 { #category : #'test - moving' }
@@ -310,8 +313,8 @@ VMPermanentSpaceMemoryTest >> testPassingObjectInBulkToPermSpaceKeepsFirstInReme
 
 	permanentObject1 := memory fetchPointer: 0 ofObject: array.
 
-	self assert: (memory isRemembered: permanentObject1).
-	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject1 ).	
+	self deny: (memory isRemembered: permanentObject1).
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject1 ).	
 
 ]
 
@@ -330,7 +333,7 @@ VMPermanentSpaceMemoryTest >> testPassingObjectsInBulkPreservesObjectAlreadyInTh
 	permanentObject1 := memory moveToPermSpace: oldObject1.
 	
 	self assert: (memory isRemembered: permanentObject1).	
-	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject1).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject1).
 	
 	array := self newArrayWithSlots: 1.
 	memory storePointer: 0 ofObject: array withValue: oldObject2.
@@ -340,10 +343,10 @@ VMPermanentSpaceMemoryTest >> testPassingObjectsInBulkPreservesObjectAlreadyInTh
 	permanentObject2 := memory fetchPointer: 0 ofObject: array.
 
 	self assert: (memory isRemembered: permanentObject1).	
-	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject1).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject1).
 
 	self assert: (memory isRemembered: permanentObject2).	
-	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject2).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject2).
 
 ]
 
@@ -367,7 +370,7 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsInBulkToPermSpaceIsRemovedFro
 
 	self deny: (memory isRemembered: permanentObject1).
 	self deny: (memory getFromOldSpaceRememberedSet isInRememberedSet: permanentObject1).
-	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject1).		
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject1).		
 ]
 
 { #category : #'test - moving' }
@@ -382,11 +385,12 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceIsRemovedFromRemem
 	permanentObject1 := memory moveToPermSpace: oldObject1.	
 	permanentObject2 := memory moveToPermSpace: oldObject2.
 
-	memory doScavenge: 1.
+	"The FromPermToOld Remembered set is cleaned on FullGC"
+	memory fullGC.
 
 	self deny: (memory isRemembered: permanentObject1).
 	self deny: (memory getFromOldSpaceRememberedSet isInRememberedSet: permanentObject1).
-	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject1).		
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject1).		
 ]
 
 { #category : #'test - moving' }
@@ -401,8 +405,9 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceKeepsFirstInRememb
 	permanentObject1 := memory moveToPermSpace: oldObject1.	
 	permanentObject2 := memory moveToPermSpace: oldObject2.
 
-	self assert: (memory isRemembered: permanentObject1).
-	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject1 ).	
+	"But it is not marked"
+	self deny: (memory isRemembered: permanentObject1).
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject1 ).	
 
 ]
 
@@ -422,6 +427,23 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceKeepsPointerToForw
 ]
 
 { #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceNotUpdatesForwarderInScanvenge [
+
+	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
+	
+	oldObject1 := self newOldSpaceObjectWithSlots: 1.
+	oldObject2 := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObject1  withValue: oldObject2.
+	
+	permanentObject1 := memory moveToPermSpace: oldObject1.	
+	permanentObject2 := memory moveToPermSpace: oldObject2.
+
+	memory doScavenge: 1.
+
+	self deny: (memory fetchPointer: 0 ofObject: permanentObject1) equals: permanentObject2
+]
+
+{ #category : #'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceUpdatesForwarderInGC [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
@@ -434,23 +456,6 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceUpdatesForwarderIn
 	permanentObject2 := memory moveToPermSpace: oldObject2.
 
 	memory fullGC.
-
-	self assert: (memory fetchPointer: 0 ofObject: permanentObject1) equals: permanentObject2
-]
-
-{ #category : #'test - moving' }
-VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceUpdatesForwarderInScanvenge [
-
-	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
-	
-	oldObject1 := self newOldSpaceObjectWithSlots: 1.
-	oldObject2 := self newOldSpaceObjectWithSlots: 1.
-	memory storePointer: 0 ofObject: oldObject1  withValue: oldObject2.
-	
-	permanentObject1 := memory moveToPermSpace: oldObject1.	
-	permanentObject2 := memory moveToPermSpace: oldObject2.
-
-	memory doScavenge: 1.
 
 	self assert: (memory fetchPointer: 0 ofObject: permanentObject1) equals: permanentObject2
 ]
@@ -515,7 +520,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToFalseIsNotRemembered 
 	permanentObject := memory moveToPermSpace: oldObject.
 	
 	self deny: (memory isRemembered: permanentObject).
-	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject ).	
 ]
 
 { #category : #'test - moving' }
@@ -528,7 +533,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToMachineCodeIsNotRemem
 	permanentObject := memory moveToPermSpace: oldObject.
 	
 	self deny: (memory isRemembered: permanentObject).
-	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject ).	
 ]
 
 { #category : #'test - moving' }
@@ -540,7 +545,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToNilIsNotRemembered [
 	permanentObject := memory moveToPermSpace: oldObject.
 	
 	self deny: (memory isRemembered: permanentObject).
-	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject ).	
 ]
 
 { #category : #'test - moving' }
@@ -553,7 +558,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToTrueIsNotRemembered [
 	permanentObject := memory moveToPermSpace: oldObject.
 	
 	self deny: (memory isRemembered: permanentObject).
-	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject ).	
 ]
 
 { #category : #'test - moving' }
@@ -567,14 +572,14 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToYoungObjectIsRemovedW
 	permanentObject := memory moveToPermSpace: oldObject.
 	
 	self assert: (memory isRemembered: permanentObject).
-	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject ).	
 	
 	memory storePointer: 0 ofObject: permanentObject withValue: 16.
 
 	memory doScavenge: 1.
 
 	self deny: (memory isRemembered: permanentObject).
-	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+	self deny: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject ).	
 
 ]
 
@@ -589,14 +594,14 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectUpdatedToTrueIsRemovedFromRemem
 	permanentObject := memory moveToPermSpace: oldObject.
 	
 	self assert: (memory isRemembered: permanentObject).
-	self assert: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject ).	
 	
 	memory storePointer: 0 ofObject: permanentObject withValue: memory trueObject.
 
 	memory doScavenge: 1.
 
 	self deny: (memory isRemembered: permanentObject).
-	self deny: (memory getFromPermSpaceRememberedSet isInRememberedSet: permanentObject ).	
+	self deny: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject ).	
 
 ]
 

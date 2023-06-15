@@ -1689,11 +1689,11 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: index [
 			[81] ->  [^objectMemory integerObjectOf: 
 								objectMemory getFromOldSpaceRememberedSet rememberedSetLimit].
 			[82] ->  [^objectMemory integerObjectOf: 
-								objectMemory getFromPermSpaceRememberedSet rememberedSetSize].
+								objectMemory getFromPermToOldSpaceRememberedSet rememberedSetSize].
 			[83] ->  [^objectMemory integerObjectOf: 
-								objectMemory getFromPermSpaceRememberedSet rememberedSetLimit].
+								objectMemory getFromPermToOldSpaceRememberedSet rememberedSetLimit].
 			[84] ->  [^objectMemory integerObjectOf:
-								objectMemory getFromPermSpaceRememberedSet numberOfNewSpaceReferers]}
+								objectMemory getFromPermToOldSpaceRememberedSet numberOfNewSpaceReferers]}
 		otherwise: [^nil]
 ]
 

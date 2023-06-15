@@ -69,26 +69,6 @@ VMRememberedSet >> countNotNilObjects [
 	^ count
 ]
 
-{ #category : #'store check' }
-VMRememberedSet >> doRemember: objOop [
-	"Add the argument to the remembered set and set its isRemembered bit to true.
-	 Answer the argument for the benefit of the Cogit."
-	<api>
-	<inline: false>
-	self assert: (manager isNonImmediate: objOop).
-	self deny: (manager getMemoryMap isYoungObject: objOop).
-	self deny: (self isInRememberedSet: objOop).
-	
-	manager setIsRememberedOf: objOop to: true.
-	rememberedSetSize >= rememberedSetLimit ifTrue:
-		[self growRememberedSet].
-	rememberedSetArray at: rememberedSetSize put: objOop.
-	self setRememberedSetSize: rememberedSetSize + 1.
-	rememberedSetSize >= rememberedSetRedZone ifTrue:
-		[manager scheduleScavenge].
-	^objOop
-]
-
 { #category : #initialization }
 VMRememberedSet >> emptyRememberedSet [
 
@@ -152,7 +132,7 @@ VMRememberedSet >> growRememberedSet [
 	newObj ifNil:
 		[newObj := manager allocatePinnedSlots: numSlots + 1024.
 		 newObj ifNil:
-			[(manager growOldSpaceByAtLeast: (numSlots + 1024) * self wordSize) ifNil: [self error: 'could not grow remembered set'].
+			[(manager growOldSpaceByAtLeast: (numSlots + 1024) * manager wordSize) ifNil: [self error: 'could not grow remembered set'].
 			 newObj := manager allocatePinnedSlots: numSlots + 1024. "cannot fail"]].
 
 	manager rememberedSet: rootIndex oop: newObj.
@@ -326,10 +306,41 @@ VMRememberedSet >> relocateRememberedSet [
 	self rememberedSetArray: (self rememberedSetArrayPointerFromObject: self objectOop)
 ]
 
+{ #category : #'store check' }
+VMRememberedSet >> remember: objOop [
+	"Add the argument to the remembered set and set its isRemembered bit to true.
+	 Answer the argument for the benefit of the Cogit."
+	<api>
+	<inline: false>
+	self deny: (self isInRememberedSet: objOop).
+	
+	manager setIsRememberedOf: objOop to: true.
+
+	^ self rememberWithoutMarkingAsRemembered: objOop
+]
+
 { #category : #accessing }
 VMRememberedSet >> rememberPreviousSize [
 
 	previousRememberedSetSize := rememberedSetSize
+]
+
+{ #category : #'store check' }
+VMRememberedSet >> rememberWithoutMarkingAsRemembered: objOop [
+
+	<api>
+	<inline: false>
+
+	self assert: (manager isNonImmediate: objOop).
+	self deny: (manager getMemoryMap isYoungObject: objOop).
+
+	rememberedSetSize >= rememberedSetLimit ifTrue:
+		[self growRememberedSet].
+	rememberedSetArray at: rememberedSetSize put: objOop.
+	self setRememberedSetSize: rememberedSetSize + 1.
+	rememberedSetSize >= rememberedSetRedZone ifTrue:
+		[manager scheduleScavenge].
+	^objOop
 ]
 
 { #category : #accessing }

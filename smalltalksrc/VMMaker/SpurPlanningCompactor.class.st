@@ -61,8 +61,9 @@ Class {
 		'objectAfterLastMobileObject',
 		'savedFirstFieldsSpace',
 		'savedFirstFieldsSpaceNotInOldSpace',
-		'firstFieldOfPermRememberedSet',
-		'savedFirstFieldSpaceMaxSlots'
+		'savedFirstFieldSpaceMaxSlots',
+		'firstFieldOfPermToOldRememberedSet',
+		'firstFieldOfPermToNewRememberedSet'
 	],
 	#pools : [
 		'VMBytecodeConstants'
@@ -616,10 +617,15 @@ SpurPlanningCompactor >> repinRememberedSet [
 	manager setIsPinnedOf: manager oldRememberedSetObj to: true.
 	manager getFromOldSpaceRememberedSet relocateRememberedSet.
 	
-	manager getFromPermSpaceRememberedSet rememberedSetSize > 0 ifTrue:
-		[manager storePointerUnchecked: 0 ofObject: manager permRememberedSetObj withValue: firstFieldOfPermRememberedSet].
-	manager setIsPinnedOf: manager permRememberedSetObj to: true.
-	manager getFromPermSpaceRememberedSet relocateRememberedSet
+	manager getFromPermToOldSpaceRememberedSet rememberedSetSize > 0 ifTrue:
+		[manager storePointerUnchecked: 0 ofObject: manager permToOldRememberedSetObj withValue: firstFieldOfPermToOldRememberedSet].
+	manager setIsPinnedOf: manager permToOldRememberedSetObj to: true.
+	manager getFromPermToOldSpaceRememberedSet relocateRememberedSet.
+	
+	manager getFromPermToNewSpaceRememberedSet rememberedSetSize > 0 ifTrue:
+		[manager storePointerUnchecked: 0 ofObject: manager permToNewRememberedSetObj withValue: firstFieldOfPermToNewRememberedSet].
+	manager setIsPinnedOf: manager permToNewRememberedSetObj to: true.
+	manager getFromPermToNewSpaceRememberedSet relocateRememberedSet
 ]
 
 { #category : #'space management' }
@@ -777,8 +783,13 @@ SpurPlanningCompactor >> unpinRememberedSet [
 	firstFieldOfRememberedSet := manager fetchPointer: 0 ofObject: manager oldRememberedSetObj.
 	manager setIsPinnedOf: manager oldRememberedSetObj to: false.
 
-	firstFieldOfPermRememberedSet := manager fetchPointer: 0 ofObject: manager permRememberedSetObj.
-	manager setIsPinnedOf: manager permRememberedSetObj to: false
+	firstFieldOfPermToOldRememberedSet := manager fetchPointer: 0 ofObject: manager permToOldRememberedSetObj.
+	manager setIsPinnedOf: manager permToOldRememberedSetObj to: false.
+
+	firstFieldOfPermToNewRememberedSet := manager fetchPointer: 0 ofObject: manager permToNewRememberedSetObj.
+	manager setIsPinnedOf: manager permToNewRememberedSetObj to: false
+	
+
 ]
 
 { #category : #compaction }
@@ -875,10 +886,17 @@ SpurPlanningCompactor >> updatePointersInManagerHeapEntities [
 		[firstFieldOfRememberedSet := manager fetchPointer: 0 ofObject: firstFieldOfRememberedSet].
 	self relocateObjectsInHeapEntity: manager oldRememberedSetObj from: 1 to: manager getFromOldSpaceRememberedSet rememberedSetSize - 1.
 
-	(manager getFromPermSpaceRememberedSet rememberedSetSize > 0) ifTrue:
-		[self updatePointersIn: firstFieldOfPermRememberedSet ].
+	(manager getFromPermToOldSpaceRememberedSet rememberedSetSize > 0) ifTrue:
+		[self updatePointersIn: firstFieldOfPermToOldRememberedSet ].
 	
-	manager getFromPermSpaceRememberedSet 
+	manager getFromPermToOldSpaceRememberedSet 
+		rememberedSetWithIndexDo: [ :oop :index | 
+			self updatePointersIn: oop ] startingAt: 1.
+
+	(manager getFromPermToNewSpaceRememberedSet rememberedSetSize > 0) ifTrue:
+		[self updatePointersIn: firstFieldOfPermToNewRememberedSet ].
+	
+	manager getFromPermToNewSpaceRememberedSet 
 		rememberedSetWithIndexDo: [ :oop :index | 
 			self updatePointersIn: oop ] startingAt: 1.
 	
