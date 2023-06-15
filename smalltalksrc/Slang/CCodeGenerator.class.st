@@ -4397,6 +4397,17 @@ CCodeGenerator >> removeVariable: aName ifAbsent: ifAbsentBlock [
 	^variables remove: aName ifAbsent: ifAbsentBlock
 ]
 
+{ #category : #translating }
+CCodeGenerator >> renameKeywordsConflicts [
+
+	methods do: [ :method |
+		method allLocals do: [ :local |
+			(self reservedWords includes: local) ifTrue: [
+				method renameVariablesUsing: (Dictionary new
+						 at: local put: (self sanitizeKeyword: local);
+						 yourself) ] ] ]
+]
+
 { #category : #'C translation support' }
 CCodeGenerator >> reservedWords [
 	^ self class reservedWords
@@ -4551,6 +4562,12 @@ CCodeGenerator >> returnTypeForSend: sendNode in: aTMethod ifNil: typeIfNil [
 		in: aTMethod
 		boundTo: methodOrNil
 		typeIfNil: typeIfNil
+]
+
+{ #category : #'translation support' }
+CCodeGenerator >> sanitizeKeyword: aKeyword [
+
+	^ aKeyword , '_1'
 ]
 
 { #category : #accessing }

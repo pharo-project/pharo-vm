@@ -6468,13 +6468,6 @@ SlangBasicTranslationTest >> testVariableAssignment [
 	self assert: translation equals: 'var = 7'
 ]
 
-{ #category : #'tests-assignment' }
-SlangBasicTranslationTest >> testVariableCantHaveReservedName [
-
-	self should: [TVariableNode new setName: 'register'] raise: TranslationError.
-
-]
-
 { #category : #'tests-blocks' }
 SlangBasicTranslationTest >> testVariableStatementsInBlockValueAreIgnored [
 
@@ -6547,6 +6540,23 @@ SlangBasicTranslationTest >> testVariableUpdateAssignmentPlus [
 			expression: expression).
 
 	self assert: translation equals: 'var += 7'
+]
+
+{ #category : #'tests-variables' }
+SlangBasicTranslationTest >> testVariableWithReservedNameShouldBeRenamed [
+
+	| method local sanitizedLocal |
+	local := #case.
+	sanitizedLocal := generator sanitizeKeyword: local.
+	method := self getTMethodFrom: #methodWithReservedWordLocal.
+
+	generator renameKeywordsConflicts.
+
+	self shouldnt: (method allLocals includes: local).
+	self should: (method allLocals includes: sanitizedLocal).
+	self shouldnt: (method declarations includes: 'char *' , local).
+	self should:
+		(method declarations includes: 'char *' , sanitizedLocal)
 ]
 
 { #category : #helpers }

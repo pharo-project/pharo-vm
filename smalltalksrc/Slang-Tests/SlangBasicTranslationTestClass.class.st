@@ -154,6 +154,14 @@ SlangBasicTranslationTestClass >> methodWithOptionPragma [
 ]
 
 { #category : #inline }
+SlangBasicTranslationTestClass >> methodWithReservedWordLocal [
+
+	<var: #case type: 'char *'>
+	| case |
+	case := 'foo'
+]
+
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodWithSharedCase [
 
 	<sharedCodeInCase: 'sharedCase'>
