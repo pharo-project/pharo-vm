@@ -1025,6 +1025,7 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 
 	| verbose methodList |
 	"method preparation"
+	
 	verbose := false.
 	self prepareMethods.
 	verbose ifTrue: [
@@ -1041,6 +1042,9 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 		applyMethodNamed: #interpret.
 
 	"code generation"
+	
+	self renameKeywordsConflicts.
+	
 	"If we're outputting the VM put the main interpreter loop first for two reasons.
 	 1, so that the dispdbg.h header included at the bytecode dispatch can define
 	 macros that affect all C code in the interpreter,  and 2, so that all primitive
