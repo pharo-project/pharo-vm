@@ -154,11 +154,13 @@ SlangBasicTranslationTestClass >> methodWithOptionPragma [
 ]
 
 { #category : #inline }
-SlangBasicTranslationTestClass >> methodWithReservedWordLocal [
+SlangBasicTranslationTestClass >> methodWithReservedWordLocal: register [
 
 	<var: #case type: 'char *'>
+	<var: #register type: 'char *'>
 	| case |
 	case := 'foo'
+	register , 'foo'
 ]
 
 { #category : #inline }

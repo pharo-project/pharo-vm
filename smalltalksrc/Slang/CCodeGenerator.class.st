@@ -4405,11 +4405,13 @@ CCodeGenerator >> removeVariable: aName ifAbsent: ifAbsentBlock [
 CCodeGenerator >> renameKeywordsConflicts [
 
 	methods do: [ :method |
-		method allLocals do: [ :local |
-			(self reservedWords includes: local) ifTrue: [
-				method renameVariablesUsing: (Dictionary new
-						 at: local put: (self sanitizeKeyword: local);
-						 yourself) ] ] ]
+		| localRewording |
+		localRewording := Dictionary new.
+
+		(method allLocals select: [ :local |
+			 self reservedWords includes: local ]) do: [ :local |
+			localRewording at: local put: (self sanitizeKeyword: local) ].
+		localRewording ifNotEmpty: [ method renameVariablesUsing: localRewording ]]
 ]
 
 { #category : #'C translation support' }

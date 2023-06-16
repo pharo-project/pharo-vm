@@ -6545,18 +6545,17 @@ SlangBasicTranslationTest >> testVariableUpdateAssignmentPlus [
 { #category : #'tests-variables' }
 SlangBasicTranslationTest >> testVariableWithReservedNameShouldBeRenamed [
 
-	| method local sanitizedLocal |
-	local := #case.
-	sanitizedLocal := generator sanitizeKeyword: local.
-	method := self getTMethodFrom: #methodWithReservedWordLocal.
-
+	| method locals sanitizedLocals |
+	locals := #(case register).
+	sanitizedLocals := locals collect: [ :local | generator sanitizeKeyword: local ] .
+	
+	method := self getTMethodFrom: #methodWithReservedWordLocal:.
+	method recordDeclarationsIn: generator.
+	
 	generator renameKeywordsConflicts.
 
-	self shouldnt: (method allLocals includes: local).
-	self should: (method allLocals includes: sanitizedLocal).
-	self shouldnt: (method declarations includes: 'char *' , local).
-	self should:
-		(method declarations includes: 'char *' , sanitizedLocal)
+	self shouldnt: (method allLocals includesAny: locals).
+	self should: (method allLocals includesAll: sanitizedLocals).
 ]
 
 { #category : #helpers }
