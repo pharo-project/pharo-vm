@@ -3835,7 +3835,8 @@ SpurMemoryManager >> cleanUpPermToOldSpaceRememeberedSet [
 	[sourceIndex < self getFromPermToOldSpaceRememberedSet rememberedSetSize] whileTrue:
 		[	referrer := self getFromPermToOldSpaceRememberedSet objectAt: sourceIndex.
 
-			self deny: (self hasYoungReferents: referrer).
+			self assert: ((self hasYoungReferents: referrer) not or:[self isRemembered: referrer]).
+
 			(self hasOldReferents: referrer)
 				ifTrue:[
 						 self getFromPermToOldSpaceRememberedSet save: referrer at: destIndex.
@@ -6055,7 +6056,9 @@ SpurMemoryManager >> hasIdentityHash: objOop [
 { #category : #'object testing' }
 SpurMemoryManager >> hasOldReferents: objOop [
 
-	^ self hasReferents:  objOop satisfying: [ :referenced | self isOld: referenced ]
+	<inline: false>
+
+	^ self hasReferents:  objOop satisfying: [ :referenced | (self isFixedKnownObject: referenced) not and: [self isOld: referenced] ]
 ]
 
 { #category : #'header access' }
@@ -6083,7 +6086,10 @@ SpurMemoryManager >> hasReferents: objOop satisfying: aCondition [
 		| referenced |
 		referenced := self fetchPointer: i ofObject: objOop.
 
-		(self isInObjectMemory: referenced) ifTrue: [  
+		self assert: ((self isImmediate: referenced) or: [ self isInObjectMemory: referenced ]).
+
+		((self isNonImmediate: referenced) 
+				and: [self isInObjectMemory: referenced ]) ifTrue: [  
 			(self isOopForwarded: referenced) 
 				ifTrue: [ referenced := self followForwarded: referenced.
 					self storePointer: i ofObject: objOop withValue: referenced ]. 
@@ -6103,6 +6109,8 @@ SpurMemoryManager >> hasSixtyFourBitImmediates [
 
 { #category : #'object testing' }
 SpurMemoryManager >> hasYoungReferents: objOop [
+
+	<inline: false>
 
 	^ self hasReferents:  objOop satisfying: [ :referenced | self isYoung: referenced ]
 ]
@@ -8626,6 +8634,7 @@ SpurMemoryManager >> markAndTraceObjStack: stackOrNil andContents: markAndTraceC
 SpurMemoryManager >> markAndTraceRememberedSet: aRememberedSet [
 
 	| rememberedSetOop |
+	<var: #aRememberedSet type: #'VMRememberedSet *'>
 
 	rememberedSetOop := aRememberedSet objectOop.
 	self setIsMarkedOf: rememberedSetOop to: true.
