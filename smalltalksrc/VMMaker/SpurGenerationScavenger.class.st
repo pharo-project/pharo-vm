@@ -758,8 +758,7 @@ SpurGenerationScavenger >> mapOopsFromPermSpace [
 						manager setIsRememberedOf: referrer to: false.
 						"Refers to Old Space, if refers to perm space only, I do nothing. I remove it from the remembered set fromPermSpaceToNewSpace"
 						result = 2 ifTrue: [ 
-							(manager getFromPermToOldSpaceRememberedSet isInRememberedSet: referrer)
-								ifFalse: [ manager getFromPermToOldSpaceRememberedSet rememberWithoutMarkingAsRemembered: referrer ]]
+							manager getFromPermToOldSpaceRememberedSet rememberWithoutMarkingAsRemembered: referrer]
 					].
 		 sourceIndex := sourceIndex + 1].
 	
@@ -1207,7 +1206,7 @@ SpurGenerationScavenger >> scavengeReferentsOfFromPermSpace: referrer [
 	returnValue := self
 		  scavengeReferentsOf: referrer
 		  additionalTestingBlock: [ :aReferrer :referent | 
-			(refersOldSpace not and: [(manager isPermanent: referent) not and: [ (manager isFixedKnownObject: referent) not ]])
+			(refersOldSpace not and: [ (manager isFixedKnownObject: referent) not and: [ (manager isPermanent: referent) not ]])
 				ifTrue: [ refersOldSpace := true ]
 			 ].
 	

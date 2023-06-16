@@ -1692,8 +1692,10 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: index [
 								objectMemory getFromPermToOldSpaceRememberedSet rememberedSetSize].
 			[83] ->  [^objectMemory integerObjectOf: 
 								objectMemory getFromPermToOldSpaceRememberedSet rememberedSetLimit].
-			[84] ->  [^objectMemory integerObjectOf:
-								objectMemory getFromPermToOldSpaceRememberedSet numberOfNewSpaceReferers]}
+			[84] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromPermToNewSpaceRememberedSet rememberedSetSize].
+			[85] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromPermToNewSpaceRememberedSet rememberedSetLimit]}
 		otherwise: [^nil]
 ]
 
@@ -3974,7 +3976,7 @@ StackInterpreterPrimitives >> primitiveVMParameter [
 	Otherwise the *real* list is in the code: `StackInterpreterPrimitives>>#primitiveGetVMParameter:`"
 
 	| paramsArraySize index |
-	paramsArraySize := 84.
+	paramsArraySize := 85.
 	argumentCount = 0 ifTrue: [^self primitiveAllVMParameters: paramsArraySize].
 	argumentCount > 2 ifTrue: [^self primitiveFailFor: PrimErrBadNumArgs].
 	

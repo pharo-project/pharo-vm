@@ -240,20 +240,6 @@ VMRememberedSet >> numRememberedEphemerons: anInteger [
 	numRememberedEphemerons := anInteger
 ]
 
-{ #category : #scavenger }
-VMRememberedSet >> numberOfNewSpaceReferers [
-
-	<api>
-	| newSpaceReferers |
-	newSpaceReferers := 0.
-
-	self rememberedSetWithIndexDo: [ :oop :i |
-		(manager hasYoungReferents: oop) ifTrue: [
-			newSpaceReferers := newSpaceReferers + 1 ] ].
-
-	^ newSpaceReferers
-]
-
 { #category : #accessing }
 VMRememberedSet >> objectAt: anIndex [
 

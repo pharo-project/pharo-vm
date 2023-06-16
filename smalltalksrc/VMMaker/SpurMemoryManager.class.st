@@ -3832,19 +3832,25 @@ SpurMemoryManager >> cleanUpPermToOldSpaceRememeberedSet [
 	| destIndex sourceIndex referrer |
 	sourceIndex := destIndex := 0.
 
+	"We iterate the remembered set to remove the objects that no longer points to old space.
+	 As it might have duplicates, I use the mark bit to see if I have already this object."
+
 	[sourceIndex < self getFromPermToOldSpaceRememberedSet rememberedSetSize] whileTrue:
 		[	referrer := self getFromPermToOldSpaceRememberedSet objectAt: sourceIndex.
 
 			self assert: ((self hasYoungReferents: referrer) not or:[self isRemembered: referrer]).
 
-			(self hasOldReferents: referrer)
+			((self isMarked: referrer) not and: [self hasOldReferents: referrer])
 				ifTrue:[
 						 self getFromPermToOldSpaceRememberedSet save: referrer at: destIndex.
+						 self setIsMarkedOf: referrer to: true. 
 						 destIndex := destIndex + 1].
 		 sourceIndex := sourceIndex + 1].
 	
 	self getFromPermToOldSpaceRememberedSet setRememberedSetSize: destIndex.
 
+	self getFromPermToOldSpaceRememberedSet rememberedSetWithIndexDo:[ :oop :i | 
+		self setIsMarkedOf: oop to: false ].
 ]
 
 { #category : #'debug support' }
