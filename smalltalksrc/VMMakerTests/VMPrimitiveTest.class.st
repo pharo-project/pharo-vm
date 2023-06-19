@@ -630,8 +630,9 @@ VMPrimitiveTest >> testPrimitiveAtForDivorcedContext [
 	context := self newContextWithTemps: { memory falseObject }.
 	
 	"Divorcing requires the instruction pointer pushed in the top of the frame's stack"
-	self interpret: [	interpreter push: interpreter instructionPointer ].		
-	interpreter externalDivorceFrame: interpreter framePointer andContext: context.
+	interpreter push: interpreter instructionPointer.
+	interpreter writeBackHeadFramePointers.
+	interpreter divorceFrame: interpreter framePointer andContext: context.
 
 	interpreter push: context.
 	interpreter push: (memory integerObjectOf: 1).	
@@ -661,8 +662,8 @@ VMPrimitiveTest >> testPrimitiveAtForWidowedContext [
 	| context |
 	context := self newContextWithTemps: { }.
 	interpreter printOop: context.
-	self interpret: [	interpreter returnTopFromMethod ].		
-	interpreter externalWriteBackHeadFramePointers.
+	interpreter returnTopFromMethod.
+	interpreter writeBackHeadFramePointers.
 	self assert: (interpreter isWidowedContext: context).
 
 	interpreter push: context.
@@ -5118,6 +5119,67 @@ VMPrimitiveTest >> testPrimitiveSubtracFailsWithTypeErrorOnFirstOperand [
 	self assert: interpreter failed
 ]
 
+{ #category : #'tests - primitiveVMParameter' }
+VMPrimitiveTest >> testPrimitiveVMParameterGetsImageVersion [
+
+	interpreter setImageVersion: 110.
+
+	interpreter push: memory nilObject.
+	interpreter push: (memory integerObjectOf: 79).
+
+	interpreter argumentCount: 1.
+	interpreter primitiveVMParameter.
+	
+	self assert: interpreter successful.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 110)
+]
+
+{ #category : #'tests - primitiveVMParameter' }
+VMPrimitiveTest >> testPrimitiveVMParameterReturnsArrayOfOops [
+
+	| slots |
+	self createArrayClass.
+	self createLargeIntegerClasses.
+	self installFloatClass.
+	
+	interpreter setExtraVMMemory: 0.
+	memory shrinkThreshold: 0.
+	memory growHeadroom: 0.
+	memory setCurrentAllocatedBytesTo: 0.
+	memory setHeapGrowthToSizeGCRatio: 0.0.
+	interpreter setImageHeaderFlagsFrom: 0.
+	interpreter preemptionYields: true.
+	interpreter primitiveVMParameter.
+	
+	"Check this is an array that has 78 OOP entries"
+	self assert: (memory isArray: interpreter stackTop).
+	slots := memory numSlotsOf: interpreter stackTop.
+	self assert: slots equals: 78.
+	
+	0 to: slots - 1 do: [ :i |
+		memory okayOop: (memory fetchPointer: i ofObject: interpreter stackTop) ]
+	
+	"Check this is an array that has 79 OOP entries"
+	self assert: (memory isArray: interpreter stackTop).
+	slots := memory numSlotsOf: interpreter stackTop.
+	self assert: slots equals: 79.
+	
+]
+
+{ #category : #'tests - primitiveVMParameter' }
+VMPrimitiveTest >> testPrimitiveVMParameterSetsImageVersion [
+
+	interpreter push: memory nilObject.
+	interpreter push: (memory integerObjectOf: 79).
+	interpreter push: (memory integerObjectOf: 110).
+
+	interpreter argumentCount: 2.
+	interpreter primitiveVMParameter.
+	
+	self assert: interpreter successful.
+	self assert: interpreter getImageVersion equals: 110.
+]
+
 { #category : #'tests - primitiveSubtract' }
 VMPrimitiveTest >> testSubtractTwoIntegersOverflow [
 
@@ -5252,65 +5314,4 @@ VMPrimitiveTest >> testSumSmallIntegersWithoutOverflow [
 	result := interpreter sumSmallInteger: a withSmallInteger: b ifOverflow: [ ^ ifOverflowValue ].
 	
 	self assert: result equals: expectedResult
-]
-
-{ #category : #'tests - primitiveVMParameter' }
-VMPrimitiveTest >> testPrimitiveVMParameterGetsImageVersion [
-
-	interpreter setImageVersion: 110.
-
-	interpreter push: memory nilObject.
-	interpreter push: (memory integerObjectOf: 79).
-
-	interpreter argumentCount: 1.
-	interpreter primitiveVMParameter.
-	
-	self assert: interpreter successful.
-	self assert: interpreter stackTop equals: (memory integerObjectOf: 110)
-]
-
-{ #category : #'tests - primitiveVMParameter' }
-VMPrimitiveTest >> testPrimitiveVMParameterReturnsArrayOfOops [
-
-	| slots |
-	self createArrayClass.
-	self createLargeIntegerClasses.
-	self installFloatClass.
-	
-	interpreter setExtraVMMemory: 0.
-	memory shrinkThreshold: 0.
-	memory growHeadroom: 0.
-	memory setCurrentAllocatedBytesTo: 0.
-	memory setHeapGrowthToSizeGCRatio: 0.0.
-	interpreter setImageHeaderFlagsFrom: 0.
-	interpreter preemptionYields: true.
-	interpreter primitiveVMParameter.
-	
-	"Check this is an array that has 78 OOP entries"
-	self assert: (memory isArray: interpreter stackTop).
-	slots := memory numSlotsOf: interpreter stackTop.
-	self assert: slots equals: 78.
-	
-	0 to: slots - 1 do: [ :i |
-		memory okayOop: (memory fetchPointer: i ofObject: interpreter stackTop) ]
-	
-	"Check this is an array that has 79 OOP entries"
-	self assert: (memory isArray: interpreter stackTop).
-	slots := memory numSlotsOf: interpreter stackTop.
-	self assert: slots equals: 79.
-	
-]
-
-{ #category : #'tests - primitiveVMParameter' }
-VMPrimitiveTest >> testPrimitiveVMParameterSetsImageVersion [
-
-	interpreter push: memory nilObject.
-	interpreter push: (memory integerObjectOf: 79).
-	interpreter push: (memory integerObjectOf: 110).
-
-	interpreter argumentCount: 2.
-	interpreter primitiveVMParameter.
-	
-	self assert: interpreter successful.
-	self assert: interpreter getImageVersion equals: 110.
 ]

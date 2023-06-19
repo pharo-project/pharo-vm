@@ -489,7 +489,7 @@ UnicornARMv8Simulator >> x20 [
 	^ self readRegister: UcARM64Registers x20
 ]
 
-{ #category :#'accessing-registers-physical' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x20: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x20 value: anInteger
