@@ -163,7 +163,7 @@ OutOfLineLiteralsManager >> fetchLiteralAtAnnotatedAddress: address using: instr
 	 the start of the literal and hence access the memory directly."
 	<var: 'instruction' type: #'AbstractInstruction *'>
 	<inline: true>
-	^objectMemory longAt: address
+	^objectMemory unsignedLongAt: address
 ]
 
 { #category : #'compile abstract instructions' }

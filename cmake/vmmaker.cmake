@@ -67,33 +67,33 @@ if(GENERATE_SOURCES)
         if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
             message("Defining Windows VM to download for code generation")
             set(VMMAKER_VM ${VMMAKER_DIR}/vm/PharoConsole.exe)
-            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Windows-x86_64/PharoVM-10.0.2-fdd3df06-Windows-x86_64-bin.zip)
-            set(VM_URL_HASH SHA256=add99433d51066392bf8295dbfc3eb8e0f6f2d1ba0454ce7e0dc6eb1a54a62fc)
+            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Windows-x86_64/PharoVM-10.0.5-2757766f-Windows-x86_64-bin.zip)
+            set(VM_URL_HASH SHA256=e7430f753ae51fbec8b6a6105f9721cd503d13d0e4ad8069f74da0f6a32c8055)
         elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64"))
             message("Defining Linux AARCH64 VM to download for code generation")
             set(VMMAKER_VM       ${VMMAKER_DIR}/vm/pharo)
-            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Linux-aarch64/PharoVM-10.0.2-fdd3df0-Linux-aarch64-bin.zip)
+            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Linux-aarch64/PharoVM-10.0.5-2757766-Linux-aarch64-bin.zip)
             set(VM_URL_HASH      SHA256=2fe44aab3715f26378796bef835fc1bd51da0baa02aad3fee03610926e80a59f)
         elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND (${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv7l"))
             message("Defining Linux ARM 32 VM to download for code generation")
             set(VMMAKER_VM       ${VMMAKER_DIR}/vm/pharo)
-            set(VM_URL https://files.pharo.org/vm/pharo-spur32-headless/Linux-armv7l/PharoVM-10.0.2-fdd3df06-Linux-armv7l-bin.zip)
+            set(VM_URL https://files.pharo.org/vm/pharo-spur32-headless/Linux-armv7l/PharoVM-10.0.5-2757766-Linux-armv7l-bin.zip)
             set(VM_URL_HASH      SHA256=b08fdf80c21fa81d61cf8ee71abd741fc192e4a7210f20185a48ed108dfa402f)
         elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
             message("Defining Linux VM x86_64 to download for code generation")
             set(VMMAKER_VM       ${VMMAKER_DIR}/vm/pharo)
-            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Linux-x86_64/PharoVM-10.0.2-fdd3df0-Linux-x86_64-bin.zip)
-            set(VM_URL_HASH      SHA256=200e141c3901cf4d3ef0944618a36f846956f0aa3217df2b51b3ca2130a5e076)
+            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Linux-x86_64/PharoVM-10.0.5-2757766-Linux-x86_64-bin.zip)
+            set(VM_URL_HASH      SHA256=dde65589966e4f547eb0b1b08053504f9663bdb94d520109d053dfcce7921eab)
         elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND (${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64"))
             message("Defining arm64 OSX VM to download for code generation")
             set(VMMAKER_VM       ${VMMAKER_DIR}/vm/Contents/MacOS/Pharo)
-            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Darwin-arm64/PharoVM-10.0.2-fdd3df06-Darwin-arm64-bin.zip)
-            set(VM_URL_HASH      SHA256=92a88abce14c110826facc0d957374c9bc109ad021d34cb5ff37d7b36f4f01a3)
+            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Darwin-arm64/PharoVM-10.0.5-2757766f-Darwin-arm64-bin.zip)
+            set(VM_URL_HASH      SHA256=414ecf82b71a4ed94a95af0fb6e04c0ab09cc7ab3011fcc207af6c1322d0b47b)
         elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
             message("Defining OSX VM to download for code generation")
             set(VMMAKER_VM       ${VMMAKER_DIR}/vm/Contents/MacOS/Pharo)
-            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Darwin-x86_64/PharoVM-10.0.2-fdd3df06-Darwin-x86_64-bin.zip)
-            set(VM_URL_HASH      SHA256=a3a4a44f26cf25d9218ed2b3cacf75a7602f7db018d57d2c8c25af31d650ad73)
+            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Darwin-x86_64/PharoVM-10.0.5-2757766f-Darwin-x86_64-bin.zip)
+            set(VM_URL_HASH      SHA256=f0f34c9411e899005749095dbdffdbeaa405ae8864aea81e4bff56331c3959e0)
         else()
             message(FATAL_ERROR "VM DOWNLOAD NOT HANDLED FOR CMAKE SYSTEM: ${CMAKE_SYSTEM_NAME}")
         endif()
@@ -120,9 +120,9 @@ if(GENERATE_SOURCES)
         ExternalProject_Add(
             vmmaker
 
-            URL https://files.pharo.org/image/110/Pharo11-SNAPSHOT.build.684.sha.79e0bd3.arch.64bit.zip
-            URL_HASH SHA256=eb7b9e06e834d7d1b16f4e297a88fc7be3a1b0400f335d10408916ac6b8a9788
-            BUILD_COMMAND ${VMMAKER_VM} --headless ${VMMAKER_DIR}/image/Pharo11-SNAPSHOT-64bit-79e0bd3.image --no-default-preferences save VMMaker
+            URL https://files.pharo.org/image/110/Pharo11-SNAPSHOT.build.688.sha.cf3d3fd.arch.64bit.zip
+            URL_HASH SHA256=c050ddcedce70ec92c22a3244aa5ebbc655dcaffcb42ac80fbf1f6e795c7010d
+            BUILD_COMMAND ${VMMAKER_VM} --headless ${VMMAKER_DIR}/image/Pharo11-SNAPSHOT-64bit-cf3d3fd.image --no-default-preferences save VMMaker
 	    COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences --save --quit "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}" "${ICEBERG_DEFAULT_REMOTE}"
             UPDATE_COMMAND      ""
             CONFIGURE_COMMAND   ""
@@ -144,7 +144,7 @@ if(GENERATE_SOURCES)
     #Custom command that generates the vm source code from VMMaker into the generated folder
     add_custom_command(
         OUTPUT ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES}
-        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${GENERATED_SOURCE_DIR}\'\"
+        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\' imageFormat: \'${IMAGE_FORMAT}\'\"
         DEPENDS vmmaker ${VMMAKER_IMAGE} ${VMMAKER_VM}
         COMMENT "Generating VM files for flavour: ${FLAVOUR}")
 

@@ -1,6 +1,51 @@
 # Change log
 
-I am a changelog... do not expect too much from me :D
+## v10.0.5
+
+* Testing scavenger tenuring by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/588
+* Deleting Pharo image from the vm repo by @jordanmontt in https://github.com/pharo-project/pharo-vm/pull/591
+* Cleaning Up Third Party Libraries by @tesonep in https://github.com/pharo-project/pharo-vm/pull/581
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.4...v10.0.5
+
+## v10.0.4
+
+- Composed image format by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/377
+- Composed image format: C translation by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/388
+- Perm space on image by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/416
+- New & old remembered sets by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/418
+- Reduce segment files size on move objects to PermSpace by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/508
+- Adding Support for PermSpace by @tesonep in https://github.com/pharo-project/pharo-vm/pull/488
+
+- Adding option to not use contant block optimization for test by @StevenCostiou in https://github.com/pharo-project/pharo-vm/pull/573
+- Do not use newer CMAKE features by @estebanlm in https://github.com/pharo-project/pharo-vm/pull/572
+- Split a method in two to reuse part in espell by @jecisc in https://github.com/pharo-project/pharo-vm/pull/569
+
+
+## New Contributors
+* @StevenCostiou made their first contribution in https://github.com/pharo-project/pharo-vm/pull/573
+* @estebanlm made their first contribution in https://github.com/pharo-project/pharo-vm/pull/572
+* @jecisc made their first contribution in https://github.com/pharo-project/pharo-vm/pull/569
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.3...v10.0.4
+
+## v10.0.3
+
+ - Fix ARM32 by @tesonep in #562
+ - Verify ephemeron key is not immediate when marking by @guillep in #565
+
+## v10.0.2
+
+- Generate Pharo VM dependency graph by @hernanmd in #554
+- Link against a shared SDL2 if already installed in target by @hernanmd in #555
+- Slang: Integer>>#bitOr: and Integer>>#| are translated to C code differently by @hernanmd in #523
+- Fix ephemeron compaction by @guillep in #561
+
+## v10.0.1
+
+- Adding image version field to the image header
+- Fixes in String comparison primitive when JIT
+- Improvements in dependency of the VMMaker code.
 
 ## v10.0.0
 

@@ -1,6 +1,9 @@
 Class {
 	#name : #VMSimpleStackBasedCogitMegamorphicPICTest,
 	#superclass : #VMSimpleStackBasedCogitAbstractTest,
+	#pools : [
+		'VMMethodCacheConstants'
+	],
 	#category : #'VMMakerTests-JitTests'
 }
 
@@ -12,7 +15,8 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> setUp [
 	self setUpCogMethodEntry.
 
 	memory coInterpreter
-		moveMethodCacheToMemoryAt: initialAddress "+ The guard page? memory cogCodeBase" + self initialCodeSize + stackSpaceSize.
+		moveMethodCacheToMemoryAt: (memory memoryManager allocate: MethodCacheEntrySize * MethodCacheSize * (interpreter sizeof: #sqInt)).
+
 	specialSelectorsArray := self newOldSpaceObjectWithSlots: 2.
 	memory coInterpreter
 		specialSelectorArray: specialSelectorsArray;

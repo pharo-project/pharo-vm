@@ -439,6 +439,7 @@ CogOutOfLineLiteralsARMv8Compiler >> sizePCDependentInstructionAt: eventualAbsol
 { #category : #'inline cacheing' }
 CogOutOfLineLiteralsARMv8Compiler >> storeLiteral: literal beforeFollowingAddress: followingAddress [
 	"Rewrite the literal in the instruction immediately preceding followingAddress."
+
 	objectMemory
 		unsignedLongAt: (self pcRelativeAddressAt:
 					((self instructionIsLDR: (self instructionBeforeAddress: followingAddress))

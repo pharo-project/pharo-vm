@@ -8,7 +8,8 @@ Class {
 		'interpreter',
 		'arrayBaseAddress',
 		'ptrOffset',
-		'unitSize'
+		'unitSize',
+		'unsigned'
 	],
 	#category : #'Slang-Types'
 }
@@ -92,6 +93,18 @@ CArray >> asSingleFloatAccessor [
 CArray >> at: offset [
 	| address |
 	address := unitSize * offset + self ptrAddress.
+	
+	unsigned ifTrue: [ 
+			^unitSize <= 2
+				ifTrue:
+					[unitSize = 1
+						ifTrue: [interpreter unsignedByteAt: address]
+						ifFalse: [interpreter unsignedShortAt: address]]
+				ifFalse:
+					[unitSize = 4
+						ifTrue: [interpreter unsignedLong32At: address]
+						ifFalse: [interpreter unsignedLong64At: address]]].
+	
 	^unitSize <= 2
 		ifTrue:
 			[unitSize = 1
@@ -107,6 +120,18 @@ CArray >> at: offset [
 CArray >> at: offset put: val [
 	| address |
 	address := unitSize * offset + self ptrAddress.
+
+	unsigned ifTrue: 
+		[	^unitSize <= 2
+				ifTrue:
+					[unitSize = 1
+						ifTrue: [interpreter unsignedByteAt: address put: val]
+						ifFalse: [interpreter unsignedShortAt: address put: val]]
+				ifFalse:
+					[unitSize = 4
+						ifTrue: [interpreter unsignedLong32At: address put: val]
+						ifFalse: [interpreter unsignedLong64At: address put: val]]].
+
 	^unitSize <= 2
 		ifTrue:
 			[unitSize = 1
@@ -116,6 +141,12 @@ CArray >> at: offset put: val [
 			[unitSize = 4
 				ifTrue: [interpreter long32At: address put: val]
 				ifFalse: [interpreter long64At: address put: val]]
+]
+
+{ #category : #'as yet unclassified' }
+CArray >> beUnsigned [
+
+	unsigned := true.
 ]
 
 { #category : #accessing }
@@ -131,6 +162,7 @@ CArray >> coerceTo: cTypeString sim: interpreterSimulator [
 		['int']				-> [self ptrAddress].
 		['float *']			-> [self asSingleFloatAccessor].
 		['double *']			-> [self asDoubleFloatAccessor].
+		['usqInt *']			-> [self shallowCopy beUnsigned; unitSize: interpreter bytesPerOop; yourself].
 		['sqInt *']			-> [self shallowCopy unitSize: interpreter bytesPerOop; yourself].
 		['unsigned int *']	-> [self shallowCopy unitSize: 4; yourself].
 		['int *']				-> [self shallowCopy unitSize: 4; yourself].
@@ -165,6 +197,13 @@ CArray >> hash [
 	^interpreter hash bitXor: arrayBaseAddress + ptrOffset + unitSize
 ]
 
+{ #category : #initialization }
+CArray >> initialize [ 
+
+	super initialize.
+	unsigned := false
+]
+
 { #category : #accessing }
 CArray >> intAt: index [
 	^ (self at: index) signedIntFromLong
@@ -181,6 +220,7 @@ CArray >> interpreter: interpreterSimulator address: arrayAddress unitSize: numB
 	interpreter := interpreterSimulator.
 	arrayBaseAddress := arrayAddress.
 	self unitSize: numBytes.
+	unsigned := false.
 	ptrOffset := 0
 ]
 

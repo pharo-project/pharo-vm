@@ -21,7 +21,6 @@ Class {
 		'apiMethods',
 		'apiVariables',
 		'kernelReturnTypes',
-		'currentMethod',
 		'headerFiles',
 		'globalVariableUsage',
 		'useSymbolicConstants',
@@ -1366,6 +1365,12 @@ CCodeGenerator >> fileHeaderVersionStampForSourceClass: sourceClass [
 			exportBuildInfo ifNotNil:
 				[s nextPutAll: exportBuildInfo; cr].
 			s cr]]
+]
+
+{ #category : #accessing }
+CCodeGenerator >> forbiddenSelector: aTSendNode [ 
+	
+	TranslationError signal: 'We should not use ' , aTSendNode selector.
 ]
 
 { #category : #'CAST translation' }
@@ -3087,8 +3092,8 @@ CCodeGenerator >> initializeCASTTranslationDictionary [
 	
 	castTranslationDict := Dictionary new: 200.
 	pairs := #(
-	#&				#generateCASTAnd:
-	#|				#generateCASTOr:
+	#&				#forbiddenSelector:
+	#|				#forbiddenSelector:
 	#abs			#generateCASTAbs:
 	#and:			#generateCASTSequentialAnd:
 	#or:			#generateCASTSequentialOr:
@@ -4677,8 +4682,11 @@ CCodeGenerator >> sizeOfIntegralCType: anIntegralCType [ "<String>"
 		['pid_t']		->	[self bytesPerWord].
 		
 		"Standard C types"
+		['int64_t']		->	[8].
 		['uint64_t']		->	[8].
 		['uint32_t']		->	[4].
+		['uint16_t']		->	[2].
+		['uint8_t']		->	[1].
 	}
 	otherwise:
 		[((anIntegralCType beginsWith: 'unsigned') "e.g. 'unsigned  : 8'"

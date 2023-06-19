@@ -161,7 +161,7 @@ SistaCogit >> defaultCogCodeSize [
 SistaCogit >> estimateOfAbstractOpcodesPerBytecodes [
 	"Due to the counter logic, the estimation is higher"
 	<inline: true>
-	^ 11
+	^ 16
 ]
 
 { #category : #'generate machine code' }

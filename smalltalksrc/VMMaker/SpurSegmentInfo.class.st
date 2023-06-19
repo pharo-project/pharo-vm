@@ -20,9 +20,12 @@ SpurSegmentInfo class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 		[:ivn|
 		aBinaryBlock
 			value: ivn
-			value: (ivn = 'swizzle'
-							ifTrue: [#sqInt]
-							ifFalse: [#usqInt])]
+			value: (ivn caseOf: {
+							['swizzle']				-> [#sqInt].
+							['savedSegSize']		-> [#'size_t'].
+							['segSize']				-> [#'size_t'].
+					} otherwise: [ #usqInt ])]
+
 ]
 
 { #category : #accessing }

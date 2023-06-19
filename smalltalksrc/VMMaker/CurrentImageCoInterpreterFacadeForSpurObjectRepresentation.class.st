@@ -83,11 +83,6 @@ CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> classTagForClass: 
 	^(self objectForOop: classOop) identityHash
 ]
 
-{ #category : #accessing }
-CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> defaultNativeStackFrameSize [
-	^ coInterpreter defaultNativeStackFrameSize
-]
-
 { #category : #'cog jit support' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> eeInstantiateClassIndex: knownClassIndex format: objFormat numSlots: numSlots [
 	self assert: knownClassIndex = ClassArrayCompactIndex.

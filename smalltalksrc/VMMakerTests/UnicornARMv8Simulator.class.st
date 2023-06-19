@@ -4,97 +4,97 @@ Class {
 	#category : #'VMMakerTests-Unicorn'
 }
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> arg0Register [
 	
 	^ UcARM64Registers x3
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> arg1Register [
 	
 	^ UcARM64Registers x1
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> arg2Register [
 	
 	^ UcARM64Registers x2
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> arg3Register [
 	
 	^ UcARM64Registers x3
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> argument1RegisterValue: anInteger [ 
 
 	self writeRegister: UcARM64Registers x4 value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> baseRegister [
 
 	^ UcARM64Registers x24
 ]
 
-{ #category : #accessing }
+{ #category : #'c calling convention' }
 UnicornARMv8Simulator >> cResultRegister [
 	
 	^ UcARM64Registers x0
 ]
 
-{ #category : #registers }
+{ #category : #'c calling convention' }
 UnicornARMv8Simulator >> carg0Register [
 	
 	^ UcARM64Registers x0
 ]
 
-{ #category : #registers }
+{ #category : #'c calling convention' }
 UnicornARMv8Simulator >> carg1Register [
 	
 	^ UcARM64Registers x1
 ]
 
-{ #category : #registers }
+{ #category : #'c calling convention' }
 UnicornARMv8Simulator >> carg2Register [
 	
 	^ UcARM64Registers x2
 ]
 
-{ #category : #registers }
+{ #category : #'c calling convention' }
 UnicornARMv8Simulator >> carg3Register [
 	
 	^ UcARM64Registers x3
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> carry [
 
 	^ (self nzcv bitAnd: (1<<29))~= 0
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> classRegister [
 	
 	^ UcARM64Registers x22
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> cpacr_el1 [
 	
 	^ self readRegister: UcARM64Registers cpacr_el1
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> cpacr_el1: anInteger [ 
 	
 	self writeRegister: UcARM64Registers cpacr_el1 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #initialization }
 UnicornARMv8Simulator >> createUnicorn [
 
 	simulator := Unicorn arm64.
@@ -109,25 +109,25 @@ UnicornARMv8Simulator >> disassembler [
 	^ LLVMARMDisassembler aarch64
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> doublePrecisionFloatingPointRegister0 [
 
 	^ UcARM64Registers d0
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> doublePrecisionFloatingPointRegister1 [
 
 	^ UcARM64Registers d1
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> doublePrecisionFloatingPointRegister2 [
 
 	^ UcARM64Registers d2
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #disassembling }
 UnicornARMv8Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstruction [ 
 	
 	"In ARM, instructions are usually encoded asSpotterCandidateLink 
@@ -138,13 +138,13 @@ UnicornARMv8Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstructio
 	^ (aLLVMInstruction assemblyCodeString substrings: String tab, ',') second trimBoth.
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> framePointerRegister [
 	
 	^ UcARM64Registers fp
 ]
 
-{ #category : #accessing }
+{ #category : #'simulation-support' }
 UnicornARMv8Simulator >> getReturnAddress [
 	
 	^ self linkRegisterValue
@@ -168,37 +168,37 @@ UnicornARMv8Simulator >> initializeRegisterAliases [
 		at: #x30 put: #linkRegister
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> instructionPointerRegister [
 
 	^ UcARM64Registers pc
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> linkRegister [
 	
 	^ UcARM64Registers x30
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> negative [
 
 	^ (self nzcv bitAnd: (1<<31))~= 0
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> nzcv [
 
 	^ self readRegister: UcARM64Registers nzcv 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> overflow [
 
 	^ (self nzcv bitAnd: (1<<28)) ~= 0
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'simulation-support' }
 UnicornARMv8Simulator >> postCallArgumentsNumArgs: numArgs "<Integer>" in: aMemory [ "<ByteArray|Bitmap>"
 	"Answer an argument vector of the requested size after a vanilla
 	 ABI call. For ARM the Procedure Calling Specification can be found in IHI0042D_aapcs.pdf.
@@ -212,7 +212,7 @@ UnicornARMv8Simulator >> postCallArgumentsNumArgs: numArgs "<Integer>" in: aMemo
 			ifFalse: [memory unsignedLongAt: self sp + (i-5)*4 bigEndian: false]].
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> receiverRegister [
 	
 	^ UcARM64Registers x23
@@ -225,25 +225,25 @@ UnicornARMv8Simulator >> registerList [
 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'simulation-support' }
 UnicornARMv8Simulator >> registerStateGetters [
 
 	^#(	x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x12 sp lr pc)
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'simulation-support' }
 UnicornARMv8Simulator >> retpcIn: aMemory [ 
 
 	^ memory longAt: self fp + 8
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> sendNumberOfArgumentsRegister [
 	
 	^ UcARM64Registers x25
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'simulation-support' }
 UnicornARMv8Simulator >> simulateJumpCallOf: address memory: aMemory [
 	"Simulate a frame-building jump of address.  Build a frame since
 	a) this is used for calls into the run-time which are unlikely to be leaf-calls"
@@ -260,14 +260,14 @@ UnicornARMv8Simulator >> simulateJumpCallOf: address memory: aMemory [
 	self instructionPointerRegisterValue: address
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'simulation-support' }
 UnicornARMv8Simulator >> simulateLeafCallOf: address nextpc: nextpc memory: aMemory [
 	
 	self lr: nextpc.
 	self pc: address
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'simulation-support' }
 UnicornARMv8Simulator >> simulateReturnIn: aSpurSimulatedMemory [ 
 
 	self framePointerRegisterValue: self popWord.
@@ -277,13 +277,13 @@ UnicornARMv8Simulator >> simulateReturnIn: aSpurSimulatedMemory [
 
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> smalltalkStackPointerRegister [
 	"Internally to execute Smalltalk code we use X28 as the stack pointer register"
 	^ UcARM64Registers x28
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'simulation-support' }
 UnicornARMv8Simulator >> smashCallerSavedRegistersWithValuesFrom: base by: step in: aMemory [
 
 	#(x0: x1: x2: x3: x4: x5: lr:) withIndexDo:
@@ -291,68 +291,68 @@ UnicornARMv8Simulator >> smashCallerSavedRegistersWithValuesFrom: base by: step 
 		self perform: accessor with: index - 1 * step + base]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'simulation-support' }
 UnicornARMv8Simulator >> smashRegisterAccessors [
 	
 	"Caller saved registers to smash"
 	^#( x0: x1: x2: x3: x4: x5: x6: x7: x8: x9: x10: x11: x12: )
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> stackPointerRegister [
 	
 	^ UcARM64Registers sp
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> temporaryRegister [
 
 	^ UcARM64Registers x1
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> v0 [
 
 	^ self readRawRegister: UcARM64Registers v0 size: 16
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> v1 [
 
 	^ self readRawRegister: UcARM64Registers v1 size: 16
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> v2 [
 
 	^ self readRawRegister: UcARM64Registers v2 size: 16
 ]
 
-{ #category : #accesing }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> vectorRegister0Value [
 
 	^ simulator readRegisterId: UcARM64Registers v0 size:  16
 ]
 
-{ #category : #accesing }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> vectorRegister1Value [
 
 	^ simulator readRegisterId: UcARM64Registers v1 size:  16
 ]
 
-{ #category : #accesing }
+{ #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> vectorRegister2Value [
 
 	^ simulator readRegisterId: UcARM64Registers v2 size:  16
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> w25: anInteger [ 
 
 	self writeRegister: UcARM64Registers w25 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> w6: anInteger [ 
 
 	self writeRegister: UcARM64Registers w6 value: anInteger
@@ -363,337 +363,337 @@ UnicornARMv8Simulator >> wordSize [
 	^ 8
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x0 [
 
 	^ self readRegister: UcARM64Registers x0
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x0: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x0 value: anInteger 
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x1 [
 
 	^ self readRegister: UcARM64Registers x1
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x10 [
 
 	^ self readRegister: UcARM64Registers x10
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x10: anInteger [ 
 
 	^ self writeRegister: UcARM64Registers x10 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x11 [
 
 	^ self readRegister: UcARM64Registers x11
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x11: anInteger [ 
 
 	^ self writeRegister: UcARM64Registers x11 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x12 [
 
 	^ self readRegister: UcARM64Registers x12
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x12: anInteger [ 
 
 	^ self writeRegister: UcARM64Registers x12 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x13: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x13 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x14: anInteger [ 
 
 	self writeRegister: UcARM64Registers x14 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x15: anInteger [ 
 
 	self writeRegister: UcARM64Registers x15 value: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x16 [
 	
 	^ self readRegister: UcARM64Registers x16
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x16: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x16 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x17: anInteger [ 
 
 	self writeRegister: UcARM64Registers x17 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x18: anInteger [ 
 
 	self writeRegister: UcARM64Registers x18 value: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x19 [
 	
 	^ self readRegister: UcARM64Registers x19
 ]
 
-{ #category : #accesing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x19: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x19 value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x1: anInteger [ 
 
 	^ self writeRegister: UcARM64Registers x1 value: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x2 [
 
 	^ self readRegister: UcARM64Registers x2
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x20 [
 	
 	^ self readRegister: UcARM64Registers x20
 ]
 
-{ #category : #accessing }
+{ #category :#'accessing-registers-physical' }
 UnicornARMv8Simulator >> x20: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x20 value: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x21 [
 
 	^ self readRegister: UcARM64Registers x21
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x21: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x21 value: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x22 [
 	
 	^ self readRegister: UcARM64Registers x22
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x22: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x22 value: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x23 [
 
 	^ self readRegister: UcARM64Registers x23
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x23: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x23 value: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x24 [
 
 	^ self readRegister: UcARM64Registers x24
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x24: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x24 value: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x25 [
 
 	^ self readRegister: UcARM64Registers x25
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x25: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x25 value: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x26 [
 
 	^ self readRegister: UcARM64Registers x26
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x26: anInteger [
 
 	self writeRegister: UcARM64Registers x26 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x28 [
 
 	^ self readRegister: UcARM64Registers x28
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x28: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x28 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x29: anInteger [ 
 	
 	^ self writeRegister: UcARM64Registers x29 value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x2: anInteger [ 
 
 	^ self writeRegister: UcARM64Registers x2 value: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x3 [
 
 	^ self readRegister: UcARM64Registers x3
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x30: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x30 value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x3: anInteger [ 
 
 	^ self writeRegister: UcARM64Registers x3 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x4 [
 
 	^ self readRegister: UcARM64Registers x4
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x4: anInteger [ 
 
 	^ self writeRegister: UcARM64Registers x4 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x5 [
 
 	^ self readRegister: UcARM64Registers x5
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x5: anInteger [ 
 
 	^ self writeRegister: UcARM64Registers x5 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x6 [
 
 	^ self readRegister: UcARM64Registers x6
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x6: anInteger [ 
 
 	^ self writeRegister: UcARM64Registers x6 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x7 [
 
 	^ self readRegister: UcARM64Registers x7
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x7: anInteger [ 
 
 	^ self writeRegister: UcARM64Registers x7 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x8 [
 
 	^ self readRegister: UcARM64Registers x8
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x8: anInteger [ 
 
 	^ self writeRegister: UcARM64Registers x8 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x9 [
 
 	^ self readRegister: UcARM64Registers x9
 ]
 
-{ #category : #registers }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> x9: anInteger [ 
 
 	^ self writeRegister: UcARM64Registers x9 value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> xzr [
 	
 	^ self readRegister: UcARM64Registers xzr
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> xzr: anInteger [ 
 
 	^ self writeRegister: UcARM64Registers xzr value: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing-registers-physical' }
 UnicornARMv8Simulator >> zero [
 
 	^ (self nzcv bitAnd: (1<<30)) ~= 0

@@ -19,12 +19,6 @@ SpurGenerationScavengerSimulator >> cameFrom: anObject [
 	cameFrom := anObject
 ]
 
-{ #category : #'remembered set' }
-SpurGenerationScavengerSimulator >> computeRefCountToShrinkRT [
-	self halt.
-	^super computeRefCountToShrinkRT
-]
-
 { #category : #scavenger }
 SpurGenerationScavengerSimulator >> copyAndForward: survivor [
 	| relocatedOop |
@@ -53,11 +47,6 @@ SpurGenerationScavengerSimulator >> manager: aSpurNBitMMXEndianSimulator [
 { #category : #scavenger }
 SpurGenerationScavengerSimulator >> recordMovements [
 	cameFrom := Dictionary new
-]
-
-{ #category : #accessing }
-SpurGenerationScavengerSimulator >> rememberedSet [
-	^rememberedSet
 ]
 
 { #category : #scavenger }
