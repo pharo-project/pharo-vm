@@ -8761,15 +8761,6 @@ StackInterpreter >> longStoreTemporaryVariableBytecode [
 	self temporary: index in: framePointer put: self stackTop
 ]
 
-{ #category : #'jump bytecodes' }
-StackInterpreter >> longUnconditionalJump [
-	| offset |
-	offset := (((currentBytecode bitAnd: 7) - 4) * 256) + self fetchByte.
-	instructionPointer := instructionPointer + offset.
-	self ifBackwardsCheckForEvents: offset.
-	self fetchNextBytecode
-]
-
 { #category : #'debug support' }
 StackInterpreter >> lookupBreakFor: lookupClass [
 	<inline: true>
@@ -12263,7 +12254,7 @@ StackInterpreter >> pushBool: trueOrFalse [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushConstantFalseBytecode [
-
+	<needsFrameNever: 1>
 	self fetchNextBytecode.
 	self push: objectMemory falseObject.
 
@@ -12271,7 +12262,7 @@ StackInterpreter >> pushConstantFalseBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushConstantMinusOneBytecode [
-
+	<needsFrameNever: 1>
 	self fetchNextBytecode.
 	self push: ConstMinusOne.
 
@@ -12279,7 +12270,7 @@ StackInterpreter >> pushConstantMinusOneBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushConstantNilBytecode [
-
+	<needsFrameNever: 1>
 	self fetchNextBytecode.
 	self push: objectMemory nilObject.
 
@@ -12287,7 +12278,7 @@ StackInterpreter >> pushConstantNilBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushConstantOneBytecode [
-
+	<needsFrameNever: 1>
 	self fetchNextBytecode.
 	self push: ConstOne.
 
@@ -12295,7 +12286,7 @@ StackInterpreter >> pushConstantOneBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushConstantTrueBytecode [
-
+	<needsFrameNever: 1>
 	self fetchNextBytecode.
 	self push: objectMemory trueObject.
 
@@ -12303,7 +12294,7 @@ StackInterpreter >> pushConstantTrueBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushConstantTwoBytecode [
-
+	<needsFrameNever: 1>
 	self fetchNextBytecode.
 	self push: ConstTwo.
 
