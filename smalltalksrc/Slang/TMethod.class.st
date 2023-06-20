@@ -3295,20 +3295,6 @@ TMethod >> usesVariableUninlinably: argName in: aCodeGen [
 						  subNode isVariable and: [ subNode name = argName ] ] ] ] ] ]
 ]
 
-{ #category : #accessing }
-TMethod >> validateVariableDeclarationExists: aVariableName [
-
-	| shouldCheckVariable |
-	shouldCheckVariable := (aVariableName beginsWithAnyOf:
-		                       #( #self #cascade #toDoLimit )) not.
-
-	(shouldCheckVariable and: [
-		 (self declaresVariableWithName: aVariableName) not]) ifTrue: [
-		TranslationError signal:
-			'Undefined local or argument ' , aVariableName
-			, ' type declaration' ]
-]
-
 { #category : #'C code generation' }
 TMethod >> validateReservedWords [
 	"Validates if there are no reserved words being used as arguments or selector"
@@ -3322,6 +3308,20 @@ TMethod >> validateReservedWords [
 	(reservedWords includes: selector) ifTrue: [
 		TranslationError signal:
 			'Invalid selector ' , selector , ': Reserved word' ]
+]
+
+{ #category : #accessing }
+TMethod >> validateVariableDeclarationExists: aVariableName [
+
+	| shouldCheckVariable |
+	shouldCheckVariable := (aVariableName beginsWithAnyOf:
+		                       #( #self #cascade #toDoLimit )) not.
+
+	(shouldCheckVariable and: [
+		 (self declaresVariableWithName: aVariableName) not]) ifTrue: [
+		TranslationError signal:
+			'Undefined local or argument ' , aVariableName
+			, ' type declaration' ]
 ]
 
 { #category : #utilities }
