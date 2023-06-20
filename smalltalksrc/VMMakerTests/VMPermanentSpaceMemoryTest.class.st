@@ -25,6 +25,33 @@ VMPermanentSpaceMemoryTest >> testAllInstancesReturnsObjectsInPermSpace [
 	self assert: (memory fetchPointer: 0 ofObject: allInstances) equals: permanentObject.
 ]
 
+{ #category : #'tests - allocation' }
+VMPermanentSpaceMemoryTest >> testBecomingOfPermanentObjectFails [
+
+	| permanentObject oldObject youngReplacement arrFrom arrTo ec |
+	
+	permanentObject := self newPermanentObjectWithSlots:  1.
+	oldObject := self newOldSpaceObjectWithSlots: 0.
+	memory storePointer: 0 ofObject: permanentObject withValue: oldObject.
+	
+	memory fullGC.
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	
+	youngReplacement := self newObjectWithSlots: 2.
+	memory storePointer: 0 ofObject: youngReplacement withValue: oldObject.
+
+	self keepObjectInVMVariable1: youngReplacement.
+	
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: youngReplacement.
+	ec := memory become: arrFrom with: arrTo twoWay: false copyHash: false.
+
+	self deny: ec equals: PrimNoErr
+]
+
 { #category : #'test - moving' }
 VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWhenModified [
 
@@ -277,6 +304,67 @@ VMPermanentSpaceMemoryTest >> testNextObjectIsReturningAGoodValue [
 
 	self assert: nextObject equals: memory permSpaceFreeStart
 	
+]
+
+{ #category : #'test - moving' }
+VMPermanentSpaceMemoryTest >> testObjectInBothRememberedSetIsCorrectlyUpdated [
+
+	| oldObject1 permanentObject1 oldObject2 youngObject |
+	
+	"To force compaction"
+	self newOldSpaceArrayWithSlots: 2.
+	
+	self keepObjectInVMVariable1: (self newOldSpaceArrayWithSlots: 3).
+	
+	oldObject1 := self newOldSpaceObjectWithSlots: 2.
+	
+	oldObject2 := self newOldSpaceObjectWithSlots: 1.
+	self keepObjectInVMVariable2: oldObject2.
+	
+	youngObject := self newZeroSizedObject.
+	self keepObjectInVMVariable3: youngObject.
+	
+	memory storePointer: 0 ofObject: oldObject1  withValue: oldObject2.
+	
+	permanentObject1 := memory moveToPermSpace: oldObject1.	
+	
+	memory storePointer: 1 ofObject: permanentObject1  withValue: youngObject.
+	
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject1).
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject1).
+
+	memory fullGC.
+	
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject1).
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject1).
+	
+	self assert: (memory fetchPointer: 0 ofObject: permanentObject1) equals: self keptObjectInVMVariable2.
+	self assert: (memory fetchPointer: 1 ofObject: permanentObject1) equals: self keptObjectInVMVariable3.
+	
+]
+
+{ #category : #'tests - allocation' }
+VMPermanentSpaceMemoryTest >> testObjectReferencingOldIsAddedToCorrectRememberedSetAndThenRemoved [
+
+	| oldObject1 oldObject2 permObject2 |
+	oldObject1 := self newOldSpaceObjectWithSlots: 0.
+	oldObject2 := self newOldSpaceObjectWithSlots: 1.
+	
+	memory storePointer: 0 ofObject: oldObject2 withValue: oldObject1.
+	
+	permObject2 := memory moveToPermSpace: oldObject2.
+	
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permObject2).
+
+	"Add again as duplicated"
+	memory getFromPermToOldSpaceRememberedSet rememberWithoutMarkingAsRemembered: permObject2.
+
+	memory storePointer: 0 ofObject: permObject2 withValue: memory nilObject.
+
+	memory fullGC.
+		
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permObject2).
+	self assert: memory getFromPermToNewSpaceRememberedSet rememberedSetSize equals: 0.
 ]
 
 { #category : #'test - moving' }

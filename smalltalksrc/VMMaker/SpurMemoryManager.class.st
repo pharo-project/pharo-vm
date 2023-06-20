@@ -1805,6 +1805,13 @@ SpurMemoryManager >> allPermSpaceObjectsDo: aBlockClosure [
 			currentObject := self objectAfter: currentObject limit: permSpaceFreeStart ].
 ]
 
+{ #category : #'gc - global' }
+SpurMemoryManager >> allPermSpaceObjectsUnmarked [
+	self allPermSpaceObjectsDo: 
+		[:o| (self isMarked: o) ifTrue: [bogon := o. ^false]].
+	^true
+]
+
 { #category : #'weakness and ephemerality' }
 SpurMemoryManager >> allStrongSlotsOfWeaklingAreMarked: aWeakling [
 	"N.B. generateToByDoLimitExpression:negative:on: guards against (unsigned)0 - 1 going +ve"
@@ -3830,11 +3837,16 @@ SpurMemoryManager >> classTagForSpecialObjectsIndex: splObjIndex compactClassInd
 SpurMemoryManager >> cleanUpPermToOldSpaceRememeberedSet [
 
 	| destIndex sourceIndex referrer |
+	
+	<inline:false>
+	
 	sourceIndex := destIndex := 0.
 
 	"We iterate the remembered set to remove the objects that no longer points to old space.
 	 As it might have duplicates, I use the mark bit to see if I have already this object."
 
+	self assert: self allPermSpaceObjectsUnmarked.
+	
 	[sourceIndex < self getFromPermToOldSpaceRememberedSet rememberedSetSize] whileTrue:
 		[	referrer := self getFromPermToOldSpaceRememberedSet objectAt: sourceIndex.
 
@@ -3851,6 +3863,9 @@ SpurMemoryManager >> cleanUpPermToOldSpaceRememeberedSet [
 
 	self getFromPermToOldSpaceRememberedSet rememberedSetWithIndexDo:[ :oop :i | 
 		self setIsMarkedOf: oop to: false ].
+	
+	self assert: self allPermSpaceObjectsUnmarked.
+
 ]
 
 { #category : #'debug support' }
@@ -4776,7 +4791,9 @@ SpurMemoryManager >> expungeDuplicateAndUnmarkedClasses: expungeUnmarked [
 				ifFalse:
 					[((expungeUnmarked and: [(self isMarkedOrPermanent: classOrNil) not])
 					   or: [(self rawHashBitsOf: classOrNil) ~= classIndex]) ifTrue:
-						[self storePointerUnchecked: j
+						[
+						 self deny: (self isPermanent: classOrNil).
+						 self storePointerUnchecked: j
 							ofObject: classTablePage
 							withValue: nilObj.
 						 "but if it is marked, it should still be in the table at its correct index."
@@ -6092,8 +6109,6 @@ SpurMemoryManager >> hasReferents: objOop satisfying: aCondition [
 		| referenced |
 		referenced := self fetchPointer: i ofObject: objOop.
 
-		self assert: ((self isImmediate: referenced) or: [ self isInObjectMemory: referenced ]).
-
 		((self isNonImmediate: referenced) 
 				and: [self isInObjectMemory: referenced ]) ifTrue: [  
 			(self isOopForwarded: referenced) 
@@ -6244,6 +6259,8 @@ SpurMemoryManager >> ifOopInvalidForBecome: oop errorCodeInto: aBlock [
 	(self isPinned: oop) ifTrue:
 		[^aBlock value: PrimErrObjectIsPinned].
 	(self isObjImmutable: oop) ifTrue:
+		[^aBlock value: PrimErrNoModification].
+	(memoryMap isPermanentObject: oop) ifTrue:
 		[^aBlock value: PrimErrNoModification]
 ]
 
@@ -8489,8 +8506,10 @@ SpurMemoryManager >> markAndShouldScan: objOop [
 	"if markAndTrace: is to follow and eliminate forwarding pointers
 	 in its scan it cannot be handed an r-value which is forwarded."
 	self assert: (self isForwarded: objOop) not.
+	
 	(self isMarked: objOop) ifTrue:
-		[^false].
+		[	self assert: (memoryMap isPermanentObject: objOop) not.
+			^false].
 	
 	"If it is a permanent object I will not mark it"
 	(memoryMap isPermanentObject: objOop)
@@ -8570,6 +8589,9 @@ SpurMemoryManager >> markAndTraceExtraRoots [
 
 { #category : #'gc - global' }
 SpurMemoryManager >> markAndTraceHiddenRoots [
+
+	<inline:false>
+
 	"The hidden roots hold both the class table pages and the obj stacks,
 	 and hence need special treatment.  The obj stacks must be marked
 	 specially; their pages must be marked, but only the contents of the
@@ -8584,8 +8606,9 @@ SpurMemoryManager >> markAndTraceHiddenRoots [
 	self markAndTraceObjStack: markStack andContents: false.
 	self markAndTraceObjStack: weaklingStack andContents: false.
 	self markAndTraceObjStack: mournQueue andContents: true.
-	
+
 	self cleanUpPermToOldSpaceRememeberedSet.
+	
 	self markAndTraceRememberedSet: self getFromPermToOldSpaceRememberedSet.
 	self markAndTraceRememberedSet: self getFromPermToNewSpaceRememberedSet.
 
@@ -8721,7 +8744,7 @@ SpurMemoryManager >> markLoopFrom: objOop [
 				                   | key |
 				                   (self isImmediate:
 					                    (key := self keyOfEphemeron: objToScan)) or: [
-					                   self isMarked: key ] ])
+					                   self isMarkedOrPermanent: key ] ])
 				                  ifTrue: [ self numSlotsOf: objToScan ]
 				                  ifFalse: [
 				                  self numStrongSlotsOfInephemeral: objToScan ].
