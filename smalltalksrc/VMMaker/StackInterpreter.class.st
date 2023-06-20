@@ -15212,8 +15212,8 @@ StackInterpreter >> transferTo: newProc from: sourceCode [
 	statProcessSwitch := statProcessSwitch + 1.
 	self push: instructionPointer.
 	self writeBackHeadFramePointers.
-	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: true line: #'__LINE__'.
-
+	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer.
+	
 	"ensureMethodIsCogged: in makeBaseFrameFor: in
 	 externalSetStackPageAndPointersForSuspendedContextOfProcess:
 	 below may do a code compaction. Nil instructionPointer to avoid it getting pushed twice."

@@ -236,9 +236,11 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableSho
 { #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testArrayOfPermanentObjectsPointingToOldObjectsIsCorrectlyMantained [
 
-	| deltaFreeSpace arrayOfPerms objectsSize aPermObject anOldObject originalRememberedSetSize afteRememberedSetSize numberOfObjects |
+	| deltaFreeSpace arrayOfPerms objectsSize aPermObject anOldObject originalRememberedSetSize afteRememberedSetSize numberOfObjects originalNewRememberedSetSize afteNewRememberedSetSize |
 
-	originalRememberedSetSize := memory bytesInObject: memory fromPermSpaceRememberedSet objectOop. 
+	originalRememberedSetSize := memory bytesInObject: memory getFromPermToOldSpaceRememberedSet objectOop. 
+	originalNewRememberedSetSize := memory bytesInObject: memory getFromPermToNewSpaceRememberedSet objectOop. 
+
 	numberOfObjects := 4096.
 
 	deltaFreeSpace := self deltaFreeSpaceAfterGC: [ 
@@ -252,9 +254,10 @@ VMSpurOldSpaceGarbageCollectorTest >> testArrayOfPermanentObjectsPointingToOldOb
 									memory storePointer: i ofObject: arrayOfPerms withValue: aPermObject ].
 		                  self keepObjectInVMVariable2: arrayOfPerms ].
 
-	afteRememberedSetSize := memory bytesInObject: memory fromPermSpaceRememberedSet objectOop.
+	afteRememberedSetSize := memory bytesInObject: memory getFromPermToOldSpaceRememberedSet objectOop.
+	afteNewRememberedSetSize := memory bytesInObject: memory getFromPermToNewSpaceRememberedSet objectOop.
 
-	self assert: deltaFreeSpace equals: objectsSize + (afteRememberedSetSize - originalRememberedSetSize)
+	self assert: deltaFreeSpace equals: objectsSize + (afteRememberedSetSize - originalRememberedSetSize) + (afteNewRememberedSetSize - originalNewRememberedSetSize)
 ]
 
 { #category : #'tests-OldSpaceSize' }
