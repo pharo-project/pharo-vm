@@ -842,7 +842,6 @@ Spur32BitMemoryManager >> setIsImmutableOf: objOop to: aBoolean [
 { #category : #'header access' }
 Spur32BitMemoryManager >> setIsMarkedOf: objOop to: aBoolean [
 	self assert: (self isFreeObject: objOop) not.
-	self assert: (memoryMap isPermanentObject: objOop) not.
 	
 	self flag: #endianness.
 	self unsignedLongAt: objOop + 4
@@ -905,7 +904,7 @@ Spur32BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 				ofObject: copy
 				withValue: (self fetchPointer: i ofObject: objOop)].
 		 (self isRemembered: objOop) ifTrue:
-			[fromOldSpaceRememberedSet doRemember: copy].
+			[fromOldSpaceRememberedSet remember: copy].
 		 self forward: objOop to: copy.
 		 ^0].
 
