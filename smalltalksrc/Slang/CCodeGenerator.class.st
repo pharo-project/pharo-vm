@@ -581,12 +581,7 @@ CCodeGenerator >> cFunctionNameFor: aSelector [
 	^selectorTranslations
 		at: aSelector
 		ifAbsent:
-			[| cSelector |
-			 cSelector := aSelector copyWithout: $:.
-			 aSelector last = $: ifTrue:
-				[[cSelector last = $_] whileTrue:
-					[cSelector := cSelector allButLast]].
-			 cSelector]
+			[ self cSelectorName: aSelector ]
 ]
 
 { #category : #'C code generator' }
@@ -708,6 +703,17 @@ CCodeGenerator >> cLiteralForUnsignedInteger: anInteger longlong: llBoolean [
 				and: [(anInteger highBit = anInteger lowBit and: [anInteger > 65536])
 					  or: [anInteger highBit - anInteger lowBit >= 4]]]).
 	^self cLiteralForUnsignedInteger: anInteger hex: hex longlong: llBoolean
+]
+
+{ #category : #'C translation support' }
+CCodeGenerator >> cSelectorName: aSelector [
+
+	| cSelector |
+	cSelector := aSelector copyWithout: $:.
+	aSelector last = $: ifTrue: [
+		[ cSelector last = $_ ] whileTrue: [
+			cSelector := cSelector allButLast ] ].
+	^ cSelector
 ]
 
 { #category : #inlining }
@@ -1025,14 +1031,12 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 
 	| verbose methodList |
 	"method preparation"
-	
 	verbose := false.
 	self prepareMethods.
 	verbose ifTrue: [
 		self printUnboundCallWarnings.
 		self printUnboundVariableReferenceWarnings.
-		logger cr.
-	].
+		logger cr ].
 	assertionFlag ifFalse: [ self removeAssertions ].
 
 	self doInlining: inlineFlag.
@@ -1042,9 +1046,9 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 		applyMethodNamed: #interpret.
 
 	"code generation"
-	
+
 	self renameKeywordsConflicts.
-	
+
 	"If we're outputting the VM put the main interpreter loop first for two reasons.
 	 1, so that the dispdbg.h header included at the bytecode dispatch can define
 	 macros that affect all C code in the interpreter,  and 2, so that all primitive
@@ -1052,11 +1056,15 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	 in the use of primitiveFunctionPointer as a function pointer and an index by trying
 	 to ensure that primitives have addresses much higher than any indices."
 	methodList := self sortMethods: methods.
-	(methods includesKey: #interpret) ifTrue:
-		[methodList := { methods at: #interpret }, (methodList copyWithout: (methods at: #interpret))].
+	(methods includesKey: #interpret) ifTrue: [
+		methodList := { (methods at: #interpret) }
+		              , (methodList copyWithout: (methods at: #interpret)) ].
 	"clean out no longer valid variable names and then
 	 handle any global variable usage in each method"
-	methodList do: [:m | self checkForGlobalUsage: (m removeUnusedTempsAndNilIfRequiredIn: self) in: m].
+	methodList do: [ :m |
+		self
+			checkForGlobalUsage: (m removeUnusedTempsAndNilIfRequiredIn: self)
+			in: m ].
 	self localizeGlobalVariables.
 
 	self emitCHeaderOn: aStream.
@@ -1066,7 +1074,6 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	self emitCVariablesOn: aStream.
 	self emitCMacros: methodList on: aStream.
 	self emitCMethods: methodList on: aStream
-
 ]
 
 { #category : #'C code generator' }
@@ -4405,13 +4412,23 @@ CCodeGenerator >> removeVariable: aName ifAbsent: ifAbsentBlock [
 CCodeGenerator >> renameKeywordsConflicts [
 
 	methods do: [ :method |
-		| localRewording |
+		| localRewording cSelector |
+		"rename locals"
 		localRewording := Dictionary new.
 
 		(method allLocals select: [ :local |
 			 self reservedWords includes: local ]) do: [ :local |
 			localRewording at: local put: (self sanitizeKeyword: local) ].
-		localRewording ifNotEmpty: [ method renameVariablesUsing: localRewording ]]
+		localRewording ifNotEmpty: [
+			method renameVariablesUsing: localRewording ].
+
+		"translate selector"
+		cSelector := self cSelectorName: method selector.
+
+		(self reservedWords includes: cSelector) ifTrue: [
+			self
+				addSelectorTranslation: method selector
+				to: (self sanitizeKeyword: cSelector) ] ]
 ]
 
 { #category : #'C translation support' }
