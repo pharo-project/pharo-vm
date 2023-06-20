@@ -740,6 +740,12 @@ CogMethodZone >> quickClearCogCompiledCode [
 
 { #category : #'young referers' }
 CogMethodZone >> relocateAndPruneYoungReferrers [
+	"This method compacts the young referrers array, and updates the references to the methods were moved."
+
+	"Young referrers is an array that holds references to CogMethods that references objects that are in the new space.
+	The young referrers array is stored at the end of the code cache, it grows towards lower addresses.
+	The variable youngReferrers points to the lowest entry in the array, and it spans up to the limitAddress"
+	
 	| source dest next cogMethod |
 	<var: #source type: #usqInt>
 	<var: #dest type: #usqInt>
