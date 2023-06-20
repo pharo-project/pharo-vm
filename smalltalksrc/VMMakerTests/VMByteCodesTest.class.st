@@ -21,6 +21,18 @@ VMByteCodesTest >> assert: aBlock pop: anOop intoTemporary: anIndex [
 	self assert: (interpreter temporary: anIndex in: interpreter framePointer) equals: anOop
 ]
 
+{ #category : #asserting }
+VMByteCodesTest >> assert: aBlock popped: nPopped andPushed: pushedObject [ 
+	| oldStackSize |
+	oldStackSize := interpreter stackPointer.
+	
+	aBlock value.
+	
+	self assert: interpreter stackPointer equals: oldStackSize + (memory wordSize * (nPopped - 1)).
+	self assert: interpreter stackTop equals: pushedObject.
+	
+]
+
 { #category : #'helper-assertions' }
 VMByteCodesTest >> assert: aBlock pushed: anOop [
 	| oldStackSize |
@@ -162,6 +174,38 @@ VMByteCodesTest >> testAccessingSenderOfContextShouldReturnContextOfSender [
 	interpreter pushActiveContextBytecode.
 	newMaybeSenderContext := interpreter instVar: SenderIndex ofContext: interpreter stackTop.
 	self assert: oldMaybeSenderContext equals: newMaybeSenderContext
+]
+
+{ #category : #'tests-addition' }
+VMByteCodesTest >> testAddIntegerObjects [
+
+	stackBuilder
+		addNewFrame;
+		buildStack.
+
+	interpreter pushInteger: 7.
+	interpreter pushInteger: 13.
+
+	self
+		assert: [ self interpret: [ interpreter bytecodePrimAdd ] ]
+		popped: 2
+		andPushed: (memory integerObjectOf: 20)
+]
+
+{ #category : #'tests-addition' }
+VMByteCodesTest >> testAddIntegerObjectsUnsafe [
+
+	stackBuilder
+		addNewFrame;
+		buildStack.
+
+	interpreter pushInteger: 7.
+	interpreter pushInteger: 13.
+
+	self
+		assert: [ self interpret: [ interpreter bytecodePrimAddUnsafe ] ]
+		popped: 2
+		andPushed: (memory integerObjectOf: 20)
 ]
 
 { #category : #'tests-simd' }
@@ -319,6 +363,102 @@ VMByteCodesTest >> testDuplicateStackTop [
 		assert: [ self interpret: [ interpreter duplicateTopBytecode  ] ]
 		pushed: (memory integerObjectOf: 1).
 	
+]
+
+{ #category : #'tests-addition' }
+VMByteCodesTest >> testLessOrEqualEqualIntegerObjects [
+
+	stackBuilder
+		addNewFrame;
+		buildStack.
+
+	interpreter pushInteger: 7.
+	interpreter pushInteger: 7.
+
+	self
+		assert: [ 	self interpret: [ interpreter bytecodePrimLessOrEqualSistaV1 ] ]
+		popped: 2
+		andPushed: memory trueObject
+]
+
+{ #category : #'tests-addition' }
+VMByteCodesTest >> testLessOrEqualEqualIntegerObjectsUnsafe [
+
+	stackBuilder
+		addNewFrame;
+		buildStack.
+
+	interpreter pushInteger: 7.
+	interpreter pushInteger: 7.
+
+	self
+		assert: [ 	self interpret: [ interpreter bytecodePrimLessOrEqualSistaV1Unsafe ] ]
+		popped: 2
+		andPushed: memory trueObject
+]
+
+{ #category : #'tests-addition' }
+VMByteCodesTest >> testLessOrEqualHigherIntegerObjects [
+
+	stackBuilder
+		addNewFrame;
+		buildStack.
+
+	interpreter pushInteger: 13.
+	interpreter pushInteger: 7.
+
+	self
+		assert: [ 	self interpret: [ interpreter bytecodePrimLessOrEqualSistaV1 ] ]
+		popped: 2
+		andPushed: memory falseObject
+]
+
+{ #category : #'tests-addition' }
+VMByteCodesTest >> testLessOrEqualHigherIntegerObjectsUnsafe [
+
+	stackBuilder
+		addNewFrame;
+		buildStack.
+
+	interpreter pushInteger: 13.
+	interpreter pushInteger: 7.
+
+	self
+		assert: [ 	self interpret: [ interpreter bytecodePrimLessOrEqualSistaV1Unsafe ] ]
+		popped: 2
+		andPushed: memory falseObject
+]
+
+{ #category : #'tests-addition' }
+VMByteCodesTest >> testLessOrEqualLowerIntegerObjects [
+
+	stackBuilder
+		addNewFrame;
+		buildStack.
+
+	interpreter pushInteger: 7.
+	interpreter pushInteger: 13.
+
+	self
+		assert: [ 	self interpret: [ interpreter bytecodePrimLessOrEqualSistaV1 ] ]
+		popped: 2
+		andPushed: memory trueObject
+]
+
+{ #category : #'tests-addition' }
+VMByteCodesTest >> testLessOrEqualLowerIntegerObjectsUnsafe [
+
+	stackBuilder
+		addNewFrame;
+		buildStack.
+
+	interpreter pushInteger: 7.
+	interpreter pushInteger: 13.
+
+	self
+		assert: [ 	self interpret: [ interpreter bytecodePrimLessOrEqualSistaV1Unsafe ] ]
+		popped: 2
+		andPushed: memory trueObject
 ]
 
 { #category : #'tests-push-simple' }
