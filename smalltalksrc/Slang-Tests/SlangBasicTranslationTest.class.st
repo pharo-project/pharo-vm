@@ -1404,46 +1404,16 @@ SlangBasicTranslationTest >> testLabelWithCommentWithPreviousCommentMarkingAnInl
 	self assert: translation equals: ''
 ]
 
-{ #category : #'tests-assignment' }
-SlangBasicTranslationTest >> testMethodCantHaveReservedArgumentNames [
-
-	| methodInitialization |
-	methodInitialization := [
-	                        TMethod new
-		                        setSelector: 'foo'
-		                        definingClass: MockEmptyVMStruct
-		                        args: { RBVariableNode named: 'continue' }
-		                        locals: Array empty
-		                        block:
-		                        (RBBlockNode body:
-			                         (RBSequenceNode statements:
-				                          Array empty))
-		                        primitive: nil
-		                        properties: nil
-		                        comment: nil ].
-
-	self should: methodInitialization raise: TranslationError
-]
-
-{ #category : #'tests-assignment' }
+{ #category : #'tests-method' }
 SlangBasicTranslationTest >> testMethodCantHaveReservedSelectorName [
 
-	| methodInitialization |
-	methodInitialization := [
-	                        TMethod new
-		                        setSelector: 'break'
-		                        definingClass: MockEmptyVMStruct
-		                        args: Array empty
-		                        locals: Array empty
-		                        block:
-		                        (RBBlockNode body:
-			                         (RBSequenceNode statements:
-				                          Array empty))
-		                        primitive: nil
-		                        properties: nil
-		                        comment: nil ].
+	self getTMethodFrom: #continue.
 
-	self should: methodInitialization raise: TranslationError
+	generator renameKeywordsConflicts.
+
+	self
+		assert: (generator cFunctionNameFor: #continue)
+		equals: #continue_1
 ]
 
 { #category : #'tests-method' }
