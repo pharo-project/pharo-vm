@@ -122,7 +122,7 @@ CogMethodZone >> addAllToYoungReferrers [
 ]
 
 { #category : #accessing }
-CogMethodZone >> addToOpenPICList: anOpenPIC [
+CogMethodZone >> addToMegamorphicICList: anOpenPIC [
 	<var: #anOpenPIC type: #'CogMethod *'>
 	self assert: anOpenPIC cmType = CMMegamorphicIC.
 	self assert: (openPICList == nil
@@ -249,7 +249,7 @@ CogMethodZone >> compactCompiledCode [
 		 SistaVM ifTrue:
 			[self clearSavedPICUsageCount: source].
 		 source cmType = CMMegamorphicIC ifTrue:
-			[self addToOpenPICList: source].
+			[self addToMegamorphicICList: source].
 		 methodCount := methodCount + 1.
 		 source := self methodAfter: source].
 	source >= self limitZony ifTrue:
@@ -275,7 +275,7 @@ CogMethodZone >> compactCompiledCode [
 					[SistaVM ifTrue:
 						[self clearSavedPICUsageCount: dest].
 					 dest cmType = CMMegamorphicIC ifTrue:
-						[self addToOpenPICList: dest]].
+						[self addToMegamorphicICList: dest]].
 			 dest cmUsageCount > 0 ifTrue:
 				[dest cmUsageCount: dest cmUsageCount // 2].
 			 dest := coInterpreter
