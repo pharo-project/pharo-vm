@@ -6412,7 +6412,7 @@ Cogit >> fillInOPICHeader: pic numArgs: numArgs selector: selector [
 	pic objectHeader: 0.
 	pic blockSize: openPICSize.
 	"pic methodObject: 0.""This is also the nextOpenPIC link so don't initialize it"
-	methodZone addToOpenPICList: pic.
+	methodZone addToMegamorphicICList: pic.
 	pic methodHeader: 0.
 	pic selector: selector.
 	pic cmNumArgs: numArgs.
