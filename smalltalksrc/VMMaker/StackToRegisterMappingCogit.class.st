@@ -1383,18 +1383,11 @@ StackToRegisterMappingCogit >> genAddFloat32Vector [
 	"The sum register is the same that the array1Reg"
 	sumReg := array1Reg.
 	
-	self ssTop moveToVectorReg: array2Reg.
-	self ssPop: 1.
-	
-	self ssTop moveToVectorReg: array1Reg.
-	self ssPop: 1.
-	
+	self ssPopTopToVectorReg: array2Reg.
+	self ssPopTopToVectorReg: array1Reg.
+	self FaddS: 32 Rv: array1Reg Rv: array2Reg Rv: sumReg.	
 	self ssPushVectorRegister: sumReg.
-	self ssTop moveToVectorReg: sumReg.
 
-	self FaddS: 32 Rv: array1Reg Rv: array2Reg Rv: sumReg.
-	
-	"Returns 0 if worked"
 	^0
 ]
 
@@ -1409,18 +1402,11 @@ StackToRegisterMappingCogit >> genAddFloat64Vector [
 	"The result register is the same that the array1Reg"
 	sumReg := array1Reg.
 	
-	self ssTop moveToVectorReg: array2Reg.
-	self ssPop: 1.
-	
-	self ssTop moveToVectorReg: array1Reg.
-	self ssPop: 1.
-	
-	self ssPushVectorRegister: sumReg.
-	self ssTop moveToVectorReg: sumReg.
-	
+	self ssPopTopToVectorReg: array2Reg.
+	self ssPopTopToVectorReg: array1Reg.
 	self FaddS: 64 Rv: array1Reg Rv: array2Reg Rv: sumReg.
+	self ssPushVectorRegister: sumReg.
 	
-	"Returns 0 if worked"
 	^0
 ]
 
@@ -4483,6 +4469,13 @@ StackToRegisterMappingCogit >> ssPop: n [
 				or: [(needsFrame not and: [simStackPtr - n >= 0])]).
 	simStackPtr := simStackPtr - n.
 	self updateSimSpillBase
+]
+
+{ #category : #'mapped inline primitive generators - vectorial' }
+StackToRegisterMappingCogit >> ssPopTopToVectorReg: aVectorRegister [
+
+	self ssTop moveToVectorReg: aVectorRegister.
+	self ssPop: 1
 ]
 
 { #category : #'simulation stack' }
