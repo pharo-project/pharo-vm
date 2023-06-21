@@ -2617,11 +2617,9 @@ StackToRegisterMappingCogit >> genSpecialSelectorArithmetic [
 StackToRegisterMappingCogit >> genSpecialSelectorClass [
 	| topReg |
 	topReg := self ssTop registerOrNone.
-	self ssPop: 1.
 	(topReg = NoReg or: [topReg = ClassReg])
-		ifTrue: [self ssAllocateRequiredReg: (topReg := SendNumArgsReg) and: ClassReg]
-		ifFalse: [self ssAllocateRequiredReg: ClassReg].
-	self ssPush: 1.
+		ifTrue: [self ssAllocateRequiredReg: (topReg := SendNumArgsReg) and: ClassReg upThrough: simStackPtr - 1]
+		ifFalse: [self ssAllocateRequiredReg: ClassReg upThrough: simStackPtr - 1].
 	self ssTop moveToReg: topReg.
 	objectRepresentation
 		genGetClassObjectOf: topReg
@@ -4375,6 +4373,14 @@ StackToRegisterMappingCogit >> ssAllocateRequiredReg: requiredReg1 and: required
 	self ssAllocateRequiredRegMask: ((self registerMaskFor: requiredReg1)
 										bitOr: (self registerMaskFor: requiredReg2))
 		upThrough: simStackPtr
+]
+
+{ #category : #'simulation stack' }
+StackToRegisterMappingCogit >> ssAllocateRequiredReg: requiredReg1 and: requiredReg2 upThrough: stackPointer [
+	<inline: true>
+	self ssAllocateRequiredRegMask: ((self registerMaskFor: requiredReg1)
+										bitOr: (self registerMaskFor: requiredReg2))
+		upThrough: stackPointer
 ]
 
 { #category : #'simulation stack' }
