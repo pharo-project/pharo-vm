@@ -164,8 +164,8 @@ SlangBasicTranslationTestClass >> methodWithReservedWordLocal: register [
 	<var: #case type: 'char *'>
 	<var: #register type: 'char *'>
 	| case |
-	case := 'foo'
-	register , 'foo'
+	case := register nextPutAll: 'foo'
+	
 ]
 
 { #category : #inline }

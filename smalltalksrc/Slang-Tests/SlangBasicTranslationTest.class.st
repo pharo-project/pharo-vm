@@ -1405,18 +1405,6 @@ SlangBasicTranslationTest >> testLabelWithCommentWithPreviousCommentMarkingAnInl
 ]
 
 { #category : #'tests-method' }
-SlangBasicTranslationTest >> testMethodCantHaveReservedSelectorName [
-
-	self getTMethodFrom: #continue.
-
-	generator renameKeywordsConflicts.
-
-	self
-		assert: (generator cFunctionNameFor: #continue)
-		equals: #continue_1
-]
-
-{ #category : #'tests-method' }
 SlangBasicTranslationTest >> testMethodComment [
 
 	"Test the smalltalk comment of the function."
@@ -1688,6 +1676,20 @@ SlangBasicTranslationTest >> testMethodPrototypeWithStatic [
 			, (translation lineNumber: 3)
 		equals: 'static sqInt
 increment(sqInt x)'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodRenamesReservedSelectorName [
+
+	| method translation |
+	method := self getTMethodFrom: #continue.
+
+	generator renameKeywordsConflicts.
+
+	translation := self translate: method.
+	
+	self should: (translation includesSubstring: 'static sqInt
+continue_1(void)')
 ]
 
 { #category : #'tests-method' }
@@ -6515,17 +6517,18 @@ SlangBasicTranslationTest >> testVariableUpdateAssignmentPlus [
 { #category : #'tests-variables' }
 SlangBasicTranslationTest >> testVariableWithReservedNameShouldBeRenamed [
 
-	| method locals sanitizedLocals |
-	locals := #(case register).
-	sanitizedLocals := locals collect: [ :local | generator sanitizeKeyword: local ] .
+	| method translation |
 	
 	method := self getTMethodFrom: #methodWithReservedWordLocal:.
 	method recordDeclarationsIn: generator.
 	
 	generator renameKeywordsConflicts.
 
-	self shouldnt: (method allLocals includesAny: locals).
-	self should: (method allLocals includesAll: sanitizedLocals).
+	translation := self translate: method.
+	
+	self should: (translation includesSubstring: 'char *case_1').
+	self should: (translation includesSubstring: 'char *register_1').
+	self should: (translation includesSubstring: 'case_1 = nextPutAll(register_1, "foo")')
 ]
 
 { #category : #helpers }
