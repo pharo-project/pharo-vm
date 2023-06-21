@@ -1814,7 +1814,7 @@ StackToRegisterMappingCogit >> genJumpIf: boolean to: targetBytecodePC [
 	(self stackEntryIsBoolean: desc) ifTrue: [
 		"Must arrange there's a fixup at the target whether it is jumped to or
 		not so that the simStackPtr can be kept correct."
-		self ssPop: 1.
+		self ssPopLeBon: 1.
 		fixup := self ensureFixupAt: eventualTarget.
 		"Must annotate the bytecode for correct pc mapping."
 		self annotateBytecode: (desc constant = boolean
