@@ -2729,12 +2729,8 @@ StackToRegisterMappingCogit >> genStoreFloat32RegisterIntoArray [
 	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
 	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
 	
-	self ssTop moveToReg: arrayReg.
-	self ssPop: 1.
-	
-	self ssTop moveToReg: indexReg.
-	self ssPop: 1.
-	
+	self ssPopTopToReg: arrayReg.
+	self ssPopTopToReg: indexReg.
 	self AddCq: objectMemory baseHeaderSize R: arrayReg.
 
 	"The index is a SmallInteger, so it is shifted left 3 and plus 1. So, as we need to untag it and then shift it left 2 (for getting number of bytes from number of elements), we just shift it 1 right. 
@@ -2746,14 +2742,10 @@ StackToRegisterMappingCogit >> genStoreFloat32RegisterIntoArray [
 	self AddR: indexReg R: arrayReg.
 	
 	vectorReg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
-	self ssTop moveToVectorReg: vectorReg.
-	self ssPop: 1.
-	
+	self ssPopTopToVectorReg: vectorReg.
 	self St1S: 32 Vr: vectorReg R: arrayReg Mw: 0.
-	
 	self ssPushRegister: arrayReg.
 	
-	"Returns 0 if worked"
 	^0
 ]
 
@@ -2766,12 +2758,8 @@ StackToRegisterMappingCogit >> genStoreFloat64RegisterIntoArray [
 	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
 	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
 	
-	self ssTop moveToReg: arrayReg.
-	self ssPop: 1.
-	
-	self ssTop moveToReg: indexReg.
-	self ssPop: 1.
-	
+	self ssPopTopToReg: arrayReg.
+	self ssPopTopToReg: indexReg.
 	self AddCq: objectMemory baseHeaderSize R: arrayReg.
 
 	"The index is a SmallInteger, so it is shifted left 3 and plus 1. So, as we need to untag it and then shift it 3 (for getting number of bytes from number of elements), we just substract 1. 
@@ -2783,14 +2771,10 @@ StackToRegisterMappingCogit >> genStoreFloat64RegisterIntoArray [
 	self AddR: indexReg R: arrayReg.
 	
 	vectorReg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
-	self ssTop moveToVectorReg: vectorReg.
-	self ssPop: 1.
-	
+	self ssPopTopToVectorReg: vectorReg.
 	self St1S: 64 Vr: vectorReg R: arrayReg Mw: 0.
-	
 	self ssPushRegister: arrayReg.
 	
-	"Returns 0 if worked"
 	^0
 ]
 
@@ -2966,16 +2950,10 @@ StackToRegisterMappingCogit >> genSubFloat64Vector [
 	"The result register is the same that the array2Reg"
 	subReg := array2Reg.
 	
-	self ssTop moveToVectorReg: array1Reg.
-	self ssPop: 1.
-	
-	self ssTop moveToVectorReg: array2Reg.
-	self ssPop: 1.
-	
-	self ssPushVectorRegister: subReg.
-	self ssTop moveToVectorReg: subReg.
-	
+	self ssPopTopToVectorReg: array1Reg.
+	self ssPopTopToVectorReg: array2Reg.
 	self FsubS: 64 Rv: array2Reg Rv: array1Reg Rv: subReg.
+	self ssPushVectorRegister: subReg.	
 	
 	"Returns 0 if worked"
 	^0
@@ -4616,11 +4594,11 @@ StackToRegisterMappingCogit >> ssStorePop: popBoolean toPreferredReg: preferredR
 StackToRegisterMappingCogit >> ssStorePop: popBoolean toReg: reg [
 	"Store or pop the top simulated stack entry to a register.
 	N.B.: popToReg: and storeToReg: does not generate anything if 
-	it moves a register to the same register."	
+	it moves a register to the same register."
+
 	popBoolean
-		ifTrue: [self ssTop moveToReg: reg.
-				self ssPop: 1]
-		ifFalse: [self ssTop storeToReg: reg].
+		ifTrue: [ self ssPopTopToReg: reg ]
+		ifFalse: [ self ssTop storeToReg: reg ]
 ]
 
 { #category : #'simulation stack' }
