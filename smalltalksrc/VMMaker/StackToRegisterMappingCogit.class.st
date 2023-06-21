@@ -1770,7 +1770,7 @@ StackToRegisterMappingCogit >> genIdenticalNoBranchArgIsConstant: argIsConstant 
 	 ^0
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genInlinedIdenticalOrNotIf: orNot [
 	"Decompose code generation for #== into a common constant-folding version,
 	 followed by a double dispatch throguh the objectRepresentation to a version
@@ -1787,7 +1787,7 @@ StackToRegisterMappingCogit >> genInlinedIdenticalOrNotIf: orNot [
 					ifTrue: [self ssTop constant ~= (self ssValue: 1) constant])
 									ifTrue: [objectMemory trueObject]
 									ifFalse: [objectMemory falseObject].
-		 self ssPop: 2.
+		 self ssPopLeBon: 2.
 		 ^self ssPushConstant: result].
 
 	^objectRepresentation genInlinedIdenticalOrNotIfGuts: orNot
@@ -2288,23 +2288,24 @@ StackToRegisterMappingCogit >> genPushNewArrayBytecode [
 	| size popValues |
 	self assert: needsFrame.
 	self voidReceiverResultRegContainsSelf.
+	"Spill everything in the stack so that we can simplify the access just by doing a pop"
 	(popValues := byte1 > 127)
 		ifTrue: [self ssFlushTo: simStackPtr]
 		ifFalse: [self ssAllocateCallReg: SendNumArgsReg and: ReceiverResultReg].
+
 	size := byte1 bitAnd: 127.
 	popValues ifFalse:
 		[(self tryCollapseTempVectorInitializationOfSize: size) ifTrue:
 			[^0]].
+
 	objectRepresentation genNewArrayOfSize: size initialized: popValues not.
-	popValues ifTrue:
-		[size - 1 to: 0 by: -1 do:
-			[:i|
-			self PopR: TempReg.
+	popValues ifTrue: [
+		size - 1 to: 0 by: -1 do: [:i|
+			self ssPopTopToReg: TempReg.
 			objectRepresentation
 				genStoreSourceReg: TempReg
 				slotIndex: i
-				intoNewObjectInDestReg: ReceiverResultReg].
-		 self ssPop: size].
+				intoNewObjectInDestReg: ReceiverResultReg ]].
 	^self ssPushRegister: ReceiverResultReg
 ]
 
@@ -2411,7 +2412,7 @@ StackToRegisterMappingCogit >> genSendDirectedSuper: selectorIndex numArgs: numA
 	| result |
 	self assert: self ssTop type = SSConstant.
 	tempOop := self ssTop constant.
-	self ssPop: 1.
+	self ssPopLeBon: 1.
 	self marshallSendArguments: numArgs.
 	result := self
 				genMarshalledSend: selectorIndex
