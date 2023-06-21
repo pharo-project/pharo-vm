@@ -2755,7 +2755,7 @@ StackToRegisterMappingCogit >> genStaticallyResolvedSpecialSelectorComparison [
 		[JumpZero]				-> [result := rcvrInt = argInt].
 		[JumpNonZero]			-> [result := rcvrInt ~= argInt] }.
 	 "Must annotate the bytecode for correct pc mapping."
-	 self ssPop: 2.
+	 self ssPopLeBon: 2.
 	 ^self ssPushAnnotatedConstant: (result
 			ifTrue: [objectMemory trueObject]
 			ifFalse: [objectMemory falseObject])
