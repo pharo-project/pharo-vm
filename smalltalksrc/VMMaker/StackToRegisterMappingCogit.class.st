@@ -2134,12 +2134,8 @@ StackToRegisterMappingCogit >> genPushFloat32ArrayToRegister [
 	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
 	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
 	
-	self ssTop moveToReg: arrayReg.
-	self ssPop: 1.
-	
-	self ssTop moveToReg: indexReg.
-	self ssPop: 1.
-	
+	self ssPopTopToReg: arrayReg.
+	self ssPopTopToReg: indexReg.
 	self AddCq: objectMemory baseHeaderSize R: arrayReg.
 
 	"The index is a SmallInteger, so it is shifted left 3 and plus 1. So, as we need to untag it and then shift it 2 (for getting number of bytes from number of elements), we just shift 1. 
@@ -2151,9 +2147,8 @@ StackToRegisterMappingCogit >> genPushFloat32ArrayToRegister [
 	self AddR: indexReg R: arrayReg.
 	
 	vectorReg := self allocateVectorRegNotConflictingWith: 0.
-	self ssPushVectorRegister: vectorReg.
-	
 	self Ld1S: 32 Vr: vectorReg R: arrayReg Mw: 0.
+	self ssPushVectorRegister: vectorReg.
 	
 	"Returns 0 if worked"
 	^0
@@ -2169,12 +2164,8 @@ StackToRegisterMappingCogit >> genPushFloat64ArrayToRegister [
 	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
 	indexReg := self allocateRegForStackEntryAt: 1 notConflictingWith: (self registerMaskFor: arrayReg).
 	
-	self ssTop moveToReg: arrayReg.
-	self ssPop: 1.
-	
-	self ssTop moveToReg: indexReg.
-	self ssPop: 1.
-	
+	self ssPopTopToReg: arrayReg.
+	self ssPopTopToReg: indexReg.
 	self AddCq: objectMemory baseHeaderSize R: arrayReg.
 
 	"The index is a SmallInteger, so it is shifted left 3 and plus 1. So, as we need to untag it and then shift it 3 (for getting number of bytes from number of elements), we just substract 1. 
@@ -2186,9 +2177,8 @@ StackToRegisterMappingCogit >> genPushFloat64ArrayToRegister [
 	self AddR: indexReg R: arrayReg.
 	
 	vectorReg := self allocateVectorRegNotConflictingWith: 0.
-	self ssPushVectorRegister: vectorReg.
-	
 	self Ld1S: 64 Vr: vectorReg R: arrayReg Mw: 0.
+	self ssPushVectorRegister: vectorReg.
 	
 	"Returns 0 if worked"
 	^0
@@ -2398,15 +2388,13 @@ StackToRegisterMappingCogit >> genReturnReceiver [
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genReturnTopFromBlock [
 	self assert: inBlock > 0.
-	self ssTop moveToReg: ReceiverResultReg.
-	self ssPop: 1.
+	self ssPopTopToReg: ReceiverResultReg.
 	^self genBlockReturn
 ]
 
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genReturnTopFromMethod [
-	self ssTop moveToReg: ReceiverResultReg.
-	self ssPop: 1.
+	self ssPopTopToReg: ReceiverResultReg.
 	^self genUpArrowReturn
 ]
 
@@ -4482,6 +4470,13 @@ StackToRegisterMappingCogit >> ssPop: n [
 				or: [(needsFrame not and: [simStackPtr - n >= 0])]).
 	simStackPtr := simStackPtr - n.
 	self updateSimSpillBase
+]
+
+{ #category : #'mapped inline primitive generators - vectorial' }
+StackToRegisterMappingCogit >> ssPopTopToReg: aRegister [
+	
+	self ssTop moveToReg: aRegister.
+	self ssPop: 1
 ]
 
 { #category : #'mapped inline primitive generators - vectorial' }
