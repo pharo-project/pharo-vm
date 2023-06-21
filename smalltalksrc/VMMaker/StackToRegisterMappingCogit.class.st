@@ -2061,9 +2061,7 @@ StackToRegisterMappingCogit >> genPICMissTrampolineFor: numArgs [
 
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genPopStackBytecode [
-	self ssTop spilled ifTrue:
-		[self AddCq: objectMemory wordSize R: SPReg].
-	self ssPop: 1.
+	self ssPopLeBon: 1.
 	^0
 ]
 
