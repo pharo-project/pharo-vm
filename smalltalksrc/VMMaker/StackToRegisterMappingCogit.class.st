@@ -3005,66 +3005,6 @@ StackToRegisterMappingCogit >> genUpArrowReturn [
 	^0
 ]
 
-{ #category : #'bytecode generators' }
-StackToRegisterMappingCogit >> genVanillaInlinedIdenticalOrNotIf: orNot [
-	| nextPC postBranchPC targetPC branchDescriptor
-	  rcvrReg argReg argIsConstant rcvrIsConstant  |
-	<var: #branchDescriptor type: #'BytecodeDescriptor *'>
-	
-	self extractMaybeBranchDescriptorInto: [ :descr :next :postBranch :target | 
-		branchDescriptor := descr. nextPC := next. postBranchPC := postBranch. targetPC := target ].
-	
-	argIsConstant := self ssTop type = SSConstant.
-	"They can't be both constants to use correct machine opcodes.
-	 However annotable constants can't be resolved statically, hence we need to careful."
-	rcvrIsConstant := argIsConstant not and: [(self ssValue: 1) type = SSConstant].
-	
-	self 
-		allocateEqualsEqualsRegistersArgNeedsReg: argIsConstant not 
-		rcvrNeedsReg: rcvrIsConstant not 
-		into: [ :rcvr :arg | rcvrReg:= rcvr. argReg := arg ].
-	
-	"If not followed by a branch, resolve to true or false."
-	(branchDescriptor isBranchTrue or: [branchDescriptor isBranchFalse]) ifFalse:
-		[^ self 
-			genIdenticalNoBranchArgIsConstant: argIsConstant 
-			rcvrIsConstant: rcvrIsConstant 
-			argReg: argReg 
-			rcvrReg: rcvrReg 
-			orNotIf: orNot].
-	
-	"If branching the stack must be flushed for the merge"
-	self ssFlushTo: simStackPtr - 2.
-	
-	self genCmpArgIsConstant: argIsConstant rcvrIsConstant: rcvrIsConstant argReg: argReg rcvrReg: rcvrReg.
-	self ssPop: 2.
-
-	"Further since there is a following conditional jump bytecode, define
-	 non-merge fixups and leave the cond bytecode to set the mergeness."
-	(self fixupAt: nextPC) notAFixup
-		ifTrue: "The next instruction is dead.  we can skip it."
-			[deadCode := true.
-		 	 self ensureFixupAt: targetPC.
-			 self ensureFixupAt: postBranchPC]
-		ifFalse:
-			[self deny: deadCode]. "push dummy value below"
-		
-
-	orNot == branchDescriptor isBranchTrue "orNot is true for ~~"
-		ifFalse: "a == b ifTrue: ... or a ~~ b ifFalse: ... jump on equal to target pc"
-			[self JumpZero:  (self ensureNonMergeFixupAt: targetPC).
-			 self Jump: (self ensureNonMergeFixupAt: postBranchPC)]
-		ifTrue: "a == b ifFalse: ... or a ~~ b ifTrue: ... jump on equal to post-branch pc"
-			[self ensureNonMergeFixupAt: targetPC.
-			 self JumpZero: (self ensureNonMergeFixupAt: postBranchPC).
-			 self Jump: (self ensureNonMergeFixupAt: targetPC)].
-
-	"Not reached, execution flow has jumped to fixup"
-	deadCode ifFalse:
-		[self ssPushConstant: objectMemory trueObject]. "dummy value"
-	^0
-]
-
 { #category : #initialization }
 StackToRegisterMappingCogit >> generateEnilopmarts [
 	"Enilopmarts transfer control from C into machine code (backwards trampolines).
@@ -3463,55 +3403,6 @@ StackToRegisterMappingCogit >> mapDeadDescriptorIfNeeded: descriptor [
 		or: [inBlock > 0 and: [descriptor isMappedInBlock]]) 
 		ifTrue: [self annotateBytecode: self Nop].
 	^ 0
-]
-
-{ #category : #'simulation stack' }
-StackToRegisterMappingCogit >> marshallAbsentReceiverSendArguments: numArgs [
-	self assert: needsFrame.
-	self ssAllocateCallReg: ReceiverResultReg.
-	self putSelfInReceiverResultReg.
-
-	"Spill everything on the simulated stack that needs spilling (that below arguments).
-	 Marshall arguments to stack and/or registers depending on arg count.
-	 If the args don't fit in registers push receiver and args (spill everything).  Assume
-	 receiver already in ResultReceiverReg so shuffle args and push it if necessary."
-	self ssFlushTo: simStackPtr - numArgs.
-	numArgs > self numRegArgs
-		ifTrue:
-			["The arguments must be pushed to the stack, and hence the receiver
-			   must be inserted beneath the args.  Reduce or eliminate the argument
-			   shuffle by only moving already spilled items."
-			| numSpilled |
-			numSpilled := self numberOfSpillsInTopNItems: numArgs.
-			numSpilled > 0
-				ifTrue:
-					[self MoveMw: 0 r: SPReg R: TempReg.
-					 self PushR: TempReg.
-					 2 to: numSpilled do:
-						[:index|
-						self MoveMw: index * objectMemory wordSize r: SPReg R: TempReg.
-						self MoveR: TempReg Mw: index - 1 * objectMemory wordSize r: SPReg].
-					 self MoveR: ReceiverResultReg Mw: numSpilled * objectMemory wordSize r: SPReg]
-				ifFalse:
-					[self PushR: ReceiverResultReg].
-			self ssFlushTo: simStackPtr]
-		"Move the args to the register arguments, being careful to do
-		 so last to first so e.g. previous contents don't get overwritten.
-		 Also check for any arg registers in use by other args."
-		ifFalse:
-			[numArgs > 0 ifTrue:
-				[(self numRegArgs > 1 and: [numArgs > 1])
-					ifTrue:
-						[self ssAllocateRequiredReg: Arg0Reg upThrough: simStackPtr - 2.
-						 self ssAllocateRequiredReg: Arg1Reg upThrough: simStackPtr - 1]
-					ifFalse:
-						[self ssAllocateRequiredReg: Arg0Reg upThrough: simStackPtr - 1]].
-			 (self numRegArgs > 1 and: [numArgs > 1]) ifTrue:
-				[(self simStackAt: simStackPtr) moveToReg: Arg1Reg].
-			 numArgs > 0 ifTrue:
-				[(self simStackAt: simStackPtr - numArgs + 1)
-					moveToReg: Arg0Reg]].
-	self ssPop: numArgs
 ]
 
 { #category : #'simulation stack' }
