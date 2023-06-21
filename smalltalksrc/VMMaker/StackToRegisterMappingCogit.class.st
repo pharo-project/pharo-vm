@@ -1521,7 +1521,7 @@ StackToRegisterMappingCogit >> genExtPushFullClosureBytecode [
 			intoNewObjectInDestReg: ReceiverResultReg].
 	receiverIsOnStack
 		ifTrue: [reg := self ssStorePop: true toPreferredReg: TempReg]
-		ifFalse: [self simSelf storeToReg: (reg := TempReg)].
+		ifFalse: [self simSelf copyToReg: (reg := TempReg)].
 	objectRepresentation
 			genStoreSourceReg: reg
 			slotIndex: FullClosureReceiverIndex
@@ -3424,10 +3424,10 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 				ifTrue:
 					[self ssFlushTo: simStackPtr.
 					 (self simStackAt: simStackPtr - numArgs)
-						storeToReg: ReceiverResultReg]
+						copyToReg: ReceiverResultReg]
 				ifFalse:
 					[(self simStackAt: simStackPtr - numArgs)
-						storeToReg: ReceiverResultReg;
+						copyToReg: ReceiverResultReg;
 					 	type: SSRegister;
 						register: ReceiverResultReg.
 					 self ssFlushTo: simStackPtr]]
@@ -3948,7 +3948,7 @@ StackToRegisterMappingCogit >> put: aString paddedTo: compositionWidth tabWidth:
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> putSelfInReceiverResultReg [
 	<inline: true>
-	 self simSelf storeToReg: ReceiverResultReg
+	 self simSelf copyToReg: ReceiverResultReg
 ]
 
 { #category : #'bytecode generator support' }
@@ -4489,7 +4489,7 @@ StackToRegisterMappingCogit >> ssStorePop: popBoolean toReg: reg [
 
 	popBoolean
 		ifTrue: [ self ssPopTopToReg: reg ]
-		ifFalse: [ self ssTop storeToReg: reg ]
+		ifFalse: [ self ssTop copyToReg: reg ]
 ]
 
 { #category : #'simulation stack' }

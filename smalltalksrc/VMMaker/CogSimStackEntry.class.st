@@ -135,6 +135,21 @@ CogSimStackEntry >> constant: anObject [
 ]
 
 { #category : #'compile abstract instructions' }
+CogSimStackEntry >> copyToReg: reg [
+
+	"Copy the value of the current entry to the register argument.
+	Do not touch the stack"
+	
+	type caseOf: {
+		[SSBaseOffset]	-> [cogit MoveMw: offset r: register R: reg].
+		[SSSpill]		-> [cogit MoveMw: offset r: register R: reg].
+		[SSConstant]	-> [cogit genMoveConstant: constant R: reg].
+		[SSRegister]	-> [reg ~= register
+								ifTrue: [cogit MoveR: register R: reg]
+								ifFalse: [cogit Label]] }
+]
+
+{ #category : #'compile abstract instructions' }
 CogSimStackEntry >> ensureSpilledAt: baseOffset from: baseRegister [
 	| inst |
 	<var: #inst type: #'AbstractInstruction *'>
@@ -336,17 +351,6 @@ CogSimStackEntry >> spilled: anObject [
 	"Set the value of spilled"
 
 	^spilled := anObject
-]
-
-{ #category : #'compile abstract instructions' }
-CogSimStackEntry >> storeToReg: reg [
-	type caseOf: {
-		[SSBaseOffset]	-> [cogit MoveMw: offset r: register R: reg].
-		[SSSpill]		-> [cogit MoveMw: offset r: register R: reg].
-		[SSConstant]	-> [cogit genMoveConstant: constant R: reg].
-		[SSRegister]	-> [reg ~= register
-								ifTrue: [cogit MoveR: register R: reg]
-								ifFalse: [cogit Label]] }
 ]
 
 { #category : #accessing }
