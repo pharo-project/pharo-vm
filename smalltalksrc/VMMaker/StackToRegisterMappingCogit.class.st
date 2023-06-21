@@ -4414,9 +4414,9 @@ StackToRegisterMappingCogit >> ssPopLeBon: n [
 StackToRegisterMappingCogit >> ssPopTopToReg: aRegister [
 	
 	"Move to reg pops from the runtime stack if spilled!"
-	self ssTop moveToReg: aRegister.
+	self ssTop copyToReg: aRegister.
 	"So here we only need to pop the simulated stack"
-	self ssPop: 1
+	self ssPopLeBon: 1
 ]
 
 { #category : #'mapped inline primitive generators - vectorial' }
