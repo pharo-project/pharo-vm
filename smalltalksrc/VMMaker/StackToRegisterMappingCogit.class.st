@@ -1687,9 +1687,10 @@ StackToRegisterMappingCogit >> genGenericStorePop: popBoolean MaybeContextSlotIn
 					 needsRestoreReceiver ifTrue: [ self putSelfInReceiverResultReg ].
 					 immutabilityFailure := self Jump: 0.
 					 mutableJump jmpTarget: self Label.]].
-	self ssPop: 1.
-	self ssAllocateCallReg: ClassReg and: SendNumArgsReg. "for ceStoreContextInstVarTrampoline"
-	self ssPush: 1.
+
+	"for ceStoreContextInstVarTrampoline"
+	self ssAllocateCallReg: ClassReg and: SendNumArgsReg upThrough: simStackPtr -1.
+
 	objectRepresentation
 		genLoadSlot: SenderIndex
 		sourceReg: ReceiverResultReg
@@ -4331,6 +4332,18 @@ StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg1 and: requiredReg2
 										bitOr: ((self registerMaskFor: requiredReg3)
 										bitOr: (self registerMaskFor: requiredReg4)))))
 		upThrough: simStackPtr
+]
+
+{ #category : #'simulation stack' }
+StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg1 and: requiredReg2 upThrough: aStackPointer [
+	"Allocate registers needed in a run-time call (i.e. flush uses of the
+	 registers to the real stack).  Since the run-time can smash any and
+	 all caller-saved registers also flush all caller-saved registers."
+	<inline: true>
+	self ssAllocateRequiredRegMask: (CallerSavedRegisterMask
+										bitOr: ((self registerMaskFor: requiredReg1)
+										bitOr: (self registerMaskFor: requiredReg2)))
+		upThrough: aStackPointer
 ]
 
 { #category : #'simulation stack' }
