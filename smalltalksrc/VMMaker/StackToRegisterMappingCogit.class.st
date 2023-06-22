@@ -2678,7 +2678,7 @@ StackToRegisterMappingCogit >> genSpecialSelectorComparison [
 	argIsIntConst ifTrue: [
 		"If the argument is constant, we already extracted the value and we have it in argInt"
 		"Pop the argument from the stack, then the receiver"
-		self ssPop: 1.
+		self ssPopLeBon: 1.
 		self ssPopTopToReg: ReceiverResultReg ]
 	ifFalse: [ 
 		"Otherwise, marshall normally to prepare for a message send"
@@ -4423,7 +4423,7 @@ StackToRegisterMappingCogit >> ssPopTopToReg: aRegister [
 StackToRegisterMappingCogit >> ssPopTopToVectorReg: aVectorRegister [
 
 	self ssTop moveToVectorReg: aVectorRegister.
-	self ssPop: 1
+	self ssPopLeBon: 1
 ]
 
 { #category : #'simulation stack' }
