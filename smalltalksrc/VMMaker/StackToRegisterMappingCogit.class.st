@@ -2545,7 +2545,7 @@ StackToRegisterMappingCogit >> genSpecialSelectorArithmetic [
 			[OrRR]	-> [result := rcvrInt bitOr: argInt] }.
 		(objectMemory isIntegerValue: result) ifTrue:
 			["Must annotate the bytecode for correct pc mapping."
-			^self ssPop: 2; ssPushAnnotatedConstant: (objectMemory integerObjectOf: result)].
+			^self ssPopLeBon: 2; ssPushAnnotatedConstant: (objectMemory integerObjectOf: result)].
 		^self genSpecialSelectorSend].
 
 	"If there's any constant involved other than a SmallInteger don't attempt to inline."
@@ -2559,10 +2559,10 @@ StackToRegisterMappingCogit >> genSpecialSelectorArithmetic [
 		[^self genSpecialSelectorSend].
 
 	argIsConst
-		ifTrue:
-			[self ssFlushTo: simStackPtr - 2.
-			 (self ssValue: 1) moveToReg: ReceiverResultReg.
-			 self ssPop: 2]
+		ifTrue: [
+			self ssFlushTo: simStackPtr - 2.
+			self ssPopLeBon: 1.
+			self ssPopTopToReg: ReceiverResultReg ]
 		ifFalse:
 			[self marshallSendArguments: 1].
 	jumpNotSmallInts := (rcvrIsInt and: [argIsInt]) ifFalse:
