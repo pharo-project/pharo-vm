@@ -1132,6 +1132,12 @@ StackToRegisterMappingCogit >> duplicateTopBytecode [
 
 { #category : #'compile abstract instructions' }
 StackToRegisterMappingCogit >> ensureFixupAt: targetPC [
+	
+	^ self ensureFixupAt: targetPC withStackPointer: simStackPtr
+]
+
+{ #category : #'compile abstract instructions' }
+StackToRegisterMappingCogit >> ensureFixupAt: targetPC withStackPointer: aStackPointer [
 	"Make sure there's a flagged fixup at the target pc in fixups.
 	 Initially a fixup's target is just a flag.  Later on it is replaced with a proper instruction."
 	<returnTypeC: #'BytecodeFixup *'>
@@ -1140,21 +1146,23 @@ StackToRegisterMappingCogit >> ensureFixupAt: targetPC [
 	fixup := self fixupAt:  targetPC.
 	self traceFixup: fixup merge: true.
 	self cCode: '' inSmalltalk:
-		[self assert: simStackPtr = (self debugStackPointerFor: targetPC).
+		[self assert: aStackPointer = (self debugStackPointerFor: targetPC).
 		 (fixup isMergeFixupOrIsFixedUp
 		  and: [fixup isBackwardBranchFixup not]) ifTrue: "ignore backward branch targets"
-			[self assert: fixup simStackPtr = simStackPtr]].
+			[self assert: fixup simStackPtr = aStackPointer]].
+	
+
 	fixup isNonMergeFixupOrNotAFixup
 		ifTrue: "convert a non-merge into a merge"
 			[fixup becomeMergeFixup.
-			 fixup simStackPtr: simStackPtr ]
+			 fixup simStackPtr: aStackPointer ]
 		ifFalse:
 			[fixup isBackwardBranchFixup
 				ifTrue: "this is the target of a backward branch and
 						 so doesn't have a simStackPtr assigned yet."
-					[fixup simStackPtr: simStackPtr ]
+					[fixup simStackPtr: aStackPointer ]
 				ifFalse:
-					[self assert: fixup simStackPtr = simStackPtr ]].
+					[self assert: fixup simStackPtr = aStackPointer ]].
 	fixup recordBcpc: bytecodePC.
 	^fixup
 ]
@@ -1858,16 +1866,17 @@ StackToRegisterMappingCogit >> genJumpTo: targetBytecodePC [
 	(eventualTarget > bytecodePC
 	 and: [self stackTopIsBoolean
 	 and: [(generator := self generatorForPC: eventualTarget) isConditionalBranch]])
-		ifTrue:
-			[eventualTarget := eventualTarget
+		ifTrue: [
+			"If the jump target is a conditional branch and we have a boolean, thread the jumps and output a single one"
+			eventualTarget := eventualTarget
 							  + generator numBytes
 							  + (generator isBranchTrue == (self ssTop constant = objectMemory trueObject)
 									ifTrue: [self spanFor: generator at: eventualTarget exts: 0 in: methodObj]
 									ifFalse: [0]).
-			self ssPop: 1.
-			self ssFlushTo: simStackPtr.
-			fixup := self ensureFixupAt: eventualTarget.
-			self ssPop: -1]
+			"Since we are threading the jumps, spill everything above the top.
+			Leave the top for the next instruction that is assuming that this JUMP instruction did not consume the top"
+			self ssFlushTo: simStackPtr - 1.
+			fixup := self ensureFixupAt: eventualTarget withStackPointer: simStackPtr - 1]
 		ifFalse:
 			[self ssFlushTo: simStackPtr.
 			fixup := self ensureFixupAt: eventualTarget].
