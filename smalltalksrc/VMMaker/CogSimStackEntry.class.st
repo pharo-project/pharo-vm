@@ -233,14 +233,6 @@ CogSimStackEntry >> maybeConstant [
 ]
 
 { #category : #'compile abstract instructions' }
-CogSimStackEntry >> moveToReg: reg [
-
-	spilled
-		ifTrue: [ cogit PopR: reg ]
-		ifFalse: [ self copyToReg: reg ]
-]
-
-{ #category : #'compile abstract instructions' }
 CogSimStackEntry >> moveToVectorReg: reg [
 	self assert: type = SSVectorRegister.
 	spilled
