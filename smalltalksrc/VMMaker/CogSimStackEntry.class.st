@@ -92,6 +92,13 @@ CogSimStackEntry class >> structTypeName [
 ]
 
 { #category : #accessing }
+CogSimStackEntry >> base [
+
+	self assert: (self type == SSSpill or: [self type == SSBaseOffset]).
+	^ register
+]
+
+{ #category : #accessing }
 CogSimStackEntry >> bcptr [
 	"Answer the value of bcptr"
 
@@ -248,7 +255,7 @@ CogSimStackEntry >> moveToVectorReg: reg [
 { #category : #accessing }
 CogSimStackEntry >> offset [
 	"Answer the value of offset"
-	self assert: type = SSBaseOffset.
+	self assert: (self type == SSSpill or: [self type == SSBaseOffset]).
 	^offset
 ]
 

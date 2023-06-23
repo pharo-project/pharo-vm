@@ -3394,6 +3394,13 @@ StackToRegisterMappingCogit >> initSimStackForFramelessMethod: startpc [
 	simSpillBase := methodOrBlockNumArgs + 1.
 ]
 
+{ #category : #'simulation stack' }
+StackToRegisterMappingCogit >> initSimStackPointer: wat [
+
+	simStackPtr := methodOrBlockNumTemps.
+	simSpillBase := methodOrBlockNumTemps + 1
+]
+
 { #category : #'compile abstract instructions' }
 StackToRegisterMappingCogit >> initializeFixup: fixup [
 	"Initialize a fixup.  These are the targets of backward branches.  A backward branch fixup's
@@ -4581,6 +4588,12 @@ StackToRegisterMappingCogit >> ssSelfDescriptor [
 	<returnTypeC: #SimStackEntry>
 	<inline: true>
 	^simStack at: 0
+]
+
+{ #category : #'simulation stack' }
+StackToRegisterMappingCogit >> ssSize [
+	
+	^ simStackPtr + 1
 ]
 
 { #category : #'simulation stack' }
