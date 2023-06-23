@@ -4462,10 +4462,13 @@ StackToRegisterMappingCogit >> ssPop: n popSpilled: popSpilled [
 { #category : #'mapped inline primitive generators - vectorial' }
 StackToRegisterMappingCogit >> ssPopTopToReg: aRegister [
 	
-	"Move to reg pops from the runtime stack if spilled!"
-	self ssTop copyToReg: aRegister.
-	"So here we only need to pop the simulated stack"
-	self ssPop: 1
+	"Peephole optimisation: generate always a single instruction.
+	If the top is spilled, generate just a pop instruction. Otherwise a copy/load"
+	self ssTop spilled
+		ifTrue: [ self PopR: aRegister ]
+		ifFalse: [ self ssTop copyToReg: aRegister ].
+	"No need to spill from the physical stack, we already did it"
+	self ssPop: 1 popSpilled: false.
 ]
 
 { #category : #'mapped inline primitive generators - vectorial' }
