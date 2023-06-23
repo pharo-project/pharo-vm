@@ -2376,19 +2376,19 @@ Cogit >> MoveC32: wordConstant R: reg [
 ]
 
 { #category : #'abstract instructions' }
-Cogit >> MoveCf32: constantFloat32 Rs: register [
+Cogit >> MoveCf32: constantFloat32 Rs: reg [
 	<inline: true>
 	<var: #constantFloat32 type: #float>
 	<returnTypeC: #'AbstractInstruction *'>
-	^ backEnd genMoveCf32: constantFloat32 Rs: register
+	^ backEnd genMoveCf32: constantFloat32 Rs: reg
 ]
 
 { #category : #'abstract instructions' }
-Cogit >> MoveCf64: constantFloat64 Rd: register [
+Cogit >> MoveCf64: constantFloat64 Rd: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #constantFloat64 type: #double>
-	^ backEnd genMoveCf64: constantFloat64 Rd: register
+	^ backEnd genMoveCf64: constantFloat64 Rd: reg
 ]
 
 { #category : #'abstract instructions' }
@@ -6412,7 +6412,7 @@ Cogit >> fillInOPICHeader: pic numArgs: numArgs selector: selector [
 	pic objectHeader: 0.
 	pic blockSize: openPICSize.
 	"pic methodObject: 0.""This is also the nextOpenPIC link so don't initialize it"
-	methodZone addToOpenPICList: pic.
+	methodZone addToMegamorphicICList: pic.
 	pic methodHeader: 0.
 	pic selector: selector.
 	pic cmNumArgs: numArgs.
@@ -11762,15 +11762,15 @@ Cogit >> targetMethodAndSendTableFor: entryPoint annotation: annotation into: bi
 	"Evaluate binaryBlock with the targetMethod and relevant send table for a linked-send
 	 to entryPoint.  Do so based on the alignment of entryPoint."
 
-	<var: #targetMethod type: #'CogMethod *'>
-
-	self offsetAndSendTableFor: entryPoint
+	self
+		offsetAndSendTableFor: entryPoint
 		annotation: annotation
-		into: [:offset :sendTable| | targetCogCode |
-			targetCogCode := self cCoerceSimple: entryPoint - offset to: #'CogMethod *'.
-			binaryBlock
-				value: targetCogCode
-				value: sendTable]
+		into: [ :offset :sendTable |
+			| targetCogCode |
+			targetCogCode := self
+				                 cCoerceSimple: entryPoint - offset
+				                 to: #'CogMethod *'.
+			binaryBlock value: targetCogCode value: sendTable ]
 ]
 
 { #category : #debugging }

@@ -617,7 +617,8 @@ Class {
 		'unscannedEphemeronsQueueInitialSize',
 		'permSpaceFreeStart',
 		'fromOldSpaceRememberedSet',
-		'fromPermSpaceRememberedSet'
+		'fromPermToOldSpaceRememberedSet',
+		'fromPermToNewSpaceRememberedSet'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -635,7 +636,8 @@ Class {
 		'ObjStackPageSlots',
 		'ObjStackTopx',
 		'OldRememberedSetRootIndex',
-		'PermRememberedSetRootIndex',
+		'PermToNewRememberedSetRootIndex',
+		'PermToOldRememberedSetRootIndex',
 		'RemapBufferSize',
 		'WeaklingStackRootIndex'
 	],
@@ -738,7 +740,8 @@ SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
 	aCCodeGenerator 
 		var: #memoryMap type: #'VMMemoryMap *';
 		var: #fromOldSpaceRememberedSet type: #'VMRememberedSet *';
-		var: #fromPermSpaceRememberedSet type: #'VMRememberedSet *'		
+		var: #fromPermToOldSpaceRememberedSet type: #'VMRememberedSet *';
+		var: #fromPermToNewSpaceRememberedSet type: #'VMRememberedSet *'
 ]
 
 { #category : #translation }
@@ -790,7 +793,8 @@ SpurMemoryManager class >> initialize [
 	WeaklingStackRootIndex := MarkStackRootIndex + 1.
 	MournQueueRootIndex := MarkStackRootIndex + 2.
 	OldRememberedSetRootIndex := MarkStackRootIndex + 3.
-	PermRememberedSetRootIndex := MarkStackRootIndex + 4.
+	PermToOldRememberedSetRootIndex := MarkStackRootIndex + 4.
+	PermToNewRememberedSetRootIndex := MarkStackRootIndex + 5.
 
 	MarkObjectsForEnumerationPrimitives := false.
 
@@ -1801,6 +1805,13 @@ SpurMemoryManager >> allPermSpaceObjectsDo: aBlockClosure [
 			currentObject := self objectAfter: currentObject limit: permSpaceFreeStart ].
 ]
 
+{ #category : #'gc - global' }
+SpurMemoryManager >> allPermSpaceObjectsUnmarked [
+	self allPermSpaceObjectsDo: 
+		[:o| (self isMarked: o) ifTrue: [bogon := o. ^false]].
+	^true
+]
+
 { #category : #'weakness and ephemerality' }
 SpurMemoryManager >> allStrongSlotsOfWeaklingAreMarked: aWeakling [
 	"N.B. generateToByDoLimitExpression:negative:on: guards against (unsigned)0 - 1 going +ve"
@@ -2285,6 +2296,23 @@ SpurMemoryManager >> allocatePinnedSlots: nSlots [
 	obj ifNotNil:
 		[self fillObj: obj numSlots: nSlots with: 0].
 	^obj
+]
+
+{ #category : #initialization }
+SpurMemoryManager >> allocateRememberedSetWithRootIndex: rootIndex [
+
+	<returnTypeC: #'VMRememberedSet *'>
+	<var: #newRememberedSet type: #'VMRememberedSet *'>
+
+	| newRememberedSet |
+
+	newRememberedSet := self cCoerce: (self malloc:
+			                              (self sizeof: VMRememberedSet))
+		                             to: #'VMRememberedSet *'.
+
+	newRememberedSet rootIndex: rootIndex.
+	
+	^ newRememberedSet
 ]
 
 { #category : #allocation }
@@ -3392,7 +3420,7 @@ SpurMemoryManager >> checkOkayYoungReferrer: obj [
 		[ self print: 'remembered bit is not set in '; printHex: obj; cr. ^false ].
 
 	(self getFromOldSpaceRememberedSet isInRememberedSet: obj) ifTrue: [^true].
-	(self getFromPermSpaceRememberedSet isInRememberedSet: obj) ifTrue: [^true].
+	(self getFromPermToNewSpaceRememberedSet isInRememberedSet: obj) ifTrue: [^true].
 
 	self printHex: obj; print: ' has remembered bit set but is not in remembered set'; cr.
 
@@ -3805,6 +3833,41 @@ SpurMemoryManager >> classTagForSpecialObjectsIndex: splObjIndex compactClassInd
 	^compactClassIndex
 ]
 
+{ #category : #'perm - space' }
+SpurMemoryManager >> cleanUpPermToOldSpaceRememeberedSet [
+
+	| destIndex sourceIndex referrer |
+	
+	<inline:false>
+	
+	sourceIndex := destIndex := 0.
+
+	"We iterate the remembered set to remove the objects that no longer points to old space.
+	 As it might have duplicates, I use the mark bit to see if I have already this object."
+
+	self assert: self allPermSpaceObjectsUnmarked.
+	
+	[sourceIndex < self getFromPermToOldSpaceRememberedSet rememberedSetSize] whileTrue:
+		[	referrer := self getFromPermToOldSpaceRememberedSet objectAt: sourceIndex.
+
+			self assert: ((self hasYoungReferents: referrer) not or:[self isRemembered: referrer]).
+
+			((self isMarked: referrer) not and: [self hasOldReferents: referrer])
+				ifTrue:[
+						 self getFromPermToOldSpaceRememberedSet save: referrer at: destIndex.
+						 self setIsMarkedOf: referrer to: true. 
+						 destIndex := destIndex + 1].
+		 sourceIndex := sourceIndex + 1].
+	
+	self getFromPermToOldSpaceRememberedSet setRememberedSetSize: destIndex.
+
+	self getFromPermToOldSpaceRememberedSet rememberedSetWithIndexDo:[ :oop :i | 
+		self setIsMarkedOf: oop to: false ].
+	
+	self assert: self allPermSpaceObjectsUnmarked.
+
+]
+
 { #category : #'debug support' }
 SpurMemoryManager >> clearLeakMapAndMapAccessibleFreeSpace [
 	"Perform an integrity/leak check using the heapMap.  Set a bit at each free chunk's header."
@@ -3884,7 +3947,7 @@ SpurMemoryManager >> clone: objOop [
 					withValue: oop].
 			(hasYoung
 			 and: [(memoryMap isYoungObject: newObj) not]) ifTrue:
-				[self getFromOldSpaceRememberedSet doRemember: newObj]]
+				[self getFromOldSpaceRememberedSet remember: newObj]]
 		ifFalse:
 			[0 to: numSlots - 1 do:
 				[:i|
@@ -3895,7 +3958,7 @@ SpurMemoryManager >> clone: objOop [
 				[coInterpreter maybeFixClonedCompiledMethod: newObj.
 				 ((memoryMap isOldObject: newObj)
 				  and: [(memoryMap isYoungObject: objOop) or: [self isRemembered: objOop]]) ifTrue:
-					[self getFromOldSpaceRememberedSet doRemember: newObj]]].
+					[self getFromOldSpaceRememberedSet remember: newObj]]].
 	^newObj
 ]
 
@@ -3936,7 +3999,7 @@ SpurMemoryManager >> cloneInOldSpace: objOop forPinning: forPinning [
 					ofObject: newObj
 					withValue: oop].
 			hasYoung ifTrue:
-				[self getFromOldSpaceRememberedSet doRemember: newObj]]
+				[self getFromOldSpaceRememberedSet remember: newObj]]
 		ifFalse:
 			[0 to: numSlots - 1 do:
 				[:i|
@@ -3946,7 +4009,7 @@ SpurMemoryManager >> cloneInOldSpace: objOop forPinning: forPinning [
 			 fmt >= self firstCompiledMethodFormat ifTrue:
 				[coInterpreter maybeFixClonedCompiledMethod: newObj.
 				 ((memoryMap isYoungObject: objOop) or: [self isRemembered: objOop]) ifTrue:
-					[self getFromOldSpaceRememberedSet doRemember: newObj]]].
+					[self getFromOldSpaceRememberedSet remember: newObj]]].
 	(hash := self rawHashBitsOf: objOop) ~= 0 ifTrue:
 		[self setHashBitsOf: newObj to: hash].
 	(self isObjImmutable: objOop) ifTrue:
@@ -4314,9 +4377,10 @@ SpurMemoryManager >> doBecome: obj1 to: obj2 copyHash: copyHashFlag [
 ]
 
 { #category : #'private - perm space' }
-SpurMemoryManager >> doMoveToPermSpace: objOop [ 
+SpurMemoryManager >> doMoveToPermSpace: objOop addToRememberedSet: shouldAddToRememberedSet [ 
 
-	| numSlots numPointerSlots fmt newObj shouldBeRememberedInPermSpace hash |
+	| numSlots numPointerSlots fmt newObj hash refersNewSpace refersOldSpace|
+
 	numSlots := self numSlotsOf: objOop.
 	numPointerSlots := self numPointerSlotsOf: objOop.
 
@@ -4332,7 +4396,8 @@ SpurMemoryManager >> doMoveToPermSpace: objOop [
 		self primitiveFailFor: PrimErrNoMemory.
 		^ nil ].
 
-	shouldBeRememberedInPermSpace := false.
+	refersNewSpace := false.
+	refersOldSpace := false.
 
 	0 to: numSlots - 1 do: [ :i | | referenced |
 		referenced := self fetchPointer: i ofObject: objOop.
@@ -4345,11 +4410,14 @@ SpurMemoryManager >> doMoveToPermSpace: objOop [
 						(self isForwarded: referenced)
 							ifTrue: [ referenced := self followForwarded: referenced ].				
 
-					(shouldBeRememberedInPermSpace not
-					 and: [ (self isFixedKnownObject: referenced) not 
-							and: [(self getMemoryMap isYoungObject: referenced) or: [ 
-									self getMemoryMap isOldObject: referenced ]]])
-						ifTrue: [ shouldBeRememberedInPermSpace := true ]].
+						"If the object already refers to new space, we don't check anymore"
+						(refersNewSpace not and: [(self isFixedKnownObject: referenced) not])
+							ifTrue: [
+								(self getMemoryMap isYoungObject: referenced)
+									ifTrue: [ refersNewSpace := true ]
+									ifFalse: [ (self getMemoryMap isOldObject: referenced)
+											ifTrue: [ refersOldSpace := true ] ]]
+			].
 			
 
 		"We check only if the object has not be already detected."
@@ -4362,8 +4430,11 @@ SpurMemoryManager >> doMoveToPermSpace: objOop [
 	(self isRemembered: objOop) ifTrue: [ 
 		fromOldSpaceRememberedSet forgetObject: objOop ].
 
-	shouldBeRememberedInPermSpace 
-		ifTrue: [ fromPermSpaceRememberedSet doRemember: newObj ].
+	shouldAddToRememberedSet 
+		ifTrue: [ 
+			refersNewSpace 
+				ifTrue: [ self getFromPermToNewSpaceRememberedSet remember: newObj ]
+				ifFalse: [ refersOldSpace ifTrue: [ self getFromPermToOldSpaceRememberedSet rememberWithoutMarkingAsRemembered: newObj ] ]].
 
 	(hash := self rawHashBitsOf: objOop) ~= 0 ifTrue: [ 
 		self setHashBitsOf: newObj to: hash ].
@@ -4511,22 +4582,15 @@ SpurMemoryManager >> endianness [
 { #category : #initialization }
 SpurMemoryManager >> ensureAuxiliarStructures [
 
-	self 
-		cCode: [ 
-			fromOldSpaceRememberedSet isNil ifTrue: [	
-				fromOldSpaceRememberedSet := self 
-					cCoerce: (self malloc: (self sizeof: VMRememberedSet))
-					to: #'VMRememberedSet *'.
-				
-				fromOldSpaceRememberedSet rootIndex: OldRememberedSetRootIndex].
-			
-			fromPermSpaceRememberedSet isNil ifTrue: [ 	
-				fromPermSpaceRememberedSet := self 
-					cCoerce: (self malloc: (self sizeof: VMRememberedSet))
-					to: #'VMRememberedSet *'.
-					
-				fromPermSpaceRememberedSet rootIndex: PermRememberedSetRootIndex]].
+	self cCode: [
+		fromOldSpaceRememberedSet ifNil: [
+			fromOldSpaceRememberedSet := self allocateRememberedSetWithRootIndex: OldRememberedSetRootIndex ].
 
+		fromPermToOldSpaceRememberedSet ifNil: [
+			fromPermToOldSpaceRememberedSet := self allocateRememberedSetWithRootIndex: PermToOldRememberedSetRootIndex ].
+
+		fromPermToNewSpaceRememberedSet ifNil: [
+			fromPermToNewSpaceRememberedSet := self allocateRememberedSetWithRootIndex: PermToNewRememberedSetRootIndex ] ]
 ]
 
 { #category : #'class table' }
@@ -4727,7 +4791,9 @@ SpurMemoryManager >> expungeDuplicateAndUnmarkedClasses: expungeUnmarked [
 				ifFalse:
 					[((expungeUnmarked and: [(self isMarkedOrPermanent: classOrNil) not])
 					   or: [(self rawHashBitsOf: classOrNil) ~= classIndex]) ifTrue:
-						[self storePointerUnchecked: j
+						[
+						 self deny: (self isPermanent: classOrNil).
+						 self storePointerUnchecked: j
 							ofObject: classTablePage
 							withValue: nilObj.
 						 "but if it is marked, it should still be in the table at its correct index."
@@ -5787,12 +5853,6 @@ SpurMemoryManager >> fromOldSpaceRememberedSet [
 	^ fromOldSpaceRememberedSet
 ]
 
-{ #category : #accessing }
-SpurMemoryManager >> fromPermSpaceRememberedSet [
-
-	^ fromPermSpaceRememberedSet
-]
-
 { #category : #'gc - global' }
 SpurMemoryManager >> fullGC [
 	"Perform a full eager compacting GC.  Answer the size of the largest free chunk."
@@ -5843,12 +5903,21 @@ SpurMemoryManager >> getFromOldSpaceRememberedSet [
 ]
 
 { #category : #accessing }
-SpurMemoryManager >> getFromPermSpaceRememberedSet [
+SpurMemoryManager >> getFromPermToNewSpaceRememberedSet [
 	
 	<api>
 	<returnTypeC: #'VMRememberedSet *'> 	
 	
-	^ fromPermSpaceRememberedSet 
+	^ fromPermToNewSpaceRememberedSet 
+]
+
+{ #category : #accessing }
+SpurMemoryManager >> getFromPermToOldSpaceRememberedSet [
+	
+	<api>
+	<returnTypeC: #'VMRememberedSet *'> 	
+	
+	^ fromPermToOldSpaceRememberedSet 
 ]
 
 { #category : #accessing }
@@ -6007,6 +6076,14 @@ SpurMemoryManager >> hasIdentityHash: objOop [
 		inSmalltalk: [(self rawHashBitsOf: objOop) ~= 0]
 ]
 
+{ #category : #'object testing' }
+SpurMemoryManager >> hasOldReferents: objOop [
+
+	<inline: false>
+
+	^ self hasReferents:  objOop satisfying: [ :referenced | (self isFixedKnownObject: referenced) not and: [self isOld: referenced] ]
+]
+
 { #category : #'header access' }
 SpurMemoryManager >> hasOverflowHeader: objOop [
 	^(self rawNumSlotsOf: objOop) = self numSlotsMask
@@ -6025,6 +6102,25 @@ SpurMemoryManager >> hasPointerFieldsNonImm: oop [
 	^self isAnyPointerFormat: (self formatOf: oop)
 ]
 
+{ #category : #'object testing' }
+SpurMemoryManager >> hasReferents: objOop satisfying: aCondition [
+
+	0 to: (self numPointerSlotsOf: objOop) - 1 do: [ :i |
+		| referenced |
+		referenced := self fetchPointer: i ofObject: objOop.
+
+		((self isNonImmediate: referenced) 
+				and: [self isInObjectMemory: referenced ]) ifTrue: [  
+			(self isOopForwarded: referenced) 
+				ifTrue: [ referenced := self followForwarded: referenced.
+					self storePointer: i ofObject: objOop withValue: referenced ]. 
+
+			(aCondition value: referenced) 
+				ifTrue: [ ^ true ]] ].
+
+	^ false
+]
+
 { #category : #'interpreter access' }
 SpurMemoryManager >> hasSixtyFourBitImmediates [
 	"The V3 64-bit memory manager has 64-bit oops, but its SmallIntegers only have
@@ -6034,12 +6130,10 @@ SpurMemoryManager >> hasSixtyFourBitImmediates [
 
 { #category : #'object testing' }
 SpurMemoryManager >> hasYoungReferents: objOop [
-	0 to: (self numPointerSlotsOf: objOop) - 1 do:
-		[:i| | oop |
-		oop := self fetchPointer: i ofObject: objOop.
-		(self isYoung: oop) ifTrue:
-			[^true]].
-	^false
+
+	<inline: false>
+
+	^ self hasReferents:  objOop satisfying: [ :referenced | self isYoung: referenced ]
 ]
 
 { #category : #'header access' }
@@ -6165,6 +6259,8 @@ SpurMemoryManager >> ifOopInvalidForBecome: oop errorCodeInto: aBlock [
 	(self isPinned: oop) ifTrue:
 		[^aBlock value: PrimErrObjectIsPinned].
 	(self isObjImmutable: oop) ifTrue:
+		[^aBlock value: PrimErrNoModification].
+	(memoryMap isPermanentObject: oop) ifTrue:
 		[^aBlock value: PrimErrNoModification]
 ]
 
@@ -6460,7 +6556,8 @@ SpurMemoryManager >> initialize [
 
 	"we can initialize things that are virtual in C."
 	fromOldSpaceRememberedSet := VMRememberedSet new manager: self; rootIndex: OldRememberedSetRootIndex; yourself.
-	fromPermSpaceRememberedSet := VMRememberedSet new manager: self; rootIndex: PermRememberedSetRootIndex; yourself.
+	fromPermToOldSpaceRememberedSet := VMRememberedSet new manager: self; rootIndex: PermToOldRememberedSetRootIndex; yourself.
+	fromPermToNewSpaceRememberedSet := VMRememberedSet new manager: self; rootIndex: PermToNewRememberedSetRootIndex; yourself.
 
 	scavenger := SpurGenerationScavenger simulatorClass new manager: self; yourself.
 	segmentManager := SpurSegmentManager simulatorClass new manager: self; yourself.
@@ -6648,9 +6745,9 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	self initializeNewSpaceVariables.
 
 	fromOldSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
-	fromPermSpaceRememberedSet initializeRememberedSetShouldStartEmpty: false.
-	self assert: self isPermSpaceRememberedSetSane.
-
+	fromPermToOldSpaceRememberedSet initializeRememberedSetShouldStartEmpty: false.
+	fromPermToNewSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
+	
 	segmentManager checkSegments.
 	compactor biasForGC.
 
@@ -7557,46 +7654,48 @@ SpurMemoryManager >> isPermSpaceRememberedSetSane [
 
 	<inline: false>
 	<api>
-	
-	| numPointerSlots referenced mustBeRemembered |
-	
+		
+	| refersNewSpace refersOldSpace isInPermToNewRememberedSet isInPermToOldRememberedSet isValid|
+
+	isValid := true.
+
 	self allPermSpaceObjectsDo: [ :objOop |
-		numPointerSlots := self numPointerSlotsOf: objOop.
-		mustBeRemembered := false.
 		
-		0 to: numPointerSlots - 1 do: [ :index |
-			referenced := self fetchPointer: index ofObject: objOop.
-			(self isInObjectMemory: referenced) ifTrue: [  
-				(self isOopForwarded: referenced) ifTrue: [ 
-					referenced := self followForwarded: referenced ]. 
-		
-				(((self isFixedKnownObject: referenced) not 
-					and: [ self isNonImmediate: referenced ])
-					and: [(self getMemoryMap isYoungObject: referenced) or: [ self getMemoryMap isOldObject: referenced ]])
-					ifTrue: [ mustBeRemembered := true]]].
-			
-			mustBeRemembered ifTrue: [ 
-				(self getFromPermSpaceRememberedSet isInRememberedSet: objOop)
-					ifFalse: [ 
-						self logError: 'Offending Object: %p' _: objOop.
-						self error: 'Object should be in remembered set'. ].
+		refersNewSpace := self hasYoungReferents: objOop.	
+		refersOldSpace := self hasOldReferents: objOop.
+	
+		isInPermToNewRememberedSet := self getFromPermToNewSpaceRememberedSet isInRememberedSet: objOop.
+		isInPermToOldRememberedSet := self getFromPermToOldSpaceRememberedSet isInRememberedSet: objOop.
+
+		(isInPermToNewRememberedSet and: [ refersNewSpace or: refersOldSpace ])
+			ifTrue: [ 
 				(self isRemembered: objOop) 
 					ifFalse: [ 
+						isValid := false.
 						self logError: 'Offending Object: %p' _: objOop.						
-						self error: 'Object should be marked as remembered' ]]
-			ifFalse: [
-				(self getFromPermSpaceRememberedSet isInRememberedSet: objOop)
-					ifTrue: [ 
+						self error: 'Object should be marked as remembered' ]].
+
+		(refersNewSpace and: [ isInPermToNewRememberedSet not ])
+			ifTrue: [ 
+						isValid := false.
 						self logError: 'Offending Object: %p' _: objOop.
-						self error: 'Object should not be in remembered set'. ].
-				(self isRemembered: objOop) 
-					ifTrue: [ 
+						self error: 'Object should be in remembered set (Perm to New)' ].
+
+		(isInPermToNewRememberedSet and: [refersNewSpace not and: [ refersOldSpace not ]])
+			ifTrue: [ 
+						isValid := false.
 						self logError: 'Offending Object: %p' _: objOop.
-						self error: 'Object should not be marked as remembered' ]				
-			].
+						self error: 'Object should not be in remembered set (Perm to New)'. ].
+
+		(refersOldSpace and: [ isInPermToNewRememberedSet not and: [isInPermToOldRememberedSet not] ])
+			ifTrue: [ 
+						isValid := false.
+						self logError: 'Offending Object: %p' _: objOop.
+						self error: 'Object should not be in remembered set (Perm to Old)'. ].
+
 		].
 	
-	^ true.
+	^ isValid.
 ]
 
 { #category : #'object testing' }
@@ -8407,8 +8506,10 @@ SpurMemoryManager >> markAndShouldScan: objOop [
 	"if markAndTrace: is to follow and eliminate forwarding pointers
 	 in its scan it cannot be handed an r-value which is forwarded."
 	self assert: (self isForwarded: objOop) not.
+	
 	(self isMarked: objOop) ifTrue:
-		[^false].
+		[	self assert: (memoryMap isPermanentObject: objOop) not.
+			^false].
 	
 	"If it is a permanent object I will not mark it"
 	(memoryMap isPermanentObject: objOop)
@@ -8488,6 +8589,9 @@ SpurMemoryManager >> markAndTraceExtraRoots [
 
 { #category : #'gc - global' }
 SpurMemoryManager >> markAndTraceHiddenRoots [
+
+	<inline:false>
+
 	"The hidden roots hold both the class table pages and the obj stacks,
 	 and hence need special treatment.  The obj stacks must be marked
 	 specially; their pages must be marked, but only the contents of the
@@ -8502,7 +8606,11 @@ SpurMemoryManager >> markAndTraceHiddenRoots [
 	self markAndTraceObjStack: markStack andContents: false.
 	self markAndTraceObjStack: weaklingStack andContents: false.
 	self markAndTraceObjStack: mournQueue andContents: true.
-	self markAndTraceRememberedSet: fromPermSpaceRememberedSet.
+
+	self cleanUpPermToOldSpaceRememeberedSet.
+	
+	self markAndTraceRememberedSet: self getFromPermToOldSpaceRememberedSet.
+	self markAndTraceRememberedSet: self getFromPermToNewSpaceRememberedSet.
 
 	self setIsMarkedOf: self nilObject to: true.
 	self setIsMarkedOf: self trueObject to: true.
@@ -8555,6 +8663,7 @@ SpurMemoryManager >> markAndTraceObjStack: stackOrNil andContents: markAndTraceC
 SpurMemoryManager >> markAndTraceRememberedSet: aRememberedSet [
 
 	| rememberedSetOop |
+	<var: #aRememberedSet type: #'VMRememberedSet *'>
 
 	rememberedSetOop := aRememberedSet objectOop.
 	self setIsMarkedOf: rememberedSetOop to: true.
@@ -8635,7 +8744,7 @@ SpurMemoryManager >> markLoopFrom: objOop [
 				                   | key |
 				                   (self isImmediate:
 					                    (key := self keyOfEphemeron: objToScan)) or: [
-					                   self isMarked: key ] ])
+					                   self isMarkedOrPermanent: key ] ])
 				                  ifTrue: [ self numSlotsOf: objToScan ]
 				                  ifFalse: [
 				                  self numStrongSlotsOfInephemeral: objToScan ].
@@ -9016,16 +9125,15 @@ SpurMemoryManager >> moveToPermSpace: objOop [
 
 	<inline: false>
 	| newObj |
-
 	"Clearing the flag for all"
 	becomeEffectsFlags := 0.
 
-	(self isValidToMoveToPermSpace: objOop) ifFalse: [ 
-		self primitiveFailFor: PrimErrBadReceiver. 
-			^ nil  ].
+	(self isValidToMoveToPermSpace: objOop) ifFalse: [
+		self primitiveFailFor: PrimErrBadReceiver.
+		^ nil ].
 
 	"Clonning in permSpace"
-	newObj := self doMoveToPermSpace: objOop.
+	newObj := self doMoveToPermSpace: objOop addToRememberedSet: true.
 
 	self doAfterMoveToPermSpace.
 
@@ -9042,30 +9150,30 @@ SpurMemoryManager >> moveToPermSpaceInBulk: anArrayOop [
 	becomeEffectsFlags := 0.
 
 	size := self numSlotsOf: anArrayOop.
-	
-	0 to: size - 1 do: [ :index | 
-		
-		objOop := self fetchPointer: index ofObject: anArrayOop.
-		
-		(self isValidToMoveToPermSpace: objOop) ifFalse: [ 
-			self primitiveFailFor: PrimErrBadReceiver. 
-				^ nil  ]].
 
-
-	0 to: size - 1 do: [ :index | 
+	0 to: size - 1 do: [ :index |
 		objOop := self fetchPointer: index ofObject: anArrayOop.
 
-		(self getMemoryMap isPermanentObject: objOop)
-			ifFalse: [
-				"Clonning in permSpace"
-				newObj := self doMoveToPermSpace: objOop.
-				newObj ifNil: [ ^ anArrayOop ].
-			
-				self storePointer: index ofObject: anArrayOop withValue: newObj]].
+		(self isValidToMoveToPermSpace: objOop) ifFalse: [
+			self primitiveFailFor: PrimErrBadReceiver.
+			^ nil ] ].
+
+
+	0 to: size - 1 do: [ :index |
+		objOop := self fetchPointer: index ofObject: anArrayOop.
+
+		(self getMemoryMap isPermanentObject: objOop) ifFalse: [ 
+			"Clonning in permSpace - We don't add to the remembered set, this will be done after all is moved. To minimize the size of the remembered set"
+			newObj := self doMoveToPermSpace: objOop addToRememberedSet: false.
+			newObj ifNil: [ ^ anArrayOop ].
+
+			self storePointer: index ofObject: anArrayOop withValue: newObj ] ].
 
 	self followForwardedObjectFields: anArrayOop toDepth: 1.
+	self recreateFromPermSpaceRememberedSet.
 
-	becomeEffectsFlags := BecamePointerObjectFlag + BecameActiveClassFlag bitOr: BecameCompiledMethodFlag.
+	becomeEffectsFlags := BecamePointerObjectFlag + BecameActiveClassFlag
+		                      bitOr: BecameCompiledMethodFlag.
 	self doAfterMoveToPermSpace.
 
 	^ anArrayOop
@@ -9941,14 +10049,19 @@ SpurMemoryManager >> pastSpaceStart [
 	^pastSpaceStart
 ]
 
-{ #category : #scavenger }
-SpurMemoryManager >> permRememberedSetObj [
-	^self fetchPointer: PermRememberedSetRootIndex ofObject: hiddenRootsObj
-]
-
 { #category : #accessing }
 SpurMemoryManager >> permSpaceFreeStart [
 	^ permSpaceFreeStart
+]
+
+{ #category : #scavenger }
+SpurMemoryManager >> permToNewRememberedSetObj [
+	^self fetchPointer: PermToNewRememberedSetRootIndex ofObject: hiddenRootsObj
+]
+
+{ #category : #scavenger }
+SpurMemoryManager >> permToOldRememberedSetObj [
+	^self fetchPointer: PermToOldRememberedSetRootIndex ofObject: hiddenRootsObj
 ]
 
 { #category : #'primitive support' }
@@ -10109,7 +10222,7 @@ SpurMemoryManager >> possibleOldObjectStoreInto: destObj [
 
 	<inline: true>
 	(self isRemembered: destObj) ifFalse: [ 
-		fromOldSpaceRememberedSet doRemember: destObj ]
+		fromOldSpaceRememberedSet remember: destObj ]
 ]
 
 { #category : #'store check' }
@@ -10126,10 +10239,12 @@ SpurMemoryManager >> possiblePermObjectStoreInto: destObj value: valueObj [
 	(self isInObjectMemory: valueObj)
 		ifFalse: [ ^ self ].
 	
+	(self isRemembered: destObj)
+		ifTrue: [ ^ self ].
+	
 	(self isPermanent: destObj) ifTrue: [ 
-		(self isPermanent: valueObj) ifFalse: [ 
-			(self isRemembered: destObj) ifFalse: [ 
-				fromPermSpaceRememberedSet doRemember: destObj ] ] ]
+		(self getMemoryMap isPermanentObject: valueObj) ifFalse: [ 
+				self getFromPermToNewSpaceRememberedSet remember: destObj ] ]
 ]
 
 { #category : #'become implementation' }
@@ -11018,6 +11133,52 @@ SpurMemoryManager >> readUINT8AtPointer: aCArrayAccessor [
 	^ intPtr at: 0
 ]
 
+{ #category : #'perm - space' }
+SpurMemoryManager >> recreateFromPermSpaceRememberedSet [
+
+	self getFromPermToOldSpaceRememberedSet emptyRememberedSet.
+	self getFromPermToNewSpaceRememberedSet emptyRememberedSet.
+
+	self allPermSpaceObjectsDo: [ :aPermSpaceObject | 
+			| slotIndex referenced numPointerSlots refersNewSpace refersOldSpace |
+	
+		"We clear the bit of all remembered objects, it will be recalculated"
+		self setIsRememberedOf: aPermSpaceObject to: false.	
+		numPointerSlots := self numPointerSlotsOf: aPermSpaceObject.	
+		
+		refersNewSpace := false.
+		refersOldSpace := false.
+	
+		slotIndex := 0.
+
+		"If the object already refers to new space, we don't check anymore"
+		[ refersNewSpace not and: [slotIndex < numPointerSlots]  ]
+			whileTrue: [ 
+				referenced := self fetchPointer: slotIndex ofObject: aPermSpaceObject.
+
+				"We check if we have an object in the pointer slots of objOop"
+					((self isNonImmediate: referenced) and: [self isInObjectMemory: referenced ])
+						ifTrue: [ 
+							(self isForwarded: referenced)
+								ifTrue: [ referenced := self followForwarded: referenced ].
+
+
+							(self isFixedKnownObject: referenced)
+								ifFalse: [
+									(self getMemoryMap isYoungObject: referenced)
+										ifTrue: [ refersNewSpace := true ]
+										ifFalse: [ (self getMemoryMap isOldObject: referenced)
+												ifTrue: [ refersOldSpace := true ] ]].
+								].
+				slotIndex := slotIndex + 1.
+			].
+		
+		refersNewSpace 
+			ifTrue: [ self getFromPermToNewSpaceRememberedSet remember: aPermSpaceObject ]
+			ifFalse: [ refersOldSpace ifTrue: [ self getFromPermToOldSpaceRememberedSet rememberWithoutMarkingAsRemembered: aPermSpaceObject ] ]
+	]
+]
+
 { #category : #compaction }
 SpurMemoryManager >> relocateObjStackForPlanningCompactor: objStack [
 	"Relocate all objStack pages that comprise objStack."
@@ -11097,10 +11258,10 @@ SpurMemoryManager >> rememberObjInCorrectRememberedSet: objOop [
 	<api>
 
 	(self isOld: objOop) ifTrue: [ 
-		^ fromOldSpaceRememberedSet doRemember: objOop ].
+		^ fromOldSpaceRememberedSet remember: objOop ].
 
 	(self isPermanent: objOop) ifTrue: [ 
-		^ fromPermSpaceRememberedSet doRemember: objOop ].
+		^ fromPermToNewSpaceRememberedSet remember: objOop ].
 	
 	^ objOop
 
@@ -11544,7 +11705,6 @@ SpurMemoryManager >> setMaxOldSpaceSize: limit [
 SpurMemoryManager >> setMinimalPermSpaceSize: min [
 
 	<api>
-	<var: #limit type: #usqInt>
 	
 	self ensureMemoryMap.
 	self getMemoryMap minPermSpaceSize: min.
