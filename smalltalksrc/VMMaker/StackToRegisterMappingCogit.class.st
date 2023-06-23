@@ -1755,7 +1755,7 @@ StackToRegisterMappingCogit >> genGenericStorePop: popBoolean slotIndex: slotInd
 	topReg := self 
 				allocateRegForStackEntryAt: 0 
 				notConflictingWith: (self registerMaskFor: destReg). 
-	self ssStorePop: popBoolean toReg: topReg.
+	self ssPop: popBoolean andCopyReg: topReg.
 	^objectRepresentation
 		genStoreSourceReg: topReg
 		slotIndex: slotIndex
@@ -4432,6 +4432,17 @@ StackToRegisterMappingCogit >> ssPop: n [
 ]
 
 { #category : #'simulation stack' }
+StackToRegisterMappingCogit >> ssPop: popBoolean andCopyReg: reg [
+	"Store or pop the top simulated stack entry to a register.
+	N.B.: popToReg: and storeToReg: does not generate anything if 
+	it moves a register to the same register."
+
+	popBoolean
+		ifTrue: [ self ssPopTopToReg: reg ]
+		ifFalse: [ self ssTop copyToReg: reg ]
+]
+
+{ #category : #'simulation stack' }
 StackToRegisterMappingCogit >> ssPopLeBon: n [
 	
 	self ssPopLeBon: n popSpilled: true
@@ -4572,9 +4583,9 @@ StackToRegisterMappingCogit >> ssStoreAndReplacePop: popBoolean toReg: reg [
 	for the top value"
 	| topSpilled |
 	topSpilled := self ssTop spilled.
-	self ssStorePop: (popBoolean or: [topSpilled]) toReg: reg.
+	self ssPop: (popBoolean or: [topSpilled]) andCopyReg: reg.
 	popBoolean ifFalse: 
-		[ topSpilled ifFalse: [self ssPopLeBon: 1 popSpilled: false].
+		[ topSpilled ifFalse: [self ssPopLeBon: 1 popSpilled: false ].
 		self ssPushRegister: reg ].
 ]
 
@@ -4588,19 +4599,8 @@ StackToRegisterMappingCogit >> ssStorePop: popBoolean toPreferredReg: preferredR
 	self ssTop type = SSRegister ifTrue: 
 		[self assert: self ssTop spilled not.
 		 actualReg := self ssTop register].
-	self ssStorePop: popBoolean toReg: actualReg. "generates nothing if ssTop is already in actualReg"
+	self ssPop: popBoolean andCopyReg: actualReg. "generates nothing if ssTop is already in actualReg"
 	^ actualReg
-]
-
-{ #category : #'simulation stack' }
-StackToRegisterMappingCogit >> ssStorePop: popBoolean toReg: reg [
-	"Store or pop the top simulated stack entry to a register.
-	N.B.: popToReg: and storeToReg: does not generate anything if 
-	it moves a register to the same register."
-
-	popBoolean
-		ifTrue: [ self ssPopTopToReg: reg ]
-		ifFalse: [ self ssTop copyToReg: reg ]
 ]
 
 { #category : #'simulation stack' }
