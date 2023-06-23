@@ -256,7 +256,9 @@ Class {
 		'statCompileFullBlockUsecs',
 		'statCompileMethodCount',
 		'statCompileMethodUsecs',
-		'jitCodeZoneWriteEnabled'
+		'jitCodeZoneWriteEnabled',
+		'cePrimReturnEnterCogCode',
+		'cePrimReturnEnterCogCodeProfiling'
 	],
 	#classVars : [
 		'AnnotationConstantNames',
@@ -7791,7 +7793,17 @@ Cogit >> generateEnilopmarts [
 				self genEnilopmartFor: ReceiverResultReg
 					and: ClassReg
 					forCall: true
-					called: 'ceCallCogCodePopReceiverAndClassRegs']
+					called: 'ceCallCogCodePopReceiverAndClassRegs'].
+	
+	self genPrimReturnEnterCogCodeEnilopmart: false.
+	cePrimReturnEnterCogCode := methodZoneBase.
+	self outputInstructionsForGeneratedRuntimeAt: cePrimReturnEnterCogCode.
+	self recordGeneratedRunTime: 'cePrimReturnEnterCogCode' address: cePrimReturnEnterCogCode.
+	
+	self genPrimReturnEnterCogCodeEnilopmart: true.
+	cePrimReturnEnterCogCodeProfiling := methodZoneBase.
+	self outputInstructionsForGeneratedRuntimeAt: cePrimReturnEnterCogCodeProfiling.
+	self recordGeneratedRunTime: 'cePrimReturnEnterCogCodeProfiling' address: cePrimReturnEnterCogCodeProfiling
 ]
 
 { #category : #'generate machine code' }
