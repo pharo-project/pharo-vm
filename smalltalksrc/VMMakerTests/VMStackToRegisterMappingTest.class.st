@@ -30,6 +30,34 @@ VMStackToRegisterMappingTest >> setUp [
 ]
 
 { #category : #tests }
+VMStackToRegisterMappingTest >> testFlushBelowTop [
+
+	| stop stackPointerBefore framePointer |
+	sendAddress := self compile: [
+		cogit ssPushConstant: 1.
+		"Do not flush the constant, and pop it"
+		cogit ssFlushStackExceptTop: 1.
+		cogit ssPop: 1 popSpilled: false.
+		stop := cogit Stop
+	].
+
+	"Push a frame. Saved FP, method, context, receiver"
+	framePointer := self machineSimulator smalltalkStackPointerRegisterValue.
+	self pushAddress: 0.
+	self pushAddress: 0.
+	self pushAddress: 0.
+	self pushAddress: (memory integerObjectOf: 17).
+
+	self machineSimulator framePointerRegisterValue: framePointer.
+	stackPointerBefore := self machineSimulator smalltalkStackPointerRegisterValue.
+	self runFrom: sendAddress until: stop address.
+
+	"The stack top should still be the receiver"
+	self assert: self machineSimulator smalltalkStackPointerRegisterValue equals: stackPointerBefore.
+	self assert: self popAddress equals: (memory integerObjectOf: 17)
+]
+
+{ #category : #tests }
 VMStackToRegisterMappingTest >> testPopConstant [
 
 	cogit ssPushConstant: 1.
@@ -37,6 +65,33 @@ VMStackToRegisterMappingTest >> testPopConstant [
 	
 	self assert: cogit ssSize equals: 1.
 	self assert: cogit ssTop equals: cogit simSelf.
+]
+
+{ #category : #tests }
+VMStackToRegisterMappingTest >> testPopNonSpilledTopToRegister [
+
+	| stop stackPointerBefore framePointer |
+	sendAddress := self compile: [
+		cogit ssPushConstant: 1.
+		cogit ssFlushStackExceptTop: 1.
+		cogit ssPopTopToReg: ReceiverResultReg.
+		stop := cogit Stop
+	].
+
+	"Push a frame. Saved FP, method, context, receiver"
+	framePointer := self machineSimulator smalltalkStackPointerRegisterValue.
+	self pushAddress: 0.
+	self pushAddress: 0.
+	self pushAddress: 0.
+	self pushAddress: (memory integerObjectOf: 17).
+
+	self machineSimulator framePointerRegisterValue: framePointer.
+	stackPointerBefore := self machineSimulator smalltalkStackPointerRegisterValue.
+	self runFrom: sendAddress until: stop address.
+
+	"Nothing should have been left in the stack"
+	self assert: self machineSimulator smalltalkStackPointerRegisterValue equals: stackPointerBefore.
+	self assert: self machineSimulator receiverRegisterValue equals: 1
 ]
 
 { #category : #tests }
@@ -73,6 +128,60 @@ VMStackToRegisterMappingTest >> testPopSpilledConstantShouldPopFromStack [
 
 	"Nothing should have been left in the stack"
 	self assert: self machineSimulator smalltalkStackPointerRegisterValue equals: stackPointerBefore
+]
+
+{ #category : #tests }
+VMStackToRegisterMappingTest >> testPopSpilledConstantWithoutPoppingShouldNotPopFromStack [
+
+	| stop stackPointerBefore framePointer |
+	sendAddress := self compile: [
+		cogit ssPushConstant: 1.
+		cogit ssFlushStack.
+		cogit ssPop: 1 popSpilled: false.
+		stop := cogit Stop
+	].
+
+	"Push a frame. Saved FP, method, context, receiver"
+	framePointer := self machineSimulator smalltalkStackPointerRegisterValue.
+	self pushAddress: 0.
+	self pushAddress: 0.
+	self pushAddress: 0.
+	self pushAddress: (memory integerObjectOf: 17).
+
+	self machineSimulator framePointerRegisterValue: framePointer.
+	stackPointerBefore := self machineSimulator smalltalkStackPointerRegisterValue.
+	self runFrom: sendAddress until: stop address.
+
+	"The constant should have been pushed"
+	self assert: self machineSimulator smalltalkStackPointerRegisterValue equals: stackPointerBefore - memory wordSize.
+	self assert: self popAddress equals: 1
+]
+
+{ #category : #tests }
+VMStackToRegisterMappingTest >> testPopSpilledTopToRegister [
+
+	| stop stackPointerBefore framePointer |
+	sendAddress := self compile: [
+		cogit ssPushConstant: 1.
+		cogit ssFlushStack.
+		cogit ssPopTopToReg: ReceiverResultReg.
+		stop := cogit Stop
+	].
+
+	"Push a frame. Saved FP, method, context, receiver"
+	framePointer := self machineSimulator smalltalkStackPointerRegisterValue.
+	self pushAddress: 0.
+	self pushAddress: 0.
+	self pushAddress: 0.
+	self pushAddress: (memory integerObjectOf: 17).
+
+	self machineSimulator framePointerRegisterValue: framePointer.
+	stackPointerBefore := self machineSimulator smalltalkStackPointerRegisterValue.
+	self runFrom: sendAddress until: stop address.
+
+	"Nothing should have been left in the stack"
+	self assert: self machineSimulator smalltalkStackPointerRegisterValue equals: stackPointerBefore.
+	self assert: self machineSimulator receiverRegisterValue equals: 1
 ]
 
 { #category : #tests }
