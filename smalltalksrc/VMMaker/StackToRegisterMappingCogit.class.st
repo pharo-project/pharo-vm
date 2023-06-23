@@ -1636,7 +1636,7 @@ StackToRegisterMappingCogit >> genForwardersInlinedIdenticalOrNotIf: orNot [
 
 	receiverConstant := (self ssValue: 1) constant.
 	argumentConstant := self ssTop constant.
-	self ssPopLeBon: 2.
+	self ssPop: 2.
 
 	label := self Label.
 	self assert: (argReg ~= NoReg or: [ rcvrReg ~= NoReg ]).
@@ -1776,7 +1776,7 @@ StackToRegisterMappingCogit >> genIdenticalNoBranchArgIsConstant: argIsConstant 
 	
 	receiverConstant := (self ssValue: 1) constant.
 	argumentConstant := self ssTop constant.
-	self ssPopLeBon: 2.
+	self ssPop: 2.
 
 	label := self Label.
 	self assert: (argReg ~= NoReg or: [ rcvrRegOrNone ~= NoReg ]).
@@ -1822,7 +1822,7 @@ StackToRegisterMappingCogit >> genInlinedIdenticalOrNotIf: orNot [
 					ifTrue: [self ssTop constant ~= (self ssValue: 1) constant])
 									ifTrue: [objectMemory trueObject]
 									ifFalse: [objectMemory falseObject].
-		 self ssPopLeBon: 2.
+		 self ssPop: 2.
 		 ^self ssPushConstant: result].
 
 	^objectRepresentation genInlinedIdenticalOrNotIfGuts: orNot
@@ -1849,7 +1849,7 @@ StackToRegisterMappingCogit >> genJumpIf: boolean to: targetBytecodePC [
 	(self stackEntryIsBoolean: desc) ifTrue: [
 		"Must arrange there's a fixup at the target whether it is jumped to or
 		not so that the simStackPtr can be kept correct."
-		self ssPopLeBon: 1.
+		self ssPop: 1.
 		fixup := self ensureFixupAt: eventualTarget.
 		"Must annotate the bytecode for correct pc mapping."
 		self annotateBytecode: (desc constant = boolean
@@ -2097,7 +2097,7 @@ StackToRegisterMappingCogit >> genPICMissTrampolineFor: numArgs [
 
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genPopStackBytecode [
-	self ssPopLeBon: 1.
+	self ssPop: 1.
 	^0
 ]
 
@@ -2448,7 +2448,7 @@ StackToRegisterMappingCogit >> genSendDirectedSuper: selectorIndex numArgs: numA
 	| result |
 	self assert: self ssTop type = SSConstant.
 	tempOop := self ssTop constant.
-	self ssPopLeBon: 1.
+	self ssPop: 1.
 	self marshallSendArguments: numArgs.
 	result := self
 				genMarshalledSend: selectorIndex
@@ -2572,7 +2572,7 @@ StackToRegisterMappingCogit >> genSpecialSelectorArithmetic [
 			[OrRR]	-> [result := rcvrInt bitOr: argInt] }.
 		(objectMemory isIntegerValue: result) ifTrue:
 			["Must annotate the bytecode for correct pc mapping."
-			^self ssPopLeBon: 2; ssPushAnnotatedConstant: (objectMemory integerObjectOf: result)].
+			^self ssPop: 2; ssPushAnnotatedConstant: (objectMemory integerObjectOf: result)].
 		^self genSpecialSelectorSend].
 
 	"If there's any constant involved other than a SmallInteger don't attempt to inline."
@@ -2588,7 +2588,7 @@ StackToRegisterMappingCogit >> genSpecialSelectorArithmetic [
 	argIsConst
 		ifTrue: [
 			self ssFlushTo: simStackPtr - 2.
-			self ssPopLeBon: 1.
+			self ssPop: 1.
 			self ssPopTopToReg: ReceiverResultReg ]
 		ifFalse:
 			[self marshallSendArguments: 1].
@@ -2714,7 +2714,7 @@ StackToRegisterMappingCogit >> genSpecialSelectorComparison [
 	argIsIntConst ifTrue: [
 		"If the argument is constant, we already extracted the value and we have it in argInt"
 		"Pop the argument from the stack, then the receiver"
-		self ssPopLeBon: 1.
+		self ssPop: 1.
 		self ssPopTopToReg: ReceiverResultReg ]
 	ifFalse: [ 
 		"Otherwise, marshall normally to prepare for a message send"
@@ -2792,7 +2792,7 @@ StackToRegisterMappingCogit >> genStaticallyResolvedSpecialSelectorComparison [
 		[JumpZero]				-> [result := rcvrInt = argInt].
 		[JumpNonZero]			-> [result := rcvrInt ~= argInt] }.
 	 "Must annotate the bytecode for correct pc mapping."
-	 self ssPopLeBon: 2.
+	 self ssPop: 2.
 	 ^self ssPushAnnotatedConstant: (result
 			ifTrue: [objectMemory trueObject]
 			ifFalse: [objectMemory falseObject])
@@ -3512,7 +3512,7 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 			"Pop from the stack, so that subsequent compilation in this unit make as if they were popped.
 			However, but do not discard the entries in the runtime stack (do not generate pops).
 			It's the callee responsibility of popping them."
-			^ self ssPopLeBon: numArgs + 1 popSpilled: false ]
+			^ self ssPop: numArgs + 1 popSpilled: false ]
 		ifFalse: [
 			"Move the args to the register arguments, being careful to do
 			 so last to first so e.g. previous contents don't get overwritten.
@@ -3533,7 +3533,7 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 			Here, DO discard the entries in the runtime stack.
 			The calling convention dictates that in this case all receiver/args pass through registers and no stack is involved.
 			If we don't pop from the runtime stack, it will get desynchronised"
-			self ssPopLeBon: numArgs + 1 ]
+			self ssPop: numArgs + 1 ]
 ]
 
 { #category : #'compile abstract instructions' }
@@ -4425,10 +4425,8 @@ StackToRegisterMappingCogit >> ssFlushUpThroughTemporaryVariable: tempIndex [
 
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> ssPop: n [
-	self assert: (simStackPtr - n >= methodOrBlockNumTemps
-				or: [(needsFrame not and: [simStackPtr - n >= 0])]).
-	simStackPtr := simStackPtr - n.
-	self updateSimSpillBase
+	
+	self ssPop: n popSpilled: true
 ]
 
 { #category : #'simulation stack' }
@@ -4443,13 +4441,7 @@ StackToRegisterMappingCogit >> ssPop: popBoolean andCopyReg: reg [
 ]
 
 { #category : #'simulation stack' }
-StackToRegisterMappingCogit >> ssPopLeBon: n [
-	
-	self ssPopLeBon: n popSpilled: true
-]
-
-{ #category : #'simulation stack' }
-StackToRegisterMappingCogit >> ssPopLeBon: n popSpilled: popSpilled [
+StackToRegisterMappingCogit >> ssPop: n popSpilled: popSpilled [
 	| spilledToPop |
 	self assert: (simStackPtr - n >= methodOrBlockNumTemps
 				or: [(needsFrame not and: [simStackPtr - n >= 0])]).
@@ -4473,14 +4465,14 @@ StackToRegisterMappingCogit >> ssPopTopToReg: aRegister [
 	"Move to reg pops from the runtime stack if spilled!"
 	self ssTop copyToReg: aRegister.
 	"So here we only need to pop the simulated stack"
-	self ssPopLeBon: 1
+	self ssPop: 1
 ]
 
 { #category : #'mapped inline primitive generators - vectorial' }
 StackToRegisterMappingCogit >> ssPopTopToVectorReg: aVectorRegister [
 
 	self ssTop moveToVectorReg: aVectorRegister.
-	self ssPopLeBon: 1
+	self ssPop: 1
 ]
 
 { #category : #'simulation stack' }
@@ -4585,7 +4577,7 @@ StackToRegisterMappingCogit >> ssStoreAndReplacePop: popBoolean toReg: reg [
 	topSpilled := self ssTop spilled.
 	self ssPop: (popBoolean or: [topSpilled]) andCopyReg: reg.
 	popBoolean ifFalse: 
-		[ topSpilled ifFalse: [self ssPopLeBon: 1 popSpilled: false ].
+		[ topSpilled ifFalse: [self ssPop: 1 popSpilled: false ].
 		self ssPushRegister: reg ].
 ]
 
