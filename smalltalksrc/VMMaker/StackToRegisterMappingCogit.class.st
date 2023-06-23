@@ -1629,7 +1629,7 @@ StackToRegisterMappingCogit >> genForwardersInlinedIdenticalOrNotIf: orNot [
 			  orNotIf: orNot ].
 
 	"If branching the stack must be flushed for the merge"
-	self ssFlushTo: simStackPtr - 2.
+	self ssFlushStackExceptTop: 2.
 
 	argIsConstant := unforwardArg not.
 	rcvrIsConstant := unforwardRcvr not.
@@ -1715,7 +1715,7 @@ StackToRegisterMappingCogit >> genGenericStorePop: popBoolean MaybeContextSlotIn
 		sourceReg: ReceiverResultReg
 		destReg: TempReg.
 	self ssStoreAndReplacePop: popBoolean toReg: ClassReg.
-	self ssFlushTo: simStackPtr.
+	self ssFlushStack.
 	self MoveCq: slotIndex R: SendNumArgsReg.
 	self CallRT: ceStoreContextInstVarTrampoline.
 	self 
@@ -1744,7 +1744,7 @@ StackToRegisterMappingCogit >> genGenericStorePop: popBoolean slotIndex: slotInd
 			[self ssAllocateRequiredReg: ClassReg upThrough: simStackPtr - 1. "If already classReg don't spill it"
 			 "we replace the top value for the flush"
 			 self ssStoreAndReplacePop: popBoolean toReg: ClassReg.
-			 self ssFlushTo: simStackPtr.
+			 self ssFlushStack.
 			 ^objectRepresentation 
 				genStoreWithImmutabilityCheckSourceReg: ClassReg 
 				slotIndex: slotIndex 
@@ -1830,7 +1830,7 @@ StackToRegisterMappingCogit >> genInlinedIdenticalOrNotIf: orNot [
 
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genJumpBackTo: targetBytecodePC [
-	self ssFlushTo: simStackPtr.
+	self ssFlushStack.
 	deadCode := true. "can't fall through"
 	^super genJumpBackTo: targetBytecodePC
 ]
@@ -1844,7 +1844,7 @@ StackToRegisterMappingCogit >> genJumpIf: boolean to: targetBytecodePC [
 	<var: #ok type: #'AbstractInstruction *'>
 	| desc fixup ok eventualTarget |
 	eventualTarget := self eventualTargetOf: targetBytecodePC.
-	self ssFlushTo: simStackPtr - 1.
+	self ssFlushStackExceptTop: 1.
 	desc := self ssTop.
 	(self stackEntryIsBoolean: desc) ifTrue: [
 		"Must arrange there's a fixup at the target whether it is jumped to or
@@ -1902,10 +1902,10 @@ StackToRegisterMappingCogit >> genJumpTo: targetBytecodePC [
 									ifFalse: [0]).
 			"Since we are threading the jumps, spill everything above the top.
 			Leave the top for the next instruction that is assuming that this JUMP instruction did not consume the top"
-			self ssFlushTo: simStackPtr - 1.
+			self ssFlushStackExceptTop: 1.
 			fixup := self ensureFixupAt: eventualTarget withStackPointer: simStackPtr - 1]
 		ifFalse:
-			[self ssFlushTo: simStackPtr.
+			[self ssFlushStack.
 			fixup := self ensureFixupAt: eventualTarget].
 	deadCode := true. "can't fall through"
 	self Jump: fixup.
@@ -2326,7 +2326,7 @@ StackToRegisterMappingCogit >> genPushNewArrayBytecode [
 	self voidReceiverResultRegContainsSelf.
 	"Spill everything in the stack so that we can simplify the access just by doing a pop"
 	(popValues := byte1 > 127)
-		ifTrue: [self ssFlushTo: simStackPtr]
+		ifTrue: [self ssFlushStack]
 		ifFalse: [self ssAllocateCallReg: SendNumArgsReg and: ReceiverResultReg].
 
 	size := byte1 bitAnd: 127.
@@ -2587,7 +2587,7 @@ StackToRegisterMappingCogit >> genSpecialSelectorArithmetic [
 
 	argIsConst
 		ifTrue: [
-			self ssFlushTo: simStackPtr - 2.
+			self ssFlushStackExceptTop: 2.
 			self ssPop: 1.
 			self ssPopTopToReg: ReceiverResultReg ]
 		ifFalse:
@@ -2676,7 +2676,7 @@ StackToRegisterMappingCogit >> genSpecialSelectorComparison [
 	<var: #branchDescriptor type: #'BytecodeDescriptor *'>
 	<var: #jumpNotSmallInts type: #'AbstractInstruction *'>
 	| nextPC postBranchPC targetPC primDescriptor branchDescriptor rcvrIsInt rcvrIsConst argIsIntConst argInt jumpNotSmallInts inlineCAB index |
-	self ssFlushTo: simStackPtr - 2.
+	self ssFlushStackExceptTop: 2.
 	primDescriptor := self generatorAt: byte0.
 	argIsIntConst := self ssTop type = SSConstant and: [
 		                 objectMemory isIntegerObject:
@@ -3062,7 +3062,7 @@ StackToRegisterMappingCogit >> genUpArrowReturn [
 	deadCode := true. "can't fall through"
 	inBlock > 0 ifTrue:
 		[self assert: needsFrame.
-		 self ssFlushTo: simStackPtr.
+		 self ssFlushStack.
 		 self CallRT: ceNonLocalReturnTrampoline.
 		 self annotateBytecode: self Label.
 		 ^0].
@@ -3490,7 +3490,7 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 	 If the args don't fit in registers push receiver and args (spill everything), but still assign
 	 the receiver to ReceiverResultReg."
 
-	self ssFlushTo: simStackPtr - numArgs - 1.
+	self ssFlushStackExceptTop: numArgs - 1.
 	numArgs > self numRegArgs
 		ifTrue: [ "If there are no spills and no references to ReceiverResultReg
 			 the fetch of ReceiverResultReg from the stack can be avoided
@@ -3500,14 +3500,14 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 			anyRefs := self anyReferencesToRegister: ReceiverResultReg inTopNItems: numArgs + 1.
 			(numSpilled > 0 or: [ anyRefs ])
 				ifTrue: [
-					self ssFlushTo: simStackPtr.
+					self ssFlushStack.
 					(self simStackAt: simStackPtr - numArgs) copyToReg: ReceiverResultReg ]
 				ifFalse: [
 					(self simStackAt: simStackPtr - numArgs)
 						copyToReg: ReceiverResultReg;
 						type: SSRegister;
 						register: ReceiverResultReg.
-					self ssFlushTo: simStackPtr ].
+					self ssFlushStack ].
 			
 			"Pop from the stack, so that subsequent compilation in this unit make as if they were popped.
 			However, but do not discard the entries in the runtime stack (do not generate pops).
@@ -3617,7 +3617,7 @@ StackToRegisterMappingCogit >> mergeWithFixupIfRequired: fixup [
 			 self assert: (fixup simStackPtr >= methodOrBlockNumTemps).
 			 simStackPtr := fixup simStackPtr ]
 		ifFalse: "case 4"
-			[self ssFlushTo: simStackPtr].
+			[self ssFlushStack].
 
 	"cases 3 and 4"
 	deadCode := false.
@@ -4361,6 +4361,18 @@ StackToRegisterMappingCogit >> ssAllocateRequiredRegMask: requiredRegsMask upThr
 	(liveRegs anyMask: requiredRegsMask) ifTrue:
 		[self ssFlushTo: lastRequired.
 		 self deny: (self liveRegisters anyMask: requiredRegsMask)]
+]
+
+{ #category : #'as yet unclassified' }
+StackToRegisterMappingCogit >> ssFlushStack [
+	
+	self ssFlushStackExceptTop: 0
+]
+
+{ #category : #'as yet unclassified' }
+StackToRegisterMappingCogit >> ssFlushStackExceptTop: n [
+	
+	self ssFlushTo: simStackPtr - n
 ]
 
 { #category : #'simulation stack' }
