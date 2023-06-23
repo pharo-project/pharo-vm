@@ -3512,7 +3512,7 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 			"Pop from the stack, so that subsequent compilation in this unit make as if they were popped.
 			However, but do not discard the entries in the runtime stack (do not generate pops).
 			It's the callee responsibility of popping them."
-			^ self ssPop: numArgs + 1 ]
+			^ self ssPopLeBon: numArgs + 1 popSpilled: false ]
 		ifFalse: [
 			"Move the args to the register arguments, being careful to do
 			 so last to first so e.g. previous contents don't get overwritten.
@@ -4574,7 +4574,7 @@ StackToRegisterMappingCogit >> ssStoreAndReplacePop: popBoolean toReg: reg [
 	topSpilled := self ssTop spilled.
 	self ssStorePop: (popBoolean or: [topSpilled]) toReg: reg.
 	popBoolean ifFalse: 
-		[ topSpilled ifFalse: [self ssPop: 1].
+		[ topSpilled ifFalse: [self ssPopLeBon: 1 popSpilled: false].
 		self ssPushRegister: reg ].
 ]
 
