@@ -3493,7 +3493,7 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 	 If the args don't fit in registers push receiver and args (spill everything), but still assign
 	 the receiver to ReceiverResultReg."
 
-	self ssFlushStackExceptTop: numArgs - 1.
+	self ssFlushStackExceptTop: numArgs + 1.
 	numArgs > self numRegArgs
 		ifTrue: [ "If there are no spills and no references to ReceiverResultReg
 			 the fetch of ReceiverResultReg from the stack can be avoided
