@@ -202,7 +202,7 @@ VMStackToRegisterMappingTest >> testPushRegister [
 
 	self assert: cogit ssSize equals: 2.
 	self assert: cogit ssTop type equals: SSRegister.
-	self assert: cogit ssTop register equals: TempReg.
+	self assert: cogit ssTop registerr equals: TempReg.
 	self deny: cogit ssTop spilled
 ]
 

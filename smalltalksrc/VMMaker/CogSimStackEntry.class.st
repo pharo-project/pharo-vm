@@ -95,7 +95,7 @@ CogSimStackEntry class >> structTypeName [
 CogSimStackEntry >> base [
 
 	self assert: (self type == SSSpill or: [self type == SSBaseOffset]).
-	^ register
+	^ registerr
 ]
 
 { #category : #accessing }
