@@ -4832,12 +4832,12 @@ StackInterpreter >> context: aContext hasValidInversePCMappingOf: theIP in: theF
 ]
 
 { #category : #'frame access' }
-StackInterpreter >> contextInstructionPointer: theIP frame: theFP [
+StackInterpreter >> contextInstructionPointer: anIP frame: theFP [
 
 	<var: #theFP type: #'char *'>
-	self assert: (self validInstructionPointer: theIP inFrame: theFP).
+	self assert: (self validInstructionPointer: anIP inFrame: theFP).
 	^ objectMemory integerObjectOf:
-		  theIP - (self iframeMethod: theFP) - objectMemory baseHeaderSize
+		  anIP - (self iframeMethod: theFP) - objectMemory baseHeaderSize
 		  + 2
 ]
 
@@ -6606,6 +6606,12 @@ StackInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 	<var: #callerFP type: #'char *'>
 	<var: #thePage type: #'StackPage *'>
 	| theIPPtr |
+	
+	stackPage = 0 ifTrue: "the system must be snapshotting; nothing to do..."
+		[self assert: stackPages mostRecentlyUsedPage isFree.
+		 self cCode: [] inSmalltalk: [stackPages allPagesFree].
+		 ^self].
+
 	self writeBackHeadFramePointers.
 
 	(theBecomeEffectsFlags anyMask: BecameCompiledMethodFlag) ifTrue: [
@@ -9201,8 +9207,6 @@ StackInterpreter >> makeBaseFrameFor: aContext [
 		                         maybeClosure: maybeClosure
 		                         withNumArgs: numArgs
 		                         withReceiver: rcvr.
-	self assert: (self frameHasContext: page baseFP).
-	self assert: (self frameNumArgs: page baseFP) == numArgs.
 
 	"Push all elements in the context operand stack in the frame, including temps"
 	stackPtrIndex := self
@@ -9226,6 +9230,8 @@ StackInterpreter >> makeBaseFrameFor: aContext [
 	self setHeadFP: framePointer andSP: stackPointer inPage: page.
 	page baseFP: page headFP.
 
+	self assert: (self frameHasContext: page baseFP).
+	self assert: (self frameNumArgs: page baseFP) == numArgs.
 	self assert: (self
 			 context: aContext
 			 hasValidInversePCMappingOf: theInstructionPointer
@@ -13146,15 +13152,12 @@ StackInterpreter >> remapCallbackState [
 ]
 
 { #category : #'object memory support' }
-StackInterpreter >> remapInstructionPointerInFrame: theFP inSavedInstructionPointerLocation: theIPPtr byRemapDelta: delta [
+StackInterpreter >> remapInstructionPointerInFrame: theFP inSavedInstructionPointerLocation: frameSavedInstructionPointerLocation byRemapDelta: delta [
 	"The IP is in theIPPtr and needs to be mapped by delta, which is the distance the method has moved"
 
-	| theIP frameSavedInstructionPointerLocation |
-	frameSavedInstructionPointerLocation := theIPPtr.
-	theIP := stackPages unsignedLongAt: theIPPtr.
-	stackPages
-		unsignedLongAt: frameSavedInstructionPointerLocation
-		put: theIP - delta
+	| theIP |
+	theIP := stackPages unsignedLongAt: frameSavedInstructionPointerLocation.
+	stackPages unsignedLongAt: frameSavedInstructionPointerLocation put: theIP - delta
 ]
 
 { #category : #'stack bytecodes' }
@@ -13972,7 +13975,7 @@ StackInterpreter >> setupFrameForNewMethodInterpreted [
 	numTemps := self temporaryCountOfMethodHeader: methodHeader.
 	numArgs := self argumentCountOfMethodHeader: methodHeader.
 
-	rcvr := self stackValue: numArgs. "could new rcvr be set at point of send?"
+	rcvr := self stackValue: numArgs + 2. "+ saved instruction pointer + frame pointer"
 	self assert: (objectMemory isOopForwarded: rcvr) not.
 
 	self

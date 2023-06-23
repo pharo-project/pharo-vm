@@ -4810,34 +4810,29 @@ CoInterpreter >> setupFrameFixedPart: theMethod withHeader: methodHeader withCon
 	<inline: true>
 	| contextSavedIP theInstructionPointer theMethodPointer cogMethod |
 	theMethodPointer := theMethod.
-	contextSavedIP := self instructionPointerForBaseFrameContext:
-		                  aContext.
+	contextSavedIP := self instructionPointerForBaseFrameContext: aContext.
 	contextSavedIP < 0 ifFalse: [ "Interpreted Frame"
-		^ self
-			  setupFrameFixedPartForNewMethodInterpreted: theMethodPointer
-			  withHeader: (objectMemory methodHeaderOf: theMethodPointer)
+		^ super
+			  setupFrameFixedPart: theMethod
+			  withHeader: methodHeader
 			  withContext: aContext
-			  isBlock: maybeClosure ~= objectMemory nilObject
+			  maybeClosure: maybeClosure
 			  withNumArgs: numArgs
 			  withReceiver: rcvr ].
 
 	"We have to generate a machine-code method to be able to map
 	the native pc, thus create a native method and native frame."
-	cogMethod := self
-		             ensureMethodIsCogged: theMethodPointer
-		             maybeClosure: maybeClosure.
+	cogMethod := self ensureMethodIsCogged: theMethodPointer maybeClosure: maybeClosure.
 	theMethodPointer := cogMethod asInteger.
 	self assert: (contextSavedIP signedBitShift: -16) >= -1.
 	"If the pc is the special HasBeenReturnedFromMCPC pc set the pc
 		appropriately so that the frame stays in the cannotReturn: state."
 	theInstructionPointer := contextSavedIP = HasBeenReturnedFromMCPC
 		                         ifTrue: [ cogit ceCannotResumePC ]
-		                         ifFalse: [
-		                         theMethodPointer asInteger - contextSavedIP ].
-	self push: theMethodPointer + MFMethodFlagHasContextFlag
-		+ (maybeClosure ~= objectMemory nilObject
-				 ifTrue: [ MFMethodFlagIsBlockFlag ]
-				 ifFalse: [ 0 ]).
+		                         ifFalse: [ theMethodPointer asInteger - contextSavedIP ].
+	self push: theMethodPointer + MFMethodFlagHasContextFlag + (maybeClosure ~= objectMemory nilObject
+			 ifTrue: [ MFMethodFlagIsBlockFlag ]
+			 ifFalse: [ 0 ]).
 	self push: aContext.
 	^ theInstructionPointer
 ]
