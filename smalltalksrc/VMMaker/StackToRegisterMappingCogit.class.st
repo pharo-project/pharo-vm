@@ -3497,21 +3497,24 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 			 by assigning directly to ReceiverResultReg and pushing it."
 			| numSpilled anyRefs |
 			numSpilled := self numberOfSpillsInTopNItems: numArgs + 1.
-			anyRefs := self
-				           anyReferencesToRegister: ReceiverResultReg
-				           inTopNItems: numArgs + 1.
+			anyRefs := self anyReferencesToRegister: ReceiverResultReg inTopNItems: numArgs + 1.
 			(numSpilled > 0 or: [ anyRefs ])
 				ifTrue: [
 					self ssFlushTo: simStackPtr.
-					(self simStackAt: simStackPtr - numArgs) copyToReg:
-						ReceiverResultReg ]
+					(self simStackAt: simStackPtr - numArgs) copyToReg: ReceiverResultReg ]
 				ifFalse: [
 					(self simStackAt: simStackPtr - numArgs)
 						copyToReg: ReceiverResultReg;
 						type: SSRegister;
 						register: ReceiverResultReg.
-					self ssFlushTo: simStackPtr ] ]
-		ifFalse: [ "Move the args to the register arguments, being careful to do
+					self ssFlushTo: simStackPtr ].
+			
+			"Pop from the stack, so that subsequent compilation in this unit make as if they were popped.
+			However, but do not discard the entries in the runtime stack (do not generate pops).
+			It's the callee responsibility of popping them."
+			^ self ssPop: numArgs + 1 ]
+		ifFalse: [
+			"Move the args to the register arguments, being careful to do
 			 so last to first so e.g. previous contents don't get overwritten.
 			 Also check for any arg registers in use by other args."
 			numArgs > 0 ifTrue: [
@@ -3519,17 +3522,18 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 					ifTrue: [
 						self ssAllocateRequiredReg: Arg0Reg upThrough: simStackPtr - 2.
 						self ssAllocateRequiredReg: Arg1Reg upThrough: simStackPtr - 1 ]
-					ifFalse: [
-					self ssAllocateRequiredReg: Arg0Reg upThrough: simStackPtr - 1 ] ].
+					ifFalse: [ self ssAllocateRequiredReg: Arg0Reg upThrough: simStackPtr - 1 ] ].
 
-			(self numRegArgs > 1 and: [ numArgs > 1 ]) ifTrue: [
-				(self simStackAt: simStackPtr) moveToReg: Arg1Reg ].
+			(self numRegArgs > 1 and: [ numArgs > 1 ]) ifTrue: [ (self simStackAt: simStackPtr) copyToReg: Arg1Reg ].
 
-			numArgs > 0 ifTrue: [
-				(self simStackAt: simStackPtr - numArgs + 1) moveToReg: Arg0Reg ].
-			(self simStackAt: simStackPtr - numArgs) moveToReg:
-				ReceiverResultReg ].
-	self ssPop: numArgs + 1
+			numArgs > 0 ifTrue: [ (self simStackAt: simStackPtr - numArgs + 1) copyToReg: Arg0Reg ].
+			(self simStackAt: simStackPtr - numArgs) copyToReg: ReceiverResultReg.
+
+			"Pop from the stack, so that subsequent compilation in this unit make as if they were popped.
+			Here, DO discard the entries in the runtime stack.
+			The calling convention dictates that in this case all receiver/args pass through registers and no stack is involved.
+			If we don't pop from the runtime stack, it will get desynchronised"
+			self ssPopLeBon: numArgs + 1 ]
 ]
 
 { #category : #'compile abstract instructions' }
