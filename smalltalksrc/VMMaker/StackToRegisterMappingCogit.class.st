@@ -4433,6 +4433,12 @@ StackToRegisterMappingCogit >> ssPop: n [
 
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> ssPopLeBon: n [
+	
+	self ssPopLeBon: n popSpilled: true
+]
+
+{ #category : #'simulation stack' }
+StackToRegisterMappingCogit >> ssPopLeBon: n popSpilled: popSpilled [
 	| spilledToPop |
 	self assert: (simStackPtr - n >= methodOrBlockNumTemps
 				or: [(needsFrame not and: [simStackPtr - n >= 0])]).
@@ -4444,7 +4450,7 @@ StackToRegisterMappingCogit >> ssPopLeBon: n [
 	If the spill base is above the stack, it means we popped spilled elements.
 	If the spill base is below or equals to the stack pointer, we don't need ot do anything"	
 	spilledToPop := simSpillBase - 1 - simStackPtr.
-	spilledToPop > 0 ifTrue:
+	(popSpilled and: [spilledToPop > 0]) ifTrue:
 		[self AddCq: spilledToPop * objectMemory wordSize R: SPReg].
 	
 	self updateSimSpillBase
