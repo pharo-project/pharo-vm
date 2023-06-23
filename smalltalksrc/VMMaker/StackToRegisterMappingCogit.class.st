@@ -609,29 +609,28 @@ StackToRegisterMappingCogit >> adjustArgumentsForPerform: numArgs [
 StackToRegisterMappingCogit >> allocateEqualsEqualsRegistersArgNeedsReg: argNeedsReg rcvrNeedsReg: rcvrNeedsReg into: binaryBlock [
 
 	| argReg rcvrReg |
-	self assert: (argNeedsReg or: [rcvrNeedsReg]).
+	self assert: (argNeedsReg or: [ rcvrNeedsReg ]).
 	argReg := rcvrReg := NoReg.
 	argNeedsReg
-		ifTrue: 
-			[rcvrNeedsReg
-				ifTrue:
-					[self allocateRegForStackTopTwoEntriesInto: [:rTop :rNext| argReg := rTop. rcvrReg := rNext].
-					 self ssTop moveToReg: argReg.
-					 (self ssValue: 1) moveToReg: rcvrReg]
-				ifFalse:
-					[argReg := self allocateRegForStackEntryAt: 0.
-					 self ssTop moveToReg: argReg.
-					 "If the receiver is a spilled constant we need to pop it from the stack."
-					 (self ssValue: 1) spilled ifTrue:
-						[self AddCq: objectMemory wordSize R: SPReg]]]
-		ifFalse:
-			[self assert: rcvrNeedsReg.
-			 self deny: self ssTop spilled.
-			 rcvrReg := self allocateRegForStackEntryAt: 1.
-			 (self ssValue: 1) moveToReg: rcvrReg].
-		
-	self deny: (argNeedsReg and: [argReg = NoReg]).
-	self deny: (rcvrNeedsReg and: [rcvrReg = NoReg]).
+		ifTrue: [
+			rcvrNeedsReg
+				ifTrue: [
+					self allocateRegForStackTopTwoEntriesInto: [ :rTop :rNext |
+						argReg := rTop.
+						rcvrReg := rNext ].
+					self ssTop copyToReg: argReg.
+					(self ssValue: 1) copyToReg: rcvrReg ]
+				ifFalse: [
+					argReg := self allocateRegForStackEntryAt: 0.
+					self ssTop copyToReg: argReg ] ]
+		ifFalse: [
+			self assert: rcvrNeedsReg.
+			self deny: self ssTop spilled.
+			rcvrReg := self allocateRegForStackEntryAt: 1.
+			(self ssValue: 1) copyToReg: rcvrReg ].
+
+	self deny: (argNeedsReg and: [ argReg = NoReg ]).
+	self deny: (rcvrNeedsReg and: [ rcvrReg = NoReg ]).
 
 	binaryBlock value: rcvrReg value: argReg
 ]
@@ -1599,13 +1598,15 @@ StackToRegisterMappingCogit >> genExternalizePointersForPrimitiveCall [
 
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genForwardersInlinedIdenticalOrNotIf: orNot [
-	| nextPC branchDescriptor unforwardRcvr argReg targetBytecodePC
-	  unforwardArg  rcvrReg postBranchPC label fixup |
+
 	<var: #branchDescriptor type: #'BytecodeDescriptor *'>
 	<var: #label type: #'AbstractInstruction *'>
-	
-	self extractMaybeBranchDescriptorInto: [ :descr :next :postBranch :target | 
-		branchDescriptor := descr. nextPC := next. postBranchPC := postBranch. targetBytecodePC := target ].
+	| nextPC branchDescriptor unforwardRcvr argReg targetBytecodePC unforwardArg rcvrReg postBranchPC label fixup rcvrIsConstant argIsConstant receiverConstant argumentConstant |
+	self extractMaybeBranchDescriptorInto: [ :descr :next :postBranch :target |
+		branchDescriptor := descr.
+		nextPC := next.
+		postBranchPC := postBranch.
+		targetBytecodePC := target ].
 
 	"If an operand is an annotable constant, it may be forwarded, so we need to store it into a 
 	register so the forwarder check can jump back to the comparison after unforwarding the constant.
@@ -1614,60 +1615,70 @@ StackToRegisterMappingCogit >> genForwardersInlinedIdenticalOrNotIf: orNot [
 	unforwardRcvr := (objectRepresentation isUnannotatableConstant: (self ssValue: 1)) not.
 	unforwardArg := (objectRepresentation isUnannotatableConstant: self ssTop) not.
 
-	self 
-		allocateEqualsEqualsRegistersArgNeedsReg: unforwardArg 
-		rcvrNeedsReg: unforwardRcvr 
-		into: [ :rcvr :arg | rcvrReg:= rcvr. argReg := arg ].
+	self allocateEqualsEqualsRegistersArgNeedsReg: unforwardArg rcvrNeedsReg: unforwardRcvr into: [ :rcvr :arg |
+		rcvrReg := rcvr.
+		argReg := arg ].
 
 	"If not followed by a branch, resolve to true or false."
-	(branchDescriptor isBranchTrue or: [branchDescriptor isBranchFalse]) ifFalse:
-		[^ self 
-			genIdenticalNoBranchArgIsConstant: unforwardArg not
-			rcvrIsConstant: unforwardRcvr not
-			argReg: argReg 
-			rcvrReg: rcvrReg 
-			orNotIf: orNot].
-	
+	(branchDescriptor isBranchTrue or: [ branchDescriptor isBranchFalse ]) ifFalse: [
+		^ self
+			  genIdenticalNoBranchArgIsConstant: unforwardArg not
+			  rcvrIsConstant: unforwardRcvr not
+			  argReg: argReg
+			  rcvrReg: rcvrReg
+			  orNotIf: orNot ].
+
 	"If branching the stack must be flushed for the merge"
 	self ssFlushTo: simStackPtr - 2.
-	
+
+	argIsConstant := unforwardArg not.
+	rcvrIsConstant := unforwardRcvr not.
+
+	receiverConstant := (self ssValue: 1) constant.
+	argumentConstant := self ssTop constant.
+	self ssPopLeBon: 2.
+
 	label := self Label.
-	self genCmpArgIsConstant: unforwardArg not rcvrIsConstant: unforwardRcvr not argReg: argReg rcvrReg: rcvrReg.
-	self ssPop: 2.
+	self assert: (argReg ~= NoReg or: [ rcvrReg ~= NoReg ]).
+	argIsConstant
+		ifTrue: [ self genCmpConstant: argumentConstant R: rcvrReg ]
+		ifFalse: [
+			rcvrIsConstant
+				ifTrue: [ self genCmpConstant: receiverConstant R: argReg ]
+				ifFalse: [ self CmpR: argReg R: rcvrReg ] ].
 
 	"Since there is a following conditional jump bytecode (unless there is deadCode),
 	 define non-merge fixups and leave the cond bytecode to set the mergeness."
 	(self fixupAt: nextPC) notAFixup
-		ifTrue: "The next instruction is dead.  we can skip it."
-			[deadCode := true.
-		 	 self ensureFixupAt: targetBytecodePC.
-			 self ensureFixupAt: postBranchPC]
-		ifFalse:
-			[self deny: deadCode]. "push dummy value below"
+		ifTrue: [ "The next instruction is dead.  we can skip it."
+			deadCode := true.
+			self ensureFixupAt: targetBytecodePC.
+			self ensureFixupAt: postBranchPC ]
+		ifFalse: [ self deny: deadCode ]. "push dummy value below"
 
-	self assert: (unforwardArg or: [unforwardRcvr]).
-	orNot == branchDescriptor isBranchTrue "orNot is true for ~~"
-		ifFalse: "a == b ifTrue: ... or a ~~ b ifFalse: ... jump on equal to target pc"
-			[fixup := self ensureNonMergeFixupAt: postBranchPC.
-			 self JumpZero:  (self ensureNonMergeFixupAt: targetBytecodePC)]
-		ifTrue: "a == b ifFalse: ... or a ~~ b ifTrue: ... jump on equal to post-branch pc"
-			[fixup := self ensureNonMergeFixupAt: targetBytecodePC.
-			 self JumpZero: (self ensureNonMergeFixupAt: postBranchPC)].
-		
+	self assert: (unforwardArg or: [ unforwardRcvr ]).
+	orNot == branchDescriptor isBranchTrue
+		ifFalse: [ "a == b ifTrue: ... or a ~~ b ifFalse: ... jump on equal to target pc"
+			fixup := self ensureNonMergeFixupAt: postBranchPC.
+			self JumpZero: (self ensureNonMergeFixupAt: targetBytecodePC) ]
+		ifTrue: [ "a == b ifFalse: ... or a ~~ b ifTrue: ... jump on equal to post-branch pc"
+			fixup := self ensureNonMergeFixupAt: targetBytecodePC.
+			self JumpZero: (self ensureNonMergeFixupAt: postBranchPC) ]. "orNot is true for ~~"
+
 	"The forwarders checks need to jump back to the comparison (label) if a forwarder is found, else 
 	 jump forward either to the next forwarder check or to the postBranch or branch target (fixup)."
-	(unforwardArg and: [unforwardRcvr]) ifTrue:
-		[objectRepresentation genEnsureOopInRegNotForwarded: argReg scratchReg: TempReg jumpBackTo: label].
-	objectRepresentation 
-		genEnsureOopInRegNotForwarded: (unforwardRcvr ifTrue: [rcvrReg] ifFalse: [argReg]) 
-		scratchReg: TempReg 
+	(unforwardArg and: [ unforwardRcvr ]) ifTrue: [ objectRepresentation genEnsureOopInRegNotForwarded: argReg scratchReg: TempReg jumpBackTo: label ].
+	objectRepresentation
+		genEnsureOopInRegNotForwarded: (unforwardRcvr
+				 ifTrue: [ rcvrReg ]
+				 ifFalse: [ argReg ])
+		scratchReg: TempReg
 		ifForwarder: label
 		ifNotForwarder: fixup.
-		
+
 	"Not reached, execution flow has jumped to fixup"
-	deadCode ifFalse:
-		[self ssPushConstant: objectMemory trueObject]. "dummy value"
-	^0
+	deadCode ifFalse: [ self ssPushConstant: objectMemory trueObject ]. "dummy value"
+	^ 0
 ]
 
 { #category : #'bytecode generator stores' }
@@ -1757,25 +1768,41 @@ StackToRegisterMappingCogit >> genGenericStorePop: popBoolean slotIndex: slotInd
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genIdenticalNoBranchArgIsConstant: argIsConstant rcvrIsConstant: rcvrIsConstant argReg: argReg rcvrReg: rcvrRegOrNone orNotIf: orNot [
 	"Generates the machine code for #== in the case where the instruction is not followed by a branch"
-	| label jumpEqual jumpNotEqual resultReg |
+
 	<var: #label type: #'AbstractInstruction *'>
 	<var: #jumpEqual type: #'AbstractInstruction *'>
 	<var: #jumpNotEqual type: #'AbstractInstruction *'>
+	| label jumpEqual jumpNotEqual resultReg receiverConstant argumentConstant |
+	
+	receiverConstant := (self ssValue: 1) constant.
+	argumentConstant := self ssTop constant.
+	self ssPopLeBon: 2.
+
 	label := self Label.
-	self genCmpArgIsConstant: argIsConstant rcvrIsConstant: rcvrIsConstant argReg: argReg rcvrReg: rcvrRegOrNone.
-	self ssPop: 2.
-	resultReg := rcvrRegOrNone = NoReg ifTrue: [argReg] ifFalse: [rcvrRegOrNone].
+	self assert: (argReg ~= NoReg or: [ rcvrRegOrNone ~= NoReg ]).
+	argIsConstant
+		ifTrue: [ self genCmpConstant: argumentConstant R: rcvrRegOrNone ]
+		ifFalse: [
+			rcvrIsConstant
+				ifTrue: [ self genCmpConstant: receiverConstant R: argReg ]
+				ifFalse: [ self CmpR: argReg R: rcvrRegOrNone ] ].
+
+	resultReg := rcvrRegOrNone = NoReg
+		             ifTrue: [ argReg ]
+		             ifFalse: [ rcvrRegOrNone ].
 	jumpEqual := self JumpZero: 0.
-	 argIsConstant ifFalse:
-		[objectRepresentation genEnsureOopInRegNotForwarded: argReg scratchReg: TempReg jumpBackTo: label].
-	 rcvrIsConstant ifFalse:
-		[objectRepresentation genEnsureOopInRegNotForwarded: rcvrRegOrNone scratchReg: TempReg jumpBackTo: label].
-	 orNot ifFalse: [self genMoveFalseR: resultReg] ifTrue: [self genMoveTrueR: resultReg].
-	 jumpNotEqual := self Jump: 0.
-	 jumpEqual jmpTarget: (orNot ifFalse: [self genMoveTrueR: resultReg] ifTrue: [self genMoveFalseR: resultReg]).
-	 jumpNotEqual jmpTarget: self Label.
-	 self ssPushRegister: resultReg.
-	 ^0
+	argIsConstant ifFalse: [ objectRepresentation genEnsureOopInRegNotForwarded: argReg scratchReg: TempReg jumpBackTo: label ].
+	rcvrIsConstant ifFalse: [ objectRepresentation genEnsureOopInRegNotForwarded: rcvrRegOrNone scratchReg: TempReg jumpBackTo: label ].
+	orNot
+		ifFalse: [ self genMoveFalseR: resultReg ]
+		ifTrue: [ self genMoveTrueR: resultReg ].
+	jumpNotEqual := self Jump: 0.
+	jumpEqual jmpTarget: (orNot
+			 ifFalse: [ self genMoveTrueR: resultReg ]
+			 ifTrue: [ self genMoveFalseR: resultReg ]).
+	jumpNotEqual jmpTarget: self Label.
+	self ssPushRegister: resultReg.
+	^ 0
 ]
 
 { #category : #'bytecode generator support' }
