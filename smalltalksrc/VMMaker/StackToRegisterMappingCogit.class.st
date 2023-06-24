@@ -1630,8 +1630,11 @@ StackToRegisterMappingCogit >> genForwardersInlinedIdenticalOrNotIf: orNot [
 	argIsConstant := unforwardArg not.
 	rcvrIsConstant := unforwardRcvr not.
 
-	receiverConstant := (self ssValue: 1) constant.
-	argumentConstant := self ssTop constant.
+	"Extract the values from the stack before popping"
+	receiverConstant := rcvrIsConstant ifTrue: [
+		(self ssValue: 1) constant
+	].
+	argumentConstant := argIsConstant ifTrue: [ self ssTop constant ].
 	self ssPop: 2.
 
 	label := self Label.
