@@ -339,6 +339,7 @@ VMJitMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 	stackBuilder setInterpreterVariables.
 
 	cogit generateReturnToInterpreterPCTrampoline.
+	interpreter argumentCount: 3.
 	interpreter newMethod: callingMethod.
 	interpreter activateNewMethod.
 	"Set the backwards branch count to 3 so it trips in the first iteration.
