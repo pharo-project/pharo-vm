@@ -9142,7 +9142,7 @@ StackInterpreter >> makeBaseFrameFor: aContext [
 	<returnTypeC: #'StackPage *'>
 	<inline: false>
 	<var: #page type: #'StackPage *'>
-	<var: #theInstructionpointer type: #sqInt>
+	<var: #theInstructionPointer type: #sqInt>
 	| page theMethod numArgs stackPtrIndex maybeClosure rcvr theInstructionPointer |
 	self assert: (objectMemory isContext: aContext).
 	self assert: (self isSingleContext: aContext).
@@ -13912,7 +13912,7 @@ StackInterpreter >> setTraceFlagOnContextsFramesPageIfNeeded: aContext [
 { #category : #'frame access' }
 StackInterpreter >> setupFrameFixedPart: theMethod withHeader: methodHeader withContext: aContext maybeClosure: maybeClosure withNumArgs: numArgs withReceiver: rcvr [
 
-	<var: #theInstructionpointer type: #sqInt>
+	<var: #theInstructionPointer type: #sqInt>
 	<var: #contextSavedIP type: #sqInt>
 	<inline: true>
 	| contextSavedIP theInstructionPointer |

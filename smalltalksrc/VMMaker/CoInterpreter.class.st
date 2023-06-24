@@ -4805,7 +4805,7 @@ CoInterpreter >> setUpForUseByFacade: aCurrentImageCoInterpreterFacade [
 { #category : #'frame access' }
 CoInterpreter >> setupFrameFixedPart: theMethod withHeader: methodHeader withContext: aContext maybeClosure: maybeClosure withNumArgs: numArgs withReceiver: rcvr [
 
-	<var: #theInstructionpointer type: #sqInt>
+	<var: #theInstructionPointer type: #sqInt>
 	<var: #contextSavedIP type: #sqInt>
 	<inline: true>
 	| contextSavedIP theInstructionPointer theMethodPointer cogMethod |
