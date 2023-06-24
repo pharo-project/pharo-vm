@@ -219,7 +219,6 @@ Class {
 		'superSendTrampolines',
 		'directedSuperSendTrampolines',
 		'directedSuperBindingSendTrampolines',
-		'dynamicSuperSendTrampolines',
 		'firstSend',
 		'lastSend',
 		'realCEEnterCogCodePopReceiverReg',
@@ -486,19 +485,13 @@ Cogit class >> cogToBytecodeMethodMapping [
 Cogit class >> declareCVarsIn: aCCodeGenerator [
 
 	#( 'coInterpreter' 'objectMemory' 'methodZone' 'objectRepresentation'
-	   'cogBlockMethodSurrogateClass' 'cogMethodSurrogateClass'
+	   'cogMethodSurrogateClass'
 	   'processor' 'lastNInstructions' 'simulatedAddresses'
 	   'simulatedTrampolines' 'simulatedVariableGetters'
 	   'simulatedVariableSetters' 'printRegisters' 'printInstructions'
 	   'clickConfirm' 'singleStep' ) do: [
 		:simulationVariableNotNeededForRealVM |
 		aCCodeGenerator removeVariable: simulationVariableNotNeededForRealVM ].
-	#( 'selfSendTrampolines' 'dynamicSuperSendTrampolines'
-	   'implicitReceiverSendTrampolines'
-	   'outerSendTrampolines' 'ceEnclosingObjectTrampoline'
-	   'numIRCs' 'indexOfIRC' 'theIRCs' ) do: [
-		:variableNotNeededInNormalVM |
-		aCCodeGenerator removeVariable: variableNotNeededInNormalVM ].
 
 	aCCodeGenerator
 		addHeaderFile: '<stddef.h>';
