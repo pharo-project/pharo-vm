@@ -1527,7 +1527,19 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: index [
 			[76] ->	[^self getMethodCompilationMSecs]. 
 			[77] ->	[^self getBlockCompilationCount]. 
 			[78] ->	[^self getBlockCompilationMSecs].
-			[79] ->  [^objectMemory integerObjectOf: self getImageVersion ] }
+			[79] ->  [^objectMemory integerObjectOf: self getImageVersion ].
+			[80] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromOldSpaceRememberedSet rememberedSetSize].
+			[81] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromOldSpaceRememberedSet rememberedSetLimit].
+			[82] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromPermToOldSpaceRememberedSet rememberedSetSize].
+			[83] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromPermToOldSpaceRememberedSet rememberedSetLimit].
+			[84] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromPermToNewSpaceRememberedSet rememberedSetSize].
+			[85] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromPermToNewSpaceRememberedSet rememberedSetLimit]}
 		otherwise: [^nil]
 ]
 
@@ -3808,7 +3820,7 @@ StackInterpreterPrimitives >> primitiveVMParameter [
 	Otherwise the *real* list is in the code: `StackInterpreterPrimitives>>#primitiveGetVMParameter:`"
 
 	| paramsArraySize index |
-	paramsArraySize := 79.
+	paramsArraySize := 85.
 	argumentCount = 0 ifTrue: [^self primitiveAllVMParameters: paramsArraySize].
 	argumentCount > 2 ifTrue: [^self primitiveFailFor: PrimErrBadNumArgs].
 	

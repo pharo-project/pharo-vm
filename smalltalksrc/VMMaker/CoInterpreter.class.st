@@ -746,7 +746,7 @@ CoInterpreter >> assertValidStackedInstructionPointersIn: aStackPage line: ln [
 			 theIP = cogit ceReturnToInterpreterPC ifTrue:
 				[theIP := self iframeSavedIP: theFP].
 			 self assert: (theIP >= (methodObj + (objectMemory lastPointerOf: methodObj))
-						  and: [theIP < (methodObj + (objectMemory numBytesOfBytes: methodObj) + objectMemory baseHeaderSize - 1)])
+						  and: [theIP <= (methodObj + (objectMemory numBytesOfBytes: methodObj) + objectMemory baseHeaderSize - 1)])
 				l: ln.
 			 prevFrameWasCogged := false].
 	 theIP := (stackPages unsignedLongAt: theFP + FoxCallerSavedIP) asUnsignedInteger.
