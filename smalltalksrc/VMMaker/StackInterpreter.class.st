@@ -7940,12 +7940,9 @@ StackInterpreter >> instructionPointer: anInteger [
 StackInterpreter >> instructionPointerForBaseFrameContext: aContext [
 
 	| theIP |
-	theIP := objectMemory
-		         fetchPointer: InstructionPointerIndex
-		         ofObject: aContext.
-	^ (objectMemory isIntegerObject: theIP)
-		  ifTrue: [ objectMemory integerValueOf: theIP ]
-		  ifFalse: [ self error: 'context is not resumable' ]
+	theIP := objectMemory fetchPointer: InstructionPointerIndex ofObject: aContext.
+	(objectMemory isIntegerObject: theIP) ifFalse: [ self error: 'context is not resumable' ].
+	^ objectMemory integerValueOf: theIP
 ]
 
 { #category : #'frame access' }
