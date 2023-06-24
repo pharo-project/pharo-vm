@@ -137,6 +137,7 @@ sqInt failed(void);
 void fullGC(void);
 sqInt primitiveFail(void);
 sqInt primitiveFailFor(sqInt reasonCode);
+sqInt showDisplayBitsLeftTopRightBottom(sqInt aForm, sqInt l, sqInt t, sqInt r, sqInt b);
 sqInt signalSemaphoreWithIndex(sqInt semaIndex);
 sqInt success(sqInt aBoolean);
 sqInt superclassOf(sqInt classPointer);
@@ -357,6 +358,7 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 	VM->failed = failed;
 	VM->fullGC = fullGC;
 	VM->primitiveFail = primitiveFail;
+	VM->showDisplayBitsLeftTopRightBottom = showDisplayBitsLeftTopRightBottom;
 	VM->signalSemaphoreWithIndex = signalSemaphoreWithIndex;
 	VM->success = success;
 	VM->superclassOf = superclassOf;
