@@ -9047,7 +9047,7 @@ SpurMemoryManager >> methodHeaderFromSavedFirstField: oop [
 { #category : #'memory access' }
 SpurMemoryManager >> methodHeaderOf: methodObj [
 	"Answer the method header of a CompiledMethod object."
-	self assert: (self isCompiledMethod: methodObj).
+	<inline: true>
 	^ self rawHeaderOf: methodObj
 ]
 
