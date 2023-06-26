@@ -6844,10 +6844,14 @@ SpurMemoryManager >> instantiateClass: classObj indexableSize: nElements isPinne
 { #category : #instantiation }
 SpurMemoryManager >> instantiateClass: classObj isPinned: isPinned [
 	| instSpec classFormat numSlots classIndex newObj |
+	(self numSlotsOfAny: classObj) >= InstanceSpecificationIndex ifFalse:
+		[self primitiveFailFor: PrimErrBadReceiver. "no format"
+		 ^nil].
 	classFormat := self formatOfClass: classObj.
 	instSpec := self instSpecOfClassFormat: classFormat.
 	(self isFixedSizePointerFormat: instSpec) ifFalse:
-		[^nil].
+		[self primitiveFailFor: PrimErrBadReceiver. "bad format"
+		^nil].
 	classIndex := self ensureBehaviorHash: classObj.
 	classIndex < 0 ifTrue:
 		[coInterpreter primitiveFailFor: classIndex negated.
@@ -6855,7 +6859,8 @@ SpurMemoryManager >> instantiateClass: classObj isPinned: isPinned [
 	numSlots := self fixedFieldsOfClassFormat: classFormat.
 	newObj := self allocateSlots: numSlots format: instSpec classIndex: classIndex isPinned: isPinned.
 	newObj ifNotNil:
-		[self fillObj: newObj numSlots: numSlots with: nilObj].
+		[self fillObj: newObj numSlots: numSlots with: nilObj]
+		ifNil: [ self primitiveFailFor: PrimErrNoMemory ].
 	^newObj
 ]
 
