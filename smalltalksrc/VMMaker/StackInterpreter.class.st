@@ -1827,8 +1827,7 @@ StackInterpreter >> activateFailingPrimitiveMethod [
 	self assert: (self primitiveIndexOf: newMethod) ~= 0.
 	self justActivateNewMethod: true. "Frame must be interpreted"
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
-	"NOTREACHED"
-	^nil
+	self unreachable
 ]
 
 { #category : #'control primitives' }
@@ -3698,8 +3697,7 @@ StackInterpreter >> callbackLeave: cbID [
 	cbID < 1 ifTrue:[^false].
 	"This is ugly but necessary, or otherwise the Mac will not build"
 	self long: (jmpBuf at: jmpDepth) jmp: 1.
-	"NOTREACHED"
-	^nil
+	self unreachable
 ]
 
 { #category : #'message sending' }
