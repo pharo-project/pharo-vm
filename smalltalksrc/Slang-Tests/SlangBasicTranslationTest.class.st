@@ -5192,6 +5192,28 @@ SlangBasicTranslationTest >> testSendSignedRightBitShiftVariable64Bits [
 	self assert: translation equals: '((sqLong) a ) >> 3'
 ]
 
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendStructAccessorWithReservedWordSelector [
+	"Tests if the renaming of the accessors impacts the struct accessing"
+
+	| translation send |
+	generator addStructClasses: { MockVMStructWithReservedWords }.
+	generator renameKeywordsConflicts.
+
+	generator pushScope:
+		(TStatementListNode new addDeclarations: (Dictionary new
+				  at: 'structInstance' put: 'MockVMStructWithReservedWords*';
+				  yourself)).
+	send := TSendNode
+		        receiver: (TVariableNode named: 'structInstance')
+		        selector: #case
+		        arguments: {  }.
+
+	translation := self translate: send.
+
+	self assert: translation equals: '(structInstance->case_1)'
+]
+
 { #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testSendSubclassResponsibility [
 
@@ -5975,6 +5997,27 @@ SlangBasicTranslationTest >> testSendWordSize [
 			                arguments: { }).
 
 	self assert: translation equals: 'BytesPerWord'
+]
+
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testStructFieldIsRenamedWithReservedWord [
+	"Tests if the struct field is renamed when it's a reserved word"
+
+	| translation |
+	
+	generator addStructClasses: { MockVMStructWithReservedWords }.
+	generator renameKeywordsConflicts.
+	generator vmClass: VMClass.
+
+	translation := String streamContents: [ :s | generator emitCTypesOn: s ].
+
+	self assert: translation equals: 'typedef struct {
+	char *foo;
+	char *case_1;
+ } MockVMStructWithReservedWords;
+
+
+'
 ]
 
 { #category : #'tests-case' }

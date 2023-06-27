@@ -78,6 +78,12 @@ SlangStructType class >> needsTypeTag [
 { #category : #translation }
 SlangStructType class >> printTypedefOn: aStream [
 
+	^self printTypedefOn: aStream withTranslations: Dictionary new.
+]
+
+{ #category : #translation }
+SlangStructType class >> printTypedefOn: aStream withTranslations: ivnTranslations [
+
 	aStream nextPutAll: 'typedef struct '.
 	self needsTypeTag ifTrue: [
 		aStream
@@ -87,9 +93,10 @@ SlangStructType class >> printTypedefOn: aStream [
 		nextPut: ${;
 		cr.
 	self instVarTypeDeclarationsDo: [ :ivn :typeArg |
-		| type |
-		ivn first == $#
-			ifTrue: [ aStream nextPutAll: ivn ]
+		| type ivnC|
+		ivnC := ivnTranslations at: ivn ifAbsent: [ ivn ].
+		ivnC first == $#
+			ifTrue: [ aStream nextPutAll: ivnC ]
 			ifFalse: [
 				type := typeArg.
 				#( BytesPerWord BaseHeaderSize BytesPerOop ) do: [ :sizeConstant |
@@ -114,7 +121,7 @@ SlangStructType class >> printTypedefOn: aStream [
 							aStream nextPutAll: type first.
 							(type first last isSeparator or: [ type first last = $* ])
 								ifFalse: [ aStream tab: 2 ].
-							aStream nextPutAll: ivn.
+							aStream nextPutAll: ivnC.
 							type last first isSeparator ifFalse: [ aStream space ].
 							aStream nextPutAll: type last ]
 						ifFalse: [
@@ -122,7 +129,7 @@ SlangStructType class >> printTypedefOn: aStream [
 							aStream nextPutAll: type.
 							(type last isSeparator or: [ type last = $* ]) ifFalse: [
 								aStream tab: 1 ].
-							aStream nextPutAll: ivn ] ].
+							aStream nextPutAll: ivnC ] ].
 				aStream nextPut: $; ].
 		aStream cr ].
 	aStream

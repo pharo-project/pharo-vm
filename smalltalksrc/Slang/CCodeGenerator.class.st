@@ -43,7 +43,8 @@ Class {
 		'stopOnErrors',
 		'castTranslationDict',
 		'castAsArgumentTranslationDict',
-		'wordSize'
+		'wordSize',
+		'structInstanceVariableTranslations'
 	],
 	#classVars : [
 		'NoRegParmsInAssertVMs'
@@ -371,6 +372,11 @@ CCodeGenerator >> addStructClasses: classes silently: aSilentlyBoolean [
 		 (structClass withAllSuperclasses copyUpTo: SlangStructType) do:
 			[:structClassOrSuperclass|
 			 self addStructClass: structClassOrSuperclass silently: aSilentlyBoolean ]]
+]
+
+{ #category : #public }
+CCodeGenerator >> addStructInstanceVariableTranslation: aVariable to: aString [
+	structInstanceVariableTranslations at: aVariable asSymbol put: aString
 ]
 
 { #category : #utilities }
@@ -1234,7 +1240,7 @@ CCodeGenerator >> emitCTypesOn: aStream [
 	"Store local type declarations on the given stream."
 	self structClasses do: [:structClass|
 		(self shouldGenerateStruct: structClass) ifTrue: [
-			structClass printTypedefOn: aStream.
+			structClass printTypedefOn: aStream withTranslations: structInstanceVariableTranslations.
 			aStream cr; cr ] ]
 ]
 
@@ -3103,6 +3109,7 @@ CCodeGenerator >> initialize [
 	logger := (ProvideAnswerNotification new tag: #logger; signal) ifNil: [Transcript].
 	pools := IdentitySet new.
 	selectorTranslations := IdentityDictionary new.
+	structInstanceVariableTranslations := IdentityDictionary new.
 	suppressAsmLabels := false.
 	previousCommentMarksInlining := false.
 	previousCommenter := nil.
@@ -4428,7 +4435,16 @@ CCodeGenerator >> renameKeywordsConflicts [
 		(self reservedWords includes: cSelector) ifTrue: [
 			self
 				addSelectorTranslation: method selector
-				to: (self sanitizeKeyword: cSelector) ] ]
+				to: (self sanitizeKeyword: cSelector) ] ].
+
+	"translate structs instance variables"
+	structClasses ifNotNil: [ :classes |
+		classes do: [ :struct |
+			struct instVarTypeDeclarationsDo: [ :ivn :type |
+				(self reservedWords includes: ivn) ifTrue: [
+					self
+						addStructInstanceVariableTranslation: ivn
+						to: (self sanitizeKeyword: ivn) ] ] ] ]
 ]
 
 { #category : #'C translation support' }
