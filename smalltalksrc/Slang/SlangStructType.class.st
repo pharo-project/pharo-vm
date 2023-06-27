@@ -24,6 +24,33 @@ SlangStructType class >> filteredInstVarNames [
 ]
 
 { #category : #translation }
+SlangStructType class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
+	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a struct of this type."
+
+	self subclassResponsibility
+]
+
+{ #category : #translation }
+SlangStructType class >> instVarTypeDeclarationsDo: aBinaryBlock [
+
+	| instVarNameTypeDeclarations |
+	instVarNameTypeDeclarations := Dictionary new.
+
+	self instVarNamesAndTypesForTranslationDo: [ :ivn :type |
+		instVarNameTypeDeclarations at: ivn put: type ].
+
+
+	self filteredInstVarNames do: [ :ivn |
+		| typeDeclaration |
+		typeDeclaration := instVarNameTypeDeclarations at: ivn ifAbsent: [
+			                   TranslationError signal:
+				                   'Missing type declaration for instance variable '
+				                   , ivn ].
+
+		aBinaryBlock value: ivn value: typeDeclaration ]
+]
+
+{ #category : #translation }
 SlangStructType class >> isAccessor: aSelector [
 	"Answer if aSelector is simply an accessor method for one of our fields."
 	^(self instVarIndexFor: (aSelector copyWithout: $:) ifAbsent: [0]) > 0
