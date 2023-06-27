@@ -425,10 +425,10 @@ Spur64BitMemoryManager >> instantiateClass: classObj indexableSize: nElements is
 	<var: #nElements type: #usqInt>
 	"Allocate an instance of a variable class, excepting CompiledMethod."
 	| instSpec classFormat numSlots classIndex newObj fillValue |
-	(self numSlotsOfAny: classObj) >= InstanceSpecificationIndex ifFalse:
+	classFormat := self formatOfClassSafe: classObj.
+	classFormat ifNil:
 		[self primitiveFailFor: PrimErrBadReceiver. "no format"
 		 ^nil].
-	classFormat := self formatOfClass: classObj.
 	instSpec := self instSpecOfClassFormat: classFormat.
 	classIndex := self rawHashBitsOf: classObj.
 	fillValue := 0.
