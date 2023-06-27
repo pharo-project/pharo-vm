@@ -2869,10 +2869,7 @@ VMPrimitiveTest >> testPrimitiveNewWithArgWithInvalidClassFails2 [
 	| class |
 
 	"class object with no slots, so no format"
-	class := self memory
-		allocateSlotsInOldSpace: 0
-		format: memory nonIndexablePointerFormat
-		classIndex: memory arrayClassIndexPun.
+	class := self newObjectWithSlots: 0.
 
 	interpreter push: class.
 	interpreter push: (memory integerObjectOf: 256).
@@ -2911,10 +2908,7 @@ VMPrimitiveTest >> testPrimitiveNewWithInvalidClassFails [
 VMPrimitiveTest >> testPrimitiveNewWithInvalidClassFails2 [
 	| class |
 	"class object with no slots, so no format"
-	class := self memory
-		allocateSlotsInOldSpace: 0
-		format: memory nonIndexablePointerFormat
-		classIndex: memory arrayClassIndexPun.
+	class := self newObjectWithSlots: 0.
 
 	interpreter push: class.
 	interpreter primitiveNew.
