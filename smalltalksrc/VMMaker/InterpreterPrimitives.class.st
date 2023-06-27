@@ -905,6 +905,12 @@ InterpreterPrimitives >> primitiveAt [
 ]
 
 { #category : #'indexing primitives' }
+InterpreterPrimitives >> primitiveAtPointerArray [
+	<accessorDepth: 0>
+	self commonAtPointerArray
+]
+
+{ #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveAtPut [
 	<accessorDepth: 0>
 	self commonAtPut: false
