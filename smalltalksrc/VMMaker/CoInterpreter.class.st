@@ -3150,7 +3150,7 @@ CoInterpreter >> handleMNU: selectorIndex InMachineCodeTo: rcvr classForMessage:
 			 fromUnlinkedSendWithReceiver: rcvr.
 		 self unreachable].
 	self interpretMethodFromMachineCode.
-	self unreachable
+	^self unreachable
 ]
 
 { #category : #'message sending' }

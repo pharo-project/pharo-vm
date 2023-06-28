@@ -1278,7 +1278,8 @@ VMClass >> unreachable [
 	Raise an error in debug mode, but is a noop on release mode."
 
 	<inline: true>
-	self assert: false
+	self assert: false.
+	^nil
 ]
 
 { #category : #'memory access' }

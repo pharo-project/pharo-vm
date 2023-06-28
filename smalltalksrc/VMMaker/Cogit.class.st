@@ -4115,7 +4115,7 @@ Cogit >> ceSICMiss: receiver [
 		executeCogPIC: pic
 		fromLinkedSendWithReceiver: receiver
 		andCacheTag: (backEnd inlineCacheTagAt: outerReturn).
-	self unreachable
+	^self unreachable
 ]
 
 { #category : #accessing }
@@ -10316,7 +10316,7 @@ Cogit >> patchToOpenPICFor: selector numArgs: numArgs receiver: receiver [
 
 	"Jump into the oPIC at its entry"
 	coInterpreter executeCogMethod: oPIC fromLinkedSendWithReceiver: receiver.
-	self unreachable
+	^self unreachable
 ]
 
 { #category : #accessing }

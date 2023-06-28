@@ -3697,7 +3697,7 @@ StackInterpreter >> callbackLeave: cbID [
 	cbID < 1 ifTrue:[^false].
 	"This is ugly but necessary, or otherwise the Mac will not build"
 	self long: (jmpBuf at: jmpDepth) jmp: 1.
-	self unreachable
+	^self unreachable
 ]
 
 { #category : #'message sending' }
