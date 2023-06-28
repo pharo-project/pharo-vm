@@ -1633,7 +1633,7 @@ CoInterpreter >> ceSendAbort: selector to: rcvr numArgs: numArgs [
 		[self executeNewMethod.
 		 self unreachable].
 	self interpretMethodFromMachineCode.
-	self unreachable
+	^self unreachable
 ]
 
 { #category : #trampolines }
