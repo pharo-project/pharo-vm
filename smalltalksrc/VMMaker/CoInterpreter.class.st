@@ -1011,7 +1011,7 @@ CoInterpreter >> ceBaseFrameReturn: returnValue [
 	self stackTopPut: returnValue. "a.k.a. pop saved ip then push result"
 	self assert: (self checkIsStillMarriedContext: contextToReturnTo currentFP: framePointer).
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
-	self unreachable
+	^self unreachable
 ]
 
 { #category : #trampolines }
@@ -5234,7 +5234,7 @@ CoInterpreter >> return: returnValue toExecutive: inInterpreter [
 	inInterpreter ifTrue:
 		[^nil].
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
-	self unreachable
+	^self unreachable
 ]
 
 { #category : #trampolines }
