@@ -92,6 +92,13 @@ CogSimStackEntry class >> structTypeName [
 ]
 
 { #category : #accessing }
+CogSimStackEntry >> base [
+
+	self assert: (self type == SSSpill or: [self type == SSBaseOffset]).
+	^ registerr
+]
+
+{ #category : #accessing }
 CogSimStackEntry >> bcptr [
 	"Answer the value of bcptr"
 
@@ -132,6 +139,21 @@ CogSimStackEntry >> constant: anObject [
 	"Set the value of constant"
 
 	^constant := anObject
+]
+
+{ #category : #'compile abstract instructions' }
+CogSimStackEntry >> copyToReg: reg [
+
+	"Copy the value of the current entry to the register argument.
+	Do not touch the stack"
+	
+	type caseOf: {
+		[SSBaseOffset]	-> [cogit MoveMw: offset r: registerr R: reg].
+		[SSSpill]		-> [cogit MoveMw: offset r: registerr R: reg].
+		[SSConstant]	-> [cogit genMoveConstant: constant R: reg].
+		[SSRegister]	-> [reg = registerr
+								ifTrue: [cogit Label]
+								ifFalse: [cogit MoveR: registerr R: reg]] }
 ]
 
 { #category : #'compile abstract instructions' }
@@ -218,20 +240,6 @@ CogSimStackEntry >> maybeConstant [
 ]
 
 { #category : #'compile abstract instructions' }
-CogSimStackEntry >> moveToReg: reg [
-	spilled
-		ifTrue:
-			[cogit PopR: reg]
-		ifFalse:
-			[type caseOf: {
-				[SSBaseOffset]	-> [cogit MoveMw: offset r: registerr R: reg].
-				[SSConstant]	-> [cogit genMoveConstant: constant R: reg].
-				[SSRegister]	-> [reg ~= registerr
-										ifTrue: [cogit MoveR: registerr R: reg]
-										ifFalse: [cogit Label]] }]
-]
-
-{ #category : #'compile abstract instructions' }
 CogSimStackEntry >> moveToVectorReg: reg [
 	self assert: type = SSVectorRegister.
 	spilled
@@ -247,7 +255,7 @@ CogSimStackEntry >> moveToVectorReg: reg [
 { #category : #accessing }
 CogSimStackEntry >> offset [
 	"Answer the value of offset"
-	self assert: type = SSBaseOffset.
+	self assert: (self type == SSSpill or: [self type == SSBaseOffset]).
 	^offset
 ]
 
@@ -336,17 +344,6 @@ CogSimStackEntry >> spilled: anObject [
 	"Set the value of spilled"
 
 	^spilled := anObject
-]
-
-{ #category : #'compile abstract instructions' }
-CogSimStackEntry >> storeToReg: reg [
-	type caseOf: {
-		[SSBaseOffset]	-> [cogit MoveMw: offset r: registerr R: reg].
-		[SSSpill]		-> [cogit MoveMw: offset r: registerr R: reg].
-		[SSConstant]	-> [cogit genMoveConstant: constant R: reg].
-		[SSRegister]	-> [reg ~= registerr
-								ifTrue: [cogit MoveR: registerr R: reg]
-								ifFalse: [cogit Label]] }
 ]
 
 { #category : #accessing }
