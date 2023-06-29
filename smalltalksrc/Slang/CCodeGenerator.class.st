@@ -1053,6 +1053,7 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 
 	"code generation"
 
+	self renameConflictingMethods.
 	self renameKeywordsConflicts.
 
 	"If we're outputting the VM put the main interpreter loop first for two reasons.
@@ -4416,6 +4417,30 @@ CCodeGenerator >> removeVariable: aName ifAbsent: ifAbsentBlock [
 ]
 
 { #category : #translating }
+CCodeGenerator >> renameConflictingMethods [
+
+	| cFunctionNames toRename |
+	cFunctionNames := IdentityDictionary new.
+
+	methods do: [ :m |
+		| functionName conflicts |
+		functionName := self cFunctionNameFor: m selector.
+
+		conflicts := cFunctionNames at: functionName ifAbsent: [ #(  ) ].
+
+		cFunctionNames at: functionName put: (conflicts copyWith: m) ].
+
+	toRename := cFunctionNames select: [ :conflicts | conflicts size > 1 ].
+
+	toRename keysDo: [ :key |
+		(toRename at: key) do: [ :method |
+			method isStructAccessor ifFalse: [
+				self
+					addSelectorTranslation: method selector
+					to: key , method args size asString ] ] ]
+]
+
+{ #category : #translating }
 CCodeGenerator >> renameKeywordsConflicts [
 
 	methods do: [ :method |
@@ -4430,7 +4455,7 @@ CCodeGenerator >> renameKeywordsConflicts [
 			method renameVariablesUsing: localRewording ].
 
 		"translate selector"
-		cSelector := self cSelectorName: method selector.
+		cSelector := self cFunctionNameFor: method selector.
 
 		(self reservedWords includes: cSelector) ifTrue: [
 			self

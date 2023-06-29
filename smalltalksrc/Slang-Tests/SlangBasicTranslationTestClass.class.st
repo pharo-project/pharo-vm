@@ -158,6 +158,18 @@ SlangBasicTranslationTestClass >> methodWithOptionPragma [
 	
 ]
 
+{ #category : #'as yet unclassified' }
+SlangBasicTranslationTestClass >> methodWithRepeatedCFunctionName [
+
+	^ true
+]
+
+{ #category : #'as yet unclassified' }
+SlangBasicTranslationTestClass >> methodWithRepeatedCFunctionName: arg1 [
+
+	^ true
+]
+
 { #category : #inline }
 SlangBasicTranslationTestClass >> methodWithReservedWordLocal: register [
 
