@@ -1120,7 +1120,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		(79 primitiveNewMethod)
 
 		"Control Primitives (80-89)"
-		(80 primitiveAtPointerArray)
+		(80 primitiveAtStringArray)
 		(81 primitiveFail)
 		(82 primitiveFail)
 		(83 primitivePerform)
@@ -2223,6 +2223,36 @@ StackInterpreter >> assertValidStackLimits: ln [
 	self assert: (stackPage stackLimit = stackPage realStackLimit
 				or: [stackPage stackLimit = self allOnesAsCharStar])
 		l: ln
+]
+
+{ #category : #'indexing primitive support' }
+StackInterpreter >> atStringArray [
+	"This is a specialized primitive for strings.
+	The generic primitive is defined in the #commonAt: method.
+	Look at the comment of that method for more information."
+
+	<inline: true>
+	| index array result |
+	self initPrimCall. "to get it inlined in primitiveAt and primitiveStringAt"
+	array := self stackValue: 1.
+	index := self stackTop.
+
+	"validate things like the index is an intefer, the array is not a forwarder, etc."
+	self validateArray: array andIndex: index.
+
+	"No need to test for large positive integers here, no object has 7EB elements."
+	index := objectMemory integerValueOf: index.
+	result := self stPointerArray: array at: index.
+
+	self successful ifFalse: [ ^ self ].
+
+	"Check if the character can be decoded."
+	(objectMemory isInRangeCharacterCode: result)
+		ifFalse: [ ^ self primitiveFailFor: PrimErrBadReceiver ].
+	"Decode"
+	result := self characterForAscii: (objectMemory integerValueOf: result).
+
+	self pop: argumentCount + 1 thenPush: result
 ]
 
 { #category : #'return bytecodes' }
@@ -4404,7 +4434,7 @@ StackInterpreter >> codeGeneratorToComputeAccessorDepth: aCCodeGenerator [
 ]
 
 { #category : #'indexing primitive support' }
-StackInterpreter >> commonAt: stringy [
+StackInterpreter >> commonAt [
 	"This code is called if the receiver responds primitively to at:.
 	 N.B. this does *not* use the at cache, instead inlining stObject:at:.
 	 Using the at cache here would require that callers set messageSelector
@@ -4417,58 +4447,12 @@ StackInterpreter >> commonAt: stringy [
 	array := self stackValue: 1.
 	index := self stackTop.
 
-	"Validate that the receiver is not "
-	(objectMemory isImmediate: array)
-		ifTrue: [ ^ self primitiveFailFor: PrimErrInappropriate ].
+	"validate things like the index is an intefer, the array is not a forwarder, etc."
+	self validateArray: array andIndex: index.
 
-	"If the index is not an integer, fail"
-	"If the array is a forwarder, for example in the case of e.g. object:basicAt:, fail"
-	((objectMemory isNonIntegerObject: index)
-		or: [ argumentCount > 1
-				and: [ objectMemory isForwarded: array ]  ])
-				ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-	
 	"No need to test for large positive integers here, no object has 7EB elements"
 	index := objectMemory integerValueOf: index.
 	result := self stObject: array at: index.
-
-	self successful ifFalse: [ ^ self ].
-
-	stringy ifTrue: [
-		(objectMemory isInRangeCharacterCode: result)
-			ifFalse: [ ^ self primitiveFailFor: PrimErrBadReceiver ].
-		result := self characterForAscii: (objectMemory integerValueOf: result) ].
-	self pop: argumentCount + 1 thenPush: result
-]
-
-{ #category : #'indexing primitive support' }
-StackInterpreter >> commonAtPointerArray [
-	"This code is called if the receiver responds primitively to at:.
-	 N.B. this does *not* use the at cache, instead inlining stObject:at:.
-	 Using the at cache here would require that callers set messageSelector
-	 and lkupClass and that is onerous and error-prone, and in any case,
-	 inlining produces much better performance than using the at cache here."
-
-	<inline: true>
-	| index array result |
-	self initPrimCall. "to get it inlined in primitiveAt and primitiveStringAt"
-	array := self stackValue: 1.
-	index := self stackTop.
-
-	"Validate that the receiver is not immediate"
-	(objectMemory isImmediate: array)
-		ifTrue: [ ^ self primitiveFailFor: PrimErrInappropriate ].
-
-	"If the index is not an integer, fail"
-	"If the array is a forwarder, for example in the case of e.g. object:basicAt:, fail"
-	((objectMemory isNonIntegerObject: index)
-		or: [ argumentCount > 1
-				and: [ objectMemory isForwarded: array ]  ])
-				ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-	
-	"No need to test for large positive integers here, no object has 7EB elements"
-	index := objectMemory integerValueOf: index.
-	result := self stPointerArray: array at: index.
 
 	self successful ifFalse: [ ^ self ].
 	self pop: argumentCount + 1 thenPush: result
@@ -16007,6 +15991,24 @@ StackInterpreter >> validStackPageBaseFrames [
 			[(self validStackPageBaseFrame: aPage) ifFalse:
 				[^false]]].
 	^true
+]
+
+{ #category : #'indexing primitive support' }
+StackInterpreter >> validateArray: array andIndex: index [
+	"This is a helper method to valide if the array and the index parameter are valid.
+	For example, that the index is an integer, that the array is not a forwarder, etc."
+
+	<inline: true>
+	"Validate that the receiver is not immediate"
+	(objectMemory isImmediate: array)
+		ifTrue: [ ^ self primitiveFailFor: PrimErrInappropriate ].
+
+	"If the index is not an integer, fail"
+	"If the array is a forwarder, for example in the case of e.g. object:basicAt:, fail"
+	(objectMemory isNonIntegerObject: index)	
+		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory isForwarded: array)
+		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ]
 ]
 
 { #category : #'primitive support' }
