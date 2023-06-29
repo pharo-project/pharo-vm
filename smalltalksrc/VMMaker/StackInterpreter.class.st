@@ -6771,17 +6771,15 @@ StackInterpreter >> frameCallerContext: theFP [
 { #category : #'frame access' }
 StackInterpreter >> frameCallerContext: theFP put: aValue [
 	"The first word on the stack holds the base frame's caller context, which is immediately above the stacked receiver."
+
 	<var: #theFP type: #'char *'>
 	<inline: true>
-	self assert: (aValue = objectMemory nilObject or: [objectMemory isContext: aValue]).
+	self assert: (aValue = objectMemory nilObject or: [ objectMemory isContext: aValue ]).
 	self assert: (self isBaseFrame: theFP).
 	self assert: theFP + (self frameStackedReceiverOffset: theFP) + (2 * objectMemory wordSize) = (stackPages stackPageFor: theFP) baseAddress.
 	self isCog ifTrue: [
-		self assert: (stackPages longAt: theFP + (self frameStackedReceiverOffset: theFP) + (2 * objectMemory wordSize)) = (self frameContext: theFP).
-	].
-	^stackPages
-		longAt: theFP + (self frameStackedReceiverOffset: theFP) + (2 * objectMemory wordSize)
-		put: aValue
+		self assert: (stackPages longAt: theFP + (self frameStackedReceiverOffset: theFP) + objectMemory wordSize) = (self frameContext: theFP) ].
+	^ stackPages longAt: theFP + (self frameStackedReceiverOffset: theFP) + (2 * objectMemory wordSize) put: aValue
 ]
 
 { #category : #'frame access' }
