@@ -6776,7 +6776,9 @@ StackInterpreter >> frameCallerContext: theFP put: aValue [
 	self assert: (aValue = objectMemory nilObject or: [objectMemory isContext: aValue]).
 	self assert: (self isBaseFrame: theFP).
 	self assert: theFP + (self frameStackedReceiverOffset: theFP) + (2 * objectMemory wordSize) = (stackPages stackPageFor: theFP) baseAddress.
-	self assert: (stackPages longAt: theFP + (self frameStackedReceiverOffset: theFP) + objectMemory wordSize) = (self frameContext: theFP).
+	self isCog ifTrue: [
+		self assert: (stackPages longAt: theFP + (self frameStackedReceiverOffset: theFP) + (2 * objectMemory wordSize)) = (self frameContext: theFP).
+	].
 	^stackPages
 		longAt: theFP + (self frameStackedReceiverOffset: theFP) + (2 * objectMemory wordSize)
 		put: aValue
@@ -10330,10 +10332,18 @@ StackInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 	callerFP := self frameCallerFP: theFP.
 	self assert: (self frameHasContext: callerFP).
 	self assert: (objectMemory isContext: (self frameContext: callerFP)).
-	theContext := self ensureFrameIsMarried: theFP SP: (self frameReceiverLocation: theFP).
+
+	"In cog the base frames are married, in non cog they are not"
+	self isCog ifTrue: [
+		theContext := self ensureFrameIsMarried: theFP SP: (self frameReceiverLocation: theFP).
+	] ifFalse: [
+		theContext := objectMemory nilObject.
+	].
+
 	stackPages
 		unsignedLongAt: (newSP := newPage baseAddress) put: (self frameContext: callerFP);
 		unsignedLongAt: (newSP := newSP - objectMemory wordSize) put:  theContext.
+
 	stackedReceiverOffset := self frameStackedReceiverOffset: theFP.
 	"First move the data, leaving room for the caller and base frame contexts.  We will fix up frame pointers later."
 	theFP + stackedReceiverOffset
@@ -10342,11 +10352,13 @@ StackInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 		do: [:source|
 			newSP := newSP - objectMemory wordSize.
 			stackPages longAt: newSP put: (stackPages longAt: source)].
+
 	"newSP = oldSP + delta => delta = newSP - oldSP"
 	delta := newSP - oldPage headSP.
 	newFP := newPage baseAddress - stackedReceiverOffset - (2 * objectMemory wordSize).
 	self setHeadFP: oldPage headFP + delta andSP: newSP inPage: newPage.
 	newPage baseFP: newFP.
+
 	callerIP := self oopForPointer: (self frameCallerSavedIP: theFP).
 	stackPages longAt: theFP + stackedReceiverOffset put: callerIP.
 	self assert: (callerFP < oldPage baseAddress
