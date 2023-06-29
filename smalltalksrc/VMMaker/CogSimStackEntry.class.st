@@ -151,9 +151,9 @@ CogSimStackEntry >> copyToReg: reg [
 		[SSBaseOffset]	-> [cogit MoveMw: offset r: registerr R: reg].
 		[SSSpill]		-> [cogit MoveMw: offset r: registerr R: reg].
 		[SSConstant]	-> [cogit genMoveConstant: constant R: reg].
-		[SSRegister]	-> [reg ~= registerr
-								ifTrue: [cogit MoveR: registerr R: reg]
-								ifFalse: [cogit Label]] }
+		[SSRegister]	-> [reg = registerr
+								ifTrue: [cogit Label]
+								ifFalse: [cogit MoveR: registerr R: reg]] }
 ]
 
 { #category : #'compile abstract instructions' }
