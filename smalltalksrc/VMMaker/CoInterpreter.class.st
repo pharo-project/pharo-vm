@@ -2086,7 +2086,7 @@ CoInterpreter >> contextInstructionPointer: anIP frame: theFP [
 	theIP := theIP = cogit ceReturnToInterpreterPC
 		         ifTrue: [ self iframeSavedIP: theFP ]
 		         ifFalse: [ theIP ].
-	^ super contextInstructionPointer: anIP frame: theFP
+	^ super contextInstructionPointer: theIP frame: theFP
 ]
 
 { #category : #'frame access' }

@@ -4832,12 +4832,12 @@ StackInterpreter >> context: aContext hasValidInversePCMappingOf: theIP in: theF
 ]
 
 { #category : #'frame access' }
-StackInterpreter >> contextInstructionPointer: anIP frame: theFP [
+StackInterpreter >> contextInstructionPointer: theIP frame: theFP [
 
 	<var: #theFP type: #'char *'>
-	self assert: (self validInstructionPointer: anIP inFrame: theFP).
+	self assert: (self validInstructionPointer: theIP inFrame: theFP).
 	^ objectMemory integerObjectOf:
-		  anIP - (self iframeMethod: theFP) - objectMemory baseHeaderSize
+		  theIP - (self iframeMethod: theFP) - objectMemory baseHeaderSize
 		  + 2
 ]
 
