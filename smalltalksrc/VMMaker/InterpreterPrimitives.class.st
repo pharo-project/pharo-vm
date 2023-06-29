@@ -3951,7 +3951,7 @@ InterpreterPrimitives >> primitiveStopVMProfiling [
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveStringAt [
 
-	self atStringArray
+	self stringArrayAt
 ]
 
 { #category : #'indexing primitives' }

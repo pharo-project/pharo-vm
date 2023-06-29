@@ -2225,36 +2225,6 @@ StackInterpreter >> assertValidStackLimits: ln [
 		l: ln
 ]
 
-{ #category : #'indexing primitive support' }
-StackInterpreter >> atStringArray [
-	"This is a specialized primitive for strings.
-	The generic primitive is defined in the #commonAt: method.
-	Look at the comment of that method for more information."
-
-	<inline: true>
-	| index array result |
-	self initPrimCall. "to get it inlined in primitiveAt and primitiveStringAt"
-	array := self stackValue: 1.
-	index := self stackTop.
-
-	"validate things like the index is an intefer, the array is not a forwarder, etc."
-	self validateArray: array andIndex: index.
-
-	"No need to test for large positive integers here, no object has 7EB elements."
-	index := objectMemory integerValueOf: index.
-	result := self stObject: array at: index.
-
-	self successful ifFalse: [ ^ self ].
-
-	"Check if the character can be decoded."
-	(objectMemory isInRangeCharacterCode: result)
-		ifFalse: [ ^ self primitiveFailFor: PrimErrBadReceiver ].
-	"Decode"
-	result := self characterForAscii: (objectMemory integerValueOf: result).
-
-	self pop: argumentCount + 1 thenPush: result
-]
-
 { #category : #'return bytecodes' }
 StackInterpreter >> baseFrameCannotReturnTo: contextToReturnTo [
 
@@ -14999,6 +14969,36 @@ StackInterpreter >> storeStackPointerValue: value inContext: aContext [
 	objectMemory storePointerUnchecked: StackPointerIndex
 		ofObject: aContext
 		withValue: (objectMemory integerObjectOf: value)
+]
+
+{ #category : #'indexing primitive support' }
+StackInterpreter >> stringArrayAt [
+	"This is a specialized primitive for strings.
+	The generic primitive is defined in the #commonAt: method.
+	Look at the comment of that method for more information."
+
+	<inline: true>
+	| index array result |
+	self initPrimCall. "to get it inlined in primitiveAt and primitiveStringAt"
+	array := self stackValue: 1.
+	index := self stackTop.
+
+	"validate things like the index is an intefer, the array is not a forwarder, etc."
+	self validateArray: array andIndex: index.
+
+	"No need to test for large positive integers here, no object has 7EB elements."
+	index := objectMemory integerValueOf: index.
+	result := self stObject: array at: index.
+
+	self successful ifFalse: [ ^ self ].
+
+	"Check if the character can be decoded."
+	(objectMemory isInRangeCharacterCode: result)
+		ifFalse: [ ^ self primitiveFailFor: PrimErrBadReceiver ].
+	"Decode"
+	result := self characterForAscii: (objectMemory integerValueOf: result).
+
+	self pop: argumentCount + 1 thenPush: result
 ]
 
 { #category : #'debug support' }
