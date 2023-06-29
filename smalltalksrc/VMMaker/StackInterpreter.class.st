@@ -7881,13 +7881,7 @@ StackInterpreter >> instVar: index ofContext: aMarriedContext put: anOop [
 		self ensureContextIsExecutionSafeAfterAssignToStackPointer:
 			aMarriedContext ].
 	"Assigning various fields can force a divorce which can change the stackPage."
-	stackPages markStackPageMostRecentlyUsed: stackPage.
-	self
-		assertValidExecutionPointe: instructionPointer asUnsignedInteger
-		r: framePointer
-		s: stackPointer
-		imbar: true
-		line: #__LINE__
+	stackPages markStackPageMostRecentlyUsed: stackPage
 ]
 
 { #category : #'indexing primitive support' }
