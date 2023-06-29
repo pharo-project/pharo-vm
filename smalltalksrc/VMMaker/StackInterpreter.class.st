@@ -2242,7 +2242,7 @@ StackInterpreter >> atStringArray [
 
 	"No need to test for large positive integers here, no object has 7EB elements."
 	index := objectMemory integerValueOf: index.
-	result := self stPointerArray: array at: index.
+	result := self stObject: array at: index.
 
 	self successful ifFalse: [ ^ self ].
 
@@ -4452,7 +4452,9 @@ StackInterpreter >> commonAt [
 
 	"No need to test for large positive integers here, no object has 7EB elements"
 	index := objectMemory integerValueOf: index.
-	result := self stObject: array at: index.
+	"At this point, we know that we have a pointer array.
+	There is a special method for the String."
+	result := self stPointerArray: array at: index.
 
 	self successful ifFalse: [ ^ self ].
 	self pop: argumentCount + 1 thenPush: result
