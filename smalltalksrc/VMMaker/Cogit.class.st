@@ -3837,8 +3837,7 @@ Cogit >> ceCPICMiss: cPIC receiver: receiver [
 		executeCogPIC: cPIC
 		fromLinkedSendWithReceiver: receiver
 		andCacheTag: (backEnd inlineCacheTagAt: outerReturn).
-	"NOTREACHED"
-	^nil
+	self unreachable
 ]
 
 { #category : #accessing }
@@ -4101,8 +4100,7 @@ Cogit >> ceSICMiss: receiver [
 		executeCogPIC: pic
 		fromLinkedSendWithReceiver: receiver
 		andCacheTag: (backEnd inlineCacheTagAt: outerReturn).
-	"NOTREACHED"
-	^nil
+	^self unreachable
 ]
 
 { #category : #accessing }
@@ -10303,8 +10301,7 @@ Cogit >> patchToOpenPICFor: selector numArgs: numArgs receiver: receiver [
 
 	"Jump into the oPIC at its entry"
 	coInterpreter executeCogMethod: oPIC fromLinkedSendWithReceiver: receiver.
-	"NOTREACHED"
-	^true
+	^self unreachable
 ]
 
 { #category : #accessing }
@@ -11522,7 +11519,7 @@ Cogit >> simulateEnilopmart: enilopmartAddress numArgs: n [
 	self simulateCogCodeAt: enilopmartAddress.
 	"We should either longjmp back to the interpreter or
 	 stay in machine code so control should not reach here."
-	self assert: false
+	self unreachable
 ]
 
 { #category : #accessing }

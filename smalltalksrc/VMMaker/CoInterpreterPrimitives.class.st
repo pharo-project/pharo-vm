@@ -407,8 +407,8 @@ CoInterpreterPrimitives >> primitiveSnapshot [
 		["snapshot: has reached the end and built a frame.
 		 In the JIT we need to back-up the pc before reentering the interpreter."
 		instructionPointer := instructionPointer - 1].
-	self siglong: reenterInterpreter jmp: ReturnToInterpreter
-	"NOTREACHED"
+	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
+	self unreachable
 ]
 
 { #category : #'control primitives' }
@@ -599,8 +599,8 @@ CoInterpreterPrimitives >> primitiveVoidVMState [
 	self push: instructionPointer.
 	activeContext := self voidVMStateForSnapshotFlushingExternalPrimitivesIf: false.
 	self marryContextInNewStackPageAndInitializeInterpreterRegisters: activeContext.
-	self siglong: reenterInterpreter jmp: ReturnToInterpreter
-	"NOTREACHED"
+	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
+	self unreachable
 ]
 
 { #category : #'system control primitives' }
@@ -648,7 +648,7 @@ CoInterpreterPrimitives >> primitiveVoidVMStateForMethod [
 		 self assert: (methodObj = self stackTop or: [argumentCount > 0 and: [methodObj = (self stackValue: 1)]]).
 		 self pop: argumentCount.
 		 self siglong: reenterInterpreter jmp: ReturnToInterpreter.
-		 "NOTREACHED"].
+		 self unreachable].
 	"If not, work out where we are and continue"
 	theFrame := self frameOfMarriedContext: activeContext.
 	thePage := stackPages stackPageFor: theFrame.
