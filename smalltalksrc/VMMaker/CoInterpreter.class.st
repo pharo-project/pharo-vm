@@ -469,7 +469,7 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 		 self push: cogMethod asInteger + cogit noCheckEntryOffset.
 		 self push: rcvr.
 		 self callEnilopmart: #ceCallCogCodePopReceiverReg.
-		 self error: 'should not be reached'].
+		 self unreachable].
 	self push: framePointer.
 	framePointer := stackPointer.
 	self push: cogMethod asInteger.
@@ -491,7 +491,7 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 		 self push: cogMethod asInteger + cogMethod stackCheckOffset.
 		 self push: rcvr.
 		 self callEnilopmart: #ceEnterCogCodePopReceiverReg.
-		 self error: 'should not be reached'].
+		 self unreachable].
 	instructionPointer := cogMethod asInteger + cogMethod stackCheckOffset.
 	switched := self handleStackOverflowOrEventAllowContextSwitch: (self canContextSwitchIfActivating: newMethod header: methodHeader).
 	self returnToExecutive: inInterpreter postContextSwitch: switched
@@ -885,21 +885,21 @@ CoInterpreter >> callRegisterArgCogMethod: cogMethod at: entryOffset receiver: r
 		 self stackValue: 1 put: (self stackValue: 3). "first arg"
 		 self stackValue: 2 put: rcvr.
 		 self stackValue: 3 put: cogMethod asInteger + entryOffset.
-		 self callEnilopmart: #ceCallCogCodePopReceiverArg1Arg0Regs
-		"NOTREACHED"].
+		 self callEnilopmart: #ceCallCogCodePopReceiverArg1Arg0Regs.
+		 self unreachable].
 	cogMethod cmNumArgs = 1 ifTrue:
 		[self stackValue: 2 put: self stackTop. "retpc"
 		 self push: (self stackValue: 1). "arg"
 		 self stackValue: 1 put: rcvr.
 		 self stackValue: 2 put: cogMethod asInteger + entryOffset.
-		 self callEnilopmart: #ceCallCogCodePopReceiverArg0Regs
-		"NOTREACHED"].
+		 self callEnilopmart: #ceCallCogCodePopReceiverArg0Regs.
+		 self unreachable].
 	self assert: cogMethod cmNumArgs = 0.
 	self stackValue: 1 put: self stackTop. "retpc"
 	self stackValue: 0 put: cogMethod asInteger + entryOffset.
 	self push: rcvr.
-	self callEnilopmart: #ceCallCogCodePopReceiverReg
-	"NOTREACHED"
+	self callEnilopmart: #ceCallCogCodePopReceiverReg.
+	self unreachable
 ]
 
 { #category : #enilopmarts }
@@ -1003,7 +1003,7 @@ CoInterpreter >> ceBaseFrameReturn: returnValue [
 	(self isMachineCodeFrame: framePointer) ifTrue:
 		[self push: returnValue.
 		 self callEnilopmart: #ceEnterCogCodePopReceiverReg.
-		 "NOTREACHED"].
+		 self unreachable].
 	instructionPointer := self stackTop.
 	instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
 		[instructionPointer := self iframeSavedIP: framePointer].
@@ -1011,8 +1011,7 @@ CoInterpreter >> ceBaseFrameReturn: returnValue [
 	self stackTopPut: returnValue. "a.k.a. pop saved ip then push result"
 	self assert: (self checkIsStillMarriedContext: contextToReturnTo currentFP: framePointer).
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
-	"NOTREACHED"
-	^nil
+	^self unreachable
 ]
 
 { #category : #trampolines }
@@ -1189,16 +1188,16 @@ CoInterpreter >> ceInterpretMethodFromPIC: aMethodObj receiver: rcvr [
 			[cogit cog: aMethodObj selector: pic selector]].
 	(self methodHasCogMethod: aMethodObj) ifTrue:
 		[self executeCogMethod: (self cogMethodOf: aMethodObj)
-			fromUnlinkedSendWithReceiver: rcvr
-		 "NOTREACHED"].
+			fromUnlinkedSendWithReceiver: rcvr.
+		 self unreachable].
 	messageSelector := pic selector.
 	newMethod := aMethodObj.
 	primitiveIndex := self primitiveIndexOf: aMethodObj.
 	primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: objectMemory nilObject.
 	argumentCount := pic cmNumArgs.
 	instructionPointer := self popStack.
-	^self interpretMethodFromMachineCode
-	"NOTREACHED"
+	self interpretMethodFromMachineCode.
+	self unreachable
 ]
 
 { #category : #trampolines }
@@ -1221,8 +1220,7 @@ CoInterpreter >> ceMNUFromPICMNUMethod: aMethodObj receiver: rcvr [
 			[self push: instructionPointer.
 			 self executeCogMethod: (self cogMethodOf: aMethodObj)
 				 fromUnlinkedSendWithReceiver: rcvr.
-			 "NOTREACHED"
-			 self assert: false].
+			 self unreachable].
 		newMethod := aMethodObj.
 		primitiveIndex := self primitiveIndexOf: aMethodObj.
 		primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: objectMemory nilObject.
@@ -1233,8 +1231,7 @@ CoInterpreter >> ceMNUFromPICMNUMethod: aMethodObj receiver: rcvr [
 	self handleMNU: SelectorDoesNotUnderstand
 		InMachineCodeTo: rcvr
 		classForMessage: (lkupClass := objectMemory fetchClassOf: rcvr).
-	"NOTREACHED"
-	self assert: false
+	self unreachable
 ]
 
 { #category : #trampolines }
@@ -1394,8 +1391,7 @@ CoInterpreter >> ceReturnToInterpreter: anOop [
 	instructionPointer := self iframeSavedIP: framePointer.
 	self push: anOop.
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
-	"NOTREACHED"
-	^nil
+	self unreachable
 ]
 
 { #category : #trampolines }
@@ -1457,7 +1453,7 @@ CoInterpreter >> ceSend: selector above: methodClass to: rcvr numArgs: numArgs [
 				self handleMNU: errSelIdx
 					InMachineCodeTo: rcvr
 					classForMessage: classObj.
-				self assert: false "NOTREACHED"]].
+				self unreachable]].
 	"Method found and has a cog method.  Attempt to link to it.  The receiver's class may be young.
 	 We must not link to an Open PIC since they perform normal sends."
 	(self maybeMethodHasCogMethod: newMethod) ifTrue:
@@ -1479,10 +1475,10 @@ CoInterpreter >> ceSend: selector above: methodClass to: rcvr numArgs: numArgs [
 				receiver: rcvr].
 		 instructionPointer := self popStack.
 		 self executeNewMethod.
-		 self assert: false "NOTREACHED"].
+		 self unreachable].
 	instructionPointer := self popStack.
-	^self interpretMethodFromMachineCode
-	"NOTREACHED"
+	self interpretMethodFromMachineCode.
+	self unreachable
 ]
 
 { #category : #trampolines }
@@ -1566,7 +1562,7 @@ CoInterpreter >> ceSend: selector super: superNormalBar to: rcvr numArgs: numArg
 									ifFalse: [cogit noCheckEntryOffset])
 							receiver: rcvr].
 				self handleMNU: errSelIdx InMachineCodeTo: rcvr classForMessage: classObj.
-				self assert: false "NOTREACHED"]].
+				self unreachable]].
 	"Method found and has a cog method.  Attempt to link to it.  The receiver's class may be young.
 	 If the Cogit can't store young classes in inline caches we can link to an open PIC instead."
 	(self maybeMethodHasCogMethod: newMethod) ifTrue:
@@ -1597,10 +1593,10 @@ CoInterpreter >> ceSend: selector super: superNormalBar to: rcvr numArgs: numArg
 						receiver: rcvr]].
 		 instructionPointer := self popStack.
 		 self executeNewMethod.
-		 self assert: false "NOTREACHED"].
+		 self unreachable].
 	instructionPointer := self popStack.
-	^self interpretMethodFromMachineCode
-	"NOTREACHED"
+	self interpretMethodFromMachineCode.
+	self unreachable
 ]
 
 { #category : #trampolines }
@@ -1631,15 +1627,13 @@ CoInterpreter >> ceSendAbort: selector to: rcvr numArgs: numArgs [
 			 classObj := objectMemory classForClassTag: classTag.
 			 (errSelIdx := self lookupOrdinaryNoMNUEtcInClass: classObj) ~= 0 ifTrue:
 				[self handleMNU: errSelIdx InMachineCodeTo: rcvr classForMessage: classObj.
-				"NOTREACHED"
-				self assert: false]].
+				self unreachable]].
 	instructionPointer := self popStack.
 	(self maybeMethodHasCogMethod: newMethod) ifTrue:
 		[self executeNewMethod.
-		 self assert: false
-		 "NOTREACHED"].
-	^self interpretMethodFromMachineCode
-	"NOTREACHED"
+		 self unreachable].
+	self interpretMethodFromMachineCode.
+	^self unreachable
 ]
 
 { #category : #trampolines }
@@ -1677,15 +1671,13 @@ CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPIC [
 			 classObj := objectMemory classForClassTag: classTag.
 			 (errSelIdx := self lookupOrdinaryNoMNUEtcInClass: classObj) ~= 0 ifTrue:
 				[self handleMNU: errSelIdx InMachineCodeTo: rcvr classForMessage: classObj.
-				"NOTREACHED"
-				self assert: false]].
+				self unreachable]].
 	instructionPointer := self popStack.
 	(self maybeMethodHasCogMethod: newMethod) ifTrue:
 		[self executeNewMethod.
-		 self assert: false
-		 "NOTREACHED"].
-	^self interpretMethodFromMachineCode
-	"NOTREACHED"
+		 self unreachable].
+	self interpretMethodFromMachineCode.
+	self unreachable
 ]
 
 { #category : #trampolines }
@@ -2490,8 +2482,8 @@ CoInterpreter >> enterSmalltalkExecutiveImplementation [
 	"Setjmp for reentry into interpreter from elsewhere, e.g. machine-code trampolines."
 	self sigset: reenterInterpreter jmp: 0.
 	(self isMachineCodeFrame: framePointer) ifTrue:
-		[self returnToExecutive: false postContextSwitch: true
-		 "NOTREACHED"].
+		[self returnToExecutive: false postContextSwitch: true.
+		 self unreachable].
 	self setMethod: (self iframeMethod: framePointer).
 	instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
 		[instructionPointer := self iframeSavedIP: framePointer].
@@ -2521,8 +2513,8 @@ CoInterpreter >> executeCogMethod: cogMethod fromLinkedSendWithReceiver: rcvr [
 	self
 		push: cogMethod asInteger + cogit entryOffset;
 		push: rcvr.
-	self callEnilopmart: #ceCallCogCodePopReceiverReg
-	"NOTREACHED"
+	self callEnilopmart: #ceCallCogCodePopReceiverReg.
+	self unreachable
 ]
 
 { #category : #enilopmarts }
@@ -2545,8 +2537,8 @@ CoInterpreter >> executeCogMethod: cogMethod fromUnlinkedSendWithReceiver: rcvr 
 	self
 		push: cogMethod asInteger + cogit noCheckEntryOffset;
 		push: rcvr.
-	self callEnilopmart: #ceCallCogCodePopReceiverReg
-	"NOTREACHED"
+	self callEnilopmart: #ceCallCogCodePopReceiverReg.
+	self unreachable
 ]
 
 { #category : #enilopmarts }
@@ -2578,8 +2570,8 @@ CoInterpreter >> executeCogPIC: cogPIC fromLinkedSendWithReceiver: rcvr andCache
 	self
 		push: rcvr;
 		push: cacheTag.
-	self callEnilopmart: #ceCallCogCodePopReceiverAndClassRegs
-	"NOTREACHED"
+	self callEnilopmart: #ceCallCogCodePopReceiverAndClassRegs.
+	self unreachable
 ]
 
 { #category : #enilopmarts }
@@ -2600,8 +2592,8 @@ CoInterpreter >> executeFullCogBlock: cogMethod closure: closure mayContextSwitc
 				ifTrue: [cogit fullBlockEntryOffset]
 				ifFalse: [cogit fullBlockNoContextSwitchEntryOffset]).
 	self push: closure.
-	self callEnilopmart: #ceCallCogCodePopReceiverReg
-	"NOTREACHED"
+	self callEnilopmart: #ceCallCogCodePopReceiverReg.
+	self unreachable
 ]
 
 { #category : #'return bytecodes' }
@@ -3156,10 +3148,9 @@ CoInterpreter >> handleMNU: selectorIndex InMachineCodeTo: rcvr classForMessage:
 		[self push: instructionPointer.
 		 self executeCogMethod: (self cogMethodOf: newMethod)
 			 fromUnlinkedSendWithReceiver: rcvr.
-		 "NOTREACHED"
-		 self assert: false].
-	^self interpretMethodFromMachineCode
-	"NOTREACHED"
+		 self unreachable].
+	self interpretMethodFromMachineCode.
+	^self unreachable
 ]
 
 { #category : #'message sending' }
@@ -3438,8 +3429,7 @@ CoInterpreter >> interpretMethodFromMachineCode [
 		ifFail: [ "if not primitive, or primitive failed, activate the method and reenter the interpreter"
 			self activateNewMethod.
 			self siglong: reenterInterpreter jmp: ReturnToInterpreter.
-			"NOTREACHED"
-			^ nil ]
+			self unreachable ]
 ]
 
 { #category : #'stack pages' }
@@ -5234,8 +5224,8 @@ CoInterpreter >> return: returnValue toExecutive: inInterpreter [
 		[self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: false line: #'__LINE__'.
 		 self push: instructionPointer.
 		 self push: returnValue.
-		 self callEnilopmart: #ceEnterCogCodePopReceiverReg
-		 "NOTREACHED"].
+		 self callEnilopmart: #ceEnterCogCodePopReceiverReg.
+		 self unreachable].
 	self push: returnValue.
 	self setMethod: (self iframeMethod: framePointer).
 	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: true line: #'__LINE__'.
@@ -5244,8 +5234,7 @@ CoInterpreter >> return: returnValue toExecutive: inInterpreter [
 	inInterpreter ifTrue:
 		[^nil].
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
-	"NOTREACHED"
-	^nil
+	^self unreachable
 ]
 
 { #category : #trampolines }
@@ -5289,8 +5278,8 @@ CoInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedCon
 			ifFalse: [retValue := self mframeReceiver: framePointer].
 		 self push: instructionPointer.
 		 self push: retValue.
-		 self callEnilopmart: #ceEnterCogCodePopReceiverReg
-		 "NOTREACHED"].
+		 self callEnilopmart: #ceEnterCogCodePopReceiverReg.
+		 self unreachable].
 	self setMethod: (self iframeMethod: framePointer).
 	fullyInInterpreter := inInterpreter.
 	instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
@@ -5299,7 +5288,7 @@ CoInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedCon
 	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: true line: #'__LINE__'.
 	fullyInInterpreter ifFalse:
 		[self siglong: reenterInterpreter jmp: ReturnToInterpreter.
-		 "NOTREACHED"].
+		 self unreachable].
 	^nil
 ]
 
@@ -5322,8 +5311,8 @@ CoInterpreter >> returnToMachineCodeFrame [
 	self push: localReturnValue.
 	self cCode: '' inSmalltalk: [ 
 		self maybeCheckStackDepth: 1 sp: stackPointer pc: instructionPointer ].
-	self callEnilopmart: #ceEnterCogCodePopReceiverReg
-	"NOTREACHED"
+	self callEnilopmart: #ceEnterCogCodePopReceiverReg.
+	self unreachable
 ]
 
 { #category : #'method lookup cache' }
