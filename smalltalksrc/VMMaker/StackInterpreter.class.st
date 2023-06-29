@@ -1120,7 +1120,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		(79 primitiveNewMethod)
 
 		"Control Primitives (80-89)"
-		(80 primitiveAtStringArray)
+		(80 primitiveFail)
 		(81 primitiveFail)
 		(82 primitiveFail)
 		(83 primitivePerform)

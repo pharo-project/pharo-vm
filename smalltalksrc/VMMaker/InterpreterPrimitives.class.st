@@ -910,12 +910,6 @@ InterpreterPrimitives >> primitiveAtPut [
 	self commonAtPut: false
 ]
 
-{ #category : #'indexing primitives' }
-InterpreterPrimitives >> primitiveAtStringArray [
-	<accessorDepth: 0>
-	self atStringArray
-]
-
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveBehaviorHash [
 	| hashOrError |
