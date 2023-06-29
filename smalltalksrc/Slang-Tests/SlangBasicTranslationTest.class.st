@@ -105,6 +105,16 @@ SlangBasicTranslationTest >> shouldGenerateDeadCode [
 	^ true
 ]
 
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testApiMethodsWithConflictingName [
+	
+	generator addClass: SlangConflictingApiTestClass.
+	
+	self should: [generator renameConflictingMethods] raise: TranslationError.
+	
+	
+]
+
 { #category : #'tests-blocks' }
 SlangBasicTranslationTest >> testAssignBlockValueValueValue [
 

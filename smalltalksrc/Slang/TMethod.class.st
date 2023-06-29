@@ -3300,7 +3300,7 @@ TMethod >> validateVariableDeclarationExists: aVariableName [
 
 	| shouldCheckVariable |
 	shouldCheckVariable := (aVariableName beginsWithAnyOf:
-		                       #( #self #cascade #toDoLimit )) not.
+		                       #( #self #cascade #toDoLimit #std )) not.
 
 	(shouldCheckVariable and: [
 		 (self declaresVariableWithName: aVariableName) not]) ifTrue: [
