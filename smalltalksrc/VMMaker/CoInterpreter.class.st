@@ -2697,6 +2697,15 @@ CoInterpreter >> flushExternalPrimitiveOf: methodObj [
 			to: #primitiveExternalCall]
 ]
 
+{ #category : #'method lookup cache' }
+CoInterpreter >> flushMethodCache [
+	"Flush the method cache. The method cache is flushed on every programming change and
+	garbage collect."
+
+	super flushMethodCache.
+	cogit unlinkAllSends
+]
+
 { #category : #'message sending' }
 CoInterpreter >> followForwardedFieldsInCurrentMethod [
 
