@@ -9395,7 +9395,7 @@ StackInterpreter >> mapStackPages [
 					methodOopBeforeRemapping := self iframeMethod: theFP.
 					remappedMethodOop := objectMemory remapObj:
 						                     methodOopBeforeRemapping.
-					delta := methodOopBeforeRemapping + remappedMethodOop.
+					delta := methodOopBeforeRemapping - remappedMethodOop.
 					stackPages
 						unsignedLongAt: theFP + FoxMethod
 						put: remappedMethodOop.
