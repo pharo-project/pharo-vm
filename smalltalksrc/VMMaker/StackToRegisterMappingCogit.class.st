@@ -1395,33 +1395,23 @@ StackToRegisterMappingCogit >> freeAnyFloatRegNotConflictingWith: regMask [
 
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> freeAnyRegNotConflictingWith: regMask [
-	"Spill the oldest register on stack not conflicting with regMask. 
-	Returns the allocated register.
-	
-	Returns NoReg if no register was found, whether 
-	 - the stack is spilled or;
-	 - the mask conflicts with all entries "
-
+	"Spill the closest register on stack not conflicting with regMask. 
+	Assertion Failure if regMask has already all the registers"
 	<var: #desc type: #'CogSimStackEntry *'>
 	| reg index |
 	self assert: needsFrame.
-	
 	reg := NoReg.
 	index := simSpillBase max: 0.
-	"Walk the stack from spill base (or base of the stack if no spilling) to top.
-	Stop when we find a register or we reached the stack top"
-	[ reg = NoReg and: [ index < simStackPtr ] ] whileTrue: [
-		| desc |
-		desc := self simStackAt: index.
-		"If we find a register that does not conflict, choose it"
-		(desc type = SSRegister and: [
-			(regMask anyMask: (self registerMaskFor: desc register)) not]) ifTrue: [
-				reg := desc register ].
-		index := index + 1 ].
-
-	"If we found a register, spill its stack location"
-	reg = NoReg ifFalse: [ self ssAllocateRequiredReg: reg ].
-	^ reg
+	[reg = NoReg and: [index < simStackPtr]] whileTrue: 
+		[ | desc |
+		 desc := self simStackAt: index.
+		 desc type = SSRegister ifTrue:
+			[(regMask anyMask: (self registerMaskFor: desc registerr)) ifFalse: 
+				[reg := desc registerr]].
+		 index := index + 1].
+	self deny: reg = NoReg.
+	self ssAllocateRequiredReg: reg.
+	^reg
 ]
 
 { #category : #'mapped inline primitive generators - vectorial' }
@@ -3564,29 +3554,31 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 	 If the args don't fit in registers push receiver and args (spill everything), but still assign
 	 the receiver to ReceiverResultReg."
 
-	| numSpilled |
-	self ssFlushTo: simStackPtr - numArgs - 1.
-	numSpilled := self numberOfSpillsInTopNItems: numArgs + 1.
+	self ssFlushStackExceptTop: numArgs + 1.
 	numArgs > self numRegArgs
 		ifTrue: [ "If there are no spills and no references to ReceiverResultReg
 			 the fetch of ReceiverResultReg from the stack can be avoided
 			 by assigning directly to ReceiverResultReg and pushing it."
-			| anyRefs |
-			anyRefs := self
-				           anyReferencesToRegister: ReceiverResultReg
-				           inTopNItems: numArgs + 1.
+			| numSpilled anyRefs |
+			numSpilled := self numberOfSpillsInTopNItems: numArgs + 1.
+			anyRefs := self anyReferencesToRegister: ReceiverResultReg inTopNItems: numArgs + 1.
 			(numSpilled > 0 or: [ anyRefs ])
 				ifTrue: [
-					self ssFlushTo: simStackPtr.
-					(self simStackAt: simStackPtr - numArgs) storeToReg:
-						ReceiverResultReg ]
+					self ssFlushStack.
+					(self simStackAt: simStackPtr - numArgs) copyToReg: ReceiverResultReg ]
 				ifFalse: [
 					(self simStackAt: simStackPtr - numArgs)
-						storeToReg: ReceiverResultReg;
+						copyToReg: ReceiverResultReg;
 						type: SSRegister;
-						register: ReceiverResultReg.
-					self ssFlushTo: simStackPtr ] ]
-		ifFalse: [ "Move the args to the register arguments, being careful to do
+						registerr: ReceiverResultReg.
+					self ssFlushStack ].
+			
+			"Pop from the stack, so that subsequent compilation in this unit make as if they were popped.
+			However, but do not discard the entries in the runtime stack (do not generate pops).
+			It's the callee responsibility of popping them."
+			^ self ssPop: numArgs + 1 popSpilled: false ]
+		ifFalse: [
+			"Move the args to the register arguments, being careful to do
 			 so last to first so e.g. previous contents don't get overwritten.
 			 Also check for any arg registers in use by other args."
 			numArgs > 0 ifTrue: [
@@ -3594,17 +3586,18 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 					ifTrue: [
 						self ssAllocateRequiredReg: Arg0Reg upThrough: simStackPtr - 2.
 						self ssAllocateRequiredReg: Arg1Reg upThrough: simStackPtr - 1 ]
-					ifFalse: [
-					self ssAllocateRequiredReg: Arg0Reg upThrough: simStackPtr - 1 ] ].
-			(self numRegArgs > 1 and: [ numArgs > 1 ]) ifTrue: [
-				(self simStackAt: simStackPtr) moveToReg: Arg1Reg ].
-			numArgs > 0 ifTrue: [
-				(self simStackAt: simStackPtr - numArgs + 1) moveToReg: Arg0Reg ].
-			(self simStackAt: simStackPtr - numArgs) moveToReg:
-				ReceiverResultReg ].
-	simStackPtr to: simSpillBase by: -1 do: [ :e |
-	self assert: (self simStackAt: e) spilled not ].
-	self ssPop: numArgs + 1
+					ifFalse: [ self ssAllocateRequiredReg: Arg0Reg upThrough: simStackPtr - 1 ] ].
+
+			(self numRegArgs > 1 and: [ numArgs > 1 ]) ifTrue: [ (self simStackAt: simStackPtr) copyToReg: Arg1Reg ].
+
+			numArgs > 0 ifTrue: [ (self simStackAt: simStackPtr - numArgs + 1) copyToReg: Arg0Reg ].
+			(self simStackAt: simStackPtr - numArgs) copyToReg: ReceiverResultReg.
+
+			"Pop from the stack, so that subsequent compilation in this unit make as if they were popped.
+			Here, DO discard the entries in the runtime stack.
+			The calling convention dictates that in this case all receiver/args pass through registers and no stack is involved.
+			If we don't pop from the runtime stack, it will get desynchronised"
+			self ssPop: numArgs + 1 ]
 ]
 
 { #category : #'compile abstract instructions' }
@@ -4540,21 +4533,8 @@ StackToRegisterMappingCogit >> ssFlushUpThroughTemporaryVariable: tempIndex [
 
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> ssPop: n [
-	| spilledToPop |
-	self assert: (simStackPtr - n >= methodOrBlockNumTemps
-				or: [(needsFrame not and: [simStackPtr - n >= 0])]).
-
-	"Pop from the simulated stack"
-	simStackPtr := simStackPtr - n.
-
-	"Check how many elements to pop from the stack have been spilled.
-	If the spill base is above the stack, it means we popped spilled elements.
-	If the spill base is below or equals to the stack pointer, we don't need ot do anything"	
-	spilledToPop := simSpillBase - 1 - simStackPtr.
-	spilledToPop > 0 ifTrue:
-		[self AddCq: spilledToPop * objectMemory wordSize R: SPReg].
 	
-	self updateSimSpillBase
+	self ssPop: n popSpilled: true
 ]
 
 { #category : #'simulation stack' }
