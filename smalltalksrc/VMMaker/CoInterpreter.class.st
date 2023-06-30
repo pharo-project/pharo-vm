@@ -562,7 +562,15 @@ CoInterpreter >> activateNewMethod [
 
 	inInterpreter := self isInstructionPointerInInterpreter:
 		                 instructionPointer.
-	methodHeader := self activateNewMethodInterpreted.
+
+	"If the method is compiled, jump to machine code, otherwise continue in interpreted code"
+	(self isCogMethodReference: methodHeader)
+		ifTrue:
+			[inInterpreter ifTrue:
+				[self iframeSavedIP: framePointer put: instructionPointer asInteger.
+				 instructionPointer := cogit ceReturnToInterpreterPC].
+			^ self activateCoggedNewMethod: inInterpreter]
+		ifFalse: [ self activateNewMethodInterpreted ].
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
 	switched := true.
