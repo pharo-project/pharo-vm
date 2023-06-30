@@ -4064,7 +4064,7 @@ DruidJIT >> gen_PushTemporaryVariableBytecode0 [
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
-	(self simStackTempAt: 0) moveToReg: t0.
+	(self simStackTempAt: 0) copyToReg: t0.
 	self ssPushRegister: t0.
 	^ 0
 ]
@@ -4079,7 +4079,7 @@ DruidJIT >> gen_PushTemporaryVariableBytecode1 [
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
-	(self simStackTempAt: 1) moveToReg: t0.
+	(self simStackTempAt: 1) copyToReg: t0.
 	self ssPushRegister: t0.
 	^ 0
 ]
@@ -4094,7 +4094,7 @@ DruidJIT >> gen_PushTemporaryVariableBytecode2 [
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
-	(self simStackTempAt: 2) moveToReg: t0.
+	(self simStackTempAt: 2) copyToReg: t0.
 	self ssPushRegister: t0.
 	^ 0
 ]
@@ -4158,7 +4158,7 @@ DruidJIT >> gen_ReturnTopFromMethod [
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
-	(self ssValue: 0) moveToReg: t0.
+	(self ssValue: 0) copyToReg: t0.
 	self MoveR: t0 R: ReceiverResultReg.
 	self genUpArrowReturn.
 	^ 0
