@@ -4851,6 +4851,7 @@ CoInterpreter >> setupFrameFixedPart: theMethod withHeader: methodHeader withCon
 			 ifTrue: [ MFMethodFlagIsBlockFlag ]
 			 ifFalse: [ 0 ]).
 	self push: aContext.
+	self push: rcvr.
 	^ theInstructionPointer
 ]
 
