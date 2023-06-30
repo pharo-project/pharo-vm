@@ -212,7 +212,7 @@ VMMachineCodeDebugger >> highlightMCInstructions: aVMDebuggerIRInstruction [
 VMMachineCodeDebugger >> highlightPCInstruction [
 
 	| index |
-	index :=	(self initialDisassembly collect: [ :e | e address ]) indexOf: machineSimulator instructionPointerValue.
+	index :=	(self initialDisassembly collect: [ :e | e address ]) indexOf: machineSimulator instructionPointerRegisterValue.
 	instructions selection selectIndex: index
 
 ]

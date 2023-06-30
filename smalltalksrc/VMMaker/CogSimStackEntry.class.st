@@ -266,13 +266,6 @@ CogSimStackEntry >> offset: anObject [
 	^offset := anObject
 ]
 
-{ #category : #'compile abstract instructions' }
-CogSimStackEntry >> popToReg: reg [
-	
-	self moveToReg: reg.
-	cogit ssPop: 1
-]
-
 { #category : #printing }
 CogSimStackEntry >> printStateOn: aStream [
 	<doNotGenerate> "Smalltalk-side only"

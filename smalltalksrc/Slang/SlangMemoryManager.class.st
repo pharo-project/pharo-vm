@@ -60,7 +60,7 @@ SlangMemoryManager >> copyFrom: start to: end [
 	
 	^ region memory
 		copyFrom: start - region start + 1
-		to: end - region start + 1
+		to: ((end - region start + 1) min: region memory size)
 ]
 
 { #category : #allocating }
