@@ -5179,7 +5179,7 @@ DruidJIT >> markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil [
 	<var: #cogMethodOrNil type: #'CogMethod *'>
 	(objectMemory isNonImmediate: objOop) ifTrue:
 		[(cogMethodOrNil notNil
-		  and: [objectMemory isYoungObject: objOop]) ifTrue:
+		  and: [objectMemory getMemoryMap isYoungObject: objOop]) ifTrue:
 			[methodZone ensureInYoungReferrers: cogMethodOrNil].
 		 objectMemory markAndTrace: objOop]
 ]
