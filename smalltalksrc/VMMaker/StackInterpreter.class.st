@@ -1819,8 +1819,7 @@ StackInterpreter >> activateFailingPrimitiveMethod [
 	self assert: (self primitiveIndexOf: newMethod) ~= 0.
 	self justActivateNewMethod: true. "Frame must be interpreted"
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
-	"NOTREACHED"
-	^nil
+	self unreachable
 ]
 
 { #category : #'control primitives' }
@@ -3363,8 +3362,7 @@ StackInterpreter >> callbackLeave: cbID [
 	cbID < 1 ifTrue:[^false].
 	"This is ugly but necessary, or otherwise the Mac will not build"
 	self long: (jmpBuf at: jmpDepth) jmp: 1.
-	"NOTREACHED"
-	^nil
+	^self unreachable
 ]
 
 { #category : #'message sending' }
@@ -10669,22 +10667,20 @@ StackInterpreter >> primitiveExitCriticalSection [
 { #category : #'simd primitives' }
 StackInterpreter >> primitiveFloat64ArrayAdd [
 
-	<var: #rcvr type: #'double *'>
-	<var: #arg type: #'double *'>
 	| arg1 arg2 res arraySize |
 	arg1 := self stackValue: 2.
 	arg2 := self stackValue: 1.
 	res := self stackTop.
 	arraySize := objectMemory numSlotsOf: res.
 
-	(objectMemory isSixtyFourBitIndexableOop: arg1)
-		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-	(objectMemory isSixtyFourBitIndexableOop: arg2)
-		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-	(objectMemory isSixtyFourBitIndexableOop: res)
-		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory isSixtyFourBitIndexableOop: arg1) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory isSixtyFourBitIndexableOop: arg2) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory isSixtyFourBitIndexableOop: res) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
 
-	0 to: arraySize - 1 do: [ :i | 
+	0 to: arraySize - 1 do: [ :i |
 		| tmp |
 		tmp := (objectMemory fetchFloat64: i ofObject: arg1)
 		       + (objectMemory fetchFloat64: i ofObject: arg2).
@@ -12662,7 +12658,6 @@ StackInterpreter >> reapAndResetErrorCodeTo: theFP header: methodHeader [
 	 and if so, assign it through theFP into the correct temporary variable.
 	Then zero the primFailCode.  This is infrequent code, so keep it out of the common path."
 
-	<var: 'theSP' type: #'char *'>
 	<inline: #never>
 	| initialPC |
 	self assert: primFailCode ~= 0.
@@ -14969,8 +14964,8 @@ StackInterpreter >> transferTo: newProc from: sourceCode [
 	statProcessSwitch := statProcessSwitch + 1.
 	self push: instructionPointer.
 	self writeBackHeadFramePointers.
-	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: true line: #'__LINE__'.
-
+	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer.
+	
 	"ensureMethodIsCogged: in makeBaseFrameFor: in
 	 externalSetStackPageAndPointersForSuspendedContextOfProcess:
 	 below may do a code compaction. Nil instructionPointer to avoid it getting pushed twice."

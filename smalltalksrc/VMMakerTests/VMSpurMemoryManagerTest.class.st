@@ -277,12 +277,13 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 		                       fetchPointer: 0
 		                       ofObject: memory hiddenRootsObject.
 
-	memory fromOldSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
-	memory fromPermSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
+	memory getFromOldSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
+	memory getFromPermToOldSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
+	memory getFromPermToNewSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
 
-	memory getFromOldSpaceRememberedSet doRemember:
+	memory getFromOldSpaceRememberedSet remember:
 		memory hiddenRootsObject.
-	memory getFromOldSpaceRememberedSet doRemember: firstClassTablePage.
+	memory getFromOldSpaceRememberedSet remember: firstClassTablePage.
 	memory specialObjectsOop: (self newObjectWithSlots: 60).
 
 	memory scavengingGCTenuringIf: 1.

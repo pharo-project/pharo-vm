@@ -75,6 +75,25 @@ CCodeGenerator class >> monticelloDescriptionFor: aClass [
 	^aClass name, (pkg modified ifTrue: [' * '] ifFalse: [' ']), pkg ancestry ancestorString, ' uuid: ', uuid asString
 ]
 
+{ #category : #'C translation support' }
+CCodeGenerator class >> reservedWords [
+	^#(	'auto'
+		'break'
+		'case' 'char' 'const' 'continue'
+		'default' 'do' 'double'
+		'else' "'entry' obsolete" 'enum' 'extern'
+		'float' 'for'
+		'goto'
+		'if' 'int'
+		'long'
+		'register' 'return'
+		'short' 'signed' 'sizeof' 'static' 'struct' 'switch'
+		'typedef'
+		'union' 'unsigned'
+		'void' 'volatile'
+		'while')
+]
+
 { #category : #'C code generator' }
 CCodeGenerator class >> shortMonticelloDescriptionForClass: aClass [
 	"Answer a suitable Monticello package stamp to include in a moduleName."
@@ -4382,21 +4401,7 @@ CCodeGenerator >> removeVariable: aName ifAbsent: ifAbsentBlock [
 
 { #category : #'C translation support' }
 CCodeGenerator >> reservedWords [
-	^#(	'auto'
-		'break'
-		'case' 'char' 'const' 'continue'
-		'default' 'do' 'double'
-		'else' "'entry' obsolete" 'enum' 'extern'
-		'float' 'for'
-		'goto'
-		'if' 'int'
-		'long'
-		'register' 'return'
-		'short' 'signed' 'sizeof' 'static' 'struct' 'switch'
-		'typedef'
-		'union' 'unsigned'
-		'void' 'volatile'
-		'while')
+	^ self class reservedWords
 ]
 
 { #category : #inlining }

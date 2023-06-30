@@ -1302,8 +1302,12 @@ VMClass >> unalignedAccessError [
 
 { #category : #'debug support' }
 VMClass >> unreachable [
+	"Hint for the developper (and the compiler) that the instruction is unreachable.
+	Raise an error in debug mode, but is a noop on release mode."
+
 	<inline: true>
-	self error: 'UNREACHABLE'
+	self assert: false.
+	^nil
 ]
 
 { #category : #'memory access' }

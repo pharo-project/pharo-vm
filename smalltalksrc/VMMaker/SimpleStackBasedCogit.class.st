@@ -1146,12 +1146,12 @@ SimpleStackBasedCogit >> genCallPrimitiveBytecode [
 ]
 
 { #category : #'constant support' }
-SimpleStackBasedCogit >> genCmpConstant: constant R: register [
+SimpleStackBasedCogit >> genCmpConstant: constant R: reg [
 	"If the objectMemory allows it, generates a quick constant cmp, else generates a word constant cmp"
 	<inline: true>
 	^ (objectRepresentation shouldAnnotateObjectReference: constant)
-		ifTrue: [ self annotate: (self CmpCw: constant R: register) objRef: constant ]
-		ifFalse: [ self CmpCq: constant R: register ]
+		ifTrue: [ self annotate: (self CmpCw: constant R: reg) objRef: constant ]
+		ifFalse: [ self CmpCq: constant R: reg ]
 	
 ]
 
