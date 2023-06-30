@@ -4211,7 +4211,7 @@ CoInterpreter >> printFrame: theFP WithSP: theSP [
 	<var: #addr type: #'char *'>
 	<var: #cogMethod type: #'CogMethod *'>
 	<var: #homeMethod type: #'CogMethod *'>
-	| theMethod theMethodEnd numArgs numTemps topThing limit |
+	| theMethod theMethodEnd numArgs numTemps topThing limit stackStart |
 	self cCode: '' inSmalltalk: [ self transcript newLine ].
 	(stackPages couldBeFramePointer: theFP) ifFalse: [
 		self
@@ -4280,9 +4280,16 @@ CoInterpreter >> printFrame: theFP WithSP: theSP [
 	(topThing >= theMethod and: [ topThing <= theMethodEnd ]) ifTrue: [
 		limit := limit + objectMemory wordSize ].
 
-	(self frameReceiverLocation: theFP) - objectMemory wordSize to: limit
-	by: objectMemory wordSize negated do: [ :addr |
-	self printFrameOop: 'temp/stck' at: addr ].
+	stackStart := (self frameReceiverLocation: theFP) - objectMemory wordSize.
+	"Print the temps"
+	1 to: numTemps - numArgs do: [ :i |
+		self printFrameOop: 'temp' at: (stackStart - (i * objectMemory wordSize))
+	].
+	"Print the stack"
+	stackStart to: limit
+		by: objectMemory wordSize negated do: [ :addr |
+			self printFrameOop: 'stck' at: addr ].
+
 	(topThing >= theMethod and: [ topThing <= theMethodEnd ]) ifTrue: [
 		self
 			printFrameThing: 'frame ip'
