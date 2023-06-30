@@ -384,10 +384,7 @@ Spur32BitMemoryManager >> instantiateClass: classObj indexableSize: nElements is
 	<var: #nElements type: #usqInt>
 	"Allocate an instance of a variable class, excepting CompiledMethod."
 	| instSpec classFormat numSlots classIndex newObj fillValue |
-	classFormat := self formatOfClassSafe: classObj.
-	classFormat ifNil:
-		[self primitiveFailFor: PrimErrBadReceiver. "no format"
-		 ^nil].
+	classFormat := self formatOfClass: classObj.
 	instSpec := self instSpecOfClassFormat: classFormat.
 	classIndex := self rawHashBitsOf: classObj.
 	fillValue := 0.
@@ -424,8 +421,7 @@ Spur32BitMemoryManager >> instantiateClass: classObj indexableSize: nElements is
 			  this method.
 			  Hence allow fixed classes to be instantiated here iff nElements = 0."
 			 (nElements ~= 0 or: [instSpec > self lastPointerFormat]) ifTrue:
-				[coInterpreter primitiveFailFor: PrimErrBadReceiver.
-				 ^nil].
+				[^nil].
 			 numSlots := self fixedFieldsOfClassFormat: classFormat.
 			 fillValue := nilObj].
 	classIndex = 0 ifTrue:
@@ -446,8 +442,7 @@ Spur32BitMemoryManager >> instantiateClass: classObj indexableSize: nElements is
 		ifFalse:
 			[newObj := self allocateSlots: numSlots format: instSpec classIndex: classIndex].
 	newObj ifNotNil:
-		[self fillObj: newObj numSlots: numSlots with: fillValue]
-		ifNil: [ self primitiveFailFor: PrimErrNoMemory ].
+		[self fillObj: newObj numSlots: numSlots with: fillValue].
 	^newObj
 ]
 
