@@ -385,7 +385,7 @@ Spur32BitMemoryManager >> instantiateClass: classObj indexableSize: nElements is
 	"Allocate an instance of a variable class, excepting CompiledMethod."
 	| instSpec classFormat numSlots classIndex newObj fillValue |
 	classFormat := self formatOfClassSafe: classObj.
-	classFormat ifNil:
+	classFormat == -1 ifTrue:
 		[self primitiveFailFor: PrimErrBadReceiver. "no format"
 		 ^nil].
 	instSpec := self instSpecOfClassFormat: classFormat.

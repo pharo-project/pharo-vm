@@ -5551,15 +5551,15 @@ SpurMemoryManager >> formatOfClass: classPointer [
 { #category : #'object format' }
 SpurMemoryManager >> formatOfClassSafe: oop [
 	"like formatOfClass: but check the existence of the format.
-	return nil there is no format or a non integer format"
+	return -1 there is no format or a non integer format"
 	<api>
 	<inline: true>
 	| classObj classFormat |
 	classObj := self followMaybeForwarded: oop. 
-	(self isNonImmediate: classObj) ifFalse: [ ^nil].
-	(self numSlotsOfAny: classObj) >= InstanceSpecificationIndex ifFalse: [^nil].
+	(self isNonImmediate: classObj) ifFalse: [ ^-1].
+	(self numSlotsOfAny: classObj) >= InstanceSpecificationIndex ifFalse: [^-1].
 	classFormat := self fetchPointer: InstanceSpecificationIndex ofObject: classObj.
-	(self isIntegerObject: classFormat) ifFalse: [^nil].
+	(self isIntegerObject: classFormat) ifFalse: [^-1].
 	^self integerValueOf: classFormat
 ]
 
@@ -6957,7 +6957,7 @@ SpurMemoryManager >> instantiateClass: classObj indexableSize: nElements isPinne
 SpurMemoryManager >> instantiateClass: classObj isPinned: isPinned [
 	| instSpec classFormat numSlots classIndex newObj |
 	classFormat := self formatOfClassSafe: classObj.
-	classFormat ifNil:
+	classFormat == -1 ifTrue:
 		[self primitiveFailFor: PrimErrBadReceiver. "no format"
 		 ^nil].
 	instSpec := self instSpecOfClassFormat: classFormat.
