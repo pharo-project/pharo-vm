@@ -984,7 +984,6 @@ SimpleStackBasedCogit >> directedBindingSuperSendTrampolines [
 { #category : #'span functions' }
 SimpleStackBasedCogit >> distanceForShortForwardBranch: pc inMethod: aMethodObj [
 	"N.B.  This serves for both BlueBook/V3 and V4 short jumps."
-	<var: #descriptor type: #'BytecodeDescriptor *'>
 	<inline: true>
 	
 	^((objectMemory fetchByte: pc ofObject: aMethodObj) bitAnd: 7) + 1

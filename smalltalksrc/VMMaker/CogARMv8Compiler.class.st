@@ -3763,7 +3763,7 @@ CogARMv8Compiler >> fConvertSourceRegister: sourceRegister toRegister: destRegis
 ]
 
 { #category : #assembler }
-CogARMv8Compiler >> fConvertSourceRegisterFP: sourceRegister ofPrecision: precision toRegisterScalarRoundingTowardsZero: destRegister signed: signed [ 
+CogARMv8Compiler >> fConvertSourceRegisterFP: sourceRegister ofPrecision: precision toRegisterScalarRoundingTowardsZero: destRegister signed: signedBit [ 
 	
 	"C7.2.92 FCVTZS (scalar, integer)
 	
@@ -3773,7 +3773,7 @@ CogARMv8Compiler >> fConvertSourceRegisterFP: sourceRegister ofPrecision: precis
 	"
 	<inline: true>
 
-	^ (signed bitAnd: 1) << 31
+	^ (signedBit bitAnd: 1) << 31
 		bitOr: (2r0011110 << 24
 		bitOr: ((precision bitAnd: 2r11) << 22
 		bitOr: (2r111000000000 << 10
