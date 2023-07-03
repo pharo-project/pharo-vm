@@ -54,6 +54,13 @@ SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragma [
 ]
 
 { #category : #inline }
+SlangBasicTranslationTestClass >> methodDefiningConflictingVariable [
+
+	<var: 'methodWithoutReturn' type: 'char *'>
+	| methodWithoutReturn |
+]
+
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodDefiningSingleExternVariable [
 
 	<var: 'foo' type: #'extern int' >

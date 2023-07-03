@@ -6596,6 +6596,23 @@ SlangBasicTranslationTest >> testVariableUpdateAssignmentPlus [
 ]
 
 { #category : #'tests-variables' }
+SlangBasicTranslationTest >> testVariableWithConflictingNameShouldBeRenamed [
+	"tests if a local that would conflict with a function name is renamed"
+
+	| method translation |
+	method := self getTMethodFrom: #methodDefiningConflictingVariable.
+
+	generator renameConflictingLocals.
+
+	translation := self translate: method.
+
+
+	self
+		assert: (translation lineNumber: 5)
+		equals: '	char *l_methodWithoutReturn;'
+]
+
+{ #category : #'tests-variables' }
 SlangBasicTranslationTest >> testVariableWithReservedNameShouldBeRenamed [
 
 	| method translation |

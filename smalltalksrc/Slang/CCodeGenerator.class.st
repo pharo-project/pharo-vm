@@ -4417,6 +4417,26 @@ CCodeGenerator >> removeVariable: aName ifAbsent: ifAbsentBlock [
 ]
 
 { #category : #renaming }
+CCodeGenerator >> renameConflictingLocals [
+	"renames locals that would conflict with a declared function"
+
+	| allFunctions |
+	allFunctions := methods values collect: [ :method |
+		                self cFunctionNameFor: method selector ].
+
+
+
+	methods do: [ :method |
+		| renames |
+		renames := Dictionary new.
+		method allLocals
+			select: [ :local | allFunctions includes: local ]
+			thenDo: [ :local | renames at: local put: 'l_' , local ].
+
+		method renameVariablesUsing: renames ]
+]
+
+{ #category : #renaming }
 CCodeGenerator >> renameConflictingMethods [
 
 	| cFunctionNames toRename |
@@ -4458,9 +4478,11 @@ CCodeGenerator >> renameKeywordsConflicts [
 		"rename locals"
 		localRewording := Dictionary new.
 
-		(method allLocals select: [ :local |
-			 self reservedWords includes: local ]) do: [ :local |
-			localRewording at: local put: (self sanitizeKeyword: local) ].
+		
+		method allLocals 
+			select: [ :local | self reservedWords includes: local ]
+			thenDo: [ :local | localRewording at: local put: (self sanitizeKeyword: local) ].
+
 		localRewording ifNotEmpty: [
 			method renameVariablesUsing: localRewording ].
 
@@ -4473,13 +4495,12 @@ CCodeGenerator >> renameKeywordsConflicts [
 				to: (self sanitizeKeyword: cSelector) ] ].
 
 	"translate structs instance variables"
-	structClasses ifNotNil: [ :classes |
-		classes do: [ :struct |
-			struct instVarTypeDeclarationsDo: [ :ivn :type |
-				(self reservedWords includes: ivn) ifTrue: [
-					self
-						addStructInstanceVariableTranslation: ivn
-						to: (self sanitizeKeyword: ivn) ] ] ] ]
+	self structClasses do: [ :struct |
+		struct instVarTypeDeclarationsDo: [ :ivn :type |
+			(self reservedWords includes: ivn) ifTrue: [
+				self
+					addStructInstanceVariableTranslation: ivn
+					to: (self sanitizeKeyword: ivn) ] ] ]
 ]
 
 { #category : #'C translation support' }
