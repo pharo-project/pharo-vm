@@ -2499,6 +2499,7 @@ TMethod >> recordDeclarationsIn: aCCodeGen [
 		pragma selector = #returnTypeC: ifTrue: [ 
 			self returnType: pragma arguments last ] ].
 	
+		"reset cache since declarations changed"
 		cachedLocals := nil
 ]
 
