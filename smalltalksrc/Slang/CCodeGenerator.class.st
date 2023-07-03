@@ -4416,7 +4416,7 @@ CCodeGenerator >> removeVariable: aName ifAbsent: ifAbsentBlock [
 	^variables remove: aName ifAbsent: ifAbsentBlock
 ]
 
-{ #category : #translating }
+{ #category : #renaming }
 CCodeGenerator >> renameConflictingMethods [
 
 	| cFunctionNames toRename |
@@ -4433,19 +4433,24 @@ CCodeGenerator >> renameConflictingMethods [
 	toRename := cFunctionNames select: [ :conflicts | conflicts size > 1 ].
 
 	toRename keysDo: [ :key |
-		|conflictingMethods|
+		| conflictingMethods |
 		conflictingMethods := toRename at: key.
-		
-		((conflictingMethods select: [:m | m isAPIMethod ]) size > 1 ) ifTrue: [TranslationError signal: 'Conflicting API methods with name "', key, '"' ].
-		
-		(toRename at: key) do: [ :method |
+
+		"api methods cannot be renamed"
+		(conflictingMethods select: [ :m | m isAPIMethod ]) size > 1
+			ifTrue: [
+				TranslationError signal:
+					'Conflicting API methods would be translated to "' , key , '"' ].
+
+
+		(conflictingMethods reject: [ :m | m isAPIMethod ]) do: [ :method |
 			method isStructAccessor ifFalse: [
 				self
 					addSelectorTranslation: method selector
 					to: key , method args size asString ] ] ]
 ]
 
-{ #category : #translating }
+{ #category : #renaming }
 CCodeGenerator >> renameKeywordsConflicts [
 
 	methods do: [ :method |
