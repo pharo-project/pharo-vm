@@ -9185,8 +9185,8 @@ StackInterpreter >> makeBaseFrameFor: aContext [
 
 	"We finished pushing all the meta-data required for the base-frame to work.
 	Proceed to start a new frame"
-	"Create either a machine code frame or an interpreter frame based on the pc.  If the pc is -ve
-	 it is a machine code pc and so we produce a machine code frame.  If +ve an interpreter frame.
+	"Create either a machine code frame or an interpreter frame based on the pc.  If the pc is negative
+	 it is a machine code pc and so we produce a machine code frame.  If positive an interpreter frame.
 	 N.B. Do *not* change this to try and map from a bytecode pc to a machine code frame under
 	 any circumstances.  See ensureContextIsExecutionSafeAfterAssignToStackPointer:"
 	theInstructionPointer := self
