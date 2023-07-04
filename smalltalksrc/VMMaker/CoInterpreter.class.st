@@ -1256,7 +1256,7 @@ CoInterpreter >> ceDeoptimiseOnBytecode: bytecodePC [
 	stackPointer := stackPointer + delta.
 	
 	"Compute the interpreter frame flags before the values are overridden"
-	method := self frameMethodObject: framePointer.
+	self setMethod: (self frameMethodObject: framePointer).
 	methodHeader := objectMemory methodHeaderOf: method.
 	frameFlags := (self
 					 encodeFrameFieldHasContext: (self mframeHasContext: framePointer)
@@ -1274,7 +1274,7 @@ CoInterpreter >> ceDeoptimiseOnBytecode: bytecodePC [
 		and: [bytecodePC = (1 + (self startPCOfMethodHeader: methodHeader))])
 			ifTrue: [ theIP := theIP + (self sizeOfCallPrimitiveBytecode: methodHeader) ].
 	
-	instructionPointer := theIP.
+	instructionPointer := (self iframeInstructionPointerForIndex: theIP method: method).
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
 	self unreachable
 ]
