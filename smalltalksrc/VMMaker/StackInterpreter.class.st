@@ -8933,7 +8933,7 @@ StackInterpreter >> lookupMethodFor: selector InDictionary: dictionary [
 
 { #category : #'message sending' }
 StackInterpreter >> lookupMethodInClass: class [
-	| currentClass dictionary found |
+	| currentClass superClass dictionary found |
 	<inline: false>
 	self assert: (self addressCouldBeClassObj: class).
 	self lookupBreakFor: class.
@@ -8942,11 +8942,14 @@ StackInterpreter >> lookupMethodInClass: class [
 		[dictionary := objectMemory followObjField: MethodDictionaryIndex ofObject: currentClass.
 		dictionary = objectMemory nilObject ifTrue:
 			["MethodDict pointer is nil (hopefully due a swapped out stub)
-				-- raise exception #cannotInterpret:."
+				-- send #cannotInterpret: from the superclass."
 			self createActualMessageTo: class.
 			messageSelector := objectMemory splObj: SelectorCannotInterpret.
 			self sendBreakpoint: messageSelector receiver: nil.
-			^self lookupMethodInClass: (self superclassOf: currentClass)].
+			superClass := self superclassOf: currentClass.
+			superClass = objectMemory nilObject ifTrue: [
+				self error: 'cannotInterpret: cannot be send without a superclass' ].
+			^self lookupMethodInClass: superClass ].
 		found := self lookupMethodInDictionary: dictionary.
 		found ifTrue: [^currentClass].
 		currentClass := self superclassOf: currentClass].
