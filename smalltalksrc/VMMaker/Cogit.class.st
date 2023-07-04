@@ -734,8 +734,8 @@ Cogit class >> generatorTableFrom: anArray [
 		"As a hack to cut down on descriptor flags, use opcode to tag unusedBytecode for scanning.
 		 Currently descriptors are exactly 16 bytes with all 8 flag bits used.
 		As another hack to eliminate a test in scanMethod mark unknowns as extensions."
-		descriptor generator == #unknownBytecode ifTrue:
-			[descriptor opcode: Nop; isExtension: true].
+		"descriptor generator == #unknownBytecode ifTrue:
+			[descriptor ""opcode: Nop;"" isExtension: true]."
 		tuple do:
 			[:thing|
 			thing isSymbol ifTrue:
