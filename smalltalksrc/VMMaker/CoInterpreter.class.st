@@ -1256,6 +1256,8 @@ CoInterpreter >> ceDeoptimiseOnBytecode: bytecodePC [
 	
 	| delta frameFlags methodHeader theIP |
 
+	self popStack.
+
 	"Iterate from the top of the stack up to the receiver, pushing the elements down 2 elements"
 	delta := FoxIFReceiver - FoxMFReceiver.
 	stackPointer to:  framePointer + FoxMFReceiver by: objectMemory wordSize do: [:p|
@@ -1281,7 +1283,7 @@ CoInterpreter >> ceDeoptimiseOnBytecode: bytecodePC [
 		and: [bytecodePC = (1 + (self startPCOfMethodHeader: methodHeader))])
 			ifTrue: [ theIP := theIP + (self sizeOfCallPrimitiveBytecode: methodHeader) ].
 	
-	instructionPointer := (self iframeInstructionPointerForIndex: theIP method: method).
+	instructionPointer := (self iframeInstructionPointerForIndex: theIP + 1 method: method).
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
 	self unreachable
 ]
