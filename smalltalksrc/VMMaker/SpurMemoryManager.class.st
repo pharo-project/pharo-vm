@@ -839,7 +839,7 @@ SpurMemoryManager class >> initializeObjectHeaderConstants [
 { #category : #'class initialization' }
 SpurMemoryManager class >> initializeSpecialObjectIndices [
 	"Initialize indices into specialObjects array.
-	
+
 	See `SmalltalkImage>>#newSpecialObjectsArray` for the image side version.
 	Note: offsets here are zero-relative (so shifted by one in indexed array access)."
 
@@ -847,7 +847,7 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	FalseObject := 1.
 	TrueObject := 2.
 	SchedulerAssociation := 3.
-	ClassBitmap := 4.
+	ClassBitmap := 4. "plugin support only"
 	ClassSmallInteger := 5.
 	ClassByteString := ClassString := 6. "N.B.  Actually class ByteString"
 	ClassArray := 7.
@@ -883,7 +883,7 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	"Was ClassBlockClosure := 36."
 	"Was BlockContextProto := 37."
 	ExternalObjectsArray := 38.
-	ClassMutex := 39.
+	ClassMutex := 39. "Only used for debugging (StackInterpreter>>#printAllStacks)"
 	"Was: ClassTranslatedMethod := 40."
 	ProcessInExternalCodeTag := 40.
 	TheFinalizationSemaphore := 41.
