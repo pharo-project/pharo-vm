@@ -904,6 +904,14 @@ InterpreterPrimitives >> primitiveAt [
 	self commonAt: false
 ]
 
+{ #category : #'as yet unclassified' }
+InterpreterPrimitives >> primitiveAtPointerArray [
+
+	<accessorDepth: 0>
+	<numberOfArguments: 1>
+	self commonAtPointerArray
+]
+
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveAtPut [
 	<accessorDepth: 0>

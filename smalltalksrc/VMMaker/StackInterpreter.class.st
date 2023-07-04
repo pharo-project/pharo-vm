@@ -1120,7 +1120,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		(79 primitiveNewMethod)
 
 		"Control Primitives (80-89)"
-		(80 primitiveFail)
+		(80 primitiveAtPointerArray)
 		(81 primitiveFail)
 		(82 primitiveFail)
 		(83 primitivePerform)
@@ -4428,6 +4428,38 @@ StackInterpreter >> commonAt: stringy [
 				[^self primitiveFailFor: PrimErrBadReceiver].
 			 result := self characterForAscii: (objectMemory integerValueOf: result)].
 		 self pop: argumentCount+1 thenPush: result]
+]
+
+{ #category : #'as yet unclassified' }
+StackInterpreter >> commonAtPointerArray [
+	"This code is called if the receiver responds primitively to at:.
+	 N.B. this does *not* use the at cache, instead inlining stObject:at:.
+	 Using the at cache here would require that callers set messageSelector
+	 and lkupClass and that is onerous and error-prone, and in any case,
+	 inlining produces much better performance than using the at cache here."
+
+	<inline: true>
+	| index array result |
+	self initPrimCall. "to get it inlined in primitiveAt and primitiveStringAt"
+	array := self stackValue: 1.
+	index := self stackTop.
+
+	"Validate that the receiver is not immediate"
+	(objectMemory isImmediate: array) ifTrue: [
+		^ self primitiveFailFor: PrimErrInappropriate ].
+
+	"If the index is not an integer, fail"
+	"If the array is a forwarder, for example in the case of e.g. object:basicAt:, fail"
+	((objectMemory isNonIntegerObject: index) or: [
+		 argumentCount > 1 and: [ objectMemory isForwarded: array ] ])
+		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+
+	"No need to test for large positive integers here, no object has 7EB elements"
+	index := objectMemory integerValueOf: index.
+	result := self stPointerArray: array at: index.
+
+	self successful ifFalse: [ ^ self ].
+	self pop: argumentCount + 1 thenPush: result
 ]
 
 { #category : #'indexing primitive support' }
@@ -14482,6 +14514,41 @@ StackInterpreter >> stObject: array at: index put: value [
 		ifTrue: [self subscript: array with: (index + fixedFields) storing: value format: fmt]
 		ifFalse: [self primitiveFailFor: (fmt <= 1 ifTrue: [PrimErrBadReceiver] ifFalse: [PrimErrBadIndex])].
 	^value
+]
+
+{ #category : #'as yet unclassified' }
+StackInterpreter >> stPointerArray: array at: index [
+	"Array is always a pointer array, not a forwarder.
+	Index is an native integer."
+
+	<inline: true>
+	| hdr fmt totalLength fixedFields stSize |
+	hdr := objectMemory baseHeader: array.
+	fmt := objectMemory formatOfHeader: hdr.
+
+	"Check it's a pointer object"
+	fmt <= objectMemory lastPointerFormat ifFalse: [
+		^ self primitiveFailFor: PrimErrBadReceiver ].
+	"Check it's not a context"
+	(fmt = objectMemory indexablePointersFormat and: [
+		 objectMemory isContextHeader: hdr ]) ifTrue: [
+		^ self primitiveFailFor: PrimErrBadReceiver ].
+
+
+	totalLength := objectMemory numSlotsOfAny: array.
+	fixedFields := objectMemory
+		               fixedFieldsOf: array
+		               format: fmt
+		               length: totalLength.
+
+	stSize := totalLength - fixedFields.
+
+	"Bound check. The index should be between 1 and the size. Consider 1-based indexing"
+	((self oop: index isGreaterThanOrEqualTo: 1) and: [
+		 self oop: index isLessThanOrEqualTo: stSize ]) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadIndex ].
+
+	^ objectMemory fetchPointer: index - 1 ofObject: array
 ]
 
 { #category : #'indexing primitive support' }
