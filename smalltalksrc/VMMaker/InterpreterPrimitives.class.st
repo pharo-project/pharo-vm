@@ -3146,6 +3146,48 @@ InterpreterPrimitives >> primitiveQuoLargeIntegers [
 	self successful ifTrue: [self pop: 2 thenPush: oopResult].
 ]
 
+{ #category : #'as yet unclassified' }
+InterpreterPrimitives >> primitiveRandom [
+
+	<export: true>
+	<var: #state type: #uint64_t>
+	<var: #x type: #uint64_t>
+	<var: #count type: #uint32_t>
+	<var: #returnValue type: #uint32_t>
+	| stateArray state count returnValue x |
+	stateArray := self stackValue: 0.
+	((objectMemory isSixtyFourBitIndexableOop: stateArray) and:
+		 (objectMemory byteSizeOf: stateArray) = 8) ifFalse: [
+		^ self primitiveFail ].
+
+	state := objectMemory fetchLong64: 1 ofObject: stateArray.
+	x := state.
+	count := state >> 59.
+	self
+		cCode: [ state := x * 6364136223846793005 + 1442695040888963407 ]
+		inSmalltalk: [ "Simulate 64 bits overflow"
+			state := x * 6364136223846793005 + 1442695040888963407 bitAnd:
+				         16rFFFFFFFFFFFFFFFF ].
+
+	x := x >> 18 bitXor: x.
+
+	"Rotation on 32 bits"
+	self
+		cCode: [
+			returnValue := x >> 27.
+			returnValue := returnValue >> count bitOr:
+				               returnValue << (count negated bitAnd: 31) ]
+		inSmalltalk: [ "Simulate 32 bits overflow"
+			returnValue := x >> 27 bitAnd: 16rFFFFFFFF.
+			returnValue := (returnValue >> count bitOr:
+				                returnValue << (count negated bitAnd: 31))
+				               bitAnd: 16rFFFFFFFF ].
+
+	objectMemory storeLong64: 1 ofObject: stateArray withValue: state.
+
+	self pop: 2 thenPush: (returnValue bitAnd: 16r7FFFFFFF)
+]
+
 { #category : #'I/O primitives' }
 InterpreterPrimitives >> primitiveRelinquishProcessor [
 	"Relinquish the processor for up to the given number of microseconds. The exact behavior of this primitive is platform dependent."
