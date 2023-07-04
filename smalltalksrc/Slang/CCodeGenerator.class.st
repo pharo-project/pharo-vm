@@ -21,7 +21,6 @@ Class {
 		'apiMethods',
 		'apiVariables',
 		'kernelReturnTypes',
-		'currentMethod',
 		'headerFiles',
 		'globalVariableUsage',
 		'useSymbolicConstants',
@@ -74,6 +73,25 @@ CCodeGenerator class >> monticelloDescriptionFor: aClass [
 	pkg ancestry ancestors isEmpty ifFalse:
 		[uuid := pkg ancestry ancestors first id].
 	^aClass name, (pkg modified ifTrue: [' * '] ifFalse: [' ']), pkg ancestry ancestorString, ' uuid: ', uuid asString
+]
+
+{ #category : #'C translation support' }
+CCodeGenerator class >> reservedWords [
+	^#(	'auto'
+		'break'
+		'case' 'char' 'const' 'continue'
+		'default' 'do' 'double'
+		'else' "'entry' obsolete" 'enum' 'extern'
+		'float' 'for'
+		'goto'
+		'if' 'int'
+		'long'
+		'register' 'return'
+		'short' 'signed' 'sizeof' 'static' 'struct' 'switch'
+		'typedef'
+		'union' 'unsigned'
+		'void' 'volatile'
+		'while')
 ]
 
 { #category : #'C code generator' }
@@ -1366,6 +1384,12 @@ CCodeGenerator >> fileHeaderVersionStampForSourceClass: sourceClass [
 			exportBuildInfo ifNotNil:
 				[s nextPutAll: exportBuildInfo; cr].
 			s cr]]
+]
+
+{ #category : #accessing }
+CCodeGenerator >> forbiddenSelector: aTSendNode [ 
+	
+	TranslationError signal: 'We should not use ' , aTSendNode selector.
 ]
 
 { #category : #'CAST translation' }
@@ -3087,8 +3111,8 @@ CCodeGenerator >> initializeCASTTranslationDictionary [
 	
 	castTranslationDict := Dictionary new: 200.
 	pairs := #(
-	#&				#generateCASTAnd:
-	#|				#generateCASTOr:
+	#&				#forbiddenSelector:
+	#|				#forbiddenSelector:
 	#abs			#generateCASTAbs:
 	#and:			#generateCASTSequentialAnd:
 	#or:			#generateCASTSequentialOr:
@@ -4377,21 +4401,7 @@ CCodeGenerator >> removeVariable: aName ifAbsent: ifAbsentBlock [
 
 { #category : #'C translation support' }
 CCodeGenerator >> reservedWords [
-	^#(	'auto'
-		'break'
-		'case' 'char' 'const' 'continue'
-		'default' 'do' 'double'
-		'else' "'entry' obsolete" 'enum' 'extern'
-		'float' 'for'
-		'goto'
-		'if' 'int'
-		'long'
-		'register' 'return'
-		'short' 'signed' 'sizeof' 'static' 'struct' 'switch'
-		'typedef'
-		'union' 'unsigned'
-		'void' 'volatile'
-		'while')
+	^ self class reservedWords
 ]
 
 { #category : #inlining }
@@ -4677,8 +4687,11 @@ CCodeGenerator >> sizeOfIntegralCType: anIntegralCType [ "<String>"
 		['pid_t']		->	[self bytesPerWord].
 		
 		"Standard C types"
+		['int64_t']		->	[8].
 		['uint64_t']		->	[8].
 		['uint32_t']		->	[4].
+		['uint16_t']		->	[2].
+		['uint8_t']		->	[1].
 	}
 	otherwise:
 		[((anIntegralCType beginsWith: 'unsigned') "e.g. 'unsigned  : 8'"

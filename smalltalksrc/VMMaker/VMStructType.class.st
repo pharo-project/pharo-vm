@@ -112,7 +112,7 @@ VMStructType class >> fieldAccessorSourceFor: surrogateClass bytesPerWord: bytes
 VMStructType class >> fieldAccessorsForBytesPerWord: bytesPerWord [
 	| fieldSpecs |
 	fieldSpecs := OrderedCollection new.
-	self instVarNamesAndTypesForTranslationDo:
+	self instVarTypeDeclarationsDo:
 		[:ivn :typeTuple| | index replacement |
 		(index := typeTuple indexOf: #BytesPerWord ifAbsent: 0) > 0
 			ifTrue:
@@ -220,6 +220,26 @@ VMStructType class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a struct of this type."
 
 	self subclassResponsibility
+]
+
+{ #category : #translation }
+VMStructType class >> instVarTypeDeclarationsDo: aBinaryBlock [
+
+	| instVarNameTypeDeclarations |
+	instVarNameTypeDeclarations := Dictionary new.
+
+	self instVarNamesAndTypesForTranslationDo: [ :ivn :type |
+		instVarNameTypeDeclarations at: ivn put: type ].
+
+
+	self filteredInstVarNames do: [ :ivn |
+		| typeDeclaration |
+		typeDeclaration := instVarNameTypeDeclarations at: ivn ifAbsent: [
+			                   TranslationError signal:
+				                   'Missing type declaration for instance variable '
+				                   , ivn ].
+
+		aBinaryBlock value: ivn value: typeDeclaration ]
 ]
 
 { #category : #accessing }
@@ -337,6 +357,13 @@ VMStructType class >> timeStamp [
 { #category : #translation }
 VMStructType class >> typedef [
 	^String streamContents: [:s| self printTypedefOn: s]
+]
+
+{ #category : #'debug support' }
+VMStructType >> logError: aMessage [
+	
+	<doNotGenerate>
+	self logError: aMessage withArgs: #()
 ]
 
 { #category : #printing }

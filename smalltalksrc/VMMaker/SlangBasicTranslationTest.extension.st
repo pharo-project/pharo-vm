@@ -4,7 +4,6 @@ Extension { #name : #SlangBasicTranslationTest }
 SlangBasicTranslationTest >> setUp [
 
 	super setUp.
-
 	generator := MLVMCCodeGenerator new.
 	generator vmMaker: VMMaker new.
 	generator vmMaker vmmakerConfiguration: VMMakerConfiguration.
@@ -12,6 +11,7 @@ SlangBasicTranslationTest >> setUp [
 		labels: Set new;
 		definingClass: self class;
 		selector: #setUp;
+		parseTree: (TStatementListNode new statements: #())
 		yourself).
 	generator pushScope: TStatementListNode new.
 	

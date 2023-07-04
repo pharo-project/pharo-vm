@@ -1404,6 +1404,48 @@ SlangBasicTranslationTest >> testLabelWithCommentWithPreviousCommentMarkingAnInl
 	self assert: translation equals: ''
 ]
 
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testMethodCantHaveReservedArgumentNames [
+
+	| methodInitialization |
+	methodInitialization := [
+	                        TMethod new
+		                        setSelector: 'foo'
+		                        definingClass: MockEmptyVMStruct
+		                        args: { RBVariableNode named: 'continue' }
+		                        locals: Array empty
+		                        block:
+		                        (RBBlockNode body:
+			                         (RBSequenceNode statements:
+				                          Array empty))
+		                        primitive: nil
+		                        properties: nil
+		                        comment: nil ].
+
+	self should: methodInitialization raise: TranslationError
+]
+
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testMethodCantHaveReservedSelectorName [
+
+	| methodInitialization |
+	methodInitialization := [
+	                        TMethod new
+		                        setSelector: 'break'
+		                        definingClass: MockEmptyVMStruct
+		                        args: Array empty
+		                        locals: Array empty
+		                        block:
+		                        (RBBlockNode body:
+			                         (RBSequenceNode statements:
+				                          Array empty))
+		                        primitive: nil
+		                        properties: nil
+		                        comment: nil ].
+
+	self should: methodInitialization raise: TranslationError
+]
+
 { #category : #'tests-method' }
 SlangBasicTranslationTest >> testMethodComment [
 
@@ -2039,15 +2081,14 @@ SlangBasicTranslationTest >> testSendAllMask [
 { #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendAnd [
 
-	| translation send |
+	| send |
 
 	send := TSendNode new
 					setSelector: #&
 					receiver: (TConstantNode value: false)
 					arguments: { TConstantNode value: true }.
-	translation := self translate: send.
+	self should: [ self translate: send ] raise: TranslationError.
 
-	self assert: translation equals: '0 && 1'
 ]
 
 { #category : #'tests-builtins' }
@@ -3045,7 +3086,7 @@ SlangBasicTranslationTest >> testSendIfFalseAsArgumentWithNonLeafReceiver [
 		        expression: (TSendNode new
 				         setSelector: #ifFalse:
 				         receiver: (TSendNode new
-						          setSelector: #&
+						          setSelector: #<
 						          receiver: (TVariableNode new setName: 'x')
 						          arguments: { (TVariableNode new setName: 'y') })
 				         arguments: { (TStatementListNode new statements: { 
@@ -3057,7 +3098,7 @@ SlangBasicTranslationTest >> testSendIfFalseAsArgumentWithNonLeafReceiver [
 								           expression: (TConstantNode value: 1)) }) }).
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'y = ((!(x && y))
+	self assert: translation trimBoth equals: 'y = ((!(x < y))
 	 ? ((a = 0), (c = 1))
 	 : 0)'
 ]
@@ -3073,7 +3114,7 @@ SlangBasicTranslationTest >> testSendIfFalseAsArgumentWithReceiverSendNot [
 				         receiver: (TSendNode new
 						          setSelector: #not
 						          receiver: (TSendNode new
-								           setSelector: #&
+								           setSelector: #<
 								           receiver: (TVariableNode new setName: 'x')
 								           arguments: { (TVariableNode new setName: 'y') })
 						          arguments: {  })
@@ -3086,7 +3127,7 @@ SlangBasicTranslationTest >> testSendIfFalseAsArgumentWithReceiverSendNot [
 								           expression: (TConstantNode value: 1)) }) }).
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'y = ((x && y)
+	self assert: translation trimBoth equals: 'y = ((x < y)
 	 ? ((a = 0), (c = 1))
 	 : 0)'
 ]
@@ -3289,14 +3330,14 @@ SlangBasicTranslationTest >> testSendIfFalseIfTrueWithSingleStatementArguments [
 		        setSelector: #ifFalse:ifTrue:
 		        receiver: (TVariableNode new setName: 'x')
 		        arguments: { 
-				        TVariableNode new setName: 'break'.
-				        TVariableNode new setName: 'continue' }.
+				        TVariableNode new setName: 'foo'.
+				        TVariableNode new setName: 'bar' }.
 	translation := self translate: send.
 
 	self assert: translation trimBoth equals: 'if (x) 
-	continue;
+	bar;
  else 
-	break;'
+	foo;'
 ]
 
 { #category : #'tests-builtins' }
@@ -3306,7 +3347,7 @@ SlangBasicTranslationTest >> testSendIfFalseWithNonLeafReceiver [
 	send := TSendNode new
 		        setSelector: #ifFalse:
 		        receiver: (TSendNode new
-				         setSelector: #&
+				         setSelector: #>
 				         receiver: (TVariableNode new setName: 'x')
 				         arguments: { (TVariableNode new setName: 'y') })
 		        arguments: { (TStatementListNode new statements: { 
@@ -3318,7 +3359,7 @@ SlangBasicTranslationTest >> testSendIfFalseWithNonLeafReceiver [
 						          expression: (TConstantNode value: 1)) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'if (!(x && y)) {
+	self assert: translation trimBoth equals: 'if (!(x > y)) {
 	a = 0;
 	c = 1;
 }'
@@ -3850,7 +3891,7 @@ SlangBasicTranslationTest >> testSendIfTrueAsArgumentWithNonLeafReceiver [
 		        expression: (TSendNode new
 				         setSelector: #ifTrue:
 				         receiver: (TSendNode new
-						          setSelector: #&
+						          setSelector: #==
 						          receiver: (TVariableNode new setName: 'x')
 						          arguments: { (TVariableNode new setName: 'y') })
 				         arguments: { (TStatementListNode new statements: { 
@@ -3862,7 +3903,7 @@ SlangBasicTranslationTest >> testSendIfTrueAsArgumentWithNonLeafReceiver [
 								           expression: (TConstantNode value: 1)) }) }).
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'y = ((x && y)
+	self assert: translation trimBoth equals: 'y = ((x == y)
 	 ? ((a = 0), (c = 1))
 	 : 0)'
 ]
@@ -4081,14 +4122,14 @@ SlangBasicTranslationTest >> testSendIfTrueIfFalseWithSingleStatementArguments [
 		        setSelector: #ifTrue:ifFalse:
 		        receiver: (TVariableNode new setName: 'x')
 		        arguments: { 
-				        TVariableNode new setName: 'break'.
-				        TVariableNode new setName: 'continue' }.
+				        TVariableNode new setName: 'foo'.
+				        TVariableNode new setName: 'bar' }.
 	translation := self translate: send.
 
 	self assert: translation trimBoth equals: 'if (x) 
-	break;
+	foo;
  else 
-	continue;'
+	bar;'
 ]
 
 { #category : #'tests-builtins' }
@@ -4124,7 +4165,7 @@ SlangBasicTranslationTest >> testSendIfTrueWithReceiverBinaryOperation [
 	send := TSendNode new
 		        setSelector: #ifTrue:
 		        receiver: (TSendNode new
-				         setSelector: #&
+				         setSelector: #<
 				         receiver: (TVariableNode new setName: 'a')
 				         arguments: { (TVariableNode new setName: 'b') })
 		        arguments: { (TStatementListNode new statements: { 
@@ -4136,7 +4177,7 @@ SlangBasicTranslationTest >> testSendIfTrueWithReceiverBinaryOperation [
 						          expression: (TConstantNode value: 1)) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'if (a && b) {
+	self assert: translation trimBoth equals: 'if (a < b) {
 	a = 0;
 	c = 1;
 }'
@@ -4192,11 +4233,11 @@ SlangBasicTranslationTest >> testSendIfTrueWithSingleStatementArgument [
 	send := TSendNode new
 		        setSelector: #ifTrue:
 		        receiver: (TVariableNode new setName: 'x')
-		        arguments: { TVariableNode new setName: 'break' }.
+		        arguments: { TVariableNode new setName: 'foo' }.
 	translation := self translate: send.
 
 	self assert: translation trimBoth equals: 'if (x) 
-	break;'
+	foo;'
 ]
 
 { #category : #'tests-builtins' }
@@ -4218,7 +4259,9 @@ SlangBasicTranslationTest >> testSendIntegerObjectOfConstantValue [
 SlangBasicTranslationTest >> testSendIntegerObjectOfSignedValue [
 
 	| translation send |
-	generator currentMethod declarationAt: 'var' put: 'long'.
+	
+	generator currentMethod addLocal: 'var'; declarationAt: 'var' put: 'long'.
+		
 	send := TSendNode new
 					setSelector: #integerObjectOf:
 					receiver: (TVariableNode named: 'self')
@@ -4232,7 +4275,7 @@ SlangBasicTranslationTest >> testSendIntegerObjectOfSignedValue [
 SlangBasicTranslationTest >> testSendIntegerObjectOfUnsignedSmallValue [
 
 	| translation send |
-	generator currentMethod declarationAt: 'var' put: 'unsigned short'.
+	generator currentMethod addLocal: 'var'; declarationAt: 'var' put: 'unsigned short'.
 	send := TSendNode new
 					setSelector: #integerObjectOf:
 					receiver: (TVariableNode named: 'self')
@@ -4246,14 +4289,18 @@ SlangBasicTranslationTest >> testSendIntegerObjectOfUnsignedSmallValue [
 SlangBasicTranslationTest >> testSendIntegerObjectOfUnsignedValue [
 
 	| translation send |
-	generator currentMethod declarationAt: 'var' put: 'unsigned long'.
+	generator currentMethod
+		addLocal: 'var';
+		declarationAt: 'var' put: 'unsigned long'.
 	send := TSendNode new
-					setSelector: #integerObjectOf:
-					receiver: (TVariableNode named: 'self')
-					arguments: { TVariableNode named: 'var' }.
+		        setSelector: #integerObjectOf:
+		        receiver: (TVariableNode named: 'self')
+		        arguments: { (TVariableNode named: 'var') }.
 	translation := self translate: send.
 
-	self assert: translation equals: '((var << ', numSmallIntegerTagBits asString, ') | 1)'
+	self
+		assert: translation
+		equals: '((var << ' , numSmallIntegerTagBits asString , ') | 1)'
 ]
 
 { #category : #'tests-builtins' }
@@ -4354,7 +4401,7 @@ SlangBasicTranslationTest >> testSendLeftBitShifNegativeLitteralIntegerOverflow 
 SlangBasicTranslationTest >> testSendLeftBitShift [
 
 	| translation send |
-	generator currentMethod declarationAt: 'a' put: 'sqInt'.
+	generator currentMethod addLocal:'a'; declarationAt: 'a' put: 'sqInt'.
 	send := TSendNode new
 		        setSelector: #<<
 		        receiver: (TVariableNode new setName: 'a')
@@ -4368,10 +4415,12 @@ SlangBasicTranslationTest >> testSendLeftBitShift [
 SlangBasicTranslationTest >> testSendLeftBitShiftByVariable [
 
 	| translation send |
-	generator currentMethod declarationAt: 'a' put: 'unsigned short'.
-	
+	generator currentMethod
+		addLocal: 'a';
+		declarationAt: 'a' put: 'unsigned short'.
+
 	send := TSendNode new
-		        setSelector: #<<
+		        setSelector: #'<<'
 		        receiver: (TConstantNode value: 3)
 		        arguments: { (TVariableNode new setName: 'a') }.
 	translation := self translate: send.
@@ -4383,9 +4432,11 @@ SlangBasicTranslationTest >> testSendLeftBitShiftByVariable [
 SlangBasicTranslationTest >> testSendLeftBitShiftByVariableIn32Bits [
 
 	| translation send |
-	generator currentMethod declarationAt: 'a' put: 'sqInt'.
+	generator currentMethod
+		addLocal: 'a';
+		declarationAt: 'a' put: 'sqInt'.
 	send := TSendNode new
-		        setSelector: #<<
+		        setSelector: #'<<'
 		        receiver: (TConstantNode value: 3)
 		        arguments: { (TVariableNode new setName: 'a') }.
 	translation := self translate: send.
@@ -4397,10 +4448,12 @@ SlangBasicTranslationTest >> testSendLeftBitShiftByVariableIn32Bits [
 SlangBasicTranslationTest >> testSendLeftBitShiftByVariableIn64Bits [
 
 	| translation send |
-	generator currentMethod declarationAt: 'a' put: 'sqInt'.
+	generator currentMethod
+		addLocal: 'a';
+		declarationAt: 'a' put: 'sqInt'.
 	generator wordSize: 8.
 	send := TSendNode new
-		        setSelector: #<<
+		        setSelector: #'<<'
 		        receiver: (TConstantNode value: 3)
 		        arguments: { (TVariableNode new setName: 'a') }.
 	translation := self translate: send.
@@ -4412,9 +4465,11 @@ SlangBasicTranslationTest >> testSendLeftBitShiftByVariableIn64Bits [
 SlangBasicTranslationTest >> testSendLeftBitShiftLong [
 
 	| translation send |
-	generator currentMethod declarationAt: 'a' put: 'sqLong'.
+	generator currentMethod
+		addLocal: 'a';
+		declarationAt: 'a' put: 'sqLong'.
 	send := TSendNode new
-		        setSelector: #<<
+		        setSelector: #'<<'
 		        receiver: (TVariableNode new setName: 'a')
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
@@ -4426,9 +4481,11 @@ SlangBasicTranslationTest >> testSendLeftBitShiftLong [
 SlangBasicTranslationTest >> testSendLeftBitShiftShortType [
 
 	| translation send |
-	generator currentMethod declarationAt: 'a' put: 'short'.
+	generator currentMethod
+		addLocal: 'a';
+		declarationAt: 'a' put: 'short'.
 	send := TSendNode new
-		        setSelector: #<<
+		        setSelector: #'<<'
 		        receiver: (TVariableNode new setName: 'a')
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
@@ -4440,9 +4497,11 @@ SlangBasicTranslationTest >> testSendLeftBitShiftShortType [
 SlangBasicTranslationTest >> testSendLeftBitShiftUnsigned [
 
 	| translation send |
-	generator currentMethod declarationAt: 'a' put: 'usqInt'.
+	generator currentMethod
+		addLocal: 'a';
+		declarationAt: 'a' put: 'usqInt'.
 	send := TSendNode new
-		        setSelector: #<<
+		        setSelector: #'<<'
 		        receiver: (TVariableNode new setName: 'a')
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
@@ -4454,9 +4513,11 @@ SlangBasicTranslationTest >> testSendLeftBitShiftUnsigned [
 SlangBasicTranslationTest >> testSendLeftBitShiftUnsignedShortType [
 
 	| translation send |
-	generator currentMethod declarationAt: 'a' put: 'unsigned short'.
+	generator currentMethod
+		addLocal: 'a';
+		declarationAt: 'a' put: 'unsigned short'.
 	send := TSendNode new
-		        setSelector: #<<
+		        setSelector: #'<<'
 		        receiver: (TVariableNode new setName: 'a')
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
@@ -4649,15 +4710,13 @@ SlangBasicTranslationTest >> testSendNotNil [
 { #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendOr [
 
-	| translation send |
+	| send |
 
 	send := TSendNode new
 					setSelector: #|
 					receiver: (TConstantNode value: 0)
 					arguments: { TConstantNode value: 1 }.
-	translation := self translate: send.
-
-	self assert: translation equals: '0 || 1'
+	self should: [ self translate: send ] raise: TranslationError.
 ]
 
 { #category : #'tests-builtins' }
@@ -4690,17 +4749,21 @@ SlangBasicTranslationTest >> testSendPerformWith [
 SlangBasicTranslationTest >> testSendPerformWithAccessor [
 
 	| translation send |
-	generator currentMethod declarationAt: 'aPrimitiveDescriptor' put: #'PrimitiveDescriptor *'.
+	generator currentMethod
+		addLocal: 'aPrimitiveDescriptor';
+		declarationAt: 'aPrimitiveDescriptor' put: #'PrimitiveDescriptor *'.
 	send := TSendNode new
 		        setSelector: #perform:
 		        receiver: (TVariableNode named: 'objectRepresentation')
-		        arguments: { TSendNode new
-			        setSelector: #primitiveGenerator
-			        receiver: (TVariableNode named: 'aPrimitiveDescriptor')
-			        arguments: #() }.
+		        arguments: { (TSendNode new
+				         setSelector: #primitiveGenerator
+				         receiver: (TVariableNode named: 'aPrimitiveDescriptor')
+				         arguments: #(  )) }.
 	translation := self translate: send.
 
-	self assert: translation equals: '(primitiveGenerator(aPrimitiveDescriptor))()'
+	self
+		assert: translation
+		equals: '(primitiveGenerator(aPrimitiveDescriptor))()'
 ]
 
 { #category : #'tests-builtins' }
@@ -4839,10 +4902,12 @@ SlangBasicTranslationTest >> testSendRepeat [
 SlangBasicTranslationTest >> testSendRightBitShiftSignedIn64Bits [
 
 	| translation send |
-	generator currentMethod declarationAt: 'a' put: 'sqInt'.
+	generator currentMethod
+		addLocal: 'a';
+		declarationAt: 'a' put: 'sqInt'.
 	generator wordSize: 8.
 	send := TSendNode new
-		        setSelector: #>>
+		        setSelector: #'>>'
 		        receiver: (TVariableNode new setName: 'a')
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
@@ -4854,9 +4919,11 @@ SlangBasicTranslationTest >> testSendRightBitShiftSignedIn64Bits [
 SlangBasicTranslationTest >> testSendRightBitShiftUnsigned [
 
 	| translation send |
-	generator currentMethod declarationAt: 'a' put: 'usqInt'.
+	generator currentMethod
+		addLocal: 'a';
+		declarationAt: 'a' put: 'usqInt'.
 	send := TSendNode new
-		        setSelector: #>>
+		        setSelector: #'>>'
 		        receiver: (TVariableNode new setName: 'a')
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
@@ -4868,10 +4935,12 @@ SlangBasicTranslationTest >> testSendRightBitShiftUnsigned [
 SlangBasicTranslationTest >> testSendRightBitShiftUnsignedIn64Bits [
 
 	| translation send |
-	generator currentMethod declarationAt: 'a' put: 'usqInt'.
+	generator currentMethod
+		addLocal: 'a';
+		declarationAt: 'a' put: 'usqInt'.
 	generator wordSize: 8.
 	send := TSendNode new
-		        setSelector: #>>
+		        setSelector: #'>>'
 		        receiver: (TVariableNode new setName: 'a')
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
@@ -5139,9 +5208,11 @@ SlangBasicTranslationTest >> testSendSignedIntToShort [
 SlangBasicTranslationTest >> testSendSignedRightBitShiftVariable64Bits [
 
 	| translation send |
-	generator currentMethod declarationAt: 'a' put: 'long long'.
+	generator currentMethod
+		addLocal: 'a';
+		declarationAt: 'a' put: 'long long'.
 	send := TSendNode new
-		        setSelector: #>>>
+		        setSelector: #'>>>'
 		        receiver: (TVariableNode new setName: 'a')
 		        arguments: { (TConstantNode value: 3) }.
 	translation := self translate: send.
@@ -5686,7 +5757,7 @@ SlangBasicTranslationTest >> testSendWhileFalseWithOneStatementInReceiverBlock [
 		        setSelector: #whileFalse:
 		        receiver:
 			        (TStatementListNode new statements: { (TSendNode new
-					          setSelector: #&
+					          setSelector: #>
 					          receiver: (TVariableNode new setName: 'a')
 					          arguments: { (TVariableNode new setName: 'b') }) })
 		        arguments: { (TStatementListNode new statements:
@@ -5695,7 +5766,7 @@ SlangBasicTranslationTest >> testSendWhileFalseWithOneStatementInReceiverBlock [
 					          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'while (!(a && b)) {
+	self assert: translation trimBoth equals: 'while (!(a > b)) {
 	var -= 7;
 }'
 ]
@@ -5785,7 +5856,7 @@ SlangBasicTranslationTest >> testSendWhileTrueWithNilAsArgument [
 						          setVariable: variable
 						          expression: expression).
 					         (TSendNode new
-						          setSelector: #&
+						          setSelector: #<
 						          receiver: (TVariableNode new setName: 'a')
 						          arguments: { (TVariableNode new setName: 'b') }) })
 		        arguments: { (TStatementListNode new statements:
@@ -5794,7 +5865,7 @@ SlangBasicTranslationTest >> testSendWhileTrueWithNilAsArgument [
 
 	self assert: translation trimBoth equals: 'do{
 	var -= 7;
-}while(a && b)'
+}while(a < b)'
 ]
 
 { #category : #'tests-builtins' }
@@ -5811,7 +5882,7 @@ SlangBasicTranslationTest >> testSendWhileTrueWithOneStatementInReceiverBlock [
 		        setSelector: #whileTrue:
 		        receiver:
 			        (TStatementListNode new statements: { (TSendNode new
-					          setSelector: #&
+					          setSelector: #>
 					          receiver: (TVariableNode new setName: 'a')
 					          arguments: { (TVariableNode new setName: 'b') }) })
 		        arguments: { (TStatementListNode new statements:
@@ -5820,7 +5891,7 @@ SlangBasicTranslationTest >> testSendWhileTrueWithOneStatementInReceiverBlock [
 					          expression: expression) }) }.
 	translation := self translate: send.
 
-	self assert: translation trimBoth equals: 'while (a && b) {
+	self assert: translation trimBoth equals: 'while (a > b) {
 	var -= 7;
 }'
 ]
@@ -6166,7 +6237,9 @@ SlangBasicTranslationTest >> testSwitchStatementInAssignmentAddAssignmentToEndOf
 SlangBasicTranslationTest >> testSwitchStatementInAssignmentAddAssignmentToEndOfCasesWithNoDefaultStatement [
 
 	| translation |
-	generator currentMethod declarationAt: 'toto' put: 'int toto'.
+	generator currentMethod
+		addLocal: 'toto';
+		declarationAt: 'toto' put: 'int toto'.
 	translation := self translate: (TAssignmentNode new
 			                setVariable: (TVariableNode named: 'toto')
 			                expression: (TSwitchStmtNode new
@@ -6200,7 +6273,9 @@ SlangBasicTranslationTest >> testSwitchStatementInAssignmentAddAssignmentToEndOf
 SlangBasicTranslationTest >> testSwitchStatementInAssignmentAddAssignmentToEndOfCasesWithNoDefaultStatementAndAssignmentVariableIsPointer [
 
 	| translation |
-	generator currentMethod declarationAt: 'toto' put: 'int* toto'.
+	generator currentMethod
+		addLocal: 'toto';
+		declarationAt: 'toto' put: 'int* toto'.
 	translation := self translate: (TAssignmentNode new
 			                setVariable: (TVariableNode named: 'toto')
 			                expression: (TSwitchStmtNode new
@@ -6391,6 +6466,13 @@ SlangBasicTranslationTest >> testVariableAssignment [
 			expression: expression).
 
 	self assert: translation equals: 'var = 7'
+]
+
+{ #category : #'tests-assignment' }
+SlangBasicTranslationTest >> testVariableCantHaveReservedName [
+
+	self should: [TVariableNode new setName: 'register'] raise: TranslationError.
+
 ]
 
 { #category : #'tests-blocks' }

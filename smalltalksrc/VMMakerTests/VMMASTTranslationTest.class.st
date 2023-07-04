@@ -437,7 +437,7 @@ VMMASTTranslationTest >> testMethodWithLoopDeclaresLoopIndexVariable [
 VMMASTTranslationTest >> testMethodWithoutExplicitReturnInOtherMethodReturnsVoid [
 
 	| translation codeGenerator |
-	translation := (CoInterpreterPrimitives >> #doWaitSemaphore:reEnterInterpreter: ) asTranslationMethodOfClass: TMethod.
+	translation := (CoInterpreterPrimitives lookupSelector: #doWaitSemaphore:reEnterInterpreter: ) asTranslationMethodOfClass: TMethod.
 	
 	codeGenerator := CCodeGeneratorGlobalStructure new.
 	codeGenerator vmMaker: VMMaker new.

@@ -11,7 +11,7 @@ VMSessionIdTest >> testGlobalSessionID [
 
 	"The globalSessionID is the Unix time at startup + startMicroseconds.
 	The simulator allows startMicroseconds to be set, so we can force the value to have the top bit set in a 32 bit signed integer"
-	vm := StackInterpreterSimulator newWithOptions: { 
+	vm := StackInterpreterSimulator newBasicWithOptions: { 
 		#ObjectMemory -> #Spur64BitMemoryManager.
 		#startMicroseconds -> 16r80000000. } asDictionary.
 	vm initializeGlobalSessionID.

@@ -88,7 +88,7 @@ size_t basicImageFileRead(void * initialPtr, size_t sz, size_t count, sqImageFil
 
 		lastReadBytes = fread(currentPtr, 1, chunkToRead, (FILE*)f);
 
-		if(lastReadBytes < 0){
+		if(lastReadBytes < chunkToRead){
 			logErrorFromErrno("fread");
 			return lastReadBytes;
 		}

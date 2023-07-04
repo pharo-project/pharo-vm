@@ -5,12 +5,9 @@ Class {
 }
 
 { #category : #tests }
-VMJitSimdBytecode class >> testParameters [ 
+VMJitSimdBytecode class >> wordSizeParameters [ 
 
-	^ ParametrizedTestMatrix new
-		addCase: { #ISA -> #'aarch64'. #wordSize -> 8};
-		addCase: { #ISA -> #'X64'. #wordSize -> 8};
-		yourself
+	^ self wordSize64Parameters 
 ]
 
 { #category : #running }
@@ -129,7 +126,7 @@ VMJitSimdBytecode >> testAddVectorPushesArraySumIntoSimulatedStack [
 	entry := cogit ssTop.
 	"The register with the result is the same as the first one"
 	self assert: (entry type) equals: SSVectorRegister.
-	self assert: (entry register) equals: 0.
+	self assert: (entry registerr) equals: 0.
 
 ]
 
@@ -191,7 +188,7 @@ VMJitSimdBytecode >> testPushArrayToRegisterPushesArrayChunkIntoSimulatedStack [
 	entry := cogit ssTop.
 	
 	self assert: (entry type) equals: SSVectorRegister.
-	self assert: (entry register) equals: 0.
+	self assert: (entry registerr) equals: 0.
 ]
 
 { #category : #tests }

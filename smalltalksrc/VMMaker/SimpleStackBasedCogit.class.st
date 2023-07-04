@@ -397,7 +397,7 @@ SimpleStackBasedCogit >> compileFullBlockMethodFrameBuild: numCopied [
 	 We arrange this using a labelOffset.  A hack, but it works."
 	methodLabel addDependent: (self annotateAbsolutePCRef:
 			(self PushCw: methodLabel asInteger));
-			setLabelOffset: MFMethodFlagIsBlockFlag.. "method"
+			setLabelOffset: MFMethodFlagIsBlockFlag. "method"
 	self genMoveNilR: SendNumArgsReg.
 	self PushR: SendNumArgsReg. "context"
 	"Closure is on stack and initially in ReceiverResultReg.
@@ -984,7 +984,6 @@ SimpleStackBasedCogit >> directedBindingSuperSendTrampolines [
 { #category : #'span functions' }
 SimpleStackBasedCogit >> distanceForShortForwardBranch: pc inMethod: aMethodObj [
 	"N.B.  This serves for both BlueBook/V3 and V4 short jumps."
-	<var: #descriptor type: #'BytecodeDescriptor *'>
 	<inline: true>
 	
 	^((objectMemory fetchByte: pc ofObject: aMethodObj) bitAnd: 7) + 1
@@ -1083,23 +1082,6 @@ SimpleStackBasedCogit >> extendedStoreAndPopBytecode [
 	^EncounteredUnknownBytecode
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> extendedStoreBytecode [
-	| variableType variableIndex |
-	variableType := byte1 >> 6 bitAnd: 3.
-	variableIndex := byte1 bitAnd: 63.
-	variableType = 0 ifTrue:
-		[^self genStorePop: false ReceiverVariable: variableIndex].
-	variableType = 1 ifTrue:
-		[self genStorePop: false TemporaryVariable: variableIndex.
-		"needs a fake map entry if Immutability is ON..."
-		self cppIf: IMMUTABILITY ifTrue: [ self annotateBytecode: self Label. ].
-		^ 0].
-	variableType = 3 ifTrue:
-		[^self genStorePop: false LiteralVariable: variableIndex].
-	^EncounteredUnknownBytecode
-]
-
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> firstSpecialSelectorBytecodeOffset [
 	<inline: true>
@@ -1163,12 +1145,12 @@ SimpleStackBasedCogit >> genCallPrimitiveBytecode [
 ]
 
 { #category : #'constant support' }
-SimpleStackBasedCogit >> genCmpConstant: constant R: register [
+SimpleStackBasedCogit >> genCmpConstant: constant R: reg [
 	"If the objectMemory allows it, generates a quick constant cmp, else generates a word constant cmp"
 	<inline: true>
 	^ (objectRepresentation shouldAnnotateObjectReference: constant)
-		ifTrue: [ self annotate: (self CmpCw: constant R: register) objRef: constant ]
-		ifFalse: [ self CmpCq: constant R: register ]
+		ifTrue: [ self annotate: (self CmpCw: constant R: reg) objRef: constant ]
+		ifFalse: [ self CmpCq: constant R: reg ]
 	
 ]
 
@@ -2924,7 +2906,7 @@ SimpleStackBasedCogit >> mapPCDataFor: cogMethod into: arrayObj [
 					storePointerUnchecked: 3 ofObject: introspectionData withValue: (objectMemory integerObjectOf: cmNoCheckEntryOffset)].
 		 ^4].
 	errCode := self
-					mapFor: (self cCoerceSimple: cogMethod to: #'CogBlockMethod *')
+					mapFor: cogMethod
 					bcpc: (coInterpreter startPCOfMethod: cogMethod methodObject)
 					performUntil: #pcDataFor:Annotation:Mcpc:Bcpc:Method:
 					arg: cogMethod asVoidPointer.

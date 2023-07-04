@@ -294,10 +294,10 @@ UnicornProcessor >> retpcIn: aSpurSimulatedMemory [
 	^ machineSimulator retpcIn: aSpurSimulatedMemory 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'accessing registers' }
 UnicornProcessor >> rsi: anInteger [ 
 	
-	machineSimulator rsi: anInteger
+	^ machineSimulator rsi: anInteger
 ]
 
 { #category : #registers }
