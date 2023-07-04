@@ -796,24 +796,31 @@ CoInterpreter >> attemptToSwitchToMachineCode: bcpc [
 	"Attempt to convert the current interpreted activation into a machine code
 	 activation, and if this is popssible, jump into machine code.  bcpc is the
 	 0-relative pc of the backward branch bytecode (not any preceding extension)."
-	| cogMethod pc cls |
+
 	<inline: false>
 	<var: #cogMethod type: #'CogMethod *'>
-	(self methodHasCogMethod: method)
-		ifFalse: [
-			(self iframeIsBlockActivation: framePointer)
-				ifTrue: [ "Compiled block / full closure"
-					cls := self frameStackedReceiver: framePointer numArgs: (self frameNumArgs: framePointer).
-					cogit cogFullBlockMethod: method numCopied: (objectMemory numPointerSlotsOf: cls) - FullClosureFirstCopiedValueIndex]
-				ifFalse: [ "Compiled method"
-					cogit cog: method selector: objectMemory nilObject ] ].
-	(self methodHasCogMethod: method) ifTrue:
-		[cogMethod := self cogMethodOf: method.
-		 pc := self convertToMachineCodeFrame: cogMethod bcpc: bcpc.
-		 self assertValidMachineCodeFrame: pc.
-		 self push: pc.
-		 self push: objectMemory nilObject.
-		 self callEnilopmart: #ceEnterCogCodePopReceiverReg]
+	| cogMethod pc cls |
+	(self methodHasCogMethod: method) ifFalse: [
+		(self iframeIsBlockActivation: framePointer)
+			ifTrue: [ "Compiled block / full closure"
+				cls := self
+					       frameStackedReceiver: framePointer
+					       numArgs: (self frameNumArgs: framePointer).
+				cogit
+					cogFullBlockMethod: method
+					numCopied: (objectMemory numPointerSlotsOf: cls)
+						- FullClosureFirstCopiedValueIndex ]
+			ifFalse: [ "Compiled method"
+				cogit cog: method selector: objectMemory nilObject ] ].
+	(self methodHasCogMethod: method) ifTrue: [
+		cogMethod := self cogMethodOf: method.
+		pc := self convertToMachineCodeFrame: cogMethod bcpc: bcpc.
+		"If conversion failed, continue interpreted"
+		pc = 0 ifTrue: [ ^ self ].
+		self assertValidMachineCodeFrame: pc.
+		self push: pc.
+		self push: objectMemory nilObject.
+		self callEnilopmart: #ceEnterCogCodePopReceiverReg ]
 ]
 
 { #category : #'return bytecodes' }
@@ -2291,19 +2298,7 @@ CoInterpreter >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
 	<var: #cogMethod type: #'CogMethod *'>
 	<var: #p type: #'char *'>
 	self assert: (self isMachineCodeFrame: framePointer) not.
-	"Update the return pc, perhaps saving it in the caller's iframeSavedIP."
-	(self isBaseFrame: framePointer)
-		ifTrue:
-			[stackPages
-				unsignedLongAt: framePointer + FoxCallerSavedIP
-				put: cogit ceBaseFrameReturnPC]
-		ifFalse:
-			[(self isMachineCodeFrame: (self frameCallerFP: framePointer)) ifFalse:
-				[self iframeSavedIP: (self frameCallerFP: framePointer)
-					put: (self frameCallerSavedIP: framePointer) asInteger.
-				 stackPages
-					unsignedLongAt: framePointer + FoxCallerSavedIP
-					put: cogit ceReturnToInterpreterPC]].
+	
 	"Compute the cog method field"
 	(self iframeIsBlockActivation: framePointer)
 		ifTrue: [
@@ -2317,6 +2312,26 @@ CoInterpreter >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
 			methodField := cogHomeMethod asInteger ].
 	"compute the pc before converting the frame to help with debugging."
 	pc := cogit mcPCForBackwardBranch: bcpc startBcpc: startBcpc in: cogMethod.
+	
+	"If we don't have a PC, because the bytecode was not compiled (either dead code or unknown),
+	exit early and do not transform the frame."
+	pc = 0 ifTrue: [ ^ 0 ].
+	
+	"Update the return pc, perhaps saving it in the caller's iframeSavedIP."
+	(self isBaseFrame: framePointer)
+		ifTrue:
+			[stackPages
+				unsignedLongAt: framePointer + FoxCallerSavedIP
+				put: cogit ceBaseFrameReturnPC]
+		ifFalse:
+			[(self isMachineCodeFrame: (self frameCallerFP: framePointer)) ifFalse:
+				[self iframeSavedIP: (self frameCallerFP: framePointer)
+					put: (self frameCallerSavedIP: framePointer) asInteger.
+				 stackPages
+					unsignedLongAt: framePointer + FoxCallerSavedIP
+					put: cogit ceReturnToInterpreterPC]].
+	
+	
 	self assert: pc > (cogMethod asUnsignedInteger + cogit noCheckEntryOffset).
 	self assert: bcpc = (cogit bytecodePCFor: pc startBcpc: startBcpc in: cogMethod).
 	"now convert to a machine code frame"
