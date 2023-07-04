@@ -1234,6 +1234,7 @@ CoInterpreter >> ceCounterTripped: condition [
 { #category : #trampolines }
 CoInterpreter >> ceDeoptimiseOnBytecode: bytecodePC [
 
+	<api>
 	"Deoptimise the top frame of the stack, transforming the current frame from compiled to interpreted.
 	All values are already spilled in memory.
 	This requires:
