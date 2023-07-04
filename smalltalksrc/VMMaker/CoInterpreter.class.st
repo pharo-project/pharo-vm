@@ -1264,15 +1264,19 @@ CoInterpreter >> ceDeoptimiseOnBytecode: bytecodePC [
 					 numArgs: (self argumentCountOf: method)).
 	
 	"Fix method, add savedIP and flag fields"
-	self iframeMethod: method.
+	self frameMethodField: framePointer put: method.
 	self iframeSavedIP: framePointer put: 0.
-	self iframeFlags: frameFlags.
+	self iframeFlags: framePointer put: frameFlags.
 	
+	"Set the instruction pointer and reenter the interpreter"
 	theIP := bytecodePC.
 	((self methodHeaderHasPrimitive: methodHeader)
 		and: [bytecodePC = (1 + (self startPCOfMethodHeader: methodHeader))])
 			ifTrue: [ theIP := theIP + (self sizeOfCallPrimitiveBytecode: methodHeader) ].
-	instructionPointer := theIP
+	
+	instructionPointer := theIP.
+	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
+	self unreachable
 ]
 
 { #category : #trampolines }

@@ -6467,6 +6467,14 @@ StackInterpreter >> frameMethodField: theFP [
 ]
 
 { #category : #'frame access' }
+StackInterpreter >> frameMethodField: theFP put: aValue [
+	<inline: true>
+	<var: #theFP type: #'char *'>
+
+	^stackPages unsignedLongAt: theFP + FoxMethod put: aValue
+]
+
+{ #category : #'frame access' }
 StackInterpreter >> frameMethodObject: theFP [
 	"Homonym of frameMethod: for compatibility with CoInterpreter"
 	<inline: true>
