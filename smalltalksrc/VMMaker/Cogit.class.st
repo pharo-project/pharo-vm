@@ -267,7 +267,8 @@ Class {
 		'statCompileMethodCount',
 		'statCompileMethodUsecs',
 		'ceSendMustBeBooleanTrampoline',
-		'jitCodeZoneWriteEnabled'
+		'jitCodeZoneWriteEnabled',
+		'ceDeoptimiseFrameTrampoline'
 	],
 	#classVars : [
 		'AnnotationConstantNames',
@@ -8028,6 +8029,10 @@ Cogit >> generateRunTimeTrampolines [
 		                               called: 'ceBaseFrameReturnTrampoline'
 		                               arg: ReceiverResultReg.
 	self generateReturnToInterpreterPCTrampoline.
+	ceDeoptimiseFrameTrampoline := self
+		                      genTrampolineFor: #ceDeoptimiseOnBytecode:
+		                      called: 'ceDeoptimiseFrame'
+		                      arg: ReceiverResultReg.
 	ceMallocTrampoline := self
 		                      genTrampolineFor: #ceMalloc:
 		                      called: 'ceMallocTrampoline'
@@ -10810,6 +10815,12 @@ Cogit >> recordEventTrace [
 { #category : #initialization }
 Cogit >> recordGeneratedRunTime: aString address: address [
 	<var: #aString type: #'char *'>
+	
+	"trampolineAddresses goes over 0 through (NumTrampolines * 2) - 1.
+	If we try go generate a trampoline above (NumTrampolines * 2), validate we don't go out of bounds"
+	trampolineTableIndex > (NumTrampolines * 2)
+		ifTrue: [ self error: 'Attempt to add an entry in a full trampoline table' ].
+	
 	trampolineAddresses
 		at: trampolineTableIndex put: aString;
 		at: trampolineTableIndex + 1 put: (self cCoerceSimple: address to: #'char *').
@@ -11890,7 +11901,11 @@ Cogit >> trampolineName: routinePrefix numRegArgs: numArgs [
 
 { #category : #'bytecode generators' }
 Cogit >> unknownBytecode [
-	^EncounteredUnknownBytecode
+	
+	self ssFlushStack.
+	self MoveCq: bytecodePC R: ReceiverResultReg.
+	self CallRT: ceDeoptimiseFrameTrampoline.
+	^ 0
 ]
 
 { #category : #'jit - api' }

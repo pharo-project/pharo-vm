@@ -1232,6 +1232,41 @@ CoInterpreter >> ceCounterTripped: condition [
 ]
 
 { #category : #trampolines }
+CoInterpreter >> ceDeoptimiseOnBytecode: bytecodePC [
+
+	"Deoptimise the top frame of the stack, transforming the current frame from compiled to interpreted.
+	All values are already spilled in memory.
+	This requires:
+		- push down receiver, temps and stack
+		- insert the missing fields (flags), saved method ip
+		- unflag the method object reference
+	
+	Do not fix the caller saved ip.
+	The return in the interpreter knows how to deal with both cases of call from interpreted or machine code.
+	See #maybeReturnToMachineCodeFrame"
+	
+	| delta frameFlags |
+
+	"Iterate from the top of the stack up to the receiver, pushing the elements down 2 elements"
+	delta := FoxIFReceiver - FoxMFReceiver.
+	stackPointer to:  framePointer + FoxMFReceiver by: objectMemory wordSize do: [:p|
+		stackPages unsignedLongAt: p + delta put: (stackPages unsignedLongAt: p)].
+	stackPointer := stackPointer + delta.
+	
+	"Compute the interpreter frame flags before the values are overridden"
+	method := self frameMethodObject: framePointer.
+	frameFlags := (self
+					 encodeFrameFieldHasContext: (self mframeHasContext: framePointer)
+					 isBlock: (self mframeIsBlockActivation: framePointer)
+					 numArgs: (self argumentCountOf: method)).
+	
+	"Fix method, add savedIP and flag fields"
+	self iframeMethod: method.
+	self iframeSavedIP: framePointer put: 0.
+	self iframeFlags: frameFlags
+]
+
+{ #category : #trampolines }
 CoInterpreter >> ceInterpretMethodFromPIC: aMethodObj receiver: rcvr [
 	<api>
 	| pic primitiveIndex |
@@ -3310,6 +3345,22 @@ CoInterpreter >> iframeBackwardBranchByte: theFP put: aByte [
 	stackPages
 		byteAt: theFP + (VMBIGENDIAN ifTrue: [FoxIFrameFlags + objectMemory wordSize - 1] ifFalse: [FoxIFrameFlags])
 		put: aByte
+]
+
+{ #category : #'frame access' }
+CoInterpreter >> iframeFlags: theFP [
+	"See encodeFrameFieldHasContext:numArgs:"
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^stackPages unsignedLongAt: theFP + FoxIFrameFlags
+]
+
+{ #category : #'frame access' }
+CoInterpreter >> iframeFlags: theFP put: flags [
+	"See encodeFrameFieldHasContext:numArgs:"
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^stackPages unsignedLongAt: theFP + FoxIFrameFlags put: flags
 ]
 
 { #category : #'frame access' }
