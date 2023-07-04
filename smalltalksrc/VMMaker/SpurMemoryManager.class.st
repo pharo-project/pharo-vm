@@ -838,7 +838,10 @@ SpurMemoryManager class >> initializeObjectHeaderConstants [
 
 { #category : #'class initialization' }
 SpurMemoryManager class >> initializeSpecialObjectIndices [
-	"Initialize indices into specialObjects array."
+	"Initialize indices into specialObjects array.
+	
+	See `SmalltalkImage>>#newSpecialObjectsArray` for the image side version.
+	Note: offsets here are zero-relative (so shifted by one in indexed array access)."
 
 	NilObject := 0.
 	FalseObject := 1.
@@ -856,6 +859,7 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	SuspendedProcessInCallout := 11.
 	ClassPoint := 12.
 	ClassLargePositiveInteger := 13.
+	"ClassDisplay := 14. unused by the VM"
 	ClassMessage := 15.
 	"ClassCompiledMethod := 16. unused by the VM"
 	TheLowSpaceSemaphore := 17.
@@ -865,10 +869,11 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	SelectorCannotReturn := 21.
 	ProcessSignalingLowSpace := 22.	"was TheInputSemaphore"
 	SpecialSelectors := 23.
+	"24. was an array of 255 characters"
 	SelectorMustBeBoolean := 25.
 	ClassByteArray := 26.
 	"ClassProcess := 27. unused"
-	CompactClasses := 28.
+	"CompactClasses := 28. unused"
 	TheTimerSemaphore := 29.
 	TheInterruptSemaphore := 30.
 	ClassFloat32Register := 31.
@@ -892,9 +897,9 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	SelectorAttemptToAssign := 50.
 	"PrimErrTableIndex := 51. in VMClass class>>initializePrimitiveErrorCodes"
 
-	ClassWeakFinalizer := 55.
+	"ClassWeakFinalizer := 55. obsoleted by ephemerons"
 
-	ForeignCallbackProcess := 56.
+	"ForeignCallbackProcess := 56. unused"
 
 	SelectorUnknownBytecode := 57.
 	SelectorCounterTripped := 58.
