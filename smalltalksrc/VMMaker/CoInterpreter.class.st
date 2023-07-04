@@ -1241,12 +1241,13 @@ CoInterpreter >> ceDeoptimiseOnBytecode: bytecodePC [
 		- push down receiver, temps and stack
 		- insert the missing fields (flags), saved method ip
 		- unflag the method object reference
+		- set the instruction pointer
 	
 	Do not fix the caller saved ip.
 	The return in the interpreter knows how to deal with both cases of call from interpreted or machine code.
 	See #maybeReturnToMachineCodeFrame"
 	
-	| delta frameFlags |
+	| delta frameFlags methodHeader theIP |
 
 	"Iterate from the top of the stack up to the receiver, pushing the elements down 2 elements"
 	delta := FoxIFReceiver - FoxMFReceiver.
@@ -1256,6 +1257,7 @@ CoInterpreter >> ceDeoptimiseOnBytecode: bytecodePC [
 	
 	"Compute the interpreter frame flags before the values are overridden"
 	method := self frameMethodObject: framePointer.
+	methodHeader := objectMemory methodHeaderOf: method.
 	frameFlags := (self
 					 encodeFrameFieldHasContext: (self mframeHasContext: framePointer)
 					 isBlock: (self mframeIsBlockActivation: framePointer)
@@ -1264,7 +1266,13 @@ CoInterpreter >> ceDeoptimiseOnBytecode: bytecodePC [
 	"Fix method, add savedIP and flag fields"
 	self iframeMethod: method.
 	self iframeSavedIP: framePointer put: 0.
-	self iframeFlags: frameFlags
+	self iframeFlags: frameFlags.
+	
+	theIP := bytecodePC.
+	((self methodHeaderHasPrimitive: methodHeader)
+		and: [bytecodePC = (1 + (self startPCOfMethodHeader: methodHeader))])
+			ifTrue: [ theIP := theIP + (self sizeOfCallPrimitiveBytecode: methodHeader) ].
+	instructionPointer := theIP
 ]
 
 { #category : #trampolines }
