@@ -1256,9 +1256,10 @@ CoInterpreter >> ceDeoptimiseOnBytecode: bytecodePC [
 	
 	| delta frameFlags methodHeader theIP |
 
+	"Pop and discard the trampoline IP, we don't need it"
 	self popStack.
 
-	"Iterate from the top of the stack up to the receiver, pushing the elements down 2 elements"
+	"Iterate from the top of the stack up to the receiver, pushing the elements down 2 words"
 	delta := FoxIFReceiver - FoxMFReceiver.
 	stackPointer to:  framePointer + FoxMFReceiver by: objectMemory wordSize do: [:p|
 		stackPages unsignedLongAt: p + delta put: (stackPages unsignedLongAt: p)].
@@ -1267,10 +1268,10 @@ CoInterpreter >> ceDeoptimiseOnBytecode: bytecodePC [
 	"Compute the interpreter frame flags before the values are overridden"
 	self setMethod: (self frameMethodObject: framePointer).
 	methodHeader := objectMemory methodHeaderOf: method.
-	frameFlags := (self
+	frameFlags := self
 					 encodeFrameFieldHasContext: (self mframeHasContext: framePointer)
 					 isBlock: (self mframeIsBlockActivation: framePointer)
-					 numArgs: (self argumentCountOf: method)).
+					 numArgs: (self argumentCountOf: method).
 	
 	"Fix method, add savedIP and flag fields"
 	self frameMethodField: framePointer put: method.

@@ -5207,6 +5207,11 @@ StackInterpreter >> extBBytecode [
 StackInterpreter >> extJumpIfFalse [
 	"244		11110100	i i i i i i i i	Pop and Jump 0n False i i i i i i i i (+ Extend B * 256, where Extend B >= 0)"
 	| byte offset |
+	<compilationInfo: #branch>
+	<compilationInfo: #isBranchFalse>
+	<compilationInfo: #isMapped> "because of mustBeBoolean"
+	<compilationInfo: #v4:Long:Branch:Distance:>
+
 	byte := self fetchByte.
 	offset := byte + (extB << 8).
 	numExtB := extB := extA := 0.
@@ -5217,6 +5222,11 @@ StackInterpreter >> extJumpIfFalse [
 StackInterpreter >> extJumpIfTrue [
 	"243		11110011	i i i i i i i i	Pop and Jump 0n True i i i i i i i i (+ Extend B * 256, where Extend B >= 0)"
 	| byte offset |
+	<compilationInfo: #branch>
+	<compilationInfo: #isBranchTrue>
+	<compilationInfo: #isMapped> "because of mustBeBoolean"
+	<compilationInfo: #v4:Long:Branch:Distance:>
+
 	byte := self fetchByte.
 	offset := byte + (extB << 8).
 	numExtB := extB := extA := 0.
