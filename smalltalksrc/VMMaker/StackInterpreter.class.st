@@ -4907,7 +4907,7 @@ StackInterpreter >> dumpPrimTraceLog [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> duplicateTopBytecode [
-
+	<needsFrameNever: 1>
 	self fetchNextBytecode.
 	self push: self stackTop
 ]
@@ -5226,6 +5226,7 @@ StackInterpreter >> extJumpIfTrue [
 { #category : #'miscellaneous bytecodes' }
 StackInterpreter >> extNopBytecode [
 	"SistaV1		94		01011111		Nop"
+	<needsFrameNever: 0>
 	self fetchNextBytecode.
 	numExtB := extA := extB := 0
 ]
