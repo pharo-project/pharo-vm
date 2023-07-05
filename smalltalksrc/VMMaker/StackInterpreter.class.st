@@ -7578,7 +7578,7 @@ StackInterpreter >> internalAboutToReturn: resultOop through: aContext [
 ]
 
 { #category : #'return bytecodes' }
-StackInterpreter >> internalMustBeBoolean [
+StackInterpreter >> internalMustBeBoolean: aNonBoolean [
 	<inline: true>
 	messageSelector := objectMemory splObj: SelectorMustBeBoolean.
 	argumentCount := 0.
@@ -8249,7 +8249,7 @@ StackInterpreter >> jumplfFalseBy: offset [
 			self jump: offset ]
 		ifFalse: [ 
 			boolean = objectMemory trueObject ifFalse: [ 
-				^ self internalMustBeBoolean ].
+				^ self internalMustBeBoolean: boolean ].
 			self pop: 1.
 			self fetchNextBytecode ].
 ]
@@ -8265,7 +8265,7 @@ StackInterpreter >> jumplfTrueBy: offset [
 			self jump: offset ]
 		ifFalse: [ 
 			boolean = objectMemory falseObject ifFalse: [ 
-				^ self internalMustBeBoolean ].
+				^ self internalMustBeBoolean: boolean ].
 			self pop: 1.
 			self fetchNextBytecode ]
 ]
