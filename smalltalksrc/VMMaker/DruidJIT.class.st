@@ -6764,7 +6764,7 @@ DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode0 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: 0.
-	self MoveR: t0 Mw: 0 r: FPReg.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 0) r: FPReg.
 	self ssPop: 1.
 	^ 0
 ]
@@ -6781,7 +6781,7 @@ DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode1 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: 1.
-	self MoveR: t0 Mw: 1 r: FPReg.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 1) r: FPReg.
 	self ssPop: 1.
 	^ 0
 ]
@@ -6798,7 +6798,7 @@ DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode2 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: 2.
-	self MoveR: t0 Mw: 2 r: FPReg.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 2) r: FPReg.
 	self ssPop: 1.
 	^ 0
 ]
@@ -6815,7 +6815,7 @@ DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode3 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: 3.
-	self MoveR: t0 Mw: 3 r: FPReg.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 3) r: FPReg.
 	self ssPop: 1.
 	^ 0
 ]
@@ -6832,7 +6832,7 @@ DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode4 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: 4.
-	self MoveR: t0 Mw: 4 r: FPReg.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 4) r: FPReg.
 	self ssPop: 1.
 	^ 0
 ]
@@ -6849,7 +6849,7 @@ DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode5 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: 5.
-	self MoveR: t0 Mw: 5 r: FPReg.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 5) r: FPReg.
 	self ssPop: 1.
 	^ 0
 ]
@@ -6866,7 +6866,7 @@ DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode6 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: 6.
-	self MoveR: t0 Mw: 6 r: FPReg.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 6) r: FPReg.
 	self ssPop: 1.
 	^ 0
 ]
@@ -6883,7 +6883,7 @@ DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode7 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: 7.
-	self MoveR: t0 Mw: 7 r: FPReg.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 7) r: FPReg.
 	self ssPop: 1.
 	^ 0
 ]
