@@ -3150,11 +3150,10 @@ InterpreterPrimitives >> primitiveQuoLargeIntegers [
 InterpreterPrimitives >> primitiveRandom [
 
 	<export: true>
-	<var: #state type: #uint64_t>
-	<var: #x type: #uint64_t>
+	<var: #intermediateValue64Bits type: #uint64_t>
 	<var: #count type: #uint32_t>
 	<var: #returnValue type: #uint32_t>
-	| stateArray state count returnValue intermediateValue64Bits |
+	| stateArray count returnValue intermediateValue64Bits |
 	stateArray := self stackValue: 0.
 	((objectMemory isSixtyFourBitIndexableOop: stateArray) and:
 		 (objectMemory byteSizeOf: stateArray) = 8) ifFalse: [
