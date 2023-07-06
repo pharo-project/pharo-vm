@@ -4800,6 +4800,14 @@ CoInterpreter >> primitiveFailAddress [
 		inSmalltalk: [objectMemory getMemoryMap startOfObjectMemory]
 ]
 
+{ #category : #'trampoline support' }
+CoInterpreter >> primitiveFailureCodeAddress [
+	<api>
+	<returnTypeC: #usqInt>
+	^self cCode: [(self addressOf: primFailCode) asUnsignedInteger]
+		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #primFailCode in: self]
+]
+
 { #category : #'cog jit support' }
 CoInterpreter >> primitiveFunctionPointer: oop [
 	"Apparently not sent but is used in the simulator."

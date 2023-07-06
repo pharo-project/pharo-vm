@@ -267,7 +267,8 @@ Class {
 		'statCompileMethodCount',
 		'statCompileMethodUsecs',
 		'ceSendMustBeBooleanTrampoline',
-		'jitCodeZoneWriteEnabled'
+		'jitCodeZoneWriteEnabled',
+		'ceDeoptimiseFrameTrampoline'
 	],
 	#classVars : [
 		'AnnotationConstantNames',
@@ -2469,9 +2470,19 @@ Cogit >> MoveMb: offset r: baseReg R: destReg [
 
 { #category : #'abstract instructions' }
 Cogit >> MoveMw: offset r: baseReg R: destReg [
+
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
-	^self gen: MoveMwrR quickConstant: offset operand: baseReg operand: destReg
+	(self backEnd isWithinMwOffsetRange: offset)
+		ifTrue: [ self genMoveMw: offset r: baseReg R: destReg ]
+		ifFalse: [
+			"We don't want to override the baseRegister in case it is used in a subsequent instruction.
+			But we can override the destination, because it was going to be overwritten by the load anyways.
+			
+			Copy the base to the base to the destination, add the offset to the destination (=base) then load from the destination + zero-offset"
+			baseReg = destReg ifFalse: [ self MoveR: baseReg R: destReg ].
+			self AddCq: offset R: destReg.
+			self genMoveMw: 0 r: destReg R: destReg ]
 ]
 
 { #category : #'abstract instructions' }
@@ -7203,6 +7214,13 @@ Cogit >> genMethodAbortTrampoline [
 		pushLinkReg: true "Push the LinkReg for the ceMethodAbort call."
 		resultReg: NoReg
 		appendOpcodes: true
+]
+
+{ #category : #'abstract instructions' }
+Cogit >> genMoveMw: offset r: baseReg R: destReg [
+	<inline: true>
+	<returnTypeC: #'AbstractInstruction *'>
+	^self gen: MoveMwrR quickConstant: offset operand: baseReg operand: destReg
 ]
 
 { #category : #initialization }
