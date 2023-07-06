@@ -3185,7 +3185,7 @@ InterpreterPrimitives >> primitiveRandom [
 
 	objectMemory storeLong64: 1 ofObject: stateArray withValue: state.
 
-	self pop: 2 thenPush: (returnValue bitAnd: 16r7FFFFFFF)
+	self pop: 2 thenPush: (objectMemory integerObjectOf: (returnValue bitAnd: 16r7FFFFFFF))
 ]
 
 { #category : #'I/O primitives' }

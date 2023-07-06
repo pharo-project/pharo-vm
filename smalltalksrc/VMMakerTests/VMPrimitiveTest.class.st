@@ -3210,7 +3210,7 @@ VMPrimitiveTest >> testPrimitiveRandom1 [
 
 		interpreter primitiveRandom.
 
-		results add: interpreter popStack ].
+		results add: (memory integerValueOf: interpreter popStack) ].
 
 	self
 		assert: results asArray 
@@ -3257,7 +3257,7 @@ VMPrimitiveTest >> testPrimitiveRandom2 [
 
 		interpreter primitiveRandom.
 
-		results add: interpreter popStack ].
+		results add: (memory integerValueOf: interpreter popStack) ].
 	
 	self
 		assert: results asArray 
@@ -3304,7 +3304,7 @@ VMPrimitiveTest >> testPrimitiveRandom3 [
 
 		interpreter primitiveRandom.
 
-		results add: interpreter popStack ].
+		results add: (memory integerValueOf: interpreter popStack) ].
 
 	self
 		assert: results asArray
@@ -3351,7 +3351,7 @@ VMPrimitiveTest >> testPrimitiveRandom4 [
 
 		interpreter primitiveRandom.
 
-		results add: interpreter popStack ].
+		results add: (memory integerValueOf: interpreter popStack) ].
 
 	self
 		assert: results asArray
@@ -3398,7 +3398,7 @@ VMPrimitiveTest >> testPrimitiveRandom5 [
 
 		interpreter primitiveRandom.
 
-		results add: interpreter popStack ].
+		results add: (memory integerValueOf: interpreter popStack) ].
 
 	self
 		assert: results asArray
