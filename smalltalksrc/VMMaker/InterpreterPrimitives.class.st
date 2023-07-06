@@ -3154,31 +3154,33 @@ InterpreterPrimitives >> primitiveRandom [
 	<var: #x type: #uint64_t>
 	<var: #count type: #uint32_t>
 	<var: #returnValue type: #uint32_t>
-	| stateArray state count returnValue x |
+	| stateArray state count returnValue intermediateValue64Bits |
 	stateArray := self stackValue: 0.
 	((objectMemory isSixtyFourBitIndexableOop: stateArray) and:
 		 (objectMemory byteSizeOf: stateArray) = 8) ifFalse: [
 		^ self primitiveFail ].
 
 	state := objectMemory fetchLong64: 0 ofObject: stateArray.
-	x := state.
+	intermediateValue64Bits := state.
 	count := state >> 59.
 	self
-		cCode: [ state := x * 6364136223846793005 + 1442695040888963407 ]
+		cCode: [ 
+			"Updating state"
+			state := state * 6364136223846793005 + 1442695040888963407 ]
 		inSmalltalk: [ "Simulate 64 bits overflow"
-			state := x * 6364136223846793005 + 1442695040888963407 bitAnd:
+			state := state * 6364136223846793005 + 1442695040888963407 bitAnd:
 				         16rFFFFFFFFFFFFFFFF ].
 
-	x := x >> 18 bitXor: x.
+	intermediateValue64Bits := intermediateValue64Bits >> 18 bitXor: intermediateValue64Bits.
 
 	"Rotation on 32 bits"
 	self
 		cCode: [
-			returnValue := x >> 27.
+			returnValue := intermediateValue64Bits >> 27.
 			returnValue := returnValue >> count bitOr:
 				               returnValue << (count negated bitAnd: 31) ]
 		inSmalltalk: [ "Simulate 32 bits overflow"
-			returnValue := x >> 27 bitAnd: 16rFFFFFFFF.
+			returnValue := intermediateValue64Bits >> 27 bitAnd: 16rFFFFFFFF.
 			returnValue := (returnValue >> count bitOr:
 				                returnValue << (count negated bitAnd: 31))
 				               bitAnd: 16rFFFFFFFF ].
