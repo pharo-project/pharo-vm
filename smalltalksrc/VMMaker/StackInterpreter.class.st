@@ -7576,6 +7576,18 @@ StackInterpreter >> internalMustBeBoolean [
 	self normalSend
 ]
 
+{ #category : #'return bytecodes' }
+StackInterpreter >> internalMustBeBoolean: aBoolean [
+	<inline: true>
+	
+	"Push the boolean to send it the mustBeBoolean message"
+	self push: aBoolean.
+	
+	messageSelector := objectMemory splObj: SelectorMustBeBoolean.
+	argumentCount := 0.
+	self normalSend
+]
+
 { #category : #'interpreter shell' }
 StackInterpreter >> interpret [
 	"This is the main interpreter loop. It normally loops forever, fetching and executing bytecodes. When running in the context of a browser plugin VM, however, it must return control to the browser periodically. This should done only when the state of the currently running Squeak thread is safely stored in the object heap. Since this is the case at the moment that a check for interrupts is performed, that is when we return to the browser if it is time to do so. Interrupt checks happen quite frequently."
@@ -8234,15 +8246,13 @@ StackInterpreter >> jumplfFalseBy: offset [
 
 	| boolean |
 	boolean := self stackTop.
+	self pop: 1.
 	boolean = objectMemory falseObject
-		ifTrue: [ 
-			self pop: 1.
-			self jump: offset ]
-		ifFalse: [ 
-			boolean = objectMemory trueObject ifFalse: [ 
-				^ self internalMustBeBoolean ].
-			self pop: 1.
-			self fetchNextBytecode ].
+		ifTrue: [ self jump: offset ]
+		ifFalse: [
+			boolean = objectMemory trueObject ifFalse: [
+				^ self internalMustBeBoolean: boolean ].
+			self fetchNextBytecode ]
 ]
 
 { #category : #'jump bytecodes' }
@@ -8250,14 +8260,12 @@ StackInterpreter >> jumplfTrueBy: offset [
 
 	| boolean |
 	boolean := self stackTop.
+	self pop: 1.
 	boolean = objectMemory trueObject
-		ifTrue: [ 
-			self pop: 1.
-			self jump: offset ]
-		ifFalse: [ 
-			boolean = objectMemory falseObject ifFalse: [ 
-				^ self internalMustBeBoolean ].
-			self pop: 1.
+		ifTrue: [ self jump: offset ]
+		ifFalse: [
+			boolean = objectMemory falseObject ifFalse: [
+				^ self internalMustBeBoolean: boolean ].
 			self fetchNextBytecode ]
 ]
 
