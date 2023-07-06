@@ -3150,28 +3150,37 @@ InterpreterPrimitives >> primitiveQuoLargeIntegers [
 InterpreterPrimitives >> primitiveRandom [
 
 	<export: true>
-	<var: #state type: #uint64_t>
-	<var: #x type: #uint64_t>
+	<var: #intermediateValue64Bits type: #uint64_t>
 	<var: #count type: #uint32_t>
 	<var: #returnValue type: #uint32_t>
-	| stateArray state count returnValue intermediateValue64Bits |
+	| stateArray count returnValue intermediateValue64Bits |
 	stateArray := self stackValue: 0.
 	((objectMemory isSixtyFourBitIndexableOop: stateArray) and:
 		 (objectMemory byteSizeOf: stateArray) = 8) ifFalse: [
 		^ self primitiveFail ].
 
-	state := objectMemory fetchLong64: 0 ofObject: stateArray.
-	intermediateValue64Bits := state.
-	count := state >> 59.
-	self
+	intermediateValue64Bits := objectMemory
+		                           fetchLong64: 0
+		                           ofObject: stateArray.
+	count := intermediateValue64Bits >> 59.
+	self "Updating state"
 		cCode: [ 
-			"Updating state"
-			state := state * 6364136223846793005 + 1442695040888963407 ]
+			objectMemory
+				storeLong64: 0
+				ofObject: stateArray
+				withValue:
+				intermediateValue64Bits * 6364136223846793005
+				+ 1442695040888963407 ]
 		inSmalltalk: [ "Simulate 64 bits overflow"
-			state := state * 6364136223846793005 + 1442695040888963407 bitAnd:
-				         16rFFFFFFFFFFFFFFFF ].
+			objectMemory
+				storeLong64: 0
+				ofObject: stateArray
+				withValue:
+					(intermediateValue64Bits * 6364136223846793005
+					 + 1442695040888963407 bitAnd: 16rFFFFFFFFFFFFFFFF) ].
 
-	intermediateValue64Bits := intermediateValue64Bits >> 18 bitXor: intermediateValue64Bits.
+	intermediateValue64Bits := intermediateValue64Bits >> 18 bitXor:
+		                           intermediateValue64Bits.
 
 	"Rotation on 32 bits"
 	self
@@ -3185,9 +3194,10 @@ InterpreterPrimitives >> primitiveRandom [
 				                returnValue << (count negated bitAnd: 31))
 				               bitAnd: 16rFFFFFFFF ].
 
-	objectMemory storeLong64: 0 ofObject: stateArray withValue: state.
-
-	self pop: 2 thenPush: (objectMemory integerObjectOf: (returnValue bitAnd: 16r7FFFFFFF))
+	self
+		pop: 2
+		thenPush:
+		(objectMemory integerObjectOf: (returnValue bitAnd: 16r7FFFFFFF))
 ]
 
 { #category : #'I/O primitives' }
