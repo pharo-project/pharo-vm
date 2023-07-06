@@ -3160,7 +3160,7 @@ InterpreterPrimitives >> primitiveRandom [
 		 (objectMemory byteSizeOf: stateArray) = 8) ifFalse: [
 		^ self primitiveFail ].
 
-	state := objectMemory fetchLong64: 1 ofObject: stateArray.
+	state := objectMemory fetchLong64: 0 ofObject: stateArray.
 	x := state.
 	count := state >> 59.
 	self
@@ -3183,7 +3183,7 @@ InterpreterPrimitives >> primitiveRandom [
 				                returnValue << (count negated bitAnd: 31))
 				               bitAnd: 16rFFFFFFFF ].
 
-	objectMemory storeLong64: 1 ofObject: stateArray withValue: state.
+	objectMemory storeLong64: 0 ofObject: stateArray withValue: state.
 
 	self pop: 2 thenPush: (objectMemory integerObjectOf: (returnValue bitAnd: 16r7FFFFFFF))
 ]

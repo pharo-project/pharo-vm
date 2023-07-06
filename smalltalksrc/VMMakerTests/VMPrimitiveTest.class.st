@@ -3198,7 +3198,7 @@ VMPrimitiveTest >> testPrimitiveRandom1 [
 
 	stateArray := self new64BitIndexableOfSize: 1.
 	memory
-		storeLong64: 1
+		storeLong64: 0
 		ofObject: stateArray
 		withValue: 16r4d595df4d0f33173.
 
@@ -3245,7 +3245,7 @@ VMPrimitiveTest >> testPrimitiveRandom2 [
 
 	stateArray := self new64BitIndexableOfSize: 1.
 	memory
-		storeLong64: 1
+		storeLong64: 0
 		ofObject: stateArray
 		withValue: 16r977afd8015414a94.
 
@@ -3292,7 +3292,7 @@ VMPrimitiveTest >> testPrimitiveRandom3 [
 
 	stateArray := self new64BitIndexableOfSize: 1.
 	memory
-		storeLong64: 1
+		storeLong64: 0
 		ofObject: stateArray
 		withValue: 16re81fbe472905b453.
 
@@ -3339,7 +3339,7 @@ VMPrimitiveTest >> testPrimitiveRandom4 [
 
 	stateArray := self new64BitIndexableOfSize: 1.
 	memory
-		storeLong64: 1
+		storeLong64: 0
 		ofObject: stateArray
 		withValue: 16re8adc5779db42e9b.
 
@@ -3386,7 +3386,7 @@ VMPrimitiveTest >> testPrimitiveRandom5 [
 
 	stateArray := self new64BitIndexableOfSize: 1.
 	memory
-		storeLong64: 1
+		storeLong64: 0
 		ofObject: stateArray
 		withValue: 16r39352fc390c369b2.
 
