@@ -43,7 +43,8 @@ Class {
 		'stopOnErrors',
 		'castTranslationDict',
 		'castAsArgumentTranslationDict',
-		'wordSize'
+		'wordSize',
+		'structInstanceVariableTranslations'
 	],
 	#classVars : [
 		'NoRegParmsInAssertVMs'
@@ -373,6 +374,11 @@ CCodeGenerator >> addStructClasses: classes silently: aSilentlyBoolean [
 			 self addStructClass: structClassOrSuperclass silently: aSilentlyBoolean ]]
 ]
 
+{ #category : #public }
+CCodeGenerator >> addStructInstanceVariableTranslation: aVariable to: aString [
+	structInstanceVariableTranslations at: aVariable asSymbol put: aString
+]
+
 { #category : #utilities }
 CCodeGenerator >> addStructMethodFor: aClass selector: selector [ 
 	"Add the given struct method to the code base and answer its translation
@@ -581,12 +587,7 @@ CCodeGenerator >> cFunctionNameFor: aSelector [
 	^selectorTranslations
 		at: aSelector
 		ifAbsent:
-			[| cSelector |
-			 cSelector := aSelector copyWithout: $:.
-			 aSelector last = $: ifTrue:
-				[[cSelector last = $_] whileTrue:
-					[cSelector := cSelector allButLast]].
-			 cSelector]
+			[ self cSelectorName: aSelector ]
 ]
 
 { #category : #'C code generator' }
@@ -708,6 +709,17 @@ CCodeGenerator >> cLiteralForUnsignedInteger: anInteger longlong: llBoolean [
 				and: [(anInteger highBit = anInteger lowBit and: [anInteger > 65536])
 					  or: [anInteger highBit - anInteger lowBit >= 4]]]).
 	^self cLiteralForUnsignedInteger: anInteger hex: hex longlong: llBoolean
+]
+
+{ #category : #'C translation support' }
+CCodeGenerator >> cSelectorName: aSelector [
+
+	| cSelector |
+	cSelector := aSelector copyWithout: $:.
+	aSelector last = $: ifTrue: [
+		[ cSelector last = $_ ] whileTrue: [
+			cSelector := cSelector allButLast ] ].
+	^ cSelector
 ]
 
 { #category : #inlining }
@@ -1030,8 +1042,7 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	verbose ifTrue: [
 		self printUnboundCallWarnings.
 		self printUnboundVariableReferenceWarnings.
-		logger cr.
-	].
+		logger cr ].
 	assertionFlag ifFalse: [ self removeAssertions ].
 
 	self doInlining: inlineFlag.
@@ -1041,6 +1052,9 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 		applyMethodNamed: #interpret.
 
 	"code generation"
+
+	self renameKeywordsConflicts.
+
 	"If we're outputting the VM put the main interpreter loop first for two reasons.
 	 1, so that the dispdbg.h header included at the bytecode dispatch can define
 	 macros that affect all C code in the interpreter,  and 2, so that all primitive
@@ -1048,11 +1062,15 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	 in the use of primitiveFunctionPointer as a function pointer and an index by trying
 	 to ensure that primitives have addresses much higher than any indices."
 	methodList := self sortMethods: methods.
-	(methods includesKey: #interpret) ifTrue:
-		[methodList := { methods at: #interpret }, (methodList copyWithout: (methods at: #interpret))].
+	(methods includesKey: #interpret) ifTrue: [
+		methodList := { (methods at: #interpret) }
+		              , (methodList copyWithout: (methods at: #interpret)) ].
 	"clean out no longer valid variable names and then
 	 handle any global variable usage in each method"
-	methodList do: [:m | self checkForGlobalUsage: (m removeUnusedTempsAndNilIfRequiredIn: self) in: m].
+	methodList do: [ :m |
+		self
+			checkForGlobalUsage: (m removeUnusedTempsAndNilIfRequiredIn: self)
+			in: m ].
 	self localizeGlobalVariables.
 
 	self emitCHeaderOn: aStream.
@@ -1062,7 +1080,6 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	self emitCVariablesOn: aStream.
 	self emitCMacros: methodList on: aStream.
 	self emitCMethods: methodList on: aStream
-
 ]
 
 { #category : #'C code generator' }
@@ -1223,7 +1240,7 @@ CCodeGenerator >> emitCTypesOn: aStream [
 	"Store local type declarations on the given stream."
 	self structClasses do: [:structClass|
 		(self shouldGenerateStruct: structClass) ifTrue: [
-			structClass printTypedefOn: aStream.
+			structClass printTypedefOn: aStream withTranslations: structInstanceVariableTranslations.
 			aStream cr; cr ] ]
 ]
 
@@ -3092,6 +3109,7 @@ CCodeGenerator >> initialize [
 	logger := (ProvideAnswerNotification new tag: #logger; signal) ifNil: [Transcript].
 	pools := IdentitySet new.
 	selectorTranslations := IdentityDictionary new.
+	structInstanceVariableTranslations := IdentityDictionary new.
 	suppressAsmLabels := false.
 	previousCommentMarksInlining := false.
 	previousCommenter := nil.
@@ -4397,6 +4415,39 @@ CCodeGenerator >> removeVariable: aName ifAbsent: ifAbsentBlock [
 	^variables remove: aName ifAbsent: ifAbsentBlock
 ]
 
+{ #category : #translating }
+CCodeGenerator >> renameKeywordsConflicts [
+
+	methods do: [ :method |
+		| localRewording cSelector |
+		"rename locals"
+		localRewording := Dictionary new.
+
+		
+		method allLocals 
+			select: [ :local | self reservedWords includes: local ]
+			thenDo: [ :local | localRewording at: local put: (self sanitizeKeyword: local) ].
+
+		localRewording ifNotEmpty: [
+			method renameVariablesUsing: localRewording ].
+
+		"translate selector"
+		cSelector := self cSelectorName: method selector.
+
+		(self reservedWords includes: cSelector) ifTrue: [
+			self
+				addSelectorTranslation: method selector
+				to: (self sanitizeKeyword: cSelector) ] ].
+
+	"translate structs instance variables"
+	self structClasses do: [ :struct |
+		struct instVarTypeDeclarationsDo: [ :ivn :type |
+			(self reservedWords includes: ivn) ifTrue: [
+				self
+					addStructInstanceVariableTranslation: ivn
+					to: (self sanitizeKeyword: ivn) ] ] ]
+]
+
 { #category : #'C translation support' }
 CCodeGenerator >> reservedWords [
 	^ self class reservedWords
@@ -4551,6 +4602,12 @@ CCodeGenerator >> returnTypeForSend: sendNode in: aTMethod ifNil: typeIfNil [
 		in: aTMethod
 		boundTo: methodOrNil
 		typeIfNil: typeIfNil
+]
+
+{ #category : #'translation support' }
+CCodeGenerator >> sanitizeKeyword: aKeyword [
+
+	^ aKeyword , '_1'
 ]
 
 { #category : #accessing }

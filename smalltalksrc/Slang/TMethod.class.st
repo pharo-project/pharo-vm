@@ -2497,7 +2497,10 @@ TMethod >> recordDeclarationsIn: aCCodeGen [
 				declarationAt: varName
 				put: varType , varName ].
 		pragma selector = #returnTypeC: ifTrue: [ 
-			self returnType: pragma arguments last ] ]
+			self returnType: pragma arguments last ] ].
+	
+		"reset cache since declarations changed"
+		cachedLocals := nil
 ]
 
 { #category : #accessing }
@@ -2816,8 +2819,6 @@ TMethod >> setSelector: sel definingClass: class args: argList locals: localList
 	self parseTree: (aBlockNode asTranslatorNodeIn: self).
 	self locals: tempParseTree locals, (localList  collect: [:arg | arg name]).
 	self addTypeForSelf.
-	
-	self validateReservedWords.
 	
 	complete := false.  "set to true when all possible inlining has been done"
 	export := self extractExportDirective.
@@ -3293,21 +3294,6 @@ TMethod >> usesVariableUninlinably: argName in: aCodeGen [
 				  node arguments anySatisfy: [ :argNode | 
 					  argNode anySatisfy: [ :subNode | 
 						  subNode isVariable and: [ subNode name = argName ] ] ] ] ] ]
-]
-
-{ #category : #'C code generation' }
-TMethod >> validateReservedWords [
-	"Validates if there are no reserved words being used as arguments or selector"
-
-	| reservedWords |
-	reservedWords := CCodeGenerator reservedWords.
-
-	(reservedWords includesAnyOf: args) ifTrue: [
-		TranslationError signal: 'Arguments cannot be reserved words' ].
-
-	(reservedWords includes: selector) ifTrue: [
-		TranslationError signal:
-			'Invalid selector ' , selector , ': Reserved word' ]
 ]
 
 { #category : #accessing }
