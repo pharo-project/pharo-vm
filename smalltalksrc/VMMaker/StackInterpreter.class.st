@@ -7588,8 +7588,12 @@ StackInterpreter >> internalAboutToReturn: resultOop through: aContext [
 ]
 
 { #category : #'return bytecodes' }
-StackInterpreter >> internalMustBeBoolean: aNonBoolean [
+StackInterpreter >> internalMustBeBoolean: aBoolean [
 	<inline: true>
+	
+	"Push the boolean to send it the mustBeBoolean message"
+	self push: aBoolean.
+	
 	messageSelector := objectMemory splObj: SelectorMustBeBoolean.
 	argumentCount := 0.
 	self normalSend

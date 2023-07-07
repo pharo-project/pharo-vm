@@ -70,7 +70,9 @@ Integer >> asUnsignedInteger [
 	"Since the simulator deals with positive integers most of the time we assert that the receiver is greater than zero.
 	 But one major exception is stack pointers in the StackInterpreterSimulator, which are negative.  So don't fail
 	 if the sender is a StackInterpreter and the receiver could be a stack pointer."
-	^ thisContext sender receiver objectMemory wordSize = 8
+
+	^ (thisContext findMethodContextSuchThat: [ :e |
+		   e receiver respondsTo: #wordSize ]) receiver wordSize = 8
 		  ifTrue: [ self signedIntToLong64 ]
 		  ifFalse: [ self signedIntToLong ]
 ]
