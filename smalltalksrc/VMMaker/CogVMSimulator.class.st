@@ -592,22 +592,6 @@ CogVMSimulator >> expectSends: anArray [
 	expecting := true
 ]
 
-{ #category : #'miscellaneous bytecodes' }
-CogVMSimulator >> extABytecode [
-	"224		11100000	aaaaaaaa	Extend A (Ext A = Ext A prev * 256 + Ext A)"
-	(extA = 0 and: [extB = 0]) ifTrue:
-		[lastExtPC := instructionPointer].
-	^super extABytecode
-]
-
-{ #category : #'miscellaneous bytecodes' }
-CogVMSimulator >> extBBytecode [
-	"225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
-	(extA = 0 and: [extB = 0]) ifTrue:
-		[lastExtPC := instructionPointer].
-	^super extBBytecode
-]
-
 { #category : #'interpreter shell' }
 CogVMSimulator >> fetchByte [
 	^objectMemory byteAt: (instructionPointer := instructionPointer + 1)
