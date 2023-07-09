@@ -8257,15 +8257,13 @@ StackInterpreter >> jumplfFalseBy: offset [
 
 	| boolean |
 	boolean := self stackTop.
+	self pop: 1.
 	boolean = objectMemory falseObject
-		ifTrue: [ 
-			self pop: 1.
-			self jump: offset ]
-		ifFalse: [ 
-			boolean = objectMemory trueObject ifFalse: [ 
+		ifTrue: [ self jump: offset ]
+		ifFalse: [
+			boolean = objectMemory trueObject ifFalse: [
 				^ self internalMustBeBoolean: boolean ].
-			self pop: 1.
-			self fetchNextBytecode ].
+			self fetchNextBytecode ]
 ]
 
 { #category : #'jump bytecodes' }
@@ -8273,15 +8271,14 @@ StackInterpreter >> jumplfTrueBy: offset [
 
 	| boolean |
 	boolean := self stackTop.
+	self pop: 1.
 	boolean = objectMemory trueObject
-		ifTrue: [ 
-			self pop: 1.
-			self jump: offset ]
+		ifTrue: [ self jump: offset ]
 		ifFalse: [ 
 			boolean = objectMemory falseObject ifFalse: [ 
 				^ self internalMustBeBoolean: boolean ].
-			self pop: 1.
-			self fetchNextBytecode ]
+			self fetchNextBytecode ].
+
 ]
 
 { #category : #'message sending' }
@@ -12572,12 +12569,16 @@ StackInterpreter >> pushReceiverVariableBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushRemoteTemp: index inVectorAt: tempVectorIndex [
+
 	| tempVector |
 	tempVector := self itemporary: tempVectorIndex in: framePointer.
-	TempVectReadBarrier
-		ifTrue: 
-			[(objectMemory isForwarded: tempVector) ifTrue:
-				[tempVector := self unfollowTempVector: tempVector atIndex: tempVectorIndex in: framePointer]].
+	TempVectReadBarrier ifTrue: [
+		(objectMemory isForwarded: tempVector) ifTrue: [
+			self druidIgnore: [
+				tempVector := self
+					              unfollowTempVector: tempVector
+					              atIndex: tempVectorIndex
+					              in: framePointer ] ] ].
 	self push: (objectMemory fetchPointer: index ofObject: tempVector)
 ]
 
@@ -14646,12 +14647,13 @@ StackInterpreter >> storeRemoteTemp: index inVectorAt: tempVectorIndex [
 
 	| tempVector |
 	tempVector := self itemporary: tempVectorIndex in: framePointer.
-	TempVectReadBarrier ifTrue: [ 
-		(objectMemory isForwarded: tempVector) ifTrue: [ 
-			tempVector := self
-				              unfollowTempVector: tempVector
-				              atIndex: tempVectorIndex
-				              in: framePointer ] ].
+	TempVectReadBarrier ifTrue: [
+		(objectMemory isForwarded: tempVector) ifTrue: [
+			self druidIgnore: [
+				tempVector := self
+					              unfollowTempVector: tempVector
+					              atIndex: tempVectorIndex
+					              in: framePointer ] ] ].
 	objectMemory
 		storePointer: index
 		ofObject: tempVector
