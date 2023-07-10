@@ -4158,6 +4158,13 @@ StackInterpreter >> commonCallerReturn [
 ]
 
 { #category : #'return bytecodes' }
+StackInterpreter >> commonCallerReturn: value [
+
+	localReturnValue := value.
+	self commonCallerReturn
+]
+
+{ #category : #'return bytecodes' }
 StackInterpreter >> commonReturn [
 	"Do an ^-return (return from method), checking for unwinds if this is a block activation.
 	 Note: Assumed to be inlined into the dispatch loop."
@@ -5187,6 +5194,7 @@ StackInterpreter >> expandCases [
 { #category : #'miscellaneous bytecodes' }
 StackInterpreter >> extABytecode [
 	"224		11100000	aaaaaaaa	Extend A (Ext A = Ext A prev * 256 + Ext A)"
+	<compilationInfo: #extension>
 	extA := (extA bitShift: 8) + self fetchByte.
 	self fetchNextBytecode
 ]
@@ -5195,6 +5203,7 @@ StackInterpreter >> extABytecode [
 StackInterpreter >> extBBytecode [
 	"225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
 	| byte |
+	<compilationInfo: #extension>
 	byte := self fetchByte.
 	self fetchNextBytecode.
 	extB := (numExtB = 0 and: [byte > 127])
@@ -5245,6 +5254,7 @@ StackInterpreter >> extNopBytecode [
 StackInterpreter >> extPushCharacterBytecode [
 	"SistaV1:	*	233		11101001	iiiiiiii		Push Character #iiiiiiii (+ Extend B * 256)"
 	| value |
+	<needsFrameNever: 1>
 	value := self fetchByte + (extB << 8).
 	self fetchNextBytecode.
 	self push: (objectMemory characterObjectOf: value).
@@ -5278,6 +5288,7 @@ StackInterpreter >> extPushFullClosureBytecode [
 StackInterpreter >> extPushIntegerBytecode [
 	"229		11100101	i i i i i i i i	Push Integer #iiiiiiii (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)"
 	| value |
+	<needsFrameNever: 1>
 	value := self fetchByte + (extB << 8).
 	self fetchNextBytecode.
 	extB := 0.
@@ -5289,6 +5300,7 @@ StackInterpreter >> extPushIntegerBytecode [
 StackInterpreter >> extPushLiteralBytecode [
 	"228		11100100	i i i i i i i i	Push Literal #iiiiiiii (+ Extend A * 256)"
 	| index |
+	<needsFrameNever: 1>
 	index := self fetchByte + (extA << 8).
 	self fetchNextBytecode.
 	extA := 0.
@@ -5299,6 +5311,7 @@ StackInterpreter >> extPushLiteralBytecode [
 StackInterpreter >> extPushLiteralVariableBytecode [
 	"227		11100011	i i i i i i i i	Push Literal Variable #iiiiiiii (+ Extend A * 256)"
 	| index |
+	<needsFrameNever: 1>
 	index := self fetchByte + (extA << 8).
 	self fetchNextBytecode.
 	extA := 0.
@@ -5325,6 +5338,7 @@ StackInterpreter >> extPushPseudoVariable [
 StackInterpreter >> extPushReceiverVariableBytecode [
 	"226		11100010	i i i i i i i i	Push Receiver Variable #iiiiiiii (+ Extend A * 256)"
 	| index |
+	<compilationInfo: #isInstVarRef>
 	index := self fetchByte + (extA << 8).
 	self fetchNextBytecode.
 	extA := 0.
@@ -5347,19 +5361,19 @@ StackInterpreter >> extReturnTopFromBlock [
 
 { #category : #'send bytecodes' }
 StackInterpreter >> extSendBytecode [
-
 	"238		11101110	i i i i i j j j	Send Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments"
 
-	| byte messageSelectorIndex |
+	<compilationInfo: #isMapped>
+	| byte messageSelectorIndex messageArgumentCount |
 	byte := self fetchByte.
 	messageSelectorIndex := byte >> 3 + (extA << 5).
 	extA := 0.
-	argumentCount := (byte bitAnd: 7) + (extB << 3).
+	messageArgumentCount := (byte bitAnd: 7) + (extB << 3).
 	extB := 0.
 	numExtB := 0.
 	self
 		normalLiteralSelectorAt: messageSelectorIndex
-		argumentCount: argumentCount
+		argumentCount: messageArgumentCount
 ]
 
 { #category : #'send bytecodes' }
@@ -5369,6 +5383,7 @@ StackInterpreter >> extSendSuperBytecode [
 			ifTrue: [Send To Superclass Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments]
 			ifFalse: [Send To Superclass of Stacked Class Literal Selector #iiiii (+ Extend A * 32) with jjj (+ (Extend B bitAnd: 63) * 8) Arguments]"
 	| byte |
+	<compilationInfo: #isMapped>
 	byte := self fetchByte.
 	messageSelector := self literal: (byte >> 3) + (extA << 5).
 	extA := 0.
@@ -5390,6 +5405,7 @@ StackInterpreter >> extStoreAndPopLiteralVariableBytecode [
 	"236		11101100	i i i i i i i i	Pop and Store Literal Variable #iiiiiiii (+ Extend A * 256)"
 
 	| variableIndex value |
+	<compilationInfo: #isMappedIfImmutability>
 	variableIndex := self fetchByte + (extA << 8).
 	value := self stackTop.
 	self pop: 1.
@@ -5404,6 +5420,8 @@ StackInterpreter >> extStoreAndPopReceiverVariableBytecode [
 	"235		11101011	i i i i i i i i	Pop and Store Receiver Variable #iiiiiii (+ Extend A * 256)"
 
 	| variableIndex value |
+	<compilationInfo: #isInstVarRef>
+	<compilationInfo: #isMappedIfImmutability>
 	variableIndex := self fetchByte + (extA << 8).
 	extA := 0.
 	value := self stackTop.
@@ -5420,6 +5438,7 @@ StackInterpreter >> extStoreLiteralVariableBytecode [
 	"233		11101001	i i i i i i i i	Store Literal Variable #iiiiiiii (+ Extend A * 256)"
 
 	| variableIndex |
+	<compilationInfo: #isMappedIfImmutability>
 	variableIndex := self fetchByte + (extA << 8).
 	extA := 0.
 	self storeLiteralVariable: variableIndex withValue: self stackTop.
@@ -5432,6 +5451,8 @@ StackInterpreter >> extStoreReceiverVariableBytecode [
 	"232		11101000	i i i i i i i i	Store Receiver Variable #iiiiiii (+ Extend A * 256)"
 
 	| variableIndex |
+	<compilationInfo: #isInstVarRef>
+	<compilationInfo: #isMappedIfImmutability>
 	variableIndex := self fetchByte + (extA << 8).
 	extA := 0.
 	self
@@ -5444,6 +5465,9 @@ StackInterpreter >> extStoreReceiverVariableBytecode [
 StackInterpreter >> extUnconditionalJump [
 	"242		11110010	i i i i i i i i	Jump i i i i i i i i (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)"
 	| byte offset bcpcDelta |
+	<compilationInfo: #branch>
+	<compilationInfo: #isMapped> "because of interrupt check"
+	<compilationInfo: #v4:Long:Branch:Distance:>
 	byte := self fetchByte.
 	offset := byte + (extB << 8).
 	bcpcDelta := offset < 0 ifTrue: [numExtB * 2] ifFalse: [0].
@@ -10454,8 +10478,8 @@ StackInterpreter >> popStack [
 	<api>
 	| top |
 	<inline: true>
-	top := stackPages unsignedLongAt: stackPointer.
-	stackPointer := stackPointer + objectMemory wordSize.
+	top := self stackTop.
+	self pop: 1.
 	^top
 ]
 
@@ -12985,8 +13009,10 @@ StackInterpreter >> returnNil [
 { #category : #'return bytecodes' }
 StackInterpreter >> returnNilFromBlock [
 	"Return nil to the caller of the current block activation."
-	localReturnValue := objectMemory nilObject.
-	self commonCallerReturn
+	<compilationInfo: #return>
+	<needsFrameNever: -1>
+
+	self commonCallerReturn: objectMemory nilObject
 ]
 
 { #category : #'return bytecodes' }
@@ -13014,9 +13040,10 @@ StackInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switched
 StackInterpreter >> returnTopFromBlock [
 
 	"Return top-of-stack to the caller of the current block activation."
+	<compilationInfo: #return>
+	<needsFrameNever: -1>
 
-	localReturnValue := self stackTop.
-	self commonCallerReturn
+	self commonCallerReturn: self popStack
 ]
 
 { #category : #'return bytecodes' }
@@ -13025,7 +13052,7 @@ StackInterpreter >> returnTopFromMethod [
 	<compilationInfo: #isMappedInBlock>
 	<needsFrameIfInBlock: -1>
 
-	self commonReturn: self stackTop
+	self commonReturn: self popStack
 ]
 
 { #category : #'return bytecodes' }
@@ -14528,6 +14555,10 @@ StackInterpreter >> startPCOfMethodHeader: methodHeader [
 StackInterpreter >> storeAndPopReceiverVariableBytecode [
 
 	| rcvr top instVarIndex |
+	<compilationInfo: #isInstVarRef>
+	<compilationInfo: #is1ByteInstVarStore>
+	<compilationInfo: #isMappedIfImmutability>
+	<needsFrameIfImmutability: -1>
 	rcvr := self receiver.
 	top := self stackTop.
 	instVarIndex := currentBytecode bitAnd: 7.
@@ -15514,12 +15545,15 @@ StackInterpreter >> unfollow: litVar atIndex: literalIndex [
 
 { #category : #'compiled methods' }
 StackInterpreter >> unfollowTempVector: tempVector atIndex: tempVectorIndex in: theFP [
+	"So rare it mustn't bulk up the common path"
+
 	<option: #TempVectReadBarrier>
-	<inline: #never> "So rare it mustn't bulk up the common path"
+	<inline: #never>
 	| followed |
 	followed := objectMemory followForwarded: tempVector.
-	self itemporary: tempVectorIndex in: theFP put: followed.
-	^followed
+	self druidIgnore: [
+		self itemporary: tempVectorIndex in: theFP put: followed ].
+	^ followed
 ]
 
 { #category : #'miscellaneous bytecodes' }
