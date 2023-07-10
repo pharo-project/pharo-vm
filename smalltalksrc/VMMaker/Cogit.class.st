@@ -2474,7 +2474,7 @@ Cogit >> MoveMw: offset r: baseReg R: destReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	(self backEnd isWithinMwOffsetRange: offset)
-		ifTrue: [ self genMoveMw: offset r: baseReg R: destReg ]
+		ifTrue: [ ^ self genMoveMw: offset r: baseReg R: destReg ]
 		ifFalse: [
 			"We don't want to override the baseRegister in case it is used in a subsequent instruction.
 			But we can override the destination, because it was going to be overwritten by the load anyways.
@@ -2482,7 +2482,7 @@ Cogit >> MoveMw: offset r: baseReg R: destReg [
 			Copy the base to the base to the destination, add the offset to the destination (=base) then load from the destination + zero-offset"
 			baseReg = destReg ifFalse: [ self MoveR: baseReg R: destReg ].
 			self AddCq: offset R: destReg.
-			self genMoveMw: 0 r: destReg R: destReg ]
+			^ self genMoveMw: 0 r: destReg R: destReg ]
 ]
 
 { #category : #'abstract instructions' }
