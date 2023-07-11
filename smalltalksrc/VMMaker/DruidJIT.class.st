@@ -6307,20 +6307,18 @@ DruidJIT >> gen_ShortConditionalJumpFalse0 [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 1 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -6340,20 +6338,18 @@ DruidJIT >> gen_ShortConditionalJumpFalse1 [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 2 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -6373,20 +6369,18 @@ DruidJIT >> gen_ShortConditionalJumpFalse2 [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 3 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -6406,20 +6400,18 @@ DruidJIT >> gen_ShortConditionalJumpFalse3 [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 4 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -6439,20 +6431,18 @@ DruidJIT >> gen_ShortConditionalJumpFalse4 [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 5 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -6472,20 +6462,18 @@ DruidJIT >> gen_ShortConditionalJumpFalse5 [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 6 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -6505,20 +6493,18 @@ DruidJIT >> gen_ShortConditionalJumpFalse6 [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 7 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -6538,20 +6524,18 @@ DruidJIT >> gen_ShortConditionalJumpFalse7 [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 8 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -6571,20 +6555,18 @@ DruidJIT >> gen_ShortConditionalJumpTrue0 [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 1 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -6604,20 +6586,18 @@ DruidJIT >> gen_ShortConditionalJumpTrue1 [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 2 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -6637,20 +6617,18 @@ DruidJIT >> gen_ShortConditionalJumpTrue2 [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 3 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -6670,20 +6648,18 @@ DruidJIT >> gen_ShortConditionalJumpTrue3 [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 4 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -6703,20 +6679,18 @@ DruidJIT >> gen_ShortConditionalJumpTrue4 [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 5 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -6736,20 +6710,18 @@ DruidJIT >> gen_ShortConditionalJumpTrue5 [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 6 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -6769,20 +6741,18 @@ DruidJIT >> gen_ShortConditionalJumpTrue6 [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 7 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -6802,20 +6772,18 @@ DruidJIT >> gen_ShortConditionalJumpTrue7 [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 8 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
