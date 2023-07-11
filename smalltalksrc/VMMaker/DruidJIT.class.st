@@ -406,14 +406,14 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 205. 205. #unknownBytecode }.
 		  { 1. 206. 206. #unknownBytecode }.
 		  { 1. 207. 207. #unknownBytecode }.
-		  { 1. 208. 208. #unknownBytecode }.
-		  { 1. 209. 209. #unknownBytecode }.
-		  { 1. 210. 210. #unknownBytecode }.
-		  { 1. 211. 211. #unknownBytecode }.
-		  { 1. 212. 212. #unknownBytecode }.
-		  { 1. 213. 213. #unknownBytecode }.
-		  { 1. 214. 214. #unknownBytecode }.
-		  { 1. 215. 215. #unknownBytecode }.
+		  { 1. 208. 208. #gen_StoreAndPopTemporaryVariableBytecode0 }.
+		  { 1. 209. 209. #gen_StoreAndPopTemporaryVariableBytecode1 }.
+		  { 1. 210. 210. #gen_StoreAndPopTemporaryVariableBytecode2 }.
+		  { 1. 211. 211. #gen_StoreAndPopTemporaryVariableBytecode3 }.
+		  { 1. 212. 212. #gen_StoreAndPopTemporaryVariableBytecode4 }.
+		  { 1. 213. 213. #gen_StoreAndPopTemporaryVariableBytecode5 }.
+		  { 1. 214. 214. #gen_StoreAndPopTemporaryVariableBytecode6 }.
+		  { 1. 215. 215. #gen_StoreAndPopTemporaryVariableBytecode7 }.
 		  { 1. 216. 216. #gen_PopStackBytecode. #needsFrameNever:.
 		   -1 }.
 		  { 1. 217. 217. #unknownBytecode }.
