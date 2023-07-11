@@ -1560,7 +1560,7 @@ DruidJIT >> gen_BytecodePrimAdd [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -1
+		genMarshalledSend: -1
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1574,7 +1574,7 @@ DruidJIT >> gen_BytecodePrimAt [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -17
+		genMarshalledSend: -17
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1588,7 +1588,7 @@ DruidJIT >> gen_BytecodePrimAtEnd [
 	live := 0.
 	self marshallSendArguments: 0.
 	self
-		genMarshalledSend:  -22
+		genMarshalledSend: -22
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1602,7 +1602,7 @@ DruidJIT >> gen_BytecodePrimAtPut [
 	live := 0.
 	self marshallSendArguments: 2.
 	self
-		genMarshalledSend:  -18
+		genMarshalledSend: -18
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1616,7 +1616,7 @@ DruidJIT >> gen_BytecodePrimBitAnd [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -15
+		genMarshalledSend: -15
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1630,7 +1630,7 @@ DruidJIT >> gen_BytecodePrimBitOr [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -16
+		genMarshalledSend: -16
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1644,7 +1644,7 @@ DruidJIT >> gen_BytecodePrimBitShift [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -13
+		genMarshalledSend: -13
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1658,7 +1658,7 @@ DruidJIT >> gen_BytecodePrimDiv [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -14
+		genMarshalledSend: -14
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1672,7 +1672,7 @@ DruidJIT >> gen_BytecodePrimDivide [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -10
+		genMarshalledSend: -10
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1686,7 +1686,7 @@ DruidJIT >> gen_BytecodePrimDo [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -28
+		genMarshalledSend: -28
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1700,7 +1700,7 @@ DruidJIT >> gen_BytecodePrimEqualSistaV1 [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -7
+		genMarshalledSend: -7
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1714,7 +1714,7 @@ DruidJIT >> gen_BytecodePrimGreaterOrEqualSistaV1 [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -6
+		genMarshalledSend: -6
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1728,7 +1728,7 @@ DruidJIT >> gen_BytecodePrimGreaterThanSistaV1 [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -4
+		genMarshalledSend: -4
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1917,7 +1917,7 @@ DruidJIT >> gen_BytecodePrimLessOrEqualSistaV1 [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -5
+		genMarshalledSend: -5
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1931,7 +1931,7 @@ DruidJIT >> gen_BytecodePrimLessThanSistaV1 [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -3
+		genMarshalledSend: -3
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1945,7 +1945,7 @@ DruidJIT >> gen_BytecodePrimMakePoint [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -12
+		genMarshalledSend: -12
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1959,7 +1959,7 @@ DruidJIT >> gen_BytecodePrimMod [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -11
+		genMarshalledSend: -11
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1973,7 +1973,7 @@ DruidJIT >> gen_BytecodePrimMultiply [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -9
+		genMarshalledSend: -9
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -1987,7 +1987,7 @@ DruidJIT >> gen_BytecodePrimNew [
 	live := 0.
 	self marshallSendArguments: 0.
 	self
-		genMarshalledSend:  -29
+		genMarshalledSend: -29
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -2001,7 +2001,7 @@ DruidJIT >> gen_BytecodePrimNewWithArg [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -30
+		genMarshalledSend: -30
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -2015,7 +2015,7 @@ DruidJIT >> gen_BytecodePrimNext [
 	live := 0.
 	self marshallSendArguments: 0.
 	self
-		genMarshalledSend:  -20
+		genMarshalledSend: -20
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -2029,7 +2029,7 @@ DruidJIT >> gen_BytecodePrimNextPut [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -21
+		genMarshalledSend: -21
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -2043,7 +2043,7 @@ DruidJIT >> gen_BytecodePrimNotEqualSistaV1 [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -8
+		genMarshalledSend: -8
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -2232,7 +2232,7 @@ DruidJIT >> gen_BytecodePrimPointX [
 	live := 0.
 	self marshallSendArguments: 0.
 	self
-		genMarshalledSend:  -31
+		genMarshalledSend: -31
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -2246,7 +2246,7 @@ DruidJIT >> gen_BytecodePrimPointY [
 	live := 0.
 	self marshallSendArguments: 0.
 	self
-		genMarshalledSend:  -32
+		genMarshalledSend: -32
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -2260,7 +2260,7 @@ DruidJIT >> gen_BytecodePrimSize [
 	live := 0.
 	self marshallSendArguments: 0.
 	self
-		genMarshalledSend:  -19
+		genMarshalledSend: -19
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -2274,7 +2274,7 @@ DruidJIT >> gen_BytecodePrimSubtract [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -2
+		genMarshalledSend: -2
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -2288,7 +2288,7 @@ DruidJIT >> gen_BytecodePrimValue [
 	live := 0.
 	self marshallSendArguments: 0.
 	self
-		genMarshalledSend:  -26
+		genMarshalledSend: -26
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
 	^ 0
@@ -2302,7 +2302,7 @@ DruidJIT >> gen_BytecodePrimValueWithArg [
 	live := 0.
 	self marshallSendArguments: 1.
 	self
-		genMarshalledSend:  -27
+		genMarshalledSend: -27
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
 	^ 0
