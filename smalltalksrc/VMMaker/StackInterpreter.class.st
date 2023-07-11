@@ -12598,11 +12598,10 @@ StackInterpreter >> pushRemoteTemp: index inVectorAt: tempVectorIndex [
 	tempVector := self itemporary: tempVectorIndex in: framePointer.
 	TempVectReadBarrier ifTrue: [
 		(objectMemory isForwarded: tempVector) ifTrue: [
-			self druidIgnore: [
-				tempVector := self
-					              unfollowTempVector: tempVector
-					              atIndex: tempVectorIndex
-					              in: framePointer ] ] ].
+			tempVector := self
+				              unfollowTempVector: tempVector
+				              atIndex: tempVectorIndex
+				              in: framePointer ] ].
 	self push: (objectMemory fetchPointer: index ofObject: tempVector)
 ]
 
@@ -14680,11 +14679,10 @@ StackInterpreter >> storeRemoteTemp: index inVectorAt: tempVectorIndex [
 	tempVector := self itemporary: tempVectorIndex in: framePointer.
 	TempVectReadBarrier ifTrue: [
 		(objectMemory isForwarded: tempVector) ifTrue: [
-			self druidIgnore: [
-				tempVector := self
-					              unfollowTempVector: tempVector
-					              atIndex: tempVectorIndex
-					              in: framePointer ] ] ].
+			tempVector := self
+				              unfollowTempVector: tempVector
+				              atIndex: tempVectorIndex
+				              in: framePointer ] ].
 	objectMemory
 		storePointer: index
 		ofObject: tempVector

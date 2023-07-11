@@ -1597,22 +1597,6 @@ SimpleStackBasedCogit >> genLoadArgAtDepth: n into: reg [
 ]
 
 { #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genLongJumpIfFalse [
-	| distance target |
-	distance := self v3: (self generatorAt: byte0) LongForward: bytecodePC Branch: 0 Distance: methodObj.
-	target := distance + 2 + bytecodePC.
-	^self genJumpIf: objectMemory falseObject to: target
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genLongJumpIfTrue [
-	| distance target |
-	distance := self v3: (self generatorAt: byte0) LongForward: bytecodePC Branch: 0 Distance: methodObj.
-	target := distance + 2 + bytecodePC.
-	^self genJumpIf: objectMemory trueObject to: target
-]
-
-{ #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genLongPushTemporaryVariableBytecode [
 	"230		11100110	i i i i i i i i	Push Temporary Variable #iiiiiiii"
 	^self genPushTemporaryVariable: byte1
