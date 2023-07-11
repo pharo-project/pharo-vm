@@ -441,8 +441,10 @@ DruidJIT class >> bytecodeTable [
 		  { 2. 235. 235. #unknownBytecode }.
 		  { 2. 236. 236. #unknownBytecode }.
 		  { 2. 237. 237. #unknownBytecode }.
-		  { 2. 238. 238. #unknownBytecode }.
-		  { 2. 239. 239. #unknownBytecode }.
+		  { 2. 238. 238. #gen_ExtJumpIfTrue. #branch. #isBranchTrue.
+		  #isMapped. #v4:Long:Branch:Distance: }.
+		  { 2. 239. 239. #gen_ExtJumpIfFalse. #branch. #isBranchFalse.
+		  #isMapped. #v4:Long:Branch:Distance: }.
 		  { 2. 240. 240. #unknownBytecode }.
 		  { 2. 241. 241. #unknownBytecode }.
 		  { 2. 242. 242. #gen_LongStoreAndPopTemporaryVariableBytecode }.
@@ -2366,20 +2368,18 @@ DruidJIT >> gen_ExtJumpIfFalse [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + (byte1 + (r3 << 8)) + 1.
+	self genJumpTo: bytecodePC + (byte1 + (r3 << 8)) + 1 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -2403,20 +2403,18 @@ DruidJIT >> gen_ExtJumpIfTrue [
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump2 := self JumpZero: 0.
+	self ssFlushStack.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
 	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump2 jmpTarget: currentBlock.
-	jump2 := self Jump: 0.
-	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + (byte1 + (r3 << 8)) + 1.
+	self genJumpTo: bytecodePC + (byte1 + (r3 << 8)) + 1 + 1.
 	deadCode := false.
 	currentBlock := self Label.
-	jump3 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ 0
 ]
 
@@ -6546,7 +6544,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse0 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 1 + 1.
+	self genJumpTo: bytecodePC + 1 + 1 + 0.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6577,7 +6575,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse1 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 2 + 1.
+	self genJumpTo: bytecodePC + 2 + 1 + 0.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6608,7 +6606,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse2 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 3 + 1.
+	self genJumpTo: bytecodePC + 3 + 1 + 0.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6639,7 +6637,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse3 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 4 + 1.
+	self genJumpTo: bytecodePC + 4 + 1 + 0.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6670,7 +6668,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse4 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 5 + 1.
+	self genJumpTo: bytecodePC + 5 + 1 + 0.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6701,7 +6699,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse5 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 6 + 1.
+	self genJumpTo: bytecodePC + 6 + 1 + 0.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6732,7 +6730,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse6 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 7 + 1.
+	self genJumpTo: bytecodePC + 7 + 1 + 0.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6763,7 +6761,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse7 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 8 + 1.
+	self genJumpTo: bytecodePC + 8 + 1 + 0.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6794,7 +6792,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue0 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 1 + 1.
+	self genJumpTo: bytecodePC + 1 + 1 + 0.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6825,7 +6823,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue1 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 2 + 1.
+	self genJumpTo: bytecodePC + 2 + 1 + 0.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6856,7 +6854,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue2 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 3 + 1.
+	self genJumpTo: bytecodePC + 3 + 1 + 0.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6887,7 +6885,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue3 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 4 + 1.
+	self genJumpTo: bytecodePC + 4 + 1 + 0.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6918,7 +6916,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue4 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 5 + 1.
+	self genJumpTo: bytecodePC + 5 + 1 + 0.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6949,7 +6947,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue5 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 6 + 1.
+	self genJumpTo: bytecodePC + 6 + 1 + 0.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6980,7 +6978,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue6 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 7 + 1.
+	self genJumpTo: bytecodePC + 7 + 1 + 0.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -7011,7 +7009,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue7 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 8 + 1.
+	self genJumpTo: bytecodePC + 8 + 1 + 0.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -7025,7 +7023,7 @@ DruidJIT >> gen_ShortUnconditionalJump0 [
 
 	| live currentBlock |
 	live := 0.
-	self genJumpTo: bytecodePC + 1 + 1.
+	self genJumpTo: bytecodePC + 1 + 1 + 0.
 	^ 0
 ]
 
@@ -7035,7 +7033,7 @@ DruidJIT >> gen_ShortUnconditionalJump1 [
 
 	| live currentBlock |
 	live := 0.
-	self genJumpTo: bytecodePC + 2 + 1.
+	self genJumpTo: bytecodePC + 2 + 1 + 0.
 	^ 0
 ]
 
@@ -7045,7 +7043,7 @@ DruidJIT >> gen_ShortUnconditionalJump2 [
 
 	| live currentBlock |
 	live := 0.
-	self genJumpTo: bytecodePC + 3 + 1.
+	self genJumpTo: bytecodePC + 3 + 1 + 0.
 	^ 0
 ]
 
@@ -7055,7 +7053,7 @@ DruidJIT >> gen_ShortUnconditionalJump3 [
 
 	| live currentBlock |
 	live := 0.
-	self genJumpTo: bytecodePC + 4 + 1.
+	self genJumpTo: bytecodePC + 4 + 1 + 0.
 	^ 0
 ]
 
@@ -7065,7 +7063,7 @@ DruidJIT >> gen_ShortUnconditionalJump4 [
 
 	| live currentBlock |
 	live := 0.
-	self genJumpTo: bytecodePC + 5 + 1.
+	self genJumpTo: bytecodePC + 5 + 1 + 0.
 	^ 0
 ]
 
@@ -7075,7 +7073,7 @@ DruidJIT >> gen_ShortUnconditionalJump5 [
 
 	| live currentBlock |
 	live := 0.
-	self genJumpTo: bytecodePC + 6 + 1.
+	self genJumpTo: bytecodePC + 6 + 1 + 0.
 	^ 0
 ]
 
@@ -7085,7 +7083,7 @@ DruidJIT >> gen_ShortUnconditionalJump6 [
 
 	| live currentBlock |
 	live := 0.
-	self genJumpTo: bytecodePC + 7 + 1.
+	self genJumpTo: bytecodePC + 7 + 1 + 0.
 	^ 0
 ]
 
@@ -7095,7 +7093,7 @@ DruidJIT >> gen_ShortUnconditionalJump7 [
 
 	| live currentBlock |
 	live := 0.
-	self genJumpTo: bytecodePC + 8 + 1.
+	self genJumpTo: bytecodePC + 8 + 1 + 0.
 	^ 0
 ]
 
