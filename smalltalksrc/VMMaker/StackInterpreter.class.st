@@ -5470,11 +5470,15 @@ StackInterpreter >> extUnconditionalJump [
 	<compilationInfo: #v4:Long:Branch:Distance:>
 	byte := self fetchByte.
 	offset := byte + (extB << 8).
+	
+	"If backwards, we should consider the delta from before the previous extensions.
+	Consider each extension is 2 bytes."
 	bcpcDelta := offset < 0 ifTrue: [numExtB * 2] ifFalse: [0].
 	extB := 0.
 	numExtB := 0.
-	instructionPointer := instructionPointer + offset.
+	self druidIgnore: [ instructionPointer := instructionPointer + offset ].
 	self ifBackwardsCheckForEvents: offset + bcpcDelta.
+	self interpreterIgnore: [ instructionPointer := instructionPointer + offset + 1 ].
 	self fetchNextBytecode
 ]
 

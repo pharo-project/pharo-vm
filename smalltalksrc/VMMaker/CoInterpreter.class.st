@@ -3311,31 +3311,31 @@ CoInterpreter >> ifBackwardsCheckForEvents: offsetToJumpBytecode [
 
 	stackPointer < stackLimit ifTrue: [
 		switched := self checkForEventsMayContextSwitch: true.
-		self returnToExecutive: true postContextSwitch: switched.
+		self druidIgnore:[ self returnToExecutive: true postContextSwitch: switched ].
 		switched ifTrue: [ ^ self ] ].
 
-	"We use the least significant byte of the flags word (which is marked as an immediate) and
+	self druidIgnore: [ "We use the least significant byte of the flags word (which is marked as an immediate) and
 	 subtract two each time to avoid disturbing the least significant tag bit.  Since the byte is
 	 initialized to 1 (on frame build), on first decrement it will become -1.  Trip when it reaches 1 again."
-	backwardJumpCountByte := self iframeBackwardBranchByte: framePointer.
-	(backwardJumpCountByte := backwardJumpCountByte - 2) = 1
-		ifTrue: [
-			(self methodWithHeaderShouldBeCogged:
-				 (objectMemory methodHeaderOf: method)) ifTrue: [
-				self attemptToSwitchToMachineCode:
-					(self oopForPointer: instructionPointer) - offsetToJumpBytecode
-					- method - objectMemory baseHeaderSize - 1
-				"If attemptToSwitchToMachineCode: returns the method could not be cogged, hence..." ].
-			"can't cog method; avoid asking to cog it again for the longest possible time."
-			backwardJumpCountByte := 16r7F ]
-		ifFalse: [
-			backwardJumpCountByte = -1 ifTrue: [ "initialize the count"
-				self assert: minBackwardJumpCountForCompile <= 128.
-				backwardJumpCountByte := minBackwardJumpCountForCompile - 1 << 1
-				                         + 1 ] ].
-	self
-		iframeBackwardBranchByte: framePointer
-		put: backwardJumpCountByte
+		backwardJumpCountByte := self iframeBackwardBranchByte: framePointer.
+		(backwardJumpCountByte := backwardJumpCountByte - 2) = 1
+			ifTrue: [
+				(self methodWithHeaderShouldBeCogged:
+					 (objectMemory methodHeaderOf: method)) ifTrue: [
+					self attemptToSwitchToMachineCode:
+						(self oopForPointer: instructionPointer) - offsetToJumpBytecode
+						- method - objectMemory baseHeaderSize - 1
+					"If attemptToSwitchToMachineCode: returns the method could not be cogged, hence..." ].
+				"can't cog method; avoid asking to cog it again for the longest possible time."
+				backwardJumpCountByte := 16r7F ]
+			ifFalse: [
+				backwardJumpCountByte = -1 ifTrue: [ "initialize the count"
+					self assert: minBackwardJumpCountForCompile <= 128.
+					backwardJumpCountByte := minBackwardJumpCountForCompile - 1 << 1
+					                         + 1 ] ].
+		self
+			iframeBackwardBranchByte: framePointer
+			put: backwardJumpCountByte ]
 ]
 
 { #category : #'debug support' }
