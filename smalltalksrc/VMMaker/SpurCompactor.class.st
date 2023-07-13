@@ -31,7 +31,7 @@ Class {
 		'VMBasicConstants',
 		'VMSpurObjectRepresentationConstants'
 	],
-	#category : #'VMMaker-SpurMemoryManager'
+	#category : #'VMMaker-InterpreterSimulation'
 }
 
 { #category : #translation }
@@ -46,13 +46,12 @@ SpurCompactor class >> declareCVarsIn: aCCodeGenerator [
 	"If subclasses are being used but are not the compactorClass itself
 	 then statically resolve their api selectors."
 	(self inheritsFrom: SpurCompactor) ifTrue: "leave SpurCompactor methods alone"
-		[(SpurMemoryManager compactorClass includesBehavior: self) ifFalse: "only map methods not in the compactorClass"
-			[#(compact biasForGC biasForSnapshot remapObj: shouldRemapObj:) do: "map the public api methods only"
+		[#(compact biasForGC biasForSnapshot remapObjCompactor: shouldRemapObjCompactor: postSwizzleAction isMobileObj: relocateObjInHeapEntity:from:to: ) do: "map the public api methods only"
 				[:selectorToStaticallyResolve|
 				 aCCodeGenerator
 					staticallyResolveMethodNamed: selectorToStaticallyResolve
 					forClass: self
-					to: (self staticallyResolvePolymorphicSelector: selectorToStaticallyResolve)]]]
+					to: (self staticallyResolvePolymorphicSelector: selectorToStaticallyResolve)]]
 ]
 
 { #category : #translation }
@@ -97,15 +96,8 @@ SpurCompactor >> postSwizzleAction [
 	"do nothing"
 ]
 
-{ #category : #debugging }
-SpurCompactor >> printTheBogons: aBogon [
-	<inline: true>
-	coInterpreter
-		print: 'bogon '; printHexnp: aBogon; cr
-]
-
 { #category : #api }
-SpurCompactor >> remapObj: objOop [
+SpurCompactor >> remapObjCompactor: objOop [
 	<api>
 	<inline: false>
 	^manager vanillaRemapObj: objOop
@@ -118,7 +110,7 @@ SpurCompactor >> scavenger: aSpurGenerationScavenger [
 ]
 
 { #category : #api }
-SpurCompactor >> shouldRemapObj: objOop [
+SpurCompactor >> shouldRemapObjCompactor: objOop [
 	<api>
 	"Answer if the obj should be scavenged (or simply followed). The method is called
 	 shouldRemapObj: for compatibility with ObjectMemory.  Defer to the compactor

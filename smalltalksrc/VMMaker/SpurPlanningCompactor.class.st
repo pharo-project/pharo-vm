@@ -424,6 +424,12 @@ SpurPlanningCompactor >> isMobile: obj [
 ]
 
 { #category : #private }
+SpurPlanningCompactor >> isMobileObj: obj [
+	<inline: true>
+	^self isMobile: obj
+]
+
+{ #category : #private }
 SpurPlanningCompactor >> isPostMobile: obj [
 	"For asserts"
 	^self oop: obj isGreaterThanOrEqualTo: mobileStart andLessThanOrEqualTo: lastMobileObject
@@ -538,14 +544,6 @@ SpurPlanningCompactor >> planCompactSavingForwarders [
 	^true
 ]
 
-{ #category : #'debug support' }
-SpurPlanningCompactor >> printTheBogons: aBogon [
-	<inline: true>
-	coInterpreter
-		print: 'bogon '; printHexnp: aBogon; cr;
-		print: 'anomaly '; printHexnp: anomaly; cr
-]
-
 { #category : #private }
 SpurPlanningCompactor >> recordMovementOf: o to: toFinger savedFirstFieldPtr: savedFirstFieldPtr [
 	"No-op in the real class."
@@ -581,6 +579,19 @@ SpurPlanningCompactor >> releaseSavedFirstFieldsSpace [
 ]
 
 { #category : #compaction }
+SpurPlanningCompactor >> relocateObjInHeapEntity: heapEntity from: startIndex to: finishIndex [
+	"Sweep the fields in some non-pointer heap entity (objStackPage, rememberedSet),
+	 updating all references to mobile objects to their eventual locations.  Answer the
+	 heapEntity's eventual location."
+
+	<inline: true>
+	^ self
+		  relocateObjectsInHeapEntity: heapEntity
+		  from: startIndex
+		  to: finishIndex
+]
+
+{ #category : #compaction }
 SpurPlanningCompactor >> relocateObjectsInHeapEntity: heapEntity from: startIndex to: finishIndex [
 	"Sweep the fields in some non-pointer heap entity (objStackPage, rememberedSet),
 	 updating all references to mobile objects to their eventual locations.  Answer the
@@ -600,7 +611,7 @@ SpurPlanningCompactor >> relocateObjectsInHeapEntity: heapEntity from: startInde
 ]
 
 { #category : #'gc - scavenge/compact' }
-SpurPlanningCompactor >> remapObj: objOop [
+SpurPlanningCompactor >> remapObjCompactor: objOop [
 	"Scavenge or simply follow objOop.  Answer the new location of objOop.
 	 The send should have been guarded by a send of shouldRemapOop:.
 	 The method is called remapObj: for compatibility with ObjectMemory."
@@ -696,7 +707,7 @@ SpurPlanningCompactor >> selectSavedFirstFieldsSpace [
 ]
 
 { #category : #'gc - scavenge/compact' }
-SpurPlanningCompactor >> shouldRemapObj: objOop [
+SpurPlanningCompactor >> shouldRemapObjCompactor: objOop [
 	"Answer if the obj should be scavenged, or simply followed. Sent via the compactor
 	 from shouldRemapObj:.  We test for being already scavenged because mapStackPages
 	 via mapInterpreterOops may be applied twice in the context of a global GC where a
@@ -1093,7 +1104,6 @@ SpurPlanningCompactor >> validRelocationPlanInPass: onePass [
 	<var: 'destination' type: #usqInt>
 	nMobiles := 0.
 	toFinger := mobileStart.
-	anomaly := nil.
 	manager allOldSpaceEntitiesFrom: firstMobileObject do:
 		[:o| | destination |
 		 self check: o.
@@ -1102,10 +1112,10 @@ SpurPlanningCompactor >> validRelocationPlanInPass: onePass [
 				[nMobiles := nMobiles + 1.
 				 destination := manager fetchPointer: 0 ofObject: o.
 				 destination >= toFinger ifFalse:
-					[anomaly := o. ^1].
+					[^1].
 				 toFinger := toFinger + (manager bytesInObject: o).
 				 (self oop: o isGreaterThan: lastMobileObject) ifTrue:
-					[anomaly := o. ^2].
+					[^2].
 				 o = lastMobileObject ifTrue:
 					[^savedFirstFieldsSpace top + manager bytesPerOop - savedFirstFieldsSpace start / manager bytesPerOop
 					   = nMobiles

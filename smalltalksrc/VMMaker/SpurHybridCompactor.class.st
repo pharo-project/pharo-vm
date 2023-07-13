@@ -86,12 +86,12 @@ SpurHybridCompactor >> manager: aSpurNBitMMXEndianSimulator [
 ]
 
 { #category : #api }
-SpurHybridCompactor >> remapObj: objOop [
+SpurHybridCompactor >> remapObjCompactor: objOop [
 	<api>
 	<inline: false>
 	planNotSelect ifTrue:
 		[^manager slidingCompactionRemapObj: objOop].
-	^super remapObj: objOop
+	^super remapObjCompactor: objOop
 ]
 
 { #category : #initialization }
@@ -103,10 +103,10 @@ SpurHybridCompactor >> scavenger: aSpurGenerationScavenger [
 ]
 
 { #category : #api }
-SpurHybridCompactor >> shouldRemapObj: objOop [
+SpurHybridCompactor >> shouldRemapObjCompactor: objOop [
 	<api>
 	<inline: false>
 	planNotSelect ifTrue:
 		[^manager slidingCompactionShouldRemapObj: objOop].
-	^super shouldRemapObj: objOop
+	^super shouldRemapObjCompactor: objOop
 ]

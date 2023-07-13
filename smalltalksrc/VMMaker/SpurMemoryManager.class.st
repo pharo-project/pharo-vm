@@ -593,7 +593,6 @@ Class {
 		'gcMarkEndUsecs',
 		'gcSweepEndUsecs',
 		'compactionStartUsecs',
-		'bogon',
 		'statCoalesces',
 		'statCompactPassCount',
 		'statFGCDeltaUsecs',
@@ -618,12 +617,16 @@ Class {
 		'permSpaceFreeStart',
 		'fromOldSpaceRememberedSet',
 		'fromPermToOldSpaceRememberedSet',
-		'fromPermToNewSpaceRememberedSet'
+		'fromPermToNewSpaceRememberedSet',
+		'gcType',
+		'planningCompactor',
+		'sweepCompactor'
 	],
 	#classVars : [
 		'BitsPerByte',
 		'ExtraRootsSize',
 		'FirstValidClassIndex',
+		'GCType',
 		'MarkObjectsForEnumerationPrimitives',
 		'MarkStackRecord',
 		'MarkStackRootIndex',
@@ -748,7 +751,14 @@ SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
 		var: #memoryMap type: #'VMMemoryMap *';
 		var: #fromOldSpaceRememberedSet type: #'VMRememberedSet *';
 		var: #fromPermToOldSpaceRememberedSet type: #'VMRememberedSet *';
-		var: #fromPermToNewSpaceRememberedSet type: #'VMRememberedSet *'
+		var: #fromPermToNewSpaceRememberedSet type: #'VMRememberedSet *'.
+
+	aCCodeGenerator
+		staticallyResolvedPolymorphicReceiver: 'planningCompactor'
+		to: SpurPlanningCompactor;
+		staticallyResolvedPolymorphicReceiver: 'sweepCompactor'
+		to: SpurSweeper "SpurSelectiveCompactor" "The selector mangling is easier this way"
+
 ]
 
 { #category : #translation }
@@ -934,6 +944,9 @@ SpurMemoryManager class >> initializeWithOptions: optionsDictionary [
 	InitializationOptions
 		at: #Spur32BitMemoryManager ifAbsentPut: false;
 		at: #Spur64BitMemoryManager ifAbsentPut: false.
+
+	GCType := InitializationOptions at: #gcType ifAbsent: [0].
+
 	self initialize.
 	self initBytesPerWord: (self == SpurMemoryManager
 								ifTrue: [optionsDictionary at: #BytesPerWord ifAbsent: [4]]
@@ -955,7 +968,7 @@ SpurMemoryManager class >> isImmediate: anObject [
 
 { #category : #translation }
 SpurMemoryManager class >> isNonArgumentImplicitReceiverVariableName: aString [
-	^#('self' 'coInterpreter' 'manager' 'scavenger' 'segmentManager' 'compactor' 'planningCompactor' 'selectiveCompactor' 'heapMap') includes: aString
+	^#('self' 'coInterpreter' 'manager' 'scavenger' 'segmentManager' 'compactor' 'planningCompactor' 'planningCompactor' 'sweepCompactor' 'selectiveCompactor' 'heapMap') includes: aString
 ]
 
 { #category : #translation }
@@ -1652,7 +1665,7 @@ SpurMemoryManager >> allObjectsInFreeTreeDo: aBlock [
 { #category : #'gc - global' }
 SpurMemoryManager >> allObjectsUnmarked [
 	self allObjectsDo:
-		[:o| (self isMarked: o) ifTrue: [bogon := o. ^false]].
+		[:o| (self isMarked: o) ifTrue: [^false]].
 	^true
 ]
 
@@ -1820,7 +1833,7 @@ SpurMemoryManager >> allPermSpaceObjectsDo: aBlockClosure [
 { #category : #'gc - global' }
 SpurMemoryManager >> allPermSpaceObjectsUnmarked [
 	self allPermSpaceObjectsDo: 
-		[:o| (self isMarked: o) ifTrue: [bogon := o. ^false]].
+		[:o| (self isMarked: o) ifTrue: [^false]].
 	^true
 ]
 
@@ -1966,6 +1979,13 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 		survivorBytes: newSpaceActualBytes // self scavengerDenominator.
 
 	compactor := self class compactorClass simulatorClass new
+		             manager: self;
+		             yourself.
+		
+	planningCompactor := SpurPlanningCompactor simulatorClass new
+		             manager: self;
+		             yourself.
+	 sweepCompactor := SpurSweeper simulatorClass new
 		             manager: self;
 		             yourself.
 	
@@ -5908,9 +5928,19 @@ SpurMemoryManager >> fullGCLock [
 SpurMemoryManager >> garbageCollectForSnapshot [
 	self flushNewSpace. "There is no place to put newSpace in the snapshot file."
 	self flag: 'If we wanted to shrink the rememberedSet prior to snapshot this is the place to do it.'.
-	compactor biasForSnapshot.
+	GCType caseOf: { 
+		[ 0 ] -> [ planningCompactor biasForSnapshot ].
+		[ 1 ] -> [ sweepCompactor biasForSnapshot ].
+	 }.
+
+	
 	self fullGC.
-	compactor biasForGC.
+
+	gcType caseOf: { 
+		[ 0 ] -> [ planningCompactor biasForGC ].
+		[ 1 ] -> [ sweepCompactor biasForGC ].
+	 }.
+
 	segmentManager prepareForSnapshot.
 	self checkFreeSpace: GCModeFull
 ]
@@ -6006,7 +6036,12 @@ SpurMemoryManager >> globalGarbageCollect [
 		
 	compactionStartUsecs := coInterpreter ioUTCMicrosecondsNow.
 	segmentManager prepareForGlobalSweep. "for notePinned:"
-	compactor compact.
+	
+	gcType caseOf: { 
+		[ 0 ] -> [ planningCompactor compact ].
+		[ 1 ] -> [ sweepCompactor compact ].
+	 }.
+	
 	self attemptToShrink.
 	self setHeapSizeAtPreviousGC.
 
@@ -6597,7 +6632,8 @@ SpurMemoryManager >> initialize [
 	maxOldSpaceSize := self class initializationOptions
 							ifNotNil: [:initOpts| initOpts at: #maxOldSpaceSize ifAbsent: [0]]
 							ifNil: [0].
-
+	
+	gcType := GCType
 ]
 
 { #category : #bootstrap }
@@ -6732,6 +6768,9 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	"Catch mis-initializations leading to bad translations to C"
 	self assert: self baseHeaderSize = self baseHeaderSize.
 	self assert: (self maxSlotsForAlloc * self wordSize) asInteger > 0.
+	
+	gcType := GCType.
+	
 	self bootstrapping ifFalse:
 		[self
 			initSegmentBridgeWithBytes: self bridgeSize
@@ -6767,7 +6806,13 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	
 	self updateFreeLists.
 	self computeFreeSpacePostSwizzle.
-	compactor postSwizzleAction.
+	
+"	gcType caseOf: { 
+		[ 0 ] -> [ planningCompactor postSwizzleAction ].
+		[ 1 ] -> [ sweepCompactor postSwizzleAction ].
+		ONLY SELECTIVE
+	 }.
+"
 	self initializeOldSpaceFirstFree: freeOldSpaceStart. "initializes endOfMemory, freeStart, free space"
 	self initializeNewSpaceVariables.
 
@@ -6776,7 +6821,11 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	fromPermToNewSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
 	
 	segmentManager checkSegments.
-	compactor biasForGC.
+	
+	gcType caseOf: { 
+		[ 0 ] -> [ planningCompactor biasForGC ].
+		[ 1 ] -> [ sweepCompactor biasForGC ].
+	 }.
 
 	"These defaults should depend on machine size; e.g. too small on a powerful laptop, too big on a Pi."
 	growHeadroom := 16*1024*1024.		"headroom when growing"
@@ -10427,12 +10476,6 @@ SpurMemoryManager >> printAdjacentFreeChunks [
 
 ]
 
-{ #category : #'debug printing' }
-SpurMemoryManager >> printBogons [
-	<api>
-	compactor printTheBogons: bogon
-]
-
 { #category : #printing }
 SpurMemoryManager >> printClassTableEntries [
 
@@ -11224,10 +11267,16 @@ SpurMemoryManager >> relocateObjStackForPlanningCompactor: objStack [
 	   if there were 5 slots in an oop stack, full would be 2, and the last 0-rel index is 4.
 	   Hence the last index is topx + fixed slots - 1, or topx + ObjStackNextx"
 	 next := self fetchPointer: ObjStackNextx ofObject: stackOrNil.
-	 relocated := compactor
-					relocateObjectsInHeapEntity: stackOrNil
+	
+	
+	gcType caseOf: { 
+		[ 0 ] -> [ 
+		relocated := planningCompactor
+					relocateObjInHeapEntity: stackOrNil
 					from: ObjStackFreex
-					to: ObjStackNextx + (self rawHashBitsOf: stackOrNil).
+					to: ObjStackNextx + (self rawHashBitsOf: stackOrNil) ].
+	 }.
+	 
 	 stackOrNil = objStack ifTrue:
 		[result := relocated].
 	 next ~= 0]
@@ -11236,10 +11285,14 @@ SpurMemoryManager >> relocateObjStackForPlanningCompactor: objStack [
 	[freeList ~= 0] whileTrue:
 		[self assert: (self numSlotsOfAny: freeList) = ObjStackPageSlots.
 		 next := self fetchPointer: ObjStackFreex ofObject: freeList.
-		 compactor
-			relocateObjectsInHeapEntity: freeList
+		
+	gcType caseOf: { 
+		[ 0 ] -> [ planningCompactor 
+			relocateObjInHeapEntity: freeList
 			from: ObjStackFreex
-			to: ObjStackFreex.
+			to: ObjStackFreex ].
+	 }.
+
 		 freeList := next].
 	
 	^ result
@@ -11280,8 +11333,12 @@ SpurMemoryManager >> remapObj: objOop [
 	 Defer to the compactor to choose the actual method, there being a
 	 difference between the vanilla method and that used with a sliding
 	 compactor where objects are not marked as forwarded."
-	<doNotGenerate>
-	^compactor remapObj: objOop
+	<api>
+	gcType caseOf: { 
+		[ 0 ] -> [ ^ planningCompactor remapObjCompactor: objOop ].
+		[ 1 ] -> [ ^ sweepCompactor remapObjCompactor: objOop ].
+	 }.
+ 
 ]
 
 { #category : #'object access' }
@@ -11826,8 +11883,11 @@ SpurMemoryManager >> shouldRemapObj: objOop [
 	 shouldRemapObj: for compatibility with ObjectMemory.  Defer to the compactor
 	 to choose the actual test, there being a difference between the vanilla test and
 	 that used with a sliding compactor where objects are not marked as forwarded."
-	<doNotGenerate>
-	^compactor shouldRemapObj: objOop
+	<api>
+	gcType caseOf: { 
+		[ 0 ] -> [ ^ planningCompactor shouldRemapObjCompactor: objOop ].
+		[ 1 ] -> [ ^ sweepCompactor shouldRemapObjCompactor: objOop ].
+	 }.
 ]
 
 { #category : #'gc - scavenge/compact' }
@@ -12019,8 +12079,17 @@ SpurMemoryManager >> slidingCompactionRemapObj: objOop [
 					[^scavenger copyAndForward: resolvedObj]]
 			ifFalse:
 				[self assert: self slidingCompactionInProgress.
-				 (compactor isMobile: objOop) ifTrue:
-					[^self fetchPointer: 0 ofObject: objOop]]].
+				
+				
+	gcType caseOf: { 
+		[ 0 ] -> [ (planningCompactor isMobileObj: objOop) ifTrue:
+					[^self fetchPointer: 0 ofObject: objOop]
+				 ].
+	 }.
+	
+				]
+			
+			].
 	^resolvedObj
 ]
 
@@ -12037,7 +12106,16 @@ SpurMemoryManager >> slidingCompactionShouldRemapObj: objOop [
 		   and: [self scavengeInProgress
 					ifTrue: [(memoryMap isYoungObject: objOop)
 							and: [(self isInFutureSpace: objOop) not]]
-					ifFalse: [compactor isMobile: objOop]]]
+					ifFalse: [
+						
+	gcType caseOf: { 
+		[ 0 ] -> [ planningCompactor isMobileObj: objOop ].
+	 }.
+
+						
+						
+						
+						]]]
 ]
 
 { #category : #'object access' }
