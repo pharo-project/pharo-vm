@@ -1602,89 +1602,179 @@ StackInterpreterPrimitives >> primitiveGetCurrentWorkingDirectory [
 ]
 
 { #category : #'system control primitives' }
-StackInterpreterPrimitives >> primitiveGetVMParameter: index [ 
+StackInterpreterPrimitives >> primitiveGetVMParameter: index [
 	"See primitiveVMParameter method comment.
 		Return an OOP if success.
 		Return nil if no argument is available for the index"
-	index caseOf: {
-			[1]  ->	[^self positiveMachineIntegerFor: objectMemory oldSpaceSize].
-			[2]  ->	[^objectMemory integerObjectOf: objectMemory newSpaceSize].
-			[3]  ->	[^self positiveMachineIntegerFor: objectMemory totalMemorySize].
-			[6]  ->	[^objectMemory integerObjectOf: objectMemory tenuringThreshold].
-			[7]  ->	[^objectMemory integerObjectOf: objectMemory statFullGCs].
-			[8]  ->	[^objectMemory integerObjectOf: objectMemory statFullGCUsecs + 500 // 1000].
-			[9]  ->	[^objectMemory integerObjectOf: objectMemory statScavenges].
-			[10] ->	[^objectMemory integerObjectOf: objectMemory statScavengeGCUsecs + 500 // 1000].
-			[11] ->	[^objectMemory integerObjectOf: objectMemory statTenures].
-			[12] ->	[^ConstZero]. "Was JITTER VM info"
-			[13] ->	[^ConstZero]. "Was JITTER VM info"
-			[14] ->	[^ConstZero]. "Was JITTER VM info"
-			[15] ->	[^ConstZero]. "Was JITTER VM info"
-			[16] ->	[^self positive64BitIntegerFor: statIdleUsecs].
-			[17] ->	[^(SistaVM and: [self isCog])
-						ifTrue: [objectMemory floatObjectOf: self getCogCodeZoneThreshold]
-						ifFalse: [ConstZero]].
-			[18] ->	[^objectMemory integerObjectOf: objectMemory statCompactionUsecs + 500 // 1000].
-			[19] ->	[^objectMemory integerObjectOf: objectMemory scavengeThresholdAsExtent].
-			[20] ->	[^objectMemory positive64BitIntegerFor: self ioUTCStartMicroseconds].
-			[21] ->	[^objectMemory integerObjectOf: objectMemory rootTableCount].
-			[22] ->	[^objectMemory integerObjectOf: objectMemory statRootTableOverflows].
-			[23] ->	[^objectMemory integerObjectOf: extraVMMemory].
-			[24] ->	[^objectMemory integerObjectOf: objectMemory shrinkThreshold].
-			[25] ->	[^objectMemory integerObjectOf: objectMemory growHeadroom].
-			[26] ->	[^objectMemory integerObjectOf: self ioHeartbeatMilliseconds].
-			[27] ->	[^objectMemory integerObjectOf: objectMemory statMarkCount].
-			[28] ->	[^objectMemory integerObjectOf: objectMemory statSweepCount].
-			[29] ->	[^objectMemory integerObjectOf: objectMemory statMkFwdCount].
-			[30] ->	[^objectMemory integerObjectOf: objectMemory statCompMoveCount].
-			[31] ->	[^objectMemory integerObjectOf: objectMemory statGrowMemory].
-			[32] ->	[^objectMemory integerObjectOf: objectMemory statShrinkMemory].
-			[33] ->	[^objectMemory integerObjectOf: objectMemory statRootTableCount].
-			[34] ->	[^objectMemory positive64BitIntegerFor: objectMemory currentAllocatedBytes].
-			[35] ->	[^objectMemory integerObjectOf: objectMemory statSurvivorCount].
-			[36] ->	[^objectMemory integerObjectOf: (self microsecondsToMilliseconds: objectMemory statGCEndUsecs)].
-			[37] ->	[^objectMemory integerObjectOf: objectMemory statSpecialMarkCount].
-			[38] ->	[^objectMemory integerObjectOf: objectMemory statIGCDeltaUsecs + 500 // 1000].
-			[39] ->	[^ConstZero]. "free"
-			[40] ->	[^objectMemory integerObjectOf: objectMemory wordSize].
-			[41] ->	[^objectMemory integerObjectOf: self imageFormatVersion].
-			[42] ->	[^objectMemory integerObjectOf: numStackPages].
-			[43] ->	[^objectMemory integerObjectOf: desiredNumStackPages].
-			[44] ->	[^objectMemory integerObjectOf: objectMemory edenBytes].
-			[45] ->	[^objectMemory integerObjectOf: desiredEdenBytes].
-			[46] ->	[^self getCogCodeSize].
-			[47] ->	[^self getDesiredCogCodeSize].
-			[48] ->	[^self getCogVMFlags].
-			[49] ->	[^objectMemory integerObjectOf: self ioGetMaxExtSemTableSize].
-			[52] ->	[^objectMemory integerObjectOf: objectMemory rootTableCapacity].
-			[53] ->	[^objectMemory integerObjectOf: objectMemory numSegments].
-			[54] ->	[^objectMemory integerObjectOf: objectMemory freeSize].
-			[55] ->	[^objectMemory floatObjectOf: objectMemory getHeapGrowthToSizeGCRatio].
-			[56] ->	[^self positive64BitIntegerFor: statProcessSwitch].
-			[57] ->	[^ConstZero "free"].
-			[58] ->	[^self positive64BitIntegerFor: statForceInterruptCheck].
-			[59] ->	[^self positive64BitIntegerFor: statCheckForEvents].
-			[60] ->	[^self positive64BitIntegerFor: statStackOverflow].
-			[61] ->	[^self positive64BitIntegerFor: statStackPageDivorce].
-			[62] ->	[^self getCodeCompactionCount].
-			[63] ->	[^self getCodeCompactionMSecs].
-			[64] ->	[^self getCogMethodCount].
-			[65] ->	[^self getCogVMFeatureFlags].
-			[66] ->	[^objectMemory integerObjectOf: self stackPageByteSize].
-			[67] ->	[^objectMemory integerObjectOf: objectMemory maxOldSpaceSize].
-			[68] ->	[^objectMemory floatObjectOf: stackPages statAverageLivePagesWhenMapping].
-			[69] ->	[^objectMemory integerObjectOf: stackPages statMaxPageCountWhenMapping].
-			[70] ->	[^objectMemory integerObjectOf: (self cCode: 'VM_PROXY_MAJOR' inSmalltalk: [self class vmProxyMajorVersion])].
-			[71] ->	[^objectMemory integerObjectOf: (self cCode: 'VM_PROXY_MINOR' inSmalltalk: [self class vmProxyMinorVersion])].
-			[72] ->	[^objectMemory integerObjectOf: objectMemory statMarkUsecs + 500 // 1000].
-			[73] ->	[^objectMemory integerObjectOf: objectMemory statSweepUsecs + 500 // 1000].
-			[74] ->	[^objectMemory integerObjectOf: objectMemory statMaxAllocSegmentTime + 500 // 1000].
-			[75] ->	[^self getMethodCompilationCount]. 
-			[76] ->	[^self getMethodCompilationMSecs]. 
-			[77] ->	[^self getBlockCompilationCount]. 
-			[78] ->	[^self getBlockCompilationMSecs].
-			[79] ->  [^objectMemory integerObjectOf: self getImageVersion ] }
-		otherwise: [^nil]
+
+	index
+		caseOf: {
+				([ 1 ]
+				 -> [ ^ self positiveMachineIntegerFor: objectMemory oldSpaceSize ]).
+				([ 2 ]
+				 -> [ ^ objectMemory integerObjectOf: objectMemory newSpaceSize ]).
+				([ 3 ]
+				 -> [
+				 ^ self positiveMachineIntegerFor: objectMemory totalMemorySize ]).
+				([ 6 ]
+				 -> [
+				 ^ objectMemory integerObjectOf: objectMemory tenuringThreshold ]).
+				([ 7 ]
+				 -> [ ^ objectMemory integerObjectOf: objectMemory statFullGCs ]).
+				([ 8 ] -> [
+				 ^ objectMemory integerObjectOf:
+					   objectMemory statFullGCUsecs + 500 // 1000 ]).
+				([ 9 ]
+				 -> [ ^ objectMemory integerObjectOf: objectMemory statScavenges ]).
+				([ 10 ] -> [
+				 ^ objectMemory integerObjectOf:
+					   objectMemory statScavengeGCUsecs + 500 // 1000 ]).
+				([ 11 ]
+				 -> [ ^ objectMemory integerObjectOf: objectMemory statTenures ]).
+				([ 12 ] -> [ ^ ConstZero ]). "Was JITTER VM info"
+				([ 13 ] -> [ ^ ConstZero ]). "Was JITTER VM info"
+				([ 14 ] -> [ ^ ConstZero ]). "Was JITTER VM info"
+				([ 15 ] -> [ ^ ConstZero ]). "Was JITTER VM info"
+				([ 16 ] -> [ ^ self positive64BitIntegerFor: statIdleUsecs ]).
+				([ 17 ] -> [
+				 ^ (SistaVM and: [ self isCog ])
+					   ifTrue: [
+					   objectMemory floatObjectOf: self getCogCodeZoneThreshold ]
+					   ifFalse: [ ConstZero ] ]).
+				([ 18 ] -> [
+				 ^ objectMemory integerObjectOf:
+					   objectMemory statCompactionUsecs + 500 // 1000 ]).
+				([ 19 ] -> [
+				 ^ objectMemory integerObjectOf:
+					   objectMemory scavengeThresholdAsExtent ]).
+				([ 20 ]
+				 -> [
+				 ^ objectMemory positive64BitIntegerFor:
+					   self ioUTCStartMicroseconds ]).
+				([ 21 ]
+				 -> [ ^ objectMemory integerObjectOf: objectMemory rootTableCount ]).
+				([ 22 ]
+				 -> [
+				 ^ objectMemory integerObjectOf:
+					   objectMemory statRootTableOverflows ]).
+				([ 23 ] -> [ ^ objectMemory integerObjectOf: extraVMMemory ]).
+				([ 24 ]
+				 -> [
+				 ^ objectMemory integerObjectOf: objectMemory shrinkThreshold ]).
+				([ 25 ]
+				 -> [ ^ objectMemory integerObjectOf: objectMemory growHeadroom ]).
+				([ 26 ]
+				 -> [
+				 ^ objectMemory integerObjectOf: self ioHeartbeatMilliseconds ]).
+				([ 27 ]
+				 -> [ ^ objectMemory integerObjectOf: objectMemory statMarkCount ]).
+				([ 28 ]
+				 -> [ ^ objectMemory integerObjectOf: objectMemory statSweepCount ]).
+				([ 29 ]
+				 -> [ ^ objectMemory integerObjectOf: objectMemory statMkFwdCount ]).
+				([ 30 ]
+				 -> [
+				 ^ objectMemory integerObjectOf: objectMemory statCompMoveCount ]).
+				([ 31 ]
+				 -> [ ^ objectMemory integerObjectOf: objectMemory statGrowMemory ]).
+				([ 32 ]
+				 -> [
+				 ^ objectMemory integerObjectOf: objectMemory statShrinkMemory ]).
+				([ 33 ]
+				 -> [
+				 ^ objectMemory integerObjectOf: objectMemory statRootTableCount ]).
+				([ 34 ] -> [
+				 ^ objectMemory positive64BitIntegerFor:
+					   objectMemory currentAllocatedBytes ]).
+				([ 35 ]
+				 -> [
+				 ^ objectMemory integerObjectOf: objectMemory statSurvivorCount ]).
+				([ 36 ] -> [
+				 ^ objectMemory integerObjectOf:
+					   (self microsecondsToMilliseconds: objectMemory statGCEndUsecs) ]).
+				([ 37 ]
+				 -> [
+				 ^ objectMemory integerObjectOf: objectMemory statSpecialMarkCount ]).
+				([ 38 ] -> [
+				 ^ objectMemory integerObjectOf:
+					   objectMemory statIGCDeltaUsecs + 500 // 1000 ]).
+				([ 39 ] -> [ ^ ConstZero ]). "free"
+				([ 40 ]
+				 -> [ ^ objectMemory integerObjectOf: objectMemory wordSize ]).
+				([ 41 ]
+				 -> [ ^ objectMemory integerObjectOf: self imageFormatVersion ]).
+				([ 42 ] -> [ ^ objectMemory integerObjectOf: numStackPages ]).
+				([ 43 ]
+				 -> [ ^ objectMemory integerObjectOf: desiredNumStackPages ]).
+				([ 44 ]
+				 -> [ ^ objectMemory integerObjectOf: objectMemory edenBytes ]).
+				([ 45 ] -> [ ^ objectMemory integerObjectOf: desiredEdenBytes ]).
+				([ 46 ] -> [ ^ self getCogCodeSize ]).
+				([ 47 ] -> [ ^ self getDesiredCogCodeSize ]).
+				([ 48 ] -> [ ^ self getCogVMFlags ]).
+				([ 49 ]
+				 -> [
+				 ^ objectMemory integerObjectOf: self ioGetMaxExtSemTableSize ]).
+				([ 52 ]
+				 -> [
+				 ^ objectMemory integerObjectOf: objectMemory rootTableCapacity ]).
+				([ 53 ]
+				 -> [ ^ objectMemory integerObjectOf: objectMemory numSegments ]).
+				([ 54 ]
+				 -> [ ^ objectMemory integerObjectOf: objectMemory freeSize ]).
+				([ 55 ] -> [
+				 ^ objectMemory floatObjectOf:
+					   objectMemory getHeapGrowthToSizeGCRatio ]).
+				([ 56 ] -> [ ^ self positive64BitIntegerFor: statProcessSwitch ]).
+				([ 57 ] -> [ ^ ConstZero "free" ]).
+				([ 58 ]
+				 -> [ ^ self positive64BitIntegerFor: statForceInterruptCheck ]).
+				([ 59 ] -> [ ^ self positive64BitIntegerFor: statCheckForEvents ]).
+				([ 60 ] -> [ ^ self positive64BitIntegerFor: statStackOverflow ]).
+				([ 61 ]
+				 -> [ ^ self positive64BitIntegerFor: statStackPageDivorce ]).
+				([ 62 ] -> [ ^ self getCodeCompactionCount ]).
+				([ 63 ] -> [ ^ self getCodeCompactionMSecs ]).
+				([ 64 ] -> [ ^ self getCogMethodCount ]).
+				([ 65 ] -> [ ^ self getCogVMFeatureFlags ]).
+				([ 66 ]
+				 -> [ ^ objectMemory integerObjectOf: self stackPageByteSize ]).
+				([ 67 ]
+				 -> [
+				 ^ objectMemory integerObjectOf: objectMemory maxOldSpaceSize ]).
+				([ 68 ] -> [
+				 ^ objectMemory floatObjectOf:
+					   stackPages statAverageLivePagesWhenMapping ]).
+				([ 69 ] -> [
+				 ^ objectMemory integerObjectOf:
+					   stackPages statMaxPageCountWhenMapping ]).
+				([ 70 ] -> [
+				 ^ objectMemory integerObjectOf: (self
+						    cCode: 'VM_PROXY_MAJOR'
+						    inSmalltalk: [ self class vmProxyMajorVersion ]) ]).
+				([ 71 ] -> [
+				 ^ objectMemory integerObjectOf: (self
+						    cCode: 'VM_PROXY_MINOR'
+						    inSmalltalk: [ self class vmProxyMinorVersion ]) ]).
+				([ 72 ] -> [
+				 ^ objectMemory integerObjectOf:
+					   objectMemory statMarkUsecs + 500 // 1000 ]).
+				([ 73 ] -> [
+				 ^ objectMemory integerObjectOf:
+					   objectMemory statSweepUsecs + 500 // 1000 ]).
+				([ 74 ] -> [
+				 ^ objectMemory integerObjectOf:
+					   objectMemory statMaxAllocSegmentTime + 500 // 1000 ]).
+				([ 75 ] -> [ ^ self getMethodCompilationCount ]).
+				([ 76 ] -> [ ^ self getMethodCompilationMSecs ]).
+				([ 77 ] -> [ ^ self getBlockCompilationCount ]).
+				([ 78 ] -> [ ^ self getBlockCompilationMSecs ]).
+				([ 79 ]
+				 -> [ ^ objectMemory integerObjectOf: self getImageVersion ]).
+				([ 80 ]
+				 -> [
+				 ^ objectMemory integerObjectOf: objectMemory garbageCollectorType ]) }
+		otherwise: [ ^ nil ]
 ]
 
 { #category : #'memory space primitives' }
@@ -3964,7 +4054,7 @@ StackInterpreterPrimitives >> primitiveVMParameter [
 	Otherwise the *real* list is in the code: `StackInterpreterPrimitives>>#primitiveGetVMParameter:`"
 
 	| paramsArraySize index |
-	paramsArraySize := 79.
+	paramsArraySize := 80.
 	argumentCount = 0 ifTrue: [^self primitiveAllVMParameters: paramsArraySize].
 	argumentCount > 2 ifTrue: [^self primitiveFailFor: PrimErrBadNumArgs].
 	

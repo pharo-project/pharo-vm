@@ -5066,6 +5066,21 @@ VMPrimitiveTest >> testPrimitiveSubtractWithOverflowPreservesStack [
 ]
 
 { #category : #'tests - primitiveVMParameter' }
+VMPrimitiveTest >> testPrimitiveVMParameterGetsGarbageCollectorType [
+
+	memory setGarbageCollectorType: 3.
+
+	interpreter push: memory nilObject.
+	interpreter push: (memory integerObjectOf: 80).
+
+	interpreter argumentCount: 1.
+	interpreter primitiveVMParameter.
+	
+	self assert: interpreter successful.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 3).
+]
+
+{ #category : #'tests - primitiveVMParameter' }
 VMPrimitiveTest >> testPrimitiveVMParameterGetsImageVersion [
 
 	interpreter setImageVersion: 110.
