@@ -11693,6 +11693,13 @@ SpurMemoryManager >> setFreeOldSpaceStart: newFreeOldSpaceStart [
 	freeOldSpaceStart := newFreeOldSpaceStart
 ]
 
+{ #category : #accessing }
+SpurMemoryManager >> setGarbageCollectorType: type [
+
+	<api>
+	garbageCollectorType := type
+]
+
 { #category : #'header access' }
 SpurMemoryManager >> setHashBitsOf: objOop to: hash [
 	self flag: #endianness.
