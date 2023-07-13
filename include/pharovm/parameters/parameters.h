@@ -88,6 +88,13 @@ Deprecated:
 
  */
 
+typedef enum GarbageCollector_ {
+    PLANNING_COMPACTOR = 0,
+    HYBRID_COMPACTOR = 1,
+    SWEEP_COMPACTOR = 2,
+    SELECTIVE_COMPACTOR = 3
+} GarbageCollector;
+
 typedef struct VMParameters_
 {
 	/**
@@ -129,6 +136,8 @@ typedef struct VMParameters_
 
 	// FIXME: Passing this environment vector seems hackish. getenv should be used instead.
 	const char** environmentVector;
+
+    GarbageCollector garbageCollector;
 
 	VMParameterVector vmParameters;
 	VMParameterVector imageParameters;
