@@ -617,7 +617,8 @@ Class {
 		'unscannedEphemeronsQueueInitialSize',
 		'permSpaceFreeStart',
 		'fromOldSpaceRememberedSet',
-		'fromPermSpaceRememberedSet'
+		'fromPermSpaceRememberedSet',
+		'garbageCollectorType'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -11441,6 +11442,13 @@ SpurMemoryManager >> setFormatOf: objOop to: format [
 SpurMemoryManager >> setFreeOldSpaceStart: newFreeOldSpaceStart [
 	"Set by the segment manager on parsing the image."
 	freeOldSpaceStart := newFreeOldSpaceStart
+]
+
+{ #category : #accessing }
+SpurMemoryManager >> setGarbageCollectorType: type [
+
+	<api>
+	garbageCollectorType := type
 ]
 
 { #category : #'header access' }
