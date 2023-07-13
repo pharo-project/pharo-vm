@@ -5928,7 +5928,7 @@ SpurMemoryManager >> fullGCLock [
 SpurMemoryManager >> garbageCollectForSnapshot [
 	self flushNewSpace. "There is no place to put newSpace in the snapshot file."
 	self flag: 'If we wanted to shrink the rememberedSet prior to snapshot this is the place to do it.'.
-	GCType caseOf: { 
+	gcType caseOf: { 
 		[ 0 ] -> [ planningCompactor biasForSnapshot ].
 		[ 1 ] -> [ sweepCompactor biasForSnapshot ].
 	 }.
@@ -11697,7 +11697,7 @@ SpurMemoryManager >> setFreeOldSpaceStart: newFreeOldSpaceStart [
 SpurMemoryManager >> setGarbageCollectorType: type [
 
 	<api>
-	garbageCollectorType := type
+	gcType := type
 ]
 
 { #category : #'header access' }
