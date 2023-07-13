@@ -36,9 +36,13 @@ SpurHybridCompactor class >> classesForTranslation [
 
 { #category : #translation }
 SpurHybridCompactor class >> declareCVarsIn: aCCodeGenerator [
+
+	super declareCVarsIn: aCCodeGenerator.
 	aCCodeGenerator
-		staticallyResolvedPolymorphicReceiver: 'planningCompactor' to: SpurPlanningCompactor;
-		staticallyResolvedPolymorphicReceiver: 'selectiveCompactor' to: SpurSweeper"SpurSelectiveCompactor" "The selector mangling is easier this way"
+		staticallyResolvedPolymorphicReceiver: 'planningCompactor'
+		to: SpurPlanningCompactor;
+		staticallyResolvedPolymorphicReceiver: 'selectiveCompactor'
+		to: SpurSweeper "SpurSelectiveCompactor" "The selector mangling is easier this way"
 ]
 
 { #category : #api }

@@ -652,13 +652,20 @@ Class {
 	#category : #'VMMaker-SpurMemoryManager'
 }
 
+{ #category : #'accessing class hierarchy' }
+SpurMemoryManager class >> allCompactorClasses [
+
+	^ SpurCompactor allSubclasses reject: [ :class |
+		  class name includesSubstring: 'Simulator' ]
+]
+
 { #category : #translation }
 SpurMemoryManager class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
 	^{	SpurGenerationScavenger. SpurScavengeLogRecord. SpurSegmentManager. SpurSegmentInfo. VMMemoryMap. 
 		VMMemoryMapConfiguration. VMMemoryMapConfiguration forWordsize: self objectMemoryClass wordSize.
 		VMRememberedSet }, 
-		self compactorClass classesForTranslation,
+		(self allCompactorClasses flatCollect: [ :class | class classesForTranslation ]) asSet asArray,
 		SpurNewSpaceSpace withAllSubclasses
 		
 	
