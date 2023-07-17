@@ -718,11 +718,6 @@ VMPrimitiveTest >> testPrimitiveAtPutFailsForImmediate [
 { #category : #'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveAtPutFailsForMoreThanTwoArguments [
 	| class objectInstance |
-	"I don't know how to force a bad argument count."
-	
-	self skip.
-	
-	
 	"We push receiver then 3 arguments"
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
 	objectInstance := memory instantiateClass: class.
