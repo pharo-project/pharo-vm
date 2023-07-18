@@ -108,8 +108,8 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compiler
 	| platformDirectory vmmaker imageReaderClassName imageWriterClassName |
 	
 	imageFormatName := (Dictionary newFromPairs: options) at: 'ImageFormat' ifAbsent: [ imageFormatName ].
-	(#(SpurFormat ComposedFormat) includes: imageFormatName)
-		ifFalse:[ self error: 'Invalid Image Format'].
+	(#(SpurFormat ComposedFormat) includes: imageFormatName asSymbol)
+		ifFalse:[ self error: 'Invalid Image Format: ', imageFormatName].
 	
 	imageFormatName = 'ComposedFormat' 
 		ifTrue: [imageReaderClassName 	:= ComposedImageReader name.
