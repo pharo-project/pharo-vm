@@ -124,7 +124,8 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 80. 80. #gen_PushConstantZeroBytecode. #needsFrameNever:. 1 }.
 		  { 1. 81. 81. #gen_PushConstantOneBytecode. #needsFrameNever:. 1 }.
 		  { 1. 82. 82. #unknownBytecode }.
-		  { 1. 83. 83. #unknownBytecode }.
+		  { 1. 83. 83. #gen_DuplicateTopBytecode. #needsFrameNever:.
+		  1 }.
 		  { 1. 84. 84. #unknownBytecode }.
 		  { 1. 85. 85. #unknownBytecode }.
 		  { 1. 86. 86. #unknownBytecode }.
@@ -154,7 +155,8 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 104. 104. #gen_BytecodePrimMultiply. #isMapped }.
 		  { 1. 105. 105. #gen_BytecodePrimDivide. #isMapped }.
 		  { 1. 106. 106. #gen_BytecodePrimMod. #isMapped }.
-		  { 1. 107. 107. #gen_BytecodePrimMakePoint. #isMapped }.
+		  { 1. 107. 107. #gen_BytecodePrimMakePoint.
+		  #isMapped }.
 		  { 1. 108. 108. #gen_BytecodePrimBitShift. #isMapped }.
 		  { 1. 109. 109. #gen_BytecodePrimDiv. #isMapped }.
 		  { 1. 110. 110. #gen_BytecodePrimBitAnd. #isMapped }.
@@ -169,10 +171,12 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 119. 119. #unknownBytecode }.
 		  { 1. 120. 120. #unknownBytecode }.
 		  { 1. 121. 121. #gen_BytecodePrimValue. #isMapped }.
-		  { 1. 122. 122. #gen_BytecodePrimValueWithArg. #isMapped }.
+		  { 1. 122. 122. #gen_BytecodePrimValueWithArg.
+		  #isMapped }.
 		  { 1. 123. 123. #gen_BytecodePrimDo. #isMapped }.
 		  { 1. 124. 124. #gen_BytecodePrimNew. #isMapped }.
-		  { 1. 125. 125. #gen_BytecodePrimNewWithArg. #isMapped }.
+		  { 1. 125. 125. #gen_BytecodePrimNewWithArg.
+		  #isMapped }.
 		  { 1. 126. 126. #gen_BytecodePrimPointX. #isMapped }.
 		  { 1. 127. 127. #gen_BytecodePrimPointY. #isMapped }.
 		  { 1. 128. 128. #gen_SendLiteralSelector0ArgsBytecode0.
@@ -294,15 +298,16 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 205. 205. #unknownBytecode }.
 		  { 1. 206. 206. #unknownBytecode }.
 		  { 1. 207. 207. #unknownBytecode }.
-		  { 1. 208. 208. #unknownBytecode }.
-		  { 1. 209. 209. #unknownBytecode }.
-		  { 1. 210. 210. #unknownBytecode }.
-		  { 1. 211. 211. #unknownBytecode }.
-		  { 1. 212. 212. #unknownBytecode }.
-		  { 1. 213. 213. #unknownBytecode }.
-		  { 1. 214. 214. #unknownBytecode }.
-		  { 1. 215. 215. #unknownBytecode }.
-		  { 1. 216. 216. #gen_PopStackBytecode. #needsFrameNever:.  -1 }.
+		  { 1. 208. 208. #gen_StoreAndPopTemporaryVariableBytecode0 }.
+		  { 1. 209. 209. #gen_StoreAndPopTemporaryVariableBytecode1 }.
+		  { 1. 210. 210. #gen_StoreAndPopTemporaryVariableBytecode2 }.
+		  { 1. 211. 211. #gen_StoreAndPopTemporaryVariableBytecode3 }.
+		  { 1. 212. 212. #gen_StoreAndPopTemporaryVariableBytecode4 }.
+		  { 1. 213. 213. #gen_StoreAndPopTemporaryVariableBytecode5 }.
+		  { 1. 214. 214. #gen_StoreAndPopTemporaryVariableBytecode6 }.
+		  { 1. 215. 215. #gen_StoreAndPopTemporaryVariableBytecode7 }.
+		  { 1. 216. 216. #gen_PopStackBytecode. #needsFrameNever:.
+		   -1 }.
 		  { 1. 217. 217. #unknownBytecode }.
 		  { 1. 218. 218. #unknownBytecode }.
 		  { 1. 219. 219. #unknownBytecode }.
@@ -310,12 +315,14 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 221. 221. #unknownBytecode }.
 		  { 1. 222. 222. #unknownBytecode }.
 		  { 1. 223. 223. #unknownBytecode }.
-		  { 2. 224. 224. #unknownBytecode }.
+		  { 2. 224. 224. #gen_ExtABytecode. #extension }.
 		  { 2. 225. 225. #unknownBytecode }.
 		  { 2. 226. 226. #unknownBytecode }.
-		  { 2. 227. 227. #unknownBytecode }.
-		  { 2. 228. 228. #unknownBytecode }.
-		  { 2. 229. 229. #unknownBytecode }.
+		  { 2. 227. 227. #gen_ExtPushLiteralVariableBytecode.
+		  #needsFrameNever:. 1 }.
+		  { 2. 228. 228. #gen_ExtPushLiteralBytecode.
+		  #needsFrameNever:. 1 }.
+		  { 2. 229. 229. #gen_LongPushTemporaryVariableBytecode }.
 		  { 2. 230. 230. #unknownBytecode }.
 		  { 2. 231. 231. #unknownBytecode }.
 		  { 2. 232. 232. #unknownBytecode }.
@@ -323,21 +330,24 @@ DruidJIT class >> bytecodeTable [
 		  { 2. 234. 234. #unknownBytecode }.
 		  { 2. 235. 235. #gen_ExtSendSuperBytecode. #isMapped }.
 		  { 2. 236. 236. #unknownBytecode }.
-		  { 2. 237. 237. #unknownBytecode }.
-		  { 2. 238. 238. #unknownBytecode }.
-		  { 2. 239. 239. #unknownBytecode }.
+		  { 2. 237. 237. #gen_ExtUnconditionalJump. #branch. #isMapped.
+		  #v4:Long:Branch:Distance: }.
+		  { 2. 238. 238. #gen_ExtJumpIfTrue. #branch. #isBranchTrue.
+		  #isMapped. #v4:Long:Branch:Distance: }.
+		  { 2. 239. 239. #gen_ExtJumpIfFalse. #branch. #isBranchFalse.
+		  #isMapped. #v4:Long:Branch:Distance: }.
 		  { 2. 240. 240. #unknownBytecode }.
 		  { 2. 241. 241. #unknownBytecode }.
-		  { 2. 242. 242. #unknownBytecode }.
+		  { 2. 242. 242. #gen_LongStoreAndPopTemporaryVariableBytecode }.
 		  { 2. 243. 243. #unknownBytecode }.
 		  { 2. 244. 244. #unknownBytecode }.
-		  { 2. 245. 245. #unknownBytecode }.
+		  { 2. 245. 245. #gen_LongStoreTemporaryVariableBytecode }.
 		  { 2. 246. 246. #unknownBytecode }.
 		  { 2. 247. 247. #unknownBytecode }.
 		  { 3. 248. 248. #unknownBytecode }.
 		  { 3. 249. 249. #unknownBytecode }.
 		  { 3. 250. 250. #unknownBytecode }.
-		  { 3. 251. 251. #unknownBytecode }.
+		  { 3. 251. 251. #gen_PushRemoteTempLongBytecode }.
 		  { 3. 252. 252. #unknownBytecode }.
 		  { 3. 253. 253. #unknownBytecode }.
 		  { 3. 254. 254. #unknownBytecode }.
@@ -418,7 +428,6 @@ DruidJIT class >> primitiveTableArray [
 		  { 5. #gen_PrimitiveLessOrEqual. 1 }.
 		  { 6. #gen_PrimitiveGreaterOrEqual. 1 }.
 		  { 7. #gen_PrimitiveEqual. 1 }.
-		  { 8. #gen_PrimitiveNotEqual. 1 }.
 		  { 9. #gen_PrimitiveMultiply. 1 }.
 		  { 73. #genNonImplementedPrimitive.  -1. #maycallback }.
 		  { 117. #genNonImplementedPrimitive.  -1. #maycallback }.
@@ -1028,6 +1037,15 @@ DruidJIT >> genJumpNotSmallIntegersIn: aRegister and: bRegister scratch: scratch
 ]
 
 { #category : #'trait candidates' }
+DruidJIT >> genJumpTo: targetBytecodePC [
+
+	deadCode := true. "can't fall through"
+	self ssFlushStack.
+	self Jump: (self ensureFixupAt: targetBytecodePC).
+	^ 0
+]
+
+{ #category : #'trait candidates' }
 DruidJIT >> genJumpTo: targetBytecodePC followDeadCode: followDeadCode [
 
 	| eventualTarget fixup |
@@ -1467,7 +1485,10 @@ DruidJIT >> gen_BytecodePrimAtEnd [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 0.
-	self genMarshalledSend: -22 numArgs: 0 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -22
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1478,7 +1499,10 @@ DruidJIT >> gen_BytecodePrimAtPut [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 2.
-	self genMarshalledSend: -18 numArgs: 2 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -18
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1489,7 +1513,10 @@ DruidJIT >> gen_BytecodePrimBitAnd [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -15 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -15
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1500,7 +1527,10 @@ DruidJIT >> gen_BytecodePrimBitOr [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -16 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -16
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1511,7 +1541,10 @@ DruidJIT >> gen_BytecodePrimBitShift [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -13 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -13
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1522,7 +1555,10 @@ DruidJIT >> gen_BytecodePrimDiv [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -14 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -14
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1533,7 +1569,10 @@ DruidJIT >> gen_BytecodePrimDivide [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -10 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -10
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1544,7 +1583,10 @@ DruidJIT >> gen_BytecodePrimDo [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -28 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -28
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1555,7 +1597,10 @@ DruidJIT >> gen_BytecodePrimEqualSistaV1 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -7 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -7
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1566,7 +1611,10 @@ DruidJIT >> gen_BytecodePrimGreaterOrEqualSistaV1 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -6 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -6
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1577,7 +1625,10 @@ DruidJIT >> gen_BytecodePrimGreaterThanSistaV1 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -4 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -4
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1763,7 +1814,10 @@ DruidJIT >> gen_BytecodePrimLessOrEqualSistaV1 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -5 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -5
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1774,7 +1828,10 @@ DruidJIT >> gen_BytecodePrimLessThanSistaV1 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -3 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -3
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1785,7 +1842,10 @@ DruidJIT >> gen_BytecodePrimMakePoint [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -12 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -12
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1796,7 +1856,10 @@ DruidJIT >> gen_BytecodePrimMod [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -11 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -11
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1807,7 +1870,10 @@ DruidJIT >> gen_BytecodePrimMultiply [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -9 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -9
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1818,7 +1884,10 @@ DruidJIT >> gen_BytecodePrimNew [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 0.
-	self genMarshalledSend: -29 numArgs: 0 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -29
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1829,7 +1898,10 @@ DruidJIT >> gen_BytecodePrimNewWithArg [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -30 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -30
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1840,7 +1912,10 @@ DruidJIT >> gen_BytecodePrimNext [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 0.
-	self genMarshalledSend: -20 numArgs: 0 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -20
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1851,7 +1926,10 @@ DruidJIT >> gen_BytecodePrimNextPut [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -21 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -21
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -1862,7 +1940,10 @@ DruidJIT >> gen_BytecodePrimNotEqualSistaV1 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -8 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -8
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -2048,7 +2129,10 @@ DruidJIT >> gen_BytecodePrimPointX [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 0.
-	self genMarshalledSend: -31 numArgs: 0 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -31
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -2059,7 +2143,10 @@ DruidJIT >> gen_BytecodePrimPointY [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 0.
-	self genMarshalledSend: -32 numArgs: 0 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -32
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -2070,7 +2157,10 @@ DruidJIT >> gen_BytecodePrimSize [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 0.
-	self genMarshalledSend: -19 numArgs: 0 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -19
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -2081,7 +2171,10 @@ DruidJIT >> gen_BytecodePrimSubtract [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: -2 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -2
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -2092,7 +2185,10 @@ DruidJIT >> gen_BytecodePrimValue [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 0.
-	self genMarshalledSend: -26 numArgs: 0 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: -26
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -2152,6 +2248,350 @@ DruidJIT >> gen_ExtSendSuperBytecode [
 		genMarshalledSend: byte1 >> 3 + (r5 << 5)
 		numArgs: byte1 & 7 + (r43 << 3)
 		sendTable: superSendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_DuplicateTopBytecode [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 0) copyToReg: t0.
+	self ssPushRegister: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_ExtABytecode [
+	"AutoGenerated by Druid"
+
+	| live r1 currentBlock |
+	live := 0.
+	r1 := extA.
+	extA := r1 << 8 + byte1.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_ExtJumpIfFalse [
+	"AutoGenerated by Druid"
+
+	| t0 jump3 jump1 currentBlock r3 live jump2 |
+	live := 0.
+	r3 := extB.
+	extA := 0.
+	extB := 0.
+	numExtB := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 0) copyToReg: t0.
+	self ssPop: 1.
+	self ssFlushStack.
+	self CmpCq: objectMemory falseObject R: t0.
+	jump1 := self JumpZero: 0.
+	self CmpCq: objectMemory trueObject R: t0.
+	jump2 := self JumpZero: 0.
+	self MoveR: t0 R: TempReg.
+	self CallRT: ceSendMustBeBooleanTrampoline.
+	self annotateBytecode: self Label.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self genJumpTo: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1.
+	deadCode := false.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_ExtJumpIfTrue [
+	"AutoGenerated by Druid"
+
+	| t0 jump3 jump1 currentBlock r3 live jump2 |
+	live := 0.
+	r3 := extB.
+	extA := 0.
+	extB := 0.
+	numExtB := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 0) copyToReg: t0.
+	self ssPop: 1.
+	self ssFlushStack.
+	self CmpCq: objectMemory trueObject R: t0.
+	jump1 := self JumpZero: 0.
+	self CmpCq: objectMemory falseObject R: t0.
+	jump2 := self JumpZero: 0.
+	self MoveR: t0 R: TempReg.
+	self CallRT: ceSendMustBeBooleanTrampoline.
+	self annotateBytecode: self Label.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self genJumpTo: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1.
+	deadCode := false.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_ExtNopBytecode [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	extB := 0.
+	extA := 0.
+	numExtB := 0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_ExtPushCharacterBytecode [
+	"AutoGenerated by Druid"
+
+	| live r2 currentBlock |
+	live := 0.
+	r2 := extB.
+	self ssPushConstant: (((byte1 + (r2 << 8)) << 3) + 2).
+	extB := 0.
+	numExtB := 0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_ExtPushIntegerBytecode [
+	"AutoGenerated by Druid"
+
+	| live r2 currentBlock |
+	live := 0.
+	r2 := extB.
+	extB := 0.
+	numExtB := 0.
+	self ssPushConstant: (((byte1 + (r2 << 8)) << 3) + 1).
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_ExtPushLiteralBytecode [
+	"AutoGenerated by Druid"
+
+	| live r2 currentBlock t0 |
+	live := 0.
+	r2 := extA.
+	extA := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: byte1 + (r2 << 8) + LiteralStart << 3 + 8.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_ExtPushLiteralVariableBytecode [
+	"AutoGenerated by Druid"
+
+	| jump1 jumpNext t1 jump3 currentBlock t0 jumpTrue r2 jump2 b230 live |
+	live := 0.
+	r2 := extA.
+	extA := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self MoveM64: byte1 + (r2 << 8) + LiteralStart << 3 + 8 r: t0 R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	b230 := self Label.
+	self MoveR: t0 R: t1.
+	self AndCq: 7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t1.
+	jump3 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssPushBase: t1 offset: ValueIndex << 3 + 8.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	jump3 := self Jump: b230.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_ExtSendBytecode [
+	"AutoGenerated by Druid"
+
+	| live r5 r13 currentBlock |
+	live := 0.
+	r5 := extA.
+	extA := 0.
+	r13 := extB.
+	extB := 0.
+	numExtB := 0.
+	self marshallSendArguments: ((byte1 bitAnd: 7) + (r13 << 3)).
+	self
+		genMarshalledSend: ((byte1 >> 3) + (r5 << 5))
+		numArgs: ((byte1 bitAnd: 7) + (r13 << 3))
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_ExtUnconditionalJump [
+	"AutoGenerated by Druid"
+
+	| t0 jump1 t1 currentBlock r3 live jump2 |
+	live := 0.
+	r3 := extB.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: (byte1 + (r3 << 8)) R: t0.
+	(byte1 + (r3 << 8))<0 ifTrue: [
+		| r11 jump1 jump2 t1 |
+		r11 := numExtB.
+		self genMoveConstant: (r11 * 2) R: t0.
+		extB := 0.
+		numExtB := 0.
+		self AddCq: (byte1 + (r3 << 8)) R: t0.
+		self ssFlushStack.
+		self CmpCq: 0 R: t0.
+		jump1 := self JumpGreaterOrEqual: 0.
+		self MoveR: SPReg R: t0.
+		t1 := self
+			      allocateRegNotConflictingWith: live
+			      ifNone: [ ^ self unknownBytecode ].
+		live := live bitOr: (self registerMaskFor: t1).
+		self MoveAw: coInterpreter stackLimitAddress R: t1.
+		self CmpR: t1 R: t0.
+		jump2 := self JumpGreaterOrEqual: 0.
+		self CallRT: ceCheckForInterruptTrampoline.
+		self annotateBytecode: self Label.
+		currentBlock := self Label.
+		jump1 jmpTarget: currentBlock.
+		jump2 jmpTarget: currentBlock.
+		self genJumpTo: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1.
+		^ 0 ].
+	self genMoveConstant: 0 R: t0.
+	extB := 0.
+	numExtB := 0.
+	self AddCq: (byte1 + (r3 << 8)) R: t0.
+	self ssFlushStack.
+	self CmpCq: 0 R: t0.
+	jump2 := self JumpGreaterOrEqual: 0.
+	self MoveR: SPReg R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveAw: coInterpreter stackLimitAddress R: t1.
+	self CmpR: t1 R: t0.
+	jump1 := self JumpGreaterOrEqual: 0.
+	self CallRT: ceCheckForInterruptTrampoline.
+	self annotateBytecode: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	jump1 jmpTarget: currentBlock.
+	self genJumpTo: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_LongPushTemporaryVariableBytecode [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self simStackTempAt: byte1) copyToReg: t0.
+	self ssPushRegister: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_LongStoreAndPopTemporaryVariableBytecode [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 0) copyToReg: t0.
+	self ssFlushUpThroughTemporaryVariable: byte1.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: byte1) r: FPReg.
+	self ssPop: 1.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_LongStoreTemporaryVariableBytecode [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 0) copyToReg: t0.
+	self ssFlushUpThroughTemporaryVariable: byte1.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: byte1) r: FPReg.
 	^ 0
 ]
 
@@ -3322,12 +3762,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode1 [
 DruidJIT >> gen_PushLiteralConstantBytecode10 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((10 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 10 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3335,12 +3777,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode10 [
 DruidJIT >> gen_PushLiteralConstantBytecode11 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((11 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 11 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3348,12 +3792,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode11 [
 DruidJIT >> gen_PushLiteralConstantBytecode12 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((12 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 12 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3361,12 +3807,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode12 [
 DruidJIT >> gen_PushLiteralConstantBytecode13 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((13 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 13 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3374,12 +3822,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode13 [
 DruidJIT >> gen_PushLiteralConstantBytecode14 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((14 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 14 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3387,12 +3837,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode14 [
 DruidJIT >> gen_PushLiteralConstantBytecode15 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((15 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 15 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3400,12 +3852,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode15 [
 DruidJIT >> gen_PushLiteralConstantBytecode16 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((16 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 16 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3413,12 +3867,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode16 [
 DruidJIT >> gen_PushLiteralConstantBytecode17 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((17 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 17 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3426,12 +3882,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode17 [
 DruidJIT >> gen_PushLiteralConstantBytecode18 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((18 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 18 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3439,12 +3897,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode18 [
 DruidJIT >> gen_PushLiteralConstantBytecode19 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((19 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 19 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3452,10 +3912,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode19 [
 DruidJIT >> gen_PushLiteralConstantBytecode2 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self MoveCq: ((methodObj + 8) + ((2 + LiteralStart) << 3)) R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 2 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3463,12 +3927,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode2 [
 DruidJIT >> gen_PushLiteralConstantBytecode20 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((20 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 20 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3476,12 +3942,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode20 [
 DruidJIT >> gen_PushLiteralConstantBytecode21 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((21 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 21 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3489,12 +3957,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode21 [
 DruidJIT >> gen_PushLiteralConstantBytecode22 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((22 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 22 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3502,12 +3972,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode22 [
 DruidJIT >> gen_PushLiteralConstantBytecode23 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((23 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 23 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3515,12 +3987,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode23 [
 DruidJIT >> gen_PushLiteralConstantBytecode24 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((24 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 24 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3528,12 +4002,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode24 [
 DruidJIT >> gen_PushLiteralConstantBytecode25 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((25 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 25 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3541,12 +4017,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode25 [
 DruidJIT >> gen_PushLiteralConstantBytecode26 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((26 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 26 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3554,12 +4032,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode26 [
 DruidJIT >> gen_PushLiteralConstantBytecode27 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((27 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 27 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3567,12 +4047,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode27 [
 DruidJIT >> gen_PushLiteralConstantBytecode28 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((28 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 28 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3580,12 +4062,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode28 [
 DruidJIT >> gen_PushLiteralConstantBytecode29 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((29 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 29 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3593,10 +4077,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode29 [
 DruidJIT >> gen_PushLiteralConstantBytecode3 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self MoveCq: ((methodObj + 8) + ((3 + LiteralStart) << 3)) R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 3 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3604,12 +4092,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode3 [
 DruidJIT >> gen_PushLiteralConstantBytecode30 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((30 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 30 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3617,12 +4107,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode30 [
 DruidJIT >> gen_PushLiteralConstantBytecode31 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self
-		MoveCq: ((methodObj + 8) + ((31 + LiteralStart) << 3))
-		R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 31 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3630,10 +4122,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode31 [
 DruidJIT >> gen_PushLiteralConstantBytecode4 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self MoveCq: ((methodObj + 8) + ((4 + LiteralStart) << 3)) R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 4 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3641,10 +4137,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode4 [
 DruidJIT >> gen_PushLiteralConstantBytecode5 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self MoveCq: ((methodObj + 8) + ((5 + LiteralStart) << 3)) R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 5 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3652,10 +4152,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode5 [
 DruidJIT >> gen_PushLiteralConstantBytecode6 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self MoveCq: ((methodObj + 8) + ((6 + LiteralStart) << 3)) R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 6 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3663,10 +4167,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode6 [
 DruidJIT >> gen_PushLiteralConstantBytecode7 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self MoveCq: ((methodObj + 8) + ((7 + LiteralStart) << 3)) R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 7 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3674,10 +4182,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode7 [
 DruidJIT >> gen_PushLiteralConstantBytecode8 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self MoveCq: ((methodObj + 8) + ((8 + LiteralStart) << 3)) R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 8 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3685,10 +4197,14 @@ DruidJIT >> gen_PushLiteralConstantBytecode8 [
 DruidJIT >> gen_PushLiteralConstantBytecode9 [
 	"AutoGenerated by Druid"
 
-	| currentBlock |
-	self MoveCq: ((methodObj + 8) + ((9 + LiteralStart) << 3)) R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self ssPushBase: t0 offset: 9 + LiteralStart << 3 + 8.
 	^ 0
 ]
 
@@ -3811,13 +4327,897 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode1 [
 ]
 
 { #category : #generated }
+DruidJIT >> gen_PushLiteralVariable16CasesBytecode10 [
+	"AutoGenerated by Druid"
+
+	| jump1 jumpNext t1 jump3 currentBlock t0 jumpTrue jump2 b230 live |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self MoveM64: 10 + LiteralStart << 3 + 8 r: t0 R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	b230 := self Label.
+	self MoveR: t0 R: t1.
+	self AndCq: 7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t1.
+	jump3 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssPushBase: t1 offset: ValueIndex << 3 + 8.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	jump3 := self Jump: b230.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushLiteralVariable16CasesBytecode11 [
+	"AutoGenerated by Druid"
+
+	| jump1 jumpNext t1 jump3 currentBlock t0 jumpTrue jump2 b230 live |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self MoveM64: 11 + LiteralStart << 3 + 8 r: t0 R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	b230 := self Label.
+	self MoveR: t0 R: t1.
+	self AndCq: 7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t1.
+	jump3 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssPushBase: t1 offset: ValueIndex << 3 + 8.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	jump3 := self Jump: b230.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushLiteralVariable16CasesBytecode12 [
+	"AutoGenerated by Druid"
+
+	| jump1 jumpNext t1 jump3 currentBlock t0 jumpTrue jump2 b230 live |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self MoveM64: 12 + LiteralStart << 3 + 8 r: t0 R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	b230 := self Label.
+	self MoveR: t0 R: t1.
+	self AndCq: 7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t1.
+	jump3 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssPushBase: t1 offset: ValueIndex << 3 + 8.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	jump3 := self Jump: b230.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushLiteralVariable16CasesBytecode13 [
+	"AutoGenerated by Druid"
+
+	| jump1 jumpNext t1 jump3 currentBlock t0 jumpTrue jump2 b230 live |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self MoveM64: 13 + LiteralStart << 3 + 8 r: t0 R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	b230 := self Label.
+	self MoveR: t0 R: t1.
+	self AndCq: 7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t1.
+	jump3 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssPushBase: t1 offset: ValueIndex << 3 + 8.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	jump3 := self Jump: b230.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushLiteralVariable16CasesBytecode14 [
+	"AutoGenerated by Druid"
+
+	| jump1 jumpNext t1 jump3 currentBlock t0 jumpTrue jump2 b230 live |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self MoveM64: 14 + LiteralStart << 3 + 8 r: t0 R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	b230 := self Label.
+	self MoveR: t0 R: t1.
+	self AndCq: 7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t1.
+	jump3 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssPushBase: t1 offset: ValueIndex << 3 + 8.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	jump3 := self Jump: b230.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushLiteralVariable16CasesBytecode15 [
+	"AutoGenerated by Druid"
+
+	| jump1 jumpNext t1 jump3 currentBlock t0 jumpTrue jump2 b230 live |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self MoveM64: 15 + LiteralStart << 3 + 8 r: t0 R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	b230 := self Label.
+	self MoveR: t0 R: t1.
+	self AndCq: 7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t1.
+	jump3 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssPushBase: t1 offset: ValueIndex << 3 + 8.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	jump3 := self Jump: b230.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushLiteralVariable16CasesBytecode2 [
+	"AutoGenerated by Druid"
+
+	| jump1 jumpNext t1 jump3 currentBlock t0 jumpTrue jump2 b230 live |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self MoveM64: 2 + LiteralStart << 3 + 8 r: t0 R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	b230 := self Label.
+	self MoveR: t0 R: t1.
+	self AndCq: 7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t1.
+	jump3 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssPushBase: t1 offset: ValueIndex << 3 + 8.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	jump3 := self Jump: b230.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushLiteralVariable16CasesBytecode3 [
+	"AutoGenerated by Druid"
+
+	| jump1 jumpNext t1 jump3 currentBlock t0 jumpTrue jump2 b230 live |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self MoveM64: 3 + LiteralStart << 3 + 8 r: t0 R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	b230 := self Label.
+	self MoveR: t0 R: t1.
+	self AndCq: 7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t1.
+	jump3 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssPushBase: t1 offset: ValueIndex << 3 + 8.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	jump3 := self Jump: b230.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushLiteralVariable16CasesBytecode4 [
+	"AutoGenerated by Druid"
+
+	| jump1 jumpNext t1 jump3 currentBlock t0 jumpTrue jump2 b230 live |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self MoveM64: 4 + LiteralStart << 3 + 8 r: t0 R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	b230 := self Label.
+	self MoveR: t0 R: t1.
+	self AndCq: 7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t1.
+	jump3 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssPushBase: t1 offset: ValueIndex << 3 + 8.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	jump3 := self Jump: b230.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushLiteralVariable16CasesBytecode5 [
+	"AutoGenerated by Druid"
+
+	| jump1 jumpNext t1 jump3 currentBlock t0 jumpTrue jump2 b230 live |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self MoveM64: 5 + LiteralStart << 3 + 8 r: t0 R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	b230 := self Label.
+	self MoveR: t0 R: t1.
+	self AndCq: 7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t1.
+	jump3 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssPushBase: t1 offset: ValueIndex << 3 + 8.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	jump3 := self Jump: b230.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushLiteralVariable16CasesBytecode6 [
+	"AutoGenerated by Druid"
+
+	| jump1 jumpNext t1 jump3 currentBlock t0 jumpTrue jump2 b230 live |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self MoveM64: 6 + LiteralStart << 3 + 8 r: t0 R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	b230 := self Label.
+	self MoveR: t0 R: t1.
+	self AndCq: 7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t1.
+	jump3 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssPushBase: t1 offset: ValueIndex << 3 + 8.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	jump3 := self Jump: b230.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushLiteralVariable16CasesBytecode7 [
+	"AutoGenerated by Druid"
+
+	| jump1 jumpNext t1 jump3 currentBlock t0 jumpTrue jump2 b230 live |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self MoveM64: 7 + LiteralStart << 3 + 8 r: t0 R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	b230 := self Label.
+	self MoveR: t0 R: t1.
+	self AndCq: 7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t1.
+	jump3 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssPushBase: t1 offset: ValueIndex << 3 + 8.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	jump3 := self Jump: b230.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushLiteralVariable16CasesBytecode8 [
+	"AutoGenerated by Druid"
+
+	| jump1 jumpNext t1 jump3 currentBlock t0 jumpTrue jump2 b230 live |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self MoveM64: 8 + LiteralStart << 3 + 8 r: t0 R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	b230 := self Label.
+	self MoveR: t0 R: t1.
+	self AndCq: 7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t1.
+	jump3 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssPushBase: t1 offset: ValueIndex << 3 + 8.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	jump3 := self Jump: b230.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushLiteralVariable16CasesBytecode9 [
+	"AutoGenerated by Druid"
+
+	| jump1 jumpNext t1 jump3 currentBlock t0 jumpTrue jump2 b230 live |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: methodObj R: t0.
+	self MoveM64: 9 + LiteralStart << 3 + 8 r: t0 R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	b230 := self Label.
+	self MoveR: t0 R: t1.
+	self AndCq: 7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveM64: 0 r: t0 R: t1.
+	self AndCq: 16r3FFFF7 R: t1.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t1.
+	jump3 := self JumpZero: 0.
+	self MoveR: t0 R: t1.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssPushBase: t1 offset: ValueIndex << 3 + 8.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self MoveM64: 8 r: t0 R: t1.
+	self MoveR: t1 R: t0.
+	jump3 := self Jump: b230.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	^ 0
+]
+
+{ #category : #generated }
 DruidJIT >> gen_PushReceiverBytecode [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
 	live := 0.
 	self ensureReceiverResultRegContainsSelf.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	self MoveR: ReceiverResultReg R: t0.
 	self ssPushRegister: t0.
@@ -3831,7 +5231,9 @@ DruidJIT >> gen_PushReceiverVariableBytecode0 [
 	| live currentBlock t0 |
 	live := 0.
 	self ensureReceiverResultRegContainsSelf.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	self MoveR: ReceiverResultReg R: t0.
 	self ssPushBase: t0 offset: 8.
@@ -3845,10 +5247,108 @@ DruidJIT >> gen_PushReceiverVariableBytecode1 [
 	| live currentBlock t0 |
 	live := 0.
 	self ensureReceiverResultRegContainsSelf.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	self MoveR: ReceiverResultReg R: t0.
 	self ssPushBase: t0 offset: 16.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushReceiverVariableBytecode10 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	self ensureReceiverResultRegContainsSelf.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self MoveR: ReceiverResultReg R: t0.
+	self ssPushBase: t0 offset: 88.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushReceiverVariableBytecode11 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	self ensureReceiverResultRegContainsSelf.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self MoveR: ReceiverResultReg R: t0.
+	self ssPushBase: t0 offset: 96.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushReceiverVariableBytecode12 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	self ensureReceiverResultRegContainsSelf.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self MoveR: ReceiverResultReg R: t0.
+	self ssPushBase: t0 offset: 104.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushReceiverVariableBytecode13 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	self ensureReceiverResultRegContainsSelf.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self MoveR: ReceiverResultReg R: t0.
+	self ssPushBase: t0 offset: 112.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushReceiverVariableBytecode14 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	self ensureReceiverResultRegContainsSelf.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self MoveR: ReceiverResultReg R: t0.
+	self ssPushBase: t0 offset: 120.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushReceiverVariableBytecode15 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	self ensureReceiverResultRegContainsSelf.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self MoveR: ReceiverResultReg R: t0.
+	self ssPushBase: t0 offset: 128.
 	^ 0
 ]
 
@@ -3859,7 +5359,9 @@ DruidJIT >> gen_PushReceiverVariableBytecode2 [
 	| live currentBlock t0 |
 	live := 0.
 	self ensureReceiverResultRegContainsSelf.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	self MoveR: ReceiverResultReg R: t0.
 	self ssPushBase: t0 offset: 24.
@@ -3873,7 +5375,9 @@ DruidJIT >> gen_PushReceiverVariableBytecode3 [
 	| live currentBlock t0 |
 	live := 0.
 	self ensureReceiverResultRegContainsSelf.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	self MoveR: ReceiverResultReg R: t0.
 	self ssPushBase: t0 offset: 32.
@@ -3887,7 +5391,9 @@ DruidJIT >> gen_PushReceiverVariableBytecode4 [
 	| live currentBlock t0 |
 	live := 0.
 	self ensureReceiverResultRegContainsSelf.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	self MoveR: ReceiverResultReg R: t0.
 	self ssPushBase: t0 offset: 40.
@@ -3901,7 +5407,9 @@ DruidJIT >> gen_PushReceiverVariableBytecode5 [
 	| live currentBlock t0 |
 	live := 0.
 	self ensureReceiverResultRegContainsSelf.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	self MoveR: ReceiverResultReg R: t0.
 	self ssPushBase: t0 offset: 48.
@@ -3915,7 +5423,9 @@ DruidJIT >> gen_PushReceiverVariableBytecode6 [
 	| live currentBlock t0 |
 	live := 0.
 	self ensureReceiverResultRegContainsSelf.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	self MoveR: ReceiverResultReg R: t0.
 	self ssPushBase: t0 offset: 56.
@@ -3929,7 +5439,9 @@ DruidJIT >> gen_PushReceiverVariableBytecode7 [
 	| live currentBlock t0 |
 	live := 0.
 	self ensureReceiverResultRegContainsSelf.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	self MoveR: ReceiverResultReg R: t0.
 	self ssPushBase: t0 offset: 64.
@@ -3943,7 +5455,9 @@ DruidJIT >> gen_PushReceiverVariableBytecode8 [
 	| live currentBlock t0 |
 	live := 0.
 	self ensureReceiverResultRegContainsSelf.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	self MoveR: ReceiverResultReg R: t0.
 	self ssPushBase: t0 offset: 72.
@@ -3957,10 +5471,80 @@ DruidJIT >> gen_PushReceiverVariableBytecode9 [
 	| live currentBlock t0 |
 	live := 0.
 	self ensureReceiverResultRegContainsSelf.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	self MoveR: ReceiverResultReg R: t0.
 	self ssPushBase: t0 offset: 80.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushRemoteTempLongBytecode [
+	"AutoGenerated by Druid"
+
+	| live t1 currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self simStackTempAt: byte2) copyToReg: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self genMoveConstant: 1 R: t1.
+	true=TempVectReadBarrier ifTrue: [
+		| jumpTrue jump3 jump1 jumpNext jump2 b196 |
+		self MoveM64: 0 r: t0 R: t1.
+		self AndCq: 16r3FFFF7 R: t1.
+		self CmpCq: 0 R: t1.
+		jump1 := self JumpZero: 0.
+		self MoveR: t0 R: t1.
+		jump2 := self Jump: 0.
+		currentBlock := self Label.
+		jump1 jmpTarget: currentBlock.
+		self MoveM64: 8 r: t0 R: t1.
+		self MoveR: t1 R: t0.
+		b196 := self Label.
+		self MoveR: t0 R: t1.
+		self AndCq: 7 R: t1.
+		self CmpCq: 0 R: t1.
+		jump1 := self JumpZero: 0.
+		self genMoveConstant: 0 R: t1.
+		jump3 := self Jump: 0.
+		currentBlock := self Label.
+		jump1 jmpTarget: currentBlock.
+		self MoveM64: 0 r: t0 R: t1.
+		self AndCq: 16r3FFFF7 R: t1.
+		self CmpCq: 0 R: t1.
+		jumpTrue := self JumpZero: 0.
+		self genMoveConstant: 0 R: t1.
+		jumpNext := self Jump: 0.
+		jumpTrue jmpTarget: self Label.
+		self genMoveConstant: 1 R: t1.
+		jumpNext jmpTarget: self Label.
+		currentBlock := self Label.
+		jump3 jmpTarget: currentBlock.
+		self CmpCq: 1 R: t1.
+		jump3 := self JumpZero: 0.
+		self MoveR: t0 R: t1.
+		currentBlock := self Label.
+		jump2 jmpTarget: currentBlock.
+		jump2 := self Jump: 0.
+		currentBlock := self Label.
+		jump3 jmpTarget: currentBlock.
+		self MoveM64: 8 r: t0 R: t1.
+		self MoveR: t1 R: t0.
+		jump3 := self Jump: b196.
+		currentBlock := self Label.
+		jump2 jmpTarget: currentBlock.
+		self ssPushBase: t1 offset: byte1 << 3 + 8.
+		^ 0 ].
+	self MoveR: t0 R: t1.
+	self ssPushBase: t1 offset: byte1 << 3 + 8.
 	^ 0
 ]
 
@@ -3970,7 +5554,9 @@ DruidJIT >> gen_PushTemporaryVariableBytecode0 [
 
 	| live currentBlock t0 |
 	live := 0.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self simStackTempAt: 0) copyToReg: t0.
 	self ssPushRegister: t0.
@@ -3983,9 +5569,41 @@ DruidJIT >> gen_PushTemporaryVariableBytecode1 [
 
 	| live currentBlock t0 |
 	live := 0.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self simStackTempAt: 1) copyToReg: t0.
+	self ssPushRegister: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushTemporaryVariableBytecode10 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self simStackTempAt: 10) copyToReg: t0.
+	self ssPushRegister: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushTemporaryVariableBytecode11 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self simStackTempAt: 11) copyToReg: t0.
 	self ssPushRegister: t0.
 	^ 0
 ]
@@ -3996,9 +5614,116 @@ DruidJIT >> gen_PushTemporaryVariableBytecode2 [
 
 	| live currentBlock t0 |
 	live := 0.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self simStackTempAt: 2) copyToReg: t0.
+	self ssPushRegister: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushTemporaryVariableBytecode3 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self simStackTempAt: 3) copyToReg: t0.
+	self ssPushRegister: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushTemporaryVariableBytecode4 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self simStackTempAt: 4) copyToReg: t0.
+	self ssPushRegister: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushTemporaryVariableBytecode5 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self simStackTempAt: 5) copyToReg: t0.
+	self ssPushRegister: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushTemporaryVariableBytecode6 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self simStackTempAt: 6) copyToReg: t0.
+	self ssPushRegister: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushTemporaryVariableBytecode7 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self simStackTempAt: 7) copyToReg: t0.
+	self ssPushRegister: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushTemporaryVariableBytecode8 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self simStackTempAt: 8) copyToReg: t0.
+	self ssPushRegister: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_PushTemporaryVariableBytecode9 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self simStackTempAt: 9) copyToReg: t0.
 	self ssPushRegister: t0.
 	^ 0
 ]
@@ -4009,7 +5734,9 @@ DruidJIT >> gen_ReturnFalse [
 
 	| live currentBlock t0 |
 	live := 0.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	self genMoveConstant: objectMemory falseObject R: t0.
 	self MoveR: t0 R: ReceiverResultReg.
@@ -4023,11 +5750,29 @@ DruidJIT >> gen_ReturnNil [
 
 	| live currentBlock t0 |
 	live := 0.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	self genMoveConstant: objectMemory nilObject R: t0.
 	self MoveR: t0 R: ReceiverResultReg.
 	self genUpArrowReturn.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_ReturnNilFromBlock [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self genMoveConstant: objectMemory nilObject R: t0.
+	self MoveR: t0 R: ReceiverResultReg.
+	self genBlockReturn.
 	^ 0
 ]
 
@@ -4038,11 +5783,30 @@ DruidJIT >> gen_ReturnReceiver [
 	| live currentBlock t0 |
 	live := 0.
 	self ensureReceiverResultRegContainsSelf.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	self MoveR: ReceiverResultReg R: t0.
 	self MoveR: t0 R: ReceiverResultReg.
 	self genUpArrowReturn.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_ReturnTopFromBlock [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 0) copyToReg: t0.
+	self ssPop: 1.
+	self MoveR: t0 R: ReceiverResultReg.
+	self genBlockReturn.
 	^ 0
 ]
 
@@ -4052,9 +5816,12 @@ DruidJIT >> gen_ReturnTopFromMethod [
 
 	| live currentBlock t0 |
 	live := 0.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
+	self ssPop: 1.
 	self MoveR: t0 R: ReceiverResultReg.
 	self genUpArrowReturn.
 	^ 0
@@ -4066,7 +5833,9 @@ DruidJIT >> gen_ReturnTrue [
 
 	| live currentBlock t0 |
 	live := 0.
-	t0 := self allocateRegNotConflictingWith: live ifNone: [ ^ self unknownBytecode ].
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	self genMoveConstant: objectMemory trueObject R: t0.
 	self MoveR: t0 R: ReceiverResultReg.
@@ -4081,7 +5850,10 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode0 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 0.
-	self genMarshalledSend: 0 numArgs: 0 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: 0
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -4092,7 +5864,94 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode1 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 0.
-	self genMarshalledSend: 1 numArgs: 0 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: 1
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector0ArgsBytecode10 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 0.
+	self
+		genMarshalledSend: 10
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector0ArgsBytecode11 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 0.
+	self
+		genMarshalledSend: 11
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector0ArgsBytecode12 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 0.
+	self
+		genMarshalledSend: 12
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector0ArgsBytecode13 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 0.
+	self
+		genMarshalledSend: 13
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector0ArgsBytecode14 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 0.
+	self
+		genMarshalledSend: 14
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector0ArgsBytecode15 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 0.
+	self
+		genMarshalledSend: 15
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -4103,7 +5962,10 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode2 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 0.
-	self genMarshalledSend: 2 numArgs: 0 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: 2
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -4114,7 +5976,10 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode3 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 0.
-	self genMarshalledSend: 3 numArgs: 0 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: 3
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -4125,7 +5990,10 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode4 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 0.
-	self genMarshalledSend: 4 numArgs: 0 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: 4
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -4136,7 +6004,10 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode5 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 0.
-	self genMarshalledSend: 5 numArgs: 0 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: 5
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -4147,7 +6018,52 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode6 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 0.
-	self genMarshalledSend: 6 numArgs: 0 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: 6
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector0ArgsBytecode7 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 0.
+	self
+		genMarshalledSend: 7
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector0ArgsBytecode8 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 0.
+	self
+		genMarshalledSend: 8
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector0ArgsBytecode9 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 0.
+	self
+		genMarshalledSend: 9
+		numArgs: 0
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -4158,7 +6074,10 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode0 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: 0 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: 0
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -4169,7 +6088,94 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode1 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: 1 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: 1
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector1ArgBytecode10 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 1.
+	self
+		genMarshalledSend: 10
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector1ArgBytecode11 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 1.
+	self
+		genMarshalledSend: 11
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector1ArgBytecode12 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 1.
+	self
+		genMarshalledSend: 12
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector1ArgBytecode13 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 1.
+	self
+		genMarshalledSend: 13
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector1ArgBytecode14 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 1.
+	self
+		genMarshalledSend: 14
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector1ArgBytecode15 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 1.
+	self
+		genMarshalledSend: 15
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -4180,7 +6186,10 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode2 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: 2 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: 2
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -4191,7 +6200,10 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode3 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: 3 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: 3
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -4202,7 +6214,10 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode4 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: 4 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: 4
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -4213,7 +6228,10 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode5 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: 5 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: 5
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -4224,7 +6242,52 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode6 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 1.
-	self genMarshalledSend: 6 numArgs: 1 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: 6
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector1ArgBytecode7 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 1.
+	self
+		genMarshalledSend: 7
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector1ArgBytecode8 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 1.
+	self
+		genMarshalledSend: 8
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector1ArgBytecode9 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 1.
+	self
+		genMarshalledSend: 9
+		numArgs: 1
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -4235,7 +6298,10 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode0 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 2.
-	self genMarshalledSend: 0 numArgs: 2 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: 0
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -4246,7 +6312,94 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode1 [
 	| live currentBlock |
 	live := 0.
 	self marshallSendArguments: 2.
-	self genMarshalledSend: 1 numArgs: 2 sendTable: ordinarySendTrampolines.
+	self
+		genMarshalledSend: 1
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector2ArgsBytecode10 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 2.
+	self
+		genMarshalledSend: 10
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector2ArgsBytecode11 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 2.
+	self
+		genMarshalledSend: 11
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector2ArgsBytecode12 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 2.
+	self
+		genMarshalledSend: 12
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector2ArgsBytecode13 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 2.
+	self
+		genMarshalledSend: 13
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector2ArgsBytecode14 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 2.
+	self
+		genMarshalledSend: 14
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_SendLiteralSelector2ArgsBytecode15 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 2.
+	self
+		genMarshalledSend: 15
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
 	^ 0
 ]
 
@@ -4328,6 +6481,20 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode8 [
 ]
 
 { #category : #generated }
+DruidJIT >> gen_SendLiteralSelector2ArgsBytecode9 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock |
+	live := 0.
+	self marshallSendArguments: 2.
+	self
+		genMarshalledSend: 9
+		numArgs: 2
+		sendTable: ordinarySendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
 DruidJIT >> gen_ShortConditionalJumpFalse0 [
 	"AutoGenerated by Druid"
 
@@ -4337,6 +6504,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse0 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssPop: 1.
+	self ssFlushStack.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
@@ -4347,7 +6515,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse0 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 1 + 1.
+	self genJumpTo: bytecodePC + 0 + 1 + 1.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -4365,6 +6533,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse1 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssPop: 1.
+	self ssFlushStack.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
@@ -4375,7 +6544,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse1 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 2 + 1.
+	self genJumpTo: bytecodePC + 0 + 2 + 1.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -4393,6 +6562,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse2 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssPop: 1.
+	self ssFlushStack.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
@@ -4403,7 +6573,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse2 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 3 + 1.
+	self genJumpTo: bytecodePC + 0 + 3 + 1.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -4421,6 +6591,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse3 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssPop: 1.
+	self ssFlushStack.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
@@ -4431,7 +6602,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse3 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 4 + 1.
+	self genJumpTo: bytecodePC + 0 + 4 + 1.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -4449,6 +6620,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse4 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssPop: 1.
+	self ssFlushStack.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
@@ -4459,7 +6631,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse4 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 5 + 1.
+	self genJumpTo: bytecodePC + 0 + 5 + 1.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -4477,6 +6649,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse5 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssPop: 1.
+	self ssFlushStack.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
@@ -4487,7 +6660,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse5 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 6 + 1.
+	self genJumpTo: bytecodePC + 0 + 6 + 1.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -4505,6 +6678,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse6 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssPop: 1.
+	self ssFlushStack.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
@@ -4515,7 +6689,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse6 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 7 + 1.
+	self genJumpTo: bytecodePC + 0 + 7 + 1.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -4533,6 +6707,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse7 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssPop: 1.
+	self ssFlushStack.
 	self CmpCq: objectMemory falseObject R: t0.
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory trueObject R: t0.
@@ -4543,7 +6718,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse7 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 8 + 1.
+	self genJumpTo: bytecodePC + 0 + 8 + 1.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -4561,6 +6736,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue0 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssPop: 1.
+	self ssFlushStack.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
@@ -4571,7 +6747,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue0 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 1 + 1.
+	self genJumpTo: bytecodePC + 0 + 1 + 1.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -4589,6 +6765,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue1 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssPop: 1.
+	self ssFlushStack.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
@@ -4599,7 +6776,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue1 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 2 + 1.
+	self genJumpTo: bytecodePC + 0 + 2 + 1.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -4617,6 +6794,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue2 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssPop: 1.
+	self ssFlushStack.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
@@ -4627,7 +6805,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue2 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 3 + 1.
+	self genJumpTo: bytecodePC + 0 + 3 + 1.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -4645,6 +6823,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue3 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssPop: 1.
+	self ssFlushStack.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
@@ -4655,7 +6834,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue3 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 4 + 1.
+	self genJumpTo: bytecodePC + 0 + 4 + 1.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -4673,6 +6852,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue4 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssPop: 1.
+	self ssFlushStack.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
@@ -4683,7 +6863,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue4 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 5 + 1.
+	self genJumpTo: bytecodePC + 0 + 5 + 1.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -4701,6 +6881,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue5 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssPop: 1.
+	self ssFlushStack.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
@@ -4711,7 +6892,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue5 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 6 + 1.
+	self genJumpTo: bytecodePC + 0 + 6 + 1.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -4729,6 +6910,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue6 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssPop: 1.
+	self ssFlushStack.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
@@ -4739,7 +6921,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue6 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 7 + 1.
+	self genJumpTo: bytecodePC + 0 + 7 + 1.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -4757,6 +6939,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue7 [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssPop: 1.
+	self ssFlushStack.
 	self CmpCq: objectMemory trueObject R: t0.
 	jump1 := self JumpZero: 0.
 	self CmpCq: objectMemory falseObject R: t0.
@@ -4767,7 +6950,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue7 [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 8 + 1.
+	self genJumpTo: bytecodePC + 0 + 8 + 1.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -4781,7 +6964,8 @@ DruidJIT >> gen_ShortUnconditionalJump0 [
 
 	| live currentBlock |
 	live := 0.
-	self genJumpTo: bytecodePC + 1 + 1.
+	self ssFlushStack.
+	self genJumpTo: bytecodePC + 0 + 1 + 1.
 	^ 0
 ]
 
@@ -4791,7 +6975,8 @@ DruidJIT >> gen_ShortUnconditionalJump1 [
 
 	| live currentBlock |
 	live := 0.
-	self genJumpTo: bytecodePC + 2 + 1.
+	self ssFlushStack.
+	self genJumpTo: bytecodePC + 0 + 2 + 1.
 	^ 0
 ]
 
@@ -4801,7 +6986,8 @@ DruidJIT >> gen_ShortUnconditionalJump2 [
 
 	| live currentBlock |
 	live := 0.
-	self genJumpTo: bytecodePC + 3 + 1.
+	self ssFlushStack.
+	self genJumpTo: bytecodePC + 0 + 3 + 1.
 	^ 0
 ]
 
@@ -4811,7 +6997,8 @@ DruidJIT >> gen_ShortUnconditionalJump3 [
 
 	| live currentBlock |
 	live := 0.
-	self genJumpTo: bytecodePC + 4 + 1.
+	self ssFlushStack.
+	self genJumpTo: bytecodePC + 0 + 4 + 1.
 	^ 0
 ]
 
@@ -4821,7 +7008,8 @@ DruidJIT >> gen_ShortUnconditionalJump4 [
 
 	| live currentBlock |
 	live := 0.
-	self genJumpTo: bytecodePC + 5 + 1.
+	self ssFlushStack.
+	self genJumpTo: bytecodePC + 0 + 5 + 1.
 	^ 0
 ]
 
@@ -4831,7 +7019,8 @@ DruidJIT >> gen_ShortUnconditionalJump5 [
 
 	| live currentBlock |
 	live := 0.
-	self genJumpTo: bytecodePC + 6 + 1.
+	self ssFlushStack.
+	self genJumpTo: bytecodePC + 0 + 6 + 1.
 	^ 0
 ]
 
@@ -4841,7 +7030,8 @@ DruidJIT >> gen_ShortUnconditionalJump6 [
 
 	| live currentBlock |
 	live := 0.
-	self genJumpTo: bytecodePC + 7 + 1.
+	self ssFlushStack.
+	self genJumpTo: bytecodePC + 0 + 7 + 1.
 	^ 0
 ]
 
@@ -4851,7 +7041,144 @@ DruidJIT >> gen_ShortUnconditionalJump7 [
 
 	| live currentBlock |
 	live := 0.
-	self genJumpTo: bytecodePC + 8 + 1.
+	self ssFlushStack.
+	self genJumpTo: bytecodePC + 0 + 8 + 1.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode0 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 0) copyToReg: t0.
+	self ssFlushUpThroughTemporaryVariable: 0.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 0) r: FPReg.
+	self ssPop: 1.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode1 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 0) copyToReg: t0.
+	self ssFlushUpThroughTemporaryVariable: 1.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 1) r: FPReg.
+	self ssPop: 1.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode2 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 0) copyToReg: t0.
+	self ssFlushUpThroughTemporaryVariable: 2.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 2) r: FPReg.
+	self ssPop: 1.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode3 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 0) copyToReg: t0.
+	self ssFlushUpThroughTemporaryVariable: 3.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 3) r: FPReg.
+	self ssPop: 1.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode4 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 0) copyToReg: t0.
+	self ssFlushUpThroughTemporaryVariable: 4.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 4) r: FPReg.
+	self ssPop: 1.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode5 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 0) copyToReg: t0.
+	self ssFlushUpThroughTemporaryVariable: 5.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 5) r: FPReg.
+	self ssPop: 1.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode6 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 0) copyToReg: t0.
+	self ssFlushUpThroughTemporaryVariable: 6.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 6) r: FPReg.
+	self ssPop: 1.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode7 [
+	"AutoGenerated by Druid"
+
+	| live currentBlock t0 |
+	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 0) copyToReg: t0.
+	self ssFlushUpThroughTemporaryVariable: 7.
+	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 7) r: FPReg.
+	self ssPop: 1.
 	^ 0
 ]
 

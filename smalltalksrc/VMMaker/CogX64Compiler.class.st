@@ -4345,14 +4345,11 @@ CogX64Compiler >> isQuick: operand [
 ]
 
 { #category : #testing }
-CogX64Compiler >> isWithinMwOffsetRange: anAddress [
-	"Answer if an address can be accessed using the offset in a MoveMw:r:R: or similar instruction.
-	 We assume this is true for 32-bit processors and expect 64-bit processors to answer false
-	 for values in the interpreter or the object memory.    Restrict our use of offsets to reference
-	 addresses within the method zone, rather than checking for a 32-bit offset, si as to keep the
-	 simulator and real VM in sync."
+CogX64Compiler >> isWithinMwOffsetRange: anImmediate [
+	"Answer if an immediate value can be used as offset in a MoveMw:r:R: or similar instruction.
+	 The X64 backend only encodes 32bit signed immediates for now"
 
-	^cogit addressIsInCodeZone: anAddress
+	^ self is32BitSignedImmediate: anImmediate
 ]
 
 { #category : #accessing }
