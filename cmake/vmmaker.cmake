@@ -38,6 +38,25 @@ else()
   endif()
 endif()
 
+function (getVMMakerParameters _resultVar)
+    getListOfVarsStartingWith("VMMaker_" matchedVars)
+    set (_pharoParameterArray "")
+    foreach (_var IN LISTS matchedVars)
+        # VMMaker_ has 8 characters
+        string(SUBSTRING ${_var} 8 -1 _name)
+        set (_pharoParameterArray "${_pharoParameterArray} '${_name}' '${${_var}}'")
+    endforeach()
+    set (${_resultVar} "#( ${_pharoParameterArray} )" PARENT_SCOPE)
+endfunction()
+
+function (getListOfVarsStartingWith _prefix _resultVar)
+    get_cmake_property(_vars VARIABLES)
+    string (REGEX MATCHALL "(^|;)${_prefix}[A-Za-z0-9_]*" _matchedVars "${_vars}")
+    set (${_resultVar} ${_matchedVars} PARENT_SCOPE)
+endfunction()
+
+getVMMakerParameters(VM_Parameters)
+
 set(PLUGIN_GENERATED_FILES 
     ${PHARO_CURRENT_GENERATED}/plugins/src/FilePlugin/FilePlugin.c
     ${PHARO_CURRENT_GENERATED}/plugins/src/SurfacePlugin/SurfacePlugin.c
@@ -144,9 +163,9 @@ if(GENERATE_SOURCES)
     #Custom command that generates the vm source code from VMMaker into the generated folder
     add_custom_command(
         OUTPUT ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES}
-        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\' imageFormat: \'${IMAGE_FORMAT}\'\"
+        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\' options: "${VM_Parameters}"\"
         DEPENDS vmmaker ${VMMAKER_IMAGE} ${VMMAKER_VM}
-        COMMENT "Generating VM files for flavour: ${FLAVOUR}")
+        COMMENT "Generating VM files for flavour: ${FLAVOUR} with options: ${VM_Parameters}")
 
     add_custom_target(generate-sources DEPENDS ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES})
 
