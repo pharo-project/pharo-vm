@@ -9,7 +9,8 @@ Class {
 		'stopOnErrors',
 		'generatePlugins',
 		'wordSizesToGenerate',
-		'imageFormatName'
+		'imageFormatName',
+		'options'
 	],
 	#category : #'VMMakerCompatibilityForPharo6-CommandLine'
 }
@@ -65,21 +66,10 @@ PharoVMMaker class >> generate: anInterpreterClass outputDirectory: aDirectory [
 ]
 
 { #category : #generation }
-PharoVMMaker class >> generate: anInterpreterClass outputDirectory: aDirectory imageFormat: imageFormatName [
-
-	Transcript
-		nextPutAll: 'Generating ';
-		nextPutAll: anInterpreterClass printString;
-		nextPutAll: ' in ';
-		nextPutAll: aDirectory printString;
-		nextPutAll: ' with ';
-		nextPutAll: imageFormatName;
-		nextPutAll: '...';
-		newLine;
-		flush.
+PharoVMMaker class >> generate: anInterpreterClass outputDirectory: aDirectory options: options [
 
 	self new
-		imageFormatName: imageFormatName;
+		options: options;
 		outputDirectory: aDirectory;
 		perform: #generate , anInterpreterClass asSymbol
 ]
@@ -115,14 +105,9 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager [
 { #category : #generation }
 PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compilerClass: compilerClass [
 
-	self generate: interpreterClass memoryManager: memoryManager compilerClass: compilerClass options: #()
-]
-
-{ #category : #generation }
-PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compilerClass: compilerClass options: options [
-
 	| platformDirectory vmmaker imageReaderClassName imageWriterClassName |
 	
+	imageFormatName := (Dictionary newFromPairs: options) at: 'ImageFormat' ifAbsent: [ imageFormatName ].
 	(#(SpurFormat ComposedFormat) includes: imageFormatName)
 		ifFalse:[ self error: 'Invalid Image Format'].
 	
@@ -220,27 +205,6 @@ PharoVMMaker >> generatePlugins: anObject [
 ]
 
 { #category : #generation }
-PharoVMMaker >> generateSistaVM [
-
-	self generates64Bits ifTrue: [	
-			self
-				generate: CoInterpreter
-				memoryManager: Spur64BitCoMemoryManager
-				compilerClass: SistaCogit
-				options: #( SistaVM true )].
-	
-	
-	self generates32Bits ifTrue: [
-			self
-				generate: CoInterpreter
-				memoryManager: Spur32BitCoMemoryManager
-				compilerClass: SistaCogit
-				options: #( SistaVM true )].
-
-
-]
-
-{ #category : #generation }
 PharoVMMaker >> generateStackVM [
 
 	self generates64Bits ifTrue: [self generate: StackInterpreter memoryManager: Spur64BitMemoryManager].
@@ -272,7 +236,9 @@ PharoVMMaker >> initialize [
 	stopOnErrors := false.
 	generatePlugins := true.
 	wordSizesToGenerate := #(4 8).
-	imageFormatName := self class defaultImageFormatName
+	imageFormatName := self class defaultImageFormatName.
+	
+	options := #()
 ]
 
 { #category : #initialization }
