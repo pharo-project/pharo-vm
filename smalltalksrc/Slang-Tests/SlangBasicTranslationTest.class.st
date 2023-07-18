@@ -1404,48 +1404,6 @@ SlangBasicTranslationTest >> testLabelWithCommentWithPreviousCommentMarkingAnInl
 	self assert: translation equals: ''
 ]
 
-{ #category : #'tests-assignment' }
-SlangBasicTranslationTest >> testMethodCantHaveReservedArgumentNames [
-
-	| methodInitialization |
-	methodInitialization := [
-	                        TMethod new
-		                        setSelector: 'foo'
-		                        definingClass: MockEmptyVMStruct
-		                        args: { RBVariableNode named: 'continue' }
-		                        locals: Array empty
-		                        block:
-		                        (RBBlockNode body:
-			                         (RBSequenceNode statements:
-				                          Array empty))
-		                        primitive: nil
-		                        properties: nil
-		                        comment: nil ].
-
-	self should: methodInitialization raise: TranslationError
-]
-
-{ #category : #'tests-assignment' }
-SlangBasicTranslationTest >> testMethodCantHaveReservedSelectorName [
-
-	| methodInitialization |
-	methodInitialization := [
-	                        TMethod new
-		                        setSelector: 'break'
-		                        definingClass: MockEmptyVMStruct
-		                        args: Array empty
-		                        locals: Array empty
-		                        block:
-		                        (RBBlockNode body:
-			                         (RBSequenceNode statements:
-				                          Array empty))
-		                        primitive: nil
-		                        properties: nil
-		                        comment: nil ].
-
-	self should: methodInitialization raise: TranslationError
-]
-
 { #category : #'tests-method' }
 SlangBasicTranslationTest >> testMethodComment [
 
@@ -1718,6 +1676,20 @@ SlangBasicTranslationTest >> testMethodPrototypeWithStatic [
 			, (translation lineNumber: 3)
 		equals: 'static sqInt
 increment(sqInt x)'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodRenamesReservedSelectorName [
+
+	| method translation |
+	method := self getTMethodFrom: #continue.
+
+	generator renameKeywordsConflicts.
+
+	translation := self translate: method.
+	
+	self should: (translation includesSubstring: 'static sqInt
+continue_1(void)')
 ]
 
 { #category : #'tests-method' }
@@ -5220,6 +5192,28 @@ SlangBasicTranslationTest >> testSendSignedRightBitShiftVariable64Bits [
 	self assert: translation equals: '((sqLong) a ) >> 3'
 ]
 
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testSendStructAccessorWithReservedWordSelector [
+	"Tests if the renaming of the accessors impacts the struct accessing"
+
+	| translation send |
+	generator addStructClasses: { MockVMStructWithReservedWords }.
+	generator renameKeywordsConflicts.
+
+	generator pushScope:
+		(TStatementListNode new addDeclarations: (Dictionary new
+				  at: 'structInstance' put: 'MockVMStructWithReservedWords*';
+				  yourself)).
+	send := TSendNode
+		        receiver: (TVariableNode named: 'structInstance')
+		        selector: #case
+		        arguments: {  }.
+
+	translation := self translate: send.
+
+	self assert: translation equals: '(structInstance->case_1)'
+]
+
 { #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testSendSubclassResponsibility [
 
@@ -6005,6 +5999,27 @@ SlangBasicTranslationTest >> testSendWordSize [
 	self assert: translation equals: 'BytesPerWord'
 ]
 
+{ #category : #'tests-builtins' }
+SlangBasicTranslationTest >> testStructFieldIsRenamedWithReservedWord [
+	"Tests if the struct field is renamed when it's a reserved word"
+
+	| translation |
+	
+	generator addStructClasses: { MockVMStructWithReservedWords }.
+	generator renameKeywordsConflicts.
+	generator vmClass: VMClass.
+
+	translation := String streamContents: [ :s | generator emitCTypesOn: s ].
+
+	self assert: translation equals: 'typedef struct {
+	char *foo;
+	char *case_1;
+ } MockVMStructWithReservedWords;
+
+
+'
+]
+
 { #category : #'tests-case' }
 SlangBasicTranslationTest >> testSwitchOnCurrentBytecodeAddsPreDispatchHook [
 
@@ -6468,13 +6483,6 @@ SlangBasicTranslationTest >> testVariableAssignment [
 	self assert: translation equals: 'var = 7'
 ]
 
-{ #category : #'tests-assignment' }
-SlangBasicTranslationTest >> testVariableCantHaveReservedName [
-
-	self should: [TVariableNode new setName: 'register'] raise: TranslationError.
-
-]
-
 { #category : #'tests-blocks' }
 SlangBasicTranslationTest >> testVariableStatementsInBlockValueAreIgnored [
 
@@ -6547,6 +6555,23 @@ SlangBasicTranslationTest >> testVariableUpdateAssignmentPlus [
 			expression: expression).
 
 	self assert: translation equals: 'var += 7'
+]
+
+{ #category : #'tests-variables' }
+SlangBasicTranslationTest >> testVariableWithReservedNameShouldBeRenamed [
+
+	| method translation |
+	
+	method := self getTMethodFrom: #methodWithReservedWordLocal:.
+	method recordDeclarationsIn: generator.
+	
+	generator renameKeywordsConflicts.
+
+	translation := self translate: method.
+	
+	self should: (translation includesSubstring: 'char *case_1').
+	self should: (translation includesSubstring: 'char *register_1').
+	self should: (translation includesSubstring: 'case_1 = nextPutAll(register_1, "foo")')
 ]
 
 { #category : #helpers }

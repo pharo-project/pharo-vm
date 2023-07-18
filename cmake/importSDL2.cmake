@@ -47,8 +47,7 @@ function(build_SDL2)
 
     set_target_properties(SDL2 PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
 
-    add_dependencies(SDL2_copy SDL2)
-    add_dependencies(${VM_LIBRARY_NAME} SDL2_copy)
+    add_dependencies(${VM_LIBRARY_NAME} SDL2)
     set(SDL2_FOUND "From build_SDL2" PARENT_SCOPE)
 endfunction()
 

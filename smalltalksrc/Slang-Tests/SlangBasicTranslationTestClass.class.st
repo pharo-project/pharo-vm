@@ -23,6 +23,11 @@ SlangBasicTranslationTestClass class >> objectMemoryClass [
 ]
 
 { #category : #inline }
+SlangBasicTranslationTestClass >> continue [
+	"reserved name selector"
+]
+
+{ #category : #inline }
 SlangBasicTranslationTestClass >> first: param1 second: param2 [
 	"Method with several parameters"
 ]
@@ -150,6 +155,16 @@ SlangBasicTranslationTestClass >> methodWithOptionPragma [
 	<option: #OPTION1>
 	<notOption: #OPTION2>
 	<option: #OPTION3>
+	
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodWithReservedWordLocal: register [
+
+	<var: #case type: 'char *'>
+	<var: #register type: 'char *'>
+	| case |
+	case := register nextPutAll: 'foo'
 	
 ]
 
