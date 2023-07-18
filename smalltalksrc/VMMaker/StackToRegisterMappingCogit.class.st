@@ -4903,6 +4903,14 @@ StackToRegisterMappingCogit >> tryCollapseTempVectorInitializationOfSize: slots 
 	^true
 ]
 
+{ #category : #'bytecode generators' }
+StackToRegisterMappingCogit >> unknownBytecode [
+
+	deadCode := true.
+	self ssFlushStack.
+	^ super unknownBytecode
+]
+
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> updateSimSpillBase [
 	"Something volatile has been pushed on the stack; update simSpillBase accordingly."

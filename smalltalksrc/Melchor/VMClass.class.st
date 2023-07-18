@@ -708,6 +708,14 @@ VMClass >> int8AtPointer: pointer put: value [
 	^self at: pointer put: value
 ]
 
+{ #category : #'druid support' }
+VMClass >> interpreterIgnore: aBlock [
+
+	"Ignore the block during interpretation, consider it during compilation.
+	Should be used only to control compilation in very few cases only"
+	
+]
+
 { #category : #'plugin support' }
 VMClass >> isInterpreterProxy [
 	<doNotGenerate>

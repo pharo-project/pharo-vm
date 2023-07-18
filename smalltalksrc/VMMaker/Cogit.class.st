@@ -734,8 +734,8 @@ Cogit class >> generatorTableFrom: anArray [
 		"As a hack to cut down on descriptor flags, use opcode to tag unusedBytecode for scanning.
 		 Currently descriptors are exactly 16 bytes with all 8 flag bits used.
 		As another hack to eliminate a test in scanMethod mark unknowns as extensions."
-		descriptor generator == #unknownBytecode ifTrue:
-			[descriptor opcode: Nop; isExtension: true].
+		"descriptor generator == #unknownBytecode ifTrue:
+			[descriptor ""opcode: Nop;"" isExtension: true]."
 		tuple do:
 			[:thing|
 			thing isSymbol ifTrue:
@@ -8046,6 +8046,10 @@ Cogit >> generateRunTimeTrampolines [
 		                               called: 'ceBaseFrameReturnTrampoline'
 		                               arg: ReceiverResultReg.
 	self generateReturnToInterpreterPCTrampoline.
+	ceDeoptimiseFrameTrampoline := self
+		                      genTrampolineFor: #ceDeoptimiseOnBytecode:
+		                      called: 'ceDeoptimiseFrame'
+		                      arg: ReceiverResultReg.
 	ceMallocTrampoline := self
 		                      genTrampolineFor: #ceMalloc:
 		                      called: 'ceMallocTrampoline'
@@ -10828,6 +10832,12 @@ Cogit >> recordEventTrace [
 { #category : #initialization }
 Cogit >> recordGeneratedRunTime: aString address: address [
 	<var: #aString type: #'char *'>
+	
+	"trampolineAddresses goes over 0 through (NumTrampolines * 2) - 1.
+	If we try go generate a trampoline above (NumTrampolines * 2), validate we don't go out of bounds"
+	trampolineTableIndex > (NumTrampolines * 2)
+		ifTrue: [ self error: 'Attempt to add an entry in a full trampoline table' ].
+	
 	trampolineAddresses
 		at: trampolineTableIndex put: aString;
 		at: trampolineTableIndex + 1 put: (self cCoerceSimple: address to: #'char *').
@@ -11908,7 +11918,10 @@ Cogit >> trampolineName: routinePrefix numRegArgs: numArgs [
 
 { #category : #'bytecode generators' }
 Cogit >> unknownBytecode [
-	^EncounteredUnknownBytecode
+	
+	self MoveCq: bytecodePC R: ReceiverResultReg.
+	self CallRT: ceDeoptimiseFrameTrampoline.
+	^ 0
 ]
 
 { #category : #'jit - api' }

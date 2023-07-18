@@ -796,24 +796,31 @@ CoInterpreter >> attemptToSwitchToMachineCode: bcpc [
 	"Attempt to convert the current interpreted activation into a machine code
 	 activation, and if this is popssible, jump into machine code.  bcpc is the
 	 0-relative pc of the backward branch bytecode (not any preceding extension)."
-	| cogMethod pc cls |
+
 	<inline: false>
 	<var: #cogMethod type: #'CogMethod *'>
-	(self methodHasCogMethod: method)
-		ifFalse: [
-			(self iframeIsBlockActivation: framePointer)
-				ifTrue: [ "Compiled block / full closure"
-					cls := self frameStackedReceiver: framePointer numArgs: (self frameNumArgs: framePointer).
-					cogit cogFullBlockMethod: method numCopied: (objectMemory numPointerSlotsOf: cls) - FullClosureFirstCopiedValueIndex]
-				ifFalse: [ "Compiled method"
-					cogit cog: method selector: objectMemory nilObject ] ].
-	(self methodHasCogMethod: method) ifTrue:
-		[cogMethod := self cogMethodOf: method.
-		 pc := self convertToMachineCodeFrame: cogMethod bcpc: bcpc.
-		 self assertValidMachineCodeFrame: pc.
-		 self push: pc.
-		 self push: objectMemory nilObject.
-		 self callEnilopmart: #ceEnterCogCodePopReceiverReg]
+	| cogMethod pc cls |
+	(self methodHasCogMethod: method) ifFalse: [
+		(self iframeIsBlockActivation: framePointer)
+			ifTrue: [ "Compiled block / full closure"
+				cls := self
+					       frameStackedReceiver: framePointer
+					       numArgs: (self frameNumArgs: framePointer).
+				cogit
+					cogFullBlockMethod: method
+					numCopied: (objectMemory numPointerSlotsOf: cls)
+						- FullClosureFirstCopiedValueIndex ]
+			ifFalse: [ "Compiled method"
+				cogit cog: method selector: objectMemory nilObject ] ].
+	(self methodHasCogMethod: method) ifTrue: [
+		cogMethod := self cogMethodOf: method.
+		pc := self convertToMachineCodeFrame: cogMethod bcpc: bcpc.
+		"If conversion failed, continue interpreted"
+		pc = 0 ifTrue: [ ^ self ].
+		self assertValidMachineCodeFrame: pc.
+		self push: pc.
+		self push: objectMemory nilObject.
+		self callEnilopmart: #ceEnterCogCodePopReceiverReg ]
 ]
 
 { #category : #'return bytecodes' }
@@ -1229,6 +1236,57 @@ CoInterpreter >> ceCounterTripped: condition [
 	self activateNewMethod.
 	"not reached"
 	^true
+]
+
+{ #category : #trampolines }
+CoInterpreter >> ceDeoptimiseOnBytecode: bytecodePC [
+
+	<api>
+	"Deoptimise the top frame of the stack, transforming the current frame from compiled to interpreted.
+	All values are already spilled in memory.
+	This requires:
+		- push down receiver, temps and stack
+		- insert the missing fields (flags), saved method ip
+		- unflag the method object reference
+		- set the instruction pointer
+	
+	Do not fix the caller saved ip.
+	The return in the interpreter knows how to deal with both cases of call from interpreted or machine code.
+	See #maybeReturnToMachineCodeFrame"
+	
+	| delta frameFlags methodHeader theIP |
+
+	"Pop and discard the trampoline IP, we don't need it"
+	self popStack.
+
+	"Iterate from the top of the stack up to the receiver, pushing the elements down 2 words"
+	delta := FoxIFReceiver - FoxMFReceiver.
+	stackPointer to:  framePointer + FoxMFReceiver by: objectMemory wordSize do: [:p|
+		stackPages unsignedLongAt: p + delta put: (stackPages unsignedLongAt: p)].
+	stackPointer := stackPointer + delta.
+	
+	"Compute the interpreter frame flags before the values are overridden"
+	self setMethod: (self frameMethodObject: framePointer).
+	methodHeader := objectMemory methodHeaderOf: method.
+	frameFlags := self
+					 encodeFrameFieldHasContext: (self mframeHasContext: framePointer)
+					 isBlock: (self mframeIsBlockActivation: framePointer)
+					 numArgs: (self argumentCountOf: method).
+	
+	"Fix method, add savedIP and flag fields"
+	self frameMethodField: framePointer put: method.
+	self iframeSavedIP: framePointer put: 0.
+	self iframeFlags: framePointer put: frameFlags.
+	
+	"Set the instruction pointer and reenter the interpreter"
+	theIP := bytecodePC.
+	((self methodHeaderHasPrimitive: methodHeader)
+		and: [bytecodePC = (1 + (self startPCOfMethodHeader: methodHeader))])
+			ifTrue: [ theIP := theIP + (self sizeOfCallPrimitiveBytecode: methodHeader) ].
+	
+	instructionPointer := (self iframeInstructionPointerForIndex: theIP + 1 method: method).
+	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
+	self unreachable
 ]
 
 { #category : #trampolines }
@@ -2243,19 +2301,7 @@ CoInterpreter >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
 	<var: #cogMethod type: #'CogMethod *'>
 	<var: #p type: #'char *'>
 	self assert: (self isMachineCodeFrame: framePointer) not.
-	"Update the return pc, perhaps saving it in the caller's iframeSavedIP."
-	(self isBaseFrame: framePointer)
-		ifTrue:
-			[stackPages
-				unsignedLongAt: framePointer + FoxCallerSavedIP
-				put: cogit ceBaseFrameReturnPC]
-		ifFalse:
-			[(self isMachineCodeFrame: (self frameCallerFP: framePointer)) ifFalse:
-				[self iframeSavedIP: (self frameCallerFP: framePointer)
-					put: (self frameCallerSavedIP: framePointer) asInteger.
-				 stackPages
-					unsignedLongAt: framePointer + FoxCallerSavedIP
-					put: cogit ceReturnToInterpreterPC]].
+	
 	"Compute the cog method field"
 	(self iframeIsBlockActivation: framePointer)
 		ifTrue: [
@@ -2269,6 +2315,26 @@ CoInterpreter >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
 			methodField := cogHomeMethod asInteger ].
 	"compute the pc before converting the frame to help with debugging."
 	pc := cogit mcPCForBackwardBranch: bcpc startBcpc: startBcpc in: cogMethod.
+	
+	"If we don't have a PC, because the bytecode was not compiled (either dead code or unknown),
+	exit early and do not transform the frame."
+	pc = 0 ifTrue: [ ^ 0 ].
+	
+	"Update the return pc, perhaps saving it in the caller's iframeSavedIP."
+	(self isBaseFrame: framePointer)
+		ifTrue:
+			[stackPages
+				unsignedLongAt: framePointer + FoxCallerSavedIP
+				put: cogit ceBaseFrameReturnPC]
+		ifFalse:
+			[(self isMachineCodeFrame: (self frameCallerFP: framePointer)) ifFalse:
+				[self iframeSavedIP: (self frameCallerFP: framePointer)
+					put: (self frameCallerSavedIP: framePointer) asInteger.
+				 stackPages
+					unsignedLongAt: framePointer + FoxCallerSavedIP
+					put: cogit ceReturnToInterpreterPC]].
+	
+	
 	self assert: pc > (cogMethod asUnsignedInteger + cogit noCheckEntryOffset).
 	self assert: bcpc = (cogit bytecodePCFor: pc startBcpc: startBcpc in: cogMethod).
 	"now convert to a machine code frame"
@@ -3245,31 +3311,31 @@ CoInterpreter >> ifBackwardsCheckForEvents: offsetToJumpBytecode [
 
 	stackPointer < stackLimit ifTrue: [
 		switched := self checkForEventsMayContextSwitch: true.
-		self returnToExecutive: true postContextSwitch: switched.
+		self druidIgnore:[ self returnToExecutive: true postContextSwitch: switched ].
 		switched ifTrue: [ ^ self ] ].
 
-	"We use the least significant byte of the flags word (which is marked as an immediate) and
+	self druidIgnore: [ "We use the least significant byte of the flags word (which is marked as an immediate) and
 	 subtract two each time to avoid disturbing the least significant tag bit.  Since the byte is
 	 initialized to 1 (on frame build), on first decrement it will become -1.  Trip when it reaches 1 again."
-	backwardJumpCountByte := self iframeBackwardBranchByte: framePointer.
-	(backwardJumpCountByte := backwardJumpCountByte - 2) = 1
-		ifTrue: [
-			(self methodWithHeaderShouldBeCogged:
-				 (objectMemory methodHeaderOf: method)) ifTrue: [
-				self attemptToSwitchToMachineCode:
-					(self oopForPointer: instructionPointer) - offsetToJumpBytecode
-					- method - objectMemory baseHeaderSize - 1
-				"If attemptToSwitchToMachineCode: returns the method could not be cogged, hence..." ].
-			"can't cog method; avoid asking to cog it again for the longest possible time."
-			backwardJumpCountByte := 16r7F ]
-		ifFalse: [
-			backwardJumpCountByte = -1 ifTrue: [ "initialize the count"
-				self assert: minBackwardJumpCountForCompile <= 128.
-				backwardJumpCountByte := minBackwardJumpCountForCompile - 1 << 1
-				                         + 1 ] ].
-	self
-		iframeBackwardBranchByte: framePointer
-		put: backwardJumpCountByte
+		backwardJumpCountByte := self iframeBackwardBranchByte: framePointer.
+		(backwardJumpCountByte := backwardJumpCountByte - 2) = 1
+			ifTrue: [
+				(self methodWithHeaderShouldBeCogged:
+					 (objectMemory methodHeaderOf: method)) ifTrue: [
+					self attemptToSwitchToMachineCode:
+						(self oopForPointer: instructionPointer) - offsetToJumpBytecode
+						- method - objectMemory baseHeaderSize - 1
+					"If attemptToSwitchToMachineCode: returns the method could not be cogged, hence..." ].
+				"can't cog method; avoid asking to cog it again for the longest possible time."
+				backwardJumpCountByte := 16r7F ]
+			ifFalse: [
+				backwardJumpCountByte = -1 ifTrue: [ "initialize the count"
+					self assert: minBackwardJumpCountForCompile <= 128.
+					backwardJumpCountByte := minBackwardJumpCountForCompile - 1 << 1
+					                         + 1 ] ].
+		self
+			iframeBackwardBranchByte: framePointer
+			put: backwardJumpCountByte ]
 ]
 
 { #category : #'debug support' }
@@ -3310,6 +3376,22 @@ CoInterpreter >> iframeBackwardBranchByte: theFP put: aByte [
 	stackPages
 		byteAt: theFP + (VMBIGENDIAN ifTrue: [FoxIFrameFlags + objectMemory wordSize - 1] ifFalse: [FoxIFrameFlags])
 		put: aByte
+]
+
+{ #category : #'frame access' }
+CoInterpreter >> iframeFlags: theFP [
+	"See encodeFrameFieldHasContext:numArgs:"
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^stackPages unsignedLongAt: theFP + FoxIFrameFlags
+]
+
+{ #category : #'frame access' }
+CoInterpreter >> iframeFlags: theFP put: flags [
+	"See encodeFrameFieldHasContext:numArgs:"
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^stackPages unsignedLongAt: theFP + FoxIFrameFlags put: flags
 ]
 
 { #category : #'frame access' }
