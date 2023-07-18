@@ -11919,7 +11919,6 @@ Cogit >> trampolineName: routinePrefix numRegArgs: numArgs [
 { #category : #'bytecode generators' }
 Cogit >> unknownBytecode [
 	
-	self ssFlushStack.
 	self MoveCq: bytecodePC R: ReceiverResultReg.
 	self CallRT: ceDeoptimiseFrameTrampoline.
 	^ 0
